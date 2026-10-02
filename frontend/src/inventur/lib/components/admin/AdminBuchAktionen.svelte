@@ -8,9 +8,9 @@
 		stehtInSicht,
 		verringernRueckfrage,
 		BestandVeraltetFehler,
-		DubletteFehler,
-		frageVorhandenenOeffnen
+		DubletteFehler
 	} from '../../buch_speichern.js';
+	import { frageVorhandenenOeffnen } from '../../buch_vorhanden.js';
 	import { hatRecht } from '../../../../lib/menu.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 

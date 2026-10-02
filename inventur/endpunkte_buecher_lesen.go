@@ -230,7 +230,8 @@ func (handler *APIHandler) gespeichert(ctx context.Context, gesendet Book) Book 
 // BearbeiteBuchVorhanden sagt vor dem Speichern, was die Dublettenkontrolle zu einer ISBN
 // sagen wird: den Titel, der sie schon trägt, samt der Meldung der Ablehnung — oder keinen.
 // Die Maske „Neues Buch" fragt damit schon bei der Eingabe der ISBN, wie Littera; das Format
-// der Nummer prüft erst das Speichern.
+// der Nummer prüft erst das Speichern. Trägt kein Titel die ISBN, nennt die Antwort unter
+// „andereForm" den Titel, der sie in der anderen Länge trägt.
 func (handler *APIHandler) BearbeiteBuchVorhanden(antwort http.ResponseWriter, anfrage *http.Request) {
 	isbn := strings.TrimSpace(anfrage.URL.Query().Get("isbn"))
 	if isbn == "" {
@@ -244,12 +245,28 @@ func (handler *APIHandler) BearbeiteBuchVorhanden(antwort http.ResponseWriter, a
 		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler")
 		return
 	}
-	if vorhanden == nil {
-		writeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{"vorhanden": nil}})
+	if vorhanden != nil {
+		writeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{
+			"vorhanden": vorhanden.alsAntwort(),
+			"meldung":   vorhanden.Meldung(),
+		}})
 		return
 	}
-	writeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{
-		"vorhanden": vorhanden.alsAntwort(),
-		"meldung":   vorhanden.Meldung(),
-	}})
+
+	// Unter „vorhanden" steht nur, was das Speichern ablehnt. Ein Titel unter der anderen
+	// Länge der ISBN ist ein Vorschlag: Die Maske fragt, und das Speichern legt an.
+	andererTitel, andereForm, fehler := handler.repo.TitelUnterAndererForm(anfrage.Context(), isbn)
+	if fehler != nil {
+		log.Printf("Dublettenkontrolle vorab (andere Form): %v", fehler)
+		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler")
+		return
+	}
+	daten := map[string]any{"vorhanden": nil}
+	if andererTitel != nil {
+		vorschlag := andererTitel.alsAntwort()
+		vorschlag["isbn"] = andereForm
+		daten["andereForm"] = vorschlag
+		daten["meldung"] = andererTitel.MeldungAndereForm(andereForm)
+	}
+	writeJSON(antwort, http.StatusOK, map[string]any{"data": daten})
 }

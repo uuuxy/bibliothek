@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"bibliothek/pkg/isbnutil"
 	"bibliothek/repository"
 )
 
@@ -70,6 +71,34 @@ func titelMitISBN(ctx context.Context, q repository.DBQueryer, isbn, eigeneID st
 // TitelMitISBN sagt vor dem Speichern, was die Dublettenkontrolle zu dieser ISBN sagen wird.
 func (repo *BookRepository) TitelMitISBN(ctx context.Context, isbn string) (*DubletteISBN, error) {
 	return titelMitISBN(ctx, repo.db, isbn, "")
+}
+
+// TitelUnterAndererForm sucht den Titel, der dieselbe ISBN in der anderen Länge trägt (ISBN-10
+// und ISBN-13 mit 978, isbnutil.AndereForm), und nennt diese Form. Die Normalform trennt beide
+// Längen, und der Strichcode auf dem Buch ist dreizehnstellig: Ein Titel aus Littera mit
+// zehnstelliger ISBN stünde nach dem Scan sonst ein zweites Mal im Katalog. Er wird nur
+// vorgeschlagen und nicht abgelehnt — unter der anderen Form kann ein anderes Buch stehen
+// (eine ISBN-10 mit falschem Prüfzeichen).
+func (repo *BookRepository) TitelUnterAndererForm(ctx context.Context, isbn string) (*DubletteISBN, string, error) {
+	andere := isbnutil.AndereForm(isbn)
+	if andere == "" {
+		return nil, "", nil
+	}
+	titel, err := titelMitISBN(ctx, repo.db, andere, "")
+	return titel, andere, err
+}
+
+// MeldungAndereForm ist der Satz der Maske zu einem Titel unter der anderen Form der ISBN.
+func (d *DubletteISBN) MeldungAndereForm(andere string) string {
+	laenge := "dreizehnstelliger"
+	if len(andere) == 10 {
+		laenge = "zehnstelliger"
+	}
+	meldung := "Im Katalog steht diese ISBN in " + laenge + " Form (" + andere + ") am Titel „" + d.Titel + "“."
+	if !d.HatExemplar {
+		meldung += " Er hat kein Exemplar und steht deshalb in der Titelliste nur unter „Ohne Exemplare“."
+	}
+	return meldung
 }
 
 // pruefeDublette lehnt einen Titel ab, den es schon gibt (OFFEN.md 4.18, Stufe 2): mit ISBN

@@ -256,3 +256,35 @@ func TestBaueDNBSuchItem(t *testing.T) {
 		t.Errorf("erwartet, dass IsDuplicate false ist")
 	}
 }
+
+// Die DNB nennt zu einem Buch die dreizehnstellige ISBN, der Katalog trägt es aus Littera mit
+// der zehnstelligen: Der Treffer heißt „Vorhanden", nicht „Neu". Ob es dasselbe Buch ist,
+// fragt die Bestelltür beim Klick.
+func TestBaueDNBSuchItem_VorhandenAuchUnterDerAnderenLaenge(t *testing.T) {
+	treffer := inventur.MetadatenErgebnis{ISBN: "978-3-551-55167-2", Titel: "Harry Potter und der Stein der Weisen"}
+
+	for name, f := range map[string]struct {
+		imKatalog string
+		vorhanden bool
+	}{
+		"dieselbe Länge":         {"9783551551672", true},
+		"zehnstellig im Katalog": {"3551551677", true},
+		"ein anderes Buch":       {"3551551669", false},
+	} {
+		item := baueDNBSuchItem(treffer, map[string]struct{}{f.imKatalog: {}})
+		if item.IsDuplicate != f.vorhanden {
+			t.Errorf("%s: IsDuplicate = %v, erwartet %v", name, item.IsDuplicate, f.vorhanden)
+		}
+	}
+
+	// Gefragt wird der Katalog nach beiden Längen; eine 979er ISBN hat nur eine.
+	if got := isbnInBeidenLaengen("978-3-551-55167-2"); len(got) != 2 || got[0] != "9783551551672" || got[1] != "3551551677" {
+		t.Errorf("beide Längen: %v", got)
+	}
+	if got := isbnInBeidenLaengen("9791036700316"); len(got) != 1 {
+		t.Errorf("979er ISBN: %v, erwartet nur sie selbst", got)
+	}
+	if got := isbnInBeidenLaengen(""); got != nil {
+		t.Errorf("ohne ISBN: %v", got)
+	}
+}

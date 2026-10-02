@@ -282,9 +282,7 @@ func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inve
 
 	var isbns []string
 	for _, dr := range dnbResults {
-		if dr.ISBN != "" {
-			isbns = append(isbns, isbnutil.CleanISBN(dr.ISBN))
-		}
+		isbns = append(isbns, isbnInBeidenLaengen(dr.ISBN)...)
 	}
 
 	existingISBNs := sammleExistierendeISBNs(ctx, pool, isbns)
@@ -294,6 +292,21 @@ func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inve
 		results = append(results, baueDNBSuchItem(dr, existingISBNs))
 	}
 	return results
+}
+
+// isbnInBeidenLaengen nennt eine ISBN so, wie sie im Katalog stehen kann: in ihrer eigenen
+// Länge und in der anderen (isbnutil.AndereForm). Die Normalform des Katalogs trennt ISBN-10
+// und ISBN-13, und die DNB nennt die dreizehnstellige zu einem Buch, das aus Littera mit der
+// zehnstelligen im Katalog steht — der Treffer hieße sonst „Neu".
+func isbnInBeidenLaengen(isbn string) []string {
+	if isbn == "" {
+		return nil
+	}
+	sauber := isbnutil.CleanISBN(isbn)
+	if andere := isbnutil.AndereForm(sauber); andere != "" {
+		return []string{sauber, andere}
+	}
+	return []string{sauber}
 }
 
 // sammleExistierendeISBNs prüft per Bulk-Query, welche der (normalisierten) ISBNs bereits im
@@ -330,9 +343,11 @@ func baueDNBSuchItem(dr inventur.MetadatenErgebnis, existingISBNs map[string]str
 		coverURL = fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", dr.ISBN)
 	}
 
+	// „Vorhanden" auch, wenn der Katalog die ISBN in der anderen Länge trägt. Ob es dasselbe
+	// Buch ist, fragt danach die Bestelltür (aus-isbn).
 	existsLocally := false
-	if dr.ISBN != "" {
-		if _, found := existingISBNs[isbnutil.CleanISBN(dr.ISBN)]; found {
+	for _, form := range isbnInBeidenLaengen(dr.ISBN) {
+		if _, found := existingISBNs[form]; found {
 			existsLocally = true
 		}
 	}

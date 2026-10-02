@@ -396,19 +396,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   SELECT jahrgang_von, jahrgang_bis, count(*) FROM buecher_titel GROUP BY 1, 2 ORDER BY 3 DESC;
   ```
 
-- **ISBN-10 und ISBN-13 desselben Buchs:** Die Normalform trennt beide bewusst (Migration 133),
-  die Littera-Übernahme behält eine gültige ISBN-10. Seit dem 25.09.2026 rechnet die Bestelltür
-  um und schlägt den Titel unter der anderen Länge vor (`isbnutil.AndereForm`, der Zwilling
-  von `isbnFormen.js`). Nur die Schreibweise vergleichen weiter die Markierung
-  „Vorhanden" der Bestellsuche (`sammleExistierendeISBNs`) und die Dublettenkontrolle der
-  Maske: Ein DNB-Treffer, dessen ISBN-10 im Katalog steht, heißt in der Trefferliste „Neu",
-  erst der Klick führt zur Frage. Gemessen am Testserver am 23.09.2026 (lesend): 100 Titel mit
-  ISBN-10, 9.743 mit ISBN-13, 4 Paare mit gleichem Kern — alle aus der Littera-Übernahme vom
-  15.07.2026, ohne Exemplare. Unter `3499500252` und `9783499500251` stehen zwei verschiedene
-  Bücher („Heinrich Mann" und „Frédéric Chopin", rororo): Die ISBN-10 trägt ein falsches
-  Prüfzeichen (richtig wäre `3499500256`; die Prüfung `KlaereISBN` der Übernahme gibt es seit dem
-  04.08.2026), und die Rechnung führt von ihr trotzdem auf die ISBN-13. Deshalb wird
-  vorgeschlagen, nicht still zusammengeführt.
 - **Die kurze Nummer der alten Littera-Etiketten lässt sich an der Theke nicht eintippen**
   (gefunden am 30.09.2026, am Code gelesen, nicht nachgestellt). Nach der Übernahme ist die
   Nummer eines Littera-Exemplars der EAN-13 seines Etiketts (`5896800039556`); lesbar steht auf
