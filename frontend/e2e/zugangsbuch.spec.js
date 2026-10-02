@@ -28,13 +28,15 @@ test('Zugangsbuch: Zugänge des Halbjahres nach Topf, Lieferant dabei — und al
 	`);
 
 	await uiLogin(page);
-	// Seit dem 17.09.2026 unter „System → Bestandsbücher" statt im Medienkatalog.
+	// Der Menüpunkt steht unter „Berichte → Bestandsbücher".
 	await gehZu(page, '/bestandsbuecher');
 	await page.getByRole('tab', { name: 'Zugangsbuch' }).click();
 
 	// 1. Der Zugang aus der Bestellung steht unter dem Topf des Landes, mit Lieferant.
+	// Die Seite baut alle Zugänge des Halbjahres auf einmal auf. Auf einer großen Datenbank
+	// sind das Zehntausende Zeilen und mehrere Sekunden, deshalb die längere Frist.
 	const land = page.getByRole('table', { name: /Zugangsbuch — Lernmittelfreiheit \(Land\)/ });
-	await expect(land.getByText(`E2E-ZUG-A-${s}`)).toBeVisible();
+	await expect(land.getByText(`E2E-ZUG-A-${s}`)).toBeVisible({ timeout: 30_000 });
 	await expect(land.getByText(`E2E-Haendler ${s}`)).toBeVisible();
 
 	// 2. Der Zugang OHNE Bestellung steht nicht dort, sondern unter „ohne Zuordnung" —

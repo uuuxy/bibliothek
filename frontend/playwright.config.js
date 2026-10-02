@@ -20,6 +20,9 @@ export default defineConfig({
 	forbidOnly: !!process.env.CI,
 	reporter: [['list']],
 	use: {
+		// Maßstab ist der gebaute Stand. Am Entwicklungsserver (E2E_BASE_URL=http://localhost:5173)
+		// braucht die Barrierefreiheits-Prüfung großer Seiten ein Mehrfaches der Zeit; dort
+		// `--timeout=300000` mitgeben.
 		baseURL: process.env.E2E_BASE_URL || 'http://localhost:8084',
 		trace: 'retain-on-failure',
 		screenshot: 'only-on-failure'

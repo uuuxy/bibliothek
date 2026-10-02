@@ -463,16 +463,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Teardown löscht die Bestellung, die Exemplare bleiben „im Zulauf" ohne Bestellung.
   `e2e/abgaenger-management.spec.js` räumt nichts ab (133 Titel „Abgänger Buch …"), der
   Wareneingang-Test in `e2e/scrollbereiche.spec.js` lässt je Lauf acht Titel mit je einem
-  Exemplar im Zulauf liegen. Von `e2e/leserdatei.spec.js` stehen aus der Zeit vor dem
+  Exemplar im Zulauf liegen, `e2e/zugangsbuch.spec.js` je Lauf einen Titel mit zwei
+  Exemplaren (74 Titel). Von `e2e/leserdatei.spec.js` stehen aus der Zeit vor dem
   02.10.2026 noch 84 Titel, 83 Ausleihen, 86 Leser und 81 Konten. Lokale Zahlen tragen diese
   Reste mit. Abhilfe je Spec: eigener Titel, Aufräumen über die Kennung. Kategorie B.
-- Gegen den Entwicklungsserver (`E2E_BASE_URL=http://localhost:5173`) sind drei Specs rot, die
-  am gebauten Stand grün sind (gemessen am 02.10.2026). Die Barrierefreiheits-Prüfung des
-  Mahnwesens läuft in die Zeitüberschreitung, und `e2e/zugangsbuch.spec.js` findet den Zugang
-  nicht in der Tabelle des Landes — beide auch ohne Änderung an den Quellen. Die Prüfung der
-  Leserdatei liegt bei 30 s an der Grenze (ein Lauf grün, einer rot; am gebauten Stand 6 s).
-  Ursache beim Zugangsbuch nicht untersucht. Ein Lauf gegen den Entwicklungsserver ist
-  deshalb nie ganz grün.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
@@ -741,6 +735,13 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   main content" und „avoid positioning the snackbar in a way that completely obscures
   actionable elements". Am unteren Rand stehen die Auswahlleisten der Listen
   (`ui/AuswahlLeiste`, `AuswahlAktionsleiste`); dort müssten die Meldungen ausweichen.
+- Das Zugangsbuch baut alle Zugänge des Zeitraums auf einmal auf
+  (`components/bestand/Bestandsbuch.svelte`; die Abfrage in `repository/zugangsbuch.go` hat
+  keine Grenze). Gemessen am 02.10.2026 an der lokalen Datenbank: 34.621 Zeilen im laufenden
+  Halbjahr, 5,4 MB, Abruf 0,1 s, Aufbau im Browser 4,2 s. Die lokalen Zugangsdaten stammen aus
+  Importen und Testläufen und sagen nichts über die Schule; ein neues Exemplar übernimmt sein
+  Erwerbsdatum als Zugangsdatum (`stempel_zugang_am`). Anlass zum Bauen: ein Halbjahr mit
+  mehreren tausend Zugängen am Server.
 - Bei 390 px Breite ist die Bestellspalte (Bestellwesen, das Fenster vor dem Warenkorb) 68 px
   breit, auch das Eingabefeld der Schlagworte; die Chips ragen darüber hinaus (gemessen am
   30.09.2026 im echten Chrome, schon vor der zweiten Vorschlagszeile so). Unterhalb von `lg` legt
