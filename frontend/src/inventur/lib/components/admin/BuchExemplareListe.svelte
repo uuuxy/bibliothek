@@ -78,7 +78,8 @@
 			Keine Exemplare in der Datenbank vorhanden. (Gesamtbestand: {formular.stock})
 		</div>
 	{:else}
-		<div class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+		<!-- Ohne eigene Höhe: Die Liste zeigt alle Exemplare, gescrollt wird die Seite. -->
+		<div class="space-y-2">
 			{#each exemplare as ex, _i (_i)}
 				<!-- Dieselben Exemplare zeigt die Buchakte (BookExemplarCard): umrandete Fläche in
 				     outline-variant, Barcode als getönte Chip-Form, Zustand über StatusChip. Zwei
@@ -118,19 +119,3 @@
 		</div>
 	{/if}
 </div>
-
-<style>
-	.custom-scrollbar::-webkit-scrollbar {
-		width: 4px;
-	}
-	.custom-scrollbar::-webkit-scrollbar-track {
-		background: transparent;
-	}
-	.custom-scrollbar::-webkit-scrollbar-thumb {
-		background: var(--color-outline-variant);
-		border-radius: 4px;
-	}
-	.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-		background: var(--color-outline);
-	}
-</style>

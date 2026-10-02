@@ -6,20 +6,24 @@ import { uiLogin, seedSQL, uniqueSuffix, oeffneSchuelerProfil, gehZu } from './h
 // achtzehn Ausleihen je Leser.
 
 /**
- * Die Scrollbereiche um die Tabelle mit dieser Beschriftung, von innen nach außen.
- * @param {{ beschriftung: string, ueberschrift: string }} suche
+ * Die Scrollbereiche um eine Liste, von innen nach außen. Die Liste ist die Tabelle mit
+ * dieser Beschriftung oder, wo sie keine Tabelle ist, das Element mit dem Text einer Zeile.
+ * @param {{ beschriftung?: string, zeile?: string, ueberschrift: string }} suche
  */
-function scrollLage({ beschriftung, ueberschrift }) {
-	const tabellen = [...document.querySelectorAll('table')].filter((t) =>
-		t.querySelector('caption')?.textContent?.includes(beschriftung)
+function scrollLage({ beschriftung, zeile, ueberschrift }) {
+	const tabellen = [...document.querySelectorAll('table')].filter(
+		(t) => beschriftung && t.querySelector('caption')?.textContent?.includes(beschriftung)
 	);
+	const liste = zeile
+		? [...document.querySelectorAll('span')].find((e) => e.textContent?.trim() === zeile)
+		: tabellen[0];
 	const kopf = [...document.querySelectorAll('h2, h3')].find((h) =>
 		h.textContent?.includes(ueberschrift)
 	);
 	const seite = document.scrollingElement;
-	if (tabellen.length === 0 || !kopf || !seite) return null;
+	if (!liste || !kopf || !seite) return null;
 	const bereiche = [];
-	for (let e = tabellen[0].parentElement; e; e = e.parentElement) {
+	for (let e = liste.parentElement; e; e = e.parentElement) {
 		if (e === seite || /(auto|scroll)/.test(getComputedStyle(e).overflowY)) bereiche.push(e);
 	}
 	return {
@@ -129,4 +133,48 @@ test('Wareneingang: die Positionen scrollen mit der Seite, und nur ein Bereich s
 	await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
 	await leiste.getByRole('button', { name: 'Markierung aufheben' }).click();
 	await expect(leiste).toHaveCount(0);
+});
+
+test('Buchmaske: zwanzig Exemplare stehen in einer Liste ohne eigenen Scrollkasten', async ({
+	page
+}) => {
+	const s = uniqueSuffix();
+	seedSQL(`
+		WITH t AS (
+			INSERT INTO buecher_titel (isbn, titel, autor)
+			VALUES ('978s${s}', 'E2E Scrollmaske ${s}', 'Scroll Autor')
+			RETURNING id
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+		SELECT id, 'B-scm-${s}-' || lpad(n::text, 2, '0'), true FROM t, generate_series(1, 20) n;
+	`);
+
+	try {
+		await uiLogin(page);
+		await gehZu(page, '/medienkatalog');
+		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+		await page.getByRole('searchbox', { name: 'Bücher durchsuchen' }).fill(`E2E Scrollmaske ${s}`);
+		await page.getByText(`E2E Scrollmaske ${s}`).first().click();
+		await expect(page.getByRole('heading', { name: 'Exemplare (20)' })).toBeVisible();
+
+		const lage = await page.evaluate(scrollLage, {
+			zeile: `B-scm-${s}-01`,
+			ueberschrift: 'Exemplare (20)'
+		});
+		expect(lage, 'Liste oder Überschrift der Exemplare nicht gefunden').not.toBeNull();
+		expect(
+			lage?.ueberschriftImSelbenBereich,
+			'Die Exemplare scrollen in einem eigenen Kasten, getrennt von ihrer Überschrift.'
+		).toBe(true);
+		expect(
+			lage?.ueberlaufend,
+			'In der Buchmaske scrollen mehrere Bereiche ineinander.'
+		).toBeLessThanOrEqual(1);
+	} finally {
+		// Zwanzig Exemplare ohne gedrucktes Etikett stünden sonst nach jedem Lauf im Druck-Center.
+		seedSQL(`
+			DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn = '978s${s}');
+			DELETE FROM buecher_titel WHERE isbn = '978s${s}';
+		`);
+	}
 });

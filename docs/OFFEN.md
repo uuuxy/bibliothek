@@ -718,18 +718,24 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
 
 ### 5.45 Listen in einem Kasten mit eigenem Scrollen
 
-Am 01.10.2026 sind zwei Kästen entfernt: die Ausleihliste der Leserakte (256 px, drei Zeilen)
-und die Positionen im Wareneingang (60 % der Fensterhöhe). Beide Listen zeigen jetzt alle
-Zeilen, gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B. Offen:
+Am 01.10.2026 und 02.10.2026 sind drei Kästen entfernt: die Ausleihliste der Leserakte
+(256 px, drei Zeilen), die Positionen im Wareneingang (60 % der Fensterhöhe) und die Exemplare
+in der Maske „Buch bearbeiten" (256 px, vier Zeilen). Die Listen zeigen jetzt alle Zeilen,
+gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B. Offen:
 
-- **Weitere Kästen derselben Form, nicht durchgesehen:** `BuchExemplareListe.svelte`
-  (`max-h-64`), `SignaturenView.svelte` (`max-h-112`), `OrderRecommendations.svelte`,
-  `BestellWorkspace.svelte` (`max-h-(--rail-max)`), `LabelBarcodeSchritt.svelte` (`max-h-40`)
-  und `LabelSettings.svelte` (`max-h-48`). Suchmuster: `max-h-` und `overflow-y-auto` in einer
-  Zeile, 14 Treffer; die übrigen acht sind Auswahllisten, Vorschläge, Dialoge und das
-  Eigenschaften-Feld des Designers. Je Bildschirm mit einer Menge wie an der Schule ansehen:
-  Die Testdaten kennen höchstens drei Ausleihen je Leser, an der Schule sind es acht bis
-  achtzehn.
+- **Weitere Kästen derselben Form, nicht durchgesehen:** `SignaturenView.svelte`
+  (`max-h-112`), `OrderRecommendations.svelte`, `BestellWorkspace.svelte`
+  (`max-h-(--rail-max)`), `LabelBarcodeSchritt.svelte` (`max-h-40`) und `LabelSettings.svelte`
+  (`max-h-48`). Suchmuster: `max-h-` und `overflow-y-auto` in einer Zeile, 13 Treffer; die
+  übrigen acht sind Auswahllisten, Vorschläge, Dialoge und das Eigenschaften-Feld des
+  Designers. Je Bildschirm mit einer Menge wie an der Schule ansehen: Die Testdaten kennen
+  höchstens drei Ausleihen je Leser, an der Schule sind es acht bis achtzehn.
+- **Der Abstand des Rahmens liegt um den Scrollbereich, nicht in ihm** (alle Seiten, gemessen
+  am 02.10.2026 bei 1710 × 952 px): `Anwendungsrahmen.svelte` gibt der Arbeitsfläche 24 px
+  oben und unten und 32 px an den Seiten, gescrollt wird erst das Element darin
+  (`Router.svelte`, `overflow-y-auto`). Die Scrollleiste sitzt deshalb 32 px vom Fensterrand,
+  und über und unter dem Inhalt bleiben beim Scrollen je 24 px stehen. Betrifft jedes
+  Bauteil, das beim Scrollen stehen bleibt (`sticky top-0`).
 - **Leserakte in einem Fenster unter 1200 px Breite** (gemessen am 02.10.2026, Seitenleiste
   ausgeklappt): Die Akte stellt Leserkarte (320 px) und Inhalt ab 1024 px nebeneinander
   (`StudentProfile.svelte`, `lg:grid-cols-[320px_minmax(0,1fr)]`). Der Ausleihliste bleiben
