@@ -40,9 +40,12 @@ test('Schlagworte: eintragen, erhalten beim Speichern ohne Änderung, einzeln en
 		await page.getByText(titel).first().click();
 		await expect(page.locator('#buch-schlagworte')).toBeVisible({ timeout: 15000 });
 	}
+	/** Speichert und wartet, bis die Maske fort ist. Sie schließt erst nach der Antwort des
+	 *  Servers und blendet 200 ms aus. Die Meldung „gespeichert" taugt nicht als Zeichen: Sie
+	 *  steht 5 s, ab dem zweiten Speichern genügte also die des vorigen. */
 	async function speichere() {
 		await page.getByRole('button', { name: 'Speichern' }).click();
-		await expect(page.getByText('Buch erfolgreich gespeichert!').first()).toBeVisible({
+		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeHidden({
 			timeout: 15000
 		});
 	}

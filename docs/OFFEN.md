@@ -457,16 +457,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   steht; vom Katalog aus brächen sie ab wie der Kontrast-Test bis zum 02.10.2026. Abhilfe:
   `menuepunkt` aus `e2e/helpers.js` an allen Stellen, und die Spec räumt ihren Titel ab.
   Kategorie B.
-- `e2e/schlagworte-roundtrip.spec.js` hängt an der Geschwindigkeit des Rechners (gefunden am
-  02.10.2026). `speichere()` wartet auf die Meldung „Buch erfolgreich gespeichert!" mit
-  `.first()`; eine Meldung steht 5 s, ab dem zweiten Speichern genügt die des vorigen, und der
-  nächste Schritt beginnt, während die Maske noch schließt. Sie blendet 200 ms aus und nimmt
-  in dieser Zeit keine Eingabe an (`inert`); ein Klick auf den Titel holt in dieser Zeit
-  dieselbe Maske zurück. Nachgestellt an beiden Ständen: Speichern, Titel sofort wieder
-  anklicken, Schlagwort tippen — das Feld bleibt leer, gespeichert wird ohne das Wort. Im Test
-  wurde das sichtbar, als eine Meldung über „Speichern" lag und der Klick 900 ms später kam
-  (vierter Schritt rot). Von Hand ist das Fenster von 200 ms nicht zu treffen. Abhilfe: nach
-  dem Speichern warten, bis die Überschrift „Buch bearbeiten" fort ist. Kategorie B.
 - Gegen den Entwicklungsserver (`E2E_BASE_URL=http://localhost:5173`) sind drei Specs rot, die
   am gebauten Stand grün sind (gemessen am 02.10.2026). Die Barrierefreiheits-Prüfung des
   Mahnwesens läuft in die Zeitüberschreitung, und `e2e/zugangsbuch.spec.js` findet den Zugang
