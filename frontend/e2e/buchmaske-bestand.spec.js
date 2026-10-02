@@ -162,25 +162,29 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		expect(signatur()).toBe('Bes 4');
 	});
 
-	// „Exemplar löschen" sondert aus. Die Maske zählte danach selbst eins herunter, auch bei
-	// einem bestellten Exemplar, das im Bestand nie mitzählte — und das nächste Speichern
-	// sonderte dafür ein Exemplar aus dem Regal aus.
-	test('ein bestelltes Exemplar in der Maske gelöscht: die Zahl im Feld bleibt', async ({
+	// Die Liste der Maske zeigt den Bestand: Bestellte und ausgesonderte Exemplare stehen nicht
+	// darin, sondern in einem Satz darüber. „Exemplar löschen" sondert aus; die Zahl im Feld
+	// holt die Maske danach vom Server, statt selbst zu zählen.
+	test('die Liste zeigt den Bestand; ein Exemplar gelöscht: Feld und Liste folgen', async ({
 		page
 	}) => {
 		await oeffneTitel(page, '5');
-		await page
-			.locator('div')
-			.filter({ hasText: new RegExp(`^B-BM-Z1-${s}`) })
-			.getByRole('button', { name: 'Exemplar löschen' })
-			.click();
+		await expect(page.getByRole('heading', { name: 'Exemplare (5)' })).toBeVisible();
+		await expect(page.getByText(/^B-BM-Z[12]-/)).toHaveCount(0);
+		await expect(
+			page.getByText('Nicht im Bestand: 2 ausgesondert, 2 bestellt. Sie stehen in der Buchakte.')
+		).toBeVisible();
+
+		await page.getByRole('button', { name: 'Exemplar löschen' }).first().click();
 		await page.getByRole('dialog').getByRole('button', { name: 'Löschen' }).click();
 		await expect(page.getByText('Exemplar erfolgreich gelöscht')).toBeVisible();
-		await expect(page.locator('#buch-bestand')).toHaveValue('5');
-		expect(stand()).toBe('5/1/3');
+		await expect(page.locator('#buch-bestand')).toHaveValue('4');
+		await expect(page.getByRole('heading', { name: 'Exemplare (4)' })).toBeVisible();
+		await expect(page.getByText(/Nicht im Bestand: 3 ausgesondert, 2 bestellt\./)).toBeVisible();
+		expect(stand()).toBe('4/2/3');
 
 		await speichern(page);
 		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
-		expect(stand()).toBe('5/1/3');
+		expect(stand()).toBe('4/2/3');
 	});
 });

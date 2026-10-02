@@ -9,10 +9,20 @@
 
 	let { formular = $bindable() } = $props();
 
+	// Die Liste zeigt den Bestand des Titels, die Zahl im Feld „Aktueller Bestand".
+	// Ausgesonderte und bestellte Exemplare zählt er nicht; sie führt die Buchakte.
 	/** @type {any[]} */
 	let exemplare = $state([]);
+	let ausgesondert = $state(0);
+	let bestellt = $state(0);
 	let loading = $state(true);
 	let error = $state('');
+
+	const nichtImBestand = $derived(
+		[ausgesondert && `${ausgesondert} ausgesondert`, bestellt && `${bestellt} bestellt`]
+			.filter(Boolean)
+			.join(', ')
+	);
 
 	onMount(() => {
 		loadExemplare();
@@ -31,8 +41,12 @@
 				throw new Error(err.error || 'Fehler beim Laden der Exemplare');
 			}
 			// Die Antwort ist das nackte Array (RespondJSON), wie Buchakte und Druck-Center
-			// sie lesen — bis zum 23.09.2026 stand hier `json.data`, und die Liste blieb leer.
-			exemplare = (await res.json()) ?? [];
+			// sie lesen. Ob ein Exemplar zum Bestand zählt, sagt der Server (im_bestand).
+			/** @type {any[]} */
+			const alle = (await res.json()) ?? [];
+			exemplare = alle.filter((e) => e.im_bestand !== false);
+			ausgesondert = alle.filter((e) => e.im_bestand === false && e.ist_ausgesondert).length;
+			bestellt = alle.length - exemplare.length - ausgesondert;
 		} catch (err) {
 			error = err instanceof Error ? err.message : String(err);
 		} finally {
@@ -49,9 +63,10 @@
 				credentials: 'include'
 			});
 			if (res.ok) {
+				// „Löschen" sondert aus: Das Exemplar verlässt den Bestand und die Liste.
 				exemplare = exemplare.filter((e) => e.id !== ex.id);
-				// Der Bestand der Maske kommt neu vom Server: Ein ausgesondertes oder bestelltes
-				// Exemplar zählte nicht mit, sein Löschen ändert die Zahl nicht.
+				ausgesondert += 1;
+				// Die Zahl im Feld kommt neu vom Server, die Maske zählt nicht selbst.
 				await ladeBestandNach(formular);
 				showToast('Exemplar erfolgreich gelöscht', 'success');
 			} else {
@@ -65,57 +80,66 @@
 </script>
 
 <div class="mt-8 border-t border-outline-variant pt-6">
-	<h3 class="text-lg font-semibold text-on-surface mb-4">Exemplare ({exemplare.length})</h3>
+	<h3 class="text-lg font-semibold text-on-surface">Exemplare ({exemplare.length})</h3>
+	{#if nichtImBestand}
+		<p class="text-sm text-on-surface-variant">
+			Nicht im Bestand: {nichtImBestand}. Sie stehen in der Buchakte.
+		</p>
+	{/if}
 
-	{#if loading}
-		<div class="text-sm text-on-surface-variant py-4 flex items-center justify-center">
-			Lade Exemplare...
-		</div>
-	{:else if error}
-		<div class="text-sm text-error py-4">{error}</div>
-	{:else if exemplare.length === 0}
-		<div class="text-sm text-on-surface-variant py-4 italic text-center">
-			Keine Exemplare in der Datenbank vorhanden. (Gesamtbestand: {formular.stock})
-		</div>
-	{:else}
-		<!-- Ohne eigene Höhe: Die Liste zeigt alle Exemplare, gescrollt wird die Seite. -->
-		<div class="space-y-2">
-			{#each exemplare as ex, _i (_i)}
-				<!-- Dieselben Exemplare zeigt die Buchakte (BookExemplarCard): umrandete Fläche in
+	<div class="mt-4">
+		{#if loading}
+			<div class="text-sm text-on-surface-variant py-4 flex items-center justify-center">
+				Lade Exemplare...
+			</div>
+		{:else if error}
+			<div class="text-sm text-error py-4">{error}</div>
+		{:else if exemplare.length === 0}
+			<div class="text-sm text-on-surface-variant py-4 italic text-center">
+				Kein Exemplar im Bestand.
+			</div>
+		{:else}
+			<!-- Ohne eigene Höhe: Die Liste zeigt alle Exemplare, gescrollt wird die Seite. -->
+			<div class="space-y-2">
+				{#each exemplare as ex, _i (_i)}
+					<!-- Dieselben Exemplare zeigt die Buchakte (BookExemplarCard): umrandete Fläche in
 				     outline-variant, Barcode als getönte Chip-Form, Zustand über StatusChip. Zwei
 				     Ansichten desselben Exemplars sollen nicht zwei Farbsprachen sprechen. -->
-				<div class="flex items-center justify-between p-3 rounded-lg border border-outline-variant">
-					<div class="flex items-center gap-3">
-						<span
-							class="rounded-md px-2 py-0.5 font-mono text-xs font-bold whitespace-nowrap bg-primary-container text-on-primary-container"
-						>
-							{ex.barcode_id}
-						</span>
-						<StatusChip
-							ton={!ex.ist_ausleihbar ? 'fehler' : !ex.ist_verfuegbar ? 'warten' : 'erfolg'}
-							text={!ex.ist_ausleihbar
-								? 'Gesperrt'
-								: !ex.ist_verfuegbar
-									? 'Ausgeliehen'
-									: 'Verfügbar'}
-						/>
-						{#if ex.zustand_notiz}
-							<span
-								class="text-label-small text-on-surface-variant truncate max-w-37.5"
-								title={ex.zustand_notiz}>{ex.zustand_notiz}</span
-							>
-						{/if}
-					</div>
-					<button
-						title="Exemplar löschen"
-						aria-label="Exemplar löschen"
-						class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
-						onclick={() => deleteCopy(ex)}
+					<div
+						class="flex items-center justify-between p-3 rounded-lg border border-outline-variant"
 					>
-						<Trash2 class="w-4 h-4" aria-hidden="true" />
-					</button>
-				</div>
-			{/each}
-		</div>
-	{/if}
+						<div class="flex items-center gap-3">
+							<span
+								class="rounded-md px-2 py-0.5 font-mono text-xs font-bold whitespace-nowrap bg-primary-container text-on-primary-container"
+							>
+								{ex.barcode_id}
+							</span>
+							<StatusChip
+								ton={!ex.ist_ausleihbar ? 'fehler' : !ex.ist_verfuegbar ? 'warten' : 'erfolg'}
+								text={!ex.ist_ausleihbar
+									? 'Gesperrt'
+									: !ex.ist_verfuegbar
+										? 'Ausgeliehen'
+										: 'Verfügbar'}
+							/>
+							{#if ex.zustand_notiz}
+								<span
+									class="text-label-small text-on-surface-variant truncate max-w-37.5"
+									title={ex.zustand_notiz}>{ex.zustand_notiz}</span
+								>
+							{/if}
+						</div>
+						<button
+							title="Exemplar löschen"
+							aria-label="Exemplar löschen"
+							class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
+							onclick={() => deleteCopy(ex)}
+						>
+							<Trash2 class="w-4 h-4" aria-hidden="true" />
+						</button>
+					</div>
+				{/each}
+			</div>
+		{/if}
+	</div>
 </div>

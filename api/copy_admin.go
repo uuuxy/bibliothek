@@ -132,6 +132,7 @@ func (s *Server) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepositor
 		// (docs/OFFEN.md 4.24, Stufe 3).
 		query := `
 			SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.ist_ausleihbar, e.ist_ausgesondert,
+			       (` + repository.SQLExemplarImBestand + `) AS im_bestand,
 			       coalesce(e.zustand_abwertung_prozent, 0),
 			       NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL) AS ist_verfuegbar,
 			       ` + repository.ExemplarTopfSQL + `, ` + repository.ExemplarTopfHerkunftSQL + `,
@@ -160,7 +161,10 @@ func (s *Server) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepositor
 			ZustandAbwertungProzent int  `json:"zustand_abwertung_prozent"`
 			IstAusleihbar           bool `json:"ist_ausleihbar"`
 			IstAusgesondert         bool `json:"ist_ausgesondert"`
-			IstVerfuegbar           bool `json:"ist_verfuegbar"`
+			// ImBestand: zählt zum Bestand des Titels (repository.SQLExemplarImBestand), also
+			// weder ausgesondert noch bestellt. Die Buchmaske listet nur diese.
+			ImBestand     bool `json:"im_bestand"`
+			IstVerfuegbar bool `json:"ist_verfuegbar"`
 			// Ersatzwert und Herleitung: was ein Ersatz für DIESES Exemplar heute kostet
 			// (OFFEN.md 9.8, Stufe 2b). Gerechnet wird mit ersatzwertVorschlagAus —
 			// derselben Funktion wie im Melde-Dialog, damit die Buchakte und die
@@ -186,7 +190,7 @@ func (s *Server) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepositor
 			// Eine unlesbare Zeile ist ein Fehler, kein Exemplar, das still von der Buchakte
 			// verschwindet (bis zum 29.09.2026 wurde sie übersprungen, die Liste kam mit 200).
 			if err := rows.Scan(&cp.ID, &cp.BarcodeID, &cp.ZustandNotiz, &cp.IstAusleihbar,
-				&cp.IstAusgesondert, &cp.ZustandAbwertungProzent, &cp.IstVerfuegbar,
+				&cp.IstAusgesondert, &cp.ImBestand, &cp.ZustandAbwertungProzent, &cp.IstVerfuegbar,
 				&cp.Eigentum, &cp.EigentumHerkunft, &cp.LitteraEigentumsvermerk); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return

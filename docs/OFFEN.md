@@ -433,10 +433,12 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   dazwischen nur ein Cover nachgeladen wurde. Dieselbe Form an Leser, Gerät, Benutzer und
   Einstellungen ist nicht durchgesehen (Raster, Frage 18; [sweeps.md](sweeps.md), „Absoluter
   Wert aus dem Ladezeitpunkt").
-- Die Exemplarliste der Buchmaske führt ausgesonderte und bestellte Exemplare mit (gesehen am
-  01.10.2026 im Browser): Über der Liste steht „Exemplare (9)" neben dem Bestand 5, beide
-  Arten heißen „Gesperrt", und „Exemplar löschen" an einem ausgesonderten antwortet
-  „exemplar nicht gefunden oder bereits ausgebucht". Kategorie B.
+- Die Buchakte führt ausgesonderte und bestellte Exemplare als „Gesperrt" (Reiter
+  „Exemplare", `BookExemplarCard.svelte`; die Buchmaske listet seit dem 02.10.2026 nur den
+  Bestand). „Exemplar löschen" antwortet dort an einem ausgesonderten „exemplar nicht
+  gefunden oder bereits ausgebucht". An einem bestellten sondert es aus, was nie eingetroffen
+  ist (`DeleteCopy`): Das Exemplar steht danach im Abgangsbuch, ohne je im Zugangsbuch
+  gestanden zu haben. Kategorie B.
 - Maske „Neues Buch": „Speichern" ist gesperrt, solange einem Bibliotheksbuch die Signatur
   fehlt; den Grund nennt das Feld Signatur („Speichern ist bis dahin gesperrt"). M3, Dialogs,
   Guidelines, zur bildschirmfüllenden Maske: „Don't disable the confirmation button" und
