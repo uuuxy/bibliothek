@@ -480,8 +480,9 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Wareneingang-Test in `e2e/scrollbereiche.spec.js` lässt je Lauf acht Titel mit je einem
   Exemplar im Zulauf liegen, `e2e/zugangsbuch.spec.js` je Lauf einen Titel mit zwei
   Exemplaren (74 Titel). Von `e2e/leserdatei.spec.js` stehen aus der Zeit vor dem
-  02.10.2026 noch 84 Titel, 83 Ausleihen, 86 Leser und 81 Konten. Lokale Zahlen tragen diese
-  Reste mit. Abhilfe je Spec: eigener Titel, Aufräumen über die Kennung. Kategorie B.
+  02.10.2026 noch 84 Titel, 83 Ausleihen, 86 Leser und 81 Konten. Ein voller Lauf am
+  02.10.2026 ließ 94 Titel und 438 Exemplare zurück. Lokale Zahlen tragen diese Reste mit.
+  Abhilfe je Spec: eigener Titel, Aufräumen über die Kennung. Kategorie B.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
@@ -696,13 +697,29 @@ Am 01.10.2026 und 02.10.2026 sind drei Kästen entfernt: die Ausleihliste der Le
 in der Maske „Buch bearbeiten" (256 px, vier Zeilen). Die Listen zeigen jetzt alle Zeilen,
 gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B. Offen:
 
-- **Weitere Kästen derselben Form, nicht durchgesehen:** `SignaturenView.svelte`
-  (`max-h-112`), `OrderRecommendations.svelte`, `BestellWorkspace.svelte`
-  (`max-h-(--rail-max)`), `LabelBarcodeSchritt.svelte` (`max-h-40`) und `LabelSettings.svelte`
-  (`max-h-48`). Suchmuster: `max-h-` und `overflow-y-auto` in einer Zeile, 13 Treffer; die
-  übrigen acht sind Auswahllisten, Vorschläge, Dialoge und das Eigenschaften-Feld des
-  Designers. Je Bildschirm mit einer Menge wie an der Schule ansehen: Die Testdaten kennen
-  höchstens drei Ausleihen je Leser, an der Schule sind es acht bis achtzehn.
+- **Weitere Kästen derselben Form, durchgesehen am 02.10.2026** (1280 × 900, lokale Mengen;
+  Suchmuster: `max-h-` und `overflow-y-auto` in einer Zeile, 13 Treffer, die übrigen sind
+  Auswahllisten, Vorschläge, Dialoge und das Eigenschaften-Feld des Designers). Zu
+  entscheiden ist je Kasten, ob er bleibt:
+  - Druck-Center, Schritt 2 (`LabelBarcodeSchritt.svelte`, `max-h-40`): Die Exemplare des
+    Titels stehen in einem Kasten von 158 px, fünf Zeilen. Bei einem Titel mit 409 Exemplaren
+    ist die Liste darin 14.326 px lang. „Alle" oder „keine" gibt es nicht, suchen lässt sich
+    darin nicht. Die Seite daneben ist durch die Vorschau 13.462 px hoch.
+  - Signaturen (`SignaturenView.svelte`, `max-h-112`): Die Liste links zeigt zwölf von 762
+    Signaturen (448 px von 27.432 px) und endet in einer halben Zeile; die Seite scrollt
+    daneben selbst (852 von 1.876 px), weil darunter die Sachgruppen folgen. Liste und Regal
+    sind Auswahl und Detail (M3, List-detail: „Use the list-detail layout for quickly
+    accessing details of an item from a long list of content").
+  - Bestellwesen (`OrderRecommendations.svelte`, `BestellWorkspace.svelte`): Bedarf (596 von
+    3.900 px bei 60 geladenen von 560 Titeln) und Bestellspalte (811 von 1.488 px bei sechs
+    Positionen) scrollen je für sich. Die Bestellspalte ist so entschieden und gesichert
+    (`e2e/bestellung-erreichbar.spec.js`). Die Seite läuft dabei 16 px über (852 von 868 px).
+  - `LabelSettings.svelte` (`max-h-48`) ist die Vorschlagsliste unter dem Suchfeld, kein
+    Kasten im Seitenfluss.
+- **Signaturen bei 1280 px:** Liste und Regal sind zusammen 1.000 px breit, Platz sind 960 px
+  (gemessen am 02.10.2026). Die Spalte „verliehen" endet 8 px hinter dem Fensterrand, die
+  Seite bekommt eine waagerechte Scrollleiste. Die rechte Spalte des Rasters ist `1fr` ohne
+  untere Grenze 0 (`lg:grid-cols-[20rem_1fr]`).
 - **Die Exemplare in „Buch bearbeiten" bei Mengen wie an der Schule** (am Testserver lesend
   gezählt am 02.10.2026): 2.253 Titel haben Exemplare, mindestens die Hälfte davon eines, 90 %
   höchstens 58; über 100 Exemplare haben 68 Titel, der größte 383. Lokal mit 403 Exemplaren
@@ -722,8 +739,24 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   dann 339 bis 512 px; Datum und Aktionen brauchen 290 px, das Miniaturbild 33 px. Dem Titel
   eines Lernmittels bleiben bei 1200 px 69 px und ab 1100 px abwärts nichts. Ab 1280 px sind
   es mindestens 149 px, rund zwanzig Zeichen (`e2e/ausleihliste-zeilen.spec.js` verlangt
-  140 px). Zu entscheiden wäre, ob die Leserkarte unter 1280 px über den Inhalt rückt oder die
-  Zeile dort zweizeilig wird.
+  140 px). Drei Wege, zwei davon gemessen am 02.10.2026 mit zwölf Ausleihen:
+  - Leserkarte über dem Inhalt: Der Titel hat Platz, die Liste beginnt aber erst 894 px
+    unter dem oberen Fensterrand (Fensterhöhe 900 px); die Karte ist in voller Breite 486 px
+    hoch.
+  - Navigation eingeklappt (die Symbolleiste gibt es, `uiStore.isSidebarCollapsed`, heute nur
+    von Hand): Bei 1100 px bleiben der Liste 604 px, der Titel steht wie bei 1280 px; bei
+    1024 px bleiben dem Titel 186 px. Die drei Reiter stehen ganz im Bild; ausgeklappt ist
+    bei 1100 px „Stammdaten & Adresse" abgeschnitten. M3, Navigation drawer, Guidelines:
+    „Use a modal navigation drawer alone or with a navigation rail on medium and expanded
+    breakpoints" und „A standard navigation drawer can be used in single pane layouts in
+    expanded breakpoints"; die Akte hat zwei Bereiche.
+  - Zeile zweizeilig: nicht gebaut.
+
+  Vorschlag: Unter 1200 px Fensterbreite beginnt die Navigation eingeklappt. Entscheidung
+  offen.
+- **Leserakte, langer Name:** Ein Name aus einem Wort von 22 Zeichen ragt aus der Leserkarte
+  in die rechte Spalte und liegt über dem ersten Reiter (gesehen am 02.10.2026 an einem
+  Testleser). Namen mit Leerzeichen oder Bindestrich brechen um.
 - **Leserakte, Autor und Nummer des Exemplars:** Der Autor steht nur in der Sprechblase am
   Titel, die Nummer in Fenstern bis rund 1580 px ebenfalls (darüber hat sie ihre Spalte;
   gemessen bei ausgeklappter Seitenleiste). Die Sprechblase erscheint beim Zeigen mit der
