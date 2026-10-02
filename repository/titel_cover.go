@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"bibliothek/pkg/coverdatei"
+	"bibliothek/pkg/coverablage"
 )
 
 // titelCoverLeser ist, was LokaleCoverNurDieserTitel braucht: eine Transaktion oder der Pool.
@@ -41,7 +41,7 @@ func LokaleCoverNurDieserTitel(ctx context.Context, q titelCoverLeser, ids []str
 // auf, der Titel ist gelöscht.
 func LoescheCoverDateien(coverURLs []string) {
 	for _, coverURL := range coverURLs {
-		if err := coverdatei.Loesche(coverURL); err != nil {
+		if err := coverablage.Loesche(coverURL); err != nil {
 			log.Printf("Cover-Datei %q nicht entfernt: %v", coverURL, err)
 		}
 	}

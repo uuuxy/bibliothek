@@ -11,59 +11,25 @@ package coverdatei
 
 import (
 	"io"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/coverablage"
 	"bibliothek/pkg/imageutil"
 )
 
 // Wurzel ist das Verzeichnis aller lokal gespeicherten Bilder, relativ zum
-// Arbeitsverzeichnis des Servers.
-const Wurzel = "uploads"
-
-// zerlegeCoverURL prüft die Cover-URL und liefert den Dateipfad zweimal: einmal relativ
-// zur Wurzel (so verlangt es os.Root) und einmal vollständig, weil die PDF-Erzeuger ihn
-// als Namen ihres Bildspeichers führen. ok=false heißt: nicht verwendbar.
-//
-// Die Herkunftsprüfung ganz oben ist KEIN Schutz — das ist os.Root beim Zugriff (siehe
-// oeffneWurzel), und nur der ließ sich am Rückbau rot zeigen. Sie steht hier als
-// Vorfilter: Die allermeisten Titel haben gar kein Cover (gemessen am 17.09.2026: 3168
-// von 3233 mit leerem cover_url), und für die soll kein Verzeichnis geöffnet werden.
-// Eine zweite Textprüfung auf „beginnt mit uploads/" stand hier bis zum 17.09.2026;
-// sie war gegenüber os.Root wirkungslos und ist ersatzlos entfallen.
-func zerlegeCoverURL(coverURL string) (rel, pfad string, ok bool) {
-	if !strings.HasPrefix(coverURL, "/"+Wurzel+"/") {
-		return "", "", false
-	}
-	pfad = filepath.Clean(strings.TrimPrefix(coverURL, "/"))
-	rel, err := filepath.Rel(Wurzel, pfad)
-	if err != nil {
-		return "", "", false
-	}
-	return rel, pfad, true
-}
-
-// oeffneWurzel öffnet das Upload-Verzeichnis als os.Root. Erst diese Klammer hält auch den
-// Fall auf, den die Textprüfung oben nicht sehen kann: eine Verknüpfung INNERHALB von
-// uploads, die nach draußen zeigt. os.Stat würde ihr folgen, root.Stat verweigert sie.
-func oeffneWurzel() (*os.Root, bool) {
-	wurzel, err := os.OpenRoot(Wurzel)
-	if err != nil {
-		return nil, false
-	}
-	return wurzel, true
-}
+// Arbeitsverzeichnis des Servers. Pfadprüfung und Zugriff auf das Verzeichnis liegen in
+// pkg/coverablage, das ohne Bildbibliothek auskommt.
+const Wurzel = coverablage.Wurzel
 
 // Pfad löst die Cover-URL eines Titels in einen lesbaren lokalen Dateipfad auf.
 // Rückgabe "" heißt: kein verwendbares Cover — der Aufrufer zeichnet dann nur den Rahmen.
 func Pfad(coverURL string) string {
-	rel, pfad, ok := zerlegeCoverURL(coverURL)
+	rel, pfad, ok := coverablage.Zerlege(coverURL)
 	if !ok {
 		return ""
 	}
-	wurzel, ok := oeffneWurzel()
+	wurzel, ok := coverablage.OeffneWurzel()
 	if !ok {
 		return ""
 	}
@@ -84,11 +50,11 @@ func Pfad(coverURL string) string {
 // still — genau eine Zeile ohne Bild statt einer Liste, die mit 500 endet. Ein
 // Verzeichnis braucht keine eigene Abweisung: io.ReadAll scheitert daran von selbst.
 func AlsJPEG(coverURL string) (bilddaten []byte, pfad string, ok bool) {
-	rel, pfad, ok := zerlegeCoverURL(coverURL)
+	rel, pfad, ok := coverablage.Zerlege(coverURL)
 	if !ok {
 		return nil, "", false
 	}
-	wurzel, ok := oeffneWurzel()
+	wurzel, ok := coverablage.OeffneWurzel()
 	if !ok {
 		return nil, "", false
 	}
@@ -109,30 +75,4 @@ func AlsJPEG(coverURL string) (bilddaten []byte, pfad string, ok bool) {
 		return nil, "", false
 	}
 	return jpg, pfad, true
-}
-
-// Loesche entfernt die Datei eines lokal gespeicherten Covers, etwa nachdem sein Titel
-// gelöscht ist. Nur Dateien direkt in der Wurzel: In ihren Unterordnern liegen andere Bilder
-// (Ausweisfotos, der Zwischenspeicher des Cover-Abrufs), und die Cover-URL eines Titels kommt
-// aus einer Maske. Eine fehlende Datei und eine Adresse außerhalb sind kein Fehler; der
-// Aufrufer räumt nur auf.
-func Loesche(coverURL string) error {
-	rel, _, ok := zerlegeCoverURL(coverURL)
-	if !ok || rel == "." || rel != filepath.Base(rel) {
-		return nil
-	}
-	wurzel, ok := oeffneWurzel()
-	if !ok {
-		return nil
-	}
-	defer closeutil.LogClose(wurzel, "coverdatei wurzel")
-
-	// Lstat: Eine Verknüpfung oder ein Ordner unter diesem Namen ist kein Cover.
-	if info, err := wurzel.Lstat(rel); err != nil || !info.Mode().IsRegular() {
-		return nil
-	}
-	if err := wurzel.Remove(rel); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
 }
