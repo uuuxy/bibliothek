@@ -84,7 +84,7 @@
 		<div class="flex-1"></div>
 		<Button variant="secondary" onclick={printAusleiher}>
 			<Printer class="w-4 h-4" aria-hidden="true" />
-			Mahnliste drucken
+			Liste drucken
 		</Button>
 	</div>
 

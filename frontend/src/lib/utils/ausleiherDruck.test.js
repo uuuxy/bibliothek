@@ -102,4 +102,14 @@ describe('baueAusleiherDruckHtml', () => {
 		const html = baueAusleiherDruckHtml([], { title: '"><b>weg</b>' }, 'Alle');
 		expect(html).not.toContain('<b>weg</b>');
 	});
+
+	// Auf dem Blatt stehen alle Ausleiher des Titels, auch die ohne Verzug. Das Fenster heißt
+	// deshalb wie das Blatt; die Mahnliste mit nur den Überfälligen steht im Mahnwesen.
+	it('nennt im Fenstertitel dasselbe wie in der Überschrift des Blatts', () => {
+		const html = baueAusleiherDruckHtml([], { title: 'Emil' }, 'Alle');
+		const fenstertitel = html.match(/<title>(.*?)<\/title>/)?.[1];
+		const ueberschrift = html.match(/<h1>(.*?)<\/h1>/)?.[1];
+		expect(fenstertitel).toBe('Ausleiher-Liste: Emil');
+		expect(ueberschrift).toBe(fenstertitel);
+	});
 });

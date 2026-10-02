@@ -30,6 +30,9 @@ const STIL = `
  */
 export function baueAusleiherDruckHtml(ausleiher, buch, filterKlasse, jetzt = new Date()) {
 	const buchTitel = escapeHtml(buch?.title || 'Buch');
+	// Fenstertitel und Überschrift sind ein Text: Das Blatt nennt alle Ausleiher des Titels,
+	// nicht nur die mit überschrittener Frist.
+	const ueberschrift = `Ausleiher-Liste: ${buchTitel}`;
 	const druckDatum = jetzt.toLocaleDateString('de-DE');
 
 	const zeilen = ausleiher
@@ -52,11 +55,11 @@ export function baueAusleiherDruckHtml(ausleiher, buch, filterKlasse, jetzt = ne
 	return `<!DOCTYPE html>
 <html>
 <head>
-  <title>Mahnliste: ${buchTitel}</title>
+  <title>${ueberschrift}</title>
   <style>${STIL}</style>
 </head>
 <body>
-  <h1>Ausleiher-Liste: ${buchTitel}</h1>
+  <h1>${ueberschrift}</h1>
   <p class="meta">Erstellt am: ${druckDatum} | Filter: Klasse ${escapeHtml(filterKlasse)}</p>
   <table>
     <thead>
