@@ -31,8 +31,11 @@ const DIENSTE = '/api/lookup/';
 const antwort = (status, koerper) =>
 	/** @type {any} */ ({ ok: status < 400, status, json: async () => koerper });
 
-/** @param {boolean} vergeben — der eigene Katalog kennt die gescannte ISBN */
-function server(vergeben) {
+/**
+ * @param {boolean} vergeben — der eigene Katalog kennt die gescannte ISBN
+ * @param {number} [dienste] Status, mit dem die Katalogdienste antworten
+ */
+function server(vergeben, dienste = 200) {
 	vi.mocked(apiFetch).mockImplementation(async (url) => {
 		const u = String(url);
 		if (u.startsWith(KATALOG)) {
@@ -45,7 +48,7 @@ function server(vergeben) {
 					: { vorhanden: null }
 			});
 		}
-		if (u.startsWith(DIENSTE)) return antwort(200, { data: { title: 'Green Line 3' } });
+		if (u.startsWith(DIENSTE)) return antwort(dienste, { data: { title: 'Green Line 3' } });
 		return antwort(200, []);
 	});
 }
@@ -113,6 +116,24 @@ describe('BuchFormular: Kamera-Scan in einer neuen Maske', () => {
 		expect(aufrufe(KATALOG)).toHaveLength(1);
 		expect(String(aufrufe(DIENSTE)[0][0])).toBe(`${DIENSTE}${GESCANNT}`);
 		expect(bestaetigen).not.toHaveBeenCalled();
+	});
+
+	// Eine Abfrage für beide Wege: Nach dem Scan steht derselbe Satz am ISBN-Feld wie nach
+	// dem Tippen.
+	it('die Katalogdienste antworten nicht: der Grund steht am ISBN-Feld', async () => {
+		server(false, 502);
+		const formular = $state(leeresBuchFormular());
+		const screen = maske(formular);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Scan ISBN' }));
+
+		const eingabe = screen.getByLabelText('ISBN');
+		await waitFor(() => expect(eingabe.getAttribute('aria-invalid')).toBe('true'), {
+			timeout: 4000
+		});
+		const hinweis = document.getElementById(eingabe.getAttribute('aria-describedby') ?? '');
+		expect(hinweis?.textContent).toContain('Die Katalogdienste sind nicht erreichbar.');
+		expect(formular.title).toBe('');
 	});
 });
 

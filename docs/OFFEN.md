@@ -419,11 +419,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
   kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
-- Die ISBN-Abfrage der Maske „Neues Buch" steht zweimal (gefunden am 01.10.2026, am Code
-  gelesen): `IsbnFeld.svelte` für Feld und Knopf, `handleScan` in `BuchFormular.svelte` für
-  den Kamera-Scan. Beide füllen dieselben Felder aus `GET /api/lookup/{isbn}`; scheitert die
-  Abfrage, meldet das Feld es als Snackbar, der Scan als Zeile über den Feldern, und nur das
-  Feld sagt nach einem Treffer „Metadaten übernommen". Kategorie B.
 - Jede ISBN-Abfrage legt eine Cover-Datei ab (gefunden am 01.10.2026, am lokalen Stack
   gezählt): `GET /api/lookup/{isbn}` speichert das Cover als `uploads/cover_auto_…`, auch wenn
   danach nichts gespeichert wird. `POST /api/books` schlägt wegen des leeren Listenpreises
