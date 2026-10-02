@@ -9,6 +9,28 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import Suchfeld from '../ui/Suchfeld.svelte';
+
+	// Der Kasten zeigt fünf Zeilen. Was ganz hineinpasst, braucht kein Feld zum Suchen.
+	const ZEILEN_IM_KASTEN = 5;
+
+	// Die Zahl nennt alle gewählten Exemplare, auch die, die das Nummernfeld gerade ausblendet.
+	const ueberschrift = $derived(
+		labelStore.loadingCopies || labelStore.auswahl.gesamt === 0
+			? 'Exemplare auswählen'
+			: `Exemplare auswählen: ${labelStore.auswahl.gewaehlt} von ${labelStore.auswahl.gesamt}`
+	);
+	const gesucht = $derived(labelStore.exemplarSuche.trim());
+	const sichtbar = $derived(labelStore.sichtbareExemplare.length);
+	const alleText = $derived.by(() => {
+		if (!gesucht) return `Alle ${labelStore.auswahl.gesamt} Exemplare`;
+		return sichtbar === 1 ? 'Der eine Treffer' : `Alle ${sichtbar} Treffer`;
+	});
+	const ausgesondertText = $derived(
+		labelStore.ausgesondertAnzahl === 1
+			? '1 ausgesondertes Exemplar steht nicht in der Liste.'
+			: `${labelStore.ausgesondertAnzahl} ausgesonderte Exemplare stehen nicht in der Liste.`
+	);
 </script>
 
 {#if labelStore.selectedTitle}
@@ -35,33 +57,64 @@
 
 		{#if labelStore.generationMode === 'existing'}
 			<div class="space-y-2">
-				<span class="text-xs font-medium text-slate-500 block"
-					>Exemplare auswählen ({labelStore.existingCopies.length} gefunden)</span
-				>
+				<span class="block text-xs font-medium text-on-surface-variant">{ueberschrift}</span>
 				{#if labelStore.loadingCopies}
 					<div class="flex items-center justify-center py-4">
 						<Ladekreis size="md" />
 					</div>
 				{:else if labelStore.existingCopies.length === 0}
-					<p class="text-xs text-slate-500">
-						Keine physischen Exemplare in der Datenbank vorhanden.
+					<p class="text-xs text-on-surface-variant">
+						Zu diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann.
 					</p>
 				{:else}
+					<!-- Ein Kästchen für alle (M3: „A parent checkbox allows for easy selection or
+					     deselection of all items“). Es wirkt auf das, was zu sehen ist. -->
+					{#if labelStore.existingCopies.length > 1 && sichtbar > 0}
+						<Kaestchen
+							label={alleText}
+							checked={labelStore.auswahlSichtbar === 'alle'}
+							indeterminate={labelStore.auswahlSichtbar === 'teil'}
+							onchange={() => labelStore.setzeSichtbare(labelStore.auswahlSichtbar !== 'alle')}
+						/>
+					{/if}
+					{#if labelStore.existingCopies.length > ZEILEN_IM_KASTEN}
+						<!-- Als Formular, damit die Eingabetaste zählt: Ein Handscanner schickt sie nach
+						     der Nummer, und das Exemplar steht dann auf dem Bogen. -->
+						<form
+							onsubmit={(e) => {
+								e.preventDefault();
+								labelStore.uebernimmNummer();
+							}}
+						>
+							<Suchfeld
+								bind:wert={labelStore.exemplarSuche}
+								platzhalter="Nummer eingeben oder scannen …"
+								etikett="Exemplar nach Nummer suchen"
+							/>
+						</form>
+					{/if}
 					<div
-						class="max-h-40 overflow-y-auto border border-slate-100 rounded-xl divide-y divide-slate-50 p-2 space-y-1 bg-slate-50/50"
+						class="max-h-40 space-y-1 overflow-y-auto rounded-xl border border-outline-variant p-2"
 					>
-						{#each labelStore.existingCopies as copy, _i (_i)}
+						{#each labelStore.sichtbareExemplare as copy (copy.barcode_id)}
 							<label
-								class="flex items-center space-x-3 text-xs text-slate-700 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg"
+								class="flex cursor-pointer items-center gap-3 rounded-lg p-1.5 text-xs text-on-surface hover:bg-on-surface/8"
 							>
 								<Kaestchen bind:checked={copy.checked} />
-								<span class="font-bold text-slate-800">{copy.barcode_id}</span>
-								<span class="text-label-small text-slate-500 font-sans"
+								<span class="font-bold">{copy.barcode_id}</span>
+								<span class="text-label-small text-on-surface-variant font-sans"
 									>({copy.zustand_notiz || 'Neuwertig'})</span
 								>
 							</label>
+						{:else}
+							<p class="p-1.5 text-xs text-on-surface-variant">
+								Kein Exemplar dieses Titels passt zu „{gesucht}“.
+							</p>
 						{/each}
 					</div>
+				{/if}
+				{#if !labelStore.loadingCopies && labelStore.ausgesondertAnzahl > 0}
+					<p class="text-xs text-on-surface-variant">{ausgesondertText}</p>
 				{/if}
 			</div>
 		{:else}

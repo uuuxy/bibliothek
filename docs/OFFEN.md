@@ -694,10 +694,12 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   Suchmuster: `max-h-` und `overflow-y-auto` in einer Zeile, 13 Treffer, die übrigen sind
   Auswahllisten, Vorschläge, Dialoge und das Eigenschaften-Feld des Designers). Zu
   entscheiden ist je Kasten, ob er bleibt:
-  - Druck-Center, Schritt 2 (`LabelBarcodeSchritt.svelte`, `max-h-40`): Die Exemplare des
-    Titels stehen in einem Kasten von 158 px, fünf Zeilen. Bei einem Titel mit 409 Exemplaren
-    ist die Liste darin 14.326 px lang. „Alle" oder „keine" gibt es nicht, suchen lässt sich
-    darin nicht. Die Seite daneben ist durch die Vorschau 13.462 px hoch.
+  - Druck-Center, Schritt 2 (`LabelBarcodeSchritt.svelte`, `max-h-40`): Der Kasten bleibt
+    als Auswahlliste; seit dem 02.10.2026 stehen darüber ein Kästchen für alle und ein Feld
+    für die Nummer. Offen: Bei einem Titel mit 409 Exemplaren ist die Seite durch die
+    Vorschau 13.462 px hoch (gemessen am 02.10.2026), und „A4-Bogen drucken" steht unter
+    beiden Spalten (`LabelPrinter.svelte`). Jede Zeile nennt „(Neuwertig)", wenn das Exemplar
+    keine Zustandsnotiz trägt, auch ein bestelltes.
   - Signaturen (`SignaturenView.svelte`, `max-h-112`): Die Liste links zeigt zwölf von 762
     Signaturen (448 px von 27.432 px) und endet in einer halben Zeile; die Seite scrollt
     daneben selbst (852 von 1.876 px), weil darunter die Sachgruppen folgen. Liste und Regal

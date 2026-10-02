@@ -5,6 +5,9 @@ import { apiFetch } from '../apiFetch.js';
 import { felderProBogen } from '../etikettformate.js';
 import { printQueue, clearPrintQueue } from './printQueue.svelte.js';
 import { toastStore } from './toastStore.svelte.js';
+import { normalisiereScan } from '../scanEinordnen.js';
+import { dekodiereLitteraEtikett } from '../litteraEtikett.js';
+import { ohnePruefzeichen } from '../code39Pruefzeichen.js';
 
 // Bewusst im Modul-Scope und nicht im Store: Die Funktion greift auf nichts aus
 // dem Store zu — nur auf apiFetch und ihr Argument. Innen definiert wurde sie bei
@@ -59,7 +62,27 @@ function createLabelStore() {
 	// Tief reaktiv, nicht $state.raw: Das Kästchen in Schritt 2 schreibt `checked` an das
 	// Exemplar selbst, und der Bogen (finalLabels) muss das sehen.
 	let existingCopies = $state(/** @type {any[]} */ ([]));
+	// Ausgesonderte Exemplare stehen nicht mehr im Regal und deshalb nicht in der Liste; ihre
+	// Zahl steht als Hinweis darunter. Dieselbe Regel wie repository.EtikettOffenBedingung.
+	let ausgesondertAnzahl = $state(0);
 	let loadingCopies = $state(false);
+	// Der Text im Nummernfeld über der Liste: zeigt nur die Exemplare, deren Nummer ihn enthält.
+	let exemplarSuche = $state('');
+	let sichtbareExemplare = $derived.by(() => {
+		const text = exemplarSuche.trim().toLowerCase();
+		if (!text) return existingCopies;
+		return existingCopies.filter((c) => String(c.barcode_id).toLowerCase().includes(text));
+	});
+	let auswahl = $derived({
+		gewaehlt: existingCopies.filter((c) => c.checked).length,
+		gesamt: existingCopies.length
+	});
+	/** @type {'alle' | 'teil' | 'keine'} */
+	let auswahlSichtbar = $derived.by(() => {
+		const gewaehlt = sichtbareExemplare.filter((c) => c.checked).length;
+		if (gewaehlt === 0) return 'keine';
+		return gewaehlt === sichtbareExemplare.length ? 'alle' : 'teil';
+	});
 	let newQuantity = $state(9);
 	let newStartNum = $state(20060);
 
@@ -127,6 +150,42 @@ function createLabelStore() {
 		}
 		selectedTitle = null;
 		existingCopies = [];
+		ausgesondertAnzahl = 0;
+		exemplarSuche = '';
+	}
+
+	/**
+	 * Das Kästchen über der Liste: wählt oder entfernt, was gerade zu sehen ist. Was das
+	 * Nummernfeld ausblendet, bleibt, wie es war.
+	 * @param {boolean} gewaehlt
+	 */
+	function setzeSichtbare(gewaehlt) {
+		for (const exemplar of sichtbareExemplare) exemplar.checked = gewaehlt;
+	}
+
+	/**
+	 * Die Eingabetaste im Nummernfeld, wie sie ein Handscanner schickt: setzt das Exemplar mit
+	 * genau dieser Nummer auf den Bogen und leert das Feld. Gelesen wird wie an der Theke
+	 * (scanEinordnen.js): die Nummer selbst, dann das Littera-Etikett, zuletzt ein Etikett mit
+	 * Prüfzeichen. Ein Teil einer Nummer wählt nichts; er zeigt nur die passenden Zeilen.
+	 * Groß und klein zählen nicht: Das Feld sucht nur Nummern dieses Titels, kein Wort.
+	 * @returns {boolean} ob ein Exemplar dieses Titels gefunden wurde
+	 */
+	function uebernimmNummer() {
+		const scan = normalisiereScan(exemplarSuche);
+		if (!scan) return false;
+		for (const nummer of [scan, dekodiereLitteraEtikett(scan), ohnePruefzeichen(scan)]) {
+			const gesucht = nummer?.toLowerCase();
+			const exemplar = gesucht
+				? existingCopies.find((c) => String(c.barcode_id).toLowerCase() === gesucht)
+				: undefined;
+			if (exemplar) {
+				exemplar.checked = true;
+				exemplarSuche = '';
+				return true;
+			}
+		}
+		return false;
 	}
 
 	function handleSearchInput() {
@@ -178,14 +237,17 @@ function createLabelStore() {
 	async function loadExistingCopies() {
 		if (!selectedTitle) return;
 		loadingCopies = true;
+		exemplarSuche = '';
+		ausgesondertAnzahl = 0;
 		try {
 			const res = await apiFetch(`/api/buecher/titel/${selectedTitle.id}/exemplare`);
 			if (res.ok) {
-				const data = await res.json();
-				existingCopies = (data || []).map((/** @type {any} */ c) => ({
-					...c,
-					checked: true
-				}));
+				/** @type {any[]} */
+				const alle = (await res.json()) || [];
+				existingCopies = alle
+					.filter((c) => !c.ist_ausgesondert)
+					.map((c) => ({ ...c, checked: true }));
+				ausgesondertAnzahl = alle.length - existingCopies.length;
 			} else {
 				existingCopies = [];
 			}
@@ -302,6 +364,24 @@ function createLabelStore() {
 		get loadingCopies() {
 			return loadingCopies;
 		},
+		get ausgesondertAnzahl() {
+			return ausgesondertAnzahl;
+		},
+		get exemplarSuche() {
+			return exemplarSuche;
+		},
+		set exemplarSuche(v) {
+			exemplarSuche = v;
+		},
+		get sichtbareExemplare() {
+			return sichtbareExemplare;
+		},
+		get auswahl() {
+			return auswahl;
+		},
+		get auswahlSichtbar() {
+			return auswahlSichtbar;
+		},
 		get newQuantity() {
 			return newQuantity;
 		},
@@ -326,6 +406,8 @@ function createLabelStore() {
 		handleClassChange,
 		handleSearchInput,
 		selectBookTitle,
+		setzeSichtbare,
+		uebernimmNummer,
 		triggerPrint,
 
 		resetPendingCopies() {
