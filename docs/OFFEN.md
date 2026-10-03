@@ -89,10 +89,16 @@ entfallen.
 5. **Die Maske „Buch bearbeiten" in der neuen Reihenfolge ansehen** (gebaut am 03.10.2026):
    zuerst die ISBN und die Angaben zum Buch, darunter die Gruppe „An der Schule" mit der Wahl
    Bibliothek oder Lernmittel, „Andere Auflagen" als letzte Angabe dieser Gruppe, Bestand und
-   Zähldatum unter „Exemplare". Dabei zu entscheiden:
-   - „Speichern" am neuen Bibliotheksbuch: Die Pflicht-Signatur steht jetzt unter dem ersten
-     Bildschirm, der Knopf ist bis dahin gesperrt (5.5).
-   - Die Breite der Felder an breiten Bildschirmen (6.1).
+   Zähldatum unter „Exemplare". Das Feld „Beschreibung / Klappentext" gibt es seit dem
+   03.10.2026 nicht mehr; „Speichern" bleibt am neuen Bibliotheksbuch bedienbar und führt ohne
+   Signatur zum Feld.
+6. **Zwei Vorschläge am Bild ansehen** (gebaut am 03.10.2026, je ein eigener Commit; die Bilder
+   liegen unter `frontend/playwright-report/`):
+   - Leserakte: die Knöpfe der Dokumente ohne Überschrift und Rahmen
+     (`leserakte-dokumente-heute-vorschlag.png`). Die Reiter stehen 46 px höher.
+   - Maske „Buch bearbeiten": Die Felder enden bei 704 px
+     (`buchmaske-feldbreite-heute-vorschlag.png`). Im Fenster von 1710 px bleibt rechts der
+     Felder ein freier Streifen bis zum Cover; zu entscheiden ist, ob das so bleibt (6.1).
 
 **Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
 hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat Node 26 ab dem
@@ -441,15 +447,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   gefunden oder bereits ausgebucht". An einem bestellten sondert es aus, was nie eingetroffen
   ist (`DeleteCopy`): Das Exemplar steht danach im Abgangsbuch, ohne je im Zugangsbuch
   gestanden zu haben. Kategorie B.
-- Maske „Neues Buch": „Speichern" ist gesperrt, solange einem Bibliotheksbuch die Signatur
-  fehlt; den Grund nennt das Feld Signatur („Speichern ist bis dahin gesperrt"). Seit dem
-  03.10.2026 steht das Feld in der Gruppe „An der Schule": In einem Fenster von 1366 × 768 px
-  liegt es unter dem ersten Bildschirm (gemessen am Entwicklungsserver), und der gesperrte
-  Knopf nennt den Grund nur beim Zeigen. M3, Dialogs, Guidelines, zur bildschirmfüllenden
-  Maske: „Don't disable the confirmation button" und „Only trigger an additional basic dialog
-  if the action fails". Vorschlag: Der Knopf bleibt bedienbar, und ein Klick ohne Signatur
-  führt zum Feld. Mit der neuen Reihenfolge Kategorie B; die Entscheidung steht unter „Was
-  bei dir liegt".
 - Druck-Center, Buch-Etiketten: Die Vorschau zeichnet für jedes Etikettenformat dasselbe Blatt,
   drei Spalten mit Etiketten von 42,3 × 25,4 mm (`LabelPreview.svelte`). Das ist der Bogen
   „Zweckform L4760" in zwei Dritteln der Größe. Für „Avery 3475" (3 × 8) und „Kleine Barcodes"
@@ -819,13 +816,14 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
 
 ### 6.1 Beobachtungen
 
-- Maske „Buch bearbeiten": Titel, Untertitel, Autor, Schlagworte und Beschreibung laufen
-  über die ganze Feldspalte, an einem Fenster von 1710 px Breite 1223 px (gemessen am
-  03.10.2026 an einer Aufnahme vom Testserver); am Fenster von 1366 px sind es 702 px. M3,
-  Text fields, Guidelines: „For medium and expanded breakpoints, text fields should be bound
-  by flexible margins or other containers" und „Text fields shouldn’t span the full width of a
-  large screen". Dagegen steht die Hausregel, die Fläche zu nutzen. Zu entscheiden wäre, ob
-  die Feldspalte eine größte Breite bekommt; die Listen darunter blieben breit.
+- Breite der Textfelder. **Entschieden am 03.10.2026:** Textfelder folgen Material 3 (Text
+  fields, Guidelines: „Text fields shouldn’t span the full width of a large screen"); die
+  Hausregel, die Fläche zu nutzen, gilt den Flächen der Seite, nicht den Feldern. In der Maske
+  „Buch bearbeiten" enden die Felder seitdem bei 704 px; die Exemplare darunter behalten die
+  Breite. Offen: was mit dem freien Streifen zwischen Feldern und Cover im breiten Fenster
+  wird (gemessen bei 1710 px: Felder bis 1016 px), und die übrigen Masken — sie sind nicht
+  durchgesehen. Der Wert steht bisher nur in `BuchFormular.svelte`; mit der zweiten Maske
+  gehört er an eine Stelle.
 - Die Meldungen der Anwendung (`ToastContainer.svelte`) erscheinen oben rechts, bis 384 px
   breit, 5 s lang, und halten ihre Standzeit an, solange der Mauszeiger auf ihnen ruht. Was
   dort steht, ist in dieser Zeit verdeckt (gemessen am 02.10.2026 bei 1280 × 720: Meldung bei
