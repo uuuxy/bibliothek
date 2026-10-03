@@ -150,3 +150,38 @@ func TestLmfFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 		})
 	}
 }
+
+// Der Rückgabetermin der Klasse und die Jahre des Mehrjahresbands hängen an zwei Angaben des
+// Titels: Ohne das Kästchen „Mehrjahresband" ist ein Schulbuch mit Spanne bis Jahrgang 11 ein
+// gewöhnliches Schulbuch und folgt dem Termin der Klasse. Ein Buch der Bücherei geht der
+// Termin nichts an, es bekommt die Leihfrist für Bücher.
+func TestLmfFrist_OhneKaestchenUndBuechereiBuch(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	rueckgabePlanJuni2027(t, pool)
+
+	// Montag, der Tag vor dem Termin der 9H2.
+	heute := time.Date(2027, time.June, 28, 10, 0, 0, 0, schulzeit.Zone())
+	termin := TagesEndeInSchulzeitzone(time.Date(2027, time.June, 29, 10, 0, 0, 0, schulzeit.Zone()))
+	svc := &defaultLoanService{pool: pool, jetzt: func() time.Time { return heute }}
+
+	ohneKaestchen := &repository.BookCopy{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", JahrgangBis: 11}
+	got, err := svc.resolveCheckoutDueDate(ctx, ohneKaestchen, "9H2")
+	if err != nil {
+		t.Fatalf("Frist: %v", err)
+	}
+	if !got.Equal(termin) {
+		t.Errorf("Schulbuch mit Spanne, ohne Kästchen: Frist %v, erwartet den Termin der Klasse %v",
+			got.In(schulzeit.Zone()), termin.In(schulzeit.Zone()))
+	}
+
+	buecherei := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
+	got, err = svc.resolveCheckoutDueDate(ctx, buecherei, "9H2")
+	if err != nil {
+		t.Fatalf("Frist: %v", err)
+	}
+	if !got.After(termin.AddDate(0, 0, 7)) {
+		t.Errorf("Buch der Bücherei: Frist %v — erwartet die Leihfrist für Bücher, nicht den Termin der Klasse %v",
+			got.In(schulzeit.Zone()), termin.In(schulzeit.Zone()))
+	}
+}

@@ -286,6 +286,31 @@ func TestResolveCheckoutDueDate_LeseclubVergangenGiltNicht(t *testing.T) {
 	}
 }
 
+// Ein eingestelltes Zieldatum gilt nur bei eingeschaltetem Leseclub: Nach der Aktion bleibt das
+// Datum in den Einstellungen stehen, der Schalter ist aus.
+func TestResolveCheckoutDueDate_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
+	svc, mock := newServiceWithMock(t)
+	defer mock.Close()
+
+	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
+		AddRow("ferien_leseclub_aktiv", "false").
+		AddRow("ferien_leseclub_zieldatum", "2030-09-15")
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+		WillReturnRows(rows)
+
+	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
+	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	if got.Year() == 2030 && got.Month() == time.September && got.Day() == 15 {
+		t.Errorf("Leseclub ist ausgeschaltet, die Frist ist trotzdem sein Zieldatum: %v", got)
+	}
+	if !got.After(time.Now()) || got.After(time.Now().AddDate(0, 6, 0)) {
+		t.Errorf("erwartet die Leihfrist für Bücher ab heute: got %v", got)
+	}
+}
+
 func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()

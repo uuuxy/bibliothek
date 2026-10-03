@@ -238,22 +238,11 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 }
 
 // resolveCheckoutDueDateAm rechnet die Frist ab einem gegebenen Tag — beim Nachbuchen der
-// Scan-Zeitpunkt (Entscheidung vom 13.09.2026: Frist, Mahnwesen und Lesehistorie rechnen
-// ab dem Scan), am Online-Scan jetzt.
+// Scan-Zeitpunkt (Frist, Mahnwesen und Lesehistorie rechnen ab dem Scan), am Online-Scan jetzt.
 func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string, heute time.Time) (time.Time, error) {
 	settings, err := s.querySettings(ctx)
 	heute = heute.In(schoolLocation())
-
-	// Mehrjahresband (Migration 134): Das Buch bleibt bis zum Ende von JahrgangBis beim Kind.
-	// Die Jahre über das laufende Schuljahr hinaus sind der Abstand zwischen der Klasse des
-	// Kindes und JahrgangBis; ein Kind über der Spanne bekommt ein Schuljahr wie jedes andere.
-	additionalYears := 0
-	if copy.Mehrjahresband && copy.JahrgangBis > 0 && borrowerKlasse != "" {
-		currentGrade := parseGrade(borrowerKlasse)
-		if currentGrade > 0 && copy.JahrgangBis >= currentGrade {
-			additionalYears = copy.JahrgangBis - currentGrade
-		}
-	}
+	additionalYears := mehrjahresbandJahre(copy, borrowerKlasse)
 
 	if err != nil {
 		// Bei einem Datenbankfehler greifen wir auf feste Notfall-Standardwerte zurück
@@ -268,52 +257,11 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 		}), nil
 	}
 
-	// LMF-Plan (Register, Entscheidung 3a): Nennt der Plan für die Klasse einen
-	// Rückgabe-Termin, ist der die Frist ihrer Schulbücher — vor dem globalen Stichtag.
-	// Nur für die einjährige Ausleihe; eine mehrjährige rechnet weiter über den Stichtag.
-	// Ein Fehler beim Nachschlagen blockiert die Ausleihe nicht: dann gilt der Stichtag.
-	//
-	// Mehrjahresband (Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.6): Der
-	// Rückgabetermin der Klasse geht das Buch nichts an, es bleibt beim Kind — außer der
-	// Termin ist schon vorbei. Dann ist das laufende Schuljahr für diese Klasse zu Ende, und
-	// die Frist rechnet vom folgenden Schuljahr aus: Von den verbleibenden Jahren steckt
-	// eines bereits in diesem Sprung, deshalb additionalYears-1. Ein Kind der 7 mit einem
-	// Band bis Jahrgang 9, ausgegeben nach dem Termin im Juli 2027, gibt ihn am 31.07.2029
-	// zurück — nicht 2030.
-	//
-	// Am oder nach dem Rückgabetermin der Klasse (Entscheidung vom 13.09.2026): Wer jetzt
-	// noch ein Schulbuch bekommt, gibt es erst im nächsten Schuljahr zurück — die Frist ist
-	// dessen Stichtag. Das gilt auch, wenn die Klasse noch einen Nachzügler-Termin vor sich
-	// hat (zweimal im Plan): Nach ihrem Rückgabetermin ist jedes neu ausgegebene Schulbuch
-	// eines fürs nächste Schuljahr, keins für fünf Tage. Bis zum 14.09.2026 war am Termintag
-	// der Termin selbst die Frist (heute 23:59) und danach der Stichtag des laufenden
-	// Schuljahres, ein Tag in den Ferien: Nach den Ferien wäre die ganze Klasse überfällig und
-	// nach 14 Tagen gesperrt gewesen.
-	if copy.IstLernmittel && borrowerKlasse != "" {
-		lage, lageErr := repository.NewLmfTerminRepository(s.pool).RueckgabeTerminLage(ctx, borrowerKlasse, heute)
-		if lageErr == nil && lage.Vergangen {
-			folgendes := repository.SchuljahrBeginn(heute).AddDate(1, 0, 0)
-			stichtag := repository.LmfStichtagImSchuljahr(folgendes, settings.LmfStichtag)
-			return TagesEndeInSchulzeitzone(stichtag.AddDate(max(additionalYears-1, 0), 0, 0)), nil
-		}
-		if lageErr == nil && lage.Bevorstehend && additionalYears == 0 {
-			return TagesEndeInSchulzeitzone(lage.Naechster), nil
-		}
+	if frist, ok := s.fristNachLmfPlan(ctx, copy, borrowerKlasse, heute, settings, additionalYears); ok {
+		return frist, nil
 	}
-
-	// Leseclub-Regel: Falls die Ferien-Leseclub-Aktion aktiv ist und ein Zieldatum konfiguriert wurde,
-	// erhalten alle regulären Buchbestände (ausgenommen Lernmittel) dieses Zieldatum als Frist —
-	// aber nur, solange es nicht vorbei ist. Bleibt der Schalter nach den Ferien an, wäre das
-	// vergangene Ferienende sonst die Frist jeder neuen Ausleihe: sofort überfällig, nach 14
-	// Tagen gesperrt (Bestands-Durchgang 10.09.2026). Dann gilt die reguläre Frist.
-	if !copy.IstLernmittel && settings.FerienLeseclubAktiv && settings.FerienLeseclubZieldatum != nil {
-		t, parseErr := time.Parse("2006-01-02", *settings.FerienLeseclubZieldatum)
-		if parseErr == nil {
-			end := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, schoolLocation())
-			if end.After(heute) {
-				return end, nil
-			}
-		}
+	if frist, ok := leseclubFrist(copy, settings, heute); ok {
+		return frist, nil
 	}
 
 	// Reguläre Fristenberechnung
@@ -326,4 +274,63 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 		AdditionalYears: additionalYears,
 		Sommerferien:    settings.Sommerferien,
 	}), nil
+}
+
+// mehrjahresbandJahre: Ein Mehrjahresband (Migration 134) bleibt bis zum Ende von JahrgangBis
+// beim Kind. Die Jahre über das laufende Schuljahr hinaus sind der Abstand zwischen der Klasse
+// des Kindes und JahrgangBis; ein Kind über der Spanne bekommt ein Schuljahr wie jedes andere.
+func mehrjahresbandJahre(copy *repository.BookCopy, borrowerKlasse string) int {
+	if copy.Mehrjahresband && copy.JahrgangBis > 0 && borrowerKlasse != "" {
+		currentGrade := parseGrade(borrowerKlasse)
+		if currentGrade > 0 && copy.JahrgangBis >= currentGrade {
+			return copy.JahrgangBis - currentGrade
+		}
+	}
+	return 0
+}
+
+// fristNachLmfPlan liefert die Frist eines Schulbuchs, wenn der LMF-Plan der Klasse sie bestimmt:
+//
+//   - Steht der Rückgabetermin der Klasse bevor, ist er die Frist — vor dem globalen Stichtag,
+//     und nur für die einjährige Ausleihe. Ein Mehrjahresband bleibt beim Kind und rechnet
+//     weiter über den Stichtag.
+//   - Am oder nach dem Rückgabetermin gibt die Klasse ein neu ausgegebenes Schulbuch erst im
+//     nächsten Schuljahr zurück, die Frist ist dessen Stichtag — auch wenn noch ein
+//     Nachzügler-Termin folgt. Mit dem Stichtag des laufenden Schuljahres wäre die Klasse nach
+//     den Ferien überfällig und nach 14 Tagen gesperrt.
+//   - Beim Mehrjahresband steckt in diesem Sprung schon eines der verbleibenden Jahre, deshalb
+//     additionalYears-1: Ein Kind der 7 mit einem Band bis Jahrgang 9, ausgegeben nach dem
+//     Termin im Juli 2027, gibt ihn am 31.07.2029 zurück.
+//
+// Ein Fehler beim Nachschlagen hält die Ausleihe nicht an: Dann gilt der Stichtag.
+func (s *defaultLoanService) fristNachLmfPlan(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string, heute time.Time, settings *SystemEinstellungen, additionalYears int) (time.Time, bool) {
+	if copy.IstLernmittel && borrowerKlasse != "" {
+		lage, lageErr := repository.NewLmfTerminRepository(s.pool).RueckgabeTerminLage(ctx, borrowerKlasse, heute)
+		if lageErr == nil && lage.Vergangen {
+			folgendes := repository.SchuljahrBeginn(heute).AddDate(1, 0, 0)
+			stichtag := repository.LmfStichtagImSchuljahr(folgendes, settings.LmfStichtag)
+			return TagesEndeInSchulzeitzone(stichtag.AddDate(max(additionalYears-1, 0), 0, 0)), true
+		}
+		if lageErr == nil && lage.Bevorstehend && additionalYears == 0 {
+			return TagesEndeInSchulzeitzone(lage.Naechster), true
+		}
+	}
+	return time.Time{}, false
+}
+
+// leseclubFrist: Ist die Ferien-Leseclub-Aktion aktiv und ein Zieldatum eingestellt, ist es die
+// Frist aller regulären Bestände (ausgenommen Lernmittel) — aber nur, solange es nicht vorbei
+// ist. Bleibt der Schalter nach den Ferien an, wäre das vergangene Ferienende sonst die Frist
+// jeder neuen Ausleihe: sofort überfällig, nach 14 Tagen gesperrt. Dann gilt die reguläre Frist.
+func leseclubFrist(copy *repository.BookCopy, settings *SystemEinstellungen, heute time.Time) (time.Time, bool) {
+	if !copy.IstLernmittel && settings.FerienLeseclubAktiv && settings.FerienLeseclubZieldatum != nil {
+		t, parseErr := time.Parse("2006-01-02", *settings.FerienLeseclubZieldatum)
+		if parseErr == nil {
+			end := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, schoolLocation())
+			if end.After(heute) {
+				return end, true
+			}
+		}
+	}
+	return time.Time{}, false
 }
