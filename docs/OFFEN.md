@@ -801,15 +801,20 @@ Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? K
 ### 6.1 Beobachtungen
 
 - Das Feld ISBN der Buchmaske nimmt jede Nummer mit 10 bis 13 Zeichen an (`validiereISBN`),
-  also auch elf- und zwölfstellige. Die Datenbank bringt nur eine ISBN in ihre Normalform (10
-  oder 13 Stellen, `isbn_normalform`); jede andere Nummer bleibt, wie sie geschrieben wurde,
-  mit Bindestrichen und Leerzeichen. Die Dublettenkontrolle der Maske vergleicht solche Nummern
-  deshalb zusätzlich ohne Trennzeichen (`titelMitISBN`), der UNIQUE-Index tut es nicht.
-  Gemessen am Testserver am 03.10.2026: 65 Titel mit einem Wert ohne ISBN-Form.
-  Offen ist, ob das Feld andere Nummern tragen soll, etwa den Strichcode einer DVD. Daneben
-  rechnet `konvertiereISBN10zu13` (`inventur/metadaten_helfer.go`, für die Cover-Suche) die
-  dreizehnstellige Form ein zweites Mal und ohne Blick auf das Prüfzeichen; die Regel steht in
-  `isbnutil.Normalform`.
+  also auch elf- und zwölfstellige. **Entschieden am 03.10.2026:** Das bleibt so; das Feld
+  trägt auch die Nummer einer DVD oder CD. Die Datenbank bringt nur eine ISBN in ihre
+  Normalform (10 oder 13 Stellen, `isbn_normalform`); jede andere Nummer bleibt, wie sie
+  geschrieben wurde, mit Bindestrichen und Leerzeichen. Die Dublettenkontrolle der Maske
+  vergleicht solche Nummern deshalb zusätzlich ohne Trennzeichen (`titelMitISBN`), der
+  UNIQUE-Index tut es nicht. Gemessen am Testserver am 03.10.2026: 65 Titel mit einem Wert
+  ohne ISBN-Form.
+- Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, ohne
+  Grenze): „Suche & Filter" bei jedem Öffnen, weil dort im Browser gesucht wird, die
+  Titel-Verwaltung beim Öffnen und bei leerem Suchfeld. Gezeigt werden je 50 Titel. Gemessen am
+  03.10.2026 am lokalen Stack: 9.652 Titel, 4,7 MB je Abruf, ohne Kompression
+  (`content-encoding` fehlt), Abruf rund 0,16 s. Die lokale Zahl trägt Test-Titel mit; Größe
+  und Dauer am Server über das Schulnetz sind nicht gemessen. Anlass zum Bauen: Der Katalog
+  öffnet am Server spürbar verzögert.
 - Breite der Textfelder. **Entschieden am 03.10.2026:** Textfelder folgen Material 3 (Text
   fields, Guidelines: „Text fields shouldn’t span the full width of a large screen"); die
   Hausregel, die Fläche zu nutzen, gilt den Flächen der Seite, nicht den Feldern. In der Maske
