@@ -98,6 +98,33 @@ describe('Benutzerliste: Meldungen', () => {
 		expect(meldungen()).toEqual([]);
 	});
 
+	// M3, Dialogs: „Dismissive actions are never disabled." Die Anfrage lässt sich nicht
+	// zurückholen; „Abbrechen" schließt den Dialog wie Escape, das Ergebnis steht auf der Seite.
+	it('lässt „Abbrechen" bedienbar, solange gelöscht wird, und meldet das Ergebnis auf der Seite', async () => {
+		/** @type {(antwort: any) => void} */
+		let beantworte = () => {};
+		vi.mocked(apiFetch).mockImplementation(async (adresse, optionen) =>
+			adresse === '/api/benutzer' && !optionen
+				? antwort([KONTO])
+				: new Promise((fertig) => (beantworte = fertig))
+		);
+		const screen = await benutzerliste();
+		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+		const dialog = screen.getByRole('dialog');
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Löschen' }));
+
+		const knopf = (/** @type {string} */ name) =>
+			/** @type {HTMLButtonElement} */ (within(dialog).getByRole('button', { name }));
+		expect(knopf('Löschen').disabled).toBe(true);
+		expect(knopf('Abbrechen').disabled).toBe(false);
+		await fireEvent.click(knopf('Abbrechen'));
+		expect(screen.queryByRole('dialog')).toBeNull();
+
+		beantworte(antwort({}, false, 409));
+		const meldung = await screen.findByRole('alert');
+		expect(meldung.textContent).toContain('Der Server meldet einen Fehler.');
+	});
+
 	// M3, Dialogs: „Buttons are aligned to the trailing edge of the dialog … The confirmation
 	// button is always closest to the edge." So steht es auch in der Rückfrage des Hauses.
 	it('stellt die Knöpfe der Lösch-Rückfrage an den rechten Rand, Löschen außen', async () => {

@@ -42,8 +42,10 @@
 				<span>{error}</span>
 			</div>
 		{/if}
+		<!-- „Abbrechen" bleibt bedienbar, auch solange gelöscht wird: Es schließt den Dialog wie
+		     Escape. Die Anfrage läuft zu Ende, ihr Ergebnis steht dann auf der Seite. -->
 		<div class="flex justify-end gap-2 pt-2">
-			<Button variant="ghost" onclick={onclose} disabled={deletingUser}>Abbrechen</Button>
+			<Button variant="ghost" onclick={onclose}>Abbrechen</Button>
 			<Button variant="danger-solid" onclick={confirmDeleteUser} disabled={deletingUser}>
 				{#if deletingUser}<Ladekreis size="sm" farbe="aktuell" />{/if}
 				Löschen

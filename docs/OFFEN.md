@@ -593,9 +593,6 @@ die Dialoge zum Bearbeiten und Löschen). Beim Ansehen aufgefallen:
 
 - Der Zustand eines Kontos steht in zwei Formen: „Aktiv" und „Inaktiv" als Punkt mit Wort,
   „Zugang beantragt" als Pille.
-- In der Rückfrage vor dem Löschen ist „Abbrechen" gesperrt, solange gelöscht wird
-  (`UserManagementDeleteModal.svelte`); Escape und der Klick neben den Dialog schließen
-  trotzdem. M3, Dialogs, Guidelines: „Dismissive actions are never disabled."
 
 Die Mail-Vorlagen (Einstellungen, Kategorie „Mail") und die Buchakte stehen seit dem 03.10.2026
 auf Rollen; die Reiter der Akte kommen aus `ui/Reiter`.
@@ -1030,11 +1027,16 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   gelesen am 02.10.2026). In der Reihenfolge der Tabulatortaste steht „Speichern" seit dem
   02.10.2026 vor den Feldern; wer mit der Tastatur ausfüllt, erreicht den Knopf nach dem
   letzten Feld nur rückwärts.
-- Zwölf Dialoge und Formulare sperren „Abbrechen", solange ihre Anfrage läuft (etwa
-  `StudentProfileDeleteModal.svelte`, `BescheidDialog.svelte`, `PapierkorbLoeschenDialog.svelte`;
-  gezählt am 01.10.2026). M3 Dialogs, Guidelines: „Disable confirming actions until a choice is
-  made. Dismissive actions are never disabled." Abbrechen bricht die laufende Anfrage am Server
-  nicht ab; zu entscheiden wäre, ob der Knopf dann den Dialog schließen darf.
+- Elf Dialoge sperren „Abbrechen", solange ihre Anfrage läuft (etwa
+  `StudentProfileDeleteModal.svelte`, `BescheidDialog.svelte`, `PapierkorbLoeschenDialog.svelte`),
+  dazu sechs Stellen in Formularen und Listen (`PromoteStudentsView.svelte` zweimal,
+  `GeraeteVerwaltung.svelte`, `AnliegenListe.svelte`, `KlassensatzReservierungen.svelte`,
+  `AusleiheRueckgabe.svelte`; gezählt am 03.10.2026). M3 Dialogs, Guidelines: „Disable confirming
+  actions until a choice is made. Dismissive actions are never disabled." Abbrechen bricht die
+  laufende Anfrage am Server nicht ab. In der Lösch-Rückfrage der Benutzerliste schließt der
+  Knopf den Dialog wie Escape, und das Ergebnis der Anfrage steht auf der Seite; zu entscheiden
+  wäre, ob das für die übrigen ebenso gilt. Voraussetzung je Stelle: Erfolg und Ablehnung werden
+  außerhalb des Dialogs gemeldet.
 - Die Akte eines Kollegen ohne Ausweisnummer sagt am gesperrten Ausweisdruck „die Nummer steht
   in „Benutzer & Rechte""; ohne Konto hat er dort keinen Eintrag. Die Nummer kommt mit dem
   freigeschalteten Zugang (`StudentProfileActions.svelte`, `data-tip`).
