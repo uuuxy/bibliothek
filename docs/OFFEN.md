@@ -498,10 +498,11 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   und eine Gegenprobe je Zusicherung, Muster in `api/inventur_verlust_aktionen_pg_test.go`.
   Kategorie B.
 - SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek4`; der
-  Schlüssel steht in `sonar-project.properties`. Stand 03.10.2026: 0 Fehler, 0 Schwachstellen,
-  209 Hinweise (davon 75 `go:S3776`, siehe 6.2), Abdeckung 70,8 %. Das Quality Gate vergleicht
-  mit dem Stand desselben Projekts; ein neu angelegtes Projekt meldet OK, ohne zu prüfen. Die
-  134 übrigen Hinweise sind nicht einzeln durchgesehen.
+  Schlüssel steht in `sonar-project.properties`. Letzter Scan am 03.10.2026: 0 Fehler,
+  0 Schwachstellen, 209 Hinweise (davon 75 `go:S3776`), Abdeckung 70,8 %. Die 75 sind danach
+  zurückgebaut worden (siehe 6.2); ein Scan, der das bestätigt, steht aus. Das Quality Gate
+  vergleicht mit dem Stand desselben Projekts; ein neu angelegtes Projekt meldet OK, ohne zu
+  prüfen. Die 134 übrigen Hinweise sind nicht einzeln durchgesehen.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
@@ -1086,13 +1087,16 @@ Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? K
   `etikettformate-konsistenz.test.js`; am 31.08.2026 entschieden geparkt.
 - Reste des Nie-verdrahtet-Sweeps: `abgaenger_jahr` in der Aktivlisten-Antwort ohne
   Konsument; bei den Geräten `ActionEvent.GeraetID` ohne Broadcast und mit Null-Zeitstempel.
-- Cognitive Complexity: 75 Funktionen über 15, Testdateien nicht mitgezählt (SonarQube
-  `go:S3776` und `gocognit -over 15`, beide gemessen am 03.10.2026, davon 47 in `api/`). Verlauf
-  mit `gocognit` an den Ständen der Tage: 0 am 04.08.2026, 35 am 05.09.2026, 60 am 17.09.2026.
-  Kein Gate hält die Zahl; golangci-lint prüft sie nicht (`.golangci.yml`). Die höchsten Werte:
-  `PatchStudentHandler` und `BescheidErstellenHandler` je 36, `nachbuchenAusleihe` 34,
-  `UpdateSettingsHandler` 33. Lohnend allenfalls `OverrideDueDateHandler` (30) und
-  `behandleAbgaenger` (25).
+- Cognitive Complexity: Kein Gate hält die Zahl der Funktionen über 15 (`go:S3776`);
+  golangci-lint prüft sie nicht (`.golangci.yml`). Seit dem 03.10.2026 liegt keine
+  Produktionsfunktion darüber (`gocognit -over 15`, Testdateien nicht mitgezählt). Verlauf an
+  den Ständen der Tage: 0 am 04.08.2026, 35 am 05.09.2026, 60 am 17.09.2026, 75 am 03.10.2026
+  vor dem Rückbau. Eine Ratsche, unter der die Zahl nur sinken darf, ist am 03.10.2026
+  zurückgestellt worden; ohne sie wächst die Zahl wieder wie zwischen August und Oktober.
+- Die beiden Fristen-Türen (`PATCH /api/admin/ausleihen/{id}/faelligkeit`,
+  `POST /api/ausleihen/{ausleihe_id}/verlaengern`) antworten auf eine Kennung, die keine UUID
+  ist, mit 500 statt mit 404 (nachgestellt am 03.10.2026). Die Oberfläche schickt nur echte
+  Kennungen. Beim nächsten Anfassen `kennung.IstUUID` vor die erste Abfrage.
 - `javascript:S6551` und `javascript:S8783`: begründete Dauer-Ausnahmen. Die Begründung zu
   S6551 steht als Kommentar in `settingsWerte.js`; S8783 nennt im Repository keine Stelle
   (nachgesehen am 02.10.2026).
