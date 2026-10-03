@@ -9,7 +9,13 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import Segmente from '../ui/Segmente.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
+
+	const ARTEN = [
+		{ wert: 'existing', text: 'Vorhandene Exemplare' },
+		{ wert: 'new', text: 'Neue Barcodes' }
+	];
 
 	// Der Kasten zeigt fünf Zeilen. Was ganz hineinpasst, braucht kein Feld zum Suchen.
 	const ZEILEN_IM_KASTEN = 5;
@@ -34,26 +40,16 @@
 </script>
 
 {#if labelStore.selectedTitle}
-	<div class="py-5 space-y-4 border-b border-slate-200">
-		<h3 class="text-base font-semibold text-slate-500">2. Barcodes generieren</h3>
+	<div class="space-y-4 border-b border-outline-variant py-5">
+		<h3 class="text-base font-semibold text-on-surface-variant">2. Barcodes generieren</h3>
 
-		<!-- Selection mode -->
-		<div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/40 text-xs">
-			<button
-				onclick={() => (labelStore.generationMode = 'existing')}
-				class="flex-1 text-center py-1.5 rounded-lg font-bold transition-all cursor-pointer {labelStore.generationMode ===
-				'existing'
-					? 'bg-white text-slate-800 shadow-xs'
-					: 'text-slate-500 hover:text-slate-700'}">Vorhandene Exemplare</button
-			>
-			<button
-				onclick={() => (labelStore.generationMode = 'new')}
-				class="flex-1 text-center py-1.5 rounded-lg font-bold transition-all cursor-pointer {labelStore.generationMode ===
-				'new'
-					? 'bg-white text-slate-800 shadow-xs'
-					: 'text-slate-500 hover:text-slate-700'}">Neue Barcodes</button
-			>
-		</div>
+		<Segmente
+			etikett="Woher die Barcodes kommen"
+			optionen={ARTEN}
+			wert={labelStore.generationMode}
+			onwahl={(art) => (labelStore.generationMode = art)}
+			klasse="w-full"
+		/>
 
 		{#if labelStore.generationMode === 'existing'}
 			<div class="space-y-2">
@@ -128,9 +124,9 @@
 {:else}
 	<!-- Platzhalter, damit die Schrittfolge nicht von 1 auf 3 springt (wirkt sonst
 	     wie ein übersprungener Schritt). Wird aktiv, sobald ein Titel gewählt ist. -->
-	<!-- Gedämpft über die Textfarbe, nicht über opacity: 60 % Deckung auf slate-400 ergab
-	     2,5:1 — der inaktive Schritt war für viele schlicht unlesbar (axe, 09.09.2026). -->
-	<div class="py-5 space-y-2 border-b border-slate-200">
+	<!-- Gedämpft über die Textfarbe, nicht über opacity: Mit 60 % Deckung lag der Kontrast des
+	     inaktiven Schritts bei 2,5:1. -->
+	<div class="space-y-2 border-b border-outline-variant py-5">
 		<h3 class="text-base font-semibold text-on-surface-variant">2. Barcodes generieren</h3>
 		<p class="text-xs text-on-surface-variant">Zuerst oben einen Titel oder Klassensatz wählen.</p>
 	</div>

@@ -17,12 +17,12 @@
 	];
 </script>
 
-<div class="py-5 space-y-4 border-b border-slate-200">
-	<h3 class="text-base font-semibold text-slate-500">3. Layout-Optionen</h3>
+<div class="py-5 space-y-4 border-b border-outline-variant">
+	<h3 class="text-base font-semibold text-on-surface-variant">3. Layout-Optionen</h3>
 
 	<div class="space-y-3.5">
 		<div class="space-y-1.5">
-			<span class="text-xs font-medium text-slate-500 block">Etikettenformat</span>
+			<span class="text-xs font-medium text-on-surface-variant block">Etikettenformat</span>
 			<Select
 				bind:value={labelStore.formatId}
 				options={ETIKETT_FORMATE}
@@ -31,7 +31,9 @@
 		</div>
 
 		<div class="space-y-1.5">
-			<span class="text-xs font-medium text-slate-500 block">Startposition auf dem A4-Bogen</span>
+			<span class="text-xs font-medium text-on-surface-variant block"
+				>Startposition auf dem A4-Bogen</span
+			>
 			<div class="flex items-center gap-2">
 				<Feld
 					type="number"
@@ -41,15 +43,15 @@
 					aria-label="Startposition auf dem A4-Bogen"
 					feld="w-24"
 				/>
-				<span class="text-label-small text-slate-400">max. {labelStore.maxPositions}</span>
+				<span class="text-label-small text-on-surface-variant">max. {labelStore.maxPositions}</span>
 			</div>
-			<p class="text-xs text-slate-400 mt-1">
+			<p class="text-xs text-on-surface-variant mt-1">
 				Für angebrochene Bögen: Gibt an, auf welchem Feld der Druck starten soll.
 			</p>
 		</div>
 
 		<div class="space-y-1.5">
-			<span class="text-xs font-medium text-slate-500 block">Barcode-Ausgabe</span>
+			<span class="text-xs font-medium text-on-surface-variant block">Barcode-Ausgabe</span>
 			<Select
 				bind:value={labelStore.barcodeType}
 				options={BARCODE_AUSGABE}
