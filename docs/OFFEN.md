@@ -92,13 +92,6 @@ entfallen.
    Zähldatum unter „Exemplare". Das Feld „Beschreibung / Klappentext" gibt es seit dem
    03.10.2026 nicht mehr; „Speichern" bleibt am neuen Bibliotheksbuch bedienbar und führt ohne
    Signatur zum Feld.
-6. **Zwei Vorschläge am Bild ansehen** (gebaut am 03.10.2026, je ein eigener Commit; die Bilder
-   liegen unter `frontend/playwright-report/`):
-   - Leserakte: die Knöpfe der Dokumente ohne Überschrift und Rahmen
-     (`leserakte-dokumente-heute-vorschlag.png`). Die Reiter stehen 46 px höher.
-   - Maske „Buch bearbeiten": Die Felder enden bei 704 px
-     (`buchmaske-feldbreite-heute-vorschlag.png`). Im Fenster von 1710 px bleibt rechts der
-     Felder ein freier Streifen bis zum Cover; zu entscheiden ist, ob das so bleibt (6.1).
 
 **Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
 hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat Node 26 ab dem
@@ -797,9 +790,12 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   zusammen; M3: „A navigation rail can be expanded by default on larger screen sizes, or can
   be expanded over content on smaller screen sizes". Anlass zum Bauen: Die Anwendung wird
   an einem Tablet oder in Fenstern unter 1280 px bedient.
-- **Leserakte, langer Name:** Ein Name aus einem Wort von 22 Zeichen ragt aus der Leserkarte
-  in die rechte Spalte und liegt über dem ersten Reiter (gesehen am 02.10.2026 an einem
-  Testleser). Namen mit Leerzeichen oder Bindestrich brechen um.
+- **Leserakte, langer Name:** Ein Name aus einem Wort von 22 Zeichen ragt 73 px aus der
+  Leserkarte in die rechte Spalte. Er liegt dort unter den Reitern auf der ersten Zeile des
+  Inhalts: In „Gebühren & Schäden" und „Stammdaten & Adresse" verdeckt er deren Anfang
+  (49 px), in „Ausleihen & Historie" endet er an der Oberkante der Überschrift (gemessen am
+  03.10.2026 bei 1280 × 900 px an einem Testleser). Namen mit Leerzeichen oder Bindestrich
+  brechen um.
 - **Leserakte, Autor und Nummer des Exemplars:** Der Autor steht nur in der Sprechblase am
   Titel, die Nummer in Fenstern bis rund 1580 px ebenfalls (darüber hat sie ihre Spalte;
   gemessen bei ausgeklappter Seitenleiste). Die Sprechblase erscheint beim Zeigen mit der
@@ -820,10 +816,10 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   fields, Guidelines: „Text fields shouldn’t span the full width of a large screen"); die
   Hausregel, die Fläche zu nutzen, gilt den Flächen der Seite, nicht den Feldern. In der Maske
   „Buch bearbeiten" enden die Felder seitdem bei 704 px; die Exemplare darunter behalten die
-  Breite. Offen: was mit dem freien Streifen zwischen Feldern und Cover im breiten Fenster
-  wird (gemessen bei 1710 px: Felder bis 1016 px), und die übrigen Masken — sie sind nicht
-  durchgesehen. Der Wert steht bisher nur in `BuchFormular.svelte`; mit der zweiten Maske
-  gehört er an eine Stelle.
+  Breite. Am Bild abgenommen am 03.10.2026; der freie Streifen zwischen Feldern und Cover im
+  breiten Fenster bleibt (gemessen bei 1710 px: Felder bis 1016 px). Offen: die übrigen
+  Masken — sie sind nicht durchgesehen. Der Wert steht bisher nur in `BuchFormular.svelte`;
+  mit der zweiten Maske gehört er an eine Stelle.
 - Die Meldungen der Anwendung (`ToastContainer.svelte`) erscheinen oben rechts, bis 384 px
   breit, 5 s lang, und halten ihre Standzeit an, solange der Mauszeiger auf ihnen ruht. Was
   dort steht, ist in dieser Zeit verdeckt (gemessen am 02.10.2026 bei 1280 × 720: Meldung bei
