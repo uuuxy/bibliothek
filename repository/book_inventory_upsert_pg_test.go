@@ -149,3 +149,62 @@ func TestBulkUpsertBookTitles_MehrjahresbandBehaeltSeineSpanne(t *testing.T) {
 		t.Errorf("Mehrjahresband nach dem Import: Spanne %d–%d, Schalter %v — erwartet 7–9 und an", von, bis, band)
 	}
 }
+
+// Der Katalog-Import ordnet einen Datensatz über die ISBN zu und vergleicht dabei Zeichen für
+// Zeichen. Die Datenbank speichert eine zehnstellige ISBN dreizehnstellig (Migration 157);
+// die Zuordnung muss dieselbe Form führen. Sonst findet der Import den vorhandenen Titel nicht,
+// legt ihn neu an und scheitert am UNIQUE-Index — der ganze Import, er läuft in einer
+// Transaktion.
+func TestBulkUpsertBookTitles_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	repo := NewBookRepository(pool)
+
+	titelZur := func(isbn string) (anzahl int, signatur string) {
+		t.Helper()
+		if err := pool.QueryRow(ctx, `SELECT count(*)::int, coalesce(max(signatur), '')
+			FROM buecher_titel WHERE isbn = $1`, isbn).Scan(&anzahl, &signatur); err != nil {
+			t.Fatal(err)
+		}
+		return anzahl, signatur
+	}
+
+	// Der Bestand trägt die dreizehnstellige; die Datei nennt das Buch zehnstellig und unter
+	// einem anderen Titeltext, damit nur die ISBN zuordnen kann.
+	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{{
+		Titel: "Harry Potter und der Stein der Weisen", ISBN: "9783551551672", Signatur: "Jf",
+	}}); err != nil {
+		t.Fatalf("Erstimport: %v", err)
+	}
+	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{{
+		Titel: "Harry Potter 1", ISBN: "3551551677", Signatur: "JF Row",
+	}}); err != nil {
+		t.Fatalf("Import mit der zehnstelligen ISBN: %v", err)
+	}
+	if anzahl, signatur := titelZur("9783551551672"); anzahl != 1 || signatur != "JF Row" {
+		t.Errorf("nach dem Import: %d Titel mit Signatur %q, erwartet 1 mit „JF Row“", anzahl, signatur)
+	}
+
+	// Eine Datei nennt dasselbe Buch in beiden Längen: ein Titel, der zweite Datensatz ist
+	// eine Dublette innerhalb der Datei.
+	eingereiht, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{
+		{Titel: "Advanced Organic Chemistry", ISBN: "0306406152"},
+		{Titel: "Advanced Organic Chemistry, Part A", ISBN: "9780306406157"},
+	})
+	if err != nil {
+		t.Fatalf("Import mit beiden Längen: %v", err)
+	}
+	if anzahl, _ := titelZur("9780306406157"); anzahl != 1 || eingereiht != 1 {
+		t.Errorf("beide Längen in einer Datei: %d Titel, %d Datensätze eingereiht, erwartet je 1", anzahl, eingereiht)
+	}
+
+	// Der Aufrufer behält seine Liste, wie er sie übergeben hat.
+	datei := []BookTitle{{Titel: "Harry Potter 1", ISBN: "3551551677"}}
+	if _, err := repo.BulkUpsertBookTitles(ctx, datei); err != nil {
+		t.Fatal(err)
+	}
+	if datei[0].ISBN != "3551551677" {
+		t.Errorf("die Liste des Aufrufers trägt danach %q, übergeben war 3551551677", datei[0].ISBN)
+	}
+}

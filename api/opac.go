@@ -108,6 +108,7 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			   OR bt.titel ILIKE '%' || $2 || '%'
 			   OR bt.autor ILIKE '%' || $2 || '%'
 			   OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($2, '[- ]', '', 'g') || '%'
+			   OR `+repository.SQLSuchtextIstISBN("bt", "$1")+`
 			   OR `+repository.SQLTitelUeberSchlagwort("bt", "$2")+`)`)
 		}
 		if schlagwortID != "" {

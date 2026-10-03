@@ -237,6 +237,7 @@ func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) 
 				OR t.autor ILIKE '%' || $1 || '%'
 				OR regexp_replace(coalesce(t.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1, '[- ]', '', 'g') || '%'
 				OR replace(t.isbn, '-', '') = replace($1, '-', '')
+				OR ` + repository.SQLSuchtextIstISBN("t", "$1") + `
 			ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel ASC
 			LIMIT 50
 		)
@@ -282,7 +283,9 @@ func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inve
 
 	var isbns []string
 	for _, dr := range dnbResults {
-		isbns = append(isbns, isbnInBeidenLaengen(dr.ISBN)...)
+		if n := isbnutil.Normalform(dr.ISBN); n != "" {
+			isbns = append(isbns, n)
+		}
 	}
 
 	existingISBNs := sammleExistierendeISBNs(ctx, pool, isbns)
@@ -294,30 +297,18 @@ func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inve
 	return results
 }
 
-// isbnInBeidenLaengen nennt eine ISBN so, wie sie im Katalog stehen kann: in ihrer eigenen
-// Länge und in der anderen (isbnutil.AndereForm). Die Normalform des Katalogs trennt ISBN-10
-// und ISBN-13, und die DNB nennt die dreizehnstellige zu einem Buch, das aus Littera mit der
-// zehnstelligen im Katalog steht — der Treffer hieße sonst „Neu".
-func isbnInBeidenLaengen(isbn string) []string {
-	if isbn == "" {
-		return nil
-	}
-	sauber := isbnutil.CleanISBN(isbn)
-	if andere := isbnutil.AndereForm(sauber); andere != "" {
-		return []string{sauber, andere}
-	}
-	return []string{sauber}
-}
-
-// sammleExistierendeISBNs prüft per Bulk-Query, welche der (normalisierten) ISBNs bereits im
-// Katalog liegen, und liefert sie als Set. Fehler werden nur geloggt und als leeres/teilweises
-// Set behandelt — die DNB-Suche soll dadurch nicht scheitern (identisch zum bisherigen Verhalten).
+// sammleExistierendeISBNs fragt in einer Abfrage, welche der ISBNs schon ein Titel trägt, und
+// liefert sie als Menge. Beide Seiten stehen in der Normalform (isbnutil.Normalform,
+// isbn_normalform): Die DNB nennt eine ISBN mit Bindestrichen und bei älteren Sätzen
+// zehnstellig, der Katalog führt sie dreizehnstellig — der Treffer hieße sonst „Neu". Fehler
+// werden protokolliert und ergeben eine leere oder unvollständige Menge; die Suche in der DNB
+// scheitert daran nicht.
 func sammleExistierendeISBNs(ctx context.Context, pool db.PgxPoolIface, isbns []string) map[string]struct{} {
 	existing := make(map[string]struct{})
 	if len(isbns) == 0 {
 		return existing
 	}
-	rows, err := pool.Query(ctx, "SELECT replace(isbn, '-', '') FROM buecher_titel WHERE replace(isbn, '-', '') = ANY($1)", isbns)
+	rows, err := pool.Query(ctx, "SELECT isbn_normalform(isbn) FROM buecher_titel WHERE isbn_normalform(isbn) = ANY($1)", isbns)
 	if err != nil {
 		log.Printf("order-service: Bulk ISBN-Existenzprüfung fehlgeschlagen: %v", err)
 		return existing
@@ -335,22 +326,16 @@ func sammleExistierendeISBNs(ctx context.Context, pool db.PgxPoolIface, isbns []
 	return existing
 }
 
-// baueDNBSuchItem mappt ein DNB-Ergebnis auf ein OrderSearchItem: Cover-Fallback auf die
-// DNB-Cover-URL und Duplikat-Markierung anhand des bereits vorhandenen ISBN-Sets.
+// baueDNBSuchItem macht aus einem Treffer der DNB einen Eintrag der Bestellsuche: ohne
+// eigenes Cover die Cover-Adresse der DNB, und „Vorhanden", wenn die ISBN in der Menge der
+// schon getragenen steht (sammleExistierendeISBNs, Normalform).
 func baueDNBSuchItem(dr inventur.MetadatenErgebnis, existingISBNs map[string]struct{}) OrderSearchItem {
 	coverURL := dr.CoverURL
 	if coverURL == "" && dr.ISBN != "" {
 		coverURL = fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", dr.ISBN)
 	}
 
-	// „Vorhanden" auch, wenn der Katalog die ISBN in der anderen Länge trägt. Ob es dasselbe
-	// Buch ist, fragt danach die Bestelltür (aus-isbn).
-	existsLocally := false
-	for _, form := range isbnInBeidenLaengen(dr.ISBN) {
-		if _, found := existingISBNs[form]; found {
-			existsLocally = true
-		}
-	}
+	_, existsLocally := existingISBNs[isbnutil.Normalform(dr.ISBN)]
 
 	return OrderSearchItem{
 		Titel:          dr.Titel,

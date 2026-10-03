@@ -346,9 +346,9 @@ func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, q reposit
 		WITH ziel AS (
 			SELECT t.id AS titel_id, row_number() OVER () AS nr
 			FROM UNNEST($1::text[], $2::int[]) AS u(isbn, stueck)
-			-- Normalform beider Seiten (Migration 133): der neue Titel steht schon normalisiert
-			-- in der Tabelle, die Importzeile kommt roh; der Bestand kann noch anders geschrieben sein.
-			JOIN buecher_titel t ON isbn_normalform(t.isbn) = isbn_normalform(u.isbn)
+			-- Normalform beider Seiten: der neue Titel steht schon normalisiert in der Tabelle,
+			-- die Importzeile kommt roh; der Bestand kann noch anders geschrieben sein.
+			JOIN buecher_titel t ON `+repository.SQLTitelTraegtISBN("t", "u.isbn")+`
 			CROSS JOIN generate_series(1, u.stueck)
 			WHERE u.stueck > 0 AND u.isbn <> ''
 		)

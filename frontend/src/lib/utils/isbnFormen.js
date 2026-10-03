@@ -1,19 +1,18 @@
 /**
  * Dieselbe ISBN, andere Schreibweise.
  *
- * Ein Strichcode auf dem Buchrücken ist immer eine EAN-13 („9783060130764"). Im Bestand
- * steht dieselbe ISBN je nach Herkunft anders: mit Bindestrichen aus einer Katalogabfrage,
- * mit Leerzeichen aus einer Liste, und bei Altbeständen zehnstellig — die Littera-Übernahme
- * behält eine gültige ISBN-10 unverändert bei (internal/uebernahme/isbn.go). Ein
- * Zeichenvergleich findet davon nur den Zufallstreffer.
+ * Ein Strichcode auf dem Buchrücken ist immer eine EAN-13 („9783060130764"), auf dem
+ * Titelblatt älterer Bücher steht die zehnstellige ISBN. Die Datenbank führt eine ISBN in
+ * einer Form (isbn_normalform, Migration 133 und 157): ohne Bindestriche, und eine
+ * zehnstellige mit richtigem Prüfzeichen dreizehnstellig. Stehen bleibt, was vor der Regel
+ * neben einer Dublette lag, und eine zehnstellige Nummer mit falschem Prüfzeichen.
  *
- * Nicht geraten wird dabei nichts: Zwischen ISBN-10 und ISBN-13 mit 978-Präfix liegt eine
- * feste Rechnung — gleicher Kern, neu berechnete Prüfziffer. Beide Formen bezeichnen
- * dasselbe Buch.
+ * Die Suche im Browser nennt deshalb beide Längen. Zwischen ISBN-10 und ISBN-13 mit
+ * 978-Präfix liegt eine feste Rechnung — gleicher Kern, neu berechnete Prüfziffer.
  *
- * Am Server rechnet isbnutil.AndereForm dasselbe für die Bestelltür (docs/OFFEN.md 4.18,
- * Stufe 4). Beide Seiten lesen dieselben Prüffälle (isbnFormen.faelle.json) — rechnen sie
- * verschieden, wird der Go- oder der Vitest rot.
+ * Am Server rechnet isbnutil.Normalform die dreizehnstellige Form. Beide Seiten lesen
+ * dieselben Prüffälle (isbnFormen.faelle.json) — rechnen sie verschieden, wird der Go- oder
+ * der Vitest rot.
  */
 
 /** Nur die bedeutungstragenden Zeichen, Prüfzeichen groß. @param {unknown} roh */

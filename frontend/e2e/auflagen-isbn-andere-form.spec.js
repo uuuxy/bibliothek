@@ -2,13 +2,12 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, gehZu, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 import { isbnFormen } from '../src/lib/utils/isbnFormen.js';
 
-// „Neue Auflage bestellen" über die andere Länge der ISBN (docs/OFFEN.md 4.18, Stufe 4): Im
-// Katalog steht die neue Auflage mit ihrer ISBN-10, eingegeben wird die EAN-13 vom Buchrücken.
-// Die Tür legt nichts an und fragt; „Diesen Titel nehmen" ordnet den Titel aus dem Katalog zu,
-// und unter der EAN-13 entsteht kein zweiter. Die ISBN-10 rechnet hier der Browser aus
-// (isbnFormen), am Server ihr Zwilling (isbnutil.AndereForm) — die Frage kommt nur, wenn beide
-// gleich rechnen. Kein Katalogdienst im Netz: Gefragt wird die DNB erst bei „Neu anlegen".
-test('Bestellbedarf: neue Auflage über die andere Länge der ISBN — erst die Frage, dann der Titel aus dem Katalog', async ({
+// „Neue Auflage bestellen" über die andere Länge der ISBN (Migration 157): Die neue
+// Auflage steht im Katalog, zehnstellig angelegt wie vom Titelblatt; der Katalog führt die ISBN
+// dreizehnstellig. Eingegeben wird die zehnstellige: Die Tür findet den Titel, fragt nicht und
+// legt nichts an — die zehn- und die dreizehnstellige Form sind dieselbe Nummer. Kein
+// Katalogdienst im Netz: Die DNB fragt die Tür nur zu einer ISBN, die der Katalog nicht kennt.
+test('Bestellbedarf: neue Auflage über die andere Länge der ISBN — der Titel aus dem Katalog, ohne Frage', async ({
 	page
 }) => {
 	const marke = `E2E-AndereForm-${uniqueSuffix()}`;
@@ -50,28 +49,21 @@ test('Bestellbedarf: neue Auflage über die andere Länge der ISBN — erst die 
 			.click();
 		await page.getByRole('menuitem', { name: /Neue Auflage bestellen/ }).click();
 		const dialog = page.getByRole('dialog', { name: 'Neue Auflage bestellen' });
-		await dialog.getByLabel('ISBN der neuen Auflage').fill(ean);
+		await dialog.getByLabel('ISBN der neuen Auflage').fill(zehn);
 		await dialog.getByRole('button', { name: 'Suchen' }).click();
 
-		// Die Frage: der Titel aus dem Katalog mit seiner ISBN-10, und bis zur Wahl nichts zu
-		// bestätigen.
-		await expect(
-			dialog.getByText('Im Katalog steht diese ISBN in zehnstelliger Form.')
-		).toBeVisible();
-		const nehmen = dialog.getByRole('button', { name: /Diesen Titel nehmen/ });
-		await expect(nehmen).toContainText(`${marke} Neubearbeitung`);
-		await expect(nehmen).toContainText(zehn);
-		await expect(dialog.getByRole('button', { name: /Neu anlegen/ })).toContainText(ean);
-		await expect(dialog.getByRole('button', { name: 'Zuordnen und bestellen' })).toBeDisabled();
-		expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE isbn = '${ean}'`)).toBe('0');
-
-		await nehmen.click();
-		await expect(dialog.getByText(/in zehnstelliger Form/)).toBeHidden();
+		// Der Titel aus dem Katalog mit der ISBN, wie der Katalog sie trägt; keine Frage.
 		await expect(dialog.getByText(`${marke} Neubearbeitung`)).toBeVisible();
+		await expect(dialog.getByText(ean)).toBeVisible();
+		await expect(dialog.getByText(/in zehnstelliger Form|in dreizehnstelliger Form/)).toHaveCount(
+			0
+		);
+		await expect(dialog.getByRole('button', { name: /Neu anlegen/ })).toHaveCount(0);
+
 		await dialog.getByRole('button', { name: 'Zuordnen und bestellen' }).click();
 		await expect(dialog).toBeHidden();
 
-		// Zugeordnet ist der Titel aus dem Katalog; unter der EAN-13 steht weiter keiner.
+		// Zugeordnet ist der Titel aus dem Katalog; ein zweiter ist nicht entstanden.
 		await expect(zeilen.first()).toContainText('Bestand aus 2 Auflagen');
 		expect(
 			querySQL(
@@ -79,12 +71,15 @@ test('Bestellbedarf: neue Auflage über die andere Länge der ISBN — erst die 
 				 FROM buecher_titel WHERE id IN ('${alt}', '${neu}')`
 			)
 		).toBe('1/2/true');
-		expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE isbn = '${ean}'`)).toBe('0');
+		expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE isbn IN ('${ean}', '${zehn}')`)).toBe(
+			'1'
+		);
+		expect(querySQL(`SELECT isbn FROM buecher_titel WHERE id = '${neu}'`)).toBe(ean);
 	} finally {
 		seedSQL(`
 			DELETE FROM werke WHERE id IN (
 				SELECT werk_id FROM buecher_titel WHERE id IN ('${alt}', '${neu}') AND werk_id IS NOT NULL);
-			DELETE FROM buecher_titel WHERE id IN ('${alt}', '${neu}') OR isbn = '${ean}';
+			DELETE FROM buecher_titel WHERE id IN ('${alt}', '${neu}') OR isbn IN ('${ean}', '${zehn}');
 		`);
 		for (const [schluessel, wert] of Object.entries(vorher)) {
 			if (wert) setze(schluessel, wert);

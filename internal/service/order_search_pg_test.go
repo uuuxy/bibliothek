@@ -47,3 +47,35 @@ func TestSearchLocalOrders_LiefertSignatur(t *testing.T) {
 		t.Errorf("Source = %q, want %q", results[0].Source, "local")
 	}
 }
+
+// Die Bestellsuche im eigenen Katalog vergleicht eine getippte ISBN als Teilstring. Die
+// zehnstellige vom Titelblatt und die dreizehnstellige, unter der die Datenbank den Titel
+// führt (Migration 157), enden auf verschiedene Prüfzeichen: Ohne den Vergleich mit der
+// Normalform des Suchtexts hieße ein vorhandenes Buch in der Bestellsuche „nicht gefunden".
+func TestSearchLocalOrders_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	const zehn, dreizehn = "0306406152", "9780306406157"
+	raeume := func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn = ANY($1)`, []string{zehn, dreizehn}); err != nil {
+			t.Errorf("aufräumen: %v", err)
+		}
+	}
+	raeume()
+	t.Cleanup(raeume)
+	var id string
+	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, isbn) VALUES ('Advanced Organic Chemistry', $1) RETURNING id::text`,
+		zehn).Scan(&id); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+
+	for _, suchtext := range []string{zehn, "0-306-40615-2", dreizehn, "978-0-306-40615-7"} {
+		treffer := searchLocalOrders(ctx, pool, suchtext)
+		if len(treffer) != 1 || treffer[0].ID != id || treffer[0].ISBN != dreizehn {
+			t.Errorf("Suche %q: %+v, erwartet den Titel %s unter %s", suchtext, treffer, id, dreizehn)
+		}
+	}
+	if treffer := searchLocalOrders(ctx, pool, "0306406153"); len(treffer) != 0 {
+		t.Errorf("falsches Prüfzeichen: %d Treffer, erwartet keinen", len(treffer))
+	}
+}

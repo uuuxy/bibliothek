@@ -164,7 +164,10 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, lookup titelLo
 		return "", nil, false
 	}
 
-	isbn := isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
+	// Die Form, in der die Datenbank speichert: Nennt die Datei dasselbe Buch zehn- und
+	// dreizehnstellig, ist es ein Titel. Als zwei Schlüssel ergäbe es zwei INSERTs, und der
+	// zweite scheiterte am UNIQUE-Index.
+	isbn := isbnutil.Normalform(isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn")))
 
 	if matchTitelID(isbn, z.titel, lookup) != "" {
 		return "", nil, false // schon vorhanden

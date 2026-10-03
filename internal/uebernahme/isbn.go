@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+
+	"bibliothek/pkg/isbnutil"
 )
 
 var reNichtISBN = regexp.MustCompile(`[^0-9Xx]`)
@@ -64,13 +66,21 @@ func pruefeISBN10(isbn string) bool {
 	return summe%11 == 0
 }
 
+// VormerkSchluessel ist die Form, unter der eine ISBN vorgemerkt wird: die, in der die
+// Datenbank sie speichert (isbn_normalform). Eine zehnstellige ISBN wird dort
+// dreizehnstellig; unter der zehnstelligen vorgemerkt, träfe sie den Titel, der sie
+// dreizehnstellig trägt, erst am UNIQUE-Index.
+func VormerkSchluessel(roh string) string {
+	return isbnutil.Normalform(NormalisiereISBN(roh))
+}
+
 // KlaereISBN ermittelt die ISBN, mit der ein Titel geschrieben wird, und meldet jede
 // Abwertung als Warnung. Rückgabe "" heißt: Titel ohne ISBN übernehmen — das ist besser,
 // als ihn wegen einer kaputten Prüfziffer ganz zu verlieren.
 //
-// gesehen bildet ISBN → Quell-ID ab und wird fortgeschrieben. buecher_titel.isbn ist
-// UNIQUE; ohne diese Vormerkung liefe jede Dublette in einen 23505 und kostete den
-// zweiten Titel. Im Littera-Altbestand betrifft das 1.100 Titel.
+// gesehen bildet ISBN → Quell-ID ab und wird fortgeschrieben, unter dem VormerkSchluessel.
+// buecher_titel.isbn ist UNIQUE; ohne diese Vormerkung liefe jede Dublette in einen 23505
+// und kostete den zweiten Titel. Im Littera-Altbestand betrifft das 1.100 Titel.
 func KlaereISBN(p *Protokoll, quellID, roh string, gesehen map[string]string) string {
 	norm, ok := PruefeISBN(roh)
 	if roh != "" && !ok {
@@ -80,6 +90,7 @@ func KlaereISBN(p *Protokoll, quellID, roh string, gesehen map[string]string) st
 	if norm == "" {
 		return ""
 	}
+	norm = VormerkSchluessel(norm)
 	if vorher, belegt := gesehen[norm]; belegt {
 		p.Warnung(quellID, norm, fmt.Sprintf(
 			"doppelte ISBN – bereits übernommen als %s=%s; Titel wird ohne ISBN übernommen", p.idFeld, vorher))

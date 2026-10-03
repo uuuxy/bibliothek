@@ -1,42 +1,68 @@
 {
-	"_zweck": "Geteilte Prüffälle: isbnFormen (isbnFormen.js, zweiter Eintrag) und isbnutil.AndereForm (pkg/isbnutil/andere_form.go) rechnen dieselbe ISBN in die andere Länge um. Beide Tests lesen diese Datei; rechnen die Seiten verschieden, fragt die Bestelltür nach einem anderen Titel, als die Katalogsuche findet (docs/OFFEN.md 4.18, Stufe 4).",
-	"_grenze": "Nur Eingaben aus Ziffern, X, Bindestrichen und Leerzeichen. Andere Zeichen behandeln beide Seiten bewusst verschieden: Der Browser streicht sie für die Suche, der Server hält die Normalform der Datenbank (Migration 133), in der ‚ISBN 978…' keine ISBN ist.",
+	"_zweck": "Geteilte Prüffälle: Die Datenbank führt eine ISBN in der Normalform (isbnutil.Normalform in pkg/isbnutil/clean.go, in SQL isbn_normalform), die Katalogsuche im Browser sucht mit isbnFormen (isbnFormen.js) nach beiden Längen. Beide Tests lesen diese Datei: Go prüft die Normalform, der Vitest die andere Länge und dass die Schreibweisen der Suche die Normalform enthalten. Rechnen die Seiten verschieden, findet die Suche einen Titel nicht, den die Datenbank unter dieser ISBN führt.",
+	"_grenze": "Nur Eingaben aus Ziffern, X, Bindestrichen und Leerzeichen. Andere Zeichen behandeln beide Seiten bewusst verschieden: Der Browser streicht sie für die Suche, der Server hält die Normalform der Datenbank, in der ‚ISBN 978…' keine ISBN ist.",
 	"faelle": [
 		{
 			"fall": "ISBN-13 (978) auf die zehnstellige Form, Beispielpaar der Norm",
 			"roh": "9780306406157",
-			"andere": "0306406152"
+			"andere": "0306406152",
+			"normalform": "9780306406157"
 		},
 		{
 			"fall": "ISBN-10 auf die dreizehnstellige Form",
 			"roh": "0306406152",
-			"andere": "9780306406157"
+			"andere": "9780306406157",
+			"normalform": "9780306406157"
 		},
 		{
 			"fall": "Bindestriche wie auf dem Buch",
 			"roh": "978-0-306-40615-7",
-			"andere": "0306406152"
+			"andere": "0306406152",
+			"normalform": "9780306406157"
 		},
-		{ "fall": "ISBN-10 mit Bindestrichen", "roh": "0-306-40615-2", "andere": "9780306406157" },
+		{
+			"fall": "ISBN-10 mit Bindestrichen",
+			"roh": "0-306-40615-2",
+			"andere": "9780306406157",
+			"normalform": "9780306406157"
+		},
 		{
 			"fall": "Prüfzeichen X, zweites Beispielpaar der Norm",
 			"roh": "9783161484100",
-			"andere": "316148410X"
+			"andere": "316148410X",
+			"normalform": "9783161484100"
 		},
-		{ "fall": "kleines x und Leerzeichen", "roh": "3 16 148410 x", "andere": "9783161484100" },
 		{
-			"fall": "Testserver: ISBN-10 mit falschem Prüfzeichen führt auf die ISBN-13 eines anderen Buchs",
+			"fall": "kleines x und Leerzeichen",
+			"roh": "3 16 148410 x",
+			"andere": "9783161484100",
+			"normalform": "9783161484100"
+		},
+		{
+			"fall": "Testserver: ISBN-10 mit falschem Prüfzeichen bleibt in der Datenbank zehnstellig; die Rechnung führte auf die ISBN-13 eines anderen Buchs",
 			"roh": "3499500252",
-			"andere": "9783499500251"
+			"andere": "9783499500251",
+			"normalform": "3499500252"
 		},
 		{
 			"fall": "Testserver: zurück führt die Rechnung auf das richtige Prüfzeichen",
 			"roh": "9783499500251",
-			"andere": "3499500256"
+			"andere": "3499500256",
+			"normalform": "9783499500251"
 		},
-		{ "fall": "979 hat keine ISBN-10", "roh": "9791234567896", "andere": null },
-		{ "fall": "eine einzelne Zahl ist keine ISBN", "roh": "7", "andere": null },
-		{ "fall": "zwölf Ziffern sind keine ISBN", "roh": "978316148410", "andere": null },
-		{ "fall": "leer", "roh": "", "andere": null }
+		{
+			"fall": "979 hat keine ISBN-10",
+			"roh": "9791234567896",
+			"andere": null,
+			"normalform": "9791234567896"
+		},
+		{ "fall": "eine einzelne Zahl ist keine ISBN", "roh": "7", "andere": null, "normalform": "7" },
+		{
+			"fall": "zwölf Ziffern sind keine ISBN",
+			"roh": "978316148410",
+			"andere": null,
+			"normalform": "978316148410"
+		},
+		{ "fall": "leer", "roh": "", "andere": null, "normalform": "" }
 	]
 }

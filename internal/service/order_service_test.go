@@ -75,9 +75,9 @@ func TestSearchOrders_ReturnsCombinedResults(t *testing.T) {
 	metaClient := inventur.NeuerMetadatenClient()
 	metaClient.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTransport})
 
-	mock.ExpectQuery(`SELECT replace\(isbn, '-', ''\) FROM buecher_titel`).
+	mock.ExpectQuery(`SELECT isbn_normalform\(isbn\) FROM buecher_titel`).
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"replace"}).
+		WillReturnRows(pgxmock.NewRows([]string{"isbn_normalform"}).
 			AddRow("9780987654321"))
 
 	results, err := SearchOrders(ctx, mock, metaClient, "TestBook")
@@ -195,9 +195,9 @@ func TestSearchOrders_DNBOnlyWhenLocalFails(t *testing.T) {
 	metaClient := inventur.NeuerMetadatenClient()
 	metaClient.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTransport})
 
-	mock.ExpectQuery(`SELECT replace\(isbn, '-', ''\) FROM buecher_titel`).
+	mock.ExpectQuery(`SELECT isbn_normalform\(isbn\) FROM buecher_titel`).
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"replace"}))
+		WillReturnRows(pgxmock.NewRows([]string{"isbn_normalform"}))
 
 	results, err := SearchOrders(ctx, mock, metaClient, "TestBook")
 	if err != nil {
@@ -257,34 +257,24 @@ func TestBaueDNBSuchItem(t *testing.T) {
 	}
 }
 
-// Die DNB nennt zu einem Buch die dreizehnstellige ISBN, der Katalog trägt es aus Littera mit
-// der zehnstelligen: Der Treffer heißt „Vorhanden", nicht „Neu". Ob es dasselbe Buch ist,
-// fragt die Bestelltür beim Klick.
-func TestBaueDNBSuchItem_VorhandenAuchUnterDerAnderenLaenge(t *testing.T) {
-	treffer := inventur.MetadatenErgebnis{ISBN: "978-3-551-55167-2", Titel: "Harry Potter und der Stein der Weisen"}
-
+// Die DNB nennt eine ISBN mit Bindestrichen und bei älteren Sätzen zehnstellig, der Katalog
+// führt sie in der Normalform: Der Treffer heißt „Vorhanden", nicht „Neu". Eine zehnstellige
+// Nummer mit falschem Prüfzeichen ist keine andere Schreibweise der dreizehnstelligen.
+func TestBaueDNBSuchItem_VorhandenInJederSchreibweise(t *testing.T) {
 	for name, f := range map[string]struct {
-		imKatalog string
-		vorhanden bool
+		dnb, imKatalog string
+		vorhanden      bool
 	}{
-		"dieselbe Länge":         {"9783551551672", true},
-		"zehnstellig im Katalog": {"3551551677", true},
-		"ein anderes Buch":       {"3551551669", false},
+		"dreizehnstellig mit Bindestrichen": {"978-3-551-55167-2", "9783551551672", true},
+		"zehnstellig aus der DNB":           {"3-551-55167-7", "9783551551672", true},
+		"ein anderes Buch":                  {"978-3-551-55167-2", "9783551551665", false},
+		"falsches Prüfzeichen im Katalog":   {"978-3-499-50025-1", "3499500252", false},
+		"ohne ISBN":                         {"", "9783551551672", false},
 	} {
+		treffer := inventur.MetadatenErgebnis{ISBN: f.dnb, Titel: "Probe"}
 		item := baueDNBSuchItem(treffer, map[string]struct{}{f.imKatalog: {}})
 		if item.IsDuplicate != f.vorhanden {
 			t.Errorf("%s: IsDuplicate = %v, erwartet %v", name, item.IsDuplicate, f.vorhanden)
 		}
-	}
-
-	// Gefragt wird der Katalog nach beiden Längen; eine 979er ISBN hat nur eine.
-	if got := isbnInBeidenLaengen("978-3-551-55167-2"); len(got) != 2 || got[0] != "9783551551672" || got[1] != "3551551677" {
-		t.Errorf("beide Längen: %v", got)
-	}
-	if got := isbnInBeidenLaengen("9791036700316"); len(got) != 1 {
-		t.Errorf("979er ISBN: %v, erwartet nur sie selbst", got)
-	}
-	if got := isbnInBeidenLaengen(""); got != nil {
-		t.Errorf("ohne ISBN: %v", got)
 	}
 }

@@ -86,12 +86,13 @@ const ZweigOhne = "-"
 // nur `track = 'Gymnasium'` prüft, versteckte deshalb fünf Sechstel des Bestands vor dem
 // Fachsprecher (Befund 03.09.2026). Gesucht wird darum „dieser Zweig ODER für alle";
 // ZweigOhne ist die Gegenrichtung — nur die ohne Angabe.
-const lernmittelFilterSQL = `
+var lernmittelFilterSQL = `
 	AND ($1 = 0 OR (b.jahrgang_von <= $1 AND b.jahrgang_bis >= $1))
 	AND ($2 = '' OR ($2 = '` + ZweigOhne + `' AND COALESCE(b.track, '') = '')
 	     OR ($2 <> '` + ZweigOhne + `' AND (COALESCE(b.track, '') = '' OR b.track = $2)))
 	AND ($3 = '' OR b.titel ILIKE '%' || $3 || '%' OR regexp_replace(coalesce(b.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($3, '[- ]', '', 'g') || '%'
-	     OR COALESCE(b.autor, '') ILIKE '%' || $3 || '%' OR COALESCE(b.subject, '') ILIKE '%' || $3 || '%')`
+	     OR COALESCE(b.autor, '') ILIKE '%' || $3 || '%' OR COALESCE(b.subject, '') ILIKE '%' || $3 || '%'
+	     OR ` + repository.SQLSuchtextIstISBN("b", "$3") + `)`
 
 const lernmittelZaehlung = `
 	COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,

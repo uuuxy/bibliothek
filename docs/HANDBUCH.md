@@ -538,13 +538,15 @@ das Wort in die Liste. Stand der Titel schon im Katalog, holt der Knopf _Vorschl
 unter den Schlagworten dieselben Vorschläge (seit 30.09.2026) — nur die Wörter, die der Titel
 noch nicht trägt.
 
-**Dieselbe ISBN, zehn- oder dreizehnstellig** (seit 25.09.2026): Ältere Titel stehen oft mit
-der zehnstelligen ISBN im Katalog, auf dem Buchrücken steht die dreizehnstellige. Findet
-_Titel suchen & hinzufügen_ oder _Neue Auflage bestellen_ die ISBN nur in der anderen Länge,
-wird nichts angelegt, und es erscheint die Frage „Ist es dasselbe Buch?" mit zwei Zeilen:
-_Diesen Titel nehmen_ (der Titel aus dem Katalog, mit Titel und ISBN) oder _Neu anlegen_ (ein
-eigener Titel aus der DNB). Ohne Klick geschieht nichts. Gefragt wird, obwohl sich beide
-Längen ineinander umrechnen lassen: Eine falsch erfasste ISBN führt sonst auf ein anderes Buch.
+**Dieselbe ISBN, zehn- oder dreizehnstellig** (seit 03.10.2026): Auf dem Titelblatt älterer
+Bücher steht die zehnstellige ISBN, auf dem Buchrücken die dreizehnstellige. Für das Programm
+ist es dieselbe Nummer. Es speichert eine zehnstellige ISBN mit richtiger Prüfziffer
+dreizehnstellig und findet den Titel über beide Längen: in der Maske _Neues Buch_, bei _Titel
+suchen & hinzufügen_ und _Neue Auflage bestellen_, in den Importen und in den Suchfeldern. Steht
+das Buch schon im Katalog, wird kein zweiter Titel angelegt. Eine zehnstellige Nummer mit
+falscher Prüfziffer bleibt, wie sie eingegeben wurde, und gilt als eigene Nummer: Umgerechnet
+führte sie auf ein anderes Buch. Die Frage „Ist es dasselbe Buch?" zur anderen Länge gibt es
+nicht mehr.
 
 ## Inventur
 

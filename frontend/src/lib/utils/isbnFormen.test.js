@@ -49,9 +49,9 @@ describe('isbnFormen', () => {
 	});
 });
 
-// Die JavaScript-Seite der geteilten Prüffälle (pkg/isbnutil/andere_form_test.go prüft die
-// Go-Seite): Die Bestelltür rechnet mit isbnutil.AndereForm, die Katalogsuche hiermit.
-describe('isbnFormen, geteilte Prüffälle mit isbnutil.AndereForm', () => {
+// Die JavaScript-Seite der geteilten Prüffälle (pkg/isbnutil/normalform_test.go prüft die
+// Go-Seite): Die Datenbank führt eine ISBN in der Normalform, die Katalogsuche sucht hiermit.
+describe('isbnFormen, geteilte Prüffälle mit isbnutil.Normalform', () => {
 	const faelle = pruefung.faelle;
 
 	it('liest die gemeinsame Datei überhaupt ein', () => {
@@ -62,7 +62,11 @@ describe('isbnFormen, geteilte Prüffälle mit isbnutil.AndereForm', () => {
 
 	for (const f of faelle) {
 		it(`${f.fall}: ${JSON.stringify(f.roh)}`, () => {
-			expect(isbnFormen(f.roh)[1] ?? null).toBe(f.andere);
+			const formen = isbnFormen(f.roh);
+			expect(formen[1] ?? null).toBe(f.andere);
+			// Ist die Eingabe eine ISBN, steht unter den Schreibweisen der Suche die Form, in der
+			// die Datenbank sie führt — sonst fände die Suche den Titel nicht.
+			if (formen.length > 0) expect(formen).toContain(f.normalform);
 		});
 	}
 });

@@ -539,23 +539,44 @@ CREATE TABLE buecher_titel (
     ) STORED
 );
 
--- Migration 133: Eine ISBN hat EINE Schreibweise — ohne Bindestriche und Leerzeichen,
--- Prüfzeichen groß, aber nur, wenn das Ergebnis eine ISBN ist; anderes bleibt wie
--- geschrieben, leer wird NULL. Die Datenbank normalisiert an jeder Tür; so greift der
--- UNIQUE-Index über alle Schreibweisen. Kein Rückschreiben des Bestands (erst messen).
+-- Migration 133 und 157: Eine ISBN hat eine Schreibweise — ohne Bindestriche und Leerzeichen,
+-- Prüfzeichen groß, und in einer Länge: Eine zehnstellige mit richtigem Prüfzeichen wird zur
+-- dreizehnstelligen (978, die neun Ziffern, neu berechnete Prüfziffer). Eine zehnstellige mit
+-- falschem Prüfzeichen bleibt, wie sie ist; was keine ISBN ist, bleibt wie geschrieben; leer
+-- wird NULL. Die Datenbank bringt jede geschriebene ISBN an jeder Tür in diese Form; so
+-- greift der UNIQUE-Index über alle Schreibweisen und beide Längen.
 CREATE OR REPLACE FUNCTION isbn_normalform(roh text)
-RETURNS text LANGUAGE sql IMMUTABLE AS $$
-    -- Nur, was eine ISBN IST: Bindestriche und Leerzeichen weg, Prüfzeichen groß — und
-    -- das Ergebnis muss 10 oder 13 Zeichen aus Ziffern und X haben. Alles andere bleibt,
-    -- wie es geschrieben wurde (getrimmt): Ein Wert, der keine ISBN ist, wird nicht still
-    -- zu einer anderen Zeichenkette oder zu NULL.
-    SELECT CASE
-        WHEN regexp_replace(roh, '[- ]', '', 'g') = '' THEN NULL
-        WHEN upper(regexp_replace(roh, '[- ]', '', 'g')) ~ '^([0-9]{9}[0-9X]|[0-9]{13})$'
-            THEN upper(regexp_replace(roh, '[- ]', '', 'g'))
-        ELSE btrim(roh)
-    END
-$$;
+RETURNS text LANGUAGE plpgsql IMMUTABLE STRICT AS $$
+DECLARE
+    ohne text := upper(regexp_replace(roh, '[- ]', '', 'g'));
+    summe integer := 0;
+BEGIN
+    IF ohne = '' THEN
+        RETURN NULL;
+    END IF;
+    IF ohne ~ '^[0-9]{13}$' THEN
+        RETURN ohne;
+    END IF;
+    -- Was keine ISBN ist, bleibt, wie es geschrieben wurde: Es wird nicht still zu einer
+    -- anderen Zeichenkette.
+    IF ohne !~ '^[0-9]{9}[0-9X]$' THEN
+        RETURN btrim(roh);
+    END IF;
+    -- Prüfzeichen der ISBN-10: Gewichte 10 bis 1, X zählt 10, die Summe teilt sich durch 11.
+    FOR i IN 1..10 LOOP
+        summe := summe + (11 - i)
+            * CASE substr(ohne, i, 1) WHEN 'X' THEN 10 ELSE substr(ohne, i, 1)::integer END;
+    END LOOP;
+    IF summe % 11 <> 0 THEN
+        RETURN ohne;
+    END IF;
+    -- Prüfziffer der ISBN-13: Gewichte 1 und 3 im Wechsel; 978 trägt 9 + 21 + 8 bei.
+    summe := 38;
+    FOR i IN 1..9 LOOP
+        summe := summe + substr(ohne, i, 1)::integer * CASE WHEN i % 2 = 1 THEN 3 ELSE 1 END;
+    END LOOP;
+    RETURN '978' || left(ohne, 9) || ((10 - summe % 10) % 10)::text;
+END $$;
 
 CREATE OR REPLACE FUNCTION titel_isbn_in_normalform()
 RETURNS trigger LANGUAGE plpgsql AS $$
@@ -1930,7 +1951,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('153_sonderkonten_als_art.sql'),
 ('154_titeltext_nfc.sql'),
 ('155_sitzungen.sql'),
-('156_titel_ohne_beschreibung.sql')
+('156_titel_ohne_beschreibung.sql'),
+('157_isbn_eine_laenge.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -72,6 +72,27 @@ func TestKlaereISBNWertetAbStattZuVerwerfen(t *testing.T) {
 		}
 	})
 
+	// Die Datenbank speichert eine zehnstellige ISBN dreizehnstellig. Die Vormerkung muss
+	// dieselbe Form führen, sonst trifft der zweite Titel erst den UNIQUE-Index.
+	t.Run("Dublette in der anderen Länge", func(t *testing.T) {
+		for name, f := range map[string]struct{ vorgemerkt, kommt string }{
+			"dreizehn vorgemerkt, zehn kommt": {"978-3-16-148410-0", "3-16-148410-X"},
+			"zehn vorgemerkt, dreizehn kommt": {"3-16-148410-x", "9783161484100"},
+		} {
+			p := testProtokoll(t)
+			gesehen := map[string]string{}
+			if got := KlaereISBN(p, "7", f.vorgemerkt, gesehen); got != "9783161484100" {
+				t.Errorf("%s: der erste Titel bekommt %q, erwartet 9783161484100", name, got)
+			}
+			if got := KlaereISBN(p, "9", f.kommt, gesehen); got != "" {
+				t.Errorf("%s: der zweite Titel bekommt %q, erwartet keine ISBN", name, got)
+			}
+			if p.Warnungen() != 1 {
+				t.Errorf("%s: eine Warnung erwartet, gezählt: %d", name, p.Warnungen())
+			}
+		}
+	})
+
 	t.Run("gültige ISBN wird reserviert", func(t *testing.T) {
 		p := testProtokoll(t)
 		gesehen := map[string]string{}

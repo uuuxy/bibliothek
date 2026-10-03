@@ -396,11 +396,16 @@ var triggerBestand = []string{
 	// der Auswahl (bewegungsstempel_pg_test.go). Frage 12: Der Wächter des Nachbuchens liest
 	// den Stempel; ein Schreiber ohne Stempel ließ ihn dort still.
 	"trg_exemplar_bewegung_bei_zustandswechsel @ buecher_exemplare",
-	// Migration 133, befragt am 22.09.2026: Jede geschriebene ISBN bekommt EINE Schreibweise
+	// Migration 133, befragt am 22.09.2026: Jede geschriebene ISBN bekommt eine Schreibweise
 	// (ohne Bindestriche und Leerzeichen, X groß) — nur, wenn das Ergebnis eine ISBN ist;
-	// anderes bleibt wie geschrieben (repository/isbn_normalform_pg_test.go). Frage 12: Wer
-	// eine ISBN vergleicht, vergleicht die Normalform — Go über isbnutil.Normalform, SQL
-	// über isbn_normalform(); die Parität prüft repository/isbn_normalform_pg_test.go.
+	// anderes bleibt wie geschrieben (repository/isbn_normalform_pg_test.go). Seit Migration
+	// 157, befragt am 03.10.2026, auch eine Länge: Eine zehnstellige ISBN mit richtigem
+	// Prüfzeichen wird dreizehnstellig. Frage 12: Wer eine ISBN vergleicht, vergleicht die
+	// Normalform — Go über isbnutil.Normalform, SQL über isbn_normalform()
+	// (SQLTitelTraegtISBN, SQLSuchtextIstISBN); die Parität prüft
+	// repository/isbn_normalform_pg_test.go. Wer eine Zuordnung ISBN → Titel in Go führt (die
+	// Importe, die Übernahme), führt sie unter der Normalform, sonst trifft der zweite Titel
+	// erst den UNIQUE-Index.
 	"trg_titel_isbn_normalform @ buecher_titel",
 	// Migration 154, befragt am 30.09.2026: Titel, Untertitel, Autor, Verlag und Beschreibung
 	// werden zusammengesetzt gespeichert (NFC) — die DNB liefert Umlaute zerlegt, und zerlegt

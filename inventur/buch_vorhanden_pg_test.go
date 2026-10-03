@@ -17,14 +17,18 @@ import (
 // Schreibweise nennt die Auskunft genau dann einen Titel, wenn das Speichern mit 409 ablehnt —
 // denselben Titel mit derselben Meldung. Fragten beide nach verschiedenen Regeln, hieße es in
 // der Maske erst „neu" und beim Speichern „existiert bereits".
+//
+// Zu den Schreibweisen gehört die Länge: Die zehnstellige ISBN vom Titelblatt und die
+// dreizehnstellige vom Strichcode sind dieselbe Nummer, und die Datenbank führt sie
+// dreizehnstellig (Migration 157).
 func TestBuchVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	const dreizehn = "9780306406171"
-	const zehn = "080442957X"
+	const zehn, zehnGespeichert = "080442957X", "9780804429573"
 	const frei = "9780306406188"
 	loesche := func() {
 		if _, err := pool.Exec(context.Background(),
-			`DELETE FROM buecher_titel WHERE isbn IN ($1, $2, $3)`, dreizehn, zehn, frei); err != nil {
+			`DELETE FROM buecher_titel WHERE isbn = ANY($1)`, []string{dreizehn, zehn, zehnGespeichert, frei}); err != nil {
 			t.Logf("Aufräumen: %v", err)
 		}
 	}
@@ -96,8 +100,14 @@ func TestBuchVorhanden_SagtVorabWasDasSpeichernSagt(t *testing.T) {
 		{"978-0-306-40617-1", "Vorab-Probe dreizehn"},
 		{"978 0 306 40617 1", "Vorab-Probe dreizehn"},
 		{"  9780306406171  ", "Vorab-Probe dreizehn"},
+		// Zehnstellig angelegt: in beiden Längen dieselbe Nummer.
 		{zehn, "Vorab-Probe zehn"},
 		{"0-8044-2957-x", "Vorab-Probe zehn"},
+		{zehnGespeichert, "Vorab-Probe zehn"},
+		{"978-0-8044-2957-3", "Vorab-Probe zehn"},
+		// Dreizehnstellig angelegt, zehnstellig gefragt.
+		{"0306406179", "Vorab-Probe dreizehn"},
+		{"0-306-40617-9", "Vorab-Probe dreizehn"},
 	}
 	for _, f := range faelle {
 		vorhanden, meldung := vorab(f.schreibweise)

@@ -7,7 +7,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"bibliothek/pkg/isbnutil"
 	"bibliothek/repository"
 )
 
@@ -70,16 +69,21 @@ func (d *DubletteTitel) Meldung() string {
 
 func (d *DubletteTitel) alsAntwort() map[string]any { return (*DubletteISBN)(d).alsAntwort() }
 
-// titelMitISBN sucht den Titel, der die ISBN schon trägt, ohne Rücksicht auf Bindestriche,
-// Leerzeichen und Großschreibung; eigeneID nimmt den Titel aus, der gerade geändert wird.
-// Ohne Treffer nil. Die Ablehnung beim Speichern und die Auskunft vorab fragen beide hier,
-// damit die Maske vorab dasselbe erfährt, was das Speichern sagen wird.
+// titelMitISBN sucht den Titel, der die ISBN schon trägt, in jeder Schreibweise und in beiden
+// Längen (repository.SQLTitelTraegtISBN); eigeneID nimmt den Titel aus, der gerade geändert
+// wird. Ohne Treffer nil. Die Ablehnung beim Speichern und die Auskunft vorab fragen beide
+// hier, damit die Maske vorab dasselbe erfährt, was das Speichern sagen wird.
+//
+// Der zweite Vergleich gilt Nummern, die keine ISBN sind, etwa dem Strichcode einer DVD: Die
+// Datenbank lässt sie, wie sie geschrieben wurden, und ihr UNIQUE-Index hält dieselbe Nummer
+// mit und ohne Leerzeichen für zwei.
 func titelMitISBN(ctx context.Context, q repository.DBQueryer, isbn, eigeneID string) (*DubletteISBN, error) {
 	vorhanden := DubletteISBN{}
 	err := q.QueryRow(ctx, `
 		SELECT bt.id::text, bt.titel, `+repository.SQLTitelHatExemplar("bt")+`
 		FROM buecher_titel bt
-		WHERE replace(replace(lower(bt.isbn), '-', ''), ' ', '') = replace(replace(lower($1), '-', ''), ' ', '')
+		WHERE (`+repository.SQLTitelTraegtISBN("bt", "$1")+`
+		       OR replace(replace(lower(bt.isbn), '-', ''), ' ', '') = replace(replace(lower($1), '-', ''), ' ', ''))
 		  AND ($2 = '' OR bt.id <> $2::uuid)
 		LIMIT 1`, isbn, eigeneID).Scan(&vorhanden.ID, &vorhanden.Titel, &vorhanden.HatExemplar)
 	switch {
@@ -95,31 +99,6 @@ func titelMitISBN(ctx context.Context, q repository.DBQueryer, isbn, eigeneID st
 // TitelMitISBN sagt vor dem Speichern, was die Dublettenkontrolle zu dieser ISBN sagen wird.
 func (repo *BookRepository) TitelMitISBN(ctx context.Context, isbn string) (*DubletteISBN, error) {
 	return titelMitISBN(ctx, repo.db, isbn, "")
-}
-
-// TitelUnterAndererForm sucht den Titel, der dieselbe ISBN in der anderen Länge trägt (ISBN-10
-// und ISBN-13 mit 978, isbnutil.AndereForm), und nennt diese Form. Die Normalform trennt beide
-// Längen, und der Strichcode auf dem Buch ist dreizehnstellig: Ein Titel aus Littera mit
-// zehnstelliger ISBN stünde nach dem Scan sonst ein zweites Mal im Katalog. Er wird nur
-// vorgeschlagen und nicht abgelehnt — unter der anderen Form kann ein anderes Buch stehen
-// (eine ISBN-10 mit falschem Prüfzeichen).
-func (repo *BookRepository) TitelUnterAndererForm(ctx context.Context, isbn string) (*DubletteISBN, string, error) {
-	andere := isbnutil.AndereForm(isbn)
-	if andere == "" {
-		return nil, "", nil
-	}
-	titel, err := titelMitISBN(ctx, repo.db, andere, "")
-	return titel, andere, err
-}
-
-// MeldungAndereForm ist der Satz der Maske zu einem Titel unter der anderen Form der ISBN.
-func (d *DubletteISBN) MeldungAndereForm(andere string) string {
-	laenge := "dreizehnstelliger"
-	if len(andere) == 10 {
-		laenge = "zehnstelliger"
-	}
-	return "Im Katalog steht diese ISBN in " + laenge + " Form (" + andere + ") am Titel „" + d.Titel + "“." +
-		hinweisOhneExemplar(d.HatExemplar)
 }
 
 // isbnVergeben lehnt eine ISBN ab, die schon ein anderer Titel trägt, und nennt ihn: Als zwei

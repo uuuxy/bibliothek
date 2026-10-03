@@ -9,6 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/text/unicode/norm"
+
+	"bibliothek/pkg/isbnutil"
 )
 
 // NormalisiereTitelKey bildet den Schlüssel für das Titel-Matching der Importe:
@@ -198,6 +200,14 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	if err != nil {
 		return 0, err
 	}
+	// Die ISBN jedes Datensatzes in die Form bringen, in der die Datenbank speichert: Die
+	// Zuordnung unten vergleicht Zeichen für Zeichen. Zehnstellig aus der Datei träfe sie den
+	// Titel mit der dreizehnstelligen sonst nicht, und der INSERT scheiterte am UNIQUE-Index.
+	// Auf einer Kopie, die Liste des Aufrufers bleibt, wie sie ist.
+	titles = slices.Clone(titles)
+	for i := range titles {
+		titles[i].ISBN = isbnutil.Normalform(titles[i].ISBN)
+	}
 
 	// Lernmittel, Fach und Jahrgang (Migration 093): Der Import liest sie aus Litteras
 	// Signatur „LMF Bio 7", den Schlagwörtern und der Zielgruppe (pkg/lmf). Beim
@@ -365,7 +375,10 @@ func titelOhneSchlagworte(ctx context.Context, tx pgx.Tx) (map[string]bool, erro
 	return ohne, nil
 }
 
-// ladeTitelBestand lädt den vorhandenen Titelbestand als isbn→id- und titel→id-Maps.
+// ladeTitelBestand lädt den vorhandenen Titelbestand als isbn→id- und titel→id-Maps. Der
+// Schlüssel der ISBN ist ihre Normalform. Tragen zwei Titel dieselbe ISBN in verschiedener
+// Schreibweise (eine Dublette, die Migration 140 oder 157 stehen ließ), gilt der, der sie in
+// der Normalform trägt.
 func ladeTitelBestand(ctx context.Context, tx pgx.Tx) (isbnToID, titelToID map[string]string, err error) {
 	rows, err := tx.Query(ctx, "SELECT id, COALESCE(isbn, ''), titel FROM buecher_titel")
 	if err != nil {
@@ -380,8 +393,10 @@ func ladeTitelBestand(ctx context.Context, tx pgx.Tx) (isbnToID, titelToID map[s
 		if err := rows.Scan(&id, &isbn, &titel); err != nil {
 			return nil, nil, err
 		}
-		if isbn != "" {
-			isbnToID[isbn] = id
+		if schluessel := isbnutil.Normalform(isbn); schluessel != "" {
+			if _, belegt := isbnToID[schluessel]; !belegt || isbn == schluessel {
+				isbnToID[schluessel] = id
+			}
 		}
 		titelToID[NormalisiereTitelKey(titel)] = id
 	}

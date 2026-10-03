@@ -41,6 +41,7 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 			OR b.autor ILIKE '%' || $1::text || '%'
 			OR regexp_replace(coalesce(b.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1::text, '[- ]', '', 'g') || '%'
 			OR replace(b.isbn, '-', '') = replace($1::text, '-', '')
+			OR ` + SQLSuchtextIstISBN("b", "$1::text") + `
 		) AND ` + SQLTitelHatExemplar("b") + `
 		ORDER BY ts_rank(b.search_vector, plainto_tsquery('german', $1::text)) DESC, b.titel ASC
 		LIMIT 50
@@ -100,9 +101,11 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 			OR lower(b.isbn)        LIKE '%' || lower($4::text) || '%'
 			OR lower(b.signatur)    LIKE '%' || lower($4::text) || '%'
 			OR replace(b.isbn, '-', '') = replace($2::text, '-', '')
+			OR ` + SQLSuchtextIstISBN("b", "$2::text") + `
 		  )
 		  AND (
 			   replace(b.isbn, '-', '') = replace($2::text, '-', '')
+			OR ` + SQLSuchtextIstISBN("b", "$2::text") + `
 			OR (
 				SELECT bool_and(
 					   suchnorm(coalesce(b.titel, ''))     LIKE '%' || tokens.norm || '%'

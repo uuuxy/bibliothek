@@ -231,7 +231,7 @@ func (s *Schreiber) vorhandeneISBNs(ctx context.Context) (map[string]string, err
 		if err := rows.Scan(&isbn); err != nil {
 			return nil, fmt.Errorf("konnte die vorhandenen ISBNs nicht lesen: %w", err)
 		}
-		gesehen[uebernahme.NormalisiereISBN(isbn)] = "(Bestand)"
+		gesehen[uebernahme.VormerkSchluessel(isbn)] = "(Bestand)"
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("konnte die vorhandenen ISBNs nicht lesen: %w", err)

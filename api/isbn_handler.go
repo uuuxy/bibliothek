@@ -9,7 +9,6 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/inventur"
-	"bibliothek/pkg/isbnutil"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -27,18 +26,18 @@ func parseErscheinungsjahr(raw string) *int {
 	return nil
 }
 
-// findeLokalenTitel sucht einen Titel im lokalen Katalog anhand der (entstrichenen) ISBN.
-// Rückgabe (nil, nil) bedeutet: nicht im Katalog vorhanden.
+// findeLokalenTitel sucht den Titel, der die ISBN trägt, in jeder Schreibweise und in beiden
+// Längen. Rückgabe (nil, nil) bedeutet: nicht im Katalog vorhanden.
 //
 // Liefert die vorhandene Signatur mit — die Bestellung übernimmt sie unverändert und
 // fragt dafür nie erneut DNB/eine Kategorisierung ab (siehe upsertTitelAusMetadaten,
 // die dieser Funktion vorgeschaltet ist und nur bei NICHT gefundenem Titel läuft).
 func (s *Server) findeLokalenTitel(ctx context.Context, isbn string) (*ISBNLookupResponse, error) {
-	resp := ISBNLookupResponse{ISBN: isbn}
+	var resp ISBNLookupResponse
 	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel
-		FROM buecher_titel WHERE isbn_normalform(isbn) = isbn_normalform($1) LIMIT 1
-	`, isbn).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel)
+		SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel, isbn
+		FROM buecher_titel WHERE `+repository.SQLTitelTraegtISBN("", "$1")+` LIMIT 1
+	`, isbn).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel, &resp.ISBN)
 	if err == nil {
 		resp.Exists = true
 		return &resp, nil
@@ -47,17 +46,6 @@ func (s *Server) findeLokalenTitel(ctx context.Context, isbn string) (*ISBNLooku
 		return nil, nil
 	}
 	return nil, err
-}
-
-// findeTitelUnterAndererForm sucht den Titel, der dieselbe ISBN in der anderen Länge trägt
-// (isbnutil.AndereForm: ISBN-10 ↔ ISBN-13 mit 978). Rückgabe (nil, nil): Es gibt keine andere
-// Form, oder unter ihr steht nichts im Katalog.
-func (s *Server) findeTitelUnterAndererForm(ctx context.Context, isbn string) (*ISBNLookupResponse, error) {
-	andere := isbnutil.AndereForm(isbn)
-	if andere == "" {
-		return nil, nil
-	}
-	return s.findeLokalenTitel(ctx, andere)
 }
 
 func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (ISBNLookupResponse, error) {
@@ -76,7 +64,7 @@ func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta 
 	// Die Altersangabe (Zielgruppe) bleibt ungespeichert: Es gibt für sie keine Spalte und
 	// keinen Leser.
 	listenpreis := inventur.ListenpreisAusNachschlagen(nil, meta.Preis)
-	resp := ISBNLookupResponse{ISBN: isbn}
+	var resp ISBNLookupResponse
 	err = s.DB.Pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url, subject, untertitel, listenpreis)
 		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF(btrim($8), ''), $9)
@@ -89,10 +77,10 @@ func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta 
 			    untertitel = COALESCE(NULLIF(buecher_titel.untertitel, ''), EXCLUDED.untertitel),
 			    listenpreis = COALESCE(buecher_titel.listenpreis, EXCLUDED.listenpreis),
 			    aktualisiert_am = CURRENT_TIMESTAMP
-		RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel
+		RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel, isbn
 	`, meta.Titel, meta.Autor, isbn, meta.Verlag, jahrInt, meta.CoverURL, kanonisch[meta.Fach],
 		meta.Untertitel, listenpreis).
-		Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel)
+		Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel, &resp.ISBN)
 	if err != nil {
 		return ISBNLookupResponse{}, err
 	}
@@ -103,10 +91,12 @@ func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta 
 // ISBNLookupResponse is the result of a live ISBN metadata query.
 // exists=true means the title is already in the catalog and has a stable titel_id.
 type ISBNLookupResponse struct {
-	Exists   bool   `json:"exists"`
-	TitelID  string `json:"titel_id"`
-	Titel    string `json:"titel"`
-	Autor    string `json:"autor"`
+	Exists  bool   `json:"exists"`
+	TitelID string `json:"titel_id"`
+	Titel   string `json:"titel"`
+	Autor   string `json:"autor"`
+	// ISBN ist die Nummer, wie der Katalog sie trägt: Eine zehnstellig eingegebene ISBN
+	// steht dort dreizehnstellig (isbn_normalform).
 	ISBN     string `json:"isbn"`
 	Verlag   string `json:"verlag,omitempty"`
 	CoverURL string `json:"cover_url,omitempty"`
@@ -134,13 +124,6 @@ type ISBNLookupResponse struct {
 	// nicht kennt (entschieden am 30.09.2026: angeboten mit dem Zusatz „neu", nie vorbelegt).
 	// Wer eines anklickt, legt es mit dem Speichern in der Liste an.
 	SchlagwortVorschlaegeNeu []string `json:"schlagwort_vorschlaege_neu,omitempty"`
-	// AndereForm: Unter dieser Schreibweise steht die ISBN nicht im Katalog, wohl aber in der
-	// anderen Länge (ISBN-10 ↔ ISBN-13, docs/OFFEN.md 4.18 Stufe 4 und 5.5). Dann ist NICHTS
-	// angelegt, titel_id ist leer, und hier steht der gefundene Titel. Die Oberfläche fragt
-	// „Diesen Titel nehmen" oder „Neu anlegen"; Neu anlegen schickt dieselbe ISBN mit
-	// neu_anlegen. Vorgeschlagen statt still übernommen: Am Testserver führt die Rechnung von
-	// einer ISBN-10 mit falschem Prüfzeichen auf die ISBN-13 eines anderen Buchs.
-	AndereForm *ISBNLookupResponse `json:"andere_form,omitempty"`
 }
 
 // titelAusNachschlagen legt den Titel aus einem Treffer der Katalogdienste an und gibt den
@@ -165,8 +148,8 @@ func (s *Server) titelAusNachschlagen(ctx context.Context, isbn string, meta *in
 // It receives an ISBN, checks the local catalog, and—if the title is not
 // yet catalogued—fetches metadata from DNB / Google Books / OpenLibrary and
 // creates a new buecher_titel record. The response contains a titel_id that the order
-// workspace can add to the cart immediately — außer, der Katalog hat dieselbe ISBN in der
-// anderen Länge: Dann trägt sie nur andere_form, und angelegt ist nichts.
+// workspace can add to the cart immediately. Die zehn- und die dreizehnstellige Form einer
+// ISBN sind dabei dieselbe Nummer: Der Katalog führt sie dreizehnstellig.
 func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 	return s.isbnZuTitel(inventur.NeuerMetadatenClient())
 }
@@ -178,9 +161,6 @@ func (s *Server) isbnZuTitel(metaClient *inventur.MetadatenClient) http.HandlerF
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			ISBN string `json:"isbn"`
-			// NeuAnlegen: Die Antwort hat einen Titel unter der anderen Form vorgeschlagen, und
-			// der Besteller hat „Neu anlegen" gewählt — dann wird nach ihr nicht mehr gesucht.
-			NeuAnlegen bool `json:"neu_anlegen"`
 		}
 		if !DecodeAndValidate(w, r, &req) {
 			return
@@ -203,17 +183,6 @@ func (s *Server) isbnZuTitel(metaClient *inventur.MetadatenClient) http.HandlerF
 		if lokal != nil {
 			RespondJSON(w, http.StatusOK, *lokal)
 			return
-		}
-		if !req.NeuAnlegen {
-			andere, err := s.findeTitelUnterAndererForm(ctx, req.ISBN)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			if andere != nil {
-				RespondJSON(w, http.StatusOK, ISBNLookupResponse{ISBN: req.ISBN, AndereForm: andere})
-				return
-			}
 		}
 
 		// 2. Not yet in catalog – fetch metadata from DNB / Google / OpenLibrary.
