@@ -197,7 +197,6 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		Listenpreis:             eingabe.Listenpreis,
 		Verlag:                  strings.TrimSpace(eingabe.Verlag),
 		Erscheinungsjahr:        eingabe.Erscheinungsjahr,
-		Beschreibung:            strings.TrimSpace(eingabe.Beschreibung),
 		Signatur:                strings.TrimSpace(eingabe.Signatur),
 		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
 		Schlagworte:             schlagworte,

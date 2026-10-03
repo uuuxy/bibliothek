@@ -7,17 +7,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// TestSearchVector_IncludesIsbnAndBeschreibung sichert Migration 050 ab: ISBN und
-// Beschreibung müssen über den Volltext-Suchvektor auffindbar sein — vorher deckte er nur
-// titel/untertitel/autor/verlag ab.
-func TestSearchVector_IncludesIsbnAndBeschreibung(t *testing.T) {
+// TestSearchVector_UmfasstTitelangabenUndISBN sichert den Volltext-Suchvektor nach Migration
+// 156 ab: Titel, Untertitel, Autor, Verlag und ISBN sind über ihn auffindbar.
+func TestSearchVector_UmfasstTitelangabenUndISBN(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 
 	inTx(t, pool, func(tx pgx.Tx) {
 		if _, err := tx.Exec(ctx,
-			`INSERT INTO buecher_titel (titel, isbn, beschreibung)
-			 VALUES ('Belangloser Titel', '9783161484100', 'Ein Zauberwald voller Drachen')`); err != nil {
+			`INSERT INTO buecher_titel (titel, untertitel, autor, verlag, isbn)
+			 VALUES ('Quarzwaldgeflecht', 'Nebelzinnenpfad', 'Federkielmann', 'Lindenhofverlag', '9783161484100')`); err != nil {
 			t.Fatalf("Titel anlegen: %v", err)
 		}
 
@@ -32,11 +31,13 @@ func TestSearchVector_IncludesIsbnAndBeschreibung(t *testing.T) {
 			return n
 		}
 
-		if treffer("Zauberwald") != 1 {
-			t.Error("Stichwort aus der Beschreibung ist nicht über den search_vector auffindbar")
-		}
-		if treffer("9783161484100") != 1 {
-			t.Error("ISBN ist nicht über den search_vector auffindbar")
+		for spalte, wort := range map[string]string{
+			"Titel": "Quarzwaldgeflecht", "Untertitel": "Nebelzinnenpfad", "Autor": "Federkielmann",
+			"Verlag": "Lindenhofverlag", "ISBN": "9783161484100",
+		} {
+			if treffer(wort) != 1 {
+				t.Errorf("%s ist nicht über den search_vector auffindbar (%q)", spalte, wort)
+			}
 		}
 	})
 }

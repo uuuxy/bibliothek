@@ -38,7 +38,7 @@ var buchListenSelect = `
 		TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp,
 		COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis,
 		COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag,
-		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr, COALESCE(bt.beschreibung, '') AS beschreibung,
+		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr,
 		bt.erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, bt.mehrjahresband` + buchWerkSpalten + `
 	FROM buecher_titel bt
 	LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
@@ -46,16 +46,14 @@ var buchListenSelect = `
 `
 
 const buchListenGroupBy = `
-	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.beschreibung, bt.erweiterte_eigenschaften, bt.auflage, bt.listenpreis, bt.mehrjahresband, bt.werk_id
+	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.erweiterte_eigenschaften, bt.auflage, bt.listenpreis, bt.mehrjahresband, bt.werk_id
 `
 
-// buchListenSelectSchlank ist die LISTEN-Variante: identische Spaltenzahl/-reihenfolge
-// (scanBuchZeilen bleibt unverändert), aber die zwei schwersten Spalten — beschreibung
-// (TEXT) und erweiterte_eigenschaften (JSONB) — werden als leere Konstanten geliefert
-// statt vom Server übertragen. Die Listen-/Katalogansicht und ihre clientseitige Suche
-// nutzen diese Felder NICHT (nur Titel/Autor/ISBN/Fach/Track/Jahrgang); das Detail holt
-// sie per Einzel-Read (ListBooksByIDs) mit dem vollen buchListenSelect nach. Das
-// verkleinert die /api/books-Payload je Titel um ein Vielfaches — ohne Verhaltensänderung.
+// buchListenSelectSchlank ist die Listen-Variante: gleiche Spaltenzahl und -reihenfolge
+// (scanBuchZeilen bleibt unverändert), aber die schwerste Spalte, erweiterte_eigenschaften
+// (JSONB), kommt als leere Konstante statt vom Server. Die Listen- und Katalogansicht und
+// ihre Suche im Browser nutzen sie nicht; das Detail holt sie per Einzel-Read
+// (ListBooksByIDs) mit dem vollen buchListenSelect nach.
 var buchListenSelectSchlank = `
 	SELECT
 		bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author,
@@ -68,15 +66,15 @@ var buchListenSelectSchlank = `
 		TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp,
 		COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis,
 		COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag,
-		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr, '' AS beschreibung,
+		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr,
 		'{}'::jsonb AS erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, bt.mehrjahresband` + buchWerkSpalten + `
 	FROM buecher_titel bt
 	LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
 	LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 `
 
-// buchListenGroupBySchlank lässt die beiden Konstanten-Spalten aus der Gruppierung weg
-// (Konstanten müssen nicht gruppiert werden — spart dem Server das Hashen großer Werte).
+// buchListenGroupBySchlank lässt die Konstanten-Spalte aus der Gruppierung weg: Eine
+// Konstante muss nicht gruppiert werden, das spart dem Server das Hashen großer Werte.
 const buchListenGroupBySchlank = `
 	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.auflage, bt.listenpreis, bt.mehrjahresband, bt.werk_id
 `
@@ -115,7 +113,6 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 			&book.Untertitel,
 			&book.Verlag,
 			&book.Erscheinungsjahr,
-			&book.Beschreibung,
 			&book.ErweiterteEigenschaften,
 			&book.Auflage,
 			&book.Listenpreis,
@@ -137,7 +134,7 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 
 // ListBooks lists books matching subject, grade level, and text query.
 //
-// Nutzt die schlanke Listen-Variante (ohne beschreibung/erweiterte_eigenschaften) und
+// Nutzt die schlanke Listen-Variante (ohne erweiterte_eigenschaften) und
 // eine Sicherheits-Kappung gegen unbegrenztes Wachstum — siehe buchListenSelectSchlank
 // bzw. listBooksSicherheitsLimit.
 //

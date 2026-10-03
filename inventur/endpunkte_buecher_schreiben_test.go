@@ -266,7 +266,6 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 				"",                  // untertitel
 				"",                  // verlag
 				0,                   // erscheinungsjahr
-				"",                  // beschreibung
 				"",                  // signatur
 				false,               // ist_lernmittel
 				"",                  // auflage

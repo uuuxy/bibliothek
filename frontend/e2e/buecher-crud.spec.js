@@ -77,23 +77,18 @@ test('Bücher: anlegen, Exemplare, Katalog-Suche, Signatur übersteht Littera-Im
 	}
 });
 
-// Regressions-Gate zur schlanken Katalogliste: GET /api/books liefert beschreibung/
-// erweiterteEigenschaften bewusst LEER (Payload), und das Bearbeiten-Formular schickt
-// per PUT das GANZE Objekt zurück. Würde das Formular aus der Listenzeile befüllt,
-// leerte "Bearbeiten → Speichern" beide Felder still (Upsert-Blanking-Bugklasse —
-// exakt so am 20.08.2026 als Regression gebaut und in der Nachprüfung gefunden).
-// Das Formular muss deshalb vom Einzel-Read (/api/books/{id}) befüllt werden. Dieser
-// Test beweist es über den echten Klickpfad: öffnen, NICHTS ändern, speichern —
-// beide Felder unversehrt. Die toHaveValue-Prüfung schlägt zusätzlich schon beim
-// Öffnen fehl, wenn das Formular aus der schlanken Liste käme (leere Textarea).
-test('Bücher: Bearbeiten ohne Änderung erhält Beschreibung und erweiterte Eigenschaften', async ({
-	page
-}) => {
+// Gate zur schlanken Katalogliste: GET /api/books liefert erweiterteEigenschaften leer, und
+// das Bearbeiten-Formular schickt per PUT das ganze Objekt zurück. Würde das Formular aus der
+// Listenzeile befüllt, leerte „Bearbeiten → Speichern“ die Eigenschaften still. Das Formular
+// muss deshalb vom Einzel-Read (/api/books/{id}) befüllt werden. Der Test geht den Klickpfad:
+// öffnen, nichts ändern, speichern. Die toHaveValue-Prüfung schlägt schon beim Öffnen fehl,
+// wenn das Formular aus der schlanken Liste käme (leerer Standort).
+test('Bücher: Bearbeiten ohne Änderung erhält die erweiterten Eigenschaften', async ({ page }) => {
 	await uiLogin(page);
 	const suffix = uniqueSuffix();
 	const isbn = `9782${String(Date.now()).slice(-9)}`;
 	const titel = `E2E-Blank-Buch-${suffix}`;
-	const beschreibung = `Wertvolle Beschreibung ${suffix}`;
+	const standort = `Standort ${suffix}`;
 
 	try {
 		const created = await apiPost(page, '/api/books', {
@@ -106,8 +101,7 @@ test('Bücher: Bearbeiten ohne Änderung erhält Beschreibung und erweiterte Eig
 			gradeLevel: 7,
 			track: '',
 			stock: 1,
-			beschreibung,
-			erweiterteEigenschaften: { regal: `R-${suffix}` }
+			erweiterteEigenschaften: { regal: `R-${suffix}`, standort }
 		});
 		expect(created.ok(), `Buch anlegen: ${created.status()}`).toBeTruthy();
 
@@ -118,20 +112,22 @@ test('Bücher: Bearbeiten ohne Änderung erhält Beschreibung und erweiterte Eig
 		await suche.fill(titel);
 		await page.getByText(titel).first().click();
 
-		// Beweis der Quelle: Das Formular zeigt die Beschreibung — die schlanke
-		// Listenzeile hätte hier eine leere Textarea.
-		const feld = page.locator('#buch-beschreibung');
+		// Beweis der Quelle: Das Formular zeigt den Standort — die schlanke Listenzeile
+		// hätte hier ein leeres Feld.
+		const feld = page.locator('#buch-standort');
 		await expect(feld).toBeVisible({ timeout: 15000 });
-		await expect(feld).toHaveValue(beschreibung);
+		await expect(feld).toHaveValue(standort);
 
 		await page.getByRole('button', { name: 'Speichern' }).click();
 		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible({
 			timeout: 15000
 		});
 
-		expect(querySQL(`SELECT beschreibung FROM buecher_titel WHERE isbn = '${isbn}'`)).toBe(
-			beschreibung
-		);
+		expect(
+			querySQL(
+				`SELECT erweiterte_eigenschaften->>'standort' FROM buecher_titel WHERE isbn = '${isbn}'`
+			)
+		).toBe(standort);
 		expect(
 			querySQL(
 				`SELECT erweiterte_eigenschaften->>'regal' FROM buecher_titel WHERE isbn = '${isbn}'`

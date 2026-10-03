@@ -46,7 +46,7 @@ Schalter richtig; der Schreibpfad ist dafür gebaut und geprüft.
 ### `Titel` → `buecher_titel`
 `Buchungsnummer` (Schlüssel) · `Haupttitel` → `titel` · `Untertitel` → `untertitel` ·
 `ISBN` → `isbn` · `Erscheinungsjahr` (Text!) · `Medienart` (Long → Nachschlagetabelle) ·
-`Verlag` (Long → Nachschlagetabelle, **kein Freitext**) · `Annotation` → `beschreibung`
+`Verlag` (Long → Nachschlagetabelle, **kein Freitext**) · `Annotation` (nicht übernommen)
 
 ### `Exemplar` → `buecher_exemplare`
 `Buchungsnummer` (Schlüssel) · `Titel` (FK) · `Barcode` → `barcode_id` ·

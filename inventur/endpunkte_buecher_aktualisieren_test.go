@@ -26,8 +26,7 @@ func TestBuchEingabeDecodesAlleFelder(t *testing.T) {
 		"jahrgangBis": 13,
 		"untertitel": "Ein Untertitel",
 		"verlag": "Testverlag",
-		"erscheinungsjahr": 2024,
-		"beschreibung": "Beschreibungstext"
+		"erscheinungsjahr": 2024
 	}`
 
 	var eingabe BuchEingabe
@@ -49,9 +48,6 @@ func TestBuchEingabeDecodesAlleFelder(t *testing.T) {
 	}
 	if eingabe.Erscheinungsjahr != 2024 {
 		t.Errorf("Erscheinungsjahr: erwartet 2024, bekam %d", eingabe.Erscheinungsjahr)
-	}
-	if eingabe.Beschreibung != "Beschreibungstext" {
-		t.Errorf("Beschreibung: erwartet 'Beschreibungstext', bekam %q", eingabe.Beschreibung)
 	}
 }
 
@@ -147,29 +143,27 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		{
 			name: "Trims spaces from fields",
 			eingabe: BuchEingabe{
-				ISBN:         "  978-3-16-148410-0  ",
-				Titel:        "  Titel  ",
-				Autor:        "  Autor  ",
-				CoverURL:     "  URL  ",
-				Fach:         "  Fach  ",
-				Schulzweig:   "  Schulzweig  ",
-				Medientyp:    "  Medientyp  ",
-				Untertitel:   "  Untertitel  ",
-				Verlag:       "  Verlag  ",
-				Beschreibung: "  Beschreibung  ",
+				ISBN:       "  978-3-16-148410-0  ",
+				Titel:      "  Titel  ",
+				Autor:      "  Autor  ",
+				CoverURL:   "  URL  ",
+				Fach:       "  Fach  ",
+				Schulzweig: "  Schulzweig  ",
+				Medientyp:  "  Medientyp  ",
+				Untertitel: "  Untertitel  ",
+				Verlag:     "  Verlag  ",
 			},
 			wantErr: false,
 			wantEingabe: &BuchEingabe{
-				ISBN:         "978-3-16-148410-0",
-				Titel:        "Titel",
-				Autor:        "Autor",
-				CoverURL:     "URL",
-				Fach:         "Fach",
-				Schulzweig:   "Schulzweig",
-				Medientyp:    "Medientyp",
-				Untertitel:   "Untertitel",
-				Verlag:       "Verlag",
-				Beschreibung: "Beschreibung",
+				ISBN:       "978-3-16-148410-0",
+				Titel:      "Titel",
+				Autor:      "Autor",
+				CoverURL:   "URL",
+				Fach:       "Fach",
+				Schulzweig: "Schulzweig",
+				Medientyp:  "Medientyp",
+				Untertitel: "Untertitel",
+				Verlag:     "Verlag",
 			},
 		},
 	}
@@ -211,7 +205,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 		// Kein einziger syncBookStock-Aufruf darf folgen: Das Feld "stock" fehlt im Rumpf.
 		erwarteFachBekannt(mock, "Mathe")
 		mock.ExpectBegin()
-		beliebig := make([]any, 22) // 22 seit mehrjahresband, Migration 134 (21 seit listenpreis, Migration 127)
+		beliebig := make([]any, 21) // eine Stelle je geschriebener Spalte und die Kennung
 		for i := range beliebig {
 			beliebig[i] = pgxmock.AnyArg()
 		}
@@ -278,7 +272,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 			if fall.hatAutor {
 				mock.ExpectRollback()
 			} else {
-				beliebig := make([]any, 22)
+				beliebig := make([]any, 21)
 				for i := range beliebig {
 					beliebig[i] = pgxmock.AnyArg()
 				}

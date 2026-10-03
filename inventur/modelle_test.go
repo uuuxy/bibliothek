@@ -31,7 +31,6 @@ func TestBook_JSONMarshaling(t *testing.T) {
 		Untertitel:              "An Introduction",
 		Verlag:                  "Test Publisher",
 		Erscheinungsjahr:        2023,
-		Beschreibung:            "A test description",
 		ErweiterteEigenschaften: map[string]any{"key1": "value1", "key2": float64(42)},
 	}
 

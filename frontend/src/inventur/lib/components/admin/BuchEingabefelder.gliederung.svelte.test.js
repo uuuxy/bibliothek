@@ -28,8 +28,7 @@ const TITELANGABEN = [
 	'buch-jahr',
 	'buch-auflage',
 	'buch-listenpreis',
-	'buch-schlagworte',
-	'buch-beschreibung'
+	'buch-schlagworte'
 ];
 
 beforeEach(() => {

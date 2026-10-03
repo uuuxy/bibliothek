@@ -487,7 +487,6 @@ CREATE TABLE buecher_titel (
     isbn VARCHAR(20) UNIQUE,                          -- ISBN-10 or ISBN-13
     verlag VARCHAR(255),
     erscheinungsjahr INTEGER,
-    beschreibung TEXT,
     meldebestand INTEGER NOT NULL DEFAULT 5,          -- Reorder threshold point
     cover_url VARCHAR(512),                           -- Integrated cover URL
     cover_status VARCHAR(50) DEFAULT 'PENDING',       -- Added for async cover fetching
@@ -527,16 +526,15 @@ CREATE TABLE buecher_titel (
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- Immutable generated column for German language full-text search indexing.
-    -- Enthält isbn und beschreibung (siehe Migration 050), damit ISBN-Eingaben und
-    -- Stichworte aus der Beschreibung über die Omnibox auffindbar sind.
+    -- Enthält die isbn (Migration 050), damit ISBN-Eingaben über die Omnibox auffindbar
+    -- sind. Die Beschreibung am Titel gibt es seit Migration 156 nicht mehr.
     search_vector TSVECTOR GENERATED ALWAYS AS (
         to_tsvector('german',
             coalesce(titel, '') || ' ' ||
             coalesce(untertitel, '') || ' ' ||
             coalesce(autor, '') || ' ' ||
             coalesce(verlag, '') || ' ' ||
-            coalesce(isbn, '') || ' ' ||
-            coalesce(beschreibung, '')
+            coalesce(isbn, '')
         )
     ) STORED
 );
@@ -580,12 +578,11 @@ BEGIN
     NEW.untertitel := normalize(NEW.untertitel, NFC);
     NEW.autor := normalize(NEW.autor, NFC);
     NEW.verlag := normalize(NEW.verlag, NFC);
-    NEW.beschreibung := normalize(NEW.beschreibung, NFC);
     RETURN NEW;
 END $$;
 
 CREATE TRIGGER trg_titel_text_nfc
-BEFORE INSERT OR UPDATE OF titel, untertitel, autor, verlag, beschreibung ON buecher_titel
+BEFORE INSERT OR UPDATE OF titel, untertitel, autor, verlag ON buecher_titel
 FOR EACH ROW EXECUTE FUNCTION titel_text_in_nfc();
 
 CREATE INDEX idx_buecher_titel_search ON buecher_titel USING GIN (search_vector);
@@ -1932,7 +1929,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('152_klassensatz_reservierung_freitext.sql'),
 ('153_sonderkonten_als_art.sql'),
 ('154_titeltext_nfc.sql'),
-('155_sitzungen.sql')
+('155_sitzungen.sql'),
+('156_titel_ohne_beschreibung.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

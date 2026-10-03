@@ -50,7 +50,6 @@ type Book struct {
 	Listenpreis             *float64       `json:"listenpreis" db:"listenpreis"`
 	Verlag                  string         `json:"verlag" db:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr" db:"erscheinungsjahr"`
-	Beschreibung            string         `json:"beschreibung" db:"beschreibung"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften" db:"erweiterte_eigenschaften"`
 	// Schlagworte (Migration 138) stehen in einer eigenen Tabelle. nil heißt „keine
 	// Aussage": Die Katalogliste lädt sie nicht, und beim Speichern lässt nil die
@@ -104,7 +103,6 @@ type BuchEingabe struct {
 	Listenpreis             *float64       `json:"listenpreis"`
 	Verlag                  string         `json:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr"`
-	Beschreibung            string         `json:"beschreibung"`
 	Signatur                string         `json:"signatur"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
 	// Schlagworte: Zeiger aus demselben Grund wie Bestand — „nicht mitgeschickt" (nil)

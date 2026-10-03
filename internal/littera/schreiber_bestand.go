@@ -46,11 +46,11 @@ type BestandBericht struct {
 // die Spaltenvorgabe 5–10.
 const sqlTitelEinfuegen = `
 	INSERT INTO buecher_titel
-		(titel, untertitel, autor, isbn, verlag, erscheinungsjahr, beschreibung,
+		(titel, untertitel, autor, isbn, verlag, erscheinungsjahr,
 		 medientyp, signatur, erweiterte_eigenschaften, erstellt_am,
 		 ist_lernmittel, subject, grade_level, jahrgang_von, jahrgang_bis)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,
-	        $12, NULLIF($13, ''), NULLIF($14, 0)::smallint, COALESCE(NULLIF($15, 0), 5), COALESCE(NULLIF($16, 0), 10))
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+	        $11, NULLIF($12, ''), NULLIF($13, 0)::smallint, COALESCE(NULLIF($14, 0), 5), COALESCE(NULLIF($15, 0), 10))
 	RETURNING id`
 
 // etikett_gedruckt ($7): Altbestand traegt seine Littera-Etiketten physisch —
@@ -263,7 +263,7 @@ func (l *bestandslauf) schreibeTitel(
 
 	err = tx.QueryRow(ctx, sqlTitelEinfuegen,
 		f.titel, f.untertitel, f.autor, uebernahme.Nullbar(reservierteISBN), f.verlag,
-		jahrOderNil(t.Erscheinungsjahr), uebernahme.Nullbar(t.Beschreibung),
+		jahrOderNil(t.Erscheinungsjahr),
 		f.medientyp, f.signatur, eigenschaften, l.s.opt.Jetzt,
 		lern.IstLernmittel, kanonisch[lern.Fach], lern.Stufe, lern.JahrgangVon, lern.JahrgangBis,
 	).Scan(&titelID)

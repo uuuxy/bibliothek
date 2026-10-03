@@ -50,14 +50,6 @@ func buildErweiterteEigenschaften(m mysqlMedium) (string, error) {
 	return string(b), nil
 }
 
-func nullableString(s sql.NullString) *string {
-	if !s.Valid || s.String == "" {
-		return nil
-	}
-	v := s.String
-	return &v
-}
-
 func nullableInt(n sql.NullInt64) *int {
 	if !n.Valid {
 		return nil
@@ -178,9 +170,9 @@ func insertMediumAtomar(
 const sqlInsertTitel = `
 	INSERT INTO buecher_titel
 		(titel, untertitel, autor, isbn, verlag, erscheinungsjahr,
-		 beschreibung, medientyp, erweiterte_eigenschaften,
+		 medientyp, erweiterte_eigenschaften,
 		 erstellt_am)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 	RETURNING id`
 
 // insertMedium schreibt Titel und Exemplare innerhalb des übergebenen Savepoints.
@@ -218,7 +210,6 @@ func insertMedium(
 		nullStr(res.ISBN),
 		felder.Verlag,
 		nullableInt(m.Erscheinungsjahr),
-		nullableString(m.Beschreibung),
 		felder.Medientyp,
 		jsonbProps,
 		erstelltAm,

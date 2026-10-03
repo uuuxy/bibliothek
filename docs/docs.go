@@ -5574,10 +5574,6 @@ const docTemplate = `{
                     "description": "Autor ist der Name des Autors oder der Autoren.",
                     "type": "string"
                 },
-                "beschreibung": {
-                    "description": "Beschreibung enthält eine Inhaltsangabe oder Notizen zum Buch.",
-                    "type": "string"
-                },
                 "bestand": {
                     "description": "Bestand und Verfuegbar füllen NUR die Suchabfragen (SearchTitles,\nSearchTitlesFuzzy) — Protokoll des Medienzentrums vom 16.09.2026, Punkt 4:\n„Bücher, zu denen es keine Exemplare gibt, tauchen in der Trefferliste auf.\"\nEin Titel ohne Exemplare ist ein legitimer Zustand (angelegt ohne\nBestandsangabe, Altbestand aus Littera) — verstecken wäre falsch, aber die\nTrefferliste muss es SAGEN.\n\nZeiger, weil „nicht mitgeliefert\" und „null Exemplare\" zwei verschiedene\nDinge sind: Jede andere Abfrage, die einen Titel liefert (Katalog, Import,\nBestellwesen), lässt die Felder nil, und die Oberfläche schreibt dann gar\nnichts statt „0 Exemplare\" über einen Titel, dessen Bestand niemand gezählt\nhat.",
                     "type": "integer"

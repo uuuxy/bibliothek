@@ -9,12 +9,12 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Migration 154 setzt Titeltexte zusammen (NFC): der Trigger an jeder Tür und das Nachziehen
-// des Bestands. Gemessen am Testserver am 30.09.2026: 19 Titel mit zerlegten Zeichen, alle
-// aus der DNB. Geprüft wird die echte Migrationsdatei an Altzeilen, die am Trigger vorbei
-// entstehen — so, wie sie vor der Migration in die Tabelle kamen. Alles in einer Transaktion,
-// die am Ende zurückgerollt wird; das Abschalten des Triggers gilt nur darin.
-func TestTiteltextNFC_Migration154(t *testing.T) {
+// Titeltexte stehen zusammengesetzt (NFC) in der Tabelle: Ein Trigger setzt sie an jeder Tür
+// zusammen, die DNB liefert Umlaute zerlegt. Migration 156 legt Funktion und Trigger ohne die
+// Beschreibung neu an. Geprüft wird die echte Migrationsdatei an einer Altzeile, die am
+// Trigger vorbei entsteht. Alles in einer Transaktion, die am Ende zurückgerollt wird; das
+// Abschalten des Triggers gilt nur darin.
+func TestTiteltextNFC_NachMigration156(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -30,15 +30,15 @@ func TestTiteltextNFC_Migration154(t *testing.T) {
 			t.Fatalf("%s: %v", sql, err)
 		}
 	}
-	type zeile struct{ titel, untertitel, autor, verlag, beschreibung, signatur string }
+	type zeile struct{ titel, untertitel, autor, verlag, signatur string }
 	lies := func(isbn string) zeile {
 		t.Helper()
 		var z zeile
 		if err := tx.QueryRow(ctx, `
 			SELECT titel, coalesce(untertitel, ''), coalesce(autor, ''), coalesce(verlag, ''),
-			       coalesce(beschreibung, ''), coalesce(signatur, '')
+			       coalesce(signatur, '')
 			FROM buecher_titel WHERE isbn = $1`, isbn).
-			Scan(&z.titel, &z.untertitel, &z.autor, &z.verlag, &z.beschreibung, &z.signatur); err != nil {
+			Scan(&z.titel, &z.untertitel, &z.autor, &z.verlag, &z.signatur); err != nil {
 			t.Fatalf("Titel %s lesen: %v", isbn, err)
 		}
 		return z
@@ -47,13 +47,13 @@ func TestTiteltextNFC_Migration154(t *testing.T) {
 	// Die Signatur trägt ein zerlegtes Zeichen mit Absicht: Sie bleibt, wie sie am Buch steht.
 	const zerlegteSignatur = "Sk Mu\u0308"
 	exec(`ALTER TABLE buecher_titel DISABLE TRIGGER trg_titel_text_nfc`)
-	exec(`INSERT INTO buecher_titel (titel, untertitel, autor, verlag, beschreibung, signatur, isbn)
-	      VALUES ($1, $2, $3, $4, $5, $6, '9783608126044')`,
+	exec(`INSERT INTO buecher_titel (titel, untertitel, autor, verlag, signatur, isbn)
+	      VALUES ($1, $2, $3, $4, $5, '9783608126044')`,
 		"Der Herr der Ringe - Anha\u0308nge und Register", "U\u0308bersetzung", "Ma\u0308rz, Tobias",
-		"Klett-Cotta Stuttgart", "Zu Tolkiens Welt. Fu\u0308r Leser", zerlegteSignatur)
+		"Klett-Cotta Stuttgart", zerlegteSignatur)
 	exec(`ALTER TABLE buecher_titel ENABLE TRIGGER trg_titel_text_nfc`)
 
-	migration, err := os.ReadFile(filepath.Join("..", "migrations", "154_titeltext_nfc.sql"))
+	migration, err := os.ReadFile(filepath.Join("..", "migrations", "156_titel_ohne_beschreibung.sql"))
 	if err != nil {
 		t.Fatalf("Migration lesen: %v", err)
 	}
@@ -64,13 +64,17 @@ func TestTiteltextNFC_Migration154(t *testing.T) {
 		}
 	}
 
+	// Die Altzeile ist am Trigger vorbei entstanden: Die nächste Änderung an ihr setzt alle vier
+	// Texte zusammen.
+	exec(`UPDATE buecher_titel SET verlag = verlag WHERE isbn = '9783608126044'`)
+
 	want := zeile{
 		titel: "Der Herr der Ringe - Anhänge und Register", untertitel: "Übersetzung",
 		autor: "März, Tobias", verlag: "Klett-Cotta Stuttgart",
-		beschreibung: "Zu Tolkiens Welt. Für Leser", signatur: zerlegteSignatur,
+		signatur: zerlegteSignatur,
 	}
 	if got := lies("9783608126044"); got != want {
-		t.Errorf("nach der Migration:\n got %+q\nwant %+q", got, want)
+		t.Errorf("nach Migration und Änderung:\n got %+q\nwant %+q", got, want)
 	}
 
 	// Der Trigger an jeder Tür: ein neuer Titel und eine Änderung, beide zerlegt geschrieben.

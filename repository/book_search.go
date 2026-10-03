@@ -32,7 +32,7 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error) {
 	query := `
 		SELECT 
-			b.id, coalesce(b.titel, ''), coalesce(b.untertitel, ''), coalesce(b.autor, ''), coalesce(b.isbn, ''), coalesce(b.verlag, ''), coalesce(b.erscheinungsjahr, 0), coalesce(b.beschreibung, ''), coalesce(b.cover_url, ''), coalesce(b.medientyp, ''), coalesce(b.signatur, ''), coalesce(b.auflage, ''), b.mehrjahresband, b.ist_lernmittel, b.erstellt_am, b.aktualisiert_am, coalesce(b.erweiterte_eigenschaften, '{}'::jsonb),
+			b.id, coalesce(b.titel, ''), coalesce(b.untertitel, ''), coalesce(b.autor, ''), coalesce(b.isbn, ''), coalesce(b.verlag, ''), coalesce(b.erscheinungsjahr, 0), coalesce(b.cover_url, ''), coalesce(b.medientyp, ''), coalesce(b.signatur, ''), coalesce(b.auflage, ''), b.mehrjahresband, b.ist_lernmittel, b.erstellt_am, b.aktualisiert_am, coalesce(b.erweiterte_eigenschaften, '{}'::jsonb),
 			` + SQLBestandGesamt + `, ` + SQLBestandVerfuegbar + `, ` + SQLBestandImZulauf + `
 		FROM buecher_titel b
 		WHERE (
@@ -85,7 +85,7 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 			SELECT suchnorm(t) AS norm, lower(t) AS roh FROM unnest($1::text[]) AS t
 		)
 		SELECT
-			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(auflage, ''), mehrjahresband, ist_lernmittel, erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb),
+			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(auflage, ''), mehrjahresband, ist_lernmittel, erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb),
 			` + SQLBestandGesamt + `, ` + SQLBestandVerfuegbar + `, ` + SQLBestandImZulauf + `,
 			count(*) OVER () AS treffer_gesamt
 		FROM buecher_titel b

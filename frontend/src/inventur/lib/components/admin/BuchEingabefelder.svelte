@@ -139,14 +139,6 @@
 			disabled={!schlagworteGeladen}
 		/>
 	</div>
-
-	<Feld
-		id="buch-beschreibung"
-		label="Beschreibung / Klappentext"
-		mehrzeilig
-		zeilen={3}
-		bind:value={formular.beschreibung}
-	/>
 </div>
 
 <BuchEingabefelderKategorisierung bind:formular {systematikListe} />

@@ -14,7 +14,6 @@ type mysqlMedium struct {
 	ISBN             sql.NullString
 	Verlag           sql.NullString
 	Erscheinungsjahr sql.NullInt64
-	Beschreibung     sql.NullString
 	Medientyp        sql.NullString
 	Standort         sql.NullString // free-text shelf location → JSONB
 	Regal            sql.NullString // rack/row label           → JSONB
@@ -34,7 +33,6 @@ func readMySQLTitles(db *sql.DB) ([]mysqlMedium, error) {
 			IFNULL(isbn, ''),
 			IFNULL(verlag, ''),
 			IFNULL(erscheinungsjahr, 0),
-			IFNULL(beschreibung, ''),
 			IFNULL(medientyp, 'Buch'),
 			IFNULL(standort, ''),
 			IFNULL(regal, ''),
@@ -71,7 +69,6 @@ func scanMySQLMedium(rows *sql.Rows) (mysqlMedium, error) {
 		isbn             string
 		verlag           string
 		erscheinungsjahr int64
-		beschreibung     string
 		medientyp        string
 		standort         string
 		regal            string
@@ -80,7 +77,7 @@ func scanMySQLMedium(rows *sql.Rows) (mysqlMedium, error) {
 	if err := rows.Scan(
 		&m.ID, &m.Titel,
 		&untertitel, &autor, &isbn, &verlag,
-		&erscheinungsjahr, &beschreibung, &medientyp,
+		&erscheinungsjahr, &medientyp,
 		&standort, &regal, &notizen,
 		&m.Anzahl, &m.ErstelltAm,
 	); err != nil {
@@ -100,9 +97,6 @@ func scanMySQLMedium(rows *sql.Rows) (mysqlMedium, error) {
 	}
 	if erscheinungsjahr > 0 {
 		m.Erscheinungsjahr = sql.NullInt64{Int64: erscheinungsjahr, Valid: true}
-	}
-	if beschreibung != "" {
-		m.Beschreibung = sql.NullString{String: beschreibung, Valid: true}
 	}
 	if medientyp != "" {
 		m.Medientyp = sql.NullString{String: medientyp, Valid: true}

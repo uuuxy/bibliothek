@@ -143,8 +143,6 @@ type BookTitle struct {
 	// Schlagworte kommen ebenso nur aus dem Katalogisat (MAB 710) und gehen nur in den Upsert:
 	// an Titel, die noch keine tragen (docs/OFFEN.md 4.20, Stufe 3).
 	Schlagworte []string `json:"-"`
-	// Beschreibung enthält eine Inhaltsangabe oder Notizen zum Buch.
-	Beschreibung string `json:"beschreibung,omitempty"`
 	// CoverURL verweist auf das Bild des Buchumschlags.
 	CoverURL string `json:"cover_url,omitempty"`
 	// Medientyp klassifiziert die Art des Mediums (z. B. "Buch", "CD", "DVD").

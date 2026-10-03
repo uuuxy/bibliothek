@@ -21,7 +21,7 @@ export async function holeBuecherListe() {
 }
 
 /**
- * Lädt EIN Buch vollständig (inkl. beschreibung/erweiterteEigenschaften).
+ * Lädt EIN Buch vollständig (inkl. erweiterteEigenschaften).
  * Die Katalogliste ist bewusst schlank und liefert diese Felder LEER — jedes
  * Formular, das per PUT das ganze Objekt zurückschickt, MUSS hierüber befüllt
  * werden, sonst leert Speichern die Felder still (Upsert-Blanking-Bugklasse).

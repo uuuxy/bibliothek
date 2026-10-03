@@ -44,7 +44,6 @@ type Titel struct {
 	VerlagID         string // Schlüssel auf Verlag.Buchungsnummer, kein Freitext
 	MedienartID      string // Schlüssel auf Medienart.Buchungsnummer, kein Freitext
 	Erscheinungsjahr int
-	Beschreibung     string
 }
 
 // Exemplar ist ein physisches Stück aus der Littera-Tabelle `Exemplar`.
@@ -126,7 +125,6 @@ func LeseTitel(r io.Reader) ([]Titel, error) {
 			VerlagID:         strings.TrimSpace(z["Verlag"]),
 			MedienartID:      strings.TrimSpace(z["Medienart"]),
 			Erscheinungsjahr: jahrAus(z["Erscheinungsjahr"]),
-			Beschreibung:     strings.TrimSpace(z["Annotation"]),
 		})
 	}
 	return titel, nil

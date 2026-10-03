@@ -91,7 +91,7 @@
 	/** @param {any} buch */
 	async function oeffneDetails(buch) {
 		// Immer das VOLLE Buch vom Einzel-Read laden: Die Katalogliste ist bewusst
-		// schlank (beschreibung/erweiterteEigenschaften leer), und saveChanges schickt
+		// schlank (erweiterteEigenschaften leer), und saveChanges schickt
 		// das ganze Formular per PUT zurück — aus dem Listen-Objekt gespreadet würde
 		// Speichern genau diese Felder still leeren (Upsert-Blanking-Bugklasse).
 		// Nebeneffekt: Bearbeiten arbeitet auf frischen Daten statt einer evtl.

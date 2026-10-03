@@ -2,11 +2,10 @@
 //
 // Der Rahmen um Beschriftung, Feld und Hinweis ist ein Raster mit `grid-rows-subgrid`,
 // damit die drei Zeilen in einem Eltern-Raster über alle Spalten auf einer Linie
-// stehen. Steht das Feld NICHT in einem Raster (Einstellungen → Schadensersatz: flex;
-// Buchformular: space-y), gibt es kein Eltern-Raster, und Chrome sizt die Zeile der
-// Textarea ohne ihre `rows`: Gemessen standen beide Felder auf 18 px — Rahmen und
-// Innenabstand, null Zeilen Text. Einzeilige Felder merken davon nichts, sie tragen
-// eine feste Höhe (h-9). Das Bankverbindungs-Feld war so seit dem 10.09.2026.
+// stehen. Steht das Feld nicht in einem Raster (Einstellungen → Schadensersatz: flex), gibt
+// es kein Eltern-Raster, und Chrome sizt die Zeile der Textarea ohne ihre `rows`: Gemessen
+// stand das Feld auf 18 px — Rahmen und Innenabstand, null Zeilen Text. Einzeilige Felder
+// merken davon nichts, sie tragen eine feste Höhe (h-9).
 //
 // Warum im Browser: Die Höhe entsteht erst beim Layout; jsdom rechnet keins.
 import { test, expect } from '@playwright/test';
@@ -32,13 +31,4 @@ test('Mehrzeilige Felder zeigen ihre Zeilen — auch außerhalb eines Rasters', 
 		bank.soll,
 		1
 	);
-
-	await page.getByTitle('Medienkatalog').click();
-	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
-	await page.getByRole('button', { name: 'Neues Buch' }).click();
-	const beschreibung = await textzeilen(page.locator('#buch-beschreibung'));
-	expect(
-		beschreibung.ist,
-		`Beschreibung: ${beschreibung.ist.toFixed(2)} statt ${beschreibung.soll} Zeilen`
-	).toBeCloseTo(beschreibung.soll, 1);
 });

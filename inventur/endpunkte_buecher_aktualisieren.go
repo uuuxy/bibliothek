@@ -60,7 +60,6 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Listenpreis:             eingabe.Listenpreis,
 		Verlag:                  eingabe.Verlag,
 		Erscheinungsjahr:        eingabe.Erscheinungsjahr,
-		Beschreibung:            eingabe.Beschreibung,
 		Signatur:                strings.TrimSpace(eingabe.Signatur),
 		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
 		Schlagworte:             schlagworte,
@@ -120,7 +119,6 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 	eingabe.Medientyp = strings.TrimSpace(eingabe.Medientyp)
 	eingabe.Untertitel = strings.TrimSpace(eingabe.Untertitel)
 	eingabe.Verlag = strings.TrimSpace(eingabe.Verlag)
-	eingabe.Beschreibung = strings.TrimSpace(eingabe.Beschreibung)
 
 	if eingabe.ISBN == "" {
 		return errors.New("isbn darf nicht leer sein")
