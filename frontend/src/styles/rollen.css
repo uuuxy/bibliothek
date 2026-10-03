@@ -52,6 +52,10 @@
 	--color-on-warning: #ffffff;
 	--color-warning-container: #ffdcc2;
 	--color-on-warning-container: #2e1500;
+	/* Schleier über Inhalt, der zurücktreten soll (M3, Elevation: „Scrims use the scrim color
+	   role at an opacity of 32%"). Der Wert ist in Googles Token-Datei Schwarz
+	   (md-sys-color: scrim = neutral0). */
+	--color-scrim: #000000;
 }
 
 body {

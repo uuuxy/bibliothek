@@ -602,16 +602,12 @@ Seit dem 03.10.2026 stehen außerdem auf Rollen: die Warenkorb-Position
 „Buch-Etiketten" des Druck-Centers (`LabelSettings`, `LabelBarcodeSchritt`,
 `LabelLayoutOptionen`), die Datenverwaltung mit ihren Bausteinen (`DataManagement.svelte`,
 `LitteraImportWidget.svelte`, `OfflineSicherungenEinspielen.svelte`) und die Aufnahme des
-Passbilds (`WebcamCapture.svelte`) bis auf die Hilfslinien im Sucher (5 Fundstellen; sie gehören
-zum Kamerabild). Beim Ansehen aufgefallen, jeweils am Code nachgesehen:
+Passbilds (`WebcamCapture.svelte`). Beim Ansehen aufgefallen, jeweils am Code nachgesehen:
 
 - Druck-Center, Buch-Etiketten: Das Vorschaublatt ist fest 140 mm breit
   (`LabelPreview.svelte`), seine Spalte schmaler. Gemessen am 03.10.2026 mit ausgeklapptem
   Menü: Bei 1280 px liegt das Blatt 42 px über dem rechten Rand der Einstellungsspalte, bei
   1440 px 9 px, bei 1680 px liegt es frei.
-- Passbild: Der gestrichelte Rahmen im Sucher ist halb so breit wie das Bild und 90 % so hoch.
-  Gespeichert wird ein anderer Ausschnitt: die volle Höhe im Format 3:4, bei einem Bild in 16:9
-  also 42 % der Breite (`WebcamCapture.svelte`, `capturePhoto`).
 
 Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
 

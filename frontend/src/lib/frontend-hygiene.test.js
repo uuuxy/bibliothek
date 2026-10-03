@@ -40,7 +40,6 @@ const PIXELGROESSE = /text-\[[0-9.]+(px|rem|em|pt)\]/;
 // eine Miniatur davon — die Schrift gehört dort zum Bild, nicht zur Bedienoberfläche,
 // und muss mit ihm skalieren. Eine Rolle aus der Skala wäre hier schlicht zu groß.
 const ZEICHNUNGEN = [
-	'src/lib/WebcamCapture.svelte', // Hilfslinien über dem Kamerabild
 	'src/lib/components/labels/LabelPreview.svelte', // 42,3-mm-Etikett in Originalgröße
 	'src/lib/designer/CanvasElement.svelte', // Ausweiskarte in mm auf dem Reißbrett
 	'src/lib/designer/CardFace.svelte' // dieselbe Karte im Druck, Größen in echten Punkten
