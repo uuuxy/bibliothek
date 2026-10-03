@@ -9,6 +9,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/repository"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -93,33 +94,9 @@ type nachbuchLage struct {
 // Nachbuchen bucht einen Eintrag. Fachliche Ausgänge kommen als Ergebnis zurück; ein
 // Fehler ist ein Serverfehler (Datenbank), und der Eintrag bleibt auf dem Rechner liegen.
 func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) (*NachbuchErgebnis, error) {
-	if e.Absicht != NachbuchAbsichtAusleihe && e.Absicht != NachbuchAbsichtRueckgabe {
-		return nil, meldung(ErrInvalidState, "Unbekannte Absicht %q", e.Absicht)
-	}
-	jetzt := s.heute()
-	gescannt := e.GescanntAm.Add(e.UhrVersatz).In(schoolLocation())
-	if gescannt.After(jetzt) {
-		gescannt = jetzt // höchstens Serverzeit — auch nach der Umrechnung datiert nichts vor
-	}
-	l := &nachbuchLage{e: e, gescannt: gescannt}
-
-	copy, err := s.loeseExemplar(ctx, e.Barcode)
-	if err != nil {
-		return nil, err
-	}
-	if copy == nil {
-		return s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, "Buch unbekannt: "+e.Barcode)
-	}
-	l.copy = copy
-	if err := s.loesePerson(ctx, l); err != nil {
-		return nil, err
-	}
-	if e.Absicht == NachbuchAbsichtAusleihe && l.leser == nil {
-		grund := "Ausweis unbekannt"
-		if l.ausweis != nil {
-			grund += ": " + *l.ausweis
-		}
-		return s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, grund)
+	l, abweisung, err := s.loeseNachbuchEintrag(ctx, e)
+	if abweisung != nil || err != nil {
+		return abweisung, err
 	}
 
 	tx, err := s.loanRepo.BeginTx(ctx)
@@ -134,61 +111,113 @@ func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) 
 			return nil, err
 		}
 	}
-	if l.activeLoan, err = s.loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, copy.ID); err != nil {
+	if l.activeLoan, err = s.loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, l.copy.ID); err != nil {
 		return nil, err
 	}
 	var ausleihbar, ausgesondert bool
 	var letzteBewegung *time.Time
 	if err := tx.QueryRow(ctx, `SELECT ist_ausleihbar, ist_ausgesondert, letzte_bewegung_am
-		FROM buecher_exemplare WHERE id = $1 FOR UPDATE`, copy.ID).Scan(&ausleihbar, &ausgesondert, &letzteBewegung); err != nil {
+		FROM buecher_exemplare WHERE id = $1 FOR UPDATE`, l.copy.ID).Scan(&ausleihbar, &ausgesondert, &letzteBewegung); err != nil {
 		return nil, err
 	}
 
-	// Die Ausnahme: Der Online-Versand hat nur die Fremdrückgabe gebucht, die Ausleihe fehlt.
-	// Der Scan wird auf den Zeitpunkt dieser Rückgabe gelegt. Die Ausleihe überlappt die
-	// beendete dann nicht, und der Wächter darunter entscheidet wie immer: Ist die Rückgabe
-	// noch die letzte Bewegung, kommt der Eintrag durch; hat sich das Exemplar danach bewegt
-	// (Rückgabe, Aussonderung), liegt der Stempel später, und er meldet „veraltet". Das trägt
-	// nur, weil der Stempel nie rückwärts läuft (repository.sqlStempelVor) und jede Bewegung
-	// stempelt (docs/invarianten.md).
-	// „Nicht verliehen" ist trotzdem nötig: Eine Ausleihe, die selbst so nachgeholt wurde, liegt
-	// auf demselben Rückgabezeitpunkt und schiebt den Stempel nicht darüber hinaus — ein zweiter
-	// Eintrag mit Verweis auf dieselbe Fremdrückgabe käme sonst durch und buchte sie um
-	// (TestNachbuchen_WaechterUndFremdrueckgabe).
-	if e.NachFremdrueckgabeVon != nil && e.Absicht == NachbuchAbsichtAusleihe && l.activeLoan == nil {
-		rueckgabe, err := repository.LiesFremdrueckgabeZeitpunkt(ctx, tx, *e.NachFremdrueckgabeVon, copy.ID)
-		if err != nil {
-			return nil, err
-		}
-		if rueckgabe != nil && gescannt.Before(*rueckgabe) {
-			gescannt = *rueckgabe
-			l.gescannt = gescannt
-		}
+	if err := verlegeScanAufFremdrueckgabe(ctx, tx, l); err != nil {
+		return nil, err
 	}
 
 	// Der Wächter: Ein Scan, der älter ist als die letzte Bewegung, beschreibt eine
 	// Wirklichkeit, die es nicht mehr gibt.
-	if letzteBewegung != nil && gescannt.Before(*letzteBewegung) {
+	if letzteBewegung != nil && l.gescannt.Before(*letzteBewegung) {
 		db.SafeRollback(ctx, tx)
 		return s.meldeAbweisung(ctx, l, repository.NachbuchVeraltet,
 			fmt.Sprintf("Scan von %s liegt vor der letzten Bewegung des Exemplars (%s)",
-				gescannt.Format("02.01.2006 15:04"), letzteBewegung.In(schoolLocation()).Format("02.01.2006 15:04")))
+				l.gescannt.Format("02.01.2006 15:04"), letzteBewegung.In(schoolLocation()).Format("02.01.2006 15:04")))
 	}
 
-	// Abgeschrieben oder gesperrt, aber nicht verliehen: zurückholen — Umlauf und
-	// Forderung in dieser Transaktion (Baustein aus Commit 8).
-	if (ausgesondert || !ausleihbar) && l.activeLoan == nil {
-		if l.befund, err = repository.HoleExemplarZurueck(ctx, tx, copy.ID, e.StaffID, &gescannt); err != nil {
-			return nil, err
-		}
-		l.reaktiviert = true
-		copy.IstAusleihbar, copy.IstAusgesondert, copy.ZustandNotiz = true, false, ""
+	if err := holeAbgeschriebenesZurueck(ctx, tx, l, ausleihbar, ausgesondert); err != nil {
+		return nil, err
 	}
 
 	if e.Absicht == NachbuchAbsichtRueckgabe {
 		return s.nachbuchenRueckgabe(ctx, tx, l)
 	}
 	return s.nachbuchenAusleihe(ctx, tx, l)
+}
+
+// loeseNachbuchEintrag prüft die Absicht, bestimmt den Scan-Zeitpunkt und löst Buch und Person
+// auf, noch ohne Sperre. Ist das Buch unbekannt oder fehlt zur Ausleihe die Person, ist der
+// Eintrag damit beantwortet: Die Abweisung steht als Meldung und kommt als zweiter Wert zurück.
+func (s *defaultLoanService) loeseNachbuchEintrag(ctx context.Context, e NachbuchEintrag) (*nachbuchLage, *NachbuchErgebnis, error) {
+	if e.Absicht != NachbuchAbsichtAusleihe && e.Absicht != NachbuchAbsichtRueckgabe {
+		return nil, nil, meldung(ErrInvalidState, "Unbekannte Absicht %q", e.Absicht)
+	}
+	jetzt := s.heute()
+	gescannt := e.GescanntAm.Add(e.UhrVersatz).In(schoolLocation())
+	if gescannt.After(jetzt) {
+		gescannt = jetzt // höchstens Serverzeit — auch nach der Umrechnung datiert nichts vor
+	}
+	l := &nachbuchLage{e: e, gescannt: gescannt}
+
+	copy, err := s.loeseExemplar(ctx, e.Barcode)
+	if err != nil {
+		return nil, nil, err
+	}
+	if copy == nil {
+		abweisung, err := s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, "Buch unbekannt: "+e.Barcode)
+		return nil, abweisung, err
+	}
+	l.copy = copy
+	if err := s.loesePerson(ctx, l); err != nil {
+		return nil, nil, err
+	}
+	if e.Absicht == NachbuchAbsichtAusleihe && l.leser == nil {
+		grund := "Ausweis unbekannt"
+		if l.ausweis != nil {
+			grund += ": " + *l.ausweis
+		}
+		abweisung, err := s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, grund)
+		return nil, abweisung, err
+	}
+	return l, nil, nil
+}
+
+// verlegeScanAufFremdrueckgabe behandelt die Ausnahme: Der Online-Versand hat nur die
+// Fremdrückgabe gebucht, die Ausleihe fehlt. Der Scan wird auf den Zeitpunkt dieser Rückgabe
+// gelegt. Die Ausleihe überlappt die beendete dann nicht, und der Wächter entscheidet wie immer:
+// Ist die Rückgabe noch die letzte Bewegung, kommt der Eintrag durch; hat sich das Exemplar
+// danach bewegt (Rückgabe, Aussonderung), liegt der Stempel später, und er meldet „veraltet".
+// Das trägt nur, weil der Stempel nie rückwärts läuft (repository.sqlStempelVor) und jede
+// Bewegung stempelt (docs/invarianten.md).
+// „Nicht verliehen" ist trotzdem nötig: Eine Ausleihe, die selbst so nachgeholt wurde, liegt
+// auf demselben Rückgabezeitpunkt und schiebt den Stempel nicht darüber hinaus — ein zweiter
+// Eintrag mit Verweis auf dieselbe Fremdrückgabe käme sonst durch und buchte sie um
+// (TestNachbuchen_WaechterUndFremdrueckgabe).
+func verlegeScanAufFremdrueckgabe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) error {
+	e := l.e
+	if e.NachFremdrueckgabeVon != nil && e.Absicht == NachbuchAbsichtAusleihe && l.activeLoan == nil {
+		rueckgabe, err := repository.LiesFremdrueckgabeZeitpunkt(ctx, tx, *e.NachFremdrueckgabeVon, l.copy.ID)
+		if err != nil {
+			return err
+		}
+		if rueckgabe != nil && l.gescannt.Before(*rueckgabe) {
+			l.gescannt = *rueckgabe
+		}
+	}
+	return nil
+}
+
+// holeAbgeschriebenesZurueck: Ist das Exemplar abgeschrieben oder gesperrt, aber nicht verliehen,
+// kommt es zurück — Umlauf und Forderung in der Transaktion des Eintrags.
+func holeAbgeschriebenesZurueck(ctx context.Context, tx pgx.Tx, l *nachbuchLage, ausleihbar, ausgesondert bool) error {
+	if (ausgesondert || !ausleihbar) && l.activeLoan == nil {
+		var err error
+		if l.befund, err = repository.HoleExemplarZurueck(ctx, tx, l.copy.ID, l.e.StaffID, &l.gescannt); err != nil {
+			return err
+		}
+		l.reaktiviert = true
+		l.copy.IstAusleihbar, l.copy.IstAusgesondert, l.copy.ZustandNotiz = true, false, ""
+	}
+	return nil
 }
 
 // loeseExemplar findet das Exemplar zum gescannten Barcode — direkt oder über die

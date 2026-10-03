@@ -17,25 +17,7 @@ import (
 // war (dann ist die Forderung beendet), sonst nicht_gebucht.
 func (s *defaultLoanService) nachbuchenRueckgabe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
 	if l.activeLoan == nil {
-		if !l.reaktiviert {
-			rollbackStill(ctx, tx)
-			return s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, "Buch war nicht ausgeliehen")
-		}
-		hinweis := l.befund.AufsichtHinweis()
-		grund := "Buch war abgeschrieben und ist wieder im Umlauf"
-		if l.befund.StornierteForderungen > 0 {
-			grund = fmt.Sprintf("Buch war abgeschrieben; Forderung über %.2f € storniert", l.befund.StornierterBetrag)
-		}
-		if hinweis != "" {
-			grund = hinweis
-		}
-		if err := repository.SchreibeNachbuchMeldung(ctx, tx, s.meldung(l, repository.NachbuchNurReaktiviert, grund)); err != nil {
-			return nil, err
-		}
-		if err := tx.Commit(ctx); err != nil {
-			return nil, err
-		}
-		return &NachbuchErgebnis{Ergebnis: repository.NachbuchNurReaktiviert, Grund: grund, AufsichtHinweis: hinweis}, nil
+		return s.rueckgabeOhneAusleihe(ctx, tx, l)
 	}
 
 	resp := &LoanResult{}
@@ -62,10 +44,35 @@ func (s *defaultLoanService) nachbuchenRueckgabe(ctx context.Context, tx pgx.Tx,
 	return &NachbuchErgebnis{Ergebnis: repository.NachbuchZurueckgegeben, Result: resp}, nil
 }
 
+// rueckgabeOhneAusleihe: Das Buch war nicht verliehen, es gibt nichts zurückzunehmen. War es
+// abgeschrieben, ist es jetzt wieder im Umlauf (nur_reaktiviert), und die Meldung nennt, was mit
+// der Forderung geschah; sonst nicht_gebucht.
+func (s *defaultLoanService) rueckgabeOhneAusleihe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
+	if !l.reaktiviert {
+		rollbackStill(ctx, tx)
+		return s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, "Buch war nicht ausgeliehen")
+	}
+	hinweis := l.befund.AufsichtHinweis()
+	grund := "Buch war abgeschrieben und ist wieder im Umlauf"
+	if l.befund.StornierteForderungen > 0 {
+		grund = fmt.Sprintf("Buch war abgeschrieben; Forderung über %.2f € storniert", l.befund.StornierterBetrag)
+	}
+	if hinweis != "" {
+		grund = hinweis
+	}
+	if err := repository.SchreibeNachbuchMeldung(ctx, tx, s.meldung(l, repository.NachbuchNurReaktiviert, grund)); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return &NachbuchErgebnis{Ergebnis: repository.NachbuchNurReaktiviert, Grund: grund, AufsichtHinweis: hinweis}, nil
+}
+
 // nachbuchenAusleihe: Absicht „Ausleihe". Beim selben Kind wird nichts umgekehrt
-// (bereits_ausgeliehen). Lag das Buch bei jemand anderem, wird dort zurückgenommen — VOR
+// (bereits_ausgeliehen). Lag das Buch bei jemand anderem, wird dort zurückgenommen — vor
 // dem Savepoint, damit die Rücknahme bleibt, wenn die neue Ausleihe an Sperre, Limit oder
-// Vormerkung scheitert (entschieden am 13.09.2026, c).
+// Vormerkung scheitert.
 func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
 	if l.activeLoan != nil && gehoert(l) {
 		rollbackStill(ctx, tx)
@@ -90,56 +97,9 @@ func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, 
 	}
 
 	// Savepoint: Was ab hier scheitert, nimmt die Rücknahme nicht mit.
-	// Savepoint: Was ab hier scheitert, nimmt die Rücknahme nicht mit.
-	sp, err := tx.Begin(ctx)
-	if err != nil {
-		return nil, err
-	}
-	chkCtx, err := s.nachbuchKontext(ctx, tx, l)
-	if err != nil {
-		return nil, err
-	}
-	if err := s.nachbuchSchranken(ctx, sp, l, chkCtx); err != nil {
-		if !errors.Is(err, ErrBlocked) && !errors.Is(err, ErrConflict) {
-			return nil, err
-		}
-		if err := sp.Rollback(ctx); err != nil {
-			return nil, err
-		}
-		if err := tx.Commit(ctx); err != nil { // die Rücknahme beim Vorbesitzer bleibt
-			return nil, err
-		}
-		return s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, err.Error())
-	}
-
-	loan, err := repository.CreateLoanZumTx(ctx, sp, repository.CreateLoanParams{
-		ExemplarID:     l.copy.ID,
-		LeserID:        l.leser.ID,
-		BearbeiterID:   l.e.StaffID,
-		RueckgabeFrist: chkCtx.dueTime,
-		IstDauerleihe:  !chkCtx.istSchueler(),
-		Zeitpunkt:      &l.gescannt,
-	})
-	if err != nil {
-		if errors.Is(err, repository.ErrAusleiheKonflikt) {
-			if rbErr := sp.Rollback(ctx); rbErr != nil {
-				return nil, rbErr
-			}
-			if err := tx.Commit(ctx); err != nil {
-				return nil, err
-			}
-			return s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, "Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht")
-		}
-		return nil, err
-	}
-	if chkCtx.istSchueler() {
-		entferneErfuellteVormerkung(ctx, sp, l.copy, l.leser.ID, resp)
-	}
-	if err := s.auditRepo.LogAusleihe(ctx, sp, l.copy.ID, l.leser.ID, "", l.e.StaffID); err != nil {
-		return nil, err
-	}
-	if err := sp.Commit(ctx); err != nil {
-		return nil, err
+	loan, abweisung, err := s.leiheImSavepointAus(ctx, tx, l, resp)
+	if abweisung != nil || err != nil {
+		return abweisung, err
 	}
 
 	ergebnis := repository.NachbuchAusgeliehen
@@ -164,6 +124,66 @@ func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, 
 		resp.LoanID = &loan.ID
 	}
 	return &NachbuchErgebnis{Ergebnis: ergebnis, Result: resp, AufsichtHinweis: l.befund.AufsichtHinweis()}, nil
+}
+
+// leiheImSavepointAus prüft die Schranken und legt die Ausleihe an, beides im Savepoint.
+// Scheitert es an Sperre, Limit, Vormerkung oder an einer gleichzeitigen Buchung, ist der
+// Eintrag abgewiesen: Die Abweisung kommt als zweiter Wert zurück, und die Transaktion ist dann
+// abgeschlossen (weiseImSavepointAb).
+func (s *defaultLoanService) leiheImSavepointAus(ctx context.Context, tx pgx.Tx, l *nachbuchLage, resp *LoanResult) (*repository.Loan, *NachbuchErgebnis, error) {
+	sp, err := tx.Begin(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	chkCtx, err := s.nachbuchKontext(ctx, tx, l)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := s.nachbuchSchranken(ctx, sp, l, chkCtx); err != nil {
+		if !errors.Is(err, ErrBlocked) && !errors.Is(err, ErrConflict) {
+			return nil, nil, err
+		}
+		abweisung, abwErr := s.weiseImSavepointAb(ctx, tx, sp, l, err.Error())
+		return nil, abweisung, abwErr
+	}
+
+	loan, err := repository.CreateLoanZumTx(ctx, sp, repository.CreateLoanParams{
+		ExemplarID:     l.copy.ID,
+		LeserID:        l.leser.ID,
+		BearbeiterID:   l.e.StaffID,
+		RueckgabeFrist: chkCtx.dueTime,
+		IstDauerleihe:  !chkCtx.istSchueler(),
+		Zeitpunkt:      &l.gescannt,
+	})
+	if errors.Is(err, repository.ErrAusleiheKonflikt) {
+		abweisung, abwErr := s.weiseImSavepointAb(ctx, tx, sp, l, "Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht")
+		return nil, abweisung, abwErr
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	if chkCtx.istSchueler() {
+		entferneErfuellteVormerkung(ctx, sp, l.copy, l.leser.ID, resp)
+	}
+	if err := s.auditRepo.LogAusleihe(ctx, sp, l.copy.ID, l.leser.ID, "", l.e.StaffID); err != nil {
+		return nil, nil, err
+	}
+	if err := sp.Commit(ctx); err != nil {
+		return nil, nil, err
+	}
+	return loan, nil, nil
+}
+
+// weiseImSavepointAb nimmt den Savepoint zurück und schließt die Transaktion ab — die
+// Rücknahme beim Vorbesitzer bleibt —, dann schreibt es die Abweisung als Meldung.
+func (s *defaultLoanService) weiseImSavepointAb(ctx context.Context, tx, sp pgx.Tx, l *nachbuchLage, grund string) (*NachbuchErgebnis, error) {
+	if err := sp.Rollback(ctx); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, grund)
 }
 
 // errScanVeraltet: die Rückgabe läge vor der Ausleihe (check_return_date).
