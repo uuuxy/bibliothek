@@ -102,3 +102,40 @@ describe('BuchFormular: Speichern während der ISBN-Abfrage', () => {
 		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
 	});
 });
+
+// „Speichern" bleibt bedienbar, auch wenn die Pflicht-Signatur fehlt: Der Klick speichert
+// nicht und setzt den Fokus ins Feld, das den Grund nennt.
+describe('BuchFormular: Speichern ohne Pflicht-Signatur', () => {
+	beforeEach(() => {
+		// jsdom rechnet kein Layout und kennt scrollIntoView nicht.
+		Element.prototype.scrollIntoView = vi.fn();
+	});
+
+	it('ein Bibliotheksbuch: der Klick speichert nicht und führt ins Feld Signatur', async () => {
+		server({ vorhanden: null });
+		const formular = $state({ ...leeresBuchFormular(), title: 'Tintenherz', isbn: '' });
+		const onSave = vi.fn();
+
+		await verlasseIsbnUndSpeichere(formular, onSave);
+		await kurz();
+
+		expect(onSave).not.toHaveBeenCalled();
+		expect(document.activeElement?.id).toBe('buch-signatur');
+		expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(1);
+	});
+
+	it('ein Lernmittel speichert ohne Signatur', async () => {
+		server({ vorhanden: null });
+		const formular = $state({
+			...leeresBuchFormular(),
+			title: 'Green Line 3',
+			isbn: '',
+			istLernmittel: true
+		});
+		const onSave = vi.fn();
+
+		await verlasseIsbnUndSpeichere(formular, onSave);
+
+		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+	});
+});

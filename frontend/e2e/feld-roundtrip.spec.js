@@ -73,13 +73,27 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await page.getByRole('button', { name: 'Neues Buch' }).first().click();
 		await page.locator('#buch-titel').fill(`RT Lernmittel ${s}`);
 		await page.locator('#buch-isbn').fill(ISBN_LM);
+		// Ein Bibliotheksbuch braucht die Signatur. „Speichern“ bleibt bedienbar: Der Klick
+		// speichert nicht und führt zum Feld, das unter dem ersten Bildschirm steht.
 		const speichern = page.getByRole('button', { name: 'Speichern' });
-		await expect(speichern, 'ein Bibliotheksbuch braucht die Signatur').toBeDisabled();
+		const signatur = page.locator('#buch-signatur');
+		await expect(speichern).toBeEnabled();
+		await speichern.click();
+		await expect(signatur, 'der Klick ohne Signatur führt ins Feld').toBeFocused();
+		const kopf = await page.getByRole('heading', { name: 'Neues Buch' }).boundingBox();
+		const feld = await signatur.boundingBox();
+		expect(feld?.y, 'das Feld steht unter dem stehenden Kopf der Maske').toBeGreaterThan(
+			(kopf?.y ?? 0) + (kopf?.height ?? 0)
+		);
+		await expect(signatur).toBeInViewport();
+		expect(
+			querySQL(`SELECT count(*) FROM buecher_titel WHERE isbn = '${ISBN_LM}'`),
+			'ohne Signatur ist nichts gespeichert'
+		).toBe('0');
 		await page
 			.getByRole('group', { name: 'Art des Buchs' })
 			.getByRole('button', { name: 'Lernmittel' })
 			.click();
-		await expect(speichern, 'ein Lernmittel braucht keine Signatur').toBeEnabled();
 		await page.locator('#buch-schulzweig').click();
 		await page.getByRole('option', { name: 'Realschule', exact: true }).click();
 		await page.locator('#buch-jahrgang-von').fill('7');

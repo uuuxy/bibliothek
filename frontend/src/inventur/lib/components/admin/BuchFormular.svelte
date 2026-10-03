@@ -37,11 +37,16 @@
 	// vorhandenen Titel gefragt, entscheidet die Antwort darauf und nicht dieser Klick.
 	async function speichern() {
 		if (await abfrage.ruht()) return;
+		// Der Knopf bleibt bedienbar: Fehlt die Pflicht-Signatur, führt der Klick zum Feld, das
+		// den Grund nennt. Die Mitte des Fensters, weil der Kopf der Maske oben stehen bleibt.
+		if (signaturFehlt(formular)) {
+			const feld = document.getElementById('buch-signatur');
+			feld?.scrollIntoView({ block: 'center', inline: 'nearest' });
+			feld?.focus({ preventScroll: true });
+			return;
+		}
 		onSave();
 	}
-
-	// Ohne die Pflicht-Signatur ist „Speichern" gesperrt; den Grund nennt das Feld.
-	const speichernGesperrt = $derived(signaturFehlt(formular));
 </script>
 
 <div class="flex flex-col w-full my-4" transition:fade={{ duration: 200 }}>
@@ -60,14 +65,7 @@
 		<h2 class="min-w-0 truncate text-xl font-bold text-on-surface">
 			{formular.id ? 'Buch bearbeiten' : 'Neues Buch'}
 		</h2>
-		<Button
-			onclick={speichern}
-			disabled={speichernGesperrt}
-			title={speichernGesperrt ? 'Signatur eintragen, um zu speichern' : undefined}
-			class="ml-4 shrink-0 px-5"
-		>
-			Speichern
-		</Button>
+		<Button onclick={speichern} class="ml-4 shrink-0 px-5">Speichern</Button>
 	</div>
 
 	<!-- Zwei Spalten wie eine Play-Store-Detailseite: Felder und Exemplare links, Cover und die

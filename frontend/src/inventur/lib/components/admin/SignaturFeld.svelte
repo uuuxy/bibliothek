@@ -42,7 +42,7 @@
 	required={pflicht}
 	ungueltig={fehlt}
 	hint={fehlt
-		? 'Ohne Signatur kein Etikett — bitte Systematik-Kürzel eintragen (Speichern ist bis dahin gesperrt).'
+		? 'Ohne Signatur kein Etikett — bitte Systematik-Kürzel eintragen. Gespeichert wird erst mit ihr.'
 		: formular.istLernmittel
 			? 'Lernmittel tragen kein Rückenetikett — die Signatur ist hier nur eine Notiz.'
 			: 'Wird 1:1 auf das Rücken-Etikett gedruckt — am besten eine vorhandene Regaladresse.'}
