@@ -59,3 +59,48 @@ func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.
 		t.Fatalf("Frist in vier Wochen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
 }
+
+// Die Ablehnungen vor dem Schreiben, in ihrer Reihenfolge: Jede Anfrage verletzt auch alle
+// späteren Prüfungen, genannt wird die erste. Keine von ihnen legt einen Bescheid an.
+func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	bescheidReset(t, pool)
+	bescheidAngabenSetzen(t, pool)
+	srv := &Server{DB: &db.Database{Pool: pool}}
+
+	sid := seedSchueler(t, pool, "S-ABL", "Ablehnung", "08G2")
+	titelID := bescheidLernmittel(t, pool, "Physik 8")
+	f := bescheidForderung(t, pool, sid, exemplar(t, pool, titelID, "ABL-1", true, ""),
+		"nicht_zurueckgegeben", "Physik 8 nicht zurück")
+	position := `[{"schadensfall_id":"` + f + `","betrag":18.00}]`
+	const unbekannt = "00000000-0000-0000-0000-00000000dead"
+
+	for _, fall := range []struct {
+		name, leser, rumpf string
+		status             int
+		meldung            string
+	}{
+		{"unbekannter Topf", sid, `{"mittel":"quatsch","frist_bis":"bald","positionen":[]}`,
+			http.StatusBadRequest, ErrMittelUngueltig.Error()},
+		{"Topf des Schulträgers", sid, `{"mittel":"schultraeger","frist_bis":"bald","positionen":[]}`,
+			http.StatusConflict, "nur für Lernmittel des Landes"},
+		{"keine Auswahl", sid, `{"mittel":"land","frist_bis":"bald","positionen":[],"ausleihen":[]}`,
+			http.StatusBadRequest, "mindestens ein Buch"},
+		{"Frist ist kein Datum", sid, `{"mittel":"land","frist_bis":"bald","positionen":` + position + `}`,
+			http.StatusBadRequest, "muss ein Datum sein"},
+		{"Leser unbekannt", unbekannt, `{"mittel":"land","frist_bis":"` + in28Tagen() + `","positionen":` + position + `}`,
+			http.StatusNotFound, "nicht gefunden"},
+	} {
+		rec := bescheidErstellenUeberHandler(t, srv, pool, fall.leser, fall.rumpf)
+		if rec.Code != fall.status {
+			t.Errorf("%s: Status %d, erwartet %d: %s", fall.name, rec.Code, fall.status, rec.Body.String())
+		}
+		if !strings.Contains(rec.Body.String(), fall.meldung) {
+			t.Errorf("%s: die Antwort nennt %q nicht: %s", fall.name, fall.meldung, rec.Body.String())
+		}
+	}
+	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM schadensersatz_bescheide`); n != 0 {
+		t.Errorf("%d Bescheide nach fünf Ablehnungen", n)
+	}
+}
