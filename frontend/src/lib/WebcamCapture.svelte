@@ -1,8 +1,16 @@
+<!-- @component WebcamCapture — Aufnahme des Passbilds mit der Webcam.
+
+     Ein Dialog des Hauses (Modal). Dunkel ist nur der Sucher: Ein Kamerabild steht auf Schwarz,
+     die Hilfslinien gehören zum Bild. Der erste Fokus liegt auf „Schließen" im Kopf und nicht auf
+     der Aufnahme: An der Theke tippt der Handscanner blind und endet mit Enter, das nähme sonst
+     ein Foto auf und ersetzte das vorhandene. -->
 <script>
+	import { AlertTriangle, Camera } from '@lucide/svelte';
 	import { apiClient } from './apiFetch.js';
+	import Modal from './Modal.svelte';
+	import Button from './components/ui/Button.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { onMount } from 'svelte';
-	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
 	import { ruhtWennTraege } from './actions/ruhtWennTraege.js';
 
 	/** @type {{ studentId: string, onCapture: (url: string) => void, onClose: () => void }} */
@@ -105,79 +113,58 @@
 	});
 </script>
 
-<!-- Hinter der Sperre läuft keine Kamera (wie KameraScanner). -->
-<div
-	class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-md p-4 no-print"
-	use:ruhtWennTraege={{ anhalten: stopCamera, fortsetzen: startCamera }}
->
-	<div
-		class="w-full max-w-lg p-6 rounded-3xl bg-zinc-900 shadow-2xl flex flex-col space-y-4"
-		use:escapeSchliesst={onClose}
-	>
-		<div class="flex items-center justify-between border-b border-zinc-800 pb-3">
-			<h3 class="text-base font-bold text-zinc-100 tracking-wide">📸 HQ Schülerfoto aufnehmen</h3>
-			<button
-				onclick={onClose}
-				class="text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
-				>Schließen</button
-			>
-		</div>
-
+<Modal open={true} onclose={onClose} size="lg" ebene="darueber" beschriftetDurch="webcam-titel">
+	{#snippet header()}
+		<h3 id="webcam-titel" class="text-base font-bold text-on-surface">Passbild aufnehmen</h3>
+	{/snippet}
+	<!-- Hinter der Sperre läuft keine Kamera (wie KameraScanner). -->
+	<div class="space-y-4 p-6" use:ruhtWennTraege={{ anhalten: stopCamera, fortsetzen: startCamera }}>
 		{#if errorMsg}
 			<div
-				class="p-8 text-center text-xs text-red-400 font-medium bg-red-950/20 border border-red-900/30 rounded-2xl"
+				role="alert"
+				class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 			>
-				{errorMsg}
+				<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
+				<span>{errorMsg}</span>
 			</div>
-			<div class="flex justify-end pt-2">
-				<button
-					onclick={startCamera}
-					class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl cursor-pointer"
-					>Erneut versuchen</button
-				>
+			<div class="flex justify-end">
+				<Button variant="secondary" onclick={startCamera}>Erneut versuchen</Button>
 			</div>
 		{:else}
-			<!-- Camera screen viewport with aspect ratio guidelines overlay -->
-			<div
-				class="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-zinc-800"
-			>
-				<video bind:this={videoEl} autoplay playsinline class="w-full h-full object-cover"></video>
-
-				<!-- Passport Overlay (3:4 Ratio & Face Guide Ellipse) -->
+			<!-- Der Sucher mit den Hilfslinien für das Gesicht. -->
+			<div class="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+				<video bind:this={videoEl} autoplay playsinline class="h-full w-full object-cover"></video>
 				<div
-					class="absolute inset-0 pointer-events-none flex items-center justify-center bg-zinc-950/20"
+					class="pointer-events-none absolute inset-0 flex items-center justify-center bg-zinc-950/20"
 				>
 					<div
-						class="w-[50%] h-[90%] border-2 border-dashed border-emerald-400 rounded-lg flex items-center justify-center relative"
+						class="relative flex h-[90%] w-[50%] items-center justify-center rounded-lg border-2 border-dashed border-emerald-400"
 					>
 						<div
-							class="w-[85%] h-[80%] border border-dashed border-emerald-400/40 rounded-full"
+							class="h-[80%] w-[85%] rounded-full border border-dashed border-emerald-400/40"
 						></div>
 						<span
-							class="absolute bottom-2 text-[8px] bg-zinc-950/90 px-2 py-0.5 text-emerald-400 rounded-full font-bold tracking-wider"
+							class="absolute bottom-2 rounded-full bg-zinc-950/90 px-2 py-0.5 text-[8px] font-bold tracking-wider text-emerald-400"
 							>Gesichtsrahmen</span
 						>
 					</div>
 				</div>
 			</div>
 
-			<div class="flex items-center justify-between pt-2">
-				<span class="text-label-small text-zinc-500"
-					>1080p Stream · Automatischer 3:4 Zuschnitt</span
-				>
-				<button
-					onclick={capturePhoto}
-					disabled={isCapturing}
-					class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 text-zinc-950 disabled:text-zinc-500 font-bold text-xs rounded-xl shadow-lg cursor-pointer transition-all flex items-center gap-1.5"
-				>
+			<div class="flex items-center justify-between gap-4">
+				<p class="text-sm text-on-surface-variant">
+					Das Foto wird auf das Hochformat 3:4 zugeschnitten.
+				</p>
+				<Button onclick={capturePhoto} disabled={isCapturing} class="shrink-0">
 					{#if isCapturing}
 						<Ladekreis size="sm" farbe="aktuell" />
-						Speichert...
+						Speichert …
 					{:else}
-						📸 Foto aufnehmen
+						<Camera class="h-4 w-4" aria-hidden="true" />
+						Foto aufnehmen
 					{/if}
-				</button>
+				</Button>
 			</div>
 		{/if}
 	</div>
-</div>
+</Modal>

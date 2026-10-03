@@ -43,9 +43,9 @@
 //     unsichtbar (grün), im vollen e2e-Lauf sichtbar (rot) — weil ein anderer
 //     Test die Einstellung verändert hatte. Gefunden wurde er also durch Zufall,
 //     nicht durch Konstruktion.
-//   * Die selbstgebauten Overlays, die NICHT Modal.svelte benutzen. Am 16.09.2026
-//     sind das sieben Dateien: App.svelte, StrichcodeScannerOverlay, WebcamCapture,
-//     Monitor, OmniboxVormerkungAlert, OmniboxBlockAlert und Sperrbildschirm.
+//   * Die selbstgebauten Overlays, die NICHT Modal.svelte benutzen. Am 03.10.2026
+//     sind das sechs Dateien: App.svelte, StrichcodeScannerOverlay, Monitor,
+//     OmniboxVormerkungAlert, OmniboxBlockAlert und Sperrbildschirm.
 //     Nachzählen, statt dieser Liste zu glauben:
 //       grep -rl "fixed inset-0" frontend/src --include='*.svelte' \
 //         | xargs grep -L Modal.svelte | grep -v /Modal.svelte
