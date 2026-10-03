@@ -33,7 +33,6 @@ const BESTAND = [
 	'src/lib/OpacSearch.svelte',
 	'src/lib/StudentPrintReceipt.svelte',
 	'src/lib/components/bestellungen/BestellDetailPositionen.svelte',
-	'src/lib/components/bestellungen/WareneingangTable.svelte',
 	'src/lib/components/portal/PortalTrefferkarte.svelte',
 	'src/inventur/lib/components/BuchKarte.svelte',
 	'src/inventur/lib/components/admin/ClassAssignmentSummary.svelte',

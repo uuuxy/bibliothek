@@ -1,5 +1,6 @@
 <script>
-	import { coverSrc } from '../../utils/coverSrc.js';
+	import BuchCover from '../ui/BuchCover.svelte';
+	import Button from '../ui/Button.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 
@@ -45,53 +46,32 @@
 	}
 </script>
 
-{#snippet coverImage(item)}
-	{@const quelle = coverSrc(item.cover_url, item.isbn)}
-	{#if quelle}
-		<img
-			src={quelle}
-			class="w-16 h-24 object-cover shadow-sm rounded border border-slate-200"
-			alt="Cover"
-			loading="lazy"
-		/>
-	{:else}
-		<div
-			class="w-16 h-24 bg-slate-100 rounded border border-slate-200 flex items-center justify-center text-slate-400 text-label-small text-center p-1 leading-tight"
-		>
-			Kein Cover
-		</div>
-	{/if}
-{/snippet}
-
 <div>
 	<div class="flex items-center justify-between mb-3">
-		<h3 class="text-base font-medium text-slate-500">
+		<h3 class="text-base font-medium text-on-surface-variant">
 			Erwartete Positionen ({totalItems} Exemplare)
 		</h3>
 		{#if incomingShipments.length > 0}
-			<button
-				onclick={toggleAll}
-				class="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
-			>
+			<Button variant="ghost" size="sm" onclick={toggleAll}>
 				{allSelected ? 'Auswahl aufheben' : 'Alle auswählen'}
-			</button>
+			</Button>
 		{/if}
 	</div>
 
 	<!-- Ohne eigenen Scrollkasten: Die Positionen scrollen mit der Seite, der Name des
 	     Lieferanten bleibt dabei oben stehen. -->
-	<div class="bg-slate-50/30">
+	<div>
 		{#if incomingShipments.length === 0}
-			<div class="py-12 text-center text-sm font-medium text-slate-400">
+			<div class="py-12 text-center text-sm font-medium text-on-surface-variant">
 				Keine Positionen im Zulauf.
 			</div>
 		{:else}
 			{#each incomingShipments as group, _i (_i)}
 				<div
-					class="bg-slate-50/80 border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10 backdrop-blur-sm"
+					class="sticky top-0 z-10 flex items-center justify-between border-b border-outline-variant bg-surface/80 px-6 py-3 backdrop-blur-sm"
 				>
-					<div class="font-bold text-slate-800">{group.supplierName}</div>
-					<div class="text-xs font-semibold text-slate-500">Bestellt am {group.date}</div>
+					<div class="font-bold text-on-surface">{group.supplierName}</div>
+					<div class="text-xs font-semibold text-on-surface-variant">Bestellt am {group.date}</div>
 				</div>
 				<Tabelle beschriftung="Bestellte Exemplare im Zulauf">
 					<tbody>
@@ -108,12 +88,17 @@
 									/>
 								</td>
 								<td class="w-20 shrink-0">
-									{@render coverImage(item)}
+									<BuchCover
+										coverUrl={item.cover_url}
+										isbn={item.isbn}
+										titel={item.titel}
+										groesse="gross"
+									/>
 								</td>
 								<td class="font-semibold">{item.titel}</td>
 								<td class="text-right">
 									<span
-										class="inline-flex items-center justify-center min-w-14 h-14 px-2 rounded-xl bg-blue-50 text-blue-800 text-3xl font-extrabold shadow-inner border border-blue-200"
+										class="inline-flex h-14 min-w-14 items-center justify-center rounded-xl bg-primary-container px-2 text-3xl font-extrabold text-on-primary-container"
 									>
 										{item.menge}
 									</span>

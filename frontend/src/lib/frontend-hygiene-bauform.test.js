@@ -46,8 +46,7 @@ const SCHATTEN = /(^|[\s'"`{(])shadow(-(xs|sm|md|lg|xl|2xl))?(?=[\s'"`});]|$)/;
 //     BEIDES: Ein Alarm, der einen Schüler an der Ausleihe stoppt, wird nicht leiser
 //     gemacht, um eine Gestaltungsregel zu erfüllen. Bewusste Ausnahme, keine Schuld.
 //   * `LabelPreview` bildet Papier nach; der Rahmen ist die Etikettenkante.
-//   * Die Cover-Bilder (`OrderSearch`, `WareneingangTable`, `CoverPeek`) sind Bilder,
-//     keine M3-Bauteile.
+//   * Die Cover-Bilder (`OrderSearch`, `CoverPeek`) sind Bilder, keine M3-Bauteile.
 //
 // Wer einen Eintrag abräumt, trägt ihn hier aus. Wer einen hinzufügen will, hat einen
 // Verstoß gebaut — die Regel ist nicht ausgelegt, sondern in Googles Token-Spezifikation
@@ -63,7 +62,6 @@ const BESTAND = [
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
 	'src/lib/components/auth/Login.svelte',
 	'src/lib/components/bestellungen/BestellHistorieTabelle.svelte',
-	'src/lib/components/bestellungen/WareneingangTable.svelte',
 	'src/lib/components/labels/LabelPreview.svelte',
 	'src/lib/components/students/AuswahlAktionsleiste.svelte',
 	'src/lib/components/ui/CoverPeek.svelte',
