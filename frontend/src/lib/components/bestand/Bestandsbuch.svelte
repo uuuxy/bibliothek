@@ -41,7 +41,8 @@
 
 	// Die Töpfe stehen als Felder mit ihrer Zahl unter dem Zeitraum. Ein leerer Topf belegt
 	// unten keinen Abschnitt: Dass nichts kam oder ging, sagt die Null im Feld. Ein Klick zeigt
-	// einen Topf allein; der Ausdruck bleibt das ganze Buch.
+	// einen Topf allein; der Ausdruck bleibt das ganze Buch. Das Feld trägt den Namen des Topfs
+	// wie Überschrift und Blatt, auch wo er länger ist als die 20 Zeichen, die M3 für Chips nennt.
 	let nurTopf = $state(/** @type {string | null} */ (null));
 	const felder = $derived(
 		abschnitte.map((a) => ({ wert: a.topf, text: `${a.titel} · ${formatZahl(a.zeilen.length)}` }))

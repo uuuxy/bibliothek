@@ -85,23 +85,6 @@ entfallen.
      „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
      dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
      Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
-5. **Fragen aus der Nacht zum 03.10.2026** (Farben und Bestandsbücher). Gebaut ist nichts davon;
-   jede Frage steht mit Beleg an der genannten Stelle.
-   - **Bestandsbücher, Länge der Feldnamen** (6.1): Die Felder tragen die Topfnamen des Blatts,
-     bis 33 Zeichen; M3 nennt höchstens 20. Kürzer wären „Land" und „Schulträger".
-   - **Schriftstärke von Chips und Umschaltern** (6.1): vier Bauteile rendern 400, die M3-Token
-     nennen 500; betrifft acht Bildschirme.
-   - **Benutzerliste, Farben der Rollen-Abzeichen** (5.21): vier Farben ohne Bedeutung; ein
-     neutrales Abzeichen oder die Rolle als Wort.
-   - **Benutzerliste, Lösch-Dialog** (5.21): eigener Dialog mit Knöpfen in der Mitte; M3 stellt
-     sie rechts.
-   - **Mail-Vorlagen, Namen** (5.21): Die Liste zeigt die Schlüssel „BESTELLUNG HAENDLER" und
-     „MAHNUNG ELTERN".
-   - **Buchakte, Überschrift im Reiter „Vormerkungen"** (5.21): wiederholt den Namen des Reiters.
-   - **Webcam-Aufnahme** (`WebcamCapture.svelte`, 24 Fundstellen): ein dunkler, eigener Dialog;
-     als Dialog des Hauses wäre er hell, das Kamerabild bliebe dunkel.
-   - **Datenverwaltung** (`DataManagement.svelte`, 16 Fundstellen): Die Knöpfe sind schwarz; als
-     Knöpfe des Hauses wären sie blau (primary). Für Schwarz gibt es keine Rolle.
 
 **Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
 hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat Node 26 ab dem
@@ -555,7 +538,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 03.10.2026: 1004 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 03.10.2026: 886 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
@@ -594,31 +577,35 @@ nicht (M3, Color roles: „Inverse surface: Background fills for elements which 
 surface"). Die Balkenfarben des Diagramms sind feste Werte, keine Rollen.
 
 Die Benutzerliste steht seit dem 03.10.2026 auf Rollen (`UserManagement`, `UserManagementTable`,
-die Dialoge zum Bearbeiten und Löschen), bis auf die Rollen-Abzeichen (12 Fundstellen):
+die Dialoge zum Bearbeiten und Löschen). Beim Ansehen aufgefallen:
 
-- Vier Rollen tragen Palettenfarben, die nichts bedeuten außer „eine andere Rolle" (Admin blau,
-  Kollegium grün, Helfer lila, Mitarbeiter gelb); die Leitung trägt `primary-container`. Grün
-  und Gelb sind in `rollen.css` die Rollen für „in Ordnung" und „Achtung". Lokal sind 471 von
-  479 Konten Kollegium. Umstellen hieße: ein neutrales Abzeichen für alle (`ui/StatusChip`)
-  oder die Rolle als Wort; der Verwalter fällt dann in der Liste nicht mehr durch die Farbe auf.
-- Der Dialog „Benutzer unwiderruflich löschen?" ist ein eigener Dialog neben
-  `ui/BestaetigungsDialog`, mit Symbol und Knöpfen in der Mitte. M3, Dialogs, Guidelines:
-  „Buttons are aligned to the trailing edge of the dialog for easier interaction." Er zeigt den
-  Grund eines gescheiterten Löschens im Dialog (offene Ausleihen im Handapparat); das kann der
-  gemeinsame Dialog nicht.
 - Der Zustand eines Kontos steht in zwei Formen: „Aktiv" und „Inaktiv" als Punkt mit Wort,
   „Zugang beantragt" als Pille.
+- In der Rückfrage vor dem Löschen ist „Abbrechen" gesperrt, solange gelöscht wird
+  (`UserManagementDeleteModal.svelte`); Escape und der Klick neben den Dialog schließen
+  trotzdem. M3, Dialogs, Guidelines: „Dismissive actions are never disabled."
 
-Die Mail-Vorlagen (Einstellungen, Kategorie „Mail") stehen seit dem 03.10.2026 auf Rollen. Die
-Liste nennt die Vorlagen mit ihrem Schlüssel aus der Datenbank, die Unterstriche durch
-Leerzeichen ersetzt: „BESTELLUNG HAENDLER", „MAHNUNG ELTERN" (`MailTemplates.svelte`,
-`t.typ.replace`). Ein Wort für Menschen wäre etwa „Bestellung an den Händler" und „Mahnbrief an
-die Eltern"; der Hinweis darunter (`MailVorlagenPlatzhalter.svelte`) beschreibt jede Vorlage
-schon so.
+Die Mail-Vorlagen (Einstellungen, Kategorie „Mail") und die Buchakte stehen seit dem 03.10.2026
+auf Rollen; die Reiter der Akte kommen aus `ui/Reiter`.
 
-Die Buchakte steht seit dem 03.10.2026 auf Rollen, ihre Reiter kommen aus `ui/Reiter`. Der
-Reiter „Vormerkungen" trägt als einziger der Akte eine eigene Überschrift („Warteliste /
-Vormerkungen", 22 px), die den Namen des Reiters wiederholt (`BookVormerkungenTab.svelte`).
+Seit dem 03.10.2026 stehen außerdem auf Rollen: die Warenkorb-Position
+(`OrderCartPosition.svelte`), die Liste im Wareneingang (`WareneingangTable.svelte`), die Spalte
+„Buch-Etiketten" des Druck-Centers (`LabelSettings`, `LabelBarcodeSchritt`,
+`LabelLayoutOptionen`), die Datenverwaltung (`DataManagement.svelte`) und die Aufnahme des
+Passbilds (`WebcamCapture.svelte`) bis auf die Hilfslinien im Sucher (5 Fundstellen; sie gehören
+zum Kamerabild). Beim Ansehen aufgefallen, jeweils am Code nachgesehen:
+
+- Druck-Center, Buch-Etiketten: Das Vorschaublatt ist fest 140 mm breit
+  (`LabelPreview.svelte`), seine Spalte schmaler. Gemessen am 03.10.2026 mit ausgeklapptem
+  Menü: Bei 1280 px liegt das Blatt 42 px über dem rechten Rand der Einstellungsspalte, bei
+  1440 px 9 px, bei 1680 px liegt es frei.
+- Passbild: Der gestrichelte Rahmen im Sucher ist halb so breit wie das Bild und 90 % so hoch.
+  Gespeichert wird ein anderer Ausschnitt: die volle Höhe im Format 3:4, bei einem Bild in 16:9
+  also 42 % der Breite (`WebcamCapture.svelte`, `capturePhoto`).
+- Datenverwaltung: Die Seite trägt fünf gefüllte Knöpfe, einen je Baustein. M3, Buttons,
+  Guidelines: „the filled style should be used sparingly, ideally for only one action on a
+  page". Der Katalog-Import (`LitteraImportWidget.svelte`) steht als einziger Baustein noch in
+  einer Kachel mit Rand und Schatten und auf Palettenfarben.
 
 Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
 
@@ -851,20 +838,6 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   mehreren tausend Zugängen am Server. Die Felder je Topf über der Liste bauen dabei nichts
   neu auf: Eine Liste mit Zeilen bleibt im Dokument und wird aus- und eingeblendet (gemessen am
   02.10.2026 mit 38.810 Zeilen: ausblenden 0,1 s, einblenden 0,8 bis 0,9 s).
-- Die Felder im Zugangs- und Abgangsbuch tragen die Topfnamen des Blatts: „Lernmittelfreiheit
-  (Land) · 63" hat 30 Zeichen, „Schülerbücherei (Schulträger) · 0" 33. M3, Chips, Guidelines:
-  „Chip label text should be 20 characters or fewer", als Don't: „Avoid chip labels longer than
-  20 characters". Kürzer wären „Land" und „Schulträger"; dann nennt das Feld den Topf anders als
-  die Überschrift der Liste und das Blatt. Gemessen am 02.10.2026: Bei 1024 und 800 px stehen
-  die drei Felder in einer Zeile, bei 390 px untereinander.
-- Die Beschriftung der Chips und Umschalter rendert mit Gewicht 400, M3 setzt 500: `ui/FilterChips`,
-  `ui/ChipFeld`, `ui/ChipAngebote` und `ui/Segmente` tragen `font-medium`, das in diesem Haus auf
-  400 zeigt (`styles/theme-mass.css`; `ui/Reiter` nennt die Falle und schreibt `font-semibold`).
-  material-web, Token v0_192: `label-text-weight` ist bei Filter-, Input-, Suggestion- und
-  Assist-Chip und beim Outlined Segmented Button `label-large-weight`, das ist `weight-medium`
-  (500). Gemessen am 02.10.2026 im Zugangsbuch: 14 px, Gewicht 400; `ui/Button` und `ui/Reiter`
-  tragen `font-semibold` (500). Betrifft Portal, Bestandsbücher, Buchformular, Bestellfenster,
-  Titel-Verwaltung, Statistik, LMF-Plan und Druck-Center.
 - Bei 390 px Breite ist die Bestellspalte (Bestellwesen, das Fenster vor dem Warenkorb) 68 px
   breit, auch das Eingabefeld der Schlagworte; die Chips ragen darüber hinaus (gemessen am
   30.09.2026 im echten Chrome, schon vor der zweiten Vorschlagszeile so). Unterhalb von `lg` legt
