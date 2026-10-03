@@ -83,51 +83,54 @@ type verlustLoeschenRequest struct {
 // diese Route rührt ausschliesslich Exemplare an, die schon als VERLUST gelten.
 // @Router /buecher/exemplare/verlust-endgueltig-loeschen [post]
 func (s *Server) InventurVerlusteLoeschenHandler() http.HandlerFunc {
-	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		var req verlustLoeschenRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return nil
-		}
-		if len(req.ExemplarIDs) == 0 {
-			return apierrors.BadRequest("exemplar_ids fehlt oder ist leer", nil)
-		}
-		claims, ok := auth.GetClaims(r.Context())
-		if !ok {
-			return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
-		}
+	return apierrors.Wrap(s.handleInventurVerlusteLoeschen)
+}
 
-		ctx := r.Context()
-		tx, err := s.DB.Pool.Begin(ctx)
-		if err != nil {
-			return apierrors.Internal("Transaktion konnte nicht gestartet werden", err)
-		}
-		defer db.SafeRollback(ctx, tx)
-
-		invRepo := repository.NewInventoryRepository(tx)
-		geloeschteIDs, err := invRepo.EndgueltigLoescheVerlustExemplare(ctx, req.ExemplarIDs, claims.UserID)
-		if err != nil {
-			// 409 statt 500: Ein gebundenes Exemplar ist eine Lage, kein Störfall. Als
-			// Internal ersetzte der Sanitizer den Text durch „interner Datenbankfehler"
-			// (apierrors.SendHTTPError) — die Bedienung erführe nie, WELCHES Exemplar
-			// warum im Weg steht. Wrap gibt die Message eines APIError unverändert aus.
-			if errors.Is(err, repository.ErrVerlustNochGebunden) {
-				return apierrors.Conflict(err.Error(), err)
-			}
-			return apierrors.Internal("Endgültiges Löschen fehlgeschlagen", err)
-		}
-		if err := tx.Commit(ctx); err != nil {
-			return apierrors.Internal("Transaktion konnte nicht abgeschlossen werden", err)
-		}
-		// Beide Angaben: die Zahl für die Meldung, die IDs, damit die Oberfläche genau
-		// die Zeilen entfernt, die wirklich weg sind — und nicht die, die sie angefragt
-		// hatte. Nie nil, damit der Client [] statt null bekommt.
-		if geloeschteIDs == nil {
-			geloeschteIDs = []string{}
-		}
-		RespondJSON(w, http.StatusOK, map[string]any{
-			"geloescht":      len(geloeschteIDs),
-			"geloeschte_ids": geloeschteIDs,
-		})
+// handleInventurVerlusteLoeschen löscht die genannten Verlust-Exemplare in einer Transaktion.
+func (s *Server) handleInventurVerlusteLoeschen(w http.ResponseWriter, r *http.Request) error {
+	var req verlustLoeschenRequest
+	if !DecodeAndValidate(w, r, &req) {
 		return nil
+	}
+	if len(req.ExemplarIDs) == 0 {
+		return apierrors.BadRequest("exemplar_ids fehlt oder ist leer", nil)
+	}
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
+	}
+
+	ctx := r.Context()
+	tx, err := s.DB.Pool.Begin(ctx)
+	if err != nil {
+		return apierrors.Internal("Transaktion konnte nicht gestartet werden", err)
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	invRepo := repository.NewInventoryRepository(tx)
+	geloeschteIDs, err := invRepo.EndgueltigLoescheVerlustExemplare(ctx, req.ExemplarIDs, claims.UserID)
+	if err != nil {
+		// 409 statt 500: Ein gebundenes Exemplar ist eine Lage, kein Störfall. Als
+		// Internal ersetzte der Sanitizer den Text durch „interner Datenbankfehler"
+		// (apierrors.SendHTTPError) — die Bedienung erführe nie, WELCHES Exemplar
+		// warum im Weg steht. Wrap gibt die Message eines APIError unverändert aus.
+		if errors.Is(err, repository.ErrVerlustNochGebunden) {
+			return apierrors.Conflict(err.Error(), err)
+		}
+		return apierrors.Internal("Endgültiges Löschen fehlgeschlagen", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return apierrors.Internal("Transaktion konnte nicht abgeschlossen werden", err)
+	}
+	// Beide Angaben: die Zahl für die Meldung, die IDs, damit die Oberfläche genau
+	// die Zeilen entfernt, die wirklich weg sind — und nicht die, die sie angefragt
+	// hatte. Nie nil, damit der Client [] statt null bekommt.
+	if geloeschteIDs == nil {
+		geloeschteIDs = []string{}
+	}
+	RespondJSON(w, http.StatusOK, map[string]any{
+		"geloescht":      len(geloeschteIDs),
+		"geloeschte_ids": geloeschteIDs,
 	})
+	return nil
 }

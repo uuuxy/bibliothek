@@ -37,58 +37,64 @@ type UpdateStatusRequest struct {
 // @Router       /buecher/exemplare/{id}/status [put]
 func (s *Server) UpdateCopyStatusHandler(bookRepo repository.BookRepository, bescheidRepo repository.BescheidRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
-			return
-		}
-
-		var req UpdateStatusRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-
-		ctx := r.Context()
-
-		// Wenn ein Buch manuell auf "Verfügbar" gesetzt wird, zwingend Notizen und Ausgesondert-Flag löschen
-		//
-		// Der Beschädigungsgrad wird dabei AUSDRÜCKLICH nicht geräumt: Er ist eine
-		// Eigenschaft des Buchs, kein Status. Ein Band mit Wasserrand darf ausleihbar sein
-		// und trägt seinen Abschlag weiter — sonst verlangte die Schule beim nächsten
-		// Verlust wieder den vollen Zeitwert für ein sichtbar beschädigtes Buch.
-		if req.IstAusleihbar {
-			req.ZustandNotiz = ""
-			req.IstAusgesondert = false
-		}
-
-		if err := bookRepo.UpdateCopyStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert,
-			req.ZustandNotiz, req.ZustandAbwertungProzent); err != nil {
-			if errors.Is(err, repository.ErrExemplarNochVerliehen) {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-				return
-			}
-			if errors.Is(err, repository.ErrExemplarNichtGefunden) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// Die Antwort trägt den NEUEN Ersatzwert zurück (OFFEN.md 9.8, Stufe 2b):
-		// Wer den Wertverlust gerade eingetragen hat, sieht sofort, was das Buch damit
-		// noch wert ist. Gerechnet wird dabei am Server, mit derselben Funktion wie im
-		// Melde-Dialog — die Oberfläche soll diese Zahl nie selbst ausrechnen.
-		//
-		// Scheitert die Nachfrage, bleibt es bei der Erfolgsmeldung: Gespeichert ist
-		// gespeichert, und eine fehlende Auskunft darf daraus keinen Fehler machen.
-		antwort := map[string]any{"status": "success"}
-		if g, groessenErr := bescheidRepo.GroessenFuerExemplar(ctx, id); groessenErr == nil {
-			v := ersatzwertVorschlagAus(g, s.preisquelle(ctx))
-			antwort["ersatzwert"] = v.Betrag
-			antwort["ersatzwert_herleitung"] = v.Herleitung
-			antwort["ersatzwert_bekannt"] = v.Bekannt
-		}
-		RespondJSON(w, http.StatusOK, antwort)
+		s.handleUpdateCopyStatus(w, r, bookRepo, bescheidRepo)
 	}
+}
+
+// handleUpdateCopyStatus speichert Status und Zustand eines Exemplars und nennt den neuen
+// Ersatzwert.
+func (s *Server) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, bookRepo repository.BookRepository, bescheidRepo repository.BescheidRepository) {
+	id := r.PathValue("id")
+	if id == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
+		return
+	}
+
+	var req UpdateStatusRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
+	}
+
+	ctx := r.Context()
+
+	// Wenn ein Buch manuell auf "Verfügbar" gesetzt wird, zwingend Notizen und Ausgesondert-Flag löschen
+	//
+	// Der Beschädigungsgrad wird dabei AUSDRÜCKLICH nicht geräumt: Er ist eine
+	// Eigenschaft des Buchs, kein Status. Ein Band mit Wasserrand darf ausleihbar sein
+	// und trägt seinen Abschlag weiter — sonst verlangte die Schule beim nächsten
+	// Verlust wieder den vollen Zeitwert für ein sichtbar beschädigtes Buch.
+	if req.IstAusleihbar {
+		req.ZustandNotiz = ""
+		req.IstAusgesondert = false
+	}
+
+	if err := bookRepo.UpdateCopyStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert,
+		req.ZustandNotiz, req.ZustandAbwertungProzent); err != nil {
+		if errors.Is(err, repository.ErrExemplarNochVerliehen) {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			return
+		}
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// Die Antwort trägt den NEUEN Ersatzwert zurück (OFFEN.md 9.8, Stufe 2b):
+	// Wer den Wertverlust gerade eingetragen hat, sieht sofort, was das Buch damit
+	// noch wert ist. Gerechnet wird dabei am Server, mit derselben Funktion wie im
+	// Melde-Dialog — die Oberfläche soll diese Zahl nie selbst ausrechnen.
+	//
+	// Scheitert die Nachfrage, bleibt es bei der Erfolgsmeldung: Gespeichert ist
+	// gespeichert, und eine fehlende Auskunft darf daraus keinen Fehler machen.
+	antwort := map[string]any{"status": "success"}
+	if g, groessenErr := bescheidRepo.GroessenFuerExemplar(ctx, id); groessenErr == nil {
+		v := ersatzwertVorschlagAus(g, s.preisquelle(ctx))
+		antwort["ersatzwert"] = v.Betrag
+		antwort["ersatzwert_herleitung"] = v.Herleitung
+		antwort["ersatzwert_bekannt"] = v.Bekannt
+	}
+	RespondJSON(w, http.StatusOK, antwort)
 }

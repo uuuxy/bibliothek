@@ -9,6 +9,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/db"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -158,15 +159,11 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Die alte Bezeichnung VOR dem Update lesen: Nur sie verbindet die Sachgruppe
+	// Die alte Bezeichnung vor dem Update lesen: Nur sie verbindet die Sachgruppe
 	// mit den offenen Inventur-Sessions (und die Zählung mit den Büchern).
-	var alteBezeichnung string
-	if err := tx.QueryRow(ctx,
-		`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&alteBezeichnung); err != nil {
-		if strings.Contains(err.Error(), "no rows") {
-			return apierrors.NotFound("Sachgruppe nicht gefunden", err)
-		}
-		return apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
+	alteBezeichnung, err := sachgruppenBezeichnung(ctx, tx, id)
+	if err != nil {
+		return err
 	}
 
 	var mitgezogen int64
@@ -212,6 +209,20 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 		"titel_mitgezogen": mitgezogen,
 	})
 	return nil
+}
+
+// sachgruppenBezeichnung liest die Bezeichnung einer Sachgruppe; eine unbekannte Kennung ist
+// ein 404.
+func sachgruppenBezeichnung(ctx context.Context, tx pgx.Tx, id string) (string, error) {
+	var bezeichnung string
+	if err := tx.QueryRow(ctx,
+		`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&bezeichnung); err != nil {
+		if strings.Contains(err.Error(), "no rows") {
+			return "", apierrors.NotFound("Sachgruppe nicht gefunden", err)
+		}
+		return "", apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
+	}
+	return bezeichnung, nil
 }
 
 // DeleteSystematikHandler entfernt eine Sachgruppe — aber nicht unter den Büchern weg.

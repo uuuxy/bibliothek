@@ -29,44 +29,49 @@ type UpdateBarcodeRequest struct {
 // @Router       /buecher/exemplare/{id}/barcode [put]
 func (s *Server) UpdateCopyBarcodeHandler(bookRepo repository.BookRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
-			return
-		}
-
-		var req UpdateBarcodeRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-
-		if req.Barcode == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("barcode cannot be empty"))
-			return
-		}
-
-		ctx := r.Context()
-
-		if err := bookRepo.UpdateCopyBarcode(ctx, id, req.Barcode); err != nil {
-			if errors.Is(err, repository.ErrExemplarNichtGefunden) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
-				return
-			}
-			// Eine Nummer ist entweder Buch oder Ausweis (Migration 131): Die Theke löst
-			// einen Scan zuerst als Buch auf — trüge ein Buch die Nummer eines Ausweises,
-			// lüde dieser Ausweis das Buch.
-			if repository.IstNummerBuchOderAusweisKollision(err) {
-				apierrors.SendHTTPError(w, http.StatusConflict, errors.New("diese Nummer ist der Ausweis eines Lesers und kann kein Buch-Barcode sein"))
-				return
-			}
-			if strings.Contains(err.Error(), "unique constraint") || strings.Contains(err.Error(), "duplicate key") {
-				apierrors.SendHTTPError(w, http.StatusConflict, errors.New("dieser Barcode wird bereits von einem anderen Exemplar verwendet"))
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		RespondSuccess(w)
+		s.handleUpdateCopyBarcode(w, r, bookRepo)
 	}
+}
+
+// handleUpdateCopyBarcode setzt den Barcode eines Exemplars und ordnet die Ablehnungen ein.
+func (s *Server) handleUpdateCopyBarcode(w http.ResponseWriter, r *http.Request, bookRepo repository.BookRepository) {
+	id := r.PathValue("id")
+	if id == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
+		return
+	}
+
+	var req UpdateBarcodeRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
+	}
+
+	if req.Barcode == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("barcode cannot be empty"))
+		return
+	}
+
+	ctx := r.Context()
+
+	if err := bookRepo.UpdateCopyBarcode(ctx, id, req.Barcode); err != nil {
+		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			return
+		}
+		// Eine Nummer ist entweder Buch oder Ausweis (Migration 131): Die Theke löst
+		// einen Scan zuerst als Buch auf — trüge ein Buch die Nummer eines Ausweises,
+		// lüde dieser Ausweis das Buch.
+		if repository.IstNummerBuchOderAusweisKollision(err) {
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("diese Nummer ist der Ausweis eines Lesers und kann kein Buch-Barcode sein"))
+			return
+		}
+		if strings.Contains(err.Error(), "unique constraint") || strings.Contains(err.Error(), "duplicate key") {
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("dieser Barcode wird bereits von einem anderen Exemplar verwendet"))
+			return
+		}
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	RespondSuccess(w)
 }

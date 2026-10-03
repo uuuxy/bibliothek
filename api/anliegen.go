@@ -132,51 +132,57 @@ func (s *Server) CountOffeneAnliegenHandler() http.HandlerFunc {
 // ErledigeAnliegenHandler hakt ab und benachrichtigt die Lehrkraft.
 // PUT /api/anliegen/{id}/erledigen  { "notiz": "bestellt, kommt Anfang September" }
 func (s *Server) ErledigeAnliegenHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		var body struct {
-			Notiz string `json:"notiz"`
-		}
-		if !DecodeAndValidate(w, r, &body) {
-			return
-		}
+	return s.handleErledigeAnliegen
+}
 
-		erledigt, err := repository.NewAnliegenRepository(s.DB.Pool).Erledige(r.Context(), id, kuerze(strings.TrimSpace(body.Notiz), 500))
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if erledigt == nil {
-			// Schon abgehakt (Doppelklick an zwei Arbeitsplätzen) oder unbekannt —
-			// beides kein Serverfehler, und vor allem: KEINE zweite Mail.
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("anliegen ist bereits erledigt oder unbekannt"))
-			return
-		}
-
-		// Best effort wie die Klassensatz-Bereit-Mail: Das Abhaken gilt, auch wenn der
-		// Mailversand klemmt. Aber nicht mehr spurlos (Ausfallmatrix 20.08.2026): Die
-		// Antwort traegt den Mail-Status, damit die Theke weiss, ob die Lehrkraft
-		// wirklich benachrichtigt wurde. Ohne Konto-Adresse keine Mail.
-		mailStatus := mailStatusKeineAdresse
-		if erledigt.AnfragendeMail != nil && *erledigt.AnfragendeMail != "" {
-			mailStatus = mailStatusVersendet
-			betreff := fmt.Sprintf("Ihr Wunsch ist erledigt: %s", erledigt.TitelText)
-			if erledigt.Art == "meldung" {
-				betreff = fmt.Sprintf("Ihre Meldung ist erledigt: %s", erledigt.TitelText)
-			}
-			text := fmt.Sprintf("Die Bibliothek hat Ihr Anliegen erledigt.\n\n  Betreff: %s\n", erledigt.TitelText)
-			if erledigt.Klasse != "" {
-				text += fmt.Sprintf("  Klasse:  %s\n", erledigt.Klasse)
-			}
-			if erledigt.ErledigtNotiz != "" {
-				text += fmt.Sprintf("  Notiz:   %s\n", erledigt.ErledigtNotiz)
-			}
-			text += "\nDiese Mail wurde automatisch beim Abhaken verschickt."
-			if err := SendEmail(MailRequest{To: *erledigt.AnfragendeMail, Subject: betreff, Body: text}); err != nil {
-				log.Printf("Anliegen-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
-				mailStatus = mailStatusFehlgeschlagen
-			}
-		}
-		RespondJSON(w, http.StatusOK, map[string]string{"mail": mailStatus})
+// handleErledigeAnliegen hakt das Anliegen ab und benachrichtigt, wer es gestellt hat.
+func (s *Server) handleErledigeAnliegen(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	var body struct {
+		Notiz string `json:"notiz"`
 	}
+	if !DecodeAndValidate(w, r, &body) {
+		return
+	}
+
+	erledigt, err := repository.NewAnliegenRepository(s.DB.Pool).Erledige(r.Context(), id, kuerze(strings.TrimSpace(body.Notiz), 500))
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if erledigt == nil {
+		// Schon abgehakt (Doppelklick an zwei Arbeitsplätzen) oder unbekannt —
+		// beides kein Serverfehler, und vor allem: keine zweite Mail.
+		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("anliegen ist bereits erledigt oder unbekannt"))
+		return
+	}
+
+	// Das Abhaken gilt, auch wenn der Mailversand klemmt. Die Antwort trägt den
+	// Mail-Status, damit die Theke weiß, ob die Lehrkraft wirklich benachrichtigt wurde.
+	RespondJSON(w, http.StatusOK, map[string]string{"mail": sendeAnliegenErledigtMail(erledigt)})
+}
+
+// sendeAnliegenErledigtMail benachrichtigt, wer das Anliegen gestellt hat, und nennt, was aus
+// dem Versand wurde. Ohne Adresse am Konto geht keine Mail.
+func sendeAnliegenErledigtMail(erledigt *repository.AnliegenErledigt) string {
+	if erledigt.AnfragendeMail == nil || *erledigt.AnfragendeMail == "" {
+		return mailStatusKeineAdresse
+	}
+	betreff := fmt.Sprintf("Ihr Wunsch ist erledigt: %s", erledigt.TitelText)
+	if erledigt.Art == "meldung" {
+		betreff = fmt.Sprintf("Ihre Meldung ist erledigt: %s", erledigt.TitelText)
+	}
+	text := fmt.Sprintf("Die Bibliothek hat Ihr Anliegen erledigt.\n\n  Betreff: %s\n", erledigt.TitelText)
+	if erledigt.Klasse != "" {
+		text += fmt.Sprintf("  Klasse:  %s\n", erledigt.Klasse)
+	}
+	if erledigt.ErledigtNotiz != "" {
+		text += fmt.Sprintf("  Notiz:   %s\n", erledigt.ErledigtNotiz)
+	}
+	text += "\nDiese Mail wurde automatisch beim Abhaken verschickt."
+	if err := SendEmail(MailRequest{To: *erledigt.AnfragendeMail, Subject: betreff, Body: text}); err != nil {
+		log.Printf("Anliegen-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
+		return mailStatusFehlgeschlagen
+	}
+	return mailStatusVersendet
 }

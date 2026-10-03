@@ -134,26 +134,36 @@ var coverHTTPClient = safehttp.NeuerClient(20 * time.Second)
 // Cache-Verzeichnis. Bei Encode-/Close-Fehler wird die evtl. angefangene Datei
 // wieder entfernt.
 func holeUndKonvertiereCover(ctx context.Context, root *os.Root, urlStr, fileName string) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
+	rohBytes, err := ladeCoverBytes(ctx, urlStr)
 	if err != nil {
 		return err
+	}
+	return speichereCoverAlsWebP(root, fileName, rohBytes)
+}
+
+// ladeCoverBytes holt die Antwort der Quelle und weist ab, was kein Cover ist, bevor
+// irgendetwas dekodiert wird.
+func ladeCoverBytes(ctx context.Context, urlStr string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, urlStr, nil)
+	if err != nil {
+		return nil, err
 	}
 	req.Header.Set("User-Agent", "Inventur/1.0")
 
 	resp, err := coverHTTPClient.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer closeutil.LogClose(resp.Body, "cover download")
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("cover download: unerwarteter Status %d", resp.StatusCode)
+		return nil, fmt.Errorf("cover download: unerwarteter Status %d", resp.StatusCode)
 	}
 
 	// Nicht-Bild-Antworten sofort verwerfen: Bot-Schranken (DNB/Anubis) liefern bei
 	// unerwartetem User-Agent HTTP 200 mit einer HTML-Challenge. Gleiche Prüfung wie im
 	// Cover-Downloader des Inventur-Moduls.
 	if ct := resp.Header.Get(headerContentType); strings.Contains(ct, "html") || strings.Contains(ct, "text/") || strings.Contains(ct, "json") {
-		return fmt.Errorf("cover download: Nicht-Bild-Antwort (%s)", ct)
+		return nil, fmt.Errorf("cover download: Nicht-Bild-Antwort (%s)", ct)
 	}
 
 	// Erst begrenzt einlesen, dann den Header prüfen, dann dekodieren — in dieser
@@ -167,30 +177,34 @@ func holeUndKonvertiereCover(ctx context.Context, root *os.Root, urlStr, fileNam
 	// allokiert keine Pixeldaten).
 	rohBytes, err := io.ReadAll(io.LimitReader(resp.Body, maxCoverBytes+1))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(rohBytes) > maxCoverBytes {
-		return fmt.Errorf("cover download: Antwort überschreitet %d MB", maxCoverBytes>>20)
+		return nil, fmt.Errorf("cover download: Antwort überschreitet %d MB", maxCoverBytes>>20)
 	}
 	// Ein Ersatzbild der Quelle ist kein Cover: Der Aufrufer zeigt dann die nächste Quelle
 	// oder die Initiale des Titels.
 	if coverquelle.IstErsatzbild(rohBytes) {
-		return errors.New("cover download: die Quelle hat zu dieser ISBN kein Cover (Ersatzbild)")
+		return nil, errors.New("cover download: die Quelle hat zu dieser ISBN kein Cover (Ersatzbild)")
 	}
 	if err := imageutil.GuardImageDimensions(rohBytes); err != nil {
-		return err
+		return nil, err
 	}
+	return rohBytes, nil
+}
 
+// speichereCoverAlsWebP dekodiert das geprüfte Bild und legt es als WebP in den Cache. Eine
+// angefangene Datei wird bei einem Fehler wieder entfernt.
+func speichereCoverAlsWebP(root *os.Root, fileName string, rohBytes []byte) error {
 	img, _, err := image.Decode(bytes.NewReader(rohBytes))
 	if err != nil {
 		return err
 	}
 
-	// 0600 wie in uploads_pfad.go, nicht 0666: Der Cover-Cache schrieb als einzige Stelle
-	// welt-schreibbar. Im Container federt die umask das meist ab — „meist" ist bei
-	// Dateirechten aber keine Zusage, sondern eine Wette auf die Laufzeitumgebung. Der
-	// Prozess ist der einzige, der diese Dateien je anfassen muss; ausgeliefert werden
-	// sie über den FileServer, nicht über das Dateisystem.
+	// 0600 wie in uploads_pfad.go, nicht 0666: Im Container federt die umask das meist ab —
+	// „meist" ist bei Dateirechten aber keine Zusage, sondern eine Wette auf die
+	// Laufzeitumgebung. Der Prozess ist der einzige, der diese Dateien je anfassen muss;
+	// ausgeliefert werden sie über den FileServer, nicht über das Dateisystem.
 	out, err := root.OpenFile(fileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
 		return err

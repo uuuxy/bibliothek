@@ -29,66 +29,68 @@ type KlassensatzReservierungRequest struct {
 // CreateKlassensatzReservierungHandler lets a LEHRER submit a class-set reservation.
 // POST /api/reservierungen/klassensatz
 func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req KlassensatzReservierungRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-		if !validateKlassensatzRequest(w, &req) {
-			return
-		}
+	return s.handleCreateKlassensatzReservierung
+}
 
-		claims, ok := auth.GetClaims(r.Context())
-		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("fehlende Sitzungsinformationen"))
-			return
-		}
-
-		ctx := r.Context()
-		repo := repository.NewReservationRepository(s.DB.Pool)
-
-		// Verify the title exists. Ein DB-Fehler ist KEIN „nicht gefunden" (Fehler-Kollaps,
-		// Sweep 29.08.2026): Vorher endete ein Verbindungsabbruch als 404, und die
-		// Lehrkraft las „Buchtitel nicht gefunden" für einen Titel, der da war.
-		exists, err := repo.CheckTitleExists(ctx, req.TitelID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if !exists {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("buchtitel nicht gefunden"))
-			return
-		}
-
-		// Bestandsdeckelung: Mehr Exemplare zu reservieren, als die Bibliothek überhaupt
-		// besitzt, erzeugt eine dauerhaft unerfüllbare Aufgabe im Dashboard (Ghost-Order).
-		// Die Wunschmenge wird deshalb gegen den physischen Bestand (nicht ausgesondert)
-		// geprüft.
-		bestand, err := repo.CountTitleStock(ctx, req.TitelID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if req.Anzahl > bestand {
-			apierrors.SendHTTPError(w, http.StatusBadRequest,
-				fmt.Errorf("nur %d Exemplare im Bestand — %d können nicht reserviert werden", bestand, req.Anzahl))
-			return
-		}
-
-		newID, neu, err := repo.CreateKlassensatzReservierung(ctx, req.TitelID, req.Klasse, req.Anzahl, nullableString(req.Notiz), claims.UserID, nullableString(req.IdempotencyKey))
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// neu=false: derselbe Idempotenz-Schlüssel lief schon durch (Doppelklick) — die
-		// bestehende Reservierung zurückgeben, kein zweiter Eintrag, keine zweite Mail.
-		status := "erstellt"
-		if !neu {
-			status = "bereits_vorhanden"
-		}
-		RespondJSON(w, http.StatusCreated, map[string]string{"id": newID, "status": status})
+// handleCreateKlassensatzReservierung prüft Titel und Bestand und legt die Reservierung an.
+func (s *Server) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *http.Request) {
+	var req KlassensatzReservierungRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
 	}
+	if !validateKlassensatzRequest(w, &req) {
+		return
+	}
+
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("fehlende Sitzungsinformationen"))
+		return
+	}
+
+	ctx := r.Context()
+	repo := repository.NewReservationRepository(s.DB.Pool)
+
+	// Ein Datenbankfehler ist kein „nicht gefunden": Sonst endete ein Verbindungsabbruch
+	// als 404, und die Lehrkraft läse „Buchtitel nicht gefunden" für einen Titel, der da ist.
+	exists, err := repo.CheckTitleExists(ctx, req.TitelID)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if !exists {
+		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("buchtitel nicht gefunden"))
+		return
+	}
+
+	// Bestandsdeckelung: Mehr Exemplare zu reservieren, als die Bibliothek überhaupt
+	// besitzt, erzeugt eine dauerhaft unerfüllbare Aufgabe im Dashboard (Ghost-Order).
+	// Die Wunschmenge wird deshalb gegen den physischen Bestand (nicht ausgesondert)
+	// geprüft.
+	bestand, err := repo.CountTitleStock(ctx, req.TitelID)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if req.Anzahl > bestand {
+		apierrors.SendHTTPError(w, http.StatusBadRequest,
+			fmt.Errorf("nur %d Exemplare im Bestand — %d können nicht reserviert werden", bestand, req.Anzahl))
+		return
+	}
+
+	newID, neu, err := repo.CreateKlassensatzReservierung(ctx, req.TitelID, req.Klasse, req.Anzahl, nullableString(req.Notiz), claims.UserID, nullableString(req.IdempotencyKey))
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// neu=false: derselbe Idempotenz-Schlüssel lief schon durch (Doppelklick) — die
+	// bestehende Reservierung zurückgeben, kein zweiter Eintrag, keine zweite Mail.
+	status := "erstellt"
+	if !neu {
+		status = "bereits_vorhanden"
+	}
+	RespondJSON(w, http.StatusCreated, map[string]string{"id": newID, "status": status})
 }
 
 // GetKlassensatzReservierungenHandler lists all pending class-set reservations for admins.

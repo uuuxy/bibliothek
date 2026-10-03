@@ -240,3 +240,50 @@ func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 		t.Errorf("Signatur darf sich nicht ändern, war %q", sig)
 	}
 }
+
+// Eine unbekannte Sachgruppe zu ändern ist ein 404; eine Bezeichnung, die eine andere schon
+// trägt, ein 409, und die Sachgruppe behält ihre.
+func TestSystematikAendern_UnbekanntUndDoppelt(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
+	t.Cleanup(func() {
+		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE kuerzel LIKE 'Dop%'`)
+	})
+	if rec, _ := systematikAnlegen(t, srv, "DopA"+suffix, "Doppelt A "+suffix); rec.Code != http.StatusCreated {
+		t.Fatalf("erste Sachgruppe: Status %d, %s", rec.Code, rec.Body.String())
+	}
+	rec, zweite := systematikAnlegen(t, srv, "DopB"+suffix, "Doppelt B "+suffix)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("zweite Sachgruppe: Status %d, %s", rec.Code, rec.Body.String())
+	}
+	aendere := func(id, kuerzel, bezeichnung string) *httptest.ResponseRecorder {
+		t.Helper()
+		koerper, err := json.Marshal(map[string]string{"kuerzel": kuerzel, "bezeichnung": bezeichnung})
+		if err != nil {
+			t.Fatalf("Anfrage kodieren: %v", err)
+		}
+		req := httptest.NewRequest(http.MethodPut, "/api/systematics/"+id, bytes.NewReader(koerper))
+		req.SetPathValue("id", id)
+		rec := httptest.NewRecorder()
+		srv.UpdateSystematikHandler().ServeHTTP(rec, req)
+		return rec
+	}
+
+	if rec := aendere("00000000-0000-0000-0000-00000000dead", "DopC"+suffix, "Doppelt C "+suffix); rec.Code != http.StatusNotFound {
+		t.Errorf("unbekannte Sachgruppe: Status %d, erwartet 404: %s", rec.Code, rec.Body.String())
+	}
+	if rec := aendere(zweite, "DopB"+suffix, "Doppelt A "+suffix); rec.Code != http.StatusConflict {
+		t.Errorf("schon vergebene Bezeichnung: Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
+	}
+	var bezeichnung string
+	if err := pool.QueryRow(ctx,
+		`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, zweite).Scan(&bezeichnung); err != nil {
+		t.Fatalf("Bezeichnung lesen: %v", err)
+	}
+	if bezeichnung != "Doppelt B "+suffix {
+		t.Errorf("die abgelehnte Änderung hat die Bezeichnung geändert: %q", bezeichnung)
+	}
+}

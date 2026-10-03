@@ -106,6 +106,48 @@ func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
 			t.Fatalf("mail=%q, erwartet keine_adresse", got)
 		}
 	})
+
+	t.Run("die Mail nennt Art, Klasse und Notiz, ein zweites Abhaken schickt keine", func(t *testing.T) {
+		var mails []MailRequest
+		alt := SendEmail
+		SendEmail = func(m MailRequest) error { mails = append(mails, m); return nil }
+		t.Cleanup(func() { SendEmail = alt })
+
+		var meldung string
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO lehrer_anliegen (art, titel_text, klasse, angefordert_von)
+			VALUES ('meldung', 'Atlas, Seite 12 fehlt', '7b', $1) RETURNING id`, lehrerID).Scan(&meldung); err != nil {
+			t.Fatalf("Meldung anlegen: %v", err)
+		}
+		if got := mailStatusAusAntwort(t, erledige(t, meldung)); got != "versendet" {
+			t.Fatalf("mail=%q, erwartet versendet", got)
+		}
+		if got := mailStatusAusAntwort(t, erledige(t, neuesAnliegen(t))); got != "versendet" {
+			t.Fatalf("mail=%q, erwartet versendet", got)
+		}
+		if len(mails) != 2 {
+			t.Fatalf("%d Mails nach zwei erledigten Anliegen, erwartet 2", len(mails))
+		}
+		m, wunsch := mails[0], mails[1]
+		if m.To != "anliegen-mailstatus@test.invalid" || m.Subject != "Ihre Meldung ist erledigt: Atlas, Seite 12 fehlt" {
+			t.Errorf("Meldung: an %q mit Betreff %q", m.To, m.Subject)
+		}
+		for _, stueck := range []string{"Betreff: Atlas, Seite 12 fehlt", "Klasse:  7b", "Notiz:   besorgt"} {
+			if !strings.Contains(m.Body, stueck) {
+				t.Errorf("Meldung: der Text nennt %q nicht: %s", stueck, m.Body)
+			}
+		}
+		if wunsch.Subject != "Ihr Wunsch ist erledigt: Faust II" || strings.Contains(wunsch.Body, "Klasse:") {
+			t.Errorf("Wunsch ohne Klasse: Betreff %q, Text %s", wunsch.Subject, wunsch.Body)
+		}
+
+		if rec := erledige(t, meldung); rec.Code != http.StatusNotFound {
+			t.Errorf("zweites Abhaken: Status %d, erwartet 404: %s", rec.Code, rec.Body.String())
+		}
+		if len(mails) != 2 {
+			t.Errorf("das zweite Abhaken hat eine Mail geschickt (%d statt 2)", len(mails))
+		}
+	})
 }
 
 func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
