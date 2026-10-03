@@ -9,7 +9,9 @@
 	// Sie sind unter „System → Bestandsbücher" gewandert (components/bestand/
 	// Bestandsbuecher.svelte): ein Nachweis zum Stichtag ist etwas anderes als die tägliche
 	// Arbeit am Katalog, und fünf Reiter über der Suche waren zwei zu viel.
-	let activeView = $state('catalog'); // "catalog" | "admin" | "geraete"
+	// Wer mit einem Titel zum Bearbeiten kommt, beginnt in der Titel-Verwaltung: Der Katalog
+	// stünde sonst einen Takt lang da und lüde dabei seine ganze Liste.
+	let activeView = $state(appState.requestAdminView ? 'admin' : 'catalog'); // "catalog" | "admin" | "geraete"
 
 	$effect(() => {
 		if (appState.requestAdminView) {

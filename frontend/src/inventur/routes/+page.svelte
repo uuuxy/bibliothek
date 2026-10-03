@@ -98,7 +98,7 @@
 			onBookClick={(book) => navigateToDetail(book)}
 			onEditClick={darfBearbeiten
 				? (book) => {
-						// Die Titel-Verwaltung öffnet die Akte, sobald sie geladen hat
+						// Die Titel-Verwaltung holt den Titel und öffnet die Maske
 						// (admin/+page: appState.bookToEdit) — unabhängig davon, ob sie in
 						// dieser Sitzung schon einmal offen war.
 						appState.bookToEdit = book;

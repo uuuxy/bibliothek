@@ -1,10 +1,8 @@
-<!--
-  admin/+page.svelte
-  Hauptseite des Administratorenbereichs: liest/schreibt Bücherdaten über die API, steuert Unterkomponenten.
--->
+<!-- Titel-Verwaltung: lädt die Titelliste, öffnet die Maske und steuert die Unterkomponenten. -->
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { bestaetigen, loeschenBestaetigen } from '../../../lib/stores/bestaetigung.svelte.js';
+	import Ladekreis from '../../../lib/components/ui/Ladekreis.svelte';
 	import { appState, showToast } from '$lib/store.svelte.js';
 	import BookTable from '$lib/components/admin/BookTable.svelte';
 	import BuchFormular from '$lib/components/admin/BuchFormular.svelte';
@@ -30,33 +28,36 @@
 
 	let formular = $state(leeresBuchFormular());
 
-	/** @type {any} */
-	let suchVerzoegerung = null;
+	// Die Liste lädt beim Aufbau und nach jedem Wechsel von Suche oder Sicht. Der erste Lauf
+	// des Effekts ist kein Wechsel; mit ihm lüde die ganze Liste zweimal.
+	let ersterLauf = true;
 	$effect(() => {
 		const suchAnfrage = appState.searchQuery;
 		void appState.bestandsAnsicht; // die Sicht lädt die Liste genauso neu wie die Suche
-		if (suchVerzoegerung) clearTimeout(suchVerzoegerung);
-		suchVerzoegerung = setTimeout(() => {
-			if (appState.adminAuthenticated && typeof suchAnfrage === 'string') {
-				aktualisiereBuecher();
-			}
-		}, 300);
-	});
-
-	onMount(() => {
-		aktualisiereBuecher();
-	});
-
-	$effect(() => {
-		if (appState.bookToEdit && !wirdGeladen) {
-			const found = buecher.find((b) => b.id === appState.bookToEdit.id);
-			if (found) {
-				oeffneDetails(found);
-			} else {
-				oeffneDetails(appState.bookToEdit);
-			}
-			appState.bookToEdit = null;
+		if (ersterLauf) {
+			ersterLauf = false;
+			return;
 		}
+		const warten = setTimeout(() => {
+			if (appState.adminAuthenticated && typeof suchAnfrage === 'string') aktualisiereBuecher();
+		}, 300);
+		return () => clearTimeout(warten);
+	});
+
+	onMount(aktualisiereBuecher);
+
+	// Ein Titel, mit dem jemand zum Bearbeiten kommt, wird sofort geholt: Die Maske braucht
+	// nur ihn, nicht die Liste. Solange er unterwegs ist, steht die Tabelle nicht da.
+	let titelKommt = $state(false);
+	$effect(() => {
+		const ziel = appState.bookToEdit;
+		if (!ziel) return;
+		appState.bookToEdit = null;
+		untrack(async () => {
+			titelKommt = true;
+			await oeffneDetails(ziel);
+			titelKommt = false;
+		});
 	});
 
 	// Nur die jüngste Abfrage gilt: Die ganze Liste lädt länger als ein Suchergebnis und
@@ -90,13 +91,9 @@
 
 	/** @param {any} buch */
 	async function oeffneDetails(buch) {
-		// Immer das VOLLE Buch vom Einzel-Read laden: Die Katalogliste ist bewusst
-		// schlank (erweiterteEigenschaften leer), und saveChanges schickt
-		// das ganze Formular per PUT zurück — aus dem Listen-Objekt gespreadet würde
-		// Speichern genau diese Felder still leeren (Upsert-Blanking-Bugklasse).
-		// Nebeneffekt: Bearbeiten arbeitet auf frischen Daten statt einer evtl.
-		// veralteten Listenzeile. Bei Ladefehler wird NICHT mit dem schlanken Objekt
-		// geöffnet — das wäre derselbe stille Datenverlust durch die Hintertür.
+		// Die Maske arbeitet auf dem ganzen Titel vom Einzelabruf: Die Liste ist schlank
+		// (erweiterteEigenschaften leer), und das Speichern schickt das ganze Formular zurück —
+		// aus der Listenzeile gefüllt, leerte es diese Felder. Scheitert der Abruf, öffnet nichts.
 		let voll = buch;
 		if (buch?.id) {
 			try {
@@ -109,9 +106,7 @@
 		// stockGesehen: Mit der Zahl vom Öffnen erkennt das Speichern, ob das Feld „Bestand"
 		// geändert wurde und ob sie am Server noch gilt (buch_speichern.js).
 		formular = { ...voll, stockGesehen: voll.stock };
-		if (!formular.medientyp) {
-			formular.medientyp = 'Buch';
-		}
+		if (!formular.medientyp) formular.medientyp = 'Buch';
 		if (formular.lastCounted && formular.lastCounted.includes('T')) {
 			formular.lastCounted = formular.lastCounted.split('T')[0];
 		}
@@ -170,6 +165,11 @@
 			onAssignClass={() => (klassenZuweisenIds = formular.id ? [formular.id] : [])}
 			onDelete={buchAktionen?.darfLoeschen() ? () => buchAktionen.titelLoeschen() : undefined}
 		/>
+	{:else if titelKommt}
+		<!-- Unter 200 ms zeigt Material 3 keine Ladeanzeige; sie blendet erst danach ein. -->
+		<div class="flex justify-center py-32 transition-opacity delay-200 starting:opacity-0">
+			<Ladekreis size="lg" />
+		</div>
 	{:else}
 		<BookTable
 			books={buecher}
