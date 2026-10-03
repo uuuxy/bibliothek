@@ -179,82 +179,83 @@ func (s *Server) serveCachedActionResponse(w http.ResponseWriter, antwort *repos
 // ActionHandler dispatches requests from the Omnibox.
 func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
-		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
-			return
-		}
-
-		var req ActionRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-
-		req.Query = strings.TrimSpace(req.Query)
-		if req.Query == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("such- oder Barcode-Abfrage ist leer"))
-			return
-		}
-
-		ctx := r.Context()
-
-		lage := s.erlangeIdempotenz(ctx, req.IdempotencyKey)
-		if lage.antwort != nil && s.serveCachedActionResponse(w, lage.antwort) {
-			return
-		}
-		if lage.inArbeit {
-			apierrors.SendHTTPError(w, http.StatusConflict,
-				errors.New("in_arbeit: dieser Scan wird gerade gebucht — bitte einen Moment warten und erneut scannen"))
-			return
-		}
-
-		// Einen Hinweis übergehen ist ein Verwaltungsakt, kein Theken-Vorgang:
-		// override_block wirkt nur mit edit_students — demselben Recht, das auch
-		// das Sperren/Entsperren erlaubt. Ohne es bleibt die Sperre bestehen; wer
-		// das Feld trotzdem setzt, wird behandelt, als hätte er es nicht gesetzt.
-		// Am 18.08.2026 live gefunden: perform_actions allein reichte, ein Helfer
-		// konnte jede Sperre per Request-Feld aushebeln — die UI bot den Schalter
-		// nie an, der Schutz war also nur Konvention (bewertung-Muster F1/F4).
-		// Seit dem 24.09.2026 übergeht es am Buch wie am Gerät nur die Hinweise
-		// (offene Forderung, Überfällig-Automatik), keine Sperre am Leser.
-		res, err := omniboxSvc.ProcessQuery(ctx, service.OmniboxQuery{
-			Query:              req.Query,
-			ActiveLeserID:      req.ActiveLeserID,
-			ConfirmedChecklist: req.ConfirmedChecklist,
-			StaffID:            claims.UserID,
-			StaffRole:          string(claims.Rolle),
-			OverrideBlock:      req.OverrideBlock && s.BesitztRecht(r, "edit_students"),
-		})
-
-		if err != nil {
-			// VOR dem Cachen kürzen — sonst läge der Freitext im Idempotenz-Cache.
-			err = ohneSperrgrund(err, s.BesitztRecht(r, "view_students"))
-			status := mapServiceErrorToStatus(err)
-			cacheDaten := map[string]string{"error": err.Error()}
-			if merkmal := sperrMerkmal(err); merkmal != "" {
-				// Merkmal für den Sperr-Dialog der Theke — im Header, damit der Body die
-				// eine kanonische Fehlerform behält, und im Cache, damit eine Wiederholung
-				// es nicht verliert (sperr_merkmal_test.go).
-				w.Header().Set(sperrKopf, merkmal)
-				cacheDaten[sperrCacheFeld] = merkmal
-			}
-			s.saveToCache(ctx, req.IdempotencyKey, cacheDaten, status)
-			apierrors.SendHTTPError(w, status, err)
-			return
-		}
-
-		// Map to API response
-		resp := mapOmniboxResultToActionResponse(res)
-
-		s.saveToCache(ctx, req.IdempotencyKey, resp, http.StatusOK)
-
-		// Broadcast updates to all monitoring dashboards (SSE)
-		if resp.Type == "ausleihe" || resp.Type == "rueckgabe" {
-			s.broadcastActionEvent(*resp)
-		}
-
-		RespondJSON(w, http.StatusOK, resp)
+		s.handleAction(w, r, omniboxSvc)
 	}
+}
+
+// handleAction nimmt einen Scan oder eine Suche der Theke entgegen und reicht sie an die Omnibox.
+func (s *Server) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc service.OmniboxService) {
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+		return
+	}
+
+	var req ActionRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
+	}
+
+	req.Query = strings.TrimSpace(req.Query)
+	if req.Query == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("such- oder Barcode-Abfrage ist leer"))
+		return
+	}
+
+	ctx := r.Context()
+
+	lage := s.erlangeIdempotenz(ctx, req.IdempotencyKey)
+	if lage.antwort != nil && s.serveCachedActionResponse(w, lage.antwort) {
+		return
+	}
+	if lage.inArbeit {
+		apierrors.SendHTTPError(w, http.StatusConflict,
+			errors.New("in_arbeit: dieser Scan wird gerade gebucht — bitte einen Moment warten und erneut scannen"))
+		return
+	}
+
+	// Einen Hinweis übergehen ist ein Verwaltungsakt, kein Theken-Vorgang: override_block wirkt
+	// nur mit edit_students, demselben Recht, das auch das Sperren und Entsperren erlaubt. Wer
+	// das Feld ohne das Recht setzt, wird behandelt, als hätte er es nicht gesetzt. Übergangen
+	// werden am Buch wie am Gerät nur die Hinweise (offene Forderung, Überfällig-Automatik),
+	// keine Sperre am Leser.
+	res, err := omniboxSvc.ProcessQuery(ctx, service.OmniboxQuery{
+		Query:              req.Query,
+		ActiveLeserID:      req.ActiveLeserID,
+		ConfirmedChecklist: req.ConfirmedChecklist,
+		StaffID:            claims.UserID,
+		StaffRole:          string(claims.Rolle),
+		OverrideBlock:      req.OverrideBlock && s.BesitztRecht(r, "edit_students"),
+	})
+
+	if err != nil {
+		// Vor dem Cachen kürzen — sonst läge der Freitext im Idempotenz-Cache.
+		err = ohneSperrgrund(err, s.BesitztRecht(r, "view_students"))
+		status := mapServiceErrorToStatus(err)
+		cacheDaten := map[string]string{"error": err.Error()}
+		if merkmal := sperrMerkmal(err); merkmal != "" {
+			// Merkmal für den Sperr-Dialog der Theke — im Header, damit der Body die
+			// eine kanonische Fehlerform behält, und im Cache, damit eine Wiederholung
+			// es nicht verliert (sperr_merkmal_test.go).
+			w.Header().Set(sperrKopf, merkmal)
+			cacheDaten[sperrCacheFeld] = merkmal
+		}
+		s.saveToCache(ctx, req.IdempotencyKey, cacheDaten, status)
+		apierrors.SendHTTPError(w, status, err)
+		return
+	}
+
+	// Map to API response
+	resp := mapOmniboxResultToActionResponse(res)
+
+	s.saveToCache(ctx, req.IdempotencyKey, resp, http.StatusOK)
+
+	// Broadcast updates to all monitoring dashboards (SSE)
+	if resp.Type == "ausleihe" || resp.Type == "rueckgabe" {
+		s.broadcastActionEvent(*resp)
+	}
+
+	RespondJSON(w, http.StatusOK, resp)
 }
 
 func mapOmniboxResultToActionResponse(res *service.OmniboxResult) *ActionResponse {

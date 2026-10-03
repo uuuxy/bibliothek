@@ -106,50 +106,55 @@ const nachbuchBereitsGebucht = "bereits_gebucht"
 // @Router       /action/nachbuchen [post]
 func (s *Server) NachbuchenHandler(nachbuchSvc service.NachbuchService) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		// Die Empfangszeit wird VOR dem Einlesen festgehalten. Der gemessene Versatz enthält die
-		// Laufzeit der Anfrage bis hierher: Umgerechnet liegt ein Scan um diese Laufzeit zu spät,
-		// im Schulnetz Millisekunden — weniger, als ein Buch braucht, um von einer Theke zur
-		// anderen zu kommen.
-		empfangen := time.Now()
-		claims, ok := auth.GetClaims(r.Context())
-		if !ok {
-			return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
-		}
-		var req NachbuchenRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return nil
-		}
-		if len(req.Eintraege) > nachbuchenHoechstens {
-			return apierrors.BadRequest("höchstens 50 Einträge je Aufruf", errors.New("zu viele einträge"))
-		}
-
-		versatz := empfangen.Sub(req.GesendetAm)
-		if versatz >= uhrVersatzWarnenAb || versatz <= -uhrVersatzWarnenAb {
-			log.Printf("nachbuchen: WARNUNG die Uhr des Theken-Rechners weicht um %s ab (Konto %s) — Scan-Zeitpunkte werden umgerechnet, die Uhr sollte gestellt werden",
-				(-versatz).Round(time.Second), claims.UserID)
-		}
-
-		ctx := r.Context()
-		antwort := NachbuchenResponse{
-			UhrVersatzSekunden: int(versatz.Round(time.Second) / time.Second),
-			Ergebnisse:         make([]NachbuchenErgebnis, 0, len(req.Eintraege)),
-		}
-		// Die Zahl VOR dem Nachbuchen. Gemeldet wird hinterher an der WIRKUNG, nicht an
-		// einer Liste der Ergebnisse, die eine Meldung erzeugen: Welche das sind, weiß der
-		// Dienst, und eine zweite Liste hier wäre die zweite Wahrheitsquelle — sie stimmte
-		// genau bis zur nächsten Meldung, die jemand hinzufügt.
-		offenVorher, zaehlbar := s.zaehleMeldungen(ctx)
-		for _, e := range req.Eintraege {
-			antwort.Ergebnisse = append(antwort.Ergebnisse, s.bucheEintragNach(ctx, nachbuchSvc, e, claims.UserID, versatz))
-		}
-		if zaehlbar {
-			if offenNachher, ok := s.zaehleMeldungen(ctx); ok && offenNachher != offenVorher {
-				s.meldeMeldungsstand()
-			}
-		}
-		RespondJSON(w, http.StatusOK, antwort)
-		return nil
+		return s.handleNachbuchen(w, r, nachbuchSvc)
 	})
+}
+
+// handleNachbuchen bucht eine Portion der Warteschlange, Eintrag für Eintrag.
+func (s *Server) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbuchSvc service.NachbuchService) error {
+	// Die Empfangszeit wird vor dem Einlesen festgehalten. Der gemessene Versatz enthält die
+	// Laufzeit der Anfrage bis hierher: Umgerechnet liegt ein Scan um diese Laufzeit zu spät,
+	// im Schulnetz Millisekunden — weniger, als ein Buch braucht, um von einer Theke zur
+	// anderen zu kommen.
+	empfangen := time.Now()
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
+	}
+	var req NachbuchenRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return nil
+	}
+	if len(req.Eintraege) > nachbuchenHoechstens {
+		return apierrors.BadRequest("höchstens 50 Einträge je Aufruf", errors.New("zu viele einträge"))
+	}
+
+	versatz := empfangen.Sub(req.GesendetAm)
+	if versatz >= uhrVersatzWarnenAb || versatz <= -uhrVersatzWarnenAb {
+		log.Printf("nachbuchen: WARNUNG die Uhr des Theken-Rechners weicht um %s ab (Konto %s) — Scan-Zeitpunkte werden umgerechnet, die Uhr sollte gestellt werden",
+			(-versatz).Round(time.Second), claims.UserID)
+	}
+
+	ctx := r.Context()
+	antwort := NachbuchenResponse{
+		UhrVersatzSekunden: int(versatz.Round(time.Second) / time.Second),
+		Ergebnisse:         make([]NachbuchenErgebnis, 0, len(req.Eintraege)),
+	}
+	// Die Zahl vor dem Nachbuchen. Gemeldet wird hinterher an der Wirkung, nicht an
+	// einer Liste der Ergebnisse, die eine Meldung erzeugen: Welche das sind, weiß der
+	// Dienst, und eine zweite Liste hier wäre die zweite Wahrheitsquelle — sie stimmte
+	// genau bis zur nächsten Meldung, die jemand hinzufügt.
+	offenVorher, zaehlbar := s.zaehleMeldungen(ctx)
+	for _, e := range req.Eintraege {
+		antwort.Ergebnisse = append(antwort.Ergebnisse, s.bucheEintragNach(ctx, nachbuchSvc, e, claims.UserID, versatz))
+	}
+	if zaehlbar {
+		if offenNachher, ok := s.zaehleMeldungen(ctx); ok && offenNachher != offenVorher {
+			s.meldeMeldungsstand()
+		}
+	}
+	RespondJSON(w, http.StatusOK, antwort)
+	return nil
 }
 
 // bucheEintragNach bucht einen Eintrag. Ein Serverfehler wird NICHT zum Fehler des ganzen

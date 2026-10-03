@@ -68,16 +68,13 @@ func (s *Server) ergreifeNachbuchSchluessel(ctx context.Context, e NachbuchenEin
 	}
 
 	var fremdrueckgabeVon *string
-	if antwort.Status >= http.StatusOK && antwort.Status < http.StatusMultipleChoices {
-		var gebucht ActionResponse
-		if json.Unmarshal(antwort.Daten, &gebucht) == nil && (gebucht.Type == "ausleihe" || gebucht.Type == "rueckgabe") {
-			if !nurFremdrueckgabeVorAusleihe(gebucht, e.Absicht) {
-				return nachbuchSchluesselLage{antwort: &NachbuchenErgebnis{
-					Schluessel: e.Schluessel, Ergebnis: nachbuchBereitsGebucht, Daten: &gebucht,
-				}}, nil
-			}
-			fremdrueckgabeVon = gebucht.LoanID
+	if gebucht, ok := onlineGebucht(antwort); ok {
+		if !nurFremdrueckgabeVorAusleihe(gebucht, e.Absicht) {
+			return nachbuchSchluesselLage{antwort: &NachbuchenErgebnis{
+				Schluessel: e.Schluessel, Ergebnis: nachbuchBereitsGebucht, Daten: &gebucht,
+			}}, nil
 		}
+		fremdrueckgabeVon = gebucht.LoanID
 	}
 
 	uebernommen, err := repository.UebernimmIdempotenzAntwort(ctx, s.DB.Pool, e.Schluessel, *antwort)
@@ -88,6 +85,19 @@ func (s *Server) ergreifeNachbuchSchluessel(ctx context.Context, e NachbuchenEin
 		return nachbuchSchluesselLage{antwort: nachbuchNochInArbeit(e)}, nil
 	}
 	return nachbuchSchluesselLage{fremdrueckgabeVon: fremdrueckgabeVon, online: antwort}, nil
+}
+
+// onlineGebucht liest aus der Antwort des Online-Versands die gebuchte Ausleihe oder Rückgabe.
+// false bei einer Fehlerantwort und bei einer Ausweis- oder Suchantwort: Dort wurde nichts gebucht.
+func onlineGebucht(antwort *repository.IdempotenzAntwort) (ActionResponse, bool) {
+	if antwort.Status < http.StatusOK || antwort.Status >= http.StatusMultipleChoices {
+		return ActionResponse{}, false
+	}
+	var gebucht ActionResponse
+	if json.Unmarshal(antwort.Daten, &gebucht) != nil || (gebucht.Type != "ausleihe" && gebucht.Type != "rueckgabe") {
+		return ActionResponse{}, false
+	}
+	return gebucht, true
 }
 
 // nurFremdrueckgabeVorAusleihe: Der Online-Versand hat nur die Fremdrückgabe gebucht, und der
