@@ -162,10 +162,11 @@ func literaleIn(n ast.Node) []string {
 	return out
 }
 
-// ruft: Ruft der Rumpf eine Funktion dieses Namens auf, direkt oder über ein Paket?
-func ruft(body *ast.BlockStmt, name string) bool {
+// ruft: Ruft der Knoten — ein Funktionsrumpf oder eine ganze Deklaration — eine Funktion
+// dieses Namens auf, direkt oder über ein Paket?
+func ruft(n ast.Node, name string) bool {
 	gefunden := false
-	ast.Inspect(body, func(k ast.Node) bool {
+	ast.Inspect(n, func(k ast.Node) bool {
 		call, ok := k.(*ast.CallExpr)
 		if !ok {
 			return true
