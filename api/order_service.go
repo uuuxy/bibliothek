@@ -122,58 +122,26 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	labels := make([]BarcodeLabelDetail, 0)
-	orderSummaryItems := make([]OrderedItem, 0)
-	var totalAllocated int
-	var gesamtbetrag float64
-
-	var copyInserts []repository.BookCopyInsert
-	var positionen []bestellungPosition
-
-	for _, item := range req.Items {
-		res, err := s.verarbeiteBestellItem(ctx, tx, item, supplier)
-		if err != nil {
-			return nil, err
-		}
-		orderSummaryItems = append(orderSummaryItems, res.summary)
-		positionen = append(positionen, res.position)
-		copyInserts = append(copyInserts, res.copies...)
-		// Der Topf jedes Etiketts ist der Topf DIESER Bestellung — derselbe Wert, den
-		// repository.ExemplarTopfSQL später aus bestellungen_verlauf.mittel liest. Die
-		// Exemplare entstehen erst in dieser Transaktion; abgefragt werden können sie
-		// noch nicht. TestEtikettenWegeDruckenDasselbe hält die Wege am PDF zusammen.
-		for i := range res.labels {
-			res.labels[i].Topf = req.Mittel
-		}
-		labels = append(labels, res.labels...)
-		gesamtbetrag += res.betrag
-		totalAllocated += res.position.menge
+	posten, err := s.verarbeiteBestellItems(ctx, tx, req, supplier)
+	if err != nil {
+		return nil, err
 	}
 
-	// REIHENFOLGE: Bestellkopf VOR den Exemplaren. Die Exemplare tragen seit Migration 063
-	// ihre bestellung_id, und die gibt es erst, wenn der Kopf geschrieben ist. Der Tausch
-	// ist unbedenklich, weil keine der beiden Einfügungen die andere liest — die Barcodes
-	// sind oben in der Schleife bereits reserviert, und der Kopf zählt nur die dort
-	// errechneten Summen.
-	bestellungID, linkGueltigBis, err := s.insertBestellverlauf(ctx, tx, req, supplier, gesamtbetrag, totalAllocated, tokenHash, linkTage)
+	// Der Bestellkopf kommt vor den Exemplaren: Sie tragen seit Migration 063 ihre
+	// bestellung_id, und die gibt es erst, wenn der Kopf geschrieben ist. Keine der beiden
+	// Einfügungen liest die andere — die Barcodes sind in verarbeiteBestellItems schon
+	// reserviert, und der Kopf zählt nur die dort errechneten Summen.
+	bestellungID, linkGueltigBis, err := s.insertBestellverlauf(ctx, tx, req, supplier, posten.gesamtbetrag, posten.menge, tokenHash, linkTage)
 	if errors.Is(err, ErrBestellungDuplikat) {
 		// Doppelklick: dieselbe Bestellung lief schon durch. Die Transaktion wird
 		// zurückgerollt (die hier reservierten Exemplare verschwinden wieder), und wir
-		// melden die BESTEHENDE Bestellung — der Handler verschickt dann KEINE zweite Mail.
+		// melden die bestehende Bestellung — der Handler verschickt dann keine zweite Mail.
 		return s.ladeBestehendeBestellung(ctx, req.IdempotencyKey)
 	}
 	if err != nil {
 		return nil, err
 	}
-	for i := range copyInserts {
-		copyInserts[i].BestellungID = bestellungID
-	}
-
-	if err := s.bookRepo.BulkInsertCopiesTx(ctx, tx, copyInserts); err != nil {
-		return nil, fmt.Errorf("bulk insert error: %w", err)
-	}
-
-	if err := s.insertBestellpositionen(ctx, tx, bestellungID, positionen); err != nil {
+	if err := s.schreibeExemplareUndPositionen(ctx, tx, bestellungID, posten); err != nil {
 		return nil, err
 	}
 
@@ -186,14 +154,62 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		SupplierEmail:      supplier.Email,
 		CustomerNumber:     supplier.KundennummerFuer(req.Mittel),
 		Mittel:             req.Mittel,
-		Labels:             labels,
-		SummaryItems:       orderSummaryItems,
-		TotalAllocated:     totalAllocated,
+		Labels:             posten.labels,
+		SummaryItems:       posten.summary,
+		TotalAllocated:     posten.menge,
 		IstHauptlieferant:  supplier.IstHauptlieferant,
 		BestellungID:       bestellungID,
 		BestaetigungsToken: token,
 		LinkGueltigBis:     linkGueltigBis,
 	}, nil
+}
+
+// bestellPosten ist, was die Positionen eines Warenkorbs zusammen ergeben.
+type bestellPosten struct {
+	labels       []BarcodeLabelDetail
+	summary      []OrderedItem
+	positionen   []bestellungPosition
+	copies       []repository.BookCopyInsert
+	gesamtbetrag float64
+	menge        int
+}
+
+// verarbeiteBestellItems prüft jede Position, reserviert ihre Barcodes und sammelt Exemplare,
+// Etiketten und Summen der Bestellung.
+func (s *OrderService) verarbeiteBestellItems(ctx context.Context, tx pgx.Tx, req SubmitOrderRequest, supplier *repository.Supplier) (bestellPosten, error) {
+	posten := bestellPosten{labels: make([]BarcodeLabelDetail, 0), summary: make([]OrderedItem, 0)}
+	for _, item := range req.Items {
+		res, err := s.verarbeiteBestellItem(ctx, tx, item, supplier)
+		if err != nil {
+			return bestellPosten{}, err
+		}
+		posten.summary = append(posten.summary, res.summary)
+		posten.positionen = append(posten.positionen, res.position)
+		posten.copies = append(posten.copies, res.copies...)
+		// Der Topf jedes Etiketts ist der Topf dieser Bestellung — derselbe Wert, den
+		// repository.ExemplarTopfSQL später aus bestellungen_verlauf.mittel liest. Die
+		// Exemplare entstehen erst in dieser Transaktion; abgefragt werden können sie
+		// noch nicht. TestEtikettenWegeDruckenDasselbe hält die Wege am PDF zusammen.
+		for i := range res.labels {
+			res.labels[i].Topf = req.Mittel
+		}
+		posten.labels = append(posten.labels, res.labels...)
+		posten.gesamtbetrag += res.betrag
+		posten.menge += res.position.menge
+	}
+	return posten, nil
+}
+
+// schreibeExemplareUndPositionen hängt die Exemplare an den geschriebenen Bestellkopf und
+// schreibt sie und die Positionen.
+func (s *OrderService) schreibeExemplareUndPositionen(ctx context.Context, tx pgx.Tx, bestellungID string, posten bestellPosten) error {
+	for i := range posten.copies {
+		posten.copies[i].BestellungID = bestellungID
+	}
+	if err := s.bookRepo.BulkInsertCopiesTx(ctx, tx, posten.copies); err != nil {
+		return fmt.Errorf("bulk insert error: %w", err)
+	}
+	return s.insertBestellpositionen(ctx, tx, bestellungID, posten.positionen)
 }
 
 // verarbeiteBestellItem validiert eine Bestellposition, lädt den Titel, reserviert die

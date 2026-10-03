@@ -42,103 +42,109 @@ type SubmitOrderRequest struct {
 // SubmitOrderHandler processes a full cart order via the OrderService and dispatches PDFs via PDFService.
 func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req SubmitOrderRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
+		s.handleSubmitOrder(w, r, orderSvc, pdfSvc)
+	}
+}
 
-		if req.SupplierID == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("supplier_id is required"))
-			return
-		}
-		if len(req.Items) == 0 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("order cart cannot be empty"))
-			return
-		}
-		if !repository.MittelGueltig(req.Mittel) {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, ErrMittelUngueltig)
-			return
-		}
+// handleSubmitOrder speichert die Bestellung und verschickt danach die Mail an den Lieferanten;
+// die Bestellung gilt auch, wenn der Versand ausbleibt.
+func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, orderSvc *OrderService, pdfSvc *PDFService) {
+	var req SubmitOrderRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
+	}
 
-		ctx := r.Context()
+	if req.SupplierID == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("supplier_id is required"))
+		return
+	}
+	if len(req.Items) == 0 {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("order cart cannot be empty"))
+		return
+	}
+	if !repository.MittelGueltig(req.Mittel) {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, ErrMittelUngueltig)
+		return
+	}
 
-		res, err := orderSvc.ProcessOrder(ctx, req)
-		if err != nil {
-			apierrors.SendHTTPError(w, mapProcessOrderError(err), err)
-			return
-		}
+	ctx := r.Context()
 
-		// Doppelklick: dieselbe Bestellung lief schon durch — KEINE zweite Mail, keine
-		// zweite Bestellung. Die erste Anfrage hat Mail und Etiketten bereits erledigt.
-		if res.BereitsVorhanden {
-			RespondJSON(w, http.StatusOK, map[string]any{
-				"status":      "success",
-				"message":     fmt.Sprintf("Bestellung an %s war bereits erfasst (Doppelklick) — es wurde keine zweite Bestellung ausgelöst.", res.SupplierName),
-				"ordered_qty": res.TotalAllocated,
-			})
-			return
-		}
+	res, err := orderSvc.ProcessOrder(ctx, req)
+	if err != nil {
+		apierrors.SendHTTPError(w, mapProcessOrderError(err), err)
+		return
+	}
 
-		if !smtpKonfiguriert() {
-			log.Println("WARNUNG: Kein (echter) SMTP-Server hinterlegt. E-Mail-Versand übersprungen, die Bestellung ist gespeichert.")
-			RespondJSON(w, http.StatusOK, map[string]any{
-				"status":      "success",
-				"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.SupplierName),
-				"ordered_qty": res.TotalAllocated,
-			})
-			return
-		}
-
-		// Sum up how many items have generate_barcodes to pass to pdfSvc
-		anyBarcodesGenerated := hatVorabBarcodes(req.Items)
-
-		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-		settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
-		schule := pdf.SchuleInfo{
-			Name:    settings.SchuleName,
-			Strasse: settings.SchuleStrasse,
-			PLZ:     settings.SchulePLZ,
-			Ort:     settings.SchuleOrt,
-		}
-
-		betreff, textBody := s.loadBestellTemplate(ctx)
-		// Ohne hinterlegte öffentliche Adresse bleibt der Link leer: Die Bestellung geht
-		// dann wie bisher raus, nur ohne Bestätigungsschritt. Ein Link auf den internen
-		// Servernamen wäre beim Lieferanten wertlos und sähe trotzdem echt aus.
-		link := ""
-		if settings.OeffentlicheAdresse != nil {
-			link = bestaetigungsLink(*settings.OeffentlicheAdresse, res.BestaetigungsToken)
-		}
-		subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels), link, res.LinkGueltigBis, res.Mittel)
-
-		if err := pdfSvc.DispatchOrderEmail(BestellMail{
-			Empfaenger:           res.SupplierEmail,
-			Betreff:              subject,
-			Text:                 body,
-			Positionen:           res.SummaryItems,
-			Etiketten:            res.Labels,
-			MitVorabBarcodes:     anyBarcodesGenerated,
-			IstHauptlieferant:    res.IstHauptlieferant,
-			MitBestaetigungsLink: link != "",
-			Schule:               schule,
-			EtikettKopf:          etikettKopfAus(settings),
-			Mittel:               res.Mittel,
-		}); err != nil {
-			RespondJSON(w, http.StatusOK, map[string]any{
-				"status":      "warning",
-				"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
-				"ordered_qty": res.TotalAllocated,
-			})
-			return
-		}
-
-		status, meldung := bestellVersandMeldung(res.SupplierName, res.IstHauptlieferant && link == "")
+	// Doppelklick: dieselbe Bestellung lief schon durch — KEINE zweite Mail, keine
+	// zweite Bestellung. Die erste Anfrage hat Mail und Etiketten bereits erledigt.
+	if res.BereitsVorhanden {
 		RespondJSON(w, http.StatusOK, map[string]any{
-			"status":      status,
-			"message":     meldung,
+			"status":      "success",
+			"message":     fmt.Sprintf("Bestellung an %s war bereits erfasst (Doppelklick) — es wurde keine zweite Bestellung ausgelöst.", res.SupplierName),
 			"ordered_qty": res.TotalAllocated,
 		})
+		return
 	}
+
+	if !smtpKonfiguriert() {
+		log.Println("WARNUNG: Kein (echter) SMTP-Server hinterlegt. E-Mail-Versand übersprungen, die Bestellung ist gespeichert.")
+		RespondJSON(w, http.StatusOK, map[string]any{
+			"status":      "success",
+			"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.SupplierName),
+			"ordered_qty": res.TotalAllocated,
+		})
+		return
+	}
+
+	// Sum up how many items have generate_barcodes to pass to pdfSvc
+	anyBarcodesGenerated := hatVorabBarcodes(req.Items)
+
+	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
+	settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
+	schule := pdf.SchuleInfo{
+		Name:    settings.SchuleName,
+		Strasse: settings.SchuleStrasse,
+		PLZ:     settings.SchulePLZ,
+		Ort:     settings.SchuleOrt,
+	}
+
+	betreff, textBody := s.loadBestellTemplate(ctx)
+	// Ohne hinterlegte öffentliche Adresse bleibt der Link leer: Die Bestellung geht
+	// dann wie bisher raus, nur ohne Bestätigungsschritt. Ein Link auf den internen
+	// Servernamen wäre beim Lieferanten wertlos und sähe trotzdem echt aus.
+	link := ""
+	if settings.OeffentlicheAdresse != nil {
+		link = bestaetigungsLink(*settings.OeffentlicheAdresse, res.BestaetigungsToken)
+	}
+	subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels), link, res.LinkGueltigBis, res.Mittel)
+
+	if err := pdfSvc.DispatchOrderEmail(BestellMail{
+		Empfaenger:           res.SupplierEmail,
+		Betreff:              subject,
+		Text:                 body,
+		Positionen:           res.SummaryItems,
+		Etiketten:            res.Labels,
+		MitVorabBarcodes:     anyBarcodesGenerated,
+		IstHauptlieferant:    res.IstHauptlieferant,
+		MitBestaetigungsLink: link != "",
+		Schule:               schule,
+		EtikettKopf:          etikettKopfAus(settings),
+		Mittel:               res.Mittel,
+	}); err != nil {
+		RespondJSON(w, http.StatusOK, map[string]any{
+			"status":      "warning",
+			"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
+			"ordered_qty": res.TotalAllocated,
+		})
+		return
+	}
+
+	status, meldung := bestellVersandMeldung(res.SupplierName, res.IstHauptlieferant && link == "")
+	RespondJSON(w, http.StatusOK, map[string]any{
+		"status":      status,
+		"message":     meldung,
+		"ordered_qty": res.TotalAllocated,
+	})
 }
 
 // mapProcessOrderError bildet die (textbasierten) Fehler von ProcessOrder auf HTTP-Status ab.

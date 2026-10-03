@@ -84,89 +84,92 @@ func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID 
 // PrintRechnungHandler generates the invoice for lost books of a student.
 func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		// extract schueler_id from the URL path: /api/print/rechnung/{id}
-		idStr := r.PathValue("schueler_id")
-		schuelerID, err := uuid.Parse(idStr)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-			return
-		}
-
-		// Anschrift mitladen: Die Rechnung ist wie der Eltern-Mahnbrief ein
-		// DIN-Fensterkuvert-Brief (VVT-Zweck „gedruckte Rechnung / Elternbrief").
-		// Bis zum 01.09.2026 wurden die vier Felder hier hartkodiert geleert —
-		// das Fenster zeigte zwei leere Zeilen. COALESCE ist Pflicht: nullbare
-		// Spalten in nicht-nullbare Go-Strings (NULL-Scan-Bugklasse).
-		var s pdf.Schueler
-		err = dbPool.QueryRow(ctx, `
-			SELECT vorname, nachname,
-			       COALESCE(strasse, ''), COALESCE(hausnummer, ''),
-			       COALESCE(plz, ''), COALESCE(ort, '')
-			FROM schueler WHERE id = $1 AND deleted_at IS NULL
-		`, schuelerID).Scan(&s.Vorname, &s.Nachname, &s.Strasse, &s.Hausnummer, &s.PLZ, &s.Ort)
-		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
-			return
-		}
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		items, err := queryRechnungItems(ctx, dbPool, schuelerID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		if len(items) == 0 {
-			// Stehen die offenen Forderungen alle auf einem Bescheid, sagt die Meldung das.
-			// Sonst hieße es „keine offenen Schadensfälle", während die Akte offene Beträge zeigt.
-			var aufBescheid bool
-			if err := dbPool.QueryRow(ctx, `
-				SELECT EXISTS (SELECT 1 FROM schadensfaelle
-				               WHERE schueler_id = $1 AND ist_bezahlt = false AND bescheid_id IS NOT NULL)
-			`, schuelerID).Scan(&aufBescheid); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			if aufBescheid {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New(
-					"die offenen Forderungen stehen auf einem Schadensersatz-Bescheid — dafür gilt der Bescheid, keine Ersatzforderung"))
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("no open damage records found for student"))
-			return
-		}
-
-		settingsRepo := repository.NewSystemSettingsRepository(dbPool)
-		settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
-		schule := pdf.SchuleInfo{
-			Name:    settings.SchuleName,
-			Strasse: settings.SchuleStrasse,
-			PLZ:     settings.SchulePLZ,
-			Ort:     settings.SchuleOrt,
-		}
-
-		// Zahlstelle und Bankverbindung des Landes aus derselben Einstellung wie im
-		// Bescheid — eine zweite Kontoangabe im selben Haus wäre eine zweite Wahrheit.
-		angaben := repository.BescheidAngabenAus(settings)
-		zahlung := pdf.Zahlungsangaben{Zahlstelle: angaben.Zahlstelle, Bankverbindung: angaben.Bankverbindung}
-
-		pdfBytes, err := pdf.GenerateRechnung(s, items, schule, zahlung)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, `inline; filename="Rechnung.pdf"`)
-		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
-
-		http.ServeContent(w, r, "Rechnung.pdf", time.Now(), bytes.NewReader(pdfBytes))
+		handlePrintRechnung(w, r, dbPool)
 	}
+}
+
+// handlePrintRechnung lädt Anschrift und offene Forderungen ohne Bescheid und setzt den Brief.
+func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolIface) {
+	ctx := r.Context()
+
+	// extract schueler_id from the URL path: /api/print/rechnung/{id}
+	idStr := r.PathValue("schueler_id")
+	schuelerID, err := uuid.Parse(idStr)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// Anschrift mitladen: Die Rechnung ist wie der Eltern-Mahnbrief ein Brief für das
+	// DIN-Fensterkuvert (VVT-Zweck „gedruckte Rechnung / Elternbrief"). COALESCE ist
+	// Pflicht: Die Spalten sind nullbar, die Go-Strings nicht.
+	var s pdf.Schueler
+	err = dbPool.QueryRow(ctx, `
+		SELECT vorname, nachname,
+		       COALESCE(strasse, ''), COALESCE(hausnummer, ''),
+		       COALESCE(plz, ''), COALESCE(ort, '')
+		FROM schueler WHERE id = $1 AND deleted_at IS NULL
+	`, schuelerID).Scan(&s.Vorname, &s.Nachname, &s.Strasse, &s.Hausnummer, &s.PLZ, &s.Ort)
+	if errors.Is(err, pgx.ErrNoRows) {
+		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+		return
+	}
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	items, err := queryRechnungItems(ctx, dbPool, schuelerID)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if len(items) == 0 {
+		// Stehen die offenen Forderungen alle auf einem Bescheid, sagt die Meldung das.
+		// Sonst hieße es „keine offenen Schadensfälle", während die Akte offene Beträge zeigt.
+		var aufBescheid bool
+		if err := dbPool.QueryRow(ctx, `
+			SELECT EXISTS (SELECT 1 FROM schadensfaelle
+			               WHERE schueler_id = $1 AND ist_bezahlt = false AND bescheid_id IS NOT NULL)
+		`, schuelerID).Scan(&aufBescheid); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if aufBescheid {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New(
+				"die offenen Forderungen stehen auf einem Schadensersatz-Bescheid — dafür gilt der Bescheid, keine Ersatzforderung"))
+			return
+		}
+		apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("no open damage records found for student"))
+		return
+	}
+
+	settingsRepo := repository.NewSystemSettingsRepository(dbPool)
+	settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
+	schule := pdf.SchuleInfo{
+		Name:    settings.SchuleName,
+		Strasse: settings.SchuleStrasse,
+		PLZ:     settings.SchulePLZ,
+		Ort:     settings.SchuleOrt,
+	}
+
+	// Zahlstelle und Bankverbindung des Landes aus derselben Einstellung wie im
+	// Bescheid — eine zweite Kontoangabe im selben Haus wäre eine zweite Wahrheit.
+	angaben := repository.BescheidAngabenAus(settings)
+	zahlung := pdf.Zahlungsangaben{Zahlstelle: angaben.Zahlstelle, Bankverbindung: angaben.Bankverbindung}
+
+	pdfBytes, err := pdf.GenerateRechnung(s, items, schule, zahlung)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.Header().Set(headerContentType, contentTypePDF)
+	w.Header().Set(headerContentDisposition, `inline; filename="Rechnung.pdf"`)
+	w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
+
+	http.ServeContent(w, r, "Rechnung.pdf", time.Now(), bytes.NewReader(pdfBytes))
 }
 
 // queryMahnungSchueler lädt alle überfälligen Ausleihen einer Klasse und gruppiert sie
