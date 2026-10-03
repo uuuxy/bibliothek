@@ -186,7 +186,9 @@ func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *Me
 // downloadAndSaveCoverLocally akzeptiert nur dekodierbare Bilder ausreichender Größe. Ein
 // fehlgeschlagener Download verwirft hier NICHT mehr ein bereits gefundenes Cover.
 func (client *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) string {
-	isbn13 := konvertiereISBN10zu13(isbn)
+	// DNB und OpenLibrary werden mit der Normalform gefragt, derselben Regel wie in der
+	// Datenbank: Eine zehnstellige ISBN wird nur mit richtigem Prüfzeichen dreizehnstellig.
+	nummer := isbnutil.Normalform(isbn)
 
 	// Kandidaten in Prioritätsreihenfolge: DNB primär (beste Quelle für deutsche Schulbücher).
 	kandidaten := make([]string, 0, 4)
@@ -197,7 +199,7 @@ func (client *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *
 	}
 
 	// 2. DNB MVB Cover (primär).
-	kandidaten = append(kandidaten, fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", url.QueryEscape(isbn13)))
+	kandidaten = append(kandidaten, fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", url.QueryEscape(nummer)))
 
 	// 3. Google Books — separat abfragen, falls die Metadaten von DNB kamen (DNB liefert keine Cover-URL im Datensatz).
 	if gb, err := client.sucheGoogleBooks(kontext, isbn); err == nil && gb != nil && gb.CoverURL != "" {
@@ -205,7 +207,7 @@ func (client *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *
 	}
 
 	// 4. OpenLibrary — default=false erzwingt ein echtes 404 statt eines 1×1-Platzhalters.
-	kandidaten = append(kandidaten, fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-L.jpg?default=false", isbn13))
+	kandidaten = append(kandidaten, fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-L.jpg?default=false", nummer))
 
 	for _, kandidat := range kandidaten {
 		if lokal := downloadAndSaveCoverLocally(kontext, client.httpClient, kandidat, isbn); lokal != "" {

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -75,5 +76,41 @@ func TestAufloeseCover_AlleQuellenScheitern(t *testing.T) {
 		if !strings.Contains(strings.Join(gefragt, " "), host) {
 			t.Errorf("%s wurde nicht gefragt — eine scheiternde Quelle hat die Rückfallquellen verdeckt (gefragt: %v)", host, gefragt)
 		}
+	}
+}
+
+// Die Cover-Suche fragt mit der Normalform der Nummer (isbnutil.Normalform), der einen Regel
+// für die Länge einer ISBN. Eine zehnstellige mit richtigem Prüfzeichen geht dreizehnstellig
+// hinaus; eine mit falschem bleibt, wie sie ist — gerechnet führte sie auf die ISBN eines
+// anderen Buchs, und dessen Cover läge dann am Titel. 3499500252 steht so am Testserver.
+func TestAufloeseCover_FragtMitDerNormalform(t *testing.T) {
+	faelle := []struct{ name, isbn, gefragt string }{
+		{"zehnstellig, Prüfzeichen stimmt", "3866801920", "9783866801929"},
+		{"zehnstellig, Prüfzeichen falsch", "3499500252", "3499500252"},
+		{"dreizehnstellig", "9783141011540", "9783141011540"},
+		{"zwölfstellig, keine ISBN", "012345678905", "012345678905"},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			var adressen []string
+			client := NeuerMetadatenClient()
+			client.SetzeHTTPClientFuerTest(&http.Client{Transport: &mockTransport{
+				roundTripFunc: func(req *http.Request) (*http.Response, error) {
+					adressen = append(adressen, req.URL.String())
+					return nil, http.ErrServerClosed
+				},
+			}})
+
+			client.aufloeseCover(context.Background(), &MetadatenErgebnis{}, f.isbn)
+
+			for _, erwartet := range []string{
+				"https://portal.dnb.de/opac/mvb/cover?isbn=" + f.gefragt,
+				"https://covers.openlibrary.org/b/isbn/" + f.gefragt + "-L.jpg?default=false",
+			} {
+				if !slices.Contains(adressen, erwartet) {
+					t.Errorf("%s wurde nicht gefragt (gefragt: %v)", erwartet, adressen)
+				}
+			}
+		})
 	}
 }
