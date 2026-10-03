@@ -69,25 +69,12 @@ func (s *Server) sammleLage(
 		SelbstanmeldeDomain:  auth.SelbstanmeldeDomain(),
 	}
 
-	// Öffentliche Adresse und SMTP-Host kommen aus der DATENBANK, nicht aus der .env:
+	// Öffentliche Adresse und SMTP-Host kommen aus der Datenbank, nicht aus der .env:
 	// Beides ist über die Oberfläche einstellbar, die .env füllt nur beim ersten Start
 	// vor. Wer hier die Umgebung befragte, meldete „eingerichtet", während die
-	// Anwendung längst mit einem anderen Wert arbeitet — genau der Grund, warum beim
-	// Mail-Debugging die DB-Zeile gilt und nicht die .env.
+	// Anwendung längst mit einem anderen Wert arbeitet.
 	if settings, err := settingsRepo.GetSettings(ctx); err == nil && settings != nil {
-		if settings.OeffentlicheAdresse != nil {
-			lage.OeffentlicheAdresse = strings.TrimSpace(*settings.OeffentlicheAdresse)
-		}
-		if settings.AlarmEmpfaenger != nil {
-			lage.AlarmEmpfaenger = strings.TrimSpace(*settings.AlarmEmpfaenger)
-		}
-		// Schadensersatz-Bescheid: dieselbe Prüfung, mit der das Erstellen abweist.
-		// FehlendeAngaben liefert nil, wenn nichts fehlt — in der Lage heißt nil aber
-		// „nicht erhoben", also wird daraus die leere Liste.
-		lage.BescheidFehlend = repository.BescheidAngabenAus(settings).FehlendeAngaben(repository.SchuleAngabenAus(settings))
-		if lage.BescheidFehlend == nil {
-			lage.BescheidFehlend = []string{}
-		}
+		einstellungenInDieLage(&lage, settings)
 	}
 
 	// DSGVO-Löschroutinen: Zustand statt Log, und zwar für ALLE, nicht nur die
@@ -121,14 +108,41 @@ func (s *Server) sammleLage(
 		lage.BeispielLieferanten = namen
 	}
 
-	// Bei einem Fehler bleibt RechteLive nil — die Prüfung meldet dann „nicht
-	// lesbar" statt fälschlich jede Vorgabe-Zeile als fehlend zu deklarieren.
+	rechteKlassenUndAdminsInDieLage(ctx, zustandRepo, &lage)
+
+	if probe, err := repository.PruefeSchluesselGegenBestand(ctx, s.DB.Pool); err == nil {
+		lage.SchluesselProbe = &probe
+	}
+
+	sicherungUndFerienInDieLage(ctx, zustandRepo, &lage)
+	return lage
+}
+
+// einstellungenInDieLage übernimmt, was die Prüfungen aus den Einstellungen brauchen.
+func einstellungenInDieLage(lage *Lage, settings *repository.SystemEinstellungen) {
+	if settings.OeffentlicheAdresse != nil {
+		lage.OeffentlicheAdresse = strings.TrimSpace(*settings.OeffentlicheAdresse)
+	}
+	if settings.AlarmEmpfaenger != nil {
+		lage.AlarmEmpfaenger = strings.TrimSpace(*settings.AlarmEmpfaenger)
+	}
+	// Schadensersatz-Bescheid: dieselbe Prüfung, mit der das Erstellen abweist.
+	// FehlendeAngaben liefert nil, wenn nichts fehlt — in der Lage heißt nil aber
+	// „nicht erhoben", also wird daraus die leere Liste.
+	lage.BescheidFehlend = repository.BescheidAngabenAus(settings).FehlendeAngaben(repository.SchuleAngabenAus(settings))
+	if lage.BescheidFehlend == nil {
+		lage.BescheidFehlend = []string{}
+	}
+}
+
+// rechteKlassenUndAdminsInDieLage liest Rechte, Klassen-Zuordnungen und Admin-Konten. Bei
+// einem Lesefehler bleibt die jeweilige Liste nil: Die Prüfung meldet dann „nicht lesbar"
+// oder „nicht erhoben" statt eines falschen „alles gut".
+func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandRepository, lage *Lage) {
 	if rechte, err := zustandRepo.LadeRollenRechte(ctx); err == nil {
 		lage.RechteLive = rechte
 	}
 
-	// Klassen-Drift (F3): Bei einem Fehler bleiben die Listen nil — die Prüfung
-	// meldet dann „nicht erhoben" statt fälschlich „alles verbunden".
 	if schueler, zuordnungen, listen, err := zustandRepo.KlassenBestand(ctx); err == nil {
 		lage.KlassenOhneLehrkraft = fehlendeEintraege(mitKlassenleitung(schueler), zuordnungen)
 		lage.VerwaisteZuordnungen = fehlendeEintraege(zuordnungen, schueler)
@@ -141,11 +155,11 @@ func (s *Server) sammleLage(
 			lage.AdminKonten = append(lage.AdminKonten, a.Name+" ("+a.Email+")")
 		}
 	}
+}
 
-	if probe, err := repository.PruefeSchluesselGegenBestand(ctx, s.DB.Pool); err == nil {
-		lage.SchluesselProbe = &probe
-	}
-
+// sicherungUndFerienInDieLage trägt den Stand der Backups, die Reichweite der Ferientabelle
+// und das Ergebnis der Restore-Probe ein.
+func sicherungUndFerienInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandRepository, lage *Lage) {
 	// Backup-Zustand aus derselben Quelle wie das Dashboard-Badge (backup_status.go).
 	encKey := os.Getenv("BACKUP_ENCRYPTION_KEY")
 	lage.BackupKeySet = encKey != ""
@@ -164,7 +178,7 @@ func (s *Server) sammleLage(
 	if err != nil {
 		sommerferien = ""
 	}
-	// Lückenlos AB dem laufenden Jahr — nicht das Maximum: Ein vergessenes Jahr mitten in
+	// Lückenlos ab dem laufenden Jahr, nicht das Maximum: Ein vergessenes Jahr mitten in
 	// der Liste lässt den Planer ohne Vorgabe stehen, und genau das soll die Prüfung sagen.
 	lage.FerientabelleBis = lmfplan.FerientabelleAus(sommerferien).LueckenlosBis(lage.Jetzt.Year())
 	lage.UebrigeFerienBis = lmfplan.UebrigeFerienBis()
@@ -177,8 +191,6 @@ func (s *Server) sammleLage(
 			lage.RestoreProbe = &probe
 		}
 	}
-
-	return lage
 }
 
 // BetriebsbereitschaftHandler beantwortet: Was ist eingerichtet, aber nicht in Betrieb?

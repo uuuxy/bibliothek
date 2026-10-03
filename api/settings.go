@@ -46,89 +46,98 @@ func (s *Server) GetSettingsHandler(settingsRepo repository.SystemSettingsReposi
 // @Router       /einstellungen/speichern [post]
 func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		// Patch statt vollem Objekt: Der Rumpf traegt nur die Felder EINER Kategorie
-		// (system_settings_patch.go). Ein volles Objekt wuerde hier zu lauter
-		// Nullwerten dekodieren und beim Speichern die uebrigen Kategorien
-		// zuruecksetzen.
-		// Streng dekodiert (DecodeStrictAndValidate): Der Rumpf entsteht aus einer
-		// geschlossenen Liste benannter Schlüssel, ein unbekanntes Feld ist hier also
-		// immer ein Fehler — und zwar der teuerste, weil er sonst still verschwindet
-		// und die Oberfläche trotzdem "gespeichert" meldet.
-		var req repository.EinstellungenPatch
-		if !DecodeStrictAndValidate(w, r, &req) {
-			return nil // Error is already sent by DecodeAndValidate
-		}
-
-		if req.IstLeer() {
-			return apierrors.BadRequest("Es wurde keine einzige Einstellung mitgeschickt.",
-				errors.New("leerer Einstellungs-Patch"))
-		}
-		// Zahlen: innerhalb ihrer Spanne oder gar nicht gespeichert
-		// (repository/system_settings_zahlen.go). Bis zum 16.09.2026 tauschte der
-		// Sammler einen zu kleinen Wert still gegen einen Ersatz und meldete
-		// „gespeichert"; eine Obergrenze gab es bei keiner der fünfzehn Zahlen. Die
-		// Prüfung steht VOR dem Protokoll-Eintrag, damit dort nicht mehr die Eingabe
-		// steht, während in der Datenbank etwas anderes liegt.
-		if err := req.PruefeZahlen(); err != nil {
-			return apierrors.BadRequest(err.Error(), err)
-		}
-
-		// Die Sommerferien tragen jede Frist des LMF-Plans: geprüft und in Normalform,
-		// oder gar nicht gespeichert (pkg/lmfplan/ferien_einstellung.go).
-		if req.Sommerferien != nil {
-			norm, err := lmfplan.NormalisiereSommerferien(*req.Sommerferien)
-			if err != nil {
-				return apierrors.BadRequest(err.Error(), err)
-			}
-			req.Sommerferien = &norm
-		}
-
-		// Dieselbe Regel wie bei den Sommerferien: geprüft und in Normalform, oder gar
-		// nicht gespeichert. Unlesbares wurde sonst gespeichert, angezeigt und beim Lesen
-		// still auf die Vorgabe zurückgeworfen (Rasterdurchgang 06.09.2026).
-		if req.LmfEingangsjahrgaenge != nil {
-			norm, err := repository.NormalisiereEingangsjahrgaenge(*req.LmfEingangsjahrgaenge)
-			if err != nil {
-				return apierrors.BadRequest(err.Error(), err)
-			}
-			req.LmfEingangsjahrgaenge = &norm
-		}
-		// Der dritte Nachbar im selben Formular: Der Stichtag trägt jede Lernmittel-Frist.
-		// Bis zum 10.09.2026 ungeprüft gespeichert, beim Rechnen still auf 07-31 zurück.
-		if req.LmfStichtag != nil {
-			norm, err := repository.NormalisiereLmfStichtag(*req.LmfStichtag)
-			if err != nil {
-				return apierrors.BadRequest(err.Error(), err)
-			}
-			req.LmfStichtag = &norm
-		}
-
-		ctx := r.Context()
-
-		if err := settingsRepo.SaveSettings(ctx, &req); err != nil {
-			return apierrors.Internal("Fehler beim Speichern der Einstellungen", err)
-		}
-
-		// Admin audit log (IP-Adresse wird gemäß DSGVO nicht gespeichert)
-		if claims, ok := auth.GetClaims(r.Context()); ok {
-			if detailsBytes, merr := json.Marshal(req); merr != nil {
-				log.Printf("audit: Settings-Details konnten nicht serialisiert werden: %v", merr)
-			} else {
-				logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, $2, $3::jsonb)", claims.UserID, "UPDATE_SETTINGS", string(detailsBytes)))
-			}
-		}
-
-		// Die Sitzungsfristen holt jeder Tab nur einmal beim Anmelden (App.svelte).
-		// Das Signal erreicht auch offene Tabs an anderen Arbeitsplätzen; die Werte
-		// holen sich die Clients per GET /api/einstellungen/sitzung — dort sitzt die
-		// Vorgaben-Logik, hier wäre sie dupliziert.
-		if s.Broker != nil && (req.ThekeLeerenMinuten != nil || req.SperreMinuten != nil) {
-			s.Broker.Broadcast("sitzungsfristen", "{}")
-		}
-
-		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-		return nil
+		return s.handleUpdateSettings(w, r, settingsRepo)
 	})
+}
+
+// handleUpdateSettings prüft den Patch, speichert ihn, protokolliert die Änderung und meldet neue
+// Sitzungsfristen an die offenen Arbeitsplätze.
+func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request, settingsRepo repository.SystemSettingsRepository) error {
+	// Patch statt vollem Objekt: Der Rumpf trägt nur die Felder einer Kategorie
+	// (system_settings_patch.go). Ein volles Objekt dekodierte hier zu lauter Nullwerten
+	// und setzte beim Speichern die übrigen Kategorien zurück.
+	// Streng dekodiert (DecodeStrictAndValidate): Der Rumpf entsteht aus einer
+	// geschlossenen Liste benannter Schlüssel, ein unbekanntes Feld ist hier also
+	// immer ein Fehler — und zwar der teuerste, weil er sonst still verschwindet
+	// und die Oberfläche trotzdem "gespeichert" meldet.
+	var req repository.EinstellungenPatch
+	if !DecodeStrictAndValidate(w, r, &req) {
+		return nil // Error is already sent by DecodeAndValidate
+	}
+
+	if req.IstLeer() {
+		return apierrors.BadRequest("Es wurde keine einzige Einstellung mitgeschickt.",
+			errors.New("leerer Einstellungs-Patch"))
+	}
+	// Zahlen: innerhalb ihrer Spanne oder gar nicht gespeichert
+	// (repository/system_settings_zahlen.go). Beide Prüfungen stehen vor dem
+	// Protokoll-Eintrag, damit dort nicht die Eingabe steht, während in der Datenbank
+	// etwas anderes liegt.
+	if err := req.PruefeZahlen(); err != nil {
+		return apierrors.BadRequest(err.Error(), err)
+	}
+	if err := normalisiereLernmittelAngaben(&req); err != nil {
+		return apierrors.BadRequest(err.Error(), err)
+	}
+
+	if err := settingsRepo.SaveSettings(r.Context(), &req); err != nil {
+		return apierrors.Internal("Fehler beim Speichern der Einstellungen", err)
+	}
+	s.protokolliereEinstellungen(r, req)
+
+	// Die Sitzungsfristen holt jeder Tab nur einmal beim Anmelden (App.svelte).
+	// Das Signal erreicht auch offene Tabs an anderen Arbeitsplätzen; die Werte
+	// holen sich die Clients per GET /api/einstellungen/sitzung — dort sitzt die
+	// Vorgaben-Logik, hier wäre sie dupliziert.
+	if s.Broker != nil && (req.ThekeLeerenMinuten != nil || req.SperreMinuten != nil) {
+		s.Broker.Broadcast("sitzungsfristen", "{}")
+	}
+
+	RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	return nil
+}
+
+// normalisiereLernmittelAngaben bringt Sommerferien, Eingangsjahrgänge und Stichtag in
+// Normalform. An ihnen hängt jede Lernmittel-Frist: Unlesbares wird nicht gespeichert, statt
+// beim Lesen still auf die Vorgabe zurückzufallen.
+func normalisiereLernmittelAngaben(req *repository.EinstellungenPatch) error {
+	if req.Sommerferien != nil {
+		norm, err := lmfplan.NormalisiereSommerferien(*req.Sommerferien)
+		if err != nil {
+			return err
+		}
+		req.Sommerferien = &norm
+	}
+	if req.LmfEingangsjahrgaenge != nil {
+		norm, err := repository.NormalisiereEingangsjahrgaenge(*req.LmfEingangsjahrgaenge)
+		if err != nil {
+			return err
+		}
+		req.LmfEingangsjahrgaenge = &norm
+	}
+	if req.LmfStichtag != nil {
+		norm, err := repository.NormalisiereLmfStichtag(*req.LmfStichtag)
+		if err != nil {
+			return err
+		}
+		req.LmfStichtag = &norm
+	}
+	return nil
+}
+
+// protokolliereEinstellungen schreibt den gespeicherten Patch ins Protokoll; die IP-Adresse
+// wird nicht gespeichert.
+func (s *Server) protokolliereEinstellungen(r *http.Request, req repository.EinstellungenPatch) {
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		return
+	}
+	detailsBytes, merr := json.Marshal(req)
+	if merr != nil {
+		log.Printf("audit: Settings-Details konnten nicht serialisiert werden: %v", merr)
+		return
+	}
+	logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, $2, $3::jsonb)", claims.UserID, "UPDATE_SETTINGS", string(detailsBytes)))
 }
 
 // SitzungsEinstellungen sind die zwei Inaktivitäts-Fristen des Clients (A4 in

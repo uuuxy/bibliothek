@@ -36,33 +36,8 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 		dsgvoLeer(p, tr)
 	}
 	for _, a := range k.Anfragen {
-		teile := []string{dsgvoAnfrageArt(a.Art)}
-		if a.ISBN != "" {
-			teile = append(teile, "ISBN: "+a.ISBN)
-		}
-		if a.Klasse != "" {
-			teile = append(teile, "Klasse: "+a.Klasse)
-		}
-		if a.Anzahl > 0 {
-			teile = append(teile, fmt.Sprintf("Anzahl: %d", a.Anzahl))
-		}
-		teile = append(teile, "gestellt: "+dsgvoDatum(a.ErstelltAm))
-		switch {
-		case a.ErledigtAm != nil:
-			teile = append(teile, "erledigt: "+dsgvoDatum(*a.ErledigtAm))
-		case a.Erledigt:
-			teile = append(teile, "erledigt")
-		default:
-			teile = append(teile, "offen")
-		}
-		if a.Kommentar != "" {
-			teile = append(teile, "Kommentar: "+a.Kommentar)
-		}
-		if a.ErledigtNotiz != "" {
-			teile = append(teile, "Notiz der Bibliothek: "+a.ErledigtNotiz)
-		}
 		dsgvoEintragTitel(p, tr, a.Titel)
-		dsgvoEintragZeile(p, tr, strings.Join(teile, " · "))
+		dsgvoEintragZeile(p, tr, dsgvoAnfrageZeile(a))
 	}
 
 	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Einträge im Verwaltungsprotokoll zu diesem Konto (%d)", len(k.Ereignisse)))
@@ -86,6 +61,37 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 		p.MultiCell(0, 5, tr(fmt.Sprintf("%s · %s (%d): %s", z.tag, z.handlung, len(z.zeiten),
 			strings.Join(z.zeiten, ", "))), "", "L", false)
 	}
+}
+
+// dsgvoAnfrageZeile nennt zu einem Wunsch, einer Meldung oder einer Reservierung die
+// gespeicherten Angaben in einer Zeile; leere Angaben fallen weg.
+func dsgvoAnfrageZeile(a repository.DsgvoAnfrage) string {
+	teile := []string{dsgvoAnfrageArt(a.Art)}
+	if a.ISBN != "" {
+		teile = append(teile, "ISBN: "+a.ISBN)
+	}
+	if a.Klasse != "" {
+		teile = append(teile, "Klasse: "+a.Klasse)
+	}
+	if a.Anzahl > 0 {
+		teile = append(teile, fmt.Sprintf("Anzahl: %d", a.Anzahl))
+	}
+	teile = append(teile, "gestellt: "+dsgvoDatum(a.ErstelltAm))
+	switch {
+	case a.ErledigtAm != nil:
+		teile = append(teile, "erledigt: "+dsgvoDatum(*a.ErledigtAm))
+	case a.Erledigt:
+		teile = append(teile, "erledigt")
+	default:
+		teile = append(teile, "offen")
+	}
+	if a.Kommentar != "" {
+		teile = append(teile, "Kommentar: "+a.Kommentar)
+	}
+	if a.ErledigtNotiz != "" {
+		teile = append(teile, "Notiz der Bibliothek: "+a.ErledigtNotiz)
+	}
+	return strings.Join(teile, " · ")
 }
 
 // dsgvoFruehereKontenAbschnitt druckt die gelöschten Konten, die auf diesen Leser zeigten, als

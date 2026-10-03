@@ -515,41 +515,7 @@ func pruefeRechteVorgabe(l Lage) Befund {
 		return b
 	}
 
-	var abweichungen []string
-	vorgabe := map[string]map[string]bool{}
-	for _, v := range db.RechteVorgabe {
-		if vorgabe[v.Role] == nil {
-			vorgabe[v.Role] = map[string]bool{}
-		}
-		vorgabe[v.Role][v.Permission] = v.Allowed
-		zeile, bekannt := l.RechteLive[v.Role]
-		liveWert, vorhanden := false, false
-		if bekannt {
-			liveWert, vorhanden = zeile[v.Permission]
-		}
-		switch {
-		case !vorhanden:
-			abweichungen = append(abweichungen,
-				fmt.Sprintf("%s/%s fehlt live (Vorgabe: %s)", v.Role, v.Permission, anAus(v.Allowed)))
-		// Optionale Paare (db.RechteOptional): Der Haken in der Rechte-Matrix ist
-		// dort der vorgesehene Gebrauch, kein Drift — nur die Existenz zählt.
-		case db.RechteOptional[v.Role+"/"+v.Permission]:
-		case liveWert != v.Allowed:
-			abweichungen = append(abweichungen,
-				fmt.Sprintf("%s/%s live %s, Vorgabe %s", v.Role, v.Permission, anAus(liveWert), anAus(v.Allowed)))
-		}
-	}
-	// Gegenrichtung: Live-Zeilen, deren Rolle oder Recht die Vorgabe nicht kennt —
-	// Reste alter Vokabulare (z. B. eine umbenannte Rolle) oder Tippfehler im Editor.
-	for rolle, zeile := range l.RechteLive {
-		for recht, erlaubt := range zeile {
-			if _, kennt := vorgabe[rolle][recht]; !kennt {
-				abweichungen = append(abweichungen,
-					fmt.Sprintf("%s/%s live %s, in der Vorgabe unbekannt", rolle, recht, anAus(erlaubt)))
-			}
-		}
-	}
-
+	abweichungen := rechteAbweichungen(l.RechteLive)
 	if len(abweichungen) == 0 {
 		b.Stufe = StufeOK
 		b.Befund = fmt.Sprintf("Live-Rechte decken sich mit der Code-Vorgabe (%d Zeilen).", len(db.RechteVorgabe))
@@ -573,6 +539,46 @@ func pruefeRechteVorgabe(l Lage) Befund {
 	b.Abhilfe = "Jede Zeile prüfen. Bewusste Admin-Entscheidung: so lassen (die Warnung " +
 		"dokumentiert sie). Drift nach Code-Änderung: unter Benutzer & Rechte → Rollen & Rechte angleichen."
 	return b
+}
+
+// rechteAbweichungen vergleicht die Live-Rechte in beiden Richtungen mit der Vorgabe und
+// nennt jede Abweichung; die Reihenfolge ist die der Maps und damit zufällig.
+func rechteAbweichungen(live map[string]map[string]bool) []string {
+	var abweichungen []string
+	vorgabe := map[string]map[string]bool{}
+	for _, v := range db.RechteVorgabe {
+		if vorgabe[v.Role] == nil {
+			vorgabe[v.Role] = map[string]bool{}
+		}
+		vorgabe[v.Role][v.Permission] = v.Allowed
+		zeile, bekannt := live[v.Role]
+		liveWert, vorhanden := false, false
+		if bekannt {
+			liveWert, vorhanden = zeile[v.Permission]
+		}
+		switch {
+		case !vorhanden:
+			abweichungen = append(abweichungen,
+				fmt.Sprintf("%s/%s fehlt live (Vorgabe: %s)", v.Role, v.Permission, anAus(v.Allowed)))
+		// Optionale Paare (db.RechteOptional): Der Haken in der Rechte-Matrix ist
+		// dort der vorgesehene Gebrauch, kein Drift — nur die Existenz zählt.
+		case db.RechteOptional[v.Role+"/"+v.Permission]:
+		case liveWert != v.Allowed:
+			abweichungen = append(abweichungen,
+				fmt.Sprintf("%s/%s live %s, Vorgabe %s", v.Role, v.Permission, anAus(liveWert), anAus(v.Allowed)))
+		}
+	}
+	// Gegenrichtung: Live-Zeilen, deren Rolle oder Recht die Vorgabe nicht kennt —
+	// Reste alter Vokabulare (z. B. eine umbenannte Rolle) oder Tippfehler im Editor.
+	for rolle, zeile := range live {
+		for recht, erlaubt := range zeile {
+			if _, kennt := vorgabe[rolle][recht]; !kennt {
+				abweichungen = append(abweichungen,
+					fmt.Sprintf("%s/%s live %s, in der Vorgabe unbekannt", rolle, recht, anAus(erlaubt)))
+			}
+		}
+	}
+	return abweichungen
 }
 
 func anAus(erlaubt bool) string {

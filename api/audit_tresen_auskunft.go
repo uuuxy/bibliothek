@@ -86,58 +86,64 @@ func tresenEreignis(z repository.TresenEreignisZeile) TresenEreignis {
 // TresenAuskunftHandler beantwortet GET /api/audit/tresen-auskunft?barcode=…
 func (s *Server) TresenAuskunftHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		barcode := strings.TrimSpace(r.URL.Query().Get("barcode"))
-		if barcode == "" || len(barcode) > 64 {
-			apierrors.SendHTTPError(w, http.StatusBadRequest,
-				errors.New("barcode fehlt oder ist unplausibel lang"))
-			return
-		}
+		s.handleTresenAuskunft(w, r, auditRepo)
+	}
+}
 
-		exemplarZeilen, err := repository.SucheTresenExemplare(r.Context(), s.DB.Pool, barcode)
+// handleTresenAuskunft sucht die Exemplare zum Barcode und ihre Vorgänge und protokolliert den
+// Blick, bevor er antwortet.
+func (s *Server) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository) {
+	barcode := strings.TrimSpace(r.URL.Query().Get("barcode"))
+	if barcode == "" || len(barcode) > 64 {
+		apierrors.SendHTTPError(w, http.StatusBadRequest,
+			errors.New("barcode fehlt oder ist unplausibel lang"))
+		return
+	}
+
+	exemplarZeilen, err := repository.SucheTresenExemplare(r.Context(), s.DB.Pool, barcode)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+	exemplare := []TresenExemplar{}
+	ids := make([]string, 0, len(exemplarZeilen))
+	for _, z := range exemplarZeilen {
+		ids = append(ids, z.ExemplarID)
+		exemplare = append(exemplare, TresenExemplar{Titel: z.Titel, Status: z.Status})
+	}
+
+	ereignisse := []TresenEreignis{}
+	if len(ids) > 0 {
+		zeilen, err := repository.SucheTresenEreignisse(r.Context(), s.DB.Pool, ids, tresenMaxEreignisse)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		exemplare := []TresenExemplar{}
-		ids := make([]string, 0, len(exemplarZeilen))
-		for _, z := range exemplarZeilen {
-			ids = append(ids, z.ExemplarID)
-			exemplare = append(exemplare, TresenExemplar{Titel: z.Titel, Status: z.Status})
+		for _, z := range zeilen {
+			ereignisse = append(ereignisse, tresenEreignis(z))
 		}
-
-		ereignisse := []TresenEreignis{}
-		if len(ids) > 0 {
-			zeilen, err := repository.SucheTresenEreignisse(r.Context(), s.DB.Pool, ids, tresenMaxEreignisse)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			for _, z := range zeilen {
-				ereignisse = append(ereignisse, tresenEreignis(z))
-			}
-		}
-
-		// Die Protokollierung ist Teil der Zusage, nicht Kür: Ein Blick in die
-		// Ausleihhistorie ohne eigene Spur wäre genau die stille Tür, gegen die
-		// dieser Endpunkt so eng gebaut ist. Scheitert sie, gibt es keine Auskunft.
-		claims, ok := auth.GetClaims(r.Context())
-		if !ok {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError,
-				errors.New("keine sitzung im kontext"))
-			return
-		}
-		if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "TRESEN_AUSKUNFT",
-			getIP(r), map[string]any{
-				"barcode":            barcode,
-				"treffer_exemplare":  len(exemplare),
-				"treffer_ereignisse": len(ereignisse),
-			}); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		RespondJSON(w, http.StatusOK, TresenAuskunft{
-			Barcode: barcode, Exemplare: exemplare, Ereignisse: ereignisse,
-		})
 	}
+
+	// Die Protokollierung ist Teil der Zusage, nicht Kür: Ein Blick in die
+	// Ausleihhistorie ohne eigene Spur wäre genau die stille Tür, gegen die
+	// dieser Endpunkt so eng gebaut ist. Scheitert sie, gibt es keine Auskunft.
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError,
+			errors.New("keine sitzung im kontext"))
+		return
+	}
+	if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "TRESEN_AUSKUNFT",
+		getIP(r), map[string]any{
+			"barcode":            barcode,
+			"treffer_exemplare":  len(exemplare),
+			"treffer_ereignisse": len(ereignisse),
+		}); err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	RespondJSON(w, http.StatusOK, TresenAuskunft{
+		Barcode: barcode, Exemplare: exemplare, Ereignisse: ereignisse,
+	})
 }
