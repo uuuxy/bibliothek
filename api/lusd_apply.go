@@ -39,30 +39,20 @@ func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, datei lusdDatei, z l
 			continue
 		}
 		if id, ok := z.zielID[i]; ok {
-			if z.geburtsdatumSetzen[i] {
-				rec.geburtsdatumUebernehmen = true
-			}
+			rec.geburtsdatumUebernehmen = z.geburtsdatumSetzen[i]
 			batchRecords = append(batchRecords, rec)
 			batchIDs = append(batchIDs, id)
 			continue
 		}
 
-		if datei.Modus == lusdModusID {
-			// Nicht in der Zuordnung, aber die lusd_id kann inzwischen eine nicht soft-
-			// gelöschte Zeile halten: den eben ADOPTIERTEN Waisen (adoptiereWaisen lief vor
-			// diesem Durchlauf) — oder, defensiv, einen Rückkehrer. Ein blindes INSERT
-			// kollidierte am partiellen Unique-Index uniq_schueler_lusd_id_active und ließe
-			// den GESAMTEN Import scheitern (SQLSTATE 23505). Soft-gelöschte Zeilen blockieren
-			// den Index NICHT und sollen bewusst als frischer Datensatz neu entstehen.
-			bestandID, err := findeAktivenSchuelerNachLusdID(ctx, tx, rec.LusdID)
-			if err != nil {
-				return err
-			}
-			if bestandID != "" {
-				batchRecords = append(batchRecords, rec)
-				batchIDs = append(batchIDs, bestandID)
-				continue
-			}
+		bestandID, err := belegteLusdID(ctx, tx, datei.Modus, rec.LusdID)
+		if err != nil {
+			return err
+		}
+		if bestandID != "" {
+			batchRecords = append(batchRecords, rec)
+			batchIDs = append(batchIDs, bestandID)
+			continue
 		}
 
 		if err := legeNeuenSchuelerAn(ctx, tx, rec, startNum+barcodeCounter); err != nil {
@@ -76,6 +66,17 @@ func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, datei lusdDatei, z l
 	}
 
 	return nil
+}
+
+// belegteLusdID nennt im ID-Modus die Zeile, die die LUSD-ID schon hält, obwohl die Zuordnung
+// sie nicht kennt: den eben adoptierten Waisen oder einen Rückkehrer. Ein INSERT liefe dort auf
+// uniq_schueler_lusd_id_active auf und risse den ganzen Import mit. Soft-gelöschte Zeilen
+// belegen den Index nicht und entstehen als frischer Datensatz neu.
+func belegteLusdID(ctx context.Context, tx pgx.Tx, modus lusdModus, lusdID string) (string, error) {
+	if modus != lusdModusID {
+		return "", nil
+	}
+	return findeAktivenSchuelerNachLusdID(ctx, tx, lusdID)
 }
 
 // findeAktivenSchuelerNachLusdID sucht die (höchstens eine — garantiert durch den partiellen
@@ -287,22 +288,8 @@ func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string, karenzT
 	}
 
 	// Offene Ausleihen pre-loaden
-	pendingCounts := make(map[string]int, len(gradIDs))
-	rows, err := tx.Query(ctx, "SELECT schueler_id, COUNT(*) FROM ausleihen WHERE schueler_id = ANY($1) AND rueckgabe_am IS NULL GROUP BY schueler_id", gradIDs)
+	pendingCounts, err := zaehleJeSchueler(ctx, tx, "SELECT schueler_id, COUNT(*) FROM ausleihen WHERE schueler_id = ANY($1) AND rueckgabe_am IS NULL GROUP BY schueler_id", gradIDs)
 	if err != nil {
-		return err
-	}
-	for rows.Next() {
-		var sID string
-		var count int
-		if err := rows.Scan(&sID, &count); err != nil {
-			rows.Close()
-			return err
-		}
-		pendingCounts[sID] = count
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
 		return err
 	}
 
@@ -310,44 +297,56 @@ func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string, karenzT
 	// Anonymisierung — sonst würden Name und Rechnungsadresse gelöscht und die Schule bliebe
 	// auf dem Schaden sitzen, weil sie den Schüler nicht mehr anschreiben kann. storniert_am
 	// setzt ist_bezahlt = true (repository/audit_system.go), daher genügt ist_bezahlt = false.
-	offeneSchaedenCounts := make(map[string]int, len(gradIDs))
-	schaedenRows, err := tx.Query(ctx, "SELECT schueler_id, COUNT(*) FROM schadensfaelle WHERE schueler_id = ANY($1) AND ist_bezahlt = false GROUP BY schueler_id", gradIDs)
+	offeneSchaedenCounts, err := zaehleJeSchueler(ctx, tx, "SELECT schueler_id, COUNT(*) FROM schadensfaelle WHERE schueler_id = ANY($1) AND ist_bezahlt = false GROUP BY schueler_id", gradIDs)
 	if err != nil {
-		return err
-	}
-	for schaedenRows.Next() {
-		var sID string
-		var count int
-		if err := schaedenRows.Scan(&sID, &count); err != nil {
-			schaedenRows.Close()
-			return err
-		}
-		offeneSchaedenCounts[sID] = count
-	}
-	schaedenRows.Close()
-	if err := schaedenRows.Err(); err != nil {
 		return err
 	}
 
 	for _, sID := range gradIDs {
 		offen := pendingCounts[sID] > 0 || offeneSchaedenCounts[sID] > 0
-		switch {
-		case offen:
-			if err := sperreAbgaenger(ctx, tx, sID, abgaengerSperrgrundOffen); err != nil {
-				return err
-			}
-		case karenzTage > 0:
-			if err := sperreAbgaenger(ctx, tx, sID, abgaengerSperrgrundKarenz); err != nil {
-				return err
-			}
-		default:
-			if err := anonymisiereAbgaenger(ctx, tx, sID); err != nil {
-				return err
-			}
+		if err := sperreOderAnonymisiere(ctx, tx, sID, offen, karenzTage); err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+// zaehleJeSchueler führt eine Zählabfrage mit den Spalten schueler_id und Anzahl aus und
+// liest sie ganz, bevor die Transaktion weiterbenutzt wird.
+func zaehleJeSchueler(ctx context.Context, tx pgx.Tx, abfrage string, schuelerIDs []string) (map[string]int, error) {
+	zahlen := make(map[string]int, len(schuelerIDs))
+	rows, err := tx.Query(ctx, abfrage, schuelerIDs)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var sID string
+		var count int
+		if err := rows.Scan(&sID, &count); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		zahlen[sID] = count
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return zahlen, nil
+}
+
+// sperreOderAnonymisiere schließt einen Abgänger ab: Mit offenen Vorgängen und während der
+// Karenzzeit wird er nur gesperrt, sonst sofort anonymisiert.
+func sperreOderAnonymisiere(ctx context.Context, tx pgx.Tx, schuelerID string, offen bool, karenzTage int) error {
+	switch {
+	case offen:
+		return sperreAbgaenger(ctx, tx, schuelerID, abgaengerSperrgrundOffen)
+	case karenzTage > 0:
+		return sperreAbgaenger(ctx, tx, schuelerID, abgaengerSperrgrundKarenz)
+	default:
+		return anonymisiereAbgaenger(ctx, tx, schuelerID)
+	}
 }
 
 // Die beiden automatischen Sperrgründe teilen das Präfix, an dem der Rückkehrer-Pfad

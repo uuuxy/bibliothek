@@ -251,47 +251,53 @@ func (s *Server) computeLusdLauf(ctx context.Context, datei lusdDatei, lauf lusd
 // lusdUploadHandler bündelt, was Vorschau und Import gemeinsam haben: Upload-Grenze,
 // Parsen, Fehlerabbildung. apply unterscheidet die beiden Routen.
 func (s *Server) lusdUploadHandler(apply bool) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
-		if err := r.ParseMultipartForm(10 << 20); err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-			return
-		}
-		datei, err := readLusdUpload(r)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-			return
-		}
-		lauf := lusdLauf{apply: apply, allowMassGraduation: apply && r.FormValue("confirm_graduates") == "true"}
-		if apply {
-			if lauf.umbenennungen, err = leseUmbenennungsWahl(r.FormValue("umbenennungen")); err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-				return
-			}
-		}
-		res, err := s.computeLusdLauf(r.Context(), datei, lauf)
-		if err == nil && apply {
-			// Der einzige Pfad, der Schülernamen irreversibel anonymisiert, hinterließ bis
-			// 22.08.2026 keinen Audit-Eintrag — weder Akteur noch Zahlen (Prüfung 22.08., B).
-			// Zähler und Modus, keine Namen (Rechenschaft ohne neue PII).
-			s.protokolliereLusdImport(r, res, lauf.allowMassGraduation)
-		}
-		if err != nil {
-			var massErr *errMassGraduation
-			var wahlErr *errUmbenennungUngueltig
-			if errors.As(err, &massErr) {
-				apierrors.SendHTTPError(w, http.StatusConflict, err)
-				return
-			}
-			if errors.As(err, &wahlErr) {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		RespondJSON(w, http.StatusOK, res)
+	return func(w http.ResponseWriter, r *http.Request) { s.handleLusdUpload(w, r, apply) }
+}
+
+// handleLusdUpload liest die Datei, fährt den Lauf und antwortet mit Vorschau oder Ergebnis.
+func (s *Server) handleLusdUpload(w http.ResponseWriter, r *http.Request, apply bool) {
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		return
 	}
+	datei, err := readLusdUpload(r)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+	lauf := lusdLauf{apply: apply, allowMassGraduation: apply && r.FormValue("confirm_graduates") == "true"}
+	if apply {
+		if lauf.umbenennungen, err = leseUmbenennungsWahl(r.FormValue("umbenennungen")); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+	}
+	res, err := s.computeLusdLauf(r.Context(), datei, lauf)
+	if err != nil {
+		apierrors.SendHTTPError(w, lusdFehlerStatus(err), err)
+		return
+	}
+	if apply {
+		// Der Import ist der einzige Weg, der Schülernamen unumkehrbar anonymisiert. Ins
+		// Protokoll gehen Akteur, Modus und Zähler, keine Namen.
+		s.protokolliereLusdImport(r, res, lauf.allowMassGraduation)
+	}
+	RespondJSON(w, http.StatusOK, res)
+}
+
+// lusdFehlerStatus ordnet den Fehler eines Laufs ein: Der Massenabgang wartet auf eine
+// Bestätigung (409), eine überholte Umbenennungs-Auswahl ist eine Fehleingabe (400).
+func lusdFehlerStatus(err error) int {
+	var massErr *errMassGraduation
+	var wahlErr *errUmbenennungUngueltig
+	switch {
+	case errors.As(err, &massErr):
+		return http.StatusConflict
+	case errors.As(err, &wahlErr):
+		return http.StatusBadRequest
+	}
+	return http.StatusInternalServerError
 }
 
 // leseUmbenennungsWahl liest das Formularfeld `umbenennungen` (JSON-Liste aus Zeile +

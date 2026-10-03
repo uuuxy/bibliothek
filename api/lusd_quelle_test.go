@@ -163,3 +163,24 @@ func TestParseLusdDatei_XlsxLiestAlleBlaetterMitKopfzeile(t *testing.T) {
 		}
 	}
 }
+
+// Steht über der Kopfzeile jedes Blatts eine Titelzeile, gibt trotzdem die Kopfzeile die
+// Breite der Tabelle vor. An der Titelzeile abgelesen, bliebe von den Zeilen des zweiten
+// Blatts nur eine Spalte übrig.
+func TestParseLusdDatei_XlsxTitelzeileUeberJedemBlatt(t *testing.T) {
+	xlsx := baueXlsx(t, map[string][][]any{
+		"6F1": {{"Klasse 6F1"}, {"Nachname", "Vorname", "Klasse"}, {"Adler", "Ava", "06F1"}},
+		"6F2": {{"Klasse 6F2"}, {"Klasse", "Vorname", "Nachname"}, {"06F2", "Cem", "Cato"}},
+	})
+	datei, err := parseLusdDatei(xlsx)
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	gelesen := map[string]string{}
+	for _, z := range datei.Zeilen {
+		gelesen[z.Nachname] = z.Vorname + " " + z.Klasse
+	}
+	if len(datei.Zeilen) != 2 || gelesen["Adler"] != "Ava 06F1" || gelesen["Cato"] != "Cem 06F2" {
+		t.Errorf("erwartet Adler (Ava 06F1) und Cato (Cem 06F2), bekam %v", gelesen)
+	}
+}

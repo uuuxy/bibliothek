@@ -248,16 +248,24 @@ func parseLusdDatei(content []byte) (lusdDatei, error) {
 		return legeDublettenZusammen(zeilen, lusdModusID, func(r parsedStudentRow) string { return r.LusdID }), nil
 	}
 	if irgendeinDatum {
-		for _, z := range zeilen {
-			if z.GebDatum == nil {
-				// Nur die Zeilennummer, kein Name: Die Meldung landet über SendHTTPError im
-				// Server-Log (Prüfung 22.08.2026). Die Zeile findet das Sekretariat in der Datei.
-				return lusdDatei{}, fmt.Errorf("zeile %d: Geburtsdatum fehlt oder ist unlesbar — ohne LUSD-ID ist Name + Geburtsdatum der Zuordnungsschlüssel, er muss in jeder Zeile stehen", z.LineNum)
-			}
+		if err := pruefeGeburtsdatumJeZeile(zeilen); err != nil {
+			return lusdDatei{}, err
 		}
 		return legeDublettenZusammen(zeilen, lusdModusName, parsedStudentRow.schluessel), nil
 	}
 	return lusdDatei{Zeilen: zeilen, Modus: lusdModusNurName}, nil
+}
+
+// pruefeGeburtsdatumJeZeile meldet die erste Zeile ohne lesbares Geburtsdatum.
+func pruefeGeburtsdatumJeZeile(zeilen []parsedStudentRow) error {
+	for _, z := range zeilen {
+		if z.GebDatum == nil {
+			// Nur die Zeilennummer, kein Name: Die Meldung geht über SendHTTPError auch ins
+			// Server-Log. Die Zeile findet das Sekretariat in der Datei.
+			return fmt.Errorf("zeile %d: Geburtsdatum fehlt oder ist unlesbar — ohne LUSD-ID ist Name + Geburtsdatum der Zuordnungsschlüssel, er muss in jeder Zeile stehen", z.LineNum)
+		}
+	}
+	return nil
 }
 
 // legeDublettenZusammen lässt von mehreren Zeilen mit demselben Schlüssel die LETZTE
@@ -275,7 +283,7 @@ func legeDublettenZusammen(zeilen []parsedStudentRow, modus lusdModus, schluesse
 		}
 		if idx, gesehen := platz[key]; gesehen {
 			if vorher := datei.Zeilen[idx]; !klassenGleich(vorher.Klasse, z.Klasse) {
-				datei.Zusammengelegt = append(datei.Zusammengelegt, diffZeile(fmt.Sprintf("zeile-%d", z.LineNum), z, vorher.Klasse, z.Klasse))
+				datei.Zusammengelegt = append(datei.Zusammengelegt, diffZeile(z.zeilenKennung(), z, vorher.Klasse, z.Klasse))
 			}
 			datei.Zeilen[idx] = z
 			datei.DublettenInDatei++

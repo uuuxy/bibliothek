@@ -78,7 +78,7 @@ func klassifiziereLusd(datei lusdDatei, idx lusdIndex, res *LusdPreviewResult) l
 			// Nur-Name: Derselbe Name zweimal in der Datei sind zwei Menschen, die sich
 			// nicht auseinanderhalten lassen — beide melden, keinen anfassen.
 			if namenInDatei[rec.namensschluessel()] > 1 {
-				lauf.res.Mehrdeutig = append(lauf.res.Mehrdeutig, diffZeile(fmt.Sprintf("zeile-%d", rec.LineNum), rec, "", rec.Klasse))
+				lauf.res.Mehrdeutig = append(lauf.res.Mehrdeutig, diffZeile(rec.zeilenKennung(), rec, "", rec.Klasse))
 				lauf.z.ueberspringen[i] = true
 				// Der Name STEHT im Export — ein bestätigter Bestandsschüler dieses Namens
 				// ist also nicht „nicht im Export". Ohne diese Zeile machte sammleAbgaenger
@@ -140,75 +140,101 @@ func (l *klassifizierungsLauf) klassifiziereZeileID(i int, rec parsedStudentRow)
 	l.z.neuZeilen = append(l.z.neuZeilen, i)
 }
 
-// klassifiziereZeileName: Schlüssel Name+Geburtsdatum oder nur Name (key kommt vom
-// Aufrufer, vom Parser garantiert nicht leer). Mehrdeutige Treffer werden übersprungen
-// und gemeldet — ein Neuzugang an ihrer Stelle liefe ohnehin am Unique-Index
-// unique_schueler_name_gebdatum auf oder wäre im Nur-Name-Modus ein Ratespiel.
+// klassifiziereZeileName ordnet eine Zeile über Name + Geburtsdatum oder nur über den Namen
+// zu. Mehrdeutige Treffer werden übersprungen und gemeldet: Ein Neuzugang an ihrer Stelle
+// liefe am Unique-Index unique_schueler_name_gebdatum auf oder wäre im Nur-Name-Modus geraten.
 //
-// nurName: Im Nur-Name-Modus ist ein Abgänger mit demselben Namen KEIN sicherer
-// Rückkehrer — ebenso gut ein neuer Fünftklässler, der sonst auf dem Datensatz (Sperre,
-// Schulden, Lesehistorie) des Abgegangenen landete (Prüfung 22.08.2026, A2). Er wird als
-// mehrdeutig gemeldet und nicht angefasst; das Sekretariat entscheidet von Hand.
+// Im Nur-Name-Modus gilt ein Abgänger mit demselben Namen nicht als Rückkehrer. Es kann
+// ebenso ein neuer Fünftklässler sein, der sonst auf dem Datensatz des Abgegangenen landete
+// (Sperre, Schulden, Lesehistorie); das Sekretariat entscheidet von Hand.
 func (l *klassifizierungsLauf) klassifiziereZeileName(i int, rec parsedStudentRow, modus lusdModus) {
-	// Schlüssel AUS dem Modus ableiten (rec.schluesselFuer), nicht vom Aufrufer entgegennehmen:
-	// Die Gegenseite (bestandsSchluessel in lusd_bestand.go) tut dasselbe. Kämen beide aus
-	// verschiedenen Händen, könnte ein Aufrufer den Namensschlüssel gegen den Name+Datum-Index
-	// schlagen — das matcht dann still niemanden. Nebenbei fällt der achte Parameter weg und
-	// aus dem nichtssagenden `…, gesehen, true)` am Aufrufer wird der benannte Modus.
+	// Der Schlüssel kommt aus dem Modus, wie auf der Gegenseite (bestandsSchluessel in
+	// lusd_bestand.go). Käme er vom Aufrufer, könnte ein Namensschlüssel gegen den Index aus
+	// Name und Datum laufen und träfe still niemanden.
 	nurName := modus == lusdModusNurName
 	key := rec.schluesselFuer(modus)
-	zeilenID := fmt.Sprintf("zeile-%d", rec.LineNum)
-	if s, ok := l.idx.aktiv[key]; ok {
-		if s == nil {
-			l.res.Mehrdeutig = append(l.res.Mehrdeutig, diffZeile(zeilenID, rec, "", rec.Klasse))
-			l.z.ueberspringen[i] = true
-			return
-		}
-		l.gesehen[key] = true
-		l.z.zielID[i] = s.ID
-		if !klassenGleich(s.Klasse, rec.Klasse) {
-			l.res.ClassChanges = append(l.res.ClassChanges, diffZeile(s.ID, rec, s.Klasse, rec.Klasse))
-		}
+	if l.ordneAktivemZu(i, rec, key) || l.ordneAbgaengerZu(i, rec, key, nurName) {
 		return
 	}
-	if s, ok := l.idx.abgaenger[key]; ok {
-		if s == nil || nurName {
-			alteKlasse := ""
-			if s != nil {
-				alteKlasse = s.Klasse
-			}
-			l.res.Mehrdeutig = append(l.res.Mehrdeutig, diffZeile(zeilenID, rec, alteKlasse, rec.Klasse))
-			l.z.ueberspringen[i] = true
-			return
-		}
-		l.z.zielID[i] = s.ID
-		l.res.Rueckkehrer = append(l.res.Rueckkehrer, diffZeile(s.ID, rec, s.Klasse, rec.Klasse))
+	if !nurName && l.ordneUeberNamenZu(i, rec) {
 		return
 	}
-	// Rückfallstufe (nur Name+Geb-Modus): Bestandsschüler OHNE Geburtsdatum über den
-	// Namen — eindeutig → zuordnen und das Datum aus dem Export nachtragen; mehrdeutig
-	// → melden, nichts anlegen. Ohne diese Stufe wurde beim Modus-Wechsel (erst LANIS-
-	// Liste, später Export mit Datum) jeder Bestandsschüler als „neu" dupliziert.
-	if !nurName && rec.GebDatum != nil {
-		nameKey := rec.namensschluessel()
-		if w, ok := l.idx.ohneDatumNachName[nameKey]; ok {
-			if w == nil {
-				l.res.Mehrdeutig = append(l.res.Mehrdeutig, diffZeile(zeilenID, rec, "", rec.Klasse))
-				l.z.ueberspringen[i] = true
-				return
-			}
-			l.z.zielID[i] = w.ID
-			l.z.datumNachgetragen[w.ID] = true
-			l.z.adoptionen = append(l.z.adoptionen, AdoptionDiff{
-				SchuelerID: w.ID, Vorname: rec.Vorname, Nachname: rec.Nachname,
-				Geburtsdatum: rec.GebDatum.Format("2006-01-02"), AlteKlasse: w.Klasse, NeueKlasse: rec.Klasse,
-			})
-			delete(l.idx.ohneDatumNachName, nameKey) // konsumiert — zwei Zeilen beanspruchen nie denselben
-			return
-		}
-	}
-	l.res.NewStudents = append(l.res.NewStudents, diffZeile(zeilenID, rec, "", rec.Klasse))
+	l.res.NewStudents = append(l.res.NewStudents, diffZeile(rec.zeilenKennung(), rec, "", rec.Klasse))
 	l.z.neuZeilen = append(l.z.neuZeilen, i)
+}
+
+// zeilenKennung steht in den Listen der Vorschau, wo eine Zeile noch keinen Datensatz hat.
+func (r parsedStudentRow) zeilenKennung() string {
+	return fmt.Sprintf("zeile-%d", r.LineNum)
+}
+
+// ordneAktivemZu: Der Schlüssel trifft den aktiven Bestand. Ein eindeutiger Treffer wird
+// zugeordnet, ein mehrdeutiger gemeldet und übersprungen; false heißt kein Treffer.
+func (l *klassifizierungsLauf) ordneAktivemZu(i int, rec parsedStudentRow, key string) bool {
+	s, ok := l.idx.aktiv[key]
+	if !ok {
+		return false
+	}
+	if s == nil {
+		l.res.Mehrdeutig = append(l.res.Mehrdeutig, diffZeile(rec.zeilenKennung(), rec, "", rec.Klasse))
+		l.z.ueberspringen[i] = true
+		return true
+	}
+	l.gesehen[key] = true
+	l.z.zielID[i] = s.ID
+	if !klassenGleich(s.Klasse, rec.Klasse) {
+		l.res.ClassChanges = append(l.res.ClassChanges, diffZeile(s.ID, rec, s.Klasse, rec.Klasse))
+	}
+	return true
+}
+
+// ordneAbgaengerZu: Der Schlüssel trifft einen Abgänger. Eindeutig ist er ein Rückkehrer; im
+// Nur-Name-Modus und bei mehreren Treffern wird die Zeile gemeldet und übersprungen.
+func (l *klassifizierungsLauf) ordneAbgaengerZu(i int, rec parsedStudentRow, key string, nurName bool) bool {
+	s, ok := l.idx.abgaenger[key]
+	if !ok {
+		return false
+	}
+	if s == nil || nurName {
+		alteKlasse := ""
+		if s != nil {
+			alteKlasse = s.Klasse
+		}
+		l.res.Mehrdeutig = append(l.res.Mehrdeutig, diffZeile(rec.zeilenKennung(), rec, alteKlasse, rec.Klasse))
+		l.z.ueberspringen[i] = true
+		return true
+	}
+	l.z.zielID[i] = s.ID
+	l.res.Rueckkehrer = append(l.res.Rueckkehrer, diffZeile(s.ID, rec, s.Klasse, rec.Klasse))
+	return true
+}
+
+// ordneUeberNamenZu ist die Rückfallstufe im Modus Name + Geburtsdatum: Ein Bestandsschüler
+// ohne Geburtsdatum wird über den Namen zugeordnet und bekommt das Datum aus dem Export; bei
+// mehreren Treffern wird gemeldet und nichts angelegt. Ohne diese Stufe entstünde nach dem
+// Wechsel von der Liste ohne Datum zum Export mit Datum jeder Bestandsschüler doppelt.
+func (l *klassifizierungsLauf) ordneUeberNamenZu(i int, rec parsedStudentRow) bool {
+	if rec.GebDatum == nil {
+		return false
+	}
+	nameKey := rec.namensschluessel()
+	w, ok := l.idx.ohneDatumNachName[nameKey]
+	if !ok {
+		return false
+	}
+	if w == nil {
+		l.res.Mehrdeutig = append(l.res.Mehrdeutig, diffZeile(rec.zeilenKennung(), rec, "", rec.Klasse))
+		l.z.ueberspringen[i] = true
+		return true
+	}
+	l.z.zielID[i] = w.ID
+	l.z.datumNachgetragen[w.ID] = true
+	l.z.adoptionen = append(l.z.adoptionen, AdoptionDiff{
+		SchuelerID: w.ID, Vorname: rec.Vorname, Nachname: rec.Nachname,
+		Geburtsdatum: rec.GebDatum.Format("2006-01-02"), AlteKlasse: w.Klasse, NeueKlasse: rec.Klasse,
+	})
+	delete(l.idx.ohneDatumNachName, nameKey) // verbraucht: zwei Zeilen beanspruchen nie denselben
+	return true
 }
 
 // sammleAbgaenger: Wer aktiv ist und nicht im Export steht, geht ab — im ID-Modus jeder

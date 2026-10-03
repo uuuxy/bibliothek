@@ -48,6 +48,7 @@ var parameterStrukturen = map[string]string{
 	"exemplarZurGruppe": "fehlendes Feld = Zulaufzeile ohne Exemplar-ID oder ohne Cover",
 	"Rahmen":            "fehlendes Feld = Plan ohne Startstunde oder mit 0 Stunden je Tag, also ohne Plätze",
 	"Ende":              "fehlendes Feld = Rückgabe-Plan ohne Anker oder mit 0 Stunden je Tag, also still leer",
+	"paarSignale":       "fehlendes Feld = ein Signal der Umbenennungs-Paarung zählt still nie",
 }
 
 func TestParameterStrukturen_JedesLiteralSetztJedesFeld(t *testing.T) {

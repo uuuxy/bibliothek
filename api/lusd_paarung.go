@@ -78,15 +78,30 @@ type paarKandidat struct {
 // Abgänger dieses Laufs (aktive, die im Export fehlen) und die noch nicht anonymisierten
 // Abgänger früherer Läufe; auf der Dateiseite die Zeilen, die neu angelegt würden.
 //
-// Nur in den Namensmodi: Im ID-Modus trägt jede Zeile die LUSD-ID, eine Umbenennung
-// findet der Schlüssel selbst — ein Paar hätte dort die alte lusd_id behalten und wäre
-// beim nächsten Lauf erneut als Abgänger + Neuzugang erschienen (Rasterdurchgang 02.09.).
-// Ausgeschlossen sind außerdem Bestandsschüler, die dieser Lauf schon per Schlüssel
-// zuordnet (Rückkehrer in z.zielID): Sonst zeigten zwei Zeilen auf dieselbe ID.
+// Nur im Modus Name + Geburtsdatum: Im ID-Modus findet die LUSD-ID eine Umbenennung selbst;
+// ein Paar behielte dort die alte lusd_id und erschiene beim nächsten Lauf erneut als
+// Abgänger und Neuzugang.
 func findeUmbenennungen(datei lusdDatei, bestand []lusdBestandsSchueler, idx lusdIndex, z lusdZuordnung) []UmbenennungDiff {
 	if datei.Modus != lusdModusName || len(z.neuZeilen) == 0 {
 		return nil
 	}
+	seite := umbenennungsSeite(bestand, idx, z)
+
+	var kandidaten []paarKandidat
+	for _, i := range z.neuZeilen {
+		for _, s := range seite {
+			if k, ok := bewertePaar(i, datei.Zeilen[i], s); ok {
+				kandidaten = append(kandidaten, k)
+			}
+		}
+	}
+	return waehlePaare(datei, kandidaten)
+}
+
+// umbenennungsSeite sammelt die Bestandsschüler, die für ein Paar in Frage kommen, nach ID
+// sortiert. Wen dieser Lauf schon per Schlüssel zuordnet (Rückkehrer in z.zielID), der
+// bleibt draußen: Sonst zeigten zwei Zeilen auf dieselbe ID.
+func umbenennungsSeite(bestand []lusdBestandsSchueler, idx lusdIndex, z lusdZuordnung) []*lusdBestandsSchueler {
 	nachID := make(map[string]*lusdBestandsSchueler, len(bestand))
 	for i := range bestand {
 		nachID[bestand[i].ID] = &bestand[i]
@@ -107,58 +122,69 @@ func findeUmbenennungen(datei lusdDatei, bestand []lusdBestandsSchueler, idx lus
 		}
 	}
 	sort.Slice(seite, func(a, b int) bool { return seite[a].ID < seite[b].ID })
+	return seite
+}
 
-	var kandidaten []paarKandidat
-	for _, i := range z.neuZeilen {
-		for _, s := range seite {
-			if k, ok := bewertePaar(i, datei.Zeilen[i], s); ok {
-				kandidaten = append(kandidaten, k)
-			}
+// paarSignale hält, worin eine Exportzeile und ein Bestandsschüler übereinstimmen.
+type paarSignale struct {
+	eintritt, geb, nachname, vorname, klasse, adresse bool
+}
+
+func lesePaarSignale(rec parsedStudentRow, s *lusdBestandsSchueler) paarSignale {
+	return paarSignale{
+		eintritt: datumGleich(rec.EintrittAm, s.EintrittAm),
+		geb:      datumGleich(rec.GebDatum, s.Geburtsdatum),
+		nachname: namensteilGleich(rec.Nachname, s.Nachname),
+		vorname:  namensteilGleich(rec.Vorname, s.Vorname),
+		klasse:   klassenNachbar(s.Klasse, rec.Klasse),
+		adresse: rec.PLZ != "" && rec.Strasse != "" &&
+			normName(rec.PLZ) == normName(s.PLZ) && normName(rec.Strasse) == normName(s.Strasse),
+	}
+}
+
+func (p paarSignale) name() bool { return p.nachname && p.vorname }
+
+// gruende nennt die Übereinstimmungen, absteigend nach Gewicht. Ein voller Name steht für
+// seine beiden Teile.
+func (p paarSignale) gruende() []string {
+	var gruende []string
+	for _, g := range []struct {
+		gilt bool
+		text string
+	}{
+		{p.eintritt, "gleicher Schuleintritt"},
+		{p.geb, "gleiches Geburtsdatum"},
+		{p.name(), "gleicher Name"},
+		{!p.name() && p.nachname, "gleicher Nachname"},
+		{!p.name() && p.vorname, "gleicher Vorname"},
+		{p.klasse, "gleiche oder benachbarte Klasse"},
+		{p.adresse, "gleiche Anschrift"},
+	} {
+		if g.gilt {
+			gruende = append(gruende, g.text)
 		}
 	}
-	return waehlePaare(datei, kandidaten)
+	return gruende
 }
 
 // bewertePaar sammelt die Signale zwischen einer Exportzeile und einem Bestandsschüler.
 func bewertePaar(i int, rec parsedStudentRow, s *lusdBestandsSchueler) (paarKandidat, bool) {
-	geb := datumGleich(rec.GebDatum, s.Geburtsdatum)
-	eintritt := datumGleich(rec.EintrittAm, s.EintrittAm)
-	nachname := namensteilGleich(rec.Nachname, s.Nachname)
-	vorname := namensteilGleich(rec.Vorname, s.Vorname)
-	name := nachname && vorname
-	klasse := klassenNachbar(s.Klasse, rec.Klasse)
-	adresse := rec.PLZ != "" && rec.Strasse != "" &&
-		normName(rec.PLZ) == normName(s.PLZ) && normName(rec.Strasse) == normName(s.Strasse)
-
-	var gruende []string
-	add := func(ok bool, text string) {
-		if ok {
-			gruende = append(gruende, text)
-		}
-	}
-	add(eintritt, "gleicher Schuleintritt")
-	add(geb, "gleiches Geburtsdatum")
-	add(name, "gleicher Name")
-	add(!name && nachname, "gleicher Nachname")
-	add(!name && vorname, "gleicher Vorname")
-	add(klasse, "gleiche oder benachbarte Klasse")
-	add(adresse, "gleiche Anschrift")
-
+	p := lesePaarSignale(rec, s)
+	gruende := p.gruende()
 	k := paarKandidat{zeile: i, s: s, signale: len(gruende)}
-	// Gegen-Signal: gleiches Geburtsdatum, aber ein Vorname, der weder gleich noch
-	// Anfang des anderen ist — so sehen Zwillinge aus (und ein Vorname-Tippfehler).
-	// Ein solches Paar wird angeboten, aber nie vorangekreuzt.
-	zwilling := geb && !vorname && normName(rec.Vorname) != "" && normName(s.Vorname) != ""
 	switch {
-	case eintritt && (name || (geb && vorname)):
+	case p.eintritt && (p.name() || (p.geb && p.vorname)):
 		k.sicher = true
-	case geb && (nachname || vorname || klasse || adresse || eintritt):
-	case name && (klasse || adresse):
+	case p.geb && (p.nachname || p.vorname || p.klasse || p.adresse || p.eintritt):
+	case p.name() && (p.klasse || p.adresse):
 		gruende = append(gruende, "Geburtsdatum abweichend (Korrektur?)")
 	default:
 		return paarKandidat{}, false
 	}
-	if zwilling {
+	// Gegen-Signal: gleiches Geburtsdatum, aber ein Vorname, der weder gleich noch Anfang des
+	// anderen ist. So sehen Zwillinge aus und ein Tippfehler im Vornamen; das Paar wird
+	// angeboten, aber nie vorangekreuzt.
+	if p.geb && !p.vorname && normName(rec.Vorname) != "" && normName(s.Vorname) != "" {
 		gruende = append(gruende, "Vorname abweichend (Zwilling?)")
 	}
 	k.grund = strings.Join(gruende, ", ")

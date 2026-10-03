@@ -83,19 +83,13 @@ func leseCsvZeilen(content []byte) ([]tabellenZeile, error) {
 	return rows, nil
 }
 
-// leseXlsxZeilen liefert die Zeilen ALLER Blätter, die eine Kopfzeile tragen, als eine
-// Tabelle — und zwar im Spaltenbild des ersten Blatts mit Kopfzeile.
+// leseXlsxZeilen liefert die Zeilen aller Blätter, die eine Kopfzeile tragen, als eine
+// Tabelle im Spaltenbild des ersten Blatts mit Kopfzeile. Eine Klassenliste hat je Klasse ein
+// Blatt; wer nur das erste läse, machte im Nur-Name-Modus aus den übrigen Klassen Abgänger.
 //
-// Bis 26.08.2026 zählte nur das ERSTE Blatt mit Kopfzeile. Eine Klassenliste aus der Schule
-// (kein LUSD-Export, aber eine Form, die jeder Excel-Export annehmen kann) hat je
-// Klasse ein Blatt: 6F1, 6F2, 6F3, 6F4 — 91 Schüler, von denen 23 angekommen wären. Im Nur-Name-Modus wäre das keine Lücke,
-// sondern ein Schaden: Wer bestätigt war und im Export „fehlt", gilt als Abgänger.
-//
-// Blätter ohne Kopfzeile (Deckblatt) werden weiter übersprungen. Spätere Blätter dürfen
-// die Spalten in anderer Reihenfolge tragen: Ihre Zellen werden über die Kopfzeile auf
-// das Spaltenbild des ersten Blatts umsortiert, damit der Index-Zugriff des Parsers
-// stimmt. Rohwerte (RawCellValue): Datumszellen kommen als Excel-Serienzahl und werden
-// in parseLUSDDatum zurückgerechnet.
+// Blätter ohne Kopfzeile (Deckblatt) werden übersprungen. Spätere Blätter dürfen die Spalten
+// in anderer Reihenfolge tragen und werden umsortiert. Gelesen werden Rohwerte: Datumszellen
+// kommen als Excel-Serienzahl und werden in parseLUSDDatum zurückgerechnet.
 func leseXlsxZeilen(content []byte) ([]tabellenZeile, error) {
 	f, err := excelize.OpenReader(bytes.NewReader(content), xlsxgrenze.Optionen())
 	if err != nil {
@@ -103,20 +97,15 @@ func leseXlsxZeilen(content []byte) ([]tabellenZeile, error) {
 	}
 	defer closeutil.LogClose(f, "lusd xlsx")
 
-	var ersteZeilen, gesamt []tabellenZeile
-	var ersterKopf map[string]int
-	ersteBreite := 0
+	var ersteZeilen []tabellenZeile
+	var gesamt xlsxTabelle
 	for _, blatt := range f.GetSheetList() {
-		raw, err := f.GetRows(blatt, excelize.Options{RawCellValue: true})
+		rows, err := leseXlsxBlatt(f, blatt)
 		if err != nil {
-			return nil, fmt.Errorf("Excel-Blatt %q konnte nicht gelesen werden: %w", blatt, err)
+			return nil, err
 		}
-		if len(raw) == 0 {
+		if len(rows) == 0 {
 			continue
-		}
-		rows := make([]tabellenZeile, len(raw))
-		for i, r := range raw {
-			rows[i] = tabellenZeile{nr: i + 1, zellen: r}
 		}
 		if ersteZeilen == nil {
 			ersteZeilen = rows
@@ -125,21 +114,48 @@ func leseXlsxZeilen(content []byte) ([]tabellenZeile, error) {
 		if err != nil || idx < 0 {
 			continue
 		}
-		if gesamt == nil {
-			gesamt, ersterKopf, ersteBreite = rows, kopf, len(rows[idx].zellen)
-			continue
-		}
-		for _, z := range rows[idx+1:] {
-			gesamt = append(gesamt, tabellenZeile{nr: z.nr, zellen: umsortiert(z.zellen, kopf, ersterKopf, ersteBreite)})
-		}
+		gesamt.nimm(rows, idx, kopf)
 	}
-	if gesamt != nil {
-		return gesamt, nil
+	if gesamt.zeilen != nil {
+		return gesamt.zeilen, nil
 	}
 	if ersteZeilen == nil {
 		return nil, fmt.Errorf("fehler beim lesen der csv-kopfzeile: die Excel-Datei enthält kein Blatt mit Daten")
 	}
 	return ersteZeilen, nil // die Kopfzeilen-Meldung formuliert findeKopfzeile am ersten Blatt
+}
+
+// leseXlsxBlatt liest ein Blatt als Rohwerte und nummeriert seine Zeilen ab 1.
+func leseXlsxBlatt(f *excelize.File, blatt string) ([]tabellenZeile, error) {
+	raw, err := f.GetRows(blatt, excelize.Options{RawCellValue: true})
+	if err != nil {
+		return nil, fmt.Errorf("Excel-Blatt %q konnte nicht gelesen werden: %w", blatt, err)
+	}
+	rows := make([]tabellenZeile, len(raw))
+	for i, r := range raw {
+		rows[i] = tabellenZeile{nr: i + 1, zellen: r}
+	}
+	return rows, nil
+}
+
+// xlsxTabelle fügt die Blätter mit Kopfzeile zu einer Tabelle zusammen. Das erste gibt das
+// Spaltenbild vor, an dem der Parser seine Indizes abliest.
+type xlsxTabelle struct {
+	zeilen []tabellenZeile
+	kopf   map[string]int
+	breite int
+}
+
+// nimm übernimmt das erste Blatt ganz und von jedem weiteren die Zeilen hinter der Kopfzeile,
+// umsortiert auf das Spaltenbild des ersten.
+func (t *xlsxTabelle) nimm(rows []tabellenZeile, idx int, kopf map[string]int) {
+	if t.zeilen == nil {
+		t.zeilen, t.kopf, t.breite = rows, kopf, len(rows[idx].zellen)
+		return
+	}
+	for _, z := range rows[idx+1:] {
+		t.zeilen = append(t.zeilen, tabellenZeile{nr: z.nr, zellen: umsortiert(z.zellen, kopf, t.kopf, t.breite)})
+	}
 }
 
 // umsortiert legt die Zellen eines späteren Blatts in das Spaltenbild des ersten:
