@@ -50,4 +50,19 @@ func TestDeleteTitle_TresenAuskunftFindetGeloeschteExemplare(t *testing.T) {
 				"ohne Titel im Snapshot sagt die Trefferzeile nichts aus", barcode, zeilen[0].Titel)
 		}
 	}
+
+	// Der Eintrag zum Titel selbst hängt an der Kennung des Titels und nennt, wer gelöscht hat.
+	if n := zaehleZeilen(t, pool, `
+		SELECT count(*) FROM audit_log
+		WHERE tabelle = 'buecher_titel' AND aktion = 'DELETE' AND datensatz_id = $1::uuid
+		  AND bearbeiter_id = $2::uuid AND details->>'titel' = 'Snapshot-Titel'`, titelID, bearbeiter); n != 1 {
+		t.Errorf("%d Einträge zum gelöschten Titel mit seiner Kennung und dem Bearbeiter, erwartet 1", n)
+	}
+	// Je Exemplar derselbe Bearbeiter und der Bezug zum Titel.
+	if n := zaehleZeilen(t, pool, `
+		SELECT count(*) FROM audit_log
+		WHERE tabelle = 'buecher_exemplare' AND aktion = 'DELETE' AND bearbeiter_id = $2::uuid
+		  AND details->>'titel_id' = $1`, titelID, bearbeiter); n != 2 {
+		t.Errorf("%d Einträge zu den Exemplaren mit Titelbezug und Bearbeiter, erwartet 2", n)
+	}
 }

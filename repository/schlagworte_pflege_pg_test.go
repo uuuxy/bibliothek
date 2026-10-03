@@ -126,6 +126,39 @@ func TestSchlagwortPflege_ZusammenfuehrenMachtDasAlteWortZumVerweis(t *testing.T
 	}
 }
 
+// Ist das Ziel selbst ein Verweis, gilt das Wort dahinter: Die Titel landen dort, und das
+// alte Wort verweist auf dieses Wort, nicht auf den Verweis.
+func TestSchlagwortPflege_ZusammenfuehrenInEinenVerweisNimmtDessenZiel(t *testing.T) {
+	pool := pgTestPool(t)
+	resetSchlagworte(t, pool)
+	ctx := context.Background()
+	ids := pflegeStand(t, pool, map[string][]string{
+		"Tintenherz":    {"Tierfantasy"},
+		"Drachenreiter": {"Fantasy"},
+	})
+	if err := SetzeSchlagwortVerweis(ctx, pool, "Phantastik", ids["Fantasy"]); err != nil {
+		t.Fatal(err)
+	}
+	var verweisID string
+	if err := pool.QueryRow(ctx, `SELECT id::text FROM schlagworte WHERE wort = 'Phantastik'`).Scan(&verweisID); err != nil {
+		t.Fatal(err)
+	}
+
+	titel, err := FuehreSchlagworteZusammen(ctx, pool, ids["Tierfantasy"], verweisID, true)
+	if err != nil {
+		t.Fatalf("in einen Verweis zusammenführen: %v", err)
+	}
+	if titel != 1 {
+		t.Errorf("gemeldet %d Titel, „Tierfantasy“ trug 1", titel)
+	}
+	if got := woerterAm(t, pool, "Tintenherz"); !slices.Equal(got, []string{"Fantasy"}) {
+		t.Errorf("Tintenherz trägt %q, erwartet [Fantasy]", got)
+	}
+	if alt := pflegeZeile(t, pool, "Tierfantasy"); alt.VerweisAuf != "Fantasy" {
+		t.Errorf("„Tierfantasy“ verweist auf %q, erwartet Fantasy", alt.VerweisAuf)
+	}
+}
+
 func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 	pool := pgTestPool(t)
 	resetSchlagworte(t, pool)

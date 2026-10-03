@@ -38,7 +38,7 @@ func (r *BetriebszustandRepository) zaehle(ctx context.Context, tabelle, alias s
 	return n, err
 }
 
-// ZaehleLoeschRueckstand prüft ALLE Löschroutinen des Systems und liefert je eine Zeile.
+// ZaehleLoeschRueckstand prüft alle Löschroutinen des Systems und liefert je eine Zeile.
 //
 // Fehlerverhalten: Der erste Fehler bricht ab und liefert nil — der Aufrufer meldet dann
 // „nicht erhoben" (Warnung) statt eines falschen „alles gut". Eine halbe Liste wäre die
@@ -51,10 +51,22 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	if err != nil {
 		return nil, err
 	}
+	stand, err := r.rueckstandLeserUndLesehistorie(ctx, einst)
+	if err != nil {
+		return nil, err
+	}
+	vorgaenge, err := r.rueckstandVorgaengeUndProtokoll(ctx, einst)
+	if err != nil {
+		return nil, err
+	}
+	return append(stand, vorgaenge...), nil
+}
+
+// rueckstandLeserUndLesehistorie zählt die Routinen, die Leser und ihre Lesehistorie
+// betreffen (1 bis 4).
+func (r *BetriebszustandRepository) rueckstandLeserUndLesehistorie(ctx context.Context, einst *SystemEinstellungen) ([]LoeschRueckstand, error) {
 	freihandTage := TageOderStandard(einst.LesehistorieTage, StandardLesehistorieTage)
 	lernmittelTage := TageOderStandard(einst.LesehistorieLernmittelTage, StandardLesehistorieLernmittelTage)
-	anliegenTage := TageOderStandard(einst.AnliegenTage, StandardAnliegenTage)
-	auditMonate := AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate)
 	karenzTage := AbgaengerKarenzTageOderStandard(einst)
 
 	stand := []LoeschRueckstand{}
@@ -75,16 +87,16 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	}
 	stand = append(stand, LoeschRueckstand{Routine: "Abgänger endgültig löschen", Frist: "nach der Karenz (anonymisiert), ab 30. Januar des Folgejahres", Zeilen: n})
 
-	// 2a. Gelöschte Kollegen endgültig löschen (180 Tage im Papierkorb, entschieden am 28.09.2026).
+	// 2a. Gelöschte Kollegen endgültig löschen (180 Tage im Papierkorb).
 	n, err = r.zaehle(ctx, "leser", "", PredikatKollegenPapierkorb(KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
 	stand = append(stand, LoeschRueckstand{Routine: "Gelöschte Kollegen endgültig löschen", Frist: tageText(StandardAnonymisierungSoftDeleteTage) + " im Papierkorb", Zeilen: n})
 
-	// 3./4. Lesehistorie, beide Klassen — Ausleihe UND Protokolleintrag. Die
+	// 3./4. Lesehistorie, beide Klassen — Ausleihe und Protokolleintrag. Die
 	//       Protokollzeile trägt dieselbe Zuordnung; wer nur die Ausleihe zählt, sieht
-	//       die halbe Wahrheit (Prüfung 22.08.2026, A5).
+	//       die halbe Wahrheit.
 	for _, k := range []struct {
 		routine    string
 		tage       int
@@ -107,6 +119,18 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 		}
 		stand = append(stand, zeile)
 	}
+	return stand, nil
+}
+
+// rueckstandVorgaengeUndProtokoll zählt die Routinen für erledigte Vorgänge und die
+// Aufbewahrung der Protokolle (5 und 6).
+func (r *BetriebszustandRepository) rueckstandVorgaengeUndProtokoll(ctx context.Context, einst *SystemEinstellungen) ([]LoeschRueckstand, error) {
+	anliegenTage := TageOderStandard(einst.AnliegenTage, StandardAnliegenTage)
+	auditMonate := AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate)
+
+	stand := []LoeschRueckstand{}
+	fehler := func(e error) ([]LoeschRueckstand, error) { return nil, e }
+	var err error
 
 	// 5. Erledigte Anliegen.
 	anliegen := LoeschRueckstand{Routine: "Erledigte Anliegen", Frist: tageText(anliegenTage), Aus: anliegenTage <= 0}

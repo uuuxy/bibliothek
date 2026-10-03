@@ -160,6 +160,19 @@ func TestSchlagworteAusNormdaten_VorhandenUndNeu(t *testing.T) {
 		t.Errorf("neu %q, erwartet %q", neu, want)
 	}
 
+	// Ein Begriff, dessen Anzeige ein Wort nennt, das über einen anderen Begriff schon unter
+	// den vorhandenen steht, wird nicht zusätzlich als neu angeboten.
+	doppeltV, doppeltN, err := SchlagworteAusNormdaten(ctx, pool, []Normdatenbegriff{
+		begriff("weltkrieg <1939-1945>"),
+		{Anzeige: "Zweiter Weltkrieg", Formen: []string{"Weltkrieg II"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(doppeltV, []string{"Zweiter Weltkrieg"}) || len(doppeltN) != 0 {
+		t.Errorf("vorhanden %q, neu %q — erwartet nur „Zweiter Weltkrieg“ unter den vorhandenen", doppeltV, doppeltN)
+	}
+
 	leerV, leerN, err := SchlagworteAusNormdaten(ctx, pool, nil)
 	if err != nil || leerV == nil || leerN == nil || len(leerV)+len(leerN) != 0 {
 		t.Errorf("ohne Begriffe: %q, %q, %v — erwartet zwei leere Listen", leerV, leerN, err)

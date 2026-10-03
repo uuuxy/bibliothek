@@ -327,54 +327,8 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		return nil, fmt.Errorf("nachbuch-meldungen verschieben: %w", err)
 	}
 	erg.NachbuchMeldungen = int64(len(g.NachbuchMeldungen))
-	// Zugangskonto (Migration 123): Zeigt eine Anmeldung auf die Quelle, muss sie nach dem
-	// Zusammenführen auf das Ziel zeigen — sonst macht der DELETE der Quelle sie still
-	// leserlos, und die Person könnte sich anmelden, ohne ihre Bücher zu sehen.
-	//
-	// Haben BEIDE Seiten ein Konto, wird nicht geraten: uniq_benutzer_leser verbietet zwei
-	// Anmeldungen auf einer Leserzeile, und welche der beiden bleiben soll, ist eine
-	// Entscheidung über zwei Menschen. Lieber ein klarer Abbruch als eine
-	// Constraint-Meldung, die niemand liest.
-	//
-	// EINE Ausnahme, und nur diese: ein Konto unter der Platzhalter-Domäne. Es ist kein
-	// Zugang, sondern Füllmaterial — die Übernahme aus Littera braucht für jedes Konto
-	// eine Adresse, die Leserdatei dort führt aber keine (internal/littera:
-	// schreiber_personen.go). Die Domäne ist nach RFC 2606 dauerhaft reserviert, kein
-	// Mailserver löst sie auf, und die Anmeldung läuft ausschließlich über IMAP gegen den
-	// Schul-Mailserver — mit dieser Adresse kommt niemand hinein.
-	//
-	// Ohne die Räumung stünde der Abbruch genau dort, wo „das ist dieselbe Person"
-	// gebraucht wird: Eine übernommene Lehrkraft, die sich selbst anmeldet, hat dann ein
-	// Platzhalter-Konto und ein echtes — zwei Konten, aber nur ein Zugang.
-	//
-	// Die Bedingung ist eng: Geräumt wird nur, wenn die ANDERE Seite ein ECHTES Konto hat.
-	// Stehen zwei Platzhalter gegeneinander (zwei Littera-Zeilen derselben Person), bleibt
-	// der Abbruch — dort ist nichts zu retten und nichts zu entscheiden, was diese Schicht
-	// wüsste.
-	if g.PlatzhalterKonten, err = idsAus(ctx, tx, `
-		DELETE FROM benutzer b
-		 WHERE b.leser_id IN ($1, $2)
-		   AND lower(b.email) LIKE '%'||$3
-		   AND EXISTS (SELECT 1 FROM benutzer a
-		                WHERE a.leser_id IN ($1, $2) AND a.leser_id <> b.leser_id
-		                  AND lower(a.email) NOT LIKE '%'||$3)
-		RETURNING b.id`, ziel, quelle, PlatzhalterDomain); err != nil {
-		return nil, fmt.Errorf("platzhalter-konto räumen: %w", err)
-	}
-
-	var zielKonto, quelleKonto bool
-	if err := tx.QueryRow(ctx, `SELECT
-			EXISTS (SELECT 1 FROM benutzer WHERE leser_id = $1),
-			EXISTS (SELECT 1 FROM benutzer WHERE leser_id = $2)`, ziel, quelle).Scan(&zielKonto, &quelleKonto); err != nil {
-		return nil, fmt.Errorf("zugangskonten prüfen: %w", err)
-	}
-	if zielKonto && quelleKonto {
-		return nil, ErrZusammenfuehrenZweiKonten
-	}
-	if g.Konten, err = idsAus(ctx, tx,
-		`UPDATE benutzer SET leser_id = $1, aktualisiert_am = NOW() WHERE leser_id = $2 RETURNING id`,
-		ziel, quelle); err != nil {
-		return nil, fmt.Errorf("zugangskonto verschieben: %w", err)
+	if err = verschiebeZugangskonto(ctx, tx, ziel, quelle, g); err != nil {
+		return nil, err
 	}
 	erg.Ausleihen, erg.Schaeden, erg.Vormerkungen = int64(len(g.Ausleihen)), int64(len(g.Schadensfaelle)), int64(len(g.Vormerkungen))
 	// Foto: Es kommt nie aus der LUSD, also gibt es keinen „führenden" Datensatz dafür —
@@ -404,6 +358,61 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		}
 	}
 	return g, nil
+}
+
+// verschiebeZugangskonto hängt das Konto der Quelle an das Ziel (Migration 123). Zeigt eine
+// Anmeldung auf die Quelle, muss sie nach dem Zusammenführen auf das Ziel zeigen — sonst macht
+// der DELETE der Quelle sie still leserlos, und die Person könnte sich anmelden, ohne ihre
+// Bücher zu sehen.
+//
+// Haben beide Seiten ein Konto, wird nicht geraten: uniq_benutzer_leser verbietet zwei
+// Anmeldungen auf einer Leserzeile, und welche der beiden bleiben soll, ist eine
+// Entscheidung über zwei Menschen. Lieber ein klarer Abbruch als eine
+// Constraint-Meldung, die niemand liest.
+//
+// Eine Ausnahme, und nur diese: ein Konto unter der Platzhalter-Domäne. Es ist kein
+// Zugang, sondern Füllmaterial — die Übernahme aus Littera braucht für jedes Konto
+// eine Adresse, die Leserdatei dort führt aber keine (internal/littera:
+// schreiber_personen.go). Die Domäne ist nach RFC 2606 dauerhaft reserviert, kein
+// Mailserver löst sie auf, und die Anmeldung läuft ausschließlich über IMAP gegen den
+// Schul-Mailserver — mit dieser Adresse kommt niemand hinein.
+//
+// Ohne die Räumung stünde der Abbruch genau dort, wo „das ist dieselbe Person"
+// gebraucht wird: Eine übernommene Lehrkraft, die sich selbst anmeldet, hat dann ein
+// Platzhalter-Konto und ein echtes — zwei Konten, aber nur ein Zugang.
+//
+// Die Bedingung ist eng: Geräumt wird nur, wenn die andere Seite ein echtes Konto hat.
+// Stehen zwei Platzhalter gegeneinander (zwei Littera-Zeilen derselben Person), bleibt
+// der Abbruch — dort ist nichts zu retten und nichts zu entscheiden, was diese Schicht
+// wüsste.
+func verschiebeZugangskonto(ctx context.Context, tx pgx.Tx, ziel, quelle string, g *gewanderteVorgaenge) error {
+	var err error
+	if g.PlatzhalterKonten, err = idsAus(ctx, tx, `
+		DELETE FROM benutzer b
+		 WHERE b.leser_id IN ($1, $2)
+		   AND lower(b.email) LIKE '%'||$3
+		   AND EXISTS (SELECT 1 FROM benutzer a
+		                WHERE a.leser_id IN ($1, $2) AND a.leser_id <> b.leser_id
+		                  AND lower(a.email) NOT LIKE '%'||$3)
+		RETURNING b.id`, ziel, quelle, PlatzhalterDomain); err != nil {
+		return fmt.Errorf("platzhalter-konto räumen: %w", err)
+	}
+
+	var zielKonto, quelleKonto bool
+	if err := tx.QueryRow(ctx, `SELECT
+			EXISTS (SELECT 1 FROM benutzer WHERE leser_id = $1),
+			EXISTS (SELECT 1 FROM benutzer WHERE leser_id = $2)`, ziel, quelle).Scan(&zielKonto, &quelleKonto); err != nil {
+		return fmt.Errorf("zugangskonten prüfen: %w", err)
+	}
+	if zielKonto && quelleKonto {
+		return ErrZusammenfuehrenZweiKonten
+	}
+	if g.Konten, err = idsAus(ctx, tx,
+		`UPDATE benutzer SET leser_id = $1, aktualisiert_am = NOW() WHERE leser_id = $2 RETURNING id`,
+		ziel, quelle); err != nil {
+		return fmt.Errorf("zugangskonto verschieben: %w", err)
+	}
+	return nil
 }
 
 // idsAus führt ein Statement mit RETURNING aus und sammelt die Kennungen.

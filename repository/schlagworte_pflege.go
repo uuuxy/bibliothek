@@ -202,28 +202,8 @@ func BenenneSchlagwortUm(ctx context.Context, q DBQueryer, id, neu string, alteA
 		return "", false, fmt.Errorf("%w: „%s“ ist ein Verweis — eine weitere Schreibweise legt „Verweis anlegen“ am Ziel an",
 			ErrSchlagwortRegel, alt.wort)
 	}
-	var anderesID, anderes string
-	var anderesZiel *string
-	err = tx.QueryRow(ctx, `SELECT id::text, wort, verweis_auf::text FROM schlagworte
-		WHERE lower(wort) = lower($1) AND id <> $2`, wort, id).Scan(&anderesID, &anderes, &anderesZiel)
-	switch {
-	case errors.Is(err, pgx.ErrNoRows):
-	case err != nil:
-		return "", false, fmt.Errorf("umbenennen: vorhandenes wort suchen: %w", err)
-	case anderesZiel != nil && *anderesZiel == id:
-		// Der eigene Verweis geht im Wort auf. Ohne Sperre gelesen, damit die Tür nur Zeilen
-		// sperrt, die sie ändert. Hat ihn inzwischen jemand umgehängt oder gelöscht, trifft
-		// das DELETE keine Zeile; die Tür meldet dann „gibt es schon", und ein zweiter Versuch
-		// sieht den neuen Stand.
-		tag, err := tx.Exec(ctx, `DELETE FROM schlagworte WHERE id = $1 AND verweis_auf = $2`, anderesID, id)
-		if err != nil {
-			return "", false, fmt.Errorf("umbenennen: eigenen verweis auflösen: %w", err)
-		}
-		if tag.RowsAffected() != 1 {
-			return "", false, fmt.Errorf("%w: „%s“", ErrSchlagwortGibtEs, anderes)
-		}
-	default:
-		return "", false, fmt.Errorf("%w: „%s“", ErrSchlagwortGibtEs, anderes)
+	if err := macheSchreibweiseFrei(ctx, tx, id, wort); err != nil {
+		return "", false, err
 	}
 	tag, err := tx.Exec(ctx, `UPDATE schlagworte SET wort = $2 WHERE id = $1`, id, wort)
 	if err != nil {
@@ -250,6 +230,37 @@ func BenenneSchlagwortUm(ctx context.Context, q DBQueryer, id, neu string, alteA
 	return wort, verweis, nil
 }
 
+// macheSchreibweiseFrei prüft, ob ein anderes Wort die neue Schreibweise schon trägt. Ist es
+// der eigene Verweis, geht er im Wort auf; jedes andere Wort ist ein Konflikt
+// (ErrSchlagwortGibtEs).
+func macheSchreibweiseFrei(ctx context.Context, tx pgx.Tx, id, wort string) error {
+	var anderesID, anderes string
+	var anderesZiel *string
+	err := tx.QueryRow(ctx, `SELECT id::text, wort, verweis_auf::text FROM schlagworte
+		WHERE lower(wort) = lower($1) AND id <> $2`, wort, id).Scan(&anderesID, &anderes, &anderesZiel)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		return nil
+	case err != nil:
+		return fmt.Errorf("umbenennen: vorhandenes wort suchen: %w", err)
+	case anderesZiel != nil && *anderesZiel == id:
+		// Der eigene Verweis geht im Wort auf. Ohne Sperre gelesen, damit die Tür nur Zeilen
+		// sperrt, die sie ändert. Hat ihn inzwischen jemand umgehängt oder gelöscht, trifft
+		// das DELETE keine Zeile; die Tür meldet dann „gibt es schon", und ein zweiter Versuch
+		// sieht den neuen Stand.
+		tag, err := tx.Exec(ctx, `DELETE FROM schlagworte WHERE id = $1 AND verweis_auf = $2`, anderesID, id)
+		if err != nil {
+			return fmt.Errorf("umbenennen: eigenen verweis auflösen: %w", err)
+		}
+		if tag.RowsAffected() != 1 {
+			return fmt.Errorf("%w: „%s“", ErrSchlagwortGibtEs, anderes)
+		}
+		return nil
+	default:
+		return fmt.Errorf("%w: „%s“", ErrSchlagwortGibtEs, anderes)
+	}
+}
+
 // FuehreSchlagworteZusammen hängt die Titel von „von" an „in". Mit alteAlsVerweis wird „von"
 // zum Verweis auf „in" — wer das alte Wort gewohnt ist, landet weiter richtig —, sonst fällt
 // es weg, wie in Littera. Verweise auf „von" zeigen danach auf „in", eine Filter-Markierung
@@ -273,26 +284,9 @@ func FuehreSchlagworteZusammen(ctx context.Context, q DBQueryer, vonID, inID str
 
 // fuehreZusammenIn ist das Zusammenführen innerhalb einer laufenden Transaktion.
 func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string, alteAlsVerweis bool) (int, error) {
-	// In fester Reihenfolge sperren, damit zwei gegenläufige Aufrufe nicht verklemmen.
-	erste, zweite := vonID, inID
-	if zweite < erste {
-		erste, zweite = zweite, erste
-	}
-	gesperrt := map[string]pflegeWort{}
-	for _, id := range []string{erste, zweite} {
-		w, err := sperreSchlagwort(ctx, tx, id)
-		if err != nil {
-			return 0, err
-		}
-		gesperrt[id] = w
-	}
-	von, ziel := gesperrt[vonID], gesperrt[inID]
-	if ziel.verweisAuf != nil {
-		z, err := sperreSchlagwort(ctx, tx, *ziel.verweisAuf)
-		if err != nil {
-			return 0, err
-		}
-		ziel = z
+	von, ziel, err := sperreVonUndZiel(ctx, tx, vonID, inID)
+	if err != nil {
+		return 0, err
 	}
 	if von.id == ziel.id {
 		return 0, fmt.Errorf("%w: ein Wort lässt sich nicht mit sich selbst zusammenführen", ErrSchlagwortRegel)
@@ -337,6 +331,32 @@ func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string, alteAl
 		}
 	}
 	return titel, nil
+}
+
+// sperreVonUndZiel sperrt beide Wörter in fester Reihenfolge, damit zwei gegenläufige Aufrufe
+// nicht verklemmen. Ist das Ziel selbst ein Verweis, gilt und sperrt sie dessen Ziel.
+func sperreVonUndZiel(ctx context.Context, tx pgx.Tx, vonID, inID string) (von, ziel pflegeWort, err error) {
+	erste, zweite := vonID, inID
+	if zweite < erste {
+		erste, zweite = zweite, erste
+	}
+	gesperrt := map[string]pflegeWort{}
+	for _, id := range []string{erste, zweite} {
+		w, err := sperreSchlagwort(ctx, tx, id)
+		if err != nil {
+			return pflegeWort{}, pflegeWort{}, err
+		}
+		gesperrt[id] = w
+	}
+	von, ziel = gesperrt[vonID], gesperrt[inID]
+	if ziel.verweisAuf != nil {
+		z, err := sperreSchlagwort(ctx, tx, *ziel.verweisAuf)
+		if err != nil {
+			return pflegeWort{}, pflegeWort{}, err
+		}
+		ziel = z
+	}
+	return von, ziel, nil
 }
 
 // SchlagwortLoeschung sagt, was ein Löschen getroffen hat: die gewählten Wörter, die Titel,

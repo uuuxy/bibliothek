@@ -208,3 +208,46 @@ func TestBulkUpsertBookTitles_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 		t.Errorf("die Liste des Aufrufers trägt danach %q, übergeben war 3551551677", datei[0].ISBN)
 	}
 }
+
+// Das Fach eines importierten Titels kommt an: Kennt die Systematik es noch nicht, wird es in
+// derselben Transaktion registriert, und der Titel trägt es.
+func TestBulkUpsertBookTitles_FachWirdRegistriertUndEingetragen(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+	const fach = "Importfach Astronomie"
+	t.Cleanup(func() {
+		for _, sql := range []string{
+			`DELETE FROM buecher_titel WHERE subject = $1`,
+			`DELETE FROM systematik_kategorien WHERE bezeichnung = $1`,
+		} {
+			if _, err := pool.Exec(context.Background(), sql, fach); err != nil {
+				t.Errorf("aufräumen: %v", err)
+			}
+		}
+	})
+
+	if _, err := NewBookRepository(pool).BulkUpsertBookTitles(ctx, []BookTitle{
+		{Titel: "Sterne und Planeten", Fach: fach},
+		{Titel: "Ohne Fach"},
+	}); err != nil {
+		t.Fatalf("Import: %v", err)
+	}
+
+	var subject string
+	if err := pool.QueryRow(ctx,
+		`SELECT coalesce(subject, '') FROM buecher_titel WHERE titel = 'Sterne und Planeten'`).Scan(&subject); err != nil {
+		t.Fatalf("Titel nach dem Import nicht lesbar: %v", err)
+	}
+	if subject != fach {
+		t.Errorf("Fach am Titel %q, erwartet %q", subject, fach)
+	}
+	var registriert int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM systematik_kategorien WHERE bezeichnung = $1`, fach).Scan(&registriert); err != nil {
+		t.Fatal(err)
+	}
+	if registriert != 1 {
+		t.Errorf("%d Sachgruppen mit der Bezeichnung %q, erwartet 1", registriert, fach)
+	}
+}

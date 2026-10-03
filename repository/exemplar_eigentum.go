@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"bibliothek/db"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Das Eigentum von Hand ändern (docs/OFFEN.md 4.24, Stufe 3, freigegeben am 29.09.2026) — wie
@@ -61,57 +63,21 @@ func SetzeExemplarEigentum(ctx context.Context, q DBQueryer, a EigentumAenderung
 		Scan(&gewaehlt); err != nil {
 		return 0, fmt.Errorf("eigentum: kennungen zählen: %w", err)
 	}
-	// In fester Reihenfolge sperren; zwei Änderungen mit überlappender Auswahl verklemmen
-	// sich nicht. Gelesen wird dabei der alte Wert fürs Protokoll.
-	rows, err := tx.Query(ctx, `
-		SELECT id::text, coalesce(eigentum, ''), coalesce(eigentum_quelle, '')
-		FROM buecher_exemplare WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE`, a.ExemplarIDs)
+	alle, err := sperreEigentumStand(ctx, tx, a.ExemplarIDs)
 	if err != nil {
-		return 0, fmt.Errorf("eigentum: sperren: %w", err)
-	}
-	type alterStand struct{ id, eigentum, quelle string }
-	var alle []alterStand
-	for rows.Next() {
-		var s alterStand
-		if err := rows.Scan(&s.id, &s.eigentum, &s.quelle); err != nil {
-			rows.Close()
-			return 0, fmt.Errorf("eigentum: alten stand lesen: %w", err)
-		}
-		alle = append(alle, s)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return 0, fmt.Errorf("eigentum: alten stand lesen: %w", err)
+		return 0, err
 	}
 	if len(alle) != gewaehlt {
 		return 0, ErrExemplarNichtGefunden
 	}
 
-	audit := &pgAuditRepository{}
-	kontext := "Eigentum von Hand geändert"
 	geaendert := 0
 	for _, s := range alle {
 		if s.eigentum == a.Eigentum && s.quelle == quelle {
 			continue
 		}
-		tag, err := tx.Exec(ctx, `
-			UPDATE buecher_exemplare SET eigentum = NULLIF($2, ''), eigentum_quelle = NULLIF($3, '')
-			WHERE id = $1`, s.id, a.Eigentum, quelle)
-		if err != nil {
-			return 0, fmt.Errorf("eigentum: exemplar %s: %w", s.id, err)
-		}
-		if tag.RowsAffected() != 1 {
-			return 0, fmt.Errorf("eigentum: exemplar %s: %d zeilen statt 1", s.id, tag.RowsAffected())
-		}
-		if err := audit.insertAuditLog(ctx, tx, auditEntry{
-			Tabelle: "buecher_exemplare", Aktion: "UPDATE", DatensatzID: s.id,
-			BearbeiterID: &a.BearbeiterID, Akteur: "USER", Kontext: &kontext,
-			Details: map[string]any{
-				"eigentum_alt": s.eigentum, "eigentum_quelle_alt": s.quelle,
-				"eigentum_neu": a.Eigentum, "grund": grund,
-			},
-		}); err != nil {
-			return 0, fmt.Errorf("eigentum: protokoll: %w", err)
+		if err := schreibeEigentum(ctx, tx, s, a, quelle, grund); err != nil {
+			return 0, err
 		}
 		geaendert++
 	}
@@ -119,6 +85,61 @@ func SetzeExemplarEigentum(ctx context.Context, q DBQueryer, a EigentumAenderung
 		return 0, fmt.Errorf("eigentum: commit: %w", err)
 	}
 	return geaendert, nil
+}
+
+// eigentumStand ist das Eigentum eines Exemplars vor der Änderung.
+type eigentumStand struct{ id, eigentum, quelle string }
+
+// sperreEigentumStand sperrt die Exemplare in fester Reihenfolge, damit sich zwei Änderungen
+// mit überlappender Auswahl nicht verklemmen, und liest dabei den alten Wert fürs Protokoll.
+func sperreEigentumStand(ctx context.Context, tx pgx.Tx, exemplarIDs []string) ([]eigentumStand, error) {
+	rows, err := tx.Query(ctx, `
+		SELECT id::text, coalesce(eigentum, ''), coalesce(eigentum_quelle, '')
+		FROM buecher_exemplare WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE`, exemplarIDs)
+	if err != nil {
+		return nil, fmt.Errorf("eigentum: sperren: %w", err)
+	}
+	var alle []eigentumStand
+	for rows.Next() {
+		var s eigentumStand
+		if err := rows.Scan(&s.id, &s.eigentum, &s.quelle); err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("eigentum: alten stand lesen: %w", err)
+		}
+		alle = append(alle, s)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("eigentum: alten stand lesen: %w", err)
+	}
+	return alle, nil
+}
+
+// schreibeEigentum setzt das Eigentum eines Exemplars und schreibt den Eintrag mit altem und
+// neuem Wert ins Protokoll.
+func schreibeEigentum(ctx context.Context, tx pgx.Tx, s eigentumStand, a EigentumAenderung, quelle, grund string) error {
+	tag, err := tx.Exec(ctx, `
+		UPDATE buecher_exemplare SET eigentum = NULLIF($2, ''), eigentum_quelle = NULLIF($3, '')
+		WHERE id = $1`, s.id, a.Eigentum, quelle)
+	if err != nil {
+		return fmt.Errorf("eigentum: exemplar %s: %w", s.id, err)
+	}
+	if tag.RowsAffected() != 1 {
+		return fmt.Errorf("eigentum: exemplar %s: %d zeilen statt 1", s.id, tag.RowsAffected())
+	}
+	audit := &pgAuditRepository{}
+	kontext := "Eigentum von Hand geändert"
+	if err := audit.insertAuditLog(ctx, tx, auditEntry{
+		Tabelle: "buecher_exemplare", Aktion: "UPDATE", DatensatzID: s.id,
+		BearbeiterID: &a.BearbeiterID, Akteur: "USER", Kontext: &kontext,
+		Details: map[string]any{
+			"eigentum_alt": s.eigentum, "eigentum_quelle_alt": s.quelle,
+			"eigentum_neu": a.Eigentum, "grund": grund,
+		},
+	}); err != nil {
+		return fmt.Errorf("eigentum: protokoll: %w", err)
+	}
+	return nil
 }
 
 // pruefeEigentumAenderung prüft die Eingabe, bevor die Datenbank gefragt wird.

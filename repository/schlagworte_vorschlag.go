@@ -70,14 +70,7 @@ func SchlagworteAusNormdaten(ctx context.Context, q DBQueryer, begriffe []Normda
 	}
 	var neuRoh []string
 	for _, b := range begriffe {
-		ziel := ""
-		for _, form := range b.Formen {
-			if z, da := treffer[schlagwortNormalform(form)]; da {
-				ziel = z
-				break
-			}
-		}
-		if ziel != "" {
+		if ziel := listenZiel(b, treffer); ziel != "" {
 			vorhanden = append(vorhanden, ziel)
 			continue
 		}
@@ -86,19 +79,34 @@ func SchlagworteAusNormdaten(ctx context.Context, q DBQueryer, begriffe []Normda
 		}
 	}
 	vorhanden = alphabetischOhneDoppelte(vorhanden)
+	return vorhanden, neueOhneVorhandene(neuRoh, vorhanden), nil
+}
+
+// listenZiel nennt das Wort der Liste, das die erste dort stehende Form des Begriffs trifft;
+// steht keine in der Liste, "".
+func listenZiel(b Normdatenbegriff, treffer map[string]string) string {
+	for _, form := range b.Formen {
+		if z, da := treffer[schlagwortNormalform(form)]; da {
+			return z
+		}
+	}
+	return ""
+}
+
+// neueOhneVorhandene liefert die neuen Wörter alphabetisch, ohne Doppelte und ohne die, die
+// schon unter den vorhandenen stehen; nie nil.
+func neueOhneVorhandene(neuRoh, vorhanden []string) []string {
 	schonDa := make(map[string]bool, len(vorhanden))
 	for _, w := range vorhanden {
 		schonDa[strings.ToLower(w)] = true
 	}
+	neu := []string{}
 	for _, w := range alphabetischOhneDoppelte(neuRoh) {
 		if !schonDa[strings.ToLower(w)] {
 			neu = append(neu, w)
 		}
 	}
-	if neu == nil {
-		neu = []string{}
-	}
-	return vorhanden, neu, nil
+	return neu
 }
 
 // listenZiele sucht die Kandidaten in der eigenen Liste und liefert je getroffenem Kandidaten

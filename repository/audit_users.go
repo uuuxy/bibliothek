@@ -136,27 +136,8 @@ func loescheUnberuehrteLeserzeile(ctx context.Context, tx pgx.Tx, leserID *strin
 		return false, "ausweis", nil
 	}
 
-	rows, err := tx.Query(ctx, `
-		SELECT c.conrelid::regclass::text, a.attname
-		  FROM pg_constraint c
-		  JOIN unnest(c.conkey) AS k(attnum) ON true
-		  JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.attnum
-		 WHERE c.contype = 'f' AND c.confrelid = 'leser'::regclass`)
+	kinder, err := fremdschluesselAufLeser(ctx, tx)
 	if err != nil {
-		return false, "", fmt.Errorf("fremdschlüssel auf leser lesen: %w", err)
-	}
-	type kind struct{ tabelle, spalte string }
-	var kinder []kind
-	for rows.Next() {
-		var k kind
-		if err := rows.Scan(&k.tabelle, &k.spalte); err != nil {
-			rows.Close()
-			return false, "", err
-		}
-		kinder = append(kinder, k)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
 		return false, "", err
 	}
 	// Kein Fremdschlüssel gefunden heißt nicht „nichts hängt daran", sondern dass die
@@ -164,19 +145,12 @@ func loescheUnberuehrteLeserzeile(ctx context.Context, tx pgx.Tx, leserID *strin
 	if len(kinder) == 0 {
 		return false, "katalog leer", nil
 	}
-
-	for _, k := range kinder {
-		// Die Namen stammen aus dem Katalog, nicht aus einer Eingabe; `regclass` liefert sie
-		// bereits so, wie Postgres sie wieder liest.
-		var haengt bool
-		if err := tx.QueryRow(ctx,
-			`SELECT EXISTS (SELECT 1 FROM `+k.tabelle+` WHERE `+k.spalte+` = $1)`, *leserID,
-		).Scan(&haengt); err != nil {
-			return false, "", fmt.Errorf("%s prüfen: %w", k.tabelle, err)
-		}
-		if haengt {
-			return false, k.tabelle, nil
-		}
+	tabelle, err := ersteTabelleMitBezug(ctx, tx, kinder, *leserID)
+	if err != nil {
+		return false, "", err
+	}
+	if tabelle != "" {
+		return false, tabelle, nil
 	}
 
 	tag, err := tx.Exec(ctx, `DELETE FROM leser WHERE id = $1`, *leserID)
@@ -189,6 +163,54 @@ func loescheUnberuehrteLeserzeile(ctx context.Context, tx pgx.Tx, leserID *strin
 		return false, "schon weg", nil
 	}
 	return true, "", nil
+}
+
+// leserKind ist eine Spalte einer anderen Tabelle, die per Fremdschlüssel auf leser zeigt.
+type leserKind struct{ tabelle, spalte string }
+
+// fremdschluesselAufLeser liest aus dem Katalog der Datenbank, welche Spalten auf leser zeigen.
+func fremdschluesselAufLeser(ctx context.Context, tx pgx.Tx) ([]leserKind, error) {
+	rows, err := tx.Query(ctx, `
+		SELECT c.conrelid::regclass::text, a.attname
+		  FROM pg_constraint c
+		  JOIN unnest(c.conkey) AS k(attnum) ON true
+		  JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.attnum
+		 WHERE c.contype = 'f' AND c.confrelid = 'leser'::regclass`)
+	if err != nil {
+		return nil, fmt.Errorf("fremdschlüssel auf leser lesen: %w", err)
+	}
+	var kinder []leserKind
+	for rows.Next() {
+		var k leserKind
+		if err := rows.Scan(&k.tabelle, &k.spalte); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		kinder = append(kinder, k)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return kinder, nil
+}
+
+// ersteTabelleMitBezug nennt die erste Tabelle, in der etwas an der Leserzeile hängt, sonst "".
+func ersteTabelleMitBezug(ctx context.Context, tx pgx.Tx, kinder []leserKind, leserID string) (string, error) {
+	for _, k := range kinder {
+		// Die Namen stammen aus dem Katalog, nicht aus einer Eingabe; `regclass` liefert sie
+		// bereits so, wie Postgres sie wieder liest.
+		var haengt bool
+		if err := tx.QueryRow(ctx,
+			`SELECT EXISTS (SELECT 1 FROM `+k.tabelle+` WHERE `+k.spalte+` = $1)`, leserID,
+		).Scan(&haengt); err != nil {
+			return "", fmt.Errorf("%s prüfen: %w", k.tabelle, err)
+		}
+		if haengt {
+			return k.tabelle, nil
+		}
+	}
+	return "", nil
 }
 
 // DeleteStudent verschiebt einen Schüler in den Papierkorb (Soft-Delete): deleted_at

@@ -96,37 +96,16 @@ func inventurScopesIdentisch(aType string, a InventurScope, bType string, b Inve
 // sich mit dem gewünschten überschneidet — leerer String, wenn keine überlappt. Läuft
 // unter dem Advisory-Lock des Inventur-Starts, die Prüfung ist also race-frei.
 func (r *InventoryRepository) findeUeberlappendeSession(ctx context.Context, tx pgx.Tx, scopeType string, scope InventurScope) (string, error) {
-	// Erst ALLE offenen Sessions einlesen, dann prüfen: Der Bestandsabgleich braucht
-	// eigene Queries auf derselben Tx-Verbindung, und die ist busy, solange rows offen sind.
-	type offeneSession struct {
-		typ   string
-		scope InventurScope
-		label string
-	}
-	rows, err := tx.Query(ctx, `
-		SELECT scope_type, scope_signatur, scope_subject, scope_grade, scope_label
-		FROM inventur_sessions WHERE abgeschlossen_am IS NULL`)
+	// Erst alle offenen Sessions einlesen, dann prüfen: Der Bestandsabgleich braucht
+	// eigene Queries auf derselben Tx-Verbindung, und die ist belegt, solange rows offen sind.
+	offene, err := leseOffeneInventurSessions(ctx, tx)
 	if err != nil {
-		return "", fmt.Errorf("offene sessions lesen fehlgeschlagen: %w", err)
-	}
-	defer rows.Close()
-
-	var offene []offeneSession
-	for rows.Next() {
-		var o offeneSession
-		if err := rows.Scan(&o.typ, &o.scope.Signatur, &o.scope.Subject, &o.scope.Grade, &o.label); err != nil {
-			return "", fmt.Errorf("offene session lesen fehlgeschlagen: %w", err)
-		}
-		offene = append(offene, o)
-	}
-	if err := rows.Err(); err != nil {
 		return "", err
 	}
-	rows.Close()
 
 	for _, offen := range offene {
 		// Exakt identische Scopes überlässt die Prüfung dem Unique-Index (→ LaeuftBereits);
-		// nur eine ECHTE Überschneidung meldet sie als Ueberlappt.
+		// nur eine echte Überschneidung meldet sie als Ueberlappt.
 		if inventurScopesIdentisch(scopeType, scope, offen.typ, offen.scope) {
 			continue
 		}
@@ -144,6 +123,37 @@ func (r *InventoryRepository) findeUeberlappendeSession(ctx context.Context, tx 
 		}
 	}
 	return "", nil
+}
+
+// offeneInventurSession ist eine Session ohne Abschluss mit ihrem Scope.
+type offeneInventurSession struct {
+	typ   string
+	scope InventurScope
+	label string
+}
+
+// leseOffeneInventurSessions liest die Sessions ohne Abschluss ganz ein.
+func leseOffeneInventurSessions(ctx context.Context, tx pgx.Tx) ([]offeneInventurSession, error) {
+	rows, err := tx.Query(ctx, `
+		SELECT scope_type, scope_signatur, scope_subject, scope_grade, scope_label
+		FROM inventur_sessions WHERE abgeschlossen_am IS NULL`)
+	if err != nil {
+		return nil, fmt.Errorf("offene sessions lesen fehlgeschlagen: %w", err)
+	}
+	defer rows.Close()
+
+	var offene []offeneInventurSession
+	for rows.Next() {
+		var o offeneInventurSession
+		if err := rows.Scan(&o.typ, &o.scope.Signatur, &o.scope.Subject, &o.scope.Grade, &o.label); err != nil {
+			return nil, fmt.Errorf("offene session lesen fehlgeschlagen: %w", err)
+		}
+		offene = append(offene, o)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return offene, nil
 }
 
 // scopesTreffenGemeinsamenBestand prüft am Bestand, ob es ein Exemplar gibt, das in

@@ -200,14 +200,7 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	if err != nil {
 		return 0, err
 	}
-	// Die ISBN jedes Datensatzes in die Form bringen, in der die Datenbank speichert: Die
-	// Zuordnung unten vergleicht Zeichen für Zeichen. Zehnstellig aus der Datei träfe sie den
-	// Titel mit der dreizehnstelligen sonst nicht, und der INSERT scheiterte am UNIQUE-Index.
-	// Auf einer Kopie, die Liste des Aufrufers bleibt, wie sie ist.
-	titles = slices.Clone(titles)
-	for i := range titles {
-		titles[i].ISBN = isbnutil.Normalform(titles[i].ISBN)
-	}
+	titles = mitISBNInNormalform(titles)
 
 	// Lernmittel, Fach und Jahrgang (Migration 093): Der Import liest sie aus Litteras
 	// Signatur „LMF Bio 7", den Schlagwörtern und der Zielgruppe (pkg/lmf). Beim
@@ -252,16 +245,10 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 		WHERE id = $1
 	`
 
-	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer VOR dem
+	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer vor dem
 	// SendBatch in derselben Transaktion registrieren (danach ist die Verbindung bis
 	// br.Close() belegt) und jede Zeile auf die kanonische Schreibweise ziehen.
-	faecher := make([]string, 0, len(titles))
-	for _, t := range titles {
-		if t.Fach != "" {
-			faecher = append(faecher, t.Fach)
-		}
-	}
-	kanonisch, err := StelleFaecherSicher(ctx, tx, faecher)
+	kanonisch, err := StelleFaecherSicher(ctx, tx, faecherDerTitel(titles))
 	if err != nil {
 		return 0, err
 	}
@@ -306,6 +293,29 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 		return 0, err
 	}
 	return queued, nil
+}
+
+// mitISBNInNormalform bringt die ISBN jedes Datensatzes in die Form, in der die Datenbank
+// speichert: Die Zuordnung vergleicht Zeichen für Zeichen. Zehnstellig aus der Datei träfe sie
+// den Titel mit der dreizehnstelligen sonst nicht, und der INSERT scheiterte am UNIQUE-Index.
+// Auf einer Kopie; die Liste des Aufrufers bleibt, wie sie ist.
+func mitISBNInNormalform(titles []BookTitle) []BookTitle {
+	titles = slices.Clone(titles)
+	for i := range titles {
+		titles[i].ISBN = isbnutil.Normalform(titles[i].ISBN)
+	}
+	return titles
+}
+
+// faecherDerTitel sammelt die Fächer, die die Titel nennen.
+func faecherDerTitel(titles []BookTitle) []string {
+	faecher := make([]string, 0, len(titles))
+	for _, t := range titles {
+		if t.Fach != "" {
+			faecher = append(faecher, t.Fach)
+		}
+	}
+	return faecher
 }
 
 // ergaenzeSchlagworteAusImport schreibt die Schlagworte des Katalogisats an die Titel, die noch

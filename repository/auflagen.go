@@ -136,27 +136,8 @@ func FasseAuflagenZusammen(ctx context.Context, q DBQueryer, titelID, andereID s
 		}
 	}
 
-	switch {
-	case ziel.werkID == nil && quelle.werkID == nil:
-		var werkID string
-		if err := tx.QueryRow(ctx, `INSERT INTO werke DEFAULT VALUES RETURNING id::text`).Scan(&werkID); err != nil {
-			return nil, fmt.Errorf("werk anlegen: %w", err)
-		}
-		if err := setzeWerk(ctx, tx, werkID, ziel.id, quelle.id); err != nil {
-			return nil, err
-		}
-	case quelle.werkID == nil:
-		if err := setzeWerk(ctx, tx, *ziel.werkID, quelle.id); err != nil {
-			return nil, err
-		}
-	case ziel.werkID == nil:
-		if err := setzeWerk(ctx, tx, *quelle.werkID, ziel.id); err != nil {
-			return nil, err
-		}
-	case *ziel.werkID != *quelle.werkID:
-		if err := vereineWerke(ctx, tx, *ziel.werkID, *quelle.werkID); err != nil {
-			return nil, err
-		}
+	if err := verbindeWerke(ctx, tx, ziel, quelle); err != nil {
+		return nil, err
 	}
 
 	auflagen, err := AuflagenDesTitels(ctx, tx, titelID)
@@ -167,6 +148,27 @@ func FasseAuflagenZusammen(ctx context.Context, q DBQueryer, titelID, andereID s
 		return nil, fmt.Errorf("auflagen: commit: %w", err)
 	}
 	return auflagen, nil
+}
+
+// verbindeWerke bringt beide Titel in ein Werk: ein neues, das vorhandene des einen oder das
+// des Ziels, in das alle Titel aus dem Werk der Quelle wechseln. Sind beide schon zusammen,
+// wird nichts geschrieben.
+func verbindeWerke(ctx context.Context, tx pgx.Tx, ziel, quelle auflagenKopf) error {
+	switch {
+	case ziel.werkID == nil && quelle.werkID == nil:
+		var werkID string
+		if err := tx.QueryRow(ctx, `INSERT INTO werke DEFAULT VALUES RETURNING id::text`).Scan(&werkID); err != nil {
+			return fmt.Errorf("werk anlegen: %w", err)
+		}
+		return setzeWerk(ctx, tx, werkID, ziel.id, quelle.id)
+	case quelle.werkID == nil:
+		return setzeWerk(ctx, tx, *ziel.werkID, quelle.id)
+	case ziel.werkID == nil:
+		return setzeWerk(ctx, tx, *quelle.werkID, ziel.id)
+	case *ziel.werkID != *quelle.werkID:
+		return vereineWerke(ctx, tx, *ziel.werkID, *quelle.werkID)
+	}
+	return nil
 }
 
 // LoeseAuflage nimmt einen Titel aus seinem Werk und liefert danach seine Auflagen — also
