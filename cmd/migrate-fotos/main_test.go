@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"testing"
 
@@ -328,4 +329,77 @@ func TestMigriereAlleFotos_MisslungeneGegenprobeBehaeltDieDatei(t *testing.T) {
 	assert.Equal(t, 0, migriert, "eine misslungene Gegenprobe darf nicht als Erfolg zählen")
 	assert.Equal(t, 0, geloescht)
 	assert.FileExists(t, pfad, "die einzige Kopie des Bildes wurde gelöscht")
+}
+
+// Die Abfrage nennt genau die Barcodes der Fotos, in der Reihenfolge der Dateinamen: Die
+// Endung zählt in jeder Schreibweise, ein Verzeichnis und eine andere Datei zählen nicht.
+// Stimmt die Liste nicht, findet die Datenbank keinen Schüler, und jedes Foto bliebe liegen.
+func TestMigriereAlleFotos_FragtNachDenBarcodesDerFotos(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	tempDir := t.TempDir()
+	for _, name := range []string{"B-2.JPG", "a-1.jpg", "notiz.txt"} {
+		require.NoError(t, os.WriteFile(tempDir+"/"+name, []byte("fake"), 0o600))
+	}
+	require.NoError(t, os.Mkdir(tempDir+"/ordner.jpg", 0o700))
+
+	root, err := os.OpenRoot(tempDir)
+	require.NoError(t, err)
+	defer root.Close() //nolint:errcheck
+
+	dir, err := root.Open(".")
+	require.NoError(t, err)
+	entries, err := dir.ReadDir(-1)
+	require.NoError(t, err)
+	require.NoError(t, dir.Close())
+
+	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
+		WithArgs([]string{"B-2", "a-1"}).
+		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "id"}))
+
+	processed, migrated, geloescht := migriereAlleFotos(mock, root, entries, false)
+	assert.Equal(t, 2, processed, "zwei Fotos liegen im Verzeichnis")
+	assert.Equal(t, 0, migrated)
+	assert.Equal(t, 0, geloescht)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+// Bricht die Liste der Schüler beim Lesen ab, ist sie unvollständig: Das Werkzeug migriert
+// dann nichts, statt die fehlenden Schüler als „kein Schüler für Barcode" zu melden.
+func TestMigriereAlleFotos_AbgebrocheneSchuelerlisteMigriertNichts(t *testing.T) {
+	t.Setenv("APP_ENCRYPTION_KEY", "01234567890123456789012345678901")
+
+	mock, err := pgxmock.NewPool()
+	require.NoError(t, err)
+	defer mock.Close()
+
+	tempDir := t.TempDir()
+	pfad := tempDir + "/12345.jpg"
+	require.NoError(t, os.WriteFile(pfad, []byte("fake image data"), 0o600))
+
+	root, err := os.OpenRoot(tempDir)
+	require.NoError(t, err)
+	defer root.Close() //nolint:errcheck
+
+	dir, err := root.Open(".")
+	require.NoError(t, err)
+	entries, err := dir.ReadDir(-1)
+	require.NoError(t, err)
+	require.NoError(t, dir.Close())
+
+	// Die erste Zeile kommt an, danach reißt die Antwort ab: Next liefert false, Err den Fehler.
+	mock.ExpectQuery("SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY").
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "id"}).
+			AddRow("12345", "uuid-12345").
+			RowError(1, errors.New("verbindung abgerissen")))
+
+	processed, migrated, geloescht := migriereAlleFotos(mock, root, entries, false)
+	assert.Equal(t, 0, processed, "nach einer abgebrochenen Liste wird kein Foto angefasst")
+	assert.Equal(t, 0, migrated)
+	assert.Equal(t, 0, geloescht)
+	assert.FileExists(t, pfad)
+	require.NoError(t, mock.ExpectationsWereMet())
 }

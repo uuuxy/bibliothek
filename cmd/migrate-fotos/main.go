@@ -98,87 +98,35 @@ func main() {
 	}
 }
 
-// migriereAlleFotos verschlüsselt alle .jpg-Dateien im Verzeichnis und liefert die Zahl
-// gefundener und erfolgreich migrierter Fotos. Ausgelagert aus main, damit main flach bleibt.
+// migriereAlleFotos verschlüsselt alle .jpg-Dateien im Verzeichnis und liefert, wie viele
+// gefunden, migriert und gelöscht wurden.
 //
-// Die Schüler-IDs werden EINMAL für alle Barcodes geladen (ANY($1)) — das war das N+1 und
-// ist seit cdb23e14 erledigt. Die INSERTs laufen bewusst weiter einzeln und NICHT als
-// pgx.Batch. Das ist eine Entscheidung, kein Übersehen:
-//
-// Ein Batch-Umbau (PR #442, abgelehnt am 11.08.2026) kostet die Zuordnung. Am selben
-// Datenbestand gegeneinander gefahren — ein Foto mit gültigem Barcode, eins ohne:
-//
-//	dieser Stand  INFO  "Foto erfolgreich migriert"            barcode=S-abg1-…
-//	              WARN  "Kein Schüler für Barcode gefunden"    barcode=S-GIBTESNICHT-999
-//	mit Batch     WARN  "Kein Schüler gefunden oder DB-Fehler" (ohne Barcode, ohne Erfolgszeile)
-//
-// Das „oder" ist der Punkt: Der Batch liefert pro Ergebnis nur ErrNoRows und kann nicht
-// mehr sagen, WELCHE Datei es traf und OB es überhaupt ein Fehler war. Bei einer einmaligen
-// Übernahme von Schülerfotos ist genau diese Liste das Ergebnis — wer sie nicht hat, weiß
-// hinterher nicht, welche Kinder ohne Bild dastehen.
-//
-// Dazu käme, dass der Vorschlag die Suche wieder pro Zeile in die Anweisung zurückholt
-// (INSERT … SELECT id FROM schueler WHERE barcode_id = $1) und damit die Vorablade-Abfrage
-// oben entwertet, und dass ein Batch alle verschlüsselten Bilder gleichzeitig im Speicher
-// hält statt eines nach dem anderen. Der Gewinn wäre eine Runde statt N — bei einem
-// Werkzeug, das genau einmal läuft.
-//
-// Falls je zehntausende Fotos zu übernehmen sind: dann in Blöcken von ~50 batchen UND eine
-// Liste der Barcodes in Batch-Reihenfolge mitführen, damit jedes Ergebnis wieder einer
-// Datei zuzuordnen ist. Ohne diese Liste nicht.
+// Die Schüler-IDs kommen in einer Abfrage für alle Barcodes; geschrieben wird je Foto einzeln
+// und nicht als pgx.Batch. Ein Batch liefert je Ergebnis nur ErrNoRows und kann nicht sagen,
+// welche Datei es traf und ob es ein Fehler war — diese Liste ist das Ergebnis einer
+// einmaligen Übernahme. Wer doch batcht, führt die Barcodes in Batch-Reihenfolge mit.
 func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntry, behalten bool) (processed, migrated, geloescht int) {
-	// Verzeichnisreihenfolge ist keine Reihenfolge: `dir.ReadDir` liefert sie so, wie das
-	// Dateisystem sie hergibt (die Paketfunktion os.ReadDir sortiert, diese Methode
-	// nicht) — auf APFS alphabetisch, auf ext4 beliebig. Für ein Protokoll, das jemand
-	// hinterher liest, ist das unnötig verwirrend; und sortiert wird HIER statt beim
-	// Aufrufer, damit auch jeder Test dieselbe Reihenfolge sieht. Genau daran ist der
-	// erste Anlauf dieses Werkzeugs in CI gescheitert, während er lokal grün war.
+	// dir.ReadDir liefert die Dateien in der Reihenfolge des Dateisystems, auf ext4 beliebig.
+	// Sortiert wird hier statt beim Aufrufer, damit Protokoll und Tests dieselbe Reihenfolge
+	// sehen.
 	sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
 
-	// Barcodes aus Dateinamen extrahieren
-	var barcodes []string
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".jpg") {
-			continue
-		}
-		barcodeID := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
-		barcodes = append(barcodes, barcodeID)
-	}
-
+	barcodes := barcodesDerFotos(entries)
 	if len(barcodes) == 0 {
 		return 0, 0, 0
 	}
-
-	// Alle Schueler-IDs auf einmal laden
-	studentMap := make(map[string]string)
-	query := "SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY($1)"
-	rows, err := pool.Query(context.Background(), query, barcodes)
-	if err != nil {
-		slog.Error("Fehler beim Laden der Schueler-IDs", "error", err)
-		return 0, 0, 0
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var barcode, studentID string
-		if err := rows.Scan(&barcode, &studentID); err != nil {
-			slog.Error("Fehler beim Scannen der Schueler-ID", "error", err)
-			continue
-		}
-		studentMap[barcode] = studentID
-	}
-	if rows.Err() != nil {
-		slog.Error("Fehler nach dem Scannen der Schueler-IDs", "error", rows.Err())
+	studentMap, ok := ladeSchuelerIDs(pool, barcodes)
+	if !ok {
 		return 0, 0, 0
 	}
 
 	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".jpg") {
+		barcodeID, istFoto := fotoBarcode(entry)
+		if !istFoto {
 			continue
 		}
 		processed++
 
-		barcodeID := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
 		studentID, ok := studentMap[barcodeID]
 		if !ok {
 			slog.Warn("Kein Schüler für Barcode gefunden (übersprungen)", "barcode", barcodeID)
@@ -200,6 +148,53 @@ func migriereAlleFotos(pool db.PgxPoolIface, root *os.Root, entries []os.DirEntr
 		geloescht++
 	}
 	return processed, migrated, geloescht
+}
+
+// fotoBarcode liefert den Barcode eines Fotos: der Name der .jpg-Datei ohne Endung. Abfrage
+// und Schleife fragen beide hier, damit sie dieselben Dateien meinen.
+func fotoBarcode(entry os.DirEntry) (string, bool) {
+	if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".jpg") {
+		return "", false
+	}
+	return strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name())), true
+}
+
+// barcodesDerFotos sammelt die Barcodes aller Fotos des Verzeichnisses.
+func barcodesDerFotos(entries []os.DirEntry) []string {
+	var barcodes []string
+	for _, entry := range entries {
+		if barcodeID, istFoto := fotoBarcode(entry); istFoto {
+			barcodes = append(barcodes, barcodeID)
+		}
+	}
+	return barcodes
+}
+
+// ladeSchuelerIDs lädt die Schüler zu allen Barcodes in einer Abfrage. false heißt: Die
+// Abfrage ist gescheitert, der Fehler steht im Protokoll.
+func ladeSchuelerIDs(pool db.PgxPoolIface, barcodes []string) (map[string]string, bool) {
+	studentMap := make(map[string]string)
+	query := "SELECT barcode_id, id FROM schueler WHERE barcode_id = ANY($1)"
+	rows, err := pool.Query(context.Background(), query, barcodes)
+	if err != nil {
+		slog.Error("Fehler beim Laden der Schueler-IDs", "error", err)
+		return nil, false
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var barcode, studentID string
+		if err := rows.Scan(&barcode, &studentID); err != nil {
+			slog.Error("Fehler beim Scannen der Schueler-ID", "error", err)
+			continue
+		}
+		studentMap[barcode] = studentID
+	}
+	if rows.Err() != nil {
+		slog.Error("Fehler nach dem Scannen der Schueler-IDs", "error", rows.Err())
+		return nil, false
+	}
+	return studentMap, true
 }
 
 // migriereFoto liest, verschlüsselt und speichert das Foto einer Datei (Dateiname =

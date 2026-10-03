@@ -68,31 +68,8 @@ func (s *Schreiber) SchreibeSchlagworte(ctx context.Context, ab *Altbestand, bes
 		return b, err
 	}
 
-	// Gezählt über die Zuordnungen, nicht über die Titel des Exports: Eine Zuordnung zu einem
-	// Titel, den es dort gar nicht gibt, fiele sonst nirgends auf. Ein Titel mit Schlagworten
-	// und Interessenkreisen zählt einmal.
-	ohneTitel := map[string]bool{}
-	for _, jeTitel := range []map[string][]string{q.JeTitel, kreise.JeTitel} {
-		for litteraID := range jeTitel {
-			if _, uebernommen := bestand.TitelIDs[litteraID]; !uebernommen {
-				ohneTitel[litteraID] = true
-			}
-		}
-	}
-	b.OhneTitel = len(ohneTitel)
-	var auftraege []schlagwortAuftrag
-	for _, t := range ab.Titel {
-		// Die Interessenkreise hinter den Schlagworten; ein gleichlautendes Wort („U plus")
-		// zählt einmal (repository.SchlagworteAusFremddaten).
-		roh := append(slices.Clone(q.JeTitel[t.ID]), kreise.JeTitel[t.ID]...)
-		titelID, uebernommen := bestand.TitelIDs[t.ID]
-		if len(roh) == 0 || !uebernommen {
-			continue
-		}
-		if woerter := s.bereiteSchlagworteVor(t, roh, &b); len(woerter) > 0 {
-			auftraege = append(auftraege, schlagwortAuftrag{t.ID, titelID, woerter})
-		}
-	}
+	b.OhneTitel = zaehleOhneUebernommenenTitel(bestand.TitelIDs, q.JeTitel, kreise.JeTitel)
+	auftraege := s.schlagwortAuftraege(ab, bestand, &b)
 	for i := 0; i < len(auftraege); i += s.opt.BatchGroesse {
 		ende := min(i+s.opt.BatchGroesse, len(auftraege))
 		if err := s.schlagworteEinBatch(ctx, auftraege[i:ende], &b); err != nil {
@@ -107,6 +84,41 @@ func (s *Schreiber) SchreibeSchlagworte(ctx context.Context, ab *Altbestand, bes
 	b.IstZuordnungen, b.IstWoerter = nachherZ-vorherZ, nachherW-vorherW
 	b.AbgleichOK = b.IstZuordnungen == b.Zuordnungen
 	return b, nil
+}
+
+// zaehleOhneUebernommenenTitel zählt über die Zuordnungen, nicht über die Titel des Exports:
+// Eine Zuordnung zu einem Titel, den es dort gar nicht gibt, fiele sonst nirgends auf. Ein
+// Titel mit Schlagworten und Interessenkreisen zählt einmal.
+func zaehleOhneUebernommenenTitel(titelIDs map[string]string, zuordnungen ...map[string][]string) int {
+	ohneTitel := map[string]bool{}
+	for _, jeTitel := range zuordnungen {
+		for litteraID := range jeTitel {
+			if _, uebernommen := titelIDs[litteraID]; !uebernommen {
+				ohneTitel[litteraID] = true
+			}
+		}
+	}
+	return len(ohneTitel)
+}
+
+// schlagwortAuftraege stellt je übernommenem Titel die Wörter zusammen, in der Reihenfolge
+// des Exports.
+func (s *Schreiber) schlagwortAuftraege(ab *Altbestand, bestand BestandBericht, b *SchlagwortBericht) []schlagwortAuftrag {
+	q, kreise := ab.Schlagworte, ab.Interessenkreise
+	var auftraege []schlagwortAuftrag
+	for _, t := range ab.Titel {
+		// Die Interessenkreise hinter den Schlagworten; ein gleichlautendes Wort („U plus")
+		// zählt einmal (repository.SchlagworteAusFremddaten).
+		roh := append(slices.Clone(q.JeTitel[t.ID]), kreise.JeTitel[t.ID]...)
+		titelID, uebernommen := bestand.TitelIDs[t.ID]
+		if len(roh) == 0 || !uebernommen {
+			continue
+		}
+		if woerter := s.bereiteSchlagworteVor(t, roh, b); len(woerter) > 0 {
+			auftraege = append(auftraege, schlagwortAuftrag{t.ID, titelID, woerter})
+		}
+	}
+	return auftraege
 }
 
 // bereiteSchlagworteVor bringt die Wörter eines Titels in die Form des Schreibpfads

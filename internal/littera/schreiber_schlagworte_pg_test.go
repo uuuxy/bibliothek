@@ -176,3 +176,50 @@ func TestSchreibeSchlagworte_InteressenkreiseKommenMit(t *testing.T) {
 		}
 	}
 }
+
+// Ein Titel, den der Bestand nicht übernahm, trägt in Littera Schlagworte: Sie werden gezählt,
+// nicht geschrieben und nicht als gescheitert gemeldet — für ihn gibt es keinen Auftrag. Ein
+// Interessenkreis an einem Titel, den der Export nicht kennt, zählt genauso.
+func TestSchreibeSchlagworte_NichtUebernommenerTitelWirdGezaehltNichtGeschrieben(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, protokoll := testSchreiber(t, pool, nil)
+	ctx := context.Background()
+
+	ab := bestand(titel("1", "Erster", ""), titel("2", "Kollidiert", ""), titel("3", "Ohne Wort", ""))
+	erzwingeZeilenfehler(t, pool, "buecher_titel", "titel", "Kollidiert")
+	ab.Schlagworte = SchlagwortQuelle{JeTitel: map[string][]string{
+		"1": {"Geschichte"},
+		"2": {"Erdkunde", "Atlas"},
+	}}
+	ab.Interessenkreise = SchlagwortQuelle{JeTitel: map[string][]string{"98": {"Lehrer"}}}
+
+	bestandBericht, err := s.SchreibeBestand(ctx, ab)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, uebernommen := bestandBericht.TitelIDs["2"]; uebernommen || bestandBericht.Uebersprungen != 1 {
+		t.Fatalf("Testaufbau: Titel 2 sollte übersprungen sein, Bericht: %+v", bestandBericht)
+	}
+	b, err := s.SchreibeSchlagworte(ctx, ab, bestandBericht)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if b.OhneTitel != 2 {
+		t.Errorf("Titel fehlt: %d, erwartet 2 — der übersprungene Titel 2 und Titel 98, den nur die Interessenkreise nennen", b.OhneTitel)
+	}
+	if b.Uebersprungen != 0 || b.Titel != 1 || b.Zuordnungen != 1 || !b.AbgleichOK {
+		t.Errorf("Bericht: %d gescheitert, %d Zuordnungen an %d Titeln, Abgleich %v — erwartet 0, 1 an 1, true",
+			b.Uebersprungen, b.Zuordnungen, b.Titel, b.AbgleichOK)
+	}
+	if got := schlagworteAm(t, pool, bestandBericht.TitelIDs["1"]); !slices.Equal(got, []string{"Geschichte"}) {
+		t.Errorf("Titel 1 trägt %q, erwartet nur Geschichte", got)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM schlagworte`); n != 1 {
+		t.Errorf("%d Wörter angelegt, erwartet 1 — die Wörter des übersprungenen Titels entstehen nicht", n)
+	}
+	if log := protokoll(); strings.Contains(log, "Schlagworte nicht übernommen") {
+		t.Errorf("das Protokoll meldet einen gescheiterten Schreibversuch für einen Titel, den es nicht gibt:\n%s", log)
+	}
+}
