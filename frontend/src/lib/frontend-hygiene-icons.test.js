@@ -30,19 +30,10 @@ const ZEICHNUNGEN = [
 // Wer eine Datei auf Lucide umstellt, nimmt sie hier heraus. Der Test meldet
 // beides: neu hinzugekommene Dateien UND Einträge, die inzwischen sauber sind.
 //
-// Die drei Verbliebenen stehen hier aus STRUKTURELLEN Gründen, nicht aus Rückstand —
-// damit niemand sie ein zweites Mal untersucht:
-//   BuchCoverUpload       das <svg> steckt in einer data:-URI als Platzhalterbild,
-//                         ist also gar kein Bauteil-Symbol.
-//   DataManagement        rendert `d={iconPath}`: ein generischer Schnipsel, der
-//                         Pfad-STRINGS als Parameter nimmt.
-//   MahnwesenDruckMenue   dasselbe Muster mit `d={BRIEF}`.
-// Die beiden letzten umzustellen heißt, ihre Snippet-Signatur von „Pfad" auf
-// „Komponente" zu ändern — eine eigene Entscheidung, kein Nachziehen.
-const SVG_BESTAND = [
-	'src/inventur/lib/components/admin/BuchCoverUpload.svelte',
-	'src/lib/components/admin/DataManagement.svelte'
-];
+// Die verbliebene Datei steht hier aus einem Grund der Bauart, nicht aus Rückstand:
+// In BuchCoverUpload steckt das <svg> in einer data:-URI als Platzhalterbild, es ist
+// also kein Bauteil-Symbol.
+const SVG_BESTAND = ['src/inventur/lib/components/admin/BuchCoverUpload.svelte'];
 
 describe('Symbol-Hygiene', () => {
 	it('zeichnet keine neuen Symbole von Hand (Icons kommen aus @lucide/svelte)', () => {
