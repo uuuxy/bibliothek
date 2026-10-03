@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,7 +45,7 @@ func TestUpdateBook(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		erwarteFachBekannt(mock, book.Subject) // läuft auf dem Pool, vor der Tx
 		mock.ExpectBegin()
-		erwarteKeineDublette(mock)
+		erwarteTitelstand(mock, book.ISBN, book.Author)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
 				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
@@ -65,12 +66,9 @@ func TestUpdateBook(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		erwarteFachBekannt(mock, book.Subject)
 		mock.ExpectBegin()
-		erwarteKeineDublette(mock)
-		mock.ExpectExec(updateQuery).
-			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
-			).
-			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
+		mock.ExpectQuery(`SELECT COALESCE\(isbn, ''\), COALESCE\(autor, ''\) FROM buecher_titel WHERE id = \$1 FOR UPDATE`).
+			WithArgs("book-123").
+			WillReturnError(pgx.ErrNoRows)
 		mock.ExpectRollback()
 
 		err := repo.UpdateBook(ctx, "book-123", book, &Bestandsangabe{Soll: book.Stock})
@@ -81,7 +79,7 @@ func TestUpdateBook(t *testing.T) {
 	t.Run("db error", func(t *testing.T) {
 		erwarteFachBekannt(mock, book.Subject)
 		mock.ExpectBegin()
-		erwarteKeineDublette(mock)
+		erwarteTitelstand(mock, book.ISBN, book.Author)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
 				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
@@ -100,7 +98,7 @@ func TestUpdateBook(t *testing.T) {
 	t.Run("sync-fehler wird zurückgegeben und rollt zurück", func(t *testing.T) {
 		erwarteFachBekannt(mock, book.Subject)
 		mock.ExpectBegin()
-		erwarteKeineDublette(mock)
+		erwarteTitelstand(mock, book.ISBN, book.Author)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
 				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,

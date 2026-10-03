@@ -34,17 +34,41 @@ func (d *DubletteISBN) Unwrap() error { return ErrDuplicateISBN }
 // Meldung ist der Satz für die Oberfläche: der Titel und, hat er kein Exemplar, die Sicht,
 // in der er steht. Die Ablehnung beim Speichern und die Auskunft vorab sagen dasselbe.
 func (d *DubletteISBN) Meldung() string {
-	meldung := "Diese ISBN trägt schon der Titel „" + d.Titel + "“."
-	if !d.HatExemplar {
-		meldung += " Er hat kein Exemplar und steht deshalb in der Titelliste nur unter „Ohne Exemplare“."
-	}
-	return meldung
+	return "Diese ISBN trägt schon der Titel „" + d.Titel + "“." + hinweisOhneExemplar(d.HatExemplar)
 }
 
 // alsAntwort ist der Titel in der Form, in der beide Türen ihn unter „vorhanden" nennen.
 func (d *DubletteISBN) alsAntwort() map[string]any {
 	return map[string]any{"id": d.ID, "title": d.Titel, "ohneExemplar": !d.HatExemplar}
 }
+
+// hinweisOhneExemplar nennt die Sicht, in der ein Titel ohne Exemplar steht: Keine Suche
+// zeigt ihn.
+func hinweisOhneExemplar(hatExemplar bool) string {
+	if hatExemplar {
+		return ""
+	}
+	return " Er hat kein Exemplar und steht deshalb in der Titelliste nur unter „Ohne Exemplare“."
+}
+
+// DubletteTitel ist ErrDubletteTitel mit dem Titel, der ohne ISBN gleich heißt. Anders als
+// eine vergebene ISBN ist das eine Frage und keine Ablehnung: Hefte einer Zeitschrift und
+// Bände eines Werks tragen denselben Titel und Autor.
+type DubletteTitel DubletteISBN
+
+func (d *DubletteTitel) Error() string {
+	return fmt.Sprintf("%v: %q (%s) heißt gleich", ErrDubletteTitel, d.Titel, d.ID)
+}
+
+// Unwrap hält errors.Is(err, ErrDubletteTitel) für alle Aufrufer gültig.
+func (d *DubletteTitel) Unwrap() error { return ErrDubletteTitel }
+
+// Meldung ist der Satz, mit dem die Maske fragt, ob es dasselbe Medium ist.
+func (d *DubletteTitel) Meldung() string {
+	return "Ohne ISBN steht schon ein Titel „" + d.Titel + "“ im Katalog." + hinweisOhneExemplar(d.HatExemplar)
+}
+
+func (d *DubletteTitel) alsAntwort() map[string]any { return (*DubletteISBN)(d).alsAntwort() }
 
 // titelMitISBN sucht den Titel, der die ISBN schon trägt, ohne Rücksicht auf Bindestriche,
 // Leerzeichen und Großschreibung; eigeneID nimmt den Titel aus, der gerade geändert wird.
@@ -94,55 +118,61 @@ func (d *DubletteISBN) MeldungAndereForm(andere string) string {
 	if len(andere) == 10 {
 		laenge = "zehnstelliger"
 	}
-	meldung := "Im Katalog steht diese ISBN in " + laenge + " Form (" + andere + ") am Titel „" + d.Titel + "“."
-	if !d.HatExemplar {
-		meldung += " Er hat kein Exemplar und steht deshalb in der Titelliste nur unter „Ohne Exemplare“."
-	}
-	return meldung
+	return "Im Katalog steht diese ISBN in " + laenge + " Form (" + andere + ") am Titel „" + d.Titel + "“." +
+		hinweisOhneExemplar(d.HatExemplar)
 }
 
-// pruefeDublette lehnt einen Titel ab, den es schon gibt (OFFEN.md 4.18, Stufe 2): mit ISBN
-// den, der die Nummer trägt, ohne ISBN das Paar aus Titel und Autor. Als zwei Titel hätte ein
-// Buch zwei Bestände und zwei Zeilen in der Nachbestellung; Littera bietet an dieser Stelle an,
-// statt des Titels ein weiteres Exemplar aufzunehmen.
-//
-// Die Prüfung läuft vor dem Schreiben in derselben Transaktion und nennt den vorhandenen
-// Titel. Zwei gleichzeitige Anfragen mit derselben ISBN fängt der UNIQUE-Index: Die Datenbank
-// bringt jede ISBN vor dem Schreiben in eine Schreibweise (isbn_normalform).
-func pruefeDublette(ctx context.Context, q repository.DBQueryer, b Book, eigeneID string) error {
-	if b.ISBN != "" {
-		vorhanden, err := titelMitISBN(ctx, q, b.ISBN, eigeneID)
-		if err != nil {
-			return err
-		}
-		// Ein nil-Zeiger in der error-Schnittstelle wäre nicht nil.
-		if vorhanden != nil {
-			return vorhanden
-		}
-		return nil
+// isbnVergeben lehnt eine ISBN ab, die schon ein anderer Titel trägt, und nennt ihn: Als zwei
+// Titel hätte ein Buch zwei Bestände und zwei Zeilen in der Nachbestellung. Die Prüfung läuft
+// vor dem Schreiben in derselben Transaktion; zwei gleichzeitige Anfragen fängt der
+// UNIQUE-Index, weil die Datenbank jede ISBN in eine Schreibweise bringt (isbn_normalform).
+func isbnVergeben(ctx context.Context, q repository.DBQueryer, isbn, eigeneID string) error {
+	vorhanden, err := titelMitISBN(ctx, q, isbn, eigeneID)
+	if err != nil {
+		return err
 	}
+	// Ein nil-Zeiger in der error-Schnittstelle wäre nicht nil.
+	if vorhanden != nil {
+		return vorhanden
+	}
+	return nil
+}
 
-	// Ohne ISBN entscheidet das Paar aus Titel und Autor — wie bei Littera. Die Auflage
-	// hebt den Verdacht auf: Wer sie füllt, sagt damit, dass er ein anderes Buch meint
-	// (dieselbe Reihe, andere Seitenzahlen).
-	if b.Title == "" {
-		return nil
-	}
-	var vorhandeneID string
+// gleichnamigOhneISBN nennt den Titel, der ohne ISBN in Titel, Autor und Auflage gleich ist —
+// wie Littera, das ohne Nummer Verfasser und Haupttitel vergleicht und ein weiteres Exemplar
+// anbietet. Wer die Auflage füllt, meint ein anderes Buch. Von mehreren gleichnamigen kommt
+// zuerst einer mit Exemplar: Den zeigt auch der Katalog.
+func gleichnamigOhneISBN(ctx context.Context, q repository.DBQueryer, b Book) error {
+	vorhanden := DubletteTitel{}
+	hatExemplar := repository.SQLTitelHatExemplar("bt")
 	err := q.QueryRow(ctx, `
-		SELECT id::text FROM buecher_titel
-		WHERE isbn IS NULL
-		  AND lower(btrim(titel)) = lower(btrim($1))
-		  AND lower(btrim(coalesce(autor, ''))) = lower(btrim($2))
-		  AND lower(btrim(coalesce(auflage, ''))) = lower(btrim($3))
-		  AND ($4 = '' OR id <> $4::uuid)
-		LIMIT 1`, b.Title, b.Author, b.Auflage, eigeneID).Scan(&vorhandeneID)
+		SELECT bt.id::text, bt.titel, `+hatExemplar+`
+		FROM buecher_titel bt
+		WHERE bt.isbn IS NULL
+		  AND lower(btrim(bt.titel)) = lower(btrim($1))
+		  AND lower(btrim(coalesce(bt.autor, ''))) = lower(btrim($2))
+		  AND lower(btrim(coalesce(bt.auflage, ''))) = lower(btrim($3))
+		ORDER BY `+hatExemplar+` DESC, bt.sort_order
+		LIMIT 1`, b.Title, b.Author, b.Auflage).Scan(&vorhanden.ID, &vorhanden.Titel, &vorhanden.HatExemplar)
 	switch {
 	case err == nil:
-		return fmt.Errorf("%w: derselbe Titel steht schon ohne Nummer im Katalog", ErrDubletteTitel)
+		return &vorhanden
 	case istKeineZeile(err):
 		return nil
 	default:
 		return fmt.Errorf("dublettenkontrolle (titel): %w", err)
 	}
+}
+
+// pruefeNeuenTitel ist die Dublettenkontrolle der Aufnahme: mit ISBN der Titel, der die
+// Nummer trägt, ohne ISBN der gleichnamige. anderesMedium ist die Antwort der Maske auf die
+// Frage nach dem gleichnamigen und übergeht nur diese.
+func pruefeNeuenTitel(ctx context.Context, q repository.DBQueryer, b Book, anderesMedium bool) error {
+	if b.ISBN != "" {
+		return isbnVergeben(ctx, q, b.ISBN, "")
+	}
+	if anderesMedium {
+		return nil
+	}
+	return gleichnamigOhneISBN(ctx, q, b)
 }

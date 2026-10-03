@@ -109,6 +109,9 @@ type BuchEingabe struct {
 	// lässt die vorhandenen stehen, `[]` entfernt alle. Ein Aufrufer, der das Feld nicht
 	// kennt (Scanner-Neuanlage, ältere Clients), löscht so nichts.
 	Schlagworte *[]string `json:"schlagworte"`
+	// AnderesMedium gilt nur beim Anlegen ohne ISBN: Die Maske hat nach dem gleichnamigen
+	// Titel gefragt, und die Antwort war ein anderes Heft, ein anderer Band.
+	AnderesMedium bool `json:"anderesMedium"`
 }
 
 // schlagworteAusEingabe prüft und normalisiert die Schlagworte einer Eingabe VOR dem

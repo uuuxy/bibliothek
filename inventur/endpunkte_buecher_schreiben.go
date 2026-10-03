@@ -11,18 +11,19 @@ import (
 	"bibliothek/pkg/kennung"
 )
 
-// validiereBuchErstellenEingabe prüft ISBN (vorhanden + Format) und Klassenstufe.
+// validiereBuchErstellenEingabe prüft Titel, ISBN und Klassenstufe. Pflicht ist der Titel;
+// die ISBN darf fehlen (Zeitschrift, Spiel, altes Buch) und wird nur geprüft, wenn sie dasteht.
 // ok=false: die Fehlerantwort wurde bereits geschrieben.
-func validiereBuchErstellenEingabe(antwort http.ResponseWriter, isbn string, klassenStufe int16) bool {
-	if isbn == "" {
-		writeError(antwort, http.StatusBadRequest, "isbn ist erforderlich")
+func validiereBuchErstellenEingabe(antwort http.ResponseWriter, eingabe BuchEingabe) bool {
+	if strings.TrimSpace(eingabe.Titel) == "" {
+		writeError(antwort, http.StatusBadRequest, "titel darf nicht leer sein")
 		return false
 	}
-	if !validiereISBN(isbn) {
+	if isbn := strings.TrimSpace(eingabe.ISBN); isbn != "" && !validiereISBN(isbn) {
 		writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
 		return false
 	}
-	if klassenStufe < 0 || klassenStufe > 13 {
+	if eingabe.KlassenStufe < 0 || eingabe.KlassenStufe > 13 {
 		writeError(antwort, http.StatusBadRequest, "gradeLevel muss zwischen 0 und 13 sein")
 		return false
 	}
@@ -44,26 +45,23 @@ func ListenpreisAusNachschlagen(vorhanden *float64, gefunden float64) *float64 {
 	return &gefunden
 }
 
-// setzePlatzhalter gibt einem neuen Titel ohne Titel oder Autor einen Namen. Die
-// Katalogdienste fragt das Anlegen nicht: Was sie zu einer ISBN wissen, holt die Maske bei
-// der Eingabe und zeigt es, bevor gespeichert wird. Ein Speichern, das auf sie wartete,
-// scheiterte mit ihnen und trug ein, was niemand gesehen hatte.
-func setzePlatzhalter(buch *Book) {
-	if buch.Title == "" {
-		buch.Title = "Unbekannter Titel"
+// speichereNeuesBuch legt das Buch an und setzt buch.ID. anderesMedium ist die Antwort der
+// Maske auf die Frage nach dem gleichnamigen Titel. ok=false: die Fehlerantwort (409 bei
+// vergebener ISBN oder gleichnamigem Titel, sonst 400) wurde bereits geschrieben.
+func (handler *APIHandler) speichereNeuesBuch(ctx context.Context, antwort http.ResponseWriter, buch *Book, anderesMedium bool) bool {
+	anlegen := handler.repo.CreateBook
+	if anderesMedium {
+		anlegen = handler.repo.CreateBookAlsAnderesMedium
 	}
-	if buch.Author == "" {
-		buch.Author = "Unbekannter Autor"
-	}
-}
-
-// speichereNeuesBuch legt das Buch an und setzt buch.ID. ok=false: die Fehlerantwort
-// (409 bei Duplikat-ISBN, sonst 400) wurde bereits geschrieben.
-func (handler *APIHandler) speichereNeuesBuch(ctx context.Context, antwort http.ResponseWriter, buch *Book) bool {
-	erstellteID, fehler := handler.repo.CreateBook(ctx, *buch)
+	erstellteID, fehler := anlegen(ctx, *buch)
 	if fehler != nil {
 		if errors.Is(fehler, ErrDuplicateISBN) {
 			schreibeDubletteISBN(antwort, fehler)
+			return false
+		}
+		var gleichnamig *DubletteTitel
+		if errors.As(fehler, &gleichnamig) {
+			schreibeDubletteTitel(antwort, gleichnamig)
 			return false
 		}
 		log.Printf("Fehler beim Erstellen von Buch ISBN %s: %v", buch.ISBN, fehler)
@@ -88,6 +86,17 @@ func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
 	writeJSON(antwort, http.StatusConflict, map[string]any{
 		"error":     dublette.Meldung(),
 		"vorhanden": dublette.alsAntwort(),
+	})
+}
+
+// schreibeDubletteTitel antwortet mit 409 und nennt unter „vorhanden" den Titel, der ohne ISBN
+// gleich heißt. „gleicherTitel" sagt der Maske, dass sie fragen und nach der Antwort „anderes
+// Medium" noch einmal schicken darf; eine vergebene ISBN lässt sich so nicht übergehen.
+func schreibeDubletteTitel(antwort http.ResponseWriter, gleichnamig *DubletteTitel) {
+	writeJSON(antwort, http.StatusConflict, map[string]any{
+		"error":         gleichnamig.Meldung(),
+		"vorhanden":     gleichnamig.alsAntwort(),
+		"gleicherTitel": true,
 	})
 }
 
@@ -154,7 +163,8 @@ func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter,
 }
 
 // BearbeiteBuchErstellen verarbeitet POST-Anfragen zum Erstellen eines neuen Buches und
-// speichert, was die Anfrage nennt.
+// speichert, was die Anfrage nennt: Ein Titel ohne Autor bleibt ohne ihn, und die
+// Katalogdienste fragt das Anlegen nicht — was sie wissen, zeigt die Maske vor dem Speichern.
 func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, anfrage *http.Request) {
 	var eingabe BuchEingabe
 
@@ -163,7 +173,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		return
 	}
 
-	if !validiereBuchErstellenEingabe(antwort, eingabe.ISBN, eingabe.KlassenStufe) {
+	if !validiereBuchErstellenEingabe(antwort, eingabe) {
 		return
 	}
 	if fehler := pruefeMehrjahresband(eingabe.IstLernmittel, eingabe.Mehrjahresband, eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
@@ -205,9 +215,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 	buch.Author = strings.TrimSpace(eingabe.Autor)
 	buch.CoverURL = strings.TrimSpace(eingabe.CoverURL)
 
-	setzePlatzhalter(&buch)
-
-	if !handler.speichereNeuesBuch(anfrage.Context(), antwort, &buch) {
+	if !handler.speichereNeuesBuch(anfrage.Context(), antwort, &buch, eingabe.AnderesMedium) {
 		return
 	}
 

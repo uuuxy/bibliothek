@@ -69,25 +69,25 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		// Die ISBN prüft der Schreibpfad gegen den gespeicherten Titel (pruefeAenderung): Ein
+		// Titel ohne ISBN oder mit einer Nummer, die keine ISBN ist, bleibt speicherbar.
 		{
-			name: "Empty ISBN",
+			name: "Ohne ISBN",
 			eingabe: BuchEingabe{
 				ISBN:         "",
 				KlassenStufe: 5,
 				Bestand:      zeigerAuf(10),
 			},
-			wantErr: true,
-			errMsg:  "isbn darf nicht leer sein",
+			wantErr: false,
 		},
 		{
-			name: "Invalid ISBN format",
+			name: "Nummer ohne ISBN-Form",
 			eingabe: BuchEingabe{
 				ISBN:         "123",
 				KlassenStufe: 5,
 				Bestand:      zeigerAuf(10),
 			},
-			wantErr: true,
-			errMsg:  "ungültiges ISBN-Format",
+			wantErr: false,
 		},
 		{
 			name: "Negative gradeLevel",
@@ -209,7 +209,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 		for i := range beliebig {
 			beliebig[i] = pgxmock.AnyArg()
 		}
-		erwarteKeineDublette(mock)
+		erwarteTitelstand(mock, "9783161484100", "Autor")
 		mock.ExpectExec("UPDATE buecher_titel").WithArgs(beliebig...).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectCommit()
@@ -267,8 +267,11 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 			const id = "0f8fad5b-d9cb-469f-a165-70867728950e"
 			erwarteFachBekannt(mock, "Mathe")
 			mock.ExpectBegin()
-			mock.ExpectQuery(`SELECT COALESCE\(autor, ''\) <> '' FROM buecher_titel WHERE id = \$1 FOR UPDATE`).
-				WithArgs(id).WillReturnRows(pgxmock.NewRows([]string{"hat"}).AddRow(fall.hatAutor))
+			autor := ""
+			if fall.hatAutor {
+				autor = "Funke, Cornelia"
+			}
+			erwarteTitelstand(mock, "9783161484100", autor)
 			if fall.hatAutor {
 				mock.ExpectRollback()
 			} else {
@@ -276,7 +279,6 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 				for i := range beliebig {
 					beliebig[i] = pgxmock.AnyArg()
 				}
-				erwarteKeineDublette(mock)
 				mock.ExpectExec("UPDATE buecher_titel").WithArgs(beliebig...).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 				mock.ExpectCommit()

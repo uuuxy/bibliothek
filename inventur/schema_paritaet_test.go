@@ -131,9 +131,10 @@ func sqlVonUpdateBook(t *testing.T) string {
 	// UpdateBook ist atomar (Tx): Begin, UPDATE, Zählung des Bestands (Soll 0 bei Stand 0 → keine
 	// weiteren Schreibvorgänge), Commit.
 	mock.ExpectBegin()
-	// Keine Erwartung für die Dublettenkontrolle und die Prüfung des Autors: Die eine fragt
-	// die Datenbank nur mit ISBN oder Titel, die andere nur ohne Autor — gemessen wird mit
-	// einem Buch, das nur einen Autor nennt.
+	// Der Schreibpfad liest zuerst, was am Titel steht. Die Dublettenkontrolle folgt nur bei
+	// geänderter ISBN; gemessen wird mit einem Buch, das nur einen Autor nennt.
+	mock.ExpectQuery("").WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"isbn", "autor"}).AddRow("", "Autor"))
 	mock.ExpectExec("").WithArgs(beliebig...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectQuery("").WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))

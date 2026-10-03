@@ -9,8 +9,19 @@ import (
 	"bibliothek/db"
 )
 
-// CreateBook inserts a new book record.
+// CreateBook legt einen Titel an. Trägt ein anderer die ISBN, lehnt sie ab (DubletteISBN);
+// heißt ohne ISBN ein anderer gleich, nennt sie ihn (DubletteTitel).
 func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, error) {
+	return repo.legeTitelAn(ctx, book, false)
+}
+
+// CreateBookAlsAnderesMedium legt einen Titel ohne ISBN auch neben einem gleichnamigen an: Die
+// Maske hat gefragt, und es ist ein anderes Heft, ein anderer Band oder eine andere Ausgabe.
+func (repo *BookRepository) CreateBookAlsAnderesMedium(ctx context.Context, book Book) (string, error) {
+	return repo.legeTitelAn(ctx, book, true)
+}
+
+func (repo *BookRepository) legeTitelAn(ctx context.Context, book Book, anderesMedium bool) (string, error) {
 	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer erst
 	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
 	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
@@ -43,9 +54,8 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Dublettenkontrolle VOR dem Schreiben, in derselben Transaktion (OFFEN.md 4.18):
-	// Der UNIQUE-Index sieht nur die zeichengleiche ISBN.
-	if err := pruefeDublette(ctx, tx, book, ""); err != nil {
+	// Die Dublettenkontrolle läuft vor dem Schreiben in derselben Transaktion.
+	if err := pruefeNeuenTitel(ctx, tx, book, anderesMedium); err != nil {
 		return "", err
 	}
 

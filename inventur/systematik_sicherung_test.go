@@ -157,12 +157,19 @@ func TestStelleFaecherSicher_Mehrere(t *testing.T) {
 	}
 }
 
-// erwarteKeineDublette: die Dublettenkontrolle vor jedem Anlegen und Ändern (4.18, Stufe 2)
-// fragt EINMAL nach einem Titel mit derselben Nummer bzw. demselben Titel. „Nichts
-// gefunden" ist der Normalfall — die Mock-Tests hier prüfen den Schreibpfad, nicht die
-// Kontrolle; die hat ihren eigenen Test am echten Postgres.
+// erwarteKeineDublette: Die Dublettenkontrolle fragt vor dem Anlegen und vor dem Ändern
+// der ISBN einmal nach dem Titel, der die Nummer trägt. „Nichts gefunden" ist der Normalfall;
+// die Mock-Tests prüfen den Schreibpfad, die Kontrolle hat ihren Test am echten Postgres.
 func erwarteKeineDublette(mock pgxmock.PgxPoolIface) {
-	mock.ExpectQuery(`SELECT (bt\.id::text, bt\.titel, EXISTS .+|id::text) FROM buecher_titel`).
+	mock.ExpectQuery(`SELECT bt\.id::text, bt\.titel, EXISTS .+ FROM buecher_titel`).
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(pgx.ErrNoRows)
+}
+
+// erwarteTitelstand: Vor jedem Ändern liest der Schreibpfad, was am Titel steht
+// (pruefeAenderung). Trägt er die ISBN der Änderung, folgt keine Dublettenkontrolle.
+func erwarteTitelstand(mock pgxmock.PgxPoolIface, isbn, autor string) {
+	mock.ExpectQuery(`SELECT COALESCE\(isbn, ''\), COALESCE\(autor, ''\) FROM buecher_titel WHERE id = \$1 FOR UPDATE`).
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"isbn", "autor"}).AddRow(isbn, autor))
 }

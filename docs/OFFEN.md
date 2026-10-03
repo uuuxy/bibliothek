@@ -93,8 +93,8 @@ Datenbank und der Littera-Übernahme (7.2).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **5.47** (ein Titel ohne ISBN lässt sich in der Maske nicht speichern) — vor dem Bauen zu
-   klären, ob die Maske ihn auch neu anlegen soll. Vor dem Echtstart.
+1. **5.47** (ein Titel ohne ISBN lässt sich in der Maske nicht speichern) — die Türen am
+   Server sind gebaut, offen ist die Maske. Vor dem Echtstart.
 2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
 3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
@@ -792,27 +792,13 @@ Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? K
 
 ### 5.47 Ein Titel ohne ISBN lässt sich in der Maske nicht speichern
 
-Gefunden im Rasterdurchgang vom 03.10.2026 (Frage 14), an der Tür nachgestellt
-(`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_TitelOhneISBN ./inventur/`). Die Maske
-„Buch bearbeiten" meldet „Titel und ISBN sind Pflichtfelder" (`saveChanges` in
-`AdminBuchAktionen.svelte`), und `PUT /api/books/{id}` antwortet mit 400 „isbn darf nicht leer
-sein" (`bereinigeUndValidiereBuchEingabe`). Wer an einem Titel ohne ISBN die Signatur, die
-Klasse oder die Angabe Lernmittel ändert, kann nicht speichern. Die Maske verlangt die ISBN
-seit dem ersten Stand des Programms (29.05.2026); an Büchern mit ISBN fällt es nicht auf.
-
-Gemessen am 03.10.2026, lesend: In der Littera-Sicherung von 2010 tragen 2.193 von 10.732
-Titeln keine ISBN, nach der Übernahme (7.2) also mindestens ein Fünftel des Katalogs. In der
-lokalen Datenbank sind es 7.457 von 10.416 (`isbn` ist NULL), 7.009 davon mit einem Exemplar,
-das nicht ausgesondert ist; kein Exemplar dort stammt aus der Übernahme. Die Zahl für den
-Testserver:
-`docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE coalesce(isbn,'') = '') AS ohne_isbn, count(*) AS titel FROM buecher_titel;"`
-
-Die Datenbank und die Dublettenkontrolle kennen den Titel ohne ISBN: Die Spalte darf leer
-sein, und ohne Nummer gilt das Paar aus Titel und Autor (`pruefeDublette`). Beim Bauen eine
-leere ISBN als NULL schreiben, die Spalte ist eindeutig. Zu entscheiden vor dem Bauen: Soll die
-Maske einen Titel ohne ISBN nur ändern oder auch neu anlegen können (altes Buch, Spiel,
-Zeitschrift)? Ein neuer Titel ohne Autor bekommt heute „Unbekannter Autor" eingetragen
-(`setzePlatzhalter`). Vor dem Echtstart. Kategorie B: Der Fehler meldet sich.
+Gefunden im Rasterdurchgang vom 03.10.2026 (Frage 14). Entschieden am 03.10.2026: Die ISBN ist
+freiwillig, beim Ändern und beim Anlegen; heißt ohne ISBN ein vorhandener Titel gleich, fragt
+die Maske, statt abzulehnen. Die Türen sind gebaut (`inventur/titel_ohne_isbn_pg_test.go`):
+`PUT /api/books/{id}` prüft die ISBN nur, wenn sie geändert wird, `POST /api/books` verlangt
+den Titel und nimmt eine leere ISBN an. Offen ist die Maske: Sie meldet weiter „Titel und ISBN
+sind Pflichtfelder" (`saveChanges` in `AdminBuchAktionen.svelte`) und kennt die Frage nach dem
+gleichnamigen Titel nicht. Vor dem Echtstart. Kategorie B: Der Fehler meldet sich.
 
 ---
 

@@ -89,6 +89,10 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 				"autor darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
 			return
 		}
+		if errors.Is(fehler, ErrISBNFormat) {
+			writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
+			return
+		}
 		log.Printf("Fehler beim Aktualisieren von Buch ID %s: %v", id, fehler)
 		writeError(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden")
 		return
@@ -109,6 +113,8 @@ func bestandsangabe(eingabe BuchEingabe) *Bestandsangabe {
 
 // bereinigeUndValidiereBuchEingabe trimmt Leerzeichen der Eingabefelder und prüft auf Gültigkeit.
 // Es gibt einen Fehler zurück, der als HTTP-Fehlermeldung an den Client gesendet werden kann.
+// Die ISBN prüft sie nicht: Ob sie sich geändert hat, weiß erst der Schreibpfad, der den
+// gespeicherten Titel liest (pruefeAenderung).
 func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 	eingabe.ISBN = strings.TrimSpace(eingabe.ISBN)
 	eingabe.Titel = strings.TrimSpace(eingabe.Titel)
@@ -120,12 +126,6 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 	eingabe.Untertitel = strings.TrimSpace(eingabe.Untertitel)
 	eingabe.Verlag = strings.TrimSpace(eingabe.Verlag)
 
-	if eingabe.ISBN == "" {
-		return errors.New("isbn darf nicht leer sein")
-	}
-	if !validiereISBN(eingabe.ISBN) {
-		return errors.New("ungültiges ISBN-Format")
-	}
 	if eingabe.KlassenStufe < 0 || eingabe.KlassenStufe > 13 {
 		return errors.New("gradeLevel muss zwischen 0 und 13 sein")
 	}

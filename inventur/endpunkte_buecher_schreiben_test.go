@@ -14,62 +14,36 @@ import (
 // Since mockTransport is defined in metadaten_client_test.go without export,
 // we can use it here if they are in the same package (inventur).
 
+// Pflicht ist beim Anlegen der Titel. Die ISBN darf fehlen und wird nur geprüft, wenn sie
+// dasteht.
 func TestValidiereBuchErstellenEingabe(t *testing.T) {
 	tests := []struct {
-		name         string
-		isbn         string
-		klassenStufe int16
-		wantResult   bool
-		wantStatus   int
+		name       string
+		eingabe    BuchEingabe
+		wantResult bool
+		wantError  string
 	}{
-		{
-			name:         "Valid Input",
-			isbn:         "978-3-16-148410-0",
-			klassenStufe: 5,
-			wantResult:   true,
-			wantStatus:   http.StatusOK, // default status for httptest.ResponseRecorder if no error
-		},
-		{
-			name:         "Empty ISBN",
-			isbn:         "",
-			klassenStufe: 5,
-			wantResult:   false,
-			wantStatus:   http.StatusBadRequest,
-		},
-		{
-			name:         "Invalid ISBN Format",
-			isbn:         "123",
-			klassenStufe: 5,
-			wantResult:   false,
-			wantStatus:   http.StatusBadRequest,
-		},
-		{
-			name:         "Invalid Grade Level Negative",
-			isbn:         "978-3-16-148410-0",
-			klassenStufe: -1,
-			wantResult:   false,
-			wantStatus:   http.StatusBadRequest,
-		},
-		{
-			name:         "Invalid Grade Level Too High",
-			isbn:         "978-3-16-148410-0",
-			klassenStufe: 14,
-			wantResult:   false,
-			wantStatus:   http.StatusBadRequest,
-		},
+		{name: "Titel und ISBN", eingabe: BuchEingabe{Titel: "T", ISBN: "978-3-16-148410-0", KlassenStufe: 5}, wantResult: true},
+		{name: "ohne ISBN", eingabe: BuchEingabe{Titel: "T", KlassenStufe: 5}, wantResult: true},
+		{name: "ohne Titel", eingabe: BuchEingabe{ISBN: "978-3-16-148410-0"}, wantError: "titel darf nicht leer sein"},
+		{name: "Titel nur aus Leerzeichen", eingabe: BuchEingabe{Titel: "  "}, wantError: "titel darf nicht leer sein"},
+		{name: "Nummer ohne ISBN-Form", eingabe: BuchEingabe{Titel: "T", ISBN: "123"}, wantError: "ungültiges ISBN-Format"},
+		{name: "Klassenstufe unter 0", eingabe: BuchEingabe{Titel: "T", KlassenStufe: -1}, wantError: "gradeLevel muss zwischen 0 und 13 sein"},
+		{name: "Klassenstufe über 13", eingabe: BuchEingabe{Titel: "T", KlassenStufe: 14}, wantError: "gradeLevel muss zwischen 0 und 13 sein"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			result := validiereBuchErstellenEingabe(recorder, tt.isbn, tt.klassenStufe)
+			result := validiereBuchErstellenEingabe(recorder, tt.eingabe)
 			if result != tt.wantResult {
 				t.Errorf("got result %v, want %v", result, tt.wantResult)
 			}
-			if result == false {
-				if recorder.Code != tt.wantStatus {
-					t.Errorf("got status %d, want %d", recorder.Code, tt.wantStatus)
-				}
+			if tt.wantResult {
+				return
+			}
+			if recorder.Code != http.StatusBadRequest || !strings.Contains(recorder.Body.String(), tt.wantError) {
+				t.Errorf("got %d %s, want 400 mit %q", recorder.Code, recorder.Body.String(), tt.wantError)
 			}
 		})
 	}
@@ -201,14 +175,14 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 		}
 	})
 
-	t.Run("Invalid Input Validation", func(t *testing.T) {
-		body := `{"isbn": "", "subject": "Math", "gradeLevel": 5}`
+	t.Run("ohne Titel wird nichts angelegt", func(t *testing.T) {
+		body := `{"isbn": "978-3-16-148410-0", "subject": "Math", "gradeLevel": 5}`
 		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(body))
 		rec := httptest.NewRecorder()
 		handler.BearbeiteBuchErstellen(rec, req)
 
-		if rec.Code != http.StatusBadRequest {
-			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
+		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "titel darf nicht leer sein") {
+			t.Errorf("got %d %s, want 400 mit „titel darf nicht leer sein“", rec.Code, rec.Body.String())
 		}
 	})
 

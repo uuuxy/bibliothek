@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"bibliothek/db"
+	"bibliothek/pkg/isbnutil"
 )
 
 // UpdateBook updates metadata fields of a book.
@@ -80,13 +81,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	if err := pruefeAutorNichtGeleert(ctx, tx, id, book.Author); err != nil {
-		return err
-	}
-
-	// Wie beim Anlegen: Eine geänderte ISBN darf nicht in anderer Schreibweise auf einen
-	// vorhandenen Titel zeigen (OFFEN.md 4.18). Die eigene Zeile ist ausgenommen.
-	if err := pruefeDublette(ctx, tx, book, id); err != nil {
+	if err := pruefeAenderung(ctx, tx, id, book); err != nil {
 		return err
 	}
 
@@ -145,26 +140,29 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 	return nil
 }
 
-// pruefeAutorNichtGeleert lehnt eine Änderung ohne Autor ab, wenn der Titel einen trägt: Dann
-// hat ein Formular das Feld nie befüllt, oder jemand hat es geleert. Ein Titel ohne Autor
-// (Medien, Sammelwerke, viele Titel aus Littera) bleibt ohne ihn speicherbar. Die Sperre hält
-// die Zeile bis zum UPDATE derselben Transaktion.
-func pruefeAutorNichtGeleert(ctx context.Context, tx repository.DBQueryer, id, autor string) error {
-	if autor != "" {
-		return nil
-	}
-	var hatAutor bool
+// pruefeAenderung hält die Änderung gegen den gespeicherten Titel und prüft, was sich ändert.
+// Ein leerer Autor ist nur ein Fehler, wenn der Titel einen trägt: Dann hat ein Formular das
+// Feld nie befüllt, oder jemand hat es geleert. Die ISBN wird nur geprüft, wenn sie eine
+// andere ist als die gespeicherte: Ein Titel ohne ISBN oder mit einer Nummer, die keine ISBN
+// ist, bleibt speicherbar, wenn ein anderes Feld geändert wird. Die Sperre hält die Zeile bis
+// zum UPDATE derselben Transaktion.
+func pruefeAenderung(ctx context.Context, tx repository.DBQueryer, id string, book Book) error {
+	var isbn, autor string
 	err := tx.QueryRow(ctx,
-		`SELECT COALESCE(autor, '') <> '' FROM buecher_titel WHERE id = $1 FOR UPDATE`, id).Scan(&hatAutor)
+		`SELECT COALESCE(isbn, ''), COALESCE(autor, '') FROM buecher_titel WHERE id = $1 FOR UPDATE`, id).Scan(&isbn, &autor)
 	switch {
 	case istKeineZeile(err):
 		return ErrBookNotFound
 	case err != nil:
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
-	case hatAutor:
+	case book.Author == "" && autor != "":
 		return ErrAutorGeleert
+	case book.ISBN == "" || isbnutil.Normalform(book.ISBN) == isbnutil.Normalform(isbn):
+		return nil
+	case !validiereISBN(book.ISBN):
+		return ErrISBNFormat
 	}
-	return nil
+	return isbnVergeben(ctx, tx, book.ISBN, id)
 }
 
 // Bestandsangabe ist, was eine Maske zum Bestand eines vorhandenen Titels sagt: die Zahl,

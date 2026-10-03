@@ -89,14 +89,11 @@ func TestSpeichern_FragtDieKatalogdiensteNicht(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &angelegt); err != nil {
 		t.Fatal(err)
 	}
-	if s := lies(); s.Autor != "Unbekannter Autor" || s.Cover != "" || s.Listenpreis != nil {
+	if s := lies(); s.Autor != "" || s.Cover != "" || s.Listenpreis != nil {
 		t.Errorf("Anlegen trug ein, was die Anfrage nicht nannte: %+v", s)
 	}
 
 	// Ändern: Der Titel hat keinen Autor, die Maske schickt ihn leer zurück.
-	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET autor = NULL WHERE isbn = $1`, isbn); err != nil {
-		t.Fatal(err)
-	}
 	ohneAutor := map[string]any{"isbn": isbn, "title": "Von Hand getippt", "author": "", "signatur": "Spe 2"}
 	if rec := sende(http.MethodPut, angelegt.Data.ID, ohneAutor); rec.Code != http.StatusOK {
 		t.Fatalf("Ändern ohne Autor: %d %s", rec.Code, rec.Body.String())
