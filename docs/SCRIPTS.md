@@ -517,6 +517,10 @@ docker rm -f biblio-test-pg
 Der DB-Name **muss** „test" enthalten (Sicherheits-Notbremse in `pgtest_support_test.go`
 vor dem `DROP SCHEMA`).
 
+Der Projektschlüssel steht in `sonar-project.properties`, der Token gehört zu diesem Projekt.
+Für einen weiteren Lauf kein neues Projekt anlegen: Das Quality Gate vergleicht mit dem Stand
+desselben Projekts, und ein neues meldet OK, ohne etwas geprüft zu haben.
+
 ### Datenbank-Helfer
 
 | Skript                            | Zweck                                                                                                                                                                                                                                                                                                                                                                 | Vorsicht                                                                                                                                                                                                                                                                                      |

@@ -102,4 +102,6 @@ SONAR_TOKEN="$SONAR_TOKEN" sonar-scanner \
 	-Dsonar.projectVersion="$PROJEKT_VERSION" \
 	-Dsonar.host.url="$HOST_URL"
 
-echo "Fertig. Ergebnis: ${HOST_URL}/dashboard?id=bibliothek"
+# Der Schluessel steht nur in sonar-project.properties; die Adresse des Ergebnisses folgt ihm.
+PROJEKT="$(sed -n 's/^sonar\.projectKey=//p' sonar-project.properties)"
+echo "Fertig. Ergebnis: ${HOST_URL}/dashboard?id=${PROJEKT}"
