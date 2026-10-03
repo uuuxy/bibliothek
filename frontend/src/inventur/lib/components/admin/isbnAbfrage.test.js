@@ -137,6 +137,60 @@ describe('isbnAbfrage: eine andere ISBN in derselben Maske', () => {
 	});
 });
 
+// Ein zweiter Scan ersetzt die ISBN, während die Katalogdienste zur ersten noch antworten;
+// seine Eingabetaste schließt sich dem laufenden Ablauf an. Die Antwort zur ersten ISBN gehört
+// zum ersten Buch und darf nicht unter der zweiten Nummer stehen.
+describe('isbnAbfrage: die ISBN ändert sich, während die Abfrage läuft', () => {
+	/** Hält die Antwort der Katalogdienste zur ISBN A an, bis der Test sie freigibt. */
+	function haltAn() {
+		let gibFrei = () => {};
+		const warte = new Promise((r) => (gibFrei = () => r(undefined)));
+		const sonst = /** @type {any} */ (vi.mocked(apiFetch).getMockImplementation());
+		vi.mocked(apiFetch).mockImplementation(async (url) => {
+			if (String(url) === `/api/lookup/${A}`) await warte;
+			return sonst(url);
+		});
+		return gibFrei;
+	}
+	const neueMaske = () => /** @type {any} */ ({ id: null, isbn: A, title: '', author: '' });
+
+	it('zeigt das zweite Buch und fragt zu seiner ISBN', async () => {
+		const gibFrei = haltAn();
+		const formular = neueMaske();
+		const abfrage = erzeugeIsbnAbfrage(
+			() => formular,
+			() => undefined
+		);
+
+		const erster = abfrage.nachschlagen(false);
+		await vi.waitFor(() => expect(abfragenZu(A)).toBe(1));
+		formular.isbn = B;
+		const zweiter = abfrage.nachschlagen(false);
+		gibFrei();
+		await Promise.all([erster, zweiter]);
+
+		expect(formular).toMatchObject({ isbn: B, title: 'Buch B', author: '' });
+		expect(abfragenZu(B)).toBe(1);
+	});
+
+	it('eine geleerte ISBN bekommt die Angaben nicht', async () => {
+		const gibFrei = haltAn();
+		const formular = neueMaske();
+		const abfrage = erzeugeIsbnAbfrage(
+			() => formular,
+			() => undefined
+		);
+
+		const lauf = abfrage.nachschlagen(false);
+		await vi.waitFor(() => expect(abfragenZu(A)).toBe(1));
+		formular.isbn = '';
+		gibFrei();
+		await lauf;
+
+		expect(formular).toMatchObject({ isbn: '', title: '', author: '' });
+	});
+});
+
 // Der Server trägt beim Speichern nichts nach: Was die Dienste wissen, steht nach der Abfrage
 // in der Maske, auch Untertitel und Listenpreis, und wer speichert, wartet auf sie.
 describe('isbnAbfrage: Untertitel, Listenpreis und das Speichern', () => {

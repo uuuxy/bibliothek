@@ -101,6 +101,58 @@ describe('BuchFormular: Speichern während der ISBN-Abfrage', () => {
 
 		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
 	});
+
+	// Der Handscanner: die Zeichen ins Feld, dann die Eingabetaste. Das zweite Buch wird
+	// gescannt, während die Dienste zum ersten noch antworten.
+	it('nach einem zweiten Scan während der Abfrage geht das zweite Buch hinaus', async () => {
+		const ZWEITE = '9783551551672';
+		/** @type {() => void} */
+		let antworte = () => {};
+		const erste = new Promise((gibFrei) => (antworte = () => gibFrei(undefined)));
+		vi.mocked(apiFetch).mockImplementation(async (url) => {
+			const u = String(url);
+			if (u.startsWith('/api/books/vorhanden')) return antwort(200, { data: { vorhanden: null } });
+			if (u === `/api/lookup/${ZWEITE}`) return antwort(200, { data: { title: 'Zweites Buch' } });
+			if (u.startsWith('/api/lookup/')) {
+				await erste;
+				return antwort(200, { data: { title: 'Erstes Buch', author: 'Autorin des ersten' } });
+			}
+			return antwort(200, []);
+		});
+		const formular = $state({ ...leeresBuchFormular(), signatur: 'Eng 3' });
+		/** @type {any} */
+		let hinaus = null;
+		const onSave = vi.fn(
+			() => (hinaus = { isbn: formular.isbn, title: formular.title, author: formular.author })
+		);
+		const screen = render(BuchFormular, {
+			formular,
+			onClose: () => {},
+			onSave,
+			onCoverUpload: () => {},
+			onCoverNeuHolen: () => {},
+			onAssignClass: () => {}
+		});
+		const feld = screen.getByLabelText('ISBN');
+		/** @param {string} code */
+		const scanne = async (code) => {
+			await fireEvent.input(feld, { target: { value: code } });
+			await fireEvent.keyDown(feld, { key: 'Enter' });
+		};
+		const abfragenZurErsten = () =>
+			vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url) === `/api/lookup/${ISBN}`)
+				.length;
+
+		await scanne(ISBN);
+		await waitFor(() => expect(abfragenZurErsten()).toBe(1));
+		await scanne(ZWEITE);
+		antworte();
+		await fireEvent.blur(feld);
+		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+
+		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+		expect(hinaus).toEqual({ isbn: ZWEITE, title: 'Zweites Buch', author: '' });
+	});
 });
 
 // „Speichern" bleibt bedienbar, auch wenn die Pflicht-Signatur fehlt: Der Klick speichert

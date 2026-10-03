@@ -107,12 +107,17 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 	/** @param {any} formular */
 	async function holeAngaben(formular) {
 		const isbn = formular.isbn;
+		// Die ISBN hat sich während der Abfrage geändert, etwa durch einen zweiten Scan: Die
+		// Antwort gehört zum vorigen Buch und stünde sonst unter der neuen Nummer.
+		const veraltet = () => formular.isbn !== isbn;
 		aktiv = true;
 		ausgang = null;
 		try {
 			const antwort = await apiFetch(`/api/lookup/${encodeURIComponent(isbn)}`);
+			if (veraltet()) return;
 			if (!antwort.ok) return melde(AUSGAENGE[antwort.status] ?? GESCHEITERT);
 			const daten = (await antwort.json()).data ?? {};
+			if (veraltet()) return;
 			for (const [feld, wert] of felderAus(daten)) schreibe(formular, feld, wert);
 			// Der Ladenpreis der DNB ist ein Vorschlag für den Listenpreis: Er füllt nur ein
 			// leeres Feld. Was jemand eingetragen hat, bleibt.
@@ -125,25 +130,45 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 			showToast(`Metadaten übernommen: ${daten.title}`, 'success');
 		} catch (fehler) {
 			console.error('Fehler beim Nachschlagen der ISBN', fehler);
-			melde(GESCHEITERT);
+			if (!veraltet()) melde(GESCHEITERT);
 		} finally {
 			aktiv = false;
 		}
 	}
 
-	/** @returns {Promise<boolean>} ob die Maske nach einem vorhandenen Titel gefragt hat */
-	async function durchlauf() {
-		const formular = maske();
-		if (formular !== uebernommenIn || formular.isbn !== uebernommenZu) nimmZurueck(formular);
-		if (!formular.id && (await frageWennVergeben(formular.isbn, andereForm))) return true;
-		if (aufWunsch || !formular.title) await holeAngaben(formular);
+	/**
+	 * Fragt zu der ISBN, die beim Beginn im Formular steht. Ändert sie sich unterwegs, endet
+	 * der Durchlauf ohne Angaben; der Ablauf fragt dann mit der neuen.
+	 * @param {any} formular
+	 * @returns {Promise<boolean>} ob die Maske nach einem vorhandenen Titel gefragt hat
+	 */
+	async function durchlauf(formular) {
+		const isbn = formular.isbn;
+		if (formular !== uebernommenIn || isbn !== uebernommenZu) nimmZurueck(formular);
+		if (!formular.id && (await frageWennVergeben(isbn, andereForm))) return true;
+		if (formular.isbn === isbn && (aufWunsch || !formular.title)) await holeAngaben(formular);
 		return false;
+	}
+
+	/**
+	 * Ein zweiter Scan ersetzt die ISBN, während zur ersten noch gefragt wird, und seine
+	 * Eingabetaste schließt sich dem laufenden Ablauf an. Der Ablauf endet deshalb erst, wenn
+	 * zu der ISBN gefragt ist, die im Formular steht.
+	 * @returns {Promise<boolean>} ob die Maske nach einem vorhandenen Titel gefragt hat
+	 */
+	async function ablauf() {
+		const formular = maske();
+		for (;;) {
+			const isbn = formular.isbn;
+			if (await durchlauf(formular)) return true;
+			if (maske() !== formular || !formular.isbn || formular.isbn === isbn) return false;
+		}
 	}
 
 	/** @param {boolean} wunsch true: der Knopf lädt auch, wenn schon ein Titel dasteht */
 	function nachschlagen(wunsch) {
 		aufWunsch ||= wunsch;
-		lauf ??= durchlauf().finally(() => {
+		lauf ??= ablauf().finally(() => {
 			lauf = null;
 			aufWunsch = false;
 		});
