@@ -12,8 +12,15 @@
 	const MEDIENTYP_BASIS = ['Buch', 'CD', 'DVD'];
 
 	/** dnbVorschlag: der Schlagwort-Vorschlag der DNB (BuchFormular, erzeugeDnbSchlagwortVorschlag).
-	 *  abfrage: die ISBN-Abfrage der Maske (BuchFormular, erzeugeIsbnAbfrage). */
-	let { formular = $bindable(), wirdGescannt = $bindable(), dnbVorschlag, abfrage } = $props();
+	 *  abfrage: die ISBN-Abfrage der Maske (BuchFormular, erzeugeIsbnAbfrage).
+	 *  titelFehlt: Ein Klick auf „Speichern" hat den Titel vermisst (BuchFormular). */
+	let {
+		formular = $bindable(),
+		wirdGescannt = $bindable(),
+		dnbVorschlag,
+		abfrage,
+		titelFehlt = false
+	} = $props();
 
 	// Die Spalte medientyp ist offen (der Littera-Import bringt „Zeitschrift", „Spiel"). Der
 	// vorhandene Wert steht deshalb immer in der Liste: Sonst sähe er aus wie nicht gesetzt,
@@ -57,7 +64,8 @@
 </script>
 
 <!-- Die Angaben zum Buch tragen keine Überschrift: Der Kopf der Maske benennt sie. Zuerst
-     steht die ISBN, weil die Aufnahme mit ihr beginnt und ihre Abfrage die Felder darunter füllt. -->
+     steht die ISBN, weil die Aufnahme mit ihr beginnt und ihre Abfrage die Felder darunter füllt;
+     sie darf leer bleiben. -->
 <div class="space-y-5">
 	<div class="grid grid-cols-2 gap-4">
 		<IsbnFeld bind:formular bind:wirdGescannt {abfrage} />
@@ -70,7 +78,15 @@
 		</div>
 	</div>
 
-	<Feld id="buch-titel" label="Titel" bind:value={formular.title} />
+	<!-- Der Titel ist das Pflichtfeld der Maske: Stern an der Beschriftung, der Fehler am Feld. -->
+	<Feld
+		id="buch-titel"
+		label="Titel *"
+		bind:value={formular.title}
+		required
+		ungueltig={titelFehlt}
+		hint={titelFehlt ? 'Bitte den Titel eintragen. Gespeichert wird erst mit ihm.' : ''}
+	/>
 
 	<Feld id="buch-untertitel" label="Untertitel" bind:value={formular.untertitel} />
 

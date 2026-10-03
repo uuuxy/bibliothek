@@ -37,6 +37,39 @@ describe('buch_speichern: speichereBuch', () => {
 		expect(fehler.message).toContain('Drachenreiter');
 	});
 
+	it('eine vergebene ISBN ist kein gleichnamiger Titel', async () => {
+		const vorhanden = { id: 'titel-1', title: 'Drachenreiter', ohneExemplar: false };
+		vi.mocked(apiFetch).mockResolvedValue(antwort(409, { error: 'vergeben', vorhanden }));
+		const fehler = await speichereBuch({ id: null, isbn: '978' }).catch((e) => e);
+		expect(fehler.gleicherTitel).toBe(false);
+	});
+
+	// Ohne ISBN nennt der Server den Titel, der gleich heißt, und kennzeichnet die Antwort: Die
+	// Maske fragt dann, statt abzulehnen.
+	it('409 mit gleicherTitel wird ein DubletteFehler, der die Frage erlaubt', async () => {
+		const vorhanden = { id: 'titel-2', title: 'Bild der Wissenschaft', ohneExemplar: false };
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort(409, { error: 'Ohne ISBN steht schon …', vorhanden, gleicherTitel: true })
+		);
+		const fehler = await speichereBuch({ id: null, isbn: '' }).catch((e) => e);
+		expect(fehler).toBeInstanceOf(DubletteFehler);
+		expect(fehler.gleicherTitel).toBe(true);
+		expect(fehler.vorhanden).toEqual(vorhanden);
+	});
+
+	it('„anderes Medium" geht nur nach der Antwort darauf mit', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu' } }));
+		const rumpf = (/** @type {number} */ n) =>
+			JSON.parse(String(vi.mocked(apiFetch).mock.calls[n][1]?.body));
+
+		await speichereBuch({ id: null, isbn: '', title: 'Heft 3' });
+		expect('anderesMedium' in rumpf(0)).toBe(false);
+		expect(rumpf(0).isbn).toBe('');
+
+		await speichereBuch({ id: null, isbn: '', title: 'Heft 3' }, { anderesMedium: true });
+		expect(rumpf(1).anderesMedium).toBe(true);
+	});
+
 	it('409 ohne vorhandenen Titel bleibt eine einfache Meldung', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(409, { error: 'existiert bereits' }));
 		const fehler = await speichereBuch({ id: null, isbn: '978' }).catch((e) => e);

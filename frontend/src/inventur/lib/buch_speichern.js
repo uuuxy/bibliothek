@@ -5,16 +5,19 @@ import { holeBuchDetail } from './admin_api.js';
 
 /**
  * Die Ablehnung einer vergebenen ISBN (409) samt dem Titel, der sie trägt. Die Maske führt
- * damit zu ihm: Ein Titel ohne Exemplar steht in keiner Suche.
+ * damit zu ihm: Ein Titel ohne Exemplar steht in keiner Suche. gleicherTitel: Die ISBN fehlt,
+ * und der vorhandene heißt nur gleich — dann fragt die Maske, statt abzulehnen.
  */
 export class DubletteFehler extends Error {
 	/**
 	 * @param {string} meldung
 	 * @param {VorhandenerTitel} vorhanden
+	 * @param {boolean} [gleicherTitel]
 	 */
-	constructor(meldung, vorhanden) {
+	constructor(meldung, vorhanden, gleicherTitel = false) {
 		super(meldung);
 		this.vorhanden = vorhanden;
+		this.gleicherTitel = gleicherTitel;
 	}
 }
 
@@ -97,9 +100,11 @@ export async function ladeBestandNach(formular) {
 /**
  * Legt den Titel der Maske an (ohne id) oder ändert ihn.
  * @param {any} formular
+ * @param {{ anderesMedium?: boolean }} [antwort] anderesMedium: Die Maske hat nach dem
+ *   gleichnamigen Titel ohne ISBN gefragt, und es ist ein anderes Heft, ein anderer Band.
  * @returns {Promise<any>} der gespeicherte Titel
  */
-export async function speichereBuch(formular) {
+export async function speichereBuch(formular, antwort = {}) {
 	const res = await apiFetch(formular.id ? `/api/books/${formular.id}` : '/api/books', {
 		method: formular.id ? 'PUT' : 'POST',
 		credentials: 'include',
@@ -112,14 +117,15 @@ export async function speichereBuch(formular) {
 			// Der Bestand geht nur über bestandsAngabe hinaus, nie als Feld der Maske.
 			stock: undefined,
 			stockGesehen: undefined,
-			...bestandsAngabe(formular)
+			...bestandsAngabe(formular),
+			anderesMedium: antwort.anderesMedium || undefined
 		})
 	});
 	if (!res.ok) {
 		const fehler = await res.json().catch(() => null);
 		const meldung = fehler?.error || fehler?.message || 'Speichern fehlgeschlagen';
 		if (res.status === 409 && fehler?.vorhanden?.id) {
-			throw new DubletteFehler(meldung, fehler.vorhanden);
+			throw new DubletteFehler(meldung, fehler.vorhanden, fehler.gleicherTitel === true);
 		}
 		if (res.status === 409 && Number.isInteger(fehler?.bestand)) {
 			throw new BestandVeraltetFehler(meldung, fehler.bestand);

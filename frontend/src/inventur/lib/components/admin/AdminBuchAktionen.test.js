@@ -4,6 +4,7 @@ import { render } from '@testing-library/svelte';
 vi.mock('../../../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
 vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({
 	bestaetigen: vi.fn(),
+	fragen: vi.fn(),
 	loeschenBestaetigen: vi.fn()
 }));
 vi.mock('../../../../lib/stores/authStore.svelte.js', () => ({ authStore: { currentUser: null } }));
@@ -13,7 +14,7 @@ vi.mock('$lib/store.svelte.js', () => ({
 }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
-import { bestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
+import { bestaetigen, fragen } from '../../../../lib/stores/bestaetigung.svelte.js';
 import { appState, showToast } from '$lib/store.svelte.js';
 import AdminBuchAktionen from './AdminBuchAktionen.svelte';
 
@@ -36,6 +37,8 @@ function maske(formular) {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	// Auch eine nicht abgeholte Antwort eines früheren Tests fällt weg.
+	vi.mocked(apiFetch).mockReset();
 	appState.bestandsAnsicht = 'mit';
 	appState.bookToEdit = null;
 });
@@ -77,6 +80,106 @@ describe('AdminBuchAktionen: vergebene ISBN beim Anlegen', () => {
 		await maske({ id: 'titel-2', isbn: '9783791504544', title: 'Anderer', stock: 1 }).saveChanges();
 		expect(bestaetigen).not.toHaveBeenCalled();
 		expect(showToast).toHaveBeenCalledWith(MELDUNG, 'error');
+	});
+});
+
+// Pflicht ist der Titel, die ISBN nicht: Rund ein Drittel der Titel aus Littera trägt keine.
+describe('AdminBuchAktionen: Titel ohne ISBN', () => {
+	const rumpf = (/** @type {number} */ n) =>
+		JSON.parse(String(vi.mocked(apiFetch).mock.calls[n][1]?.body));
+
+	it('ein vorhandener Titel ohne ISBN wird gespeichert', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'titel-9', stock: 1 } }));
+		await maske({
+			id: 'titel-9',
+			isbn: '',
+			title: 'Bild der Wissenschaft',
+			signatur: 'Z 1',
+			stock: 1,
+			stockGesehen: 1
+		}).saveChanges();
+
+		expect(vi.mocked(apiFetch).mock.calls[0][1]?.method).toBe('PUT');
+		expect(rumpf(0)).toMatchObject({ isbn: '', signatur: 'Z 1' });
+		expect(showToast).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
+	});
+
+	it('ein neuer Titel ohne ISBN wird angelegt', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu', stock: 1 } }));
+		await maske({ id: null, isbn: '', title: 'Die Siedler von Catan', stock: 1 }).saveChanges();
+
+		expect(vi.mocked(apiFetch).mock.calls[0][1]?.method).toBe('POST');
+		expect(rumpf(0).isbn).toBe('');
+		expect(showToast).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
+	});
+});
+
+// Ohne ISBN heißt ein vorhandener Titel gleich. Hefte und Bände tragen denselben Titel und
+// Autor: Die Maske fragt, statt abzulehnen, und legt nur nach der Antwort „Anderes Medium" an.
+describe('AdminBuchAktionen: gleichnamiger Titel ohne ISBN', () => {
+	const HINWEIS = 'Ohne ISBN steht schon ein Titel „Bild der Wissenschaft“ im Katalog.';
+	const GLEICH = antwort(409, {
+		error: HINWEIS,
+		vorhanden: { id: 'titel-7', title: 'Bild der Wissenschaft', ohneExemplar: false },
+		gleicherTitel: true
+	});
+	const heft = () => ({ id: null, isbn: '', title: 'Bild der Wissenschaft', stock: 1 });
+	const rumpf = (/** @type {number} */ n) =>
+		JSON.parse(String(vi.mocked(apiFetch).mock.calls[n][1]?.body));
+
+	it('fragt, ob es dasselbe Medium ist, mit zwei Antworten', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(GLEICH);
+		vi.mocked(fragen).mockResolvedValue(null);
+		await maske(heft()).saveChanges();
+
+		const frage = vi.mocked(fragen).mock.calls[0][0];
+		expect(frage.titel).toBe('Ist es dasselbe Medium?');
+		expect(frage.text).toContain(HINWEIS);
+		expect([frage.aktion, frage.abbruch]).toEqual(['Titel öffnen', 'Anderes Medium']);
+		expect(bestaetigen).not.toHaveBeenCalled();
+	});
+
+	it('„Titel öffnen" führt zum vorhandenen und legt nichts an', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(GLEICH);
+		vi.mocked(fragen).mockResolvedValue(true);
+		await maske(heft()).saveChanges();
+
+		expect(appState.bookToEdit).toEqual({ id: 'titel-7' });
+		expect(apiFetch).toHaveBeenCalledTimes(1);
+		expect(showToast).not.toHaveBeenCalled();
+	});
+
+	it('„Anderes Medium" schickt denselben Titel noch einmal und meldet das Speichern', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(GLEICH);
+		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(201, { data: { id: 'neu', stock: 1 } }));
+		vi.mocked(fragen).mockResolvedValue(false);
+		await maske(heft()).saveChanges();
+
+		expect(apiFetch).toHaveBeenCalledTimes(2);
+		expect('anderesMedium' in rumpf(0)).toBe(false);
+		expect(rumpf(1)).toMatchObject({ title: 'Bild der Wissenschaft', anderesMedium: true });
+		expect(appState.bookToEdit).toBeNull();
+		expect(showToast).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
+	});
+
+	it('den Dialog nur zu schließen ist keine Antwort: nichts wird angelegt', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(GLEICH);
+		vi.mocked(fragen).mockResolvedValue(null);
+		await maske(heft()).saveChanges();
+
+		expect(apiFetch).toHaveBeenCalledTimes(1);
+		expect(appState.bookToEdit).toBeNull();
+		expect(showToast).not.toHaveBeenCalled();
+	});
+
+	it('nach dem Schließen fragt der nächste Klick auf „Speichern" wieder', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(GLEICH);
+		vi.mocked(fragen).mockResolvedValue(null);
+		const aktionen = maske(heft());
+		await aktionen.saveChanges();
+		await aktionen.saveChanges();
+
+		expect(fragen).toHaveBeenCalledTimes(2);
 	});
 });
 

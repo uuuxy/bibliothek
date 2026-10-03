@@ -214,13 +214,12 @@ test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf b
 
 		// Die Meldungen der Anwendung erscheinen oben rechts. Eine Fehlermeldung nach „Speichern"
 		// darf nicht über dem Knopf liegen: Unter dem Mauszeiger hält sie ihre Standzeit an.
+		// Eine geänderte Nummer ohne ISBN-Form lehnt der Server ab, die Meldung kommt oben rechts.
 		const speichern = page.getByRole('button', { name: 'Speichern', exact: true });
-		await page.locator('#buch-titel').fill('');
+		await page.locator('#buch-isbn').fill('12345');
 		await page.getByText(`B-scm-${s}-20`).scrollIntoViewIfNeeded();
 		await speichern.click();
-		const meldung = page
-			.getByRole('alert')
-			.filter({ hasText: 'Titel und ISBN sind Pflichtfelder' });
+		const meldung = page.getByRole('alert').filter({ hasText: 'ungültiges ISBN-Format' });
 		await expect(meldung).toBeVisible();
 		const k = await speichern.boundingBox();
 		const m = await meldung.boundingBox();

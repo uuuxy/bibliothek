@@ -502,8 +502,10 @@ am 03.10.2026 über die Änderungen danach:
   Vorschläge nur aus den 500 häufigsten Wörtern (`1a0ba055`, 30.09.2026).
 - **Frage 14, die Zeile ohne den Pflichtwert:** Verlangt eine Maske oder ihre Tür beim Ändern
   ein Feld, das Zeilen im Bestand nicht tragen? An Zeilen mit dem Wert fällt es nie auf. Beleg
-  vom 03.10.2026: Ein Titel ohne ISBN lässt sich in der Maske „Buch bearbeiten" nicht speichern
-  (OFFEN.md 5.47; in der Littera-Sicherung von 2010 tragen 2.193 von 10.732 Titeln keine).
+  vom 03.10.2026: Ein Titel ohne ISBN ließ sich in der Maske „Buch bearbeiten" nicht speichern;
+  in der Littera-Sicherung von 2010 tragen 2.193 von 10.732 Titeln keine
+  (`inventur/titel_ohne_isbn_pg_test.go`). Dazu gehört die Zeile, deren Wert die Prüfung nicht
+  besteht: Eine Tür prüft, was sich ändert.
 - **Frage 16, der Scan vor der Antwort:** Was geschieht mit dem nächsten Scan, solange die
   Antwort auf den vorigen aussteht — fragt er neu, oder schließt er sich dem laufenden Ablauf
   an, und zu welcher Eingabe gehört dann die Antwort? Beleg vom 03.10.2026: In der Maske

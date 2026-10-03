@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-01. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-03. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -122,7 +122,11 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   dem Speichern prüfen; die Signatur trägt man selbst ein, das Feld bietet die Signaturen des
   Bestands an), bearbeiten, Cover tauschen,
   Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Die Maske beginnt mit der ISBN
-  und den Angaben zum Buch. Darunter steht die Gruppe _An der Schule_: die Wahl _Bibliothek |
+  und den Angaben zum Buch. Pflicht ist der Titel; die ISBN darf fehlen, etwa bei einer
+  Zeitschrift, einem Spiel oder einem alten Buch (seit 03.10.2026). Heißt beim Anlegen ohne
+  ISBN schon ein Titel mit demselben Autor gleich, fragt die Maske _Ist es dasselbe Medium?_:
+  _Titel öffnen_ führt zum vorhandenen Titel, dort kommt das Exemplar dazu; _Anderes Medium_
+  legt den Titel an (ein anderes Heft, ein anderer Band). Darunter steht die Gruppe _An der Schule_: die Wahl _Bibliothek |
   Lernmittel_, Signatur und Standort, Fach, Schulzweig, Klasse und Jahrgänge, das
   Mehrjahresband und die anderen Auflagen. Bestand und Zähldatum stehen unter _Exemplare_,
   über der Liste. Wird der Bestand nach oben

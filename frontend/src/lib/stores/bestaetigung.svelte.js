@@ -29,20 +29,34 @@
  * }} Rueckfrage
  */
 
-/** @type {(Rueckfrage & { resolve: (ja: boolean) => void }) | null} */
+/** @type {(Rueckfrage & { resolve: (antwort: boolean | null) => void }) | null} */
 let offen = $state(null);
 
 export const bestaetigungStore = {
 	get anfrage() {
 		return offen;
 	},
-	/** @param {boolean} ja */
-	antworten(ja) {
+	/** @param {boolean | null} antwort null: geschlossen, ohne einen Knopf zu wählen */
+	antworten(antwort) {
 		const a = offen;
 		offen = null;
-		a?.resolve(ja);
+		a?.resolve(antwort);
 	}
 };
+
+/**
+ * Eine Frage, bei der auch der zweite Knopf etwas auslöst („Titel öffnen" oder „Anderes
+ * Medium"). Anders als bestaetigen trennt sie den zweiten Knopf vom Schließen: Escape, der
+ * Klick neben den Dialog und eine zweite Frage sind keine Antwort.
+ * @param {Rueckfrage} frage
+ * @returns {Promise<boolean | null>} true: die Aktion, false: der zweite Knopf, null: geschlossen
+ */
+export function fragen(frage) {
+	return new Promise((resolve) => {
+		offen?.resolve(null);
+		offen = { aktion: 'Fortfahren', abbruch: 'Abbrechen', gefaehrlich: false, ...frage, resolve };
+	});
+}
 
 /**
  * Stellt die Rückfrage und löst mit der Antwort auf. `aktion` ist die Beschriftung
@@ -51,10 +65,7 @@ export const bestaetigungStore = {
  * @returns {Promise<boolean>}
  */
 export function bestaetigen(frage) {
-	return new Promise((resolve) => {
-		offen?.resolve(false);
-		offen = { aktion: 'Fortfahren', abbruch: 'Abbrechen', gefaehrlich: false, ...frage, resolve };
-	});
+	return fragen(frage).then((antwort) => antwort === true);
 }
 
 /**

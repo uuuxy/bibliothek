@@ -1,5 +1,6 @@
 import { apiFetch } from '../../lib/apiFetch.js';
-import { bestaetigen } from '../../lib/stores/bestaetigung.svelte.js';
+import { bestaetigen, fragen } from '../../lib/stores/bestaetigung.svelte.js';
+import { DubletteFehler, speichereBuch } from './buch_speichern.js';
 import { appState, showToast } from './store.svelte.js';
 
 /** @typedef {import('./buch_speichern.js').VorhandenerTitel} VorhandenerTitel */
@@ -44,6 +45,43 @@ export async function frageVorhandenenOeffnen(meldung, vorhanden) {
 		aktion: 'Titel öffnen'
 	});
 	if (oeffnen) appState.bookToEdit = { id: vorhanden.id };
+}
+
+/**
+ * Ohne ISBN heißt ein vorhandener Titel gleich: Die Maske fragt, ob es dasselbe Medium ist.
+ * Hefte einer Zeitschrift und Bände eines Werks tragen denselben Titel und Autor, deshalb
+ * lehnt sie nicht ab. „Titel öffnen" führt zum vorhandenen, dort kommt das Exemplar dazu;
+ * wer den Dialog nur schließt, hat nicht geantwortet, und nichts wird angelegt.
+ * @param {string} meldung
+ * @param {VorhandenerTitel} vorhanden
+ * @returns {Promise<boolean>} ob der Titel als anderes Medium angelegt werden soll
+ */
+async function frageGleichenTitel(meldung, vorhanden) {
+	const oeffnen = await fragen({
+		titel: 'Ist es dasselbe Medium?',
+		text: `${meldung} Beim Öffnen werden die Eingaben dieser Maske verworfen.`,
+		aktion: 'Titel öffnen',
+		abbruch: 'Anderes Medium'
+	});
+	if (oeffnen) appState.bookToEdit = { id: vorhanden.id };
+	return oeffnen === false;
+}
+
+/**
+ * Speichert den Titel der Maske. Heißt beim Anlegen ohne ISBN ein vorhandener gleich, fragt
+ * sie und schickt denselben Titel nach „Anderes Medium" noch einmal.
+ * @param {any} formular
+ * @returns {Promise<any | null>} der gespeicherte Titel; null, wenn die Frage zum vorhandenen
+ *   Titel führte oder ohne Antwort blieb
+ */
+export async function speichereMitFrage(formular) {
+	try {
+		return await speichereBuch(formular);
+	} catch (fehler) {
+		if (!(fehler instanceof DubletteFehler && fehler.gleicherTitel) || formular.id) throw fehler;
+		if (!(await frageGleichenTitel(fehler.message, fehler.vorhanden))) return null;
+		return speichereBuch(formular, { anderesMedium: true });
+	}
 }
 
 /**

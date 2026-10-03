@@ -32,19 +32,28 @@
 		() => dnbVorschlag
 	);
 
+	// Pflicht ist der Titel, die ISBN nicht: Zeitschriften, Spiele und alte Bücher tragen keine.
+	// Der Fehler steht am Feld, sobald ein Klick auf „Speichern" den Titel vermisst hat.
+	let titelVerlangt = $state(false);
+	const titelFehlt = $derived(titelVerlangt && !(formular.title ?? '').trim());
+
+	/** Die Mitte des Fensters, weil der Kopf der Maske oben stehen bleibt. @param {string} id */
+	function fuehreZu(id) {
+		const feld = document.getElementById(id);
+		feld?.scrollIntoView({ block: 'center', inline: 'nearest' });
+		feld?.focus({ preventScroll: true });
+	}
+
 	// Ein Klick auf „Speichern" verlässt das ISBN-Feld und stößt dessen Abfrage an. Gespeichert
 	// wird erst mit ihren Angaben: Der Server trägt nichts nach. Hat sie nach einem
 	// vorhandenen Titel gefragt, entscheidet die Antwort darauf und nicht dieser Klick.
 	async function speichern() {
 		if (await abfrage.ruht()) return;
-		// Der Knopf bleibt bedienbar: Fehlt die Pflicht-Signatur, führt der Klick zum Feld, das
-		// den Grund nennt. Die Mitte des Fensters, weil der Kopf der Maske oben stehen bleibt.
-		if (signaturFehlt(formular)) {
-			const feld = document.getElementById('buch-signatur');
-			feld?.scrollIntoView({ block: 'center', inline: 'nearest' });
-			feld?.focus({ preventScroll: true });
-			return;
-		}
+		// Der Knopf bleibt bedienbar: Fehlt ein Pflichtfeld, führt der Klick zum Feld, das den
+		// Grund nennt.
+		titelVerlangt = true;
+		if (!(formular.title ?? '').trim()) return fuehreZu('buch-titel');
+		if (signaturFehlt(formular)) return fuehreZu('buch-signatur');
 		onSave();
 	}
 </script>
@@ -76,7 +85,7 @@
 		<!-- Die Felder enden bei 44rem: In einem breiten Fenster laufen Textfelder sonst über die
 		     ganze Spalte. Die Exemplare darunter nutzen die Breite. -->
 		<div class="max-w-176 space-y-8 lg:col-start-1">
-			<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} {abfrage} />
+			<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} {abfrage} {titelFehlt} />
 		</div>
 		<aside
 			class="mx-auto mt-8 w-full max-w-64 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:sticky lg:top-20 lg:self-start"

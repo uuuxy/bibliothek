@@ -4,13 +4,12 @@
 	import { appState, showToast } from '$lib/store.svelte.js';
 	import { loescheTitel, coverNeuHolen } from '../../admin_api.js';
 	import {
-		speichereBuch,
 		stehtInSicht,
 		verringernRueckfrage,
 		BestandVeraltetFehler,
 		DubletteFehler
 	} from '../../buch_speichern.js';
-	import { frageVorhandenenOeffnen } from '../../buch_vorhanden.js';
+	import { frageVorhandenenOeffnen, speichereMitFrage } from '../../buch_vorhanden.js';
 	import { hatRecht } from '../../../../lib/menu.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 
@@ -38,20 +37,18 @@
 	// Stand der ersten und käme als Ablehnung zurück.
 	let speichert = false;
 
+	/** Speichert die Maske. Pflicht ist der Titel, das prüft der Knopf (BuchFormular). */
 	export async function saveChanges() {
 		if (speichert) return;
-		if (!formular.title || !formular.isbn) {
-			showToast('Titel und ISBN sind Pflichtfelder', 'error');
-			return;
-		}
-
 		speichert = true;
 		try {
 			const frage = verringernRueckfrage(formular);
 			if (frage && !(await bestaetigen(frage))) return;
 
 			const neu = !formular.id;
-			const updated = await speichereBuch(formular);
+			const updated = await speichereMitFrage(formular);
+			// Die Frage nach dem gleichnamigen Titel führte zu ihm oder blieb ohne Antwort.
+			if (!updated) return;
 			// Die Antwort ist der gespeicherte Titel samt Bestand; die Zeile der Liste wird sie.
 			const bestand = Number(updated.stock) || 0;
 			if (books.some((/** @type {any} */ b) => b.id === updated.id)) {

@@ -76,8 +76,8 @@ Datenbank und der Littera-Übernahme (7.2).
      Klick. Erwartet: ISBN, Titel und Autor sind die des zweiten.
    - Buchmaske, ohne Scanner: einen Titel mit vielen Exemplaren öffnen (der größte am
      Testserver hat 383) und nach unten rollen. Erwartet: „Speichern", das Cover und die Knöpfe
-     darunter bleiben im Bild. Dann den Titel leeren und „Speichern" drücken. Erwartet: Die
-     Meldung oben rechts liegt nicht über dem Knopf.
+     darunter bleiben im Bild. Dann ins Feld ISBN „12345" tippen und „Speichern" drücken.
+     Erwartet: Die Meldung oben rechts („ungültiges ISBN-Format") liegt nicht über dem Knopf.
    - Druck-Center, Buch-Etiketten: einen Titel mit mehr als fünf Exemplaren wählen, den Haken
      „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
      dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
@@ -87,14 +87,19 @@ Datenbank und der Littera-Übernahme (7.2).
    Bibliothek oder Lernmittel, „Andere Auflagen" als letzte Angabe dieser Gruppe, Bestand und
    Zähldatum unter „Exemplare". Das Feld „Beschreibung / Klappentext" gibt es seit dem
    03.10.2026 nicht mehr; „Speichern" bleibt am neuen Bibliotheksbuch bedienbar und führt ohne
-   Signatur zum Feld.
-6. **Ein Termin für die Abnahmen** mit dem Sekretariat, sobald der Schulserver steht (7.7). Ein
+   Signatur zum Feld. Seit dem 03.10.2026 ist die ISBN freiwillig, Pflicht ist der Titel (Stern
+   an der Beschriftung): einen Titel ohne ISBN öffnen, die Signatur ändern und speichern; ein
+   Medium ohne ISBN neu anlegen und danach noch einmal mit demselben Titel und Autor — die
+   Maske fragt dann „Ist es dasselbe Medium?".
+6. **Eine Zählung am Testserver** für 5.48 (die ISBN in einer Länge); der Einzeiler steht
+   dort. Vor der Zahl entsteht die Migration nicht.
+7. **Ein Termin für die Abnahmen** mit dem Sekretariat, sobald der Schulserver steht (7.7). Ein
    LUSD-Import mit echten Schülern kommt erst nach der Littera-Übernahme (7.2).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **5.47** (ein Titel ohne ISBN lässt sich in der Maske nicht speichern) — die Türen am
-   Server sind gebaut, offen ist die Maske. Vor dem Echtstart.
+1. **5.48** (die ISBN in einer Länge) — entschieden am 03.10.2026; vor dem Bauen die Zählung
+   vom Testserver.
 2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
 3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
@@ -104,7 +109,8 @@ Datenbank und der Littera-Übernahme (7.2).
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
-(`update.sh` für den Schulserver) und der Eingang für die Seite der Lieferanten (4.23).
+(`update.sh` für den Schulserver), der Eingang für die Seite der Lieferanten (4.23) und die
+Auflage in der Littera-Übernahme (5.5).
 
 **In der Doku:** Pflegekonzept und Datenschutz-Nachweis stehen als Entwurf. Es folgen die
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung (9.9).
@@ -426,13 +432,12 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   gefunden oder bereits ausgebucht". An einem bestellten sondert es aus, was nie eingetroffen
   ist (`DeleteCopy`): Das Exemplar steht danach im Abgangsbuch, ohne je im Zugangsbuch
   gestanden zu haben. Kategorie B.
-- Der Listenimport kennt die ISBN nur in einer Länge (Rasterdurchgang vom 03.10.2026,
-  nachgestellt: `TEST_DATABASE_URL=… go test -tags raster -run TestRaster_Listenimport ./inventur/`).
-  Die Bestelltür fragt seit dem 25.09.2026 auch nach der anderen Länge, Maske und Bestellsuche
-  seit dem 02.10.2026 (`isbnutil.AndereForm`); `UpsertBooksBatch` gleicht über
-  `ON CONFLICT (isbn)` ab. Trägt der Katalog ein Buch mit zehnstelliger ISBN und nennt die Liste
-  die dreizehnstellige, steht es danach zweimal im Katalog, mit zwei Beständen. Nicht
-  durchgesehen: die übrigen Importe. Kategorie B.
+- Die Übernahme aus Littera überträgt die Auflage nicht (gefunden am 03.10.2026, am Code
+  gelesen und an der Sicherung gezählt): `sqlTitelEinfuegen` in `internal/littera` schreibt die
+  Spalte `auflage` nicht, das Feld am Titel gibt es seit dem 17.09.2026. In der Sicherung von
+  2010 tragen 3.182 von 10.732 Titeln eine Angabe in `Titel.Auflage` („1. Aufl.", „2. Aufl."),
+  663 davon stehen nach der Übernahme ohne ISBN da. Ohne die Auflage sind zwei Ausgaben
+  desselben Buchs im Katalog nicht zu unterscheiden. Vor dem Echtstart, mit 7.2. Kategorie B.
 - Druck-Center, Buch-Etiketten: Scheitert das Laden der Exemplare eines Titels, steht dort „Zu
   diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann." (`loadExistingCopies` in
   `stores/labels.svelte.js` leert die Liste bei jeder Fehlantwort; am Code gelesen im
@@ -790,15 +795,45 @@ Erledigen (`api/anliegen.go`), in der Liste der Bibliothek das Abzeichen „Wuns
 Vor dem Bauen zu klären: Fällt die Unterscheidung ganz weg — ein Formular, ein Abzeichen, ein
 Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? Kategorie B.
 
-### 5.47 Ein Titel ohne ISBN lässt sich in der Maske nicht speichern
+### 5.48 Die ISBN in einer Länge
 
-Gefunden im Rasterdurchgang vom 03.10.2026 (Frage 14). Entschieden am 03.10.2026: Die ISBN ist
-freiwillig, beim Ändern und beim Anlegen; heißt ohne ISBN ein vorhandener Titel gleich, fragt
-die Maske, statt abzulehnen. Die Türen sind gebaut (`inventur/titel_ohne_isbn_pg_test.go`):
-`PUT /api/books/{id}` prüft die ISBN nur, wenn sie geändert wird, `POST /api/books` verlangt
-den Titel und nimmt eine leere ISBN an. Offen ist die Maske: Sie meldet weiter „Titel und ISBN
-sind Pflichtfelder" (`saveChanges` in `AdminBuchAktionen.svelte`) und kennt die Frage nach dem
-gleichnamigen Titel nicht. Vor dem Echtstart. Kategorie B: Der Fehler meldet sich.
+Entschieden am 03.10.2026: Eine gültige zehnstellige ISBN wird beim Speichern zur
+dreizehnstelligen, in der Datenbank und damit an jeder Tür (Maske, Listenimport, die übrigen
+Importe, Bestellung). Eine Nummer mit falscher Prüfziffer bleibt, wie sie eingegeben wurde, und
+wird nie mit einer anderen gepaart. Die Frage „Ist es dasselbe Buch?" zur anderen Länge (Maske
+„Neues Buch", Bestellsuche, „Neue Auflage bestellen"; gebaut am 25.09.2026 und am 02.10.2026)
+entfällt damit: Bei gültiger Nummer ist es dasselbe Buch, und die Maske fragt wie bei jeder
+vergebenen ISBN „Vorhandenen Titel öffnen?".
+
+Anlass: Die Normalform (Migration 133) trennt beide Längen, und jede Tür rechnet für sich um
+(`isbnutil.AndereForm`, im Browser `isbnFormen`). Der Listenimport tut es nicht: Trägt der
+Katalog ein Buch mit zehnstelliger ISBN und nennt die Liste die dreizehnstellige, steht es
+danach zweimal im Katalog, mit zwei Beständen (Rasterdurchgang vom 03.10.2026, nachgestellt:
+`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_Listenimport ./inventur/`). Die
+übrigen Importe sind nicht durchgesehen.
+
+Gemessen am 03.10.2026, lesend: In der Littera-Sicherung von 2010 stehen 213 zehnstellige
+Nummern, im Katalog-Export vom Juni 2026 sind es 112, alle mit falscher Prüfziffer. Eine
+gültige zehnstellige ISBN gibt es dort nicht: Littera rechnet sie selbst um (Handbuch:
+„ISBN-10 wird ab LITTERA Version 4.6 automatisch in ISBN-13 umgerechnet") und behält die
+erfasste in der Spalte `ISBN10`. Bei 6 der 112 führt die Rechnung auf die ISBN-13 eines
+anderen Eintrags, darunter 3499500252 — das Paar, dessentwegen die andere Länge seit dem
+25.09.2026 nur vorgeschlagen wird.
+
+Vor dem Bauen die Zahl vom Testserver; dort stehen auch Titel, die das Programm selbst
+zehnstellig angelegt hat. Der Einzeiler zählt die zehnstelligen, die gültigen darunter und die
+gültigen, deren dreizehnstellige Form ein anderer Titel trägt:
+`docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) AS zehnstellig, count(*) FILTER (WHERE g) AS gueltig, count(*) FILTER (WHERE g AND EXISTS (SELECT 1 FROM buecher_titel a WHERE a.isbn = z.dreizehn)) AS paar_im_katalog FROM (SELECT isbn, (SELECT sum((CASE WHEN c = 'X' THEN 10 ELSE c::int END) * (11 - i::int)) FROM regexp_split_to_table(isbn, '') WITH ORDINALITY AS s(c, i)) % 11 = 0 AS g, '978' || left(isbn, 9) || ((10 - (SELECT sum(c::int * CASE WHEN i % 2 = 1 THEN 1 ELSE 3 END) FROM regexp_split_to_table('978' || left(isbn, 9), '') WITH ORDINALITY AS s(c, i)) % 10) % 10)::text AS dreizehn FROM buecher_titel WHERE length(isbn) = 10 AND isbn ~ '^[0-9]{9}[0-9X]') z;"`
+
+Umfang: die Funktion `isbn_normalform` und ihr Spiegel in Go (`isbnutil.Normalform`, die
+Parität beider prüft `repository/isbn_normalform_pg_test.go`); eine Migration, die vorhandene
+gültige zehnstellige Nummern umrechnet und Paare stehen lässt wie Migration 140; die
+Vergleichsstellen, die noch selbst bereinigen (`titelMitISBN`, `sammleExistierendeISBNs`,
+`repository/cover_quellen.go`, `uebernahme.KlaereISBN`), auf die eine Normalform. Suchen muss
+sich weiter mit beiden Schreibweisen lassen; im Medienkatalog rechnet `isbnFormen`, die übrigen
+Suchfelder sind zu prüfen. Danach entfallen die Stellen mit der Frage zur anderen Länge, das
+Bauteil `AndereIsbnFormWahl` und die Browser-Tests `auflagen-isbn-andere-form` und
+`buch-anlegen-andere-isbn-laenge`. Kategorie B.
 
 ---
 

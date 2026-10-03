@@ -94,7 +94,12 @@ describe('BuchFormular: Speichern während der ISBN-Abfrage', () => {
 
 	it('ohne laufende Abfrage speichert der Klick', async () => {
 		server({ vorhanden: null });
-		const formular = $state({ ...leeresBuchFormular(), isbn: '', signatur: 'Eng 3' });
+		const formular = $state({
+			...leeresBuchFormular(),
+			title: 'Green Line 3',
+			isbn: '',
+			signatur: 'Eng 3'
+		});
 		const onSave = vi.fn();
 
 		await verlasseIsbnUndSpeichere(formular, onSave);
@@ -152,6 +157,82 @@ describe('BuchFormular: Speichern während der ISBN-Abfrage', () => {
 
 		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
 		expect(hinaus).toEqual({ isbn: ZWEITE, title: 'Zweites Buch', author: '' });
+	});
+});
+
+// Pflicht ist der Titel, die ISBN nicht. Fehlt der Titel, speichert der Klick nicht und führt
+// ins Feld; der Fehler steht dort erst nach dem Klick und geht mit dem ersten Zeichen.
+describe('BuchFormular: Speichern ohne Titel und ohne ISBN', () => {
+	const FEHLER = 'Bitte den Titel eintragen. Gespeichert wird erst mit ihm.';
+	beforeEach(() => {
+		Element.prototype.scrollIntoView = vi.fn();
+	});
+
+	/** @param {any} formular @param {() => void} onSave */
+	const maske = (formular, onSave) =>
+		render(BuchFormular, {
+			formular,
+			onClose: () => {},
+			onSave,
+			onCoverUpload: () => {},
+			onCoverNeuHolen: () => {},
+			onAssignClass: () => {}
+		});
+
+	it('ohne Titel: der Klick speichert nicht, führt ins Feld und nennt dort den Grund', async () => {
+		server({ vorhanden: null });
+		const formular = $state({ ...leeresBuchFormular(), isbn: '', signatur: 'Spi 1' });
+		const onSave = vi.fn();
+		const screen = maske(formular, onSave);
+		const titel = screen.getByLabelText('Titel *');
+
+		expect(screen.queryByText(FEHLER), 'vor dem Klick steht kein Fehler am Feld').toBeNull();
+		expect(titel.getAttribute('aria-invalid')).toBeNull();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+		await waitFor(() => expect(screen.getByText(FEHLER)).toBeTruthy());
+		expect(onSave).not.toHaveBeenCalled();
+		expect(document.activeElement?.id).toBe('buch-titel');
+		expect(titel.getAttribute('aria-invalid')).toBe('true');
+
+		await fireEvent.input(titel, { target: { value: 'Die Siedler von Catan' } });
+		await waitFor(() => expect(screen.queryByText(FEHLER)).toBeNull());
+	});
+
+	it('ein Titel ohne ISBN geht hinaus', async () => {
+		server({ vorhanden: null });
+		const formular = $state({
+			...leeresBuchFormular(),
+			title: 'Die Siedler von Catan',
+			isbn: '',
+			signatur: 'Spi 1'
+		});
+		const onSave = vi.fn();
+		const screen = maske(formular, onSave);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+
+		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+		expect(
+			vi.mocked(apiFetch).mock.calls.some(([url]) => String(url).startsWith('/api/lookup/'))
+		).toBe(false);
+	});
+
+	it('ein vorhandener Titel ohne ISBN geht hinaus', async () => {
+		server({ vorhanden: null });
+		const formular = $state({
+			...leeresBuchFormular(),
+			id: 'titel-9',
+			title: 'Bild der Wissenschaft',
+			isbn: '',
+			schlagworte: []
+		});
+		const onSave = vi.fn();
+		const screen = maske(formular, onSave);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+
+		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
 	});
 });
 
