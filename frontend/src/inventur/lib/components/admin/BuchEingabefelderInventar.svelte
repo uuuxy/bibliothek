@@ -1,3 +1,5 @@
+<!-- @component Bestand und Zähldatum eines Titels. Sie stehen im Abschnitt „Exemplare"
+     (BuchExemplareListe): Die Zahl im Feld ist der Bestand, den die Liste darunter zeigt. -->
 <script>
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import { bestandHinweis } from './buch_form_optionen.js';
@@ -18,16 +20,3 @@
 	</Feld>
 	<Feld id="buch-zaehldatum" label="Zähldatum" type="date" bind:value={formular.lastCounted} />
 </div>
-
-{#if formular.erweiterteEigenschaften}
-	<!-- Signatur lebt jetzt als Pflichtfeld direkt unter Titel/Autor
-         (BuchEingabefelder) und schreibt die echte DB-Spalte. -->
-	<div class="grid grid-cols-2 gap-4">
-		<Feld
-			id="buch-standort"
-			label="Standort / Regal"
-			bind:value={formular.erweiterteEigenschaften.standort}
-			placeholder="z. B. Krimi-Ecke oder Regal 3B"
-		/>
-	</div>
-{/if}

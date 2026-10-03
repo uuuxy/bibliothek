@@ -1,17 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { bestandHinweis, leeresBuchFormular, mehrjahresbandHinweis } from './buch_form_optionen.js';
 
-// Mehrjahresband (docs/OFFEN.md 9.6, 22.09.2026): ein Schalter am Werk, die Zahl kommt aus
-// der Spanne „bis". Ein neues Buch beginnt mit „aus"; fehlte der Wert in der Vorlage,
+// Mehrjahresband (docs/OFFEN.md 9.6): ein Kästchen am Werk, die Zahl kommt aus der Spanne
+// „bis". Ein neues Buch beginnt ohne Haken; fehlte der Wert in der Vorlage,
 // schickte der Anlegen-Weg das Feld nie mit (siehe den Kommentar an leeresBuchFormular).
 // Der Hinweis rechnet dieselbe Regel wie der Server (inventur/mehrjahresband.go).
 describe('buch_form_optionen: Mehrjahresband', () => {
-	it('die Vorlage eines neuen Buchs beginnt mit „aus"', () => {
+	it('die Vorlage eines neuen Buchs beginnt ohne Haken', () => {
 		expect(leeresBuchFormular().mehrjahresband).toBe(false);
 	});
 
-	it('aus: erklärt beide Zustände, ohne zu rechnen', () => {
-		expect(mehrjahresbandHinweis(false, 7, 9)).toMatch(/^Aus: /);
+	it('ohne Haken: erklärt beide Zustände in den Worten des Kästchens, ohne zu rechnen', () => {
+		const hinweis = mehrjahresbandHinweis(false, 7, 9);
+		expect(hinweis).toMatch(/^Ohne Haken: /);
+		expect(hinweis).toContain('Mit Haken: ');
+		expect(hinweis).not.toMatch(/\b(Aus|An): /);
 	});
 
 	it('an: nennt das Ende und die Zahl der Schuljahre aus der Spanne', () => {

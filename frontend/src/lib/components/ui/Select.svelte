@@ -33,6 +33,7 @@
 	 *   placeholder?: string,
 	 *   class?: string,
 	 *   'aria-label'?: string,
+	 *   'aria-describedby'?: string,
 	 *   onchange?: (wert: any) => void
 	 * }}
 	 */

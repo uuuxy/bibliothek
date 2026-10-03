@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 
-vi.mock('../../../../lib/apiFetch.js', () => ({ apiFetch: vi.fn(), apiPut: vi.fn() }));
+// „Andere Auflagen" steht in derselben Gruppe und bringt seine Importe mit.
+vi.mock('../../../../lib/apiFetch.js', () => ({
+	apiFetch: vi.fn(),
+	apiPut: vi.fn(),
+	apiClient: { post: vi.fn() },
+	extractApiError: vi.fn(async (/** @type {any} */ res) => `Fehler ${res.status}`)
+}));
 vi.mock('$lib/store.svelte.js', () => ({ showToast: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';

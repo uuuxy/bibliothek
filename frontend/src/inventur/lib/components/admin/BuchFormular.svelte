@@ -3,7 +3,7 @@
 	import BuchCoverUpload from './BuchCoverUpload.svelte';
 	import BuchEingabefelder from './BuchEingabefelder.svelte';
 	import BuchExemplareListe from './BuchExemplareListe.svelte';
-	import BuchAuflagen from './BuchAuflagen.svelte';
+	import { signaturFehlt } from './buch_form_optionen.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
 	import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
@@ -40,12 +40,8 @@
 		onSave();
 	}
 
-	// Neuanlage eines Bibliotheksbuchs ohne Signatur ist gesperrt — die Signatur
-	// muss aufs Rücken-Etikett. Lernmittel tragen keins (Migration 093). Altbestand
-	// (formular.id) bleibt speicherbar, damit leere Littera-Importe pflegbar sind.
-	const speichernGesperrt = $derived(
-		!formular.id && !formular.istLernmittel && !(formular.signatur ?? '').trim()
-	);
+	// Ohne die Pflicht-Signatur ist „Speichern" gesperrt; den Grund nennt das Feld.
+	const speichernGesperrt = $derived(signaturFehlt(formular));
 </script>
 
 <div class="flex flex-col w-full my-4" transition:fade={{ duration: 200 }}>
@@ -74,18 +70,16 @@
 		</Button>
 	</div>
 
-	<!-- Zwei Spalten wie eine Play-Store-Detailseite: Felder und Listen links, Cover und die
+	<!-- Zwei Spalten wie eine Play-Store-Detailseite: Felder und Exemplare links, Cover und die
 	     Aktionen zum Titel rechts und beim Scrollen stehend. Die Spalte steht im Quelltext vor
-	     den Listen: In einem schmalen Fenster folgt sie so auf die Felder und nicht erst auf
-	     das letzte Exemplar. -->
+	     den Exemplaren: In einem schmalen Fenster folgt sie so auf die Felder und nicht erst
+	     auf das letzte Exemplar. -->
 	<div class="flex-1 p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-x-10">
 		<div class="space-y-8 lg:col-start-1">
 			<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} {abfrage} />
 		</div>
 		<aside
-			class="mx-auto mt-8 w-full max-w-64 lg:col-start-2 lg:row-start-1 lg:mt-0 lg:sticky lg:top-20 lg:self-start {formular.id
-				? 'lg:row-span-2'
-				: ''}"
+			class="mx-auto mt-8 w-full max-w-64 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0 lg:sticky lg:top-20 lg:self-start"
 		>
 			<BuchCoverUpload bind:formular {onCoverUpload} {onCoverNeuHolen} />
 			{#if formular.id}
@@ -123,11 +117,9 @@
 				</div>
 			{/if}
 		</aside>
-		{#if formular.id}
-			<div class="space-y-8 lg:col-start-1">
-				<BuchAuflagen {formular} />
-				<BuchExemplareListe bind:formular />
-			</div>
-		{/if}
+		<!-- Auch am neuen Titel: Unter „Exemplare" steht die Zahl, mit der er angelegt wird. -->
+		<div class="lg:col-start-1">
+			<BuchExemplareListe bind:formular />
+		</div>
 	</div>
 </div>

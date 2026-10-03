@@ -87,6 +87,42 @@ describe('BuchExemplareListe', () => {
 		expect(formular.stock, 'die Zahl im Feld kommt vom Server').toBe(1);
 	});
 
+	// Die Zahl im Feld und die Liste darunter sind derselbe Bestand: Das Feld legt beim
+	// Speichern Exemplare an oder sondert aus. Beide stehen deshalb unter einer Überschrift.
+	it('führt Bestand und Zähldatum über der Liste', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(antwort([exemplar('1'), exemplar('2')]));
+		const screen = render(BuchExemplareListe, {
+			formular: { id: 't-1', stock: 2, lastCounted: '2026-09-02' }
+		});
+		const zeile = await screen.findByText('B-1');
+		const bestand = /** @type {HTMLInputElement} */ (screen.getByLabelText('Aktueller Bestand'));
+		expect(bestand.id).toBe('buch-bestand');
+		expect(bestand.value).toBe('2');
+		expect(/** @type {HTMLInputElement} */ (screen.getByLabelText('Zähldatum')).value).toBe(
+			'2026-09-02'
+		);
+		const ueberschrift = screen.getByRole('heading', { name: 'Exemplare (2)' });
+		const FOLGT = Node.DOCUMENT_POSITION_FOLLOWING;
+		expect(
+			ueberschrift.compareDocumentPosition(bestand) & FOLGT,
+			'Feld nach der Überschrift'
+		).toBeTruthy();
+		expect(bestand.compareDocumentPosition(zeile) & FOLGT, 'Liste nach dem Feld').toBeTruthy();
+	});
+
+	// Ein neuer Titel hat noch keine Liste; die Zahl der Exemplare wird trotzdem hier gesetzt.
+	it('ein neuer Titel: die Felder stehen unter „Exemplare“, gefragt und gelistet wird nichts', () => {
+		const screen = render(BuchExemplareListe, { formular: { id: null, stock: 1 } });
+		expect(screen.getByRole('heading', { name: 'Exemplare' })).toBeTruthy();
+		expect(/** @type {HTMLInputElement} */ (screen.getByLabelText('Aktueller Bestand')).value).toBe(
+			'1'
+		);
+		expect(screen.getByLabelText('Zähldatum')).toBeTruthy();
+		expect(apiFetch).not.toHaveBeenCalled();
+		expect(screen.queryByText(/Lade Exemplare/)).toBeNull();
+		expect(screen.queryByText('Kein Exemplar im Bestand.')).toBeNull();
+	});
+
 	it('ohne Exemplar im Bestand sagt die Liste das', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(
 			antwort([exemplar('1', { im_bestand: false, ist_ausgesondert: true })])

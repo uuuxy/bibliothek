@@ -1,10 +1,6 @@
-<!-- @component Kategorisierung eines Titels: Lernmittel-Schalter, Fach, Klasse, Jahrgangsspanne.
-
-     Der Schalter ersetzt seit dem 02.09.2026 (Migration 093) die Auswahl „Schulzweig"
-     plus das Textpräfix „LMF" in der Signatur. Ob ein Buch ein Lernmittel ist —
-     Schuljahresfrist, kein Ausleihlimit, unsichtbar im öffentlichen Katalog — war eine
-     Konvention über Freitext, die zweimal in Produktion falsch lief. Jetzt ist es eine
-     Entscheidung, die man sieht. -->
+<!-- @component Die Gruppe „An der Schule" der Titelmaske: was die Schule über das Buch
+     entscheidet. Die Wahl Bibliothek oder Lernmittel steht oben, weil die Pflicht zur
+     Signatur, der Schulzweig, das Mehrjahresband und die anderen Auflagen von ihr abhängen. -->
 <script>
 	import {
 		klassenStufen,
@@ -12,10 +8,17 @@
 	} from '$lib/components/admin/buch_form_optionen.js';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
-	import Switch from '../../../../lib/components/ui/Switch.svelte';
+	import Segmente from '../../../../lib/components/ui/Segmente.svelte';
+	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
+	import SignaturFeld from './SignaturFeld.svelte';
+	import BuchAuflagen from './BuchAuflagen.svelte';
 
 	let { formular = $bindable(), systematikListe = [] } = $props();
 
+	const ARTEN = [
+		{ wert: 'bibliothek', text: 'Bibliothek' },
+		{ wert: 'lernmittel', text: 'Lernmittel' }
+	];
 	const faecher = $derived([
 		{ value: '', label: 'Kein Fach' },
 		...systematikListe.map((/** @type {any} */ s) => ({
@@ -24,10 +27,8 @@
 		}))
 	]);
 	const klassen = klassenStufen.map((/** @type {number} */ k) => ({ value: k, label: String(k) }));
-	// Schulzweig: am 02.09.2026 mit Migration 093 aus der Maske genommen, am 03.09.2026 für
-	// SCHULBÜCHER zurückgeholt — der Portal-Reiter filtert danach, und niemand konnte den
-	// Zweig pflegen. Für Bibliotheksbücher bleibt er draußen: Dort war er nie eine Aussage
-	// über das Buch, sondern eine Restspur der alten „LMF/Bibliothek"-Unterscheidung.
+	// Der Schulzweig steht nur am Lernmittel: Der Portal-Reiter der Schulbücher filtert nach
+	// ihm, über ein Bibliotheksbuch sagt er nichts.
 	const ZWEIGE = [
 		{ value: '', label: 'Alle Zweige' },
 		...['Gymnasium', 'Realschule', 'Hauptschule', 'Förderstufe', 'Oberstufe'].map((z) => ({
@@ -35,95 +36,122 @@
 			label: z
 		}))
 	];
+	const BESCHRIFTUNG = 'text-sm font-medium text-on-surface-variant';
+
+	/** @param {string} art */
+	function waehleArt(art) {
+		formular.istLernmittel = art === 'lernmittel';
+		// Der Server weist ein Mehrjahresband am Bibliotheksbuch ab.
+		if (!formular.istLernmittel) formular.mehrjahresband = false;
+	}
 </script>
 
-<div
-	class="flex items-center justify-between gap-4 rounded-xl border border-outline-variant px-4 py-3"
->
-	<div class="min-w-0">
-		<label for="buch-lernmittel" class="block text-sm font-medium text-on-surface">Lernmittel</label
-		>
-		<p class="text-xs text-on-surface-variant">
-			Schulbuch, das die Schule fürs Schuljahr leiht: Frist bis zum Stichtag, zählt nicht ins
-			Ausleihlimit, erscheint nicht im öffentlichen Katalog.
-		</p>
-	</div>
-	<!-- Kein Lernmittel, kein Mehrjahresband: Der Server weist den Schalter am
-	     Bibliotheksbuch ab, deshalb fällt er hier mit dem Lernmittel-Schalter. -->
-	<Switch
-		id="buch-lernmittel"
-		bind:checked={formular.istLernmittel}
-		onchange={(an) => {
-			if (!an) formular.mehrjahresband = false;
-		}}
-	/>
-</div>
-
-<div class="grid grid-cols-2 gap-4">
-	<div>
-		<label for="buch-fach" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
-			>Fach</label
-		>
-		<Select
-			id="buch-fach"
-			bind:value={formular.subject}
-			options={faecher}
-			placeholder="Fach auswählen"
-		/>
-	</div>
-	<div>
-		<label for="buch-klasse" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
-			>Klasse</label
-		>
-		<Select id="buch-klasse" bind:value={formular.gradeLevel} options={klassen} />
-	</div>
-</div>
-
-{#if formular.istLernmittel}
-	<div>
-		<label for="buch-schulzweig" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
-			>Schulzweig</label
-		>
-		<Select id="buch-schulzweig" bind:value={formular.track} options={ZWEIGE} />
-		<p class="mt-1 text-xs text-on-surface-variant">
-			Nur setzen, wenn das Buch wirklich einem Zweig gehört — leer heißt „gilt für alle".
-		</p>
-	</div>
-{/if}
-
-<div class="grid grid-cols-2 gap-4">
-	<!-- Bei einem Lernmittel ist die Spanne der Unterricht, kein Lesealter — und bei einem
-	     Mehrjahresband die Laufzeit beim Kind (die Zahl kommt aus „bis", OFFEN.md 9.6). -->
-	<Feld
-		id="buch-jahrgang-von"
-		label={formular.istLernmittel ? 'Im Unterricht von Jahrgang' : 'Geeignet für Jahrgang von'}
-		type="number"
-		min="1"
-		max="13"
-		bind:value={formular.jahrgangVon}
-	/>
-	<Feld
-		id="buch-jahrgang-bis"
-		label="bis Jahrgang"
-		type="number"
-		min="1"
-		max="13"
-		bind:value={formular.jahrgangBis}
-	/>
-</div>
-
-{#if formular.istLernmittel}
-	<div
-		class="flex items-center justify-between gap-4 rounded-xl border border-outline-variant px-4 py-3"
-	>
-		<div class="min-w-0">
-			<label for="buch-mehrjahresband" class="block text-sm font-medium text-on-surface"
-				>Mehrjahresband</label
-			>
-			<p class="text-xs text-on-surface-variant">
-				{mehrjahresbandHinweis(formular.mehrjahresband, formular.jahrgangVon, formular.jahrgangBis)}
+<div class="mt-8 border-t border-outline-variant pt-6">
+	<h3 class="text-lg font-semibold text-on-surface">An der Schule</h3>
+	<div class="mt-4 space-y-5">
+		<!-- Zwei Möglichkeiten, die einander ausschließen, sind eine Auswahl und kein Schalter:
+		     Ein Schalter wirkt sofort, diese Angabe gilt erst mit „Speichern". -->
+		<div>
+			<Segmente
+				etikett="Art des Buchs"
+				optionen={ARTEN}
+				wert={formular.istLernmittel ? 'lernmittel' : 'bibliothek'}
+				onwahl={waehleArt}
+			/>
+			<p class="mt-1.5 text-xs text-on-surface-variant">
+				Lernmittel: Schulbuch, das die Schule fürs Schuljahr leiht. Frist bis zum Stichtag, zählt
+				nicht ins Ausleihlimit, erscheint nicht im öffentlichen Katalog.
 			</p>
 		</div>
-		<Switch id="buch-mehrjahresband" bind:checked={formular.mehrjahresband} />
+
+		<div class="grid grid-cols-2 gap-4">
+			<SignaturFeld bind:formular />
+			{#if formular.erweiterteEigenschaften}
+				<Feld
+					id="buch-standort"
+					label="Standort / Regal"
+					bind:value={formular.erweiterteEigenschaften.standort}
+					placeholder="z. B. Krimi-Ecke oder Regal 3B"
+				/>
+			{/if}
+		</div>
+
+		<!-- Auswahlfelder wie ui/Feld mit Beschriftung: drei Zeilen im Subgrid, damit die
+		     Nachbarn einer Zeile fluchten. -->
+		<div class="grid grid-cols-2 gap-4">
+			<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
+				<label for="buch-fach" class={BESCHRIFTUNG}>Fach</label>
+				<Select
+					id="buch-fach"
+					bind:value={formular.subject}
+					options={faecher}
+					placeholder="Fach auswählen"
+				/>
+			</div>
+			{#if formular.istLernmittel}
+				<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
+					<label for="buch-schulzweig" class={BESCHRIFTUNG}>Schulzweig</label>
+					<Select
+						id="buch-schulzweig"
+						bind:value={formular.track}
+						options={ZWEIGE}
+						aria-describedby="buch-schulzweig-hinweis"
+					/>
+					<span id="buch-schulzweig-hinweis" class="text-xs text-on-surface-variant">
+						Nur setzen, wenn das Buch wirklich einem Zweig gehört — leer heißt „gilt für alle".
+					</span>
+				</div>
+			{/if}
+		</div>
+
+		<!-- Bei einem Lernmittel ist die Spanne der Unterricht, kein Lesealter, und bei einem
+		     Mehrjahresband die Laufzeit beim Kind: Die Zahl kommt aus „bis". -->
+		<div class="grid grid-cols-3 gap-4">
+			<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
+				<label for="buch-klasse" class={BESCHRIFTUNG}>Klasse</label>
+				<Select id="buch-klasse" bind:value={formular.gradeLevel} options={klassen} />
+			</div>
+			<Feld
+				id="buch-jahrgang-von"
+				label={formular.istLernmittel ? 'Im Unterricht von Jahrgang' : 'Geeignet für Jahrgang von'}
+				type="number"
+				min="1"
+				max="13"
+				bind:value={formular.jahrgangVon}
+			/>
+			<Feld
+				id="buch-jahrgang-bis"
+				label="bis Jahrgang"
+				type="number"
+				min="1"
+				max="13"
+				bind:value={formular.jahrgangBis}
+			/>
+		</div>
+
+		{#if formular.istLernmittel}
+			<!-- Als Spalte gesetzt: In einer Textzeile höbe die Trefferfläche des Kästchens
+			     (40 px) die Zeile an, und der Hinweis rückte ab. -->
+			<div class="flex flex-col items-start">
+				<Kaestchen
+					id="buch-mehrjahresband"
+					bind:checked={formular.mehrjahresband}
+					label="Mehrjahresband"
+					aria-describedby="buch-mehrjahresband-hinweis"
+				/>
+				<p id="buch-mehrjahresband-hinweis" class="mt-1.5 pl-7.5 text-xs text-on-surface-variant">
+					{mehrjahresbandHinweis(
+						formular.mehrjahresband,
+						formular.jahrgangVon,
+						formular.jahrgangBis
+					)}
+				</p>
+			</div>
+		{/if}
+
+		<!-- Zuordnen und Lösen brauchen einen gespeicherten Titel. -->
+		{#if formular.id}
+			<BuchAuflagen {formular} />
+		{/if}
 	</div>
-{/if}
+</div>

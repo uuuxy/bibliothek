@@ -86,6 +86,14 @@ entfallen.
      dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
      Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
 
+5. **Die Maske „Buch bearbeiten" in der neuen Reihenfolge ansehen** (gebaut am 03.10.2026):
+   zuerst die ISBN und die Angaben zum Buch, darunter die Gruppe „An der Schule" mit der Wahl
+   Bibliothek oder Lernmittel, „Andere Auflagen" als letzte Angabe dieser Gruppe, Bestand und
+   Zähldatum unter „Exemplare". Dabei zu entscheiden:
+   - „Speichern" am neuen Bibliotheksbuch: Die Pflicht-Signatur steht jetzt unter dem ersten
+     Bildschirm, der Knopf ist bis dahin gesperrt (5.5).
+   - Die Breite der Felder an breiten Bildschirmen (6.1).
+
 **Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
 hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat Node 26 ab dem
 28. Oktober 2026 nach der Regel „immer die aktive LTS"
@@ -383,8 +391,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   „klasse" des Listenimports und der Klassenvorschlag der ISBN-Suche, der auch aus
   „Band 2", „Level 9" und jeder Zahl von 5 bis 13 im Titel eine Klasse macht.
   **Entschieden am 24.09.2026, im selben Umbau:** „Jahrgang unbekannt" wird eine eigene Vorgabe
-  (NULL) statt 5 bis 10 — heute ist beides nicht zu unterscheiden, und wer den
-  Mehrjahresband-Schalter (Migration 134) auf einem Titel mit der Vorgabe umlegt, bekommt die 10.
+  (NULL) statt 5 bis 10 — heute ist beides nicht zu unterscheiden, und wer das
+  Mehrjahresband (Migration 134) an einem Titel mit der Vorgabe anhakt, bekommt die 10.
   Die drei Leser der Spanne (Mahnwesen „Jahrgang", Inventur, Portal-Filter) lernen „unbekannt"
   mit. Vorher am Testserver messen.
   Ein vierter Leser ist die Suche im Medienkatalog (`trifftJahrgang` in
@@ -434,10 +442,14 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   ist (`DeleteCopy`): Das Exemplar steht danach im Abgangsbuch, ohne je im Zugangsbuch
   gestanden zu haben. Kategorie B.
 - Maske „Neues Buch": „Speichern" ist gesperrt, solange einem Bibliotheksbuch die Signatur
-  fehlt; den Grund nennt das Feld Signatur („Speichern ist bis dahin gesperrt"). M3, Dialogs,
-  Guidelines, zur bildschirmfüllenden Maske: „Don't disable the confirmation button" und
-  „Only trigger an additional basic dialog if the action fails". Zu entscheiden wäre, ob der
-  Knopf bedienbar bleibt und ein Klick zum Feld führt (Lesung 02.10.2026, Kategorie C).
+  fehlt; den Grund nennt das Feld Signatur („Speichern ist bis dahin gesperrt"). Seit dem
+  03.10.2026 steht das Feld in der Gruppe „An der Schule": In einem Fenster von 1366 × 768 px
+  liegt es unter dem ersten Bildschirm (gemessen am Entwicklungsserver), und der gesperrte
+  Knopf nennt den Grund nur beim Zeigen. M3, Dialogs, Guidelines, zur bildschirmfüllenden
+  Maske: „Don't disable the confirmation button" und „Only trigger an additional basic dialog
+  if the action fails". Vorschlag: Der Knopf bleibt bedienbar, und ein Klick ohne Signatur
+  führt zum Feld. Mit der neuen Reihenfolge Kategorie B; die Entscheidung steht unter „Was
+  bei dir liegt".
 - Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
   140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der
   Auswahlfelder liegen darunter (Sichtprüfung 24.09.2026). Mit 5.21 für diesen Bildschirm.
@@ -819,6 +831,13 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
 
 ### 6.1 Beobachtungen
 
+- Maske „Buch bearbeiten": Titel, Untertitel, Autor, Schlagworte und Beschreibung laufen
+  über die ganze Feldspalte, an einem Fenster von 1710 px Breite 1223 px (gemessen am
+  03.10.2026 an einer Aufnahme vom Testserver); am Fenster von 1366 px sind es 702 px. M3,
+  Text fields, Guidelines: „For medium and expanded breakpoints, text fields should be bound
+  by flexible margins or other containers" und „Text fields shouldn’t span the full width of a
+  large screen". Dagegen steht die Hausregel, die Fläche zu nutzen. Zu entscheiden wäre, ob
+  die Feldspalte eine größte Breite bekommt; die Listen darunter blieben breit.
 - Die Meldungen der Anwendung (`ToastContainer.svelte`) erscheinen oben rechts, bis 384 px
   breit, 5 s lang, und halten ihre Standzeit an, solange der Mauszeiger auf ihnen ruht. Was
   dort steht, ist in dieser Zeit verdeckt (gemessen am 02.10.2026 bei 1280 × 720: Meldung bei
@@ -927,7 +946,7 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   `e2e_altlasten.sql`, `entferne_demo_daten.sql` und `seed_demo.sql` löschen Titel per DELETE;
   das erreicht `werke` nicht, der Verweis zeigt vom Titel zum Werk. Zurück bleiben Werke ohne
   Titel, die keine Ansicht zeigt, oder mit einem einzigen Titel, der überall wie ein Titel ohne
-  weitere Auflage erscheint (Titelmaske: „Keine andere Auflage zugeordnet."). Kein Schaden; die
+  weitere Auflage erscheint (Titelmaske: unter „Andere Auflagen" steht keine Liste). Kein Schaden; die
   Ratsche `auflagen_schreibpfad_ratsche_test.go` liest keine Skripte.
 - Der Katalogisat-Import legt Einträge über den Titeltext zusammen, und ein zweiter Lauf schreibt
   die Angaben des zuletzt passenden Eintrags darüber (gemessen am 30.09.2026 am Export vom Juni

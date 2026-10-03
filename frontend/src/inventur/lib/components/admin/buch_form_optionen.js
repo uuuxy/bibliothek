@@ -1,10 +1,10 @@
 export const klassenStufen = [0, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
 /**
- * Der Hinweis unter dem Schalter „Mehrjahresband" (docs/OFFEN.md 9.6, 22.09.2026): Die
- * Zahl, bis zu der das Buch beim Kind bleibt, ist „bis" aus der Spanne — eine zweite gibt
- * es nicht. Dieselbe Regel wie am Server (inventur/mehrjahresband.go): nur mit einer Spanne
- * über mehr als einen Jahrgang.
+ * Der Hinweis unter dem Kästchen „Mehrjahresband" (docs/OFFEN.md 9.6): Die Zahl, bis zu der
+ * das Buch beim Kind bleibt, ist „bis" aus der Spanne — eine zweite gibt es nicht. Dieselbe
+ * Regel wie am Server (inventur/mehrjahresband.go): nur mit einer Spanne über mehr als einen
+ * Jahrgang.
  * @param {boolean} an
  * @param {number|string} von
  * @param {number|string} bis
@@ -15,12 +15,32 @@ export function mehrjahresbandHinweis(an, von, bis) {
 	const b = Number(bis);
 	const spanneOk = Number.isInteger(v) && Number.isInteger(b) && v >= 1 && b <= 13 && b > v;
 	if (!an) {
-		return 'Aus: Das Buch kommt wie jedes Schulbuch am Rückgabetermin der Klasse zurück. An: Es bleibt über die Spanne beim Kind.';
+		return 'Ohne Haken: Das Buch kommt wie jedes Schulbuch am Rückgabetermin der Klasse zurück. Mit Haken: Es bleibt über die Spanne beim Kind.';
 	}
 	if (!spanneOk) {
 		return 'Braucht eine Spanne über mehr als einen Jahrgang: „bis" muss über „von" liegen, sonst lässt sich der Titel nicht speichern.';
 	}
 	return `Bleibt beim Kind bis zum Ende von Jahrgang ${b}. Ein Kind der ${v} gibt es nach ${b - v + 1} Schuljahren zurück; die Frist ist der Stichtag dieses Schuljahres.`;
+}
+
+/**
+ * Die Signatur steht auf dem Rückenetikett; bei der Neuanlage eines Bibliotheksbuchs ist sie
+ * Pflicht. Lernmittel tragen kein Etikett, und ein vorhandener Titel bleibt speicherbar, damit
+ * sich leer übernommene Titel pflegen lassen. Das Feld (SignaturFeld) und der Knopf
+ * „Speichern" (BuchFormular) lesen dieselbe Regel.
+ * @param {{ id?: string|null, istLernmittel?: boolean }} formular
+ * @returns {boolean}
+ */
+export function signaturPflicht(formular) {
+	return !formular.id && !formular.istLernmittel;
+}
+
+/**
+ * @param {{ id?: string|null, istLernmittel?: boolean, signatur?: string|null }} formular
+ * @returns {boolean} die Pflicht-Signatur ist leer
+ */
+export function signaturFehlt(formular) {
+	return signaturPflicht(formular) && !(formular.signatur ?? '').trim();
 }
 
 /**

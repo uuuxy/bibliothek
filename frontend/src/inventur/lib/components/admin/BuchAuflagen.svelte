@@ -1,15 +1,12 @@
-<!-- @component BuchAuflagen — der Abschnitt „Auflagen" der Titelmaske (docs/OFFEN.md 4.18,
-     Stufe 2). Eine neue Auflage ist ein eigener Titel mit eigener ISBN; hier ordnet man die
-     Titel zu, die dasselbe Buch sind, und löst sie wieder. Die Regeln stehen im Server
-     (repository/auflagen.go): nur Lernmittel, zwei Gruppen werden eine, ein Buch mit einer
-     Auflage ist keine Gruppe.
+<!-- @component BuchAuflagen — „Andere Auflagen" in der Gruppe „An der Schule" der Titelmaske
+     (docs/OFFEN.md 4.18). Eine neue Auflage ist ein eigener Titel mit eigener ISBN; hier
+     ordnet man die Titel zu, die dasselbe Schulbuch sind, und löst sie wieder. Die Regeln
+     stehen im Server (repository/auflagen.go).
 
-     Sichtbar bei jedem Lernmittel — und bei jedem Titel, der schon zu einem Buch gehört, auch
-     wenn er inzwischen kein Lernmittel mehr ist: Sonst ließe er sich nicht mehr lösen.
-
-     Aufbau wie der Abschnitt „Exemplare" darunter (Trennlinie, Überschrift, umrandete Zeilen),
-     damit die beiden Abschnitte derselben Maske gleich lesen. Lösen fragt nicht nach: Es lässt
-     sich mit „Andere Auflage zuordnen" jederzeit zurücknehmen und löscht nichts. -->
+     Sichtbar bei jedem Lernmittel und bei jedem Titel, der schon zu einem Buch gehört: Sonst
+     ließe er sich nicht mehr lösen. Aufbau wie ein Feld (Beschriftung, Liste und Knopf,
+     Hinweis), weil das Zuordnen selten ist und ein eigener Abschnitt dafür zu viel Platz nähme.
+     Lösen fragt nicht nach: Es löscht nichts und lässt sich über den Knopf zurücknehmen. -->
 <script>
 	import { onMount } from 'svelte';
 	import { Plus, Unlink } from '@lucide/svelte';
@@ -84,55 +81,55 @@
 </script>
 
 {#if sichtbar}
-	<div class="mt-8 border-t border-outline-variant pt-6">
-		<h3 class="text-lg font-semibold text-on-surface">Auflagen</h3>
-		<p class="mb-4 mt-1 text-sm text-on-surface-variant">
+	<div role="group" aria-labelledby="buch-auflagen-titel">
+		<p id="buch-auflagen-titel" class="text-sm font-medium text-on-surface-variant">
+			Andere Auflagen
+		</p>
+		{#if !geladen}
+			<p class="mt-1.5 text-sm text-on-surface-variant">Lade Auflagen …</p>
+		{:else if fehler}
+			<p class="mt-1.5 text-sm text-error" role="alert">{fehler}</p>
+		{:else}
+			{#if auflagen.length > 1}
+				<ul class="mt-1.5 space-y-2" aria-label="Auflagen dieses Buchs">
+					{#each auflagen as a (a.id)}
+						<li class="flex items-center gap-3 rounded-lg border border-outline-variant p-3">
+							<AuflagenZeile
+								auflage={a.auflage}
+								erscheinungsjahr={a.erscheinungsjahr}
+								titel={a.titel}
+								isbn={a.isbn}
+								verlag={a.verlag}
+								gesamt={a.gesamt}
+								verfuegbar={a.verfuegbar}
+								imZulauf={a.im_zulauf}
+								diese={a.id === formular.id}
+							/>
+							<button
+								type="button"
+								class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
+								data-tip="Aus den Auflagen lösen"
+								aria-label={`${auflagenBeschriftung(a)} aus den Auflagen lösen`}
+								disabled={loest !== ''}
+								onclick={() => loesen(a)}
+							>
+								<Unlink class="h-4 w-4" aria-hidden="true" />
+							</button>
+						</li>
+					{/each}
+				</ul>
+				<p class="mt-2 text-sm text-on-surface-variant">Zusammen: {zusammen}</p>
+			{/if}
+			<div class="mt-1.5">
+				<Button variant="secondary" onclick={() => (dialogOffen = true)}>
+					<Plus class="h-4 w-4" aria-hidden="true" />
+					Andere Auflage zuordnen
+				</Button>
+			</div>
+		{/if}
+		<p class="mt-1.5 text-xs text-on-surface-variant">
 			Andere Auflagen desselben Buchs — jede behält ihre ISBN und ihre Exemplare.
 		</p>
-
-		{#if !geladen}
-			<p class="py-2 text-sm text-on-surface-variant">Lade Auflagen …</p>
-		{:else if fehler}
-			<p class="py-2 text-sm text-error" role="alert">{fehler}</p>
-		{:else if auflagen.length < 2}
-			<p class="py-2 text-sm text-on-surface-variant">Keine andere Auflage zugeordnet.</p>
-		{:else}
-			<ul class="space-y-2" aria-label="Auflagen dieses Buchs">
-				{#each auflagen as a (a.id)}
-					<li class="flex items-center gap-3 rounded-lg border border-outline-variant p-3">
-						<AuflagenZeile
-							auflage={a.auflage}
-							erscheinungsjahr={a.erscheinungsjahr}
-							titel={a.titel}
-							isbn={a.isbn}
-							verlag={a.verlag}
-							gesamt={a.gesamt}
-							verfuegbar={a.verfuegbar}
-							imZulauf={a.im_zulauf}
-							diese={a.id === formular.id}
-						/>
-						<button
-							type="button"
-							class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
-							data-tip="Aus den Auflagen lösen"
-							aria-label={`${auflagenBeschriftung(a)} aus den Auflagen lösen`}
-							disabled={loest !== ''}
-							onclick={() => loesen(a)}
-						>
-							<Unlink class="h-4 w-4" aria-hidden="true" />
-						</button>
-					</li>
-				{/each}
-			</ul>
-			<p class="mt-3 text-sm text-on-surface-variant">Zusammen: {zusammen}</p>
-		{/if}
-
-		{#if geladen && !fehler}
-			<Button variant="secondary" class="mt-4" onclick={() => (dialogOffen = true)}>
-				<Plus class="h-4 w-4" aria-hidden="true" />
-				Andere Auflage zuordnen
-			</Button>
-		{/if}
 	</div>
 
 	<AuflageZuordnenDialog

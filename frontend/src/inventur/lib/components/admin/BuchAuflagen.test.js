@@ -11,7 +11,8 @@ vi.mock('$lib/store.svelte.js', () => ({ showToast: vi.fn() }));
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import BuchAuflagen from './BuchAuflagen.svelte';
 
-// Der Abschnitt „Auflagen" der Titelmaske (docs/OFFEN.md 4.18, Stufe 2). GET
+// „Andere Auflagen" in der Gruppe „An der Schule" der Titelmaske (docs/OFFEN.md 4.18,
+// Stufe 2): Beschriftung, Liste, Knopf und Hinweis wie ein Feld, keine eigene Überschrift. GET
 // /api/buecher/titel/{id}/auflagen antwortet mit { id, auflagen } — die Auflagen des Buchs,
 // die neueste zuerst, ohne Gruppe nur der Titel selbst (api/auflagen_handler.go).
 
@@ -43,9 +44,11 @@ describe('BuchAuflagen', () => {
 		);
 		const screen = render(BuchAuflagen, { formular: { id: 't1', istLernmittel: true } });
 
-		expect(await screen.findByText('Keine andere Auflage zugeordnet.')).toBeTruthy();
-		expect(screen.getByRole('heading', { name: 'Auflagen' })).toBeTruthy();
-		expect(screen.getByRole('button', { name: 'Andere Auflage zuordnen' })).toBeTruthy();
+		expect(await screen.findByRole('button', { name: 'Andere Auflage zuordnen' })).toBeTruthy();
+		expect(screen.getByRole('group', { name: 'Andere Auflagen' })).toBeTruthy();
+		// Ohne andere Auflage steht keine Liste da; ein eigener Satz dazu entfällt.
+		expect(screen.queryByRole('list', { name: 'Auflagen dieses Buchs' })).toBeNull();
+		expect(screen.queryAllByRole('heading')).toHaveLength(0);
 		expect(apiFetch).toHaveBeenCalledWith('/api/buecher/titel/t1/auflagen');
 	});
 
@@ -53,7 +56,8 @@ describe('BuchAuflagen', () => {
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ (antwort([auflage('t1', '', 2019)])));
 		const screen = render(BuchAuflagen, { formular: { id: 't1', istLernmittel: false } });
 		await stillhalten();
-		expect(screen.queryByRole('heading', { name: 'Auflagen' })).toBeNull();
+		expect(screen.queryByRole('group', { name: 'Andere Auflagen' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Andere Auflage zuordnen' })).toBeNull();
 	});
 
 	it('zeigt die Auflagen mit Summe — und einen Titel, der kein Lernmittel mehr ist, damit er sich lösen lässt', async () => {
@@ -93,6 +97,7 @@ describe('BuchAuflagen', () => {
 			method: 'DELETE'
 		});
 		expect(apiFetch).toHaveBeenNthCalledWith(3, '/api/buecher/titel/t1/auflagen');
-		expect(await screen.findByText('Keine andere Auflage zugeordnet.')).toBeTruthy();
+		expect(screen.queryByRole('list', { name: 'Auflagen dieses Buchs' })).toBeNull();
+		expect(screen.getByRole('button', { name: 'Andere Auflage zuordnen' })).toBeTruthy();
 	});
 });

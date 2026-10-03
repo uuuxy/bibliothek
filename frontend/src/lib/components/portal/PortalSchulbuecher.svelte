@@ -12,7 +12,7 @@
 	 *
 	 * Gefiltert wird SERVERSEITIG (Jahrgang, Schulzweig, Suchtext): Sonst zeigten die
 	 * Zahlen am Fach und die PDF-Datei etwas anderes als die Liste darunter.
-	 * Grundlage ist allein der Lernmittel-Schalter; Daten über die Portal-Tür
+	 * Grundlage ist allein die Angabe „Lernmittel" am Titel; Daten über die Portal-Tür
 	 * /api/portal/lernmittel (Anmeldung genügt, kein view_books).
 	 */
 	import { onDestroy, onMount } from 'svelte';
@@ -153,7 +153,7 @@
 		<p class="py-4 text-sm text-on-surface-variant">
 			{suche.trim() || jahrgang || zweig
 				? 'Keine Schulbücher passen zu dieser Auswahl.'
-				: 'Noch keine Schulbücher markiert — der Lernmittel-Schalter am Titel entscheidet.'}
+				: 'Noch keine Schulbücher markiert — die Angabe „Lernmittel“ am Titel entscheidet.'}
 		</p>
 	{:else}
 		<div data-testid="schulbuecher-faecher">

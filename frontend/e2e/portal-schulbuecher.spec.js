@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
 // Lehrerportal → Reiter „Schulbücher" (03.09.2026): Die Fachsprecher wollen wissen,
-// wie viele Mathebücher die Schule hat. Grundlage ist allein der Lernmittel-Schalter am
+// wie viele Mathebücher die Schule hat. Grundlage ist allein die Angabe „Lernmittel" am
 // Titel; das Fach gruppiert. Türen /api/portal/lernmittel[/export] hinter der Anmeldung,
 // ohne view_books — deshalb als e2e mit der Rolle kollegium, nicht nur am Handler.
 const LEHRER_EMAIL = 'e2e-lehrer-schulbuecher@test.local';

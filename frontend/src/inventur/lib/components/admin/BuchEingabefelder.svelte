@@ -3,8 +3,6 @@
 	import { onMount } from 'svelte';
 	import IsbnFeld from './IsbnFeld.svelte';
 	import BuchEingabefelderKategorisierung from './BuchEingabefelderKategorisierung.svelte';
-	import BuchEingabefelderInventar from './BuchEingabefelderInventar.svelte';
-	import SignaturFeld from './SignaturFeld.svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import ChipFeld from '../../../../lib/components/ui/ChipFeld.svelte';
@@ -17,11 +15,9 @@
 	 *  abfrage: die ISBN-Abfrage der Maske (BuchFormular, erzeugeIsbnAbfrage). */
 	let { formular = $bindable(), wirdGescannt = $bindable(), dnbVorschlag, abfrage } = $props();
 
-	// Die medientyp-Spalte ist offen (Littera-Import bringt z. B. "Zeitschrift", "Spiel").
-	// Ohne diesen Zusatz zeigte das Dropdown für einen solchen Wert "Bitte wählen" — er
-	// sah aus wie nicht gesetzt, und wer ihn "korrigierte", überschrieb den echten Typ mit
-	// Buch/CD/DVD. Der aktuelle Wert wird deshalb immer als Option geführt, wenn er nicht
-	// ohnehin zur Basisliste gehört.
+	// Die Spalte medientyp ist offen (der Littera-Import bringt „Zeitschrift", „Spiel"). Der
+	// vorhandene Wert steht deshalb immer in der Liste: Sonst sähe er aus wie nicht gesetzt,
+	// und wer ihn „korrigiert", überschriebe den echten Typ.
 	const medientypOptionen = $derived(
 		(formular.medientyp && !MEDIENTYP_BASIS.includes(formular.medientyp)
 			? [...MEDIENTYP_BASIS, formular.medientyp]
@@ -48,13 +44,6 @@
 
 	const schlagworteGeladen = $derived(Array.isArray(formular.schlagworte));
 
-	/** Neuanlage eines Bibliotheksbuchs ohne Signatur → Speichern gesperrt (Material-
-	 *  Error-State am Feld). Lernmittel tragen kein Rückenetikett (Migration 093), für
-	 *  sie ist die Signatur frei. */
-	const signaturFehlt = $derived(
-		!formular.id && !formular.istLernmittel && !(formular.signatur ?? '').trim()
-	);
-
 	$effect(() => {
 		if (!formular.erweiterteEigenschaften) {
 			formular.erweiterteEigenschaften = { standort: '' };
@@ -62,36 +51,34 @@
 			formular.erweiterteEigenschaften.standort = '';
 		}
 
-		// Defaults for Jahrgang
 		if (formular.jahrgangVon === undefined) formular.jahrgangVon = 5;
 		if (formular.jahrgangBis === undefined) formular.jahrgangBis = 10;
 	});
 </script>
 
+<!-- Die Angaben zum Buch tragen keine Überschrift: Der Kopf der Maske benennt sie. Zuerst
+     steht die ISBN, weil die Aufnahme mit ihr beginnt und ihre Abfrage die Felder darunter füllt. -->
 <div class="space-y-5">
-	<div>
-		<label for="buch-medientyp" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
-			>Medientyp</label
-		>
-		<Select id="buch-medientyp" bind:value={formular.medientyp} options={medientypOptionen} />
+	<div class="grid grid-cols-2 gap-4">
+		<IsbnFeld bind:formular bind:wirdGescannt {abfrage} />
+		<!-- Wie ui/Feld mit Beschriftung: drei Zeilen im Subgrid, damit die Nachbarn fluchten. -->
+		<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
+			<label for="buch-medientyp" class="text-sm font-medium text-on-surface-variant"
+				>Medientyp</label
+			>
+			<Select id="buch-medientyp" bind:value={formular.medientyp} options={medientypOptionen} />
+		</div>
 	</div>
 
 	<Feld id="buch-titel" label="Titel" bind:value={formular.title} />
 
 	<Feld id="buch-untertitel" label="Untertitel" bind:value={formular.untertitel} />
 
-	<div class="grid grid-cols-2 gap-4">
-		<Feld
-			id="buch-autor"
-			label={formular.medientyp === 'DVD' ? 'Regisseur' : 'Autor'}
-			bind:value={formular.author}
-		/>
-
-		<!-- Extrahierte ISBN-Feld-Komponente -->
-		<IsbnFeld bind:formular bind:wirdGescannt {abfrage} />
-	</div>
-
-	<SignaturFeld bind:formular {signaturFehlt} />
+	<Feld
+		id="buch-autor"
+		label={formular.medientyp === 'DVD' ? 'Regisseur' : 'Autor'}
+		bind:value={formular.author}
+	/>
 
 	<div class="grid grid-cols-2 gap-4">
 		<Feld id="buch-verlag" label="Verlag" bind:value={formular.verlag} />
@@ -103,42 +90,31 @@
 		/>
 	</div>
 
-	<!-- Auflage: Bei Schulbüchern ist sie das einzige Merkmal, das zwei gleich heißende
-	     Titel unterscheidet — die neue Auflage hat eine eigene ISBN und deshalb eine
-	     eigene Zeile. Andere Seitenzahlen heißen andere Hausaufgaben. -->
-	<Feld
-		id="buch-auflage"
-		label="Auflage"
-		bind:value={formular.auflage}
-		hint="Wie auf dem Titelblatt, z. B. „4. Aufl. 2023“. Leer lassen, wenn es nur eine gibt."
-	/>
+	<!-- Auflage und Listenpreis beschreiben diese Ausgabe. Die Auflage unterscheidet zwei gleich
+	     heißende Schulbücher; der Listenpreis ist, was ein Ersatz heute kostet. Leer heißt dort
+	     „nicht erfasst": Dann rechnet der Schadensersatz mit dem Kaufpreis, eine 0 ergäbe 0,00 €. -->
+	<div class="grid grid-cols-2 gap-4">
+		<Feld
+			id="buch-auflage"
+			label="Auflage"
+			bind:value={formular.auflage}
+			hint="Wie auf dem Titelblatt, z. B. „4. Aufl. 2023“. Leer lassen, wenn es nur eine gibt."
+		/>
+		<Feld
+			id="buch-listenpreis"
+			label="Listenpreis"
+			type="number"
+			step="0.01"
+			min="0"
+			bind:value={formular.listenpreis}
+			hint="Was ein Ersatz heute kostet. Leer lassen, wenn unbekannt — dann rechnet der Schadensersatz mit dem Einkaufspreis."
+		>
+			{#snippet nachlaufend()}€{/snippet}
+		</Feld>
+	</div>
 
-	<!-- Listenpreis: was ein Ersatz heute kostet — die Grundlage, auf die die Staffel des
-	     Erlasses ab dem zweiten Verleihjahr rechnet (Migration 127). Die ISBN-Abfrage trägt
-	     den Ladenpreis der DNB ein, solange das Feld leer ist; hier prüft und überschreibt
-	     ihn ein Mensch. Leer heißt „nicht erfasst", nicht „kostet nichts": Dann weicht die
-	     Staffel auf den Kaufpreis aus. Eine getippte 0 ergäbe einen Ersatzbetrag von 0,00 €. -->
-	<Feld
-		id="buch-listenpreis"
-		label="Listenpreis"
-		type="number"
-		step="0.01"
-		min="0"
-		bind:value={formular.listenpreis}
-		hint="Was ein Ersatz heute kostet. Leer lassen, wenn unbekannt — dann rechnet der Schadensersatz mit dem Einkaufspreis."
-	>
-		{#snippet nachlaufend()}€{/snippet}
-	</Feld>
-
-	<BuchEingabefelderKategorisierung bind:formular {systematikListe} />
-
-	<BuchEingabefelderInventar bind:formular />
-
-	<!-- Schlagworte (Migration 138): frei eintragbar wie in Littera, Vorschläge aus dem
-	     Bestand. Die Maske lädt sie über den Einzel-Read und schickt sie mit dem Titel
-	     zurück. Ohne geladene Liste (null) bleibt das Feld zu: Ein Wort ersetzte sonst
-	     still alle vorhandenen — dieselbe Regel wie im Bestellkorb. Darunter der Vorschlag
-	     der DNB (seit 30.09.2026): nach einer ISBN-Abfrage von selbst, sonst auf Knopfdruck. -->
+	<!-- Ohne geladene Liste (null) bleibt das Feld zu: Ein Wort ersetzte sonst alle
+	     vorhandenen Schlagworte. Darunter der Vorschlag der DNB. -->
 	<div class="space-y-2">
 		<ChipFeld
 			id="buch-schlagworte"
@@ -164,8 +140,6 @@
 		/>
 	</div>
 
-	<!-- Das mehrzeilige ui/Feld statt einer eigenen textarea: dieselbe Form, Farbe und
-	     Fokusanzeige wie jedes Feld darüber (bis zum 23.09.2026 grün fokussiert). -->
 	<Feld
 		id="buch-beschreibung"
 		label="Beschreibung / Klappentext"
@@ -174,3 +148,5 @@
 		bind:value={formular.beschreibung}
 	/>
 </div>
+
+<BuchEingabefelderKategorisierung bind:formular {systematikListe} />

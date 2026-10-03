@@ -34,9 +34,11 @@ test('Auflagen: in der Titelmaske zuordnen und wieder lösen', async ({ page }) 
 		await karteAlt.getByRole('button', { name: 'Buch schnell bearbeiten' }).click();
 		await expect(page.getByRole('heading', { name: 'Buch bearbeiten' })).toBeVisible();
 
-		await expect(page.getByRole('heading', { name: 'Auflagen', exact: true })).toBeVisible();
-		await expect(page.getByText('Keine andere Auflage zugeordnet.')).toBeVisible();
-		await page.getByRole('button', { name: 'Andere Auflage zuordnen' }).click();
+		// „Andere Auflagen" steht in der Gruppe „An der Schule"; ohne Zuordnung gibt es keine Liste.
+		const auflagen = page.getByRole('group', { name: 'Andere Auflagen' });
+		await expect(auflagen).toBeVisible();
+		await expect(page.getByRole('list', { name: 'Auflagen dieses Buchs' })).toHaveCount(0);
+		await auflagen.getByRole('button', { name: 'Andere Auflage zuordnen' }).click();
 
 		const dialog = page.getByRole('dialog', { name: 'Andere Auflage zuordnen' });
 		await expect(dialog.getByRole('button', { name: 'Zuordnen' })).toBeDisabled();
@@ -61,7 +63,8 @@ test('Auflagen: in der Titelmaske zuordnen und wieder lösen', async ({ page }) 
 		).toBe('1/2');
 
 		await liste.getByRole('button', { name: '4. Aufl. · 2023 aus den Auflagen lösen' }).click();
-		await expect(page.getByText('Keine andere Auflage zugeordnet.')).toBeVisible();
+		await expect(liste).toHaveCount(0);
+		await expect(auflagen.getByRole('button', { name: 'Andere Auflage zuordnen' })).toBeVisible();
 		expect(
 			querySQL(`SELECT count(werk_id) FROM buecher_titel WHERE id IN ('${alt}', '${neu}')`)
 		).toBe('0');

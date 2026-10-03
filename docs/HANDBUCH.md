@@ -120,7 +120,11 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   den das Programm nicht zuordnet (etwa „Förderverein"), zeigt die Zeile mit an.
 - **Titel-Verwaltung**: neuen Titel anlegen (ISBN-Eingabe holt Metadaten und schlägt eine
   Signatur vor — vor dem Speichern prüfen), bearbeiten, Cover tauschen,
-  Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Wird der Bestand nach oben
+  Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Die Maske beginnt mit der ISBN
+  und den Angaben zum Buch. Darunter steht die Gruppe _An der Schule_: die Wahl _Bibliothek |
+  Lernmittel_, Signatur und Standort, Fach, Schulzweig, Klasse und Jahrgänge, das
+  Mehrjahresband und die anderen Auflagen. Bestand und Zähldatum stehen unter _Exemplare_,
+  über der Liste. Wird der Bestand nach oben
   korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
   07.09.2026 — vorher „SYS-…"); sie stehen danach im Druck-Center unter _Fehlende
   Etiketten_. Wird er verringert, fragt die Maske mit beiden Zahlen nach; ausgesondert
@@ -137,7 +141,7 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   das in einem Satz darunter. (§13)
 - **Auflagen** (seit 25.09.2026, bei Lernmitteln): Eine neue Auflage eines Schulbuchs ist
   ein eigener Titel mit eigener ISBN, denn die Seitenzahlen sind andere. In der Maske steht
-  unter den Feldern der Abschnitt _Auflagen_: _Andere Auflage zuordnen_ sucht unter den
+  in der Gruppe _An der Schule_ die Angabe _Andere Auflagen_: _Andere Auflage zuordnen_ sucht unter den
   Lernmitteln — auch unter Titeln, von denen kein Exemplar mehr da ist — und fasst die
   gewählte mit dieser zusammen; gehört sie schon zu weiteren Auflagen, kommen die mit, und
   der Dialog sagt das vorher. Das Symbol am Ende einer Zeile löst eine Auflage wieder. Jede
@@ -148,10 +152,10 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   (42)". Die Titel-Verwaltung listet weiter jede Auflage einzeln. (§13)
 - **Mehrjahresband**: Bei einem Lernmittel heißt die Spanne „Im Unterricht von Jahrgang …
   bis". Bleibt das Buch über diese Spanne beim Kind, statt am Rückgabetermin der Klasse
-  zurückzukommen, schaltet man darunter „Mehrjahresband" ein; der Hinweis daneben rechnet
+  zurückzukommen, setzt man darunter den Haken bei „Mehrjahresband"; der Hinweis darunter rechnet
   mit: „Bleibt beim Kind bis zum Ende von Jahrgang 9." Die Frist ist dann der Stichtag des
   Schuljahres, in dem das Kind diesen Jahrgang beendet — ein Kind der 7 gibt ein Buch „7 bis
-  9" nach drei Schuljahren zurück. Der Schalter geht nur mit einer Spanne über mehr als
+  9" nach drei Schuljahren zurück. Der Haken geht nur mit einer Spanne über mehr als
   einen Jahrgang; und Vorsicht mit der Vorgabe 5 bis 10, die jeder neue Titel trägt. (§2)
 - **Titel ohne Exemplar** stehen in keinem Katalog und in keiner Trefferliste — weder im
   Portal noch an der Theke (seit 22.09.2026; ein bestelltes Exemplar zählt schon). Sie sind
@@ -656,12 +660,12 @@ jedem Fach und druckt genau dieses Fach mit der aktuellen Filterung: eine Zeile 
 mit Coverbild, Titel, Autor, ISBN, Jahrgang, Schulzweig, Zähldatum und den Zahlen. Die
 Spalte **Gezählt** erscheint nur, wenn in der Auswahl überhaupt schon gezählt wurde. Im Kopf steht,
 welcher Ausschnitt es ist — ein gefilterter Ausdruck ist sonst nicht von der vollen Liste
-zu unterscheiden. Gezählt wird nur, was den
-Lernmittel-Schalter trägt. Ein Buch in mehreren Auflagen, die in der Titel-Verwaltung
+zu unterscheiden. Gezählt wird nur, was am
+Titel als Lernmittel geführt ist. Ein Buch in mehreren Auflagen, die in der Titel-Verwaltung
 zusammengefasst sind, ist eine Kachel und eine PDF-Zeile (seit 25.09.2026): die Zahlen sind
 die Summe, darunter steht „Bestand aus 2 Auflagen: 4. Aufl. · 2023 (16), 3. Aufl. · 2019
 (42)", und die Fach-Zeile zählt es als einen Titel. Den **Schulzweig** pflegt die Bibliothek am Buch: In der
-Buchmaske erscheint das Feld, sobald „Lernmittel" eingeschaltet ist; leer heißt „gilt für
+Buchmaske erscheint das Feld, sobald „Lernmittel" gewählt ist; leer heißt „gilt für
 alle Zweige" — solche Bücher erscheinen deshalb unter **jedem** Zweig-Filter, und die
 Auswahl „Ohne Schulzweig" zeigt umgekehrt nur sie. Littera hat den Zweig nie mitgeliefert,
 der Altbestand ist also zunächst ohne. Ein Buch, dessen Coverbild von außerhalb kommt

@@ -12,6 +12,10 @@ const LEHRER = 'e2e-rt-lehrer@test.local';
 const kern = ('978' + String(Date.now()).slice(-9)).slice(0, 12);
 const pruef = (10 - ([...kern].reduce((a, d, i) => a + Number(d) * (i % 2 ? 3 : 1), 0) % 10)) % 10;
 const ISBN = kern + pruef;
+// Eine zweite gültige ISBN für das Lernmittel: derselbe Kern, um eins weitergezählt.
+const kernLm = String(Number(kern) + 1);
+const ISBN_LM =
+	kernLm + ((10 - ([...kernLm].reduce((a, d, i) => a + Number(d) * (i % 2 ? 3 : 1), 0) % 10)) % 10);
 /** @type {string} */
 let FRIST_VORHER = '21';
 test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
@@ -33,8 +37,8 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 			UPDATE system_einstellungen SET wert = '${FRIST_VORHER}' WHERE schluessel = 'frist_buch_tage';
 			DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE barcode_id LIKE 'RT-%${s}%');
 			DELETE FROM lehrer_anliegen WHERE titel_text LIKE 'RT Wunsch ${s}%';
-			DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn IN ('978rt${s}','${ISBN}'));
-			DELETE FROM buecher_titel WHERE isbn IN ('978rt${s}','${ISBN}');
+			DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn IN ('978rt${s}','${ISBN}','${ISBN_LM}'));
+			DELETE FROM buecher_titel WHERE isbn IN ('978rt${s}','${ISBN}','${ISBN_LM}');
 			DELETE FROM schueler WHERE barcode_id = 'RT-${s}';
 		`);
 	});
@@ -56,6 +60,38 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 			`SELECT last_counted::text || '|' || coalesce(erweiterte_eigenschaften->>'standort','') || '|' || (SELECT count(*) FROM buecher_exemplare e WHERE e.titel_id = t.id) FROM buecher_titel t WHERE titel = 'RT Neu ${s}'`
 		);
 		expect(row).toBe(`2026-08-25|Regal ${s}|3`);
+	});
+
+	// Die Wahl „Lernmittel" und das Kästchen „Mehrjahresband" stehen in der Gruppe „An der
+	// Schule". Der Titel steht vor der ISBN, damit die Maske die Katalogdienste nicht fragt.
+	test('Buch anlegen als Lernmittel: Art, Schulzweig, Spanne und Mehrjahresband kommen in der DB an', async ({
+		page
+	}) => {
+		await uiLogin(page);
+		await page.goto('/medienkatalog');
+		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+		await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+		await page.locator('#buch-titel').fill(`RT Lernmittel ${s}`);
+		await page.locator('#buch-isbn').fill(ISBN_LM);
+		const speichern = page.getByRole('button', { name: 'Speichern' });
+		await expect(speichern, 'ein Bibliotheksbuch braucht die Signatur').toBeDisabled();
+		await page
+			.getByRole('group', { name: 'Art des Buchs' })
+			.getByRole('button', { name: 'Lernmittel' })
+			.click();
+		await expect(speichern, 'ein Lernmittel braucht keine Signatur').toBeEnabled();
+		await page.locator('#buch-schulzweig').click();
+		await page.getByRole('option', { name: 'Realschule', exact: true }).click();
+		await page.locator('#buch-jahrgang-von').fill('7');
+		await page.locator('#buch-jahrgang-bis').fill('9');
+		await page.getByRole('checkbox', { name: 'Mehrjahresband' }).check();
+		await speichern.click();
+		await expect(page.getByText(`RT Lernmittel ${s}`).first()).toBeVisible({ timeout: 10000 });
+		expect(
+			querySQL(
+				`SELECT ist_lernmittel::text || '|' || coalesce(track, '') || '|' || jahrgang_von || '-' || jahrgang_bis || '|' || mehrjahresband::text FROM buecher_titel WHERE isbn = '${ISBN_LM}'`
+			)
+		).toBe('true|Realschule|7-9|true');
 	});
 
 	test('Abgangsjahr und Rückgabedatum im Profil', async ({ page }) => {
