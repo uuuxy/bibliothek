@@ -100,17 +100,21 @@ describe('ChipFeld', () => {
 		expect(getByText(/Höchstens 2/)).toBeTruthy();
 	});
 
-	it('hat die Chip-Form des Hauses: 32 px, Radius 8 px, secondary-container, × auf 32 × 32 px', () => {
+	// Gewicht: label-large der M3-Token ist 500. `font-medium` zeigt in diesem Haus auf 400
+	// (styles/theme-mass.css), 500 schreibt sich `font-semibold`.
+	it('hat die Chip-Form des Hauses: 32 px, Radius 8 px, Gewicht 500, secondary-container, × auf 32 × 32 px', () => {
 		const { getByRole, container } = aufbau({ werte: ['Krimi'] });
 		const chip = (container.querySelector('li')?.getAttribute('class') || '').split(/\s+/);
 		expect(chip).toEqual(
 			expect.arrayContaining([
 				'h-8',
 				'rounded-md',
+				'font-semibold',
 				'bg-secondary-container',
 				'text-on-secondary-container'
 			])
 		);
+		expect(chip).not.toContain('font-medium');
 		const knopf = (
 			getByRole('button', { name: '„Krimi“ entfernen' }).getAttribute('class') || ''
 		).split(/\s+/);
@@ -139,6 +143,10 @@ describe('ChipFeld mit Angeboten', () => {
 		const screen = aufbau({ angebote: ['Krieg', 'Erste Liebe'], angeboteEtikett: 'Aus der DNB' });
 		expect(chips(screen.container)).toEqual([]);
 		expect(screen.getByRole('group', { name: 'Aus der DNB' })).toBeTruthy();
+		// Dasselbe Gewicht wie die gewählten Chips darüber (label-large, 500).
+		const klassen = (angebot(screen, 'Krieg').getAttribute('class') || '').split(/\s+/);
+		expect(klassen).toContain('font-semibold');
+		expect(klassen).not.toContain('font-medium');
 		await fireEvent.click(angebot(screen, 'Krieg'));
 		expect(chips(screen.container)).toEqual(['Krieg']);
 		expect(angebot(screen, 'Krieg')).toBeNull();

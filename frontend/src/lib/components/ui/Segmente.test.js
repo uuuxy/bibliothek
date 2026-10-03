@@ -54,4 +54,16 @@ describe('Segmente', () => {
 		expect(klassen).toContain('h-10');
 		expect(klassen).toContain('rounded-full');
 	});
+
+	// M3-Token (material-web, _md-comp-outlined-segmented-button.scss): label-text-weight ist
+	// label-large-weight, also 500. `font-medium` zeigt in diesem Haus auf 400
+	// (styles/theme-mass.css), 500 schreibt sich `font-semibold`.
+	it('schreibt die Beschriftung mit Gewicht 500 — label-large der M3-Token', () => {
+		const { getAllByRole } = aufbau('offen');
+		for (const knopf of getAllByRole('button')) {
+			const klassen = (knopf.getAttribute('class') || '').split(/\s+/);
+			expect(klassen).toContain('font-semibold');
+			expect(klassen).not.toContain('font-medium');
+		}
+	});
 });

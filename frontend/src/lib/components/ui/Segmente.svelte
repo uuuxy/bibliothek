@@ -44,7 +44,7 @@
 			type="button"
 			aria-pressed={gewaehlt}
 			onclick={() => onwahl(o.wert)}
-			class="flex cursor-pointer items-center justify-center gap-2 px-4 text-sm font-medium transition-colors {i >
+			class="flex cursor-pointer items-center justify-center gap-2 px-4 text-sm font-semibold transition-colors {i >
 			0
 				? 'border-l border-outline'
 				: ''} {gewaehlt ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface'}"

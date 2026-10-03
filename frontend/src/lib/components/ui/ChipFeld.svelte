@@ -167,7 +167,7 @@
 		<ul class="flex flex-wrap gap-2" aria-label="{label ?? ariaLabel} (gewählt)">
 			{#each liste as wert (schluessel(wert))}
 				<li
-					class="inline-flex h-8 items-center gap-1 rounded-md bg-secondary-container pl-3 text-sm font-medium text-on-secondary-container"
+					class="inline-flex h-8 items-center gap-1 rounded-md bg-secondary-container pl-3 text-sm font-semibold text-on-secondary-container"
 				>
 					{wert}
 					<button

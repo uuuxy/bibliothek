@@ -35,13 +35,17 @@ describe('FilterChips', () => {
 		expect(getByRole('group', { name: 'Nach Schlagwort filtern' })).toBeTruthy();
 	});
 
-	it('trägt die M3-Bauform: 32 px, Ecke 8 px, gewählt secondary-container statt Primärfarbe', () => {
+	// Gewicht: label-large der M3-Token ist 500. `font-medium` zeigt in diesem Haus auf 400
+	// (styles/theme-mass.css), 500 schreibt sich `font-semibold`.
+	it('trägt die M3-Bauform: 32 px, Ecke 8 px, Gewicht 500, gewählt secondary-container statt Primärfarbe', () => {
 		const { getByRole } = aufbau('a');
 		const klassen = (/** @type {string} */ name) =>
 			(getByRole('button', { name }).getAttribute('class') || '').split(/\s+/);
 		for (const name of ['Fantasy', 'Krimi']) {
 			expect(klassen(name)).toContain('h-8');
 			expect(klassen(name)).toContain('rounded-md');
+			expect(klassen(name)).toContain('font-semibold');
+			expect(klassen(name)).not.toContain('font-medium');
 		}
 		expect(klassen('Fantasy')).toContain('bg-secondary-container');
 		expect(klassen('Fantasy')).toContain('text-on-secondary-container');
