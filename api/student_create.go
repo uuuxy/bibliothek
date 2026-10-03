@@ -303,33 +303,9 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// 1. Notfall-Wachhund: Doppelprüfung.
-	//
-	// Bei einem Schüler über Name + Geburtsdatum (dieselbe Regel wie der LUSD-Schlüssel),
-	// bei einem Kollegen über den NAMEN allein — er hat kein Geburtsdatum, an dem die
-	// Schüler-Prüfung greifen könnte, und der häufigste Fall ist der Kollege, der sich
-	// über „Mein Portal" längst selbst angemeldet hat.
-	if istSchuelerArt(req.Art) {
-		isDuplicate, err := pruefeSchuelerDuplikat(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return "", "", false
-		}
-		if isDuplicate {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
-			return "", "", false
-		}
-	} else {
-		belegt, err := pruefeLeserNamensdublette(ctx, tx, req.Vorname, req.Nachname)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return "", "", false
-		}
-		if belegt {
-			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungLeserNamensdublette))
-			return "", "", false
-		}
+	// 1. Doppelprüfung, bevor irgendetwas geschrieben wird.
+	if !antworteAufLeserDublette(ctx, tx, w, req, parsedGebdatum) {
+		return "", "", false
 	}
 
 	// 2. Resolve/generate barcode_id if not provided
@@ -359,24 +335,7 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 		RETURNING id
 	`
 	if err := tx.QueryRow(ctx, qInsert, barcodeID, req.Vorname, req.Nachname, klasse, parsedGebdatum, abgaengerJahr, req.Art).Scan(&studentID); err != nil {
-		// Der Index ist die letzte Instanz (zwei Arbeitsplätze gleichzeitig): seine
-		// Verletzung ist ein Bedienfall mit Erklärung, kein 500.
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "unique_schueler_name_gebdatum" {
-			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
-			return "", "", false
-		}
-		if repository.IstAusweisKollision(err) {
-			apierrors.SendHTTPError(w, http.StatusConflict,
-				fmt.Errorf("die Ausweisnummer '%s' wird bereits von einer anderen Person verwendet", barcodeID))
-			return "", "", false
-		}
-		if repository.IstNummerBuchOderAusweisKollision(err) {
-			apierrors.SendHTTPError(w, http.StatusConflict,
-				fmt.Errorf("die Nummer '%s' ist der Barcode eines Buchs und kann kein Ausweis sein", barcodeID))
-			return "", "", false
-		}
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		antworteAufLeserInsertFehler(w, err, barcodeID)
 		return "", "", false
 	}
 
@@ -414,6 +373,58 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 		s.protokolliereKontoAnlage(ctx, kontoID, strings.ToLower(strings.TrimSpace(req.Email)), "kollegium", req.Vorname, req.Nachname)
 	}
 	return studentID, barcodeID, true
+}
+
+// antworteAufLeserDublette lehnt einen Leser ab, den es schon gibt: einen Schüler über Name
+// und Geburtsdatum (dieselbe Regel wie der LUSD-Schlüssel), einen Kollegen über den Namen
+// allein. Er hat kein Geburtsdatum, und der häufigste Fall ist der Kollege, der sich über
+// „Mein Portal" längst selbst angemeldet hat. false heißt: Die Antwort ist geschrieben.
+func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, req CreateStudentRequest, parsedGebdatum *time.Time) bool {
+	if istSchuelerArt(req.Art) {
+		isDuplicate, err := pruefeSchuelerDuplikat(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return false
+		}
+		if isDuplicate {
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
+			return false
+		}
+		return true
+	}
+	belegt, err := pruefeLeserNamensdublette(ctx, tx, req.Vorname, req.Nachname)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+	if belegt {
+		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
+		apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungLeserNamensdublette))
+		return false
+	}
+	return true
+}
+
+// antworteAufLeserInsertFehler ordnet den Fehler beim Anlegen der Leserzeile ein. Die
+// Indizes sind die letzte Instanz bei zwei Arbeitsplätzen gleichzeitig; ihre Verletzung ist
+// ein Bedienfall mit Erklärung, kein 500.
+func antworteAufLeserInsertFehler(w http.ResponseWriter, err error, barcodeID string) {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "unique_schueler_name_gebdatum" {
+		apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
+		return
+	}
+	if repository.IstAusweisKollision(err) {
+		apierrors.SendHTTPError(w, http.StatusConflict,
+			fmt.Errorf("die Ausweisnummer '%s' wird bereits von einer anderen Person verwendet", barcodeID))
+		return
+	}
+	if repository.IstNummerBuchOderAusweisKollision(err) {
+		apierrors.SendHTTPError(w, http.StatusConflict,
+			fmt.Errorf("die Nummer '%s' ist der Barcode eines Buchs und kann kein Ausweis sein", barcodeID))
+		return
+	}
+	apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 }
 
 // parseCreateGeburtsdatum parst das Geburtsdatum (YYYY-MM-DD) aus dem Anlage-Request.

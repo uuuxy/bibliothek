@@ -85,84 +85,90 @@ func (s *Server) GetStudentProfileHandler(
 	studentRepo repository.StudentRepository,
 ) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		id := r.PathValue("id")
-		if id == "" {
-			return apierrors.BadRequest("missing student ID parameter", nil)
-		}
-
-		ctx := r.Context()
-
-		// 1. Den LESER laden — Schüler ODER Kollegium.
-		//
-		// GetLeserByID statt GetByID: Letzteres liest die Sicht `schueler`, und eine
-		// Lehrkraft kam damit als 404 zurück. An der Theke hieß das: Der Kollege ist
-		// geladen, aber niemand sieht, welche Bücher er hat.
-		student, err := studentRepo.GetLeserByID(ctx, id)
-		if err != nil {
-			return apierrors.Internal("Fehler beim Laden des Lesers", err)
-		}
-		if student == nil {
-			return apierrors.NotFound("student record not found", nil)
-		}
-
-		// 2. Resolve photo URL if an encrypted photo exists in the DB
-		fotoURL := resolveFotoURL(ctx, studentRepo, student)
-
-		// 3. Retrieve currently active loans for this student
-		borrowedBooks, err := studentRepo.GetActiveBorrowedBooks(ctx, id)
-		if err != nil {
-			return apierrors.Internal("Fehler beim Laden der ausgeliehenen Bücher", err)
-		}
-		if borrowedBooks == nil {
-			borrowedBooks = []repository.BorrowedBook{}
-		}
-
-		// 3.5 Offene Forderungen. Ein Fehler bricht ab: „nichts offen" wäre sonst eine Auskunft,
-		// die niemand geprüft hat.
-		anzahl, summe, err := studentRepo.OffeneSchaeden(ctx, student.ID)
-		if err != nil {
-			return apierrors.Internal("Fehler beim Laden der offenen Forderungen", err)
-		}
-
-		// 3.6 Die Schul-Adresse am Konto — nur beim Kollegium (ein Schüler hat keins).
-		schulEmail := ""
-		if !istSchuelerArt(student.Art) {
-			schulEmail, err = s.kontoEmail(ctx, student.ID)
-			if err != nil {
-				return apierrors.Internal("Fehler beim Laden des Zugangs", err)
-			}
-		}
-
-		// 4. Construct response and stream as JSON
-		resp := StudentProfileResponse{
-			ID:                student.ID,
-			BarcodeID:         student.BarcodeID,
-			Vorname:           student.Vorname,
-			Nachname:          student.Nachname,
-			Art:               student.Art,
-			Klasse:            student.Klasse,
-			AbgaengerJahr:     student.AbgaengerJahr,
-			AusweisGueltigBis: student.AusweisGueltigBis,
-			IstGesperrt:       student.IstGesperrt,
-			FotoURL:           fotoURL,
-			Geburtsdatum:      student.Geburtsdatum,
-			LusdID:            student.LusdID,
-			HasOpenDamages:    anzahl > 0,
-			OffeneForderungen: OffeneForderungen{Anzahl: anzahl, Summe: summe},
-			IsManuallyBlocked: student.IsManuallyBlocked,
-			BlockReason:       student.BlockReason,
-			Strasse:           student.Strasse,
-			Hausnummer:        student.Hausnummer,
-			Plz:               student.Plz,
-			Ort:               student.Ort,
-			ElternEmail:       student.ElternEmail,
-			Email:             schulEmail,
-			EntlieheneBuecher: borrowedBooks,
-		}
-
-		RespondJSON(w, http.StatusOK, resp)
-		return nil
+		return s.handleGetStudentProfile(w, r, studentRepo)
 	})
+}
+
+// handleGetStudentProfile stellt die Akte eines Lesers zusammen: Stammdaten, Foto, Ausleihen,
+// offene Forderungen und beim Kollegium die Schul-Adresse.
+func (s *Server) handleGetStudentProfile(w http.ResponseWriter, r *http.Request, studentRepo repository.StudentRepository) error {
+	id := r.PathValue("id")
+	if id == "" {
+		return apierrors.BadRequest("missing student ID parameter", nil)
+	}
+
+	ctx := r.Context()
+
+	// 1. Den Leser laden — Schüler oder Kollegium.
+	//
+	// GetLeserByID statt GetByID: Letzteres liest die Sicht `schueler`, und eine
+	// Lehrkraft käme damit als 404 zurück. An der Theke hieße das: Der Kollege ist
+	// geladen, aber niemand sieht, welche Bücher er hat.
+	student, err := studentRepo.GetLeserByID(ctx, id)
+	if err != nil {
+		return apierrors.Internal("Fehler beim Laden des Lesers", err)
+	}
+	if student == nil {
+		return apierrors.NotFound("student record not found", nil)
+	}
+
+	// 2. Resolve photo URL if an encrypted photo exists in the DB
+	fotoURL := resolveFotoURL(ctx, studentRepo, student)
+
+	// 3. Retrieve currently active loans for this student
+	borrowedBooks, err := studentRepo.GetActiveBorrowedBooks(ctx, id)
+	if err != nil {
+		return apierrors.Internal("Fehler beim Laden der ausgeliehenen Bücher", err)
+	}
+	if borrowedBooks == nil {
+		borrowedBooks = []repository.BorrowedBook{}
+	}
+
+	// 3.5 Offene Forderungen. Ein Fehler bricht ab: „nichts offen" wäre sonst eine Auskunft,
+	// die niemand geprüft hat.
+	anzahl, summe, err := studentRepo.OffeneSchaeden(ctx, student.ID)
+	if err != nil {
+		return apierrors.Internal("Fehler beim Laden der offenen Forderungen", err)
+	}
+
+	// 3.6 Die Schul-Adresse am Konto — nur beim Kollegium (ein Schüler hat keins).
+	schulEmail := ""
+	if !istSchuelerArt(student.Art) {
+		schulEmail, err = s.kontoEmail(ctx, student.ID)
+		if err != nil {
+			return apierrors.Internal("Fehler beim Laden des Zugangs", err)
+		}
+	}
+
+	// 4. Construct response and stream as JSON
+	resp := StudentProfileResponse{
+		ID:                student.ID,
+		BarcodeID:         student.BarcodeID,
+		Vorname:           student.Vorname,
+		Nachname:          student.Nachname,
+		Art:               student.Art,
+		Klasse:            student.Klasse,
+		AbgaengerJahr:     student.AbgaengerJahr,
+		AusweisGueltigBis: student.AusweisGueltigBis,
+		IstGesperrt:       student.IstGesperrt,
+		FotoURL:           fotoURL,
+		Geburtsdatum:      student.Geburtsdatum,
+		LusdID:            student.LusdID,
+		HasOpenDamages:    anzahl > 0,
+		OffeneForderungen: OffeneForderungen{Anzahl: anzahl, Summe: summe},
+		IsManuallyBlocked: student.IsManuallyBlocked,
+		BlockReason:       student.BlockReason,
+		Strasse:           student.Strasse,
+		Hausnummer:        student.Hausnummer,
+		Plz:               student.Plz,
+		Ort:               student.Ort,
+		ElternEmail:       student.ElternEmail,
+		Email:             schulEmail,
+		EntlieheneBuecher: borrowedBooks,
+	}
+
+	RespondJSON(w, http.StatusOK, resp)
+	return nil
 }
 
 // GetClassesHandler returns a list of all distinct classes in the database.

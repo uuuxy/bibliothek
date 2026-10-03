@@ -196,91 +196,125 @@ func parseGeburtsdatum(raw string) (*time.Time, error) {
 // Wird nun auch für das Bearbeiten aller Stammdaten in der UI genutzt.
 func (s *Server) PatchStudentHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
-		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
-			return
-		}
-
-		id := r.PathValue("id")
-		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
-			return
-		}
-
-		var req patchStudentRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-
-		b, ok := baueSchuelerUpdate(w, &req)
-		if !ok {
-			return
-		}
-
-		ctx := r.Context()
-		// lusd_id kontrolliert nachtragen (nur wenn leer, eindeutig) und ggf. in denselben
-		// Builder einhängen. nachgetragen != "" heißt: hinterher auditieren.
-		nachgetragen, ok := s.pruefeUndSetzeLusdID(ctx, w, id, req.LusdID, b)
-		if !ok {
-			return
-		}
-		if !s.pruefeUndSetzeArt(ctx, w, id, req.Art, b) {
-			return
-		}
-		// Die Schul-E-Mail wird VOR dem Schreiben geprüft und NACH ihm eingetragen: Das
-		// Konto soll nicht an einer Leserzeile hängen, deren Änderung gescheitert ist.
-		// nachzutragen != "" heißt: Es gibt noch kein Konto, und die Adresse ist gültig.
-		nachzutragen, ok := s.pruefeSchulEmail(ctx, w, id, req.Email, req.Art)
-		if !ok {
-			return
-		}
-		if !s.pruefeAusweisLeerung(ctx, w, id, req.BarcodeID) {
-			return
-		}
-		// Ein zweiter Empty-Check: Wenn AUSSER lusd_id nichts drin war und lusd_id ein
-		// No-op ist (gleicher Wert), darf kein leerer UPDATE laufen. Eine nachzutragende
-		// Adresse ist Arbeit, auch wenn an der Leserzeile selbst nichts steht — sonst
-		// wäre „nur die Schul-E-Mail nachtragen" ein 400.
-		if len(b.sets) == 0 && nachzutragen == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
-			return
-		}
-
-		if !s.fuehreSchuelerUpdateAus(ctx, w, id, b) {
-			return
-		}
-
-		if nachzutragen != "" {
-			// Das Konto entsteht immer, AKTIV nur bei manage_users — dieselbe Paarung wie
-			// beim Anlegen (student_create.go). Wer hier nur edit_students hat, bekäme
-			// sonst still das Recht, Zugänge freizuschalten.
-			if !s.trageKontoNach(ctx, w, id, nachzutragen, s.BesitztRecht(r, "manage_users")) {
-				return
-			}
-			if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "KOLLEGIUMSKONTO_NACHGETRAGEN", getIP(r), map[string]any{
-				"schueler_id": id,
-			}); logErr != nil {
-				log.Printf("Audit für Kontonachtrag fehlgeschlagen: %v", logErr)
-			}
-		}
-
-		if nachgetragen != "" {
-			if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "LUSD_ID_NACHGETRAGEN", getIP(r), map[string]any{
-				"schueler_id": id,
-				"lusd_id":     nachgetragen,
-			}); logErr != nil {
-				log.Printf("Audit für LUSD-ID-Nachtrag fehlgeschlagen: %v", logErr)
-			}
-		}
-
-		w.Header().Set(headerContentType, contentTypeJSON)
-		response := map[string]any{"status": "success"}
-		if req.AbgaengerJahr != nil {
-			response["abgaenger_jahr"] = *req.AbgaengerJahr
-		}
-		httpresp.Encode(w, response)
+		s.handlePatchStudent(w, r, auditRepo)
 	}
+}
+
+// handlePatchStudent prüft die Änderung, schreibt sie und trägt nach, was erst nach dem
+// Schreiben entstehen darf.
+func (s *Server) handlePatchStudent(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository) {
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+		return
+	}
+
+	id := r.PathValue("id")
+	if id == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Schüler-ID"))
+		return
+	}
+
+	var req patchStudentRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
+	}
+
+	ctx := r.Context()
+	aenderung, ok := s.pruefeSchuelerAenderung(ctx, w, id, &req)
+	if !ok {
+		return
+	}
+	if !s.fuehreSchuelerUpdateAus(ctx, w, id, aenderung.update) {
+		return
+	}
+	if !s.trageNachUndProtokolliere(w, r, auditRepo, claims, id, aenderung) {
+		return
+	}
+
+	w.Header().Set(headerContentType, contentTypeJSON)
+	response := map[string]any{"status": "success"}
+	if req.AbgaengerJahr != nil {
+		response["abgaenger_jahr"] = *req.AbgaengerJahr
+	}
+	httpresp.Encode(w, response)
+}
+
+// schuelerAenderung ist eine geprüfte Änderung an der Leserzeile samt dem, was nach dem
+// Schreiben noch aussteht.
+type schuelerAenderung struct {
+	update *updateBuilder
+	// lusdNachgetragen ist die LUSD-ID, die diese Änderung einträgt; sie gehört ins Protokoll.
+	lusdNachgetragen string
+	// kontoAdresse ist die Schul-E-Mail, für die nach dem Schreiben ein Konto entsteht.
+	kontoAdresse string
+}
+
+// pruefeSchuelerAenderung baut die Zuweisungen aus der Anfrage und prüft jedes Feld, das
+// eigene Regeln hat. false heißt: Die Ablehnung ist schon beantwortet.
+func (s *Server) pruefeSchuelerAenderung(ctx context.Context, w http.ResponseWriter, id string, req *patchStudentRequest) (schuelerAenderung, bool) {
+	var keine schuelerAenderung
+	b, ok := baueSchuelerUpdate(w, req)
+	if !ok {
+		return keine, false
+	}
+	// Die LUSD-ID lässt sich nur nachtragen: wenn sie bisher leer war und der neue Wert
+	// eindeutig ist.
+	lusdNachgetragen, ok := s.pruefeUndSetzeLusdID(ctx, w, id, req.LusdID, b)
+	if !ok {
+		return keine, false
+	}
+	if !s.pruefeUndSetzeArt(ctx, w, id, req.Art, b) {
+		return keine, false
+	}
+	// Die Schul-E-Mail wird vor dem Schreiben geprüft und nach ihm eingetragen: Das Konto
+	// soll nicht an einer Leserzeile hängen, deren Änderung gescheitert ist. Eine Adresse
+	// kommt nur zurück, wenn es noch kein Konto gibt und sie gültig ist.
+	kontoAdresse, ok := s.pruefeSchulEmail(ctx, w, id, req.Email, req.Art)
+	if !ok {
+		return keine, false
+	}
+	if !s.pruefeAusweisLeerung(ctx, w, id, req.BarcodeID) {
+		return keine, false
+	}
+	// Ohne Zuweisung läuft kein UPDATE, etwa wenn nur die unveränderte LUSD-ID mitkam. Eine
+	// nachzutragende Adresse ist Arbeit, auch wenn an der Leserzeile nichts steht; sonst
+	// wäre „nur die Schul-E-Mail nachtragen" ein 400.
+	if len(b.sets) == 0 && kontoAdresse == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
+		return keine, false
+	}
+	return schuelerAenderung{update: b, lusdNachgetragen: lusdNachgetragen, kontoAdresse: kontoAdresse}, true
+}
+
+// trageNachUndProtokolliere legt nach dem Schreiben das Konto zur Schul-E-Mail an und
+// schreibt die Protokolleinträge der Nachträge. false heißt: Die Ablehnung ist schon
+// beantwortet.
+func (s *Server) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository, claims *auth.Claims, id string, a schuelerAenderung) bool {
+	ctx := r.Context()
+	if a.kontoAdresse != "" {
+		// Das Konto entsteht immer, aktiv nur bei manage_users — dieselbe Paarung wie beim
+		// Anlegen (student_create.go). Wer hier nur edit_students hat, bekäme sonst still
+		// das Recht, Zugänge freizuschalten.
+		if !s.trageKontoNach(ctx, w, id, a.kontoAdresse, s.BesitztRecht(r, "manage_users")) {
+			return false
+		}
+		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "KOLLEGIUMSKONTO_NACHGETRAGEN", getIP(r), map[string]any{
+			"schueler_id": id,
+		}); logErr != nil {
+			log.Printf("Audit für Kontonachtrag fehlgeschlagen: %v", logErr)
+		}
+	}
+
+	if a.lusdNachgetragen != "" {
+		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "LUSD_ID_NACHGETRAGEN", getIP(r), map[string]any{
+			"schueler_id": id,
+			"lusd_id":     a.lusdNachgetragen,
+		}); logErr != nil {
+			log.Printf("Audit für LUSD-ID-Nachtrag fehlgeschlagen: %v", logErr)
+		}
+	}
+	return true
 }
 
 // pruefeUndSetzeLusdID trägt die LUSD-ID kontrolliert nach. Die LUSD-ID ist der

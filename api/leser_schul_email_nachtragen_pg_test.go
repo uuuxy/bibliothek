@@ -317,3 +317,66 @@ func TestAusweisnummerLeeren(t *testing.T) {
 		}
 	})
 }
+
+// Die beiden Nachträge über die Akte stehen im Protokoll, mit dem Konto, das sie eintrug, und
+// dem Leser, den sie betreffen: die Schul-E-Mail eines Kollegen und die LUSD-ID eines Schülers.
+// Ein zweites Speichern derselben Werte schreibt keinen zweiten Eintrag.
+func TestNachtraegeUeberDieAkteStehenImProtokoll(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+
+	var adminID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Nach', 'Trag', 'nachtrag-admin@test.invalid', 'admin', true) RETURNING id`).Scan(&adminID); err != nil {
+		t.Fatalf("Konto anlegen: %v", err)
+	}
+	patch := func(t *testing.T, id, body string) {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPatch, "/api/schueler/"+id, strings.NewReader(body))
+		req.SetPathValue("id", id)
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
+			&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+		rec := httptest.NewRecorder()
+		srv.PatchStudentHandler(repository.NewAuditRepository(pool))(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Antwort %d: %s", rec.Code, rec.Body.String())
+		}
+	}
+	// eintraege zählt die Einträge einer Aktion zu diesem Konto und Leser; mit lusdID != ""
+	// muss der Eintrag auch diese Nummer tragen.
+	eintraege := func(t *testing.T, aktion, leserID, lusdID string) int {
+		t.Helper()
+		return zaehleZeilen(t, pool, `
+			SELECT count(*) FROM audit_logs
+			WHERE aktion = $1 AND admin_id = $2 AND details->>'schueler_id' = $3
+			  AND ($4 = '' OR details->>'lusd_id' = $4)`, aktion, adminID, leserID, lusdID)
+	}
+
+	var kollegeID, schuelerID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO leser (vorname, nachname, art) VALUES ('Kurt', 'Kollege', 'lehrkraft') RETURNING id::text`).Scan(&kollegeID); err != nil {
+		t.Fatalf("Kollegen anlegen: %v", err)
+	}
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
+		VALUES ('Susi', 'Schueler', '5a', 'NT-1', 2030) RETURNING id`).Scan(&schuelerID); err != nil {
+		t.Fatalf("Schüler anlegen: %v", err)
+	}
+
+	for range 2 {
+		patch(t, kollegeID, `{"nachname":"Kollege","email":"kurt.kollege@schule.invalid"}`)
+		patch(t, schuelerID, `{"nachname":"Schueler","lusd_id":"L-4711"}`)
+	}
+	if n := eintraege(t, "KOLLEGIUMSKONTO_NACHGETRAGEN", kollegeID, ""); n != 1 {
+		t.Errorf("%d Einträge zum nachgetragenen Konto, erwartet 1", n)
+	}
+	if n := eintraege(t, "LUSD_ID_NACHGETRAGEN", schuelerID, "L-4711"); n != 1 {
+		t.Errorf("%d Einträge zur nachgetragenen LUSD-ID, erwartet 1", n)
+	}
+	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion IN ('KOLLEGIUMSKONTO_NACHGETRAGEN', 'LUSD_ID_NACHGETRAGEN')`); n != 2 {
+		t.Errorf("%d Einträge zu Nachträgen insgesamt, erwartet 2", n)
+	}
+}

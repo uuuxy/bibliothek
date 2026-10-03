@@ -207,45 +207,19 @@ func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 // derselben Regel hoch wie promoteStudentsQuery die Schüler. Absteigend nach
 // Stufe, damit '9a' erst nach dem Wegzug von '10a' auf den freien Namen rücken
 // kann; Abschlussklassen-Zeilen werden entfernt (die Kohorte verlässt die
-// Schule). Ebenso die Zeilen der Jahrgänge 6 und 10 (Vorgabe vom 30.09.2026): Nach
+// Schule). Ebenso die Zeilen der Jahrgänge 6 und 10: Nach
 // der 6 und nach der 10 bildet die Schule die Klassen neu — aus der Förderstufe
 // werden die Zweige, aus der 10 die Oberstufe —, und die neuen Klassen bekommen
 // neue Klassenleitungen. Hochgezählt landete die Zuordnung auf „07F1" oder
 // „11G1", Klassen, die es an der Schule nicht gibt, mit der alten Lehrkraft.
 // Der Konflikt-Zweig (Zielname belegt → Zeile bleibt stehen und wird
 // gemeldet) ist seit dem Klassen-Vokabular (Migration 079) Rückfallebene: Die
-// klassische Ursache — '9a' UND '09a' nebeneinander, beide → '10a' — kann durch
+// klassische Ursache — '9a' und '09a' nebeneinander, beide → '10a' — kann durch
 // die Kanonisierung nicht mehr entstehen. Er bleibt, damit ein Namenskonflikt
 // den Schuljahreswechsel auch künftig nie scheitern lässt.
 func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *PromoteStudentsResponse) error {
-	rows, err := tx.Query(ctx, `
-		SELECT klasse,
-		       lpad((substring(klasse from '^\d+')::int + 1)::text,
-		            greatest(length(substring(klasse from '^\d+')), length((substring(klasse from '^\d+')::int + 1)::text)), '0')
-		         || substring(klasse from '^\d+(.*)$') AS neue_klasse,
-		       (`+repository.AbschlussklasseSQL("klasse")+`
-		        OR substring(klasse from '^\d+')::int IN (6, 10)) AS entfaellt
-		FROM klassen_lehrer_mapping
-		WHERE klasse ~ '^\d+'
-		ORDER BY substring(klasse from '^\d+')::int DESC, klasse DESC`)
+	zeilen, err := leseKlassenlehrerVersetzung(ctx, tx)
 	if err != nil {
-		return err
-	}
-	type zeile struct {
-		alt, neu  string
-		entfaellt bool
-	}
-	var zeilen []zeile
-	for rows.Next() {
-		var z zeile
-		if err := rows.Scan(&z.alt, &z.neu, &z.entfaellt); err != nil {
-			rows.Close()
-			return err
-		}
-		zeilen = append(zeilen, z)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
 		return err
 	}
 
@@ -271,6 +245,44 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *Promot
 		resp.MappingVersetzt++
 	}
 	return nil
+}
+
+// mappingVersetzung ist eine Zeile der Lehrer-Zuordnung mit ihrem Namen nach der Versetzung.
+type mappingVersetzung struct {
+	alt, neu  string
+	entfaellt bool
+}
+
+// leseKlassenlehrerVersetzung liest die Zuordnungen absteigend nach Stufe und liest sie ganz,
+// bevor die Transaktion wieder schreibt.
+func leseKlassenlehrerVersetzung(ctx context.Context, tx pgx.Tx) ([]mappingVersetzung, error) {
+	rows, err := tx.Query(ctx, `
+		SELECT klasse,
+		       lpad((substring(klasse from '^\d+')::int + 1)::text,
+		            greatest(length(substring(klasse from '^\d+')), length((substring(klasse from '^\d+')::int + 1)::text)), '0')
+		         || substring(klasse from '^\d+(.*)$') AS neue_klasse,
+		       (`+repository.AbschlussklasseSQL("klasse")+`
+		        OR substring(klasse from '^\d+')::int IN (6, 10)) AS entfaellt
+		FROM klassen_lehrer_mapping
+		WHERE klasse ~ '^\d+'
+		ORDER BY substring(klasse from '^\d+')::int DESC, klasse DESC`)
+	if err != nil {
+		return nil, err
+	}
+	var zeilen []mappingVersetzung
+	for rows.Next() {
+		var z mappingVersetzung
+		if err := rows.Scan(&z.alt, &z.neu, &z.entfaellt); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		zeilen = append(zeilen, z)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return zeilen, nil
 }
 
 // parsePromoteRequest dekodiert den Request-Body und erzwingt die explizite Bestätigung
