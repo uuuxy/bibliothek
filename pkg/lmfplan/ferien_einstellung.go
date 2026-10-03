@@ -50,23 +50,8 @@ func ParseSommerferien(text string) ([]SommerferienEintrag, error) {
 	}
 	gesehen := map[int]bool{}
 	for _, e := range eintraege {
-		z, ok := e.zeitraum()
-		if !ok {
-			return nil, fmt.Errorf("Sommerferien %d: Datum nicht lesbar (JJJJ-MM-TT)", e.Jahr)
-		}
-		// Ein Zahlendreher im Jahr (2131 statt 2031) kam sonst durch beide Türen und machte
-		// die Selbstprüfung hundert Jahre stumm (Rasterdurchgang 06.09.2026).
-		if e.Jahr < 2000 || e.Jahr > 2100 {
-			return nil, fmt.Errorf("Sommerferien %d: das Jahr liegt außerhalb von 2000 bis 2100 — Zahlendreher?", e.Jahr)
-		}
-		if z.Von.Year() != e.Jahr || z.Bis.Year() != e.Jahr {
-			return nil, fmt.Errorf("Sommerferien %d: Beginn und Ende müssen im Jahr %d liegen", e.Jahr, e.Jahr)
-		}
-		if !z.Bis.After(z.Von) {
-			return nil, fmt.Errorf("Sommerferien %d: das Ende liegt nicht nach dem Beginn", e.Jahr)
-		}
-		if tage := z.Bis.Sub(z.Von).Hours() / 24; tage < 28 || tage > 63 {
-			return nil, fmt.Errorf("Sommerferien %d: %d Tage sind keine Sommerferien (erwartet 4 bis 9 Wochen)", e.Jahr, int(tage)+1)
+		if err := e.pruefe(); err != nil {
+			return nil, err
 		}
 		if gesehen[e.Jahr] {
 			return nil, fmt.Errorf("Sommerferien %d: das Jahr steht zweimal in der Liste", e.Jahr)
@@ -75,6 +60,29 @@ func ParseSommerferien(text string) ([]SommerferienEintrag, error) {
 	}
 	sort.Slice(eintraege, func(i, j int) bool { return eintraege[i].Jahr < eintraege[j].Jahr })
 	return eintraege, nil
+}
+
+// pruefe prüft einen Eintrag für sich; ein doppeltes Jahr sieht nur die Liste.
+func (e SommerferienEintrag) pruefe() error {
+	z, ok := e.zeitraum()
+	if !ok {
+		return fmt.Errorf("Sommerferien %d: Datum nicht lesbar (JJJJ-MM-TT)", e.Jahr)
+	}
+	// Ein Zahlendreher im Jahr (2131 statt 2031) käme sonst durch und machte die
+	// Selbstprüfung hundert Jahre stumm.
+	if e.Jahr < 2000 || e.Jahr > 2100 {
+		return fmt.Errorf("Sommerferien %d: das Jahr liegt außerhalb von 2000 bis 2100 — Zahlendreher?", e.Jahr)
+	}
+	if z.Von.Year() != e.Jahr || z.Bis.Year() != e.Jahr {
+		return fmt.Errorf("Sommerferien %d: Beginn und Ende müssen im Jahr %d liegen", e.Jahr, e.Jahr)
+	}
+	if !z.Bis.After(z.Von) {
+		return fmt.Errorf("Sommerferien %d: das Ende liegt nicht nach dem Beginn", e.Jahr)
+	}
+	if tage := z.Bis.Sub(z.Von).Hours() / 24; tage < 28 || tage > 63 {
+		return fmt.Errorf("Sommerferien %d: %d Tage sind keine Sommerferien (erwartet 4 bis 9 Wochen)", e.Jahr, int(tage)+1)
+	}
+	return nil
 }
 
 // NormalisiereSommerferien prüft den Text wie ParseSommerferien und gibt ihn in

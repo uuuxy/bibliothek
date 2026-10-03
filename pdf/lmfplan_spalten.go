@@ -102,16 +102,9 @@ func lmfVerteile(bau lmfSatzbau, bausteine []lmfBaustein, kap int) ([][]lmfBaust
 		kette := lmfKette(bausteine, i)
 		hoehe := lmfHoehe(kette)
 		if hoehe > frei {
-			if aktuell+1 >= bau.modus.spalten {
-				return nil, false
-			}
-			aktuell, frei = aktuell+1, kap
-			if bausteine[i].art == lmfDaten {
-				kopf := bau.fortsetzung(bausteine[i].abschnitt)
-				spalten[aktuell] = append(spalten[aktuell], kopf...)
-				frei -= lmfHoehe(kopf)
-			}
-			if hoehe > frei {
+			var gewechselt bool
+			aktuell, frei, gewechselt = lmfNaechsteSpalte(bau, spalten, bausteine[i], aktuell, kap)
+			if !gewechselt || hoehe > frei {
 				return nil, false
 			}
 		}
@@ -120,6 +113,22 @@ func lmfVerteile(bau lmfSatzbau, bausteine []lmfBaustein, kap int) ([][]lmfBaust
 		i += len(kette)
 	}
 	return spalten, true
+}
+
+// lmfNaechsteSpalte beginnt die Spalte hinter aktuell und setzt ihr den Fortsetzungskopf
+// voran, wenn der Baustein mitten in den Terminen eines Abschnitts steht. Zurück kommen die
+// neue Spalte und ihr freier Platz; false, wenn es keine weitere Spalte gibt.
+func lmfNaechsteSpalte(bau lmfSatzbau, spalten [][]lmfBaustein, b lmfBaustein, aktuell, kap int) (int, int, bool) {
+	if aktuell+1 >= bau.modus.spalten {
+		return aktuell, 0, false
+	}
+	aktuell, frei := aktuell+1, kap
+	if b.art == lmfDaten {
+		kopf := bau.fortsetzung(b.abschnitt)
+		spalten[aktuell] = append(spalten[aktuell], kopf...)
+		frei -= lmfHoehe(kopf)
+	}
+	return aktuell, frei, true
 }
 
 // lmfNotverteilung ist der Ausweg, wenn selbst die kleinste Schrift nicht reicht (jenseits

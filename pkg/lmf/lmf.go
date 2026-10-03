@@ -134,6 +134,13 @@ func Zerlege(signatur string) (z Zerlegung, ok bool) {
 	if i := strings.Index(rest, "/"); i >= 0 && !strings.ContainsAny(rest[i:], "0123456789") {
 		rest = rest[:i]
 	}
+	z.JahrgangVon, z.JahrgangBis = jahrgangsSpanne(rest)
+	return z, true
+}
+
+// jahrgangsSpanne liest den kleinsten und den größten Jahrgang aus dem Rest der Signatur;
+// ohne Zahl zwischen 5 und 13 bleibt es bei 0/0.
+func jahrgangsSpanne(rest string) (von, bis int) {
 	for _, zahl := range jahrgangsZahlen.FindAllString(rest, -1) {
 		j := int(zahl[0] - '0')
 		if len(zahl) == 2 {
@@ -142,14 +149,14 @@ func Zerlege(signatur string) (z Zerlegung, ok bool) {
 		if j < 5 || j > 13 {
 			continue
 		}
-		if z.JahrgangVon == 0 || j < z.JahrgangVon {
-			z.JahrgangVon = j
+		if von == 0 || j < von {
+			von = j
 		}
-		if j > z.JahrgangBis {
-			z.JahrgangBis = j
+		if j > bis {
+			bis = j
 		}
 	}
-	return z, true
+	return von, bis
 }
 
 // stichwort ist ein Eintrag der Titel-Heuristik. Ein Slice, keine Map: Die Reihenfolge
