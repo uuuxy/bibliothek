@@ -170,3 +170,132 @@ func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
 		t.Errorf("Frist muss Berliner Tagesende sein (21:59:59Z am 15.07.), war %s", fristUTC.Format(time.RFC3339))
 	}
 }
+
+// Die Frist von Hand, über die Tür: Eine Ablehnung schreibt weder Frist noch Protokoll. Ein
+// Zeitstempel gilt wörtlich, ein Datum als Tagesende, und nur eine Frist in der Zukunft setzt
+// die Mahnstufe zurück — ein vorgezogenes Datum lässt sie stehen.
+func TestOverrideDueDate_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	var adminID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Tür', 'Admin', 'frist-tuer@test.invalid', 'admin', true) RETURNING id`).Scan(&adminID); err != nil {
+		t.Fatalf("Test-Admin: %v", err)
+	}
+	sid := seedSchueler(t, pool, "S-FT-1", "Tuer", "5a")
+	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
+	ausleihe := seedAusleihe(t, pool, sid, "Buch Tuer", alteFrist)
+	zurueck := seedAusleihe(t, pool, sid, "Buch zurueck", alteFrist)
+	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP WHERE id = $1`, zurueck); err != nil {
+		t.Fatalf("Rückgabe buchen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET mahnstufe = 2, letztes_mahndatum = CURRENT_TIMESTAMP WHERE id = $1`, ausleihe); err != nil {
+		t.Fatalf("Mahnstufe setzen: %v", err)
+	}
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	mux := http.NewServeMux()
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(repository.NewAuditRepository(pool)))
+	rufe := func(ausleiheID, rumpf string, angemeldet bool) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleiheID+"/faelligkeit", strings.NewReader(rumpf))
+		if angemeldet {
+			req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
+				&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
+		}
+		w := httptest.NewRecorder()
+		mux.ServeHTTP(w, req)
+		return w
+	}
+	stand := func(ausleiheID string) (frist time.Time, mahnstufe int, gemahnt bool) {
+		t.Helper()
+		if err := pool.QueryRow(ctx, `SELECT rueckgabe_frist, mahnstufe, letztes_mahndatum IS NOT NULL FROM ausleihen WHERE id = $1`,
+			ausleiheID).Scan(&frist, &mahnstufe, &gemahnt); err != nil {
+			t.Fatalf("Ausleihe lesen: %v", err)
+		}
+		return frist, mahnstufe, gemahnt
+	}
+
+	zukunft := time.Now().AddDate(1, 0, 0).Format("2006-01-02")
+	const unbekannt = "99999999-9999-9999-9999-999999999999"
+	for _, f := range []struct {
+		name, ausleiheID, rumpf string
+		angemeldet              bool
+		status                  int
+		stueck                  string
+	}{
+		{"ohne Sitzung", ausleihe, `{"faellig_am":"` + zukunft + `"}`, false, http.StatusUnauthorized, "Sitzungs-Information"},
+		{"ohne Datum", ausleihe, `{}`, true, http.StatusBadRequest, ""},
+		{"Datum unlesbar", ausleihe, `{"faellig_am":"morgen"}`, true, http.StatusBadRequest, "ungültiges Datumsformat"},
+		{"unbekannte Ausleihe, Frist in der Zukunft", unbekannt, `{"faellig_am":"` + zukunft + `"}`, true, http.StatusNotFound, "nicht gefunden"},
+		{"unbekannte Ausleihe, vorgezogene Frist", unbekannt, `{"faellig_am":"2022-06-01"}`, true, http.StatusNotFound, "nicht gefunden"},
+		{"zurückgegeben, Frist in der Zukunft", zurueck, `{"faellig_am":"` + zukunft + `"}`, true, http.StatusNotFound, "nicht gefunden"},
+		{"zurückgegeben, vorgezogene Frist", zurueck, `{"faellig_am":"2022-06-01"}`, true, http.StatusNotFound, "nicht gefunden"},
+	} {
+		w := rufe(f.ausleiheID, f.rumpf, f.angemeldet)
+		if w.Code != f.status {
+			t.Errorf("%s: Status %d, erwartet %d: %s", f.name, w.Code, f.status, w.Body.String())
+		}
+		if !strings.Contains(w.Body.String(), f.stueck) {
+			t.Errorf("%s: die Antwort nennt %q nicht: %s", f.name, f.stueck, w.Body.String())
+		}
+	}
+	for _, id := range []string{ausleihe, zurueck} {
+		if frist, _, _ := stand(id); !frist.Equal(alteFrist) {
+			t.Fatalf("eine Ablehnung hat die Frist geschrieben: %s", frist.UTC().Format(time.RFC3339))
+		}
+	}
+	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'FRIST_OVERRIDE'`); n != 0 {
+		t.Fatalf("%d Protokolleinträge nach sieben Ablehnungen", n)
+	}
+
+	// Vorgezogen: Die Frist steht, die Mahnstufe bleibt.
+	if w := rufe(ausleihe, `{"faellig_am":"2022-06-01"}`, true); w.Code != http.StatusOK {
+		t.Fatalf("vorgezogene Frist: Status %d: %s", w.Code, w.Body.String())
+	}
+	if _, mahnstufe, gemahnt := stand(ausleihe); mahnstufe != 2 || !gemahnt {
+		t.Errorf("nach vorgezogener Frist: Mahnstufe %d, Mahndatum gesetzt %v — erwartet 2 und true", mahnstufe, gemahnt)
+	}
+
+	// Ein Zeitstempel in der Zukunft gilt auf die Sekunde und beginnt die Mahnfolge neu.
+	stempel := time.Now().AddDate(1, 0, 0).UTC().Truncate(time.Second).Add(90 * time.Minute)
+	if w := rufe(ausleihe, `{"faellig_am":"`+stempel.Format(time.RFC3339)+`"}`, true); w.Code != http.StatusOK {
+		t.Fatalf("Zeitstempel: Status %d: %s", w.Code, w.Body.String())
+	}
+	frist, mahnstufe, gemahnt := stand(ausleihe)
+	if !frist.Equal(stempel) {
+		t.Errorf("Frist %s, erwartet den Zeitstempel %s — kein Tagesende", frist.UTC().Format(time.RFC3339), stempel.Format(time.RFC3339))
+	}
+	if mahnstufe != 0 || gemahnt {
+		t.Errorf("nach Frist in der Zukunft: Mahnstufe %d, Mahndatum gesetzt %v — erwartet 0 und false", mahnstufe, gemahnt)
+	}
+	// Das Protokoll nennt je Änderung den Bearbeiter, die Ausleihe und die neue Frist.
+	rows, err := pool.Query(ctx, `
+		SELECT details->>'neue_frist' FROM audit_logs
+		WHERE aktion = 'FRIST_OVERRIDE' AND admin_id = $1 AND details->>'ausleihe_id' = $2 ORDER BY zeitstempel, id`, adminID, ausleihe)
+	if err != nil {
+		t.Fatalf("Protokoll lesen: %v", err)
+	}
+	defer rows.Close()
+	var protokolliert []time.Time
+	for rows.Next() {
+		var text string
+		if err := rows.Scan(&text); err != nil {
+			t.Fatalf("Protokoll lesen: %v", err)
+		}
+		frist, err := time.Parse(time.RFC3339, text)
+		if err != nil {
+			t.Fatalf("neue_frist %q im Protokoll ist kein Zeitstempel: %v", text, err)
+		}
+		protokolliert = append(protokolliert, frist)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("Protokoll lesen: %v", err)
+	}
+	if len(protokolliert) != 2 || !protokolliert[1].Equal(stempel) {
+		t.Errorf("Protokoll nennt die Fristen %v — erwartet zwei Einträge, der zweite mit %s", protokolliert, stempel.Format(time.RFC3339))
+	}
+}

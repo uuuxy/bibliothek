@@ -51,14 +51,8 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	// Frist nicht verlängert werden — die Sperre soll zur Rückgabe zwingen, nicht durch
 	// eine Verlängerung ausgehebelt werden. Welche Sperre zählt, sagt die Regel der Theke
 	// (checkAusleiheGesperrt): Beim Schulbuch nur die von Hand, beim Kollegen keine.
-	gesperrt, blockReason, errChk := s.checkAusleiheGesperrt(ctx, ausleiheID)
-	if errChk != nil {
-		if errors.Is(errChk, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
-			return
-		}
-		log.Printf("Fehler bei Sperr-Prüfung (Einzel-Verlängerung): %v", errChk)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+	gesperrt, blockReason, geprueft := s.sperreDerAusleihe(ctx, w, ausleiheID, "Einzel-Verlängerung")
+	if !geprueft {
 		return
 	}
 	if gesperrt {
@@ -72,42 +66,14 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 		return
 	}
 
-	// Retrieve standard extension interval
-	settings, err := settingsRepo.GetSettings(ctx)
-	extensionDays := 28 // Default if not configured
-	sommerferien := ""  // leer: nur die Programmtabelle
-	if err == nil {
-		if settings.FristBuchTage > 0 {
-			extensionDays = settings.FristBuchTage
-		}
-		sommerferien = settings.Sommerferien
-	}
+	extensionDays, sommerferien := verlaengerungsRegel(ctx, settingsRepo)
 
-	// Gerechnet wird ab dem SPÄTEREN von altem Fristende und heute.
-	//
-	// Vorher stand hier rueckgabe_frist + Intervall, also immer ab dem alten Fristende. Bei
-	// einer Ausleihe, die länger überfällig war als die Leihfrist, landete die neue Frist
-	// damit WIEDER in der Vergangenheit: Das Buch blieb „Überfällig", die Zeile sah
-	// unverändert aus, und die Erfolgsmeldung nannte ein Datum, das schon vorbei war. Aus
-	// dem Betrieb gemeldet als „es kommt ein Datum in der Vergangenheit, sonst passiert
-	// nichts" — eine Verlängerung, die nicht verlängert, ist keine.
-	//
-	// GREATEST statt schlicht CURRENT_DATE + Intervall: Wer VOR Fristablauf verlängert, soll
-	// die verbleibenden Tage nicht verlieren. Für diesen Fall bleibt es beim bisherigen
-	// Verhalten; nur der überfällige Fall rechnet ab heute.
-	//
-	// Damit liegt die neue Frist immer in der Zukunft, und die Mahn-Eskalation wird immer
-	// zurückgesetzt. Das ist beabsichtigt: Wer verlängert, gewährt ausdrücklich neue Zeit —
-	// ohne den Reset übersprünge dasselbe Buch beim nächsten Überziehen die 1. Mahnstufe
-	// und eskalierte sofort in Stufe 2 (Rechnung).
-	//
-	// Seit dem 24.09.2026 rechnet Go statt SQL: Die neue Frist ist eine Tagesfrist wie die
-	// der Ausleihe (lmfplan.Ferientabelle.Tagesfrist) — Tagesende in der Schulzeitzone, und fällt sie auf
-	// ein Wochenende, einen Feiertag oder in die Ferien, der nächste Schultag. Vorher stand
-	// hier GREATEST(rueckgabe_frist, CURRENT_TIMESTAMP) + Intervall: ohne Kalender, und bei
-	// einer überfälligen Ausleihe mit der Uhrzeit der Verlängerung statt des Tagesendes.
-	// Die Zeile ist gesperrt, bis die neue Frist steht (zwei Verlängerungen zugleich
-	// rechnen nacheinander, nicht beide von derselben alten Frist aus).
+	// Gerechnet wird ab dem späteren von altem Fristende und heute: Wer vor Fristablauf
+	// verlängert, verliert die verbleibenden Tage nicht, und eine lange überfällige Ausleihe
+	// bekommt keine Frist in der Vergangenheit. Die neue Frist ist eine Tagesfrist wie die der
+	// Ausleihe (lmfplan.Ferientabelle.Tagesfrist), und die Mahnfolge beginnt neu — sonst
+	// überspränge dasselbe Buch beim nächsten Überziehen die erste Mahnstufe. Die Zeile bleibt
+	// gesperrt, bis die neue Frist steht, damit zwei Verlängerungen zugleich nacheinander rechnen.
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
 		log.Printf("Fehler beim Starten der Transaktion (Einzel-Verlaengerung): %v", err)
@@ -165,69 +131,57 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 // OverrideDueDateHandler manually overrides the due date of an active loan.
 func (s *Server) OverrideDueDateHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
-		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+		s.handleOverrideDueDate(w, r, auditRepo)
+	}
+}
+
+// handleOverrideDueDate setzt die Frist einer laufenden Ausleihe von Hand.
+func (s *Server) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository) {
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
+		return
+	}
+
+	ausleiheID := r.PathValue("id")
+	if ausleiheID == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Ausleihe-ID"))
+		return
+	}
+
+	var req OverrideDueDateRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
+	}
+
+	newDate, err := leseFaelligAm(req.FaelligAm)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	ctx := r.Context()
+
+	// Wie bei den beiden Verlängerungen: Eine Frist in der Zukunft machte die Ausleihe eines
+	// gesperrten Lesers wieder „nicht überfällig", setzte die Mahnfolge zurück und hebelte so
+	// die Sperre aus, die aus überfälligen Ausleihen berechnet wird. Ein vorgezogenes Datum
+	// (Rückruf) bleibt auch bei Sperre erlaubt: Es hebt die Sanktion nicht auf.
+	if newDate.After(time.Now()) {
+		gesperrt, _, geprueft := s.sperreDerAusleihe(ctx, w, ausleiheID, "Frist-Überschreibung")
+		if !geprueft {
 			return
 		}
-
-		ausleiheID := r.PathValue("id")
-		if ausleiheID == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende Ausleihe-ID"))
+		if gesperrt {
+			apierrors.SendHTTPError(w, http.StatusForbidden,
+				errors.New("gesperrte Ausleihe: die Frist kann nicht in die Zukunft verschoben werden — die Sperre soll zur Rückgabe zwingen"))
 			return
 		}
+	}
 
-		var req OverrideDueDateRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-
-		newDate, err := time.Parse(time.RFC3339, req.FaelligAm)
-		if err != nil {
-			// Fallback auf einfaches Datum YYYY-MM-DD
-			newDate, err = time.Parse("2006-01-02", req.FaelligAm)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Datumsformat (erwartet ISO 8601 oder YYYY-MM-DD)"))
-				return
-			}
-			// Tagesende in der Schulzeitzone (Berlin), nicht roh in UTC: sonst wäre die
-			// überschriebene Frist 1–2 h später fällig als eine regulär berechnete zum
-			// selben Datum (dieselbe EINZIGE Definition wie service.CalculateDueDate).
-			newDate = service.TagesEndeInSchulzeitzone(newDate)
-		}
-
-		ctx := r.Context()
-
-		// Sanktions-Konsistenz mit ExtendLoanHandler und GlobalExtendLMFHandler: Ist das
-		// Buch an einen gesperrten Schüler verliehen (welche Sperre zählt, sagt
-		// checkAusleiheGesperrt), darf die Frist nicht in die ZUKUNFT verschoben werden — das
-		// machte die Ausleihe wieder "nicht überfällig", setzte die Mahn-Eskalation zurück und
-		// hebelte so die Auto-Sperre aus (die aus überfälligen Ausleihen berechnet wird).
-		// Genau diese Umgehung war bis 18.08.2026 über diesen Endpunkt möglich, während die
-		// beiden Verlängerungs-Endpunkte sie ausdrücklich verbieten. Ein VORGEZOGENES Datum
-		// (Rückruf) bleibt auch bei Sperre erlaubt: Es hebt die Sanktion nicht auf, im Gegenteil.
-		if newDate.After(time.Now()) {
-			gesperrt, _, errChk := s.checkAusleiheGesperrt(ctx, ausleiheID)
-			if errChk != nil {
-				if errors.Is(errChk, pgx.ErrNoRows) {
-					apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
-					return
-				}
-				log.Printf("Fehler bei Sperr-Prüfung (Frist-Überschreibung): %v", errChk)
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
-				return
-			}
-			if gesperrt {
-				apierrors.SendHTTPError(w, http.StatusForbidden,
-					errors.New("gesperrte Ausleihe: die Frist kann nicht in die Zukunft verschoben werden — die Sperre soll zur Rückgabe zwingen"))
-				return
-			}
-		}
-
-		// Wie bei der regulären Verlängerung: Eine neue Frist in der Zukunft macht die
-		// Ausleihe wieder "nicht überfällig" und setzt die Mahn-Eskalation zurück. Ein
-		// vorgezogenes Datum (Rückruf) lässt die Mahnstufe unberührt.
-		q := `
+	// Wie bei der regulären Verlängerung: Eine neue Frist in der Zukunft macht die
+	// Ausleihe wieder "nicht überfällig" und setzt die Mahn-Eskalation zurück. Ein
+	// vorgezogenes Datum (Rückruf) lässt die Mahnstufe unberührt.
+	q := `
 			UPDATE ausleihen
 			SET rueckgabe_frist = $1,
 			    mahnstufe = CASE WHEN $1 > CURRENT_TIMESTAMP THEN 0 ELSE mahnstufe END,
@@ -236,35 +190,80 @@ func (s *Server) OverrideDueDateHandler(auditRepo repository.AuditRepository) ht
 			RETURNING id, rueckgabe_frist
 		`
 
-		var id string
-		var newFrist time.Time
-		err = s.DB.Pool.QueryRow(ctx, q, newDate, ausleiheID).Scan(&id, &newFrist)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
-				return
-			}
-			log.Printf("Fehler bei manueller Frist-Überschreibung: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+	var id string
+	var newFrist time.Time
+	err = s.DB.Pool.QueryRow(ctx, q, newDate, ausleiheID).Scan(&id, &newFrist)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 			return
 		}
-
-		// Ein manuell überschriebenes Fälligkeitsdatum ist ein Eingriff in eine Sanktion
-		// (Mahnfristen, Auto-Sperre) — er gehört revisionssicher protokolliert, genau wie
-		// der Checkout-Override (OVERRIDE_BLOCK). Best effort: Der Eingriff gilt, auch wenn
-		// das Log klemmt, aber der Fehlversuch steht wenigstens im Server-Log.
-		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "FRIST_OVERRIDE", "", map[string]any{
-			"ausleihe_id": id,
-			"neue_frist":  newFrist.Format(time.RFC3339),
-		}); logErr != nil {
-			log.Printf("Audit für Frist-Überschreibung fehlgeschlagen: %v", logErr)
-		}
-
-		RespondJSON(w, http.StatusOK, map[string]interface{}{
-			"success":    true,
-			"faellig_am": newFrist,
-		})
+		log.Printf("Fehler bei manueller Frist-Überschreibung: %v", err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		return
 	}
+
+	// Ein manuell überschriebenes Fälligkeitsdatum ist ein Eingriff in eine Sanktion
+	// (Mahnfristen, Auto-Sperre) — er gehört revisionssicher protokolliert, genau wie
+	// der Checkout-Override (OVERRIDE_BLOCK). Best effort: Der Eingriff gilt, auch wenn
+	// das Log klemmt, aber der Fehlversuch steht wenigstens im Server-Log.
+	if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "FRIST_OVERRIDE", "", map[string]any{
+		"ausleihe_id": id,
+		"neue_frist":  newFrist.Format(time.RFC3339),
+	}); logErr != nil {
+		log.Printf("Audit für Frist-Überschreibung fehlgeschlagen: %v", logErr)
+	}
+
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"success":    true,
+		"faellig_am": newFrist,
+	})
+}
+
+// leseFaelligAm liest die Frist als Zeitstempel (ISO 8601) oder als Datum. Ein Datum gilt bis
+// zum Tagesende in der Schulzeitzone, nach derselben Definition wie service.CalculateDueDate:
+// Roh in UTC wäre die überschriebene Frist ein bis zwei Stunden später fällig als eine
+// berechnete zum selben Datum.
+func leseFaelligAm(text string) (time.Time, error) {
+	if zeitstempel, err := time.Parse(time.RFC3339, text); err == nil {
+		return zeitstempel, nil
+	}
+	datum, err := time.Parse("2006-01-02", text)
+	if err != nil {
+		return time.Time{}, errors.New("ungültiges Datumsformat (erwartet ISO 8601 oder YYYY-MM-DD)")
+	}
+	return service.TagesEndeInSchulzeitzone(datum), nil
+}
+
+// verlaengerungsRegel liefert die Tage einer Verlängerung und die Sommerferien aus den
+// Einstellungen. Sind sie nicht lesbar, gelten 28 Tage und die Ferientabelle des Programms.
+func verlaengerungsRegel(ctx context.Context, settingsRepo repository.SystemSettingsRepository) (tage int, sommerferien string) {
+	settings, err := settingsRepo.GetSettings(ctx)
+	if err != nil {
+		return 28, ""
+	}
+	tage = 28
+	if settings.FristBuchTage > 0 {
+		tage = settings.FristBuchTage
+	}
+	return tage, settings.Sommerferien
+}
+
+// sperreDerAusleihe fragt die Regel der Theke (checkAusleiheGesperrt) für eine Verlängerung oder
+// eine Frist von Hand. Fehlt die Ausleihe oder scheitert die Prüfung, ist die Anfrage hier
+// beantwortet und geprueft false.
+func (s *Server) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, ausleiheID, vorgang string) (gesperrt bool, grund string, geprueft bool) {
+	gesperrt, grund, err := s.checkAusleiheGesperrt(ctx, ausleiheID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
+		return false, "", false
+	}
+	if err != nil {
+		log.Printf("Fehler bei Sperr-Prüfung (%s): %v", vorgang, err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		return false, "", false
+	}
+	return gesperrt, grund, true
 }
 
 // GlobalExtendLMFHandler performs a mass-extension for all LMF media for a specific class.
