@@ -53,6 +53,9 @@ var (
 	// Schreibweisen für denselben Personenkreis und dürfen sich treffen (die
 	// Selbstanmeldung legt jeden als „lehrkraft" an, auch eine LiV).
 	ErrZusammenfuehrenVerschiedeneArten = errors.New("ein schüler lässt sich nicht mit einem kollegen zusammenführen")
+	// ErrZusammenfuehrenZweiKonten meldet: Beide Datensätze haben ein Zugangskonto. Über den
+	// Namen erkennt die Route die Abweisung und nennt den Grund statt einer Störung.
+	ErrZusammenfuehrenZweiKonten = errors.New("beide datensätze haben ein eigenes zugangskonto")
 )
 
 // PlatzhalterDomain ist die Domäne der Ersatzadressen aus der Littera-Übernahme. Sie
@@ -366,9 +369,7 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		return nil, fmt.Errorf("zugangskonten prüfen: %w", err)
 	}
 	if zielKonto && quelleKonto {
-		return nil, fmt.Errorf("beide Datensätze haben ein eigenes Zugangskonto — " +
-			"zusammenführen würde eine der beiden Anmeldungen verlieren; erst in der " +
-			"Benutzerverwaltung entscheiden, welches Konto bleibt")
+		return nil, ErrZusammenfuehrenZweiKonten
 	}
 	if g.Konten, err = idsAus(ctx, tx,
 		`UPDATE benutzer SET leser_id = $1, aktualisiert_am = NOW() WHERE leser_id = $2 RETURNING id`,

@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 
 	"bibliothek/repository"
@@ -464,8 +463,8 @@ func TestZusammenfuehren_ZweiKontenBrichtAb(t *testing.T) {
 	if err == nil {
 		t.Fatal("das Zusammenführen ging durch — eine der beiden Anmeldungen wäre verloren")
 	}
-	if !strings.Contains(err.Error(), "Zugangskonto") {
-		t.Errorf("Abbruch kam, nennt aber nicht den Grund: %v", err)
+	if !errors.Is(err, repository.ErrZusammenfuehrenZweiKonten) {
+		t.Errorf("Abbruch kam, aber nicht als die benannte Abweisung, an der die Route den Grund erkennt: %v", err)
 	}
 
 	// Und es ist wirklich nichts passiert: Die Quelle steht noch, beide Konten hängen noch.

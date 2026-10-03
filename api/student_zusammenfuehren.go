@@ -53,6 +53,10 @@ func (s *Server) ZusammenfuehrenSchuelerHandler(auditRepo repository.AuditReposi
 			return apierrors.NotFound("Einer der beiden Schüler wurde nicht gefunden oder liegt im Papierkorb.", err)
 		case errors.Is(err, repository.ErrZusammenfuehrenAnonymisiert):
 			return apierrors.Conflict("Ein anonymisierter Datensatz trägt keine Person mehr und lässt sich nicht zusammenführen.", err)
+		case errors.Is(err, repository.ErrZusammenfuehrenVerschiedeneArten):
+			return apierrors.Conflict("Ein Schüler lässt sich nicht mit einem Kollegen zusammenführen.", err)
+		case errors.Is(err, repository.ErrZusammenfuehrenZweiKonten):
+			return apierrors.Conflict("Beide Datensätze haben ein eigenes Zugangskonto, und beim Zusammenführen ginge eine der beiden Anmeldungen verloren. Erst unter „Benutzer & Rechte“ entscheiden, welches Konto bleibt.", err)
 		case err != nil:
 			return apierrors.Internal("Zusammenführen fehlgeschlagen", err)
 		}
