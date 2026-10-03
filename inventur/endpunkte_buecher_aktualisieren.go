@@ -66,40 +66,46 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 	}
 
 	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch, bestandsangabe(eingabe)); fehler != nil {
-		if errors.Is(fehler, ErrDuplicateISBN) {
-			schreibeDubletteISBN(antwort, fehler)
-			return
-		}
-		var veraltet *BestandVeraltet
-		if errors.As(fehler, &veraltet) {
-			// Mit dem Stand in der Antwort stellt die Maske ihr Feld nach, ohne dass die
-			// übrigen Eingaben verloren gehen.
-			writeJSON(antwort, http.StatusConflict, map[string]any{
-				"error":   veraltet.Meldung(),
-				"bestand": veraltet.Aktuell,
-			})
-			return
-		}
-		if errors.Is(fehler, ErrBookNotFound) {
-			writeError(antwort, http.StatusNotFound, "Buch nicht gefunden")
-			return
-		}
-		if errors.Is(fehler, ErrAutorGeleert) {
-			writeError(antwort, http.StatusBadRequest,
-				"autor darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
-			return
-		}
-		if errors.Is(fehler, ErrISBNFormat) {
-			writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
-			return
-		}
-		log.Printf("Fehler beim Aktualisieren von Buch ID %s: %v", id, fehler)
-		writeError(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden")
+		antworteAufAenderungsfehler(antwort, id, fehler)
 		return
 	}
 
 	buch.ID = id
 	writeJSON(antwort, http.StatusOK, map[string]any{"message": "buch aktualisiert", "data": handler.gespeichert(anfrage.Context(), buch)})
+}
+
+// antworteAufAenderungsfehler ordnet ein, warum ein Titel sich nicht ändern ließ: doppelte
+// ISBN, veralteter Bestand, unbekannter Titel, geleerter Autor, ISBN-Format; alles andere 500.
+func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler error) {
+	if errors.Is(fehler, ErrDuplicateISBN) {
+		schreibeDubletteISBN(antwort, fehler)
+		return
+	}
+	var veraltet *BestandVeraltet
+	if errors.As(fehler, &veraltet) {
+		// Mit dem Stand in der Antwort stellt die Maske ihr Feld nach, ohne dass die
+		// übrigen Eingaben verloren gehen.
+		writeJSON(antwort, http.StatusConflict, map[string]any{
+			"error":   veraltet.Meldung(),
+			"bestand": veraltet.Aktuell,
+		})
+		return
+	}
+	if errors.Is(fehler, ErrBookNotFound) {
+		writeError(antwort, http.StatusNotFound, "Buch nicht gefunden")
+		return
+	}
+	if errors.Is(fehler, ErrAutorGeleert) {
+		writeError(antwort, http.StatusBadRequest,
+			"autor darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
+		return
+	}
+	if errors.Is(fehler, ErrISBNFormat) {
+		writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
+		return
+	}
+	log.Printf("Fehler beim Aktualisieren von Buch ID %s: %v", id, fehler)
+	writeError(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden")
 }
 
 // bestandsangabe liest aus der Eingabe, was sie zum Bestand sagt. Ohne das Feld „stock" sagt

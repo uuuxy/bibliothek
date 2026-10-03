@@ -129,28 +129,7 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 		LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 		WHERE ($1 = '' OR cb.class_name ILIKE '%' || $1 || '%')
 		GROUP BY cb.class_name, b.id, b.titel, b.subject, b.track, b.cover_url, b.isbn, cb.quelle, cb.leser
-		ORDER BY `
-
-	if branch == "" {
-		// Fallback: Workflow-Reihenfolge F, G, R, H
-		query += `
-			CASE 
-				WHEN cb.class_name ILIKE '%F%' THEN 1
-				WHEN cb.class_name ILIKE '%G%' THEN 2
-				WHEN cb.class_name ILIKE '%R%' THEN 3
-				WHEN cb.class_name ILIKE '%H%' THEN 4
-				ELSE 5
-			END, `
-	}
-
-	gradeCast := `CAST(SUBSTRING(cb.class_name FROM '^[0-9]+') AS INTEGER)`
-	descending := sortOrder == "desc"
-
-	if descending {
-		query += gradeCast + ` DESC, cb.class_name DESC, b.titel ASC`
-	} else {
-		query += gradeCast + ` ASC, cb.class_name ASC, b.titel ASC`
-	}
+		ORDER BY ` + klassenSortierung(branch, sortOrder)
 
 	rows, err := repo.db.Query(ctx, query, branch, KlassensatzMindestLeser)
 	if err != nil {
@@ -162,17 +141,9 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 	var classNames []string
 
 	for rows.Next() {
-		var className string
-		var book ClassBook
-		var auflagen []byte
-		err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Verfuegbar, &book.Gesamt, &book.ImZulauf, &book.Quelle, &book.Leser, &auflagen)
+		className, book, err := leseKlassenBuch(rows)
 		if err != nil {
-			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
-		}
-		if len(auflagen) > 0 {
-			if err := json.Unmarshal(auflagen, &book.Auflagen); err != nil {
-				return nil, fmt.Errorf("auflagen von %s in %s: %w", book.ID, className, err)
-			}
+			return nil, err
 		}
 
 		if _, exists := groupsMap[className]; !exists {
@@ -193,6 +164,47 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 	}
 
 	return result, nil
+}
+
+// klassenSortierung ist das ORDER BY der Klassenübersicht: ohne Bildungsgang zuerst in der
+// Reihenfolge F, G, R, H, dann nach Jahrgang, Klasse und Titel.
+func klassenSortierung(branch, sortOrder string) string {
+	sortierung := ""
+	if branch == "" {
+		// Fallback: Workflow-Reihenfolge F, G, R, H
+		sortierung += `
+			CASE 
+				WHEN cb.class_name ILIKE '%F%' THEN 1
+				WHEN cb.class_name ILIKE '%G%' THEN 2
+				WHEN cb.class_name ILIKE '%R%' THEN 3
+				WHEN cb.class_name ILIKE '%H%' THEN 4
+				ELSE 5
+			END, `
+	}
+
+	gradeCast := `CAST(SUBSTRING(cb.class_name FROM '^[0-9]+') AS INTEGER)`
+	if sortOrder == "desc" {
+		return sortierung + gradeCast + ` DESC, cb.class_name DESC, b.titel ASC`
+	}
+	return sortierung + gradeCast + ` ASC, cb.class_name ASC, b.titel ASC`
+}
+
+// leseKlassenBuch liest eine Zeile der Klassenübersicht: die Klasse und ihr Buch, mit der
+// Aufschlüsselung nach Auflagen, wenn die Zeile eine trägt.
+func leseKlassenBuch(rows pgx.Rows) (string, ClassBook, error) {
+	var className string
+	var book ClassBook
+	var auflagen []byte
+	err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Verfuegbar, &book.Gesamt, &book.ImZulauf, &book.Quelle, &book.Leser, &auflagen)
+	if err != nil {
+		return "", book, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
+	}
+	if len(auflagen) > 0 {
+		if err := json.Unmarshal(auflagen, &book.Auflagen); err != nil {
+			return "", book, fmt.Errorf("auflagen von %s in %s: %w", book.ID, className, err)
+		}
+	}
+	return className, book, nil
 }
 
 // UpdateClassBooks schreibt die Buchzuordnung einer Klasse neu. oldClassName wird dabei

@@ -6,6 +6,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // DeleteBooks löscht Titel samt allem, was an ihnen hängt.
@@ -95,17 +97,8 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		return err
 	}
 
-	// In derselben Transaktion: Entweder die Löschung UND ihre Spur, oder keins von beidem.
-	if err := protokolliereOffeneSchaeden(ctx, tx, offeneSchaeden); err != nil {
-		return err
-	}
-	if err := repository.ProtokolliereWartendeBezuege(ctx, tx, wartende); err != nil {
-		return err
-	}
-	if err := protokolliereOffeneAusleihen(ctx, tx, offene); err != nil {
-		return err
-	}
-	if err := protokolliereGeloeschteExemplare(ctx, tx, exemplarSnaps); err != nil {
+	// In derselben Transaktion: entweder die Löschung und ihre Spur oder keins von beidem.
+	if err := protokolliereWasMitDenTitelnFiel(ctx, tx, offeneSchaeden, wartende, offene, exemplarSnaps); err != nil {
 		return err
 	}
 
@@ -117,4 +110,19 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	// Datenbank doch scheitert.
 	repository.LoescheCoverDateien(localCovers)
 	return nil
+}
+
+// protokolliereWasMitDenTitelnFiel schreibt fest, was das Löschen mitgenommen hat: unbezahlte
+// Forderungen, Wartende, laufende Ausleihen und die Barcodes der Exemplare.
+func protokolliereWasMitDenTitelnFiel(ctx context.Context, tx pgx.Tx, schaeden []offenerSchaden, wartende []repository.WartenderBezug, ausleihen []offeneAusleihe, exemplare []exemplarSnapshot) error {
+	if err := protokolliereOffeneSchaeden(ctx, tx, schaeden); err != nil {
+		return err
+	}
+	if err := repository.ProtokolliereWartendeBezuege(ctx, tx, wartende); err != nil {
+		return err
+	}
+	if err := protokolliereOffeneAusleihen(ctx, tx, ausleihen); err != nil {
+		return err
+	}
+	return protokolliereGeloeschteExemplare(ctx, tx, exemplare)
 }

@@ -58,16 +58,10 @@ func titelBreite(mitGezaehlt bool) float64 {
 // SchulbuecherAlsPDF baut die Bestandsliste. fachName ist die Überschrift („Englisch"
 // oder "" für alle Fächer), zusatz die aktive Einschränkung als Klartext.
 func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byte, error) {
-	// Die Zählspalte erscheint nur, wenn in dieser Auswahl überhaupt etwas gezählt wurde
-	// (03.09.2026). Eine Spalte, die auf jedem Blatt leer bliebe, nähme der
-	// Titelspalte 17 mm weg und behauptete zugleich eine Angabe, die es nicht gibt.
-	mitGezaehlt := false
-	for _, t := range titel {
-		if t.Gezaehlt != "" {
-			mitGezaehlt = true
-			break
-		}
-	}
+	// Die Zählspalte erscheint nur, wenn in dieser Auswahl überhaupt etwas gezählt wurde.
+	// Eine Spalte, die auf jedem Blatt leer bliebe, nähme der Titelspalte 17 mm weg und
+	// behauptete zugleich eine Angabe, die es nicht gibt.
+	mitGezaehlt := hatZaehlung(titel)
 	breiteTitel := titelBreite(mitGezaehlt)
 	fehlendeCover := 0
 
@@ -88,11 +82,7 @@ func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 		pdf.Ln(7)
 		pdf.SetFont("Arial", "", 9)
 		pdf.SetTextColor(120, 120, 120)
-		hinweis := fmt.Sprintf("%d Titel · Stand %s", len(titel), schulzeit.Jetzt().Format("02.01.2006"))
-		if zusatz != "" {
-			hinweis = zusatz + " · " + hinweis
-		}
-		pdf.Cell(0, 5, tr(hinweis))
+		pdf.Cell(0, 5, tr(schulbuchStandzeile(len(titel), zusatz)))
 		pdf.SetTextColor(0, 0, 0)
 		pdf.Ln(9)
 		zeichneKopfzeile(pdf, tr, breiteTitel, mitGezaehlt)
@@ -133,6 +123,26 @@ func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 		return nil, fmt.Errorf("schulbuecher-pdf: %w", err)
 	}
 	return out.Bytes(), nil
+}
+
+// hatZaehlung sagt, ob in der Auswahl mindestens ein Titel gezählt wurde.
+func hatZaehlung(titel []LernmittelTitel) bool {
+	for _, t := range titel {
+		if t.Gezaehlt != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// schulbuchStandzeile ist die Zeile unter der Überschrift: die Einschränkung, wenn es eine
+// gibt, dann Zahl der Titel und Tag des Ausdrucks.
+func schulbuchStandzeile(anzahl int, zusatz string) string {
+	hinweis := fmt.Sprintf("%d Titel · Stand %s", anzahl, schulzeit.Jetzt().Format("02.01.2006"))
+	if zusatz != "" {
+		hinweis = zusatz + " · " + hinweis
+	}
+	return hinweis
 }
 
 // zeichneKopfzeile schreibt die Spaltennamen.

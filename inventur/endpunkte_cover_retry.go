@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -47,42 +48,42 @@ func (handler *APIHandler) handleRetryExternalCovers(writer http.ResponseWriter,
 		return
 	}
 
-	retried := 0
-	updated := 0
-	skipped := 0
-	failed := 0
-
+	zahlen := map[string]int{"retried": 0, coverAktualisiert: 0, coverUebersprungen: 0, coverGescheitert: 0}
 	for _, book := range books {
-		retried++
-		if !validiereISBN(book.ISBN) {
-			skipped++
-			continue
-		}
-
-		lookup, lookupErr := handler.metadaten.SucheNachISBN(request.Context(), book.ISBN)
-		if lookupErr != nil || lookup == nil || lookup.CoverURL == "" {
-			failed++
-			continue
-		}
-		if !strings.HasPrefix(lookup.CoverURL, "http") || lookup.CoverURL == book.CoverURL {
-			skipped++
-			continue
-		}
-
-		if updateErr := handler.repo.UpdateBookMetadata(request.Context(), book.ID, "", "", lookup.CoverURL); updateErr != nil {
-			failed++
-			continue
-		}
-		updated++
+		zahlen["retried"]++
+		zahlen[handler.ladeCoverErneut(request.Context(), book)]++
 	}
 
 	writeJSON(writer, http.StatusOK, map[string]any{
 		"message": "cover-retry abgeschlossen",
-		"data": map[string]int{
-			"retried": retried,
-			"updated": updated,
-			"skipped": skipped,
-			"failed":  failed,
-		},
+		"data":    zahlen,
 	})
+}
+
+// Die Zahlen der Antwort, unter denen ein Titel nach dem erneuten Laden zählt.
+const (
+	coverAktualisiert  = "updated"
+	coverUebersprungen = "skipped"
+	coverGescheitert   = "failed"
+)
+
+// ladeCoverErneut fragt die Katalogdienste nach dem Cover eines Titels, trägt eine neue
+// Adresse ein und nennt, unter welcher Zahl der Titel in der Antwort zählt.
+func (handler *APIHandler) ladeCoverErneut(ctx context.Context, book Book) string {
+	if !validiereISBN(book.ISBN) {
+		return coverUebersprungen
+	}
+
+	lookup, lookupErr := handler.metadaten.SucheNachISBN(ctx, book.ISBN)
+	if lookupErr != nil || lookup == nil || lookup.CoverURL == "" {
+		return coverGescheitert
+	}
+	if !strings.HasPrefix(lookup.CoverURL, "http") || lookup.CoverURL == book.CoverURL {
+		return coverUebersprungen
+	}
+
+	if updateErr := handler.repo.UpdateBookMetadata(ctx, book.ID, "", "", lookup.CoverURL); updateErr != nil {
+		return coverGescheitert
+	}
+	return coverAktualisiert
 }

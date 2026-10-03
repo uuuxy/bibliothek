@@ -250,37 +250,33 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQu
 // sich über die Zahl nicht aussondern.
 func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository.DBQueryer, titelID string, currentStock, expectedStock int) error {
 	if expectedStock > currentStock {
-		numToCreate := expectedStock - currentStock
-		if numToCreate > 0 {
-			// Nummern aus barcode_seq — dieselbe Quelle wie Bestellwesen, Handvergabe und
-			// Littera-Import (Migration 068: „EINE Quelle für alle Wege"). Bis zum
-			// 07.09.2026 zog diese Stelle aus einer eigenen, nirgends deklarierten Sequenz
-			// und prägte „SYS-…" — ein zweiter Nummernkreis, den 068 übersehen hatte
-			// (Migration 105 räumt ihn ab).
-			barcodes, err := repository.ZieheFreieExemplarBarcodes(ctx, q, numToCreate)
-			if err != nil {
-				return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)
-			}
-			_, err = q.Exec(ctx, `
+		// Nummern aus barcode_seq — dieselbe Quelle wie Bestellwesen, Handvergabe und
+		// Littera-Import (Migration 068: eine Quelle für alle Wege).
+		barcodes, err := repository.ZieheFreieExemplarBarcodes(ctx, q, expectedStock-currentStock)
+		if err != nil {
+			return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)
+		}
+		_, err = q.Exec(ctx, `
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
 				SELECT $1, unnest($2::text[]), true, 'Automatisch generiert'
 			`, titelID, barcodes)
-			if err != nil {
-				return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)
-			}
+		if err != nil {
+			return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)
 		}
-	} else if expectedStock < currentStock {
-		numToRetire := currentStock - expectedStock
+		return nil
+	}
+	if expectedStock == currentStock {
+		return nil
+	}
+	numToRetire := currentStock - expectedStock
 
-		// 1. Versuchen, nicht-ausgeliehene Exemplare auszusondern
-		//
-		// ist_ausleihbar = false gehört DAZU. Hier stand bis zum 23.08.2026 nur
-		// ist_ausgesondert = true — anders als in allen drei anderen Aussonderungswegen
-		// (repository/audit_books.go, damage.go, book_inventory.go), die beide Spalten
-		// setzen. Ein ausgesondertes Exemplar, das sich weiterhin "ausleihbar" nennt, ist
-		// ein Widerspruch, der nur deshalb keinen Schaden anrichtet, weil jeder heutige
-		// Leser BEIDE Spalten prüft. Der erste, der nur ist_ausleihbar liest, verleiht es.
-		query := `
+	// 1. Versuchen, nicht-ausgeliehene Exemplare auszusondern
+	//
+	// ist_ausleihbar = false gehört dazu, wie in den anderen Aussonderungswegen
+	// (repository/audit_books.go, damage.go, book_inventory.go): Ein ausgesondertes
+	// Exemplar, das sich weiterhin „ausleihbar" nennt, verleiht der erste Leser, der nur
+	// diese Spalte prüft.
+	query := `
 			UPDATE buecher_exemplare
 			SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR', bestellstatus = NULL, letzte_bewegung_am = CURRENT_TIMESTAMP,
 			    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert'
@@ -292,16 +288,18 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 				LIMIT $2
 			)
 		`
-		result, err := q.Exec(ctx, query, titelID, numToRetire)
-		if err != nil {
-			return fmt.Errorf("fehler beim aussondern von exemplaren: %w", err)
-		}
+	result, err := q.Exec(ctx, query, titelID, numToRetire)
+	if err != nil {
+		return fmt.Errorf("fehler beim aussondern von exemplaren: %w", err)
+	}
 
-		retired := result.RowsAffected()
-		if retired < int64(numToRetire) {
-			// 2. Fallback: Auch ausgeliehene Exemplare aussondern, falls nötig
-			remainingToRetire := int64(numToRetire) - retired
-			fallbackQuery := `
+	retired := result.RowsAffected()
+	if retired >= int64(numToRetire) {
+		return nil
+	}
+	// 2. Fallback: Auch ausgeliehene Exemplare aussondern, falls nötig
+	remainingToRetire := int64(numToRetire) - retired
+	fallbackQuery := `
 				UPDATE buecher_exemplare
 				SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR', bestellstatus = NULL, letzte_bewegung_am = CURRENT_TIMESTAMP,
 				    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert (war ausgeliehen)'
@@ -312,12 +310,9 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 					LIMIT $2
 				)
 			`
-			_, err = q.Exec(ctx, fallbackQuery, titelID, remainingToRetire)
-			if err != nil {
-				return fmt.Errorf("fehler beim aussondern (fallback): %w", err)
-			}
-		}
+	_, err = q.Exec(ctx, fallbackQuery, titelID, remainingToRetire)
+	if err != nil {
+		return fmt.Errorf("fehler beim aussondern (fallback): %w", err)
 	}
-
 	return nil
 }
