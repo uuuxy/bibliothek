@@ -54,3 +54,45 @@ func TestVerteileLmfPlan_PlatzJeZeile(t *testing.T) {
 		}
 	})
 }
+
+// Ein freier Tag des Plans wird übersprungen und mit seinem Grund als Ausfall genannt; ohne
+// Grund heißt er „freier Tag". Der 10.09.2026 ist ein Donnerstag, bei einer Stunde je Tag
+// liegt jede Zeile auf einem eigenen Schultag.
+func TestVerteileLmfPlan_FreieTageWerdenUebersprungenUndGenannt(t *testing.T) {
+	s := &Server{}
+	entwurf := func(frei []repository.LmfFreierTag) lmfPlanEntwurf {
+		return lmfPlanEntwurf{
+			Plan: repository.LmfPlan{
+				Art: repository.LmfTerminAusgabe, ErsterTag: "2026-09-10",
+				Startstunde: 1, StundenJeTag: 1, FreieTage: frei,
+			},
+			Zeilen: []repository.LmfPlanZeile{{Klassen: []string{"05A"}}, {Klassen: []string{"05B"}}, {Klassen: []string{"05C"}}},
+			Fest:   []*lmfplan.Platz{nil, nil, nil},
+		}
+	}
+
+	e := entwurf([]repository.LmfFreierTag{{Datum: "2026-09-11", Grund: "Pädagogischer Tag"}, {Datum: "2026-09-14"}})
+	plaetze, ausfaelle, err := s.verteileLmfPlan(&e)
+	if err != nil {
+		t.Fatalf("Plan mit freien Tagen abgelehnt: %v", err)
+	}
+	var tage []string
+	for _, p := range plaetze {
+		tage = append(tage, p.Datum.Format("2006-01-02"))
+	}
+	if got := strings.Join(tage, ","); got != "2026-09-10,2026-09-15,2026-09-16" {
+		t.Errorf("Plätze %s, erwartet 2026-09-10,2026-09-15,2026-09-16", got)
+	}
+	var genannt []string
+	for _, a := range ausfaelle {
+		genannt = append(genannt, a.Datum+" "+a.Grund)
+	}
+	if got := strings.Join(genannt, ","); got != "2026-09-11 Pädagogischer Tag,2026-09-14 freier Tag" {
+		t.Errorf("Ausfälle %q, erwartet den pädagogischen Tag und den freien Tag ohne Grund", got)
+	}
+
+	e = entwurf([]repository.LmfFreierTag{{Datum: "kein Datum"}})
+	if _, _, err := s.verteileLmfPlan(&e); err == nil {
+		t.Error("ein freier Tag ohne lesbares Datum muss die Verteilung abbrechen")
+	}
+}

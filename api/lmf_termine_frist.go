@@ -28,52 +28,64 @@ import (
 // der umgeschriebenen Ausleihen.
 func (s *Server) koppleLmfFristen(ctx context.Context, ex repository.DBQueryer, alt, neu *repository.LmfTermin) (int64, error) {
 	repo := repository.NewLmfTerminRepository(s.DB.Pool)
-	var gesamt int64
-
-	// 1. Klassen, die ihren Rückgabe-Termin verlieren → zurück zum Stichtag.
-	if alt != nil && alt.Art == repository.LmfTerminRueckgabe {
-		verlierer := alt.Klassen
-		if neu != nil && neu.Art == repository.LmfTerminRueckgabe {
-			verlierer = ohne(alt.Klassen, neu.Klassen)
-		}
-		if len(verlierer) > 0 {
-			altTag, err := planTag(alt.Datum)
-			if err != nil {
-				return gesamt, err
-			}
-			einstellungen, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
-			if err != nil {
-				return gesamt, err
-			}
-			// Der Stichtag des Schuljahres, in dem der Termin lag — NICHT der nächste ab
-			// heute: Angefasst werden nur Fristen dieses Schuljahres (von/bis unten),
-			// und sie gehen dorthin zurück, wo sie ohne Plan gestanden hätten.
-			stichtag := repository.LmfStichtagImSchuljahr(altTag, einstellungen.LmfStichtag)
-			von, bis := schuljahrGrenzen(altTag)
-			n, err := repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, verlierer,
-				service.TagesEndeInSchulzeitzone(stichtag), von, bis, &altTag)
-			if err != nil {
-				return gesamt, err
-			}
-			gesamt += n
-		}
+	gesamt, err := s.loeseLmfFristenVomTermin(ctx, ex, repo, alt, neu)
+	if err != nil {
+		return gesamt, err
 	}
-
-	// 2. Klassen des (neuen) Rückgabe-Termins → Frist ist der Termin.
-	if neu != nil && neu.Art == repository.LmfTerminRueckgabe && len(neu.Klassen) > 0 {
-		neuTag, err := planTag(neu.Datum)
-		if err != nil {
-			return gesamt, err
-		}
-		von, bis := schuljahrGrenzen(neuTag)
-		n, err := repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, neu.Klassen,
-			service.TagesEndeInSchulzeitzone(neuTag), von, bis, nil)
-		if err != nil {
-			return gesamt, err
-		}
-		gesamt += n
+	n, err := setzeLmfFristenAufTermin(ctx, ex, repo, neu)
+	if err != nil {
+		return gesamt, err
 	}
-	return gesamt, nil
+	return gesamt + n, nil
+}
+
+// loeseLmfFristenVomTermin bringt die Fristen der Klassen, die ihren Rückgabe-Termin
+// verlieren, zurück zum Stichtag.
+func (s *Server) loeseLmfFristenVomTermin(ctx context.Context, ex repository.DBQueryer, repo *repository.LmfTerminRepository, alt, neu *repository.LmfTermin) (int64, error) {
+	if alt == nil || alt.Art != repository.LmfTerminRueckgabe {
+		return 0, nil
+	}
+	verlierer := alt.Klassen
+	if neu != nil && neu.Art == repository.LmfTerminRueckgabe {
+		verlierer = ohne(alt.Klassen, neu.Klassen)
+	}
+	if len(verlierer) == 0 {
+		return 0, nil
+	}
+	altTag, err := planTag(alt.Datum)
+	if err != nil {
+		return 0, err
+	}
+	einstellungen, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	if err != nil {
+		return 0, err
+	}
+	// Der Stichtag des Schuljahres, in dem der Termin lag, nicht der nächste ab heute:
+	// Angefasst werden nur Fristen dieses Schuljahres (von/bis unten), und sie gehen
+	// dorthin zurück, wo sie ohne Plan gestanden hätten.
+	stichtag := repository.LmfStichtagImSchuljahr(altTag, einstellungen.LmfStichtag)
+	von, bis := schuljahrGrenzen(altTag)
+	n, err := repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, verlierer,
+		service.TagesEndeInSchulzeitzone(stichtag), von, bis, &altTag)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+// setzeLmfFristenAufTermin setzt die Fristen der Klassen eines Rückgabe-Termins auf dessen
+// Tag.
+func setzeLmfFristenAufTermin(ctx context.Context, ex repository.DBQueryer, repo *repository.LmfTerminRepository, neu *repository.LmfTermin) (int64, error) {
+	if neu == nil || neu.Art != repository.LmfTerminRueckgabe || len(neu.Klassen) == 0 {
+		return 0, nil
+	}
+	neuTag, err := planTag(neu.Datum)
+	if err != nil {
+		return 0, err
+	}
+	von, bis := schuljahrGrenzen(neuTag)
+	return repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, neu.Klassen,
+		service.TagesEndeInSchulzeitzone(neuTag), von, bis, nil)
 }
 
 // planTag liest das Plan-Datum (JJJJ-MM-TT) als Kalendertag der Schule.

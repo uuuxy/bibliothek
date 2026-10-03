@@ -86,41 +86,54 @@ func (s *Server) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LmfTe
 // @Router       /lmf-plan/{art}/veroeffentlichen [post]
 func (s *Server) PostLmfPlanVeroeffentlichenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		art, err := lmfPlanArt(r)
+		antwort, gestempelt, err := s.veroeffentlicheLmfPlan(r)
 		if err != nil {
-			return apierrors.BadRequest(err.Error(), err)
+			return err
 		}
-		repo := repository.NewLmfTerminRepository(s.DB.Pool)
-		st, err := repo.NeuesterLmfPlan(r.Context(), art)
-		if errors.Is(err, pgx.ErrNoRows) {
-			return apierrors.NotFound("kein Plan vorhanden", pgx.ErrNoRows)
+		// Ein schon veröffentlichter Plan ändert sich hier nicht und meldet nichts.
+		if gestempelt {
+			s.meldeLmfPlanGeaendert()
 		}
-		if err != nil {
-			return apierrors.Internal("LMF-Plan laden", err)
-		}
-		antwort := LmfPlanSpeicherAntwort{LmfPlanStand: st, Ausfaelle: []LmfPlanAusfall{}}
-		if st.Plan.VeroeffentlichtAm != nil {
-			RespondJSON(w, http.StatusOK, antwort)
-			return nil
-		}
-		// Stempel und Fristen in EINER Klammer — siehe PutLmfPlanHandler.
-		tx, err := s.DB.Pool.Begin(r.Context())
-		if err != nil {
-			return apierrors.Internal("Transaktion", err)
-		}
-		defer db.SafeRollback(r.Context(), tx)
-		if antwort.LmfPlanStand, err = repo.VeroeffentlicheLmfPlanIn(r.Context(), tx, st.Plan.ID, s.jetzt()); err != nil {
-			return apierrors.Internal("LMF-Plan veröffentlichen", err)
-		}
-		if antwort.FristenAngepasst, err = s.koppleLmfPlanFristen(r.Context(), tx, art, nil, antwort.Zeilen); err != nil {
-			return apierrors.Internal("Fristen koppeln", err)
-		}
-		if err := tx.Commit(r.Context()); err != nil {
-			return apierrors.Internal("LMF-Plan veröffentlichen", err)
-		}
-		s.auditiereLmfPlan(r, auditLmfPlanVeroeffentlicht, art, st.Plan.ID, antwort.FristenAngepasst)
-		s.meldeLmfPlanGeaendert()
 		RespondJSON(w, http.StatusOK, antwort)
 		return nil
 	})
+}
+
+// veroeffentlicheLmfPlan stempelt den neuesten Plan der Art und lässt die Fristen folgen.
+// gestempelt ist false, wenn der Plan schon veröffentlicht war.
+func (s *Server) veroeffentlicheLmfPlan(r *http.Request) (LmfPlanSpeicherAntwort, bool, error) {
+	var keine LmfPlanSpeicherAntwort
+	art, err := lmfPlanArt(r)
+	if err != nil {
+		return keine, false, apierrors.BadRequest(err.Error(), err)
+	}
+	repo := repository.NewLmfTerminRepository(s.DB.Pool)
+	st, err := repo.NeuesterLmfPlan(r.Context(), art)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return keine, false, apierrors.NotFound("kein Plan vorhanden", pgx.ErrNoRows)
+	}
+	if err != nil {
+		return keine, false, apierrors.Internal("LMF-Plan laden", err)
+	}
+	antwort := LmfPlanSpeicherAntwort{LmfPlanStand: st, Ausfaelle: []LmfPlanAusfall{}}
+	if st.Plan.VeroeffentlichtAm != nil {
+		return antwort, false, nil
+	}
+	// Stempel und Fristen stehen in einer Transaktion, wie beim Speichern.
+	tx, err := s.DB.Pool.Begin(r.Context())
+	if err != nil {
+		return keine, false, apierrors.Internal("Transaktion", err)
+	}
+	defer db.SafeRollback(r.Context(), tx)
+	if antwort.LmfPlanStand, err = repo.VeroeffentlicheLmfPlanIn(r.Context(), tx, st.Plan.ID, s.jetzt()); err != nil {
+		return keine, false, apierrors.Internal("LMF-Plan veröffentlichen", err)
+	}
+	if antwort.FristenAngepasst, err = s.koppleLmfPlanFristen(r.Context(), tx, art, nil, antwort.Zeilen); err != nil {
+		return keine, false, apierrors.Internal("Fristen koppeln", err)
+	}
+	if err := tx.Commit(r.Context()); err != nil {
+		return keine, false, apierrors.Internal("LMF-Plan veröffentlichen", err)
+	}
+	s.auditiereLmfPlan(r, auditLmfPlanVeroeffentlicht, art, st.Plan.ID, antwort.FristenAngepasst)
+	return antwort, true, nil
 }
