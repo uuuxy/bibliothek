@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-02
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-03
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -472,8 +472,8 @@ Enter ohne Klick, `frontend/e2e/kiosk-scannerfokus.spec.js`), für 18 den Test m
 Plätzen (`frontend/e2e/buchmaske-bestand.spec.js`), für 15 den Test mit der Maske vor und
 nach der Sperre (`frontend/e2e/sperre-ungespeichertes.spec.js`).
 
-Schärfungen ohne neue Nummer, vom selben Durchgang und vom Durchgang am 02.10.2026 über die
-Änderungen danach:
+Schärfungen ohne neue Nummer, vom selben Durchgang und von den Durchgängen am 02.10.2026 und
+am 03.10.2026 über die Änderungen danach:
 
 - **Frage 3, der einzige Auslöser:** Blendet eine Änderung ein Element aus oder nimmt sie es
   weg — was hat nur dieses Element ausgelöst? Beleg vom 02.10.2026: Das Miniaturbild der
@@ -500,6 +500,15 @@ Schärfungen ohne neue Nummer, vom selben Durchgang und vom Durchgang am 02.10.2
   die neuere Startseite nach einem Rückbau (OFFEN.md 6.1).
 - **Frage 14, die Menge:** Schneidet der Pfad an einer Grenze ab, und sagt er es? Beleg: die
   Vorschläge nur aus den 500 häufigsten Wörtern (`1a0ba055`, 30.09.2026).
+- **Frage 14, die Zeile ohne den Pflichtwert:** Verlangt eine Maske oder ihre Tür beim Ändern
+  ein Feld, das Zeilen im Bestand nicht tragen? An Zeilen mit dem Wert fällt es nie auf. Beleg
+  vom 03.10.2026: Ein Titel ohne ISBN lässt sich in der Maske „Buch bearbeiten" nicht speichern
+  (OFFEN.md 5.47; in der Littera-Sicherung von 2010 tragen 2.193 von 10.732 Titeln keine).
+- **Frage 16, der Scan vor der Antwort:** Was geschieht mit dem nächsten Scan, solange die
+  Antwort auf den vorigen aussteht — fragt er neu, oder schließt er sich dem laufenden Ablauf
+  an, und zu welcher Eingabe gehört dann die Antwort? Beleg vom 03.10.2026: In der Maske
+  „Neues Buch" standen nach einem zweiten Scan während der ISBN-Abfrage die Angaben des ersten
+  Buchs unter der ISBN des zweiten (`isbnAbfrage.test.js`).
 
 ### Frontend-Lesart (ergänzt 31.08.2026)
 

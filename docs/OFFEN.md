@@ -93,12 +93,14 @@ Datenbank und der Littera-Übernahme (7.2).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
+1. **5.47** (ein Titel ohne ISBN lässt sich in der Maske nicht speichern) — vor dem Bauen zu
+   klären, ob die Maske ihn auch neu anlegen soll. Vor dem Echtstart.
+2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
+3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
-3. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
-4. Nach der Antwort zu 8.3: **5.4**.
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+4. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
+5. Nach der Antwort zu 8.3: **5.4**.
+6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
@@ -424,6 +426,18 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   gefunden oder bereits ausgebucht". An einem bestellten sondert es aus, was nie eingetroffen
   ist (`DeleteCopy`): Das Exemplar steht danach im Abgangsbuch, ohne je im Zugangsbuch
   gestanden zu haben. Kategorie B.
+- Der Listenimport kennt die ISBN nur in einer Länge (Rasterdurchgang vom 03.10.2026,
+  nachgestellt: `TEST_DATABASE_URL=… go test -tags raster -run TestRaster_Listenimport ./inventur/`).
+  Die Bestelltür fragt seit dem 25.09.2026 auch nach der anderen Länge, Maske und Bestellsuche
+  seit dem 02.10.2026 (`isbnutil.AndereForm`); `UpsertBooksBatch` gleicht über
+  `ON CONFLICT (isbn)` ab. Trägt der Katalog ein Buch mit zehnstelliger ISBN und nennt die Liste
+  die dreizehnstellige, steht es danach zweimal im Katalog, mit zwei Beständen. Nicht
+  durchgesehen: die übrigen Importe. Kategorie B.
+- Druck-Center, Buch-Etiketten: Scheitert das Laden der Exemplare eines Titels, steht dort „Zu
+  diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann." (`loadExistingCopies` in
+  `stores/labels.svelte.js` leert die Liste bei jeder Fehlantwort; am Code gelesen im
+  Rasterdurchgang vom 03.10.2026). Der Satz legt nahe, neue Barcodes zu erzeugen. Abhilfe: der
+  Ladefehler als eigener Zustand (`ui/LadeFehler`). Kategorie B.
 - Druck-Center, Buch-Etiketten: Die Vorschau zeichnet für jedes Etikettenformat dasselbe Blatt,
   drei Spalten mit Etiketten von 42,3 × 25,4 mm (`LabelPreview.svelte`). Das ist der Bogen
   „Zweckform L4760" in zwei Dritteln der Größe. Für „Avery 3475" (3 × 8) und „Kleine Barcodes"
@@ -775,6 +789,30 @@ Erledigen (`api/anliegen.go`), in der Liste der Bibliothek das Abzeichen „Wuns
 
 Vor dem Bauen zu klären: Fällt die Unterscheidung ganz weg — ein Formular, ein Abzeichen, ein
 Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? Kategorie B.
+
+### 5.47 Ein Titel ohne ISBN lässt sich in der Maske nicht speichern
+
+Gefunden im Rasterdurchgang vom 03.10.2026 (Frage 14), an der Tür nachgestellt
+(`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_TitelOhneISBN ./inventur/`). Die Maske
+„Buch bearbeiten" meldet „Titel und ISBN sind Pflichtfelder" (`saveChanges` in
+`AdminBuchAktionen.svelte`), und `PUT /api/books/{id}` antwortet mit 400 „isbn darf nicht leer
+sein" (`bereinigeUndValidiereBuchEingabe`). Wer an einem Titel ohne ISBN die Signatur, die
+Klasse oder die Angabe Lernmittel ändert, kann nicht speichern. Die Maske verlangt die ISBN
+seit dem ersten Stand des Programms (29.05.2026); an Büchern mit ISBN fällt es nicht auf.
+
+Gemessen am 03.10.2026, lesend: In der Littera-Sicherung von 2010 tragen 2.193 von 10.732
+Titeln keine ISBN, nach der Übernahme (7.2) also mindestens ein Fünftel des Katalogs. In der
+lokalen Datenbank sind es 7.457 von 10.416 (`isbn` ist NULL), 7.009 davon mit einem Exemplar,
+das nicht ausgesondert ist; kein Exemplar dort stammt aus der Übernahme. Die Zahl für den
+Testserver:
+`docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE coalesce(isbn,'') = '') AS ohne_isbn, count(*) AS titel FROM buecher_titel;"`
+
+Die Datenbank und die Dublettenkontrolle kennen den Titel ohne ISBN: Die Spalte darf leer
+sein, und ohne Nummer gilt das Paar aus Titel und Autor (`pruefeDublette`). Beim Bauen eine
+leere ISBN als NULL schreiben, die Spalte ist eindeutig. Zu entscheiden vor dem Bauen: Soll die
+Maske einen Titel ohne ISBN nur ändern oder auch neu anlegen können (altes Buch, Spiel,
+Zeitschrift)? Ein neuer Titel ohne Autor bekommt heute „Unbekannter Autor" eingetragen
+(`setzePlatzhalter`). Vor dem Echtstart. Kategorie B: Der Fehler meldet sich.
 
 ---
 
