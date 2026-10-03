@@ -135,3 +135,22 @@ func TestAuthenticateIMAP_ToterServerLiefertSentinel(t *testing.T) {
 		t.Fatalf("erwartet ErrMailserverNichtErreichbar, bekam: %v", authErr)
 	}
 }
+
+// Die Adresse des Mailservers: Ein Port am Hostnamen wird verworfen, es gilt IMAP_PORT und
+// ohne ihn 993. Der Name, gegen den das Zertifikat geprüft wird, ist der Host ohne Port.
+func TestImapVerbindungsdaten(t *testing.T) {
+	for _, f := range []struct{ host, port, adresse string }{
+		{"mail.example.test", "", "mail.example.test:993"},
+		{"mail.example.test:143", "", "mail.example.test:993"},
+		{"mail.example.test", "1993", "mail.example.test:1993"},
+	} {
+		t.Setenv("IMAP_PORT", f.port)
+		adresse, tlsConfig := imapVerbindungsdaten(f.host)
+		if adresse != f.adresse {
+			t.Errorf("Host %q, IMAP_PORT %q: Adresse %q, erwartet %q", f.host, f.port, adresse, f.adresse)
+		}
+		if tlsConfig.ServerName != "mail.example.test" {
+			t.Errorf("Host %q: Zertifikatsname %q, erwartet mail.example.test", f.host, tlsConfig.ServerName)
+		}
+	}
+}

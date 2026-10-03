@@ -537,52 +537,57 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
 			return
 		}
+		erneuereSitzung(w, r, authenticator, claims, cookieSecure)
+	}
+}
 
-		// Only refresh if the token has less than 50% of its lifetime remaining.
-		// This prevents unnecessary token churn from frequent polling/requests.
-		if claims.ExpiresAt != nil {
-			remaining := time.Until(claims.ExpiresAt.Time)
-			if remaining > authenticator.tokenDuration/2 {
-				// Token is still fresh enough, return current session info
-				w.Header().Set(headerContentType, contentTypeJSON)
-				httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "skipped"})
-				return
-			}
-		}
-
-		// Neues Token mit frischer Laufzeit. claims.Rolle ist hier bereits die
-		// AKTUELLE Rolle aus der Datenbank — VerifyToken überschreibt die im alten
-		// Token signierte. Vorher schrieb der Refresh die alte Rolle fort und machte
-		// aus einer 12-Stunden-Staleness eine unbegrenzte.
-		verlaengert, err := authenticator.Sitzungen.Verlaengere(r.Context(), claims.SitzungID, time.Now().Add(authenticator.tokenDuration))
-		if err != nil {
-			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
-			return
-		}
-		if !verlaengert {
+// erneuereSitzung stellt für eine geprüfte Sitzung ein neues Token aus, wenn weniger als die
+// halbe Laufzeit übrig ist und die Zeile in sitzungen sich verlängern lässt; sonst bleibt es
+// beim alten.
+func erneuereSitzung(w http.ResponseWriter, r *http.Request, authenticator *Authenticator, claims *Claims, cookieSecure bool) {
+	// Only refresh if the token has less than 50% of its lifetime remaining.
+	// This prevents unnecessary token churn from frequent polling/requests.
+	if claims.ExpiresAt != nil {
+		remaining := time.Until(claims.ExpiresAt.Time)
+		if remaining > authenticator.tokenDuration/2 {
+			// Token is still fresh enough, return current session info
 			w.Header().Set(headerContentType, contentTypeJSON)
 			httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "skipped"})
 			return
 		}
-
-		newToken, err := authenticator.GenerateToken(claims.UserID, claims.BarcodeID, claims.Rolle, claims.SitzungID)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		// Set the new session cookie
-		http.SetCookie(w, &http.Cookie{
-			Name:     "session_token",
-			Value:    newToken,
-			Path:     "/",
-			Expires:  time.Now().Add(authenticator.tokenDuration),
-			HttpOnly: true,
-			Secure:   cookieSecure,
-			SameSite: http.SameSiteStrictMode,
-		})
-
-		w.Header().Set(headerContentType, contentTypeJSON)
-		httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "renewed"})
 	}
+
+	// Neues Token mit frischer Laufzeit. claims.Rolle ist hier bereits die aktuelle Rolle
+	// aus der Datenbank: VerifyToken überschreibt die im alten Token signierte. Schriebe der
+	// Refresh die alte Rolle fort, bliebe ein entzogenes Recht unbegrenzt erhalten.
+	verlaengert, err := authenticator.Sitzungen.Verlaengere(r.Context(), claims.SitzungID, time.Now().Add(authenticator.tokenDuration))
+	if err != nil {
+		apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+		return
+	}
+	if !verlaengert {
+		w.Header().Set(headerContentType, contentTypeJSON)
+		httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "skipped"})
+		return
+	}
+
+	newToken, err := authenticator.GenerateToken(claims.UserID, claims.BarcodeID, claims.Rolle, claims.SitzungID)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	// Set the new session cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session_token",
+		Value:    newToken,
+		Path:     "/",
+		Expires:  time.Now().Add(authenticator.tokenDuration),
+		HttpOnly: true,
+		Secure:   cookieSecure,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	w.Header().Set(headerContentType, contentTypeJSON)
+	httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "renewed"})
 }

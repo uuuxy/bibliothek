@@ -169,31 +169,30 @@ func PruefeIMAPKonfiguration() error {
 	return nil
 }
 
-// AuthenticateIMAP connects to the IMAP server and verifies credentials.
-// It uses implicit TLS on port 993 as successfully implemented in schul-orga.
-// ctx kommt vom Aufrufer (Login-Handler); die eigene Frist imapFrist liegt darunter.
-func AuthenticateIMAP(ctx context.Context, email, password string) error {
-	host := strings.TrimSpace(os.Getenv("IMAP_HOST"))
-
-	// Kein stiller Rückfall mehr auf den Schulserver: Ohne konfigurierten Host
-	// wird nicht geraten, sondern abgelehnt. Siehe PruefeIMAPKonfiguration.
+// imapOhneServer entscheidet die Fälle, in denen kein Mailserver gefragt wird. Ohne Host wird
+// abgelehnt statt geraten (siehe PruefeIMAPKonfiguration). Der Mock-Modus nimmt jedes Passwort
+// an und gilt nur in der lokalen Entwicklung; die Prüfung hier ist die zweite Schranke hinter
+// der beim Start, falls die Variable zur Laufzeit gesetzt wird.
+func imapOhneServer(host string) (entschieden bool, err error) {
 	if host == "" {
 		slog.Error("IMAP_HOST ist nicht gesetzt — Anmeldung wird abgelehnt")
-		return fmt.Errorf("anmeldung fehlgeschlagen")
+		return true, fmt.Errorf("anmeldung fehlgeschlagen")
 	}
-
-	// MOCK-MODUS für lokale Entwicklung — zweite Schranke hinter dem Startup-Check
-	// in PruefeIMAPKonfiguration, falls die Variable zur Laufzeit gesetzt wird.
-	if host == "mock" {
-		if !istLokaleUmgebung() {
-			slog.Error("IMAP_HOST=mock außerhalb der lokalen Entwicklung — Anmeldung wird abgelehnt",
-				"app_env", os.Getenv("APP_ENV"))
-			return fmt.Errorf("anmeldung fehlgeschlagen")
-		}
-		slog.Warn("⚠️  IMAP MOCK-MODUS AKTIV: Jedes Passwort wird akzeptiert! NUR für lokale Entwicklung verwenden!")
-		return nil
+	if host != "mock" {
+		return false, nil
 	}
+	if !istLokaleUmgebung() {
+		slog.Error("IMAP_HOST=mock außerhalb der lokalen Entwicklung — Anmeldung wird abgelehnt",
+			"app_env", os.Getenv("APP_ENV"))
+		return true, fmt.Errorf("anmeldung fehlgeschlagen")
+	}
+	slog.Warn("⚠️  IMAP MOCK-MODUS AKTIV: Jedes Passwort wird akzeptiert! NUR für lokale Entwicklung verwenden!")
+	return true, nil
+}
 
+// imapVerbindungsdaten baut Adresse und TLS-Einstellungen für den Mailserver. Ein Port am
+// Hostnamen (alte Konfiguration, etwa :143) wird verworfen; es gilt IMAP_PORT, sonst 993.
+func imapVerbindungsdaten(host string) (string, *tls.Config) {
 	// Remove port from host if it was provided via env/old config (e.g. :143)
 	if strings.Contains(host, ":") {
 		parts := strings.Split(host, ":")
@@ -204,12 +203,6 @@ func AuthenticateIMAP(ctx context.Context, email, password string) error {
 	if port == "" {
 		port = "993"
 	}
-
-	// Format email correctly if only username was provided (wie in schul-orga)
-	if !strings.Contains(email, "@") {
-		email = fmt.Sprintf("%s@philipp-reis-schule.de", email)
-	}
-
 	addr := fmt.Sprintf("%s:%s", host, port)
 
 	tlsConfig := &tls.Config{
@@ -232,6 +225,23 @@ func AuthenticateIMAP(ctx context.Context, email, password string) error {
 	if imapTLSAnpassung != nil {
 		imapTLSAnpassung(tlsConfig)
 	}
+	return addr, tlsConfig
+}
+
+// AuthenticateIMAP connects to the IMAP server and verifies credentials.
+// It uses implicit TLS on port 993 as successfully implemented in schul-orga.
+// ctx kommt vom Aufrufer (Login-Handler); die eigene Frist imapFrist liegt darunter.
+func AuthenticateIMAP(ctx context.Context, email, password string) error {
+	host := strings.TrimSpace(os.Getenv("IMAP_HOST"))
+	if entschieden, err := imapOhneServer(host); entschieden {
+		return err
+	}
+
+	// Format email correctly if only username was provided (wie in schul-orga)
+	if !strings.Contains(email, "@") {
+		email = fmt.Sprintf("%s@philipp-reis-schule.de", email)
+	}
+	addr, tlsConfig := imapVerbindungsdaten(host)
 
 	ctx, cancel := context.WithTimeout(ctx, imapFrist)
 	defer cancel()

@@ -126,6 +126,34 @@ func TestRefreshTokenHandler_FreshTokenIsSkippedWithoutNewCookie(t *testing.T) {
 	}
 }
 
+// Ein frisches Token einer Anmeldung mit Zeile in sitzungen wird nicht erneuert und fasst die
+// Zeile nicht an. Das Token ohne Zeile im Test darüber käme auch ohne die Regel der halben
+// Laufzeit als „skipped" zurück, weil sich ohne Zeile nichts verlängern lässt.
+func TestRefreshTokenHandler_FrischesTokenMitSitzungFasstDieZeileNichtAn(t *testing.T) {
+	a, mock := newTestAuthenticator(t, 12*time.Hour)
+	token, err := a.GenerateToken("user-1", "B-1", RoleAdmin, testSitzungID)
+	if err != nil {
+		t.Fatalf("GenerateToken: %v", err)
+	}
+	expectNotBlacklisted(mock)
+	expectKontoAktiv(mock, true)
+
+	rec := doRefresh(t, a, &http.Cookie{Name: "session_token", Value: token})
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Body.String(); !strings.Contains(got, `"refresh":"skipped"`) {
+		t.Errorf("erwartet refresh=skipped, Body: %s", got)
+	}
+	if len(rec.Result().Cookies()) != 0 {
+		t.Errorf("ein frisches Token darf kein neues Cookie bekommen")
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("offene Erwartungen: %v", err)
+	}
+}
+
 func TestRefreshTokenHandler_OldTokenIsRenewedWithNewCookie(t *testing.T) {
 	// Token wurde mit kurzer Laufzeit ausgestellt (Restlaufzeit 1h). Der Handler
 	// läuft mit 12h-Fenster: 1h < 6h → Sliding Window greift, neues Cookie.
