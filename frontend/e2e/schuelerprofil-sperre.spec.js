@@ -53,17 +53,13 @@ for (const { name, viewport } of BREITEN) {
 		const sperren = page.getByRole('button', { name: /Schüler sperren|Sperre aufheben/ });
 		await expect(sperren).toBeVisible();
 
-		// Der Dokumente-Kasten darf die Sperre NICHT mehr enthalten.
-		//
-		// Über die Überschrift und deren Elternelement, NICHT über einen Textfilter auf
-		// 'div': Ein solcher Filter trifft jeden Vorfahren, der den Text irgendwo
-		// enthält — bis hinauf zum Seitenrumpf, der die Sperre natürlich mit umfasst.
-		// Der erste Anlauf dieses Tests war deshalb rot, obwohl der Umbau stimmte.
-		const dokumenteKasten = page
-			.getByRole('heading', { name: 'Dokumente', exact: true })
-			.locator('xpath=..');
+		// Die Zeile der Dokumente darf die Sperre nicht enthalten. Gefunden wird sie über ihre
+		// Gruppe, nicht über einen Textfilter auf 'div': Der träfe jeden Vorfahren bis hinauf
+		// zum Seitenrumpf, der die Sperre natürlich mit umfasst.
+		const dokumente = page.getByRole('group', { name: 'Dokumente', exact: true });
+		await expect(dokumente, 'die Zeile der Dokumente steht in der Akte').toBeVisible();
 		await expect(
-			dokumenteKasten.getByRole('button', { name: /Schüler sperren|Sperre aufheben/ })
+			dokumente.getByRole('button', { name: /Schüler sperren|Sperre aufheben/ })
 		).toHaveCount(0);
 
 		// Und sie steht wirklich beim Status: derselbe Block trägt beides.

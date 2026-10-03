@@ -105,8 +105,8 @@
 				onLock={rechte.bearbeiten ? () => (st.showLockModal = true) : undefined}
 			/>
 
-			<!-- Kein Abstand nach oben: Der erste Block beginnt auf der Oberkante des linken Kastens. -->
-			<div class="lg:col-span-1 space-y-6 flex flex-col h-full px-6 pb-4">
+			<!-- pt-4: Die Knopfzeile steht auf der Höhe des Schließen-Knopfs der linken Spalte. -->
+			<div class="lg:col-span-1 space-y-6 flex flex-col h-full px-6 pt-4 pb-4">
 				{#if rechte.einsehen}
 					<StudentProfileActions
 						profile={st.profile}
