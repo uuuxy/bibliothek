@@ -70,6 +70,9 @@ func TestUploadStudentPhoto(t *testing.T) {
 		if err.Error() != expectedErr {
 			t.Errorf("expected error %s, got %s", expectedErr, err.Error())
 		}
+		if !errors.Is(err, ErrFotoLeserUnbekannt) {
+			t.Errorf("expected ErrFotoLeserUnbekannt, got %v", err)
+		}
 
 		if err := mock.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %s", err)
@@ -89,8 +92,8 @@ func TestUploadStudentPhoto(t *testing.T) {
 
 		invalidBase64 := "data:image/png;base64,invalid-base-64!!!"
 		photoURL, err := UploadStudentPhoto(context.Background(), mock, "student-123", invalidBase64)
-		if err == nil {
-			t.Error("expected error, got nil")
+		if !errors.Is(err, ErrFotoUnlesbar) {
+			t.Errorf("expected ErrFotoUnlesbar, got %v", err)
 		}
 		if photoURL != "" {
 			t.Errorf("expected empty url, got %s", photoURL)

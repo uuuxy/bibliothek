@@ -14,6 +14,15 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// Die zwei Abweisungen des Foto-Uploads tragen einen Namen, damit die Route sie von einer
+// Störung des Servers unterscheidet.
+var (
+	// ErrFotoLeserUnbekannt meldet: Unter der Kennung steht kein Leser.
+	ErrFotoLeserUnbekannt = errors.New("schüler nicht gefunden")
+	// ErrFotoUnlesbar meldet: Die Daten sind kein Bild, das sich lesen und umwandeln lässt.
+	ErrFotoUnlesbar = errors.New("das bild ist nicht lesbar")
+)
+
 // UploadStudentPhoto verarbeitet den Base64-String eines Fotos, konvertiert ihn zu WebP,
 // verschlüsselt ihn per AES und speichert ihn in der Datenbank ab.
 func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID string, base64DataStr string) (string, error) {
@@ -27,7 +36,7 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 	err := dbPool.QueryRow(ctx, "SELECT COALESCE(barcode_id, '') FROM leser WHERE id = $1", studentID).Scan(&barcodeID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", errors.New("schüler nicht gefunden")
+			return "", ErrFotoLeserUnbekannt
 		}
 		return "", err
 	}
@@ -38,13 +47,14 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 
 	imgBytes, err := base64.StdEncoding.DecodeString(base64Data)
 	if err != nil {
-		return "", fmt.Errorf("ungültiges base64-format: %w", err)
+		return "", fmt.Errorf("%w: ungültiges base64-format: %w", ErrFotoUnlesbar, err)
 	}
 
-	// 3. Konvertierung nach WebP
+	// 3. Konvertierung nach WebP. Die Umwandlung rechnet nur auf den übergebenen Bytes;
+	// scheitert sie, liegt es am Bild (kein JPEG oder PNG, zu groß), nicht am Server.
 	webpBytes, err := imageutil.ConvertToWebP(imgBytes, 80)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%w: %w", ErrFotoUnlesbar, err)
 	}
 
 	// 4. Verschlüsseln der WebP-Bytes

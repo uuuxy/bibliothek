@@ -7,7 +7,6 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/internal/service"
-	"bibliothek/pkg/httpresp"
 )
 
 // UploadPhotoRequest holds the base64 encoded photo payload.
@@ -38,15 +37,21 @@ func (s *Server) UploadStudentPhotoHandler() http.HandlerFunc {
 
 		photoURL, err := service.UploadStudentPhoto(ctx, s.DB.Pool, id, req.PhotoData)
 		if err != nil {
-			if err.Error() == "schüler nicht gefunden" {
+			if errors.Is(err, service.ErrFotoLeserUnbekannt) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
+			if errors.Is(err, service.ErrFotoUnlesbar) {
+				apierrors.SendHTTPErrorMitMeldung(w, http.StatusBadRequest,
+					"Das Bild ließ sich nicht lesen. Bitte die Aufnahme wiederholen.", err)
 				return
 			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		httpresp.Write(w, []byte(`{"status":"success","url":"`+photoURL+`"}`))
+		// Über den JSON-Schreiber, nicht von Hand zusammengesetzt: Die Ausweisnummer steht in
+		// der Adresse und darf Zeichen tragen, die in JSON maskiert werden müssen.
+		RespondJSON(w, http.StatusOK, map[string]string{"status": "success", "url": photoURL})
 	}
 }
