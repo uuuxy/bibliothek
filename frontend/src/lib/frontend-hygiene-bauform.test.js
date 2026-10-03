@@ -55,7 +55,6 @@ const BESTAND = [
 	'src/inventur/lib/components/admin/ClassAssignmentBookGrid.svelte',
 	'src/lib/BestellWorkspace.svelte',
 	'src/lib/CameraScanner.svelte',
-	'src/lib/LitteraImportWidget.svelte',
 	'src/lib/PermissionManager.svelte',
 	'src/lib/StudentProfileActions.svelte',
 	'src/lib/components/OmniboxBlockAlert.svelte',

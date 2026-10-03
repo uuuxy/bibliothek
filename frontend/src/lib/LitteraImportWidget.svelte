@@ -53,15 +53,15 @@
 	}
 </script>
 
-<div class="p-6 rounded-3xl bg-white border border-slate-100 shadow-xs space-y-4">
-	<div>
-		<h3 class="text-base font-bold text-slate-900">Katalog-Import (Littera)</h3>
-		<p class="text-xs text-slate-500 mt-1">
-			Lade hier die <strong>katalogisat.xml</strong> hoch (um bestehende Buch-Metadaten zu
-			aktualisieren) oder eine <strong>CSV- bzw. XLSX-Datei</strong> (um neue Bücher/Exemplare per Bulk-Insert
-			anzulegen).
-		</p>
-	</div>
+<!-- Der erste Baustein der Gruppe, deshalb ohne Trennlinie darüber; sonst gebaut wie
+     BestandImportWidget und ListenImportWidget. -->
+<div>
+	<h4 class="mb-1 text-sm font-bold text-on-surface">Katalog-Import (Littera)</h4>
+	<p class="mb-4 text-xs text-on-surface-variant">
+		Lade hier die <strong>katalogisat.xml</strong> hoch (um bestehende Buch-Metadaten zu
+		aktualisieren) oder eine <strong>CSV- bzw. XLSX-Datei</strong> (um neue Bücher/Exemplare per Bulk-Insert
+		anzulegen).
+	</p>
 
 	<div class="flex items-center gap-4">
 		<label class="relative {isImporting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}">
@@ -73,7 +73,7 @@
 				class="sr-only"
 			/>
 			<div
-				class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition-colors border border-slate-200 inline-block"
+				class="px-5 py-2.5 bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-sm rounded-xl transition-colors border border-outline-variant inline-block"
 			>
 				{files && files.length > 0 ? files[0].name : 'Datei auswählen...'}
 			</div>
@@ -89,16 +89,16 @@
 				<Ladekreis size="sm" farbe="aktuell" />
 				<span>Importiere...</span>
 			{:else}
-				<span>Import Starten</span>
+				<span>Import starten</span>
 			{/if}
 		</Button>
 	</div>
 
 	{#if importResult}
 		<div
-			class="p-4 rounded-xl text-sm font-semibold {importResult.type === 'error'
-				? 'bg-rose-50 text-rose-600 border border-rose-100'
-				: 'bg-emerald-50 text-emerald-700 border border-emerald-100'}"
+			class="mt-4 p-4 rounded-xl text-sm font-semibold {importResult.type === 'error'
+				? 'bg-error-container text-on-error-container'
+				: 'bg-success-container text-on-success-container'}"
 		>
 			{importResult.message}
 		</div>

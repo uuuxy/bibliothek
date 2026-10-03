@@ -81,9 +81,10 @@
 	</div>
 {/snippet}
 
-<!-- Der Hauptknopf des Hauses, in Größe und Abstand wie in den Import-Bausteinen daneben. -->
+<!-- Umrandet statt gefüllt: Beides sind eigene Werkzeuge der Seite, kein Abschluss eines
+     Ablaufs. Gefüllt ist hier nur der Import einer gewählten Datei. -->
 {#snippet actionButton(label: string, Symbol: typeof Upload, onclick: () => void, laeuft: boolean)}
-	<Button size="lg" class="px-6" {onclick} disabled={laeuft}>
+	<Button variant="secondary" size="lg" class="px-6" {onclick} disabled={laeuft}>
 		{#if laeuft}
 			<Ladekreis size="sm" farbe="aktuell" />
 			<span>Bitte warten...</span>

@@ -97,7 +97,7 @@
 			<div
 				class="mt-4 p-4 rounded-xl text-sm font-semibold {ergebnis.type === 'error'
 					? 'bg-error-container text-on-error-container'
-					: 'bg-primary-container text-on-primary-container'}"
+					: 'bg-success-container text-on-success-container'}"
 				data-testid="listenimport-ergebnis"
 			>
 				{ergebnis.message}

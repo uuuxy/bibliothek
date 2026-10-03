@@ -53,17 +53,17 @@
 </script>
 
 <div>
-	<h3 class="text-lg font-medium text-slate-900">Offline-Sicherungen einspielen</h3>
-	<p class="text-sm text-slate-600 mt-2 max-w-2xl">
+	<h3 class="text-lg font-medium text-on-surface">Offline-Sicherungen einspielen</h3>
+	<p class="mt-2 max-w-2xl text-sm text-on-surface-variant">
 		Fällt an einem Kiosk-Rechner das Netz aus, werden Rückgaben dort zwischengespeichert und die
 		Kraft speichert vor dem Ausschalten eine Sicherungsdatei. Diese Dateien werden hier eingespielt
 		— mehrere auf einmal, eine je Rechner.
 	</p>
-	<p class="text-sm text-slate-600 mt-2 max-w-2xl">
+	<p class="mt-2 max-w-2xl text-sm text-on-surface-variant">
 		<span class="font-medium">Wann:</span> immer dann, wenn an einem Arbeitsplatz eine Sicherung gespeichert
 		wurde. Das System kann das nicht selbst erkennen, denn der betroffene Rechner war ja offline.
 	</p>
-	<p class="text-sm text-slate-600 mt-2 max-w-2xl">
+	<p class="mt-2 max-w-2xl text-sm text-on-surface-variant">
 		Zweimaliges Einspielen derselben Datei ist unschädlich: Jeder Vorgang trägt einen Schlüssel, den
 		der Server wiedererkennt.
 	</p>
@@ -74,7 +74,7 @@
 			{laeuft ? 'Wird eingespielt …' : 'Sicherungsdateien auswählen'}
 		</Button>
 		{#if offlineSync.pendingCount > 0}
-			<span class="text-sm text-slate-600">
+			<span class="text-sm text-on-surface-variant">
 				{offlineSync.pendingCount} Vorgang/Vorgänge warten noch auf Übertragung
 			</span>
 		{/if}
@@ -90,7 +90,7 @@
 	/>
 
 	{#if bericht}
-		<div class="mt-6 border border-emerald-100 bg-emerald-50 text-emerald-700 px-4 py-3 text-sm">
+		<div class="mt-6 rounded-xl bg-success-container p-4 text-sm text-on-success-container">
 			<p class="font-medium">
 				{bericht.vorgaenge} Vorgang/Vorgänge aus {bericht.dateien} Datei(en) übernommen
 			</p>

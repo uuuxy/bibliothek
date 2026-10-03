@@ -600,7 +600,8 @@ auf Rollen; die Reiter der Akte kommen aus `ui/Reiter`.
 Seit dem 03.10.2026 stehen außerdem auf Rollen: die Warenkorb-Position
 (`OrderCartPosition.svelte`), die Liste im Wareneingang (`WareneingangTable.svelte`), die Spalte
 „Buch-Etiketten" des Druck-Centers (`LabelSettings`, `LabelBarcodeSchritt`,
-`LabelLayoutOptionen`), die Datenverwaltung (`DataManagement.svelte`) und die Aufnahme des
+`LabelLayoutOptionen`), die Datenverwaltung mit ihren Bausteinen (`DataManagement.svelte`,
+`LitteraImportWidget.svelte`, `OfflineSicherungenEinspielen.svelte`) und die Aufnahme des
 Passbilds (`WebcamCapture.svelte`) bis auf die Hilfslinien im Sucher (5 Fundstellen; sie gehören
 zum Kamerabild). Beim Ansehen aufgefallen, jeweils am Code nachgesehen:
 
@@ -611,10 +612,6 @@ zum Kamerabild). Beim Ansehen aufgefallen, jeweils am Code nachgesehen:
 - Passbild: Der gestrichelte Rahmen im Sucher ist halb so breit wie das Bild und 90 % so hoch.
   Gespeichert wird ein anderer Ausschnitt: die volle Höhe im Format 3:4, bei einem Bild in 16:9
   also 42 % der Breite (`WebcamCapture.svelte`, `capturePhoto`).
-- Datenverwaltung: Die Seite trägt fünf gefüllte Knöpfe, einen je Baustein. M3, Buttons,
-  Guidelines: „the filled style should be used sparingly, ideally for only one action on a
-  page". Der Katalog-Import (`LitteraImportWidget.svelte`) steht als einziger Baustein noch in
-  einer Kachel mit Rand und Schatten und auf Palettenfarben.
 
 Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
 
