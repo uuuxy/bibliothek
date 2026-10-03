@@ -143,7 +143,7 @@ func (s *defaultLoanService) leiheImSavepointAus(ctx context.Context, tx pgx.Tx,
 		if !errors.Is(err, ErrBlocked) && !errors.Is(err, ErrConflict) {
 			return nil, nil, err
 		}
-		abweisung, abwErr := s.weiseImSavepointAb(ctx, tx, sp, l, err.Error())
+		abweisung, abwErr := s.weiseImSavepointAb(ctx, tx, sp, l, err.Error(), err)
 		return nil, abweisung, abwErr
 	}
 
@@ -156,7 +156,7 @@ func (s *defaultLoanService) leiheImSavepointAus(ctx context.Context, tx pgx.Tx,
 		Zeitpunkt:      &l.gescannt,
 	})
 	if errors.Is(err, repository.ErrAusleiheKonflikt) {
-		abweisung, abwErr := s.weiseImSavepointAb(ctx, tx, sp, l, "Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht")
+		abweisung, abwErr := s.weiseImSavepointAb(ctx, tx, sp, l, "Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht", nil)
 		return nil, abweisung, abwErr
 	}
 	if err != nil {
@@ -175,15 +175,21 @@ func (s *defaultLoanService) leiheImSavepointAus(ctx context.Context, tx pgx.Tx,
 }
 
 // weiseImSavepointAb nimmt den Savepoint zurück und schließt die Transaktion ab — die
-// Rücknahme beim Vorbesitzer bleibt —, dann schreibt es die Abweisung als Meldung.
-func (s *defaultLoanService) weiseImSavepointAb(ctx context.Context, tx, sp pgx.Tx, l *nachbuchLage, grund string) (*NachbuchErgebnis, error) {
+// Rücknahme beim Vorbesitzer bleibt —, dann schreibt es die Abweisung als Meldung. schranke
+// ist der Fehler der Schranke, wenn es an einer lag; er reist mit dem Ergebnis zur Tür.
+func (s *defaultLoanService) weiseImSavepointAb(ctx context.Context, tx, sp pgx.Tx, l *nachbuchLage, grund string, schranke error) (*NachbuchErgebnis, error) {
 	if err := sp.Rollback(ctx); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
-	return s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, grund)
+	abweisung, err := s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, grund)
+	if err != nil {
+		return nil, err
+	}
+	abweisung.Schranke = schranke
+	return abweisung, nil
 }
 
 // errScanVeraltet: die Rückgabe läge vor der Ausleihe (check_return_date).

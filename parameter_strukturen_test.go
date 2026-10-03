@@ -50,6 +50,7 @@ var parameterStrukturen = map[string]string{
 	"Ende":              "fehlendes Feld = Rückgabe-Plan ohne Anker oder mit 0 Stunden je Tag, also still leer",
 	"paarSignale":       "fehlendes Feld = ein Signal der Umbenennungs-Paarung zählt still nie",
 	"schuelerAenderung": "fehlendes Feld = Nachtrag ohne Protokolleintrag oder Schul-E-Mail ohne Konto",
+	"nachbuchAbsender":  "fehlendes Feld = Nachbuchung ohne Bearbeiter, mit unberichtigter Uhr oder ohne Entscheidung über den Sperrgrund",
 }
 
 func TestParameterStrukturen_JedesLiteralSetztJedesFeld(t *testing.T) {

@@ -73,8 +73,12 @@ type NachbuchEintrag struct {
 
 // NachbuchErgebnis ist die Antwort je Eintrag.
 type NachbuchErgebnis struct {
-	Ergebnis        string // repository.Nachbuch*
-	Grund           string
+	Ergebnis string // repository.Nachbuch*
+	Grund    string
+	// Schranke ist bei nicht_gebucht der Fehler der Schranke, an der die Ausleihe scheiterte.
+	// Grund trägt seinen vollen Text, auch den Freitext einer Sperre (SperrGrundFehler); die Tür
+	// kürzt ihn daran für Aufrufer ohne view_students. Die Meldung behält den vollen Grund.
+	Schranke        error
 	Result          *LoanResult // bei ausgeliehen, umgebucht, bereits_ausgeliehen, zurueckgegeben
 	AufsichtHinweis string      // das Buch stand auf einem Bescheid bei der Aufsicht
 }

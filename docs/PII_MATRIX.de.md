@@ -60,7 +60,8 @@ Session-Cookie selbst), `Sitzung` (`RequireAuthenticated`), `inventur-Mux`
 Stufe ≥2 dürfen NIE allein dahinter liegen. Stufe 1 hinter Helfer-Rechten ist die
 bewusste Theken-Ausnahme (SchuelerKiosk-Sicht, `api/schueler_kiosk.go`). Der
 Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und hängt überall an
-`view_students` (`ohneSperrgrund` in `api/action.go`). Stufe 3 gehört
+`view_students` (`ohneSperrgrund` in `api/action.go`, auch für die Antwort des
+Nachbuchens). Stufe 3 gehört
 ausschließlich hinter `view_students`/`manage_students_admin`.
 
 ## routes_students.go

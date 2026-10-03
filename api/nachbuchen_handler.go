@@ -145,8 +145,9 @@ func (s *Server) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbu
 	// Dienst, und eine zweite Liste hier wäre die zweite Wahrheitsquelle — sie stimmte
 	// genau bis zur nächsten Meldung, die jemand hinzufügt.
 	offenVorher, zaehlbar := s.zaehleMeldungen(ctx)
+	absender := nachbuchAbsender{staffID: claims.UserID, uhrVersatz: versatz, darfSperrgrundSehen: s.BesitztRecht(r, "view_students")}
 	for _, e := range req.Eintraege {
-		antwort.Ergebnisse = append(antwort.Ergebnisse, s.bucheEintragNach(ctx, nachbuchSvc, e, claims.UserID, versatz))
+		antwort.Ergebnisse = append(antwort.Ergebnisse, s.bucheEintragNach(ctx, nachbuchSvc, e, absender))
 	}
 	if zaehlbar {
 		if offenNachher, ok := s.zaehleMeldungen(ctx); ok && offenNachher != offenVorher {
@@ -157,11 +158,19 @@ func (s *Server) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbu
 	return nil
 }
 
-// bucheEintragNach bucht einen Eintrag. Ein Serverfehler wird NICHT zum Fehler des ganzen
+// nachbuchAbsender ist, was für jeden Eintrag einer Portion gleich ist: wer sie schickt, wie
+// seine Uhr geht und ob er den Freitext einer Sperre lesen darf (view_students).
+type nachbuchAbsender struct {
+	staffID             string
+	uhrVersatz          time.Duration
+	darfSperrgrundSehen bool
+}
+
+// bucheEintragNach bucht einen Eintrag. Ein Serverfehler wird nicht zum Fehler des ganzen
 // Aufrufs: Die übrigen Einträge sollen durchlaufen, und der gescheiterte bleibt auf dem
 // Rechner liegen („wiederholen"). Schweigen wäre hier das Schlimmste — die Theke hielte
-// ihn für erledigt (Stufe 1, Commit 6: „erledigt ist nur, was der Server gebucht hat").
-func (s *Server) bucheEintragNach(ctx context.Context, svc service.NachbuchService, e NachbuchenEintrag, staffID string, uhrVersatz time.Duration) NachbuchenErgebnis {
+// ihn für erledigt, und erledigt ist nur, was der Server gebucht hat.
+func (s *Server) bucheEintragNach(ctx context.Context, svc service.NachbuchService, e NachbuchenEintrag, absender nachbuchAbsender) NachbuchenErgebnis {
 	lage, err := s.ergreifeNachbuchSchluessel(ctx, e)
 	if err != nil {
 		log.Printf("nachbuchen: Schlüssel %s nicht lesbar: %v", e.Schluessel, err)
@@ -174,9 +183,9 @@ func (s *Server) bucheEintragNach(ctx context.Context, svc service.NachbuchServi
 	}
 	erg, err := svc.Nachbuchen(ctx, service.NachbuchEintrag{
 		Schluessel: e.Schluessel, Absicht: e.Absicht, Barcode: e.Barcode,
-		GescanntAm: e.GescanntAm, UhrVersatz: uhrVersatz,
+		GescanntAm: e.GescanntAm, UhrVersatz: absender.uhrVersatz,
 		LeserID: e.LeserID, AusweisBarcode: e.AusweisBarcode,
-		NachFremdrueckgabeVon: lage.fremdrueckgabeVon, StaffID: staffID,
+		NachFremdrueckgabeVon: lage.fremdrueckgabeVon, StaffID: absender.staffID,
 	})
 	if err != nil {
 		log.Printf("nachbuchen: Eintrag %s konnte nicht gebucht werden: %v", e.Schluessel, err)
@@ -186,6 +195,11 @@ func (s *Server) bucheEintragNach(ctx context.Context, svc service.NachbuchServi
 	out := NachbuchenErgebnis{
 		Schluessel: e.Schluessel, Ergebnis: erg.Ergebnis, Grund: erg.Grund,
 		AufsichtInformieren: erg.AufsichtHinweis,
+	}
+	if erg.Schranke != nil {
+		// Vor dem Ablegen kürzen, wie an der Online-Theke (ohneSperrgrund) — sonst läge der
+		// Freitext der Sperre unter dem Schlüssel und käme mit der Wiederholung zurück.
+		out.Grund = ohneSperrgrund(erg.Schranke, absender.darfSperrgrundSehen).Error()
 	}
 	if erg.Result != nil {
 		out.Daten = mapOmniboxResultToActionResponse(service.LoanResultAlsOmnibox(erg.Result))
