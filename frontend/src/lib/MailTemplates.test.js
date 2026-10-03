@@ -52,7 +52,7 @@ describe('Mail-Vorlagen', () => {
 		const screen = await vorlagen();
 		const [bestellung, mahnung] = screen
 			.getAllByRole('button')
-			.filter((k) => /BESTELLUNG|MAHNUNG/.test(k.textContent ?? ''));
+			.filter((k) => /Bestellung|Mahnbrief/.test(k.textContent ?? ''));
 		expect(bestellung.getAttribute('aria-current')).toBe('true');
 		expect(mahnung.getAttribute('aria-current')).toBeNull();
 
@@ -61,6 +61,26 @@ describe('Mail-Vorlagen', () => {
 		expect(/** @type {HTMLTextAreaElement} */ (screen.getByLabelText('Text-Inhalt')).value).toBe(
 			'Liebe Eltern …'
 		);
+	});
+
+	// Der Schlüssel aus der Datenbank („BESTELLUNG_HAENDLER") ist kein Wort für Menschen. Die
+	// Liste nennt die Vorlage so, wie der Hinweis unter dem Editor sie beschreibt.
+	it('nennt die Vorlagen mit ihrem Namen statt mit dem Schlüssel', async () => {
+		vi.mocked(apiClient.get).mockResolvedValue(
+			antwort([...VORLAGEN, { id: 3, typ: 'NOCH_OHNE_NAMEN', betreff: 'Neu', text_body: '' }])
+		);
+		const screen = await vorlagen();
+		const namen = screen
+			.getAllByRole('button')
+			.filter((k) => k.hasAttribute('aria-current') || /Mahnbrief|OHNE/.test(k.textContent ?? ''))
+			.map((k) => k.firstElementChild?.textContent?.trim());
+
+		expect(namen).toEqual([
+			'Bestellung an den Händler',
+			'Mahnbrief an die Eltern',
+			'NOCH OHNE NAMEN'
+		]);
+		expect(screen.container.textContent).not.toMatch(/BESTELLUNG|MAHNUNG/);
 	});
 
 	it('nennt einen Ladefehler als Meldung', async () => {

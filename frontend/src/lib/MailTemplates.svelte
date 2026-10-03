@@ -9,6 +9,7 @@
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import MailVorlagenPlatzhalter from './MailVorlagenPlatzhalter.svelte';
+	import { vorlagenName } from './mailVorlagenInfo.js';
 
 	/** @type {any[]} */
 	let templates = $state([]);
@@ -110,7 +111,7 @@
 							errorMessage = '';
 						}}
 					>
-						<span class="truncate text-sm font-medium">{t.typ.replace(/_/g, ' ')}</span>
+						<span class="truncate text-sm font-medium">{vorlagenName(t.typ)}</span>
 						<span class="truncate text-sm {gewaehlt ? 'opacity-80' : 'text-on-surface-variant'}"
 							>{t.betreff}</span
 						>

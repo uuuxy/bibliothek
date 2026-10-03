@@ -7,7 +7,7 @@ package api
 //   1. der GO-RENDERER — die einzige Menge, die wirklich ersetzt wird
 //      (reports_pdf.go für MAHNUNG_ELTERN, bestellmail_text.go für
 //      BESTELLUNG_HAENDLER),
-//   2. die ANZEIGE im Vorlagen-Editor (vorlagenInfo in MailTemplates.svelte),
+//   2. die ANZEIGE im Vorlagen-Editor (vorlagenInfo in mailVorlagenInfo.js),
 //   3. die SEED-TEXTE (schema.sql).
 //
 // Bis zum 01.09.2026 zeigte der Editor für JEDE Vorlage dieselben vier
@@ -74,15 +74,15 @@ func leseRendererPlatzhalter(t *testing.T, datei string) map[string]bool {
 	return sammlePlatzhalter(ohneKommentare(string(roh)))
 }
 
-// leseEditorPlatzhalter parst vorlagenInfo aus MailVorlagenPlatzhalter.svelte:
+// leseEditorPlatzhalter parst vorlagenInfo aus frontend/src/lib/mailVorlagenInfo.js:
 // je Typ-Block die platzhalter-Liste (und dass es den Block überhaupt gibt).
 func leseEditorPlatzhalter(t *testing.T) map[string]map[string]bool {
 	t.Helper()
-	roh, err := os.ReadFile(filepath.Join("..", "frontend", "src", "lib", "MailVorlagenPlatzhalter.svelte"))
+	roh, err := os.ReadFile(filepath.Join("..", "frontend", "src", "lib", "mailVorlagenInfo.js"))
 	if err != nil {
-		t.Fatalf("MailVorlagenPlatzhalter.svelte lesen: %v", err)
+		t.Fatalf("mailVorlagenInfo.js lesen: %v", err)
 	}
-	blockMuster := regexp.MustCompile(`(?s)([A-Z_]+):\s*\{\s*verwendung:.*?platzhalter:\s*\[(.*?)\]`)
+	blockMuster := regexp.MustCompile(`(?s)([A-Z_]+):\s*\{\s*name:.*?platzhalter:\s*\[(.*?)\]`)
 	out := map[string]map[string]bool{}
 	for _, m := range blockMuster.FindAllStringSubmatch(string(roh), -1) {
 		out[m[1]] = sammlePlatzhalter(m[2])
@@ -138,7 +138,7 @@ func TestVorlagenPlatzhalterSindDeckungsgleich(t *testing.T) {
 		}
 		ui, ok := editor[typ]
 		if !ok {
-			t.Errorf("%s fehlt in vorlagenInfo (MailTemplates.svelte) — der Editor zeigt dann nichts an.", typ)
+			t.Errorf("%s fehlt in vorlagenInfo (mailVorlagenInfo.js) — der Editor zeigt dann nichts an.", typ)
 			continue
 		}
 		for p := range renderer {

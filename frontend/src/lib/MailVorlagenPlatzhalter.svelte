@@ -1,39 +1,16 @@
 <script>
+	import { vorlagenInfo } from './mailVorlagenInfo.js';
+
 	/**
 	 * @component MailVorlagenPlatzhalter
-	 * Verwendung + erlaubte Platzhalter JE VORLAGEN-TYP, unter dem Vorlagen-Editor.
-	 *
-	 * Bis zum 01.09.2026 zeigte der Editor für jede Vorlage dieselben vier
-	 * Platzhalter an — für die Händler-Mail ersetzte der Renderer keinen einzigen
-	 * davon: Wer die Vorlage laut Anleitung umformulierte, schickte dem Buchhändler
-	 * wörtlich „{{.BuchListe}}". Diese Liste hält api/mail_vorlagen_platzhalter_test.go
-	 * deckungsgleich mit den Go-Renderern (reports_pdf.go, bestellmail_text.go) —
-	 * wer dort einen Platzhalter ändert, muss hier nachziehen, sonst wird das Gate rot.
+	 * Verwendung und erlaubte Platzhalter je Vorlagen-Typ, unter dem Vorlagen-Editor. Jede
+	 * Vorlage hat ihre eigene Liste: Ein Platzhalter, den der Renderer dieser Vorlage nicht
+	 * ersetzt, stünde wörtlich im Versand.
 	 *
 	 * @prop {string} typ - Vorlagen-Typ (mail_vorlagen.typ), z. B. MAHNUNG_ELTERN.
 	 */
 	let { typ } = $props();
 
-	const vorlagenInfo = {
-		MAHNUNG_ELTERN: {
-			verwendung:
-				'Gedruckter Eltern-Mahnbrief (Fensterkuvert) — es geht keine Mail an Eltern. Die Mahn-Mails an Klassenleitungen haben eigene, feste Texte.',
-			platzhalter: ['{{.Vorname}}', '{{.Nachname}}', '{{.BuchListe}}', '{{.Frist}}']
-		},
-		BESTELLUNG_HAENDLER: {
-			verwendung:
-				'Bestellmail an den Buchhändler. Fehlt {{.BestaetigungsLink}} im Text, hängt das System den Bestätigungs-Link automatisch als eigenen Absatz an. {{.LinkGueltigBis}} ist das Ablaufdatum des Links (Einstellung „Bestellwesen"). {{.Mittel}} ist der Topf der Bestellung („Lernmittelfreiheit" oder „Schülerbücherei") — fehlt er, ergänzt das System Betreff und Text automatisch um den Vermerk.',
-			platzhalter: [
-				'{{.Datum}}',
-				'{{.Kundennummer}}',
-				'{{.AnzahlTitel}}',
-				'{{.AnzahlExemplare}}',
-				'{{.BestaetigungsLink}}',
-				'{{.LinkGueltigBis}}',
-				'{{.Mittel}}'
-			]
-		}
-	};
 	const info = $derived(vorlagenInfo[typ] ?? null);
 </script>
 
