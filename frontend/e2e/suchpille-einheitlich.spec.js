@@ -160,6 +160,97 @@ test('Jede Suchpille hat dieselben Maße, Farben und Schriftgröße', async ({ p
 	expect(erste.werte.hoehe).toBe(48);
 });
 
+/**
+ * Läuft im Browser: wie weit die Pille über ihren Kasten hinaus zeichnet (Ring außen, Umriss)
+ * und wie viel Platz je Seite bis zum nächsten Vorfahren bleibt, der abschneidet. Ein
+ * Rollbereich schneidet an seiner Innenkante ab, was übersteht.
+ */
+const RAHMEN_UND_PLATZ = (/** @type {string} */ id) => {
+	const pille = document.getElementById(id)?.parentElement;
+	if (!pille) return null;
+	const stil = getComputedStyle(pille);
+	let aussen = 0;
+	let innen = 0;
+	const schichten = stil.boxShadow === 'none' ? [] : stil.boxShadow.split(/,(?![^(]*\))/);
+	for (const schicht of schichten) {
+		const kanaele = ((schicht.match(/rgba?\([^)]*\)/) || [''])[0].match(/[\d.]+/g) || []).map(
+			parseFloat
+		);
+		if (kanaele.length === 4 && kanaele[3] === 0) continue;
+		const masse = (schicht.replace(/rgba?\([^)]*\)/g, '').match(/-?[\d.]+px/g) || []).map(
+			parseFloat
+		);
+		const breite = (masse[2] ?? 0) + (masse[3] ?? 0); // Weichzeichnung + Ausdehnung
+		if (schicht.includes('inset')) innen = Math.max(innen, breite);
+		else aussen = Math.max(aussen, breite);
+	}
+	if (stil.outlineStyle !== 'none') {
+		aussen = Math.max(
+			aussen,
+			parseFloat(stil.outlineWidth) + Math.max(0, parseFloat(stil.outlineOffset))
+		);
+	}
+	const p = pille.getBoundingClientRect();
+	const platz = { oben: Infinity, unten: Infinity, links: Infinity, rechts: Infinity };
+	for (let v = pille.parentElement; v; v = v.parentElement) {
+		const s = getComputedStyle(v);
+		const r = v.getBoundingClientRect();
+		const links = r.left + v.clientLeft;
+		const oben = r.top + v.clientTop;
+		if (s.overflowX !== 'visible') {
+			platz.links = Math.min(platz.links, p.left - links);
+			platz.rechts = Math.min(platz.rechts, links + v.clientWidth - p.right);
+		}
+		if (s.overflowY !== 'visible') {
+			platz.oben = Math.min(platz.oben, p.top - oben);
+			platz.unten = Math.min(platz.unten, oben + v.clientHeight - p.bottom);
+		}
+	}
+	return { aussen, innen, rahmen: parseFloat(stil.borderTopWidth), platz };
+};
+
+// Der Fokusrahmen ist 2 px stark: 1 px Rand und 1 px Ring. Die Pille sitzt bündig an der Kante
+// des Rollbereichs; ein Ring außen fehlt dort, und unten steht die Linie doppelt so stark wie
+// an den übrigen Seiten. Geprüft wird, ob alles, was außen gezeichnet wird, Platz hat.
+test('Der Fokusrahmen jeder Suchpille ist an allen vier Seiten ganz zu sehen', async ({ page }) => {
+	await uiLogin(page);
+
+	/** @type {string[]} */
+	const abgeschnitten = [];
+	let gemessen = 0;
+	const messe = async (/** @type {{ name: string, pfad: string, id: string }} */ pille) => {
+		await page.goto(pille.pfad);
+		await page.locator(`#${pille.id}`).waitFor();
+		await fokussiertMessen(page, pille.id);
+		const werte = await page.evaluate(RAHMEN_UND_PLATZ, pille.id);
+		expect(werte, `${pille.name}: Pille nicht messbar`).not.toBeNull();
+		gemessen++;
+		// Ohne diese Zusage wäre der Test auch grün, wenn der Ring ganz fehlte.
+		expect(
+			werte.rahmen + werte.innen + werte.aussen,
+			`${pille.name}: Der Fokusrahmen ist 2 px stark (Rand und Ring).`
+		).toBe(2);
+		for (const [seite, platz] of Object.entries(werte.platz)) {
+			if (platz < werte.aussen) {
+				abgeschnitten.push(
+					`  ${pille.name}, ${seite}: ${werte.aussen} px außen, ${platz} px Platz`
+				);
+			}
+		}
+	};
+	for (const pille of PILLEN) await messe(pille);
+	// Der öffentliche Katalog kommt ohne Anmeldung, wie im Vergleich darüber.
+	await page.context().clearCookies();
+	await messe(OPAC);
+
+	expect(gemessen, 'Nicht jede Pille wurde gemessen').toBe(PILLEN.length + 1);
+	expect(
+		abgeschnitten.join('\n'),
+		`Der Fokusrahmen wird abgeschnitten:\n${abgeschnitten.join('\n')}\n` +
+			`Der Ring gehört nach innen (ring-inset in ui/Suchpille.svelte und Omnibox.svelte).`
+	).toBe('');
+});
+
 test('Im Ruhezustand sind die Pillen gefüllt und randlos — nicht dauerhaft im Fokus-Aussehen', async ({
 	page
 }) => {

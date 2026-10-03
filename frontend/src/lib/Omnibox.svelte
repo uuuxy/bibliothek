@@ -127,15 +127,15 @@
 		<!-- Die Fläche der Leiste hat die Farbe der Seite: In Ruhe ist hinter ihr nichts zu
 		     sehen, beim Scrollen verdeckt sie den Inhalt, der unter ihr durchläuft. -->
 		<div class="w-full sticky top-0 z-30 bg-surface-container-lowest pb-2">
-			<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus. Bewusst rounded-full und
-		     bewusst 48 px statt der 36-px-Control-Höhe — das Scanfeld ist das globale Werkzeug
-		     des Kiosks und soll sich von den eckigen Datenfeldern abheben. Der Container trägt
-		     Fläche, Rahmen und Fokus; Lupe, Feld und Kamera-Knopf sind seine Flex-Kinder.
+			<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus, bewusst rounded-full und
+		     48 px statt der 36-px-Control-Höhe: Das Scanfeld ist das Werkzeug des Kiosks. Der
+		     Container trägt Fläche, Rahmen und Fokus. ring-inset zeichnet den Ring nach innen:
+		     Die Pille liegt bündig an der Kante des Rollbereichs, außen würde er abgeschnitten.
 		     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
 			<form
 				onsubmit={(e) =>
 					omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
-				class="group relative flex items-center w-full h-12 px-5 rounded-full border transition-colors no-print {omniboxStore.isShaking
+				class="group relative flex items-center w-full h-12 px-5 rounded-full border ring-inset transition-colors no-print {omniboxStore.isShaking
 					? 'animate-shake'
 					: ''} {farbZustand}"
 			>

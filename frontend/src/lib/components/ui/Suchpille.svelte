@@ -26,6 +26,9 @@
 	 * nicht an, und Erhebung ist dort ohnehin Farbe (tonal), kein Schlagschatten. Das
 	 * Fokus-Signal ist der Umriss.
 	 *
+	 * Sein zweiter Pixel liegt innen (ring-inset): Eine Pille, die bündig an der Kante eines
+	 * Rollbereichs sitzt, verlöre einen außen liegenden Ring an dieser Kante.
+	 *
 	 * @type {{
 	 *   id: string,
 	 *   wert: string,
@@ -105,7 +108,7 @@
 </script>
 
 <div
-	class="group flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent transition-all duration-200 focus-within:bg-white focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600"
+	class="group flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent ring-inset transition-all duration-200 focus-within:bg-white focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600"
 >
 	<Search
 		class="h-5 w-5 shrink-0 text-slate-500 group-focus-within:text-blue-600 transition-colors duration-200"
