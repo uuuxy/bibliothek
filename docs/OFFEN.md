@@ -13,14 +13,11 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 ## Was jetzt dran ist
 
-**Die Sichtung vom 16.09.2026** (Abschnitt 9): Die zwei Bedingungen aus 9.9 — DSGVO-Nachweis
-sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pflegekonzept ist am
-24.09.2026 umentschieden, der DSGVO-Nachweis am 28.09.2026; beide liegen als Entwurf vor.
+**Die Sichtung vom 16.09.2026** (Abschnitt 9): Für die zwei Bedingungen aus 9.9 — DSGVO-Nachweis
+sowie Hosting- und Pflegekonzept — liegen Entwürfe vor; offen ist, was bei der Schule liegt.
 
 **Entschieden am 28.09.2026: Neuaufbau am Schulserver.** Der Echtbetrieb beginnt mit einer leeren
-Datenbank und der Littera-Übernahme; `tabula_rasa.sql` und `repair_titel_dubletten.sql` sind
-entfernt, das Aufräumen vor einem zweiten Littera-Lauf und der Etiketten-Lauf für den Altbestand
-entfallen.
+Datenbank und der Littera-Übernahme (7.2).
 
 **Was bei dir liegt — der Reihe nach:**
 
@@ -85,47 +82,34 @@ entfallen.
      „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
      dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
      Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
-
 5. **Die Maske „Buch bearbeiten" in der neuen Reihenfolge ansehen** (gebaut am 03.10.2026):
    zuerst die ISBN und die Angaben zum Buch, darunter die Gruppe „An der Schule" mit der Wahl
    Bibliothek oder Lernmittel, „Andere Auflagen" als letzte Angabe dieser Gruppe, Bestand und
    Zähldatum unter „Exemplare". Das Feld „Beschreibung / Klappentext" gibt es seit dem
    03.10.2026 nicht mehr; „Speichern" bleibt am neuen Bibliotheksbuch bedienbar und führt ohne
    Signatur zum Feld.
+6. **Ein Termin für die Abnahmen** mit dem Sekretariat, sobald der Schulserver steht (7.7). Ein
+   LUSD-Import mit echten Schülern kommt erst nach der Littera-Übernahme (7.2).
 
-**Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
-hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat Node 26 ab dem
-28. Oktober 2026 nach der Regel „immer die aktive LTS"
-([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Die CI steht seit dem 28.09.2026 fest auf
-`ubuntu-24.04`, der Wechsel auf Ubuntu 26 hat damit keinen Termin mehr (5.10). Die Reihenfolge
-(freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026, die
-Reihenfolge unter 1. die vom 29.09.2026).
+**Im Code,** in dieser Reihenfolge:
 
-1. Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu 4.24 ist am 01.10.2026
-   entschieden: kein dritter Eigentümer im Programm, die Frage geht an die Bücherei (oben
-   unter 2.). Zu 4.28 (Anmelden ohne Mailserver) steht die Entscheidung aus; erst klären.
-2. **5.3** ist am 02.10.2026 zurückgestellt: Zurzeit wird nichts an die Schulaufsicht
-   übergeben. Der Punkt steht nicht in der Reihenfolge, bis eine Übergabe ansteht.
-3. Nach der Antwort zu 8.3: **5.4**.
-4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
+2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
+   Unterscheidung wird.
+3. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
+4. Nach der Antwort zu 8.3: **5.4**.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
-Vor dem Echtstart außerdem: 5.31 (`update.sh` für den Schulserver) und der Eingang für die Seite
-der Lieferanten (4.23).
+Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
+([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
+(`update.sh` für den Schulserver) und der Eingang für die Seite der Lieferanten (4.23).
 
-**In der Doku:** Pflegekonzept und Datenschutz-Nachweis (9.9) stehen als Entwurf. Im
-Pflegekonzept sind seit dem 28.09.2026 die Antworten zu seinen vier offenen Stellen eingetragen,
-die Vorlage für das Blatt liegt in [blatt_vorlage.md](blatt_vorlage.md). Es folgen die
-Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
+**In der Doku:** Pflegekonzept und Datenschutz-Nachweis stehen als Entwurf. Es folgen die
+Arbeitsnotizen ins Repository und die Probe durch die Vertretung (9.9).
 
 Mit der Littera-Übernahme (7.2) kommen das Eigentum je Exemplar (4.24) und alle Schlagworte und
 Interessenkreise der Titel; ob Littera Verweise zwischen Schlagworten führt, zeigt erst die
 Sicherung von 2026 (4.20).
-
-**Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver samt Speicher außer
-Haus (7.3), das Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den
-Zahlungswegen (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen, sobald der
-Schulserver steht (7.7). Einen echten LUSD-Import erst nach der
-Littera-Übernahme (7.2).
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
 Betriebspunkte in 7. Keiner davon schadet still; sie werden gebündelt erledigt.
@@ -145,15 +129,15 @@ jemandem schaden?"**
 
 1. **Ein Fund = ein Commit.** Was beim Reparieren zusätzlich auffällt, kommt hierher, nicht in
    denselben Commit.
-1. **Kategorie A wird belegt, nicht behauptet:** ein Test, der am alten Code rot wird. Bis ein
+2. **Kategorie A wird belegt, nicht behauptet:** ein Test, der am alten Code rot wird. Bis ein
    Fund nachgestellt ist, heißt er „Verdacht".
-2. **Neues kommt nur hierher** — Funde, offene Fragen, Betriebspunkte. Kein Issue, kein anderes
+3. **Neues kommt nur hierher** — Funde, offene Fragen, Betriebspunkte. Kein Issue, kein anderes
    Dokument. Eine Frage steht hier, bevor die Antwort kommt.
-3. **Erledigt heißt:** hier löschen — Datum und Begründung stehen in der Commit-Nachricht, ein
+4. **Erledigt heißt:** hier löschen — Datum und Begründung stehen in der Commit-Nachricht, ein
    Archiv gibt es nicht. Eine Antwort bekommt „Entschieden am …" und fällt weg, sobald
    sie umgesetzt ist. Die Nummer eines gelöschten Punkts wird nicht wieder vergeben —
    Kommentare im Code nennen sie als Herkunft.
-4. **Die Reihenfolge** wird bei jeder Änderung mitgepflegt.
+5. **Die Reihenfolge** wird bei jeder Änderung mitgepflegt.
 
 ---
 
@@ -458,11 +442,11 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   der Test die Seite ohne Kacheln und geht weiter. Belegt an einer Kachel, die den Klick auf
   den nächsten Menüpunkt scheitern ließ, solange der Test ihn per Teilwort traf: fünf von
   sechs Läufen rot, einer grün, die Kacheln standen dort also noch nicht. Abhilfe: je Seite
-  auf ein Merkmal des Inhalts warten (Kachel, Tabellenzeile). Dieselbe Wartefunktion steht in
-  `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`, dort nicht nachgemessen.
-  Kategorie B.
-- 45 Specs klicken Menüpunkte per `page.getByTitle('<Name>')`, 88 Stellen (gezählt am
-  02.10.2026). Das trifft jedes Element, dessen `title` den Namen enthält, auch die Kachel
+  auf ein Merkmal des Inhalts warten (Kachel, Tabellenzeile). Dieselbe Form des Wartens steht
+  in `typo-rollen.spec.js`, `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`, dort
+  nicht nachgemessen. Kategorie B.
+- 44 Specs klicken Menüpunkte per `page.getByTitle('<Name>')`, 87 Stellen (gezählt am
+  03.10.2026). Das trifft jedes Element, dessen `title` den Namen enthält, auch die Kachel
   eines Buchs. `e2e/abgaenger-management.spec.js` legt Titel „Abgänger Buch …" an und räumt
   sie nicht ab (lokal 133, der älteste an erster Stelle des Katalogs). Die zwei Klicks auf
   „Abgänger" (`schueler-profil-klick.spec.js`) kommen heute von der Theke, wo keine Kachel
@@ -546,75 +530,48 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 Stand 03.10.2026: 852 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
-Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
-eigenen Rollen `success` und `warning` in `styles/rollen.css` (M3, „Define custom color
-roles"). Vorgehen:
+Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
+`success` und `warning` in `styles/rollen.css` (M3, „Define custom color roles"). Vorgehen:
 Bildschirm für Bildschirm, die größten zuerst, je Portion ein Commit, am gerenderten Bildschirm
 geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über ui/StatusChip, Cover
 über ui/BuchCover, Rückmeldung beim Zeigen über den State-Layer statt `hover:bg-*`, ein Fehler
 über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für die übrige Anwendung
 freigegeben am 23.09.2026.
 
-Der Inventur-Bildschirm steht ganz auf Rollen: seit dem 24.09.2026 der Bildschirm selbst
-(`UnifiedInventory.svelte`, `inventur/ScanRueckmeldung.svelte`), seit dem 02.10.2026 der
-Start-Dialog, die Rückfrage vor dem Abschluss und der Fehlbestandsbericht.
 `inventur/lib/bookHelpers.js` (48) sind Farbverläufe je Fach für selbstgebaute
 Cover-Platzhalter; das gehört zu 6.2 (Cover über `ui/BuchCover`).
 
-Die Titel-Verwaltung steht seit dem 02.10.2026 auf Rollen (`BookTable`, `BookTableToolbar`,
-`BookTableZeile`). Beim Ansehen aufgefallen, jeweils am Code nachgesehen:
+Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 
-- Ein Titel lässt sich in der Liste nur mit der Maus öffnen: Der Klick hängt an der Zeile
-  (`BookTableZeile.svelte`, `onclick` am `<tr>`), die Zeile nimmt keinen Fokus. Die Leserdatei
-  öffnet die Akte seit dem 09.09.2026 über den Namen als Knopf.
-- Der Knopf „Retry Cover" trägt eine englische Beschriftung.
-
-Die Seite „LUSD & Versetzung" steht seit dem 02.10.2026 auf Rollen (`LusdImportView`,
-`PromoteStudentsView`, `lusdVorschauRubriken.js`). Die Flächen für Fehler, Erfolg, Hinweis und
-Warnung stehen in beiden Dateien von Hand, wie an rund 40 weiteren Stellen der Anwendung
-(gezählt am 02.10.2026: getönte Fläche und Rundung in einer Klassenliste); ein gemeinsames
-Bauteil dafür gibt es nicht.
-
-Die Statistik steht seit dem 02.10.2026 auf Rollen (`StatsDashboard`, `OverdueWidget`,
-`StatsTrendChart`), bis auf die Sprechblase des Diagramms: Sie trägt wie die Sprechblasen der
-ganzen Anwendung (`actions/tooltip.js`) `bg-slate-900`, und `rollen.css` kennt die Rolle dafür
-nicht (M3, Color roles: „Inverse surface: Background fills for elements which contrast against
-surface"). Die Balkenfarben des Diagramms sind feste Werte, keine Rollen.
-
-Die Benutzerliste steht seit dem 03.10.2026 auf Rollen (`UserManagement`, `UserManagementTable`,
-die Dialoge zum Bearbeiten und Löschen). Beim Ansehen aufgefallen:
-
-- Der Zustand eines Kontos steht in zwei Formen: „Aktiv" und „Inaktiv" als Punkt mit Wort,
-  „Zugang beantragt" als Pille.
-
-Die Mail-Vorlagen (Einstellungen, Kategorie „Mail") und die Buchakte stehen seit dem 03.10.2026
-auf Rollen; die Reiter der Akte kommen aus `ui/Reiter`.
-
-Seit dem 03.10.2026 stehen außerdem auf Rollen: die Warenkorb-Position
-(`OrderCartPosition.svelte`), die Liste im Wareneingang (`WareneingangTable.svelte`), die Spalte
-„Buch-Etiketten" des Druck-Centers (`LabelSettings`, `LabelBarcodeSchritt`,
-`LabelLayoutOptionen`), die Datenverwaltung mit ihren Bausteinen (`DataManagement.svelte`,
-`LitteraImportWidget.svelte`, `OfflineSicherungenEinspielen.svelte`) und die Aufnahme des
-Passbilds (`WebcamCapture.svelte`).
-
-Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
-
-- Im Fehlbestandsbericht ist der Titel bei 1280 px nach rund 95 px abgeschnitten, während die
-  Spalte „Signatur" etwa dreimal so breit ist (gesehen am 02.10.2026; die Titelzelle trägt
-  `max-w-0` ohne volle Breite an der Spalte). Der Bericht wird zum Absuchen des Regals
+- Titel-Verwaltung: Ein Titel lässt sich in der Liste nur mit der Maus öffnen. Der Klick hängt
+  an der Zeile (`BookTableZeile.svelte`, `onclick` am `<tr>`), die Zeile nimmt keinen Fokus. Die
+  Leserdatei öffnet die Akte über den Namen als Knopf.
+- Titel-Verwaltung: Der Knopf „Retry Cover" trägt eine englische Beschriftung.
+- „LUSD & Versetzung": Die Flächen für Fehler, Erfolg, Hinweis und Warnung stehen in
+  `LusdImportView` und `PromoteStudentsView` von Hand, wie an rund 40 weiteren Stellen der
+  Anwendung (gezählt am 02.10.2026: getönte Fläche und Rundung in einer Klassenliste); ein
+  gemeinsames Bauteil dafür gibt es nicht.
+- Statistik: Die Sprechblase des Diagramms (`StatsTrendChart`) trägt wie die Sprechblasen der
+  ganzen Anwendung (`actions/tooltip.js`) `bg-slate-900`, und `rollen.css` kennt die Rolle dafür
+  nicht (M3, Color roles: „Inverse surface: Background fills for elements which contrast against
+  surface"). Die Balkenfarben des Diagramms sind feste Werte, keine Rollen.
+- Benutzerliste: Der Zustand eines Kontos steht in zwei Formen, „Aktiv" und „Inaktiv" als Punkt
+  mit Wort, „Zugang beantragt" als Pille (`UserManagementTable`).
+- Inventur: Im Fehlbestandsbericht ist der Titel bei 1280 px nach rund 95 px abgeschnitten,
+  während die Spalte „Signatur" etwa dreimal so breit ist (gesehen am 02.10.2026; die Titelzelle
+  trägt `max-w-0` ohne volle Breite an der Spalte). Der Bericht wird zum Absuchen des Regals
   ausgedruckt; ob der Ausdruck ebenso kürzt, ist nicht nachgesehen.
-- Die Wörter „Inventur-Scope" (Überschrift des Start-Dialogs) und „aus dem aktuellen Scope"
-  (Rückfrage vor dem Abschluss) stehen so in der Oberfläche; ein deutsches Wort wäre
+- Inventur: Die Wörter „Inventur-Scope" (Überschrift des Start-Dialogs) und „aus dem aktuellen
+  Scope" (Rückfrage vor dem Abschluss) stehen so in der Oberfläche; ein deutsches Wort wäre
   „Umfang" oder „Bereich".
-
-- Ein unbekannter Barcode zeigt am Scanner den rohen Fehlertext „exemplar für inventur-scan
-  nicht ladbar: no rows in result set" (`GetExemplarForInventoryScan` hüllt `pgx.ErrNoRows` ein,
-  `ladeExemplarFuerScan` gibt ihn mit 404 unverändert weiter). Der Status stimmt, der Satz nicht.
-
-Dazu gehört die Leiste des Ausweisdrucks in der Leserdatei (`students/AuswahlAktionsleiste`,
-dunkel in Palettenfarben): Seit dem 23.09.2026 gibt es für markierte Zeilen `ui/AuswahlLeiste`
-(Schlagwort-Pflege). Beim Umstellen zu klären: wohin der Hinweis „ohne Ablaufjahr" und das Feld
-„Ab Feld" kommen — beides passt nicht in die 64 px hohe Leiste.
+- Inventur: Ein unbekannter Barcode zeigt am Scanner den rohen Fehlertext „exemplar für
+  inventur-scan nicht ladbar: no rows in result set" (`GetExemplarForInventoryScan` hüllt
+  `pgx.ErrNoRows` ein, `ladeExemplarFuerScan` gibt ihn mit 404 unverändert weiter). Der Status
+  stimmt, der Satz nicht.
+- Leserdatei: Die Leiste des Ausweisdrucks (`students/AuswahlAktionsleiste`) ist dunkel in
+  Palettenfarben; für markierte Zeilen gibt es `ui/AuswahlLeiste` (Schlagwort-Pflege). Beim
+  Umstellen zu klären: wohin der Hinweis „ohne Ablaufjahr" und das Feld „Ab Feld" kommen —
+  beides passt nicht in die 64 px hohe Leiste.
 
 ### 5.22 Fremdrückgabe über Kreuz verklemmt sich — seit Migration 137
 
@@ -733,10 +690,9 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
 
 ### 5.45 Listen in einem Kasten mit eigenem Scrollen
 
-Am 01.10.2026 und 02.10.2026 sind drei Kästen entfernt: die Ausleihliste der Leserakte
-(256 px, drei Zeilen), die Positionen im Wareneingang (60 % der Fensterhöhe) und die Exemplare
-in der Maske „Buch bearbeiten" (256 px, vier Zeilen). Die Listen zeigen jetzt alle Zeilen,
-gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B. Offen:
+Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich der Seite
+(`e2e/scrollbereiche.spec.js`); so stehen die Ausleihliste der Leserakte, die Positionen im
+Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Offen:
 
 - **Weitere Kästen derselben Form, durchgesehen am 02.10.2026** (1280 × 900, lokale Mengen;
   Suchmuster: `max-h-` und `overflow-y-auto` in einer Zeile, 13 Treffer, die übrigen sind
@@ -805,6 +761,20 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   die laufenden Ausleihen und die Vormerkungen. Unter dem Reiter „Stammdaten & Adresse" steht
   dieselbe Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem
   01.10.2026 „Forderungen".
+
+### 5.46 Portal: ein Weg für Wunsch und Meldung
+
+Wunsch vom 01.10.2026: Im Portal, Reiter „Meine Anliegen", stehen über dem Formular zwei Knöpfe,
+„Buchwunsch" und „Etwas stimmt nicht". Beide führen zum selben Formular und zum selben Absenden;
+es soll einer sein. Am Code nachgesehen am 03.10.2026 (`portal/AnliegenWidget.svelte`): Die Wahl
+ändert die Beschriftung des ersten Feldes („Welches Buch?" oder „Worum geht es?"), dessen
+Beispieltext und die Meldung nach dem Absenden. Am Server bestimmt sie den Betreff der Mail beim
+Erledigen (`api/anliegen.go`), in der Liste der Bibliothek das Abzeichen „Wunsch" oder „Meldung"
+(`bestellungen/AnliegenListe.svelte`). Die zwei Knöpfe sind von Hand gebaut, nicht aus
+`ui/Segmente`.
+
+Vor dem Bauen zu klären: Fällt die Unterscheidung ganz weg — ein Formular, ein Abzeichen, ein
+Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? Kategorie B.
 
 ---
 
@@ -1034,7 +1004,7 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   sie nirgends. In Tabellenzeilen stehen bis zu drei Symbole ohne Abstand nebeneinander
   (Ausleihliste der Leserakte: verlängern, Schaden melden, zurückgeben). Anlass zum Bauen:
   Fehlklicks an der Theke oder Bedienung am Tablet.
-- 14 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`, darunter
+- 11 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`, darunter
   `KlassenBuchKachel` im Portal). Umstellen beim fachlichen Anfassen, nicht in einem Rutsch.
 - 3.000 Titel ohne ISBN: `inventur.SucheTextDNB` nur mit Bestätigung durch einen Menschen
   verdrahten.
@@ -1045,10 +1015,6 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
 - Die Altersangabe der DNB (653 „(Zielgruppe)ab 10 Jahre", `MetadatenErgebnis.Zielgruppe`) wird
   gelesen und nicht gespeichert: Es gibt keine Spalte und keinen Leser. Anlass zum Bauen: ein
   Leser, etwa ein Filter im Portal.
-- Das Nachschlagen (`GET /api/lookup/{isbn}`) liefert einen Untertitel (`subtitle`), den weder
-  das ISBN-Feld noch der Scan im Buchformular übernimmt. Beim Anlegen trägt ihn der Server
-  nach, beim Ändern nicht (`ergaenzeFehlendeMetadatenFuerAktualisierung`) — der Zwilling zu
-  `8f7610aa`, der den Untertitel sonst mitnimmt.
 - `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=time.Now()` in der Zone des
   Testprozesses; unter `TZ=Pacific/Midway` ist das der Vortag und der Zähler nennt 0. Kein
   Produktfehler — im Betrieb kommt dieses Datum aus dem Browser in Berlin. Beim nächsten Anfassen
@@ -1059,20 +1025,14 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   eingespielte Migrationen bleiben unverändert.
 - Knopfzeile über den Reitern (Mahnwesen): kommt aus dem gemeinsamen Seitengerüst; Anlass wäre ein
   Rundgang über das Gerüst.
-- Drei handgebaute Pillen-Gruppen in `StatsDashboard` statt `ui/Segmente.svelte`.
-- Schriftstärke der Chips: `ui/ChipFeld`, `ui/FilterChips` und `ui/Segmente` schreiben
-  `font-medium`, das im Haus 400 ist (`styles/theme-mass.css`; an `FilterChips` im Browser
-  gemessen am 23.09.2026, die beiden anderen tragen dieselbe Klasse). M3 nennt für label-large
-  500, die Knöpfe tragen `font-semibold` (500). Alle drei zusammen entscheiden, nicht einzeln.
 - `github.com/jung-kurt/gofpdf` ist seit 2021 archiviert und steckt in 17 Dateien (ohne Tests,
   gezählt am 30.09.2026); gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto
   mitbringt. Neue PDFs (5.3, 5.4) nicht mehr auf dem archivierten; die 17 beim fachlichen Anfassen
   umstellen, mit den PDF-Gates.
 - Etikettenraster doppelt (`api/label_formats.go` und `etikettformate.js`), gehalten von
   `etikettformate-konsistenz.test.js`; am 31.08.2026 entschieden geparkt.
-- Reste des Nie-verdrahtet-Sweeps: `inventur_sessions.gestartet_von` wird nie angezeigt;
-  `abgaenger_jahr` in der Aktivlisten-Antwort ohne Konsument; bei den Geräten
-  `ActionEvent.GeraetID` ohne Broadcast und mit Null-Zeitstempel.
+- Reste des Nie-verdrahtet-Sweeps: `abgaenger_jahr` in der Aktivlisten-Antwort ohne
+  Konsument; bei den Geräten `ActionEvent.GeraetID` ohne Broadcast und mit Null-Zeitstempel.
 - Cognitive Complexity: 32 Funktionen über 15 ohne Tests (Messung 05.09.2026); lohnend allenfalls
   `OverrideDueDateHandler` und `behandleAbgaenger`.
 - `javascript:S6551` und `javascript:S8783`: begründete Dauer-Ausnahmen. Die Begründung zu
@@ -1211,7 +1171,7 @@ von außen durchlässt, und Port 443 frei ist.
 ### 7.6 Ruleset `main`
 
 PR-Pflicht entfernen (Solo-Entscheidung 30.07.2026), „Block force pushes" und „Restrict
-deletions" anlassen. Am 30.09.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
+deletions" anlassen. Am 03.10.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
 Admin-Bypass.
 
 ### 7.7 Abnahmen
@@ -1330,11 +1290,9 @@ Anforderungsliste, abgeglichen in [mittel_konzept.md](mittel_konzept.md) Abschni
 
 ### 9.9 Zwei Bedingungen neben der Mängelliste
 
-**Entschieden am 23.09.2026: zurückgestellt.** Beides bleibt liegen, bis es ansteht; dann gelten
-die Schritte und Fragen unten. **Am 24.09.2026 für das Pflegekonzept umentschieden: jetzt, als
-Wartungshandbuch** (Vorschlag am Ende dieses Abschnitts); **am 28.09.2026 auch für den
-DSGVO-Nachweis**, weil jetzt die Antworten von Schule und Schulträger den Echtstart bestimmen
-und beide Dokumente sie beeinflussen.
+**Entschieden am 24.09.2026 für das Pflegekonzept, am 28.09.2026 für den DSGVO-Nachweis:**
+Beides wird jetzt erarbeitet, das Pflegekonzept als Wartungshandbuch, weil die Antworten von
+Schule und Schulträger den Echtstart bestimmen und beide Dokumente sie beeinflussen.
 
 Die Einschätzung am Ende des Protokolls nennt zwei Punkte, die in keinem der zwölf Mängel
 stehen:
