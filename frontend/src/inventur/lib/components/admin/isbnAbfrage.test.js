@@ -137,10 +137,11 @@ describe('isbnAbfrage: eine andere ISBN in derselben Maske', () => {
 	});
 });
 
-// Ein zweiter Scan ersetzt die ISBN, während die Katalogdienste zur ersten noch antworten;
-// seine Eingabetaste schließt sich dem laufenden Ablauf an. Die Antwort zur ersten ISBN gehört
-// zum ersten Buch und darf nicht unter der zweiten Nummer stehen.
-describe('isbnAbfrage: die ISBN ändert sich, während die Abfrage läuft', () => {
+// Die Katalogdienste antworten nach Sekunden, und in der Zeit wird weiter gescannt und getippt.
+// Ein zweiter Scan ersetzt die ISBN, und seine Eingabetaste schließt sich dem laufenden Ablauf
+// an: Die Antwort zur ersten ISBN gehört zum ersten Buch und darf nicht unter der zweiten
+// Nummer stehen. Ein Feld, in das inzwischen jemand geschrieben hat, überschreibt sie nicht.
+describe('isbnAbfrage: Eingaben, während die Abfrage läuft', () => {
 	/** Hält die Antwort der Katalogdienste zur ISBN A an, bis der Test sie freigibt. */
 	function haltAn() {
 		let gibFrei = () => {};
@@ -188,6 +189,41 @@ describe('isbnAbfrage: die ISBN ändert sich, während die Abfrage läuft', () =
 		await lauf;
 
 		expect(formular).toMatchObject({ isbn: '', title: '', author: '' });
+	});
+
+	// Dieselbe Regel wie beim Listenpreis: Was jemand eingetragen hat, bleibt.
+	it('ein Feld, das während der Abfrage getippt wird, bleibt; die übrigen füllt die Antwort', async () => {
+		const gibFrei = haltAn();
+		const formular = neueMaske();
+		const abfrage = erzeugeIsbnAbfrage(
+			() => formular,
+			() => undefined
+		);
+
+		const lauf = abfrage.nachschlagen(false);
+		await vi.waitFor(() => expect(abfragenZu(A)).toBe(1));
+		formular.author = 'Von Hand';
+		gibFrei();
+		await lauf;
+
+		expect(formular).toMatchObject({ title: 'Buch A', author: 'Von Hand', verlag: 'Verlag A' });
+	});
+
+	it('der Knopf ersetzt, was vor dem Klick dastand, nicht was danach getippt wird', async () => {
+		const gibFrei = haltAn();
+		const formular = { ...neueMaske(), title: 'Alter Titel', author: 'Alter Autor' };
+		const abfrage = erzeugeIsbnAbfrage(
+			() => formular,
+			() => undefined
+		);
+
+		const lauf = abfrage.nachschlagen(true);
+		await vi.waitFor(() => expect(abfragenZu(A)).toBe(1));
+		formular.author = 'Von Hand';
+		gibFrei();
+		await lauf;
+
+		expect(formular).toMatchObject({ title: 'Buch A', author: 'Von Hand' });
 	});
 });
 

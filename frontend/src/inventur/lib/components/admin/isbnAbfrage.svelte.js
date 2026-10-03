@@ -110,6 +110,8 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 		// Die ISBN hat sich während der Abfrage geändert, etwa durch einen zweiten Scan: Die
 		// Antwort gehört zum vorigen Buch und stünde sonst unter der neuen Nummer.
 		const veraltet = () => formular.isbn !== isbn;
+		// Was jemand tippt, während die Dienste antworten, bleibt stehen.
+		const beimBeginn = { ...formular };
 		aktiv = true;
 		ausgang = null;
 		try {
@@ -118,7 +120,8 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 			if (!antwort.ok) return melde(AUSGAENGE[antwort.status] ?? GESCHEITERT);
 			const daten = (await antwort.json()).data ?? {};
 			if (veraltet()) return;
-			for (const [feld, wert] of felderAus(daten)) schreibe(formular, feld, wert);
+			const frei = felderAus(daten).filter(([feld]) => formular[feld] === beimBeginn[feld]);
+			for (const [feld, wert] of frei) schreibe(formular, feld, wert);
 			// Der Ladenpreis der DNB ist ein Vorschlag für den Listenpreis: Er füllt nur ein
 			// leeres Feld. Was jemand eingetragen hat, bleibt.
 			if (daten.preis > 0 && istLeer(formular.listenpreis)) {
