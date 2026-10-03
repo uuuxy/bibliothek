@@ -1,12 +1,13 @@
 <!-- @component Eine Position im Warenkorb — Cover, Titel, Menge, Preis, Topf-Wechsel.
 
-     Eigene Datei, seit der Warenkorb nach Topf gruppiert (10.09.2026): OrderCart trägt
-     die Gruppen und den Absenden-Knopf, diese Datei die Zeile. Beides zusammen lag über
-     der 200-Zeilen-Marke. -->
+     Eigene Datei, weil der Warenkorb nach Topf gruppiert: OrderCart trägt die Gruppen und
+     den Absenden-Knopf, diese Datei die Zeile. Beides zusammen läge über der
+     200-Zeilen-Marke. -->
 <script>
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Feld from '../ui/Feld.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
+	import StatusChip from '../ui/StatusChip.svelte';
 	import { MITTEL, anderesMittel } from './mittel.js';
 	import { X, Tag } from '@lucide/svelte';
 
@@ -17,60 +18,56 @@
 	const ziel = $derived(MITTEL[anderesMittel(item.mittel)]);
 </script>
 
-<div class="rounded-xl border border-slate-200 bg-white p-3 space-y-2.5">
+<div class="space-y-2.5 rounded-xl border border-outline-variant bg-surface-container-lowest p-3">
 	<div class="flex items-start gap-2.5">
 		<BuchCover coverUrl={item.cover_url} isbn={item.isbn} titel={item.titel} klasse="shrink-0" />
 		<div class="min-w-0 flex-1">
-			<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">
+			<h4 class="truncate text-sm leading-snug font-semibold text-on-surface">
 				{item.titel}
 			</h4>
-			<p class="text-xs text-slate-400 truncate font-mono">{item.isbn || '—'}</p>
+			<p class="truncate font-mono text-xs text-on-surface-variant">{item.isbn || '—'}</p>
 			{#if item.generate_barcodes}
-				<div
-					class="text-label-small font-bold text-blue-600 mt-1 flex items-center gap-1 bg-blue-50 w-fit px-1.5 py-0.5 rounded-md"
-				>
-					<Tag class="w-3 h-3" aria-hidden="true" />
-					{item.menge}
-					{item.menge === 1 ? 'Barcode' : 'Barcodes'}
+				<div class="mt-1">
+					<StatusChip icon={Tag} text={item.menge === 1 ? '1 Barcode' : `${item.menge} Barcodes`} />
 				</div>
 			{/if}
 		</div>
 		<button
 			onclick={() => orderStore.removeFromCart(item)}
 			aria-label="Entfernen"
-			class="shrink-0 w-6 h-6 rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center cursor-pointer transition-colors"
+			class="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-on-surface-variant transition-colors hover:text-error"
 		>
 			<X class="w-3.5 h-3.5" aria-hidden="true" />
 		</button>
 	</div>
 
 	<div class="flex items-center justify-between gap-2 pl-10">
-		<div class="flex items-center border border-slate-200 bg-white rounded-xl overflow-hidden">
+		<div
+			class="flex items-center overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest"
+		>
 			<button
 				aria-label="Menge verringern"
 				onclick={() => (item.menge = Math.max(1, item.menge - 1))}
-				class="px-2.5 py-1 hover:bg-slate-50 font-bold text-slate-500 cursor-pointer">−</button
-			><span class="px-2 font-bold text-slate-800 text-sm min-w-6 text-center tabular-nums"
+				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant">−</button
+			><span class="min-w-6 px-2 text-center text-sm font-bold text-on-surface tabular-nums"
 				>{item.menge}</span
 			><button
 				aria-label="Menge erhöhen"
 				onclick={() => (item.menge += 1)}
-				class="px-2.5 py-1 hover:bg-slate-50 font-bold text-slate-500 cursor-pointer">+</button
+				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant">+</button
 			>
 		</div>
 		{#if orderStore.preiseErfassen}
 			<div class="flex items-center gap-1.5">
-				<!-- Der Vorschlag bleibt als solcher erkennbar, solange er unveraendert ist.
-				     Er ist der DNB-Ladenpreis bei Erscheinen — NICHT der Schulpreis, den die
-				     Schule tatsaechlich zahlt. Wer ihn ueberschreibt, verliert das Abzeichen
-				     und damit die Erinnerung daran, dass hier geraten wurde. -->
+				<!-- Der Vorschlag bleibt als solcher erkennbar, solange er unverändert ist: Er ist
+				     der DNB-Ladenpreis bei Erscheinen, nicht der Preis, den die Schule zahlt. Wer
+				     ihn überschreibt, verliert das Abzeichen. -->
 				{#if item.preis_vorschlag > 0 && Number(item.preis) === item.preis_vorschlag}
-					<span
-						class="text-label-small font-bold uppercase text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded"
-						title="Ladenpreis aus dem DNB-Datensatz — bitte gegen den Schulpreis pruefen"
-					>
-						DNB
-					</span>
+					<StatusChip
+						ton="warten"
+						text="DNB"
+						tip="Ladenpreis aus dem DNB-Datensatz — bitte gegen den Schulpreis prüfen"
+					/>
 				{/if}
 				<Feld
 					type="number"
@@ -79,7 +76,7 @@
 					aria-label="Preis"
 					feld="w-20 text-right font-semibold"
 				/>
-				<span class="text-sm font-semibold text-slate-400">€</span>
+				<span class="text-sm font-semibold text-on-surface-variant">€</span>
 			</div>
 		{/if}
 	</div>
