@@ -91,15 +91,13 @@ Datenbank und der Littera-Übernahme (7.2).
    an der Beschriftung): einen Titel ohne ISBN öffnen, die Signatur ändern und speichern; ein
    Medium ohne ISBN neu anlegen und danach noch einmal mit demselben Titel und Autor — die
    Maske fragt dann „Ist es dasselbe Medium?".
-6. **Eine Zählung am Testserver** für 5.48 (die ISBN in einer Länge); der Einzeiler steht
-   dort. Vor der Zahl entsteht die Migration nicht.
-7. **Ein Termin für die Abnahmen** mit dem Sekretariat, sobald der Schulserver steht (7.7). Ein
+6. **Ein Termin für die Abnahmen** mit dem Sekretariat, sobald der Schulserver steht (7.7). Ein
    LUSD-Import mit echten Schülern kommt erst nach der Littera-Übernahme (7.2).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **5.48** (die ISBN in einer Länge) — entschieden am 03.10.2026; vor dem Bauen die Zählung
-   vom Testserver.
+1. **5.48** (die ISBN in einer Länge) — entschieden am 03.10.2026, die Zählung vom Testserver
+   liegt vor.
 2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
 3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
@@ -820,8 +818,11 @@ erfasste in der Spalte `ISBN10`. Bei 6 der 112 führt die Rechnung auf die ISBN-
 anderen Eintrags, darunter 3499500252 — das Paar, dessentwegen die andere Länge seit dem
 25.09.2026 nur vorgeschlagen wird.
 
-Vor dem Bauen die Zahl vom Testserver; dort stehen auch Titel, die das Programm selbst
-zehnstellig angelegt hat. Der Einzeiler zählt die zehnstelligen, die gültigen darunter und die
+Am Testserver, lesend gemessen am 03.10.2026 (Migrationsstand 156): 100 zehnstellige Nummern,
+keine davon gültig, keine mit ihrer dreizehnstelligen Form an einem anderen Titel. Die Migration
+rechnet dort keine Zeile um; die neue Regel wirkt auf das, was künftig geschrieben wird. Dazu
+gezählt: 13.062 Titel, 3.000 ohne ISBN, 65 mit einem Wert ohne ISBN-Form, 16 gleichnamige ohne
+ISBN. Nachzählen an einer anderen Anlage — die zehnstelligen, die gültigen darunter und die
 gültigen, deren dreizehnstellige Form ein anderer Titel trägt:
 `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) AS zehnstellig, count(*) FILTER (WHERE g) AS gueltig, count(*) FILTER (WHERE g AND EXISTS (SELECT 1 FROM buecher_titel a WHERE a.isbn = z.dreizehn)) AS paar_im_katalog FROM (SELECT isbn, (SELECT sum((CASE WHEN c = 'X' THEN 10 ELSE c::int END) * (11 - i::int)) FROM regexp_split_to_table(isbn, '') WITH ORDINALITY AS s(c, i)) % 11 = 0 AS g, '978' || left(isbn, 9) || ((10 - (SELECT sum(c::int * CASE WHEN i % 2 = 1 THEN 1 ELSE 3 END) FROM regexp_split_to_table('978' || left(isbn, 9), '') WITH ORDINALITY AS s(c, i)) % 10) % 10)::text AS dreizehn FROM buecher_titel WHERE length(isbn) = 10 AND isbn ~ '^[0-9]{9}[0-9X]') z;"`
 
