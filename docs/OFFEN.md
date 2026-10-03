@@ -482,6 +482,26 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   02.10.2026 noch 84 Titel, 83 Ausleihen, 86 Leser und 81 Konten. Ein voller Lauf am
   02.10.2026 ließ 94 Titel und 438 Exemplare zurück. Lokale Zahlen tragen diese Reste mit.
   Abhilfe je Spec: eigener Titel, Aufräumen über die Kennung. Kategorie B.
+- Code, den kein Go-Test ausführt (gemessen am 03.10.2026 mit der ganzen Suite und `-coverpkg`
+  über alle Pakete: 84,2 % der Anweisungen; die Messung je Paket rechnet die Datenbank-Tests
+  aus `api/` nicht für `repository/` an und nennt 78,9 %). Unter 50 % liegen, ohne `cmd/`,
+  `main.go` und Dateien mit weniger als 20 Anweisungen: `api/littera_import.go` 0,7 % (Littera-
+  und Bestandsdatei hochladen; die Regeln in `internal/littera` 82,7 %),
+  `internal/service/cover_service.go` 18,2 %, `internal/littera/altbestand.go` 4,4 %,
+  `api/klassen_mapping.go` 27,0 %, `api/schueler_etiketten.go` 2,3 %,
+  `inventur/endpunkte_cover_retry.go` 26,5 %, `api/geraete.go` 49,0 %, `db/seed.go` 35,5 %,
+  `api/ausweis_layout.go` 33,3 %, `api/user_admin_loeschen.go` 48,3 %,
+  `repository/mail_settings.go` 38,1 %. Ob Browser-Tests diesen Code erreichen, ist nicht
+  gemessen. Anlass: Das Nachziehen der Tests für fünf Routen am 03.10.2026 fand drei Fehler
+  (zwei Abweisungen beim Zusammenführen ohne Grund, ein unlesbares Bild als Störung gemeldet,
+  eine Antwort des Foto-Uploads, die kein JSON war). Abhilfe je Route: ein Test mit Datenbank
+  und eine Gegenprobe je Zusicherung, Muster in `api/inventur_verlust_aktionen_pg_test.go`.
+  Kategorie B.
+- SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek4`; der
+  Schlüssel steht in `sonar-project.properties`. Stand 03.10.2026: 0 Fehler, 0 Schwachstellen,
+  209 Hinweise (davon 75 `go:S3776`, siehe 6.2), Abdeckung 70,8 %. Das Quality Gate vergleicht
+  mit dem Stand desselben Projekts; ein neu angelegtes Projekt meldet OK, ohne zu prüfen. Die
+  134 übrigen Hinweise sind nicht einzeln durchgesehen.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
@@ -1066,8 +1086,13 @@ Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? K
   `etikettformate-konsistenz.test.js`; am 31.08.2026 entschieden geparkt.
 - Reste des Nie-verdrahtet-Sweeps: `abgaenger_jahr` in der Aktivlisten-Antwort ohne
   Konsument; bei den Geräten `ActionEvent.GeraetID` ohne Broadcast und mit Null-Zeitstempel.
-- Cognitive Complexity: 32 Funktionen über 15 ohne Tests (Messung 05.09.2026); lohnend allenfalls
-  `OverrideDueDateHandler` und `behandleAbgaenger`.
+- Cognitive Complexity: 75 Funktionen über 15, Testdateien nicht mitgezählt (SonarQube
+  `go:S3776` und `gocognit -over 15`, beide gemessen am 03.10.2026, davon 47 in `api/`). Verlauf
+  mit `gocognit` an den Ständen der Tage: 0 am 04.08.2026, 35 am 05.09.2026, 60 am 17.09.2026.
+  Kein Gate hält die Zahl; golangci-lint prüft sie nicht (`.golangci.yml`). Die höchsten Werte:
+  `PatchStudentHandler` und `BescheidErstellenHandler` je 36, `nachbuchenAusleihe` 34,
+  `UpdateSettingsHandler` 33. Lohnend allenfalls `OverrideDueDateHandler` (30) und
+  `behandleAbgaenger` (25).
 - `javascript:S6551` und `javascript:S8783`: begründete Dauer-Ausnahmen. Die Begründung zu
   S6551 steht als Kommentar in `settingsWerte.js`; S8783 nennt im Repository keine Stelle
   (nachgesehen am 02.10.2026).
