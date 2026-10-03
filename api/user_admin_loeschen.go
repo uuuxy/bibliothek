@@ -28,49 +28,55 @@ import (
 // @Router       /benutzer/{id} [delete]
 func (s *Server) DeleteUserHandler(auditRepo repository.AuditRepository, userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := auth.GetClaims(r.Context())
-		if !ok {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
-			return
-		}
-		id := r.PathValue("id")
-		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
-			return
-		}
-
-		// Prevent self-deletion
-		if id == claims.UserID {
-			apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht gelöscht werden"))
-			return
-		}
-
-		ctx := r.Context()
-
-		// Ohne diese Prüfung wäre die Rechtetrennung an der Bearbeitung wirkungslos:
-		// Wer den letzten Administrator nicht ändern darf, aber löschen kann, entfernt
-		// damit auch jede Instanz, die eine Selbstbeförderung noch zurücknehmen könnte.
-		if !pruefeAdminZiel(ctx, w, r, userRepo, id) {
-			return
-		}
-
-		err := auditRepo.DeleteUser(ctx, id, claims.UserID)
-		if err != nil {
-			// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:
-			// Der Admin muss die Bücher erst zurückbuchen.
-			if errors.Is(err, repository.ErrUserHasActiveLoans) {
-				apierrors.SendHTTPError(w, http.StatusConflict, err)
-				return
-			}
-			if errors.Is(err, repository.ErrBenutzerNichtGefunden) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		w.Header().Set(headerContentType, contentTypeJSON)
-		httpresp.Write(w, []byte(`{"status":"success"}`))
+		s.handleDeleteUser(w, r, auditRepo, userRepo)
 	}
+}
+
+// handleDeleteUser prüft, ob das Konto gelöscht werden darf, und ordnet die Ablehnungen des
+// Löschens ein.
+func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository, userRepo repository.UserRepository) {
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
+		return
+	}
+	id := r.PathValue("id")
+	if id == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
+		return
+	}
+
+	// Prevent self-deletion
+	if id == claims.UserID {
+		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht gelöscht werden"))
+		return
+	}
+
+	ctx := r.Context()
+
+	// Ohne diese Prüfung wäre die Rechtetrennung an der Bearbeitung wirkungslos:
+	// Wer den letzten Administrator nicht ändern darf, aber löschen kann, entfernt
+	// damit auch jede Instanz, die eine Selbstbeförderung noch zurücknehmen könnte.
+	if !pruefeAdminZiel(ctx, w, r, userRepo, id) {
+		return
+	}
+
+	err := auditRepo.DeleteUser(ctx, id, claims.UserID)
+	if err != nil {
+		// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:
+		// Der Admin muss die Bücher erst zurückbuchen.
+		if errors.Is(err, repository.ErrUserHasActiveLoans) {
+			apierrors.SendHTTPError(w, http.StatusConflict, err)
+			return
+		}
+		if errors.Is(err, repository.ErrBenutzerNichtGefunden) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			return
+		}
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.Header().Set(headerContentType, contentTypeJSON)
+	httpresp.Write(w, []byte(`{"status":"success"}`))
 }

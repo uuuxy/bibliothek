@@ -74,58 +74,63 @@ type CreateUserRequest struct {
 // @Router       /benutzer [post]
 func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req CreateUserRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-
-		if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("alle Felder sind Pflichtfelder"))
-			return
-		}
-
-		// Einen Administrator darf nur ein Administrator anlegen (siehe
-		// user_admin_eskalation.go).
-		if !pruefeAdminVergabe(w, r, req.Rolle) {
-			return
-		}
-
-		ctx := r.Context()
-
-		if !pruefeEmailEindeutig(ctx, w, userRepo, req.Email, "") {
-			return
-		}
-		if !pruefeKeineLeserzeileOhneKonto(ctx, w, userRepo, req.Vorname, req.Nachname) {
-			return
-		}
-
-		barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, BarcodePruefOptionen{
-			BarcodeID:   req.BarcodeID,
-			ExcludeID:   "",
-			KonfliktMsg: "dieser Barcode wird bereits verwendet",
-		})
-		if !ok {
-			return
-		}
-
-		dbEnumRole := normalisiereBenutzerRolle(req.Rolle)
-
-		// Die Leserzeile — und damit der Platz für Ausweis und Ausleihen — entsteht dabei
-		// von selbst (Trigger trg_benutzer_hat_leserzeile, Migration 125).
-		kontoID, err := userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole)
-		if err != nil {
-			if meldeAusweisKollision(w, err) {
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		s.protokolliereKontoAnlage(r.Context(), kontoID, req.Email, dbEnumRole, req.Vorname, req.Nachname)
-
-		w.Header().Set(headerContentType, contentTypeJSON)
-		httpresp.Write(w, []byte(`{"status":"success"}`))
+		s.handleCreateUser(w, r, userRepo)
 	}
+}
+
+// handleCreateUser prüft Rolle, Adresse und Ausweis, legt das Konto an und protokolliert es.
+func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, userRepo repository.UserRepository) {
+	var req CreateUserRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
+	}
+
+	if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("alle Felder sind Pflichtfelder"))
+		return
+	}
+
+	// Einen Administrator darf nur ein Administrator anlegen (siehe
+	// user_admin_eskalation.go).
+	if !pruefeAdminVergabe(w, r, req.Rolle) {
+		return
+	}
+
+	ctx := r.Context()
+
+	if !pruefeEmailEindeutig(ctx, w, userRepo, req.Email, "") {
+		return
+	}
+	if !pruefeKeineLeserzeileOhneKonto(ctx, w, userRepo, req.Vorname, req.Nachname) {
+		return
+	}
+
+	barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, BarcodePruefOptionen{
+		BarcodeID:   req.BarcodeID,
+		ExcludeID:   "",
+		KonfliktMsg: "dieser Barcode wird bereits verwendet",
+	})
+	if !ok {
+		return
+	}
+
+	dbEnumRole := normalisiereBenutzerRolle(req.Rolle)
+
+	// Die Leserzeile — und damit der Platz für Ausweis und Ausleihen — entsteht dabei
+	// von selbst (Trigger trg_benutzer_hat_leserzeile, Migration 125).
+	kontoID, err := userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole)
+	if err != nil {
+		if meldeAusweisKollision(w, err) {
+			return
+		}
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	s.protokolliereKontoAnlage(r.Context(), kontoID, req.Email, dbEnumRole, req.Vorname, req.Nachname)
+
+	w.Header().Set(headerContentType, contentTypeJSON)
+	httpresp.Write(w, []byte(`{"status":"success"}`))
 }
 
 // UpdateUserRequest ist der Änderungssatz für ein Mitarbeiterkonto. Warum hier bewusst
@@ -158,76 +163,88 @@ type UpdateUserRequest struct {
 // @Router       /benutzer/{id} [put]
 func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		if id == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
-			return
-		}
-
-		var req UpdateUserRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-
-		if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("vorname, Nachname, E-Mail und Rolle sind Pflichtfelder"))
-			return
-		}
-
-		ctx := r.Context()
-
-		// Reihenfolge ist Absicht: erst die eigene Rolle/Aktivierung schützen, dann die
-		// Vergabe der Admin-Rolle, dann den Schutz bestehender Admin-Konten. Alle drei
-		// laufen VOR jedem Schreibzugriff (siehe user_admin_eskalation.go).
-		if !pruefeSelbstschutz(w, r, id, req.Rolle, req.Aktiv) {
-			return
-		}
-		if !pruefeAdminVergabe(w, r, req.Rolle) {
-			return
-		}
-		if !pruefeAdminZiel(ctx, w, r, userRepo, id) {
-			return
-		}
-
-		if !pruefeEmailEindeutig(ctx, w, userRepo, req.Email, id) {
-			return
-		}
-
-		barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, BarcodePruefOptionen{
-			BarcodeID:   req.BarcodeID,
-			ExcludeID:   id,
-			KonfliktMsg: "dieser Barcode wird bereits von einem anderen Benutzer verwendet",
-		})
-		if !ok {
-			return
-		}
-
-		dbEnumRole := normalisiereBenutzerRolle(req.Rolle)
-
-		if err := userRepo.UpdateUser(ctx, repository.UpdateUserParams{
-			ID: id, Barcode: barcode, Vorname: req.Vorname, Nachname: req.Nachname,
-			Email: req.Email, Rolle: dbEnumRole, Aktiv: req.Aktiv,
-		}); err != nil {
-			// Kein Audit-Eintrag und kein Cache-Invalidate für eine Änderung, die nie
-			// stattfand (Phantom-Erfolg-Sweep 31.08.2026).
-			if errors.Is(err, repository.ErrBenutzerNichtGefunden) {
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
-				return
-			}
-			if meldeAusweisKollision(w, err) {
-				return
-			}
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		s.auditiereBenutzerMutation(r, "USER_UPDATE", map[string]any{
-			"ziel_id": id, "email": req.Email, "rolle": dbEnumRole, "aktiv": req.Aktiv,
-		})
-
-		InvalidatePermissionCache()
-
-		w.Header().Set(headerContentType, contentTypeJSON)
-		httpresp.Write(w, []byte(`{"status":"success"}`))
+		s.handleUpdateUser(w, r, userRepo)
 	}
+}
+
+// handleUpdateUser prüft die Schutzregeln vor jedem Schreibzugriff, ändert das Konto und
+// protokolliert es.
+func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRepo repository.UserRepository) {
+	id := r.PathValue("id")
+	if id == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
+		return
+	}
+
+	var req UpdateUserRequest
+	if !DecodeAndValidate(w, r, &req) {
+		return
+	}
+
+	if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("vorname, Nachname, E-Mail und Rolle sind Pflichtfelder"))
+		return
+	}
+
+	ctx := r.Context()
+
+	// Reihenfolge ist Absicht: erst die eigene Rolle/Aktivierung schützen, dann die
+	// Vergabe der Admin-Rolle, dann den Schutz bestehender Admin-Konten. Alle drei
+	// laufen VOR jedem Schreibzugriff (siehe user_admin_eskalation.go).
+	if !pruefeSelbstschutz(w, r, id, req.Rolle, req.Aktiv) {
+		return
+	}
+	if !pruefeAdminVergabe(w, r, req.Rolle) {
+		return
+	}
+	if !pruefeAdminZiel(ctx, w, r, userRepo, id) {
+		return
+	}
+
+	if !pruefeEmailEindeutig(ctx, w, userRepo, req.Email, id) {
+		return
+	}
+
+	barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, BarcodePruefOptionen{
+		BarcodeID:   req.BarcodeID,
+		ExcludeID:   id,
+		KonfliktMsg: "dieser Barcode wird bereits von einem anderen Benutzer verwendet",
+	})
+	if !ok {
+		return
+	}
+
+	dbEnumRole := normalisiereBenutzerRolle(req.Rolle)
+
+	if err := userRepo.UpdateUser(ctx, repository.UpdateUserParams{
+		ID: id, Barcode: barcode, Vorname: req.Vorname, Nachname: req.Nachname,
+		Email: req.Email, Rolle: dbEnumRole, Aktiv: req.Aktiv,
+	}); err != nil {
+		// Kein Protokolleintrag und kein Cache-Invalidate für eine Änderung, die nie
+		// stattfand.
+		antworteAufKontoAenderungsfehler(w, err)
+		return
+	}
+
+	s.auditiereBenutzerMutation(r, "USER_UPDATE", map[string]any{
+		"ziel_id": id, "email": req.Email, "rolle": dbEnumRole, "aktiv": req.Aktiv,
+	})
+
+	InvalidatePermissionCache()
+
+	w.Header().Set(headerContentType, contentTypeJSON)
+	httpresp.Write(w, []byte(`{"status":"success"}`))
+}
+
+// antworteAufKontoAenderungsfehler ordnet den Fehler beim Ändern eines Kontos ein: unbekannte
+// Kennung 404, belegter Ausweis 409, alles andere 500.
+func antworteAufKontoAenderungsfehler(w http.ResponseWriter, err error) {
+	if errors.Is(err, repository.ErrBenutzerNichtGefunden) {
+		apierrors.SendHTTPError(w, http.StatusNotFound, err)
+		return
+	}
+	if meldeAusweisKollision(w, err) {
+		return
+	}
+	apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 }
