@@ -70,6 +70,15 @@ describe('BookVormerkungenTab', () => {
 		expect(toastStore.toasts.map((t) => t.message)).toContain('Erfolgreich vorgemerkt');
 	});
 
+	// M3, Tabs: „Text labels should clearly and succinctly describe the content within the
+	// tab." Eine Überschrift darunter sagte dasselbe ein zweites Mal; die anderen Reiter der
+	// Akte tragen keine.
+	it('wiederholt den Namen des Reiters nicht als Überschrift', () => {
+		const screen = render(BookVormerkungenTab, { vormerkungen: [VORMERKUNG], book: { id: 't1' } });
+		expect(screen.queryAllByRole('heading')).toEqual([]);
+		expect(screen.getByRole('button', { name: '+ Schüler vormerken' })).toBeTruthy();
+	});
+
 	it('löscht eine Vormerkung nach der Rückfrage', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort({}));
 		const screen = render(BookVormerkungenTab, { vormerkungen: [VORMERKUNG], book: { id: 't1' } });

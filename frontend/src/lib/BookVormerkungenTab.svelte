@@ -79,9 +79,9 @@
 	}
 </script>
 
+<!-- Ohne eigene Überschrift: Der Reiter nennt den Inhalt, wie bei den anderen Reitern der Akte. -->
 <div class="space-y-6 pt-4">
-	<div class="flex items-center justify-between">
-		<h3 class="text-lg font-bold text-on-surface">Warteliste / Vormerkungen</h3>
+	<div class="flex justify-end">
 		<Button onclick={() => (isAdding = !isAdding)}>
 			{isAdding ? 'Abbrechen' : '+ Schüler vormerken'}
 		</Button>
