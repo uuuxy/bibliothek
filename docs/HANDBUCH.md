@@ -118,8 +118,9 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   auswählen_), dann _Eigentum ändern_ — Land, Schulträger oder _Vorgabe_ (nimmt die Angabe am
   Exemplar wieder weg), mit Grund; jede Änderung steht im Protokoll. Einen Littera-Vermerk,
   den das Programm nicht zuordnet (etwa „Förderverein"), zeigt die Zeile mit an.
-- **Titel-Verwaltung**: neuen Titel anlegen (ISBN-Eingabe holt Metadaten und schlägt eine
-  Signatur vor — vor dem Speichern prüfen), bearbeiten, Cover tauschen,
+- **Titel-Verwaltung**: neuen Titel anlegen (die ISBN-Eingabe holt die Angaben zum Buch — vor
+  dem Speichern prüfen; die Signatur trägt man selbst ein, das Feld bietet die Signaturen des
+  Bestands an), bearbeiten, Cover tauschen,
   Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Die Maske beginnt mit der ISBN
   und den Angaben zum Buch. Darunter steht die Gruppe _An der Schule_: die Wahl _Bibliothek |
   Lernmittel_, Signatur und Standort, Fach, Schulzweig, Klasse und Jahrgänge, das
