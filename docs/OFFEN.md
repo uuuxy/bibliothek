@@ -450,9 +450,12 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   if the action fails". Vorschlag: Der Knopf bleibt bedienbar, und ein Klick ohne Signatur
   führt zum Feld. Mit der neuen Reihenfolge Kategorie B; die Entscheidung steht unter „Was
   bei dir liegt".
-- Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
-  140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der
-  Auswahlfelder liegen darunter (Sichtprüfung 24.09.2026). Mit 5.21 für diesen Bildschirm.
+- Druck-Center, Buch-Etiketten: Die Vorschau zeichnet für jedes Etikettenformat dasselbe Blatt,
+  drei Spalten mit Etiketten von 42,3 × 25,4 mm (`LabelPreview.svelte`). Das ist der Bogen
+  „Zweckform L4760" in zwei Dritteln der Größe. Für „Avery 3475" (3 × 8) und „Kleine Barcodes"
+  (4 × 13) zeigt sie damit nicht den gewählten Bogen; gedruckt wird nach
+  `api/label_formats.go`, die Überschrift der Vorschau nennt das gewählte Format (gemessen am
+  03.10.2026).
 
 ### 5.10 Gates und Werkzeuge
 
@@ -550,7 +553,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 03.10.2026: 886 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 03.10.2026: 855 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
@@ -602,12 +605,7 @@ Seit dem 03.10.2026 stehen außerdem auf Rollen: die Warenkorb-Position
 „Buch-Etiketten" des Druck-Centers (`LabelSettings`, `LabelBarcodeSchritt`,
 `LabelLayoutOptionen`), die Datenverwaltung mit ihren Bausteinen (`DataManagement.svelte`,
 `LitteraImportWidget.svelte`, `OfflineSicherungenEinspielen.svelte`) und die Aufnahme des
-Passbilds (`WebcamCapture.svelte`). Beim Ansehen aufgefallen, jeweils am Code nachgesehen:
-
-- Druck-Center, Buch-Etiketten: Das Vorschaublatt ist fest 140 mm breit
-  (`LabelPreview.svelte`), seine Spalte schmaler. Gemessen am 03.10.2026 mit ausgeklapptem
-  Menü: Bei 1280 px liegt das Blatt 42 px über dem rechten Rand der Einstellungsspalte, bei
-  1440 px 9 px, bei 1680 px liegt es frei.
+Passbilds (`WebcamCapture.svelte`).
 
 Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
 
