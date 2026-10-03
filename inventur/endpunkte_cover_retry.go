@@ -67,19 +67,20 @@ const (
 	coverGescheitert   = "failed"
 )
 
-// ladeCoverErneut fragt die Katalogdienste nach dem Cover eines Titels, trägt eine neue
-// Adresse ein und nennt, unter welcher Zahl der Titel in der Antwort zählt.
+// ladeCoverErneut holt das Cover eines Titels über die Katalogdienste, trägt den lokalen Pfad
+// des heruntergeladenen Bilds ein und nennt, unter welcher Zahl der Titel in der Antwort zählt.
+//
+// Nachgeladen wird nur, was noch eine Adresse im Netz trägt: Ein Cover, das lokal liegt, ist
+// schon da oder von Hand hochgeladen, und das ersetzt dieser Lauf nicht. Die Suche liefert
+// immer den lokalen Pfad (MetadatenClient.aufloeseCover), nie eine Adresse im Netz.
 func (handler *APIHandler) ladeCoverErneut(ctx context.Context, book Book) string {
-	if !validiereISBN(book.ISBN) {
+	if !validiereISBN(book.ISBN) || !strings.HasPrefix(book.CoverURL, "http") {
 		return coverUebersprungen
 	}
 
 	lookup, lookupErr := handler.metadaten.SucheNachISBN(ctx, book.ISBN)
 	if lookupErr != nil || lookup == nil || lookup.CoverURL == "" {
 		return coverGescheitert
-	}
-	if !strings.HasPrefix(lookup.CoverURL, "http") || lookup.CoverURL == book.CoverURL {
-		return coverUebersprungen
 	}
 
 	if updateErr := handler.repo.UpdateBookMetadata(ctx, book.ID, "", "", lookup.CoverURL); updateErr != nil {
