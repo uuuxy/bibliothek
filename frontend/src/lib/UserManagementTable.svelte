@@ -1,8 +1,10 @@
 <script>
 	import { Search } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
+	import StatusChip from './components/ui/StatusChip.svelte';
 	import SuchZustand from './components/ui/SuchZustand.svelte';
 	import Tabelle from './components/ui/Tabelle.svelte';
+	import { rollenName } from './benutzerRollen.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -13,17 +15,6 @@
 	 */
 	/** @type {Props} */
 	let { loadingUsers, filteredUsers, openEditUserModal, openDeleteConfirm } = $props();
-
-	// Farbe des Rollen-Abzeichens als Nachschlagetabelle statt einer Kette von Vergleichen;
-	// der Rückfall ist Mitarbeiter. Vier Rollen tragen Palettenfarben, die nichts bedeuten
-	// außer „eine andere Rolle" — ob sie bleiben, ist offen (docs/OFFEN.md 5.21).
-	const ROLLEN_ABZEICHEN = {
-		admin: 'bg-blue-50 text-blue-700 border border-blue-100',
-		leitung: 'bg-primary-container text-on-primary-container border border-outline-variant',
-		kollegium: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
-		helfer: 'bg-purple-50 text-purple-700 border border-purple-100',
-		mitarbeiter: 'bg-amber-50 text-amber-700 border border-amber-100'
-	};
 </script>
 
 {#if loadingUsers}
@@ -47,7 +38,6 @@
 			</thead>
 			<tbody class="font-medium">
 				{#each filteredUsers as user, _i (_i)}
-					{@const roleBadge = ROLLEN_ABZEICHEN[user.rolle] ?? ROLLEN_ABZEICHEN.mitarbeiter}
 					<tr>
 						<td>
 							<span class="font-semibold">{user.vorname} {user.nachname}</span>
@@ -62,13 +52,9 @@
 								<span class="text-on-surface-variant italic">Keine</span>
 							{/if}
 						</td>
-						<td>
-							<span
-								class="inline-flex px-2 py-0.5 rounded-md font-bold text-xs uppercase tracking-wide {roleBadge}"
-							>
-								{user.rolle}
-							</span>
-						</td>
+						<!-- Ein Abzeichen für jede Rolle: Grün und Gelb heißen im Programm „in Ordnung"
+						     und „Achtung", eine Farbe je Rolle sagte hier nichts davon. -->
+						<td><StatusChip text={rollenName(user.rolle)} /></td>
 						<td class="whitespace-nowrap">
 							{#if user.aktiv}
 								<span class="inline-flex items-center gap-1.5 text-success">

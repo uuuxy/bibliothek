@@ -6,19 +6,7 @@
 	import Switch from './components/ui/Switch.svelte';
 	import Select from './components/ui/Select.svelte';
 	import Feld from './components/ui/Feld.svelte';
-
-	// Kollegium steht OBEN, weil es keine Rolle ist, sondern der Grundzustand: Wer sich
-	// übers Portal selbst anmeldet und freigeschaltet wird, ist Kollegium (Absprache vom
-	// 16.09.2026: „das sind im Grunde alle"). Darunter die Erhebungen, die der Admin
-	// vornimmt — aufsteigend bis zum Administrator. Stünde Kollegium zwischen Helfer und
-	// Mitarbeiter, läse sich die Liste als Rangfolge mit dem Kollegium als Stufe darin.
-	const ROLLEN = [
-		{ value: 'kollegium', label: 'Kollegium (keine Rolle, nur Portal)' },
-		{ value: 'helfer', label: 'Helfer' },
-		{ value: 'mitarbeiter', label: 'Mitarbeiter' },
-		{ value: 'leitung', label: 'Leitung' },
-		{ value: 'admin', label: 'Administrator' }
-	];
+	import { ROLLEN_AUSWAHL } from './benutzerRollen.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -44,7 +32,7 @@
 	// Die Rolle sagt, was jemand darf — mehr entscheidet dieses Formular nicht. Das Feld
 	// „Personenart" ist mit Migration 125 weggefallen: Wer jemand ist, steht an seiner
 	// Leserzeile und gehört in die Leserdatei.
-	const AUSWAHLEN = [{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN }];
+	const AUSWAHLEN = [{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN_AUSWAHL }];
 </script>
 
 <Modal {open} {onclose} size="md" beschriftetDurch="benutzer-formular-titel">

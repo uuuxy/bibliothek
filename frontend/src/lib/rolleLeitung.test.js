@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { srcRoot, ohneKommentare } from './hygiene-quellen.js';
 import { authStore } from './stores/authStore.svelte.js';
 import { appState } from '../inventur/lib/store.svelte.js';
+import { ROLLEN_AUSWAHL } from './benutzerRollen.js';
 
 // Die Rolle Leitung (Migration 121/122). Sie ist im Server vollständig, sobald der
 // ENUM-Wert und die Rechte stehen — aber genau so war die Rolle Helfer monatelang
@@ -11,19 +12,19 @@ import { appState } from '../inventur/lib/store.svelte.js';
 // die drei Stellen, an denen eine Rolle in der Oberfläche vorkommen MUSS, damit sie
 // vergeben und gepflegt werden kann.
 //
-// Geprüft wird am Quelltext, nicht am gerenderten Bauteil: Die Rollenliste und die
-// Spalten der Rechte-Matrix sind Konstanten in den Komponenten. Ein Render-Test würde
-// dieselbe Konstante über drei Ebenen Svelte-Kompilat zurücklesen und dabei nur
-// beweisen, dass Svelte funktioniert.
+// Die Rollenliste steht in benutzerRollen.js und wird dort gelesen. Die Spalten der
+// Rechte-Matrix sind Konstanten in den Komponenten und werden am Quelltext geprüft: Ein
+// Render-Test würde dieselbe Konstante über drei Ebenen Svelte-Kompilat zurücklesen und
+// dabei nur beweisen, dass Svelte funktioniert.
 function quelle(pfad) {
 	return readFileSync(join(srcRoot, pfad), 'utf8');
 }
 
 describe('Rolle Leitung in der Oberfläche', () => {
 	it('die Benutzerverwaltung bietet die Rolle zur Auswahl an', () => {
-		const src = quelle('lib/UserManagementEditModal.svelte');
-		expect(src).toContain("value: 'leitung'");
-		expect(src).toMatch(/label: '[^']*Leitung/);
+		expect(ROLLEN_AUSWAHL).toContainEqual({ value: 'leitung', label: 'Leitung' });
+		// Die Liste nützt nur, wenn der Dialog sie auch einsetzt.
+		expect(quelle('lib/UserManagementEditModal.svelte')).toMatch(/options:\s*ROLLEN_AUSWAHL\b/);
 	});
 
 	it('Kollegium steht VOR den Rollen — es ist der Grundzustand, keine Rolle', () => {
@@ -31,13 +32,11 @@ describe('Rolle Leitung in der Oberfläche', () => {
 		// einfach alle, alle Lehrer. Nur einige werden anhand ihrer E-Mail zu höheren
 		// Berufen." Steht Kollegium zwischen Mitarbeiter und Administrator, liest die
 		// Liste sich als Rangfolge, in der das Kollegium eine Stufe wäre.
-		const src = quelle('lib/UserManagementEditModal.svelte');
-		const kollegium = src.indexOf("value: 'kollegium'");
-		const leitung = src.indexOf("value: 'leitung'");
-		const admin = src.indexOf("value: 'admin'");
+		const werte = ROLLEN_AUSWAHL.map((r) => r.value);
+		const kollegium = werte.indexOf('kollegium');
 		expect(kollegium).toBeGreaterThan(-1);
-		expect(kollegium).toBeLessThan(leitung);
-		expect(kollegium).toBeLessThan(admin);
+		expect(kollegium).toBeLessThan(werte.indexOf('leitung'));
+		expect(kollegium).toBeLessThan(werte.indexOf('admin'));
 	});
 
 	it('die Rechte-Matrix hat eine Spalte für die Leitung', () => {

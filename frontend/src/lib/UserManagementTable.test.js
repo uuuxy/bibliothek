@@ -48,11 +48,34 @@ describe('UserManagementTable', () => {
 			'Kora Muster',
 			'kora@test.local',
 			'A-11266',
-			'kollegium',
+			'Kollegium',
 			'Aktiv'
 		]);
-		expect(zellen(screen, 'Ole Ohne').slice(2, 5)).toEqual(['Keine', 'kollegium', 'Inaktiv']);
+		expect(zellen(screen, 'Ole Ohne').slice(2, 5)).toEqual(['Keine', 'Kollegium', 'Inaktiv']);
 		expect(zellen(screen, 'Anna Antrag')[4]).toBe('Zugang beantragt');
+	});
+
+	// Grün und Gelb heißen im Programm „in Ordnung" und „Achtung". Die Rolle steht deshalb in
+	// einem Abzeichen für alle, mit dem Wort aus dem Bearbeiten-Dialog statt dem Schlüssel.
+	it('zeigt jede Rolle mit ihrem Namen im selben Abzeichen', () => {
+		const rollen = ['kollegium', 'helfer', 'mitarbeiter', 'leitung', 'admin', 'unbekannt'];
+		const screen = tabelle(
+			rollen.map((rolle, i) => konto({ id: `u${i}`, vorname: 'Konto', nachname: rolle, rolle }))
+		);
+		const abzeichen = rollen.map((rolle) => {
+			const zeile = /** @type {HTMLElement} */ (screen.getByText(`Konto ${rolle}`).closest('tr'));
+			return /** @type {HTMLElement} */ (zeile.querySelector('[data-chip]'));
+		});
+
+		expect(abzeichen.map((a) => a.textContent?.trim())).toEqual([
+			'Kollegium',
+			'Helfer',
+			'Mitarbeiter',
+			'Leitung',
+			'Administrator',
+			'unbekannt'
+		]);
+		expect(new Set(abzeichen.map((a) => a.className)).size, 'eine Form für alle Rollen').toBe(1);
 	});
 
 	it('reicht das Konto der Zeile an Bearbeiten und Löschen', async () => {

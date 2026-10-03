@@ -98,6 +98,21 @@ describe('Benutzerliste: Meldungen', () => {
 		expect(meldungen()).toEqual([]);
 	});
 
+	// M3, Dialogs: „Buttons are aligned to the trailing edge of the dialog … The confirmation
+	// button is always closest to the edge." So steht es auch in der Rückfrage des Hauses.
+	it('stellt die Knöpfe der Lösch-Rückfrage an den rechten Rand, Löschen außen', async () => {
+		const screen = await benutzerliste();
+		await fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+		const dialog = screen.getByRole('dialog');
+
+		const knoepfe = within(dialog).getAllByRole('button');
+		expect(knoepfe.map((k) => k.textContent?.trim())).toEqual(['Abbrechen', 'Löschen']);
+		const zeile = /** @type {HTMLElement} */ (knoepfe[0].parentElement);
+		expect(knoepfe[1].parentElement).toBe(zeile);
+		expect(zeile.className.split(/\s+/)).toContain('justify-end');
+		expect(zeile.className).not.toMatch(/justify-center/);
+	});
+
 	it('zeigt einen Ladefehler als Meldung, die sich über einen benannten Knopf schließen lässt', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort({}, false, 500));
 		const screen = render(UserManagement);
