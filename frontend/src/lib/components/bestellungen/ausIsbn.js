@@ -1,34 +1,12 @@
 /**
  * Die Tür der Titelsuche beim Bestellen: POST /api/buecher/aus-isbn — aus dem Katalog oder neu
- * aus der DNB. Zwei Stellen fragen sie, die Titelsuche (OrderSearch) und „Neue Auflage
- * bestellen" (NeueAuflageDialog); beide lesen die Antwort nach derselben Regel.
- *
- * Steht die ISBN nur in der anderen Länge im Katalog (ISBN-10 ↔ ISBN-13, docs/OFFEN.md 4.18
- * Stufe 4), legt die Tür nichts an: Die Antwort trägt keine titel_id, dafür andere_form. Dann
- * fragt AndereIsbnFormWahl, und „Neu anlegen" schickt dieselbe ISBN mit neu_anlegen.
+ * aus der DNB. Die Antwort nennt die ISBN, wie der Katalog sie trägt: Eine zehnstellig
+ * eingegebene steht dort dreizehnstellig.
  */
-
-/**
- * Der Rumpf der Anfrage.
- * @param {string} isbn
- * @param {boolean} [neuAnlegen] true nach „Neu anlegen" in der Frage — dann sucht die Tür die
- *   andere Form nicht mehr.
- */
-export function ausIsbnRumpf(isbn, neuAnlegen = false) {
-	return neuAnlegen ? { isbn, neu_anlegen: true } : { isbn };
-}
-
-/**
- * Fragt die Antwort, ob der Titel unter der anderen Form gemeint ist? Dann ist nichts angelegt.
- * @param {any} antwort
- */
-export function istAndereFormFrage(antwort) {
-	return Boolean(antwort?.andere_form) && !antwort?.titel_id;
-}
 
 /**
  * Der Titel für das Staging-Fenster (OrderStaging) aus der Antwort der Tür und dem Treffer, den
- * die Titelsuche angeklickt hat — auch nach „Diesen Titel nehmen" (andere_form).
+ * die Titelsuche angeklickt hat.
  *
  * dnb_vorschlag_da: Nur ein eben aus der DNB angelegter Titel (exists=false) bringt den
  * Schlagwort-Vorschlag mit. Stand er schon im Katalog, hat die Tür die DNB nicht gefragt; dann

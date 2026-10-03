@@ -65,10 +65,6 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 	/** @type {Promise<boolean> | null} */
 	let lauf = null;
 	let aufWunsch = false;
-	// Merkt, zu welcher ISBN die Maske schon gefragt hat, ob der Titel unter der anderen
-	// Länge dasselbe Buch ist (frageWennVergeben).
-	/** @type {{ anderesBuch?: string }} */
-	const andereForm = {};
 	// Was die letzte Abfrage in welches Formular geschrieben hat, und zu welcher ISBN. Eine
 	// andere ISBN nimmt es zurück, soweit niemand es geändert hat: Sonst stünden die Angaben
 	// des ersten Buchs unter der Nummer des zweiten.
@@ -148,7 +144,7 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 	async function durchlauf(formular) {
 		const isbn = formular.isbn;
 		if (formular !== uebernommenIn || isbn !== uebernommenZu) nimmZurueck(formular);
-		if (!formular.id && (await frageWennVergeben(isbn, andereForm))) return true;
+		if (!formular.id && (await frageWennVergeben(isbn))) return true;
 		if (formular.isbn === isbn && (aufWunsch || !formular.title)) await holeAngaben(formular);
 		return false;
 	}

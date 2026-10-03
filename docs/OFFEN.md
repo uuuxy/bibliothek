@@ -90,20 +90,21 @@ Datenbank und der Littera-Übernahme (7.2).
    Signatur zum Feld. Seit dem 03.10.2026 ist die ISBN freiwillig, Pflicht ist der Titel (Stern
    an der Beschriftung): einen Titel ohne ISBN öffnen, die Signatur ändern und speichern; ein
    Medium ohne ISBN neu anlegen und danach noch einmal mit demselben Titel und Autor — die
-   Maske fragt dann „Ist es dasselbe Medium?".
+   Maske fragt dann „Ist es dasselbe Medium?". Seit dem 03.10.2026 sind die zehn- und die
+   dreizehnstellige ISBN dieselbe Nummer: ein Buch mit der zehnstelligen ISBN vom Titelblatt
+   anlegen — gespeichert steht die dreizehnstellige im Feld — und danach in „Neues Buch"
+   seinen Strichcode scannen; die Maske fragt „Vorhandenen Titel öffnen?".
 6. **Ein Termin für die Abnahmen** mit dem Sekretariat, sobald der Schulserver steht (7.7). Ein
    LUSD-Import mit echten Schülern kommt erst nach der Littera-Übernahme (7.2).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **5.48** (die ISBN in einer Länge) — entschieden am 03.10.2026, die Zählung vom Testserver
-   liegt vor.
-2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
+1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
+2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
-4. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
-5. Nach der Antwort zu 8.3: **5.4**.
-6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+3. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
+4. Nach der Antwort zu 8.3: **5.4**.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
@@ -793,55 +794,22 @@ Erledigen (`api/anliegen.go`), in der Liste der Bibliothek das Abzeichen „Wuns
 Vor dem Bauen zu klären: Fällt die Unterscheidung ganz weg — ein Formular, ein Abzeichen, ein
 Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? Kategorie B.
 
-### 5.48 Die ISBN in einer Länge
-
-Entschieden am 03.10.2026: Eine gültige zehnstellige ISBN wird beim Speichern zur
-dreizehnstelligen, in der Datenbank und damit an jeder Tür (Maske, Listenimport, die übrigen
-Importe, Bestellung). Eine Nummer mit falscher Prüfziffer bleibt, wie sie eingegeben wurde, und
-wird nie mit einer anderen gepaart. Die Frage „Ist es dasselbe Buch?" zur anderen Länge (Maske
-„Neues Buch", Bestellsuche, „Neue Auflage bestellen"; gebaut am 25.09.2026 und am 02.10.2026)
-entfällt damit: Bei gültiger Nummer ist es dasselbe Buch, und die Maske fragt wie bei jeder
-vergebenen ISBN „Vorhandenen Titel öffnen?".
-
-Anlass: Die Normalform (Migration 133) trennt beide Längen, und jede Tür rechnet für sich um
-(`isbnutil.AndereForm`, im Browser `isbnFormen`). Der Listenimport tut es nicht: Trägt der
-Katalog ein Buch mit zehnstelliger ISBN und nennt die Liste die dreizehnstellige, steht es
-danach zweimal im Katalog, mit zwei Beständen (Rasterdurchgang vom 03.10.2026, nachgestellt:
-`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_Listenimport ./inventur/`). Die
-übrigen Importe sind nicht durchgesehen.
-
-Gemessen am 03.10.2026, lesend: In der Littera-Sicherung von 2010 stehen 213 zehnstellige
-Nummern, im Katalog-Export vom Juni 2026 sind es 112, alle mit falscher Prüfziffer. Eine
-gültige zehnstellige ISBN gibt es dort nicht: Littera rechnet sie selbst um (Handbuch:
-„ISBN-10 wird ab LITTERA Version 4.6 automatisch in ISBN-13 umgerechnet") und behält die
-erfasste in der Spalte `ISBN10`. Bei 6 der 112 führt die Rechnung auf die ISBN-13 eines
-anderen Eintrags, darunter 3499500252 — das Paar, dessentwegen die andere Länge seit dem
-25.09.2026 nur vorgeschlagen wird.
-
-Am Testserver, lesend gemessen am 03.10.2026 (Migrationsstand 156): 100 zehnstellige Nummern,
-keine davon gültig, keine mit ihrer dreizehnstelligen Form an einem anderen Titel. Die Migration
-rechnet dort keine Zeile um; die neue Regel wirkt auf das, was künftig geschrieben wird. Dazu
-gezählt: 13.062 Titel, 3.000 ohne ISBN, 65 mit einem Wert ohne ISBN-Form, 16 gleichnamige ohne
-ISBN. Nachzählen an einer anderen Anlage — die zehnstelligen, die gültigen darunter und die
-gültigen, deren dreizehnstellige Form ein anderer Titel trägt:
-`docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) AS zehnstellig, count(*) FILTER (WHERE g) AS gueltig, count(*) FILTER (WHERE g AND EXISTS (SELECT 1 FROM buecher_titel a WHERE a.isbn = z.dreizehn)) AS paar_im_katalog FROM (SELECT isbn, (SELECT sum((CASE WHEN c = 'X' THEN 10 ELSE c::int END) * (11 - i::int)) FROM regexp_split_to_table(isbn, '') WITH ORDINALITY AS s(c, i)) % 11 = 0 AS g, '978' || left(isbn, 9) || ((10 - (SELECT sum(c::int * CASE WHEN i % 2 = 1 THEN 1 ELSE 3 END) FROM regexp_split_to_table('978' || left(isbn, 9), '') WITH ORDINALITY AS s(c, i)) % 10) % 10)::text AS dreizehn FROM buecher_titel WHERE length(isbn) = 10 AND isbn ~ '^[0-9]{9}[0-9X]') z;"`
-
-Umfang: die Funktion `isbn_normalform` und ihr Spiegel in Go (`isbnutil.Normalform`, die
-Parität beider prüft `repository/isbn_normalform_pg_test.go`); eine Migration, die vorhandene
-gültige zehnstellige Nummern umrechnet und Paare stehen lässt wie Migration 140; die
-Vergleichsstellen, die noch selbst bereinigen (`titelMitISBN`, `sammleExistierendeISBNs`,
-`repository/cover_quellen.go`, `uebernahme.KlaereISBN`), auf die eine Normalform. Suchen muss
-sich weiter mit beiden Schreibweisen lassen; im Medienkatalog rechnet `isbnFormen`, die übrigen
-Suchfelder sind zu prüfen. Danach entfallen die Stellen mit der Frage zur anderen Länge, das
-Bauteil `AndereIsbnFormWahl` und die Browser-Tests `auflagen-isbn-andere-form` und
-`buch-anlegen-andere-isbn-laenge`. Kategorie B.
-
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
 
 ### 6.1 Beobachtungen
 
+- Das Feld ISBN der Buchmaske nimmt jede Nummer mit 10 bis 13 Zeichen an (`validiereISBN`),
+  also auch elf- und zwölfstellige. Die Datenbank bringt nur eine ISBN in ihre Normalform (10
+  oder 13 Stellen, `isbn_normalform`); jede andere Nummer bleibt, wie sie geschrieben wurde,
+  mit Bindestrichen und Leerzeichen. Die Dublettenkontrolle der Maske vergleicht solche Nummern
+  deshalb zusätzlich ohne Trennzeichen (`titelMitISBN`), der UNIQUE-Index tut es nicht.
+  Gemessen am Testserver am 03.10.2026: 65 Titel mit einem Wert ohne ISBN-Form.
+  Offen ist, ob das Feld andere Nummern tragen soll, etwa den Strichcode einer DVD. Daneben
+  rechnet `konvertiereISBN10zu13` (`inventur/metadaten_helfer.go`, für die Cover-Suche) die
+  dreizehnstellige Form ein zweites Mal und ohne Blick auf das Prüfzeichen; die Regel steht in
+  `isbnutil.Normalform`.
 - Breite der Textfelder. **Entschieden am 03.10.2026:** Textfelder folgen Material 3 (Text
   fields, Guidelines: „Text fields shouldn’t span the full width of a large screen"); die
   Hausregel, die Fläche zu nutzen, gilt den Flächen der Seite, nicht den Feldern. In der Maske

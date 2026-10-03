@@ -4,6 +4,7 @@
 	import Button from '../ui/Button.svelte';
 	import BedarfZeile from './BedarfZeile.svelte';
 	import NeueAuflageDialog from './NeueAuflageDialog.svelte';
+	import { filtereBedarf } from './bedarfFilter.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	let { recommendations, onAddToCart } = $props();
 
@@ -21,24 +22,7 @@
 	// Schnellfilter: bei 335 Titeln ist Suchen schneller als Scrollen.
 	let filter = $state('');
 
-	let gefiltert = $derived(
-		filter.trim()
-			? recommendations.filter((/** @type {any} */ r) => {
-					const q = filter.trim().toLowerCase();
-					// Die ISBN jeder Auflage zählt mit (docs/OFFEN.md 4.18): Wer die alte Auflage scannt,
-					// findet die Zeile des Buchs, die die neueste zeigt.
-					return (
-						(r.titel || '').toLowerCase().includes(q) ||
-						(r.isbn || '').toLowerCase().includes(q) ||
-						(r.auflagen ?? []).some((/** @type {any} */ a) =>
-							(a.isbn || '').toLowerCase().includes(q)
-						) ||
-						(r.verlag || '').toLowerCase().includes(q) ||
-						(r.signatur || '').toLowerCase().includes(q)
-					);
-				})
-			: recommendations
-	);
+	let gefiltert = $derived(filtereBedarf(recommendations, filter));
 
 	let sichtbare = $derived(gefiltert.slice(0, maxVisible));
 

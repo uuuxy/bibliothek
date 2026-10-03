@@ -5,7 +5,6 @@ vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: v
 vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToast: vi.fn() }));
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
-import { bestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 
 const A = '9783791504650';
@@ -279,39 +278,5 @@ describe('isbnAbfrage: Untertitel, Listenpreis und das Speichern', () => {
 		formular.isbn = B;
 		abfrage.nachschlagen(false);
 		expect(await abfrage.ruht(), 'die ISBN ist vergeben').toBe(true);
-	});
-});
-
-// Der Katalog trägt die ISBN in der anderen Länge. „Anderes Buch" heißt: weiter in dieser
-// Maske, mit den Angaben der Katalogdienste — und zu dieser ISBN keine zweite Frage.
-describe('isbnAbfrage: die ISBN steht in der anderen Länge im Katalog', () => {
-	it('nach „Anderes Buch" lädt die Maske die Angaben und fragt nicht noch einmal', async () => {
-		vi.mocked(apiFetch).mockImplementation(async (url) => {
-			const u = String(url);
-			if (u.startsWith('/api/lookup/')) return antwort(200, { data: DIENSTE[A] });
-			return antwort(200, {
-				data: {
-					vorhanden: null,
-					andereForm: { id: 't-9', title: 'Aus Littera', ohneExemplar: false, isbn: '3791504657' },
-					meldung: 'Im Katalog steht diese ISBN in zehnstelliger Form.'
-				}
-			});
-		});
-		vi.mocked(bestaetigen).mockResolvedValue(false);
-		const formular = /** @type {any} */ ({ id: null, isbn: A, title: '' });
-		const abfrage = erzeugeIsbnAbfrage(
-			() => formular,
-			() => undefined
-		);
-
-		expect(await abfrage.nachschlagen(false), 'die Maske führt nicht zum anderen Titel').toBe(
-			false
-		);
-		expect(formular.title).toBe('Buch A');
-
-		formular.title = '';
-		await abfrage.nachschlagen(false);
-		expect(bestaetigen).toHaveBeenCalledTimes(1);
-		expect(formular.title).toBe('Buch A');
 	});
 });
