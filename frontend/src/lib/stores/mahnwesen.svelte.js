@@ -46,7 +46,6 @@ function createMahnwesenStore() {
 
 	// Filter und Auswahl
 	let expandedKlassen = /** @type {Set<string>} */ (new SvelteSet());
-	let mahnMode = $state('datum'); // "datum" oder "jahrgang"
 	let selectedKlasse = $state(''); // Klassenfilter (leer = alle); steuert Liste UND Klassen-PDF
 	let searchQuery = $state(''); // Freitextsuche über Name/Klasse
 
@@ -111,9 +110,7 @@ function createMahnwesenStore() {
 		loading = true;
 		error = null;
 		try {
-			const endpoint =
-				mahnMode === 'datum' ? '/api/mahnwesen' : '/api/mahnwesen/ueberfaellig_jahrgang';
-			const res = await apiFetch(endpoint);
+			const res = await apiFetch('/api/mahnwesen');
 			if (!res.ok) throw new Error((await res.text()) || 'Fehler beim Laden');
 			const json = await res.json();
 			data = json;
@@ -169,12 +166,6 @@ function createMahnwesenStore() {
 		},
 		get expandedKlassen() {
 			return expandedKlassen;
-		},
-		get mahnMode() {
-			return mahnMode;
-		},
-		set mahnMode(v) {
-			mahnMode = v;
 		},
 		get selectedKlasse() {
 			return selectedKlasse;

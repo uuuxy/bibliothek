@@ -376,11 +376,12 @@ markiert, statt still übersprungen zu werden.
 
 Historie: Vom 25.06. bis 05.09.2026 filterte die Ansicht `ist_abgaenger = true` (weg laut LUSD) —
 ein Bedeutungswechsel, der als Fix eines echten Fehlers (hartkodierte Klassennamen) durchging
-(Register, Entscheidung 2). Wer weg ist und noch Bücher hat, steht im Mahnwesen
-(`QueryUeberfaelligeNachJahrgang` schließt `ist_abgaenger` ein) und in der Leserdatei unter
+(Register, Entscheidung 2). Wer weg ist und noch Bücher hat, steht in der Leserdatei unter
 „Ehemalige / Archiv" (`GET /api/schueler?status=ehemalige`, `ListEhemaligeWithStats` — dieselbe
 Liste und Serversuche wie „Aktive Schüler" mit umgekehrtem Vorzeichen; bis 05.09.2026 bettete
-der Reiter die Abgängerliste ein).
+der Reiter die Abgängerliste ein), mit der Zahl seiner offenen und überfälligen Bücher. Im
+Mahnwesen steht er, sobald die Frist eines Buchs abgelaufen ist (`QueryUeberfaelligeNachKlasse`);
+das Mahnwesen kennt nur die Frist.
 
 ## 9. Druck-Center und Ausweise
 

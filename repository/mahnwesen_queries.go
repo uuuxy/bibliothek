@@ -2,11 +2,9 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
-	"bibliothek/internal/ausweis"
 	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
@@ -157,114 +155,6 @@ func (repo *MahnwesenRepository) reichereLehrerEmails(ctx context.Context, klass
 	for i := range klassen {
 		klassen[i].LehrerEmail = emailMap[KlassenSchluessel(klassen[i].Klasse)]
 	}
-}
-
-// jahrgaengeDerKlassen ordnet den Namen des Klassen-Vokabulars ihren Jahrgang zu, als zwei
-// gleich lange Listen für unnest. Eine Klasse ohne lesbaren Jahrgang („ABG") fehlt darin.
-func (repo *MahnwesenRepository) jahrgaengeDerKlassen(ctx context.Context) ([]string, []int, error) {
-	rows, err := repo.db.Query(ctx, `SELECT name FROM klassen`)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer rows.Close()
-
-	klassen, jahrgaenge := []string{}, []int{}
-	for rows.Next() {
-		var klasse string
-		if err := rows.Scan(&klasse); err != nil {
-			return nil, nil, err
-		}
-		if _, jahrgang, ok := ausweis.AblaufJahrgang(klasse); ok {
-			klassen = append(klassen, klasse)
-			jahrgaenge = append(jahrgaenge, jahrgang)
-		}
-	}
-	return klassen, jahrgaenge, rows.Err()
-}
-
-// QueryUeberfaelligeNachJahrgang nennt offene Ausleihen, bei denen der Jahrgang des Schülers
-// über der Spanne des Titels liegt (Buch bis Klasse 6, das Kind ist in der 7), und alle
-// offenen Ausleihen Ehemaliger. Der Jahrgang kommt aus ausweis.AblaufJahrgang und nicht aus
-// den Ziffern der Klasse: „05F1" nennt auch den Zug, und die Einführungsphase heißt „ET".
-func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
-	klassenMitJahrgang, jahrgaenge, err := repo.jahrgaengeDerKlassen(ctx)
-	if err != nil {
-		return nil, err
-	}
-	q := `
-		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
-		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
-		       coalesce(e.barcode_id,''),
-		       a.ausgeliehen_am,
-		       t.jahrgang_bis,
-		       j.jahrgang AS schueler_jahrgang,
-			   s.ist_abgaenger
-		FROM ausleihen a
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t    ON e.titel_id = t.id
-		JOIN schueler s         ON a.schueler_id = s.id
-		LEFT JOIN unnest($1::text[], $2::int[]) AS j(klasse, jahrgang) ON j.klasse = s.klasse
-		WHERE a.rueckgabe_am IS NULL
-		  AND s.deleted_at IS NULL
-		  AND (j.jahrgang > t.jahrgang_bis OR s.ist_abgaenger = true)
-	`
-	args := []any{klassenMitJahrgang, jahrgaenge}
-	if klasseFilter != "" {
-		q += " AND s.klasse = $3"
-		args = append(args, klasseFilter)
-	}
-	q += " ORDER BY s.klasse, s.nachname, s.vorname, t.titel"
-
-	rows, err := repo.db.Query(ctx, q, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	g := newKlassenGrouper()
-
-	for rows.Next() {
-		var ausleiheID, schuelerID, name, klasse string
-		var titel, autor, isbn, coverURL, exBarcode string
-		var ausgeliehenAm time.Time
-		var jahrgangBis int
-		var schuelerJahrgang *int
-		var istAbgaenger bool
-
-		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
-			&titel, &autor, &isbn, &coverURL, &exBarcode,
-			&ausgeliehenAm, &jahrgangBis, &schuelerJahrgang, &istAbgaenger); err != nil {
-			return nil, err
-		}
-
-		// Ein Ehemaliger steht auch mit einem Buch in der Liste, dessen Spanne sein
-		// Jahrgang nicht überschreitet; darüber liegt er dann um null Jahrgänge.
-		ueberschreitung := 0
-		if schuelerJahrgang != nil {
-			ueberschreitung = max(0, *schuelerJahrgang-jahrgangBis)
-		}
-
-		g.add(klasse, schuelerID, name, UeberfaelligesMedium{
-			AusleiheID:       ausleiheID,
-			Titel:            titel,
-			Autor:            autor,
-			ISBN:             isbn,
-			Barcode:          exBarcode,
-			CoverURL:         coverURL,
-			FaelligAm:        fmt.Sprintf("bis Kl. %d", jahrgangBis),
-			TageUeberfaellig: ueberschreitung,
-		})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	// Auch der Jahrgangs-Modus braucht die Klassenleitungen: Ohne diese Zeile stand im
-	// Umschalter „Jahrgang" bei JEDER Klasse „keine E-Mail" — die Datums-Ansicht war
-	// angereichert, diese nicht, und der Unterschied war von aussen nicht zu erklären.
-	repo.reichereLehrerEmails(ctx, g.klassen)
-
-	return g.klassen, nil
 }
 
 // sqlUeberfaelligeByAusleiheIDs sammelt die PDF-Daten zu konkreten Ausleih-IDs.

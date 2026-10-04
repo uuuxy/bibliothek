@@ -47,7 +47,7 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/vormerkung.go":             {3, "Create prüft gegen die Sicht, DASS es ein Schüler ist; die zwei Listen zeigen deshalb nur Schüler oder Vormerkungen ohne Person"},
 	"repository/vormerkung_nachruecken.go": {1, "Nachrücken im Abholfach — Vormerkungen gibt es nur für Schüler (Tür: Create)"},
 	"api/ausleihe.go":                      {1, "Massen-Verlängerung der Lernmittel einer KLASSE; ein Kollege leiht auf Dauer (ist_handapparat) und soll keine Klassenfrist bekommen"},
-	"repository/mahnwesen_queries.go":      {4, "Gemahnt werden Schüler, nicht das Kollegium (Entscheidung zum Lehrer-Anliegen, Kommentar an der ersten Abfrage); die anderen folgen derselben Auswahl bzw. rechnen über die Klassenstufe, und ZaehleMahnungTx zählt, was auf dem Blatt steht"},
+	"repository/mahnwesen_queries.go":      {3, "Gemahnt werden Schüler, nicht das Kollegium (Entscheidung zum Lehrer-Anliegen, Kommentar an der ersten Abfrage); das Blatt folgt derselben Auswahl, und ZaehleMahnungTx zählt, was auf dem Blatt steht"},
 	"repository/bescheid.go":               {4, "Bescheide hängen an Forderungen, und ein Kollege bekommt keine (Tür: schaden_melden.go, ohneForderung)"},
 	"repository/bescheid_ausstehend.go":    {1, "Offene Forderungen ohne Bescheid — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
 	// Durchsicht der Akte und des Drucks, 21.09.2026.

@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-10-01. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-10-04. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -16,7 +16,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (229)
+## Alle registrierten Routen (228)
 
 - `/`
 - `/api/admin`
@@ -112,7 +112,6 @@
 - `GET /api/lookup/{isbn}`
 - `GET /api/mahnwesen`
 - `GET /api/mahnwesen/pdf`
-- `GET /api/mahnwesen/ueberfaellig_jahrgang`
 - `GET /api/mail-templates`
 - `GET /api/monitor/slides`
 - `GET /api/portal/klassensaetze`

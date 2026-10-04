@@ -76,33 +76,6 @@
 		</Button>
 	{/if}
 {:else}
-	<div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-		<button
-			class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors {mahnwesenStore.mahnMode ===
-			'datum'
-				? 'bg-white text-slate-800 shadow-sm'
-				: 'text-slate-500 hover:text-slate-700'}"
-			onclick={() => {
-				mahnwesenStore.mahnMode = 'datum';
-				mahnwesenStore.fetchData();
-			}}
-		>
-			Datum
-		</button>
-		<button
-			class="px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors {mahnwesenStore.mahnMode ===
-			'jahrgang'
-				? 'bg-white text-slate-800 shadow-sm'
-				: 'text-slate-500 hover:text-slate-700'}"
-			onclick={() => {
-				mahnwesenStore.mahnMode = 'jahrgang';
-				mahnwesenStore.fetchData();
-			}}
-		>
-			Jahrgang
-		</button>
-	</div>
-
 	<Button
 		variant="secondary"
 		onclick={mahnwesenStore.fetchData}

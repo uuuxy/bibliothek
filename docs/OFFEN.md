@@ -99,14 +99,12 @@ Datenbank und der Littera-Übernahme (7.2).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **4.29** (Mahnwesen, Ansicht „Jahrgang"): entschieden am 04.10.2026, der Umschalter wird
-   ausgebaut.
-2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
+1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
+2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
-4. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
-5. Nach der Antwort zu 8.3: **5.4**.
-6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+3. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
+4. Nach der Antwort zu 8.3: **5.4**.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
@@ -292,33 +290,6 @@ nicht gibt ([arc42/09](arc42/09-architekturentscheidungen.md), A2). Entschieden 
 getrennt von der Sperre zu entscheiden. Vor einer Empfehlung zu klären: wie oft der Mailserver
 der Schule ausfällt, und wie Littera und andere Programme es halten.
 
-### 4.29 Mahnwesen, Ansicht „Jahrgang": was aus ihr hinausgeht
-
-Die Ansicht „Jahrgang" (Umschalter „Datum / Jahrgang" im Mahnwesen,
-`GET /api/mahnwesen/ueberfaellig_jahrgang`) nennt offene Ausleihen, bei denen der Jahrgang des
-Kindes über der Spanne des Titels liegt, und alle offenen Ausleihen Ehemaliger. Die Frist der
-Ausleihe spielt dabei keine Rolle.
-
-- Eine Ausleihe mit einer Frist in 60 Tagen steht in der Ansicht „Jahrgang" und nicht in der
-  Ansicht „Datum". Einen Mahnbrief druckt das Programm für sie seit dem 04.10.2026 nicht mehr
-  (`erzeugeUndCommitBulkMahnung` in `api/mahnwesen_bulk.go`); die Auswahl mit Kästchen und
-  der Knopf „Mahnbriefe drucken" stehen in der Ansicht weiter.
-- Die Zeile spricht in Tagen: `tage_ueberfaellig` trägt in dieser Ansicht die Zahl der Jahrgänge
-  über der Spanne. Die Tabelle zeigt sie als „N Tage überfällig", einen Ehemaligen als „heute
-  fällig" (`MahnwesenTable.svelte`); die Mahnstufe der Zeile und die Reiter „Akut fällig" und
-  „Eskaliert" rechnen mit derselben Zahl (`berechneMahnstufe`, `MahnwesenTabs.svelte`). Im
-  Browser gezählt am 04.10.2026 am lokalen Stack: 3.013 Zeilen, alle „1. Erinnerung", davon
-  2.941 „heute fällig" und 72 „1 Tag" bis „3 Tage überfällig".
-- Ein Klick auf „Jahrgang" ruft die Liste zweimal ab (im Browser gezählt am 04.10.2026); die
-  Ursache ist nicht nachgesehen.
-- Mit der Vorgabe 5 bis 10 an fast jedem Titel (5.5) nennt die Ansicht jedes offene Buch der
-  Jahrgänge 11 bis 13, auch die Bücher der Bücherei.
-- Das Handbuch beschreibt den Umschalter nicht.
-
-**Entschieden am 04.10.2026:** Der Umschalter „Jahrgang" wird ausgebaut, gemahnt wird nur nach
-Frist. Wer die Schule verlassen hat und noch Bücher hat, steht in der Leserdatei unter
-„Ehemalige / Archiv". Zu bauen: Umschalter, Route und Abfrage entfernen.
-
 ---
 
 ## 5. Abarbeitbar (Kategorie B)
@@ -393,8 +364,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   nicht die Ausnahme). Laut, also richtig — nur die Meldung nennt weder Zeile noch Weg.
   Kategorie C, bis es einmal vorkommt.
 - „Klasse" neben der Spanne (22.09.2026): Zwei Jahrgangsangaben am Titel, „Klasse"
-  (`grade_level`) und „von … bis" (`jahrgang_von/bis`). Mahnwesen „nach Jahrgang", Inventur
-  nach Klasse und die Mehrjahresband-Frist lesen nur die Spanne; Titel-Tabelle,
+  (`grade_level`) und „von … bis" (`jahrgang_von/bis`). Inventur nach Klasse und die
+  Mehrjahresband-Frist lesen nur die Spanne; Titel-Tabelle,
   Klassenzuweisung und Listenfilter lesen die Klasse, der Portal-Filter liest beide. Die
   Zusammenlegung (Migration 135) ist zurückgenommen: Sie machte aus Klasse N die Spanne N
   bis N, und das trifft die Daten nicht. Lesend gemessen auf dem Testserver: 153 Titel mit
@@ -412,8 +383,9 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   **Entschieden am 24.09.2026, im selben Umbau:** „Jahrgang unbekannt" wird eine eigene Vorgabe
   (NULL) statt 5 bis 10 — heute ist beides nicht zu unterscheiden, und wer das
   Mehrjahresband (Migration 134) an einem Titel mit der Vorgabe anhakt, bekommt die 10.
-  Die drei Leser der Spanne (Mahnwesen „Jahrgang", Inventur, Portal-Filter) lernen „unbekannt"
-  mit. Vorher am Testserver messen.
+  Die zwei Leser der Spanne (Inventur, Portal-Filter) lernen „unbekannt" mit; die Ansicht
+  „Jahrgang" des Mahnwesens, der dritte, ist seit dem 04.10.2026 ausgebaut. Vorher am
+  Testserver messen.
   Ein vierter Leser ist die Suche im Medienkatalog (`trifftJahrgang` in
   `frontend/src/inventur/lib/startseiten_api.js`): Sie liest Klasse oder Spanne. Seit dem
   01.10.2026 zählt die Vorgabe 5 bis 10 dort nicht mehr als Jahrgang, wie schon in der
@@ -600,7 +572,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 03.10.2026: 852 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 04.10.2026: 845 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen

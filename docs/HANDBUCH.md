@@ -407,7 +407,10 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
   Formular nie. Bei Praktikum und Fachbereich ist das Feld verschlossen: Es entsteht nur der
   Eintrag in der Leserdatei, auf den an der Theke ausgeliehen wird.
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
-- Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**. Löschen in
+- Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**. Die Liste
+  der Ehemaligen nennt je Person die offenen und die überfälligen Bücher. Im Mahnwesen steht
+  ein Ehemaliger, sobald die Frist eines Buchs abgelaufen ist; läuft sie noch (etwa bei einem
+  Mehrjahresband), in der Akte an der Ausleihe das Rückgabedatum auf heute setzen. Löschen in
   der Akte verlangt den Namen zur Bestätigung und legt die Person in den Papierkorb. Dort lässt
   sie sich bis zu 180 Tage lang wiederherstellen; danach wird ein Schüler anonymisiert, ein
   Kollege endgültig gelöscht. Ein Ehemaliger wird schon mit dem Ende seiner Karenzzeit

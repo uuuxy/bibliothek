@@ -326,11 +326,10 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/action/nachbuch-meldungen/anzahl": {URL: "/api/action/nachbuch-meldungen/anzahl"},
 		// Forderungen ohne Brief je Kind (15.09.2026): Der Kanarienvogel hat einen
 		// offenen Schadensfall ohne bescheid_id und steht deshalb mit Namen darin.
-		"GET /api/bescheide/ausstehend":            {URL: "/api/bescheide/ausstehend", Positiv: []string{"Vogelbeere"}},
-		"GET /api/bescheide/{id}/pdf":              {URL: "/api/bescheide/" + w.bescheidID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
-		"GET /api/mahnwesen":                       {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
-		"GET /api/mahnwesen/ueberfaellig_jahrgang": {URL: "/api/mahnwesen/ueberfaellig_jahrgang"},
-		"GET /api/mahnwesen/pdf":                   {URL: "/api/mahnwesen/pdf"},
+		"GET /api/bescheide/ausstehend": {URL: "/api/bescheide/ausstehend", Positiv: []string{"Vogelbeere"}},
+		"GET /api/bescheide/{id}/pdf":   {URL: "/api/bescheide/" + w.bescheidID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
+		"GET /api/mahnwesen":            {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
+		"GET /api/mahnwesen/pdf":        {URL: "/api/mahnwesen/pdf"},
 
 		// routes_books.go
 		"GET /api/buecher/titel/{id}/exemplare": {URL: "/api/buecher/titel/" + w.titelID + "/exemplare"},
