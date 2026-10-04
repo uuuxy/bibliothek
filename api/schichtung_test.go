@@ -75,7 +75,6 @@ var handlerMitSQL = []string{
 	"lookups.go",
 	"lusd.go",
 	"lusd_apply.go",
-	"mahnwesen_bulk.go",
 	"mahnwesen_bulk_mail.go",
 	"mail_routes.go",
 	"mail_settings.go",

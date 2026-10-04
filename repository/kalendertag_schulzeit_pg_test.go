@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -97,7 +96,7 @@ func TestKalendertag_SchulzeitStattSitzungszone(t *testing.T) {
 // CURRENT_DATE rechnen — er misst dann nur noch seine eigene Kopie.
 func TestKalendertag_DieLebendenAbfragenBenutzenDenSchultag(t *testing.T) {
 	faelle := []struct{ pfad, klage string }{
-		{filepath.Join("..", "api", "mahnwesen_bulk.go"),
+		{"mahnwesen_queries.go",
 			"der Mahnlauf vergleicht nicht mehr gegen den Kalendertag der Schule — eine Ausleihe " +
 				"kann damit an einem Tag zweimal in der Mahnstufe steigen"},
 		{"mahnwesen_repo.go",

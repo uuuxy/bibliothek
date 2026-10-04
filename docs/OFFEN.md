@@ -99,8 +99,8 @@ Datenbank und der Littera-Übernahme (7.2).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **4.29** (Mahnwesen, Ansicht „Jahrgang"): Die Entscheidung steht aus; bis dahin erhöht
-   „Mahnbriefe drucken" dort die Mahnstufe auch für ein Buch, dessen Frist noch läuft.
+1. **4.29** (Mahnwesen, Ansicht „Jahrgang"): entschieden am 04.10.2026, der Umschalter wird
+   ausgebaut.
 2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
 3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
@@ -299,12 +299,10 @@ Die Ansicht „Jahrgang" (Umschalter „Datum / Jahrgang" im Mahnwesen,
 Kindes über der Spanne des Titels liegt, und alle offenen Ausleihen Ehemaliger. Die Frist der
 Ausleihe spielt dabei keine Rolle.
 
-- **Nachgestellt am 04.10.2026 am Router:** Eine Ausleihe mit einer Frist in 60 Tagen steht in
-  der Ansicht „Jahrgang" und nicht in der Ansicht „Datum". „Mahnbriefe drucken" mit dieser
-  Ausleihe (`POST /api/admin/mahnungen/bulk-print`) antwortet 200 mit dem Brief, und die
-  Mahnstufe der Ausleihe steht danach auf 1. Die Tür prüft, dass die Ausleihe offen ist
-  (`erzeugeUndCommitBulkMahnung` in `api/mahnwesen_bulk.go`); dass sie überfällig ist, stellt
-  allein die Liste der Ansicht „Datum" sicher.
+- Eine Ausleihe mit einer Frist in 60 Tagen steht in der Ansicht „Jahrgang" und nicht in der
+  Ansicht „Datum". Einen Mahnbrief druckt das Programm für sie seit dem 04.10.2026 nicht mehr
+  (`erzeugeUndCommitBulkMahnung` in `api/mahnwesen_bulk.go`); die Auswahl mit Kästchen und
+  der Knopf „Mahnbriefe drucken" stehen in der Ansicht weiter.
 - Die Zeile spricht in Tagen: `tage_ueberfaellig` trägt in dieser Ansicht die Zahl der Jahrgänge
   über der Spanne. Die Tabelle zeigt sie als „N Tage überfällig", einen Ehemaligen als „heute
   fällig" (`MahnwesenTable.svelte`); die Mahnstufe der Zeile und die Reiter „Akut fällig" und
@@ -317,10 +315,9 @@ Ausleihe spielt dabei keine Rolle.
   Jahrgänge 11 bis 13, auch die Bücher der Bücherei.
 - Das Handbuch beschreibt den Umschalter nicht.
 
-**Offen:** Was soll aus der Ansicht „Jahrgang" hinausgehen — der Mahnbrief (dann steigt die
-Mahnstufe für ein Buch, dessen Frist noch läuft), ein eigener Brief ohne Mahnstufe oder nichts
-(die Ansicht bleibt eine Liste)? Danach zu bauen: Die Tür `bulk-print` nimmt nur überfällige
-Ausleihen, und die Ansicht bekommt eigene Beschriftungen.
+**Entschieden am 04.10.2026:** Der Umschalter „Jahrgang" wird ausgebaut, gemahnt wird nur nach
+Frist. Wer die Schule verlassen hat und noch Bücher hat, steht in der Leserdatei unter
+„Ehemalige / Archiv". Zu bauen: Umschalter, Route und Abfrage entfernen.
 
 ---
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/ausweis"
+	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -268,6 +269,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 
 // sqlUeberfaelligeByAusleiheIDs sammelt die PDF-Daten zu konkreten Ausleih-IDs.
 // rueckgabe_am IS NULL: bereits zurückgegebene Bücher gehören nicht in eine Mahnung.
+// rueckgabe_frist < CURRENT_TIMESTAMP: ein Buch, dessen Frist noch läuft, ebenso wenig.
 // s.deleted_at IS NULL: für einen in den Papierkorb gelöschten Schüler dürfen keine
 // Mahn-Daten mehr verarbeitet werden (DSGVO — sonst gingen "Zombie-Mahnungen" an den
 // ehemaligen Klassenlehrer).
@@ -282,6 +284,7 @@ const sqlUeberfaelligeByAusleiheIDs = `
 	JOIN buecher_titel t    ON e.titel_id = t.id
 	JOIN schueler s         ON a.schueler_id = s.id
 	WHERE a.id = ANY($1) AND a.rueckgabe_am IS NULL
+	  AND a.rueckgabe_frist < CURRENT_TIMESTAMP
 	  AND s.deleted_at IS NULL
 	ORDER BY s.klasse, s.nachname, s.vorname, a.rueckgabe_frist
 `
@@ -315,6 +318,31 @@ func scanUeberfaelligeKlassen(rows pgx.Rows) ([]MahnwesenKlasse, error) {
 		return nil, err
 	}
 	return g.klassen, nil
+}
+
+// ZaehleMahnungTx erhöht die Mahnstufe der genannten Ausleihen und liefert, wie viele es traf.
+// Gezählt wird, was auf dem Blatt steht (sqlUeberfaelligeByAusleiheIDs): das offene Buch eines
+// Schülers außerhalb des Papierkorbs, dessen Frist abgelaufen ist. Eine Ausleihe steigt
+// höchstens einmal je Kalendertag der Schule, deshalb stehen beide Seiten des Vergleichs in
+// der Schulzeitzone. Das UPDATE sperrt die getroffenen Zeilen bis zum Commit.
+func (repo *MahnwesenRepository) ZaehleMahnungTx(ctx context.Context, tx pgx.Tx, ids []string) (int64, error) {
+	tag, err := tx.Exec(ctx, `
+		UPDATE ausleihen a
+		SET mahnstufe = a.mahnstufe + 1,
+		    letztes_mahndatum = CURRENT_TIMESTAMP
+		FROM schueler s
+		WHERE a.id = ANY($1)
+		  AND s.id = a.schueler_id
+		  AND s.deleted_at IS NULL
+		  AND a.rueckgabe_am IS NULL
+		  AND a.rueckgabe_frist < CURRENT_TIMESTAMP
+		  AND (a.letztes_mahndatum IS NULL
+		       OR (a.letztes_mahndatum AT TIME ZONE '`+schulzeit.ZonenName+`')::date < `+schulzeit.SQLHeute+`)
+	`, ids)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
 }
 
 // QueryUeberfaelligeByAusleiheIDsTx liest dieselben Daten INNERHALB einer Transaktion.

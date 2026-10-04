@@ -26,6 +26,13 @@ func TestQueryUeberfaellige_ZurueckgegebeneRausfiltern(t *testing.T) {
 
 	loanOffen := seedAusleihe(t, pool, ex[0], schueler, bearbeiter)
 	loanZurueck := seedAusleihe(t, pool, ex[1], schueler, bearbeiter)
+	// Beide Fristen sind abgelaufen: Die Abfrage nennt nur überfällige Bücher, und der
+	// Unterschied der zwei Ausleihen soll allein die Rückgabe sein.
+	if _, err := pool.Exec(ctx,
+		`UPDATE ausleihen SET rueckgabe_frist = CURRENT_TIMESTAMP - interval '30 days' WHERE id = ANY($1)`,
+		[]string{loanOffen, loanZurueck}); err != nil {
+		t.Fatalf("Fristen ablaufen lassen: %v", err)
+	}
 	returnLoan(t, pool, loanZurueck) // dieses Buch ist schon zurück
 
 	repo := NewMahnwesenRepository(pool)

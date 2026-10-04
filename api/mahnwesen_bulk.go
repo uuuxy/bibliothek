@@ -9,7 +9,6 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
-	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -29,40 +28,22 @@ func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 	// Rollback-Defer, welches wirksam wird, falls tx.Commit() nicht erreicht wird
 	defer db.SafeRollback(ctx, tx)
 
-	// 1. Mahnstufe hochzählen. Dies ist der EINZIGE Ort, der mahnstufe erhöht — der
-	// PDF-Druck ist der physische Verwaltungsakt. Der Mail-Versand bumpt bewusst NICHT
-	// (Friendly Reminder, siehe mahnwesen_bulk_mail.go / docs/invarianten.md §1).
-	// rueckgabe_am IS NULL: bereits zurückgegebene Bücher werden nicht gemahnt. Das UPDATE
-	// nimmt zugleich einen Write-Lock auf die getroffenen Zeilen — eine parallele Rückgabe
-	// derselben Ausleihe blockiert bis zu unserem Commit.
-	//
-	// „Höchstens einmal am Tag" meint den Kalendertag der SCHULE. Bis zum 17.09.2026 stand
-	// hier CURRENT_DATE und damit der Tag der Datenbank-Sitzung (im Image UTC): Der Tag
-	// wechselte um 2 Uhr Berliner Zeit statt um Mitternacht. Wer am späten Abend mahnte und
-	// am nächsten Morgen um 1 Uhr noch einmal, erhöhte die Mahnstufe ein zweites Mal für
-	// denselben Tag — und die Mahnstufe ist der Weg in die Rechnung. Auch der Vergleich
-	// LINKS gehört in die Schulzeitzone, sonst wird ein Datum in UTC gegen einen Berliner
-	// Tag gehalten.
-	cmdTag, err := tx.Exec(ctx, `
-		UPDATE ausleihen
-		SET mahnstufe = mahnstufe + 1,
-		    letztes_mahndatum = CURRENT_TIMESTAMP
-		WHERE id = ANY($1) 
-		  AND rueckgabe_am IS NULL
-		  AND (letztes_mahndatum IS NULL
-		       OR (letztes_mahndatum AT TIME ZONE '`+schulzeit.ZonenName+`')::date < `+schulzeit.SQLHeute+`)
-	`, ausleihIDs)
+	// 1. Mahnstufe hochzählen; nur dieser Druck zählt sie, der Mail-Versand nicht
+	// (mahnwesen_bulk_mail.go, docs/invarianten.md §1). Die Auswahl kommt aus der
+	// Oberfläche und kann älter sein als eine Verlängerung oder Rückgabe.
+	mahnRepo := repository.NewMahnwesenRepository(s.DB.Pool)
+	gezaehlt, err := mahnRepo.ZaehleMahnungTx(ctx, tx, ausleihIDs)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim update der mahnstufen: %w", err))
 		return nil, false
 	}
-	if cmdTag.RowsAffected() == 0 {
-		apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("keine offene Ausleihe zu den übergebenen IDs gefunden"))
+	if gezaehlt == 0 {
+		apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("keine Ausleihe mit abgelaufener Frist in der Auswahl, die heute noch nicht gemahnt wurde"))
 		return nil, false
 	}
 
 	// 2. Exakt den soeben aktualisierten Zustand fürs PDF lesen — in DERSELBEN Tx.
-	klassen, err := repository.NewMahnwesenRepository(s.DB.Pool).QueryUeberfaelligeByAusleiheIDsTx(ctx, tx, ausleihIDs)
+	klassen, err := mahnRepo.QueryUeberfaelligeByAusleiheIDsTx(ctx, tx, ausleihIDs)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim abrufen der daten für pdf: %w", err))
 		return nil, false

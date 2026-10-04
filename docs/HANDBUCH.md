@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-03. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-04. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -431,7 +431,9 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 Register **Alle · Akut fällig (bis 14 Tage) · Eskaliert**, Filter nach Klasse. Mahnbriefe an
 Eltern oder für eine ganze Klasse drucken; **Sammel-Mahnlauf** per Mail an die Klassenleitungen
 (Klassen wählen, Empfänger prüfen, dann senden). Die Mahnstufe steigt beim **Druck** des
-Mahnbriefs, nicht beim Mailversand. Lehrkräfte werden nie angemahnt. Welche Klasse an welche
+Mahnbriefs, nicht beim Mailversand. Ein Mahnbrief entsteht nur für ein Buch, dessen Frist
+abgelaufen ist; wurde ein Buch zwischen dem Laden der Liste und dem Druck verlängert, steht es
+nicht auf dem Blatt. Lehrkräfte werden nie angemahnt. Welche Klasse an welche
 Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. Diese Liste wird dort von Hand
 gepflegt, die LUSD liefert sie nicht, und an die Klassenleitungen geht nur, was jemand von Hand
 sendet (Mahnlauf, Abgänger-Kontoauszüge).
