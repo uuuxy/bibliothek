@@ -77,7 +77,7 @@ def stichprobe(verz, verliehen_pfad, aus):
 def kopf(grund):
     """Der Anfang eines Grundes, ohne Werte: Namen stehen nur hinter „ – " oder „: "."""
     grund = re.split(r" – |: ", grund, maxsplit=1)[0]
-    grund = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", "<mail>", grund)
+    grund = re.sub(r"[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,255}", "<mail>", grund)
     grund = re.sub(r"„[^“]*“", "„…“", grund)
     grund = re.sub(r'"[^"]*"', '"…"', grund)
     grund = re.sub(r"\([^)]*\)", "(…)", grund)

@@ -18,7 +18,7 @@ export function formatZahl(wert) {
  * @param {number | string | null | undefined} wert
  */
 export function formatProzent(wert) {
-	const zahl = typeof wert === 'string' ? parseFloat(wert) : (wert ?? 0);
+	const zahl = typeof wert === 'string' ? Number.parseFloat(wert) : (wert ?? 0);
 	return (
 		(Number.isFinite(zahl) ? zahl : 0).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' %'
 	);

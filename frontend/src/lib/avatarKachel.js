@@ -21,6 +21,6 @@ export const initialen = (p) =>
 export function avatarVerlauf(p) {
 	const key = `${p.vorname ?? ''} ${p.nachname ?? ''}`;
 	let h = 0;
-	for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+	for (const zeichen of key) h = (h * 31 + (zeichen.codePointAt(0) ?? 0)) >>> 0;
 	return VERLAEUFE[h % VERLAEUFE.length];
 }

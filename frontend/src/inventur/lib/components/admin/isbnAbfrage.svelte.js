@@ -26,8 +26,8 @@ const AUSGAENGE = {
  * @returns {[string, any][]}
  */
 function felderAus(daten) {
-	const jahr = parseInt(daten.jahr);
-	const klasse = parseInt(daten.grade);
+	const jahr = Number.parseInt(daten.jahr);
+	const klasse = Number.parseInt(daten.grade);
 	/** @type {[string, any][]} */
 	const felder = [
 		['title', daten.title],

@@ -31,4 +31,4 @@ export const vorlagenInfo = {
  * Schlüssel da statt als leere Zeile.
  * @param {string} typ
  */
-export const vorlagenName = (typ) => vorlagenInfo[typ]?.name ?? typ.replace(/_/g, ' ');
+export const vorlagenName = (typ) => vorlagenInfo[typ]?.name ?? typ.replaceAll('_', ' ');

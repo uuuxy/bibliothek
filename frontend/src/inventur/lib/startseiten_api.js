@@ -66,7 +66,7 @@ export function buecherSuchen(buecherArray, searchQuery) {
 	if (q === '') return Array.isArray(buecherArray) ? buecherArray : [];
 
 	let terms = q.split(/\s+/).map((term) => suchSynonyme.get(term) || term);
-	const hasNumber = terms.some((t) => !isNaN(parseInt(t, 10)));
+	const hasNumber = terms.some((t) => !Number.isNaN(Number.parseInt(t, 10)));
 	if (hasNumber) {
 		terms = terms.filter((t) => !['klasse', 'kl', 'kl.', 'jahrgang', 'jg', 'jg.'].includes(t));
 	}
@@ -97,8 +97,8 @@ export function buecherSuchen(buecherArray, searchQuery) {
 				b.suchwoerter.some((/** @type {string} */ w) => w.toLowerCase().includes(term))
 			)
 				return true;
-			const num = parseInt(term, 10);
-			return !isNaN(num) && trifftJahrgang(b, num);
+			const num = Number.parseInt(term, 10);
+			return !Number.isNaN(num) && trifftJahrgang(b, num);
 		})
 	);
 }
