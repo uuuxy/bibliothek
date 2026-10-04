@@ -37,21 +37,23 @@ func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim update der mahnstufen: %w", err))
 		return nil, false
 	}
-	if gezaehlt == 0 {
-		apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("keine Ausleihe mit abgelaufener Frist in der Auswahl, die heute noch nicht gemahnt wurde"))
-		return nil, false
-	}
 
-	// 2. Exakt den soeben aktualisierten Zustand fürs PDF lesen — in DERSELBEN Tx.
+	// 2. Exakt den soeben aktualisierten Zustand fürs PDF lesen — in DERSELBEN Tx. Das
+	// Blatt hängt nicht am Zählen: Ein Buch steigt höchstens einmal am Tag, gedruckt wird
+	// es nach einem Papierstau auch ein zweites Mal.
 	klassen, err := mahnRepo.QueryUeberfaelligeByAusleiheIDsTx(ctx, tx, ausleihIDs)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim abrufen der daten für pdf: %w", err))
 		return nil, false
 	}
-	if len(klassen) == 0 {
-		// Nach RowsAffected>0 nicht zu erwarten; defensiv: keine Mahnung ohne PDF
-		// festschreiben — der Rollback (defer) nimmt den Mahnstufen-Bump zurück.
+	if len(klassen) == 0 && gezaehlt > 0 {
+		// Zählen und Blatt lesen dieselbe Auswahl, das ist nicht zu erwarten. Keine
+		// Mahnung ohne PDF festschreiben — der Rollback (defer) nimmt das Zählen zurück.
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("dateninkonsistenz: keine PDF-Daten trotz aktualisierter Mahnstufen"))
+		return nil, false
+	}
+	if len(klassen) == 0 {
+		apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("keine Ausleihe mit abgelaufener Frist in der Auswahl"))
 		return nil, false
 	}
 

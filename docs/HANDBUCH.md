@@ -435,8 +435,9 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 Register **Alle · Akut fällig (bis 14 Tage) · Eskaliert**, Filter nach Klasse. Mahnbriefe an
 Eltern oder für eine ganze Klasse drucken; **Sammel-Mahnlauf** per Mail an die Klassenleitungen
 (Klassen wählen, Empfänger prüfen, dann senden). Gezählt wird eine Mahnung nur beim Druck aus
-der Auswahl (Kinder anhaken, dann _Mahnbriefe drucken_), höchstens einmal am Tag je Buch; die
-Briefe an die Eltern, die Liste einer Klasse und der Mailversand zählen nicht. Das Programm
+der Auswahl (Kinder anhaken, dann _Mahnbriefe drucken_), höchstens einmal am Tag je Buch; ein
+zweiter Druck am selben Tag, etwa nach einem Papierstau, liefert das Blatt noch einmal und zählt
+nicht. Die Briefe an die Eltern, die Liste einer Klasse und der Mailversand zählen nicht. Das Programm
 zeigt die Zahl nicht an und knüpft nichts an sie. Ein Mahnbrief entsteht nur für ein Buch,
 dessen Frist abgelaufen ist; wurde ein Buch zwischen dem Laden der Liste und dem Druck
 verlängert, steht es nicht auf dem Blatt. Lehrkräfte werden nie angemahnt. Wer die Schule

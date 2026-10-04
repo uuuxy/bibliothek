@@ -328,13 +328,12 @@ Gefunden am 04.10.2026 bei der Entscheidung zur Ansicht „Jahrgang".
    läuft das Zählen durch eine Tür.
 3. Ein Name je Papier: „Erinnerung" für das Blatt an das Kind, „Elternbrief" für den Brief
    mit Anschrift.
-4. Ehemalige bekommen den Elternbrief. Dass sie in der Mahnliste als eigene Gruppe stehen und
-   an keine Klassenleitung gehen, ist seit dem 04.10.2026 gebaut.
-5. Ein zweiter Druck am selben Tag liefert das Blatt und zählt nicht (5.50).
+4. Ehemalige bekommen den Elternbrief.
 
-Gebaut wird in Stufen, jede mit einem Test, der am alten Code rot ist: zuerst der Nachdruck,
-dann die Tür für beide Papiere mit dem Zählen, zuletzt die Oberfläche. Vor der Oberfläche steht
-eine Beschreibung, was wo stehen wird.
+Gebaut wird in Stufen, jede mit einem Test, der am alten Code rot ist: zuerst die Tür für beide
+Papiere mit dem Zählen, dann die Oberfläche. Vor der Oberfläche steht eine Beschreibung, was wo
+stehen wird. Gebaut sind seit dem 04.10.2026 der Nachdruck (ein zweiter Druck am selben Tag
+liefert das Blatt und zählt nicht) und die Gruppe der Ehemaligen.
 
 ---
 
@@ -508,6 +507,17 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   in `api/ausleihe.go`, `api/etiketten_offen.go` und `api/student_promotion.go`; die Dateien
   stehen wegen anderer Anweisungen in der Liste. Ein neuer Handler, dessen einzige Anweisung
   so aussieht, bliebe unbemerkt. Kategorie B.
+- `e2e/sperre-scan.spec.js` hängt an Millisekunden des Runners (gefunden am 04.10.2026). Der
+  Test „Anmeldung: ein Scan wird nicht abgeschickt, und die Felder stehen wie davor" tippt
+  `B-00123` ohne Pause und erwartet, dass die Anmeldung die sieben Zeichen als Scan erkennt.
+  Die Erkennung verlangt sechs Zeichen in Folge mit höchstens 50 ms Abstand
+  (`scanErkennung.js`); eine Pause des Runners zwischen zwei Tasten macht daraus eine Eingabe
+  von Hand, und das Enter meldet an. Im CI-Lauf zum Stand efe92636 einmal rot („unexpected
+  value "B-00123""), im Neulauf desselben Stands grün; lokal zehn von zehn Läufen grün.
+  Abhilfe: die Tasten mit festen Zeitstempeln schicken (CDP `Input.dispatchKeyEvent`, Feld
+  `timestamp`), damit der Abstand vom Test kommt und nicht vom Runner; vorher messen, ob
+  Chromium den Zeitstempel als `event.timeStamp` übernimmt. Dieselbe Tipp-Hilfe nutzt der Test
+  zum Sperrbildschirm in derselben Datei. Kategorie B.
 - `e2e/kontrast.spec.js` misst den Medienkatalog nicht in jedem Lauf mit seinen Kacheln
   (gefunden am 02.10.2026, lokal mit 8.600 Titeln). `warteAufStabilenBaum` gilt als stabil,
   sobald zwei Zählungen im Abstand von 100 ms gleich sind; kommt die Titelliste später, misst
@@ -896,18 +906,6 @@ Abgängerliste) antworten auch mit einer solchen Klasse (`klassenZahlSQL` in
 Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächster Schritt mit
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
-
-### 5.50 Derselbe Mahnbrief lässt sich am selben Tag nicht noch einmal drucken
-
-Nachgestellt am 04.10.2026 an der Tür (`BulkPrintMahnungenHandler`): Der erste Druck einer
-Auswahl antwortet 200 mit dem Blatt, der zweite am selben Tag 404 mit „keine Ausleihe mit
-abgelaufener Frist in der Auswahl, die heute noch nicht gemahnt wurde". Die Regel „höchstens
-einmal am Tag" schützt das Zählen und nimmt dabei das Blatt mit: Nach einem Papierstau gibt es
-bis zum nächsten Tag keinen Nachdruck. Enthält die Auswahl ein weiteres, noch nicht gemahntes
-Buch, kommt das Blatt mit allen überfälligen Büchern, gezählt wird nur das neue. Die Oberfläche
-zeigt die Antwort als Fehlermeldung mit dem rohen Antworttext (`printSelectedMahnungen`, am
-Code gelesen). Littera fragt nach dem Druck, ob gezählt werden soll, und druckt bei „Nein"
-erneut. Abhilfe hier: ein Nachdruck, der nicht zählt. Hängt an 4.30.
 
 ---
 

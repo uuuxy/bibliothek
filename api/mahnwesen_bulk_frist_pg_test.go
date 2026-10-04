@@ -151,4 +151,37 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 				stufe, datum != nil)
 		}
 	})
+
+	// Nach einem Papierstau wird dieselbe Auswahl noch einmal gedruckt. Ein Buch steigt
+	// höchstens einmal am Tag; das Blatt gibt es trotzdem.
+	t.Run("ein zweiter Druck am selben Tag liefert das Blatt und zählt nicht", func(t *testing.T) {
+		kind := seedSchueler(t, pool, "MBF-S-5", "Olga", "06G1")
+		buch := seedAusleihe(t, pool, kind, "Band Nachdruck", abgelaufen)
+
+		if rec := drucke(t, buch); rec.Code != http.StatusOK {
+			t.Fatalf("erster Druck: Status %d — %s", rec.Code, rec.Body.String())
+		}
+		stufe, erstesDatum := mahnState(t, pool, buch)
+		if stufe != 1 || erstesDatum == nil {
+			t.Fatalf("nach dem ersten Druck: Mahnstufe %d, Mahndatum gesetzt %v — erwartet 1 und gesetzt",
+				stufe, erstesDatum != nil)
+		}
+
+		rec := drucke(t, buch)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("zweiter Druck am selben Tag: Status %d, erwartet 200 mit dem Blatt — %s",
+				rec.Code, firstBytes(rec.Body.Bytes(), 160))
+		}
+		blatt := strings.Join(pdftest.Texte(t, rec.Body.Bytes()), "\n")
+		if !strings.Contains(blatt, "Band Nachdruck") {
+			t.Errorf("das Buch fehlt auf dem zweiten Blatt:\n%s", blatt)
+		}
+		stufe, datum := mahnState(t, pool, buch)
+		if stufe != 1 {
+			t.Errorf("nach dem zweiten Druck: Mahnstufe %d, erwartet weiter 1", stufe)
+		}
+		if datum == nil || !datum.Equal(*erstesDatum) {
+			t.Errorf("nach dem zweiten Druck: Mahndatum %v, erwartet unverändert %v", datum, erstesDatum)
+		}
+	})
 }
