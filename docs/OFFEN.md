@@ -540,9 +540,11 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Tages, in der Einteilung der Übersicht (MQR-Modus): Zuverlässigkeit 0 Meldungen (Note A),
   Sicherheit 0 (A), Wartbarkeit 114 (A), Abdeckung 77,4 % von 38.650 Zeilen. Am 03.10.2026
   waren es 209 Meldungen, davon 75 `go:S3776` und zehn mit Auswirkung auf die Zuverlässigkeit
-  (Note C); beide Gruppen und zehn Meldungen zur Wartbarkeit sind behoben, die übrigen 114
-  sind nicht einzeln durchgesehen. `komplexitaet_ratsche_test.go` lässt keine
-  Produktionsfunktion über 15 zu. Das Projekt ist am 04.10.2026 neu angelegt, der Stand vom
+  (Note C); beide Gruppen und zehn Meldungen zur Wartbarkeit sind behoben. Die übrigen 114
+  sind am 05.10.2026 einzeln gelesen: Die 20 im Go-Code sind behoben (c8f05392, bbb30013,
+  baf75962, 4c126aaa), offen sind 93 in JavaScript und eine in Python. Der Scan nach diesen
+  Commits steht aus; bis dahin zeigt der Server weiter 114. `komplexitaet_ratsche_test.go`
+  lässt keine Produktionsfunktion über 15 zu. Das Projekt ist am 04.10.2026 neu angelegt, der Stand vom
   03.10.2026 liegt auf dem Server unter `Bibliothek4a`. Das Quality Gate vergleicht mit dem
   ersten Scan des Projekts und steht auf OK mit drei Bedingungen; vom neuen Code sind 94,1 %
   getestet (3 von 47 Zeilen offen: zwei im Fehlerausgang von `ZaehleMahnungTx`, eine in
