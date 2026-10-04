@@ -99,12 +99,14 @@ Datenbank und der Littera-Übernahme (7.2).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
+1. **4.29** (Mahnwesen, Ansicht „Jahrgang"): Die Entscheidung steht aus; bis dahin erhöht
+   „Mahnbriefe drucken" dort die Mahnstufe auch für ein Buch, dessen Frist noch läuft.
+2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
+3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
-3. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
-4. Nach der Antwort zu 8.3: **5.4**.
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+4. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
+5. Nach der Antwort zu 8.3: **5.4**.
+6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
@@ -289,6 +291,32 @@ das Abmelden hinaus bleiben — ein dauerhafter Passwort-Hash je Konto, den es s
 nicht gibt ([arc42/09](arc42/09-architekturentscheidungen.md), A2). Entschieden am 01.10.2026:
 getrennt von der Sperre zu entscheiden. Vor einer Empfehlung zu klären: wie oft der Mailserver
 der Schule ausfällt, und wie Littera und andere Programme es halten.
+
+### 4.29 Mahnwesen, Ansicht „Jahrgang": was aus ihr hinausgeht
+
+Die Ansicht „Jahrgang" (Umschalter „Datum / Jahrgang" im Mahnwesen,
+`GET /api/mahnwesen/ueberfaellig_jahrgang`) nennt offene Ausleihen, bei denen der Jahrgang des
+Kindes über der Spanne des Titels liegt, und alle offenen Ausleihen Ehemaliger. Die Frist der
+Ausleihe spielt dabei keine Rolle.
+
+- **Nachgestellt am 04.10.2026 am Router:** Eine Ausleihe mit einer Frist in 60 Tagen steht in
+  der Ansicht „Jahrgang" und nicht in der Ansicht „Datum". „Mahnbriefe drucken" mit dieser
+  Ausleihe (`POST /api/admin/mahnungen/bulk-print`) antwortet 200 mit dem Brief, und die
+  Mahnstufe der Ausleihe steht danach auf 1. Die Tür prüft, dass die Ausleihe offen ist
+  (`erzeugeUndCommitBulkMahnung` in `api/mahnwesen_bulk.go`); dass sie überfällig ist, stellt
+  allein die Liste der Ansicht „Datum" sicher.
+- Die Zeile spricht in Tagen: `tage_ueberfaellig` trägt in dieser Ansicht die Zahl der Jahrgänge
+  über der Spanne. Die Tabelle zeigt sie als „N Tage überfällig", einen Ehemaligen als „heute
+  fällig" (`MahnwesenTable.svelte`); die Mahnstufe der Zeile und die Reiter „Akut fällig" und
+  „Eskaliert" rechnen mit derselben Zahl (`berechneMahnstufe`, `MahnwesenTabs.svelte`).
+- Mit der Vorgabe 5 bis 10 an fast jedem Titel (5.5) nennt die Ansicht jedes offene Buch der
+  Jahrgänge 11 bis 13, auch die Bücher der Bücherei.
+- Das Handbuch beschreibt den Umschalter nicht.
+
+**Offen:** Was soll aus der Ansicht „Jahrgang" hinausgehen — der Mahnbrief (dann steigt die
+Mahnstufe für ein Buch, dessen Frist noch läuft), ein eigener Brief ohne Mahnstufe oder nichts
+(die Ansicht bleibt eine Liste)? Danach zu bauen: Die Tür `bulk-print` nimmt nur überfällige
+Ausleihen, und die Ansicht bekommt eigene Beschriftungen.
 
 ---
 

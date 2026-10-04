@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/internal/ausweis"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -156,32 +158,58 @@ func (repo *MahnwesenRepository) reichereLehrerEmails(ctx context.Context, klass
 	}
 }
 
-// QueryUeberfaelligeNachJahrgang ermittelt Bücher, die über die Jahrgangsstufe hinaus ausgeliehen wurden
-// (z. B. wenn ein Buch nur bis Klasse 6 gedacht ist, der Schüler nun aber in Klasse 7 ist) oder die
-// von Schülern behalten wurden, die die Schule bereits verlassen haben (Abgänger).
+// jahrgaengeDerKlassen ordnet den Namen des Klassen-Vokabulars ihren Jahrgang zu, als zwei
+// gleich lange Listen für unnest. Eine Klasse ohne lesbaren Jahrgang („ABG") fehlt darin.
+func (repo *MahnwesenRepository) jahrgaengeDerKlassen(ctx context.Context) ([]string, []int, error) {
+	rows, err := repo.db.Query(ctx, `SELECT name FROM klassen`)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+
+	klassen, jahrgaenge := []string{}, []int{}
+	for rows.Next() {
+		var klasse string
+		if err := rows.Scan(&klasse); err != nil {
+			return nil, nil, err
+		}
+		if _, jahrgang, ok := ausweis.AblaufJahrgang(klasse); ok {
+			klassen = append(klassen, klasse)
+			jahrgaenge = append(jahrgaenge, jahrgang)
+		}
+	}
+	return klassen, jahrgaenge, rows.Err()
+}
+
+// QueryUeberfaelligeNachJahrgang nennt offene Ausleihen, bei denen der Jahrgang des Schülers
+// über der Spanne des Titels liegt (Buch bis Klasse 6, das Kind ist in der 7), und alle
+// offenen Ausleihen Ehemaliger. Der Jahrgang kommt aus ausweis.AblaufJahrgang und nicht aus
+// den Ziffern der Klasse: „05F1" nennt auch den Zug, und die Einführungsphase heißt „ET".
 func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
+	klassenMitJahrgang, jahrgaenge, err := repo.jahrgaengeDerKlassen(ctx)
+	if err != nil {
+		return nil, err
+	}
 	q := `
 		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
 		       coalesce(e.barcode_id,''),
 		       a.ausgeliehen_am,
 		       t.jahrgang_bis,
-		       NULLIF(regexp_replace(s.klasse, '\D', '', 'g'), '')::int AS schueler_jahrgang,
+		       j.jahrgang AS schueler_jahrgang,
 			   s.ist_abgaenger
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t    ON e.titel_id = t.id
 		JOIN schueler s         ON a.schueler_id = s.id
+		LEFT JOIN unnest($1::text[], $2::int[]) AS j(klasse, jahrgang) ON j.klasse = s.klasse
 		WHERE a.rueckgabe_am IS NULL
 		  AND s.deleted_at IS NULL
-		  AND (
-		      (NULLIF(regexp_replace(s.klasse, '\D', '', 'g'), '')::int > t.jahrgang_bis)
-		      OR s.ist_abgaenger = true
-		  )
+		  AND (j.jahrgang > t.jahrgang_bis OR s.ist_abgaenger = true)
 	`
-	args := []any{}
+	args := []any{klassenMitJahrgang, jahrgaenge}
 	if klasseFilter != "" {
-		q += " AND s.klasse = $1"
+		q += " AND s.klasse = $3"
 		args = append(args, klasseFilter)
 	}
 	q += " ORDER BY s.klasse, s.nachname, s.vorname, t.titel"
@@ -208,9 +236,11 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachJahrgang(ctx context.Cont
 			return nil, err
 		}
 
+		// Ein Ehemaliger steht auch mit einem Buch in der Liste, dessen Spanne sein
+		// Jahrgang nicht überschreitet; darüber liegt er dann um null Jahrgänge.
 		ueberschreitung := 0
 		if schuelerJahrgang != nil {
-			ueberschreitung = *schuelerJahrgang - jahrgangBis
+			ueberschreitung = max(0, *schuelerJahrgang-jahrgangBis)
 		}
 
 		g.add(klasse, schuelerID, name, UeberfaelligesMedium{
