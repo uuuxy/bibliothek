@@ -35,4 +35,5 @@ ffmpeg -y -loglevel error -loop 1 -i "$ORDNER/frame.png" -t 6 -r 15 -pix_fmt yuv
 
 echo "3/3  Die Theke damit füttern"
 cd frontend
-KAMERA_VIDEO="$ORDNER/kamera.y4m" npx playwright test -c playwright.proben.config.js --reporter=list
+KAMERA_VIDEO="$ORDNER/kamera.y4m" KAMERA_INHALT="$INHALT" \
+	npx playwright test -c playwright.proben.config.js --reporter=list

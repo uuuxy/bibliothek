@@ -16,6 +16,15 @@ import { uiLogin } from '../e2e/helpers.js';
  * zu überspringen — ein Gate, das niemand rot sehen kann, ist keins.
  */
 const VIDEO = process.env.KAMERA_VIDEO ?? '';
+const INHALT = process.env.KAMERA_INHALT ?? '';
+
+/**
+ * Was die Theke in einem Durchgang gebucht hat: der Code je Aufruf der Buchungstür.
+ * @param {{ gesendet: string[] }} lauf
+ */
+function gebucht(lauf) {
+	return lauf.gesendet.map((rumpf) => JSON.parse(rumpf).query);
+}
 
 async function probe(ohneEingebautenErkenner) {
 	const browser = await chromium.launch({
@@ -62,6 +71,9 @@ test('Kamera liest einen echten Barcode — mit und ohne eingebauten Erkenner', 
 		VIDEO && fs.existsSync(VIDEO),
 		'KAMERA_VIDEO fehlt — diese Probe läuft über scripts/kamera_probe.sh'
 	).toBe(true);
+	expect(INHALT, 'KAMERA_INHALT fehlt — diese Probe läuft über scripts/kamera_probe.sh').not.toBe(
+		''
+	);
 
 	const mit = await probe(false);
 	console.log('=== MIT eingebautem Erkenner ===');
@@ -74,5 +86,14 @@ test('Kamera liest einen echten Barcode — mit und ohne eingebauten Erkenner', 
 	console.log('Zeile: ' + ohne.zeile);
 	console.log('gesendet: ' + JSON.stringify(ohne.gesendet));
 	console.log('Fehler: ' + ohne.fehler.slice(0, 3).join(' | '));
-	expect(true).toBe(true);
+
+	// Je Durchgang genau eine Buchung mit dem gezeigten Code: Eine leere Liste heißt „nichts
+	// erkannt", ein anderer Wert „falsch gelesen", zwei Einträge „doppelt gebucht". Beide
+	// Durchgänge werden gemeldet, auch wenn schon der erste scheitert.
+	expect
+		.soft(gebucht(mit), `Mit eingebautem Erkenner. Zeile am Bild: ${mit.zeile}`)
+		.toEqual([INHALT]);
+	expect
+		.soft(gebucht(ohne), `Ohne eingebauten Erkenner (iPhone-Weg). Zeile am Bild: ${ohne.zeile}`)
+		.toEqual([INHALT]);
 });
