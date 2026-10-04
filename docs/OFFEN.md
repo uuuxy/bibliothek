@@ -103,8 +103,10 @@ Datenbank und der Littera-Übernahme (7.2).
 2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
 3. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
-4. Nach der Antwort zu 8.3: **5.4**.
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+4. **4.30** (Mahnstufe und die zwei Papiere „Mahnbrief"): Die Entscheidung steht aus; erst
+   klären.
+5. Nach der Antwort zu 8.3: **5.4**.
+6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
@@ -290,6 +292,29 @@ nicht gibt ([arc42/09](arc42/09-architekturentscheidungen.md), A2). Entschieden 
 getrennt von der Sperre zu entscheiden. Vor einer Empfehlung zu klären: wie oft der Mailserver
 der Schule ausfällt, und wie Littera und andere Programme es halten.
 
+### 4.30 Mahnstufe und die zwei Papiere „Mahnbrief"
+
+Gefunden am 04.10.2026 bei der Entscheidung zur Ansicht „Jahrgang".
+
+- **Die Mahnstufe hat keinen Leser.** `ZaehleMahnungTx` zählt sie beim Druck aus der Auswahl,
+  Verlängerung und neue Frist setzen sie zurück, die Littera-Übernahme schreibt sie. Gelesen
+  wird sie nirgends: keine Anzeige in Liste, Akte oder auf dem Blatt, keine Gebühr, keine
+  Sperre. `letztes_mahndatum` liest allein die Regel „höchstens einmal am Tag". Die Spalten
+  „1. Erinnerung" und „Mahnung" der Liste rechnet die Oberfläche aus den Tagen über der Frist.
+- **Zwei Papiere heißen „Mahnbrief".** Der Knopf „Mahnbriefe" druckt für alle überfälligen
+  Schüler einen Brief an die Eltern mit Anschrift und dem Text der Vorlage
+  (`GET /api/reports/overdue-pdf`); er zählt nichts und lässt Ehemalige aus, seit dem ersten
+  Stand vom 11.06.2026 und ohne Begründung im Verlauf. „Mahnbriefe drucken" nach dem Anhaken
+  druckt je Kind ein Blatt „Mahnung – Schulbibliothek" in Du-Form ohne Anschrift
+  (`POST /api/admin/mahnungen/bulk-print`) und zählt.
+- Die Unterlagen zum Verfahren nennen vor dem Bescheid nur den mehrmaligen Hinweis, keine
+  Stufen und keine Gebühr. Littera zählt je Leser nach bestätigtem Druck, steuert damit den
+  Abstand zur nächsten Mahnung und druckt die Stufe auf den Brief.
+
+**Offen:** Wozu dient die Mahnstufe — anzeigen (Liste, Akte, Blatt), als Hinweis vor dem
+Bescheid, oder entfallen? Dazu: ein eigener Name je Papier, und ob die Briefe an die Eltern
+Ehemalige weiter auslassen.
+
 ---
 
 ## 5. Abarbeitbar (Kategorie B)
@@ -455,6 +480,13 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
+- `TestHandlerFormulierenKeinNeuesSQL` (`api/schichtung_test.go`) sieht ein `UPDATE` mit
+  Tabellenkürzel nicht: Das Muster verlangt `UPDATE <Tabelle> SET`, und `UPDATE ausleihen a SET`
+  trifft es nicht. Gefunden am 04.10.2026: Die Ratsche hielt `api/mahnwesen_bulk.go` für frei
+  von SQL, als dessen einzige Anweisung ein Kürzel bekam. Drei Anweisungen dieser Form stehen
+  in `api/ausleihe.go`, `api/etiketten_offen.go` und `api/student_promotion.go`; die Dateien
+  stehen wegen anderer Anweisungen in der Liste. Ein neuer Handler, dessen einzige Anweisung
+  so aussieht, bliebe unbemerkt. Kategorie B.
 - `e2e/kontrast.spec.js` misst den Medienkatalog nicht in jedem Lauf mit seinen Kacheln
   (gefunden am 02.10.2026, lokal mit 8.600 Titeln). `warteAufStabilenBaum` gilt als stabil,
   sobald zwei Zählungen im Abstand von 100 ms gleich sind; kommt die Titelliste später, misst
@@ -839,6 +871,18 @@ Abgängerliste) antworten auch mit einer solchen Klasse (`klassenZahlSQL` in
 Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächster Schritt mit
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
+
+### 5.50 Derselbe Mahnbrief lässt sich am selben Tag nicht noch einmal drucken
+
+Nachgestellt am 04.10.2026 an der Tür (`BulkPrintMahnungenHandler`): Der erste Druck einer
+Auswahl antwortet 200 mit dem Blatt, der zweite am selben Tag 404 mit „keine Ausleihe mit
+abgelaufener Frist in der Auswahl, die heute noch nicht gemahnt wurde". Die Regel „höchstens
+einmal am Tag" schützt das Zählen und nimmt dabei das Blatt mit: Nach einem Papierstau gibt es
+bis zum nächsten Tag keinen Nachdruck. Enthält die Auswahl ein weiteres, noch nicht gemahntes
+Buch, kommt das Blatt mit allen überfälligen Büchern, gezählt wird nur das neue. Die Oberfläche
+zeigt die Antwort als Fehlermeldung mit dem rohen Antworttext (`printSelectedMahnungen`, am
+Code gelesen). Littera fragt nach dem Druck, ob gezählt werden soll, und druckt bei „Nein"
+erneut. Abhilfe hier: ein Nachdruck, der nicht zählt. Hängt an 4.30.
 
 ---
 

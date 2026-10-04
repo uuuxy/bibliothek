@@ -79,7 +79,7 @@ wird, behalten die Tastatur.
   Schulbuch an. Dasselbe gilt fürs Verlängern: an der Buchzeile, für die ganze Klasse
   (_LMF-Aktionen_) und mit den Terminen des Büchertauschs. (§2.2)
 - **Kollegen** werden nie angehalten.
-- **Überfällige** Bücher und die Mahnstufe stehen direkt an der Ausleihzeile.
+- **Überfällige** Bücher sind an der Ausleihzeile gekennzeichnet.
 
 **Außerdem:** Geräte (iPads, Taschenrechner, Beamer) laufen über dieselbe Theke, mit
 Zubehör-Checkliste beim Scan (§5) · Kamera als Ersatz für den Handscanner (Knopf neben dem
@@ -433,10 +433,12 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 
 Register **Alle · Akut fällig (bis 14 Tage) · Eskaliert**, Filter nach Klasse. Mahnbriefe an
 Eltern oder für eine ganze Klasse drucken; **Sammel-Mahnlauf** per Mail an die Klassenleitungen
-(Klassen wählen, Empfänger prüfen, dann senden). Die Mahnstufe steigt beim **Druck** des
-Mahnbriefs, nicht beim Mailversand. Ein Mahnbrief entsteht nur für ein Buch, dessen Frist
-abgelaufen ist; wurde ein Buch zwischen dem Laden der Liste und dem Druck verlängert, steht es
-nicht auf dem Blatt. Lehrkräfte werden nie angemahnt. Welche Klasse an welche
+(Klassen wählen, Empfänger prüfen, dann senden). Gezählt wird eine Mahnung nur beim Druck aus
+der Auswahl (Kinder anhaken, dann _Mahnbriefe drucken_), höchstens einmal am Tag je Buch; die
+Briefe an die Eltern, die Liste einer Klasse und der Mailversand zählen nicht. Das Programm
+zeigt die Zahl nicht an und knüpft nichts an sie. Ein Mahnbrief entsteht nur für ein Buch,
+dessen Frist abgelaufen ist; wurde ein Buch zwischen dem Laden der Liste und dem Druck
+verlängert, steht es nicht auf dem Blatt. Lehrkräfte werden nie angemahnt. Welche Klasse an welche
 Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. Diese Liste wird dort von Hand
 gepflegt, die LUSD liefert sie nicht, und an die Klassenleitungen geht nur, was jemand von Hand
 sendet (Mahnlauf, Abgänger-Kontoauszüge).
