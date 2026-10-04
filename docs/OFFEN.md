@@ -538,7 +538,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   `komplexitaet_ratsche_test.go` lässt keine Produktionsfunktion über 15 zu. Das Projekt ist am
   04.10.2026 neu angelegt, der Stand vom 03.10.2026 liegt auf dem Server unter `Bibliothek4a`.
   Das Quality Gate vergleicht mit dem ersten Scan des Projekts und steht nach dem zweiten auf
-  OK mit drei Bedingungen. Die 124 Meldungen zur Wartbarkeit sind nicht einzeln durchgesehen.
+  OK mit drei Bedingungen. Zehn der 124 Meldungen zur Wartbarkeit sind behoben, der Scan danach
+  steht aus; die übrigen 114 sind nicht einzeln durchgesehen.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
