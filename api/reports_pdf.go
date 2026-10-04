@@ -1,47 +1,31 @@
 package api
 
 import (
-	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 	"bytes"
 	"context"
-	"errors"
 
 	"fmt"
-	"log"
-	"net/http"
 	"strings"
-	"time"
 
 	"github.com/jung-kurt/gofpdf"
 )
 
-// OverdueBook represents a single overdue book in the report.
-type OverdueBook struct {
-	Titel         string
-	BarcodeID     string
-	AusgeliehenAm time.Time
-	Frist         time.Time
-	DaysOverdue   int
-}
+// mahnbriefTextVolljaehrig steht statt der Vorlage, wenn der Brief an die Person selbst
+// geht: Die Vorlage der Schule spricht die Eltern an.
+const mahnbriefTextVolljaehrig = anredeVolljaehrig + "\n\n" +
+	"die Leihfrist für folgende Medien ist abgelaufen:\n\n{{.BuchListe}}\n\n" +
+	"Bitte geben Sie die Medien umgehend in der Schulbibliothek ab.\n" +
+	"Ursprüngliche Frist: {{.Frist}}\n\nVielen Dank.\nIhre Schulbibliothek"
 
-// OverdueStudent groups overdue books for a specific student.
-type OverdueStudent struct {
-	ID       string
-	Vorname  string
-	Nachname string
-	// Anschrift für das Fensterkuvert (DIN 5008). Zweck laut VVT/SECURITY.md
-	// ausdrücklich „gedruckter Elternbrief bei Mahnung" — bis zum 01.09.2026
-	// stand hier trotzdem hartkodiert „Adresse unbekannt": Das Layout war für
-	// den Postversand gebaut, die Daten wurden nie angeschlossen.
-	Strasse    string
-	Hausnummer string
-	PLZ        string
-	Ort        string
-	Books      []OverdueBook
+// mahnbriefVorlage ist, was auf allen Briefen eines Drucks gleich steht.
+type mahnbriefVorlage struct {
+	Betreff  string
+	Text     string
+	Absender string
 }
 
 // loadMahnungTemplate lädt die Eltern-Mahnvorlage aus der Datenbank; ist keine
@@ -59,168 +43,39 @@ func (s *Server) loadMahnungTemplate(ctx context.Context) (betreff, textBody str
 	return betreff, textBody
 }
 
-// queryOverdueStudents lädt alle überfälligen Ausleihen (ohne Abgänger) und gruppiert
-// sie je Schüler in stabiler Reihenfolge (Nachname, Vorname, Titel).
-func (s *Server) queryOverdueStudents(ctx context.Context) ([]*OverdueStudent, error) {
-	// COALESCE auf den Adressspalten ist Pflicht, nicht Kosmetik: Sie sind
-	// nullbar, die Go-Felder nicht — ohne COALESCE stünde hier "cannot scan NULL"
-	// statt des Mahnlaufs (bekannte NULL-Scan-Bugklasse).
-	query := `
-		SELECT
-			s.id, s.vorname, s.nachname,
-			COALESCE(s.strasse, ''), COALESCE(s.hausnummer, ''),
-			COALESCE(s.plz, ''), COALESCE(s.ort, ''),
-			a.ausgeliehen_am, a.rueckgabe_frist,
-			FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))/86400) AS days_overdue,
-			t.titel, e.barcode_id
-		FROM ausleihen a
-		JOIN schueler s ON a.schueler_id = s.id
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE a.rueckgabe_am IS NULL
-		  AND a.rueckgabe_frist < CURRENT_TIMESTAMP
-		  AND s.ist_abgaenger = false
-		ORDER BY s.nachname, s.vorname, t.titel;
-	`
-
-	rows, err := s.DB.Pool.Query(ctx, query)
-	if err != nil {
-		return nil, errors.New("fehler beim Abrufen der Datenbank")
+// ladeMahnbriefVorlage liest Betreff und Text aus der Vorlage und die Absenderzeile aus den
+// Angaben zur Schule.
+func (s *Server) ladeMahnbriefVorlage(ctx context.Context) mahnbriefVorlage {
+	betreff, text := s.loadMahnungTemplate(ctx)
+	settings, _ := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx) //nolint:errcheck
+	schule := pdf.SchuleInfo{
+		Name:    settings.SchuleName,
+		Strasse: settings.SchuleStrasse,
+		PLZ:     settings.SchulePLZ,
+		Ort:     settings.SchuleOrt,
 	}
-	defer rows.Close()
-
-	studentMap := make(map[string]*OverdueStudent)
-	var studentOrder []string
-
-	for rows.Next() {
-		var id, vorname, nachname, strasse, hausnummer, plz, ort, titel, barcode string
-		var ausgeliehenAm, frist time.Time
-		var days float64 // EXTRACT returns numeric/float
-
-		if err := rows.Scan(&id, &vorname, &nachname, &strasse, &hausnummer, &plz, &ort,
-			&ausgeliehenAm, &frist, &days, &titel, &barcode); err != nil {
-			log.Printf("Scan error: %v", err)
-			continue
-		}
-
-		if _, exists := studentMap[id]; !exists {
-			studentMap[id] = &OverdueStudent{
-				ID: id, Vorname: vorname, Nachname: nachname,
-				Strasse: strasse, Hausnummer: hausnummer, PLZ: plz, Ort: ort,
-			}
-			studentOrder = append(studentOrder, id)
-		}
-
-		studentMap[id].Books = append(studentMap[id].Books, OverdueBook{
-			Titel:         titel,
-			BarcodeID:     barcode,
-			AusgeliehenAm: ausgeliehenAm,
-			Frist:         frist,
-			DaysOverdue:   int(days),
-		})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	students := make([]*OverdueStudent, 0, len(studentOrder))
-	for _, sID := range studentOrder {
-		students = append(students, studentMap[sID])
-	}
-	return students, nil
+	return mahnbriefVorlage{Betreff: betreff, Text: text, Absender: schule.Absenderzeile()}
 }
 
-// zeichneElternMahnbrief rendert eine DIN-5008-Mahnseite (für Fensterkuvert, Formblatt A)
-// für einen Schüler inkl. Adressfeld, Betreff, Fließtext und Tabelle der überfälligen Bücher.
-func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *OverdueStudent, betreff, textBody, absender string) {
-	pdf.AddPage()
-
-	// --- DIN 5008 Folding Marks ---
-	pdf.SetLineWidth(0.2)
-	pdf.SetDrawColor(150, 150, 150)
-	pdf.Line(0, 105, 4, 105)     // Falzmarke oben (Formblatt A)
-	pdf.Line(0, 148.5, 6, 148.5) // Lochmarke (Mitte)
-	pdf.Line(0, 210, 4, 210)     // Falzmarke unten (Formblatt A)
-
-	pdf.SetDrawColor(0, 0, 0) // Reset to black
-
-	// --- Address Window ---
-	// Start Y: 45mm, X: 20mm (Formblatt A)
-	pdf.SetFont("Arial", "U", 7)
-	pdf.SetXY(20, 45)
-	pdf.Cell(85, 5, tr(absender))
-
-	pdf.SetFont("Arial", "", 11)
-	pdf.SetXY(20, 52)
-
-	// Address block
-	pdf.CellFormat(85, 5, tr(fmt.Sprintf("Eltern von %s %s", student.Vorname, student.Nachname)), "", 1, "L", false, 0, "")
-	pdf.SetX(20)
-
-	// Anschrift aus der Schülerdatei (LUSD-Import bzw. Handpflege). Fehlt sie,
-	// steht das AUSDRÜCKLICH im Fensterfeld — eine leere Zeile sähe aus wie ein
-	// Druckfehler, so sieht die Sekretärin sofort, welcher Brief nicht per Post
-	// gehen kann und stattdessen über die Klassenleitung verteilt wird.
-	addrLine1 := strings.TrimSpace(student.Strasse + " " + student.Hausnummer)
-	addrLine2 := strings.TrimSpace(student.PLZ + " " + student.Ort)
-	if addrLine1 == "" && addrLine2 == "" {
-		addrLine1 = "(keine Adresse hinterlegt)"
+// mahnbriefAnschrift baut das Fensterfeld. Der Brief geht an die Eltern, ab 18 an die Person
+// selbst. Fehlt die Anschrift, steht das im Feld: Eine leere Zeile sähe aus wie ein
+// Druckfehler, so ist zu sehen, welcher Brief über das Kind oder die Klassenleitung geht.
+func mahnbriefAnschrift(e repository.MahnbriefEmpfaenger) []string {
+	name := fmt.Sprintf("Eltern von %s %s", e.Vorname, e.Nachname)
+	if e.Volljaehrig {
+		name = strings.TrimSpace(e.Vorname + " " + e.Nachname)
 	}
-	pdf.CellFormat(85, 5, tr(addrLine1), "", 1, "L", false, 0, "")
-	pdf.SetX(20)
-	pdf.CellFormat(85, 5, tr(addrLine2), "", 1, "L", false, 0, "")
-
-	// --- Date ---
-	pdf.SetFont("Arial", "", 11)
-	pdf.SetXY(150, 85)
-	pdf.Cell(40, 5, "Datum: "+schulzeit.Jetzt().Format(dateFormatDE))
-
-	// --- Subject ---
-	pdf.SetFont("Arial", "B", 12)
-	pdf.SetXY(20, 100)
-
-	// {{.Frist}} ist die ÄLTESTE Rückgabefrist der gemahnten Bücher. Bis zum
-	// 01.09.2026 stand hier schulzeit.Jetzt(): „Ursprüngliche Frist: <Druckdatum>" —
-	// direkt über einer Tabelle mit „34 Tage überfällig". Bei mehreren Büchern
-	// ist die früheste Frist die ehrliche eine Zahl; je Buch steht die eigene
-	// Überfälligkeit ohnehin in der Tabelle.
-	aeltesteFrist := schulzeit.Jetzt()
-	for _, b := range student.Books {
-		if b.Frist.Before(aeltesteFrist) {
-			aeltesteFrist = b.Frist
-		}
+	strasse := strings.TrimSpace(e.Strasse + " " + e.Hausnummer)
+	ort := strings.TrimSpace(e.PLZ + " " + e.Ort)
+	if strasse == "" && ort == "" {
+		strasse = "(keine Adresse hinterlegt)"
 	}
-	replacer := strings.NewReplacer(
-		"{{.Vorname}}", student.Vorname,
-		"{{.Nachname}}", student.Nachname,
-		"{{.Frist}}", aeltesteFrist.Format(dateFormatDE),
-	)
+	return []string{name, strasse, ort}
+}
 
-	// In der Betreffzeile hat die Bücher-Tabelle keinen Platz — ein dort
-	// eingetragenes {{.BuchListe}} fällt weg, statt wörtlich im Brief zu stehen.
-	parsedBetreff := strings.TrimSpace(strings.ReplaceAll(replacer.Replace(betreff), "{{.BuchListe}}", ""))
-	pdf.Cell(0, 5, tr(parsedBetreff))
-
-	// --- Body Text ---
-	pdf.SetFont("Arial", "", 11)
-	pdf.SetXY(20, 115)
-
-	parsedText := replacer.Replace(textBody)
-
-	// Die Tabelle ersetzt das ERSTE {{.BuchListe}}; alles danach wird gedruckt,
-	// nicht verschluckt. Vorher: strings.Split + parts[0]/parts[1] — stand der
-	// Platzhalter zweimal in der Vorlage, verschwand der Rest samt Grußformel.
-	// Weitere Vorkommen fallen weg (eine zweite Tabelle gibt es nicht).
-	parts := strings.SplitN(parsedText, "{{.BuchListe}}", 2)
-	if len(parts) > 1 {
-		parts[1] = strings.ReplaceAll(parts[1], "{{.BuchListe}}", "")
-	}
-
-	// Print text before book list
-	pdf.MultiCell(170, 6, tr(parts[0]), "", "L", false)
-	pdf.Ln(5)
-
-	// --- Overdue Books Table ---
+// zeichneMahnbriefBuecher setzt die Tabelle der Bücher über der Frist. Der Barcode steht als
+// Bild und als Nummer da, damit das Buch bei der Rückgabe vom Brief gescannt werden kann.
+func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher []repository.MahnbriefBuch) {
 	pdf.SetFont("Arial", "B", 10)
 	pdf.SetX(20)
 	pdf.SetFillColor(240, 240, 240)
@@ -230,89 +85,118 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 	pdf.CellFormat(30, 7, tr("Tage überfällig"), "1", 1, "R", true, 0, "")
 
 	pdf.SetFont("Arial", "", 10)
-	for _, b := range student.Books {
+	const rowH = 15.0
+	for _, b := range buecher {
 		startY := pdf.GetY()
-		rowH := 15.0
 		pdf.SetX(20)
+		pdf.CellFormat(75, rowH, tr(kuerzeAufZeichen(b.Titel, 38)), "1", 0, "L", false, 0, "")
 
-		tTitle := kuerzeAufZeichen(b.Titel, 38)
-		pdf.CellFormat(75, rowH, tr(tTitle), "1", 0, "L", false, 0, "")
-
-		// Barcode-Zelle: Rahmen + eingebettetes Barcode-Bild + darunter die lesbare Nummer,
-		// damit das Buch bei der Rückgabe direkt vom Brief gescannt werden kann.
 		bcX := pdf.GetX()
 		pdf.CellFormat(35, rowH, "", "1", 0, "", false, 0, "")
-		if b.BarcodeID != "" {
-			if pngBytes, err := GenerateBarcodePNG(b.BarcodeID, false, 300, 80); err == nil {
-				imgName := "bc_eltern_" + b.BarcodeID
+		if b.Barcode != "" {
+			if pngBytes, err := GenerateBarcodePNG(b.Barcode, false, 300, 80); err == nil {
+				imgName := "bc_eltern_" + b.Barcode
 				opt := gofpdf.ImageOptions{ImageType: "PNG"}
 				pdf.RegisterImageOptionsReader(imgName, opt, bytes.NewReader(pngBytes))
 				pdf.ImageOptions(imgName, bcX+2.5, startY+2, 30, 8, false, opt, 0, "")
 			}
 			pdf.SetFont("Courier", "", 7)
 			pdf.SetXY(bcX, startY+10.5)
-			pdf.CellFormat(35, 4, tr(b.BarcodeID), "", 0, "C", false, 0, "")
+			pdf.CellFormat(35, 4, tr(b.Barcode), "", 0, "C", false, 0, "")
 			pdf.SetFont("Arial", "", 10)
 		}
 
 		pdf.SetXY(bcX+35, startY)
-		pdf.CellFormat(30, rowH, b.AusgeliehenAm.Format(dateFormatDE), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(30, rowH, fmt.Sprintf("%d", b.DaysOverdue), "1", 1, "R", false, 0, "")
-	}
-
-	// Print text after book list (if any)
-	if len(parts) > 1 {
-		pdf.Ln(5)
-		pdf.SetX(20)
-		pdf.SetFont("Arial", "", 11)
-		pdf.MultiCell(170, 6, tr(strings.TrimSpace(parts[1])), "", "L", false)
+		pdf.CellFormat(30, rowH, b.AusgeliehenAm.In(schulzeit.Zone()).Format(dateFormatDE), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(30, rowH, fmt.Sprintf("%d", b.TageUeberfaellig), "1", 1, "R", false, 0, "")
 	}
 }
 
-// GetOverdueReportsPDFHandler generates a PDF containing overdue notices for all students,
-// formatted according to DIN 5008 standards for window envelopes.
-func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+// zeichneMahnbrief setzt eine Seite nach DIN 5008 (Form A, Fensterkuvert) für einen Schüler:
+// Fensterfeld, Betreff, Text und die Tabelle seiner Bücher über der Frist.
+func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e repository.MahnbriefEmpfaenger, v mahnbriefVorlage) {
+	pdf.AddPage()
 
-		// 1. Load Mail Template
-		betreff, textBody := s.loadMahnungTemplate(ctx)
+	// Falzmarken und Lochmarke.
+	pdf.SetLineWidth(0.2)
+	pdf.SetDrawColor(150, 150, 150)
+	pdf.Line(0, 105, 4, 105)
+	pdf.Line(0, 148.5, 6, 148.5)
+	pdf.Line(0, 210, 4, 210)
+	pdf.SetDrawColor(0, 0, 0)
 
-		// 2. Query Overdue Loans grouped by student
-		students, err := s.queryOverdueStudents(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if len(students) == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine überfälligen Ausleihen gefunden"))
-			return
-		}
+	// Fensterfeld: Absenderzeile klein darüber, Anschrift ab 52 mm.
+	pdf.SetFont("Arial", "U", 7)
+	pdf.SetXY(20, 45)
+	pdf.Cell(85, 5, tr(v.Absender))
+	pdf.SetFont("Arial", "", 11)
+	pdf.SetXY(20, 52)
+	for _, zeile := range mahnbriefAnschrift(e) {
+		pdf.SetX(20)
+		pdf.CellFormat(85, 5, tr(zeile), "", 1, "L", false, 0, "")
+	}
 
-		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-		settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
-		schule := pdf.SchuleInfo{
-			Name:    settings.SchuleName,
-			Strasse: settings.SchuleStrasse,
-			PLZ:     settings.SchulePLZ,
-			Ort:     settings.SchuleOrt,
-		}
-		absender := schule.Absenderzeile()
+	// Die Klasse steht neben dem Fensterfeld: Ein Brief ohne Anschrift geht über das Kind
+	// mit, und der Stapel wird nach Klassen verteilt.
+	if e.Klasse != "" {
+		pdf.SetXY(150, 79)
+		pdf.Cell(40, 5, tr("Klasse: "+e.Klasse))
+	}
+	pdf.SetXY(150, 85)
+	pdf.Cell(40, 5, "Datum: "+schulzeit.Jetzt().Format(dateFormatDE))
 
-		// 3. Generate PDF Document
-		doc := gofpdf.New("P", "mm", "A4", "")
-		tr := pdfzeichen.Uebersetzer(doc.UnicodeTranslatorFromDescriptor("")) // To correctly render German umlauts in standard fonts
-
-		for _, student := range students {
-			zeichneElternMahnbrief(doc, tr, student, betreff, textBody, absender)
-		}
-
-		filename := fmt.Sprintf("mahnlauf_%s.pdf", schulzeit.Jetzt().Format(dateFormatISO))
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", filename))
-
-		if err := doc.Output(w); err != nil {
-			log.Printf("Error writing PDF output: %v", err)
+	// {{.Frist}} ist die älteste Rückgabefrist der gemahnten Bücher; je Buch steht die
+	// eigene Überschreitung in der Tabelle.
+	aeltesteFrist := schulzeit.Jetzt()
+	for _, b := range e.Buecher {
+		if b.Frist.Before(aeltesteFrist) {
+			aeltesteFrist = b.Frist
 		}
 	}
+	replacer := strings.NewReplacer(
+		"{{.Vorname}}", e.Vorname,
+		"{{.Nachname}}", e.Nachname,
+		"{{.Frist}}", aeltesteFrist.In(schulzeit.Zone()).Format(dateFormatDE),
+	)
+
+	// In der Betreffzeile hat die Tabelle keinen Platz; ein dort eingetragenes
+	// {{.BuchListe}} fällt weg, statt wörtlich im Brief zu stehen.
+	pdf.SetFont("Arial", "B", 12)
+	pdf.SetXY(20, 100)
+	pdf.Cell(0, 5, tr(strings.TrimSpace(strings.ReplaceAll(replacer.Replace(v.Betreff), "{{.BuchListe}}", ""))))
+
+	text := v.Text
+	if e.Volljaehrig {
+		text = mahnbriefTextVolljaehrig
+	}
+	// Die Tabelle ersetzt das erste {{.BuchListe}}; der Text danach wird gedruckt, weitere
+	// Vorkommen fallen weg.
+	teile := strings.SplitN(replacer.Replace(text), "{{.BuchListe}}", 2)
+	pdf.SetFont("Arial", "", 11)
+	pdf.SetXY(20, 115)
+	pdf.MultiCell(170, 6, tr(teile[0]), "", "L", false)
+	pdf.Ln(5)
+
+	zeichneMahnbriefBuecher(pdf, tr, e.Buecher)
+
+	if len(teile) > 1 {
+		pdf.Ln(5)
+		pdf.SetX(20)
+		pdf.SetFont("Arial", "", 11)
+		pdf.MultiCell(170, 6, tr(strings.TrimSpace(strings.ReplaceAll(teile[1], "{{.BuchListe}}", ""))), "", "L", false)
+	}
+}
+
+// erzeugeMahnbriefe setzt je Schüler einen Brief in ein PDF.
+func erzeugeMahnbriefe(briefe []repository.MahnbriefEmpfaenger, v mahnbriefVorlage) ([]byte, error) {
+	doc := gofpdf.New("P", "mm", "A4", "")
+	tr := pdfzeichen.Uebersetzer(doc.UnicodeTranslatorFromDescriptor(""))
+	for _, e := range briefe {
+		zeichneMahnbrief(doc, tr, e, v)
+	}
+	var buf bytes.Buffer
+	if err := doc.Output(&buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

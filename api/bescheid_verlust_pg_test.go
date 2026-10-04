@@ -97,12 +97,24 @@ func TestBescheidVorschlag_NenntUeberfaelligeBuecherOhneForderung(t *testing.T) 
 		t.Fatal(err)
 	}
 
+	// Zu diesem Buch sind zwei Mahnbriefe gedruckt. 22:30 Uhr UTC ist in Berlin schon der
+	// nächste Kalendertag.
+	if _, err := pool.Exec(context.Background(), `
+		UPDATE ausleihen SET mahnstufe = 2, letztes_mahndatum = '2026-09-25 22:30:00+00' WHERE id = $1`,
+		aUeberfaellig); err != nil {
+		t.Fatal(err)
+	}
+
 	v := bescheidVorschlagUeberHandler(t, srv, pool, sid)
 	if len(v.Ausleihen) != 1 || v.Ausleihen[0].AusleiheID != aUeberfaellig {
 		t.Fatalf("Ausleihen = %+v, erwartet genau die überfällige ohne Forderung", v.Ausleihen)
 	}
 	if v.Ausleihen[0].Topf != repository.MittelLand || v.Ausleihen[0].Titel != "Physik 8" || v.Ausleihen[0].FaelligSeit == "" {
 		t.Errorf("Ausleihe unvollständig: %+v", v.Ausleihen[0])
+	}
+	if v.Ausleihen[0].Mahnstufe != 2 || v.Ausleihen[0].LetztesMahndatum != "2026-09-26" {
+		t.Errorf("Mahnungen zum Buch: bekam %d und %q, erwartet 2 und 2026-09-26",
+			v.Ausleihen[0].Mahnstufe, v.Ausleihen[0].LetztesMahndatum)
 	}
 	if len(v.Positionen) != 1 {
 		t.Errorf("Positionen = %+v, erwartet die eine bestehende Forderung", v.Positionen)

@@ -4,6 +4,7 @@
 import { apiFetch } from '../apiFetch.js';
 import { useMahnwesenPdf } from './mahnwesenPdf.svelte.js';
 import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
+import { mahnungenJeKind } from '../mahnungen.js';
 import { SvelteSet } from 'svelte/reactivity';
 
 /**
@@ -20,7 +21,7 @@ function maxTageUeberfaellig(medien) {
 }
 
 /**
- * Mahnstufe eines Schülers nach Überfälligkeit. (Die frühere Sonderstufe
+ * Reiter eines Schülers nach Überfälligkeit. (Die frühere Sonderstufe
  * 'Lehrerkollegium' für klasse='lehrer' ist mit Migration 072 gefallen —
  * Lehrkräfte sind keine Schülerzeilen mehr.)
  * @param {number} maxTage
@@ -79,7 +80,13 @@ function createMahnwesenStore() {
 			for (const s of k.schueler) {
 				const maxTage = maxTageUeberfaellig(s.medien);
 				const mahnstufe = berechneMahnstufe(maxTage);
-				list.push({ ...s, maxTage, mahnstufe, lehrer_email: k.lehrer_email });
+				list.push({
+					...s,
+					maxTage,
+					mahnstufe,
+					...mahnungenJeKind(s.medien),
+					lehrer_email: k.lehrer_email
+				});
 			}
 		}
 		return list;
@@ -224,9 +231,6 @@ function createMahnwesenStore() {
 		get pdfLoading() {
 			return pdfStore.pdfLoading;
 		},
-		get elternPdfLoading() {
-			return pdfStore.elternPdfLoading;
-		},
 		get klassePdfLoading() {
 			return pdfStore.klassePdfLoading;
 		},
@@ -235,7 +239,6 @@ function createMahnwesenStore() {
 		},
 		printSelectedMahnungen: printSelectedMahnungenWrapper,
 		downloadPDF: pdfStore.downloadPDF,
-		downloadElternPDF: pdfStore.downloadElternPDF,
 		downloadKlassePDF: pdfStore.downloadKlassePDF
 	};
 }

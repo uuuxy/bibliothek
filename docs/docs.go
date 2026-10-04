@@ -3819,6 +3819,13 @@ const docTemplate = `{
                 "isbn": {
                     "type": "string"
                 },
+                "letztes_mahndatum": {
+                    "type": "string"
+                },
+                "mahnstufe": {
+                    "description": "Mahnstufe und LetztesMahndatum (JJJJ-MM-TT, leer ohne Datum): wie oft und wann\nzuletzt ein Mahnbrief zu diesem Buch gedruckt wurde.",
+                    "type": "integer"
+                },
                 "titel": {
                     "type": "string"
                 },

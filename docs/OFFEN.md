@@ -96,17 +96,18 @@ Datenbank und der Littera-Übernahme (7.2).
    seinen Strichcode scannen; die Maske fragt „Vorhandenen Titel öffnen?".
 6. **Ein Termin für die Abnahmen** mit dem Sekretariat, sobald der Schulserver steht (7.7). Ein
    LUSD-Import mit echten Schülern kommt erst nach der Littera-Übernahme (7.2).
+7. **Das Mahnwesen ansehen** (gebaut am 04.10.2026): Kinder anhaken, „Mahnbriefe drucken". Es
+   kommt je Kind der Brief an die Eltern mit Anschrift und Klasse; die Liste zeigt danach
+   „1× gemahnt, zuletzt …". Zu entscheiden ist, ob die zwei Listen im Druck-Menü bleiben (4.30).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **4.30** (Mahnstufe, die zwei Papiere „Mahnbrief" und Ehemalige im Mahnwesen): entschieden
-   am 04.10.2026, gebaut wird in Stufen.
-2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
+1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
+2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
-4. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
-5. Nach der Antwort zu 8.3: **5.4**.
-6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+3. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
+4. Nach der Antwort zu 8.3: **5.4**.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
@@ -292,48 +293,24 @@ nicht gibt ([arc42/09](arc42/09-architekturentscheidungen.md), A2). Entschieden 
 getrennt von der Sperre zu entscheiden. Vor einer Empfehlung zu klären: wie oft der Mailserver
 der Schule ausfällt, und wie Littera und andere Programme es halten.
 
-### 4.30 Mahnstufe und die zwei Papiere „Mahnbrief"
+### 4.30 Was das Mahnwesen neben dem Mahnbrief druckt
 
-Gefunden am 04.10.2026 bei der Entscheidung zur Ansicht „Jahrgang".
+Seit dem 04.10.2026 kommt aus der Auswahl ein Papier: der Mahnbrief an die Eltern, ab 18 an die
+Person selbst. Daneben drucken drei Wege weiter je Kind ein Blatt in Du-Form, keiner zählt:
 
-- **Die Mahnstufe hat keinen Leser.** `ZaehleMahnungTx` zählt sie beim Druck aus der Auswahl,
-  Verlängerung und neue Frist setzen sie zurück, die Littera-Übernahme schreibt sie. Gelesen
-  wird sie nirgends: keine Anzeige in Liste, Akte oder auf dem Blatt, keine Gebühr, keine
-  Sperre. `letztes_mahndatum` liest allein die Regel „höchstens einmal am Tag". Die Spalten
-  „1. Erinnerung" und „Mahnung" der Liste rechnet die Oberfläche aus den Tagen über der Frist.
-- **Zwei Papiere heißen „Mahnbrief".** Der Knopf „Mahnbriefe" druckt für alle überfälligen
-  Schüler einen Brief an die Eltern mit Anschrift und dem Text der Vorlage
-  (`GET /api/reports/overdue-pdf`); er zählt nichts und lässt Ehemalige aus, seit dem ersten
-  Stand vom 11.06.2026 und ohne Begründung im Verlauf. „Mahnbriefe drucken" nach dem Anhaken
-  druckt je Kind ein Blatt „Mahnung – Schulbibliothek" in Du-Form ohne Anschrift
-  (`POST /api/admin/mahnungen/bulk-print`) und zählt.
-- Die Unterlagen zum Verfahren nennen vor dem Bescheid nur den mehrmaligen Hinweis, keine
-  Stufen und keine Gebühr. Littera zählt je Leser nach bestätigtem Druck, steuert damit den
-  Abstand zur nächsten Mahnung und druckt die Stufe auf den Brief.
+- „Mahnliste einer Klasse" im Druck-Menü (`GET /api/print/mahnung/klasse/{klasse}`, Überschrift
+  „Erinnerung: Rückgabe von Bibliotheksbüchern", `pdf.GenerateMahnliste`),
+- „Übersichtsliste" im Druck-Menü (`GET /api/mahnwesen/pdf`, Überschrift „Mahnung –
+  Schulbibliothek", `generateMahnPDF`),
+- der Anhang der Mail an die Klassenleitung („Alle anmahnen"), dasselbe Blatt wie die
+  Übersichtsliste.
 
-- **Die Briefe an die Eltern kennen keine Auswahl** (am Code gelesen am 04.10.2026): Der Knopf
-  druckt für jeden Schüler mit einem überfälligen Buch, auch wenn es seit einem Tag überfällig
-  ist (`queryOverdueStudents` in `api/reports_pdf.go`).
-- Littera fragt nach dem Druck, ob gezählt werden soll („nur wenn Probleme mit dem Drucker
-  aufgetreten sind", mit Nein), druckt mit „Mahnbriefe nachdrucken" den letzten Lauf ohne
-  Zählen, nennt die Stufe im Druckbild (1 = erste, 2 = zweite oder weitere Mahnung) und zeigt
-  je Leser eine Mahnhistorie (Littera-Handbuch, „Mahnwesen").
+**Zu entscheiden:** Bleiben die zwei Listen im Druck-Menü? Der Anhang der Mail hängt am Mahnlauf
+und ist nicht gemeint.
 
-**Entschieden am 04.10.2026,** jeweils nach der Empfehlung:
-
-1. Die Zahl wird gezeigt, nicht gestrichen: Mahnliste und Bescheid-Dialog nennen je Kind, wie
-   oft und wann zuletzt erinnert wurde, statt des Worts, das die Liste heute aus den Tagen
-   rechnet. Gezählt werden die zwei Papiere, die Mail an die Klassenleitung wie bisher nicht.
-2. Beide Papiere gehen von der Auswahl aus: Kinder anhaken, dann das Papier wählen. Damit
-   läuft das Zählen durch eine Tür.
-3. Ein Name je Papier: „Erinnerung" für das Blatt an das Kind, „Elternbrief" für den Brief
-   mit Anschrift.
-4. Ehemalige bekommen den Elternbrief.
-
-Gebaut wird in Stufen, jede mit einem Test, der am alten Code rot ist: zuerst die Tür für beide
-Papiere mit dem Zählen, dann die Oberfläche. Vor der Oberfläche steht eine Beschreibung, was wo
-stehen wird. Gebaut sind seit dem 04.10.2026 der Nachdruck (ein zweiter Druck am selben Tag
-liefert das Blatt und zählt nicht) und die Gruppe der Ehemaligen.
+Gelesen am 04.10.2026, nicht nachgestellt: Die Ersatzforderung (`pdf/rechnung.go`) und der Brief
+zum Schadensfall (`pdf/schadensfall.go`) sprechen immer die Erziehungsberechtigten an. Die Regel
+„ab 18 an die Person selbst" haben nur Bescheid und Mahnbrief.
 
 ---
 

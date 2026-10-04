@@ -32,18 +32,23 @@ func TestQueryUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 	repo := NewMahnwesenRepository(mock)
 	frist := time.Date(2026, 6, 20, 12, 0, 0, 0, time.UTC)
 
+	// 22:30 Uhr UTC ist in Berlin schon der nächste Kalendertag.
+	gemahnt := time.Date(2026, 9, 25, 22, 30, 0, 0, time.UTC)
+	var ohneDatum *time.Time
+
 	rows := pgxmock.NewRows([]string{
 		"id", "s_id", "name", "klasse", "ist_abgaenger",
 		"titel", "autor", "isbn", "cover_url", "barcode",
-		"rueckgabe_frist", "tage_ueberfaellig",
+		"rueckgabe_frist", "tage_ueberfaellig", "mahnstufe", "letztes_mahndatum",
 	}).
 		// Klasse 7A: zwei VERSCHIEDENE Schülerinnen mit identischem Namen,
 		// deren Ausleihen nach Frist verzahnt sortiert sind.
-		AddRow("a1", "s1", "Anna Müller", "7A", false, "Faust", "Goethe", "978-1", "", "B-1", frist, 17).
-		AddRow("a2", "s2", "Anna Müller", "7A", false, "Die Räuber", "Schiller", "978-2", "", "B-2", frist.AddDate(0, 0, 1), 16).
-		AddRow("a3", "s1", "Anna Müller", "7A", false, "Woyzeck", "Büchner", "978-3", "", "B-3", frist.AddDate(0, 0, 2), 15).
-		// Zweite Klasse — löst die Reallokation des klassen-Slices aus.
-		AddRow("a4", "s3", "Ben Yilmaz", "8B", false, "Effi Briest", "Fontane", "978-4", "", "B-4", frist, 17)
+		AddRow("a1", "s1", "Anna Müller", "7A", false, "Faust", "Goethe", "978-1", "", "B-1", frist, 17, 2, &gemahnt).
+		AddRow("a2", "s2", "Anna Müller", "7A", false, "Die Räuber", "Schiller", "978-2", "", "B-2", frist.AddDate(0, 0, 1), 16, 0, ohneDatum).
+		AddRow("a3", "s1", "Anna Müller", "7A", false, "Woyzeck", "Büchner", "978-3", "", "B-3", frist.AddDate(0, 0, 2), 15, 0, ohneDatum).
+		// Zweite Klasse — löst die Reallokation des klassen-Slices aus. Die Mahnstufe ohne
+		// Datum ist der Fall einer aus Littera übernommenen Ausleihe.
+		AddRow("a4", "s3", "Ben Yilmaz", "8B", false, "Effi Briest", "Fontane", "978-4", "", "B-4", frist, 17, 1, ohneDatum)
 
 	mock.ExpectQuery(`SELECT a\.id, s\.id, s\.vorname \|\| ' ' \|\| s\.nachname, s\.klasse`).
 		WillReturnRows(rows)
@@ -92,6 +97,23 @@ func TestQueryUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 		t.Errorf("Medium falsch gemappt: %+v", m)
 	}
 
+	// Wie oft und wann zuletzt gemahnt wurde, steht je Buch in der Liste; das Datum ist
+	// der Kalendertag der Schule.
+	if m.Mahnstufe != 1 || m.LetztesMahndatum != "" {
+		t.Errorf("Mahnstufe ohne Datum: bekam %d und %q, erwartet 1 und kein Datum", m.Mahnstufe, m.LetztesMahndatum)
+	}
+	var faust UeberfaelligesMedium
+	for _, sch := range k7a.Schueler {
+		for _, med := range sch.Medien {
+			if med.AusleiheID == "a1" {
+				faust = med
+			}
+		}
+	}
+	if faust.Mahnstufe != 2 || faust.LetztesMahndatum != "2026-09-26" {
+		t.Errorf("zweimal gemahntes Buch: bekam %d und %q, erwartet 2 und 2026-09-26", faust.Mahnstufe, faust.LetztesMahndatum)
+	}
+
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Erwartungen: %v", err)
 	}
@@ -111,7 +133,7 @@ func TestQueryUeberfaelligeNachKlasse_MitKlassenfilter(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{
 			"id", "s_id", "name", "klasse", "ist_abgaenger",
 			"titel", "autor", "isbn", "cover_url", "barcode",
-			"rueckgabe_frist", "tage_ueberfaellig",
+			"rueckgabe_frist", "tage_ueberfaellig", "mahnstufe", "letztes_mahndatum",
 		}))
 
 	klassen, err := repo.QueryUeberfaelligeNachKlasse(t.Context(), "7A")

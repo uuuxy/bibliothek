@@ -7,10 +7,11 @@
 
      Jede Zeile hat einen `key` (bescheidFormular.zeilenAus): die Forderung oder, seit
      Stufe 2, die Ausleihe eines überfälligen Buchs ohne Forderung. Letztere sagt, seit
-     wann es fällig ist und dass der Brief seinen Verlust bucht. -->
+     wann es fällig ist, wie oft dazu gemahnt wurde und dass der Brief seinen Verlust bucht. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import { gemahntSatz } from '../../mahnungen.js';
 
 	/** @param {string} iso */
 	const datum = (iso) => new Date(iso).toLocaleDateString('de-DE');
@@ -59,7 +60,10 @@
 						</div>
 						{#if p.quelle === 'ausleihe'}
 							<div class="text-xs text-on-surface-variant">
-								Fällig seit {datum(p.faellig_seit)} · wird mit dem Brief als Verlust gebucht
+								Fällig seit {datum(p.faellig_seit)} · {gemahntSatz(
+									p.mahnstufe,
+									p.letztes_mahndatum
+								)} · wird mit dem Brief als Verlust gebucht
 							</div>
 						{/if}
 						{#if p.topf !== 'land'}

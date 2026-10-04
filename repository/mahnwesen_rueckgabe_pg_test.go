@@ -5,17 +5,11 @@ import (
 	"testing"
 )
 
-// TestQueryUeberfaellige_ZurueckgegebeneRausfiltern sichert #4 ab: Gibt ein Schüler
-// sein Buch zwischen dem Aufbereiten der Mahnliste und dem Druck zurück, darf die
-// bereits zurückgegebene Ausleihe nicht mehr in der Mahnung erscheinen (und ihre
-// Mahnstufe nicht steigen). Die Query muss rueckgabe_am IS NULL prüfen.
-//
-// Geprüft wird die Tx-Variante, und zwar seit dem 11.08.2026 aus einem Grund: Vorher
-// stand hier die Fassung OHNE Transaktion — die der Bulk-Mahnlauf gar nicht aufruft
-// (api/mahnwesen_bulk.go nimmt ...Tx, weil sie NACH dem Mahnstufen-UPDATE in derselben
-// Transaktion lesen muss). Der Test war grün für Code, den die Anwendung nie erreicht;
-// die ungenutzte Fassung ist entfallen. Dieselbe Falle wie beim LUSD-Ghost-Block.
-func TestQueryUeberfaellige_ZurueckgegebeneRausfiltern(t *testing.T) {
+// TestMahnbriefe_ZurueckgegebeneRausfiltern: Gibt ein Schüler sein Buch zwischen dem Laden
+// der Mahnliste und dem Druck zurück, steht die Ausleihe nicht mehr auf dem Mahnbrief (und
+// ihre Mahnstufe steigt nicht). Geprüft wird die Abfrage, die der Druck aus der Auswahl in
+// seiner Transaktion ruft (api/mahnwesen_bulk.go).
+func TestMahnbriefe_ZurueckgegebeneRausfiltern(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -41,20 +35,18 @@ func TestQueryUeberfaellige_ZurueckgegebeneRausfiltern(t *testing.T) {
 		t.Fatalf("Begin: %v", err)
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck // Rollback nach dem Lesen ist hier der Normalfall
-	klassen, err := repo.QueryUeberfaelligeByAusleiheIDsTx(ctx, tx, []string{loanOffen, loanZurueck})
+	briefe, err := repo.MahnbriefeTx(ctx, tx, []string{loanOffen, loanZurueck})
 	if err != nil {
-		t.Fatalf("QueryUeberfaelligeByAusleiheIDsTx: %v", err)
+		t.Fatalf("MahnbriefeTx: %v", err)
 	}
 
 	// Nur die noch offene Ausleihe darf auftauchen.
-	var medien int
-	for _, k := range klassen {
-		for _, s := range k.Schueler {
-			medien += len(s.Medien)
-		}
+	var buecher int
+	for _, b := range briefe {
+		buecher += len(b.Buecher)
 	}
-	if medien != 1 {
-		t.Errorf("erwartet 1 gemahntes Medium (nur die offene Ausleihe), waren %d — "+
-			"eine zurückgegebene Ausleihe landete in der Mahnung", medien)
+	if len(briefe) != 1 || buecher != 1 {
+		t.Errorf("erwartet 1 Brief mit 1 Buch (nur die offene Ausleihe), waren %d Briefe mit %d Büchern — "+
+			"eine zurückgegebene Ausleihe landete in der Mahnung", len(briefe), buecher)
 	}
 }

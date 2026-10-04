@@ -126,7 +126,7 @@ describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 			method: 'POST',
 			body: JSON.stringify({ ausleih_ids: ['a1', 'a2', 'a3'] })
 		});
-		expect(clicks).toEqual([{ href: 'blob:mock-url', download: `Mahnliste_Bulk_${heute()}.pdf` }]);
+		expect(clicks).toEqual([{ href: 'blob:mock-url', download: `mahnbriefe_${heute()}.pdf` }]);
 		expect(selectedIds.size).toBe(0);
 		expect(refreshData).toHaveBeenCalledTimes(1);
 		expect(store.pdfLoading).toBe(false);
@@ -162,38 +162,6 @@ describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 	});
 });
 
-describe('useMahnwesenPdf.downloadElternPDF', () => {
-	it('lädt die Eltern-Mahnbriefe herunter', async () => {
-		apiFetchMock.mockResolvedValueOnce(mockPdfResponse());
-		const store = useMahnwesenPdf();
-
-		await store.downloadElternPDF();
-
-		expect(apiFetch).toHaveBeenCalledWith('/api/reports/overdue-pdf');
-		expect(clicks).toEqual([{ href: 'blob:mock-url', download: `mahnbriefe_${heute()}.pdf` }]);
-		expect(store.globalErrorToast).toBeNull();
-		expect(store.elternPdfLoading).toBe(false);
-	});
-
-	it('zeigt Fehler als Toast und blendet ihn nach 4s wieder aus', async () => {
-		vi.useFakeTimers();
-		try {
-			apiFetchMock.mockResolvedValueOnce(mockErrorResponse('Keine Adressdaten'));
-			const store = useMahnwesenPdf();
-
-			await store.downloadElternPDF();
-
-			expect(store.globalErrorToast).toContain('Keine Adressdaten');
-			expect(store.elternPdfLoading).toBe(false);
-
-			await vi.advanceTimersByTimeAsync(4000);
-			expect(store.globalErrorToast).toBeNull();
-		} finally {
-			vi.useRealTimers();
-		}
-	});
-});
-
 describe('useMahnwesenPdf.downloadKlassePDF', () => {
 	it('tut nichts ohne ausgewählte Klasse', async () => {
 		const store = useMahnwesenPdf();
@@ -220,5 +188,23 @@ describe('useMahnwesenPdf.downloadKlassePDF', () => {
 
 		expect(store.globalErrorToast).toContain('Keine überfälligen Ausleihen gefunden');
 		expect(store.klassePdfLoading).toBe(false);
+	});
+
+	it('zeigt den Fehlertext des Servers und blendet ihn nach 4 s wieder aus', async () => {
+		vi.useFakeTimers();
+		try {
+			apiFetchMock.mockResolvedValueOnce(
+				mockErrorResponse('keine überfälligen Ausleihen für Klasse 4a')
+			);
+			const store = useMahnwesenPdf();
+
+			await store.downloadKlassePDF('4a');
+
+			expect(store.globalErrorToast).toContain('für Klasse 4a');
+			await vi.advanceTimersByTimeAsync(4000);
+			expect(store.globalErrorToast).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

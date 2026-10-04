@@ -66,7 +66,8 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
 		       coalesce(e.barcode_id,''),
 		       a.rueckgabe_frist,
-		       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig
+		       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig,
+		       a.mahnstufe, a.letztes_mahndatum
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t    ON e.titel_id = t.id
@@ -100,10 +101,11 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 		var ehemalig bool
 		var titel, autor, isbn, coverURL, exBarcode string
 		var frist time.Time
-		var tage int
+		var tage, mahnstufe int
+		var mahndatum *time.Time
 		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse, &ehemalig,
 			&titel, &autor, &isbn, &coverURL, &exBarcode,
-			&frist, &tage); err != nil {
+			&frist, &tage, &mahnstufe, &mahndatum); err != nil {
 			return nil, err
 		}
 
@@ -116,6 +118,8 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 			CoverURL:         coverURL,
 			FaelligAm:        frist.Format("02.01.2006"),
 			TageUeberfaellig: tage,
+			Mahnstufe:        mahnstufe,
+			LetztesMahndatum: mahndatumText(mahndatum),
 		})
 	}
 	if err := rows.Err(); err != nil {
@@ -170,18 +174,42 @@ func (repo *MahnwesenRepository) reichereLehrerEmails(ctx context.Context, klass
 	}
 }
 
-// sqlUeberfaelligeByAusleiheIDs sammelt die PDF-Daten zu konkreten Ausleih-IDs.
-// rueckgabe_am IS NULL: bereits zurückgegebene Bücher gehören nicht in eine Mahnung.
-// rueckgabe_frist < CURRENT_TIMESTAMP: ein Buch, dessen Frist noch läuft, ebenso wenig.
-// s.deleted_at IS NULL: für einen in den Papierkorb gelöschten Schüler dürfen keine
-// Mahn-Daten mehr verarbeitet werden (DSGVO — sonst gingen "Zombie-Mahnungen" an den
-// ehemaligen Klassenlehrer).
-const sqlUeberfaelligeByAusleiheIDs = `
-	SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
-	       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
-	       coalesce(e.barcode_id,''),
-	       a.rueckgabe_frist,
-	       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int) AS tage_ueberfaellig
+// MahnbriefBuch ist ein Buch auf dem Mahnbrief.
+type MahnbriefBuch struct {
+	Titel            string
+	Barcode          string
+	AusgeliehenAm    time.Time
+	Frist            time.Time
+	TageUeberfaellig int
+}
+
+// MahnbriefEmpfaenger ist ein Schüler mit seinen Büchern über der Frist und dem, was der
+// Brief für das Fensterkuvert braucht. Klasse ist bei einem Ehemaligen leer: Der Name
+// gehört nach der Versetzung einem anderen Jahrgang.
+type MahnbriefEmpfaenger struct {
+	SchuelerID  string
+	Vorname     string
+	Nachname    string
+	Klasse      string
+	Strasse     string
+	Hausnummer  string
+	PLZ         string
+	Ort         string
+	Volljaehrig bool
+	Buecher     []MahnbriefBuch
+}
+
+// sqlMahnbriefe liest zu den gewählten Ausleihen, was auf dem Mahnbrief steht: je Schüler
+// Anschrift und die offenen Bücher mit abgelaufener Frist. Die Sicht schueler lässt das
+// Kollegium aus, ein Schüler im Papierkorb bekommt keinen Brief. Die Briefe einer Klasse
+// liegen beieinander, die der Ehemaligen am Ende.
+const sqlMahnbriefe = `
+	SELECT s.id, s.vorname, s.nachname,
+	       CASE WHEN s.ist_abgaenger THEN '' ELSE coalesce(s.klasse, '') END,
+	       coalesce(s.strasse, ''), coalesce(s.hausnummer, ''), coalesce(s.plz, ''), coalesce(s.ort, ''),
+	       ` + sqlVolljaehrig + `,
+	       t.titel, coalesce(e.barcode_id, ''), a.ausgeliehen_am, a.rueckgabe_frist,
+	       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int)
 	FROM ausleihen a
 	JOIN buecher_exemplare e ON a.exemplar_id = e.id
 	JOIN buecher_titel t    ON e.titel_id = t.id
@@ -189,47 +217,14 @@ const sqlUeberfaelligeByAusleiheIDs = `
 	WHERE a.id = ANY($1) AND a.rueckgabe_am IS NULL
 	  AND a.rueckgabe_frist < CURRENT_TIMESTAMP
 	  AND s.deleted_at IS NULL
-	ORDER BY s.klasse, s.nachname, s.vorname, a.rueckgabe_frist
+	ORDER BY s.ist_abgaenger, s.klasse, s.nachname, s.vorname, s.id, a.rueckgabe_frist
 `
 
-// scanUeberfaelligeKlassen liest die Spaltenreihenfolge von sqlUeberfaelligeByAusleiheIDs
-// in die gruppierte Klassen→Schüler→Medien-Struktur.
-func scanUeberfaelligeKlassen(rows pgx.Rows) ([]MahnwesenKlasse, error) {
-	g := newKlassenGrouper()
-	for rows.Next() {
-		var ausleiheID, schuelerID, name, klasse string
-		var titel, autor, isbn, coverURL, exBarcode string
-		var frist time.Time
-		var tage int
-		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
-			&titel, &autor, &isbn, &coverURL, &exBarcode,
-			&frist, &tage); err != nil {
-			return nil, err
-		}
-		// Das Blatt nennt die Klasse, die das Kind zuletzt trug; gruppiert wird nur für
-		// die Reihenfolge der Seiten.
-		g.add(klasse, false, schuelerID, name, UeberfaelligesMedium{
-			AusleiheID:       ausleiheID,
-			Titel:            titel,
-			Autor:            autor,
-			ISBN:             isbn,
-			Barcode:          exBarcode,
-			CoverURL:         coverURL,
-			FaelligAm:        frist.Format("02.01.2006"),
-			TageUeberfaellig: tage,
-		})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return g.klassen, nil
-}
-
 // ZaehleMahnungTx erhöht die Mahnstufe der genannten Ausleihen und liefert, wie viele es traf.
-// Gezählt wird, was auf dem Blatt steht (sqlUeberfaelligeByAusleiheIDs): das offene Buch eines
-// Schülers außerhalb des Papierkorbs, dessen Frist abgelaufen ist. Eine Ausleihe steigt
-// höchstens einmal je Kalendertag der Schule, deshalb stehen beide Seiten des Vergleichs in
-// der Schulzeitzone. Das UPDATE sperrt die getroffenen Zeilen bis zum Commit.
+// Gezählt wird, was auf dem Mahnbrief steht (sqlMahnbriefe): das offene Buch eines Schülers
+// außerhalb des Papierkorbs, dessen Frist abgelaufen ist. Eine Ausleihe steigt höchstens
+// einmal je Kalendertag der Schule, deshalb stehen beide Seiten des Vergleichs in der
+// Schulzeitzone. Das UPDATE sperrt die getroffenen Zeilen bis zum Commit.
 func (repo *MahnwesenRepository) ZaehleMahnungTx(ctx context.Context, tx pgx.Tx, ids []string) (int64, error) {
 	tag, err := tx.Exec(ctx, `
 		UPDATE ausleihen a
@@ -250,19 +245,37 @@ func (repo *MahnwesenRepository) ZaehleMahnungTx(ctx context.Context, tx pgx.Tx,
 	return tag.RowsAffected(), nil
 }
 
-// QueryUeberfaelligeByAusleiheIDsTx liest dieselben Daten INNERHALB einer Transaktion.
-// Der Bulk-Mahnlauf ruft dies NACH dem Mahnstufen-UPDATE in derselben Tx auf, damit das
-// PDF exakt den festgeschriebenen Zustand widerspiegelt (Papier == DB). Läge das Auslesen
-// vor der Tx, könnte ein zwischenzeitlich zurückgegebenes Buch aufs Papier geraten, ohne
-// dass seine Mahnstufe steigt (TOCTOU).
-func (repo *MahnwesenRepository) QueryUeberfaelligeByAusleiheIDsTx(ctx context.Context, tx pgx.Tx, ids []string) ([]MahnwesenKlasse, error) {
+// MahnbriefeTx liest die Briefe zu den genannten Ausleihen in der Transaktion, die vorher
+// gezählt hat: Auf dem Blatt steht dann derselbe Stand, der gezählt wurde, auch wenn ein
+// Buch zwischen dem Laden der Liste und dem Druck zurückkam.
+func (repo *MahnwesenRepository) MahnbriefeTx(ctx context.Context, tx pgx.Tx, ids []string) ([]MahnbriefEmpfaenger, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	rows, err := tx.Query(ctx, sqlUeberfaelligeByAusleiheIDs, ids)
+	rows, err := tx.Query(ctx, sqlMahnbriefe, ids)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	return scanUeberfaelligeKlassen(rows)
+
+	var briefe []MahnbriefEmpfaenger
+	for rows.Next() {
+		var e MahnbriefEmpfaenger
+		var b MahnbriefBuch
+		if err := rows.Scan(&e.SchuelerID, &e.Vorname, &e.Nachname, &e.Klasse,
+			&e.Strasse, &e.Hausnummer, &e.PLZ, &e.Ort, &e.Volljaehrig,
+			&b.Titel, &b.Barcode, &b.AusgeliehenAm, &b.Frist, &b.TageUeberfaellig); err != nil {
+			return nil, err
+		}
+		// Die Sortierung hält die Bücher eines Schülers beieinander.
+		if n := len(briefe); n == 0 || briefe[n-1].SchuelerID != e.SchuelerID {
+			briefe = append(briefe, e)
+		}
+		letzter := &briefe[len(briefe)-1]
+		letzter.Buecher = append(letzter.Buecher, b)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return briefe, nil
 }

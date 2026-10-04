@@ -5,6 +5,7 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Mail } from '@lucide/svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import { gemahntSatz } from '../../mahnungen.js';
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
 	function openProfile(schuelerId) {
@@ -124,21 +125,20 @@
 									{schueler.medien.length === 1 ? 'Buch' : 'Bücher'}
 								</span>
 							</td>
-							<!-- Ein Farbträger je Zeile, und Farbe nur für die AUSNAHME. Auf diesem
-							     Bildschirm ist alles überfällig — die erste Erinnerung ist der Normalfall
-							     und braucht keine Warnfarbe. Rot bekommt nur die Eskalation. Vorher trug
-							     jede Zeile Pille UND roten Text: bei 422 Zeilen eine Farbwand, in der die
-							     wirklich dringenden Fälle untergehen. -->
+							<!-- Oben steht, was hinausging: wie oft und wann zuletzt ein Mahnbrief
+							     gedruckt wurde. Darunter die Tage über der Frist; Farbe trägt nur die
+							     Ausnahme, mehr als 14 Tage (Reiter „Eskaliert"). M3 Lists: „Use trailing
+							     text for supplemental details, like a price, count, or date". -->
 							<td>
 								<div class="flex flex-col items-start">
-									<span
-										class="text-sm font-medium {schueler.mahnstufe === 'Mahnung'
-											? 'text-rose-600'
-											: 'text-slate-700'}"
-									>
-										{schueler.mahnstufe}
+									<span class="text-sm font-medium text-on-surface">
+										{gemahntSatz(schueler.gemahnt, schueler.zuletztGemahnt)}
 									</span>
-									<span class="text-sm text-slate-500">
+									<span
+										class="text-sm {schueler.mahnstufe === 'Mahnung'
+											? 'text-error'
+											: 'text-on-surface-variant'}"
+									>
 										{schueler.maxTage === 0
 											? 'heute fällig'
 											: `${schueler.maxTage} ${schueler.maxTage === 1 ? 'Tag' : 'Tage'} überfällig`}

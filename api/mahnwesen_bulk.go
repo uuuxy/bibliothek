@@ -9,28 +9,28 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
-// erzeugeUndCommitBulkMahnung führt den gesamten Bulk-Mahnlauf in EINER Transaktion aus:
-// Mahnstufe hochzählen (das UPDATE sperrt die betroffenen Zeilen für die Tx-Dauer), dann
-// exakt diesen festgeschriebenen Zustand fürs PDF auslesen, dann committen. Das Auslesen
-// passiert bewusst INNERHALB der Transaktion — läge es davor, könnte ein zwischen
-// Aufbereiten und Druck zurückgegebenes Buch aufs Papier geraten, ohne dass seine
-// Mahnstufe steigt (TOCTOU). ok=false: die Fehlerantwort wurde bereits geschrieben
-// (Rollback greift via defer).
+// erzeugeUndCommitBulkMahnung zählt die Mahnung, liest in derselben Transaktion die Briefe
+// und schreibt erst fest, wenn das PDF steht. Läge das Lesen vor dem Zählen, könnte ein
+// inzwischen zurückgegebenes Buch auf dem Brief stehen, ohne gezählt zu sein. ok=false: Die
+// Fehlerantwort ist geschrieben, das Zählen nimmt der Rollback zurück.
 func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.ResponseWriter, ausleihIDs []string) ([]byte, bool) {
+	// Vorlage und Absender vor der Transaktion: Sie hält eine Verbindung und Zeilensperren.
+	vorlage := s.ladeMahnbriefVorlage(ctx)
+
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return nil, false
 	}
-	// Rollback-Defer, welches wirksam wird, falls tx.Commit() nicht erreicht wird
 	defer db.SafeRollback(ctx, tx)
 
-	// 1. Mahnstufe hochzählen; nur dieser Druck zählt sie, der Mail-Versand nicht
-	// (mahnwesen_bulk_mail.go, docs/invarianten.md §1). Die Auswahl kommt aus der
-	// Oberfläche und kann älter sein als eine Verlängerung oder Rückgabe.
+	// Nur dieser Druck zählt die Mahnung, der Mail-Versand nicht (docs/invarianten.md §1).
+	// Die Auswahl kommt aus der Oberfläche und kann älter sein als eine Verlängerung oder
+	// Rückgabe.
 	mahnRepo := repository.NewMahnwesenRepository(s.DB.Pool)
 	gezaehlt, err := mahnRepo.ZaehleMahnungTx(ctx, tx, ausleihIDs)
 	if err != nil {
@@ -38,33 +38,30 @@ func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 		return nil, false
 	}
 
-	// 2. Exakt den soeben aktualisierten Zustand fürs PDF lesen — in DERSELBEN Tx. Das
-	// Blatt hängt nicht am Zählen: Ein Buch steigt höchstens einmal am Tag, gedruckt wird
-	// es nach einem Papierstau auch ein zweites Mal.
-	klassen, err := mahnRepo.QueryUeberfaelligeByAusleiheIDsTx(ctx, tx, ausleihIDs)
+	// Der Brief hängt nicht am Zählen: Ein Buch steigt höchstens einmal am Tag, gedruckt
+	// wird es nach einem Papierstau auch ein zweites Mal.
+	briefe, err := mahnRepo.MahnbriefeTx(ctx, tx, ausleihIDs)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim abrufen der daten für pdf: %w", err))
 		return nil, false
 	}
-	if len(klassen) == 0 && gezaehlt > 0 {
-		// Zählen und Blatt lesen dieselbe Auswahl, das ist nicht zu erwarten. Keine
-		// Mahnung ohne PDF festschreiben — der Rollback (defer) nimmt das Zählen zurück.
+	if len(briefe) == 0 && gezaehlt > 0 {
+		// Zählen und Lesen folgen derselben Bedingung, das ist nicht zu erwarten. Keine
+		// Mahnung ohne Brief festschreiben.
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("dateninkonsistenz: keine PDF-Daten trotz aktualisierter Mahnstufen"))
 		return nil, false
 	}
-	if len(klassen) == 0 {
+	if len(briefe) == 0 {
 		apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("keine Ausleihe mit abgelaufener Frist in der Auswahl"))
 		return nil, false
 	}
 
-	// 3. PDF erzeugen …
-	pdfBytes, err := generateMahnPDF(klassen)
+	pdfBytes, err := erzeugeMahnbriefe(briefe, vorlage)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim generieren des pdfs: %w", err))
 		return nil, false
 	}
 
-	// 4. … und erst nach erfolgreichem PDF committen.
 	if err := tx.Commit(ctx); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim commit der transaktion: %w", err))
 		return nil, false
@@ -79,9 +76,8 @@ type BulkPrintRequest struct {
 	AusleihIDs []string `json:"ausleih_ids" validate:"omitempty,dive,uuid_oder_leer"`
 }
 
-// BulkPrintMahnungenHandler verarbeitet ein Array von Ausleih-IDs,
-// inkrementiert deren Mahnstufe, aktualisiert das Mahndatum und generiert das PDF.
-// Alles geschieht in einer PostgreSQL-Transaktion mit striktem Rollback bei Fehlern.
+// BulkPrintMahnungenHandler druckt die Mahnbriefe zu den gewählten Ausleihen und zählt die
+// Mahnung, beides in einer Transaktion.
 // POST /api/admin/mahnungen/bulk-print
 func (s *Server) BulkPrintMahnungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -95,17 +91,12 @@ func (s *Server) BulkPrintMahnungenHandler() http.HandlerFunc {
 			return
 		}
 
-		ctx := r.Context()
-
-		// Mahnstufen erhöhen, aktualisierten Zustand auslesen, PDF erzeugen, committen —
-		// alles in einer Transaktion (siehe erzeugeUndCommitBulkMahnung).
-		pdfBytes, ok := s.erzeugeUndCommitBulkMahnung(ctx, w, req.AusleihIDs)
+		pdfBytes, ok := s.erzeugeUndCommitBulkMahnung(r.Context(), w, req.AusleihIDs)
 		if !ok {
 			return
 		}
 
-		// PDF an den Client senden
-		filename := fmt.Sprintf("Mahnliste_Bulk_%s.pdf", time.Now().Format(dateFormatISO))
+		filename := fmt.Sprintf("mahnbriefe_%s.pdf", schulzeit.Jetzt().Format(dateFormatISO))
 
 		w.Header().Set(headerContentType, contentTypePDF)
 		w.Header().Set(headerContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))

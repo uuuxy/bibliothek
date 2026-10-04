@@ -1,54 +1,51 @@
 package api
 
-// Tests am fertigen PDF-Inhaltsstrom (Technik wie die Etiketten-Gates): Der
-// Eltern-Mahnbrief ist ein DIN-5008-Fensterkuvert-Brief — seit dem 01.09.2026
-// steht die Anschrift aus der Schülerdatei im Fensterfeld (vorher hartkodiert
-// „Adresse unbekannt", obwohl das Layout von Anfang an für den Postversand
-// gebaut war). Den bestückten Fall über den Live-Pfad prüft das PII-Antwort-Gate
-// (Positiv-Kontrolle auf /api/reports/overdue-pdf); hier steht der Gegenfall,
-// der dort nicht abbildbar ist: OHNE Anschrift muss der Brief das ausdrücklich
-// sagen — eine leere Zeile im Fenster sähe aus wie ein Druckfehler, so sieht
-// die Sekretärin sofort, welcher Brief über die Klassenleitung gehen muss.
+// Tests am fertigen PDF-Inhaltsstrom (Technik wie die Etiketten-Gates): Der Mahnbrief ist
+// ein Brief nach DIN 5008 für das Fensterkuvert. Den Weg über die Tür prüft
+// mahnwesen_bulk_frist_pg_test.go; hier stehen die Fälle des Blatts selbst.
 
 import (
-	"bytes"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/jung-kurt/gofpdf"
+	"bibliothek/pkg/schulzeit"
+	"bibliothek/repository"
 )
 
-func renderElternMahnbrief(t *testing.T, student *OverdueStudent) string {
+func renderMahnbrief(t *testing.T, e repository.MahnbriefEmpfaenger, betreff, text string) string {
 	t.Helper()
-	doc := gofpdf.New("P", "mm", "A4", "")
-	tr := doc.UnicodeTranslatorFromDescriptor("")
-	zeichneElternMahnbrief(doc, tr, student, "Mahnung", "Bitte zurückgeben:\n{{.BuchListe}}", "Testschule")
-	var buf bytes.Buffer
-	if err := doc.Output(&buf); err != nil {
+	roh, err := erzeugeMahnbriefe([]repository.MahnbriefEmpfaenger{e},
+		mahnbriefVorlage{Betreff: betreff, Text: text, Absender: "Testschule"})
+	if err != nil {
 		t.Fatalf("PDF erzeugen: %v", err)
 	}
-	return pdfText(t, buf.Bytes())
+	return pdfText(t, roh)
 }
 
-func testOverdueStudent() *OverdueStudent {
-	return &OverdueStudent{
-		Vorname: "Mia", Nachname: "Musterkind",
-		Books: []OverdueBook{{
-			Titel: "Testband", BarcodeID: "BC-1",
-			AusgeliehenAm: time.Now().AddDate(0, -2, 0),
-			Frist:         time.Now().AddDate(0, -1, 0),
-			DaysOverdue:   30,
+func renderElternMahnbrief(t *testing.T, e repository.MahnbriefEmpfaenger) string {
+	t.Helper()
+	return renderMahnbrief(t, e, "Mahnung", "Liebe Eltern von {{.Vorname}} {{.Nachname}},\nbitte zurückgeben:\n{{.BuchListe}}")
+}
+
+func testMahnbriefEmpfaenger() repository.MahnbriefEmpfaenger {
+	return repository.MahnbriefEmpfaenger{
+		Vorname: "Mia", Nachname: "Musterkind", Klasse: "07H2",
+		Buecher: []repository.MahnbriefBuch{{
+			Titel: "Testband", Barcode: "BC-1",
+			AusgeliehenAm:    time.Now().AddDate(0, -2, 0),
+			Frist:            time.Now().AddDate(0, -1, 0),
+			TageUeberfaellig: 30,
 		}},
 	}
 }
 
 func TestElternMahnbriefDrucktAnschriftInsFensterfeld(t *testing.T) {
-	student := testOverdueStudent()
-	student.Strasse, student.Hausnummer = "Blumenweg", "7"
-	student.PLZ, student.Ort = "61169", "Friedberg"
+	e := testMahnbriefEmpfaenger()
+	e.Strasse, e.Hausnummer = "Blumenweg", "7"
+	e.PLZ, e.Ort = "61169", "Friedberg"
 
-	text := renderElternMahnbrief(t, student)
+	text := renderElternMahnbrief(t, e)
 	for _, soll := range []string{"Blumenweg 7", "61169 Friedberg", "Eltern von Mia Musterkind"} {
 		if !strings.Contains(text, soll) {
 			t.Errorf("Brief ohne %q — das Fensterkuvert bliebe leer", soll)
@@ -59,55 +56,69 @@ func TestElternMahnbriefDrucktAnschriftInsFensterfeld(t *testing.T) {
 	}
 }
 
-// {{.Frist}} muss die ÄLTESTE Rückgabefrist der gemahnten Bücher tragen — nicht das
-// Druckdatum. Bis zum 01.09.2026 stand dort time.Now(): Der Seed-Text „Ursprüngliche
-// Frist: {{.Frist}}" nannte den Tag des Ausdrucks, direkt über einer Tabelle mit
-// „34 Tage überfällig" — der Brief widersprach sich selbst, Eltern konnten die
-// Angabe nicht prüfen.
-func TestElternMahnbriefFristIstDieAeltesteRueckgabefrist(t *testing.T) {
-	student := testOverdueStudent()
-	aeltere := time.Now().AddDate(0, 0, -40)
-	student.Books = append(student.Books, OverdueBook{
-		Titel: "Zweitband", BarcodeID: "BC-2",
-		AusgeliehenAm: time.Now().AddDate(0, -3, 0),
-		Frist:         aeltere,
-		DaysOverdue:   40,
-	})
+// Ab 18 geht der Brief an die Person selbst, wie der Bescheid: ihr Name im Fensterfeld und
+// ein Text, der keine Eltern anspricht, gleich was die Vorlage der Schule sagt.
+func TestMahnbriefAnVolljaehrigeNenntKeineEltern(t *testing.T) {
+	e := testMahnbriefEmpfaenger()
+	e.Volljaehrig = true
 
-	doc := gofpdf.New("P", "mm", "A4", "")
-	tr := doc.UnicodeTranslatorFromDescriptor("")
-	zeichneElternMahnbrief(doc, tr, student, "Mahnung", "Frist war {{.Frist}} Ende\n{{.BuchListe}}", "Testschule")
-	var buf bytes.Buffer
-	if err := doc.Output(&buf); err != nil {
-		t.Fatalf("PDF erzeugen: %v", err)
+	text := renderElternMahnbrief(t, e)
+	if !strings.Contains(text, "Mia Musterkind") {
+		t.Fatalf("der Name fehlt im Brief — der Leser sieht das Blatt nicht:\n%s", text)
 	}
-	text := pdfText(t, buf.Bytes())
-
-	if soll := "Frist war " + aeltere.Format(dateFormatDE) + " Ende"; !strings.Contains(text, soll) {
-		t.Errorf("Brief nennt nicht die älteste Rückgabefrist: %q fehlt", soll)
+	if strings.Contains(text, "Eltern") {
+		t.Errorf("der Brief an eine Volljährige nennt Eltern:\n%s", text)
 	}
-	if falsch := "Frist war " + time.Now().Format(dateFormatDE); strings.Contains(text, falsch) {
-		t.Errorf("Brief füllt {{.Frist}} mit dem Druckdatum (%q) — genau der alte Fehler", falsch)
+	for _, soll := range []string{anredeVolljaehrig, "Testband"} {
+		if !strings.Contains(text, soll) {
+			t.Errorf("Brief an eine Volljährige ohne %q:\n%s", soll, text)
+		}
 	}
 }
 
-// Die Vorlage ist Betreiber-Freitext — der Renderer muss auch schiefe Eingaben
-// überleben: {{.BuchListe}} im BETREFF stand wörtlich in der Betreffzeile, und bei
-// ZWEI Vorkommen im Text verschwand alles nach dem zweiten kommentarlos — samt
-// Grußformel (strings.Split druckte nur parts[0] und parts[1]).
-func TestElternMahnbriefUeberlebtSchiefePlatzhalter(t *testing.T) {
-	student := testOverdueStudent()
-	doc := gofpdf.New("P", "mm", "A4", "")
-	tr := doc.UnicodeTranslatorFromDescriptor("")
-	zeichneElternMahnbrief(doc, tr, student,
-		"Mahnung {{.BuchListe}}",
-		"Anfang {{.BuchListe}} Mitte {{.BuchListe}} Grussformel-Ende",
-		"Testschule")
-	var buf bytes.Buffer
-	if err := doc.Output(&buf); err != nil {
-		t.Fatalf("PDF erzeugen: %v", err)
+// Ein Brief ohne Anschrift geht über das Kind mit; der Stapel wird nach Klassen verteilt.
+// Bei einem Ehemaligen bleibt die Klasse leer und steht nicht auf dem Brief.
+func TestMahnbriefNenntDieKlasse(t *testing.T) {
+	if text := renderElternMahnbrief(t, testMahnbriefEmpfaenger()); !strings.Contains(text, "Klasse: 07H2") {
+		t.Errorf("Brief ohne die Klasse:\n%s", text)
 	}
-	text := pdfText(t, buf.Bytes())
+	ehemalig := testMahnbriefEmpfaenger()
+	ehemalig.Klasse = ""
+	if text := renderElternMahnbrief(t, ehemalig); strings.Contains(text, "Klasse:") {
+		t.Errorf("Brief eines Ehemaligen nennt eine Klasse:\n%s", text)
+	}
+}
+
+// {{.Frist}} trägt die älteste Rückgabefrist der gemahnten Bücher, nicht das Druckdatum:
+// Der Text der Vorlage nennt sie über einer Tabelle mit den Tagen über der Frist.
+func TestElternMahnbriefFristIstDieAeltesteRueckgabefrist(t *testing.T) {
+	e := testMahnbriefEmpfaenger()
+	aeltere := time.Now().AddDate(0, 0, -40)
+	e.Buecher = append(e.Buecher, repository.MahnbriefBuch{
+		Titel: "Zweitband", Barcode: "BC-2",
+		AusgeliehenAm:    time.Now().AddDate(0, -3, 0),
+		Frist:            aeltere,
+		TageUeberfaellig: 40,
+	})
+
+	text := renderMahnbrief(t, e, "Mahnung", "Frist war {{.Frist}} Ende\n{{.BuchListe}}")
+
+	// Der Brief nennt den Kalendertag der Schule.
+	if soll := "Frist war " + aeltere.In(schulzeit.Zone()).Format(dateFormatDE) + " Ende"; !strings.Contains(text, soll) {
+		t.Errorf("Brief nennt nicht die älteste Rückgabefrist: %q fehlt", soll)
+	}
+	if falsch := "Frist war " + schulzeit.Jetzt().Format(dateFormatDE); strings.Contains(text, falsch) {
+		t.Errorf("Brief füllt {{.Frist}} mit dem Druckdatum (%q)", falsch)
+	}
+}
+
+// Die Vorlage ist freier Text der Schule. {{.BuchListe}} im Betreff stünde wörtlich in der
+// Betreffzeile, und bei zwei Vorkommen im Text verschwände alles nach dem zweiten samt
+// Grußformel.
+func TestElternMahnbriefUeberlebtSchiefePlatzhalter(t *testing.T) {
+	text := renderMahnbrief(t, testMahnbriefEmpfaenger(),
+		"Mahnung {{.BuchListe}}",
+		"Anfang {{.BuchListe}} Mitte {{.BuchListe}} Grussformel-Ende")
 
 	// Klammern stehen im PDF-Strom escaped — auf den Kern ohne Klammern prüfen.
 	if strings.Contains(text, "{.BuchListe}") {
@@ -122,7 +133,7 @@ func TestElternMahnbriefUeberlebtSchiefePlatzhalter(t *testing.T) {
 }
 
 func TestElternMahnbriefOhneAnschriftSagtEsAusdruecklich(t *testing.T) {
-	text := renderElternMahnbrief(t, testOverdueStudent())
+	text := renderElternMahnbrief(t, testMahnbriefEmpfaenger())
 	// Ohne Klammern gesucht: Im PDF-Inhaltsstrom stehen Klammern escaped
 	// (`\(…\)`), der Wortlaut dazwischen bleibt unverändert.
 	if !strings.Contains(text, "keine Adresse hinterlegt") {

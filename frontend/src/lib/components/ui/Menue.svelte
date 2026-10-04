@@ -24,9 +24,9 @@
 
      Seit 07.09.2026 tragen die beiden alten Menüs dieses Bauteil, und dafür kann es
      zweierlei mehr: einen eigenen Auslöser (`ausloeser`-Snippet — der Split-Button
-     „Mahnbriefe ▾" bzw. „Ausweis drucken ▾"; der Chevron trägt aria-haspopup, dorthin
-     kehrt der Fokus zurück) und einen Kopf über den Einträgen (`kopf`-Snippet — das
-     Auswahlfeld „Ganze Klasse" im Mahnwesen). Mit Kopf steht die Höhe erst nach dem
+     „Ausweis drucken ▾", der Drucker-Knopf im Mahnwesen; der Knopf mit aria-haspopup
+     bekommt den Fokus zurück) und einen Kopf über den Einträgen (`kopf`-Snippet — die
+     Klassenwahl für die Mahnliste im Mahnwesen). Mit Kopf steht die Höhe erst nach dem
      Rendern fest, deshalb wird gemessen statt gerechnet (menueGeometrie.js), und Tab
      wandert IN den Kopf statt das Menü zu schließen — geschlossen wird, wenn der Fokus
      das Menü verlässt. Gruppen-Überschriften: `ueberschriftDavor` am Eintrag. -->

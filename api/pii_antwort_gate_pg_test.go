@@ -293,8 +293,8 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/abgaenger":               {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
 		"GET /api/abgaenger/pdf":           {URL: "/api/abgaenger/pdf"},
 		// Auch der dritte Fensterkuvert-Brief trägt seit dem 01.09.2026 die Anschrift
-		// (vorher Unterstrich-Zeilen) — Kanariweg als Positiv-Kontrolle wie bei den
-		// Geschwistern overdue-pdf und print/rechnung.
+		// (vorher Unterstrich-Zeilen) — Kanariweg als Positiv-Kontrolle wie bei
+		// print/rechnung.
 		"GET /api/schadensfaelle/{id}/pdf":      {URL: "/api/schadensfaelle/" + w.schadensfallID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
 		"GET /api/schueler/{id}/schadensfaelle": {URL: "/api/schueler/" + w.schuelerID + "/schadensfaelle", Positiv: []string{"Kanarischaden"}},
 		// Schadensersatz-Bescheide (Migration 110). Der Vorschlag und die Akten-Liste
@@ -396,13 +396,10 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/audit":                             {URL: "/api/audit"},
 		"GET /api/audit/tresen-auskunft":             {URL: "/api/audit/tresen-auskunft?barcode=" + w.buchBarcode, Positiv: []string{"Vogelbeere"}},
 		"GET /api/mail-templates":                    {URL: "/api/mail-templates"},
-		// Anschrift als Positiv-Kontrolle: Der Elternbrief ist ein DIN-5008-
-		// Fensterkuvert-Postbrief (Stufe 3, seit 01.09.2026) — verliert er die
-		// Anschrift wieder, ist er für den Postversand unbrauchbar, und das soll
-		// dieses Gate melden, nicht die Sekretärin am Kuvertiertisch.
-		"GET /api/reports/overdue-pdf": {URL: "/api/reports/overdue-pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
-		// Anschrift auch hier Positiv-Kontrolle (Fensterkuvert-Brief, seit 01.09.2026
-		// verdrahtet — vorher hartkodiert geleert): dieselbe Regel wie overdue-pdf.
+		// Anschrift als Positiv-Kontrolle: Der Brief geht ins Fensterkuvert; verliert er
+		// die Anschrift, ist er für den Postversand unbrauchbar. Für den Mahnbrief prüft
+		// das der Test am Druck aus der Auswahl (mahnwesen_bulk_frist_pg_test.go), die
+		// Tür ist ein POST.
 		"GET /api/print/rechnung/{schueler_id}":    {URL: "/api/print/rechnung/" + w.schuelerID, Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
 		"GET /api/print/mahnung/klasse/{klasse}":   {URL: "/api/print/mahnung/klasse/" + url.PathEscape("05A")},
 		"GET /api/print/kontoauszug/{schueler_id}": {URL: "/api/print/kontoauszug/" + w.schuelerID, Positiv: []string{"Vogelbeere"}},

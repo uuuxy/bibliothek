@@ -11,6 +11,8 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
+	"bibliothek/pkg/schulzeit"
+	"bibliothek/repository"
 	"bibliothek/sse"
 )
 
@@ -54,6 +56,36 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 		return rec
+	}
+
+	// mahnungenInDerListe liest aus der Mahnliste, wie oft und wann zuletzt zu einer
+	// Ausleihe gemahnt wurde.
+	mahnungenInDerListe := func(t *testing.T, ausleiheID string) (int, string) {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodGet, "/api/mahnwesen", nil)
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Mahnliste: Status %d — %s", rec.Code, rec.Body.String())
+		}
+		var antwort struct {
+			Klassen []repository.MahnwesenKlasse `json:"klassen"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Mahnliste lesen: %v", err)
+		}
+		for _, kl := range antwort.Klassen {
+			for _, sch := range kl.Schueler {
+				for _, m := range sch.Medien {
+					if m.AusleiheID == ausleiheID {
+						return m.Mahnstufe, m.LetztesMahndatum
+					}
+				}
+			}
+		}
+		t.Fatalf("Ausleihe %s steht nicht in der Mahnliste", ausleiheID)
+		return 0, ""
 	}
 
 	abgelaufen := time.Now().AddDate(0, 0, -30)
@@ -182,6 +214,106 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 		}
 		if datum == nil || !datum.Equal(*erstesDatum) {
 			t.Errorf("nach dem zweiten Druck: Mahndatum %v, erwartet unverändert %v", datum, erstesDatum)
+		}
+	})
+
+	// Aus der Auswahl kommt ein Papier: der Brief an die Eltern mit Anschrift für das
+	// Fensterkuvert. Die Klasse steht daneben, weil ein Brief ohne Anschrift über das Kind
+	// mitgeht.
+	t.Run("der Druck aus der Auswahl ist der Brief an die Eltern", func(t *testing.T) {
+		kind := seedSchueler(t, pool, "MBF-S-6", "Ida", "07H2")
+		if _, err := pool.Exec(ctx, `
+			UPDATE schueler SET strasse = 'Lindenweg', hausnummer = '4', plz = '61169', ort = 'Friedberg'
+			WHERE id = $1`, kind); err != nil {
+			t.Fatalf("Anschrift setzen: %v", err)
+		}
+		buch := seedAusleihe(t, pool, kind, "Band Elternbrief", abgelaufen)
+
+		rec := drucke(t, buch)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Druck: Status %d — %s", rec.Code, rec.Body.String())
+		}
+		blatt := strings.Join(pdftest.Texte(t, rec.Body.Bytes()), "\n")
+		for _, soll := range []string{"Eltern von Ida Test", "Lindenweg 4", "61169 Friedberg", "Klasse: 07H2", "Band Elternbrief"} {
+			if !strings.Contains(blatt, soll) {
+				t.Errorf("auf dem Brief fehlt %q:\n%s", soll, blatt)
+			}
+		}
+		// Das frühere Blatt in Du-Form sprach das Kind an.
+		if strings.Contains(blatt, "Bitte gib") {
+			t.Errorf("aus der Auswahl kommt das Blatt an das Kind statt des Briefs:\n%s", blatt)
+		}
+		if stufe, datum := mahnState(t, pool, buch); stufe != 1 || datum == nil {
+			t.Errorf("der Brief zählt die Mahnung: Mahnstufe %d, Mahndatum gesetzt %v — erwartet 1 und gesetzt",
+				stufe, datum != nil)
+		}
+	})
+
+	// Die Mahnliste zeigt je Kind, wie oft und wann zuletzt gemahnt wurde; die Zahl dazu
+	// liefert die Liste je Buch.
+	t.Run("nach dem Druck nennt die Mahnliste die Mahnung", func(t *testing.T) {
+		kind := seedSchueler(t, pool, "MBF-S-9", "Rosa", "06G1")
+		buch := seedAusleihe(t, pool, kind, "Band Gezaehlt", abgelaufen)
+
+		if stufe, datum := mahnungenInDerListe(t, buch); stufe != 0 || datum != "" {
+			t.Errorf("vor dem Druck: Liste nennt %d Mahnungen und das Datum %q, erwartet 0 und keins", stufe, datum)
+		}
+		if rec := drucke(t, buch); rec.Code != http.StatusOK {
+			t.Fatalf("Druck: Status %d — %s", rec.Code, rec.Body.String())
+		}
+		heute := schulzeit.Jetzt().Format(dateFormatISO)
+		if stufe, datum := mahnungenInDerListe(t, buch); stufe != 1 || datum != heute {
+			t.Errorf("nach dem Druck: Liste nennt %d Mahnungen und das Datum %q, erwartet 1 und %s", stufe, datum, heute)
+		}
+	})
+
+	t.Run("ab 18 geht der Brief an die Person selbst", func(t *testing.T) {
+		erwachsen := seedSchueler(t, pool, "MBF-S-7", "Jonas", "13T1")
+		if _, err := pool.Exec(ctx, `
+			UPDATE schueler SET geburtsdatum = CURRENT_DATE - INTERVAL '19 years' WHERE id = $1`, erwachsen); err != nil {
+			t.Fatalf("Geburtsdatum setzen: %v", err)
+		}
+		buch := seedAusleihe(t, pool, erwachsen, "Band Oberstufe", abgelaufen)
+
+		rec := drucke(t, buch)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Druck: Status %d — %s", rec.Code, rec.Body.String())
+		}
+		blatt := strings.Join(pdftest.Texte(t, rec.Body.Bytes()), "\n")
+		if !strings.Contains(blatt, "Jonas Test") || !strings.Contains(blatt, "Band Oberstufe") {
+			t.Fatalf("Name oder Buch fehlen auf dem Brief — der Leser sieht das Blatt nicht:\n%s", blatt)
+		}
+		if strings.Contains(blatt, "Eltern") {
+			t.Errorf("der Brief an einen Volljährigen nennt Eltern:\n%s", blatt)
+		}
+	})
+
+	// Ein Ehemaliger steht in der Mahnliste unter „Ehemalige" und geht an keine
+	// Klassenleitung; den Brief bekommt er wie jeder andere über die Auswahl.
+	t.Run("ein Ehemaliger bekommt den Brief", func(t *testing.T) {
+		ehemalig := seedSchueler(t, pool, "MBF-S-8", "Erik", "08H3")
+		if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true WHERE id = $1`, ehemalig); err != nil {
+			t.Fatalf("als Ehemaligen kennzeichnen: %v", err)
+		}
+		buch := seedAusleihe(t, pool, ehemalig, "Band Ehemalig", abgelaufen)
+
+		rec := drucke(t, buch)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Druck für einen Ehemaligen: Status %d, erwartet 200 mit dem Brief — %s",
+				rec.Code, firstBytes(rec.Body.Bytes(), 160))
+		}
+		blatt := strings.Join(pdftest.Texte(t, rec.Body.Bytes()), "\n")
+		for _, soll := range []string{"Eltern von Erik Test", "Band Ehemalig"} {
+			if !strings.Contains(blatt, soll) {
+				t.Errorf("auf dem Brief des Ehemaligen fehlt %q:\n%s", soll, blatt)
+			}
+		}
+		// Der Klassenname gehört nach der Versetzung einem anderen Jahrgang.
+		if strings.Contains(blatt, "Klasse:") {
+			t.Errorf("der Brief des Ehemaligen nennt eine Klasse:\n%s", blatt)
+		}
+		if stufe, _ := mahnState(t, pool, buch); stufe != 1 {
+			t.Errorf("Buch des Ehemaligen: Mahnstufe %d, erwartet 1", stufe)
 		}
 	})
 }

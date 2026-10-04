@@ -432,18 +432,26 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 
 ## Mahnwesen
 
-Register **Alle · Akut fällig (bis 14 Tage) · Eskaliert**, Filter nach Klasse. Mahnbriefe an
-Eltern oder für eine ganze Klasse drucken; **Sammel-Mahnlauf** per Mail an die Klassenleitungen
-(Klassen wählen, Empfänger prüfen, dann senden). Gezählt wird eine Mahnung nur beim Druck aus
-der Auswahl (Kinder anhaken, dann _Mahnbriefe drucken_), höchstens einmal am Tag je Buch; ein
-zweiter Druck am selben Tag, etwa nach einem Papierstau, liefert das Blatt noch einmal und zählt
-nicht. Die Briefe an die Eltern, die Liste einer Klasse und der Mailversand zählen nicht. Das Programm
-zeigt die Zahl nicht an und knüpft nichts an sie. Ein Mahnbrief entsteht nur für ein Buch,
-dessen Frist abgelaufen ist; wurde ein Buch zwischen dem Laden der Liste und dem Druck
-verlängert, steht es nicht auf dem Blatt. Lehrkräfte werden nie angemahnt. Wer die Schule
-verlassen hat, steht in der Liste unter „Ehemalige" statt unter seiner früheren Klasse; an eine
-Klassenleitung geht er nicht, weder im Mahnlauf noch im Druck einer Klasse. Welche Klasse an welche
-Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. Diese Liste wird dort von Hand
+Register **Alle · Akut fällig (bis 14 Tage) · Eskaliert**, Filter nach Klasse.
+
+**Mahnbriefe:** Kinder anhaken (alle über das Kästchen im Tabellenkopf), dann _Mahnbriefe
+drucken_. Je Kind kommt ein Brief an die Eltern für das Fensterkuvert, mit dem Text der Vorlage
+(_Einstellungen → Mail_). Fehlt die Anschrift, steht das im Adressfeld, und der Brief geht über
+das Kind mit; dafür nennt er die Klasse. Ab 18 geht der Brief an die Person selbst, mit festem
+Text. Der Druck zählt die Mahnung, höchstens einmal am Tag je Buch; ein zweiter Druck am selben
+Tag, etwa nach einem Papierstau, liefert den Brief noch einmal und zählt nicht. Die Liste zeigt je
+Kind, wie oft und wann zuletzt gemahnt wurde („2× gemahnt, zuletzt 26.09.2026"), das Fenster für
+den Bescheid je Buch; an die Zahl knüpft das Programm nichts. Ein Mahnbrief entsteht nur für ein
+Buch, dessen Frist abgelaufen ist; wurde ein Buch zwischen dem Laden der Liste und dem Druck
+verlängert, steht es nicht auf dem Brief.
+
+**Sammel-Mahnlauf** per Mail an die Klassenleitungen (Klassen wählen, Empfänger prüfen, dann
+senden). Hinter dem Drucker-Knopf stehen die Mahnliste einer Klasse und die Übersichtsliste.
+Mail und Listen zählen nicht. Lehrkräfte werden nie angemahnt. Wer die Schule verlassen hat,
+steht in der Liste unter „Ehemalige" statt unter seiner früheren Klasse. Er bekommt den Mahnbrief
+wie alle über die Auswahl; an eine Klassenleitung geht er nicht, weder im Mahnlauf noch in der
+Mahnliste einer Klasse. Welche Klasse an welche Lehrkraft geht, steht unter _Einstellungen →
+Mahnwesen-Routing_. Diese Liste wird dort von Hand
 gepflegt, die LUSD liefert sie nicht, und an die Klassenleitungen geht nur, was jemand von Hand
 sendet (Mahnlauf, Abgänger-Kontoauszüge).
 Die Versetzung rückt die Zuordnungen eine Stufe hoch, außer von 6 nach 7 und von 10 in die

@@ -266,6 +266,12 @@ const bescheidHatOffenePosition = `EXISTS (SELECT 1 FROM schadensfaelle fo WHERE
 // Berliner Zeit noch den Vortag.
 const sqlSchulHeute = schulzeit.SQLHeute
 
+// sqlVolljaehrig: Ist der Schüler am heutigen Kalendertag der Schule 18? Daran hängt, ob
+// ein Brief an die Eltern geht oder an die Person selbst. Ohne Geburtsdatum gilt er als
+// minderjährig, das ist an einer Schule der Regelfall und der schonendere Fehler. Die
+// Spalte steht ohne Tabellennamen, damit Bescheid und Mahnbrief denselben Ausdruck lesen.
+const sqlVolljaehrig = `coalesce(geburtsdatum <= ` + sqlSchulHeute + ` - INTERVAL '18 years', false)`
+
 // bescheidFristAbgelaufen: offen, Frist vorbei, und es ist noch etwas zu zahlen.
 //
 // Die Frist ist ein Kalendertag in der Schulzeitzone (api/bescheid_handler.go), also wird
@@ -512,18 +518,13 @@ type OffeneForderung struct {
 // EmpfaengerFuerBescheid liest die Angaben des Schülers für Anrede und Anschriftfeld.
 //
 // Volljährig entscheidet über die Anrede: Bei minderjährigen Schülern geht der Brief an
-// die Erziehungsberechtigten. Ohne Geburtsdatum (Altdaten) gilt minderjährig — das ist
-// an einer Schule der Regelfall und der schonendere Fehler.
+// die Erziehungsberechtigten (sqlVolljaehrig).
 func (r *pgBescheidRepository) EmpfaengerFuerBescheid(ctx context.Context, schuelerID string) (BescheidEmpfaengerDaten, error) {
 	var d BescheidEmpfaengerDaten
 	err := r.db.QueryRow(ctx, `
 		SELECT vorname, nachname, coalesce(klasse, ''), coalesce(strasse, ''),
 		       coalesce(hausnummer, ''), coalesce(plz, ''), coalesce(ort, ''),
-		       -- Volljährigkeit am KALENDERTAG der Schule, nicht dem der Sitzung (im Image
-		       -- UTC): Am 18. Geburtstag galt das Kind bis 2 Uhr Berliner Zeit noch als
-		       -- minderjährig, und der Bescheid ging an die Eltern statt an die Person.
-		       -- Dieselbe Rechnung wie die Frist (sqlSchulHeute, 16.09.2026).
-		       coalesce(geburtsdatum <= `+sqlSchulHeute+` - INTERVAL '18 years', false)
+		       `+sqlVolljaehrig+`
 		FROM schueler WHERE id = $1`, schuelerID).
 		Scan(&d.Vorname, &d.Nachname, &d.Klasse, &d.Strasse, &d.Hausnummer, &d.PLZ, &d.Ort, &d.Volljaehrig)
 	return d, err

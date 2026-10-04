@@ -60,6 +60,10 @@ type BescheidVorschlagAusleihe struct {
 	Herleitung  string  `json:"herleitung"`
 	Topf        string  `json:"topf"`
 	FaelligSeit string  `json:"faellig_seit"`
+	// Mahnstufe und LetztesMahndatum (JJJJ-MM-TT, leer ohne Datum): wie oft und wann
+	// zuletzt ein Mahnbrief zu diesem Buch gedruckt wurde.
+	Mahnstufe        int    `json:"mahnstufe"`
+	LetztesMahndatum string `json:"letztes_mahndatum,omitempty"`
 }
 
 // BescheidVorschlag ist die Antwort für den Dialog.
@@ -197,7 +201,7 @@ func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ers
 		SchuljahreMitAusleihe: a.SchuljahreMitAusleihe, SchuljahreImBestand: a.SchuljahreImBestand,
 		Topf: a.Topf,
 	}.rechne(quelle)
-	return BescheidVorschlagAusleihe{
+	antwort := BescheidVorschlagAusleihe{
 		AusleiheID:  a.AusleiheID,
 		Titel:       a.Titel,
 		ISBN:        a.ISBN,
@@ -205,7 +209,12 @@ func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ers
 		Herleitung:  bescheidHerleitung(v),
 		Topf:        a.Topf,
 		FaelligSeit: a.FaelligSeit.In(schulzeit.Zone()).Format(dateFormatISO),
+		Mahnstufe:   a.Mahnstufe,
 	}
+	if a.LetztesMahndatum != nil {
+		antwort.LetztesMahndatum = a.LetztesMahndatum.In(schulzeit.Zone()).Format(dateFormatISO)
+	}
+	return antwort
 }
 
 // bescheidHerleitung formuliert, wie der Vorschlag zustande kommt.
@@ -418,7 +427,7 @@ func bescheidSnapshotAus(ctx context.Context, repo repository.BescheidRepository
 	anrede := "Sehr geehrte Erziehungsberechtigte,"
 	anZeile := bescheidAnAnErzieher
 	if d.Volljaehrig {
-		anrede = "Sehr geehrte Damen und Herren,"
+		anrede = anredeVolljaehrig
 		anZeile = ""
 	}
 	return map[string]string{

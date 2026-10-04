@@ -1,28 +1,23 @@
-<!-- @component MahnwesenDruckMenue — Split-Button „Mahnbriefe" mit Geltungsbereich.
+<!-- @component MahnwesenDruckMenue — die Listen des Mahnwesens hinter einem Drucker-Knopf.
 
-     Eine Primäraktion (Eltern-Briefe drucken) plus ein Menü für alles, was denselben
-     Vorgang mit anderem Umfang meint. Ersetzt die vier früher verstreuten PDF-Wege.
-     Drucker- und Dokument-Symbole — kein Umschlag, denn hier wird nichts gemailt.
+     Die Mahnbriefe kommen aus der Auswahl (Kinder anhaken, „Mahnbriefe drucken"). Hier
+     steht, was daneben gedruckt wird und keine Mahnung zählt: die Liste einer Klasse, die
+     Übersichtsliste und die Seite selbst.
 
-     Seit 07.09.2026 auf ui/Menue.svelte: der Split-Button als `ausloeser`, das
-     Auswahlfeld „Ganze Klasse" als `kopf`. Vorher ein Eigenbau in Paletten-Farben ohne
-     Pfeiltasten und mit handgeschriebenen SVG-Pfaden (Register 06.09.). -->
+     M3 (Icon buttons, Guidelines): „Default icon buttons can open other elements, such as
+     a menu"; der Tooltip beschreibt die Handlung, nicht das Symbol. Das Menü ist
+     ui/Menue.svelte mit der Klassenwahl für die Mahnliste als Kopf. -->
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
-	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
 	import Menue from '../ui/Menue.svelte';
-	import { ChevronDown, Download, FileText, Printer } from '@lucide/svelte';
+	import { Download, Printer } from '@lucide/svelte';
+
+	const ETIKETT = 'Weitere Druck- und Export-Optionen';
 
 	/** @type {import('../ui/menueGeometrie.js').Eintrag[]} */
 	const eintraege = $derived([
-		{
-			id: 'eltern',
-			text: 'Alle überfälligen',
-			icon: FileText,
-			disabled: mahnwesenStore.elternPdfLoading
-		},
 		{
 			id: 'uebersicht',
 			text: 'Übersichtsliste (PDF)',
@@ -36,47 +31,29 @@
 
 	/** @param {string} id */
 	function waehle(id) {
-		if (id === 'eltern') mahnwesenStore.downloadElternPDF();
-		else if (id === 'uebersicht') mahnwesenStore.downloadPDF();
+		if (id === 'uebersicht') mahnwesenStore.downloadPDF();
 		else if (id === 'drucken') window.print();
 	}
 </script>
 
-<Menue etikett="Weitere Druck- und Export-Optionen" {eintraege} onwahl={waehle} breite={280}>
+<Menue etikett={ETIKETT} {eintraege} onwahl={waehle} breite={280}>
 	{#snippet ausloeser({ offen, umschalten })}
-		<div class="inline-flex rounded-md shadow-sm">
-			<Button
-				onclick={mahnwesenStore.downloadElternPDF}
-				disabled={mahnwesenStore.elternPdfLoading}
-				class="rounded-r-none"
-			>
-				{#if mahnwesenStore.elternPdfLoading}
-					<Ladekreis size="sm" farbe="aktuell" />
-				{:else}
-					<FileText class="h-4 w-4" aria-hidden="true" />
-				{/if}
-				Mahnbriefe
-			</Button>
-			<Button
-				onclick={umschalten}
-				aria-haspopup="menu"
-				aria-expanded={offen}
-				aria-label="Weitere Druck- und Export-Optionen"
-				data-tip="Weitere Druck- und Export-Optionen"
-				class="rounded-l-none border-l-white/25 px-2"
-			>
-				<ChevronDown
-					class="h-3.5 w-3.5 transition-transform {offen ? 'rotate-180' : ''}"
-					aria-hidden="true"
-				/>
-			</Button>
-		</div>
+		<Button
+			variant="secondary"
+			onclick={umschalten}
+			aria-haspopup="menu"
+			aria-expanded={offen}
+			aria-label={ETIKETT}
+			data-tip={ETIKETT}
+			class="px-2 text-on-surface-variant"
+		>
+			<Printer class="h-4 w-4" aria-hidden="true" />
+		</Button>
 	{/snippet}
 	{#snippet kopf()}
-		<div class="pt-1 pb-1 text-label-small font-medium text-on-surface-variant">
-			Mahnbriefe an Eltern
+		<div class="mb-1.5 pt-1 text-label-small font-medium text-on-surface-variant">
+			Mahnliste einer Klasse
 		</div>
-		<div class="text-label-small text-on-surface-variant mb-1.5">Ganze Klasse</div>
 		<div class="flex items-center gap-2">
 			<Select
 				bind:value={mahnwesenStore.selectedKlasse}
@@ -86,7 +63,7 @@
 				}))}
 				placeholder="Klasse wählen …"
 				class="flex-1 min-w-0"
-				aria-label="Klasse für den Sammel-Mahnlauf"
+				aria-label="Klasse für die Mahnliste"
 			/>
 			<Button
 				size="sm"

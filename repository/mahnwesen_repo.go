@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"bibliothek/db"
 	"bibliothek/pkg/schulzeit"
@@ -25,6 +26,19 @@ type UeberfaelligesMedium struct {
 	FaelligAm string `json:"faellig_am"`
 	// TageUeberfaellig speichert die Anzahl der Tage, die das Medium bereits überfällig ist.
 	TageUeberfaellig int `json:"tage_ueberfaellig"`
+	// Mahnstufe zählt die gedruckten Mahnbriefe zu dieser Ausleihe.
+	Mahnstufe int `json:"mahnstufe"`
+	// LetztesMahndatum ist der Kalendertag der Schule, an dem zuletzt gemahnt wurde
+	// (JJJJ-MM-TT). Leer ohne Mahnung und bei einer aus Littera übernommenen Mahnstufe.
+	LetztesMahndatum string `json:"letztes_mahndatum,omitempty"`
+}
+
+// mahndatumText nennt den Kalendertag der Schule zu einem Mahndatum, leer ohne Datum.
+func mahndatumText(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.In(schulzeit.Zone()).Format("2006-01-02")
 }
 
 // UeberfaelligerSchueler fasst alle überfälligen Medien eines konkreten Schülers zusammen.

@@ -90,9 +90,7 @@
 
 	<MahnwesenDruckMenue />
 
-	<!-- „Alle anmahnen" ist die EINZIGE echte E-Mail-Aktion → nur hier das Umschlag-Icon.
-	     Getönt statt gefüllt (M3: EIN gefüllter Knopf je Bereich — das ist „Mahnbriefe");
-	     bis 24.08.2026 standen zwei gefüllte nebeneinander, blau und rot.
+	<!-- „Alle anmahnen" ist die einzige E-Mail-Aktion, nur hier steht das Umschlag-Symbol.
 	     Nur mit dem Recht der Route dahinter (create_orders, entschieden in Mahnwesen.svelte);
 	     Drucken bleibt — das hängt wie die Seite an view_students, Papier ist der Notweg. -->
 	{#if darfMahnlauf && countAlle > 0}

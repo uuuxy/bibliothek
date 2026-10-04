@@ -7,12 +7,11 @@ import { SvelteDate } from 'svelte/reactivity';
  */
 export function useMahnwesenPdf() {
 	let pdfLoading = $state(false);
-	let elternPdfLoading = $state(false);
 	let klassePdfLoading = $state(false);
 	let globalErrorToast = $state(/** @type {string|null} */ (null));
 
 	/**
-	 * Prints selected Mahnungen by collecting ausleih_ids.
+	 * Druckt die Mahnbriefe der angehakten Schüler; der Server zählt dabei die Mahnung.
 	 * @param {Set<string>} selectedIds
 	 * @param {Function} getFilteredSchueler
 	 * @param {Function} refreshData
@@ -55,7 +54,7 @@ export function useMahnwesenPdf() {
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
-			a.download = `Mahnliste_Bulk_${new SvelteDate().toISOString().slice(0, 10)}.pdf`;
+			a.download = `mahnbriefe_${new SvelteDate().toISOString().slice(0, 10)}.pdf`;
 			a.click();
 			URL.revokeObjectURL(url);
 
@@ -87,30 +86,6 @@ export function useMahnwesenPdf() {
 			toastStore.addToast('Fehler: ' + String(e), 'error');
 		} finally {
 			pdfLoading = false;
-		}
-	}
-
-	/**
-	 * Downloads the Eltern Mahnbriefe PDF.
-	 */
-	async function downloadElternPDF() {
-		elternPdfLoading = true;
-		globalErrorToast = null;
-		try {
-			const res = await apiFetch('/api/reports/overdue-pdf');
-			if (!res.ok) throw new Error((await res.text()) || 'PDF-Erzeugung fehlgeschlagen');
-			const blob = await res.blob();
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `mahnbriefe_${new SvelteDate().toISOString().slice(0, 10)}.pdf`;
-			a.click();
-			URL.revokeObjectURL(url);
-		} catch (e) {
-			globalErrorToast = 'Fehler: ' + String(e);
-			setTimeout(() => (globalErrorToast = null), 4000);
-		} finally {
-			elternPdfLoading = false;
 		}
 	}
 
@@ -147,9 +122,6 @@ export function useMahnwesenPdf() {
 		get pdfLoading() {
 			return pdfLoading;
 		},
-		get elternPdfLoading() {
-			return elternPdfLoading;
-		},
 		get klassePdfLoading() {
 			return klassePdfLoading;
 		},
@@ -161,7 +133,6 @@ export function useMahnwesenPdf() {
 		},
 		printSelectedMahnungen,
 		downloadPDF,
-		downloadElternPDF,
 		downloadKlassePDF
 	};
 }
