@@ -98,7 +98,7 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		gewaehlt, unbekannt := waehleKlassen(alle, req.Klassen)
+		gewaehlt, unbekannt := waehleKlassen(nurKlassen(alle), req.Klassen)
 
 		// 5. Optional: Empfänger auf eine einzelne Adresse umlenken.
 		if req.OverrideEmail != "" {
@@ -216,6 +216,18 @@ func ergaenzeSchulDomain(eingabe string) string {
 		return eingabe
 	}
 	return eingabe + absender[at:]
+}
+
+// nurKlassen lässt die Gruppe der Ehemaligen fallen. Sie ist keine Klasse: Ihre Liste geht
+// an keine Klassenleitung und auch an keine von Hand genannte Adresse.
+func nurKlassen(gruppen []repository.MahnwesenKlasse) []repository.MahnwesenKlasse {
+	klassen := make([]repository.MahnwesenKlasse, 0, len(gruppen))
+	for _, g := range gruppen {
+		if !g.Ehemalige {
+			klassen = append(klassen, g)
+		}
+	}
+	return klassen
 }
 
 // waehleKlassen schneidet die geladenen Klassen auf die Auswahl zu und meldet

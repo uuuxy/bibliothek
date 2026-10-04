@@ -79,5 +79,30 @@ describe('MahnwesenAktionen', () => {
 			"const darfMahnlauf = $derived(hatRecht(authStore.currentUser, 'create_orders'))"
 		);
 		expect(seite).toContain('{darfMahnlauf}');
+		// Der Versand-Dialog bietet nur Klassen an, nicht die Gruppe der Ehemaligen.
+		expect(seite).toContain('klassen={mahnwesenStore.versandKlassen}');
+	});
+
+	it('bietet „Alle anmahnen" nicht an, wenn nur Ehemalige überfällig sind', async () => {
+		// Die Gruppe der Ehemaligen geht an keine Klassenleitung; der Mahnlauf hätte niemanden.
+		/** @type {any} */ (apiFetch).mockResolvedValue({
+			ok: true,
+			json: async () => ({
+				klassen: [
+					{
+						klasse: 'Ehemalige',
+						ehemalige: true,
+						schueler: [{ schueler_id: 's9', name: 'Erik Test', klasse: 'Ehemalige', medien: [] }]
+					}
+				]
+			})
+		});
+		await mahnwesenStore.fetchData();
+		expect(mahnwesenStore.klassen.length).toBe(1);
+		expect(mahnwesenStore.versandKlassen).toEqual([]);
+
+		const zeile = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnlauf: true });
+		expect(zeile.queryByRole('button', { name: /Alle anmahnen/ })).toBeNull();
+		expect(zeile.queryByRole('button', { name: 'Daten neu laden' })).toBeTruthy();
 	});
 });

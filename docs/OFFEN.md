@@ -99,8 +99,8 @@ Datenbank und der Littera-Übernahme (7.2).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **4.30** (Mahnstufe, die zwei Papiere „Mahnbrief" und Ehemalige im Mahnwesen): Vier Fragen
-   sind vorgelegt, die Antwort steht aus. Vorn, weil darin ein Verdacht der Kategorie A steht.
+1. **4.30** (Mahnstufe, die zwei Papiere „Mahnbrief" und Ehemalige im Mahnwesen): entschieden
+   am 04.10.2026, gebaut wird in Stufen.
 2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
 3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
@@ -314,34 +314,27 @@ Gefunden am 04.10.2026 bei der Entscheidung zur Ansicht „Jahrgang".
 - **Die Briefe an die Eltern kennen keine Auswahl** (am Code gelesen am 04.10.2026): Der Knopf
   druckt für jeden Schüler mit einem überfälligen Buch, auch wenn es seit einem Tag überfällig
   ist (`queryOverdueStudents` in `api/reports_pdf.go`).
-- **Verdacht, am Code gelesen am 04.10.2026, nicht nachgestellt: Ein Ehemaliger steht in der
-  Liste an eine fremde Klassenleitung.** Meldet die LUSD einen Schüler mit offenen Büchern
-  nicht mehr, wird er Ehemaliger und behält seine Klasse (`sperreAbgaenger` in
-  `api/lusd_apply.go`); die Versetzung fasst danach nur Schüler an, die nicht Ehemalige sind
-  (`promoteStudentsQuery` in `api/student_promotion.go`). Die Mahnliste führt ihn unter
-  dieser Klasse, und „Alle anmahnen" liest dieselbe Liste (`QueryUeberfaelligeNachKlasse`).
-  Nach der Versetzung trägt ein anderer Jahrgang den Klassennamen: Name und Bücher des
-  Ehemaligen gingen dann an dessen Klassenleitung. Ein Abgänger aus der Versetzung trägt die
-  Klasse `ABG`, für die es keine Klassenleitung gibt. Kategorie A, sobald nachgestellt.
 - Littera fragt nach dem Druck, ob gezählt werden soll („nur wenn Probleme mit dem Drucker
   aufgetreten sind", mit Nein), druckt mit „Mahnbriefe nachdrucken" den letzten Lauf ohne
   Zählen, nennt die Stufe im Druckbild (1 = erste, 2 = zweite oder weitere Mahnung) und zeigt
   je Leser eine Mahnhistorie (Littera-Handbuch, „Mahnwesen").
 
-**Vorgelegt am 04.10.2026, die Antwort steht aus.** Je Frage die Empfehlung:
+**Entschieden am 04.10.2026,** jeweils nach der Empfehlung:
 
-1. Die Zahl zeigen statt streichen: Mahnliste und Bescheid-Dialog nennen je Kind, wie oft und
-   wann zuletzt erinnert wurde, statt des Worts, das die Liste heute aus den Tagen rechnet.
-   Gezählt werden die zwei Papiere, die Mail an die Klassenleitung wie bisher nicht.
+1. Die Zahl wird gezeigt, nicht gestrichen: Mahnliste und Bescheid-Dialog nennen je Kind, wie
+   oft und wann zuletzt erinnert wurde, statt des Worts, das die Liste heute aus den Tagen
+   rechnet. Gezählt werden die zwei Papiere, die Mail an die Klassenleitung wie bisher nicht.
 2. Beide Papiere gehen von der Auswahl aus: Kinder anhaken, dann das Papier wählen. Damit
    läuft das Zählen durch eine Tür.
 3. Ein Name je Papier: „Erinnerung" für das Blatt an das Kind, „Elternbrief" für den Brief
    mit Anschrift.
-4. Ehemalige stehen in der Mahnliste als eigene Gruppe, gehen an keine Klassenleitung und
-   bekommen den Elternbrief.
+4. Ehemalige bekommen den Elternbrief. Dass sie in der Mahnliste als eigene Gruppe stehen und
+   an keine Klassenleitung gehen, ist seit dem 04.10.2026 gebaut.
+5. Ein zweiter Druck am selben Tag liefert das Blatt und zählt nicht (5.50).
 
-Mit der Antwort zu bauen, ohne eigene Frage: Ein zweiter Druck am selben Tag liefert das Blatt
-und zählt nicht (5.50).
+Gebaut wird in Stufen, jede mit einem Test, der am alten Code rot ist: zuerst der Nachdruck,
+dann die Tür für beide Papiere mit dem Zählen, zuletzt die Oberfläche. Vor der Oberfläche steht
+eine Beschreibung, was wo stehen wird.
 
 ---
 

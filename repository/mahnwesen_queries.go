@@ -27,15 +27,22 @@ func newKlassenGrouper() *klassenGrouper {
 	}
 }
 
-func (g *klassenGrouper) add(klasse, schuelerID, name string, medium UeberfaelligesMedium) {
-	ki, ok := g.klassenIdx[klasse]
+// add ordnet ein Medium seiner Gruppe zu. Ehemalige bilden eine Gruppe für sich, gleich
+// welche Klasse sie zuletzt trugen: Der Klassenname gehört nach der Versetzung einem
+// anderen Jahrgang.
+func (g *klassenGrouper) add(klasse string, ehemalig bool, schuelerID, name string, medium UeberfaelligesMedium) {
+	schluessel := "klasse|" + klasse
+	if ehemalig {
+		klasse, schluessel = GruppeEhemalige, "ehemalige"
+	}
+	ki, ok := g.klassenIdx[schluessel]
 	if !ok {
-		g.klassen = append(g.klassen, MahnwesenKlasse{Klasse: klasse})
+		g.klassen = append(g.klassen, MahnwesenKlasse{Klasse: klasse, Ehemalige: ehemalig})
 		ki = len(g.klassen) - 1
-		g.klassenIdx[klasse] = ki
+		g.klassenIdx[schluessel] = ki
 	}
 
-	schuelerKey := klasse + "|" + schuelerID
+	schuelerKey := schluessel + "|" + schuelerID
 	si, ok := g.schuelerIdx[schuelerKey]
 	if !ok {
 		g.klassen[ki].Schueler = append(g.klassen[ki].Schueler, UeberfaelligerSchueler{
@@ -51,10 +58,11 @@ func (g *klassenGrouper) add(klasse, schuelerID, name string, medium Ueberfaelli
 }
 
 // QueryUeberfaelligeNachKlasse ermittelt alle Ausleihen, deren Frist überschritten ist,
-// gruppiert nach Klasse und Schüler. Ein optionaler Filter schränkt die Abfrage auf eine Klasse ein.
+// gruppiert nach Klasse und Schüler; Ehemalige stehen als eigene Gruppe am Ende. Ein
+// optionaler Filter schränkt die Abfrage auf die heutigen Schüler einer Klasse ein.
 func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Context, klasseFilter string) ([]MahnwesenKlasse, error) {
 	q := `
-		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse,
+		SELECT a.id, s.id, s.vorname || ' ' || s.nachname, s.klasse, s.ist_abgaenger,
 		       t.titel, coalesce(t.autor,''), coalesce(t.isbn,''), coalesce(t.cover_url,''),
 		       coalesce(e.barcode_id,''),
 		       a.rueckgabe_frist,
@@ -73,10 +81,11 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 	`
 	args := []any{}
 	if klasseFilter != "" {
-		q += " AND s.klasse = $1"
+		q += " AND s.klasse = $1 AND s.ist_abgaenger = false"
 		args = append(args, klasseFilter)
 	}
-	q += " ORDER BY s.klasse, s.nachname, s.vorname, a.rueckgabe_frist"
+	q += ` ORDER BY s.ist_abgaenger, CASE WHEN s.ist_abgaenger THEN '' ELSE s.klasse END,
+		s.nachname, s.vorname, a.rueckgabe_frist`
 
 	rows, err := repo.db.Query(ctx, q, args...)
 	if err != nil {
@@ -88,16 +97,17 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 
 	for rows.Next() {
 		var ausleiheID, schuelerID, name, klasse string
+		var ehemalig bool
 		var titel, autor, isbn, coverURL, exBarcode string
 		var frist time.Time
 		var tage int
-		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse,
+		if err := rows.Scan(&ausleiheID, &schuelerID, &name, &klasse, &ehemalig,
 			&titel, &autor, &isbn, &coverURL, &exBarcode,
 			&frist, &tage); err != nil {
 			return nil, err
 		}
 
-		g.add(klasse, schuelerID, name, UeberfaelligesMedium{
+		g.add(klasse, ehemalig, schuelerID, name, UeberfaelligesMedium{
 			AusleiheID:       ausleiheID,
 			Titel:            titel,
 			Autor:            autor,
@@ -153,6 +163,9 @@ func (repo *MahnwesenRepository) reichereLehrerEmails(ctx context.Context, klass
 		emailMap = map[string]string{} // Teil-Mapping verwerfen (best-effort-Anreicherung)
 	}
 	for i := range klassen {
+		if klassen[i].Ehemalige {
+			continue
+		}
 		klassen[i].LehrerEmail = emailMap[KlassenSchluessel(klassen[i].Klasse)]
 	}
 }
@@ -193,7 +206,9 @@ func scanUeberfaelligeKlassen(rows pgx.Rows) ([]MahnwesenKlasse, error) {
 			&frist, &tage); err != nil {
 			return nil, err
 		}
-		g.add(klasse, schuelerID, name, UeberfaelligesMedium{
+		// Das Blatt nennt die Klasse, die das Kind zuletzt trug; gruppiert wird nur für
+		// die Reihenfolge der Seiten.
+		g.add(klasse, false, schuelerID, name, UeberfaelligesMedium{
 			AusleiheID:       ausleiheID,
 			Titel:            titel,
 			Autor:            autor,

@@ -58,6 +58,8 @@ function createMahnwesenStore() {
 
 	// Abgeleitete Werte
 	let klassen = $derived(data?.klassen ?? []);
+	// Die Gruppe der Ehemaligen ist keine Klasse; Versand und Klassendruck bieten sie nicht an.
+	let versandKlassen = $derived(klassen.filter((/** @type {any} */ k) => !k.ehemalige));
 	let totalOverdue = $derived(
 		klassen.reduce(
 			(/** @type {number} */ sum, /** @type {any} */ k) =>
@@ -184,6 +186,9 @@ function createMahnwesenStore() {
 		},
 		get klassen() {
 			return klassen;
+		},
+		get versandKlassen() {
+			return versandKlassen;
 		},
 		get totalOverdue() {
 			return totalOverdue;

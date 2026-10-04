@@ -120,7 +120,7 @@
 	beschreibung="Wähle die Klassen aus, für die Mahnungen generiert werden sollen."
 	aktion="anmahnen"
 	hinweis="Leer lassen = an die regulären Klassenleitungen. Der Namensteil genügt, die Schul-Domäne wird ergänzt."
-	klassen={mahnwesenStore.klassen}
+	klassen={mahnwesenStore.versandKlassen}
 	onclose={() => (mahnlaufOffen = false)}
 	onconfirm={(auswahl) => {
 		mahnlaufOffen = false;

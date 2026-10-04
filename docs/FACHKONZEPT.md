@@ -165,7 +165,7 @@ Ausgabe-Pläne setzen keine Frist. PUT/DELETE melden `fristen_angepasst`.
 Das Mahnwesen kennt eine Frage: Welche offenen Bücher von Schülern sind über die Frist
 (`rueckgabe_frist`)? Kollegen werden nicht gemahnt, eine Dauerleihe wird nicht überfällig.
 
-- **Liste:** `GET /api/mahnwesen` nennt je Klasse und Schüler die offenen Bücher mit abgelaufener Frist. Die Reiter „Akut fällig" (bis 14 Tage) und „Eskaliert" (darüber) teilen sie nach der längsten Überschreitung je Schüler; gerechnet wird in der Oberfläche (`berechneMahnstufe`).
+- **Liste:** `GET /api/mahnwesen` nennt je Klasse und Schüler die offenen Bücher mit abgelaufener Frist. Die Reiter „Akut fällig" (bis 14 Tage) und „Eskaliert" (darüber) teilen sie nach der längsten Überschreitung je Schüler; gerechnet wird in der Oberfläche (`berechneMahnstufe`). Ehemalige stehen als eigene Gruppe am Ende (`ehemalige` in der Antwort), gleich welche Klasse sie zuletzt trugen: Der Klassenname gehört nach der Versetzung einem anderen Jahrgang. Die Gruppe hat keine Klassenleitung; der Mahnlauf und die Mahnliste einer Klasse lassen sie aus.
 - **Was hinausgeht:** die Mahnliste je Klasse per Mail an die Klassenleitung („Alle anmahnen", `POST /api/mail/send-bulk-overdue`), die Briefe an die Eltern mit Anschrift („Mahnbriefe", `GET /api/reports/overdue-pdf`, Text aus der Vorlage `MAHNUNG_ELTERN`, ohne Ehemalige), die Mahnliste einer Klasse (`GET /api/print/mahnung/klasse/{klasse}`), die Übersichtsliste (`GET /api/mahnwesen/pdf`) und das Blatt je Schüler aus der Auswahl („Mahnbriefe drucken", `POST /api/admin/mahnungen/bulk-print`).
 - **Mahnstufe:** Nur der Druck aus der Auswahl zählt sie (`ZaehleMahnungTx`), höchstens einmal je Kalendertag der Schule und nur für ein Buch, das auf dem Blatt steht: das offene Buch eines Schülers mit abgelaufener Frist. Rückt die Frist in die Zukunft (Verlängerung, Termin aus dem LMF-Plan, Datum von Hand), fällt sie auf null. Sie steht an der Ausleihe (`ausleihen.mahnstufe`); das Programm zeigt sie nicht an und knüpft weder eine Gebühr noch eine Sperre an sie. Wozu sie dienen soll, ist offen (OFFEN.md 4.30).
 - **Sperre und Geld:** Was ein Kind an der Theke anhält, steht in §2.2 (überfällige Bücher nach Zahl und Dauer, offene Forderung, Sperre von Hand). Eine Forderung entsteht mit einer Verlust- oder Schadensmeldung und dem Bescheid (§14); Mahngebühren gibt es nicht.
@@ -382,8 +382,8 @@ ein Bedeutungswechsel, der als Fix eines echten Fehlers (hartkodierte Klassennam
 „Ehemalige / Archiv" (`GET /api/schueler?status=ehemalige`, `ListEhemaligeWithStats` — dieselbe
 Liste und Serversuche wie „Aktive Schüler" mit umgekehrtem Vorzeichen; bis 05.09.2026 bettete
 der Reiter die Abgängerliste ein), mit der Zahl seiner offenen und überfälligen Bücher. Im
-Mahnwesen steht er, sobald die Frist eines Buchs abgelaufen ist (`QueryUeberfaelligeNachKlasse`);
-das Mahnwesen kennt nur die Frist.
+Mahnwesen steht er, sobald die Frist eines Buchs abgelaufen ist (`QueryUeberfaelligeNachKlasse`),
+in der Gruppe der Ehemaligen (§3); das Mahnwesen kennt nur die Frist.
 
 ## 9. Druck-Center und Ausweise
 

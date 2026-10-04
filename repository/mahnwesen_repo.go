@@ -33,16 +33,23 @@ type UeberfaelligerSchueler struct {
 	SchuelerID string `json:"schueler_id"`
 	// Name ist der vollständige Name des Schülers.
 	Name string `json:"name"`
-	// Klasse ist die aktuelle Schulklasse des Schülers.
+	// Klasse ist die Klasse des Schülers; die Mahnliste nennt bei einem Ehemaligen
+	// stattdessen den Namen seiner Gruppe.
 	Klasse string `json:"klasse"`
 	// Medien listet alle überfälligen Buchexemplare auf, die auf diesen Schüler entfallen.
 	Medien []UeberfaelligesMedium `json:"medien"`
 }
 
+// GruppeEhemalige ist der Name, unter dem die Mahnliste führt, wer die Schule verlassen hat.
+const GruppeEhemalige = "Ehemalige"
+
 // MahnwesenKlasse gruppiert überfällige Schüler und Ausleihen nach ihren Schulklassen für die Mahnwesen-Übersicht.
 type MahnwesenKlasse struct {
 	// Klasse ist das Klassenkürzel (z. B. "09A").
 	Klasse string `json:"klasse"`
+	// Ehemalige ist gesetzt, wenn die Gruppe keine Klasse ist, sondern die Ehemaligen
+	// sammelt. Sie hat keine Klassenleitung und geht in keinen Versand an eine.
+	Ehemalige bool `json:"ehemalige"`
 	// LehrerEmail ist die E-Mail-Adresse der Klassenleitung (für automatische Benachrichtigungen).
 	LehrerEmail string `json:"lehrer_email"`
 	// Schueler enthält die Liste aller Schüler dieser Klasse mit überfälligen Büchern.

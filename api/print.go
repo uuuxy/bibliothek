@@ -182,6 +182,9 @@ func queryMahnungSchueler(ctx context.Context, dbPool db.PgxPoolIface, klasse st
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE LOWER(s.klasse) = LOWER($1)
+		  -- Ein Ehemaliger behält den Klassennamen, den nach der Versetzung ein anderer
+		  -- Jahrgang trägt.
+		  AND s.ist_abgaenger = false
 		  AND s.deleted_at IS NULL
 		  AND a.rueckgabe_am IS NULL
 		  -- Eine Definition von "überfällig" wie überall sonst (Mahnliste, Dashboard,

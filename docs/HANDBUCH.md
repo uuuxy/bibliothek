@@ -409,8 +409,9 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
 - Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**. Die Liste
   der Ehemaligen nennt je Person die offenen und die überfälligen Bücher. Im Mahnwesen steht
-  ein Ehemaliger, sobald die Frist eines Buchs abgelaufen ist; läuft sie noch (etwa bei einem
-  Mehrjahresband), in der Akte an der Ausleihe das Rückgabedatum auf heute setzen. Löschen in
+  ein Ehemaliger unter „Ehemalige", sobald die Frist eines Buchs abgelaufen ist; läuft sie noch
+  (etwa bei einem Mehrjahresband), in der Akte an der Ausleihe das Rückgabedatum auf heute
+  setzen. Löschen in
   der Akte verlangt den Namen zur Bestätigung und legt die Person in den Papierkorb. Dort lässt
   sie sich bis zu 180 Tage lang wiederherstellen; danach wird ein Schüler anonymisiert, ein
   Kollege endgültig gelöscht. Ein Ehemaliger wird schon mit dem Ende seiner Karenzzeit
@@ -438,7 +439,9 @@ der Auswahl (Kinder anhaken, dann _Mahnbriefe drucken_), höchstens einmal am Ta
 Briefe an die Eltern, die Liste einer Klasse und der Mailversand zählen nicht. Das Programm
 zeigt die Zahl nicht an und knüpft nichts an sie. Ein Mahnbrief entsteht nur für ein Buch,
 dessen Frist abgelaufen ist; wurde ein Buch zwischen dem Laden der Liste und dem Druck
-verlängert, steht es nicht auf dem Blatt. Lehrkräfte werden nie angemahnt. Welche Klasse an welche
+verlängert, steht es nicht auf dem Blatt. Lehrkräfte werden nie angemahnt. Wer die Schule
+verlassen hat, steht in der Liste unter „Ehemalige" statt unter seiner früheren Klasse; an eine
+Klassenleitung geht er nicht, weder im Mahnlauf noch im Druck einer Klasse. Welche Klasse an welche
 Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. Diese Liste wird dort von Hand
 gepflegt, die LUSD liefert sie nicht, und an die Klassenleitungen geht nur, was jemand von Hand
 sendet (Mahnlauf, Abgänger-Kontoauszüge).

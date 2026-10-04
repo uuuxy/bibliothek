@@ -80,7 +80,7 @@
 		<div class="flex items-center gap-2">
 			<Select
 				bind:value={mahnwesenStore.selectedKlasse}
-				options={mahnwesenStore.klassen.map((/** @type {any} */ k) => ({
+				options={mahnwesenStore.versandKlassen.map((/** @type {any} */ k) => ({
 					value: k.klasse,
 					label: k.klasse
 				}))}

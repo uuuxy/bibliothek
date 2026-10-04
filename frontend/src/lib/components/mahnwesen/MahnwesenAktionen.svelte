@@ -38,8 +38,9 @@
 		mahnwesenStore.selectedIds.size === 1 ? [...mahnwesenStore.selectedIds][0] : ''
 	);
 
+	// Wen „Alle anmahnen" erreicht: die Kinder der Klassen, nicht die Ehemaligen.
 	let countAlle = $derived(
-		mahnwesenStore.klassen.reduce(
+		mahnwesenStore.versandKlassen.reduce(
 			(/** @type {number} */ sum, /** @type {any} */ k) => sum + k.schueler.length,
 			0
 		)
