@@ -3,7 +3,7 @@
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
 	import Segmente from '../../../../lib/components/ui/Segmente.svelte';
-	import { BookOpen, Camera, Plus, RefreshCw, Trash2 } from '@lucide/svelte';
+	import { BookOpen, Camera, Plus, RefreshCw, Trash } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -53,7 +53,7 @@
 				Zum Klassensatz hinzufügen ({selectedCount})
 			</Button>
 			<Button variant="danger" onclick={onDelete}>
-				<Trash2 class="w-4 h-4" aria-hidden="true" />
+				<Trash class="w-4 h-4" aria-hidden="true" />
 				Löschen ({selectedCount})
 			</Button>
 		{/if}

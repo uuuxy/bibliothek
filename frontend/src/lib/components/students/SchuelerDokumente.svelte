@@ -13,7 +13,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { apiFetch } from '../../apiFetch.js';
-	import { Printer, AlertTriangle, ShieldCheck } from '@lucide/svelte';
+	import { Printer, TriangleAlert, ShieldCheck } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -97,7 +97,7 @@
 			onclick={downloadRechnungPDF}
 			disabled={rechnungPdfLoading || !profile.has_open_damages}
 		>
-			{#if rechnungPdfLoading}{@render spinner()}{:else}<AlertTriangle
+			{#if rechnungPdfLoading}{@render spinner()}{:else}<TriangleAlert
 					class="w-4 h-4 text-rose-600"
 				/>{/if}
 			Ersatzforderung

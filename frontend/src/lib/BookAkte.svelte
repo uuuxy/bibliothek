@@ -12,7 +12,7 @@
 	import Reiter from './components/ui/Reiter.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { hatRecht } from './menu.js';
-	import { ChevronLeft, Frown } from '@lucide/svelte';
+	import { ChevronLeft, FaceSlightlyFrowning } from '@lucide/svelte';
 	import { untrack } from 'svelte';
 
 	/** @type {{ bookId: string | null, onBack: () => void }} */
@@ -123,7 +123,7 @@
 		/>
 	{:else}
 		<div class="py-24 flex flex-col items-center text-on-surface-variant gap-3">
-			<Frown class="w-12 h-12" aria-hidden="true" />
+			<FaceSlightlyFrowning class="w-12 h-12" aria-hidden="true" />
 			<p class="font-semibold">Buch nicht gefunden.</p>
 			<button
 				onclick={onBack}

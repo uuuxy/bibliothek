@@ -21,7 +21,7 @@
 	 *    Entschieden: eine Zeile wie bei der Fremdrückgabe, kein Dialog; die Ausleihe
 	 *    ist gebucht, wer will, legt das Buch zurück und holt die andere Auflage.
 	 */
-	import { AlertTriangle, BookCopy, PackageCheck, GraduationCap } from '@lucide/svelte';
+	import { TriangleAlert, BookCopy, PackageCheck, GraduationCap } from '@lucide/svelte';
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
 	import { leserArtText, istKollegium } from '../leserArt.js';
 	import { auflagenHinweisText } from '../utils/auflagenText.js';
@@ -33,7 +33,7 @@
 	<div
 		class="no-print mb-2 flex w-full max-w-xl items-center space-x-2 border border-amber-100 bg-amber-50 p-3 text-xs text-amber-800"
 	>
-		<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
+		<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
 		<span
 			>Fremdrückgabe: Buch war auf {omniboxStore.lastFremdrueckgabe.vorbesitzerName} verbucht und wurde
 			dort zurückgegeben —

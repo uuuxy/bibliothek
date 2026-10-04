@@ -11,7 +11,7 @@
         was zu tun ist, und der Knopf führt direkt auf den richtigen Reiter. -->
 <script>
 	import { onMount } from 'svelte';
-	import { AlertTriangle, ArrowRight, X } from '@lucide/svelte';
+	import { TriangleAlert, ArrowRight, X } from '@lucide/svelte';
 	import { backupStatus } from '../../stores/backupStatus.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -47,7 +47,7 @@
 		class="no-print mb-5 flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] bg-white py-3 pr-4 pl-3.5
 			{critical ? 'border-l-rose-600' : 'border-l-amber-500'}"
 	>
-		<AlertTriangle
+		<TriangleAlert
 			class="mt-0.5 h-4 w-4 shrink-0 {critical ? 'text-rose-600' : 'text-amber-600'}"
 			aria-hidden="true"
 		/>

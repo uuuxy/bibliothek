@@ -1,5 +1,5 @@
 <script>
-	import { AlertTriangle } from '@lucide/svelte';
+	import { TriangleAlert } from '@lucide/svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
@@ -47,7 +47,7 @@
 				role="alert"
 				class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 			>
-				<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
+				<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
 				<span>{error}</span>
 			</div>
 		{/if}

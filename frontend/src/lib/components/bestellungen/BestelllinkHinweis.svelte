@@ -10,7 +10,7 @@
      Form wie BackupAlert: 3-px-Schweregradstreifen auf ruhigem Grund, ein Satz zur Lage,
      ein Satz zur Folge, ein Knopf, der genau dorthin führt, wo es zu beheben ist. -->
 <script>
-	import { AlertTriangle, ArrowRight } from '@lucide/svelte';
+	import { TriangleAlert, ArrowRight } from '@lucide/svelte';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menu.js';
@@ -51,7 +51,7 @@
 		role="alert"
 		class="no-print flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] border-l-amber-500 bg-white py-3 pr-4 pl-3.5"
 	>
-		<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+		<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
 		<div class="min-w-0 flex-1">
 			<p class="text-sm font-semibold text-slate-800">
 				Bestellungen gehen ohne Bestätigungs-Link raus
@@ -79,7 +79,7 @@
 		role="status"
 		class="no-print flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] border-l-slate-400 bg-white py-3 pr-4 pl-3.5"
 	>
-		<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+		<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
 		<div class="min-w-0 flex-1">
 			<p class="text-sm font-semibold text-slate-800">Bestell-Einstellungen nicht geladen</p>
 			<p class="mt-0.5 text-xs leading-relaxed text-slate-500">

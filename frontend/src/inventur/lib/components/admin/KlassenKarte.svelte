@@ -2,7 +2,7 @@
 	import KlassenBuchKachel from '$lib/components/admin/KlassenBuchKachel.svelte';
 	import { sortBooksBySubjectAndTitle } from '$lib/book_sorting.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
-	import { ChevronDown, Pencil, Trash2 } from '@lucide/svelte';
+	import { ChevronDown, Pencil, Trash } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -101,7 +101,7 @@
 					title="Buchliste löschen"
 					aria-label="Buchliste löschen"
 				>
-					<Trash2 class="w-5 h-5" aria-hidden="true" />
+					<Trash class="w-5 h-5" aria-hidden="true" />
 				</button>
 			</div>
 		{/if}

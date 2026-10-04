@@ -29,7 +29,7 @@
 		ShieldCheck,
 		KeyRound,
 		Settings,
-		BookMarked,
+		BookBookmark,
 		FileText
 	} from '@lucide/svelte';
 
@@ -54,7 +54,7 @@
 		clock: Clock,
 		'chart-bar': ChartColumn,
 		// Bestandsbücher (Zugang/Abgang) — ein Nachweis zum Abheften, kein Katalog.
-		'book-marked': BookMarked,
+		'book-marked': BookBookmark,
 		// Bestellberichte — das Blatt selbst. NICHT 'clipboard' (ClipboardCheck): Das trägt
 		// die Inventur, und zwei Ziele mit demselben Symbol unterscheidet niemand.
 		'file-text': FileText,

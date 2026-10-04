@@ -11,7 +11,7 @@
 	import { onMount } from 'svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { Trash2, Undo2, ShieldOff } from '@lucide/svelte';
+	import { Trash, Undo2, ShieldOff } from '@lucide/svelte';
 	import PapierkorbLoeschenDialog from './PapierkorbLoeschenDialog.svelte';
 	import { erzeugePapierkorb, istAnonymisiert } from './papierkorbListe.svelte.js';
 
@@ -44,7 +44,7 @@
 <div class="w-full border-l-4 border-l-rose-400">
 	<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
 		<h3 class="text-base font-bold text-rose-800 flex items-center gap-2">
-			<Trash2 class="h-5 w-5" aria-hidden="true" />
+			<Trash class="h-5 w-5" aria-hidden="true" />
 			Gelöschte Schüler (Papierkorb)
 		</h3>
 	</div>
@@ -68,7 +68,7 @@
 		</div>
 	{:else if papierkorb.liste.length === 0}
 		<div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">
-			<Trash2 class="h-10 w-10 text-slate-300" aria-hidden="true" />
+			<Trash class="h-10 w-10 text-slate-300" aria-hidden="true" />
 			<span class="text-xs font-semibold">Der Papierkorb ist leer.</span>
 		</div>
 	{:else}
@@ -134,7 +134,7 @@
 											aria-label="Endgültig löschen"
 											class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-error-container text-on-error-container hover:opacity-80 transition-opacity shadow-sm cursor-pointer"
 										>
-											<Trash2 class="h-4.5 w-4.5" aria-hidden="true" />
+											<Trash class="h-4.5 w-4.5" aria-hidden="true" />
 										</button>
 									{/if}
 								</div>

@@ -10,7 +10,7 @@
 		erzeugeKlassenVorschlaege,
 		klassenPlatzhalter
 	} from './components/students/klassenVorschlaege.svelte.js';
-	import { Trash2 } from '@lucide/svelte';
+	import { Trash } from '@lucide/svelte';
 
 	/** @type {{klasse: string, lehrer_email: string}[]} */
 	let mappingRows = $state([]);
@@ -104,7 +104,7 @@
 								class="p-2 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
 								title="Mapping löschen"
 							>
-								<Trash2 class="w-5 h-5" aria-hidden="true" />
+								<Trash class="w-5 h-5" aria-hidden="true" />
 							</button>
 						</td>
 					</tr>

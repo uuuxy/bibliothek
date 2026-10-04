@@ -2,7 +2,7 @@
      Dreistufig: Dry-Run-Vorschau (Server rechnet identisches SQL und rollt zurück)
      → Ausführen-Knopf → rote Bestätigung. Kein window.confirm/Modal. -->
 <script>
-	import { AlertTriangle, CircleCheck, Info } from '@lucide/svelte';
+	import { TriangleAlert, CircleCheck, Info } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
@@ -135,7 +135,7 @@
 		<div
 			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
-			<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
+			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
 		</div>
 	{/if}
 
@@ -172,7 +172,7 @@
 		<div
 			class="flex items-start gap-2 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 		>
-			<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
+			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
 			<span
 				>Dieser Vorgang ist <strong>irreversibel</strong> und betrifft alle aktiven Schüler gleichzeitig.
 				Es gibt keinen automatischen Rückweg — nur ein erneuter LUSD-Import kann einzelne Datensätze danach

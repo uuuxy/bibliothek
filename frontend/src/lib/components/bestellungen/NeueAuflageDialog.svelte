@@ -9,7 +9,7 @@
      Material 3, Dialogs: höchstens zwei Aktionen, die bestätigende gesperrt, bis es etwas zu
      bestätigen gibt; die abbrechende nie. -->
 <script>
-	import { AlertCircle } from '@lucide/svelte';
+	import { CircleAlert } from '@lucide/svelte';
 	import { apiClient, extractApiError } from '../../apiFetch.js';
 	import Modal from '../../Modal.svelte';
 	import Button from '../ui/Button.svelte';
@@ -157,7 +157,7 @@
 				role="alert"
 				class="flex items-start gap-2 rounded-xl bg-error-container p-3 text-on-error-container"
 			>
-				<AlertCircle class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+				<CircleAlert class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
 				<p class="text-xs font-bold leading-tight">{fehler}</p>
 			</div>
 		{/if}

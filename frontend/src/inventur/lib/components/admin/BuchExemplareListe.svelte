@@ -4,7 +4,7 @@
 	import { showToast } from '$lib/store.svelte.js';
 	import { ladeBestandNach } from '../../buch_speichern.js';
 	import { onMount } from 'svelte';
-	import { Trash2 } from '@lucide/svelte';
+	import { Trash } from '@lucide/svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
 	import BuchEingabefelderInventar from './BuchEingabefelderInventar.svelte';
 
@@ -145,7 +145,7 @@
 								class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
 								onclick={() => deleteCopy(ex)}
 							>
-								<Trash2 class="w-4 h-4" aria-hidden="true" />
+								<Trash class="w-4 h-4" aria-hidden="true" />
 							</button>
 						</div>
 					{/each}

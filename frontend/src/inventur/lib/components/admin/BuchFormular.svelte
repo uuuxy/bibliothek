@@ -7,7 +7,7 @@
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
 	import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
-	import { BookOpen, Printer, Trash2, X } from '@lucide/svelte';
+	import { BookOpen, Printer, Trash, X } from '@lucide/svelte';
 
 	/**
 	 * onDelete kommt nur mit dem Recht delete_books (admin/+page) — ohne Recht gibt es den Knopf nicht.
@@ -119,7 +119,7 @@
 							class="w-full text-error"
 							title="Diesen Titel mit allen Exemplaren löschen"
 						>
-							<Trash2 class="w-4 h-4" aria-hidden="true" />
+							<Trash class="w-4 h-4" aria-hidden="true" />
 							Titel löschen
 						</Button>
 					{/if}

@@ -7,7 +7,7 @@
      Vorher: Cover links als farbiger Block, daneben sieben bunte Chips mit Rahmen, vier
      getönte Zahlenkästen in vier Farben, Titel erst darunter. -->
 <script>
-	import { Copy, MapPin, SquarePen, Trash2 } from '@lucide/svelte';
+	import { Copy, MapPin, SquarePen, Trash } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
 	import BuchKarteCover from '../inventur/lib/components/BuchKarteCover.svelte';
 
@@ -138,7 +138,7 @@
 				{/if}
 				{#if onDelete}
 					<Button variant="ghost" onclick={onDelete} class="text-error">
-						<Trash2 class="h-4 w-4" aria-hidden="true" />
+						<Trash class="h-4 w-4" aria-hidden="true" />
 						Titel löschen
 					</Button>
 				{/if}

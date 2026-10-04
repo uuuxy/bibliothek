@@ -2,7 +2,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
-	import { Clock, Trash2 } from '@lucide/svelte';
+	import { Clock, Trash } from '@lucide/svelte';
 
 	/** @type {{ vormerkungen: any[] }} */
 	let { vormerkungen = $bindable() } = $props();
@@ -63,7 +63,7 @@
 						class="text-rose-600 hover:text-rose-700 hover:bg-rose-50 p-2 rounded-lg transition-colors cursor-pointer"
 						title="Vormerkung löschen"
 					>
-						<Trash2 class="w-5 h-5" aria-hidden="true" />
+						<Trash class="w-5 h-5" aria-hidden="true" />
 					</button>
 				</div>
 			{/each}

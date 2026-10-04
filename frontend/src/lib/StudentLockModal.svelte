@@ -5,7 +5,7 @@
 <script>
 	import { apiClient } from './apiFetch.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
-	import { Unlock, Lock, AlertCircle } from '@lucide/svelte';
+	import { LockOpen, Lock, CircleAlert } from '@lucide/svelte';
 	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
 	import { ausleiheGesperrt } from './sperrStatus.js';
@@ -75,7 +75,7 @@
 				: 'text-error'} flex items-center gap-2"
 		>
 			{#if gesperrt}
-				<Unlock class="w-5 h-5" aria-hidden="true" />
+				<LockOpen class="w-5 h-5" aria-hidden="true" />
 				Sperre aufheben
 			{:else}
 				<Lock class="w-5 h-5" aria-hidden="true" />
@@ -117,7 +117,7 @@
 				role="alert"
 				class="p-3 bg-error-container text-on-error-container rounded-xl flex gap-2 items-start"
 			>
-				<AlertCircle class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+				<CircleAlert class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
 				<p class="text-xs font-bold leading-tight">{errorMsg}</p>
 			</div>
 		{/if}

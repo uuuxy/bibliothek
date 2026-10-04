@@ -8,7 +8,7 @@
 	import { sucheSchuelerFuerVormerkung } from './vormerkungSchuelersuche.js';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
-	import { Clock, Trash2 } from '@lucide/svelte';
+	import { Clock, Trash } from '@lucide/svelte';
 
 	/** @type {{ vormerkungen: any[], book: any }} */
 	let { vormerkungen = $bindable(), book } = $props();
@@ -189,7 +189,7 @@
 								title="Vormerkung löschen"
 								aria-label="Vormerkung löschen"
 							>
-								<Trash2 class="w-4 h-4" aria-hidden="true" />
+								<Trash class="w-4 h-4" aria-hidden="true" />
 							</button>
 						</td>
 					</tr>

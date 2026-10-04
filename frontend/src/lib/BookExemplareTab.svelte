@@ -10,7 +10,7 @@
 	import ExemplarEigentumDialog from './components/ExemplarEigentumDialog.svelte';
 	import AuswahlLeiste from './components/ui/AuswahlLeiste.svelte';
 	import Button from './components/ui/Button.svelte';
-	import { BookOpen, Trash2 } from '@lucide/svelte';
+	import { BookOpen, Trash } from '@lucide/svelte';
 
 	/** @type {{ exemplare: any[], book: any, loadAll: (id: string) => void }} */
 	let { exemplare = $bindable([]), book, loadAll } = $props();
@@ -147,7 +147,7 @@
 			<Button onclick={() => (eigentumOffen = true)}>Eigentum ändern</Button>
 			{#if darfLoeschen}
 				<Button variant="danger" onclick={deleteSelectedCopies}>
-					<Trash2 class="h-4 w-4" aria-hidden="true" />
+					<Trash class="h-4 w-4" aria-hidden="true" />
 					Löschen
 				</Button>
 			{/if}

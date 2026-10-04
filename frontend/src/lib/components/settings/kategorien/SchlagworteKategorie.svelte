@@ -12,7 +12,7 @@
 	 */
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { Trash2 } from '@lucide/svelte';
+	import { Trash } from '@lucide/svelte';
 	import { apiPut, apiPost } from '../../../apiFetch.js';
 	import { toastStore } from '../../../stores/toastStore.svelte.js';
 	import { loeschenBestaetigen } from '../../../stores/bestaetigung.svelte.js';
@@ -154,7 +154,7 @@
 					onleeren={() => auswahl.clear()}
 				>
 					<Button variant="danger" onclick={() => loeschen(markiert)}>
-						<Trash2 class="h-4 w-4" aria-hidden="true" />
+						<Trash class="h-4 w-4" aria-hidden="true" />
 						Löschen
 					</Button>
 				</AuswahlLeiste>

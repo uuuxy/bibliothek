@@ -4,7 +4,7 @@
      Konzept in docs/LUSD.md §5. Seit 07.09.2026 auf Modal.svelte (Register 05.09.);
      Kopfzeile und Schließen-Knopf stellt das Bauteil. -->
 <script>
-	import { Merge, AlertCircle } from '@lucide/svelte';
+	import { Merge, CircleAlert } from '@lucide/svelte';
 	import { apiClient, extractApiError } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -147,7 +147,7 @@
 				role="alert"
 				class="p-3 bg-error-container text-on-error-container rounded-xl flex gap-2 items-start"
 			>
-				<AlertCircle class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+				<CircleAlert class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
 				<p class="text-xs font-bold leading-tight">{fehler}</p>
 			</div>
 		{/if}

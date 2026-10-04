@@ -9,7 +9,7 @@
      alles, was vor Migration 063 bestellt wurde, hat keine bestellung_id. Die Ansicht
      sagt das ausdrücklich, statt eine leere Liste für eine Aussage zu halten. -->
 <script>
-	import { CheckCircle2, Clock, Ban } from '@lucide/svelte';
+	import { CircleCheck, Clock, Ban } from '@lucide/svelte';
 
 	/** @type {{ exemplare: any[] }} */
 	let { exemplare } = $props();
@@ -63,7 +63,7 @@
 								{#if e.ist_ausgesondert}
 									<Ban class="h-3.5 w-3.5" aria-hidden="true" />
 								{:else if e.etikett_gedruckt}
-									<CheckCircle2 class="h-3.5 w-3.5" aria-hidden="true" />
+									<CircleCheck class="h-3.5 w-3.5" aria-hidden="true" />
 								{:else}
 									<Clock class="h-3.5 w-3.5" aria-hidden="true" />
 								{/if}

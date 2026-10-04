@@ -10,7 +10,7 @@
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
-	import { CheckCircle2, Clock, Copy, Check } from '@lucide/svelte';
+	import { CircleCheck, Clock, Copy, Check } from '@lucide/svelte';
 
 	let { b, onAktualisieren } = $props();
 
@@ -88,7 +88,7 @@
 	<!-- Getönter Container statt Kasten mit Rahmen: In M3 trägt ein erledigter Zustand
 	     Fläche, keine Umrandung. -->
 	<div class="mb-3 flex items-start gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-emerald-900">
-		<CheckCircle2 size={20} class="mt-0.5 shrink-0 text-emerald-700" aria-hidden="true" />
+		<CircleCheck size={20} class="mt-0.5 shrink-0 text-emerald-700" aria-hidden="true" />
 		<div>
 			<p class="text-sm font-semibold">
 				{b.bestaetigt_durch === 'lieferant'

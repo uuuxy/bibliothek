@@ -16,7 +16,7 @@
      Nicht zu verwechseln mit der „Gefahrenzone" im Stammdaten-Reiter: Dort steht das
      unumkehrbare Löschen. Eine Sperre ist umkehrbar und gehört deshalb hierher. -->
 <script>
-	import { Lock, Unlock } from '@lucide/svelte';
+	import { Lock, LockOpen } from '@lucide/svelte';
 	import { ausleiheGesperrt } from '../../sperrStatus.js';
 	import { istKollegium } from '../../leserArt.js';
 	import Button from '../ui/Button.svelte';
@@ -80,7 +80,7 @@
 			disabled={kollege}
 		>
 			{#if gesperrt}
-				<Unlock class="w-4 h-4" aria-hidden="true" /> Sperre aufheben
+				<LockOpen class="w-4 h-4" aria-hidden="true" /> Sperre aufheben
 			{:else}
 				<Lock class="w-4 h-4" aria-hidden="true" />
 				{kollege ? 'Kollegen sperren' : 'Schüler sperren'}

@@ -14,7 +14,7 @@
 <script>
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Tabelle from '../ui/Tabelle.svelte';
-	import { CheckCircle2, Clock, ChevronRight } from '@lucide/svelte';
+	import { CircleCheck, Clock, ChevronRight } from '@lucide/svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import { mittelLabel } from './mittel.js';
 
@@ -85,7 +85,7 @@
 						{#if b.mit_bestaetigung && b.bestaetigt_am}
 							<StatusChip
 								ton="erfolg"
-								icon={CheckCircle2}
+								icon={CircleCheck}
 								text="Bestätigt"
 								detail={kurzdatum(b.bestaetigt_am)}
 								tip={b.bestaetigt_durch === 'lieferant'

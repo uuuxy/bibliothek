@@ -13,7 +13,7 @@
      Die Änderung gilt deshalb ausdrücklich nur für diesen einen Druck: Sie wird nirgends
      gespeichert und ist nach dem Verlassen des Profils wieder weg. -->
 <script>
-	import { RotateCcw, CalendarClock, AlertTriangle } from '@lucide/svelte';
+	import { RotateCcw, CalendarClock, TriangleAlert } from '@lucide/svelte';
 	import Feld from './ui/Feld.svelte';
 
 	/**
@@ -80,7 +80,7 @@
 
 	{#if vorschlag === null}
 		<p class="flex items-start gap-1.5 text-xs leading-relaxed text-amber-700">
-			<AlertTriangle class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+			<TriangleAlert class="mt-0.5 h-3.5 w-3.5 shrink-0" />
 			<span>
 				Aus der Klasse {klasse ? `„${klasse}“` : ''} lässt sich kein Ablaufjahr ableiten — bitte eintragen.
 				Geraten wird hier nichts: Ein falsches Datum fällt erst auf, wenn die Karte an der Ausleihe abgewiesen

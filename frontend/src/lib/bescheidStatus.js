@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2 } from '@lucide/svelte';
+import { TriangleAlert, CircleCheck } from '@lucide/svelte';
 
 /**
  * Liegt der Brief noch bei der Schule — ist also hier etwas zu tun oder abzuwarten?
@@ -35,7 +35,7 @@ export function bescheidStatus(b, datum) {
 	if (b.rueckgabe_nach_uebergabe) {
 		return {
 			ton: 'warten',
-			icon: AlertTriangle,
+			icon: TriangleAlert,
 			text: 'Rückgabe nach Übergabe',
 			tip: 'Das Buch kam zurück, nachdem der Fall abgegeben war — die Aufsicht ist zu informieren.'
 		};
@@ -49,12 +49,12 @@ export function bescheidStatus(b, datum) {
 		};
 	}
 	if (b.status === 'erledigt') {
-		return { ton: 'erfolg', icon: CheckCircle2, text: 'erledigt' };
+		return { ton: 'erfolg', icon: CircleCheck, text: 'erledigt' };
 	}
 	if (b.frist_abgelaufen) {
 		return {
 			ton: 'fehler',
-			icon: AlertTriangle,
+			icon: TriangleAlert,
 			text: 'Frist abgelaufen',
 			tip: 'Original und Buchungsbeleg gehen jetzt an die Aufsicht.'
 		};

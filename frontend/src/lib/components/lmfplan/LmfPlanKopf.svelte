@@ -12,7 +12,7 @@
      „Plan speichern" sonst zwei Bildschirmhöhen über der letzten Änderung. Der
      Scroll-Container ist <main> (App.svelte), deshalb genügt sticky top-0. -->
 <script>
-	import { Printer, Send, Trash2 } from '@lucide/svelte';
+	import { Printer, Send, Trash } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import Segmente from '../ui/Segmente.svelte';
 	import { ARTEN, datumKurz } from '../../lmfplanDienst.js';
@@ -56,7 +56,7 @@
 					Als PDF
 				</Button>
 				<Button variant="secondary" onclick={onverwerfen} disabled={!stand?.plan || stand.vorbei}>
-					<Trash2 class="h-4 w-4" aria-hidden="true" />
+					<Trash class="h-4 w-4" aria-hidden="true" />
 					Plan verwerfen
 				</Button>
 				{#if laufend && !veroeffentlicht}

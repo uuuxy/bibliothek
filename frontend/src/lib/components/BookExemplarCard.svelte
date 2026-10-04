@@ -6,7 +6,7 @@
 	import Button from './ui/Button.svelte';
 	import Feld from './ui/Feld.svelte';
 	import Kaestchen from './ui/Kaestchen.svelte';
-	import { Pencil, Plus, Printer, Trash2 } from '@lucide/svelte';
+	import { Pencil, Plus, Printer, Trash } from '@lucide/svelte';
 
 	/**
 	 * Einzelne Exemplar-Karte. Verwaltet ihren eigenen Bearbeitungsmodus
@@ -196,7 +196,7 @@
 						onDelete();
 					}}
 				>
-					<Trash2 class="w-3.5 h-3.5" aria-hidden="true" />
+					<Trash class="w-3.5 h-3.5" aria-hidden="true" />
 				</button>
 			{/if}
 		</div>

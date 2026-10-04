@@ -17,7 +17,7 @@
 		PinOff,
 		Plus,
 		Split,
-		Trash2,
+		Trash,
 		X
 	} from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
@@ -61,7 +61,7 @@
 				// Zeile nicht an (400): Der Eintrag bleibt sichtbar, aber gesperrt.
 				{ id: 'fest', text: 'Datum und Stunde festlegen', icon: Pin, disabled: platzlos },
 		...(klassen === 1 ? [{ id: 'klasseraus', text: 'Klasse aus dem Plan nehmen', icon: X }] : []),
-		{ id: 'entfernen', text: 'Zeile entfernen', icon: Trash2, trennerDavor: true }
+		{ id: 'entfernen', text: 'Zeile entfernen', icon: Trash, trennerDavor: true }
 	]);
 
 	const aktionen = {

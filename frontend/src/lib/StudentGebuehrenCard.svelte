@@ -1,7 +1,7 @@
 <script>
 	import { apiClient } from './apiFetch.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
-	import { Receipt, CheckCircle2, Ban, FileText } from '@lucide/svelte';
+	import { Receipt, CircleCheck, Ban, FileText } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import Modal from './Modal.svelte';
@@ -126,7 +126,7 @@
 								onclick={() => erledige(`/api/schadensfaelle/${f.id}/bezahlt`, 'Zahlung verbucht.')}
 								disabled={isSubmitting}
 							>
-								<CheckCircle2 class="h-4 w-4" aria-hidden="true" />
+								<CircleCheck class="h-4 w-4" aria-hidden="true" />
 								Bezahlt
 							</Button>
 							<Button variant="danger" onclick={() => (stornoFall = f)} disabled={isSubmitting}>

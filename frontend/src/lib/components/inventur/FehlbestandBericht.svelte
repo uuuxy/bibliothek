@@ -19,7 +19,7 @@
      Zurücksetzen der Inventur hinweg. Sonst wäre er im selben Moment wieder weg, in dem
      er entsteht. -->
 <script>
-	import { Printer, X, PackageSearch, Trash2 } from '@lucide/svelte';
+	import { Printer, X, PackageSearch, Trash } from '@lucide/svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Button from '../ui/Button.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
@@ -101,7 +101,7 @@
 					onclick={() => (loeschDialogOffen = true)}
 					data-tip="Weiterhin fehlende Exemplare unwiderruflich aus dem Katalog entfernen"
 				>
-					<Trash2 class="h-4 w-4" aria-hidden="true" />
+					<Trash class="h-4 w-4" aria-hidden="true" />
 					{offene.length} endgültig löschen
 				</Button>
 			{/if}

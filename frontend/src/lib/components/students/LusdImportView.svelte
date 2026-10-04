@@ -8,7 +8,7 @@
      die Vorschau sagt, welche Stufe gilt, und was unangetastet bleibt. Texte und Rubriken
      stehen in lusdVorschauRubriken.js. -->
 <script>
-	import { AlertTriangle, ChevronRight, CircleCheck, FolderOpen } from '@lucide/svelte';
+	import { TriangleAlert, ChevronRight, CircleCheck, FolderOpen } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
@@ -204,7 +204,7 @@
 			role="alert"
 			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
-			<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
+			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
 		</div>
 	{/if}
 
@@ -277,7 +277,7 @@
 					<div
 						class="flex items-center gap-2 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 					>
-						<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" /><span
+						<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span
 							>Auffällig viele Abgänger ({previewResult.graduates.length} von {previewResult.active_db_students}
 							aktiven Schülern) — Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche
 							Bestätigung.</span

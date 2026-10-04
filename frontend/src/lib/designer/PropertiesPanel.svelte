@@ -11,7 +11,7 @@
 	import ZahlenFeld from './ZahlenFeld.svelte';
 	import Kaestchen from '../components/ui/Kaestchen.svelte';
 	import Switch from '../components/ui/Switch.svelte';
-	import { MousePointer2, Trash2 } from '@lucide/svelte';
+	import { MousePointer2, Trash } from '@lucide/svelte';
 
 	/** @type {{ selectedId: string|null, side: 'front'|'back' }} */
 	const { selectedId, side } = $props();
@@ -78,7 +78,7 @@
 					title="Element löschen"
 					aria-label="Element löschen"
 				>
-					<Trash2 class="w-4 h-4" aria-hidden="true" />
+					<Trash class="w-4 h-4" aria-hidden="true" />
 				</button>
 			{/if}
 		</div>

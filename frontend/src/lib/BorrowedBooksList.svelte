@@ -3,7 +3,7 @@
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { showToast } from '../inventur/lib/store.svelte.js';
-	import { AlertTriangle, CalendarPlus, Undo2 } from '@lucide/svelte';
+	import { TriangleAlert, CalendarPlus, Undo2 } from '@lucide/svelte';
 	import AusleiheRueckgabe from './AusleiheRueckgabe.svelte';
 	import BuchCover from './components/ui/BuchCover.svelte';
 	import CoverPeek from './components/ui/CoverPeek.svelte';
@@ -138,7 +138,7 @@
 									data-tip="Verlust oder Schaden melden"
 									aria-label="Verlust oder Schaden melden"
 								>
-									<AlertTriangle class="h-4 w-4" aria-hidden="true" />
+									<TriangleAlert class="h-4 w-4" aria-hidden="true" />
 								</button>
 							{/if}
 							{#if onReturnClick}

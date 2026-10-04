@@ -2,7 +2,7 @@
 
      Was eine Rolle darf, steht im Reiter daneben (PermissionManager), nicht hier. -->
 <script>
-	import { AlertTriangle, Plus, X } from '@lucide/svelte';
+	import { TriangleAlert, Plus, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import UserManagementTable from './UserManagementTable.svelte';
 	import UserManagementZugangsanfragen from './UserManagementZugangsanfragen.svelte';
@@ -153,7 +153,7 @@
 		role="alert"
 		class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 	>
-		<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
+		<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
 		<span class="grow">{error}</span>
 		<button
 			type="button"

@@ -3,7 +3,7 @@
      Steht in der Einstellungs-Kategorie „Mail" unter deren Überschrift „Mail-Vorlagen", die
      auch den Hinweis trägt; eine eigene Überschrift hätte die Ordnung der Seite umgekehrt. -->
 <script>
-	import { AlertTriangle } from '@lucide/svelte';
+	import { TriangleAlert } from '@lucide/svelte';
 	import { apiClient } from './apiFetch.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import Button from './components/ui/Button.svelte';
@@ -88,7 +88,7 @@
 			role="alert"
 			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
-			<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
+			<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
 		</div>
 	{/if}
 

@@ -1,4 +1,4 @@
-import { Pencil, Merge, CornerDownRight, Trash2 } from '@lucide/svelte';
+import { Pencil, Merge, CornerDownRight, Trash } from '@lucide/svelte';
 
 // Die Regeln der Pflegeseite, die nicht im Server stehen, sondern in der Anzeige: was das
 // Menü einer Zeile anbietet, was die Löschen-Rückfrage sagt, die Zählzeile
@@ -13,7 +13,7 @@ import { Pencil, Merge, CornerDownRight, Trash2 } from '@lucide/svelte';
  */
 export function menueEintraege(z) {
 	const umbenennen = { id: 'umbenennen', text: 'Umbenennen', icon: Pencil };
-	const loeschen = { id: 'loeschen', text: 'Löschen', icon: Trash2, trennerDavor: true };
+	const loeschen = { id: 'loeschen', text: 'Löschen', icon: Trash, trennerDavor: true };
 	if (z.verweis_auf_id) return [umbenennen, loeschen];
 	return [
 		umbenennen,
