@@ -99,12 +99,12 @@ Datenbank und der Littera-Übernahme (7.2).
 
 **Im Code,** in dieser Reihenfolge:
 
-1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
+1. **4.30** (Mahnstufe, die zwei Papiere „Mahnbrief" und Ehemalige im Mahnwesen): Vier Fragen
+   sind vorgelegt, die Antwort steht aus. Vorn, weil darin ein Verdacht der Kategorie A steht.
+2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
+3. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
    Unterscheidung wird.
-3. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
-4. **4.30** (Mahnstufe und die zwei Papiere „Mahnbrief"): Die Entscheidung steht aus; erst
-   klären.
+4. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
 5. Nach der Antwort zu 8.3: **5.4**.
 6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
@@ -311,9 +311,37 @@ Gefunden am 04.10.2026 bei der Entscheidung zur Ansicht „Jahrgang".
   Stufen und keine Gebühr. Littera zählt je Leser nach bestätigtem Druck, steuert damit den
   Abstand zur nächsten Mahnung und druckt die Stufe auf den Brief.
 
-**Offen:** Wozu dient die Mahnstufe — anzeigen (Liste, Akte, Blatt), als Hinweis vor dem
-Bescheid, oder entfallen? Dazu: ein eigener Name je Papier, und ob die Briefe an die Eltern
-Ehemalige weiter auslassen.
+- **Die Briefe an die Eltern kennen keine Auswahl** (am Code gelesen am 04.10.2026): Der Knopf
+  druckt für jeden Schüler mit einem überfälligen Buch, auch wenn es seit einem Tag überfällig
+  ist (`queryOverdueStudents` in `api/reports_pdf.go`).
+- **Verdacht, am Code gelesen am 04.10.2026, nicht nachgestellt: Ein Ehemaliger steht in der
+  Liste an eine fremde Klassenleitung.** Meldet die LUSD einen Schüler mit offenen Büchern
+  nicht mehr, wird er Ehemaliger und behält seine Klasse (`sperreAbgaenger` in
+  `api/lusd_apply.go`); die Versetzung fasst danach nur Schüler an, die nicht Ehemalige sind
+  (`promoteStudentsQuery` in `api/student_promotion.go`). Die Mahnliste führt ihn unter
+  dieser Klasse, und „Alle anmahnen" liest dieselbe Liste (`QueryUeberfaelligeNachKlasse`).
+  Nach der Versetzung trägt ein anderer Jahrgang den Klassennamen: Name und Bücher des
+  Ehemaligen gingen dann an dessen Klassenleitung. Ein Abgänger aus der Versetzung trägt die
+  Klasse `ABG`, für die es keine Klassenleitung gibt. Kategorie A, sobald nachgestellt.
+- Littera fragt nach dem Druck, ob gezählt werden soll („nur wenn Probleme mit dem Drucker
+  aufgetreten sind", mit Nein), druckt mit „Mahnbriefe nachdrucken" den letzten Lauf ohne
+  Zählen, nennt die Stufe im Druckbild (1 = erste, 2 = zweite oder weitere Mahnung) und zeigt
+  je Leser eine Mahnhistorie (Littera-Handbuch, „Mahnwesen").
+
+**Vorgelegt am 04.10.2026, die Antwort steht aus.** Je Frage die Empfehlung:
+
+1. Die Zahl zeigen statt streichen: Mahnliste und Bescheid-Dialog nennen je Kind, wie oft und
+   wann zuletzt erinnert wurde, statt des Worts, das die Liste heute aus den Tagen rechnet.
+   Gezählt werden die zwei Papiere, die Mail an die Klassenleitung wie bisher nicht.
+2. Beide Papiere gehen von der Auswahl aus: Kinder anhaken, dann das Papier wählen. Damit
+   läuft das Zählen durch eine Tür.
+3. Ein Name je Papier: „Erinnerung" für das Blatt an das Kind, „Elternbrief" für den Brief
+   mit Anschrift.
+4. Ehemalige stehen in der Mahnliste als eigene Gruppe, gehen an keine Klassenleitung und
+   bekommen den Elternbrief.
+
+Mit der Antwort zu bauen, ohne eigene Frage: Ein zweiter Druck am selben Tag liefert das Blatt
+und zählt nicht (5.50).
 
 ---
 
@@ -531,21 +559,20 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   und eine Gegenprobe je Zusicherung, Muster in `api/inventur_verlust_aktionen_pg_test.go`.
   Kategorie B.
 - SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek5`; der
-  Schlüssel steht in `sonar-project.properties`. Letzter Scan am 04.10.2026, der dritte des
+  Schlüssel steht in `sonar-project.properties`. Letzter Scan am 04.10.2026, der vierte des
   Tages, in der Einteilung der Übersicht (MQR-Modus): Zuverlässigkeit 0 Meldungen (Note A),
-  Sicherheit 0 (A), Wartbarkeit 114 (A), Abdeckung 72,0 % von 38.740 Zeilen. Am 03.10.2026
+  Sicherheit 0 (A), Wartbarkeit 114 (A), Abdeckung 77,4 % von 38.650 Zeilen. Am 03.10.2026
   waren es 209 Meldungen, davon 75 `go:S3776` und zehn mit Auswirkung auf die Zuverlässigkeit
   (Note C); beide Gruppen und zehn Meldungen zur Wartbarkeit sind behoben, die übrigen 114
   sind nicht einzeln durchgesehen. `komplexitaet_ratsche_test.go` lässt keine
   Produktionsfunktion über 15 zu. Das Projekt ist am 04.10.2026 neu angelegt, der Stand vom
   03.10.2026 liegt auf dem Server unter `Bibliothek4a`. Das Quality Gate vergleicht mit dem
-  ersten Scan des Projekts und steht nach dem dritten auf Fehler, an einer von drei
-  Bedingungen: Von 50 neuen Zeilen zählt der Scan 29 als ungetestet (57,7 % statt 80 %). Er
-  rechnete einem Go-Paket nur die Tests an, die in ihm selbst liegen; seit dem 04.10.2026 misst
-  das Skript mit `-coverpkg` über alle Pakete ([SCRIPTS.md](SCRIPTS.md), „Warum die Coverage
-  niedriger aussieht, als sie ist"). Der Scan danach steht aus; er zeigt, ob die Bedingung
-  damit auf OK steht. Die Gesamtabdeckung muss dabei steigen. Fällt sie, liest SonarQube ein
-  Profil, das einen Block je Testprogramm einmal nennt, nicht wie angenommen.
+  ersten Scan des Projekts und steht auf OK mit drei Bedingungen; vom neuen Code sind 94,1 %
+  getestet (3 von 47 Zeilen offen: zwei im Fehlerausgang von `ZaehleMahnungTx`, eine in
+  `scripts/generalprobe/probe_host.py`). Der dritte Scan stand an dieser Bedingung auf Fehler
+  (57,7 %, Gesamtabdeckung 72,0 %): Er rechnete einem Go-Paket nur die Tests an, die in ihm
+  selbst liegen. Seit dem 04.10.2026 misst das Skript mit `-coverpkg` über alle Pakete
+  ([SCRIPTS.md](SCRIPTS.md), „Warum die Coverage niedriger aussieht, als sie ist").
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
