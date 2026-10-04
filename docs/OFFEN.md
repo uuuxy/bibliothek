@@ -1096,10 +1096,13 @@ Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? K
   den Ständen der Tage: 0 am 04.08.2026, 35 am 05.09.2026, 60 am 17.09.2026, 75 am 03.10.2026
   vor dem Rückbau. Eine Ratsche, unter der die Zahl nur sinken darf, ist am 03.10.2026
   zurückgestellt worden; ohne sie wächst die Zahl wieder wie zwischen August und Oktober.
-- Die beiden Fristen-Türen (`PATCH /api/admin/ausleihen/{id}/faelligkeit`,
-  `POST /api/ausleihen/{ausleihe_id}/verlaengern`) antworten auf eine Kennung, die keine UUID
-  ist, mit 500 statt mit 404 (nachgestellt am 03.10.2026). Die Oberfläche schickt nur echte
-  Kennungen. Beim nächsten Anfassen `kennung.IstUUID` vor die erste Abfrage.
+- Die Prüfung der UUID-Pfadparameter (`ValidateUUIDParamsMiddleware`) sitzt in
+  `RequirePermission`. Eine Route mit `{id}`, `{schueler_id}` oder `{ausleihe_id}` unter
+  `RequireAuthenticated` liefe an ihr vorbei, und die Kennung ginge ungeprüft an die Datenbank.
+  Heute gibt es keine: Am 04.10.2026 antworteten alle 65 Routen mit UUID-Platzhalter am echten
+  Router auf eine Kennung, die keine UUID ist, mit 400. Kein Gate hält das;
+  `api/uuid_pfadparameter_test.go` prüft die Namen der Platzhalter, nicht die Hülle der Route.
+  Anlass zum Bauen: die erste Route mit UUID-Platzhalter ohne `RequirePermission`.
 - `javascript:S6551` und `javascript:S8783`: begründete Dauer-Ausnahmen. Die Begründung zu
   S6551 steht als Kommentar in `settingsWerte.js`; S8783 nennt im Repository keine Stelle
   (nachgesehen am 02.10.2026).
