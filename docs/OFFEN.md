@@ -98,7 +98,8 @@ Datenbank und der Littera-Übernahme (7.2).
    LUSD-Import mit echten Schülern kommt erst nach der Littera-Übernahme (7.2).
 7. **Das Mahnwesen ansehen** (gebaut am 04.10.2026): Kinder anhaken, „Mahnbriefe drucken". Es
    kommt je Kind der Brief an die Eltern mit Anschrift; die Liste zeigt danach
-   „1× gemahnt, zuletzt …". Zu entscheiden ist, ob die zwei Listen im Druck-Menü bleiben (4.30).
+   „1× gemahnt, zuletzt …". Zu entscheiden ist, ob die zwei Listen im Druck-Menü bleiben (4.30);
+   danach bekommt der Knopf zum Druck-Menü seine Form (5.51).
 
 **Im Code,** in dieser Reihenfolge:
 
@@ -879,6 +880,32 @@ Abgängerliste) antworten auch mit einer solchen Klasse (`klassenZahlSQL` in
 Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächster Schritt mit
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
+
+### 5.51 Der Knopf zum Druck-Menü im Mahnwesen trägt kein Wort
+
+Seit dem 04.10.2026 öffnet im Mahnwesen ein umrandeter Knopf mit Drucker-Symbol und ohne
+Beschriftung das Druck-Menü (`MahnwesenDruckMenue.svelte`); vorher war es der Split-Button
+„Mahnbriefe ▾". Verglichen am selben Tag mit den anderen Seiten:
+
+- Druck-Knöpfe tragen sonst Symbol und Wort, in 15 Dateien („Liste drucken", „Drucken",
+  „Als PDF", „Nachdruck", „Ausdrucken", „A4-Bogen drucken" …). Ein Drucker ohne Wort steht sonst
+  nur als Zeilenaktion in einer Liste (`BookExemplarCard.svelte`,
+  `BestellDetailPositionen.svelte`).
+- Menüs öffnen sonst über einen Split-Button („Ausweis drucken ▾" in der Schülerakte) oder über
+  ⋮ (Bedarf, Zeile im LMF-Plan, Schlagworte).
+- „Neu laden" daneben (`MahnwesenAktionen.svelte`) trägt ebenfalls kein Wort; auf den anderen
+  Seiten heißt der Knopf „Aktualisieren" oder „Neu prüfen".
+
+M3, Icon buttons (Guidelines): „Default icon buttons can open other elements, such as a menu" —
+die Bauform ist erlaubt. Dieselbe Seite: „Icons visually communicate the button's action. Their
+meaning should be clear and unambiguous." Der Drucker öffnet hier ein Menü, und zwei der drei
+Wege darin laden ein PDF. M3, Menus (Guidelines): Ein Menü öffnet aus „an icon, button, or text
+field".
+
+Nächster Schritt, nach 4.30 (die Antwort bestimmt, was hinter dem Knopf steht): ein umrandeter
+Knopf mit Drucker, Wort und Pfeil in der Form von „Liste drucken" in der Buchakte; „Neu laden"
+bekommt im selben Zug sein Wort. Die Form ist ein Vorschlag, entschieden ist sie nicht.
+Kategorie B.
 
 ---
 
