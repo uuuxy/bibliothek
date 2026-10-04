@@ -89,6 +89,18 @@ function istNeutralerErsatz(node) {
 }
 
 /**
+ * Setzt der Fehlerzweig des Dreisatzes einen neutralen Wert? Er steht bei `res.ok ? … : []`
+ * im zweiten Zweig, bei der Verneinung `!res.ok ? [] : …` im ersten.
+ */
+function fehlerzweigIstNeutral(node) {
+	const { test } = node;
+	if (fragtNachOk(test)) return istNeutralerErsatz(node.alternate);
+	const verneint =
+		test.type === 'UnaryExpression' && test.operator === '!' && fragtNachOk(test.argument);
+	return verneint && istNeutralerErsatz(node.consequent);
+}
+
+/**
  * @param {string} datei Pfad (bestimmt auch die Parserwahl)
  * @param {string} [quelle] Inhalt; ohne Angabe wird die Datei gelesen
  * @returns {number[]} Zeilennummern der verschluckten Fehlausgänge
@@ -107,25 +119,12 @@ export function findeVerschluckteFehlantworten(datei, quelle) {
 					zeilen.push(node.loc.start.line);
 					return;
 				}
-				// Form 2: `res.ok ? … : []` — der Fehlerzweig EXISTIERT, setzt aber einen
-				// neutralen Wert. Auf dem Bildschirm ist das nicht von „nichts gefunden" zu
-				// unterscheiden; „Der Papierkorb ist leer" für einen Papierkorb, der nur
-				// nicht geladen werden konnte, war genau dieser Fall.
-				//
-				// Seit dem 22.09.2026 über alle Formen der Bedingung (OFFEN.md 5.12): auch die
-				// UND-Kette (`res.ok && nr === ladeNr ? … : []`) wie in Form 1, und die
-				// Verneinung (`!res.ok ? [] : …`), bei der der neutrale Wert im ERSTEN Zweig steht.
-				if (node.type === 'ConditionalExpression') {
-					if (fragtNachOk(node.test) && istNeutralerErsatz(node.alternate)) {
-						zeilen.push(node.loc.start.line);
-					} else if (
-						node.test.type === 'UnaryExpression' &&
-						node.test.operator === '!' &&
-						fragtNachOk(node.test.argument) &&
-						istNeutralerErsatz(node.consequent)
-					) {
-						zeilen.push(node.loc.start.line);
-					}
+				// Form 2: `res.ok ? … : []` — der Fehlerzweig ist da, setzt aber einen neutralen
+				// Wert. Auf dem Bildschirm ist das nicht von „nichts gefunden" zu unterscheiden:
+				// „Der Papierkorb ist leer" für einen Papierkorb, der nicht geladen werden konnte.
+				// Die Bedingung zählt in jeder Form, auch als UND-Kette und verneint.
+				if (node.type === 'ConditionalExpression' && fehlerzweigIstNeutral(node)) {
+					zeilen.push(node.loc.start.line);
 				}
 			}
 		});
