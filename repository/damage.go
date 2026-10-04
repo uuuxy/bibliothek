@@ -28,7 +28,9 @@ func (a SchadensArt) Gueltig() bool {
 
 // DamageRepository defines operations for managing book damages and related loan actions.
 type DamageRepository interface {
-	ReportDamage(ctx context.Context, copyID, loanID, schuelerID string, benutzerID string, beschreibung string, art SchadensArt, betrag float64) (string, error)
+	// ReportDamage bucht einen Verlust oder Schaden an einer Ausleihe. Einen Schuldner nimmt
+	// die Tür nicht entgegen: Er steht an der Ausleihe.
+	ReportDamage(ctx context.Context, copyID, loanID, benutzerID, beschreibung string, art SchadensArt, betrag float64) (string, error)
 	// ListSchadensfaelleVonSchueler liefert alle Schadensfälle eines Schülers,
 	// neueste zuerst — die Gebühren-Sektion der Schülerakte.
 	ListSchadensfaelleVonSchueler(ctx context.Context, schuelerID string) ([]Schadensfall, error)
@@ -100,9 +102,8 @@ var ErrExemplarNeuVerliehen = errors.New("Exemplar wurde zwischenzeitlich neu au
 
 // ReportDamage bucht einen Verlust oder Schaden in eigener Transaktion — der Weg aus der
 // Schülerakte („Verlust/Schaden melden"). Der Rumpf ist meldeSchaden; der Bescheid ruft
-// ihn in seiner eigenen Transaktion (Stufe 2 des Mahnverfahrens). schuelerID ist nur
-// Anzeige: Der Schuldner steht an der Ausleihe.
-func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, _ string, benutzerID string, beschreibung string, art SchadensArt, betrag float64) (string, error) {
+// ihn in seiner eigenen Transaktion (Stufe 2 des Mahnverfahrens).
+func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, benutzerID, beschreibung string, art SchadensArt, betrag float64) (string, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return "", err

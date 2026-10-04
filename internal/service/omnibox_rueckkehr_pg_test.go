@@ -108,7 +108,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 			`SELECT id FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL`, exemplarID).Scan(&loanID); err != nil {
 			t.Fatalf("Ausleihe lesen: %v", err)
 		}
-		schadensID, err := damageRepo.ReportDamage(ctx, exemplarID, loanID, schuelerID, mitarbeiterID,
+		schadensID, err := damageRepo.ReportDamage(ctx, exemplarID, loanID, mitarbeiterID,
 			"Nicht zurückgegeben (Test)", repository.SchadensArtNichtZurueck, 12.00)
 		if err != nil {
 			t.Fatalf("Forderung melden: %v", err)
@@ -215,7 +215,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		`SELECT id FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL`, defektID).Scan(&defektLoanID); err != nil {
 		t.Fatalf("Ausleihe lesen: %v", err)
 	}
-	if _, err := damageRepo.ReportDamage(ctx, defektID, defektLoanID, schuelerID, mitarbeiterID,
+	if _, err := damageRepo.ReportDamage(ctx, defektID, defektLoanID, mitarbeiterID,
 		"Wasserschaden (Test)", repository.SchadensArtBeschaedigt, 7.50); err != nil {
 		t.Fatalf("Schaden melden: %v", err)
 	}

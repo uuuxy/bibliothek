@@ -19,7 +19,9 @@ func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) htt
 		}
 
 		var req struct {
-			LoanID       string `json:"loan_id" validate:"omitempty,uuid_oder_leer"`
+			LoanID string `json:"loan_id" validate:"omitempty,uuid_oder_leer"`
+			// SchuelerID schickt der Dialog mit; gelesen wird es nicht. Der Schuldner steht
+			// an der Ausleihe (repository.meldeSchaden).
 			SchuelerID   string `json:"schueler_id" validate:"omitempty,uuid_oder_leer"`
 			CopyID       string `json:"copy_id" validate:"omitempty,uuid_oder_leer"`
 			Beschreibung string `json:"beschreibung"`
@@ -39,7 +41,7 @@ func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) htt
 				errors.New("art fehlt oder ist ungültig"))
 		}
 
-		schadensID, err := damageRepo.ReportDamage(r.Context(), req.CopyID, req.LoanID, req.SchuelerID, claims.UserID, req.Beschreibung, art, req.Betrag)
+		schadensID, err := damageRepo.ReportDamage(r.Context(), req.CopyID, req.LoanID, claims.UserID, req.Beschreibung, art, req.Betrag)
 		if err != nil {
 			// Zwischenzeitliche Neuausleihe ist ein Konflikt (409), kein Serverfehler:
 			// Der Nutzer muss den Vorgang neu laden, nicht der Server ist kaputt.

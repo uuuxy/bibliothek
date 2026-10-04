@@ -30,7 +30,7 @@ func TestReportDamageRace(t *testing.T) {
 	seedAusleihe(t, pool, copyID, schuelerB, bearbeiter)
 
 	// Jetzt kommt der verspätete "Schaden melden"-Klick mit der ALTEN loanID.
-	_, err := repo.ReportDamage(ctx, copyID, alteLoan, schuelerA, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 5.0)
+	_, err := repo.ReportDamage(ctx, copyID, alteLoan, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 5.0)
 	if !errors.Is(err, ErrExemplarNeuVerliehen) {
 		t.Fatalf("erwartet ErrExemplarNeuVerliehen, war: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestReportDamageNormalfall(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
 
-	schadensID, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 3.0)
+	schadensID, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 3.0)
 	if err != nil {
 		t.Fatalf("regulärer Schaden abgelehnt: %v", err)
 	}
@@ -95,11 +95,11 @@ func TestReportDamageIdempotent(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
 
-	id1, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
+	id1, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
 	if err != nil {
 		t.Fatalf("erster Report abgelehnt: %v", err)
 	}
-	id2, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
+	id2, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
 	if err != nil {
 		t.Fatalf("zweiter Report (Doppelklick) abgelehnt: %v", err)
 	}
@@ -158,10 +158,10 @@ func returnLoan(t *testing.T, pool *pgxpool.Pool, loanID string) {
 	}
 }
 
-// TestReportDamageSchuldnerAusAusleihe belegt die Objektbindung (IDOR-Sweep 19.08.2026):
-// Der Schadensfall wird dem Schuldner der AUSLEIHE zugeschrieben, nicht der vom Client
-// mitgeschickten schueler_id. Eine falsche (vertippte oder manipulierte) ID im Request
-// darf den Gebührenbescheid nicht einem unbeteiligten Schüler anhängen.
+// TestReportDamageSchuldnerAusAusleihe belegt die Objektbindung: Der Schadensfall wird dem
+// Schuldner der Ausleihe zugeschrieben. Eine Kennung des Schuldners nimmt ReportDamage nicht
+// entgegen; dass die mitgeschickte schueler_id der Anfrage folgenlos bleibt, prüft
+// api/schaden_schuldner_pg_test.go an der Route.
 func TestReportDamageSchuldnerAusAusleihe(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -176,8 +176,7 @@ func TestReportDamageSchuldnerAusAusleihe(t *testing.T) {
 
 	loan := seedAusleihe(t, pool, copyID, echterSchuldner, bearbeiter)
 
-	// Der Client behauptet fälschlich, der FREMDE sei schuld.
-	schadensID, err := repo.ReportDamage(ctx, copyID, loan, fremder, bearbeiter, "Riss", SchadensArtBeschaedigt, 4.0)
+	schadensID, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "Riss", SchadensArtBeschaedigt, 4.0)
 	if err != nil {
 		t.Fatalf("ReportDamage: %v", err)
 	}
@@ -188,7 +187,7 @@ func TestReportDamageSchuldnerAusAusleihe(t *testing.T) {
 		t.Fatalf("Schadensfall lesen: %v", err)
 	}
 	if gebucht != echterSchuldner {
-		t.Errorf("Schaden muss dem Ausleiher (%s) angelastet werden, nicht der Client-ID (%s) — war %s",
+		t.Errorf("Schaden muss dem Ausleiher (%s) angelastet werden, nicht einem anderen Schüler (%s) — war %s",
 			echterSchuldner, fremder, gebucht)
 	}
 }
