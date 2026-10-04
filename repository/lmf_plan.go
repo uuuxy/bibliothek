@@ -319,7 +319,7 @@ func (r *LmfTerminRepository) KlassenMitSchuelern(ctx context.Context) ([]Klasse
 	rows, err := r.db.Query(ctx, `
 		SELECT s.klasse,
 		       `+AbschlussklasseSQL("s.klasse")+` AS abschluss,
-		       COALESCE(substring(s.klasse from '^\d+')::int, 99) AS jahrgang
+		       COALESCE(`+klassenZahlSQL("s.klasse")+`, 99) AS jahrgang
 		FROM schueler s
 		WHERE s.deleted_at IS NULL AND s.ist_abgaenger = false AND btrim(s.klasse) <> ''
 		GROUP BY s.klasse

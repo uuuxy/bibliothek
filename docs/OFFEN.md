@@ -847,6 +847,25 @@ Erledigen (`api/anliegen.go`), in der Liste der Bibliothek das Abzeichen „Wuns
 Vor dem Bauen zu klären: Fällt die Unterscheidung ganz weg — ein Formular, ein Abzeichen, ein
 Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? Kategorie B.
 
+### 5.49 Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
+
+Die Versetzung liest die Zahl am Anfang der Klasse (`promoteStudentsQuery` und
+`leseKlassenlehrerVersetzung` in `api/student_promotion.go`). Nachgestellt am 04.10.2026 am
+Router, in der Vorschau (`dry_run`):
+
+- Trägt ein aktiver Schüler eine Klasse, deren Zahl am Anfang größer ist als 2.147.483.647 (eine
+  Buchnummer im Feld Klasse, „9783123456789"), antwortet die Versetzung mit 500 und versetzt
+  niemanden. Die Meldung nennt weder die Klasse noch den Schüler.
+- Jede Zahl ab 13 gilt als Abschlussklasse (`repository.AbschlussklasseSQL`): Der Schüler der
+  Klasse „2147483647A" wird in der Vorschau als Abgänger gezählt (`archived_count` 1).
+
+Die lesenden Türen (Jahrgangs-Auswahl und Jahrgangsfilter der Leserdatei, LMF-Planer,
+Abgängerliste) antworten auch mit einer solchen Klasse (`klassenZahlSQL` in
+`repository/abschlussklasse.go`, `api/klasse_lange_ziffernfolge_pg_test.go`); offen ist nur die
+Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächster Schritt mit
+Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
+sie in der Vorschau. Kategorie B.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)

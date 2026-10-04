@@ -105,8 +105,8 @@ func NormalisiereLmfStichtag(text string) (string, error) {
 // Eingangsjahrgang (die Klasse wird neu gebildet). eingang ist der Platzhalter eines
 // int[]-Parameters. COALESCE, weil substring auf „Q1" NULL liefert.
 func nurRueckgabeSQL(spalte, eingang string) string {
-	return fmt.Sprintf(`COALESCE(%s OR (substring(%s from '^\d+')::int + 1) = ANY(%s::int[]), false)`,
-		AbschlussklasseSQL(spalte), spalte, eingang)
+	return fmt.Sprintf(`COALESCE(%s OR (%s + 1) = ANY(%s::int[]), false)`,
+		AbschlussklasseSQL(spalte), klassenZahlSQL(spalte), eingang)
 }
 
 // KlassenNurRueckgabe nennt aus den Namen die Klassen, die vor den Ferien nur abgeben —

@@ -16,7 +16,7 @@ import (
 // Jahrgang „ET", und ein Filter, der den Jahrgang aus führenden Ziffern liest, findet
 // dort nichts — lautlos, denn eine leere Liste sieht aus wie „niemand in diesem
 // Jahrgang". Genau so rechnet KlassenMitSchuelern für die Sortierung des LMF-Plans
-// (`substring(klasse from '^\d+')`, sonst 99); als Filter wäre dieselbe Zeile falsch.
+// (die Zahl am Anfang der Klasse, sonst 99); als Filter wäre dieselbe Zeile falsch.
 //
 // Am echten Postgres, weil geprüft wird, was aus der Kombination aus Klassenbestand und
 // Ableitung herausfällt — ein Mock würde genau die Frage wegdefinieren.

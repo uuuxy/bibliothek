@@ -19,8 +19,8 @@ import (
 // eine Auswahl nach Jahrgängen."
 //
 // Warum das in Go steht und nicht im SQL: An dieser Schule heißt der elfte Jahrgang „ET",
-// der zwölfte „12T" und der dreizehnte „13T" (Klassenschema, Migration 087). Ein
-// `substring(klasse from '^\d+')` liefert für „ET" keine Zahl — genau das tut
+// der zwölfte „12T" und der dreizehnte „13T" (Klassenschema, Migration 087). Die Zahl
+// am Anfang der Klasse gibt es für „ET" nicht — genau die liest
 // KlassenMitSchuelern für die Sortierung des LMF-Plans, wo ein 99 als „irgendwo oben"
 // folgenlos ist. Als FILTER wäre dieselbe Zeile falsch: Die Oberstufe fiele heraus, und
 // zwar lautlos — eine leere Liste sieht aus wie „niemand da".

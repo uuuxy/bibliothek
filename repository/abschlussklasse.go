@@ -17,6 +17,13 @@ func AbgangsjahrOhneKlasse(jetzt time.Time) int {
 	return jetzt.Year() + 5
 }
 
+// klassenZahlSQL liest die Zahl am Anfang einer Klasse (NULL ohne führende Ziffer), höchstens
+// neun Ziffern weit. Eine längere Folge, etwa eine Buchnummer im Feld Klasse, passt in keine
+// ganze Zahl der Datenbank und bräche sonst jede Abfrage ab, die diese Klasse mitliest.
+func klassenZahlSQL(spalte string) string {
+	return fmt.Sprintf(`(substring(%s from '^\d{1,9}')::int)`, spalte)
+}
+
 // AbschlussklasseSQL liefert das SQL-Prädikat „diese Klasse ist eine Abschlussklasse" für
 // einen Spaltenausdruck. Es ist die EINE Regel für das Ende eines Bildungsgangs an dieser
 // Schule, gelesen aus Jahrgang und Zweig der Klasse — nie aus dem Klassennamen als Text.
@@ -36,7 +43,7 @@ func AbgangsjahrOhneKlasse(jetzt time.Time) int {
 // Zuordnung) und die Abgängerliste (zeigt sie in der Saison mit offenen Büchern). Beide
 // MÜSSEN dieselbe Menge sehen — api/graduates_pg_test.go (Paar-Gate) hält das fest.
 func AbschlussklasseSQL(spalte string) string {
-	jahrgang := fmt.Sprintf(`(substring(%s from '^\d+')::int)`, spalte)
+	jahrgang := klassenZahlSQL(spalte)
 	// COALESCE ist Pflicht: Ohne Zweigbuchstaben („12", „13") wäre substring NULL, das
 	// ganze Prädikat NULL — im WHERE nur „nicht wahr", in der Versetzung aber ein Schreiben
 	// von NULL in ist_abgaenger NOT NULL (am 05.09.2026 vom Paar-Gate gefunden).
