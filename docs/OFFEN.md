@@ -497,13 +497,15 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   eine Antwort des Foto-Uploads, die kein JSON war). Abhilfe je Route: ein Test mit Datenbank
   und eine Gegenprobe je Zusicherung, Muster in `api/inventur_verlust_aktionen_pg_test.go`.
   Kategorie B.
-- SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek4`; der
-  Schlüssel steht in `sonar-project.properties`. Letzter Scan am 03.10.2026: 0 Fehler,
-  0 Schwachstellen, 209 Hinweise (davon 75 `go:S3776`), Abdeckung 70,8 %. Die 75 sind danach
-  zurückgebaut worden, und `komplexitaet_ratsche_test.go` lässt seit dem 04.10.2026 keine
-  Produktionsfunktion über 15 zu; ein Scan, der das bestätigt, steht aus. Das Quality Gate
-  vergleicht mit dem Stand desselben Projekts; ein neu angelegtes Projekt meldet OK, ohne zu
-  prüfen. Die 134 übrigen Hinweise sind nicht einzeln durchgesehen.
+- SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek5`; der
+  Schlüssel steht in `sonar-project.properties`. Letzter Scan am 04.10.2026: 0 Fehler,
+  0 Schwachstellen, 134 Hinweise, Abdeckung 72,0 %. `go:S3776` meldet er nicht mehr (am
+  03.10.2026: 75 von 209 Hinweisen); jede andere Regel steht auf derselben Zahl wie am Vortag.
+  `komplexitaet_ratsche_test.go` lässt keine Produktionsfunktion über 15 zu. Das Projekt ist am
+  04.10.2026 neu angelegt, der Stand vom 03.10.2026 liegt auf dem Server unter `Bibliothek4a`.
+  Das Quality Gate vergleicht mit dem Stand desselben Projekts: Nach dem ersten Scan meldet es
+  OK ohne Bedingungen, eine Aussage trifft es ab dem zweiten. Die 134 Hinweise sind nicht
+  einzeln durchgesehen.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
