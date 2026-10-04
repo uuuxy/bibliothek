@@ -2,11 +2,13 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"
 )
 
@@ -117,5 +119,48 @@ func TestMeHandler_DeactivatedUserReturns401(t *testing.T) {
 	rec := doMe(t, a, mock, &http.Cookie{Name: "session_token", Value: token})
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("erwartet 401 für deaktivierten Benutzer, bekam %d", rec.Code)
+	}
+}
+
+// Die Stammdaten-Abfrage hinter einer gültigen Sitzung hat drei Fehlausgänge: Ein fehlendes
+// und ein deaktiviertes Konto sind beide keine aktive Sitzung (401). Ein Datenbankfehler ist
+// es nicht (500), sonst meldete der Client ab.
+func TestMeHandler_KontoAbfrageScheitert(t *testing.T) {
+	faelle := []struct {
+		name    string
+		antwort func(q *pgxmock.ExpectedQuery)
+		status  int
+	}{
+		{"kein Konto", func(q *pgxmock.ExpectedQuery) {
+			q.WillReturnError(pgx.ErrNoRows)
+		}, http.StatusUnauthorized},
+		{"Datenbankfehler", func(q *pgxmock.ExpectedQuery) {
+			q.WillReturnError(errors.New("connection reset by peer"))
+		}, http.StatusInternalServerError},
+		{"Konto deaktiviert", func(q *pgxmock.ExpectedQuery) {
+			q.WillReturnRows(pgxmock.NewRows([]string{"rolle", "vorname", "nachname", "aktiv", "email"}).
+				AddRow("mitarbeiter", "Mia", "Muster", false, "mia@example.org"))
+		}, http.StatusUnauthorized},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			a, mock := newTestAuthenticator(t, 12*time.Hour)
+			token, err := a.GenerateToken("user-4", "B-4", RoleMitarbeiter, "")
+			if err != nil {
+				t.Fatalf("GenerateToken: %v", err)
+			}
+
+			expectNotBlacklisted(mock)
+			expectKontoAktiv(mock, true)
+			f.antwort(mock.ExpectQuery(`SELECT rolle, vorname, nachname, aktiv, email`).WithArgs("user-4"))
+
+			rec := doMe(t, a, mock, &http.Cookie{Name: "session_token", Value: token})
+			if rec.Code != f.status {
+				t.Errorf("erwartet %d, bekam %d: %s", f.status, rec.Code, rec.Body.String())
+			}
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("offene Erwartungen: %v", err)
+			}
+		})
 	}
 }

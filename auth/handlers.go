@@ -437,16 +437,15 @@ func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolI
 			WHERE id = $1
 			LIMIT 1
 		`, userID).Scan(&roleStr, &vorname, &nachname, &aktiv, &email)
-	// Ein DB-Fehler ist keine abgelaufene Sitzung: 500 statt 401, sonst meldete der Client ab.
+	// Ein fehlendes und ein deaktiviertes Konto sind beide keine aktive Sitzung. Ein DB-Fehler
+	// ist es nicht: 500 statt 401, sonst meldete der Client ab.
+	keineSitzung := errors.Is(err, pgx.ErrNoRows) || (err == nil && !aktiv)
 	switch {
-	case errors.Is(err, pgx.ErrNoRows):
+	case keineSitzung:
 		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
 		return LoginResponse{}, false
 	case err != nil:
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return LoginResponse{}, false
-	case !aktiv:
-		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
 		return LoginResponse{}, false
 	}
 
