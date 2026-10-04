@@ -94,6 +94,13 @@ func ErweitereLesefristFuerLangeUploads(next http.Handler) http.Handler {
 	})
 }
 
+// istLiveStrom erkennt den SSE-Strom. Er bleibt offen und schickt jedes Ereignis einzeln;
+// Bearbeitungsfrist und Kompression gelten für ihn nicht. Der genaue Pfad, nicht das
+// Teilwort: Eine Datei der Oberfläche darf events-….js heißen.
+func istLiveStrom(pfad string) bool {
+	return pfad == "/events"
+}
+
 // TimeoutMiddleware wraps the request with a context timeout.
 //
 // Der SSE-Stream bleibt ohne Frist — er ist definitionsgemäß offen. Alles andere bekommt
@@ -102,7 +109,7 @@ func ErweitereLesefristFuerLangeUploads(next http.Handler) http.Handler {
 func TimeoutMiddleware(timeout time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.URL.Path, "/events") {
+			if istLiveStrom(r.URL.Path) {
 				next.ServeHTTP(w, r)
 				return
 			}

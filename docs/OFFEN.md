@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 03.10.2026
+Stand: 04.10.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -831,11 +831,14 @@ Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? K
   ohne ISBN-Form.
 - Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, ohne
   Grenze): „Suche & Filter" bei jedem Öffnen, weil dort im Browser gesucht wird, die
-  Titel-Verwaltung beim Öffnen und bei leerem Suchfeld. Gezeigt werden je 50 Titel. Gemessen am
-  03.10.2026 am lokalen Stack: 9.652 Titel, 4,7 MB je Abruf, ohne Kompression
-  (`content-encoding` fehlt), Abruf rund 0,16 s. Die lokale Zahl trägt Test-Titel mit; Größe
-  und Dauer am Server über das Schulnetz sind nicht gemessen. Anlass zum Bauen: Der Katalog
-  öffnet am Server spürbar verzögert.
+  Titel-Verwaltung beim Öffnen und bei leerem Suchfeld, also auch bei jedem Wechsel zwischen den
+  Reitern. Gezeigt werden je 50 Titel. Die Liste geht mit gzip gepackt hinaus
+  (`api/middleware_kompression.go`). Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,
+  4,87 MB, über die Leitung 0,43 MB. Die lokale Zahl trägt Test-Titel mit; Größe und Dauer am
+  Server über das Schulnetz sind nicht gemessen (im Browser: F12, Netzwerk, Zeile `books`).
+  Anlass zum Bauen: Der Katalog öffnet am Server trotz Packen spürbar verzögert. Dann beantwortet
+  der Server einen unveränderten Bestand mit 304 statt mit der Liste, wie bei den Buchnummern
+  der Theke (`api/buchbarcodes_handler.go`).
 - Breite der Textfelder. **Entschieden am 03.10.2026:** Textfelder folgen Material 3 (Text
   fields, Guidelines: „Text fields shouldn’t span the full width of a large screen"); die
   Hausregel, die Fläche zu nutzen, gilt den Flächen der Seite, nicht den Feldern. In der Maske

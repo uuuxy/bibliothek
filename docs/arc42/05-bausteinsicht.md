@@ -58,6 +58,7 @@ HTTP-Anfrage
    ├─ 9 Timeout ──────────────── Kontext-Deadline je Route (StandardBearbeitungsfrist)
    ├─10 RateLimit ────────────── je Client-IP (pkg/clientip: genau ein Proxy-Hop)
    ├─11 CSRF ─────────────────── Double-Submit-Cookie, Refresh-Route ausgenommen
+   ├─12 Kompression ──────────── gzip für JSON und die Textdateien der Oberfläche; der SSE-Strom läuft daran vorbei
    │
    ▼  http.ServeMux (Methoden-Routing, Go 1.22+)
    │

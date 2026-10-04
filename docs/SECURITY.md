@@ -2,7 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-02 (Scan im Passwortfeld: ein in Scannergeschwindigkeit
+> Zuletzt aktualisiert: 2026-10-04 (Security-Header: Antworten gehen mit gzip gepackt
+> hinaus, Einordnung zum BREACH-Angriff).
+> Davor 2026-10-02 (Scan im Passwortfeld: ein in Scannergeschwindigkeit
 > getipptes Passwort gilt als Scan).
 > Davor 2026-10-01 (Einrichtung: was `APP_ENV` schaltet, die Vorlage ohne
 > `IMAP_HOST=mock`; `/uploads/` liefert nur Dateien direkt im Verzeichnis aus; die Sperre nach
@@ -723,6 +725,24 @@ Gate: `frontend/src/lib/utils/coverHerkunft.test.js` durchsucht den gesamten
 Frontend-Quelltext nach direkt eingebundenen Fremdadressen. Genau dieses Gate hat beim
 Umbau eine Stelle gefunden, die eine Textsuche übersehen hatte
 (`lib/useBookAkte.svelte.js`).
+
+### Antworten gehen mit gzip gepackt hinaus (seit 04.10.2026)
+
+`api/middleware_kompression.go` packt JSON-Antworten und die Textdateien der Oberfläche
+(HTML, CSS, JavaScript, SVG), wenn der Browser es anbietet. Kompression über TLS ist die
+Voraussetzung des BREACH-Angriffs: Ein Angreifer lässt den Browser des Opfers viele
+angemeldete Anfragen mit eigenem Text schicken und liest an der Länge der gepackten Antwort
+ab, ob sein Text mit einem Geheimnis im selben Rumpf übereinstimmt.
+
+- **Keine angemeldete Anfrage von fremder Seite:** Sitzungs- und CSRF-Cookie tragen
+  `SameSite=Strict`. Eine Seite unter einer fremden Domain löst damit keine Anfrage aus, die
+  die Sitzung trägt.
+- **Kein Token im gepackten Rumpf:** Das Sitzungs-Token steht nur im Cookie-Kopf; gepackt
+  wird der Rumpf, nicht der Kopf. Das CSRF-Token steht in einem Rumpf allein bei
+  `GET /api/csrf-token`; diese Antwort liegt unter der Mindestgröße von 1024 Byte und geht
+  unverpackt hinaus.
+- **Gate:** `api/middleware_kompression_pg_test.go` prüft am Router des Betriebs, was gepackt
+  wird und was nicht, darunter die Antwort von `/api/csrf-token`.
 
 ---
 

@@ -14,6 +14,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/johnfercher/maroto/v2 v2.4.2
 	github.com/jung-kurt/gofpdf v1.16.2
+	github.com/klauspost/compress v1.19.2
 	github.com/minio/minio-go/v7 v7.3.0
 	github.com/pashagolub/pgxmock/v5 v5.2.0
 	github.com/phpdave11/gofpdf v1.4.3
@@ -50,7 +51,6 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/johnfercher/go-tree v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.4.0 // indirect
 	github.com/klauspost/crc32 v1.3.0 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect

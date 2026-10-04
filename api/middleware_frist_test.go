@@ -7,6 +7,26 @@ import (
 	"time"
 )
 
+// Nur der Live-Strom läuft ohne Bearbeitungsfrist. Ein Pfad, der /events nur als Teilwort
+// trägt, ist eine gewöhnliche Anfrage und bekommt die Frist.
+func TestTimeoutMiddleware_NurDerLiveStromBleibtOhneFrist(t *testing.T) {
+	var hatFrist bool
+	kette := TimeoutMiddleware(StandardBearbeitungsfrist)(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		_, hatFrist = r.Context().Deadline()
+	}))
+	for pfad, erwartet := range map[string]bool{
+		"/events":               false,
+		"/assets/events-abc.js": true,
+		"/api/events/export":    true,
+		"/api/books":            true,
+	} {
+		kette.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, pfad, nil))
+		if hatFrist != erwartet {
+			t.Errorf("GET %s: Frist gesetzt = %v, erwartet %v", pfad, hatFrist, erwartet)
+		}
+	}
+}
+
 // TestRequestFrist belegt die Fristen-Zuordnung ohne HTTP-Aufbau.
 //
 // Hintergrund (Audit 01.08.2026): Alle Pfade ausser /events liefen unter derselben

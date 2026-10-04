@@ -1,7 +1,6 @@
 package api
 
 import (
-	"compress/gzip"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -34,14 +33,11 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	}
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	hole := func(ifNoneMatch, accept string) *httptest.ResponseRecorder {
+	hole := func(ifNoneMatch string) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, "/api/action/buchbarcodes", nil)
 		if ifNoneMatch != "" {
 			req.Header.Set("If-None-Match", ifNoneMatch)
-		}
-		if accept != "" {
-			req.Header.Set("Accept-Encoding", accept)
 		}
 		req = req.WithContext(t.Context())
 		rec := httptest.NewRecorder()
@@ -49,7 +45,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 		return rec
 	}
 
-	rec := hole("", "")
+	rec := hole("")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())
 	}
@@ -84,7 +80,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	}
 
 	// Unverändert: 304, kein Rumpf.
-	rec = hole(`"`+antwort.Stand+`"`, "")
+	rec = hole(`"` + antwort.Stand + `"`)
 	if rec.Code != http.StatusNotModified {
 		t.Errorf("unveränderter Bestand: Status %d, erwartet 304", rec.Code)
 	}
@@ -99,7 +95,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 
 	// Ein neues Exemplar ändert den Stand — sonst holte der Rechner es nie.
 	exemplar(t, pool, titelID, "B-BC-NEU", true, "")
-	rec = hole(`"`+antwort.Stand+`"`, "")
+	rec = hole(`"` + antwort.Stand + `"`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("nach einem neuen Exemplar: Status %d, erwartet 200 mit neuer Liste", rec.Code)
 	}
@@ -121,7 +117,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	if _, err := pool.Exec(ctx, `DELETE FROM buecher_exemplare WHERE barcode_id = $1`, "1234567890123"); err != nil {
 		t.Fatalf("Exemplar löschen: %v", err)
 	}
-	rec = hole(`"`+zweite.Stand+`"`, "")
+	rec = hole(`"` + zweite.Stand + `"`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("nach dem Löschen: Status %d, erwartet 200 mit neuer Liste", rec.Code)
 	}
@@ -136,22 +132,5 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 		if b == "1234567890123" {
 			t.Error("der gelöschte Barcode steht noch in der Liste")
 		}
-	}
-
-	// Gepackt: derselbe Inhalt, Content-Encoding gesetzt.
-	rec = hole("", "gzip")
-	if rec.Header().Get("Content-Encoding") != "gzip" {
-		t.Fatalf("Accept-Encoding gzip → Content-Encoding %q", rec.Header().Get("Content-Encoding"))
-	}
-	entpacker, err := gzip.NewReader(rec.Body)
-	if err != nil {
-		t.Fatalf("gepackte Antwort nicht lesbar: %v", err)
-	}
-	var gepackt BuchbarcodesResponse
-	if err := json.NewDecoder(entpacker).Decode(&gepackt); err != nil {
-		t.Fatalf("gepackte Antwort: %v", err)
-	}
-	if gepackt.Anzahl != dritte.Anzahl {
-		t.Errorf("gepackt %d Einträge, ungepackt %d", gepackt.Anzahl, dritte.Anzahl)
 	}
 }

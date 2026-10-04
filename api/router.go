@@ -223,7 +223,10 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 	rateLimiter := RateLimitMiddleware(rateLimitAusUmgebung())
 	timeoutLimiter := TimeoutMiddleware(StandardBearbeitungsfrist)
 
-	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> Lesefrist -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> ValidateUUIDParams -> Mux
+	// Chain: PanicRecovery -> Sentry -> SecurityHeaders -> CORS -> Logging -> HTTPSRedirect -> Lesefrist -> BodyLimiter -> TimeoutLimiter -> RateLimiter -> CSRF -> Kompression -> Mux
+	//
+	// Kompression sitzt innen am Mux: Gepackt wird, was ein Handler liefert. Hinter CORS,
+	// weil CORS den Vary-Kopf setzt statt ergänzt und Accept-Encoding sonst daraus fiele.
 	//
 	// ErweitereLesefristFuerLangeUploads steht VOR dem BodyLimiter und damit vor jedem
 	// Lesen des Rumpfes — danach gesetzt käme die Frist zu spät. Sie hebt die strenge
@@ -237,7 +240,7 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 	// las sie r.PathValue("id"), bevor die Route aufgelöst war — der Wert ist dort immer
 	// leer, die Prüfung lief also nie (Audit-Befund 01.08.2026). Sie sitzt jetzt in
 	// RequirePermission, also hinter dem Routing, wo PathValue gefüllt ist.
-	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(ErweitereLesefristFuerLangeUploads(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(mux)))))))))))
+	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(ErweitereLesefristFuerLangeUploads(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(KompressionMiddleware(mux))))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)

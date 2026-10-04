@@ -1,7 +1,6 @@
 package api
 
 import (
-	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -38,8 +37,9 @@ import (
 // je Zeile ~14 Byte). Größe und Dauer stehen im Log jeder Auslieferung, damit die Annahme
 // am Server überprüfbar bleibt statt geschätzt.
 
-// buchbarcodesWarnAb: Ab dieser Antwortgröße steht eine Warnung im Log. Kein Abbruch —
-// die Liste bleibt richtig; die Zeile sagt nur, dass die Annahme „passt bequem" kippt.
+// buchbarcodesWarnAb: Ab dieser Antwortgröße (vor dem Packen) steht eine Warnung im Log.
+// Kein Abbruch — die Liste bleibt richtig; die Zeile sagt nur, dass die Annahme „passt
+// bequem" kippt.
 const buchbarcodesWarnAb = 4 << 20 // 4 MB
 
 // BuchbarcodesResponse ist die Liste für den Theken-Rechner.
@@ -98,18 +98,18 @@ func (s *Server) BuchbarcodesHandler() http.HandlerFunc {
 		antwort := BuchbarcodesResponse{Stand: stand, Anzahl: len(barcodes), Barcodes: barcodes}
 
 		w.Header().Set("ETag", `"`+stand+`"`)
-		bytes, err := schreibeVielleichtGepackt(w, r, antwort)
+		bytes, err := schreibeGezaehlt(w, antwort)
 		if err != nil {
 			// Nach dem ersten geschriebenen Byte hilft kein Statuscode mehr — nur das Log.
 			log.Printf("buchbarcodes: Antwort abgebrochen (%d Einträge): %v", antwort.Anzahl, err)
 			return nil
 		}
 		if bytes > buchbarcodesWarnAb {
-			log.Printf("buchbarcodes: WARNUNG %d Einträge, %d Byte in %s — die Liste ist größer als erwartet; vor dem nächsten Ausbau die Annahme prüfen (api/buchbarcodes_handler.go)",
+			log.Printf("buchbarcodes: WARNUNG %d Einträge, %d Byte vor dem Packen in %s — die Liste ist größer als erwartet; vor dem nächsten Ausbau die Annahme prüfen (api/buchbarcodes_handler.go)",
 				antwort.Anzahl, bytes, time.Since(begonnen).Round(time.Millisecond))
 			return nil
 		}
-		log.Printf("buchbarcodes: %d Einträge, %d Byte in %s ausgeliefert", antwort.Anzahl, bytes, time.Since(begonnen).Round(time.Millisecond))
+		log.Printf("buchbarcodes: %d Einträge, %d Byte vor dem Packen in %s ausgeliefert", antwort.Anzahl, bytes, time.Since(begonnen).Round(time.Millisecond))
 		return nil
 	})
 }
@@ -141,27 +141,17 @@ func passtStand(kopf, stand string) bool {
 	return false
 }
 
-// schreibeVielleichtGepackt packt die Antwort, wenn der Rechner es anbietet — Caddy
-// komprimiert nicht (Caddyfile ohne `encode`), und ohne Packen wandern hier je Anmeldung
-// ein paar hundert Kilobyte durchs Schulnetz. Liefert die Zahl der geschriebenen Bytes.
-func schreibeVielleichtGepackt(w http.ResponseWriter, r *http.Request, daten any) (int, error) {
+// schreibeGezaehlt schreibt die Antwort als JSON und liefert ihre Größe vor dem Packen.
+// Gepackt wird sie wie jede Antwort in der Kette (KompressionMiddleware).
+func schreibeGezaehlt(w http.ResponseWriter, daten any) (int, error) {
 	w.Header().Set("Content-Type", "application/json")
-	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-		z := &zaehlendeSchreiber{w: w}
-		return z.n, json.NewEncoder(z).Encode(daten)
-	}
-	w.Header().Set("Content-Encoding", "gzip")
-	w.Header().Add("Vary", "Accept-Encoding")
 	z := &zaehlendeSchreiber{w: w}
-	packer := gzip.NewWriter(z)
-	if err := json.NewEncoder(packer).Encode(daten); err != nil {
-		return z.n, err
-	}
-	return z.n, packer.Close()
+	err := json.NewEncoder(z).Encode(daten)
+	return z.n, err
 }
 
-// zaehlendeSchreiber zählt, wie viel wirklich über die Leitung ging — die Zahl im Log
-// soll die ausgelieferte Größe nennen, nicht die vor dem Packen.
+// zaehlendeSchreiber zählt die Bytes der Antwort, bevor die Kette sie packt: Die Zahl im
+// Log nennt die Größe der Liste, wie der Theken-Rechner sie hält.
 //
 // CodeQL meldet hier go/reflected-xss (Alarm 30, 15.09.2026) und liegt falsch. Der
 // gemeldete Weg führt vom Anfragekörper des Mahnwesens über api/mail_sender.go zu
