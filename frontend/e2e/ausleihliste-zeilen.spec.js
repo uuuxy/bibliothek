@@ -66,11 +66,14 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 			t AS (
 				INSERT INTO buecher_titel (titel, isbn, ist_lernmittel, autor)
 				SELECT v.titel, v.isbn, true, '${AUTORIN}' FROM (VALUES ${werte}) AS v(titel, isbn, n)
-				RETURNING id, isbn
+				RETURNING id, titel
 			),
+			-- Die Nummer kommt aus der Liste, nicht aus der gespeicherten ISBN: Eine gültige
+			-- zehnstellige ISBN speichert das Programm dreizehnstellig.
 			ex AS (
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
-				SELECT id, '5896' || substr(isbn, 2), true FROM t
+				SELECT t.id, '5896' || lpad(v.n::text, 2, '0') || '${s}', true
+				FROM t JOIN (VALUES ${werte}) AS v(titel, isbn, n) ON v.titel = t.titel
 				RETURNING id
 			)
 			INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
