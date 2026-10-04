@@ -427,7 +427,7 @@ func bescheidSnapshotAus(ctx context.Context, repo repository.BescheidRepository
 	anrede := "Sehr geehrte Erziehungsberechtigte,"
 	anZeile := bescheidAnAnErzieher
 	if d.Volljaehrig {
-		anrede = anredeVolljaehrig
+		anrede = "Sehr geehrte Damen und Herren,"
 		anZeile = ""
 	}
 	return map[string]string{

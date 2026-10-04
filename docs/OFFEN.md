@@ -97,7 +97,7 @@ Datenbank und der Littera-Übernahme (7.2).
 6. **Ein Termin für die Abnahmen** mit dem Sekretariat, sobald der Schulserver steht (7.7). Ein
    LUSD-Import mit echten Schülern kommt erst nach der Littera-Übernahme (7.2).
 7. **Das Mahnwesen ansehen** (gebaut am 04.10.2026): Kinder anhaken, „Mahnbriefe drucken". Es
-   kommt je Kind der Brief an die Eltern mit Anschrift und Klasse; die Liste zeigt danach
+   kommt je Kind der Brief an die Eltern mit Anschrift; die Liste zeigt danach
    „1× gemahnt, zuletzt …". Zu entscheiden ist, ob die zwei Listen im Druck-Menü bleiben (4.30).
 
 **Im Code,** in dieser Reihenfolge:
@@ -295,8 +295,8 @@ der Schule ausfällt, und wie Littera und andere Programme es halten.
 
 ### 4.30 Was das Mahnwesen neben dem Mahnbrief druckt
 
-Seit dem 04.10.2026 kommt aus der Auswahl ein Papier: der Mahnbrief an die Eltern, ab 18 an die
-Person selbst. Daneben drucken drei Wege weiter je Kind ein Blatt in Du-Form, keiner zählt:
+Seit dem 04.10.2026 kommt aus der Auswahl ein Papier: der Mahnbrief an die Eltern. Daneben
+drucken drei Wege weiter je Kind ein Blatt in Du-Form, keiner zählt:
 
 - „Mahnliste einer Klasse" im Druck-Menü (`GET /api/print/mahnung/klasse/{klasse}`, Überschrift
   „Erinnerung: Rückgabe von Bibliotheksbüchern", `pdf.GenerateMahnliste`),
@@ -308,9 +308,16 @@ Person selbst. Daneben drucken drei Wege weiter je Kind ein Blatt in Du-Form, ke
 **Zu entscheiden:** Bleiben die zwei Listen im Druck-Menü? Der Anhang der Mail hängt am Mahnlauf
 und ist nicht gemeint.
 
-Gelesen am 04.10.2026, nicht nachgestellt: Die Ersatzforderung (`pdf/rechnung.go`) und der Brief
-zum Schadensfall (`pdf/schadensfall.go`) sprechen immer die Erziehungsberechtigten an. Die Regel
-„ab 18 an die Person selbst" haben nur Bescheid und Mahnbrief.
+Am 04.10.2026 gebaut und am selben Tag zurückgenommen, weil nicht bestellt:
+
+- **Brief ab 18 an die Person selbst.** Der Mahnbrief geht immer an „Eltern von …". Die Regel
+  hat nur der Bescheid; die Arbeitshilfe des Landes nennt sie für das Schreiben mit der
+  Zahlungsaufforderung („bei den volljährigen Schülerinnen und Schülern oder den
+  Erziehungsberechtigten der minderjährigen"). Littera kennt keine Altersregel. Gelesen, nicht
+  nachgestellt: Auch die Ersatzforderung (`pdf/rechnung.go`) und der Brief zum Schadensfall
+  (`pdf/schadensfall.go`) sprechen immer die Erziehungsberechtigten an.
+- **Klasse auf dem Brief.** Das frühere Blatt aus der Auswahl nannte die Klasse, der Brief nennt
+  sie nicht. Die Briefe einer Klasse liegen im Druck beieinander.
 
 ---
 

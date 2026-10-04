@@ -30,7 +30,7 @@ func renderElternMahnbrief(t *testing.T, e repository.MahnbriefEmpfaenger) strin
 
 func testMahnbriefEmpfaenger() repository.MahnbriefEmpfaenger {
 	return repository.MahnbriefEmpfaenger{
-		Vorname: "Mia", Nachname: "Musterkind", Klasse: "07H2",
+		Vorname: "Mia", Nachname: "Musterkind",
 		Buecher: []repository.MahnbriefBuch{{
 			Titel: "Testband", Barcode: "BC-1",
 			AusgeliehenAm:    time.Now().AddDate(0, -2, 0),
@@ -53,39 +53,6 @@ func TestElternMahnbriefDrucktAnschriftInsFensterfeld(t *testing.T) {
 	}
 	if strings.Contains(text, "Adresse unbekannt") || strings.Contains(text, "keine Adresse hinterlegt") {
 		t.Error("Brief trägt trotz vollständiger Anschrift einen Fehlt-Vermerk")
-	}
-}
-
-// Ab 18 geht der Brief an die Person selbst, wie der Bescheid: ihr Name im Fensterfeld und
-// ein Text, der keine Eltern anspricht, gleich was die Vorlage der Schule sagt.
-func TestMahnbriefAnVolljaehrigeNenntKeineEltern(t *testing.T) {
-	e := testMahnbriefEmpfaenger()
-	e.Volljaehrig = true
-
-	text := renderElternMahnbrief(t, e)
-	if !strings.Contains(text, "Mia Musterkind") {
-		t.Fatalf("der Name fehlt im Brief — der Leser sieht das Blatt nicht:\n%s", text)
-	}
-	if strings.Contains(text, "Eltern") {
-		t.Errorf("der Brief an eine Volljährige nennt Eltern:\n%s", text)
-	}
-	for _, soll := range []string{anredeVolljaehrig, "Testband"} {
-		if !strings.Contains(text, soll) {
-			t.Errorf("Brief an eine Volljährige ohne %q:\n%s", soll, text)
-		}
-	}
-}
-
-// Ein Brief ohne Anschrift geht über das Kind mit; der Stapel wird nach Klassen verteilt.
-// Bei einem Ehemaligen bleibt die Klasse leer und steht nicht auf dem Brief.
-func TestMahnbriefNenntDieKlasse(t *testing.T) {
-	if text := renderElternMahnbrief(t, testMahnbriefEmpfaenger()); !strings.Contains(text, "Klasse: 07H2") {
-		t.Errorf("Brief ohne die Klasse:\n%s", text)
-	}
-	ehemalig := testMahnbriefEmpfaenger()
-	ehemalig.Klasse = ""
-	if text := renderElternMahnbrief(t, ehemalig); strings.Contains(text, "Klasse:") {
-		t.Errorf("Brief eines Ehemaligen nennt eine Klasse:\n%s", text)
 	}
 }
 

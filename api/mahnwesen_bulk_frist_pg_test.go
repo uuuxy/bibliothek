@@ -218,8 +218,7 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 	})
 
 	// Aus der Auswahl kommt ein Papier: der Brief an die Eltern mit Anschrift für das
-	// Fensterkuvert. Die Klasse steht daneben, weil ein Brief ohne Anschrift über das Kind
-	// mitgeht.
+	// Fensterkuvert.
 	t.Run("der Druck aus der Auswahl ist der Brief an die Eltern", func(t *testing.T) {
 		kind := seedSchueler(t, pool, "MBF-S-6", "Ida", "07H2")
 		if _, err := pool.Exec(ctx, `
@@ -234,7 +233,7 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 			t.Fatalf("Druck: Status %d — %s", rec.Code, rec.Body.String())
 		}
 		blatt := strings.Join(pdftest.Texte(t, rec.Body.Bytes()), "\n")
-		for _, soll := range []string{"Eltern von Ida Test", "Lindenweg 4", "61169 Friedberg", "Klasse: 07H2", "Band Elternbrief"} {
+		for _, soll := range []string{"Eltern von Ida Test", "Lindenweg 4", "61169 Friedberg", "Band Elternbrief"} {
 			if !strings.Contains(blatt, soll) {
 				t.Errorf("auf dem Brief fehlt %q:\n%s", soll, blatt)
 			}
@@ -267,27 +266,6 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 		}
 	})
 
-	t.Run("ab 18 geht der Brief an die Person selbst", func(t *testing.T) {
-		erwachsen := seedSchueler(t, pool, "MBF-S-7", "Jonas", "13T1")
-		if _, err := pool.Exec(ctx, `
-			UPDATE schueler SET geburtsdatum = CURRENT_DATE - INTERVAL '19 years' WHERE id = $1`, erwachsen); err != nil {
-			t.Fatalf("Geburtsdatum setzen: %v", err)
-		}
-		buch := seedAusleihe(t, pool, erwachsen, "Band Oberstufe", abgelaufen)
-
-		rec := drucke(t, buch)
-		if rec.Code != http.StatusOK {
-			t.Fatalf("Druck: Status %d — %s", rec.Code, rec.Body.String())
-		}
-		blatt := strings.Join(pdftest.Texte(t, rec.Body.Bytes()), "\n")
-		if !strings.Contains(blatt, "Jonas Test") || !strings.Contains(blatt, "Band Oberstufe") {
-			t.Fatalf("Name oder Buch fehlen auf dem Brief — der Leser sieht das Blatt nicht:\n%s", blatt)
-		}
-		if strings.Contains(blatt, "Eltern") {
-			t.Errorf("der Brief an einen Volljährigen nennt Eltern:\n%s", blatt)
-		}
-	})
-
 	// Ein Ehemaliger steht in der Mahnliste unter „Ehemalige" und geht an keine
 	// Klassenleitung; den Brief bekommt er wie jeder andere über die Auswahl.
 	t.Run("ein Ehemaliger bekommt den Brief", func(t *testing.T) {
@@ -307,10 +285,6 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 			if !strings.Contains(blatt, soll) {
 				t.Errorf("auf dem Brief des Ehemaligen fehlt %q:\n%s", soll, blatt)
 			}
-		}
-		// Der Klassenname gehört nach der Versetzung einem anderen Jahrgang.
-		if strings.Contains(blatt, "Klasse:") {
-			t.Errorf("der Brief des Ehemaligen nennt eine Klasse:\n%s", blatt)
 		}
 		if stufe, _ := mahnState(t, pool, buch); stufe != 1 {
 			t.Errorf("Buch des Ehemaligen: Mahnstufe %d, erwartet 1", stufe)

@@ -14,13 +14,6 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// mahnbriefTextVolljaehrig steht statt der Vorlage, wenn der Brief an die Person selbst
-// geht: Die Vorlage der Schule spricht die Eltern an.
-const mahnbriefTextVolljaehrig = anredeVolljaehrig + "\n\n" +
-	"die Leihfrist für folgende Medien ist abgelaufen:\n\n{{.BuchListe}}\n\n" +
-	"Bitte geben Sie die Medien umgehend in der Schulbibliothek ab.\n" +
-	"Ursprüngliche Frist: {{.Frist}}\n\nVielen Dank.\nIhre Schulbibliothek"
-
 // mahnbriefVorlage ist, was auf allen Briefen eines Drucks gleich steht.
 type mahnbriefVorlage struct {
 	Betreff  string
@@ -57,14 +50,11 @@ func (s *Server) ladeMahnbriefVorlage(ctx context.Context) mahnbriefVorlage {
 	return mahnbriefVorlage{Betreff: betreff, Text: text, Absender: schule.Absenderzeile()}
 }
 
-// mahnbriefAnschrift baut das Fensterfeld. Der Brief geht an die Eltern, ab 18 an die Person
-// selbst. Fehlt die Anschrift, steht das im Feld: Eine leere Zeile sähe aus wie ein
-// Druckfehler, so ist zu sehen, welcher Brief über das Kind oder die Klassenleitung geht.
+// mahnbriefAnschrift baut das Fensterfeld. Fehlt die Anschrift, steht das im Feld: Eine leere
+// Zeile sähe aus wie ein Druckfehler, so ist zu sehen, welcher Brief über das Kind oder die
+// Klassenleitung geht.
 func mahnbriefAnschrift(e repository.MahnbriefEmpfaenger) []string {
 	name := fmt.Sprintf("Eltern von %s %s", e.Vorname, e.Nachname)
-	if e.Volljaehrig {
-		name = strings.TrimSpace(e.Vorname + " " + e.Nachname)
-	}
 	strasse := strings.TrimSpace(e.Strasse + " " + e.Hausnummer)
 	ort := strings.TrimSpace(e.PLZ + " " + e.Ort)
 	if strasse == "" && ort == "" {
@@ -136,12 +126,6 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e repository.Mah
 		pdf.CellFormat(85, 5, tr(zeile), "", 1, "L", false, 0, "")
 	}
 
-	// Die Klasse steht neben dem Fensterfeld: Ein Brief ohne Anschrift geht über das Kind
-	// mit, und der Stapel wird nach Klassen verteilt.
-	if e.Klasse != "" {
-		pdf.SetXY(150, 79)
-		pdf.Cell(40, 5, tr("Klasse: "+e.Klasse))
-	}
 	pdf.SetXY(150, 85)
 	pdf.Cell(40, 5, "Datum: "+schulzeit.Jetzt().Format(dateFormatDE))
 
@@ -165,13 +149,9 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e repository.Mah
 	pdf.SetXY(20, 100)
 	pdf.Cell(0, 5, tr(strings.TrimSpace(strings.ReplaceAll(replacer.Replace(v.Betreff), "{{.BuchListe}}", ""))))
 
-	text := v.Text
-	if e.Volljaehrig {
-		text = mahnbriefTextVolljaehrig
-	}
 	// Die Tabelle ersetzt das erste {{.BuchListe}}; der Text danach wird gedruckt, weitere
 	// Vorkommen fallen weg.
-	teile := strings.SplitN(replacer.Replace(text), "{{.BuchListe}}", 2)
+	teile := strings.SplitN(replacer.Replace(v.Text), "{{.BuchListe}}", 2)
 	pdf.SetFont("Arial", "", 11)
 	pdf.SetXY(20, 115)
 	pdf.MultiCell(170, 6, tr(teile[0]), "", "L", false)

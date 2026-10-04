@@ -11,8 +11,8 @@ import (
 
 // Volljährig wird man am Geburtstag — in Berlin, nicht in der Zeitzone der Sitzung.
 //
-// Bescheid und Mahnbrief entscheiden daran, WER den Brief bekommt: die Eltern oder die
-// Person selbst. Bis zum 17.09.2026 rechnete der Bescheid mit CURRENT_DATE, also mit dem
+// Der Bescheid-Vorschlag entscheidet daran, WER den Brief bekommt: die Eltern oder die
+// Person selbst. Bis zum 17.09.2026 rechnete er mit CURRENT_DATE, also mit dem
 // Kalendertag der Datenbank-Sitzung (im Image UTC). Am 18. Geburtstag galt das Kind
 // damit bis 2 Uhr Berliner Zeit noch als minderjährig; ein in dieser Zeit erzeugter
 // Bescheid ging an die Eltern eines Erwachsenen. Das ist kein Schönheitsfehler, sondern
@@ -26,21 +26,17 @@ func TestVolljaehrigkeit_RechnetInDerSchulzeitzone(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
-	// Der Ausdruck, nach dem Bescheid und Mahnbrief rechnen. Gemessen wird er selbst; die
-	// zwei Abfragen müssen ihn einsetzen, sonst misst der Test eine Regel ohne Leser.
-	ausdruck := sqlVolljaehrig
-	for datei, einsatz := range map[string]string{
-		"bescheid.go":          "`+sqlVolljaehrig+`",
-		"mahnwesen_queries.go": "` + sqlVolljaehrig + `",
-	} {
-		quelle, err := os.ReadFile(datei)
-		if err != nil {
-			t.Fatalf("%s nicht lesbar: %v", datei, err)
-		}
-		if !strings.Contains(string(quelle), einsatz) {
-			t.Fatalf("%s setzt sqlVolljaehrig nicht mehr ein — entweder ist der Test "+
-				"nachzuziehen oder die Abfrage rechnet die Volljährigkeit auf eigene Weise", datei)
-		}
+	// Genau der Ausdruck aus EmpfaengerFuerBescheid — abgeschrieben, also nachgeprüft:
+	// Ohne diesen Wächter bliebe der Test grün, während die Abfrage längst wieder mit
+	// CURRENT_DATE rechnet. Er misst dann seine eigene Kopie.
+	ausdruck := `coalesce(geburtsdatum <= ` + sqlSchulHeute + ` - INTERVAL '18 years', false)`
+	quelle, err := os.ReadFile("bescheid.go")
+	if err != nil {
+		t.Fatalf("bescheid.go nicht lesbar: %v", err)
+	}
+	if !strings.Contains(string(quelle), "geburtsdatum <= `+sqlSchulHeute+` - INTERVAL '18 years'") {
+		t.Fatal("EmpfaengerFuerBescheid rechnet die Volljährigkeit nicht mehr mit sqlSchulHeute — " +
+			"entweder ist der Test nachzuziehen oder die Abfrage ist zurückgefallen")
 	}
 
 	faelle := []struct {
@@ -76,7 +72,7 @@ func TestVolljaehrigkeit_RechnetInDerSchulzeitzone(t *testing.T) {
 				t.Fatalf("%s in %s: %v", f.name, zone, err)
 			}
 			if ergebnis != f.volljaehrig {
-				t.Errorf("%s, Sitzungszone %s: volljährig = %v, erwartet %v — der Brief ginge "+
+				t.Errorf("%s, Sitzungszone %s: volljährig = %v, erwartet %v — der Bescheid ginge "+
 					"an den falschen Empfänger", f.name, zone, ergebnis, f.volljaehrig)
 			}
 		}

@@ -183,20 +183,17 @@ type MahnbriefBuch struct {
 	TageUeberfaellig int
 }
 
-// MahnbriefEmpfaenger ist ein Schüler mit seinen Büchern über der Frist und dem, was der
-// Brief für das Fensterkuvert braucht. Klasse ist bei einem Ehemaligen leer: Der Name
-// gehört nach der Versetzung einem anderen Jahrgang.
+// MahnbriefEmpfaenger ist ein Schüler mit seinen Büchern über der Frist und der Anschrift
+// für das Fensterkuvert.
 type MahnbriefEmpfaenger struct {
-	SchuelerID  string
-	Vorname     string
-	Nachname    string
-	Klasse      string
-	Strasse     string
-	Hausnummer  string
-	PLZ         string
-	Ort         string
-	Volljaehrig bool
-	Buecher     []MahnbriefBuch
+	SchuelerID string
+	Vorname    string
+	Nachname   string
+	Strasse    string
+	Hausnummer string
+	PLZ        string
+	Ort        string
+	Buecher    []MahnbriefBuch
 }
 
 // sqlMahnbriefe liest zu den gewählten Ausleihen, was auf dem Mahnbrief steht: je Schüler
@@ -205,9 +202,7 @@ type MahnbriefEmpfaenger struct {
 // liegen beieinander, die der Ehemaligen am Ende.
 const sqlMahnbriefe = `
 	SELECT s.id, s.vorname, s.nachname,
-	       CASE WHEN s.ist_abgaenger THEN '' ELSE coalesce(s.klasse, '') END,
 	       coalesce(s.strasse, ''), coalesce(s.hausnummer, ''), coalesce(s.plz, ''), coalesce(s.ort, ''),
-	       ` + sqlVolljaehrig + `,
 	       t.titel, coalesce(e.barcode_id, ''), a.ausgeliehen_am, a.rueckgabe_frist,
 	       GREATEST(0, EXTRACT(DAY FROM (CURRENT_TIMESTAMP - a.rueckgabe_frist))::int)
 	FROM ausleihen a
@@ -262,8 +257,8 @@ func (repo *MahnwesenRepository) MahnbriefeTx(ctx context.Context, tx pgx.Tx, id
 	for rows.Next() {
 		var e MahnbriefEmpfaenger
 		var b MahnbriefBuch
-		if err := rows.Scan(&e.SchuelerID, &e.Vorname, &e.Nachname, &e.Klasse,
-			&e.Strasse, &e.Hausnummer, &e.PLZ, &e.Ort, &e.Volljaehrig,
+		if err := rows.Scan(&e.SchuelerID, &e.Vorname, &e.Nachname,
+			&e.Strasse, &e.Hausnummer, &e.PLZ, &e.Ort,
 			&b.Titel, &b.Barcode, &b.AusgeliehenAm, &b.Frist, &b.TageUeberfaellig); err != nil {
 			return nil, err
 		}

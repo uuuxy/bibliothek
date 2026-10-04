@@ -73,9 +73,6 @@ const (
 		"auch durch Einlegung bei dem %s als Behörde, die den Widerspruchsbescheid zu erlassen hat, gewahrt."
 	// Die Zeile über dem Namen im Anschriftfeld, wenn der Schuldner minderjährig ist.
 	bescheidAnAnErzieher = "An die Erziehungsberechtigten des/der Schülers/in"
-	// Die Anrede eines Briefs an die Person selbst (Bescheid und Mahnbrief). Das Geschlecht
-	// ist nicht gespeichert; den Namen trägt das Anschriftfeld.
-	anredeVolljaehrig = "Sehr geehrte Damen und Herren,"
 )
 
 // BescheidPosition ist eine Zeile der Tabelle: ein Buch mit seinem Betrag.

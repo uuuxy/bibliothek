@@ -7,7 +7,7 @@ export const vorlagenInfo = {
 	MAHNUNG_ELTERN: {
 		name: 'Mahnbrief an die Eltern',
 		verwendung:
-			'Gedruckter Eltern-Mahnbrief (Fensterkuvert) — es geht keine Mail an Eltern. Ab 18 geht der Brief an die Person selbst, mit festem Text. Die Mahn-Mails an Klassenleitungen haben eigene, feste Texte.',
+			'Gedruckter Eltern-Mahnbrief (Fensterkuvert) — es geht keine Mail an Eltern. Die Mahn-Mails an Klassenleitungen haben eigene, feste Texte.',
 		platzhalter: ['{{.Vorname}}', '{{.Nachname}}', '{{.BuchListe}}', '{{.Frist}}']
 	},
 	BESTELLUNG_HAENDLER: {

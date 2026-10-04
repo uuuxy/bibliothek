@@ -437,13 +437,12 @@ Register **Alle · Akut fällig (bis 14 Tage) · Eskaliert**, Filter nach Klasse
 **Mahnbriefe:** Kinder anhaken (alle über das Kästchen im Tabellenkopf), dann _Mahnbriefe
 drucken_. Je Kind kommt ein Brief an die Eltern für das Fensterkuvert, mit dem Text der Vorlage
 (_Einstellungen → Mail_). Fehlt die Anschrift, steht das im Adressfeld, und der Brief geht über
-das Kind mit; dafür nennt er die Klasse. Ab 18 geht der Brief an die Person selbst, mit festem
-Text. Der Druck zählt die Mahnung, höchstens einmal am Tag je Buch; ein zweiter Druck am selben
-Tag, etwa nach einem Papierstau, liefert den Brief noch einmal und zählt nicht. Die Liste zeigt je
-Kind, wie oft und wann zuletzt gemahnt wurde („2× gemahnt, zuletzt 26.09.2026"), das Fenster für
-den Bescheid je Buch; an die Zahl knüpft das Programm nichts. Ein Mahnbrief entsteht nur für ein
-Buch, dessen Frist abgelaufen ist; wurde ein Buch zwischen dem Laden der Liste und dem Druck
-verlängert, steht es nicht auf dem Brief.
+das Kind mit. Der Druck zählt die Mahnung, höchstens einmal am Tag je Buch; ein zweiter Druck
+am selben Tag, etwa nach einem Papierstau, liefert den Brief noch einmal und zählt nicht. Die
+Liste zeigt je Kind, wie oft und wann zuletzt gemahnt wurde („2× gemahnt, zuletzt 26.09.2026"),
+das Fenster für den Bescheid je Buch; an die Zahl knüpft das Programm nichts. Ein Mahnbrief
+entsteht nur für ein Buch, dessen Frist abgelaufen ist; wurde ein Buch zwischen dem Laden der
+Liste und dem Druck verlängert, steht es nicht auf dem Brief.
 
 **Sammel-Mahnlauf** per Mail an die Klassenleitungen (Klassen wählen, Empfänger prüfen, dann
 senden). Hinter dem Drucker-Knopf stehen die Mahnliste einer Klasse und die Übersichtsliste.
