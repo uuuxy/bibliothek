@@ -180,11 +180,12 @@ jede eingesetzt wird — gemessen über die Importe des Produktivcodes, nicht ab
 | `robfig/cron/v3`                                               | `jobs`                                                           | Zeitplan der Hintergrundläufe, auf UTC (A16)                                            |
 | `minio/minio-go/v7`                                            | `jobs`                                                           | optionaler S3-Upload des Backups (A17)                                                  |
 | `google/uuid`                                                  | `api`, `cmd/seed`                                                | Kennungen erzeugen                                                                      |
+| `klauspost/compress`                                           | `api`                                                            | gzip der Antworten (`api/middleware_kompression.go`)                                    |
 | `swaggo/swag`, `swaggo/http-swagger`                           | `docs`, `api`                                                    | Swagger, nur lokal (A23)                                                                |
 | `golang.org/x/crypto`                                          | `internal/backupkrypto`                                          | scrypt-Schlüsselableitung des Backups                                                   |
 | `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `pkg/imageutil`, `inventur`, `internal/service`, `repository`    | Bildformate; Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) |
 | `go-sql-driver/mysql`                                          | nur `cmd/migrate`                                                | Einmal-Werkzeug, nicht im Server                                                        |
-| `pashagolub/pgxmock/v5`, `stretchr/testify`                    | nur `*_test.go`                                                  | Prüfhilfen                                                                              |
+| `pashagolub/pgxmock/v5`, `stretchr/testify`, `uudashr/gocognit` | nur `*_test.go`                                                  | Prüfhilfen; gocognit misst für `komplexitaet_ratsche_test.go`                           |
 
 Nachmessen: `awk '/^require \(/{f=1;next} /^\)/{f=0} f&&!/indirect/{print $1}' go.mod` und je
 Modul `grep -rl '"<modul>' --include='*.go' . | grep -v _test.go`.

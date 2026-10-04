@@ -500,7 +500,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek4`; der
   Schlüssel steht in `sonar-project.properties`. Letzter Scan am 03.10.2026: 0 Fehler,
   0 Schwachstellen, 209 Hinweise (davon 75 `go:S3776`), Abdeckung 70,8 %. Die 75 sind danach
-  zurückgebaut worden (siehe 6.2); ein Scan, der das bestätigt, steht aus. Das Quality Gate
+  zurückgebaut worden, und `komplexitaet_ratsche_test.go` lässt seit dem 04.10.2026 keine
+  Produktionsfunktion über 15 zu; ein Scan, der das bestätigt, steht aus. Das Quality Gate
   vergleicht mit dem Stand desselben Projekts; ein neu angelegtes Projekt meldet OK, ohne zu
   prüfen. Die 134 übrigen Hinweise sind nicht einzeln durchgesehen.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
@@ -1090,12 +1091,6 @@ Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? K
   `etikettformate-konsistenz.test.js`; am 31.08.2026 entschieden geparkt.
 - Reste des Nie-verdrahtet-Sweeps: `abgaenger_jahr` in der Aktivlisten-Antwort ohne
   Konsument; bei den Geräten `ActionEvent.GeraetID` ohne Broadcast und mit Null-Zeitstempel.
-- Cognitive Complexity: Kein Gate hält die Zahl der Funktionen über 15 (`go:S3776`);
-  golangci-lint prüft sie nicht (`.golangci.yml`). Seit dem 03.10.2026 liegt keine
-  Produktionsfunktion darüber (`gocognit -over 15`, Testdateien nicht mitgezählt). Verlauf an
-  den Ständen der Tage: 0 am 04.08.2026, 35 am 05.09.2026, 60 am 17.09.2026, 75 am 03.10.2026
-  vor dem Rückbau. Eine Ratsche, unter der die Zahl nur sinken darf, ist am 03.10.2026
-  zurückgestellt worden; ohne sie wächst die Zahl wieder wie zwischen August und Oktober.
 - Die Prüfung der UUID-Pfadparameter (`ValidateUUIDParamsMiddleware`) sitzt in
   `RequirePermission`. Eine Route mit `{id}`, `{schueler_id}` oder `{ausleihe_id}` unter
   `RequireAuthenticated` liefe an ihr vorbei, und die Kennung ginge ungeprüft an die Datenbank.

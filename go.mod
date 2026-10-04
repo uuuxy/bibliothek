@@ -22,6 +22,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
+	github.com/uudashr/gocognit v1.2.1
 	github.com/xuri/excelize/v2 v2.11.0
 	golang.org/x/crypto v0.57.0
 	golang.org/x/image v0.46.0
