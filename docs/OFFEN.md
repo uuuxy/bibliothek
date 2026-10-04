@@ -885,8 +885,13 @@ sie in der Vorschau. Kategorie B.
   Titel-Verwaltung beim Öffnen und bei leerem Suchfeld, also auch bei jedem Wechsel zwischen den
   Reitern. Gezeigt werden je 50 Titel. Die Liste geht mit gzip gepackt hinaus
   (`api/middleware_kompression.go`). Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,
-  4,87 MB, über die Leitung 0,43 MB. Die lokale Zahl trägt Test-Titel mit; Größe und Dauer am
-  Server über das Schulnetz sind nicht gemessen (im Browser: F12, Netzwerk, Zeile `books`).
+  4,87 MB, über die Leitung 0,43 MB. Über den Proxy des Testservers kommen die Antworten gepackt
+  an (gemessen am 04.10.2026 vom Server aus: Skript der Oberfläche 347.994 statt 1.091.670 Byte,
+  öffentliche Katalogsuche 3.017 statt 8.389 Byte, je mit `Content-Encoding: gzip`). An einem
+  Arbeitsplatz, dessen Virenscanner HTTPS filtert, ist das nicht abzulesen: Er entpackt die
+  Antwort, und es bleibt der Kopf `x-content-encoding-over-network`. Die lokale Zahl trägt
+  Test-Titel mit; Größe und Dauer am Server über das Schulnetz sind nicht gemessen (im Browser:
+  F12, Netzwerk, Zeile `books`).
   Anlass zum Bauen: Der Katalog öffnet am Server trotz Packen spürbar verzögert. Dann beantwortet
   der Server einen unveränderten Bestand mit 304 statt mit der Liste, wie bei den Buchnummern
   der Theke (`api/buchbarcodes_handler.go`).

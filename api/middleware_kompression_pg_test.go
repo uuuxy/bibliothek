@@ -94,7 +94,7 @@ func TestKompression_AmRouterDesBetriebs(t *testing.T) {
 	t.Run("Oberfläche und Listen gehen gepackt hinaus", func(t *testing.T) {
 		for _, pfad := range []string{
 			"/assets/app.js", "/assets/events-abc.js", "/assets/app.css", "/icons.svg", "/katalog",
-			"/api/books", "/api/action/buchbarcodes",
+			"/api/books", "/api/action/buchbarcodes", "/api/admin/books/export",
 		} {
 			offen := hole(pfad, nil)
 			if offen.Code != http.StatusOK || offen.Body.Len() < kompressionMindestgroesse {

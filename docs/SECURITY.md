@@ -728,11 +728,12 @@ Umbau eine Stelle gefunden, die eine Textsuche übersehen hatte
 
 ### Antworten gehen mit gzip gepackt hinaus (seit 04.10.2026)
 
-`api/middleware_kompression.go` packt JSON-Antworten und die Textdateien der Oberfläche
-(HTML, CSS, JavaScript, SVG), wenn der Browser es anbietet. Kompression über TLS ist die
-Voraussetzung des BREACH-Angriffs: Ein Angreifer lässt den Browser des Opfers viele
-angemeldete Anfragen mit eigenem Text schicken und liest an der Länge der gepackten Antwort
-ab, ob sein Text mit einem Geheimnis im selben Rumpf übereinstimmt.
+`api/middleware_kompression.go` packt JSON-Antworten, den CSV-Export des Bestands und die
+Textdateien der Oberfläche (HTML, CSS, JavaScript, SVG), wenn der Browser es anbietet.
+Kompression über TLS ist die Voraussetzung des BREACH-Angriffs: Ein Angreifer lässt den
+Browser des Opfers viele angemeldete Anfragen mit eigenem Text schicken und liest an der
+Länge der gepackten Antwort ab, ob sein Text mit einem Geheimnis im selben Rumpf
+übereinstimmt.
 
 - **Keine angemeldete Anfrage von fremder Seite:** Sitzungs- und CSRF-Cookie tragen
   `SameSite=Strict`. Eine Seite unter einer fremden Domain löst damit keine Anfrage aus, die

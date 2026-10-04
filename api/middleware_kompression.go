@@ -11,14 +11,15 @@ import (
 const kompressionMindestgroesse = 1024
 
 // kompressionInhaltstypen sind die Textformen, die der Server ausliefert: die Antworten
-// der Schnittstelle und die Dateien der Oberfläche. Bilder, PDF und Excel sind in sich
-// schon gepackt und gehen unverändert hinaus.
+// der Schnittstelle, der CSV-Export des Bestands und die Dateien der Oberfläche. Bilder,
+// PDF und Excel sind in sich schon gepackt und gehen unverändert hinaus.
 var kompressionInhaltstypen = []string{
 	"application/json",
 	"text/html",
 	"text/css",
 	"text/javascript",
 	"image/svg+xml",
+	"text/csv",
 }
 
 // KompressionMiddleware packt Antworten mit gzip, wenn der Client es anbietet. Der Proxy
