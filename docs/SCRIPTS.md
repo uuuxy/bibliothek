@@ -474,29 +474,35 @@ steht in Abschnitt 1b.
 | `deadcode_gate.sh`    | Gate gegen unerreichbaren Go-Code (`x/tools/cmd/deadcode`), Erreichbarkeit ab allen `main`-Paketen; nur von Tests erreichter Code zählt mit, begründete Ausnahmen stehen in `deadcode_baseline.txt`. Tote **Interface**-Methoden sieht das Werkzeug nicht — dafür läuft `tote_tueren_test.go` in jedem `go test`.                                                                                                                                                                         |
 | `govulncheck-gate.sh` | Bekannte Schwachstellen in Go-Abhängigkeiten, aufrufbezogen — mit einer Ausnahmeliste, die sich nicht totstellen kann (`security/vuln-ausnahmen.json`, seit 17.09.2026, läuft im pre-push). Eine Ausnahme braucht Nachweis als Test im Repo und eine Wiedervorlage; das Gate wird von allein rot, wenn eine Schwachstelle NICHT in der Liste steht, wenn eine Wiedervorlage abgelaufen ist oder wenn ein Eintrag gar nicht mehr gemeldet wird (dann gibt es einen Fix und die Ausnahme gehört gelöscht).                                                                              |
 | `tag-gate.sh`         | Das Tag-Gate (seit 21.09.2026): prüft für einen Commit, ob ALLE Pflicht-Prüfläufe grün sind — die Jobs aus `ci.yml` und die vier Security-Jobs. Eine Liste für Release (`release.yml`) und versioniertes Image (`docker-publish.yml`); jeder Lauf eines Namens zählt, ein fehlender Name ist ein Fehler. Am echten Commit nachstellbar: `GITHUB_REPOSITORY=uuuxy/bibliothek GITHUB_SHA="$(git rev-parse origin/main)" ./scripts/tag-gate.sh`. Die Liste hält `docs/umgebung_paritaet_test.go` gegen beide Workflows.                                                                  |
-| `sonar_scan.sh`       | SonarQube-Analyse **inklusive beider** Coverage-Berichte (Go + Frontend-lcov; seit 23.08.2026 erzeugt Schritt 2 `npm run test:coverage` und bricht bei roten Frontend-Tests ab). Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. Braucht `SONAR_TOKEN` in der Umgebung (nie als `-Dsonar.token=`, das stünde in `ps`). **Vorher `TEST_DATABASE_URL` setzen** — siehe unten, sonst misst der Lauf rund 13 Punkte zu niedrig.            |
+| `sonar_scan.sh`       | SonarQube-Analyse **inklusive beider** Coverage-Berichte (Go + Frontend-lcov; seit 23.08.2026 erzeugt Schritt 2 `npm run test:coverage` und bricht bei roten Frontend-Tests ab). Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. Braucht `SONAR_TOKEN` in der Umgebung (nie als `-Dsonar.token=`, das stünde in `ps`). **Vorher `TEST_DATABASE_URL` setzen** — siehe unten, sonst misst der Lauf rund die Hälfte.                     |
 | `install-hooks.sh`    | Installiert `scripts/git-hooks/` (pre-commit, pre-push) in `.git/hooks`.                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `backup_krypto.sh`    | Kein eigenständiges Skript, sondern der gemeinsame Verschlüsselungs-Helfer von `backup.sh` und `update.sh` (`source`). Prüft, ob verschlüsselt werden kann, reicht Daten durch `cmd/encrypt-backup` im Backend-Container und beweist am fertigen `.enc` den Rückweg über `restore-backup`, **bevor** ein Klartext-Dump gelöscht wird.                                                                                                                                                     |
 | `../security-scan.sh` | Sammel-Scan im **Repo-Root**: `gosec` (SAST), `trivy fs` (Abhängigkeiten/Konfiguration), OWASP-ZAP-API-Scan gegen `/swagger/doc.json` des lokalen Stacks (Port 8084, Swagger gibt es nur dort). Der ZAP-Teil braucht den laufenden Stack und Docker; mit `ADMIN_TOKEN` (Wert des Cookies `session_token` nach der Anmeldung am lokalen Stack) geht das Token als Cookie `session_token` mit, ohne läuft er unangemeldet — er ist kein stiller Durchläufer, sondern eine bewusste Sitzung. |
 
 #### Warum die Coverage niedriger aussieht, als sie ist
 
-Gemessen am 06.08.2026, dreimal dieselbe Codebasis:
+Gemessen am 04.10.2026 an derselben Codebasis, nur der Go-Teil (Anweisungen):
 
-| Lauf                                         | Gesamtabdeckung |
-| -------------------------------------------- | --------------- |
-| `go test ./...` ohne Datenbank               | **32,5 %**      |
-| … mit `TEST_DATABASE_URL`                    | **45,2 %**      |
-| … und ohne die Fremddatei aus `node_modules` | **45,9 %**      |
+| Lauf                                                   | Abdeckung  |
+| ------------------------------------------------------ | ---------- |
+| alle Pakete, ohne Datenbank                            | **42,8 %** |
+| alle Pakete, mit `TEST_DATABASE_URL`                   | **84,9 %** |
+| `repository/` allein mit den Tests des eigenen Pakets  | **57,4 %** |
+| `repository/` mit den Tests aller Pakete (`-coverpkg`) | **85,1 %** |
 
-Zwei Messfehler, kein Codefehler:
+Drei Messfehler, kein Codefehler:
 
-1. **58 Dateien `*_pg_test.go` überspringen sich ohne Datenbank** — still, mit „ok" in
-   der Ausgabe. Ihr Produktivcode zählt dann als ungedeckt. Das sind rund 13 Punkte.
+1. **Die Dateien `*_pg_test.go` überspringen sich ohne Datenbank** — still, mit „ok" in
+   der Ausgabe. Ihr Produktivcode zählt dann als ungedeckt; die Abdeckung fällt auf die Hälfte.
 2. **`frontend/node_modules/flatted/golang/pkg/flatted/flatted.go`** ist eine fremde
    Go-Datei in einem JS-Paket. `go list ./...` führt sie als Projektpaket — Go kennt
    `node_modules` nicht als Sonderfall. 115 ungedeckte Zeilen im Profil.
    `sonar_scan.sh` filtert sie seit dem 06.08.2026 über `go list | grep -v node_modules`.
+3. **Ohne `-coverpkg` rechnet Go einem Paket nur die Tests an, die in ihm selbst liegen.** Die
+   Tests der Türen liegen in `api/` und führen den Code in `repository/` über den Router aus;
+   eine neue Abfrage zählte so als ungetestet, obwohl ihr Test sie ausführt. `sonar_scan.sh`
+   misst seit dem 04.10.2026 mit `-coverpkg` über alle Pakete. Im Profil steht ein Block
+   dann je Testprogramm einmal; gedeckt ist er, sobald ein Eintrag ihn zählt.
 
 **100 % sind kein Ziel und wären kein gutes.** Der Rest verteilt sich so: `cmd/*`
 (bei dieser Messung sechs CLI-Werkzeuge, 0 %; am 13.09.2026 sind es neun) und `internal/smtptest` (Testserver, wird von Tests benutzt

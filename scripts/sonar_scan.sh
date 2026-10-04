@@ -33,28 +33,25 @@ if [ -z "${SONAR_TOKEN:-}" ]; then
 	exit 1
 fi
 
-# Schritt 1: Coverage erzeugen.
+# Schritt 1: Go-Abdeckung erzeugen. Drei Dinge verfaelschen die Zahl, ohne dass sich am
+# Code etwas aendert:
 #
-# ZWEI Messfehler lauern hier, beide gemessen am 06.08.2026:
-#
-#  1. Die auf TEST_DATABASE_URL gegateten *_pg_test.go (58 Dateien!) ueberspringen sich
-#     ohne Datenbank STILL. Ihr Code zaehlt dann als ungedeckt, und die Gesamtabdeckung
-#     faellt von 45,2 % auf 32,5 % — ohne dass sich am Code irgendetwas geaendert haette.
-#     Das Skript sagt darum jetzt an, in welchem Modus es misst, statt eine Zahl
-#     auszuliefern, deren Zustandekommen niemand sieht.
+#  1. Ohne TEST_DATABASE_URL ueberspringen sich die *_pg_test.go still, und ihr Code
+#     zaehlt als ungedeckt. Das Skript sagt deshalb an, in welchem Modus es misst.
 #
 #  2. frontend/node_modules/flatted/golang/pkg/flatted/flatted.go ist eine fremde
-#     Go-Datei in einem JS-Paket. `go list ./...` fuehrt sie als
-#     "bibliothek/frontend/node_modules/..." — Go kennt node_modules nicht als
-#     Sonderfall. Sie landete mit 115 ungedeckten Zeilen im Profil und drueckte die
-#     Quote. sonar-project.properties schliesst sie vom SCAN aus, aber nicht aus dem
-#     COVERAGE-Report, den derselbe Scan hochlaedt.
+#     Go-Datei in einem JS-Paket, und `go list ./...` fuehrt sie als Paket des Projekts.
+#     sonar-project.properties nimmt sie aus dem Scan, aber nicht aus dem
+#     Abdeckungsbericht, den derselbe Scan hochlaedt.
+#
+#  3. Ohne -coverpkg rechnet Go einem Paket nur die Tests an, die in ihm selbst liegen.
+#     Die Tests der Tueren liegen in api/ und fuehren repository/ ueber den Router aus.
 if [ -n "${TEST_DATABASE_URL:-}" ]; then
 	echo "[1/3] Erzeuge Go-Coverage — MIT PostgreSQL-Integrationstests."
 else
 	echo "[1/3] Erzeuge Go-Coverage — OHNE PostgreSQL-Integrationstests." >&2
-	echo "      TEST_DATABASE_URL ist nicht gesetzt; 58 *_pg_test.go-Dateien ueberspringen" >&2
-	echo "      sich und zaehlen als ungedeckt (rund 13 Prozentpunkte weniger)." >&2
+	echo "      TEST_DATABASE_URL ist nicht gesetzt; die *_pg_test.go-Dateien ueberspringen" >&2
+	echo "      sich und zaehlen als ungedeckt (die Abdeckung faellt auf rund die Haelfte)." >&2
 	echo "      Echte Zahlen (siehe docs/SCRIPTS.md):" >&2
 	echo "        docker run -d --name biblio-test-pg -e POSTGRES_PASSWORD=test \\" >&2
 	echo "          -e POSTGRES_DB=bibliothek_test -p 55432:5432 postgres:18-alpine" >&2
@@ -63,8 +60,9 @@ fi
 
 # go list statt ./... — nur so bleibt die Fremddatei aus node_modules draussen.
 PAKETE="$(go list ./... | grep -v '/node_modules/')"
+COVERPKG="$(printf '%s\n' "$PAKETE" | paste -sd, -)"
 # shellcheck disable=SC2086 # Paketliste soll in Woerter zerfallen
-go test $PAKETE -coverprofile=coverage.out
+go test $PAKETE -coverpkg="$COVERPKG" -coverprofile=coverage.out
 
 # Schritt 1b: Frontend-Coverage. Aus demselben Grund an den Scan gebunden wie die
 # Go-Abdeckung: Ohne lcov-Bericht zaehlt SonarQube JEDE Frontend-Zeile als ungedeckt (0 %,

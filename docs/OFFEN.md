@@ -531,16 +531,21 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   und eine Gegenprobe je Zusicherung, Muster in `api/inventur_verlust_aktionen_pg_test.go`.
   Kategorie B.
 - SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek5`; der
-  Schlüssel steht in `sonar-project.properties`. Letzter Scan am 04.10.2026, in der Einteilung
-  der Übersicht (MQR-Modus): Zuverlässigkeit 0 Meldungen (Note A), Sicherheit 0 (A),
-  Wartbarkeit 124 (A), Abdeckung 72,0 % von 38.721 Zeilen. Am 03.10.2026 waren es 209
-  Meldungen, davon 75 `go:S3776` und zehn mit Auswirkung auf die Zuverlässigkeit (Note C);
-  beide Gruppen sind behoben, jede andere Regel steht auf derselben Zahl.
-  `komplexitaet_ratsche_test.go` lässt keine Produktionsfunktion über 15 zu. Das Projekt ist am
-  04.10.2026 neu angelegt, der Stand vom 03.10.2026 liegt auf dem Server unter `Bibliothek4a`.
-  Das Quality Gate vergleicht mit dem ersten Scan des Projekts und steht nach dem zweiten auf
-  OK mit drei Bedingungen. Zehn der 124 Meldungen zur Wartbarkeit sind behoben, der Scan danach
-  steht aus; die übrigen 114 sind nicht einzeln durchgesehen.
+  Schlüssel steht in `sonar-project.properties`. Letzter Scan am 04.10.2026, der dritte des
+  Tages, in der Einteilung der Übersicht (MQR-Modus): Zuverlässigkeit 0 Meldungen (Note A),
+  Sicherheit 0 (A), Wartbarkeit 114 (A), Abdeckung 72,0 % von 38.740 Zeilen. Am 03.10.2026
+  waren es 209 Meldungen, davon 75 `go:S3776` und zehn mit Auswirkung auf die Zuverlässigkeit
+  (Note C); beide Gruppen und zehn Meldungen zur Wartbarkeit sind behoben, die übrigen 114
+  sind nicht einzeln durchgesehen. `komplexitaet_ratsche_test.go` lässt keine
+  Produktionsfunktion über 15 zu. Das Projekt ist am 04.10.2026 neu angelegt, der Stand vom
+  03.10.2026 liegt auf dem Server unter `Bibliothek4a`. Das Quality Gate vergleicht mit dem
+  ersten Scan des Projekts und steht nach dem dritten auf Fehler, an einer von drei
+  Bedingungen: Von 50 neuen Zeilen zählt der Scan 29 als ungetestet (57,7 % statt 80 %). Er
+  rechnete einem Go-Paket nur die Tests an, die in ihm selbst liegen; seit dem 04.10.2026 misst
+  das Skript mit `-coverpkg` über alle Pakete ([SCRIPTS.md](SCRIPTS.md), „Warum die Coverage
+  niedriger aussieht, als sie ist"). Der Scan danach steht aus; er zeigt, ob die Bedingung
+  damit auf OK steht. Die Gesamtabdeckung muss dabei steigen. Fällt sie, liest SonarQube ein
+  Profil, das einen Block je Testprogramm einmal nennt, nicht wie angenommen.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
