@@ -58,31 +58,42 @@ func (s *Server) loadBestellTemplate(ctx context.Context) (betreff, textBody str
 	return betreff, textBody
 }
 
+// platzhalterMittel steht in der Vorlage für den Topf der Bestellung.
+const platzhalterMittel = "{{.Mittel}}"
+
+// bestellMailWerte sind die Angaben der Bestellung, die die Platzhalter der Vorlage füllen.
+type bestellMailWerte struct {
+	kundennummer    string
+	anzahlTitel     int
+	anzahlExemplare int
+	// link ist der Bestätigungs-Link für Lieferanten, die selbst etikettieren. Er ist leer,
+	// wenn dieser Lieferant keinen bekommt oder keine öffentliche Adresse hinterlegt ist.
+	link string
+	// gueltigBis ist der Ablauf des Links, nil ohne Link. Die Mail nennt ihn als Datum:
+	// Das kann der Händler in den Kalender schreiben, eine Tageszahl müsste er ausrechnen.
+	gueltigBis *time.Time
+	// mittel ist der Topf der Bestellung (repository.MittelLand / MittelSchultraeger).
+	mittel string
+}
+
 // resolveBestellMail ersetzt die Platzhalter der Bestellvorlage in Betreff und Text.
 //
-// link ist der Bestätigungs-Link für Lieferanten, die selbst etikettieren; er ist leer,
-// wenn dieser Lieferant keinen bekommt oder keine öffentliche Adresse hinterlegt ist.
-// gueltigBis ist der Ablauf des Links (nil ohne Link). Als Datum in der Mail, nicht als
-// Tageszahl: „bis zum 29.09.2026" kann der Händler in den Kalender schreiben, „21 Tage"
-// muss er erst ausrechnen — und die Zahl ist seit 08.09.2026 eine Einstellung.
-//
-// mittel ist der Topf der Bestellung (repository.MittelLand / MittelSchultraeger). Er
-// füllt {{.Mittel}} — und fehlt der Platzhalter in der Vorlage, sorgt
-// ergaenzeMittelVermerk dafür, dass Betreff und Text ihn trotzdem tragen: Der Vermerk
-// ist Pflicht auf der Bestellung, eine umformulierte Vorlage darf ihn nicht verlieren.
-func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anzahlExemplare int, link string, gueltigBis *time.Time, mittel string) (subject, body string) {
-	texte := mittelTexte[mittel]
+// Fehlt der Platzhalter für den Topf in der Vorlage, hängt ergaenzeMittelVermerk ihn an:
+// Der Vermerk ist Pflicht auf der Bestellung, eine umformulierte Vorlage darf ihn nicht
+// verlieren.
+func resolveBestellMail(betreff, textBody string, w bestellMailWerte) (subject, body string) {
+	texte := mittelTexte[w.mittel]
 	replacer := strings.NewReplacer(
 		"{{.Datum}}", schulzeit.Jetzt().Format(dateFormatDE),
-		"{{.Kundennummer}}", kundennummer,
-		"{{.AnzahlTitel}}", strconv.Itoa(anzahlTitel),
-		"{{.AnzahlExemplare}}", strconv.Itoa(anzahlExemplare),
-		"{{.BestaetigungsLink}}", link,
-		"{{.LinkGueltigBis}}", linkFrist(gueltigBis),
-		"{{.Mittel}}", texte.Kurz,
+		"{{.Kundennummer}}", w.kundennummer,
+		"{{.AnzahlTitel}}", strconv.Itoa(w.anzahlTitel),
+		"{{.AnzahlExemplare}}", strconv.Itoa(w.anzahlExemplare),
+		"{{.BestaetigungsLink}}", w.link,
+		"{{.LinkGueltigBis}}", linkFrist(w.gueltigBis),
+		platzhalterMittel, texte.Kurz,
 	)
 	subject, body = ergaenzeMittelVermerk(replacer.Replace(betreff), replacer.Replace(textBody), betreff, textBody, texte)
-	return subject, ergaenzeLinkAbsatz(body, textBody, link, gueltigBis)
+	return subject, ergaenzeLinkAbsatz(body, textBody, w.link, w.gueltigBis)
 }
 
 // ergaenzeMittelVermerk hängt den Topf an, wo die Vorlage {{.Mittel}} nicht selbst
@@ -93,10 +104,10 @@ func ergaenzeMittelVermerk(subject, body, rohBetreff, rohText string, texte mitt
 	if texte.Kurz == "" {
 		return subject, body
 	}
-	if !strings.Contains(rohBetreff, "{{.Mittel}}") {
+	if !strings.Contains(rohBetreff, platzhalterMittel) {
 		subject += " – " + texte.Kurz
 	}
-	if !strings.Contains(rohText, "{{.Mittel}}") {
+	if !strings.Contains(rohText, platzhalterMittel) {
 		body += "\n\n" + texte.Vermerk + " Bitte führen Sie diesen Vermerk auch auf der Rechnung."
 	}
 	return subject, body

@@ -131,7 +131,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	// bestellung_id, und die gibt es erst, wenn der Kopf geschrieben ist. Keine der beiden
 	// Einfügungen liest die andere — die Barcodes sind in verarbeiteBestellItems schon
 	// reserviert, und der Kopf zählt nur die dort errechneten Summen.
-	bestellungID, linkGueltigBis, err := s.insertBestellverlauf(ctx, tx, req, supplier, posten.gesamtbetrag, posten.menge, tokenHash, linkTage)
+	bestellungID, linkGueltigBis, err := s.insertBestellverlauf(ctx, tx, req, supplier, posten, tokenHash, linkTage)
 	if errors.Is(err, ErrBestellungDuplikat) {
 		// Doppelklick: dieselbe Bestellung lief schon durch. Die Transaktion wird
 		// zurückgerollt (die hier reservierten Exemplare verschwinden wieder), und wir
@@ -304,12 +304,13 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 	return res, nil
 }
 
-// insertBestellverlauf schreibt den Bestellkopf und liefert die erzeugte Bestell-ID.
+// insertBestellverlauf schreibt den Bestellkopf und liefert die erzeugte Bestell-ID. Vom
+// Warenkorb stehen dort nur die Summen: Gesamtbetrag und Zahl der Exemplare.
 //
 // tokenHash ist leer, wenn dieser Lieferant keinen Bestätigungs-Link bekommt; NULLIF
 // macht daraus ein SQL-NULL, damit der Teil-Index (Migration 063) nicht zwei Bestellungen
 // ohne Link als Dublette ablehnt.
-func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req SubmitOrderRequest, supplier *repository.Supplier, gesamtbetrag float64, totalAllocated int, tokenHash string, linkTage int) (string, *time.Time, error) {
+func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req SubmitOrderRequest, supplier *repository.Supplier, posten bestellPosten, tokenHash string, linkTage int) (string, *time.Time, error) {
 	var bestellungID string
 	var linkGueltigBis *time.Time
 	// ON CONFLICT (idempotenz_schluessel) DO NOTHING: Ein Doppelklick mit demselben
@@ -330,7 +331,7 @@ func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req 
 		ON CONFLICT (idempotenz_schluessel) WHERE idempotenz_schluessel IS NOT NULL DO NOTHING
 		RETURNING id, token_gueltig_bis`,
 		req.SupplierID, supplier.Name, supplier.Email, supplier.KundennummerFuer(req.Mittel),
-		gesamtbetrag, totalAllocated, tokenHash, linkTage,
+		posten.gesamtbetrag, posten.menge, tokenHash, linkTage,
 		nullableString(req.IdempotencyKey), req.Mittel,
 	).Scan(&bestellungID, &linkGueltigBis)
 	if errors.Is(err, pgx.ErrNoRows) {

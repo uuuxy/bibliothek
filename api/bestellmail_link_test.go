@@ -23,7 +23,8 @@ const testLink = "https://bib.example.invalid/bestellung/TESTTOKEN"
 // Vorlage ohne Platzhalter — der Normalfall, denn die ausgelieferte Vorlage aus
 // Migration 052 kennt {{.BestaetigungsLink}} nicht. Der Link muss trotzdem mit.
 func TestBestellmail_LinkWirdAngehaengtWennVorlageIhnNichtKennt(t *testing.T) {
-	_, body := resolveBestellMail("Betreff", "Sehr geehrte Damen und Herren,\n\nanbei die Bestellung.", "K-1", 2, 5, testLink, nil, "")
+	_, body := resolveBestellMail("Betreff", "Sehr geehrte Damen und Herren,\n\nanbei die Bestellung.",
+		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: testLink, gueltigBis: nil, mittel: ""})
 
 	if !strings.Contains(body, testLink) {
 		t.Fatalf("Link fehlt in der Mail — der Lieferant bekäme nichts zum Anklicken.\nBody:\n%s", body)
@@ -40,7 +41,8 @@ func TestBestellmail_AusgelieferteVorlageBrauchtDenAnhaengePfad(t *testing.T) {
 	if strings.Contains(bestellMailFallbackBody, "{{.BestaetigungsLink}}") {
 		t.Skip("Vorlage trägt den Platzhalter jetzt selbst — Anhänge-Pfad nicht mehr nötig")
 	}
-	_, body := resolveBestellMail(bestellMailFallbackBetreff, bestellMailFallbackBody, "K-1", 2, 5, testLink, nil, "")
+	_, body := resolveBestellMail(bestellMailFallbackBetreff, bestellMailFallbackBody,
+		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: testLink, gueltigBis: nil, mittel: ""})
 	if !strings.Contains(body, testLink) {
 		t.Fatal("die ausgelieferte Vorlage verschickt den Link nicht")
 	}
@@ -50,7 +52,8 @@ func TestBestellmail_AusgelieferteVorlageBrauchtDenAnhaengePfad(t *testing.T) {
 // zusätzlich unten angehängt werden.
 func TestBestellmail_PlatzhalterWirdErsetztUndNichtVerdoppelt(t *testing.T) {
 	vorlage := "Guten Tag,\n\nBestätigung hier: {{.BestaetigungsLink}}\n\nViele Grüße"
-	_, body := resolveBestellMail("Betreff", vorlage, "K-1", 2, 5, testLink, nil, "")
+	_, body := resolveBestellMail("Betreff", vorlage,
+		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: testLink, gueltigBis: nil, mittel: ""})
 
 	if strings.Contains(body, "{{.BestaetigungsLink}}") {
 		t.Error("Platzhalter blieb unersetzt im Text stehen")
@@ -69,7 +72,8 @@ func TestBestellmail_OhneLinkBleibtDieMailSauber(t *testing.T) {
 	}
 	for name, vorlage := range faelle {
 		t.Run(name, func(t *testing.T) {
-			_, body := resolveBestellMail("Betreff", vorlage, "K-1", 2, 5, "", nil, "")
+			_, body := resolveBestellMail("Betreff", vorlage,
+				bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: "", gueltigBis: nil, mittel: ""})
 
 			if strings.Contains(body, "{{.BestaetigungsLink}}") {
 				t.Error("unaufgelöster Platzhalter in der Mail an den Lieferanten")
@@ -135,11 +139,13 @@ func TestBestaetigungsToken_EinmaligUndNurAlsHashGespeichert(t *testing.T) {
 // Platzhalter {{.LinkGueltigBis}} in einer eigenen Vorlage.
 func TestBestellmail_FristStehtAlsDatumInDerMail(t *testing.T) {
 	bis := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
-	_, body := resolveBestellMail("Betreff", "anbei die Bestellung.", "K-1", 2, 5, testLink, &bis, "")
+	_, body := resolveBestellMail("Betreff", "anbei die Bestellung.",
+		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: testLink, gueltigBis: &bis, mittel: ""})
 	if !strings.Contains(body, "bis zum 29.09.2026 gültig") {
 		t.Errorf("Ablaufdatum fehlt im angehängten Absatz:\n%s", body)
 	}
-	_, body = resolveBestellMail("Betreff", "Link: {{.BestaetigungsLink}} (gültig bis {{.LinkGueltigBis}})", "K-1", 2, 5, testLink, &bis, "")
+	_, body = resolveBestellMail("Betreff", "Link: {{.BestaetigungsLink}} (gültig bis {{.LinkGueltigBis}})",
+		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: testLink, gueltigBis: &bis, mittel: ""})
 	if !strings.Contains(body, "(gültig bis 29.09.2026)") {
 		t.Errorf("Platzhalter {{.LinkGueltigBis}} nicht ersetzt:\n%s", body)
 	}
@@ -150,7 +156,8 @@ func TestBestellmail_FristStehtAlsDatumInDerMail(t *testing.T) {
 // Friedrichsdorf schon der 30.09. — bis zum 21.09.2026 stand in der Mail der 29.
 func TestBestellmail_FristIstDerKalendertagDerSchule(t *testing.T) {
 	bis := time.Date(2026, 9, 29, 22, 30, 0, 0, time.UTC)
-	_, body := resolveBestellMail("Betreff", "anbei die Bestellung.", "K-1", 2, 5, testLink, &bis, "")
+	_, body := resolveBestellMail("Betreff", "anbei die Bestellung.",
+		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: testLink, gueltigBis: &bis, mittel: ""})
 	if !strings.Contains(body, "bis zum 30.09.2026 gültig") {
 		t.Errorf("Frist steht nicht als Schultag (30.09.2026) in der Mail:\n%s", body)
 	}

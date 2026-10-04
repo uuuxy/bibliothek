@@ -315,17 +315,17 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 
 // LogAusleihe schreibt einen neuen Ausleiheintrag (CHECKOUT) in das Audit-Log.
 func (r *pgAuditRepository) LogAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
-	return r.logLoanEvent(ctx, tx, "ausleihen", "CHECKOUT", exemplarID, schuelerID, benutzerID, bearbeiterID)
+	return r.logLoanEvent(ctx, tx, "CHECKOUT", exemplarID, schuelerID, benutzerID, bearbeiterID)
 }
 
 // LogRueckgabe schreibt einen neuen Rückgabeeintrag (RETURN) in das Audit-Log.
 func (r *pgAuditRepository) LogRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
-	return r.logLoanEvent(ctx, tx, "ausleihen", "RETURN", exemplarID, schuelerID, benutzerID, bearbeiterID)
+	return r.logLoanEvent(ctx, tx, "RETURN", exemplarID, schuelerID, benutzerID, bearbeiterID)
 }
 
 // logLoanEvent schreibt den Ausleih-/Rückgabe-Eintrag in die ÜBERGEBENE Transaktion —
 // keine eigene: Eintrag und Buchung stehen oder fallen zusammen.
-func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tx pgx.Tx, tabelle, aktion, exemplarID, schuelerID, benutzerID, bearbeiterID string) error {
+func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tx pgx.Tx, aktion, exemplarID, schuelerID, benutzerID, bearbeiterID string) error {
 	var bearbeiterPtr *string
 	if bearbeiterID != "" {
 		bearbeiterPtr = &bearbeiterID
@@ -343,7 +343,7 @@ func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tx pgx.Tx, tabelle
 	}
 
 	return r.insertAuditLog(ctx, tx, auditEntry{
-		Tabelle: tabelle, Aktion: aktion, DatensatzID: exemplarID,
+		Tabelle: "ausleihen", Aktion: aktion, DatensatzID: exemplarID,
 		BearbeiterID: bearbeiterPtr, Akteur: "USER",
 		Details: details,
 	})

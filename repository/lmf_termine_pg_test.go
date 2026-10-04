@@ -40,7 +40,7 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 
 	// Donnerstag 11.06.2026 ab 3. Stunde, 6 je Tag — wie der echte Plan der Schule.
 	// Schreibvarianten und eine Dublette in einer Zeile; eine Zeile ohne Klasse.
-	st := speicherePlan(t, repo, LmfTerminRueckgabe, "2026-06-11", 3, 6,
+	st := speicherePlan(t, repo, LmfPlan{Art: LmfTerminRueckgabe, ErsterTag: "2026-06-11", Startstunde: 3, StundenJeTag: 6},
 		[]LmfPlanZeile{
 			{Klassen: []string{"9h1"}}, {Klassen: []string{"9H2"}, Vermerk: "bis 11. eingesammelt"},
 			{Klassen: []string{"10r1", " 10R2 ", "10r1"}}, {Klassen: []string{"10R3"}},
@@ -122,7 +122,7 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 
 	// Zweites Speichern im selben Schuljahr ERSETZT (eine Zeile weniger, andere Startstunde)
 	// — und der Stempel bleibt: ein veröffentlichter Plan wird durch Umschreiben kein Entwurf.
-	st2 := speicherePlan(t, repo, LmfTerminRueckgabe, "2026-06-15", 1, 6,
+	st2 := speicherePlan(t, repo, LmfPlan{Art: LmfTerminRueckgabe, ErsterTag: "2026-06-15", Startstunde: 1, StundenJeTag: 6},
 		[]LmfPlanZeile{{Klassen: []string{"9H1"}}}, nil)
 	if st2.Plan.ID != st.Plan.ID {
 		t.Errorf("gleiches Schuljahr muss denselben Plan umschreiben: %s ≠ %s", st2.Plan.ID, st.Plan.ID)
@@ -135,7 +135,7 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 		t.Errorf("umgeschriebener Plan: %+v (%v)", neuester, err)
 	}
 	// Anderes Schuljahr legt einen NEUEN Plan an; der neueste gewinnt.
-	st3 := speicherePlan(t, repo, LmfTerminRueckgabe, "2027-06-14", 1, 6,
+	st3 := speicherePlan(t, repo, LmfPlan{Art: LmfTerminRueckgabe, ErsterTag: "2027-06-14", Startstunde: 1, StundenJeTag: 6},
 		[]LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}}, nil)
 	if st3.Plan.ID == st.Plan.ID {
 		t.Error("neues Schuljahr muss einen neuen Plan anlegen")

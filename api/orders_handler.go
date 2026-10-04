@@ -116,7 +116,14 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	if settings.OeffentlicheAdresse != nil {
 		link = bestaetigungsLink(*settings.OeffentlicheAdresse, res.BestaetigungsToken)
 	}
-	subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels), link, res.LinkGueltigBis, res.Mittel)
+	subject, body := resolveBestellMail(betreff, textBody, bestellMailWerte{
+		kundennummer:    res.CustomerNumber,
+		anzahlTitel:     len(res.SummaryItems),
+		anzahlExemplare: len(res.Labels),
+		link:            link,
+		gueltigBis:      res.LinkGueltigBis,
+		mittel:          res.Mittel,
+	})
 
 	if err := pdfSvc.DispatchOrderEmail(BestellMail{
 		Empfaenger:           res.SupplierEmail,

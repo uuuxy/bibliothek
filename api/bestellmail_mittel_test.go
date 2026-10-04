@@ -14,7 +14,7 @@ import (
 
 func TestBestellMailTraegtDenTopfAuchOhnePlatzhalter(t *testing.T) {
 	subject, body := resolveBestellMail("Buchbestellung {{.Datum}}", "Sehr geehrte Damen und Herren,\n\nanbei die Bestellung.",
-		"K-1", 2, 5, "", nil, repository.MittelSchultraeger)
+		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: "", gueltigBis: nil, mittel: repository.MittelSchultraeger})
 
 	if !strings.HasSuffix(subject, "– Schülerbücherei") {
 		t.Errorf("Betreff ohne Topf: %q", subject)
@@ -29,7 +29,7 @@ func TestBestellMailTraegtDenTopfAuchOhnePlatzhalter(t *testing.T) {
 
 func TestBestellMailErsetztDenPlatzhalterUndHaengtDannNichtsAn(t *testing.T) {
 	subject, body := resolveBestellMail("Bestellung {{.Mittel}} {{.Datum}}", "Diese Bestellung: {{.Mittel}}.",
-		"K-1", 2, 5, "", nil, repository.MittelLand)
+		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: "", gueltigBis: nil, mittel: repository.MittelLand})
 
 	if !strings.HasPrefix(subject, "Bestellung Lernmittelfreiheit ") {
 		t.Errorf("Platzhalter im Betreff nicht ersetzt: %q", subject)
@@ -50,7 +50,8 @@ func TestBestellMailFallbackKenntDenTopf(t *testing.T) {
 			t.Errorf("Fallback ohne {{.Mittel}}: %q", vorlage)
 		}
 	}
-	subject, _ := resolveBestellMail(bestellMailFallbackBetreff, bestellMailFallbackBody, "K-1", 1, 1, "", nil, repository.MittelLand)
+	subject, _ := resolveBestellMail(bestellMailFallbackBetreff, bestellMailFallbackBody,
+		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 1, anzahlExemplare: 1, link: "", gueltigBis: nil, mittel: repository.MittelLand})
 	if !strings.Contains(subject, "Lernmittelfreiheit") || strings.Contains(subject, "{{") {
 		t.Errorf("Fallback-Betreff: %q", subject)
 	}
@@ -60,7 +61,8 @@ func TestBestellMailFallbackKenntDenTopf(t *testing.T) {
 // Handlung, der Vermerk die Einordnung; beides muss da sein, wenn die Vorlage keins von
 // beiden platziert.
 func TestBestellMailVermerkStehtVorDemLinkAbsatz(t *testing.T) {
-	_, body := resolveBestellMail("Betreff", "anbei die Bestellung.", "K-1", 1, 1, "https://bib.example.invalid/bestellung/x", nil, repository.MittelLand)
+	_, body := resolveBestellMail("Betreff", "anbei die Bestellung.",
+		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 1, anzahlExemplare: 1, link: "https://bib.example.invalid/bestellung/x", gueltigBis: nil, mittel: repository.MittelLand})
 	vermerk := strings.Index(body, "Lernmittelfreiheit")
 	link := strings.Index(body, "https://bib.example.invalid/bestellung/x")
 	if vermerk < 0 || link < 0 || vermerk > link {

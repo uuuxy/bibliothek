@@ -170,6 +170,31 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 	}
 }
 
+// Die Mail nennt die Kundennummer und zählt Titel und Exemplare: Ein Titel in zwei Exemplaren
+// kommt beim Händler nicht als zwei Titel in einem Exemplar an.
+func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+
+	setzeOeffentlicheAdresse(t, pool, "")
+	sitzungen := mailAbfangen(t)
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	lieferant := haendler(t, pool, "Naacher-Zahlen", false)
+	titel := titelMitMeldebestand(t, pool, "LMF-Mathe-Zahlen", 0)
+
+	if rec := bestelleUeberHandler(t, srv, lieferant, titel); rec.Code != http.StatusOK {
+		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+
+	nachricht := warteAufMail(t, sitzungen)
+	for _, zeile := range []string{"Kundennummer: K-Naacher-Zahlen", "Bestellte Titel: 1", "Gesamtanzahl Exemplare: 2"} {
+		if !strings.Contains(nachricht, zeile) {
+			t.Errorf("%q fehlt in der Mail:\n%s", zeile, kopf(nachricht))
+		}
+	}
+}
+
 // kopf kürzt die Nachricht auf den Textteil; die base64-kodierten Anhänge machen jede
 // Fehlermeldung sonst unlesbar.
 func kopf(nachricht string) string {

@@ -21,14 +21,14 @@ func TestRueckgabeTerminLage(t *testing.T) {
 	repo := NewLmfTerminRepository(pool)
 	t.Cleanup(func() { raeumeLmfPlaene(t, pool) })
 
-	veroeffentliche(t, repo, speicherePlan(t, repo, LmfTerminRueckgabe, "2026-06-01", 1, 6,
+	veroeffentliche(t, repo, speicherePlan(t, repo, LmfPlan{Art: LmfTerminRueckgabe, ErsterTag: "2026-06-01", Startstunde: 1, StundenJeTag: 6},
 		[]LmfPlanZeile{{Klassen: []string{"9H1"}, Vermerk: "vergangen"}}, nil))
 	// 9H1 am 28.06. (Zeile 1) und noch einmal am 05.07. (Zeile 6, hinter dem Wochenende);
 	// 9H2 nur am 29.06.
-	entwurf := speicherePlan(t, repo, LmfTerminRueckgabe, "2027-06-28", 1, 1,
+	entwurf := speicherePlan(t, repo, LmfPlan{Art: LmfTerminRueckgabe, ErsterTag: "2027-06-28", Startstunde: 1, StundenJeTag: 1},
 		[]LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}, {Klassen: []string{"10R1"}},
 			{Klassen: []string{"10R2"}}, {Klassen: []string{"10R3"}}, {Klassen: []string{"9H1"}, Vermerk: "zweiter Termin"}}, nil)
-	veroeffentliche(t, repo, speicherePlan(t, repo, LmfTerminAusgabe, "2027-08-10", 2, 6,
+	veroeffentliche(t, repo, speicherePlan(t, repo, LmfPlan{Art: LmfTerminAusgabe, ErsterTag: "2027-08-10", Startstunde: 2, StundenJeTag: 6},
 		[]LmfPlanZeile{{Klassen: []string{"7G1"}, Vermerk: "neu"}}, nil))
 	heute := time.Date(2026, time.September, 5, 12, 0, 0, 0, schulzeit.Zone())
 	lageVon := func(klasse string, tag time.Time) LmfTerminLage {
@@ -90,26 +90,27 @@ func TestRueckgabeTerminLage(t *testing.T) {
 }
 
 // speicherePlan verteilt die Zeilen wie der Handler (Mo–Fr, ohne Ferien) und speichert.
-func speicherePlan(t *testing.T, repo *LmfTerminRepository, art, ersterTag string, startstunde, stundenJeTag int, zeilen []LmfPlanZeile, ausgelassen []string) LmfPlanStand {
+// Vom Plan zählen Art, erster Tag, Startstunde und Stunden je Tag; das Ende des
+// Rückgabe-Plans rechnet der Helfer.
+func speicherePlan(t *testing.T, repo *LmfTerminRepository, plan LmfPlan, zeilen []LmfPlanZeile, ausgelassen []string) LmfPlanStand {
 	t.Helper()
-	tag, err := time.ParseInLocation("2006-01-02", ersterTag, schulzeit.Zone())
+	tag, err := time.ParseInLocation("2006-01-02", plan.ErsterTag, schulzeit.Zone())
 	if err != nil {
 		t.Fatal(err)
 	}
-	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag, Startstunde: startstunde, StundenJeTag: stundenJeTag},
+	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag, Startstunde: plan.Startstunde, StundenJeTag: plan.StundenJeTag},
 		make([]*lmfplan.Platz, len(zeilen)), lmfplan.Schultage(nil))
-	plan := LmfPlan{Art: art, ErsterTag: ersterTag, Startstunde: startstunde, StundenJeTag: stundenJeTag}
 	// Der Rückgabe-Plan trägt sein Ende (Migration 101): hier der Platz der letzten Zeile
 	// — vom Ende her gerechnet ergäbe das dieselben Plätze.
-	if art == LmfTerminRueckgabe {
-		plan.LetzterTag, plan.LetzteStunde = ersterTag, startstunde
+	if plan.Art == LmfTerminRueckgabe {
+		plan.LetzterTag, plan.LetzteStunde = plan.ErsterTag, plan.Startstunde
 		if n := len(plaetze); n > 0 {
 			plan.LetzterTag, plan.LetzteStunde = plaetze[n-1].Datum.Format("2006-01-02"), plaetze[n-1].Stunde
 		}
 	}
 	st, err := speichereLmfPlanImTest(context.Background(), repo, plan, zeilen, plaetze, ausgelassen)
 	if err != nil {
-		t.Fatalf("Plan %s ab %s speichern: %v", art, ersterTag, err)
+		t.Fatalf("Plan %s ab %s speichern: %v", plan.Art, plan.ErsterTag, err)
 	}
 	return st
 }
