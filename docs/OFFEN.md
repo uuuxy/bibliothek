@@ -308,7 +308,11 @@ Ausleihe spielt dabei keine Rolle.
 - Die Zeile spricht in Tagen: `tage_ueberfaellig` trägt in dieser Ansicht die Zahl der Jahrgänge
   über der Spanne. Die Tabelle zeigt sie als „N Tage überfällig", einen Ehemaligen als „heute
   fällig" (`MahnwesenTable.svelte`); die Mahnstufe der Zeile und die Reiter „Akut fällig" und
-  „Eskaliert" rechnen mit derselben Zahl (`berechneMahnstufe`, `MahnwesenTabs.svelte`).
+  „Eskaliert" rechnen mit derselben Zahl (`berechneMahnstufe`, `MahnwesenTabs.svelte`). Im
+  Browser gezählt am 04.10.2026 am lokalen Stack: 3.013 Zeilen, alle „1. Erinnerung", davon
+  2.941 „heute fällig" und 72 „1 Tag" bis „3 Tage überfällig".
+- Ein Klick auf „Jahrgang" ruft die Liste zweimal ab (im Browser gezählt am 04.10.2026); die
+  Ursache ist nicht nachgesehen.
 - Mit der Vorgabe 5 bis 10 an fast jedem Titel (5.5) nennt die Ansicht jedes offene Buch der
   Jahrgänge 11 bis 13, auch die Bücher der Bücherei.
 - Das Handbuch beschreibt den Umschalter nicht.
