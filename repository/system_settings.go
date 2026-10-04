@@ -191,7 +191,7 @@ func setzeStringRoh(val *string, ziel *string) {
 // applyEinstellung überträgt einen einzelnen Key/Value-Eintrag aus der DB auf
 // die Settings-Struktur.
 func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
-	if anwendenDatenschutzEinstellung(settings, key, val) {
+	if anwendenDatenschutzEinstellung(settings, key, val) || anwendenBescheidEinstellung(settings, key, val) {
 		return
 	}
 	switch key {
@@ -242,26 +242,6 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		setzeStringRoh(val, &settings.EtikettEigentumsvermerk)
 	case "etikett_eigentumsvermerk_schuelerbuecherei":
 		setzeStringRoh(val, &settings.EtikettEigentumsvermerkSchuelerbuecherei)
-	case "bescheid_bereich_nr":
-		setzeStringRoh(val, &settings.BescheidBereichNr)
-	case "bescheid_schulnummer":
-		setzeStringRoh(val, &settings.BescheidSchulnummer)
-	case "bescheid_aufsicht":
-		setzeStringRoh(val, &settings.BescheidAufsicht)
-	case "bescheid_schulleitung":
-		setzeStringRoh(val, &settings.BescheidSchulleitung)
-	case "bescheid_geschaeftszeichen":
-		setzeStringRoh(val, &settings.BescheidGeschaeftszeichen)
-	case "bescheid_bearbeiter":
-		setzeStringRoh(val, &settings.BescheidBearbeiter)
-	case "bescheid_durchwahl":
-		setzeStringRoh(val, &settings.BescheidDurchwahl)
-	case "bescheid_zahlstelle":
-		setzeStringRoh(val, &settings.BescheidZahlstelle)
-	case "bescheid_bankverbindung":
-		setzeStringRoh(val, &settings.BescheidBankverbindung)
-	case "bescheid_frist_tage":
-		setzeIntZeiger(val, &settings.BescheidFristTage)
 	case "alarm_empfaenger":
 		if val != nil {
 			v := *val

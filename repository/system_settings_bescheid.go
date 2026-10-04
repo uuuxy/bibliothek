@@ -24,6 +24,35 @@ const (
 	BescheidBankverbindungVorgabe = "Konto-Nr. 1002401\nBankleitzahl 500 500 00\nIBAN DE86500500000001002401\nBIC HELADEFFXXX"
 )
 
+// anwendenBescheidEinstellung meldet true, wenn der Schlüssel hierher gehört.
+func anwendenBescheidEinstellung(s *SystemEinstellungen, key string, val *string) bool {
+	switch key {
+	case "bescheid_bereich_nr":
+		setzeStringRoh(val, &s.BescheidBereichNr)
+	case "bescheid_schulnummer":
+		setzeStringRoh(val, &s.BescheidSchulnummer)
+	case "bescheid_aufsicht":
+		setzeStringRoh(val, &s.BescheidAufsicht)
+	case "bescheid_schulleitung":
+		setzeStringRoh(val, &s.BescheidSchulleitung)
+	case "bescheid_geschaeftszeichen":
+		setzeStringRoh(val, &s.BescheidGeschaeftszeichen)
+	case "bescheid_bearbeiter":
+		setzeStringRoh(val, &s.BescheidBearbeiter)
+	case "bescheid_durchwahl":
+		setzeStringRoh(val, &s.BescheidDurchwahl)
+	case "bescheid_zahlstelle":
+		setzeStringRoh(val, &s.BescheidZahlstelle)
+	case "bescheid_bankverbindung":
+		setzeStringRoh(val, &s.BescheidBankverbindung)
+	case "bescheid_frist_tage":
+		setzeIntZeiger(val, &s.BescheidFristTage)
+	default:
+		return false
+	}
+	return true
+}
+
 // BescheidAngaben bündelt die Einstellungen des Bescheids für Brief und Prüfung.
 type BescheidAngaben struct {
 	// BereichNr und Schulnummer bilden mit Kassenjahr und laufender Nummer die

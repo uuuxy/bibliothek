@@ -49,6 +49,7 @@ func schluesselAusUebernahme(t *testing.T) map[string]bool {
 	for _, q := range []string{
 		filepath.Join("..", "internal", "service", "loan_rules.go"),
 		filepath.Join("..", "repository", "system_settings_datenschutz.go"),
+		filepath.Join("..", "repository", "system_settings_bescheid.go"),
 		filepath.Join("..", "repository", "system_settings.go"),
 	} {
 		roh, err := os.ReadFile(q)
