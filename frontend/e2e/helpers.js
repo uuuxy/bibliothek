@@ -425,3 +425,54 @@ export async function oeffneSchuelerProfil(page, vorname) {
 	await expect(reiter).toBeVisible();
 	await reiter.click();
 }
+
+/**
+ * Tastenangaben für ein Zeichen, wie ein Handscanner mit US-Belegung es tippt.
+ * @param {string} zeichen
+ */
+function scannerTaste(zeichen) {
+	if (/^[0-9]$/.test(zeichen)) return { code: `Digit${zeichen}`, keyCode: zeichen.charCodeAt(0) };
+	if (/^[A-Za-z]$/.test(zeichen)) {
+		const gross = zeichen.toUpperCase();
+		return { code: `Key${gross}`, keyCode: gross.charCodeAt(0) };
+	}
+	if (zeichen === '-') return { code: 'Minus', keyCode: 189 };
+	throw new Error(`scanneWieScanner kennt das Zeichen „${zeichen}" nicht`);
+}
+
+/**
+ * Tippt wie ein Handscanner: echte Tastendrücke im Abstand von 5 ms, Enter am Ende. Den
+ * Zeitpunkt jeder Taste gibt der Test vor; eine Pause des Rechners zwischen zwei Tasten
+ * macht aus dem Scan sonst eine Eingabe von Hand (scanErkennung.js, 50 ms).
+ * @param {import('@playwright/test').Page} page
+ * @param {string} nummer Ziffern, Buchstaben und Bindestrich
+ */
+export async function scanneWieScanner(page, nummer) {
+	const abstand = 0.005;
+	const tasten = [...nummer].map((z) => ({ key: z, text: z, ...scannerTaste(z) }));
+	tasten.push({ key: 'Enter', text: '\r', code: 'Enter', keyCode: 13 });
+
+	const client = await page.context().newCDPSession(page);
+	const beginn = Date.now() / 1000;
+	for (const [i, t] of tasten.entries()) {
+		const taste = {
+			key: t.key,
+			code: t.code,
+			windowsVirtualKeyCode: t.keyCode,
+			timestamp: beginn + i * abstand
+		};
+		await client.send('Input.dispatchKeyEvent', {
+			...taste,
+			type: 'keyDown',
+			text: t.text,
+			unmodifiedText: t.text
+		});
+		await client.send('Input.dispatchKeyEvent', { ...taste, type: 'keyUp' });
+	}
+	await client.detach();
+
+	// Die vorgegebene Zeit läuft der echten nicht voraus: Die nächste Taste des Tests bekäme
+	// sonst einen früheren Zeitpunkt als das Enter des Scans.
+	const voraus = (beginn + tasten.length * abstand) * 1000 - Date.now();
+	if (voraus > 0) await page.waitForTimeout(voraus);
+}

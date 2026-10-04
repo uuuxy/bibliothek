@@ -484,17 +484,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   in `api/ausleihe.go`, `api/etiketten_offen.go` und `api/student_promotion.go`; die Dateien
   stehen wegen anderer Anweisungen in der Liste. Ein neuer Handler, dessen einzige Anweisung
   so aussieht, bliebe unbemerkt. Kategorie B.
-- `e2e/sperre-scan.spec.js` hängt an Millisekunden des Runners (gefunden am 04.10.2026). Der
-  Test „Anmeldung: ein Scan wird nicht abgeschickt, und die Felder stehen wie davor" tippt
-  `B-00123` ohne Pause und erwartet, dass die Anmeldung die sieben Zeichen als Scan erkennt.
-  Die Erkennung verlangt sechs Zeichen in Folge mit höchstens 50 ms Abstand
-  (`scanErkennung.js`); eine Pause des Runners zwischen zwei Tasten macht daraus eine Eingabe
-  von Hand, und das Enter meldet an. Im CI-Lauf zum Stand efe92636 einmal rot („unexpected
-  value "B-00123""), im Neulauf desselben Stands grün; lokal zehn von zehn Läufen grün.
-  Abhilfe: die Tasten mit festen Zeitstempeln schicken (CDP `Input.dispatchKeyEvent`, Feld
-  `timestamp`), damit der Abstand vom Test kommt und nicht vom Runner; vorher messen, ob
-  Chromium den Zeitstempel als `event.timeStamp` übernimmt. Dieselbe Tipp-Hilfe nutzt der Test
-  zum Sperrbildschirm in derselben Datei. Kategorie B.
 - `e2e/kontrast.spec.js` misst den Medienkatalog nicht in jedem Lauf mit seinen Kacheln
   (gefunden am 02.10.2026, lokal mit 8.600 Titeln). `warteAufStabilenBaum` gilt als stabil,
   sobald zwei Zählungen im Abstand von 100 ms gleich sind; kommt die Titelliste später, misst
