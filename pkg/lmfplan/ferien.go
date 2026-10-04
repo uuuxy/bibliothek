@@ -27,11 +27,11 @@ var sommerferienHessen = map[int]Zeitraum{
 // ferien baut einen Tabelleneintrag; ein Tippfehler in der Tabelle ist ein Programm-
 // fehler und fällt beim Start, nicht im Juni.
 func ferien(von, bis string) Zeitraum {
-	v, err := time.Parse("2006-01-02", von)
+	v, err := time.Parse(time.DateOnly, von)
 	if err != nil {
 		panic("Ferientabelle: " + err.Error())
 	}
-	b, err := time.Parse("2006-01-02", bis)
+	b, err := time.Parse(time.DateOnly, bis)
 	if err != nil {
 		panic("Ferientabelle: " + err.Error())
 	}

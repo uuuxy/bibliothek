@@ -99,7 +99,7 @@ func VerbucheRueckkehr(ctx context.Context, q DBQueryer, exemplarID, bearbeiterI
 	// Berliner Zeit trug das Datum von GESTERN — dieselbe Zeile, die erklären soll, wann
 	// das Buch wieder da war. schulzeit.Jetzt() wie überall sonst, wo ein Datum vor einem
 	// Menschen landet (pdf/schadensfall.go, pdf/kontoauszug.go).
-	grund := "Rückgabe am " + schulzeit.Jetzt().Format("02.01.2006")
+	grund := "Rückgabe am " + schulzeit.Jetzt().Format(dateFormatDE)
 	for _, f := range offene {
 		if f.bescheidStatus == "uebergeben" {
 			if err := merkeRueckgabeNachUebergabe(ctx, q, f, bearbeiterID); err != nil {

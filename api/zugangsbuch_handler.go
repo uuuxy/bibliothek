@@ -64,7 +64,7 @@ func (s *Server) ZugangsbuchPDFHandler() http.HandlerFunc {
 
 		einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
 		if err != nil {
-			return apierrors.Internal("Einstellungen konnten nicht gelesen werden", err)
+			return apierrors.Internal(meldungEinstellungenUnlesbar, err)
 		}
 		schule := pdf.SchuleInfo{
 			Name: einst.SchuleName, Strasse: einst.SchuleStrasse,

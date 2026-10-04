@@ -22,5 +22,11 @@ const (
 	dateFormatISO = "2006-01-02" // JJJJ-MM-TT
 )
 
+// Fehlermeldungen, die mehrere Handler wörtlich gleich ausgeben.
+const (
+	meldungIDLeer                = "id darf nicht leer sein"
+	meldungEinstellungenUnlesbar = "Einstellungen konnten nicht gelesen werden"
+)
+
 // Audit-/Log-Quellen.
 const litteraImportSource = "littera import file"

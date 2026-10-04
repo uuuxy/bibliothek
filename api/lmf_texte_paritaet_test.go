@@ -62,12 +62,12 @@ func TestLmfTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
 	if !strings.Contains(js, "'Nur die neu gebildeten Klassen bekommen ihre Schulbücher.'") {
 		t.Error("lmfplanDienst.js kennt den Satz ohne Jahrgänge nicht — dann zeigt das Portal ein leeres Klammerpaar")
 	}
-	sätze := map[string]string{
+	saetze := map[string]string{
 		repository.LmfTerminAusgabe: "Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher.",
 		repository.LmfTerminRueckgabe: "Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. " +
 			"„Nur Rückgabe“: Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.",
 	}
-	for art, jsSatz := range sätze {
+	for art, jsSatz := range saetze {
 		if !strings.Contains(js, jsSatz) {
 			t.Errorf("Erklärungssatz %q steht so nicht in lmfplanDienst.js:\n  Go: %s",
 				art, LmfArtErklaerung(art, eingang))

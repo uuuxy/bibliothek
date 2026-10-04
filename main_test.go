@@ -171,7 +171,7 @@ func TestLoadConfig_LokalOhneSchalterStartetMitBeispielJWT(t *testing.T) {
 }
 
 // Ausdrückliches false bleibt der Weg für eine Testphase auf einem production-Server.
-func TestLoadConfig_AusdrücklichFalseLaesstBeispielJWTDurch(t *testing.T) {
+func TestLoadConfig_AusdruecklichFalseLaesstBeispielJWTDurch(t *testing.T) {
 	originalEnv := os.Environ()
 	defer restoreEnv(originalEnv)
 

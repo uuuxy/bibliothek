@@ -102,6 +102,9 @@ func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher [
 	}
 }
 
+// platzhalterBuchListe steht in der Vorlage für die Tabelle der gemahnten Bücher.
+const platzhalterBuchListe = "{{.BuchListe}}"
+
 // zeichneMahnbrief setzt eine Seite nach DIN 5008 (Form A, Fensterkuvert) für einen Schüler:
 // Fensterfeld, Betreff, Text und die Tabelle seiner Bücher über der Frist.
 func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e repository.MahnbriefEmpfaenger, v mahnbriefVorlage) {
@@ -147,11 +150,11 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e repository.Mah
 	// {{.BuchListe}} fällt weg, statt wörtlich im Brief zu stehen.
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetXY(20, 100)
-	pdf.Cell(0, 5, tr(strings.TrimSpace(strings.ReplaceAll(replacer.Replace(v.Betreff), "{{.BuchListe}}", ""))))
+	pdf.Cell(0, 5, tr(strings.TrimSpace(strings.ReplaceAll(replacer.Replace(v.Betreff), platzhalterBuchListe, ""))))
 
 	// Die Tabelle ersetzt das erste {{.BuchListe}}; der Text danach wird gedruckt, weitere
 	// Vorkommen fallen weg.
-	teile := strings.SplitN(replacer.Replace(v.Text), "{{.BuchListe}}", 2)
+	teile := strings.SplitN(replacer.Replace(v.Text), platzhalterBuchListe, 2)
 	pdf.SetFont("Arial", "", 11)
 	pdf.SetXY(20, 115)
 	pdf.MultiCell(170, 6, tr(teile[0]), "", "L", false)
@@ -163,7 +166,7 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e repository.Mah
 		pdf.Ln(5)
 		pdf.SetX(20)
 		pdf.SetFont("Arial", "", 11)
-		pdf.MultiCell(170, 6, tr(strings.TrimSpace(strings.ReplaceAll(teile[1], "{{.BuchListe}}", ""))), "", "L", false)
+		pdf.MultiCell(170, 6, tr(strings.TrimSpace(strings.ReplaceAll(teile[1], platzhalterBuchListe, ""))), "", "L", false)
 	}
 }
 

@@ -67,7 +67,7 @@ func (s *Server) NachbuchMeldungQuittierenHandler() http.HandlerFunc {
 		// {id} ist durch ValidateUUIDParamsMiddleware schon als UUID geprüft.
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest("id darf nicht leer sein", errors.New("missing id"))
+			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
 		}
 		err := repository.QuittiereNachbuchMeldung(r.Context(), s.DB.Pool, id, claims.UserID)
 		if errors.Is(err, repository.ErrNachbuchMeldungNichtOffen) {

@@ -39,7 +39,7 @@ func (s *Server) UpdateTitelSignaturHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest("id darf nicht leer sein", errors.New("missing id"))
+			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
 		}
 
 		var req UpdateTitelSignaturRequest
@@ -103,7 +103,7 @@ func (s *Server) UpdateTitelLernmittelHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest("id darf nicht leer sein", errors.New("missing id"))
+			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
 		}
 
 		var req UpdateTitelLernmittelRequest

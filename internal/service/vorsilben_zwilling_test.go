@@ -30,28 +30,28 @@ import (
 
 func TestVorsilben_OhneNetzUndMitNetzBedeutenDasselbe(t *testing.T) {
 	js := vorsilbenAusScanEinordnen(t)
-	go_ := vorsilbenAusOmniboxSwitch(t)
+	server := vorsilbenAusOmniboxSwitch(t)
 
 	for vorsilbe, art := range js {
-		if go_[vorsilbe] == "" {
+		if server[vorsilbe] == "" {
 			t.Errorf("%q ist ohne Netz ein %s, der Server-Switch kennt die Vorsilbe nicht — "+
 				"derselbe Scan bedeutet mit und ohne Netz Verschiedenes", vorsilbe, art)
 			continue
 		}
-		if go_[vorsilbe] != art {
-			t.Errorf("%q ist ohne Netz ein %s, mit Netz ein %s", vorsilbe, art, go_[vorsilbe])
+		if server[vorsilbe] != art {
+			t.Errorf("%q ist ohne Netz ein %s, mit Netz ein %s", vorsilbe, art, server[vorsilbe])
 		}
 	}
-	for vorsilbe, art := range go_ {
+	for vorsilbe, art := range server {
 		if js[vorsilbe] == "" {
 			t.Errorf("%q ist mit Netz ein %s, ohne Netz wird der Scan als unklar abgewiesen — "+
 				"die Theke nimmt ihn dann nur an, solange das Netz steht", vorsilbe, art)
 		}
 	}
 
-	if len(js) == 0 || len(go_) == 0 {
+	if len(js) == 0 || len(server) == 0 {
 		t.Fatalf("nichts gemessen (js=%d, go=%d) — der Detektor liest ins Leere, und dieser "+
-			"Test wäre ab sofort immer grün", len(js), len(go_))
+			"Test wäre ab sofort immer grün", len(js), len(server))
 	}
 }
 

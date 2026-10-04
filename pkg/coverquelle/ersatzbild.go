@@ -35,7 +35,7 @@ func IstErsatzbild(antwort []byte) bool {
 func MerkeErsatzbildFuerTest(bild []byte) (vergiss func()) {
 	summe := pruefsumme(bild)
 	if ersatzbilder[summe] {
-		return func() {}
+		return func() { /* Das Bild stand schon in der Liste; es bleibt dort. */ }
 	}
 	ersatzbilder[summe] = true
 	return func() { delete(ersatzbilder, summe) }

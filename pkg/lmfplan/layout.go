@@ -156,7 +156,7 @@ func Beginn(plaetze []Platz) (Platz, bool) {
 
 // schluessel ist der Map-Schlüssel eines Platzes — als Text, nicht als time.Time: Zwei
 // Zeitpunkte desselben Kalendertags aus verschiedenen Zonen wären als Schlüssel verschieden.
-func schluessel(p Platz) string { return fmt.Sprintf("%s/%d", p.Datum.Format("2006-01-02"), p.Stunde) }
+func schluessel(p Platz) string { return fmt.Sprintf("%s/%d", p.Datum.Format(time.DateOnly), p.Stunde) }
 
 // festePlaetze legt die Ergebnisliste an, trägt die festen Plätze ein und merkt sie als
 // belegt — der gemeinsame Anfang von Vorwärts- und Rückwärtsfluss.

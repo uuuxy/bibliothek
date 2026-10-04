@@ -177,9 +177,9 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 		); err != nil {
 			continue
 		}
-		res.ErstelltAm = t.Format("02.01.2006")
+		res.ErstelltAm = t.Format(dateFormatDE)
 		if erledigtAm != nil {
-			res.ErledigtAm = erledigtAm.Format("02.01.2006")
+			res.ErledigtAm = erledigtAm.Format(dateFormatDE)
 		}
 		result = append(result, res)
 	}
@@ -212,7 +212,7 @@ func (r *pgReservationRepository) OffeneKlassensatzReservierungen(ctx context.Co
 		if err := rows.Scan(&o.TitelID, &o.Titel, &o.Klasse, &o.Anzahl, &t); err != nil {
 			return nil, err
 		}
-		o.ErstelltAm = t.Format("02.01.2006")
+		o.ErstelltAm = t.Format(dateFormatDE)
 		offene = append(offene, o)
 	}
 	return offene, rows.Err()
@@ -263,9 +263,9 @@ func (r *pgReservationRepository) MeineKlassensatzReservierungen(ctx context.Con
 			&m.Notiz, &m.Erledigt, &m.ErledigtNotiz, &erledigtAm, &erstellt); err != nil {
 			return nil, err
 		}
-		m.ErstelltAm = erstellt.Format("02.01.2006")
+		m.ErstelltAm = erstellt.Format(dateFormatDE)
 		if erledigtAm != nil {
-			m.ErledigtAm = erledigtAm.Format("02.01.2006")
+			m.ErledigtAm = erledigtAm.Format(dateFormatDE)
 		}
 		meine = append(meine, m)
 	}

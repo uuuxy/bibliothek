@@ -115,13 +115,13 @@ func (s *Server) BescheidVorschlagHandler(bescheidRepo repository.BescheidReposi
 func (s *Server) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository) error {
 	id := r.PathValue("id")
 	if id == "" {
-		return apierrors.BadRequest("id darf nicht leer sein", errors.New("missing id"))
+		return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
 	}
 	ctx := r.Context()
 
 	angaben, schule, err := s.bescheidAngaben(ctx)
 	if err != nil {
-		return apierrors.Internal("Einstellungen konnten nicht gelesen werden", err)
+		return apierrors.Internal(meldungEinstellungenUnlesbar, err)
 	}
 	// Welcher Preis die Grundlage ist, steht in denselben Einstellungen (Stufe 4).
 	quelle := s.preisquelle(ctx)
@@ -280,7 +280,7 @@ func (s *Server) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 	id := r.PathValue("id")
 	var req BescheidErstellenRequest
 	if id == "" {
-		return apierrors.BadRequest("id darf nicht leer sein", errors.New("missing id"))
+		return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
 	}
 	if !DecodeAndValidate(w, r, &req) {
 		return nil
@@ -293,7 +293,7 @@ func (s *Server) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 	ctx := r.Context()
 	angaben, schule, err := s.bescheidAngaben(ctx)
 	if err != nil {
-		return apierrors.Internal("Einstellungen konnten nicht gelesen werden", err)
+		return apierrors.Internal(meldungEinstellungenUnlesbar, err)
 	}
 	// Ohne die Pflichtangaben entsteht kein Bescheid: Ein Brief ohne Referenznummer
 	// oder ohne Aufsichtsbehörde ist keiner, und die Nummer wäre verbraucht.
@@ -491,7 +491,7 @@ func (s *Server) BescheidSchuelerListeHandler(bescheidRepo repository.BescheidRe
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest("id darf nicht leer sein", errors.New("missing id"))
+			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
 		}
 		liste, err := bescheidRepo.ZuSchueler(r.Context(), id)
 		if err != nil {
@@ -515,7 +515,7 @@ func (s *Server) BescheidPDFHandler(bescheidRepo repository.BescheidRepository) 
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest("id darf nicht leer sein", errors.New("missing id"))
+			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
 		}
 		ctx := r.Context()
 
@@ -569,7 +569,7 @@ func (s *Server) bescheidBrief(ctx context.Context, bescheidRepo repository.Besc
 	if len(absender) == 0 {
 		angaben, schule, err := s.bescheidAngaben(ctx)
 		if err != nil {
-			return BescheidBrief{}, nil, apierrors.Internal("Einstellungen konnten nicht gelesen werden", err)
+			return BescheidBrief{}, nil, apierrors.Internal(meldungEinstellungenUnlesbar, err)
 		}
 		absender = bescheidAbsenderAus(angaben, schule)
 	}
@@ -635,7 +635,7 @@ func (s *Server) BescheidUebergebenHandler(bescheidRepo repository.BescheidRepos
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest("id darf nicht leer sein", errors.New("missing id"))
+			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
 		}
 		ctx := r.Context()
 		if err := bescheidRepo.Uebergebe(ctx, id); err != nil {

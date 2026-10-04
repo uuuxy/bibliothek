@@ -28,8 +28,8 @@ type SommerferienEintrag struct {
 }
 
 func (e SommerferienEintrag) zeitraum() (Zeitraum, bool) {
-	von, err1 := time.Parse("2006-01-02", e.Von)
-	bis, err2 := time.Parse("2006-01-02", e.Bis)
+	von, err1 := time.Parse(time.DateOnly, e.Von)
+	bis, err2 := time.Parse(time.DateOnly, e.Bis)
 	if err1 != nil || err2 != nil {
 		return Zeitraum{}, false
 	}
@@ -120,7 +120,7 @@ func FerientabelleAus(text string) Ferientabelle {
 func ProgrammEintraege() []SommerferienEintrag {
 	out := make([]SommerferienEintrag, 0, len(sommerferienHessen))
 	for jahr, z := range sommerferienHessen {
-		out = append(out, SommerferienEintrag{Jahr: jahr, Von: z.Von.Format("2006-01-02"), Bis: z.Bis.Format("2006-01-02")})
+		out = append(out, SommerferienEintrag{Jahr: jahr, Von: z.Von.Format(time.DateOnly), Bis: z.Bis.Format(time.DateOnly)})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Jahr < out[j].Jahr })
 	return out

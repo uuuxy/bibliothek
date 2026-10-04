@@ -15,6 +15,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// meldungSperreFehler geht hinaus, wenn das Umschalten an der Datenbank scheitert.
+const meldungSperreFehler = "Fehler beim Aktualisieren der Sperre"
+
 // sperrStand ist der Zustand eines Lesers, bevor die Sperre umgeschaltet wird.
 type sperrStand struct {
 	art                     string
@@ -77,7 +80,7 @@ func (s *Server) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 	ctx := r.Context()
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
-		return apierrors.Internal("Fehler beim Aktualisieren der Sperre", err)
+		return apierrors.Internal(meldungSperreFehler, err)
 	}
 	defer db.SafeRollback(ctx, tx)
 
@@ -93,7 +96,7 @@ func (s *Server) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 		return apierrors.NotFound("leser nicht gefunden", err)
 	}
 	if err != nil {
-		return apierrors.Internal("Fehler beim Aktualisieren der Sperre", err)
+		return apierrors.Internal(meldungSperreFehler, err)
 	}
 	switch {
 	case alt.geloescht:
@@ -128,10 +131,10 @@ func (s *Server) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 		&student.ID, &student.Vorname, &student.Nachname,
 		&student.Klasse, &student.IsManuallyBlocked, &student.IstGesperrt)
 	if err != nil {
-		return apierrors.Internal("Fehler beim Aktualisieren der Sperre", err)
+		return apierrors.Internal(meldungSperreFehler, err)
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return apierrors.Internal("Fehler beim Aktualisieren der Sperre", err)
+		return apierrors.Internal(meldungSperreFehler, err)
 	}
 
 	protokolliereSperre(r, auditRepo, claims.UserID, id, req.IsLocked, reason, alt)

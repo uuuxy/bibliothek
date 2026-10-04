@@ -116,7 +116,7 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 			ISBN:             isbn,
 			Barcode:          exBarcode,
 			CoverURL:         coverURL,
-			FaelligAm:        frist.Format("02.01.2006"),
+			FaelligAm:        frist.Format(dateFormatDE),
 			TageUeberfaellig: tage,
 			Mahnstufe:        mahnstufe,
 			LetztesMahndatum: mahndatumText(mahndatum),

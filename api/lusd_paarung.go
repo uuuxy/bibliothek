@@ -319,14 +319,14 @@ func entferneDiff(liste []StudentDiff, id string) []StudentDiff {
 // ── Vergleichshelfer ─────────────────────────────────────────────────────────
 
 func datumGleich(a, b *time.Time) bool {
-	return a != nil && b != nil && a.Format("2006-01-02") == b.Format("2006-01-02")
+	return a != nil && b != nil && a.Format(dateFormatISO) == b.Format(dateFormatISO)
 }
 
 func datumText(d *time.Time) string {
 	if d == nil {
 		return ""
 	}
-	return d.Format("2006-01-02")
+	return d.Format(dateFormatISO)
 }
 
 // normName ebnet ein, was eine Umbenennung typischerweise ändert: Groß/Klein, Umlaut-

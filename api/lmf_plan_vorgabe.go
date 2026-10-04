@@ -76,7 +76,7 @@ func lmfPlanSommerferien(art string, plan *repository.LmfPlan, laufend bool, jet
 	}
 	f := LmfPlanSommerferien{Jahr: jahr, Bekannt: ok}
 	if ok {
-		f.Von, f.Bis = z.Von.Format("2006-01-02"), z.Bis.Format("2006-01-02")
+		f.Von, f.Bis = z.Von.Format(dateFormatISO), z.Bis.Format(dateFormatISO)
 	}
 	return f, z
 }
@@ -109,9 +109,9 @@ func lmfPlanRahmenVorgabe(art string, f LmfPlanSommerferien, z lmfplan.Zeitraum)
 		return v
 	}
 	if art == repository.LmfTerminRueckgabe {
-		v.LetzterTag = lmfplan.DonnerstagVor(z.Von).Format("2006-01-02")
+		v.LetzterTag = lmfplan.DonnerstagVor(z.Von).Format(dateFormatISO)
 	} else {
-		v.ErsterTag = lmfplan.ErsterSchultagNach(z).Format("2006-01-02")
+		v.ErsterTag = lmfplan.ErsterSchultagNach(z).Format(dateFormatISO)
 	}
 	return v
 }

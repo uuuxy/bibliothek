@@ -199,7 +199,7 @@ func lmfPlanVorbei(st repository.LmfPlanStand, jetzt time.Time) bool {
 			letzter = z.Datum
 		}
 	}
-	heute := jetzt.In(schulzeit.Zone()).Format("2006-01-02")
+	heute := jetzt.In(schulzeit.Zone()).Format(dateFormatISO)
 	return letzter < heute
 }
 
@@ -332,7 +332,7 @@ func pruefeLmfPlan(art string, req lmfPlanRequest) (lmfPlanEntwurf, error) {
 	}
 	for i, f := range req.FreieTage {
 		datum := strings.TrimSpace(f.Datum)
-		if _, err := time.Parse("2006-01-02", datum); err != nil {
+		if _, err := time.Parse(dateFormatISO, datum); err != nil {
 			return e, fmt.Errorf("freier Tag %d: Datum muss als JJJJ-MM-TT angegeben sein", i+1)
 		}
 		e.Plan.FreieTage = append(e.Plan.FreieTage, repository.LmfFreierTag{Datum: datum, Grund: strings.TrimSpace(f.Grund)})
@@ -395,7 +395,7 @@ func pruefeLmfPlanZeile(nr int, z lmfPlanRequestZeile) (repository.LmfPlanZeile,
 func pruefeLmfAnker(p *repository.LmfPlan, req lmfPlanRequest) error {
 	if p.Art == repository.LmfTerminRueckgabe {
 		p.LetzterTag, p.LetzteStunde = strings.TrimSpace(req.LetzterTag), req.LetzteStunde
-		if _, err := time.Parse("2006-01-02", p.LetzterTag); err != nil {
+		if _, err := time.Parse(dateFormatISO, p.LetzterTag); err != nil {
 			return errors.New("letzter_tag muss als JJJJ-MM-TT angegeben sein")
 		}
 		if p.LetzteStunde < 1 || p.LetzteStunde > p.StundenJeTag {
@@ -405,7 +405,7 @@ func pruefeLmfAnker(p *repository.LmfPlan, req lmfPlanRequest) error {
 		return nil
 	}
 	p.ErsterTag, p.Startstunde = strings.TrimSpace(req.ErsterTag), req.Startstunde
-	if _, err := time.Parse("2006-01-02", p.ErsterTag); err != nil {
+	if _, err := time.Parse(dateFormatISO, p.ErsterTag); err != nil {
 		return errors.New("erster_tag muss als JJJJ-MM-TT angegeben sein")
 	}
 	if p.Startstunde < 1 || p.Startstunde > p.StundenJeTag {
@@ -502,7 +502,7 @@ func (s *Server) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 func lmfPlanVorschauAntwort(e lmfPlanEntwurf, plaetze []lmfplan.Platz, ausfaelle []LmfPlanAusfall) LmfPlanSpeicherAntwort {
 	for i := range e.Zeilen {
 		e.Zeilen[i].Position = i + 1
-		e.Zeilen[i].Datum = plaetze[i].Datum.Format("2006-01-02")
+		e.Zeilen[i].Datum = plaetze[i].Datum.Format(dateFormatISO)
 		e.Zeilen[i].Stunde = plaetze[i].Stunde
 	}
 	return LmfPlanSpeicherAntwort{Vorschau: true, Ausfaelle: ausfaelle,
@@ -532,7 +532,7 @@ func (s *Server) verteileLmfPlan(e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanA
 		ende := lmfplan.Ende{LetzterTag: anker, LetzteStunde: e.Plan.LetzteStunde, StundenJeTag: e.Plan.StundenJeTag}
 		plaetze = lmfplan.VerteileRueckwaerts(ende, e.Fest, lmfplan.Schultage(frei))
 		if b, ok := lmfplan.Beginn(plaetze); ok {
-			e.Plan.ErsterTag, e.Plan.Startstunde = b.Datum.Format("2006-01-02"), b.Stunde
+			e.Plan.ErsterTag, e.Plan.Startstunde = b.Datum.Format(dateFormatISO), b.Stunde
 		}
 	} else {
 		r := lmfplan.Rahmen{ErsterTag: anker, Startstunde: e.Plan.Startstunde, StundenJeTag: e.Plan.StundenJeTag}
@@ -544,7 +544,7 @@ func (s *Server) verteileLmfPlan(e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanA
 	}
 	ausfaelle := []LmfPlanAusfall{}
 	for _, a := range lmfplan.Ausfaelle(ersterTag, spaetesterPlatz(ersterTag, plaetze), frei) {
-		ausfaelle = append(ausfaelle, LmfPlanAusfall{Datum: a.Datum.Format("2006-01-02"), Grund: a.Grund})
+		ausfaelle = append(ausfaelle, LmfPlanAusfall{Datum: a.Datum.Format(dateFormatISO), Grund: a.Grund})
 	}
 	// Je Zeile ein Platz: Beide Verteiler liefern einen Platz je Eintrag in e.Fest, und
 	// e.Fest hat einen je Zeile — außer bei stunden_je_tag < 1, wo beide eine leere Liste
@@ -601,7 +601,7 @@ func (s *Server) lmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTe
 	if err != nil {
 		return nil, err
 	}
-	if st.Plan.SchuljahrBeginn != repository.SchuljahrBeginn(tag).Format("2006-01-02") || st.Plan.VeroeffentlichtAm == nil {
+	if st.Plan.SchuljahrBeginn != repository.SchuljahrBeginn(tag).Format(dateFormatISO) || st.Plan.VeroeffentlichtAm == nil {
 		// Anderes Schuljahr: das Speichern legt einen neuen Plan an, der alte bleibt.
 		return nil, nil
 	}
