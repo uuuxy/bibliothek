@@ -415,7 +415,7 @@ export async function pruefeFeldreihen(page, kontext) {
 
 /**
  * Öffnet das Profil eines Schülers über die Schülerdatei und wechselt auf den Reiter
- * „Ausleihen & Historie".
+ * „Ausleihen & Vormerkungen".
  *
  * Bis 06.09.2026 nahmen drei Specs die Abgänger-Liste als Abkürzung ins Profil (Schüler
  * mit ist_abgaenger = true geseedet, dann „Profil von …" geklickt). Seit dem 05.09. zeigt
@@ -430,7 +430,7 @@ export async function oeffneSchuelerProfil(page, vorname) {
 	await gehZu(page, '/schuelerdatei');
 	await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
 	await page.getByRole('button', { name: new RegExp(`Profil von ${vorname} `) }).click();
-	const reiter = page.getByRole('tab', { name: /Ausleihen & Historie/ });
+	const reiter = page.getByRole('tab', { name: /Ausleihen & Vormerkungen/ });
 	await expect(reiter).toBeVisible();
 	await reiter.click();
 }

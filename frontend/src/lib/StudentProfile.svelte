@@ -124,7 +124,7 @@
 				<Reiter
 					etikett="Leserakte"
 					reiter={[
-						{ id: 'ausleihen', label: 'Ausleihen & Historie' },
+						{ id: 'ausleihen', label: 'Ausleihen & Vormerkungen' },
 						{ id: 'gebuehren', label: 'Gebühren & Schäden', anzahl: offen.anzahl },
 						{ id: 'stammdaten', label: 'Stammdaten & Adresse' }
 					]}

@@ -157,6 +157,6 @@ test('Schadensfall: der offene Betrag steht auch, wenn die Liste der Forderungen
 	await expect(
 		page.getByRole('alert').filter({ hasText: 'Nicht geladen: Gebühren' })
 	).toBeVisible();
-	await page.getByRole('tab', { name: /Ausleihen & Historie/ }).click();
+	await page.getByRole('tab', { name: /Ausleihen & Vormerkungen/ }).click();
 	await expect(page.getByRole('alert').filter({ hasText: 'Nicht geladen' })).toHaveCount(0);
 });

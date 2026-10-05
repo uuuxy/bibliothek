@@ -49,7 +49,7 @@ test('Abgänger-Zeile klickbar → Schülerprofil öffnet sich', async ({ page }
 
 	// BEWEIS: Das Profil ist offen, sobald die profil-spezifischen Tabs erscheinen
 	// (die gibt es in der Abgänger-Liste nicht).
-	await expect(page.getByText('Ausleihen & Historie')).toBeVisible();
+	await expect(page.getByText('Ausleihen & Vormerkungen')).toBeVisible();
 	await expect(page.getByRole('heading', { name: new RegExp(`Abgklick${s}`) })).toBeVisible();
 });
 
@@ -96,7 +96,7 @@ test('Profil-Reiter folgt der Absicht: Abgänger → Ausleihen, eigene Suche →
 		.getByRole('button', { name: new RegExp(`Profil von Reiter${s} Testschueler`) })
 		.click();
 
-	const ausleihReiter = page.getByRole('tab', { name: 'Ausleihen & Historie' });
+	const ausleihReiter = page.getByRole('tab', { name: 'Ausleihen & Vormerkungen' });
 	await expect(ausleihReiter).toBeVisible();
 	// Der aktive Reiter ist als gewählt ausgezeichnet (aria-selected, ui/Reiter) — daran
 	// hängt die Zusicherung, nicht an der Sichtbarkeit (beide sind immer sichtbar).

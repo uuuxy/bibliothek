@@ -355,9 +355,9 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 - **Reiter**: _Aktive Leser_, _Ehemalige / Archiv_ und (mit dem Recht zum Löschen)
   _Papierkorb_.
 - **Suche** über den ganzen Bestand (Name, Klasse, Barcode). Zeile anklicken → Akte.
-- **Akte**: drei Reiter — _Ausleihen & Historie_, _Gebühren & Schäden_ und _Stammdaten &
+- **Akte**: drei Reiter — _Ausleihen & Vormerkungen_, _Gebühren & Schäden_ und _Stammdaten &
   Adresse_. Aus der Leserdatei öffnet sie auf _Stammdaten & Adresse_, aus Mahnliste und
-  Abgängern auf _Ausleihen & Historie_, aus dem Reiter _Schadensersatz_ des Mahnwesens auf
+  Abgängern auf _Ausleihen & Vormerkungen_, aus dem Reiter _Schadensersatz_ des Mahnwesens auf
   _Gebühren & Schäden_. Links stehen bei jedem Leser der Konto-Status und darunter _Offene
   Forderungen_: _keine_ oder der Betrag in Rot — in jedem Reiter.
   Für jeden dieselben Felder

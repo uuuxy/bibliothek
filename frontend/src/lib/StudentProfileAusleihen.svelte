@@ -1,4 +1,4 @@
-<!-- @component StudentProfileAusleihen — der Reiter „Ausleihen & Historie" der Akte: die
+<!-- @component StudentProfileAusleihen — der Reiter „Ausleihen & Vormerkungen" der Akte: die
      entliehenen Bücher und die Vormerkungen.
 
      Gebühren und Bescheide stehen im eigenen Reiter (StudentProfileGebuehren); jeder Reiter

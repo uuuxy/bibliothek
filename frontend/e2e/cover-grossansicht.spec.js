@@ -41,7 +41,7 @@ test('Cover-Großansicht zeigt ein lokal abgelegtes Cover', async ({ page }) => 
 
 	await uiLogin(page);
 
-	// Ins Profil und auf den Reiter „Ausleihen & Historie", in dem die Ausleihliste mit
+	// Ins Profil und auf den Reiter „Ausleihen & Vormerkungen", in dem die Ausleihliste mit
 	// den Covern steht.
 	await oeffneSchuelerProfil(page, `Cover${s}`);
 	await expect(page.getByText(titel).first()).toBeVisible();
