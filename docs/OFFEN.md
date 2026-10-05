@@ -668,7 +668,8 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 - Inventur: Im Fehlbestandsbericht ist der Titel bei 1280 px nach rund 95 px abgeschnitten,
   während die Spalte „Signatur" etwa dreimal so breit ist (gesehen am 02.10.2026; die Titelzelle
   trägt `max-w-0` ohne volle Breite an der Spalte). Der Bericht wird zum Absuchen des Regals
-  ausgedruckt; ob der Ausdruck ebenso kürzt, ist nicht nachgesehen.
+  ausgedruckt; der Ausdruck kürzt ebenso, nach rund 24 Zeichen, und rechts bleibt ein Viertel
+  der Seite leer (gemessen am 05.10.2026).
 - Inventur: Die Wörter „Inventur-Scope" (Überschrift des Start-Dialogs) und „aus dem aktuellen
   Scope" (Rückfrage vor dem Abschluss) stehen so in der Oberfläche; ein deutsches Wort wäre
   „Umfang" oder „Bereich".

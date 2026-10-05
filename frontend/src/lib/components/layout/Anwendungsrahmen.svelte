@@ -20,7 +20,7 @@
 </script>
 
 <div
-	class="h-screen flex w-full overflow-hidden"
+	class="print-flow h-screen flex w-full overflow-hidden"
 	hidden={verdeckt}
 	inert={verdeckt}
 	data-anwendungsrahmen
@@ -31,7 +31,7 @@
 	     und die Anwendung wirkt in Kacheln gezwängt. Getrennt wird durch Linien, über die volle
 	     Breite. -->
 	<div
-		class="bg-surface-container-lowest flex w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 md:px-8"
+		class="print-flow bg-surface-container-lowest flex w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 md:px-8"
 	>
 		<!-- Systemzustand, der eine Handlung braucht, steht über dem Inhalt —
 		     nicht in der Navigation. Sichtbar für alle, die den Backup-Status lesen

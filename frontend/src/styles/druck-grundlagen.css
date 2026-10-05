@@ -37,6 +37,14 @@
 		color: black !important;
 	}
 
+	/* Am Bildschirm hat die Anwendung die Höhe des Fensters, gescrollt wird in ihr. Auf Papier
+	   läuft der Inhalt über die Seiten; mit der festen Höhe endet der Ausdruck nach der ersten.
+	   Die Ausweis-Betriebsarten setzen ihre Seiten selbst und bleiben ausgenommen. */
+	body:not([data-print-mode]) .print-flow {
+		height: auto !important;
+		overflow: visible !important;
+	}
+
 	header,
 	footer,
 	.no-print {
