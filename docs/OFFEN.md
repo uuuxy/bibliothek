@@ -104,9 +104,8 @@ Datenbank und der Littera-Übernahme (7.2).
 **Im Code,** in dieser Reihenfolge:
 
 1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. **5.46** (Portal: Wunsch und Meldung, das Buch aus Vorschlägen) — entschieden am 05.10.2026.
-3. Nach der Antwort zu 8.3: **5.4**.
-4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+2. Nach der Antwort zu 8.3: **5.4**.
+3. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
@@ -821,39 +820,6 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
 - **Leserakte, doppelte Beschriftung:** Unter dem Reiter „Stammdaten & Adresse" steht dieselbe
   Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem 01.10.2026
   „Forderungen".
-
-### 5.46 Portal: Wunsch und Meldung, das Buch aus Vorschlägen
-
-Im Portal, Reiter „Meine Anliegen", stehen über dem Formular zwei Knöpfe, „Buchwunsch" und
-„Etwas stimmt nicht"; vorbelegt ist „Buchwunsch" (`portal/AnliegenWidget.svelte`). Beide führen
-zum selben Formular. Die Wahl ändert die Beschriftung des ersten Feldes, die Meldung nach dem
-Absenden, den Betreff der Mail beim Erledigen (`api/anliegen.go`) und in der Liste der Bibliothek
-das Abzeichen: „Wunsch" grau, „Meldung" rot (`bestellungen/AnliegenListe.svelte`). Sie steht
-außerdem in der Auskunft über ein Konto (`api/dsgvo_pdf_konto.go`). Die Liste der Bibliothek
-zeigt die ältesten Einträge zuerst (`repository/anliegen_repo.go`).
-
-**Entschieden am 05.10.2026, nicht gebaut.** Kategorie B.
-
-- **Die Wahl bleibt, ohne Vorbelegung.** Zwei gleich gewichtete Knöpfe sind der Einstieg
-  („Buchwunsch", „Problem melden"), mit den Symbolen des Hauses; das Formular erscheint erst
-  nach dem Klick. Grund: Wünsche bleiben liegen, bis bestellt wird, ein Problem will am selben
-  Tag erledigt werden, und mit der Vorbelegung stand ein Problem als Wunsch in der Liste, sobald
-  niemand umschaltete.
-- **Zwei Formulare.** Beim Problem wird das Buch aus Vorschlägen gewählt, die beim Tippen
-  erscheinen, mit Cover (Issue 700); beim Wunsch bleibt freier Text, etwa für ein Buch, das es
-  noch nicht gibt. Der Server nimmt heute keinen Verweis auf ein Buch an (`api/anliegen.go`:
-  `art`, `titel_text`, `klasse`, `kommentar`); die Spalten `titel_id` und `isbn` in
-  `lehrer_anliegen` gibt es noch. Titel sucht das Portal über `GET /api/public/opac/suche`.
-- **Die Liste der Bibliothek in zwei Abschnitten:** „Meldungen" oben, „Wünsche" darunter, je die
-  ältesten zuerst. Das rote Abzeichen bleibt; eine rote Fläche um die Meldungen gibt es nicht.
-
-Nachgelesen am 05.10.2026: M3, Radio button (Guidelines): „Radio buttons should always have one
-option pre-selected." Eine Pflichtwahl ohne Vorbelegung ist deshalb kein Paar von
-Auswahlknöpfen. M3, Buttons (Guidelines): „Buttons let people take action and make choices with
-one tap." M3, Color roles: „Use error roles to communicate error states". M3, Lists
-(Guidelines): „Gaps or dividers can separate lists into items and groups". Littera kennt keinen
-Weg für Lehrkräfte; den Bedarf erfasst dort die Bibliothek im Erwerb (Handbuch,
-„Bedarfsermittlung", „Bestellvorschläge").
 
 ### 5.49 Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
 
