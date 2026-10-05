@@ -466,3 +466,129 @@ describe('offlineSync: die Nachbuch-Tuer', () => {
 		expect(await loadQueue(), 'die zweite Portion folgt in derselben Runde').toHaveLength(0);
 	});
 });
+
+// Der Wortlaut dessen, was der Bediener von Hand prüfen soll: Barcode, Grund und Reihenfolge.
+describe('offlineSync: der Wortlaut der Meldung', () => {
+	beforeEach(async () => {
+		await clearQueue();
+		vi.clearAllMocks();
+	});
+
+	const HAND = '— bitte von Hand prüfen.';
+	const AUFGABE = 'Die Forderung steht auf einem Bescheid, der schon abgegeben ist.';
+
+	/**
+	 * Bucht einen Eintrag nach und liefert, was dem Bediener gemeldet wurde.
+	 * @param {any} eintrag @param {any} ergebnis die Antwort der Nachbuch-Tuer zu diesem Eintrag
+	 */
+	async function meldungenNach(eintrag, ergebnis) {
+		await enqueueOfflineAction(eintrag);
+		vi.mocked(apiClient.post).mockImplementation(antworte(() => ergebnis));
+		await offlineSync.startSync();
+		return vi.mocked(showToast).mock.calls;
+	}
+
+	it.each([
+		['nicht_gebucht', 'Barcode nicht gefunden', 'nicht gebucht (Barcode nicht gefunden)'],
+		['veraltet', 'schon zurückgegeben', 'nicht gebucht (schon zurückgegeben)'],
+		['nicht_gebucht', undefined, 'nicht gebucht'],
+		['veraltet', '', 'nicht gebucht']
+	])('„%s“ mit dem Grund „%s“ heißt „%s“', async (ergebnis, grund, text) => {
+		const meldungen = await meldungenNach(rueckgabe('B-10243'), { ergebnis, grund });
+
+		expect(meldungen).toEqual([[`Offline-Scan „B-10243“: ${text} ${HAND}`, 'error']]);
+		expect(await loadQueue(), 'endgültig entschieden, also ausgebucht').toHaveLength(0);
+	});
+
+	it('nennt erst die Absicht des Scans, dann die Wirkung am Server', async () => {
+		const meldungen = await meldungenNach(ausleihe('B-10234', 'schueler-7'), {
+			ergebnis: 'zurueckgegeben',
+			daten: { type: 'rueckgabe' }
+		});
+
+		expect(meldungen).toEqual([
+			[`Offline-Scan „B-10234“: als Ausleihe gescannt, der Server buchte Rückgabe ${HAND}`, 'error']
+		]);
+	});
+
+	// „bereits_gebucht“ kann ohne Daten kommen. Ohne genannte Wirkung gibt es nichts zu vergleichen.
+	it('meldet nichts, wenn der Server keine Wirkung nennt', async () => {
+		const meldungen = await meldungenNach(rueckgabe('B-10234'), { ergebnis: 'bereits_gebucht' });
+
+		expect(meldungen).toEqual([]);
+		expect(await loadQueue()).toHaveLength(0);
+	});
+
+	it('gibt eine offene Aufgabe mit dem Barcode weiter, auch wenn wie gescannt gebucht wurde', async () => {
+		const meldungen = await meldungenNach(rueckgabe('B-1'), {
+			ergebnis: 'zurueckgegeben',
+			daten: { type: 'rueckgabe' },
+			aufsicht_informieren: AUFGABE
+		});
+
+		expect(meldungen).toEqual([[`Offline-Scan „B-1“: ${AUFGABE} ${HAND}`, 'error']]);
+	});
+
+	it('stellt die offene Aufgabe hinter die Meldung zum selben Scan', async () => {
+		const meldungen = await meldungenNach(rueckgabe('B-2'), {
+			ergebnis: 'nicht_gebucht',
+			grund: 'gesperrt',
+			aufsicht_informieren: AUFGABE
+		});
+
+		expect(meldungen).toEqual([
+			[
+				`2 Offline-Scans brauchen Prüfung: „B-2“: nicht gebucht (gesperrt); „B-2“: ${AUFGABE} ${HAND}`,
+				'error'
+			]
+		]);
+	});
+});
+
+// Der Server rechnet den Versatz der Uhr selbst heraus. Die Zeile in der Konsole sagt der
+// Wartung, dass die Uhr dieses Rechners falsch geht; gebucht wird trotzdem.
+describe('offlineSync: die Uhr des Rechners', () => {
+	beforeEach(async () => {
+		await clearQueue();
+		vi.clearAllMocks();
+	});
+
+	/** @param {number} versatz Sekunden, die der Server als Abweichung nennt */
+	async function bucheMitVersatz(versatz) {
+		const warnung = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		await enqueueOfflineAction(rueckgabe('B-10234'));
+		vi.mocked(apiClient.post).mockImplementation(
+			/** @type {any} */ (
+				async (/** @type {any} */ _pfad, /** @type {any} */ rumpf) => ({
+					ok: true,
+					json: async () => ({
+						uhr_versatz_sekunden: versatz,
+						ergebnisse: rumpf.eintraege.map((/** @type {any} */ e) => ({
+							schluessel: e.schluessel,
+							...wieGescannt(e)
+						}))
+					})
+				})
+			)
+		);
+		await offlineSync.startSync();
+		const zeilen = warnung.mock.calls.map((c) => String(c[0]));
+		warnung.mockRestore();
+		return zeilen;
+	}
+
+	it('vermerkt eine Abweichung von mehr als einer Minute, in beide Richtungen', async () => {
+		expect(await bucheMitVersatz(-75)).toEqual([
+			'Offline-Sync: Uhr dieses Rechners weicht um -75 s ab.'
+		]);
+		expect(await bucheMitVersatz(61)).toEqual([
+			'Offline-Sync: Uhr dieses Rechners weicht um 61 s ab.'
+		]);
+		expect(await loadQueue()).toHaveLength(0);
+	});
+
+	it('schweigt bis zu einer Minute', async () => {
+		expect(await bucheMitVersatz(60)).toEqual([]);
+		expect(await bucheMitVersatz(-60)).toEqual([]);
+	});
+});

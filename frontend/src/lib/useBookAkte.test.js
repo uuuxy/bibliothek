@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { srcRoot, ohneKommentare } from './hygiene-quellen.js';
 import { useBookAkte } from './useBookAkte.svelte.js';
 import { apiFetch } from './apiFetch.js';
+import { appState } from '../inventur/lib/store.svelte.js';
 
 // Die Buch-Akte lädt fünf Dinge je Titel: Kopf, Ausleiher, Exemplare, Historie,
 // Vormerkungen. Sie bleibt beim Wechsel MONTIERT — die Omnibox setzt nur
@@ -161,5 +162,124 @@ describe('useBookAkte.loadAll', () => {
 	it('der Reiter zeigt ein Fragezeichen statt einer ungeprüften Null', () => {
 		const quelle = ohneKommentare(readFileSync(join(srcRoot, 'lib', 'BookAkte.svelte'), 'utf8'));
 		expect(quelle).toMatch(/fehlendeListen\.includes\(name\)\s*\?\s*'\?'/);
+	});
+});
+
+// Woher der Kopf kommt, und was ein Lauf noch schreiben darf, den ein jüngerer überholt hat.
+describe('useBookAkte.loadAll: Kopf und überholte Läufe', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+		appState.selectedBook = null;
+	});
+
+	/** Die Adressen, die die Akte abgerufen hat. */
+	const abrufe = () => vi.mocked(apiFetch).mock.calls.map((c) => String(c[0]));
+
+	// Die Titel-Verwaltung reicht den Titel mit, den sie gerade geöffnet hat. Für diesen Titel
+	// spart die Akte den Abruf; für jeden anderen wäre der mitgereichte Kopf der falsche.
+	it('nimmt den mitgereichten Titel nur als Kopf, wenn es derselbe ist', async () => {
+		vi.mocked(apiFetch).mockImplementation(antworten('A'));
+		const akte = useBookAkte();
+
+		appState.selectedBook = { id: 'X', titel: 'ein anderer Titel' };
+		await akte.loadAll('A');
+		expect(akte.book).toEqual({ id: 'A', titel: 'Titel A' });
+		expect(abrufe()).toContain('/api/books/A');
+
+		vi.mocked(apiFetch).mockClear();
+		appState.selectedBook = { id: 'A', titel: 'mitgereicht' };
+		await akte.loadAll('A');
+		expect(akte.book).toEqual({ id: 'A', titel: 'mitgereicht' });
+		expect(abrufe()).not.toContain('/api/books/A');
+		expect(abrufe(), 'die Listen lädt die Akte trotzdem').toHaveLength(4);
+	});
+
+	it('nennt den Netzwerkfehler, wenn der Kopf gar nicht ankommt', async () => {
+		const konsole = vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) => {
+			if (String(url).startsWith('/api/books/')) throw new Error('Failed to fetch');
+			return /** @type {any} */ (ok([]));
+		});
+		const akte = useBookAkte();
+
+		await akte.loadAll('A');
+
+		expect(akte.book).toBeNull();
+		expect(akte.kopfFehler).toBe('Der Titel konnte nicht geladen werden (Netzwerkfehler).');
+		expect(akte.isLoading).toBe(false);
+		konsole.mockRestore();
+	});
+
+	it('ein überholter Lauf meldet seinen Netzwerkfehler nicht', async () => {
+		/** @type {(grund: Error) => void} */
+		let scheitereA = () => {};
+		const kopfVonA = new Promise((_, ablehnen) => (scheitereA = ablehnen));
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) => {
+			const u = String(url);
+			if (u === '/api/books/A') return /** @type {any} */ (kopfVonA);
+			if (u.startsWith('/api/books/')) return /** @type {any} */ (ok({ id: 'B' }));
+			return /** @type {any} */ (ok([]));
+		});
+		const akte = useBookAkte();
+
+		const langsam = akte.loadAll('A');
+		await akte.loadAll('B');
+		scheitereA(new Error('Failed to fetch'));
+		await langsam;
+
+		expect(akte.book, 'der gescheiterte Lauf A hat den Kopf von B geleert').toEqual({ id: 'B' });
+		expect(akte.kopfFehler, 'der Fehler von A steht über dem Titel B').toBe('');
+	});
+
+	it('ein überholter Lauf beendet die Ladeanzeige des jüngeren nicht', async () => {
+		/** @type {Record<string, (antwort: any) => void>} */
+		const kommt = {};
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) => {
+			const u = String(url);
+			if (!u.startsWith('/api/books/')) return /** @type {any} */ (ok([]));
+			return /** @type {any} */ (new Promise((antworte) => (kommt[u] = antworte)));
+		});
+		const akte = useBookAkte();
+
+		const alt = akte.loadAll('A');
+		const jung = akte.loadAll('B');
+		kommt['/api/books/A'](ok({ id: 'A' }));
+		await alt;
+
+		expect(akte.isLoading, 'B lädt noch').toBe(true);
+		expect(akte.book).toBeNull();
+
+		kommt['/api/books/B'](ok({ id: 'B' }));
+		await jung;
+		expect(akte.isLoading).toBe(false);
+		expect(akte.book).toEqual({ id: 'B' });
+	});
+
+	// Der Kopf von A ist schon da, seine Listen noch nicht: Wechselt die Akte jetzt zu B,
+	// dürfen die Listen von A nicht mehr unter dem Kopf von B landen.
+	it('ein beim Laden der Listen überholter Lauf schreibt sie nicht mehr', async () => {
+		/** @type {() => void} */
+		let listenVonAKommen = () => {};
+		const warteA = new Promise((r) => (listenVonAKommen = /** @type {any} */ (r)));
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) => {
+			const u = String(url);
+			const istA = u.includes('/A') || u.endsWith('=A');
+			if (u.startsWith('/api/books/')) return /** @type {any} */ (ok({ id: istA ? 'A' : 'B' }));
+			if (istA) await warteA;
+			if (u.includes('/exemplare')) return /** @type {any} */ (ok([{ id: istA ? 'e-A' : 'e-B' }]));
+			// Die übrigen Listen von A scheitern, die von B kommen an.
+			return /** @type {any} */ (istA ? { ok: false, status: 500 } : ok([]));
+		});
+		const akte = useBookAkte();
+
+		const langsam = akte.loadAll('A');
+		await vi.waitFor(() => expect(abrufe()).toContain('/api/buecher/titel/A/exemplare'));
+		await akte.loadAll('B');
+		listenVonAKommen();
+		await langsam;
+
+		expect(akte.book).toEqual({ id: 'B' });
+		expect(akte.exemplare).toEqual([{ id: 'e-B' }]);
+		expect(akte.fehlendeListen, 'die Fehlliste von A steht unter dem Titel B').toEqual([]);
 	});
 });

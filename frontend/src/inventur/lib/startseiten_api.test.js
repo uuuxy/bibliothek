@@ -42,7 +42,7 @@ describe('buecherSuchen', () => {
 	const finde = (/** @type {string} */ q) => buecherSuchen(katalog, q).map((b) => b.title);
 
 	it('gibt bei leerer Suche alle Bücher zurück', () => {
-		expect(buecherSuchen(katalog, '').length).toBe(katalog.length);
+		expect(buecherSuchen(katalog, '')).toHaveLength(katalog.length);
 		// @ts-expect-error null statt einer Liste: Die Suche liefert dann eine leere Liste.
 		expect(buecherSuchen(null, '')).toEqual([]);
 	});
@@ -115,6 +115,46 @@ describe('buecherSuchen: Jahrgang ohne Angabe', () => {
 describe('buecherSuchen: Signatur', () => {
 	it('findet ein Buch über seine Signatur (Regaladresse)', () => {
 		expect(buecherSuchen(bestand, 'goe').map((b) => b.title)).toEqual(['Faust']);
+	});
+});
+
+// Je Feld ein Buch, das nur dieses Feld trägt: Ein Treffer über ein Nachbarfeld belegte das
+// Feld nicht, und ein fehlendes Feld darf die Suche nicht abbrechen.
+describe('buecherSuchen: jedes Feld für sich', () => {
+	const katalog = [
+		buch({ title: 'Faust' }),
+		buch({ author: 'Goethe' }),
+		buch({ subject: 'Deutsch' }),
+		buch({ signatur: 'Kla 12' }),
+		buch({ isbn: '978-3-06-031306-8' })
+	];
+
+	it.each([
+		['faust', 0],
+		['goethe', 1],
+		['deutsch', 2],
+		['kla', 3],
+		['0313', 4]
+	])('„%s“ trifft genau das eine Buch', (suche, nr) => {
+		expect(buecherSuchen(katalog, suche)).toEqual([katalog[nr]]);
+	});
+});
+
+// Was ein Begriff ist (Jahrgang, ISBN), entscheidet sich je Begriff, nicht am ersten.
+describe('buecherSuchen: mehrere Begriffe', () => {
+	const katalog = [
+		buch({ title: 'Mathematik A', isbn: '978-3-06-031306-8', gradeLevel: 5 }),
+		buch({ title: 'Mathematik B', gradeLevel: 7 })
+	];
+	const titel = (/** @type {string} */ q) => buecherSuchen(katalog, q).map((b) => b.title);
+
+	it('ein Jahrgang hinter einem Wort bleibt ein Jahrgang', () => {
+		// Als Stück einer ISBN träfe die 7 auch „Mathematik A“ (978…).
+		expect(titel('mathe 7')).toEqual(['Mathematik B']);
+	});
+
+	it('eine ISBN hinter einem Wort findet auch die andere Schreibweise', () => {
+		expect(titel('mathe 306031306X')).toEqual(['Mathematik A']);
 	});
 });
 

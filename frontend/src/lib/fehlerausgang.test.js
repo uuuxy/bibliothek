@@ -73,10 +73,6 @@ const BESTAND = {
 		1,
 		'Flur-Monitor: null heißt „nichts Neues" — der Takt behält die Folien und versucht es wieder (monitorTakt.svelte.js)'
 	],
-	'src/lib/useBookAkte.svelte.js': [
-		1,
-		'leerer Kopf MIT Meldung: die Zeile darunter setzt `kopfFehler`, und die Akte zeigt „Titel nicht geladen" statt „Buch nicht gefunden" (12.09.2026)'
-	],
 	'src/lib/components/students/zusammenfuehrenSuche.svelte.js': [
 		1,
 		'leere Trefferliste MIT Meldung: die Zeile darunter setzt `fehler` aus extractApiError'

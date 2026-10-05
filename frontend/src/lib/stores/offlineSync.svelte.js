@@ -82,18 +82,6 @@ const TYPNAME = { ausleihe: 'Ausleihe', rueckgabe: 'Rückgabe' };
 /** @param {string | undefined} typ */
 const nenne = (typ) => TYPNAME[typ ?? ''] ?? (typ ? `„${typ}“` : 'nichts');
 
-// Erledigt ist nur, was der Server wirklich entschieden hat.
-//
-// Die Nachbuch-Tuer antwortet je Schluessel mit einem von neun Woertern. Acht davon sind
-// endgueltig — gebucht, umgebucht, schon dagewesen, abgelehnt: In allen Faellen hat der
-// Server den Fall abschliessend behandelt, und der Eintrag gehoert aus der Warteschlange.
-// Das neunte, „wiederholen", heisst ausdruecklich das Gegenteil: Der Server war nicht
-// erreichbar, oder derselbe Schluessel wird gerade gebucht. Dann bleibt der Eintrag liegen
-// und die Runde endet, statt gegen dieselbe Wand zu laufen.
-//
-// Ein Schluessel, den der Server GAR NICHT beantwortet hat, bleibt ebenfalls liegen.
-// Schweigen ist kein Erfolg — bis zum 15.09.2026 galt es als erledigt.
-//
 // Gemeldet wird, was ein Mensch wissen muss:
 //   - `nicht_gebucht` und `veraltet` tragen ihren Grund; ohne die Meldung erfaehrt niemand,
 //     dass vier von achtzehn Rueckgaben abgelehnt wurden, und die Ausleihen laufen ins
@@ -107,6 +95,52 @@ const nenne = (typ) => TYPNAME[typ ?? ''] ?? (typ ? `„${typ}“` : 'nichts');
 //     damals durchkam, ohne dass die Theke die Antwort noch sah.
 //   - `aufsicht_informieren` ist keine Meldung, sondern eine Aufgabe: Das Buch stand auf
 //     einem Bescheid, der schon bei der Schulaufsicht liegt.
+/**
+ * @param {import('../offlineQueue.js').OfflineEintrag} item
+ * @param {any} erg das endgültige Ergebnis des Servers zu diesem Eintrag
+ * @returns {{ barcode: string, meldung: string }[]}
+ */
+function zuPruefendeFuer(item, erg) {
+	/** @type {{ barcode: string, meldung: string }[]} */
+	const pruefen = [];
+	if (erg.ergebnis === 'nicht_gebucht' || erg.ergebnis === 'veraltet') {
+		pruefen.push({
+			barcode: item.barcode,
+			meldung: erg.grund ? `nicht gebucht (${erg.grund})` : 'nicht gebucht'
+		});
+	} else if (erg.ergebnis === 'umgebucht') {
+		pruefen.push({
+			barcode: item.barcode,
+			meldung: 'lag bei jemand anderem — dort zurückgenommen und neu ausgeliehen'
+		});
+	} else {
+		const gebucht = erg.daten?.type;
+		if (gebucht && gebucht !== item.art) {
+			pruefen.push({
+				barcode: item.barcode,
+				meldung: `als ${nenne(item.art)} gescannt, der Server buchte ${nenne(gebucht)}`
+			});
+		}
+	}
+
+	if (erg.aufsicht_informieren) {
+		pruefen.push({ barcode: item.barcode, meldung: erg.aufsicht_informieren });
+	}
+
+	return pruefen;
+}
+
+// Erledigt ist nur, was der Server wirklich entschieden hat.
+//
+// Die Nachbuch-Tuer antwortet je Schluessel mit einem von neun Woertern. Acht davon sind
+// endgueltig — gebucht, umgebucht, schon dagewesen, abgelehnt: In allen Faellen hat der
+// Server den Fall abschliessend behandelt, und der Eintrag gehoert aus der Warteschlange.
+// Das neunte, „wiederholen", heisst ausdruecklich das Gegenteil: Der Server war nicht
+// erreichbar, oder derselbe Schluessel wird gerade gebucht. Dann bleibt der Eintrag liegen
+// und die Runde endet, statt gegen dieselbe Wand zu laufen.
+//
+// Ein Schluessel, den der Server GAR NICHT beantwortet hat, bleibt ebenfalls liegen.
+// Schweigen ist kein Erfolg — bis zum 15.09.2026 galt es als erledigt.
 /**
  * @param {any} data
  * @param {import('../offlineQueue.js').OfflineEintrag[]} batchItems
@@ -138,30 +172,7 @@ async function verarbeiteNachbuchErgebnisse(data, batchItems) {
 			continue;
 		}
 
-		if (erg.ergebnis === 'nicht_gebucht' || erg.ergebnis === 'veraltet') {
-			pruefen.push({
-				barcode: item.barcode,
-				meldung: erg.grund ? `nicht gebucht (${erg.grund})` : 'nicht gebucht'
-			});
-		} else if (erg.ergebnis === 'umgebucht') {
-			pruefen.push({
-				barcode: item.barcode,
-				meldung: 'lag bei jemand anderem — dort zurückgenommen und neu ausgeliehen'
-			});
-		} else {
-			const gebucht = erg.daten?.type;
-			if (gebucht && gebucht !== item.art) {
-				pruefen.push({
-					barcode: item.barcode,
-					meldung: `als ${nenne(item.art)} gescannt, der Server buchte ${nenne(gebucht)}`
-				});
-			}
-		}
-
-		if (erg.aufsicht_informieren) {
-			pruefen.push({ barcode: item.barcode, meldung: erg.aufsicht_informieren });
-		}
-
+		pruefen.push(...zuPruefendeFuer(item, erg));
 		await dequeueOfflineAction(item.id);
 	}
 	return { pruefen, weiter };

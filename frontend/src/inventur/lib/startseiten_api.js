@@ -79,28 +79,41 @@ export function buecherSuchen(buecherArray, searchQuery) {
 	const istJahrgang = terms.map((term) => /^\d{1,2}\.?$/.test(term));
 
 	return (Array.isArray(buecherArray) ? buecherArray : []).filter((/** @type {any} */ b) =>
-		terms.every((term, i) => {
-			if (b.title && b.title.toLowerCase().includes(term)) return true;
-			if (!istJahrgang[i] && b.isbn && b.isbn.toLowerCase().includes(term)) return true;
-			if (b.isbn && isbnJeTerm[i].length > 0 && isbnJeTerm[i].includes(normalisiereIsbn(b.isbn)))
-				return true;
-			if (b.author && b.author.toLowerCase().includes(term)) return true;
-			if (b.subject && b.subject.toLowerCase().includes(term)) return true;
-			if (b.istLernmittel && 'lernmittel'.includes(term)) return true;
-			// Die Signatur ist die Regaladresse (Handbuch).
-			if (b.signatur && b.signatur.toLowerCase().includes(term)) return true;
-			// Schlagworte und die Verweise darauf (docs/OFFEN.md 4.20). Welche Wörter einen
-			// Titel finden, entscheidet der Server (repository.SuchwoerterDerTitel) — dieselbe
-			// Regel, nach der die Titel-Verwaltung und das Portal am Server suchen.
-			if (
-				Array.isArray(b.suchwoerter) &&
-				b.suchwoerter.some((/** @type {string} */ w) => w.toLowerCase().includes(term))
-			)
-				return true;
-			const num = Number.parseInt(term, 10);
-			return !Number.isNaN(num) && trifftJahrgang(b, num);
-		})
+		terms.every((term, i) => trifftBegriff(b, term, isbnJeTerm[i], istJahrgang[i]))
 	);
+}
+
+/**
+ * Trifft der Begriff das Buch in mindestens einem Feld?
+ * @param {any} b
+ * @param {string} term
+ * @param {string[]} isbnFormenDesBegriffs die Schreibweisen des Begriffs als ISBN; leer, wenn er keine ist
+ * @param {boolean} istJahrgang der Begriff ist ein Jahrgang und kein Stück einer ISBN
+ */
+function trifftBegriff(b, term, isbnFormenDesBegriffs, istJahrgang) {
+	if (b.title?.toLowerCase().includes(term)) return true;
+	if (!istJahrgang && b.isbn?.toLowerCase().includes(term)) return true;
+	if (
+		b.isbn &&
+		isbnFormenDesBegriffs.length > 0 &&
+		isbnFormenDesBegriffs.includes(normalisiereIsbn(b.isbn))
+	)
+		return true;
+	if (b.author?.toLowerCase().includes(term)) return true;
+	if (b.subject?.toLowerCase().includes(term)) return true;
+	if (b.istLernmittel && 'lernmittel'.includes(term)) return true;
+	// Die Signatur ist die Regaladresse (Handbuch).
+	if (b.signatur?.toLowerCase().includes(term)) return true;
+	// Schlagworte und die Verweise darauf (docs/OFFEN.md 4.20). Welche Wörter einen
+	// Titel finden, entscheidet der Server (repository.SuchwoerterDerTitel) — dieselbe
+	// Regel, nach der die Titel-Verwaltung und das Portal am Server suchen.
+	if (
+		Array.isArray(b.suchwoerter) &&
+		b.suchwoerter.some((/** @type {string} */ w) => w.toLowerCase().includes(term))
+	)
+		return true;
+	const num = Number.parseInt(term, 10);
+	return !Number.isNaN(num) && trifftJahrgang(b, num);
 }
 
 /**

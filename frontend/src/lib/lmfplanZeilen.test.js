@@ -37,6 +37,14 @@ describe('lmfplanZeilen.einordnen', () => {
 		expect(einordnen(plan, 'ET1').index).toBe(plan.length);
 	});
 
+	// „ET1“ hat keine Jahrgangszahl. Steht so eine Klasse schon im Plan, zählt sie für die
+	// Nachbar-Regel nicht mit und hält das Einordnen der übrigen nicht auf.
+	it('übergeht Klassen ohne Jahrgangszahl, die schon im Plan stehen', () => {
+		const mitEt = [z('ET1'), z('06F1'), z('12T', 'ET2'), z('06F2')];
+		expect(nachbarZeile(mitEt, '06F3')).toBe(3);
+		expect(einordnen(mitEt, '06F3').index).toBe(4);
+	});
+
 	it('findet den Jahrgang auch in einer geteilten Stunde und ohne führende Null', () => {
 		expect(nachbarZeile(plan, '10R3')).toBe(0);
 		expect(nachbarZeile(plan, '5f2')).toBe(5);

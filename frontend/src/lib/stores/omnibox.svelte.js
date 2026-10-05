@@ -9,6 +9,7 @@ import { buchBarcodes } from './buchBarcodes.svelte.js';
 import { normalisiereScan, ordneScanEin } from '../scanEinordnen.js';
 import { toastStore } from './toastStore.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
+import { fehlertext } from '../utils/fehlertext.js';
 
 // Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
 function formatVorbesitzerName(data) {
@@ -351,48 +352,57 @@ export function createOmniboxStore() {
 		if (data.aufsicht_informieren) showToast(data.aufsicht_informieren, 'warning');
 	}
 
+	// Ein Leser ist geladen: Er steht jetzt an der Theke, sein Abholfach kommt mit.
+	function verarbeiteLeser(data) {
+		activeStudent = data.student;
+		abholbereit = data.abholbereit ?? [];
+		triggerScreenFlash('success');
+		playSoundSuccess();
+		triggerFlash('green');
+		// Bei einem Kollegen sagen, was der Scan bedeutet: Die Karte daneben zeigt
+		// keine Klasse, und ohne Ansage sieht ein geladener Kollege aus wie ein
+		// Schüler mit fehlender Angabe.
+		if (data.student?.art && data.student.art !== 'schueler') {
+			showToast(`Geladen: ${data.student.vorname} ${data.student.nachname}`);
+		}
+	}
+
+	function verarbeiteAusleihe(data, reloadProfileCb) {
+		// Gebucht ist die Ausleihe in jedem Fall (Ton wie immer). Gehört das Buch zu einer
+		// anderen Auflage als die, die die Klasse schon hat, blitzt es wie bei der
+		// Fremdrückgabe, und die Zeile über dem Konto sagt, welche (4.18, Stufe 5).
+		lastAuflagenHinweis = data.auflagen_hinweis ?? null;
+		triggerScreenFlash(lastAuflagenHinweis ? 'warning' : 'success');
+		playSoundSuccess();
+		triggerFlash(lastAuflagenHinweis ? 'orange' : 'green');
+		showToast(
+			`„${data.book?.titel ?? data.geraet?.modellname}" ausgeliehen an ${activeStudent?.vorname}.`
+		);
+		// Der Schüler hatte ein ANDERES Exemplar reserviert und ein Freihand-Exemplar
+		// genommen — das reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
+		if (data.regalfreigabe_barcode) {
+			showToast(
+				`Hinweis: Reserviertes Exemplar ${data.regalfreigabe_barcode} zurück ins Regal räumen.`,
+				'warning'
+			);
+		}
+		// Das Exemplar war abgeschrieben und ist beim Scan zurückgeholt worden (die
+		// Ausleihe folgte im selben Zug): Was dabei mit der Forderung geschah, gehört
+		// gesagt — sonst sieht die Theke nur „ausgeliehen".
+		zeigeRueckkehrHinweise(data);
+		if (reloadProfileCb) reloadProfileCb();
+	}
+
 	// Verarbeitet die erfolgreiche Server-Antwort je nach data.type. overrideBlock ist das
 	// Übergehen, mit dem der Scan geschickt wurde — die Zubehör-Liste reicht es weiter.
 	function verarbeiteAktionsErgebnis(data, reloadProfileCb, q = '', overrideBlock = false) {
 		if (data.type === 'student') {
-			activeStudent = data.student;
-			abholbereit = data.abholbereit ?? [];
-			triggerScreenFlash('success');
-			playSoundSuccess();
-			triggerFlash('green');
-			// Bei einem Kollegen sagen, was der Scan bedeutet: Die Karte daneben zeigt
-			// keine Klasse, und ohne Ansage sieht ein geladener Kollege aus wie ein
-			// Schüler mit fehlender Angabe.
-			if (data.student?.art && data.student.art !== 'schueler') {
-				showToast(`Geladen: ${data.student.vorname} ${data.student.nachname}`);
-			}
+			verarbeiteLeser(data);
 		} else if (data.type === 'geraet_check') {
 			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
 			checklistAnfrage = { query: q, geraet: data.geraet, overrideBlock };
 		} else if (data.type === 'ausleihe') {
-			// Gebucht ist die Ausleihe in jedem Fall (Ton wie immer). Gehört das Buch zu einer
-			// anderen Auflage als die, die die Klasse schon hat, blitzt es wie bei der
-			// Fremdrückgabe, und die Zeile über dem Konto sagt, welche (4.18, Stufe 5).
-			lastAuflagenHinweis = data.auflagen_hinweis ?? null;
-			triggerScreenFlash(lastAuflagenHinweis ? 'warning' : 'success');
-			playSoundSuccess();
-			triggerFlash(lastAuflagenHinweis ? 'orange' : 'green');
-			showToast(
-				`„${data.book?.titel ?? data.geraet?.modellname}" ausgeliehen an ${activeStudent?.vorname}.`
-			);
-			// Der Schüler hatte ein ANDERES Exemplar reserviert und ein Freihand-Exemplar
-			// genommen — das reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
-			if (data.regalfreigabe_barcode) {
-				showToast(
-					`Hinweis: Reserviertes Exemplar ${data.regalfreigabe_barcode} zurück ins Regal räumen.`,
-					'warning'
-				);
-			}
-			// Das Exemplar war abgeschrieben und ist beim Scan zurückgeholt worden (die
-			// Ausleihe folgte im selben Zug): Was dabei mit der Forderung geschah, gehört
-			// gesagt — sonst sieht die Theke nur „ausgeliehen".
-			zeigeRueckkehrHinweise(data);
-			if (reloadProfileCb) reloadProfileCb();
+			verarbeiteAusleihe(data, reloadProfileCb);
 		} else if (data.type === 'rueckgabe') {
 			verarbeiteRueckgabe(data, reloadProfileCb);
 		} else if (data.type === 'info') {
@@ -642,7 +652,7 @@ export function createOmniboxStore() {
 		}
 		// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
 		// Kein zusätzlicher Toast — das war die doppelte Anzeige desselben Fehlers.
-		zeigeFehlerBanner(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
+		zeigeFehlerBanner(`Fehler: ${fehlertext(e)}`);
 	}
 
 	// Haupt-Scan-Aktion. `absicht` nur, wenn der Aufrufer sie kennt (gibZurueck); ein Scan

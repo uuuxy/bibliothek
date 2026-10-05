@@ -29,7 +29,7 @@ export function nachbarZeile(zeilen, klasse) {
 	zeilen.forEach((z, i) => {
 		for (const k of z.klassen) {
 			const kt = klassenTeile(k);
-			if (!kt || kt.jahrgang !== t.jahrgang) continue;
+			if (kt?.jahrgang !== t.jahrgang) continue;
 			letzteGleicherJahrgang = i;
 			if (kt.zweig === t.zweig) letzteGleicherZweig = i;
 		}
