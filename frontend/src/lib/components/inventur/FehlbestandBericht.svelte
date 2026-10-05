@@ -1,25 +1,22 @@
 <!-- @component FehlbestandBericht — welche Exemplare eine Inventur als Verlust gebucht hat.
 
-     Der Abschluss meldete bisher nur eine Zahl: „47 Bücher wurden als verloren markiert."
-     Damit kann niemand ins Regal gehen und nachsehen, ob eines davon nur falsch
-     einsortiert war, und der Schule sagen, was fehlt, auch nicht. Rekonstruieren liess
-     sich die Liste danach nicht — durch die Aussonderung fallen die Exemplare aus der
-     Scope-Bedingung, nach der gerechnet wird.
+     Eine Zahl allein reicht nicht: Mit der Liste geht jemand ins Regal und sieht nach, ob
+     ein Buch nur falsch einsortiert war, und der Schule lässt sich sagen, was fehlt. Später
+     ist sie nicht mehr zu errechnen, weil die ausgesonderten Exemplare aus dem Umfang der
+     Inventur fallen.
 
-     Zwei Handlungen, nicht nur Anzeige (05.08.2026, Absprache: „ich kann nicht weiter damit
-     machen!"): Ein wiedergefundenes Buch kommt über "Gefunden" zurück in Umlauf, ein
-     endgültig fehlendes über den Lösch-Knopf ganz aus dem Katalog — beide Ausgänge, die
-     das Regal-Absuchen tatsächlich hat.
+     Das Absuchen hat zwei Ausgänge, und beide stehen hier: Ein wiedergefundenes Buch kommt
+     über „Gefunden" zurück in Umlauf, ein endgültig fehlendes über den Lösch-Knopf aus dem
+     Katalog.
 
-     Sortiert kommt sie nach Signatur und Titel vom Server: Das ist die Reihenfolge, in
-     der man mit dem Zettel durchs Regal läuft. Nach Barcode sortiert müsste man kreuz und
-     quer gehen.
-
-     Der Bericht bleibt stehen, bis er ausdrücklich geschlossen wird — auch über das
-     Zurücksetzen der Inventur hinweg. Sonst wäre er im selben Moment wieder weg, in dem
-     er entsteht. -->
+     Sortiert kommt die Liste nach Signatur und Titel vom Server, in der Reihenfolge des
+     Regals. Der Bericht bleibt stehen, bis er ausdrücklich geschlossen wird, auch über das
+     Zurücksetzen der Inventur hinweg; sonst wäre er weg, sobald er entsteht. -->
 <script>
 	import { Printer, X, PackageSearch, Trash } from '@lucide/svelte';
+	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { baueFehlbestandDruckHtml } from '../../utils/fehlbestandDruck.js';
+	import { druckeDokument, FENSTER_BLOCKIERT } from '../../utils/listenDruck.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Button from '../ui/Button.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
@@ -44,8 +41,10 @@
 	// bereits auf einem anderen Weg endgültig gelöscht und es gibt nichts mehr zu tun).
 	let offene = $derived(eintraege.filter((e) => !e.gefunden_am && e.exemplar_id));
 
+	// Auf das Blatt kommt, was noch zu suchen ist; Geklärtes steht dort nur als Zahl.
 	function drucken() {
-		window.print();
+		const html = baueFehlbestandDruckHtml(offene, { label, gebucht: eintraege.length });
+		if (!druckeDokument(html)) toastStore.addToast(FENSTER_BLOCKIERT, 'warning');
 	}
 
 	/** @param {string} exemplarId */
@@ -105,14 +104,9 @@
 					{offene.length} endgültig löschen
 				</Button>
 			{/if}
-			<Button
-				variant="secondary"
-				size="sm"
-				onclick={drucken}
-				data-tip="Liste zum Nachsuchen ausdrucken"
-			>
+			<Button variant="secondary" size="sm" onclick={drucken} disabled={offene.length === 0}>
 				<Printer class="h-4 w-4" aria-hidden="true" />
-				Drucken
+				Liste drucken
 			</Button>
 			<!-- Eindeutiger Name: „Schließen" allein gibt es auf dieser Ansicht mehrfach —
 			     für den Screenreader wie für die Bedienung ist dann nicht klar, was zugeht. -->
@@ -151,14 +145,16 @@
 						{@const istGefunden = Boolean(e.gefunden_am)}
 						<tr>
 							<td class="whitespace-nowrap">{e.signatur || '—'}</td>
-							<td class="max-w-0">
+							<!-- w-full: Die Zelle nimmt den Rest der Breite, und ein langer Titel läuft um.
+							     Gekürzt stünde der Rest nur in einer Sprechblase, die ohne Maus nicht erscheint. -->
+							<td class="w-full">
 								<span
-									class="block truncate font-semibold {istGefunden
+									class="block font-semibold {istGefunden
 										? 'text-on-surface-variant line-through'
 										: 'text-on-surface'}">{e.titel}</span
 								>
 								{#if e.autor}
-									<span class="block truncate text-sm text-on-surface-variant">{e.autor}</span>
+									<span class="block text-sm text-on-surface-variant">{e.autor}</span>
 								{/if}
 							</td>
 							<td class="font-mono whitespace-nowrap">{e.barcode_id}</td>

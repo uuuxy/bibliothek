@@ -573,9 +573,11 @@ nicht mehr.
 _Neue Bestandsprüfung starten_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →
 scannen; Fortschrittsbalken. **Achtung:** _Inventur abschließen_ bucht alles Ungescannte im
 Umfang als Verlust — vorher den Fehlbestandsbericht prüfen; dort lassen sich Funde wieder
-zurückholen. Laufende Inventuren können fortgesetzt oder verworfen werden. Verwerfen bucht
-nichts: Unter _Frühere Inventuren_ steht der Lauf dann als „verworfen", ohne Fehlbestand — der
-Bereich gilt nicht als geprüft (seit 29.09.2026). (§6)
+zurückholen. _Liste drucken_ im Bericht druckt die Exemplare, die noch fehlen, in der
+Reihenfolge der Signaturen, mit ganzem Titel und einem Kästchen zum Abhaken; gefundene und
+endgültig gelöschte nennt das Blatt nur als Zahl. Laufende Inventuren können fortgesetzt oder
+verworfen werden. Verwerfen bucht nichts: Unter _Frühere Inventuren_ steht der Lauf dann als
+„verworfen", ohne Fehlbestand — der Bereich gilt nicht als geprüft (seit 29.09.2026). (§6)
 
 ---
 

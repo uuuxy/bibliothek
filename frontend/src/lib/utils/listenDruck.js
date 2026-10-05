@@ -1,5 +1,6 @@
 // utils/listenDruck.js
-// Gerüst und Fenster für den Ausdruck einer Liste (Ausleiher eines Titels, Mahnliste).
+// Gerüst und Fenster für den Ausdruck einer Liste (Ausleiher eines Titels, Mahnliste,
+// Fehlbestand einer Inventur).
 //
 // Das Gerüst nimmt nur Text entgegen und maskiert jede Einsetzstelle selbst. Ein Aufrufer
 // kann die Maskierung so nicht vergessen, und eine neue Spalte ist von selbst geschützt.
@@ -19,6 +20,7 @@ const STIL = `
   .overdue { color: #e11d48; font-weight: bold; }
   .mono { font-family: monospace; }
   .schmal { width: 1%; white-space: nowrap; }
+  .kaestchen::before { content: ''; display: inline-block; width: 0.8rem; height: 0.8rem; border: 1px solid #475569; border-radius: 2px; vertical-align: middle; }
   @media print { @page { margin: 1cm; } }
 `;
 
@@ -27,7 +29,8 @@ export const FENSTER_BLOCKIERT = 'Bitte erlaube Popups, um die Liste zu drucken.
 
 /**
  * @typedef {string | { text: string, klasse?: string }} Zelle
- *   `klasse` im Rumpf: overdue oder mono. Im Kopf: schmal — die Spalte nimmt nur die
+ *   `klasse` im Rumpf: overdue, mono oder kaestchen (ein leeres Kästchen zum Abhaken mit
+ *   dem Stift, die Zelle bleibt ohne Text). Im Kopf: schmal — die Spalte nimmt nur die
  *   Breite ihres Inhalts und bricht nicht um, der Rest bleibt den Textspalten. Die Klasse
  *   des Kopfs gilt für jede Zelle seiner Spalte.
  */
