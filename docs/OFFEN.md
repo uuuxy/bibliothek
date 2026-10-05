@@ -104,8 +104,10 @@ Datenbank und der Littera-Übernahme (7.2).
 **Im Code,** in dieser Reihenfolge:
 
 1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. Nach der Antwort zu 8.3: **5.4**.
-3. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+2. **5.52** (Portal: Schulbücher in der Suche, der Buchwunsch an der Suche) — entschieden am
+   05.10.2026; zwei Fragen dazu sind gestellt.
+3. Nach der Antwort zu 8.3: **5.4**.
+4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
@@ -847,6 +849,48 @@ Abgängerliste) antworten auch mit einer solchen Klasse (`klassenZahlSQL` in
 Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächster Schritt mit
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
+
+### 5.52 Portal: Schulbücher in der Suche, der Buchwunsch an der Suche
+
+Die Suche in „Mein Portal", Reiter „Suchen & Reservieren" (`portal/portalSuche.svelte.js`), fragt
+`GET /api/public/opac/suche`. Die Tür zeigt nur, was ohne Anmeldung sichtbar sein darf
+(`repository.OeffentlichSichtbar`): kein Lernmittel, mindestens ein Exemplar im Haus. Ein
+Schulbuch, das als Lernmittel geführt ist, lässt sich im Portal deshalb nicht finden und nicht
+als Klassensatz reservieren. Der Kommentar in `api/opac.go` nennt die Klassensatz-Reservierung
+unter den Stellen, die diese Bücher weiter finden müssen.
+
+Gemessen am Testserver am 05.10.2026: 580 von 13.062 Titeln sind Lernmittel, 350 davon mit einem
+Exemplar im Haus. „Markl Biologie 1" (174 Exemplare, kein Lernmittel) wird gefunden, „Markl
+Biologie 2" (145 Exemplare, Lernmittel) nicht. Für ein solches Buch bleibt im Portal der
+Buchwunsch unter „Meine Anliegen": freier Text ohne Stückzahl, und die Liste der Bibliothek zeigt
+dazu keinen Bestand. Das Feld „Welches Buch?" bei „Problem melden"
+(`portal/BuchVorschlagFeld.svelte`) sucht über dieselbe Tür und schlägt Lernmittel nicht vor.
+
+**Entschieden am 05.10.2026, nicht gebaut.** Kategorie B.
+
+- **Die Suche im Portal findet auch Lernmittel.** Gefunden heißt „Klassensatz reservieren" mit
+  Klasse und Stückzahl wie bisher. Der öffentliche Katalog und der Flur-Monitor bleiben ohne
+  Lernmittel.
+- **Der Buchwunsch steht an der Suche.** Findet sie nichts, bietet sie an, das Buch bei der
+  Bibliothek zu wünschen; der Suchtext steht dann im Formular. Der Knopf „Buchwunsch" unter
+  „Meine Anliegen" entfällt, „Problem melden" und die Liste der eigenen Anliegen bleiben.
+- **Die Obergrenze bleibt.** Mehr Exemplare, als im Bestand sind, lehnt die Reservierung ab
+  (`api/reservation.go`). Ein Angebot zum Buchwunsch gibt es an dieser Stelle nicht.
+
+**Gefragt am 05.10.2026, Antwort offen:**
+
+- Steht das Angebot nur bei einer Suche ohne Treffer, gibt es ohne den Knopf unter „Meine
+  Anliegen" keinen Weg zum Wunsch, sobald die Suche irgendeinen Titel findet: ein anderes Buch
+  als das gesuchte, oder das gesuchte in zu kleiner Zahl. Vorgeschlagen: Das Angebot steht auch
+  unter einer Trefferliste.
+- „Was stimmt nicht?" ist nur im Formular Pflicht; `POST /api/anliegen` nimmt eine Meldung ohne
+  den Satz an (`api/anliegen.go`). Vorgeschlagen: Der Server verlangt ihn bei einer Meldung
+  ebenfalls, gebaut zusammen mit diesem Punkt.
+
+Nachgelesen am 05.10.2026: M3, Tabs (Guidelines): „Text labels should clearly and succinctly
+describe the content within the tab."; „Avoid using more than four tabs at once. At five or more
+tabs, the container becomes cramped." Das Portal hat fünf Reiter; ein weiterer kommt nicht dazu.
+M3, Search (Guidelines), beschreibt keine Suche ohne Treffer.
 
 ---
 
