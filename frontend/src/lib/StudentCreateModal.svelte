@@ -117,24 +117,22 @@
 
 <Modal {open} onclose={() => onclose?.()} size="md">
 	{#snippet header()}
-		<h3 class="text-base font-bold text-slate-800">Neuen Leser anlegen</h3>
+		<h3 class="text-base font-bold text-on-surface">Neuen Leser anlegen</h3>
 	{/snippet}
 	<div class="p-6 space-y-4">
 		<LeserArtWahl bind:art disabled={isSaving} />
 
 		{#if duplicateConflict}
 			<div
-				class="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-sm font-semibold text-amber-800"
+				class="p-4 bg-warning-container rounded-xl flex items-start gap-3 text-sm font-semibold text-on-warning-container"
 			>
-				<TriangleAlert class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" aria-hidden="true" />
+				<TriangleAlert class="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
 				<p>{duplicateConflict}</p>
 			</div>
 		{/if}
 
 		{#if createError}
-			<div
-				class="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-semibold text-rose-600"
-			>
+			<div class="p-3 bg-error-container rounded-xl text-xs font-semibold text-on-error-container">
 				{createError}
 			</div>
 		{/if}
@@ -159,7 +157,7 @@
 			/>
 		{/if}
 
-		<div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
+		<div class="flex justify-end gap-3 pt-2 border-t border-outline-variant">
 			<Button variant="secondary" onclick={() => onclose?.()} disabled={isSaving}>Abbrechen</Button>
 			<Button onclick={legeAn} disabled={isSaving}>
 				{isSaving ? 'Speichern...' : 'Speichern'}

@@ -32,12 +32,12 @@
 {:else if leer}
 	<div class="py-12 text-center space-y-3 animate-fade-in">
 		<div
-			class="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto"
+			class="w-16 h-16 rounded-full bg-success-container flex items-center justify-center text-on-success-container mx-auto"
 		>
 			<Check class="h-8 w-8" aria-hidden="true" />
 		</div>
-		<h3 class="font-bold text-slate-800">Alle Abgänger entlastet!</h3>
-		<p class="text-xs text-slate-500 max-w-xs mx-auto">
+		<h3 class="font-bold text-on-surface">Alle Abgänger entlastet!</h3>
+		<p class="text-xs text-on-surface-variant max-w-xs mx-auto">
 			Kein Schüler der Abschlussklassen hat noch offene Lehrmittel.
 		</p>
 	</div>
@@ -65,7 +65,7 @@
 						tabindex="0"
 						role="button"
 						aria-label="Profil von {student.vorname} {student.nachname} (Klasse {student.klasse}) anzeigen"
-						class="cursor-pointer animate-slide-up focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
+						class="cursor-pointer animate-slide-up focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2"
 					>
 						<td>{student.klasse}</td>
 						<td class="font-medium">{student.vorname} {student.nachname}</td>
@@ -73,14 +73,14 @@
 							{student.offene_buecher}
 							{student.offene_buecher === 1 ? 'Buch' : 'Bücher'}
 							{#if student.ueberfaellig > 0}
-								<span class="font-medium text-rose-600">
+								<span class="font-medium text-error">
 									· {student.ueberfaellig} überfällig
 								</span>
 							{/if}
 						</td>
 						<td>
 							{#if student.ist_gesperrt}
-								<span class="text-sm font-medium text-rose-600">Sperre aktiv</span>
+								<span class="text-sm font-medium text-error">Sperre aktiv</span>
 							{/if}
 						</td>
 					</tr>

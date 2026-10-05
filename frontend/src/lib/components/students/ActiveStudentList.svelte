@@ -11,7 +11,7 @@
   Schüler, bei dem die Klasse fehlt.
 -->
 <script>
-	import { BookOpen, ChevronRight } from '@lucide/svelte';
+	import { ChevronRight } from '@lucide/svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import TabelleSortKopf from '../ui/TabelleSortKopf.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
@@ -63,14 +63,14 @@
 {#snippet statusBadge(s)}
 	<div class="inline-flex items-center justify-end gap-1.5 py-1">
 		{#if s.ueberfaellig_count > 0}
-			<span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" aria-hidden="true"></span>
-			<span class="text-sm font-semibold text-rose-600">Überfällig</span>
+			<span class="w-1.5 h-1.5 rounded-full bg-error animate-pulse" aria-hidden="true"></span>
+			<span class="text-sm font-semibold text-error">Überfällig</span>
 		{:else if ausleiheGesperrt(s)}
-			<span class="w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden="true"></span>
-			<span class="text-sm font-semibold text-amber-600">Gesperrt</span>
+			<span class="w-1.5 h-1.5 rounded-full bg-warning" aria-hidden="true"></span>
+			<span class="text-sm font-semibold text-warning">Gesperrt</span>
 		{:else}
-			<span class="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
-			<span class="text-sm font-semibold text-emerald-600">Alles ok</span>
+			<span class="w-1.5 h-1.5 rounded-full bg-success" aria-hidden="true"></span>
+			<span class="text-sm font-semibold text-success">Alles ok</span>
 		{/if}
 	</div>
 {/snippet}
@@ -83,9 +83,8 @@
 	{:else if ladefehler}
 		<LadeFehler onerneut={onErneut} titel="Verzeichnis nicht geladen" text={ladefehler} />
 	{:else if filteredStudents.length === 0}
-		<div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">
-			<BookOpen class="h-10 w-10 text-slate-300" aria-hidden="true" />
-			<span class="text-xs font-semibold">Keine Leser im Verzeichnis gefunden.</span>
+		<div class="py-16 text-center text-base text-on-surface-variant">
+			Keine Leser im Verzeichnis gefunden.
 		</div>
 	{:else}
 		<div class="overflow-x-auto w-full text-left">
@@ -151,7 +150,7 @@
 								     gehört hingeschrieben: Eine leere Zeile sähe nach einem Anzeigefehler
 								     aus, und ohne Nummer lässt sich kein Ausweis drucken. -->
 								<div
-									class="text-sm text-slate-400 font-normal mt-0.5 {s.barcode_id
+									class="text-sm text-on-surface-variant font-normal mt-0.5 {s.barcode_id
 										? 'font-mono'
 										: 'italic'}"
 								>
@@ -170,8 +169,8 @@
 								<span
 									class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold {s.ausgeliehen_count >
 									0
-										? 'bg-blue-50 text-blue-700'
-										: 'bg-slate-100 text-slate-500'}"
+										? 'bg-primary-container text-on-primary-container'
+										: 'bg-surface-container text-on-surface-variant'}"
 								>
 									{s.ausgeliehen_count || 0}
 								</span>
@@ -181,7 +180,7 @@
 							</td>
 							<td class="text-right">
 								<ChevronRight
-									class="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
+									class="w-4 h-4 text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
 									aria-hidden="true"
 								/>
 							</td>

@@ -623,7 +623,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 05.10.2026: 539 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 05.10.2026: 494 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -677,8 +677,7 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   Umstellen zu klären: wohin der Hinweis „ohne Ablaufjahr" und das Feld „Ab Feld" kommen —
   beides passt nicht in die 64 px hohe Leiste.
 - Die Ratsche zählt eine Palettenfarbe an einer einzelnen Rahmenseite nicht
-  (`border-l-amber-500`): drei Stellen, `system/BackupAlert` (2) und
-  `students/DeletedStudentList` (1), gezählt am 05.10.2026.
+  (`border-l-amber-500`): zwei Stellen in `system/BackupAlert`, gezählt am 05.10.2026.
 - Mahnwesen: Scheitert das Blatt je Klasse, steht die Meldung in einem eigenen Kasten oben
   rechts (`globalErrorToast` in `stores/mahnwesenPdf.svelte.js`); die übrigen Meldungen
   derselben Datei gehen über `toastStore`. Entfällt mit dem Blatt (4.30).

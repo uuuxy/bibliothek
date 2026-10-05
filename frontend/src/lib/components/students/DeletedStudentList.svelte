@@ -41,9 +41,9 @@
 	});
 </script>
 
-<div class="w-full border-l-4 border-l-rose-400">
-	<div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-		<h3 class="text-base font-bold text-rose-800 flex items-center gap-2">
+<div class="w-full border-l-4 border-l-error">
+	<div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
+		<h3 class="text-base font-bold text-error flex items-center gap-2">
 			<Trash class="h-5 w-5" aria-hidden="true" />
 			Gelöschte Schüler (Papierkorb)
 		</h3>
@@ -67,10 +67,7 @@
 			</button>
 		</div>
 	{:else if papierkorb.liste.length === 0}
-		<div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">
-			<Trash class="h-10 w-10 text-slate-300" aria-hidden="true" />
-			<span class="text-xs font-semibold">Der Papierkorb ist leer.</span>
-		</div>
+		<div class="py-16 text-center text-base text-on-surface-variant">Der Papierkorb ist leer.</div>
 	{:else}
 		<div class="overflow-x-auto w-full text-left">
 			<Tabelle beschriftung="Papierkorb">
@@ -88,7 +85,7 @@
 							<td class="font-semibold">
 								{s.vorname}
 								{s.nachname}
-								<div class="text-sm font-mono text-slate-400 font-normal mt-0.5">
+								<div class="text-sm font-mono text-on-surface-variant font-normal mt-0.5">
 									{s.barcode_id}
 								</div>
 							</td>
@@ -122,7 +119,7 @@
 											onclick={() => papierkorb.wiederherstellen(s.id)}
 											title="Wiederherstellen"
 											aria-label="Wiederherstellen"
-											class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors shadow-sm cursor-pointer"
+											class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-success-container text-on-success-container hover:opacity-80 transition-opacity shadow-sm cursor-pointer"
 										>
 											<Undo2 class="h-4.5 w-4.5" aria-hidden="true" />
 										</button>

@@ -48,7 +48,7 @@
 	const darfMailen = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 </script>
 
-<div class="flex flex-col gap-3 border-b border-slate-100 pb-5">
+<div class="flex flex-col gap-3 border-b border-outline-variant pb-5">
 	<Suchpille
 		id="abgaenger-suchfeld"
 		bind:wert={suche}
@@ -59,7 +59,9 @@
 	<div class="flex items-center justify-between gap-4">
 		{#if !laedt && gesamt > 0}
 			<div class="flex items-center gap-3 min-w-0">
-				<label class="text-xs font-medium text-slate-500 shrink-0" for="grad-klasse">Klasse</label>
+				<label class="text-xs font-medium text-on-surface-variant shrink-0" for="grad-klasse"
+					>Klasse</label
+				>
 				<Select
 					id="grad-klasse"
 					bind:value={klasse}
@@ -69,7 +71,7 @@
 					]}
 					class="w-48"
 				/>
-				<span class="text-xs text-slate-400 shrink-0">{gefiltert} Abgänger</span>
+				<span class="text-xs text-on-surface-variant shrink-0">{gefiltert} Abgänger</span>
 			</div>
 		{:else}
 			<div></div>
@@ -102,10 +104,10 @@
 				</Button>
 			{/if}
 			<div
-				class="flex items-center gap-1.5 text-label-small font-semibold text-emerald-600 shrink-0"
+				class="flex items-center gap-1.5 text-label-small font-semibold text-success shrink-0"
 				title="Änderungen an allen Arbeitsplätzen sofort sichtbar (Live-Synchronisation)"
 			>
-				<span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+				<span class="h-2 w-2 rounded-full bg-success animate-pulse shrink-0"></span>
 				Live
 			</div>
 		</div>

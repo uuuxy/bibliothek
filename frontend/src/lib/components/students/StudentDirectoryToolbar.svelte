@@ -82,7 +82,7 @@
 		     Jahrgangsfilter zählt dazu: Eine bei 500 abgeschnittene Jahrgangsliste meldete
 		     „Treffer: 500" — dieselbe falsche Vollständigkeit wie damals, nur eine Ebene
 		     tiefer. Was gekappt ist, muss es sagen, egal warum die Liste eingegrenzt wurde. -->
-		<div class="ml-auto shrink-0 text-xs font-semibold text-slate-500">
+		<div class="ml-auto shrink-0 text-xs font-semibold text-on-surface-variant">
 			{#if gekuerzt}
 				Erste {trefferzahl} — zum Finden bitte suchen
 			{:else if suchend}
