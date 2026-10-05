@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { erzeugeAusweisdruck } from './ausweisdruck.svelte.js';
 import { idStore, vergissDesignLadezustand } from '../../designer/idDesignerStore.svelte.js';
 import { apiFetch } from '../../apiFetch.js';
@@ -75,5 +75,39 @@ describe('erzeugeAusweisdruck: lädt das zentrale Design selbst', () => {
 
 		expect(apiFetch).toHaveBeenCalledTimes(1);
 		expect(druck.etikettModus).toBe(false); // der Store gilt, nicht der alte Serverstand
+	});
+});
+
+describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
+	afterEach(() => vi.unstubAllGlobals());
+
+	const seitenregelDa = () =>
+		[...document.head.querySelectorAll('style')].some((s) =>
+			s.textContent?.includes('85.6mm 53.98mm')
+		);
+
+	it('setzt Modus, Seite und Seitenregel für den Druck und räumt sie danach ab', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({ printMode: 'card' }) })
+		);
+		/** @type {{ modus: string | null, seite: string | null, seitenregel: boolean }[]} */
+		const gesehen = [];
+		vi.stubGlobal('print', () => {
+			gesehen.push({
+				modus: document.body.getAttribute('data-print-mode'),
+				seite: document.body.getAttribute('data-print-side'),
+				seitenregel: seitenregelDa()
+			});
+		});
+		const druck = erzeugeAusweisdruck();
+		await stillhalten();
+
+		await druck.drucke([{ id: 's1' }]);
+
+		expect(gesehen).toEqual([{ modus: 'card', seite: 'front', seitenregel: true }]);
+		// Bliebe etwas stehen, druckte die nächste Seite dieses Tabs im Kartenformat.
+		expect(document.body.hasAttribute('data-print-mode')).toBe(false);
+		expect(document.body.hasAttribute('data-print-side')).toBe(false);
+		expect(seitenregelDa()).toBe(false);
 	});
 });

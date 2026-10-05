@@ -54,7 +54,7 @@ for (const [, liste] of markup.matchAll(/class="(print-rendered-output[^"]*)"/g)
 	if (!/^[-\w :./![\]%]+$/.test(liste)) {
 		abbruch(`Klassenliste mit unerwarteten Zeichen in PrintPreview.svelte: "${liste}"`);
 	}
-	const name = liste.match(/print-section-[a-z0-9-]+/)?.[0];
+	const name = /print-section-[a-z0-9-]+/.exec(liste)?.[0];
 	if (name) klassen[name] = liste;
 }
 const ERWARTET = ['print-section-card', 'print-section-back-card'];
@@ -70,7 +70,7 @@ const cssDatei = fs
 	.map((f) => path.join('assets', f))[0];
 if (!cssDatei) abbruch('Kein gebautes CSS in dist/assets — vorher "npm run build" laufen lassen.');
 const css = fs.readFileSync(path.join(dist, cssDatei), 'utf8');
-const scope = css.match(/print-section-card\.(svelte-[a-z0-9]+)/)?.[1];
+const scope = /print-section-card\.(svelte-[a-z0-9]+)/.exec(css)?.[1];
 if (!scope) abbruch('Im gebauten CSS steht keine gescopte Regel für .print-section-card mehr.');
 
 // --- 3. Seitengerüst wie in App.svelte, mit den echten Klassen ----------------------
@@ -145,10 +145,10 @@ for (const [modus, seitenwahl, erwartet] of MATRIX) {
 	await seiteImBrowser.evaluate(
 		([m, s]) => {
 			// null = Attribut gar nicht gesetzt (blankes window.print(), z. B. Quittung).
-			if (m === null) document.body.removeAttribute('data-print-mode');
-			else document.body.setAttribute('data-print-mode', m);
-			if (s === null) document.body.removeAttribute('data-print-side');
-			else document.body.setAttribute('data-print-side', s);
+			if (m === null) delete document.body.dataset.printMode;
+			else document.body.dataset.printMode = m;
+			if (s === null) delete document.body.dataset.printSide;
+			else document.body.dataset.printSide = s;
 		},
 		[modus, seitenwahl]
 	);

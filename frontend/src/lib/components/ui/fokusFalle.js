@@ -48,13 +48,13 @@ export function fokusFalle(node) {
 	stapel.push(node);
 
 	queueMicrotask(() => {
-		if (stapel[stapel.length - 1] !== node || node.contains(document.activeElement)) return;
+		if (stapel.at(-1) !== node || node.contains(document.activeElement)) return;
 		(kandidaten(node)[0] ?? node).focus({ preventScroll: true });
 	});
 
 	/** @param {KeyboardEvent} e */
 	function beiTaste(e) {
-		if (e.key !== 'Tab' || stapel[stapel.length - 1] !== node) return;
+		if (e.key !== 'Tab' || stapel.at(-1) !== node) return;
 		const liste = kandidaten(node);
 		if (liste.length === 0) {
 			e.preventDefault();
@@ -62,7 +62,8 @@ export function fokusFalle(node) {
 			return;
 		}
 		const erstes = liste[0];
-		const letztes = liste[liste.length - 1];
+		// Die Liste ist hier nicht leer, at(-1) liefert also ein Element.
+		const letztes = /** @type {HTMLElement} */ (liste.at(-1));
 		const aktiv = document.activeElement;
 		const drinnen = aktiv instanceof HTMLElement && node.contains(aktiv) && aktiv !== node;
 		if (e.shiftKey && (!drinnen || aktiv === erstes)) {

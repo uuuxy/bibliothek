@@ -63,12 +63,12 @@ export function erzeugeAusweisdruck() {
 			const style = document.createElement('style');
 			style.textContent = '@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }';
 			document.head.appendChild(style);
-			document.body.setAttribute('data-print-mode', 'card');
-			document.body.setAttribute('data-print-side', 'front');
+			document.body.dataset.printMode = 'card';
+			document.body.dataset.printSide = 'front';
 			window.print();
-			document.head.removeChild(style);
-			document.body.removeAttribute('data-print-mode');
-			document.body.removeAttribute('data-print-side');
+			style.remove();
+			delete document.body.dataset.printMode;
+			delete document.body.dataset.printSide;
 		}
 	};
 }

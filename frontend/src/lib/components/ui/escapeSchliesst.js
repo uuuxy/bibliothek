@@ -55,7 +55,7 @@ export function escapeSchliesst(node, schliessen) {
 		// mit der escapeIstBelegt() den Router vom Dialog fernhält, gilt damit auch nach
 		// innen.
 		if (e.defaultPrevented) return;
-		if (stapel[stapel.length - 1] !== eintrag) return;
+		if (stapel.at(-1) !== eintrag) return;
 		e.preventDefault();
 		e.stopPropagation();
 		eintrag.ruf?.();

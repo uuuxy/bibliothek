@@ -21,7 +21,7 @@ export function dekodiereLitteraEtikett(scan) {
 	const laenge = Number(scan[11]);
 	if (laenge < 1 || laenge > 8) return null;
 	const nummer = scan.slice(0, laenge);
-	if (nummer[0] === '0') return null;
+	if (nummer.startsWith('0')) return null;
 	// Zwischen Mediennummer und Bibliotheksnummer steht ausschließlich Polsterung.
 	if (!/^0*$/.test(scan.slice(laenge, 8))) return null;
 	return nummer;

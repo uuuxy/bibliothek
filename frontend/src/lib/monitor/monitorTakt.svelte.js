@@ -21,13 +21,13 @@
 //     Stecker zieht. Nur hier, nicht in der Theke: Die darf sich nie mitten in einer
 //     Ausleihe erneuern.
 
-import { NEUSTART_STUNDE, msBisNeustart } from './neustart.js';
+import { msBisNeustart } from './neustart.js';
 
 export const FOLIE_MS = 15_000;
 export const COVER_MS = 2_500;
 export const NACHLADEN_MS = 5 * 60_000;
 export const NEUVERSUCH_MS = 30_000;
-export { NEUSTART_STUNDE, msBisNeustart };
+export { NEUSTART_STUNDE, msBisNeustart } from './neustart.js';
 
 /** Beschriftungen der drei Folien, in Laufreihenfolge. */
 export const FOLIEN = ['Buch des Monats', 'Neu eingetroffen', 'Beliebt diese Woche'];
@@ -71,9 +71,11 @@ export class MonitorTakt {
 	/** Startet die Takte, stellt den Neustart-Wecker und holt den ersten Stand. */
 	start() {
 		this.#laeuft = true;
-		this.#takte.push(setInterval(() => this.weiter(), FOLIE_MS));
-		this.#takte.push(setInterval(() => this.coverWeiter(), COVER_MS));
-		this.#takte.push(setInterval(() => this.nachladen(), NACHLADEN_MS));
+		this.#takte.push(
+			setInterval(() => this.weiter(), FOLIE_MS),
+			setInterval(() => this.coverWeiter(), COVER_MS),
+			setInterval(() => this.nachladen(), NACHLADEN_MS)
+		);
 		this.#wecker = setTimeout(() => this.#neustart(), msBisNeustart());
 		return this.nachladen();
 	}

@@ -19,7 +19,8 @@
 export function naechsterIndex(options, aktiv, richtung) {
 	if (!options.length) return aktiv;
 	let i = aktiv;
-	for (let n = 0; n < options.length; n++) {
+	// Höchstens ein Versuch je Eintrag: Sind alle gesperrt, endet die Suche.
+	for (let versuche = options.length; versuche > 0; versuche--) {
 		i = (i + richtung + options.length) % options.length;
 		if (!options[i].disabled) break;
 	}

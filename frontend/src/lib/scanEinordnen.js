@@ -51,7 +51,7 @@ export function normalisiereScan(roh) {
 		if (
 			scan.length > v.length &&
 			scan.slice(0, v.length).toUpperCase() === v &&
-			/[0-9]/.test(scan[v.length])
+			/\d/.test(scan[v.length])
 		) {
 			return v + scan.slice(v.length);
 		}

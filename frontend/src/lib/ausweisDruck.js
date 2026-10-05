@@ -15,10 +15,10 @@ export function druckeAusweis(seite = 'both') {
 	const stil = document.createElement('style');
 	stil.textContent = '@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }';
 	document.head.appendChild(stil);
-	document.body.setAttribute('data-print-mode', 'card-single');
-	if (seite !== 'both') document.body.setAttribute('data-print-card-side', seite);
+	document.body.dataset.printMode = 'card-single';
+	if (seite !== 'both') document.body.dataset.printCardSide = seite;
 	window.print();
-	document.head.removeChild(stil);
-	document.body.removeAttribute('data-print-mode');
-	document.body.removeAttribute('data-print-card-side');
+	stil.remove();
+	delete document.body.dataset.printMode;
+	delete document.body.dataset.printCardSide;
 }

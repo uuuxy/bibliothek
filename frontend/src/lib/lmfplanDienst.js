@@ -40,7 +40,7 @@ export const ARTEN = /** @type {const} */ ([
 function jahrgaengeText(jahrgaenge) {
 	const j = (jahrgaenge ?? []).map(String);
 	if (j.length <= 1) return j.join('');
-	return `${j.slice(0, -1).join(', ')} und ${j[j.length - 1]}`;
+	return `${j.slice(0, -1).join(', ')} und ${j.at(-1)}`;
 }
 
 /** Der eine Satz, der erklärt, was in einem Plan geschieht — im Planer, im Portal und
@@ -162,6 +162,7 @@ export function entwurfAus(stand) {
 			drin.add(normKey(k));
 		}
 	}
+	ausgelassen.sort((a, b) => a.localeCompare(b, 'de', { numeric: true }));
 	const rahmen = laufend && stand.plan ? stand.plan : (stand.vorschlag?.rahmen ?? leererEntwurf());
 	return {
 		erster_tag: rahmen.erster_tag,
@@ -171,7 +172,7 @@ export function entwurfAus(stand) {
 		stunden_je_tag: rahmen.stunden_je_tag,
 		freie_tage: laufend && stand.plan ? [...(stand.plan.freie_tage ?? [])] : [],
 		zeilen,
-		ausgelassen: ausgelassen.sort((a, b) => a.localeCompare(b, 'de', { numeric: true }))
+		ausgelassen
 	};
 }
 

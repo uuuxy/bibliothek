@@ -47,6 +47,6 @@ export function ohnePruefzeichen(scan) {
 	if (typeof scan !== 'string' || scan.length < 3) return null;
 	const kern = scan.slice(0, -1);
 	const erwartet = pruefzeichen(kern);
-	if (erwartet === null || erwartet !== scan[scan.length - 1]) return null;
+	if (erwartet === null || erwartet !== scan.at(-1)) return null;
 	return kern;
 }
