@@ -21,6 +21,7 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
+	import { bestandSatz } from '../../utils/format.js';
 
 	/** @type {{ book: any, form: any, warteschlange: { klasse: string, anzahl: number, erstellt_am: string }[], ontoggle: () => void, onsenden: () => void }} */
 	let { book, form, warteschlange, ontoggle, onsenden } = $props();
@@ -38,6 +39,11 @@
 	const reichtNicht = $derived(
 		rechnerischFrei != null && vorgemerkt > 0 && Number(form.anzahl) > rechnerischFrei
 	);
+
+	// Steht nichts im Regal, aber etwas ist bestellt, sagt das Abzeichen „30 bestellt" wie
+	// im Medienkatalog. „nicht verfügbar (0 im Bestand)" läse sich wie ein Titel, den es
+	// nicht gibt — reservieren lässt er sich aber schon.
+	const nurBestellt = $derived(book.gesamt === 0 && book.im_zulauf > 0);
 </script>
 
 <div class="w-full">
@@ -67,14 +73,19 @@
 			{#if book.verfuegbar != null}
 				<p class="mt-1.5 text-xs">
 					<span
-						class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-small font-medium {book.verfuegbar >
-						0
-							? 'bg-secondary-container text-on-secondary-container'
-							: 'bg-error-container text-on-error-container'}"
+						class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-small font-medium {nurBestellt
+							? 'bg-surface-container-high text-on-surface-variant'
+							: book.verfuegbar > 0
+								? 'bg-secondary-container text-on-secondary-container'
+								: 'bg-error-container text-on-error-container'}"
 					>
-						{book.verfuegbar > 0
-							? `${book.verfuegbar} von ${book.gesamt} verfügbar`
-							: `nicht verfügbar (${book.gesamt} im Bestand)`}
+						{#if nurBestellt}
+							{bestandSatz(book.gesamt, book.verfuegbar, book.im_zulauf)}
+						{:else if book.verfuegbar > 0}
+							{book.verfuegbar} von {book.gesamt} verfügbar
+						{:else}
+							nicht verfügbar ({book.gesamt} im Bestand)
+						{/if}
 					</span>
 					{#if vorgemerkt > 0 && rechnerischFrei != null}
 						<span

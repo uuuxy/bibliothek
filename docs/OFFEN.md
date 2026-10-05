@@ -104,8 +104,7 @@ Datenbank und der Littera-Übernahme (7.2).
 **Im Code,** in dieser Reihenfolge:
 
 1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. **5.52** (Portal: Schulbücher in der Suche, Reservieren und Anliegen in einem Reiter) — die
-   Suche ist entschieden, der Rest ist in Überlegung; vorher nicht bauen.
+2. **5.52** (Portal: Reservieren und Anliegen in einem Reiter) — entschieden am 05.10.2026.
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
@@ -850,56 +849,38 @@ Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächste
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
 
-### 5.52 Portal: Schulbücher in der Suche, Reservieren und Anliegen in einem Reiter
+### 5.52 Portal: Reservieren und Anliegen in einem Reiter
 
-Die Suche in „Mein Portal", Reiter „Suchen & Reservieren" (`portal/portalSuche.svelte.js`), fragt
-`GET /api/public/opac/suche`. Die Tür zeigt nur, was ohne Anmeldung sichtbar sein darf
-(`repository.OeffentlichSichtbar`): kein Lernmittel, mindestens ein Exemplar im Haus. Ein
-Schulbuch, das als Lernmittel geführt ist, lässt sich im Portal deshalb nicht finden und nicht
-als Klassensatz reservieren. Der Kommentar in `api/opac.go` nennt die Klassensatz-Reservierung
-unter den Stellen, die diese Bücher weiter finden müssen.
-
-Gemessen am Testserver am 05.10.2026: 580 von 13.062 Titeln sind Lernmittel, 350 davon mit einem
-Exemplar im Haus. „Markl Biologie 1" (174 Exemplare, kein Lernmittel) wird gefunden, „Markl
-Biologie 2" (145 Exemplare, Lernmittel) nicht. Für ein solches Buch bleibt im Portal der
-Buchwunsch unter „Meine Anliegen": freier Text ohne Stückzahl, und die Liste der Bibliothek zeigt
-dazu keinen Bestand. Das Feld „Welches Buch?" bei „Problem melden"
-(`portal/BuchVorschlagFeld.svelte`) sucht über dieselbe Tür und schlägt Lernmittel nicht vor.
+Im Portal fragen „Klassensatz reservieren" (Reiter „Suchen & Reservieren") und der Knopf
+„Buchwunsch" (Reiter „Meine Anliegen") dasselbe, Buch und Klasse. Der Buchwunsch meint in aller
+Regel eine Reservierung: „Natura 2 für die 8G1", und eine andere Lehrkraft möchte für ihre Klasse
+„Markl 2". Ein Buch, das die Schule nicht hat, wird darüber nicht gewünscht. Die Suche des
+Portals findet auch Lernmittel und bestellte Titel (`api/katalog_kollegium.go`); reservieren
+lässt sich damit jedes dieser Bücher.
 
 **Entschieden am 05.10.2026, nicht gebaut.** Kategorie B.
 
-- **Die Suche im Portal findet auch Lernmittel.** Gefunden heißt „Klassensatz reservieren" mit
-  Klasse und Stückzahl wie bisher. Der öffentliche Katalog und der Flur-Monitor bleiben ohne
-  Lernmittel.
+- **Der Buchwunsch entfällt.** Knopf und Formular verschwinden, `POST /api/anliegen` nimmt nur
+  noch Meldungen an. Vorhandene Wünsche bleiben in der Liste der Bibliothek, bis sie abgehakt
+  sind.
+- **„Problem melden" steht am Treffer.** Das Buch ist dann gewählt; das Feld mit
+  Buchvorschlägen (`portal/BuchVorschlagFeld.svelte`) entfällt. Einmal steht „Problem melden"
+  ohne Buch. Der Server verlangt „Was stimmt nicht?" bei einer Meldung; heute ist der Satz nur
+  im Formular Pflicht (`api/anliegen.go`).
+- **Ein Reiter statt zwei.** „Suchen & Reservieren" und „Meine Anliegen" werden ein Reiter: die
+  Suche, darunter die eigenen Reservierungen und Meldungen. Das Portal hat dann vier Reiter,
+  die Zahl am Reiter „Meine Anliegen" entfällt.
+- **Das Suchfeld bleibt eine Suche.** Ein allgemeines Postfach entsteht nicht; die Suche läuft
+  bei jedem Buchstaben, und für die Anliegen gilt „kein Ticketsystem" ([FACHKONZEPT.md](FACHKONZEPT.md), 4.4).
 - **Die Obergrenze bleibt.** Mehr Exemplare, als im Bestand sind, lehnt die Reservierung ab
   (`api/reservation.go`).
-- „Was stimmt nicht?" ist nur im Formular Pflicht; `POST /api/anliegen` nimmt eine Meldung ohne
-  den Satz an (`api/anliegen.go`). Der Server verlangt ihn bei einer Meldung ebenfalls; gebaut
-  wird es mit diesem Punkt.
-
-**Am 05.10.2026 zurückgenommen und neu in Überlegung — nicht bauen.** Zunächst war entschieden,
-den Buchwunsch an die Suche ohne Treffer zu legen und den Knopf unter „Meine Anliegen" zu
-entfernen. Der Buchwunsch meint aber in aller Regel eine Reservierung für eine Klasse („Markl 2
-für die 8G3"). Ein Buch, das die Schule nicht hat, wird darüber nicht gewünscht, höchstens eines,
-das bestellt und noch nicht da ist. Vorgeschlagen, Antwort offen:
-
-- Der Buchwunsch entfällt ganz, sobald die Suche des Portals Lernmittel findet.
-- „Suchen & Reservieren" und „Meine Anliegen" werden ein Reiter: die Suche, darunter die eigenen
-  Reservierungen und Meldungen. „Problem melden" steht am Treffer, das Buch ist dann gewählt,
-  und einmal ohne Buch; das Feld mit Buchvorschlägen (`portal/BuchVorschlagFeld.svelte`) entfiele.
-- Gefragt: ob Titel im Portal zu finden und zu reservieren sind, deren Exemplare bestellt und
-  noch nicht eingetroffen sind (`OeffentlichSichtbar` blendet sie aus, `CountTitleStock` in
-  `repository/reservation_repo.go` zählt sie mit), und was mit „Buchreihen für Klassen" gemeint
-  ist.
 
 Nachgelesen am 05.10.2026 (m3.material.io, Guidelines):
 
 - Tabs: „Text labels should clearly and succinctly describe the content within the tab."; „Avoid
-  using more than four tabs at once. At five or more tabs, the container becomes cramped." Das
-  Portal hat fünf Reiter.
+  using more than four tabs at once. At five or more tabs, the container becomes cramped."
 - Search: „Search lets people enter a keyword or phrase to get relevant information"; „Provide a
-  short description of the information people can search". Eine Suche ohne Treffer beschreibt
-  die Seite nicht.
+  short description of the information people can search".
 - Buttons: „Don't clutter your UI with too many buttons. Consider presenting low-priority actions
   in overflow menus or as icon buttons."; „Since they have such strong emphasis, the filled style
   should be used sparingly, ideally for only one action on a page."; „The text button style

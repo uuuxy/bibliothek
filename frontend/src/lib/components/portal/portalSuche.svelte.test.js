@@ -44,7 +44,7 @@ describe('Portal-Suche', () => {
 			flushSync();
 			await vi.advanceTimersByTimeAsync(300);
 			expect(vi.mocked(apiFetch).mock.calls.at(-1)?.[0]).toBe(
-				'/api/public/opac/suche?schlagwort_id=w1'
+				'/api/reservierungen/klassensatz/katalog?schlagwort_id=w1'
 			);
 			expect(suche.treffer.map((/** @type {any} */ t) => t.titel)).toEqual(['Mondflug']);
 			expect(suche.gesamt).toBe(52);
@@ -68,7 +68,7 @@ describe('Portal-Suche', () => {
 			flushSync();
 			await vi.advanceTimersByTimeAsync(300);
 			expect(vi.mocked(apiFetch).mock.calls.at(-1)?.[0]).toBe(
-				'/api/public/opac/suche?q=Mond%20%26%20Sterne&schlagwort_id=w1'
+				'/api/reservierungen/klassensatz/katalog?q=Mond%20%26%20Sterne&schlagwort_id=w1'
 			);
 		} finally {
 			stopp();

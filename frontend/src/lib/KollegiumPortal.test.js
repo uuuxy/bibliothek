@@ -18,16 +18,16 @@ vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
 const TITEL = 'Seydlitz Geographie';
 
 /**
- * Antwort des OPAC — ein nacktes Array, kein `{books: …}`-Umschlag, und mit den
- * Bestandszahlen. Beides muss hier stimmen: Das Portal hat lange `/api/search`
- * befragt, das die Felder `verfuegbar`/`gesamt` gar nicht kennt. Dazu der Kopf
- * X-Treffer-Gesamt, den der OPAC seit dem 23.09.2026 schickt (api/opac.go).
+ * Antwort des Katalogs des Kollegiums (api/katalog_kollegium.go) — ein nacktes Array, kein
+ * `{books: …}`-Umschlag, mit den Bestandszahlen und dem Kopf X-Treffer-Gesamt.
  */
-function suchtreffer(verfuegbar = 12, gesamt = 30) {
+function suchtreffer(verfuegbar = 12, gesamt = 30, im_zulauf = 0) {
 	return {
 		ok: true,
 		headers: new Headers({ 'X-Treffer-Gesamt': '1' }),
-		json: async () => [{ id: 'titel-1', titel: TITEL, autor: 'Klaus Berger', verfuegbar, gesamt }]
+		json: async () => [
+			{ id: 'titel-1', titel: TITEL, autor: 'Klaus Berger', verfuegbar, gesamt, im_zulauf }
+		]
 	};
 }
 
@@ -53,7 +53,7 @@ describe('KollegiumPortal', () => {
 		vi.mocked(apiFetch).mockImplementation(
 			/** @type {any} */ (
 				async (/** @type {string} */ url) =>
-					url.startsWith('/api/public/opac/suche')
+					url.startsWith('/api/reservierungen/klassensatz/katalog')
 						? suchtreffer()
 						: { ok: true, text: async () => '', json: async () => ({}) }
 			)
@@ -102,7 +102,7 @@ describe('KollegiumPortal', () => {
 		vi.mocked(apiFetch).mockImplementation(
 			/** @type {any} */ (
 				async (/** @type {string} */ url) =>
-					url.startsWith('/api/public/opac/suche')
+					url.startsWith('/api/reservierungen/klassensatz/katalog')
 						? suchtreffer(0, 30)
 						: { ok: true, text: async () => '', json: async () => ({}) }
 			)
@@ -120,11 +120,35 @@ describe('KollegiumPortal', () => {
 		expect(await screen.findByText('nicht verfügbar (30 im Bestand)')).toBeTruthy();
 	});
 
+	// Ein Titel, dessen Exemplare bestellt und noch nicht eingetroffen sind, steht in der
+	// Trefferliste und lässt sich reservieren. „nicht verfügbar (0 im Bestand)" hieße für
+	// die Lehrkraft: gibt es nicht.
+	it('nennt einen Titel, der nur bestellt ist, „bestellt" und lässt ihn reservieren', async () => {
+		vi.mocked(apiFetch).mockImplementation(
+			/** @type {any} */ (
+				async (/** @type {string} */ url) =>
+					url.startsWith('/api/reservierungen/klassensatz/katalog')
+						? suchtreffer(0, 0, 30)
+						: { ok: true, text: async () => '', json: async () => ({}) }
+			)
+		);
+
+		const screen = render(KollegiumPortal, { user: { klasse: '' } });
+		await fireEvent.input(
+			screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
+			{ target: { value: 'Seydlitz' } }
+		);
+
+		expect(await screen.findByText('30 bestellt')).toBeTruthy();
+		expect(screen.queryByText(/nicht verfügbar/)).toBeNull();
+		expect(screen.getByRole('button', { name: 'Klassensatz reservieren' })).toBeTruthy();
+	});
+
 	it('meldet einen abgelehnten Versuch und blockiert den Knopf nicht', async () => {
 		vi.mocked(apiFetch).mockImplementation(
 			/** @type {any} */ (
 				async (/** @type {string} */ url) =>
-					url.startsWith('/api/public/opac/suche')
+					url.startsWith('/api/reservierungen/klassensatz/katalog')
 						? suchtreffer()
 						: { ok: false, text: async () => 'Titel ist gesperrt.' }
 			)
@@ -150,7 +174,7 @@ it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vorderman
 	vi.mocked(apiFetch).mockImplementation(
 		/** @type {any} */ (
 			async (/** @type {string} */ url, /** @type {any} */ opts) => {
-				if (url.startsWith('/api/public/opac/suche')) return suchtreffer();
+				if (url.startsWith('/api/reservierungen/klassensatz/katalog')) return suchtreffer();
 				if (url.startsWith('/api/reservierungen/klassensatz/offen')) {
 					return {
 						ok: true,

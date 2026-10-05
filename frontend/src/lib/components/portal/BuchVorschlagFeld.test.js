@@ -39,7 +39,9 @@ describe('BuchVorschlagFeld', () => {
 
 		await tippe(feld, 'Markl');
 
-		expect(vi.mocked(apiFetch).mock.calls.at(-1)?.[0]).toBe('/api/public/opac/suche?q=Markl');
+		expect(vi.mocked(apiFetch).mock.calls.at(-1)?.[0]).toBe(
+			'/api/reservierungen/klassensatz/katalog?q=Markl'
+		);
 		// Vor dem Titel steht das Cover; ohne Bild ist das der Anfangsbuchstabe.
 		const zeilen = s.getAllByRole('option').map((o) => o.textContent?.replace(/\s+/g, ' ').trim());
 		expect(zeilen).toHaveLength(2);

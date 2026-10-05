@@ -201,6 +201,16 @@ dahin beschrieb dieser Abschnitt ein Blockier-Modell, das nie gebaut war):
   die rechnerisch freie Zahl, warnt das Formular vor dem Absenden („Reicht aktuell
   nicht — du stellst dich hinter 8a an“); wer trotzdem reserviert, erfährt in der
   Bestätigung, hinter wem sein Satz an der Reihe ist.
+- **Gesucht wird im Katalog des Kollegiums** (`GET /api/reservierungen/klassensatz/katalog`,
+  Recht `create_reservations`; `api/katalog_kollegium.go`): dieselbe Abfrage wie der
+  öffentliche Katalog (§16.1, `repository.SucheImKatalog`), aber mit
+  `repository.KollegiumSichtbar` — jeder Titel mit einem Exemplar, das nicht ausgesondert ist.
+  Das schließt Lernmittel ein und Titel, deren Exemplare bestellt und noch nicht eingetroffen
+  sind: Reserviert werden vor allem Schulbücher, und der öffentliche Katalog verbirgt sie.
+  Ein Titel, von dem nichts im Regal steht und etwas bestellt ist, trägt am Treffer
+  „N bestellt" und lässt sich reservieren. Zur Tür gehört der Filter nach Schlagwort
+  (`?schlagwort_id=`, Liste über `…/katalog/filter`, §13); gibt es mehr als 50 Treffer, sagt
+  das Portal über den Kopf `X-Treffer-Gesamt` „Gezeigt werden 50 von 312 Treffern".
 - Die Bibliothek arbeitet die Schlange unter Bestellungen → Klassensatz-Reservierungen
   ab: je Zeile Anfragende(r) mit Namen und der aktuelle Regal-Bestand („N verfügbar“).
   „Abschließen“ beendet den Vorgang nach der physischen Übergabe — die Ausleihe selbst
@@ -480,7 +490,7 @@ Schule — das ist eine Produktentscheidung.
    **Warum ausgerechnet `manage_users` fehlt:** Mit dem Recht ändert man die E-Mail-Adresse eines Kontos, und die Anmeldung erkennt eine Person allein an ihrer E-Mail. Die Rechtevergabe wäre damit der Weg in jedes Konto der Anlage. Der Admin kann das Recht erteilen; ein Admin-KONTO bleibt der Leitung auch dann verschlossen (`api/user_admin_eskalation.go`).
 3. **Mitarbeiter (`mitarbeiter`):** Das Personal für das Tagesgeschäft. Hat Zugriff auf die Scanner-Omnibox, Buchkatalog, Mahnwesen und Leserdatei, darf aber keine Systemeinstellungen ändern.
 4. **Helfer (`helfer`):** siehe unten.
-5. **Kollegium (`kollegium`) — der Grundzustand, keine vergebene Rolle:** Zugang zum Kollegiums-Portal mit fünf Reitern (Stand 05.09.2026): _Suchen & Reservieren_, _Klassensätze_ (welche Klasse hat welche Bücher — Handliste `class_books` plus live aus den Ausleihen abgeleitet, seit 05.09.2026: mehr als die Hälfte der Klasse und mindestens `KlassensatzMindestLeser` Kinder halten den Titel; `GetClassGroups`, Quelle `hand`/`ausleihe`, nie gespeichert), _LMF-Plan_ (Rückgabe- und Ausgabetermine je Klasse, §2.3), _Schulbücher_ (Suche über Titel, ISBN, Autor und Fach; Filter Jahrgang und Schulzweig; je Fach eine aufklappbare Zeile mit Exemplaren, Titeln und Verliehenen; Export je Fach als **PDF** mit Coverbildern, Jahrgang, Schulzweig und Zähldatum; nur Titel mit `ist_lernmittel`; Portal-Routen `/api/portal/lernmittel[/export]`) und _Meine Anliegen_. Erteilt ist weiterhin ein einziges Recht, `create_reservations` (Migration 070): Die Suche läuft über den öffentlichen OPAC, Reservierung und Anliegen über `create_reservations`; die Klassensatz-Sicht hängt an einer eigenen Portal-Route (`/api/portal/klassensaetze`), für die die Anmeldung genügt — bewusst kein `view_books`, das der Rolle den ganzen Medienkatalog öffnen würde. Nichts davon fasst Personendaten an.
+5. **Kollegium (`kollegium`) — der Grundzustand, keine vergebene Rolle:** Zugang zum Kollegiums-Portal mit fünf Reitern (Stand 05.09.2026): _Suchen & Reservieren_, _Klassensätze_ (welche Klasse hat welche Bücher — Handliste `class_books` plus live aus den Ausleihen abgeleitet, seit 05.09.2026: mehr als die Hälfte der Klasse und mindestens `KlassensatzMindestLeser` Kinder halten den Titel; `GetClassGroups`, Quelle `hand`/`ausleihe`, nie gespeichert), _LMF-Plan_ (Rückgabe- und Ausgabetermine je Klasse, §2.3), _Schulbücher_ (Suche über Titel, ISBN, Autor und Fach; Filter Jahrgang und Schulzweig; je Fach eine aufklappbare Zeile mit Exemplaren, Titeln und Verliehenen; Export je Fach als **PDF** mit Coverbildern, Jahrgang, Schulzweig und Zähldatum; nur Titel mit `ist_lernmittel`; Portal-Routen `/api/portal/lernmittel[/export]`) und _Meine Anliegen_. Erteilt ist weiterhin ein einziges Recht, `create_reservations` (Migration 070): Suche (Katalog des Kollegiums, §4.2), Reservierung und Anliegen laufen über `create_reservations`; die Klassensatz-Sicht hängt an einer eigenen Portal-Route (`/api/portal/klassensaetze`), für die die Anmeldung genügt — bewusst kein `view_books`, das der Rolle den ganzen Medienkatalog öffnen würde. Nichts davon fasst Personendaten an.
 
    **„Mein Portal“ hängt seit 26.08.2026 am Recht `create_reservations`, nicht an der Rolle** (entschieden): Eine Lehrkraft, die in Bibliothek oder LMF mitarbeitet und deshalb als Mitarbeiter angelegt ist, sieht das Portal ebenfalls und reserviert dort für die eigene Klasse. Vorher stand der Menüpunkt auf `roles: ['kollegium']`, während der Server sie mit demselben Recht längst hineinließ — zwei Wahrheitsquellen, die nur zufällig einig waren.
 
@@ -727,10 +737,9 @@ eines „LMF"-Präfixes in Titel oder Signatur) und mindestens ein Exemplar im H
 ausgesondert, nicht nur bestellt). Maximal 50 Treffer; der Kopf `X-Treffer-Gesamt` nennt, wie
 viele es insgesamt sind (seit 23.09.2026), und die Seite sagt dann „Gezeigt werden 50 von N
 Treffern" statt „50 Treffer".
-Das Suchfeld ist scannertauglich (Enter löst die Suche aus). Das Kollegiums-Portal benutzt für
-seine Suche denselben Endpunkt (§12, Rolle Kollegium), dazu den Filter nach Schlagwort
-(`?schlagwort_id=`, Liste über `GET /api/public/opac/filter`, §13) und sagt über den Kopf,
-wenn es mehr als 50 Treffer gibt („Gezeigt werden 50 von 312 Treffern").
+Das Suchfeld ist scannertauglich (Enter löst die Suche aus). Das Kollegiums-Portal sucht mit
+derselben Abfrage über eine eigene Tür hinter der Anmeldung, die auch Lernmittel und bestellte
+Titel zeigt (§4.2).
 
 ### 16.2 Bibliotheks-Monitor — `/monitor`
 

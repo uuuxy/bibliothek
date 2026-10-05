@@ -675,7 +675,9 @@ eingebaut und je Schule nicht verstellbar. (§12)
 
 Lehrkräfte sehen genau diesen Bereich: **Suchen & Reservieren** (Bestand mit Verfügbarkeit
 und Warteschlange; Klassensatz reservieren mit Klasse oder Kurs, Anzahl, Datum — das Feld ist
-Freitext und legt keine Klasse an. Unter der Suche stehen
+Freitext und legt keine Klasse an. Die Suche findet die Bücher der Bücherei und die
+Schulbücher, auch Titel, die bestellt und noch nicht eingetroffen sind; am Treffer steht dann
+„N bestellt", und reservieren lässt er sich schon. Unter der Suche stehen
 die Schlagworte, die die Bibliothek unter _Einstellungen → Schlagworte_ als Filter markiert
 hat: Ein Klick zeigt alle Titel des Worts, zusammen mit einem Suchwort nur die, die beides
 treffen; ein zweiter Klick nimmt den Filter zurück. Gezeigt werden höchstens 50 Treffer — gibt

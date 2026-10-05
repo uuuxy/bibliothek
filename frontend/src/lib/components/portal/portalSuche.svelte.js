@@ -6,17 +6,16 @@ import { apiFetch } from '../../apiFetch.js';
  * wüchse (Ratsche frontend-hygiene-dateigroesse) — dasselbe Muster wie eigeneAnliegen und
  * klassensatzReservierung daneben.
  *
- * Gesucht wird über den öffentlichen Katalog und nicht über /api/search: Nur der OPAC
- * rechnet die Verfügbarkeit aus. /api/search liefert `BookTitle` — dort gibt es KEIN
- * Bestandsfeld, weshalb das Abzeichen still übersprungen wurde und Lehrkräfte nie erfahren
- * haben, ob ein Klassensatz überhaupt frei ist. Der OPAC passt auch fachlich: nur Titel,
- * Autor und Verfügbarkeit, keine Ausleih- oder Personendaten.
+ * Gesucht wird im Katalog des Kollegiums (GET /api/reservierungen/klassensatz/katalog):
+ * Titel, Autor, Verfügbarkeit und die Zahl der bestellten Exemplare, keine Ausleih- oder
+ * Personendaten. Anders als der öffentliche Katalog zeigt er auch Lernmittel und Titel, die
+ * bestellt und noch nicht eingetroffen sind — reserviert werden vor allem Schulbücher.
  *
- * Der Filter (docs/OFFEN.md 4.20): die Schlagworte, die die Pflegeseite als Filter markiert
- * (GET /api/public/opac/filter). Ein gewählter Filter sucht auch ohne Text; mit Text
- * grenzt er ihn ein. Der OPAC zeigt höchstens 50 Titel und nennt im Kopf X-Treffer-Gesamt
- * alle — beim Stöbern über ein Thema sind mehr als 50 der Normalfall, und 50 gezeigte
- * sähen sonst aus wie alle.
+ * Der Filter: die Schlagworte, die die Pflegeseite als Filter markiert
+ * (GET /api/reservierungen/klassensatz/katalog/filter). Ein gewählter Filter sucht auch
+ * ohne Text; mit Text grenzt er ihn ein. Der Katalog zeigt höchstens 50 Titel und nennt im
+ * Kopf X-Treffer-Gesamt alle — beim Stöbern über ein Thema sind mehr als 50 der Normalfall,
+ * und 50 gezeigte sähen sonst aus wie alle.
  *
  * Jede Suche trägt eine laufende Nummer; eine Antwort, die nach einer neueren ankommt,
  * wird verworfen. Sonst stünden nach schnellem Umschalten zwischen zwei Filtern die
@@ -38,7 +37,7 @@ export function erzeugePortalSuche() {
 
 	async function ladeFilter() {
 		try {
-			const res = await apiFetch('/api/public/opac/filter');
+			const res = await apiFetch('/api/reservierungen/klassensatz/katalog/filter');
 			if (!res.ok) return; // ohne Filterliste bleibt die Suche, wie sie war
 			const daten = await res.json();
 			if (Array.isArray(daten)) filter = daten;
@@ -54,7 +53,7 @@ export function erzeugePortalSuche() {
 			const teile = [];
 			if (q) teile.push(`q=${encodeURIComponent(q)}`);
 			if (wort) teile.push(`schlagwort_id=${encodeURIComponent(wort)}`);
-			const res = await apiFetch(`/api/public/opac/suche?${teile.join('&')}`);
+			const res = await apiFetch(`/api/reservierungen/klassensatz/katalog?${teile.join('&')}`);
 			if (!res.ok) {
 				// Keine Treffer statt der alten: Sonst stünden die Treffer des vorigen
 				// Suchtextes unter der neuen Eingabe (Sweep „verschluckte Fehlantwort",

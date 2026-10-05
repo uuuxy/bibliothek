@@ -9,21 +9,6 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-func TestMaskiereLikeJoker(t *testing.T) {
-	faelle := map[string]string{
-		"Harry":      "Harry",
-		"100%":       `100\%`,
-		"a_b":        `a\_b`,
-		`back\slash`: `back\\slash`,
-		"%_%":        `\%\_\%`,
-	}
-	for in, will := range faelle {
-		if got := maskiereLikeJoker(in); got != will {
-			t.Errorf("maskiereLikeJoker(%q) = %q; want %q", in, got, will)
-		}
-	}
-}
-
 // Die OPAC-Suche schickt die Eingabe zweimal: roh für die Volltextsuche, maskiert für
 // die ILIKE-Vergleiche. Mit dem alten Code (ein Argument) trifft die Erwartung nicht.
 func TestPublicCatalogSearch_LikeJokerWerdenMaskiert(t *testing.T) {

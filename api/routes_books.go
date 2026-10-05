@@ -131,6 +131,11 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// reservieren darf, darf sehen, wer vor ihm dran ist.
 	mux.Handle("GET /api/reservierungen/klassensatz/offen", s.RequirePermission("create_reservations")(s.OffeneKlassensatzReservierungenHandler()))
 	mux.Handle("GET /api/reservierungen/klassensatz/eigene", s.RequirePermission("create_reservations")(s.MeineKlassensatzReservierungenHandler()))
+	// Der Katalog, in dem das Kollegium sucht und reserviert, und die Schlagworte, die
+	// darunter als Filter stehen: wie der öffentliche Katalog, dazu Lernmittel und bestellte
+	// Titel (katalog_kollegium.go). Dasselbe Recht wie das Reservieren.
+	mux.Handle("GET /api/reservierungen/klassensatz/katalog", s.RequirePermission("create_reservations")(s.KollegiumKatalogSucheHandler()))
+	mux.Handle("GET /api/reservierungen/klassensatz/katalog/filter", s.RequirePermission("create_reservations")(s.KollegiumKatalogFilterHandler()))
 
 	// Geräte-Verwaltung (Bereich im Medienkatalog): Geräte sind Bestand — Rechte wie Bücher.
 	geraeteRepo := repository.NewGeraeteRepository(s.DB.Pool)

@@ -15,7 +15,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (225)
+## Alle registrierten Routen (226)
 
 - `/`
 - `/api/admin`
@@ -119,11 +119,12 @@
 - `GET /api/print/rechnung/{schueler_id}`
 - `GET /api/public/bestellung/{token}`
 - `GET /api/public/bestellung/{token}/etiketten/{groesse}`
-- `GET /api/public/opac/filter`
 - `GET /api/public/opac/suche`
 - `GET /api/reservierungen/klassensatz`
 - `GET /api/reservierungen/klassensatz/anzahl`
 - `GET /api/reservierungen/klassensatz/eigene`
+- `GET /api/reservierungen/klassensatz/katalog`
+- `GET /api/reservierungen/klassensatz/katalog/filter`
 - `GET /api/reservierungen/klassensatz/offen`
 - `GET /api/schadensfaelle/{id}/pdf`
 - `GET /api/schlagworte`
