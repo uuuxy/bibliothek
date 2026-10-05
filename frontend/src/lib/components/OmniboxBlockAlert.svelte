@@ -80,6 +80,7 @@
 </script>
 
 {#if omniboxStore.blockAlert}
+	<!-- Der rote Schleier gehört zum Alarm. Eine Rolle dafür gibt es nicht: scrim ist schwarz. -->
 	<div
 		class="fixed inset-0 bg-rose-900/80 backdrop-blur-sm z-100 flex items-center justify-center p-4"
 	>
@@ -90,15 +91,15 @@
 			role="alertdialog"
 			aria-modal="true"
 			aria-labelledby="omnibox-block-titel"
-			class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-rose-500"
+			class="bg-surface-container-lowest rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-error"
 			use:fokusFalle
 			use:escapeSchliesst={schliessen}
 		>
 			<div class="text-6xl mb-4">⛔️</div>
-			<h2 id="omnibox-block-titel" class="text-2xl font-extrabold text-rose-700 mb-2">
+			<h2 id="omnibox-block-titel" class="text-2xl font-extrabold text-error mb-2">
 				Ausleihe blockiert
 			</h2>
-			<p class="text-slate-700 font-medium mb-6">{omniboxStore.blockAlert.message}</p>
+			<p class="text-on-surface-variant font-medium mb-6">{omniboxStore.blockAlert.message}</p>
 
 			<div class="space-y-3">
 				{#if fehler}

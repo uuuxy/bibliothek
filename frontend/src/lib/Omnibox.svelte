@@ -162,7 +162,7 @@
 			</form>
 
 			{#if omniboxStore.errorMessage}
-				<div class="mt-3 p-3 bg-red-600 text-white text-center">
+				<div class="mt-3 p-3 bg-error text-on-error text-center">
 					{omniboxStore.errorMessage}
 				</div>
 			{/if}

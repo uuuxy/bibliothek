@@ -17,9 +17,8 @@
 </script>
 
 <!-- Gleiches Spaltenraster wie StudentResultItem, damit beide Gruppen im selben
-     Dropdown auf einer Kante stehen. Und dieselbe Primärfarbe: Vorher war die
-     Auswahl bei Schülern blau und bei Büchern indigo — zwei Akzente für dieselbe
-     Interaktion in derselben Liste.
+     Dropdown auf einer Kante stehen. Die markierte Zeile trägt in beiden Gruppen
+     dieselbe Schicht wie in den Menüs des Hauses (ui/SelectListe).
      Die Signatur steht vor dem Autor, weil sie beim Suchen im Regal die Frage
      beantwortet; das Cover ist raus, es hielt die Zeile auf und trug nichts bei. -->
 <div
@@ -30,9 +29,9 @@
 		? `, ${satz}`
 		: ''}"
 	tabindex="-1"
-	class="grid grid-cols-[minmax(0,1fr)_5rem_11rem_10rem] items-center gap-4 px-4 h-12 cursor-pointer {selected
-		? 'bg-blue-50 text-blue-900'
-		: 'text-slate-900 hover:bg-slate-50'}"
+	class="m3-state grid grid-cols-[minmax(0,1fr)_5rem_11rem_10rem] items-center gap-4 px-4 h-12 cursor-pointer text-on-surface {selected
+		? 'bg-on-surface/8'
+		: ''}"
 	onclick={() => onSelect(index)}
 	onkeydown={(e) => {
 		if (e.key === 'Enter' || e.key === ' ') {
@@ -42,10 +41,8 @@
 	}}
 >
 	<span class="truncate font-medium">{book.titel}</span>
-	<span class="text-sm truncate {selected ? 'text-blue-700' : 'text-slate-600'}"
-		>{book.signatur}</span
-	>
-	<span class="text-sm truncate {selected ? 'text-blue-700' : 'text-slate-600'}">{book.autor}</span>
+	<span class="text-sm truncate text-on-surface-variant">{book.signatur}</span>
+	<span class="text-sm truncate text-on-surface-variant">{book.autor}</span>
 	<!-- „Keine Exemplare" wird abgesetzt, „0 von 5 verfügbar" nicht: Das eine ist ein
 	     Titel ohne Bestand — dort ist nichts zu holen, auch nicht morgen —, das andere
 	     der Normalfall im Schuljahr, in dem fast jedes Lernmittel verliehen ist. Ein

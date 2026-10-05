@@ -31,7 +31,7 @@
 	<!-- Eine Betonung, nicht vier: Der entscheidende Teil ist, auf wen NICHT
 	     gebucht wurde. Wenn jedes zweite Wort fett ist, betont keines mehr. -->
 	<div
-		class="no-print mb-2 flex w-full max-w-xl items-center space-x-2 border border-amber-100 bg-amber-50 p-3 text-xs text-amber-800"
+		class="bg-warning-container text-on-warning-container no-print mb-2 flex w-full max-w-xl items-center space-x-2 p-3 text-xs"
 	>
 		<TriangleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
 		<span

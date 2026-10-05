@@ -41,7 +41,7 @@ const SCHATTEN = /(^|[\s'"`{(])shadow(-(xs|sm|md|lg|xl|2xl))?(?=[\s'"`});]|$)/;
 // Rolle entscheidet, welcher der beiden Teile weicht, und ein Dialog ist in M3 eine
 // erhobene Fläche (level3, kein outline-Token). Was bleibt, ist bewusst so:
 //
-//   * `OmniboxBlockAlert`/`OmniboxVormerkungAlert` tragen `border-4 border-rose-500`
+//   * `OmniboxBlockAlert`/`OmniboxVormerkungAlert` tragen `border-4 border-error`
 //     als Alarmsignal an der Theke — dort IST der Rahmen die Aussage. Sie behalten
 //     BEIDES: Ein Alarm, der einen Schüler an der Ausleihe stoppt, wird nicht leiser
 //     gemacht, um eine Gestaltungsregel zu erfüllen. Bewusste Ausnahme, keine Schuld.

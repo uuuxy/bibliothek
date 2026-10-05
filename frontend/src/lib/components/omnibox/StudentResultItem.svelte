@@ -26,9 +26,9 @@
 		? ''
 		: `, Klasse ${student.klasse}`}, Ausweis {ausweis}"
 	tabindex="-1"
-	class="grid grid-cols-[minmax(0,1fr)_6rem_11rem_10rem] items-center gap-4 px-4 h-12 cursor-pointer {selected
-		? 'bg-blue-50 text-blue-900'
-		: 'text-slate-900 hover:bg-slate-50'}"
+	class="m3-state grid grid-cols-[minmax(0,1fr)_6rem_11rem_10rem] items-center gap-4 px-4 h-12 cursor-pointer text-on-surface {selected
+		? 'bg-on-surface/8'
+		: ''}"
 	onclick={() => onSelect(index)}
 	onkeydown={(e) => {
 		if (e.key === 'Enter' || e.key === ' ') {
@@ -38,11 +38,9 @@
 	}}
 >
 	<span class="truncate font-medium">{student.vorname} {student.nachname}</span>
-	<span class="text-sm truncate {selected ? 'text-blue-700' : 'text-slate-600'}">{mitte}</span>
-	<span
-		class="text-sm truncate {student.barcode_id ? '' : 'italic'} {selected
-			? 'text-blue-700'
-			: 'text-slate-600'}">{ausweis}</span
+	<span class="text-sm truncate text-on-surface-variant">{mitte}</span>
+	<span class="text-sm truncate text-on-surface-variant {student.barcode_id ? '' : 'italic'}"
+		>{ausweis}</span
 	>
 	<!-- Leere vierte Spalte: Sie gehört den Büchern (dort steht der Bestand, seit
 	     17.09.2026). Ohne sie wären die Spalten der beiden Gruppen um 10rem gegeneinander

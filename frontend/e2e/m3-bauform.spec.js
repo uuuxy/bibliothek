@@ -55,7 +55,7 @@
 //     Eine Quelltext-Zählung fand am 04.09.2026 vierzig Kandidaten mit Rahmen und
 //     Schatten in derselben Klassenliste; der grösste Teil davon sitzt in genau
 //     diesen Overlays. Sie sind bewusst NICHT pauschal geändert worden: Bei
-//     `OmniboxBlockAlert` ist der `border-4 border-rose-500` ein Alarmsignal an
+//     `OmniboxBlockAlert` ist der `border-4 border-error` ein Alarmsignal an
 //     der Theke, kein Dekor — das ist Einzelfallprüfung, kein Suchen-und-Ersetzen.
 //
 // Wer dieses Gate erweitert, erweitert die Öffnerliste — nicht die Regel.

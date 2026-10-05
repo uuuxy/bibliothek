@@ -54,8 +54,8 @@
 	title="Kamera-Scanner (Mobilgerät)"
 	aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
 	class="shrink-0 -mr-2 p-1.5 rounded-full transition-colors {showCamera
-		? 'bg-blue-100 text-blue-600'
-		: 'text-slate-500 hover:text-blue-600 hover:bg-blue-50'}"
+		? 'bg-secondary-container text-on-secondary-container'
+		: 'text-on-surface-variant hover:text-primary'}"
 >
 	<Camera class="h-5 w-5" aria-hidden="true" />
 </button>
