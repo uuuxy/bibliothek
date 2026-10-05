@@ -13,111 +13,45 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 ## Was jetzt dran ist
 
-**Die Sichtung vom 16.09.2026** (Abschnitt 9): Für die zwei Bedingungen aus 9.9 — DSGVO-Nachweis
-sowie Hosting- und Pflegekonzept — liegen Entwürfe vor; offen ist, was bei der Schule liegt.
+Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Littera-Übernahme
+(7.2; entschieden am 28.09.2026). Davor stehen Antworten von außen, die Proben am Testserver
+und die Arbeit im Code.
 
-**Entschieden am 28.09.2026: Neuaufbau am Schulserver.** Der Echtbetrieb beginnt mit einer leeren
-Datenbank und der Littera-Übernahme (7.2).
+**Bei dir — zu entscheiden:**
 
-**Was bei dir liegt — der Reihe nach:**
+- Portal: ein fester Platz für „Problem melden" und der Name des ersten Reiters (4.31).
+- Theke: die Rückgabe eines ganzen Stapels, ohne dass dabei ein Buch ausgeliehen wird (4.32).
+- Buchmaske: was beim Standort für Lernmittel und Bibliothek getrennt sein soll (5.53).
+- GitHub: drei offene PRs (5.10) und die PR-Pflicht im Regelwerk für `main` (7.6).
 
-1. **Drei Fragen** (28.09.2026). Ist eine davon ein Nein, hilft kein weiterer Code; sind alle
-   drei ein Ja, bleibt vor dem Echtstart überschaubare Arbeit im Code.
-   - **Schulträger:** Gibt es den Schulserver, ab wann, in welchem Netz (8.5, B5)? Heute ist er
-     nur geplante Zielumgebung (Abschnitt 7), und echte Schülerdaten — auch die aus Littera —
-     gehören nur dorthin. Dazu: Hat der Schulträger eine Vorlage für das IT-Sicherheitskonzept?
-     Dann kommt der Teil des Programms in seiner Form. Außerdem: ob seine IT Betriebssystem und
-     Docker pflegt, wie im Pflegekonzept vorgesehen (Abschnitt 9); wie die Pflege den Server
-     erreicht, vor Ort oder über einen Fernzugang; und was die Seite für die Lieferanten von ihm
-     braucht: einen Namen im Internet, die Freigabe von Port 443 und die Angabe, wie Anfragen aus
-     dem Schulnetz am Server ankommen (4.23); und ob er einen Speicher für die Sicherungen außer
-     Haus stellt (7.3).
-   - **Wer die Sichtung gemacht hat** (Abschnitt 9): Reichen Datenschutz-Nachweis und
-     Pflegekonzept als die zwei Bedingungen, werden die drei begründeten Abweichungen im
-     Mahnwesen akzeptiert, und wer wird Vertretung?
-   - **Littera:** das Kennwort, das bei der Einrichtung von Littera für dessen SQL Server
-     vergeben wurde — zu fragen bei dem, der Littera eingerichtet hat, nicht bei der Bücherei.
-     Damit öffnen sich womöglich die zwei Sicherungen vom 01. und 02.09.2026, und ein neues
-     Backup ist nicht nötig. Kennt es niemand, bleibt die Littera-Hotline (7.2).
-2. **Die übrigen Anfragen** (Abschnitt 8), soweit noch nicht gestellt:
-   - **Sekretariat:** die Schulnummer für die Bescheide (8.1); wie Ersatz für Bücher der
-     Schülerbücherei bisher bezahlt wurde und wer eine Zahlung einbucht (8.3, erster Schritt).
-   - **Schulamt:** das Kürzel des Schulamtsbereichs und welches Kassenjahr in die Referenznummer
-     gehört (8.1); der Mail-Erlass vom 11.06.2018 und das aktuelle Musterschreiben — aus dem von
-     2014 stammen heute Zahlstelle und Bankverbindung im Bescheid (8.2).
-   - **Datenschutzbeauftragter der Schule:** beteiligen und schriftlich festhalten, ob eine
-     Datenschutz-Folgenabschätzung nötig ist (B4); das Foto auf dem Ausweis (B3; beides 8.5).
-   - **Schulträger**, nach der Antwort der Schule: die Zahlungswege der Schülerbücherei (8.3,
-     zweiter Schritt).
-   - **An einem Buch selbst:** den Eigentumsvermerk auf den alten Littera-Etiketten der
-     Schülerbücherei ablesen. Entschieden am 28.09.2026: Neue Etiketten tragen denselben
-     Wortlaut; er wird beim Einrichten unter Einstellungen → Schule eingetragen (heute leer, also
-     kein Vermerk). Littera führt den Vermerk je Exemplar: In der Medienliste vom 12.06.2026
-     tragen über 13.000 Exemplare das Land, 2.942 den Schulträger, einige hundert andere
-     Eigentümer (Schule, Förderverein, Bibliothek), rund 50.000 keinen. Zum Ablesen ein Buch
-     nehmen, das dort den Schulträger trägt. Der Vermerk je Exemplar kommt mit (4.24).
-   - **Bücherei:** wem die Bücher mit den Littera-Vermerken „Philipp-Reis-Schule", „Bibliothek",
-     „Förderverein", „Info Schulprojekt" und „Dauerleihgabe" gehören — rund 630 Exemplare, bis
-     dahin ohne Zuordnung (4.24).
-3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
-   Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
-   Stack, wenn der Nachweis ansteht.
-4. **Am Testserver mit dem Handscanner probieren**, nach `git pull` und `./update.sh`. Die
-   Browser-Tests tippen die Zeichen blind wie ein Scanner; ob der Scanner der Schule schnell
-   genug tippt (höchstens 50 ms je Zeichen), zeigt nur das Gerät.
-   - Sperrbildschirm (Sperrfrist dafür unter Einstellungen kurz stellen): ein Buch scannen.
-     Erwartet: „Scan erkannt", kein Fehlversuch; danach schließt das getippte Passwort auf.
-   - Theke: Leser scannen, einen Reiter der Akte anklicken, in der Akte nach unten rollen, ein
-     Buch scannen. Erwartet: Die Suchleiste steht noch im Fenster, das Buch ist gebucht.
-   - Buchmaske: einen Titel halb ausfüllen, sperren lassen, aufschließen. Erwartet: Die
-     Eingaben stehen noch da.
-   - „Neues Buch" öffnen und ein Buch scannen, ohne ins Feld zu klicken. Erwartet: Die ISBN
-     steht im Feld, Titel und Autor sind eingetragen. Ein zweites Buch scannen, wieder ohne
-     Klick. Erwartet: ISBN, Titel und Autor sind die des zweiten.
-   - Buchmaske, ohne Scanner: einen Titel mit vielen Exemplaren öffnen (der größte am
-     Testserver hat 383) und nach unten rollen. Erwartet: „Speichern", das Cover und die Knöpfe
-     darunter bleiben im Bild. Dann ins Feld ISBN „12345" tippen und „Speichern" drücken.
-     Erwartet: Die Meldung oben rechts („ungültiges ISBN-Format") liegt nicht über dem Knopf.
-   - Druck-Center, Buch-Etiketten: einen Titel mit mehr als fünf Exemplaren wählen, den Haken
-     „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
-     dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
-     Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
-5. **Die Maske „Buch bearbeiten" in der neuen Reihenfolge ansehen** (gebaut am 03.10.2026):
-   zuerst die ISBN und die Angaben zum Buch, darunter die Gruppe „An der Schule" mit der Wahl
-   Bibliothek oder Lernmittel, „Andere Auflagen" als letzte Angabe dieser Gruppe, Bestand und
-   Zähldatum unter „Exemplare". Das Feld „Beschreibung / Klappentext" gibt es seit dem
-   03.10.2026 nicht mehr; „Speichern" bleibt am neuen Bibliotheksbuch bedienbar und führt ohne
-   Signatur zum Feld. Seit dem 03.10.2026 ist die ISBN freiwillig, Pflicht ist der Titel (Stern
-   an der Beschriftung): einen Titel ohne ISBN öffnen, die Signatur ändern und speichern; ein
-   Medium ohne ISBN neu anlegen und danach noch einmal mit demselben Titel und Autor — die
-   Maske fragt dann „Ist es dasselbe Medium?". Seit dem 03.10.2026 sind die zehn- und die
-   dreizehnstellige ISBN dieselbe Nummer: ein Buch mit der zehnstelligen ISBN vom Titelblatt
-   anlegen — gespeichert steht die dreizehnstellige im Feld — und danach in „Neues Buch"
-   seinen Strichcode scannen; die Maske fragt „Vorhandenen Titel öffnen?".
-6. **Ein Termin für die Abnahmen** mit dem Sekretariat, sobald der Schulserver steht (7.7). Ein
-   LUSD-Import mit echten Schülern kommt erst nach der Littera-Übernahme (7.2).
-7. **Das Mahnwesen ansehen** (gebaut am 04.10.2026): Kinder anhaken, „Mahnbriefe drucken". Es
-   kommt je Kind der Brief an die Eltern mit Anschrift; die Liste zeigt danach
-   „1× gemahnt, zuletzt …". Seit dem 05.10.2026 druckt „Liste drucken" die Liste als Tabelle, je
-   Buch eine Zeile; einmal ausdrucken und ansehen.
+**Bei dir — zu fragen:** Schulträger, Sichtung und das Littera-Kennwort; dazu Sekretariat,
+Schulamt, Datenschutzbeauftragter und Bücherei. Wer was gefragt wird, steht am Anfang von
+Abschnitt 8.
 
-**Im Code,** in dieser Reihenfolge:
+**Bei dir — auszuprobieren:**
+
+- Am Testserver nach `git pull` und `./update.sh`: die Proben mit dem Handscanner, die Maske
+  „Buch bearbeiten" und das Mahnwesen (7.10).
+- Der SonarQube-Scan nach den Commits vom 05.10.2026 (5.10).
+- Der Nachweis von Hand für die Theke ohne Netz (2.3, Stufe 1 und 3 im echten Chrome),
+  zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen Stack, wenn
+  der Nachweis ansteht.
+- Ein Termin für die Abnahmen mit dem Sekretariat, sobald der Schulserver steht (7.7).
+
+**Bei mir — im Code,** in dieser Reihenfolge:
 
 1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
 2. Nach der Antwort zu 8.3: **5.4**.
-3. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+3. Vor dem Echtstart: **5.31** (`update.sh` für den Schulserver), der Eingang für die Seite der
+   Lieferanten (4.23) und die Auflage in der Littera-Übernahme (5.5).
+4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
-Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
-([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
-(`update.sh` für den Schulserver), der Eingang für die Seite der Lieferanten (4.23) und die
-Auflage in der Littera-Übernahme (5.5).
+**Termine:** Am 19. Oktober 2026 wechselt CodeQL bei GitHub das Abbild (5.10). Node 26 ist ab
+dem 28. Oktober 2026 dran, nach der Regel „immer die aktive LTS"
+([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
 
 **In der Doku:** Pflegekonzept und Datenschutz-Nachweis stehen als Entwurf. Es folgen die
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung (9.9).
-
-Mit der Littera-Übernahme (7.2) kommen das Eigentum je Exemplar (4.24) und alle Schlagworte und
-Interessenkreise der Titel; ob Littera Verweise zwischen Schlagworten führt, zeigt erst die
-Sicherung von 2026 (4.20).
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
 Betriebspunkte in 7. Keiner davon schadet still; sie werden gebündelt erledigt.
@@ -286,6 +220,32 @@ Am 04.10.2026 gebaut und am selben Tag zurückgenommen, weil nicht bestellt:
 - **Klasse auf dem Brief.** Das frühere Blatt aus der Auswahl nannte die Klasse, der Brief nennt
   sie nicht. Die Briefe einer Klasse liegen im Druck beieinander.
 
+### 4.31 Portal: „Problem melden" ist nicht zu finden
+
+Rückmeldung vom 05.10.2026 am Testserver: Wer ein Problem melden will, erkennt nicht, dass er
+dafür einen Buchtitel suchen soll. Am Code: Der erste Reiter heißt „Suchen & Reservieren"
+(`KollegiumPortal.svelte`). „Problem melden" steht am Treffer, also erst nach dem Tippen, und
+ohne Buch als Knopf unter „Deine Reservierungen" und „Deine Meldungen"
+(`portal/PortalMeldungen.svelte`) — nur solange das Suchfeld leer ist. Der Reiter
+„Klassensätze" kennt keine Meldung.
+
+Vorschlag vom 05.10.2026, nicht gebaut: Der Reiter heißt „Reservieren & Melden". „Problem
+melden" steht als umrandeter Knopf fest unter dem Suchfeld und bleibt beim Tippen stehen; der
+Knopf unter den Listen entfällt, am Treffer bleibt die Meldung mit dem gewählten Buch. M3, Tabs:
+„Text labels should clearly and succinctly describe the content within the tab."; M3, Buttons:
+Der umrandete Knopf ist für „actions that need attention but aren’t the primary action". Beim
+Umbenennen die E2E-Specs mitziehen.
+
+### 4.32 Theke: ein Stapel vom Rückgabetisch
+
+Littera hat eine Schnellrückgabe, die nie ausleiht. An der Theke bleibt nach der ersten
+Rückgabe der Leser dieses Buchs geladen (besprochen am 03.10.2026, am Code gelesen, nicht
+nachgestellt): Ein Buch eines anderen Lesers wird mit Warnton zurückgegeben, die Akte bleibt
+beim ersten. Ein Buch, das nicht verliehen ist, und ein zweiter Scan desselben Buchs werden an
+den geladenen Leser ausgeliehen. Davor schützt heute die Escape-Taste zwischen zwei Lesern.
+Zu entscheiden: Es bleibt bei Escape, oder die Theke bleibt nach einer Rückgabe ohne vorher
+geladenen Leser leer und nennt ihn nur in der Meldung.
+
 ---
 
 ## 5. Abarbeitbar (Kategorie B)
@@ -366,36 +326,28 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,
   nicht die Ausnahme). Laut, also richtig — nur die Meldung nennt weder Zeile noch Weg.
   Kategorie C, bis es einmal vorkommt.
-- „Klasse" neben der Spanne (22.09.2026): Zwei Jahrgangsangaben am Titel, „Klasse"
-  (`grade_level`) und „von … bis" (`jahrgang_von/bis`). Inventur nach Klasse und die
-  Mehrjahresband-Frist lesen nur die Spanne; Titel-Tabelle,
-  Klassenzuweisung und Listenfilter lesen die Klasse, der Portal-Filter liest beide. Die
-  Zusammenlegung (Migration 135) ist zurückgenommen: Sie machte aus Klasse N die Spanne N
-  bis N, und das trifft die Daten nicht. Lesend gemessen auf dem Testserver: 153 Titel mit
-  Klasse, 129 davon Klasse 6–13 bei der Vorgabe 5 bis 10, 89 dieser 129 Lernmittel.
+- „Klasse" neben der Spanne: Der Titel führt zwei Jahrgangsangaben, „Klasse" (`grade_level`)
+  und „von … bis" (`jahrgang_von/bis`). Inventur nach Klasse und die Mehrjahresband-Frist lesen
+  nur die Spanne; Titel-Tabelle, Klassenzuweisung und Listenfilter lesen die Klasse;
+  Portal-Filter und die Suche im Medienkatalog (`trifftJahrgang` in
+  `frontend/src/inventur/lib/startseiten_api.js`) lesen beide. Die Zusammenlegung (Migration
+  135) ist zurückgenommen: Aus Klasse N wurde die Spanne N bis N, und das trifft die Daten
+  nicht. Gemessen am Testserver: 153 Titel mit Klasse, 129 davon Klasse 6–13 bei der Vorgabe 5
+  bis 10, 89 dieser 129 Lernmittel; 13.057 von 13.062 Titeln tragen die Vorgabe (01.10.2026).
   Mehrjährige Bände tragen ein einziges Jahr („Natur und Technik - Biologie 7 - 10" und
   „Pontes Gesamtband": Klasse 7), Klasse und Signatur widersprechen sich („Forum Geschichte
   4 (Schulbuch Klasse 9)": Signatur Ges9, Klasse 10). Woher die Werte stammen, ist nicht
-  belegt. Seit dem 22.09.2026 rät der Listenimport keine Klasse mehr (früher: erste Zahl im
-  Titel, sonst 5) und schreibt ohne Spalte „klasse" NULL; eine Klasse 5 aus einem älteren
-  Listenimport ist von einer gepflegten nicht zu unterscheiden. Nächster Schritt: je Titel
-  entscheiden, welche Spanne gilt (Liste per Einzeiler
-  unten), dann die Spalte mit genau diesen Werten ablösen. Dabei mitentscheiden: die Spalte
-  „klasse" des Listenimports und der Klassenvorschlag der ISBN-Suche, der auch aus
+  belegt; eine Klasse 5 aus einem älteren Listenimport ist von einer gepflegten nicht zu
+  unterscheiden. Katalogsuche und Schulbuchliste (`jahrgangText`) werten die Vorgabe 5 bis 10
+  nicht als Jahrgang; eine bewusst gepflegte Spanne 5 bis 10 fällt damit bis zum Umbau
+  ebenfalls heraus. Nächster Schritt: je Titel entscheiden, welche Spanne gilt (Liste per
+  Einzeiler unten), dann die Spalte mit genau diesen Werten ablösen. Dabei mitentscheiden: die
+  Spalte „klasse" des Listenimports und der Klassenvorschlag der ISBN-Suche, der auch aus
   „Band 2", „Level 9" und jeder Zahl von 5 bis 13 im Titel eine Klasse macht.
   **Entschieden am 24.09.2026, im selben Umbau:** „Jahrgang unbekannt" wird eine eigene Vorgabe
-  (NULL) statt 5 bis 10 — heute ist beides nicht zu unterscheiden, und wer das
-  Mehrjahresband (Migration 134) an einem Titel mit der Vorgabe anhakt, bekommt die 10.
-  Die zwei Leser der Spanne (Inventur, Portal-Filter) lernen „unbekannt" mit; die Ansicht
-  „Jahrgang" des Mahnwesens, der dritte, ist seit dem 04.10.2026 ausgebaut. Vorher am
-  Testserver messen.
-  Ein vierter Leser ist die Suche im Medienkatalog (`trifftJahrgang` in
-  `frontend/src/inventur/lib/startseiten_api.js`): Sie liest Klasse oder Spanne. Seit dem
-  01.10.2026 zählt die Vorgabe 5 bis 10 dort nicht mehr als Jahrgang, wie schon in der
-  Schulbuchliste (`jahrgangText`); vorher traf „Klasse 5" bis „Klasse 10" jeden Titel ohne
-  gepflegte Spanne. Gemessen am Testserver am 01.10.2026: 13.057 von 13.062 Titeln tragen die
-  Vorgabe, 153 davon eine Klasse. Eine bewusst gepflegte Spanne 5 bis 10 ist bis zum Umbau
-  davon nicht zu unterscheiden; mit ihm liest die Suche „unbekannt" statt der Vorgabe.
+  (NULL) statt 5 bis 10 — heute ist beides nicht zu unterscheiden, und wer das Mehrjahresband
+  (Migration 134) an einem Titel mit der Vorgabe anhakt, bekommt die 10. Die Leser der Spanne
+  (Inventur, Portal-Filter, Katalogsuche) lernen „unbekannt" mit. Vorher am Testserver messen.
 
   ```sql
   SELECT grade_level, jahrgang_von, jahrgang_bis, ist_lernmittel, signatur, titel
@@ -550,6 +502,13 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   jedes Mal grün. Beim zweiten Mal war die Maske zu und die Liste stand da („Bücher (10618)"),
   der neue Titel fehlte in der Ansicht. Die lokale Datenbank trägt Hunderte Test-Titel aus
   früheren Läufen.
+- Auf GitHub stehen drei PRs offen (05.10.2026), bei allen sind die Prüfungen grün. PR 703
+  (zugeliefert) ersetzt in der Sperre gegen einen doppelten Schuljahreswechsel ein Zählen durch
+  eine Existenzabfrage (`api/student_promotion.go`). Die Stelle läuft einmal im Jahr, eine
+  Messung liegt nicht bei, und der PR bringt zwei kompilierte Testprogramme (`api.test`,
+  `db.test`), zwei Zeilen in `frontend/package.json`, einen Benchmark und eine Notizdatei mit.
+  Vorschlag: schließen. PR 701 und 702 (Dependabot) heben ein Go-Paket und acht npm-Pakete in
+  Neben- und Korrekturversionen an. Vorschlag: nach `main` holen und die Gates laufen lassen.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
@@ -584,18 +543,6 @@ lehnt die Tür seit dem 21.09.2026 ab.
 SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
 SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
 ```
-
-### 5.20 Aus der Durchsicht von PR 631 (21.09.2026) — was offen bleibt
-
-- **Anfrage-Log mit Dauer und Anfragekennung:** nicht gebaut, nur die Doku auf den Ist-Stand
-  gezogen. Mehr Logzeilen am Schulserver sind eine Betriebsfrage.
-- **Totalverlust des Servers ist nicht beschrieben** (gehört zu 7.4). Der Entwurf im PR ist
-  nach eigener Angabe unerprobt und scheitert in Schritt 5: Das Backend hat nur benannte
-  Volumes, die Sicherung vom zweiten Ort liegt also nicht im Container, und die entschlüsselte
-  Datei entsteht in einem Wegwerf-Container und ist danach fort. Schreiben und an einem fremden
-  Ziel durchspielen, nicht herleiten.
-- **Zu 7.3:** Der zweite Ort muss kein S3 sein — ein zweiter Rechner per Kopierbefehl oder
-  eine getauschte Platte tun dasselbe ohne Vertragsfrage. Eine Betriebsentscheidung.
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
@@ -679,25 +626,21 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 
 ### 5.22 Fremdrückgabe über Kreuz verklemmt sich — seit Migration 137
 
-Der Rückgabe-Trigger `trg_leser_stempel_rueckgabe` (Karenz-Uhr) sperrt bei einer Rückgabe die
-Leserzeile des Ausleihers — im Normalfall immer, denn die Rückgabe liegt nach dem letzten
-Stempel —, und zwar NACH der Ausleihe. Die Fremdrückgabe an der Theke sperrt vorher das Kind der
-offenen Sitzung. Geben zwei Kinder an zwei Theken zugleich je das Buch des anderen ab, wartet jede
-Transaktion auf die andere, und Postgres bricht nach einer Sekunde eine ab (40P01). Nachgestellt
-am 23.09.2026 mit den Schritten des Codes; ohne den Trigger läuft derselbe Ablauf durch
-(`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_Fremdrueckgabe ./repository/`). Das
+Geben zwei Kinder an zwei Theken zugleich je das Buch des anderen ab, wartet jede Transaktion
+auf die andere, und Postgres bricht nach einer Sekunde eine ab (40P01): Der Rückgabe-Trigger
+`trg_leser_stempel_rueckgabe` (Karenz-Uhr) sperrt die Leserzeile des Ausleihers nach der
+Ausleihe, die Fremdrückgabe sperrt vorher das Kind der offenen Sitzung. Nachgestellt am
+23.09.2026 mit den Schritten des Codes
+(`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_Fremdrueckgabe ./repository/`); das
 Nachbuchen zweier Theken, die über Kreuz umbuchen, hat dieselbe Folge von Sperren (nicht eigens
-nachgestellt).
+nachgestellt). Wirkung: An der Theke erscheint eine Fehlermeldung, erneutes Scannen bucht; beim
+Nachbuchen läuft der Eintrag in der nächsten Runde durch. Daten gehen nicht verloren. Dieselbe
+Sperre lässt eine Rückgabe warten, solange ein anderer Vorgang die Leserzeile hält (etwa ein
+LUSD-Lauf, der diesen Schüler ändert).
 
-Wirkung: An der Theke erscheint eine Fehlermeldung, erneutes Scannen bucht. Beim Nachbuchen
-wird der Eintrag „wiederholen" und läuft in der nächsten Runde durch. Keine Daten gehen verloren.
-Nebenfolge derselben Sperre: Eine Rückgabe wartet, solange ein anderer Vorgang die Leserzeile
-hält (etwa ein LUSD-Lauf, der diesen Schüler ändert).
-
-**Entschieden am 24.09.2026: so lassen.** Die Abhilfe ohne Verklemmung wäre der Stempel in einer
-eigenen Tabelle statt an der Leserzeile — eine Migration an der Karenz-Uhr (Löschuhr, Wächter,
-DSGVO-Auskunft lesen ihn). Sie kommt beim nächsten Umbau der Karenz-Uhr mit; bis dahin steht der
-Punkt hier, damit dieser Umbau ihn findet.
+**Entschieden am 24.09.2026: so lassen.** Die Abhilfe wäre der Stempel in einer eigenen Tabelle
+statt an der Leserzeile — eine Migration an der Karenz-Uhr (Löschuhr, Wächter, DSGVO-Auskunft
+lesen ihn). Sie kommt beim nächsten Umbau der Karenz-Uhr mit.
 
 ### 5.25 Eine Forderung für ein Gerät lässt sich nicht anlegen
 
@@ -855,20 +798,39 @@ Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächste
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
 
+### 5.53 Buchmaske: ein Standort für Bibliothek und Lernmittel
+
+Rückmeldung vom 05.10.2026: Ein Standort, der bei „Lernmittel" eingetragen ist, steht auch da,
+wenn die Maske auf „Bibliothek" steht; verlangt ist, dass beides getrennt ist. Am Code: Der
+Titel führt einen einzigen Standort (`erweiterteEigenschaften.standort`), und die Wahl
+„Bibliothek" oder „Lernmittel" ändert nur die Art des Titels, kein anderes Feld
+(`BuchEingabefelderKategorisierung.svelte`). Den Standort zeigen die Titel-Verwaltung und die
+Buchakte. Vor dem Bau zu klären: Gibt es Titel, von denen Exemplare in der Bücherei und im
+Lernmittelbestand stehen? Dann braucht der Titel zwei Standorte. Steht ein Titel immer nur an
+einem der beiden Orte, genügt es, dass der Wechsel der Art den Standort nicht mitnimmt.
+
+### 5.54 Klassensätze aus den Ausleihen und Hinweise an der Theke
+
+Besprochen am 03.10.2026 und bis zum 05.10.2026 nicht eingetragen.
+
+- Für ET1 bis ET3 entsteht kein Klassensatz „aus Ausleihen": Die Übersicht zählt nur Klassen,
+  deren Name mit einer Ziffer beginnt (`GetClassGroups` in `inventur/datenbank_klassen.go`).
+  Gezählt werden Ausleihen auf die Ausweise der Kinder; ein Stapel auf dem Ausweis der Lehrkraft
+  erscheint nicht bei der Klasse.
+- Die Theke warnt, wenn ein Kind eine andere Auflage bekommt als seine Klasse, und wenn ein Buch
+  auf ein anderes Kind verbucht ist. Sie warnt nicht, wenn ein Kind ein Buch bekommt, das nicht
+  zu seinem Jahrgang gehört, oder ein zweites Exemplar eines Titels, den es schon hat (am Code
+  gelesen am 03.10.2026, nicht nachgestellt). Die Kachel eines Klassensatzes nennt die Zahl der
+  Leser, nicht, wem das Buch fehlt.
+
+Kategorie B.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
 
 ### 6.1 Beobachtungen
 
-- Das Feld ISBN der Buchmaske nimmt jede Nummer mit 10 bis 13 Zeichen an (`validiereISBN`),
-  also auch elf- und zwölfstellige. **Entschieden am 03.10.2026:** Das bleibt so; das Feld
-  trägt auch die Nummer einer DVD oder CD. Die Datenbank bringt nur eine ISBN in ihre
-  Normalform (10 oder 13 Stellen, `isbn_normalform`); jede andere Nummer bleibt, wie sie
-  geschrieben wurde, mit Bindestrichen und Leerzeichen. Die Dublettenkontrolle der Maske
-  vergleicht solche Nummern deshalb zusätzlich ohne Trennzeichen (`titelMitISBN`), der
-  UNIQUE-Index tut es nicht. Gemessen am Testserver am 03.10.2026: 65 Titel mit einem Wert
-  ohne ISBN-Form.
 - Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, ohne
   Grenze), „Suche & Filter" bei jedem Öffnen, die Titel-Verwaltung beim Öffnen und bei leerem
   Suchfeld; gezeigt werden je 50 Titel. Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,
@@ -878,14 +840,11 @@ sie in der Vorschau. Kategorie B.
   Der Katalog öffnet am Server spürbar verzögert. Dann beantwortet der Server einen
   unveränderten Bestand mit 304 statt mit der Liste, wie bei den Buchnummern der Theke
   (`api/buchbarcodes_handler.go`).
-- Breite der Textfelder. **Entschieden am 03.10.2026:** Textfelder folgen Material 3 (Text
-  fields, Guidelines: „Text fields shouldn’t span the full width of a large screen"); die
-  Hausregel, die Fläche zu nutzen, gilt den Flächen der Seite, nicht den Feldern. In der Maske
-  „Buch bearbeiten" enden die Felder seitdem bei 704 px; die Exemplare darunter behalten die
-  Breite. Am Bild abgenommen am 03.10.2026; der freie Streifen zwischen Feldern und Cover im
-  breiten Fenster bleibt (gemessen bei 1710 px: Felder bis 1016 px). Offen: die übrigen
-  Masken — sie sind nicht durchgesehen. Der Wert steht bisher nur in `BuchFormular.svelte`;
-  mit der zweiten Maske gehört er an eine Stelle.
+- Breite der Textfelder: Textfelder folgen Material 3 (Text fields, Guidelines: „Text fields
+  shouldn’t span the full width of a large screen"; entschieden am 03.10.2026). Umgesetzt ist das
+  in der Maske „Buch bearbeiten" (Felder bis 704 px); die übrigen Masken sind nicht
+  durchgesehen. Der Wert steht bisher nur in `BuchFormular.svelte`; mit der zweiten Maske gehört
+  er an eine Stelle.
 - Die Meldungen der Anwendung (`ToastContainer.svelte`) erscheinen oben rechts, bis 384 px
   breit, 5 s lang, und halten ihre Standzeit an, solange der Mauszeiger auf ihnen ruht. Was
   dort steht, ist in dieser Zeit verdeckt (gemessen am 02.10.2026 bei 1280 × 720: Meldung bei
@@ -961,19 +920,8 @@ sie in der Vorschau. Kategorie B.
 - Die Sperrprüfung liest aus dem Pool, während die Checkout-Transaktion mit `FOR UPDATE` offen ist
   (drei Abfragen über eine zweite Verbindung). Bei `MaxConns = 50` ohne Wirkung; beim Nachbuchen
   vieler Ausleihen (Abschnitt 2) beobachten.
-- `golang.org/x/crypto/openpgp` (`GO-2026-5932`): kein Fix verfügbar, transitiv, kein Aufrufer im
-  eigenen Code.
-- Designer: Wer den Browser binnen 800 ms schließt, verliert die letzte Auto-Save-Änderung;
-  `sendBeacon` bewusst nicht gebaut.
-- Migration 082 (Dedupe der Vormerkungen) verlor den neueren `abholbereit`-Eintrag; auf Prod
-  gelaufen, nur relevant für eine weitere gewachsene Datenbank.
 - Die Rate-Limiter-Maps räumen erst ab 5.000 Einträgen; nur mit vielen frischen Adressen ein
   CPU-Thema.
-- `startGDPRWorker` (`main.go`) ruft nur die Leihen-Anonymisierung und die Abgänger-Löschung;
-  `RunGDPRAnonymizeOldData` läuft allein im Cron. Keine Wirkung erkennbar, die Doku beschreibt
-  beide Wege.
-- Portal: Das Menü „Mein Portal" verlangt `create_reservations`, `GET /api/lmf-termine` nur eine
-  Sitzung — bewusst, der Inhalt ist PII-Stufe 0.
 - Das Druck-Center hängt im Menü an `view_students`, seine Buch-Etiketten brauchen nur
   `view_books` und `edit_books`. Ab Werk hat jede Rolle mit `edit_books` auch `view_students`;
   wer die Rechte anders verteilt, erreicht die Buch-Etiketten nicht (Sammelpunkt wie
@@ -1048,6 +996,9 @@ sie in der Vorschau. Kategorie B.
   Leserecht; einen Namen trägt sie nicht (PII-Matrix, Stufe 0). Gelesen am 01.10.2026, nicht
   nachgestellt. Zuhörer sind nur die Theke und die Abgänger-Seite. Frage mit Anlass: Braucht
   die Meldung die Kennung des Lesers für jeden Empfänger?
+- Das Anfrage-Log nennt weder Dauer noch Anfragekennung (aus der Durchsicht von PR 631 am
+  21.09.2026): nicht gebaut, die Doku steht auf dem Ist-Stand. Mehr Logzeilen am Schulserver
+  sind eine Betriebsfrage.
 
 ### 6.2 Kategorie C
 
@@ -1121,10 +1072,6 @@ sie in der Vorschau. Kategorie B.
   auf `schulzeit.Zone()` umstellen (gefunden am 18.09.2026, als die volle Suite einmal unter einer
   fremden Prozesszone lief).
 - Zwei Regexe für die LMF-Kennung (`pkg/lmf/lmf.go`, `internal/service/import_lmf.go`).
-- `migrations/110_schadensersatz_bescheide.sql` nennt drei Barzahlungs-Briefe, es sind zwei;
-  eingespielte Migrationen bleiben unverändert.
-- Knopfzeile über den Reitern (Mahnwesen): kommt aus dem gemeinsamen Seitengerüst; Anlass wäre ein
-  Rundgang über das Gerüst.
 - `github.com/jung-kurt/gofpdf` ist seit 2021 archiviert und steckt in 17 Dateien (ohne Tests,
   gezählt am 30.09.2026); gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto
   mitbringt. Neue PDFs (5.3, 5.4) nicht mehr auf dem archivierten; die 17 beim fachlichen Anfassen
@@ -1140,9 +1087,6 @@ sie in der Vorschau. Kategorie B.
   Router auf eine Kennung, die keine UUID ist, mit 400. Kein Gate hält das;
   `api/uuid_pfadparameter_test.go` prüft die Namen der Platzhalter, nicht die Hülle der Route.
   Anlass zum Bauen: die erste Route mit UUID-Platzhalter ohne `RequirePermission`.
-- `javascript:S6551` und `javascript:S8783`: begründete Dauer-Ausnahmen. Die Begründung zu
-  S6551 steht als Kommentar in `settingsWerte.js`; S8783 nennt im Repository keine Stelle
-  (nachgesehen am 02.10.2026).
 - `auth.Claims.BarcodeID` liest niemand mehr; die Ausweisnummer kommt seit Migration 125
   als LEFT JOIN aus der Leserzeile in die Sitzung, nur damit das Feld gefüllt bleibt.
 - Tabellen-Inline-Felder mit 36 px: eine `size="sm"`-Variante von `Feld` erst bei Bedienbefund.
@@ -1160,6 +1104,9 @@ sie in der Vorschau. Kategorie B.
   in `icon-trefferflaechen.spec.js` und `icon-tooltips.spec.js`. Ein 32-px-Knopf bricht die
   Kopfzeile bei 1280 px um (gemessen am 24.09.2026: Karte 70 → 100 px) — die Knöpfe brauchen
   eine eigene Zeile; eine Layoutfrage, nicht einzeln.
+- `docs/datenschutz_offene_punkte.md` heißt wie eine zweite Offen-Liste: Teil A ist dort
+  abgehakt statt gelöscht, Teil B steht auch in 8.5. Vorgeschlagen am 02.10.2026 und nicht
+  entschieden: umbenennen und die Erledigt-Spalte streichen; 17 Dateien verweisen auf den Namen.
 
 ### 6.3 Parkdeck (bewusste Nicht-Entscheidungen)
 
@@ -1257,6 +1204,8 @@ Kalenderwoche eine für 12 Wochen; `jobs.BehalteNaechte`, `jobs.BehalteWochen`),
 im Code auf den Speicher ausdehnen. **Entschieden am 28.09.2026:** zuerst beim Schulträger fragen, ob er einen Speicher
 außer Haus stellt (Frage oben); ein Speicher des Schulträgers braucht keinen Vertrag mit einem
 Dritten. Einen anderen Kopierweg als S3 gibt es im Programm nicht.
+Ein zweiter Rechner per Kopierbefehl oder eine getauschte Platte leisten dasselbe ohne
+Vertragsfrage, außerhalb des Programms; das ist eine Betriebsentscheidung.
 
 ### 7.4 Manuelle Restore-Probe an einem fremden Ziel
 
@@ -1265,6 +1214,12 @@ manuelle Probe nicht. Anleitung: [resilience_and_recovery.md](resilience_and_rec
 Abschnitt 2e — dabei die neuen Befehle erproben, die bisher nur am Text geprüft sind. Sinnvoll
 nach S3 oder am Schulserver. Machen soll sie die Vertretung allein mit dem Pflegekonzept (9.9);
 sie wartet also auf den Schulserver und auf die benannte Vertretung.
+
+**Der Totalverlust des Servers ist nicht beschrieben** (aus der Durchsicht von PR 631 am
+21.09.2026). Der Entwurf im PR ist nach eigener Angabe unerprobt und scheitert in Schritt 5:
+Das Backend hat nur benannte Volumes, die Sicherung vom zweiten Ort liegt also nicht im
+Container, und die entschlüsselte Datei entsteht in einem Wegwerf-Container und ist danach
+fort. Schreiben und an einem fremden Ziel durchspielen, nicht herleiten.
 
 ### 7.5 Externes Uptime-Signal
 
@@ -1297,22 +1252,98 @@ Littera-Übernahme, die dort läuft (7.2).
 
 ### 7.8 Am Server nachsehen (lesend, Einzeiler)
 
-- „Neuer Text" im Ausweis-Layout: laut Serverlesung vom 13.09.2026 in keinem Wert von
-  `system_einstellungen`. Bestätigen, dann erledigt.
-- Sind die Admin-Konten deaktiviert? Ist `/app/uploads/fotos` leer? Gibt es Lehrkräfte mit
-  Platzhalter-Mail `@lehrer-umzug.invalid`? Braucht `repair_fach_kategorie.sql` einen zweiten
-  Lauf?
-- Tragen Titel die Nichtsortierzeichen der DNB? Sie umschließen den Artikel am Anfang
-  („Der kleine Hobbit"), sind nicht zu sehen und standen bis zum 02.10.2026 in jedem Titel,
-  der mit Artikel aus einer ISBN-Abfrage oder einer Bestellung per ISBN entstand; seitdem
-  entfernt sie das Einlesen. Bei 0 erledigt, sonst bereinigt eine Migration nach dem Muster
-  von 154:
-  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FROM buecher_titel WHERE titel ~ U&'[\0098\009C]';"`
+- Sind die Admin-Konten deaktiviert?
 - Erreicht der Server die DNB? Ohne sie bringt die ISBN-Abfrage der Buchmaske keine Angaben
   und der Cover-Abgleich kein Cover; gespeichert wird trotzdem. Am Abbild vom 01.10.2026 geprüft, Ausgabe „erreichbar":
   `docker exec bibliothek-backend sh -c 'wget -q -T 8 -O /dev/null "https://services.dnb.de/sru/dnb?version=1.1&operation=explain" && echo erreichbar || echo nicht erreichbar'`
 
+### 7.10 Am Testserver ausprobieren
+
+Nach `git pull` und `./update.sh`.
+
+**Mit dem Handscanner.** Die Browser-Tests tippen die Zeichen blind wie ein Scanner; ob der
+Scanner der Schule schnell genug tippt (höchstens 50 ms je Zeichen), zeigt nur das Gerät.
+
+- Sperrbildschirm (Sperrfrist dafür unter Einstellungen kurz stellen): ein Buch scannen.
+  Erwartet: „Scan erkannt", kein Fehlversuch; danach schließt das getippte Passwort auf.
+- Theke: Leser scannen, einen Reiter der Akte anklicken, in der Akte nach unten rollen, ein
+  Buch scannen. Erwartet: Die Suchleiste steht noch im Fenster, das Buch ist gebucht.
+- Buchmaske: einen Titel halb ausfüllen, sperren lassen, aufschließen. Erwartet: Die
+  Eingaben stehen noch da.
+- „Neues Buch" öffnen und ein Buch scannen, ohne ins Feld zu klicken. Erwartet: Die ISBN
+  steht im Feld, Titel und Autor sind eingetragen. Ein zweites Buch scannen, wieder ohne
+  Klick. Erwartet: ISBN, Titel und Autor sind die des zweiten.
+- Buchmaske, ohne Scanner: einen Titel mit vielen Exemplaren öffnen (der größte am
+  Testserver hat 383) und nach unten rollen. Erwartet: „Speichern", das Cover und die Knöpfe
+  darunter bleiben im Bild. Dann ins Feld ISBN „12345" tippen und „Speichern" drücken.
+  Erwartet: Die Meldung oben rechts („ungültiges ISBN-Format") liegt nicht über dem Knopf.
+- Druck-Center, Buch-Etiketten: einen Titel mit mehr als fünf Exemplaren wählen, den Haken
+  „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
+  dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
+  Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
+
+**Die Maske „Buch bearbeiten" in der neuen Reihenfolge ansehen** (gebaut am 03.10.2026):
+zuerst die ISBN und die Angaben zum Buch, darunter die Gruppe „An der Schule" mit der Wahl
+Bibliothek oder Lernmittel, „Andere Auflagen" als letzte Angabe dieser Gruppe, Bestand und
+Zähldatum unter „Exemplare". Das Feld „Beschreibung / Klappentext" gibt es seit dem
+03.10.2026 nicht mehr; „Speichern" bleibt am neuen Bibliotheksbuch bedienbar und führt ohne
+Signatur zum Feld. Seit dem 03.10.2026 ist die ISBN freiwillig, Pflicht ist der Titel (Stern
+an der Beschriftung): einen Titel ohne ISBN öffnen, die Signatur ändern und speichern; ein
+Medium ohne ISBN neu anlegen und danach noch einmal mit demselben Titel und Autor — die
+Maske fragt dann „Ist es dasselbe Medium?". Seit dem 03.10.2026 sind die zehn- und die
+dreizehnstellige ISBN dieselbe Nummer: ein Buch mit der zehnstelligen ISBN vom Titelblatt
+anlegen — gespeichert steht die dreizehnstellige im Feld — und danach in „Neues Buch"
+seinen Strichcode scannen; die Maske fragt „Vorhandenen Titel öffnen?".
+
+**Das Mahnwesen ansehen** (gebaut am 04.10.2026): Kinder anhaken, „Mahnbriefe drucken". Es
+kommt je Kind der Brief an die Eltern mit Anschrift; die Liste zeigt danach
+„1× gemahnt, zuletzt …". Seit dem 05.10.2026 druckt „Liste drucken" die Liste als Tabelle, je
+Buch eine Zeile; einmal ausdrucken und ansehen.
+
 ## 8. Schule, Schulamt, Schulträger
+
+**Wer was gefragt wird.** Zuerst die drei Fragen vom 28.09.2026 — ist eine davon ein Nein,
+hilft kein weiterer Code; sind alle drei ein Ja, bleibt vor dem Echtstart überschaubare
+Arbeit im Code:
+
+- **Schulträger:** Gibt es den Schulserver, ab wann, in welchem Netz (8.5, B5)? Heute ist er
+  nur geplante Zielumgebung (Abschnitt 7), und echte Schülerdaten — auch die aus Littera —
+  gehören nur dorthin. Dazu: Hat der Schulträger eine Vorlage für das IT-Sicherheitskonzept?
+  Dann kommt der Teil des Programms in seiner Form. Außerdem: ob seine IT Betriebssystem und
+  Docker pflegt, wie im Pflegekonzept vorgesehen (Abschnitt 9); wie die Pflege den Server
+  erreicht, vor Ort oder über einen Fernzugang; und was die Seite für die Lieferanten von ihm
+  braucht: einen Namen im Internet, die Freigabe von Port 443 und die Angabe, wie Anfragen aus
+  dem Schulnetz am Server ankommen (4.23); und ob er einen Speicher für die Sicherungen außer
+  Haus stellt (7.3).
+- **Wer die Sichtung gemacht hat** (Abschnitt 9): Reichen Datenschutz-Nachweis und
+  Pflegekonzept als die zwei Bedingungen, werden die drei begründeten Abweichungen im
+  Mahnwesen akzeptiert, und wer wird Vertretung?
+- **Littera:** das Kennwort, das bei der Einrichtung von Littera für dessen SQL Server
+  vergeben wurde — zu fragen bei dem, der Littera eingerichtet hat, nicht bei der Bücherei.
+  Damit öffnen sich womöglich die zwei Sicherungen vom 01. und 02.09.2026, und ein neues
+  Backup ist nicht nötig. Kennt es niemand, bleibt die Littera-Hotline (7.2).
+
+Die übrigen Anfragen, soweit noch nicht gestellt:
+
+- **Sekretariat:** die Schulnummer für die Bescheide (8.1); wie Ersatz für Bücher der
+  Schülerbücherei bisher bezahlt wurde und wer eine Zahlung einbucht (8.3, erster Schritt).
+- **Schulamt:** das Kürzel des Schulamtsbereichs und welches Kassenjahr in die Referenznummer
+  gehört (8.1); der Mail-Erlass vom 11.06.2018 und das aktuelle Musterschreiben — aus dem von
+  2014 stammen heute Zahlstelle und Bankverbindung im Bescheid (8.2).
+- **Datenschutzbeauftragter der Schule:** beteiligen und schriftlich festhalten, ob eine
+  Datenschutz-Folgenabschätzung nötig ist (B4); das Foto auf dem Ausweis (B3; beides 8.5).
+- **Schulträger**, nach der Antwort der Schule: die Zahlungswege der Schülerbücherei (8.3,
+  zweiter Schritt).
+- **An einem Buch selbst:** den Eigentumsvermerk auf den alten Littera-Etiketten der
+  Schülerbücherei ablesen. Entschieden am 28.09.2026: Neue Etiketten tragen denselben
+  Wortlaut; er wird beim Einrichten unter Einstellungen → Schule eingetragen (heute leer, also
+  kein Vermerk). Littera führt den Vermerk je Exemplar: In der Medienliste vom 12.06.2026
+  tragen über 13.000 Exemplare das Land, 2.942 den Schulträger, einige hundert andere
+  Eigentümer (Schule, Förderverein, Bibliothek), rund 50.000 keinen. Zum Ablesen ein Buch
+  nehmen, das dort den Schulträger trägt. Der Vermerk je Exemplar kommt mit (4.24).
+- **Bücherei:** wem die Bücher mit den Littera-Vermerken „Philipp-Reis-Schule", „Bibliothek",
+  „Förderverein", „Info Schulprojekt" und „Dauerleihgabe" gehören — rund 630 Exemplare, bis
+  dahin ohne Zuordnung (4.24).
 
 ### 8.1 E1: Schulamts- und Schulnummer
 
