@@ -37,17 +37,17 @@
 	} = $props();
 </script>
 
-<div class="flex items-center justify-between border-b border-slate-200 pb-4">
+<div class="flex items-center justify-between border-b border-outline-variant pb-4">
 	<div>
-		<h2 class="text-base font-bold text-slate-800">Bestellhistorie</h2>
-		<p class="text-sm text-slate-500 mt-0.5">
+		<h2 class="text-base font-bold text-on-surface">Bestellhistorie</h2>
+		<p class="text-sm text-on-surface-variant mt-0.5">
 			Alle aufgegebenen Bestellungen — automatisch erfasst beim Bestellen
 		</p>
 		<!-- Nur wenn wirklich etwas aussteht. „Alles bestätigt" jeden Tag zu lesen, wäre
 		     dieselbe Zeile ohne Nachricht — auffallen soll die Abweichung. Wer den Satz
 		     sieht, weiß ohne Scrollen, dass in der Statusspalte etwas auf ihn wartet. -->
 		{#if offeneBestaetigungen > 0}
-			<p class="mt-2 flex items-center gap-1.5 text-sm font-medium text-amber-700">
+			<p class="mt-2 flex items-center gap-1.5 text-sm font-medium text-warning">
 				<Clock size={15} aria-hidden="true" />
 				{offeneBestaetigungen === 1
 					? '1 Bestellung wartet noch auf die Bestätigung des Händlers'
@@ -61,11 +61,11 @@
 	{#if zeigeKennzahlen}
 		<div class="text-right">
 			{#if orderStore.preiseErfassen}
-				<div class="text-xs text-slate-400 font-semibold">Gesamtausgaben</div>
-				<div class="text-2xl font-black text-slate-800">{euro(gesamtsumme)}</div>
+				<div class="text-xs text-on-surface-variant font-semibold">Gesamtausgaben</div>
+				<div class="text-2xl font-black text-on-surface">{euro(gesamtsumme)}</div>
 			{:else}
-				<div class="text-xs text-slate-400 font-semibold">Bestellte Exemplare</div>
-				<div class="text-2xl font-black text-slate-800">{gesamtExemplare}</div>
+				<div class="text-xs text-on-surface-variant font-semibold">Bestellte Exemplare</div>
+				<div class="text-2xl font-black text-on-surface">{gesamtExemplare}</div>
 			{/if}
 			<!-- Woraus die Zahl darüber besteht: Für das Schulamt zählt der
 				     Landes-Anteil, für den Schulträger seiner (Migration 109). -->

@@ -162,8 +162,8 @@
 
 <div class="space-y-6">
 	<div>
-		<h2 class="text-base font-bold text-slate-800">Klassensatz-Reservierungen</h2>
-		<p class="text-sm text-slate-500 mt-0.5">
+		<h2 class="text-base font-bold text-on-surface">Klassensatz-Reservierungen</h2>
+		<p class="text-sm text-on-surface-variant mt-0.5">
 			Von Lehrkräften angefragte Klassensätze in Warteschlangen-Reihenfolge (älteste zuerst).
 			Reservieren sperrt keinen Bestand — „Abschließen" schließt den Vorgang nach der Übergabe ab
 			und schickt der Lehrkraft die Bereit-Mail — mit deiner Notiz, wenn du eine schreibst.
@@ -171,7 +171,9 @@
 	</div>
 
 	{#if reservierungen.laedt}
-		<div class="py-16 text-center text-slate-400 text-base animate-pulse">Lade Reservierungen…</div>
+		<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
+			Lade Reservierungen…
+		</div>
 	{:else if reservierungen.ladefehler}
 		<LadeFehler
 			onerneut={reservierungen.laden}
@@ -179,11 +181,11 @@
 			text={reservierungen.ladefehler}
 		/>
 	{:else if reservierungen.offene.length === 0}
-		<div class="py-16 text-center text-slate-400 text-base">
+		<div class="py-16 text-center text-on-surface-variant text-base">
 			Keine offenen Klassensatz-Reservierungen.
 		</div>
 	{:else}
-		<ul class="divide-y divide-slate-100">
+		<ul class="divide-y divide-outline-variant">
 			{#each reservierungen.offene as r (r.id)}
 				{@render reservierungRow(r)}
 			{/each}

@@ -42,21 +42,21 @@
 <div class="w-full h-full flex flex-col gap-6 bg-white p-6 animate-fade-in">
 	<!-- Back Button & Header -->
 	<div
-		class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100"
+		class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant"
 	>
 		<div class="space-y-3">
 			<button
 				onclick={onBack}
-				class="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer group"
+				class="inline-flex items-center gap-1 text-xs font-bold text-on-surface-variant cursor-pointer group"
 			>
 				<span class="transform group-hover:-translate-x-0.5 transition-transform">←</span> Zurück zur
 				Übersicht
 			</button>
 			<div>
-				<h2 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+				<h2 class="text-xl sm:text-2xl font-black text-on-surface tracking-tight">
 					Wareneingang bearbeiten
 				</h2>
-				<p class="mt-1 text-sm text-slate-500">
+				<p class="mt-1 text-sm text-on-surface-variant">
 					Wähle die Positionen aus, die eingetroffen sind und ins System aufgenommen werden sollen.
 				</p>
 				<!-- Der Hinweis steht hier und nicht in einer Meldung nach dem Einbuchen: Er erklärt,

@@ -30,7 +30,7 @@
 </script>
 
 {#if exemplare.length === 0}
-	<p class="text-sm text-slate-400 italic">
+	<p class="text-sm text-on-surface-variant italic">
 		Zu dieser Bestellung sind keine Exemplare hinterlegt. Bei Bestellungen aus der Zeit vor der
 		Exemplar-Zuordnung ist das normal — die bestellten Titel stehen oben.
 	</p>
@@ -38,9 +38,9 @@
 	<div class="space-y-4">
 		{#each gruppen as g (g.titel)}
 			<div>
-				<p class="mb-1.5 text-sm font-semibold text-slate-700">
+				<p class="mb-1.5 text-sm font-semibold text-on-surface">
 					{g.titel}
-					<span class="ml-1 font-normal text-slate-400">({g.stuecke.length})</span>
+					<span class="ml-1 font-normal text-on-surface-variant">({g.stuecke.length})</span>
 				</p>
 				<ul class="flex flex-wrap gap-1.5">
 					{#each g.stuecke as e (e.barcode_id)}
@@ -48,12 +48,12 @@
 							<!-- Drei Zustände, drei Töne. Der Barcode bleibt in jedem Fall lesbar — er ist
 							     die Nummer, die auf dem Buch klebt, und der Grund, warum man hier ist. -->
 							<span
-								class="inline-flex items-center gap-1 rounded-lg border px-2 py-1 font-mono text-xs
+								class="inline-flex items-center gap-1 rounded-lg px-2 py-1 font-mono text-xs
 								{e.ist_ausgesondert
-									? 'border-slate-200 bg-slate-50 text-slate-400 line-through'
+									? 'bg-surface-container text-on-surface-variant line-through'
 									: e.etikett_gedruckt
-										? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-										: 'border-amber-200 bg-amber-50 text-amber-800'}"
+										? 'bg-success-container text-on-success-container'
+										: 'bg-warning-container text-on-warning-container'}"
 								data-tip={e.ist_ausgesondert
 									? 'Ausgesondert'
 									: e.etikett_gedruckt

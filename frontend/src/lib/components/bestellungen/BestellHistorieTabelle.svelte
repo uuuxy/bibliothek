@@ -30,7 +30,7 @@
 	let { bestellungen, euro, datum, kurzdatum, onOeffnen } = $props();
 </script>
 
-<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs">
+<div class="overflow-x-auto rounded-xl border border-outline-variant bg-surface-container-lowest">
 	<Tabelle beschriftung="Bestellhistorie">
 		<thead>
 			<tr>
@@ -61,14 +61,14 @@
 							onOeffnen(b.id);
 						}
 					}}
-					class="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+					class="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
 				>
 					<td class="font-semibold whitespace-nowrap tabular-nums">
 						{datum(b.bestelldatum)}
 					</td>
 					<td class="max-w-0">
-						<span class="block truncate font-semibold text-slate-800">{b.lieferant_name}</span>
-						<span class="block truncate text-sm text-slate-400">
+						<span class="block truncate font-semibold text-on-surface">{b.lieferant_name}</span>
+						<span class="block truncate text-sm text-on-surface-variant">
 							{b.kundennummer ? 'Kd.-Nr. ' + b.kundennummer : b.lieferant_email}
 						</span>
 					</td>
@@ -111,7 +111,7 @@
 					{/if}
 					<!-- Chevron nach rechts: Die Zeile führt weiter, sie klappt nicht mehr auf. -->
 					<td class="text-right">
-						<ChevronRight class="inline-block h-4 w-4 text-slate-400" aria-hidden="true" />
+						<ChevronRight class="inline-block h-4 w-4 text-on-surface-variant" aria-hidden="true" />
 					</td>
 				</tr>
 			{/each}

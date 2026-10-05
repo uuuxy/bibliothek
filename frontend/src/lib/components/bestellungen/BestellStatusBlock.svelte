@@ -87,25 +87,27 @@
 {#if b.bestaetigt_am}
 	<!-- Getönter Container statt Kasten mit Rahmen: In M3 trägt ein erledigter Zustand
 	     Fläche, keine Umrandung. -->
-	<div class="mb-3 flex items-start gap-3 rounded-xl bg-emerald-50 px-4 py-3 text-emerald-900">
-		<CircleCheck size={20} class="mt-0.5 shrink-0 text-emerald-700" aria-hidden="true" />
+	<div
+		class="mb-3 flex items-start gap-3 rounded-xl bg-success-container px-4 py-3 text-on-success-container"
+	>
+		<CircleCheck size={20} class="mt-0.5 shrink-0" aria-hidden="true" />
 		<div>
 			<p class="text-sm font-semibold">
 				{b.bestaetigt_durch === 'lieferant'
 					? 'Der Lieferant hat die Bestellung bestätigt'
 					: 'Bestätigung in der Bibliothek nachgetragen'}
 			</p>
-			<p class="mt-0.5 text-xs text-emerald-800">{quittungsdetails}</p>
+			<p class="mt-0.5 text-xs">{quittungsdetails}</p>
 		</div>
 	</div>
 {:else}
-	<div class="mb-3 rounded-xl border border-slate-200 bg-white">
+	<div class="mb-3 rounded-xl border border-outline-variant bg-surface-container-lowest">
 		<div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
 			<div class="flex items-start gap-3">
-				<Clock size={20} class="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
+				<Clock size={20} class="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
 				<div>
-					<p class="text-sm font-semibold text-slate-800">Warten auf den Händler</p>
-					<p class="mt-0.5 text-xs text-slate-500">
+					<p class="text-sm font-semibold text-on-surface">Warten auf den Händler</p>
+					<p class="mt-0.5 text-xs text-on-surface-variant">
 						{b.link_aktiv
 							? `Der Bestätigungs-Link ging mit der Bestellmail raus${b.link_gueltig_bis ? ` und gilt bis zum ${langdatum(b.link_gueltig_bis)}` : ''}. Sobald der Händler dort bestätigt, erscheint es hier von selbst.`
 							: 'Für diese Bestellung ist kein gültiger Link unterwegs.'}
@@ -118,8 +120,8 @@
 		</div>
 
 		{#if neuerLink}
-			<div class="mx-4 mb-3 rounded-lg bg-blue-50 px-3 py-2.5">
-				<p class="text-xs font-medium text-blue-900">
+			<div class="mx-4 mb-3 rounded-lg bg-primary-container px-3 py-2.5 text-on-primary-container">
+				<p class="text-xs font-medium">
 					Nur jetzt sichtbar — gespeichert wird der Link nicht. Ein früherer ist ab sofort ungültig.{neuerLinkBis
 						? ` Gültig bis zum ${langdatum(neuerLinkBis)}.`
 						: ''}
@@ -140,9 +142,11 @@
 		<!-- Zweite Ebene, bewusst leiser: Seit der Lieferant selbst bestätigt, ist der
 		     Nachtrag nur noch für den Sonderfall da (telefonische Zusage). -->
 		<div
-			class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-2"
+			class="flex flex-wrap items-center justify-between gap-2 border-t border-outline-variant px-4 py-2"
 		>
-			<span class="text-xs text-slate-400">Hat der Händler anders zugesagt? Hier nachtragen:</span>
+			<span class="text-xs text-on-surface-variant"
+				>Hat der Händler anders zugesagt? Hier nachtragen:</span
+			>
 			<div class="flex items-center gap-1">
 				<Button variant="ghost" size="sm" disabled={laeuft} onclick={() => nachtragen('klein')}>
 					Kleine Etiketten

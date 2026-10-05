@@ -19,6 +19,7 @@
 	import BestellDetailPositionen from './BestellDetailPositionen.svelte';
 	import BestellDetailExemplare from './BestellDetailExemplare.svelte';
 	import Button from '../ui/Button.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import BestellMittelDialog from './BestellMittelDialog.svelte';
 	import { mittelLabel } from './mittel.js';
@@ -94,16 +95,18 @@
 	</Button>
 
 	{#if laedt}
-		<div class="animate-pulse py-16 text-center text-base text-slate-400">Lade Bestellung…</div>
-	{:else if fehler}
-		<div class="rounded-xl border border-red-200 bg-red-50 py-8 text-center text-red-650">
-			{fehler}
+		<div class="animate-pulse py-16 text-center text-base text-on-surface-variant">
+			Lade Bestellung…
 		</div>
+	{:else if fehler}
+		<LadeFehler onerneut={laden} titel="Bestellung nicht geladen" text={fehler} />
 	{:else if bestellung}
-		<div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
+		<div
+			class="flex flex-wrap items-start justify-between gap-4 border-b border-outline-variant pb-4"
+		>
 			<div>
 				<div class="flex flex-wrap items-center gap-2">
-					<h2 class="text-base font-bold text-slate-800">{bestellung.lieferant_name}</h2>
+					<h2 class="text-base font-bold text-on-surface">{bestellung.lieferant_name}</h2>
 					<!-- Der Topf gehört zum Beleg wie die Kundennummer: Er steht auf dem
 					     Anschreiben, das der Händler bekommen hat (Migration 109). „ohne
 					     Zuordnung" ist eine Alt-Bestellung, deren Topf nicht eindeutig war —
@@ -118,18 +121,18 @@
 						</button>
 					{/if}
 				</div>
-				<p class="mt-0.5 text-sm text-slate-500">
+				<p class="mt-0.5 text-sm text-on-surface-variant">
 					{langdatum(bestellung.bestelldatum)}
 					{#if bestellung.kundennummer}· Kd.-Nr. {bestellung.kundennummer}{/if}
 				</p>
-				<p class="text-sm text-slate-400">{bestellung.lieferant_email}</p>
+				<p class="text-sm text-on-surface-variant">{bestellung.lieferant_email}</p>
 			</div>
 			<div class="text-right">
 				{#if orderStore.preiseErfassen}
-					<div class="text-xs font-semibold text-slate-400">Bestellwert</div>
-					<div class="text-2xl font-black text-slate-800">{euro(bestellung.gesamtbetrag)}</div>
+					<div class="text-xs font-semibold text-on-surface-variant">Bestellwert</div>
+					<div class="text-2xl font-black text-on-surface">{euro(bestellung.gesamtbetrag)}</div>
 				{/if}
-				<div class="text-sm text-slate-500 tabular-nums">
+				<div class="text-sm text-on-surface-variant tabular-nums">
 					{bestellung.anzahl_exemplare} Exemplare bestellt
 				</div>
 			</div>
@@ -150,7 +153,7 @@
 		/>
 
 		<section>
-			<h3 class="mb-2 text-base font-bold text-slate-700">Bestellte Titel</h3>
+			<h3 class="mb-2 text-base font-bold text-on-surface">Bestellte Titel</h3>
 			<BestellDetailPositionen
 				positionen={bestellung.positionen}
 				{euro}
@@ -160,10 +163,10 @@
 		</section>
 
 		<section>
-			<h3 class="mb-2 text-base font-bold text-slate-700">
+			<h3 class="mb-2 text-base font-bold text-on-surface">
 				Exemplare aus dieser Bestellung
 				{#if bestellung.exemplare.length > 0}
-					<span class="font-normal text-slate-400">({bestellung.exemplare.length})</span>
+					<span class="font-normal text-on-surface-variant">({bestellung.exemplare.length})</span>
 				{/if}
 			</h3>
 			<BestellDetailExemplare exemplare={bestellung.exemplare} />

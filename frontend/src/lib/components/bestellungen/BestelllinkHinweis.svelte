@@ -49,14 +49,14 @@
 {#if sichtbar}
 	<div
 		role="alert"
-		class="no-print flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] border-l-amber-500 bg-white py-3 pr-4 pl-3.5"
+		class="no-print flex items-start gap-3 rounded-md border border-outline-variant border-l-[3px] border-l-warning bg-surface-container-lowest py-3 pr-4 pl-3.5"
 	>
-		<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+		<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
 		<div class="min-w-0 flex-1">
-			<p class="text-sm font-semibold text-slate-800">
+			<p class="text-sm font-semibold text-on-surface">
 				Bestellungen gehen ohne Bestätigungs-Link raus
 			</p>
-			<p class="mt-0.5 text-xs leading-relaxed text-slate-500">
+			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">
 				Der Hauptlieferant soll die Etikettengröße selbst wählen und damit bestätigen — dafür
 				braucht das System die öffentliche Adresse, unter der er es von außen erreicht
 				(Einstellungen → Erreichbarkeit & Alarme).
@@ -77,12 +77,12 @@
 	     eine über diese Ansicht. Sie sagt, was sie nicht weiß, statt Ruhe vorzutäuschen. -->
 	<div
 		role="status"
-		class="no-print flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] border-l-slate-400 bg-white py-3 pr-4 pl-3.5"
+		class="no-print flex items-start gap-3 rounded-md border border-outline-variant border-l-[3px] border-l-outline bg-surface-container-lowest py-3 pr-4 pl-3.5"
 	>
-		<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+		<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0 text-on-surface-variant" aria-hidden="true" />
 		<div class="min-w-0 flex-1">
-			<p class="text-sm font-semibold text-slate-800">Bestell-Einstellungen nicht geladen</p>
-			<p class="mt-0.5 text-xs leading-relaxed text-slate-500">
+			<p class="text-sm font-semibold text-on-surface">Bestell-Einstellungen nicht geladen</p>
+			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">
 				Ob die Bestellmails einen Bestätigungs-Link tragen, konnte gerade nicht geprüft werden.
 				Seite neu laden — bleibt der Hinweis, vor dem Bestellen nachsehen.
 			</p>

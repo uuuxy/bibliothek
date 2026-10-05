@@ -58,7 +58,6 @@ const BESTAND = [
 	'src/lib/components/OmniboxBlockAlert.svelte',
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
 	'src/lib/components/auth/Login.svelte',
-	'src/lib/components/bestellungen/BestellHistorieTabelle.svelte',
 	'src/lib/components/labels/LabelPreview.svelte',
 	'src/lib/components/students/AuswahlAktionsleiste.svelte',
 	'src/lib/components/ui/CoverPeek.svelte',

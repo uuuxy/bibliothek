@@ -139,11 +139,11 @@
 		/>
 
 		{#if loading}
-			<div class="py-16 text-center text-slate-400 text-base animate-pulse">
+			<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
 				Lade Bestellhistorie…
 			</div>
 		{:else if bestellungen.length === 0}
-			<div class="py-16 text-center text-slate-400 text-base">
+			<div class="py-16 text-center text-on-surface-variant text-base">
 				{#if mittel}
 					Keine Bestellungen in diesem Topf.<br />
 					<span class="text-sm">Andere Mittelherkunft wählen, um alle zu sehen.</span>
@@ -158,7 +158,7 @@
 			<!-- Ehrlich sagen, dass die Liste nicht alles zeigt. Ohne den Satz sucht jemand eine
 		     ältere Bestellung, findet sie nicht und hält sie für gelöscht. -->
 			{#if gekappt}
-				<p class="text-center text-xs text-slate-400">
+				<p class="text-center text-xs text-on-surface-variant">
 					Neueste {bestellungen.length} von {gesamtImBlick} Bestellungen — ältere stehen im Bericht.
 				</p>
 			{/if}
