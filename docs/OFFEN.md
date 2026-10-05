@@ -104,7 +104,7 @@ Datenbank und der Littera-Übernahme (7.2).
 **Im Code,** in dieser Reihenfolge:
 
 1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — die Frage ist am 05.10.2026 vorgelegt.
+2. **5.46** (Portal: Wunsch und Meldung, das Buch aus Vorschlägen) — entschieden am 05.10.2026.
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
@@ -591,7 +591,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 05.10.2026: 461 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 05.10.2026: 452 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -611,31 +611,6 @@ Im Ausweis-Designer bleiben 29 Stellen: die Farben der Karte (`themes` in
 auf der gezeichneten Karte (`CanvasElement.svelte`, `CardFace.svelte`). Die Farbe der Karte
 steht als Klassenliste im zentral gespeicherten Entwurf und wird gedruckt; die Karte bleibt
 weiß, auch wenn die Oberfläche ihr Farbschema wechselt.
-
-**Theke, Scanfeld — vorgelegt am 05.10.2026, Antwort offen.** Das Scanfeld färbt nach einem
-Scan eine Sekunde lang Fläche und Rand (`farbZustand` in `Omnibox.svelte`: grün gebucht, gelb
-Hinweis, rot abgelehnt), dazu blitzt der Bildschirmrand 300 ms (`OmniboxScreenFlash.svelte`).
-Nachgelesen am 05.10.2026:
-
-- M3, Search (Specs), States: „Enabled", „Hovered", „Focused", „Pressed (ripple)". Die
-  Suchleiste kennt keinen Zustand für Erfolg oder Fehler; Googles Token-Datei der Suchleiste
-  führt keine Fehlerfarbe (material-web, `_md-comp-search-bar.scss`).
-- M3, Text fields (Specs): „Error messages are displayed below the text field as supporting
-  text until fixed." Die Token des Textfelds färben im Fehlerzustand Rand oder Linie, Symbol
-  und den Text darunter in `error` (`error-outline-color`, `error-active-indicator-color`,
-  `error-supporting-text-color`); einen Wert für die Fläche im Fehlerzustand gibt es nicht.
-- M3, Color roles: „Use error roles to communicate error states, such as an incorrect password
-  entered into a text field."
-- M3, Advanced customizations, „Define static colors": „a static green color called Success is
-  defined in addition to the scheme, and applied to UI to indicate a success state"; im Beispiel
-  an einer Karte („Success container color applied to a card container").
-- M3, Snackbar: „Snackbars inform users of a process that an app has performed or will perform."
-
-Drei Fassungen liegen als Bild vor: A wie heute (blasse Fläche, Rand in Palettenfarbe); B nur
-der Rand in der Rollenfarbe, die Fläche bleibt — die Form, die M3 dem Fehlerzustand eines Feldes
-gibt; C Fläche in `…-container` und Rand in der Rollenfarbe. Die Flächenfarbe trägt in M3 eine
-eigene Fläche wie eine Karte; so steht die Rückmeldung am Inventur-Scanner
-(`inventur/ScanRueckmeldung.svelte`).
 
 Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 
@@ -847,43 +822,38 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem 01.10.2026
   „Forderungen".
 
-### 5.46 Portal: ein Weg für Wunsch und Meldung
+### 5.46 Portal: Wunsch und Meldung, das Buch aus Vorschlägen
 
-Wunsch vom 01.10.2026: Im Portal, Reiter „Meine Anliegen", stehen über dem Formular zwei Knöpfe,
-„Buchwunsch" und „Etwas stimmt nicht". Beide führen zum selben Formular und zum selben Absenden;
-es soll einer sein. Am Code nachgesehen am 03.10.2026 (`portal/AnliegenWidget.svelte`): Die Wahl
-ändert die Beschriftung des ersten Feldes („Welches Buch?" oder „Worum geht es?"), dessen
-Beispieltext und die Meldung nach dem Absenden. Am Server bestimmt sie den Betreff der Mail beim
-Erledigen (`api/anliegen.go`), in der Liste der Bibliothek das Abzeichen „Wunsch" oder „Meldung"
-(`bestellungen/AnliegenListe.svelte`). Die zwei Knöpfe sind von Hand gebaut, nicht aus
-`ui/Segmente`.
+Im Portal, Reiter „Meine Anliegen", stehen über dem Formular zwei Knöpfe, „Buchwunsch" und
+„Etwas stimmt nicht"; vorbelegt ist „Buchwunsch" (`portal/AnliegenWidget.svelte`). Beide führen
+zum selben Formular. Die Wahl ändert die Beschriftung des ersten Feldes, die Meldung nach dem
+Absenden, den Betreff der Mail beim Erledigen (`api/anliegen.go`) und in der Liste der Bibliothek
+das Abzeichen: „Wunsch" grau, „Meldung" rot (`bestellungen/AnliegenListe.svelte`). Sie steht
+außerdem in der Auskunft über ein Konto (`api/dsgvo_pdf_konto.go`). Die Liste der Bibliothek
+zeigt die ältesten Einträge zuerst (`repository/anliegen_repo.go`).
 
-Vor dem Bauen zu klären: Fällt die Unterscheidung ganz weg — ein Formular, ein Abzeichen, ein
-Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? Kategorie B.
+**Entschieden am 05.10.2026, nicht gebaut.** Kategorie B.
 
-Vorgelegt am 05.10.2026, Antwort offen: a) sie fällt ganz weg — ein Formular ohne Vorauswahl,
-kein Abzeichen, der Betreff „Ihr Anliegen ist erledigt" (empfohlen); b) sie bleibt, gewählt
-wird mit `ui/Segmente`. Sortiert oder gefiltert wird nach der Art nirgends; außer den drei
-genannten Stellen liest sie die Auskunft über ein Konto (`api/dsgvo_pdf_konto.go`). Verloren
-ginge mit a das rote Abzeichen „Meldung" in der Liste der Bibliothek („Wunsch" ist grau). Die
-Vorauswahl steht auf „Buchwunsch": Wer nichts anklickt und ein Problem meldet, steht dort schon
-heute als Wunsch.
+- **Die Wahl bleibt, ohne Vorbelegung.** Zwei gleich gewichtete Knöpfe sind der Einstieg
+  („Buchwunsch", „Problem melden"), mit den Symbolen des Hauses; das Formular erscheint erst
+  nach dem Klick. Grund: Wünsche bleiben liegen, bis bestellt wird, ein Problem will am selben
+  Tag erledigt werden, und mit der Vorbelegung stand ein Problem als Wunsch in der Liste, sobald
+  niemand umschaltete.
+- **Zwei Formulare.** Beim Problem wird das Buch aus Vorschlägen gewählt, die beim Tippen
+  erscheinen, mit Cover (Issue 700); beim Wunsch bleibt freier Text, etwa für ein Buch, das es
+  noch nicht gibt. Der Server nimmt heute keinen Verweis auf ein Buch an (`api/anliegen.go`:
+  `art`, `titel_text`, `klasse`, `kommentar`); die Spalten `titel_id` und `isbn` in
+  `lehrer_anliegen` gibt es noch. Titel sucht das Portal über `GET /api/public/opac/suche`.
+- **Die Liste der Bibliothek in zwei Abschnitten:** „Meldungen" oben, „Wünsche" darunter, je die
+  ältesten zuerst. Das rote Abzeichen bleibt; eine rote Fläche um die Meldungen gibt es nicht.
 
-Besprochen am 05.10.2026, noch nicht entschieden. Gegen a spricht: Die Liste der Bibliothek zeigt
-die ältesten Einträge zuerst (`repository/anliegen_repo.go`). Bleiben Wünsche stehen, bis bestellt
-ist, steht ein Problem von heute darunter, und das rote Abzeichen ist das Einzige, was es
-hervorhebt. Es entscheidet sich an zwei Fragen an die Bibliothek: ob Wünsche gleich abgehakt
-werden oder stehen bleiben, und ob Probleme über das Portal kommen. Bleibt die Wahl, dann ohne
-Vorauswahl. Littera kennt keinen Weg für Lehrkräfte; den Bedarf erfasst dort die Bibliothek im
-Erwerb (Handbuch, „Bedarfsermittlung", „Bestellvorschläge").
-
-Dazu der Wunsch vom 03.10.2026 (Issue 700): Bei einem Problem sollen im Portal die Bücher zur
-Auswahl stehen statt nur des Freitextfelds. **Entschieden am 05.10.2026:** Im Feld erscheinen
-beim Tippen passende Titel der Schule zum Anklicken, mit Cover; freier Text bleibt möglich, etwa
-für ein Buch, das es noch nicht gibt. Heute trägt das Formular drei Textfelder, und der Server
-nimmt keinen Verweis auf ein Buch an (`api/anliegen.go`: `art`, `titel_text`, `klasse`,
-`kommentar`); die Spalten `titel_id` und `isbn` in `lehrer_anliegen` gibt es noch. Gebaut wird
-zusammen mit der Antwort oben.
+Nachgelesen am 05.10.2026: M3, Radio button (Guidelines): „Radio buttons should always have one
+option pre-selected." Eine Pflichtwahl ohne Vorbelegung ist deshalb kein Paar von
+Auswahlknöpfen. M3, Buttons (Guidelines): „Buttons let people take action and make choices with
+one tap." M3, Color roles: „Use error roles to communicate error states". M3, Lists
+(Guidelines): „Gaps or dividers can separate lists into items and groups". Littera kennt keinen
+Weg für Lehrkräfte; den Bedarf erfasst dort die Bibliothek im Erwerb (Handbuch,
+„Bedarfsermittlung", „Bestellvorschläge").
 
 ### 5.49 Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
 
