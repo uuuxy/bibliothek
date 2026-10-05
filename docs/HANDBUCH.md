@@ -445,12 +445,13 @@ entsteht nur für ein Buch, dessen Frist abgelaufen ist; wurde ein Buch zwischen
 Liste und dem Druck verlängert, steht es nicht auf dem Brief.
 
 **Sammel-Mahnlauf** per Mail an die Klassenleitungen (Klassen wählen, Empfänger prüfen, dann
-senden). Hinter dem Drucker-Knopf stehen die Mahnliste einer Klasse und die Übersichtsliste.
-Mail und Listen zählen nicht. Lehrkräfte werden nie angemahnt. Wer die Schule verlassen hat,
+senden): Jede Klassenleitung bekommt ein Blatt je Kind zum Austeilen. **Liste drucken** druckt
+die Mahnliste als Tabelle, je Buch eine Zeile mit Klasse, Kind, Buch, Frist und Zahl der
+Mahnungen — so, wie Reiter, Klassenfilter und Suche sie gerade zeigen, geordnet nach Klasse und
+Name. Mail und Liste zählen nicht. Lehrkräfte werden nie angemahnt. Wer die Schule verlassen hat,
 steht in der Liste unter „Ehemalige" statt unter seiner früheren Klasse. Er bekommt den Mahnbrief
-wie alle über die Auswahl; an eine Klassenleitung geht er nicht, weder im Mahnlauf noch in der
-Mahnliste einer Klasse. Welche Klasse an welche Lehrkraft geht, steht unter _Einstellungen →
-Mahnwesen-Routing_. Diese Liste wird dort von Hand
+wie alle über die Auswahl; an eine Klassenleitung geht er nicht. Welche Klasse an welche
+Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. Diese Liste wird dort von Hand
 gepflegt, die LUSD liefert sie nicht, und an die Klassenleitungen geht nur, was jemand von Hand
 sendet (Mahnlauf, Abgänger-Kontoauszüge).
 Die Versetzung rückt die Zuordnungen eine Stufe hoch, außer von 6 nach 7 und von 10 in die

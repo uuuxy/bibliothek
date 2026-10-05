@@ -3,11 +3,8 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"net/http"
 
-	"bibliothek/apierrors"
 	"bibliothek/pkg/coverdatei"
-	"bibliothek/pkg/httpresp"
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -210,29 +207,4 @@ func pluralMedium(n int) string {
 		return "Medium"
 	}
 	return "Medien"
-}
-
-// GetMahnwesenPDFHandler generates and streams the full overdue PDF.
-// GET /api/mahnwesen/pdf
-func (s *Server) GetMahnwesenPDFHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, "")
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		pdfBytes, err := generateMahnPDF(klassen)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition,
-			fmt.Sprintf("attachment; filename=mahnliste_%s.pdf", schulzeit.Jetzt().Format(dateFormatISO)))
-		httpresp.Write(w, pdfBytes)
-	}
 }

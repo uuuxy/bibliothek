@@ -10,7 +10,7 @@
 	import { hatRecht } from './menu.js';
 	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
-	import { Info, TriangleAlert } from '@lucide/svelte';
+	import { TriangleAlert } from '@lucide/svelte';
 
 	// „Alle anmahnen" lief frueher gegen ein window.confirm: alles oder nichts, immer an
 	// die hinterlegten Klassenleitungen. Der Dialog steht jetzt als Tuersteher davor —
@@ -49,15 +49,6 @@
 		}
 	});
 </script>
-
-{#if mahnwesenStore.globalErrorToast}
-	<div
-		class="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in bg-error text-on-error flex items-center gap-2"
-	>
-		<Info class="h-5 w-5" aria-hidden="true" />
-		{mahnwesenStore.globalErrorToast}
-	</div>
-{/if}
 
 <div class="w-full h-full flex flex-col">
 	{#if offlineSync.pendingCount > 0}

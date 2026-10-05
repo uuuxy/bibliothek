@@ -7,10 +7,7 @@
      Symbolgröße des Hauses), Breite zwischen 112 und 280 dp. Dieselbe Fläche wie die
      Liste des Auswahlfelds (SelectListe.svelte).
 
-     Bis zum 06.09.2026 gab es zwei Menüs im Haus, jedes selbst gebaut
-     (MahnwesenDruckMenue, StudentProfileActions) — beide in Paletten-Farben und ohne
-     Tastaturbedienung der Einträge. Dieses Bauteil ist die eine Stelle; beide
-     sind seit dem 07.09.2026 darauf umgestellt (bbad2f39).
+     Dieses Bauteil ist die eine Stelle für Menüs im Haus.
 
      POSITION FIXED wie SelectListe: Das Menü öffnet sich in Tabellen und Spalten mit
      overflow, absolut positioniert würde es dort abgeschnitten.
@@ -22,14 +19,13 @@
      „Disabled menu items can receive focus but aren't selectable") — deshalb
      aria-disabled wie in SelectListe; ein <button disabled> nimmt im Browser keinen Fokus.
 
-     Seit 07.09.2026 tragen die beiden alten Menüs dieses Bauteil, und dafür kann es
-     zweierlei mehr: einen eigenen Auslöser (`ausloeser`-Snippet — der Split-Button
-     „Ausweis drucken ▾", der Drucker-Knopf im Mahnwesen; der Knopf mit aria-haspopup
-     bekommt den Fokus zurück) und einen Kopf über den Einträgen (`kopf`-Snippet — die
-     Klassenwahl für die Mahnliste im Mahnwesen). Mit Kopf steht die Höhe erst nach dem
-     Rendern fest, deshalb wird gemessen statt gerechnet (menueGeometrie.js), und Tab
-     wandert IN den Kopf statt das Menü zu schließen — geschlossen wird, wenn der Fokus
-     das Menü verlässt. Gruppen-Überschriften: `ueberschriftDavor` am Eintrag. -->
+     Zweierlei über die Einträge hinaus: ein eigener Auslöser (`ausloeser`-Snippet — der
+     Split-Button „Ausweis drucken ▾"; der Knopf mit aria-haspopup bekommt den Fokus
+     zurück) und ein Kopf über den Einträgen (`kopf`-Snippet). Mit Kopf steht die Höhe
+     erst nach dem Rendern fest, deshalb wird gemessen statt gerechnet
+     (menueGeometrie.js), und Tab wandert in den Kopf, statt das Menü zu schließen —
+     geschlossen wird, wenn der Fokus das Menü verlässt. Gruppen-Überschriften:
+     `ueberschriftDavor` am Eintrag. -->
 <script>
 	import { tick } from 'svelte';
 	import { EllipsisVertical } from '@lucide/svelte';

@@ -20,7 +20,9 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
-	import MahnwesenDruckMenue from './MahnwesenDruckMenue.svelte';
+	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { baueMahnlisteDruckHtml } from '../../utils/mahnlisteDruck.js';
+	import { druckeDokument, FENSTER_BLOCKIERT } from '../../utils/listenDruck.js';
 	import { FileText, Mail, Printer, RefreshCw, X } from '@lucide/svelte';
 
 	/**
@@ -45,6 +47,17 @@
 			0
 		)
 	);
+
+	// Druckt die Liste, wie Reiter, Klassenfilter und Suche sie gerade zeigen. Das Blatt
+	// entsteht im Browser aus den geladenen Zeilen und zählt keine Mahnung.
+	function listeDrucken() {
+		const html = baueMahnlisteDruckHtml(mahnwesenStore.filteredSchueler, {
+			ansicht: mahnwesenStore.activeFilter,
+			klasse: mahnwesenStore.selectedKlasse,
+			suche: mahnwesenStore.searchQuery
+		});
+		if (!druckeDokument(html)) toastStore.addToast(FENSTER_BLOCKIERT, 'warning');
+	}
 </script>
 
 {#if mahnwesenStore.selectedIds.size > 0}
@@ -88,7 +101,14 @@
 		<RefreshCw class="h-4 w-4" aria-hidden="true" />
 	</Button>
 
-	<MahnwesenDruckMenue />
+	<Button
+		variant="secondary"
+		onclick={listeDrucken}
+		disabled={mahnwesenStore.filteredSchueler.length === 0}
+	>
+		<Printer class="h-4 w-4" aria-hidden="true" />
+		Liste drucken
+	</Button>
 
 	<!-- „Alle anmahnen" ist die einzige E-Mail-Aktion, nur hier steht das Umschlag-Symbol.
 	     Nur mit dem Recht der Route dahinter (create_orders, entschieden in Mahnwesen.svelte);

@@ -4,6 +4,7 @@
 	import Select from './components/ui/Select.svelte';
 	import BorrowersListe from './components/BorrowersListe.svelte';
 	import { baueAusleiherDruckHtml } from './utils/ausleiherDruck.js';
+	import { druckeDokument, FENSTER_BLOCKIERT } from './utils/listenDruck.js';
 	import { fmtDateDE as fmtDate } from './utils/dates.js';
 	import { Printer, Users } from '@lucide/svelte';
 	import Suchfeld from './components/ui/Suchfeld.svelte';
@@ -32,27 +33,8 @@
 	);
 
 	function printAusleiher() {
-		const printWindow = window.open('', '_blank', 'width=800,height=600');
-		if (!printWindow) {
-			toastStore.addToast('Bitte erlaube Popups, um die Liste zu drucken.', 'warning');
-			return;
-		}
-
-		printWindow.document.open();
-		printWindow.document.write(baueAusleiherDruckHtml(filteredBorrowers, book, filterKlasse));
-		printWindow.document.close();
-
-		// Drucken wird VON HIER angestoßen, nicht mehr von einem <script> im geschriebenen
-		// Dokument. Der Grund ist keine Stilfrage: Ein per window.open('') erzeugtes
-		// about:blank erbt die CSP des Openers, und die erlaubt nur script-src 'self'.
-		// Das eingebettete Skript wurde also nie ausgeführt — das Fenster ging auf und
-		// blieb stehen, drucken musste man von Hand (gemessen am 06.08.2026).
-		//
-		// Aus dem Opener heraus ist es kein Inline-Skript mehr, sondern ein gewöhnlicher
-		// Aufruf auf dem gleichen Origin. document.write ist synchron und das Dokument
-		// enthält keine nachzuladenden Ressourcen, deshalb steht der Inhalt hier bereits.
-		printWindow.focus();
-		printWindow.print();
+		const html = baueAusleiherDruckHtml(filteredBorrowers, book, filterKlasse);
+		if (!druckeDokument(html)) toastStore.addToast(FENSTER_BLOCKIERT, 'warning');
 	}
 </script>
 

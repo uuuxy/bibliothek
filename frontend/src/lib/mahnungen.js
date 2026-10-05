@@ -4,6 +4,18 @@
 import { formatDatum } from './utils/format.js';
 
 /**
+ * Wie die Ansichten der Mahnliste heißen, am Reiter wie auf dem Ausdruck. Der Schlüssel
+ * ist der Filterwert des Stores.
+ * @type {Record<string, string>}
+ */
+export const ANSICHTEN = {
+	Alle: 'Alle',
+	'1. Erinnerung': 'Akut fällig',
+	Mahnung: 'Eskaliert',
+	Schadensersatz: 'Schadensersatz'
+};
+
+/**
  * Die Mahnungen eines Kindes: die höchste Zahl und der jüngste Tag über seine Bücher. Ein
  * später fällig gewordenes Buch steht noch bei null, während zum ersten schon zwei Briefe
  * hinausgingen.

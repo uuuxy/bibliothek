@@ -47,7 +47,7 @@ function createMahnwesenStore() {
 
 	// Filter und Auswahl
 	let expandedKlassen = /** @type {Set<string>} */ (new SvelteSet());
-	let selectedKlasse = $state(''); // Klassenfilter (leer = alle); steuert Liste UND Klassen-PDF
+	let selectedKlasse = $state(''); // Klassenfilter (leer = alle)
 	let searchQuery = $state(''); // Freitextsuche über Name/Klasse
 
 	// MD3 Filter & Bulk Actions
@@ -227,19 +227,10 @@ function createMahnwesenStore() {
 		// siehe mahnwesenMail.svelte.js).
 		sendBulkOverdueMails: mailStore.sendBulkOverdueMails,
 
-		// Expose pdf store methods and state directly
 		get pdfLoading() {
 			return pdfStore.pdfLoading;
 		},
-		get klassePdfLoading() {
-			return pdfStore.klassePdfLoading;
-		},
-		get globalErrorToast() {
-			return pdfStore.globalErrorToast;
-		},
-		printSelectedMahnungen: printSelectedMahnungenWrapper,
-		downloadPDF: pdfStore.downloadPDF,
-		downloadKlassePDF: pdfStore.downloadKlassePDF
+		printSelectedMahnungen: printSelectedMahnungenWrapper
 	};
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { fireEvent, render } from '@testing-library/svelte';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import MahnwesenAktionen from './MahnwesenAktionen.svelte';
@@ -40,7 +40,14 @@ beforeAll(async () => {
 			klassen: [
 				{
 					klasse: '5a',
-					schueler: [{ schueler_id: 's1', name: 'Test Schüler', klasse: '5a', buecher: [] }]
+					schueler: [
+						{
+							schueler_id: 's1',
+							name: 'Test Schüler',
+							klasse: '5a',
+							medien: [{ titel: 'Testbuch', faellig_am: '24.09.2026', tage_ueberfaellig: 11 }]
+						}
+					]
 				}
 			]
 		})
@@ -60,6 +67,43 @@ describe('MahnwesenAktionen', () => {
 		// Die Seite bleibt bedienbar: Neu laden und Drucken hängen an view_students, also
 		// am Recht, mit dem sie überhaupt offen ist. Papier ist hier der Notweg.
 		expect(ohne.queryByRole('button', { name: 'Daten neu laden' })).toBeTruthy();
+	});
+
+	it('druckt mit „Liste drucken" die Liste, wie sie gerade dasteht', async () => {
+		const fenster = {
+			document: { open: vi.fn(), write: vi.fn(), close: vi.fn() },
+			focus: vi.fn(),
+			print: vi.fn()
+		};
+		const oeffnen = vi.spyOn(window, 'open').mockReturnValue(/** @type {any} */ (fenster));
+		try {
+			const zeile = render(MahnwesenAktionen, {
+				...PROPS,
+				darfBescheid: false,
+				darfMahnlauf: false
+			});
+			await fireEvent.click(zeile.getByRole('button', { name: 'Liste drucken' }));
+
+			const html = fenster.document.write.mock.calls[0][0];
+			expect(html).toContain('<h1>Mahnliste</h1>');
+			expect(html).toContain(
+				'<td class="schmal">5a</td><td>Test Schüler</td><td>Testbuch</td><td class="schmal">24.09.2026</td>'
+			);
+			expect(fenster.print).toHaveBeenCalledTimes(1);
+			zeile.unmount();
+
+			// Nichts in der Liste, nichts zu drucken: Die Suche trifft kein Kind.
+			mahnwesenStore.searchQuery = 'gibt es nicht';
+			const leer = render(MahnwesenAktionen, {
+				...PROPS,
+				darfBescheid: false,
+				darfMahnlauf: false
+			});
+			expect(leer.getByRole('button', { name: 'Liste drucken' })).toHaveProperty('disabled', true);
+		} finally {
+			mahnwesenStore.searchQuery = '';
+			oeffnen.mockRestore();
+		}
 	});
 
 	it('bindet den Knopf in Mahnwesen.svelte an create_orders — das Recht der Route', () => {

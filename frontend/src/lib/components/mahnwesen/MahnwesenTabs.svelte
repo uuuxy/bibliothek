@@ -12,6 +12,7 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import { bescheideStore } from '../../stores/bescheide.svelte.js';
 	import Reiter from '../ui/Reiter.svelte';
+	import { ANSICHTEN } from '../../mahnungen.js';
 
 	/** Höchste Überfälligkeit eines Schülers in Tagen. @param {any} s */
 	const maxTage = (s) =>
@@ -35,12 +36,14 @@
 	// mit gemeldetem Verlust oder Schaden, mit oder ohne Brief. Die Zahl zählt, was bei
 	// der Schule liegt (bescheidStatus.liegtBeiDerSchule) — nicht nur die abgelaufenen
 	// Fristen, sonst stand ein frischer Brief mit „0" am Reiter.
-	const register = $derived([
-		{ id: 'Alle', label: 'Alle', anzahl: zaehle(() => true) },
-		{ id: '1. Erinnerung', label: 'Akut fällig', anzahl: zaehle((s) => maxTage(s) <= 14) },
-		{ id: 'Mahnung', label: 'Eskaliert', anzahl: zaehle((s) => maxTage(s) > 14) },
-		{ id: 'Schadensersatz', label: 'Schadensersatz', anzahl: bescheideStore.beiDerSchule }
-	]);
+	const register = $derived(
+		[
+			{ id: 'Alle', anzahl: zaehle(() => true) },
+			{ id: '1. Erinnerung', anzahl: zaehle((s) => maxTage(s) <= 14) },
+			{ id: 'Mahnung', anzahl: zaehle((s) => maxTage(s) > 14) },
+			{ id: 'Schadensersatz', anzahl: bescheideStore.beiDerSchule }
+		].map((r) => ({ ...r, label: ANSICHTEN[r.id] }))
+	);
 	// Das Register „Kollegium" (klasse='lehrer') ist mit Migration 072 gefallen:
 	// Lehrkräfte sind Personal-Konten, ihre Handapparat-Ausleihen laufen bewusst
 	// ohne Mahn-Eskalation (1 Jahr Frist) — siehe Befund F4, bewertung/.

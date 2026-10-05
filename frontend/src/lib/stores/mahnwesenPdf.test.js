@@ -54,50 +54,6 @@ afterEach(() => {
 
 const heute = () => new Date().toISOString().slice(0, 10);
 
-describe('useMahnwesenPdf.downloadPDF', () => {
-	it('lädt die globale Mahnliste und stößt den Browser-Download an', async () => {
-		apiFetchMock.mockResolvedValueOnce(mockPdfResponse());
-		const store = useMahnwesenPdf();
-
-		await store.downloadPDF();
-
-		expect(apiFetch).toHaveBeenCalledWith('/api/mahnwesen/pdf');
-		expect(clicks).toEqual([{ href: 'blob:mock-url', download: `mahnliste_${heute()}.pdf` }]);
-		expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
-		expect(store.pdfLoading).toBe(false);
-	});
-
-	it('setzt pdfLoading während des Ladens und danach zurück', async () => {
-		/** @type {(value: any) => void} */
-		let resolveFetch = () => {};
-		apiFetchMock.mockImplementationOnce(
-			() =>
-				new Promise((res) => {
-					resolveFetch = res;
-				})
-		);
-		const store = useMahnwesenPdf();
-
-		const pending = store.downloadPDF();
-		expect(store.pdfLoading).toBe(true);
-
-		resolveFetch(mockPdfResponse());
-		await pending;
-		expect(store.pdfLoading).toBe(false);
-	});
-
-	it('meldet Fehler per alert und lädt nichts herunter', async () => {
-		apiFetchMock.mockResolvedValueOnce(mockErrorResponse(''));
-		const store = useMahnwesenPdf();
-
-		await store.downloadPDF();
-
-		expect(clicks).toEqual([]);
-		expect(toastStore.addToast).toHaveBeenCalledTimes(1);
-		expect(store.pdfLoading).toBe(false);
-	});
-});
-
 describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 	const schuelerListe = [
 		{
@@ -146,6 +102,25 @@ describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 		expect(store.pdfLoading).toBe(false);
 	});
 
+	it('setzt pdfLoading während des Ladens und danach zurück', async () => {
+		/** @type {(value: any) => void} */
+		let resolveFetch = () => {};
+		apiFetchMock.mockImplementationOnce(
+			() =>
+				new Promise((res) => {
+					resolveFetch = res;
+				})
+		);
+		const store = useMahnwesenPdf();
+
+		const pending = store.printSelectedMahnungen(new Set(['s2']), () => schuelerListe, vi.fn());
+		expect(store.pdfLoading).toBe(true);
+
+		resolveFetch(mockPdfResponse());
+		await pending;
+		expect(store.pdfLoading).toBe(false);
+	});
+
 	it('behält Auswahl und Daten bei einem Serverfehler', async () => {
 		apiFetchMock.mockResolvedValueOnce(mockErrorResponse('Drucker brennt'));
 		const store = useMahnwesenPdf();
@@ -159,52 +134,5 @@ describe('useMahnwesenPdf.printSelectedMahnungen', () => {
 		expect(selectedIds.size).toBe(1); // Auswahl bleibt für einen zweiten Versuch
 		expect(refreshData).not.toHaveBeenCalled();
 		expect(store.pdfLoading).toBe(false);
-	});
-});
-
-describe('useMahnwesenPdf.downloadKlassePDF', () => {
-	it('tut nichts ohne ausgewählte Klasse', async () => {
-		const store = useMahnwesenPdf();
-		await store.downloadKlassePDF('');
-		expect(apiFetch).not.toHaveBeenCalled();
-	});
-
-	it('lädt das Klassen-PDF mit der Klasse im Pfad und Dateinamen', async () => {
-		apiFetchMock.mockResolvedValueOnce(mockPdfResponse());
-		const store = useMahnwesenPdf();
-
-		await store.downloadKlassePDF('4a');
-
-		expect(apiFetch).toHaveBeenCalledWith('/api/print/mahnung/klasse/4a');
-		expect(clicks).toEqual([{ href: 'blob:mock-url', download: 'Mahnliste_Klasse_4a.pdf' }]);
-		expect(store.klassePdfLoading).toBe(false);
-	});
-
-	it('nutzt die Fallback-Meldung, wenn der Server keinen Fehlertext liefert', async () => {
-		apiFetchMock.mockResolvedValueOnce(mockErrorResponse(''));
-		const store = useMahnwesenPdf();
-
-		await store.downloadKlassePDF('4a');
-
-		expect(store.globalErrorToast).toContain('Keine überfälligen Ausleihen gefunden');
-		expect(store.klassePdfLoading).toBe(false);
-	});
-
-	it('zeigt den Fehlertext des Servers und blendet ihn nach 4 s wieder aus', async () => {
-		vi.useFakeTimers();
-		try {
-			apiFetchMock.mockResolvedValueOnce(
-				mockErrorResponse('keine überfälligen Ausleihen für Klasse 4a')
-			);
-			const store = useMahnwesenPdf();
-
-			await store.downloadKlassePDF('4a');
-
-			expect(store.globalErrorToast).toContain('für Klasse 4a');
-			await vi.advanceTimersByTimeAsync(4000);
-			expect(store.globalErrorToast).toBeNull();
-		} finally {
-			vi.useRealTimers();
-		}
 	});
 });

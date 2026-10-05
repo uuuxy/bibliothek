@@ -127,41 +127,6 @@ func TestGenerateSchadensfallPDF(t *testing.T) {
 	istPDF(t, got, "Schadensfall")
 }
 
-func TestGenerateMahnliste(t *testing.T) {
-	liste := []MahnungSchueler{
-		{
-			Vorname: "Ömer", Nachname: "Özdemir", Klasse: "5b",
-			Buecher: []MahnungBuch{
-				{Titel: umlautText, Barcode: "B-00010", FaelligSeit: time.Now().AddDate(0, 0, -21)},
-			},
-		},
-		{
-			Vorname: "Süleyman", Nachname: "Şahin", Klasse: "9c",
-			Buecher: []MahnungBuch{
-				{Titel: "Kurz", Barcode: "B-00011", FaelligSeit: time.Now().AddDate(0, 0, -3)},
-				{Titel: "Noch eins", Barcode: "B-00012", FaelligSeit: time.Now().AddDate(0, 0, -40)},
-			},
-		},
-	}
-
-	got, err := GenerateMahnliste(liste)
-	if err != nil {
-		t.Fatalf("GenerateMahnliste: %v", err)
-	}
-	istPDF(t, got, "Mahnliste")
-}
-
-// TestGenerateMahnlisteLeer: Die Mahnliste wird auch dann angefordert, wenn gerade
-// niemand etwas schuldet. Ein Fehler wäre hier falsch — der Nutzer bekäme HTTP 500
-// für den erfreulichen Fall.
-func TestGenerateMahnlisteLeer(t *testing.T) {
-	got, err := GenerateMahnliste(nil)
-	if err != nil {
-		t.Fatalf("GenerateMahnliste ohne Schüler: %v", err)
-	}
-	istPDF(t, got, "leere Mahnliste")
-}
-
 func TestGenerateKontoauszug(t *testing.T) {
 	schueler := KontoauszugSchueler{Vorname: "Änne", Nachname: "Groß", Klasse: "8a"}
 	buecher := []KontoauszugBuch{

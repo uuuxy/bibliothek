@@ -2,13 +2,9 @@ import { apiFetch } from '../apiFetch.js';
 import { toastStore } from './toastStore.svelte.js';
 import { SvelteDate } from 'svelte/reactivity';
 
-/**
- * Handles PDF generation logic for Mahnwesen.
- */
+/** Der Druck der Mahnbriefe aus der Auswahl. */
 export function useMahnwesenPdf() {
 	let pdfLoading = $state(false);
-	let klassePdfLoading = $state(false);
-	let globalErrorToast = $state(/** @type {string|null} */ (null));
 
 	/**
 	 * Druckt die Mahnbriefe der angehakten Schüler; der Server zählt dabei die Mahnung.
@@ -67,72 +63,10 @@ export function useMahnwesenPdf() {
 		}
 	}
 
-	/**
-	 * Downloads the global Mahnliste PDF.
-	 */
-	async function downloadPDF() {
-		pdfLoading = true;
-		try {
-			const res = await apiFetch('/api/mahnwesen/pdf');
-			if (!res.ok) throw new Error('PDF-Erzeugung fehlgeschlagen');
-			const blob = await res.blob();
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `mahnliste_${new SvelteDate().toISOString().slice(0, 10)}.pdf`;
-			a.click();
-			URL.revokeObjectURL(url);
-		} catch (e) {
-			toastStore.addToast('Fehler: ' + String(e), 'error');
-		} finally {
-			pdfLoading = false;
-		}
-	}
-
-	/**
-	 * Downloads the PDF for a specific class.
-	 * @param {string} selectedKlasse
-	 */
-	async function downloadKlassePDF(selectedKlasse) {
-		if (!selectedKlasse) return;
-		klassePdfLoading = true;
-		globalErrorToast = null;
-		try {
-			const res = await apiFetch(`/api/print/mahnung/klasse/${selectedKlasse}`);
-			if (!res.ok) {
-				const errText = await res.text();
-				throw new Error(errText || 'Keine überfälligen Ausleihen gefunden');
-			}
-			const blob = await res.blob();
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `Mahnliste_Klasse_${selectedKlasse}.pdf`;
-			a.click();
-			URL.revokeObjectURL(url);
-		} catch (e) {
-			globalErrorToast = String(e);
-			setTimeout(() => (globalErrorToast = null), 4000);
-		} finally {
-			klassePdfLoading = false;
-		}
-	}
-
 	return {
 		get pdfLoading() {
 			return pdfLoading;
 		},
-		get klassePdfLoading() {
-			return klassePdfLoading;
-		},
-		get globalErrorToast() {
-			return globalErrorToast;
-		},
-		set globalErrorToast(v) {
-			globalErrorToast = v;
-		},
-		printSelectedMahnungen,
-		downloadPDF,
-		downloadKlassePDF
+		printSelectedMahnungen
 	};
 }

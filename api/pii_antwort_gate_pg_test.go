@@ -49,7 +49,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"sort"
 	"strings"
 	"testing"
@@ -329,7 +328,6 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/bescheide/ausstehend": {URL: "/api/bescheide/ausstehend", Positiv: []string{"Vogelbeere"}},
 		"GET /api/bescheide/{id}/pdf":   {URL: "/api/bescheide/" + w.bescheidID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
 		"GET /api/mahnwesen":            {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
-		"GET /api/mahnwesen/pdf":        {URL: "/api/mahnwesen/pdf"},
 
 		// routes_books.go
 		"GET /api/buecher/titel/{id}/exemplare": {URL: "/api/buecher/titel/" + w.titelID + "/exemplare"},
@@ -401,7 +399,6 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		// das der Test am Druck aus der Auswahl (mahnwesen_bulk_frist_pg_test.go), die
 		// Tür ist ein POST.
 		"GET /api/print/rechnung/{schueler_id}":    {URL: "/api/print/rechnung/" + w.schuelerID, Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
-		"GET /api/print/mahnung/klasse/{klasse}":   {URL: "/api/print/mahnung/klasse/" + url.PathEscape("05A")},
 		"GET /api/print/kontoauszug/{schueler_id}": {URL: "/api/print/kontoauszug/" + w.schuelerID, Positiv: []string{"Vogelbeere"}},
 		"GET /api/dashboard/summary":               {URL: "/api/dashboard/summary"},
 		"GET /api/statistiken":                     {URL: "/api/statistiken"},

@@ -10,7 +10,6 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
-	"bibliothek/internal/pdftest"
 	"bibliothek/sse"
 )
 
@@ -102,7 +101,8 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 				Ehemalige   bool   `json:"ehemalige"`
 				LehrerEmail string `json:"lehrer_email"`
 				Schueler    []struct {
-					Name string `json:"name"`
+					Name   string `json:"name"`
+					Klasse string `json:"klasse"`
 				} `json:"schueler"`
 			} `json:"klassen"`
 		}
@@ -119,6 +119,11 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 						t.Errorf("Erik steht in der Gruppe %q (Ehemalige: %v, Klassenleitung %q) — "+
 							"erwartet die Gruppe der Ehemaligen ohne Klassenleitung", g.Klasse, g.Ehemalige, g.LehrerEmail)
 					}
+					// Der Klassenfilter der Liste und ihr Ausdruck wählen nach der Klasse am
+					// Kind. Trüge Erik dort die 08H3, stünde er auf dem Blatt dieser Klasse.
+					if s.Klasse != "Ehemalige" {
+						t.Errorf("Erik trägt in der Mahnliste die Klasse %q — erwartet den Namen seiner Gruppe", s.Klasse)
+					}
 				case "Nora Test":
 					if g.Ehemalige || g.Klasse != "08H3" || g.LehrerEmail != "leitung-nora@schule.invalid" {
 						t.Errorf("Nora steht in der Gruppe %q (Ehemalige: %v, Klassenleitung %q) — "+
@@ -129,20 +134,6 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 		}
 		if !gefunden["Erik Test"] || !gefunden["Nora Test"] {
 			t.Errorf("in der Mahnliste fehlt ein Kind mit überfälligem Buch: %v", gefunden)
-		}
-	})
-
-	t.Run("der Druck der Klasse nennt den Ehemaligen nicht", func(t *testing.T) {
-		rec := rufe(httptest.NewRequest(http.MethodGet, "/api/print/mahnung/klasse/08H3", nil))
-		if rec.Code != http.StatusOK {
-			t.Fatalf("Druck der 08H3: Status %d — %s", rec.Code, firstBytes(rec.Body.Bytes(), 200))
-		}
-		blatt := strings.Join(pdftest.Texte(t, rec.Body.Bytes()), "\n")
-		if !strings.Contains(blatt, "Nora") {
-			t.Fatalf("Nora fehlt auf der Liste ihrer Klasse:\n%s", blatt)
-		}
-		if strings.Contains(blatt, "Erik") {
-			t.Errorf("der Ehemalige steht auf der Liste der 08H3:\n%s", blatt)
 		}
 	})
 

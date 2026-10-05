@@ -2,9 +2,11 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
-// Mahnwesen: überfällige Ausleihe erscheint in der Übersicht, und die
-// Mahnliste kommt als echtes PDF (Smoke-Assert statt visueller Prüfung).
-test('Mahnwesen: überfälliger Schüler erscheint, Mahnliste-PDF antwortet', async ({ page }) => {
+// Mahnwesen: überfällige Ausleihe erscheint in der Übersicht, und „Liste drucken" druckt
+// die Liste als Tabelle mit dem Buch.
+test('Mahnwesen: überfälliger Schüler erscheint, „Liste drucken" druckt ihn mit Buch', async ({
+	page
+}) => {
 	await uiLogin(page);
 	const suffix = uniqueSuffix();
 
@@ -28,12 +30,21 @@ test('Mahnwesen: überfälliger Schüler erscheint, Mahnliste-PDF antwortet', as
 	await expect(zeile).toBeVisible();
 	await expect(zeile).toContainText('8M');
 
-	// PDF-Smoke: Status, Content-Type und nicht-leerer Body genügen —
-	// visuelle PDF-Prüfung lohnt den Wartungsaufwand nicht.
-	const pdf = await page.request.get('/api/mahnwesen/pdf');
-	expect(pdf.status(), 'Mahnliste-PDF Status').toBe(200);
-	expect(pdf.headers()['content-type']).toContain('application/pdf');
-	expect((await pdf.body()).length).toBeGreaterThan(1000);
+	// Das Blatt trägt, was die Liste zeigt: nach der Suche genau dieses Kind, je Buch eine Zeile.
+	await page
+		.getByRole('searchbox', { name: 'Schüler oder Klasse suchen' })
+		.fill(`Saeumig-${suffix}`);
+	const fenster = page.waitForEvent('popup');
+	await page.getByRole('button', { name: 'Liste drucken' }).click();
+	const blatt = await fenster;
+	await expect(blatt.locator('h1')).toHaveText('Mahnliste');
+	const druckzeile = blatt.locator('tbody tr');
+	await expect(druckzeile).toHaveCount(1);
+	await expect(druckzeile).toContainText(`E2E Saeumig-${suffix}`);
+	await expect(druckzeile).toContainText('8M');
+	await expect(druckzeile).toContainText(`E2E-Mahnbuch-${suffix}`);
+	await expect(druckzeile).toContainText('noch nicht gemahnt');
+	await expect(blatt.locator('p.meta')).toContainText('1 Kind, 1 Buch');
 });
 
 // Der Weg der Mahnbriefe: Kind anhaken, „Mahnbriefe drucken", danach nennt die Liste die
@@ -63,10 +74,8 @@ test('Mahnbrief: aus der Auswahl gedruckt, danach steht die Mahnung in der Liste
 	await expect(zeile).toContainText('noch nicht gemahnt');
 	await expect(zeile).toContainText('10 Tage überfällig');
 
-	// Ohne Auswahl: das Druck-Menü hinter dem Drucker-Knopf, kein Knopf „Mahnbriefe".
-	await expect(
-		page.getByRole('button', { name: 'Weitere Druck- und Export-Optionen' })
-	).toBeVisible();
+	// Ohne Auswahl: „Liste drucken", kein Knopf „Mahnbriefe".
+	await expect(page.getByRole('button', { name: 'Liste drucken' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Mahnbriefe', exact: true })).toHaveCount(0);
 
 	await page.getByLabel(`E2E Briefkind-${suffix} auswählen`).click();

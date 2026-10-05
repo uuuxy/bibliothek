@@ -200,10 +200,9 @@ export function buchhalterTasks(data) {
   const dsgvoRes = http.get(`${BASE_URL}/api/print/kontoauszug/${student.id}`, reqConf);
   check(dsgvoRes, { 'Kontoauszug PDF ok': (r) => r.status === 200 || r.status === 404 });
 
-  // 2. Mahnlauf PDF für eine Klasse drucken
-  const randomKlasse = `LT-${Math.floor(Math.random() * 6) + 1}`;
-  const mahnRes = http.get(`${BASE_URL}/api/print/mahnung/klasse/${randomKlasse}`, reqConf);
-  check(mahnRes, { 'Mahnung PDF ok': (r) => r.status === 200 || r.status === 404 });
+  // 2. Mahnliste laden; aus ihr druckt der Browser „Liste drucken"
+  const mahnRes = http.get(`${BASE_URL}/api/mahnwesen`, reqConf);
+  check(mahnRes, { 'Mahnliste ok': (r) => r.status === 200 });
 
   // 3. Mahnwesen Bulk Send
   const sendRes = http.post(`${BASE_URL}/api/mail/send-bulk-overdue`, JSON.stringify({}), reqConf);
