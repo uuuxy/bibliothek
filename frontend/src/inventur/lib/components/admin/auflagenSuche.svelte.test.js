@@ -98,6 +98,26 @@ describe('erzeugeAuflagenSuche', () => {
 		expect(s.treffer).toEqual([]);
 	});
 
+	it('meldet auch den Fehler der ersten Hälfte, und bei zweien den ersten', async () => {
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 500 }))
+			.mockResolvedValueOnce(/** @type {any} */ (antwort([titel('A', 'Mathe 7', 2019)])));
+		const s = erzeugeAuflagenSuche(() => []);
+		s.suche = 'Mathe';
+		s.tippen();
+		await vi.advanceTimersByTimeAsync(250);
+		expect(s.fehler).toBe('Fehler 500');
+		expect(s.treffer).toEqual([]);
+
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 500 }))
+			.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 403 }));
+		s.suche = 'Mathe 8';
+		s.tippen();
+		await vi.advanceTimersByTimeAsync(250);
+		expect(s.fehler).toBe('Fehler 500');
+	});
+
 	it('sucht erst ab zwei Zeichen', async () => {
 		const s = erzeugeAuflagenSuche(() => []);
 		s.suche = 'M';

@@ -31,13 +31,22 @@ export function menueEintraege(z) {
 export function loeschFolgen(z) {
 	const folgen = z.verweis_auf_id
 		? `Wer „${z.wort}“ einträgt, landet danach nicht mehr bei „${z.verweis_auf}“.`
-		: `${z.titel} Titel ${z.titel === 1 ? 'verliert' : 'verlieren'} das Schlagwort` +
-			(z.verweise.length === 1
-				? ', der Verweis darauf fällt mit.'
-				: z.verweise.length > 1
-					? `, ${z.verweise.length} Verweise darauf fallen mit.`
-					: '.');
+		: titelFolge(z);
 	return `${folgen} Das lässt sich nicht rückgängig machen.`;
+}
+
+/** Was das Löschen eines Worts an den Titeln und an den Verweisen darauf ändert.
+ *  @param {SchlagwortZeile} z */
+function titelFolge(z) {
+	const verb = z.titel === 1 ? 'verliert' : 'verlieren';
+	return `${z.titel} Titel ${verb} das Schlagwort${verweisFolge(z.verweise.length)}`;
+}
+
+/** @param {number} anzahl Verweise, die auf das gelöschte Wort zeigen */
+function verweisFolge(anzahl) {
+	if (anzahl === 1) return ', der Verweis darauf fällt mit.';
+	if (anzahl > 1) return `, ${anzahl} Verweise darauf fallen mit.`;
+	return '.';
 }
 
 /**
@@ -138,9 +147,8 @@ export function loeschFrage(gewaehlt) {
  */
 export function loeschErgebnis(gewaehlt, antwort) {
 	if (gewaehlt.length === 1) return `„${gewaehlt[0].wort}“ gelöscht.`;
-	const titel =
-		antwort.titel === 0
-			? ''
-			: ` ${antwort.titel} ${antwort.titel === 1 ? 'Titel hat' : 'Titel haben'} Schlagworte verloren.`;
-	return `${antwort.woerter} Schlagworte gelöscht.${titel}`;
+	const geloescht = `${antwort.woerter} Schlagworte gelöscht.`;
+	if (antwort.titel === 0) return geloescht;
+	const haben = antwort.titel === 1 ? 'Titel hat' : 'Titel haben';
+	return `${geloescht} ${antwort.titel} ${haben} Schlagworte verloren.`;
 }

@@ -66,6 +66,16 @@ async function getDB() {
  */
 
 /**
+ * Die Absicht in der früheren Schreibweise (Format 1).
+ * @param {unknown} actionType
+ */
+function artAusActionType(actionType) {
+	if (actionType === 'checkout') return 'ausleihe';
+	if (actionType === 'checkin') return 'rueckgabe';
+	return undefined;
+}
+
+/**
  * Übersetzt einen gespeicherten oder eingespielten Eintrag beider Formate in Format 2.
  * Liefert null, wenn Barcode oder Absicht fehlen — so ein Eintrag ließe sich nicht buchen.
  * @param {any} roh
@@ -74,13 +84,7 @@ async function getDB() {
 export function normalisiereEintrag(roh) {
 	if (!roh || typeof roh !== 'object') return null;
 	const barcode = roh.barcode ?? roh.barcode_id;
-	const art =
-		roh.art ??
-		(roh.action_type === 'checkout'
-			? 'ausleihe'
-			: roh.action_type === 'checkin'
-				? 'rueckgabe'
-				: undefined);
+	const art = roh.art ?? artAusActionType(roh.action_type);
 	if (!barcode || (art !== 'ausleihe' && art !== 'rueckgabe')) return null;
 	// Ein unlesbarer Zeitpunkt wird zu JETZT, nicht zu NaN. `Number('2026-09-16T10:00:00Z')`
 	// ist NaN, und aus NaN baut der Sync `new Date(NaN).toISOString()` — das WIRFT. Der Wurf

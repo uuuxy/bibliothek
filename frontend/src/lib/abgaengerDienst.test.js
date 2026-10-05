@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
 import { apiFetch } from './apiFetch.js';
@@ -84,5 +84,51 @@ describe('abgaengerDienst.kontoauszugAdresse', () => {
 		vi.mocked(apiFetch).mockReset();
 		await expect(ladeKontoauszuege('', 'zzz', [])).rejects.toThrow(/niemanden/);
 		expect(apiFetch).not.toHaveBeenCalled();
+	});
+});
+
+describe('abgaengerDienst.ladeKontoauszuege: der Dateiname', () => {
+	/** @type {string[]} */
+	let namen;
+	const erzeuge = URL.createObjectURL;
+	const gibFrei = URL.revokeObjectURL;
+
+	beforeEach(() => {
+		namen = [];
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, blob: async () => new Blob(['%PDF']) })
+		);
+		// jsdom kennt createObjectURL nicht; der Spion am Anker fängt den Download ab.
+		URL.createObjectURL = vi.fn(() => 'blob:kontoauszug');
+		URL.revokeObjectURL = vi.fn();
+		vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(
+			/** @this {HTMLAnchorElement} */ function () {
+				namen.push(this.download);
+			}
+		);
+	});
+	afterEach(() => {
+		vi.restoreAllMocks();
+		URL.createObjectURL = erzeuge;
+		URL.revokeObjectURL = gibFrei;
+	});
+
+	it('nennt die Klasse, sonst alle Abgänger, und bei einer Suche die Auswahl', async () => {
+		await ladeKontoauszuege('');
+		await ladeKontoauszuege('10R1');
+		await ladeKontoauszuege('', 'müller', [{ id: 'a-1' }]);
+		// Die Suche geht vor: Auch mit Klasse stehen nur die sichtbaren Zeilen im PDF.
+		await ladeKontoauszuege('10R1', 'müller', [{ id: 'a-1' }]);
+		// Nur Leerzeichen ist keine Suche.
+		await ladeKontoauszuege('10R1', '   ');
+
+		expect(namen).toEqual([
+			'Kontoauszuege_Abgaenger.pdf',
+			'Kontoauszuege_10R1.pdf',
+			'Kontoauszuege_Auswahl.pdf',
+			'Kontoauszuege_Auswahl.pdf',
+			'Kontoauszuege_10R1.pdf'
+		]);
 	});
 });

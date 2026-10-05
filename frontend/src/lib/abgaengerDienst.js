@@ -43,6 +43,14 @@ export function kontoauszugAdresse(klasse, suche = '', sichtbar = []) {
 	return query ? `/api/abgaenger/pdf?${query}` : '/api/abgaenger/pdf';
 }
 
+/** Der Dateiname sagt, was im PDF steht: die Auswahl einer Suche, eine Klasse oder alle.
+ *  @param {string} klasse
+ *  @param {string} suche */
+function kontoauszugDateiname(klasse, suche) {
+	if (suche.trim()) return 'Kontoauszuege_Auswahl.pdf';
+	return klasse ? `Kontoauszuege_${klasse}.pdf` : 'Kontoauszuege_Abgaenger.pdf';
+}
+
 /** Lädt den Kontoauszug als PDF herunter.
  *
  *  Das PDF heißt serverseitig noch /abgaenger/pdf, ist aber seit Langem der
@@ -58,11 +66,7 @@ export async function ladeKontoauszuege(klasse, suche = '', sichtbar = []) {
 	const url = window.URL.createObjectURL(await response.blob());
 	const a = document.createElement('a');
 	a.href = url;
-	a.download = suche.trim()
-		? 'Kontoauszuege_Auswahl.pdf'
-		: klasse
-			? `Kontoauszuege_${klasse}.pdf`
-			: 'Kontoauszuege_Abgaenger.pdf';
+	a.download = kontoauszugDateiname(klasse, suche);
 	document.body.appendChild(a);
 	a.click();
 	window.URL.revokeObjectURL(url);

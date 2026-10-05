@@ -29,9 +29,8 @@ export function erzeugeSchlagwortPflegeListe() {
 		const meine = ++laufNr;
 		const text = suche.trim();
 		try {
-			const antwort = await apiGet(
-				`/api/schlagworte/pflege${text ? `?suche=${encodeURIComponent(text)}` : ''}`
-			);
+			const frage = text ? `?suche=${encodeURIComponent(text)}` : '';
+			const antwort = await apiGet(`/api/schlagworte/pflege${frage}`);
 			if (meine !== laufNr) return; // eine jüngere Liste ist schon unterwegs oder da
 			liste = antwort;
 			ladeFehler = false;

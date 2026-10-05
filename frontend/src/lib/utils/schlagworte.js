@@ -14,9 +14,8 @@ import { apiFetch, apiPut } from '../apiFetch.js';
  */
 export async function ladeSchlagwortVorschlaege(suche = '') {
 	try {
-		const res = await apiFetch(
-			`/api/schlagworte${suche ? `?suche=${encodeURIComponent(suche)}` : ''}`
-		);
+		const frage = suche ? `?suche=${encodeURIComponent(suche)}` : '';
+		const res = await apiFetch(`/api/schlagworte${frage}`);
 		if (!res.ok) {
 			return null;
 		}
@@ -78,7 +77,7 @@ export async function ladeTitelSchlagworte(titelId) {
 	}
 	const antwort = await res.json();
 	if (!Array.isArray(antwort?.schlagworte)) {
-		throw new Error('Schlagworte: Antwort ohne Liste');
+		throw new TypeError('Schlagworte: Antwort ohne Liste');
 	}
 	return antwort.schlagworte;
 }

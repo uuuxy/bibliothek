@@ -61,16 +61,16 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		laedt = true;
 		try {
 			const q = query.trim();
+			const text = q ? `&q=${encodeURIComponent(q)}` : '';
 			const jg = jahrgang ? `&jahrgang=${encodeURIComponent(jahrgang)}` : '';
+			const richtung = sortAbsteigend ? 'ab' : 'auf';
 			const so = sortSpalte
-				? `&sortierung=${encodeURIComponent(sortSpalte)}&richtung=${sortAbsteigend ? 'ab' : 'auf'}`
+				? `&sortierung=${encodeURIComponent(sortSpalte)}&richtung=${richtung}`
 				: '';
 			// art=alle: die LESERDATEI. Ohne diesen Zusatz liefert die Tür nur Schüler —
 			// die Vorgabe gilt den anderen Aufrufern (Reiter „Ehemalige", Schülersuche des
 			// Vormerkungs-Reiters), für die ein Kollege in der Liste falsch wäre.
-			const res = await apiFetch(
-				`/api/schueler?art=alle${q ? `&q=${encodeURIComponent(q)}` : ''}${jg}${so}`
-			);
+			const res = await apiFetch(`/api/schueler?art=alle${text}${jg}${so}`);
 			// Nur die jüngste Anfrage schreibt — aber sie schreibt IN JEDEM FALL. Bis zum
 			// 12.09.2026 hing am `nr === ladeNr` auch das `res.ok`: Scheiterte der Lauf,
 			// blieben die Treffer der vorigen Suche unter dem neuen Suchtext stehen, und

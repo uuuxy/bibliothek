@@ -83,6 +83,35 @@ describe('Leserdatei-Suche', () => {
 			stopp();
 		}
 	});
+	it('hängt Suchtext, Jahrgang und Sortierung in dieser Reihenfolge an die Adresse', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(ok(treffer));
+		/** @type {any} */
+		let suche;
+		const stopp = $effect.root(() => {
+			suche = erzeugeSchuelerSuche(() => {});
+		});
+		const letzte = () => vi.mocked(apiFetch).mock.calls.at(-1)?.[0];
+		try {
+			suche.jahrgang = '7';
+			await suche.lade();
+			expect(letzte()).toBe('/api/schueler?art=alle&jahrgang=7');
+
+			suche.sortiere('nachname');
+			expect(letzte()).toBe('/api/schueler?art=alle&jahrgang=7&sortierung=nachname&richtung=auf');
+
+			suche.sortiere('nachname');
+			expect(letzte()).toBe('/api/schueler?art=alle&jahrgang=7&sortierung=nachname&richtung=ab');
+
+			suche.query = 'Müller & Co';
+			await suche.lade();
+			expect(letzte()).toBe(
+				'/api/schueler?art=alle&q=M%C3%BCller%20%26%20Co&jahrgang=7&sortierung=nachname&richtung=ab'
+			);
+		} finally {
+			stopp();
+		}
+	});
+
 	// Die Kappung hängt am SUCHTEXT, nicht am Filter (Rasterdurchgang 17.09.2026).
 	//
 	// Bis dahin meldete `gekuerzt` bei gesetztem Jahrgang `false` — mit der Begründung, ein

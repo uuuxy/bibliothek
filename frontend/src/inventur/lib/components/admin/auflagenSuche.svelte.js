@@ -35,7 +35,7 @@ export function erzeugeAuflagenSuche(bekannte) {
 		const pfad = `/api/books?q=${encodeURIComponent(q)}`;
 		try {
 			const [mit, ohne] = await Promise.all([apiFetch(pfad), apiFetch(`${pfad}&bestand=ohne`)]);
-			const antwort = !mit.ok ? mit : !ohne.ok ? ohne : null;
+			const antwort = [mit, ohne].find((a) => !a.ok) ?? null;
 			const meldung = antwort ? await extractApiError(antwort) : '';
 			const liste = antwort ? [] : kandidaten([await mit.json(), await ohne.json()], bekannte());
 			if (meine !== nr) return;

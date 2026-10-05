@@ -42,6 +42,15 @@ describe('Schlagwort-Pflege: Anzeige-Regeln', () => {
 			/^12 Titel verlieren das Schlagwort\. /
 		);
 		expect(loeschFolgen(verweis)).toMatch(/nicht mehr bei „Fantasy“/);
+		expect(loeschFolgen(verweis)).toBe(
+			'Wer „Tierfantasy“ einträgt, landet danach nicht mehr bei „Fantasy“. Das lässt sich nicht rückgängig machen.'
+		);
+		expect(loeschFolgen({ ...wort, titel: 1, verweise: ['X', 'Y'] })).toBe(
+			'1 Titel verliert das Schlagwort, 2 Verweise darauf fallen mit. Das lässt sich nicht rückgängig machen.'
+		);
+		expect(loeschFolgen({ ...wort, verweise: [] })).toBe(
+			'12 Titel verlieren das Schlagwort. Das lässt sich nicht rückgängig machen.'
+		);
 	});
 
 	it('zählt Wörter und Verweise getrennt', () => {
@@ -126,6 +135,9 @@ describe('Schlagwort-Pflege: mehrere löschen', () => {
 		);
 		expect(loeschErgebnis([wort, verweis], { woerter: 2, titel: 0 })).toBe(
 			'2 Schlagworte gelöscht.'
+		);
+		expect(loeschErgebnis([wort, verweis], { woerter: 2, titel: 5 })).toBe(
+			'2 Schlagworte gelöscht. 5 Titel haben Schlagworte verloren.'
 		);
 	});
 });
