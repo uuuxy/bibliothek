@@ -43,6 +43,17 @@ describe('Problem melden', () => {
 		expect(meldung.form('titel-1')).toMatchObject({ open: false, klasse: '', text: '' });
 	});
 
+	// Ein Buch ohne Titel im Katalog: Die Meldung geht trotzdem raus. Sonst täte „Absenden"
+	// nichts und sagte es nicht.
+	it('meldet am Treffer auch ein Buch, das im Katalog keinen Titel trägt', async () => {
+		const meldung = erzeugeProblemMeldung(vi.fn());
+		meldung.oeffne('titel-1');
+		meldung.form('titel-1').text = 'Seiten fehlen';
+
+		expect(await meldung.senden('titel-1', '  ')).toBe(true);
+		expect(gesendet().titel_text).toBe('Unbekannter Titel');
+	});
+
 	it('nimmt ohne Buch den Text aus „Worum geht es?"', async () => {
 		const meldung = erzeugeProblemMeldung(vi.fn());
 		meldung.oeffne(OHNE_BUCH);

@@ -61,7 +61,9 @@ export function erzeugeProblemMeldung(nachSenden) {
 		 */
 		async senden(key, titel) {
 			const f = ensure(key);
-			const titelText = (titel ?? f.worum).trim();
+			// Am Treffer steht das Buch fest. Trägt es im Katalog keinen Titel, geht die
+			// Meldung trotzdem raus, mit dem Wort, das auch die Karte zeigt.
+			const titelText = titel === undefined ? f.worum.trim() : titel.trim() || 'Unbekannter Titel';
 			if (f.sending || titelText === '' || f.text.trim() === '') return false;
 			f.sending = true;
 			try {

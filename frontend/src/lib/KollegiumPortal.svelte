@@ -131,7 +131,7 @@
 						ontoggle={() => reserviereAmTreffer(titelId)}
 						onsenden={() => reservierung.senden(titelId)}
 						onmelden={() => meldeAmTreffer(titelId)}
-						onmeldungsenden={() => meldung.senden(titelId, book.titel ?? book.title)}
+						onmeldungsenden={() => meldung.senden(titelId, book.titel ?? book.title ?? '')}
 						onmeldungabbrechen={() => meldung.schliesse(titelId)}
 					/>
 				{/each}

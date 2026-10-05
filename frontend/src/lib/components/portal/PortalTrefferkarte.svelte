@@ -53,10 +53,9 @@
 
 	const bild = $derived(coverSrc(book.cover_url, book.isbn));
 
-	// Reservieren bucht nichts — das OPAC-Abzeichen sinkt erst, wenn die Bibliothek den
-	// Satz tatsächlich ausleiht. „60 von 60 verfügbar" und darunter „40 reserviert für
-	// 8a" standen deshalb nebeneinander, und die Lehrkraft musste selbst rechnen. Die
-	// Vormerkungen werden hier abgezogen: eine Zahl, die sagt, ob es JETZT reicht.
+	// Reservieren bucht nichts — das Abzeichen „60 von 60 verfügbar" sinkt erst, wenn die
+	// Bibliothek den Satz ausleiht. Die Vormerkungen werden hier abgezogen: eine Zahl, die
+	// sagt, ob es jetzt reicht, statt „40 reserviert für 8a" daneben zum Selbstrechnen.
 	const vorgemerkt = $derived(warteschlange.reduce((sum, o) => sum + (o.anzahl ?? 0), 0));
 	const rechnerischFrei = $derived(
 		book.verfuegbar == null ? null : Math.max(0, book.verfuegbar - vorgemerkt)
@@ -87,7 +86,7 @@
 
 		<div class="min-w-0 flex-1 basis-48">
 			<h3 class="truncate text-base leading-tight font-medium text-on-surface">
-				{book.titel ?? book.title ?? 'Unbekannter Titel'}
+				{book.titel || book.title || 'Unbekannter Titel'}
 			</h3>
 			<p class="mt-0.5 text-xs text-on-surface-variant">{book.autor ?? book.author ?? ''}</p>
 			{#if book.isbn}
