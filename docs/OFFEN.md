@@ -586,6 +586,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Eine neue Stelle dieser Regeln meldet gosec nicht. Abhilfe: je Stelle ein `#nosec` mit Grund,
   dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
   Nur mit Anlass.
+- **Ein Browser-Test war im vollen Lauf einmal rot.** `e2e/feld-roundtrip.spec.js` („Buch
+  anlegen: Bestand, Zähldatum, Standort kommen in der DB an") fand am 05.10.2026 im vollen
+  Lauf am lokalen Stack den neuen Titel nicht binnen 10 s; einzeln lief die Datei danach
+  zweimal grün. Die lokale Datenbank trägt Hunderte Test-Titel aus früheren Läufen.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
@@ -635,7 +639,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 04.10.2026: 845 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 05.10.2026: 651 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -681,6 +685,12 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   Palettenfarben; für markierte Zeilen gibt es `ui/AuswahlLeiste` (Schlagwort-Pflege). Beim
   Umstellen zu klären: wohin der Hinweis „ohne Ablaufjahr" und das Feld „Ab Feld" kommen —
   beides passt nicht in die 64 px hohe Leiste.
+- Die Ratsche zählt eine Palettenfarbe an einer einzelnen Rahmenseite nicht
+  (`border-l-amber-500`): drei Stellen, `system/BackupAlert` (2) und
+  `students/DeletedStudentList` (1), gezählt am 05.10.2026.
+- Mahnwesen: Scheitert das Blatt je Klasse, steht die Meldung in einem eigenen Kasten oben
+  rechts (`globalErrorToast` in `stores/mahnwesenPdf.svelte.js`); die übrigen Meldungen
+  derselben Datei gehen über `toastStore`. Entfällt mit dem Blatt (4.30).
 
 ### 5.22 Fremdrückgabe über Kreuz verklemmt sich — seit Migration 137
 
