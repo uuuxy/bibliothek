@@ -767,25 +767,13 @@ Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich der Seite
 (`e2e/scrollbereiche.spec.js`); so stehen die Ausleihliste der Leserakte, die Positionen im
 Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Offen:
 
-- **Weitere Kästen derselben Form, durchgesehen am 02.10.2026** (1280 × 900, lokale Mengen;
-  Suchmuster: `max-h-` und `overflow-y-auto` in einer Zeile, 13 Treffer, die übrigen sind
-  Auswahllisten, Vorschläge, Dialoge und das Eigenschaften-Feld des Designers). Zu
-  entscheiden ist je Kasten, ob er bleibt:
-  - Druck-Center, Schritt 2 (`LabelBarcodeSchritt.svelte`, `max-h-40`): Der Kasten bleibt
-    als Auswahlliste; seit dem 02.10.2026 stehen darüber ein Kästchen für alle und ein Feld
-    für die Nummer. Offen: Bei einem Titel mit 409 Exemplaren ist die Seite durch die
-    Vorschau 13.462 px hoch (gemessen am 02.10.2026), und „A4-Bogen drucken" steht unter
-    beiden Spalten (`LabelPrinter.svelte`). Jede Zeile nennt „(Neuwertig)", wenn das Exemplar
-    keine Zustandsnotiz trägt, auch ein bestelltes.
-  - Signaturen (`SignaturenView.svelte`, `max-h-112`): Die Liste links zeigt zwölf von 762
-    Signaturen (448 px von 27.432 px) und endet in einer halben Zeile; die Seite scrollt
-    daneben selbst (852 von 1.876 px), weil darunter die Sachgruppen folgen. Liste und Regal
-    sind Auswahl und Detail (M3, List-detail: „Use the list-detail layout for quickly
-    accessing details of an item from a long list of content").
-  - Bestellwesen (`OrderRecommendations.svelte`, `BestellWorkspace.svelte`): Bedarf (596 von
-    3.900 px bei 60 geladenen von 560 Titeln) und Bestellspalte (811 von 1.488 px bei sechs
-    Positionen) scrollen je für sich. Die Bestellspalte ist so entschieden und gesichert
-    (`e2e/bestellung-erreichbar.spec.js`). Die Seite läuft dabei 16 px über (852 von 868 px).
+- **Druck-Center, Schritt 2** (`LabelBarcodeSchritt.svelte`, `max-h-40`): Der Kasten bleibt
+  als Auswahlliste; darüber stehen ein Kästchen für alle und ein Feld für die Nummer. Offen:
+  Bei einem Titel mit 409 Exemplaren ist die Seite durch die Vorschau 13.462 px hoch (gemessen
+  am 02.10.2026), und „A4-Bogen drucken" steht unter beiden Spalten (`LabelPrinter.svelte`).
+  Jede Zeile nennt „(Neuwertig)", wenn das Exemplar keine Zustandsnotiz trägt, auch ein
+  bestelltes.
+- **Bestellwesen:** Die Seite läuft 16 px über (852 von 868 px, gemessen am 02.10.2026).
 - **Signaturen bei 1280 px:** Liste und Regal sind zusammen 1.000 px breit, Platz sind 960 px
   (gemessen am 02.10.2026). Die Spalte „verliehen" endet 8 px hinter dem Fensterrand, die
   Seite bekommt eine waagerechte Scrollleiste. Die rechte Spalte des Rasters ist `1fr` ohne
@@ -1110,9 +1098,6 @@ sie in der Vorschau. Kategorie B.
   außerhalb des Dialogs gemeldet.
 - Mahnwesen: „Neu laden" ist ein Symbolknopf ohne Wort (`MahnwesenAktionen.svelte`); auf den
   anderen Seiten heißt der Knopf „Aktualisieren" oder „Neu prüfen".
-- Zwei gedruckte Listen, zwei Schriftgrößen: Die Mahnliste ist eng gesetzt (12 px, rund 25 bis
-  30 Zeilen je Seite), die Ausleiher-Liste der Buchakte steht in 16 px mit rund 15 Zeilen je
-  Seite (`utils/listenDruck.js`, Schalter `dicht`; gemessen am 05.10.2026 an einem Probedruck).
 - `ui/Menue` kann einen Kopf über den Einträgen und Gruppen-Überschriften (`kopf`,
   `ueberschriftDavor`); seit dem 05.10.2026 nutzt beides kein Aufrufer mehr.
 - Die Akte eines Kollegen ohne Ausweisnummer sagt am gesperrten Ausweisdruck „die Nummer steht
