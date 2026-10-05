@@ -312,17 +312,19 @@ func parsePromoteRequest(w http.ResponseWriter, r *http.Request) (promoteStudent
 // Audit-Eintrag wird atomar mit dem Batch committet (finalisiereSchuljahreswechsel),
 // ein abgebrochener Lauf hinterlässt also keinen Eintrag und keine Sperre.
 func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWriter) bool {
-	var recentRuns int
+	var hasRecentRuns bool
 	err := tx.QueryRow(ctx, `
-		SELECT COUNT(*) FROM audit_logs
-		WHERE aktion = 'SCHULJAHRESWECHSEL'
-		  AND zeitstempel > NOW() - INTERVAL '12 hours'
-	`).Scan(&recentRuns)
+		SELECT EXISTS(
+			SELECT 1 FROM audit_logs
+			WHERE aktion = 'SCHULJAHRESWECHSEL'
+			  AND zeitstempel > NOW() - INTERVAL '12 hours'
+		)
+	`).Scan(&hasRecentRuns)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
 	}
-	if recentRuns > 0 {
+	if hasRecentRuns {
 		apierrors.SendHTTPError(w, http.StatusConflict,
 			errors.New("schuljahreswechsel wurde vor wenigen Minuten bereits durchgeführt — ein erneuter Lauf würde alle Schüler doppelt versetzen"))
 		return false

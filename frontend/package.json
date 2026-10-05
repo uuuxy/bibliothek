@@ -44,6 +44,8 @@
 		"@lucide/svelte": "^1.48.0",
 		"@sentry/svelte": "^11.0.0",
 		"@tailwindcss/vite": "^4.3.3",
+		"espree": "^11.2.0",
+		"estree-walker": "^3.0.3",
 		"html5-qrcode": "^2.3.8",
 		"idb": "^8.0.3",
 		"tailwindcss": "^4.3.0"
