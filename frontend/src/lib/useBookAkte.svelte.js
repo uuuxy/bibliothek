@@ -28,17 +28,14 @@ async function jsonOderNull(settled) {
  * es dann womöglich, es kam nur nichts an.
  *
  * @param {string} id
- * @param {() => boolean} ueberholt ist inzwischen ein jüngerer Lauf unterwegs?
- * @returns {Promise<{ kopf: any, fehler: string } | null>} null, wenn der Lauf überholt wurde
+ * @returns {Promise<{ kopf: any, fehler: string }>}
  */
-async function holeKopf(id, ueberholt) {
+async function holeKopf(id) {
 	try {
 		const res = await apiFetch(`/api/books/${id}`, { credentials: 'include' });
-		if (ueberholt()) return null;
 		if (res.ok) return { kopf: await res.json(), fehler: '' };
 		return { kopf: null, fehler: res.status === 404 ? '' : await extractApiError(res) };
 	} catch (err) {
-		if (ueberholt()) return null;
 		console.error('Fehler beim Laden des Buches:', err);
 		return { kopf: null, fehler: 'Der Titel konnte nicht geladen werden (Netzwerkfehler).' };
 	}
@@ -114,8 +111,10 @@ export function useBookAkte() {
 		if (appState.selectedBook?.id === id) {
 			kopf = appState.selectedBook;
 		} else {
-			const geholt = await holeKopf(id, () => meine !== laufNr);
-			if (!geholt) return; // ein jüngerer Titel ist schon unterwegs oder da
+			const geholt = await holeKopf(id);
+			// Erst prüfen, wenn der Kopf ganz gelesen ist: Zwischen der Antwort und ihrem Körper
+			// kann ein jüngerer Titel schon stehen, und dieser Kopf läge über dessen Listen.
+			if (meine !== laufNr) return;
 			kopf = geholt.kopf;
 			kopfFehler = geholt.fehler;
 		}

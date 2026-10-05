@@ -231,6 +231,46 @@ describe('useBookAkte.loadAll: Kopf und überholte Läufe', () => {
 		expect(akte.kopfFehler, 'der Fehler von A steht über dem Titel B').toBe('');
 	});
 
+	// Zwischen der Antwort und ihrem Körper kann die Akte schon beim nächsten Titel stehen. Der
+	// Kopf von A läge sonst über den Listen von B, und „Gesamten Titel löschen" träfe A.
+	it.each(['mitgereicht', 'vom Server'])(
+		'der Körper des Kopfs von A kommt, als B schon steht (B %s): der Kopf von B bleibt',
+		async (weg) => {
+			/** @type {((kopf: any) => void) | null} */
+			let koerperVonA = null;
+			vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) => {
+				const u = String(url);
+				if (u === '/api/books/A')
+					return /** @type {any} */ ({
+						ok: true,
+						json: () => new Promise((kommt) => (koerperVonA = kommt))
+					});
+				if (u.startsWith('/api/books/'))
+					return /** @type {any} */ (ok({ id: 'B', titel: 'Titel B' }));
+				if (u.includes('/exemplare'))
+					return /** @type {any} */ (ok([{ id: u.includes('/A/') ? 'e-A' : 'e-B' }]));
+				return /** @type {any} */ (ok([]));
+			});
+			const akte = useBookAkte();
+
+			const alt = akte.loadAll('A');
+			await vi.waitFor(() => expect(koerperVonA).not.toBeNull());
+			if (weg === 'mitgereicht') appState.selectedBook = { id: 'B', titel: 'Titel B' };
+			await akte.loadAll('B');
+			/** @type {any} */ (koerperVonA)({ id: 'A', titel: 'Titel A' });
+			await alt;
+
+			expect(akte.book, 'der Kopf von A steht über den Listen von B').toEqual({
+				id: 'B',
+				titel: 'Titel B'
+			});
+			expect(akte.exemplare).toEqual([{ id: 'e-B' }]);
+			expect(abrufe(), 'der überholte Lauf lädt keine Listen mehr').not.toContain(
+				'/api/buecher/titel/A/exemplare'
+			);
+		}
+	);
+
 	it('ein überholter Lauf beendet die Ladeanzeige des jüngeren nicht', async () => {
 		/** @type {Record<string, (antwort: any) => void>} */
 		const kommt = {};
