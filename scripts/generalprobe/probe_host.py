@@ -39,7 +39,10 @@ def zuordnen(verz, paare):
         zeilen = list(csv.reader(f))
     kopf = zeilen[0]
     spalte = kopf.index("Untergruppe")
-    ziel = dict(p.split("=", 1) for p in paare)
+    ziel = {}
+    for p in paare:
+        name, neu = p.split("=", 1)
+        ziel[name] = neu
     getroffen = Counter()
     for z in zeilen[1:]:
         name = z[spalte].strip()
