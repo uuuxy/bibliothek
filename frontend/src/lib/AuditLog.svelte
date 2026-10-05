@@ -4,8 +4,10 @@
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
 	import StatusChip from './components/ui/StatusChip.svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
+	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { formatZeitpunkt } from './utils/format.js';
-	import { RefreshCw, ScrollText } from '@lucide/svelte';
+	import { RefreshCw } from '@lucide/svelte';
 
 	// Aktionen lesbar und mit BEDEUTUNG in der Farbe: Vorher stand jede Aktion in
 	// derselben roten Pille — CHECKOUT wie DELETE — und Rot heißt überall sonst
@@ -59,7 +61,7 @@
 		     gekapptes Logbuch aus wie ein vollständiges — und wer einen älteren Vorgang
 		     sucht und nicht findet, schlösse daraus, er sei nie protokolliert worden. -->
 		{#if logs.length >= 1000}
-			<p class="text-xs text-slate-500">
+			<p class="text-sm text-on-surface-variant">
 				Die <strong class="font-semibold">1000</strong> jüngsten Einträge. Ältere Vorgänge sind protokolliert,
 				aber hier nicht sichtbar.
 			</p>
@@ -73,20 +75,13 @@
 	</div>
 
 	{#if loading}
-		<div class="p-12 text-center text-slate-400 font-medium animate-pulse">
-			Lade Logbuch-Einträge...
+		<div class="flex justify-center py-20">
+			<Ladekreis size="lg" label="Logbuch lädt" />
 		</div>
 	{:else if error}
-		<div
-			class="p-6 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium"
-		>
-			{error}
-		</div>
+		<LadeFehler onerneut={fetchLogs} titel="Logbuch nicht geladen" text={error} />
 	{:else if logs.length === 0}
-		<div
-			class="p-12 rounded-xl border border-dashed border-slate-200 bg-white text-center text-slate-400"
-		>
-			<ScrollText class="mx-auto mb-2 h-8 w-8 text-slate-300" aria-hidden="true" />
+		<div class="py-16 text-center text-base text-on-surface-variant">
 			Keine Audit-Einträge vorhanden.
 		</div>
 	{:else}
@@ -115,7 +110,7 @@
 										tip={log.aktion}
 									/>
 								</td>
-								<td class="text-emerald-600">
+								<td>
 									{log.tabelle}
 								</td>
 								<td>
@@ -126,10 +121,10 @@
 									     Zelle zu zeigen wäre von einem Datenfehler nicht zu unterscheiden;
 									     sie werden deshalb ausdrücklich als „System" benannt. -->
 									{#if log.akteur === 'SYSTEM' || !log.bearbeiter_id}
-										<span class="font-medium text-slate-500 italic">System</span>
-										<span class="block text-sm text-slate-400">automatischer Vorgang</span>
+										<span class="font-medium text-on-surface-variant italic">System</span>
+										<span class="block text-sm text-on-surface-variant">automatischer Vorgang</span>
 									{:else}
-										<span class="font-medium text-slate-700" title={log.bearbeiter_id}
+										<span class="font-medium text-on-surface" title={log.bearbeiter_id}
 											>{log.bearbeiter_vorname} {log.bearbeiter_nachname}</span
 										>
 										<!-- Die Bearbeiter-UUID ist in fast jeder Zeile dieselbe und verdoppelte die

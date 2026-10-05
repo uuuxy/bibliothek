@@ -3,7 +3,10 @@
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
-	import { RefreshCw, ShieldCheck } from '@lucide/svelte';
+	import StatusChip from './components/ui/StatusChip.svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
+	import LadeFehler from './components/ui/LadeFehler.svelte';
+	import { RefreshCw } from '@lucide/svelte';
 
 	/** @type {any[]} */
 	let logs = $state.raw([]);
@@ -48,18 +51,13 @@
 	</div>
 
 	{#if loading}
-		<div class="p-12 text-center text-slate-400 font-medium animate-pulse">Lade Audit-Logs...</div>
-	{:else if error}
-		<div
-			class="p-6 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium"
-		>
-			{error}
+		<div class="flex justify-center py-20">
+			<Ladekreis size="lg" label="Admin-Audit-Log lädt" />
 		</div>
+	{:else if error}
+		<LadeFehler onerneut={fetchLogs} titel="Admin-Audit-Log nicht geladen" text={error} />
 	{:else if logs.length === 0}
-		<div
-			class="p-12 rounded-xl border border-dashed border-slate-200 bg-white text-center text-slate-400"
-		>
-			<ShieldCheck class="mx-auto mb-2 h-8 w-8 text-slate-300" aria-hidden="true" />
+		<div class="py-16 text-center text-base text-on-surface-variant">
 			Keine administrativen Eingriffe protokolliert.
 		</div>
 	{:else}
@@ -81,12 +79,9 @@
 								<td class="whitespace-nowrap">
 									{new Date(log.zeitstempel).toLocaleString('de-DE')}
 								</td>
+								<!-- Neutral wie im Logbuch daneben: Farbe trägt dort nur das Unumkehrbare. -->
 								<td>
-									<span
-										class="inline-flex px-2 py-1 rounded-md text-xs font-bold bg-amber-50 border border-amber-100 text-amber-700"
-									>
-										{log.aktion}
-									</span>
+									<StatusChip ton="neutral" text={log.aktion} />
 								</td>
 								<td class="whitespace-nowrap font-medium">
 									{log.admin_name}
@@ -96,7 +91,7 @@
 								</td>
 								<td>
 									<pre
-										class="text-sm text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap font-mono max-w-md overflow-x-auto">{JSON.stringify(
+										class="text-sm text-on-surface-variant bg-surface-container-low p-2 rounded whitespace-pre-wrap font-mono max-w-md overflow-x-auto">{JSON.stringify(
 											log.details,
 											null,
 											2
