@@ -354,6 +354,13 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.5 Bestand, Katalog, Druck
 
+- Portal, Treffer mit Bestand und Zulauf (Rasterdurchgang 05.10.2026): Stehen von einem Titel
+  Exemplare im Haus und sind weitere bestellt, zeigt der Treffer nur „N von M verfügbar".
+  „N bestellt" steht dort allein, wenn nichts im Haus ist (`utils/format.js`, `bestandSatz`,
+  wie im Medienkatalog). Die Obergrenze der Reservierung zählt die bestellten Exemplare mit
+  (`CountTitleStock` in `repository/reservation_repo.go`): Bei zehn Exemplaren im Haus und
+  zwanzig bestellten nimmt sie 28 an, der Treffer nennt zehn. Gefragt am 05.10.2026: ob der
+  Treffer die bestellten zusätzlich nennt. Kategorie B.
 - Listenimport gegen den Nummern-Wächter (Migration 131): Trägt eine Zeile der Datei die
   Ausweisnummer eines Lesers als Buch-Barcode, lehnt der Wächter ab und der ganze Import
   bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,
