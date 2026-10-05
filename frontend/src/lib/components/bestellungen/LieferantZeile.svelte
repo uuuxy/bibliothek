@@ -64,35 +64,34 @@
 						kundennummerSchultraeger: editCustNumSchultraeger
 					})}
 				aria-label="Änderungen für Lieferant {s.name} speichern"
-				class="text-blue-600 hover:text-blue-800 font-bold cursor-pointer text-sm mr-3"
-				>Speichern</button
+				class="text-primary font-bold cursor-pointer text-sm mr-3">Speichern</button
 			>
 			<button
 				onclick={onCancel}
 				aria-label="Änderungen für Lieferant {s.name} abbrechen"
-				class="text-slate-400 hover:text-slate-600 cursor-pointer text-sm">Abbrechen</button
+				class="text-on-surface-variant cursor-pointer text-sm">Abbrechen</button
 			>
 		</td>
 	</tr>
 {:else}
 	<tr>
 		<td>
-			<span class="block max-w-52 truncate font-bold text-slate-800" title={s.name}>{s.name}</span>
+			<span class="block max-w-52 truncate font-bold text-on-surface" title={s.name}>{s.name}</span>
 			<!-- Nur die Abweichung wird benannt: „Bestellmail" in jeder Zeile wäre
 			     Rauschen. Auffallen soll die eine Zeile, die anders ist. -->
 			{#if s.ist_hauptlieferant}
 				<span
-					class="block text-xs font-semibold text-slate-700"
+					class="block text-xs font-semibold text-on-surface"
 					data-tip="Vorausgewählt beim Bestellen, bekommt den Bestelllink (Etikettengröße + Bestätigung) und beklebt die Bücher selbst"
 					>Hauptlieferant</span
 				>
 			{:else}
-				<span class="block text-xs text-slate-400">nur Bestellmail</span>
+				<span class="block text-xs text-on-surface-variant">nur Bestellmail</span>
 			{/if}
 		</td>
 		<td>
 			<span class="block max-w-60 truncate" title={s.email}>{s.email}</span>
-			<span class="block text-xs text-slate-400 whitespace-nowrap">
+			<span class="block text-xs text-on-surface-variant whitespace-nowrap">
 				Kd.-Nr. {s.customerNumber || '–'}
 				<!-- Die zweite Nummer nur, wenn es sie gibt — sonst gilt dieselbe. -->
 				{#if s.kundennummer_schultraeger}
@@ -104,12 +103,12 @@
 			<button
 				onclick={() => onEdit(s)}
 				aria-label="Lieferant {s.name} bearbeiten"
-				class="text-slate-500 hover:text-blue-600 cursor-pointer text-sm mr-3">Bearbeiten</button
+				class="text-on-surface-variant cursor-pointer text-sm mr-3">Bearbeiten</button
 			>
 			<button
 				onclick={() => onRemove(s.id)}
 				aria-label="Lieferant {s.name} löschen"
-				class="text-rose-600/80 hover:text-rose-700 cursor-pointer text-sm">Löschen</button
+				class="text-error cursor-pointer text-sm">Löschen</button
 			>
 		</td>
 	</tr>
