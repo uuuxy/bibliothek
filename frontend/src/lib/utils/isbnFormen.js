@@ -15,7 +15,7 @@
  * der Vitest rot.
  */
 
-/** Nur die bedeutungstragenden Zeichen, Prüfzeichen groß. @param {unknown} roh */
+/** Nur die bedeutungstragenden Zeichen, Prüfzeichen groß. @param {string | number | null | undefined} roh */
 export function normalisiereIsbn(roh) {
 	return String(roh ?? '')
 		.replace(/[^0-9xX]/g, '')

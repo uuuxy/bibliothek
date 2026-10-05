@@ -14,9 +14,18 @@
 import { showToast } from '../inventur/lib/store.svelte.js';
 import { bestaetigen } from './stores/bestaetigung.svelte.js';
 import * as dienst from './lmfplanDienst.js';
+import { fehlertext } from './utils/fehlertext.js';
 
 /** @typedef {import('./lmfplanDienst.js').PlanStand} PlanStand */
 /** @typedef {import('./lmfplanDienst.js').PlanEntwurf} PlanEntwurf */
+
+// Der Dienst wirft bei Netzfehler und beim Zeitlimit von apiFetch. Ohne Meldung würde für
+// den Bediener nur der Knopf wieder aktiv; ein im Browser abgebrochenes PUT kann am Server
+// trotzdem gelaufen sein.
+/** @param {unknown} e @param {string} was */
+function schreibfehler(e, was) {
+	showToast(`${was} fehlgeschlagen: ${fehlertext(e)}`, 'error');
+}
 
 export function erzeugePlaner() {
 	const zustand = $state({
@@ -140,16 +149,6 @@ export function erzeugePlaner() {
 		const erg = dienst.klasseHinein(zustand.entwurf, k, vor);
 		zustand.entwurf = erg.entwurf;
 		if (erg.index !== null) zustand.markiert = { index: erg.index };
-	}
-
-	// Die drei Schreibwege hatten bis zum Rasterdurchgang am 06.09.2026 kein `catch`
-	// (Frage 5): Der Dienst wirft bei Netzfehler und beim 10-Sekunden-Zeitlimit von
-	// apiFetch, und die Ablehnung landete in window.unhandledrejection — für den Bediener
-	// wurde der Knopf einfach wieder aktiv. KEIN Toast, keine Meldung, und ein
-	// clientseitig abgebrochenes PUT kann serverseitig trotzdem gelaufen sein.
-	/** @param {unknown} e @param {string} was */
-	function schreibfehler(e, was) {
-		showToast(`${was} fehlgeschlagen: ${e instanceof Error ? e.message : e}`, 'error');
 	}
 
 	async function speichern() {

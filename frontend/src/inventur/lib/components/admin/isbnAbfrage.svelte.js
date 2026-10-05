@@ -127,8 +127,8 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 			if (!daten.title) return melde(NICHTS_BEKANNT);
 			dnbVorschlag()?.lade(isbn);
 			showToast(`Metadaten übernommen: ${daten.title}`, 'success');
-		} catch (fehler) {
-			console.error('Fehler beim Nachschlagen der ISBN', fehler);
+		} catch (err) {
+			console.error('Fehler beim Nachschlagen der ISBN', err);
 			if (!veraltet()) melde(GESCHEITERT);
 		} finally {
 			aktiv = false;

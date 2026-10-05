@@ -17,7 +17,7 @@
 // zwischen Textinhalt und Attributwert austauschbar sein.
 
 /**
- * @param {unknown} wert Beliebiger Wert; null/undefined ergeben ''.
+ * @param {string | number | null | undefined} wert Text oder Zahl; null/undefined ergeben ''.
  * @returns {string} Für HTML-Text und Attributwerte sichere Zeichenkette.
  */
 export function escapeHtml(wert) {

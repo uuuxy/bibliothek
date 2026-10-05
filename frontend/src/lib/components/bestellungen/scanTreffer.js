@@ -25,7 +25,8 @@
  */
 export function scanTreffer(code, treffer) {
 	const liste = Array.isArray(treffer) ? treffer : [];
-	const ziffern = (/** @type {unknown} */ v) => String(v ?? '').replace(/\D/g, '');
+	const ziffern = (/** @type {string | null | undefined} */ v) =>
+		String(v ?? '').replace(/\D/g, '');
 	const gescannt = ziffern(code);
 
 	if (gescannt !== '') {

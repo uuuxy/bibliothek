@@ -1,3 +1,5 @@
+import { fehlertext } from '../../../../lib/utils/fehlertext.js';
+
 /**
  * Die Strichcode-Arten, die an dieser Schule vorkommen — EINE Liste für beide Kameras und
  * für das Gate, das sie gegen den Druck hält (e2e/barcode-lesbar.spec.js).
@@ -34,9 +36,7 @@ export const GELESENE_FORMATE = [
  * @returns {boolean}
  */
 export function istNichtsGefunden(fehler) {
-	const text = String(
-		fehler instanceof Error ? fehler.message : typeof fehler === 'string' ? fehler : (fehler ?? '')
-	);
+	const text = fehlertext(fehler);
 	return (
 		text.includes('NotFound') ||
 		text.includes('able to detect') ||
@@ -104,14 +104,14 @@ export async function createBarcodeDetector() {
 						// showImage=false: kein Bild in den versteckten Knoten malen.
 						const result = await scanner.scanFileV2(file, false);
 						return [{ rawValue: result.decodedText }];
-					} catch (fehler) {
+					} catch (err) {
 						// „Kein Code in diesem Bild" ist der Normalfall, zehnmal in der Sekunde —
 						// alles andere ist ein Grund, warum die Erkennung NICHT arbeitet, und der
 						// gehoert nach oben. Bis zum 17.09.2026 fiel beides in dasselbe leere
 						// catch: Ein Browser, der `File` nicht kennt oder kein Bild liefert, sah
 						// danach genauso aus wie eine Kamera, die nur nichts vor der Linse hat.
-						if (istNichtsGefunden(fehler)) return [];
-						throw fehler instanceof Error ? fehler : new Error(String(fehler));
+						if (istNichtsGefunden(err)) return [];
+						throw err instanceof Error ? err : new Error(String(err));
 					}
 				}
 			}

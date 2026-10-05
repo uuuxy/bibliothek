@@ -70,9 +70,9 @@ async function frageGleichenTitel(meldung, vorhanden) {
 export async function speichereMitFrage(formular) {
 	try {
 		return await speichereBuch(formular);
-	} catch (fehler) {
-		if (!(fehler instanceof DubletteFehler && fehler.gleicherTitel) || formular.id) throw fehler;
-		if (!(await frageGleichenTitel(fehler.message, fehler.vorhanden))) return null;
+	} catch (err) {
+		if (!(err instanceof DubletteFehler && err.gleicherTitel) || formular.id) throw err;
+		if (!(await frageGleichenTitel(err.message, err.vorhanden))) return null;
 		return speichereBuch(formular, { anderesMedium: true });
 	}
 }
