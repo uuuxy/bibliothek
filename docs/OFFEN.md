@@ -19,7 +19,7 @@ und die Arbeit im Code.
 
 **Bei dir — zu entscheiden:**
 
-- Theke: die Rückgabe eines ganzen Stapels, ohne dass dabei ein Buch ausgeliehen wird (4.32).
+- Theke: der Vorschlag zur Schnellrückgabe, sobald er vorliegt (4.32).
 - Buchmaske: was beim Standort für Lernmittel und Bibliothek getrennt sein soll (5.53).
 - GitHub: drei offene PRs (5.10) und die PR-Pflicht im Regelwerk für `main` (7.6).
 
@@ -236,12 +236,16 @@ ein Scan bedeutet (am Code gelesen am 06.10.2026, nicht im Browser nachgestellt)
 Folge: ein Buch im Regal, das auf dem Konto eines Kindes steht und später gemahnt wird.
 Verdacht auf Kategorie A, bis der Ablauf nachgestellt ist.
 
-Zwei Wege, besprochen am 06.10.2026, nichts gebaut: (A) Ein Leser, der nur durch eine Rückgabe
-erscheint, wird gezeigt, bekommt aber nichts ausgeliehen, bis sein Ausweis gescannt oder sein
-Name gewählt ist; ein Stapel verleiht dann nichts. Preis: ein Schritt mehr, wenn ein Kind ohne
-Ausweis zurückgibt und gleich ausleiht. (B) Die Ausleihe bekommt einen eigenen Ton und eine
-eigene Farbe. Offen ist, wie oft ohne Ausweis direkt nach einer Rückgabe ausgeliehen wird. Ein
-Bau an der Theke braucht die Proben des Scanner-Pfads.
+**Richtung vom 06.10.2026: eine Schnellrückgabe wie in Littera,** nichts gebaut. Verworfen ist
+der Weg, einem Leser, der nur durch eine Rückgabe erscheint, nichts auszuleihen: An der Theke
+wird oft ein Buch des Kindes gescannt, damit sein Konto erscheint, und danach ausgeliehen. Zum
+Modus gehört: Er ist am Scanfeld zu sehen, solange er an ist; er endet von selbst (Ausweis
+gescannt, Escape, einige Minuten ohne Scan), sonst geht beim nächsten Kind ein Buch ohne
+Ausleihe über die Theke; im Modus lädt eine Rückgabe keinen Leser, die Meldung nennt ihn.
+Unabhängig vom Modus bleibt der zweite Scan desselben Buchs bei geladenem Leser: dagegen eine
+Sperre für dasselbe Buch in den ersten Sekunden nach seiner Rückgabe und ein eigener Ton und
+eine eigene Farbe für die Ausleihe. Vor dem Bau: ein Vorschlag, wo der Umschalter sitzt, nach
+den M3-Seiten; der Bau braucht die Proben des Scanner-Pfads.
 
 ---
 
