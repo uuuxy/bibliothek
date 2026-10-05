@@ -479,6 +479,13 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   (4 × 13) zeigt sie damit nicht den gewählten Bogen; gedruckt wird nach
   `api/label_formats.go`, die Überschrift der Vorschau nennt das gewählte Format (gemessen am
   03.10.2026).
+- Zwei Schreibweisen stehen neben ihrem Helfer (gefunden am 05.10.2026 beim Umbau zu den
+  Meldungen zur Wartbarkeit). Einen Betrag in Euro schreiben sechs Stellen selbst
+  (`toLocaleString` und `+ ' €'`: `useFehlbestand.svelte.js`, `StudentBescheideCard`,
+  `BestellHistorie`, `BestellDetail`, `BescheidDialog`, `BescheideTabelle`), mit gewöhnlichem
+  statt geschütztem Leerzeichen; dafür gibt es `formatEuro` (`utils/format.js`). Den Text eines
+  gefangenen Fehlers (`e instanceof Error ? e.message : String(e)`) schreiben 21 Stellen in 13
+  Dateien selbst; `fehlertext` (`utils/fehlertext.js`) rufen bisher drei. Kategorie B.
 
 ### 5.10 Gates und Werkzeuge
 
@@ -535,15 +542,26 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   eine Antwort des Foto-Uploads, die kein JSON war). Abhilfe je Route: ein Test mit Datenbank
   und eine Gegenprobe je Zusicherung, Muster in `api/inventur_verlust_aktionen_pg_test.go`.
   Kategorie B.
+- `beforeEach(() => attrappe.mockReset())` steht in 16 Testdateien der Oberfläche, in einer
+  davon mit `mockClear` (gefunden am 05.10.2026). Die Kurzform gibt die Attrappe zurück, und Vitest ruft eine Funktion, die ein
+  Hook zurückgibt, nach dem Test als Aufräumer auf: Jeder Test ruft die Attrappe danach noch
+  einmal. Wirft oder scheitert sie dann (`mockRejectedValue`), wird der Test rot, obwohl seine
+  Erwartungen stimmen; nachgestellt an `klassensatzReservierung.svelte.test.js`. Abhilfe: der
+  Rumpf des Hooks in geschweiften Klammern. Kategorie B.
 - SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek5`; der
   Schlüssel steht in `sonar-project.properties`. Letzter Scan am 04.10.2026, der vierte des
   Tages, in der Einteilung der Übersicht (MQR-Modus): Zuverlässigkeit 0 Meldungen (Note A),
   Sicherheit 0 (A), Wartbarkeit 114 (A), Abdeckung 77,4 % von 38.650 Zeilen. Am 03.10.2026
   waren es 209 Meldungen, davon 75 `go:S3776` und zehn mit Auswirkung auf die Zuverlässigkeit
   (Note C); beide Gruppen und zehn Meldungen zur Wartbarkeit sind behoben. Die übrigen 114
-  sind am 05.10.2026 einzeln gelesen: Die 20 im Go-Code sind behoben (c8f05392, bbb30013,
-  baf75962, 4c126aaa), offen sind 93 in JavaScript und eine in Python. Der Scan nach diesen
-  Commits steht aus; bis dahin zeigt der Server weiter 114. `komplexitaet_ratsche_test.go`
+  sind am 05.10.2026 einzeln gelesen und bearbeitet: im Code 20 in Go (c8f05392, bbb30013,
+  baf75962, 4c126aaa), 80 in JavaScript und die eine in Python (fd29f5a9 bis 096f08a6); 13 in
+  JavaScript stehen als begründete Ausnahme in `sonar-project.properties` (e12: `S7776` in
+  `.svelte.js`, e13 bis e21: `S2925` in neun Specs). Der Scan nach diesen Commits steht aus;
+  bis dahin zeigt der Server weiter 114. Nicht vorab messbar waren die zwei Meldungen zu
+  `S6594` in `frontend/scripts/druck-sektionen-gate.mjs` und die Wirkung der Ausnahmen; die
+  übrigen Regeln sind mit ESLint nachgestellt und treffen die geänderten Stellen nicht mehr.
+  `komplexitaet_ratsche_test.go`
   lässt keine Produktionsfunktion über 15 zu. Das Projekt ist am 04.10.2026 neu angelegt, der Stand vom
   03.10.2026 liegt auf dem Server unter `Bibliothek4a`. Das Quality Gate vergleicht mit dem
   ersten Scan des Projekts und steht auf OK mit drei Bedingungen; vom neuen Code sind 94,1 %
