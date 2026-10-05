@@ -68,18 +68,17 @@
 <Snackbar {snackbar} />
 
 <!-- Full Page View (Replaces the side sheet) -->
-<div class="w-full h-full bg-white flex flex-col animate-fade-in">
+<div class="w-full h-full bg-surface-container-lowest flex flex-col animate-fade-in">
 	<!-- ── Header ─────────────────────────────────────────────────────────── -->
 	<header
-		class="shrink-0 flex items-center justify-between gap-4 px-8 py-5 border-b border-slate-100"
+		class="shrink-0 flex items-center justify-between gap-4 px-8 py-5 border-b border-outline-variant"
 	>
 		<div class="flex items-center gap-4 min-w-0">
 			<!-- Back Button -->
 			<button
 				onclick={onClose}
 				aria-label="Zurück"
-				class="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-slate-50
-               text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+				class="icon-btn h-10 w-10 shrink-0 text-on-surface-variant"
 			>
 				<ChevronLeft class="w-5 h-5" aria-hidden="true" />
 			</button>
@@ -88,10 +87,10 @@
 				<!-- Der Titel nennt die Art statt fest „Schüler": In dieser Datei steht seit
 				     dem 16.09.2026 jeder Leser, und „Schüler bearbeiten" über der Akte einer
 				     Lehrkraft ist schlicht eine falsche Auskunft. -->
-				<h2 class="text-xl font-black text-slate-900 leading-tight">
+				<h2 class="text-xl font-black text-on-surface leading-tight">
 					{leserArtText(student?.art)} bearbeiten
 				</h2>
-				<p class="text-xs text-slate-500 font-medium mt-0.5">
+				<p class="text-xs text-on-surface-variant font-medium mt-0.5">
 					{student?.vorname}
 					{student?.nachname}{student?.barcode_id ? ` · ${student.barcode_id}` : ''}
 				</p>

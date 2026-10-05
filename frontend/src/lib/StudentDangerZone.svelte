@@ -32,14 +32,14 @@
 </script>
 
 <section
-	class="mt-8 border border-rose-100 bg-rose-50/50 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
+	class="mt-8 border border-error-container bg-error-container/20 rounded-2xl p-6 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between"
 >
 	<div>
-		<h3 class="text-rose-700 font-bold text-base flex items-center gap-2">
+		<h3 class="text-error font-bold text-base flex items-center gap-2">
 			<TriangleAlert class="w-5 h-5" />
 			Gefahrenzone
 		</h3>
-		<p class="text-rose-600/80 text-sm mt-1 max-w-xl">
+		<p class="text-error/80 text-sm mt-1 max-w-xl">
 			{#if mitZugang}
 				Das Löschen entfernt die Person aus dem regulären System — und mit ihr den Zugang zu „Mein
 				Portal“. Offene Ausleihen oder Forderungen müssen vorher beglichen werden.
@@ -56,7 +56,7 @@
 		variant="danger"
 		size="lg"
 		onclick={onDelete}
-		class="shrink-0 px-6 bg-white hover:bg-rose-600 hover:text-white"
+		class="shrink-0 px-6 bg-surface-container-lowest"
 	>
 		{kollege ? 'Kollegen archivieren / löschen' : 'Schüler archivieren / löschen'}
 	</Button>

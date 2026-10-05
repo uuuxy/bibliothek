@@ -29,7 +29,7 @@
 	const kollege = $derived(istKollegium(profile));
 </script>
 
-<div class="w-full space-y-3 border-t border-b border-slate-200 py-3">
+<div class="w-full space-y-3 border-t border-b border-outline-variant py-3">
 	<div class="flex items-center justify-between">
 		<span class="text-base text-on-surface-variant">Konto-Status</span>
 		<!-- Gesperrt ist die Ausnahme und trägt Farbe; „Aktiv" ist der Normalfall und

@@ -88,15 +88,15 @@
 		</Button>
 		<Button variant="ghost" size="sm" onclick={() => (bearbeiten = false)}>✕</Button>
 	</div>
-	{#if fehler}<p class="text-xs text-rose-500 mt-1">{fehler}</p>{/if}
+	{#if fehler}<p class="text-xs text-error mt-1">{fehler}</p>{/if}
 {:else if darfBearbeiten}
 	<button
 		onclick={starte}
-		class="text-base text-slate-500 font-semibold hover:text-blue-600 hover:underline cursor-pointer transition-colors"
+		class="text-base text-on-surface-variant font-semibold hover:underline cursor-pointer"
 		title="Abgangsjahr bearbeiten"
 	>
 		Abgang {profile.abgaenger_jahr} ✎
 	</button>
 {:else}
-	<p class="text-base text-slate-500 font-semibold">Abgang {profile.abgaenger_jahr}</p>
+	<p class="text-base text-on-surface-variant font-semibold">Abgang {profile.abgaenger_jahr}</p>
 {/if}

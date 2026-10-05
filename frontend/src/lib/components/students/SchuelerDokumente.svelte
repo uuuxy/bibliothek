@@ -73,7 +73,7 @@
 		disabled={kontoauszugPdfLoading || !(profile.entliehene_buecher?.length > 0)}
 	>
 		{#if kontoauszugPdfLoading}{@render spinner()}{:else}<Printer
-				class="w-4 h-4 text-blue-600"
+				class="w-4 h-4 text-primary"
 			/>{/if}
 		Kontoauszug
 	</Button>
@@ -98,7 +98,7 @@
 			disabled={rechnungPdfLoading || !profile.has_open_damages}
 		>
 			{#if rechnungPdfLoading}{@render spinner()}{:else}<TriangleAlert
-					class="w-4 h-4 text-rose-600"
+					class="w-4 h-4 text-error"
 				/>{/if}
 			Ersatzforderung
 		</Button>
@@ -111,7 +111,7 @@
 		onclick={downloadDsgvoAuskunft}
 		title="DSGVO-Auskunft (Art. 15) als PDF exportieren"
 	>
-		<ShieldCheck class="w-4 h-4 text-slate-500" />
+		<ShieldCheck class="w-4 h-4 text-on-surface-variant" />
 		DSGVO-Auskunft
 	</Button>
 {/if}

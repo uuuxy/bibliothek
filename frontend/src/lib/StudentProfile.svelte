@@ -82,7 +82,7 @@
 {:else if st.profile}
 	{#if st.globalErrorToast}
 		<div
-			class="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in bg-rose-600 text-white flex items-center gap-2"
+			class="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in bg-error text-on-error flex items-center gap-2"
 		>
 			<Info class="h-5 w-5" aria-hidden="true" />
 			{st.globalErrorToast}
@@ -91,7 +91,7 @@
 
 	{#if !st.showEditModal}
 		<div
-			class="w-full grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] items-stretch text-slate-800 animate-fade-in no-print print:hidden font-sans"
+			class="w-full grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] items-stretch text-on-surface animate-fade-in no-print print:hidden font-sans"
 		>
 			<StudentProfileCard
 				bind:profile={st.profile}

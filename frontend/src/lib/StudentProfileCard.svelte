@@ -1,6 +1,7 @@
 <script>
 	import { Camera, Lock, X } from '@lucide/svelte';
 	import { ausleiheGesperrt } from './sperrStatus.js';
+	import StatusChip from './components/ui/StatusChip.svelte';
 	import StudentKontoStatus from './components/students/StudentKontoStatus.svelte';
 	import AbgangsjahrFeld from './components/students/AbgangsjahrFeld.svelte';
 	import { initialen, avatarVerlauf } from './avatarKachel.js';
@@ -29,12 +30,12 @@
 </script>
 
 <div
-	class="lg:col-span-1 relative bg-slate-50/60 border-r border-slate-200 px-7 pt-8 pb-6 flex flex-col items-start text-left gap-6"
+	class="lg:col-span-1 relative bg-surface/60 border-r border-outline-variant px-7 pt-8 pb-6 flex flex-col items-start text-left gap-6"
 >
 	<!-- Schließen -->
 	<button
 		onclick={onDeselect}
-		class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-full transition-colors cursor-pointer"
+		class="icon-btn absolute top-4 right-4 p-2 text-on-surface-variant"
 		title="Akte schließen (ESC)"
 	>
 		<X class="w-5 h-5" aria-hidden="true" />
@@ -48,7 +49,7 @@
 					? profile.foto_url
 					: profile.foto_url + '?t=' + timestamp}
 				alt="Passbild"
-				class="w-28 h-28 object-cover rounded-2xl border border-slate-200"
+				class="w-28 h-28 object-cover rounded-2xl border border-outline-variant"
 				onerror={() => (imageFailed = true)}
 			/>
 		{:else}
@@ -63,7 +64,7 @@
 			hidden={!rechte.foto}
 			onclick={() => (showWebcam = true)}
 			aria-label="Passbild mit Webcam aufnehmen"
-			class="absolute bottom-1 right-1 p-2 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white backdrop-blur-md transition-all cursor-pointer border border-white/20"
+			class="absolute bottom-1 right-1 p-2 rounded-full bg-scrim/60 text-white backdrop-blur-md cursor-pointer border border-white/20"
 			title="Passbild aufnehmen"
 		>
 			<Camera class="h-4 w-4" aria-hidden="true" />
@@ -73,19 +74,14 @@
 	<!-- Name & Metadaten -->
 	<div class="w-full space-y-2">
 		{#if ausleiheGesperrt(profile)}
-			<span
-				class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-rose-100 text-rose-700 border border-rose-200 mb-1"
-			>
-				<Lock class="w-3 h-3 mr-1" aria-hidden="true" />
-				Ausleihe gesperrt
-			</span>
+			<StatusChip ton="fehler" text="Ausleihe gesperrt" icon={Lock} />
 		{/if}
 
-		<h3 class="text-3xl font-bold text-slate-900 leading-tight">
+		<h3 class="text-3xl font-bold text-on-surface leading-tight">
 			{profile.vorname}
 			{profile.nachname}
 		</h3>
-		<p class="text-lg font-bold text-slate-700">
+		<p class="text-lg font-bold text-on-surface-variant">
 			{kollege ? leserArtText(profile.art) : `Klasse ${profile.klasse}`}
 		</p>
 
@@ -98,7 +94,7 @@
 		     (Migrationen 136, 145). Eine leere Zeile sähe nach einem Anzeigefehler aus;
 		     ohne Nummer gibt es auch keinen Ausweis zu drucken. -->
 		{#if profile.barcode_id}
-			<p class="text-sm text-slate-400 font-mono tracking-widest">{profile.barcode_id}</p>
+			<p class="text-sm text-on-surface-variant font-mono tracking-widest">{profile.barcode_id}</p>
 		{:else}
 			<p class="text-sm text-on-surface-variant italic">Noch keine Ausweisnummer</p>
 		{/if}

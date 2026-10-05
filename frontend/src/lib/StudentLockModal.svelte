@@ -70,9 +70,7 @@
 	{#snippet header()}
 		<h3
 			id="sperre-titel"
-			class="text-lg font-bold {gesperrt
-				? 'text-emerald-700'
-				: 'text-error'} flex items-center gap-2"
+			class="text-lg font-bold {gesperrt ? 'text-success' : 'text-error'} flex items-center gap-2"
 		>
 			{#if gesperrt}
 				<LockOpen class="w-5 h-5" aria-hidden="true" />

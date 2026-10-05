@@ -12,7 +12,7 @@
 </script>
 
 <div
-	class="relative w-8 h-8 rounded-full overflow-hidden border border-slate-100/80 bg-slate-50 flex items-center justify-center shrink-0"
+	class="relative w-8 h-8 rounded-full overflow-hidden border border-outline-variant bg-surface flex items-center justify-center shrink-0"
 >
 	{#if leser.foto_url}
 		<img
@@ -22,7 +22,7 @@
 		/>
 	{:else}
 		<div
-			class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-medium text-sm"
+			class="w-full h-full flex items-center justify-center bg-surface-container text-on-surface-variant font-medium text-sm"
 			aria-hidden="true"
 		>
 			{leser.vorname.charAt(0)}{leser.nachname.charAt(0)}
