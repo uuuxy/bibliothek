@@ -527,7 +527,7 @@ Bestellung nachträglich mit Grund korrigieren) ·
 Händlerbestätigung; Filter _Mittelherkunft_ nach Topf oder „ohne Zuordnung", die Kennzahlen
 im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Klassensatz-
 Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Bereit-Mail) ·
-**Wünsche & Meldungen** (Anliegen aus dem Portal, Meldungen über den Wünschen; _Abhaken_ mit
+**Meldungen** (Meldungen aus dem Portal, darunter ältere Wünsche; _Abhaken_ mit
 Notiz an die Lehrkraft).
 Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
 

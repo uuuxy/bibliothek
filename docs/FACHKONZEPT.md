@@ -283,7 +283,7 @@ Seit 18.08.2026 (Betreiber-Entscheidung: bewusst schlank, kein Ticketsystem):
   Lernmittel und bestellte Titel findet. `POST /api/anliegen` nimmt nur noch Meldungen an.
   Wünsche aus der Zeit davor stehen weiter in der Liste der Bibliothek, bis sie abgehakt
   sind.
-- Die Bibliothek arbeitet die Liste unter Bestellungen → „Wünsche & Meldungen" in
+- Die Bibliothek arbeitet die Liste unter Bestellungen → „Meldungen" in
   Ruhe ab: Meldungen stehen über den Wünschen, je die ältesten zuerst. **Abhaken**
   schließt das Anliegen und schickt der Lehrkraft automatisch eine Mail — mit der
   optionalen Notiz („bestellt, kommt Anfang September"). Ein Doppelklick von zwei

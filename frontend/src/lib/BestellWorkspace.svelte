@@ -172,7 +172,7 @@
 				label: 'Klassensatz-Reservierungen',
 				anzahl: uiStore.pendingReservierungen
 			},
-			{ id: 'anliegen', label: 'Wünsche & Meldungen' }
+			{ id: 'anliegen', label: 'Meldungen' }
 		]}
 	/>
 

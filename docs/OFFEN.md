@@ -1002,14 +1002,6 @@ Kategorie B.
 
 ### 6.2 Kategorie C
 
-- Das Portal legt seit dem 05.10.2026 keinen Buchwunsch mehr an, die Bibliothek liest das Wort
-  aber weiter: der Reiter und die Überschrift „Wünsche & Meldungen" unter Bestellungen
-  (`BestellWorkspace.svelte`, `bestellungen/AnliegenListe.svelte`), dort der Abschnitt
-  „Wünsche", der Betreff „Ihr Wunsch ist erledigt" (`api/anliegen.go`) und die Art „Wunsch" in
-  der Auskunft über ein Konto (`api/dsgvo_pdf_konto.go`). Alle vier gelten für Wünsche, die
-  noch in der Tabelle stehen; an einer neu eingerichteten Datenbank gibt es keine. Gefragt am
-  05.10.2026: ob Reiter und Überschrift dann „Meldungen" heißen. Beim Umbenennen die E2E-Specs
-  mitziehen (`portal-anliegen`, `feld-roundtrip`).
 - Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (16.09.2026), gefunden am
   01.10.2026: das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
   Vormerk-Liste (`permissionMetadata.js`, `BookVormerkungenTab.svelte`), das Etikett der

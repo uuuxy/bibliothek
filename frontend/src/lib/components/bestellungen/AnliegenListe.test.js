@@ -63,9 +63,13 @@ describe('AnliegenListe', () => {
 		);
 		const { findByRole, getAllByRole, container } = render(AnliegenListe);
 
-		await findByRole('heading', { name: 'Meldungen' });
+		// Die Meldungen stehen ohne Zwischenüberschrift unter der Überschrift der Seite: Eine
+		// zweite Zeile „Meldungen" stünde direkt unter der ersten.
+		await findByRole('heading', { name: 'Wünsche' });
+		expect(getAllByRole('heading', { level: 2 }).map((h) => h.textContent?.trim())).toEqual([
+			'Meldungen'
+		]);
 		expect(getAllByRole('heading', { level: 3 }).map((h) => h.textContent?.trim())).toEqual([
-			'Meldungen',
 			'Wünsche'
 		]);
 		const text = container.textContent ?? '';
@@ -87,9 +91,9 @@ describe('AnliegenListe', () => {
 				]
 			})
 		);
-		const { findByRole, queryByRole } = render(AnliegenListe);
+		const { findByRole, container } = render(AnliegenListe);
 
 		await findByRole('heading', { name: 'Wünsche' });
-		expect(queryByRole('heading', { name: 'Meldungen' })).toBeNull();
+		expect(container.querySelectorAll('section')).toHaveLength(1);
 	});
 });

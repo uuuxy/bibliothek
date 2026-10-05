@@ -167,7 +167,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		const ap = await a.newPage();
 		await uiLogin(ap);
 		await ap.goto('/bestellungen');
-		await ap.getByRole('tab', { name: /Wünsche & Meldungen/ }).click();
+		await ap.getByRole('tab', { name: 'Meldungen', exact: true }).click();
 		await expect(ap.getByText(`RT Meldung ${s}`)).toBeVisible();
 		// Die Zeile dieser Meldung: Über ihr können ältere Meldungen anderer Läufe stehen.
 		await ap

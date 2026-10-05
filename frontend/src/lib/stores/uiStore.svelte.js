@@ -62,8 +62,8 @@ class UIStore {
 	 * Bestellbedarf — einer Seite, die damit nichts zu tun hat.
 	 */
 	offeneEtiketten = $state(0);
-	// Offene Lehrer-Anliegen (Wünsche & Meldungen). Bis 24.08.2026 zählte sie niemand —
-	// wer nicht ohnehin bestellen wollte, sah den dritten Reiter nie.
+	// Offene Anliegen der Lehrkräfte (Reiter „Meldungen" unter Bestellungen). Die Zahl am
+	// Menüpunkt zeigt sie auch dem, der gerade nichts bestellen will.
 	offeneAnliegen = $state(0);
 	isInitialRouteMatched = $state(false);
 	/** Welche Statistik-Detailliste die stats_detail-Seite zeigt (deep-linkbar via URL). */

@@ -98,7 +98,7 @@ test.describe.serial('Portal: Problem melden', () => {
 	test('Die Bibliothek sieht die Meldung über dem älteren Wunsch', async ({ page }) => {
 		await uiLogin(page);
 		await page.goto('/bestellungen');
-		await page.getByRole('tab', { name: /Wünsche & Meldungen/ }).click();
+		await page.getByRole('tab', { name: 'Meldungen', exact: true }).click();
 
 		await expect(page.getByRole('heading', { name: 'Meldungen', exact: true })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Wünsche', exact: true })).toBeVisible();

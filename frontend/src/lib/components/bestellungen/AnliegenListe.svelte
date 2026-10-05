@@ -1,9 +1,6 @@
-<!-- @component AnliegenListe — LMF-Arbeitsliste für Wünsche und Meldungen der
-     Lehrkräfte (Betreiber-Entscheidung 18.08.2026: EIN schlanker Mechanismus,
-     kein Ticketsystem). Lehrkräfte legen Anliegen im Kollegiums-Portal an;
-     hier wird in Ruhe abgearbeitet — „Abhaken" schickt der Lehrkraft eine
-     Mail mit der optionalen Notiz. Meldungen stehen über den Wünschen, je die
-     ältesten zuerst. -->
+<!-- @component AnliegenListe — Arbeitsliste der Bibliothek für die Meldungen der Lehrkräfte
+     aus dem Portal, ohne Ticketsystem: „Abhaken" schickt der Lehrkraft eine Mail mit der
+     Notiz. Wünsche legt das Portal nicht mehr an; vorhandene stehen unter den Meldungen. -->
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
@@ -30,9 +27,10 @@
 	let notiz = $state('');
 
 	// Ein Problem soll am selben Tag erledigt werden, ein Wunsch wartet auf die Bestellung.
+	// Die Meldungen tragen keine Zwischenüberschrift: Sie stünde direkt unter der der Seite.
 	const abschnitte = $derived(
 		[
-			{ titel: 'Meldungen', liste: anliegen.filter((a) => a.art === 'meldung') },
+			{ titel: '', liste: anliegen.filter((a) => a.art === 'meldung') },
 			{ titel: 'Wünsche', liste: anliegen.filter((a) => a.art !== 'meldung') }
 		].filter((g) => g.liste.length > 0)
 	);
@@ -167,7 +165,7 @@
 
 <div class="space-y-6">
 	<div>
-		<h2 class="text-base font-bold text-on-surface">Wünsche & Meldungen</h2>
+		<h2 class="text-base font-bold text-on-surface">Meldungen</h2>
 		<p class="text-sm text-on-surface-variant mt-0.5">
 			Anliegen der Lehrkräfte aus dem Kollegiums-Portal, je die ältesten zuerst. „Abhaken" schließt
 			das Anliegen ab und schickt der Lehrkraft eine Mail — mit deiner Notiz, wenn du eine
@@ -187,7 +185,9 @@
 		<!-- M3 Lists: Ein Abstand trennt die Gruppen, die Linien nur die Zeilen einer Gruppe. -->
 		{#each abschnitte as g (g.titel)}
 			<section class="space-y-1">
-				<h3 class="text-base font-medium text-on-surface">{g.titel}</h3>
+				{#if g.titel}
+					<h3 class="text-base font-medium text-on-surface">{g.titel}</h3>
+				{/if}
 				<ul class="divide-y divide-outline-variant">
 					{#each g.liste as a (a.id)}
 						{@render anliegenRow(a)}
