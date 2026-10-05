@@ -203,7 +203,7 @@ describe('Problem melden im Portal', () => {
 		const screen = portalMitTreffer();
 		await suche(screen);
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
+		await fireEvent.click(screen.getByRole('button', { name: `Problem melden zu ${TITEL}` }));
 		expect(screen.queryByLabelText('Worum geht es? *'), 'das Buch ist schon gewählt').toBeNull();
 		const absenden = /** @type {HTMLButtonElement} */ (
 			await screen.findByRole('button', { name: 'Absenden' })
@@ -235,7 +235,7 @@ describe('Problem melden im Portal', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Klassensatz reservieren' }));
 		expect(await screen.findByRole('button', { name: 'Anfrage senden' })).toBeTruthy();
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
+		await fireEvent.click(screen.getByRole('button', { name: `Problem melden zu ${TITEL}` }));
 		expect(await screen.findByRole('button', { name: 'Absenden' })).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Anfrage senden' })).toBeNull();
 
@@ -250,7 +250,7 @@ describe('Problem melden im Portal', () => {
 		const screen = portalMitTreffer();
 
 		expect(screen.getAllByRole('tab').map((r) => r.textContent?.trim())).toEqual([
-			'Suchen & Reservieren',
+			'Reservieren & Melden',
 			'Klassensätze',
 			'Schulbücher',
 			'LMF-Plan'
@@ -276,6 +276,20 @@ describe('Problem melden im Portal', () => {
 		await vi.waitFor(() =>
 			expect(screen.queryByRole('button', { name: 'Problem melden' })).toBeTruthy()
 		);
+	});
+
+	// Der Knopf ohne Buch bleibt beim Tippen stehen, und der Platzhalter nennt beide Zwecke:
+	// Wer ein Problem ins Suchfeld schreibt, schickt es von dort ab.
+	it('lässt „Problem melden" beim Tippen stehen und übernimmt das Getippte', async () => {
+		const screen = portalMitTreffer();
+		expect(screen.getByPlaceholderText('Buch suchen für Reservierung oder Meldung …')).toBeTruthy();
+		await suche(screen);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
+		const worum = /** @type {HTMLInputElement} */ (
+			await screen.findByLabelText('Worum geht es? *')
+		);
+		expect(worum.value).toBe('Seydlitz');
 	});
 
 	// Solange nichts gesucht wird, steht unter der Suche, was die Lehrkraft geschickt hat:

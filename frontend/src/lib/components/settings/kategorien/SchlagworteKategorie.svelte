@@ -102,7 +102,7 @@
 			stehen; wer das nicht will, wählt es im Dialog ab.
 		</p>
 		<p>
-			Die als Filter markierten Wörter stehen in „Mein Portal“ unter „Suchen & Reservieren“ als
+			Die als Filter markierten Wörter stehen in „Mein Portal“ unter „Reservieren & Melden“ als
 			Filter, sobald ein Titel mit dem Wort im öffentlichen Katalog steht — Lernmittel stehen dort
 			nicht. Gesucht wird über alle Wörter und Verweise, markiert oder nicht.
 		</p>

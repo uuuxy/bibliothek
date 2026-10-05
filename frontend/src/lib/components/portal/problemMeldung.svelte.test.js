@@ -108,4 +108,26 @@ describe('Problem melden', () => {
 
 		expect(meldung.form('titel-1')).toMatchObject({ open: false, text: 'angefangen' });
 	});
+
+	// Ohne Buch steht das Getippte aus dem Suchfeld schon im Formular. Eine eigene Eingabe
+	// überschreibt die Vorgabe nicht.
+	it('übernimmt beim Öffnen die Vorgabe, solange unter „Worum geht es?" nichts steht', () => {
+		const meldung = erzeugeProblemMeldung(vi.fn());
+		meldung.oeffne(OHNE_BUCH, 'Scanner kaputt');
+		expect(meldung.form(OHNE_BUCH).worum).toBe('Scanner kaputt');
+
+		meldung.form(OHNE_BUCH).worum = 'die Bücher der 8G3';
+		meldung.schliesse(OHNE_BUCH);
+		meldung.oeffne(OHNE_BUCH, 'etwas anderes');
+		expect(meldung.form(OHNE_BUCH).worum).toBe('die Bücher der 8G3');
+	});
+
+	it('hält höchstens ein Formular offen', () => {
+		const meldung = erzeugeProblemMeldung(vi.fn());
+		meldung.oeffne('titel-1');
+		meldung.oeffne(OHNE_BUCH);
+
+		expect(meldung.form('titel-1').open).toBe(false);
+		expect(meldung.form(OHNE_BUCH).open).toBe(true);
+	});
 });

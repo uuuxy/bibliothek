@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 05.10.2026
+Stand: 06.10.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -19,7 +19,6 @@ und die Arbeit im Code.
 
 **Bei dir — zu entscheiden:**
 
-- Portal: ein fester Platz für „Problem melden" und der Name des ersten Reiters (4.31).
 - Theke: die Rückgabe eines ganzen Stapels, ohne dass dabei ein Buch ausgeliehen wird (4.32).
 - Buchmaske: was beim Standort für Lernmittel und Bibliothek getrennt sein soll (5.53).
 - GitHub: drei offene PRs (5.10) und die PR-Pflicht im Regelwerk für `main` (7.6).
@@ -219,26 +218,6 @@ Am 04.10.2026 gebaut und am selben Tag zurückgenommen, weil nicht bestellt:
   (`pdf/schadensfall.go`) sprechen immer die Erziehungsberechtigten an.
 - **Klasse auf dem Brief.** Das frühere Blatt aus der Auswahl nannte die Klasse, der Brief nennt
   sie nicht. Die Briefe einer Klasse liegen im Druck beieinander.
-
-### 4.31 Portal: „Problem melden" ist nicht zu finden
-
-Rückmeldung vom 05.10.2026 am Testserver: Wer ein Problem melden will, erkennt nicht, dass er
-dafür einen Buchtitel suchen soll. Am Code: Der erste Reiter heißt „Suchen & Reservieren"
-(`KollegiumPortal.svelte`). „Problem melden" steht am Treffer, also erst nach dem Tippen, und
-ohne Buch als Knopf unter „Deine Reservierungen" und „Deine Meldungen"
-(`portal/PortalMeldungen.svelte`) — nur solange das Suchfeld leer ist. Der Reiter
-„Klassensätze" kennt keine Meldung.
-
-Besprochen am 05.10.2026, nicht gebaut. Drei Teile: (1) „Problem melden" steht als
-umrandeter Knopf fest unter dem Suchfeld und bleibt beim Tippen stehen; der Knopf unter den
-Listen entfällt, am Treffer bleibt die Meldung mit dem gewählten Buch. (2) Der Platzhalter des
-Suchfelds nennt den Zweck („Buch suchen für Reservierung oder Meldung …"); er allein genügt
-nicht, weil er mit dem ersten Buchstaben verschwindet. (3) Der Reiter bekommt einen Namen, der
-das Melden nennt. Vorgeschlagen sind „Reservieren & Melden" und „Anfragen & Suche"; „Anfrage"
-heißt im Portal schon die Reservierung (Knopf „Anfrage senden"). M3, Tabs: „Text labels should
-clearly and succinctly describe the content within the tab."; M3, Buttons: Der umrandete Knopf
-ist für „actions that need attention but aren’t the primary action". Beim Umbenennen die
-E2E-Specs mitziehen.
 
 ### 4.32 Theke: ein Stapel vom Rückgabetisch
 
@@ -493,10 +472,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Eine neue Stelle dieser Regeln meldet gosec nicht. Abhilfe: je Stelle ein `#nosec` mit Grund,
   dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
   Nur mit Anlass.
-- **Ein Browser-Test war im vollen Lauf zweimal rot.** `e2e/feld-roundtrip.spec.js` („Buch
+- **Ein Browser-Test war dreimal rot.** `e2e/feld-roundtrip.spec.js` („Buch
   anlegen: Bestand, Zähldatum, Standort kommen in der DB an") fand am 05.10.2026 in zwei vollen
-  Läufen am lokalen Stack den neuen Titel nicht binnen 10 s; einzeln lief die Datei danach
-  jedes Mal grün. Beim zweiten Mal war die Maske zu und die Liste stand da („Bücher (10618)"),
+  Läufen und am 06.10.2026 in einem Lauf über neun Dateien am lokalen Stack den neuen Titel
+  nicht binnen 10 s; einzeln lief die Datei danach jedes Mal grün. Beim zweiten Mal war die Maske zu und die Liste stand da („Bücher (10618)"),
   der neue Titel fehlte in der Ansicht. Die lokale Datenbank trägt Hunderte Test-Titel aus
   früheren Läufen.
 - Auf GitHub stehen drei PRs offen (05.10.2026), bei allen sind die Prüfungen grün. PR 703

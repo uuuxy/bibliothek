@@ -26,7 +26,12 @@
 </script>
 
 <div class="grid max-w-3xl grid-cols-1 gap-y-4">
-	<p class="text-sm font-medium text-on-surface">Problem melden</p>
+	<div>
+		<p class="text-sm font-medium text-on-surface">Problem melden</p>
+		<p class="text-sm text-on-surface-variant">
+			Die Bibliothek arbeitet die Liste ab — beim Erledigen bekommst du eine Mail.
+		</p>
+	</div>
 	{#if mitWorum}
 		<Feld
 			bind:value={form.worum}

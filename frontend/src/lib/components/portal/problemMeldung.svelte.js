@@ -41,9 +41,17 @@ export function erzeugeProblemMeldung(nachSenden) {
 			return forms[key] ?? leer();
 		},
 
-		/** @param {string} key */
-		oeffne(key) {
-			ensure(key).open = true;
+		/**
+		 * Öffnet das Formular und schließt jedes andere. Ohne Buch steht das Getippte aus dem
+		 * Suchfeld als Vorgabe unter „Worum geht es?", solange dort nichts steht.
+		 * @param {string} key
+		 * @param {string} [vorgabe]
+		 */
+		oeffne(key, vorgabe = '') {
+			for (const k of Object.keys(forms)) if (k !== key) forms[k].open = false;
+			const f = ensure(key);
+			if (vorgabe && f.worum.trim() === '') f.worum = vorgabe;
+			f.open = true;
 		},
 
 		/** Schließt das Formular; die Eingabe bleibt stehen. @param {string} key */

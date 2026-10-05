@@ -171,6 +171,7 @@
 					size="sm"
 					bind:element={meldeKnopf}
 					aria-expanded={meldung.open}
+					aria-label="Problem melden zu {book.titel || book.title || 'Unbekannter Titel'}"
 					onclick={onmelden}
 				>
 					Problem melden

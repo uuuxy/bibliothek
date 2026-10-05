@@ -1,7 +1,7 @@
 import { apiFetch } from '../../apiFetch.js';
 
 /**
- * Die Suche in „Mein Portal → Suchen & Reservieren": Suchtext, Filter nach Schlagwort und
+ * Die Suche in „Mein Portal → Reservieren & Melden": Suchtext, Filter nach Schlagwort und
  * die Treffer. Eigene Datei, weil KollegiumPortal.svelte sonst über die 200-Zeilen-Grenze
  * wüchse (Ratsche frontend-hygiene-dateigroesse) — dasselbe Muster wie eigeneAnliegen und
  * klassensatzReservierung daneben.

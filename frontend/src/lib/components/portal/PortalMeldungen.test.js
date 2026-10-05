@@ -1,50 +1,20 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { render } from '@testing-library/svelte';
 import PortalMeldungen from './PortalMeldungen.svelte';
 
-// Die eigenen Meldungen und „Problem melden" ohne Buch, unter der Suche des Portals. Einen
-// Buchwunsch gibt es nicht mehr: Ein Buch für eine Klasse wird über die Suche reserviert.
-// Der Zustand des Formulars gehört dem Portal; das Zusammenspiel prüft KollegiumPortal.test.js.
-
-const zu = { open: false, worum: '', klasse: '', text: '', sending: false };
+// Die eigenen Meldungen der Lehrkraft mit ihrem Stand, unter der Suche des Portals. Der Knopf
+// „Problem melden" steht darüber in der Zeile unter dem Suchfeld (KollegiumPortal.test.js).
 
 /** @param {Record<string, any>} [props] */
-const aufbau = (props = {}) => {
-	const rufe = { onoeffnen: vi.fn(), onsenden: vi.fn(), onabbrechen: vi.fn() };
-	return {
-		...render(PortalMeldungen, {
-			anliegen: [],
-			form: zu,
-			onaktualisiert: vi.fn(),
-			...rufe,
-			...props
-		}),
-		...rufe
-	};
-};
+const aufbau = (props = {}) =>
+	render(PortalMeldungen, { anliegen: [], onaktualisiert: vi.fn(), ...props });
 
 describe('PortalMeldungen', () => {
-	it('zeigt einen Knopf „Problem melden" und kein Formular', async () => {
+	it('zeigt ohne Meldungen nichts, auch keinen Knopf', () => {
 		const s = aufbau();
 
-		expect(s.queryByRole('button', { name: 'Buchwunsch' })).toBeNull();
-		expect(s.queryByRole('button', { name: 'Absenden' })).toBeNull();
-
-		await fireEvent.click(s.getByRole('button', { name: 'Problem melden' }));
-		expect(s.onoeffnen).toHaveBeenCalled();
-	});
-
-	it('fragt ohne Buch, worum es geht, und kennzeichnet die Pflichtfelder', async () => {
-		const s = aufbau({ form: { ...zu, open: true } });
-
-		expect(s.getByLabelText('Worum geht es? *')).toBeTruthy();
-		expect(s.getByLabelText('Klasse / Kurs')).toBeTruthy();
-		expect(s.getByLabelText('Was stimmt nicht? *')).toBeTruthy();
-		const absenden = /** @type {HTMLButtonElement} */ (s.getByRole('button', { name: 'Absenden' }));
-		expect(absenden.disabled, 'ohne Gegenstand und Beschreibung').toBe(true);
-
-		await fireEvent.click(s.getByRole('button', { name: 'Abbrechen' }));
-		expect(s.onabbrechen).toHaveBeenCalled();
+		expect(s.queryByRole('heading', { name: 'Deine Meldungen' })).toBeNull();
+		expect(s.queryByRole('button', { name: 'Problem melden' })).toBeNull();
 	});
 
 	// Wünsche aus der Zeit des Buchwunschs stehen weiter in der Liste, bis sie abgehakt sind.

@@ -5,6 +5,7 @@
 	import SuchZustand from './components/ui/SuchZustand.svelte';
 	import { Search } from '@lucide/svelte';
 	import PortalMeldungen from './components/portal/PortalMeldungen.svelte';
+	import PortalProblemZeile from './components/portal/PortalProblemZeile.svelte';
 	import { erzeugeEigeneAnliegen } from './components/portal/eigeneAnliegen.svelte.js';
 	import PortalTrefferkarte from './components/portal/PortalTrefferkarte.svelte';
 	import PortalUeberblick from './components/portal/PortalUeberblick.svelte';
@@ -52,6 +53,13 @@
 	// die eigenen Anliegen neu.
 	const meldung = erzeugeProblemMeldung(() => eigeneAnliegen.lade());
 
+	// Ohne Buch steht das Getippte schon unter „Worum geht es?": Wer ein Problem ins Suchfeld
+	// schreibt und nichts findet, schickt es von dort ab.
+	function meldeOhneBuch() {
+		if (meldung.form(OHNE_BUCH).open) return meldung.schliesse(OHNE_BUCH);
+		meldung.oeffne(OHNE_BUCH, suche.text.trim());
+	}
+
 	// Je Karte ist höchstens ein Formular offen: Das eine schließt das andere.
 	/** @param {string} titelId */
 	function reserviereAmTreffer(titelId) {
@@ -73,7 +81,7 @@
 	<Reiter
 		etikett="Portal-Bereiche"
 		reiter={[
-			{ id: 'buecher', label: 'Suchen & Reservieren' },
+			{ id: 'buecher', label: 'Reservieren & Melden' },
 			{ id: 'klassensaetze', label: 'Klassensätze' },
 			// Schulbücher je Fach für die Fachsprecher.
 			{ id: 'schulbuecher', label: 'Schulbücher' },
@@ -85,26 +93,33 @@
 	/>
 
 	{#if reiter === 'buecher'}
-		<!-- `mt-4`: Der Abstand Reiter→Pille ist im Haus 24 px (Hülle) + 16 px. Die Filter nach
-		     Schlagwort stehen darunter wie die Filterzeile der Leserdatei (gap-3); ohne
-		     markierte Wörter entfällt die Zeile. -->
+		<!-- `mt-4`: Der Abstand Reiter→Pille ist im Haus 24 px (Hülle) + 16 px. Darunter die
+		     Zeile wie in der Leserdatei (gap-3): links die Filter nach Schlagwort, rechts
+		     „Problem melden" ohne Buch. -->
 		<div class="mt-4 flex flex-col gap-3">
 			<Suchpille
 				id="portal-suchfeld"
 				bind:wert={suche.text}
-				platzhalter="Titel, Autor oder ISBN eingeben …"
+				platzhalter="Buch suchen für Reservierung oder Meldung …"
 				etikett="Bücher für einen Klassensatz suchen"
 				autofokus
 				{nachlaufend}
 			/>
-			{#if suche.filter.length > 0}
-				<FilterChips
-					optionen={suche.filter.map((f) => ({ wert: f.id, text: f.wort }))}
-					wert={suche.schlagwort}
-					onwahl={(w) => (suche.schlagwort = w)}
-					etikett="Nach Schlagwort filtern"
-				/>
-			{/if}
+			<PortalProblemZeile
+				form={meldung.form(OHNE_BUCH)}
+				onumschalten={meldeOhneBuch}
+				onsenden={() => meldung.senden(OHNE_BUCH)}
+				onabbrechen={() => meldung.schliesse(OHNE_BUCH)}
+			>
+				{#if suche.filter.length > 0}
+					<FilterChips
+						optionen={suche.filter.map((f) => ({ wert: f.id, text: f.wort }))}
+						wert={suche.schlagwort}
+						onwahl={(w) => (suche.schlagwort = w)}
+						etikett="Nach Schlagwort filtern"
+					/>
+				{/if}
+			</PortalProblemZeile>
 		</div>
 
 		{#if suche.fehler}
@@ -147,14 +162,10 @@
 			/>
 		{:else if suche.leer}
 			<!-- Solange nichts gesucht wird: was die Lehrkraft geschickt hat und was daraus
-			     geworden ist, darunter „Problem melden" ohne Buch. -->
+			     geworden ist. -->
 			<PortalUeberblick reservierungen={listen.eigene} />
 			<PortalMeldungen
 				anliegen={eigeneAnliegen.liste}
-				form={meldung.form(OHNE_BUCH)}
-				onoeffnen={() => meldung.oeffne(OHNE_BUCH)}
-				onsenden={() => meldung.senden(OHNE_BUCH)}
-				onabbrechen={() => meldung.schliesse(OHNE_BUCH)}
 				onaktualisiert={eigeneAnliegen.lade}
 				ladefehler={eigeneAnliegen.fehler}
 			/>

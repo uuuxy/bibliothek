@@ -35,7 +35,7 @@ test.describe.serial('Portal: Problem melden', () => {
 		await page.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }).fill(TITEL);
 		await expect(page.getByRole('heading', { name: TITEL })).toBeVisible();
 
-		const melden = page.getByRole('button', { name: 'Problem melden' });
+		const melden = page.getByRole('button', { name: `Problem melden zu ${TITEL}` });
 		await melden.click();
 		// Das Buch wird nicht noch einmal getippt.
 		await expect(page.getByLabel('Worum geht es? *')).toHaveCount(0);
@@ -67,13 +67,13 @@ test.describe.serial('Portal: Problem melden', () => {
 
 		// Vier Reiter, keiner für Anliegen, und kein Buchwunsch.
 		await expect(page.getByRole('tab')).toHaveText([
-			'Suchen & Reservieren',
+			'Reservieren & Melden',
 			'Klassensätze',
 			'Schulbücher',
 			'LMF-Plan'
 		]);
 		await expect(page.getByRole('button', { name: 'Buchwunsch' })).toHaveCount(0);
-		await page.getByRole('button', { name: 'Problem melden' }).click();
+		await page.getByRole('button', { name: 'Problem melden', exact: true }).click();
 		const worum = page.getByLabel('Worum geht es? *');
 		await expect(worum).toBeFocused();
 		await worum.fill(OHNE_BUCH);
@@ -90,9 +90,26 @@ test.describe.serial('Portal: Problem melden', () => {
 			)
 			.toBe('meldung|drei fehlen');
 		// Nach dem Absenden steht wieder der Knopf da, und die Meldung unter „Deine Meldungen".
-		await expect(page.getByRole('button', { name: 'Problem melden' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Problem melden', exact: true })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Deine Meldungen' })).toBeVisible();
 		await expect(page.getByText(OHNE_BUCH)).toBeVisible();
+	});
+
+	// Der Knopf ohne Buch liegt nicht hinter der Suche: Er bleibt beim Tippen stehen, und was
+	// im Suchfeld steht, steht danach schon im Formular.
+	test('Beim Tippen bleibt „Problem melden" stehen, das Getippte steht im Formular', async ({
+		page
+	}) => {
+		await uiLogin(page, LEHRER);
+		await page.getByTitle('Mein Portal').click();
+		const getippt = `Scanner kaputt ${s}`;
+		await page
+			.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' })
+			.fill(getippt);
+		await expect(page.getByText('Keine Bücher gefunden')).toBeVisible();
+
+		await page.getByRole('button', { name: 'Problem melden', exact: true }).click();
+		await expect(page.getByLabel('Worum geht es? *')).toHaveValue(getippt);
 	});
 
 	test('Die Bibliothek sieht die Meldung über dem älteren Wunsch', async ({ page }) => {

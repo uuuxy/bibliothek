@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
-// „Mein Portal → Suchen & Reservieren": Die Schlagworte, die die Pflegeseite als Filter
+// „Mein Portal → Reservieren & Melden": Die Schlagworte, die die Pflegeseite als Filter
 // markiert, stehen als Filter-Chips unter der Suche (docs/OFFEN.md 4.20). Über den Draht
 // und mit der Rolle kollegium, weil das Portal über den öffentlichen Katalog sucht und
 // Lehrkräfte kein view_books haben — ein Test am Handler sähe weder die Tür noch die Rolle.
