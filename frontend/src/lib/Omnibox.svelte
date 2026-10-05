@@ -19,19 +19,18 @@
 	let studentProfileComponent = $state(/** @type {any} */ (null));
 
 	// Rückmeldung des Scanners: rot = blockiert oder fehlgeschlagen, grün = gebucht, orange =
-	// Hinweis. Der Ausdruck liefert den ganzen Farbsatz, Ruhe oder Rückmeldung: Stünden beide im
-	// class-Attribut, gewönne die Regel, die im Stylesheet weiter hinten steht, und der
-	// Grundzustand schluckte die Fehlerfarbe.
+	// Hinweis. Die Farbe trägt nur der Rand, die Fläche bleibt die des Feldes im Fokus, wie beim
+	// Fehlerzustand von ui/Feld. Jeder Eintrag ist ein ganzer Farbsatz: Stünde er neben RUHE im
+	// class-Attribut, gewönne die Regel, die im Stylesheet weiter hinten steht.
 	const RUHE =
 		'bg-slate-100 border-transparent focus-within:bg-white focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600';
-	const farbZustand = $derived.by(() => {
-		if (omniboxStore.flashBorder === 'green')
-			return 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-400';
-		if (omniboxStore.flashBorder === 'orange')
-			return 'bg-amber-50 border-amber-400 ring-1 ring-amber-400';
-		if (omniboxStore.flashBorder === 'red') return 'bg-red-50 border-red-500 ring-1 ring-red-500';
-		return RUHE;
-	});
+	/** @type {Record<string, string>} */
+	const RUECKMELDUNG = {
+		green: 'bg-surface-container-lowest border-success ring-1 ring-success',
+		orange: 'bg-surface-container-lowest border-warning ring-1 ring-warning',
+		red: 'bg-surface-container-lowest border-error ring-1 ring-error'
+	};
+	const farbZustand = $derived(RUECKMELDUNG[omniboxStore.flashBorder] ?? RUHE);
 
 	$effect(() => {
 		if (appState.triggerStudentScan) {

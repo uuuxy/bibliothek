@@ -26,7 +26,7 @@ const BESTAND = {
 	'src/inventur/lib/components/admin/ClassAssignmentDialog.svelte': 207,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 212,
 	'src/lib/BestellWorkspace.svelte': 286,
-	'src/lib/Omnibox.svelte': 221,
+	'src/lib/Omnibox.svelte': 220,
 	'src/lib/StatsDashboard.svelte': 351,
 	'src/lib/StudentProfile.svelte': 231,
 	'src/lib/UnifiedInventory.svelte': 237,
