@@ -262,14 +262,19 @@ meisten zuerst; die der Kachel mit „diese Auflage"). Belegt:
 Seit 18.08.2026 (Betreiber-Entscheidung: bewusst schlank, kein Ticketsystem):
 
 - **Ein Mechanismus für zwei Fälle:** „Ich möchte in der 8G3 den Markl 2" (Wunsch)
-  und „die 8G3 hat die falschen Bücher bekommen" (Meldung). Die Lehrkraft trägt es
-  im Kollegiums-Portal ein — Art, Freitext, Klasse/Kurs, optionale Anmerkung.
+  und „die 8G3 hat die falschen Bücher bekommen" (Meldung). Die Lehrkraft wählt im
+  Kollegiums-Portal zuerst die Art über zwei Knöpfe, „Buchwunsch" und „Problem melden";
+  vorbelegt ist keine. Der Wunsch nimmt Freitext, Klasse/Kurs und eine optionale
+  Anmerkung. Beim Problem schlägt das Feld für das Buch beim Tippen Titel aus dem Katalog
+  vor, ein eigener Text bleibt möglich; dazu Klasse/Kurs und was nicht stimmt.
+  Gespeichert wird in beiden Fällen Text, kein Verweis auf einen Titel.
 - **Wünschen geht immer** — keine Wunschphase, kein Stichtag.
 - Die Bibliothek arbeitet die Liste unter Bestellungen → „Wünsche & Meldungen" in
-  Ruhe ab (älteste zuerst). **Abhaken** schließt das Anliegen und schickt der
-  Lehrkraft automatisch eine Mail — mit der optionalen Notiz („bestellt, kommt
-  Anfang September"). Ein Doppelklick von zwei Arbeitsplätzen löst keine zweite
-  Mail aus (gleiches Muster wie die Klassensatz-Bereit-Mail).
+  Ruhe ab: Meldungen stehen über den Wünschen, je die ältesten zuerst. **Abhaken**
+  schließt das Anliegen und schickt der Lehrkraft automatisch eine Mail — mit der
+  optionalen Notiz („bestellt, kommt Anfang September"). Ein Doppelklick von zwei
+  Arbeitsplätzen löst keine zweite Mail aus (gleiches Muster wie die
+  Klassensatz-Bereit-Mail).
 - Die Lehrkraft sieht ihre Anliegen samt Status und Erledigungs-Notiz im Portal.
 - Bewusst NICHT gebaut: Prioritäten, Kommentar-Threads, Genehmigungsketten,
   Deckungsprüfung, Packlisten — erst nachrüsten, wenn der Alltag sie vermisst.

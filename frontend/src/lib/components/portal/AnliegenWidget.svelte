@@ -1,30 +1,17 @@
-<!-- @component AnliegenWidget — Wünsche und Meldungen der Lehrkraft im
-     Kollegiums-Portal (Betreiber-Entscheidung 18.08.2026): Wünschen geht
-     IMMER, ohne Stichtag. Formular oben, eigene Anliegen mit Status darunter —
-     „die LMF hakt ab, und du siehst es hier oder bekommst eine Mail".
+<!-- @component AnliegenWidget — Wünsche und Meldungen der Lehrkraft im Kollegiums-Portal.
 
-     Seit dem 23.08.2026 ein eigener REITER des Portals statt eines Anhängsels
-     unter der Buchsuche. Vorher standen zwei ungleiche Aufgaben auf einer Fläche:
-     oben ein namenloses Suchfeld, darunter ein 340-px-Poster, darunter dieses
-     Formular — und weil die Felder dieselbe Pillenform trugen wie die Suche,
-     las sich „Welches Buch?" wie ein zweites Suchfeld.
-
-     Die Felder sind deshalb jetzt Feld (Beschriftung über dem Feld,
-     Rahmen statt Füllung). Die Regel im Haus: Pille = suchen, Rahmen = eingeben. -->
+     Der Einstieg sind zwei Knöpfe ohne Vorbelegung: Ein Wunsch bleibt liegen, bis bestellt
+     wird, ein Problem soll am selben Tag erledigt werden, und mit einer vorbelegten Art
+     stünde das eine als das andere in der Liste der Bibliothek. Darunter stehen die eigenen
+     Anliegen mit ihrem Stand. -->
 <script>
-	import { apiFetch } from '../../apiFetch.js';
+	import { tick } from 'svelte';
+	import { BookPlus, TriangleAlert } from '@lucide/svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import AnliegenFormular from './AnliegenFormular.svelte';
 
 	/** @typedef {{ id: string, art: string, titel_text: string, klasse: string, kommentar?: string, erstellt_am: string, erledigt_am?: string, erledigt_notiz?: string }} Anliegen */
-
-	let art = $state('wunsch');
-	let titelText = $state('');
-	let klasse = $state('');
-	let kommentar = $state('');
-	let sending = $state(false);
 
 	// Die Liste gehört dem Portal: Es braucht sie ohnehin für den Zähler am Reiter und
 	// für die Startfläche. Zwei eigene Abrufe hätten zwei Wahrheiten über denselben
@@ -33,37 +20,24 @@
 	let { anliegen, onaktualisiert, ladefehler = false } = $props();
 	const eigene = $derived(anliegen);
 
-	async function absenden() {
-		if (!titelText.trim() || sending) return;
-		sending = true;
-		try {
-			const res = await apiFetch('/api/anliegen', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					art,
-					titel_text: titelText.trim(),
-					klasse: klasse.trim(),
-					kommentar: kommentar.trim()
-				})
-			});
-			if (!res.ok) {
-				const data = await res.json().catch(() => null);
-				throw new Error(data?.error || 'Anliegen konnte nicht gesendet werden.');
-			}
-			toastStore.addToast(
-				art === 'wunsch' ? 'Wunsch ist bei der Bibliothek.' : 'Meldung ist bei der Bibliothek.',
-				'success'
-			);
-			titelText = '';
-			klasse = '';
-			kommentar = '';
-			await onaktualisiert();
-		} catch (err) {
-			toastStore.addToast(/** @type {any} */ (err).message || String(err), 'error');
-		} finally {
-			sending = false;
-		}
+	/** @type {'wunsch' | 'meldung' | null} */
+	let art = $state(null);
+	/** @type {HTMLButtonElement | undefined} */
+	let wunschKnopf = $state();
+	/** @type {HTMLButtonElement | undefined} */
+	let meldungKnopf = $state();
+
+	/** Zurück zur Wahl; der Fokus geht auf den Knopf, der das Formular geöffnet hatte. */
+	async function zurWahl() {
+		const zuletzt = art;
+		art = null;
+		await tick();
+		(zuletzt === 'meldung' ? meldungKnopf : wunschKnopf)?.focus();
+	}
+
+	async function abgeschickt() {
+		await zurWahl();
+		await onaktualisiert();
 	}
 </script>
 
@@ -73,56 +47,31 @@
 		Erledigen bekommst du eine Mail.
 	</p>
 
-	<div class="flex flex-col gap-4">
-		<!-- Zwei Arten, ein Formular: der Unterschied ist nur das Etikett. -->
-		<div class="flex gap-2" role="radiogroup" aria-label="Art des Anliegens">
-			{#each [['wunsch', 'Buchwunsch'], ['meldung', 'Etwas stimmt nicht']] as [wert, label] (wert)}
-				<button
-					role="radio"
-					aria-checked={art === wert}
-					onclick={() => (art = wert)}
-					class="px-4 py-2 rounded-full text-sm font-semibold transition-colors cursor-pointer {art ===
-					wert
-						? 'bg-primary-container text-on-primary-container'
-						: 'bg-surface border border-outline-variant text-on-surface-variant hover:bg-surface-container-low'}"
-				>
-					{label}
-				</button>
-			{/each}
-		</div>
-
-		<Feld
-			bind:value={titelText}
-			label={art === 'wunsch' ? 'Welches Buch?' : 'Worum geht es?'}
-			type="text"
-			maxlength={300}
-			placeholder={art === 'wunsch'
-				? 'z. B. Markl Biologie 2, ISBN falls bekannt'
-				: 'z. B. 8G3 hat die falschen Bücher bekommen'}
-		/>
-		<div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-3">
-			<Feld
-				bind:value={klasse}
-				label="Klasse / Kurs"
-				type="text"
-				maxlength={50}
-				placeholder="z. B. 8G3"
-			/>
-			<Feld
-				bind:value={kommentar}
-				label="Anmerkung (optional)"
-				type="text"
-				maxlength={1000}
-				placeholder="Was die Bibliothek sonst noch wissen sollte"
-				class="sm:col-span-2"
-			/>
-		</div>
-		<div class="flex justify-end">
-			<Button onclick={absenden} disabled={sending || !titelText.trim()}>
-				{sending ? 'Wird gesendet …' : 'Absenden'}
+	{#if art === null}
+		<!-- M3 Buttons: zwei gleichrangige Wahlen in derselben Form, das Symbol vor dem Wort. -->
+		<div class="flex flex-wrap gap-3" role="group" aria-label="Art des Anliegens">
+			<Button
+				variant="secondary"
+				size="lg"
+				bind:element={wunschKnopf}
+				onclick={() => (art = 'wunsch')}
+			>
+				<BookPlus class="h-5 w-5" aria-hidden="true" />
+				Buchwunsch
+			</Button>
+			<Button
+				variant="secondary"
+				size="lg"
+				bind:element={meldungKnopf}
+				onclick={() => (art = 'meldung')}
+			>
+				<TriangleAlert class="h-5 w-5" aria-hidden="true" />
+				Problem melden
 			</Button>
 		</div>
-	</div>
+	{:else}
+		<AnliegenFormular {art} onabbrechen={zurWahl} onabgeschickt={abgeschickt} />
+	{/if}
 
 	<!-- Ein gescheiterter ERSTER Abruf sagt nichts über die Anliegen — dann steht hier der
 	     Ausfall und nicht die leere Liste. „Nichts da" hätte einen abgeschickten Wunsch als

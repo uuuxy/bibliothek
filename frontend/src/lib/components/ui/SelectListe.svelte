@@ -7,7 +7,10 @@
      POSITION FIXED, nicht absolute: Die Liste öffnet sich regelmäßig in einem
      Container mit overflow-y-auto (Formularspalten, Tabellen, Dialoge).
      Absolut positioniert würde sie dort abgeschnitten — dieselbe Falle, die in
-     CoverPeek schon dokumentiert ist. -->
+     CoverPeek schon dokumentiert ist.
+
+     Mit `zeile` zeichnet der Aufrufer den Inhalt einer Zeile selbst, etwa mit führendem
+     Bild und zweiter Textzeile. Fläche, Zeilenhöhe und Markierung bleiben die des Menüs. -->
 <script>
 	import { Check } from '@lucide/svelte';
 
@@ -21,11 +24,22 @@
 	 *   zeilenKennung: (i: number) => string,
 	 *   onwaehlen: (i: number) => void,
 	 *   onaktiv: (i: number) => void,
-	 *   onelement: (el: HTMLDivElement | undefined) => void
+	 *   onelement: (el: HTMLDivElement | undefined) => void,
+	 *   zeile?: import('svelte').Snippet<[any]>
 	 * }}
 	 */
-	let { options, value, aktiv, box, kennung, zeilenKennung, onwaehlen, onaktiv, onelement } =
-		$props();
+	let {
+		options,
+		value,
+		aktiv,
+		box,
+		kennung,
+		zeilenKennung,
+		onwaehlen,
+		onaktiv,
+		onelement,
+		zeile = undefined
+	} = $props();
 
 	/** @type {HTMLDivElement | undefined} */
 	let el = $state();
@@ -70,9 +84,13 @@
 					? 'bg-on-surface/8 text-on-surface'
 					: 'text-on-surface'}"
 		>
-			<span class="min-w-0 flex-1 truncate">{o.label}</span>
-			{#if o.value === value}
-				<Check class="h-5 w-5 shrink-0" aria-hidden="true" />
+			{#if zeile}
+				{@render zeile(o)}
+			{:else}
+				<span class="min-w-0 flex-1 truncate">{o.label}</span>
+				{#if o.value === value}
+					<Check class="h-5 w-5 shrink-0" aria-hidden="true" />
+				{/if}
 			{/if}
 		</div>
 	{/each}

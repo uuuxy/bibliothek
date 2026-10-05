@@ -2,7 +2,8 @@
      Lehrkräfte (Betreiber-Entscheidung 18.08.2026: EIN schlanker Mechanismus,
      kein Ticketsystem). Lehrkräfte legen Anliegen im Kollegiums-Portal an;
      hier wird in Ruhe abgearbeitet — „Abhaken" schickt der Lehrkraft eine
-     Mail mit der optionalen Notiz. Älteste zuerst, wie die Klassensätze. -->
+     Mail mit der optionalen Notiz. Meldungen stehen über den Wünschen, je die
+     ältesten zuerst. -->
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
@@ -27,6 +28,14 @@
 	/** @type {string | null} */
 	let completingId = $state(null);
 	let notiz = $state('');
+
+	// Ein Problem soll am selben Tag erledigt werden, ein Wunsch wartet auf die Bestellung.
+	const abschnitte = $derived(
+		[
+			{ titel: 'Meldungen', liste: anliegen.filter((a) => a.art === 'meldung') },
+			{ titel: 'Wünsche', liste: anliegen.filter((a) => a.art !== 'meldung') }
+		].filter((g) => g.liste.length > 0)
+	);
 
 	async function loadAnliegen() {
 		loading = true;
@@ -160,8 +169,9 @@
 	<div>
 		<h2 class="text-base font-bold text-on-surface">Wünsche & Meldungen</h2>
 		<p class="text-sm text-on-surface-variant mt-0.5">
-			Anliegen der Lehrkräfte aus dem Kollegiums-Portal, älteste zuerst. „Abhaken" schließt das
-			Anliegen ab und schickt der Lehrkraft eine Mail — mit deiner Notiz, wenn du eine schreibst.
+			Anliegen der Lehrkräfte aus dem Kollegiums-Portal, je die ältesten zuerst. „Abhaken" schließt
+			das Anliegen ab und schickt der Lehrkraft eine Mail — mit deiner Notiz, wenn du eine
+			schreibst.
 		</p>
 	</div>
 
@@ -174,10 +184,16 @@
 	{:else if anliegen.length === 0}
 		<div class="py-16 text-center text-on-surface-variant text-base">Keine offenen Anliegen.</div>
 	{:else}
-		<ul class="divide-y divide-outline-variant">
-			{#each anliegen as a (a.id)}
-				{@render anliegenRow(a)}
-			{/each}
-		</ul>
+		<!-- M3 Lists: Ein Abstand trennt die Gruppen, die Linien nur die Zeilen einer Gruppe. -->
+		{#each abschnitte as g (g.titel)}
+			<section class="space-y-1">
+				<h3 class="text-base font-medium text-on-surface">{g.titel}</h3>
+				<ul class="divide-y divide-outline-variant">
+					{#each g.liste as a (a.id)}
+						{@render anliegenRow(a)}
+					{/each}
+				</ul>
+			</section>
+		{/each}
 	{/if}
 </div>

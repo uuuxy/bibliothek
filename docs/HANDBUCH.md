@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-04. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-05. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -527,7 +527,8 @@ Bestellung nachträglich mit Grund korrigieren) ·
 Händlerbestätigung; Filter _Mittelherkunft_ nach Topf oder „ohne Zuordnung", die Kennzahlen
 im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Klassensatz-
 Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Bereit-Mail) ·
-**Wünsche & Meldungen** (Anliegen aus dem Portal, _Erledigen_ mit Notiz an die Lehrkraft).
+**Wünsche & Meldungen** (Anliegen aus dem Portal, Meldungen über den Wünschen; _Abhaken_ mit
+Notiz an die Lehrkraft).
 Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
 
 **Auflagen im Bestellbedarf** (seit 25.09.2026): Sind Auflagen eines Schulbuchs in der
@@ -697,8 +698,9 @@ Auswahl „Ohne Schulzweig" zeigt umgekehrt nur sie. Littera hat den Zweig nie m
 der Altbestand ist also zunächst ohne. Ein Buch, dessen Coverbild von außerhalb kommt
 (Deutsche Nationalbibliothek, Google Books), erscheint im PDF ohne Bild: gedruckt wird nur,
 was auf dem Server liegt. Tauchen dort Standorttexte wie „Buch Deu 6/Cha 126" als Fach auf,
-stammt der Bestand aus einem Import vor dem 03.09.2026: `scripts/repair_fach_kategorie.sql`) · **Meine Anliegen** (Buchwunsch oder „Etwas stimmt
-nicht" an die Bibliothek). (§12, Rolle Kollegium)
+stammt der Bestand aus einem Import vor dem 03.09.2026: `scripts/repair_fach_kategorie.sql`) · **Meine Anliegen** (zwei Knöpfe,
+„Buchwunsch" und „Problem melden"; beim Problem schlägt das Feld beim Tippen Titel aus dem
+Katalog vor, ein eigener Text geht auch). (§12, Rolle Kollegium)
 
 ---
 

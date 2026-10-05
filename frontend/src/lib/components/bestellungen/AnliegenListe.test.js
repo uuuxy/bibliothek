@@ -36,4 +36,60 @@ describe('AnliegenListe', () => {
 		const { findByText } = render(AnliegenListe);
 		expect(await findByText('Keine offenen Anliegen.')).toBeTruthy();
 	});
+
+	// Ein Wunsch wartet auf die nächste Bestellung, ein Problem soll am selben Tag erledigt
+	// werden. In einer Liste nach Alter stünde die Meldung von heute unter den Wünschen.
+	it('stellt die Meldungen über die Wünsche, auch wenn der Wunsch älter ist', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{
+						id: 'w',
+						art: 'wunsch',
+						titel_text: 'Alter Wunsch',
+						klasse: '7A',
+						erstellt_am: '2026-09-01T08:00:00Z'
+					},
+					{
+						id: 'm',
+						art: 'meldung',
+						titel_text: 'Neue Meldung',
+						klasse: '8G3',
+						erstellt_am: '2026-10-05T08:00:00Z'
+					}
+				]
+			})
+		);
+		const { findByRole, getAllByRole, container } = render(AnliegenListe);
+
+		await findByRole('heading', { name: 'Meldungen' });
+		expect(getAllByRole('heading', { level: 3 }).map((h) => h.textContent?.trim())).toEqual([
+			'Meldungen',
+			'Wünsche'
+		]);
+		const text = container.textContent ?? '';
+		expect(text.indexOf('Neue Meldung')).toBeLessThan(text.indexOf('Alter Wunsch'));
+	});
+
+	it('zeigt einen Abschnitt nur, wenn er Einträge hat', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{
+						id: 'w',
+						art: 'wunsch',
+						titel_text: 'Ein Wunsch',
+						klasse: '7A',
+						erstellt_am: '2026-09-01T08:00:00Z'
+					}
+				]
+			})
+		);
+		const { findByRole, queryByRole } = render(AnliegenListe);
+
+		await findByRole('heading', { name: 'Wünsche' });
+		expect(queryByRole('heading', { name: 'Meldungen' })).toBeNull();
+	});
 });

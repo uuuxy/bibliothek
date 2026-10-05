@@ -153,6 +153,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await uiLogin(lp, LEHRER);
 		await lp.getByTitle('Mein Portal').click();
 		await lp.getByRole('tab', { name: 'Meine Anliegen' }).click();
+		await lp.getByRole('button', { name: 'Buchwunsch' }).click();
 		await lp.getByLabel('Welches Buch?').fill(`RT Wunsch ${s}`);
 		await lp.getByLabel('Klasse / Kurs').fill('7A');
 		await lp.getByRole('button', { name: 'Absenden' }).click();

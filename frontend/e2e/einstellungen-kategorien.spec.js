@@ -198,6 +198,12 @@ test('Portal: kein Eingabefeld hängt eine Zeile tiefer als seine Nachbarn', asy
 	await uiLogin(page);
 	await gehZu(page, '/kollegium-portal');
 	await page.getByRole('tab', { name: /Meine Anliegen/ }).click();
+	// Die Felder stehen erst nach der Wahl da, je Art ein eigenes Formular.
+	await page.getByRole('button', { name: 'Buchwunsch' }).click();
 	await page.locator(FELDER).first().waitFor();
-	await pruefeFeldreihen(page, 'Portal → Meine Anliegen');
+	await pruefeFeldreihen(page, 'Portal → Meine Anliegen, Buchwunsch');
+	await page.getByRole('button', { name: 'Abbrechen' }).click();
+	await page.getByRole('button', { name: 'Problem melden' }).click();
+	await page.locator(FELDER).first().waitFor();
+	await pruefeFeldreihen(page, 'Portal → Meine Anliegen, Problem melden');
 });
