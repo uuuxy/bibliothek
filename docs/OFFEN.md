@@ -223,9 +223,6 @@ Anmeldung: Das Sitzungs-Cookie wird nur über HTTPS gesetzt (`ermittleCookieSecu
 Warnung, und die Theke ließe sich bei einem Netzausfall nicht neu laden (Service Worker,
 [arc42/08](arc42/08-querschnittliche-konzepte.md), „Offline"). Das Uptime-Signal von außen (7.5)
 ruft `/health` ab.
-Littera lief im Schulnetz; Recherche, Reservierung und Verlängerung über das Internet gab es dort
-nur mit dem gesondert lizenzierten Zusatzmodul web.OPAC (Littera-Handbuch, „Einstellungen für den
-web.OPAC").
 
 **Was die Seite von außen braucht** (am Code nachgesehen am 28.09.2026): den Pfad
 `/bestellung/<token>` mit den Dateien der Oberfläche, `/api/public/bestellung/…` (Abruf,
@@ -551,27 +548,14 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Erwartungen stimmen; nachgestellt an `klassensatzReservierung.svelte.test.js`. Abhilfe: der
   Rumpf des Hooks in geschweiften Klammern. Kategorie B.
 - SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek5`; der
-  Schlüssel steht in `sonar-project.properties`. Letzter Scan am 04.10.2026, der vierte des
-  Tages, in der Einteilung der Übersicht (MQR-Modus): Zuverlässigkeit 0 Meldungen (Note A),
-  Sicherheit 0 (A), Wartbarkeit 114 (A), Abdeckung 77,4 % von 38.650 Zeilen. Am 03.10.2026
-  waren es 209 Meldungen, davon 75 `go:S3776` und zehn mit Auswirkung auf die Zuverlässigkeit
-  (Note C); beide Gruppen und zehn Meldungen zur Wartbarkeit sind behoben. Die übrigen 114
-  sind am 05.10.2026 einzeln gelesen und bearbeitet: im Code 20 in Go (c8f05392, bbb30013,
-  baf75962, 4c126aaa), 80 in JavaScript und die eine in Python (fd29f5a9 bis 096f08a6); 13 in
-  JavaScript stehen als begründete Ausnahme in `sonar-project.properties` (e12: `S7776` in
-  `.svelte.js`, e13 bis e21: `S2925` in neun Specs). Der Scan nach diesen Commits steht aus;
-  bis dahin zeigt der Server weiter 114. Nicht vorab messbar waren die zwei Meldungen zu
-  `S6594` in `frontend/scripts/druck-sektionen-gate.mjs` und die Wirkung der Ausnahmen; die
-  übrigen Regeln sind mit ESLint nachgestellt und treffen die geänderten Stellen nicht mehr.
-  `komplexitaet_ratsche_test.go`
-  lässt keine Produktionsfunktion über 15 zu. Das Projekt ist am 04.10.2026 neu angelegt, der Stand vom
-  03.10.2026 liegt auf dem Server unter `Bibliothek4a`. Das Quality Gate vergleicht mit dem
-  ersten Scan des Projekts und steht auf OK mit drei Bedingungen; vom neuen Code sind 94,1 %
-  getestet (3 von 47 Zeilen offen: zwei im Fehlerausgang von `ZaehleMahnungTx`, eine in
-  `scripts/generalprobe/probe_host.py`). Der dritte Scan stand an dieser Bedingung auf Fehler
-  (57,7 %, Gesamtabdeckung 72,0 %): Er rechnete einem Go-Paket nur die Tests an, die in ihm
-  selbst liegen. Seit dem 04.10.2026 misst das Skript mit `-coverpkg` über alle Pakete
-  ([SCRIPTS.md](SCRIPTS.md), „Warum die Coverage niedriger aussieht, als sie ist").
+  Schlüssel steht in `sonar-project.properties`. Letzter Scan am 04.10.2026 (MQR-Modus):
+  Zuverlässigkeit 0 Meldungen, Sicherheit 0, Wartbarkeit 114, Abdeckung 77,4 %, Quality Gate OK.
+  Die 114 sind am 05.10.2026 bearbeitet: 101 im Code, 13 als begründete Ausnahme in
+  `sonar-project.properties` (e12 bis e21). **Offen: der Scan nach diesen Commits;** bis dahin
+  zeigt der Server weiter 114. Nicht vorab messbar waren die zwei Meldungen zu `S6594` in
+  `frontend/scripts/druck-sektionen-gate.mjs` und die Wirkung der Ausnahmen. Der Stand vom
+  03.10.2026 liegt auf dem Server unter `Bibliothek4a`; wie die Abdeckung gemessen wird, steht
+  in [SCRIPTS.md](SCRIPTS.md), „Warum die Coverage niedriger aussieht, als sie ist".
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
@@ -691,6 +675,18 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 - Mahnwesen: Scheitert das Blatt je Klasse, steht die Meldung in einem eigenen Kasten oben
   rechts (`globalErrorToast` in `stores/mahnwesenPdf.svelte.js`); die übrigen Meldungen
   derselben Datei gehen über `toastStore`. Entfällt mit dem Blatt (4.30).
+- Bestellwesen, nach der Umstellung gegen die M3-Seiten gehalten (05.10.2026): Die Zahl im
+  eingeklappten Bestellstreifen steht von Hand auf `primary` mit 24 px
+  (`BestellWorkspace.svelte`; M3, Badges: Farbe „Error", 16dp; dafür gibt es
+  `ui/Zaehlerpille`). „PDF-Bestellliste" ist ein Link in eigener Knopfform: 12 px Rundung, Fläche
+  und Rand zugleich, 34 px hoch (`OrderRecommendations.svelte`; `ui/Button` kann kein Link
+  sein). „Speichern", „Abbrechen", „Bearbeiten" und „Löschen" der Lieferanten sind Wörter ohne
+  Knopffläche (`LieferantZeile.svelte`). Zwei Hinweissätze unter „Bestellung auslösen" stehen
+  in `text-label-small`, der leere Warenkorb in einem gestrichelten Kasten (`OrderCart.svelte`).
+  Der Spaltenkopf der Bedarfsliste steht von Hand in Versalien neben dem Kopf von `ui/Tabelle`.
+  „Lade …" steht an drei Stellen als pulsierender Text (`BestellDetail`, `BestellHistorie`,
+  `KlassensatzReservierungen`), sonst `ui/Ladekreis`. `WareneingangView.svelte` trägt `bg-white`;
+  Weiß und Schwarz zählt die Ratsche nicht (74 Stellen in `.svelte`-Dateien).
 
 ### 5.22 Fremdrückgabe über Kreuz verklemmt sich — seit Migration 137
 
@@ -741,35 +737,18 @@ Fragen oben beantwortet sind.
   Vorstufe. Heute holt `update.sh` mit `git pull` den neuesten Stand des Zweigs und fragt nicht
   ab, ob dessen Prüfläufe grün sind. Ein Release entsteht nur, wenn alle Pflicht-Prüfungen des
   Commits grün sind (`scripts/tag-gate.sh`).
-- **Die Postgres-Nebenversion am Server** (gefunden beim Pflegekonzept, 24.09.2026).
-  `update.sh` ruft `docker compose up -d --build` auf und holt das Image `postgres:18-alpine`
-  nie neu; der Datenbank-Container bleibt auf der Nebenversion des Images, das beim Anlegen
-  vorlag (Major-Wechsel 31.08.2026). Nebenversionen mit Sicherheitskorrekturen erscheinen
-  vierteljährlich; aktuell ist 18.6 (postgresql.org, abgerufen am 24.09.2026). Der Port ist nur
-  an `127.0.0.1` gebunden, das begrenzt das Risiko. Die Lücke besteht unabhängig vom Messwert —
-  auch bei 18.6 käme die nächste Nebenversion nicht an; die Zahl zeigt nur, wie weit der Server
-  zurückliegt. Gemessen am Testserver am 25.09.2026: 18.6, also aktuell. **Entschieden am
-  28.09.2026 nach dem Vorschlag vom 25.09.2026: bei jedem Update holen;** die Datenbank startet
-  dann bei einer neuen Nebenversion während des Updates neu. Postgres rät zu solchen Updates
-  („The community considers performing minor upgrades to be less risky than continuing to run
-  an old minor version", postgresql.org/support/versioning); eine Nebenversion braucht weder
-  Sicherung noch Neuaufbau. Die Datenbank sortiert unter musl ohne Sprachregeln (lokal
-  gemessen: `datlocprovider` = c), ein neues Alpine im Image ändert also die Reihenfolge der
-  Indizes nicht. Die CI testet bei jedem Lauf gegen denselben Tag `postgres:18-alpine`. Die
-  Hauptversion bleibt im Repo festgeschrieben.
-- **Die Alpine-Pakete im Backend-Image** (gefunden am 25.09.2026). Das `Dockerfile` holt
-  Sicherheitskorrekturen nur über `apk --no-cache upgrade`. Der Build-Cache hält diese Schicht
-  fest, solange die Zeilen davor gleich bleiben, und `update.sh` baut ohne `--pull` und ohne
-  `--no-cache`; das Aufräumen in Schritt 7 entfernt nur Schichten, die eine Woche lang niemand
-  benutzt hat. Lokal gemessen: Image vom 24.09.2026, die `apk upgrade`-Schicht darin drei Wochen
-  alt. Der Trivy-Scan der CI prüft ein frisch gebautes Image, nicht das am Server. Gemessen am
-  Testserver am 25.09.2026: 3 Tage — der Server liegt kaum zurück, die Lücke bleibt. **Entschieden
-  am 28.09.2026 nach dem Vorschlag vom 25.09.2026: `--pull --no-cache`;** jedes Update baut dann
-  alles neu. Der Sicherheitsscan der CI baut ohnehin ohne Zwischenspeicher (`docker build` auf
-  einem frischen Runner) und braucht dafür 93 Sekunden (Lauf vom 25.09.2026, Schritt „Build
-  Docker image for scanning"); ein Takt-Stempel im `Dockerfile` spart ein, zwei Minuten und
-  braucht eigene Mechanik. Die Regel „mindestens einmal im Monat ein Update, auch ohne neue
-  Funktionen" steht seit dem 28.09.2026 im Pflegekonzept (Abschnitt 4).
+- **Die Postgres-Nebenversion am Server:** `update.sh` ruft `docker compose up -d --build` auf
+  und holt das Image `postgres:18-alpine` nie neu; der Datenbank-Container bleibt auf der
+  Nebenversion des Images, das beim Anlegen vorlag. **Entschieden: bei jedem Update holen;** die
+  Datenbank startet dann bei einer neuen Nebenversion während des Updates neu. Eine
+  Nebenversion braucht weder Sicherung noch Neuaufbau, und die Datenbank sortiert unter musl
+  ohne Sprachregeln (`datlocprovider` = c), ein neues Alpine im Image ändert die Reihenfolge der
+  Indizes also nicht. Die Hauptversion bleibt im Repo festgeschrieben.
+- **Die Alpine-Pakete im Backend-Image:** Das `Dockerfile` holt Sicherheitskorrekturen nur über
+  `apk --no-cache upgrade`. Der Build-Cache hält diese Schicht fest, solange die Zeilen davor
+  gleich bleiben, und `update.sh` baut ohne `--pull` und ohne `--no-cache`. Der Trivy-Scan der
+  CI prüft ein frisch gebautes Image, nicht das am Server. **Entschieden: `--pull --no-cache`;**
+  jedes Update baut dann alles neu (in der CI 93 Sekunden).
 - **Das Löschen hängt am Lauf** (gefunden am 28.09.2026). `update.sh` und `scripts/backup.sh`
   löschen alte Sicherungen nur, wenn sie laufen. Kommt kein Update mehr, bleibt die letzte
   Vorab-Sicherung für immer; ein Klartext-Rest nach einem misslungenen Update bleibt bis zum
@@ -832,8 +811,6 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
     3.900 px bei 60 geladenen von 560 Titeln) und Bestellspalte (811 von 1.488 px bei sechs
     Positionen) scrollen je für sich. Die Bestellspalte ist so entschieden und gesichert
     (`e2e/bestellung-erreichbar.spec.js`). Die Seite läuft dabei 16 px über (852 von 868 px).
-  - `LabelSettings.svelte` (`max-h-48`) ist die Vorschlagsliste unter dem Suchfeld, kein
-    Kasten im Seitenfluss.
 - **Signaturen bei 1280 px:** Liste und Regal sind zusammen 1.000 px breit, Platz sind 960 px
   (gemessen am 02.10.2026). Die Spalte „verliehen" endet 8 px hinter dem Fensterrand, die
   Seite bekommt eine waagerechte Scrollleiste. Die rechte Spalte des Rasters ist `1fr` ohne
@@ -900,6 +877,11 @@ kein Abzeichen, der Betreff „Ihr Anliegen ist erledigt" (empfohlen); b) sie bl
 wird mit `ui/Segmente`. Sortiert oder gefiltert wird nach der Art nirgends; außer den drei
 genannten Stellen liest sie die Auskunft über ein Konto (`api/dsgvo_pdf_konto.go`).
 
+Dazu der Wunsch vom 03.10.2026 (Issue 700): Bei einem Problem sollen im Portal die Bücher zur
+Auswahl stehen statt nur des Freitextfelds. Heute trägt das Formular drei Textfelder, und der
+Server nimmt keinen Verweis auf ein Buch an (`api/anliegen.go`: `art`, `titel_text`, `klasse`,
+`kommentar`). Mit der Antwort oben zusammen entscheiden.
+
 ### 5.49 Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
 
 Die Versetzung liest die Zahl am Anfang der Klasse (`promoteStudentsQuery` und
@@ -960,20 +942,14 @@ Kategorie B.
   UNIQUE-Index tut es nicht. Gemessen am Testserver am 03.10.2026: 65 Titel mit einem Wert
   ohne ISBN-Form.
 - Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, ohne
-  Grenze): „Suche & Filter" bei jedem Öffnen, weil dort im Browser gesucht wird, die
-  Titel-Verwaltung beim Öffnen und bei leerem Suchfeld, also auch bei jedem Wechsel zwischen den
-  Reitern. Gezeigt werden je 50 Titel. Die Liste geht mit gzip gepackt hinaus
-  (`api/middleware_kompression.go`). Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,
-  4,87 MB, über die Leitung 0,43 MB. Über den Proxy des Testservers kommen die Antworten gepackt
-  an (gemessen am 04.10.2026 vom Server aus: Skript der Oberfläche 347.994 statt 1.091.670 Byte,
-  öffentliche Katalogsuche 3.017 statt 8.389 Byte, je mit `Content-Encoding: gzip`). An einem
-  Arbeitsplatz, dessen Virenscanner HTTPS filtert, ist das nicht abzulesen: Er entpackt die
-  Antwort, und es bleibt der Kopf `x-content-encoding-over-network`. Die lokale Zahl trägt
-  Test-Titel mit; Größe und Dauer am Server über das Schulnetz sind nicht gemessen (im Browser:
-  F12, Netzwerk, Zeile `books`).
-  Anlass zum Bauen: Der Katalog öffnet am Server trotz Packen spürbar verzögert. Dann beantwortet
-  der Server einen unveränderten Bestand mit 304 statt mit der Liste, wie bei den Buchnummern
-  der Theke (`api/buchbarcodes_handler.go`).
+  Grenze), „Suche & Filter" bei jedem Öffnen, die Titel-Verwaltung beim Öffnen und bei leerem
+  Suchfeld; gezeigt werden je 50 Titel. Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,
+  4,87 MB, gepackt über die Leitung 0,43 MB (`api/middleware_kompression.go`); auch über den
+  Proxy des Testservers kommen die Antworten gepackt an. Größe und Dauer am Server über das
+  Schulnetz sind nicht gemessen (im Browser: F12, Netzwerk, Zeile `books`). Anlass zum Bauen:
+  Der Katalog öffnet am Server spürbar verzögert. Dann beantwortet der Server einen
+  unveränderten Bestand mit 304 statt mit der Liste, wie bei den Buchnummern der Theke
+  (`api/buchbarcodes_handler.go`).
 - Breite der Textfelder. **Entschieden am 03.10.2026:** Textfelder folgen Material 3 (Text
   fields, Guidelines: „Text fields shouldn’t span the full width of a large screen"); die
   Hausregel, die Fläche zu nutzen, gilt den Flächen der Seite, nicht den Feldern. In der Maske
@@ -1093,25 +1069,17 @@ Kategorie B.
   weitere Auflage erscheint (Titelmaske: unter „Andere Auflagen" steht keine Liste). Kein Schaden; die
   Ratsche `auflagen_schreibpfad_ratsche_test.go` liest keine Skripte.
 - Der Katalogisat-Import legt Einträge über den Titeltext zusammen, und ein zweiter Lauf schreibt
-  die Angaben des zuletzt passenden Eintrags darüber (gemessen am 30.09.2026 am Export vom Juni
-  2026, zweimal in eine leere Datenbank). Der Upsert (`queueTitelUpsert` in
-  `BulkUpsertBookTitles`) sucht einen Titel über die ISBN, sonst über den Titeltext. Der erste
-  Lauf macht aus 13.708 Einträgen 11.302 Titel: 226 sind echte Dubletten (gleiche ISBN, gleicher
-  Text), 432 teilen die ISBN mit einem Eintrag anderen Texts (4190700703809 steht an neun
-  verschiedenen DVDs), 1.748 den Titeltext bei anderer oder fehlender ISBN — „Harry Potter und der
-  Feuerkelch" steht als Buch, Taschenbuch und DVD in der Datei und wird ein Titel. Beim zweiten
-  Lauf gilt ein solcher Eintrag als Aktualisierung des vorhandenen Titels: Titeltext, Autor,
-  Verlag, Jahr, Signatur und Jahrgangsspanne kommen aus dem Eintrag, sobald er einen Wert hat
-  (`qUpdate`), der letzte gewinnt. Geändert werden so 789 Titel — Jahr 664, Verlag 359, Signatur
-  347, Autor 220, Jahrgang von 65 und bis 62 (mit den Interessenkreisen, die die Spanne aus allen
-  Werten bilden), Titeltext 38, dazu Leerstellen: ISBN 33, Fach 61, Schlagworte an einem. Der
-  Buchtitel „Harry Potter und der Feuerkelch" trägt danach Signatur und Jahr des DVD-Eintrags
-  („DvD/D", 2005). Die Übernahme aus der Sicherung (`internal/littera`), mit der der Echtbetrieb
-  beginnt (entschieden am 28.09.2026), gleicht nicht über den Titeltext ab; der Import aus CSV und
-  Excel (`internal/service/import_dynamic.go`) tut es ebenfalls, dort nicht gemessen. Der Katalog
-  am Testserver stammt aus diesem Import (13.705 der 13.708 Einträge finden dort ihren Titel,
-  gezählt am 30.09.2026). Anlass zum Bauen: Das Katalogisat wird wieder ein Weg in den
-  Echtbetrieb, oder ein gepflegter Katalog soll es erneut einlesen.
+  die Angaben des zuletzt passenden Eintrags darüber (`queueTitelUpsert` in
+  `BulkUpsertBookTitles` sucht über die ISBN, sonst über den Titeltext). Gemessen am 30.09.2026
+  am Export vom Juni 2026: Aus 13.708 Einträgen werden 11.302 Titel (226 echte Dubletten, 432
+  mit gleicher ISBN und anderem Text, 1.748 mit gleichem Text bei anderer oder fehlender ISBN) —
+  „Harry Potter und der Feuerkelch" steht als Buch, Taschenbuch und DVD in der Datei und wird
+  ein Titel. Ein zweiter Lauf ändert 789 Titel; der letzte passende Eintrag gewinnt. Der Import
+  aus CSV und Excel (`internal/service/import_dynamic.go`) gleicht ebenso ab, dort nicht
+  gemessen; die Übernahme aus der Sicherung (`internal/littera`), mit der der Echtbetrieb
+  beginnt, tut es nicht. Der Katalog am Testserver stammt aus diesem Import. Anlass zum Bauen:
+  Das Katalogisat wird wieder ein Weg in den Echtbetrieb, oder ein gepflegter Katalog soll es
+  erneut einlesen.
 - Nach einem Rückbau auf einen älteren Stand behält ein Browser die neuere Startseite: Sie geht
   mit `Last-Modified` und ohne `Cache-Control` hinaus (`http.ServeFileFS` in `api/router.go`),
   und auf die Rückfrage mit dem jüngeren Datum antwortet der ältere Stand mit 304 (gemessen am
@@ -1487,10 +1455,6 @@ Anforderungsliste, abgeglichen in [mittel_konzept.md](mittel_konzept.md) Abschni
 
 ### 9.9 Zwei Bedingungen neben der Mängelliste
 
-**Entschieden am 24.09.2026 für das Pflegekonzept, am 28.09.2026 für den DSGVO-Nachweis:**
-Beides wird jetzt erarbeitet, das Pflegekonzept als Wartungshandbuch, weil die Antworten von
-Schule und Schulträger den Echtstart bestimmen und beide Dokumente sie beeinflussen.
-
 Die Einschätzung am Ende des Protokolls nennt zwei Punkte, die in keinem der zwölf Mängel
 stehen:
 
@@ -1498,11 +1462,9 @@ stehen:
 > Hosting- und Programmpflegekonzepte sind nicht geplant. Dies könnte ein Ausschlusskriterium
 > sein."
 
-- **Nachweis der DSGVO-Konformität.** Der Entwurf steht seit dem 28.09.2026:
-  [datenschutz/nachweis.md](datenschutz/nachweis.md) — eine Übersicht zum Weitergeben mit den
-  Unterlagen (VVT-Entwurf, Datenschutzhinweis, PII-Matrix), den Löschfristen, dem Test hinter
-  jeder Zusage, dem Ablauf bei einer Datenpanne, den bekannten Lücken und dem, was bei der
-  Schule liegt. Offen ist die Beschlussfassung der Schule (8.5, B1–B7).
+- **Nachweis der DSGVO-Konformität.** Der Entwurf steht:
+  [datenschutz/nachweis.md](datenschutz/nachweis.md). Offen ist die Beschlussfassung der Schule
+  (8.5, B1–B7).
   **Die Frist bis zum Sperrbildschirm:** Der Entwurf nennt die Vorgabe des Programms, 15
   Minuten (Abschnitt 5, „Zugang"). Gewünscht sind an der Schule 8 Stunden ohne Bedienung
   (01.10.2026). Das Feld nimmt 0 bis 1440 Minuten, 480 sind am Stack nachgestellt; die Vorgabe
@@ -1510,15 +1472,8 @@ stehen:
   eingetragen. Der Nachweis nennt dann die Zahl der Schule. Mit 480 Minuten greift die Sperre an einem
   Schultag nicht; für den unbeaufsichtigten Platz bleibt das Leeren der Theke nach 5 Minuten.
   Das gehört zur Beteiligung des Datenschutzbeauftragten (8.5, B4).
-- **Hosting- und Programmpflegekonzept.** Der Entwurf steht seit dem 24.09.2026, ergänzt am
-  28.09.2026 um die Aufbewahrung der Sicherungen, den Datenweg beim Wechsel und die
-  Kontakte für eine Datenpanne: [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) — mit den drei am
-  24.09.2026 beantworteten Fragen
-  (Betrieb, Pflege mit Vertretung, Ende der Pflege), den wiederkehrenden Aufgaben mit Takt, den
-  zwei Handgriffen der Vertretung und der Messung, ob jemand anderes das Programm weiterführen
-  kann; am 28.09.2026 mit den Antworten zu den vier offenen Stellen des Entwurfs (für welche
-  Schulen, Fehler melden, Betriebssystem und Docker, nur Releases) und der Vorlage für das Blatt.
-  Offen:
+- **Hosting- und Programmpflegekonzept.** Der Entwurf steht:
+  [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md). Offen:
   1. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — ausfüllen bei dir, Vorlage in
      [blatt_vorlage.md](blatt_vorlage.md). Vorschlag: die zwei Schlüssel in einem Passwortmanager
      und als Papier im verschlossenen Umschlag im Tresor der Schule, nie per E-Mail.
