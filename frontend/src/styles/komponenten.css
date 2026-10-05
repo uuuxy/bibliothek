@@ -83,8 +83,9 @@
 		min-width: 2rem; /* 32 px */
 		min-height: 2rem;
 		/* Rund, wie der M3-Icon-Button: Er trägt genau ein Symbol, seine Trefferfläche
-		   ist ein Kreis um dieses Symbol. Vorher --radius-2xl, das jetzt 16 px wäre. */
-		border-radius: var(--radius-full);
+		   ist ein Kreis um dieses Symbol. Als fester Wert, weil Tailwind 4 keine Variable
+		   --radius-full führt; mit ihr blieb der Knopf eckig. */
+		border-radius: 9999px;
 		cursor: pointer;
 		transition-property: color, background-color, border-color;
 		/* Aus der Skala, nicht fest verdrahtet: Diese Regel ist plain CSS, sie erbt

@@ -69,7 +69,8 @@ const MESSEN = () => {
 			breite: Math.round(r.width),
 			hoehe: Math.round(r.height),
 			label: b.getAttribute('aria-label') || b.getAttribute('title') || '(ohne Label)',
-			klassen: b.getAttribute('class') || ''
+			klassen: b.getAttribute('class') || '',
+			radius: Number.parseFloat(getComputedStyle(b).borderTopLeftRadius) || 0
 		});
 	}
 	return alle;
@@ -117,6 +118,9 @@ test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 	/** @type {string[]} */
 	const zuKlein = [];
 	let untersucht = 0;
+	/** @type {string[]} */
+	const eckig = [];
+	let symbolknoepfe = 0;
 
 	for (const [name, pfad] of SCREENS) {
 		await gehZu(page, pfad);
@@ -134,6 +138,14 @@ test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 		untersucht += gefunden.length;
 		for (const t of gefunden.filter((t) => t.breite < MIN_FLAECHE || t.hoehe < MIN_FLAECHE)) {
 			zuKlein.push(`${name}: "${t.label}" ist ${t.breite}×${t.hoehe} px [${t.klassen}]`);
+		}
+		for (const t of gefunden.filter((t) => /(^|\s)icon-btn(\s|$)/.test(t.klassen))) {
+			symbolknoepfe++;
+			if (t.radius < Math.min(t.breite, t.hoehe) / 2) {
+				eckig.push(
+					`${name}: "${t.label}" hat ${t.radius} px Rundung bei ${t.breite}×${t.hoehe} px`
+				);
+			}
 		}
 	}
 
@@ -166,5 +178,15 @@ test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 			`Eine bewusste Ausnahme braucht ein explizites min-w-*/min-h-* an der Fundstelle UND eine\n` +
 			`Begründung im Code — nicht hier im Test.\n\n` +
 			zuKlein.join('\n')
+	).toEqual([]);
+
+	// Rund ist die Form des Symbolknopfs (M3, Icon buttons, Specs: Shape „Round (default)"). An
+	// ihr hängt auch die Schicht beim Zeigen: Sie erbt den Radius des Knopfs.
+	expect(symbolknoepfe, 'Der Test hat keinen Knopf mit .icon-btn gefunden.').toBeGreaterThan(0);
+	expect(
+		eckig,
+		`Symbolknöpfe mit .icon-btn, die nicht rund sind (${symbolknoepfe} gemessen).\n` +
+			`Behebung: Die Rundung steht in .icon-btn (styles/komponenten.css).\n\n` +
+			eckig.join('\n')
 	).toEqual([]);
 });
