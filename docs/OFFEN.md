@@ -590,7 +590,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 05.10.2026: 452 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 05.10.2026: 409 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -610,6 +610,12 @@ Im Ausweis-Designer bleiben 29 Stellen: die Farben der Karte (`themes` in
 auf der gezeichneten Karte (`CanvasElement.svelte`, `CardFace.svelte`). Die Farbe der Karte
 steht als Klassenliste im zentral gespeicherten Entwurf und wird gedruckt; die Karte bleibt
 weiß, auch wenn die Oberfläche ihr Farbschema wechselt.
+
+An der Theke bleiben neun Stellen. Sieben sind die Farben des Scanfelds in Ruhe und im Fokus
+(`Omnibox.svelte`, `OmniboxInput.svelte`): Sie gleichen der Suchpille der übrigen Suchseiten
+(`ui/Suchpille`) und wechseln mit ihr. Zwei sind der rote Schleier hinter den Alarmen
+(`OmniboxBlockAlert`, `OmniboxVormerkungAlert`); eine Rolle für einen farbigen Schleier gibt es
+nicht, `scrim` ist schwarz.
 
 Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 
