@@ -26,7 +26,9 @@
 	const suche = erzeugePortalSuche();
 
 	let offen = $state(false);
-	let gemerkt = $state(-1);
+	// Die Markierung hängt am Titel und nicht an der Stelle: Treffen neue Vorschläge ein,
+	// stünde sie sonst auf einem anderen Titel, und Enter nähme den.
+	let gemerkt = $state(/** @type {string | null} */ (null));
 	/** @type {HTMLDivElement | undefined} */
 	let liste = $state();
 	let box = $state({ left: 0, top: 0, breite: 0 });
@@ -44,8 +46,12 @@
 		)
 	);
 	const sichtbar = $derived(offen && optionen.length > 0);
-	// Neue Treffer können kürzer sein als die Liste, in der die Markierung stand.
-	const aktiv = $derived(gemerkt < optionen.length ? gemerkt : -1);
+	const aktiv = $derived(gemerkt === null ? -1 : optionen.findIndex((o) => o.value === gemerkt));
+
+	/** @param {number} i */
+	function markiere(i) {
+		gemerkt = optionen[i]?.value ?? null;
+	}
 
 	function messen() {
 		if (element) box = berechneBox(element, optionen.length);
@@ -67,12 +73,12 @@
 	function eingabe(e) {
 		suche.text = /** @type {HTMLInputElement} */ (e.currentTarget).value;
 		offen = true;
-		gemerkt = -1;
+		gemerkt = null;
 	}
 
 	function schliessen() {
 		offen = false;
-		gemerkt = -1;
+		gemerkt = null;
 	}
 
 	/** @param {number} i */
@@ -92,10 +98,10 @@
 		if (!sichtbar) return;
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			gemerkt = naechsterIndex(optionen, aktiv, 1);
+			markiere(naechsterIndex(optionen, aktiv, 1));
 		} else if (e.key === 'ArrowUp') {
 			e.preventDefault();
-			gemerkt = naechsterIndex(optionen, Math.max(aktiv, 0), -1);
+			markiere(naechsterIndex(optionen, Math.max(aktiv, 0), -1));
 		} else if (e.key === 'Enter' && aktiv >= 0) {
 			e.preventDefault();
 			waehlen(aktiv);
@@ -141,7 +147,7 @@
 		{kennung}
 		{zeilenKennung}
 		onwaehlen={waehlen}
-		onaktiv={(i) => (gemerkt = i)}
+		onaktiv={markiere}
 		onelement={(el) => (liste = el)}
 		{zeile}
 	/>

@@ -68,6 +68,25 @@ describe('BuchVorschlagFeld', () => {
 		expect(s.queryByRole('listbox')).toBeNull();
 	});
 
+	// Die Pfeiltaste trifft noch die alte Liste, während die nächste Suche unterwegs ist. Hinge
+	// die Markierung an der Stelle, stünde sie nach dem Eintreffen auf einem anderen Titel.
+	it('hält die Markierung am Titel, wenn neue Vorschläge eintreffen', async () => {
+		const s = render(BuchVorschlagFeld, { label: 'Welches Buch?' });
+		const feld = /** @type {HTMLInputElement} */ (s.getByRole('combobox'));
+		await tippe(feld, 'Markl');
+
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort([{ id: 't0', titel: 'Markl Biologie 0', autor: 'Markl' }, ...titel])
+		);
+		await fireEvent.input(feld, { target: { value: 'Markl B' } });
+		await fireEvent.keyDown(feld, { key: 'ArrowDown' });
+		await vi.advanceTimersByTimeAsync(300);
+		expect(s.getAllByRole('option')).toHaveLength(3);
+		await fireEvent.keyDown(feld, { key: 'Enter' });
+
+		expect(feld.value).toBe('Markl Biologie 1');
+	});
+
 	it('lässt eigenen Text stehen: Tab schließt die Vorschläge, ohne zu wählen', async () => {
 		const s = render(BuchVorschlagFeld, { label: 'Welches Buch?' });
 		const feld = /** @type {HTMLInputElement} */ (s.getByRole('combobox'));
