@@ -39,11 +39,12 @@ Abschnitt 8.
 
 **Bei mir — im Code,** in dieser Reihenfolge:
 
-1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. Nach der Antwort zu 8.3: **5.4**.
-3. Vor dem Echtstart: **5.31** (`update.sh` für den Schulserver), der Eingang für die Seite der
+1. **4.32** (Schnellrückgabe an der Theke, Kategorie A): zuerst der Vorschlag, dann der Bau.
+2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
+3. Nach der Antwort zu 8.3: **5.4**.
+4. Vor dem Echtstart: **5.31** (`update.sh` für den Schulserver), der Eingang für die Seite der
    Lieferanten (4.23) und die Auflage in der Littera-Übernahme (5.5).
-4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 **Termine:** Am 19. Oktober 2026 wechselt CodeQL bei GitHub das Abbild (5.10). Node 26 ist ab
 dem 28. Oktober 2026 dran, nach der Regel „immer die aktive LTS"
@@ -222,7 +223,8 @@ Am 04.10.2026 gebaut und am selben Tag zurückgenommen, weil nicht bestellt:
 ### 4.32 Theke: ein Stapel vom Rückgabetisch
 
 Littera hat eine Schnellrückgabe, die nie ausleiht. An der Theke entscheidet der Zustand, was
-ein Scan bedeutet (am Code gelesen am 06.10.2026, nicht im Browser nachgestellt):
+ein Scan bedeutet. Am Code gelesen und am 06.10.2026 am lokalen Stack nachgestellt, jeder
+Schritt an der Tabelle der Ausleihen belegt:
 
 - Eine Rückgabe ohne geladenen Leser lädt den Leser des Buchs (`verarbeiteRueckgabe` in
   `stores/omnibox.svelte.js`). Ab dem zweiten Buch eines Stapels ist also immer ein Leser
@@ -231,10 +233,13 @@ ein Scan bedeutet (am Code gelesen am 06.10.2026, nicht im Browser nachgestellt)
   `internal/service/loan_checkout.go`). Das trifft ein Buch, das nicht verliehen war, und den
   zweiten Scan desselben Buchs: Der erste gibt zurück, der zweite leiht wieder aus.
 - Ausleihe und Rückgabe melden sich gleich, grün und mit demselben Ton; nur der Text der
-  Meldung unterscheidet sie. Ein Buch eines anderen Lesers meldet sich orange mit Warnton.
+  Meldung unterscheidet sie (`verarbeiteRueckgabe`, `verarbeiteAusleihe`). Ein Buch eines
+  anderen Lesers meldet sich orange mit Warnton.
+- Bei leerer Theke wird ein freies Exemplar nicht ausgeliehen; die Theke meldet „Dieses
+  Buchexemplar ist aktuell nicht ausgeliehen".
 
 Folge: ein Buch im Regal, das auf dem Konto eines Kindes steht und später gemahnt wird.
-Verdacht auf Kategorie A, bis der Ablauf nachgestellt ist.
+Kategorie A.
 
 **Richtung vom 06.10.2026: eine Schnellrückgabe wie in Littera,** nichts gebaut. Verworfen ist
 der Weg, einem Leser, der nur durch eine Rückgabe erscheint, nichts auszuleihen: An der Theke
