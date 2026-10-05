@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-03
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-05
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -473,8 +473,8 @@ Enter ohne Klick, `frontend/e2e/kiosk-scannerfokus.spec.js`), für 18 den Test m
 Plätzen (`frontend/e2e/buchmaske-bestand.spec.js`), für 15 den Test mit der Maske vor und
 nach der Sperre (`frontend/e2e/sperre-ungespeichertes.spec.js`).
 
-Schärfungen ohne neue Nummer, vom selben Durchgang und von den Durchgängen am 02.10.2026 und
-am 03.10.2026 über die Änderungen danach:
+Schärfungen ohne neue Nummer, vom selben Durchgang und von den Durchgängen am 02.10.2026,
+am 03.10.2026 und am 05.10.2026 über die Änderungen danach:
 
 - **Frage 3, der einzige Auslöser:** Blendet eine Änderung ein Element aus oder nimmt sie es
   weg — was hat nur dieses Element ausgelöst? Beleg vom 02.10.2026: Das Miniaturbild der
@@ -512,6 +512,16 @@ am 03.10.2026 über die Änderungen danach:
   an, und zu welcher Eingabe gehört dann die Antwort? Beleg vom 03.10.2026: In der Maske
   „Neues Buch" standen nach einem zweiten Scan während der ISBN-Abfrage die Angaben des ersten
   Buchs unter der ISBN des zweiten (`isbnAbfrage.test.js`).
+- **Frage 11, die Ablage unter einem Schlüssel:** Liegt ein Ergebnis unter einem Schlüssel, den
+  auch eine andere Anmeldung vorlegen kann, in der Fassung, die der erste Absender lesen
+  durfte? Die Warteschlange der Theke gehört dem Rechner, nicht der Person. Beleg vom
+  05.10.2026: Die Nachbuch-Tür legte den Grund mit dem Freitext der Sperre ab, und die
+  wiederholte Portion gab ihn an einen Helfer (`api/nachbuchen_sperrgrund_pg_test.go`).
+- **Frage 18, die jüngste Öffnung:** Fordert ein Bildschirm nacheinander zwei Inhalte an
+  (zweiter Klick, „Neu"), welche Antwort gilt, wenn die erste später ankommt? Beleg vom
+  05.10.2026: In der Titel-Verwaltung legte sich die späte Antwort zum zuerst angeklickten
+  Titel über die offene Maske des zweiten, samt dem dort Getippten
+  (`frontend/e2e/titel-oeffnen-rennen.spec.js`).
 
 ### Frontend-Lesart (ergänzt 31.08.2026)
 
