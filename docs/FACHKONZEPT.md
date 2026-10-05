@@ -208,7 +208,8 @@ dahin beschrieb dieser Abschnitt ein Blockier-Modell, das nie gebaut war):
   Das schließt Lernmittel ein und Titel, deren Exemplare bestellt und noch nicht eingetroffen
   sind: Reserviert werden vor allem Schulbücher, und der öffentliche Katalog verbirgt sie.
   Ein Titel, von dem nichts im Regal steht und etwas bestellt ist, trägt am Treffer
-  „N bestellt" und lässt sich reservieren. Zur Tür gehört der Filter nach Schlagwort
+  „N bestellt" und lässt sich reservieren; stehen Exemplare im Haus und sind weitere bestellt,
+  steht „N bestellt" neben dem Bestand. Zur Tür gehört der Filter nach Schlagwort
   (`?schlagwort_id=`, Liste über `…/katalog/filter`, §13); gibt es mehr als 50 Treffer, sagt
   das Portal über den Kopf `X-Treffer-Gesamt` „Gezeigt werden 50 von 312 Treffern".
 - Die Bibliothek arbeitet die Schlange unter Bestellungen → Klassensatz-Reservierungen

@@ -677,8 +677,9 @@ Lehrkräfte sehen genau diesen Bereich: **Suchen & Reservieren** (Bestand mit Ve
 und Warteschlange; Klassensatz reservieren mit Klasse oder Kurs, Anzahl, Datum — das Feld ist
 Freitext und legt keine Klasse an. Die Suche findet die Bücher der Bücherei und die
 Schulbücher, auch Titel, die bestellt und noch nicht eingetroffen sind; am Treffer steht dann
-„N bestellt", und reservieren lässt er sich schon. Am Treffer stehen zwei Aktionen:
-„Klassensatz reservieren" und „Problem melden"; die Meldung nennt dann dieses Buch. Solange
+„N bestellt", auch neben dem Bestand im Haus, und reservieren lässt er sich schon. Am Treffer
+stehen zwei Aktionen: „Klassensatz reservieren" und „Problem melden"; die Meldung nennt dann
+dieses Buch. Solange
 nichts gesucht wird, stehen unter der Suche die eigenen Reservierungen und Meldungen mit ihrem
 Stand und der Antwort der Bibliothek, darunter „Problem melden" ohne Buch — das Formular fragt
 dann, worum es geht. Unter dem Suchfeld stehen

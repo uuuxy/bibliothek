@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { formatProzent, formatDatum, formatZeitpunkt, formatZahl, bestandSatz } from './format.js';
+import {
+	formatProzent,
+	formatDatum,
+	formatZeitpunkt,
+	formatZahl,
+	bestandSatz,
+	zulaufSatz
+} from './format.js';
 
 describe('format.js — eine deutsche Schreibweise', () => {
 	it('Prozent: Komma, eine Nachkommastelle, geschütztes Leerzeichen; Rohstring vom Backend geht auch', () => {
@@ -43,5 +50,15 @@ describe('format.js — eine deutsche Schreibweise', () => {
 		// Etwas im Regal: Die Zahl dort beantwortet die Frage an der Theke, der Zulauf nicht.
 		expect(bestandSatz(1, 1, 2)).toBe('1 von 1 verfügbar');
 		expect(bestandSatz(null, null, 2)).toBe('');
+	});
+
+	// Wo der Zulauf zur Frage gehört (Klassensatz im Portal), steht er neben dem Bestand —
+	// in denselben Worten wie beim Titel, der nur bestellt ist.
+	it('Zulauf: „20 bestellt", und nichts, wenn nichts bestellt ist', () => {
+		expect(zulaufSatz(20)).toBe('20 bestellt');
+		expect(zulaufSatz(2)).toBe(bestandSatz(0, 0, 2));
+		expect(zulaufSatz(0)).toBe('');
+		expect(zulaufSatz(null)).toBe('');
+		expect(zulaufSatz(undefined)).toBe('');
 	});
 });

@@ -21,7 +21,7 @@
 	import KlassensatzFormular from './KlassensatzFormular.svelte';
 	import ProblemFormular from './ProblemFormular.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
-	import { bestandSatz } from '../../utils/format.js';
+	import { bestandSatz, zulaufSatz } from '../../utils/format.js';
 
 	/** @type {{ book: any, form: any, meldung: import('./problemMeldung.svelte.js').MeldeFormular, warteschlange: { klasse: string, anzahl: number, erstellt_am: string }[], ontoggle: () => void, onsenden: () => void, onmelden: () => void, onmeldungsenden: () => Promise<boolean>, onmeldungabbrechen: () => void }} */
 	let {
@@ -68,6 +68,10 @@
 	// im Medienkatalog. „nicht verfügbar (0 im Bestand)" läse sich wie ein Titel, den es
 	// nicht gibt — reservieren lässt er sich aber schon.
 	const nurBestellt = $derived(book.gesamt === 0 && book.im_zulauf > 0);
+
+	// Steht etwas im Regal und ist Weiteres bestellt, nennt ein zweites Abzeichen den Zulauf:
+	// Die Obergrenze der Reservierung zählt ihn mit.
+	const zulaufDazu = $derived(book.gesamt > 0 && book.im_zulauf > 0);
 </script>
 
 <div class="w-full">
@@ -113,6 +117,13 @@
 							nicht verfügbar ({book.gesamt} im Bestand)
 						{/if}
 					</span>
+					{#if zulaufDazu}
+						<span
+							class="ml-1 inline-flex items-center gap-1 rounded-full bg-surface-container-high px-2 py-0.5 text-label-small font-medium text-on-surface-variant"
+						>
+							{zulaufSatz(book.im_zulauf)}
+						</span>
+					{/if}
 					{#if vorgemerkt > 0 && rechnerischFrei != null}
 						<span
 							class="ml-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-label-small font-medium {rechnerischFrei >

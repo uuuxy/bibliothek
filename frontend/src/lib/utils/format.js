@@ -88,7 +88,18 @@ export function formatZeitpunkt(wert) {
  */
 export function bestandSatz(gesamt, verfuegbar, imZulauf) {
 	if (gesamt == null) return '';
-	if (gesamt === 0 && imZulauf) return `${imZulauf} bestellt`;
+	if (gesamt === 0 && imZulauf) return zulaufSatz(imZulauf);
 	if (gesamt === 0) return 'Keine Exemplare';
 	return `${verfuegbar ?? 0} von ${gesamt} verfügbar`;
+}
+
+/**
+ * Der Zulauf eines Titels als Satz: „2 bestellt". Wo er zur Frage gehört, steht er neben dem
+ * Bestand in denselben Worten wie beim Titel, der nur bestellt ist.
+ *
+ * @param {number | null | undefined} imZulauf bestellt, noch nicht eingetroffen
+ * @returns {string} leer, wenn nichts bestellt ist
+ */
+export function zulaufSatz(imZulauf) {
+	return imZulauf ? `${imZulauf} bestellt` : '';
 }
