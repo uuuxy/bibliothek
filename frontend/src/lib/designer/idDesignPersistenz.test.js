@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { srcRoot, ohneKommentare } from '../hygiene-quellen.js';
 import { erzeugeDesignAblage } from './idDesignPersistenz.svelte.js';
 import { apiFetch } from '../apiFetch.js';
-import { applyDesign } from './idDesignerStore.svelte.js';
+import { applyDesign, wendeSchulstammdatenAn } from './idDesignerStore.svelte.js';
 
 vi.mock('../apiFetch.js', () => ({ apiFetch: vi.fn() }));
 // Teilweise gemockt: ausweisVorlagen.js liest echte Konstanten aus diesem Store.
@@ -77,5 +77,78 @@ describe('Ausweis-Design laden', () => {
 			readFileSync(join(srcRoot, 'lib', 'StudentIdDesigner.svelte'), 'utf8')
 		);
 		expect(quelle).toMatch(/if\s*\(!ablage\.geladen\)\s*return;/);
+	});
+});
+
+// Nach dem Laden setzt die Ablage Schulname und Adresse aus den Einstellungen an die Stelle
+// der Platzhalter. Die Einstellungen darf nicht jeder lesen, der Ausweise druckt; dann bleibt
+// der Platzhalter stehen, ohne Meldung.
+describe('Ausweis-Design laden: Schulname und Adresse', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(wendeSchulstammdatenAn).mockReset();
+	});
+
+	/** @param {any} einstellungen was die Tür der Einstellungen antwortet */
+	async function ladeMit(einstellungen) {
+		vi.mocked(apiFetch).mockImplementation(async (pfad) =>
+			pfad === '/api/einstellungen'
+				? einstellungen
+				: /** @type {any} */ ({ ok: true, status: 200, json: async () => ({}) })
+		);
+		const ablage = erzeugeDesignAblage();
+		await ablage.laden();
+		return ablage;
+	}
+
+	/** @param {Record<string, string>} felder */
+	const lesbar = (felder) => ({ ok: true, status: 200, json: async () => felder });
+
+	it('setzt die Adresse aus Straße, Postleitzahl und Ort zusammen', async () => {
+		await ladeMit(
+			lesbar({
+				schule_name: 'Musterschule',
+				schule_strasse: 'Schulweg 1',
+				schule_plz: '12345',
+				schule_ort: 'Musterstadt'
+			})
+		);
+
+		expect(wendeSchulstammdatenAn).toHaveBeenCalledTimes(1);
+		expect(wendeSchulstammdatenAn).toHaveBeenCalledWith(
+			'Musterschule',
+			'Schulweg 1, 12345 Musterstadt'
+		);
+	});
+
+	it.each([
+		[{ schule_name: 'Musterschule', schule_ort: 'Musterstadt' }, ['Musterschule', 'Musterstadt']],
+		[{ schule_strasse: 'Schulweg 1', schule_plz: '12345' }, ['', 'Schulweg 1, 12345']],
+		[{}, ['', '']]
+	])('lässt weg, was in den Einstellungen fehlt: %j', async (felder, erwartet) => {
+		await ladeMit(lesbar(felder));
+
+		expect(wendeSchulstammdatenAn).toHaveBeenCalledWith(...erwartet);
+	});
+
+	it('lässt die Leinwand in Ruhe, wenn die Einstellungen nicht lesbar sind', async () => {
+		const ablage = await ladeMit({ ok: false, status: 403, json: async () => ({ error: 'x' }) });
+
+		expect(wendeSchulstammdatenAn).not.toHaveBeenCalled();
+		expect(ablage.geladen).toBe(true);
+		expect(ablage.ladefehler).toBe('');
+	});
+
+	it('übersteht einen Netzfehler beim Lesen der Einstellungen', async () => {
+		vi.mocked(apiFetch).mockImplementation(async (pfad) => {
+			if (pfad === '/api/einstellungen') throw new Error('offline');
+			return /** @type {any} */ ({ ok: true, status: 200, json: async () => ({}) });
+		});
+		const ablage = erzeugeDesignAblage();
+
+		await ablage.laden();
+
+		expect(wendeSchulstammdatenAn).not.toHaveBeenCalled();
+		expect(ablage.geladen).toBe(true);
 	});
 });

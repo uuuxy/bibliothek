@@ -6,6 +6,16 @@ import {
 	loescheVerlustEndgueltig
 } from './inventurApi.js';
 
+/** @param {number} n */
+function euro(n) {
+	return (
+		Number(n ?? 0).toLocaleString('de-DE', {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2
+		}) + ' €'
+	);
+}
+
 /**
  * Der Fehlbestandsbericht: Liste, frühere Läufe, und die zwei Handlungen darauf
  * (Gefunden / endgültig löschen). Aus useUnifiedInventory herausgelöst — die
@@ -65,16 +75,6 @@ export function useFehlbestand() {
 			'success'
 		);
 		if (r.data?.hinweis) toastStore.addToast(r.data.hinweis, 'warning');
-	}
-
-	/** @param {number} n */
-	function euro(n) {
-		return (
-			Number(n ?? 0).toLocaleString('de-DE', {
-				minimumFractionDigits: 2,
-				maximumFractionDigits: 2
-			}) + ' €'
-		);
 	}
 
 	/** @param {string[]} exemplarIds */

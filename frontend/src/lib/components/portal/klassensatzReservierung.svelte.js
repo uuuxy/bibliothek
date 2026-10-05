@@ -1,5 +1,20 @@
 import { apiFetch } from '../../apiFetch.js';
 
+/** @param {string} pfad @param {(daten: any[]) => void} setze */
+async function ladeListe(pfad, setze) {
+	try {
+		const res = await apiFetch(pfad);
+		if (res.ok) {
+			const daten = await res.json();
+			// Nur Arrays übernehmen — eine unerwartete Antwort darf die Anzeige
+			// nicht mit einem .filter-Absturz aus dem Rendern werfen.
+			if (Array.isArray(daten)) setze(daten);
+		}
+	} catch {
+		/* Anzeige ist Zusatzinfo — ohne sie bleibt das Portal benutzbar */
+	}
+}
+
 /**
  * Die beiden Reservierungs-Listen des Portals — Zustand IN der Fabrik, kein
  * Modul-Singleton: Auf einem geteilten Rechner dürfen die eigenen Reservierungen
@@ -15,21 +30,6 @@ import { apiFetch } from '../../apiFetch.js';
 export function erzeugeReservierungsListen() {
 	let offene = $state(/** @type {any[]} */ ([]));
 	let eigene = $state(/** @type {any[]} */ ([]));
-
-	/** @param {string} pfad @param {(daten: any[]) => void} setze */
-	async function ladeListe(pfad, setze) {
-		try {
-			const res = await apiFetch(pfad);
-			if (res.ok) {
-				const daten = await res.json();
-				// Nur Arrays übernehmen — eine unerwartete Antwort darf die Anzeige
-				// nicht mit einem .filter-Absturz aus dem Rendern werfen.
-				if (Array.isArray(daten)) setze(daten);
-			}
-		} catch {
-			/* Anzeige ist Zusatzinfo — ohne sie bleibt das Portal benutzbar */
-		}
-	}
 
 	return {
 		get offene() {

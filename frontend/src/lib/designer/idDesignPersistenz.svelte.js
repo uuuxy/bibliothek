@@ -38,27 +38,6 @@ export function erzeugeDesignAblage() {
 	// statt still mit Vorgabewerten weiterzuarbeiten.
 	let ladefehler = $state('');
 
-	// /api/einstellungen verlangt manage_settings — wer den Ausweis-Designer nur zum Drucken
-	// öffnet (view_students reicht dafür), bekäme sonst ein sichtbares Berechtigungs-Toast
-	// für eine reine Komfortfunktion. Deshalb roh über apiFetch und bei jedem Fehler
-	// (auch 403) still nichts tun.
-	async function heileSchulstammdaten() {
-		try {
-			const res = await apiFetch('/api/einstellungen');
-			if (!res.ok) return;
-			const data = await res.json();
-			const adresse = [
-				data.schule_strasse,
-				[data.schule_plz, data.schule_ort].filter(Boolean).join(' ')
-			]
-				.filter(Boolean)
-				.join(', ');
-			wendeSchulstammdatenAn(data.schule_name ?? '', adresse);
-		} catch {
-			/* Komfortfunktion — Platzhalter bleibt stehen */
-		}
-	}
-
 	return {
 		get zustand() {
 			return zustand;
@@ -165,4 +144,25 @@ export function erzeugeDesignAblage() {
 			return true;
 		}
 	};
+}
+
+// /api/einstellungen verlangt manage_settings — wer den Ausweis-Designer nur zum Drucken
+// öffnet (view_students reicht dafür), bekäme sonst ein sichtbares Berechtigungs-Toast
+// für eine reine Komfortfunktion. Deshalb roh über apiFetch und bei jedem Fehler
+// (auch 403) still nichts tun.
+async function heileSchulstammdaten() {
+	try {
+		const res = await apiFetch('/api/einstellungen');
+		if (!res.ok) return;
+		const data = await res.json();
+		const adresse = [
+			data.schule_strasse,
+			[data.schule_plz, data.schule_ort].filter(Boolean).join(' ')
+		]
+			.filter(Boolean)
+			.join(', ');
+		wendeSchulstammdatenAn(data.schule_name ?? '', adresse);
+	} catch {
+		/* Komfortfunktion — Platzhalter bleibt stehen */
+	}
 }
