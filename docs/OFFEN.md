@@ -98,8 +98,8 @@ Datenbank und der Littera-Übernahme (7.2).
    LUSD-Import mit echten Schülern kommt erst nach der Littera-Übernahme (7.2).
 7. **Das Mahnwesen ansehen** (gebaut am 04.10.2026): Kinder anhaken, „Mahnbriefe drucken". Es
    kommt je Kind der Brief an die Eltern mit Anschrift; die Liste zeigt danach
-   „1× gemahnt, zuletzt …". Zu entscheiden ist, ob die zwei Listen im Druck-Menü bleiben (4.30);
-   danach bekommt der Knopf zum Druck-Menü seine Form (5.51).
+   „1× gemahnt, zuletzt …". Seit dem 05.10.2026 druckt „Liste drucken" die Liste als Tabelle, je
+   Buch eine Zeile; einmal ausdrucken und ansehen.
 
 **Im Code,** in dieser Reihenfolge:
 
@@ -274,39 +274,7 @@ oder geliehen? **Entschieden am 01.10.2026:** kein dritter Eigentümer im Progra
 behalten den Littera-Wortlaut, den die Buchakte schon zeigt; Ersatz für ein verlorenes Buch liefe
 dann über den Schulträger, bei 90 Büchern ein seltener Fall.
 
-### 4.30 Was das Mahnwesen neben dem Mahnbrief druckt
-
-Seit dem 04.10.2026 kommt aus der Auswahl ein Papier: der Mahnbrief an die Eltern. Daneben
-drucken drei Wege weiter je Kind ein Blatt in Du-Form, keiner zählt:
-
-- „Mahnliste einer Klasse" im Druck-Menü (`GET /api/print/mahnung/klasse/{klasse}`, Überschrift
-  „Erinnerung: Rückgabe von Bibliotheksbüchern", `pdf.GenerateMahnliste`),
-- „Übersichtsliste" im Druck-Menü (`GET /api/mahnwesen/pdf`, Überschrift „Mahnung –
-  Schulbibliothek", `generateMahnPDF`),
-- der Anhang der Mail an die Klassenleitung („Alle anmahnen"), dasselbe Blatt wie die
-  Übersichtsliste.
-
-**Zu entscheiden:** Bleiben die zwei Listen im Druck-Menü? Der Anhang der Mail hängt am Mahnlauf
-und ist nicht gemeint.
-
-Nachgesehen und am lokalen Stack ausprobiert am 05.10.2026:
-
-- Beide Einträge drucken je Kind ein Blatt, keine Liste: der eine für eine Klasse, der andere
-  für alle Klassen.
-- Im Blatt je Klasse steht unter „Fällig seit" das Ausleihdatum (`queryMahnungSchueler` in
-  `api/print.go` liest `ausgeliehen_am`). Probe: gedruckt 04.09.2026, die Frist lief am
-  24.09.2026 ab.
-- „Diese Seite drucken" zeigt Reiter, Suchfeld und Knöpfe mit: `print:hidden` wirkt an einem
-  Element mit `flex` nicht, weil `designer/PrintPreview.svelte` jedes `.flex` im Druck auf
-  `display: block !important` stellt. Buchtitel stehen nicht in der Liste.
-- Littera hat einen Mahnbrief und daneben die „Liste der verliehenen Medien", die mit „nur
-  Überfällige drucken" zur Mahnliste wird und sich auf Klassen einschränken lässt (Handbuch,
-  „Verliehene Medien").
-
-Vorgelegt am 05.10.2026, Antwort offen: a) eine Liste — der Knopf heißt „Liste drucken" und
-druckt, was in der Liste steht, als Tabelle (Klasse, Kind, Buch, fällig seit, wie oft
-gemahnt), die zwei Blätter entfallen (empfohlen); b) kein Druck neben dem Mahnbrief; c) es
-bleibt bei drei Einträgen, mit berichtigtem Datum. Mit a und b entfällt 5.51.
+### 4.30 Mahnbrief: Anrede ab 18 und die Klasse auf dem Brief
 
 Am 04.10.2026 gebaut und am selben Tag zurückgenommen, weil nicht bestellt:
 
@@ -623,7 +591,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 05.10.2026: 494 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 05.10.2026: 461 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -678,9 +646,6 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   beides passt nicht in die 64 px hohe Leiste.
 - Die Ratsche zählt eine Palettenfarbe an einer einzelnen Rahmenseite nicht
   (`border-l-amber-500`): zwei Stellen in `system/BackupAlert`, gezählt am 05.10.2026.
-- Mahnwesen: Scheitert das Blatt je Klasse, steht die Meldung in einem eigenen Kasten oben
-  rechts (`globalErrorToast` in `stores/mahnwesenPdf.svelte.js`); die übrigen Meldungen
-  derselben Datei gehen über `toastStore`. Entfällt mit dem Blatt (4.30).
 - Bestellwesen, nach der Umstellung gegen die M3-Seiten gehalten (05.10.2026): Die Zahl im
   eingeklappten Bestellstreifen steht von Hand auf `primary` mit 24 px
   (`BestellWorkspace.svelte`; M3, Badges: Farbe „Error", 16dp; dafür gibt es
@@ -844,7 +809,9 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   Grenze von 1024 px, an der die Akte Leserkarte (320 px) und Inhalt nebeneinanderstellt,
   bleiben ihm 98 bis 139 px (gemessen am 02.10.2026 mit zwölf Ausleihen). Wer die
   Navigation unter 1258 px von Hand ausklappt, lässt dem Titel weniger als 140 px, unter
-  1118 px nichts. Nicht gebaut: die Zeile zweizeilig.
+  1118 px nichts. Nicht gebaut: die Zeile zweizeilig. Bei 1024 bis rund 1035 px ist auch die
+  Reiterzeile der Akte 12 px zu schmal, sobald „Gebühren & Schäden" eine Zahl trägt (gemessen am
+  05.10.2026: 540 von 528 px); sie lässt sich dann seitlich schieben.
 - **Eingeklappte Navigation:** Sie zeigt nur Symbole, bis zu 18; der Name steht im `title`
   des Knopfs und erscheint beim Zeigen mit der Maus. M3, Navigation rail, Guidelines: „All
   navigation items require a one word label text" und „The collapsed nav rail … should
@@ -855,7 +822,7 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
 - **Leserakte, langer Name:** Ein Name aus einem Wort von 22 Zeichen ragt 73 px aus der
   Leserkarte in die rechte Spalte. Er liegt dort unter den Reitern auf der ersten Zeile des
   Inhalts: In „Gebühren & Schäden" und „Stammdaten & Adresse" verdeckt er deren Anfang
-  (49 px), in „Ausleihen & Historie" endet er an der Oberkante der Überschrift (gemessen am
+  (49 px), in „Ausleihen & Vormerkungen" endet er an der Oberkante der Überschrift (gemessen am
   03.10.2026 bei 1280 × 900 px an einem Testleser). Namen mit Leerzeichen oder Bindestrich
   brechen um.
 - **Leserakte, Autor und Nummer des Exemplars:** Der Autor steht nur in der Sprechblase am
@@ -863,10 +830,9 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   gemessen bei ausgeklappter Seitenleiste). Die Sprechblase erscheint beim Zeigen mit der
   Maus; an einem Tablet ohne Maus sind beide Angaben in der Akte nicht zu sehen.
   Vorleseprogramme bekommen sie als unsichtbaren Text.
-- **Leserakte, zwei Beschriftungen:** Der Reiter heißt „Ausleihen & Historie", zeigt aber nur
-  die laufenden Ausleihen und die Vormerkungen. Unter dem Reiter „Stammdaten & Adresse" steht
-  dieselbe Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem
-  01.10.2026 „Forderungen".
+- **Leserakte, doppelte Beschriftung:** Unter dem Reiter „Stammdaten & Adresse" steht dieselbe
+  Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem 01.10.2026
+  „Forderungen".
 
 ### 5.46 Portal: ein Weg für Wunsch und Meldung
 
@@ -885,12 +851,18 @@ Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? K
 Vorgelegt am 05.10.2026, Antwort offen: a) sie fällt ganz weg — ein Formular ohne Vorauswahl,
 kein Abzeichen, der Betreff „Ihr Anliegen ist erledigt" (empfohlen); b) sie bleibt, gewählt
 wird mit `ui/Segmente`. Sortiert oder gefiltert wird nach der Art nirgends; außer den drei
-genannten Stellen liest sie die Auskunft über ein Konto (`api/dsgvo_pdf_konto.go`).
+genannten Stellen liest sie die Auskunft über ein Konto (`api/dsgvo_pdf_konto.go`). Verloren
+ginge mit a das rote Abzeichen „Meldung" in der Liste der Bibliothek („Wunsch" ist grau). Die
+Vorauswahl steht auf „Buchwunsch": Wer nichts anklickt und ein Problem meldet, steht dort schon
+heute als Wunsch.
 
 Dazu der Wunsch vom 03.10.2026 (Issue 700): Bei einem Problem sollen im Portal die Bücher zur
-Auswahl stehen statt nur des Freitextfelds. Heute trägt das Formular drei Textfelder, und der
-Server nimmt keinen Verweis auf ein Buch an (`api/anliegen.go`: `art`, `titel_text`, `klasse`,
-`kommentar`). Mit der Antwort oben zusammen entscheiden.
+Auswahl stehen statt nur des Freitextfelds. **Entschieden am 05.10.2026:** Im Feld erscheinen
+beim Tippen passende Titel der Schule zum Anklicken, mit Cover; freier Text bleibt möglich, etwa
+für ein Buch, das es noch nicht gibt. Heute trägt das Formular drei Textfelder, und der Server
+nimmt keinen Verweis auf ein Buch an (`api/anliegen.go`: `art`, `titel_text`, `klasse`,
+`kommentar`); die Spalten `titel_id` und `isbn` in `lehrer_anliegen` gibt es noch. Gebaut wird
+zusammen mit der Antwort oben.
 
 ### 5.49 Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
 
@@ -910,32 +882,6 @@ Abgängerliste) antworten auch mit einer solchen Klasse (`klassenZahlSQL` in
 Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächster Schritt mit
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
-
-### 5.51 Der Knopf zum Druck-Menü im Mahnwesen trägt kein Wort
-
-Seit dem 04.10.2026 öffnet im Mahnwesen ein umrandeter Knopf mit Drucker-Symbol und ohne
-Beschriftung das Druck-Menü (`MahnwesenDruckMenue.svelte`); vorher war es der Split-Button
-„Mahnbriefe ▾". Verglichen am selben Tag mit den anderen Seiten:
-
-- Druck-Knöpfe tragen sonst Symbol und Wort, in 15 Dateien („Liste drucken", „Drucken",
-  „Als PDF", „Nachdruck", „Ausdrucken", „A4-Bogen drucken" …). Ein Drucker ohne Wort steht sonst
-  nur als Zeilenaktion in einer Liste (`BookExemplarCard.svelte`,
-  `BestellDetailPositionen.svelte`).
-- Menüs öffnen sonst über einen Split-Button („Ausweis drucken ▾" in der Schülerakte) oder über
-  ⋮ (Bedarf, Zeile im LMF-Plan, Schlagworte).
-- „Neu laden" daneben (`MahnwesenAktionen.svelte`) trägt ebenfalls kein Wort; auf den anderen
-  Seiten heißt der Knopf „Aktualisieren" oder „Neu prüfen".
-
-M3, Icon buttons (Guidelines): „Default icon buttons can open other elements, such as a menu" —
-die Bauform ist erlaubt. Dieselbe Seite: „Icons visually communicate the button's action. Their
-meaning should be clear and unambiguous." Der Drucker öffnet hier ein Menü, und zwei der drei
-Wege darin laden ein PDF. M3, Menus (Guidelines): Ein Menü öffnet aus „an icon, button, or text
-field".
-
-Nächster Schritt, nach 4.30 (die Antwort bestimmt, was hinter dem Knopf steht): ein umrandeter
-Knopf mit Drucker, Wort und Pfeil in der Form von „Liste drucken" in der Buchakte; „Neu laden"
-bekommt im selben Zug sein Wort. Die Form ist ein Vorschlag, entschieden ist sie nicht.
-Kategorie B.
 
 ---
 
@@ -1162,6 +1108,13 @@ Kategorie B.
   Knopf den Dialog wie Escape, und das Ergebnis der Anfrage steht auf der Seite; zu entscheiden
   wäre, ob das für die übrigen ebenso gilt. Voraussetzung je Stelle: Erfolg und Ablehnung werden
   außerhalb des Dialogs gemeldet.
+- Mahnwesen: „Neu laden" ist ein Symbolknopf ohne Wort (`MahnwesenAktionen.svelte`); auf den
+  anderen Seiten heißt der Knopf „Aktualisieren" oder „Neu prüfen".
+- Zwei gedruckte Listen, zwei Schriftgrößen: Die Mahnliste ist eng gesetzt (12 px, rund 25 bis
+  30 Zeilen je Seite), die Ausleiher-Liste der Buchakte steht in 16 px mit rund 15 Zeilen je
+  Seite (`utils/listenDruck.js`, Schalter `dicht`; gemessen am 05.10.2026 an einem Probedruck).
+- `ui/Menue` kann einen Kopf über den Einträgen und Gruppen-Überschriften (`kopf`,
+  `ueberschriftDavor`); seit dem 05.10.2026 nutzt beides kein Aufrufer mehr.
 - Die Akte eines Kollegen ohne Ausweisnummer sagt am gesperrten Ausweisdruck „die Nummer steht
   in „Benutzer & Rechte""; ohne Konto hat er dort keinen Eintrag. Die Nummer kommt mit dem
   freigeschalteten Zugang (`StudentProfileActions.svelte`, `data-tip`).
