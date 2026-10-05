@@ -144,3 +144,20 @@ export async function speichereBuch(formular, antwort = {}) {
 export function stehtInSicht(bestand, sicht) {
 	return Number(bestand) > 0 === (sicht !== 'ohne');
 }
+
+/**
+ * Der Titel, wie die Maske ihn zum Bearbeiten braucht: ganz vom Einzelabruf. Die Liste ist
+ * schlank (erweiterteEigenschaften leer), und das Speichern schickt das ganze Formular zurück —
+ * aus der Listenzeile gefüllt, leerte es diese Felder. `stockGesehen` ist die Zahl vom Öffnen,
+ * an der das Speichern erkennt, ob das Feld „Bestand" geändert wurde (bestandsAngabe).
+ * @param {any} buch Zeile der Liste oder ein Titel ohne Kennung
+ * @returns {Promise<any>} das Formular; wirft, wenn der Abruf scheitert
+ */
+export async function titelFuerMaske(buch) {
+	const voll = buch?.id ? await holeBuchDetail(buch.id) : buch;
+	const formular = { ...voll, stockGesehen: voll.stock };
+	if (!formular.medientyp) formular.medientyp = 'Buch';
+	if (formular.lastCounted?.includes('T'))
+		formular.lastCounted = formular.lastCounted.split('T')[0];
+	return formular;
+}

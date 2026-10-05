@@ -11,11 +11,11 @@
 	import { leeresBuchFormular } from '$lib/components/admin/buch_form_optionen.js';
 	import {
 		holeBuecherListe,
-		holeBuchDetail,
 		loescheBuecher,
 		holeExterneCover,
 		retryExterneCover
 	} from '$lib/admin_api.js';
+	import { titelFuerMaske } from '$lib/buch_speichern.js';
 
 	/** @type {any[]} */
 	let buecher = $state.raw([]);
@@ -78,7 +78,12 @@
 		}
 	}
 
+	// Nur die jüngste Öffnung gilt: Die Antwort zu einem früher angeklickten Titel legte sich
+	// sonst über die Maske des späteren, samt dem dort Getippten.
+	let oeffnung = 0;
+
 	function neuesBuchErstellen() {
+		oeffnung++;
 		formular = leeresBuchFormular();
 		istBearbeitenModus = true;
 	}
@@ -91,25 +96,17 @@
 
 	/** @param {any} buch */
 	async function oeffneDetails(buch) {
-		// Die Maske arbeitet auf dem ganzen Titel vom Einzelabruf: Die Liste ist schlank
-		// (erweiterteEigenschaften leer), und das Speichern schickt das ganze Formular zurück —
-		// aus der Listenzeile gefüllt, leerte es diese Felder. Scheitert der Abruf, öffnet nichts.
-		let voll = buch;
-		if (buch?.id) {
-			try {
-				voll = await holeBuchDetail(buch.id);
-			} catch {
-				showToast('Buch konnte nicht vollständig geladen werden — Bearbeiten abgebrochen', 'error');
-				return;
-			}
+		const meine = ++oeffnung;
+		let geholt;
+		try {
+			geholt = await titelFuerMaske(buch);
+		} catch {
+			if (meine !== oeffnung) return;
+			showToast('Buch konnte nicht vollständig geladen werden — Bearbeiten abgebrochen', 'error');
+			return;
 		}
-		// stockGesehen: Mit der Zahl vom Öffnen erkennt das Speichern, ob das Feld „Bestand"
-		// geändert wurde und ob sie am Server noch gilt (buch_speichern.js).
-		formular = { ...voll, stockGesehen: voll.stock };
-		if (!formular.medientyp) formular.medientyp = 'Buch';
-		if (formular.lastCounted && formular.lastCounted.includes('T')) {
-			formular.lastCounted = formular.lastCounted.split('T')[0];
-		}
+		if (meine !== oeffnung) return;
+		formular = geholt;
 		istBearbeitenModus = true;
 	}
 
