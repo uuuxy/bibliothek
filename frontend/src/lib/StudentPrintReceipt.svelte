@@ -73,16 +73,14 @@
 								<div class="font-bold">{book.titel}</div>
 								<div class="text-xs text-slate-500">{book.autor}</div>
 							</td>
-							<td class="py-3 px-2 text-center font-mono text-xs"
-								>{book.barcode || book.signatur || '-'}</td
-							>
-							<td class="py-3 px-2 text-center">{formatDate(book.ausleih_datum)}</td>
+							<td class="py-3 px-2 text-center font-mono text-xs">{book.barcode_id || '-'}</td>
+							<td class="py-3 px-2 text-center">{formatDate(book.ausgeliehen_am)}</td>
 							<td
-								class="py-3 px-2 text-right font-bold {new Date(book.rueckgabe_datum) < new Date()
+								class="py-3 px-2 text-right font-bold {new Date(book.rueckgabe_frist) < new Date()
 									? 'text-red-600'
 									: ''}"
 							>
-								{formatDate(book.rueckgabe_datum)}
+								{formatDate(book.rueckgabe_frist)}
 							</td>
 						</tr>
 					{/each}
