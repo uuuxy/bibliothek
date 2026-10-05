@@ -229,12 +229,16 @@ ohne Buch als Knopf unter „Deine Reservierungen" und „Deine Meldungen"
 (`portal/PortalMeldungen.svelte`) — nur solange das Suchfeld leer ist. Der Reiter
 „Klassensätze" kennt keine Meldung.
 
-Vorschlag vom 05.10.2026, nicht gebaut: Der Reiter heißt „Reservieren & Melden". „Problem
-melden" steht als umrandeter Knopf fest unter dem Suchfeld und bleibt beim Tippen stehen; der
-Knopf unter den Listen entfällt, am Treffer bleibt die Meldung mit dem gewählten Buch. M3, Tabs:
-„Text labels should clearly and succinctly describe the content within the tab."; M3, Buttons:
-Der umrandete Knopf ist für „actions that need attention but aren’t the primary action". Beim
-Umbenennen die E2E-Specs mitziehen.
+Besprochen am 05.10.2026, nicht gebaut. Drei Teile: (1) „Problem melden" steht als
+umrandeter Knopf fest unter dem Suchfeld und bleibt beim Tippen stehen; der Knopf unter den
+Listen entfällt, am Treffer bleibt die Meldung mit dem gewählten Buch. (2) Der Platzhalter des
+Suchfelds nennt den Zweck („Buch suchen für Reservierung oder Meldung …"); er allein genügt
+nicht, weil er mit dem ersten Buchstaben verschwindet. (3) Der Reiter bekommt einen Namen, der
+das Melden nennt. Vorgeschlagen sind „Reservieren & Melden" und „Anfragen & Suche"; „Anfrage"
+heißt im Portal schon die Reservierung (Knopf „Anfrage senden"). M3, Tabs: „Text labels should
+clearly and succinctly describe the content within the tab."; M3, Buttons: Der umrandete Knopf
+ist für „actions that need attention but aren’t the primary action". Beim Umbenennen die
+E2E-Specs mitziehen.
 
 ### 4.32 Theke: ein Stapel vom Rückgabetisch
 
