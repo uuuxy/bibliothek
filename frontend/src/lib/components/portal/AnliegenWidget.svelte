@@ -1,88 +1,71 @@
-<!-- @component AnliegenWidget — Wünsche und Meldungen der Lehrkraft im Kollegiums-Portal.
-
-     Der Einstieg sind zwei Knöpfe ohne Vorbelegung: Ein Wunsch bleibt liegen, bis bestellt
-     wird, ein Problem soll am selben Tag erledigt werden, und mit einer vorbelegten Art
-     stünde das eine als das andere in der Liste der Bibliothek. Darunter stehen die eigenen
-     Anliegen mit ihrem Stand. -->
+<!-- @component AnliegenWidget — Meldungen der Lehrkraft im Kollegiums-Portal: „Problem
+     melden" ohne Buch und darunter die eigenen Anliegen mit ihrem Stand. Am Treffer der
+     Suche gibt es dieselbe Meldung mit gewähltem Buch (PortalTrefferkarte). -->
 <script>
 	import { tick } from 'svelte';
-	import { BookPlus, TriangleAlert } from '@lucide/svelte';
+	import { TriangleAlert } from '@lucide/svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Button from '../ui/Button.svelte';
-	import AnliegenFormular from './AnliegenFormular.svelte';
+	import ProblemFormular from './ProblemFormular.svelte';
 
 	/** @typedef {{ id: string, art: string, titel_text: string, klasse: string, kommentar?: string, erstellt_am: string, erledigt_am?: string, erledigt_notiz?: string }} Anliegen */
 
-	// Die Liste gehört dem Portal: Es braucht sie ohnehin für den Zähler am Reiter und
-	// für die Startfläche. Zwei eigene Abrufe hätten zwei Wahrheiten über denselben
-	// Zustand ergeben — nach dem Absenden hätte der Zähler noch den alten Stand gezeigt.
-	/** @type {{ anliegen: Anliegen[], onaktualisiert: () => void | Promise<void>, ladefehler?: boolean }} */
-	let { anliegen, onaktualisiert, ladefehler = false } = $props();
+	// Liste und Formularzustand gehören dem Portal (eigeneAnliegen, problemMeldung): Der
+	// Zähler am Reiter liest dieselbe Liste, und zwei Abrufe wären zwei Wahrheiten.
+	/** @type {{ anliegen: Anliegen[], form: import('./problemMeldung.svelte.js').MeldeFormular, onoeffnen: () => void, onsenden: () => Promise<boolean>, onabbrechen: () => void, onaktualisiert: () => void | Promise<void>, ladefehler?: boolean }} */
+	let {
+		anliegen,
+		form,
+		onoeffnen,
+		onsenden,
+		onabbrechen,
+		onaktualisiert,
+		ladefehler = false
+	} = $props();
 	const eigene = $derived(anliegen);
 
-	/** @type {'wunsch' | 'meldung' | null} */
-	let art = $state(null);
 	/** @type {HTMLButtonElement | undefined} */
-	let wunschKnopf = $state();
-	/** @type {HTMLButtonElement | undefined} */
-	let meldungKnopf = $state();
+	let knopf = $state();
 
-	/** Zurück zur Wahl; der Fokus geht auf den Knopf, der das Formular geöffnet hatte. */
-	async function zurWahl() {
-		const zuletzt = art;
-		art = null;
+	// Der Knopf steht nur, solange das Formular zu ist; danach geht der Fokus auf ihn zurück.
+	async function zumKnopf() {
 		await tick();
-		(zuletzt === 'meldung' ? meldungKnopf : wunschKnopf)?.focus();
+		knopf?.focus();
 	}
-
-	async function abgeschickt() {
-		await zurWahl();
-		await onaktualisiert();
+	async function abbrechen() {
+		onabbrechen();
+		await zumKnopf();
+	}
+	async function senden() {
+		if (await onsenden()) await zumKnopf();
 	}
 </script>
 
 <section class="flex w-full max-w-3xl flex-col gap-6">
 	<p class="text-sm text-on-surface-variant">
-		Buchwunsch für deine Klasse oder etwas stimmt nicht? Die Bibliothek arbeitet die Liste ab — beim
-		Erledigen bekommst du eine Mail.
+		Etwas stimmt nicht? Die Bibliothek arbeitet die Liste ab — beim Erledigen bekommst du eine Mail.
 	</p>
 
-	{#if art === null}
-		<!-- M3 Buttons: zwei gleichrangige Wahlen in derselben Form, das Symbol vor dem Wort. -->
-		<div class="flex flex-wrap gap-3" role="group" aria-label="Art des Anliegens">
-			<Button
-				variant="secondary"
-				size="lg"
-				bind:element={wunschKnopf}
-				onclick={() => (art = 'wunsch')}
-			>
-				<BookPlus class="h-5 w-5" aria-hidden="true" />
-				Buchwunsch
-			</Button>
-			<Button
-				variant="secondary"
-				size="lg"
-				bind:element={meldungKnopf}
-				onclick={() => (art = 'meldung')}
-			>
+	{#if form.open}
+		<ProblemFormular {form} mitWorum onsenden={senden} onabbrechen={abbrechen} />
+	{:else}
+		<div>
+			<Button variant="secondary" size="lg" bind:element={knopf} onclick={onoeffnen}>
 				<TriangleAlert class="h-5 w-5" aria-hidden="true" />
 				Problem melden
 			</Button>
 		</div>
-	{:else}
-		<AnliegenFormular {art} onabbrechen={zurWahl} onabgeschickt={abgeschickt} />
 	{/if}
 
-	<!-- Ein gescheiterter ERSTER Abruf sagt nichts über die Anliegen — dann steht hier der
-	     Ausfall und nicht die leere Liste. „Nichts da" hätte einen abgeschickten Wunsch als
-	     verloren erscheinen lassen, und der nächste Schritt wäre gewesen, ihn noch einmal
-	     zu schicken. -->
+	<!-- Ein gescheiterter erster Abruf sagt nichts über die Anliegen — dann steht hier der
+	     Ausfall und nicht die leere Liste. „Nichts da" ließe eine abgeschickte Meldung als
+	     verloren erscheinen, und der nächste Schritt wäre, sie noch einmal zu schicken. -->
 	{#if ladefehler}
 		<div class="border-t border-outline-variant pt-6">
 			<LadeFehler
 				onerneut={onaktualisiert}
 				titel="Deine Anliegen konnten nicht geladen werden"
-				text="Bitte später noch einmal versuchen. Schon abgeschickte Wünsche und Meldungen sind nicht verloren — sie sind bei der Bibliothek."
+				text="Bitte später noch einmal versuchen. Schon abgeschickte Meldungen sind nicht verloren — sie sind bei der Bibliothek."
 			/>
 		</div>
 	{:else if eigene.length > 0}

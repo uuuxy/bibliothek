@@ -1,19 +1,20 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
-// Portal „Meine Anliegen": Die Art wird gewählt und nie vorbelegt. Beim Problem kommt das
-// Buch aus den Vorschlägen des Katalogs, und in der Liste der Bibliothek steht die Meldung
-// über den Wünschen, auch wenn der Wunsch älter ist.
+// Portal, „Problem melden": Am Treffer der Suche ist das Buch gewählt, sein Titel steht in
+// der Meldung. Ohne Buch fragt das Formular, worum es geht. Einen Buchwunsch gibt es nicht
+// mehr; in der Liste der Bibliothek steht die Meldung über einem älteren Wunsch.
 const LEHRER = 'e2e-anliegen-lehrer@test.local';
 const s = uniqueSuffix().slice(0, 6);
 const TITEL = `Anliegenbuch ${s}`;
 const BESCHREIBUNG = `falsche Auflage, E2E ${s}`;
+const OHNE_BUCH = `Bücher der 8G3, E2E ${s}`;
 
-test.describe.serial('Portal: Wunsch und Problem', () => {
+test.describe.serial('Portal: Problem melden', () => {
 	test.beforeAll(() => {
 		seedSQL(`
 			INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv) VALUES ('E2E', 'Anliegen', '${LEHRER}', 'kollegium', true) ON CONFLICT (email) DO UPDATE SET aktiv = true;
-			WITH t AS (INSERT INTO buecher_titel (isbn, titel, autor) VALUES ('978an${s}', '${TITEL}', 'Autorin ${s}') RETURNING id)
+			WITH t AS (INSERT INTO buecher_titel (isbn, titel, autor, ist_lernmittel) VALUES ('978an${s}', '${TITEL}', 'Autorin ${s}', true) RETURNING id)
 			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar) SELECT id, 'AN-EX-${s}', true FROM t;
 			INSERT INTO lehrer_anliegen (art, titel_text, klasse, kommentar, erstellt_am)
 			VALUES ('wunsch', 'Alter Wunsch ${s}', '7A', 'E2E ${s}', now() - interval '30 days');
@@ -21,40 +22,28 @@ test.describe.serial('Portal: Wunsch und Problem', () => {
 	});
 	test.afterAll(() => {
 		seedSQL(`
-			DELETE FROM lehrer_anliegen WHERE kommentar LIKE '%E2E ${s}';
+			DELETE FROM lehrer_anliegen WHERE kommentar LIKE '%E2E ${s}' OR titel_text LIKE '%E2E ${s}';
 			DELETE FROM buecher_exemplare WHERE barcode_id = 'AN-EX-${s}';
 			DELETE FROM buecher_titel WHERE isbn = '978an${s}';
 		`);
 	});
 
-	test('Problem melden: keine Vorbelegung, das Buch kommt aus den Vorschlägen', async ({
-		page
-	}) => {
+	test('Am Treffer: das Buch ist gewählt, die Beschreibung ist Pflicht', async ({ page }) => {
 		await uiLogin(page, LEHRER);
 		await page.getByTitle('Mein Portal').click();
-		await page.getByRole('tab', { name: 'Meine Anliegen' }).click();
+		await page.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }).fill(TITEL);
+		await expect(page.getByRole('heading', { name: TITEL })).toBeVisible();
 
-		// Vor der Wahl steht kein Formular da.
-		await expect(page.getByRole('button', { name: 'Buchwunsch' })).toBeVisible();
-		await expect(page.getByLabel('Welches Buch?')).toHaveCount(0);
-
-		await page.getByRole('button', { name: 'Problem melden' }).click();
-		const buch = page.getByRole('combobox', { name: 'Welches Buch?' });
-		await expect(buch).toBeFocused();
-
-		// Gesucht wird über den Namen der Autorin, damit der Titel im Feld aus dem Vorschlag
-		// stammt und nicht aus der Eingabe.
-		await buch.fill(`Autorin ${s}`);
-		const vorschlag = page.getByRole('option', { name: new RegExp(TITEL) });
-		await expect(vorschlag).toBeVisible();
-		await vorschlag.click();
-		await expect(buch).toHaveValue(TITEL);
-		await expect(page.getByRole('listbox')).toHaveCount(0);
+		const melden = page.getByRole('button', { name: 'Problem melden' });
+		await melden.click();
+		// Das Buch wird nicht noch einmal getippt.
+		await expect(page.getByLabel('Worum geht es? *')).toHaveCount(0);
+		await expect(page.getByLabel('Klasse / Kurs', { exact: true })).toBeFocused();
 
 		const absenden = page.getByRole('button', { name: 'Absenden' });
 		await expect(absenden, 'ohne Beschreibung des Problems').toBeDisabled();
-		await page.getByLabel('Klasse / Kurs').fill('8G3');
-		await page.getByLabel('Was stimmt nicht?').fill(BESCHREIBUNG);
+		await page.getByLabel('Klasse / Kurs', { exact: true }).fill('8G3');
+		await page.getByLabel('Was stimmt nicht? *').fill(BESCHREIBUNG);
 		await absenden.click();
 
 		await expect
@@ -64,8 +53,38 @@ test.describe.serial('Portal: Wunsch und Problem', () => {
 				)
 			)
 			.toBe(`meldung|${TITEL}|8G3`);
-		// Nach dem Absenden steht wieder die Wahl da.
+		// Das Formular ist zu, der Fokus steht wieder auf dem Knopf am Treffer.
+		await expect(absenden).toHaveCount(0);
+		await expect(melden).toBeFocused();
+	});
+
+	test('Ohne Buch: das Formular fragt, worum es geht; einen Buchwunsch gibt es nicht', async ({
+		page
+	}) => {
+		await uiLogin(page, LEHRER);
+		await page.getByTitle('Mein Portal').click();
+		await page.getByRole('tab', { name: 'Meine Anliegen' }).click();
+
+		await expect(page.getByRole('button', { name: 'Buchwunsch' })).toHaveCount(0);
+		await page.getByRole('button', { name: 'Problem melden' }).click();
+		const worum = page.getByLabel('Worum geht es? *');
+		await expect(worum).toBeFocused();
+		await worum.fill(OHNE_BUCH);
+		const absenden = page.getByRole('button', { name: 'Absenden' });
+		await expect(absenden, 'ohne Beschreibung des Problems').toBeDisabled();
+		await page.getByLabel('Was stimmt nicht? *').fill('drei fehlen');
+		await absenden.click();
+
+		await expect
+			.poll(() =>
+				querySQL(
+					`SELECT art || '|' || kommentar FROM lehrer_anliegen WHERE titel_text = '${OHNE_BUCH}'`
+				)
+			)
+			.toBe('meldung|drei fehlen');
+		// Nach dem Absenden steht wieder der Knopf da, und die Meldung in der eigenen Liste.
 		await expect(page.getByRole('button', { name: 'Problem melden' })).toBeVisible();
+		await expect(page.getByText(OHNE_BUCH)).toBeVisible();
 	});
 
 	test('Die Bibliothek sieht die Meldung über dem älteren Wunsch', async ({ page }) => {

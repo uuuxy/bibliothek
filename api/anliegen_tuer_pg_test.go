@@ -12,14 +12,12 @@ import (
 	"bibliothek/db"
 )
 
-// Die Annahme-Tür für Wünsche und Meldungen nimmt, was das Formular im Kollegiums-Portal
-// schickt — Art, Text, Klasse, Anmerkung — und nichts darüber hinaus.
+// Die Annahme-Tür für Meldungen nimmt, was das Formular im Kollegiums-Portal schickt — Art,
+// Text, Klasse, Beschreibung — und nichts darüber hinaus.
 //
-// Bis zum 21.09.2026 nahm sie zusätzlich `titel_id` und `isbn` an und schrieb beide in die
-// Zeile. Kein Formular hat sie je geschickt; entschieden ist (21.09.2026), dass das
-// Formular Freitext bleibt. Der Test schickt beide Felder trotzdem mit, und zwar mit
-// Werten, die die alte Tür angenommen hätte: eine echte Titel-Kennung (der Fremdschlüssel
-// hielte) und eine ISBN. Am alten Stand landen beide in der Zeile — dann ist er rot.
+// Der Test schickt `titel_id` und `isbn` trotzdem mit, und zwar mit Werten, die eine Tür mit
+// diesen Feldern annähme: eine echte Titel-Kennung (der Fremdschlüssel hielte) und eine ISBN.
+// Landen beide in der Zeile, ist er rot.
 func TestCreateAnliegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -48,16 +46,16 @@ func TestCreateAnliegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 		}
 	})
 
-	rumpf := `{"art":"wunsch","titel_text":"Markl Biologie 2","klasse":"8G3",` +
-		`"kommentar":"bitte zum Halbjahr","isbn":"978-3-12-150010-9","titel_id":"` + titelID + `"}`
+	rumpf := `{"art":"meldung","titel_text":"Markl Biologie 2","klasse":"8G3",` +
+		`"kommentar":"falsche Auflage bekommen","isbn":"978-3-12-150010-9","titel_id":"` + titelID + `"}`
 	req := httptest.NewRequest(http.MethodPost, "/api/anliegen", strings.NewReader(rumpf))
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: lehrkraftID}))
 	rec := httptest.NewRecorder()
 	srv.CreateAnliegenHandler()(rec, req)
 
-	// Unbekannte Felder sind kein Fehler: Wer sie schickt, bekommt seinen Wunsch trotzdem
-	// angelegt. Verloren ginge sonst ein Wunsch, nicht ein Feld.
+	// Unbekannte Felder sind kein Fehler: Wer sie schickt, bekommt seine Meldung trotzdem
+	// angelegt. Verloren ginge sonst eine Meldung, nicht ein Feld.
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Status = %d, want 201 — %s", rec.Code, rec.Body.String())
 	}
@@ -81,7 +79,62 @@ func TestCreateAnliegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 		t.Errorf("isbn = %q, want leer — die Tür nimmt wieder eine ISBN an", isbn)
 	}
 	// Die Gegenprobe: Was das Formular wirklich schickt, kommt an, jedes in seiner Spalte.
-	if titelText != "Markl Biologie 2" || klasse != "8G3" || kommentar != "bitte zum Halbjahr" {
+	if titelText != "Markl Biologie 2" || klasse != "8G3" || kommentar != "falsche Auflage bekommen" {
 		t.Errorf("Formularfelder falsch: titel_text=%q klasse=%q kommentar=%q", titelText, klasse, kommentar)
+	}
+}
+
+// Die Tür nimmt nur Meldungen an, und nur mit einer Beschreibung. Einen Buchwunsch kennt
+// das Portal nicht mehr: Ein Buch für eine Klasse wird dort reserviert. Und eine Meldung
+// ohne den Satz, was nicht stimmt, nennt nur ein Buch — das Formular verlangt ihn, die Tür
+// hält dieselbe Regel.
+func TestCreateAnliegen_NimmtNurMeldungenMitBeschreibung(t *testing.T) {
+	pool, router, token := portalWelt(t)
+	ctx := context.Background()
+
+	sende := func(rumpf string) *httptest.ResponseRecorder {
+		req := mitCSRF(httptest.NewRequest(http.MethodPost, "/api/anliegen", strings.NewReader(rumpf)))
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: token})
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		return rec
+	}
+	zeilen := func() int {
+		t.Helper()
+		var n int
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM lehrer_anliegen`).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	if _, err := pool.Exec(ctx, `DELETE FROM lehrer_anliegen`); err != nil {
+		t.Fatal(err)
+	}
+
+	abgelehnt := map[string]string{
+		"ein Wunsch":                       `{"art":"wunsch","titel_text":"Markl Biologie 2","klasse":"8G3","kommentar":"bitte zum Halbjahr"}`,
+		"eine Meldung ohne Beschreibung":   `{"art":"meldung","titel_text":"Markl Biologie 2","klasse":"8G3"}`,
+		"eine Meldung nur mit Leerzeichen": `{"art":"meldung","titel_text":"Markl Biologie 2","kommentar":"   "}`,
+	}
+	for name, rumpf := range abgelehnt {
+		if rec := sende(rumpf); rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: HTTP %d statt 400 — %s", name, rec.Code, rec.Body.String())
+		}
+	}
+	if n := zeilen(); n != 0 {
+		t.Fatalf("%d Zeilen angelegt, obwohl jede Anfrage abgelehnt sein sollte", n)
+	}
+
+	rec := sende(`{"art":"meldung","titel_text":"Markl Biologie 2","klasse":"8G3","kommentar":"falsche Auflage bekommen"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("Meldung mit Beschreibung: HTTP %d statt 201 — %s", rec.Code, rec.Body.String())
+	}
+	var art, kommentar string
+	if err := pool.QueryRow(ctx, `SELECT art, kommentar FROM lehrer_anliegen`).Scan(&art, &kommentar); err != nil {
+		t.Fatalf("Zeile lesen: %v", err)
+	}
+	if art != "meldung" || kommentar != "falsche Auflage bekommen" {
+		t.Errorf("angelegt: art=%q kommentar=%q", art, kommentar)
 	}
 }

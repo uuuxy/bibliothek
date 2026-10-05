@@ -1,93 +1,79 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import AnliegenWidget from './AnliegenWidget.svelte';
-import { apiFetch } from '../../apiFetch.js';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
-vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+// „Problem melden" ohne Buch und die eigenen Anliegen. Einen Buchwunsch gibt es nicht mehr:
+// Ein Buch für eine Klasse wird über die Suche reserviert. Der Zustand des Formulars gehört
+// dem Portal; das Zusammenspiel prüft KollegiumPortal.test.js.
 
-// Die Art eines Anliegens wird gewählt und nie vorbelegt: Mit der Vorbelegung „Buchwunsch"
-// stand ein Problem als Wunsch in der Liste der Bibliothek, sobald niemand umschaltete.
+const zu = { open: false, worum: '', klasse: '', text: '', sending: false };
 
-const aufbau = () => {
-	const onaktualisiert = vi.fn();
-	return { ...render(AnliegenWidget, { anliegen: [], onaktualisiert }), onaktualisiert };
+/** @param {Record<string, any>} [props] */
+const aufbau = (props = {}) => {
+	const rufe = { onoeffnen: vi.fn(), onsenden: vi.fn(), onabbrechen: vi.fn() };
+	return {
+		...render(AnliegenWidget, {
+			anliegen: [],
+			form: zu,
+			onaktualisiert: vi.fn(),
+			...rufe,
+			...props
+		}),
+		...rufe
+	};
 };
 
-/** Der Rumpf der letzten Anfrage an die Tür für Anliegen. */
-function gesendet() {
-	const ruf = vi.mocked(apiFetch).mock.calls.findLast(([url]) => url === '/api/anliegen');
-	return ruf ? JSON.parse(/** @type {any} */ (ruf[1]).body) : null;
-}
-
 describe('AnliegenWidget', () => {
-	beforeEach(() => {
-		vi.mocked(apiFetch).mockReset();
-		vi.mocked(apiFetch).mockResolvedValue(
-			/** @type {any} */ ({ ok: true, json: async () => ({ id: 'neu' }), headers: new Headers() })
-		);
-	});
-
-	it('zeigt vor der Wahl zwei Knöpfe und kein Formular', () => {
+	it('zeigt einen Knopf „Problem melden" und kein Formular', async () => {
 		const s = aufbau();
 
-		expect(s.getByRole('button', { name: 'Buchwunsch' })).toBeTruthy();
-		expect(s.getByRole('button', { name: 'Problem melden' })).toBeTruthy();
-		expect(s.queryByRole('radio'), 'eine Auswahl mit Vorbelegung').toBeNull();
-		expect(s.queryByLabelText('Welches Buch?')).toBeNull();
+		expect(s.queryByRole('button', { name: 'Buchwunsch' })).toBeNull();
 		expect(s.queryByRole('button', { name: 'Absenden' })).toBeNull();
-	});
 
-	it('schickt nach „Problem melden" eine Meldung und verlangt die Beschreibung', async () => {
-		const s = aufbau();
 		await fireEvent.click(s.getByRole('button', { name: 'Problem melden' }));
+		expect(s.onoeffnen).toHaveBeenCalled();
+	});
 
-		await fireEvent.input(s.getByLabelText('Welches Buch?'), {
-			target: { value: 'Markl Biologie 2' }
-		});
+	it('fragt ohne Buch, worum es geht, und kennzeichnet die Pflichtfelder', async () => {
+		const s = aufbau({ form: { ...zu, open: true } });
+
+		expect(s.getByLabelText('Worum geht es? *')).toBeTruthy();
+		expect(s.getByLabelText('Klasse / Kurs')).toBeTruthy();
+		expect(s.getByLabelText('Was stimmt nicht? *')).toBeTruthy();
 		const absenden = /** @type {HTMLButtonElement} */ (s.getByRole('button', { name: 'Absenden' }));
-		expect(absenden.disabled, 'ohne Beschreibung des Problems').toBe(true);
+		expect(absenden.disabled, 'ohne Gegenstand und Beschreibung').toBe(true);
 
-		await fireEvent.input(s.getByLabelText('Was stimmt nicht?'), {
-			target: { value: 'falsche Auflage' }
-		});
-		await fireEvent.click(absenden);
-
-		await vi.waitFor(() => expect(gesendet()).toBeTruthy());
-		expect(gesendet()).toEqual({
-			art: 'meldung',
-			titel_text: 'Markl Biologie 2',
-			klasse: '',
-			kommentar: 'falsche Auflage'
-		});
-		// Nach dem Absenden steht wieder die Wahl da, und die eigene Liste wird neu gelesen.
-		await vi.waitFor(() =>
-			expect(s.queryByRole('button', { name: 'Problem melden' })).toBeTruthy()
-		);
-		expect(s.onaktualisiert).toHaveBeenCalled();
-	});
-
-	it('schickt nach „Buchwunsch" einen Wunsch, die Anmerkung bleibt freiwillig', async () => {
-		const s = aufbau();
-		await fireEvent.click(s.getByRole('button', { name: 'Buchwunsch' }));
-
-		await fireEvent.input(s.getByLabelText('Welches Buch?'), { target: { value: 'Neues Buch' } });
-		await fireEvent.click(s.getByRole('button', { name: 'Absenden' }));
-
-		await vi.waitFor(() => expect(gesendet()).toBeTruthy());
-		expect(gesendet().art).toBe('wunsch');
-		expect(gesendet().titel_text).toBe('Neues Buch');
-	});
-
-	it('führt mit „Abbrechen" zurück zur Wahl, ohne etwas zu senden', async () => {
-		const s = aufbau();
-		await fireEvent.click(s.getByRole('button', { name: 'Buchwunsch' }));
 		await fireEvent.click(s.getByRole('button', { name: 'Abbrechen' }));
+		expect(s.onabbrechen).toHaveBeenCalled();
+	});
 
-		await vi.waitFor(() =>
-			expect(s.queryByRole('button', { name: 'Problem melden' })).toBeTruthy()
-		);
-		expect(s.queryByLabelText('Welches Buch?')).toBeNull();
-		expect(gesendet()).toBeNull();
+	// Wünsche aus der Zeit des Buchwunschs stehen weiter in der Liste, bis sie abgehakt sind.
+	it('zeigt die eigenen Anliegen mit Art, Stand und der Antwort der Bibliothek', () => {
+		const s = aufbau({
+			anliegen: [
+				{
+					id: 'a1',
+					art: 'meldung',
+					titel_text: 'Markl Biologie 2',
+					klasse: '8G3',
+					erstellt_am: 'x'
+				},
+				{
+					id: 'a2',
+					art: 'wunsch',
+					titel_text: 'Natura 2',
+					klasse: '7G1',
+					erstellt_am: 'x',
+					erledigt_am: 'y',
+					erledigt_notiz: 'liegt bereit'
+				}
+			]
+		});
+
+		expect(s.getByText('Meldung:')).toBeTruthy();
+		expect(s.getByText('Wunsch:')).toBeTruthy();
+		expect(s.getByText('Offen')).toBeTruthy();
+		expect(s.getByText('Erledigt')).toBeTruthy();
+		expect(s.getByText('Bibliothek: „liegt bereit"')).toBeTruthy();
 	});
 });

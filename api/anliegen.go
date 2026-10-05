@@ -12,19 +12,20 @@ import (
 	"bibliothek/repository"
 )
 
-// Anliegen der Lehrkräfte (Betreiber-Entscheidung 18.08.2026): Wunsch
-// ("Markl 2 für die 8G3") und Meldung ("falsche Bücher bekommen") als EIN
-// schlanker Mechanismus. Wünschen geht IMMER (kein Stichtag), die LMF hakt in
-// Ruhe ab, die Lehrkraft bekommt dabei eine Mail. Bewusst ohne Prioritäten,
-// Kommentar-Threads oder Genehmigungsketten.
+// Anliegen der Lehrkräfte: die Meldung, dass etwas nicht stimmt („falsche Bücher
+// bekommen"). Die Bibliothek hakt in Ruhe ab, die Lehrkraft bekommt dabei eine Mail. Ohne
+// Prioritäten, Kommentar-Threads oder Genehmigungsketten.
+//
+// Die Tabelle führt daneben Wünsche (art 'wunsch'), die das Portal nicht mehr anlegt: Wer
+// ein Buch für eine Klasse möchte, reserviert es dort. Vorhandene Wünsche werden wie
+// Meldungen gelistet und abgehakt.
 
 // AnliegenRequest ist die Eingabe der Lehrkraft im Kollegiums-Portal.
 //
-// Bewusst Freitext: Ein Wunsch gilt meist einem Buch, das NICHT im Bestand ist, und für
-// ein vorhandenes gibt es die Klassensatz-Reservierung im selben Portal. Bis zum 21.09.2026
-// nahm die Tür zusätzlich `titel_id` und `isbn` an — kein Formular hat sie je geschickt
-// (seit dem ersten Commit vom 18.08.2026 nicht), und eine Tür, die Felder annimmt, die
-// niemand füllt, sieht aus wie eine Funktion. Die Spalten in lehrer_anliegen bleiben.
+// Freitext: Am Treffer gemeldet, steht der Titel des Buchs im Text; ohne Buch nennt die
+// Lehrkraft selbst, worum es geht. Die Spalten titel_id und isbn in lehrer_anliegen füllt
+// die Tür nicht — eine Tür, die Felder annimmt, die kein Formular schickt, sieht aus wie
+// eine Funktion.
 type AnliegenRequest struct {
 	Art       string `json:"art" validate:"required"`
 	TitelText string `json:"titel_text" validate:"required"`
@@ -32,7 +33,7 @@ type AnliegenRequest struct {
 	Kommentar string `json:"kommentar,omitempty"`
 }
 
-// CreateAnliegenHandler nimmt Wunsch/Meldung entgegen. POST /api/anliegen
+// CreateAnliegenHandler nimmt eine Meldung entgegen. POST /api/anliegen
 func (s *Server) CreateAnliegenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
@@ -45,8 +46,8 @@ func (s *Server) CreateAnliegenHandler() http.HandlerFunc {
 			return
 		}
 		req.Art = strings.ToLower(strings.TrimSpace(req.Art))
-		if req.Art != "wunsch" && req.Art != "meldung" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("art muss 'wunsch' oder 'meldung' sein"))
+		if req.Art != "meldung" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("art muss 'meldung' sein — ein Buch für eine Klasse wird im Portal reserviert"))
 			return
 		}
 		req.TitelText = strings.TrimSpace(req.TitelText)
@@ -54,11 +55,17 @@ func (s *Server) CreateAnliegenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("worum geht es? titel_text ist leer"))
 			return
 		}
-		// Längen kappen statt ablehnen — ein zu langer Wunsch soll nicht verloren
+		// Längen kappen statt ablehnen — eine zu lange Meldung soll nicht verloren
 		// gehen, nur weil jemand einen ganzen Absatz ins Titelfeld kopiert hat.
 		req.TitelText = kuerze(req.TitelText, 300)
 		req.Klasse = kuerze(strings.TrimSpace(req.Klasse), 50)
 		req.Kommentar = kuerze(strings.TrimSpace(req.Kommentar), 1000)
+		// Ohne Beschreibung nennt die Meldung nur ein Buch, und die Bibliothek muss
+		// nachfragen. Das Formular verlangt den Satz; die Tür hält dieselbe Regel.
+		if req.Kommentar == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("was stimmt nicht? kommentar ist leer"))
+			return
+		}
 
 		repo := repository.NewAnliegenRepository(s.DB.Pool)
 		id, err := repo.Create(r.Context(), repository.NeuesAnliegen{

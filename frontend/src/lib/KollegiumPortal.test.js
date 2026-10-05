@@ -165,6 +165,113 @@ describe('KollegiumPortal', () => {
 	});
 });
 
+/** Der Rumpf der letzten Anfrage an die Tür für Anliegen. */
+function gemeldet() {
+	const ruf = vi.mocked(apiFetch).mock.calls.findLast(([url]) => url === '/api/anliegen');
+	return ruf ? JSON.parse(/** @type {any} */ (ruf[1]).body) : null;
+}
+
+/** Katalog und Annahme der Meldung antworten, alles andere ist leer. */
+function portalMitTreffer() {
+	vi.mocked(apiFetch).mockReset();
+	vi.mocked(apiFetch).mockImplementation(
+		/** @type {any} */ (
+			async (/** @type {string} */ url) =>
+				url.startsWith('/api/reservierungen/klassensatz/katalog')
+					? suchtreffer()
+					: { ok: true, text: async () => '', json: async () => ({}) }
+		)
+	);
+	return render(KollegiumPortal, { user: { klasse: '' } });
+}
+
+/** @param {any} screen */
+async function suche(screen) {
+	await fireEvent.input(
+		screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
+		{ target: { value: 'Seydlitz' } }
+	);
+	await screen.findByRole('button', { name: 'Klassensatz reservieren' });
+}
+
+/**
+ * „Problem melden" steht am Treffer: Das Buch ist gewählt, sein Titel geht in die Meldung.
+ * Ein zweites Feld, in das die Lehrkraft das Buch noch einmal tippt, gibt es nicht.
+ */
+describe('Problem melden im Portal', () => {
+	it('meldet am Treffer mit dem Titel des Buchs und verlangt die Beschreibung', async () => {
+		const screen = portalMitTreffer();
+		await suche(screen);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
+		expect(screen.queryByLabelText('Worum geht es? *'), 'das Buch ist schon gewählt').toBeNull();
+		const absenden = /** @type {HTMLButtonElement} */ (
+			await screen.findByRole('button', { name: 'Absenden' })
+		);
+		expect(absenden.disabled, 'ohne Beschreibung').toBe(true);
+
+		await fireEvent.input(screen.getByLabelText('Klasse / Kurs'), { target: { value: '8G3' } });
+		await fireEvent.input(screen.getByLabelText('Was stimmt nicht? *'), {
+			target: { value: 'falsche Auflage' }
+		});
+		await fireEvent.click(absenden);
+
+		await vi.waitFor(() => expect(gemeldet()).toBeTruthy());
+		expect(gemeldet()).toEqual({
+			art: 'meldung',
+			titel_text: TITEL,
+			klasse: '8G3',
+			kommentar: 'falsche Auflage'
+		});
+		// Danach ist das Formular zu, und der Treffer steht wie vorher da.
+		await vi.waitFor(() => expect(screen.queryByRole('button', { name: 'Absenden' })).toBeNull());
+		expect(screen.getByRole('button', { name: 'Klassensatz reservieren' })).toBeTruthy();
+	});
+
+	it('hält je Treffer höchstens ein Formular offen', async () => {
+		const screen = portalMitTreffer();
+		await suche(screen);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Klassensatz reservieren' }));
+		expect(await screen.findByRole('button', { name: 'Anfrage senden' })).toBeTruthy();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
+		expect(await screen.findByRole('button', { name: 'Absenden' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Anfrage senden' })).toBeNull();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Klassensatz reservieren' }));
+		expect(await screen.findByRole('button', { name: 'Anfrage senden' })).toBeTruthy();
+		expect(screen.queryByRole('button', { name: 'Absenden' })).toBeNull();
+	});
+
+	// Einen Buchwunsch kennt das Portal nicht mehr; ohne Buch fragt die Meldung, worum es geht.
+	it('meldet ohne Buch unter „Meine Anliegen"', async () => {
+		const screen = portalMitTreffer();
+		await fireEvent.click(screen.getByRole('tab', { name: /Meine Anliegen/ }));
+
+		expect(screen.queryByRole('button', { name: 'Buchwunsch' })).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
+		await fireEvent.input(await screen.findByLabelText('Worum geht es? *'), {
+			target: { value: 'die Bücher der 8G3' }
+		});
+		await fireEvent.input(screen.getByLabelText('Was stimmt nicht? *'), {
+			target: { value: 'drei fehlen' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Absenden' }));
+
+		await vi.waitFor(() => expect(gemeldet()).toBeTruthy());
+		expect(gemeldet()).toEqual({
+			art: 'meldung',
+			titel_text: 'die Bücher der 8G3',
+			klasse: '',
+			kommentar: 'drei fehlen'
+		});
+		await vi.waitFor(() =>
+			expect(screen.queryByRole('button', { name: 'Problem melden' })).toBeTruthy()
+		);
+	});
+});
+
 /**
  * Das Warteschlangen-Modell (16.08.2026): Reservieren sperrt nichts — wer denselben
  * Titel reserviert, stellt sich an. Das Portal muss beides leisten: die bestehende

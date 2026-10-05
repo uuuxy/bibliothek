@@ -2,29 +2,54 @@
 	/**
 	 * @component PortalTrefferkarte
 	 * Ein Suchtreffer im Kollegiums-Portal: Cover, Titelangaben, Verfügbarkeit, die
-	 * Warteschlange — und das aufklappbare Formular für die Klassensatz-Reservierung.
-	 *
-	 * Aus KollegiumPortal.svelte herausgelöst (23.08.2026): Die Datei trug 389 Zeilen,
-	 * davon 150 diese eine Karte. Die stehende Vorgabe im Haus sind 200 Zeilen je Datei.
-	 *
-	 * Die Formularfelder sind Feld wie überall sonst — Rahmen statt Füllung,
-	 * Beschriftung über dem Feld. Vorher waren es drei handgebaute Felder mit eigener
-	 * Rundung und eigenem Fokusring.
+	 * Warteschlange und zwei Aktionen — „Klassensatz reservieren" und „Problem melden". Je
+	 * Karte ist höchstens eines der beiden Formulare offen; ihr Zustand gehört dem Aufrufer.
 	 *
 	 * @prop {any} book
-	 * @prop {any} form - Formularzustand dieses Titels (reaktives Objekt des Aufrufers).
+	 * @prop {any} form - Reservierung dieses Titels (klassensatzReservierung.svelte.js).
+	 * @prop {import('./problemMeldung.svelte.js').MeldeFormular} meldung - Meldung zu diesem Titel.
 	 * @prop {{ klasse: string, anzahl: number, erstellt_am: string }[]} warteschlange
 	 * @prop {() => void} ontoggle
 	 * @prop {() => void} onsenden
+	 * @prop {() => void} onmelden - öffnet oder schließt „Problem melden".
+	 * @prop {() => Promise<boolean>} onmeldungsenden - true, wenn die Meldung angenommen ist.
+	 * @prop {() => void} onmeldungabbrechen
 	 */
+	import { tick } from 'svelte';
 	import { BookOpen } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import KlassensatzFormular from './KlassensatzFormular.svelte';
+	import ProblemFormular from './ProblemFormular.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
 	import { bestandSatz } from '../../utils/format.js';
 
-	/** @type {{ book: any, form: any, warteschlange: { klasse: string, anzahl: number, erstellt_am: string }[], ontoggle: () => void, onsenden: () => void }} */
-	let { book, form, warteschlange, ontoggle, onsenden } = $props();
+	/** @type {{ book: any, form: any, meldung: import('./problemMeldung.svelte.js').MeldeFormular, warteschlange: { klasse: string, anzahl: number, erstellt_am: string }[], ontoggle: () => void, onsenden: () => void, onmelden: () => void, onmeldungsenden: () => Promise<boolean>, onmeldungabbrechen: () => void }} */
+	let {
+		book,
+		form,
+		meldung,
+		warteschlange,
+		ontoggle,
+		onsenden,
+		onmelden,
+		onmeldungsenden,
+		onmeldungabbrechen
+	} = $props();
+
+	/** @type {HTMLButtonElement | undefined} */
+	let meldeKnopf = $state();
+
+	// Schließt das Formular, geht der Fokus zurück auf den Knopf, der es geöffnet hat.
+	async function schliesseMeldung() {
+		onmeldungabbrechen();
+		await tick();
+		meldeKnopf?.focus();
+	}
+	async function sendeMeldung() {
+		if (!(await onmeldungsenden())) return;
+		await tick();
+		meldeKnopf?.focus();
+	}
 
 	const bild = $derived(coverSrc(book.cover_url, book.isbn));
 
@@ -47,7 +72,9 @@
 </script>
 
 <div class="w-full">
-	<div class="flex gap-4 p-4">
+	<!-- Mit Umbruch: Reicht die Breite nicht für Titel und Aktionen nebeneinander, rücken die
+	     Aktionen unter den Text, statt den Titel auf null zu drücken. -->
+	<div class="flex flex-wrap gap-4 p-4">
 		<div
 			class="flex h-20 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-outline-variant bg-surface-container-low"
 		>
@@ -58,7 +85,7 @@
 			{/if}
 		</div>
 
-		<div class="min-w-0 flex-1">
+		<div class="min-w-0 flex-1 basis-48">
 			<h3 class="truncate text-base leading-tight font-medium text-on-surface">
 				{book.titel ?? book.title ?? 'Unbekannter Titel'}
 			</h3>
@@ -114,68 +141,44 @@
 			{/each}
 		</div>
 
-		<!-- Die Bestätigung ERSETZT den Knopf nicht: Eine Lehrkraft, die denselben Titel
-		     für 8a bestellt hat, braucht ihn direkt danach für 8b. Vorher blieb
-		     „✓ Gesendet" für immer stehen und der einzige Weg zurück war ein Reload. -->
-		<div class="flex shrink-0 flex-col items-end justify-between gap-2">
+		<!-- Zwei Aktionen in zwei Gewichten: die häufige als umrandeter Knopf, die seltene als
+		     Textknopf; der gefüllte Knopf bleibt dem Absenden im Formular. Die Bestätigung
+		     ersetzt den Knopf nicht: Wer den Titel für die 8a reserviert hat, braucht ihn
+		     direkt danach für die 8b. -->
+		<div class="ml-auto flex max-w-full shrink-0 flex-col items-end gap-2">
+			<div class="flex flex-wrap items-center justify-end gap-1">
+				<Button variant="secondary" size="sm" onclick={ontoggle}>
+					{#if form.open}
+						Abbrechen
+					{:else if form.success}
+						Weitere Klasse reservieren
+					{:else}
+						Klassensatz reservieren
+					{/if}
+				</Button>
+				<Button
+					variant="ghost"
+					size="sm"
+					bind:element={meldeKnopf}
+					aria-expanded={meldung.open}
+					onclick={onmelden}
+				>
+					Problem melden
+				</Button>
+			</div>
 			{#if form.success}
 				<span class="text-xs font-medium text-primary" title={form.success}>✓ Gesendet</span>
 			{/if}
-			<Button
-				variant={form.open || form.success ? 'secondary' : 'primary'}
-				size="sm"
-				onclick={ontoggle}
-			>
-				{#if form.open}
-					Abbrechen
-				{:else if form.success}
-					Weitere Klasse reservieren
-				{:else}
-					Klassensatz reservieren
-				{/if}
-			</Button>
 		</div>
 	</div>
 
 	{#if form.open}
-		<div
-			class="flex flex-col gap-4 border-t border-outline-variant bg-surface-container-low px-4 py-4"
-		>
-			<p class="text-sm font-medium text-on-surface">Klassensatz-Reservierung</p>
-			<div class="grid grid-cols-2 gap-4">
-				<Feld
-					bind:value={form.klasse}
-					label="Klasse / Kurs *"
-					type="text"
-					placeholder="z. B. 8G3"
-				/>
-				<Feld type="number" bind:value={form.anzahl} label="Anzahl" min={1} max={200} />
-			</div>
-			<label class="grid gap-y-1.5">
-				<span class="text-sm font-medium text-on-surface-variant">Notiz (optional)</span>
-				<textarea
-					bind:value={form.notiz}
-					rows="2"
-					placeholder="z. B. Benötigt ab 15. September …"
-					class="w-full resize-none rounded-sm border border-outline-variant bg-surface-container-lowest px-3 py-2 text-base text-on-surface transition-colors placeholder:text-outline focus:border-primary focus:outline-none"
-				></textarea>
-			</label>
-			<!-- Anstellen bleibt erlaubt — aber die Lehrkraft soll es VOR dem Absenden wissen,
-			     nicht erst aus der Bestätigung. -->
-			{#if reichtNicht}
-				<p class="text-xs text-on-surface-variant" role="status">
-					Reicht aktuell nicht: {rechnerischFrei} rechnerisch frei — du stellst dich hinter
-					{warteschlange.map((o) => o.klasse).join(', ')} an.
-				</p>
-			{/if}
-			{#if form.error}
-				<p class="text-xs text-error">{form.error}</p>
-			{/if}
-			<div class="flex justify-end">
-				<Button onclick={onsenden} disabled={form.loading}>
-					{form.loading ? 'Wird gesendet …' : 'Anfrage senden'}
-				</Button>
-			</div>
+		<div class="border-t border-outline-variant bg-surface-container-low px-4 py-4">
+			<KlassensatzFormular {form} {reichtNicht} {rechnerischFrei} {warteschlange} {onsenden} />
+		</div>
+	{:else if meldung.open}
+		<div class="border-t border-outline-variant bg-surface-container-low px-4 py-4">
+			<ProblemFormular form={meldung} onsenden={sendeMeldung} onabbrechen={schliesseMeldung} />
 		</div>
 	{/if}
 </div>

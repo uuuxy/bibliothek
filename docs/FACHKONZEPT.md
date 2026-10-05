@@ -267,18 +267,21 @@ Kachel, trägt sie die Aufschlüsselung (`auflagen`: jede Auflage mit der Zahl d
 meisten zuerst; die der Kachel mit „diese Auflage"). Belegt:
 `inventur/klassensatz_auflagen_pg_test.go`.
 
-### 4.4. Wünsche & Meldungen der Lehrkräfte
+### 4.4. Meldungen der Lehrkräfte
 
 Seit 18.08.2026 (Betreiber-Entscheidung: bewusst schlank, kein Ticketsystem):
 
-- **Ein Mechanismus für zwei Fälle:** „Ich möchte in der 8G3 den Markl 2" (Wunsch)
-  und „die 8G3 hat die falschen Bücher bekommen" (Meldung). Die Lehrkraft wählt im
-  Kollegiums-Portal zuerst die Art über zwei Knöpfe, „Buchwunsch" und „Problem melden";
-  vorbelegt ist keine. Der Wunsch nimmt Freitext, Klasse/Kurs und eine optionale
-  Anmerkung. Beim Problem schlägt das Feld für das Buch beim Tippen Titel aus dem Katalog
-  vor, ein eigener Text bleibt möglich; dazu Klasse/Kurs und was nicht stimmt.
-  Gespeichert wird in beiden Fällen Text, kein Verweis auf einen Titel.
-- **Wünschen geht immer** — keine Wunschphase, kein Stichtag.
+- **Die Meldung, dass etwas nicht stimmt** („die 8G3 hat die falschen Bücher bekommen"). Im
+  Kollegiums-Portal steht „Problem melden" am Treffer der Suche: Das Buch ist dann gewählt,
+  sein Titel steht in der Meldung; dazu Klasse/Kurs und was nicht stimmt. Einmal steht
+  „Problem melden" ohne Buch, dort nennt die Lehrkraft selbst, worum es geht. Die
+  Beschreibung ist Pflicht, im Formular und am Server (`api/anliegen.go`). Gespeichert wird
+  Text, kein Verweis auf einen Titel.
+- **Einen Buchwunsch gibt es seit dem 05.10.2026 nicht mehr.** Gemeint war damit in aller
+  Regel eine Reservierung („Markl 2 für die 8G3"); sie geht über die Suche (§4.2), die auch
+  Lernmittel und bestellte Titel findet. `POST /api/anliegen` nimmt nur noch Meldungen an.
+  Wünsche aus der Zeit davor stehen weiter in der Liste der Bibliothek, bis sie abgehakt
+  sind.
 - Die Bibliothek arbeitet die Liste unter Bestellungen → „Wünsche & Meldungen" in
   Ruhe ab: Meldungen stehen über den Wünschen, je die ältesten zuerst. **Abhaken**
   schließt das Anliegen und schickt der Lehrkraft automatisch eine Mail — mit der

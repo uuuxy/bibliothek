@@ -18,6 +18,7 @@
 		erzeugeKlassensatzReservierung,
 		erzeugeReservierungsListen
 	} from './components/portal/klassensatzReservierung.svelte.js';
+	import { erzeugeProblemMeldung, OHNE_BUCH } from './components/portal/problemMeldung.svelte.js';
 	/** @type {{ user: any }} */
 	let { user } = $props();
 
@@ -48,6 +49,23 @@
 		listen.warteschlangeFuer,
 		listen.lade
 	);
+
+	// „Problem melden" je Treffer und einmal ohne Buch; nach dem Absenden liest das Portal
+	// die eigenen Anliegen neu.
+	const meldung = erzeugeProblemMeldung(() => eigeneAnliegen.lade());
+
+	// Je Karte ist höchstens ein Formular offen: Das eine schließt das andere.
+	/** @param {string} titelId */
+	function reserviereAmTreffer(titelId) {
+		meldung.schliesse(titelId);
+		reservierung.toggle(titelId);
+	}
+	/** @param {string} titelId */
+	function meldeAmTreffer(titelId) {
+		if (meldung.form(titelId).open) return meldung.schliesse(titelId);
+		if (reservierung.form(titelId).open) reservierung.toggle(titelId);
+		meldung.oeffne(titelId);
+	}
 </script>
 
 <PageShell>
@@ -119,9 +137,13 @@
 					<PortalTrefferkarte
 						{book}
 						form={reservierung.form(titelId)}
+						meldung={meldung.form(titelId)}
 						warteschlange={listen.warteschlangeFuer(titelId)}
-						ontoggle={() => reservierung.toggle(titelId)}
+						ontoggle={() => reserviereAmTreffer(titelId)}
 						onsenden={() => reservierung.senden(titelId)}
+						onmelden={() => meldeAmTreffer(titelId)}
+						onmeldungsenden={() => meldung.senden(titelId, book.titel ?? book.title)}
+						onmeldungabbrechen={() => meldung.schliesse(titelId)}
 					/>
 				{/each}
 			</div>
@@ -146,6 +168,10 @@
 	{:else}
 		<AnliegenWidget
 			anliegen={eigeneAnliegen.liste}
+			form={meldung.form(OHNE_BUCH)}
+			onoeffnen={() => meldung.oeffne(OHNE_BUCH)}
+			onsenden={() => meldung.senden(OHNE_BUCH)}
+			onabbrechen={() => meldung.schliesse(OHNE_BUCH)}
 			onaktualisiert={eigeneAnliegen.lade}
 			ladefehler={eigeneAnliegen.fehler}
 		/>

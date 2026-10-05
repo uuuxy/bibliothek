@@ -851,42 +851,23 @@ sie in der Vorschau. Kategorie B.
 
 ### 5.52 Portal: Reservieren und Anliegen in einem Reiter
 
-Im Portal fragen „Klassensatz reservieren" (Reiter „Suchen & Reservieren") und der Knopf
-„Buchwunsch" (Reiter „Meine Anliegen") dasselbe, Buch und Klasse. Der Buchwunsch meint in aller
-Regel eine Reservierung: „Natura 2 für die 8G1", und eine andere Lehrkraft möchte für ihre Klasse
-„Markl 2". Ein Buch, das die Schule nicht hat, wird darüber nicht gewünscht. Die Suche des
-Portals findet auch Lernmittel und bestellte Titel (`api/katalog_kollegium.go`); reservieren
-lässt sich damit jedes dieser Bücher.
+Seit dem 05.10.2026 findet die Suche des Portals auch Lernmittel und bestellte Titel, der
+Buchwunsch ist entfallen, und „Problem melden" steht am Treffer. Das Portal führt noch zwei
+Reiter für das, was eine Lehrkraft an die Bibliothek schickt: „Suchen & Reservieren" mit den
+eigenen Reservierungen und „Meine Anliegen" mit „Problem melden" ohne Buch und den eigenen
+Anliegen.
 
 **Entschieden am 05.10.2026, nicht gebaut.** Kategorie B.
 
-- **Der Buchwunsch entfällt.** Knopf und Formular verschwinden, `POST /api/anliegen` nimmt nur
-  noch Meldungen an. Vorhandene Wünsche bleiben in der Liste der Bibliothek, bis sie abgehakt
-  sind.
-- **„Problem melden" steht am Treffer.** Das Buch ist dann gewählt; das Feld mit
-  Buchvorschlägen (`portal/BuchVorschlagFeld.svelte`) entfällt. Einmal steht „Problem melden"
-  ohne Buch. Der Server verlangt „Was stimmt nicht?" bei einer Meldung; heute ist der Satz nur
-  im Formular Pflicht (`api/anliegen.go`).
 - **Ein Reiter statt zwei.** „Suchen & Reservieren" und „Meine Anliegen" werden ein Reiter: die
-  Suche, darunter die eigenen Reservierungen und Meldungen. Das Portal hat dann vier Reiter,
-  die Zahl am Reiter „Meine Anliegen" entfällt.
+  Suche, darunter die eigenen Reservierungen und Meldungen und „Problem melden" ohne Buch. Das
+  Portal hat dann vier Reiter, die Zahl am Reiter „Meine Anliegen" entfällt.
 - **Das Suchfeld bleibt eine Suche.** Ein allgemeines Postfach entsteht nicht; die Suche läuft
   bei jedem Buchstaben, und für die Anliegen gilt „kein Ticketsystem" ([FACHKONZEPT.md](FACHKONZEPT.md), 4.4).
-- **Die Obergrenze bleibt.** Mehr Exemplare, als im Bestand sind, lehnt die Reservierung ab
-  (`api/reservation.go`).
 
-Nachgelesen am 05.10.2026 (m3.material.io, Guidelines):
-
-- Tabs: „Text labels should clearly and succinctly describe the content within the tab."; „Avoid
-  using more than four tabs at once. At five or more tabs, the container becomes cramped."
-- Search: „Search lets people enter a keyword or phrase to get relevant information"; „Provide a
-  short description of the information people can search".
-- Buttons: „Don't clutter your UI with too many buttons. Consider presenting low-priority actions
-  in overflow menus or as icon buttons."; „Since they have such strong emphasis, the filled style
-  should be used sparingly, ideally for only one action on a page."; „The text button style
-  should be used for the lowest priority actions".
-- Lists: „List items can contain multiple actions at once, like selection, icon buttons, overflow
-  menus, and more."
+Nachgelesen am 05.10.2026 (m3.material.io, Guidelines): Tabs: „Avoid using more than four tabs
+at once. At five or more tabs, the container becomes cramped."; „Text labels should clearly and
+succinctly describe the content within the tab."
 
 ---
 

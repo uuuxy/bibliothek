@@ -36,7 +36,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		seedSQL(`
 			UPDATE system_einstellungen SET wert = '${FRIST_VORHER}' WHERE schluessel = 'frist_buch_tage';
 			DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE barcode_id LIKE 'RT-%${s}%');
-			DELETE FROM lehrer_anliegen WHERE titel_text LIKE 'RT Wunsch ${s}%';
+			DELETE FROM lehrer_anliegen WHERE titel_text LIKE 'RT Meldung ${s}%';
 			DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn IN ('978rt${s}','${ISBN}','${ISBN_LM}'));
 			DELETE FROM buecher_titel WHERE isbn IN ('978rt${s}','${ISBN}','${ISBN_LM}');
 			DELETE FROM schueler WHERE barcode_id = 'RT-${s}';
@@ -153,13 +153,14 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await uiLogin(lp, LEHRER);
 		await lp.getByTitle('Mein Portal').click();
 		await lp.getByRole('tab', { name: 'Meine Anliegen' }).click();
-		await lp.getByRole('button', { name: 'Buchwunsch' }).click();
-		await lp.getByLabel('Welches Buch?').fill(`RT Wunsch ${s}`);
+		await lp.getByRole('button', { name: 'Problem melden' }).click();
+		await lp.getByLabel('Worum geht es? *').fill(`RT Meldung ${s}`);
 		await lp.getByLabel('Klasse / Kurs').fill('7A');
+		await lp.getByLabel('Was stimmt nicht? *').fill(`RT Beschreibung ${s}`);
 		await lp.getByRole('button', { name: 'Absenden' }).click();
 		await expect
 			.poll(() =>
-				querySQL(`SELECT klasse FROM lehrer_anliegen WHERE titel_text = 'RT Wunsch ${s}'`)
+				querySQL(`SELECT klasse FROM lehrer_anliegen WHERE titel_text = 'RT Meldung ${s}'`)
 			)
 			.toBe('7A');
 		await l.close();
@@ -168,14 +169,19 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await uiLogin(ap);
 		await ap.goto('/bestellungen');
 		await ap.getByRole('tab', { name: /Wünsche & Meldungen/ }).click();
-		await expect(ap.getByText(`RT Wunsch ${s}`)).toBeVisible();
-		await ap.getByRole('button', { name: 'Abhaken' }).first().click();
+		await expect(ap.getByText(`RT Meldung ${s}`)).toBeVisible();
+		// Die Zeile dieser Meldung: Über ihr können ältere Meldungen anderer Läufe stehen.
+		await ap
+			.getByRole('listitem')
+			.filter({ hasText: `RT Meldung ${s}` })
+			.getByRole('button', { name: 'Abhaken' })
+			.click();
 		await ap.getByLabel('Notiz für die Mail an die Lehrkraft').fill(`Notiz ${s}`);
 		await ap.getByRole('button', { name: 'Erledigt & Mail senden' }).click();
 		await expect
 			.poll(() =>
 				querySQL(
-					`SELECT coalesce(erledigt_notiz,'') FROM lehrer_anliegen WHERE titel_text = 'RT Wunsch ${s}'`
+					`SELECT coalesce(erledigt_notiz,'') FROM lehrer_anliegen WHERE titel_text = 'RT Meldung ${s}'`
 				)
 			)
 			.toBe(`Notiz ${s}`);

@@ -19,9 +19,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// kollegiumKatalogWelt baut den echten Router, ein Konto mit Sitzung und setzt der Rolle
-// genau das Recht, über das „Mein Portal" sucht und reserviert.
-func kollegiumKatalogWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
+// portalWelt baut den echten Router, ein Konto mit Sitzung und setzt der Rolle genau das
+// Recht, über das „Mein Portal" sucht, reserviert und meldet.
+func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
 	t.Helper()
 	pool := pgTestPool(t)
 	t.Setenv("RATE_LIMIT", "100000")
@@ -71,7 +71,7 @@ func katalogAnfrage(router http.Handler, token, pfad string) *httptest.ResponseR
 // meldete die Suche sonst als nicht gefunden. Titel ohne ein Exemplar, das nicht
 // ausgesondert ist, zeigt keiner der beiden Kataloge.
 func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
-	pool, router, token := kollegiumKatalogWelt(t)
+	pool, router, token := portalWelt(t)
 	ctx := context.Background()
 
 	buecherei := titelMitSignatur(t, pool, "Probe Mondflug", "", 0)
@@ -145,7 +145,7 @@ func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
 // viele Titel es sind, wenn die Antwort bei 50 abschneidet: Beim Stöbern über ein Thema
 // sind mehr als 50 Titel der Normalfall. Der öffentliche Katalog kennt den Filter nicht.
 func TestKollegiumKatalog_FilterlisteUndGefilterteSuche(t *testing.T) {
-	pool, router, token := kollegiumKatalogWelt(t)
+	pool, router, token := portalWelt(t)
 	ctx := context.Background()
 
 	titel := func(name string, woerter ...string) string {
