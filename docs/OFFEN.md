@@ -537,10 +537,12 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Eine neue Stelle dieser Regeln meldet gosec nicht. Abhilfe: je Stelle ein `#nosec` mit Grund,
   dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
   Nur mit Anlass.
-- **Ein Browser-Test war im vollen Lauf einmal rot.** `e2e/feld-roundtrip.spec.js` („Buch
-  anlegen: Bestand, Zähldatum, Standort kommen in der DB an") fand am 05.10.2026 im vollen
-  Lauf am lokalen Stack den neuen Titel nicht binnen 10 s; einzeln lief die Datei danach
-  zweimal grün. Die lokale Datenbank trägt Hunderte Test-Titel aus früheren Läufen.
+- **Ein Browser-Test war im vollen Lauf zweimal rot.** `e2e/feld-roundtrip.spec.js` („Buch
+  anlegen: Bestand, Zähldatum, Standort kommen in der DB an") fand am 05.10.2026 in zwei vollen
+  Läufen am lokalen Stack den neuen Titel nicht binnen 10 s; einzeln lief die Datei danach
+  jedes Mal grün. Beim zweiten Mal war die Maske zu und die Liste stand da („Bücher (10618)"),
+  der neue Titel fehlte in der Ansicht. Die lokale Datenbank trägt Hunderte Test-Titel aus
+  früheren Läufen.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
@@ -633,11 +635,11 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   surface"). Die Balkenfarben des Diagramms sind feste Werte, keine Rollen.
 - Benutzerliste: Der Zustand eines Kontos steht in zwei Formen, „Aktiv" und „Inaktiv" als Punkt
   mit Wort, „Zugang beantragt" als Pille (`UserManagementTable`).
-- Inventur: Im Fehlbestandsbericht ist der Titel bei 1280 px nach rund 95 px abgeschnitten,
-  während die Spalte „Signatur" etwa dreimal so breit ist (gesehen am 02.10.2026; die Titelzelle
-  trägt `max-w-0` ohne volle Breite an der Spalte). Der Bericht wird zum Absuchen des Regals
-  ausgedruckt; der Ausdruck kürzt ebenso, nach rund 24 Zeichen, und rechts bleibt ein Viertel
-  der Seite leer (gemessen am 05.10.2026).
+- Bestellhistorie: Die Zelle „Lieferant" trägt `max-w-0` ohne volle Breite an der Spalte
+  (`BestellHistorieTabelle.svelte`). Dieselbe Form ließ im Fehlbestandsbericht der Inventur dem
+  Titel 191 von 918 px (gemessen und behoben am 05.10.2026). Name und Kundennummer tragen
+  `truncate` und keine Sprechblase (M3, Text truncation: „Don't truncate content without
+  providing users another way to see it"). Am Code gelesen, im Browser nicht gemessen.
 - Inventur: Die Wörter „Inventur-Scope" (Überschrift des Start-Dialogs) und „aus dem aktuellen
   Scope" (Rückfrage vor dem Abschluss) stehen so in der Oberfläche; ein deutsches Wort wäre
   „Umfang" oder „Bereich".
