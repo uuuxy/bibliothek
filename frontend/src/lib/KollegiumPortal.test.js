@@ -244,12 +244,19 @@ describe('Problem melden im Portal', () => {
 		expect(screen.queryByRole('button', { name: 'Absenden' })).toBeNull();
 	});
 
-	// Einen Buchwunsch kennt das Portal nicht mehr; ohne Buch fragt die Meldung, worum es geht.
-	it('meldet ohne Buch unter „Meine Anliegen"', async () => {
+	// Ein Reiter für alles, was an die Bibliothek geht: „Meine Anliegen" gibt es nicht mehr,
+	// einen Buchwunsch auch nicht. Ohne Buch steht „Problem melden" unter der Suche.
+	it('meldet ohne Buch unter der Suche, ohne eigenen Reiter', async () => {
 		const screen = portalMitTreffer();
-		await fireEvent.click(screen.getByRole('tab', { name: /Meine Anliegen/ }));
 
+		expect(screen.getAllByRole('tab').map((r) => r.textContent?.trim())).toEqual([
+			'Suchen & Reservieren',
+			'Klassensätze',
+			'Schulbücher',
+			'LMF-Plan'
+		]);
 		expect(screen.queryByRole('button', { name: 'Buchwunsch' })).toBeNull();
+
 		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
 		await fireEvent.input(await screen.findByLabelText('Worum geht es? *'), {
 			target: { value: 'die Bücher der 8G3' }
@@ -269,6 +276,58 @@ describe('Problem melden im Portal', () => {
 		await vi.waitFor(() =>
 			expect(screen.queryByRole('button', { name: 'Problem melden' })).toBeTruthy()
 		);
+	});
+
+	// Solange nichts gesucht wird, steht unter der Suche, was die Lehrkraft geschickt hat:
+	// Reservierungen und Meldungen an einer Stelle. Beim Suchen weichen sie den Treffern.
+	it('zeigt unter der Suche die eigenen Reservierungen und Meldungen', async () => {
+		vi.mocked(apiFetch).mockReset();
+		vi.mocked(apiFetch).mockImplementation(
+			/** @type {any} */ (
+				async (/** @type {string} */ url) => {
+					if (url.startsWith('/api/reservierungen/klassensatz/katalog')) return suchtreffer();
+					if (url === '/api/reservierungen/klassensatz/eigene') {
+						return {
+							ok: true,
+							json: async () => [
+								{
+									id: 'r1',
+									titel: 'Tschick',
+									klasse: '8G3',
+									anzahl: 28,
+									erledigt: false,
+									erstellt_am: '01.10.2026'
+								}
+							]
+						};
+					}
+					if (url === '/api/anliegen/eigene') {
+						return {
+							ok: true,
+							json: async () => [
+								{
+									id: 'a1',
+									art: 'meldung',
+									titel_text: 'Markl Biologie 2',
+									klasse: '8G4',
+									erstellt_am: 'x'
+								}
+							]
+						};
+					}
+					return { ok: true, text: async () => '', json: async () => ({}) };
+				}
+			)
+		);
+		const screen = render(KollegiumPortal, { user: { klasse: '' } });
+
+		expect(await screen.findByRole('heading', { name: 'Deine Reservierungen' })).toBeTruthy();
+		expect(await screen.findByRole('heading', { name: 'Deine Meldungen' })).toBeTruthy();
+		expect(screen.getByText('Markl Biologie 2')).toBeTruthy();
+
+		await suche(screen);
+		expect(screen.queryByRole('heading', { name: 'Deine Meldungen' })).toBeNull();
+		expect(screen.queryByRole('heading', { name: 'Deine Reservierungen' })).toBeNull();
 	});
 });
 

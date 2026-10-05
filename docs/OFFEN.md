@@ -104,9 +104,8 @@ Datenbank und der Littera-Übernahme (7.2).
 **Im Code,** in dieser Reihenfolge:
 
 1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. **5.52** (Portal: Reservieren und Anliegen in einem Reiter) — entschieden am 05.10.2026.
-3. Nach der Antwort zu 8.3: **5.4**.
-4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+2. Nach der Antwort zu 8.3: **5.4**.
+3. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
@@ -849,26 +848,6 @@ Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächste
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
 
-### 5.52 Portal: Reservieren und Anliegen in einem Reiter
-
-Seit dem 05.10.2026 findet die Suche des Portals auch Lernmittel und bestellte Titel, der
-Buchwunsch ist entfallen, und „Problem melden" steht am Treffer. Das Portal führt noch zwei
-Reiter für das, was eine Lehrkraft an die Bibliothek schickt: „Suchen & Reservieren" mit den
-eigenen Reservierungen und „Meine Anliegen" mit „Problem melden" ohne Buch und den eigenen
-Anliegen.
-
-**Entschieden am 05.10.2026, nicht gebaut.** Kategorie B.
-
-- **Ein Reiter statt zwei.** „Suchen & Reservieren" und „Meine Anliegen" werden ein Reiter: die
-  Suche, darunter die eigenen Reservierungen und Meldungen und „Problem melden" ohne Buch. Das
-  Portal hat dann vier Reiter, die Zahl am Reiter „Meine Anliegen" entfällt.
-- **Das Suchfeld bleibt eine Suche.** Ein allgemeines Postfach entsteht nicht; die Suche läuft
-  bei jedem Buchstaben, und für die Anliegen gilt „kein Ticketsystem" ([FACHKONZEPT.md](FACHKONZEPT.md), 4.4).
-
-Nachgelesen am 05.10.2026 (m3.material.io, Guidelines): Tabs: „Avoid using more than four tabs
-at once. At five or more tabs, the container becomes cramped."; „Text labels should clearly and
-succinctly describe the content within the tab."
-
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -1065,6 +1044,14 @@ succinctly describe the content within the tab."
 
 ### 6.2 Kategorie C
 
+- Das Portal legt seit dem 05.10.2026 keinen Buchwunsch mehr an, die Bibliothek liest das Wort
+  aber weiter: der Reiter und die Überschrift „Wünsche & Meldungen" unter Bestellungen
+  (`BestellWorkspace.svelte`, `bestellungen/AnliegenListe.svelte`), dort der Abschnitt
+  „Wünsche", der Betreff „Ihr Wunsch ist erledigt" (`api/anliegen.go`) und die Art „Wunsch" in
+  der Auskunft über ein Konto (`api/dsgvo_pdf_konto.go`). Alle vier gelten für Wünsche, die
+  noch in der Tabelle stehen; an einer neu eingerichteten Datenbank gibt es keine. Gefragt am
+  05.10.2026: ob Reiter und Überschrift dann „Meldungen" heißen. Beim Umbenennen die E2E-Specs
+  mitziehen (`portal-anliegen`, `feld-roundtrip`).
 - Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (16.09.2026), gefunden am
   01.10.2026: das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
   Vormerk-Liste (`permissionMetadata.js`, `BookVormerkungenTab.svelte`), das Etikett der

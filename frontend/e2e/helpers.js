@@ -378,7 +378,7 @@ export function einstellungsKategorie(page, titel) {
  * Projekt schon einmal 29 Fundstellen gemeldet, wo real fünf waren.
  *
  * @param {import('@playwright/test').Page} page
- * @param {string} kontext Name für die Fehlermeldung, z. B. 'Portal → Meine Anliegen'.
+ * @param {string} kontext Name für die Fehlermeldung, z. B. 'Portal → Problem melden'.
  */
 export async function pruefeFeldreihen(page, kontext) {
 	const { expect } = await import('@playwright/test');

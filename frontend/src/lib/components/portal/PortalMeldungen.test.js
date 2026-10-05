@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
-import AnliegenWidget from './AnliegenWidget.svelte';
+import PortalMeldungen from './PortalMeldungen.svelte';
 
-// „Problem melden" ohne Buch und die eigenen Anliegen. Einen Buchwunsch gibt es nicht mehr:
-// Ein Buch für eine Klasse wird über die Suche reserviert. Der Zustand des Formulars gehört
-// dem Portal; das Zusammenspiel prüft KollegiumPortal.test.js.
+// Die eigenen Meldungen und „Problem melden" ohne Buch, unter der Suche des Portals. Einen
+// Buchwunsch gibt es nicht mehr: Ein Buch für eine Klasse wird über die Suche reserviert.
+// Der Zustand des Formulars gehört dem Portal; das Zusammenspiel prüft KollegiumPortal.test.js.
 
 const zu = { open: false, worum: '', klasse: '', text: '', sending: false };
 
@@ -12,7 +12,7 @@ const zu = { open: false, worum: '', klasse: '', text: '', sending: false };
 const aufbau = (props = {}) => {
 	const rufe = { onoeffnen: vi.fn(), onsenden: vi.fn(), onabbrechen: vi.fn() };
 	return {
-		...render(AnliegenWidget, {
+		...render(PortalMeldungen, {
 			anliegen: [],
 			form: zu,
 			onaktualisiert: vi.fn(),
@@ -23,7 +23,7 @@ const aufbau = (props = {}) => {
 	};
 };
 
-describe('AnliegenWidget', () => {
+describe('PortalMeldungen', () => {
 	it('zeigt einen Knopf „Problem melden" und kein Formular', async () => {
 		const s = aufbau();
 
@@ -48,7 +48,7 @@ describe('AnliegenWidget', () => {
 	});
 
 	// Wünsche aus der Zeit des Buchwunschs stehen weiter in der Liste, bis sie abgehakt sind.
-	it('zeigt die eigenen Anliegen mit Art, Stand und der Antwort der Bibliothek', () => {
+	it('zeigt die eigenen Meldungen mit Art, Stand und der Antwort der Bibliothek', () => {
 		const s = aufbau({
 			anliegen: [
 				{
@@ -70,6 +70,7 @@ describe('AnliegenWidget', () => {
 			]
 		});
 
+		expect(s.getByRole('heading', { name: 'Deine Meldungen' })).toBeTruthy();
 		expect(s.getByText('Meldung:')).toBeTruthy();
 		expect(s.getByText('Wunsch:')).toBeTruthy();
 		expect(s.getByText('Offen')).toBeTruthy();

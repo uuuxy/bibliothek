@@ -197,9 +197,9 @@ test('Portal: kein Eingabefeld hängt eine Zeile tiefer als seine Nachbarn', asy
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await uiLogin(page);
 	await gehZu(page, '/kollegium-portal');
-	await page.getByRole('tab', { name: /Meine Anliegen/ }).click();
-	// Die Felder stehen erst nach dem Klick auf „Problem melden" da.
+	// Die Felder stehen erst nach dem Klick auf „Problem melden" da. Das Suchfeld darüber
+	// zählt mit und steht weit genug über dem Formular.
 	await page.getByRole('button', { name: 'Problem melden' }).click();
-	await page.locator(FELDER).first().waitFor();
-	await pruefeFeldreihen(page, 'Portal → Meine Anliegen, Problem melden');
+	await page.getByLabel('Worum geht es? *').waitFor();
+	await pruefeFeldreihen(page, 'Portal → Problem melden');
 });

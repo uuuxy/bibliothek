@@ -2,8 +2,9 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Portal, „Problem melden": Am Treffer der Suche ist das Buch gewählt, sein Titel steht in
-// der Meldung. Ohne Buch fragt das Formular, worum es geht. Einen Buchwunsch gibt es nicht
-// mehr; in der Liste der Bibliothek steht die Meldung über einem älteren Wunsch.
+// der Meldung. Ohne Buch steht der Knopf unter der Suche, und das Formular fragt, worum es
+// geht. Einen Buchwunsch und einen Reiter „Meine Anliegen" gibt es nicht mehr; in der Liste
+// der Bibliothek steht die Meldung über einem älteren Wunsch.
 const LEHRER = 'e2e-anliegen-lehrer@test.local';
 const s = uniqueSuffix().slice(0, 6);
 const TITEL = `Anliegenbuch ${s}`;
@@ -58,13 +59,19 @@ test.describe.serial('Portal: Problem melden', () => {
 		await expect(melden).toBeFocused();
 	});
 
-	test('Ohne Buch: das Formular fragt, worum es geht; einen Buchwunsch gibt es nicht', async ({
+	test('Ohne Buch: der Knopf steht unter der Suche, das Formular fragt, worum es geht', async ({
 		page
 	}) => {
 		await uiLogin(page, LEHRER);
 		await page.getByTitle('Mein Portal').click();
-		await page.getByRole('tab', { name: 'Meine Anliegen' }).click();
 
+		// Vier Reiter, keiner für Anliegen, und kein Buchwunsch.
+		await expect(page.getByRole('tab')).toHaveText([
+			'Suchen & Reservieren',
+			'Klassensätze',
+			'Schulbücher',
+			'LMF-Plan'
+		]);
 		await expect(page.getByRole('button', { name: 'Buchwunsch' })).toHaveCount(0);
 		await page.getByRole('button', { name: 'Problem melden' }).click();
 		const worum = page.getByLabel('Worum geht es? *');
@@ -82,8 +89,9 @@ test.describe.serial('Portal: Problem melden', () => {
 				)
 			)
 			.toBe('meldung|drei fehlen');
-		// Nach dem Absenden steht wieder der Knopf da, und die Meldung in der eigenen Liste.
+		// Nach dem Absenden steht wieder der Knopf da, und die Meldung unter „Deine Meldungen".
 		await expect(page.getByRole('button', { name: 'Problem melden' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'Deine Meldungen' })).toBeVisible();
 		await expect(page.getByText(OHNE_BUCH)).toBeVisible();
 	});
 

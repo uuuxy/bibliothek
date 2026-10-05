@@ -4,7 +4,7 @@
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import SuchZustand from './components/ui/SuchZustand.svelte';
 	import { Search } from '@lucide/svelte';
-	import AnliegenWidget from './components/portal/AnliegenWidget.svelte';
+	import PortalMeldungen from './components/portal/PortalMeldungen.svelte';
 	import { erzeugeEigeneAnliegen } from './components/portal/eigeneAnliegen.svelte.js';
 	import PortalTrefferkarte from './components/portal/PortalTrefferkarte.svelte';
 	import PortalUeberblick from './components/portal/PortalUeberblick.svelte';
@@ -24,10 +24,8 @@
 
 	let reiter = $state('buecher');
 
-	// Die eigenen Anliegen liegen an EINER Stelle (components/portal/eigeneAnliegen.svelte.js)
-	// und nicht in den zwei Bauteilen, die sie zeigen: Der Zähler am Reiter, die
-	// Startfläche und der Anliegen-Reiter sprechen sonst über denselben Zustand mit drei
-	// Abrufen — und nach dem Absenden zeigte der Zähler noch den alten Stand.
+	// Die eigenen Anliegen: Die Liste steht unter der Suche, und eine Meldung am Treffer
+	// liest sie neu.
 	const eigeneAnliegen = erzeugeEigeneAnliegen();
 
 	// Suchtext, Filter nach Schlagwort und Treffer — ausgelagert, Begründung in der Fabrik.
@@ -69,36 +67,27 @@
 </script>
 
 <PageShell>
-	<!-- Zwei Reiter statt zweier Aufgaben auf einer Fläche (Betreiber-Entscheidung
-	     23.08.2026). Vorher stand oben ein namenloses Suchfeld, darunter ein 340-px-
-	     Poster und ganz unten das Anliegen-Formular — dessen Felder dieselbe Pillenform
-	     trugen wie die Suche, sodass „Welches Buch?" wie ein zweites Suchfeld aussah.
-	     M3 kennt Reiter für genau diesen Fall: zwei gleichrangige Bereiche. -->
+	<!-- Vier Reiter. Der erste nimmt alles auf, was eine Lehrkraft an die Bibliothek schickt —
+	     suchen, reservieren, ein Problem melden — und zeigt, was daraus geworden ist; die
+	     drei anderen sind Seiten zum Nachschlagen. M3 rät von mehr als vier Reitern ab. -->
 	<Reiter
 		etikett="Portal-Bereiche"
 		reiter={[
-			// Drei gleichrangige Aufgaben (25.08.2026, die Ansage; „Bestand nach Jahrgang" am
-			// 02.09.2026 gestrichen — Import-Default 5–10 machte die Gruppierung leer): „Lernmittel" stapelte
-			// vorher zwei Listen mit eigenen Überschriften übereinander; und „Bücher &
-			// Klassensätze" hieß fast so wie der Abschnitt „Klassensätze" darin — dreimal
-			// dasselbe Wort für Suchen, Ansehen und den Menüpunkt.
 			{ id: 'buecher', label: 'Suchen & Reservieren' },
 			{ id: 'klassensaetze', label: 'Klassensätze' },
-			// Schulbücher je Fach für die Fachsprecher (03.09.2026).
+			// Schulbücher je Fach für die Fachsprecher.
 			{ id: 'schulbuecher', label: 'Schulbücher' },
-			// LMF-Plan für alle gleich statt Excel per Mail (05.09.2026).
-			{ id: 'lmfplan', label: 'LMF-Plan' },
-			{ id: 'anliegen', label: 'Meine Anliegen', anzahl: eigeneAnliegen.offene }
+			// Derselbe LMF-Plan für alle.
+			{ id: 'lmfplan', label: 'LMF-Plan' }
 		]}
 		aktiv={reiter}
 		onwahl={(id) => (reiter = id)}
 	/>
 
 	{#if reiter === 'buecher'}
-		<!-- `mt-4`: Der Abstand Reiter→Pille ist im Haus 24 px (Huelle) + 16 px. Er fehlte
-		     hier, die Pille begann bei 57 px statt bei 73. Die Filter nach Schlagwort stehen
-		     darunter wie die Filterzeile der Leserdatei (gap-3); ohne markierte Wörter
-		     entfällt die Zeile. -->
+		<!-- `mt-4`: Der Abstand Reiter→Pille ist im Haus 24 px (Hülle) + 16 px. Die Filter nach
+		     Schlagwort stehen darunter wie die Filterzeile der Leserdatei (gap-3); ohne
+		     markierte Wörter entfällt die Zeile. -->
 		<div class="mt-4 flex flex-col gap-3">
 			<Suchpille
 				id="portal-suchfeld"
@@ -157,30 +146,30 @@
 					: 'Versuche es mit einem anderen Titel oder Autor.'}
 			/>
 		{:else if suche.leer}
+			<!-- Solange nichts gesucht wird: was die Lehrkraft geschickt hat und was daraus
+			     geworden ist, darunter „Problem melden" ohne Buch. -->
 			<PortalUeberblick reservierungen={listen.eigene} />
+			<PortalMeldungen
+				anliegen={eigeneAnliegen.liste}
+				form={meldung.form(OHNE_BUCH)}
+				onoeffnen={() => meldung.oeffne(OHNE_BUCH)}
+				onsenden={() => meldung.senden(OHNE_BUCH)}
+				onabbrechen={() => meldung.schliesse(OHNE_BUCH)}
+				onaktualisiert={eigeneAnliegen.lade}
+				ladefehler={eigeneAnliegen.fehler}
+			/>
 		{/if}
 	{:else if reiter === 'klassensaetze'}
 		<PortalLernmittel />
 	{:else if reiter === 'schulbuecher'}
 		<PortalSchulbuecher />
-	{:else if reiter === 'lmfplan'}
-		<PortalLmfPlan />
 	{:else}
-		<AnliegenWidget
-			anliegen={eigeneAnliegen.liste}
-			form={meldung.form(OHNE_BUCH)}
-			onoeffnen={() => meldung.oeffne(OHNE_BUCH)}
-			onsenden={() => meldung.senden(OHNE_BUCH)}
-			onabbrechen={() => meldung.schliesse(OHNE_BUCH)}
-			onaktualisiert={eigeneAnliegen.lade}
-			ladefehler={eigeneAnliegen.fehler}
-		/>
+		<PortalLmfPlan />
 	{/if}
 </PageShell>
 
-<!-- Der Ladepunkt sitzt IN der Pille, nicht darüber. Vorher lag er absolut positioniert
-     bei right-4, während das Feld nur pr-4 Innenabstand hatte — ein langer Suchbegriff
-     lief also unter den Punkt. -->
+<!-- Der Ladepunkt sitzt in der Pille: Absolut darüber gelegt, liefe ein langer Suchbegriff
+     unter ihn. -->
 {#snippet nachlaufend()}
 	{#if suche.laedt}
 		<Ladekreis size="sm" />

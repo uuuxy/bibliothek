@@ -1,26 +1,21 @@
 import { apiFetch } from '../../apiFetch.js';
 
 /**
- * Die eigenen Anliegen einer Lehrkraft im Kollegiums-Portal — eigene Datei, damit der
- * Zustand EINMAL da ist: Der Zähler am Reiter, die Startfläche und der Anliegen-Reiter
- * lesen alle daraus (KollegiumPortal.svelte). Drei eigene Abrufe hätten drei Wahrheiten
- * ergeben, und nach dem Absenden zeigte der Zähler noch den alten Stand.
+ * Die eigenen Anliegen einer Lehrkraft im Kollegiums-Portal: die Liste unter der Suche, die
+ * nach jeder abgeschickten Meldung neu gelesen wird.
  *
- * Scheitert ein Abruf, bleibt der ALTE Stand stehen. Bis zum 12.09.2026 stand hier
- * `const daten = res.ok ? await res.json() : []` — die Liste wurde dann geleert, und wer
- * gerade einen Wunsch abgeschickt hatte, sah ihn beim Nachladen wieder verschwinden
- * (Register, Bestands-Durchgang 10.09.2026). Ein gescheiterter Abruf weiß nichts über
- * die Anliegen; er darf also auch nichts über sie behaupten.
+ * Scheitert ein Abruf, bleibt der alte Stand stehen. Geleert, verschwände eine gerade
+ * abgeschickte Meldung beim Nachladen wieder vom Bildschirm. Ein gescheiterter Abruf weiß
+ * nichts über die Anliegen; er darf also auch nichts über sie behaupten.
  */
 export function erzeugeEigeneAnliegen() {
 	/** @type {any[]} */
 	let liste = $state([]);
-	// Beim ERSTEN Laden gibt es keinen alten Stand, auf den man zurückfallen könnte: Die
+	// Beim ersten Laden gibt es keinen alten Stand, auf den man zurückfallen könnte: Die
 	// Liste ist leer, weil noch nichts da war — und „leer" liest sich wie „du hast keine
-	// Anliegen". Wer gestern einen Wunsch geschickt hat, hält ihn für verloren und schickt
-	// ihn noch einmal (OFFEN.md 5.12, 17.09.2026). Deshalb merkt sich der Zustand, ob je
-	// ein Abruf gelungen ist; scheitert der erste, sagt das Portal es, statt „nichts da"
-	// zu zeigen.
+	// Anliegen". Wer gestern eine Meldung geschickt hat, hält sie für verloren und schickt
+	// sie noch einmal. Deshalb merkt sich der Zustand, ob je ein Abruf gelungen ist;
+	// scheitert der erste, sagt das Portal es, statt „nichts da" zu zeigen.
 	let jeGeladen = $state(false);
 	let fehler = $state(false);
 
@@ -46,9 +41,6 @@ export function erzeugeEigeneAnliegen() {
 	return {
 		get liste() {
 			return liste;
-		},
-		get offene() {
-			return liste.filter((/** @type {any} */ a) => !a.erledigt_am).length;
 		},
 		/** Der erste Abruf ist gescheitert — es gibt keinen Stand, über den man etwas sagen kann. */
 		get fehler() {

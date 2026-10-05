@@ -152,7 +152,6 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		const lp = await l.newPage();
 		await uiLogin(lp, LEHRER);
 		await lp.getByTitle('Mein Portal').click();
-		await lp.getByRole('tab', { name: 'Meine Anliegen' }).click();
 		await lp.getByRole('button', { name: 'Problem melden' }).click();
 		await lp.getByLabel('Worum geht es? *').fill(`RT Meldung ${s}`);
 		await lp.getByLabel('Klasse / Kurs').fill('7A');

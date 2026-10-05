@@ -21,7 +21,6 @@ describe('Eigene Anliegen (Kollegiums-Portal)', () => {
 		const anliegen = erzeugeEigeneAnliegen();
 		await anliegen.lade();
 		expect(anliegen.liste).toHaveLength(1);
-		expect(anliegen.offene).toBe(1);
 
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 503 }));
 		await anliegen.lade();

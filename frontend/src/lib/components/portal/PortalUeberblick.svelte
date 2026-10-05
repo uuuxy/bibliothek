@@ -1,21 +1,14 @@
 <script>
 	/**
 	 * @component PortalUeberblick
-	 * Was unter der Suche des Kollegiums-Portals steht, solange nichts gesucht wurde:
-	 * die eigenen Reservierungen — die Antwort auf die Frage, mit der eine Lehrkraft
-	 * das Portal öffnet („ist mein Satz durch?").
+	 * Was unter der Suche des Kollegiums-Portals steht, solange nichts gesucht wird: die
+	 * eigenen Reservierungen — die Antwort auf die Frage, mit der eine Lehrkraft das Portal
+	 * öffnet („ist mein Satz durch?"). Darunter folgen die eigenen Meldungen
+	 * (PortalMeldungen).
 	 *
-	 * Bis zum 31.08.2026 stand hier unter „Deine Reservierungen" die GESAMTE
-	 * Warteschlange aller Lehrkräfte — eigene und fremde Zeilen waren nicht
-	 * unterscheidbar, und mit dem Abschluss verschwand der eigene Vorgang spurlos.
-	 * Seit /api/reservierungen/klassensatz/eigene ist die Überschrift wahr, und die
-	 * Antwort der Bibliothek („Bibliothek: …", Migration 088/089) steht hier dauerhaft —
-	 * derselbe Rückweg wie beim Anliegen (AnliegenWidget), der auch dann trägt, wenn
-	 * die Bereit-Mail scheitert. Die Warteschlange bleibt sichtbar, wo sie hingehört:
-	 * als Chip an den Suchtreffern.
-	 *
-	 * Vorher (23.08.2026) stand hier zusätzlich ein Auszug „Deine Anliegen" mit „Alle
-	 * ansehen" — seit dem 25.08. ist „Meine Anliegen" ein eigener Primary Tab.
+	 * Gezeigt werden nur die eigenen Reservierungen, offene und bereitgestellte. Die Antwort
+	 * der Bibliothek („Bibliothek: …") steht hier dauerhaft und trägt auch, wenn die
+	 * Bereit-Mail scheitert. Die Warteschlange aller steht als Abzeichen an den Suchtreffern.
 	 *
 	 * @typedef {{ id: string, titel: string, klasse: string, anzahl: number,
 	 *   erledigt: boolean, erledigt_notiz?: string, erledigt_am?: string,

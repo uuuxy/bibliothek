@@ -678,8 +678,10 @@ und Warteschlange; Klassensatz reservieren mit Klasse oder Kurs, Anzahl, Datum �
 Freitext und legt keine Klasse an. Die Suche findet die Bücher der Bücherei und die
 Schulbücher, auch Titel, die bestellt und noch nicht eingetroffen sind; am Treffer steht dann
 „N bestellt", und reservieren lässt er sich schon. Am Treffer stehen zwei Aktionen:
-„Klassensatz reservieren" und „Problem melden"; die Meldung nennt dann dieses Buch. Unter der
-Suche stehen
+„Klassensatz reservieren" und „Problem melden"; die Meldung nennt dann dieses Buch. Solange
+nichts gesucht wird, stehen unter der Suche die eigenen Reservierungen und Meldungen mit ihrem
+Stand und der Antwort der Bibliothek, darunter „Problem melden" ohne Buch — das Formular fragt
+dann, worum es geht. Unter dem Suchfeld stehen
 die Schlagworte, die die Bibliothek unter _Einstellungen → Schlagworte_ als Filter markiert
 hat: Ein Klick zeigt alle Titel des Worts, zusammen mit einem Suchwort nur die, die beides
 treffen; ein zweiter Klick nimmt den Filter zurück. Gezeigt werden höchstens 50 Treffer — gibt
@@ -704,10 +706,10 @@ Auswahl „Ohne Schulzweig" zeigt umgekehrt nur sie. Littera hat den Zweig nie m
 der Altbestand ist also zunächst ohne. Ein Buch, dessen Coverbild von außerhalb kommt
 (Deutsche Nationalbibliothek, Google Books), erscheint im PDF ohne Bild: gedruckt wird nur,
 was auf dem Server liegt. Tauchen dort Standorttexte wie „Buch Deu 6/Cha 126" als Fach auf,
-stammt der Bestand aus einem Import vor dem 03.09.2026: `scripts/repair_fach_kategorie.sql`) · **Meine Anliegen** („Problem
-melden" ohne Buch — das Formular fragt, worum es geht — und die eigenen Anliegen mit ihrem
-Stand. Mit Buch steht „Problem melden" am Treffer der Suche. Einen Buchwunsch gibt es nicht
-mehr: Ein Buch für eine Klasse wird über die Suche reserviert). (§12, Rolle Kollegium)
+stammt der Bestand aus einem Import vor dem 03.09.2026: `scripts/repair_fach_kategorie.sql`).
+Einen Reiter „Meine Anliegen" und einen Buchwunsch gibt es nicht mehr: Ein Buch für eine Klasse
+wird über die Suche reserviert, und was eine Lehrkraft geschickt hat, steht unter der Suche.
+(§12, Rolle Kollegium)
 
 ---
 

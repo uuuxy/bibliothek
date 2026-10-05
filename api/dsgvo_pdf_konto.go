@@ -188,7 +188,7 @@ func dsgvoRolle(rolle string) string {
 }
 
 // dsgvoAnfrageArt schreibt die Art einer Anfrage wie das Kollegiums-Portal
-// (AnliegenWidget.svelte). Ein unbekannter Wert bleibt stehen.
+// (PortalMeldungen.svelte). Ein unbekannter Wert bleibt stehen.
 func dsgvoAnfrageArt(art string) string {
 	switch art {
 	case "wunsch":
