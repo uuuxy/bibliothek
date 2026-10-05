@@ -104,8 +104,8 @@ Datenbank und der Littera-Übernahme (7.2).
 **Im Code,** in dieser Reihenfolge:
 
 1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. **5.52** (Portal: Schulbücher in der Suche, der Buchwunsch an der Suche) — entschieden am
-   05.10.2026; zwei Fragen dazu sind gestellt.
+2. **5.52** (Portal: Schulbücher in der Suche, Reservieren und Anliegen in einem Reiter) — die
+   Suche ist entschieden, der Rest ist in Überlegung; vorher nicht bauen.
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
@@ -850,7 +850,7 @@ Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächste
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
 
-### 5.52 Portal: Schulbücher in der Suche, der Buchwunsch an der Suche
+### 5.52 Portal: Schulbücher in der Suche, Reservieren und Anliegen in einem Reiter
 
 Die Suche in „Mein Portal", Reiter „Suchen & Reservieren" (`portal/portalSuche.svelte.js`), fragt
 `GET /api/public/opac/suche`. Die Tür zeigt nur, was ohne Anmeldung sichtbar sein darf
@@ -871,26 +871,41 @@ dazu keinen Bestand. Das Feld „Welches Buch?" bei „Problem melden"
 - **Die Suche im Portal findet auch Lernmittel.** Gefunden heißt „Klassensatz reservieren" mit
   Klasse und Stückzahl wie bisher. Der öffentliche Katalog und der Flur-Monitor bleiben ohne
   Lernmittel.
-- **Der Buchwunsch steht an der Suche.** Findet sie nichts, bietet sie an, das Buch bei der
-  Bibliothek zu wünschen; der Suchtext steht dann im Formular. Der Knopf „Buchwunsch" unter
-  „Meine Anliegen" entfällt, „Problem melden" und die Liste der eigenen Anliegen bleiben.
 - **Die Obergrenze bleibt.** Mehr Exemplare, als im Bestand sind, lehnt die Reservierung ab
-  (`api/reservation.go`). Ein Angebot zum Buchwunsch gibt es an dieser Stelle nicht.
-
-**Gefragt am 05.10.2026, Antwort offen:**
-
-- Steht das Angebot nur bei einer Suche ohne Treffer, gibt es ohne den Knopf unter „Meine
-  Anliegen" keinen Weg zum Wunsch, sobald die Suche irgendeinen Titel findet: ein anderes Buch
-  als das gesuchte, oder das gesuchte in zu kleiner Zahl. Vorgeschlagen: Das Angebot steht auch
-  unter einer Trefferliste.
+  (`api/reservation.go`).
 - „Was stimmt nicht?" ist nur im Formular Pflicht; `POST /api/anliegen` nimmt eine Meldung ohne
-  den Satz an (`api/anliegen.go`). Vorgeschlagen: Der Server verlangt ihn bei einer Meldung
-  ebenfalls, gebaut zusammen mit diesem Punkt.
+  den Satz an (`api/anliegen.go`). Der Server verlangt ihn bei einer Meldung ebenfalls; gebaut
+  wird es mit diesem Punkt.
 
-Nachgelesen am 05.10.2026: M3, Tabs (Guidelines): „Text labels should clearly and succinctly
-describe the content within the tab."; „Avoid using more than four tabs at once. At five or more
-tabs, the container becomes cramped." Das Portal hat fünf Reiter; ein weiterer kommt nicht dazu.
-M3, Search (Guidelines), beschreibt keine Suche ohne Treffer.
+**Am 05.10.2026 zurückgenommen und neu in Überlegung — nicht bauen.** Zunächst war entschieden,
+den Buchwunsch an die Suche ohne Treffer zu legen und den Knopf unter „Meine Anliegen" zu
+entfernen. Der Buchwunsch meint aber in aller Regel eine Reservierung für eine Klasse („Markl 2
+für die 8G3"). Ein Buch, das die Schule nicht hat, wird darüber nicht gewünscht, höchstens eines,
+das bestellt und noch nicht da ist. Vorgeschlagen, Antwort offen:
+
+- Der Buchwunsch entfällt ganz, sobald die Suche des Portals Lernmittel findet.
+- „Suchen & Reservieren" und „Meine Anliegen" werden ein Reiter: die Suche, darunter die eigenen
+  Reservierungen und Meldungen. „Problem melden" steht am Treffer, das Buch ist dann gewählt,
+  und einmal ohne Buch; das Feld mit Buchvorschlägen (`portal/BuchVorschlagFeld.svelte`) entfiele.
+- Gefragt: ob Titel im Portal zu finden und zu reservieren sind, deren Exemplare bestellt und
+  noch nicht eingetroffen sind (`OeffentlichSichtbar` blendet sie aus, `CountTitleStock` in
+  `repository/reservation_repo.go` zählt sie mit), und was mit „Buchreihen für Klassen" gemeint
+  ist.
+
+Nachgelesen am 05.10.2026 (m3.material.io, Guidelines):
+
+- Tabs: „Text labels should clearly and succinctly describe the content within the tab."; „Avoid
+  using more than four tabs at once. At five or more tabs, the container becomes cramped." Das
+  Portal hat fünf Reiter.
+- Search: „Search lets people enter a keyword or phrase to get relevant information"; „Provide a
+  short description of the information people can search". Eine Suche ohne Treffer beschreibt
+  die Seite nicht.
+- Buttons: „Don't clutter your UI with too many buttons. Consider presenting low-priority actions
+  in overflow menus or as icon buttons."; „Since they have such strong emphasis, the filled style
+  should be used sparingly, ideally for only one action on a page."; „The text button style
+  should be used for the lowest priority actions".
+- Lists: „List items can contain multiple actions at once, like selection, icon buttons, overflow
+  menus, and more."
 
 ---
 
