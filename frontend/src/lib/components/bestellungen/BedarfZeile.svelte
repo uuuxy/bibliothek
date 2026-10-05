@@ -3,8 +3,7 @@
      (docs/OFFEN.md 4.18, Stufe 3). Gehört der Titel zu einem Buch mit mehreren Auflagen, ist
      die Zeile das Buch: Titel und ISBN der neuesten Auflage — sie wird bestellt —, die Zahlen
      sind die Summe, und die dritte Zeile nennt die Auflagen einzeln. Material 3, Lists:
-     „Limit supporting text to one to three lines". Die Farben der übrigen Zeile stehen, wie
-     sie waren; ihre Umstellung auf Rollen ist 5.21, Bildschirm für Bildschirm. -->
+     „Limit supporting text to one to three lines". -->
 <script>
 	import { BookPlus, Plus } from '@lucide/svelte';
 	import CoverPeek from '../ui/CoverPeek.svelte';
@@ -21,7 +20,7 @@
 </script>
 
 <div
-	class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 hover:bg-slate-50 hover:border-slate-200 transition-colors"
+	class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 hover:bg-on-surface/8 transition-colors"
 >
 	<!-- Cover IN der Zeile, zugleich Auslöser der Großansicht (so sieht CoverPeek es
 	     über `children` vor). Frühere Gegengründe gemessen widerlegt: `loading="lazy"`
@@ -31,11 +30,11 @@
 	</CoverPeek>
 
 	<div class="min-w-0 flex-1">
-		<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">{r.titel}</h4>
-		<p class="text-xs text-slate-500 truncate">
-			{#if r.isbn}<span class="font-mono text-slate-400">{r.isbn}</span>{/if}
-			{#if r.verlag}<span class="mx-1.5 text-slate-400">·</span>{r.verlag}{/if}
-			{#if r.signatur}<span class="mx-1.5 text-slate-400">·</span>{r.signatur}{/if}
+		<h4 class="font-semibold text-on-surface text-sm truncate leading-snug">{r.titel}</h4>
+		<p class="text-xs text-on-surface-variant truncate">
+			{#if r.isbn}<span class="font-mono">{r.isbn}</span>{/if}
+			{#if r.verlag}<span class="mx-1.5">·</span>{r.verlag}{/if}
+			{#if r.signatur}<span class="mx-1.5">·</span>{r.signatur}{/if}
 		</p>
 		{#if r.auflagen?.length > 1}
 			<p class="truncate text-xs text-on-surface-variant">
@@ -56,18 +55,19 @@
 	     (on-surface gegen on-surface-variant) statt einer zweiten Alarmfarbe. -->
 	<div
 		class="text-right shrink-0 leading-tight text-sm font-bold tabular-nums {r.gesamt_bestand === 0
-			? 'text-slate-900'
-			: 'text-slate-500'}"
+			? 'text-on-surface'
+			: 'text-on-surface-variant'}"
 		title="verfügbar / im Bestand"
 	>
-		{r.verfuegbarer_bestand}<span class="text-slate-400 font-medium">/</span>{r.gesamt_bestand}
+		{r.verfuegbarer_bestand}<span class="text-on-surface-variant font-medium">/</span
+		>{r.gesamt_bestand}
 	</div>
 
 	<button
 		onclick={() => onAddToCart(r)}
 		aria-label="{r.titel} zur Bestellung hinzufügen"
 		data-tip="Zur Bestellung hinzufügen"
-		class="shrink-0 w-9 h-9 rounded-full border border-slate-200 text-slate-400 flex items-center justify-center hover:border-blue-500 hover:text-white hover:bg-blue-600 active:scale-90 transition-all cursor-pointer"
+		class="shrink-0 w-9 h-9 rounded-full border border-outline-variant text-on-surface-variant flex items-center justify-center active:scale-90 transition-all cursor-pointer"
 	>
 		<Plus class="w-4 h-4" aria-hidden="true" />
 	</button>

@@ -2,6 +2,7 @@
 	import { ChevronRight } from '@lucide/svelte';
 	import OrderSearch from './OrderSearch.svelte';
 	import OrderCart from './OrderCart.svelte';
+	import StatusChip from '../ui/StatusChip.svelte';
 
 	/**
 	 * onCollapse — wenn gesetzt, trägt die Kopfzeile einen Knopf zum Einklappen der Spalte.
@@ -17,12 +18,10 @@
      Linie, die BestellWorkspace setzt — die traegt die Trennung fuer die ganze Spalte
      statt fuer diesen einen Block. -->
 <div>
-	<div class="pb-4 border-b border-slate-200 flex items-center justify-between gap-2">
-		<h2 class="text-lg font-bold text-slate-900 tracking-tight">Deine Bestellung</h2>
+	<div class="pb-4 border-b border-outline-variant flex items-center justify-between gap-2">
+		<h2 class="text-lg font-bold text-on-surface tracking-tight">Deine Bestellung</h2>
 		<div class="flex items-center gap-2 shrink-0">
-			<span class="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-medium"
-				>Entwurf</span
-			>
+			<StatusChip ton="neutral" text="Entwurf" />
 			{#if onCollapse}
 				<!-- Der Knopf sitzt IN der Kopfzeile, nicht darüber im Leerraum: Ein Bedienelement
 				     muss sichtbar zu dem gehören, was es bedient. -->
@@ -32,7 +31,7 @@
 					data-tip="Bestellspalte einklappen"
 					aria-controls="bestellpanel"
 					aria-expanded="true"
-					class="icon-btn hidden lg:inline-flex text-slate-400 hover:text-slate-700"
+					class="icon-btn hidden lg:inline-flex text-on-surface-variant"
 				>
 					<ChevronRight class="h-4 w-4" aria-hidden="true" />
 				</button>

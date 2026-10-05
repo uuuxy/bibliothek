@@ -20,10 +20,10 @@
 
 <div class="space-y-3">
 	<div class="flex items-center justify-between">
-		<span class="text-xs font-medium text-slate-500">Warenkorb</span>
+		<span class="text-xs font-medium text-on-surface-variant">Warenkorb</span>
 		{#if orderStore.cart.length}
 			<span
-				class="text-xs font-bold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5 tabular-nums"
+				class="text-xs font-bold text-on-surface-variant bg-surface-container rounded-full px-2 py-0.5 tabular-nums"
 				>{orderStore.totalQty} Expl.</span
 			>
 		{/if}
@@ -31,11 +31,11 @@
 
 	{#if !orderStore.cart.length}
 		<div
-			class="py-10 px-4 border border-dashed border-slate-200 rounded-xl text-center text-sm text-slate-400"
+			class="py-10 px-4 border border-dashed border-outline-variant rounded-xl text-center text-sm text-on-surface-variant"
 		>
 			<div class="text-2xl mb-1.5">🛒</div>
 			Noch nichts ausgewählt.<br />
-			Tippe links bei einem Titel auf <span class="font-bold text-slate-500">+</span> oder suche oben.
+			Tippe links bei einem Titel auf <span class="font-bold">+</span> oder suche oben.
 		</div>
 	{:else}
 		{#each orderStore.gruppen as gruppe (gruppe.mittel)}
@@ -59,17 +59,18 @@
 		{/each}
 
 		<!-- Footer: Summe + CTA -->
-		<div class="pt-3 mt-1 border-t border-slate-100 space-y-3">
+		<div class="pt-3 mt-1 border-t border-outline-variant space-y-3">
 			<!-- Ohne Preiserfassung stuende hier dauerhaft 0,00 €: eine Summe, die wie ein
 			     Betrag aussieht und keiner ist. Dann lieber die Menge, die feststeht. -->
 			<div class="flex items-center justify-between">
 				{#if orderStore.preiseErfassen}
-					<span class="text-sm font-semibold text-slate-500">Gesamt</span>
-					<span class="text-xl font-bold text-slate-900 tabular-nums">{euro(orderStore.total)}</span
+					<span class="text-sm font-semibold text-on-surface-variant">Gesamt</span>
+					<span class="text-xl font-bold text-on-surface tabular-nums"
+						>{euro(orderStore.total)}</span
 					>
 				{:else}
-					<span class="text-sm font-semibold text-slate-500">Exemplare</span>
-					<span class="text-xl font-bold text-slate-900 tabular-nums">{orderStore.totalQty}</span>
+					<span class="text-sm font-semibold text-on-surface-variant">Exemplare</span>
+					<span class="text-xl font-bold text-on-surface tabular-nums">{orderStore.totalQty}</span>
 				{/if}
 			</div>
 			<Kaestchen bind:checked={orderStore.attachBarcodes} label="Barcodes mitschicken" />
@@ -77,7 +78,7 @@
 				size="lg"
 				onclick={() => orderStore.submitOrder()}
 				disabled={orderStore.submitting || !orderStore.selectedSupplier}
-				class="w-full disabled:bg-slate-200 disabled:text-slate-400 disabled:opacity-100"
+				class="w-full"
 			>
 				{#if orderStore.submitting}
 					<Ladekreis size="sm" farbe="aktuell" />
@@ -97,7 +98,7 @@
 				</p>
 			{/if}
 			{#if !orderStore.selectedSupplier}
-				<p class="text-label-small text-center text-amber-600 font-medium">
+				<p class="text-label-small text-center text-warning font-medium">
 					Bitte zuerst einen Lieferanten wählen.
 				</p>
 			{/if}

@@ -217,7 +217,7 @@
 						id="bestellspalte"
 						style:--rail-max={railMaxHeight}
 						class="space-y-3 lg:sticky lg:top-2 lg:max-h-(--rail-max) lg:overflow-y-auto {railOffen
-							? 'lg:col-span-5 xl:col-span-4 lg:border-l lg:border-slate-200 lg:pl-6'
+							? 'lg:col-span-5 xl:col-span-4 lg:border-l lg:border-outline-variant lg:pl-6'
 							: 'lg:col-span-1 xl:col-span-1'}"
 					>
 						{#if !railOffen}
@@ -229,16 +229,16 @@
 								aria-label="Bestellspalte ausklappen"
 								aria-expanded="false"
 								aria-controls="bestellpanel"
-								class="hidden lg:flex w-full flex-col items-center gap-3 py-4 px-2 rounded-xl border border-slate-200 bg-white shadow-sm hover:border-blue-400 hover:bg-blue-50/40 transition-colors cursor-pointer"
+								class="hidden lg:flex w-full flex-col items-center gap-3 py-4 px-2 rounded-xl border border-outline-variant bg-surface-container-lowest cursor-pointer"
 							>
-								<ChevronLeft class="h-4 w-4 text-slate-400" aria-hidden="true" />
+								<ChevronLeft class="h-4 w-4 text-on-surface-variant" aria-hidden="true" />
 								<span
-									class="text-xs font-bold text-slate-600 tracking-wide"
+									class="text-xs font-bold text-on-surface-variant tracking-wide"
 									style="writing-mode: vertical-rl">Deine Bestellung</span
 								>
 								{#if orderStore.totalQty > 0}
 									<span
-										class="min-w-6 h-6 flex items-center justify-center rounded-full bg-blue-600 text-white text-label-small font-bold px-1.5 tabular-nums"
+										class="min-w-6 h-6 flex items-center justify-center rounded-full bg-primary text-on-primary text-label-small font-bold px-1.5 tabular-nums"
 										>{orderStore.totalQty}</span
 									>
 								{/if}

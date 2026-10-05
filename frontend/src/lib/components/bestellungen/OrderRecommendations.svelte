@@ -58,14 +58,14 @@
      daneben ueber die senkrechte Linie in BestellWorkspace. -->
 <section class="flex min-w-0 flex-col">
 	<!-- Header -->
-	<header class="border-b border-slate-200 pb-4">
+	<header class="border-b border-outline-variant pb-4">
 		<div class="flex items-start justify-between gap-4">
 			<div class="min-w-0">
-				<h2 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+				<h2 class="text-lg font-bold text-on-surface tracking-tight flex items-center gap-2">
 					Bestellbedarf
 					{#if recommendations.length}
 						<span
-							class="text-xs font-bold text-slate-500 bg-slate-100 rounded-full px-2 py-0.5 tabular-nums"
+							class="text-xs font-bold text-on-surface-variant bg-surface-container rounded-full px-2 py-0.5 tabular-nums"
 							>{recommendations.length}</span
 						>
 					{/if}
@@ -82,17 +82,17 @@
 					     faerben erzieht das Auge dazu, Rot zu ueberlesen, und dann verschwindet
 					     der eine echte Fehler darin. In M3 traegt die Error-Rolle Zustaende, die
 					     korrigiert werden MUESSEN. Das hier ist eine Kennzahl. -->
-					<p class="text-sm text-slate-500 mt-1">
+					<p class="text-sm text-on-surface-variant mt-1">
 						{kritischeAnzahl} von {recommendations.length} Titeln ohne ein einziges Exemplar
 					</p>
 				{:else if recommendations.length}
-					<p class="text-sm text-slate-400 mt-1">Alle unter der Bestellbedarf-Schwelle.</p>
+					<p class="text-sm text-on-surface-variant mt-1">Alle unter der Bestellbedarf-Schwelle.</p>
 				{/if}
 			</div>
 			<a
 				href="/api/bestellungen/pdf"
 				download
-				class="shrink-0 flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl transition-colors"
+				class="m3-state shrink-0 flex items-center gap-2 text-xs font-bold text-on-surface-variant bg-surface-container-low border border-outline-variant px-3 py-2 rounded-xl"
 			>
 				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
 				<span class="hidden sm:inline">PDF-Bestellliste</span>
@@ -112,13 +112,15 @@
 
 	<!-- List -->
 	{#if !recommendations.length}
-		<div class="flex flex-col items-center justify-center text-center py-16 px-6 text-slate-400">
+		<div
+			class="flex flex-col items-center justify-center text-center py-16 px-6 text-on-surface-variant"
+		>
 			<CircleCheck class="h-5 w-5" aria-hidden="true" />
-			<p class="text-sm font-semibold text-slate-500">Bestände ausreichend</p>
+			<p class="text-sm font-semibold">Bestände ausreichend</p>
 			<p class="text-xs mt-1">Kein Titel liegt unter der Bestellbedarf-Schwelle.</p>
 		</div>
 	{:else if !gefiltert.length}
-		<div class="text-center py-14 px-6 text-slate-400">
+		<div class="text-center py-14 px-6 text-on-surface-variant">
 			<p class="text-sm font-medium">Kein Treffer für <em>„{filter}"</em></p>
 		</div>
 	{:else}
@@ -136,9 +138,9 @@
 		     Platzhalter links w-4, der Cover-Knopf in der Zeile aber 32 px breit — „Titel"
 		     stand damit 17 px links neben den Titeln. Unter dem Kartenrahmen fiel das nicht
 		     auf, auf der flachen Flaeche sofort. -->
-		<div class="-mx-3 border-b border-slate-100">
+		<div class="-mx-3 border-b border-outline-variant">
 			<div
-				class="flex items-center gap-3 border border-transparent px-3 py-2 text-label-small font-semibold uppercase tracking-wider text-slate-400 select-none"
+				class="flex items-center gap-3 border border-transparent px-3 py-2 text-label-small font-semibold uppercase tracking-wider text-on-surface-variant select-none"
 			>
 				<span class="w-8 shrink-0" aria-hidden="true"></span>
 				<span class="flex-1 min-w-0">Titel</span>
