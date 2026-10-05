@@ -105,7 +105,7 @@
 	}
 </script>
 
-<div class="w-full space-y-5 no-print text-slate-800 animate-fade-in font-sans">
+<div class="w-full space-y-5 no-print text-on-surface animate-fade-in font-sans">
 	{#if ablage.ladefehler}
 		<!-- Die Leinwand zeigt hier NICHT den zentralen Stand, sondern Vorgabewerte. Bis
 		     zum Sweep am 06.09.2026 stand das nirgends — und die Auto-Speicherung schob
@@ -128,16 +128,16 @@
 
 	<div class="flex items-center justify-end gap-3 text-sm font-semibold min-h-4">
 		{#if ablage.zustand === 'saving'}
-			<span class="text-slate-400">Speichert…</span>
+			<span class="text-on-surface-variant">Speichert…</span>
 		{:else if ablage.zustand === 'saved'}
-			<span class="text-emerald-600">✓ Zentral gespeichert (alle Arbeitsplätze)</span>
+			<span class="text-success">✓ Zentral gespeichert (alle Arbeitsplätze)</span>
 		{:else if ablage.zustand === 'error'}
-			<span class="text-rose-600">Speichern fehlgeschlagen</span>
+			<span class="text-error">Speichern fehlgeschlagen</span>
 		{/if}
 		<button
 			type="button"
 			onclick={zuruecksetzen}
-			class="text-slate-400 hover:text-slate-700 underline underline-offset-2 transition-colors cursor-pointer"
+			class="text-on-surface-variant underline underline-offset-2 cursor-pointer"
 		>
 			Standardwerte wiederherstellen
 		</button>

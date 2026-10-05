@@ -157,7 +157,7 @@
 </script>
 
 <div
-	class="flex-1 flex flex-col items-center justify-center overflow-hidden bg-slate-100 border border-dashed border-slate-200 rounded-3xl min-h-120 relative p-6"
+	class="flex-1 flex flex-col items-center justify-center overflow-hidden bg-surface-container border border-dashed border-outline-variant rounded-3xl min-h-120 relative p-6"
 	role="presentation"
 	onpointerdown={onCanvasClick}
 >
@@ -172,7 +172,7 @@
 		<div
 			bind:this={cardEl}
 			data-ausweis-vorschau
-			class="card-container shadow-2xl relative border border-slate-200 rounded-lg overflow-visible select-none"
+			class="card-container shadow-2xl relative border border-outline-variant rounded-lg overflow-visible select-none"
 			style="width: 85.6mm; height: 53.98mm; background: white;"
 		>
 			<div class="w-full h-full relative rounded-lg overflow-hidden {theme}">
@@ -191,7 +191,7 @@
 	</div>
 
 	<span
-		class="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-slate-400 font-medium pointer-events-none"
+		class="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-on-surface-variant font-medium pointer-events-none"
 	>
 		{side === 'front' ? 'Vorderseite' : 'Rückseite'} · Drag &amp; Drop zum Verschieben · Ecken zum Skalieren
 	</span>

@@ -43,8 +43,8 @@
       cursor: move;
     "
 	class="{isSelected
-		? 'ring-2 ring-blue-500 ring-offset-0'
-		: 'hover:ring-1 hover:ring-slate-400 hover:ring-dashed'} rounded-xs"
+		? 'ring-2 ring-primary ring-offset-0'
+		: 'hover:ring-1 hover:ring-outline hover:ring-dashed'} rounded-xs"
 >
 	{#if isBox}
 		<!-- Farbfläche: füllt ihre Box exakt (kein object-contain, kein Bild-Chrome) —
@@ -77,6 +77,8 @@
 			{/if}
 		</div>
 	{:else if isImage}
+		<!-- Platzhalter auf der Karte tragen feste Töne: Die Karte bleibt weiß, auch wenn die
+		     Oberfläche ihr Farbschema wechselt. -->
 		<div
 			class="w-full h-full border border-dashed border-slate-300 bg-slate-50/50 flex items-center justify-center overflow-hidden rounded-xs"
 		>
@@ -137,6 +139,6 @@
 	<div
 		role="presentation"
 		onpointerdown={(e) => onStartResize(e, el.id, corner)}
-		class="absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-full z-50 {posClass}"
+		class="absolute w-3 h-3 bg-surface-container-lowest border-2 border-primary rounded-full z-50 {posClass}"
 	></div>
 {/snippet}

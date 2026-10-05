@@ -61,8 +61,7 @@ const BESTAND = [
 	'src/lib/components/labels/LabelPreview.svelte',
 	'src/lib/components/students/AuswahlAktionsleiste.svelte',
 	'src/lib/components/ui/CoverPeek.svelte',
-	'src/lib/designer/CanvasArea.svelte',
-	'src/lib/designer/PropertiesPanel.svelte'
+	'src/lib/designer/CanvasArea.svelte'
 ];
 
 /** Alle class-Attributwerte einer Svelte-Datei — Zeichenkette wie Ausdruck. */

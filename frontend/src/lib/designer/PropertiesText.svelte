@@ -26,15 +26,15 @@
 	];
 </script>
 
-<div class="space-y-3 pt-2 border-t border-slate-100">
-	<span class="text-xs font-medium text-slate-500 block">Textformatierung</span>
+<div class="space-y-3 pt-2 border-t border-outline-variant">
+	<span class="text-xs font-medium text-on-surface-variant block">Textformatierung</span>
 
 	{#if !istDynamisch}
 		<Feld label="Inhalt" bind:value={el.content} />
 	{/if}
 
 	<div class="space-y-1">
-		<span class="text-xs text-slate-400 font-medium block">Schriftart</span>
+		<span class="text-xs text-on-surface-variant font-medium block">Schriftart</span>
 		<Select bind:value={el.style.fontFamily} options={schriften} aria-label="Schriftart" />
 	</div>
 
@@ -48,11 +48,11 @@
 			onInput={(v) => (el.style.fontSize = v)}
 		/>
 		<div class="space-y-1">
-			<span class="text-xs text-slate-400 font-medium block">Farbe</span>
+			<span class="text-xs text-on-surface-variant font-medium block">Farbe</span>
 			<input
 				type="color"
 				bind:value={el.style.color}
-				class="w-full h-8 rounded-xl border border-slate-200 cursor-pointer bg-white px-1"
+				class="w-full h-8 rounded-xl border border-outline-variant cursor-pointer bg-surface-container-lowest px-1"
 			/>
 		</div>
 	</div>
@@ -61,9 +61,10 @@
 		{#each AUSRICHTUNG as a (a.wert)}
 			<button
 				onclick={() => (el.style.textAlign = a.wert)}
+				aria-pressed={el.style?.textAlign === a.wert}
 				class="py-1 rounded-lg text-sm transition-colors {el.style?.textAlign === a.wert
-					? 'bg-blue-600 text-white'
-					: 'bg-slate-100 text-slate-500 hover:bg-slate-200'}"
+					? 'bg-secondary-container text-on-secondary-container'
+					: 'bg-surface-container text-on-surface-variant'}"
 				title={a.wert}>{a.zeichen}</button
 			>
 		{/each}

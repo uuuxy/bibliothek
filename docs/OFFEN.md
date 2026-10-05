@@ -623,7 +623,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 05.10.2026: 651 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 05.10.2026: 594 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -636,6 +636,12 @@ freigegeben am 23.09.2026.
 
 `inventur/lib/bookHelpers.js` (48) sind Farbverläufe je Fach für selbstgebaute
 Cover-Platzhalter; das gehört zu 6.2 (Cover über `ui/BuchCover`).
+
+Im Ausweis-Designer bleiben 29 Stellen: die Farben der Karte (`themes` in
+`designer/Toolbar.svelte`, die Vorgaben in `idDesignerStore.svelte.js`) und die Platzhalter
+auf der gezeichneten Karte (`CanvasElement.svelte`, `CardFace.svelte`). Die Farbe der Karte
+steht als Klassenliste im zentral gespeicherten Entwurf und wird gedruckt; die Karte bleibt
+weiß, auch wenn die Oberfläche ihr Farbschema wechselt.
 
 Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 
@@ -687,6 +693,10 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   „Lade …" steht an drei Stellen als pulsierender Text (`BestellDetail`, `BestellHistorie`,
   `KlassensatzReservierungen`), sonst `ui/Ladekreis`. `WareneingangView.svelte` trägt `bg-white`;
   Weiß und Schwarz zählt die Ratsche nicht (74 Stellen in `.svelte`-Dateien).
+- Ausweis-Designer: Die Knöpfe der Textausrichtung tragen englische Hinweise („left",
+  „center", „right"; `PropertiesText.svelte`). Die zwei Umschalter der Werkzeugleiste
+  (`ToolbarDruck.svelte`, `Toolbar.svelte`) stehen von Hand in gleicher Form, nicht aus
+  `ui/Segmente`. Die zwei Farbwähler der Eigenschaften sind 32 und 36 px hoch.
 
 ### 5.22 Fremdrückgabe über Kreuz verklemmt sich — seit Migration 137
 

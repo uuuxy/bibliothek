@@ -61,21 +61,23 @@
 </script>
 
 <div
-	class="w-full lg:w-80 bg-white border border-slate-100 p-5 rounded-xl shadow-xl space-y-5 shrink-0 text-left overflow-y-auto max-h-[80vh]"
+	class="w-full lg:w-80 bg-surface-container-lowest border border-outline-variant p-5 rounded-xl space-y-5 shrink-0 text-left overflow-y-auto max-h-[80vh]"
 >
 	{#if !el}
 		<div class="flex flex-col items-center justify-center py-12 text-center gap-3">
-			<MousePointer2 class="w-10 h-10 text-slate-200" aria-hidden="true" />
-			<span class="text-xs text-slate-400 font-medium">Element auf der Karte anklicken</span>
+			<MousePointer2 class="w-10 h-10 text-outline-variant" aria-hidden="true" />
+			<span class="text-xs text-on-surface-variant font-medium"
+				>Element auf der Karte anklicken</span
+			>
 		</div>
 	{:else}
 		<div class="flex items-center justify-between">
-			<h3 class="text-base font-medium text-slate-600">{el.id}</h3>
+			<h3 class="text-base font-medium text-on-surface">{el.id}</h3>
 			{#if !['header', 'address', 'logo', 'photo', 'name', 'validity', 'barcode'].includes(el.id)}
 				<button
 					onclick={handleDelete}
-					class="text-slate-300 hover:text-rose-500 transition-colors p-1"
-					title="Element löschen"
+					class="icon-btn text-on-surface-variant"
+					data-tip="Element löschen"
 					aria-label="Element löschen"
 				>
 					<Trash class="w-4 h-4" aria-hidden="true" />
@@ -85,15 +87,15 @@
 
 		<!-- Visibility -->
 		<div class="flex items-center justify-between">
-			<label for="designer-element-sichtbar" class="text-xs font-medium text-slate-500"
+			<label for="designer-element-sichtbar" class="text-xs font-medium text-on-surface-variant"
 				>Sichtbar</label
 			>
 			<Switch id="designer-element-sichtbar" bind:checked={el.show} />
 		</div>
 
 		<!-- Position & Size -->
-		<div class="space-y-2 pt-2 border-t border-slate-100">
-			<span class="text-xs font-medium text-slate-500 block">Position &amp; Größe</span>
+		<div class="space-y-2 pt-2 border-t border-outline-variant">
+			<span class="text-xs font-medium text-on-surface-variant block">Position &amp; Größe</span>
 			<div class="grid grid-cols-2 gap-2">
 				<ZahlenFeld
 					label="X (mm)"
@@ -131,17 +133,17 @@
 		</div>
 
 		<!-- Z-Index -->
-		<div class="flex items-center gap-2 pt-2 border-t border-slate-100">
-			<span class="text-xs font-medium text-slate-500 flex-1">Ebene (z={el.zIndex})</span>
+		<div class="flex items-center gap-2 pt-2 border-t border-outline-variant">
+			<span class="text-xs font-medium text-on-surface-variant flex-1">Ebene (z={el.zIndex})</span>
 			<button
 				onclick={() => bringForward(side, el.id)}
-				class="px-2 py-1 text-label-small bg-slate-100 hover:bg-slate-200 rounded-lg font-bold transition-colors"
+				class="px-2 py-1 text-label-small bg-surface-container text-on-surface rounded-lg font-bold"
 				title="Nach vorne"
 				aria-label="Ebene nach vorne verschieben">▲</button
 			>
 			<button
 				onclick={() => sendBackward(side, el.id)}
-				class="px-2 py-1 text-label-small bg-slate-100 hover:bg-slate-200 rounded-lg font-bold transition-colors"
+				class="px-2 py-1 text-label-small bg-surface-container text-on-surface rounded-lg font-bold"
 				title="Nach hinten"
 				aria-label="Ebene nach hinten verschieben">▼</button
 			>
@@ -151,8 +153,8 @@
 			<PropertiesText {el} istDynamisch={isDynamic} schriften={fontFamilies} />
 		{/if}
 
-		<!-- Farbfläche: Füllfarbe und Eckenradius. M3-Rollen statt der slate-Töne der Nachbarn
-		     (Farb-Ratsche); Farbwähler mit Label/Höhe von Feld.svelte, damit er neben ZahlenFeld fluchtet. -->
+		<!-- Farbfläche: Füllfarbe und Eckenradius. Der Farbwähler trägt Label und Höhe von
+		     Feld.svelte, damit er neben ZahlenFeld fluchtet. -->
 		{#if isBoxType && el.style}
 			<div class="space-y-3 pt-2 border-t border-outline-variant">
 				<span class="text-xs font-medium text-on-surface-variant block">Fläche</span>
@@ -162,7 +164,7 @@
 						<input
 							type="color"
 							bind:value={el.style.color}
-							class="w-full h-9 rounded-xl border border-outline-variant cursor-pointer bg-white px-1"
+							class="w-full h-9 rounded-xl border border-outline-variant cursor-pointer bg-surface-container-lowest px-1"
 						/>
 					</div>
 					<ZahlenFeld
@@ -179,13 +181,13 @@
 
 		<!-- Image panel -->
 		{#if isImageType}
-			<div class="space-y-3 pt-2 border-t border-slate-100">
-				<span class="text-xs font-medium text-slate-500 block">Bild</span>
+			<div class="space-y-3 pt-2 border-t border-outline-variant">
+				<span class="text-xs font-medium text-on-surface-variant block">Bild</span>
 				<input
 					type="file"
 					accept="image/*"
 					onchange={handleImageUpload}
-					class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-label-small file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+					class="w-full text-xs text-on-surface-variant file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-label-small file:font-semibold file:bg-surface-container file:text-on-surface hover:file:bg-surface-container-highest cursor-pointer"
 				/>
 				<Kaestchen bind:checked={el.proportional} label="Proportionale Skalierung" />
 			</div>

@@ -50,8 +50,8 @@
 		previewStudent
 	} = $props();
 
-	// Sichtbar unterscheidbare, druck-taugliche Töne. Die vorherigen Themes lagen bei
-	// -50/40-Opazität (praktisch weiß) — die Auswahl war in der Vorschau nicht erkennbar.
+	// Farben der Karte, nicht der Oberfläche: Der Wert steht im zentral gespeicherten Entwurf
+	// und wird gedruckt. Deshalb feste, im Druck unterscheidbare Töne statt Farbrollen.
 	const themes = [
 		{ value: 'bg-white text-black border-slate-200', name: 'Weiß' },
 		{ value: 'bg-slate-100 text-slate-900 border-slate-300', name: 'Grau' },
@@ -151,7 +151,7 @@
 			<!-- Ausdrücklich als Muster benannt: Hier stand früher ein echter Schüler aus
 			     der gewählten Klasse, und man konnte meinen, dieser Bildschirm drucke ihn.
 			     Gedruckt wird in der Schülerdatei. -->
-			<span class="text-sm text-slate-500 font-medium ml-auto">
+			<span class="text-sm text-on-surface-variant font-medium ml-auto">
 				Musterkarte: {previewStudent.vorname}
 				{previewStudent.nachname}
 			</span>
@@ -160,13 +160,16 @@
 </div>
 
 {#snippet toggleGroup(options, active, onChange)}
-	<div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/40 text-sm shrink-0">
+	<div
+		class="flex bg-surface-container p-0.5 rounded-xl border border-outline-variant text-sm shrink-0"
+	>
 		{#each options as opt, _i (_i)}
 			<button
 				onclick={() => onChange(opt.value)}
+				aria-pressed={active === opt.value}
 				class="px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer {active === opt.value
-					? 'bg-white text-slate-800 shadow-xs'
-					: 'text-slate-500 hover:text-slate-700'}">{opt.label}</button
+					? 'bg-surface text-on-surface shadow-xs'
+					: 'text-on-surface-variant hover:text-on-surface'}">{opt.label}</button
 			>
 		{/each}
 	</div>
