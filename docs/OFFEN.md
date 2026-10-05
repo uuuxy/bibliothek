@@ -221,13 +221,27 @@ Am 04.10.2026 gebaut und am selben Tag zurückgenommen, weil nicht bestellt:
 
 ### 4.32 Theke: ein Stapel vom Rückgabetisch
 
-Littera hat eine Schnellrückgabe, die nie ausleiht. An der Theke bleibt nach der ersten
-Rückgabe der Leser dieses Buchs geladen (besprochen am 03.10.2026, am Code gelesen, nicht
-nachgestellt): Ein Buch eines anderen Lesers wird mit Warnton zurückgegeben, die Akte bleibt
-beim ersten. Ein Buch, das nicht verliehen ist, und ein zweiter Scan desselben Buchs werden an
-den geladenen Leser ausgeliehen. Davor schützt heute die Escape-Taste zwischen zwei Lesern.
-Zu entscheiden: Es bleibt bei Escape, oder die Theke bleibt nach einer Rückgabe ohne vorher
-geladenen Leser leer und nennt ihn nur in der Meldung.
+Littera hat eine Schnellrückgabe, die nie ausleiht. An der Theke entscheidet der Zustand, was
+ein Scan bedeutet (am Code gelesen am 06.10.2026, nicht im Browser nachgestellt):
+
+- Eine Rückgabe ohne geladenen Leser lädt den Leser des Buchs (`verarbeiteRueckgabe` in
+  `stores/omnibox.svelte.js`). Ab dem zweiten Buch eines Stapels ist also immer ein Leser
+  geladen, auch wenn die Theke vorher leer war; Escape vor dem Stapel schützt nicht.
+- Ein freies Exemplar wird an den geladenen Leser ausgeliehen (`HandleUnifiedCheckout` in
+  `internal/service/loan_checkout.go`). Das trifft ein Buch, das nicht verliehen war, und den
+  zweiten Scan desselben Buchs: Der erste gibt zurück, der zweite leiht wieder aus.
+- Ausleihe und Rückgabe melden sich gleich, grün und mit demselben Ton; nur der Text der
+  Meldung unterscheidet sie. Ein Buch eines anderen Lesers meldet sich orange mit Warnton.
+
+Folge: ein Buch im Regal, das auf dem Konto eines Kindes steht und später gemahnt wird.
+Verdacht auf Kategorie A, bis der Ablauf nachgestellt ist.
+
+Zwei Wege, besprochen am 06.10.2026, nichts gebaut: (A) Ein Leser, der nur durch eine Rückgabe
+erscheint, wird gezeigt, bekommt aber nichts ausgeliehen, bis sein Ausweis gescannt oder sein
+Name gewählt ist; ein Stapel verleiht dann nichts. Preis: ein Schritt mehr, wenn ein Kind ohne
+Ausweis zurückgibt und gleich ausleiht. (B) Die Ausleihe bekommt einen eigenen Ton und eine
+eigene Farbe. Offen ist, wie oft ohne Ausweis direkt nach einer Rückgabe ausgeliehen wird. Ein
+Bau an der Theke braucht die Proben des Scanner-Pfads.
 
 ---
 
