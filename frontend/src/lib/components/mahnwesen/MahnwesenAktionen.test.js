@@ -98,7 +98,7 @@ describe('MahnwesenAktionen', () => {
 			})
 		});
 		await mahnwesenStore.fetchData();
-		expect(mahnwesenStore.klassen.length).toBe(1);
+		expect(mahnwesenStore.klassen).toHaveLength(1);
 		expect(mahnwesenStore.versandKlassen).toEqual([]);
 
 		const zeile = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnlauf: true });

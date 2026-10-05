@@ -31,7 +31,7 @@ describe('FilterChips', () => {
 		const { getByRole, container } = aufbau('b');
 		expect(getByRole('button', { name: 'Krimi' }).getAttribute('aria-pressed')).toBe('true');
 		expect(getByRole('button', { name: 'Fantasy' }).getAttribute('aria-pressed')).toBe('false');
-		expect(container.querySelectorAll('svg').length).toBe(1);
+		expect(container.querySelectorAll('svg')).toHaveLength(1);
 		expect(getByRole('group', { name: 'Nach Schlagwort filtern' })).toBeTruthy();
 	});
 

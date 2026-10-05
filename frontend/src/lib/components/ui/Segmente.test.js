@@ -43,9 +43,9 @@ describe('Segmente', () => {
 		const { container } = aufbau('offen');
 		// Ein Icon je Segment — die unbenutzten sind unsichtbar, aber im Fluss.
 		const haken = container.querySelectorAll('svg');
-		expect(haken.length).toBe(optionen.length);
+		expect(haken).toHaveLength(optionen.length);
 		const unsichtbar = [...haken].filter((s) => s.getAttribute('class')?.includes('invisible'));
-		expect(unsichtbar.length).toBe(optionen.length - 1);
+		expect(unsichtbar).toHaveLength(optionen.length - 1);
 	});
 
 	it('ist 40 dp hoch und voll gerundet — die M3-Maße des Segmented Button', () => {

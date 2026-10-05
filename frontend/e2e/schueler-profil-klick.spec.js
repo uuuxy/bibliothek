@@ -7,6 +7,7 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
  *  @param {import('@playwright/test').Page} page */
 async function saisonOderUeberspringen(page) {
 	const { fenster } = await (await page.request.get('/api/abgaenger')).json();
+	// Ohne Zeile gibt es nichts anzuklicken; der Bericht nennt den Zeitraum als Grund.
 	test.skip(!fenster.offen, `Abgängerliste außerhalb der Saison (${fenster.von}–${fenster.bis})`);
 }
 

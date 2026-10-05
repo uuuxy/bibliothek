@@ -84,7 +84,7 @@ test('Ersatzforderung erklärt im gesperrten Zustand, woran es liegt', async ({ 
 	await expect(knopf).toBeVisible();
 	await expect(knopf, 'Testdaten: Schüler ohne Schadensfall erwartet').toBeDisabled();
 
-	await knopf.hover({ force: true });
+	await knopf.hover();
 	const blase = page.locator('[data-tooltip-blase]');
 	await expect(blase).toBeVisible({ timeout: 3000 });
 	await expect(blase).toContainText('Kein offener Schadensfall');

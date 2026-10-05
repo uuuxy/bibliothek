@@ -27,6 +27,6 @@ describe('VorlageMiniatur', () => {
 
 	it('bleibt bei unbekannter Kennung leer statt zu werfen', () => {
 		const { container } = render(VorlageMiniatur, { props: { kennung: 'gibt-es-nicht' } });
-		expect(container.querySelectorAll('[data-miniatur-element]').length).toBe(0);
+		expect(container.querySelectorAll('[data-miniatur-element]')).toHaveLength(0);
 	});
 });

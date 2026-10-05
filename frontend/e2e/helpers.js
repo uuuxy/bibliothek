@@ -271,6 +271,15 @@ export function uniqueSuffix() {
 }
 
 /**
+ * Der Text als Muster, das genau ihn trifft: Zeichen mit Bedeutung in einem regulären
+ * Ausdruck bekommen einen Rückstrich.
+ * @param {string} text
+ */
+function woertlich(text) {
+	return text.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+}
+
+/**
  * Navigiert und stellt sicher, dass die Anwendung wirklich DORT gelandet ist.
  *
  * `page.goto()` allein reicht nicht: Auf einen unbekannten Pfad antwortet diese SPA nicht
@@ -294,7 +303,7 @@ export async function gehZu(page, pfad) {
 		page,
 		`„${pfad}" hat nicht gehalten — die Anwendung ist woandershin gesprungen. ` +
 			`Unbekannte Pfade landen still auf /kiosk; vermutlich wurde eine Route umbenannt.`
-	).toHaveURL(new RegExp(`${pfad.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)}$`));
+	).toHaveURL(new RegExp(`${woertlich(pfad)}$`));
 }
 
 /**
@@ -348,7 +357,7 @@ export function einstellungsKategorie(page, titel) {
 		// „<Titel> <Beitext>". Ohne das Leerzeichen trifft „Mahnwesen" auch
 		// „Mahnwesen-Routing" — Playwright bricht dann mit strict mode ab, oder klickt
 		// in einer künftigen Liste stillschweigend die falsche Kategorie.
-		name: new RegExp(`^${titel.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)} `)
+		name: new RegExp(`^${woertlich(titel)} `)
 	});
 }
 
@@ -431,7 +440,7 @@ export async function oeffneSchuelerProfil(page, vorname) {
  * @param {string} zeichen
  */
 function scannerTaste(zeichen) {
-	if (/^[0-9]$/.test(zeichen)) return { code: `Digit${zeichen}`, keyCode: zeichen.charCodeAt(0) };
+	if (/^\d$/.test(zeichen)) return { code: `Digit${zeichen}`, keyCode: zeichen.charCodeAt(0) };
 	if (/^[A-Za-z]$/.test(zeichen)) {
 		const gross = zeichen.toUpperCase();
 		return { code: `Key${gross}`, keyCode: gross.charCodeAt(0) };

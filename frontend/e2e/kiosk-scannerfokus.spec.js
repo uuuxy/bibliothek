@@ -188,7 +188,7 @@ test.describe('Handscanner: der Fokus steht woanders', () => {
 		await page.keyboard.type(`B-Reiter1-${suffix}`, { delay: 5 });
 		await page.keyboard.press('Enter');
 		await page.waitForTimeout(1500);
-		expect(await page.locator('#omnibox-input').inputValue()).toBe('');
+		await expect(page.locator('#omnibox-input')).toHaveValue('');
 		expect(verbucht(suffix, 1), 'Der Scan wurde hinter dem Dialog verbucht').toBe('0');
 	});
 });

@@ -24,6 +24,8 @@ async function abgaengerBereitstellen(page) {
 		SELECT ex.id, sch.id, CURRENT_DATE - 5 FROM ex, sch;
 	`);
 	const { fenster, abgaenger } = await (await page.request.get('/api/abgaenger')).json();
+	// Außerhalb der Saison liefert der Server keine Zeilen; der Bericht führt den Test dann als
+	// übersprungen, mit dem Zeitraum als Grund.
 	test.skip(!fenster.offen, `Abgängerliste außerhalb der Saison (${fenster.von}–${fenster.bis})`);
 	return abgaenger;
 }

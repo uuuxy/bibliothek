@@ -27,7 +27,7 @@ describe('LmfPlanFreieTage', () => {
 
 		// Derselbe Tag noch einmal, anderer Grund: eine Zeile, der neue Grund.
 		await freihalten(r, '2026-06-05', 'Studientag');
-		expect(r.getByTestId('lmf-freie-tage').querySelectorAll('span').length).toBe(1);
+		expect(r.getByTestId('lmf-freie-tage').querySelectorAll('span')).toHaveLength(1);
 		expect(r.getByTestId('lmf-freie-tage').textContent).toContain('Studientag');
 
 		await fireEvent.click(r.getByLabelText('05.06.26 Studientag aus dem Plan nehmen'));
