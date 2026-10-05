@@ -72,7 +72,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
   - **Kollegen** werden nie gesperrt (entschieden am 16.09.2026, bestätigt am 24.09.2026): keine Frist, keine Forderung, und der Knopf in ihrer Akte ist verschlossen. Eine ältere Sperre an ihrem Konto zählt nicht.
   - **Anonymisierte Datensätze** bekommen nichts, auch kein Schulbuch; ihre Sperre lässt sich nicht aufheben.
 - **Protokoll:** Sperren und Aufheben stehen im Protokoll (`LESER_GESPERRT`, `LESER_ENTSPERRT`, mit dem Grund, der galt), das Übergehen eines Hinweises auch (`OVERRIDE_BLOCK`) — erst wenn die Ausleihe steht; weist danach noch das Ausleihlimit ab, steht dort nichts.
-- **Den Sperrgrund** sieht an der Theke nur, wer `view_students` hat; sonst steht dort „bitte an die Bibliotheksleitung wenden" (`ohneSperrgrund` in `api/action.go`). Dasselbe gilt für die Antwort des Nachbuchens (`api/nachbuchen_handler.go`); die Nachbuch-Meldung trägt den vollen Grund und liegt hinter `view_students`.
+- **Den Sperrgrund** sieht an der Theke nur, wer `view_students` hat; sonst steht dort „bitte an die Bibliotheksleitung wenden" (`ohneSperrgrund` in `api/action.go`). Dasselbe gilt für die Antwort des Nachbuchens (`api/nachbuchen_handler.go`); unter dem Schlüssel des Eintrags liegt das Ergebnis immer ohne den Freitext, weil eine wiederholte Portion unter einer anderen Anmeldung kommen kann. Die Nachbuch-Meldung trägt den vollen Grund und liegt hinter `view_students`.
 
 ---
 

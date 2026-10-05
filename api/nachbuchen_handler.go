@@ -197,14 +197,19 @@ func (s *Server) bucheEintragNach(ctx context.Context, svc service.NachbuchServi
 		AufsichtInformieren: erg.AufsichtHinweis,
 	}
 	if erg.Schranke != nil {
-		// Vor dem Ablegen kürzen, wie an der Online-Theke (ohneSperrgrund) — sonst läge der
-		// Freitext der Sperre unter dem Schlüssel und käme mit der Wiederholung zurück.
-		out.Grund = ohneSperrgrund(erg.Schranke, absender.darfSperrgrundSehen).Error()
+		// Abgelegt wird der Grund ohne den Freitext der Sperre, gleich wer die Portion schickt:
+		// Die Warteschlange gehört dem Rechner, und die Wiederholung kann unter der Anmeldung
+		// einer Person kommen, die ihn nicht lesen darf.
+		out.Grund = ohneSperrgrund(erg.Schranke, false).Error()
 	}
 	if erg.Result != nil {
 		out.Daten = mapOmniboxResultToActionResponse(service.LoanResultAlsOmnibox(erg.Result))
 	}
 	s.legeNachbuchErgebnisAb(ctx, out)
+	if erg.Schranke != nil {
+		// Die Antwort an diesen Absender kürzt dieselbe Funktion wie an der Online-Theke.
+		out.Grund = ohneSperrgrund(erg.Schranke, absender.darfSperrgrundSehen).Error()
+	}
 	return out
 }
 
