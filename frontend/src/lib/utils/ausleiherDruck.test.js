@@ -72,7 +72,7 @@ describe('baueAusleiherDruckHtml', () => {
 			'Alle',
 			jetzt
 		);
-		expect(html.match(/class="overdue"/g) ?? []).toHaveLength(1);
+		expect(html.match(/class="overdue schmal"/g) ?? []).toHaveLength(1);
 	});
 
 	// Dauerleihe (Kollegium): keine Frist, nie überfällig — dieselbe Regel wie in der Akte
@@ -93,7 +93,7 @@ describe('baueAusleiherDruckHtml', () => {
 			'Alle',
 			jetzt
 		);
-		expect(html).not.toContain('class="overdue"');
+		expect(html).not.toContain('class="overdue');
 		expect(html).toContain('ohne Frist');
 		expect(html).not.toContain('1.2.2025');
 	});

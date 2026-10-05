@@ -37,7 +37,14 @@ export function baueAusleiherDruckHtml(ausleiher, buch, filterKlasse, jetzt = ne
 		// Das Blatt nennt alle Ausleiher des Titels, nicht nur die mit überschrittener Frist.
 		ueberschrift: `Ausleiher-Liste: ${buch?.title || 'Buch'}`,
 		meta: `Erstellt am: ${jetzt.toLocaleDateString('de-DE')} | Filter: Klasse ${filterKlasse}`,
-		spalten: ['Schüler/in', 'Klasse', 'Exemplar', 'Ausgeliehen am', 'Rückgabe bis'],
+		// Nur der Name bricht um; die kurzen Spalten nehmen die Breite ihres Inhalts.
+		spalten: [
+			'Schüler/in',
+			{ text: 'Klasse', klasse: 'schmal' },
+			{ text: 'Exemplar', klasse: 'schmal' },
+			{ text: 'Ausgeliehen am', klasse: 'schmal' },
+			{ text: 'Rückgabe bis', klasse: 'schmal' }
+		],
 		zeilen
 	});
 }

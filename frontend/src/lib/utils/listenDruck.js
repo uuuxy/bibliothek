@@ -3,26 +3,22 @@
 //
 // Das Gerüst nimmt nur Text entgegen und maskiert jede Einsetzstelle selbst. Ein Aufrufer
 // kann die Maskierung so nicht vergessen, und eine neue Spalte ist von selbst geschützt.
+// Gesetzt ist eng (12 px): Eine Liste hat schnell einige Dutzend bis einige hundert Zeilen.
 
 import { escapeHtml } from './escapeHtml.js';
 
 const STIL = `
-  body { font-family: system-ui, -apple-system, sans-serif; padding: 2rem; color: #1e293b; }
-  h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-  p.meta { margin: 0 0 1.5rem 0; color: #64748b; font-size: 0.875rem; }
-  table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-  th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
-  th { background: #f8fafc; font-weight: 600; font-size: 0.875rem; color: #475569; }
-  .overdue { color: #e11d48; font-weight: bold; }
-  .mono { font-family: monospace; font-size: 0.875rem; }
-  .schmal { width: 1%; white-space: nowrap; }
+  body { font-family: system-ui, -apple-system, sans-serif; padding: 0.5rem; color: #1e293b; font-size: 0.75rem; }
+  h1 { font-size: 1.125rem; margin: 0 0 0.25rem 0; }
+  p.meta { margin: 0 0 0.5rem 0; color: #64748b; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { padding: 0.3rem 0.5rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+  th { background: #f8fafc; font-weight: 600; color: #475569; }
+  td { overflow-wrap: anywhere; }
   tr { break-inside: avoid; }
-  .dicht { padding: 0.5rem; font-size: 0.75rem; }
-  .dicht h1 { font-size: 1.125rem; margin: 0 0 0.25rem 0; }
-  .dicht p.meta { margin: 0 0 0.5rem 0; font-size: 0.75rem; }
-  .dicht table { margin-top: 0; }
-  .dicht th, .dicht td { padding: 0.3rem 0.5rem; font-size: 0.75rem; }
-  .dicht td { overflow-wrap: anywhere; }
+  .overdue { color: #e11d48; font-weight: bold; }
+  .mono { font-family: monospace; }
+  .schmal { width: 1%; white-space: nowrap; }
   @media print { @page { margin: 1cm; } }
 `;
 
@@ -48,13 +44,11 @@ function zelleHtml(zelle, marke, spaltenKlasse = '') {
 }
 
 /**
- * @param {{ ueberschrift: string, meta: string, spalten: Zelle[], zeilen: Zelle[][], dicht?: boolean }} liste
- *   Überschrift und Fenstertitel sind ein Text; `meta` ist die Zeile darunter. `dicht`
- *   setzt eine lange Liste enger (kleinere Schrift, weniger Abstand), damit sie wenige
- *   Seiten braucht.
+ * @param {{ ueberschrift: string, meta: string, spalten: Zelle[], zeilen: Zelle[][] }} liste
+ *   Überschrift und Fenstertitel sind ein Text; `meta` ist die Zeile darunter.
  * @returns {string} Vollständiges HTML-Dokument
  */
-export function baueListenDruckHtml({ ueberschrift, meta, spalten, zeilen, dicht = false }) {
+export function baueListenDruckHtml({ ueberschrift, meta, spalten, zeilen }) {
 	const titel = escapeHtml(ueberschrift);
 	const kopf = spalten.map((s) => zelleHtml(s, 'th')).join('');
 	const rumpf = zeilen
@@ -70,7 +64,7 @@ export function baueListenDruckHtml({ ueberschrift, meta, spalten, zeilen, dicht
   <title>${titel}</title>
   <style>${STIL}</style>
 </head>
-<body${dicht ? ' class="dicht"' : ''}>
+<body>
   <h1>${titel}</h1>
   <p class="meta">${escapeHtml(meta)}</p>
   <table>

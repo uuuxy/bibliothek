@@ -55,8 +55,6 @@ export function baueMahnlisteDruckHtml(kinder, sicht, jetzt = new Date()) {
 			{ text: 'Fällig seit', klasse: 'schmal' },
 			{ text: 'Gemahnt', klasse: 'schmal' }
 		],
-		zeilen,
-		// Je Buch eine Zeile: Die Liste einer Schule hat schnell einige hundert davon.
-		dicht: true
+		zeilen
 	});
 }

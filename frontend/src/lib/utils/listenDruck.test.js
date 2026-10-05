@@ -43,12 +43,6 @@ describe('baueListenDruckHtml', () => {
 		expect(html).toContain('<tr><th class="schmal">A</th><th>B</th></tr>');
 		expect(html).toContain('<tr><td class="mono schmal">eins</td><td>zwei</td></tr>');
 	});
-
-	it('setzt die Liste nur auf Wunsch eng', () => {
-		const liste = { ueberschrift: 'Liste', meta: '', spalten: ['A'], zeilen: [['eins']] };
-		expect(baueListenDruckHtml(liste)).toContain('<body>');
-		expect(baueListenDruckHtml({ ...liste, dicht: true })).toContain('<body class="dicht">');
-	});
 });
 
 describe('druckeDokument', () => {
