@@ -2,6 +2,7 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Mail } from '@lucide/svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
@@ -35,14 +36,14 @@
 		<Ladekreis size="lg" />
 	</div>
 {:else if mahnwesenStore.error}
-	<div
-		class="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-center text-rose-600 text-sm font-medium"
-	>
-		{mahnwesenStore.error}
-	</div>
+	<LadeFehler
+		onerneut={mahnwesenStore.fetchData}
+		titel="Mahnliste nicht geladen"
+		text={mahnwesenStore.error}
+	/>
 {:else if !mahnwesenStore.data || mahnwesenStore.klassen.length === 0}
-	<div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-10 text-center">
-		<p class="text-emerald-700 font-semibold">Keine überfälligen Ausleihen vorhanden.</p>
+	<div class="py-16 text-center text-base text-on-surface-variant">
+		Keine überfälligen Ausleihen vorhanden.
 	</div>
 {:else}
 	<!-- Kein Kartenrahmen. Die Kontur kam mit 160e298 dazu, weil der Arbeitsbereich
@@ -85,7 +86,7 @@
 									<button
 										type="button"
 										onclick={() => openProfile(schueler.schueler_id)}
-										class="font-semibold text-slate-800 text-left hover:text-blue-700 hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-blue-600"
+										class="font-semibold text-on-surface text-left hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary"
 										aria-label="Profil von {schueler.name} anzeigen"
 									>
 										{schueler.name}
@@ -97,7 +98,7 @@
 										     Namen liest der Screenreader es vor, statt es zu ignorieren. -->
 										<span
 											role="img"
-											class="text-slate-400 shrink-0 flex items-center"
+											class="text-on-surface-variant shrink-0 flex items-center"
 											title="Keine Eltern-E-Mail hinterlegt"
 											aria-label="Keine Eltern-E-Mail hinterlegt"
 										>
@@ -107,7 +108,7 @@
 								</div>
 							</td>
 							<td>
-								<span class="text-sm text-slate-600">
+								<span class="text-sm text-on-surface-variant">
 									{schueler.klasse}
 								</span>
 							</td>
@@ -118,7 +119,7 @@
 								     Abgänger zählt hier nur, WIE VIELE es sind; der Titeltext im title-
 								     Attribut bleibt für den Hover-Fall erhalten. -->
 								<span
-									class="text-sm text-slate-600"
+									class="text-sm text-on-surface-variant"
 									title={schueler.medien.map((m) => m.titel).join(', ')}
 								>
 									{schueler.medien.length}

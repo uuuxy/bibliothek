@@ -52,7 +52,7 @@
 
 {#if mahnwesenStore.globalErrorToast}
 	<div
-		class="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in bg-rose-600 text-white flex items-center gap-2"
+		class="fixed top-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in bg-error text-on-error flex items-center gap-2"
 	>
 		<Info class="h-5 w-5" aria-hidden="true" />
 		{mahnwesenStore.globalErrorToast}
@@ -62,19 +62,17 @@
 <div class="w-full h-full flex flex-col">
 	{#if offlineSync.pendingCount > 0}
 		<div
-			class="p-4 bg-rose-50 border-b border-rose-200 flex items-start gap-4 animate-fade-in w-full"
+			class="p-4 bg-error-container text-on-error-container flex items-start gap-4 animate-fade-in w-full"
 		>
-			<div class="bg-rose-100 p-3 rounded-full shrink-0">
-				<TriangleAlert class="h-8 w-8 text-rose-600" aria-hidden="true" />
-			</div>
+			<TriangleAlert class="mt-0.5 h-8 w-8 shrink-0" aria-hidden="true" />
 			<div>
-				<h2 class="text-lg font-bold text-rose-900">Mahnwesen blockiert</h2>
-				<p class="text-sm text-rose-800 mt-1">
+				<h2 class="text-lg font-bold">Mahnwesen blockiert</h2>
+				<p class="text-sm mt-1">
 					Es befinden sich noch <strong
 						>{offlineSync.pendingCount} ungesynchronisierte Offline-Ausleihe(n)/Rückgabe(n)</strong
 					> auf diesem Gerät.
 				</p>
-				<p class="text-xs text-rose-700 mt-2 bg-rose-100/50 p-2 rounded-lg inline-block">
+				<p class="text-xs mt-2">
 					Bitte stelle die Internetverbindung wieder her. Das System synchronisiert die Daten
 					automatisch im Hintergrund, sobald du wieder online bist. Danach wird das Mahnwesen
 					automatisch wieder freigegeben.

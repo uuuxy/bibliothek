@@ -53,11 +53,11 @@
 		onclick={mahnwesenStore.deselectAllSchueler}
 		aria-label="Auswahl aufheben"
 		title="Auswahl aufheben"
-		class="px-2 text-slate-500 hover:text-slate-700"
+		class="px-2 text-on-surface-variant"
 	>
 		<X class="h-4 w-4" aria-hidden="true" />
 	</Button>
-	<span class="text-sm font-semibold text-slate-700"
+	<span class="text-sm font-semibold text-on-surface"
 		>{mahnwesenStore.selectedIds.size} ausgewählt</span
 	>
 	<Button onclick={mahnwesenStore.printSelectedMahnungen} disabled={mahnwesenStore.pdfLoading}>
@@ -83,7 +83,7 @@
 		aria-label="Daten neu laden"
 		data-tip="Daten neu laden"
 		title="Neu laden"
-		class="px-2 text-slate-500 hover:text-slate-700"
+		class="px-2 text-on-surface-variant"
 	>
 		<RefreshCw class="h-4 w-4" aria-hidden="true" />
 	</Button>
