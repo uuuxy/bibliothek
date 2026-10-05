@@ -104,11 +104,9 @@ Datenbank und der Littera-Übernahme (7.2).
 **Im Code,** in dieser Reihenfolge:
 
 1. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — vor dem Bauen zu klären, was aus der
-   Unterscheidung wird.
-3. **4.28** (Anmelden ohne Mailserver): Die Entscheidung steht aus; erst klären.
-4. Nach der Antwort zu 8.3: **5.4**.
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+2. **5.46** (Portal: ein Weg für Wunsch und Meldung) — die Frage ist am 05.10.2026 vorgelegt.
+3. Nach der Antwort zu 8.3: **5.4**.
+4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Einen Termin hat Node 26 ab dem 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Vor dem Echtstart außerdem: 5.31
@@ -279,21 +277,6 @@ oder geliehen? **Entschieden am 01.10.2026:** kein dritter Eigentümer im Progra
 behalten den Littera-Wortlaut, den die Buchakte schon zeigt; Ersatz für ein verlorenes Buch liefe
 dann über den Schulträger, bei 90 Büchern ein seltener Fall.
 
-### 4.28 Anmelden ohne den Mailserver der Schule
-
-Die Anmeldung prüft jedes Passwort beim Mailserver der Schule (`auth/imap.go`). Ist er nicht
-erreichbar, antwortet `/login` mit 503, und niemand kann sich neu anmelden
-(`TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort`). Wer schon angemeldet ist, arbeitet
-weiter: Die Sperre nach Inaktivität geht seit Migration 155 mit dem Passwort auch ohne
-Mailserver auf, über den Prüfwert der laufenden Anmeldung
-([SECURITY.md](SECURITY.md), „Woran die Zugangsdaten geprüft werden").
-
-**Offen:** Soll auch eine neue Anmeldung ohne Mailserver gehen? Dafür müsste der Prüfwert über
-das Abmelden hinaus bleiben — ein dauerhafter Passwort-Hash je Konto, den es seit Migration 012
-nicht gibt ([arc42/09](arc42/09-architekturentscheidungen.md), A2). Entschieden am 01.10.2026:
-getrennt von der Sperre zu entscheiden. Vor einer Empfehlung zu klären: wie oft der Mailserver
-der Schule ausfällt, und wie Littera und andere Programme es halten.
-
 ### 4.30 Was das Mahnwesen neben dem Mahnbrief druckt
 
 Seit dem 04.10.2026 kommt aus der Auswahl ein Papier: der Mahnbrief an die Eltern. Daneben
@@ -308,6 +291,25 @@ drucken drei Wege weiter je Kind ein Blatt in Du-Form, keiner zählt:
 
 **Zu entscheiden:** Bleiben die zwei Listen im Druck-Menü? Der Anhang der Mail hängt am Mahnlauf
 und ist nicht gemeint.
+
+Nachgesehen und am lokalen Stack ausprobiert am 05.10.2026:
+
+- Beide Einträge drucken je Kind ein Blatt, keine Liste: der eine für eine Klasse, der andere
+  für alle Klassen.
+- Im Blatt je Klasse steht unter „Fällig seit" das Ausleihdatum (`queryMahnungSchueler` in
+  `api/print.go` liest `ausgeliehen_am`). Probe: gedruckt 04.09.2026, die Frist lief am
+  24.09.2026 ab.
+- „Diese Seite drucken" zeigt Reiter, Suchfeld und Knöpfe mit: `print:hidden` wirkt an einem
+  Element mit `flex` nicht, weil `designer/PrintPreview.svelte` jedes `.flex` im Druck auf
+  `display: block !important` stellt. Buchtitel stehen nicht in der Liste.
+- Littera hat einen Mahnbrief und daneben die „Liste der verliehenen Medien", die mit „nur
+  Überfällige drucken" zur Mahnliste wird und sich auf Klassen einschränken lässt (Handbuch,
+  „Verliehene Medien").
+
+Vorgelegt am 05.10.2026, Antwort offen: a) eine Liste — der Knopf heißt „Liste drucken" und
+druckt, was in der Liste steht, als Tabelle (Klasse, Kind, Buch, fällig seit, wie oft
+gemahnt), die zwei Blätter entfallen (empfohlen); b) kein Druck neben dem Mahnbrief; c) es
+bleibt bei drei Einträgen, mit berichtigtem Datum. Mit a und b entfällt 5.51.
 
 Am 04.10.2026 gebaut und am selben Tag zurückgenommen, weil nicht bestellt:
 
@@ -881,6 +883,11 @@ Erledigen (`api/anliegen.go`), in der Liste der Bibliothek das Abzeichen „Wuns
 
 Vor dem Bauen zu klären: Fällt die Unterscheidung ganz weg — ein Formular, ein Abzeichen, ein
 Betreff —, oder bleibt sie für die Bibliothek und wird nur anders gewählt? Kategorie B.
+
+Vorgelegt am 05.10.2026, Antwort offen: a) sie fällt ganz weg — ein Formular ohne Vorauswahl,
+kein Abzeichen, der Betreff „Ihr Anliegen ist erledigt" (empfohlen); b) sie bleibt, gewählt
+wird mit `ui/Segmente`. Sortiert oder gefiltert wird nach der Art nirgends; außer den drei
+genannten Stellen liest sie die Auskunft über ein Konto (`api/dsgvo_pdf_konto.go`).
 
 ### 5.49 Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
 

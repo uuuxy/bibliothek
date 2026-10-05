@@ -2,7 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-04 (Security-Header: Antworten gehen mit gzip gepackt
+> Zuletzt aktualisiert: 2026-10-05 (Anmeldung: Bei einem Ausfall des Mailservers bleibt es
+> dabei, dass sich niemand neu anmelden kann).
+> Davor 2026-10-04 (Security-Header: Antworten gehen mit gzip gepackt
 > hinaus, Einordnung zum BREACH-Angriff).
 > Davor 2026-10-02 (Scan im Passwortfeld: ein in Scannergeschwindigkeit
 > getipptes Passwort gilt als Scan).
@@ -64,7 +66,8 @@ eigenem Salz; davor steht ein HMAC mit einem Schlüssel, der aus `JWT_SECRET` ab
 nicht in der Datenbank liegt (`auth/pruefwert.go`). Mit der Datenbank oder einer Sicherung
 allein lässt sich deshalb kein Passwort durchprobieren. Abmelden löscht die Zeile, abgelaufene
 räumt der Server alle 15 Minuten ab, und ein gelöschtes Konto nimmt seine Zeilen mit. Eine neue
-Anmeldung prüft weiterhin allein der Mailserver (OFFEN.md 4.28).
+Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niemand neu anmelden
+(entschieden am 05.10.2026).
 
 ### JWT (JSON Web Tokens)
 

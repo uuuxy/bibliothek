@@ -1,6 +1,6 @@
 # 9. Architekturentscheidungen
 
-Stand: 01.10.2026
+Stand: 05.10.2026
 
 Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -71,7 +71,8 @@ HMAC mit einem Schlüssel außerhalb der Datenbank). Anlass: Die Sperre nach Ina
 Server und wird mit dem Passwort aufgeschlossen; ohne den Prüfwert sperrte ein Ausfall des
 Mailservers die Theke zu. Gefragt wird er nur, wenn der Mailserver nicht erreichbar ist, und er
 fällt mit dem Abmelden, dem Ablauf oder dem Konto. Eine neue Anmeldung prüft weiterhin allein
-der Mailserver.
+der Mailserver. Dabei bleibt es (entschieden am 05.10.2026): Ist er nicht erreichbar, kann sich
+niemand neu anmelden.
 
 **Anlass.** Ein zweiter Passwortspeicher in einer Schule ist ein Risiko ohne Nutzen; die
 Schule pflegt die Postfächer ohnehin.
