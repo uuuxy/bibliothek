@@ -14,7 +14,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/johnfercher/maroto/v2 v2.4.2
 	github.com/jung-kurt/gofpdf v1.16.2
-	github.com/klauspost/compress v1.19.2
+	github.com/klauspost/compress v1.20.1
 	github.com/minio/minio-go/v7 v7.3.0
 	github.com/pashagolub/pgxmock/v5 v5.2.0
 	github.com/phpdave11/gofpdf v1.4.3
