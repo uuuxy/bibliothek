@@ -612,6 +612,31 @@ auf der gezeichneten Karte (`CanvasElement.svelte`, `CardFace.svelte`). Die Farb
 steht als Klassenliste im zentral gespeicherten Entwurf und wird gedruckt; die Karte bleibt
 weiß, auch wenn die Oberfläche ihr Farbschema wechselt.
 
+**Theke, Scanfeld — vorgelegt am 05.10.2026, Antwort offen.** Das Scanfeld färbt nach einem
+Scan eine Sekunde lang Fläche und Rand (`farbZustand` in `Omnibox.svelte`: grün gebucht, gelb
+Hinweis, rot abgelehnt), dazu blitzt der Bildschirmrand 300 ms (`OmniboxScreenFlash.svelte`).
+Nachgelesen am 05.10.2026:
+
+- M3, Search (Specs), States: „Enabled", „Hovered", „Focused", „Pressed (ripple)". Die
+  Suchleiste kennt keinen Zustand für Erfolg oder Fehler; Googles Token-Datei der Suchleiste
+  führt keine Fehlerfarbe (material-web, `_md-comp-search-bar.scss`).
+- M3, Text fields (Specs): „Error messages are displayed below the text field as supporting
+  text until fixed." Die Token des Textfelds färben im Fehlerzustand Rand oder Linie, Symbol
+  und den Text darunter in `error` (`error-outline-color`, `error-active-indicator-color`,
+  `error-supporting-text-color`); einen Wert für die Fläche im Fehlerzustand gibt es nicht.
+- M3, Color roles: „Use error roles to communicate error states, such as an incorrect password
+  entered into a text field."
+- M3, Advanced customizations, „Define static colors": „a static green color called Success is
+  defined in addition to the scheme, and applied to UI to indicate a success state"; im Beispiel
+  an einer Karte („Success container color applied to a card container").
+- M3, Snackbar: „Snackbars inform users of a process that an app has performed or will perform."
+
+Drei Fassungen liegen als Bild vor: A wie heute (blasse Fläche, Rand in Palettenfarbe); B nur
+der Rand in der Rollenfarbe, die Fläche bleibt — die Form, die M3 dem Fehlerzustand eines Feldes
+gibt; C Fläche in `…-container` und Rand in der Rollenfarbe. Die Flächenfarbe trägt in M3 eine
+eigene Fläche wie eine Karte; so steht die Rückmeldung am Inventur-Scanner
+(`inventur/ScanRueckmeldung.svelte`).
+
 Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 
 - Titel-Verwaltung: Ein Titel lässt sich in der Liste nur mit der Maus öffnen. Der Klick hängt
@@ -843,6 +868,14 @@ genannten Stellen liest sie die Auskunft über ein Konto (`api/dsgvo_pdf_konto.g
 ginge mit a das rote Abzeichen „Meldung" in der Liste der Bibliothek („Wunsch" ist grau). Die
 Vorauswahl steht auf „Buchwunsch": Wer nichts anklickt und ein Problem meldet, steht dort schon
 heute als Wunsch.
+
+Besprochen am 05.10.2026, noch nicht entschieden. Gegen a spricht: Die Liste der Bibliothek zeigt
+die ältesten Einträge zuerst (`repository/anliegen_repo.go`). Bleiben Wünsche stehen, bis bestellt
+ist, steht ein Problem von heute darunter, und das rote Abzeichen ist das Einzige, was es
+hervorhebt. Es entscheidet sich an zwei Fragen an die Bibliothek: ob Wünsche gleich abgehakt
+werden oder stehen bleiben, und ob Probleme über das Portal kommen. Bleibt die Wahl, dann ohne
+Vorauswahl. Littera kennt keinen Weg für Lehrkräfte; den Bedarf erfasst dort die Bibliothek im
+Erwerb (Handbuch, „Bedarfsermittlung", „Bestellvorschläge").
 
 Dazu der Wunsch vom 03.10.2026 (Issue 700): Bei einem Problem sollen im Portal die Bücher zur
 Auswahl stehen statt nur des Freitextfelds. **Entschieden am 05.10.2026:** Im Feld erscheinen
