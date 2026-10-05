@@ -117,18 +117,18 @@ function stil(fontSize, color, fontWeight = 'normal', textAlign = 'left') {
 	return { fontFamily: 'inherit', fontSize, color, textAlign, fontWeight };
 }
 
+/** Lage und Größe eines Elements in mm: x, y, Breite, Höhe.
+ *  @typedef {[x: number, y: number, width: number, height: number]} Rahmen */
+
 /**
  * @param {string} type
  * @param {string} id
  * @param {string} content
- * @param {number} x
- * @param {number} y
- * @param {number} width
- * @param {number} height
+ * @param {Rahmen} rahmen
  * @param {number} zIndex
  * @param {ReturnType<typeof stil>} [style]
  */
-function el(type, id, content, x, y, width, height, zIndex, style) {
+function el(type, id, content, [x, y, width, height], zIndex, style) {
 	const proportional = type === 'photo' || type === 'logo' || type === 'barcode';
 	return { id, type, content, x, y, width, height, zIndex, show: true, proportional, style };
 }
@@ -137,14 +137,11 @@ function el(type, id, content, x, y, width, height, zIndex, style) {
  * Farbfläche — Füllfarbe und Eckenradius sind im Eigenschaften-Panel editierbar.
  * @param {string} id
  * @param {string} farbe
- * @param {number} x
- * @param {number} y
- * @param {number} width
- * @param {number} height
+ * @param {Rahmen} rahmen
  * @param {number} [zIndex]
  * @param {number} [radius] mm
  */
-function box(id, farbe, x, y, width, height, zIndex = 0, radius = 0) {
+function box(id, farbe, [x, y, width, height], zIndex = 0, radius = 0) {
 	return {
 		id,
 		type: 'box',
@@ -170,12 +167,12 @@ function personenBlock(farben, x = 30, yTitel = 16.5) {
 	return [
 		// Dokumenttyp statt fester Text: Die Aufschrift kommt aus der Art des Lesers
 		// (leserArt.js). Die Großschreibung der Vorlagen ist damit eine Stilangabe.
-		el('dokumenttyp', 'title', '', x, yTitel, 50, 4, 1, {
+		el('dokumenttyp', 'title', '', [x, yTitel, 50, 4], 1, {
 			...stil(6, farben.akzent, 'bold'),
 			textTransform: 'uppercase'
 		}),
-		el('name', 'name', '', x, yTitel + 4.5, 51, 8, 1, stil(10, farben.text, 'bold')),
-		el('validity', 'validity', '', x, yTitel + 13, 48, 5, 1, stil(7.5, farben.nebentext))
+		el('name', 'name', '', [x, yTitel + 4.5, 51, 8], 1, stil(10, farben.text, 'bold')),
+		el('validity', 'validity', '', [x, yTitel + 13, 48, 5], 1, stil(7.5, farben.nebentext))
 	];
 }
 
@@ -197,10 +194,7 @@ function schulkopf(x, y, breite, farben, zeilen = 1) {
 			'header',
 			'header',
 			PLATZHALTER_SCHULNAME,
-			x,
-			y,
-			breite,
-			hoehe,
+			[x, y, breite, hoehe],
 			1,
 			stil(groesse, farben.name, 'bold')
 		),
@@ -208,10 +202,7 @@ function schulkopf(x, y, breite, farben, zeilen = 1) {
 			'address',
 			'address',
 			PLATZHALTER_ADRESSE,
-			x,
-			y + hoehe + 0.1,
-			breite,
-			3.5,
+			[x, y + hoehe + 0.1, breite, 3.5],
 			1,
 			stil(5, farben.adresse)
 		)
@@ -225,15 +216,12 @@ function schulkopf(x, y, breite, farben, zeilen = 1) {
  */
 function unterschrift(x, y) {
 	return [
-		box('back-signatur-linie', '#3a4234', x, y + 0.5, 32, 0.5, 1),
+		box('back-signatur-linie', '#3a4234', [x, y + 0.5, 32, 0.5], 1),
 		el(
 			'text',
 			'back-signatur',
 			'Unterschrift Schüler/in',
-			x,
-			y + 1.7,
-			32,
-			3.5,
+			[x, y + 1.7, 32, 3.5],
 			1,
 			stil(5.5, '#64748b')
 		)
@@ -253,10 +241,10 @@ function standardRueckseite(theme, deko = [], yStart = 11, x = 5) {
 		theme,
 		elements: [
 			...deko,
-			el('text', 'back-header', 'Bestimmungen', x, yStart, 40, 5, 1, stil(8, SCHWARZ, 'bold')),
-			el('text', 'back-info', BESTIMMUNGEN, x, yStart + 6.5, 62, 16, 1, stil(7, '#3a4234')),
+			el('text', 'back-header', 'Bestimmungen', [x, yStart, 40, 5], 1, stil(8, SCHWARZ, 'bold')),
+			el('text', 'back-info', BESTIMMUNGEN, [x, yStart + 6.5, 62, 16], 1, stil(7, '#3a4234')),
 			...unterschrift(x, 40),
-			el('text', 'back-fund', FUNDHINWEIS, x, 48.7, 70, 4, 1, stil(6, '#64748b'))
+			el('text', 'back-fund', FUNDHINWEIS, [x, 48.7, 70, 4], 1, stil(6, '#64748b'))
 		]
 	};
 }
@@ -269,10 +257,10 @@ function blanko() {
 			theme: WEISS_THEME,
 			elements: [
 				...schulkopf(4, 3.5, 60, { name: '#111827', adresse: '#64748b' }),
-				el('logo', 'logo', '', 71.5, 3, 10, 10, 2),
-				el('photo', 'photo', '', 4, 16.5, 21, 25, 2),
+				el('logo', 'logo', '', [71.5, 3, 10, 10], 2),
+				el('photo', 'photo', '', [4, 16.5, 21, 25], 2),
 				...personenBlock(farben, 28, 17),
-				el('barcode', 'barcode', '', 28, 40, 30, 11, 1)
+				el('barcode', 'barcode', '', [28, 40, 30, 11], 1)
 			]
 		},
 		back: standardRueckseite(WEISS_THEME, [], 5, 4)
@@ -286,19 +274,19 @@ function schwarzGruen() {
 		front: {
 			theme: WEISS_THEME,
 			elements: [
-				box('kopfband', SCHWARZ, 0, 0, KARTE_BREITE, 13.4),
-				box('kopflinie', GRUEN, 0, 13.4, KARTE_BREITE, 1.1),
-				el('logo', 'logo', '', 4, 2, 9.5, 9.5, 2),
+				box('kopfband', SCHWARZ, [0, 0, KARTE_BREITE, 13.4]),
+				box('kopflinie', GRUEN, [0, 13.4, KARTE_BREITE, 1.1]),
+				el('logo', 'logo', '', [4, 2, 9.5, 9.5], 2),
 				...schulkopf(16.5, 3.2, 64, { name: '#ffffff', adresse: '#c9d6c2' }),
-				el('photo', 'photo', '', 4, 17.5, 22, 27, 2),
+				el('photo', 'photo', '', [4, 17.5, 22, 27], 2),
 				...personenBlock(farben, 30, 18),
-				el('barcode', 'barcode', '', 30, 36.5, 30, 11, 1),
-				box('fusslinie', GRUEN, 0, 52.9, KARTE_BREITE, 1.08)
+				el('barcode', 'barcode', '', [30, 36.5, 30, 11], 1),
+				box('fusslinie', GRUEN, [0, 52.9, KARTE_BREITE, 1.08])
 			]
 		},
 		back: standardRueckseite(WEISS_THEME, [
-			box('back-kopfband', SCHWARZ, 0, 0, KARTE_BREITE, 7.2),
-			box('back-kopflinie', GRUEN, 0, 7.2, KARTE_BREITE, 0.8)
+			box('back-kopfband', SCHWARZ, [0, 0, KARTE_BREITE, 7.2]),
+			box('back-kopflinie', GRUEN, [0, 7.2, KARTE_BREITE, 0.8])
 		])
 	};
 }
@@ -310,22 +298,22 @@ function waldgruen() {
 		front: {
 			theme: WALDGRUEN_THEME,
 			elements: [
-				box('fussband', '#f2f7e9', 0, 40, KARTE_BREITE, KARTE_HOEHE - 40),
-				el('logo', 'logo', '', 4, 2.5, 9.5, 9.5, 2),
+				box('fussband', '#f2f7e9', [0, 40, KARTE_BREITE, KARTE_HOEHE - 40]),
+				el('logo', 'logo', '', [4, 2.5, 9.5, 9.5], 2),
 				...schulkopf(16, 4.2, 64, { name: '#ffffff', adresse: '#d8ecc0' }),
-				el('photo', 'photo', '', 4, 14.5, 21, 24, 2),
+				el('photo', 'photo', '', [4, 14.5, 21, 24], 2),
 				...personenBlock(farben, 29, 14.5),
-				el('barcode', 'barcode', '', 29, 41.5, 30, 11, 1)
+				el('barcode', 'barcode', '', [29, 41.5, 30, 11], 1)
 			]
 		},
 		back: {
 			theme: WALDGRUEN_THEME,
 			elements: [
-				box('back-panel', '#ffffff', 4, 9, 77.6, 31, 0, 3),
-				el('text', 'back-header', 'Bestimmungen', 8, 12.5, 40, 5, 1, stil(8, SCHWARZ, 'bold')),
-				el('text', 'back-info', BESTIMMUNGEN, 8, 18.5, 58, 15, 1, stil(7, '#3a4234')),
+				box('back-panel', '#ffffff', [4, 9, 77.6, 31], 0, 3),
+				el('text', 'back-header', 'Bestimmungen', [8, 12.5, 40, 5], 1, stil(8, SCHWARZ, 'bold')),
+				el('text', 'back-info', BESTIMMUNGEN, [8, 18.5, 58, 15], 1, stil(7, '#3a4234')),
 				...unterschrift(8, 33.5),
-				el('text', 'back-fund', FUNDHINWEIS, 4, 46, 70, 4, 1, stil(6, '#d8ecc0'))
+				el('text', 'back-fund', FUNDHINWEIS, [4, 46, 70, 4], 1, stil(6, '#d8ecc0'))
 			]
 		}
 	};
@@ -339,32 +327,29 @@ function reisWelle() {
 			theme: WEISS_THEME,
 			elements: [
 				...schulkopf(4, 3.5, 60, { name: SCHWARZ, adresse: '#64748b' }),
-				el('logo', 'logo', '', 71.5, 3, 10, 10, 2),
-				el('image', 'welle', welleSvg(1), 0, 13, KARTE_BREITE, 9, 0),
+				el('logo', 'logo', '', [71.5, 3, 10, 10], 2),
+				el('image', 'welle', welleSvg(1), [0, 13, KARTE_BREITE, 9], 0),
 				el(
 					'text',
 					'welle-text',
 					'Philipp Reis baute in Friedrichsdorf das erste Telefon (1861).',
-					28,
-					22.3,
-					53.6,
-					3.5,
+					[28, 22.3, 53.6, 3.5],
 					1,
 					stil(4.5, '#7a8474', 'normal', 'right')
 				),
-				el('photo', 'photo', '', 4, 26.5, 20, 24.5, 2),
+				el('photo', 'photo', '', [4, 26.5, 20, 24.5], 2),
 				...personenBlock(farben, 28, 26.5),
-				el('barcode', 'barcode', '', 28, 42.5, 30, 11, 1)
+				el('barcode', 'barcode', '', [28, 42.5, 30, 11], 1)
 			]
 		},
 		back: {
 			theme: WEISS_THEME,
 			elements: [
-				el('text', 'back-header', 'Bestimmungen', 4, 4.5, 40, 5, 1, stil(8, SCHWARZ, 'bold')),
-				el('text', 'back-info', BESTIMMUNGEN, 4, 10.5, 62, 15, 1, stil(7, '#3a4234')),
-				el('image', 'back-welle', welleSvg(0.25), 0, 26, KARTE_BREITE, 12, 0),
+				el('text', 'back-header', 'Bestimmungen', [4, 4.5, 40, 5], 1, stil(8, SCHWARZ, 'bold')),
+				el('text', 'back-info', BESTIMMUNGEN, [4, 10.5, 62, 15], 1, stil(7, '#3a4234')),
+				el('image', 'back-welle', welleSvg(0.25), [0, 26, KARTE_BREITE, 12], 0),
 				...unterschrift(50, 43),
-				el('text', 'back-fund', FUNDHINWEIS, 4, 48.7, 45, 4, 1, stil(6, '#64748b'))
+				el('text', 'back-fund', FUNDHINWEIS, [4, 48.7, 45, 4], 1, stil(6, '#64748b'))
 			]
 		}
 	};
@@ -377,22 +362,22 @@ function marine() {
 		front: {
 			theme: WEISS_THEME,
 			elements: [
-				box('seitenband', MARINE, 0, 0, 26, KARTE_HOEHE),
-				box('seitenlinie', GOLD, 26, 0, 1.2, KARTE_HOEHE),
-				el('photo', 'photo', '', 3, 14, 20, 24, 2),
+				box('seitenband', MARINE, [0, 0, 26, KARTE_HOEHE]),
+				box('seitenlinie', GOLD, [26, 0, 1.2, KARTE_HOEHE]),
+				el('photo', 'photo', '', [3, 14, 20, 24], 2),
 				// Logo unter dem Foto im Seitenband, damit der Schulname rechts die volle
 				// Spaltenbreite bekommt — in 39 mm brach ein langer Name in die Adresse.
-				el('logo', 'logo', '', 8, 41, 10, 10, 2),
+				el('logo', 'logo', '', [8, 41, 10, 10], 2),
 				...schulkopf(31, 3.5, 50, { name: '#16324f', adresse: '#64748b' }, 2),
 				...personenBlock(farben, 31, 19),
-				el('barcode', 'barcode', '', 31, 38.5, 30, 11, 1)
+				el('barcode', 'barcode', '', [31, 38.5, 30, 11], 1)
 			]
 		},
 		back: standardRueckseite(
 			WEISS_THEME,
 			[
-				box('back-kopfband', MARINE, 0, 0, KARTE_BREITE, 6.4),
-				box('back-kopflinie', GOLD, 0, 6.4, KARTE_BREITE, 0.8)
+				box('back-kopfband', MARINE, [0, 0, KARTE_BREITE, 6.4]),
+				box('back-kopflinie', GOLD, [0, 6.4, KARTE_BREITE, 0.8])
 			],
 			10.5
 		)
@@ -406,18 +391,18 @@ function indigoKopfkarte() {
 		front: {
 			theme: WEISS_THEME,
 			elements: [
-				box('kopfkarte', INDIGO, 3, 3, 79.6, 14, 0, 2.5),
-				el('logo', 'logo', '', 6, 5.2, 9.5, 9.5, 2),
+				box('kopfkarte', INDIGO, [3, 3, 79.6, 14], 0, 2.5),
+				el('logo', 'logo', '', [6, 5.2, 9.5, 9.5], 2),
 				...schulkopf(17.5, 5.8, 62, { name: '#ffffff', adresse: INDIGO_HELL }),
-				el('photo', 'photo', '', 4, 20.5, 20, 24, 2),
+				el('photo', 'photo', '', [4, 20.5, 20, 24], 2),
 				...personenBlock(farben, 27.5, 21),
-				el('barcode', 'barcode', '', 27.5, 41, 30, 11, 1),
-				box('fusslinie', INDIGO_AKZENT, 3, 52.6, 79.6, 0.9, 0, 0.45)
+				el('barcode', 'barcode', '', [27.5, 41, 30, 11], 1),
+				box('fusslinie', INDIGO_AKZENT, [3, 52.6, 79.6, 0.9], 0, 0.45)
 			]
 		},
 		back: standardRueckseite(
 			WEISS_THEME,
-			[box('back-kopflinie', INDIGO, 3, 3, 79.6, 1.2, 0, 0.6)],
+			[box('back-kopflinie', INDIGO, [3, 3, 79.6, 1.2], 0, 0.6)],
 			8,
 			4
 		)
@@ -431,23 +416,23 @@ function sonnenstreifen() {
 		front: {
 			theme: WEISS_THEME,
 			elements: [
-				box('topstreifen', AMBER, 0, 0, KARTE_BREITE, 1.6),
+				box('topstreifen', AMBER, [0, 0, KARTE_BREITE, 1.6]),
 				...schulkopf(4, 4, 60, { name: '#1f2937', adresse: '#78716c' }),
-				el('logo', 'logo', '', 71.5, 3.5, 10, 10, 2),
-				el('photo', 'photo', '', 4, 16.5, 20, 24, 2),
+				el('logo', 'logo', '', [71.5, 3.5, 10, 10], 2),
+				el('photo', 'photo', '', [4, 16.5, 20, 24], 2),
 				...personenBlock(farben, 27.5, 17.5),
-				el('barcode', 'barcode', '', 27.5, 37, 30, 11, 1),
-				box('streifen-1', AMBER, 0, 49.2, KARTE_BREITE, 1.6),
-				box('streifen-2', ORANGE, 0, 50.8, KARTE_BREITE, 1.6),
-				box('streifen-3', ROT, 0, 52.4, KARTE_BREITE, 1.58)
+				el('barcode', 'barcode', '', [27.5, 37, 30, 11], 1),
+				box('streifen-1', AMBER, [0, 49.2, KARTE_BREITE, 1.6]),
+				box('streifen-2', ORANGE, [0, 50.8, KARTE_BREITE, 1.6]),
+				box('streifen-3', ROT, [0, 52.4, KARTE_BREITE, 1.58])
 			]
 		},
 		back: standardRueckseite(
 			WEISS_THEME,
 			[
-				box('back-streifen-1', AMBER, 0, 0, KARTE_BREITE, 1.6),
-				box('back-streifen-2', ORANGE, 0, 1.6, KARTE_BREITE, 1.6),
-				box('back-streifen-3', ROT, 0, 3.2, KARTE_BREITE, 1.6)
+				box('back-streifen-1', AMBER, [0, 0, KARTE_BREITE, 1.6]),
+				box('back-streifen-2', ORANGE, [0, 1.6, KARTE_BREITE, 1.6]),
+				box('back-streifen-3', ROT, [0, 3.2, KARTE_BREITE, 1.6])
 			],
 			8.5,
 			4
