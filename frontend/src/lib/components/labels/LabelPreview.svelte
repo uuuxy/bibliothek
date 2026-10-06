@@ -47,7 +47,7 @@
 				<div
 					bind:clientHeight={blattHoehe}
 					data-testid="etiketten-blatt"
-					class="bg-white border border-slate-300 shadow-2xl relative flex origin-top-left flex-col items-start select-none"
+					class="bg-surface-container-lowest border border-outline-variant shadow-2xl relative flex origin-top-left flex-col items-start select-none"
 					style="width: {BLATT_BREITE_MM}mm; min-height: 198mm; padding: 10.1mm 4.8mm 0; box-sizing: border-box; transform: scale({massstab});"
 				>
 					<div
@@ -57,26 +57,28 @@
 							{#if lbl.isBlank}
 								<!-- Blank Label placeholder representation -->
 								<div
-									class="border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center"
+									class="border border-dashed border-outline-variant bg-surface flex items-center justify-center"
 									style="width: 42.3mm; height: 25.4mm;"
 								>
-									<span class="text-[6px] text-slate-400 tracking-wider font-bold">LEER</span>
+									<span class="text-[6px] text-on-surface-variant tracking-wider font-bold"
+										>LEER</span
+									>
 								</div>
 							{:else}
 								<div
-									class="bg-white text-slate-800 text-left overflow-hidden flex flex-col justify-between {labelStore.labelBorder
-										? 'border border-slate-300'
+									class="bg-surface-container-lowest text-on-surface text-left overflow-hidden flex flex-col justify-between {labelStore.labelBorder
+										? 'border border-outline-variant'
 										: ''}"
 									style="width: 42.3mm; height: 25.4mm; padding: 1.5mm; font-size: 5px; box-sizing: border-box;"
 								>
 									<div
-										class="font-extrabold text-slate-900 title-clamp tracking-tight mb-0.5"
+										class="font-extrabold text-on-surface title-clamp tracking-tight mb-0.5"
 										style="font-size: 5.5px; line-height: 1.1;"
 									>
 										{lbl.titel}
 									</div>
 									<div
-										class="text-slate-500 author-clamp"
+										class="text-on-surface-variant author-clamp"
 										style="font-size: 5px; line-height: 1.1;"
 									>
 										{lbl.autor || 'Unbekannt'}
@@ -94,7 +96,7 @@
 											alt="Barcode"
 										/>
 										<span
-											class="mt-0.5 font-bold tracking-widest text-slate-600"
+											class="mt-0.5 font-bold tracking-widest text-on-surface-variant"
 											style="font-size: 4.5px;">{lbl.barcode_id}</span
 										>
 									</div>

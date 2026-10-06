@@ -32,7 +32,7 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
-114 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
+93 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
 Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
 
 - [x] Buchakte mit der Liste der Ausleiher (20)
@@ -43,7 +43,7 @@ Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm gep
 - [x] Meldungen und Sprechblasen (10)
 - [x] Dialog „Klassenversand" (16)
 - [x] Suchpille mit dem Scanfeld der Theke (14)
-- [x] Druck-Center (5). Quittung und nachgebildetes Etikett sind Papier und bleiben (21).
+- [x] Druck-Center, Quittung und Etikett-Vorschau (26)
 - [x] Monitor (25)
 - [x] Berechtigungen (18)
 - [x] System und Einzelstellen (54)
@@ -51,7 +51,7 @@ Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm gep
   hinter den Alarmen der Theke
 
 Offen: 48 Farbverläufe der selbstgebauten Cover-Platzhalter (6.2), 16 Stellen der
-Initialen-Kachel, 29 der Karte im Ausweis-Designer und 21 auf Papier.
+Initialen-Kachel und 29 der Karte im Ausweis-Designer.
 
 ### Etappe 3: vor dem Echtstart
 
@@ -505,7 +505,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 06.10.2026: 114 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 06.10.2026: 93 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -525,11 +525,6 @@ Im Ausweis-Designer bleiben 29 Stellen: die Farben der Karte (`themes` in
 auf der gezeichneten Karte (`CanvasElement.svelte`, `CardFace.svelte`). Die Farbe der Karte
 steht als Klassenliste im zentral gespeicherten Entwurf und wird gedruckt; die Karte bleibt
 weiß, auch wenn die Oberfläche ihr Farbschema wechselt.
-
-Papier bleibt, 21 Stellen: Die Quittung (`StudentPrintReceipt`, 12) wird nur gedruckt, und
-`labels/LabelPreview` (9) bildet Bogen und Etikett nach. Wie bei der Karte gilt: Papier bleibt
-weiß, auch wenn die Oberfläche ihr Farbschema wechselt. Die übrigen Druckblätter tragen feste
-Farbwerte im eigenen Stylesheet (`utils/listenDruck.js`).
 
 Dunkle Bereiche (Flur-Monitor, Sucher der Kamera, Leiste des Ausweisdrucks) stehen im dunklen
 Schema: Die Klasse `schema-dunkel` in `rollen.css` gibt den Rollen ihre dunklen Töne.
