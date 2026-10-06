@@ -35,108 +35,15 @@ type meldeSchadenParams struct {
 // endgültige Löschen und die Fund-Meldung des Fehlbestandsberichts kennen aber nur
 // VERLUST (OFFEN.md 5.3), und die Verlustquote (api/stats.go) zählt beide.
 func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (string, error) {
-	// Idempotenz + Serialisierung gegen Doppelklick: Zwei parallel abgeschickte
-	// "Schaden melden"-Klicks mit derselben ausleihe_id würden sonst beide den
-	// fremdeAktive-Check passieren und JE einen Schadensfall anlegen — der Schüler würde
-	// für dasselbe Buch doppelt belastet. Wir sperren zuerst die Ausleihe-Zeile
-	// (FOR UPDATE): der zweite Aufruf blockiert, bis der erste committet hat, und liest
-	// danach den bereits angelegten Schadensfall. Existiert für diese Ausleihe schon ein
-	// (nicht stornierter) Schadensfall, geben wir dessen ID idempotent zurück, statt einen
-	// zweiten anzulegen.
-	// Der Schuldner steht an der AUSLEIHE, nicht im Request: Ein beschädigtes Buch
-	// gehört dem, der es geliehen hat. Früher übernahm der INSERT die schueler_id
-	// ungeprüft aus dem Client-Body — eine falsche (vertippte oder manipulierte) ID
-	// hätte den Gebührenbescheid einem unbeteiligten Schüler zugeschrieben. Wir lesen
-	// sie stattdessen aus der ohnehin gesperrten Ausleihe-Zeile; das Client-Feld ist
-	// nur noch Anzeige. FOR UPDATE bleibt dieselbe Sperre wie zuvor.
-	//
-	// *string, weil schueler_id nullable ist: Die DSGVO-Anonymisierung löst die Ausleihe
-	// von der Person. Ein Scan in einen nackten string stürbe an "cannot scan NULL". Ist
-	// die Ausleihe personenlos, bleibt schueler_id im Schadensfall NULL.
-	//
-	// Auch das Exemplar steht an der Ausleihe: Die Kennung aus der Anfrage gilt nur für eine
-	// Ausleihe ohne Buch. Sonst sonderte eine Anfrage mit fremder Kennung ein Exemplar aus,
-	// das nie verliehen war.
-	var loanSchuelerID, loanExemplarID *string
-	var zurueck, exemplarAusgesondert bool
-	if err := tx.QueryRow(ctx, `
-		SELECT a.schueler_id, a.exemplar_id::text, a.rueckgabe_am IS NOT NULL,
-		       COALESCE(e.ist_ausgesondert, false)
-		FROM ausleihen a
-		LEFT JOIN buecher_exemplare e ON e.id = a.exemplar_id
-		WHERE a.id = $1 FOR UPDATE OF a`, params.loanID,
-	).Scan(&loanSchuelerID, &loanExemplarID, &zurueck, &exemplarAusgesondert); err != nil {
-		return "", err // pgx.ErrNoRows: Ausleihe existiert nicht
-	}
-	exemplarID := params.copyID
-	if loanExemplarID != nil {
-		exemplarID = *loanExemplarID
-	}
-
-	// Ein Kollege bekommt KEINE Forderung (entschieden am 16.09.2026).
-	//
-	// Der Weg, den eine Forderung nimmt, endet im Schadensersatz-Bescheid, und der ist ein
-	// Schreiben an Erziehungsberechtigte: Er braucht Klasse, Anschrift und die Frage der
-	// Volljährigkeit (EmpfaengerFuerBescheid). Von einer Lehrkraft steht davon nichts in der
-	// Akte — bewusst, denn ihre Privatanschrift gehört nicht in die Bücherei. Dazu haftet
-	// eine Lehrkraft ihrem Dienstherrn nur bei Vorsatz oder grober Fahrlässigkeit; das
-	// festzustellen ist Sache der Schulleitung, nicht dieser Anwendung.
-	//
-	// Gebucht wird trotzdem alles, was den BESTAND angeht: Das Exemplar ist weg oder kaputt
-	// und wird ausgesondert, die Ausleihe endet, eine Vormerkung darauf wird gelöst. Nur die
-	// Forderung entsteht nicht. Vorher entstand sie und tauchte in keiner Übersicht auf: Der
-	// Reiter „Schadensersatz" liest die Sicht `schueler`, und „Bescheid erstellen" antwortete
-	// „Schüler nicht gefunden". Das Geld stand offen, und niemand konnte es einziehen
-	// (Rasterdurchgang 16.09.2026, OFFEN.md 5.17).
-	ohneForderung := false
-	if loanSchuelerID != nil {
-		if err := tx.QueryRow(ctx,
-			`SELECT art <> 'schueler' FROM leser WHERE id = $1`, *loanSchuelerID,
-		).Scan(&ohneForderung); err != nil {
-			return "", err
-		}
-	}
-
-	var bestehenderSchaden string
-	err := tx.QueryRow(ctx,
-		`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
-		params.loanID,
-	).Scan(&bestehenderSchaden)
-	if err == nil {
-		// Schadensfall existiert bereits — idempotent zurückgeben, nichts doppelt buchen.
-		return bestehenderSchaden, nil
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
+	ausleihe, err := ladeSchadensAusleihe(ctx, tx, params)
+	if err != nil {
 		return "", err
 	}
-
-	// Race-Schutz: Bleibt das Schadensformular offen, während das Buch zurückgegeben
-	// und neu ausgeliehen wird, würde der "Melden"-Klick ein aktiv verliehenes Exemplar
-	// aussondern. Gibt es für dieses Exemplar eine aktive Ausleihe, die NICHT die hier
-	// gemeldete ist, brechen wir ab, statt die neue Ausleihe blind zu überschreiben.
-	var fremdeAktive int
-	if err := tx.QueryRow(ctx, `
-		SELECT count(*) FROM ausleihen
-		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL AND id <> $2
-	`, exemplarID, params.loanID).Scan(&fremdeAktive); err != nil {
-		return "", err
+	vorhanden, erledigt, err := pruefeSchadensmeldung(ctx, tx, params, ausleihe)
+	if err != nil || erledigt {
+		return vorhanden, err
 	}
-	if fremdeAktive > 0 {
-		return "", ErrExemplarNeuVerliehen
-	}
-
-	// „Nicht zurückgegeben" für eine Ausleihe, die beendet ist und keinen Schadensfall trägt:
-	// Das Buch kam an einem anderen Platz zurück, während die Akte offen stand. Es steht im
-	// Regal und wird nicht als Verlust ausgesondert. „Beschädigt zurückgegeben" bleibt nach der
-	// Rückgabe möglich. Beim Kollegium entsteht keine Forderung, an der die eigene frühere
-	// Meldung zu erkennen wäre; dort zeigt sie das ausgesonderte Exemplar, und der zweite Klick
-	// ändert nichts.
-	if zurueck && params.art == SchadensArtNichtZurueck {
-		if ohneForderung && exemplarAusgesondert {
-			return "", nil
-		}
-		return "", ErrAusleiheInzwischenZurueck
-	}
+	loanSchuelerID, exemplarID, ohneForderung := ausleihe.schuelerID, ausleihe.exemplarID, ausleihe.ohneForderung
 
 	grund := "BESCHAEDIGUNG"
 	if params.art == SchadensArtNichtZurueck {
@@ -191,4 +98,92 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (st
 	// könnte. Der Bescheid-Weg (bescheid_verlust.go) kommt hier nie mit einem Kollegen an:
 	// Seine Liste liest die Sicht `schueler`.
 	return schadensID, nil
+}
+
+// schadensAusleihe ist, was eine Meldung von der gesperrten Ausleihe liest.
+type schadensAusleihe struct {
+	// schuelerID ist nil bei einer anonymisierten Ausleihe; der Schadensfall bleibt dann
+	// ohne Person.
+	schuelerID           *string
+	exemplarID           string
+	zurueck              bool
+	exemplarAusgesondert bool
+	ohneForderung        bool
+}
+
+// ladeSchadensAusleihe sperrt die Ausleihe und liest Schuldner und Exemplar von ihr. Die
+// Sperre reiht zwei Klicks auf dieselbe Ausleihe hintereinander: Der zweite findet den
+// Schadensfall des ersten. Schuldner und Exemplar stehen an der Ausleihe, nicht in der
+// Anfrage; mit einer fremden Kennung träfe die Forderung sonst ein unbeteiligtes Kind und die
+// Aussonderung ein Exemplar, das nie verliehen war. Die Kennung der Anfrage gilt nur für eine
+// Ausleihe ohne Buch.
+//
+// Ein Kollege bekommt keine Forderung: Der Bescheid ist ein Schreiben an
+// Erziehungsberechtigte, und über den Ersatz einer Lehrkraft entscheidet die Schulleitung.
+// Gebucht wird trotzdem, was den Bestand angeht.
+func ladeSchadensAusleihe(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (schadensAusleihe, error) {
+	a := schadensAusleihe{exemplarID: params.copyID}
+	var exemplarID *string
+	if err := tx.QueryRow(ctx, `
+		SELECT a.schueler_id, a.exemplar_id::text, a.rueckgabe_am IS NOT NULL,
+		       COALESCE(e.ist_ausgesondert, false)
+		FROM ausleihen a
+		LEFT JOIN buecher_exemplare e ON e.id = a.exemplar_id
+		WHERE a.id = $1 FOR UPDATE OF a`, params.loanID,
+	).Scan(&a.schuelerID, &exemplarID, &a.zurueck, &a.exemplarAusgesondert); err != nil {
+		return a, err // pgx.ErrNoRows: Ausleihe existiert nicht
+	}
+	if exemplarID != nil {
+		a.exemplarID = *exemplarID
+	}
+	if a.schuelerID != nil {
+		if err := tx.QueryRow(ctx,
+			`SELECT art <> 'schueler' FROM leser WHERE id = $1`, *a.schuelerID,
+		).Scan(&a.ohneForderung); err != nil {
+			return a, err
+		}
+	}
+	return a, nil
+}
+
+// pruefeSchadensmeldung sagt, ob die Meldung noch etwas zu buchen hat. erledigt mit der
+// Kennung des vorhandenen Schadensfalls: Die Ausleihe ist schon gemeldet, nichts wird doppelt
+// gebucht.
+func pruefeSchadensmeldung(ctx context.Context, tx pgx.Tx, params meldeSchadenParams, a schadensAusleihe) (vorhanden string, erledigt bool, err error) {
+	err = tx.QueryRow(ctx,
+		`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
+		params.loanID,
+	).Scan(&vorhanden)
+	if err == nil {
+		return vorhanden, true, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return "", false, err
+	}
+
+	// Blieb der Dialog offen, während das Buch zurückkam und neu verliehen wurde, träfe die
+	// Aussonderung die Ausleihe eines anderen.
+	var fremdeAktive int
+	if err := tx.QueryRow(ctx, `
+		SELECT count(*) FROM ausleihen
+		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL AND id <> $2
+	`, a.exemplarID, params.loanID).Scan(&fremdeAktive); err != nil {
+		return "", false, err
+	}
+	if fremdeAktive > 0 {
+		return "", false, ErrExemplarNeuVerliehen
+	}
+
+	// „Nicht zurückgegeben" für eine beendete Ausleihe ohne Schadensfall: Das Buch kam an einem
+	// anderen Platz zurück, während die Akte offen stand, und steht im Regal. „Beschädigt
+	// zurückgegeben" bleibt nach der Rückgabe möglich. Beim Kollegium gibt es keine Forderung,
+	// an der die eigene frühere Meldung zu erkennen wäre; dort zeigt sie das ausgesonderte
+	// Exemplar, und der zweite Klick ändert nichts.
+	if a.zurueck && params.art == SchadensArtNichtZurueck {
+		if a.ohneForderung && a.exemplarAusgesondert {
+			return "", true, nil
+		}
+		return "", false, ErrAusleiheInzwischenZurueck
+	}
+	return "", false, nil
 }
