@@ -4,11 +4,17 @@
 	import BestellDetail from './BestellDetail.svelte';
 	import BestellHistorieTabelle from './BestellHistorieTabelle.svelte';
 	import BestellHistorieKopf from './BestellHistorieKopf.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
 
 	/** @type {any[]} */
 	let bestellungen = $state([]);
 	let loading = $state(true);
+	/** Leer heißt leer, ein Ladefehler heißt Ladefehler. */
+	let ladefehler = $state('');
+	// Nur die jüngste Anfrage schreibt die Liste: Nach zwei Filterwechseln entschiede sonst die
+	// Reihenfolge der Antworten, welcher Topf unter dem Filter steht.
+	let ladeNr = 0;
 	/** @type {string|null} Bestellung, deren Detailansicht offen ist (null = Liste). */
 	let geoeffneteId = $state(null);
 
@@ -41,13 +47,24 @@
 		// Kennzahlen im Kopf zählen aber weiterhin ALLE. Würden sie aus den geladenen Zeilen
 		// gerechnet, stünde dort nach dem Deckeln eine zu kleine Zahl — die aussieht wie eine
 		// Gesamtsumme.
-		const [liste, summen] = await Promise.all([
-			apiGet('/api/bestellhistorie' + (mittel ? `?mittel=${mittel}` : '')),
-			apiGet('/api/bestellhistorie/uebersicht')
-		]);
-		bestellungen = liste || [];
-		if (summen) uebersicht = summen;
-		loading = false;
+		const nr = ++ladeNr;
+		try {
+			const [liste, summen] = await Promise.all([
+				apiGet('/api/bestellhistorie' + (mittel ? `?mittel=${mittel}` : '')),
+				apiGet('/api/bestellhistorie/uebersicht')
+			]);
+			if (nr !== ladeNr) return;
+			bestellungen = liste || [];
+			if (summen) uebersicht = summen;
+			ladefehler = '';
+		} catch (e) {
+			if (nr !== ladeNr) return;
+			bestellungen = [];
+			ladefehler =
+				/** @type {any} */ (e)?.message || 'Die Bestellhistorie konnte nicht geladen werden.';
+		} finally {
+			if (nr === ladeNr) loading = false;
+		}
 	}
 
 	onMount(ladeBestellungen);
@@ -142,6 +159,12 @@
 			<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
 				Lade Bestellhistorie…
 			</div>
+		{:else if ladefehler}
+			<LadeFehler
+				onerneut={ladeBestellungen}
+				titel="Bestellhistorie nicht geladen"
+				text={ladefehler}
+			/>
 		{:else if bestellungen.length === 0}
 			<div class="py-16 text-center text-on-surface-variant text-base">
 				{#if mittel}
