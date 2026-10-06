@@ -8,6 +8,10 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func TestBookRepository_ListBooks(t *testing.T) {
@@ -63,6 +67,74 @@ func TestBookRepository_ListBooks(t *testing.T) {
 		books, err := repo.ListBooks(ctx, "", nil, "", false)
 		assert.ErrorContains(t, err, "bücher konnten nicht geladen werden")
 		assert.Nil(t, books)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
+func TestBookRepository_SchlagworteDesTitels(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
+		mock.ExpectQuery(`SELECT coalesce\(array_agg\(s.wort.+`).
+			WithArgs("book-1").
+			WillReturnRows(pgxmock.NewRows([]string{"woerter"}).AddRow([]string{"Fantasy", "Tiere"}))
+
+		woerter, err := repo.SchlagworteDesTitels(ctx, "book-1")
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"Fantasy", "Tiere"}, woerter)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("success empty", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
+		mock.ExpectQuery(`SELECT coalesce\(array_agg\(s.wort.+`).
+			WithArgs("book-1").
+			WillReturnRows(pgxmock.NewRows([]string{"woerter"}).AddRow([]string{}))
+
+		woerter, err := repo.SchlagworteDesTitels(ctx, "book-1")
+		assert.NoError(t, err)
+		assert.Empty(t, woerter)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
+		mock.ExpectQuery(`SELECT coalesce\(array_agg\(s.wort.+`).
+			WithArgs("book-1").
+			WillReturnError(fmt.Errorf("db failure"))
+
+		woerter, err := repo.SchlagworteDesTitels(ctx, "book-1")
+		assert.ErrorContains(t, err, "schlagworte des titels lesen")
+		assert.Nil(t, woerter)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("titel not found", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
+		mock.ExpectQuery(`SELECT coalesce\(array_agg\(s.wort.+`).
+			WithArgs("unbekannt").
+			WillReturnError(pgx.ErrNoRows)
+
+		woerter, err := repo.SchlagworteDesTitels(ctx, "unbekannt")
+		assert.ErrorIs(t, err, repository.ErrTitelNichtGefunden)
+		assert.Nil(t, woerter)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
