@@ -440,10 +440,10 @@ export async function oeffneSchuelerProfil(page, vorname) {
  * @param {string} zeichen
  */
 function scannerTaste(zeichen) {
-	if (/^\d$/.test(zeichen)) return { code: `Digit${zeichen}`, keyCode: zeichen.charCodeAt(0) };
+	if (/^\d$/.test(zeichen)) return { code: `Digit${zeichen}`, keyCode: zeichen.codePointAt(0) };
 	if (/^[A-Za-z]$/.test(zeichen)) {
 		const gross = zeichen.toUpperCase();
-		return { code: `Key${gross}`, keyCode: gross.charCodeAt(0) };
+		return { code: `Key${gross}`, keyCode: gross.codePointAt(0) };
 	}
 	if (zeichen === '-') return { code: 'Minus', keyCode: 189 };
 	throw new Error(`scanneWieScanner kennt das Zeichen „${zeichen}" nicht`);

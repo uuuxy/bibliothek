@@ -87,7 +87,8 @@ export function baueListenDruckHtml({ ueberschrift, meta, spalten, zeilen }) {
  * Gedruckt wird von hier aus und nicht von einem Skript im geschriebenen Dokument: Ein
  * per window.open('') erzeugtes Fenster erbt die CSP des Openers, und die erlaubt nur
  * script-src 'self'. document.write ist synchron und das Dokument lädt nichts nach,
- * deshalb steht der Inhalt beim Druckaufruf schon.
+ * deshalb steht der Inhalt beim Druckaufruf schon. Es liest außerdem die DOCTYPE-Zeile:
+ * Das leere Fenster steht im Quirks-Modus, und darin erbt die Tabelle die Schriftgröße nicht.
  * @param {string} html
  * @returns {boolean} false, wenn der Browser das Fenster nicht öffnet
  */

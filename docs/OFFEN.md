@@ -72,7 +72,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 **Erledigen:**
 
-- [ ] SonarQube-Scan starten. (5.10)
+- [x] SonarQube-Scan starten.
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9)
 - [ ] Theke ohne Netz: der Nachweis von Hand im echten Chrome, zurückgestellt am 24.09.2026.
@@ -405,15 +405,6 @@ Gegenprobe den heutigen Stand fest.
   Aufräumer auf: Jeder Test ruft die Attrappe danach noch einmal. Wirft oder scheitert sie dann (`mockRejectedValue`), wird der Test rot, obwohl seine
   Erwartungen stimmen; nachgestellt an `klassensatzReservierung.svelte.test.js`. Abhilfe: der
   Rumpf des Hooks in geschweiften Klammern. Kategorie B.
-- SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek5`; der
-  Schlüssel steht in `sonar-project.properties`. Letzter Scan am 04.10.2026 (MQR-Modus):
-  Zuverlässigkeit 0 Meldungen, Sicherheit 0, Wartbarkeit 114, Abdeckung 77,4 %, Quality Gate OK.
-  Die 114 sind am 05.10.2026 bearbeitet: 101 im Code, 13 als begründete Ausnahme in
-  `sonar-project.properties` (e12 bis e21). **Offen: der Scan nach diesen Commits;** bis dahin
-  zeigt der Server weiter 114. Nicht vorab messbar waren die zwei Meldungen zu `S6594` in
-  `frontend/scripts/druck-sektionen-gate.mjs` und die Wirkung der Ausnahmen. Der Stand vom
-  03.10.2026 liegt auf dem Server unter `Bibliothek4a`; wie die Abdeckung gemessen wird, steht
-  in [SCRIPTS.md](SCRIPTS.md), „Warum die Coverage niedriger aussieht, als sie ist".
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
