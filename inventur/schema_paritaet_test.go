@@ -124,7 +124,7 @@ func sqlVonUpdateBook(t *testing.T) string {
 	// 21 mit listenpreis, Migration 127; 22 mit mehrjahresband, Migration 134 — der Schalter
 	// ersetzt ziel_jahrgang aus Migration 030, das nie einen Schreiber hatte; 21 ohne die
 	// Beschreibung, Migration 156.)
-	beliebig := make([]any, 21) // 21 ohne die Beschreibung, Migration 156
+	beliebig := make([]any, 22) // 21 Werte und die Namen der Felder, die die Änderung nennt
 	for i := range beliebig {
 		beliebig[i] = pgxmock.AnyArg()
 	}
@@ -134,14 +134,15 @@ func sqlVonUpdateBook(t *testing.T) string {
 	// Der Schreibpfad liest zuerst, was am Titel steht. Die Dublettenkontrolle folgt nur bei
 	// geänderter ISBN; gemessen wird mit einem Buch, das nur einen Autor nennt.
 	mock.ExpectQuery("").WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"isbn", "autor"}).AddRow("", "Autor"))
+		WillReturnRows(pgxmock.NewRows([]string{"isbn", "autor", "ist_lernmittel", "mehrjahresband", "jahrgang_von", "jahrgang_bis"}).
+			AddRow("", "Autor", false, false, 5, 10))
 	mock.ExpectExec("").WithArgs(beliebig...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectQuery("").WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectCommit()
 
 	repo := NewBookRepository(mock)
-	if err := repo.UpdateBook(context.Background(), "irgendeine-id", Book{Author: "Autor"}, &Bestandsangabe{Soll: 0}); err != nil {
+	if err := repo.UpdateBook(context.Background(), "irgendeine-id", Book{Author: "Autor"}, []string{"author"}, &Bestandsangabe{Soll: 0}); err != nil {
 		t.Fatalf("UpdateBook: %v", err)
 	}
 	if erfasst == "" {

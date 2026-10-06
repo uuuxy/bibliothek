@@ -64,7 +64,7 @@ func TestMehrjahresband_StehtAmWerkUndErreichtDieFristregel(t *testing.T) {
 	}
 	geaendert := buecher[0]
 	geaendert.JahrgangBis = 10
-	if err := repo.UpdateBook(ctx, id, geaendert, nil); err != nil {
+	if err := repo.UpdateBook(ctx, id, geaendert, []string{"jahrgangBis"}, nil); err != nil {
 		t.Fatalf("Spanne ändern: %v", err)
 	}
 	if an, bis, _ := lies("nach dem Ändern der Spanne"); !an || bis != 10 {
@@ -72,7 +72,7 @@ func TestMehrjahresband_StehtAmWerkUndErreichtDieFristregel(t *testing.T) {
 	}
 
 	geaendert.Mehrjahresband = false
-	if err := repo.UpdateBook(ctx, id, geaendert, nil); err != nil {
+	if err := repo.UpdateBook(ctx, id, geaendert, []string{"mehrjahresband"}, nil); err != nil {
 		t.Fatalf("Schalter aus: %v", err)
 	}
 	if an, _, maske := lies("Schalter aus"); an || maske {

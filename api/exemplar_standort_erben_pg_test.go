@@ -36,7 +36,7 @@ func erbWege() []erbWeg {
 				t.Fatalf("Titel lesen: %v, %d Titel", err, len(buecher))
 			}
 			gesehen := buecher[0].Stock
-			if err := repo.UpdateBook(ctx, titel.id, buecher[0],
+			if err := repo.UpdateBook(ctx, titel.id, buecher[0], nil,
 				&inventur.Bestandsangabe{Soll: gesehen + 2, Gesehen: &gesehen}); err != nil {
 				t.Fatalf("Bestand erhöhen: %v", err)
 			}

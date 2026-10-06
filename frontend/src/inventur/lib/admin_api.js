@@ -21,10 +21,9 @@ export async function holeBuecherListe() {
 }
 
 /**
- * Lädt EIN Buch vollständig (inkl. erweiterteEigenschaften).
- * Die Katalogliste ist bewusst schlank und liefert diese Felder LEER — jedes
- * Formular, das per PUT das ganze Objekt zurückschickt, MUSS hierüber befüllt
- * werden, sonst leert Speichern die Felder still (Upsert-Blanking-Bugklasse).
+ * Lädt ein Buch vollständig (inkl. erweiterteEigenschaften). Die Katalogliste ist schlank
+ * und liefert diese Felder leer: Die Maske füllt sich hierüber, damit ihr Stand vom Öffnen
+ * der des Servers ist.
  * @param {string} id
  * @returns {Promise<any>} das vollständige Buch (Antwort ist das nackte Objekt)
  */

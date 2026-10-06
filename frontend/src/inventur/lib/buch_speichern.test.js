@@ -8,6 +8,10 @@ import { speichereBuch, stehtInSicht, DubletteFehler } from './buch_speichern.js
 const antwort = (status, koerper) =>
 	/** @type {any} */ ({ ok: status < 400, status, json: async () => koerper });
 
+/** Die Maske eines vorhandenen Titels trägt den Stand vom Öffnen (titelFuerMaske).
+ * @param {any} formular */
+const geoeffnet = (formular) => ({ ...formular, geladen: { ...formular } });
+
 // Eine vergebene ISBN lehnt der Server mit 409 ab und nennt den Titel, der sie trägt. Ohne
 // Exemplar steht dieser Titel in keiner Suche — die Maske braucht seine Kennung, um zu ihm
 // zu führen.
@@ -20,7 +24,7 @@ describe('buch_speichern: speichereBuch', () => {
 			id: 'neu',
 			stock: 1
 		});
-		await speichereBuch({ id: 'abc', isbn: '978', stock: 2 });
+		await speichereBuch(geoeffnet({ id: 'abc', isbn: '978', stock: 2 }));
 		const aufrufe = vi.mocked(apiFetch).mock.calls;
 		expect([aufrufe[0][0], aufrufe[0][1]?.method]).toEqual(['/api/books', 'POST']);
 		expect([aufrufe[1][0], aufrufe[1][1]?.method]).toEqual(['/api/books/abc', 'PUT']);
@@ -79,7 +83,7 @@ describe('buch_speichern: speichereBuch', () => {
 
 	it('ein Bestand ohne Zahl wird nicht mitgeschickt', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'abc' } }));
-		await speichereBuch({ id: 'abc', isbn: '978', stock: undefined });
+		await speichereBuch(geoeffnet({ id: 'abc', isbn: '978', stock: undefined }));
 		const koerper = JSON.parse(String(vi.mocked(apiFetch).mock.calls[0][1]?.body));
 		expect('stock' in koerper).toBe(false);
 	});

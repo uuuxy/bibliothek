@@ -74,6 +74,8 @@ type Book struct {
 }
 
 // BuchEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.
+// Beim Aktualisieren zählen nur die Felder, die der Rumpf nennt (leseAenderung): Ein Feld, das
+// fehlt, bleibt am Titel, wie es ist.
 type BuchEingabe struct {
 	ISBN          string `json:"isbn"`
 	Fach          string `json:"subject"`

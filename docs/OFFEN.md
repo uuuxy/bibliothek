@@ -18,9 +18,9 @@ Liste geführt wird, steht am Ende.
   anders als eine Rückgabe. Eine Sperre und eine eigene Farbe gibt es nicht.
 - [x] **Standort: Ein neues Exemplar erbt ihn,** wenn alle übrigen Exemplare des Titels
   denselben tragen. Gebaut am 06.10.2026.
-- [ ] **Titel speichern:** Speichern zwei Plätze denselben Titel, gewinnt bei den Feldern des
-  Titels ohne Meldung der zweite; die Eingabe des ersten ist weg. Die Maske schickt künftig nur
-  die geänderten Felder. (5.5)
+- [x] **Titel speichern:** Die Maske schickt seit dem 06.10.2026 nur die geänderten Felder,
+  der Server schreibt nur diese. Zwei Plätze mit demselben Titel behalten beide, was sie an
+  verschiedenen Feldern speichern. Ändern beide dasselbe Feld, gilt der spätere Eintrag.
 - [x] **PRs auf GitHub:** 21 durchgesehen am 06.10.2026. Zwei sind hereingeholt (701, 702), 19
   geschlossen; aus sieben davon sind die Tests übernommen (d1dba610).
 - [x] **PR 722** durchgesehen und geschlossen am 06.10.2026: Die Prüfung beim Löschen einer
@@ -277,18 +277,11 @@ Vermerk.
   mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
   kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
-- **Speichern zwei Plätze denselben Titel, gilt bei den Feldern des Titels der zweite Stand**
-  (gefunden am 01.10.2026, am Stack nachgestellt). `PUT /api/books/{id}` schreibt alle Felder
-  zurück, auch die, die niemand angefasst hat: Die Signatur, die Platz 1 gespeichert hat, ist
-  nach dem Speichern von Platz 2 wieder die alte, beide Antworten sind 200. Der Bestand ist
-  seit dem 01.10.2026 ausgenommen; er geht nur geändert und mit der Zahl vom Öffnen mit.
-  Abhilfe: Die Maske nennt die Felder, die sie geändert hat, und der Server schreibt nur
-  diese. So halten es Googles Regeln für Schnittstellen (AIP-134: „only fields declared in
-  the field mask are updated"). Ein Vergleich des ganzen Stands lehnte dagegen auch ab, wenn
-  dazwischen nur ein Cover nachgeladen wurde. Dieselbe Form an Leser, Gerät, Benutzer und
-  Einstellungen ist nicht durchgesehen (Raster, Frage 18; [sweeps.md](sweeps.md), „Absoluter
-  Wert aus dem Ladezeitpunkt"). Die Eingabe des ersten Platzes geht ohne Meldung verloren;
-  der Punkt steht deshalb im Fahrplan in Etappe 1.
+- **Eine Maske schickt alle Felder zurück, auch die, die niemand angefasst hat:** Am Titel ist
+  das seit dem 06.10.2026 behoben (`PUT /api/books/{id}` schreibt die Felder, die der Rumpf
+  nennt). Dieselbe Form an Leser, Gerät, Benutzer und Einstellungen ist nicht durchgesehen
+  (Raster, Frage 18; [sweeps.md](sweeps.md), „Absoluter Wert aus dem Ladezeitpunkt").
+  Kategorie B.
 - Die Buchakte führt ausgesonderte und bestellte Exemplare als „Gesperrt" (Reiter
   „Exemplare", `BookExemplarCard.svelte`; die Buchmaske listet seit dem 02.10.2026 nur den
   Bestand). „Exemplar löschen" antwortet dort an einem ausgesonderten „exemplar nicht

@@ -217,7 +217,8 @@ func (handler *APIHandler) ladeTitelVoll(ctx context.Context, id string) (Book, 
 // gespeichert ist die Antwort auf Anlegen und Ändern: der Titel, wie er jetzt in der Datenbank
 // steht. Die Titelliste ersetzt ihre Zeile durch die Antwort; aus den gesendeten Angaben
 // allein stünde dort der Bestand 0. Scheitert das Nachlesen, bleibt es bei den gesendeten
-// Angaben, denn gespeichert ist der Titel.
+// Angaben, denn gespeichert ist der Titel; nach einem Ändern sind das nur die Felder, die
+// der Rumpf genannt hat.
 func (handler *APIHandler) gespeichert(ctx context.Context, gesendet Book) Book {
 	buch, err := handler.ladeTitelVoll(ctx, gesendet.ID)
 	if err != nil {

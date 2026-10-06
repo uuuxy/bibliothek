@@ -4,112 +4,95 @@ import (
 	"bibliothek/repository"
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 
 	"bibliothek/db"
 	"bibliothek/pkg/isbnutil"
 )
 
-// UpdateBook updates metadata fields of a book.
+// titelFeld ist ein Feld des Titels: der Name, unter dem die Eingabe es nennt, seine Spalte
+// und der Ausdruck, der ihren Wert schreibt.
+type titelFeld struct{ name, spalte, wert string }
+
+// titelFelder sind die Felder, die UpdateBook schreibt, mit den Parametern seiner Anweisung.
+// Geschrieben wird nur, was der Aufrufer nennt: Zwei Plätze, die denselben Titel offen haben,
+// überschrieben sich sonst gegenseitig Felder, die keiner von beiden angefasst hat.
+var titelFelder = []titelFeld{
+	{"isbn", "isbn", "NULLIF($1, '')"},
+	{"title", "titel", "$2"},
+	{"author", "autor", "$3"},
+	{"coverUrl", "cover_url", "$4"},
+	{"subject", "subject", "NULLIF($5, '')"},
+	{"gradeLevel", "grade_level", "$6"},
+	{"track", "track", "$7"},
+	{"lastCounted", "last_counted", "NULLIF($8::text, '')::date"},
+	{"medientyp", "medientyp", "$9"},
+	{"erweiterteEigenschaften", "erweiterte_eigenschaften", "$10"},
+	{"jahrgangVon", "jahrgang_von", "$11"},
+	{"jahrgangBis", "jahrgang_bis", "$12"},
+	{"untertitel", "untertitel", "$13"},
+	{"verlag", "verlag", "$14"},
+	{"erscheinungsjahr", "erscheinungsjahr", "$15"},
+	// Ein leerer Wert lässt die verklebte Signatur unangetastet.
+	{"signatur", "signatur", "COALESCE(NULLIF($17, ''), signatur)"},
+	{"istLernmittel", "ist_lernmittel", "$18"},
+	{"auflage", "auflage", "NULLIF($19, '')"},
+	// Ein Listenpreis ohne Wert (nil) löscht ihn: „nicht erfasst" ist etwas anderes als 0.
+	{"listenpreis", "listenpreis", "$20"},
+	{"mehrjahresband", "mehrjahresband", "$21"},
+}
+
+// sqlTitelAendern setzt je Spalte den neuen Wert, wenn $22 ihr Feld nennt, und sonst den, der
+// in der Zeile steht. Die Anweisung nennt jede Spalte (schema_paritaet_test.go) und ist für
+// jede Änderung dieselbe.
 //
-// aktualisiert_am wurde bis zum 10.08.2026 als EINZIGE Spalte von buecher_titel beim
-// Aktualisieren nicht gesetzt. Sie steht in der API-Antwort (repository/book_search.go
-// liefert sie mit) und behauptete dort den Zeitpunkt des ANLEGENS. In der Oberfläche liest
-// sie heute niemand — aber ein Feld, das etwas anderes sagt als sein Name, ist eine Falle
-// für den Nächsten, etwa für einen Abgleich, der „was hat sich seit gestern geändert"
-// darüber beantworten will. Gefunden hat es schema_paritaet_test.go.
-//
-// Die Erklärung steht hier und nicht als SQL-Kommentar in der Anweisung: Ein Kommentar im
-// Query-String reist bei jedem Aufruf zum Server mit und lässt jeden Test scheitern, der
-// die Anweisung als Ganzes festhält.
-// bestand ist bewusst ein Zeiger: nil heißt "der Aufrufer hat zum Bestand nichts
-// gesagt" und lässt die physischen Exemplare unangetastet. Bis zum 23.08.2026 war es
-// ein int, und eine fehlende Angabe kam als 0 an — syncBookStock sonderte daraufhin
-// JEDES Exemplar des Titels aus, im Rückfallzweig auch die gerade ausgeliehenen. Der
-// Weg dorthin war kurz: `Number(undefined)` im Formular ist NaN, in JSON null, in Go 0,
-// und die Warnung im Formular ("du verringerst den Bestand") greift bei NaN nicht, weil
-// `NaN < 5` falsch ist.
-func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book, bestand *Bestandsangabe) error {
-	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer erst
-	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
-	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
+// Die Erklärung steht hier und nicht als SQL-Kommentar: Der reiste bei jedem Aufruf zum
+// Server mit und ließe jeden Test scheitern, der die Anweisung als Ganzes festhält.
+var sqlTitelAendern = func() string {
+	var b strings.Builder
+	b.WriteString("UPDATE buecher_titel SET ")
+	for _, f := range titelFelder {
+		fmt.Fprintf(&b, "%[2]s = CASE WHEN '%[1]s' = ANY($22::text[]) THEN %[3]s ELSE %[2]s END, ", f.name, f.spalte, f.wert)
+	}
+	b.WriteString("aktualisiert_am = NOW() WHERE id = $16")
+	return b.String()
+}()
+
+// pruefeFeldnamen lehnt einen Namen ab, den titelFelder nicht kennt: Die Anweisung überginge
+// ihn, und der Aufrufer hielte sein Feld für gespeichert.
+func pruefeFeldnamen(felder []string) error {
+	for _, name := range felder {
+		if !slices.ContainsFunc(titelFelder, func(f titelFeld) bool { return f.name == name }) {
+			return fmt.Errorf("buch konnte nicht aktualisiert werden: unbekanntes feld %q", name)
+		}
+	}
+	return nil
+}
+
+// UpdateBook schreibt die genannten Felder eines Titels (felder, Namen wie in titelFelder)
+// und gleicht auf Wunsch den Bestand an, beides in einer Transaktion: Scheitert der Abgleich,
+// bleibt auch der Titel, wie er war. Ein Feld, das felder nicht nennt, bleibt, wie es in der
+// Datenbank steht. bestand ist ein Zeiger: nil heißt, der Aufrufer hat zum Bestand nichts
+// gesagt, und lässt die Exemplare unangetastet — eine fehlende Angabe käme sonst als 0 an und
+// sonderte jedes Exemplar aus. aktualisiert_am wird bei jedem Speichern gesetzt.
+func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book, felder []string, bestand *Bestandsangabe) error {
+	werte, err := repo.titelWerte(ctx, id, book, felder)
 	if err != nil {
 		return err
 	}
 
-	query := `
-		UPDATE buecher_titel
-		SET isbn = NULLIF($1, ''),
-			titel = $2,
-			autor = $3,
-			cover_url = $4,
-			subject = NULLIF($5, ''),
-			grade_level = $6,
-			track = $7,
-			last_counted = NULLIF($8::text, '')::date,
-			medientyp = $9,
-			erweiterte_eigenschaften = $10,
-			jahrgang_von = $11,
-			jahrgang_bis = $12,
-			untertitel = $13,
-			verlag = $14,
-			erscheinungsjahr = $15,
-			signatur = COALESCE(NULLIF($17, ''), signatur),
-			ist_lernmittel = $18,
-			auflage = NULLIF($19, ''),
-			listenpreis = $20,
-			mehrjahresband = $21,
-			aktualisiert_am = NOW()
-		WHERE id = $16`
-
-	medientyp := book.Medientyp
-	if medientyp == "" {
-		medientyp = "Buch"
-	}
-
-	properties := book.ErweiterteEigenschaften
-	if properties == nil {
-		properties = make(map[string]any)
-	}
-
-	// Titel-Update und Bestands-Synchronisierung atomar: Schlägt der Sync fehl (z. B. die
-	// zweistufige Aussonderung), bleibt sonst ein Titel mit falschem Bestand zurück, den
-	// der Handler als erfolgreich meldet (Transaktionsgrenzen-Sweep A3). Der Sync-Fehler
-	// wird deshalb ZURÜCKGEGEBEN, nicht nur geloggt.
 	tx, err := repo.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	if err := pruefeAenderung(ctx, tx, id, book); err != nil {
+	if err := pruefeAenderung(ctx, tx, id, book, felder); err != nil {
 		return err
 	}
 
-	result, err := tx.Exec(
-		ctx,
-		query,
-		book.ISBN,
-		book.Title,
-		book.Author,
-		book.CoverURL,
-		kanonisch[book.Subject],
-		book.GradeLevel,
-		book.Track,
-		book.LastCounted,
-		medientyp,
-		properties,
-		book.JahrgangVon,
-		book.JahrgangBis,
-		book.Untertitel,
-		book.Verlag,
-		book.Erscheinungsjahr,
-		id,
-		book.Signatur,       // $17 — leerer Wert lässt die verklebte Signatur unangetastet
-		book.IstLernmittel,  // $18 — die Maske entscheidet ausdrücklich (Migration 093)
-		book.Auflage,        // $19 — die Maske ist der Ort der Angabe, leer heißt „keine"
-		book.Listenpreis,    // $20 — Zeiger: nil löscht den Wert, das ist hier gewollt
-		book.Mehrjahresband, // $21 — Mehrjahresband: bleibt über die Spanne beim Kind (Migration 134)
-	)
+	result, err := tx.Exec(ctx, sqlTitelAendern, werte...)
 	if err != nil {
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", handleDbError(err))
 	}
@@ -140,29 +123,100 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 	return nil
 }
 
-// pruefeAenderung hält die Änderung gegen den gespeicherten Titel und prüft, was sich ändert.
-// Ein leerer Autor ist nur ein Fehler, wenn der Titel einen trägt: Dann hat ein Formular das
-// Feld nie befüllt, oder jemand hat es geleert. Die ISBN wird nur geprüft, wenn sie eine
-// andere ist als die gespeicherte: Ein Titel ohne ISBN oder mit einer Nummer, die keine ISBN
-// ist, bleibt speicherbar, wenn ein anderes Feld geändert wird. Die Sperre hält die Zeile bis
-// zum UPDATE derselben Transaktion.
-func pruefeAenderung(ctx context.Context, tx repository.DBQueryer, id string, book Book) error {
+// titelWerte sind die Parameter von sqlTitelAendern, der letzte nennt die Felder. Ein
+// genanntes Fach wird vorher registriert, wenn die Systematik es nicht kennt (subject ist FK,
+// Migration 078), und in ihrer Schreibweise geschrieben; ein Leerwert wird NULL.
+func (repo *BookRepository) titelWerte(ctx context.Context, id string, book Book, felder []string) ([]any, error) {
+	if err := pruefeFeldnamen(felder); err != nil {
+		return nil, err
+	}
+	subject := ""
+	if slices.Contains(felder, "subject") {
+		kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
+		if err != nil {
+			return nil, err
+		}
+		subject = kanonisch[book.Subject]
+	}
+	medientyp := book.Medientyp
+	if medientyp == "" {
+		medientyp = "Buch"
+	}
+	properties := book.ErweiterteEigenschaften
+	if properties == nil {
+		properties = make(map[string]any)
+	}
+	if felder == nil {
+		felder = []string{}
+	}
+	return []any{
+		book.ISBN, book.Title, book.Author, book.CoverURL, subject, book.GradeLevel, book.Track,
+		book.LastCounted, medientyp, properties, book.JahrgangVon, book.JahrgangBis,
+		book.Untertitel, book.Verlag, book.Erscheinungsjahr, id, book.Signatur,
+		book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
+	}, nil
+}
+
+// pruefeAenderung hält die genannten Felder gegen den gespeicherten Titel und prüft, was sich
+// ändert. Ein leerer Autor ist nur ein Fehler, wenn der Titel einen trägt: Dann hat jemand das
+// Feld geleert. Die ISBN wird nur geprüft, wenn sie eine andere ist als die gespeicherte: Ein
+// Titel ohne ISBN oder mit einer Nummer, die keine ISBN ist, bleibt speicherbar, wenn ein
+// anderes Feld geändert wird. Die Sperre hält die Zeile bis zum UPDATE derselben Transaktion.
+func pruefeAenderung(ctx context.Context, tx repository.DBQueryer, id string, book Book, felder []string) error {
+	nennt := func(name string) bool { return slices.Contains(felder, name) }
 	var isbn, autor string
+	var lernmittel, mehrjahresband bool
+	var von, bis int
 	err := tx.QueryRow(ctx,
-		`SELECT COALESCE(isbn, ''), COALESCE(autor, '') FROM buecher_titel WHERE id = $1 FOR UPDATE`, id).Scan(&isbn, &autor)
+		`SELECT COALESCE(isbn, ''), COALESCE(autor, ''), ist_lernmittel, mehrjahresband, COALESCE(jahrgang_von, 0), COALESCE(jahrgang_bis, 0) FROM buecher_titel WHERE id = $1 FOR UPDATE`, id).
+		Scan(&isbn, &autor, &lernmittel, &mehrjahresband, &von, &bis)
 	switch {
 	case istKeineZeile(err):
 		return ErrBookNotFound
 	case err != nil:
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
-	case book.Author == "" && autor != "":
+	case nennt("author") && book.Author == "" && autor != "":
 		return ErrAutorGeleert
-	case book.ISBN == "" || isbnutil.Normalform(book.ISBN) == isbnutil.Normalform(isbn):
+	}
+	if err := pruefeSpanneNachAenderung(book, nennt, titelSpanne{lernmittel, mehrjahresband, von, bis}); err != nil {
+		return err
+	}
+	switch {
+	case !nennt("isbn") || book.ISBN == "" || isbnutil.Normalform(book.ISBN) == isbnutil.Normalform(isbn):
 		return nil
 	case !validiereISBN(book.ISBN):
 		return ErrISBNFormat
 	}
 	return isbnVergeben(ctx, tx, book.ISBN, id)
+}
+
+// titelSpanne ist, woran das Mehrjahresband hängt: Lernmittel, der Schalter und die Jahrgänge.
+type titelSpanne struct {
+	lernmittel, mehrjahresband bool
+	von, bis                   int
+}
+
+// pruefeSpanneNachAenderung prüft das Mehrjahresband am Stand nach der Änderung: die genannten
+// Felder aus der Eingabe, die übrigen vom Titel (stand). Nennt die Änderung keins der vier,
+// prüft sie nichts: Was unverändert am Titel steht, hindert das Speichern eines anderen Felds
+// nicht.
+func pruefeSpanneNachAenderung(book Book, nennt func(string) bool, stand titelSpanne) error {
+	if !nennt("istLernmittel") && !nennt("mehrjahresband") && !nennt("jahrgangVon") && !nennt("jahrgangBis") {
+		return nil
+	}
+	if nennt("istLernmittel") {
+		stand.lernmittel = book.IstLernmittel
+	}
+	if nennt("mehrjahresband") {
+		stand.mehrjahresband = book.Mehrjahresband
+	}
+	if nennt("jahrgangVon") {
+		stand.von = book.JahrgangVon
+	}
+	if nennt("jahrgangBis") {
+		stand.bis = book.JahrgangBis
+	}
+	return pruefeMehrjahresband(stand.lernmittel, stand.mehrjahresband, stand.von, stand.bis)
 }
 
 // Bestandsangabe ist, was eine Maske zum Bestand eines vorhandenen Titels sagt: die Zahl,

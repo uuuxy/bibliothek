@@ -16,10 +16,15 @@ import {
 const antwort = (status, koerper) =>
 	/** @type {any} */ ({ ok: status < 400, status, json: async () => koerper });
 
+/** Die Maske eines vorhandenen Titels trägt den Stand vom Öffnen (titelFuerMaske).
+ * @param {any} formular */
+const geoeffnet = (formular) =>
+	formular.id ? { ...formular, geladen: { ...formular } } : formular;
+
 /** @param {any} formular */
 async function gesendet(formular) {
 	vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: formular.id ?? 'neu' } }));
-	await speichereBuch(formular);
+	await speichereBuch(geoeffnet(formular));
 	return JSON.parse(String(vi.mocked(apiFetch).mock.calls[0][1]?.body));
 }
 
@@ -61,12 +66,9 @@ describe('buch_speichern: der Bestand eines vorhandenen Titels', () => {
 	it.each([[2.5], [-1], ['abc']])(
 		'keine ganze Zahl ab 0 (%s): Fehler, keine Anfrage',
 		async (feld) => {
-			const fehler = await speichereBuch({
-				id: 'abc',
-				isbn: '978',
-				stock: feld,
-				stockGesehen: 3
-			}).catch((e) => e);
+			const fehler = await speichereBuch(
+				geoeffnet({ id: 'abc', isbn: '978', stock: feld, stockGesehen: 3 })
+			).catch((e) => e);
 			expect(fehler.message).toBe('Der Bestand muss eine ganze Zahl ab 0 sein.');
 			expect(apiFetch).not.toHaveBeenCalled();
 		}
@@ -74,12 +76,9 @@ describe('buch_speichern: der Bestand eines vorhandenen Titels', () => {
 
 	it('409 mit dem Stand des Servers wird ein BestandVeraltetFehler', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(409, { error: 'jetzt 6 statt 1', bestand: 6 }));
-		const fehler = await speichereBuch({
-			id: 'abc',
-			isbn: '978',
-			stock: 2,
-			stockGesehen: 1
-		}).catch((e) => e);
+		const fehler = await speichereBuch(
+			geoeffnet({ id: 'abc', isbn: '978', stock: 2, stockGesehen: 1 })
+		).catch((e) => e);
 		expect(fehler).toBeInstanceOf(BestandVeraltetFehler);
 		expect(fehler.bestand).toBe(6);
 		expect(fehler.message).toBe('jetzt 6 statt 1');

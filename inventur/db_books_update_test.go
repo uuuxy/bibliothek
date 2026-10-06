@@ -3,6 +3,7 @@ package inventur
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -39,7 +40,9 @@ func TestUpdateBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	updateQuery := `UPDATE buecher_titel SET isbn = NULLIF\(\$1, ''\), titel = \$2, autor = \$3, cover_url = \$4, subject = NULLIF\(\$5, ''\), grade_level = \$6, track = \$7, last_counted = NULLIF\(\$8::text, ''\)::date, medientyp = \$9, erweiterte_eigenschaften = \$10, jahrgang_von = \$11, jahrgang_bis = \$12, untertitel = \$13, verlag = \$14, erscheinungsjahr = \$15, signatur = COALESCE\(NULLIF\(\$17, ''\), signatur\), ist_lernmittel = \$18, auflage = NULLIF\(\$19, ''\), listenpreis = \$20, mehrjahresband = \$21, aktualisiert_am = NOW\(\) WHERE id = \$16`
+	// Die Anweisung, wie UpdateBook sie absetzt; die Felder der Maske stehen als letzter Parameter.
+	updateQuery := regexp.QuoteMeta(sqlTitelAendern)
+	felder := alleTitelFelder()
 	// also note syncBookStock will be called
 
 	t.Run("success", func(t *testing.T) {
@@ -48,7 +51,7 @@ func TestUpdateBook(t *testing.T) {
 		erwarteTitelstand(mock, book.ISBN, book.Author)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
@@ -58,7 +61,7 @@ func TestUpdateBook(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(10))
 		mock.ExpectCommit()
 
-		err := repo.UpdateBook(ctx, "book-123", book, &Bestandsangabe{Soll: book.Stock})
+		err := repo.UpdateBook(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Stock})
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -66,12 +69,12 @@ func TestUpdateBook(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		erwarteFachBekannt(mock, book.Subject)
 		mock.ExpectBegin()
-		mock.ExpectQuery(`SELECT COALESCE\(isbn, ''\), COALESCE\(autor, ''\) FROM buecher_titel WHERE id = \$1 FOR UPDATE`).
+		mock.ExpectQuery(sqlTitelstandMuster).
 			WithArgs("book-123").
 			WillReturnError(pgx.ErrNoRows)
 		mock.ExpectRollback()
 
-		err := repo.UpdateBook(ctx, "book-123", book, &Bestandsangabe{Soll: book.Stock})
+		err := repo.UpdateBook(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Stock})
 		assert.ErrorIs(t, err, ErrBookNotFound)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -82,12 +85,12 @@ func TestUpdateBook(t *testing.T) {
 		erwarteTitelstand(mock, book.ISBN, book.Author)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
 
-		err := repo.UpdateBook(ctx, "book-123", book, &Bestandsangabe{Soll: book.Stock})
+		err := repo.UpdateBook(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Stock})
 		assert.ErrorContains(t, err, "buch konnte nicht aktualisiert werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -101,7 +104,7 @@ func TestUpdateBook(t *testing.T) {
 		erwarteTitelstand(mock, book.ISBN, book.Author)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare`).
@@ -109,7 +112,7 @@ func TestUpdateBook(t *testing.T) {
 			WillReturnError(fmt.Errorf("bestand nicht lesbar"))
 		mock.ExpectRollback()
 
-		err := repo.UpdateBook(ctx, "book-123", book, &Bestandsangabe{Soll: book.Stock})
+		err := repo.UpdateBook(ctx, "book-123", book, felder, &Bestandsangabe{Soll: book.Stock})
 		assert.ErrorContains(t, err, "exemplare konnten nicht synchronisiert werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})

@@ -82,7 +82,7 @@ func TestBestand_ZweiterSpeichervorgangZaehltNachDemErsten(t *testing.T) {
 	ergebnis := make(chan error, 1)
 	go func() {
 		gesehen := 3
-		ergebnis <- repo.UpdateBook(ctx, titelID, buch, &Bestandsangabe{Soll: 1, Gesehen: &gesehen})
+		ergebnis <- repo.UpdateBook(ctx, titelID, buch, alleTitelFelder(), &Bestandsangabe{Soll: 1, Gesehen: &gesehen})
 	}()
 
 	select {

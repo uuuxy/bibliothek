@@ -62,7 +62,7 @@ func TestAuflage_StehtAlsFeldAmTitel(t *testing.T) {
 
 	geaendert := lies("vor dem Ändern")
 	geaendert.Auflage = "5. Aufl. 2026"
-	if err := repo.UpdateBook(ctx, id, geaendert, nil); err != nil {
+	if err := repo.UpdateBook(ctx, id, geaendert, []string{"auflage"}, nil); err != nil {
 		t.Fatalf("Titel ändern: %v", err)
 	}
 	if got := lies("nach dem Ändern").Auflage; got != "5. Aufl. 2026" {

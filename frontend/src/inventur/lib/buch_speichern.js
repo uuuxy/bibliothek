@@ -1,5 +1,6 @@
 import { apiFetch } from '../../lib/apiFetch.js';
 import { holeBuchDetail } from './admin_api.js';
+import { alsRumpf, geaenderteFelder, merkeStand } from './buch_felder.js';
 
 /** @typedef {{ id: string, title: string, ohneExemplar: boolean }} VorhandenerTitel */
 
@@ -98,28 +99,29 @@ export async function ladeBestandNach(formular) {
 }
 
 /**
- * Legt den Titel der Maske an (ohne id) oder ändert ihn.
+ * Legt den Titel der Maske an (ohne id) oder ändert ihn. Ein neuer Titel geht ganz hinaus,
+ * von einem vorhandenen nur die Felder, die die Maske seit dem Öffnen geändert hat.
  * @param {any} formular
  * @param {{ anderesMedium?: boolean }} [antwort] anderesMedium: Die Maske hat nach dem
  *   gleichnamigen Titel ohne ISBN gefragt, und es ist ein anderes Heft, ein anderer Band.
  * @returns {Promise<any>} der gespeicherte Titel
  */
 export async function speichereBuch(formular, antwort = {}) {
+	// Der Bestand geht nur über bestandsAngabe hinaus, nie als Feld der Maske.
+	const rumpf = formular.id
+		? { ...geaenderteFelder(formular), ...bestandsAngabe(formular) }
+		: {
+				...alsRumpf(formular),
+				stock: undefined,
+				stockGesehen: undefined,
+				...bestandsAngabe(formular),
+				anderesMedium: antwort.anderesMedium || undefined
+			};
 	const res = await apiFetch(formular.id ? `/api/books/${formular.id}` : '/api/books', {
 		method: formular.id ? 'PUT' : 'POST',
 		credentials: 'include',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({
-			...formular,
-			gradeLevel: Number(formular.gradeLevel),
-			istLernmittel: !!formular.istLernmittel,
-			lastCounted: formular.lastCounted || null,
-			// Der Bestand geht nur über bestandsAngabe hinaus, nie als Feld der Maske.
-			stock: undefined,
-			stockGesehen: undefined,
-			...bestandsAngabe(formular),
-			anderesMedium: antwort.anderesMedium || undefined
-		})
+		body: JSON.stringify(rumpf)
 	});
 	if (!res.ok) {
 		const fehler = await res.json().catch(() => null);
@@ -146,10 +148,10 @@ export function stehtInSicht(bestand, sicht) {
 }
 
 /**
- * Der Titel, wie die Maske ihn zum Bearbeiten braucht: ganz vom Einzelabruf. Die Liste ist
- * schlank (erweiterteEigenschaften leer), und das Speichern schickt das ganze Formular zurück —
- * aus der Listenzeile gefüllt, leerte es diese Felder. `stockGesehen` ist die Zahl vom Öffnen,
- * an der das Speichern erkennt, ob das Feld „Bestand" geändert wurde (bestandsAngabe).
+ * Der Titel, wie die Maske ihn zum Bearbeiten braucht: ganz vom Einzelabruf, die Liste ist
+ * schlank. `stockGesehen` ist die Zahl vom Öffnen, an der das Speichern erkennt, ob das Feld
+ * „Bestand" geändert wurde (bestandsAngabe); `geladen` ist der ganze Stand vom Öffnen, an dem
+ * es die übrigen geänderten Felder erkennt (geaenderteFelder).
  * @param {any} buch Zeile der Liste oder ein Titel ohne Kennung
  * @returns {Promise<any>} das Formular; wirft, wenn der Abruf scheitert
  */
@@ -159,5 +161,6 @@ export async function titelFuerMaske(buch) {
 	if (!formular.medientyp) formular.medientyp = 'Buch';
 	if (formular.lastCounted?.includes('T'))
 		formular.lastCounted = formular.lastCounted.split('T')[0];
+	if (formular.id) merkeStand(formular);
 	return formular;
 }

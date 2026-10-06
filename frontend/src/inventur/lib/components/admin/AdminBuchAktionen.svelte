@@ -10,6 +10,7 @@
 		DubletteFehler
 	} from '../../buch_speichern.js';
 	import { frageVorhandenenOeffnen, speichereMitFrage } from '../../buch_vorhanden.js';
+	import { uebernimmGespeichert } from '../../buch_felder.js';
 	import { hatRecht } from '../../../../lib/menu.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 
@@ -133,7 +134,7 @@
 		if (!formular.id) return;
 		try {
 			const coverUrl = await coverNeuHolen(formular.id);
-			formular.coverUrl = coverUrl;
+			uebernimmGespeichert(formular, 'coverUrl', coverUrl);
 			books = books.map((/** @type {any} */ b) => (b.id === formular.id ? { ...b, coverUrl } : b));
 			showToast('Cover neu geholt', 'success');
 		} catch (err) {
@@ -179,7 +180,7 @@
 				throw new Error(message);
 			}
 			const json = await res.json();
-			formular.coverUrl = json.data.coverUrl;
+			uebernimmGespeichert(formular, 'coverUrl', json.data.coverUrl);
 			books = books.map((/** @type {any} */ b) =>
 				b.id === formular.id ? { ...b, coverUrl: json.data.coverUrl } : b
 			);

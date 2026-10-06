@@ -47,7 +47,7 @@ func TestISBNDublette_WirdAlsDubletteErkannt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("zweiten Titel anlegen: %v", err)
 		}
-		err = repo.UpdateBook(ctx, zweiter, Book{ISBN: isbn, Title: "Zweiter Titel", Author: "Test"}, nil)
+		err = repo.UpdateBook(ctx, zweiter, Book{ISBN: isbn, Title: "Zweiter Titel", Author: "Test"}, []string{"isbn", "title", "author"}, nil)
 		if !errors.Is(err, ErrDuplicateISBN) {
 			t.Fatalf("erwartet ErrDuplicateISBN, bekam %v", err)
 		}

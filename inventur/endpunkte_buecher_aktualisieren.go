@@ -5,18 +5,20 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
 )
 
-// BearbeiteBuchAktualisieren verarbeitet PUT-Anfragen für ein bestehendes Buch.
+// BearbeiteBuchAktualisieren verarbeitet PUT-Anfragen für ein bestehendes Buch. Geschrieben
+// werden die Felder, die der Rumpf nennt; die Maske schickt die, die sie geändert hat.
 func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWriter, anfrage *http.Request) {
 	id, ok := buchIDAusPfad(antwort, anfrage)
 	if !ok {
 		return
 	}
 
-	var eingabe BuchEingabe
-	if fehler := json.NewDecoder(anfrage.Body).Decode(&eingabe); fehler != nil {
+	eingabe, felder, fehler := leseAenderung(anfrage)
+	if fehler != nil {
 		writeError(antwort, http.StatusBadRequest, "ungültiges JSON")
 		return
 	}
@@ -35,7 +37,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 	// steht ein Mensch, der das Feld geleert hat, oder ein Formular, das es nie befüllt hat.
 	// Die Katalogdienste füllen hier nichts nach — sonst wartete das Speichern auf sie, und
 	// in der Akte stünde, was niemand eingetragen und niemand gesehen hat.
-	if eingabe.Titel == "" {
+	if slices.Contains(felder, "title") && eingabe.Titel == "" {
 		writeError(antwort, http.StatusBadRequest,
 			"titel darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
 		return
@@ -65,7 +67,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Schlagworte:             schlagworte,
 	}
 
-	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch, bestandsangabe(eingabe)); fehler != nil {
+	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch, felder, bestandsangabe(eingabe)); fehler != nil {
 		antworteAufAenderungsfehler(antwort, id, fehler)
 		return
 	}
@@ -74,11 +76,44 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 	writeJSON(antwort, http.StatusOK, map[string]any{"message": "buch aktualisiert", "data": handler.gespeichert(anfrage.Context(), buch)})
 }
 
+// leseAenderung liest den Rumpf einer Änderung: die Werte und die Namen der Felder, die er
+// nennt. Ein Feld, das fehlt, bleibt am Titel, wie es ist. Groß- und Kleinschreibung der
+// Namen zählt nicht, wie beim Dekodieren in BuchEingabe.
+func leseAenderung(anfrage *http.Request) (BuchEingabe, []string, error) {
+	var eingabe BuchEingabe
+	var roh json.RawMessage
+	var genannt map[string]json.RawMessage
+	if fehler := json.NewDecoder(anfrage.Body).Decode(&roh); fehler != nil {
+		return eingabe, nil, fehler
+	}
+	if fehler := json.Unmarshal(roh, &eingabe); fehler != nil {
+		return eingabe, nil, fehler
+	}
+	if fehler := json.Unmarshal(roh, &genannt); fehler != nil {
+		return eingabe, nil, fehler
+	}
+	felder := []string{}
+	for _, feld := range titelFelder {
+		for schluessel := range genannt {
+			if strings.EqualFold(schluessel, feld.name) {
+				felder = append(felder, feld.name)
+				break
+			}
+		}
+	}
+	return eingabe, felder, nil
+}
+
 // antworteAufAenderungsfehler ordnet ein, warum ein Titel sich nicht ändern ließ: doppelte
-// ISBN, veralteter Bestand, unbekannter Titel, geleerter Autor, ISBN-Format; alles andere 500.
+// ISBN, veralteter Bestand, unbekannter Titel, geleerter Autor, ISBN-Format, Mehrjahresband
+// ohne Spanne; alles andere 500.
 func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler error) {
 	if errors.Is(fehler, ErrDuplicateISBN) {
 		schreibeDubletteISBN(antwort, fehler)
+		return
+	}
+	if errors.Is(fehler, errMehrjahresband) {
+		writeError(antwort, http.StatusBadRequest, fehler.Error())
 		return
 	}
 	var veraltet *BestandVeraltet
@@ -119,8 +154,8 @@ func bestandsangabe(eingabe BuchEingabe) *Bestandsangabe {
 
 // bereinigeUndValidiereBuchEingabe trimmt Leerzeichen der Eingabefelder und prüft auf Gültigkeit.
 // Es gibt einen Fehler zurück, der als HTTP-Fehlermeldung an den Client gesendet werden kann.
-// Die ISBN prüft sie nicht: Ob sie sich geändert hat, weiß erst der Schreibpfad, der den
-// gespeicherten Titel liest (pruefeAenderung).
+// ISBN und Mehrjahresband prüft sie nicht: Was sich ändert und was am Titel steht, weiß erst
+// der Schreibpfad, der den gespeicherten Titel liest (pruefeAenderung).
 func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 	eingabe.ISBN = strings.TrimSpace(eingabe.ISBN)
 	eingabe.Titel = strings.TrimSpace(eingabe.Titel)
@@ -141,10 +176,7 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 	if eingabe.BestandGesehen != nil && *eingabe.BestandGesehen < 0 {
 		return errors.New("stockGesehen muss >= 0 sein")
 	}
-	if fehler := pruefeListenpreis(eingabe.Listenpreis); fehler != nil {
-		return fehler
-	}
-	return pruefeMehrjahresband(eingabe.IstLernmittel, eingabe.Mehrjahresband, eingabe.JahrgangVon, eingabe.JahrgangBis)
+	return pruefeListenpreis(eingabe.Listenpreis)
 }
 
 // pruefeListenpreis nennt den erlaubten Bereich, bevor die Datenbank ablehnt

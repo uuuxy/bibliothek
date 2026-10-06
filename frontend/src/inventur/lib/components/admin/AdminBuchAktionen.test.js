@@ -27,8 +27,10 @@ const DUBLETTE = antwort(409, {
 	vorhanden: { id: 'titel-1', title: 'Drachenreiter', ohneExemplar: true }
 });
 
-/** @param {any} formular */
+/** Ein vorhandener Titel trägt den Stand vom Öffnen, wie titelFuerMaske ihn setzt.
+ * @param {any} formular */
 function maske(formular) {
+	if (formular.id && !formular.geladen) formular.geladen = { ...formular };
 	const { component } = render(AdminBuchAktionen, {
 		props: { books: [], isEditMode: true, formular }
 	});
@@ -90,17 +92,19 @@ describe('AdminBuchAktionen: Titel ohne ISBN', () => {
 
 	it('ein vorhandener Titel ohne ISBN wird gespeichert', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(200, { data: { id: 'titel-9', stock: 1 } }));
-		await maske({
+		const geladen = {
 			id: 'titel-9',
 			isbn: '',
 			title: 'Bild der Wissenschaft',
-			signatur: 'Z 1',
+			signatur: '',
 			stock: 1,
 			stockGesehen: 1
-		}).saveChanges();
+		};
+		await maske({ ...geladen, signatur: 'Z 1', geladen }).saveChanges();
 
 		expect(vi.mocked(apiFetch).mock.calls[0][1]?.method).toBe('PUT');
-		expect(rumpf(0)).toMatchObject({ isbn: '', signatur: 'Z 1' });
+		// Die leere ISBN hindert das Speichern nicht; hinaus geht nur das geänderte Feld.
+		expect(rumpf(0)).toEqual({ signatur: 'Z 1' });
 		expect(showToast).toHaveBeenCalledWith('Buch erfolgreich gespeichert!', 'success');
 	});
 

@@ -169,7 +169,20 @@ func erwarteKeineDublette(mock pgxmock.PgxPoolIface) {
 // erwarteTitelstand: Vor jedem Ändern liest der Schreibpfad, was am Titel steht
 // (pruefeAenderung). Trägt er die ISBN der Änderung, folgt keine Dublettenkontrolle.
 func erwarteTitelstand(mock pgxmock.PgxPoolIface, isbn, autor string) {
-	mock.ExpectQuery(`SELECT COALESCE\(isbn, ''\), COALESCE\(autor, ''\) FROM buecher_titel WHERE id = \$1 FOR UPDATE`).
+	mock.ExpectQuery(sqlTitelstandMuster).
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"isbn", "autor"}).AddRow(isbn, autor))
+		WillReturnRows(pgxmock.NewRows([]string{"isbn", "autor", "ist_lernmittel", "mehrjahresband", "jahrgang_von", "jahrgang_bis"}).
+			AddRow(isbn, autor, false, false, 5, 10))
+}
+
+// sqlTitelstandMuster ist die Abfrage, mit der pruefeAenderung den Titel sperrt und liest.
+const sqlTitelstandMuster = `SELECT COALESCE\(isbn, ''\), COALESCE\(autor, ''\), ist_lernmittel, mehrjahresband, COALESCE\(jahrgang_von, 0\), COALESCE\(jahrgang_bis, 0\) FROM buecher_titel WHERE id = \$1 FOR UPDATE`
+
+// alleTitelFelder nennt jedes Feld: ein Aufrufer, der den ganzen Titel schreibt.
+func alleTitelFelder() []string {
+	felder := make([]string, 0, len(titelFelder))
+	for _, f := range titelFelder {
+		felder = append(felder, f.name)
+	}
+	return felder
 }

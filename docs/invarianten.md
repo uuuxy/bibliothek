@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-05
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-06
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -466,7 +466,11 @@ veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderunge
   Zahl vom Öffnen mit, der Server lehnt bei abweichendem Stand ab, und die Rückfrage misst
   an der geladenen Zahl. Beim Beheben kam ein dritter Fall dazu: Der Server zählte bestellte
   Exemplare zum Bestand, die Maske nicht — jedes Speichern eines Titels mit offener
-  Bestellung sonderte aus. Offen sind die übrigen Felder des Titels (OFFEN.md 5.5).
+  Bestellung sonderte aus. Behoben am 06.10.2026 für die übrigen Felder des Titels: Die Maske
+  schickt die Felder, die sie seit dem Öffnen geändert hat, und der Server schreibt die, die
+  der Rumpf nennt (`inventur/titel_genannte_felder_pg_test.go`,
+  `frontend/e2e/buchmaske-zwei-plaetze.spec.js`). Ändern zwei Plätze dasselbe Feld, gilt der
+  spätere Eintrag.
 
 Ein Gate hat keine der vier Fragen. Für 16 gibt es ein Muster (`page.keyboard.type` und
 Enter ohne Klick, `frontend/e2e/kiosk-scannerfokus.spec.js`), für 18 den Test mit zwei
