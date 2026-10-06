@@ -1,14 +1,15 @@
-<!-- @component PortalProblemZeile — die Zeile unter der Suche des Portals: links die Filter,
-     rechts „Problem melden" ohne Buch, darunter das Formular. Der Knopf bleibt beim Tippen
-     stehen: Eine Meldung soll nicht hinter der Suche nach einem Titel liegen. -->
+<!-- @component PortalProblemZeile — „Problem melden" ohne Buch in einer eigenen Zeile unter der
+     Suche des Portals, darunter das Formular. Der Knopf steht links, wo sein Formular aufklappt
+     und die eigenen Meldungen stehen, und bleibt beim Tippen stehen: Eine Meldung soll nicht
+     hinter der Suche nach einem Titel liegen. -->
 <script>
 	import { tick } from 'svelte';
 	import { TriangleAlert } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import ProblemFormular from './ProblemFormular.svelte';
 
-	/** @type {{ form: import('./problemMeldung.svelte.js').MeldeFormular, onumschalten: () => void, onsenden: () => Promise<boolean>, onabbrechen: () => void, children?: import('svelte').Snippet }} */
-	let { form, onumschalten, onsenden, onabbrechen, children } = $props();
+	/** @type {{ form: import('./problemMeldung.svelte.js').MeldeFormular, onumschalten: () => void, onsenden: () => Promise<boolean>, onabbrechen: () => void }} */
+	let { form, onumschalten, onsenden, onabbrechen } = $props();
 
 	/** @type {HTMLButtonElement | undefined} */
 	let knopf = $state();
@@ -27,8 +28,9 @@
 	}
 </script>
 
-<div class="flex flex-wrap items-center gap-3">
-	<div class="min-w-0 flex-1">{@render children?.()}</div>
+<!-- Die Hülle hält den Knopf auf seiner Breite: Als Kind einer Spalte zöge er sich sonst über
+     die ganze Zeile. -->
+<div class="flex">
 	<Button variant="secondary" bind:element={knopf} aria-expanded={form.open} onclick={onumschalten}>
 		<TriangleAlert class="h-4 w-4" aria-hidden="true" />
 		Problem melden

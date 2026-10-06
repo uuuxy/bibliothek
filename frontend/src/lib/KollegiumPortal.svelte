@@ -93,9 +93,9 @@
 	/>
 
 	{#if reiter === 'buecher'}
-		<!-- `mt-4`: Der Abstand Reiter→Pille ist im Haus 24 px (Hülle) + 16 px. Darunter die
-		     Zeile wie in der Leserdatei (gap-3): links die Filter nach Schlagwort, rechts
-		     „Problem melden" ohne Buch. -->
+		<!-- `mt-4`: Der Abstand Reiter→Pille ist im Haus 24 px (Hülle) + 16 px. Darunter erst
+		     die Filter nach Schlagwort, dann in einer eigenen Zeile „Problem melden" ohne Buch:
+		     Die Filter gehören zur Suche, die Meldung nicht. -->
 		<div class="mt-4 flex flex-col gap-3">
 			<Suchpille
 				id="portal-suchfeld"
@@ -105,21 +105,20 @@
 				autofokus
 				{nachlaufend}
 			/>
+			{#if suche.filter.length > 0}
+				<FilterChips
+					optionen={suche.filter.map((f) => ({ wert: f.id, text: f.wort }))}
+					wert={suche.schlagwort}
+					onwahl={(w) => (suche.schlagwort = w)}
+					etikett="Nach Schlagwort filtern"
+				/>
+			{/if}
 			<PortalProblemZeile
 				form={meldung.form(OHNE_BUCH)}
 				onumschalten={meldeOhneBuch}
 				onsenden={() => meldung.senden(OHNE_BUCH)}
 				onabbrechen={() => meldung.schliesse(OHNE_BUCH)}
-			>
-				{#if suche.filter.length > 0}
-					<FilterChips
-						optionen={suche.filter.map((f) => ({ wert: f.id, text: f.wort }))}
-						wert={suche.schlagwort}
-						onwahl={(w) => (suche.schlagwort = w)}
-						etikett="Nach Schlagwort filtern"
-					/>
-				{/if}
-			</PortalProblemZeile>
+			/>
 		</div>
 
 		{#if suche.fehler}

@@ -693,9 +693,9 @@ Freitext und legt keine Klasse an. Die Suche findet die Bücher der Bücherei un
 Schulbücher, auch Titel, die bestellt und noch nicht eingetroffen sind; am Treffer steht dann
 „N bestellt", auch neben dem Bestand im Haus, und reservieren lässt er sich schon. Am Treffer
 stehen zwei Aktionen: „Klassensatz reservieren" und „Problem melden"; die Meldung nennt dann
-dieses Buch. Unter dem Suchfeld steht rechts „Problem melden" ohne Buch, auch während gesucht
-wird: Das Formular fragt dann, worum es geht, und was im Suchfeld steht, ist dort schon
-eingetragen. Solange nichts gesucht wird, stehen unter der Suche die eigenen Reservierungen
+dieses Buch. Unter dem Suchfeld steht links in einer eigenen Zeile „Problem melden" ohne Buch,
+auch während gesucht wird: Das Formular klappt darunter auf und fragt, worum es geht; was im
+Suchfeld steht, ist dort schon eingetragen. Solange nichts gesucht wird, stehen unter der Suche die eigenen Reservierungen
 und Meldungen mit ihrem Stand und der Antwort der Bibliothek. Unter dem Suchfeld stehen
 die Schlagworte, die die Bibliothek unter _Einstellungen → Schlagworte_ als Filter markiert
 hat: Ein Klick zeigt alle Titel des Worts, zusammen mit einem Suchwort nur die, die beides

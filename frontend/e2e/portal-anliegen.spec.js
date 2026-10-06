@@ -73,9 +73,21 @@ test.describe.serial('Portal: Problem melden', () => {
 			'LMF-Plan'
 		]);
 		await expect(page.getByRole('button', { name: 'Buchwunsch' })).toHaveCount(0);
-		await page.getByRole('button', { name: 'Problem melden', exact: true }).click();
+		const knopf = page.getByRole('button', { name: 'Problem melden', exact: true });
+		await knopf.click();
 		const worum = page.getByLabel('Worum geht es? *');
 		await expect(worum).toBeFocused();
+		// Der Knopf steht links, sein Formular klappt darunter auf: dieselbe linke Kante.
+		const knopfLage = await knopf.boundingBox();
+		const feldLage = await worum.boundingBox();
+		if (!knopfLage || !feldLage) throw new Error('Knopf oder Feld ohne Lage');
+		expect(
+			Math.abs(knopfLage.x - feldLage.x),
+			'linke Kante von Knopf und Feld'
+		).toBeLessThanOrEqual(1);
+		expect(feldLage.y, 'das Feld steht unter dem Knopf').toBeGreaterThan(
+			knopfLage.y + knopfLage.height
+		);
 		await worum.fill(OHNE_BUCH);
 		const absenden = page.getByRole('button', { name: 'Absenden' });
 		await expect(absenden, 'ohne Beschreibung des Problems').toBeDisabled();

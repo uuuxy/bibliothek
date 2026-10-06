@@ -48,6 +48,21 @@ test.describe('Mein Portal: Filter nach Schlagwort', () => {
 		const treffer = page.locator('h3');
 		await expect(chip).toHaveAttribute('aria-pressed', 'false');
 
+		// „Problem melden" steht in einer eigenen Zeile unter den Filtern, an derselben linken
+		// Kante: Die Filter gehören zur Suche, die Meldung nicht.
+		const filterLage = await filter.boundingBox();
+		const meldenLage = await page
+			.getByRole('button', { name: 'Problem melden', exact: true })
+			.boundingBox();
+		if (!filterLage || !meldenLage) throw new Error('Filter oder „Problem melden" ohne Lage');
+		expect(meldenLage.y, '„Problem melden" unter den Filtern').toBeGreaterThanOrEqual(
+			filterLage.y + filterLage.height
+		);
+		expect(
+			Math.abs(meldenLage.x - filterLage.x),
+			'linke Kante von Filtern und „Problem melden"'
+		).toBeLessThanOrEqual(1);
+
 		// Ohne Suchtext: alle Titel des Worts — und nur sie.
 		await chip.click();
 		await expect(chip).toHaveAttribute('aria-pressed', 'true');
