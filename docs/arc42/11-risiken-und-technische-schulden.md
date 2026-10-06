@@ -41,7 +41,7 @@ Reihenfolge tauscht, verklemmt sich gegen die bestehenden — und das ist einget
 Rückgabe-Trigger aus Migration 137 sperrt die Leserzeile nach der Ausleihe. Geben zwei Kinder an
 zwei Theken zugleich je das Buch des anderen ab, bricht Postgres eine Buchung ab (40P01,
 nachgestellt am 23.09.2026); erneutes Scannen bucht, Daten gehen nicht verloren. Am 24.09.2026
-entschieden, das bis zum nächsten Umbau der Karenz-Uhr so zu lassen (OFFEN.md 5.22). Es gibt **keinen Detektor**;
+entschieden, das bis zum nächsten Umbau der Karenz-Uhr so zu lassen. Es gibt **keinen Detektor**;
 die Invariante steht als 🟡 im Katalog. Ein Gate wäre schwer, weil die Sperren über mehrere
 Funktionen verteilt sind — der ehrliche Zwischenstand ist der Kommentar an jeder Stelle.
 

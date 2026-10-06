@@ -16,9 +16,13 @@ Liste geführt wird, steht am Ende.
 
 - [ ] **Theke: zweiter Scan desselben Buchs.** Er leiht das eben zurückgegebene Buch nicht
   wieder aus, und eine Ausleihe meldet sich mit eigener Farbe und eigenem Ton. Zuerst das Bild,
-  nach dem Ja der Bau. Der einzige offene Punkt, der still schaden kann. (4.32)
+  nach dem Ja der Bau. Kann still schaden: Das Buch steht im Regal und bleibt auf einem Konto.
+  (4.32)
 - [ ] **Standort: Ein neues Exemplar erbt ihn,** wenn alle übrigen Exemplare des Titels
   denselben tragen. Entschieden am 06.10.2026. (5.53)
+- [ ] **Titel speichern:** Speichern zwei Plätze denselben Titel, gewinnt bei den Feldern des
+  Titels ohne Meldung der zweite; die Eingabe des ersten ist weg. Die Maske schickt künftig nur
+  die geänderten Felder. (5.5)
 - [x] **PRs auf GitHub:** 21 durchgesehen am 06.10.2026. Zwei sind hereingeholt (701, 702), 19
   geschlossen; aus sieben davon sind die Tests übernommen (d1dba610).
 - [x] **PR 722** durchgesehen und geschlossen am 06.10.2026: Die Prüfung beim Löschen einer
@@ -57,7 +61,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
 - [ ] Arbeitsnotizen der Entwicklung ins Repository, entlang dem Pflegekonzept. (9.9)
 - [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3), Uptime-Signal (7.5),
-  Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9).
+  Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9). Danach nachsehen:
+  Admin-Konten, Verbindung zur DNB (7.8).
 - [ ] Abnahmen mit echten Daten. (7.7)
 - [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4)
 
@@ -91,24 +96,39 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Ab dem 28. Oktober 2026: Node 26, nach der Regel „immer die aktive LTS"
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
 
-### Später: gebündelt, ohne feste Reihenfolge
+### Später: kleine Fehler und Aufräumarbeit
 
-Fehler, die sich laut melden, und Unordnung ohne Wirkung nach außen; keiner schadet still. Die
-Punkte stehen einzeln unter ihrer Nummer. Was erledigt ist, wird dort gelöscht.
+Ohne feste Reihenfolge, gebündelt. Die Einzelheiten stehen unter der Nummer; was erledigt ist,
+wird dort gelöscht.
 
-- 4.30 Mahnbrief: Anrede ab 18, Klasse auf dem Brief
-- 5.5 Bestand, Katalog, Druck
-- 5.10 Gates und Werkzeuge
-- 5.19 Auskunft: was aufs Blatt gehört, zwei Einträge ohne Kennung des Kontos
-- 5.22 Fremdrückgabe über Kreuz: bleibt so (entschieden am 24.09.2026)
-- 5.25 Eine Forderung für ein Gerät lässt sich nicht anlegen
-- 5.35 Protokolleinträge, die die Tilgung nicht erreicht
-- 5.45 Listen und Breiten in schmalen Fenstern
-- 5.49 Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
-- 5.53 Standort: welcher Knopf der gefüllte ist
-- 5.54 Klassensätze aus den Ausleihen, Hinweise an der Theke
-- 7.8 Am Server nachsehen
-- Abschnitt 6: Beobachtungen und Kategorie C, nur mit Anlass
+- **Jahrgang am Titel (5.5):** „Klasse" und „von … bis" werden eine Angabe, „unbekannt" eine
+  eigene (entschieden am 24.09.2026). Davor: je Titel festlegen, welche Spanne gilt.
+- **Buchakte (5.5):** „Exemplar löschen" an einem bestellten Exemplar schreibt einen Abgang ohne
+  Zugang; ausgesonderte und bestellte Exemplare heißen dort „Gesperrt".
+- **Druck-Center (5.5, 5.45):** Ein Ladefehler steht als „kein Exemplar" da, die Vorschau zeigt
+  immer denselben Bogen, und bei vielen Exemplaren wird die Seite sehr lang.
+- **Überläufe (5.45):** Bestellwesen 16 px, Signaturen bei 1280 px, ein langer Name in der
+  Leserakte.
+- **Auskunft (5.19):** Zwei Einträge über die Anlage eines Kontos fehlen, sobald das Konto
+  gelöscht ist; zu klären, welche Rohdaten aufs Blatt gehören.
+- **Protokoll und Tilgung (5.35):** Einträge, die einen Leser nur über seine Forderung meinen;
+  die Frist für die Löschspur von Forderung und Vormerkung; am Testserver alte Einträge zu schon
+  gelöschten Lesern.
+- **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
+- **Zwei Helfer (5.5):** Beträge und Fehlertexte schreiben 27 Stellen selbst.
+
+### Nur mit Anlass: kein Schritt
+
+Bekannt und beschrieben. Gebaut wird erst, wenn der dort genannte Anlass eintritt.
+
+- 5.5 Die kurze Nummer der Littera-Etiketten an der Theke: entscheidet sich mit der Generalprobe.
+- 5.5 Listenimport: Trägt eine Zeile die Ausweisnummer eines Lesers als Buchnummer, nennt die
+  Meldung weder Zeile noch Weg.
+- 5.25 Eine Forderung für ein Gerät lässt sich nicht anlegen.
+- 5.45 Bedienung am Tablet und in Fenstern unter 1280 px.
+- 5.49 Versetzung, wenn eine Klasse mit einer Zahl beginnt, die kein Jahrgang ist.
+- 5.54 Klassensätze aus den Ausleihen für ET1 bis ET3, weitere Hinweise an der Theke.
+- Abschnitt 6: Beobachtungen und Kategorie C.
 
 ---
 
@@ -221,19 +241,6 @@ Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten. Er wird beim 
 Einstellungen → Schule eingetragen; das Feld ist heute leer, neue Etiketten tragen also keinen
 Vermerk.
 
-### 4.30 Mahnbrief: Anrede ab 18 und die Klasse auf dem Brief
-
-Am 04.10.2026 gebaut und am selben Tag zurückgenommen, weil nicht bestellt:
-
-- **Brief ab 18 an die Person selbst.** Der Mahnbrief geht immer an „Eltern von …". Die Regel
-  hat nur der Bescheid; die Arbeitshilfe des Landes nennt sie für das Schreiben mit der
-  Zahlungsaufforderung („bei den volljährigen Schülerinnen und Schülern oder den
-  Erziehungsberechtigten der minderjährigen"). Littera kennt keine Altersregel. Gelesen, nicht
-  nachgestellt: Auch die Ersatzforderung (`pdf/rechnung.go`) und der Brief zum Schadensfall
-  (`pdf/schadensfall.go`) sprechen immer die Erziehungsberechtigten an.
-- **Klasse auf dem Brief.** Das frühere Blatt aus der Auswahl nannte die Klasse, der Brief nennt
-  sie nicht. Die Briefe einer Klasse liegen im Druck beieinander.
-
 ### 4.32 Theke: ein Stapel vom Rückgabetisch
 
 Seit dem 06.10.2026 gibt es die Schnellrückgabe wie in Littera: ein Knopf neben dem Scanfeld.
@@ -331,7 +338,8 @@ Gegenprobe den heutigen Stand fest.
   the field mask are updated"). Ein Vergleich des ganzen Stands lehnte dagegen auch ab, wenn
   dazwischen nur ein Cover nachgeladen wurde. Dieselbe Form an Leser, Gerät, Benutzer und
   Einstellungen ist nicht durchgesehen (Raster, Frage 18; [sweeps.md](sweeps.md), „Absoluter
-  Wert aus dem Ladezeitpunkt").
+  Wert aus dem Ladezeitpunkt"). Die Eingabe des ersten Platzes geht ohne Meldung verloren;
+  der Punkt steht deshalb im Fahrplan in Etappe 1.
 - Die Buchakte führt ausgesonderte und bestellte Exemplare als „Gesperrt" (Reiter
   „Exemplare", `BookExemplarCard.svelte`; die Buchmaske listet seit dem 02.10.2026 nur den
   Bestand). „Exemplar löschen" antwortet dort an einem ausgesonderten „exemplar nicht
@@ -568,24 +576,6 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   (`ToolbarDruck.svelte`, `Toolbar.svelte`) stehen von Hand in gleicher Form, nicht aus
   `ui/Segmente`. Die zwei Farbwähler der Eigenschaften sind 32 und 36 px hoch.
 
-### 5.22 Fremdrückgabe über Kreuz verklemmt sich — seit Migration 137
-
-Geben zwei Kinder an zwei Theken zugleich je das Buch des anderen ab, wartet jede Transaktion
-auf die andere, und Postgres bricht nach einer Sekunde eine ab (40P01): Der Rückgabe-Trigger
-`trg_leser_stempel_rueckgabe` (Karenz-Uhr) sperrt die Leserzeile des Ausleihers nach der
-Ausleihe, die Fremdrückgabe sperrt vorher das Kind der offenen Sitzung. Nachgestellt am
-23.09.2026 mit den Schritten des Codes
-(`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_Fremdrueckgabe ./repository/`); das
-Nachbuchen zweier Theken, die über Kreuz umbuchen, hat dieselbe Folge von Sperren (nicht eigens
-nachgestellt). Wirkung: An der Theke erscheint eine Fehlermeldung, erneutes Scannen bucht; beim
-Nachbuchen läuft der Eintrag in der nächsten Runde durch. Daten gehen nicht verloren. Dieselbe
-Sperre lässt eine Rückgabe warten, solange ein anderer Vorgang die Leserzeile hält (etwa ein
-LUSD-Lauf, der diesen Schüler ändert).
-
-**Entschieden am 24.09.2026: so lassen.** Die Abhilfe wäre der Stempel in einer eigenen Tabelle
-statt an der Leserzeile — eine Migration an der Karenz-Uhr (Löschuhr, Wächter, DSGVO-Auskunft
-lesen ihn). Sie kommt beim nächsten Umbau der Karenz-Uhr mit.
-
 ### 5.25 Eine Forderung für ein Gerät lässt sich nicht anlegen
 
 Die Datenbank sieht sie vor (`check_damage_item`: genau eines von `exemplar_id` und
@@ -698,7 +688,7 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   Grenze von 1024 px, an der die Akte Leserkarte (320 px) und Inhalt nebeneinanderstellt,
   bleiben ihm 98 bis 139 px (gemessen am 02.10.2026 mit zwölf Ausleihen). Wer die
   Navigation unter 1258 px von Hand ausklappt, lässt dem Titel weniger als 140 px, unter
-  1118 px nichts. Nicht gebaut: die Zeile zweizeilig. Bei 1024 bis rund 1035 px ist auch die
+  1118 px nichts. Bei 1024 bis rund 1035 px ist auch die
   Reiterzeile der Akte 12 px zu schmal, sobald „Gebühren & Schäden" eine Zahl trägt (gemessen am
   05.10.2026: 540 von 528 px); sie lässt sich dann seitlich schieben.
 - **Eingeklappte Navigation:** Sie zeigt nur Symbole, bis zu 18; der Name steht im `title`
@@ -745,7 +735,7 @@ sie in der Vorschau. Kategorie B.
 ### 5.53 Standort am Exemplar: was offen ist
 
 Der Standort steht am Exemplar und wird in der Buchakte über „Standort ändern" gesetzt; das
-Feld am Titel gibt es nicht mehr. Offen sind drei Punkte:
+Feld am Titel gibt es nicht mehr. Offen sind zwei Punkte:
 
 - **Neue Exemplare.** Entschieden am 06.10.2026: Ein neues Exemplar erbt den Standort, wenn
   alle übrigen Exemplare des Titels im Bestand denselben tragen. Nicht gebaut: Heute kommt es
@@ -754,10 +744,6 @@ Feld am Titel gibt es nicht mehr. Offen sind drei Punkte:
   Titelmaske erhöht (`gleicheExemplareAn` in `inventur/db_books_update.go`), Bestellung
   (`BulkInsertCopiesTx` in `repository/book_inventory.go`) und Listenimport
   (`internal/service/import_dynamic.go`). Die Regel gehört an eine Stelle.
-- **Der gefüllte Knopf.** In der Leiste der markierten Exemplare ist „Eigentum ändern"
-  gefüllt, „Standort ändern" umrandet. Material 3 hebt eine Aktion hervor, und zwar die, die am
-  häufigsten gebraucht wird. Wird der Standort öfter geändert als das Eigentum, tauschen die
-  zwei Knöpfe die Form (`BookExemplareTab.svelte`).
 - **Bestandsliste.** Die Bestandsliste als CSV ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
   Abschnitt 8) nennt je Exemplar die Signatur, den Standort nicht. Nächster Schritt: eine
   Spalte „Standort" in `inventur/export_csv.go` und im Pflegekonzept.
@@ -770,7 +756,8 @@ Littera-Datenbank zu sehen (7.2). Kategorie B.
 
 ### 5.54 Klassensätze aus den Ausleihen und Hinweise an der Theke
 
-Besprochen am 03.10.2026 und bis zum 05.10.2026 nicht eingetragen.
+Am 03.10.2026 auf eine Frage hin am Code gelesen. Ein Auftrag dazu liegt nicht vor; gebaut
+wird nur mit Anlass.
 
 - Für ET1 bis ET3 entsteht kein Klassensatz „aus Ausleihen": Die Übersicht zählt nur Klassen,
   deren Name mit einer Ziffer beginnt (`GetClassGroups` in `inventur/datenbank_klassen.go`).
@@ -1037,8 +1024,6 @@ Kategorie B.
   gezählt am 30.09.2026); gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto
   mitbringt. Neue PDFs nicht mehr auf dem archivierten; die 17 beim fachlichen Anfassen
   umstellen, mit den PDF-Gates.
-- Etikettenraster doppelt (`api/label_formats.go` und `etikettformate.js`), gehalten von
-  `etikettformate-konsistenz.test.js`; am 31.08.2026 entschieden geparkt.
 - Reste des Nie-verdrahtet-Sweeps: `abgaenger_jahr` in der Aktivlisten-Antwort ohne
   Konsument; bei den Geräten `ActionEvent.GeraetID` ohne Broadcast und mit Null-Zeitstempel.
 - Die Prüfung der UUID-Pfadparameter (`ValidateUUIDParamsMiddleware`) sitzt in

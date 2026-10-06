@@ -185,7 +185,7 @@ Gate gibt es nicht. Sie steht als Invariante im Katalog und in den Kommentaren d
 Funktionen. Der Rückgabe-Trigger aus Migration 137 (`trg_leser_stempel_rueckgabe`) hält sie
 nicht: Er sperrt die Leserzeile nach der Ausleihe. Geben zwei Kinder an zwei Theken zugleich je
 das Buch des anderen ab, bricht Postgres eine der beiden Buchungen ab; erneutes Scannen bucht.
-Am 24.09.2026 entschieden, das so zu lassen, bis die Karenz-Uhr umgebaut wird (OFFEN.md 5.22).
+Am 24.09.2026 entschieden, das so zu lassen, bis die Karenz-Uhr umgebaut wird.
 
 **Fundstelle.** `internal/service/loan_checkout.go`, `repository/loan.go`
 (`StempleBewegungZum`), [invarianten.md](../invarianten.md) Abschnitt 1.
