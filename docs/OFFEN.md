@@ -32,7 +32,7 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
-77 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
+29 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
 Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
 
 - [x] Buchakte mit der Liste der Ausleiher (20)
@@ -50,7 +50,7 @@ Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm gep
 - [x] Dunkle Flächen (16): Sucher der Kamera, Leiste des Ausweisdrucks, die zwei Schleier
   hinter den Alarmen der Theke
 - [x] Initialen-Kachel der Leserakte (16)
-- [ ] Cover-Platzhalter im Katalog (48)
+- [x] Cover-Platzhalter im Katalog (48)
 - [ ] Karte im Ausweis-Designer (29)
 
 ### Etappe 3: vor dem Echtstart
@@ -492,7 +492,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 06.10.2026: 77 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 06.10.2026: 29 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -502,9 +502,6 @@ geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über u
 über ui/BuchCover, Rückmeldung beim Zeigen über den State-Layer statt `hover:bg-*`, ein Fehler
 über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für die übrige Anwendung
 freigegeben am 23.09.2026.
-
-`inventur/lib/bookHelpers.js` (48) sind Farbverläufe je Fach für selbstgebaute
-Cover-Platzhalter.
 
 Im Ausweis-Designer bleiben 29 Stellen: die Farben der Karte (`themes` in
 `designer/Toolbar.svelte`, die Vorgaben in `idDesignerStore.svelte.js`) und die Platzhalter
