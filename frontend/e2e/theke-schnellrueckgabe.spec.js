@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, seedSQL, querySQL, uniqueSuffix, scanneWieScanner } from './helpers.js';
 
 /**
- * Ein Stapel vom Rückgabetisch (docs/OFFEN.md 4.32): zwei verliehene Bücher, ein freies
+ * Ein Stapel vom Rückgabetisch (docs/HANDBUCH.md, Ausleihe): zwei verliehene Bücher, ein freies
  * dazwischen und ein doppelt gescanntes.
  *
  * Ohne Schnellrückgabe lädt die erste Rückgabe den Leser des Buchs, und das freie Buch geht

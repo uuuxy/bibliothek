@@ -14,9 +14,8 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 1: als Nächstes
 
-- [ ] **Theke: eigene Farbe für die Ausleihe?** Eine Ausleihe klingt seit dem 06.10.2026
-  anders als eine Rückgabe. Offen ist, ob sie auch anders blitzt. Vorschlag: bleibt grün.
-  (4.32)
+- [x] **Theke: zweiter Scan desselben Buchs.** Eine Ausleihe klingt seit dem 06.10.2026
+  anders als eine Rückgabe. Eine Sperre und eine eigene Farbe gibt es nicht.
 - [ ] **Standort: Ein neues Exemplar erbt ihn,** wenn alle übrigen Exemplare des Titels
   denselben tragen. Entschieden am 06.10.2026. (5.53)
 - [ ] **Titel speichern:** Speichern zwei Plätze denselben Titel, gewinnt bei den Feldern des
@@ -223,27 +222,6 @@ den Schulträger, bei 90 Büchern ein seltener Fall.
 Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten. Er wird beim Einrichten unter
 Einstellungen → Schule eingetragen; das Feld ist heute leer, neue Etiketten tragen also keinen
 Vermerk.
-
-### 4.32 Theke: eigene Farbe für die Ausleihe
-
-Ohne die Schnellrückgabe leiht der zweite Scan desselben Buchs es wieder aus, und ein freies
-Buch im Stapel geht an den Leser der vorigen Rückgabe ([Handbuch](HANDBUCH.md)). Seit dem
-06.10.2026 ist das zu hören: Eine Ausleihe klingt mit zwei Tönen abwärts, alles andere Gebuchte
-aufwärts (`playSoundSuccess` in `lib/audio.js`).
-
-Offen: Soll eine Ausleihe auch in einer eigenen Farbe blitzen? Heute blitzen Ausleihe und
-Rückgabe grün; wer ohne Ton arbeitet, unterscheidet sie nur am Text der Meldung. Dagegen
-spricht:
-
-- Der Rand des Scanfelds ist im Fokus schon blau (`primary`), Blau wäre dort nicht zu sehen.
-  Eine Farbe, die sich von Grün, Bernstein und Rot abhebt, wäre eine neue Rolle in beiden
-  Schemata.
-- M3 vergibt Farbe nach dem Zustand („to communicate semantic meaning, like a green success
-  state", Advanced customizations) und die Akzentrollen nach dem Gewicht („based on importance
-  and needed emphasis. Use caution when changing color roles for visual effect", Color roles).
-  Ausleihe und Rückgabe sind beide gebucht.
-
-Vorschlag: bleibt grün. Wird die Farbe gewünscht, vor dem Bau ein Bild nach den M3-Seiten.
 
 ---
 
@@ -458,17 +436,17 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 Alle Farbklassen der Oberfläche sind Rollen aus `styles/rollen.css`.
 `frontend/src/lib/frontend-hygiene-farben.test.js` lässt keine Palettenklasse, kein Weiß oder
-Schwarz als Klasse und keine Rolle zu, die es nicht gibt. Feste Farbwerte stehen noch an vier
+Schwarz als Klasse und keine Rolle zu, die es nicht gibt. Feste Farbwerte stehen noch an drei
 Stellen (gezählt am 06.10.2026):
 
-- Der Bildschirmblitz der Theke (`OmniboxScreenFlash.svelte`) trägt Grün, Rot und Bernstein als
-  feste Werte der Tailwind-Palette, nicht die Töne der Rollen. Er gehört zum Vorschlag aus 4.32
-  (eigene Farbe für die Ausleihe).
 - Die zwei Reihenfarben im Diagramm der Statistik (`StatsTrendChart.svelte`), gewählt nach
   Unterscheidbarkeit bei Farbfehlsichtigkeit; die Rollen führen kein solches Paar.
 - Das Druckfenster der Listen (`utils/listenDruck.js`) ist ein eigenes Dokument mit eigenem
   Stylesheet und sechs Grau- und Rottönen der Palette.
 - Der Reliefschatten des Logos (`ui/LogoRelief.svelte`).
+
+Der Bildschirmblitz der Theke (`OmniboxScreenFlash.svelte`) trägt Grün, Rot und Bernstein als
+feste, hellere Werte der Tailwind-Palette und bleibt so (entschieden am 06.10.2026).
 
 Die Farben der Ausweiskarte sind Werte des Entwurfs (`designer/kartenFarben.js`), keine
 Rollen: Die Karte wird gedruckt und bleibt, wie sie ist, auch wenn die Oberfläche ihr Farbschema

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Die Schnellrückgabe der Theke (docs/OFFEN.md 4.32): Ein Stapel vom Rückgabetisch wird nur
+// Die Schnellrückgabe der Theke (docs/HANDBUCH.md, Ausleihe): Ein Stapel vom Rückgabetisch wird nur
 // zurückgenommen. Ohne sie lädt die erste Rückgabe den Leser des Buchs, und das nächste freie
 // Buch geht an ihn.
 //
