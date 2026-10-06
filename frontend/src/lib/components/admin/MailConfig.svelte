@@ -1,12 +1,16 @@
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { apiGet, apiPut, apiPost, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 
 	let loading = $state(true);
+	// Nach einem gescheiterten Laden steht kein Formular da: Leere Felder gingen sonst als
+	// leerer Server und Benutzer zurück (ui/LadeFehler).
+	let ladeFehler = $state(false);
 	let saving = $state(false);
 	let testing = $state(false);
 
@@ -27,7 +31,8 @@
 	 */
 	let testResult = $state(null);
 
-	onMount(async () => {
+	async function laden() {
+		loading = true;
 		try {
 			const data = await apiGet('/api/admin/settings/mail');
 			host = data.smtp_host || '';
@@ -36,12 +41,16 @@
 			sender = data.sender_email || '';
 			hasPassword = data.has_password || false;
 			testEmail = sender; // default
+			ladeFehler = false;
 		} catch (e) {
 			console.error(e);
+			ladeFehler = true;
 		} finally {
 			loading = false;
 		}
-	});
+	}
+
+	onMount(laden);
 
 	async function saveConfig() {
 		saving = true;
@@ -96,6 +105,8 @@
 	<div class="flex items-center justify-center py-20">
 		<Ladekreis size="lg" />
 	</div>
+{:else if ladeFehler}
+	<LadeFehler onerneut={laden} />
 {:else}
 	<div class="animate-fade-in flex w-full max-w-3xl flex-col gap-10">
 		<div class="flex flex-col gap-6">
