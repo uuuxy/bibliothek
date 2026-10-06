@@ -1,11 +1,13 @@
 <script>
 	import { authStore } from './stores/authStore.svelte.js';
-	import { TriangleAlert, Check } from '@lucide/svelte';
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import UserManagement from './UserManagement.svelte';
 	import PermissionsEditor from './PermissionsEditor.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
+	import LadeFehler from './components/ui/LadeFehler.svelte';
+	import { toastStore } from './stores/toastStore.svelte.js';
 	import { permissionsMetadata } from './permissionMetadata.js';
 
 	// State Runes (Svelte 5)
@@ -16,13 +18,11 @@
 	let permissionsState = $state({});
 	let loadingPermissions = $state(true);
 
-	// Common UI State
+	// Der Grund, aus dem die Matrix nicht geladen werden konnte.
 	/** @type {string | null} */
 	let error = $state(null);
 	/** @type {Record<string, boolean>} */
 	let updatingKeys = $state({});
-	/** @type {string | null} */
-	let successMessage = $state(null);
 
 	// Load permissions
 	async function fetchPermissions() {
@@ -38,11 +38,7 @@
 			const data = await res.json();
 
 			/** @type {Record<string, Record<string, boolean>>} */
-			// Alle aktiven Rollen vorbelegen, damit ihre Spalte auch ohne Server-Zeile
-			// erscheint. 'kollegium' statt des seit Migration 069 toten 'lehrer' — der alte
-			// Key wurde von keinem Consumer gelesen (PermissionsEditor liest 'kollegium'),
-			// kollegium selbst entstand bisher nur zufällig über die Rückfallzeile unten.
-			// 'leitung' seit Migration 121.
+			// Alle aktiven Rollen vorbelegen, damit ihre Spalte auch ohne Server-Zeile erscheint.
 			const newState = { admin: {}, leitung: {}, mitarbeiter: {}, kollegium: {}, helfer: {} };
 			data.forEach((/** @type {any} */ item) => {
 				if (!newState[item.role]) newState[item.role] = {};
@@ -76,10 +72,8 @@
 				allowed: newVal
 			});
 
-			// Die Begründung des Servers durchreichen statt sie durch einen Einheitssatz zu
-			// ersetzen. Seit die Rechte-Matrix Administratoren vorbehalten ist, ist genau
-			// diese Begründung die Information, die zählt ("nur ein Administrator"), und
-			// ein 400 nennt die unbekannte Rolle/Rechte-Kombination beim Namen.
+			// Die Begründung des Servers durchreichen statt eines Einheitssatzes: Sie nennt, wer
+			// die Matrix ändern darf, und ein 400 die unbekannte Rolle oder das unbekannte Recht.
 			if (!res.ok) {
 				const grund = await res
 					.json()
@@ -89,12 +83,9 @@
 			}
 			permissionsState[role][permission] = newVal;
 
-			showToast('Rechte erfolgreich aktualisiert.');
+			toastStore.addToast('Rechte erfolgreich aktualisiert.', 'success');
 		} catch (err) {
-			error = err instanceof Error ? err.message : String(err);
-			setTimeout(() => {
-				error = null;
-			}, 5000);
+			toastStore.addToast(err instanceof Error ? err.message : String(err), 'error');
 		} finally {
 			const copy = { ...updatingKeys };
 			delete copy[updateKey];
@@ -102,24 +93,13 @@
 		}
 	}
 
-	// Helper: Flash message toast
-	/** @param {string} msg */
-	function showToast(msg) {
-		successMessage = msg;
-		setTimeout(() => {
-			if (successMessage === msg) successMessage = null;
-		}, 3000);
-	}
-
 	onMount(fetchPermissions);
 </script>
 
 <div class="w-full space-y-6 animate-fade-in no-print pb-12">
-	<!-- Zwei gleichrangige Aufgaben, zwei M3-Primary-Tabs links oben (entschieden am
-	     26.08.2026): Benutzer zuerst, weil das die häufige Aufgabe ist (Kollegin anlegen,
-	     Rolle zuweisen); Rollen & Rechte dahinter, weil selten und folgenschwer. Vorher: ein
-	     Segmented-Button mit Emoji rechts in der Ecke, 12 px, unter einem Menüpunkt, der
-	     nur „Berechtigungen" hieß — wer ein Konto suchte, klickte in die Einstellungen. -->
+	<!-- Zwei gleichrangige Aufgaben, zwei M3-Primary-Tabs: Benutzer zuerst, weil das die
+	     häufige Aufgabe ist (Kollegin anlegen, Rolle zuweisen); Rollen & Rechte dahinter,
+	     weil selten und folgenschwer. -->
 	<Reiter
 		etikett="Benutzer & Rechte"
 		aktiv={activeSubTab}
@@ -130,43 +110,19 @@
 		]}
 	/>
 
-	<!-- Error Alerts -->
-	{#if error}
-		<div
-			class="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium transition-all animate-slide-up flex items-center justify-between"
-		>
-			<span><TriangleAlert class="h-4 w-4" aria-hidden="true" /> {error}</span>
-			<button
-				onclick={() => (error = null)}
-				class="text-rose-500 hover:text-rose-600 font-bold ml-2">×</button
-			>
-		</div>
-	{/if}
-
-	<!-- Success Toast -->
-	{#if successMessage}
-		<div
-			class="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold shadow-lg transition-all animate-slide-up flex items-center gap-2"
-		>
-			<Check class="h-4 w-4 text-emerald-600" aria-hidden="true" />
-			<span>{successMessage}</span>
-		</div>
-	{/if}
-
 	{#if activeSubTab === 'permissions'}
 		<div id="panel-permissions" role="tabpanel" aria-labelledby="tab-permissions">
-			<!-- Der Satz zur Tragweite stand bis zum 04.09.2026 in Berechtigungen.svelte ueber
-			     der ganzen Seite und damit auch ueber der Suchpille des Benutzer-Reiters. Er
-			     gilt aber fuer DIESE Tabelle: Sie steuert Menue und API, und die Drift-Warnung
-			     der Betriebsbereitschaft zeigt genau hierher. -->
+			<!-- Der Satz zur Tragweite gilt dieser Tabelle: Sie steuert Menü und API, und die
+			     Drift-Warnung der Betriebsbereitschaft zeigt hierher. -->
 			<p class="mb-6 max-w-2xl text-sm text-on-surface-variant">
 				Rollen-Rechte. Was hier steht, steuert Menü und API — Abweichungen von der Code-Vorgabe
 				meldet die Betriebsbereitschaft.
 			</p>
 			{#if loadingPermissions}
-				<div class="p-12 text-center text-slate-400 font-medium animate-pulse">
-					Lade Rechtekonfiguration...
-				</div>
+				<div class="flex justify-center p-12"><Ladekreis size="lg" label="Rechte laden" /></div>
+			{:else if error}
+				<!-- Ohne geladene Matrix stünden alle Schalter auf „aus", als wären die Rechte entzogen. -->
+				<LadeFehler titel="Rechte nicht geladen" text={error} onerneut={fetchPermissions} />
 			{:else}
 				<PermissionsEditor
 					schreibgeschuetzt={authStore.currentUser?.rolle !== 'admin'}
@@ -180,9 +136,9 @@
 	{/if}
 
 	{#if activeSubTab === 'users'}
-		<!-- `flex flex-col`: Ohne das kollabiert der `mt-4` der Suchzeile in UserManagement
-		     mit dem Aussenabstand dieser Tafel (space-y-6), und die Pille sass 16 px zu hoch
-		     — 57 px statt 73. In einem Flex-Container kollabieren Raender nicht. -->
+		<!-- `flex flex-col`: Ohne das kollabiert der `mt-4` der Suchzeile in UserManagement mit
+		     dem Außenabstand dieser Tafel, und die Pille sitzt 16 px zu hoch. In einem
+		     Flex-Container kollabieren Ränder nicht. -->
 		<div id="panel-users" role="tabpanel" aria-labelledby="tab-users" class="flex flex-col">
 			<UserManagement />
 		</div>

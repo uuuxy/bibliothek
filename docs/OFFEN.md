@@ -32,7 +32,7 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
-315 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
+297 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
 Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
 
 - [x] Buchakte mit der Liste der Ausleiher (20)
@@ -42,7 +42,7 @@ Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm gep
   Meldungen (81)
 - [ ] Druck-Center und Quittung (26)
 - [ ] Monitor (25)
-- [ ] Berechtigungen (18)
+- [x] Berechtigungen (18)
 - [ ] System, Kamera-Scanner und Einzelstellen (70)
 
 Nicht in dieser Etappe: 48 Farbverläufe der selbstgebauten Cover-Platzhalter (6.2). Es bleiben
@@ -498,7 +498,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 06.10.2026: 315 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 06.10.2026: 297 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -534,6 +534,9 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   (gemessen am 06.10.2026). Stift, Drucker und Papierkorb sind 14 px große Symbole ohne
   Knopffläche (`.icon-btn`), drei davon erklären sich über `title` statt `data-tip` (am Code
   gelesen). „Interne ID generieren" bricht bei 1280 px Fensterbreite im Knopf in zwei Zeilen um.
+- „Rollen & Rechte": Bei 1280 px Fensterbreite bleiben der Erklärung eines Rechts 152 px
+  neben den vier Schaltern; die Sätze laufen über bis zu sieben Zeilen (`PermissionsEditor.svelte`,
+  gemessen am 06.10.2026).
 - Signaturen: Welche Signatur in der linken Liste gewählt ist, sagt nur die Farbe der Zeile
   (`SignaturenView.svelte`); für Screenreader trägt die gewählte Zeile kein Merkmal.
 - Klassensätze: Der Knopf „Bücher verwalten" heißt für Screenreader „Klasse bearbeiten"

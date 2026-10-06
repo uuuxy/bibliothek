@@ -18,11 +18,9 @@
 	let { metadata, permissionsState, updatingKeys, onToggle, schreibgeschuetzt = false } = $props();
 </script>
 
-<!-- DRY: ein Toggle-Block für Mitarbeiter, Lehrer und Helfer.
-     Seit 08.09.2026 der M3-Schalter aus ui/ statt eines sr-only/peer-checked-Nachbaus
-     (40×24 px, ohne zugänglichen Namen). Das {#key} setzt den Schalter nach jedem
-     Speichern auf den Stand der Matrix zurück — schlägt der PUT fehl, bliebe der
-     Schalter sonst umgelegt, obwohl das Recht unverändert ist. -->
+<!-- Ein Schalter-Block für alle Rollen. Das {#key} setzt den Schalter nach jedem Speichern
+     auf den Stand der Matrix zurück — schlägt der PUT fehl, bliebe der Schalter sonst
+     umgelegt, obwohl das Recht unverändert ist. -->
 {#snippet roleToggle(item, roleLabel, roleKey)}
 	{@const isUpdating = updatingKeys[`${roleKey}-${item.key}`]}
 	{@const wert = permissionsState[roleKey]?.[item.key] ?? false}
@@ -30,7 +28,9 @@
 		class="flex items-center gap-3"
 		title={schreibgeschuetzt ? 'Die Rechte-Matrix kann nur ein Administrator ändern' : undefined}
 	>
-		<span class="text-xs font-bold text-slate-500 tracking-wider w-24 text-right">{roleLabel}</span>
+		<span class="text-xs font-bold text-on-surface-variant tracking-wider w-24 text-right"
+			>{roleLabel}</span
+		>
 		{#key isUpdating}
 			<Switch
 				checked={wert}
@@ -45,26 +45,26 @@
 <div class="space-y-12">
 	{#each metadata as cat, _i (_i)}
 		<div>
-			<div class="pb-3 mb-1 border-b border-slate-200 flex items-center gap-3">
+			<div class="pb-3 mb-1 border-b border-outline-variant flex items-center gap-3">
 				<cat.icon class="text-on-surface-variant h-5 w-5" aria-hidden="true" />
-				<h3 class="font-bold text-slate-800 text-lg tracking-tight">{cat.category}</h3>
+				<h3 class="font-bold text-on-surface text-lg tracking-tight">{cat.category}</h3>
 			</div>
 
-			<div class="divide-y divide-slate-200">
+			<div class="divide-y divide-outline-variant">
 				{#each cat.items as item, _i (_i)}
-					<div
-						class="py-6 px-1 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/30 transition-colors"
-					>
+					<div class="py-6 px-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
 						<div class="max-w-xl space-y-1">
-							<span class="font-semibold text-slate-800 text-base tracking-tight">{item.label}</span
+							<span class="font-semibold text-on-surface text-base tracking-tight"
+								>{item.label}</span
 							>
-							<p class="text-sm text-slate-500 leading-relaxed font-medium">{item.desc}</p>
+							<p class="text-sm text-on-surface-variant leading-relaxed font-medium">{item.desc}</p>
 						</div>
 
 						<div class="flex items-center gap-8 md:gap-12 shrink-0">
 							<!-- Admin (Read-only) -->
 							<div class="flex items-center gap-3">
-								<span class="text-xs font-bold text-slate-400 tracking-wider w-24 text-right"
+								<span
+									class="text-xs font-bold text-on-surface-variant tracking-wider w-24 text-right"
 									>ADMIN</span
 								>
 								<Switch checked disabled label="Administrator hat immer alle Rechte" />
@@ -72,19 +72,9 @@
 
 							{@render roleToggle(item, 'LEITUNG', 'leitung')}
 							{@render roleToggle(item, 'MITARBEITER', 'mitarbeiter')}
-							<!-- KOLLEGIUM stand hier als vierte Spalte, seit die Rolle „lehrer“ am
-							     10.08.2026 so hieß (15d2806e). Sie ist am 16.09.2026 entfallen, weil
-							     Kollegium keine Rolle ist: „die Selbstregistration ist in dem
-							     Sinn keine Rolle. Das sind einfach alle.“ Eine Rolle vergibt der Admin
-							     (Leitung, Mitarbeiter, Helfer); wer keine hat, ist Kollegium, und das ist
-							     der Ausgangszustand jeder Lehrkraft, kein Rang neben den anderen.
-							     Seine Rechte stehen fest in db/seed.go: vormerken, sonst nichts im
-							     Programm. Das ist Absicht — was „Mein Portal“ kann, ist eine
-							     Produktentscheidung und kein Schalter, den jede Schule anders stellt. -->
-							<!-- HELFER fehlte hier: Das Backend fuehrt und liefert die Rechte dieser
-							     Rolle (seed.go, user_admin_permissions.go), aendern liess sie sich
-							     ueber die Oberflaeche aber nicht — sie war nur ueber die Vorgabe im
-							     Seed steuerbar. Audit-Befund vom 01.08.2026. -->
+							<!-- Kollegium hat keine Spalte: Es ist keine Rolle, sondern der Ausgangszustand
+							     jeder Lehrkraft. Seine Rechte stehen fest in db/seed.go; was „Mein Portal“
+							     kann, ist eine Produktentscheidung und kein Schalter je Schule. -->
 							{@render roleToggle(item, 'HELFER', 'helfer')}
 						</div>
 					</div>
