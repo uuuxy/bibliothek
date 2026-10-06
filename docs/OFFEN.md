@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 06.10.2026
+Stand: 07.10.2026
 
 **Der Fahrplan.** Oben steht, was als Nächstes getan wird, in der Reihenfolge der Arbeit: je
 Schritt eine Zeile mit Kästchen. Die Nummer in Klammern führt zu den Einzelheiten weiter unten.
@@ -50,6 +50,15 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 **Entscheiden:**
 
 - [ ] Bekommt die Bestandsliste (CSV) eine Spalte „Standort"? Vorschlag: ja. (5.53)
+- [ ] Theke: Ein Scan, der eintrifft, solange die vorige Buchung läuft, wird nicht gebucht und
+  nicht gemeldet; in der Schnellrückgabe bleibt das Buch verliehen. Vorschlag: einen Scan mit
+  anderer Nummer einreihen wie seit dem 07.10.2026 in der Inventur, dieselbe Nummer weiter
+  verwerfen. (5.56)
+- [ ] Titelliste: Sie steht in der Reihenfolge des Anlegens, und jede Zeile lässt sich ziehen;
+  das Ablegen schreibt die Reihenfolge ohne Rückfrage. Vorschlag: nach Titel sortieren, das
+  Ziehen entfernen. (5.58)
+- [ ] „Mahnbriefe drucken" zählt die Mahnstufe hoch und verlangt nur das Leserecht
+  `view_students`. Vorschlag: dasselbe Recht wie der Mahnversand. (6.1)
 - [x] Das Aussehen nach der Umstellung der Farben auf M3-Rollen bleibt so (entschieden am
   06.10.2026). Eigene Farben je Fach gibt es nicht.
 
@@ -62,11 +71,15 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Maske „Buch bearbeiten"
 - [ ] Mahnwesen: Mahnbriefe und Liste drucken
 - [ ] Ausweise aus der Leserdatei am Kartendrucker drucken
+- [ ] Inventur: mehrere Bücher schnell hintereinander scannen
+- [ ] Leserakte: „Stammdaten bearbeiten" speichern
+- [ ] Buchakte: Status eines gesperrten Exemplars öffnen und speichern
 
 **Erledigen:**
 
 - [x] SonarQube-Scan starten.
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
+- [ ] Am Testserver zählen, wie viele gesperrte Exemplare „verloren" in der Notiz tragen. (5.5)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9)
 - [ ] Theke ohne Netz: der Nachweis von Hand im echten Chrome, zurückgestellt am 24.09.2026.
   (2.3)
@@ -97,6 +110,12 @@ wird dort gelöscht.
   gelöschten Lesern.
 - **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
 - **Zwei Helfer (5.5):** Beträge und Fehlertexte schreiben 27 Stellen selbst.
+- **Masken, die ihren ganzen Stand zurückschicken (5.5):** Benutzer, Gerät, Lieferant und die
+  Kategorien der Einstellungen; am Titel und am Leser ist es behoben.
+- **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es
+  danach nirgends an der Bestellung.
+- **Spur im Protokoll (5.57):** je Tür festlegen, ob sie einen Eintrag schreibt; ohne Eintrag
+  sind die Zuordnung der Klassenleitungen, die Mail-Vorlagen und die Lieferanten.
 - **Beim Umstellen der Farben aufgefallen (5.21):** In der Inventur zeigt ein unbekannter
   Barcode einen technischen Fehlertext; die Titelliste öffnet einen Titel nur mit der Maus;
   englische Wörter in der Oberfläche; eine überfällige Ausleihe ist in der Buchakte nur an der
@@ -277,11 +296,45 @@ Vermerk.
   mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
   kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
-- **Eine Maske schickt alle Felder zurück, auch die, die niemand angefasst hat:** Am Titel ist
-  das seit dem 06.10.2026 behoben (`PUT /api/books/{id}` schreibt die Felder, die der Rumpf
-  nennt). Dieselbe Form an Leser, Gerät, Benutzer und Einstellungen ist nicht durchgesehen
-  (Raster, Frage 18; [sweeps.md](sweeps.md), „Absoluter Wert aus dem Ladezeitpunkt").
+- **Eine Maske schickt alle Felder zurück, auch die, die niemand angefasst hat** (Raster,
+  Frage 18; [sweeps.md](sweeps.md), „Absoluter Wert aus dem Ladezeitpunkt"). Am Titel
+  (06.10.2026) und an der Leserakte (07.10.2026) behoben. Am 07.10.2026 am Code gelesen,
+  mit derselben Form:
+  - **Benutzer:** `PUT /api/benutzer/{id}` schreibt Name, E-Mail, Rolle, „aktiv" und die
+    Ausweisnummer der Leserzeile (`UpdateUser` in `repository/user.go`); die Maske füllt
+    sich aus der Zeile der Liste (`benutzerFormularAus`), die beim Öffnen der Seite und nach
+    jedem eigenen Speichern lädt. Hat inzwischen jemand das Konto deaktiviert, die Rolle
+    geändert oder in der Leserakte eine Ausweisnummer eingetragen, schreibt das Speichern den
+    alten Stand zurück. Dafür muss die Tür Teil-Änderungen annehmen (heute sind alle Felder
+    Pflicht). Kategorie B.
+  - **Gerät:** „Bearbeiten" und „Defekt melden" schicken Modell, Zubehör und Notiz aus der
+    Zeile der Liste (`GeraeteVerwaltung.svelte`). Kategorie C.
+  - **Lieferant:** „Hauptlieferant" geht aus der Zeile mit; Stammdaten und Hauptlieferant
+    schreibt die Tür in zwei Schritten ohne gemeinsame Transaktion
+    (`handleUpdateSupplier`). Kategorie C.
+  - **Einstellungen:** Jede Kategorie schickt alle ihre Felder (`speichereKategorie`).
+    Kategorie C.
+- **Bestellung ohne Versandstand** (gefunden am 07.10.2026, am Code gelesen). Scheitert die
+  Mail an den Lieferanten, antwortet `POST /api/bestellungen` „Bestellung gespeichert, aber
+  E-Mail-Versand … fehlgeschlagen"; die Meldung steht fünf Sekunden da. An der Bestellung
+  steht danach nichts (`bestellungen_verlauf` hat keine Spalte dafür), die Bestellhistorie
+  zeigt sie wie jede andere, und einen Knopf zum erneuten Senden gibt es nicht. Rückweg heute:
+  in der Bestellung einen neuen Bestätigungs-Link erzeugen und von Hand schicken
+  (`BestellStatusBlock.svelte`; braucht die öffentliche Adresse in den Einstellungen). Eine
+  Ansicht der Bestellung als Datei zum Weiterleiten gibt es nicht. Nächster Schritt: eine Spalte
+  „Mail versendet am" (Migration), der Hinweis an der Bestellung und „erneut senden". Seit dem
+  07.10.2026 wartet die Oberfläche bis zu 90 s auf diese Antwort (`FRIST_MAILVERSAND_MS`);
+  vorher gab sie nach 10 s auf, und die Wiederholung meldete „war bereits erfasst".
   Kategorie B.
+- **Status-Editor, Altbestand:** Bis zum 07.10.2026 öffnete der Editor ein gesperrtes
+  Exemplar als „Verloren", wenn die Notiz das Wort enthielt, und das Speichern sonderte es
+  mit dem Grund VERLUST aus. Ob das am Testserver Exemplare getroffen hat, zeigt (lesend):
+  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE NOT ist_ausgesondert) AS gesperrt, count(*) FILTER (WHERE ist_ausgesondert AND aussonderung_grund = 'VERLUST') AS als_verlust FROM buecher_exemplare WHERE NOT ist_ausleihbar AND zustand_notiz ILIKE '%verloren%';"`
+  „gesperrt" sind Exemplare, die der Fehler noch hätte treffen können; „als_verlust" sind die,
+  bei denen nachzusehen ist, ob das Buch wirklich fehlt.
+- Geräte: Eine doppelte Seriennummer meldet „Barcode ist bereits an ein anderes Gerät
+  vergeben" (`CreateGeraet` in `repository/geraete.go` liest jede Eindeutigkeits-Verletzung
+  als Barcode; am 07.10.2026 am Code gelesen, nicht nachgestellt). Kategorie C.
 - Die Buchakte führt ausgesonderte und bestellte Exemplare als „Gesperrt" (Reiter
   „Exemplare", `BookExemplarCard.svelte`; die Buchmaske listet seit dem 02.10.2026 nur den
   Bestand). „Exemplar löschen" antwortet dort an einem ausgesonderten „exemplar nicht
@@ -640,6 +693,67 @@ wird nur mit Anlass.
 
 Kategorie B.
 
+### 5.56 Theke: ein Scan, solange die vorige Buchung läuft
+
+Gefunden und im Browser nachgestellt am 07.10.2026. Die Theke nimmt dem Scanfeld während
+einer Buchung den Fokus und lässt bis zur Antwort kein Zeichen hinein (`submitAction` und
+`scanfeldBereit` in `stores/omnibox.svelte.js`); gewollt ist das gegen den Doppelscan
+desselben Buchs. Es trifft auch das nächste Buch: Kommt die Antwort spät, ist dessen Scan
+weg, ohne Meldung und ohne Ton.
+
+Messung: Schnellrückgabe, zwei verliehene Bücher, die Antwort auf den ersten Scan um 1,5 s
+verzögert, beide blind hintereinander gescannt. Danach ist das erste Buch zurück, das zweite
+steht weiter auf dem Konto; das Feld ist leer, auf dem Bildschirm steht nur die Meldung zum
+ersten. Der Fall braucht eine Antwort, die länger dauert als der Griff zum nächsten Buch
+(langsames Netz, wartende Datenbank); wie lange eine Buchung am Server dauert, ist nicht
+gemessen. Das Buch wird dann später gemahnt, obwohl es im Regal steht.
+
+Die Inventur hatte dieselbe Form und reiht Scans seit dem 07.10.2026 ein
+(`frontend/e2e/inventur-scan-reihe.spec.js`). **Zu entscheiden:** An der Theke einen Scan mit
+anderer Nummer einreihen und nach der laufenden Buchung buchen, dieselbe Nummer weiter
+verwerfen (Schutz gegen den Doppelscan bleibt); oder beim Verwerfen den Fehlerton geben.
+Kategorie A, sobald es eintritt.
+
+### 5.57 Spur im Protokoll: welche Tür schreibt einen Eintrag
+
+Raster, Frage 19 (neu am 07.10.2026). Die Rechte-Matrix schreibt seit dem 07.10.2026 einen
+Eintrag (`RECHT_GEAENDERT`). Am Code gelesen und ohne Eintrag:
+
+- **Zuordnung der Klassenleitungen** (`POST` und `DELETE /api/klassen-mapping`): An diese
+  Adressen gehen die Mahnlisten mit Namen und Titeln. Wer eine Adresse geändert hat, steht
+  nirgends; der Mahnlauf selbst schreibt Klassen und eine abweichende Adresse ins Protokoll.
+- **Mail-Vorlagen** (`PUT /api/mail-templates/{id}`): der Wortlaut von Mahnbrief und
+  Bestellmail.
+- **Lieferanten** (`POST`, `PUT`, `DELETE /api/lieferanten`): die Adresse, an die
+  Bestellungen gehen.
+
+Eine grobe Messung über sechs Pakete nennt 60 von 97 ändernden Routen, deren Anmeldung keine
+Funktion nennt, die in `audit_log` oder `audit_logs` schreibt. Sie sieht Routen über eine
+Variable nicht (die Buchung der Theke) und keine Trigger; die Liste ist ein Suchvorrat, kein
+Befund. Nächster Schritt: je Tür festlegen, ob sie einen Eintrag schreibt, und was darin
+steht, ohne neuen Personenbezug (eine Adresse im Eintrag bliebe bis zur Audit-Aufbewahrung).
+Kategorie B.
+
+### 5.58 Titelliste: Reihenfolge und Ziehen
+
+Am 07.10.2026 am Code gelesen, die Belegung an der lokalen Datenbank gezählt.
+
+- Die Titelliste (`GET /api/books`, Titel-Verwaltung und Medienkatalog) sortiert zuerst nach
+  `sort_order`. Die Spalte ist eine laufende Nummer aus dem Anlegen (`SERIAL`): lokal 12.551
+  Titel mit 12.551 verschiedenen Werten. Die Sortierung nach Titel dahinter
+  (`sortiereBuecherNatuerlich`, „Teil 2 vor Teil 10") greift damit nie; die Liste steht in der
+  Reihenfolge des Anlegens.
+- Jede Zeile der Titel-Verwaltung lässt sich ziehen (`BookTableZeile.svelte`,
+  `draggable="true"`). Das Ablegen schreibt die Reihenfolge aller geladenen Titel
+  (`PUT /api/admin/books/reorder`), ohne Rückfrage. In einer gefilterten Liste bekommen die
+  Treffer die Nummern 1 bis n und rücken an den Anfang der Liste, neben die zuerst angelegten
+  Titel. Erfolg und Fehler meldet die
+  Seite nicht: `addToast` in `BookTable.svelte` schreibt nur in die Konsole. Einen Weg zurück
+  zur alten Reihenfolge gibt es nicht.
+
+**Zu entscheiden:** Soll die Liste nach Titel sortiert sein, und wird das Ziehen gebraucht?
+Vorschlag: nach Titel sortieren, Ziehen und Route entfernen. Kategorie B.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -754,6 +868,22 @@ Kategorie B.
   LMF-Verlängerung (`edit_books`) und im Mahnwesen-Routing (`manage_settings`). Ab Werk hat jede
   Rolle mit einem dieser Rechte auch `view_students`. Wer die Rechte anders verteilt, sieht dort
   „Klassen nicht geladen", und der Rat „Bitte neu öffnen" hilft ihm nicht.
+- „Mahnbriefe drucken" (`POST /api/admin/mahnungen/bulk-print`) zählt die Mahnstufe hoch und
+  verlangt `view_students`; der Mahnversand und der Versand an die Abgänger verlangen
+  `create_orders`, weil „Versand mehr ist als Lesen" (`api/routes_students.go`). Ab Werk hat
+  jede Rolle mit `view_students` auch `create_orders`. Wer die Rechte anders verteilt, lässt
+  eine Rolle mit Leserecht Mahnstufen erhöhen (Rasterdurchgang 07.10.2026, Frage 4).
+- Auch die Katalogdienste werden in einer Anfrage gefragt, die die Oberfläche nach 10 s
+  aufgibt: `POST /api/buecher/aus-isbn` fragt DNB, Google Books und OpenLibrary
+  (`SucheNachISBN`), „Cover erneut lokalisieren" läuft in der Anfrage über alle gewählten
+  Titel (`handleRetryExternalCovers`). Am Code gelesen am 07.10.2026, die Dauer nicht
+  gemessen. Anlass zum Bauen: ein Abbruch, nach dem unklar ist, was gespeichert wurde.
+- Die Inventur meldet einen Scan nur auf dem Bildschirm; einen Ton wie an der Theke gibt es
+  nicht. Ein unbekannter Barcode in einer schnellen Folge steht nur so lange da, bis der
+  nächste Scan gebucht ist.
+- Die Meldung „Änderungen gespeichert." der Maske „Stammdaten bearbeiten" erscheint nie: Die
+  Maske schließt mit dem Speichern, und die Meldung gehört zu ihr (`StudentEditSheet.svelte`).
+  Die Akte zeigt danach den gespeicherten Stand.
 - Ausfallmatrix A3 und B4; A3 erst nach S3 (7.3).
 - Anmeldungen stehen nicht im Protokoll (am Code nachgesehen am 28.09.2026): `LoginHandler` in
   `auth/handlers.go` schreibt keinen Eintrag, nur die Selbstanmeldung
@@ -1118,6 +1248,19 @@ Scanner der Schule schnell genug tippt (höchstens 50 ms je Zeichen), zeigt nur 
   „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
   dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
   Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
+
+**Die Inventur mit dem Handscanner.** Eine Inventur für eine Signatur
+starten und fünf Bücher so schnell hintereinander scannen, wie es geht. Erwartet: Die Zahl
+„erfasst" steht danach auf 5; auch ein Scan, der kommt, solange der Drehkreis im Feld steht,
+zählt.
+
+**Die Leserakte.** Reiter „Stammdaten & Adresse", „Bearbeiten", die Eltern-E-Mail ändern,
+„Speichern". Erwartet: Die Maske schließt, die Akte zeigt die neue Adresse, Klasse und
+Ausweisnummer stehen wie vorher.
+
+**Der Status eines Exemplars.** In der Buchakte ein Exemplar auf „Gesperrt" stellen und in die
+Notiz „CD verloren" schreiben, speichern, den Status noch einmal zum Ändern öffnen. Erwartet:
+Die Auswahl steht auf „Gesperrt", nicht auf „Verloren".
 
 **Das Portal ansehen:** Im Reiter „Reservieren & Melden" steht
 „Problem melden" links in einer eigenen Zeile unter dem Suchfeld. Anklicken: Das Formular

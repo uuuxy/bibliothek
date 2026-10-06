@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-06
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-07
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -293,7 +293,7 @@ Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
   durchgehen. Ohne DB überspringen sie sich — `TestDBTestsLaufenInCI` stellt sicher,
   dass das **in CI** nicht unbemerkt passiert.
 
-## Das Raster — die achtzehn Fragen, und ihre Frontend-Lesart
+## Das Raster — die neunzehn Fragen, und ihre Frontend-Lesart
 
 **Wann:** beim Formwechsel eines Schreibpfads (neuer Endpunkt, neuer Rumpf, andere
 Speicher-Granularität) — nicht bei Kosmetik. Frage 12 zusätzlich bei JEDER Migration,
@@ -301,7 +301,9 @@ Frage 13 immer dann, wenn eine Tabelle, Spalte oder ein Feld ihre Bedeutung änd
 den Namen zu wechseln, Frage 14 bei jeder Migration und jedem Import, der vorhandene Werte
 überträgt, umdeutet oder löscht. Die Fragen 15 bis 18 bei jeder Änderung an einer Maske,
 einem Dialog oder einem Bildschirm, an dem gescannt wird; Frage 17 außerdem überall, wo ein
-Pfad eine Tür zumacht oder auf einen fremden Dienst wartet. Die Durchgänge samt Funden stehen in
+Pfad eine Tür zumacht oder auf einen fremden Dienst wartet. Frage 19 an jeder Tür, die
+festlegt, wer etwas darf oder sieht oder wohin etwas geht, und an jeder, die etwas
+Unumkehrbares tut. Die Durchgänge samt Funden stehen in
 den Commit-Nachrichten (`git log --grep=Rasterdurchgang`), was davon offen ist in [OFFEN.md](OFFEN.md), die Bestands-Achse (bekannte Bugklasse × ganzer Baum) in
 [sweeps.md](sweeps.md). Die kanonische Liste steht hier, weil sweeps.md hierher zeigt
 und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
@@ -324,6 +326,7 @@ und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
 16. **Eingabeweg** — wohin geht ein Scan (Zeichenfolge und Enter), wenn dieser Bildschirm oder Dialog offen ist: in welches Feld, auf welchen Knopf? Hört ein Feld, in das gescannt wird, auf das Enter?
 17. **Ausfall** — wovon hängt der Pfad ab, das fehlen kann (Mailserver, Netz, Datenbank, Katalogdienste), und was kann die Person an der Theke dann noch tun? Macht der Pfad eine Tür zu: Wie kommt man in jedem dieser Fälle wieder hinein?
 18. **Veralteter Stand** — zwischen Laden und Speichern liegt Zeit. Was schreibt der Pfad zurück, das die Person nicht angefasst hat, und was überschreibt er damit, wenn inzwischen ein anderer Arbeitsplatz, ein Import oder ein Hintergrundlauf gespeichert hat?
+19. **Spur** — hinterlässt der Pfad einen Eintrag, an dem sich später ablesen lässt, wer was wann geändert hat? Steht darin genug, um die Änderung zu erklären, und kein Personenbezug, den die Tilgung nicht kennt?
 
 ### Zu Frage 12 (neu am 06.09.2026)
 
@@ -470,15 +473,23 @@ veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderunge
   schickt die Felder, die sie seit dem Öffnen geändert hat, und der Server schreibt die, die
   der Rumpf nennt (`inventur/titel_genannte_felder_pg_test.go`,
   `frontend/e2e/buchmaske-zwei-plaetze.spec.js`). Ändern zwei Plätze dasselbe Feld, gilt der
-  spätere Eintrag.
+  spätere Eintrag. Behoben am 07.10.2026 für die Leserakte: „Stammdaten bearbeiten" schickte
+  bis zu dreizehn Felder mit dem Stand vom Laden der Akte, darunter Klasse und Abgangsjahr;
+  nach einer Versetzung oder einem LUSD-Import dazwischen stand wieder der alte Wert in der
+  Zeile (`frontend/e2e/leserakte-zwei-plaetze.spec.js`). Benutzer, Gerät, Lieferant und die
+  Kategorien der Einstellungen schicken weiter ihren ganzen Stand ([OFFEN.md](OFFEN.md) 5.5).
 
-Ein Gate hat keine der vier Fragen. Für 16 gibt es ein Muster (`page.keyboard.type` und
-Enter ohne Klick, `frontend/e2e/kiosk-scannerfokus.spec.js`), für 18 den Test mit zwei
-Plätzen (`frontend/e2e/buchmaske-bestand.spec.js`), für 15 den Test mit der Maske vor und
-nach der Sperre (`frontend/e2e/sperre-ungespeichertes.spec.js`).
+Ein Gate hat von den vier Fragen nur ein Teil von 17 (die Fristen an den Aufrufen mit
+Mailversand, `api/mail_routen_frist_test.go`). Für 16 gibt es ein Muster
+(`page.keyboard.type` und Enter ohne Klick, `frontend/e2e/kiosk-scannerfokus.spec.js`;
+mit verzögerter Antwort `frontend/e2e/inventur-scan-reihe.spec.js`), für 18 den Test mit
+zwei Plätzen (`frontend/e2e/buchmaske-bestand.spec.js`,
+`frontend/e2e/leserakte-zwei-plaetze.spec.js`), für 15 den Test mit der Maske vor und nach
+der Sperre (`frontend/e2e/sperre-ungespeichertes.spec.js`).
 
-Schärfungen ohne neue Nummer, vom selben Durchgang und von den Durchgängen am 02.10.2026,
-am 03.10.2026 und am 05.10.2026 über die Änderungen danach:
+Schärfungen ohne neue Nummer, vom selben Durchgang, von den Durchgängen am 02.10.2026, am
+03.10.2026 und am 05.10.2026 über die Änderungen danach und vom Durchgang über den ganzen
+Bestand am 07.10.2026:
 
 - **Frage 3, der einzige Auslöser:** Blendet eine Änderung ein Element aus oder nimmt sie es
   weg — was hat nur dieses Element ausgelöst? Beleg vom 02.10.2026: Das Miniaturbild der
@@ -526,6 +537,56 @@ am 03.10.2026 und am 05.10.2026 über die Änderungen danach:
   05.10.2026: In der Titel-Verwaltung legte sich die späte Antwort zum zuerst angeklickten
   Titel über die offene Maske des zweiten, samt dem dort Getippten
   (`frontend/e2e/titel-oeffnen-rennen.spec.js`).
+- **Frage 16, der Scan vor der Antwort, an jedem Scanfeld:** Ein Handscanner wartet nicht.
+  Ist das Feld gesperrt oder ohne Fokus, solange die Anfrage läuft, geht der nächste Scan
+  verloren, ohne Meldung. Beleg vom 07.10.2026: Die Inventur zählte von drei Büchern eines,
+  wenn die Antwort auf das erste nach 1,5 s kam, und der Abschluss hätte die zwei anderen
+  als Verlust ausgesondert (`frontend/e2e/inventur-scan-reihe.spec.js`, behoben). Die Theke
+  lässt einen Scan während einer laufenden Buchung ebenfalls fallen, mit Absicht gegen den
+  Doppelscan; in der Schnellrückgabe bleibt das zweite Buch dabei verliehen (im Browser
+  nachgestellt am 07.10.2026, [OFFEN.md](OFFEN.md) 5.56).
+- **Frage 17, die Fristenkette:** Welche Frist endet zuerst — die der Oberfläche, die des
+  Servers, die des fremden Dienstes —, und was sieht die Person, wenn die Oberfläche zuerst
+  aufgibt? Der Server arbeitet dann weiter, seine Antwort sieht niemand, und der zweite
+  Versuch trifft eine Arbeit, die schon geschehen ist. Belege vom 07.10.2026: Die
+  Oberfläche gab jeder ändernden Anfrage 10 s; der Versand der Mahnlisten öffnet je Klasse
+  eine SMTP-Sitzung ohne Gesamtfrist, ein zweiter Klick nach „Netzwerk-Timeout" hätte jede
+  Liste noch einmal verschickt. Bei der Bestellung war die Verbindungsfrist zum Mailserver
+  so lang wie die Frist der Oberfläche: Die Antwort „gespeichert, aber E-Mail-Versand
+  fehlgeschlagen" kam nie an, die Wiederholung meldete „war bereits erfasst"
+  (`api/mail_routen_frist_test.go`).
+- **Frage 5, das Formular nach dem Ladefehler:** Zeigt eine Maske nach einem gescheiterten
+  Abruf leere Felder, schreibt „Speichern" sie über die echten Werte. Beleg vom 07.10.2026:
+  die Mailserver-Angaben (`MailConfig.test.js`); dieselbe Form am 31.08.2026 an den
+  Einstellungen und am 05.09.2026 im LMF-Planer (`ui/LadeFehler`).
+- **Frage 3, die Prüfung der Schwester:** Führen zwei Türen zum selben Vorgang, prüft jede,
+  was die andere prüft? Beleg vom 07.10.2026: Der Bescheid lehnte ein Buch ab, das
+  inzwischen zurück ist, „Verlust melden" in der Akte nicht — das Buch im Regal wurde als
+  Verlust ausgesondert, das Kind bekam eine Forderung (`repository/damage_race_test.go`).
+
+### Zu Frage 19 (neu am 07.10.2026)
+
+Die achtzehn Fragen davor fragen, ob ein Pfad das Richtige tut. Keine fragt, ob sich später
+ablesen lässt, dass er es getan hat. Der Durchgang über den Bestand fand am 07.10.2026: Eine
+Änderung an der Rechte-Matrix (`PUT /api/admin/permissions`) schrieb keinen Eintrag, während
+Konten und Einstellungen ihren schreiben. Die Matrix entscheidet an jeder Route, wer welche
+Daten sieht; wer einer Rolle wann ein Recht gab, ließ sich nicht nachsehen (behoben,
+`api/rechte_matrix_protokoll_pg_test.go`). Dieselbe Form früher: Anlage und Rollenwechsel von
+Konten ohne Eintrag (bis 16.08.2026, aufgefallen an vier Admin-Konten, deren Herkunft niemand
+mehr feststellen konnte), die Anlage eines Kontos aus der Leserdatei ohne Eintrag (29.09.2026).
+
+Gefragt wird an jeder Tür, die festlegt, wer etwas darf oder sieht (Rechte, Konten, Sperren),
+wohin etwas geht (Adressen für Mahnlisten und Bestellungen, Mailserver, Vorlagen) oder die
+etwas Unumkehrbares tut (löschen, anonymisieren, aussondern, zusammenführen). Die zweite
+Hälfte der Frage hält die Gegenrichtung: Was in einen Eintrag kommt, bleibt bis zur
+Audit-Aufbewahrung; Werte einer Person darin muss die Tilgung kennen
+(`repository/protokoll_personenbezug_test.go`).
+
+Ein Gate hat die Frage nicht. Eine grobe Messung am 07.10.2026 (Syntaxbaum über sechs
+Pakete, nach Namen verbunden) nennt 60 von 97 ändernden Routen, deren Anmeldung keine
+Funktion nennt, die in ein Protokoll schreibt; sie sieht keine Routen über Variablen und
+keine Trigger. Am Code gelesen und ohne Eintrag: die Zuordnung der Klassenleitungen, die
+Mail-Vorlagen, die Lieferanten. Der Rest ist nicht gelesen ([OFFEN.md](OFFEN.md) 5.57).
 
 ### Frontend-Lesart (ergänzt 31.08.2026)
 
@@ -546,7 +607,7 @@ Die übrigen Fragen bis 14 (1, 4, 7, 9, 10) gelten wörtlich auch vorn — Frage
 das Recht steuert das Menü UND die Route, nie nur eines von beiden. Die Fragen 15 bis 18
 sind an der Oberfläche gestellt; am Server heißt 17 „welche Frist hat der Aufruf nach
 außen, und was antwortet die Tür, wenn sie abläuft?" und 18 „prüft die Tür beim Schreiben,
-ob der Stand noch der gelesene ist?".
+ob der Stand noch der gelesene ist?". Frage 19 ist am Server gestellt.
 
 ---
 

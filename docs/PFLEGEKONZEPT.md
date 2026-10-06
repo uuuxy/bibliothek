@@ -162,7 +162,7 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   veröffentlicht, eine Wiedervorlage der Sicherheits-Ausnahmen läuft ab, oder ein
   Horizont-Test der Ferien erreicht sein Jahr. Dann ist die Aufgabe aus Abschnitt 4 fällig.
 - **Wo die Begründungen stehen:** in den Commit-Nachrichten (`git log --grep`), in
-  [invarianten.md](invarianten.md) (was immer gelten muss, und das Raster aus achtzehn Fragen,
+  [invarianten.md](invarianten.md) (was immer gelten muss, und das Raster aus neunzehn Fragen,
   wenn ein Schreibpfad seine Form wechselt), in [arc42/09](arc42/09-architekturentscheidungen.md)
   (Entscheidungen) und in [OFFEN.md](OFFEN.md) (alles Offene).
 
