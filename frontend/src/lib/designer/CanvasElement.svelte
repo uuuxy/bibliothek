@@ -11,6 +11,7 @@
 	 */
 	import { User } from '@lucide/svelte';
 	import { ausweisTitel } from '../leserArt.js';
+	import { NUMMER_FARBE } from './kartenFarben.js';
 
 	/**
 	 * @type {{
@@ -77,22 +78,22 @@
 			{/if}
 		</div>
 	{:else if isImage}
-		<!-- Platzhalter auf der Karte tragen feste Töne: Die Karte bleibt weiß, auch wenn die
-		     Oberfläche ihr Farbschema wechselt. -->
+		<!-- Der gestrichelte Rahmen ist Werkzeug der Leinwand, kein Teil der Karte: Er steht
+		     auf den Rollen der Oberfläche. -->
 		<div
-			class="w-full h-full border border-dashed border-slate-300 bg-slate-50/50 flex items-center justify-center overflow-hidden rounded-xs"
+			class="w-full h-full border border-dashed border-outline-variant bg-surface/50 flex items-center justify-center overflow-hidden rounded-xs"
 		>
 			{#if el.content}
 				<img src={el.content} class="w-full h-full object-contain pointer-events-none" alt="Bild" />
 			{:else}
-				<span class="text-[5px] text-slate-400 font-bold pointer-events-none"
+				<span class="text-[5px] text-on-surface-variant font-bold pointer-events-none"
 					>{el.type === 'logo' ? 'LOGO' : 'BILD'}</span
 				>
 			{/if}
 		</div>
 	{:else if isPhoto}
 		<div
-			class="w-full h-full border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center overflow-hidden rounded-sm text-slate-400"
+			class="w-full h-full border border-dashed border-outline-variant bg-surface flex flex-col items-center justify-center overflow-hidden rounded-sm text-on-surface-variant"
 		>
 			<User
 				class="w-1/2 h-1/2 max-h-12 max-w-12 mb-1 opacity-40 pointer-events-none"
@@ -112,11 +113,12 @@
 					class="max-w-full max-h-full object-contain pointer-events-none"
 					alt="Barcode"
 				/>
-				<span class="font-bold text-[6.5pt] tracking-widest text-slate-700 pointer-events-none"
-					>{student.barcode_id}</span
+				<span
+					class="font-bold text-[6.5pt] tracking-widest pointer-events-none"
+					style="color: {NUMMER_FARBE};">{student.barcode_id}</span
 				>
 			{:else}
-				<div class="text-[5px] text-slate-400 font-bold">BARCODE</div>
+				<div class="text-[5px] text-on-surface-variant font-bold">BARCODE</div>
 			{/if}
 		</div>
 	{/if}

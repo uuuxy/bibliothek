@@ -35,14 +35,14 @@ describe('StudentIdDesigner: Auto-Save beim Verlassen', () => {
 		const { unmount } = render(StudentIdDesigner);
 		await stillhalten();
 
-		// Eine Änderung, wie sie der Farb-Umschalter macht — und dann sofort weg,
-		// lange vor Ablauf der 800 ms.
-		idStore.front.theme = 'bg-white text-black border-slate-200 FLUSH-MARKE';
+		// Eine Änderung, wie sie die Auswahl des Hintergrunds macht — und dann sofort weg,
+		// lange vor Ablauf der 800 ms. Smaragd trägt keine Seite als Vorgabe.
+		idStore.front.theme = 'smaragd';
 		await stillhalten();
 		unmount();
 
 		const put = vi.mocked(apiFetch).mock.calls.find(([, optionen]) => optionen?.method === 'PUT');
 		expect(put, 'beim Verlassen muss der ausstehende Stand gespeichert werden').toBeTruthy();
-		expect(String(put?.[1]?.body)).toContain('FLUSH-MARKE');
+		expect(String(put?.[1]?.body)).toContain('smaragd');
 	});
 });

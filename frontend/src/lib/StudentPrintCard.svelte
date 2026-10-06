@@ -3,6 +3,7 @@
 	import { idStore, applyDesign, designWurdeGeladen } from './designer/idDesignerStore.svelte.js';
 	import { apiFetch } from './apiFetch.js';
 	import CardFace from './designer/CardFace.svelte';
+	import { kartenStil } from './designer/kartenFarben.js';
 
 	/** @type {{ profile: any, timestamp: number }} */
 	let { profile, timestamp } = $props();
@@ -36,12 +37,12 @@
   Wrappers gerendert, damit es die Druckunterdrückung überlebt.
 -->
 <div class="single-card-print-section" style="display:none" aria-hidden="true">
-	<div class="print-card-box single-card-front {idStore.front.theme}">
+	<div class="print-card-box single-card-front" style={kartenStil(idStore.front.theme)}>
 		<CardFace side="front" student={profile} barcodeType={idStore.barcodeType} {timestamp} />
 	</div>
 	{#if hasBack}
 		<!-- Rückseite: student={null} — exakt wie im Batch-Druck (statischer Inhalt). -->
-		<div class="print-card-box single-card-back {idStore.back.theme}">
+		<div class="print-card-box single-card-back" style={kartenStil(idStore.back.theme)}>
 			<CardFace side="back" student={null} barcodeType={idStore.barcodeType} {timestamp} />
 		</div>
 	{/if}

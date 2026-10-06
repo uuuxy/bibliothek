@@ -14,6 +14,7 @@
 	import { onDestroy } from 'svelte';
 	import { idStore } from './idDesignerStore.svelte.js';
 	import CanvasElement from './CanvasElement.svelte';
+	import { kartenStil } from './kartenFarben.js';
 
 	/** @type {{ side: 'front'|'back', selectedId: string|null, onSelect: (id: string|null)=>void, student: any, zoom: number, barcodeType: string }} */
 	const { side, selectedId, onSelect, student, zoom, barcodeType } = $props();
@@ -175,7 +176,7 @@
 			class="card-container shadow-2xl relative border border-outline-variant rounded-lg overflow-visible select-none"
 			style="width: 85.6mm; height: 53.98mm; background: white;"
 		>
-			<div class="w-full h-full relative rounded-lg overflow-hidden {theme}">
+			<div class="w-full h-full relative rounded-lg overflow-hidden" style={kartenStil(theme)}>
 				{#each elements as el (el.id)}
 					<CanvasElement
 						{el}

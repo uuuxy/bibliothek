@@ -1,5 +1,10 @@
 import { ETIKETT_FORMATE } from '../etikettformate.js';
 import { heileAltBaender } from './idDesignAltbestand.js';
+import {
+	HINTERGRUND_VORDERSEITE,
+	HINTERGRUND_RUECKSEITE,
+	heileKartenHintergrund
+} from './kartenFarben.js';
 
 /**
  * @file idDesignerStore.svelte.js
@@ -234,11 +239,10 @@ function defaultBackElements() {
 	];
 }
 
-// Muss exakt einem themes-Wert in Toolbar.svelte entsprechen, sonst zeigt das
-// Hintergrund-Dropdown keine Auswahl an. Als Konstante, damit Store-Initialisierung
-// und resetDesign() nicht auseinanderlaufen können.
-export const FRONT_THEME_DEFAULT = 'bg-white text-black border-slate-200';
-export const BACK_THEME_DEFAULT = 'bg-slate-100 text-slate-900 border-slate-300';
+// Kennungen aus kartenFarben.js. Als Konstante, damit Store-Initialisierung und
+// resetDesign() nicht auseinanderlaufen können.
+export const FRONT_THEME_DEFAULT = HINTERGRUND_VORDERSEITE;
+export const BACK_THEME_DEFAULT = HINTERGRUND_RUECKSEITE;
 
 /**
  * Central store — all fields are deeply reactive via Svelte 5 $state.
@@ -537,6 +541,6 @@ function applySeite(ziel, quelle) {
 		);
 	}
 	if (typeof quelle.theme === 'string' && quelle.theme.trim() !== '') {
-		ziel.theme = quelle.theme;
+		ziel.theme = heileKartenHintergrund(quelle.theme);
 	}
 }

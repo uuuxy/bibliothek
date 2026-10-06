@@ -144,8 +144,8 @@ describe('wendeVorlageAn', () => {
 
 	it('ersetzt Elemente UND Theme beider Seiten', () => {
 		expect(wendeVorlageAn('waldgruen')).toBe(true);
-		expect(idStore.front.theme).toContain('from-[#16330a]');
-		expect(idStore.back.theme).toContain('from-[#16330a]');
+		expect(idStore.front.theme).toBe('waldgruen');
+		expect(idStore.back.theme).toBe('waldgruen');
 		expect(idStore.front.elements.some((e) => e.id === 'fussband')).toBe(true);
 		expect(idStore.back.elements.some((e) => e.id === 'back-panel')).toBe(true);
 	});

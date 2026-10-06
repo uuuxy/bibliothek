@@ -9,6 +9,7 @@
      per transform verkleinert, damit die Proportionen exakt die der Leinwand sind. -->
 <script>
 	import { vorlage } from './ausweisVorlagen.js';
+	import { kartenStil } from './kartenFarben.js';
 
 	/** @type {{ kennung: string, massstab?: number }} */
 	let { kennung, massstab = 0.32 } = $props();
@@ -39,8 +40,10 @@
 	style="width: {BREITE * massstab}mm; height: {HOEHE * massstab}mm;"
 >
 	<div
-		class="relative origin-top-left overflow-hidden rounded-sm {seite?.theme ?? ''}"
-		style="width: {BREITE}mm; height: {HOEHE}mm; transform: scale({massstab});"
+		class="relative origin-top-left overflow-hidden rounded-sm"
+		style="width: {BREITE}mm; height: {HOEHE}mm; transform: scale({massstab}); {kartenStil(
+			seite?.theme
+		)}"
 	>
 		{#each elements as el (el.id)}
 			<div

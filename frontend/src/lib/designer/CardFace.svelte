@@ -14,6 +14,7 @@
 	 */
 	import { idStore } from './idDesignerStore.svelte.js';
 	import { ausweisTitel, istKollegium } from '../leserArt.js';
+	import { NUMMER_FARBE } from './kartenFarben.js';
 
 	/**
 	 * `platzhalter` zeichnet leere Bild-, Logo- und Passbildfelder als gestrichelten
@@ -139,7 +140,7 @@
 				class="max-w-full max-h-full object-contain"
 				alt="Barcode"
 			/>
-			<span class="font-bold mt-0.5 text-[6.5pt] tracking-widest text-zinc-800"
+			<span class="font-bold mt-0.5 text-[6.5pt] tracking-widest" style="color: {NUMMER_FARBE};"
 				>{student.barcode_id}</span
 			>
 		</div>

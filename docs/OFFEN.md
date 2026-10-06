@@ -32,8 +32,8 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
-29 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
-Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
+Die Ratsche zählt keine Palettenfarbe mehr (06.10.2026). Bildschirm für Bildschirm, je
+Portion ein Commit, am gerenderten Bildschirm geprüft:
 
 - [x] Buchakte mit der Liste der Ausleiher (20)
 - [x] „Klassen & Bücher" (50)
@@ -51,7 +51,9 @@ Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm gep
   hinter den Alarmen der Theke
 - [x] Initialen-Kachel der Leserakte (16)
 - [x] Cover-Platzhalter im Katalog (48)
-- [ ] Karte im Ausweis-Designer (29)
+- [x] Karte im Ausweis-Designer (29)
+- [ ] Weiß und Schwarz (22 Stellen, die die Ratsche nicht zählt), die festen Farbwerte im
+  Diagramm der Statistik, die Ratsche als festes Gate
 
 ### Etappe 3: vor dem Echtstart
 
@@ -492,9 +494,9 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 06.10.2026: 29 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
-gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
-noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
+Stand 06.10.2026: keine Fundstelle mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …)
+mehr, gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues
+entsteht nur noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
 `success` und `warning` in `styles/rollen.css` (M3, „Define custom color roles"). Vorgehen:
 Bildschirm für Bildschirm, die größten zuerst, je Portion ein Commit, am gerenderten Bildschirm
@@ -503,11 +505,9 @@ geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über u
 über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für die übrige Anwendung
 freigegeben am 23.09.2026.
 
-Im Ausweis-Designer bleiben 29 Stellen: die Farben der Karte (`themes` in
-`designer/Toolbar.svelte`, die Vorgaben in `idDesignerStore.svelte.js`) und die Platzhalter
-auf der gezeichneten Karte (`CanvasElement.svelte`, `CardFace.svelte`). Die Farbe der Karte
-steht als Klassenliste im zentral gespeicherten Entwurf und wird gedruckt; die Karte bleibt
-weiß, auch wenn die Oberfläche ihr Farbschema wechselt.
+Die Farben der Ausweiskarte sind Werte des Entwurfs (`designer/kartenFarben.js`), keine
+Rollen: Die Karte wird gedruckt und bleibt, wie sie ist, auch wenn die Oberfläche ihr Farbschema
+wechselt.
 
 Dunkle Bereiche (Flur-Monitor, Sucher der Kamera, Leiste des Ausweisdrucks) stehen im dunklen
 Schema: Die Klasse `schema-dunkel` in `rollen.css` gibt den Rollen ihre dunklen Töne.

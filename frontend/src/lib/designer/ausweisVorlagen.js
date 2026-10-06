@@ -51,9 +51,8 @@ const AMBER = '#f59e0b';
 const ORANGE = '#ea580c';
 const ROT = '#dc2626';
 
-/** Muss als Literal hier stehen, damit Tailwind die Klassen in den Build aufnimmt. */
-export const WALDGRUEN_THEME =
-	'bg-linear-to-tr from-[#16330a] via-[#2d5a12] to-[#3f7418] text-white border-[#0d2405]';
+/** Kennung des dunklen Verlaufs in kartenFarben.js. */
+export const WALDGRUEN_THEME = 'waldgruen';
 const WEISS_THEME = FRONT_THEME_DEFAULT;
 
 /** Für das Auswahl-Dropdown in der Werkzeugleiste. */

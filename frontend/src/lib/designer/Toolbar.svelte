@@ -17,7 +17,7 @@
 		addImageElements,
 		addBoxElement
 	} from './idDesignerStore.svelte.js';
-	import { WALDGRUEN_THEME } from './ausweisVorlagen.js';
+	import { KARTEN_HINTERGRUENDE } from './kartenFarben.js';
 	import Button from '../components/ui/Button.svelte';
 	import ToolbarAuswahl from './ToolbarAuswahl.svelte';
 	import ToolbarDruck from './ToolbarDruck.svelte';
@@ -49,28 +49,6 @@
 		onVorlage,
 		previewStudent
 	} = $props();
-
-	// Farben der Karte, nicht der Oberfläche: Der Wert steht im zentral gespeicherten Entwurf
-	// und wird gedruckt. Deshalb feste, im Druck unterscheidbare Töne statt Farbrollen.
-	const themes = [
-		{ value: 'bg-white text-black border-slate-200', name: 'Weiß' },
-		{ value: 'bg-slate-100 text-slate-900 border-slate-300', name: 'Grau' },
-		{
-			value: 'bg-linear-to-tr from-emerald-100 to-teal-100 text-emerald-950 border-emerald-300',
-			name: 'Smaragd'
-		},
-		{
-			value: 'bg-linear-to-tr from-sky-100 to-indigo-100 text-indigo-950 border-sky-300',
-			name: 'Blau'
-		},
-		{
-			value: 'bg-linear-to-tr from-amber-100 to-orange-100 text-amber-950 border-amber-300',
-			name: 'Bernstein'
-		},
-		// Dunkler Verlauf der Vorlage „Waldgrün" — steht mit in der Liste, damit das
-		// Hintergrund-Dropdown nach dem Anwenden der Vorlage eine Auswahl anzeigt.
-		{ value: WALDGRUEN_THEME, name: 'Waldgrün' }
-	];
 
 	/** Current theme for the active side. */
 	const currentTheme = $derived(side === 'front' ? idStore.front.theme : idStore.back.theme);
@@ -110,7 +88,7 @@
 		{barcodeType}
 		{onBarcodeType}
 		{currentTheme}
-		{themes}
+		themes={KARTEN_HINTERGRUENDE}
 		{setTheme}
 		{onVorlage}
 		{zoom}
