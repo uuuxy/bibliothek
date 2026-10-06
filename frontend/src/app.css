@@ -19,15 +19,15 @@
 @import 'tailwindcss';
 @import '@fontsource/roboto/latin-400.css';
 @import '@fontsource/roboto/latin-500.css';
-
-/* Tests und Browser-Specs nennen Klassen als Beispiele, auch solche, die es nicht geben
-   soll. Aus ihnen entsteht kein CSS der Auslieferung. */
-@source not "./**/*.test.js";
-@source not "../e2e";
-
 @import './styles/theme-mass.css';
 @import './styles/rollen.css';
 @import './styles/basis.css';
 @import './styles/komponenten.css';
 @import './styles/druck-grundlagen.css';
 @import './styles/druck-ausweise.css';
+
+/* Tests und Browser-Specs nennen Klassen als Beispiele, auch solche, die es nicht geben
+   soll. Aus ihnen entsteht kein CSS der Auslieferung. Die Zeilen stehen hinter den
+   Importen, weil CSS `@import` nur vor allen anderen Regeln erlaubt. */
+@source not "./**/*.test.js";
+@source not "../e2e";
