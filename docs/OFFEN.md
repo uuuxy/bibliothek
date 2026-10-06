@@ -50,12 +50,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 **Entscheiden:**
 
 - [ ] Bekommt die Bestandsliste (CSV) eine Spalte „Standort"? Vorschlag: ja. (5.53)
-- [ ] Alle Farben stehen auf M3-Rollen. Sichtbar anders als vorher: umrandete Knöpfe mit
-  dunklerem Rand, „Löschen" rötlich getönt ohne Rand, Schalter im Aus-Zustand grauer, Dialoge
-  mit rundem Schließen-Knopf; Titel ohne Cover zeigen eine graue Kachel mit Fach und Titel
-  statt der farbigen Buchattrappe je Fach; die Initialen-Kachel der Leserakte hat für alle
-  Leser dieselbe Farbe; die Benutzerliste nennt den Zustand eines Kontos als Abzeichen.
-  Vorschlag: bleibt so. Farben je Fach wären eigene, feste Farben neben den Rollen. (5.21)
+- [x] Das Aussehen nach der Umstellung der Farben auf M3-Rollen bleibt so (entschieden am
+  06.10.2026). Eigene Farben je Fach gibt es nicht.
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -101,6 +97,10 @@ wird dort gelöscht.
   gelöschten Lesern.
 - **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
 - **Zwei Helfer (5.5):** Beträge und Fehlertexte schreiben 27 Stellen selbst.
+- **Beim Umstellen der Farben aufgefallen (5.21):** Zustände, die nur die Farbe anzeigt
+  (überfällige Ausleihe in der Buchakte, gewählte Signatur); englische Wörter in der
+  Oberfläche; die Titelliste öffnet einen Titel nur mit der Maus; Flächen, Knöpfe und Leisten
+  von Hand neben den gemeinsamen Bauteilen.
 
 ### Nur mit Anlass: kein Schritt
 
