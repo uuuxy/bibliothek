@@ -586,7 +586,8 @@ Ein Gate hat die Frage nicht. Eine grobe Messung am 07.10.2026 (Syntaxbaum über
 Pakete, nach Namen verbunden) nennt 60 von 97 ändernden Routen, deren Anmeldung keine
 Funktion nennt, die in ein Protokoll schreibt; sie sieht keine Routen über Variablen und
 keine Trigger. Am Code gelesen und ohne Eintrag: die Zuordnung der Klassenleitungen, die
-Mail-Vorlagen, die Lieferanten. Der Rest ist nicht gelesen ([OFFEN.md](OFFEN.md) 5.57).
+Mail-Vorlagen, die Lieferanten, die Verlängerung der Lernmittel einer ganzen Klasse. Der Rest
+ist nicht gelesen ([OFFEN.md](OFFEN.md) 5.57).
 
 ### Frontend-Lesart (ergänzt 31.08.2026)
 

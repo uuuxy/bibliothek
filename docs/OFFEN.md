@@ -726,6 +726,9 @@ Eintrag (`RECHT_GEAENDERT`). Am Code gelesen und ohne Eintrag:
   Bestellmail.
 - **Lieferanten** (`POST`, `PUT`, `DELETE /api/lieferanten`): die Adresse, an die
   Bestellungen gehen.
+- **Lernmittel einer Klasse verlängern** (`POST /api/ausleihen/global-extend-lmf`): eine neue
+  Frist für alle Lernmittel einer Klasse. Die Frist einer einzelnen Ausleihe von Hand zu
+  ändern schreibt einen Eintrag (`OverrideDueDateHandler`), der Lauf über die Klasse nicht.
 
 Eine grobe Messung über sechs Pakete nennt 60 von 97 ändernden Routen, deren Anmeldung keine
 Funktion nennt, die in `audit_log` oder `audit_logs` schreibt. Sie sieht Routen über eine
