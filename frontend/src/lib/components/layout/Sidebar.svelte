@@ -73,7 +73,7 @@
 			<!-- Eingeklappt bleibt nur der Punkt: M3 nennt das „small badge" — er sagt „hier
 			     liegt etwas", ohne dass eine Zahl in eine 40-px-Pille gequetscht wird. -->
 		{:else if wartendeArbeit(item.id) > 0}
-			<span class="bg-error absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-white"
+			<span class="bg-error absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-surface"
 			></span>
 		{/if}
 	</button>

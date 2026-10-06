@@ -8,7 +8,8 @@
 	/** @type {{ data?: TrendPunkt[] }} */
 	let { data = [] } = $props();
 
-	// Light-Surface (die App hat keinen Dark-Mode) — Slots 1 & 2 der validierten Palette.
+	// Zwei feste Reihenfarben, auf Unterscheidbarkeit bei Farbfehlsichtigkeit geprüft; die
+	// Rollen der Oberfläche führen kein solches Paar.
 	const FARBE_AUSLEIHEN = '#2a78d6';
 	const FARBE_RUECKGABEN = '#eb6834';
 
@@ -155,7 +156,7 @@
 						y1={t.y}
 						x2={VBW - M.right}
 						y2={t.y}
-						stroke="#f1f5f9"
+						class="stroke-outline-variant/50"
 						stroke-width="1"
 					/>
 					<text
@@ -177,8 +178,7 @@
 							y={M.top}
 							width={g.groupW}
 							height={plotH}
-							fill="#0f172a"
-							opacity="0.04"
+							class="fill-on-surface/8"
 						/>
 					{/if}
 					<path d={barPath(g.barA)} fill={FARBE_AUSLEIHEN} />
@@ -199,7 +199,7 @@
 					y1={baselineY}
 					x2={VBW - M.right}
 					y2={baselineY}
-					stroke="#cbd5e1"
+					class="stroke-outline-variant"
 					stroke-width="1"
 				/>
 			</svg>

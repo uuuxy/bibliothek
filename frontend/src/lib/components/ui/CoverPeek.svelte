@@ -145,7 +145,7 @@
 			<img
 				src={quelle}
 				alt="Cover von {titel}"
-				class="w-full h-full object-contain bg-white"
+				class="w-full h-full object-contain bg-surface-container-lowest"
 				onload={(e) => {
 					// Der Cover-Proxy antwortet bei fehlendem Bild mit einem transparenten
 					// 1×1-GIF (bewusst 200 statt 404, gegen Konsolen-Spam). onerror greift

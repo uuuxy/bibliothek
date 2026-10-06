@@ -39,7 +39,7 @@
 	}
 </script>
 
-<div class="w-full h-full flex flex-col gap-6 bg-white p-6 animate-fade-in">
+<div class="w-full h-full flex flex-col gap-6 p-6 animate-fade-in">
 	<!-- Back Button & Header -->
 	<div
 		class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-outline-variant"

@@ -20,9 +20,8 @@
 
 <!-- Solide Fläche statt Milchglas: Die Liste schwebt über Inhalt und muss von ihm
      getrennt sein, sonst steht Text auf Text. Ein flacher Schatten leistet das
-     (Material-3-Elevation 2) — bg-white/80 + backdrop-blur-2xl + weißer Rahmen war
-     Dekoration, die dasselbe schlechter konnte. Gruppen brauchen keine eigenen
-     Wrapper: Die Überschrift ist ein Geschwister der Zeilen, kein Elternteil. -->
+     (Material-3-Elevation 2). Gruppen brauchen keine eigenen Wrapper: Die Überschrift ist
+     ein Geschwister der Zeilen, kein Elternteil. -->
 <div
 	id="omnibox-dropdown"
 	role="listbox"

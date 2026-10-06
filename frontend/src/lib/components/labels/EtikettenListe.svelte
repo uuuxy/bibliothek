@@ -1,15 +1,7 @@
 <!-- @component EtikettenListe — die Tabelle der Exemplare im Etiketten-Nachdruck.
 
-     Aus EtikettenNachdruck herausgelöst (04.09.2026), aus zwei Gründen: Die Datei stand
-     mit 412 Zeilen als größte im Bestand der Komponenten-Ratsche, und die Tabelle war der
-     Teil, der sich beim M3-Durchgang komplett geändert hat.
-
-     Sie stand vorher in einem `rounded-xl border bg-white shadow-xs` — einer Karte auf
-     weißem Grund, die nichts abgrenzte. Das war ein Rückfall in ein Muster, das mit
-     90fc7d45 („Die letzten neun Kacheln aufgelöst") und a4133a29 („Kacheln … waren
-     bewusst abgeschafft") abgeschafft wurde und dessen Regel im Nachbarn steht
-     (MahnwesenTable): „Schülerdatei, Abgänger, Medienkatalog und Inventur stehen alle
-     edge-to-edge. Getrennt wird über die Kopfzeile, nicht über eine Umrandung." -->
+     Sie steht ohne Karte auf der Fläche wie Leserdatei, Abgänger, Medienkatalog und
+     Inventur: Getrennt wird über die Kopfzeile, nicht über eine Umrandung. -->
 <script>
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';

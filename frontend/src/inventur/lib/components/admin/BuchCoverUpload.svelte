@@ -51,35 +51,32 @@
 			</div>
 		{/if}
 
-		<!-- Nur noch ein HINWEIS, kein Bedienelement mehr (11.08.2026).
-		     Hier lag ein <button> mit `absolute inset-0` und `opacity-0` über dem GANZEN
-		     Cover. Das nimmt ihm nicht die Klickbarkeit: Er war per Tab erreichbar (Fokus
-		     auf etwas Unsichtbarem, WCAG 2.4.7), und auf einem Tablet öffnete ein Tipp auf
-		     das Bild ohne jede Ankündigung den Dateidialog.
-		     Gebraucht wurde er nie: Direkt unter dem Cover steht „Cover ändern" — sichtbar,
-		     beschriftet, dieselbe Funktion. Der Overlay war ein Duplikat, das nur die zwei
-		     Fallen beisteuerte. Als Hinweis bleibt er nützlich, deshalb jetzt ein div mit
-		     pointer-events-none und aria-hidden: Beim Zeigen erscheint das Kamerasymbol wie
-		     bisher, anfassen lässt es sich nicht mehr. -->
+		<!-- Ein Hinweis, kein Bedienelement: Unter dem Cover steht „Cover ändern". Als Knopf über
+		     dem ganzen Bild war er unsichtbar per Tab erreichbar, und ein Tipp auf das Bild
+		     öffnete den Dateidialog. -->
 		{#if formular.id}
 			<div
-				class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
+				class="pointer-events-none absolute inset-0 flex items-center justify-center bg-scrim/32 opacity-0 transition-opacity group-hover:opacity-100"
 				aria-hidden="true"
 			>
-				<svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-					/>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-					/>
-				</svg>
+				<span
+					class="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-container text-on-secondary-container"
+				>
+					<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+						/>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+						/>
+					</svg>
+				</span>
 			</div>
 		{:else}
 			<div

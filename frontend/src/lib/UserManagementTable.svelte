@@ -57,21 +57,13 @@
 						<td><StatusChip text={rollenName(user.rolle)} /></td>
 						<td class="whitespace-nowrap">
 							{#if user.aktiv}
-								<span class="inline-flex items-center gap-1.5 text-success">
-									<span class="h-1.5 w-1.5 rounded-full bg-success"></span> Aktiv
-								</span>
+								<StatusChip ton="erfolg" text="Aktiv" />
 							{:else if user.zugang_beantragt_am}
 								<!-- Selbstanmeldung: wartet auf Freischaltung, ist also kein bewusst
 								     abgeschaltetes Konto. -->
-								<span
-									class="inline-flex items-center gap-1.5 rounded-full bg-secondary-container px-2 py-0.5 text-xs font-medium text-on-secondary-container"
-								>
-									<span class="h-1.5 w-1.5 rounded-full bg-tertiary"></span> Zugang beantragt
-								</span>
+								<StatusChip ton="warten" text="Zugang beantragt" />
 							{:else}
-								<span class="inline-flex items-center gap-1.5 text-on-surface-variant">
-									<span class="h-1.5 w-1.5 rounded-full bg-outline-variant"></span> Inaktiv
-								</span>
+								<StatusChip text="Inaktiv" />
 							{/if}
 						</td>
 						<td class="space-x-2 text-right whitespace-nowrap">

@@ -119,7 +119,7 @@
 					</div>
 				{/if}
 				<div
-					class="absolute inset-0 bg-linear-to-t from-black/20 to-transparent group-hover:from-black/40 transition-colors"
+					class="absolute inset-0 bg-linear-to-t from-scrim/20 to-transparent group-hover:from-scrim/40 transition-colors"
 				></div>
 			</div>
 

@@ -138,7 +138,7 @@
 			     Bild liegt links und rechts (hochkant: oben und unten) ein Schleier; der helle Bereich
 			     dazwischen hat die Form des Passbilds, das Oval darin ist die Hilfslinie fürs Gesicht. -->
 			<div
-				class="relative mx-auto overflow-hidden rounded-xl bg-black"
+				class="relative mx-auto overflow-hidden rounded-xl bg-inverse-surface"
 				style:aspect-ratio={bildform}
 				style:width="min(100%, calc(60vh * {bildform}))"
 			>

@@ -85,7 +85,7 @@
 							aria-haspopup="menu"
 							aria-expanded={offen}
 							aria-label="Ausweisseiten wählen"
-							class="rounded-l-none border-l-white/25 px-2.5"
+							class="rounded-l-none border-l-on-primary/25 px-2.5"
 						>
 							<ChevronDown class="w-4 h-4 transition-transform {offen ? 'rotate-180' : ''}" />
 						</Button>
