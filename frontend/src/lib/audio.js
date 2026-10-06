@@ -8,10 +8,15 @@ function getAudioCtx() {
 	return _audioCtx;
 }
 
-export function playSoundSuccess() {
+/**
+ * Der Ton für alles, was gebucht ist. Eine Ausleihe klingt abwärts, der Rest aufwärts: Derselbe
+ * Scan gibt zurück oder leiht aus, und am Ton ist zu hören, was geschah.
+ * @param {'ausleihe'} [buchung]
+ */
+export function playSoundSuccess(buchung) {
 	try {
 		const ctx = getAudioCtx();
-		const notes = [880, 1320];
+		const notes = buchung === 'ausleihe' ? [1320, 880] : [880, 1320];
 		notes.forEach((freq, i) => {
 			const osc = ctx.createOscillator();
 			const gain = ctx.createGain();

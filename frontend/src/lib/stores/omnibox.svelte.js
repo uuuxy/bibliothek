@@ -405,12 +405,12 @@ export function createOmniboxStore() {
 	}
 
 	function verarbeiteAusleihe(data, reloadProfileCb) {
-		// Gebucht ist die Ausleihe in jedem Fall (Ton wie immer). Gehört das Buch zu einer
+		// Gebucht ist die Ausleihe in jedem Fall, deshalb ihr Ton. Gehört das Buch zu einer
 		// anderen Auflage als die, die die Klasse schon hat, blitzt es wie bei der
 		// Fremdrückgabe, und die Zeile über dem Konto sagt, welche (4.18, Stufe 5).
 		lastAuflagenHinweis = data.auflagen_hinweis ?? null;
 		triggerScreenFlash(lastAuflagenHinweis ? 'warning' : 'success');
-		playSoundSuccess();
+		playSoundSuccess('ausleihe');
 		triggerFlash(lastAuflagenHinweis ? 'orange' : 'green');
 		showToast(
 			`„${data.book?.titel ?? data.geraet?.modellname}" ausgeliehen an ${activeStudent?.vorname}.`

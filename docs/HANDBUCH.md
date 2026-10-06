@@ -57,6 +57,11 @@ Schritt).
 der Akte. Nur ein offenes Fenster (etwa „Gebühr stornieren") und ein Feld, in dem gerade getippt
 wird, behalten die Tastatur.
 
+**Am Ton ist zu hören, was gebucht wurde** (seit 06.10.2026): Eine Ausleihe klingt mit zwei
+Tönen abwärts; eine Rückgabe und ein gescannter Ausweis klingen mit denselben zwei Tönen
+aufwärts. Klingt es beim Zurücknehmen abwärts, ist das Buch ausgeliehen worden: Erneut scannen
+nimmt es zurück.
+
 **Ein Stapel vom Rückgabetisch** geht über die **Schnellrückgabe** (seit 06.10.2026): den Knopf
 rechts neben dem Scanfeld anklicken, dann die Bücher scannen. Jedes verliehene Buch wird
 zurückgebucht, und die Meldung nennt, bei wem es war. Ein Konto erscheint nicht, ausgeliehen

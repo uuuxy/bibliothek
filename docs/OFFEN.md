@@ -14,9 +14,8 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 1: als Nächstes
 
-- [ ] **Theke: zweiter Scan desselben Buchs.** Er leiht das eben zurückgegebene Buch nicht
-  wieder aus, und eine Ausleihe meldet sich mit eigener Farbe und eigenem Ton. Zuerst das Bild,
-  nach dem Ja der Bau. Kann still schaden: Das Buch steht im Regal und bleibt auf einem Konto.
+- [ ] **Theke: eigene Farbe für die Ausleihe?** Eine Ausleihe klingt seit dem 06.10.2026
+  anders als eine Rückgabe. Offen ist, ob sie auch anders blitzt. Vorschlag: bleibt grün.
   (4.32)
 - [ ] **Standort: Ein neues Exemplar erbt ihn,** wenn alle übrigen Exemplare des Titels
   denselben tragen. Entschieden am 06.10.2026. (5.53)
@@ -225,32 +224,26 @@ Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten. Er wird beim 
 Einstellungen → Schule eingetragen; das Feld ist heute leer, neue Etiketten tragen also keinen
 Vermerk.
 
-### 4.32 Theke: zweiter Scan desselben Buchs
+### 4.32 Theke: eigene Farbe für die Ausleihe
 
-Offen ist der gewöhnliche Betrieb, ohne die Schnellrückgabe ([Handbuch](HANDBUCH.md)). Am Code
-gelesen und am 06.10.2026 am lokalen Stack nachgestellt, jeder Schritt an der Tabelle der
-Ausleihen belegt:
+Ohne die Schnellrückgabe leiht der zweite Scan desselben Buchs es wieder aus, und ein freies
+Buch im Stapel geht an den Leser der vorigen Rückgabe ([Handbuch](HANDBUCH.md)). Seit dem
+06.10.2026 ist das zu hören: Eine Ausleihe klingt mit zwei Tönen abwärts, alles andere Gebuchte
+aufwärts (`playSoundSuccess` in `lib/audio.js`).
 
-- Eine Rückgabe ohne geladenen Leser lädt den Leser des Buchs (`verarbeiteRueckgabe` in
-  `stores/omnibox.svelte.js`). Wer einen Stapel ohne Schnellrückgabe scannt oder nach dem
-  Leeren der Theke weiterscannt, hat ab dem zweiten Buch einen Leser geladen.
-- Ein freies Exemplar wird an den geladenen Leser ausgeliehen (`HandleUnifiedCheckout` in
-  `internal/service/loan_checkout.go`). Das trifft ein Buch, das nicht verliehen war, und den
-  zweiten Scan desselben Buchs: Der erste gibt zurück, der zweite leiht wieder aus.
-- Ausleihe und Rückgabe melden sich gleich, grün und mit demselben Ton; nur der Text der
-  Meldung unterscheidet sie (`verarbeiteRueckgabe`, `verarbeiteAusleihe`). Ein Buch eines
-  anderen Lesers meldet sich orange mit Warnton.
+Offen: Soll eine Ausleihe auch in einer eigenen Farbe blitzen? Heute blitzen Ausleihe und
+Rückgabe grün; wer ohne Ton arbeitet, unterscheidet sie nur am Text der Meldung. Dagegen
+spricht:
 
-Folge: ein Buch im Regal, das auf dem Konto eines Kindes steht und später gemahnt wird.
-Kategorie A.
+- Der Rand des Scanfelds ist im Fokus schon blau (`primary`), Blau wäre dort nicht zu sehen.
+  Eine Farbe, die sich von Grün, Bernstein und Rot abhebt, wäre eine neue Rolle in beiden
+  Schemata.
+- M3 vergibt Farbe nach dem Zustand („to communicate semantic meaning, like a green success
+  state", Advanced customizations) und die Akzentrollen nach dem Gewicht („based on importance
+  and needed emphasis. Use caution when changing color roles for visual effect", Color roles).
+  Ausleihe und Rückgabe sind beide gebucht.
 
-**Richtung vom 06.10.2026:** eine Sperre für dasselbe Buch in den ersten Sekunden nach seiner
-Rückgabe und ein eigener Ton und eine eigene Farbe für die Ausleihe. Verworfen ist der Weg,
-einem Leser, der nur durch eine Rückgabe erscheint, nichts auszuleihen: An der Theke wird oft
-ein Buch des Kindes gescannt, damit sein Konto erscheint, und danach ausgeliehen. Die Farbe ist
-eine sichtbare Änderung: vor dem Bau ein Vorschlag nach den M3-Seiten. Der Bau braucht die
-Proben des Scanner-Pfads; `frontend/e2e/theke-schnellrueckgabe.spec.js` hält in seiner
-Gegenprobe den heutigen Stand fest.
+Vorschlag: bleibt grün. Wird die Farbe gewünscht, vor dem Bau ein Bild nach den M3-Seiten.
 
 ---
 

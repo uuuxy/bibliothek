@@ -100,6 +100,17 @@ describe('Theke: Ausleihe', () => {
 		expect(playSoundSuccess).toHaveBeenCalledTimes(1);
 	});
 
+	// Derselbe Scan gibt zurück oder leiht aus; am Ton ist zu hören, was geschah.
+	it('gibt den Ton der Ausleihe, eine Rückgabe den gewohnten', async () => {
+		const store = neuerStore(IDA);
+
+		await scanne(store, { type: 'ausleihe', book: { titel: 'Mathe 7' } });
+		expect(playSoundSuccess).toHaveBeenLastCalledWith('ausleihe');
+
+		await scanne(store, { type: 'rueckgabe', book: { titel: 'Mathe 7' } });
+		expect(playSoundSuccess).toHaveBeenLastCalledWith();
+	});
+
 	// Kinder derselben Klasse haben eine andere Auflage: gebucht, aber als Warnung gezeigt.
 	it('blitzt orange, wenn die Antwort einen Hinweis auf gemischte Auflagen trägt', async () => {
 		const store = neuerStore(IDA);
