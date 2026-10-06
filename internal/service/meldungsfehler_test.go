@@ -113,3 +113,31 @@ func fehlerart(e ast.Expr, imPaket bool) string {
 	}
 	return ""
 }
+
+func TestMeldungsfehler_Unwrap(t *testing.T) {
+	art := errors.New("basisfehler")
+	err := meldung(art, "test")
+	mErr, ok := err.(*meldungsfehler)
+	if !ok {
+		t.Fatalf("meldung returned %T, want *meldungsfehler", err)
+	}
+	if mErr.Unwrap() != art {
+		t.Errorf("Unwrap() = %v, want %v", mErr.Unwrap(), art)
+	}
+}
+
+func TestSperrGrundFehler_Error(t *testing.T) {
+	kern := errors.New("kern")
+	err := &SperrGrundFehler{Kern: kern, Grund: "grund"}
+	if err.Error() != "kern: grund" {
+		t.Errorf("Error() = %v, want %v", err.Error(), "kern: grund")
+	}
+}
+
+func TestSperrGrundFehler_Unwrap(t *testing.T) {
+	kern := errors.New("kern")
+	err := &SperrGrundFehler{Kern: kern, Grund: "grund"}
+	if err.Unwrap() != kern {
+		t.Errorf("Unwrap() = %v, want %v", err.Unwrap(), kern)
+	}
+}
