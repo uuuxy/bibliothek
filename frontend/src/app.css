@@ -1,9 +1,8 @@
 /* Einstiegspunkt des Stylesheets. Hier steht nur noch die Reihenfolge — was die
    einzelnen Teile tun, steht in ihnen selbst.
 
-   Die Reihenfolge ist nicht beliebig: erst die Skalen (Maße, Farben), dann die
-   Rollen, die darauf zeigen, dann Basis-, Bauteil- und Druckschichten. Eine
-   Rollendatei vor der Skala wäre ein Verweis auf etwas, das es noch nicht gibt.
+   Die Reihenfolge ist nicht beliebig: erst die Skala der Maße, dann die Farbrollen,
+   dann Basis-, Bauteil- und Druckschichten.
 
    Roboto — selbst ausgeliefert, nicht von Googles CDN. Die Schrift kommt als
    npm-Paket (@fontsource/roboto) mit, wird in den Build gebündelt und vom eigenen
@@ -21,8 +20,12 @@
 @import '@fontsource/roboto/latin-400.css';
 @import '@fontsource/roboto/latin-500.css';
 
+/* Tests und Browser-Specs nennen Klassen als Beispiele, auch solche, die es nicht geben
+   soll. Aus ihnen entsteht kein CSS der Auslieferung. */
+@source not "./**/*.test.js";
+@source not "../e2e";
+
 @import './styles/theme-mass.css';
-@import './styles/theme-farben.css';
 @import './styles/rollen.css';
 @import './styles/basis.css';
 @import './styles/komponenten.css';

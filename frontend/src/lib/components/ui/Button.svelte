@@ -60,7 +60,7 @@
 	// Zustandsvarianten (hover:, disabled:, focus-within:) bleiben stehen, und Größenangaben
 	// (text-label-small, text-sm) gelten nicht als Farbe.
 	const FARBE =
-		/^(bg|border|ring|text)-(slate|gray|zinc|blue|indigo|emerald|green|amber|orange|rose|red|white|black|transparent|primary|secondary|tertiary|error|success|warning|surface|outline|scrim|inverse-|on-)/;
+		/^(bg|border|ring|text)-(transparent|primary|secondary|error|success|warning|surface|outline|scrim|inverse-|on-)/;
 	const familie = (/** @type {string} */ c) => c.split('-')[0];
 
 	const variantClasses = $derived.by(() => {

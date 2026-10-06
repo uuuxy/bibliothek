@@ -45,9 +45,9 @@ describe('Button — Farb-Overrides des Aufrufers', () => {
 	it('ersetzt nur die Familie, die der Aufrufer anfasst', () => {
 		// Nur bg wird überschrieben — Rahmen und Text der Variante müssen bleiben,
 		// sonst verliert ein „danger"-Button seine rote Schrift.
-		const { getByRole } = render(Button, { variant: 'danger', class: 'bg-white' });
+		const { getByRole } = render(Button, { variant: 'danger', class: 'bg-surface' });
 		const k = klassen(getByRole('button'));
-		expect(k).toContain('bg-white');
+		expect(k).toContain('bg-surface');
 		expect(k).not.toContain('bg-error-container');
 		expect(k).toEqual(expect.arrayContaining(['border-transparent', 'text-on-error-container']));
 	});

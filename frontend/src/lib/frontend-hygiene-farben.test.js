@@ -1,75 +1,101 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
+import { join } from 'node:path';
+import { srcRoot, sammleQuelldateien, relPfad, ohneKommentare } from './hygiene-quellen.js';
 
-// Farben kommen aus den M3-Rollen (styles/rollen.css), nicht aus der Tailwind-Palette:
-// Nur für Fundstellen, die die Rollen benutzen, ist ein Farbwechsel eine Zeile und ein
-// zweites Farbschema erreichbar.
+// Farben kommen aus den M3-Rollen (styles/rollen.css), nicht aus der Tailwind-Palette und
+// nicht als Weiß oder Schwarz: Nur für Fundstellen, die die Rollen benutzen, ist ein
+// Farbwechsel eine Zeile und ein zweites Farbschema erreichbar.
 //
-// Hier steht eine Zahl und keine Dateiliste wie bei den Symbolen: Die Ratsche greift an der
-// Summe, damit auch verschobenes Markup nicht als neu zählt.
 // Mit Rahmenseite: `border-l-amber-500` färbt eine Kante und ist dieselbe Sache wie
 // `border-amber-500`.
-const PALETTE =
-	/\b(?:bg|text|border(?:-[trblxyse])?|ring|from|to|via|fill|stroke|divide|outline|decoration|accent|caret|shadow)-(?:slate|gray|zinc|neutral|stone|blue|indigo|violet|purple|rose|red|green|emerald|amber|yellow|orange|teal|cyan|sky|pink|fuchsia|lime)-\d{2,3}\b/g;
-
-// ── Ratsche ─────────────────────────────────────────────────────────────────
-// Diese Zahl darf nur sinken. Wer Fundstellen auf die Rollen umstellt, trägt den
-// neuen Stand hier ein — der Test sagt einem die Zahl.
 //
-// Sie ist ein Bestand, keine Erlaubnis: Neues gehört auf bg-surface,
-// text-on-surface-variant, border-outline-variant.
-const PALETTE_BESTAND = 0;
+// BLINDHEIT: Nur literale Klassen. Eine zusammengesetzte Klasse (`'bg-' + farbe`), ein
+// Farbwert im style-Attribut, in einer .css-Datei oder in einem SVG-Attribut (`fill="#…"`)
+// sieht der Test nicht. Die Farben der Ausweiskarte (designer/kartenFarben.js) sind Werte
+// des Entwurfs und gehören nicht hierher.
+const FAMILIE =
+	'bg|text|border(?:-[trblxyse])?|ring|from|to|via|fill|stroke|divide|outline|decoration|accent|caret|shadow';
+const PALETTE = new RegExp(
+	`\\b(?:${FAMILIE})-(?:slate|gray|zinc|neutral|stone|blue|indigo|violet|purple|rose|red|green|emerald|amber|yellow|orange|teal|cyan|sky|pink|fuchsia|lime)-\\d{2,3}\\b`,
+	'g'
+);
+const WEISS_SCHWARZ = new RegExp(`(?<![\\w-])(?:${FAMILIE})-(?:white|black)(?![\\w-])`, 'g');
 
-// Warum das nicht in einem Durchgang umgeschrieben wird:
-//
-//  1. Die Werte liegen auseinander. Nur wenige Klassen treffen ihre Rolle genau (blue-600 =
-//     primary = #0061a4, slate-50 = surface = #faf9fd). slate-500 (#4c5158) gegen
-//     on-surface-variant (#42474e), slate-200 (#e3e2e6) gegen outline-variant (#c2c7cf):
-//     Jede Umschreibung verschiebt die Farbe.
-//  2. Die Palette führt sechs Textgraustufen (slate-400…900), M3 kennt dafür zwei Rollen.
-//     Ein Massen-Rename ebnet eine bestehende Hierarchie ein.
-//
-// Umstellen ist deshalb eine Umgestaltung und keine Umbenennung: in Portionen, bei denen man
-// sieht, was sich ändert.
+// Eine Klasse, die wie eine Rolle heißt. Was dahinter steht, muss rollen.css kennen.
+const ROLLENKLASSE = new RegExp(
+	`(?<![\\w-])(?:${FAMILIE}|ring-offset|placeholder)-((?:on-)?(?:primary|secondary|tertiary|error|success|warning|surface|outline|inverse|scrim|background)[a-z0-9-]*)`,
+	'g'
+);
 
-/** Zählt die Paletten-Fundstellen je Datei. */
-function zaehleProDatei() {
-	/** @type {{ datei: string, treffer: number }[]} */
-	const out = [];
-	for (const f of sammleQuelldateien(srcRoot)) {
-		const treffer = (readFileSync(f, 'utf8').match(PALETTE) ?? []).length;
-		if (treffer > 0) out.push({ datei: relPfad(f), treffer });
-	}
-	return out.sort((a, b) => b.treffer - a.treffer);
+function bekannteRollen() {
+	const css = readFileSync(join(srcRoot, 'styles', 'rollen.css'), 'utf8');
+	return new Set([...css.matchAll(/^\s*--color-([a-z0-9-]+):/gm)].map((m) => m[1]));
 }
 
+/**
+ * @param {RegExp} muster
+ * @param {(quelle: string) => string} [vorbereiten]
+ */
+function fundeJeDatei(muster, vorbereiten = (q) => q) {
+	/** @type {string[]} */
+	const funde = [];
+	let dateien = 0;
+	for (const f of sammleQuelldateien(srcRoot)) {
+		dateien++;
+		const treffer = vorbereiten(readFileSync(f, 'utf8')).match(muster) ?? [];
+		if (treffer.length > 0) funde.push(`${relPfad(f)}: ${[...new Set(treffer)].join(', ')}`);
+	}
+	return { funde, dateien };
+}
+
+const HINWEIS =
+	'Farben gehören in die M3-Rollen aus styles/rollen.css:\n' +
+	'  Fläche       bg-surface / bg-surface-container-low / bg-surface-container-lowest\n' +
+	'  Text         text-on-surface (primär), text-on-surface-variant (sekundär)\n' +
+	'  Linie        border-outline-variant\n' +
+	'  Aktion       bg-primary / text-on-primary / bg-secondary-container\n' +
+	'  Fehler       text-error / bg-error-container\n' +
+	'  Schleier     bg-scrim/32';
+
 describe('Farb-Hygiene', () => {
-	it('führt keine neuen Tailwind-Paletten-Farben ein (Farben kommen aus den M3-Rollen)', () => {
-		const proDatei = zaehleProDatei();
-		const summe = proDatei.reduce((n, e) => n + e.treffer, 0);
+	it('erkennt die Formen, die es finden soll, und lässt Rollen durch', () => {
+		// Nicht-leer-Garantie: Der Bestand ist leer. Ein Muster, das nichts mehr fasst, sähe
+		// genauso aus.
+		const trifft = (/** @type {RegExp} */ muster, /** @type {string} */ text) =>
+			(text.match(muster) ?? []).length;
+		expect(trifft(PALETTE, 'bg-slate-100 hover:text-blue-600 border-l-amber-500')).toBe(3);
+		expect(trifft(PALETTE, 'bg-surface text-on-surface-variant border-outline-variant')).toBe(0);
+		expect(trifft(WEISS_SCHWARZ, 'bg-white text-black/80 from-black/20 ring-white')).toBe(4);
+		expect(trifft(WEISS_SCHWARZ, 'whitespace-nowrap font-black text-on-primary')).toBe(0);
+		expect(bekannteRollen().has('on-surface-variant')).toBe(true);
+		expect(bekannteRollen().size).toBeGreaterThan(30);
+	});
 
-		const spitzenreiter = proDatei
-			.slice(0, 8)
-			.map((e) => `  ${String(e.treffer).padStart(4)}  ${e.datei}`)
-			.join('\n');
+	it('führt keine Tailwind-Palettenfarbe (Farben kommen aus den M3-Rollen)', () => {
+		const { funde, dateien } = fundeJeDatei(PALETTE);
+		expect(dateien, 'Der Sammler findet kaum Quelldateien').toBeGreaterThan(200);
+		expect(funde, HINWEIS).toEqual([]);
+	});
 
+	it('führt kein Weiß und kein Schwarz als Klasse', () => {
+		const { funde } = fundeJeDatei(WEISS_SCHWARZ);
+		expect(funde, HINWEIS).toEqual([]);
+	});
+
+	it('benutzt keine Rolle, die rollen.css nicht definiert', () => {
+		const bekannt = bekannteRollen();
+		/** @type {string[]} */
+		const funde = [];
+		for (const f of sammleQuelldateien(srcRoot)) {
+			const quelle = ohneKommentare(readFileSync(f, 'utf8'));
+			for (const m of quelle.matchAll(ROLLENKLASSE)) {
+				if (!bekannt.has(m[1])) funde.push(`${relPfad(f)}: ${m[0]}`);
+			}
+		}
 		expect(
-			summe,
-			`Neue Paletten-Farben: ${summe} statt ${PALETTE_BESTAND} (+${summe - PALETTE_BESTAND}).\n` +
-				`Farben gehören in die M3-Rollen aus styles/rollen.css:\n` +
-				`  Fläche       bg-surface / bg-surface-container-low / bg-surface-container\n` +
-				`  Text         text-on-surface (primär), text-on-surface-variant (sekundär)\n` +
-				`  Linie        border-outline-variant\n` +
-				`  Aktion       bg-primary / text-on-primary / bg-secondary-container\n` +
-				`  Fehler       text-error / bg-error-container\n` +
-				`Dateien mit den meisten Fundstellen:\n${spitzenreiter}`
-		).toBeLessThanOrEqual(PALETTE_BESTAND);
-
-		expect(
-			summe,
-			`${PALETTE_BESTAND - summe} Fundstelle(n) sind auf die M3-Rollen umgestellt — danke.\n` +
-				`Bitte PALETTE_BESTAND in dieser Datei auf ${summe} setzen, damit die Ratsche greift.`
-		).toBe(PALETTE_BESTAND);
+			funde,
+			'Diese Farbklasse heißt wie eine Rolle, aber rollen.css kennt sie nicht: Sie färbt nichts.'
+		).toEqual([]);
 	});
 });

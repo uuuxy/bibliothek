@@ -1,10 +1,10 @@
 /* ── M3-Rollen ────────────────────────────────────────────────────────────────
-   Die semantische Sprache für ALLES, was ab jetzt gebaut wird: `bg-surface`,
-   `text-on-surface-variant`, `border-outline-variant`. Die Tailwind-Namen oben
-   sind die Brücke für die 3.126 bestehenden Fundstellen; neue Bauteile sollen
-   diese Rollen benutzen, dann ist ein Farbwechsel künftig EINE Zeile. Die
-   on-*-Paare sind der Punkt: Sie garantieren den Kontrast, statt ihn an jeder
-   Fundstelle neu zu raten.
+   Die Farbsprache der Anwendung: `bg-surface`, `text-on-surface-variant`,
+   `border-outline-variant`. Andere Farbklassen lässt
+   lib/frontend-hygiene-farben.test.js nicht zu; ein Farbwechsel ist damit eine
+   Zeile. Die on-*-Paare garantieren den Kontrast, statt ihn an jeder Fundstelle
+   neu zu raten. Die Töne sind Material-3-Tonleitern zur Grundfarbe Blau
+   (primary = Ton 40 = #0061a4).
 
    `static` ist hier Pflicht, nicht Geschmack: Tailwind 4 wirft Theme-Variablen
    weg, die noch niemand benutzt. Im Browser gemessen kamen die Rollen als LEERER
@@ -41,9 +41,8 @@
 	   roles": „a static green color called Success is defined in addition to the scheme,
 	   and applied to UI to indicate a success state"; je vier Rollen wie bei error).
 	   Dieselben Töne wie error — Farbe 40, On-Farbe 100, Container 90, On-Container 10 —
-	   aus den Tonleitern in theme-farben.css (emerald, amber); nachgerechnet am 24.09.2026
-	   (L* 40,5 / 91,2 / 9,8 und 41,3 / 90,0 / 9,9, Kontrast jedes Paars ab 6,2 : 1).
-	   Entschieden am 24.09.2026 für die Rückmeldung am Inventur-Scanner. */
+	   aus einer grünen und einer bernsteinfarbenen Tonleiter (L* 40,5 / 91,2 / 9,8 und
+	   41,3 / 90,0 / 9,9, Kontrast jedes Paars ab 6,2 : 1). */
 	--color-success: #346b39;
 	--color-on-success: #ffffff;
 	--color-success-container: #b7f5b9;
@@ -55,8 +54,7 @@
 	/* Helle Schrift auf dunklem Grund für Sprechblase und Snackbar (material-web, Token
 	   v0_192, plain-tooltip und snackbar: „container-color … inverse-surface",
 	   „supporting-text-color … inverse-on-surface", „action-label-text-color …
-	   inverse-primary"). Töne nach md-sys-color: neutral20, neutral95 und primary80, aus den
-	   Tonleitern in theme-farben.css (slate-800, slate-100, blue-200). */
+	   inverse-primary"). Töne nach md-sys-color: neutral20, neutral95 und primary80. */
 	--color-inverse-surface: #2f3033;
 	--color-inverse-on-surface: #f1f0f4;
 	--color-inverse-primary: #9ccaff;
@@ -64,6 +62,9 @@
 	   role at an opacity of 32%"). Der Wert ist in Googles Token-Datei Schwarz
 	   (md-sys-color: scrim = neutral0). */
 	--color-scrim: #000000;
+	/* Farbe der Schatten in theme-mass.css (md-sys-color: shadow = neutral0; die Bauteile
+	   nennen sie als „container-shadow-color"). */
+	--color-shadow: #000000;
 }
 
 /* Das dunkle Schema für einen Bereich: Flur-Monitor und Kamera-Sucher stehen dunkel, während
@@ -71,8 +72,8 @@
    (material-web, Token v0_192, md-sys-color, values-dark): surface neutral6, on-surface
    neutral90, on-surface-variant neutral-variant80, die Container neutral4 bis 22, outline
    neutral-variant60, die Farben Ton 80 mit On-Farbe 20, Container 30 und On-Container 90.
-   Die Werte stammen aus denselben Tonleitern wie das helle Schema; Töne, die theme-farben.css
-   nicht führt (neutral 4, 6, 12, 17, 22, neutral-variant 60, secondary 30 und 80), sind mit
+   Die Werte stammen aus denselben Tonleitern wie das helle Schema; die Töne, die das helle
+   nicht braucht (neutral 4, 6, 12, 17, 22, neutral-variant 60, secondary 30 und 80), sind mit
    Googles material-color-utilities aus der Grundfarbe #0061A4 gerechnet. Jede Rolle des
    hellen Schemas steht hier, sonst fiele sie im dunklen Bereich auf ihren hellen Wert zurück
    (rollen-schema.test.js). */
@@ -112,6 +113,7 @@
 	--color-inverse-on-surface: #2f3033;
 	--color-inverse-primary: #0061a4;
 	--color-scrim: #000000;
+	--color-shadow: #000000;
 }
 
 body {

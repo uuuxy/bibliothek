@@ -3,11 +3,9 @@ import { uiLogin } from './helpers.js';
 
 // Gate für die Navigationsleiste.
 //
-// Geprüft wird am BERECHNETEN Stil, nicht an Klassennamen: Die @theme-Skala des Projekts
-// hat Tailwind-Namen auf M3-Tonleitern umgebogen, `bg-blue-50` sagt also nichts darüber
-// aus, welche Farbe herauskommt. Und bei gleicher Spezifität entscheidet die Reihenfolge
-// im Stylesheet, nicht die im class-Attribut — ein Klassen-Grep hätte hier schon zweimal
-// das Falsche bestätigt.
+// Geprüft wird am berechneten Stil, nicht an Klassennamen: Bei gleicher Spezifität
+// entscheidet die Reihenfolge im Stylesheet, nicht die im class-Attribut — ein Klassen-Grep
+// hätte hier schon zweimal das Falsche bestätigt.
 //
 // Verglichen wird gegen die CSS-Variablen selbst, nicht gegen feste RGB-Werte: Ein
 // Farbwechsel in styles/rollen.css soll diesen Test NICHT rot machen. Rot werden soll er,

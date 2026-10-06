@@ -30,32 +30,7 @@ Liste geführt wird, steht am Ende.
 - [ ] **Doku-Ordner:** Vorschlag, welche der 36 Dateien in `docs/` zusammengelegt oder gelöscht
   werden; 20 davon kamen seit September 2026 dazu.
 
-### Etappe 2: Farben auf Material-3-Rollen (5.21)
-
-Die Ratsche zählt keine Palettenfarbe mehr (06.10.2026). Bildschirm für Bildschirm, je
-Portion ein Commit, am gerenderten Bildschirm geprüft:
-
-- [x] Buchakte mit der Liste der Ausleiher (20)
-- [x] „Klassen & Bücher" (50)
-- [x] Signaturen (24)
-- [x] Gemeinsame Bauteile, erster Teil (43): Knopf, Schalter, Status-Chip, Dialog,
-  Cover-Vorschau
-- [x] Meldungen und Sprechblasen (10)
-- [x] Dialog „Klassenversand" (16)
-- [x] Suchpille mit dem Scanfeld der Theke (14)
-- [x] Druck-Center, Quittung und Etikett-Vorschau (26)
-- [x] Monitor (25)
-- [x] Berechtigungen (18)
-- [x] System und Einzelstellen (54)
-- [x] Dunkle Flächen (16): Sucher der Kamera, Leiste des Ausweisdrucks, die zwei Schleier
-  hinter den Alarmen der Theke
-- [x] Initialen-Kachel der Leserakte (16)
-- [x] Cover-Platzhalter im Katalog (48)
-- [x] Karte im Ausweis-Designer (29)
-- [ ] Weiß und Schwarz (22 Stellen, die die Ratsche nicht zählt), die festen Farbwerte im
-  Diagramm der Statistik, die Ratsche als festes Gate
-
-### Etappe 3: vor dem Echtstart
+### Etappe 2: vor dem Echtstart
 
 Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Littera-Übernahme
 (entschieden am 28.09.2026).
@@ -78,12 +53,14 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [ ] Bekommt die Bestandsliste (CSV) eine Spalte „Standort"? Vorschlag: ja, zusammen mit dem
   Erben. (5.53)
-- [ ] Die gemeinsamen Bauteile stehen auf M3-Rollen und sehen überall etwas anders aus:
-  umrandete Knöpfe mit dunklerem Rand, „Löschen" rötlich getönt ohne Rand, Schalter im
-  Aus-Zustand grauer, Dialoge mit rundem Schließen-Knopf. Vorschlag: bleibt so. (5.21)
+- [ ] Alle Farben stehen auf M3-Rollen. Sichtbar anders als vorher: umrandete Knöpfe mit
+  dunklerem Rand, „Löschen" rötlich getönt ohne Rand, Schalter im Aus-Zustand grauer, Dialoge
+  mit rundem Schließen-Knopf; Titel ohne Cover zeigen eine graue Kachel mit Fach und Titel
+  statt der farbigen Buchattrappe je Fach; die Initialen-Kachel der Leserakte hat für alle
+  Leser dieselbe Farbe; die Benutzerliste nennt den Zustand eines Kontos als Abzeichen.
+  Vorschlag: bleibt so. Farben je Fach wären eigene, feste Farben neben den Rollen. (5.21)
 
-**Fertig gebaut und auf GitHub — von dir am Testserver anzusehen,** nach `git pull` und
-`./update.sh` (7.10):
+**Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
 - [ ] Portal: „Problem melden" unter dem Suchfeld
 - [ ] Buchakte: „Standort ändern", auch mit dem Handscanner
@@ -91,6 +68,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Die übrigen Proben mit dem Handscanner
 - [ ] Maske „Buch bearbeiten"
 - [ ] Mahnwesen: Mahnbriefe und Liste drucken
+- [ ] Ausweise aus der Leserdatei am Kartendrucker drucken
 
 **Erledigen:**
 
@@ -492,18 +470,21 @@ SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l
 SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
 ```
 
-### 5.21 Palettenfarben auf M3-Rollen
+### 5.21 Farben: was nach der Umstellung auf M3-Rollen offen ist
 
-Stand 06.10.2026: keine Fundstelle mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …)
-mehr, gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues
-entsteht nur noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
-Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
-`success` und `warning` in `styles/rollen.css` (M3, „Define custom color roles"). Vorgehen:
-Bildschirm für Bildschirm, die größten zuerst, je Portion ein Commit, am gerenderten Bildschirm
-geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über ui/StatusChip, Cover
-über ui/BuchCover, Rückmeldung beim Zeigen über den State-Layer statt `hover:bg-*`, ein Fehler
-über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für die übrige Anwendung
-freigegeben am 23.09.2026.
+Alle Farbklassen der Oberfläche sind Rollen aus `styles/rollen.css`.
+`frontend/src/lib/frontend-hygiene-farben.test.js` lässt keine Palettenklasse, kein Weiß oder
+Schwarz als Klasse und keine Rolle zu, die es nicht gibt. Feste Farbwerte stehen noch an vier
+Stellen (gezählt am 06.10.2026):
+
+- Der Bildschirmblitz der Theke (`OmniboxScreenFlash.svelte`) trägt Grün, Rot und Bernstein als
+  feste Werte der Tailwind-Palette, nicht die Töne der Rollen. Er gehört zum Vorschlag aus 4.32
+  (eigene Farbe für die Ausleihe).
+- Die zwei Reihenfarben im Diagramm der Statistik (`StatsTrendChart.svelte`), gewählt nach
+  Unterscheidbarkeit bei Farbfehlsichtigkeit; die Rollen führen kein solches Paar.
+- Das Druckfenster der Listen (`utils/listenDruck.js`) ist ein eigenes Dokument mit eigenem
+  Stylesheet und sechs Grau- und Rottönen der Palette.
+- Der Reliefschatten des Logos (`ui/LogoRelief.svelte`).
 
 Die Farben der Ausweiskarte sind Werte des Entwurfs (`designer/kartenFarben.js`), keine
 Rollen: Die Karte wird gedruckt und bleibt, wie sie ist, auch wenn die Oberfläche ihr Farbschema
@@ -538,10 +519,6 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   `LusdImportView` und `PromoteStudentsView` von Hand, wie insgesamt an 41 Stellen in 32
   Dateien (gezählt am 06.10.2026: getönte Fläche der Rollen Fehler, Erfolg oder Warnung und
   Rundung in einer Klassenliste); ein gemeinsames Bauteil dafür gibt es nicht.
-- Statistik: Die Farben des Diagramms (`StatsTrendChart`) sind feste Werte, keine Rollen: die
-  zwei Balkenfarben, die Hilfslinien, die Grundlinie und die Tönung des gezeigten Monats.
-- Benutzerliste: Der Zustand eines Kontos steht in zwei Formen, „Aktiv" und „Inaktiv" als Punkt
-  mit Wort, „Zugang beantragt" als Pille (`UserManagementTable`).
 - Bestellhistorie: Die Zelle „Lieferant" trägt `max-w-0` ohne volle Breite an der Spalte
   (`BestellHistorieTabelle.svelte`). Dieselbe Form ließ im Fehlbestandsbericht der Inventur dem
   Titel 191 von 918 px (gemessen und behoben am 05.10.2026). Name und Kundennummer tragen
@@ -573,8 +550,6 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   „Lade …" steht im Bestellwesen an vier Stellen als pulsierender Text (`BestellDetail`,
   `BestellHistorie`, `KlassensatzReservierungen`, `AnliegenListe`), dazu im Nachdruck der
   Etiketten, in der Benutzerliste und am Monitor; sonst `ui/Ladekreis`.
-  `WareneingangView.svelte` trägt `bg-white`; Weiß und Schwarz zählt die Ratsche nicht (22
-  Stellen, gezählt am 06.10.2026).
 - Ausweis-Designer: Die Knöpfe der Textausrichtung tragen englische Hinweise („left",
   „center", „right"; `PropertiesText.svelte`). Die zwei Umschalter der Werkzeugleiste
   (`ToolbarDruck.svelte`, `Toolbar.svelte`) stehen von Hand in gleicher Form, nicht aus
@@ -1278,6 +1253,12 @@ Maske fragt dann „Ist es dasselbe Medium?". Seit dem 03.10.2026 sind die zehn-
 dreizehnstellige ISBN dieselbe Nummer: ein Buch mit der zehnstelligen ISBN vom Titelblatt
 anlegen — gespeichert steht die dreizehnstellige im Feld — und danach in „Neues Buch"
 seinen Strichcode scannen; die Maske fragt „Vorhandenen Titel öffnen?".
+
+**Der Ausweisdruck am Kartendrucker.** In der Leserdatei zwei Leser ankreuzen, „Ausweise
+drucken". Erwartet: Jede Karte trägt nur den Ausweis, oben steht keine Reiterzeile, und die
+Nummer unter dem Strichcode steht auf der Karte. Dasselbe mit „Testdruck Vorderseite" im
+Druck-Center, Reiter „Schülerausweise". Gemessen ist das in der Druckansicht des Browsers
+(`e2e/ausweis-druckseite.spec.js`), am Kartendrucker noch nicht.
 
 **Das Mahnwesen ansehen:** Kinder anhaken, „Mahnbriefe drucken". Es
 kommt je Kind der Brief an die Eltern mit Anschrift; die Liste zeigt danach
