@@ -28,7 +28,7 @@ Liste geführt wird, steht am Ende.
 - [x] **PR 722** durchgesehen und geschlossen am 06.10.2026: Die Prüfung beim Löschen einer
   Sachgruppe (`api/systematik_handler.go`) würde durch ihn höchstens 1 ms schneller.
 - [ ] **Doku-Ordner:** Vorschlag, welche der 36 Dateien in `docs/` zusammengelegt oder gelöscht
-  werden; 19 davon kamen seit September 2026 dazu.
+  werden; 20 davon kamen seit September 2026 dazu.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
@@ -80,7 +80,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   umrandete Knöpfe mit dunklerem Rand, „Löschen" rötlich getönt ohne Rand, Schalter im
   Aus-Zustand grauer, Dialoge mit rundem Schließen-Knopf. Vorschlag: bleibt so. (5.21)
 
-**Am Testserver ausprobieren,** nach `git pull` und `./update.sh` (7.10):
+**Fertig gebaut und auf GitHub — von dir am Testserver anzusehen,** nach `git pull` und
+`./update.sh` (7.10):
 
 - [ ] Portal: „Problem melden" unter dem Suchfeld
 - [ ] Buchakte: „Standort ändern", auch mit dem Handscanner
@@ -114,7 +115,7 @@ wird dort gelöscht.
   Zugang; ausgesonderte und bestellte Exemplare heißen dort „Gesperrt".
 - **Druck-Center (5.5, 5.45):** Ein Ladefehler steht als „kein Exemplar" da, die Vorschau zeigt
   immer denselben Bogen, und bei vielen Exemplaren wird die Seite sehr lang.
-- **Überläufe (5.45):** Bestellwesen 16 px, Signaturen bei 1280 px, ein langer Name in der
+- **Überläufe (5.45):** Bestellwesen 40 px, Signaturen bei 1280 px, ein langer Name in der
   Leserakte.
 - **Auskunft (5.19):** Zwei Einträge über die Anlage eines Kontos fehlen, sobald das Konto
   gelöscht ist; zu klären, welche Rohdaten aufs Blatt gehören.
@@ -146,13 +147,9 @@ werden nicht neu vergeben; Kommentare im Code nennen sie als Herkunft.
 
 ## 2. Offline-Betrieb der Theke — der Nachweis steht aus
 
-Gebaut sind alle drei Stufen (15./16.09.2026): Die Theke hält die Buch-Barcode-Liste im Browser
-und nimmt jede Scan-Form offline an, der Sync schickt an `POST /api/action/nachbuchen`, und was
-nicht durchging, steht als Meldungsliste am Band. Wie sich das verhält, steht in
-[FACHKONZEPT.md](FACHKONZEPT.md) 18.4 und im [Handbuch](HANDBUCH.md).
-
 Offen ist **der Nachweis (2.3):** Stufe 1 und 3 gehören von Hand in den echten Chrome, Stufe 2
-über die Tür.
+über die Tür (`POST /api/action/nachbuchen`). Wie sich die Theke ohne Verbindung verhält, steht
+in [FACHKONZEPT.md](FACHKONZEPT.md) 18.4 und im [Handbuch](HANDBUCH.md).
 
 ### 2.3 Nachweis am Stack (je Stufe, echter Chrome)
 
@@ -248,16 +245,11 @@ Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten. Er wird beim 
 Einstellungen → Schule eingetragen; das Feld ist heute leer, neue Etiketten tragen also keinen
 Vermerk.
 
-### 4.32 Theke: ein Stapel vom Rückgabetisch
+### 4.32 Theke: zweiter Scan desselben Buchs
 
-Seit dem 06.10.2026 gibt es die Schnellrückgabe wie in Littera: ein Knopf neben dem Scanfeld.
-Solange sie an ist, nimmt jeder Scan nur zurück, kein Leser wird geladen, und die Meldung nennt,
-bei wem das Buch war. Sie endet mit einem zweiten Klick, mit Escape, mit einem gescannten
-Ausweis oder gewählten Leser und mit dem Leeren der Theke (Vorgabe fünf Minuten ohne
-Bedienung, Abmelden, Neuladen).
-
-Offen bleibt der gewöhnliche Betrieb. Am Code gelesen und am 06.10.2026 am lokalen Stack
-nachgestellt, jeder Schritt an der Tabelle der Ausleihen belegt:
+Offen ist der gewöhnliche Betrieb, ohne die Schnellrückgabe ([Handbuch](HANDBUCH.md)). Am Code
+gelesen und am 06.10.2026 am lokalen Stack nachgestellt, jeder Schritt an der Tabelle der
+Ausleihen belegt:
 
 - Eine Rückgabe ohne geladenen Leser lädt den Leser des Buchs (`verarbeiteRueckgabe` in
   `stores/omnibox.svelte.js`). Wer einen Stapel ohne Schnellrückgabe scannt oder nach dem
@@ -370,13 +362,14 @@ Gegenprobe den heutigen Stand fest.
   (4 × 13) zeigt sie damit nicht den gewählten Bogen; gedruckt wird nach
   `api/label_formats.go`, die Überschrift der Vorschau nennt das gewählte Format (gemessen am
   03.10.2026).
-- Zwei Schreibweisen stehen neben ihrem Helfer (gefunden am 05.10.2026 beim Umbau zu den
-  Meldungen zur Wartbarkeit). Einen Betrag in Euro schreiben sechs Stellen selbst
-  (`toLocaleString` und `+ ' €'`: `useFehlbestand.svelte.js`, `StudentBescheideCard`,
-  `BestellHistorie`, `BestellDetail`, `BescheidDialog`, `BescheideTabelle`), mit gewöhnlichem
-  statt geschütztem Leerzeichen; dafür gibt es `formatEuro` (`utils/format.js`). Den Text eines
-  gefangenen Fehlers (`e instanceof Error ? e.message : String(e)`) schreiben 21 Stellen in 13
-  Dateien selbst; `fehlertext` (`utils/fehlertext.js`) rufen bisher drei. Kategorie B.
+- Zwei Schreibweisen stehen neben ihrem Helfer (gezählt am 06.10.2026). Einen Betrag in Euro
+  schreiben sieben Stellen selbst: sechs mit `toLocaleString` und `+ ' €'`
+  (`useFehlbestand.svelte.js`, `StudentBescheideCard`, `BestellHistorie`, `BestellDetail`,
+  `BescheidDialog`, `BescheideTabelle`), eine mit `toFixed` (`OrderCart.svelte`), alle mit
+  gewöhnlichem statt geschütztem Leerzeichen; dafür gibt es `formatEuro` (`utils/format.js`).
+  Den Text eines gefangenen Fehlers (`e instanceof Error ? e.message : String(e)`) schreiben 20
+  Stellen in 12 Dateien selbst; `fehlertext` (`utils/fehlertext.js`) rufen vier Dateien.
+  Kategorie B.
 
 ### 5.10 Gates und Werkzeuge
 
@@ -385,11 +378,10 @@ Gegenprobe den heutigen Stand fest.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
 - `TestHandlerFormulierenKeinNeuesSQL` (`api/schichtung_test.go`) sieht ein `UPDATE` mit
   Tabellenkürzel nicht: Das Muster verlangt `UPDATE <Tabelle> SET`, und `UPDATE ausleihen a SET`
-  trifft es nicht. Gefunden am 04.10.2026: Die Ratsche hielt `api/mahnwesen_bulk.go` für frei
-  von SQL, als dessen einzige Anweisung ein Kürzel bekam. Drei Anweisungen dieser Form stehen
-  in `api/ausleihe.go`, `api/etiketten_offen.go` und `api/student_promotion.go`; die Dateien
-  stehen wegen anderer Anweisungen in der Liste. Ein neuer Handler, dessen einzige Anweisung
-  so aussieht, bliebe unbemerkt. Kategorie B.
+  trifft es nicht. Drei Anweisungen dieser Form stehen in `api/ausleihe.go`,
+  `api/etiketten_offen.go` und `api/student_promotion.go`; die Dateien stehen wegen anderer
+  Anweisungen in der Liste. Ein neuer Handler, dessen einzige Anweisung so aussieht, bliebe
+  unbemerkt. Kategorie B.
 - `e2e/kontrast.spec.js` misst den Medienkatalog nicht in jedem Lauf mit seinen Kacheln
   (gefunden am 02.10.2026, lokal mit 8.600 Titeln). `warteAufStabilenBaum` gilt als stabil,
   sobald zwei Zählungen im Abstand von 100 ms gleich sind; kommt die Titelliste später, misst
@@ -399,44 +391,38 @@ Gegenprobe den heutigen Stand fest.
   auf ein Merkmal des Inhalts warten (Kachel, Tabellenzeile). Dieselbe Form des Wartens steht
   in `typo-rollen.spec.js`, `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`, dort
   nicht nachgemessen. Kategorie B.
-- 44 Specs klicken Menüpunkte per `page.getByTitle('<Name>')`, 87 Stellen (gezählt am
-  03.10.2026). Das trifft jedes Element, dessen `title` den Namen enthält, auch die Kachel
+- 46 Specs klicken Menüpunkte per `page.getByTitle('<Name>')`, 94 Stellen (gezählt am
+  06.10.2026). Das trifft jedes Element, dessen `title` den Namen enthält, auch die Kachel
   eines Buchs. `e2e/abgaenger-management.spec.js` legt Titel „Abgänger Buch …" an und räumt
-  sie nicht ab (lokal 133, der älteste an erster Stelle des Katalogs). Die zwei Klicks auf
-  „Abgänger" (`schueler-profil-klick.spec.js`) kommen heute von der Theke, wo keine Kachel
-  steht; vom Katalog aus brächen sie ab wie der Kontrast-Test bis zum 02.10.2026. Abhilfe:
-  `menuepunkt` aus `e2e/helpers.js` an allen Stellen, und die Spec räumt ihren Titel ab.
-  Kategorie B.
-- Browser-Tests lassen Daten liegen (gezählt am 02.10.2026 in der lokalen Datenbank; in der CI
-  ist die Datenbank je Lauf frisch). `e2e/bestellung-detail.spec.js` bestellt je Lauf drei
-  Exemplare am ersten Titel des Katalogs und nimmt nur den Lieferanten wieder weg; der
-  Teardown löscht die Bestellung, die Exemplare bleiben „im Zulauf" ohne Bestellung.
-  `e2e/abgaenger-management.spec.js` räumt nichts ab (133 Titel „Abgänger Buch …"), der
-  Wareneingang-Test in `e2e/scrollbereiche.spec.js` lässt je Lauf acht Titel mit je einem
-  Exemplar im Zulauf liegen, `e2e/zugangsbuch.spec.js` je Lauf einen Titel mit zwei
-  Exemplaren (74 Titel). Von `e2e/leserdatei.spec.js` stehen aus der Zeit vor dem
-  02.10.2026 noch 84 Titel, 83 Ausleihen, 86 Leser und 81 Konten. Ein voller Lauf am
-  02.10.2026 ließ 94 Titel und 438 Exemplare zurück. Lokale Zahlen tragen diese Reste mit.
-  Abhilfe je Spec: eigener Titel, Aufräumen über die Kennung. Kategorie B.
-- Code, den kein Go-Test ausführt (gemessen am 03.10.2026 mit der ganzen Suite und `-coverpkg`
-  über alle Pakete: 84,2 % der Anweisungen; die Messung je Paket rechnet die Datenbank-Tests
-  aus `api/` nicht für `repository/` an und nennt 78,9 %). Unter 50 % liegen, ohne `cmd/`,
-  `main.go` und Dateien mit weniger als 20 Anweisungen: `api/littera_import.go` 0,7 % (Littera-
-  und Bestandsdatei hochladen; die Regeln in `internal/littera` 82,7 %),
-  `internal/service/cover_service.go` 18,2 %, `internal/littera/altbestand.go` 4,4 %,
-  `api/klassen_mapping.go` 27,0 %, `api/schueler_etiketten.go` 2,3 %,
-  `inventur/endpunkte_cover_retry.go` 26,5 %, `api/geraete.go` 49,0 %, `db/seed.go` 35,5 %,
-  `api/ausweis_layout.go` 33,3 %, `api/user_admin_loeschen.go` 48,3 %,
-  `repository/mail_settings.go` 38,1 %. Ob Browser-Tests diesen Code erreichen, ist nicht
-  gemessen. Anlass: Das Nachziehen der Tests für fünf Routen am 03.10.2026 fand drei Fehler
-  (zwei Abweisungen beim Zusammenführen ohne Grund, ein unlesbares Bild als Störung gemeldet,
-  eine Antwort des Foto-Uploads, die kein JSON war). Abhilfe je Route: ein Test mit Datenbank
-  und eine Gegenprobe je Zusicherung, Muster in `api/inventur_verlust_aktionen_pg_test.go`.
-  Kategorie B.
-- `beforeEach(() => attrappe.mockReset())` steht in 16 Testdateien der Oberfläche, in einer
-  davon mit `mockClear` (gefunden am 05.10.2026). Die Kurzform gibt die Attrappe zurück, und Vitest ruft eine Funktion, die ein
-  Hook zurückgibt, nach dem Test als Aufräumer auf: Jeder Test ruft die Attrappe danach noch
-  einmal. Wirft oder scheitert sie dann (`mockRejectedValue`), wird der Test rot, obwohl seine
+  sie nicht ab. Die zwei Klicks auf „Abgänger" (`schueler-profil-klick.spec.js`) kommen heute
+  von der Theke, wo keine Kachel steht; vom Katalog aus träfen sie auch die Kachel. Abhilfe:
+  `menuepunkt` aus `e2e/helpers.js` an allen Stellen (heute in zwei Specs), und die Spec räumt
+  ihren Titel ab. Kategorie B.
+- Browser-Tests lassen Daten liegen (in der CI ist die Datenbank je Lauf frisch; lokale
+  Zahlen tragen die Reste mit). Am 06.10.2026 einzeln gestartet und an der lokalen Datenbank
+  gezählt: `e2e/bestellung-detail.spec.js` bestellt drei Exemplare am ersten Titel des
+  Katalogs und nimmt nur den Lieferanten wieder weg; der Teardown löscht die Bestellung, die
+  drei Exemplare bleiben „im Zulauf" ohne Bestellung. `e2e/abgaenger-management.spec.js` lässt
+  einen Titel „Abgänger Buch …" mit einem Exemplar liegen, `e2e/zugangsbuch.spec.js` einen
+  Titel mit zwei Exemplaren. Am Code gelesen: Der Wareneingang-Test in
+  `e2e/scrollbereiche.spec.js` legt acht Titel mit je einem Exemplar im Zulauf an und räumt
+  sie nicht ab. Abhilfe je Spec: eigener Titel, Aufräumen über die Kennung. Kategorie B.
+- Code, den kein Go-Test ausführt (gemessen am 06.10.2026 mit der ganzen Suite und `-coverpkg`
+  über alle Pakete: 85,1 % der Anweisungen). Unter 50 % liegen, ohne `cmd/`, `main.go` und
+  Dateien mit weniger als 20 Anweisungen, acht Dateien: `api/littera_import.go` 0,7 % (Littera-
+  und Bestandsdatei hochladen; die Regeln in `internal/littera` 88,6 %),
+  `api/schueler_etiketten.go` 2,3 %, `internal/service/cover_service.go` 18,2 %,
+  `api/klassen_mapping.go` 27,0 %, `api/ausweis_layout.go` 33,3 %, `db/seed.go` 35,5 %,
+  `repository/mail_settings.go` 38,1 %, `api/geraete.go` 49,0 %. Ob Browser-Tests diesen Code
+  erreichen, ist nicht gemessen. Anlass: Das Nachziehen der Tests für fünf Routen am
+  03.10.2026 fand drei Fehler (zwei Abweisungen beim Zusammenführen ohne Grund, ein
+  unlesbares Bild als Störung gemeldet, eine Antwort des Foto-Uploads, die kein JSON war).
+  Abhilfe je Route: ein Test mit Datenbank und eine Gegenprobe je Zusicherung, Muster in
+  `api/inventur_verlust_aktionen_pg_test.go`. Kategorie B.
+- `beforeEach(() => attrappe.mockReset())` steht in 16 Testdateien der Oberfläche an 19
+  Stellen, in einer davon mit `mockClear` (gezählt am 06.10.2026). Die Kurzform gibt die
+  Attrappe zurück, und Vitest ruft eine Funktion, die ein Hook zurückgibt, nach dem Test als
+  Aufräumer auf: Jeder Test ruft die Attrappe danach noch einmal. Wirft oder scheitert sie dann (`mockRejectedValue`), wird der Test rot, obwohl seine
   Erwartungen stimmen; nachgestellt an `klassensatzReservierung.svelte.test.js`. Abhilfe: der
   Rumpf des Hooks in geschweiften Klammern. Kategorie B.
 - SonarQube läuft von Hand über `scripts/sonar_scan.sh` gegen das Projekt `Bibliothek5`; der
@@ -462,16 +448,17 @@ Gegenprobe den heutigen Stand fest.
   Eine neue Stelle dieser Regeln meldet gosec nicht. Abhilfe: je Stelle ein `#nosec` mit Grund,
   dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
   Nur mit Anlass.
-- **Ein Browser-Test war dreimal rot.** `e2e/feld-roundtrip.spec.js` („Buch
-  anlegen: Bestand und Zähldatum kommen in der DB an") fand am 05.10.2026 in zwei vollen
-  Läufen und am 06.10.2026 in einem Lauf über neun Dateien am lokalen Stack den neuen Titel
-  nicht binnen 10 s; einzeln lief die Datei danach jedes Mal grün. Beim zweiten Mal war die Maske zu und die Liste stand da („Bücher (10618)"),
-  der neue Titel fehlte in der Ansicht. Die lokale Datenbank trägt Hunderte Test-Titel aus
-  früheren Läufen.
+- **Ein Browser-Test war viermal rot.** `e2e/feld-roundtrip.spec.js` („Buch anlegen: Bestand
+  und Zähldatum kommen in der DB an") fand am 05.10.2026 in zwei vollen Läufen und am
+  06.10.2026 in einem Lauf über neun Dateien und in einem vollen Lauf am lokalen Stack den
+  neuen Titel nicht binnen 10 s; einzeln lief die Datei danach jedes Mal grün. Beim zweiten
+  Mal war die Maske zu und die Liste stand da („Bücher (10618)"), der neue Titel fehlte in
+  der Ansicht. Die lokale Datenbank trägt 12.455 Titel (gezählt am 06.10.2026), darunter die
+  Reste früherer Testläufe.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
-**Offen aus dem Umbau der Auskunft (gebaut am 24.09.2026):** Die Rohdaten der Protokolleinträge
+**Rohdaten der Protokolleinträge:** Die Rohdaten der Protokolleinträge
 (`details`) stehen nur in der abgerufenen Auskunft, nicht auf dem Blatt; das Gate
 `TestDsgvoPDF_DrucktJedeAngabeDerAuskunft` führt sie als begründete Ausnahme, seit dem
 24.09.2026 auch die Details der Kontoereignisse. Offen ist, was davon aufs Blatt gehört.
@@ -480,9 +467,9 @@ Nachgesehen am 24.09.2026: Die bearbeitende Person steht in eigenen Spalten (`be
 Sperre (`LESER_GESPERRT`, `LESER_ENTSPERRT`; bis zum 24.09.2026 auch `OVERRIDE_BLOCK`) —
 können aber andere Personen nennen.
 
-**Beim Bau der Auskunft über gelöschte Konten gefunden (29.09.2026), nicht gebaut:** Zwei
-Einträge über die Anlage eines Kontos tragen seine Kennung nicht als `ziel_id` und fehlen
-deshalb unter den früheren Zugangskonten der Auskunft, sobald das Konto gelöscht ist.
+**Zwei Einträge über die Anlage eines Kontos** (gefunden am 29.09.2026) tragen seine Kennung
+nicht als `ziel_id` und fehlen deshalb unter den früheren Zugangskonten der Auskunft, sobald
+das Konto gelöscht ist.
 
 - `SELBSTANMELDUNG` trägt das Konto nur als `admin_id`; die Spalte geht beim Löschen des
   Kontos auf NULL (`auth/selbstanmeldung.go`).
@@ -534,10 +521,6 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 - Buchakte, Liste der Ausleiher: Eine überfällige Ausleihe ist nur an der Farbe des Datums zu
   erkennen (`BorrowersListe.svelte`). Die Leserakte setzt für dieselbe Ausleihe ein Zeichen und
   für Screenreader das Wort „Überfällig" dazu (`AusleiheRueckgabe.svelte`).
-- Buchakte, Exemplarkarte (`BookExemplarCard.svelte`): „Barcode scannen" ist 24 px hoch
-  (gemessen am 06.10.2026). Stift, Drucker und Papierkorb sind 14 px große Symbole ohne
-  Knopffläche (`.icon-btn`), drei davon erklären sich über `title` statt `data-tip` (am Code
-  gelesen). „Interne ID generieren" bricht bei 1280 px Fensterbreite im Knopf in zwei Zeilen um.
 - Einstellungen, „E-Mail Routing für Mahnungen": Die Oberfläche sagt „Mapping" (leere Liste,
   Meldung nach dem Löschen, Sprechblase am Papierkorb; `SystemSettingsRouting.svelte`); ein
   deutsches Wort wäre „Zuordnung".
@@ -556,10 +539,11 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   Leserdatei öffnet die Akte über den Namen als Knopf.
 - Titel-Verwaltung: Der Knopf „Retry Cover" trägt eine englische Beschriftung.
 - „LUSD & Versetzung": Die Flächen für Fehler, Erfolg, Hinweis und Warnung stehen in
-  `LusdImportView` und `PromoteStudentsView` von Hand, wie an rund 40 weiteren Stellen der
-  Anwendung (gezählt am 02.10.2026: getönte Fläche und Rundung in einer Klassenliste); ein
-  gemeinsames Bauteil dafür gibt es nicht.
-- Statistik: Die Balkenfarben des Diagramms (`StatsTrendChart`) sind feste Werte, keine Rollen.
+  `LusdImportView` und `PromoteStudentsView` von Hand, wie insgesamt an 41 Stellen in 32
+  Dateien (gezählt am 06.10.2026: getönte Fläche der Rollen Fehler, Erfolg oder Warnung und
+  Rundung in einer Klassenliste); ein gemeinsames Bauteil dafür gibt es nicht.
+- Statistik: Die Farben des Diagramms (`StatsTrendChart`) sind feste Werte, keine Rollen: die
+  zwei Balkenfarben, die Hilfslinien, die Grundlinie und die Tönung des gezeigten Monats.
 - Benutzerliste: Der Zustand eines Kontos steht in zwei Formen, „Aktiv" und „Inaktiv" als Punkt
   mit Wort, „Zugang beantragt" als Pille (`UserManagementTable`).
 - Bestellhistorie: Die Zelle „Lieferant" trägt `max-w-0` ohne volle Breite an der Spalte
@@ -590,9 +574,11 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   Knopffläche (`LieferantZeile.svelte`). Zwei Hinweissätze unter „Bestellung auslösen" stehen
   in `text-label-small`, der leere Warenkorb in einem gestrichelten Kasten (`OrderCart.svelte`).
   Der Spaltenkopf der Bedarfsliste steht von Hand in Versalien neben dem Kopf von `ui/Tabelle`.
-  „Lade …" steht an drei Stellen als pulsierender Text (`BestellDetail`, `BestellHistorie`,
-  `KlassensatzReservierungen`), sonst `ui/Ladekreis`. `WareneingangView.svelte` trägt `bg-white`;
-  Weiß und Schwarz zählt die Ratsche nicht (74 Stellen in `.svelte`-Dateien).
+  „Lade …" steht im Bestellwesen an vier Stellen als pulsierender Text (`BestellDetail`,
+  `BestellHistorie`, `KlassensatzReservierungen`, `AnliegenListe`), dazu im Nachdruck der
+  Etiketten, in der Benutzerliste und am Monitor; sonst `ui/Ladekreis`.
+  `WareneingangView.svelte` trägt `bg-white`; Weiß und Schwarz zählt die Ratsche nicht (22
+  Stellen, gezählt am 06.10.2026).
 - Ausweis-Designer: Die Knöpfe der Textausrichtung tragen englische Hinweise („left",
   „center", „right"; `PropertiesText.svelte`). Die zwei Umschalter der Werkzeugleiste
   (`ToolbarDruck.svelte`, `Toolbar.svelte`) stehen von Hand in gleicher Form, nicht aus
@@ -649,10 +635,8 @@ Schulserver feststeht.
 
 ### 5.35 Protokolleinträge zu Lesern, die die Tilgung noch nicht erreicht
 
-Gefunden beim Bau des Gates aus 5.10 am 29.09.2026. Behoben ist am selben Tag die Löschspur
-eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `beschreibung`,
-`betrifft`) fallen jetzt mit der Anonymisierung und dem endgültigen Löschen
-(`api/titel_loeschspur_tilgung_pg_test.go`). Offen:
+Gefunden am 29.09.2026. Die Tilgung nimmt Name und Freitext neben der Kennung des Lesers aus
+beiden Protokollen (`repository/protokoll_personenbezug.go`). Sie erreicht nicht:
 
 - **Einträge zu Lesern, die schon endgültig gelöscht sind.** Der Nachtlauf räumt nur Einträge
   zu anonymisierten Lesern, die noch in der Tabelle stehen. Wer vor dem Einspielen endgültig
@@ -686,9 +670,11 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   am 02.10.2026), und „A4-Bogen drucken" steht unter beiden Spalten (`LabelPrinter.svelte`).
   Jede Zeile nennt „(Neuwertig)", wenn das Exemplar keine Zustandsnotiz trägt, auch ein
   bestelltes.
-- **Bestellwesen:** Die Seite läuft 16 px über (852 von 868 px, gemessen am 02.10.2026).
-- **Signaturen bei 1280 px:** Liste und Regal sind zusammen 1.000 px breit, Platz sind 960 px
-  (gemessen am 02.10.2026). Die Spalte „verliehen" endet 8 px hinter dem Fensterrand, die
+- **Bestellwesen:** Die Seite läuft 40 px über (857 von 817 px bei 1710 × 952 px, bei
+  1280 × 720 px sind es 60 px; gemessen am 06.10.2026). Darin scrollt die Bedarfsliste in
+  einem eigenen Kasten (`OrderRecommendations.svelte`, `max-h-[calc(100vh-19rem)]`).
+- **Signaturen bei 1280 px:** Liste und Regal sind zusammen 1.010 px breit, Platz sind 960 px
+  (gemessen am 06.10.2026). Die Spalte „verliehen" endet 18 px hinter dem Fensterrand, die
   Seite bekommt eine waagerechte Scrollleiste. Die rechte Spalte des Rasters ist `1fr` ohne
   untere Grenze 0 (`lg:grid-cols-[20rem_1fr]`).
 - **Die Exemplare in „Buch bearbeiten" bei Mengen wie an der Schule** (am Testserver lesend
@@ -720,12 +706,12 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   zusammen; M3: „A navigation rail can be expanded by default on larger screen sizes, or can
   be expanded over content on smaller screen sizes". Anlass zum Bauen: Die Anwendung wird
   an einem Tablet oder in Fenstern unter 1280 px bedient.
-- **Leserakte, langer Name:** Ein Name aus einem Wort von 22 Zeichen ragt 73 px aus der
-  Leserkarte in die rechte Spalte. Er liegt dort unter den Reitern auf der ersten Zeile des
-  Inhalts: In „Gebühren & Schäden" und „Stammdaten & Adresse" verdeckt er deren Anfang
-  (49 px), in „Ausleihen & Vormerkungen" endet er an der Oberkante der Überschrift (gemessen am
-  03.10.2026 bei 1280 × 900 px an einem Testleser). Namen mit Leerzeichen oder Bindestrich
-  brechen um.
+- **Leserakte, langer Name:** Ein Name aus einem Wort von 22 Zeichen ragt 72 px aus der
+  Leserkarte in die rechte Spalte (gemessen am 06.10.2026 bei 1280 × 900 px an einem
+  Testleser). Er liegt dort unter den Reitern auf der ersten Zeile des Inhalts: In
+  „Stammdaten & Adresse" verdeckt er den Anfang der Überschrift (gesehen am 06.10.2026), in
+  „Gebühren & Schäden" ebenso, in „Ausleihen & Vormerkungen" endet er an der Oberkante der
+  Überschrift (gemessen am 03.10.2026). Namen mit Leerzeichen oder Bindestrich brechen um.
 - **Leserakte, Autor und Nummer des Exemplars:** Der Autor steht nur in der Sprechblase am
   Titel, die Nummer in Fenstern bis rund 1580 px ebenfalls (darüber hat sie ihre Spalte;
   gemessen bei ausgeklappter Seitenleiste). Die Sprechblase erscheint beim Zeigen mit der
@@ -756,8 +742,7 @@ sie in der Vorschau. Kategorie B.
 
 ### 5.53 Standort am Exemplar: was offen ist
 
-Der Standort steht am Exemplar und wird in der Buchakte über „Standort ändern" gesetzt; das
-Feld am Titel gibt es nicht mehr. Offen sind zwei Punkte:
+Offen sind zwei Punkte:
 
 - **Neue Exemplare.** Entschieden am 06.10.2026: Ein neues Exemplar erbt den Standort, wenn
   alle übrigen Exemplare des Titels im Bestand denselben tragen. Nicht gebaut: Heute kommt es
@@ -799,8 +784,8 @@ Kategorie B.
 
 ### 6.1 Beobachtungen
 
-- Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, ohne
-  Grenze), „Suche & Filter" bei jedem Öffnen, die Titel-Verwaltung beim Öffnen und bei leerem
+- Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, gekappt
+  erst bei 50.000 Titeln), „Suche & Filter" bei jedem Öffnen, die Titel-Verwaltung beim Öffnen und bei leerem
   Suchfeld; gezeigt werden je 50 Titel. Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,
   4,87 MB, gepackt über die Leitung 0,43 MB (`api/middleware_kompression.go`); auch über den
   Proxy des Testservers kommen die Antworten gepackt an. Größe und Dauer am Server über das
@@ -985,8 +970,8 @@ Kategorie B.
   01.10.2026: das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
   Vormerk-Liste (`permissionMetadata.js`, `BookVormerkungenTab.svelte`), das Etikett der
   Reiterleiste (`StudentDirectory.svelte`), „Öffnet die Schülerdatei …" im Druck-Einstieg
-  (`KlassenDruckEinstieg.svelte`), „Schülerakte" in zwei Erklärtexten (`permissionMetadata.js`,
-  `DatenschutzKategorie.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
+  (`KlassenDruckEinstieg.svelte`), „Schülerakte" in drei Erklärtexten (`permissionMetadata.js`,
+  `DatenschutzKategorie.svelte`, `BescheideTabelle.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
   auch das Kollegium steht (`DeletedStudentList.svelte`). Beim Umbenennen die E2E-Specs
   mitziehen.
 - Drei Knöpfe tun bei leerem Feld nichts und sagen es nicht (gefunden am 01.10.2026 beim
@@ -1002,9 +987,9 @@ Kategorie B.
   letzten Feld nur rückwärts.
 - Elf Dialoge sperren „Abbrechen", solange ihre Anfrage läuft (etwa
   `StudentProfileDeleteModal.svelte`, `BescheidDialog.svelte`, `PapierkorbLoeschenDialog.svelte`),
-  dazu sechs Stellen in Formularen und Listen (`PromoteStudentsView.svelte` zweimal,
+  dazu sieben Stellen in Formularen und Listen (`PromoteStudentsView.svelte` zweimal,
   `GeraeteVerwaltung.svelte`, `AnliegenListe.svelte`, `KlassensatzReservierungen.svelte`,
-  `AusleiheRueckgabe.svelte`; gezählt am 03.10.2026). M3 Dialogs, Guidelines: „Disable confirming
+  `AusleiheRueckgabe.svelte`, `portal/ProblemFormular.svelte`; gezählt am 06.10.2026). M3 Dialogs, Guidelines: „Disable confirming
   actions until a choice is made. Dismissive actions are never disabled." Abbrechen bricht die
   laufende Anfrage am Server nicht ab. In der Lösch-Rückfrage der Benutzerliste schließt der
   Knopf den Dialog wie Escape, und das Ergebnis der Anfrage steht auf der Seite; zu entscheiden
@@ -1026,10 +1011,10 @@ Kategorie B.
   sie nirgends. In Tabellenzeilen stehen bis zu drei Symbole ohne Abstand nebeneinander
   (Ausleihliste der Leserakte: verlängern, Schaden melden, zurückgeben). Anlass zum Bauen:
   Fehlklicks an der Theke oder Bedienung am Tablet.
-- 11 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`, darunter
-  `KlassenBuchKachel` im Portal). Umstellen beim fachlichen Anfassen, nicht in einem Rutsch.
-- 3.000 Titel ohne ISBN: `inventur.SucheTextDNB` nur mit Bestätigung durch einen Menschen
-  verdrahten.
+- 9 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`).
+  Umstellen beim fachlichen Anfassen, nicht in einem Rutsch.
+- 3.000 Titel ohne ISBN: Die Textsuche der DNB (`SucheTextDNB`, heute nur in der Bestellsuche)
+  nur mit Bestätigung durch einen Menschen für sie verdrahten.
 - Titel aus der DNB tragen deren Platzhalter für eine fehlende Zählung („Deutschbuch [...]
   Gymnasium 5."), und der Zusatz zum Sachtitel (MARC 245 $b) steht im Titel statt im Feld
   Untertitel („Lambacher Schweizer Mathematik 6. Ausgabe Hessen Schulbuch mit Medien Klasse
@@ -1064,14 +1049,16 @@ Kategorie B.
 - Der Paritätstest vergleicht keine COMMENTs und Seeds.
 - Erbe der PR-Zulieferungen: Go-Testdateien über 200 Zeilen, ein schwacher Export-CSV-Test.
 - Klone: Go 9 Gruppen (05.09.2026), Frontend 0,41 %.
-- 50 Handler-Dateien in `api/` formulieren rohes SQL neben `repository/` (gezählt am 24.09.2026);
+- 48 Handler-Dateien in `api/` formulieren rohes SQL neben `repository/` (gezählt am 06.10.2026);
   der Bestand ist seit dem 07.08.2026 eingefroren (`handlerMitSQL` in `api/schichtung_test.go`).
   Umstellen beim fachlichen Anfassen einer Datei, nicht in einem Rutsch.
 - Exemplarkarte der Buchakte (`BookExemplarCard.svelte`): Die vier Symbolknöpfe sind 14 px groß
   statt 32 px (`.icon-btn`), drei erklären sich per `title` statt `data-tip`; die Buchakte fehlt
   in `icon-trefferflaechen.spec.js` und `icon-tooltips.spec.js`. Ein 32-px-Knopf bricht die
   Kopfzeile bei 1280 px um (gemessen am 24.09.2026: Karte 70 → 100 px) — die Knöpfe brauchen
-  eine eigene Zeile; eine Layoutfrage, nicht einzeln.
+  eine eigene Zeile; eine Layoutfrage, nicht einzeln. „Barcode scannen" ist 24 px hoch, und
+  „Interne ID generieren" bricht bei 1280 px im Knopf in zwei Zeilen um (gemessen am
+  06.10.2026).
 - `docs/datenschutz_offene_punkte.md` heißt wie eine zweite Offen-Liste: Teil A ist dort
   abgehakt statt gelöscht. Vorgeschlagen am 02.10.2026 und nicht
   entschieden: umbenennen und die Erledigt-Spalte streichen; 17 Dateien verweisen auf den Namen.
@@ -1085,7 +1072,7 @@ Kategorie B.
 
 Integer-Cent statt float64 · Bundle-Splitting · TypeScript-Migration · `inventur/` ins Haupt-API
 verschmelzen · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
-geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (25 Dateien
+geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (23 Dateien
 mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Zugangsbuch-Ausdruck je
 Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides nennt
 [mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als Verfahrensvorgabe; nicht gebaut) ·
@@ -1270,12 +1257,12 @@ Scanner der Schule schnell genug tippt (höchstens 50 ms je Zeichen), zeigt nur 
   dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
   Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
 
-**Das Portal ansehen** (gebaut am 06.10.2026): Im Reiter „Reservieren & Melden" steht
+**Das Portal ansehen:** Im Reiter „Reservieren & Melden" steht
 „Problem melden" links in einer eigenen Zeile unter dem Suchfeld. Anklicken: Das Formular
 öffnet darunter ohne zweite Überschrift und beginnt an derselben linken Kante wie der Knopf.
 „Abbrechen" führt zurück auf den Knopf.
 
-**Der Standort an der Buchakte** (gebaut am 06.10.2026). Am Testserver trägt noch kein
+**Der Standort an der Buchakte.** Am Testserver trägt noch kein
 Exemplar einen Standort. Einen Titel mit mehreren Exemplaren öffnen, Reiter „Exemplare": zwei
 Exemplare ankreuzen, „Standort ändern", einen Standort eintragen. Erwartet: Die zwei Karten
 nennen ihn, im Kopf der Akte steht er hinter der Signatur mit der Zahl 2, und die
@@ -1283,7 +1270,7 @@ Titel-Verwaltung zeigt dasselbe in der Spalte „Standort". Den Dialog noch einm
 Das Feld schlägt den Standort von eben vor. Mit dem Handscanner: den Dialog öffnen und ein
 Buch scannen. Erwartet: Das Feld bleibt leer, der Dialog bleibt offen, nichts ändert sich.
 
-**Die Maske „Buch bearbeiten" in der neuen Reihenfolge ansehen** (gebaut am 03.10.2026):
+**Die Maske „Buch bearbeiten" ansehen:**
 zuerst die ISBN und die Angaben zum Buch, darunter die Gruppe „An der Schule" mit der Wahl
 Bibliothek oder Lernmittel, „Andere Auflagen" als letzte Angabe dieser Gruppe, Bestand und
 Zähldatum unter „Exemplare". Das Feld „Beschreibung / Klappentext" gibt es seit dem
@@ -1296,7 +1283,7 @@ dreizehnstellige ISBN dieselbe Nummer: ein Buch mit der zehnstelligen ISBN vom T
 anlegen — gespeichert steht die dreizehnstellige im Feld — und danach in „Neues Buch"
 seinen Strichcode scannen; die Maske fragt „Vorhandenen Titel öffnen?".
 
-**Das Mahnwesen ansehen** (gebaut am 04.10.2026): Kinder anhaken, „Mahnbriefe drucken". Es
+**Das Mahnwesen ansehen:** Kinder anhaken, „Mahnbriefe drucken". Es
 kommt je Kind der Brief an die Eltern mit Anschrift; die Liste zeigt danach
 „1× gemahnt, zuletzt …". Seit dem 05.10.2026 druckt „Liste drucken" die Liste als Tabelle, je
 Buch eine Zeile; einmal ausdrucken und ansehen.
