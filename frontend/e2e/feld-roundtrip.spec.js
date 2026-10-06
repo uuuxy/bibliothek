@@ -43,7 +43,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		`);
 	});
 
-	test('Buch anlegen: Bestand, Zähldatum, Standort kommen in der DB an', async ({ page }) => {
+	test('Buch anlegen: Bestand und Zähldatum kommen in der DB an', async ({ page }) => {
 		await uiLogin(page);
 		await page.goto('/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
@@ -53,13 +53,12 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await page.locator('#buch-signatur').fill('BIB Rt');
 		await page.locator('#buch-bestand').fill('3');
 		await page.locator('#buch-zaehldatum').fill('2026-08-25');
-		await page.locator('#buch-standort').fill(`Regal ${s}`);
 		await page.getByRole('button', { name: 'Speichern' }).click();
 		await expect(page.getByText(`RT Neu ${s}`).first()).toBeVisible({ timeout: 10000 });
 		const row = querySQL(
-			`SELECT last_counted::text || '|' || coalesce(erweiterte_eigenschaften->>'standort','') || '|' || (SELECT count(*) FROM buecher_exemplare e WHERE e.titel_id = t.id) FROM buecher_titel t WHERE titel = 'RT Neu ${s}'`
+			`SELECT last_counted::text || '|' || (SELECT count(*) FROM buecher_exemplare e WHERE e.titel_id = t.id) FROM buecher_titel t WHERE titel = 'RT Neu ${s}'`
 		);
-		expect(row).toBe(`2026-08-25|Regal ${s}|3`);
+		expect(row).toBe('2026-08-25|3');
 	});
 
 	// Die Wahl „Lernmittel" und das Kästchen „Mehrjahresband" stehen in der Gruppe „An der

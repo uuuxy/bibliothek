@@ -64,16 +64,9 @@
 			</p>
 		</div>
 
+		<!-- Der Standort steht am Exemplar und wird in der Buchakte geändert, nicht hier. -->
 		<div class="grid grid-cols-2 gap-4">
 			<SignaturFeld bind:formular />
-			{#if formular.erweiterteEigenschaften}
-				<Feld
-					id="buch-standort"
-					label="Standort / Regal"
-					bind:value={formular.erweiterteEigenschaften.standort}
-					placeholder="z. B. Krimi-Ecke oder Regal 3B"
-				/>
-			{/if}
 		</div>
 
 		<!-- Auswahlfelder wie ui/Feld mit Beschriftung: drei Zeilen im Subgrid, damit die

@@ -350,6 +350,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/bestand/zugangsbuch/pdf":                   {URL: "/api/bestand/zugangsbuch/pdf?von=2000-01-01&bis=2099-12-31"},
 		"GET /api/exemplare/etiketten-offen":                 {URL: "/api/exemplare/etiketten-offen"},
 		"GET /api/exemplare/etiketten-offen/anzahl":          {URL: "/api/exemplare/etiketten-offen/anzahl"},
+		"GET /api/exemplare/standorte":                       {URL: "/api/exemplare/standorte"},
 		"GET /api/vormerkungen":                              {URL: "/api/vormerkungen?titel_id=" + w.titelID, Positiv: []string{"Pruefkanari"}},
 		"GET /api/reservierungen/klassensatz":                {URL: "/api/reservierungen/klassensatz"},
 		"GET /api/reservierungen/klassensatz/anzahl":         {URL: "/api/reservierungen/klassensatz/anzahl"},

@@ -188,8 +188,13 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 	if err != nil {
 		return nil, err
 	}
+	standorte, err := repository.StandorteDerTitel(ctx, repo.db, ids)
+	if err != nil {
+		return nil, err
+	}
 	for i := range books {
 		books[i].Suchwoerter = suchwoerter[books[i].ID]
+		books[i].Standorte = standorte[books[i].ID]
 	}
 	return books, nil
 }

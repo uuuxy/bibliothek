@@ -1958,7 +1958,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('155_sitzungen.sql'),
 ('156_titel_ohne_beschreibung.sql'),
 ('157_isbn_eine_laenge.sql'),
-('158_exemplar_standort.sql')
+('158_exemplar_standort.sql'),
+('159_standort_am_titel_entfaellt.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

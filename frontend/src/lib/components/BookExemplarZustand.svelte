@@ -16,13 +16,16 @@
      zwei Beträge für dasselbe Buch, und einer davon stünde in einem Bescheid.
 
      Darunter das Eigentum (4.24, Stufe 3, BookExemplarEigentum): Es hängt am Ersatzwert —
-     wem das Buch gehört, entscheidet, nach welcher Regel er gerechnet wird. -->
+     wem das Buch gehört, entscheidet, nach welcher Regel er gerechnet wird.
+
+     Zuoberst der Standort (5.53), wenn das Exemplar nicht nach der Signatur steht. Geändert
+     wird er wie das Eigentum über die Markierung („Standort ändern"). -->
 <script>
 	import { formatEuro } from '../utils/format.js';
 	import { ersatzwertBekannt } from './exemplarErsatzwert.js';
 	import BookExemplarEigentum from './BookExemplarEigentum.svelte';
 
-	/** @type {{ ex: { zustand_notiz?: string, zustand_abwertung_prozent?: number, ersatzwert?: number, ersatzwert_herleitung?: string, ersatzwert_bekannt?: boolean, eigentum?: string, eigentum_herkunft?: string, littera_eigentumsvermerk?: string } }} */
+	/** @type {{ ex: { standort?: string, zustand_notiz?: string, zustand_abwertung_prozent?: number, ersatzwert?: number, ersatzwert_herleitung?: string, ersatzwert_bekannt?: boolean, eigentum?: string, eigentum_herkunft?: string, littera_eigentumsvermerk?: string } }} */
 	let { ex } = $props();
 
 	const notiz = $derived(ex.zustand_notiz || '');
@@ -30,6 +33,12 @@
 	const zeigeWert = $derived(ersatzwertBekannt(ex));
 </script>
 
+{#if ex.standort}
+	<p class="text-xs text-on-surface-variant">
+		<span class="font-semibold">Standort:</span>
+		<span class="font-semibold text-on-surface">{ex.standort}</span>
+	</p>
+{/if}
 {#if notiz || prozent > 0}
 	<p class="text-xs text-on-surface-variant">
 		<span class="font-semibold">Zustand:</span>

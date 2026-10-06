@@ -20,6 +20,8 @@ und die Arbeit im Code.
 **Bei dir — zu entscheiden:**
 
 - GitHub: drei offene PRs (5.10) und die PR-Pflicht im Regelwerk für `main` (7.6).
+- Standort am Exemplar (5.53): ob ein neues Exemplar den Standort der übrigen erbt, und welcher
+  Knopf in der Leiste der markierten Exemplare der gefüllte ist.
 
 **Bei dir — zu fragen:** Schulträger, Sichtung und das Littera-Kennwort; dazu Sekretariat,
 Schulamt, Datenschutzbeauftragter und Bücherei. Wer was gefragt wird, steht am Anfang von
@@ -28,7 +30,7 @@ Abschnitt 8.
 **Bei dir — auszuprobieren:**
 
 - Am Testserver nach `git pull` und `./update.sh`: die Proben mit dem Handscanner, die Maske
-  „Buch bearbeiten" und das Mahnwesen (7.10).
+  „Buch bearbeiten", der Standort an der Buchakte und das Mahnwesen (7.10).
 - Der SonarQube-Scan nach den Commits vom 05.10.2026 (5.10).
 - Der Nachweis von Hand für die Theke ohne Netz (2.3, Stufe 1 und 3 im echten Chrome),
   zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen Stack, wenn
@@ -37,15 +39,13 @@ Abschnitt 8.
 
 **Bei mir — im Code,** in dieser Reihenfolge:
 
-1. **5.53** (Standort am Exemplar): Anzeige und Ändern an der Exemplarkarte, das Feld am Titel
-   entfällt. Zuerst ein Bild, dann der Bau.
-2. **4.32** (Theke, Kategorie A): eigener Ton und eigene Farbe für eine Ausleihe, kurze Sperre
+1. **4.32** (Theke, Kategorie A): eigener Ton und eigene Farbe für eine Ausleihe, kurze Sperre
    für dasselbe Buch nach seiner Rückgabe. Zuerst der Vorschlag zur Farbe, dann der Bau.
-3. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-4. Nach der Antwort zu 8.3: **5.4**.
-5. Vor dem Echtstart: **5.31** (`update.sh` für den Schulserver), der Eingang für die Seite der
+2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
+3. Nach der Antwort zu 8.3: **5.4**.
+4. Vor dem Echtstart: **5.31** (`update.sh` für den Schulserver), der Eingang für die Seite der
    Lieferanten (4.23) und die Auflage in der Littera-Übernahme (5.5).
-6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 **Termine:** Am 19. Oktober 2026 wechselt CodeQL bei GitHub das Abbild (5.10). Node 26 ist ab
 dem 28. Oktober 2026 dran, nach der Regel „immer die aktive LTS"
@@ -497,7 +497,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
   Nur mit Anlass.
 - **Ein Browser-Test war dreimal rot.** `e2e/feld-roundtrip.spec.js` („Buch
-  anlegen: Bestand, Zähldatum, Standort kommen in der DB an") fand am 05.10.2026 in zwei vollen
+  anlegen: Bestand und Zähldatum kommen in der DB an") fand am 05.10.2026 in zwei vollen
   Läufen und am 06.10.2026 in einem Lauf über neun Dateien am lokalen Stack den neuen Titel
   nicht binnen 10 s; einzeln lief die Datei danach jedes Mal grün. Beim zweiten Mal war die Maske zu und die Liste stand da („Bücher (10618)"),
   der neue Titel fehlte in der Ansicht. Die lokale Datenbank trägt Hunderte Test-Titel aus
@@ -798,36 +798,29 @@ Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächste
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
 
-### 5.53 Der Standort gehört zum Exemplar
+### 5.53 Standort am Exemplar: was offen ist
 
-Anlass (05.10.2026): Ein Standort, der in der Buchmaske bei „Lernmittel" eingetragen ist, steht
-auch da, wenn die Maske auf „Bibliothek" steht. Der Titel führt einen einzigen Standort
-(`erweiterteEigenschaften.standort`); am Testserver ist er bei keinem der 13.062 Titel
-ausgefüllt (gemessen am 06.10.2026).
+Der Standort steht am Exemplar und wird in der Buchakte über „Standort ändern" gesetzt; das
+Feld am Titel gibt es nicht mehr. Offen sind drei Punkte:
 
-**Entschieden am 06.10.2026:** Der Standort gehört zum Exemplar, wie in Littera. Von einem
-Schulbuch stehen 30 Exemplare im Lernmittelbestand und ein oder zwei in der Bücherei. Das Feld
-am Titel entfällt. Die Standorte aus Littera kommen mit.
+- **Neue Exemplare.** Ein neues Exemplar (Wareneingang, Bestand in der Titelmaske erhöht) kommt
+  ohne Standort an, auch wenn alle übrigen Exemplare des Titels denselben tragen. Zu sehen ist
+  es an der Zahl hinter dem Standort („Regal 11 (30)" bei einem Bestand von 35). Zu
+  entscheiden: ob ein neues Exemplar den Standort erbt, wenn alle übrigen im Bestand denselben
+  tragen.
+- **Der gefüllte Knopf.** In der Leiste der markierten Exemplare ist „Eigentum ändern"
+  gefüllt, „Standort ändern" umrandet. Material 3 hebt eine Aktion hervor, und zwar die, die am
+  häufigsten gebraucht wird. Wird der Standort öfter geändert als das Eigentum, tauschen die
+  zwei Knöpfe die Form (`BookExemplareTab.svelte`).
+- **Bestandsliste.** Die Bestandsliste als CSV ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
+  Abschnitt 8) nennt je Exemplar die Signatur, den Standort nicht. Nächster Schritt: eine
+  Spalte „Standort" in `inventur/export_csv.go` und im Pflegekonzept.
 
-1. **Übernahme, gebaut am 06.10.2026:** Jedes Exemplar kommt mit seinem Standort an
-   (`buecher_exemplare.standort`, Migration 158): mit dem eigenen Sonderstandort, sonst mit dem
-   Vermerk, den die Bibliothek am Titel als dritten Verfasser eingetragen hat. Der Vermerk steht
-   nicht mehr als Verfasser am Buch, und „LMF" darin macht den Titel zum Lernmittel. Zahlen und
-   Bedienung: [littera_schema_befund.md](littera_schema_befund.md) und
-   [SCRIPTS.md](SCRIPTS.md), Abschnitt 1.
-2. **Anzeige, offen:** an der Exemplarkarte der Standort des Exemplars; Titel-Verwaltung und
-   Buchakte zeigen die Standorte der Exemplare zusammengefasst.
-3. **Ändern, offen:** Der Standort wird an der Exemplarkarte eingetragen. Das Feld „Standort /
-   Regal" der Titelmaske und der Schlüssel am Titel entfallen; ein vorhandener Wert geht an die
-   Exemplare des Titels ohne eigenen Standort.
+Unberührt bleibt: Ein Titel ist Bibliothek oder Lernmittel, mit allen Exemplaren. Die
+Exemplare eines Schulbuchs, die in der Bücherei stehen, werden wie Lernmittel verliehen.
 
-Vor Schritt 2 und 3: ein Bild der Exemplarkarte und der Zeile in der Titel-Verwaltung.
-
-Am Testserver sind die Standorte erst mit einer Übernahme aus der Littera-Datenbank zu sehen
-(7.2). Der Katalog dort stammt aus den Listen vom Juni 2026.
-
-Unberührt bleibt: Ein Titel ist Bibliothek oder Lernmittel, mit allen Exemplaren. Die zwei
-Exemplare eines Schulbuchs in der Bücherei werden wie Lernmittel verliehen.
+Am Testserver sind die Standorte aus Littera erst mit einer Übernahme aus der
+Littera-Datenbank zu sehen (7.2). Kategorie B.
 
 ### 5.54 Klassensätze aus den Ausleihen und Hinweise an der Theke
 
@@ -889,6 +882,14 @@ Kategorie B.
   30.09.2026 im echten Chrome, schon vor der zweiten Vorschlagszeile so). Unterhalb von `lg` legt
   `BestellWorkspace.svelte` die Spalten untereinander (`grid-cols-1`); woher die Breite kommt, ist
   nicht nachgesehen. Anlass zum Bauen: Bestellen soll am Telefon gehen.
+- Die Leiste der markierten Exemplare in der Buchakte trägt mit „Standort ändern" vier Knöpfe
+  und ist 692 px breit. Sie passt bis zu einem Fenster von 768 px. Bei 640 px ragt das × um
+  10 px über die Leiste, bei 390 px sind „Eigentum ändern", „Löschen" und das × abgeschnitten
+  (gemessen am 06.10.2026 im Browser). Mit drei Knöpfen war sie 553 px breit (gerechnet aus den
+  Knopfbreiten) und bei 390 px schon abgeschnitten. Material 3, Toolbars: „If there's not
+  enough space for all items, put them in an overflow menu in the trailing slot";
+  `ui/AuswahlLeiste` hat kein solches Menü. Anlass zum Bauen: Die Buchakte soll am Telefon oder
+  an einem kleinen Tablet bedient werden.
 - Der Stand-Merker der Barcode-Liste (Anzahl + `max(aktualisiert_am)`) rechnet mit dem Beginn
   der Transaktion: Ändert eine lange Transaktion ein Etikett und committet nach einem kürzeren
   Schreiber, bleibt es bei 304. Nachgestellt hinter dem Build-Tag `raster`
@@ -1308,6 +1309,14 @@ Scanner der Schule schnell genug tippt (höchstens 50 ms je Zeichen), zeigt nur 
   „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
   dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
   Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
+
+**Der Standort an der Buchakte** (gebaut am 06.10.2026). Am Testserver trägt noch kein
+Exemplar einen Standort. Einen Titel mit mehreren Exemplaren öffnen, Reiter „Exemplare": zwei
+Exemplare ankreuzen, „Standort ändern", einen Standort eintragen. Erwartet: Die zwei Karten
+nennen ihn, im Kopf der Akte steht er hinter der Signatur mit der Zahl 2, und die
+Titel-Verwaltung zeigt dasselbe in der Spalte „Standort". Den Dialog noch einmal öffnen:
+Das Feld schlägt den Standort von eben vor. Mit dem Handscanner: den Dialog öffnen und ein
+Buch scannen. Erwartet: Das Feld bleibt leer, der Dialog bleibt offen, nichts ändert sich.
 
 **Die Maske „Buch bearbeiten" in der neuen Reihenfolge ansehen** (gebaut am 03.10.2026):
 zuerst die ISBN und die Angaben zum Buch, darunter die Gruppe „An der Schule" mit der Wahl

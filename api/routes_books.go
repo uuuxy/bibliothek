@@ -60,6 +60,10 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Eigentum markierter Exemplare (4.24, Stufe 3): edit_books wie Barcode und Status, Grund
 	// Pflicht, jede Änderung im Protokoll.
 	mux.Handle("PUT /api/exemplare/eigentum", s.RequirePermission("edit_books")(s.ExemplarEigentumHandler()))
+	// Standort markierter Exemplare (5.53): edit_books wie das Eigentum daneben, jede Änderung
+	// im Protokoll. Die Vorschläge liest nur der Dialog, der ändert.
+	mux.Handle("PUT /api/exemplare/standort", s.RequirePermission("edit_books")(s.ExemplarStandortHandler()))
+	mux.Handle("GET /api/exemplare/standorte", s.RequirePermission("edit_books")(s.ExemplarStandorteHandler()))
 
 	// Das Abgangsbuch: welche Exemplare in einem Zeitraum aus dem Bestand gingen
 	// (Protokoll des Medienzentrums vom 16.09.2026, Punkt 1). view_books wie der übrige

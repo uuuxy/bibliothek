@@ -52,12 +52,6 @@
 	const schlagworteGeladen = $derived(Array.isArray(formular.schlagworte));
 
 	$effect(() => {
-		if (!formular.erweiterteEigenschaften) {
-			formular.erweiterteEigenschaften = { standort: '' };
-		} else if (typeof formular.erweiterteEigenschaften.standort !== 'string') {
-			formular.erweiterteEigenschaften.standort = '';
-		}
-
 		if (formular.jahrgangVon === undefined) formular.jahrgangVon = 5;
 		if (formular.jahrgangBis === undefined) formular.jahrgangBis = 10;
 	});

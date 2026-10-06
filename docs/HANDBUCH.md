@@ -126,6 +126,12 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   auswählen_), dann _Eigentum ändern_ — Land, Schulträger oder _Vorgabe_ (nimmt die Angabe am
   Exemplar wieder weg), mit Grund; jede Änderung steht im Protokoll. Einen Littera-Vermerk,
   den das Programm nicht zuordnet (etwa „Förderverein"), zeigt die Zeile mit an.
+  Steht ein Exemplar nicht an seinem Platz nach der Signatur, nennt die Karte seinen
+  **Standort** (etwa „Bibliothek, Regal 3B"). Ändern: Exemplare ankreuzen, dann _Standort
+  ändern_ — das Feld schlägt die Standorte vor, die im Bestand schon vorkommen; _Standort
+  entfernen_ nimmt die Angabe weg. Im Kopf der Akte und in der Titel-Verwaltung stehen die
+  Standorte der Exemplare mit ihrer Zahl, etwa „Bibliothek, Regal 3B (2)". Ein neues Exemplar
+  kommt ohne Standort an.
 - **Titel-Verwaltung**: neuen Titel anlegen (die ISBN-Eingabe holt die Angaben zum Buch — vor
   dem Speichern prüfen; die Signatur trägt man selbst ein, das Feld bietet die Signaturen des
   Bestands an), bearbeiten, Cover tauschen,
@@ -135,9 +141,9 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   ISBN schon ein Titel mit demselben Autor gleich, fragt die Maske _Ist es dasselbe Medium?_:
   _Titel öffnen_ führt zum vorhandenen Titel, dort kommt das Exemplar dazu; _Anderes Medium_
   legt den Titel an (ein anderes Heft, ein anderer Band). Darunter steht die Gruppe _An der Schule_: die Wahl _Bibliothek |
-  Lernmittel_, Signatur und Standort, Fach, Schulzweig, Klasse und Jahrgänge, das
+  Lernmittel_, die Signatur, Fach, Schulzweig, Klasse und Jahrgänge, das
   Mehrjahresband und die anderen Auflagen. Bestand und Zähldatum stehen unter _Exemplare_,
-  über der Liste. Wird der Bestand nach oben
+  über der Liste; der Standort steht am Exemplar und wird in der Buchakte geändert. Wird der Bestand nach oben
   korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
   07.09.2026 — vorher „SYS-…"); sie stehen danach im Druck-Center unter _Fehlende
   Etiketten_. Wird er verringert, fragt die Maske mit beiden Zahlen nach; ausgesondert

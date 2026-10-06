@@ -142,7 +142,8 @@ func (s *Server) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 		       coalesce(e.zustand_abwertung_prozent, 0),
 		       NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL) AS ist_verfuegbar,
 		       ` + repository.ExemplarTopfSQL + `, ` + repository.ExemplarTopfHerkunftSQL + `,
-		       coalesce(e.erweiterte_eigenschaften->>'littera_eigentumsvermerk', '')
+		       coalesce(e.erweiterte_eigenschaften->>'littera_eigentumsvermerk', ''),
+		       coalesce(e.standort, '')
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		` + repository.ExemplarTopfJoin + `
@@ -188,6 +189,9 @@ func (s *Server) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 		// LitteraEigentumsvermerk ist der Wortlaut aus Littera (feste Liste), auch wenn er
 		// kein Eigentum setzt — die Bücherei sieht, was dort stand.
 		LitteraEigentumsvermerk string `json:"littera_eigentumsvermerk"`
+		// Standort: wo das Exemplar steht, wenn nicht an seinem Platz nach der Signatur
+		// (Migration 158). Leer heißt: nach der Signatur.
+		Standort string `json:"standort"`
 	}
 
 	copies := []CopyResponse{}
@@ -197,7 +201,7 @@ func (s *Server) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 		// verschwindet.
 		if err := rows.Scan(&cp.ID, &cp.BarcodeID, &cp.ZustandNotiz, &cp.IstAusleihbar,
 			&cp.IstAusgesondert, &cp.ImBestand, &cp.ZustandAbwertungProzent, &cp.IstVerfuegbar,
-			&cp.Eigentum, &cp.EigentumHerkunft, &cp.LitteraEigentumsvermerk); err != nil {
+			&cp.Eigentum, &cp.EigentumHerkunft, &cp.LitteraEigentumsvermerk, &cp.Standort); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}

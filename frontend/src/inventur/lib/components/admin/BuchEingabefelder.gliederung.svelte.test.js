@@ -56,14 +56,12 @@ const reihenfolge = (container) =>
 	);
 
 describe('BuchEingabefelder: Reihenfolge und Gruppen', () => {
-	it('ein Lernmittel: ISBN zuerst, dann die Angaben zum Buch, dann die Schule', async () => {
+	it('ein Lernmittel: ISBN zuerst, dann die Angaben zum Buch, dann die Schule', () => {
 		const formular = $state({ ...leeresBuchFormular(), id: 't-1', istLernmittel: true });
 		const screen = maske(formular);
-		await waitFor(() => expect(screen.container.querySelector('#buch-standort')).toBeTruthy());
 		expect(reihenfolge(screen.container)).toEqual([
 			...TITELANGABEN,
 			'buch-signatur',
-			'buch-standort',
 			'buch-fach',
 			'buch-schulzweig',
 			'buch-klasse',
@@ -73,14 +71,12 @@ describe('BuchEingabefelder: Reihenfolge und Gruppen', () => {
 		]);
 	});
 
-	it('ein Bibliotheksbuch zeigt weder Schulzweig noch Mehrjahresband', async () => {
+	it('ein Bibliotheksbuch zeigt weder Schulzweig noch Mehrjahresband', () => {
 		const formular = $state({ ...leeresBuchFormular(), id: 't-1' });
 		const screen = maske(formular);
-		await waitFor(() => expect(screen.container.querySelector('#buch-standort')).toBeTruthy());
 		expect(reihenfolge(screen.container)).toEqual([
 			...TITELANGABEN,
 			'buch-signatur',
-			'buch-standort',
 			'buch-fach',
 			'buch-klasse',
 			'buch-jahrgang-von',
@@ -94,6 +90,18 @@ describe('BuchEingabefelder: Reihenfolge und Gruppen', () => {
 		const screen = maske(formular);
 		expect(screen.container.querySelector('#buch-bestand')).toBeNull();
 		expect(screen.container.querySelector('#buch-zaehldatum')).toBeNull();
+	});
+
+	// Der Standort steht am Exemplar (Buchakte, „Standort ändern"). Die Maske führt kein Feld
+	// dafür und legt den Schlüssel am Titel nicht mehr an.
+	it('führt keinen Standort am Titel', async () => {
+		/** @type {any} */
+		const formular = $state({ ...leeresBuchFormular(), id: 't-1' });
+		const screen = maske(formular);
+		// Die Maske ergänzt ihre Vorgaben in einem Effekt; erst danach steht das Formular fest.
+		await waitFor(() => expect(formular.jahrgangVon).toBeDefined());
+		expect(screen.queryByLabelText(/Standort/)).toBeNull();
+		expect(JSON.stringify(formular)).not.toContain('standort');
 	});
 
 	it('trägt eine Überschrift nur über der zweiten Gruppe', () => {

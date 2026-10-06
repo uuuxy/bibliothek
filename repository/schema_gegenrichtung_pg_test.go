@@ -248,12 +248,15 @@ var checkBedingungenBestand = []string{
 	// ExemplarTopfHerkunftSQL liest die Quelle nur, wenn Eigentum steht.
 	"chk_exemplar_eigentum_mit_quelle", "chk_exemplar_eigentum_quelle",
 	// Migration 158, befragt am 06.10.2026: Ein gesetzter Standort ist nicht leer und höchstens
-	// 255 Zeichen lang. Einziger Schreiber ist die Littera-Übernahme (sqlExemplarEinfuegen): Sie
-	// liest getrimmte Werte, schreibt für „kein Standort" NULL und kürzt auf 255 Zeichen mit
-	// Vermerk im Protokoll (internal/littera, TestStandortKommtMit und
-	// TestUeberlangerStandortWirdGekuerzt). Gegenfrage: Die Regel lässt Leerraum am Rand eines
-	// nicht leeren Werts zu; ein Schreiber von Hand muss selbst trimmen. NULL heißt „steht nach
-	// der Signatur" und ist der Normalfall.
+	// 255 Zeichen lang. Drei Schreiber. Die Littera-Übernahme (sqlExemplarEinfuegen) liest
+	// getrimmte Werte, schreibt für „kein Standort" NULL und kürzt auf 255 Zeichen mit Vermerk
+	// im Protokoll (internal/littera, TestStandortKommtMit und
+	// TestUeberlangerStandortWirdGekuerzt). Die Buchakte (SetzeExemplarStandort) kürzt den Rand,
+	// schreibt für „entfernen" NULL und weist einen längeren Wert mit 400 ab
+	// (api/exemplar_standort_pg_test.go). Migration 159 kürzt Rand und Länge selbst
+	// (standort_am_titel_entfaellt_pg_test.go). Gegenfrage: Die Regel lässt Leerraum am Rand
+	// eines nicht leeren Werts zu; jeder Schreiber trimmt selbst. NULL heißt „steht nach der
+	// Signatur" und ist der Normalfall.
 	"chk_exemplar_standort",
 	// Migration 111, befragt am 10.09.2026: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur

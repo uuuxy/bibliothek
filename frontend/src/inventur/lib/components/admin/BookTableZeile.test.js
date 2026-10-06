@@ -16,7 +16,10 @@ const buch = (zusatz = {}) => ({
 	gesamt: 12,
 	coverUrl: '',
 	lastCounted: '2026-09-01T10:00:00Z',
-	erweiterteEigenschaften: { standort: 'Raum 12' },
+	standorte: [
+		{ standort: 'Lehrerschrank', anzahl: 2 },
+		{ standort: 'Raum 12', anzahl: 10 }
+	],
 	...zusatz
 });
 
@@ -54,7 +57,7 @@ describe('Titel-Verwaltung: Zeile', () => {
 			'Friedrich Schiller',
 			'Deutsch',
 			'Kl. 9',
-			'Raum 12',
+			'Raum 12 (10) · Lehrerschrank (2)',
 			'1.9.2026',
 			'12'
 		])
@@ -68,7 +71,7 @@ describe('Titel-Verwaltung: Zeile', () => {
 				subject: '',
 				gradeLevel: 0,
 				lastCounted: '',
-				erweiterteEigenschaften: {}
+				standorte: undefined
 			})
 		);
 		expect(schildchen(container)).toEqual([]);

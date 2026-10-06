@@ -1,15 +1,16 @@
-<!-- @component BookAkteMeta — der Kopf der Buchakte wie eine Play-Store-Detailseite
-     (entschieden am 02.09.2026): Titel groß links, darunter in ruhigem Grau die
-     Einordnung (Fach · Jahrgang · Zweig · Medienart), dann ISBN, Signatur und Standort als
-     Textzeilen, eine Zahlenreihe (verfügbar, Ausleiher, Exemplare) und die Aktionen als
-     Knopfreihe. Das Cover steht rechts mit Luft.
+<!-- @component BookAkteMeta — der Kopf der Buchakte wie eine Play-Store-Detailseite: Titel
+     groß links, darunter in ruhigem Grau die Einordnung (Fach · Jahrgang · Zweig ·
+     Medienart), dann ISBN, Signatur und Standorte als Textzeilen, eine Zahlenreihe
+     (verfügbar, Ausleiher, Exemplare) und die Aktionen als Knopfreihe. Das Cover steht
+     rechts mit Luft.
 
-     Vorher: Cover links als farbiger Block, daneben sieben bunte Chips mit Rahmen, vier
-     getönte Zahlenkästen in vier Farben, Titel erst darunter. -->
+     Der Standort steht am Exemplar: Die Zeile nennt die Standorte der Exemplare im Bestand
+     mit ihrer Zahl, gezählt aus den Karten des Reiters „Exemplare". -->
 <script>
 	import { Copy, MapPin, SquarePen, Trash } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
 	import BuchKarteCover from '../inventur/lib/components/BuchKarteCover.svelte';
+	import { standorteAusExemplaren, standortZeile } from './utils/standorte.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -60,7 +61,7 @@
 
 	const nummerArt = $derived(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN');
 	const signatur = $derived(book.signatur || book.erweiterte_eigenschaften?.signatur || '');
-	const standort = $derived(book.erweiterte_eigenschaften?.standort || '');
+	const standort = $derived(standortZeile(standorteAusExemplaren(exemplare)));
 
 	function kopieren() {
 		if (!book.isbn) return;

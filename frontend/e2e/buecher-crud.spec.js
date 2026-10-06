@@ -81,14 +81,12 @@ test('Bücher: anlegen, Exemplare, Katalog-Suche, Signatur übersteht Littera-Im
 // das Bearbeiten-Formular schickt per PUT das ganze Objekt zurück. Würde das Formular aus der
 // Listenzeile befüllt, leerte „Bearbeiten → Speichern“ die Eigenschaften still. Das Formular
 // muss deshalb vom Einzel-Read (/api/books/{id}) befüllt werden. Der Test geht den Klickpfad:
-// öffnen, nichts ändern, speichern. Die toHaveValue-Prüfung schlägt schon beim Öffnen fehl,
-// wenn das Formular aus der schlanken Liste käme (leerer Standort).
+// öffnen, nichts ändern, speichern, und liest die Eigenschaften danach in der Tabelle.
 test('Bücher: Bearbeiten ohne Änderung erhält die erweiterten Eigenschaften', async ({ page }) => {
 	await uiLogin(page);
 	const suffix = uniqueSuffix();
 	const isbn = `9782${String(Date.now()).slice(-9)}`;
 	const titel = `E2E-Blank-Buch-${suffix}`;
-	const standort = `Standort ${suffix}`;
 
 	try {
 		const created = await apiPost(page, '/api/books', {
@@ -101,7 +99,7 @@ test('Bücher: Bearbeiten ohne Änderung erhält die erweiterten Eigenschaften',
 			gradeLevel: 7,
 			track: '',
 			stock: 1,
-			erweiterteEigenschaften: { regal: `R-${suffix}`, standort }
+			erweiterteEigenschaften: { regal: `R-${suffix}`, notiz: `N-${suffix}` }
 		});
 		expect(created.ok(), `Buch anlegen: ${created.status()}`).toBeTruthy();
 
@@ -112,11 +110,8 @@ test('Bücher: Bearbeiten ohne Änderung erhält die erweiterten Eigenschaften',
 		await suche.fill(titel);
 		await page.getByText(titel).first().click();
 
-		// Beweis der Quelle: Das Formular zeigt den Standort — die schlanke Listenzeile
-		// hätte hier ein leeres Feld.
-		const feld = page.locator('#buch-standort');
-		await expect(feld).toBeVisible({ timeout: 15000 });
-		await expect(feld).toHaveValue(standort);
+		// Die Maske ist geladen, sobald die Signatur dasteht.
+		await expect(page.locator('#buch-signatur')).toHaveValue('E2E SIG', { timeout: 15000 });
 
 		await page.getByRole('button', { name: 'Speichern' }).click();
 		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible({
@@ -125,9 +120,9 @@ test('Bücher: Bearbeiten ohne Änderung erhält die erweiterten Eigenschaften',
 
 		expect(
 			querySQL(
-				`SELECT erweiterte_eigenschaften->>'standort' FROM buecher_titel WHERE isbn = '${isbn}'`
+				`SELECT erweiterte_eigenschaften->>'notiz' FROM buecher_titel WHERE isbn = '${isbn}'`
 			)
-		).toBe(standort);
+		).toBe(`N-${suffix}`);
 		expect(
 			querySQL(
 				`SELECT erweiterte_eigenschaften->>'regal' FROM buecher_titel WHERE isbn = '${isbn}'`

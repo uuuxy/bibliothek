@@ -67,6 +67,10 @@ type Book struct {
 	// "" und 0. Nur Ausgabe: Geschrieben wird werk_id allein in repository/auflagen.go.
 	WerkID   string `json:"werkId,omitempty"`
 	WerkRang int    `json:"werkRang,omitempty"`
+	// Standorte: je Standort die Zahl der Exemplare im Bestand, die ihn tragen
+	// (repository.StandorteDerTitel, docs/OFFEN.md 5.53). Nur in der Katalogliste, für die
+	// Spalte „Standort" der Titel-Verwaltung; geändert wird der Standort am Exemplar.
+	Standorte []repository.StandortZahl `json:"standorte,omitempty"`
 }
 
 // BuchEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"bibliothek/repository"
+
 	"github.com/pashagolub/pgxmock/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,6 +38,10 @@ func TestBookRepository_ListBooks(t *testing.T) {
 		mock.ExpectQuery(`SELECT tsw.titel_id.+FROM schlagworte sw`).
 			WithArgs([]string{"book-1"}).
 			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "woerter"}))
+		mock.ExpectQuery(`SELECT e.titel_id::text, e.standort.+FROM buecher_exemplare e`).
+			WithArgs([]string{"book-1"}).
+			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "standort", "anzahl"}).
+				AddRow("book-1", "Lehrerschrank", 2))
 
 		books, err := repo.ListBooks(ctx, "Math", &grade5, "algebra", false)
 		assert.NoError(t, err)
@@ -43,6 +49,8 @@ func TestBookRepository_ListBooks(t *testing.T) {
 		if len(books) > 0 {
 			assert.Equal(t, "book-1", books[0].ID)
 			assert.Equal(t, 3, books[0].Stock)
+			// Die Standorte der Exemplare (docs/OFFEN.md 5.53) kommen mit der Liste.
+			assert.Equal(t, []repository.StandortZahl{{Standort: "Lehrerschrank", Anzahl: 2}}, books[0].Standorte)
 			// Buch und Rang der Auflage (docs/OFFEN.md 4.18, Stufe 6) stehen am Ende der Zeile.
 			assert.Equal(t, "werk-1", books[0].WerkID)
 			assert.Equal(t, 2, books[0].WerkRang)

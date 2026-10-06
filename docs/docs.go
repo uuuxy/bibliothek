@@ -1806,6 +1806,91 @@ const docTemplate = `{
                 }
             }
         },
+        "/exemplare/standort": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Standort markierter Exemplare setzen",
+                "parameters": [
+                    {
+                        "description": "Exemplare, Standort",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ExemplarStandortRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/exemplare/standorte": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Standorte der Exemplare im Bestand",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.StandortZahl"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/inventur/abgeschlossen": {
             "get": {
                 "produces": [
@@ -4390,6 +4475,26 @@ const docTemplate = `{
                 }
             }
         },
+        "api.ExemplarStandortRequest": {
+            "type": "object",
+            "required": [
+                "exemplar_ids",
+                "standort"
+            ],
+            "properties": {
+                "exemplar_ids": {
+                    "description": "Jede Kennung wird an der Tür geprüft (400 statt 22P02/500), leer ist keine Auswahl.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "standort": {
+                    "description": "Standort: Freitext bis 255 Zeichen. Leer nimmt die Angabe weg, das Exemplar steht dann\nwieder nach der Signatur. Zeiger, weil ein fehlendes Feld kein Auftrag zum Entfernen ist.",
+                    "type": "string"
+                }
+            }
+        },
         "api.InventurAbortRequest": {
             "type": "object",
             "properties": {
@@ -6282,6 +6387,17 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "wort": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.StandortZahl": {
+            "type": "object",
+            "properties": {
+                "anzahl": {
+                    "type": "integer"
+                },
+                "standort": {
                     "type": "string"
                 }
             }

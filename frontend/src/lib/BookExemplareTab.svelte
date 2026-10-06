@@ -8,6 +8,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import BookExemplarCard from './components/BookExemplarCard.svelte';
 	import ExemplarEigentumDialog from './components/ExemplarEigentumDialog.svelte';
+	import ExemplarStandortDialog from './components/ExemplarStandortDialog.svelte';
 	import AuswahlLeiste from './components/ui/AuswahlLeiste.svelte';
 	import Button from './components/ui/Button.svelte';
 	import { BookOpen, Trash } from '@lucide/svelte';
@@ -23,6 +24,8 @@
 	const darfLoeschen = $derived(hatRecht(authStore.currentUser, 'delete_books'));
 	// Eigentum markierter Exemplare (4.24, Stufe 3): Dialog wie „Topf der Bestellung ändern".
 	let eigentumOffen = $state(false);
+	// Standort markierter Exemplare (5.53): derselbe Weg, eigener Dialog.
+	let standortOffen = $state(false);
 	// Das Etikett entsteht im Druck-Center, auf dem Bogen nach der Vorlage (OFFEN.md 5.5). Wer
 	// den Bildschirm nicht öffnen darf, bekäme statt des Bogens den ersten erlaubten: Der
 	// Router stellt einen gesperrten Reiter zurück.
@@ -49,8 +52,8 @@
 		for (const ex of exemplare) selectedExemplare.add(ex.id);
 	}
 
-	/** Nach dem Ändern: neu laden (Eigentum und Herkunft kommen vom Server) und Markierung weg. */
-	async function eigentumGeaendert() {
+	/** Nach dem Ändern von Eigentum oder Standort: neu laden (die Werte kommen vom Server) und Markierung weg. */
+	async function nachAenderung() {
 		selectedExemplare.clear();
 		if (book?.id) await loadAll(book.id);
 	}
@@ -134,7 +137,7 @@
 		{/each}
 	</div>
 	<!-- M3 Selection/Toolbars: die gemeinsame schwebende Leiste unter der Liste, wie auf der
-	     Pflegeseite der Schlagworte. Bis zum 29.09.2026 stand hier ein eigener Balken oben. -->
+	     Pflegeseite der Schlagworte. -->
 	{#if selectedExemplare.size > 0 && darfBearbeiten}
 		<AuswahlLeiste
 			satz="{selectedExemplare.size} markiert"
@@ -144,6 +147,9 @@
 			{#if selectedExemplare.size < exemplare.length}
 				<Button variant="ghost" onclick={alleAuswaehlen}>Alle auswählen</Button>
 			{/if}
+			<!-- M3 Toolbars: „Avoid emphasizing more than one action at a time" — eine gefüllte
+			     Aktion, die zweite umrandet. -->
+			<Button variant="secondary" onclick={() => (standortOffen = true)}>Standort ändern</Button>
 			<Button onclick={() => (eigentumOffen = true)}>Eigentum ändern</Button>
 			{#if darfLoeschen}
 				<Button variant="danger" onclick={deleteSelectedCopies}>
@@ -159,5 +165,11 @@
 	open={eigentumOffen}
 	exemplarIds={Array.from(selectedExemplare)}
 	onclose={() => (eigentumOffen = false)}
-	onGeaendert={eigentumGeaendert}
+	onGeaendert={nachAenderung}
+/>
+<ExemplarStandortDialog
+	open={standortOffen}
+	exemplarIds={Array.from(selectedExemplare)}
+	onclose={() => (standortOffen = false)}
+	onGeaendert={nachAenderung}
 />

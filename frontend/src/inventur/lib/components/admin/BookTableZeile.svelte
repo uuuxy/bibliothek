@@ -3,6 +3,7 @@
 	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
+	import { standortZeile } from '../../../../lib/utils/standorte.js';
 
 	/**
 	 * @type {{
@@ -19,7 +20,7 @@
 	 *     gesamt: number,
 	 *     coverUrl: string,
 	 *     lastCounted: string,
-	 *     erweiterteEigenschaften?: { standort?: string }
+	 *     standorte?: import('../../../../lib/utils/standorte.js').StandortZahl[]
 	 *   },
 	 *   index: number,
 	 *   dragOverIndex: number|null,
@@ -46,6 +47,9 @@
 		onDrop,
 		onDragEnd
 	} = $props();
+
+	// Die Standorte der Exemplare im Bestand, gezählt vom Server (docs/OFFEN.md 5.53).
+	const standort = $derived(standortZeile(book.standorte));
 </script>
 
 <!-- Abstand, Trennlinie, Rückmeldung beim Zeigen und die Fläche der gewählten Zeile kommen
@@ -110,8 +114,8 @@
 	</td>
 
 	<td>
-		{#if book.erweiterteEigenschaften?.standort}
-			{book.erweiterteEigenschaften.standort}
+		{#if standort}
+			{standort}
 		{:else}
 			<span class="text-on-surface-variant">–</span>
 		{/if}

@@ -90,12 +90,18 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 					WithArgs([]string{"b1"}).
 					WillReturnRows(pgxmock.NewRows([]string{"titel_id", "woerter"}).
 						AddRow("b1", []string{"Fantasy", "Tierfantasy"}))
+				// Die Standorte der Exemplare im Bestand (repository.StandorteDerTitel).
+				m.ExpectQuery("(?s)SELECT e.titel_id::text, e.standort.*FROM buecher_exemplare e").
+					WithArgs([]string{"b1"}).
+					WillReturnRows(pgxmock.NewRows([]string{"titel_id", "standort", "anzahl"}).
+						AddRow("b1", "Lehrerschrank", 2))
 			},
 			expectedStatus: http.StatusOK,
 			// schlagworte: null heißt „nicht geladen" — die Liste bleibt schlank (Migration 138);
 			// nur der Einzel-Read lädt sie, und ein PUT mit null lässt sie unangetastet.
-			// suchwoerter trägt die Wörter, über die die Suche im Browser den Titel findet.
-			expectedBody: `{"data":[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","gradeLevel":5,"track":"G","istLernmittel":false,"stock":10,"verfuegbar":5,"gesamt":10,"imZulauf":2,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"mehrjahresband":false,"untertitel":"Sub","auflage":"4. Aufl. 2023","listenpreis":null,"verlag":"Ver","erscheinungsjahr":2020,"erweiterteEigenschaften":{},"schlagworte":null,"suchwoerter":["Fantasy","Tierfantasy"]}]}`,
+			// suchwoerter trägt die Wörter, über die die Suche im Browser den Titel findet,
+			// standorte die Standorte der Exemplare für die Spalte der Titel-Verwaltung.
+			expectedBody: `{"data":[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","gradeLevel":5,"track":"G","istLernmittel":false,"stock":10,"verfuegbar":5,"gesamt":10,"imZulauf":2,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"mehrjahresband":false,"untertitel":"Sub","auflage":"4. Aufl. 2023","listenpreis":null,"verlag":"Ver","erscheinungsjahr":2020,"erweiterteEigenschaften":{},"schlagworte":null,"suchwoerter":["Fantasy","Tierfantasy"],"standorte":[{"standort":"Lehrerschrank","anzahl":2}]}]}`,
 		},
 		{
 			name: "Success - synonym translation",
