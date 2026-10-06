@@ -89,6 +89,26 @@ Littera-Vermerk bekommen (Land, Schulträger), wie viele einen bekannten Vermerk
 tragen und wie viele einen, der nicht in der festen Liste steht. Die letzten stehen einzeln im
 Protokoll, mit Exemplarnummer und ohne Wortlaut; nachsehen in Littera
 ([littera_schema_befund.md](littera_schema_befund.md), Abschnitt `Exemplar`).
+**Standorte (seit dem 06.10.2026, docs/OFFEN.md 5.53):** Jedes Exemplar kommt mit seinem
+Standort an (`buecher_exemplare.standort`). Littera führt ihn an zwei Stellen: am Exemplar
+(`Sonderstandort`, etwa „Videoschrank") und am Titel, wo die Bibliothek ihn als dritten
+Verfasser eingetragen hat (etwa „Bibliothek Klassensatz Regal 11", „LMF", „Schulseelsorge").
+Der Vermerk am Titel gilt für jedes Exemplar des Titels ohne eigenen Sonderstandort und steht
+nicht mehr als Verfasser am Buch. Nennt er „LMF", kommt der Titel als Lernmittel an, auch ohne
+LMF-Signatur. Der Trockenlauf listet jeden Wert beider Stellen mit seiner Zahl. Ein Vermerk
+ist jeder Eintrag der dritten Verfasserstelle ohne Komma; darunter fällt auch ein Verfasser in
+der Form „Vorname Nachname". Die Liste deshalb vor dem Lauf lesen und ausnehmen, was kein
+Standort ist:
+
+```bash
+go run ./cmd/littera-altbestand -csv ./littera-export -trocken \
+  -kein-standort "Louise Carleton-Gertsch" -kein-standort "Hörbuch"
+```
+
+Ein ausgenommener Vermerk bleibt Verfasser, ein ausgenommener Sonderstandort kommt nicht mit.
+Dieselben Schalter gehören an den echten Lauf. Die Listen können Namen tragen: Littera schreibt
+beim Rundlauf einer Zeitschrift Nummer und Namen des letzten Lesers in den Sonderstandort. Die
+Generalprobe (Abschnitt 1b) zeigt deshalb nur die Zahlen.
 
 `-barcodes neu` vergibt stattdessen frische `B-XXXXX` aus `barcode_seq` — derselben
 Sequenz, aus der die Anwendung ihre Barcodes zieht — und setzt voraus, dass jedes Buch

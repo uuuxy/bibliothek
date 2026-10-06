@@ -35,6 +35,28 @@ func TestHatKennung(t *testing.T) {
 // Läuft das Muster hier auseinander, erkennt der Import ein anderes Buch als Lernmittel
 // als die Migration — dieselbe Klasse „Doppelte Wahrheitsquelle", die 2026 zweimal ein
 // Schulbuch in den öffentlichen Katalog stellte.
+// Der Vermerk steht als eigenes Wort da, allein oder neben einem zweiten Ort.
+func TestHatVermerk(t *testing.T) {
+	faelle := map[string]bool{
+		"LMF":               true,
+		"lmf":               true,
+		"LMF/Bibliothek":    true,
+		"Bibliothek/LMF":    true,
+		"Buch LMF Ma 6/Gri": true,
+		"LMF Bio 7":         true,
+		"Filmfest":          false,
+		"Elmf":              false,
+		"LMFP-Roman":        false,
+		"Schulseelsorge":    false,
+		"":                  false,
+	}
+	for wert, erwartet := range faelle {
+		if got := HatVermerk(wert); got != erwartet {
+			t.Errorf("HatVermerk(%q) = %v, erwartet %v", wert, got, erwartet)
+		}
+	}
+}
+
 func TestHatKennung_MusterStehtInMigration093(t *testing.T) {
 	sql, err := os.ReadFile("../../migrations/093_lernmittel_feld.sql")
 	if err != nil {

@@ -182,8 +182,7 @@ func lernmittelUndFach(signatur string, schlagworte, interessenkreise []string) 
 // wie viele aus den Schlagworten (lernmittelUndFach) — für den Trockenlauf.
 func ZaehleFachquellen(ab *Altbestand) (ausSignatur, ausSchlagworten int) {
 	for _, t := range ab.Titel {
-		switch lern, sw := lernmittelUndFach(ab.Signaturen[t.ID], ab.Schlagworte.JeTitel[t.ID],
-			ab.Interessenkreise.JeTitel[t.ID]); {
+		switch lern, sw := ab.lernmittelFuer(t.ID); {
 		case sw:
 			ausSchlagworten++
 		case lern.Fach != "":

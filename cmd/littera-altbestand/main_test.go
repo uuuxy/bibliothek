@@ -204,3 +204,50 @@ func TestTrockenlaufMeldetFehlendeZuordnung(t *testing.T) {
 		t.Errorf("ohne -personen: Rückgabe %d, erwartet %d", code, exitOK)
 	}
 }
+
+// TestTrockenlaufListetStandorte: Der Trockenlauf nennt jeden Wert, der als Standort ankäme,
+// mit seiner Zahl — nur an dieser Liste fällt ein Verfasser ohne Komma auf.
+func TestTrockenlaufListetStandorte(t *testing.T) {
+	var buf bytes.Buffer
+	defer log.SetOutput(log.Writer())
+	log.SetOutput(&buf)
+
+	trockenlauf(&littera.Altbestand{
+		Signaturen:       map[string]string{},
+		Standortvermerke: map[string][]string{"1": {"LMF"}, "2": {"Louise Carleton-Gertsch"}},
+		Exemplare: []littera.Exemplar{
+			{ID: "a", TitelID: "1"}, {ID: "b", TitelID: "1", Sonderstandort: "Lehrerschrank"},
+			{ID: "c", TitelID: "2"},
+		},
+	})
+
+	out := buf.String()
+	for _, zeile := range []string{
+		"1 Exemplare mit eigenem Sonderstandort, 2 über den Vermerk am Titel; 1 Titel sind nur nach dem Vermerk Lernmittel",
+		"Vermerke am Titel (2 Werte",
+		"    1  LMF", "    1  Louise Carleton-Gertsch",
+		"Sonderstandorte der Exemplare (1 Werte",
+		"    1  Lehrerschrank",
+	} {
+		if !strings.Contains(out, zeile) {
+			t.Errorf("im Trockenlauf fehlt %q, log: %s", zeile, out)
+		}
+	}
+}
+
+// TestKeinStandortSchalter: Der Schalter darf mehrfach stehen, jeder Wert geht in die Regel.
+func TestKeinStandortSchalter(t *testing.T) {
+	var s schalter
+	for _, wert := range []string{"Louise Carleton-Gertsch", "Hörbuch"} {
+		if err := s.keinStandort.Set(wert); err != nil {
+			t.Fatalf("Set(%q): %v", wert, err)
+		}
+	}
+	regel := s.standortregel()
+	if len(regel.KeinStandort) != 2 || !regel.KeinStandort["Hörbuch"] || !regel.KeinStandort["Louise Carleton-Gertsch"] {
+		t.Errorf("Regel aus zwei Schaltern: %v", regel.KeinStandort)
+	}
+	if got := s.keinStandort.String(); got != "Louise Carleton-Gertsch, Hörbuch" {
+		t.Errorf("String() = %q", got)
+	}
+}

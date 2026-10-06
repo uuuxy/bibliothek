@@ -36,6 +36,18 @@ func HatKennung(wert string) bool {
 	return kennung.MatchString(strings.TrimSpace(wert))
 }
 
+// VermerkMuster trifft „LMF" als eigenes Wort zwischen Leerzeichen oder Schrägstrichen:
+// „LMF", „LMF/Bibliothek", „Buch LMF Ma 6". So schreibt die Schule den Vermerk in Litteras
+// Standortangaben; „Filmfest" und „Elmf" treffen nicht.
+const VermerkMuster = `(?i)(^|[\s/])LMF([\s/]|$)`
+
+var vermerk = regexp.MustCompile(VermerkMuster)
+
+// HatVermerk meldet, ob ein Standortvermerk den Bestand der Lernmittelfreiheit nennt.
+func HatVermerk(wert string) bool {
+	return vermerk.MatchString(wert)
+}
+
 // Fächer — die kanonischen Bezeichnungen, unter denen Import und Heuristiken ein Fach
 // in der Systematik registrieren (buecher_titel.subject ist FK darauf, Migration 078).
 // Eine Schreibweise je Fach: Vorher legte der ISBN-Lookup „Mathe" an und der

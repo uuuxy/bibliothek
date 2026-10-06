@@ -30,8 +30,8 @@ const funktionVerfasser = "0"
 //
 // Ohne diese Liste stünde bei 7.131 Titeln ein Standortvermerk mitten in der
 // Autorenangabe („Shaw, George Bernard; Buchbestand Bibliothek") und bei 1.486 stünde er
-// als einziger Autor da. Verloren geht dabei nichts: Der Standort steht in der Signatur,
-// LMF-Bestand ist dort am Präfix erkennbar (24.630 Exemplare).
+// als einziger Autor da. Die fünf gelten an jeder Stelle der Zuordnung als Standortvermerk
+// und kommen als Standort ans Exemplar; weitere erkennt standort.go an ihrer Stelle.
 var bestandsmarken = map[string]bool{
 	"Buchbestand Bibliothek": true,
 	"Bibliothek":             true,
@@ -89,6 +89,18 @@ type autorZuordnung struct {
 	titelID  string
 	personID string
 	lfd      int // Buchungsnummer der Zuordnung — hält die Reihenfolge des Katalogs
+	// dritteStelle: An der Stelle des dritten Verfassers trägt die Bibliothek den Standort
+	// des Titels ein (standort.go).
+	dritteStelle bool
+}
+
+// Zuordnungen sind, was `Personen_Zuordnung` je Titel hergibt: die Verfasser und die
+// Standortvermerke. VermerkNamen nennt jeden Namen, der an irgendeinem Titel als Vermerk
+// erkannt ist.
+type Zuordnungen struct {
+	Autoren          map[string]string
+	Standortvermerke map[string][]string
+	VermerkNamen     map[string]bool
 }
 
 // AutorenJeTitel löst die Verfasser eines Titels über Personen_Zuordnung auf.
@@ -104,20 +116,37 @@ type autorZuordnung struct {
 // Bei einem Schulbuch ist der erstgenannte Verfasser der Hauptverfasser; eine
 // alphabetische Sortierung würde diese Aussage zerstören.
 func AutorenJeTitel(personen map[string]string, zuordnungen io.Reader) (map[string]string, error) {
+	z, err := LeseZuordnungen(personen, zuordnungen, Standortregel{})
+	return z.Autoren, err
+}
+
+// LeseZuordnungen liest Verfasser und Standortvermerke in einem Durchgang: Ein Eintrag ist
+// das eine oder das andere, nie beides.
+func LeseZuordnungen(personen map[string]string, zuordnungen io.Reader, regel Standortregel) (Zuordnungen, error) {
 	zeilen, err := leseTabelle(zuordnungen)
 	if err != nil {
-		return nil, err
+		return Zuordnungen{}, err
 	}
 
 	jeTitel := sammleVerfasserZuordnungen(zeilen)
 
-	autoren := make(map[string]string, len(jeTitel))
+	erg := Zuordnungen{
+		Autoren:          make(map[string]string, len(jeTitel)),
+		Standortvermerke: map[string][]string{},
+		VermerkNamen:     map[string]bool{},
+	}
 	for titelID, liste := range jeTitel {
-		if namen := namenInErfassungsreihenfolge(liste, personen); len(namen) > 0 {
-			autoren[titelID] = strings.Join(namen, "; ")
+		if namen := namenInErfassungsreihenfolge(liste, personen, regel); len(namen) > 0 {
+			erg.Autoren[titelID] = strings.Join(namen, "; ")
+		}
+		if vermerke := regel.vermerkeInErfassungsreihenfolge(liste, personen); len(vermerke) > 0 {
+			erg.Standortvermerke[titelID] = vermerke
+			for _, v := range vermerke {
+				erg.VermerkNamen[v] = true
+			}
 		}
 	}
-	return autoren, nil
+	return erg, nil
 }
 
 // sammleVerfasserZuordnungen gruppiert die Verfasser-Zeilen nach Titel.
@@ -139,22 +168,23 @@ func sammleVerfasserZuordnungen(zeilen []map[string]string) map[string][]autorZu
 		if err != nil {
 			lfd = 0
 		}
-		jeTitel[titelID] = append(jeTitel[titelID], autorZuordnung{titelID, personID, lfd})
+		jeTitel[titelID] = append(jeTitel[titelID],
+			autorZuordnung{titelID, personID, lfd, anDritterStelle(z["Flags"])})
 	}
 	return jeTitel
 }
 
 // namenInErfassungsreihenfolge löst die Zuordnungen eines Titels zu Klarnamen auf —
-// sortiert nach Buchungsnummer, ohne Dubletten und ohne Bestandsvermerke.
-func namenInErfassungsreihenfolge(liste []autorZuordnung, personen map[string]string) []string {
+// sortiert nach Buchungsnummer, ohne Dubletten und ohne Standortvermerke.
+func namenInErfassungsreihenfolge(liste []autorZuordnung, personen map[string]string, regel Standortregel) []string {
 	sort.Slice(liste, func(i, j int) bool { return liste[i].lfd < liste[j].lfd })
 
 	var namen []string
 	gesehen := map[string]bool{}
 	for _, z := range liste {
 		name := personen[z.personID]
-		if name == "" || gesehen[name] || bestandsmarken[name] {
-			continue // unbekannte Person, Dublette in der Zuordnung oder Bestandsvermerk
+		if name == "" || gesehen[name] || bestandsmarken[name] || regel.istVermerk(name, z.dritteStelle) {
+			continue // unbekannte Person, Dublette in der Zuordnung oder Standortvermerk
 		}
 		gesehen[name] = true
 		namen = append(namen, name)

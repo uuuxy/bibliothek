@@ -35,6 +35,10 @@ type BestandBericht struct {
 	// keins nennt, aus den Schlagworten (lernmittelUndFach, seit dem 30.09.2026).
 	FachAusSignatur, FachAusSchlagworten int
 
+	// Standorte der geschriebenen Exemplare (standort.go): aus dem eigenen Sonderstandort
+	// oder aus dem Vermerk am Titel.
+	StandortEigen, StandortVomTitel int
+
 	// TitelIDs bildet Littera-Titel → UUID ab, ExemplarIDs Littera-Exemplar → UUID.
 	// Der Ausleihteil braucht die zweite Karte.
 	TitelIDs    map[string]string
@@ -59,11 +63,12 @@ const sqlTitelEinfuegen = `
 //
 // eigentum ($8, Migration 150): aus dem Littera-Vermerk, NULL ohne Zuordnung (eigentum.go).
 // eigentum_quelle (Migration 151) ist dann 'littera' — die Datenbank verlangt beide oder keins.
+// standort ($9, Migration 158): Sonderstandort des Exemplars oder Vermerk am Titel, NULL ohne.
 const sqlExemplarEinfuegen = `
 	INSERT INTO buecher_exemplare
 		(titel_id, barcode_id, erworben_am, ist_ausleihbar, einkaufspreis,
-		 erweiterte_eigenschaften, erstellt_am, etikett_gedruckt, eigentum, eigentum_quelle)
-	VALUES ($1,$2,$3,true,$4,$5,$6,$7,NULLIF($8, ''), CASE WHEN $8 = '' THEN NULL ELSE 'littera' END)
+		 erweiterte_eigenschaften, erstellt_am, etikett_gedruckt, eigentum, eigentum_quelle, standort)
+	VALUES ($1,$2,$3,true,$4,$5,$6,$7,NULLIF($8, ''), CASE WHEN $8 = '' THEN NULL ELSE 'littera' END, $9)
 	RETURNING id`
 
 // SchreibeBestand überträgt Titel und Exemplare.
@@ -209,7 +214,20 @@ func (l *bestandslauf) einTitel(ctx context.Context, tx pgx.Tx, t Titel) error {
 		l.bericht.FachAusSignatur++
 	}
 	l.bucheVermerke(l.exemplareJeTitel[t.ID])
+	l.bucheStandorte(t.ID)
 	return nil
+}
+
+// bucheStandorte zählt, woher die Standorte der Exemplare eines übernommenen Titels kamen.
+func (l *bestandslauf) bucheStandorte(titelID string) {
+	for _, e := range l.exemplareJeTitel[titelID] {
+		switch standort, vomTitel := StandortVon(e, l.ab.Standortvermerke[titelID]); {
+		case vomTitel:
+			l.bericht.StandortVomTitel++
+		case standort != "":
+			l.bericht.StandortEigen++
+		}
+	}
 }
 
 // bucheVermerke zählt die Eigentumsvermerke eines übernommenen Titels und meldet jeden, der
@@ -309,9 +327,12 @@ func (l *bestandslauf) schreibeExemplare(
 		if err != nil {
 			return nil, err
 		}
+		standort, _ := StandortVon(e, l.ab.Standortvermerke[e.TitelID])
 		batch.Queue(sqlExemplarEinfuegen, titelID, barcode,
 			erworbenAm(e, l.s.opt.Jetzt), e.Preis, eigenschaften, l.s.opt.Jetzt, !l.ohneEtikett[e.ID],
-			vermerk.Eigentum)
+			vermerk.Eigentum,
+			uebernahme.KuerzeNullbar(uebernahme.Kuerzung{Protokoll: l.s.prot, QuellID: e.ID,
+				Kennung: e.Exemplarnummer, Feld: "standort", Wert: standort, Max: uebernahme.MaxFreitext}))
 	}
 
 	br := tx.SendBatch(ctx, batch)
@@ -336,9 +357,20 @@ type lernmittelfelder struct {
 	JahrgangVon, JahrgangBis int
 }
 
-// lernmittel liefert Lernmittel, Fach und Jahrgang eines Titels (lernmittelUndFach).
+// lernmittel liefert Lernmittel, Fach und Jahrgang eines Titels.
 func (l *bestandslauf) lernmittel(t Titel) (lernmittelfelder, bool) {
-	return lernmittelUndFach(l.ab.Signaturen[t.ID], l.ab.Schlagworte.JeTitel[t.ID], l.ab.Interessenkreise.JeTitel[t.ID])
+	return l.ab.lernmittelFuer(t.ID)
+}
+
+// lernmittelFuer liest Fach und Jahrgang wie lernmittelUndFach. Lernmittel ist der Titel
+// nach seiner Signatur oder nach dem Vermerk, den die Bibliothek an ihn geschrieben hat.
+func (ab *Altbestand) lernmittelFuer(titelID string) (lernmittelfelder, bool) {
+	lern, ausSchlagworten := lernmittelUndFach(ab.Signaturen[titelID],
+		ab.Schlagworte.JeTitel[titelID], ab.Interessenkreise.JeTitel[titelID])
+	if nenntLernmittel(ab.Standortvermerke[titelID]) {
+		lern.IstLernmittel = true
+	}
+	return lern, ausSchlagworten
 }
 
 func lernmittelAusSignatur(signatur string) lernmittelfelder {

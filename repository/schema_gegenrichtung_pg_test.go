@@ -247,6 +247,14 @@ var checkBedingungenBestand = []string{
 	// (api/exemplar_eigentum_pg_test.go, Schritt 6). Gegenfrage: NULL/NULL ist der Normalfall —
 	// ExemplarTopfHerkunftSQL liest die Quelle nur, wenn Eigentum steht.
 	"chk_exemplar_eigentum_mit_quelle", "chk_exemplar_eigentum_quelle",
+	// Migration 158, befragt am 06.10.2026: Ein gesetzter Standort ist nicht leer und höchstens
+	// 255 Zeichen lang. Einziger Schreiber ist die Littera-Übernahme (sqlExemplarEinfuegen): Sie
+	// liest getrimmte Werte, schreibt für „kein Standort" NULL und kürzt auf 255 Zeichen mit
+	// Vermerk im Protokoll (internal/littera, TestStandortKommtMit und
+	// TestUeberlangerStandortWirdGekuerzt). Gegenfrage: Die Regel lässt Leerraum am Rand eines
+	// nicht leeren Werts zu; ein Schreiber von Hand muss selbst trimmen. NULL heißt „steht nach
+	// der Signatur" und ist der Normalfall.
+	"chk_exemplar_standort",
 	// Migration 111, befragt am 10.09.2026: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
 	// (api/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.

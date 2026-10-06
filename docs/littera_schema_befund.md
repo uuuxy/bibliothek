@@ -145,6 +145,33 @@ Zwei Folgerungen:
    `SignaturJeTitel` den häufigsten Wert und meldet den Titel als abweichend, statt
    still den ersten zu nehmen.
 
+## Der Standort — am Exemplar und am Titel
+
+Erhoben am 06.10.2026 an der Sicherung von 2010 und am Export der Titelliste vom Juni 2026.
+
+* `Exemplar.Sonderstandort` (Text 255, mit Wertehilfe; `Sonderstandortkurz` trägt denselben
+  Wert). Handbuch: Das Exemplar steht „nicht am gewöhnlichen Platz im Regal". 2010 tragen ihn
+  1.609 von 61.520 Exemplaren mit 99 Werten: `Videoschrank` (306), `DAZ` (283), `C 123` (198),
+  `Lehrerschrank` (147). Die Tabelle `SonderStandorte` ist leer.
+* Am Titel hat die Bibliothek den Standort als Person eingetragen, an der Stelle des dritten
+  Verfassers: in `Personen_Zuordnung` die vierte Stelle von `Flags`, im Export der Titelliste
+  MAB 108a. 2010 stehen dort 8.730 Zuordnungen mit 50 Namen, davon 8.585 mit den fünf Vermerken
+  aus `bestandsmarken`; dazu `Sonderstandort D-Bau` (33), `Software/Bibliothek` (25),
+  `LMF/Bibliothek` (10). Im Juni 2026 sind es 678 Einträge ohne Komma in 33 Werten: `LMF`
+  (156), `U plus` (122), `Klassensatz/Bibliothek` (71), `Bibliothek Klassensatz Regal 10` bis
+  `14` (190), `Schulseelsorge` (32), `Sonderstandort D-Bau` (31). `Buchbestand Bibliothek`
+  steht dort nur noch in der freien Verfasserangabe (MAB 359).
+* Rund 7 der 678 Einträge sind keine Standorte, sondern Verfasser ohne Komma, eine Reihe oder
+  ein Herausgeber. An der Stelle stehen außerdem 152 Verfasser in Katalogform; sie bleiben
+  Verfasser.
+* Der Vermerk `LMF` steht im Juni 2026 an 91 Titeln ohne LMF-Signatur (2010: 210). Die
+  Übernahme erkannte Lernmittel bis zum 06.10.2026 nur an der Signatur.
+* Beim Rundlauf einer Zeitschrift schreibt Littera Nummer und Namen des letzten Lesers in den
+  Sonderstandort (Handbuch, „Exemplar bleibt beim letzten Leser des Rundlaufes"). 2010 trägt
+  kein Wert diese Form.
+
+Umsetzung: `internal/littera/standort.go`, Bedienung in [SCRIPTS.md](SCRIPTS.md), Abschnitt 1.
+
 ## Werkzeuglage — das alte Werkzeug ist nie gegen echte Daten gelaufen
 
 `cmd/littera_migration` (inzwischen entfernt) fragte ab:

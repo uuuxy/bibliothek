@@ -66,6 +66,9 @@ type Exemplar struct {
 	// Eigentumsvermerk ist Litteras Angabe, wem das Exemplar gehört (Freitext mit
 	// Wertehilfe, 50 Zeichen). Was davon übernommen wird, entscheidet vermerkZuordnung.
 	Eigentumsvermerk string
+	// Sonderstandort: Das Exemplar steht nicht an seinem Platz nach der Signatur (Freitext
+	// mit Wertehilfe, 255 Zeichen). Er kommt wörtlich als Standort mit (standort.go).
+	Sonderstandort string
 }
 
 // leseTabelle liest eine mdb-export-CSV in Zeilen-Abbildungen (Spaltenname → Wert).
@@ -199,6 +202,7 @@ func LeseExemplare(r io.Reader) ([]Exemplar, error) {
 			Zugangsdatum:      strings.TrimSpace(z["Zugangsdatum"]),
 			Preis:             preisAus(z["Preis"]),
 			Eigentumsvermerk:  strings.TrimSpace(z["Eigentumsvermerk"]),
+			Sonderstandort:    strings.TrimSpace(z["Sonderstandort"]),
 		})
 	}
 	return exemplare, nil

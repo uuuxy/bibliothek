@@ -17,7 +17,7 @@ import (
 
 // lmfTokenRegex trifft "LMF" nur als eigenständiges Token an Wortgrenzen,
 // damit Wörter wie "Filmfest" oder Signaturen wie "Elmf" nie anschlagen.
-var lmfTokenRegex = regexp.MustCompile(`(?i)(^|[\s/])LMF([\s/]|$)`)
+var lmfTokenRegex = regexp.MustCompile(lmf.VermerkMuster)
 
 // hatLMFKennung meldet, ob ein Littera-Feldwert (Signatur, Kategorie oder
 // Standort) den Bestand der Lernmittelfreiheit markiert.

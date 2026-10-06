@@ -768,6 +768,11 @@ CREATE TABLE buecher_exemplare (
     eigentum_quelle TEXT
         CONSTRAINT chk_exemplar_eigentum_quelle CHECK (eigentum_quelle IS NULL OR eigentum_quelle IN ('littera', 'hand')),
     CONSTRAINT chk_exemplar_eigentum_mit_quelle CHECK ((eigentum IS NULL) = (eigentum_quelle IS NULL)),
+    -- Standort (Migration 158): wo das Exemplar steht, wenn nicht an seinem Platz nach der
+    -- Signatur. Freitext wie in Littera („Bibliothek Klassensatz Regal 11"). NULL = kein
+    -- besonderer Standort.
+    standort TEXT
+        CONSTRAINT chk_exemplar_standort CHECK (standort IS NULL OR (btrim(standort) <> '' AND char_length(standort) <= 255)),
     -- Migration 111: bestellstatus nur im Zulauf — jeder Ausgang (freigeben, aussondern)
     -- muss ihn räumen, sonst zählen OPAC/Inventur/Katalog das Exemplar nie.
     CONSTRAINT chk_exemplar_bestellstatus_nur_im_zulauf
@@ -1952,7 +1957,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('154_titeltext_nfc.sql'),
 ('155_sitzungen.sql'),
 ('156_titel_ohne_beschreibung.sql'),
-('157_isbn_eine_laenge.sql')
+('157_isbn_eine_laenge.sql'),
+('158_exemplar_standort.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

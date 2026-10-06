@@ -19,7 +19,6 @@ und die Arbeit im Code.
 
 **Bei dir — zu entscheiden:**
 
-- Buchmaske: was beim Standort für Lernmittel und Bibliothek getrennt sein soll (5.53).
 - GitHub: drei offene PRs (5.10) und die PR-Pflicht im Regelwerk für `main` (7.6).
 
 **Bei dir — zu fragen:** Schulträger, Sichtung und das Littera-Kennwort; dazu Sekretariat,
@@ -38,13 +37,15 @@ Abschnitt 8.
 
 **Bei mir — im Code,** in dieser Reihenfolge:
 
-1. **4.32** (Theke, Kategorie A): eigener Ton und eigene Farbe für eine Ausleihe, kurze Sperre
+1. **5.53** (Standort am Exemplar): Anzeige und Ändern an der Exemplarkarte, das Feld am Titel
+   entfällt. Zuerst ein Bild, dann der Bau.
+2. **4.32** (Theke, Kategorie A): eigener Ton und eigene Farbe für eine Ausleihe, kurze Sperre
    für dasselbe Buch nach seiner Rückgabe. Zuerst der Vorschlag zur Farbe, dann der Bau.
-2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-3. Nach der Antwort zu 8.3: **5.4**.
-4. Vor dem Echtstart: **5.31** (`update.sh` für den Schulserver), der Eingang für die Seite der
+3. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
+4. Nach der Antwort zu 8.3: **5.4**.
+5. Vor dem Echtstart: **5.31** (`update.sh` für den Schulserver), der Eingang für die Seite der
    Lieferanten (4.23) und die Auflage in der Littera-Übernahme (5.5).
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 **Termine:** Am 19. Oktober 2026 wechselt CodeQL bei GitHub das Abbild (5.10). Node 26 ist ab
 dem 28. Oktober 2026 dran, nach der Regel „immer die aktive LTS"
@@ -797,16 +798,36 @@ Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächste
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
 
-### 5.53 Buchmaske: ein Standort für Bibliothek und Lernmittel
+### 5.53 Der Standort gehört zum Exemplar
 
-Rückmeldung vom 05.10.2026: Ein Standort, der bei „Lernmittel" eingetragen ist, steht auch da,
-wenn die Maske auf „Bibliothek" steht; verlangt ist, dass beides getrennt ist. Am Code: Der
-Titel führt einen einzigen Standort (`erweiterteEigenschaften.standort`), und die Wahl
-„Bibliothek" oder „Lernmittel" ändert nur die Art des Titels, kein anderes Feld
-(`BuchEingabefelderKategorisierung.svelte`). Den Standort zeigen die Titel-Verwaltung und die
-Buchakte. Vor dem Bau zu klären: Gibt es Titel, von denen Exemplare in der Bücherei und im
-Lernmittelbestand stehen? Dann braucht der Titel zwei Standorte. Steht ein Titel immer nur an
-einem der beiden Orte, genügt es, dass der Wechsel der Art den Standort nicht mitnimmt.
+Anlass (05.10.2026): Ein Standort, der in der Buchmaske bei „Lernmittel" eingetragen ist, steht
+auch da, wenn die Maske auf „Bibliothek" steht. Der Titel führt einen einzigen Standort
+(`erweiterteEigenschaften.standort`); am Testserver ist er bei keinem der 13.062 Titel
+ausgefüllt (gemessen am 06.10.2026).
+
+**Entschieden am 06.10.2026:** Der Standort gehört zum Exemplar, wie in Littera. Von einem
+Schulbuch stehen 30 Exemplare im Lernmittelbestand und ein oder zwei in der Bücherei. Das Feld
+am Titel entfällt. Die Standorte aus Littera kommen mit.
+
+1. **Übernahme, gebaut am 06.10.2026:** Jedes Exemplar kommt mit seinem Standort an
+   (`buecher_exemplare.standort`, Migration 158): mit dem eigenen Sonderstandort, sonst mit dem
+   Vermerk, den die Bibliothek am Titel als dritten Verfasser eingetragen hat. Der Vermerk steht
+   nicht mehr als Verfasser am Buch, und „LMF" darin macht den Titel zum Lernmittel. Zahlen und
+   Bedienung: [littera_schema_befund.md](littera_schema_befund.md) und
+   [SCRIPTS.md](SCRIPTS.md), Abschnitt 1.
+2. **Anzeige, offen:** an der Exemplarkarte der Standort des Exemplars; Titel-Verwaltung und
+   Buchakte zeigen die Standorte der Exemplare zusammengefasst.
+3. **Ändern, offen:** Der Standort wird an der Exemplarkarte eingetragen. Das Feld „Standort /
+   Regal" der Titelmaske und der Schlüssel am Titel entfallen; ein vorhandener Wert geht an die
+   Exemplare des Titels ohne eigenen Standort.
+
+Vor Schritt 2 und 3: ein Bild der Exemplarkarte und der Zeile in der Titel-Verwaltung.
+
+Am Testserver sind die Standorte erst mit einer Übernahme aus der Littera-Datenbank zu sehen
+(7.2). Der Katalog dort stammt aus den Listen vom Juni 2026.
+
+Unberührt bleibt: Ein Titel ist Bibliothek oder Lernmittel, mit allen Exemplaren. Die zwei
+Exemplare eines Schulbuchs in der Bücherei werden wie Lernmittel verliehen.
 
 ### 5.54 Klassensätze aus den Ausleihen und Hinweise an der Theke
 
@@ -1182,6 +1203,16 @@ Personen, 21 Ausleihen). Mit dem frischen Backup die Generalprobe fahren ([SCRIP
 Abschnitt 1b; mit der Sicherung von 2010 am 28.09.2026 bestanden, 15.612 von 15.615 Ausleihen);
 nennt sie Gruppen, setzt die Bücherei diese Personen in Littera in ihre Gruppe, bevor die
 Sicherung für den Umstieg gezogen wird.
+
+**Standorte vor dem Lauf lesen (5.53).** Der Trockenlauf listet jeden Vermerk am Titel und jeden
+Sonderstandort mit seiner Zahl ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1). An der Sicherung von 2026
+prüfen: (1) Die Zahl der Vermerke liegt in der Größe der Titelliste vom Juni 2026 (678 Einträge);
+bei null hat `Personen_Zuordnung.Flags` in der SQL-Server-Fassung eine andere Form. (2) Was kein
+Standort ist, mit `-kein-standort` ausnehmen: Verfasser ohne Komma und, falls vorhanden, Nummer
+und Name eines Lesers aus einem Zeitschriften-Rundlauf. (3) Entscheiden, ob „Buchbestand
+Bibliothek" und „Bibliothek" als Standort mitkommen, falls sie noch an Titeln stehen (2010 an
+7.471 Titeln; sie nennen den gewöhnlichen Platz). Die Generalprobe zeigt nur die Zahlen; die
+Listen liest, wer den Trockenlauf selbst startet.
 
 ### 7.3 S3-Auslagerung der Backups
 

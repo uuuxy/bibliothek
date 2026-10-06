@@ -23,6 +23,9 @@ type Altbestand struct {
 	// Signaturen tragen. Sie werden übernommen (häufigster Wert gewinnt), stehen aber
 	// hier, damit der Bericht sie nennen kann.
 	SignaturAbweichend []string
+	// Standortvermerke bildet Titel.Buchungsnummer → Vermerke am Titel ab (standort.go).
+	// Sie gelten für jedes Exemplar des Titels ohne eigenen Sonderstandort.
+	Standortvermerke map[string][]string
 
 	// Ausweisnummern bildet Leser.Buchungsnummer → Barcode des Schülerausweises ab,
 	// Fremdbarcodes Exemplar.Buchungsnummer → Barcode am Buch. Beide stammen aus
@@ -91,6 +94,12 @@ const (
 // sondern still „11" statt „Klett" in den Katalog schreiben — der Lauf soll dann
 // abbrechen, nicht mit halbem Ergebnis weitermachen.
 func LeseAltbestand(verzeichnis string) (*Altbestand, error) {
+	return LeseAltbestandMit(verzeichnis, Standortregel{})
+}
+
+// LeseAltbestandMit liest wie LeseAltbestand und nimmt aus, was nach der Regel kein
+// Standort ist.
+func LeseAltbestandMit(verzeichnis string, regel Standortregel) (*Altbestand, error) {
 	ab := &Altbestand{}
 	var err error
 
@@ -100,13 +109,14 @@ func LeseAltbestand(verzeichnis string) (*Altbestand, error) {
 	if ab.Exemplare, err = mitDatei(verzeichnis, DateiExemplar, LeseExemplare); err != nil {
 		return nil, err
 	}
+	regel.wendeStandortregelAn(ab.Exemplare)
 	if ab.Verlage, err = mitDatei(verzeichnis, DateiVerlag, VerlagNamen); err != nil {
 		return nil, err
 	}
 	if ab.Medienarten, err = mitDatei(verzeichnis, DateiMedienart, MedienartNamen); err != nil {
 		return nil, err
 	}
-	if err = leseAutoren(verzeichnis, ab); err != nil {
+	if err = leseAutoren(verzeichnis, ab, regel); err != nil {
 		return nil, err
 	}
 	if err = leseSchlagworte(verzeichnis, ab); err != nil {
@@ -169,17 +179,21 @@ func vorhanden(verzeichnis, name string) bool {
 	return err == nil
 }
 
-func leseAutoren(verzeichnis string, ab *Altbestand) error {
+func leseAutoren(verzeichnis string, ab *Altbestand, regel Standortregel) error {
 	personen, err := mitDatei(verzeichnis, DateiPersonen, LesePersonen)
 	if err != nil {
 		return err
 	}
-	autoren, err := mitDatei(verzeichnis, DateiPersonenZuordnung,
-		func(r io.Reader) (map[string]string, error) { return AutorenJeTitel(personen, r) })
+	z, err := mitDatei(verzeichnis, DateiPersonenZuordnung,
+		func(r io.Reader) (Zuordnungen, error) { return LeseZuordnungen(personen, r, regel) })
 	if err != nil {
 		return err
 	}
-	ab.Titel = MitAutoren(ab.Titel, autoren)
+	for i := range ab.Titel {
+		ab.Titel[i].Autor = ohneVermerke(ab.Titel[i].Autor, z.VermerkNamen)
+	}
+	ab.Titel = MitAutoren(ab.Titel, z.Autoren)
+	ab.Standortvermerke = z.Standortvermerke
 	return nil
 }
 

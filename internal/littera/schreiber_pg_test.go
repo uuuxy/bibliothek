@@ -491,3 +491,87 @@ func TestEigentumsvermerkKommtMit(t *testing.T) {
 		t.Errorf("eigentum = 'stadt' — erwartet die Abweisung durch chk_exemplar_eigentum, war: %v", err)
 	}
 }
+
+// TestStandortKommtMit: Der Standort landet am Exemplar — der eigene Sonderstandort, sonst
+// der Vermerk am Titel. Ein Titel, den nur der Vermerk „LMF" kennzeichnet, kommt als
+// Lernmittel an.
+func TestStandortKommtMit(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, _ := testSchreiber(t, pool, nil)
+	ctx := context.Background()
+
+	ab := bestand(titel("1", "Klassensatz", ""), titel("2", "Schulbuch ohne LMF-Signatur", ""),
+		titel("3", "Ohne Standort", ""))
+	// Titel 1 bekommt ein zweites Exemplar mit eigenem Sonderstandort.
+	ab.Exemplare = append(ab.Exemplare, Exemplar{
+		ID: "E1b", Exemplarnummer: "109", Bibliotheksnummer: testBibliothek, TitelID: "1",
+		Zugangsdatum: "05/03/07", Signatur: "Ea 1 / Xyz", Sonderstandort: "Lehrerschrank",
+	})
+	ab.Standortvermerke = map[string][]string{
+		"1": {"Bibliothek Klassensatz Regal 11"},
+		"2": {"LMF/Bibliothek"},
+	}
+
+	bericht, err := s.SchreibeBestand(ctx, ab)
+	if err != nil {
+		t.Fatalf("SchreibeBestand: %v", err)
+	}
+
+	lies := func(litteraID string) (standort string, lernmittel bool) {
+		t.Helper()
+		if err := pool.QueryRow(ctx, `
+			SELECT COALESCE(e.standort, ''), t.ist_lernmittel
+			FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
+			WHERE e.erweiterte_eigenschaften->>'littera_id' = $1`, litteraID).Scan(&standort, &lernmittel); err != nil {
+			t.Fatalf("Exemplar %s lesen: %v", litteraID, err)
+		}
+		return standort, lernmittel
+	}
+	faelle := []struct {
+		id, standort string
+		lernmittel   bool
+	}{
+		{"E1", "Bibliothek Klassensatz Regal 11", false},
+		{"E1b", "Lehrerschrank", false},
+		{"E2", "LMF/Bibliothek", true},
+		{"E3", "", false},
+	}
+	for _, f := range faelle {
+		if standort, lernmittel := lies(f.id); standort != f.standort || lernmittel != f.lernmittel {
+			t.Errorf("%s: Standort %q, Lernmittel %v — erwartet %q, %v", f.id, standort, lernmittel, f.standort, f.lernmittel)
+		}
+	}
+	if leer := zaehle(t, pool, `SELECT count(*) FROM buecher_exemplare WHERE standort = ''`); leer != 0 {
+		t.Errorf("%d Exemplare tragen einen leeren Standort statt NULL", leer)
+	}
+	if bericht.StandortEigen != 1 || bericht.StandortVomTitel != 2 {
+		t.Errorf("Bericht: eigen %d, vom Titel %d — erwartet 1 und 2", bericht.StandortEigen, bericht.StandortVomTitel)
+	}
+}
+
+// TestUeberlangerStandortWirdGekuerzt: Vermerke mehrerer Zeilen können zusammen länger sein
+// als die Spalte. Das Exemplar kommt trotzdem an, gekürzt und mit Vermerk im Protokoll.
+func TestUeberlangerStandortWirdGekuerzt(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, protokoll := testSchreiber(t, pool, nil)
+	ctx := context.Background()
+
+	ab := bestand(titel("1", "Langer Vermerk", ""))
+	ab.Standortvermerke = map[string][]string{"1": {strings.Repeat("Regal ", 30), strings.Repeat("Schrank ", 20)}}
+
+	bericht, err := s.SchreibeBestand(ctx, ab)
+	if err != nil {
+		t.Fatalf("SchreibeBestand: %v", err)
+	}
+	if bericht.Exemplare != 1 || bericht.Uebersprungen != 0 {
+		t.Fatalf("geschrieben %d Exemplare, übersprungen %d — erwartet 1 und 0", bericht.Exemplare, bericht.Uebersprungen)
+	}
+	if laenge := zaehle(t, pool, `SELECT char_length(standort) FROM buecher_exemplare`); laenge != 255 {
+		t.Errorf("Standort ist %d Zeichen lang, erwartet 255", laenge)
+	}
+	if log := protokoll(); !strings.Contains(log, "standort") || !strings.Contains(log, "gekürzt") {
+		t.Errorf("die Kürzung fehlt im Protokoll:\n%s", log)
+	}
+}

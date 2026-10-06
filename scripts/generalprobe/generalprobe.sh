@@ -72,7 +72,7 @@ trap aufraeumen EXIT
 zeige_lauf() {
 	sed -E 's/^[0-9]{4}\/[0-9]{2}\/[0-9]{2} [0-9:]{8} //' "$1" |
 		sed -E 's/^(⚠  Die Übernahme endete vorzeitig):.*/\1 (Ursache in der Ausgabe des Laufs)/' |
-		grep -E '^(Gelesen|TROCKENLAUF|Übernehme|FEHLER: Leser ohne|━|Bestand |Schlagworte |Personen |Ausleihen |⚠|ℹ|  (Titel mit|davon|Verlage|Schlagworte:|Interessenkreise:|Fach:|Leser:|Ausleihen:|→|Lesergruppe|Warnungen|Fehler \(NICHT)|  +(geschrieben|Interessenkreise|✓|⚠|Fach aus|[0-9]+ Ausleihen tragen))' || true
+		grep -E '^(Gelesen|TROCKENLAUF|Übernehme|FEHLER: Leser ohne|━|Bestand |Schlagworte |Personen |Ausleihen |⚠|ℹ|  (Titel mit|davon|Verlage|Schlagworte:|Interessenkreise:|Fach:|Standorte:|Vermerke am Titel|Sonderstandorte der|Leser:|Ausleihen:|→|Lesergruppe|Warnungen|Fehler \(NICHT)|  +(geschrieben|Interessenkreise|✓|⚠|Fach aus|Standort:|[0-9]+ Ausleihen tragen))' || true
 }
 
 schritt "Werkzeuge"

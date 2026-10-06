@@ -33,6 +33,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"bibliothek/internal/littera"
@@ -61,6 +62,27 @@ type schalter struct {
 	schuljahrEnde  int
 	lehrerInaktiv  bool
 	erzwingen      bool
+	// keinStandort: Werte, die der Trockenlauf als Standort listet und die keiner sind.
+	keinStandort werteliste
+}
+
+// werteliste sammelt einen Schalter, der mehrfach stehen darf.
+type werteliste []string
+
+func (w *werteliste) String() string { return strings.Join(*w, ", ") }
+
+func (w *werteliste) Set(wert string) error {
+	*w = append(*w, wert)
+	return nil
+}
+
+// standortregel macht aus den Ausnahmen des Aufrufers die Regel der Übernahme.
+func (s schalter) standortregel() littera.Standortregel {
+	regel := littera.Standortregel{KeinStandort: map[string]bool{}}
+	for _, wert := range s.keinStandort {
+		regel.KeinStandort[wert] = true
+	}
+	return regel
 }
 
 func main() { os.Exit(run()) }
@@ -77,7 +99,7 @@ func run() int {
 	}
 
 	log.Printf("Lese Littera-Export aus %s …", s.csvVerzeichnis)
-	ab, err := littera.LeseAltbestand(s.csvVerzeichnis)
+	ab, err := littera.LeseAltbestandMit(s.csvVerzeichnis, s.standortregel())
 	if err != nil {
 		log.Printf("FEHLER: Export nicht lesbar: %v", err)
 		return exitAbgebrochen
@@ -132,6 +154,9 @@ func lies() schalter {
 			"(den Login sperrt ohnehin die Platzhalter-Adresse)")
 	flag.BoolVar(&s.erzwingen, "erzwingen", false,
 		"trotz vorhandener Littera-Daten in der Zieldatenbank laufen (legt sie ein zweites Mal an)")
+	flag.Var(&s.keinStandort, "kein-standort",
+		"Wert aus der Standortliste des Trockenlaufs, der kein Standort ist (mehrfach möglich): "+
+			"Ein Vermerk am Titel bleibt dann Verfasser, ein Sonderstandort kommt nicht mit")
 	flag.Parse()
 	return s
 }
@@ -150,6 +175,7 @@ func trockenlauf(ab *littera.Altbestand) {
 		ik.Zuordnungen, len(ik.JeTitel), ik.OhneWort)
 	ausSignatur, ausSchlagworten := littera.ZaehleFachquellen(ab)
 	log.Printf("  Fach:                    aus der Signatur %d, aus den Schlagworten %d", ausSignatur, ausSchlagworten)
+	berichteStandorte(littera.ZaehleStandorte(ab))
 
 	nach := map[littera.LeserArt]int{}
 	for _, l := range ab.Leser {
@@ -168,6 +194,23 @@ func trockenlauf(ab *littera.Altbestand) {
 	log.Printf("  Ausleihen: %d gesamt, %d offen, %d ohne Exemplar, %d ohne Frist",
 		len(ab.Ausleihen), len(littera.NurOffene(ab.Ausleihen)),
 		len(littera.OhneExemplar(ab.Ausleihen, bekannt)), len(littera.OhneFrist(ab.Ausleihen)))
+}
+
+// berichteStandorte listet jeden Wert, der als Standort ankäme. Die Liste ist zum Lesen da:
+// Ein Verfasser ohne Komma oder ein Lesername aus einem Rundlauf fällt nur einem Menschen
+// auf; er wird mit -kein-standort ausgenommen.
+func berichteStandorte(b littera.StandortBilanz) {
+	log.Printf("  Standorte:               %d Exemplare mit eigenem Sonderstandort, %d über den Vermerk am Titel; "+
+		"%d Titel sind nur nach dem Vermerk Lernmittel", b.ExemplareEigen, b.ExemplareVomTitel, b.LernmittelNurVermerk)
+	log.Printf("  Vermerke am Titel (%d Werte, je Wert die Titel) — was kein Standort ist, mit -kein-standort ausnehmen:",
+		len(b.Vermerke))
+	for _, z := range b.Vermerke {
+		log.Printf("    %5d  %s", z.Anzahl, z.Wert)
+	}
+	log.Printf("  Sonderstandorte der Exemplare (%d Werte, je Wert die Exemplare):", len(b.Sonderstandorte))
+	for _, z := range b.Sonderstandorte {
+		log.Printf("    %5d  %s", z.Anzahl, z.Wert)
+	}
 }
 
 func uebertrage(s schalter, ab *littera.Altbestand) int {
@@ -295,6 +338,8 @@ func drucke(b littera.Bericht, s schalter) {
 			b.Bestand.Titel, b.Bestand.Exemplare, b.Bestand.Uebersprungen)
 		abgleich(b.Bestand.AbgleichOK, fmt.Sprintf("%d Titel / %d Exemplare tatsächlich neu",
 			b.Bestand.IstTitel, b.Bestand.IstExemplare))
+		log.Printf("           Standort: %d Exemplare aus dem eigenen Sonderstandort, %d aus dem Vermerk am Titel",
+			b.Bestand.StandortEigen, b.Bestand.StandortVomTitel)
 		log.Printf("           Eigentum aus dem Vermerk: Land %d, Schulträger %d; "+
 			"Vermerk ohne Zuordnung %d, nicht in der Liste %d",
 			b.Bestand.EigentumLand, b.Bestand.EigentumSchultraeger,
