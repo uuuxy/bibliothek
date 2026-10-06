@@ -258,7 +258,11 @@ describe('Problem melden im Portal', () => {
 		expect(screen.queryByRole('button', { name: 'Buchwunsch' })).toBeNull();
 
 		await fireEvent.click(screen.getByRole('button', { name: 'Problem melden' }));
-		await fireEvent.input(await screen.findByLabelText('Worum geht es? *'), {
+		const worum = await screen.findByLabelText('Worum geht es? *');
+		// Der Knopf steht direkt über dem Formular: Eine Überschrift mit denselben Worten
+		// stünde dort doppelt.
+		expect(screen.getAllByText('Problem melden')).toHaveLength(1);
+		await fireEvent.input(worum, {
 			target: { value: 'die Bücher der 8G3' }
 		});
 		await fireEvent.input(screen.getByLabelText('Was stimmt nicht? *'), {

@@ -1,7 +1,8 @@
 <!-- @component ProblemFormular — „Problem melden": Klasse und was nicht stimmt.
 
      Am Treffer ist das Buch gewählt. Ohne Buch (`mitWorum`) fragt das erste Feld, worum es
-     geht. Der Zustand gehört dem Aufrufer (problemMeldung.svelte.js).
+     geht, und die Überschrift entfällt: Dort steht der Knopf „Problem melden" direkt über dem
+     Formular. Der Zustand gehört dem Aufrufer (problemMeldung.svelte.js).
 
      Eine Lesespalte in begrenzter Breite, die Beschreibung mehrzeilig: M3 nennt einzeilige
      Felder ungeeignet für längere Antworten und lässt Textfelder auf großen Bildschirmen
@@ -27,7 +28,9 @@
 
 <div class="grid max-w-3xl grid-cols-1 gap-y-4">
 	<div>
-		<p class="text-sm font-medium text-on-surface">Problem melden</p>
+		{#if !mitWorum}
+			<p class="text-sm font-medium text-on-surface">Problem melden</p>
+		{/if}
 		<p class="text-sm text-on-surface-variant">
 			Die Bibliothek arbeitet die Liste ab — beim Erledigen bekommst du eine Mail.
 		</p>
