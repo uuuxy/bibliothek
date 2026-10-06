@@ -1,6 +1,7 @@
 <script>
 	import { apiGet } from '../../apiFetch.js';
 	import Tabelle from '../ui/Tabelle.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
 
@@ -51,27 +52,29 @@
 </script>
 
 {#if !signatur}
-	<div class="text-sm text-slate-500 p-6 text-center">
+	<div class="text-sm text-on-surface-variant p-6 text-center">
 		Wähle links eine Signatur, um das Regal zu sehen.
 	</div>
 {:else if laedt}
-	<div class="text-sm text-slate-500 p-6 text-center">Wird geladen …</div>
+	<div class="flex justify-center p-6"><Ladekreis label="Regal lädt" /></div>
 {:else if buecher.length === 0}
-	<div class="text-sm text-slate-500 p-6 text-center">
+	<div class="text-sm text-on-surface-variant p-6 text-center">
 		Unter „{signatur}“ steht kein Buch.
 	</div>
 {:else}
 	<div class="space-y-3">
 		<div class="flex items-baseline justify-between gap-3 flex-wrap">
-			<h2 class="font-bold text-slate-900">
+			<h2 class="font-bold text-on-surface">
 				{signatur}
-				<span class="font-normal text-slate-500 text-sm">· {buecher.length} Titel</span>
+				<span class="font-normal text-on-surface-variant text-sm">· {buecher.length} Titel</span>
 			</h2>
-			<p class="text-xs text-slate-500">In Regalreihenfolge — so läufst du das Regal ab.</p>
+			<p class="text-xs text-on-surface-variant">
+				In Regalreihenfolge — so läufst du das Regal ab.
+			</p>
 		</div>
 
 		{#if gekappt}
-			<p class="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2">
+			<p class="text-xs bg-warning-container text-on-warning-container rounded-lg px-3 py-2">
 				Es werden nur die ersten {buecher.length} Titel angezeigt. Grenze die Signatur weiter ein, um
 				den Rest zu sehen.
 			</p>
@@ -90,8 +93,8 @@
 				</thead>
 				<tbody>
 					{#each buecher as buch (buch.titel_id)}
-						<!-- Der TITEL öffnet die Akte, nicht die Zeile: Eine Zeile mit onclick ist nur
-						     mit der Maus erreichbar (Barrierefreiheit, 09.09.2026). -->
+						<!-- Der Titel öffnet die Akte, nicht die Zeile: Eine Zeile mit onclick ist nur
+						     mit der Maus erreichbar. -->
 						<tr>
 							<td class="font-mono whitespace-nowrap">{buch.signatur}</td>
 							<td>

@@ -7,6 +7,7 @@
 	import SystematikVerwaltung from './components/signaturen/SystematikVerwaltung.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 
 	let signaturen = $state(/** @type {any[]} */ ([]));
 	let laedt = $state(true);
@@ -34,16 +35,12 @@
 </script>
 
 <PageShell>
-	<!-- Zwei Bereiche, keine zwei Kaesten: links die Liste, rechts das Regal dazu — in
-	     M3 ein „supporting pane". Getrennt wird durch eine Haarlinie, senkrecht sobald
-	     Platz ist, sonst waagerecht. Ein Rahmen mit Radius wuerde daraus zwei schwebende
-	     Objekte machen; es ist aber EIN Arbeitsbereich mit zwei Haelften. -->
-	<!-- Die Suche steht über BEIDEN Hälften, nicht in der linken Spalte: Sie ist die eine
-	     Suche der Seite und hat damit dieselbe Breite und Kante wie überall sonst. -->
-	<!-- Der Erklaersatz steht UNTER dem Feld, nicht darueber: Er erklaert, wie diese Suche
-	     liest — in M3 die Rolle des „supporting text". Bis zum 04.09.2026 stand er darueber
-	     und schob als einziges Element im Haus die Pille aus der Startlinie (Absprache: „die
-	     Suchleiste ist immer an anderen Positionen"). -->
+	<!-- Zwei Bereiche, keine zwei Kästen: links die Liste, rechts das Regal dazu — in M3 ein
+	     „supporting pane". Getrennt wird durch eine Haarlinie, senkrecht sobald Platz ist,
+	     sonst waagerecht; ein Rahmen mit Radius machte daraus zwei schwebende Objekte. -->
+	<!-- Die Suche steht über beiden Hälften: Sie ist die eine Suche der Seite und hat
+	     dieselbe Breite und Kante wie überall sonst. Der Erklärsatz steht unter dem Feld
+	     (in M3 der „supporting text"), damit die Pille auf der Startlinie bleibt. -->
 	<div class="flex flex-col gap-2">
 		<Suchpille
 			id="signaturen-suchfeld"
@@ -51,23 +48,25 @@
 			etikett="Signatur suchen"
 			platzhalter="Signatur suchen"
 		/>
-		<p class="text-sm text-slate-500">
+		<p class="text-sm text-on-surface-variant">
 			Die Signatur ist die Regaladresse auf dem Buchrücken. Sie wird als Präfix gelesen: „LMF Deu 7“
 			meint das ganze Regal, „LMF Deu 7 / Bie“ ein einzelnes Buch darin.
 		</p>
 	</div>
 
-	<div class="grid divide-y divide-slate-200 lg:grid-cols-[20rem_1fr] lg:divide-x lg:divide-y-0">
+	<div
+		class="grid divide-y divide-outline-variant lg:grid-cols-[20rem_1fr] lg:divide-x lg:divide-y-0"
+	>
 		<section class="space-y-3 pb-6 lg:pr-6 lg:pb-0">
 			{#if laedt}
-				<p class="text-sm text-slate-500">Wird geladen …</p>
+				<div class="flex justify-center py-6"><Ladekreis label="Signaturen laden" /></div>
 			{:else if signaturen.length === 0}
-				<p class="text-sm text-slate-500">
+				<p class="text-sm text-on-surface-variant">
 					Noch kein Buch trägt eine Signatur. Sie entsteht am Buch selbst — im Buchformular,
 					vorgeschlagen aus den Sachgruppen.
 				</p>
 			{:else if gefiltert.length === 0}
-				<p class="text-sm text-slate-500">Keine Signatur passt zu „{suche}“.</p>
+				<p class="text-sm text-on-surface-variant">Keine Signatur passt zu „{suche}“.</p>
 			{:else}
 				<ul class="max-h-112 overflow-y-auto -mx-1">
 					{#each gefiltert as sig (sig.signatur)}
@@ -77,11 +76,11 @@
 								onclick={() => (gewaehlt = sig.signatur)}
 								class="w-full text-left px-3 py-2 rounded-lg flex items-baseline justify-between gap-2 transition-colors {gewaehlt ===
 								sig.signatur
-									? 'bg-blue-50 text-blue-900'
-									: 'hover:bg-slate-50 text-slate-700'}"
+									? 'bg-secondary-container text-on-secondary-container'
+									: 'text-on-surface'}"
 							>
 								<span class="font-mono text-sm truncate">{sig.signatur}</span>
-								<span class="text-sm text-slate-500 shrink-0">{sig.exemplare}</span>
+								<span class="text-sm text-on-surface-variant shrink-0">{sig.exemplare}</span>
 							</button>
 						</li>
 					{/each}

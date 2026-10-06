@@ -2,11 +2,10 @@
 	import { onMount } from 'svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
-	// apiPost/apiPut/apiDelete liefern die geparste Antwort und WERFEN im Fehlerfall —
-	// den Fehler-Toast haben sie dann schon gezeigt. Deshalb hier kein zweiter Toast im
-	// catch: Ein generisches "Fehler beim Speichern" verdeckte sonst die Servermeldung,
-	// die den Grund nennt (z. B. "Kürzel existiert bereits").
+	// apiPost/apiPut/apiDelete werfen im Fehlerfall und haben die Meldung des Servers dann
+	// schon gezeigt. Ein zweiter Toast im catch verdeckte den Grund („Kürzel existiert bereits").
 	import { apiGet, apiPost, apiPut, apiDelete } from '../../apiFetch.js';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -116,13 +115,13 @@
 	}
 </script>
 
-<!-- Nachgeordneter Abschnitt: Das Regal nachschlagen macht das Sekretariat taeglich,
-     das Vokabular pflegen dreimal im Jahr. Die Trennung traegt deshalb eine Linie und
-     Abstand — kein Kasten, der beides zu gleichrangigen Objekten machen wuerde. -->
-<section class="space-y-4 border-t border-slate-200 pt-6">
+<!-- Nachgeordneter Abschnitt: Das Regal nachschlagen ist tägliche Arbeit, das Vokabular
+     pflegen seltene. Die Trennung trägt deshalb eine Linie und Abstand — kein Kasten, der
+     beides zu gleichrangigen Objekten machte. -->
+<section class="space-y-4 border-t border-outline-variant pt-6">
 	<div>
-		<h2 class="font-bold text-slate-900">Sachgruppen</h2>
-		<p class="text-sm text-slate-500 mt-0.5">
+		<h2 class="font-bold text-on-surface">Sachgruppen</h2>
+		<p class="text-sm text-on-surface-variant mt-0.5">
 			Das Fach-Vokabular des Katalogs. Die Signatur am Regal schlägt es nicht mehr vor: Dort gelten
 			die Adressen aus dem Bestand.
 		</p>
@@ -149,9 +148,9 @@
 	</form>
 
 	{#if laedt}
-		<p class="text-sm text-slate-500">Wird geladen …</p>
+		<div class="flex justify-center py-6"><Ladekreis label="Sachgruppen laden" /></div>
 	{:else if liste.length === 0}
-		<p class="text-sm text-slate-500">
+		<p class="text-sm text-on-surface-variant">
 			Noch keine Sachgruppen. Ohne sie schlägt das Buchformular nur „BIB“ bzw. „LMF“ ohne Fachkürzel
 			vor.
 		</p>
