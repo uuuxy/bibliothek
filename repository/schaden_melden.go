@@ -53,11 +53,24 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (st
 	// *string, weil schueler_id nullable ist: Die DSGVO-Anonymisierung löst die Ausleihe
 	// von der Person. Ein Scan in einen nackten string stürbe an "cannot scan NULL". Ist
 	// die Ausleihe personenlos, bleibt schueler_id im Schadensfall NULL.
-	var loanSchuelerID *string
-	if err := tx.QueryRow(ctx,
-		`SELECT schueler_id FROM ausleihen WHERE id = $1 FOR UPDATE`, params.loanID,
-	).Scan(&loanSchuelerID); err != nil {
+	//
+	// Auch das Exemplar steht an der Ausleihe: Die Kennung aus der Anfrage gilt nur für eine
+	// Ausleihe ohne Buch. Sonst sonderte eine Anfrage mit fremder Kennung ein Exemplar aus,
+	// das nie verliehen war.
+	var loanSchuelerID, loanExemplarID *string
+	var zurueck, exemplarAusgesondert bool
+	if err := tx.QueryRow(ctx, `
+		SELECT a.schueler_id, a.exemplar_id::text, a.rueckgabe_am IS NOT NULL,
+		       COALESCE(e.ist_ausgesondert, false)
+		FROM ausleihen a
+		LEFT JOIN buecher_exemplare e ON e.id = a.exemplar_id
+		WHERE a.id = $1 FOR UPDATE OF a`, params.loanID,
+	).Scan(&loanSchuelerID, &loanExemplarID, &zurueck, &exemplarAusgesondert); err != nil {
 		return "", err // pgx.ErrNoRows: Ausleihe existiert nicht
+	}
+	exemplarID := params.copyID
+	if loanExemplarID != nil {
+		exemplarID = *loanExemplarID
 	}
 
 	// Ein Kollege bekommt KEINE Forderung (entschieden am 16.09.2026).
@@ -105,11 +118,24 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (st
 	if err := tx.QueryRow(ctx, `
 		SELECT count(*) FROM ausleihen
 		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL AND id <> $2
-	`, params.copyID, params.loanID).Scan(&fremdeAktive); err != nil {
+	`, exemplarID, params.loanID).Scan(&fremdeAktive); err != nil {
 		return "", err
 	}
 	if fremdeAktive > 0 {
 		return "", ErrExemplarNeuVerliehen
+	}
+
+	// „Nicht zurückgegeben" für eine Ausleihe, die beendet ist und keinen Schadensfall trägt:
+	// Das Buch kam an einem anderen Platz zurück, während die Akte offen stand. Es steht im
+	// Regal und wird nicht als Verlust ausgesondert. „Beschädigt zurückgegeben" bleibt nach der
+	// Rückgabe möglich. Beim Kollegium entsteht keine Forderung, an der die eigene frühere
+	// Meldung zu erkennen wäre; dort zeigt sie das ausgesonderte Exemplar, und der zweite Klick
+	// ändert nichts.
+	if zurueck && params.art == SchadensArtNichtZurueck {
+		if ohneForderung && exemplarAusgesondert {
+			return "", nil
+		}
+		return "", ErrAusleiheInzwischenZurueck
 	}
 
 	grund := "BESCHAEDIGUNG"
@@ -122,7 +148,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (st
 		    zustand_notiz = $2, aktualisiert_am = CURRENT_TIMESTAMP,
 		    letzte_bewegung_am = `+sqlStempelJetzt+`
 		WHERE id = $3
-	`, grund, params.beschreibung, params.copyID); err != nil {
+	`, grund, params.beschreibung, exemplarID); err != nil {
 		return "", err
 	}
 
@@ -135,7 +161,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (st
 		UPDATE vormerkungen
 		SET status = 'wartend', bereitgestellt_exemplar_id = NULL, bereitgestellt_bis = NULL
 		WHERE bereitgestellt_exemplar_id = $1 AND status = 'abholbereit'
-	`, params.copyID); err != nil {
+	`, exemplarID); err != nil {
 		return "", err
 	}
 
@@ -145,7 +171,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (st
 			INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, art)
 			VALUES ($1, $2, $3, $4, $5, $6)
 			RETURNING id
-		`, params.copyID, params.loanID, loanSchuelerID, params.beschreibung, params.betrag, string(params.art)).Scan(&schadensID); err != nil {
+		`, exemplarID, params.loanID, loanSchuelerID, params.beschreibung, params.betrag, string(params.art)).Scan(&schadensID); err != nil {
 			return "", err
 		}
 	}

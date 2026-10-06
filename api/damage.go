@@ -43,9 +43,10 @@ func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) htt
 
 		schadensID, err := damageRepo.ReportDamage(r.Context(), req.CopyID, req.LoanID, claims.UserID, req.Beschreibung, art, req.Betrag)
 		if err != nil {
-			// Zwischenzeitliche Neuausleihe ist ein Konflikt (409), kein Serverfehler:
-			// Der Nutzer muss den Vorgang neu laden, nicht der Server ist kaputt.
-			if errors.Is(err, repository.ErrExemplarNeuVerliehen) {
+			// Inzwischen neu verliehen oder zurückgegeben: ein Konflikt (409), kein
+			// Serverfehler. Die Akte zeigt einen Stand, den es nicht mehr gibt.
+			if errors.Is(err, repository.ErrExemplarNeuVerliehen) ||
+				errors.Is(err, repository.ErrAusleiheInzwischenZurueck) {
 				return apierrors.Conflict(err.Error(), err)
 			}
 			return apierrors.Internal("Fehler beim Melden des Schadens", err)

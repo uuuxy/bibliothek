@@ -191,3 +191,71 @@ func TestReportDamageSchuldnerAusAusleihe(t *testing.T) {
 			echterSchuldner, fremder, gebucht)
 	}
 }
+
+// Bleibt die Akte offen, während das Buch an einem anderen Platz zurückkommt, steht die
+// Ausleihe dort weiter in der Liste. „Nicht zurückgegeben" auf diese Zeile darf das Buch, das
+// im Regal steht, nicht aussondern und dem Kind keine Forderung anhängen. Der Weg über den
+// Bescheid prüft dasselbe (bucheVerluste). „Beschädigt zurückgegeben" bleibt nach der Rückgabe
+// möglich (TestReportDamage_ResetsAbholbereiteVormerkung).
+func TestReportDamage_AusleiheInzwischenZurueck(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	copyID := seedSignaturMitExemplaren(t, pool, "ZurueckTest", 1)[0]
+	schueler := seedSchueler(t, pool, "ZUR-A", "Eda", "7a")
+	bearbeiter := seedBearbeiter(t, pool)
+	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
+	returnLoan(t, pool, loan)
+
+	_, err := NewDamageRepository(pool).ReportDamage(ctx, copyID, loan, bearbeiter,
+		"nicht zurückgegeben", SchadensArtNichtZurueck, 12.0)
+	if !errors.Is(err, ErrAusleiheInzwischenZurueck) {
+		t.Fatalf("erwartet ErrAusleiheInzwischenZurueck, war: %v", err)
+	}
+	if ausgesondert := ausgesonderteZahl(t, pool, []string{copyID}); ausgesondert != 0 {
+		t.Error("das zurückgegebene Exemplar wurde ausgesondert")
+	}
+	var forderungen int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM schadensfaelle WHERE ausleihe_id = $1`, loan).Scan(&forderungen); err != nil {
+		t.Fatal(err)
+	}
+	if forderungen != 0 {
+		t.Errorf("%d Forderung(en) für ein zurückgegebenes Buch", forderungen)
+	}
+}
+
+// Das Exemplar steht an der Ausleihe wie der Schuldner. Nennt die Anfrage ein anderes, trifft
+// die Meldung trotzdem das geliehene Buch und lässt das genannte in Ruhe.
+func TestReportDamage_ExemplarKommtAusDerAusleihe(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	ex := seedSignaturMitExemplaren(t, pool, "ExemplarTest", 2)
+	geliehen, imRegal := ex[0], ex[1]
+	schueler := seedSchueler(t, pool, "EXA-A", "Finn", "8a")
+	bearbeiter := seedBearbeiter(t, pool)
+	loan := seedAusleihe(t, pool, geliehen, schueler, bearbeiter)
+
+	schadensID, err := NewDamageRepository(pool).ReportDamage(ctx, imRegal, loan, bearbeiter,
+		"Wasserschaden", SchadensArtBeschaedigt, 6.0)
+	if err != nil {
+		t.Fatalf("Meldung abgelehnt: %v", err)
+	}
+	if ausgesondert := ausgesonderteZahl(t, pool, []string{imRegal}); ausgesondert != 0 {
+		t.Error("das Exemplar aus der Anfrage wurde ausgesondert, es war nie verliehen")
+	}
+	if ausgesondert := ausgesonderteZahl(t, pool, []string{geliehen}); ausgesondert != 1 {
+		t.Error("das geliehene Exemplar wurde nicht ausgesondert")
+	}
+	var amFall string
+	if err := pool.QueryRow(ctx,
+		`SELECT exemplar_id::text FROM schadensfaelle WHERE id = $1`, schadensID).Scan(&amFall); err != nil {
+		t.Fatal(err)
+	}
+	if amFall != geliehen {
+		t.Errorf("die Forderung nennt Exemplar %s, geliehen war %s", amFall, geliehen)
+	}
+}

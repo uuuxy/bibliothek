@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -63,5 +64,64 @@ func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
 	if gebucht != ausleiher {
 		t.Errorf("die Forderung steht bei %s; sie gehört dem Ausleiher %s, nicht der mitgeschickten Kennung %s",
 			gebucht, ausleiher, unbeteiligt)
+	}
+}
+
+// „Nicht zurückgegeben" für ein Buch, das an einem anderen Platz schon zurückkam: Die Akte
+// zeigt die Ausleihe noch, die Tür lehnt mit einem Satz ab (409), sondert das Buch nicht aus
+// und legt keine Forderung an.
+func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := t.Context()
+
+	authenticator, err := auth.NewAuthenticator(
+		"schaden-zurueck-testgeheimnis-32-bytes!!!!", pool, time.Hour)
+	if err != nil {
+		t.Fatalf("Authenticator: %v", err)
+	}
+	var kontoID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Zora', 'Zurueck', 'schaden-zurueck@example.org', 'admin', true)
+		RETURNING id`).Scan(&kontoID); err != nil {
+		t.Fatalf("Konto anlegen: %v", err)
+	}
+	sitzung, err := authenticator.GenerateToken(kontoID, "ZURUECK-1", auth.RoleAdmin, "")
+	if err != nil {
+		t.Fatalf("Sitzung: %v", err)
+	}
+	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+
+	kind := seedSchueler(t, pool, "S-ZURUECK-A", "Zoe", "07A")
+	ex := exemplar(t, pool, titelMitMeldebestand(t, pool, "Zurücktitel", 1), "EX-ZURUECK-1", true, "")
+	var ausleihe string
+	if err := pool.QueryRow(ctx, `INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, rueckgabe_am)
+		VALUES ($1, $2, now() + interval '14 days', now()) RETURNING id`, ex, kind).Scan(&ausleihe); err != nil {
+		t.Fatalf("Ausleihe anlegen: %v", err)
+	}
+
+	req := jsonPost("/api/damage/report", `{"loan_id":"`+ausleihe+`","copy_id":"`+ex+
+		`","beschreibung":"Verloren","art":"nicht_zurueckgegeben","betrag":12}`)
+	req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("Status %d, erwartet 409 — %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "inzwischen zurückgegeben") {
+		t.Errorf("die Antwort nennt den Grund nicht: %s", rec.Body.String())
+	}
+
+	var ausgesondert bool
+	var forderungen int
+	if err := pool.QueryRow(ctx, `
+		SELECT (SELECT ist_ausgesondert FROM buecher_exemplare WHERE id = $1),
+		       (SELECT count(*) FROM schadensfaelle WHERE ausleihe_id = $2)`, ex, ausleihe).
+		Scan(&ausgesondert, &forderungen); err != nil {
+		t.Fatalf("Stand lesen: %v", err)
+	}
+	if ausgesondert || forderungen != 0 {
+		t.Errorf("ausgesondert=%v, Forderungen=%d: Das Buch steht im Regal, gebucht werden darf nichts", ausgesondert, forderungen)
 	}
 }
