@@ -9,6 +9,21 @@ import (
 	"bibliothek/pkg/lmf"
 )
 
+func TestNewImportService(t *testing.T) {
+	repo := &stubBookRepo{}
+	svc := NewImportService(repo, nil)
+
+	if svc == nil {
+		t.Fatal("NewImportService() returned nil")
+	}
+	if svc.bookRepo != repo {
+		t.Errorf("NewImportService() bookRepo = %v, want %v", svc.bookRepo, repo)
+	}
+	if svc.db != nil {
+		t.Errorf("NewImportService() db = %v, want nil", svc.db)
+	}
+}
+
 // Falsche XML-Dateien (z. B. der Schlagwort-Export systematik+.xml mit
 // <Schlagworte>-Wurzel) sind Nutzer-Formatfehler: ParseLitteraXML muss sie als
 // ErrKeinKatalogisat melden, damit der Handler 400 statt 500 antwortet.
