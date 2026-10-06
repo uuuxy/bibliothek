@@ -76,8 +76,10 @@ Tabelle · TabelleSortKopf · Zaehlerpille.
 
 ## 4. Offene Arbeit und Sprache
 
-- Alles Offene steht **nur** in `docs/OFFEN.md`. Erledigtes wird dort gelöscht, nicht
-  abgehakt — die Geschichte steht in der Commit-Nachricht.
+- Alles Offene steht **nur** in `docs/OFFEN.md`: oben der Fahrplan mit Kästchen, darunter die
+  Einzelheiten. Im Fahrplan wird abgehakt, in den Einzelheiten gelöscht — die Geschichte steht
+  in der Commit-Nachricht. Dort steht nur Arbeit, die einer von uns beiden tun kann; Fragen an
+  Dritte und das Warten auf ihre Antworten nicht.
 - Dokumente nennen die Sache, nicht den Absender: keine Personennamen, keine prüfende Stelle.
 - Sachlich schreiben: Aussage, Beleg, nächster Schritt. Keine Werbesprache, keine Bewertungen.
 - Commit-Nachrichten auf Deutsch, ohne Werkzeug-Hinweis.

@@ -2,87 +2,118 @@
 
 Stand: 06.10.2026
 
-**Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
-Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
-Die Geschichte steht in den Commit-Nachrichten und in `git log -p docs/OFFEN.md`.
-
-Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
-[sweeps.md](sweeps.md)), führen aber keine eigene Offen-Liste.
+**Der Fahrplan.** Oben steht, was als Nächstes getan wird, in der Reihenfolge der Arbeit: je
+Schritt eine Zeile mit Kästchen. Die Nummer in Klammern führt zu den Einzelheiten weiter unten.
+Einen zweiten Ort für Offenes gibt es nicht; andere Dokumente erklären (Konzept, Anleitung, der
+Katalog der Bugklassen in [sweeps.md](sweeps.md)), führen aber keine eigene Offen-Liste. Wie die
+Liste geführt wird, steht am Ende.
 
 ---
 
-## Was jetzt dran ist
+## Fahrplan
+
+### Etappe 1: als Nächstes
+
+- [ ] **Theke: zweiter Scan desselben Buchs.** Er leiht das eben zurückgegebene Buch nicht
+  wieder aus, und eine Ausleihe meldet sich mit eigener Farbe und eigenem Ton. Zuerst das Bild,
+  nach dem Ja der Bau. Der einzige offene Punkt, der still schaden kann. (4.32)
+- [ ] **Standort: Ein neues Exemplar erbt ihn,** wenn alle übrigen Exemplare des Titels
+  denselben tragen. Entschieden am 06.10.2026. (5.53)
+- [ ] **PRs auf GitHub** durchsehen, hereinholen oder schließen und die Zweige aufräumen.
+  Beauftragt am 06.10.2026. (5.10)
+- [ ] **Doku-Ordner:** Vorschlag, welche der 36 Dateien in `docs/` zusammengelegt oder gelöscht
+  werden; 19 davon kamen seit September 2026 dazu.
+
+### Etappe 2: Farben auf Material-3-Rollen (5.21)
+
+409 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
+Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
+
+- [ ] Buchakte mit der Liste der Ausleiher (20)
+- [ ] „Klassen & Bücher" (50)
+- [ ] Signaturen (24)
+- [ ] Gemeinsame Bauteile: Knopf, Suchpille mit dem Scanfeld der Theke, Schalter, Dialoge,
+  Meldungen (81)
+- [ ] Druck-Center und Quittung (26)
+- [ ] Monitor (25)
+- [ ] Berechtigungen (18)
+- [ ] System, Kamera-Scanner und Einzelstellen (70)
+
+Nicht in dieser Etappe: 48 Farbverläufe der selbstgebauten Cover-Platzhalter (6.2). Es bleiben
+16 Stellen der Initialen-Kachel, 29 der Karte im Ausweis-Designer und zwei Schleier hinter den
+Alarmen der Theke.
+
+### Etappe 3: vor dem Echtstart
 
 Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Littera-Übernahme
-(7.2; entschieden am 28.09.2026). Davor stehen Antworten von außen, die Proben am Testserver
-und die Arbeit im Code.
+(entschieden am 28.09.2026).
 
-**Bei dir — zu entscheiden:**
+- [ ] Die Littera-Übernahme überträgt die Auflage. (5.5)
+- [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt:
+  Ausweisnummern, offene Ausleihen, Standorte, Verweise der Schlagworte. (7.2, 4.20)
+- [ ] `update.sh` für den Schulserver: nur Releases, Images frisch. (5.31)
+- [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
+- [ ] Arbeitsnotizen der Entwicklung ins Repository, entlang dem Pflegekonzept. (9.9)
+- [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3), Uptime-Signal (7.5),
+  Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9).
+- [ ] Abnahmen mit echten Daten. (7.7)
+- [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4)
 
-- GitHub: die PR-Pflicht im Regelwerk für `main` (7.6).
-- Standort am Exemplar (5.53): ob ein neues Exemplar den Standort der übrigen erbt, und welcher
-  Knopf in der Leiste der markierten Exemplare der gefüllte ist.
+### Bei dir
 
-**Bei dir — zu fragen:** Schulträger, Sichtung und das Littera-Kennwort; dazu Sekretariat,
-Schulamt, Datenschutzbeauftragter und Bücherei. Wer was gefragt wird, steht am Anfang von
-Abschnitt 8.
+**Entscheiden:**
 
-**Bei dir — auszuprobieren:**
+- [ ] Bekommt die Bestandsliste (CSV) eine Spalte „Standort"? Vorschlag: ja, zusammen mit dem
+  Erben. (5.53)
 
-- Am Testserver nach `git pull` und `./update.sh`: die Proben mit dem Handscanner, die Maske
-  „Buch bearbeiten", der Standort an der Buchakte und das Mahnwesen (7.10).
-- Der SonarQube-Scan nach den Commits vom 05.10.2026 (5.10).
-- Der Nachweis von Hand für die Theke ohne Netz (2.3, Stufe 1 und 3 im echten Chrome),
-  zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen Stack, wenn
-  der Nachweis ansteht.
-- Ein Termin für die Abnahmen mit dem Sekretariat, sobald der Schulserver steht (7.7).
+**Am Testserver ausprobieren,** nach `git pull` und `./update.sh` (7.10):
 
-**Bei mir — im Code,** in dieser Reihenfolge:
+- [ ] Portal: „Problem melden" unter dem Suchfeld
+- [ ] Buchakte: „Standort ändern", auch mit dem Handscanner
+- [ ] Theke: Schnellrückgabe mit einem Stapel
+- [ ] Die übrigen Proben mit dem Handscanner
+- [ ] Maske „Buch bearbeiten"
+- [ ] Mahnwesen: Mahnbriefe und Liste drucken
 
-1. **4.32** (Theke, Kategorie A): eigener Ton und eigene Farbe für eine Ausleihe, kurze Sperre
-   für dasselbe Buch nach seiner Rückgabe. Zuerst der Vorschlag zur Farbe, dann der Bau.
-2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
-3. Nach der Antwort zu 8.3: **5.4**.
-4. Vor dem Echtstart: **5.31** (`update.sh` für den Schulserver), der Eingang für die Seite der
-   Lieferanten (4.23) und die Auflage in der Littera-Übernahme (5.5).
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+**Erledigen:**
 
-**Termine:** Am 19. Oktober 2026 wechselt CodeQL bei GitHub das Abbild (5.10). Node 26 ist ab
-dem 28. Oktober 2026 dran, nach der Regel „immer die aktive LTS"
-([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
+- [ ] SonarQube-Scan starten. (5.10)
+- [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
+- [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9)
+- [ ] Theke ohne Netz: der Nachweis von Hand im echten Chrome, zurückgestellt am 24.09.2026.
+  (2.3)
 
-**In der Doku:** Pflegekonzept und Datenschutz-Nachweis stehen als Entwurf. Es folgen die
-Arbeitsnotizen ins Repository und die Probe durch die Vertretung (9.9).
+### Termine
 
-**Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
-Betriebspunkte in 7. Keiner davon schadet still; sie werden gebündelt erledigt.
+- [ ] 19. Oktober 2026: CodeQL wechselt bei GitHub das Abbild; den Lauf danach ansehen. (5.10)
+- [ ] Ab dem 28. Oktober 2026: Node 26, nach der Regel „immer die aktive LTS"
+  ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4).
 
----
+### Später: gebündelt, ohne feste Reihenfolge
 
-## So wird die Liste geführt
+Fehler, die sich laut melden, und Unordnung ohne Wirkung nach außen; keiner schadet still. Die
+Punkte stehen einzeln unter ihrer Nummer. Was erledigt ist, wird dort gelöscht.
 
-Vor jedem Fund steht dieselbe Frage — nicht „ist das hässlich?", sondern **„kann das still
-jemandem schaden?"**
-
-|       | Kategorie                                                                                                                                                                                            | Umgang                                                               |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| **A** | Kann **stillschweigend** ein falsches Ergebnis für einen echten Menschen erzeugen: doppelte Mahnung an Eltern, Daten beim falschen Empfänger, verlorene Eingabe, ein Gate, das nicht rot werden kann | **Sofort**, eigener Commit, eigener Test, eigene Deploy-Entscheidung |
-| **B** | Fehler, der sich **laut** meldet, oder Unordnung ohne Wirkung nach außen: totes Codestück, wackeliger Test, Doppelung                                                                                | Hier notieren, gebündelt abarbeiten                                  |
-| **C** | „Wenn ich schon mal hier bin" — Umbenennungen, Stilfragen, Refactorings ohne Anlass                                                                                                                  | Nur mit Anlass und Zeit                                              |
-
-1. **Ein Fund = ein Commit.** Was beim Reparieren zusätzlich auffällt, kommt hierher, nicht in
-   denselben Commit.
-2. **Kategorie A wird belegt, nicht behauptet:** ein Test, der am alten Code rot wird. Bis ein
-   Fund nachgestellt ist, heißt er „Verdacht".
-3. **Neues kommt nur hierher** — Funde, offene Fragen, Betriebspunkte. Kein Issue, kein anderes
-   Dokument. Eine Frage steht hier, bevor die Antwort kommt.
-4. **Erledigt heißt:** hier löschen — Datum und Begründung stehen in der Commit-Nachricht, ein
-   Archiv gibt es nicht. Eine Antwort bekommt „Entschieden am …" und fällt weg, sobald
-   sie umgesetzt ist. Die Nummer eines gelöschten Punkts wird nicht wieder vergeben —
-   Kommentare im Code nennen sie als Herkunft.
-5. **Die Reihenfolge** wird bei jeder Änderung mitgepflegt.
+- 4.30 Mahnbrief: Anrede ab 18, Klasse auf dem Brief
+- 5.5 Bestand, Katalog, Druck
+- 5.10 Gates und Werkzeuge
+- 5.19 Auskunft: was aufs Blatt gehört, zwei Einträge ohne Kennung des Kontos
+- 5.22 Fremdrückgabe über Kreuz: bleibt so (entschieden am 24.09.2026)
+- 5.25 Eine Forderung für ein Gerät lässt sich nicht anlegen
+- 5.35 Protokolleinträge, die die Tilgung nicht erreicht
+- 5.45 Listen und Breiten in schmalen Fenstern
+- 5.49 Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
+- 5.53 Standort: welcher Knopf der gefüllte ist
+- 5.54 Klassensätze aus den Ausleihen, Hinweise an der Theke
+- 7.8 Am Server nachsehen
+- Abschnitt 6: Beobachtungen und Kategorie C, nur mit Anlass
 
 ---
+
+## Einzelheiten
+
+Zum Nachschlagen: Beleg, Messwert und nächster Schritt je Punkt. Die Nummern bleiben fest und
+werden nicht neu vergeben; Kommentare im Code nennen sie als Herkunft.
 
 ## 2. Offline-Betrieb der Theke — der Nachweis steht aus
 
@@ -120,23 +151,6 @@ der Doku).
 
 Die Nummern bleiben fest; beantwortete Fragen fallen weg, sobald sie umgesetzt sind.
 
-### 4.4 E6: Nach der Übergabe an die Schulaufsicht
-
-**Heute** setzt die Übergabe nur Status und Zeitpunkt (`Uebergebe`, `repository/bescheid.go`).
-Die Forderung bleibt offen, und weil die Unterlagen eine Rückmeldung nur für eingegangenes Geld
-vorsehen, meist für immer: Der Abgänger wird nie anonymisiert oder gelöscht
-(`PredikatAnonymisierung`), Löschen von Hand lehnt der Server ab, die Selbstprüfung meldet ihn
-nach einem Jahr. Die Oberfläche sagt dagegen schon: „Der Fall liegt bei der Aufsicht; die Schule
-veranlasst nichts mehr." (`bescheidStatus.js`)
-
-**Die Unterlagen der Schule beantworten die Frage** (nachgelesen am 24.09.2026). Arbeitshilfe,
-Abschnitt 2: „Das weitere Verfahren wird im Staatlichen Schulamt geführt … Weitere Schritte sind
-durch die Schule nicht zu veranlassen." Anforderungsliste (`Ablauf Mahnverfahren.pdf`), Punkt 7,
-zum Ausdruck für das Schulamt: „Der Saldo der betroffenen Leser wird entsprechend bereinigt."
-Littera kennt keine Übergabe; dort bucht man einen offenen Betrag von Hand aus, um den Leser
-löschen zu können. **Entschieden am 24.09.2026: Mit der Übergabe ist der Fall für die Schule
-erledigt**; zu melden bleibt eine spätere Rückgabe, das kann die Theke schon. Umbau: 5.3.
-
 ### 4.20 Littera-Schlagworte übernehmen — die Verweise
 
 Die Übernahme aus der Sicherung zählt die Verweise zwischen Schlagworten
@@ -171,7 +185,7 @@ nicht ausdrücklich freigegeben ist, bleibt zu. In den Einstellungen die öffent
 setzen. Mit dem Bau [arc42/07](arc42/07-verteilungssicht.md) (dort „:80/:443 öffentlich") und
 [arc42/09](arc42/09-architekturentscheidungen.md) nachziehen.
 
-**Vom Schulträger** (Frage oben): der Name, unter dem der Server im Internet erreichbar ist, und
+**Vor dem Bau muss feststehen:** der Name, unter dem der Server im Internet erreichbar ist, und
 dass die Geräte der Schule ihn unter demselben Namen erreichen, denn das Zertifikat gilt für den
 Namen; die Freigabe von Port 443 von außen auf den Server und der Netzabschnitt, in dem er dann
 steht; und mit welcher Absenderadresse Anfragen aus dem Schulnetz am Server ankommen. Daran
@@ -181,8 +195,7 @@ Adresse an, kann er sie nicht unterscheiden.
 Auch im Schulnetz braucht der Server Verbindungen nach außen: den Mailserver der Schule (die
 Anmeldung läuft über das Postfach, `auth/imap.go`), DNB, Google Books und OpenLibrary für
 Titeldaten und Cover (`pkg/coverquelle`), für Updates GitHub, Docker Hub und die Paketquellen
-(`Dockerfile`, `update.sh`). Eine Aufstellung für den Schulträger entsteht nicht (entschieden am
-28.09.2026).
+(`Dockerfile`, `update.sh`).
 
 ### 4.24 Eigentum je Exemplar
 
@@ -193,20 +206,18 @@ Die Übernahme ordnet den Littera-Eigentumsvermerk je Exemplar nach einer festen
 Etikett, Bestandsbücher und Schadensersatz das Eigentum lesen, steht in
 [FACHKONZEPT.md](FACHKONZEPT.md).
 
-**Offen bei der Schule:** wem die Exemplare mit den fünf seltenen Vermerken gehören (Schule 355,
-Bibliothek 157, Förderverein 86, Info Schulprojekt 31, Dauerleihgabe 4). Bis dahin kommen sie
-nur als Wortlaut mit, und es gilt die Faustregel. Die Zuordnung steht an einer Stelle
-(`vermerkeLittera`); nach der Übernahme lassen sich einzelne Titel auch in der Buchakte setzen
-(_Eigentum ändern_).
+**Ohne Zuordnung** sind die Exemplare mit den fünf seltenen Vermerken (Schule 355, Bibliothek
+157, Förderverein 86, Info Schulprojekt 31, Dauerleihgabe 4). Sie kommen nur als Wortlaut mit,
+und es gilt die Faustregel. Die Zuordnung steht an einer Stelle (`vermerkeLittera`); nach der
+Übernahme lassen sich einzelne Titel auch in der Buchakte setzen (_Eigentum ändern_).
+**Entschieden am 01.10.2026:** kein dritter Eigentümer im Programm. Bücher Dritter behalten den
+Littera-Wortlaut, den die Buchakte schon zeigt; Ersatz für ein verlorenes Buch liefe dann über
+den Schulträger, bei 90 Büchern ein seltener Fall.
 
-**Zur Frage an die Bücherei (30.09.2026):** Eine hessische Schule ist eine nichtrechtsfähige
-Anstalt und schließt Rechtsgeschäfte „mit Wirkung für den ermächtigenden Rechtsträger" ab
-(Hessisches Schulgesetz). „Philipp-Reis-Schule", „Bibliothek" und „Info Schulprojekt" heißen also
-Schulträger oder Land, je nachdem, wessen Geld es war; „Förderverein" und „Dauerleihgabe" können
-Dritten gehören. Gefragt wird je Vermerk: aus welchem Geld — Schulträger, Land, Förderverein —
-oder geliehen? **Entschieden am 01.10.2026:** kein dritter Eigentümer im Programm. Bücher Dritter
-behalten den Littera-Wortlaut, den die Buchakte schon zeigt; Ersatz für ein verlorenes Buch liefe
-dann über den Schulträger, bei 90 Büchern ein seltener Fall.
+**Eigentumsvermerk auf neuen Etiketten** (entschieden am 28.09.2026): Neue Etiketten der
+Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten. Er wird beim Einrichten unter
+Einstellungen → Schule eingetragen; das Feld ist heute leer, neue Etiketten tragen also keinen
+Vermerk.
 
 ### 4.30 Mahnbrief: Anrede ab 18 und die Klasse auf dem Brief
 
@@ -256,68 +267,6 @@ Gegenprobe den heutigen Stand fest.
 ---
 
 ## 5. Abarbeitbar (Kategorie B)
-
-### 5.3 Die Übergabe schließt die Forderung ab (nach 4.4)
-
-**Zurückgestellt am 02.10.2026:** Zurzeit wird nichts an die Schulaufsicht übergeben. Der Punkt
-wird nicht vorgeschlagen und nicht in Reihenfolgen genannt, bis eine Übergabe ansteht.
-
-E6 ist am 24.09.2026 bejaht (4.4). Fertig sein muss es spätestens mit der Antwort zu E1 (8.1) —
-ab dann gibt es echte Bescheide und vier Wochen später die erste Übergabe. Eine Stufe, jeder Punkt mit einem Test, der am Rückbau rot
-wird; das Modell der Stufen 1 und 2 beschreibt das [Handbuch](HANDBUCH.md).
-
-- **Abschließen:** Bis dahin zählt eine übergebene Forderung an der Theke weiter als Hinweis:
-  Sie hält Bücherei und Gerät an, übergehbar (FACHKONZEPT §2.2). `Uebergebe` setzt in derselben
-  Transaktion `ist_bezahlt` an den offenen Forderungen, wie Zahlung und Storno — die 17 Dateien, die nach offenen Forderungen fragen,
-  folgen von selbst, die Karenz startet über den Trigger aus Migration 137 (`aktualisiert_am`
-  mitsetzen). Dazu ein Kennzeichen je Forderung: Ein Brief kann bezahlte und offene Positionen
-  mischen.
-- **Rückfrage:** „Übergeben" bucht heute ohne Rückfrage (`BescheideTabelle.svelte`). Übergeben
-  wird nur, wenn nicht gezahlt wurde — gezahlt wird aber aufs Konto des Landes, das die Theke
-  nicht sieht (wer es einbucht: 8.3). Der Dialog nennt Referenznummer und Betrag und fragt nach
-  dem Zahlungseingang.
-- **Späte Rückgabe:** `VerbucheRueckkehr` muss übergebene Forderungen ausdrücklich mitnehmen,
-  sonst entfällt „Schulaufsicht informieren" (PG-Test). `entferneSchuelerPIIUndLoesche` löscht
-  heute jede erledigte Forderung mit dem Leser; eine übergebene bleibt ohne Person stehen wie der
-  Bescheid, sonst findet die Theke nach der Löschung nichts.
-- **Anzeige:** Akte, Auskunft und Protokoll zeigten sonst „bezahlt" — dritter Zustand „an die
-  Schulaufsicht übergeben"; ebenso die Abhilfe in `pruefeEhemaligeOffen` und der Theken-Satz „Die
-  Forderung bleibt bis dahin offen".
-- **Übergabe-PDF:** Original-Nachdruck und Sammelliste für das Schulamt.
-- Vorher am Testserver zählen (lokal 0):
-  `SELECT count(*) FROM schadensfaelle f JOIN schadensersatz_bescheide b ON b.id = f.bescheid_id WHERE b.status = 'uebergeben' AND NOT f.ist_bezahlt;`
-
-**Bis dahin (Verdacht, am Code gelesen):** Die Akte bietet „Bezahlt" und „Stornieren" auch auf
-einem übergebenen Bescheid, die Selbstprüfung rät nach einem Jahr dazu — und nach einem Storno
-löst eine spätere Rückgabe „Schulaufsicht informieren" nicht mehr aus. Wirkt erst mit echten
-Bescheiden.
-
-### 5.4 Schadensersatz Teil A, Etappen 3 und 4 (nach 8.3)
-
-Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
-
-- **Kreis-Rechnung:** zweite Variante des Renderers (Nummernkreis `SB-Jahr-lfd`, Frist, Tabelle,
-  Hinweis auf Ersatzbeschaffung, Zahlungsweg aus den Einstellungen; ohne Referenznummer im
-  Landesformat, ohne Rechtsbehelfsbelehrung). Solange die Bankverbindung des Schulträgers fehlt,
-  steht sichtbar „(Bankverbindung des Schulträgers nicht hinterlegt)". Warnung in der
-  Betriebsbereitschaft. Topf in die Referenznummer, sonst kollidieren Land und Kreis an der
-  UNIQUE-Spalte. Heute lehnt der Server jeden Topf außer `land` mit 409 ab.
-- **Zahlungen nach 8.3**, wie Littera sie führte (Zahlungsart, Beleg, Auswertung nach Zeitraum
-  und Zahlungsart): Zahlungsart beim Knopf „Bezahlt", Quittung als PDF, beide Wege auf der
-  Rechnung, Liste der Barzahlungen je Zeitraum und Topf — auch für die Ausnahme beim Land (Bargeld
-  binnen 14 Tagen weiterleiten, [mittel_konzept.md](mittel_konzept.md) 1.1). Der Hinweis
-  „bereits bezahlt" nennt dann, wann und wie; an ihm zeigt sich eine doppelte Zahlung.
-- **Altbriefe entfernen** (es geht darum, ob es sie neben dem Bescheid überhaupt weiter geben
-  soll): Elternbrief `pdf/schadensfall.go` ← `api/pdf.go` (`GenerateDamagePDFHandler`) ←
-  Route in `api/routes_students.go` — die Oberfläche ruft ihn seit dem 15.09.2026 nicht mehr
-  auf (`33e92c44`), erreichbar ist er nur noch über die Adresse; Rechnung `pdf/rechnung.go` ←
-  `api/print.go` ← `GET /api/print/rechnung/{schueler_id}` in `api/routes_system.go` ← Knopf
-  in `students/SchuelerDokumente.svelte`; dazu `api/print_rechnung_pg_test.go` und
-  `elternbrief_generiert*`. Der Eltern-Mahnbrief bleibt.
-- **Doku:** FACHKONZEPT Abschnitt 3 (Mahnwesen ohne Bescheid) und 14 (PDF-Rechnung, Barzahlung am
-  Tresen); SECURITY und VVT-Entwurf mit dem Zweck „Schadensersatz-Bescheid". Den VVT-Satz
-  vorziehen, bevor die Schule den Entwurf beschließt (8.5).
-- **Release** beim Abschluss.
 
 ### 5.5 Bestand, Katalog, Druck
 
@@ -642,7 +591,7 @@ Die Datenbank sieht sie vor (`check_damage_item`: genau eines von `exemplar_id` 
 einzige Schreiber `meldeSchaden` (`repository/schaden_melden.go`) nimmt nur ein Buch-Exemplar:
 Er sondert das Exemplar aus und legt die Forderung mit `exemplar_id` an. Fehlt bei der Rückgabe
 Zubehör oder ist ein Gerät kaputt, gibt es keinen Weg zur Forderung; das FACHKONZEPT (Abschnitt
-5) behauptete bis zum 24.09.2026 einen. Gesperrt würde nach 4.4 wie heute (Schülerbücherei und
+5) behauptete bis zum 24.09.2026 einen. Gesperrt würde wie heute (Schülerbücherei und
 Geräte).
 
 Beim Bau mitnehmen (bis zum 01.10.2026 als 5.37 geführt, am Code gelesen): Der Bescheid-Dialog
@@ -655,8 +604,8 @@ Forderung für ein Gerät.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 
-**Entschieden am 28.09.2026, nicht gebaut.** Vor dem Echtstart; gebaut wird, wenn die drei
-Fragen oben beantwortet sind.
+**Entschieden am 28.09.2026, nicht gebaut.** Vor dem Echtstart; gebaut wird, sobald der
+Schulserver feststeht.
 
 - **Nur Releases:** Der Schulserver bekommt nur Releases, der Testserver folgt `main` als
   Vorstufe. Heute holt `update.sh` mit `git pull` den neuesten Stand des Zweigs und fragt nicht
@@ -796,11 +745,13 @@ sie in der Vorschau. Kategorie B.
 Der Standort steht am Exemplar und wird in der Buchakte über „Standort ändern" gesetzt; das
 Feld am Titel gibt es nicht mehr. Offen sind drei Punkte:
 
-- **Neue Exemplare.** Ein neues Exemplar (Wareneingang, Bestand in der Titelmaske erhöht) kommt
-  ohne Standort an, auch wenn alle übrigen Exemplare des Titels denselben tragen. Zu sehen ist
-  es an der Zahl hinter dem Standort („Regal 11 (30)" bei einem Bestand von 35). Zu
-  entscheiden: ob ein neues Exemplar den Standort erbt, wenn alle übrigen im Bestand denselben
-  tragen.
+- **Neue Exemplare.** Entschieden am 06.10.2026: Ein neues Exemplar erbt den Standort, wenn
+  alle übrigen Exemplare des Titels im Bestand denselben tragen. Nicht gebaut: Heute kommt es
+  ohne Standort an, zu sehen an der Zahl hinter dem Standort („Regal 11 (30)" bei einem Bestand
+  von 35). Ein Exemplar kommt auf drei Wegen zu einem vorhandenen Titel: Bestand in der
+  Titelmaske erhöht (`gleicheExemplareAn` in `inventur/db_books_update.go`), Bestellung
+  (`BulkInsertCopiesTx` in `repository/book_inventory.go`) und Listenimport
+  (`internal/service/import_dynamic.go`). Die Regel gehört an eine Stelle.
 - **Der gefüllte Knopf.** In der Leiste der markierten Exemplare ist „Eigentum ändern"
   gefüllt, „Standort ändern" umrandet. Material 3 hebt eine Aktion hervor, und zwar die, die am
   häufigsten gebraucht wird. Wird der Standort öfter geändert als das Eigentum, tauschen die
@@ -1013,6 +964,9 @@ Kategorie B.
 - Das Anfrage-Log nennt weder Dauer noch Anfragekennung (aus der Durchsicht von PR 631 am
   21.09.2026): nicht gebaut, die Doku steht auf dem Ist-Stand. Mehr Logzeilen am Schulserver
   sind eine Betriebsfrage.
+- Barrierefreiheit: Ob das System eine Erklärung zur Barrierefreiheit und barrierefreie PDFs
+  braucht (HTML-Druckweg oder begründete Ausnahme), ist nicht geklärt; bis dahin geparkt. Was
+  die Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
 
 ### 6.2 Kategorie C
 
@@ -1077,10 +1031,9 @@ Kategorie B.
   Produktfehler — im Betrieb kommt dieses Datum aus dem Browser in Berlin. Beim nächsten Anfassen
   auf `schulzeit.Zone()` umstellen (gefunden am 18.09.2026, als die volle Suite einmal unter einer
   fremden Prozesszone lief).
-- Zwei Regexe für die LMF-Kennung (`pkg/lmf/lmf.go`, `internal/service/import_lmf.go`).
 - `github.com/jung-kurt/gofpdf` ist seit 2021 archiviert und steckt in 17 Dateien (ohne Tests,
   gezählt am 30.09.2026); gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto
-  mitbringt. Neue PDFs (5.3, 5.4) nicht mehr auf dem archivierten; die 17 beim fachlichen Anfassen
+  mitbringt. Neue PDFs nicht mehr auf dem archivierten; die 17 beim fachlichen Anfassen
   umstellen, mit den PDF-Gates.
 - Etikettenraster doppelt (`api/label_formats.go` und `etikettformate.js`), gehalten von
   `etikettformate-konsistenz.test.js`; am 31.08.2026 entschieden geparkt.
@@ -1111,8 +1064,13 @@ Kategorie B.
   Kopfzeile bei 1280 px um (gemessen am 24.09.2026: Karte 70 → 100 px) — die Knöpfe brauchen
   eine eigene Zeile; eine Layoutfrage, nicht einzeln.
 - `docs/datenschutz_offene_punkte.md` heißt wie eine zweite Offen-Liste: Teil A ist dort
-  abgehakt statt gelöscht, Teil B steht auch in 8.5. Vorgeschlagen am 02.10.2026 und nicht
+  abgehakt statt gelöscht. Vorgeschlagen am 02.10.2026 und nicht
   entschieden: umbenennen und die Erledigt-Spalte streichen; 17 Dateien verweisen auf den Namen.
+- Vorschläge an einem Textfeld zeichnet der Browser (`datalist`): am Feld „Signatur", im
+  Dialog „Standort ändern", in der Schlagwort-Pflege und in `ui/ChipFeld` (sechs Stellen,
+  gezählt am 06.10.2026). Die Liste sieht je Browser anders aus und folgt nicht Material 3;
+  im Haus ist sie einheitlich. Anlass zum Bauen: Die Vorschläge sollen aussehen wie die Menüs
+  der Anwendung.
 
 ### 6.3 Parkdeck (bewusste Nicht-Entscheidungen)
 
@@ -1143,8 +1101,9 @@ der Schlussmeldung von `update.sh` und `DOMAIN` in `scripts/deploy.sh`.
 
 `littera_sav.mdb` ist ein Stand von 2010. Ohne die offenen Ausleihen startet das System mit „alles
 verfügbar"; Ausweisnummern und Exemplare nach 2010 fehlen, rund 1.350 Titel haben keine Signatur.
-Anforderungen in [littera_schema_befund.md](littera_schema_befund.md). Vorher B7 (8.5). Die
-teuerste offene Position vor dem Echtstart — früh bei der Schule anfragen.
+Anforderungen in [littera_schema_befund.md](littera_schema_befund.md). Vorher das Löschkonzept
+gegenüber Littera ([datenschutz_offene_punkte.md](datenschutz_offene_punkte.md), B7). Die
+teuerste offene Position vor dem Echtstart.
 **Reihenfolge:** Littera-Personen und -Ausleihen im selben Lauf übernehmen, **bevor** ein echter
 LUSD-Import läuft. Der Littera-Personenlauf erkennt Schüler aus der LUSD nicht und legt sie ein
 zweites Mal an ([SCRIPTS.md](SCRIPTS.md), Abschnitt 0). Das Geburtsdatum im Backup ist die Brücke
@@ -1168,17 +1127,16 @@ Name und Form sind nach dem Littera-Handbuch („Datensicherung mit SQL Server-D
 lokaler Server) die Sicherung der **SQL-Server-Fassung**: Die `.bak` ist dann eine
 SQL-Server-Sicherung, keine Access-Datei, und `mdb-export` liest sie nicht. Zum Zurückspielen
 nennt das Handbuch: „Man benötigt das Kennwort welches bei der Installation des Servers erfasst
-wurde" — das kennt, wer Littera an der Schule eingerichtet hat. Ob es die `.7z` selbst öffnet oder
-erst beim Zurückspielen mit `SqlServerRestore.exe` gebraucht wird, sagt das Handbuch nicht. Kennt
-es niemand, bleibt die Littera-Hotline. Ohne Kennwort blieben nur die Auswertungen von Littera —
+wurde". Ob es die `.7z` selbst öffnet oder erst beim Zurückspielen mit `SqlServerRestore.exe`
+gebraucht wird, sagt das Handbuch nicht. Ohne Kennwort blieben nur die Auswertungen von Littera —
 Leserliste (mit dem Leserdatenaustausch, laut Handbuch lizenzabhängig), Medienliste, Liste der
 verliehenen Medien —, die sich teils als Datei ausgeben lassen („Export des Druckbildes"). Ob sie
 die Nummern tragen, die die Übernahme braucht, ist nicht geprüft; die Übernahme liest die Tabellen
 der Datenbank, ein Weg über Auswertungen hieße einen neuen Importer (nachgelesen am 28.09.2026).
-**Nächste Schritte:** (1) dieses
-Kennwort erfragen; (2) die `.bak` auf dem eigenen Rechner in einen SQL Server einspielen und die
-dreizehn Tabellen aus Abschnitt 1 von [SCRIPTS.md](SCRIPTS.md) als CSV ausgeben, Spaltennamen und
-Datumsformate gegen den Importer prüfen, der bisher nur `mdb-export` kennt; (3) lokal und nur
+**Nächste Schritte, sobald das Kennwort vorliegt:** (1) die `.bak` auf dem eigenen Rechner in
+einen SQL Server einspielen und die dreizehn Tabellen aus Abschnitt 1 von
+[SCRIPTS.md](SCRIPTS.md) als CSV ausgeben, Spaltennamen und Datumsformate gegen den Importer
+prüfen, der bisher nur `mdb-export` kennt; (2) lokal und nur
 lesend messen, nicht auf dem Testserver, am einfachsten mit der Generalprobe über das
 CSV-Verzeichnis ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1b): `FremdLeserNummer` gefüllt, offene Ausleihen, Titel mit
 Schlagworten (4.20). Ob es die volle Datenbank ist, zeigt erst das Einspielen; dass die jüngere
@@ -1213,15 +1171,13 @@ Listen liest, wer den Trockenlauf selbst startet.
 ### 7.3 S3-Auslagerung der Backups
 
 `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` und `S3_BUCKET` sind leer (13.09.2026); alles
-liegt auf einer Platte. Nur EU oder Schulträger. Der Code ist fertig bis auf das Löschen
+liegt auf einer Platte. Nur ein Speicher in der EU. Der Code ist fertig bis auf das Löschen
 (nachgesehen am 28.09.2026): `uploadBackupToS3` in `jobs/backup.go` lädt jede Nachtsicherung
 hoch, die Rotation gilt nur dem lokalen Verzeichnis. Ohne Löschregel am Speicher bliebe dort jede
 Sicherung mit allen Personen ihres Stands unbegrenzt liegen. Beim Einrichten eine Löschregel am
 Speicher setzen, die der Aufbewahrung der Nachtsicherung folgt (die jüngsten 14, dazu je
 Kalenderwoche eine für 12 Wochen; `jobs.BehalteNaechte`, `jobs.BehalteWochen`), oder die Rotation
-im Code auf den Speicher ausdehnen. **Entschieden am 28.09.2026:** zuerst beim Schulträger fragen, ob er einen Speicher
-außer Haus stellt (Frage oben); ein Speicher des Schulträgers braucht keinen Vertrag mit einem
-Dritten. Einen anderen Kopierweg als S3 gibt es im Programm nicht.
+im Code auf den Speicher ausdehnen. Einen anderen Kopierweg als S3 gibt es im Programm nicht.
 Ein zweiter Rechner per Kopierbefehl oder eine getauschte Platte leisten dasselbe ohne
 Vertragsfrage, außerhalb des Programms; das ist eine Betriebsentscheidung.
 
@@ -1249,7 +1205,7 @@ von außen durchlässt, und Port 443 frei ist.
 ### 7.6 Ruleset `main`
 
 PR-Pflicht entfernen (Solo-Entscheidung 30.07.2026), „Block force pushes" und „Restrict
-deletions" anlassen. Am 03.10.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
+deletions" anlassen. Am 06.10.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
 Admin-Bypass.
 
 ### 7.7 Abnahmen
@@ -1305,6 +1261,11 @@ Scanner der Schule schnell genug tippt (höchstens 50 ms je Zeichen), zeigt nur 
   dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
   Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
 
+**Das Portal ansehen** (gebaut am 06.10.2026): Im Reiter „Reservieren & Melden" steht
+„Problem melden" links in einer eigenen Zeile unter dem Suchfeld. Anklicken: Das Formular
+öffnet darunter ohne zweite Überschrift und beginnt an derselben linken Kante wie der Knopf.
+„Abbrechen" führt zurück auf den Knopf.
+
 **Der Standort an der Buchakte** (gebaut am 06.10.2026). Am Testserver trägt noch kein
 Exemplar einen Standort. Einen Titel mit mehreren Exemplaren öffnen, Reiter „Exemplare": zwei
 Exemplare ankreuzen, „Standort ändern", einen Standort eintragen. Erwartet: Die zwei Karten
@@ -1331,149 +1292,22 @@ kommt je Kind der Brief an die Eltern mit Anschrift; die Liste zeigt danach
 „1× gemahnt, zuletzt …". Seit dem 05.10.2026 druckt „Liste drucken" die Liste als Tabelle, je
 Buch eine Zeile; einmal ausdrucken und ansehen.
 
-## 8. Schule, Schulamt, Schulträger
-
-**Wer was gefragt wird.** Zuerst die drei Fragen vom 28.09.2026 — ist eine davon ein Nein,
-hilft kein weiterer Code; sind alle drei ein Ja, bleibt vor dem Echtstart überschaubare
-Arbeit im Code:
-
-- **Schulträger:** Gibt es den Schulserver, ab wann, in welchem Netz (8.5, B5)? Heute ist er
-  nur geplante Zielumgebung (Abschnitt 7), und echte Schülerdaten — auch die aus Littera —
-  gehören nur dorthin. Dazu: Hat der Schulträger eine Vorlage für das IT-Sicherheitskonzept?
-  Dann kommt der Teil des Programms in seiner Form. Außerdem: ob seine IT Betriebssystem und
-  Docker pflegt, wie im Pflegekonzept vorgesehen (Abschnitt 9); wie die Pflege den Server
-  erreicht, vor Ort oder über einen Fernzugang; und was die Seite für die Lieferanten von ihm
-  braucht: einen Namen im Internet, die Freigabe von Port 443 und die Angabe, wie Anfragen aus
-  dem Schulnetz am Server ankommen (4.23); und ob er einen Speicher für die Sicherungen außer
-  Haus stellt (7.3).
-- **Wer die Sichtung gemacht hat** (Abschnitt 9): Reichen Datenschutz-Nachweis und
-  Pflegekonzept als die zwei Bedingungen, werden die drei begründeten Abweichungen im
-  Mahnwesen akzeptiert, und wer wird Vertretung?
-- **Littera:** das Kennwort, das bei der Einrichtung von Littera für dessen SQL Server
-  vergeben wurde — zu fragen bei dem, der Littera eingerichtet hat, nicht bei der Bücherei.
-  Damit öffnen sich womöglich die zwei Sicherungen vom 01. und 02.09.2026, und ein neues
-  Backup ist nicht nötig. Kennt es niemand, bleibt die Littera-Hotline (7.2).
-
-Die übrigen Anfragen, soweit noch nicht gestellt:
-
-- **Sekretariat:** die Schulnummer für die Bescheide (8.1); wie Ersatz für Bücher der
-  Schülerbücherei bisher bezahlt wurde und wer eine Zahlung einbucht (8.3, erster Schritt).
-- **Schulamt:** das Kürzel des Schulamtsbereichs und welches Kassenjahr in die Referenznummer
-  gehört (8.1); der Mail-Erlass vom 11.06.2018 und das aktuelle Musterschreiben — aus dem von
-  2014 stammen heute Zahlstelle und Bankverbindung im Bescheid (8.2).
-- **Datenschutzbeauftragter der Schule:** beteiligen und schriftlich festhalten, ob eine
-  Datenschutz-Folgenabschätzung nötig ist (B4); das Foto auf dem Ausweis (B3; beides 8.5).
-- **Schulträger**, nach der Antwort der Schule: die Zahlungswege der Schülerbücherei (8.3,
-  zweiter Schritt).
-- **An einem Buch selbst:** den Eigentumsvermerk auf den alten Littera-Etiketten der
-  Schülerbücherei ablesen. Entschieden am 28.09.2026: Neue Etiketten tragen denselben
-  Wortlaut; er wird beim Einrichten unter Einstellungen → Schule eingetragen (heute leer, also
-  kein Vermerk). Littera führt den Vermerk je Exemplar: In der Medienliste vom 12.06.2026
-  tragen über 13.000 Exemplare das Land, 2.942 den Schulträger, einige hundert andere
-  Eigentümer (Schule, Förderverein, Bibliothek), rund 50.000 keinen. Zum Ablesen ein Buch
-  nehmen, das dort den Schulträger trägt. Der Vermerk je Exemplar kommt mit (4.24).
-- **Bücherei:** wem die Bücher mit den Littera-Vermerken „Philipp-Reis-Schule", „Bibliothek",
-  „Förderverein", „Info Schulprojekt" und „Dauerleihgabe" gehören — rund 630 Exemplare, bis
-  dahin ohne Zuordnung (4.24).
-
-### 8.1 E1: Schulamts- und Schulnummer
-
-Für die Referenznummer der Bescheide; die Felder stehen in den Einstellungen und sind am
-13.09.2026 leer. Mit den Nummern entstehen echte Bescheide; was davor zu richten war (Frist,
-Nachdruck, Briefdatum), ist seit dem 23.09.2026 gebaut.
-
-**Beim Schulamt mitfragen — das Kassenjahr:** Das Programm nimmt das Jahr der Frist, ein
-Dezember-Brief mit Frist im Januar zählt also ins Folgejahr. Die Arbeitshilfe nennt das
-Kassenjahr als Teil der Referenznummer, sagt aber nicht, welches Jahr gemeint ist, und verweist
-„im Zweifelsfall" ans Schulamt. Die Nummer lässt sich nach dem Brief nicht mehr ändern.
-
-### 8.2 E2: E-Mail-Erlass vom 11.06.2018 und aktuelles Musterschreiben
-
-Die vorliegenden Unterlagen sind von 2014 und nennen eine inzwischen aufgelöste Stelle. Gebaut
-ist nach dem Muster von 2014; der Text ist an einer Stelle austauschbar.
-
-### 8.3 E5: Zahlungswege der Schülerbücherei — und wer eine Zahlung einbucht
-
-Für die Schülerbücherei nennt der Brief keinen Weg, sondern „(Bankverbindung des Schulträgers
-nicht hinterlegt)" (`pdf/zahlungsweg.go`). Es fehlen Konto und Verwendungszweck oder
-Kassenzeichen, und ob die Schule Geld des Schulträgers bar annehmen darf (in öffentlichen Kassen
-meist nur eine eingerichtete Zahlstelle) und wie es zu ihm kommt. **In zwei Schritten fragen**
-(Vorschlag vom 24.09.2026):
-
-1. **Die Schule** (Büchereileitung, Sekretariat): Wie wurde Ersatz für Bücher der
-   Schülerbücherei bisher bezahlt, wohin ging das Geld? Wer bucht eine Zahlung ein, die auf dem
-   Kontoauszug oder im Finanzbericht steht — für beide Töpfe? „Bezahlt" verbucht heute eine
-   Barzahlung am Tresen. Keine Bauarbeit vor der Antwort; eine erfundene stünde als Vorgang in
-   der Akte.
-2. **Der Schulträger** (Fachbereich Schule und Betreuung des Hochtaunuskreises), als Vorschlag
-   zum Bestätigen, an die bisherige Praxis angepasst: „Wir bieten beides an: Überweisung auf Ihr
-   Konto mit der Rechnungsnummer als Verwendungszweck, und Barzahlung gegen Quittung. Das Bargeld
-   geben wir einmal im Monat mit einer Liste an Sie weiter. Ist das zulässig? Welches Konto und
-   welches Kassenzeichen gelten?"
-
-**Engpass:** Ohne Antwort kein 5.4.
-
-### 8.4 D2: Getrennte Kundenkonten beim Händler?
-
-Führt der Händler getrennte Kundenkonten für Lernmittel und Schülerbücherei? Das Feld
-„Kundennummer Schülerbücherei" am Lieferanten bleibt bis zur Antwort leer.
-
-### 8.5 Datenschutz Teil B
-
-Einzelheiten und Entwürfe in [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md),
-Abschnitt B, und in [datenschutz/](datenschutz/).
-
-- **B1/B2** VVT und Datenschutzhinweis beschließen; die Entwürfe haben noch Platzhalter. Vorher den
-  Zweck „Schadensersatz-Bescheid" ergänzen (5.4).
-- **B3** Foto auf dem Schülerausweis: Erlass oder Einwilligung — vor dem ersten Ausweisdruck mit
-  Foto.
-- **B4** Schulischen DSB beteiligen, Schwellwertanalyse DSFA schriftlich — vor B1/B2.
-- **B5** IT-Sicherheitskonzept mit dem Schulträger, Netzplatzierung.
-- **B6** Rolle des Wartenden regeln (AVV oder dienstlich).
-- **B7** Löschkonzept gegenüber Littera — vor der Littera-Übernahme (7.2). Dazu gehört, wie lange
-  die Littera-Sicherung vom Umstiegstag aufgehoben wird (entschieden am 28.09.2026: hier statt als
-  eigene Frage nach einem Rückweg; für das Ende der Pflege gibt es seit dem 24.09.2026 keinen
-  Rückweg zu Littera).
-
-Zuerst B3 und B4 anstoßen.
-
-### 8.6 Barrierefreiheit
-
-Gilt für das System die Pflicht zur Barrierefreiheit — mit Erklärung zur Barrierefreiheit und
-barrierefreien PDFs (HTML-Druckweg oder begründete Ausnahme)? Bis zur Antwort geparkt; was die
-Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
-
 ---
 
-## 9. Sichtung vom 16.09.2026
+## 9. Pflegekonzept und Datenschutz-Nachweis
 
-Zwölf Punkte, jeder am Code geprüft. Offen ist nur, was hier folgt; das Übrige steht in den
-Commits vom 17. und 22.09.2026, die drei begründeten Abweichungen im Mahnwesen (nur Post, nie
-löschen, vier statt sechs Wochen) in [mittel_konzept.md](mittel_konzept.md) Abschnitt 3.
-
-Zwei Quellen liegen dem zugrunde: `~/Downloads/Arbeitshilfe_Mahnschreiben.pdf` (Erlass vom
-17.12.2014, Az. 674.100.002-00178) und `~/Downloads/Ablauf Mahnverfahren.pdf` (die
-Anforderungsliste, abgeglichen in [mittel_konzept.md](mittel_konzept.md) Abschnitt 3).
-
-### 9.9 Zwei Bedingungen neben der Mängelliste
-
-Die Einschätzung am Ende des Protokolls nennt zwei Punkte, die in keinem der zwölf Mängel
-stehen:
-
-> „Ein Nachweis der DSVGO-Konformität liegt nicht vor.
-> Hosting- und Programmpflegekonzepte sind nicht geplant. Dies könnte ein Ausschlusskriterium
-> sein."
+### 9.9 Was an den zwei Entwürfen offen ist
 
 - **Nachweis der DSGVO-Konformität.** Der Entwurf steht:
-  [datenschutz/nachweis.md](datenschutz/nachweis.md). Offen ist die Beschlussfassung der Schule
-  (8.5, B1–B7).
+  [datenschutz/nachweis.md](datenschutz/nachweis.md). Offen ist die Beschlussfassung
+  ([datenschutz_offene_punkte.md](datenschutz_offene_punkte.md), Teil B).
   **Die Frist bis zum Sperrbildschirm:** Der Entwurf nennt die Vorgabe des Programms, 15
   Minuten (Abschnitt 5, „Zugang"). Gewünscht sind an der Schule 8 Stunden ohne Bedienung
   (01.10.2026). Das Feld nimmt 0 bis 1440 Minuten, 480 sind am Stack nachgestellt; die Vorgabe
   bleibt 15, der Wert wird am Schulserver einmal unter Einstellungen → Datenschutz & Sitzung
   eingetragen. Der Nachweis nennt dann die Zahl der Schule. Mit 480 Minuten greift die Sperre an einem
   Schultag nicht; für den unbeaufsichtigten Platz bleibt das Leeren der Theke nach 5 Minuten.
-  Das gehört zur Beteiligung des Datenschutzbeauftragten (8.5, B4).
+  Das gehört zu Teil B, B4.
 - **Hosting- und Programmpflegekonzept.** Der Entwurf steht:
   [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md). Offen:
   1. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — ausfüllen bei dir, Vorlage in
@@ -1484,4 +1318,35 @@ stehen:
   3. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
      mit dem Dokument.
 
-**Beides ist Voraussetzung für ein „nutzbar", nicht Beiwerk.**
+---
+
+## So wird die Liste geführt
+
+**Kästchen stehen nur im Fahrplan.** Abgehakt wird im selben Commit, der den Schritt erledigt.
+Abgehakte Zeilen bleiben stehen, bis ihre Etappe fertig ist; dann fällt die Etappe weg. In den
+Einzelheiten wird Erledigtes gelöscht.
+
+**Hier steht nur Arbeit, die einer von uns beiden tun kann:** am Programm, an den Servern, auf
+GitHub. Fragen an Dritte und das Warten auf ihre Antworten stehen hier nicht.
+
+Vor jedem Fund steht dieselbe Frage — nicht „ist das hässlich?", sondern **„kann das still
+jemandem schaden?"**
+
+|       | Kategorie                                                                                                                                                                                            | Umgang                                                               |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **A** | Kann **stillschweigend** ein falsches Ergebnis für einen echten Menschen erzeugen: doppelte Mahnung an Eltern, Daten beim falschen Empfänger, verlorene Eingabe, ein Gate, das nicht rot werden kann | **Sofort**, eigener Commit, eigener Test, eigene Deploy-Entscheidung |
+| **B** | Fehler, der sich **laut** meldet, oder Unordnung ohne Wirkung nach außen: totes Codestück, wackeliger Test, Doppelung                                                                                | Hier notieren, gebündelt abarbeiten                                  |
+| **C** | „Wenn ich schon mal hier bin" — Umbenennungen, Stilfragen, Refactorings ohne Anlass                                                                                                                  | Nur mit Anlass und Zeit                                              |
+
+1. **Ein Fund = ein Commit.** Was beim Reparieren zusätzlich auffällt, kommt hierher, nicht in
+   denselben Commit.
+2. **Kategorie A wird belegt, nicht behauptet:** ein Test, der am alten Code rot wird. Bis ein
+   Fund nachgestellt ist, heißt er „Verdacht".
+3. **Neues kommt nur hierher** — Funde, offene Fragen, Betriebspunkte: als Zeile im Fahrplan,
+   wenn es ein Schritt ist, und mit Beleg unter einer Nummer in den Einzelheiten. Kein Issue,
+   kein anderes Dokument. Eine Frage steht hier, bevor die Antwort kommt.
+4. **Erledigt heißt:** im Fahrplan abhaken, in den Einzelheiten löschen — Datum und Begründung
+   stehen in der Commit-Nachricht, ein Archiv gibt es nicht. Eine Antwort bekommt „Entschieden am …" und fällt weg, sobald
+   sie umgesetzt ist. Die Nummer eines gelöschten Punkts wird nicht wieder vergeben —
+   Kommentare im Code nennen sie als Herkunft.
+5. **Die Reihenfolge** im Fahrplan wird bei jeder Änderung mitgepflegt.

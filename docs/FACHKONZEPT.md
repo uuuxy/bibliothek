@@ -960,7 +960,7 @@ der hat nicht stattgefunden.
 - Der Ausweis-Designer (Zeichenfläche `designer/CanvasArea`) ist Maus- und Touch-Arbeit ohne
   Tastaturweg.
 - Die PDFs (maroto/gofpdf) sind ungetaggt — HTML-Druckweg oder begründete Ausnahme, offen
-  ([OFFEN.md](OFFEN.md) 8.6).
+  ([OFFEN.md](OFFEN.md) 6.1).
 - Nicht gescannte Zustände (Reiter, Dialoge, Unteransichten) können weitere Verstöße tragen;
   gemessen sind sie nicht.
 

@@ -14,8 +14,9 @@ Weg — Melde-Dialog, Bescheid aus einer Forderung, Bescheid aus einer überfäl
 — und die wählbare Berechnungsgrundlage. Damit ist auch der „Staffel-Vorschlag im
 Schaden-Dialog" aus Etappe 4 erledigt. Offen bleiben aus Abschnitt 4.7 der Rest der
 Etappe 2 (die Folgen der Übergabe: Exemplare `VERLUST`, Übergabe-PDF), Etappe 3
-(Kreis-Rechnung) und der Rest der Etappe 4 (Altbriefe abräumen). Welche Punkte und
-Antworten noch offen sind, steht in [OFFEN.md](OFFEN.md).
+(Kreis-Rechnung) und der Rest der Etappe 4 (Altbriefe abräumen). Die Bauschritte dazu
+standen ausgearbeitet in OFFEN.md (4.4, 5.3, 5.4) und sind dort entfallen; nachzulesen mit
+`git show c8049cf8:docs/OFFEN.md`.
 Teil B ist ebenfalls im ersten Schnitt gebaut (Abschnitt 7.3).
 
 **Was der Einbau geworden ist (Absprache 10.09.2026, drei Entscheidungen):** Der Bescheid
