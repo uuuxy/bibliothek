@@ -82,7 +82,7 @@ describe('Cover-Herkunft', () => {
 		const adressen = coverKandidaten('', '9783551551672').map(
 			(k) => new URL(k, 'http://x').searchParams.get('url') ?? ''
 		);
-		const google = adressen.filter((a) => a.includes('books.google.com'));
+		const google = adressen.filter((a) => new URL(a, 'http://x').hostname === 'books.google.com');
 		expect(google).toEqual([
 			'https://books.google.com/books/content?vid=ISBN:9783551551672&printsec=frontcover&img=1&zoom=1'
 		]);
