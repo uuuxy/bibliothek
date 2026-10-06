@@ -1,9 +1,23 @@
 package service
 
 import (
-	"github.com/stretchr/testify/assert"
+	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+func TestSperrGrundFehler(t *testing.T) {
+	kernErr := errors.New("base error")
+	err := &SperrGrundFehler{
+		Kern:  kernErr,
+		Grund: "some reason",
+	}
+
+	assert.Equal(t, "base error: some reason", err.Error())
+	assert.Equal(t, kernErr, err.Unwrap())
+	assert.True(t, errors.Is(err, kernErr))
+}
 
 func TestNewLoanService(t *testing.T) {
 	// Create mock repositories
