@@ -21,8 +21,8 @@ Liste geführt wird, steht am Ende.
   denselben tragen. Entschieden am 06.10.2026. (5.53)
 - [x] **PRs auf GitHub:** 21 durchgesehen am 06.10.2026. Zwei sind hereingeholt (701, 702), 19
   geschlossen; aus sieben davon sind die Tests übernommen (d1dba610).
-- [ ] **PR 722** durchsehen (zugeliefert am 06.10.2026, nach dem Aufräumen): Er ändert die
-  Prüfung beim Löschen einer Sachgruppe (`api/systematik_handler.go`).
+- [x] **PR 722** durchgesehen und geschlossen am 06.10.2026: Die Prüfung beim Löschen einer
+  Sachgruppe (`api/systematik_handler.go`) würde durch ihn höchstens 1 ms schneller.
 - [ ] **Doku-Ordner:** Vorschlag, welche der 36 Dateien in `docs/` zusammengelegt oder gelöscht
   werden; 19 davon kamen seit September 2026 dazu.
 
