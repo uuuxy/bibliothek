@@ -12,16 +12,19 @@ import (
 )
 
 type mockLoanRepoReturn struct {
-	returnErr error
+	returnErr        error
+	beginErr         error
+	getActiveLoanErr error
+	tx               pgx.Tx
 }
 
 func (m *mockLoanRepoReturn) GetActiveLoanByCopyID(ctx context.Context, copyID string) (*repository.Loan, error) {
-	return nil, nil
+	return nil, m.getActiveLoanErr
 }
 func (m *mockLoanRepoReturn) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx.Tx, copyID string) (*repository.Loan, error) {
-	return nil, nil
+	return nil, m.getActiveLoanErr
 }
-func (m *mockLoanRepoReturn) BeginTx(ctx context.Context) (pgx.Tx, error) { return nil, nil }
+func (m *mockLoanRepoReturn) BeginTx(ctx context.Context) (pgx.Tx, error) { return m.tx, m.beginErr }
 func (m *mockLoanRepoReturn) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*repository.Loan, error) {
 	return nil, nil
 }
@@ -235,4 +238,50 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 	if result.VormerkungTitel != "Test Book" {
 		t.Errorf("expected VormerkungTitel to be Test Book, got %v", result.VormerkungTitel)
 	}
+}
+
+// TestHandleSimpleReturn_ReichtFehlerWeiter: Beginnt die Transaktion nicht oder lässt sich die
+// offene Ausleihe nicht lesen, kommt der Fehler an. Verschluckt gälte das Buch als „nicht
+// ausgeliehen", und die Theke wiese eine Rückgabe ab, die es gibt.
+func TestHandleSimpleReturn_ReichtFehlerWeiter(t *testing.T) {
+	dbFehler := errors.New("verbindung weg")
+	exemplar := &repository.BookCopy{ID: "ex-1"}
+
+	t.Run("die Transaktion beginnt nicht", func(t *testing.T) {
+		svc := &defaultLoanService{loanRepo: &mockLoanRepoReturn{beginErr: dbFehler}}
+
+		ergebnis, err := svc.HandleSimpleReturn(context.Background(), exemplar, "theke")
+		if !errors.Is(err, dbFehler) {
+			t.Errorf("Fehler %v, erwartet %v", err, dbFehler)
+		}
+		if ergebnis != nil {
+			t.Errorf("Ergebnis %+v, erwartet keines", ergebnis)
+		}
+	})
+
+	t.Run("die offene Ausleihe lässt sich nicht lesen", func(t *testing.T) {
+		pool, err := pgxmock.NewPool()
+		if err != nil {
+			t.Fatalf("pgxmock: %v", err)
+		}
+		defer pool.Close()
+		pool.ExpectBegin()
+		tx, err := pool.Begin(context.Background())
+		if err != nil {
+			t.Fatalf("Transaktion der Attrappe: %v", err)
+		}
+		pool.ExpectRollback()
+		svc := &defaultLoanService{loanRepo: &mockLoanRepoReturn{tx: tx, getActiveLoanErr: dbFehler}}
+
+		ergebnis, err := svc.HandleSimpleReturn(context.Background(), exemplar, "theke")
+		if !errors.Is(err, dbFehler) {
+			t.Errorf("Fehler %v, erwartet %v", err, dbFehler)
+		}
+		if ergebnis != nil {
+			t.Errorf("Ergebnis %+v, erwartet keines", ergebnis)
+		}
+		if err := pool.ExpectationsWereMet(); err != nil {
+			t.Errorf("die Transaktion wurde nicht zurückgerollt: %v", err)
+		}
+	})
 }

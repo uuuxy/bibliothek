@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"reflect"
+	"strings"
 	"testing"
 
 	"bibliothek/db"
@@ -366,4 +368,54 @@ func TestHandleSearchAction(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestProcessQuery_ZweiterVersuchOhnePruefzeichen: Bleibt ein Scan ohne Treffer und endet er
+// auf ein gültiges Prüfzeichen, fragt die Theke ein zweites Mal ohne dieses Zeichen
+// (TestAlterAufdruckMitPruefzeichenWirdGelesen). Zwei Zusagen daran: Bleibt auch der zweite
+// Versuch leer, nennt die Meldung die Nummer, die gescannt wurde. Und ein Fehler, der kein
+// „nicht gefunden" ist, löst keinen zweiten Versuch aus.
+func TestProcessQuery_ZweiterVersuchOhnePruefzeichen(t *testing.T) {
+	// „B-100016" ist „B-10001" mit dem Prüfzeichen 6.
+	const gescannt, gekuerzt = "B-100016", "B-10001"
+
+	t.Run("beide Versuche leer: die Meldung nennt die gescannte Nummer", func(t *testing.T) {
+		var gefragt []string
+		svc := &defaultOmniboxService{bookRepo: &mockBookRepo{
+			mockGetCopyByBarcode: func(_ context.Context, barcode string) (*repository.BookCopy, error) {
+				gefragt = append(gefragt, barcode)
+				return nil, nil
+			},
+		}}
+
+		_, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: gescannt})
+		if !errors.Is(err, ErrNotFound) {
+			t.Fatalf("Fehler %v, erwartet ErrNotFound", err)
+		}
+		if !strings.Contains(err.Error(), gescannt) {
+			t.Errorf("Meldung %q nennt nicht die gescannte Nummer %s", err.Error(), gescannt)
+		}
+		if soll := []string{gescannt, gekuerzt}; !reflect.DeepEqual(gefragt, soll) {
+			t.Errorf("gefragt wurde nach %v, erwartet %v", gefragt, soll)
+		}
+	})
+
+	t.Run("ein Fehler der Datenbank löst keinen zweiten Versuch aus", func(t *testing.T) {
+		dbFehler := errors.New("verbindung weg")
+		abfragen := 0
+		svc := &defaultOmniboxService{bookRepo: &mockBookRepo{
+			mockGetCopyByBarcode: func(context.Context, string) (*repository.BookCopy, error) {
+				abfragen++
+				return nil, dbFehler
+			},
+		}}
+
+		_, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: gescannt})
+		if !errors.Is(err, dbFehler) {
+			t.Fatalf("Fehler %v, erwartet %v", err, dbFehler)
+		}
+		if abfragen != 1 {
+			t.Errorf("%d Abfragen, erwartet eine", abfragen)
+		}
+	})
 }

@@ -19,7 +19,7 @@ und die Arbeit im Code.
 
 **Bei dir — zu entscheiden:**
 
-- GitHub: drei offene PRs (5.10) und die PR-Pflicht im Regelwerk für `main` (7.6).
+- GitHub: die PR-Pflicht im Regelwerk für `main` (7.6).
 - Standort am Exemplar (5.53): ob ein neues Exemplar den Standort der übrigen erbt, und welcher
   Knopf in der Leiste der markierten Exemplare der gefüllte ist.
 
@@ -502,13 +502,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   nicht binnen 10 s; einzeln lief die Datei danach jedes Mal grün. Beim zweiten Mal war die Maske zu und die Liste stand da („Bücher (10618)"),
   der neue Titel fehlte in der Ansicht. Die lokale Datenbank trägt Hunderte Test-Titel aus
   früheren Läufen.
-- Auf GitHub stehen drei PRs offen (05.10.2026), bei allen sind die Prüfungen grün. PR 703
-  (zugeliefert) ersetzt in der Sperre gegen einen doppelten Schuljahreswechsel ein Zählen durch
-  eine Existenzabfrage (`api/student_promotion.go`). Die Stelle läuft einmal im Jahr, eine
-  Messung liegt nicht bei, und der PR bringt zwei kompilierte Testprogramme (`api.test`,
-  `db.test`), zwei Zeilen in `frontend/package.json`, einen Benchmark und eine Notizdatei mit.
-  Vorschlag: schließen. PR 701 und 702 (Dependabot) heben ein Go-Paket und acht npm-Pakete in
-  Neben- und Korrekturversionen an. Vorschlag: nach `main` holen und die Gates laufen lassen.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
