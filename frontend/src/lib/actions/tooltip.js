@@ -55,7 +55,7 @@ function holeBlase() {
 	blase.setAttribute('aria-hidden', 'true');
 	blase.dataset.tooltipBlase = '';
 	blase.className =
-		'fixed m-0 w-max max-w-64 rounded-2xl bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg';
+		'fixed m-0 w-max max-w-64 rounded-2xl bg-inverse-surface px-2.5 py-1.5 text-xs font-medium text-inverse-on-surface shadow-lg';
 	document.body.appendChild(blase);
 	return blase;
 }

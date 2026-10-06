@@ -18,12 +18,14 @@
            rounded-2xl shadow-2xl
            text-sm font-semibold
            animate-fade-in
-           {snackbar.type === 'error' ? 'bg-rose-700 text-white' : 'bg-slate-900 text-white'}"
+           {snackbar.type === 'error'
+			? 'bg-error text-on-error'
+			: 'bg-inverse-surface text-inverse-on-surface'}"
 	>
 		{#if snackbar.type === 'error'}
-			<CircleAlert class="w-4 h-4 shrink-0 text-rose-300" aria-hidden="true" />
+			<CircleAlert class="w-4 h-4 shrink-0" aria-hidden="true" />
 		{:else}
-			<Check class="w-4 h-4 shrink-0 text-emerald-400" aria-hidden="true" />
+			<Check class="w-4 h-4 shrink-0" aria-hidden="true" />
 		{/if}
 		{snackbar.msg}
 	</div>

@@ -32,7 +32,7 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
-195 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
+185 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
 Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
 
 - [x] Buchakte mit der Liste der Ausleiher (20)
@@ -40,15 +40,15 @@ Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm gep
 - [x] Signaturen (24)
 - [x] Gemeinsame Bauteile, erster Teil (43): Knopf, Schalter, Status-Chip, Dialog,
   Cover-Vorschau
-- [ ] Gemeinsame Bauteile, Rest (38): Suchpille mit dem Scanfeld der Theke (14), Meldungen
-  (8), Dialog „Klassenversand" (16)
+- [x] Meldungen und Sprechblasen (10)
+- [ ] Gemeinsame Bauteile, Rest (30): Suchpille mit dem Scanfeld der Theke (14), Dialog
+  „Klassenversand" (16)
 - [x] Druck-Center (5). Quittung und nachgebildetes Etikett sind Papier und bleiben (21).
 - [ ] Monitor (25)
 - [x] Berechtigungen (18)
 - [x] System und Einzelstellen (54)
-- [ ] Dunkle Flächen (16): Sucher der Kamera, Sprechblasen und die Leiste des Ausweisdrucks.
-  Sie brauchen Rollen für helle Schrift auf dunklem Grund; bei der Leiste ist vorher zu
-  klären, wohin Hinweis und Feld kommen.
+- [ ] Dunkle Flächen (14): Sucher der Kamera (9) und die Leiste des Ausweisdrucks (5). Bei
+  der Leiste ist vorher zu klären, wohin Hinweis und Feld kommen.
 
 Nicht in dieser Etappe: 48 Farbverläufe der selbstgebauten Cover-Platzhalter (6.2). Es bleiben
 16 Stellen der Initialen-Kachel, 29 der Karte im Ausweis-Designer, 21 auf Papier und zwei
@@ -503,7 +503,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 06.10.2026: 195 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 06.10.2026: 185 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -529,13 +529,10 @@ Papier bleibt, 21 Stellen: Die Quittung (`StudentPrintReceipt`, 12) wird nur ged
 weiß, auch wenn die Oberfläche ihr Farbschema wechselt. Die übrigen Druckblätter tragen feste
 Farbwerte im eigenen Stylesheet (`utils/listenDruck.js`).
 
-Dunkle Flächen, 16 Stellen: die Sprechblasen (`actions/tooltip.js`, `StatsTrendChart`), die
-Sucher der Kamera (`KameraScanner`, `CameraScanner`) und die Leiste des Ausweisdrucks
-(`students/AuswahlAktionsleiste`). `rollen.css` führt keine Rolle für helle Schrift auf dunklem
-Grund; M3 gibt der Sprechblase `inverse-surface` und `inverse-on-surface` (material-web, Token
-v0_192, plain-tooltip: „container-color … inverse-surface", „supporting-text-color …
-inverse-on-surface"). Nächster Schritt: die zwei Rollen in `rollen.css` aus der neutralen
-Tonleiter (Ton 20 und 95) und die Sprechblasen darauf.
+Dunkle Flächen, 14 Stellen: die Sucher der Kamera (`KameraScanner`, `CameraScanner`) und die
+Leiste des Ausweisdrucks (`students/AuswahlAktionsleiste`). Für helle Schrift auf dunklem Grund
+führt `rollen.css` die Rollen `inverse-surface`, `inverse-on-surface` und `inverse-primary`;
+Sprechblasen und Meldungen tragen sie.
 
 An der Theke bleiben neun Stellen. Sieben sind die Farben des Scanfelds in Ruhe und im Fokus
 (`Omnibox.svelte`, `OmniboxInput.svelte`): Sie gleichen der Suchpille der übrigen Suchseiten
@@ -573,10 +570,7 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   `LusdImportView` und `PromoteStudentsView` von Hand, wie an rund 40 weiteren Stellen der
   Anwendung (gezählt am 02.10.2026: getönte Fläche und Rundung in einer Klassenliste); ein
   gemeinsames Bauteil dafür gibt es nicht.
-- Statistik: Die Sprechblase des Diagramms (`StatsTrendChart`) trägt wie die Sprechblasen der
-  ganzen Anwendung (`actions/tooltip.js`) `bg-slate-900`, und `rollen.css` kennt die Rolle dafür
-  nicht (M3, Color roles: „Inverse surface: Background fills for elements which contrast against
-  surface"). Die Balkenfarben des Diagramms sind feste Werte, keine Rollen.
+- Statistik: Die Balkenfarben des Diagramms (`StatsTrendChart`) sind feste Werte, keine Rollen.
 - Benutzerliste: Der Zustand eines Kontos steht in zwei Formen, „Aktiv" und „Inaktiv" als Punkt
   mit Wort, „Zugang beantragt" als Pille (`UserManagementTable`).
 - Bestellhistorie: Die Zelle „Lieferant" trägt `max-w-0` ohne volle Breite an der Spalte

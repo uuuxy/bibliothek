@@ -206,7 +206,7 @@
 
 			{#if hovered}
 				<div
-					class="pointer-events-none absolute z-10 -translate-x-1/2 -top-1 rounded-lg bg-slate-900 text-white px-3 py-2 shadow-lg text-xs whitespace-nowrap"
+					class="pointer-events-none absolute z-10 -translate-x-1/2 -top-1 rounded-lg bg-inverse-surface text-inverse-on-surface px-3 py-2 shadow-lg text-xs whitespace-nowrap"
 					style="left:{(hovered.cx / VBW) * 100}%"
 				>
 					<div class="font-bold mb-1">{monatLabel(hovered.monat)} {jahr(hovered.monat)}</div>

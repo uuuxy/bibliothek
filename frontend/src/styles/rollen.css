@@ -52,6 +52,14 @@
 	--color-on-warning: #ffffff;
 	--color-warning-container: #ffdcc2;
 	--color-on-warning-container: #2e1500;
+	/* Helle Schrift auf dunklem Grund für Sprechblase und Snackbar (material-web, Token
+	   v0_192, plain-tooltip und snackbar: „container-color … inverse-surface",
+	   „supporting-text-color … inverse-on-surface", „action-label-text-color …
+	   inverse-primary"). Töne nach md-sys-color: neutral20, neutral95 und primary80, aus den
+	   Tonleitern in theme-farben.css (slate-800, slate-100, blue-200). */
+	--color-inverse-surface: #2f3033;
+	--color-inverse-on-surface: #f1f0f4;
+	--color-inverse-primary: #9ccaff;
 	/* Schleier über Inhalt, der zurücktreten soll (M3, Elevation: „Scrims use the scrim color
 	   role at an opacity of 32%"). Der Wert ist in Googles Token-Datei Schwarz
 	   (md-sys-color: scrim = neutral0). */
