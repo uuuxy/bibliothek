@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,16 +13,25 @@ import (
 )
 
 type mockLoanRepoReturn struct {
-	returnErr error
+	returnErr        error
+	beginErr         error
+	getActiveLoanErr error
+	activeLoan       *repository.Loan
+	tx               pgx.Tx
 }
 
 func (m *mockLoanRepoReturn) GetActiveLoanByCopyID(ctx context.Context, copyID string) (*repository.Loan, error) {
-	return nil, nil
+	return m.activeLoan, m.getActiveLoanErr
 }
 func (m *mockLoanRepoReturn) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx.Tx, copyID string) (*repository.Loan, error) {
-	return nil, nil
+	return m.activeLoan, m.getActiveLoanErr
 }
-func (m *mockLoanRepoReturn) BeginTx(ctx context.Context) (pgx.Tx, error) { return nil, nil }
+func (m *mockLoanRepoReturn) BeginTx(ctx context.Context) (pgx.Tx, error) {
+	if m.beginErr != nil {
+		return nil, m.beginErr
+	}
+	return m.tx, nil
+}
 func (m *mockLoanRepoReturn) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*repository.Loan, error) {
 	return nil, nil
 }
@@ -234,5 +244,148 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 	}
 	if result.VormerkungTitel != "Test Book" {
 		t.Errorf("expected VormerkungTitel to be Test Book, got %v", result.VormerkungTitel)
+	}
+}
+
+func TestHandleSimpleReturn_BeginTxError(t *testing.T) {
+	mockPool, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("failed to init pgxmock: %v", err)
+	}
+	defer mockPool.Close()
+
+	expectedErr := errors.New("begin error")
+	svc := &defaultLoanService{
+		pool:        mockPool,
+		loanRepo:    &mockLoanRepoReturn{beginErr: expectedErr},
+		studentRepo: &mockStudentRepo{},
+	}
+
+	copy := &repository.BookCopy{ID: "c1"}
+	result, err := svc.HandleSimpleReturn(context.Background(), copy, "staff1")
+
+	if !errors.Is(err, expectedErr) {
+		t.Errorf("expected %v, got %v", expectedErr, err)
+	}
+	if result != nil {
+		t.Errorf("expected result to be nil, got %v", result)
+	}
+}
+
+func TestHandleSimpleReturn_GetActiveLoanError(t *testing.T) {
+	mockPool, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("failed to init pgxmock: %v", err)
+	}
+	defer mockPool.Close()
+
+	mockPool.ExpectBegin()
+	tx, err := mockPool.Begin(context.Background())
+	if err != nil {
+		t.Fatalf("failed to begin tx: %v", err)
+	}
+
+	expectedErr := errors.New("get loan error")
+	svc := &defaultLoanService{
+		pool:        mockPool,
+		loanRepo:    &mockLoanRepoReturn{tx: tx, getActiveLoanErr: expectedErr},
+		studentRepo: &mockStudentRepo{},
+	}
+
+	mockPool.ExpectRollback()
+
+	copy := &repository.BookCopy{ID: "c1"}
+	result, err := svc.HandleSimpleReturn(context.Background(), copy, "staff1")
+
+	if !errors.Is(err, expectedErr) {
+		t.Errorf("expected %v, got %v", expectedErr, err)
+	}
+	if result != nil {
+		t.Errorf("expected result to be nil, got %v", result)
+	}
+}
+
+func TestHandleSimpleReturn_NotBorrowed(t *testing.T) {
+	mockPool, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("failed to init pgxmock: %v", err)
+	}
+	defer mockPool.Close()
+
+	mockPool.ExpectBegin()
+	tx, err := mockPool.Begin(context.Background())
+	if err != nil {
+		t.Fatalf("failed to begin tx: %v", err)
+	}
+
+	svc := &defaultLoanService{
+		pool:        mockPool,
+		loanRepo:    &mockLoanRepoReturn{tx: tx, activeLoan: nil},
+		studentRepo: &mockStudentRepo{},
+	}
+
+	mockPool.ExpectRollback()
+
+	copy := &repository.BookCopy{ID: "c1"}
+	result, err := svc.HandleSimpleReturn(context.Background(), copy, "staff1")
+
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+	if !errors.Is(err, ErrInvalidState) {
+		t.Errorf("expected ErrInvalidState, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "Dieses Buchexemplar ist aktuell nicht ausgeliehen") {
+		t.Errorf("unexpected error message: %v", err.Error())
+	}
+	if result != nil {
+		t.Errorf("expected result to be nil, got %v", result)
+	}
+}
+
+func TestHandleSimpleReturn_Success(t *testing.T) {
+	mockPool, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("failed to init pgxmock: %v", err)
+	}
+	defer mockPool.Close()
+
+	audit := &mockAuditRepo{}
+	mockPool.ExpectBegin()
+	tx, err := mockPool.Begin(context.Background())
+	if err != nil {
+		t.Fatalf("failed to begin tx: %v", err)
+	}
+
+	leserID := "leser1"
+	activeLoan := &repository.Loan{ID: "loan1", SchuelerID: &leserID}
+
+	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE\\(s.klasse, ''\\)").
+		WithArgs("t1", &leserID).
+		WillReturnError(pgx.ErrNoRows)
+
+	mockPool.ExpectCommit()
+
+	svc := &defaultLoanService{
+		pool:        mockPool,
+		loanRepo:    &mockLoanRepoReturn{tx: tx, activeLoan: activeLoan},
+		auditRepo:   audit,
+		studentRepo: &mockStudentRepo{student: &repository.Student{ID: "leser1", Art: "lehrkraft"}},
+	}
+
+	copy := &repository.BookCopy{ID: "c1", TitelID: "t1"}
+	result, err := svc.HandleSimpleReturn(context.Background(), copy, "staff1")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatalf("expected result, got nil")
+	}
+	if result.Type != "rueckgabe" {
+		t.Errorf("expected type rueckgabe, got %v", result.Type)
+	}
+	if result.LoanID == nil || *result.LoanID != "loan1" {
+		t.Errorf("expected loan1, got %v", result.LoanID)
 	}
 }
