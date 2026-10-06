@@ -29,6 +29,20 @@ func sameDay(a, b time.Time) bool {
 
 // --- parseGrade: reine Jahrgangs-Extraktion (kritisch für mehrjährige LMF-Ausleihen) ---
 
+func TestTagesEndeInSchulzeitzone_LoanRules(t *testing.T) {
+	// 23:30 UTC am 15. Juni ist in Berlin bereits der 16. Juni, 01:30 (Sommerzeit).
+	spaet := time.Date(2026, 6, 15, 23, 30, 0, 0, time.UTC)
+
+	ende := TagesEndeInSchulzeitzone(spaet)
+
+	if got := ende.Format("2006-01-02 15:04:05"); got != "2026-06-16 23:59:59" {
+		t.Errorf("TagesEndeInSchulzeitzone(23:30 UTC am 15.06.) = %s, erwartet 2026-06-16 23:59:59 (Berliner Tag)", got)
+	}
+	if ende.Location().String() != "Europe/Berlin" {
+		t.Errorf("TagesEndeInSchulzeitzone liefert die Zone %v statt der Schulzeitzone", ende.Location())
+	}
+}
+
 func TestParseGrade(t *testing.T) {
 	cases := []struct {
 		klasse string
