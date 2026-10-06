@@ -113,3 +113,37 @@ func fehlerart(e ast.Expr, imPaket bool) string {
 	}
 	return ""
 }
+
+func TestSperrGrundFehler_Error(t *testing.T) {
+	kern := errors.New("die ausleihe ist gesperrt")
+	grund := "Schüler hat Zahlungsrückstände"
+	err := &SperrGrundFehler{
+		Kern:  kern,
+		Grund: grund,
+	}
+	erwartet := "die ausleihe ist gesperrt: Schüler hat Zahlungsrückstände"
+	if err.Error() != erwartet {
+		t.Errorf("Meldung %q, erwartet %q", err.Error(), erwartet)
+	}
+
+	if !errors.Is(err, kern) {
+		t.Errorf("die Art %q muss erkennbar bleiben", kern)
+	}
+}
+
+func TestMeldungsfehler_Error(t *testing.T) {
+	art := errors.New("my art")
+	text := "my custom text"
+	err := &meldungsfehler{
+		art:  art,
+		text: text,
+	}
+
+	if err.Error() != text {
+		t.Errorf("Error() = %q, want %q", err.Error(), text)
+	}
+
+	if err.Unwrap() != art {
+		t.Errorf("Unwrap() = %v, want %v", err.Unwrap(), art)
+	}
+}
