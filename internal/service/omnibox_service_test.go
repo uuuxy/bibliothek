@@ -367,3 +367,144 @@ func TestHandleSearchAction(t *testing.T) {
 		})
 	}
 }
+
+func TestProcessQuery(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("First attempt succeeds", func(t *testing.T) {
+		repo := &searchBookRepo{
+			BookRepository: &mockBookRepo{
+				mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.BookCopy, error) {
+					return nil, nil
+				},
+			},
+			titles: []repository.BookTitle{{Titel: "Found"}},
+			err:    nil,
+		}
+		svc := &defaultOmniboxService{
+			bookRepo: repo,
+			studentRepo: &stubLeserRepo{},
+		}
+
+		q := OmniboxQuery{Query: "searchme"}
+		resp, err := svc.ProcessQuery(ctx, q)
+
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+		if len(resp.SearchResults) != 1 {
+			t.Errorf("Expected 1 result, got %d", len(resp.SearchResults))
+		}
+	})
+
+	t.Run("First attempt fails, no check digit", func(t *testing.T) {
+		repo := &searchBookRepo{
+			BookRepository: &mockBookRepo{
+				mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.BookCopy, error) {
+					return nil, nil
+				},
+			},
+			titles: []repository.BookTitle{},
+			err:    nil,
+		}
+		svc := &defaultOmniboxService{
+			bookRepo: repo,
+			studentRepo: &stubLeserRepo{},
+		}
+
+		// "invalid" doesn't have a valid code39 check digit at the end
+		q := OmniboxQuery{Query: "invalid"}
+		resp, err := svc.ProcessQuery(ctx, q)
+
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+		if len(resp.SearchResults) != 0 {
+			t.Errorf("Expected 0 results, got %d", len(resp.SearchResults))
+		}
+	})
+
+	t.Run("First attempt fails with check digit, second succeeds", func(t *testing.T) {
+		// We use "B-100016" as it has a valid check digit '6' for "B-10001".
+		// It's a prefix action ("B-"), which uses handleBookAction.
+		// handleBookAction looks up by barcode. We mock BookRepo to return NotFound for "B-100016",
+		// but success for "B-10001".
+		bookCopy := &repository.BookCopy{ID: "copy-123", IstAusleihbar: true, IstAusgesondert: false}
+		expectedLoanResult := &LoanResult{Type: "rueckgabe"}
+
+		bookRepo := &mockBookRepo{
+			mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.BookCopy, error) {
+				if barcode == "B-100016" {
+					return nil, nil // Not found
+				}
+				if barcode == "B-10001" {
+					return bookCopy, nil // Found on second try
+				}
+				return nil, errors.New("unexpected barcode")
+			},
+		}
+
+		loanSvc := &mockLoanService{
+			mockHandleSimpleReturn: func(ctx context.Context, copy *repository.BookCopy, staffID string) (*LoanResult, error) {
+				return expectedLoanResult, nil
+			},
+		}
+
+		svc := &defaultOmniboxService{
+			bookRepo: bookRepo,
+			loanSvc:  loanSvc,
+		}
+
+		q := OmniboxQuery{Query: "B-100016"}
+		resp, err := svc.ProcessQuery(ctx, q)
+
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+		if resp.Type != "rueckgabe" {
+			t.Errorf("Expected resp.Type to be 'rueckgabe', got %s", resp.Type)
+		}
+	})
+
+	t.Run("First attempt fails with check digit, second also fails", func(t *testing.T) {
+		bookRepo := &mockBookRepo{
+			mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.BookCopy, error) {
+				return nil, nil // Not found for both
+			},
+		}
+		svc := &defaultOmniboxService{bookRepo: bookRepo}
+
+		q := OmniboxQuery{Query: "B-100016"}
+		resp, err := svc.ProcessQuery(ctx, q)
+
+		// scanBliebOhneTreffer applies to ErrNotFound, which is what `handleBookAction` returns when copy is nil
+		if !errors.Is(err, ErrNotFound) {
+			t.Fatalf("Expected ErrNotFound, got %v", err)
+		}
+
+		if resp == nil {
+			t.Errorf("Expected a non-nil response")
+		}
+	})
+
+	t.Run("First attempt fails with other error", func(t *testing.T) {
+		expectedErr := errors.New("db error")
+		bookRepo := &mockBookRepo{
+			mockGetCopyByBarcode: func(ctx context.Context, barcode string) (*repository.BookCopy, error) {
+				return nil, expectedErr // DB error, not ErrNotFound
+			},
+		}
+		svc := &defaultOmniboxService{bookRepo: bookRepo}
+
+		q := OmniboxQuery{Query: "B-100016"}
+		resp, err := svc.ProcessQuery(ctx, q)
+
+		// It should NOT try the second time if error is not ErrNotFound
+		if err != expectedErr {
+			t.Fatalf("Expected %v, got %v", expectedErr, err)
+		}
+		if resp == nil {
+			t.Errorf("Expected a non-nil response")
+		}
+	})
+}
