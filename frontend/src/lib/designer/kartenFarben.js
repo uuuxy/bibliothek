@@ -41,20 +41,21 @@ export function kartenStil(kennung) {
 	return `background: ${h.flaeche}; color: ${h.schrift};`;
 }
 
-// Merkmale der Klassenlisten, unter denen der Hintergrund früher gespeichert wurde. Jede
-// trägt höchstens eines davon; die weiße Karte trägt keines und ist der Rückfall.
+// Merkmale der Klassenlisten, unter denen der Hintergrund früher gespeichert wurde: der
+// Anfang der Klasse, die die Fläche färbte. Die weiße Karte trägt keines, ebenso die
+// älteren, fast weißen Fassungen von Grau, Smaragd und Blau; sie sind der Rückfall.
 const ALTE_MERKMALE = [
-	['emerald', 'smaragd'],
-	['sky', 'blau'],
-	['amber', 'bernstein'],
+	['from-emerald-1', 'smaragd'],
+	['from-sky-1', 'blau'],
+	['from-amber-1', 'bernstein'],
 	['16330a', 'waldgruen'],
-	['bg-slate', 'grau']
+	['bg-slate-1', 'grau']
 ];
 
 /**
  * Liest den gespeicherten Hintergrund einer Kartenseite. Ein Entwurf aus der Zeit der
  * Klassenlisten wird an seinem Merkmal erkannt und auf die Kennung übersetzt; was sich
- * nicht zuordnen lässt, ist die weiße Karte, wie sie es am Bildschirm schon war.
+ * nicht zuordnen lässt, ist die weiße Karte.
  * @param {unknown} gespeichert
  * @returns {string}
  */

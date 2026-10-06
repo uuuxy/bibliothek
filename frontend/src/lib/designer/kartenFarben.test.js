@@ -20,6 +20,13 @@ const ALTE_WERTE = {
 	waldgruen: 'bg-linear-to-tr from-[#16330a] via-[#2d5a12] to-[#3f7418] text-white border-[#0d2405]'
 };
 
+// Fassungen aus der Zeit davor: fast weiße Flächen, die es in der Auswahl nicht mehr gibt.
+const AELTERE_WERTE = [
+	'bg-slate-50 text-slate-900 border-slate-200',
+	'bg-linear-to-tr from-emerald-50/40 to-teal-50/40 text-zinc-900 border-emerald-100',
+	'bg-linear-to-tr from-blue-50/40 to-indigo-50/40 text-zinc-900 border-blue-100'
+];
+
 describe('heileKartenHintergrund', () => {
 	it('übersetzt jede früher gespeicherte Klassenliste in ihre Kennung', () => {
 		for (const [kennung, alt] of Object.entries(ALTE_WERTE)) {
@@ -33,6 +40,10 @@ describe('heileKartenHintergrund', () => {
 
 	it('lässt eine Kennung, wie sie ist', () => {
 		for (const k of KARTEN_HINTERGRUENDE) expect(heileKartenHintergrund(k.value)).toBe(k.value);
+	});
+
+	it('liest die älteren, fast weißen Fassungen als weiße Karte', () => {
+		for (const alt of AELTERE_WERTE) expect(heileKartenHintergrund(alt), alt).toBe('weiss');
 	});
 
 	it('liest Unbekanntes als weiße Karte', () => {
