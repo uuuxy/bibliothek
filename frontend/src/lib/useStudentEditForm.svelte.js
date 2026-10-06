@@ -53,6 +53,11 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 	// Feld eine Anzeige (geändert wird in der Benutzerverwaltung, api/student_schul_email.go).
 	let kontoVorhanden = $state(false);
 
+	// Die Nutzlast, wie die Maske sie direkt nach dem Füllen schickte. Das Speichern schickt
+	// nur, was davon abweicht.
+	/** @type {Record<string, unknown>} */
+	let geladen = {};
+
 	/**
 	 * Syncs the form data with the provided student object.
 	 * Call this in an $effect when the student prop changes.
@@ -60,94 +65,91 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 	function syncData() {
 		const student = getStudent();
 		if (!student) return;
-		formData.vorname = student.vorname || '';
-		formData.nachname = student.nachname || '';
-		// Eine Zeile ohne Art stammt aus der Zeit vor Migration 123 und ist ein Schüler —
-		// dieselbe Vorgabe wie in der Spalte und in leserArtText().
-		formData.art = student.art || 'schueler';
-		formData.geburtsdatum = student.geburtsdatum ? student.geburtsdatum.slice(0, 10) : '';
-		formData.lusd_id = student.lusd_id || '';
-		formData.klasse = student.klasse || '';
-		formData.barcode_id = student.barcode_id || '';
-		// `|| ''` allein greift hier nicht: Die Abfrage liefert für eine leere Spalte die
-		// 0 (COALESCE in student_profile_queries.go), und "0" ist ein wahrer String. Ein
-		// Kollege bekam dadurch ein Abgangsjahr „0" ins Feld geschrieben.
-		formData.abgaenger_jahr = student.abgaenger_jahr ? String(student.abgaenger_jahr) : '';
-		formData.strasse = student.strasse || '';
-		formData.hausnummer = student.hausnummer || '';
-		formData.plz = student.plz || '';
-		formData.ort = student.ort || '';
-		formData.eltern_email = student.eltern_email || '';
-		formData.email = student.email || '';
+		// Erst ein schlichtes Objekt: Der Aufrufer ruft syncData in einem $effect, und wer dort
+		// formData läse, füllte die Maske bei jedem Tastendruck neu.
+		const werte = {
+			vorname: student.vorname || '',
+			nachname: student.nachname || '',
+			// Eine Zeile ohne Art ist ein Schüler, wie in der Spalte und in leserArtText().
+			art: student.art || 'schueler',
+			geburtsdatum: student.geburtsdatum ? student.geburtsdatum.slice(0, 10) : '',
+			lusd_id: student.lusd_id || '',
+			klasse: student.klasse || '',
+			barcode_id: student.barcode_id || '',
+			// Die Abfrage liefert für eine leere Spalte die 0, und "0" wäre ein wahrer String.
+			abgaenger_jahr: student.abgaenger_jahr ? String(student.abgaenger_jahr) : '',
+			strasse: student.strasse || '',
+			hausnummer: student.hausnummer || '',
+			plz: student.plz || '',
+			ort: student.ort || '',
+			eltern_email: student.eltern_email || '',
+			email: student.email || ''
+		};
+		Object.assign(formData, werte);
 		kontoVorhanden = !!student.email;
+		geladen = nutzlast(werte, student, !!student.email);
 	}
 
 	/**
-	 * Die drei Felder, die einem Kollegen in der Maske VERSCHLOSSEN sind: Klasse,
-	 * Abgangsjahr und LUSD-ID. Sie gehen bei ihm gar nicht erst mit.
-	 *
-	 * Sie dürfen deshalb auch nicht als leerer String mitgehen. Der Server liest den
-	 * leeren String bei den Pflichtfeldern als „räum das weg" und antwortet „Klasse darf
-	 * nicht leer sein." — genau daran scheiterte das Speichern eines Kollegen, bevor
-	 * dieses Formular ihn überhaupt anbot. Weggelassen heißt `undefined`, wird von
-	 * JSON.stringify fallengelassen und kommt im Backend als nil an: Spalte in Ruhe
-	 * lassen.
-	 *
-	 * Die Ausweisnummer geht IMMER mit — auch leer.
+	 * Klasse, Abgangsjahr und LUSD-ID gehören dem Schüler, die Schul-Adresse dem Kollegium:
+	 * Die Felder der anderen Seite gehen nicht mit, auch nicht leer. Ein leerer String hieße
+	 * am Server „räum das weg" und käme als 400 zurück.
+	 * @param {any} daten Werte der Maske
+	 * @param {any} student der geladene Leser
+	 * @param {boolean} hatKonto
 	 * @returns {Record<string, unknown>}
 	 */
-	function schulfelder() {
-		const student = getStudent();
-		const kollege = istKollegium({ art: formData.art });
-		// Die Ausweisnummer geht IMMER mit, auch leer.
-		//
-		// Bis zum 16.09.2026 wurde sie beim Kollegen weggelassen, sobald das Feld leer war
-		// — damals die einzige Möglichkeit, weil der Server jedes leere Pflichtfeld mit 400
-		// abwies. Der Preis war ein stilles No-op: Wer beim Kollegen eine falsch
-		// eingetragene Nummer räumte, bekam „Änderungen gespeichert" und fand sie beim
-		// nächsten Öffnen wieder vor. Seit die Pflicht im Server an die Art gepaart ist
-		// (pruefeAusweisLeerung), ist das Leeren beim Kollegen ein echter Vorgang: Die
-		// Spalte wird NULL. Beim Schüler kommt die begründete 400 zurück.
-		const ausweis = { barcode_id: formData.barcode_id };
-		// Die Schul-Adresse geht NUR beim Kollegium mit. Bei einem Schüler wäre schon das
-		// Mitschicken eines leeren Strings eine Aussage — der Server weist „E-Mail am
-		// Schüler" mit 400 ab, und zwar zu Recht (pruefeSchulEmail).
-		//
-		// Bei Praktikum und Fachbereich ohne Konto geht sie leer mit: Wer die Art gerade von
-		// Lehrkraft auf Praktikum stellt, hat vielleicht schon eine Adresse getippt; das Feld
-		// ist dann verschlossen, der Wert aber noch gebunden (artMitKonto, 30.09.2026).
-		if (kollege)
-			return {
-				...ausweis,
-				email: artMitKonto(formData.art) || kontoVorhanden ? formData.email : ''
-			};
-		// Das Abgangsjahr geht NUR mit, wenn jemand es angefasst hat.
-		//
-		// Der Server leitet es aus der Klasse ab, sobald eine Klasse ohne Abgangsjahr
-		// ankommt (`calculateAbgaengerJahr`). Weil dieses Formular es aber IMMER
-		// mitschickte — den alten Wert —, kam nie eine Klasse ohne Jahr an: Ein
-		// Klassenwechsel liess das Abgangsjahr des alten Jahrgangs stehen. Daran hängen
-		// die Abgängerliste, die Versetzung und die Löschuhr; ein Kind aus der 7 mit dem
-		// Abgangsjahr der 10 verschwindet drei Jahre zu spät oder zu früh.
-		//
-		// Angefasst heisst: Der Wert im Feld ist ein anderer als der geladene. Dann gilt
-		// er — auch beim Klassenwechsel, denn dann hat jemand bewusst beides gesetzt.
+	function schulfelder(daten, student, hatKonto) {
+		const ausweis = { barcode_id: daten.barcode_id };
+		if (istKollegium({ art: daten.art })) {
+			// Ohne Zugang zur Art und ohne Konto ist das Feld verschlossen: Eine davor getippte
+			// Adresse geht nicht mit.
+			return { ...ausweis, email: artMitKonto(daten.art) || hatKonto ? daten.email : '' };
+		}
+		// Das Abgangsjahr geht nicht mit, wenn die Klasse wechselt und niemand es angefasst
+		// hat: Dann leitet der Server es aus der neuen Klasse ab (calculateAbgaengerJahr).
 		const geladenesJahr = student?.abgaenger_jahr ? String(student.abgaenger_jahr) : '';
-		const jahrAngefasst = formData.abgaenger_jahr !== geladenesJahr;
-		const klasseGeaendert = formData.klasse !== (student?.klasse || '');
+		const jahrAngefasst = daten.abgaenger_jahr !== geladenesJahr;
+		const klasseGeaendert = daten.klasse !== (student?.klasse || '');
 
 		/** @type {Record<string, unknown>} */
-		const felder = { ...ausweis, lusd_id: formData.lusd_id, klasse: formData.klasse };
+		const felder = { ...ausweis, lusd_id: daten.lusd_id, klasse: daten.klasse };
 		if (!(klasseGeaendert && !jahrAngefasst)) {
-			felder.abgaenger_jahr = formData.abgaenger_jahr
-				? Number.parseInt(formData.abgaenger_jahr, 10)
+			felder.abgaenger_jahr = daten.abgaenger_jahr
+				? Number.parseInt(daten.abgaenger_jahr, 10)
 				: null;
 		}
 		return felder;
 	}
 
 	/**
-	 * Submits the form data to the server.
+	 * Die Maske in der Form, in der sie an den Server geht. Geräumte Felder sind leere Strings:
+	 * JSON-null hieße dort „nicht mitgeschickt", und Löschen wäre nicht möglich. Nur das
+	 * Geburtsdatum geht leer als null hinaus, der Server lässt es sich nicht leeren.
+	 * @param {any} daten
+	 * @param {any} student
+	 * @param {boolean} hatKonto
+	 * @returns {Record<string, unknown>}
+	 */
+	function nutzlast(daten, student, hatKonto) {
+		return {
+			vorname: daten.vorname,
+			nachname: daten.nachname,
+			art: daten.art,
+			geburtsdatum: daten.geburtsdatum || null,
+			strasse: daten.strasse,
+			hausnummer: daten.hausnummer,
+			plz: daten.plz,
+			ort: daten.ort,
+			eltern_email: daten.eltern_email,
+			...schulfelder(daten, student, hatKonto)
+		};
+	}
+
+	/**
+	 * Speichert die Felder, die seit dem Laden der Akte geändert wurden. Der Server schreibt
+	 * jedes Feld, das der Rumpf nennt: Mit allen Feldern schriebe die Maske zurück, was ein
+	 * anderer Platz, der LUSD-Import oder die Versetzung inzwischen geändert hat.
 	 */
 	async function save() {
 		const student = getStudent();
@@ -155,42 +157,19 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 			showSnackbar('Kein Schüler ausgewählt.', 'error');
 			return;
 		}
+		const payload = Object.fromEntries(
+			Object.entries(nutzlast(formData, student, kontoVorhanden)).filter(
+				([name, wert]) => wert !== geladen[name]
+			)
+		);
+		// Ohne Änderung gibt es nichts zu schicken; der Server wiese den leeren Rumpf ab.
+		if (Object.keys(payload).length === 0) {
+			showSnackbar('Änderungen gespeichert.', 'success');
+			onSave();
+			return;
+		}
 		saving = true;
 		try {
-			// Geräumte Felder gehen als LEERER STRING raus, nicht als null.
-			//
-			// Der Unterschied ist nicht kosmetisch: Im Backend sind diese Felder *string,
-			// und JSON-null landet dort als nil — die Bedeutung von nil ist "nicht
-			// mitgeschickt, Spalte in Ruhe lassen". Bis zum 23.08.2026 stand hier überall
-			// `|| null`; wer eine Adresse oder die Eltern-Mail löschte und speicherte,
-			// bekam "Änderungen gespeichert" zu sehen, und beim nächsten Öffnen der Akte
-			// stand der alte Wert wieder da. Löschen war über dieses Formular schlicht
-			// nicht möglich.
-			//
-			// Für die Pflichtfelder (Vor-/Nachname, Klasse, Ausweisnummer) ist der leere
-			// String ebenfalls die richtige Nachricht: Der Server lehnt ihn jetzt mit einer
-			// Begründung ab, statt still nichts zu tun.
-			//
-			// EINE Ausnahme: geburtsdatum bleibt bei `|| null`. Der Server verweigert das
-			// Leeren dieses Feldes (es ist der LUSD-Schlüssel) — schickte das Formular hier
-			// den leeren String, bekäme jeder Altdatensatz OHNE Geburtsdatum bei jedem
-			// Speichern "Geburtsdatum kann nicht geleert werden" zu sehen und liesse sich
-			// gar nicht mehr bearbeiten. Es war nie gesetzt, also wird auch nichts geleert.
-			// Preis dieser Entscheidung, offen benannt: Wer ein GESETZTES Geburtsdatum im
-			// Feld räumt und speichert, bekommt weiterhin ein stilles No-op — der alte Wert
-			// steht beim nächsten Öffnen wieder da. Löschbar ist es ohnehin nicht.
-			const payload = {
-				vorname: formData.vorname,
-				nachname: formData.nachname,
-				art: formData.art,
-				geburtsdatum: formData.geburtsdatum || null,
-				strasse: formData.strasse,
-				hausnummer: formData.hausnummer,
-				plz: formData.plz,
-				ort: formData.ort,
-				eltern_email: formData.eltern_email,
-				...schulfelder()
-			};
 			const res = await apiClient.patch(`/api/schueler/${student.id}`, payload);
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));

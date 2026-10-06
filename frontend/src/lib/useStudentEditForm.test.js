@@ -102,7 +102,7 @@ describe('useStudentEditForm.save', () => {
 			expect(payload.abgaenger_jahr, 'wer beides setzt, meint beides').toBe(2033);
 		});
 
-		it('schickt das Abgangsjahr weiter mit, solange die Klasse bleibt', async () => {
+		it('lässt Klasse und Abgangsjahr weg, solange niemand sie anfasst', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueFormular();
 
@@ -110,7 +110,18 @@ describe('useStudentEditForm.save', () => {
 			await hook.save();
 
 			const [, payload] = patchMock.mock.calls[0];
-			expect(payload.abgaenger_jahr).toBe(2031);
+			expect(payload).toEqual({ vorname: 'Mira' });
+		});
+
+		it('schickt ein von Hand geändertes Abgangsjahr allein mit', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const hook = baueFormular();
+
+			hook.formData.abgaenger_jahr = '2032';
+			await hook.save();
+
+			const [, payload] = patchMock.mock.calls[0];
+			expect(payload).toEqual({ abgaenger_jahr: 2032 });
 		});
 	});
 
@@ -184,13 +195,25 @@ describe('useStudentEditForm.save', () => {
 					`${feld} ist beim Kollegen verschlossen — leer mitgeschickt wäre es eine 400`
 				).toBe(false);
 			}
-			// Die Eltern-Adresse ist NICHT verschlossen: Seit dem 16.09.2026 hat die Maske
-			// für jeden dieselbe Form (Absprache: „bitte nicht verkomplizieren"), und ein Feld,
-			// das offen steht, muss auch ankommen. Sie bleibt beim Kollegen einfach leer.
-			expect(Object.hasOwn(payload, 'eltern_email')).toBe(true);
-			expect(payload.strasse).toBe('Kleegartenstr.');
-			expect(payload.plz).toBe('61381');
-			expect(payload.art).toBe('lehrkraft');
+			// Hinaus geht, was eingetragen wurde, und sonst nichts.
+			expect(payload).toEqual({
+				strasse: 'Kleegartenstr.',
+				hausnummer: '8',
+				plz: '61381',
+				ort: 'Friedrichsdorf'
+			});
+		});
+
+		// Die Eltern-Adresse ist beim Kollegen nicht verschlossen: Die Maske hat für jeden
+		// dieselbe Form, und ein Feld, das offen steht, muss auch ankommen.
+		it('schickt eine beim Kollegen eingetragene Eltern-Adresse mit', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const hook = baueKollegenFormular();
+			hook.formData.eltern_email = 'privat@example.org';
+			await hook.save();
+
+			const [, payload] = patchMock.mock.calls[0];
+			expect(payload).toEqual({ eltern_email: 'privat@example.org' });
 		});
 
 		// UMGEKEHRT am 16.09.2026 (abends), nach der Blick auf die fertige Maske: Bis
@@ -202,14 +225,19 @@ describe('useStudentEditForm.save', () => {
 		// hielt. Seit die Pflicht im Server an die ART gepaart ist (pruefeAusweisLeerung,
 		// api/student_schul_email.go — TestAusweisnummerLeeren belegt beide Seiten), geht
 		// das leere Feld mit und leert die Spalte wirklich.
-		it('schickt die leere Ausweisnummer beim Kollegen MIT — sonst wäre das Leeren ein stilles No-op', async () => {
+		it('schickt die geleerte Ausweisnummer beim Kollegen MIT — sonst wäre das Leeren ein stilles No-op', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
-			const hook = baueKollegenFormular();
+			const hook = useStudentEditForm({
+				getStudent: () => ({ ...kollege, barcode_id: 'L-0007' }),
+				onSave: () => {},
+				showSnackbar: () => {}
+			});
+			hook.syncData();
+			hook.formData.barcode_id = '';
 			await hook.save();
 
 			const [, payload] = patchMock.mock.calls[0];
-			expect(Object.hasOwn(payload, 'barcode_id')).toBe(true);
-			expect(payload.barcode_id).toBe('');
+			expect(payload).toEqual({ barcode_id: '' });
 		});
 
 		// Die Schul-Adresse ist das Gegenstück: Sie gehört dem KONTO, nicht der Leserzeile,
@@ -235,18 +263,81 @@ describe('useStudentEditForm.save', () => {
 			expect(payload.barcode_id).toBe('L-0007');
 		});
 
-		it('schickt beim Schüler die Schülerfelder weiterhin mit', async () => {
+		it('schickt beim Schüler die geänderten Schülerfelder mit, die Schul-Adresse nie', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueFormular();
+			hook.formData.klasse = '7b';
+			hook.formData.eltern_email = 'neu@example.org';
+			// Ein Schüler hat kein Konto: Schon der leere String wäre eine Aussage, die der
+			// Server mit 400 abweist. Auch eine getippte Adresse geht nicht mit.
+			hook.formData.email = 'kind@schule.example';
 			await hook.save();
 
 			const [, payload] = patchMock.mock.calls[0];
-			expect(payload.klasse).toBe('7a');
-			expect(Object.hasOwn(payload, 'eltern_email')).toBe(true);
-			expect(payload.art).toBe('schueler');
-			// Und die Schul-Adresse NICHT: Ein Schüler hat kein Konto. Mitgeschickt wäre
-			// schon der leere String eine Aussage, die der Server mit 400 abweist.
-			expect(Object.hasOwn(payload, 'email')).toBe(false);
+			expect(payload).toEqual({ klasse: '7b', eltern_email: 'neu@example.org' });
+		});
+	});
+
+	// Der Server schreibt jedes Feld, das der Rumpf nennt. Schickte die Maske alle Felder mit
+	// dem Stand vom Laden der Akte, schriebe sie zurück, was die Versetzung, der LUSD-Import
+	// oder ein anderer Platz inzwischen geändert hat — mit der Meldung „gespeichert".
+	describe('nur die geänderten Felder', () => {
+		it('nennt nach einer Änderung an der Eltern-Adresse kein anderes Feld', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const hook = baueFormular();
+
+			hook.formData.eltern_email = 'neu@example.org';
+			await hook.save();
+
+			expect(patchMock).toHaveBeenCalledWith('/api/schueler/abc', {
+				eltern_email: 'neu@example.org'
+			});
+		});
+
+		it('schickt ohne Änderung nichts und schließt wie nach dem Speichern', async () => {
+			const onSave = vi.fn();
+			const showSnackbar = vi.fn();
+			const hook = useStudentEditForm({ getStudent: () => schueler, onSave, showSnackbar });
+			hook.syncData();
+
+			await hook.save();
+
+			expect(patchMock).not.toHaveBeenCalled();
+			expect(onSave).toHaveBeenCalledTimes(1);
+			expect(showSnackbar).toHaveBeenCalledWith('Änderungen gespeichert.', 'success');
+		});
+
+		it('schickt ein Feld nicht, das getippt und wieder zurückgestellt wurde', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const hook = baueFormular();
+
+			hook.formData.ort = 'Offenbach';
+			hook.formData.ort = 'Frankfurt';
+			hook.formData.plz = '63065';
+			await hook.save();
+
+			const [, payload] = patchMock.mock.calls[0];
+			expect(payload).toEqual({ plz: '63065' });
+		});
+
+		it('misst nach dem Neufüllen am neuen Stand', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			let leser = { ...schueler };
+			const hook = useStudentEditForm({
+				getStudent: () => leser,
+				onSave: () => {},
+				showSnackbar: () => {}
+			});
+			hook.syncData();
+			// Die Akte lädt neu, die Versetzung hat die Klasse inzwischen geändert.
+			leser = { ...schueler, klasse: '8a', abgaenger_jahr: 2031 };
+			hook.syncData();
+
+			hook.formData.strasse = 'Nebenstr';
+			await hook.save();
+
+			const [, payload] = patchMock.mock.calls[0];
+			expect(payload).toEqual({ strasse: 'Nebenstr' });
 		});
 	});
 
