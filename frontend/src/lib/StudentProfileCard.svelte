@@ -4,7 +4,7 @@
 	import StatusChip from './components/ui/StatusChip.svelte';
 	import StudentKontoStatus from './components/students/StudentKontoStatus.svelte';
 	import AbgangsjahrFeld from './components/students/AbgangsjahrFeld.svelte';
-	import { initialen, avatarVerlauf } from './avatarKachel.js';
+	import { initialen } from './avatarKachel.js';
 	import { leserArtText, istKollegium } from './leserArt.js';
 
 	/** @type {{ profile: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
@@ -21,7 +21,6 @@
 	} = $props();
 
 	const initials = $derived(initialen(profile));
-	const avatarGradient = $derived(avatarVerlauf(profile));
 
 	let imageFailed = $state(false);
 	// Ein Kollege ist kein Schüler mit fehlenden Angaben: Klasse und Abgangsjahr gibt es
@@ -54,7 +53,7 @@
 			/>
 		{:else}
 			<div
-				class="w-28 h-28 rounded-2xl border border-black/5 shadow-inner flex items-center justify-center text-white font-bold text-4xl tracking-tight select-none bg-linear-to-br {avatarGradient}"
+				class="w-28 h-28 rounded-2xl flex items-center justify-center bg-primary-container text-on-primary-container font-bold text-4xl tracking-tight select-none"
 				aria-hidden="true"
 			>
 				{initials}
@@ -64,8 +63,8 @@
 			hidden={!rechte.foto}
 			onclick={() => (showWebcam = true)}
 			aria-label="Passbild mit Webcam aufnehmen"
-			class="absolute bottom-1 right-1 p-2 rounded-full bg-scrim/60 text-white backdrop-blur-md cursor-pointer border border-white/20"
-			title="Passbild aufnehmen"
+			class="icon-btn absolute bottom-1 right-1 bg-secondary-container text-on-secondary-container"
+			data-tip="Passbild aufnehmen"
 		>
 			<Camera class="h-4 w-4" aria-hidden="true" />
 		</button>
