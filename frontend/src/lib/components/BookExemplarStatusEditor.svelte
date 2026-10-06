@@ -23,12 +23,14 @@
 	// BEWUSST NICHT: Das sind Arbeitskopien im Editor. Als $derived wuerde jede
 	// Aenderung an ex die Eingabe des Benutzers ueberschreiben — genau das, was ein
 	// Formular nicht tun darf. Einmal aus dem Prop befuellen ist hier richtig.
+	// Der Status kommt aus den zwei Merkmalen des Exemplars, nicht aus dem Wortlaut der Notiz:
+	// „CD verloren" an einem gesperrten Buch hieße sonst „Verloren", und das Speichern sonderte
+	// es aus.
 	// svelte-ignore state_referenced_locally
 	let editStatusType = $state(
 		ex.ist_ausleihbar
 			? 'Verfügbar'
-			: ex.ist_ausgesondert ||
-				  (ex.zustand_notiz && ex.zustand_notiz.toLowerCase().includes('verloren'))
+			: ex.ist_ausgesondert
 				? 'Verloren'
 				: 'Gesperrt (Defekt/Reserviert)'
 	);
