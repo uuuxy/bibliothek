@@ -121,6 +121,12 @@ func (s *Server) UpdatePermissionsHandler() http.HandlerFunc {
 			return
 		}
 
+		// Die Matrix entscheidet an jeder Route, wer welche Daten sieht: Wer sie ändert, steht
+		// im Protokoll wie bei Konten und Einstellungen.
+		s.auditiereBenutzerMutation(r, "RECHT_GEAENDERT", map[string]any{
+			"rolle": strings.ToUpper(req.Role), "recht": req.Permission, "erlaubt": req.Allowed,
+		})
+
 		// Invalidate permission cache so permission changes take effect immediately
 		InvalidatePermissionCache()
 

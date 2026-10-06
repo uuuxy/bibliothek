@@ -2,10 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-05 (Anmeldung: Bei einem Ausfall des Mailservers bleibt es
+> Zuletzt aktualisiert: 2026-10-07 (Rechte-Matrix: Jede Änderung steht im Protokoll).
+> Davor 2026-10-05 (Anmeldung: Bei einem Ausfall des Mailservers bleibt es
 > dabei, dass sich niemand neu anmelden kann).
-> Davor 2026-10-04 (Security-Header: Antworten gehen mit gzip gepackt
-> hinaus, Einordnung zum BREACH-Angriff).
 > Davor 2026-10-02 (Scan im Passwortfeld: ein in Scannergeschwindigkeit
 > getipptes Passwort gilt als Scan).
 > Davor 2026-10-01 (Einrichtung: was `APP_ENV` schaltet, die Vorlage ohne
@@ -146,7 +145,9 @@ Administrator; drei Wege führten dahin, alle jetzt geschlossen (`api/user_admin
 Zusätzlich ändert die **Rechte-Matrix** (`PUT /api/admin/permissions`) nur noch ein
 Administrator. Vorher genügte `manage_users`, und damit schloss sich der Kreis: Der
 Endpunkt konnte der eigenen Rolle jedes weitere Recht zuschalten. Konten verwalten und
-festlegen, was Rollen dürfen, sind zwei verschiedene Dinge.
+festlegen, was Rollen dürfen, sind zwei verschiedene Dinge. Jede Änderung an der Matrix
+steht im Protokoll (`RECHT_GEAENDERT`: Rolle, Recht, erteilt oder entzogen, mit Zeitpunkt
+und bearbeitender Person).
 
 Was `manage_users` weiterhin darf: alle Konten **unterhalb** der Administratorebene
 anlegen, ändern und löschen. Die Delegation an ein Sekretariat bleibt also möglich — sie
