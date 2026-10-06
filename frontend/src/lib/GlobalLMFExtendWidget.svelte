@@ -62,12 +62,12 @@
 	}
 </script>
 
-<!-- Ohne PageShell: Seit dem 24.08.2026 keine eigene Route mehr, sondern Inhalt der
-     Einstellungs-Kategorie „LMF-Aktionen" — das Seitengerüst stellt SystemSettings. -->
+<!-- Ohne PageShell: Das ist keine eigene Route, sondern Inhalt der Einstellungs-Kategorie
+     „LMF-Aktionen" — das Seitengerüst stellt SystemSettings. -->
 <div class="space-y-5">
 	<div>
-		<h3 class="text-base font-bold text-slate-900">LMF-Massenverlängerung (Klasse)</h3>
-		<p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-lg">
+		<h3 class="text-base font-bold text-on-surface">LMF-Massenverlängerung (Klasse)</h3>
+		<p class="text-xs text-on-surface-variant mt-1 leading-relaxed max-w-lg">
 			Verlängert alle aktiven LMF-Ausleihen (Schulbücher) einer bestimmten Klasse auf ein neues
 			fixes Rückgabedatum.
 		</p>

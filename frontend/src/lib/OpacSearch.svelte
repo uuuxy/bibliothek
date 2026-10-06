@@ -121,7 +121,7 @@
 							{/if}
 							<div class="absolute top-2 right-2">
 								{#if book.verfuegbar > 0}
-									<span class="px-2 py-1 rounded-lg bg-emerald-500 text-white text-xs font-bold">
+									<span class="px-2 py-1 rounded-lg bg-success text-on-success text-xs font-bold">
 										✓ Verfügbar
 									</span>
 								{:else}

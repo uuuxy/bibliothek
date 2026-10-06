@@ -21,15 +21,13 @@
 			<div class="flex justify-center py-2" title={backupStatus.message}>
 				<span
 					class="h-2.5 w-2.5 animate-pulse rounded-full {backupStatus.data.status === 'critical'
-						? 'bg-rose-500'
-						: 'bg-amber-500'}"
+						? 'bg-error'
+						: 'bg-warning'}"
 				></span>
 			</div>
 		{/if}
 	{:else if !backupStatus.needsAction}
-		<div
-			class="flex items-center gap-1.5 px-4 py-2 text-label-small font-semibold text-emerald-700"
-		>
+		<div class="flex items-center gap-1.5 px-4 py-2 text-label-small font-semibold text-success">
 			<Check class="h-3 w-3 shrink-0" aria-hidden="true" />
 			{backupStatus.message}
 		</div>

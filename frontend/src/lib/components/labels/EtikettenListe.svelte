@@ -56,9 +56,8 @@
 		<tbody>
 			{#each zeilen as e (e.barcode_id)}
 				{@const markiert = gewaehlt.includes(e.barcode_id)}
-				<!-- Gewählt = secondary-container, wie überall in dieser Anwendung: Die Regel
-				     steht seit dem 04.08.2026 in styles/rollen.css. Vorher lag hier ein
-				     bg-blue-50/50, das mit keiner Rolle etwas zu tun hatte. -->
+				<!-- Gewählt = secondary-container, wie überall in dieser Anwendung
+				     (styles/rollen.css). -->
 				<tr aria-selected={markiert}>
 					<td>
 						<Kaestchen

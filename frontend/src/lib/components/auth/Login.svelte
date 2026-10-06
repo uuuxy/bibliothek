@@ -16,16 +16,16 @@
 	});
 </script>
 
-<main class="min-h-screen flex items-center justify-center p-6 bg-slate-50">
+<main class="min-h-screen flex items-center justify-center p-6 bg-surface">
 	<form
 		onsubmit={(e) => authStore.handleLogin(e, undefined)}
 		use:scanSchutz={beiScan}
-		class="w-full max-w-md p-8 rounded-3xl bg-white border border-slate-100 shadow-xl flex flex-col items-center space-y-6 animate-fade-in no-print"
+		class="w-full max-w-md p-8 rounded-3xl bg-surface-container-lowest shadow-xl flex flex-col items-center space-y-6 animate-fade-in no-print"
 	>
 		<img src={logoUrl} alt="Bibliosys Logo" class="w-24 h-24 object-contain" />
 		<div class="text-center space-y-1.5">
-			<h2 class="text-base font-bold text-slate-800">Webmail-Login erforderlich</h2>
-			<p class="text-xs text-slate-400 font-medium">
+			<h2 class="text-base font-bold text-on-surface">Webmail-Login erforderlich</h2>
+			<p class="text-xs text-on-surface-variant font-medium">
 				Bitte logge dich mit deiner Schul-E-Mail ein.
 			</p>
 		</div>
@@ -56,7 +56,7 @@
 			{/if}
 		</Button>
 		{#if authStore.loginError}
-			<p class="text-xs text-rose-500 font-semibold animate-slide-up">{authStore.loginError}</p>
+			<p class="text-xs text-error font-semibold animate-slide-up">{authStore.loginError}</p>
 		{/if}
 		{#if authStore.abmeldeHinweis}
 			<!-- Bleibt stehen bis zur nächsten Anmeldung: Ein Toast wäre nach Sekunden weg, und

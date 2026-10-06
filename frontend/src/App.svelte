@@ -94,7 +94,7 @@
 <ThekenDaten />
 
 <div
-	class="app min-h-screen bg-surface text-on-surface font-sans selection:bg-slate-200 selection:text-slate-900"
+	class="app min-h-screen bg-surface text-on-surface font-sans selection:bg-surface-container-highest selection:text-on-surface"
 >
 	{#if _currentPath === '/katalog'}
 		<OpacSearch />

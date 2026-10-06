@@ -75,7 +75,7 @@
 	});
 </script>
 
-<div class="w-full text-slate-800 font-sans">
+<div class="w-full text-on-surface font-sans">
 	<StartseitenFilter bind:searchQuery />
 
 	<div class="relative">

@@ -46,17 +46,12 @@
 	}
 </script>
 
-<!-- Ein Navigationsziel. Als Snippet, weil es vorher ZWEIMAL im Markup stand — einmal
-     für die System-Gruppe, einmal für alle anderen. Beide Kopien trugen die vollständige
-     Icon-Kette; die Datei war dadurch 476 Zeilen lang, und wer eine Farbe änderte, änderte
-     sie an einer von zwei Stellen.
+<!-- Ein Navigationsziel. Als Snippet, weil die System-Gruppe und alle anderen Gruppen
+     dasselbe Markup brauchen; zwei Kopien liefen auseinander.
 
-     Der ausgewählte Eintrag trägt secondary-container, nicht die Primärfarbe. Das ist
-     nicht Geschmack, sondern steht seit dem 04.08.2026 als Regel in styles/rollen.css:
-     "In M3 markiert NICHT die Primärfarbe eine Auswahl, sondern der secondary-container —
-     Menüeintrag, Navigationsziel, Filterchip." Bis zum 07.08. widersprach ausgerechnet die
-     Navigation dieser Regel: Gemessen kam bg-blue-50 als #f7f9ff heraus — von Weiß kaum zu
-     unterscheiden. Welcher Punkt aktiv war, sah man praktisch nicht.
+     Der ausgewählte Eintrag trägt secondary-container, nicht die Primärfarbe: In M3
+     markiert der secondary-container eine Auswahl — Menüeintrag, Navigationsziel,
+     Filterchip (styles/rollen.css).
 
      rounded-full statt rounded-xl aus demselben Grund wie beim Button: In M3 ist das
      Navigationsziel eine Pille. -->

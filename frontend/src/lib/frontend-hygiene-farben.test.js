@@ -2,43 +2,36 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
 
-// Fünfte Struktur-Invariante, dieselbe Bauart wie die Symbol-Ratsche: Farben kommen
-// aus den M3-Rollen (styles/rollen.css), nicht aus der Tailwind-Palette.
+// Farben kommen aus den M3-Rollen (styles/rollen.css), nicht aus der Tailwind-Palette:
+// Nur für Fundstellen, die die Rollen benutzen, ist ein Farbwechsel eine Zeile und ein
+// zweites Farbschema erreichbar.
 //
-// Warum das zählt: styles/rollen.css trägt das Versprechen „dann ist ein Farbwechsel
-// künftig EINE Zeile". Das gilt nur für Fundstellen, die die Rollen auch benutzen.
-// Gemessen am 09.08.2026: 100 Rollen-Klassen gegen 2.738 Paletten-Klassen — 3 %.
-// Ohne Ratsche wächst der Rückstand mit jeder neuen Komponente weiter, und Dark Mode
-// (M3 ist im Kern ein Zwei-Schema-System) wird Jahr für Jahr unerreichbarer.
-//
-// Warum hier eine ZAHL steht und keine Dateiliste wie bei den Symbolen: Paletten-
-// Klassen stehen in fast jeder Datei. Eine Liste wäre der Dateibaum und würde nichts
-// aussagen. Die Ratsche greift deshalb an der Summe.
+// Hier steht eine Zahl und keine Dateiliste wie bei den Symbolen: Die Ratsche greift an der
+// Summe, damit auch verschobenes Markup nicht als neu zählt.
+// Mit Rahmenseite: `border-l-amber-500` färbt eine Kante und ist dieselbe Sache wie
+// `border-amber-500`.
 const PALETTE =
-	/\b(?:bg|text|border|ring|from|to|via|fill|stroke|divide|outline|decoration|accent|caret|shadow)-(?:slate|gray|zinc|neutral|stone|blue|indigo|violet|purple|rose|red|green|emerald|amber|yellow|orange|teal|cyan|sky|pink|fuchsia|lime)-\d{2,3}\b/g;
+	/\b(?:bg|text|border(?:-[trblxyse])?|ring|from|to|via|fill|stroke|divide|outline|decoration|accent|caret|shadow)-(?:slate|gray|zinc|neutral|stone|blue|indigo|violet|purple|rose|red|green|emerald|amber|yellow|orange|teal|cyan|sky|pink|fuchsia|lime)-\d{2,3}\b/g;
 
 // ── Ratsche ─────────────────────────────────────────────────────────────────
-// Diese Zahl darf NUR sinken. Wer Fundstellen auf die Rollen umstellt, trägt den
+// Diese Zahl darf nur sinken. Wer Fundstellen auf die Rollen umstellt, trägt den
 // neuen Stand hier ein — der Test sagt einem die Zahl.
 //
-// Sie ist ein Bestand, KEINE Erlaubnis: Neues gehört auf bg-surface,
+// Sie ist ein Bestand, keine Erlaubnis: Neues gehört auf bg-surface,
 // text-on-surface-variant, border-outline-variant.
-const PALETTE_BESTAND = 297;
+const PALETTE_BESTAND = 238;
 
-// Warum das nicht in einem Durchgang umgeschrieben wird (gemessen am 09.08.2026, damit
-// es niemand ein zweites Mal untersuchen muss):
+// Warum das nicht in einem Durchgang umgeschrieben wird:
 //
-//  1. Die Werte sind auseinandergedriftet. Nur zwei der sieben häufigsten Klassen
-//     treffen ihre Rolle exakt (blue-600 = primary = #0061a4, slate-50 = surface =
-//     #faf9fd). slate-500 (#4c5158) gegen on-surface-variant (#42474e), slate-200
-//     (#e3e2e6) gegen outline-variant (#c2c7cf): Jede Umschreibung verschiebt die Farbe.
-//  2. Die Palette führt SECHS Textgraustufen (slate-400…900), M3 kennt dafür zwei
-//     Rollen. slate-400 und slate-500 landen beide auf on-surface-variant — ein
-//     Massen-Rename ebnet eine bestehende Hierarchie ein.
+//  1. Die Werte liegen auseinander. Nur wenige Klassen treffen ihre Rolle genau (blue-600 =
+//     primary = #0061a4, slate-50 = surface = #faf9fd). slate-500 (#4c5158) gegen
+//     on-surface-variant (#42474e), slate-200 (#e3e2e6) gegen outline-variant (#c2c7cf):
+//     Jede Umschreibung verschiebt die Farbe.
+//  2. Die Palette führt sechs Textgraustufen (slate-400…900), M3 kennt dafür zwei Rollen.
+//     Ein Massen-Rename ebnet eine bestehende Hierarchie ein.
 //
-// Ein Refactoring ist also möglich, aber es ist eine Umgestaltung und keine Umbenennung:
-// in Portionen, bei denen man sieht, was sich ändert. Die Ratsche hält den Stand, bis
-// jemand dazu kommt.
+// Umstellen ist deshalb eine Umgestaltung und keine Umbenennung: in Portionen, bei denen man
+// sieht, was sich ändert.
 
 /** Zählt die Paletten-Fundstellen je Datei. */
 function zaehleProDatei() {

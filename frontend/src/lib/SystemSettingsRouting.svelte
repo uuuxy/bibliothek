@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import Feld from './components/ui/Feld.svelte';
+	import Button from './components/ui/Button.svelte';
 	import Select from './components/ui/Select.svelte';
 	import {
 		erzeugeKlassenVorschlaege,
@@ -71,7 +72,7 @@
 <!-- Flach & edge-to-edge: keine umschließende Box, flaches Listen-Layout (divide-y) -->
 <div class="max-w-3xl space-y-8">
 	<div>
-		<h3 class="text-base font-bold text-slate-900">E-Mail Routing für Mahnungen</h3>
+		<h3 class="text-base font-bold text-on-surface">E-Mail Routing für Mahnungen</h3>
 		<p class="mt-1 max-w-2xl text-sm text-on-surface-variant">
 			Von Hand eingetragen, die LUSD liefert es nicht; die Versetzung rückt jede Zuordnung eine
 			Stufe hoch, außer vor Klasse 7 und vor der Oberstufe.
@@ -83,7 +84,7 @@
 			<Ladekreis size="lg" />
 		</div>
 	{:else if mappingRows.length === 0}
-		<p class="text-sm text-slate-500 py-4">Noch keine Mappings vorhanden.</p>
+		<p class="text-sm text-on-surface-variant py-4">Noch keine Mappings vorhanden.</p>
 	{:else}
 		<Tabelle beschriftung="Klassenleitungen und ihre E-Mail-Adressen">
 			<thead>
@@ -101,8 +102,9 @@
 						<td class="text-right">
 							<button
 								onclick={() => deleteMapping(row.klasse)}
-								class="p-2 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
-								title="Mapping löschen"
+								class="icon-btn h-9 w-9 text-error"
+								aria-label="Mapping für {row.klasse} löschen"
+								data-tip="Mapping löschen"
 							>
 								<Trash class="w-5 h-5" aria-hidden="true" />
 							</button>
@@ -136,12 +138,12 @@
 				placeholder="lehrkraft@schule.de"
 			/>
 		</div>
-		<button
+		<Button
 			onclick={upsertMapping}
 			disabled={mappingSaving || !newMappingKlasse.trim() || !newMappingEmail.trim()}
-			class="w-full md:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-full transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shadow-sm"
+			class="w-full md:w-auto whitespace-nowrap"
 		>
 			{mappingSaving ? 'Lädt…' : 'Hinzufügen'}
-		</button>
+		</Button>
 	</div>
 </div>

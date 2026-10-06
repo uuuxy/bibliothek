@@ -32,7 +32,7 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
-297 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
+238 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
 Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
 
 - [x] Buchakte mit der Liste der Ausleiher (20)
@@ -40,14 +40,17 @@ Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm gep
 - [x] Signaturen (24)
 - [ ] Gemeinsame Bauteile: Knopf, Suchpille mit dem Scanfeld der Theke, Schalter, Dialoge,
   Meldungen (81)
-- [ ] Druck-Center und Quittung (26)
+- [x] Druck-Center (5). Quittung und nachgebildetes Etikett sind Papier und bleiben (21).
 - [ ] Monitor (25)
 - [x] Berechtigungen (18)
-- [ ] System, Kamera-Scanner und Einzelstellen (70)
+- [x] System und Einzelstellen (54)
+- [ ] Dunkle Flächen (16): Sucher der Kamera, Sprechblasen und die Leiste des Ausweisdrucks.
+  Sie brauchen Rollen für helle Schrift auf dunklem Grund; bei der Leiste ist vorher zu
+  klären, wohin Hinweis und Feld kommen.
 
 Nicht in dieser Etappe: 48 Farbverläufe der selbstgebauten Cover-Platzhalter (6.2). Es bleiben
-16 Stellen der Initialen-Kachel, 29 der Karte im Ausweis-Designer und zwei Schleier hinter den
-Alarmen der Theke.
+16 Stellen der Initialen-Kachel, 29 der Karte im Ausweis-Designer, 21 auf Papier und zwei
+Schleier hinter den Alarmen der Theke.
 
 ### Etappe 3: vor dem Echtstart
 
@@ -498,7 +501,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 06.10.2026: 297 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 06.10.2026: 238 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -519,6 +522,19 @@ auf der gezeichneten Karte (`CanvasElement.svelte`, `CardFace.svelte`). Die Farb
 steht als Klassenliste im zentral gespeicherten Entwurf und wird gedruckt; die Karte bleibt
 weiß, auch wenn die Oberfläche ihr Farbschema wechselt.
 
+Papier bleibt, 21 Stellen: Die Quittung (`StudentPrintReceipt`, 12) wird nur gedruckt, und
+`labels/LabelPreview` (9) bildet Bogen und Etikett nach. Wie bei der Karte gilt: Papier bleibt
+weiß, auch wenn die Oberfläche ihr Farbschema wechselt. Die übrigen Druckblätter tragen feste
+Farbwerte im eigenen Stylesheet (`utils/listenDruck.js`).
+
+Dunkle Flächen, 16 Stellen: die Sprechblasen (`actions/tooltip.js`, `StatsTrendChart`), die
+Sucher der Kamera (`KameraScanner`, `CameraScanner`) und die Leiste des Ausweisdrucks
+(`students/AuswahlAktionsleiste`). `rollen.css` führt keine Rolle für helle Schrift auf dunklem
+Grund; M3 gibt der Sprechblase `inverse-surface` und `inverse-on-surface` (material-web, Token
+v0_192, plain-tooltip: „container-color … inverse-surface", „supporting-text-color …
+inverse-on-surface"). Nächster Schritt: die zwei Rollen in `rollen.css` aus der neutralen
+Tonleiter (Ton 20 und 95) und die Sprechblasen darauf.
+
 An der Theke bleiben neun Stellen. Sieben sind die Farben des Scanfelds in Ruhe und im Fokus
 (`Omnibox.svelte`, `OmniboxInput.svelte`): Sie gleichen der Suchpille der übrigen Suchseiten
 (`ui/Suchpille`) und wechseln mit ihr. Zwei sind der rote Schleier hinter den Alarmen
@@ -534,6 +550,9 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   (gemessen am 06.10.2026). Stift, Drucker und Papierkorb sind 14 px große Symbole ohne
   Knopffläche (`.icon-btn`), drei davon erklären sich über `title` statt `data-tip` (am Code
   gelesen). „Interne ID generieren" bricht bei 1280 px Fensterbreite im Knopf in zwei Zeilen um.
+- Einstellungen, „E-Mail Routing für Mahnungen": Die Oberfläche sagt „Mapping" (leere Liste,
+  Meldung nach dem Löschen, Sprechblase am Papierkorb; `SystemSettingsRouting.svelte`); ein
+  deutsches Wort wäre „Zuordnung".
 - „Rollen & Rechte": Bei 1280 px Fensterbreite bleiben der Erklärung eines Rechts 152 px
   neben den vier Schaltern; die Sätze laufen über bis zu sieben Zeilen (`PermissionsEditor.svelte`,
   gemessen am 06.10.2026).
@@ -574,8 +593,6 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   Palettenfarben; für markierte Zeilen gibt es `ui/AuswahlLeiste` (Schlagwort-Pflege). Beim
   Umstellen zu klären: wohin der Hinweis „ohne Ablaufjahr" und das Feld „Ab Feld" kommen —
   beides passt nicht in die 64 px hohe Leiste.
-- Die Ratsche zählt eine Palettenfarbe an einer einzelnen Rahmenseite nicht
-  (`border-l-amber-500`): zwei Stellen in `system/BackupAlert`, gezählt am 05.10.2026.
 - Bestellwesen, nach der Umstellung gegen die M3-Seiten gehalten (05.10.2026): Die Zahl im
   eingeklappten Bestellstreifen steht von Hand auf `primary` mit 24 px
   (`BestellWorkspace.svelte`; M3, Badges: Farbe „Error", 16dp; dafür gibt es

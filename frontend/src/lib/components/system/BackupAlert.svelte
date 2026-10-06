@@ -1,14 +1,11 @@
 <!-- @component BackupAlert — der Backup-Wächter als Inline-Alert über dem Inhalt.
-     Vorher saß diese Meldung als flächig gefüllte Warnkarte im Sidebar-Fuß, direkt
-     über „Abmelden". Drei Dinge sind daran anders:
 
-     1. Der Ort. Die Sidebar ist Navigation; ein dauerhafter Konfigurationsfehler wird
-        dort zwischen Menüpunkten nach drei Tagen zur Tapete. Der Alert steht jetzt über
-        dem Inhalt, wo er zum Bildschirm gehört und nicht zur Wegweisung.
-     2. Die Form. Kein Farbblock mit Emoji, sondern ein 3-px-Schweregrad-Streifen links
-        auf ruhigem Grund plus ein Icon — auffällig durch Kante und Position.
-     3. Die Handlung. Ein Alert ohne Weg zur Behebung ist eine Sackgasse. Der Text sagt,
-        was zu tun ist, und der Knopf führt direkt auf den richtigen Reiter. -->
+     1. Der Ort. Die Sidebar ist Navigation; ein dauerhafter Konfigurationsfehler würde
+        dort zwischen Menüpunkten zur Tapete. Der Alert steht über dem Inhalt.
+     2. Die Form. Ein Streifen von 3 px in der Farbe des Schweregrads links auf ruhigem
+        Grund plus ein Icon — auffällig durch Kante und Position.
+     3. Die Handlung. Der Text sagt, was zu tun ist, und der Knopf führt auf den richtigen
+        Reiter. -->
 <script>
 	import { onMount } from 'svelte';
 	import { TriangleAlert, ArrowRight, X } from '@lucide/svelte';
@@ -20,21 +17,14 @@
 
 	const critical = $derived(backupStatus.data?.status === 'critical');
 
-	// Für die Sitzung wegklickbar. Eine Warnung, die auf JEDEM Bildschirm steht und
-	// nie verschwindet, ist keine Warnung mehr, sondern Möblierung — und sie kostet
-	// die oberste, wertvollste Bildschirmzeile.
-	//
-	// Bewusst NICHT gespeichert (weder localStorage noch Server): Beim nächsten Laden
-	// steht sie wieder da. Wer den Schlüssel nicht hinterlegt, soll morgen erneut
-	// erinnert werden — nur nicht den ganzen Tag lang. Ohne Persistenz gibt es
-	// ausserdem keinen geteilten Zustand, der zwischen den Arbeitsplätzen ausdriften
-	// könnte.
+	// Für die Sitzung wegklickbar: Eine Warnung, die auf jedem Bildschirm steht und nie
+	// verschwindet, liest niemand mehr. Nicht gespeichert (weder localStorage noch Server):
+	// Beim nächsten Laden steht sie wieder da, und es gibt keinen geteilten Zustand, der
+	// zwischen den Arbeitsplätzen auseinanderlaufen könnte.
 	let weggeklickt = $state(false);
 
 	// Ziel ist die Betriebsbereitschaft: Dort steht der Backup-Befund samt Anleitung, und
-	// sie verlangt dasselbe Recht wie dieser Alert (manage_settings). „Datenverwaltung"
-	// (bis 24.08.2026) zeigte gar keinen Backup-Stand und braucht ein anderes Recht —
-	// der Sprung wurde dann still verworfen.
+	// sie verlangt dasselbe Recht wie dieser Alert (manage_settings).
 	function openBetriebsbereitschaft() {
 		uiStore.requestedSettingsTab = 'betrieb';
 		uiStore.activeTab = 'settings';
@@ -44,16 +34,16 @@
 {#if backupStatus.needsAction && !weggeklickt}
 	<div
 		role="alert"
-		class="no-print mb-5 flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] bg-white py-3 pr-4 pl-3.5
-			{critical ? 'border-l-rose-600' : 'border-l-amber-500'}"
+		class="no-print mb-5 flex items-start gap-3 rounded-md border border-outline-variant border-l-[3px] bg-surface-container-lowest py-3 pr-4 pl-3.5
+			{critical ? 'border-l-error' : 'border-l-warning'}"
 	>
 		<TriangleAlert
-			class="mt-0.5 h-4 w-4 shrink-0 {critical ? 'text-rose-600' : 'text-amber-600'}"
+			class="mt-0.5 h-4 w-4 shrink-0 {critical ? 'text-error' : 'text-warning'}"
 			aria-hidden="true"
 		/>
 		<div class="min-w-0 flex-1">
-			<p class="text-sm font-semibold text-slate-800">{backupStatus.message}</p>
-			<p class="mt-0.5 text-xs leading-relaxed text-slate-500">{backupStatus.hint}</p>
+			<p class="text-sm font-semibold text-on-surface">{backupStatus.message}</p>
+			<p class="mt-0.5 text-xs leading-relaxed text-on-surface-variant">{backupStatus.hint}</p>
 		</div>
 		<Button
 			variant="secondary"
@@ -68,7 +58,7 @@
 			variant="ghost"
 			size="sm"
 			onclick={() => (weggeklickt = true)}
-			class="icon-btn mt-0.5 shrink-0 px-2 text-slate-400 hover:text-slate-600"
+			class="icon-btn mt-0.5 shrink-0 px-2 text-on-surface-variant"
 			aria-label="Hinweis für diese Sitzung ausblenden"
 			data-tip="Für diese Sitzung ausblenden — beim nächsten Laden wieder da"
 		>

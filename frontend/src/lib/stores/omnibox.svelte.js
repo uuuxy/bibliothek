@@ -786,20 +786,14 @@ export function createOmniboxStore() {
 			}
 		}
 
-		// Zwei Fehlerklassen, zwei Zweige (OFFEN.md 2.2, Commit 2): Scheitert der VERSAND, hat
-		// der Server nichts gesehen — der Schnappschuss geht in die Warteschlange. Kam eine
-		// Antwort an, ist nichts offline: Was ihre Auswertung wirft, wird gezeigt. Bis zum
-		// 15.09.2026 lag beides in einem catch, und ein TypeError aus der Auswertung einer
-		// 200-Antwort wurde eingereiht — mit demselben Idempotenz-Schlüssel, den der Server
-		// schon kannte; nach Ablauf des Caches (24 h) wäre neu gebucht worden.
+		// Zwei Fehlerklassen, zwei Zweige: Scheitert der Versand, hat der Server nichts gesehen —
+		// der Schnappschuss geht in die Warteschlange. Kam eine Antwort an, ist nichts offline:
+		// Was ihre Auswertung wirft, wird gezeigt und nicht eingereiht. Der Server kennt den
+		// Idempotenz-Schlüssel schon; nach Ablauf seines Caches (24 h) würde neu gebucht.
 		//
-		// Rot gehört in den Fehlerfall, nicht ins finally: Dort feuerte es bei JEDEM
-		// Scan und überschrieb das Grün, das der Erfolgspfad Millisekunden vorher
-		// gesetzt hatte — die Leiste stand also nach einer geglückten Ausleihe über
-		// eine Sekunde auf Fehlerfarbe (gemessen: bg-red-50/border-red-500 bei t=200
-		// bis t=1200 ms). Dieselbe Zeile schluckte das Orange der Fremdrückgabe.
-		// Wenn Erfolg wie Fehler aussieht, hört man auf, auf die Farbe zu schauen —
-		// und übersieht dann den echten Fehler.
+		// Rot gehört in den Fehlerfall, nicht ins finally: Dort feuerte es bei jedem Scan und
+		// überschriebe das Grün des Erfolgspfads und das Orange der Fremdrückgabe. Sieht Erfolg
+		// wie Fehler aus, schaut niemand mehr auf die Farbe.
 		let res;
 		try {
 			res = await apiClient.post('/api/action', {

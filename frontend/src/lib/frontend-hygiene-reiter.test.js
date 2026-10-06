@@ -3,25 +3,13 @@ import { readFileSync } from 'node:fs';
 import { srcRoot, sammleQuelldateien, relPfad, vergleicheMitBestand } from './hygiene-quellen.js';
 
 // Reiterleisten kommen aus components/ui/Reiter.svelte — dieselbe Invariante wie bei
-// Suchfeldern und Symbolen.
-//
-// Anlass: Am 23.08.2026 brauchte das Kollegiums-Portal Reiter, und es gab VIER
-// handgebaute Leisten im Haus (Medienkatalog, Bestellwesen, Buch-Akte,
-// Inventur-Startseite). Eine fünfte Kopie hätte die Reihe fortgesetzt, die bei den
-// Suchfeldern in zehn Fassungen mit sieben verschiedenen Maßen endete. Also erst das
-// gemeinsame Bauteil, dann der Reiter.
-//
-// Die vier Bestandsfälle sind bewusst NICHT in einem Rutsch umgestellt: Es sind drei
-// täglich benutzte Bildschirme, und ein Massen-Refactoring an einem Tag hat in diesem
-// Projekt schon zweimal eine Regression erzeugt. Sie stehen hier eingefroren und werden
-// bei ihrem nächsten fachlichen Anfassen nachgezogen.
+// Suchfeldern und Symbolen. Von Hand gebaute Leisten laufen in Höhe, Gewicht und Indikator
+// auseinander.
 const HANDGEBAUT = /role=(["'])tab\1/;
 
-// BestellWorkspace ist am 04.09.2026 nachgezogen — genau der Fall, den der Kommentar
-// oben vorsieht („bei ihrem nächsten fachlichen Anfassen"). Anlass war die gemessene
-// Höhe: 34 px gegen 32 px überall sonst, verursacht vom `border-b-2` im Textfluss.
-// Die Ratsche rückt damit von drei auf zwei Bestandsfälle.
-const BESTAND = ['src/lib/MediaCatalog.svelte'];
+// Kein Bestand: Jede Leiste der Anwendung kommt aus dem Bauteil.
+/** @type {string[]} */
+const BESTAND = [];
 
 // Die Komponente selbst trägt das role="tab" — sie ist die Quelle, nicht ein Verstoß.
 const QUELLE = 'src/lib/components/ui/Reiter.svelte';

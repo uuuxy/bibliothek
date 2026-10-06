@@ -44,10 +44,9 @@
 </script>
 
 <div class="flex flex-col gap-1.5">
-	<!-- Ein Feld mit Präfix „Gültig bis 31.07." und Zurücksetzen-Knopf im Feld — seit
-	     25.08.2026 über die vor-/nachlaufend-Snippets von ui/Feld statt als eigene Pille.
-	     Fehlendes Jahr = ungueltig: Eine Karte ohne Ablaufdatum wird an der Ausleihe
-	     abgewiesen, das ist ein Fehler, keine Warnung. -->
+	<!-- Ein Feld mit Präfix „Gültig bis 31.07." und Zurücksetzen-Knopf im Feld (Snippets
+	     von ui/Feld). Fehlendes Jahr ist ungültig: Eine Karte ohne Ablaufdatum wird an der
+	     Ausleihe abgewiesen, das ist ein Fehler, keine Warnung. -->
 	<Feld
 		type="number"
 		inputmode="numeric"
@@ -70,7 +69,7 @@
 					onclick={() => onWert(vorschlag)}
 					aria-label="Auf den vorgeschlagenen Wert {vorschlag} zurücksetzen"
 					data-tip="Zurück auf {vorschlag} (aus der Klasse gerechnet)"
-					class="rounded p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+					class="rounded p-1 text-on-surface-variant"
 				>
 					<RotateCcw class="h-3.5 w-3.5" />
 				</button>
@@ -79,7 +78,7 @@
 	</Feld>
 
 	{#if vorschlag === null}
-		<p class="flex items-start gap-1.5 text-xs leading-relaxed text-amber-700">
+		<p class="flex items-start gap-1.5 text-xs leading-relaxed text-warning">
 			<TriangleAlert class="mt-0.5 h-3.5 w-3.5 shrink-0" />
 			<span>
 				Aus der Klasse {klasse ? `„${klasse}“` : ''} lässt sich kein Ablaufjahr ableiten — bitte eintragen.
@@ -88,7 +87,7 @@
 			</span>
 		</p>
 	{:else if abweichend}
-		<p class="text-xs text-slate-400">
+		<p class="text-xs text-on-surface-variant">
 			Abweichend vom Vorschlag ({vorschlag}). Gilt nur für diesen Druck.
 		</p>
 	{/if}

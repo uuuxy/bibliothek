@@ -18,16 +18,16 @@
 
 {#if isScanning}
 	<div
-		class="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+		class="fixed inset-0 z-60 flex items-center justify-center bg-scrim/80 backdrop-blur-sm p-4"
 		transition:fade
 	>
 		<div
-			class="bg-white p-6 rounded-3xl shadow-xl w-full max-w-md relative"
+			class="bg-surface-container-lowest p-6 rounded-3xl shadow-xl w-full max-w-md relative"
 			use:escapeSchliesst={() => (isScanning = false)}
 		>
 			<button
 				onclick={() => (isScanning = false)}
-				class="absolute top-4 right-4 text-slate-500 hover:text-slate-800"
+				class="icon-btn absolute top-4 right-4 text-on-surface-variant"
 				aria-label="Scanner schließen"
 			>
 				<X class="w-6 h-6" aria-hidden="true" />
@@ -37,7 +37,7 @@
 				onDecode={handleScan}
 				onStatusChange={(/** @type {string} */ s) => (scanStatus = s)}
 			/>
-			<p class="text-center text-sm text-slate-600 mt-2">{scanStatus}</p>
+			<p class="text-center text-sm text-on-surface-variant mt-2">{scanStatus}</p>
 		</div>
 	</div>
 {/if}
