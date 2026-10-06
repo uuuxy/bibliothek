@@ -19,7 +19,6 @@ und die Arbeit im Code.
 
 **Bei dir — zu entscheiden:**
 
-- Theke: der Vorschlag zur Schnellrückgabe, sobald er vorliegt (4.32).
 - Buchmaske: was beim Standort für Lernmittel und Bibliothek getrennt sein soll (5.53).
 - GitHub: drei offene PRs (5.10) und die PR-Pflicht im Regelwerk für `main` (7.6).
 
@@ -39,7 +38,8 @@ Abschnitt 8.
 
 **Bei mir — im Code,** in dieser Reihenfolge:
 
-1. **4.32** (Schnellrückgabe an der Theke, Kategorie A): zuerst der Vorschlag, dann der Bau.
+1. **4.32** (Theke, Kategorie A): eigener Ton und eigene Farbe für eine Ausleihe, kurze Sperre
+   für dasselbe Buch nach seiner Rückgabe. Zuerst der Vorschlag zur Farbe, dann der Bau.
 2. **5.21** (Palettenfarben, Bildschirm für Bildschirm).
 3. Nach der Antwort zu 8.3: **5.4**.
 4. Vor dem Echtstart: **5.31** (`update.sh` für den Schulserver), der Eingang für die Seite der
@@ -222,35 +222,35 @@ Am 04.10.2026 gebaut und am selben Tag zurückgenommen, weil nicht bestellt:
 
 ### 4.32 Theke: ein Stapel vom Rückgabetisch
 
-Littera hat eine Schnellrückgabe, die nie ausleiht. An der Theke entscheidet der Zustand, was
-ein Scan bedeutet. Am Code gelesen und am 06.10.2026 am lokalen Stack nachgestellt, jeder
-Schritt an der Tabelle der Ausleihen belegt:
+Seit dem 06.10.2026 gibt es die Schnellrückgabe wie in Littera: ein Knopf neben dem Scanfeld.
+Solange sie an ist, nimmt jeder Scan nur zurück, kein Leser wird geladen, und die Meldung nennt,
+bei wem das Buch war. Sie endet mit einem zweiten Klick, mit Escape, mit einem gescannten
+Ausweis oder gewählten Leser und mit dem Leeren der Theke (Vorgabe fünf Minuten ohne
+Bedienung, Abmelden, Neuladen).
+
+Offen bleibt der gewöhnliche Betrieb. Am Code gelesen und am 06.10.2026 am lokalen Stack
+nachgestellt, jeder Schritt an der Tabelle der Ausleihen belegt:
 
 - Eine Rückgabe ohne geladenen Leser lädt den Leser des Buchs (`verarbeiteRueckgabe` in
-  `stores/omnibox.svelte.js`). Ab dem zweiten Buch eines Stapels ist also immer ein Leser
-  geladen, auch wenn die Theke vorher leer war; Escape vor dem Stapel schützt nicht.
+  `stores/omnibox.svelte.js`). Wer einen Stapel ohne Schnellrückgabe scannt oder nach dem
+  Leeren der Theke weiterscannt, hat ab dem zweiten Buch einen Leser geladen.
 - Ein freies Exemplar wird an den geladenen Leser ausgeliehen (`HandleUnifiedCheckout` in
   `internal/service/loan_checkout.go`). Das trifft ein Buch, das nicht verliehen war, und den
   zweiten Scan desselben Buchs: Der erste gibt zurück, der zweite leiht wieder aus.
 - Ausleihe und Rückgabe melden sich gleich, grün und mit demselben Ton; nur der Text der
   Meldung unterscheidet sie (`verarbeiteRueckgabe`, `verarbeiteAusleihe`). Ein Buch eines
   anderen Lesers meldet sich orange mit Warnton.
-- Bei leerer Theke wird ein freies Exemplar nicht ausgeliehen; die Theke meldet „Dieses
-  Buchexemplar ist aktuell nicht ausgeliehen".
 
 Folge: ein Buch im Regal, das auf dem Konto eines Kindes steht und später gemahnt wird.
 Kategorie A.
 
-**Richtung vom 06.10.2026: eine Schnellrückgabe wie in Littera,** nichts gebaut. Verworfen ist
-der Weg, einem Leser, der nur durch eine Rückgabe erscheint, nichts auszuleihen: An der Theke
-wird oft ein Buch des Kindes gescannt, damit sein Konto erscheint, und danach ausgeliehen. Zum
-Modus gehört: Er ist am Scanfeld zu sehen, solange er an ist; er endet von selbst (Ausweis
-gescannt, Escape, einige Minuten ohne Scan), sonst geht beim nächsten Kind ein Buch ohne
-Ausleihe über die Theke; im Modus lädt eine Rückgabe keinen Leser, die Meldung nennt ihn.
-Unabhängig vom Modus bleibt der zweite Scan desselben Buchs bei geladenem Leser: dagegen eine
-Sperre für dasselbe Buch in den ersten Sekunden nach seiner Rückgabe und ein eigener Ton und
-eine eigene Farbe für die Ausleihe. Vor dem Bau: ein Vorschlag, wo der Umschalter sitzt, nach
-den M3-Seiten; der Bau braucht die Proben des Scanner-Pfads.
+**Richtung vom 06.10.2026:** eine Sperre für dasselbe Buch in den ersten Sekunden nach seiner
+Rückgabe und ein eigener Ton und eine eigene Farbe für die Ausleihe. Verworfen ist der Weg,
+einem Leser, der nur durch eine Rückgabe erscheint, nichts auszuleihen: An der Theke wird oft
+ein Buch des Kindes gescannt, damit sein Konto erscheint, und danach ausgeliehen. Die Farbe ist
+eine sichtbare Änderung: vor dem Bau ein Vorschlag nach den M3-Seiten. Der Bau braucht die
+Proben des Scanner-Pfads; `frontend/e2e/theke-schnellrueckgabe.spec.js` hält in seiner
+Gegenprobe den heutigen Stand fest.
 
 ---
 
@@ -1259,6 +1259,11 @@ Scanner der Schule schnell genug tippt (höchstens 50 ms je Zeichen), zeigt nur 
   Erwartet: „Scan erkannt", kein Fehlversuch; danach schließt das getippte Passwort auf.
 - Theke: Leser scannen, einen Reiter der Akte anklicken, in der Akte nach unten rollen, ein
   Buch scannen. Erwartet: Die Suchleiste steht noch im Fenster, das Buch ist gebucht.
+- Theke, Schnellrückgabe: den Knopf neben dem Scanfeld anklicken und einen Stapel scannen, in
+  dem zwei verliehene Bücher, ein Buch aus dem Regal und eines doppelt liegen. Erwartet: Die
+  verliehenen sind zurück und die Meldung nennt den Leser; das Buch aus dem Regal und der
+  zweite Scan melden sich rot mit Fehlerton; kein Konto erscheint. Danach einen Ausweis
+  scannen. Erwartet: Der Knopf ist aus, das Konto steht da.
 - Buchmaske: einen Titel halb ausfüllen, sperren lassen, aufschließen. Erwartet: Die
   Eingaben stehen noch da.
 - „Neues Buch" öffnen und ein Buch scannen, ohne ins Feld zu klicken. Erwartet: Die ISBN

@@ -8,6 +8,7 @@
 		selectedDropdownIndex = -1,
 		totalDropdownItems,
 		isActive,
+		schnellrueckgabe = false,
 		showCamera,
 		onInput,
 		onSelect,
@@ -15,6 +16,13 @@
 		onEscape,
 		onToggleCamera
 	} = $props();
+
+	// Der Hinweistext sagt, was das Feld gerade annimmt (Material 3, Search: „Provide a short
+	// description of the information people can search").
+	const hinweis = $derived.by(() => {
+		if (schnellrueckgabe) return 'Schnellrückgabe: Bücher scannen';
+		return isActive ? 'Buch-Barcode (B-) scannen' : 'Scannen oder Namen eingeben';
+	});
 </script>
 
 <!-- Lupe, Feld und Kamera-Knopf sind Flex-Geschwister im Pillen-Container (Omnibox.svelte).
@@ -46,7 +54,7 @@
 		onEscape: onEscape
 	}}
 	class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
-	placeholder={isActive ? 'Buch-Barcode (B-) scannen' : 'Scannen oder Namen eingeben'}
+	placeholder={hinweis}
 />
 <button
 	type="button"

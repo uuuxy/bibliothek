@@ -8,6 +8,7 @@
 	import OmniboxBlockAlert from './components/OmniboxBlockAlert.svelte';
 	import OmniboxChecklistDialog from './components/OmniboxChecklistDialog.svelte';
 	import OmniboxScreenFlash from './components/OmniboxScreenFlash.svelte';
+	import OmniboxSchnellrueckgabe from './components/OmniboxSchnellrueckgabe.svelte';
 	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import { omniboxStore } from './stores/omnibox.svelte.js';
 	import { tasteInsScanfeld } from './scanOhneFokus.js';
@@ -69,6 +70,7 @@
 		/** @param {KeyboardEvent} e */
 		function handleKeyDown(e) {
 			if (e.key === 'Escape') {
+				omniboxStore.escapeGedrueckt();
 				omniboxStore.queryVal = '';
 				omniboxStore.activeStudent = null;
 				omniboxStore.lastFremdrueckgabe = null;
@@ -124,17 +126,20 @@
 		class="relative z-10 w-full mx-auto flex flex-1 flex-col items-center space-y-4 justify-start"
 	>
 		<!-- Die Fläche der Leiste hat die Farbe der Seite: In Ruhe ist hinter ihr nichts zu
-		     sehen, beim Scrollen verdeckt sie den Inhalt, der unter ihr durchläuft. -->
-		<div class="w-full sticky top-0 z-30 bg-surface-container-lowest pb-2">
+		     sehen, beim Scrollen verdeckt sie den Inhalt, der unter ihr durchläuft. Der Umschalter
+		     steht neben dem Feld; fehlt die Breite, rutscht er darunter. -->
+		<div
+			class="w-full sticky top-0 z-30 bg-surface-container-lowest pb-2 flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
+		>
 			<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus, bewusst rounded-full und
-		     48 px statt der 36-px-Control-Höhe: Das Scanfeld ist das Werkzeug des Kiosks. Der
-		     Container trägt Fläche, Rahmen und Fokus. ring-inset zeichnet den Ring nach innen:
-		     Die Pille liegt bündig an der Kante des Rollbereichs, außen würde er abgeschnitten.
-		     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
+			     48 px statt der 36-px-Control-Höhe: Das Scanfeld ist das Werkzeug des Kiosks. Der
+			     Container trägt Fläche, Rahmen und Fokus. ring-inset zeichnet den Ring nach innen:
+			     Die Pille liegt bündig an der Kante des Rollbereichs, außen würde er abgeschnitten.
+			     `relative` bleibt: die Ergebnisliste hängt sich mit top-full daran. -->
 			<form
 				onsubmit={(e) =>
 					omniboxStore.submitAction(e, () => studentProfileComponent?.reloadProfile())}
-				class="group relative flex items-center w-full h-12 px-5 rounded-full border ring-inset transition-colors no-print {omniboxStore.isShaking
+				class="group relative flex flex-1 min-w-64 items-center h-12 px-5 rounded-full border ring-inset transition-colors no-print {omniboxStore.isShaking
 					? 'animate-shake'
 					: ''} {farbZustand}"
 			>
@@ -144,6 +149,7 @@
 					selectedDropdownIndex={omniboxStore.selectedDropdownIndex}
 					totalDropdownItems={omniboxStore.totalDropdownItems}
 					isActive={omniboxStore.isActive}
+					schnellrueckgabe={omniboxStore.schnellrueckgabe}
 					showCamera={omniboxStore.showCamera}
 					onInput={omniboxStore.handleInput}
 					onSelect={(idx) => omniboxStore.selectDropdownItem(idx, onSelectBook)}
@@ -160,9 +166,10 @@
 					/>
 				{/if}
 			</form>
+			<OmniboxSchnellrueckgabe />
 
 			{#if omniboxStore.errorMessage}
-				<div class="mt-3 p-3 bg-error text-on-error text-center">
+				<div class="mt-1 w-full p-3 bg-error text-on-error text-center">
 					{omniboxStore.errorMessage}
 				</div>
 			{/if}
@@ -182,23 +189,13 @@
 	</div>
 </div>
 
-<!-- Toasts laufen ausschließlich über ToastContainer.svelte (global eingehängt).
-     Hier stand bis zuletzt ein zweites, eigenes Toast-Markup mit anderer Optik und
-     anderem Timing — zwei Meldungswege für dieselbe Sache. -->
-
 <OmniboxVormerkungAlert />
 
 <OmniboxBlockAlert onReload={() => studentProfileComponent?.reloadProfile()} />
 <OmniboxChecklistDialog onReload={() => studentProfileComponent?.reloadProfile()} />
 
 <style>
-	/* ── Shake animation ───────────────────────────────────────
-	   Eine Variante, nicht mehr zwei. Vorher gab es `shake` (scale 1.05) für die mittige
-	   Ruhelage und `activeShake` (scale 1) für die angedockte — ausgewählt über den
-	   Selektor `:global(.pt-4) .animate-shake`, also über das Vorhandensein einer
-	   Utility-Klasse. Ein Umbenennen dieser Klasse hätte die Animation still auf die
-	   falsche Variante geworfen. Seit die Leiste dauerhaft oben andockt, gibt es nur noch
-	   einen Zustand: ohne Skalierung — eine angedockte Leiste soll nicht aufpumpen. */
+	/* Rütteln ohne Skalierung: Eine angedockte Leiste soll nicht aufpumpen. */
 	@keyframes shake {
 		0%,
 		100% {

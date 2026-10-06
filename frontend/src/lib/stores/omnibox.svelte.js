@@ -10,6 +10,7 @@ import { normalisiereScan, ordneScanEin } from '../scanEinordnen.js';
 import { toastStore } from './toastStore.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
 import { fehlertext } from '../utils/fehlertext.js';
+import { escapeIstBelegt } from '../components/ui/escapeSchliesst.js';
 
 // Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
 function formatVorbesitzerName(data) {
@@ -20,6 +21,13 @@ function formatVorbesitzerName(data) {
 		return `${data.vorbesitzer_user.vorname} ${data.vorbesitzer_user.nachname}`;
 	}
 	return 'unbekannt';
+}
+
+// Name und Klasse eines Lesers; das Kollegium hat keine Klasse.
+/** @param {{vorname: string, nachname: string, klasse?: string}} leser */
+function leserMitKlasse(leser) {
+	const name = `${leser.vorname} ${leser.nachname}`;
+	return leser.klasse ? `${name} (${leser.klasse})` : name;
 }
 
 // Geht an den globalen toastStore (ToastContainer.svelte in App.svelte). Vorher
@@ -46,6 +54,9 @@ export function createOmniboxStore() {
 	// Aufloesen kann ihn nur der Server; bis dahin tragen die folgenden Buecher sie mit
 	// (offlineQueue: `ausweis_barcode`, die Nachbuch-Tuer kennt das Feld).
 	let offlineAusweis = $state('');
+	// Schnellrückgabe: Jeder Scan nimmt nur zurück. Sie und ein geladener Leser schließen
+	// einander aus; ohne Leser bekommt der Server keinen und leiht nie aus.
+	let schnellrueckgabe = $state(false);
 	let queryVal = $state('');
 
 	let flashBorder = $state('');
@@ -326,7 +337,13 @@ export function createOmniboxStore() {
 			triggerScreenFlash('success');
 			playSoundSuccess();
 			triggerFlash('green');
-			showToast(`„${data.book?.titel ?? data.geraet?.modellname}" erfolgreich zurückgegeben.`);
+			const titel = data.book?.titel ?? data.geraet?.modellname;
+			// In der Schnellrückgabe erscheint kein Konto: Die Meldung nennt, bei wem das Buch war.
+			showToast(
+				schnellrueckgabe && data.student
+					? `„${titel}" zurückgegeben, war bei ${leserMitKlasse(data.student)}.`
+					: `„${titel}" erfolgreich zurückgegeben.`
+			);
 		}
 		if (data.has_vormerkung) {
 			vormerkungAlert = {
@@ -336,10 +353,29 @@ export function createOmniboxStore() {
 		}
 		if (reloadProfileCb) reloadProfileCb();
 
-		if (data.student && !activeStudent) {
+		if (data.student && !activeStudent && !schnellrueckgabe) {
 			activeStudent = data.student;
 			abholbereit = data.abholbereit ?? [];
 		}
+	}
+
+	// Die Schnellrückgabe ein- oder ausschalten. Beim Einschalten weicht, wer geladen oder
+	// ohne Netz gemerkt ist: Sonst ginge das nächste freie Buch an ihn.
+	/** @param {boolean} an */
+	function schalteSchnellrueckgabe(an) {
+		schnellrueckgabe = an;
+		if (!an) return;
+		activeStudent = null;
+		abholbereit = [];
+		offlineAusweis = '';
+		lastFremdrueckgabe = null;
+		lastAuflagenHinweis = null;
+	}
+
+	// Escape beendet die Schnellrückgabe. Schließt es gerade einen Hinweis (Vormerkung),
+	// bleibt sie an: Der Stapel ist dann noch nicht durch.
+	function escapeGedrueckt() {
+		if (!escapeIstBelegt()) schalteSchnellrueckgabe(false);
 	}
 
 	// Die Rückkehr eines abgeschriebenen Buches (#597): Der Server sagt in `message`, was
@@ -354,6 +390,7 @@ export function createOmniboxStore() {
 
 	// Ein Leser ist geladen: Er steht jetzt an der Theke, sein Abholfach kommt mit.
 	function verarbeiteLeser(data) {
+		schnellrueckgabe = false;
 		activeStudent = data.student;
 		abholbereit = data.abholbereit ?? [];
 		triggerScreenFlash('success');
@@ -520,6 +557,7 @@ export function createOmniboxStore() {
 	// Nachbuchen auf.
 	/** @param {string} nummer */
 	function merkeOfflineAusweis(nummer) {
+		schnellrueckgabe = false;
 		offlineAusweis = nummer;
 		// Die zuvor geladene Person weicht: Sonst zeigte die Theke einen Namen, waehrend
 		// die folgenden Buecher an eine ANDERE Person gingen.
@@ -649,6 +687,11 @@ export function createOmniboxStore() {
 			triggerScreenFlash('error');
 			playSoundError();
 			return;
+		}
+		// Am Stapel wird blind gescannt: Ein Scan, der nichts gebucht hat, ist dort zu hören.
+		if (schnellrueckgabe) {
+			triggerScreenFlash('error');
+			playSoundError();
 		}
 		// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
 		// Kein zusätzlicher Toast — das war die doppelte Anzeige desselben Fehlers.
@@ -881,7 +924,11 @@ export function createOmniboxStore() {
 			offlineAusweis = v;
 		},
 		set activeStudent(v) {
+			if (v) schnellrueckgabe = false;
 			activeStudent = v;
+		},
+		get schnellrueckgabe() {
+			return schnellrueckgabe;
 		},
 		get abholbereit() {
 			return abholbereit;
@@ -1009,6 +1056,8 @@ export function createOmniboxStore() {
 		showToast,
 		handleInput,
 		uebernimmZusammengefuehrt,
+		schalteSchnellrueckgabe,
+		escapeGedrueckt,
 		gibZurueck,
 		selectDropdownItem,
 		submitAction

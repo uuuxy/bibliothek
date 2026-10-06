@@ -57,6 +57,14 @@ Schritt).
 der Akte. Nur ein offenes Fenster (etwa „Gebühr stornieren") und ein Feld, in dem gerade getippt
 wird, behalten die Tastatur.
 
+**Ein Stapel vom Rückgabetisch** geht über die **Schnellrückgabe** (seit 06.10.2026): den Knopf
+rechts neben dem Scanfeld anklicken, dann die Bücher scannen. Jedes verliehene Buch wird
+zurückgebucht, und die Meldung nennt, bei wem es war. Ein Konto erscheint nicht, ausgeliehen
+wird nichts; ein Buch, das nicht verliehen war, meldet sich rot mit Fehlerton. Ohne sie öffnet
+die erste Rückgabe das Konto ihres Lesers, und ein Buch aus dem Regal ginge an ihn. Die
+Schnellrückgabe endet mit einem zweiten Klick, mit Escape, mit einem gescannten Ausweis und
+nach der Frist, nach der sich die Theke von selbst leert.
+
 **Die Theke warnt von selbst:**
 
 - Bekommt ein Kind ein **Schulbuch in einer anderen Auflage**, als Kinder seiner Klasse sie

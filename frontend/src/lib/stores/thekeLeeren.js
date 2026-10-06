@@ -39,6 +39,9 @@ export function thekeLeeren() {
 	// entscheidet, WEM die naechsten Buecher zugeschrieben werden. Bliebe er stehen,
 	// liehe der naechste Bediener auf die Karte des vorigen aus.
 	omniboxStore.offlineAusweis = '';
+	// Die Schnellrückgabe endet mit: Wer nach der Pause an die Theke kommt, findet sie im
+	// gewöhnlichen Betrieb vor.
+	omniboxStore.schalteSchnellrueckgabe(false);
 	omniboxStore.queryVal = '';
 	omniboxStore.isDropdownOpen = false;
 	omniboxStore.unifiedSearchResults = {
