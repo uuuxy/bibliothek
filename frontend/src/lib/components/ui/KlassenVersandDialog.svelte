@@ -97,37 +97,35 @@
 
 <Modal {open} {onclose} size="lg">
 	{#snippet header()}
-		<h3 class="text-lg font-bold text-slate-900">{titel}</h3>
+		<h3 class="text-lg font-bold text-on-surface">{titel}</h3>
 	{/snippet}
 
 	<div class="p-6 space-y-5">
 		<div class="space-y-2">
 			<div class="flex items-baseline justify-between gap-3">
-				<p class="text-sm text-slate-600">{beschreibung}</p>
+				<p class="text-sm text-on-surface-variant">{beschreibung}</p>
 				<button
 					type="button"
-					class="text-xs font-semibold text-blue-600 hover:text-blue-700 shrink-0 cursor-pointer"
+					class="text-xs font-semibold text-primary shrink-0 cursor-pointer"
 					onclick={() => (ausgewaehlt = alleGewaehlt ? [] : klassen.map((k) => k.klasse))}
 				>
 					{alleGewaehlt ? 'Keine' : 'Alle'}
 				</button>
 			</div>
 
-			<!-- Zweizeilige Liste: oben WAS (Klasse, Umfang), darunter WOHIN. Der
-			     Empfänger stand vorher nirgends — sichtbar war nur seine Abwesenheit
-			     („keine E-Mail"). Wer prüfen wollte, ob die richtige Adresse hinterlegt
-			     ist, musste dafür die Einstellungen öffnen. -->
+			<!-- Jede Zeile nennt, was verschickt wird (Klasse, Umfang) und wohin: Die Adresse
+			     lässt sich so prüfen, ohne die Einstellungen zu öffnen. -->
 			<div
-				class="max-h-64 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100"
+				class="max-h-64 overflow-y-auto border border-outline-variant rounded-lg divide-y divide-outline-variant"
 			>
 				{#each klassen as k (k.klasse)}
 					{@const ziel = emailGetrimmt || k.lehrer_email}
-					<label
-						class="flex items-center gap-3 px-3 py-3 hover:bg-slate-50 cursor-pointer text-sm transition-colors"
-					>
+					<label class="m3-state flex items-center gap-3 px-3 py-3 cursor-pointer text-sm">
 						<Kaestchen checked={ausgewaehlt.includes(k.klasse)} onchange={() => toggle(k.klasse)} />
-						<span class="w-16 shrink-0 font-semibold text-slate-800">{k.klasse}</span>
-						<span class="w-20 shrink-0 text-xs text-slate-500">{anzahlSchueler(k)} Schüler</span>
+						<span class="w-16 shrink-0 font-semibold text-on-surface">{k.klasse}</span>
+						<span class="w-20 shrink-0 text-xs text-on-surface-variant"
+							>{anzahlSchueler(k)} Schüler</span
+						>
 
 						<!-- Die Adresse ist die Hauptinformation der Zeile: Sie beantwortet
 						     „geht das an die richtige Person?" — deshalb bekommt sie den Platz
@@ -135,8 +133,8 @@
 						{#if ziel}
 							<span
 								class="min-w-0 flex-1 truncate text-right text-xs {emailGetrimmt
-									? 'font-medium text-blue-700'
-									: 'text-slate-500'}"
+									? 'font-medium text-primary'
+									: 'text-on-surface-variant'}"
 								title={ziel}
 							>
 								{ziel}
@@ -144,19 +142,19 @@
 						{:else}
 							<!-- Ohne Adresse überspringt der Server die Klasse still — das gehört
 							     vor den Versand, nicht in die Ergebnismeldung danach. -->
-							<span class="min-w-0 flex-1 text-right text-xs font-medium text-amber-700">
+							<span class="min-w-0 flex-1 text-right text-xs font-medium text-warning">
 								keine E-Mail hinterlegt
 							</span>
 						{/if}
 					</label>
 				{:else}
-					<p class="p-3 text-sm text-slate-500">Keine Klassen vorhanden.</p>
+					<p class="p-3 text-sm text-on-surface-variant">Keine Klassen vorhanden.</p>
 				{/each}
 			</div>
 
 			<!-- Umfang in einer Zeile: „5 Klassen senden" allein verrät nicht, wie viele
 			     Menschen das betrifft. -->
-			<p class="text-xs text-slate-500">
+			<p class="text-xs text-on-surface-variant">
 				{ausgewaehlt.length} von {klassen.length} Klassen · {ausgewaehlteSchueler} Schüler
 			</p>
 		</div>
@@ -173,7 +171,7 @@
 		/>
 	</div>
 
-	<div class="flex justify-end gap-3 p-4 border-t border-slate-100 bg-slate-50/50">
+	<div class="flex justify-end gap-3 p-4 border-t border-outline-variant bg-surface/50">
 		<Button variant="secondary" onclick={onclose}>Abbrechen</Button>
 		<Button
 			{variant}
