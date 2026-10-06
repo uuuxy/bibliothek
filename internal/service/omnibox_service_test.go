@@ -382,7 +382,7 @@ func TestProcessQuery(t *testing.T) {
 			err:    nil,
 		}
 		svc := &defaultOmniboxService{
-			bookRepo: repo,
+			bookRepo:    repo,
 			studentRepo: &stubLeserRepo{},
 		}
 
@@ -408,7 +408,7 @@ func TestProcessQuery(t *testing.T) {
 			err:    nil,
 		}
 		svc := &defaultOmniboxService{
-			bookRepo: repo,
+			bookRepo:    repo,
 			studentRepo: &stubLeserRepo{},
 		}
 
