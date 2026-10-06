@@ -15,6 +15,7 @@ import (
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // pruefeSchuelerLoeschbar prüft, ob ein Schüler gelöscht werden darf. Rückgabe
@@ -614,6 +615,12 @@ func (s *Server) fuehreSchuelerUpdateAus(ctx context.Context, w http.ResponseWri
 		if repository.IstNummerBuchOderAusweisKollision(err) {
 			apierrors.SendHTTPError(w, http.StatusConflict,
 				errors.New("diese Nummer ist der Barcode eines Buchs und kann kein Ausweis sein"))
+			return false
+		}
+		// Name und Geburtsdatum eines anderen Lesers: dieselbe Auskunft wie beim Anlegen.
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "unique_schueler_name_gebdatum" {
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
 			return false
 		}
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
