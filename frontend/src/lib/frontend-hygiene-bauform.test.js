@@ -52,11 +52,9 @@ const SCHATTEN = /(^|[\s'"`{(])shadow(-(xs|sm|md|lg|xl|2xl))?(?=[\s'"`});]|$)/;
 // Verstoß gebaut — die Regel ist nicht ausgelegt, sondern in Googles Token-Spezifikation
 // nachgezählt.
 const BESTAND = [
-	'src/lib/CameraScanner.svelte',
 	'src/lib/components/OmniboxBlockAlert.svelte',
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
 	'src/lib/components/labels/LabelPreview.svelte',
-	'src/lib/components/students/AuswahlAktionsleiste.svelte',
 	'src/lib/components/ui/CoverPeek.svelte',
 	'src/lib/designer/CanvasArea.svelte'
 ];

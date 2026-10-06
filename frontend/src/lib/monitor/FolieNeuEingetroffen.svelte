@@ -7,9 +7,9 @@
 </script>
 
 <!-- max-w-5xl (1024 px): zehn Cover in einer Reihe — 128 + 9 × 80 px plus neun 16-px-Lücken
-     sind 992 px. Mit max-w-4xl (896 px) rutschte das zehnte Cover allein in eine zweite Zeile. -->
+     sind 992 px. In max-w-4xl (896 px) rutscht das zehnte Cover allein in eine zweite Zeile. -->
 <div class="flex flex-col items-center gap-8 w-full max-w-5xl">
-	<span class="text-sm font-medium text-cyan-400"
+	<span class="text-sm font-medium text-primary"
 		><Sparkles class="h-4 w-4" aria-hidden="true" /> Neu eingetroffen</span
 	>
 	{#if titel.length > 0}
@@ -29,11 +29,13 @@
 						/>
 					{:else}
 						<div
-							class="rounded-xl bg-slate-700 flex items-center justify-center transition-all duration-500
+							class="rounded-xl bg-surface-variant flex items-center justify-center transition-all duration-500
                               {i === coverIndex ? 'w-32 h-44' : 'w-20 h-28'}"
 						>
 							<span
-								class="{i === coverIndex ? 'text-2xl' : 'text-base'} text-slate-300 font-extrabold"
+								class="{i === coverIndex
+									? 'text-2xl'
+									: 'text-base'} text-on-surface-variant font-extrabold"
 							>
 								{book.titel.charAt(0)}
 							</span>
@@ -41,9 +43,9 @@
 					{/if}
 					{#if i === coverIndex}
 						<div class="text-center max-w-32">
-							<p class="text-sm font-bold leading-tight text-white truncate">{book.titel}</p>
+							<p class="text-sm font-bold leading-tight text-on-surface truncate">{book.titel}</p>
 							{#if book.autor}
-								<p class="text-xs text-slate-300 truncate">{book.autor}</p>
+								<p class="text-xs text-on-surface-variant truncate">{book.autor}</p>
 							{/if}
 						</div>
 					{/if}
@@ -51,6 +53,6 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-slate-300">Keine neuen Medien</p>
+		<p class="text-on-surface-variant">Keine neuen Medien</p>
 	{/if}
 </div>

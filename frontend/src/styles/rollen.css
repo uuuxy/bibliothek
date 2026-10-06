@@ -66,6 +66,54 @@
 	--color-scrim: #000000;
 }
 
+/* Das dunkle Schema für einen Bereich: Flur-Monitor und Kamera-Sucher stehen dunkel, während
+   die Anwendung hell bleibt. Die Rollen heißen gleich und tragen die Töne des dunklen Schemas
+   (material-web, Token v0_192, md-sys-color, values-dark): surface neutral6, on-surface
+   neutral90, on-surface-variant neutral-variant80, die Container neutral4 bis 22, outline
+   neutral-variant60, die Farben Ton 80 mit On-Farbe 20, Container 30 und On-Container 90.
+   Die Werte stammen aus denselben Tonleitern wie das helle Schema; Töne, die theme-farben.css
+   nicht führt (neutral 4, 6, 12, 17, 22, neutral-variant 60, secondary 30 und 80), sind mit
+   Googles material-color-utilities aus der Grundfarbe #0061A4 gerechnet. Jede Rolle des
+   hellen Schemas steht hier, sonst fiele sie im dunklen Bereich auf ihren hellen Wert zurück
+   (rollen-schema.test.js). */
+.schema-dunkel {
+	color-scheme: dark;
+	--color-primary: #9ccaff;
+	--color-on-primary: #00315e;
+	--color-primary-container: #004880;
+	--color-on-primary-container: #d0e4ff;
+	--color-secondary: #bbc7db;
+	--color-secondary-container: #3b4858;
+	--color-on-secondary-container: #d7e3f8;
+	--color-surface: #121316;
+	--color-on-surface: #e3e2e6;
+	--color-surface-variant: #42474e;
+	--color-on-surface-variant: #c2c7cf;
+	--color-surface-container-lowest: #0d0e11;
+	--color-surface-container-low: #1a1c1e;
+	--color-surface-container: #1e2022;
+	--color-surface-container-high: #282a2d;
+	--color-surface-container-highest: #333538;
+	--color-outline: #8d9199;
+	--color-outline-variant: #42474e;
+	--color-error: #ffb4ab;
+	--color-on-error: #690005;
+	--color-error-container: #93000a;
+	--color-on-error-container: #ffdad6;
+	--color-success: #9cd89f;
+	--color-on-success: #003910;
+	--color-success-container: #1a5324;
+	--color-on-success-container: #b7f5b9;
+	--color-warning: #ffb77c;
+	--color-on-warning: #4c2700;
+	--color-warning-container: #6c3c00;
+	--color-on-warning-container: #ffdcc2;
+	--color-inverse-surface: #e3e2e6;
+	--color-inverse-on-surface: #2f3033;
+	--color-inverse-primary: #0061a4;
+	--color-scrim: #000000;
+}
+
 body {
 	@apply font-sans;
 	text-rendering: optimizeLegibility;

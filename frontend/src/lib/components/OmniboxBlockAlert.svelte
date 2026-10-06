@@ -11,12 +11,12 @@
 	let { onReload } = $props();
 
 	// Beide Knöpfe folgen dem Recht ihrer Route (edit_students): override_block wirkt am
-	// Server nur damit (api/action.go) und PATCH …/lock verlangt es. Bis zum 15.09.2026 sah
-	// jede Rolle die Knöpfe; die Helferin klickte, der Server verwarf, der Dialog kam wieder
-	// (OFFEN.md 3.3). Sichtbarkeit = Recht, nicht Rolle (frontend-hygiene-rechte.test.js).
+	// Server nur damit (api/action.go) und PATCH …/lock verlangt es. Ohne das Recht verwürfe
+	// der Server den Klick, und der Dialog käme wieder. Sichtbarkeit = Recht, nicht Rolle
+	// (frontend-hygiene-rechte.test.js).
 	const darf = $derived(schuelerRechte(authStore.currentUser).bearbeiten);
 
-	// Das Merkmal des Servers entscheidet, was der Dialog anbietet (entschieden am 24.09.2026):
+	// Das Merkmal des Servers entscheidet, was der Dialog anbietet:
 	// Eine Sperre am Leser — von Hand oder die der Ehemaligen — lässt sich nicht übergehen,
 	// nur aufheben; ein Hinweis (offene Forderung, überfällige Medien) einmalig übergehen.
 	// Wie Littera: Einen gesperrten Leser hebt man in den Leserdaten auf, Hinweise wie das
@@ -80,11 +80,12 @@
 </script>
 
 {#if omniboxStore.blockAlert}
-	<!-- Der rote Schleier gehört zum Alarm. Eine Rolle dafür gibt es nicht: scrim ist schwarz. -->
+	<!-- Der rote Schleier gehört zum Alarm: der dunkelste Ton der Fehlerfarbe statt des
+	     schwarzen scrim. -->
 	<div
-		class="fixed inset-0 bg-rose-900/80 backdrop-blur-sm z-100 flex items-center justify-center p-4"
+		class="fixed inset-0 bg-on-error-container/80 backdrop-blur-sm z-100 flex items-center justify-center p-4"
 	>
-		<!-- alertdialog + Fokusfalle (09.09.2026): Der Alarm unterbricht die Theke — der
+		<!-- alertdialog + Fokusfalle: Der Alarm unterbricht die Theke — der
 		     Screenreader liest ihn sofort, Tab bleibt drin, Escape gibt den Fokus ans
 		     Scanfeld zurück. -->
 		<div

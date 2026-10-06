@@ -24,7 +24,11 @@
 	});
 </script>
 
-<main class="fixed inset-0 bg-slate-900 text-white flex flex-col overflow-hidden select-none">
+<!-- Der Monitor steht im dunklen Schema (styles/rollen.css): Die Rollen tragen hier ihre
+     dunklen Töne. -->
+<main
+	class="schema-dunkel fixed inset-0 bg-surface text-on-surface flex flex-col overflow-hidden select-none"
+>
 	<!-- Folienpunkte -->
 	<div class="absolute top-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
 		{#each FOLIEN as name, i (name)}
@@ -32,8 +36,8 @@
 				onclick={() => takt.springeZu(i)}
 				aria-label="{name} anzeigen"
 				class="rounded-full transition-all duration-300 cursor-pointer {takt.folie === i
-					? 'bg-white w-6 h-2'
-					: 'bg-slate-600 w-2 h-2'}"
+					? 'bg-on-surface w-6 h-2'
+					: 'bg-outline w-2 h-2'}"
 			></button>
 		{/each}
 	</div>
@@ -41,7 +45,7 @@
 	<!-- Folie -->
 	<div class="flex-1 flex items-center justify-center px-8 py-16">
 		{#if !takt.slides}
-			<div class="text-slate-300 text-xl animate-pulse">Lade Daten …</div>
+			<div class="text-on-surface-variant text-xl animate-pulse">Lade Daten …</div>
 		{:else if takt.folie === 0}
 			<FolieBuchDesMonats titel={takt.slides.buch_des_monats} />
 		{:else if takt.folie === 1}
@@ -53,18 +57,16 @@
 
 	<!-- Beschriftung -->
 	<div
-		class="bg-slate-800 px-6 py-3 flex items-center justify-between text-xs text-slate-300 font-semibold tracking-wide"
+		class="bg-surface-container-high px-6 py-3 flex items-center justify-between text-xs text-on-surface-variant font-semibold tracking-wide"
 	>
 		<span data-testid="monitor-folie">{FOLIEN[takt.folie]}</span>
-		<!-- Keine eigene Farbe: `slate-400` ist im Theme ein M3-Neutralton für HELLE Flächen
-		     (2,05:1 auf dem dunklen Monitor, axe 09.09.2026); die Fußzeile schreibt slate-300. -->
 		<span>Schulbibliothek</span>
 	</div>
 
 	<!-- Fortschrittsbalken: läuft genau eine Folie lang, dieselbe Zahl wie der Takt -->
 	{#key takt.lauf}
-		<div class="h-1 bg-slate-800">
-			<div class="h-full bg-slate-400 progress-bar" style:animation-duration="{FOLIE_MS}ms"></div>
+		<div class="h-1 bg-surface-container-highest">
+			<div class="h-full bg-primary progress-bar" style:animation-duration="{FOLIE_MS}ms"></div>
 		</div>
 	{/key}
 </main>

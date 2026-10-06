@@ -7,14 +7,14 @@
 </script>
 
 <div class="flex flex-col items-center gap-6 w-full max-w-lg">
-	<span class="text-sm font-medium text-rose-400"
+	<span class="text-sm font-medium text-primary"
 		><Flame class="h-4 w-4" aria-hidden="true" /> Beliebt diese Woche</span
 	>
 	{#if titel.length > 0}
 		<ol class="w-full flex flex-col gap-3">
 			{#each titel as book, i (i)}
-				<li class="flex items-center gap-4 bg-slate-800/60 rounded-2xl p-3 shadow-md">
-					<span class="text-2xl font-black w-8 text-center text-slate-300">#{i + 1}</span>
+				<li class="flex items-center gap-4 bg-surface-container rounded-2xl p-3 shadow-md">
+					<span class="text-2xl font-black w-8 text-center text-on-surface-variant">#{i + 1}</span>
 					{#if coverSrc(book.cover_url, book.isbn)}
 						<img
 							src={coverSrc(book.cover_url, book.isbn)}
@@ -22,20 +22,22 @@
 							class="w-12 h-16 object-cover rounded-xl shadow"
 						/>
 					{:else}
-						<div class="w-12 h-16 rounded-xl bg-slate-700 flex items-center justify-center">
-							<span class="text-lg font-extrabold text-slate-300">{book.titel.charAt(0)}</span>
+						<div class="w-12 h-16 rounded-xl bg-surface-variant flex items-center justify-center">
+							<span class="text-lg font-extrabold text-on-surface-variant"
+								>{book.titel.charAt(0)}</span
+							>
 						</div>
 					{/if}
 					<div class="flex-1 min-w-0">
 						<p class="font-bold truncate">{book.titel}</p>
 						{#if book.autor}
-							<p class="text-xs text-slate-300 truncate">{book.autor}</p>
+							<p class="text-xs text-on-surface-variant truncate">{book.autor}</p>
 						{/if}
 					</div>
 				</li>
 			{/each}
 		</ol>
 	{:else}
-		<p class="text-slate-300">Keine Daten verfügbar</p>
+		<p class="text-on-surface-variant">Keine Daten verfügbar</p>
 	{/if}
 </div>

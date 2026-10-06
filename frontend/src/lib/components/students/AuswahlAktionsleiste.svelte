@@ -2,7 +2,7 @@
 
      Der Balken liegt über dem Inhalt statt in der Werkzeugleiste: Wer eine Klasse
      markiert, scrollt dabei durch die Liste. Ein Knopf oben wäre nach dem dritten Haken
-     aus dem Bild — und man sucht ihn, statt zu drucken. -->
+     aus dem Bild. Der Balken steht im dunklen Schema (styles/rollen.css). -->
 <script>
 	import { IdCard, X } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
@@ -37,18 +37,20 @@
 		aria-label="Aktionen für die markierten Schüler"
 	>
 		<div
-			class="flex max-w-3xl items-center gap-4 rounded-2xl border border-slate-700/10 bg-slate-900 px-4 py-3 text-white shadow-2xl"
+			class="schema-dunkel flex max-w-3xl items-center gap-4 rounded-2xl bg-surface-container px-4 py-3 text-on-surface shadow-2xl"
 		>
 			<span class="text-sm whitespace-nowrap">
 				<span class="font-semibold">{anzahl}</span>
 				{anzahl === 1 ? 'Schüler' : 'Schüler'} markiert
 			</span>
 
-			<!-- Der Hinweis gilt der AUSWEISKARTE: Sie trägt sonst "Gültig bis: 31.07.–",
+			<!-- Der Hinweis gilt der Ausweiskarte: Sie trägt sonst "Gültig bis: 31.07.–",
 			     und wer das erst am fertigen Stapel merkt, hat die Rohlinge verbraucht.
 			     Auf dem Etikett steht kein Ablaufdatum — dort wäre die Warnung nur Lärm. -->
 			{#if ohneDatum > 0 && !etikettModus}
-				<span class="rounded-lg bg-amber-500/15 px-2.5 py-1 text-xs leading-snug text-amber-200">
+				<span
+					class="rounded-lg bg-warning-container px-2.5 py-1 text-xs leading-snug text-on-warning-container"
+				>
 					{ohneDatum} davon ohne Ablaufjahr — Klasse lässt keine Ableitung zu. Einzeln im Profil eintragen.
 				</span>
 			{/if}
@@ -57,10 +59,12 @@
 				<!-- Angebrochener Bogen: Auf welchem Feld soll der Druck anfangen? Dieselbe
 				     Angabe wie bei den Buch-Etiketten, hier direkt am Druckknopf, weil es
 				     die einzige Entscheidung dieses Vorgangs ist. -->
-				<label class="flex shrink-0 items-center gap-2 text-xs whitespace-nowrap text-white/75">
+				<label
+					class="flex shrink-0 items-center gap-2 text-xs whitespace-nowrap text-on-surface-variant"
+				>
 					Ab Feld
 					<Feld type="number" min="1" max={maxPosition} bind:value={startPosition} feld="w-16" />
-					<span class="text-white/55">von {maxPosition}</span>
+					<span>von {maxPosition}</span>
 				</label>
 			{/if}
 
@@ -74,7 +78,7 @@
 					onclick={onLeeren}
 					aria-label="Markierung aufheben"
 					data-tip="Markierung aufheben"
-					class="rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+					class="icon-btn text-on-surface-variant"
 				>
 					<X class="h-4 w-4" />
 				</button>

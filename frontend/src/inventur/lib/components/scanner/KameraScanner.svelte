@@ -96,11 +96,10 @@
 					}
 				}
 			} catch (fehler) {
-				// Ein einzelnes misslungenes Bild ist belanglos — aber wenn JEDES Bild
-				// scheitert, arbeitet die Erkennung gar nicht, und genau das sah bis zum
-				// 17.09.2026 aus wie „Kamera laeuft, findet nur nichts". Nach drei Bildern
-				// in Folge wird der Grund gemeldet; danach wird weiter gescannt, falls es
-				// sich um eine Eigenheit einzelner Bilder handelt.
+				// Ein einzelnes misslungenes Bild ist belanglos. Scheitert jedes Bild, arbeitet
+				// die Erkennung nicht, und das sähe aus wie „Kamera läuft, findet nur nichts":
+				// Nach drei Bildern in Folge wird der Grund gemeldet; danach wird weiter
+				// gescannt, falls es an einzelnen Bildern lag.
 				fehlerInFolge += 1;
 				if (fehlerInFolge === 3) {
 					const text = fehler instanceof Error ? fehler.message : String(fehler);
@@ -141,9 +140,9 @@
 </script>
 
 <!-- Hinter der Sperre läuft keine Kamera: Der Bereich wird träge, der Strom ruht und läuft
-     nach dem Aufschließen wieder an. -->
+     nach dem Aufschließen wieder an. Der Sucher steht im dunklen Schema (styles/rollen.css). -->
 <div
-	class="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 min-h-56 aspect-4/3 w-full max-w-sm mx-auto shadow-inner"
+	class="schema-dunkel relative overflow-hidden rounded-2xl border border-outline-variant bg-surface min-h-56 aspect-4/3 w-full max-w-sm mx-auto shadow-inner"
 	use:ruhtWennTraege={{ anhalten: stopScanner, fortsetzen: startScanner }}
 >
 	<!-- Ausgeschriebenes Schluss-Tag: <video /> ist kein void-Element, die selbstschliessende
@@ -159,7 +158,7 @@
 	{#if scanning}
 		<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
 			<div
-				class="border-2 border-blue-500 rounded-lg opacity-60 animate-pulse"
+				class="border-2 border-primary rounded-lg opacity-60 animate-pulse"
 				style="width: 80%; height: 40%;"
 			></div>
 		</div>
@@ -169,11 +168,8 @@
 {#if showControls}
 	<div class="mt-4 flex gap-3 justify-center">
 		<Button size="lg" onclick={startScanner} disabled={scanning} class="px-5">Starten</Button>
-		<button
-			onclick={stopScanner}
-			disabled={!scanning}
-			class="rounded-xl bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-705 hover:bg-slate-200 disabled:opacity-60 transition-colors cursor-pointer"
-			>Stoppen</button
+		<Button size="lg" variant="secondary" onclick={stopScanner} disabled={!scanning} class="px-5"
+			>Stoppen</Button
 		>
 	</div>
 {/if}

@@ -2,17 +2,10 @@
 	/**
 	 * Die Kamera an der Theke.
 	 *
-	 * Bis zum 17.09.2026 hatte sie einen EIGENEN Erkenner (html5-qrcode mit einem
-	 * Ausschnitt von 260×120 px), während der Inventur-Bereich einen zweiten benutzte.
-	 * Zwei Scanner für dieselbe Aufgabe heißen zwei Fehlerbilder — und auf einem iPhone,
-	 * das keinen eingebauten Barcode-Erkenner hat, blieb dieser hier stumm: kein Treffer,
-	 * keine Meldung, nichts.
-	 *
-	 * Jetzt liegt hier der Rahmen und dort die Technik: `KameraScanner` fragt zuerst den
-	 * eingebauten Erkenner des Browsers und fällt sonst auf ZXing zurück, über das GANZE
-	 * Bild statt über einen schmalen Streifen, und mit der Formatliste der Anwendung
-	 * (barcode_detector.js) — darin steht seit heute auch Code 39, das Format unserer
-	 * eigenen Ausweise aus der Zeit vor Code 128.
+	 * Hier liegt der Rahmen, die Technik in `KameraScanner`: ein Erkenner für Theke und
+	 * Inventur. Er fragt zuerst den eingebauten Erkenner des Browsers und fällt sonst auf ZXing
+	 * zurück, über das ganze Bild und mit der Formatliste der Anwendung (barcode_detector.js),
+	 * darunter Code 39, das Format der älteren Ausweise.
 	 */
 	import KameraScanner from '../inventur/lib/components/scanner/KameraScanner.svelte';
 	import { omniboxStore } from './stores/omnibox.svelte.js';
@@ -27,8 +20,8 @@
 
 	// Der Griff zum Abschalten liegt am Store, solange die Kamera offen ist: „Theke leeren"
 	// und der Sperrbildschirm müssen den Strom abwürgen können, ohne dieses Bauteil zu
-	// kennen. Ein Scanner, der hinter der Sperre weiterläuft, bucht ein vorgehaltenes Buch
-	// (Prüfung 22.08.2026, A6) — deshalb hängt hier ein Gate dran (idleLock.test.js).
+	// kennen. Ein Scanner, der hinter der Sperre weiterläuft, bucht ein vorgehaltenes Buch —
+	// deshalb hängt hier ein Gate dran (idleLock.test.js).
 	$effect(() => {
 		if (scanner) omniboxStore.cameraScanner = { stop: () => scanner?.stopScanner() };
 	});
@@ -53,24 +46,22 @@
 </script>
 
 <div
-	class="w-full rounded-2xl overflow-hidden border border-blue-200 shadow-lg animate-slide-up bg-black relative"
+	class="schema-dunkel w-full rounded-2xl overflow-hidden shadow-lg animate-slide-up bg-surface relative"
 >
 	<div class="absolute top-3 right-3 z-10">
 		<button
 			type="button"
 			onclick={schliessen}
-			class="p-1.5 rounded-full bg-white/80 text-slate-700 hover:bg-white shadow transition-colors cursor-pointer"
-			title="Kamera schließen"
+			class="icon-btn bg-secondary-container text-on-secondary-container"
+			data-tip="Kamera schließen"
 			aria-label="Kamera schließen"
 		>
 			<X class="h-5 w-5" aria-hidden="true" />
 		</button>
 	</div>
-	<!-- EINE Zeile, die den Zustand sagt, statt einer festen Aufschrift: Eine Kamera, die
-	     läuft und nichts findet, sieht sonst genauso aus wie eine, die gar nicht erst
-	     gestartet ist — und genau das war am 17.09.2026 die Beschwerde („Kamera geht auf,
-	     nichts passiert"). -->
-	<div class="px-4 pt-3 pb-1 text-xs text-blue-200 font-semibold text-center">
+	<!-- Eine Zeile, die den Zustand sagt, statt einer festen Aufschrift: Eine Kamera, die
+	     läuft und nichts findet, sähe sonst aus wie eine, die nicht gestartet ist. -->
+	<div class="px-4 pt-3 pb-1 text-xs text-primary font-semibold text-center">
 		{meldung}
 	</div>
 	<div class="px-4 pb-4">

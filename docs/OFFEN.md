@@ -32,7 +32,7 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
-155 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
+114 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
 Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
 
 - [x] Buchakte mit der Liste der Ausleiher (20)
@@ -44,15 +44,14 @@ Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm gep
 - [x] Dialog „Klassenversand" (16)
 - [x] Suchpille mit dem Scanfeld der Theke (14)
 - [x] Druck-Center (5). Quittung und nachgebildetes Etikett sind Papier und bleiben (21).
-- [ ] Monitor (25)
+- [x] Monitor (25)
 - [x] Berechtigungen (18)
 - [x] System und Einzelstellen (54)
-- [ ] Dunkle Flächen (14): Sucher der Kamera (9) und die Leiste des Ausweisdrucks (5). Bei
-  der Leiste ist vorher zu klären, wohin Hinweis und Feld kommen.
+- [x] Dunkle Flächen (16): Sucher der Kamera, Leiste des Ausweisdrucks, die zwei Schleier
+  hinter den Alarmen der Theke
 
-Nicht in dieser Etappe: 48 Farbverläufe der selbstgebauten Cover-Platzhalter (6.2). Es bleiben
-16 Stellen der Initialen-Kachel, 29 der Karte im Ausweis-Designer, 21 auf Papier und zwei
-Schleier hinter den Alarmen der Theke.
+Offen: 48 Farbverläufe der selbstgebauten Cover-Platzhalter (6.2), 16 Stellen der
+Initialen-Kachel, 29 der Karte im Ausweis-Designer und 21 auf Papier.
 
 ### Etappe 3: vor dem Echtstart
 
@@ -506,7 +505,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 06.10.2026: 155 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 06.10.2026: 114 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -532,14 +531,8 @@ Papier bleibt, 21 Stellen: Die Quittung (`StudentPrintReceipt`, 12) wird nur ged
 weiß, auch wenn die Oberfläche ihr Farbschema wechselt. Die übrigen Druckblätter tragen feste
 Farbwerte im eigenen Stylesheet (`utils/listenDruck.js`).
 
-Dunkle Flächen, 14 Stellen: die Sucher der Kamera (`KameraScanner`, `CameraScanner`) und die
-Leiste des Ausweisdrucks (`students/AuswahlAktionsleiste`). Für helle Schrift auf dunklem Grund
-führt `rollen.css` die Rollen `inverse-surface`, `inverse-on-surface` und `inverse-primary`;
-Sprechblasen und Meldungen tragen sie.
-
-An der Theke bleiben zwei Stellen: der rote Schleier hinter den Alarmen (`OmniboxBlockAlert`,
-`OmniboxVormerkungAlert`); eine Rolle für einen farbigen Schleier gibt es nicht, `scrim` ist
-schwarz.
+Dunkle Bereiche (Flur-Monitor, Sucher der Kamera, Leiste des Ausweisdrucks) stehen im dunklen
+Schema: Die Klasse `schema-dunkel` in `rollen.css` gibt den Rollen ihre dunklen Töne.
 
 Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 
@@ -586,10 +579,13 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   inventur-scan nicht ladbar: no rows in result set" (`GetExemplarForInventoryScan` hüllt
   `pgx.ErrNoRows` ein, `ladeExemplarFuerScan` gibt ihn mit 404 unverändert weiter). Der Status
   stimmt, der Satz nicht.
-- Leserdatei: Die Leiste des Ausweisdrucks (`students/AuswahlAktionsleiste`) ist dunkel in
-  Palettenfarben; für markierte Zeilen gibt es `ui/AuswahlLeiste` (Schlagwort-Pflege). Beim
-  Umstellen zu klären: wohin der Hinweis „ohne Ablaufjahr" und das Feld „Ab Feld" kommen —
-  beides passt nicht in die 64 px hohe Leiste.
+- Leserdatei: Die Leiste des Ausweisdrucks (`students/AuswahlAktionsleiste`) ist eine eigene,
+  dunkle Leiste neben `ui/AuswahlLeiste` (Schlagwort-Pflege). Vor dem Zusammenlegen zu klären:
+  wohin der Hinweis „ohne Ablaufjahr" und das Feld „Ab Feld" kommen — beides passt nicht in
+  die 64 px hohe Leiste.
+- Flur-Monitor: Das Symbol der Kennzeile („Buch des Monats", „Neu eingetroffen", „Beliebt
+  diese Woche") steht über dem Wort statt daneben (`monitor/Folie*.svelte`; das Symbol ist ein
+  Blockelement in einem `<span>`). Gesehen am 06.10.2026.
 - Bestellwesen, nach der Umstellung gegen die M3-Seiten gehalten (05.10.2026): Die Zahl im
   eingeklappten Bestellstreifen steht von Hand auf `primary` mit 24 px
   (`BestellWorkspace.svelte`; M3, Badges: Farbe „Error", 16dp; dafür gibt es
