@@ -50,6 +50,34 @@ func TestBookRepository_ListBooks(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
+	t.Run("nurOhneExemplare filter", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
+		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+WHERE NOT EXISTS.+`).
+			WithArgs("", (*int16)(nil), "", 50000).
+			WillReturnRows(pgxmock.NewRows([]string{
+				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel",
+				"verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
+				"untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage",
+				"listenpreis", "mehrjahresband", "werk_id", "werk_rang",
+			}).AddRow(
+				"book-2", "124", "No Exemplars", "Jones", "SIG-2", "url", "Science", int16(6), "B", false,
+				0, 0, 0, &lastCounted, 2, "Buch", 6, 7,
+				"", "", 2021, map[string]any{}, "1. Aufl. 2021", nil, false, "", 0,
+			))
+		mock.ExpectQuery(`SELECT tsw.titel_id.+FROM schlagworte sw`).
+			WithArgs([]string{"book-2"}).
+			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "woerter"}))
+
+		books, err := repo.ListBooks(ctx, "", nil, "", true)
+		assert.NoError(t, err)
+		assert.Len(t, books, 1)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
 	t.Run("db error", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
