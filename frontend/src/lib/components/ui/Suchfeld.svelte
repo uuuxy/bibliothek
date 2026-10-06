@@ -10,16 +10,9 @@
 	 * und Auswahlfeldern und gehört deshalb auf die 36-px-Control-Grundlinie aus
 	 * styles/basis.css — eine Pille an dieser Stelle säße 12 px höher als alles daneben.
 	 *
-	 * Sechs Fundstellen trugen dieselbe Bauart mit sieben kleinen Abweichungen: Symbol
-	 * 16 gegen 20 px, left-3 gegen left-3.5, pl-9 gegen pl-10, weisse gegen graue Fläche,
-	 * Fokusrahmen blue-400 gegen blue-500, `placeholder-slate-400` gegen
-	 * `placeholder:text-slate-400` und Auslassungspunkte mal als „…", mal als „...".
-	 * Nichts davon war entschieden — es war kopiert und dann auseinandergelaufen.
-	 *
-	 * Seit dem 25.08.2026 trägt es Rahmen, Fläche und Fokus aus demselben Rezept wie
-	 * ui/Feld.svelte und ui/Select.svelte (outline-variant, surface-container-lowest,
-	 * primary) — ein Suchfeld neben einem Textfeld in derselben Leiste muss als EIN
-	 * Vokabular lesen; vorher stand es als einziges Feld noch auf slate/blue.
+	 * Rahmen, Fläche und Fokus kommen aus demselben Rezept wie ui/Feld.svelte und
+	 * ui/Select.svelte — ein Suchfeld neben einem Textfeld in derselben Leiste muss gleich
+	 * aussehen.
 	 *
 	 * @type {{
 	 *   wert: string,
@@ -53,8 +46,7 @@
 
 	// Fokus beim Betreten — dieselbe Begründung wie in Suchpille: Ohne ihn geht der erste
 	// Anschlag ins Leere, und bei einem Handscanner heißt das, der Scan ist weg, ohne dass
-	// jemand einen Fehler sieht. Gemessen am 18.09.2026: Auf /bestellungen, /medienkatalog
-	// und /schuelerdatei lag der Fokus auf <body>, blind getipptes landete nirgends.
+	// jemand einen Fehler sieht.
 	$effect(() => {
 		if (autofokus) feld?.focus();
 	});
@@ -63,7 +55,7 @@
 	let feld = $state();
 	import CameraScanner from '../../CameraScanner.svelte';
 
-	// Kamera-Scanner (seit 18.09.2026, Schalter `kamera`, Standard aus): Der erkannte Code
+	// Kamera-Scanner (Schalter `kamera`, Standard aus): Der erkannte Code
 	// landet als Suchtext im Feld, dann geht ein input-Ereignis an das Feld — die Suche
 	// läuft also exakt so los, als hätte jemand den Code eingetippt. Kein zweiter Suchweg.
 	let kameraOffen = $state(false);
@@ -71,8 +63,8 @@
 		kameraOffen = false;
 		// Mit `onscan` entscheidet der Aufrufer, was ein Scan auslöst — die Titelsuche der
 		// Bestellung legt den eindeutigen Treffer direkt in die Übernahme, statt eine Liste
-		// zum Antippen zu zeigen (18.09.2026). Ohne `onscan` bleibt es beim Alten: tippen,
-		// als hätte es jemand eingegeben.
+		// zum Antippen zu zeigen. Ohne `onscan` läuft die Suche, als hätte jemand den Code
+		// eingegeben.
 		if (onscan) {
 			onscan(wert);
 			return;

@@ -5,9 +5,9 @@
 
      Drei Entwurfsentscheidungen, die nicht offensichtlich sind:
 
-     1. LAZY. Der Request geht erst raus, wenn jemand das Cover sehen will. Bei 334
+     1. Lazy. Der Request geht erst raus, wenn jemand das Cover sehen will. Bei 334
         Titeln sind das 0 statt 334 Requests beim Laden der Seite.
-     2. FIXED statt absolute. Die Liste ist ein overflow-y-auto-Container; ein absolut
+     2. Fixed statt absolute. Die Liste ist ein overflow-y-auto-Container; ein absolut
         positioniertes Kind würde an dessen Kante abgeschnitten. Die Position wird
         deshalb aus dem Trigger-Rechteck berechnet und an den Viewport-Rändern gespiegelt.
      3. Kein reines CSS-:hover. Das beherrscht weder Touch noch Tastatur — auf dem iPad
@@ -112,9 +112,9 @@
 	aria-expanded={offen}
 	aria-label="Cover von {titel} anzeigen"
 	data-tip-eigen="zeigt beim Überfahren das Cover"
-	class="shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors cursor-pointer {children
+	class="shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors cursor-pointer {children
 		? ''
-		: 'icon-btn text-slate-300 hover:text-slate-600 hover:bg-slate-100'}"
+		: 'icon-btn text-on-surface-variant'}"
 >
 	{#if children}
 		{@render children()}
@@ -125,13 +125,13 @@
 
 {#if offen}
 	<div
-		class="fixed z-50 rounded-md border border-slate-200 bg-white shadow-xl overflow-hidden pointer-events-none"
+		class="fixed z-50 rounded-md border border-outline-variant bg-surface-container-lowest shadow-xl overflow-hidden pointer-events-none"
 		style="top: {pos.top}px; left: {pos.left}px; width: {BREITE}px; height: {HOEHE}px;"
 		role="tooltip"
 	>
 		{#if status === 'keins' || !quelle}
 			<div
-				class="w-full h-full flex flex-col items-center justify-center gap-1.5 px-3 text-center text-slate-400"
+				class="w-full h-full flex flex-col items-center justify-center gap-1.5 px-3 text-center text-on-surface-variant"
 			>
 				<Slash class="w-6 h-6" aria-hidden="true" />
 				<span class="text-label-small leading-tight font-medium">Kein Coverbild hinterlegt</span>

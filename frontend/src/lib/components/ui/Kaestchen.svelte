@@ -1,15 +1,8 @@
-<!-- @component Kaestchen — DAS Kontrollkästchen der Anwendung (Material 3).
+<!-- @component Kaestchen — das Kontrollkästchen der Anwendung (Material 3).
 
-     Bis zum 08.09.2026 gab es 22 native <input type="checkbox"> in 17 Dateien. Sie
-     trugen Klassen wie `rounded border-slate-300 text-blue-600 focus:ring-blue-500`
-     — das Rezept des Tailwind-Forms-Plugins, das in diesem Repo nie installiert war.
-     Auf einem nativen Kästchen bewirken diese Klassen NICHTS: Chrome zeichnete sein
-     eigenes Blau, eckig, in 13, 16 oder 18 px, ohne Fokusring. Gemessen am 08.09.
-     (appearance: auto an allen 22 Stellen). Nur die 8 Stellen mit `accent-*`
-     färbten das Häkchen überhaupt in unser Primärblau.
-
-     Ein natives Kästchen lässt sich nicht nach M3 einkleiden, also zeichnet dieses
-     Bauteil selbst (appearance-none):
+     Ein natives Kästchen lässt sich nicht nach M3 einkleiden: Farb- und Rundungsklassen
+     bewirken an ihm nichts, der Browser zeichnet sein eigenes. Dieses Bauteil zeichnet
+     deshalb selbst (appearance-none):
        - Kasten 18 px, Rahmen 2 px in `on-surface-variant`, Ecken 2 px (rounded-xs).
        - Ausgewählt: Fläche `primary`, Häkchen in `on-primary` (Lucide Check, nicht
          handgezeichnet — Ratsche frontend-hygiene-icons.test.js).
@@ -18,15 +11,15 @@
          selbst. Es ist zugleich der Berührbereich, größer als der Kasten. Nach außen
          beansprucht das Bauteil aber nur 18 px (negativer Rand), damit es in eine
          36-px-Tabellenzeile passt; der Kreis ragt beim Hover über die Zeile hinaus,
-         genau wie in M3-Listen. Entschieden am 08.09.2026.
+         genau wie in M3-Listen.
        - Fehler (`ungueltig`): Rahmen und Fläche in `error`.
        - Deaktiviert: 38 % `on-surface`, wie M3 es vorschreibt.
 
      Bedeutung (M3): Ein Kästchen wählt aus einer Liste aus oder schaltet eine Option
-     eines Formulars. Ein ZUSTAND („Konto aktiv") ist ein Switch.svelte.
+     eines Formulars. Ein Zustand („Konto aktiv") ist ein Switch.svelte.
 
      Beschriftung: Mit `label` ist das Bauteil ein <label> mit sichtbarem Text. Ohne
-     `label` (Tabellenzelle) ist `aria-label` PFLICHT — sonst liest der Screenreader
+     `label` (Tabellenzelle) ist `aria-label` Pflicht — sonst liest der Screenreader
      nur „Kontrollkästchen". Alles Unbenannte (name, value, aria-*, title, onclick …)
      landet unverändert auf dem Eingabeelement. -->
 <script>

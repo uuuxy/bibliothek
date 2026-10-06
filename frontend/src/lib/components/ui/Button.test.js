@@ -3,43 +3,43 @@ import { render } from '@testing-library/svelte';
 import Button from './Button.svelte';
 
 /**
- * Hintergrund: Tailwind-Utilities haben alle dieselbe Spezifität. Welche gewinnt,
- * entscheidet die Reihenfolge IM STYLESHEET — nicht die im class-Attribut. Steht
- * `bg-white` der Variante im Bundle hinter `bg-blue-50` des Aufrufers, bleibt ein
- * getönter Button stumm weiß, obwohl beide Klassen am Element hängen.
- *
- * Das ist genau so passiert: sechs getönte Buttons (Medienkatalog-Toolbar,
- * Klassenkarte, Stammdaten, Buch-Akte, Offline-Banner, Mahnwesen) rendelten
- * unbemerkt im neutralen Sekundär-Look. Button.svelte entfernt die kollidierende
- * Farbe der Variante deshalb, statt sie mitzuschicken.
- *
- * Ein Screenshot hätte den Rückfall nicht verhindert — diese Tests schon.
+ * Tailwind-Utilities haben alle dieselbe Spezifität. Welche gewinnt, entscheidet die
+ * Reihenfolge im Stylesheet — nicht die im class-Attribut. Steht die Fläche der Variante im
+ * Bundle hinter der des Aufrufers, bleibt ein getönter Button in der Farbe der Variante,
+ * obwohl beide Klassen am Element hängen. Button.svelte entfernt die kollidierende Farbe der
+ * Variante deshalb, statt sie mitzuschicken.
  */
 const klassen = (el) => (el.getAttribute('class') || '').split(/\s+/);
 
 describe('Button — Farb-Overrides des Aufrufers', () => {
 	it('entfernt die Hintergrundfarbe der Variante, wenn der Aufrufer eine eigene mitgibt', () => {
-		const { getByRole } = render(Button, { variant: 'secondary', class: 'bg-blue-50' });
+		const { getByRole } = render(Button, { variant: 'secondary', class: 'bg-primary-container' });
 		const k = klassen(getByRole('button'));
-		expect(k).toContain('bg-blue-50');
-		expect(k).not.toContain('bg-white');
+		expect(k).toContain('bg-primary-container');
+		expect(k).not.toContain('bg-surface-container-lowest');
 	});
 
 	it('entfernt Rahmen- und Textfarbe der Variante gleichermaßen', () => {
 		const { getByRole } = render(Button, {
 			variant: 'secondary',
-			class: 'border-blue-100 text-blue-600'
+			class: 'border-outline text-primary'
 		});
 		const k = klassen(getByRole('button'));
-		expect(k).toEqual(expect.arrayContaining(['border-blue-100', 'text-blue-600']));
-		expect(k).not.toContain('border-slate-200');
-		expect(k).not.toContain('text-slate-700');
+		expect(k).toEqual(expect.arrayContaining(['border-outline', 'text-primary']));
+		expect(k).not.toContain('border-outline-variant');
+		expect(k).not.toContain('text-on-surface-variant');
 	});
 
 	it('lässt die Variante unangetastet, wenn keine Farbe überschrieben wird', () => {
 		const { getByRole } = render(Button, { variant: 'secondary', class: 'w-full px-6' });
 		const k = klassen(getByRole('button'));
-		expect(k).toEqual(expect.arrayContaining(['bg-white', 'border-slate-200', 'text-slate-700']));
+		expect(k).toEqual(
+			expect.arrayContaining([
+				'bg-surface-container-lowest',
+				'border-outline-variant',
+				'text-on-surface-variant'
+			])
+		);
 	});
 
 	it('ersetzt nur die Familie, die der Aufrufer anfasst', () => {
@@ -48,25 +48,38 @@ describe('Button — Farb-Overrides des Aufrufers', () => {
 		const { getByRole } = render(Button, { variant: 'danger', class: 'bg-white' });
 		const k = klassen(getByRole('button'));
 		expect(k).toContain('bg-white');
-		expect(k).not.toContain('bg-rose-50');
-		expect(k).toEqual(expect.arrayContaining(['border-rose-200', 'text-rose-700']));
+		expect(k).not.toContain('bg-error-container');
+		expect(k).toEqual(expect.arrayContaining(['border-transparent', 'text-on-error-container']));
+	});
+
+	it('erkennt auch die Rollen für Erfolg und Warnung als Farbe des Aufrufers', () => {
+		const { getByRole } = render(Button, {
+			variant: 'secondary',
+			class: 'bg-warning-container text-on-warning-container'
+		});
+		const k = klassen(getByRole('button'));
+		expect(k).toEqual(
+			expect.arrayContaining(['bg-warning-container', 'text-on-warning-container'])
+		);
+		expect(k).not.toContain('bg-surface-container-lowest');
+		expect(k).not.toContain('text-on-surface-variant');
 	});
 
 	it('hält Größenangaben aus der Farblogik heraus', () => {
 		// text-[10px] ist eine Größe, keine Farbe — die Textfarbe der Variante bleibt.
 		const { getByRole } = render(Button, { variant: 'secondary', class: 'text-[10px]' });
-		expect(klassen(getByRole('button'))).toContain('text-slate-700');
+		expect(klassen(getByRole('button'))).toContain('text-on-surface-variant');
 	});
 
 	it('rührt Zustandsvarianten nicht an', () => {
 		// hover:/disabled: beschreiben andere Zustände und kollidieren nicht mit der Grundfarbe.
 		const { getByRole } = render(Button, {
 			variant: 'primary',
-			class: 'disabled:bg-slate-200 hover:bg-emerald-700'
+			class: 'disabled:bg-surface hover:bg-success'
 		});
 		const k = klassen(getByRole('button'));
-		expect(k).toContain('bg-blue-600');
-		expect(k).toEqual(expect.arrayContaining(['disabled:bg-slate-200', 'hover:bg-emerald-700']));
+		expect(k).toContain('bg-primary');
+		expect(k).toEqual(expect.arrayContaining(['disabled:bg-surface', 'hover:bg-success']));
 	});
 
 	it('behält die gemeinsame Control-Höhe je Größe', () => {

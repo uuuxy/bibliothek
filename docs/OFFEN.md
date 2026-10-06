@@ -32,14 +32,16 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
-238 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
+195 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
 Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
 
 - [x] Buchakte mit der Liste der Ausleiher (20)
 - [x] „Klassen & Bücher" (50)
 - [x] Signaturen (24)
-- [ ] Gemeinsame Bauteile: Knopf, Suchpille mit dem Scanfeld der Theke, Schalter, Dialoge,
-  Meldungen (81)
+- [x] Gemeinsame Bauteile, erster Teil (43): Knopf, Schalter, Status-Chip, Dialog,
+  Cover-Vorschau
+- [ ] Gemeinsame Bauteile, Rest (38): Suchpille mit dem Scanfeld der Theke (14), Meldungen
+  (8), Dialog „Klassenversand" (16)
 - [x] Druck-Center (5). Quittung und nachgebildetes Etikett sind Papier und bleiben (21).
 - [ ] Monitor (25)
 - [x] Berechtigungen (18)
@@ -501,7 +503,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 06.10.2026: 238 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 06.10.2026: 195 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
