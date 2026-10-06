@@ -62,7 +62,7 @@
 		etikett,
 		autofokus = false,
 		disabled = false,
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 		element = $bindable(undefined),
 		oninput,
 		onfocus,

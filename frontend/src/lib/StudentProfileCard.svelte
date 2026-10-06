@@ -12,9 +12,9 @@
 		profile = $bindable(),
 		rechte = { bearbeiten: false, foto: false },
 		timestamp,
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 		showWebcam = $bindable(false),
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 		showDeleteConfirm = $bindable(false),
 		onDeselect,
 		leftActions,
