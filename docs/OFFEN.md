@@ -19,8 +19,10 @@ Liste geführt wird, steht am Ende.
   nach dem Ja der Bau. Der einzige offene Punkt, der still schaden kann. (4.32)
 - [ ] **Standort: Ein neues Exemplar erbt ihn,** wenn alle übrigen Exemplare des Titels
   denselben tragen. Entschieden am 06.10.2026. (5.53)
-- [ ] **PRs auf GitHub** durchsehen, hereinholen oder schließen und die Zweige aufräumen.
-  Beauftragt am 06.10.2026. (5.10)
+- [x] **PRs auf GitHub:** 21 durchgesehen am 06.10.2026. Zwei sind hereingeholt (701, 702), 19
+  geschlossen; aus sieben davon sind die Tests übernommen (d1dba610).
+- [ ] **PR 722** durchsehen (zugeliefert am 06.10.2026, nach dem Aufräumen): Er ändert die
+  Prüfung beim Löschen einer Sachgruppe (`api/systematik_handler.go`).
 - [ ] **Doku-Ordner:** Vorschlag, welche der 36 Dateien in `docs/` zusammengelegt oder gelöscht
   werden; 19 davon kamen seit September 2026 dazu.
 
