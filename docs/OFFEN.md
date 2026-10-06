@@ -77,6 +77,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [ ] Bekommt die Bestandsliste (CSV) eine Spalte „Standort"? Vorschlag: ja, zusammen mit dem
   Erben. (5.53)
+- [ ] Die gemeinsamen Bauteile stehen auf M3-Rollen und sehen überall etwas anders aus:
+  umrandete Knöpfe mit dunklerem Rand, „Löschen" rötlich getönt ohne Rand, Schalter im
+  Aus-Zustand grauer, Dialoge mit rundem Schließen-Knopf. Vorschlag: bleibt so. (5.21)
 
 **Am Testserver ausprobieren,** nach `git pull` und `./update.sh` (7.10):
 
