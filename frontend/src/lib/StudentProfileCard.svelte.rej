@@ -1,0 +1,13 @@
+--- frontend/src/lib/StudentProfileCard.svelte
++++ frontend/src/lib/StudentProfileCard.svelte
+@@ -12,8 +12,8 @@
+		rechte = { bearbeiten: false, foto: false },
+		timestamp,
+		onDeselect,
+-		showWebcam = $bindable(),
+-		showDeleteConfirm = $bindable(),
++		showWebcam = $bindable(false),
++		showDeleteConfirm = $bindable(false),
+		leftActions,
+		onLock,
+		offen = { anzahl: 0, summe: 0 }

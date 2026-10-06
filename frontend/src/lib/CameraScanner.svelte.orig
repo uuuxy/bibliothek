@@ -19,7 +19,6 @@
 	import { X } from '@lucide/svelte';
 	import { onDestroy } from 'svelte';
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let { stopCamera, queryVal = $bindable(''), submitAction } = $props();
 
 	/** @type {any} */
