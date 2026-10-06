@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -114,7 +115,7 @@ func TestBookRepository_SchlagworteDesTitels(t *testing.T) {
 
 		mock.ExpectQuery(`SELECT coalesce\(array_agg\(s.wort.+`).
 			WithArgs("book-1").
-			WillReturnError(fmt.Errorf("db failure"))
+			WillReturnError(errors.New("db failure"))
 
 		woerter, err := repo.SchlagworteDesTitels(ctx, "book-1")
 		assert.ErrorContains(t, err, "schlagworte des titels lesen")
