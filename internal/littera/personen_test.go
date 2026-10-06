@@ -30,10 +30,11 @@ func TestAutorenJeTitel(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Personen lesen: %v", err)
 	}
-	autoren, err := AutorenJeTitel(personen, strings.NewReader(zuordnungCSV))
+	zuordnungen, err := LeseZuordnungen(personen, strings.NewReader(zuordnungCSV), Standortregel{})
 	if err != nil {
 		t.Fatalf("Zuordnung lesen: %v", err)
 	}
+	autoren := zuordnungen.Autoren
 
 	// Zwei Verfasser, in Erfassungsreihenfolge (Buchungsnummer 3 vor 4) — NICHT
 	// alphabetisch: Bei einem Schulbuch ist der Erstgenannte der Hauptverfasser.
@@ -70,10 +71,11 @@ func TestAutorenReihenfolgeIstErfassungsreihenfolge(t *testing.T) {
 10,5,1,0
 11,5,2,0
 `
-	autoren, err := AutorenJeTitel(personen, strings.NewReader(zuo))
+	zuordnungen, err := LeseZuordnungen(personen, strings.NewReader(zuo), Standortregel{})
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}
+	autoren := zuordnungen.Autoren
 	if autoren["5"] != "Zweiter; Erster" {
 		t.Errorf("Erfassungsreihenfolge erwartet (\"Zweiter; Erster\"), war %q", autoren["5"])
 	}

@@ -43,7 +43,7 @@ type Altbestand struct {
 	Interessenkreise SchlagwortQuelle
 }
 
-// Dateien sind die mdb-export-Ausgaben, die LeseAltbestand erwartet.
+// Dateien sind die mdb-export-Ausgaben, die LeseAltbestandMit erwartet.
 //
 //	mdb-export littera_sav.mdb Titel              > titel.csv
 //	mdb-export littera_sav.mdb Exemplar           > exemplar.csv
@@ -88,17 +88,12 @@ const (
 	DateiFremdBarcode     = "fremdbarcode.csv"
 )
 
-// LeseAltbestand liest alle Tabellen aus einem Verzeichnis mit mdb-export-CSVs.
+// LeseAltbestandMit liest alle Tabellen aus einem Verzeichnis mit mdb-export-CSVs und nimmt
+// aus, was nach der Regel kein Standort ist.
 //
 // Alle Dateien sind Pflicht. Eine fehlende Nachschlagetabelle würde nicht auffallen,
 // sondern still „11" statt „Klett" in den Katalog schreiben — der Lauf soll dann
 // abbrechen, nicht mit halbem Ergebnis weitermachen.
-func LeseAltbestand(verzeichnis string) (*Altbestand, error) {
-	return LeseAltbestandMit(verzeichnis, Standortregel{})
-}
-
-// LeseAltbestandMit liest wie LeseAltbestand und nimmt aus, was nach der Regel kein
-// Standort ist.
 func LeseAltbestandMit(verzeichnis string, regel Standortregel) (*Altbestand, error) {
 	ab := &Altbestand{}
 	var err error

@@ -305,10 +305,11 @@ func pruefeAutorenAbdeckung(t *testing.T, basis string, titel []Titel) {
 	}
 	t.Cleanup(func() { _ = zf.Close() }) //nolint:errcheck // Testaufraeumen
 
-	autoren, err := AutorenJeTitel(personen, zf)
+	zuordnungen, err := LeseZuordnungen(personen, zf, Standortregel{})
 	if err != nil {
 		t.Fatalf("Zuordnung lesen: %v", err)
 	}
+	autoren := zuordnungen.Autoren
 
 	vorher := 0
 	for _, ti := range titel {

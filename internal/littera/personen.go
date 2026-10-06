@@ -103,25 +103,13 @@ type Zuordnungen struct {
 	VermerkNamen     map[string]bool
 }
 
-// AutorenJeTitel löst die Verfasser eines Titels über Personen_Zuordnung auf.
-//
-// Warum das nötig ist: Titel.Verfasserangabe ist nur bei 2.877 von 10.732 Titeln
-// gefüllt (27 %). Über die Personen-Zuordnung sind es 9.904 (92 %) — der Unterschied
-// zwischen einem Katalog, in dem man nach Autor suchen kann, und einem, in dem das
-// meistens ins Leere läuft.
-//
-// Mehrfache Verfasser sind der Normalfall, nicht die Ausnahme: 6.178 Titel haben genau
-// zwei, 1.217 haben drei. Sie werden mit „; " verbunden — in der Reihenfolge, in der
-// die Bibliothek sie erfasst hat (Buchungsnummer der Zuordnung), nicht alphabetisch.
-// Bei einem Schulbuch ist der erstgenannte Verfasser der Hauptverfasser; eine
-// alphabetische Sortierung würde diese Aussage zerstören.
-func AutorenJeTitel(personen map[string]string, zuordnungen io.Reader) (map[string]string, error) {
-	z, err := LeseZuordnungen(personen, zuordnungen, Standortregel{})
-	return z.Autoren, err
-}
-
 // LeseZuordnungen liest Verfasser und Standortvermerke in einem Durchgang: Ein Eintrag ist
 // das eine oder das andere, nie beides.
+//
+// Die Verfasser kommen von hier, weil Titel.Verfasserangabe nur bei 2.877 von 10.732 Titeln
+// gefüllt ist (27 %); über die Personen-Zuordnung sind es 9.904 (92 %). Mehrere Verfasser
+// stehen mit „; " in der Reihenfolge der Erfassung (Buchungsnummer der Zuordnung), nicht
+// alphabetisch: Bei einem Schulbuch ist der erstgenannte der Hauptverfasser.
 func LeseZuordnungen(personen map[string]string, zuordnungen io.Reader, regel Standortregel) (Zuordnungen, error) {
 	zeilen, err := leseTabelle(zuordnungen)
 	if err != nil {
