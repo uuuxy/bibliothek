@@ -32,13 +32,15 @@ export function useUnifiedInventory() {
 	// lastScan bleibt hier — es ist Zustand des Scan-Bildschirms, nicht der Session.
 	const session = useInventurSession({ onActivate: () => (lastScan = null) });
 
-	/** @param {string} barcodeVal @param {Function} [focusInput] */
-	async function handleScan(barcodeVal, focusInput) {
-		if (!barcodeVal.trim() || isScanning) return;
-		isScanning = true;
-		const barcode = barcodeVal.trim();
-		barcodeInput = '';
+	// Scans, die eintreffen, solange einer am Server ist. Ein Handscanner wartet nicht auf die
+	// Antwort; ein verworfener Scan fiele beim Abschluss als Verlust auf.
+	/** @type {string[]} */
+	const wartend = [];
+	// Löst sich auf, sobald kein Scan mehr unterwegs oder eingereiht ist.
+	let scansGebucht = Promise.resolve();
 
+	/** @param {string} barcode */
+	async function bucheScan(barcode) {
 		try {
 			const r = await scanne(session.sessionId, barcode);
 			const ergebnis = deuteScanErgebnis(r, barcode);
@@ -52,10 +54,31 @@ export function useUnifiedInventory() {
 				title: 'Fehler',
 				warnings: ['Netzwerkfehler beim Scannen']
 			};
-		} finally {
-			isScanning = false;
-			if (focusInput) focusInput();
 		}
+	}
+
+	/**
+	 * Reiht den Scan ein und bucht die Reihe ab, einen nach dem anderen.
+	 * @param {string} barcodeVal @param {Function} [focusInput]
+	 */
+	async function handleScan(barcodeVal, focusInput) {
+		const barcode = barcodeVal.trim();
+		if (!barcode) return;
+		barcodeInput = '';
+		wartend.push(barcode);
+		if (isScanning) return scansGebucht;
+		isScanning = true;
+		scansGebucht = (async () => {
+			try {
+				while (wartend.length > 0) {
+					await bucheScan(/** @type {string} */ (wartend.shift()));
+				}
+			} finally {
+				isScanning = false;
+				if (focusInput) focusInput();
+			}
+		})();
+		return scansGebucht;
 	}
 
 	async function finishInventory() {
@@ -91,6 +114,8 @@ export function useUnifiedInventory() {
 	 * @param {Function} [focusInput]
 	 */
 	async function abschliessenNachRueckfrage(focusInput) {
+		// Erst wenn jeder Scan gebucht ist, stimmt die Zahl in der Rückfrage.
+		await scansGebucht;
 		const ja = await bestaetigen({
 			titel: 'Inventur abschließen?',
 			text: abschlussText(session.stats.erwartet - session.stats.erfasst),

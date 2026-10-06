@@ -180,7 +180,8 @@
 			</div>
 
 			<!-- Dieselbe 48-px-Suchpille wie die Ausleihe-Omnibox: Werkzeug der Seite, kein
-			     Datenfeld in einer Leiste (Absprache vom 25.08.: „deutlich kleiner als in Ausleihe"). -->
+			     Datenfeld in einer Leiste. Das Feld bleibt während einer Anfrage bedienbar: Der
+			     nächste Scan wird eingereiht (useUnifiedInventory), gesperrt ginge er verloren. -->
 			<form
 				onsubmit={(e) => {
 					e.preventDefault();
@@ -193,7 +194,6 @@
 					bind:wert={inventoryState.barcodeInput}
 					etikett="Barcode scannen"
 					platzhalter="Barcode scannen..."
-					disabled={inventoryState.isScanning}
 				>
 					{#snippet nachlaufend()}
 						{#if inventoryState.isScanning}
