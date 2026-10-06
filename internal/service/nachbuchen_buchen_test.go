@@ -11,6 +11,7 @@ import (
 func TestLoanResultAlsOmnibox(t *testing.T) {
 	now := time.Now()
 	loanID := "test-loan-id"
+	vorbesitzer := &repository.Student{ID: "vorbesitzer-id"}
 
 	tests := []struct {
 		name string
@@ -41,7 +42,7 @@ func TestLoanResultAlsOmnibox(t *testing.T) {
 				DueDate:              &now,
 				LoanID:               &loanID,
 				Fremdrueckgabe:       true,
-				Vorbesitzer:          &repository.Student{ID: "vorbesitzer-id"},
+				Vorbesitzer:          vorbesitzer,
 				HasVormerkung:        true,
 				VormerkungTitel:      "Vorgemerktes Buch",
 				VormerkungUser:       "Anna Schmidt",
@@ -65,7 +66,7 @@ func TestLoanResultAlsOmnibox(t *testing.T) {
 				DueDate:              &now,
 				LoanID:               &loanID,
 				Fremdrueckgabe:       true,
-				Vorbesitzer:          &repository.Student{ID: "vorbesitzer-id"},
+				Vorbesitzer:          vorbesitzer,
 				HasVormerkung:        true,
 				VormerkungTitel:      "Vorgemerktes Buch",
 				VormerkungUser:       "Anna Schmidt",
