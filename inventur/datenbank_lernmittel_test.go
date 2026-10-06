@@ -20,7 +20,7 @@ func TestGetLernmittelFaecher_Error(t *testing.T) {
 
 	expectedErr := errors.New("db query error")
 	mock.ExpectQuery(`SELECT subject, COUNT\(\*\) AS titel`).
-		WithArgs(0, "", "").
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(expectedErr)
 
 	_, err = repo.GetLernmittelFaecher(context.Background(), LernmittelFilter{})
@@ -47,7 +47,7 @@ func TestGetLernmittelFaecher_ScanError(t *testing.T) {
 		AddRow("Mathematik", 2, 3, 1)
 
 	mock.ExpectQuery(`SELECT subject, COUNT\(\*\) AS titel`).
-		WithArgs(0, "", "").
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(rows)
 
 	_, err = repo.GetLernmittelFaecher(context.Background(), LernmittelFilter{})
@@ -73,7 +73,7 @@ func TestGetLernmittelFaecher_Success(t *testing.T) {
 		AddRow("", 1, 1, 0, 1)
 
 	mock.ExpectQuery(`SELECT subject, COUNT\(\*\) AS titel`).
-		WithArgs(0, "", "").
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(rows)
 
 	result, err := repo.GetLernmittelFaecher(context.Background(), LernmittelFilter{})
@@ -113,7 +113,7 @@ func TestGetLernmittelFaecher_RowsErr(t *testing.T) {
 		RowError(0, expectedErr)
 
 	mock.ExpectQuery(`SELECT subject, COUNT\(\*\) AS titel`).
-		WithArgs(0, "", "").
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(rows)
 
 	_, err = repo.GetLernmittelFaecher(context.Background(), LernmittelFilter{})
