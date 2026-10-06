@@ -193,6 +193,18 @@ an einer Stelle nachgestellt und behoben, über den Bestand nicht gesucht.
 | **Ablage nach dem Recht des ersten Absenders** | Eine Tür kürzt ihre Antwort nach dem Recht dessen, der fragt, und legt sie so unter einem Schlüssel ab. Die Wiederholung mit demselben Schlüssel kommt unter einer anderen Anmeldung und bekommt die Fassung des ersten Absenders | `api/nachbuchen_sperrgrund_pg_test.go` (erst Admin, dann Helfer mit demselben Schlüssel; am Handler davor rot) | 05.10.2026: An der Nachbuch-Tür behoben, abgelegt wird ohne den Freitext der Sperre. Die Online-Theke legt ihre Fehlerantwort ebenfalls gekürzt nach dem ersten Absender ab; ihre Wiederholung geht über die Nachbuch-Tür, die neu bucht und neu kürzt. Nicht gesucht: weitere Ablagen unter einem Schlüssel (Bestellung, Klassensatz-Reservierung) |
 | **Antwort zu einer Öffnung, die nicht mehr die jüngste ist** | Ein Bildschirm fordert nacheinander zwei Inhalte an und nimmt jede Antwort, wie sie kommt. Trifft die ältere später ein, ersetzt sie die offene Maske, und das dort Getippte ist weg. Schwester von „Antwort zu einer Eingabe, die nicht mehr dasteht" (03.10.2026) | `frontend/e2e/titel-oeffnen-rennen.spec.js` (zweiter Titel und „Neues Buch"; am alten Abbild beide rot) | 05.10.2026: In der Titel-Verwaltung behoben (`oeffneDetails`, es gilt die jüngste Öffnung). Mit einer Folgenummer geschützt sind Leserakte, Buchakte, Theke, Bestellsuche, Portal-Suche, Titelliste, Schlagwort-Pflege. Nicht geprüft: Bestellung im Einzelnen, Bescheid-Dialog |
 
+### Rasterdurchgang 06.10.2026 — drei Formen
+
+Anlass: der Durchgang über die Änderungen seit dem 06.10.2026 vormittags, im Kern die
+Umstellung der Farben auf M3-Rollen. Alle drei Formen sind an einer Stelle nachgestellt und
+behoben.
+
+| Bugklasse | Form | Gate | Stand |
+| --------- | ---- | ---- | ----- |
+| **Bedienung druckt mit** | Die Druck-CSS blendet aus, was `.no-print` trägt, und die Seiten setzen die Klasse um ihren Inhalt. Ein Bauteil, das im Seitengerüst darüber steht, landet auf dem Ausdruck; auf einer Seite im Kartenmaß schiebt es die Karte vom Blatt | `frontend/e2e/ausweis-druckseite.spec.js` (misst die Druckansicht an den drei Wegen zur Ausweiskarte; ohne den Fix rot für Stapeldruck und Testdruck) | 06.10.2026: `ui/Reiter` trägt `no-print` (b7675421). Gesucht an den drei Wegen zur Karte. Nicht gesucht: was auf den übrigen Ausdrucken über `window.print()` außerhalb von `.no-print` steht (Quittung, „Diese Seite drucken") |
+| **Klasse, die es nicht gibt** | Eine Farbklasse heißt wie eine Rolle (`bg-tertiary`), aber die Rollendatei kennt sie nicht. Tailwind erzeugt nichts, der Browser meldet nichts: Das Element hat keine Farbe | `frontend/src/lib/frontend-hygiene-farben.test.js` („benutzt keine Rolle, die rollen.css nicht definiert"; mit eingesetztem `bg-tertiary` rot) | 06.10.2026: Über den Bestand gesucht, eine Stelle (Punkt vor „Zugang beantragt" in der Benutzerliste), behoben in d8ac8cd2. Dieselbe Form für Schriftrollen hält `frontend-hygiene-schrift.test.js` |
+| **Übersetzung alter Werte an einem Wort, das auch ältere Fassungen tragen** | Ein gespeicherter Wert wechselt seine Form (Klassenliste → Kennung), und das Laden übersetzt die alte Form an einem Merkmal. Geprüft wird gegen die Werte von heute; eine ältere Fassung trägt dasselbe Merkmal und bedeutet etwas anderes | `frontend/src/lib/designer/kartenFarben.test.js` (die drei älteren Hintergründe der Ausweiskarte; mit den ersten Merkmalen rot) | 06.10.2026: behoben in 379f5696. Die früheren Werte standen in der Geschichte der Auswahl (`git log -G`); ob ein Server sie trägt, ist nicht gemessen |
+
 ### Die ISBN in einer Länge, 03.10.2026 — eine Form mit Ratsche
 
 Anlass: Migration 157 lässt die Datenbank eine zehnstellige ISBN beim Schreiben
