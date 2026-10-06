@@ -222,14 +222,21 @@ test('Der Fokusrahmen jeder Suchpille ist an allen vier Seiten ganz zu sehen', a
 		await page.goto(pille.pfad);
 		await page.locator(`#${pille.id}`).waitFor();
 		await fokussiertMessen(page, pille.id);
+		// Ohne diese Zusage wäre der Test auch grün, wenn der Ring ganz fehlte. Der Ring
+		// blendet über 200 ms ein, und fokussiertMessen sieht ihn nicht: Die Messung wartet,
+		// bis er in voller Stärke steht. Fehlt er, läuft die Frist ab.
+		await expect
+			.poll(
+				async () => {
+					const w = await page.evaluate(RAHMEN_UND_PLATZ, pille.id);
+					return w ? w.rahmen + w.innen + w.aussen : null;
+				},
+				{ message: `${pille.name}: Der Fokusrahmen ist 2 px stark (Rand und Ring).` }
+			)
+			.toBe(2);
 		const werte = await page.evaluate(RAHMEN_UND_PLATZ, pille.id);
 		expect(werte, `${pille.name}: Pille nicht messbar`).not.toBeNull();
 		gemessen++;
-		// Ohne diese Zusage wäre der Test auch grün, wenn der Ring ganz fehlte.
-		expect(
-			werte.rahmen + werte.innen + werte.aussen,
-			`${pille.name}: Der Fokusrahmen ist 2 px stark (Rand und Ring).`
-		).toBe(2);
 		for (const [seite, platz] of Object.entries(werte.platz)) {
 			if (platz < werte.aussen) {
 				abgeschnitten.push(
