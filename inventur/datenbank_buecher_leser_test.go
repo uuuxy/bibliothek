@@ -125,6 +125,41 @@ func TestBookRepository_ListExternalCoverBooks(t *testing.T) {
 		assert.Nil(t, books)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
+
+	t.Run("scan error", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
+		mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\) AS isbn, titel AS title, COALESCE\(cover_url, ''\) AS cover_url FROM buecher_titel WHERE cover_url LIKE 'http%' ORDER BY id ASC LIMIT \$1`).
+			WithArgs(10).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title"}). // Missing column to trigger scan error
+												AddRow("book-1", "123", "Title 1"))
+
+		books, err := repo.ListExternalCoverBooks(ctx, 10)
+		assert.ErrorContains(t, err, "bücher mit externen covern konnten nicht gelesen werden")
+		assert.Nil(t, books)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("iteration error", func(t *testing.T) {
+		mock, err := pgxmock.NewPool()
+		require.NoError(t, err)
+		defer mock.Close()
+		repo := NewBookRepository(mock)
+
+		mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\) AS isbn, titel AS title, COALESCE\(cover_url, ''\) AS cover_url FROM buecher_titel WHERE cover_url LIKE 'http%' ORDER BY id ASC LIMIT \$1`).
+			WithArgs(10).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "cover_url"}).
+				AddRow("book-1", "123", "Title 1", "http://example.com/1.jpg").
+				RowError(1, fmt.Errorf("row error")))
+
+		books, err := repo.ListExternalCoverBooks(ctx, 10)
+		assert.ErrorContains(t, err, "fehler beim iterieren externer cover-bücher")
+		assert.Nil(t, books)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
 }
 
 func TestBookRepository_ListBooksByIDs(t *testing.T) {
