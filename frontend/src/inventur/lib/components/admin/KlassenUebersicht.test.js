@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { render, fireEvent } from '@testing-library/svelte';
 import KlassenUebersicht from './KlassenUebersicht.svelte';
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import { authStore } from '../../../../lib/stores/authStore.svelte.js';
@@ -9,16 +9,12 @@ vi.mock('../../../../lib/apiFetch.js', () => ({
 	registriereSitzungAbgelaufenHandler: vi.fn()
 }));
 
-// Diese Seite hat am 08.08.2026 den Klassen-Reiter aus dem Medienkatalog abgelöst.
-// Der Reiter stand jedem mit view_books offen, diese Seite verlangte manage_users —
-// faktisch Administrator. Wäre die Zusammenlegung ohne diese beiden Anpassungen
-// gelaufen, hätten die Bibliotheks-Helfer die Klassensätze verloren:
+// Die Seite steht jedem mit view_books offen, auch den Bibliotheks-Helfern:
 //
-//   1. Der Menüpunkt hängt jetzt an view_books  (menu.js)
+//   1. Der Menüpunkt hängt an view_books        (menu.js)
 //   2. Gelesen wird über /api/class-books       (view_books, nicht edit_books)
 //
-// Und weil damit Leute auf die Seite kommen, die NICHT pflegen dürfen, dürfen die
-// Verwaltungsknöpfe nicht mehr bedingungslos dastehen — sie liefen ins 403.
+// Wer nicht pflegen darf, sieht deshalb keine Verwaltungsknöpfe — sie liefen ins 403.
 //
 // Kein E2E-Test: Im lokalen Stack trägt jede Rolle edit_books, ein Benutzer ohne das
 // Recht müsste erst role_permissions umschreiben — also genau die Konfiguration, die
@@ -57,7 +53,7 @@ describe('KlassenUebersicht', () => {
 		alsBenutzerMit(['view_books']);
 		const screen = render(KlassenUebersicht);
 
-		// Die Liste selbst MUSS da sein — sonst prüft der Test nur eine kaputte Seite.
+		// Die Liste selbst muss da sein — sonst prüft der Test nur eine kaputte Seite.
 		await screen.findByText('09z1');
 		await screen.findByText('09z2');
 
@@ -75,5 +71,22 @@ describe('KlassenUebersicht', () => {
 		expect(screen.getByRole('button', { name: /Klasse hinzufügen/ })).toBeTruthy();
 		expect(screen.getAllByRole('button', { name: 'Klasse bearbeiten' })).toHaveLength(2);
 		expect(screen.getAllByRole('button', { name: 'Buchliste löschen' })).toHaveLength(2);
+	});
+
+	// Der Ladefehler bietet einen zweiten Versuch an, und ein gelungener Versuch räumt ihn ab.
+	it('zeigt nach „Erneut versuchen" die Liste statt der Fehlermeldung', async () => {
+		alsBenutzerMit(['view_books']);
+		vi.mocked(apiFetch).mockImplementationOnce(
+			/** @type {any} */ (async () => ({ ok: false, json: async () => ({}) }))
+		);
+		const screen = render(KlassenUebersicht);
+
+		await screen.findByText('Klassensätze nicht geladen');
+		expect(screen.queryByText('09z1')).toBeNull();
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+
+		await screen.findByText('09z1');
+		expect(screen.queryByText('Klassensätze nicht geladen')).toBeNull();
 	});
 });

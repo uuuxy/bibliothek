@@ -23,7 +23,7 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 // Svelte-Komponenten, und nur dafür steht hier ein Gate.
 const BESTAND = {
 	'src/inventur/lib/components/admin/BookTable.svelte': 222,
-	'src/inventur/lib/components/admin/ClassAssignmentDialog.svelte': 207,
+	'src/inventur/lib/components/admin/ClassAssignmentDialog.svelte': 206,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 212,
 	'src/lib/BestellWorkspace.svelte': 286,
 	'src/lib/Omnibox.svelte': 217,

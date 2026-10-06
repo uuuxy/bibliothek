@@ -19,12 +19,8 @@
 	 * Ohne darfPflegen (Kollegiums-Portal) braucht es keine Aktionen — die Karte ist dann
 	 * dieselbe Ansicht wie unter Bibliothek → Klassensätze, nur lesend.
 	 *
-	 * EINE Fassung seit 05.09.2026: Bis dahin trug die Karte unter Bibliothek → Klassensätze
-	 * den Klassennamen als Seitenüberschrift (24 px fett, slate) und nur das Portal die
-	 * Listenzeile (`kompakt`, 25.08.2026). Die Karte ist in beiden Fällen dasselbe
-	 * ausklappbare Listenelement (siehe Kommentar am Markup), und eine Listenzeile hat in M3
-	 * 16 px — die 24 px stammten aus dem ersten Feature-Commit, nicht aus einer Entscheidung.
-	 * Dichte gehört ins Padding, nicht in die Schriftgröße; die Farben in die Rollen.
+	 * Der Klassenname ist in beiden Ansichten eine Listenzeile von 16 px: Dichte gehört ins
+	 * Padding, nicht in die Schriftgröße.
 	 */
 	let {
 		group,
@@ -35,8 +31,8 @@
 		onDelete = undefined
 	} = $props();
 	const zeilenTitel = 'truncate text-base font-medium text-on-surface';
-	// Feste Mindestbreite + Tabellenziffern: Bei „28 Bücher" war der Chip breiter als bei
-	// „5 Bücher", und der Klassenname rutschte je Zeile nach rechts (26.08.2026).
+	// Feste Mindestbreite und Tabellenziffern: Sonst ist der Chip bei „28 Bücher" breiter als
+	// bei „5 Bücher", und der Klassenname rutscht je Zeile nach rechts.
 	const zaehlerChip =
 		'bg-secondary-container text-on-secondary-container inline-flex min-w-26 shrink-0 justify-center rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums';
 
@@ -44,19 +40,10 @@
 	const rasterID = $derived(`klassensatz-${group.className.replace(/\s+/g, '-')}`);
 </script>
 
-<!-- Eine Zeile je Klasse, ausklappbar — nicht alle Saetze gleichzeitig ausgebreitet.
-     Absprache vom 09.08.2026: "jetzt sind die fotos untereinander! bei 20 klassen wird das
-     unuebersichtlich". Er hat recht, und es war meine Ueberkorrektur: Das Raster hat den
-     Seitwaertsscroll je Klasse beseitigt, dafuer standen bei zwanzig Klassen 320 Kacheln
-     untereinander — die Klassenliste selbst war dann nicht mehr zu ueberblicken.
-
-     Die Seite beantwortet zwei verschiedene Fragen. "Welche Klassen gibt es, und haben
-     sie ueberhaupt einen Satz?" beantwortet die Zeile mit Namen und Anzahl. "Stimmt der
-     Satz von 05F1?" beantwortet das Raster — aber nur fuer die eine Klasse, die man
-     gerade ansieht. In M3 ist das ein ausklappbares Listenelement; die Anzahl steht
-     schon in der eingeklappten Zeile, damit man zum Nachsehen gar nicht erst oeffnen
-     muss. -->
-<div class="class-group border-b border-slate-200 last:border-b-0">
+<!-- Eine Zeile je Klasse, ausklappbar: Die Zeile sagt, welche Klassen es gibt und wie viele
+     Bücher ihr Satz hat; das Raster zeigt den Satz der einen Klasse, die man gerade ansieht.
+     Mit zwanzig ausgebreiteten Sätzen wäre die Klassenliste nicht mehr zu überblicken. -->
+<div class="class-group border-b border-outline-variant last:border-b-0">
 	<div class="flex items-center justify-between gap-4 py-3">
 		<!-- Die ganze Zeile schaltet um, nicht nur ein kleines Dreieck: Das Ziel ist so
 		     gross wie die Aussage, die es betrifft. -->
@@ -88,7 +75,6 @@
 				<Button
 					variant="secondary"
 					onclick={onEdit}
-					class="border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100"
 					title="Klasse bearbeiten"
 					aria-label="Klasse bearbeiten"
 				>
@@ -97,8 +83,8 @@
 				</Button>
 				<button
 					onclick={onDelete}
-					class="text-rose-500 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-colors cursor-pointer"
-					title="Buchliste löschen"
+					class="icon-btn h-9 w-9 text-error"
+					data-tip="Buchliste löschen"
 					aria-label="Buchliste löschen"
 				>
 					<Trash class="w-5 h-5" aria-hidden="true" />
@@ -108,11 +94,9 @@
 	</div>
 
 	{#if offen}
-		<!-- Umbrechendes Raster statt waagerechtem Karussell (08.08.2026): Gemessen lagen
-		     2.876 px Inhalt auf 1.280 px Flaeche, neun von sechzehn Buechern also
-		     ausserhalb des Bildes. Die Pfeile dazu standen auf opacity:0 und erschienen
-		     erst bei :hover — am Tablet am Pult nie. M3 kennt zwar ein Carousel, meint
-		     damit aber das STOEBERN in Bildmaterial, nicht das Pruefen eines Bestands. -->
+		<!-- Umbrechendes Raster statt waagerechtem Karussell: Ein Karussell legt den größeren
+		     Teil eines Satzes außerhalb des Bildes ab. M3 sieht es für das Stöbern in
+		     Bildmaterial vor, nicht für das Prüfen eines Bestands. -->
 		<div
 			id={rasterID}
 			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-x-3 gap-y-4 pt-1 pb-6"

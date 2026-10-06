@@ -1,9 +1,8 @@
 <script>
 	import { Book, Check } from '@lucide/svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
-	// buecherFehler: Der Abruf der Bücher ist gescheitert (Sweep „verschluckte
-	// Fehlantwort", 06.09.2026). Ein leeres Gitter sähe sonst aus wie „kein Buch im
-	// Bestand" — der Dialog wäre unbenutzbar, ohne zu sagen, warum.
+	// buecherFehler: Der Abruf der Bücher ist gescheitert. Ein leeres Gitter sähe sonst aus
+	// wie „kein Buch im Bestand" — der Dialog wäre unbenutzbar, ohne zu sagen, warum.
 	let { books = [], buecherFehler = false, selectedBookIds = $bindable(new Set()) } = $props();
 
 	let searchQuery = $state('');
@@ -17,16 +16,9 @@
 		)
 	);
 
-	// Nicht den ganzen Bestand zeichnen.
-	//
-	// Gemessen am 11.08.2026 mit 5.875 Titeln: 5.875 Kacheln, 59.120 DOM-Knoten,
-	// 2,5 Sekunden bis der Dialog stand. Die Produktion fuehrt rund 13.700 Titel — dort
-	// waere das ein Vielfaches davon, auf einem Schulrechner ohne Weiteres eine halbe
-	// Minute. Und es bringt nichts: Durch dreizehntausend Kacheln scrollt niemand, um ein
-	// bestimmtes Buch zu finden. Dafuer ist die Suche da, und die Ueberschrift sagt es auch.
-	//
-	// Die Zahl daneben nennt weiterhin ALLE Treffer, nicht die gezeichneten — sonst
-	// verschwiege die Oberflaeche, dass es mehr gibt.
+	// Nicht den ganzen Bestand zeichnen: Mit 5.875 Titeln sind es 59.120 DOM-Knoten und 2,5
+	// Sekunden, bis der Dialog steht. Die Zahl im Suchfeld nennt alle Treffer, nicht die
+	// gezeichneten — sonst verschwiege die Oberfläche, dass es mehr gibt.
 	const ANZEIGE_GRENZE = 60;
 	const sichtbareBuecher = $derived(filteredBooks.slice(0, ANZEIGE_GRENZE));
 
@@ -51,7 +43,7 @@
 </script>
 
 <div class="mb-4 px-1">
-	<p class="text-xs text-slate-500 font-medium mb-1">BÜCHER FINDEN</p>
+	<p class="text-xs text-on-surface-variant font-medium mb-1">BÜCHER FINDEN</p>
 
 	<Suchpille
 		id="book-search-field"
@@ -70,7 +62,7 @@
 	{/if}
 
 	{#if filteredBooks.length > ANZEIGE_GRENZE}
-		<p class="mt-2 px-1 text-xs text-slate-500">
+		<p class="mt-2 px-1 text-xs text-on-surface-variant">
 			Gezeigt werden die ersten {ANZEIGE_GRENZE} von {filteredBooks.length}. Suchbegriff eingrenzen,
 			um das gesuchte Buch zu sehen.
 		</p>
@@ -79,7 +71,7 @@
 
 {#snippet nachlaufend()}
 	<span
-		class="shrink-0 whitespace-nowrap rounded-full bg-black/5 px-3 py-1 text-xs font-bold text-slate-500"
+		class="shrink-0 whitespace-nowrap rounded-full bg-on-surface/5 px-3 py-1 text-xs font-bold text-on-surface-variant"
 		>{filteredBooks.length} Treffer</span
 	>
 {/snippet}
@@ -93,13 +85,13 @@
 			aria-pressed={selectedBookIds.has(book.id)}
 			class="group relative flex flex-col text-left rounded-3xl overflow-hidden transition-all duration-300 transform active:scale-95
             {selectedBookIds.has(book.id)
-				? 'bg-primary-50 ring-4 ring-primary-500 shadow-xl scale-[1.02]'
-				: 'bg-white hover:bg-surface-container-low shadow-md hover:shadow-xl border border-surface-variant/10 hover:border-primary-200'}"
+				? 'bg-primary-container/30 ring-4 ring-primary shadow-xl scale-[1.02]'
+				: 'bg-surface-container-lowest shadow-md hover:shadow-xl'}"
 		>
 			<!-- Selection Overlay -->
 			{#if selectedBookIds.has(book.id)}
 				<div
-					class="absolute top-4 right-4 z-10 bg-primary-600 text-white p-1.5 rounded-full shadow-lg border-2 border-white animate-in zoom-in-50 duration-200"
+					class="absolute top-4 right-4 z-10 bg-primary text-on-primary p-1.5 rounded-full border-2 border-surface-container-lowest animate-in zoom-in-50 duration-200"
 				>
 					<Check class="w-5 h-5" aria-hidden="true" />
 				</div>
@@ -114,11 +106,15 @@
 						class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
 						onerror={handleImageError}
 					/>
-					<div class="w-full h-full hidden items-center justify-center bg-slate-100 text-slate-300">
+					<div
+						class="w-full h-full hidden items-center justify-center bg-surface-container text-outline-variant"
+					>
 						<Book class="w-5 h-5" aria-hidden="true" />
 					</div>
 				{:else}
-					<div class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300">
+					<div
+						class="w-full h-full flex items-center justify-center bg-surface-container text-outline-variant"
+					>
 						<Book class="w-5 h-5" aria-hidden="true" />
 					</div>
 				{/if}
@@ -129,29 +125,25 @@
 
 			<!-- Content -->
 			<div class="p-5 flex flex-col grow justify-end space-y-3 w-full">
-				<!-- Beide Marken nur, wenn sie etwas zu sagen haben. Vorher stand auf jeder
-				     Karte ohne Jahrgang „Kl. 0" und daneben eine leere Fachmarke — eine
-				     Klasse 0 gibt es nicht, die Angabe behauptete also etwas Falsches,
-				     statt zu schweigen. -->
+				<!-- Beide Marken nur, wenn sie etwas zu sagen haben: Eine Karte ohne Jahrgang
+				     trüge sonst „Kl. 0", und eine Klasse 0 gibt es nicht. -->
 				<div class="flex flex-wrap gap-1.5 items-start">
 					{#if book.subject}
 						<span
-							class="px-2.5 py-0.5 bg-primary-100 text-primary-900 text-xs font-black rounded-lg"
+							class="px-2.5 py-0.5 bg-primary-container text-on-primary-container text-xs font-black rounded-lg"
 							>{book.subject}</span
 						>
 					{/if}
 					{#if book.gradeLevel}
 						<span
-							class="px-2.5 py-0.5 bg-surface-container-high text-surface-variant text-xs font-black rounded-lg"
+							class="px-2.5 py-0.5 bg-surface-container-high text-on-surface-variant text-xs font-black rounded-lg"
 						>
 							Kl. {book.gradeLevel}
 						</span>
 					{/if}
 				</div>
 				<div>
-					<h3
-						class="font-bold text-primary-950 leading-tight line-clamp-2 group-hover:text-primary-700 transition-colors"
-					>
+					<h3 class="font-bold text-on-surface leading-tight line-clamp-2">
 						{book.title}
 					</h3>
 				</div>

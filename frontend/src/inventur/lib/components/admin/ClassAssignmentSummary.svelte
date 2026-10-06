@@ -1,7 +1,7 @@
 <script>
 	import Button from '../../../../lib/components/ui/Button.svelte';
-	import { coverSrc } from '../../../../lib/utils/coverSrc.js';
-	import { Book, Save, Table, X } from '@lucide/svelte';
+	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
+	import { Save, Table, X } from '@lucide/svelte';
 	let {
 		selectedClasses = [],
 		selectedBookIds = new Set(),
@@ -10,79 +10,17 @@
 		isUpdate = false,
 		onToggleBook = () => {},
 		onsave = () => {},
-		// Abbrechen gehoert in DIESELBE Aktionszeile wie Speichern (M3-Dialog: rechts
-		// ausgerichtet, Textknopf vor gefuelltem Knopf). Es stand vorher als eigener
-		// Knopf unter der ganzen Seitenspalte — durch die Auswahlliste getrennt und je
-		// nach Fuellstand hunderte Pixel vom Speichern entfernt.
+		// Abbrechen steht in derselben Aktionszeile wie Speichern (M3-Dialog: rechts
+		// ausgerichtet, Textknopf vor gefülltem Knopf).
 		oncancel = () => {}
 	} = $props();
-
-	/**
-	 * @param {Event} event
-	 */
-	function handleImageError(event) {
-		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
-		const fallback = image.dataset.fallback || '';
-		const isFallback = image.dataset.isFallback === '1';
-		const retryCount = Number(image.dataset.retryCount || '0');
-
-		// Network hiccups are common for external cover hosts. Retry once first.
-		if (retryCount < 1) {
-			image.dataset.retryCount = String(retryCount + 1);
-			const separator = image.src.includes('?') ? '&' : '?';
-			image.src = `${image.src}${separator}retry=${Date.now()}`;
-			return;
-		}
-
-		// Try exactly one deterministic fallback URL before showing placeholder.
-		if (!isFallback && fallback && image.src !== fallback) {
-			image.dataset.isFallback = '1';
-			image.dataset.retryCount = '0';
-			image.src = fallback;
-			return;
-		}
-
-		image.style.display = 'none';
-		const nextEl = /** @type {HTMLElement|null} */ (image.nextElementSibling);
-		if (nextEl) nextEl.style.display = 'flex';
-	}
-
-	/**
-	 * Ersatzcover über OpenLibrary — aber über den eigenen Proxy, nicht per Hotlink.
-	 *
-	 * Vorher stand hier die openlibrary.org-URL direkt im src. Damit meldete sich der
-	 * Browser JEDER Lehrkraft bei jedem Öffnen dieser Ansicht bei einem Dritten und
-	 * übermittelte dabei, welche ISBNs die Schule gerade einer Klasse zuteilt. Der
-	 * Cover-Proxy (/api/images/cover) holt dasselbe Bild serverseitig, hat
-	 * covers.openlibrary.org auf seiner Allowlist und legt das Ergebnis lokal ab —
-	 * der Browser spricht nur noch mit dem eigenen Server.
-	 *
-	 * Das ist zugleich die Voraussetzung dafür, dass die Content-Security-Policy
-	 * img-src ohne https: auskommt (siehe internal/middleware/security.go).
-	 *
-	 * @param {string|number|null|undefined} isbn
-	 */
-	function fallbackCover(isbn) {
-		if (!isbn) return '';
-		const cleaned = String(isbn).replace(/[^0-9Xx]/g, '');
-		if (!cleaned) return '';
-		return coverSrc(`https://covers.openlibrary.org/b/isbn/${cleaned}-M.jpg`, cleaned);
-	}
 </script>
 
-<!-- Stand zweimal wortgleich im Markup (Ersatz hinter dem <img> und Buch ohne
-     Cover). Der Aufrufer bestimmt nur noch die Sichtbarkeit. -->
-{#snippet buchPlatzhalter(anzeige)}
-	<div class="w-full h-full {anzeige} items-center justify-center bg-slate-100 text-slate-300">
-		<Book class="w-5 h-5" aria-hidden="true" />
-	</div>
-{/snippet}
-
 <div
-	class="px-4 sm:px-6 py-4 sm:py-6 border-b border-surface-variant/20 flex items-center justify-between"
+	class="px-4 sm:px-6 py-4 sm:py-6 border-b border-outline-variant flex items-center justify-between"
 >
-	<h3 class="text-xl font-bold text-slate-900">Auswahl</h3>
-	<div class="bg-slate-100 px-3 py-1.5 rounded-full text-sm font-bold text-slate-800">
+	<h3 class="text-xl font-bold text-on-surface">Auswahl</h3>
+	<div class="bg-surface-container-high px-3 py-1.5 rounded-full text-sm font-bold text-on-surface">
 		{selectedBookIds.size}
 	</div>
 </div>
@@ -91,46 +29,32 @@
 	class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full p-4 space-y-2"
 >
 	{#if selectedBooksList.length === 0}
-		<div class="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
-			<Table class="text-slate-400 mb-4" aria-hidden="true" />
-			<p class="text-sm font-medium text-slate-500">Deine Auswahl ist noch leer</p>
+		<div
+			class="h-full flex flex-col items-center justify-center text-center p-8 text-on-surface-variant"
+		>
+			<Table class="mb-4" aria-hidden="true" />
+			<p class="text-sm font-medium">Deine Auswahl ist noch leer</p>
 		</div>
 	{:else}
 		{#each selectedBooksList as book (book.id)}
-			{@const primaryCoverUrl = coverSrc(book.coverUrl, book.isbn)}
-			{@const fallbackCoverUrl = fallbackCover(book.isbn)}
-			{@const coverUrl = primaryCoverUrl || fallbackCoverUrl}
 			<div
 				class="flex items-center gap-3.5 hover:bg-surface-container p-2 rounded-xl transition-colors group"
 			>
-				<!-- Nur EIN bg-: Das zusätzliche bg-white war wirkungslos, weil
-				     .bg-surface-container aus altlasten.css im Bundle dahinter landet
-				     (gemessen: rgb(238,237,241)). Siehe docs/SECURITY.md. -->
-				<div class="w-10 h-14 rounded overflow-hidden shrink-0 bg-surface-container shadow-sm">
-					{#if coverUrl}
-						<img
-							src={coverUrl}
-							data-fallback={fallbackCoverUrl}
-							data-is-fallback={primaryCoverUrl ? '0' : '1'}
-							data-retry-count="0"
-							alt=""
-							loading="eager"
-							decoding="async"
-							class="w-full h-full object-cover"
-							onerror={handleImageError}
-						/>
-						{@render buchPlatzhalter('hidden')}
-					{:else}
-						{@render buchPlatzhalter('flex')}
-					{/if}
-				</div>
-				<p class="font-medium text-slate-800 grow truncate leading-tight">
+				<!-- Der Titel steht daneben, das Bild ist Schmuck. -->
+				<BuchCover
+					coverUrl={book.coverUrl}
+					isbn={book.isbn}
+					titel={book.title}
+					groesse="liste"
+					dekorativ
+				/>
+				<p class="font-medium text-on-surface grow truncate leading-tight">
 					{book.title}
 				</p>
 				<button
 					onclick={() => onToggleBook(book.id)}
-					class="text-slate-400 hover:text-red-500 p-1 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
-					title="Buch entfernen"
+					class="icon-btn text-on-surface-variant"
+					data-tip="Buch entfernen"
 					aria-label="Buch entfernen"
 				>
 					<X class="w-4 h-4" aria-hidden="true" />
@@ -140,13 +64,10 @@
 	{/if}
 </div>
 
-<!-- Aktionszeile nach M3: rechtsbuendig, Textknopf (verwerfen) vor gefuelltem Knopf
-     (bestaetigen). Der Speichern-Knopf nimmt die Hausfarbe aus Button.svelte statt
-     eines eigenen bg-emerald-600 — Gruen war hier die einzige Stelle im Haus, die
-     nicht das blaue Primaer benutzt. Beschriftung in Satzschreibung: Versalien sind
-     M2-Sprache, M3 setzt Knopftexte normal. -->
+<!-- Aktionszeile nach M3: rechtsbündig, Textknopf (verwerfen) vor gefülltem Knopf
+     (bestätigen), Beschriftung in Satzschreibung. -->
 <footer
-	class="flex items-center justify-end gap-2 border-t border-surface-variant/20 bg-white p-4 sm:p-6"
+	class="flex items-center justify-end gap-2 border-t border-outline-variant bg-surface-container-lowest p-4 sm:p-6"
 >
 	<Button variant="ghost" onclick={() => oncancel()}>Abbrechen</Button>
 	<Button
@@ -154,8 +75,8 @@
 		onclick={(e) => onsave(e)}
 	>
 		<Save class="h-4 w-4" aria-hidden="true" />
-		<!-- Kurz halten: In der 340 px schmalen Spalte brach „Auswahl speichern" auf zwei
-		     Zeilen um. Was gespeichert wird, sagt die Ueberschrift des Dialogs. -->
+		<!-- Kurz halten: In der 340 px schmalen Spalte bräche „Auswahl speichern" auf zwei
+		     Zeilen um. Was gespeichert wird, sagt die Überschrift des Dialogs. -->
 		<span class="whitespace-nowrap">{isSaving ? 'Speichert …' : 'Speichern'}</span>
 	</Button>
 </footer>

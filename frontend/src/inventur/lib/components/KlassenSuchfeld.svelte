@@ -1,15 +1,12 @@
 <!-- @component KlassenSuchfeld — Klassensuche mit Vorschlagsliste.
 
-     Bewusst KEIN Select: Hier wird getippt und gefiltert, nicht aus einer festen
-     Liste gewählt — bei über hundert Klassen ist Tippen der kürzere Weg. Der
-     150-ms-Verzug beim Verlassen ist Absicht: Ohne ihn schließt die Liste, bevor
-     der Klick auf einen Eintrag ankommt.
+     Kein Select: Hier wird getippt und gefiltert, nicht aus einer festen Liste gewählt — bei
+     über hundert Klassen ist Tippen der kürzere Weg. Der Verzug von 150 ms beim Verlassen
+     hält die Liste offen, bis der Klick auf einen Eintrag ankommt.
 
-     Es ist die EINE Suche der Klassensatz-Seite und trägt deshalb seit dem 04.09.2026
-     die 48-px-Suchpille — dieselbe Gestalt wie Medienkatalog, Portal und Theke (Absprache:
-     „eine Leiste … es soll gleich aussehen"). Bis dahin war es das 36-px-Suchfeld im
-     Werkzeugbalken, weil darüber noch die globale Suchleiste stand. Der Pfeil sitzt als
-     nachlaufendes Symbol darin, die Vorschlagsliste hängt an der Hülle. -->
+     Es ist die eine Suche der Klassensatz-Seite und trägt deshalb die Suchpille von 48 px wie
+     Medienkatalog, Portal und Theke. Der Pfeil sitzt als nachlaufendes Symbol darin, die
+     Vorschlagsliste hängt an der Hülle. -->
 <script>
 	import { ChevronDown } from '@lucide/svelte';
 	import Suchpille from '../../../lib/components/ui/Suchpille.svelte';
@@ -58,7 +55,7 @@
 					<li>
 						<button
 							type="button"
-							class="w-full text-left px-5 py-2.5 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150 cursor-pointer text-sm font-medium"
+							class="w-full text-left px-5 py-2.5 text-on-surface cursor-pointer text-sm font-medium"
 							onclick={() => onSelectKlasse?.(klasse)}
 						>
 							Klasse {klasse}
@@ -68,7 +65,7 @@
 			</ul>
 		{:else if isKlasseDropdownOpen && filteredKlassenList.length === 0}
 			<div
-				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl py-4 px-5 text-slate-400 text-center text-sm"
+				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl py-4 px-5 text-on-surface-variant text-center text-sm"
 			>
 				Keine Klasse gefunden.
 			</div>

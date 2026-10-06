@@ -32,11 +32,11 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
-389 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
+339 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
 Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
 
 - [x] Buchakte mit der Liste der Ausleiher (20)
-- [ ] „Klassen & Bücher" (50)
+- [x] „Klassen & Bücher" (50)
 - [ ] Signaturen (24)
 - [ ] Gemeinsame Bauteile: Knopf, Suchpille mit dem Scanfeld der Theke, Schalter, Dialoge,
   Meldungen (81)
@@ -498,7 +498,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 06.10.2026: 389 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 06.10.2026: 339 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -534,6 +534,11 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   (gemessen am 06.10.2026). Stift, Drucker und Papierkorb sind 14 px große Symbole ohne
   Knopffläche (`.icon-btn`), drei davon erklären sich über `title` statt `data-tip` (am Code
   gelesen). „Interne ID generieren" bricht bei 1280 px Fensterbreite im Knopf in zwei Zeilen um.
+- Klassensätze: Der Knopf „Bücher verwalten" heißt für Screenreader „Klasse bearbeiten"
+  (`KlassenKarte.svelte`, `aria-label`); der Name enthält das sichtbare Wort nicht.
+- Dialog „Klasse & Bücher zuweisen": Die Kacheln des Büchergitters tragen 28 px Rundung, die
+  Stufe der Dialoge (Karten: 12 px), und vergrößern sich beim Wählen; die Zeile „BÜCHER FINDEN"
+  steht in Versalien (`ClassAssignmentBookGrid.svelte`, gemessen am 06.10.2026).
 - Titel-Verwaltung: Ein Titel lässt sich in der Liste nur mit der Maus öffnen. Der Klick hängt
   an der Zeile (`BookTableZeile.svelte`, `onclick` am `<tr>`), die Zeile nimmt keinen Fokus. Die
   Leserdatei öffnet die Akte über den Namen als Knopf.

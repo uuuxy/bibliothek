@@ -23,17 +23,17 @@
 	let saving = $state(false);
 	let error = $state('');
 
-	// Auswählen statt tippen (docs/OFFEN.md 5.18, 30.09.2026): Ein Tippfehler legte hier eine
-	// Klasse an, die es an der Schule nicht gibt. Zur Wahl stehen die Klassen der Schüler und
-	// die Klassen, die schon eine Buchliste haben — die 05F1 bleibt so auch im Sommer wählbar,
-	// bevor der LUSD-Abgleich die neuen Fünftklässler bringt.
+	// Auswählen statt tippen: Ein Tippfehler legte sonst eine Klasse an, die es an der Schule
+	// nicht gibt. Zur Wahl stehen die Klassen der Schüler und die Klassen, die schon eine
+	// Buchliste haben — die 05F1 bleibt so auch im Sommer wählbar, bevor der LUSD-Abgleich die
+	// neuen Fünftklässler bringt.
 	const klassenListe = erzeugeKlassenVorschlaege();
 	const optionen = $derived(
 		[...new Set([...klassenListe.liste, ...existing])].sort().map((k) => ({ value: k, label: k }))
 	);
 
-	// Scheitert eine der beiden Quellen, fehlt womöglich genau die gesuchte Klasse. Bis zum
-	// 30.09.2026 schwieg der Dialog dazu, denn man tippte sie dann von Hand ein.
+	// Scheitert eine der beiden Quellen, fehlt womöglich genau die gesuchte Klasse; der Dialog
+	// sagt es dann unter dem Auswahlfeld.
 	let buchlistenFehler = $state(false);
 	const ladefehler = $derived(klassenListe.ladefehler || buchlistenFehler);
 
@@ -75,12 +75,12 @@
 	}
 </script>
 
-<!-- Seit 07.09.2026 auf Modal.svelte (Register 05.09.): Hintergrund, Feld und
-     Escape stellt das Bauteil; der Name des Dialogs kommt als `beschriftung`. -->
+<!-- Hintergrund, Fokusfalle und Escape stellt Modal.svelte; der Name des Dialogs kommt als
+     `beschriftung`. -->
 <Modal open={true} onclose={onClose} beschriftung="Zum Klassensatz hinzufügen">
 	<div class="p-6 space-y-5">
-		<h3 class="text-lg font-bold text-slate-900">Zum Klassensatz hinzufügen</h3>
-		<p class="text-sm text-slate-500">
+		<h3 class="text-lg font-bold text-on-surface">Zum Klassensatz hinzufügen</h3>
+		<p class="text-sm text-on-surface-variant">
 			{bookIds.length}
 			{bookIds.length === 1 ? 'Buch' : 'Bücher'} einer Schulklasse zuweisen.
 		</p>
@@ -99,7 +99,7 @@
 		</div>
 
 		{#if error}
-			<div class="text-sm text-rose-600">{error}</div>
+			<div class="text-sm text-error">{error}</div>
 		{/if}
 
 		<div class="flex justify-end gap-3">

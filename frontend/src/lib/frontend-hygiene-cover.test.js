@@ -34,7 +34,6 @@ const BESTAND = [
 	'src/lib/StudentPrintReceipt.svelte',
 	'src/lib/components/portal/PortalTrefferkarte.svelte',
 	'src/inventur/lib/components/BuchKarte.svelte',
-	'src/inventur/lib/components/admin/ClassAssignmentSummary.svelte',
 	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte',
 	'src/lib/useBookAkte.svelte.js',
 	'src/lib/monitor/FolieBeliebt.svelte',

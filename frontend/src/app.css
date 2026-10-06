@@ -5,13 +5,11 @@
    Rollen, die darauf zeigen, dann Basis-, Bauteil- und Druckschichten. Eine
    Rollendatei vor der Skala wäre ein Verweis auf etwas, das es noch nicht gibt.
 
-   Roboto — SELBST AUSGELIEFERT, nicht von Googles CDN. Die Schrift kommt als
-   npm-Paket (@fontsource/roboto) mit, wird in den Build gebündelt und vom EIGENEN
-   Server geladen. Es geht keine Anfrage an Google. Das ist hier nicht nur
-   Geschmack: Das Einbinden über fonts.googleapis.com überträgt die IP-Adresse
-   jedes Besuchers an Google — dafür gab es 2022 das Urteil des LG München
-   (3 O 17493/20). Bei einer Schulanwendung mit Schülerdaten ist das keine Option.
-   Nebenbei läuft die Anwendung damit auch ohne Internetzugang vollständig.
+   Roboto — selbst ausgeliefert, nicht von Googles CDN. Die Schrift kommt als
+   npm-Paket (@fontsource/roboto) mit, wird in den Build gebündelt und vom eigenen
+   Server geladen. Es geht keine Anfrage an Google: Das Einbinden über
+   fonts.googleapis.com übertrüge die IP-Adresse jedes Besuchers dorthin, und die
+   Anwendung läuft so auch ohne Internetzugang vollständig.
 
    Lizenz: SIL Open Font License 1.1 — Selbst-Hosten, Bündeln und Weitergabe
    ausdrücklich erlaubt.
@@ -30,4 +28,3 @@
 @import './styles/komponenten.css';
 @import './styles/druck-grundlagen.css';
 @import './styles/druck-ausweise.css';
-@import './styles/altlasten.css';

@@ -52,10 +52,9 @@
 		buecher.liste.filter((/** @type {any} */ b) => selectedBookIds.has(b.id))
 	);
 
-	// Der Speicherpfad ERSETZT: UpdateClassBooks loescht die Zuweisungen ALLER Zielklassen und
-	// schreibt danach die Auswahl hinein (inventur/datenbank_klassen.go). Mehrere Klassen auf
-	// einmal gingen schon immer — nur sagte nichts, dass die zusaetzlich gewaehlte Klasse ihren
-	// Satz verliert: Wer zu 05F1 noch 06A2 dazunimmt, loescht deren neun Buecher, ohne es zu sehen.
+	// Der Speicherpfad ersetzt: UpdateClassBooks löscht die Zuweisungen aller Zielklassen und
+	// schreibt danach die Auswahl hinein (inventur/datenbank_klassen.go). Wer zu 05F1 noch 06A2
+	// dazunimmt, löscht deren Satz; die Warnung unten nennt die betroffenen Klassen.
 	const ueberschriebeneKlassen = $derived(
 		selectedClasses
 			.filter((/** @type {string} */ name) => name !== initialGroup?.className)
@@ -65,8 +64,8 @@
 			.filter((/** @type {any} */ g) => g && g.books?.length > 0)
 	);
 
-	// Aufzaehlung im Skript statt im Markup: {#each} braeuchte fuer Komma und „und" Mustaches mit
-	// reinen Zeichenketten — ESLint lehnt die zu Recht ab (svelte/no-useless-mustaches).
+	// Aufzählung im Skript statt im Markup: {#each} bräuchte für Komma und „und" Mustaches mit
+	// reinen Zeichenketten, und die lehnt ESLint ab (svelte/no-useless-mustaches).
 	const ueberschriebenText = $derived.by(() => {
 		const teile = ueberschriebeneKlassen.map(
 			(/** @type {any} */ g) =>
@@ -133,9 +132,9 @@
 </script>
 
 {#if isOpen}
-	<!-- Seit 07.09.2026 auf Modal.svelte, Größe „voll" (M3 full-screen dialog): Hintergrund,
-	     Feld, Escape und Hintergrundklick stellt das Bauteil; die zweispaltige Arbeitsfläche
-	     samt eigenem Schließen-Knopf bleibt Inhalt. -->
+	<!-- Modal.svelte in Größe „voll" (M3 full-screen dialog) stellt Hintergrund, Fokusfalle,
+	     Escape und Hintergrundklick; die zweispaltige Arbeitsfläche samt eigenem
+	     Schließen-Knopf ist Inhalt. -->
 	<Modal open={true} onclose={() => onClose()} size="voll" beschriftetDurch="zuweisung-titel">
 		<div
 			class="h-full p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden"
@@ -149,7 +148,7 @@
 					>
 						Klasse & Bücher zuweisen
 					</h2>
-					<p class="mt-1 sm:mt-2 text-slate-500 font-medium text-sm sm:text-lg">
+					<p class="mt-1 sm:mt-2 text-on-surface-variant font-medium text-sm sm:text-lg">
 						Wähle Zielklassen und die entsprechenden Schulbücher aus.
 					</p>
 				</div>
@@ -160,10 +159,10 @@
 					<ClassAssignmentSelector bind:selectedClasses {vorhandeneGruppen} />
 
 					{#if ueberschriebeneKlassen.length > 0}
-						<!-- Warnung statt Verbot: Genau das WILL man meistens (ein Jahrgang
-						     bekommt denselben Satz). Es darf nur nicht unbemerkt passieren. -->
+						<!-- Warnung statt Verbot: Meist ist es gewollt (ein Jahrgang bekommt denselben
+						     Satz). Es darf nur nicht unbemerkt passieren. -->
 						<div
-							class="mb-4 flex items-start gap-2.5 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900"
+							class="mb-4 flex items-start gap-2.5 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 						>
 							<TriangleAlert class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
 							<p>{ueberschriebenText}</p>
@@ -180,7 +179,7 @@
 
 			<!-- Right Sidebar Area -->
 			<aside
-				class="w-full lg:w-85 flex-none lg:shrink-0 flex flex-col gap-4 relative z-10 border-t lg:border-t-0 lg:border-l border-slate-100 pt-4 lg:pt-0 lg:pl-8 h-[40dvh] lg:h-auto"
+				class="w-full lg:w-85 flex-none lg:shrink-0 flex flex-col gap-4 relative z-10 border-t lg:border-t-0 lg:border-l border-outline-variant pt-4 lg:pt-0 lg:pl-8 h-[40dvh] lg:h-auto"
 			>
 				<ClassAssignmentSummary
 					{selectedClasses}
@@ -198,7 +197,7 @@
 			<button
 				aria-label="Schließen"
 				onclick={onClose}
-				class="absolute top-4 sm:top-6 right-4 sm:right-6 p-2 hover:bg-slate-100 hover:text-slate-900 rounded-full transition-all duration-200 text-slate-400 z-20 cursor-pointer border-none bg-transparent"
+				class="icon-btn absolute top-4 sm:top-6 right-4 sm:right-6 z-20 text-on-surface-variant"
 			>
 				<X class="w-4 h-4" aria-hidden="true" />
 			</button>
