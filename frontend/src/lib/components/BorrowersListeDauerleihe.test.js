@@ -3,9 +3,8 @@ import { render } from '@testing-library/svelte';
 import BorrowersListe from './BorrowersListe.svelte';
 
 // Eine Dauerleihe zeigt keine Frist und wird nie überfällig — dieselbe Regel wie in der
-// Akte (BorrowedBooksListDauerleihe.test.js). Diese Liste („wer hat den Titel gerade?")
-// färbte bis zum 22.09.2026 nach dem blossen Datum: Nach einem Jahr stand der Kollege rot
-// da, während die Theke ihn anstandslos bediente (OFFEN.md 5.18).
+// Akte (BorrowedBooksListDauerleihe.test.js). Nach dem bloßen Datum gefärbt, stünde ein
+// Kollege nach einem Jahr rot da, während die Theke ihn bedient.
 describe('Ausleiher-Liste: Dauerleihe', () => {
 	/** @param {boolean} dauerleihe */
 	const zeile = (dauerleihe) => ({
@@ -26,7 +25,7 @@ describe('Ausleiher-Liste: Dauerleihe', () => {
 		const text = screen.container.textContent ?? '';
 		expect(text).toContain('ohne Frist');
 		expect(text).not.toContain('1.2.2025');
-		expect(screen.container.querySelector('.text-rose-600')).toBeNull();
+		expect(screen.container.querySelector('.text-error')).toBeNull();
 	});
 
 	// Die Gegenprobe: Ohne sie misst der Test nur, dass niemand rot wird — auch dann,
@@ -34,6 +33,6 @@ describe('Ausleiher-Liste: Dauerleihe', () => {
 	it('lässt die befristete Ausleihe überfällig werden', () => {
 		const screen = render(BorrowersListe, { zeilen: [zeile(false)], onBack: () => {}, fmtDate });
 		expect(screen.container.textContent ?? '').toContain('1.2.2025');
-		expect(screen.container.querySelector('.text-rose-600')).not.toBeNull();
+		expect(screen.container.querySelector('.text-error')).not.toBeNull();
 	});
 });

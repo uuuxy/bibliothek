@@ -32,10 +32,10 @@ Liste geführt wird, steht am Ende.
 
 ### Etappe 2: Farben auf Material-3-Rollen (5.21)
 
-409 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
+389 Stellen tragen noch Palettenfarben (gezählt am 06.10.2026 mit dem Muster der Ratsche).
 Bildschirm für Bildschirm, je Portion ein Commit, am gerenderten Bildschirm geprüft:
 
-- [ ] Buchakte mit der Liste der Ausleiher (20)
+- [x] Buchakte mit der Liste der Ausleiher (20)
 - [ ] „Klassen & Bücher" (50)
 - [ ] Signaturen (24)
 - [ ] Gemeinsame Bauteile: Knopf, Suchpille mit dem Scanfeld der Theke, Schalter, Dialoge,
@@ -498,7 +498,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 05.10.2026: 409 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 06.10.2026: 389 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es die eigenen Rollen
@@ -527,6 +527,13 @@ nicht, `scrim` ist schwarz.
 
 Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 
+- Buchakte, Liste der Ausleiher: Eine überfällige Ausleihe ist nur an der Farbe des Datums zu
+  erkennen (`BorrowersListe.svelte`). Die Leserakte setzt für dieselbe Ausleihe ein Zeichen und
+  für Screenreader das Wort „Überfällig" dazu (`AusleiheRueckgabe.svelte`).
+- Buchakte, Exemplarkarte (`BookExemplarCard.svelte`): „Barcode scannen" ist 24 px hoch
+  (gemessen am 06.10.2026). Stift, Drucker und Papierkorb sind 14 px große Symbole ohne
+  Knopffläche (`.icon-btn`), drei davon erklären sich über `title` statt `data-tip` (am Code
+  gelesen). „Interne ID generieren" bricht bei 1280 px Fensterbreite im Knopf in zwei Zeilen um.
 - Titel-Verwaltung: Ein Titel lässt sich in der Liste nur mit der Maus öffnen. Der Klick hängt
   an der Zeile (`BookTableZeile.svelte`, `onclick` am `<tr>`), die Zeile nimmt keinen Fokus. Die
   Leserdatei öffnet die Akte über den Namen als Knopf.

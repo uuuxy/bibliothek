@@ -15,17 +15,17 @@
 </script>
 
 <div class="w-full">
-	<ul class="divide-y divide-slate-50">
+	<ul class="divide-y divide-outline-variant">
 		{#each zeilen as b, _i (_i)}
 			<!-- Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Akte. -->
 			{@const dauerleihe = !!b.ist_dauerleihe}
 			{@const ueberfaellig = !dauerleihe && new Date(b.rueckgabe_frist) < new Date()}
 			<li
-				class="px-5 py-3.5 hover:bg-slate-50 transition-colors flex items-center justify-between group"
+				class="px-5 py-3.5 hover:bg-surface transition-colors flex items-center justify-between group"
 			>
 				<div class="flex items-center gap-3 min-w-0">
 					<div
-						class="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0"
+						class="w-9 h-9 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-bold text-xs shrink-0"
 					>
 						{b.schueler_name?.[0] ?? ''}{b.schueler_nachname?.[0] ?? ''}
 					</div>
@@ -35,27 +35,29 @@
 								appState.triggerStudentScan = b.schueler_barcode;
 								onBack();
 							}}
-							class="text-sm font-semibold text-slate-800 hover:text-indigo-600 text-left cursor-pointer truncate block"
+							class="text-sm font-semibold text-on-surface hover:text-primary text-left cursor-pointer truncate block"
 						>
 							{b.schueler_name}
 							{b.schueler_nachname}
-							<span class="text-xs font-normal text-slate-400 ml-1"
+							<span class="text-xs font-normal text-on-surface-variant ml-1"
 								>({b.klasse || 'Unbekannt'})</span
 							>
 						</button>
-						<p class="text-xs text-slate-400 font-mono mt-0.5">Exemplar: {b.exemplar_barcode}</p>
+						<p class="text-xs text-on-surface-variant font-mono mt-0.5">
+							Exemplar: {b.exemplar_barcode}
+						</p>
 					</div>
 				</div>
 				<div class="text-right shrink-0 ml-4 flex gap-6 items-center">
 					<div class="text-right hidden sm:block">
-						<p class="text-label-small font-medium text-slate-400">Ausgeliehen</p>
-						<p class="text-sm font-semibold text-slate-600">
+						<p class="text-label-small font-medium text-on-surface-variant">Ausgeliehen</p>
+						<p class="text-sm font-semibold text-on-surface-variant">
 							{fmtDate(b.ausgeliehen_am)}
 						</p>
 					</div>
 					<div class="text-right">
-						<p class="text-label-small font-medium text-slate-400">Rückgabe bis</p>
-						<p class="text-sm font-bold {ueberfaellig ? 'text-rose-600' : 'text-slate-700'}">
+						<p class="text-label-small font-medium text-on-surface-variant">Rückgabe bis</p>
+						<p class="text-sm font-bold {ueberfaellig ? 'text-error' : 'text-on-surface'}">
 							{dauerleihe ? 'ohne Frist' : fmtDate(b.rueckgabe_frist)}
 						</p>
 					</div>
@@ -64,7 +66,7 @@
 		{/each}
 	</ul>
 	{#if zeilen.length === 0}
-		<div class="py-8 text-center text-sm text-slate-400">
+		<div class="py-8 text-center text-sm text-on-surface-variant">
 			Keine Ausleihen entsprechen dem Filter.
 		</div>
 	{/if}

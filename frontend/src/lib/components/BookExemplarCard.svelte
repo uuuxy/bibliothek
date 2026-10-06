@@ -61,12 +61,9 @@
 	}
 </script>
 
-<!-- Die Karte ist KEIN Knopf. Bis zum 09.09.2026 trug sie role="button" mit
-     aria-pressed — und darin lagen Barcode-Feld, Drucken-Link, Stift und Papierkorb:
-     Bedienelemente im Bedienelement (nested-interactive, 50 Verstöße im
-     Medienkatalog). Ausgewählt wird über das Kästchen, das ohnehin da war und bis
-     dahin nur Anzeige war (pointer-events-none). -->
-<!-- Rahmen XOR Erhebung: `shadow-sm` ist weg, der Rahmen dafür sichtbarer. -->
+<!-- Die Karte ist kein Knopf: In ihr liegen Barcode-Feld, Stift und Papierkorb, und ein
+     Bedienelement im Bedienelement lässt sich nicht bedienen. Ausgewählt wird über das
+     Kästchen. Sie trägt einen Rahmen und keinen Schatten. -->
 <div
 	class="rounded-xl border bg-surface-container-lowest p-4 transition-colors {selected
 		? 'border-primary bg-primary-container/30 ring-1 ring-primary'
@@ -74,7 +71,7 @@
 >
 	<div class="flex items-start justify-between mb-3">
 		{#if editingBarcode}
-			<div class="flex-1 mr-2 relative">
+			<div class="flex-1 mr-2">
 				<!-- autofocus bewusst: Das Feld erscheint erst auf Klick und ersetzt an dieser
 				     Stelle den Barcode. Wer es oeffnet, will sofort tippen oder scannen. -->
 				<Feld
@@ -83,6 +80,7 @@
 					autofocus
 					onfocus={(e) => e.currentTarget.select()}
 					ungueltig={!!barcodeError}
+					hint={barcodeError}
 					feld="font-mono"
 					onkeydown={(e) => {
 						if (e.key === 'Enter') saveBarcode();
@@ -103,14 +101,6 @@
 					</Button>
 					<Button size="sm" onclick={saveBarcode} class="text-label-small">Speichern</Button>
 				</div>
-				{#if barcodeError}
-					<p
-						class="text-label-small text-rose-600 mt-1 absolute -bottom-4 left-0 truncate w-full"
-						title={barcodeError}
-					>
-						{barcodeError}
-					</p>
-				{/if}
 			</div>
 		{:else}
 			<div class="flex items-center gap-3">
@@ -121,12 +111,12 @@
 						aria-label="Exemplar {ex.barcode_id} auswählen"
 					/>
 				{/if}
-				<!-- Chip-Form (siehe StatusChip), amber heißt Platzhalternummer; nowrap,
+				<!-- Chip-Form (siehe StatusChip), die Warnfarbe heißt Platzhalternummer; nowrap,
 				     weil „Barcode scannen" sonst wortweise umbrach. -->
 				<div class="flex flex-wrap items-center gap-2">
 					<span
 						class="rounded-md px-2 py-0.5 font-mono text-xs font-bold whitespace-nowrap {platzhalter
-							? 'bg-amber-100 text-amber-700'
+							? 'bg-warning-container text-on-warning-container'
 							: 'bg-primary-container text-on-primary-container'}"
 					>
 						{ex.barcode_id}
@@ -144,7 +134,7 @@
 						{/if}
 						{#if platzhalter}
 							<button
-								class="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+								class="text-xs px-2 py-1 bg-warning-container text-on-warning-container font-semibold rounded-lg cursor-pointer flex items-center gap-1 whitespace-nowrap"
 								onclick={() => {
 									editingBarcode = true;
 									editBarcodeValue = ''; // Leer lassen für den Scanner
