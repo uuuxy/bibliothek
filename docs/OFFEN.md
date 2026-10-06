@@ -97,10 +97,10 @@ wird dort gelöscht.
   gelöschten Lesern.
 - **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
 - **Zwei Helfer (5.5):** Beträge und Fehlertexte schreiben 27 Stellen selbst.
-- **Beim Umstellen der Farben aufgefallen (5.21):** Zustände, die nur die Farbe anzeigt
-  (überfällige Ausleihe in der Buchakte, gewählte Signatur); englische Wörter in der
-  Oberfläche; die Titelliste öffnet einen Titel nur mit der Maus; Flächen, Knöpfe und Leisten
-  von Hand neben den gemeinsamen Bauteilen.
+- **Beim Umstellen der Farben aufgefallen (5.21):** In der Inventur zeigt ein unbekannter
+  Barcode einen technischen Fehlertext; die Titelliste öffnet einen Titel nur mit der Maus;
+  englische Wörter in der Oberfläche; eine überfällige Ausleihe ist in der Buchakte nur an der
+  Farbe zu erkennen; in der Bestellhistorie die Spalte „Lieferant" im Browser nachmessen.
 
 ### Nur mit Anlass: kein Schritt
 
@@ -431,30 +431,9 @@ SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l
 SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
 ```
 
-### 5.21 Farben: was nach der Umstellung auf M3-Rollen offen ist
+### 5.21 Beim Umstellen der Farben aufgefallen
 
-Alle Farbklassen der Oberfläche sind Rollen aus `styles/rollen.css`.
-`frontend/src/lib/frontend-hygiene-farben.test.js` lässt keine Palettenklasse, kein Weiß oder
-Schwarz als Klasse und keine Rolle zu, die es nicht gibt. Feste Farbwerte stehen noch an drei
-Stellen (gezählt am 06.10.2026):
-
-- Die zwei Reihenfarben im Diagramm der Statistik (`StatsTrendChart.svelte`), gewählt nach
-  Unterscheidbarkeit bei Farbfehlsichtigkeit; die Rollen führen kein solches Paar.
-- Das Druckfenster der Listen (`utils/listenDruck.js`) ist ein eigenes Dokument mit eigenem
-  Stylesheet und sechs Grau- und Rottönen der Palette.
-- Der Reliefschatten des Logos (`ui/LogoRelief.svelte`).
-
-Der Bildschirmblitz der Theke (`OmniboxScreenFlash.svelte`) trägt Grün, Rot und Bernstein als
-feste, hellere Werte der Tailwind-Palette und bleibt so (entschieden am 06.10.2026).
-
-Die Farben der Ausweiskarte sind Werte des Entwurfs (`designer/kartenFarben.js`), keine
-Rollen: Die Karte wird gedruckt und bleibt, wie sie ist, auch wenn die Oberfläche ihr Farbschema
-wechselt.
-
-Dunkle Bereiche (Flur-Monitor, Sucher der Kamera, Leiste des Ausweisdrucks) stehen im dunklen
-Schema: Die Klasse `schema-dunkel` in `rollen.css` gibt den Rollen ihre dunklen Töne.
-
-Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
+Jeweils am Code nachgesehen:
 
 - Buchakte, Liste der Ausleiher: Eine überfällige Ausleihe ist nur an der Farbe des Datums zu
   erkennen (`BorrowersListe.svelte`). Die Leserakte setzt für dieselbe Ausleihe ein Zeichen und
@@ -462,24 +441,10 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
 - Einstellungen, „E-Mail Routing für Mahnungen": Die Oberfläche sagt „Mapping" (leere Liste,
   Meldung nach dem Löschen, Sprechblase am Papierkorb; `SystemSettingsRouting.svelte`); ein
   deutsches Wort wäre „Zuordnung".
-- „Rollen & Rechte": Bei 1280 px Fensterbreite bleiben der Erklärung eines Rechts 152 px
-  neben den vier Schaltern; die Sätze laufen über bis zu sieben Zeilen (`PermissionsEditor.svelte`,
-  gemessen am 06.10.2026).
-- Signaturen: Welche Signatur in der linken Liste gewählt ist, sagt nur die Farbe der Zeile
-  (`SignaturenView.svelte`); für Screenreader trägt die gewählte Zeile kein Merkmal.
-- Klassensätze: Der Knopf „Bücher verwalten" heißt für Screenreader „Klasse bearbeiten"
-  (`KlassenKarte.svelte`, `aria-label`); der Name enthält das sichtbare Wort nicht.
-- Dialog „Klasse & Bücher zuweisen": Die Kacheln des Büchergitters tragen 28 px Rundung, die
-  Stufe der Dialoge (Karten: 12 px), und vergrößern sich beim Wählen; die Zeile „BÜCHER FINDEN"
-  steht in Versalien (`ClassAssignmentBookGrid.svelte`, gemessen am 06.10.2026).
 - Titel-Verwaltung: Ein Titel lässt sich in der Liste nur mit der Maus öffnen. Der Klick hängt
   an der Zeile (`BookTableZeile.svelte`, `onclick` am `<tr>`), die Zeile nimmt keinen Fokus. Die
   Leserdatei öffnet die Akte über den Namen als Knopf.
 - Titel-Verwaltung: Der Knopf „Retry Cover" trägt eine englische Beschriftung.
-- „LUSD & Versetzung": Die Flächen für Fehler, Erfolg, Hinweis und Warnung stehen in
-  `LusdImportView` und `PromoteStudentsView` von Hand, wie insgesamt an 41 Stellen in 32
-  Dateien (gezählt am 06.10.2026: getönte Fläche der Rollen Fehler, Erfolg oder Warnung und
-  Rundung in einer Klassenliste); ein gemeinsames Bauteil dafür gibt es nicht.
 - Bestellhistorie: Die Zelle „Lieferant" trägt `max-w-0` ohne volle Breite an der Spalte
   (`BestellHistorieTabelle.svelte`). Dieselbe Form ließ im Fehlbestandsbericht der Inventur dem
   Titel 191 von 918 px (gemessen und behoben am 05.10.2026). Name und Kundennummer tragen
@@ -492,29 +457,8 @@ Beim Umstellen aufgefallen, jeweils am Code nachgesehen:
   inventur-scan nicht ladbar: no rows in result set" (`GetExemplarForInventoryScan` hüllt
   `pgx.ErrNoRows` ein, `ladeExemplarFuerScan` gibt ihn mit 404 unverändert weiter). Der Status
   stimmt, der Satz nicht.
-- Leserdatei: Die Leiste des Ausweisdrucks (`students/AuswahlAktionsleiste`) ist eine eigene,
-  dunkle Leiste neben `ui/AuswahlLeiste` (Schlagwort-Pflege). Vor dem Zusammenlegen zu klären:
-  wohin der Hinweis „ohne Ablaufjahr" und das Feld „Ab Feld" kommen — beides passt nicht in
-  die 64 px hohe Leiste.
-- Flur-Monitor: Das Symbol der Kennzeile („Buch des Monats", „Neu eingetroffen", „Beliebt
-  diese Woche") steht über dem Wort statt daneben (`monitor/Folie*.svelte`; das Symbol ist ein
-  Blockelement in einem `<span>`). Gesehen am 06.10.2026.
-- Bestellwesen, nach der Umstellung gegen die M3-Seiten gehalten (05.10.2026): Die Zahl im
-  eingeklappten Bestellstreifen steht von Hand auf `primary` mit 24 px
-  (`BestellWorkspace.svelte`; M3, Badges: Farbe „Error", 16dp; dafür gibt es
-  `ui/Zaehlerpille`). „PDF-Bestellliste" ist ein Link in eigener Knopfform: 12 px Rundung, Fläche
-  und Rand zugleich, 34 px hoch (`OrderRecommendations.svelte`; `ui/Button` kann kein Link
-  sein). „Speichern", „Abbrechen", „Bearbeiten" und „Löschen" der Lieferanten sind Wörter ohne
-  Knopffläche (`LieferantZeile.svelte`). Zwei Hinweissätze unter „Bestellung auslösen" stehen
-  in `text-label-small`, der leere Warenkorb in einem gestrichelten Kasten (`OrderCart.svelte`).
-  Der Spaltenkopf der Bedarfsliste steht von Hand in Versalien neben dem Kopf von `ui/Tabelle`.
-  „Lade …" steht im Bestellwesen an vier Stellen als pulsierender Text (`BestellDetail`,
-  `BestellHistorie`, `KlassensatzReservierungen`, `AnliegenListe`), dazu im Nachdruck der
-  Etiketten, in der Benutzerliste und am Monitor; sonst `ui/Ladekreis`.
 - Ausweis-Designer: Die Knöpfe der Textausrichtung tragen englische Hinweise („left",
-  „center", „right"; `PropertiesText.svelte`). Die zwei Umschalter der Werkzeugleiste
-  (`ToolbarDruck.svelte`, `Toolbar.svelte`) stehen von Hand in gleicher Form, nicht aus
-  `ui/Segmente`. Die zwei Farbwähler der Eigenschaften sind 32 und 36 px hoch.
+  „center", „right"; `PropertiesText.svelte`).
 
 ### 5.25 Eine Forderung für ein Gerät lässt sich nicht anlegen
 
