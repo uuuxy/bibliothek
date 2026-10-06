@@ -1,4 +1,4 @@
-import { apiFetch } from '../apiFetch.js';
+import { apiFetch, FRIST_SAMMELVERSAND_MS } from '../apiFetch.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 
 /**
@@ -26,6 +26,8 @@ async function sendBulkOverdueMails(auswahl) {
 	try {
 		const res = await apiFetch('/api/mail/send-bulk-overdue', {
 			method: 'POST',
+			// Je Klasse eine Mail: Der Lauf dauert länger als die Vorgabe für Anfragen.
+			timeoutMs: FRIST_SAMMELVERSAND_MS,
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				klassen: auswahl.klassen,

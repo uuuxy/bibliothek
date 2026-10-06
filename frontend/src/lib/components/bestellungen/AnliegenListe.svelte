@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { apiFetch, extractApiError } from '../../apiFetch.js';
+	import { apiFetch, extractApiError, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -69,6 +69,7 @@
 		try {
 			const res = await apiFetch(`/api/anliegen/${id}/erledigen`, {
 				method: 'PUT',
+				timeoutMs: FRIST_MAILVERSAND_MS,
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ notiz })
 			});

@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
-import { apiFetch } from './apiFetch.js';
+vi.mock('./apiFetch.js', async (original) => ({
+	.../** @type {any} */ (await original()),
+	apiFetch: vi.fn()
+}));
+import { apiFetch, FRIST_SAMMELVERSAND_MS } from './apiFetch.js';
 import { sendeKontoauszuege, kontoauszugAdresse, ladeKontoauszuege } from './abgaengerDienst.js';
 
 // Der Versand der Kontoauszüge an die Klassenleitungen hat im Browser nur ein Saisonfenster:
@@ -24,6 +27,8 @@ describe('abgaengerDienst.sendeKontoauszuege', () => {
 		const [url, opts] = vi.mocked(apiFetch).mock.calls[0];
 		expect(url).toBe('/api/abgaenger/mail');
 		expect(opts?.method).toBe('POST');
+		// Je Klasse eine Mail: länger als die Vorgabe für Anfragen.
+		expect(opts?.timeoutMs).toBe(FRIST_SAMMELVERSAND_MS);
 		expect(JSON.parse(String(opts?.body))).toEqual({
 			klassen: ['09H1', '10R2'],
 			override_email: 'test@schule.example'

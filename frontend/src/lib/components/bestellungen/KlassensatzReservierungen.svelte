@@ -11,7 +11,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
 	import { erzeugeKlassensatzListe } from './klassensatzListe.svelte.js';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
@@ -51,6 +51,8 @@
 		try {
 			const res = await apiFetch(`/api/reservierungen/klassensatz/${id}/erledigen`, {
 				method: 'PUT',
+				// Der Server verschickt dabei die Mail an die Lehrkraft.
+				timeoutMs: FRIST_MAILVERSAND_MS,
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ notiz })
 			});

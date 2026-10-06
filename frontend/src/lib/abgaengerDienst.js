@@ -3,7 +3,7 @@
  *  Getrennt von Graduates.svelte, weil hier nichts Sichtbares passiert: Diese drei
  *  Funktionen reden mit dem Backend und geben Daten oder eine Meldung zurück. Die
  *  Entscheidung, was davon als Toast erscheint, bleibt in der Komponente. */
-import { apiFetch } from './apiFetch.js';
+import { apiFetch, FRIST_SAMMELVERSAND_MS } from './apiFetch.js';
 
 /** Lädt die Abgängerliste samt Saisonfenster.
  *
@@ -82,6 +82,8 @@ export async function ladeKontoauszuege(klasse, suche = '', sichtbar = []) {
 export async function sendeKontoauszuege(auswahl) {
 	const res = await apiFetch('/api/abgaenger/mail', {
 		method: 'POST',
+		// Je Klasse eine Mail mit den Auszügen: länger als die Vorgabe für Anfragen.
+		timeoutMs: FRIST_SAMMELVERSAND_MS,
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
 			klassen: auswahl.klassen,

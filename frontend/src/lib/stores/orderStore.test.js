@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('../apiFetch.js', () => ({
+vi.mock('../apiFetch.js', async (original) => ({
+	.../** @type {any} */ (await original()),
 	apiGet: vi.fn(async () => []),
 	apiPost: vi.fn(async () => ({})),
 	apiPut: vi.fn(async () => ({})),
@@ -10,7 +11,7 @@ vi.mock('./toastStore.svelte.js', () => ({
 	toastStore: { addToast: vi.fn() }
 }));
 
-import { apiGet, apiPost } from '../apiFetch.js';
+import { apiGet, apiPost, FRIST_MAILVERSAND_MS } from '../apiFetch.js';
 import { orderStore } from './orderStore.svelte.js';
 
 const apiPostMock = vi.mocked(apiPost);
@@ -213,7 +214,10 @@ describe('orderStore.submitOrder', () => {
 				// Ohne Lernmittel-Kennzeichen ist der Topf die Schülerbücherei.
 				mittel: 'schultraeger',
 				items: [{ titel_id: 't1', menge: 2, preis: 9.9, generate_barcodes: true }]
-			})
+			}),
+			// Der Server verschickt nach dem Speichern die Mail: Die Oberfläche wartet länger
+			// als die Vorgabe, sonst käme die Antwort „gespeichert, Mail gescheitert" nie an.
+			{ timeoutMs: FRIST_MAILVERSAND_MS }
 		);
 		// Doppelklick-Schutz: ein Idempotenz-Schlüssel geht mit.
 		const payload = bestellPayload(apiPostMock);

@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../apiFetch.js', () => ({
+vi.mock('../apiFetch.js', async (original) => ({
+	.../** @type {any} */ (await original()),
 	apiFetch: vi.fn()
 }));
 vi.mock('../../inventur/lib/store.svelte.js', () => ({
 	showToast: vi.fn()
 }));
 
-import { apiFetch } from '../apiFetch.js';
+import { apiFetch, FRIST_SAMMELVERSAND_MS } from '../apiFetch.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 import { useMahnwesenMail } from './mahnwesenMail.svelte.js';
 
@@ -31,6 +32,9 @@ describe('useMahnwesenMail.sendBulkOverdueMails', () => {
 
 		expect(apiFetch).toHaveBeenCalledWith('/api/mail/send-bulk-overdue', {
 			method: 'POST',
+			// Je Klasse eine Mail: Mit der Vorgabe von 10 s gäbe die Oberfläche auf, während
+			// der Server weiter versendet, und der zweite Klick schickte jede Liste doppelt.
+			timeoutMs: FRIST_SAMMELVERSAND_MS,
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ klassen: ['5a', '6b'], override_email: '' })
 		});

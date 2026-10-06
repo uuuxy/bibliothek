@@ -3,7 +3,7 @@
 // Zulauf und Bestellbedarf. Die Views (BestellWorkspace & Kinder) bleiben rein
 // darstellend.
 
-import { apiGet, apiPost, apiPut, apiDelete } from '../apiFetch.js';
+import { apiGet, apiPost, apiPut, apiDelete, FRIST_MAILVERSAND_MS } from '../apiFetch.js';
 import { toastStore } from './toastStore.svelte.js';
 import {
 	MITTEL,
@@ -507,7 +507,13 @@ class OrderStore {
 		this.pendingIdempotencyKeys[gruppe.mittel] = { signatur, key };
 
 		try {
-			const data = await apiPost('/api/bestellungen', { ...rumpf, idempotency_key: key });
+			// Der Server speichert und verschickt danach die Mail. Gäbe die Oberfläche vorher auf,
+			// meldete der zweite Versuch „war bereits erfasst", ohne dass die Mail hinausging.
+			const data = await apiPost(
+				'/api/bestellungen',
+				{ ...rumpf, idempotency_key: key },
+				{ timeoutMs: FRIST_MAILVERSAND_MS }
+			);
 			this.cart = this.cart.filter((i) => i.mittel !== gruppe.mittel);
 			delete this.pendingIdempotencyKeys[gruppe.mittel]; // erfolgreich → nächste Bestellung bekommt neuen Schlüssel
 			const toastType = data?.status === 'warning' ? 'error' : 'success';

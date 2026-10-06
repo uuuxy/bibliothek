@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { apiGet, apiPut, apiPost } from '../../apiFetch.js';
+	import { apiGet, apiPut, apiPost, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -74,9 +74,12 @@
 		testing = true;
 		testResult = null;
 		try {
-			await apiPost('/api/admin/settings/mail/test', {
-				to: testEmail
-			});
+			// Der Testversand wartet auf den Mailserver; seine Diagnose kommt erst nach dessen Frist.
+			await apiPost(
+				'/api/admin/settings/mail/test',
+				{ to: testEmail },
+				{ timeoutMs: FRIST_MAILVERSAND_MS }
+			);
 			testResult = { ok: true, message: `Test-E-Mail an ${testEmail} versendet.` };
 		} catch (e) {
 			testResult = {
