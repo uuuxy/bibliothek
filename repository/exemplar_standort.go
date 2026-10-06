@@ -14,7 +14,8 @@ import (
 
 // Der Standort eines Exemplars (docs/OFFEN.md 5.53, Migration 158): wo es steht, wenn nicht an
 // seinem Platz nach der Signatur. Die Übernahme aus Littera schreibt ihn beim Anlegen
-// (internal/littera); von Hand wird er geändert wie das Eigentum: Exemplare eines Titels
+// (internal/littera), jedes andere neue Exemplar erbt ihn von den Exemplaren seines Titels
+// (SQLGeerbterStandort); von Hand wird er geändert wie das Eigentum: Exemplare eines Titels
 // markieren, einen Wert für alle setzen. Ein einzelnes Exemplar ist eine Liste mit einem
 // Eintrag.
 //
@@ -48,6 +49,47 @@ type StandortAenderung struct {
 type StandortZahl struct {
 	Standort string `json:"standort"`
 	Anzahl   int    `json:"anzahl"`
+}
+
+// SQLGeerbterStandort ist der Standort, den ein neues Exemplar eines Titels bekommt: der, den
+// alle Exemplare des Titels im Bestand tragen. Trägt eines keinen oder einen anderen, oder hat
+// der Titel kein Exemplar im Bestand, ist der Ausdruck NULL, und das neue steht nach der
+// Signatur. Jeder Weg, der ein Exemplar zu einem Titel anlegt, setzt ihn als Wert der Spalte
+// ein; die Übernahme aus Littera bringt den Standort je Exemplar selbst mit.
+//
+// titel ist die Kennung des Titels in der umgebenden Anweisung, als Parameter oder Spalte.
+// Der Alias e gehört hier den vorhandenen Exemplaren: Eine Spalte über e bände sich an sie.
+func SQLGeerbterStandort(titel string) string {
+	return `(SELECT min(e.standort) FROM buecher_exemplare e
+		WHERE e.titel_id = ` + titel + ` AND ` + SQLExemplarImBestand + `
+		HAVING count(*) = count(e.standort) AND count(DISTINCT e.standort) = 1)`
+}
+
+// geerbteStandorte liest SQLGeerbterStandort je Titel für den Weg, der seine Zeilen ohne
+// SQL-Ausdruck schreibt (CopyFrom der Bestellung). Der Schlüssel ist die Kennung, wie der
+// Aufrufer sie schreibt; ein Titel ohne Erbe fehlt in der Antwort.
+func geerbteStandorte(ctx context.Context, q DBQueryer, titelIDs []string) (map[string]string, error) {
+	rows, err := q.Query(ctx, `
+		SELECT roh, standort
+		FROM (SELECT u.roh, `+SQLGeerbterStandort("u.roh::uuid")+` AS standort
+		      FROM (SELECT DISTINCT unnest($1::text[]) AS roh) u) erbe
+		WHERE standort IS NOT NULL`, titelIDs)
+	if err != nil {
+		return nil, fmt.Errorf("geerbte standorte lesen: %w", err)
+	}
+	defer rows.Close()
+	jeTitel := make(map[string]string)
+	for rows.Next() {
+		var titelID, standort string
+		if err := rows.Scan(&titelID, &standort); err != nil {
+			return nil, fmt.Errorf("geerbte standorte lesen: %w", err)
+		}
+		jeTitel[titelID] = standort
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("geerbte standorte lesen: %w", err)
+	}
+	return jeTitel, nil
 }
 
 // SetzeExemplarStandort setzt den Standort der genannten Exemplare und liefert, wie viele sich

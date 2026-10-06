@@ -352,8 +352,8 @@ func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, q reposit
 			CROSS JOIN generate_series(1, u.stueck)
 			WHERE u.stueck > 0 AND u.isbn <> ''
 		)
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
-		SELECT z.titel_id, c.code, true, 'Automatisch generiert (Sammelimport)'
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz, standort)
+		SELECT z.titel_id, c.code, true, 'Automatisch generiert (Sammelimport)', `+repository.SQLGeerbterStandort("z.titel_id")+`
 		FROM ziel z
 		JOIN UNNEST($3::text[]) WITH ORDINALITY AS c(code, nr) ON c.nr = z.nr
 	`, isbns, stueck, barcodes)

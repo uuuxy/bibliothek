@@ -247,7 +247,8 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQu
 
 // gleicheExemplareAn legt fehlende Exemplare an oder sondert überzählige aus, bis der Bestand
 // expectedStock erreicht. Ausgesondert wird nur aus dem Bestand: Bestellte Exemplare lassen
-// sich über die Zahl nicht aussondern.
+// sich über die Zahl nicht aussondern. Ein neues Exemplar erbt den Standort der vorhandenen
+// (repository.SQLGeerbterStandort).
 func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository.DBQueryer, titelID string, currentStock, expectedStock int) error {
 	if expectedStock > currentStock {
 		// Nummern aus barcode_seq — dieselbe Quelle wie Bestellwesen, Handvergabe und
@@ -257,8 +258,8 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 			return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)
 		}
 		_, err = q.Exec(ctx, `
-				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
-				SELECT $1, unnest($2::text[]), true, 'Automatisch generiert'
+				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz, standort)
+				SELECT $1, unnest($2::text[]), true, 'Automatisch generiert', `+repository.SQLGeerbterStandort("$1::uuid")+`
 			`, titelID, barcodes)
 		if err != nil {
 			return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)

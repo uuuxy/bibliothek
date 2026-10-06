@@ -136,7 +136,9 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   ändern_ — das Feld schlägt die Standorte vor, die im Bestand schon vorkommen; _Standort
   entfernen_ nimmt die Angabe weg. Im Kopf der Akte und in der Titel-Verwaltung stehen die
   Standorte der Exemplare mit ihrer Zahl, etwa „Bibliothek, Regal 3B (2)". Ein neues Exemplar
-  kommt ohne Standort an.
+  erbt den Standort, wenn alle Exemplare des Titels im Bestand denselben tragen — beim Erhöhen
+  des Bestands, beim Listenimport und bei einer Bestellung. Tragen sie verschiedene oder trägt
+  eines keinen, kommt es ohne Standort an.
 - **Titel-Verwaltung**: neuen Titel anlegen (die ISBN-Eingabe holt die Angaben zum Buch — vor
   dem Speichern prüfen; die Signatur trägt man selbst ein, das Feld bietet die Signaturen des
   Bestands an), bearbeiten, Cover tauschen,

@@ -392,8 +392,8 @@ func fuegeExemplareEin(ctx context.Context, tx pgx.Tx, copiesToInsert []importCo
 	// (UTC), zwischen Mitternacht und 2 Uhr der Vortag, und eine zweite Regel neben der
 	// Vorgabe.
 	qInsertExemplar := `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz, etikett_gedruckt)
-		VALUES ($1, $2, $3, NULLIF($4, ''), true)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz, etikett_gedruckt, standort)
+		VALUES ($1, $2, $3, NULLIF($4, ''), true, ` + repository.SQLGeerbterStandort("$1::uuid") + `)
 		ON CONFLICT (barcode_id) DO NOTHING
 	`
 	for _, c := range copiesToInsert {

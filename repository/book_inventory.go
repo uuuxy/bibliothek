@@ -126,10 +126,21 @@ func (r *pgBookRepository) GenerateBarcodes(ctx context.Context, count int) ([]s
 	return barcodes, nil
 }
 
-// BulkInsertCopiesTx fügt Exemplare im Bulk innerhalb einer Transaktion ein.
+// BulkInsertCopiesTx fügt Exemplare im Bulk innerhalb einer Transaktion ein. Den Standort
+// erben sie von den Exemplaren ihres Titels im Bestand (SQLGeerbterStandort), gelesen vor dem
+// Einfügen: Die neuen Zeilen zählen dabei nicht mit.
 func (r *pgBookRepository) BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, copies []BookCopyInsert) error {
 	if len(copies) == 0 {
 		return nil
+	}
+
+	titelIDs := make([]string, 0, len(copies))
+	for _, c := range copies {
+		titelIDs = append(titelIDs, c.TitelID)
+	}
+	standorte, err := geerbteStandorte(ctx, tx, titelIDs)
+	if err != nil {
+		return err
 	}
 
 	var copyRows [][]any
@@ -137,13 +148,14 @@ func (r *pgBookRepository) BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, co
 		copyRows = append(copyRows, []any{
 			c.TitelID, c.BarcodeID, c.ZustandNotiz, c.IstAusleihbar, c.EtikettGedruckt, c.Einkaufspreis,
 			bestellungIDOderNull(c.BestellungID), leererStringAlsNull(c.Bestellstatus),
+			leererStringAlsNull(standorte[c.TitelID]),
 		})
 	}
 
-	_, err := tx.CopyFrom(
+	_, err = tx.CopyFrom(
 		ctx,
 		pgx.Identifier{"buecher_exemplare"},
-		[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt", "einkaufspreis", "bestellung_id", "bestellstatus"},
+		[]string{"titel_id", "barcode_id", "zustand_notiz", "ist_ausleihbar", "etikett_gedruckt", "einkaufspreis", "bestellung_id", "bestellstatus", "standort"},
 		pgx.CopyFromRows(copyRows),
 	)
 	return err

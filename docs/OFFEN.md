@@ -16,8 +16,8 @@ Liste geführt wird, steht am Ende.
 
 - [x] **Theke: zweiter Scan desselben Buchs.** Eine Ausleihe klingt seit dem 06.10.2026
   anders als eine Rückgabe. Eine Sperre und eine eigene Farbe gibt es nicht.
-- [ ] **Standort: Ein neues Exemplar erbt ihn,** wenn alle übrigen Exemplare des Titels
-  denselben tragen. Entschieden am 06.10.2026. (5.53)
+- [x] **Standort: Ein neues Exemplar erbt ihn,** wenn alle übrigen Exemplare des Titels
+  denselben tragen. Gebaut am 06.10.2026.
 - [ ] **Titel speichern:** Speichern zwei Plätze denselben Titel, gewinnt bei den Feldern des
   Titels ohne Meldung der zweite; die Eingabe des ersten ist weg. Die Maske schickt künftig nur
   die geänderten Felder. (5.5)
@@ -49,8 +49,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 **Entscheiden:**
 
-- [ ] Bekommt die Bestandsliste (CSV) eine Spalte „Standort"? Vorschlag: ja, zusammen mit dem
-  Erben. (5.53)
+- [ ] Bekommt die Bestandsliste (CSV) eine Spalte „Standort"? Vorschlag: ja. (5.53)
 - [ ] Alle Farben stehen auf M3-Rollen. Sichtbar anders als vorher: umrandete Knöpfe mit
   dunklerem Rand, „Löschen" rötlich getönt ohne Rand, Schalter im Aus-Zustand grauer, Dialoge
   mit rundem Schließen-Knopf; Titel ohne Cover zeigen eine graue Kachel mit Fach und Titel
@@ -675,15 +674,8 @@ sie in der Vorschau. Kategorie B.
 
 ### 5.53 Standort am Exemplar: was offen ist
 
-Offen sind zwei Punkte:
+Offen ist ein Punkt:
 
-- **Neue Exemplare.** Entschieden am 06.10.2026: Ein neues Exemplar erbt den Standort, wenn
-  alle übrigen Exemplare des Titels im Bestand denselben tragen. Nicht gebaut: Heute kommt es
-  ohne Standort an, zu sehen an der Zahl hinter dem Standort („Regal 11 (30)" bei einem Bestand
-  von 35). Ein Exemplar kommt auf drei Wegen zu einem vorhandenen Titel: Bestand in der
-  Titelmaske erhöht (`gleicheExemplareAn` in `inventur/db_books_update.go`), Bestellung
-  (`BulkInsertCopiesTx` in `repository/book_inventory.go`) und Listenimport
-  (`internal/service/import_dynamic.go`). Die Regel gehört an eine Stelle.
 - **Bestandsliste.** Die Bestandsliste als CSV ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
   Abschnitt 8) nennt je Exemplar die Signatur, den Standort nicht. Nächster Schritt: eine
   Spalte „Standort" in `inventur/export_csv.go` und im Pflegekonzept.
