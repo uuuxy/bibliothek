@@ -25,11 +25,10 @@
 	});
 </script>
 
-<!-- Lupe, Feld und Kamera-Knopf sind Flex-Geschwister im Pillen-Container (Omnibox.svelte).
-     Vorher lagen Icon und Knopf absolut positioniert über einem Feld mit eigenem Padding —
-     in einer 48-px-Pille bricht das, weil die Höhe nicht mehr vom Padding kommt. -->
+<!-- Lupe, Feld und Kamera-Knopf sind Flex-Geschwister im Pillen-Container (Omnibox.svelte):
+     In einer Pille von 48 px kommt die Höhe nicht vom Padding des Feldes. -->
 <Search
-	class="h-5 w-5 shrink-0 text-slate-500 group-focus-within:text-blue-600 transition-colors"
+	class="h-5 w-5 shrink-0 text-on-surface group-focus-within:text-primary transition-colors"
 	aria-hidden="true"
 />
 <input
@@ -53,7 +52,7 @@
 		onIndexChange: onIndexChange,
 		onEscape: onEscape
 	}}
-	class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
+	class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-on-surface placeholder:text-on-surface-variant text-base"
 	placeholder={hinweis}
 />
 <button

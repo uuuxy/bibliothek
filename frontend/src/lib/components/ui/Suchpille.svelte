@@ -3,31 +3,20 @@
 	import { tick } from 'svelte';
 
 	/**
-	 * Die Suchpille — EIN Bauteil für alle Suchfelder, die das Werkzeug einer Seite sind
-	 * (nicht ein Datenfeld in einem Formular).
+	 * Die Suchpille — ein Bauteil für alle Suchfelder, die das Werkzeug einer Seite sind
+	 * (nicht ein Datenfeld in einem Formular). Mehrere Kopien liefen in Höhe, Radius, Fläche,
+	 * Rahmen, Fokusfarbe, Schriftgröße und Platzhaltertext auseinander; ein Bauteil kann das
+	 * nicht.
 	 *
-	 * Die Bauart gab es schon dreifach: in der Kiosk-Omnibox, in der Medienkatalog-Suche
-	 * und, davon abgewichen, im Kollegiums-Portal und im öffentlichen OPAC. Absprache vom
-	 * 10.08.2026: „die omnibox bei mein portal und katalog ist eine komplett andere".
-	 * Gemessen stimmte das an sieben Stellen gleichzeitig — Höhe, Radius, Fläche,
-	 * Rahmen, Fokusfarbe, Schriftgröße und der Platzhaltertext („… suchen …" gegen
-	 * „… eingeben …"). Drei Kopien driften; ein Bauteil kann das nicht.
-	 *
-	 * Material 3: gefüllte Pille auf surface-container, führendes Symbol, im Fokus weiße
-	 * Fläche mit Umriss. Der Container trägt Rahmen, Fläche und Fokus — das Feld selbst
-	 * trägt nichts und füllt ihn nur (h-full). Deshalb steht die Pille bewusst neben der
+	 * Farben nach material-web, Token v0_192, search-bar: Fläche surface-container-high,
+	 * führendes Symbol on-surface, Eingabe on-surface, Platzhalter on-surface-variant. Im Fokus
+	 * weiße Fläche mit Umriss in primary. Der Container trägt Rahmen, Fläche und Fokus — das
+	 * Feld selbst trägt nichts und füllt ihn nur (h-full). Deshalb steht die Pille neben der
 	 * 36-px-Control-Skala aus styles/basis.css.
 	 *
-	 * KEIN `focus-within:shadow-md` (entfernt 11.08.2026). Es stand hier, weil die
-	 * Medienkatalog-Fassung es mitbrachte — die Kiosk-Omnibox hatte es nie. Damit sahen die
-	 * Pillen im Fokus unterschiedlich aus, und das Gate merkte es nicht: Es verglich die
-	 * BREITE des Randes, nicht Farbe und Schatten. Aufgefallen ist es am Bildschirm.
-	 * Sachlich gehört es ohnehin nicht dazu — M3 hebt eine Suchleiste beim Fokussieren
-	 * nicht an, und Erhebung ist dort ohnehin Farbe (tonal), kein Schlagschatten. Das
-	 * Fokus-Signal ist der Umriss.
-	 *
-	 * Sein zweiter Pixel liegt innen (ring-inset): Eine Pille, die bündig an der Kante eines
-	 * Rollbereichs sitzt, verlöre einen außen liegenden Ring an dieser Kante.
+	 * Kein Schatten im Fokus: M3 hebt eine Suchleiste beim Fokussieren nicht an; das
+	 * Fokus-Signal ist der Umriss. Sein zweiter Pixel liegt innen (ring-inset): Eine Pille, die
+	 * bündig an der Kante eines Rollbereichs sitzt, verlöre einen außen liegenden Ring.
 	 *
 	 * @type {{
 	 *   id: string,
@@ -46,14 +35,11 @@
 	 * element: bind:this-Ersatz für Aufrufer, die den Fokus selbst setzen (Inventur-Scan
 	 * nach jedem Treffer). disabled: während ein Scan verarbeitet wird.
 	 *
-	 * WO SIE HINGEHÖRT (Absprache vom 04.09.2026: „eine Leiste! aber nicht 2 … es soll gleich
-	 * aussehen"): Jede Seite hat GENAU EINE Suche, und die ist diese Pille — über die volle
-	 * Breite, ganz oben im Inhalt. Filter, Auswahlfelder und Knöpfe stehen in einer eigenen
-	 * Zeile DARUNTER und bleiben auf der 36-px-Grundlinie (ui/Suchfeld.svelte); nebeneinander
-	 * säße die Pille 12 px höher als alles daneben. Der Gegenstand ist der der Seite: Der
-	 * Katalog sucht Bücher, die Inventur scannt, das Mahnwesen sucht Schüler. Bis zum
-	 * 04.09.2026 stand darüber zusätzlich eine globale Leiste — zwei Suchzeilen je Seite,
-	 * und die größte davon konnte am wenigsten.
+	 * Wo sie hingehört: Jede Seite hat genau eine Suche, und die ist diese Pille — über die
+	 * volle Breite, ganz oben im Inhalt. Filter, Auswahlfelder und Knöpfe stehen in einer
+	 * eigenen Zeile darunter und bleiben auf der 36-px-Grundlinie (ui/Suchfeld.svelte);
+	 * nebeneinander säße die Pille 12 px höher als alles daneben. Der Gegenstand ist der der
+	 * Seite: Der Katalog sucht Bücher, die Inventur scannt, das Mahnwesen sucht Schüler.
 	 */
 	let {
 		id,
@@ -74,17 +60,13 @@
 	let feld = $state();
 	import CameraScanner from '../../CameraScanner.svelte';
 
-	// Kamera-Scanner (seit 18.09.2026, Schalter `kamera`, Standard aus): Der erkannte Code
-	// landet als Suchtext im Feld, dann geht ein input-Ereignis an das Feld — die Suche
-	// läuft also exakt so los, als hätte jemand den Code eingetippt. Kein zweiter Suchweg.
+	// Kamera-Scanner (Schalter `kamera`, Standard aus): Der erkannte Code landet als Suchtext
+	// im Feld, dann geht ein input-Ereignis an das Feld — die Suche läuft also so los, als
+	// hätte jemand den Code eingetippt. Kein zweiter Suchweg.
 	//
-	// `await tick()` ist dabei kein Feinschliff, sondern der Unterschied zwischen „der Scan
-	// sucht" und „der Scan verschwindet": An DEMSELBEN input-Ereignis hängt Svelte die
-	// Rückschreibung von bind:value. Ohne das Warten steht im DOM-Feld noch der alte Wert,
-	// Svelte liest ihn zurück — und überschreibt den gerade gescannten Code mit Leer.
-	// Gemessen am 18.09.2026 im Medienkatalog: wert = "9783060130764", einen Takt später
-	// wert = "", die Seite erfuhr nie davon. Am Bildschirm sah das aus wie „die Kamera geht
-	// eine Millisekunde auf und dann passiert nichts".
+	// `await tick()` ist nötig: An demselben input-Ereignis hängt Svelte die Rückschreibung von
+	// bind:value. Ohne das Warten steht im DOM-Feld noch der alte Wert, Svelte liest ihn
+	// zurück und überschreibt den gescannten Code mit Leer.
 	let kameraOffen = $state(false);
 	async function nachScan() {
 		kameraOffen = false;
@@ -98,7 +80,7 @@
 
 	// Fokus beim Betreten der Seite.
 	//
-	// Ohne ihn geht der erste Anschlag ins Leere — bei einem Barcode-Scanner heisst das,
+	// Ohne ihn geht der erste Anschlag ins Leere — bei einem Barcode-Scanner heißt das,
 	// dass der Scan verloren geht, ohne dass jemand einen Fehler sieht. Bewusst per
 	// .focus() statt per autofocus-Attribut: Das Attribut wirkt nur beim ersten Laden des
 	// Dokuments, und diese Oberfläche wechselt die Ansicht ohne Seitenwechsel.
@@ -108,22 +90,18 @@
 </script>
 
 <div
-	class="group flex items-center w-full h-12 px-5 bg-slate-100 rounded-full border border-transparent ring-inset transition-all duration-200 focus-within:bg-white focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600"
+	class="group flex items-center w-full h-12 px-5 bg-surface-container-high rounded-full border border-transparent ring-inset transition-all duration-200 focus-within:bg-surface-container-lowest focus-within:border-primary focus-within:ring-1 focus-within:ring-primary"
 >
 	<Search
-		class="h-5 w-5 shrink-0 text-slate-500 group-focus-within:text-blue-600 transition-colors duration-200"
+		class="h-5 w-5 shrink-0 text-on-surface group-focus-within:text-primary transition-colors duration-200"
 		aria-hidden="true"
 	/>
 	<!-- Die vier Abwehr-Attribute gegen Passwortverwalter: LastPass, Dashlane und 1Password
 	     halten ein Textfeld in einem Dialog sonst für ein Anmeldeformular und füllen es
-	     ungefragt aus. `autocomplete="off"` allein reicht ihnen nicht. Sie standen bisher
-	     nur an EINEM Feld (der Suche im Klassensatz-Dialog); hier gelten sie für alle. -->
-	<!-- type="search" statt "text" (04.09.2026): Erst damit meldet sich die Pille dem
-	     Screenreader und den Tests als Suchfeld (role=searchbox) — dieselbe Rolle, die das
-	     kleine Suchfeld-Bauteil längst trägt. Aufgefallen beim Umbau der Verwaltungsseiten
-	     auf die Pille: Drei e2e-Tests suchten eine `searchbox` und fanden nichts mehr.
-	     Chromes eigenes Löschkreuz wird unten weggeblendet, sonst stünde neben dem
-	     nachlaufenden Symbol ein zweites. -->
+	     ungefragt aus. `autocomplete="off"` allein reicht ihnen nicht. -->
+	<!-- type="search": Damit meldet sich die Pille dem Screenreader und den Tests als
+	     Suchfeld (role=searchbox) wie das kleine Suchfeld-Bauteil. Chromes eigenes Löschkreuz
+	     wird unten weggeblendet, sonst stünde neben dem nachlaufenden Symbol ein zweites. -->
 	<input
 		{id}
 		name={id}
@@ -140,7 +118,7 @@
 		{onblur}
 		aria-label={etikett}
 		placeholder={platzhalter}
-		class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base [&::-webkit-search-cancel-button]:appearance-none"
+		class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-on-surface placeholder:text-on-surface-variant text-base [&::-webkit-search-cancel-button]:appearance-none"
 	/>
 	{#if nachlaufend}
 		{@render nachlaufend()}

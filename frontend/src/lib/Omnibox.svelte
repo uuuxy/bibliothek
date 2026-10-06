@@ -24,7 +24,7 @@
 	// Fehlerzustand von ui/Feld. Jeder Eintrag ist ein ganzer Farbsatz: Stünde er neben RUHE im
 	// class-Attribut, gewönne die Regel, die im Stylesheet weiter hinten steht.
 	const RUHE =
-		'bg-slate-100 border-transparent focus-within:bg-white focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600';
+		'bg-surface-container-high border-transparent focus-within:bg-surface-container-lowest focus-within:border-primary focus-within:ring-1 focus-within:ring-primary';
 	/** @type {Record<string, string>} */
 	const RUECKMELDUNG = {
 		green: 'bg-surface-container-lowest border-success ring-1 ring-success',
@@ -120,7 +120,7 @@
 		<LogoRelief />
 	{/if}
 
-	<!-- relative z-10: Das Relief ist absolut positioniert und läge sonst optisch ÜBER
+	<!-- relative z-10: Das Relief ist absolut positioniert und läge sonst optisch über
 	     diesem Inhalt (positionierte Elemente malen über nicht-positionierte). -->
 	<div
 		class="relative z-10 w-full mx-auto flex flex-1 flex-col items-center space-y-4 justify-start"
