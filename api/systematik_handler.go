@@ -254,11 +254,11 @@ func (s *Server) DeleteSystematikHandler() http.HandlerFunc {
 			return apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
 		}
 
-		betroffen, err := s.zaehleTitelMitFach(r.Context(), bezeichnung)
+		verwendet, err := s.istFachInVerwendung(r.Context(), bezeichnung)
 		if err != nil {
 			return err
 		}
-		if betroffen > 0 {
+		if verwendet {
 			return apierrors.Conflict(
 				"Diese Sachgruppe hängt noch an Büchern und kann nicht gelöscht werden",
 				errors.New("systematik noch in verwendung"))
@@ -282,14 +282,14 @@ func (s *Server) DeleteSystematikHandler() http.HandlerFunc {
 	})
 }
 
-// zaehleTitelMitFach zählt Titel, deren Fach (subject) auf die Bezeichnung zeigt.
-func (s *Server) zaehleTitelMitFach(ctx context.Context, bezeichnung string) (int, error) {
-	var anzahl int
+// istFachInVerwendung prüft, ob Titel auf dieses Fach (subject) zeigen.
+func (s *Server) istFachInVerwendung(ctx context.Context, bezeichnung string) (bool, error) {
+	var verwendet bool
 	err := s.DB.Pool.QueryRow(ctx,
-		`SELECT count(*) FROM buecher_titel WHERE btrim(COALESCE(subject, '')) = btrim($1)`,
-		bezeichnung).Scan(&anzahl)
+		`SELECT EXISTS(SELECT 1 FROM buecher_titel WHERE btrim(COALESCE(subject, '')) = btrim($1))`,
+		bezeichnung).Scan(&verwendet)
 	if err != nil {
-		return 0, apierrors.Internal("Verwendung der Sachgruppe konnte nicht geprüft werden", err)
+		return false, apierrors.Internal("Verwendung der Sachgruppe konnte nicht geprüft werden", err)
 	}
-	return anzahl, nil
+	return verwendet, nil
 }
