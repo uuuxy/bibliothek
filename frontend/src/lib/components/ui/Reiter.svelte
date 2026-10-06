@@ -54,10 +54,12 @@
 	const sekundaer = $derived(variante === 'sekundaer');
 </script>
 
+<!-- no-print: Eine Reiterleiste ist Bedienung. Auf einer Ausweiskarte schöbe sie die Karte
+     von der Seite (e2e/ausweis-druckseite.spec.js). -->
 <div
 	role="tablist"
 	aria-label={etikett}
-	class="flex gap-6 border-b border-outline-variant overflow-x-auto {klasse}"
+	class="no-print flex gap-6 border-b border-outline-variant overflow-x-auto {klasse}"
 >
 	{#each reiter as r (r.id)}
 		{@const gewaehlt = r.id === aktiv}
