@@ -88,7 +88,7 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 	}
 
 	rows, err := r.db.Query(ctx, `
-		SELECT e.id, e.barcode_id, t.titel
+		SELECT e.id, e.barcode_id, t.titel, e.zugang_am IS NOT NULL
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE e.id = ANY($1) AND e.ist_ausgesondert = true AND e.aussonderung_grund = 'VERLUST'
@@ -96,11 +96,14 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 	if err != nil {
 		return nil, fmt.Errorf("zu löschende Verlust-Exemplare lesen fehlgeschlagen: %w", err)
 	}
-	type snapshot struct{ id, barcode, titel string }
+	type snapshot struct {
+		id, barcode, titel string
+		warImBestand       bool
+	}
 	var treffer []snapshot
 	for rows.Next() {
 		var s snapshot
-		if err := rows.Scan(&s.id, &s.barcode, &s.titel); err != nil {
+		if err := rows.Scan(&s.id, &s.barcode, &s.titel, &s.warImBestand); err != nil {
 			rows.Close()
 			return nil, fmt.Errorf("verlust-exemplar lesen fehlgeschlagen: %w", err)
 		}
@@ -160,7 +163,10 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: s.id,
 			BearbeiterID: &bearbeiterID, Akteur: "USER",
 			Kontext: strPtr("Als Verlust gebuchtes Exemplar endgültig gelöscht"),
-			Details: map[string]any{"barcode_id": s.barcode, "titel": s.titel, "action": AuditAktionVerlustEndgueltigGeloescht},
+			Details: map[string]any{
+				"barcode_id": s.barcode, "titel": s.titel,
+				"action": AuditAktionVerlustEndgueltigGeloescht, AuditDetailWarImBestand: s.warImBestand,
+			},
 		}); err != nil {
 			return nil, err
 		}

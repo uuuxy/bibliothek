@@ -28,8 +28,8 @@ func TestDeleteBooks(t *testing.T) {
 		// findet gelöschte Exemplare nur über diese Spur (Befund 01.09.2026).
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
 			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel"}).
-				AddRow("ex-1", "BC-1", "Titel Eins"))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel", "war_im_bestand"}).
+				AddRow("ex-1", "BC-1", "Titel Eins", true))
 		// Die drei CASCADE-Kinder des Titels, die niemand nannte, bis Frage 12
 		// („Gegenrichtung Schema", 06.09.2026) die DDL gelesen hat: Vormerkungen,
 		// Klassensatz-Reservierungen, Klassensatz-Zuordnungen.

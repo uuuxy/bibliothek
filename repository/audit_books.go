@@ -112,7 +112,10 @@ type titelVorDemLoeschen struct {
 	exemplare              []titelExemplar
 }
 
-type titelExemplar struct{ id, barcode string }
+type titelExemplar struct {
+	id, barcode  string
+	warImBestand bool
+}
 
 // leseTitelVorDemLoeschen liest die Angaben fürs Protokoll und lehnt ab, solange ein Exemplar
 // verliehen ist. Einen unbekannten Titel lässt sie durch; den meldet das DELETE.
@@ -171,13 +174,13 @@ func pruefeKeineAktivenAusleihen(ctx context.Context, tx pgx.Tx, titleID string)
 func leseTitelExemplare(ctx context.Context, tx pgx.Tx, titleID string) ([]titelExemplar, error) {
 	var exemplare []titelExemplar
 	exRows, err := tx.Query(ctx,
-		`SELECT id::text, barcode_id FROM buecher_exemplare WHERE titel_id = $1`, titleID)
+		`SELECT id::text, barcode_id, zugang_am IS NOT NULL FROM buecher_exemplare WHERE titel_id = $1`, titleID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to snapshot copies for audit: %w", err)
 	}
 	for exRows.Next() {
 		var s titelExemplar
-		if err := exRows.Scan(&s.id, &s.barcode); err != nil {
+		if err := exRows.Scan(&s.id, &s.barcode, &s.warImBestand); err != nil {
 			exRows.Close()
 			return nil, fmt.Errorf("failed to scan copy snapshot: %w", err)
 		}
@@ -224,7 +227,7 @@ func (r *pgAuditRepository) protokolliereTitelLoeschung(ctx context.Context, tx 
 			BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 			Details: map[string]any{
 				"barcode_id": ex.barcode, "titel": vorher.titel, "titel_id": vorher.id,
-				"action": AuditAktionTitelGeloescht,
+				"action": AuditAktionTitelGeloescht, AuditDetailWarImBestand: ex.warImBestand,
 			},
 		}); err != nil {
 			return err
@@ -250,6 +253,9 @@ const (
 	// AuditAktionVerlustEndgueltigGeloescht: Ein als Verlust gebuchtes Exemplar wurde in
 	// der Inventur endgültig entfernt (inventur_verlust_aktionen.go).
 	AuditAktionVerlustEndgueltigGeloescht = "verlust_endgueltig_geloescht"
+	// AuditDetailWarImBestand steht an jeder dieser Spuren: ob das Exemplar ein Zugangsdatum
+	// trug. Ein bestelltes, nie eingetroffenes Exemplar zählt das Abgangsbuch damit nicht.
+	AuditDetailWarImBestand = "war_im_bestand"
 )
 
 func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearbeiterID string) error {

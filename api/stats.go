@@ -5,6 +5,7 @@ package api
 
 import (
 	"bibliothek/pkg/schulzeit"
+	"bibliothek/repository"
 	"context"
 	"fmt"
 	"log"
@@ -95,9 +96,10 @@ func (s *Server) queryBestandKennzahlen(ctx context.Context, typeFilter string) 
 	// AUSSORTIERT (veraltet/verschlissen, kuratierte Entfernung) und BESTANDSKORREKTUR
 	// (Import-/Sync-Anpassung, laut Migration 043 "kein echter Abgang") — sie würden
 	// Verlustquote und Wiederbeschaffungswert künstlich aufblähen. aussonderung_grund
-	// ist per chk_aussonderung_grund (Migration 043) nur bei ist_ausgesondert gesetzt,
-	// deshalb impliziert dieser Filter bereits die Aussonderung.
-	const istVerlust = "e.aussonderung_grund IN ('VERLUST', 'BESCHAEDIGUNG')"
+	// ist per chk_aussonderung_grund (Migration 043) nur bei ist_ausgesondert gesetzt.
+	// Die Grenze ist die des Abgangsbuchs: Ein bestelltes Exemplar, das nie eintraf und
+	// als verloren ausgebucht wurde, war nie im Bestand und ist kein Verlust.
+	const istVerlust = repository.SQLIstAbgang + " AND e.aussonderung_grund IN ('VERLUST', 'BESCHAEDIGUNG')"
 
 	// ⚡ Bolt: Extracted active loans subquery into a CTE and restored DISTINCT.
 	// This prevents the PostgreSQL planner from executing a suboptimal nested loop left join

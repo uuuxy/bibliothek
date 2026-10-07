@@ -135,9 +135,10 @@ func protokolliereOffeneAusleihen(ctx context.Context, tx pgx.Tx, offene []offen
 // die Exemplar-ID als datensatz_id, der Barcode als Suchschlüssel, der Titel als
 // Anzeige der Trefferzeile.
 type exemplarSnapshot struct {
-	ID      string
-	Barcode string
-	Titel   string
+	ID           string
+	Barcode      string
+	Titel        string
+	WarImBestand bool
 }
 
 // leseExemplarSnapshots sammelt ALLE Exemplare der zu löschenden Titel — in der
@@ -150,7 +151,7 @@ type exemplarSnapshot struct {
 // „nie gesehen" statt „gelöscht am …".
 func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exemplarSnapshot, error) {
 	rows, err := tx.Query(ctx, `
-		SELECT e.id, e.barcode_id, t.titel
+		SELECT e.id, e.barcode_id, t.titel, e.zugang_am IS NOT NULL
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.titel_id = ANY($1::uuid[])
@@ -163,7 +164,7 @@ func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exem
 	var snaps []exemplarSnapshot
 	for rows.Next() {
 		var s exemplarSnapshot
-		if err := rows.Scan(&s.ID, &s.Barcode, &s.Titel); err != nil {
+		if err := rows.Scan(&s.ID, &s.Barcode, &s.Titel, &s.WarImBestand); err != nil {
 			return nil, fmt.Errorf("exemplar-snapshots konnten nicht gelesen werden: %w", err)
 		}
 		snaps = append(snaps, s)
@@ -183,6 +184,8 @@ func protokolliereGeloeschteExemplare(ctx context.Context, tx pgx.Tx, snaps []ex
 			"barcode_id": s.Barcode,
 			"titel":      s.Titel,
 			"action":     repository.AuditAktionTitelGeloescht,
+
+			repository.AuditDetailWarImBestand: s.WarImBestand,
 		})
 		if err != nil {
 			return fmt.Errorf("protokoll des gelöschten exemplars: %w", err)

@@ -92,7 +92,7 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 		// Barcode-Snapshots vor den DELETEs (Tresen-Auskunft; hier: keine Exemplare).
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
 			WithArgs(pgxmock.AnyArg()).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel"}))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel", "war_im_bestand"}))
 
 		// Die drei CASCADE-Kinder des Titels, seit Frage 12 („Gegenrichtung Schema",
 		// 06.09.2026) im Protokoll: Vormerkungen, Klassensatz-Reservierungen,

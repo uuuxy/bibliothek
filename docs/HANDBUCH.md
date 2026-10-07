@@ -646,7 +646,8 @@ Ein bestelltes Buch erscheint im Zugangsbuch erst, wenn Sie es unter _Bestellung
 Wareneingang_ eingebucht haben — mit dem Tag der Lieferung, nicht dem der Bestellung.
 Was noch im Zulauf steht, gehört nicht in den Nachweis: Es liegt noch beim Händler. Ein
 bestelltes Buch, das nie geliefert wurde und das Sie in der Buchakte löschen, steht in keinem
-der beiden Bücher.
+der beiden Bücher. Es zählt auch nicht in der Zahl der gelöschten Exemplare unter dem
+Abgangsbuch und in der Statistik nicht als Verlust.
 
 **Was nicht auf dem Blatt steht, steht ausdrücklich darunter:** Exemplare, die vor der
 Einführung der Bestandsbücher ausgesondert wurden, tragen kein Abgangsdatum — ihre Zahl

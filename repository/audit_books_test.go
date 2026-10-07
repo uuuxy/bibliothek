@@ -90,8 +90,8 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	// gelöschte Exemplare nur über diese Spur (Befund 01.09.2026).
 	mock.ExpectQuery("FROM buecher_exemplare WHERE titel_id").
 		WithArgs(titelID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id"}).
-			AddRow("ex-1", "B-00001"))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "war_im_bestand"}).
+			AddRow("ex-1", "B-00001", true))
 	// Offene Forderungen VOR dem Löschen ins Protokoll (Rasterdurchgang 06.09.2026):
 	// Ein unbezahlter Schadensfall ist Geld, das ein Schüler schuldet, und er verschwand
 	// bis dahin mit dem Titel, ohne dass jemand ihn später nachtragen konnte.

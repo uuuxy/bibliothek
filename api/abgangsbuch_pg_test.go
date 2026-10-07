@@ -184,6 +184,62 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 	}
 }
 
+// Auch die Zahl der aus dem Katalog gelöschten Exemplare nennt nur, was im Bestand war. Die
+// Spur trägt dafür einen Vermerk; eine Spur ohne ihn zählt mit, weil niemand mehr weiß, ob
+// das Exemplar eingetroffen war.
+func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	bearbeiter := seedPortalLehrkraft(t, pool, "abgang-geloescht@test.invalid")
+	von, bis := schulzeit.Halbjahr(schulzeit.Jetzt())
+	geloescht := func() int {
+		t.Helper()
+		buch, err := repository.LadeAbgangsbuch(ctx, pool, von, bis)
+		if err != nil {
+			t.Fatalf("Abgangsbuch laden: %v", err)
+		}
+		return buch.AusKatalogGeloescht
+	}
+	if n := geloescht(); n != 0 {
+		t.Fatalf("vor dem Löschen: %d gelöschte, erwartet 0", n)
+	}
+
+	// Titel löschen: ein Exemplar aus dem Bestand, eines aus dem Zulauf.
+	titelID := titelMitSignatur(t, pool, "Mit Zulauf geloescht", "Zul 1", 0)
+	exemplar(t, pool, titelID, "AG-BESTAND", true, "")
+	zulaufExemplar(t, pool, titelID, "AG-ZULAUF")
+	if err := repository.NewAuditRepository(pool).DeleteTitle(ctx, titelID, bearbeiter); err != nil {
+		t.Fatalf("Titel löschen: %v", err)
+	}
+	if n := geloescht(); n != 1 {
+		t.Errorf("nach dem Löschen des Titels: %d gelöschte, erwartet 1 — AG-ZULAUF war nie im Bestand", n)
+	}
+
+	// Verlust endgültig löschen: ein bestelltes Exemplar, im Status-Editor als verloren ausgebucht.
+	zweiterTitel := titelMitSignatur(t, pool, "Nie geliefert, verloren", "Zul 2", 0)
+	verloren := zulaufExemplar(t, pool, zweiterTitel, "AG-ZULAUF-VERLOREN")
+	if err := repository.NewBookRepository(pool).UpdateCopyStatus(ctx, verloren, false, true, "", nil); err != nil {
+		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
+	}
+	entfernt, err := repository.NewInventoryRepository(pool).EndgueltigLoescheVerlustExemplare(ctx, []string{verloren}, bearbeiter)
+	if err != nil || len(entfernt) != 1 {
+		t.Fatalf("Verlust endgültig löschen: %v, entfernt %v — dann misst dieser Test nichts", err, entfernt)
+	}
+	if n := geloescht(); n != 1 {
+		t.Errorf("nach dem endgültigen Löschen: %d gelöschte, erwartet 1 — AG-ZULAUF-VERLOREN war nie im Bestand", n)
+	}
+
+	// Gegenprobe: Ohne den Vermerk zählt dieselbe Spur mit.
+	if _, err := pool.Exec(ctx, `UPDATE audit_log SET details = details - $1 WHERE details->>'barcode_id' = 'AG-ZULAUF'`,
+		repository.AuditDetailWarImBestand); err != nil {
+		t.Fatalf("Vermerk entfernen: %v", err)
+	}
+	if n := geloescht(); n != 2 {
+		t.Errorf("Spur ohne Vermerk: %d gelöschte, erwartet 2", n)
+	}
+}
+
 // Das Blatt selbst: zwei Abschnitte mit eigener Stückzahl, und der Hinweis auf die
 // Abgänge ohne Zeitpunkt. Gelesen wird der Inhaltsstrom des fertigen PDFs — im Struct
 // stand schon manches, was nie gedruckt wurde.
