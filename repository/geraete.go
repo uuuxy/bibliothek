@@ -116,18 +116,17 @@ func (r *pgGeraeteRepository) CreateGeraet(ctx context.Context, modellname strin
 	return id, nil
 }
 
-// UpdateGeraet schreibt die Stammdaten. seriennummer und istAusleihbar sind Zeiger:
-// nil heisst "nicht mitgeschickt" und laesst die Spalte in Ruhe.
-//
-// Beim Ausleihbar-Kennzeichen war das vorher ein einfaches bool, und der Handler setzte
-// es auf true, wenn das Feld fehlte. Der Bearbeiten-Dialog schickt es nie — er hat das
-// Defekt-Kennzeichen gar nicht, das liegt auf einem eigenen Knopf. Wer also bei einem
-// defekten Geraet das Zubehoer korrigierte, gab es damit still wieder zur Ausleihe frei.
+// UpdateGeraet schreibt die Stammdaten. seriennummer und istAusleihbar sind Zeiger: nil heißt
+// „nicht mitgeschickt" und lässt die Spalte in Ruhe. Der Bearbeiten-Dialog schickt das
+// Defekt-Kennzeichen nie (es liegt auf einem eigenen Knopf); eine Vorgabe dafür gäbe ein
+// defektes Gerät bei jeder Korrektur wieder frei. Eine leere Seriennummer heißt „keine" und
+// wird wie beim Anlegen NULL: Als leerer Text stieße das zweite Gerät ohne Seriennummer an
+// die Eindeutigkeit.
 func (r *pgGeraeteRepository) UpdateGeraet(ctx context.Context, id, modellname, zubehoer string, zustandNotiz, seriennummer *string, istAusleihbar *bool) error {
 	tag, err := r.db.Exec(ctx, `
 		UPDATE geraete
 		SET modellname = $1, zubehoer = $2, zustand_notiz = $3,
-		    seriennummer = COALESCE($4, seriennummer),
+		    seriennummer = CASE WHEN $4::text IS NULL THEN seriennummer ELSE NULLIF($4, '') END,
 		    ist_ausleihbar = COALESCE($5, ist_ausleihbar),
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $6 AND ist_ausgesondert = false

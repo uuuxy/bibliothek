@@ -191,3 +191,41 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 		t.Error("das abgelehnte Bearbeiten hat die Seriennummer trotzdem geändert")
 	}
 }
+
+// Zwei Geräte ohne Seriennummer lassen sich beide bearbeiten. Der Dialog schickt das leere
+// Feld mit; als leerer Text gespeichert, stieße das zweite Gerät an die Eindeutigkeit der
+// Seriennummer.
+func TestGeraetBearbeiten_LeereSeriennummerBleibtLeer(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := t.Context()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	repo := repository.NewGeraeteRepository(pool)
+	aufraeumenGeraete := func() { aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-OSN-%'`) }
+	aufraeumenGeraete()
+	t.Cleanup(aufraeumenGeraete)
+
+	bearbeite := func(barcode string) *httptest.ResponseRecorder {
+		t.Helper()
+		var id string
+		if err := pool.QueryRow(ctx, `INSERT INTO geraete (modellname, barcode_id) VALUES ('Tablet', $1) RETURNING id`,
+			barcode).Scan(&id); err != nil {
+			t.Fatalf("Gerät anlegen: %v", err)
+		}
+		// Der Rumpf des Bearbeiten-Dialogs für ein Gerät ohne Seriennummer.
+		body := `{"modellname":"Tablet","barcode_id":"` + barcode + `","seriennummer":"","zubehoer":"Hülle","zustand_notiz":""}`
+		req := httptest.NewRequest(http.MethodPut, "/api/geraete/"+id, strings.NewReader(body))
+		req.SetPathValue("id", id)
+		rec := httptest.NewRecorder()
+		srv.UpdateGeraetHandler(repo)(rec, req)
+		return rec
+	}
+	if rec := bearbeite("G-OSN-1"); rec.Code != http.StatusOK {
+		t.Fatalf("erstes Gerät bearbeiten: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	if rec := bearbeite("G-OSN-2"); rec.Code != http.StatusOK {
+		t.Errorf("zweites Gerät ohne Seriennummer bearbeiten: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id LIKE 'G-OSN-%' AND seriennummer IS NULL`); n != 2 {
+		t.Errorf("%d der zwei Geräte tragen nach dem Bearbeiten keine Seriennummer (NULL), erwartet 2", n)
+	}
+}
