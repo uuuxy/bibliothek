@@ -81,8 +81,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Bestellung mit dem Vermerk „Mail nicht versendet", die den Händler auf anderem Weg
   erreicht hat (Telefon, eigene Mail): Bei einem Händler mit Bestätigungsschritt nimmt die
   nachgetragene Bestätigung den Vermerk. Bei den übrigen bleibt er, bis jemand „Erneut senden"
-  wählt; dann geht die Bestellung noch einmal raus. Soll die Bestellung dafür einen zweiten
-  Knopf bekommen, der den Vermerk nach einer Rückfrage entfernt? (5.5)
+  wählt; dann geht die Bestellung noch einmal raus. Ist kein Mailserver eingerichtet, trägt
+  ihn jede Bestellung, und „Erneut senden" nimmt ihn nicht. Soll die Bestellung einen zweiten
+  Knopf bekommen („Auf anderem Weg bestellt"), der den Vermerk nach einer Rückfrage entfernt?
+  (5.5)
 - [x] Buchakte: Kopf und Reiter zählen den Bestand, ein bestelltes Exemplar steht im Kopf als
   „1 bestellt"; die Zahl „Exemplare" im Kopf ist entfallen (entschieden und gebaut am
   07.10.2026).
@@ -363,11 +365,18 @@ Vermerk.
   und, wo die Bestellung einen Bestätigungsschritt hat, die Bestätigung
   (`repository.SQLBestellmailOffen`). Eine Bestellung bei einem Händler ohne Bestätigungsschritt,
   die den Händler auf anderem Weg erreicht hat, behält ihn; „Erneut senden" brächte sie ein
-  zweites Mal zu ihm. Vorschlag: ein zweiter, leiser Knopf im Hinweisblock („Auf anderem Weg
+  zweites Mal zu ihm. Ist kein Mailserver eingerichtet, bekommt jede Bestellung den Vermerk,
+  und „Erneut senden" antwortet mit dem Hinweis auf die Einstellungen und lässt ihn stehen
+  (`TestBestellmail_OhneMailserverStehtEsAnDerBestellung`); ohne Bestätigungsschritt gibt es
+  dann keinen Weg, ihn zu entfernen. Auch der Wareneingang nimmt ihn nicht: Eine gelieferte
+  Bestellung nennt weiter „Der Händler hat die Bestellung nicht erhalten" (am Code gelesen,
+  nicht nachgestellt). Vorschlag: ein zweiter, leiser Knopf im Hinweisblock („Auf anderem Weg
   bestellt"), der den Vermerk nach einer Rückfrage entfernt und einen Eintrag ins Protokoll
   schreibt. Littera kennt den Fall so nicht: Der Fehlschlag steht dort nur im E-Mailprotokoll,
   und eine Bestellung lässt sich ohne Mail drucken und per Post oder Fax schicken (Handbuch,
-  „Erwerb", „Drucken").
+  „Erwerb", „Drucken"). In Koha erklärt die Bibliothek mit „Close this basket" selbst, dass
+  die Bestellung beim Händler ist („to indicate that this basket is complete and has been sent
+  to the vendor"); die Mail ist dort ein eigener Knopf (Handbuch, „Acquisitions").
 - **Status-Editor, Altbestand:** Bis zum 07.10.2026 öffnete der Editor ein gesperrtes
   Exemplar als „Verloren", wenn die Notiz das Wort enthielt, und das Speichern sonderte es
   mit dem Grund VERLUST aus. Ob das am Testserver Exemplare getroffen hat, zeigt (lesend):
@@ -405,8 +414,9 @@ Vermerk.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
 - `TestHandlerFormulierenKeinNeuesSQL` (`api/schichtung_test.go`) sieht ein `UPDATE` mit
   Tabellenkürzel nicht: Das Muster verlangt `UPDATE <Tabelle> SET`, und `UPDATE ausleihen a SET`
-  trifft es nicht. Drei Anweisungen dieser Form stehen in `api/ausleihe.go`,
-  `api/etiketten_offen.go` und `api/student_promotion.go`; die Dateien stehen wegen anderer
+  trifft es nicht. Fünf Anweisungen dieser Form stehen in `api/ausleihe.go`,
+  `api/etiketten_offen.go`, `api/mail_routes.go`, `api/student_promotion.go` und
+  `api/supplier_handler.go` (gezählt am 07.10.2026); die Dateien stehen wegen anderer
   Anweisungen in der Liste. Ein neuer Handler, dessen einzige Anweisung so aussieht, bliebe
   unbemerkt. Kategorie B.
 - `e2e/kontrast.spec.js` misst den Medienkatalog nicht in jedem Lauf mit seinen Kacheln
@@ -452,16 +462,19 @@ Vermerk.
   Titel mit zwei Exemplaren. Am Code gelesen: Der Wareneingang-Test in
   `e2e/scrollbereiche.spec.js` legt acht Titel mit je einem Exemplar im Zulauf an und räumt
   sie nicht ab. Abhilfe je Spec: eigener Titel, Aufräumen über die Kennung. Kategorie B.
-- Code, den kein Go-Test ausführt (gemessen am 06.10.2026 mit der ganzen Suite und `-coverpkg`
-  über alle Pakete: 85,1 % der Anweisungen). Unter 50 % liegen, ohne `cmd/`, `main.go` und
-  Dateien mit weniger als 20 Anweisungen, acht Dateien: `api/littera_import.go` 0,7 % (Littera-
-  und Bestandsdatei hochladen; die Regeln in `internal/littera` 88,6 %),
-  `api/schueler_etiketten.go` 2,3 %, `internal/service/cover_service.go` 18,2 %,
-  `api/klassen_mapping.go` 27,0 %, `api/ausweis_layout.go` 33,3 %, `db/seed.go` 35,5 %,
-  `repository/mail_settings.go` 38,1 %, `api/geraete.go` 49,0 %. Ob Browser-Tests diesen Code
-  erreichen, ist nicht gemessen. Anlass: Das Nachziehen der Tests für fünf Routen am
-  03.10.2026 fand drei Fehler (zwei Abweisungen beim Zusammenführen ohne Grund, ein
-  unlesbares Bild als Störung gemeldet, eine Antwort des Foto-Uploads, die kein JSON war).
+- Code, den kein Go-Test ausführt (gemessen am 07.10.2026 mit der ganzen Suite und `-coverpkg`
+  über alle Pakete: 85,3 % der Anweisungen; lokal zählt `./...` das Go-Paket mit, das npm unter
+  `frontend/node_modules/flatted` ablegt, mit ihm sind es 84,9 %). Unter 50 % liegen, ohne
+  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, acht Dateien:
+  `api/littera_import.go` 0,7 % (Littera- und Bestandsdatei hochladen; die Regeln in
+  `internal/littera` 88,6 %), `api/schueler_etiketten.go` 2,3 %,
+  `internal/service/cover_service.go` 18,2 %, `api/ausweis_layout.go` 33,3 %, `db/seed.go`
+  35,5 %, `repository/mail_settings.go` 38,1 %, `api/orders_handler.go` 44,2 % (mehrere
+  Exemplare im Wareneingang buchen 4,3 %, die Bestellsuche 13,3 %), `api/geraete.go` 49,0 %.
+  Ob Browser-Tests diesen Code erreichen, ist nicht gemessen. Anlass: Das Nachziehen der
+  Tests für fünf Routen am 03.10.2026 fand drei Fehler (zwei Abweisungen beim Zusammenführen
+  ohne Grund, ein unlesbares Bild als Störung gemeldet, eine Antwort des Foto-Uploads, die
+  kein JSON war).
   Abhilfe je Route: ein Test mit Datenbank und eine Gegenprobe je Zusicherung, Muster in
   `api/inventur_verlust_aktionen_pg_test.go`. Kategorie B.
 - `beforeEach(() => attrappe.mockReset())` steht in 16 Testdateien der Oberfläche an 19
@@ -479,8 +492,9 @@ Vermerk.
   `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf steht an jedem
   CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der CodeQL-Lauf rot.
 - **gosec: acht Regeln global ausgenommen** (gemessen mit v2.29.0 am 28.09.2026, ohne
-  `-exclude`): G706 (36 Stellen in 18 Dateien), G704 (6), G703 (5), G120 (5), G124 (4), G404
-  (4), G115 (3), G101 (1); der Grund je Regel steht in `.github/workflows/security-scan.yml`.
+  `-exclude`): G706 (38 Stellen in 20 Dateien, nachgezählt am 07.10.2026), G704 (6), G703 (5),
+  G120 (5), G124 (4), G404 (4), G115 (3), G101 (1); der Grund je Regel steht in
+  `.github/workflows/security-scan.yml`.
   Eine neue Stelle dieser Regeln meldet gosec nicht. Abhilfe: je Stelle ein `#nosec` mit Grund,
   dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
   Nur mit Anlass.
