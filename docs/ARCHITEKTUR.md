@@ -252,7 +252,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | **Rows-Iteration**                                | Jede `rows.Next()`-Schleife endet mit `rows.Err()`. Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als Erfolg — die Liste wäre still unvollständig.                                                   | `golangci-lint`, Review                                              |
 | **Komponenten-Größe Frontend**                    | ≤ 200 Zeilen je **neuer** `.svelte`-Datei; der Altbestand darüber darf nicht wachsen.                                                                                                                              | Ratsche `frontend/src/lib/frontend-hygiene-dateigroesse.test.js`     |
 | **Eine Wahrheitsquelle für Menü und Router**      | Welche Seite eine Rolle erreicht, entscheidet `canSeeItem()` in `frontend/src/lib/menu.js` — und nur diese Funktion.                                                                                                | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js`                      |
-| **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `RequirePermission(...)` oder `RequireRoles(...)`; öffentliche Routen stehen in einer Allowlist.                                                      | `api/routes_authz_coverage_test.go`                                  |
+| **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `RequirePermission(...)` oder, wo jede Sitzung genügt, `RequireAuthenticated()`; öffentliche Routen stehen in einer Allowlist.                        | `api/routes_authz_coverage_test.go`                                  |
 | **Fundstellen beim Namen**                        | In der Dokumentation werden Constraint-, Index-, Datei- und Paketnamen genannt — keine Zeilennummern und keine Migrationsnummern als Beleg (eine Datei existiert weiter, auch wenn eine spätere Migration sie aufhebt). | `docs/invarianten_fundstellen_test.go`                               |
 | **Stand-Angaben**                                 | Kein Dokument behauptet im Kopf einen Stand, unter dem es jüngere Vorgänge beschreibt.                                                                                                                             | `docs/stand_angaben_test.go` (greift auch für `docs/arc42/*.md`)     |
 | **Keine Changelog-Datei**                         | Die Commit-Historie ist Teil der Dokumentation; Erledigtes wird aus `OFFEN.md` gelöscht, nicht archiviert.                                                                                                          | Entscheidung vom 15.09.2026                                          |
@@ -591,7 +591,7 @@ HTTP-Anfrage
    │
    ▼  http.ServeMux (Methoden-Routing, Go 1.22+)
    │
-   ├─ RequirePermission("…") / RequireRoles(…) / RequireAuthenticated()
+   ├─ RequirePermission("…") / RequireAuthenticated()
    │     └─ Cookie → JWT prüfen → Kontostatus in der DB → Recht (Cache 60 s, Epoche)
    │        → UUID-Pfadparameter prüfen  ← hier, weil r.PathValue erst nach dem Routing gefüllt ist
    ▼
@@ -2118,8 +2118,9 @@ bereits das Gegenteil.
 
 ### A3 — Autorisierung pro Route; `RBACBlockMiddleware` entfernt
 
-**Entscheidung.** Jede nicht-öffentliche Route trägt `RequirePermission(...)` oder
-`RequireRoles(...)`. Es gibt **keine** globale Autorisierungs-Middleware.
+**Entscheidung.** Jede nicht-öffentliche Route trägt `RequirePermission(...)` oder, wo jede
+Sitzung genügt, `RequireAuthenticated()`. Es gibt **keine** globale Autorisierungs-Middleware
+und keinen Wächter, der nach der Rolle fragt (`RequireRoles` ist seit dem 04.08.2026 entfernt).
 
 **Anlass.** Die frühere `RBACBlockMiddleware` führte eine hartkodierte Pfad-Allowlist für
 einzelne Rollen. Sie **überstimmte** die konfigurierbare Rechtetabelle: Eine Lehrkraft
@@ -2255,7 +2256,8 @@ Rechteänderung.
 ### A10 — Eine Tabelle `leser`, `schueler` als Sicht
 
 **Entscheidung.** Schüler und Kollegium stehen in **einer** Tabelle `leser` mit der Spalte
-`art` (`schueler` | `lehrkraft` | `liv`). `schueler` ist eine Sicht mit
+`art`: `schueler`, `lehrkraft`, `liv` und seit Migration 153 die vier Sonderkonten `praktikum`,
+`sekretariat`, `uplus`, `fachbereich` (`chk_leser_art`). `schueler` ist eine Sicht mit
 `WHERE art = 'schueler'` und `WITH CHECK OPTION`. Ein gemeinsamer Ausweis-Nummernkreis.
 
 **Anlass.** Lehrkräfte waren Entleiher über einen Umweg (`schueler.klasse = 'lehrer'`) und
@@ -2265,7 +2267,9 @@ am anderen.
 **Folge.** Jede Abfrage, die **wirklich** Schüler meint (Klassenlisten, LUSD-Abgleich,
 Mahnlauf, Löschfristen), liest die Sicht. Preis ist die Bugklasse „Schreibpfad gegen
 gefilterte Sicht": eine **stille 404** statt eines Fehlers. `chk_leser_nur_schueler_werden_abgaenger`
-verhindert, dass ein Schüler seine Art wechselt; Lehrkraft ⇄ LiV ist erlaubt.
+verhindert, dass ein Schüler seine Art wechselt; innerhalb des Kollegiums lässt sie sich
+ändern. Das Programm unterscheidet überall nur `art = 'schueler'` gegen den Rest
+([FACHKONZEPT.md §12.3](FACHKONZEPT.md)).
 
 **Fundstelle.** Migrationen 123–125, `docs/schreibpfade_gegen_sicht_test.go`,
 `db/sicht_schueler_vollstaendig_pg_test.go`. Der frühere Umweg ist seit Migration 072
@@ -2398,9 +2402,13 @@ während der Server aus demselben Grund den Start verweigert.
 `30 2 * * *` verschluckt: 02:30 existiert dann nicht.
 
 **Folge.** `TZ` ist seither gefahrlos setzbar und hält Logs und Zeitstempel konsistent. Die
-**fachliche** Zeitrechnung bleibt getrennt davon bei `Europe/Berlin` im Code.
+**fachliche** Zeitrechnung bleibt getrennt davon bei `Europe/Berlin` im Code
+(`pkg/schulzeit`, `ZonenName`). Für SQL heißt das: Der Kalendertag der Schule ist
+`schulzeit.SQLHeute`, nie `CURRENT_DATE` — die Datenbank-Sitzung läuft in UTC, und zwischen
+Mitternacht in Berlin und Mitternacht UTC wäre es der Vortag. Den Bestand hält die Ratsche
+`docs/kalendertag_bestand_test.go` ([sweeps.md](sweeps.md), „Tag in der falschen Zeitzone").
 
-**Fundstelle.** `jobs/cron.go`, `.env.example` (Abschnitt `TZ`).
+**Fundstelle.** `jobs/cron.go`, `.env.example` (Abschnitt `TZ`), `pkg/schulzeit/schulzeit.go`.
 
 ---
 

@@ -2,7 +2,8 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-07 (Rechte-Matrix: Jede Änderung steht im Protokoll).
+> Zuletzt aktualisiert: 2026-10-07 (Rechte-Matrix: Jede Änderung steht im Protokoll;
+> Bestätigungs-Link: die Angabe „180 Tage" berichtigt, gültig ist er 21 Tage als Vorgabe).
 > Davor 2026-10-05 (Anmeldung: Bei einem Ausfall des Mailservers bleibt es
 > dabei, dass sich niemand neu anmelden kann).
 > Davor 2026-10-02 (Scan im Passwortfeld: ein in Scannergeschwindigkeit
@@ -217,7 +218,9 @@ Zuschnitt begrenzt den Schaden:
   Schülerdaten, keine Preise, kein Zugriff auf den Bestand.
 - **Einmalig und atomar:** Bestätigen läuft über `WHERE bestaetigt_am IS NULL`; der zweite
   Klick bekommt 409 statt eines stillen Überschreibens.
-- **Ablauf und Rückruf:** 180 Tage gültig; ein neu erzeugter Link entwertet den alten sofort.
+- **Ablauf und Rückruf:** 21 Tage gültig, als Vorgabe; die Schule stellt die Frist unter
+  Einstellungen → Bestellwesen ein (`bestelllink_gueltigkeit_tage`), ein laufender Link behält
+  sein Ablaufdatum. Ein neu erzeugter Link entwertet den alten sofort.
 - **Ungültig ist immer 404** — abgelaufen, zurückgezogen und nie existiert sehen von außen
   gleich aus, sonst verriete die Antwort, dass ein geratener Token einmal echt war.
 - **Nicht in Logfiles:** Der Token steht im Pfad, also maskiert `maskiereToken`

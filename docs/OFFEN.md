@@ -1327,12 +1327,18 @@ Buch eine Zeile; einmal ausdrucken und ansehen.
      [SCRIPTS.md](SCRIPTS.md) 1b; die Handgriffe beim Prüfen in
      [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14; was vorgeschlagen und verworfen wurde, als Liste
      in [FACHKONZEPT.md](FACHKONZEPT.md) §20. Kein Dokument und kein Kommentar im Code verweist
-     mehr auf eine Notiz. Die Prüfungen fanden dabei etwas am Programm: den Abgleich der
-     Buchnummern (behoben) und zwei Punkte der Übernahme, die Signaturen und die Sperren (7.2).
-     Es stehen aus, je als eigener Schritt: die Regeln, die [FACHKONZEPT.md](FACHKONZEPT.md)
-     und [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9 schon nennen, gegen den Code halten und
-     nachtragen, was aus den Einträgen zu Entscheidungen in keinem Dokument steht; zuletzt ein
-     Durchgang über die 93 Einträge, die in keinem dieser Schritte lagen.
+     mehr auf eine Notiz. Die Regeln, die [FACHKONZEPT.md](FACHKONZEPT.md) und
+     [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9 nennen, sind am 07.10.2026 gegen den Code
+     gehalten: 471 genannte Dateien, Funktionen, Routen und Einstellungen per Skript gesucht,
+     Zahlen und Abläufe je Abschnitt nachgelesen; fünfzehn Stellen berichtigt, vier Regeln
+     nachgetragen (Recht statt Rolle in der Oberfläche, Titel speichern nur mit den genannten
+     Feldern, Kalendertag der Schule in SQL, die Einstellung zur Gültigkeit des
+     Bestätigungs-Links). Die Prüfungen fanden dabei etwas am Programm: den Abgleich der
+     Buchnummern (behoben), zwei Punkte der Übernahme, die Signaturen und die Sperren (7.2),
+     und einen toten Eintrag in der Liste der Routen ohne Anmeldung (entfernt).
+     Es steht aus: ein Durchgang über die 93 Einträge, die in keinem dieser Schritte lagen;
+     dazu gehört das Druck-Center, das [FACHKONZEPT.md](FACHKONZEPT.md) §9 in zwei Sätzen
+     beschreibt.
   3. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
      mit dem Dokument.
 
