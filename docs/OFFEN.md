@@ -1300,9 +1300,11 @@ Buch eine Zeile; einmal ausdrucken und ansehen.
      der Gliederung des Entwurfs ins Repository — bei mir. Nicht ins Repository gehören die 82
      Einträge zur Arbeitsweise und alles, was Zugänge, Orte oder Namen nennt. Jede Aussage wird
      vor dem Eintragen am heutigen Stand geprüft: Von den Notizen zu Abschnitt 5 waren zwei
-     überholt. Eingetragen am 07.10.2026: Abschnitt 5, „Fälle, die vorkamen". Es stehen aus, je
-     als eigener Schritt: die Einträge zu Fehlerarten gegen [sweeps.md](sweeps.md), die zu
-     Entscheidungen gegen [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9 und
+     überholt. Eingetragen am 07.10.2026: Abschnitt 5, „Fälle, die vorkamen", und acht
+     Fehlerarten im Register von [sweeps.md](sweeps.md); eine davon fand noch eine Stelle im
+     Bestand (Abgleich der Buchnummern, behoben). Es stehen aus, je als eigener Schritt: von den
+     Fehlerarten die Fallen an Postgres und pgx und die an Svelte, Tailwind und Vitest, die
+     Einträge zu Entscheidungen gegen [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9 und
      [FACHKONZEPT.md](FACHKONZEPT.md), die zu Littera und LUSD gegen
      [littera_schema_befund.md](littera_schema_befund.md) und [LUSD.md](LUSD.md), die zu den
      Prüfwegen (Tests an der Datenbank, im Browser, Gegenprobe am Rückbau) gegen
