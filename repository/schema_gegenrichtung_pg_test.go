@@ -427,7 +427,17 @@ var triggerBestand = []string{
 	// Listenimport) in repository.NormalisiereTitelKey — dort fehlte es bis zum Rasterdurchgang
 	// vom 30.09.2026 (internal/service/import_dynamic_nfc_pg_test.go). Die Signatur ist bewusst
 	// nicht dabei.
-	"trg_titel_text_nfc @ buecher_titel",
+	// Migration 160, befragt am 07.10.2026: Derselbe Trigger, jetzt unter dem Namen der Form,
+	// nimmt Leerraum am Rand weg und macht aus Leerraum in Folge ein Leerzeichen
+	// (titeltext_normalform) — Littera führt Titel mit zwei Leerzeichen und mit geschütztem
+	// Leerzeichen, und die Titel-Verwaltung fand sie mit dem getippten Wortlaut nicht
+	// (inventur/titel_suche_leerraum_pg_test.go, am Rückbau rot). Frage 12: Wer einen
+	// eingegebenen Text mit einem gespeicherten Titeltext vergleicht, bringt ihn in dieselbe
+	// Form — die Suchen und die Titelschlüssel der Importe über repository.TiteltextNormalform,
+	// die Dublettenkontrolle der Maske über titeltext_normalform()
+	// (inventur/dublettenkontrolle_pg_test.go). Dass Go und SQL dieselbe Form bilden, prüft
+	// repository/titeltext_normalform_pg_test.go an jedem Zeichen der ersten Unicode-Ebene.
+	"trg_titel_text_normalform @ buecher_titel",
 	// Migration 143, befragt am 23.09.2026: keine Kette von Verweisen, kein Titel an einem
 	// Verweis. Beide Schreib-Türen halten es selbst ein — SetzeSchlagworte hängt über
 	// coalesce(verweis_auf, id) das Ziel an, fuehreZusammenIn löst erst Titel und Verweise und

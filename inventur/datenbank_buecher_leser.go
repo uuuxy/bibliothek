@@ -151,7 +151,11 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 //
 // Die Reihenfolge der Abfrage hält die Kappung und gleiche Titel fest; nach dem Titel ordnet
 // der Aufrufer (sortiereBuecherNachTitel), weil die Datenbank keine deutsche Sortierregel hat.
+//
+// Der Suchtext wird als Wortlaut verglichen und geht deshalb in die Form, in der Titeltexte
+// und Schlagworte gespeichert sind (repository.TiteltextNormalform).
 func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string, nurOhneExemplare bool) ([]Book, error) {
+	searchQuery = repository.TiteltextNormalform(searchQuery)
 	sicht := repository.SQLTitelHatExemplar("bt")
 	if nurOhneExemplare {
 		sicht = "NOT " + sicht

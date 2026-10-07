@@ -162,6 +162,10 @@ pruefe "$(sed -nE 's/.*ohne Entleiher ([0-9]+),.*/\1/p' "$ARBEIT/lauf.out" | tai
 # Litteras Nichtsortierzeichen („¬Die¬ schwarze Katze") gehören weder zum Titel noch zum Namen.
 pruefe "$(sql "SELECT count(*) FROM buecher_titel WHERE concat(titel, untertitel, autor) LIKE '%¬%'")" 0 \
 	"kein Titel trägt ein Nichtsortierzeichen (im Export: $(grep -c '¬' "$ARBEIT/export/titel.csv" || true) Zeilen)"
+# Titeltexte stehen mit einem Leerzeichen zwischen den Wörtern (Migration 160); Littera führt
+# Titel mit zwei Leerzeichen in Folge und mit geschütztem Leerzeichen.
+pruefe "$(sql "SELECT count(*) FROM buecher_titel WHERE concat_ws('|', titel, untertitel, autor, verlag) ~ ('  |' || chr(160))")" 0 \
+	"kein Titel trägt Leerraum in Folge (im Export: $(python3 "$HIER/probe_host.py" leerraum "$ARBEIT/export") Titel)"
 echo "  Protokoll nach Grund (ohne Werte):"
 python3 "$HIER/probe_host.py" protokoll "$ARBEIT/littera_import.log"
 echo "  In der Datenbank: $(sql "SELECT count(*) || ' Titel, ' || (SELECT count(*) FROM buecher_exemplare) || ' Exemplare, ' ||

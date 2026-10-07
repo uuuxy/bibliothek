@@ -69,4 +69,39 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 			t.Errorf("zweite Auflage: %v — mit eigener Auflage ist es ein anderes Buch", err)
 		}
 	})
+
+	// Die Datenbank speichert Titel und Autor mit einem Leerzeichen zwischen den Wörtern
+	// (Migration 160). Die Kontrolle vergleicht die Eingabe in derselben Form: Sonst legte,
+	// wer denselben Wortlaut ein zweites Mal tippt, ohne Rückfrage einen zweiten Titel an.
+	t.Run("ohne ISBN: Leerraum in Folge ist derselbe Titel", func(t *testing.T) {
+		const titel = "Dubletten-Probe La Peste"
+		geschuetzt := string(rune(0x00A0))
+		aufraeumen(t, titel)
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = $1`, titel); err != nil {
+			t.Fatal(err)
+		}
+		id, err := repo.CreateBook(ctx, Book{Title: "Dubletten-Probe La  Peste", Author: "Camus,  Albert"})
+		if err != nil {
+			t.Fatalf("erster Titel: %v", err)
+		}
+		var gespeichert, autor string
+		if err := pool.QueryRow(ctx, `SELECT titel, autor FROM buecher_titel WHERE id = $1`, id).
+			Scan(&gespeichert, &autor); err != nil {
+			t.Fatal(err)
+		}
+		if gespeichert != titel || autor != "Camus, Albert" {
+			t.Fatalf("gespeichert %q von %q, erwartet %q von %q", gespeichert, autor, titel, "Camus, Albert")
+		}
+
+		for _, eingabe := range []Book{
+			{Title: "Dubletten-Probe La  Peste", Author: "Camus,  Albert"},
+			{Title: " Dubletten-Probe La" + geschuetzt + "Peste ", Author: "Camus," + geschuetzt + "Albert"},
+			{Title: "Dubletten-Probe La Peste", Author: "Camus, Albert"},
+		} {
+			_, err := repo.CreateBook(ctx, eingabe)
+			if !errors.Is(err, ErrDubletteTitel) {
+				t.Errorf("%+q von %+q: Fehler %v, erwartet ErrDubletteTitel", eingabe.Title, eingabe.Author, err)
+			}
+		}
+	})
 }

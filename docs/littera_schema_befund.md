@@ -54,6 +54,12 @@ Katalog-Import). In der Sicherung von 2010 tragen es 1.403 von 10.732 Titeln und
 Verfassern, die übrigen Tabellen der Übernahme nicht. Litteras Sortiertitel (`HaupttitelSort`)
 kommt nicht mit: Die Titelliste ordnet nach dem Titel, wie er dasteht.
 
+Leerraum in Folge liest die Übernahme mit, wie er in Littera steht; die Datenbank speichert
+Titel, Untertitel, Autor und Verlag mit einem Leerzeichen zwischen den Wörtern
+(`titeltext_normalform`, Migration 160, an jeder Tür). In der Sicherung von 2010 tragen 103
+Titel, 73 Untertitel, 23 Verfasser und 2 Verlage zwei bis vier Leerzeichen in Folge
+(„La  Peste"), 11 Titel ein geschütztes Leerzeichen hinter „/" oder „:".
+
 ### `Exemplar` → `buecher_exemplare`
 `Buchungsnummer` (Schlüssel) · `Titel` (FK) · `Barcode` → `barcode_id` ·
 `Zugangsdatum` → `erworben_am` · `Preis` · `Status` (Long) · `Sig1` + `Sig2` (siehe unten) ·

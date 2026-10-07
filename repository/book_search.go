@@ -29,7 +29,10 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 }
 
 // SearchTitles führt eine sprachenspezifische Volltextsuche über Buchtitel und Autoren durch.
+// Der Teilstring-Vergleich daneben nimmt den Suchtext in der Form, in der Titeltexte
+// gespeichert sind (TiteltextNormalform).
 func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error) {
+	queryText = TiteltextNormalform(queryText)
 	query := `
 		SELECT 
 			b.id, coalesce(b.titel, ''), coalesce(b.untertitel, ''), coalesce(b.autor, ''), coalesce(b.isbn, ''), coalesce(b.verlag, ''), coalesce(b.erscheinungsjahr, 0), coalesce(b.cover_url, ''), coalesce(b.medientyp, ''), coalesce(b.signatur, ''), coalesce(b.auflage, ''), b.mehrjahresband, b.ist_lernmittel, b.erstellt_am, b.aktualisiert_am, coalesce(b.erweiterte_eigenschaften, '{}'::jsonb),

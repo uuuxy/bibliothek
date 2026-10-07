@@ -41,10 +41,11 @@ func main() {
 
 	// 4. Pre-compile SQL Statement für maximale Performance
 	// UPDATE nur wenn Titel (via ILIKE case-insensitive) matcht UND das ISBN-Feld leer/NULL ist.
+	// Der Titel der Datei geht in die Form, in der die Datenbank Titel speichert.
 	updateQuery := `
 		UPDATE buecher_titel
 		SET isbn = $1, aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE titel ILIKE $2
+		WHERE titel ILIKE titeltext_normalform($2)
 		  AND (isbn IS NULL OR trim(isbn) = '')
 		RETURNING id;
 	`

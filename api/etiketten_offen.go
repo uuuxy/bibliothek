@@ -66,6 +66,12 @@ type ExemplarOhneEtikett struct {
 	EtikettGedruckt bool `json:"etikett_gedruckt"`
 }
 
+// etikettenSuchtext liest ?q= für Liste und Zähler in der Form, in der Titeltexte gespeichert
+// sind (repository.TiteltextNormalform): Beide vergleichen den Text als Wortlaut.
+func etikettenSuchtext(r *http.Request) string {
+	return repository.TiteltextNormalform(r.URL.Query().Get("q"))
+}
+
 // EtikettenOffenHandler listet Exemplare, deren Barcode-Etikett noch nicht gedruckt wurde.
 //
 // Der Anlass: Eine Lieferung kann im System freigegeben sein, ohne dass die Etiketten je
@@ -90,7 +96,7 @@ type ExemplarOhneEtikett struct {
 // @Router       /exemplare/etiketten-offen [get]
 func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		suche := strings.TrimSpace(r.URL.Query().Get("q"))
+		suche := etikettenSuchtext(r)
 
 		statusBedingung := etikettenStatusBedingung(r.URL.Query().Get("status"))
 
@@ -172,7 +178,7 @@ func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 			WHERE `+etikettenStatusBedingung(r.URL.Query().Get("status"))+`
 			  AND ($1::date IS NULL OR COALESCE(e.zugang_am, e.erworben_am) <= $1)
 			  AND ($2 = '' OR t.titel ILIKE '%' || $2 || '%' OR e.barcode_id ILIKE '%' || $2 || '%')`,
-			bis, strings.TrimSpace(r.URL.Query().Get("q")),
+			bis, etikettenSuchtext(r),
 		).Scan(&anzahl)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Zählen der offenen Etiketten", err)

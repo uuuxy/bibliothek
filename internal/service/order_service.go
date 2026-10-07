@@ -224,8 +224,10 @@ func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventu
 
 // searchLocalOrders durchsucht den lokalen Bestand (Volltext + ILIKE-Fallbacks).
 // Bei einem Query- oder Iterationsfehler wird eine leere/nil-Liste geliefert
-// (best-effort; die DNB-Treffer werden ohnehin separat angehängt).
+// (best-effort; die DNB-Treffer werden ohnehin separat angehängt). Der Suchtext geht in die
+// Form, in der Titeltexte gespeichert sind (repository.TiteltextNormalform).
 func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) []OrderSearchItem {
+	query = repository.TiteltextNormalform(query)
 	var results []OrderSearchItem
 	localQuery := `
 		WITH matched_titels AS (

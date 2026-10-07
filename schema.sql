@@ -589,22 +589,37 @@ CREATE TRIGGER trg_titel_isbn_normalform
 BEFORE INSERT OR UPDATE OF isbn ON buecher_titel
 FOR EACH ROW EXECUTE FUNCTION titel_isbn_in_normalform();
 
--- Migration 154: Titeltexte in einer Unicode-Form (NFC). Die DNB liefert Umlaute zerlegt
--- („u" + U+0308); zerlegt traf kein eingetippter Suchbegriff den Titel. Die Datenbank setzt
--- an jeder Tür zusammen, wie bei der ISBN. Die Signatur bleibt, wie sie am Buch steht.
-CREATE OR REPLACE FUNCTION titel_text_in_nfc()
+-- Migration 154 und 160: Titeltexte haben eine Form — kein Leerraum am Rand, Leerraum in
+-- Folge ist ein Leerzeichen, Umlaute und Akzente zusammengesetzt (NFC). Littera führt Titel
+-- mit zwei Leerzeichen in Folge und mit geschütztem Leerzeichen, die DNB liefert Umlaute
+-- zerlegt („u" + U+0308); so traf der eingetippte Suchtext den Titel nicht. Die Datenbank
+-- bringt jeden geschriebenen Titeltext an jeder Tür in diese Form, wie bei der ISBN. Die
+-- Signatur bleibt, wie sie am Buch steht.
+--
+-- Leerraum sind die 25 Zeichen mit der Unicode-Eigenschaft White_Space, einzeln genannt: Die
+-- Klasse \s hängt an der Sprachumgebung des Servers und trifft das geschützte Leerzeichen
+-- nicht überall. Go zählt mit unicode.IsSpace dieselben Zeichen
+-- (repository.TiteltextNormalform).
+CREATE OR REPLACE FUNCTION titeltext_normalform(roh text)
+RETURNS text LANGUAGE sql IMMUTABLE STRICT AS $$
+    SELECT normalize(btrim(regexp_replace(roh,
+        '[\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]+',
+        ' ', 'g')), NFC)
+$$;
+
+CREATE OR REPLACE FUNCTION titel_text_in_normalform()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-    NEW.titel := normalize(NEW.titel, NFC);
-    NEW.untertitel := normalize(NEW.untertitel, NFC);
-    NEW.autor := normalize(NEW.autor, NFC);
-    NEW.verlag := normalize(NEW.verlag, NFC);
+    NEW.titel := titeltext_normalform(NEW.titel);
+    NEW.untertitel := titeltext_normalform(NEW.untertitel);
+    NEW.autor := titeltext_normalform(NEW.autor);
+    NEW.verlag := titeltext_normalform(NEW.verlag);
     RETURN NEW;
 END $$;
 
-CREATE TRIGGER trg_titel_text_nfc
+CREATE TRIGGER trg_titel_text_normalform
 BEFORE INSERT OR UPDATE OF titel, untertitel, autor, verlag ON buecher_titel
-FOR EACH ROW EXECUTE FUNCTION titel_text_in_nfc();
+FOR EACH ROW EXECUTE FUNCTION titel_text_in_normalform();
 
 CREATE INDEX idx_buecher_titel_search ON buecher_titel USING GIN (search_vector);
 CREATE INDEX idx_buecher_titel_trgm ON buecher_titel USING gin (titel gin_trgm_ops);
@@ -1959,7 +1974,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('156_titel_ohne_beschreibung.sql'),
 ('157_isbn_eine_laenge.sql'),
 ('158_exemplar_standort.sql'),
-('159_standort_am_titel_entfaellt.sql')
+('159_standort_am_titel_entfaellt.sql'),
+('160_titeltext_normalform.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

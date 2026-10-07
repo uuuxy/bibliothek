@@ -41,9 +41,12 @@ func KollegiumSichtbar(titelAlias string) string {
 // unterscheiden sich allein in s.Sichtbar. Von den Ausleihen liest sie nur, ob eine läuft;
 // kein Wert einer Ausleihe und kein Leser erreicht die Antwort.
 //
-// Der Suchtext geht zweimal in die Abfrage: roh für die Volltextsuche, mit maskierten
+// Der Suchtext geht zweimal in die Abfrage: für die Volltextsuche, und mit maskierten
 // LIKE-Jokern für die Teilstring-Vergleiche. Ein nacktes „%" träfe sonst den ganzen Bestand.
+// Beide Male in der Form, in der Titeltexte und Schlagworte gespeichert sind
+// (TiteltextNormalform).
 func SucheImKatalog(ctx context.Context, q DBQueryer, s KatalogSuche) ([]KatalogTreffer, int, error) {
+	s.Suchtext = TiteltextNormalform(s.Suchtext)
 	if s.Suchtext == "" && s.SchlagwortID == "" {
 		return []KatalogTreffer{}, 0, nil
 	}

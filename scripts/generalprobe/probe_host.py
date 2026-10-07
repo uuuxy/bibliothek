@@ -5,6 +5,7 @@ Gibt nie einen Namen aus: nur Nummern, Zählungen und Gruppenbezeichnungen.
   zuordnen   VERZ 'Untergruppe=Ziel' …   stellt eine Zuordnung in Littera nach (Kopie des Exports)
   stichprobe VERZ VERLIEHEN AUS           Etikettenwerte je Stellenzahl, dazu ein verliehenes Buch
   protokoll  LOG                          littera_import.log nach Schwere und Grund gezählt
+  leerraum   VERZ                         Titel mit zwei Leerzeichen in Folge oder geschütztem Leerzeichen
 """
 import csv
 import json
@@ -102,8 +103,16 @@ def protokoll(log):
         print(f"  {unlesbar:>6}  Zeilen in anderer Form (nicht angezeigt)")
 
 
+def leerraum(verz):
+    """Zählt die Titel des Exports, deren Haupttitel die Datenbank umschreibt (Migration 160)."""
+    with open(verz + "/titel.csv", encoding="utf-8", newline="") as f:
+        titel = [(z.get("Haupttitel") or "").replace("¬", "").strip() for z in csv.DictReader(f)]
+    print(sum(1 for t in titel if "  " in t or chr(160) in t))
+
+
 if __name__ == "__main__":
     befehl, argumente = sys.argv[1], sys.argv[2:]
     {"zuordnen": lambda: zuordnen(argumente[0], argumente[1:]),
      "stichprobe": lambda: stichprobe(*argumente),
-     "protokoll": lambda: protokoll(*argumente)}[befehl]()
+     "protokoll": lambda: protokoll(*argumente),
+     "leerraum": lambda: leerraum(*argumente)}[befehl]()

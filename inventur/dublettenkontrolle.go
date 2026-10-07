@@ -121,6 +121,9 @@ func isbnVergeben(ctx context.Context, q repository.DBQueryer, isbn, eigeneID st
 // wie Littera, das ohne Nummer Verfasser und Haupttitel vergleicht und ein weiteres Exemplar
 // anbietet. Wer die Auflage füllt, meint ein anderes Buch. Von mehreren gleichnamigen kommt
 // zuerst einer mit Exemplar: Den zeigt auch der Katalog.
+//
+// Titel und Autor der Eingabe gehen in die Form, in der die Datenbank sie speichert
+// (titeltext_normalform): Mit zwei Leerzeichen getippt ist es derselbe Titel.
 func gleichnamigOhneISBN(ctx context.Context, q repository.DBQueryer, b Book) error {
 	vorhanden := DubletteTitel{}
 	hatExemplar := repository.SQLTitelHatExemplar("bt")
@@ -128,8 +131,8 @@ func gleichnamigOhneISBN(ctx context.Context, q repository.DBQueryer, b Book) er
 		SELECT bt.id::text, bt.titel, `+hatExemplar+`
 		FROM buecher_titel bt
 		WHERE bt.isbn IS NULL
-		  AND lower(btrim(bt.titel)) = lower(btrim($1))
-		  AND lower(btrim(coalesce(bt.autor, ''))) = lower(btrim($2))
+		  AND lower(bt.titel) = lower(titeltext_normalform($1))
+		  AND lower(coalesce(bt.autor, '')) = lower(titeltext_normalform($2))
 		  AND lower(btrim(coalesce(bt.auflage, ''))) = lower(btrim($3))
 		ORDER BY `+hatExemplar+` DESC, bt.sort_order
 		LIMIT 1`, b.Title, b.Author, b.Auflage).Scan(&vorhanden.ID, &vorhanden.Titel, &vorhanden.HatExemplar)

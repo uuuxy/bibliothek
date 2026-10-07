@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -301,5 +302,48 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 	if mitStichtag.Anzahl != 4 {
 		t.Errorf("Stichtag-Zaehler nennt %d, erwartet 4 (drei markierte + ein fremdes offenes)",
 			mitStichtag.Anzahl)
+	}
+}
+
+// Liste und Zähler vergleichen den Suchtext mit dem Wortlaut des Titels. Die Datenbank
+// speichert Titeltexte mit einem Leerzeichen zwischen den Wörtern (Migration 160), und beide
+// lesen den Suchtext in derselben Form (etikettenSuchtext): Wer den Titel tippt, wie er in
+// Littera stand, findet seine Etiketten trotzdem.
+func TestEtikettenkette_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	ctx := context.Background()
+	geschuetzt := string(rune(0x00A0))
+
+	// Zwei offene Exemplare am Titel, dazu ein fremdes: Ohne das wäre eine Suche, die
+	// alles trifft, zufällig richtig.
+	if _, err := pool.Exec(ctx, `
+		WITH t AS (
+			INSERT INTO buecher_titel (titel) VALUES ($1) RETURNING id
+		), f AS (
+			INSERT INTO buecher_titel (titel) VALUES ('Anderer Titel') RETURNING id
+		), a AS (
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+			SELECT t.id, 'LR-OFFEN-' || g, false, CURRENT_DATE FROM t, generate_series(1, 2) AS g
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+		SELECT f.id, 'LR-FREMD-1', false, CURRENT_DATE FROM f
+	`, "La  Peste"); err != nil {
+		t.Fatalf("Seed: %v", err)
+	}
+
+	for _, suchtext := range []string{"La Peste", "La  Peste", "la" + geschuetzt + "pes"} {
+		query := "?q=" + url.QueryEscape(suchtext)
+		var liste []ExemplarOhneEtikett
+		jsonHolen(t, srv.EtikettenOffenHandler(), "/api/exemplare/etiketten-offen"+query, &liste)
+		var zaehler struct {
+			Anzahl int `json:"anzahl"`
+		}
+		jsonHolen(t, srv.EtikettenOffenAnzahlHandler(), "/api/exemplare/etiketten-offen/anzahl"+query, &zaehler)
+		if len(liste) != 2 || zaehler.Anzahl != 2 {
+			t.Errorf("Suche %+q: Liste %d Zeilen, Zähler %d — erwartet je 2", suchtext, len(liste), zaehler.Anzahl)
+		}
 	}
 }

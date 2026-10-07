@@ -79,3 +79,41 @@ func TestSearchLocalOrders_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) 
 		t.Errorf("falsches Prüfzeichen: %d Treffer, erwartet keinen", len(treffer))
 	}
 }
+
+// Die Bestellsuche im eigenen Katalog vergleicht den Suchtext neben dem Volltext als
+// Teilstring. Die Datenbank speichert Titeltexte mit einem Leerzeichen zwischen den Wörtern
+// (Migration 160), der Suchtext geht in dieselbe Form: Sonst hieße ein vorhandenes Buch in
+// der Bestellsuche „nicht gefunden" und würde ein zweites Mal aufgenommen. Die Suchtexte
+// enden mitten im Wort, damit der Volltext nicht aushilft.
+func TestSearchLocalOrders_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	geschuetzt := string(rune(0x00A0))
+	raeume := func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel LIKE 'Leerraumprobe%'`); err != nil {
+			t.Errorf("aufräumen: %v", err)
+		}
+	}
+	raeume()
+	t.Cleanup(raeume)
+	var id string
+	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, autor) VALUES ($1, $2) RETURNING id::text`,
+		"Leerraumprobe La  Peste", "Camus,"+geschuetzt+"Albert").Scan(&id); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+
+	for _, suchtext := range []string{
+		"Leerraumprobe La Pes",
+		"Leerraumprobe La  Pes",
+		"leerraumprobe la" + geschuetzt + "pes",
+		"Camus,  Alb",
+	} {
+		treffer := searchLocalOrders(ctx, pool, suchtext)
+		if len(treffer) != 1 || treffer[0].ID != id || treffer[0].Titel != "Leerraumprobe La Peste" {
+			t.Errorf("Suche %+q: %+v, erwartet den Titel %s", suchtext, treffer, id)
+		}
+	}
+	if treffer := searchLocalOrders(ctx, pool, "Leerraumprobe LaPes"); len(treffer) != 0 {
+		t.Errorf("ohne Leerzeichen: %d Treffer, erwartet keinen", len(treffer))
+	}
+}

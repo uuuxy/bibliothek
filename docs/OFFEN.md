@@ -38,6 +38,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Die Littera-Übernahme überträgt die Auflage. (5.5)
 - [x] Die Littera-Übernahme nimmt die Nichtsortierzeichen aus Titel und Verfasser („¬Die¬
   schwarze Katze", gebaut am 07.10.2026).
+- [x] Titel, Untertitel, Autor und Verlag stehen mit einem Leerzeichen zwischen den Wörtern,
+  an jeder Tür: „La  Peste" aus Littera wird „La Peste", und die Suche nimmt den Suchtext in
+  derselben Form (gebaut am 07.10.2026).
 - [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt:
   Ausweisnummern, offene Ausleihen, Standorte, Verweise der Schlagworte. (7.2, 4.20)
 - [ ] `update.sh` für den Schulserver: nur Releases, Images frisch. (5.31)
@@ -724,12 +727,6 @@ Kategorie B.
 
 ### 6.1 Beobachtungen
 
-- In der Littera-Sicherung von 2010 tragen 103 von 10.732 Titeln und 73 Untertitel zwei
-  Leerzeichen in Folge („La  Peste"); die Übernahme und der Katalog-Import übernehmen sie, wie
-  sie stehen (gemessen am 07.10.2026). `GET /api/books` sucht nach dem Wortlaut (`ILIKE`,
-  `inventur/datenbank_buecher_leser.go`): „La Peste" träfe diesen Titel nicht. Bei Anlass:
-  Leerraum im Titel beim Schreiben zusammenziehen, an jeder Tür gleich (Übernahme,
-  Katalog-Import, Maske).
 - Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, gekappt
   erst bei 50.000 Titeln), „Suche & Filter" bei jedem Öffnen, die Titel-Verwaltung beim Öffnen und bei leerem
   Suchfeld; gezeigt werden je 50 Titel. Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"bibliothek/repository"
 )
 
 // Lehrerportal → Schulbücher je Fach (03.09.2026). Beide Türen liegen hinter der
@@ -99,10 +101,11 @@ func filterKlartext(f LernmittelFilter) string {
 }
 
 // lernmittelFilterParam liest ?jahrgang= (5–13), ?zweig= und ?q=; alles andere heißt
-// „alle". Der Suchtext wird gekappt: Er geht als ILIKE-Muster in die Abfrage.
+// „alle". Der Suchtext wird gekappt: Er geht als ILIKE-Muster in die Abfrage, in der Form,
+// in der Titeltexte gespeichert sind (repository.TiteltextNormalform).
 func lernmittelFilterParam(r *http.Request) LernmittelFilter {
 	q := r.URL.Query()
-	f := LernmittelFilter{Zweig: strings.TrimSpace(q.Get("zweig")), Suche: strings.TrimSpace(q.Get("q"))}
+	f := LernmittelFilter{Zweig: strings.TrimSpace(q.Get("zweig")), Suche: repository.TiteltextNormalform(q.Get("q"))}
 	// Nach ZEICHEN kappen, nicht nach Bytes: Ein Schnitt mitten in einem Mehrbyte-Zeichen
 	// schickt ungültiges UTF-8 an Postgres, und aus einer Suche würde ein 500er.
 	if r := []rune(f.Suche); len(r) > 100 {

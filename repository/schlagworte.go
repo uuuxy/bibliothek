@@ -10,7 +10,6 @@ import (
 	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/text/unicode/norm"
 )
 
 // Schlagworte am Titel (Migration 138, docs/OFFEN.md 4.20) — frei eintragbar wie in
@@ -46,14 +45,12 @@ const (
 // antworten mit 400 und reichen den Text weiter.
 var ErrSchlagwortUngueltig = errors.New("schlagworte ungültig")
 
-// schlagwortNormalform ist die Form, in der ein Wort gespeichert und verglichen wird:
-// Leerraum außen weg und innen zu einem Leerzeichen, Unicode zusammengesetzt (NFC). Die DNB
-// liefert Umlaute zerlegt, als Grundbuchstabe mit Pünktchen dahinter (U+0308, gemessen am
-// 30.09.2026); zerlegt und zusammengesetzt sehen gleich aus, sind für lower() und den
-// eindeutigen Index aber zwei Wörter — „Vögel" aus der DNB traf das „Vögel" der Liste nie.
-// Schreibweg, Vorschlag und die Suche der Pflegeseite nehmen diese eine Funktion.
+// schlagwortNormalform ist die Form, in der ein Wort gespeichert und verglichen wird: dieselbe
+// wie bei den Titeltexten (TiteltextNormalform). Die DNB liefert Umlaute zerlegt; zerlegt und
+// zusammengesetzt sehen gleich aus, sind für lower() und den eindeutigen Index aber zwei
+// Wörter. Schreibweg, Vorschlag und die Suche der Pflegeseite nehmen diese eine Funktion.
 func schlagwortNormalform(roh string) string {
-	return norm.NFC.String(strings.Join(strings.Fields(roh), " "))
+	return TiteltextNormalform(roh)
 }
 
 // NormalisiereSchlagworte bringt eine Eingabe in die gespeicherte Form

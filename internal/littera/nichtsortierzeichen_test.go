@@ -20,7 +20,8 @@ func TestLeseTitel_OhneNichtsortierzeichen(t *testing.T) {
 		{"Paar mitten im Titel", "Mumienherz. ¬Die¬ Rückkehr des Seth / 1", "Mumienherz. Die Rückkehr des Seth / 1"},
 		// Wie in Littera getippt: Das Leerzeichen fehlt dort, die Übernahme erfindet keins.
 		{"kein Leerzeichen nach dem Paar", "¬The¬Scarlett Letter", "TheScarlett Letter"},
-		{"Leerzeichen bleiben, wie sie stehen", "¬La¬  Peste", "La  Peste"},
+		// Die Übernahme liest sie mit; ein Leerzeichen daraus macht die Datenbank (Migration 160).
+		{"zwei Leerzeichen in Folge", "¬La¬  Peste", "La  Peste"},
 		{"Zeichen am Rand", " ¬ Das IGL-Buch 1 ¬ ", "Das IGL-Buch 1"},
 		{"ohne Zeichen", "Die Welle", "Die Welle"},
 	}
