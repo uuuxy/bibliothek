@@ -628,7 +628,7 @@ Datenschutzbeauftragte.
 
 **Aufbewahrung/Löschung:** Beim Abgang eines Schülers (ohne offene Vorgänge) leert die
 Anonymisierungsroutine (`anonymisiereAbgaenger`) diese Felder umgehend; Lesehistorie
-nach Frist (oben). Offene Punkte der Schule: [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md).
+nach Frist (oben). Was bei der Schule liegt: [datenschutz/nachweis.md](datenschutz/nachweis.md#10-was-bei-der-schule-liegt), Abschnitt 10.
 
 ---
 

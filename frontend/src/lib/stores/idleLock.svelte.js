@@ -1,5 +1,5 @@
 // stores/idleLock.svelte.js
-// Inaktivitäts-Wächter der Sitzung (A4 in docs/datenschutz_offene_punkte.md).
+// Inaktivitäts-Wächter der Sitzung.
 //
 // Zwei Stufen, beide in den Einstellungen justierbar (0 = aus):
 //   1. Theke leeren — der geladene Schüler/Lehrer verschwindet aus der Omnibox, damit

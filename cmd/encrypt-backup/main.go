@@ -4,9 +4,8 @@
 // Es ist das Gegenstück zu cmd/restore-backup und existiert, weil die beiden
 // SHELL-Wege am nächtlichen Job vorbei dumpten: `scripts/backup.sh` und die
 // Vorab-Sicherung in `update.sh` legten `.sql.gz` im KLARTEXT ab — jeder Schülername,
-// jede Adresse, jede Ausleihe, 7 bzw. 30 Tage lang (Befund A5,
-// docs/datenschutz_offene_punkte.md). Ein Skript kann das Format nicht selbst erzeugen;
-// hier ist es.
+// jede Adresse, jede Ausleihe, 7 bzw. 30 Tage lang. Ein Skript kann das Format nicht
+// selbst erzeugen; hier ist es.
 //
 // Verwendung (der Schlüssel kommt aus der Umgebung, NICHT aus einem Argument — sonst
 // stünde er in der Prozessliste jedes Mitlesenden):

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, csrfToken, uniqueSuffix, ADMIN_PASSWORD } from './helpers.js';
 
 /**
- * Inaktivitäts-Wächter am Live-Pfad (docs/datenschutz_offene_punkte.md A4).
+ * Inaktivitäts-Wächter am Live-Pfad.
  *
  * Zwei Stufen: Nach der kurzen Frist verschwindet der geladene Schüler aus der Theke
  * (der nächste an der Theke darf nicht den vorigen sehen), nach der langen kommt der

@@ -110,4 +110,4 @@ Ort, Datum: ______________ Unterschrift Erziehungsberechtigte/r: _______________
 (ab 14 Jahren zusätzlich: Unterschrift Schüler/in: ____________________)
 
 [Falls Foto auf dem Schülerausweis: eigenes Einwilligungsfeld für das Lichtbild ergänzen —
-SchDSV Anlage 1 kennt kein Foto; siehe datenschutz_offene_punkte.md B3.]
+SchDSV Anlage 1 kennt kein Foto; siehe nachweis.md, Abschnitt 10, B3.]

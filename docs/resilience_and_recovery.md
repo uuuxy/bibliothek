@@ -49,8 +49,7 @@ Nachtbackups.
 Bis zum 23.08.2026 legten beide Skripte **unverschlüsselte** Dumps ab (7 bzw. 30 Tage) —
 jeder Schülername, jede Adresse, jede Ausleihe im Klartext, geschützt allein durch `0600`.
 Wer den Datenträger, ein Datei-Backup des Servers oder das Verzeichnis in die Hand bekam,
-las alles ohne Passphrase. Das war Befund **A5** der Datenschutz-Bewertung
-(`docs/datenschutz_offene_punkte.md`).
+las alles ohne Passphrase. Das war ein Befund der Datenschutz-Bewertung vom August 2026.
 
 Beide verschlüsseln jetzt über **dieselbe Ableitung wie der nächtliche Job** — Werkzeug
 `cmd/encrypt-backup` im Backend-Container, Helfer `scripts/backup_krypto.sh`. Der

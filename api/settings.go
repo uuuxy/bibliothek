@@ -140,9 +140,9 @@ func (s *Server) protokolliereEinstellungen(r *http.Request, req repository.Eins
 	logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, $2, $3::jsonb)", claims.UserID, "UPDATE_SETTINGS", string(detailsBytes)))
 }
 
-// SitzungsEinstellungen sind die zwei Inaktivitäts-Fristen des Clients (A4 in
-// docs/datenschutz_offene_punkte.md): Minuten bis die Theken-Ansicht den geladenen
-// Schüler fallen lässt, Minuten bis zum Sperrbildschirm. 0 = aus.
+// SitzungsEinstellungen sind die zwei Inaktivitäts-Fristen des Clients: Minuten bis die
+// Theken-Ansicht den geladenen Schüler fallen lässt, Minuten bis zum Sperrbildschirm.
+// 0 = aus.
 type SitzungsEinstellungen struct {
 	ThekeLeerenMinuten int `json:"theke_leeren_minuten"`
 	SperreMinuten      int `json:"sperre_minuten"`

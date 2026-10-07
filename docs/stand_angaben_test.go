@@ -23,12 +23,8 @@ import (
 // einen datierten Abschnitt und vergisst den Kopf) und erzeugt keine Fehlalarme durch
 // Formatierungs-Commits, die den git-Zeitstempel verschieben, ohne etwas zu sagen.
 //
-// GRENZE, die das Gate nicht überwinden kann: Ein Datum OHNE Jahr ("erledigt 23.08.")
-// ist für keinen Vergleich brauchbar — 23.08. welchen Jahres? Genau daran hing
-// docs/datenschutz_offene_punkte.md: Kopf 22.08.2026, im Text zwei Punkte "erledigt
-// 23.08.". Statt den Detektor raten zu lassen, sind dort die Jahre ausgeschrieben. Wer
-// ein Datum in ein Dokument schreibt, schreibt bitte das Jahr dazu — sonst ist es für
-// dieses Gate unsichtbar.
+// Ein Datum ohne Jahr ("erledigt 23.08.") sieht das Gate nicht: Für einen Vergleich
+// fehlt ihm das Jahr. Wer ein Datum in ein Dokument schreibt, schreibt das Jahr dazu.
 //
 // Dokumente OHNE Kopfzeile prüft das Gate nicht — nicht jedes braucht eine (FACHKONZEPT
 // und resilience_and_recovery führen bewusst keine). Wer keine Zusicherung gibt, kann
@@ -37,11 +33,8 @@ import (
 // Reparatur bei Rot: Das Datum im Kopf auf den jüngsten im Text genannten Stand ziehen —
 // oder die Kopfzeile entfernen, wenn sie ohnehin niemand pflegt.
 func TestStandAngabenNichtVeraltet(t *testing.T) {
-	// BEIDE Schreibweisen im Kopf erkennen. Das Muster akzeptierte zunächst nur
-	// 2026-08-23; docs/datenschutz_offene_punkte.md schreibt "(Stand 22.08.2026)" und
-	// fiel deshalb still durch — ausgerechnet die Datei, deren eigene Tabelle Punkte
-	// vom 23.08. als erledigt führt. Ein Detektor, der die Hälfte der Schreibweisen
-	// nicht kennt, meldet nichts und sieht dabei aus wie ein bestandener Test.
+	// Der Kopf kommt in zwei Schreibweisen vor, 2026-08-23 und 23.08.2026. Ein Muster,
+	// das nur eine kennt, ließe die Dokumente mit der anderen ungeprüft durch.
 	kopfMuster := regexp.MustCompile(`(?i)(Zuletzt aktualisiert|Stand):?\s*\**\s*(?:(\d{4})-(\d{2})-(\d{2})|(\d{2})\.(\d{2})\.(\d{4}))`)
 	// Beide Schreibweisen, die im Projekt vorkommen: 2026-08-23 und 23.08.2026.
 	datumMuster := regexp.MustCompile(`(\d{4})-(\d{2})-(\d{2})|(\d{2})\.(\d{2})\.(\d{4})`)

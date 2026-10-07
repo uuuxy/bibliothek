@@ -1,13 +1,14 @@
 # Datenschutz-Nachweis
 
-Stand: 30.09.2026 (Entwurf)
+Stand: 07.10.2026 (Entwurf)
 
 Eine Übersicht zum Weitergeben an Schulleitung, schulischen Datenschutzbeauftragten und
 Schulträger: was das Programm mit Personendaten tut, woran sich jede Zusage prüfen lässt, was
 bei einer Datenpanne zu tun ist und was die Schule vor dem Echtbetrieb entscheidet. Die
 Einzelheiten stehen in den Unterlagen, auf die jeder Abschnitt verweist. Die rechtliche
 Einordnung steht im Entwurf des Verzeichnisses der Verarbeitungstätigkeiten; bestätigen muss
-sie der Datenschutzbeauftragte der Schule.
+sie der Datenschutzbeauftragte der Schule. Die Quellen, gegen die das Programm bewertet wurde,
+nennt der Anhang.
 
 Einen Echtbetrieb gibt es noch nicht. Das Programm läuft auf einem Testserver ohne echte
 Schülerdaten; für den Betrieb ist ein Server der Schule vorgesehen.
@@ -220,8 +221,8 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
 
 ## 10. Was bei der Schule liegt
 
-Einzelheiten in den [offenen Punkten zum Datenschutz](../datenschutz_offene_punkte.md),
-Abschnitt B.
+Im Einzelnen stehen die Punkte in der Tabelle unter der Liste; andere Unterlagen nennen sie mit
+ihrer Nummer (B1 bis B7).
 
 - Verzeichnis und Datenschutzhinweis ausfüllen und beschließen; für die Schülerbücherei eine der
   beiden Fassungen wählen.
@@ -233,3 +234,43 @@ Abschnitt B.
 - Regeln, in welcher Rolle die Person, die das Programm wartet, Zugang zu Schülerdaten hat.
 - Für die Übernahme aus dem bisherigen Programm Littera festlegen, was übernommen wird: nur,
   was aktuell ist und einen Zweck hat.
+
+| # | Punkt |
+|---|---|
+| B1 | **VVT** nach HBDI-Muster — **Entwurf liegt vor:** [vvt_entwurf.md](vvt_entwurf.md) (drei Tätigkeiten: Lernmittel, Schülerbücherei, Personal/Protokolle; TOM-Anhang). Schule füllt Klammern, DSB prüft, Schulleitung beschließt. |
+| B2 | **Datenschutzhinweis** (Art. 13) — **Entwurf liegt vor:** [datenschutzhinweis_art13.md](datenschutzhinweis_art13.md), Fassung A (Lernmittel, Schulaufnahme-Information § 5 (2) SchDSV) und B (Schülerbücherei, mit Einwilligungsfeld). |
+| B3 | **Foto auf dem Schülerausweis**: Anlage 1 kennt kein Foto. Entweder deckt es der Schülerausweis-Erlass (prüfen) oder es braucht eine Einwilligung (§ 3). Vor dem ersten Ausweisdruck klären. |
+| B4 | **Schulischer DSB** beteiligen; Schwellwertanalyse DSFA dokumentieren (Minderjährige, Fotos — Ergebnis vermutlich „nicht erforderlich", aber schriftlich). |
+| B5 | **IT-Sicherheitskonzept im Benehmen mit dem Schulträger** (§ 6 (3)); **Netzplatzierung** klären: Schülerdaten ins Verwaltungsnetz, Theke/Kiosk und Lehrer-Browser sitzen meist im pädagogischen Netz. |
+| B6 | **Rolle des Entwicklers/Wartenden**: Wer Admin-Zugang hat und Schülerdaten sehen kann, braucht eine Regelung — als Lehrkraft dienstlich, als Externer AVV/Wartungsvertrag. |
+| B7 | **Löschkonzept gegenüber Littera**: „Littera hatte die Daten auch" ist keine Rechtsgrundlage. Beim Übergang nur übernehmen, was aktuell ist und einen Zweck hat. |
+
+## 11. Bewusst kein Befund
+
+- Geburtsdatum: Anlage 1 (1.7), Zweck Dubletten-Wachhund + LUSD-Abgleich → im VVT begründen.
+- Anschrift: „ggf. Anschrift" im HBDI-Muster; Zweck gedruckte Rechnung/Elternbrief.
+- Rollen ab Werk: nur Admin, Leitung und Mitarbeiter sehen Stufe 3 (Adresse, Eltern-Mail, Foto); Kollegium und Helfer nicht (Abschnitt 3).
+- IP-Adressen stehen nur im Verwaltungsprotokoll (`audit_logs.ip_adresse`, administrative Eingriffe) und werden mit ihm nach der Aufbewahrungsfrist gelöscht (`audit_aufbewahrung_monate`, Vorgabe 24 Monate, Untergrenze 6); das Anfrage-Log schreibt keine IP; Fotos und Backups verschlüsselt; Auskunft Art. 15 vorhanden; Statistik ohne Personenbezug.
+- `inventur_sessions` und `bestellungen_verlauf` bleiben **bewusst** unbefristet — die eine ist der Nachweis der Bestandskartei (HKM-Leitfaden LMF 11.3: Ausleihe UND Rücklauf), die andere ein Belegwesen mit eigener Aufbewahrungspflicht; beide tragen keine Schülerdaten.
+
+## Anhang: Rechtsrahmen (gelesen, nicht nacherzählt)
+
+Das Programm ist gegen den hessischen Rahmen bewertet.
+
+| Quelle | Was daraus folgt |
+|---|---|
+| **SchDSV** (Schul-Datenschutzverordnung, 1.12.2023, ABl. S. 763) § 2 + Anlage 1 | Erlaubter Datenkatalog: Anschrift (1.4), Geburtsdatum (1.7), Eltern-E-Mail (1.14), Schüler-ID (1.20). **Kein Foto.** |
+| SchDSV § 3 | Alles außerhalb Anlage 1 braucht eine dokumentierte **Einwilligung**. |
+| SchDSV § 5 | Schule führt VVT (Art. 30), schließt AVV bei Fremdverarbeitung, hält Datenschutzhinweise aktuell, löscht regelmäßig, meldet Vorfälle an Schulamt/Schulträger. |
+| SchDSV § 6 | TOMs nach Art. 25/32, BSI-Grundschutz beachten, **IT-Sicherheitskonzept im Benehmen mit dem Schulträger**. |
+| SchDSV § 13 | Schülerausweis = Teil-B-Datensatz (Name, Vorname, Anschrift, Geburtsdatum, Schulen, Schüler-ID); Näheres per Erlass. |
+| SchDSV § 15 | Eltern-E-Mail nur für erforderliche Schulkommunikation; Weitergabe an Dritte nur mit Einwilligung. |
+| SchDSV § 17 + Anlage 3 | Löschen, sobald Zweck erreicht. |
+| **§ 83a HSchG Nr. 2** | Schule darf eine digitale Anwendung selbst einführen, wenn sie als Verantwortliche Datenschutz und Sicherheit gewährleistet. |
+| **HBDI-Muster-VVT „Schulbibliothek"** | Datenumfang: Name, Klasse, ggf. Anschrift, Ausleihdaten. Rechtsgrundlage: Einwilligung (freiwillige Ausleihe). Löschfrist: „unverzüglich, wenn nicht mehr notwendig". |
+| **HKM-Leitfaden Lernmittelfreiheit** | 11.3 Bestandskartei weist Ausleihe **und** Rücklauf nach; 12.3–12.7 Schadensersatz ist öffentlich-rechtlich (Leistungsbescheid der Schulaufsicht); 18: Littera zulässig, Datenschutz beachten. |
+
+Links: [SchDSV Volltext](https://www.glb-hessen.de/wp-content/uploads/2024/01/DLHRatgeberAktuell_SchDSV_NEU.pdf) ·
+[HBDI-Muster Schulbibliothek](https://datenschutz.hessen.de/sites/datenschutz.hessen.de/files/2024-02/verfahrensverzeichnis_schulbibliothek_v1_0.pdf) ·
+[HKM-Leitfaden LMF](https://kultus.hessen.de/sites/kultus.hessen.de/files/2021-06/lernmittelfreiheit_in_hessen_-_leitfaden_fuer_das_verfahren.pdf) ·
+[§ 83a HSchG](https://gesetze.co/HE/HSchG/83a)

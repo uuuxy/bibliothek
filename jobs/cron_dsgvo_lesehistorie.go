@@ -14,7 +14,7 @@ import (
 // Löschung des Schülers — die Titel-Historie zeigte bis zu 200 Entleiher mit Namen,
 // das Profil die komplette Lesebiografie. Das HBDI-Muster-VVT „Schulbibliothek" verlangt
 // Löschung, „sobald nicht mehr notwendig"; die Lesehistorie eines Kindes über Jahre zu
-// führen ist kein Zweck der Ausleihe (docs/datenschutz_offene_punkte.md, A1).
+// führen ist kein Zweck der Ausleihe.
 //
 // Dieser Job trennt die Ausleihe vom Schüler (schueler_id = NULL), der Vorgang selbst
 // bleibt für Statistik und Bestandskartei erhalten. Zwei Fristen, weil zwei

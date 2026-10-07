@@ -2,7 +2,7 @@ package repository
 
 import "strconv"
 
-// Datenschutz- und Sitzungs-Einstellungen (A1/A4 aus docs/datenschutz_offene_punkte.md).
+// Datenschutz- und Sitzungs-Einstellungen.
 //
 // Alle fünf Werte sind Zeiger mit der Semantik von OeffentlicheAdresse: nil heißt „diese
 // Sektion kennt das Feld nicht" (gespeicherter Wert bleibt), ein gesetzter Zeiger heißt

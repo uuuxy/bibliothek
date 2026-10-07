@@ -1,8 +1,7 @@
 <script>
 	/**
 	 * @component DatenschutzKategorie
-	 * Fünf Löschfristen und zwei Sitzungsfristen (docs/datenschutz_offene_punkte.md
-	 * A1/A4).
+	 * Fünf Löschfristen und zwei Sitzungsfristen.
 	 *
 	 * Zwei Lesehistorie-Fristen, weil es zwei Verarbeitungstätigkeiten sind:
 	 * Schülerbücherei kurz (HBDI-Muster: löschen, sobald nicht mehr notwendig),

@@ -938,7 +938,7 @@ Vorschlag: nach Titel sortieren, Ziehen und Route entfernen. Kategorie B.
   verwirft, was dahinter ungespeichert steht, ohne es zu sagen (am Code gelesen). Ob etwas
   ungespeichert ist, weiß die Anwendung nur beim LMF-Planer (`uiStore.verlassenSperre`), und
   gefragt wird nur beim Wechsel des Menüpunkts und beim Schließen des Fensters. Das Leeren der
-  Theke ist gewollt (A4 im Datenschutz-Nachweis). Anlass zum Bauen: eine verlorene Eingabe an
+  Theke ist gewollt (Datenschutz-Nachweis, Abschnitt 5). Anlass zum Bauen: eine verlorene Eingabe an
   der Theke.
 - Das Schließen-Symbol der Maske „Buch bearbeiten" und „Neues Buch" verwirft, was getippt und
   nicht gespeichert ist, ohne Rückfrage: `onClose` schaltet nur zurück zur Titelliste
@@ -1054,9 +1054,6 @@ Vorschlag: nach Titel sortieren, Ziehen und Route entfernen. Kategorie B.
   eine eigene Zeile; eine Layoutfrage, nicht einzeln. „Barcode scannen" ist 24 px hoch, und
   „Interne ID generieren" bricht bei 1280 px im Knopf in zwei Zeilen um (gemessen am
   06.10.2026).
-- `docs/datenschutz_offene_punkte.md` heißt wie eine zweite Offen-Liste: Teil A ist dort
-  abgehakt statt gelöscht. Vorgeschlagen am 02.10.2026 und nicht
-  entschieden: umbenennen und die Erledigt-Spalte streichen; 17 Dateien verweisen auf den Namen.
 - Vorschläge an einem Textfeld zeichnet der Browser (`datalist`): am Feld „Signatur", im
   Dialog „Standort ändern", in der Schlagwort-Pflege und in `ui/ChipFeld` (sechs Stellen,
   gezählt am 06.10.2026). Die Liste sieht je Browser anders aus und folgt nicht Material 3;
@@ -1093,7 +1090,7 @@ der Schlussmeldung von `update.sh` und `DOMAIN` in `scripts/deploy.sh`.
 `littera_sav.mdb` ist ein Stand von 2010. Ohne die offenen Ausleihen startet das System mit „alles
 verfügbar"; Ausweisnummern und Exemplare nach 2010 fehlen, rund 1.350 Titel haben keine Signatur.
 Anforderungen in [littera_schema_befund.md](littera_schema_befund.md). Vorher das Löschkonzept
-gegenüber Littera ([datenschutz_offene_punkte.md](datenschutz_offene_punkte.md), B7). Die
+gegenüber Littera ([datenschutz/nachweis.md](datenschutz/nachweis.md), Abschnitt 10, B7). Die
 teuerste offene Position vor dem Echtstart.
 **Reihenfolge:** Littera-Personen und -Ausleihen im selben Lauf übernehmen, **bevor** ein echter
 LUSD-Import läuft. Der Littera-Personenlauf erkennt Schüler aus der LUSD nicht und legt sie ein
@@ -1310,14 +1307,14 @@ Buch eine Zeile; einmal ausdrucken und ansehen.
 
 - **Nachweis der DSGVO-Konformität.** Der Entwurf steht:
   [datenschutz/nachweis.md](datenschutz/nachweis.md). Offen ist die Beschlussfassung
-  ([datenschutz_offene_punkte.md](datenschutz_offene_punkte.md), Teil B).
+  (Abschnitt 10 des Entwurfs, B1 bis B7).
   **Die Frist bis zum Sperrbildschirm:** Der Entwurf nennt die Vorgabe des Programms, 15
   Minuten (Abschnitt 5, „Zugang"). Gewünscht sind an der Schule 8 Stunden ohne Bedienung
   (01.10.2026). Das Feld nimmt 0 bis 1440 Minuten, 480 sind am Stack nachgestellt; die Vorgabe
   bleibt 15, der Wert wird am Schulserver einmal unter Einstellungen → Datenschutz & Sitzung
   eingetragen. Der Nachweis nennt dann die Zahl der Schule. Mit 480 Minuten greift die Sperre an einem
   Schultag nicht; für den unbeaufsichtigten Platz bleibt das Leeren der Theke nach 5 Minuten.
-  Das gehört zu Teil B, B4.
+  Das gehört zu B4.
 - **Hosting- und Programmpflegekonzept.** Der Entwurf steht:
   [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md). Offen:
   1. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — ausfüllen bei dir, Vorlage im

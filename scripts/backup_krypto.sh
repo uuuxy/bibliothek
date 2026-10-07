@@ -5,7 +5,7 @@
 # Wird von scripts/backup.sh und ./update.sh eingebunden (source), nicht selbst
 # aufgerufen.
 #
-# Warum es das gibt (Befund A5, docs/datenschutz_offene_punkte.md): Beide Skripte
+# Warum es das gibt: Beide Skripte
 # dumpten am nächtlichen Job vorbei und legten `.sql.gz` im KLARTEXT ab — jeder
 # Schülername, jede Adresse, jede Ausleihe, 7 bzw. 30 Tage lang. Geschützt waren die
 # Dateien nur durch `0600`; wer den Datenträger, ein Datei-Backup des Servers oder das

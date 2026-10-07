@@ -80,7 +80,6 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [datenschutz/nachweis.md](datenschutz/nachweis.md)                                 | Datenschutz-Nachweis (Entwurf) zum Weitergeben an Schulleitung, Datenschutzbeauftragten und Schulträger: Daten, Fristen, der Test hinter jeder Zusage, Ablauf bei einer Datenpanne, bekannte Lücken |
 | [SECURITY.md](SECURITY.md)                                                         | Sicherheitskonzept, DSGVO, Schutzmaßnahmen, Löschroutinen                                                                            |
 | [PII_MATRIX.de.md](PII_MATRIX.de.md)                                               | Jede Route nach Schülerdaten eingestuft (Stufe 0–3) — vom Gate `api/pii_matrix_test.go` mit dem Code deckungsgleich gehalten         |
-| [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md)                       | Datenschutz-Arbeitsliste: Code-Punkte, Schul-/DSB-Punkte, bewusste Nicht-Befunde                                                     |
 | [datenschutz/vvt_entwurf.md](datenschutz/vvt_entwurf.md)                           | Entwurf Verzeichnis von Verarbeitungstätigkeiten — zwei Tätigkeiten: Lernmittelausleihe, Schülerbücherei; TOM-Anhang aus SECURITY.md |
 | [datenschutz/datenschutzhinweis_art13.md](datenschutz/datenschutzhinweis_art13.md) | Entwurf Datenschutzhinweis nach Art. 13 DSGVO für Schüler/Eltern — zwei Fassungen (Lernmittel, Schülerbücherei)                      |
 

@@ -22,7 +22,7 @@ Trennung von (1) ist nötig, weil Lernmittel weder freiwillig noch per Einwillig
 | Schulischer Datenschutzbeauftragter | [Name, Kontakt] — Pflicht nach § 5 SchDSV, Beteiligung vor Inbetriebnahme                                                                                                                                                                  |
 | Schulträger                         | [Name] — IT-Sicherheitskonzept im Benehmen mit dem Schulträger (§ 6 Abs. 3 SchDSV)                                                                                                                                                         |
 | Betrieb                             | Schuleigener Server im Schulnetz (on-prem), kein Cloud-Hosting; aus dem Internet erreichbar ist nur die Bestätigungsseite für Lieferanten (ohne Personendaten). Reverse-Proxy (Caddy, TLS), Go-Backend, PostgreSQL, Docker.                |
-| Auftragsverarbeiter                 | **keine**, solange der Server von der Schule selbst betrieben wird. Wartet eine externe Person (Entwickler) mit Admin-Zugang, braucht es eine Vereinbarung nach Art. 28 DSGVO (siehe [offene Punkte B6](../datenschutz_offene_punkte.md)). |
+| Auftragsverarbeiter                 | **keine**, solange der Server von der Schule selbst betrieben wird. Wartet eine externe Person (Entwickler) mit Admin-Zugang, braucht es eine Vereinbarung nach Art. 28 DSGVO (siehe [Nachweis, Abschnitt 10, B6](nachweis.md#10-was-bei-der-schule-liegt)). |
 | Datenschutz-Folgenabschätzung       | Schwellwertanalyse dokumentieren (Minderjährige, Fotos). Voraussichtlich nicht erforderlich: keine Profilbildung, kein Scoring, keine systematische Überwachung; Lesehistorie befristet. Ergebnis schriftlich festhalten (B4).             |
 
 ---

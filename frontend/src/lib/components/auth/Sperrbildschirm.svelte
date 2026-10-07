@@ -8,7 +8,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import { scanSchutz } from '../../scanErkennung.js';
 
-	// Sperrbildschirm nach Inaktivität (A4 in docs/datenschutz_offene_punkte.md). Die
+	// Sperrbildschirm nach Inaktivität. Die
 	// Anwendung dahinter bleibt stehen, damit Ungespeichertes die Sperre überlebt, ist aber
 	// ausgeblendet und träge (App.svelte): Die Druckvorschau zeigt sie nicht, Tab erreicht
 	// sie nicht, Screenreader lesen sie nicht (Prüfung 22.08.2026, A6). Tasten und Zeiger
