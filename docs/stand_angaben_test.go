@@ -52,9 +52,8 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 	// invarianten.md (bis 13.09.2026 auch im Befund-Register) liegen weit außerhalb dieses Fensters.
 	const kopfZeilen = 24
 
-	// Rekursiv statt zweier Globs (21.09.2026): Bis hierher sammelte das Gate `*.md` und
-	// `*/*.md`. Ein Dokument in einem dritten Ordner — etwa docs/arc42/review/ — wäre mit
-	// veraltetem Kopf still durchgefallen, und das Gate hätte dabei grün ausgesehen.
+	// Rekursiv statt fester Globs: Ein Dokument in einem tieferen Ordner fiele sonst mit
+	// veraltetem Kopf still durch, und das Gate sähe dabei grün aus.
 	var dateien []string
 	err := filepath.WalkDir(".", func(pfad string, eintrag fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -119,6 +118,6 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 
 	if geprueft < 5 {
 		t.Errorf("nur %d Dokumente mit Stand-Angabe erkannt — das Kopfmuster greift vermutlich nicht mehr "+
-			"(erwartet werden mindestens DEPLOYMENT, SECURITY, HANDBUCH, datenschutz_offene_punkte, arc42/README)", geprueft)
+			"(erwartet werden mindestens DEPLOYMENT, SECURITY, HANDBUCH, OFFEN, ARCHITEKTUR)", geprueft)
 	}
 }

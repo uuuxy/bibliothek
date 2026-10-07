@@ -63,7 +63,7 @@ für Bibliothekspersonal gibt es das [Benutzerhandbuch](docs/HANDBUCH.md).
 
 Umfang, gemessen am 26.09.2026: rund 70.000 Zeilen Go im Produktivcode, dazu 93.100
 Zeilen in 657 Testdateien; etwa 68.100 Zeilen Svelte/JavaScript und 118 e2e-Dateien. Die
-genauen Zahlen und alle Messbefehle stehen in [arc42, Kapitel 1.4](docs/arc42/01-einfuehrung-und-ziele.md).
+genauen Zahlen und alle Messbefehle stehen in [Architektur, Kapitel 1.4](docs/ARCHITEKTUR.md#1-einführung-und-ziele).
 
 Diese Zahlen altern. Die vorige Fassung stand auf dem Stand vom Juli und lag bei den
 Testzeilen um 47 % daneben — deshalb steht hier das Messdatum und darunter der Befehl,

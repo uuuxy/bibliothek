@@ -191,7 +191,7 @@ Testserver (`Caddyfile`: keine `tls`-Zeile). Ohne HTTPS ginge im Betrieb nicht e
 Anmeldung: Das Sitzungs-Cookie wird nur über HTTPS gesetzt (`ermittleCookieSecure` in
 `main.go`). Mit einem Zertifikat, dem die Browser nicht vertrauen, stünde an jedem Gerät eine
 Warnung, und die Theke ließe sich bei einem Netzausfall nicht neu laden (Service Worker,
-[arc42/08](arc42/08-querschnittliche-konzepte.md), „Offline"). Das Uptime-Signal von außen (7.5)
+[Architektur 8.8](ARCHITEKTUR.md#88-echtzeit-und-offline), „Offline"). Das Uptime-Signal von außen (7.5)
 ruft `/health` ab.
 
 **Was die Seite von außen braucht** (am Code nachgesehen am 28.09.2026): den Pfad
@@ -204,8 +204,8 @@ Schule, Lieferant, Topf, Kundennummer (`api/bestellbestaetigung_public.go`).
 
 **Zu bauen, vor dem Echtstart:** Der Eingang (Caddy) lässt von außen nur diese Pfade durch; was
 nicht ausdrücklich freigegeben ist, bleibt zu. In den Einstellungen die öffentliche Adresse
-setzen. Mit dem Bau [arc42/07](arc42/07-verteilungssicht.md) (dort „:80/:443 öffentlich") und
-[arc42/09](arc42/09-architekturentscheidungen.md) nachziehen.
+setzen. Mit dem Bau [Architektur 7](ARCHITEKTUR.md#7-verteilungssicht) (dort „:80/:443 öffentlich") und
+[Architektur 9](ARCHITEKTUR.md#9-architekturentscheidungen) nachziehen.
 
 **Vor dem Bau muss feststehen:** der Name, unter dem der Server im Internet erreichbar ist, und
 dass die Geräte der Schule ihn unter demselben Namen erreichen, denn das Zertifikat gilt für den

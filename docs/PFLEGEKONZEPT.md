@@ -163,8 +163,8 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   Horizont-Test der Ferien erreicht sein Jahr. Dann ist die Aufgabe aus Abschnitt 4 fällig.
 - **Wo die Begründungen stehen:** in den Commit-Nachrichten (`git log --grep`), in
   [invarianten.md](invarianten.md) (was immer gelten muss, und das Raster aus neunzehn Fragen,
-  wenn ein Schreibpfad seine Form wechselt), in [arc42/09](arc42/09-architekturentscheidungen.md)
-  (Entscheidungen) und in [OFFEN.md](OFFEN.md) (alles Offene).
+  wenn ein Schreibpfad seine Form wechselt), in [ARCHITEKTUR.md](ARCHITEKTUR.md#9-architekturentscheidungen),
+  Kapitel 9 (Entscheidungen), und in [OFFEN.md](OFFEN.md) (alles Offene).
 
 ---
 
@@ -174,7 +174,7 @@ Gemessen am 24.09.2026. **Der Code:** außerhalb der Tests keine Go-Funktion üb
 (die längste hat 148),
 23 direkte Go-Abhängigkeiten, übliche Bausteine (Go mit `net/http` und `pgx`, Svelte 5,
 Tailwind, PostgreSQL, Docker Compose), Tests und CI, Betrieb mit einem Befehl. Die
-Architektur ist nach arc42 beschrieben ([arc42/](arc42/README.md)).
+Architektur ist nach arc42 beschrieben ([ARCHITEKTUR.md](ARCHITEKTUR.md)).
 
 **Was bremst,** liegt um den Code: 2.499 Commits seit dem 29.05.2026, die Zahl der
 Projektregeln (`CLAUDE.md`, [invarianten.md](invarianten.md), [sweeps.md](sweeps.md)) und
