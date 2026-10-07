@@ -15,7 +15,7 @@ einem Gate nachgelesen, und wo eine Fundstelle die Aussage trägt, steht sie dab
 
 Diese Dokumentation ist **die** Architekturbeschreibung des Systems; die frühere Kurzfassung
 `ARCHITECTURE.md` ist am 18.09.2026 darin aufgegangen. Die Arbeitsteilung mit den übrigen
-Dokumenten unter [`docs/`](README.md):
+Dokumenten unter [`docs/`](../README.md#dokumentation):
 
 | Frage                                                        | Dort steht die Antwort                                     |
 | ------------------------------------------------------------ | ---------------------------------------------------------- |
@@ -2521,7 +2521,7 @@ dann auf, wenn man sich auf eine verlässt.
 jede gepflegte Liste und nicht veraltbar. **Auch diese arc42-Dokumentation führt keine
 eigene Offen-Liste**; Kapitel 11 benennt Risiken und verweist für den Stand auf `OFFEN.md`.
 
-**Fundstelle.** [OFFEN.md](OFFEN.md), [docs/README.md](README.md).
+**Fundstelle.** [OFFEN.md](OFFEN.md), [README.md](../README.md#dokumentation).
 
 ---
 

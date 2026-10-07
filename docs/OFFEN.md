@@ -25,8 +25,10 @@ Liste geführt wird, steht am Ende.
   geschlossen; aus sieben davon sind die Tests übernommen (d1dba610).
 - [x] **PR 722** durchgesehen und geschlossen am 06.10.2026: Die Prüfung beim Löschen einer
   Sachgruppe (`api/systematik_handler.go`) würde durch ihn höchstens 1 ms schneller.
-- [ ] **Doku-Ordner:** Vorschlag, welche der 36 Dateien in `docs/` zusammengelegt oder gelöscht
-  werden; 20 davon kamen seit September 2026 dazu.
+- [x] **Doku-Ordner:** Aus 36 Markdown-Dateien in `docs/` sind am 07.10.2026 20 geworden. Die
+  Architektur ist eine Datei (`ARCHITEKTUR.md`); das LUSD-Messprotokoll, die Vorlage für das
+  Blatt bei der Schule, die Liste „Datenschutz — offene Punkte" und das zweite README sind in
+  `LUSD.md`, im Pflegekonzept, im Datenschutz-Nachweis und im Haupt-README aufgegangen.
 
 ### Etappe 2: vor dem Echtstart
 
