@@ -129,12 +129,12 @@ func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 		case "schadensfaelle.storniert_von":
 			exec(`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, ist_bezahlt,
 					storniert_am, storniert_von, stornierungsgrund)
-				VALUES ($1, $2, 'Kanari-Schaden', 7.77, false, NOW(), $3, 'Kanari-Stornogrund')`, ex1, schuelerin, konto)
+				VALUES ($1, $2, 'Kanari-Schaden', 613.37, false, NOW(), $3, 'Kanari-Stornogrund')`, ex1, schuelerin, konto)
 			erwartet[quelle] = vorgang("Schadensfall storniert")
 		case "schadensersatz_bescheide.erstellt_von":
 			exec(`INSERT INTO schadensersatz_bescheide (schueler_id, mittel, kassenjahr, laufende_nr, referenznummer,
 					frist_bis, gesamtbetrag, empfaenger_snapshot, erstellt_von)
-				VALUES ($1, 'land', 2026, 1, '5830 2026 9999 0001', CURRENT_DATE + 28, 7.77,
+				VALUES ($1, 'land', 2026, 1, '5830 2026 9999 0001', CURRENT_DATE + 28, 613.37,
 					jsonb_build_object('name', 'Kanarina Eltern'), $2)`, schuelerin, konto)
 			erwartet[quelle] = vorgang("Schadensersatz-Bescheid erstellt")
 		case "inventur_sessions.gestartet_von":
@@ -193,8 +193,10 @@ func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Der Betrag hat drei Stellen vor dem Komma: Zwei Stellen und ein Bruchteil stehen auch in
+	// jeder Uhrzeit der Antwort („…:07.771").
 	for _, dritte := range []string{schuelerin, schuelerBarcode, "Kanarina", "EX-KANARI", "Kanari-Titel",
-		"Kanari-Schaden", "Kanari-Stornogrund", "5830 2026 9999", "Kanari-Grund", "Kanari-Sperrgrund", "7.77"} {
+		"Kanari-Schaden", "Kanari-Stornogrund", "5830 2026 9999", "Kanari-Grund", "Kanari-Sperrgrund", "613.37"} {
 		if strings.Contains(string(roh), dritte) {
 			t.Errorf("Beas Auskunft enthält %q — das sind Daten der betroffenen Schülerin", dritte)
 		}
