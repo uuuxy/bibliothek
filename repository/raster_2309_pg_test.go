@@ -25,7 +25,8 @@ import (
 // Die Schritte hier sind die des Codes: dieselbe Sperre auf den Schüler,
 // GetActiveLoanByCopyIDTx, ReturnLoanZumTx. Die Gegenprobe läuft dieselben Schritte mit
 // abgeschalteten Triggern (session_replication_role = replica) und kommt durch. Der Test
-// bleibt rot bis zur Entscheidung in OFFEN.md 5.22.
+// bleibt rot: Die Verklemmung ist hingenommen, die Theke meldet den Fehler, und erneutes
+// Scannen bucht. Die Abhilfe wäre der Stempel in einer eigenen Tabelle statt an der Leserzeile.
 func TestRaster_FremdrueckgabeUeberKreuzVerklemmtSich(t *testing.T) {
 	pool := pgTestPool(t)
 	for _, fall := range []struct {

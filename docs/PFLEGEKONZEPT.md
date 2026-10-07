@@ -207,6 +207,13 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   (`npx playwright install chromium`). Läuft schon eine Suite? Solange ihr Merkzettel
   `frontend/.e2e-hauptlieferant` liegt, bricht der Aufbau jeder weiteren ab
   (`e2e/global-setup.js`), auch der einer einzelnen Spec.
+- **Ein Frontend-Test ist rot, und die Meldung zeigt auf die falsche Zeile (06.10.2026).** Gibt
+  ein Haken eine Funktion zurück, ruft Vitest sie nach dem Test als Aufräumer.
+  `beforeEach(() => mock.mockReset())` gibt den Mock selbst zurück; lehnt er dann ab, kommt
+  der Fehler aus dem Aufräumer. Den Rumpf des Hakens in geschweifte Klammern setzen.
+- **svelte-check meldet „Invalid character" in einem Kommentar (25.09.2026).** Steht in einer
+  JSDoc-Zeile direkt hinter dem Namen des Parameters ein deutsches Anführungszeichen („), liest
+  der Parser es als Teil des Namens. Ein Wort davor genügt.
 - **Welche Prüfläufe zu einem Stand gehören,** zeigt `gh run list --commit <sha>`. Die Liste
   je Zweig zeigte am 05.10.2026 nach einem Push nur ältere Läufe.
 
