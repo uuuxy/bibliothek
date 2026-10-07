@@ -372,9 +372,6 @@ Vermerk.
   `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE NOT ist_ausgesondert) AS gesperrt, count(*) FILTER (WHERE ist_ausgesondert AND aussonderung_grund = 'VERLUST') AS als_verlust FROM buecher_exemplare WHERE NOT ist_ausleihbar AND zustand_notiz ILIKE '%verloren%';"`
   „gesperrt" sind Exemplare, die der Fehler noch hätte treffen können; „als_verlust" sind die,
   bei denen nachzusehen ist, ob das Buch wirklich fehlt.
-- Geräte: Eine doppelte Seriennummer meldet „Barcode ist bereits an ein anderes Gerät
-  vergeben" (`CreateGeraet` in `repository/geraete.go` liest jede Eindeutigkeits-Verletzung
-  als Barcode; am 07.10.2026 am Code gelesen, nicht nachgestellt). Kategorie C.
 - **Zugangsdatum am Testserver nachzählen** (07.10.2026). Abgangsbuch und Statistik zählen
   nur, was ein Zugangsdatum trägt (`repository.SQLWarImBestand`). Nach Migration 129 und
   ihren zwei Triggern fehlt es nur bestellten Exemplaren; lokal trifft das zu (26 von 73.785

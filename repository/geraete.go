@@ -23,6 +23,24 @@ import (
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrGeraetBarcodeVergeben = errors.New("Barcode ist bereits an ein anderes Gerät vergeben")
 
+// ErrGeraetSeriennummerVergeben meldet, dass die Seriennummer schon an einem anderen Gerät steht.
+//
+//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
+var ErrGeraetSeriennummerVergeben = errors.New("Seriennummer ist bereits an einem anderen Gerät eingetragen")
+
+// geraetEindeutigkeit übersetzt eine verletzte Eindeutigkeit in den Fehler, der das Feld
+// nennt. Die Tabelle hat zwei: Barcode und Seriennummer.
+func geraetEindeutigkeit(err error) error {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
+		return err
+	}
+	if pgErr.ConstraintName == "geraete_seriennummer_key" {
+		return ErrGeraetSeriennummerVergeben
+	}
+	return ErrGeraetBarcodeVergeben
+}
+
 // GeraetMitStatus ist eine Zeile der Geräte-Verwaltung: die Stammdaten plus der
 // aktuelle Ausleiher (nil = im Schrank).
 type GeraetMitStatus struct {
@@ -93,11 +111,7 @@ func (r *pgGeraeteRepository) CreateGeraet(ctx context.Context, modellname strin
 		RETURNING id
 	`, modellname, seriennummer, barcode, zubehoer).Scan(&id)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return "", ErrGeraetBarcodeVergeben
-		}
-		return "", err
+		return "", geraetEindeutigkeit(err)
 	}
 	return id, nil
 }
@@ -119,7 +133,7 @@ func (r *pgGeraeteRepository) UpdateGeraet(ctx context.Context, id, modellname, 
 		WHERE id = $6 AND ist_ausgesondert = false
 	`, modellname, zubehoer, zustandNotiz, seriennummer, istAusleihbar, id)
 	if err != nil {
-		return err
+		return geraetEindeutigkeit(err)
 	}
 	if tag.RowsAffected() == 0 {
 		return pgx.ErrNoRows

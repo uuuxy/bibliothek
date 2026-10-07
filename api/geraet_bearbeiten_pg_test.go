@@ -6,9 +6,12 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/repository"
+	"bibliothek/sse"
 )
 
 // Ein defektes Gerät bleibt defekt, wenn jemand nur seine Stammdaten bearbeitet.
@@ -112,5 +115,79 @@ func TestGeraetDefektKnopf_LaesstStammdatenStehen(t *testing.T) {
 	}
 	if seriennummer != "SN-0815" {
 		t.Errorf("der Defekt-Knopf hat die Seriennummer verändert: %q", seriennummer)
+	}
+}
+
+// Eine doppelte Seriennummer nennt die Seriennummer, beim Anlegen und beim Bearbeiten. Beim
+// Anlegen stand dafür „Barcode ist bereits an ein anderes Gerät vergeben", beim Bearbeiten
+// eine Störung. Der doppelte Barcode behält seine Meldung.
+func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := t.Context()
+	aufraeumenGeraete := func() { aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-SNR-%'`) }
+	aufraeumenGeraete()
+	t.Cleanup(aufraeumenGeraete)
+
+	authenticator, err := auth.NewAuthenticator(
+		"geraet-seriennummer-testgeheimnis-32-b!!", pool, time.Hour)
+	if err != nil {
+		t.Fatalf("Authenticator: %v", err)
+	}
+	var kontoID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Gerda', 'Geraet', 'geraet-seriennummer@example.org', 'admin', true)
+		RETURNING id`).Scan(&kontoID); err != nil {
+		t.Fatalf("Konto anlegen: %v", err)
+	}
+	t.Cleanup(func() { aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = 'geraet-seriennummer@example.org'`) })
+	sitzung, err := authenticator.GenerateToken(kontoID, "GERAET-1", auth.RoleAdmin, "")
+	if err != nil {
+		t.Fatalf("Sitzung: %v", err)
+	}
+	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	rufe := func(methode, pfad, rumpf string) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, mitCSRF(req))
+		return rec
+	}
+	// abgelehnt prüft den Konflikt und welches Feld die Meldung nennt.
+	abgelehnt := func(was string, rec *httptest.ResponseRecorder, nennt, nenntNicht string) {
+		t.Helper()
+		if rec.Code != http.StatusConflict {
+			t.Errorf("%s: Status %d, erwartet 409 — %s", was, rec.Code, rec.Body.String())
+			return
+		}
+		if !strings.Contains(rec.Body.String(), nennt) || strings.Contains(rec.Body.String(), nenntNicht) {
+			t.Errorf("%s: die Meldung soll %q nennen und nicht %q — %s", was, nennt, nenntNicht, rec.Body.String())
+		}
+	}
+
+	if rec := rufe(http.MethodPost, "/api/geraete",
+		`{"modellname":"Tablet A","barcode_id":"G-SNR-A","seriennummer":"SN-DOPPELT"}`); rec.Code != http.StatusCreated {
+		t.Fatalf("erstes Gerät anlegen: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	abgelehnt("zweites Gerät mit derselben Seriennummer", rufe(http.MethodPost, "/api/geraete",
+		`{"modellname":"Tablet B","barcode_id":"G-SNR-B","seriennummer":"SN-DOPPELT"}`), "Seriennummer", "Barcode")
+	abgelehnt("zweites Gerät mit demselben Barcode", rufe(http.MethodPost, "/api/geraete",
+		`{"modellname":"Tablet C","barcode_id":"G-SNR-A","seriennummer":"SN-ANDERE"}`), "Barcode", "Seriennummer")
+
+	if rec := rufe(http.MethodPost, "/api/geraete",
+		`{"modellname":"Tablet D","barcode_id":"G-SNR-D","seriennummer":"SN-FREI"}`); rec.Code != http.StatusCreated {
+		t.Fatalf("viertes Gerät anlegen: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	var idD string
+	if err := pool.QueryRow(ctx, `SELECT id::text FROM geraete WHERE barcode_id = 'G-SNR-D'`).Scan(&idD); err != nil {
+		t.Fatalf("viertes Gerät lesen: %v", err)
+	}
+	abgelehnt("Seriennummer eines anderen Geräts beim Bearbeiten", rufe(http.MethodPut, "/api/geraete/"+idD,
+		`{"modellname":"Tablet D","barcode_id":"G-SNR-D","seriennummer":"SN-DOPPELT","zubehoer":"","zustand_notiz":""}`),
+		"Seriennummer", "Barcode")
+	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-SNR-D' AND seriennummer = 'SN-FREI'`); n != 1 {
+		t.Error("das abgelehnte Bearbeiten hat die Seriennummer trotzdem geändert")
 	}
 }
