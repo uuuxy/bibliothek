@@ -120,6 +120,16 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		}
 	})
 
+	// Ohne Feld schreibt die Tür nichts; ob es das Konto gibt, sagt sie trotzdem.
+	t.Run("ein Rumpf ohne Feld an einem unbekannten Konto ist eine 404", func(t *testing.T) {
+		const unbekannt = "00000000-0000-0000-0000-000000000000"
+		rec := fkAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+unbekannt, `{}`,
+			map[string]string{"id": unbekannt})
+		if rec.Code != http.StatusNotFound {
+			t.Errorf("Status %d, erwartet 404 — %s", rec.Code, rec.Body.String())
+		}
+	})
+
 	t.Run("ein genanntes Pflichtfeld darf nicht leer sein", func(t *testing.T) {
 		vorher := lies(t)
 		for _, rumpf := range []string{`{"vorname":""}`, `{"nachname":" "}`, `{"email":""}`, `{"email":"keine-adresse"}`, `{"rolle":""}`} {
