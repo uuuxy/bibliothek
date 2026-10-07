@@ -44,3 +44,25 @@ func tilgePersonenbezugImProtokoll(tabelle string) string {
 			WHERE details ?| ` + schluessel + `
 			  AND details->>'schueler_id' = ANY($1::text[])`
 }
+
+// kontoSchluesselMitPersonenbezug sind die Schlüssel, die in einem Eintrag über ein Zugangskonto
+// (details->>'ziel_id': USER_CREATE, USER_UPDATE, SELBSTANMELDUNG) Name oder Adresse tragen.
+// Die Tilgung nimmt sie aus den Einträgen der früheren Konten eines Lesers. Der Weg dorthin ist
+// der Löscheintrag des Kontos, der den Leser nennt und dabei selbst Name und Adresse verliert
+// (konto_loeschspur.go): Blieben sie hier stehen, führte von der Kennung des getilgten Lesers
+// über die Kennung des Kontos ein Weg zu seinem Namen. Die Einträge eines bestehenden Kontos
+// bleiben wie das Konto selbst; es gehört der Anlage, die Tilgung löst nur die Verknüpfung.
+var kontoSchluesselMitPersonenbezug = []string{"vorname", "nachname", "email"}
+
+// tilgePersonenbezugFruehererKonten baut die Anweisung dazu. $1 = Leser-Kennungen als text[].
+// Die Schlüssel sind Konstanten dieser Datei, keine Eingabe.
+func tilgePersonenbezugFruehererKonten() string {
+	schluessel := "ARRAY['" + strings.Join(kontoSchluesselMitPersonenbezug, "', '") + "']::text[]"
+	return `UPDATE audit_logs
+			SET details = details - ` + schluessel + `
+			WHERE details ?| ` + schluessel + `
+			  AND details->>'ziel_id' IN (
+				SELECT datensatz_id::text FROM audit_log
+				WHERE tabelle = 'benutzer' AND aktion = 'DELETE'
+				  AND details->>'schueler_id' = ANY($1::text[]))`
+}

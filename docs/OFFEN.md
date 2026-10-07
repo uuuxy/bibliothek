@@ -513,6 +513,12 @@ beiden Protokollen (`repository/protokoll_personenbezug.go`). Sie erreicht nicht
   „forderung_steht_noch" lässt sich die Kennung aus der Forderung nachtragen;
   „forderung_geloescht" hat keinen Weg mehr zum Leser, dort fällt der Grund. Beides wäre eine
   Migration wie 147.
+- **Einträge über frühere Zugangskonten.** Seit dem 08.10.2026 nimmt die Tilgung Name und
+  Adresse auch aus Anlage, Änderung und eigener Anmeldung eines gelöschten Kontos, dessen
+  Löscheintrag den Leser nennt; für anonymisierte Leser, die noch in der Tabelle stehen, holt
+  der Nachtlauf es nach. Wer zwischen dem 29.09. und dem 08.10.2026 endgültig gelöscht wurde,
+  behält sie bis zur Audit-Aufbewahrung. Betroffen ist nur der Testserver. Erst messen:
+  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FROM audit_logs p WHERE p.details ?| ARRAY['vorname','nachname','email'] AND p.details->>'ziel_id' IN (SELECT a.datensatz_id::text FROM audit_log a WHERE a.tabelle = 'benutzer' AND a.aktion = 'DELETE' AND a.details ? 'schueler_id' AND NOT EXISTS (SELECT 1 FROM leser l WHERE l.id::text = a.details->>'schueler_id'))"`
 
 ### 5.45 Listen in einem Kasten mit eigenem Scrollen
 

@@ -17,9 +17,12 @@ func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 	erlaubt := map[string]string{
 		// Seit 31.08.2026 fährt auch der DSGVO-Cron (jobs/cron_dsgvo.go) diese Statements —
 		// über repository.SpurTilgungen, die eine Liste; er hat keine eigene Tür mehr.
-		"repository/audit_users.go":       "SpurTilgungen (DSGVO: Purge + LUSD-Anonymisierung + Cron)",
-		"jobs/cron_dsgvo_lesehistorie.go": "tilgeAusleihProtokoll (Lesehistorie-Frist)",
-		"jobs/cron_audit_retention.go":    "Aufbewahrung 24 Monate",
+		"repository/audit_users.go": "SpurTilgungen (DSGVO: Purge + LUSD-Anonymisierung + Cron)",
+		// Die Anweisungen, die SpurTilgungen aus den Schlüssellisten baut: Personenbezug neben
+		// der Kennung eines Lesers und in den Einträgen seiner früheren Zugangskonten.
+		"repository/protokoll_personenbezug.go": "Anweisungen der SpurTilgungen (Schlüssel mit Personenbezug)",
+		"jobs/cron_dsgvo_lesehistorie.go":       "tilgeAusleihProtokoll (Lesehistorie-Frist)",
+		"jobs/cron_audit_retention.go":          "Aufbewahrung 24 Monate",
 		// Zusammenführen zweier Schülerdatensätze (02.09.2026): Die Protokollspuren der
 		// aufgelösten Quelle (details->>'schueler_id', datensatz_id) werden auf das Ziel
 		// UMGESCHLÜSSELT, nicht gelöscht oder geändert — sonst verlöre die Art.-15-Auskunft

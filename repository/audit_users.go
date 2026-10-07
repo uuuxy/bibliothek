@@ -597,6 +597,14 @@ var spurTilgungen = []SpurTilgung{
 		sql:          tilgePersonenbezugImProtokoll("audit_logs"),
 	},
 	{
+		// Einträge über ein früheres Zugangskonto des Lesers (Anlage, Änderung, eigene
+		// Anmeldung) tragen das Konto als ziel_id, nicht den Leser. Name und Adresse fallen
+		// dort mit denen im Löscheintrag des Kontos (kontoSchluesselMitPersonenbezug).
+		// api/konto_eintraege_tilgung_pg_test.go.
+		Beschreibung: "audit_logs (Name und Adresse früherer Zugangskonten)",
+		sql:          tilgePersonenbezugFruehererKonten(),
+	},
+	{
 		// Die Forderung bleibt als Beleg stehen: Betrag, Datum, bezahlt oder storniert. Was
 		// dazu getippt wurde, fällt, weil es die Person oder ihre Familie nennen kann: die
 		// Beschreibung und der Grund einer Stornierung. Nur bei erledigten Fällen (ist_bezahlt

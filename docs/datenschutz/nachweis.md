@@ -213,12 +213,14 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
   trugen den Bezug zum Leser nicht und bleiben für sie unsichtbar. Die Selbstanmeldung und der
   Nachtrag einer Schul-E-Mail stehen seit dem 08.10.2026 unter dem früheren Konto; Einträge von
   davor tragen die Kennung des Kontos nicht.
-- Sechsmal gelangte ein Wert einer Person ins Protokoll, den die Anonymisierung nicht kannte
+- Siebenmal gelangte ein Wert einer Person ins Protokoll, den die Anonymisierung nicht kannte
   oder dessen Eintrag sie nicht fand; jedes Mal behoben, zuletzt am 08.10.2026 der getippte
-  Grund einer Stornierung und die Löschspur einer zusammengeführten Leserzeile. Seit dem
-  29.09.2026 prüft ein Test jede Stelle im Code, die einen Protokolleintrag mit der Kennung
-  eines Lesers baut. Offen sind Einträge von vor der jeweiligen Behebung: zu Lesern, die schon
-  gelöscht waren, und Stornierungen, die die Kennung noch nicht trugen (5.35).
+  Grund einer Stornierung, die Löschspur einer zusammengeführten Leserzeile und Name und
+  Adresse in den Einträgen über ein früheres Zugangskonto. Seit dem 29.09.2026 prüft ein Test
+  jede Stelle im Code, die einen Protokolleintrag mit der Kennung eines Lesers baut, seit dem
+  08.10.2026 auch die mit der Kennung eines Zugangskontos. Offen sind Einträge von vor der
+  jeweiligen Behebung: zu Lesern, die schon gelöscht waren, Stornierungen, die die Kennung noch
+  nicht trugen, und Einträge früherer Konten solcher Leser (5.35).
 - Anmeldungen stehen nicht im Protokoll; nach einem Missbrauch lässt sich nicht nachsehen, wann
   und von wo ein Konto angemeldet war (6.1).
 
