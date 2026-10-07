@@ -1952,7 +1952,13 @@ vierzig Terminen von selbst um.
   (`repository.BeanspruchBestellmail`): Ein zweiter Klick bekommt 409 und schickt nichts
   doppelt; scheitert der Versuch, kommt der Vermerk zurück. Liste, Detail und der erneute
   Versand lesen den Vermerk über einen Ausdruck (`repository.SQLBestellmailOffen`): Er gilt,
-  solange die Bestellung nicht bestätigt ist.
+  solange die Bestellung nicht bestätigt ist. Hat der Händler die Bestellung auf anderem Weg
+  erhalten, nimmt `DELETE /api/bestellungen/{id}/mail` den Vermerk, ohne zu senden
+  (`repository.NimmBestellmailVermerk`), und schreibt einen Eintrag ins Protokoll. Die Tür
+  gilt nur für Bestellungen ohne Bestätigungs-Link (`repository.SQLBestellungMitBestaetigung`,
+  dieselbe Bedingung wie `mit_bestaetigung` in Liste und Detail): Mit Link zeigt die
+  Oberfläche den Bestätigungsblock, und der nennte den Link nach dem Entfernen als mit der
+  Mail verschickt; dort nimmt die nachgetragene Zusage den Vermerk.
 - **Wer Post bekommt:** Klassenleitung (Mahnlisten), Händler (Bestellung), Admins
   (Bereitschafts-Wächter), Lehrkräfte (Portal-Vorgänge). **Nicht** Schüler.
 - Vorlagen mit Platzhaltern liegen in `mail_vorlagen` und sind in der Oberfläche pflegbar.
@@ -3032,6 +3038,13 @@ der das Programm eine Grenze hat, mit Beleg am Code oder Messwert, und nennt, wo
 den Anlass, bei dem gebaut würde. Tritt ein Anlass ein, kommt der Schritt in den Fahrplan von
 [OFFEN.md](OFFEN.md), und der Punkt fällt hier weg. Die Reihenfolge sagt nichts über das
 Gewicht.
+
+#### Der Vermerk „Mail nicht versendet" fällt mit der Lieferung nicht weg
+
+Den Vermerk an einer Bestellung (8.9) nehmen „Erneut senden", die Bestätigung des Händlers
+und „Auf anderem Weg bestellt". Wird die Lieferung im Wareneingang gebucht, bleibt er stehen:
+`repository.SQLBestellmailOffen` fragt nur die Bestätigung (am Code gelesen am 07.10.2026).
+Anlass zum Bauen: In der Bestellhistorie stehen gelieferte Bestellungen mit dem Hinweis.
 
 #### Eine Forderung für ein Gerät lässt sich nicht anlegen
 

@@ -146,7 +146,7 @@ func (r *pgBestelldetailRepository) ladeKopf(ctx context.Context, bestellungID s
 	err := r.db.QueryRow(ctx, `
 		SELECT id, lieferant_name, lieferant_email, kundennummer, bestelldatum,
 		       gesamtbetrag, anzahl_exemplare,
-		       bestaetigungs_token_hash IS NOT NULL,
+		       `+SQLBestellungMitBestaetigung+`,
 		       bestaetigt_am, bestaetigt_durch, etiketten_groesse,
 		       (bestaetigungs_token_hash IS NOT NULL
 		        AND (token_gueltig_bis IS NULL OR token_gueltig_bis > now())),

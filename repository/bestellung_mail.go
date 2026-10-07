@@ -20,10 +20,20 @@ import (
 // sie ein zweites Mal zu ihm. Die Bestellung muss als `b` gebunden sein.
 const SQLBestellmailOffen = `CASE WHEN b.bestaetigt_am IS NULL THEN b.mail_gescheitert_am END`
 
+// SQLBestellungMitBestaetigung sagt, ob die Bestellung mit einem Bestätigungs-Link rausging.
+// Für sie zeigt die Oberfläche den Bestätigungsblock, in dem sich die Zusage des Händlers
+// nachtragen lässt; Liste, Detail und NimmBestellmailVermerk lesen dieselbe Bedingung. Die
+// Bestellung muss als `b` gebunden sein.
+const SQLBestellungMitBestaetigung = `b.bestaetigungs_token_hash IS NOT NULL`
+
 // ErrBestellmailNichtOffen meldet: Die Bestellung trägt keinen offenen gescheiterten Versand.
 // Ihre Mail ging raus, ein anderer Arbeitsplatz sendet sie gerade erneut, sie ist bestätigt,
 // oder sie ist älter als der Vermerk.
 var ErrBestellmailNichtOffen = errors.New("für diese Bestellung ist kein gescheiterter Versand vermerkt")
+
+// ErrBestellmailMitBestaetigung meldet: Die Bestellung ging mit einem Bestätigungs-Link raus.
+// Ihren Vermerk nimmt die nachgetragene Zusage des Händlers, nicht NimmBestellmailVermerk.
+var ErrBestellmailMitBestaetigung = errors.New("die Bestellung hat einen Bestätigungsschritt")
 
 // BestellmailAuftrag ist, was der erneute Versand über die Bestellung wissen muss.
 type BestellmailAuftrag struct {
@@ -125,6 +135,37 @@ func leseBestellmailPositionen(ctx context.Context, pool db.PgxPoolIface, bestel
 		positionen = append(positionen, p)
 	}
 	return positionen, rows.Err()
+}
+
+// NimmBestellmailVermerk entfernt den Vermerk über den gescheiterten Versand, ohne zu senden:
+// Die Bibliothek hat den Händler auf anderem Weg erreicht. Nur für Bestellungen ohne
+// Bestätigungs-Link, sonst nennte der Bestätigungsblock den Link danach als mit der Mail
+// verschickt. pgx.ErrNoRows, wenn es die Bestellung nicht gibt.
+func NimmBestellmailVermerk(ctx context.Context, pool db.PgxPoolIface, bestellungID string) error {
+	tag, err := pool.Exec(ctx, `
+		UPDATE bestellungen_verlauf b
+		   SET mail_gescheitert_am = NULL
+		 WHERE b.id = $1
+		   AND `+SQLBestellmailOffen+` IS NOT NULL
+		   AND NOT (`+SQLBestellungMitBestaetigung+`)`, bestellungID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() > 0 {
+		return nil
+	}
+	// Nichts entfernt: Die Bestellung gibt es nicht, sie trägt keinen Vermerk, oder sie hat
+	// einen Bestätigungsschritt.
+	var mitBestaetigung bool
+	if err := pool.QueryRow(ctx, `
+		SELECT `+SQLBestellungMitBestaetigung+` AND `+SQLBestellmailOffen+` IS NOT NULL
+		  FROM bestellungen_verlauf b WHERE b.id = $1`, bestellungID).Scan(&mitBestaetigung); err != nil {
+		return err
+	}
+	if mitBestaetigung {
+		return ErrBestellmailMitBestaetigung
+	}
+	return ErrBestellmailNichtOffen
 }
 
 // MerkeBestellmailVersendet hält an der Bestellung die Adresse fest, an die der erneute

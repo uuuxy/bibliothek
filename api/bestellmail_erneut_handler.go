@@ -92,6 +92,55 @@ func (s *Server) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request, 
 	RespondJSON(w, http.StatusOK, map[string]any{"status": status, "message": meldung})
 }
 
+// auditBestellmailVermerkEntfernt ist die Aktion im Protokoll.
+const auditBestellmailVermerkEntfernt = "BESTELLMAIL_VERMERK_ENTFERNT"
+
+// NimmBestellmailVermerkHandler entfernt den Vermerk über den gescheiterten Versand, ohne zu
+// senden: Die Bibliothek hat den Händler auf anderem Weg erreicht, etwa am Telefon. „Erneut
+// senden" brächte die Bestellung sonst ein zweites Mal zu ihm.
+//
+// @Summary      Dismiss the failed-dispatch note of an order without sending
+// @Tags         orders
+// @Produce      json
+// @Param        id   path      string  true  "Order ID"
+// @Success      200  {object}  map[string]any
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      409  {object}  map[string]string
+// @Router       /bestellungen/{id}/mail [delete]
+func (s *Server) NimmBestellmailVermerkHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		ctx := r.Context()
+
+		err := repository.NimmBestellmailVermerk(ctx, s.DB.Pool, id)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("bestellung not found"))
+			return
+		case errors.Is(err, repository.ErrBestellmailMitBestaetigung):
+			//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
+				"Diese Bestellung ging mit einem Bestätigungs-Link raus. Hat der Händler sie auf anderem Weg erhalten, lässt sich seine Zusage in der Bestellung nachtragen."))
+			return
+		case errors.Is(err, repository.ErrBestellmailNichtOffen):
+			//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
+				"Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder der Hinweis ist schon entfernt."))
+			return
+		case err != nil:
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		s.protokolliereVerwaltung(ctx, auditBestellmailVermerkEntfernt, map[string]any{"bestellung_id": id})
+		RespondJSON(w, http.StatusOK, map[string]any{
+			"status":  "success",
+			"message": "Der Hinweis ist entfernt. Die Bestellung wurde nicht noch einmal gesendet.",
+		})
+	}
+}
+
 // baueBestellmailErneut stellt aus der gespeicherten Bestellung zusammen, was die erste Mail
 // aus dem Warenkorb bekam: Positionen, die Etiketten der Positionen mit Vorab-Barcode und,
 // wo die Bestellung einen Bestätigungsschritt hat, einen neuen Link. Der alte Link ist nicht

@@ -152,7 +152,7 @@ func (s *Server) ladeBestellhistorie(ctx context.Context, limit int, mittel stri
 	abfrage := `
 		SELECT b.id, b.lieferant_name, b.lieferant_email, b.kundennummer, b.bestelldatum,
 		       b.gesamtbetrag, b.anzahl_exemplare,
-		       b.bestaetigungs_token_hash IS NOT NULL,
+		       ` + repository.SQLBestellungMitBestaetigung + `,
 		       b.bestaetigt_am, b.etiketten_groesse, b.bestaetigt_durch,
 		       (b.bestaetigungs_token_hash IS NOT NULL
 		        AND (b.token_gueltig_bis IS NULL OR b.token_gueltig_bis > now())),

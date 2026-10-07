@@ -3,12 +3,15 @@ import { render, fireEvent, waitFor } from '@testing-library/svelte';
 
 vi.mock('../../apiFetch.js', async (original) => ({
 	.../** @type {any} */ (await original()),
-	apiPost: vi.fn()
+	apiPost: vi.fn(),
+	apiDelete: vi.fn()
 }));
 vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
+vi.mock('../../stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
 
-import { apiPost, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
+import { apiPost, apiDelete, FRIST_MAILVERSAND_MS } from '../../apiFetch.js';
 import { toastStore } from '../../stores/toastStore.svelte.js';
+import { bestaetigen } from '../../stores/bestaetigung.svelte.js';
 import BestellMailBlock from './BestellMailBlock.svelte';
 import BestellStatusBlock from './BestellStatusBlock.svelte';
 import BestellHistorieTabelle from './BestellHistorieTabelle.svelte';
@@ -74,6 +77,86 @@ describe('Bestellung: gescheiterter Versand der Bestellmail', () => {
 
 		expect(screen.getByText('Die Bestellmail ist nicht rausgegangen')).toBeTruthy();
 		expect(screen.queryByRole('button', { name: 'Erneut senden' })).toBeNull();
+	});
+
+	// Hat der Händler die Bestellung auf anderem Weg erhalten, geht der Hinweis ohne Versand.
+	describe('„Auf anderem Weg bestellt"', () => {
+		const ohneSchritt = { ...gescheitert, mit_bestaetigung: false, link_aktiv: false };
+
+		it('entfernt den Hinweis nach der Rückfrage, ohne zu senden', async () => {
+			vi.mocked(bestaetigen).mockResolvedValue(true);
+			vi.mocked(apiDelete).mockResolvedValue({ status: 'success', message: 'Hinweis entfernt.' });
+			const neuLaden = vi.fn(async () => {});
+			const screen = render(BestellMailBlock, {
+				b: ohneSchritt,
+				darfSenden: true,
+				onAktualisieren: neuLaden
+			});
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Auf anderem Weg bestellt' }));
+
+			await waitFor(() => expect(neuLaden).toHaveBeenCalledTimes(1));
+			expect(bestaetigen).toHaveBeenCalledWith(
+				expect.objectContaining({
+					titel: 'Auf anderem Weg bestellt?',
+					aktion: 'Hinweis entfernen',
+					gefaehrlich: true
+				})
+			);
+			expect(apiDelete).toHaveBeenCalledWith('/api/bestellungen/b1/mail');
+			expect(apiPost).not.toHaveBeenCalled();
+			expect(toastStore.addToast).toHaveBeenCalledWith('Hinweis entfernt.', 'success');
+		});
+
+		it('tut nichts, wenn die Rückfrage abgelehnt wird', async () => {
+			vi.mocked(bestaetigen).mockResolvedValue(false);
+			const neuLaden = vi.fn(async () => {});
+			const screen = render(BestellMailBlock, {
+				b: ohneSchritt,
+				darfSenden: true,
+				onAktualisieren: neuLaden
+			});
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Auf anderem Weg bestellt' }));
+			await waitFor(() => expect(bestaetigen).toHaveBeenCalledTimes(1));
+
+			expect(apiDelete).not.toHaveBeenCalled();
+			expect(neuLaden).not.toHaveBeenCalled();
+		});
+
+		it('lädt die Bestellung auch nach einer Abweisung neu', async () => {
+			vi.mocked(bestaetigen).mockResolvedValue(true);
+			vi.mocked(apiDelete).mockRejectedValue(new Error('kein Hinweis offen'));
+			const neuLaden = vi.fn(async () => {});
+			const screen = render(BestellMailBlock, {
+				b: ohneSchritt,
+				darfSenden: true,
+				onAktualisieren: neuLaden
+			});
+
+			await fireEvent.click(screen.getByRole('button', { name: 'Auf anderem Weg bestellt' }));
+			await waitFor(() => expect(neuLaden).toHaveBeenCalledTimes(1));
+			expect(toastStore.addToast).not.toHaveBeenCalled();
+		});
+
+		// Mit Bestätigungsschritt lehnt der Server ab; dort trägt man die Zusage nach.
+		it('fehlt bei einer Bestellung mit Bestätigungsschritt und ohne das Recht zu bestellen', () => {
+			const mitSchritt = render(BestellMailBlock, {
+				b: gescheitert,
+				darfSenden: true,
+				onAktualisieren: async () => {}
+			});
+			expect(mitSchritt.queryByRole('button', { name: 'Auf anderem Weg bestellt' })).toBeNull();
+			expect(mitSchritt.getByRole('button', { name: 'Erneut senden' })).toBeTruthy();
+			mitSchritt.unmount();
+
+			const ohneRecht = render(BestellMailBlock, {
+				b: ohneSchritt,
+				darfSenden: false,
+				onAktualisieren: async () => {}
+			});
+			expect(ohneRecht.queryByRole('button', { name: 'Auf anderem Weg bestellt' })).toBeNull();
+		});
 	});
 
 	// Der Block der Bestätigung behauptete nach einem gescheiterten Versand weiter, der Link

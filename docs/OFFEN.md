@@ -78,13 +78,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [x] Feld „Signatur" nach der Übernahme: Vorschläge, die Seite „Signaturen" und die Auswahl
   der Inventur fassen nach der Regaladresse zusammen, dem Teil vor „ / "; am Titel bleibt die
   ganze Aufschrift (entschieden und gebaut am 07.10.2026).
-- [ ] Bestellung mit dem Vermerk „Mail nicht versendet", die den Händler auf anderem Weg
-  erreicht hat (Telefon, eigene Mail): Bei einem Händler mit Bestätigungsschritt nimmt die
-  nachgetragene Bestätigung den Vermerk. Bei den übrigen bleibt er, bis jemand „Erneut senden"
-  wählt; dann geht die Bestellung noch einmal raus. Ist kein Mailserver eingerichtet, trägt
-  ihn jede Bestellung, und „Erneut senden" nimmt ihn nicht. Soll die Bestellung einen zweiten
-  Knopf bekommen („Auf anderem Weg bestellt"), der den Vermerk nach einer Rückfrage entfernt?
-  (5.5)
+- [x] Bestellung mit dem Hinweis „Mail nicht versendet", die den Händler auf anderem Weg
+  erreicht hat (Telefon, eigene Mail): „Auf anderem Weg bestellt" entfernt den Hinweis nach
+  einer Rückfrage, ohne zu senden. An einer Bestellung mit Bestätigungs-Link wird stattdessen
+  die Zusage des Händlers nachgetragen (entschieden und gebaut am 07.10.2026).
 - [x] Buchakte: Kopf und Reiter zählen den Bestand, ein bestelltes Exemplar steht im Kopf als
   „1 bestellt"; die Zahl „Exemplare" im Kopf ist entfallen (entschieden und gebaut am
   07.10.2026).
@@ -113,8 +110,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   ausgesonderten Exemplar („1 von 2 verfügbar", daneben „1 bestellt", am Reiter die 2)
 - [ ] Druck-Center: Vorschau bei einem Titel mit mehr Exemplaren, als auf einen Bogen passen
   (ein Bogen, darunter „Bogen 1 von …")
-- [ ] Bestellhistorie: Spalte „Stand". Scheitert der Versand einer Bestellmail, steht dort
-  „Mail nicht versendet" und in der Bestellung „Erneut senden"
+- [ ] Bestellhistorie: Spalte „Stand". Scheitert der Versand einer Bestellmail oder ist kein
+  Mailserver eingetragen, steht dort „Mail nicht versendet" und in der Bestellung „Erneut
+  senden"; bei einem Händler, der nicht Hauptlieferant ist, daneben „Auf anderem Weg bestellt"
 
 **Erledigen:**
 
@@ -360,23 +358,6 @@ Vermerk.
     (`handleUpdateSupplier`). Kategorie C.
   - **Einstellungen:** Jede Kategorie schickt alle ihre Felder (`speichereKategorie`).
     Kategorie C.
-- **Vermerk „Mail nicht versendet" ohne Rückweg von Hand** (gefunden am 07.10.2026 beim
-  Raster, Frage 8). Den Vermerk (`mail_gescheitert_am`) nimmt ein gelungener erneuter Versand
-  und, wo die Bestellung einen Bestätigungsschritt hat, die Bestätigung
-  (`repository.SQLBestellmailOffen`). Eine Bestellung bei einem Händler ohne Bestätigungsschritt,
-  die den Händler auf anderem Weg erreicht hat, behält ihn; „Erneut senden" brächte sie ein
-  zweites Mal zu ihm. Ist kein Mailserver eingerichtet, bekommt jede Bestellung den Vermerk,
-  und „Erneut senden" antwortet mit dem Hinweis auf die Einstellungen und lässt ihn stehen
-  (`TestBestellmail_OhneMailserverStehtEsAnDerBestellung`); ohne Bestätigungsschritt gibt es
-  dann keinen Weg, ihn zu entfernen. Auch der Wareneingang nimmt ihn nicht: Eine gelieferte
-  Bestellung nennt weiter „Der Händler hat die Bestellung nicht erhalten" (am Code gelesen,
-  nicht nachgestellt). Vorschlag: ein zweiter, leiser Knopf im Hinweisblock („Auf anderem Weg
-  bestellt"), der den Vermerk nach einer Rückfrage entfernt und einen Eintrag ins Protokoll
-  schreibt. Littera kennt den Fall so nicht: Der Fehlschlag steht dort nur im E-Mailprotokoll,
-  und eine Bestellung lässt sich ohne Mail drucken und per Post oder Fax schicken (Handbuch,
-  „Erwerb", „Drucken"). In Koha erklärt die Bibliothek mit „Close this basket" selbst, dass
-  die Bestellung beim Händler ist („to indicate that this basket is complete and has been sent
-  to the vendor"); die Mail ist dort ein eigener Knopf (Handbuch, „Acquisitions").
 - **Status-Editor, Altbestand:** Bis zum 07.10.2026 öffnete der Editor ein gesperrtes
   Exemplar als „Verloren", wenn die Notiz das Wort enthielt, und das Speichern sonderte es
   mit dem Grund VERLUST aus. Ob das am Testserver Exemplare getroffen hat, zeigt (lesend):

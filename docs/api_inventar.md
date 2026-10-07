@@ -15,7 +15,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (228)
+## Alle registrierten Routen (229)
 
 - `/`
 - `/api/admin`
@@ -29,6 +29,7 @@
 - `/uploads/`
 - `DELETE /api/admin/`
 - `DELETE /api/benutzer/{id}`
+- `DELETE /api/bestellungen/{id}/mail`
 - `DELETE /api/books`
 - `DELETE /api/buecher/exemplare/{id}`
 - `DELETE /api/buecher/titel/{id}`
