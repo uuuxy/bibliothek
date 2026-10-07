@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu } from './helpers.js';
 
 // Signaturen: Regal suchen (Präfix!) und das Vokabular pflegen, aus dem das
 // Buchformular die Signatur vorschlägt.
@@ -54,5 +54,56 @@ test('Signaturen: Regal per Präfix finden, Sachgruppe anlegen', async ({ page }
             DELETE FROM buecher_titel WHERE titel LIKE 'E2E-Sig-%-${suffix}';
             DELETE FROM systematik_kategorien WHERE kuerzel = '${kuerzel}';
         `);
+	}
+});
+
+// Bei 1280 px Fensterbreite stehen Liste und Regal nebeneinander, und alle Spalten des Regals
+// bleiben im Bild. Die rechte Spalte des Rasters hatte keine untere Grenze: Lange Titel
+// machten die Tabelle breiter als ihren Platz, „verliehen" rutschte hinter den Fensterrand.
+test('Signaturen bei 1280 px: das Regal passt neben die Liste', async ({ page }) => {
+	const suffix = uniqueSuffix();
+	const basis = `E2E REG ${suffix}`;
+	try {
+		seedSQL(`
+            INSERT INTO buecher_titel (titel, autor, signatur) VALUES
+                ('E2E-Regal-${suffix} Wirtschaftsgeographie und Sozialwissenschaften für die gymnasiale Oberstufe, Einführungsphase',
+                 'Schmidt-Rottluff, Karl-Heinz; Müller-Lüdenscheidt, Annegret', '${basis}'),
+                ('E2E-Regal-${suffix} Naturwissenschaften im Zusammenhang: Arbeitsbuch mit Lösungen',
+                 'Herausgebergemeinschaft der Fachkonferenz', '${basis} 2');
+        `);
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await uiLogin(page);
+		await gehZu(page, '/signaturen');
+		await page.getByLabel('Signatur suchen').fill(basis);
+		await page.getByRole('button', { name: basis, exact: false }).first().click();
+		await expect(
+			page.getByText(`E2E-Regal-${suffix} Naturwissenschaften`, { exact: false })
+		).toBeVisible();
+
+		const mass = await page.evaluate(() => {
+			const tabelle = [...document.querySelectorAll('table')].find((t) =>
+				t.querySelector('caption')?.textContent?.includes('Signaturen im Regal')
+			);
+			const letzte = tabelle?.querySelector('thead th:last-child');
+			return {
+				fenster: window.innerWidth,
+				seiteBreit: document.documentElement.scrollWidth,
+				verliehenEndet: letzte ? Math.round(letzte.getBoundingClientRect().right) : null
+			};
+		});
+		expect(
+			mass.verliehenEndet,
+			'Die Tabelle „Signaturen im Regal" wurde nicht gefunden'
+		).not.toBeNull();
+		expect(
+			mass.verliehenEndet,
+			`Die Spalte „verliehen" endet bei ${mass.verliehenEndet} px, das Fenster bei ${mass.fenster} px.`
+		).toBeLessThanOrEqual(mass.fenster);
+		expect(
+			mass.seiteBreit,
+			`Die Seite ist ${mass.seiteBreit} px breit und bekommt eine waagerechte Scrollleiste.`
+		).toBeLessThanOrEqual(mass.fenster);
+	} finally {
+		seedSQL(`DELETE FROM buecher_titel WHERE titel LIKE 'E2E-Regal-${suffix} %';`);
 	}
 });

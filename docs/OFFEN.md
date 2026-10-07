@@ -540,10 +540,6 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   als Auswahlliste; darüber stehen ein Kästchen für alle und ein Feld für die Nummer. Offen:
   Jede Zeile nennt „(Neuwertig)", wenn das Exemplar keine Zustandsnotiz trägt, auch ein
   bestelltes.
-- **Signaturen bei 1280 px:** Liste und Regal sind zusammen 1.010 px breit, Platz sind 960 px
-  (gemessen am 06.10.2026). Die Spalte „verliehen" endet 18 px hinter dem Fensterrand, die
-  Seite bekommt eine waagerechte Scrollleiste. Die rechte Spalte des Rasters ist `1fr` ohne
-  untere Grenze 0 (`lg:grid-cols-[20rem_1fr]`).
 - **Die Exemplare in „Buch bearbeiten" bei Mengen wie an der Schule** (am Testserver lesend
   gezählt am 02.10.2026): 2.253 Titel haben Exemplare, mindestens die Hälfte davon eines, 90 %
   höchstens 58; über 100 Exemplare haben 68 Titel, der größte 383. Lokal mit 403 Exemplaren

@@ -55,7 +55,7 @@
 	</div>
 
 	<div
-		class="grid divide-y divide-outline-variant lg:grid-cols-[20rem_1fr] lg:divide-x lg:divide-y-0"
+		class="grid divide-y divide-outline-variant lg:grid-cols-[20rem_minmax(0,1fr)] lg:divide-x lg:divide-y-0"
 	>
 		<section class="space-y-3 pb-6 lg:pr-6 lg:pb-0">
 			{#if laedt}

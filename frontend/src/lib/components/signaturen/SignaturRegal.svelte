@@ -97,7 +97,10 @@
 						     mit der Maus erreichbar. -->
 						<tr>
 							<td class="font-mono whitespace-nowrap">{buch.signatur}</td>
-							<td>
+							<!-- Titel und Autor brechen in Silben um, eine Zeichenfolge ohne Trennstelle
+							     notfalls im Wort: So passt die Tabelle neben die Liste, ohne dass eine
+							     Spalte aus dem Bild rutscht. -->
+							<td class="wrap-anywhere hyphens-auto">
 								<button
 									type="button"
 									onclick={() => oeffneBuch(buch.titel_id)}
@@ -106,7 +109,7 @@
 									{buch.titel}
 								</button>
 							</td>
-							<td>{buch.autor || '—'}</td>
+							<td class="wrap-anywhere hyphens-auto">{buch.autor || '—'}</td>
 							<td class="text-right">{buch.exemplare}</td>
 							<td class="text-right">{buch.verliehen}</td>
 						</tr>
