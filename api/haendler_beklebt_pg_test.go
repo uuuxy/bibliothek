@@ -123,8 +123,7 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 // Die Etiketten im Lieferanten-Mailanhang entstehen aus ProcessOrder, NICHT aus dem
 // Druck-Center-Pfad (queryLabelItems) — die Signatur muss deshalb hier ankommen, über
 // die echte Kette GetTitleByIDTx → BarcodeLabelDetail. Ein Unit-Test, der Signatur
-// direkt ans Struct schreibt, beweist das nicht (siehe Memory
-// verify-audit-fixes-over-live-path: genau so blieb sie im Mailanhang unbemerkt leer).
+// direkt ans Struct schreibt, beweist das nicht: Genau so blieb sie im Mailanhang leer.
 func TestProcessOrder_LabelsTragenSignatur(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)

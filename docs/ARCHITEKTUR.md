@@ -1483,7 +1483,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 30.09.2026
+Stand: 07.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -1954,6 +1954,47 @@ Skip-Gründe druckt und ein Zähler auf der Ausgabe immer auf 0 stünde.
 Die Landkarte der Ratschen in [sweeps.md](sweeps.md) nennt zu **jeder** Ratsche auch,
 was sie systembedingt **nicht** sieht. Das ist der Teil, den man nur einmal aufschreibt,
 wenn man ihn einmal gebraucht hat.
+
+**Handgriffe beim Prüfen.** Was die Tabelle oben behauptet, wird so nachgewiesen:
+
+- **Tests an der Datenbank am Arbeitsplatz.** Läuft der lokale Stack, nimmt der Hook vor dem
+  Push dessen Postgres (Port 5434, Datenbank `bibliothek_test`, Passwort aus `.env`) und fährt
+  die `*_pg_test.go` mit (`scripts/git-hooks/pre-push`). Von Hand: `TEST_DATABASE_URL` auf
+  dieselbe Datenbank setzen oder den Wegwerf-Container aus [SCRIPTS.md](SCRIPTS.md) §7 nehmen.
+  Die Harness (`internal/pgtest`) lädt `schema.sql`, nicht die Migrationen, hält eine Sperre
+  über alle Pakete und weigert sich bei einem Datenbanknamen ohne „test".
+- **Eine Tür wird über den Router geprüft,** mit Sitzung und CSRF, nicht am Handler allein: Was
+  die Registrierung davorhängt (Recht, `ValidateUUIDParamsMiddleware`), gehört zum Verhalten.
+  Muster: `baueKanarienWelt`, `mitCSRF` und `setzeGenauEinRecht` in
+  `api/pii_antwort_gate_pg_test.go`, `registrierteRouten` in `api/pii_matrix_test.go`.
+- **Gegenprobe am Rückbau.** Ein neuer Test zählt, wenn er am alten Code rot war. Als Beweis
+  gilt die erwartete Meldung des Tests, nicht der Exit-Code: Ein Rückbau, der nicht übersetzt,
+  endet auch mit 1. Ohne den Arbeitsstand anzufassen geht es in Go mit
+  `go test -overlay probe.json -run <Test> ./api/`; die Datei ordnet dem Pfad der echten Datei
+  eine geänderte Kopie zu (`{"Replace": {"/…/api/x.go": "/tmp/x_alt.go"}}`), danach ist
+  `git status` leer. Ratschen, die Go-Quelltext oder SQL-Dateien zur Laufzeit lesen, sehen das
+  Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren. Bleibt eine Probe grün,
+  misst der Test den Fall nicht.
+- **Browser-Tests warten auf einen stabilen Messwert.** `networkidle` tritt nie ein, weil die
+  Live-Leitung offen bleibt; gewartet wird auf zwei gleiche Messungen hintereinander
+  (`warteAufStabileFelder` in `frontend/e2e/control-hoehen.spec.js`). `gehZu` in
+  `frontend/e2e/helpers.js` ruft eine Seite auf und belegt, dass die Anwendung dort geblieben
+  ist: Einen unbekannten Pfad schiebt sie auf die Theke, und ein Gate mäße die Theke zweimal.
+- **Scanfelder werden getippt, nicht gefüllt.** Ein Handscanner tippt in das Element, das den
+  Fokus hat; `locator.fill()` und `locator.click()` setzen den Fokus selbst und verdecken, dass
+  er fehlt. Vorlage: `frontend/e2e/kiosk-scannerfokus.spec.js` (`page.keyboard.type`, Enter,
+  Nachweis an der Datenbank).
+- **Eine Druckseite wird in der Druckansicht gemessen.** `window.print` durch eine Attrappe
+  ersetzen, den echten Auslöser klicken, `page.emulateMedia({ media: 'print' })`, dann in der
+  Seite messen (`frontend/e2e/ausweis-druckseite.spec.js`). Am DOM allein fällt nicht auf, wenn
+  ein Bauteil des Seitengerüsts mitdruckt ([sweeps.md](sweeps.md), „Bedienung druckt mit").
+- **Ein Umbau, der die Oberfläche nicht ändern soll,** wird am Bau belegt: `npx vite build
+  --outDir <Ordner>` vor und nach dem Umbau, dann die Prüfsummen der Dateien vergleichen. Zwei
+  Bauten desselben Stands sind gleich (15 Dateien, nachgestellt am 07.10.2026).
+- **Verhalten hinter dem Proxy** lässt sich am Arbeitsplatz nachstellen: ein Caddy-Container
+  mit dem `reverse_proxy`-Block aus `update_caddy.sh` vor dem lokalen Stack
+  (`host.docker.internal:8084`, `auto_https off`). Nachgestellt am 07.10.2026; TLS und HTTP/2
+  des Servers bildet das nicht nach.
 
 ---
 

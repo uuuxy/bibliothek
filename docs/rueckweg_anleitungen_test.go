@@ -57,7 +57,7 @@ func TestRueckweg_RollbackFuehrtZurueck(t *testing.T) {
 	}
 	// Nur was GEDRUCKT wird zählt — die echo-Zeilen. Der erklärende Kommentar im Block
 	// nennt das alte `git stash` beim Namen und hätte das Gate sonst selbst getroffen
-	// (Memory „Lügende Ratsche durch Kommentar"; beim Bau dieses Gates genau so passiert).
+	// (Bugklasse „Lügende Ratsche", docs/sweeps.md; beim Bau dieses Gates genau so passiert).
 	var gedruckt []string
 	for _, zeile := range strings.Split(skript[start:start+ende], "\n") {
 		if strings.Contains(zeile, "echo") {

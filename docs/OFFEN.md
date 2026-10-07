@@ -1316,22 +1316,21 @@ Buch eine Zeile; einmal ausdrucken und ansehen.
      Anhang des Entwurfs. Vorschlag: die zwei Schlüssel in einem Passwortmanager
      und als Papier im verschlossenen Umschlag im Tresor der Schule, nie per E-Mail.
   2. **Die Arbeitsnotizen der Entwicklung** (am 07.10.2026 256 Einträge, 14.322 Zeilen) entlang
-     der Gliederung des Entwurfs ins Repository — bei mir. Nicht ins Repository gehören die 82
-     Einträge zur Arbeitsweise und alles, was Zugänge, Orte oder Namen nennt. Jede Aussage wird
-     vor dem Eintragen am heutigen Stand geprüft und jede Zahl neu gezählt: Von den Notizen zu
-     Abschnitt 5 waren zwei überholt, von denen zu Littera und LUSD drei. Eingetragen am
-     07.10.2026: Abschnitt 5, „Fälle, die vorkamen"; fünfzehn Fehlerarten im Register von
-     [sweeps.md](sweeps.md), darunter die Fallen an Postgres, pgx und Tailwind; die Einträge zu
-     Littera und LUSD in [littera_schema_befund.md](littera_schema_befund.md),
-     [LUSD.md](LUSD.md) und [SCRIPTS.md](SCRIPTS.md) 1b. Die Prüfungen fanden dabei etwas am
-     Programm: den Abgleich der Buchnummern (behoben) und zwei Punkte der Übernahme, die
-     Signaturen und die Sperren (7.2).
+     der Gliederung des Entwurfs ins Repository — bei mir. Draußen bleibt, was Zugänge, Orte
+     oder Namen nennt; von den 82 Einträgen zur Arbeitsweise kommt nur der Handgriff hinein,
+     nicht die Anweisung. Jede Aussage wird vor dem Eintragen am heutigen Stand geprüft und
+     jede Zahl neu gezählt: Von den Notizen zu Abschnitt 5 waren zwei überholt, von denen zu
+     Littera und LUSD drei. Eingetragen am 07.10.2026: Abschnitt 5, „Fälle, die vorkamen";
+     fünfzehn Fehlerarten im Register von [sweeps.md](sweeps.md), darunter die Fallen an
+     Postgres, pgx und Tailwind; die Einträge zu Littera und LUSD in
+     [littera_schema_befund.md](littera_schema_befund.md), [LUSD.md](LUSD.md) und
+     [SCRIPTS.md](SCRIPTS.md) 1b; die Handgriffe beim Prüfen in
+     [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14. Kein Dokument und kein Kommentar im Code verweist
+     mehr auf eine Notiz. Die Prüfungen fanden dabei etwas am Programm: den Abgleich der
+     Buchnummern (behoben) und zwei Punkte der Übernahme, die Signaturen und die Sperren (7.2).
      Es stehen aus, je als eigener Schritt: die Einträge zu Entscheidungen gegen
-     [FACHKONZEPT.md](FACHKONZEPT.md) und [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9; die zu
-     den Prüfwegen (Tests an der Datenbank, im Browser, Gegenprobe am Rückbau) gegen
-     [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14 und [SCRIPTS.md](SCRIPTS.md) §7, dazu die zwölf
-     Stellen in [sweeps.md](sweeps.md) und im Code, die auf eine Notiz verweisen; zuletzt ein
-     Durchgang über die 93 Einträge, die in keinem dieser Schritte lagen.
+     [FACHKONZEPT.md](FACHKONZEPT.md) und [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9; zuletzt
+     ein Durchgang über die 93 Einträge, die in keinem dieser Schritte lagen.
   3. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
      mit dem Dokument.
 

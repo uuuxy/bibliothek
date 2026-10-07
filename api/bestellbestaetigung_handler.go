@@ -35,7 +35,7 @@ type BestaetigenRequest struct {
 //
 // COALESCE gegen lieferant_id IS NULL (ON DELETE SET NULL, Migration 037): Eine Bestellung
 // überlebt den gelöschten Lieferanten als Beleg, ein NULL-Scan in bool würde das sonst mit
-// einem 500 abbrechen (siehe Memory NULL-Scan-Bugklasse).
+// einem 500 abbrechen (Bugklasse NULL-Scan, docs/sweeps.md).
 func (s *Server) bestellungImBestaetigungsweg(ctx context.Context, id string) (bool, error) {
 	var ok bool
 	err := s.DB.Pool.QueryRow(ctx, `
