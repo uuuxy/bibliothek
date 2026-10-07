@@ -132,6 +132,58 @@ func TestAbgangsbuch_ZurueckgeholtesStehtNichtDrin(t *testing.T) {
 	}
 }
 
+// Ein Abgang ist nur, was im Bestand war. Ein bestelltes Exemplar, das nie eintraf, steht
+// nicht im Zugangsbuch; wird es in der Buchakte gelöscht oder im Status-Editor ausgesondert,
+// gehört es auch nicht ins Abgangsbuch.
+func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	auditRepo := repository.NewAuditRepository(pool)
+	bearbeiter := seedPortalLehrkraft(t, pool, "abgang-zulauf@test.invalid")
+	titelID := titelMitSignatur(t, pool, "Nie geliefert", "Nie 1", 0)
+
+	geloescht := zulaufExemplar(t, pool, titelID, "AB-ZULAUF-LOESCHEN")
+	if err := auditRepo.DeleteCopy(ctx, geloescht, bearbeiter); err != nil {
+		t.Fatalf("bestelltes Exemplar löschen: %v", err)
+	}
+	ausgesondert := zulaufExemplar(t, pool, titelID, "AB-ZULAUF-STATUS")
+	if err := repository.NewBookRepository(pool).UpdateCopyStatus(ctx, ausgesondert, false, true, "", nil); err != nil {
+		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
+	}
+	// Gegenprobe: Dieselbe Tür an einem Exemplar aus dem Bestand ist ein Abgang.
+	imBestand := exemplar(t, pool, titelID, "AB-BESTAND", true, "")
+	if err := auditRepo.DeleteCopy(ctx, imBestand, bearbeiter); err != nil {
+		t.Fatalf("Exemplar aus dem Bestand löschen: %v", err)
+	}
+
+	von, bis := schulzeit.Halbjahr(schulzeit.Jetzt())
+	buch, err := repository.LadeAbgangsbuch(ctx, pool, von, bis)
+	if err != nil {
+		t.Fatalf("Abgangsbuch laden: %v", err)
+	}
+	var barcodes []string
+	for _, z := range buch.Zeilen {
+		barcodes = append(barcodes, z.Barcode)
+	}
+	if len(barcodes) != 1 || barcodes[0] != "AB-BESTAND" {
+		t.Errorf("Zeilen: %v — erwartet allein AB-BESTAND, die zwei anderen waren nie im Bestand", barcodes)
+	}
+
+	// Dieselbe Grenze gilt für die Zahl unter der Liste.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET ausgesondert_am = NULL WHERE id = ANY($1)`,
+		[]string{geloescht, imBestand}); err != nil {
+		t.Fatalf("Datum leeren: %v", err)
+	}
+	buch, err = repository.LadeAbgangsbuch(ctx, pool, von, bis)
+	if err != nil {
+		t.Fatalf("Abgangsbuch laden: %v", err)
+	}
+	if buch.OhneZeitpunkt != 1 {
+		t.Errorf("Abgänge ohne Zeitpunkt: %d, erwartet 1 — das nie eingetroffene zählt nicht mit", buch.OhneZeitpunkt)
+	}
+}
+
 // Das Blatt selbst: zwei Abschnitte mit eigener Stückzahl, und der Hinweis auf die
 // Abgänge ohne Zeitpunkt. Gelesen wird der Inhaltsstrom des fertigen PDFs — im Struct
 // stand schon manches, was nie gedruckt wurde.

@@ -85,6 +85,11 @@ type Abgangsbuch struct {
 	AusKatalogGeloescht int `json:"aus_katalog_geloescht"`
 }
 
+// sqlIstAbgang ist die Grenze beider Abfragen: ausgesondert und vorher im Bestand gewesen.
+// Ein bestelltes Exemplar, das nie eintraf und ausgebucht wurde, trägt kein Zugangsdatum
+// (Migration 129) und steht damit in keinem der beiden Bücher.
+const sqlIstAbgang = `e.ist_ausgesondert = true AND e.zugang_am IS NOT NULL`
+
 // LadeAbgangsbuch liest die Abgänge eines Zeitraums. `von` und `bis` sind Kalendertage der
 // Schule, beide EINSCHLIESSLICH — der 15.9. gehört noch in das Halbjahr, das an ihm endet.
 //
@@ -107,7 +112,7 @@ func LadeAbgangsbuch(ctx context.Context, q DBQueryer, von, bis time.Time) (Abga
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		`+ExemplarTopfJoin+`
-		WHERE e.ist_ausgesondert = true
+		WHERE `+sqlIstAbgang+`
 		  AND e.ausgesondert_am >= $1 AND e.ausgesondert_am < $2
 		-- Spalte 6 ist der Topf: 'land' vor 'schultraeger', die Reihenfolge des Ausdrucks.
 		ORDER BY 6, e.ausgesondert_am, t.titel, e.barcode_id
@@ -131,8 +136,8 @@ func LadeAbgangsbuch(ctx context.Context, q DBQueryer, von, bis time.Time) (Abga
 	}
 
 	if err := q.QueryRow(ctx, `
-		SELECT count(*) FROM buecher_exemplare
-		WHERE ist_ausgesondert = true AND ausgesondert_am IS NULL
+		SELECT count(*) FROM buecher_exemplare e
+		WHERE `+sqlIstAbgang+` AND e.ausgesondert_am IS NULL
 	`).Scan(&buch.OhneZeitpunkt); err != nil {
 		return buch, err
 	}

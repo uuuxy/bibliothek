@@ -644,7 +644,9 @@ jeweils mit eigener Stückzahl.
 
 Ein bestelltes Buch erscheint im Zugangsbuch erst, wenn Sie es unter _Bestellungen →
 Wareneingang_ eingebucht haben — mit dem Tag der Lieferung, nicht dem der Bestellung.
-Was noch im Zulauf steht, gehört nicht in den Nachweis: Es liegt noch beim Händler.
+Was noch im Zulauf steht, gehört nicht in den Nachweis: Es liegt noch beim Händler. Ein
+bestelltes Buch, das nie geliefert wurde und das Sie in der Buchakte löschen, steht in keinem
+der beiden Bücher.
 
 **Was nicht auf dem Blatt steht, steht ausdrücklich darunter:** Exemplare, die vor der
 Einführung der Bestandsbücher ausgesondert wurden, tragen kein Abgangsdatum — ihre Zahl
