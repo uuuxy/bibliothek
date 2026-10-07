@@ -270,7 +270,8 @@ Was die Probe tut, in dieser Reihenfolge:
    Stellenzahl der Exemplarnummer (aus Litteras Spalte `Barcode`, unabhängig vom Code der
    Übernahme gelesen), Ausweis, Ausleihe und Rückgabe, Rückgabe eines in Littera verliehenen
    Buchs, Buchliste für die Theke ohne Netz, Etikett-Nachdruck, Mahnwesen mit den Mahnbriefen
-   aller Klassen, Leserdatei, Katalog. Ausleihe und Rückgaben werden an der Datenbank belegt.
+   aller Klassen (über „Mahnbriefe drucken", das die Mahnung dabei zählt), Leserdatei, Katalog.
+   Ausleihe und Rückgaben werden an der Datenbank belegt.
 7. **Nachtsicherung** mit dem Code des Jobs (`nachtsicherung.go`, ohne S3 und Mail) und
    **Wiederherstellung** nach [resilience_and_recovery.md](resilience_and_recovery.md) 2a in
    eine Wegwerf-Datenbank: Einspielen mit `ON_ERROR_STOP`, Zeilen je Tabelle gegen den Dump

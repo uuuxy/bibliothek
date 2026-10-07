@@ -122,9 +122,11 @@ code, d, ms = req("GET", "/api/mahnwesen")
 klassen = (d or {}).get("klassen") or [] if isinstance(d, dict) else []
 schueler = sum(len(k.get("schueler") or []) for k in klassen)
 pruefe(code == 200 and klassen, f"Mahnwesen: HTTP {code}, {len(klassen)} Klassen, {schueler} Schüler, {ms} ms")
+# Die Tür der Oberfläche („Mahnbriefe drucken"): Sie nimmt die Ausleihen und zählt die Mahnung.
 ohne_pdf = 0
 for k in klassen:
-    c, p, _ = req("GET", "/api/print/mahnung/klasse/" + urllib.parse.quote(k["klasse"]), roh=True)
+    ausleihen = [m["ausleihe_id"] for s in k.get("schueler") or [] for m in s.get("medien") or []]
+    c, p, _ = req("POST", "/api/admin/mahnungen/bulk-print", {"ausleih_ids": ausleihen}, roh=True)
     ohne_pdf += c != 200 or not (p or b"").startswith(b"%PDF-")
 pruefe(ohne_pdf == 0, f"Mahnbriefe: {len(klassen) - ohne_pdf} von {len(klassen)} Klassen als PDF")
 erg["mahnwesen"] = {"klassen": len(klassen), "schueler": schueler}
