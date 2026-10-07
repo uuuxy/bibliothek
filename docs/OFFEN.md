@@ -116,31 +116,32 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 ### Später: kleine Fehler und Aufräumarbeit
 
-Ohne feste Reihenfolge, gebündelt. Die Einzelheiten stehen unter der Nummer; was erledigt ist,
-wird dort gelöscht.
+Ohne feste Reihenfolge. Jede Zeile bündelt, was unter ihrer Nummer in den Einzelheiten steht.
+Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wird sie, wenn unter
+der Nummer nichts mehr dazu offen ist.
 
-- **Jahrgang am Titel (5.5):** „Klasse" und „von … bis" werden eine Angabe, „unbekannt" eine
+- [ ] **Jahrgang am Titel (5.5):** „Klasse" und „von … bis" werden eine Angabe, „unbekannt" eine
   eigene (entschieden am 24.09.2026). Davor: je Titel festlegen, welche Spanne gilt.
-- **Buchakte (5.5):** „Exemplar löschen" an einem bestellten Exemplar schreibt einen Abgang ohne
+- [ ] **Buchakte (5.5):** „Exemplar löschen" an einem bestellten Exemplar schreibt einen Abgang ohne
   Zugang; ausgesonderte und bestellte Exemplare heißen dort „Gesperrt".
-- **Druck-Center (5.5, 5.45):** Ein Ladefehler steht als „kein Exemplar" da, die Vorschau zeigt
+- [ ] **Druck-Center (5.5, 5.45):** Ein Ladefehler steht als „kein Exemplar" da, die Vorschau zeigt
   immer denselben Bogen, und bei vielen Exemplaren wird die Seite sehr lang.
-- **Überläufe (5.45):** Bestellwesen 40 px, Signaturen bei 1280 px, ein langer Name in der
+- [ ] **Überläufe (5.45):** Bestellwesen 40 px, Signaturen bei 1280 px, ein langer Name in der
   Leserakte.
-- **Auskunft (5.19):** Zwei Einträge über die Anlage eines Kontos fehlen, sobald das Konto
+- [ ] **Auskunft (5.19):** Zwei Einträge über die Anlage eines Kontos fehlen, sobald das Konto
   gelöscht ist; zu klären, welche Rohdaten aufs Blatt gehören.
-- **Protokoll und Tilgung (5.35):** Einträge, die einen Leser nur über seine Forderung meinen;
+- [ ] **Protokoll und Tilgung (5.35):** Einträge, die einen Leser nur über seine Forderung meinen;
   die Frist für die Löschspur von Forderung und Vormerkung; am Testserver alte Einträge zu schon
   gelöschten Lesern.
-- **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
-- **Zwei Helfer (5.5):** Beträge und Fehlertexte schreiben 27 Stellen selbst.
-- **Masken, die ihren ganzen Stand zurückschicken (5.5):** Benutzer, Gerät, Lieferant und die
+- [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
+- [ ] **Zwei Helfer (5.5):** Beträge und Fehlertexte schreiben 27 Stellen selbst.
+- [ ] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Benutzer, Gerät, Lieferant und die
   Kategorien der Einstellungen; am Titel und am Leser ist es behoben.
-- **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es
+- [ ] **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es
   danach nirgends an der Bestellung.
-- **Spur im Protokoll (5.57):** je Tür festlegen, ob sie einen Eintrag schreibt; ohne Eintrag
+- [ ] **Spur im Protokoll (5.57):** je Tür festlegen, ob sie einen Eintrag schreibt; ohne Eintrag
   sind die Zuordnung der Klassenleitungen, die Mail-Vorlagen und die Lieferanten.
-- **Beim Umstellen der Farben aufgefallen (5.21):** In der Inventur zeigt ein unbekannter
+- [ ] **Beim Umstellen der Farben aufgefallen (5.21):** In der Inventur zeigt ein unbekannter
   Barcode einen technischen Fehlertext; die Titelliste öffnet einen Titel nur mit der Maus;
   englische Wörter in der Oberfläche; eine überfällige Ausleihe ist in der Buchakte nur an der
   Farbe zu erkennen; in der Bestellhistorie die Spalte „Lieferant" im Browser nachmessen.
