@@ -151,7 +151,7 @@ type exemplarSnapshot struct {
 // „nie gesehen" statt „gelöscht am …".
 func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exemplarSnapshot, error) {
 	rows, err := tx.Query(ctx, `
-		SELECT e.id, e.barcode_id, t.titel, e.zugang_am IS NOT NULL
+		SELECT e.id, e.barcode_id, t.titel, `+repository.SQLWarImBestand+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.titel_id = ANY($1::uuid[])

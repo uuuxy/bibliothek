@@ -174,7 +174,7 @@ func pruefeKeineAktivenAusleihen(ctx context.Context, tx pgx.Tx, titleID string)
 func leseTitelExemplare(ctx context.Context, tx pgx.Tx, titleID string) ([]titelExemplar, error) {
 	var exemplare []titelExemplar
 	exRows, err := tx.Query(ctx,
-		`SELECT id::text, barcode_id, zugang_am IS NOT NULL FROM buecher_exemplare WHERE titel_id = $1`, titleID)
+		`SELECT e.id::text, e.barcode_id, `+SQLWarImBestand+` FROM buecher_exemplare e WHERE e.titel_id = $1`, titleID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to snapshot copies for audit: %w", err)
 	}

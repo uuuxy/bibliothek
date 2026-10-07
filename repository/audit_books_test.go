@@ -88,7 +88,7 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"})) // keine offenen Ausleihen
 	// Barcode-Snapshots der Exemplare vor den DELETEs — die Tresen-Auskunft findet
 	// gelöschte Exemplare nur über diese Spur (Befund 01.09.2026).
-	mock.ExpectQuery("FROM buecher_exemplare WHERE titel_id").
+	mock.ExpectQuery("FROM buecher_exemplare e WHERE e.titel_id").
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "war_im_bestand"}).
 			AddRow("ex-1", "B-00001", true))

@@ -88,7 +88,7 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 	}
 
 	rows, err := r.db.Query(ctx, `
-		SELECT e.id, e.barcode_id, t.titel, e.zugang_am IS NOT NULL
+		SELECT e.id, e.barcode_id, t.titel, `+SQLWarImBestand+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE e.id = ANY($1) AND e.ist_ausgesondert = true AND e.aussonderung_grund = 'VERLUST'
