@@ -295,6 +295,16 @@ schneiden Prüfsummen, Ziffernfolgen und Runen, keinen Anzeigetext.
 | **Inhalt wächst, Recht bleibt** | Eine Route gibt eine neue Art von Daten aus und behält ihr altes Recht. Wer das Recht hält — nach der Vorgabe, als Leitung, durch Vergabe —, sieht jetzt mehr, als bei der Vergabe gemeint war. Route und Menü fragen dasselbe Recht, kein Gate wird rot | je Fall ein Test mit einer Rolle ohne das zweite Recht | 28.09.2026 (`afb481de`): Die Auskunft über einen Leser mit Zugangskonto nannte Konto und Kontoereignisse und lag hinter `manage_students_admin`; dieselben Daten zeigt das Programm sonst nur mit `manage_users`. Seither verlangt der Handler das zweite Recht, wenn der Leser ein Konto hat (`dsgvoKontoRecht` in `api/dsgvo_auskunft.go`) |
 | **Sortierung hinter der Kappung** | Eine Liste ist am Server begrenzt, sortiert oder gefiltert wird im Browser: Geordnet werden die ersten N Zeilen der alten Reihenfolge, nicht die ersten N der gewählten Spalte | `frontend/e2e/leserdatei-sortierung.spec.js` (misst am Draht, dass die Sortierung mitgeht) | 17.09.2026: Die Leserdatei sortiert am Server (`repository.SchuelerSortierung`, eine geschlossene Menge von Spalten; ein unbekannter Wert ist 400, keine stille Vorgabe; zweiter Schlüssel ist immer der Name) |
 
+### Schreibweise neben ihrem Helfer, 07.10.2026 — eine Form mit Ratsche
+
+Anlass: OFFEN 5.5, „Zwei Helfer". Über den Bestand gezählt: jede Stelle, die einen Betrag in
+Euro, den Text eines gefangenen Fehlers oder die Regel „überfällig" selbst schreibt, obwohl es
+dafür einen Helfer gibt oder geben kann.
+
+| Bugklasse | Form | Gate | Stand |
+| --------- | ---- | ---- | ----- |
+| **Schreibweise neben ihrem Helfer** | Für eine Schreibweise oder Regel gibt es einen Helfer, und daneben schreiben Bauteile sie von Hand. Die Kopien laufen auseinander: Sieben Beträge trugen ein gewöhnliches statt eines geschützten Leerzeichens, einer keinen Tausenderpunkt; die Quittung der Leserakte kannte bei „überfällig" die Dauerleihe nicht und druckte ihr Datum rot | `frontend-hygiene-helfer.test.js` (ein Betrag nur in `utils/format.js`, ein Fehlertext nur über `utils/fehlertext.js`; am Rückbau rot); für „überfällig" `utils/ueberfaellig.test.js` und `StudentPrintReceipt.test.js` | 07.10.2026: sieben Beträge auf `formatEuro`, 21 Fehlertexte auf `fehlertext` und vier Stellen auf `istUeberfaellig` umgestellt |
+
 ## Landkarte der Ratschen — was jede systembedingt NICHT sieht (07.09.2026)
 
 Anlass: An einem Tag dreimal dieselbe Erfahrung — die Schema-Parität war blind für DDL, das
@@ -412,6 +422,7 @@ steht im Kopfkommentar der Datei.
 | `frontend-hygiene-netzlage.test.js` | Nur Text: den Wert über eine Variable (`const n = navigator; n.onLine`) und Entscheidungen, die allein an den Ereignissen `online` und `offline` hängen. Ob `netzLage` richtig misst, prüfen `stores/netzLage.test.js` und `e2e/band-browser-meldet-offline.spec.js`. |
 | `frontend-hygiene-theken-fenster.test.js` | Nur Fenster, die `Omnibox.svelte` selbst einhängt (Datei `components/Omnibox…` mit `aria-modal` oder `<Modal`), und nur die Form `{#if omniboxStore.<Zustand>}` in der Datei des Fensters; ein Fenster tiefer in der Akte nicht. Ob ein Scan abgefangen wird, prüft `e2e/theke-scan-reihe.spec.js`. |
 | `frontend-hygiene-seitenweite-zuhoerer.test.js` | Nur literale Ereignisnamen an `window`, `document` und `<svelte:window\|document\|body>`; ein Zuhörer an `document.body` oder einem anderen Vorfahren nicht. Ob der Schild das Ereignis anhält, prüft `sperrSchild.test.js`. Zuhörer in der Fang-Phase an `window` sehen Ereignisse des Sperrbildschirms weiter. |
+| `frontend-hygiene-helfer.test.js` | Nur Text: einen Betrag ohne Leerzeichen vor dem Zeichen in einer Vorlage (`{wert}€`), ein Zeichen aus einer Variablen, und einen Fehlertext mit eigenem Ersatzsatz (`e instanceof Error ? e.message : 'Export fehlgeschlagen'`), der gewollt ist. Ob `formatEuro` und `fehlertext` richtig schreiben, prüfen `utils/format.test.js` und `utils/fehlertext.test.js`. |
 
 **Browser-Gates (Playwright — NUR in CI, nie in pre-push)**
 
