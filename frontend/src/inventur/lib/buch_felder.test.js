@@ -35,7 +35,9 @@ async function oeffne() {
 	return titelFuerMaske({ id: 'abc' });
 }
 
-beforeEach(() => vi.mocked(apiFetch).mockReset());
+beforeEach(() => {
+	vi.mocked(apiFetch).mockReset();
+});
 
 // Die Maske schickte bei jedem Speichern alle Felder mit dem Stand vom Öffnen zurück: Was ein
 // anderer Platz inzwischen an einem Feld gespeichert hatte, war danach wieder das alte.

@@ -392,7 +392,7 @@ Vermerk.
   eines Buchs. `e2e/abgaenger-management.spec.js` legt Titel „Abgänger Buch …" an und räumt
   sie nicht ab. Die zwei Klicks auf „Abgänger" (`schueler-profil-klick.spec.js`) kommen heute
   von der Theke, wo keine Kachel steht; vom Katalog aus träfen sie auch die Kachel. Abhilfe:
-  `menuepunkt` aus `e2e/helpers.js` an allen Stellen (heute in zwei Specs), und die Spec räumt
+  `menuepunkt` aus `e2e/helpers.js` an allen Stellen (heute in drei Specs), und die Spec räumt
   ihren Titel ab. Kategorie B.
 - Browser-Tests lassen Daten liegen (in der CI ist die Datenbank je Lauf frisch; lokale
   Zahlen tragen die Reste mit). Am 06.10.2026 einzeln gestartet und an der lokalen Datenbank
@@ -873,7 +873,7 @@ Vorschlag: nach Titel sortieren, Ziehen und Route entfernen. Kategorie B.
   „Klassen nicht geladen", und der Rat „Bitte neu öffnen" hilft ihm nicht.
 - „Mahnbriefe drucken" (`POST /api/admin/mahnungen/bulk-print`) zählt die Mahnstufe hoch und
   verlangt `view_students`; der Mahnversand und der Versand an die Abgänger verlangen
-  `create_orders`, weil „Versand mehr ist als Lesen" (`api/routes_students.go`). Ab Werk hat
+  `create_orders`, weil „Versand ist mehr als Lesen" (`api/routes_students.go`). Ab Werk hat
   jede Rolle mit `view_students` auch `create_orders`. Wer die Rechte anders verteilt, lässt
   eine Rolle mit Leserecht Mahnstufen erhöhen (Rasterdurchgang 07.10.2026, Frage 4).
 - Auch die Katalogdienste werden in einer Anfrage gefragt, die die Oberfläche nach 10 s

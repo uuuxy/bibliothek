@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix, scanneWieScanner } from './helpers.js';
+import {
+	uiLogin,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	scanneWieScanner,
+	menuepunkt
+} from './helpers.js';
 
 // Ein Handscanner wartet nicht auf die Antwort des Servers. Kommt die Antwort auf einen Scan
 // spät (langsamer Server, WLAN zwischen den Regalen), treffen die nächsten Scans ein, solange
@@ -26,7 +33,7 @@ test('Inventur: Scans während einer laufenden Anfrage werden gezählt', async (
 			SELECT id, b, true FROM t, unnest(ARRAY[${barcodes.map((b) => `'${b}'`).join(', ')}]) AS b;
 		`);
 
-		await page.getByTitle('Inventur').click();
+		await menuepunkt(page, 'Inventur').click();
 		await page.getByRole('button', { name: 'Neue Bestandsprüfung starten' }).click();
 		await page.getByText('Nur bestimmte Signatur').click();
 		await page.getByLabel('Signatur auswählen').fill(signatur);
