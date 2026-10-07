@@ -113,12 +113,21 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Bestellhistorie: Spalte „Stand". Scheitert der Versand einer Bestellmail oder ist kein
   Mailserver eingetragen, steht dort „Mail nicht versendet" und in der Bestellung „Erneut
   senden"; bei einem Händler, der nicht Hauptlieferant ist, daneben „Auf anderem Weg bestellt"
+- [ ] Medienkatalog, Titel-Verwaltung: einen Titel mit der Tab-Taste ansteuern und mit der
+  Eingabetaste öffnen
+- [ ] Buchakte, Reiter „Ausleiher": das Zeichen neben dem Datum einer überfälligen Ausleihe
+- [ ] Inventur: eine unbekannte Nummer scannen („Zu diesem Barcode gibt es kein Exemplar.")
+- [ ] Statistiken: „Gesamtbestand" und „aktive Exemplare" zählen bestellte Exemplare nicht
+  mehr mit
+- [ ] Leserakte einer Lehrkraft mit Dauerleihe, „Quittung drucken": Die Zeile nennt „ohne
+  Frist" statt eines Datums
 
 **Erledigen:**
 
 - [x] SonarQube-Scan starten.
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
 - [ ] Am Testserver zählen, wie viele gesperrte Exemplare „verloren" in der Notiz tragen. (5.5)
+- [ ] Am Testserver zählen, ob jedes Exemplar im Bestand ein Zugangsdatum trägt. (5.5)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9)
 - [ ] Theke ohne Netz: der Nachweis von Hand im echten Chrome, zurückgestellt am 24.09.2026.
   (2.3)
@@ -140,8 +149,9 @@ der Nummer nichts mehr dazu offen ist.
 - [x] **Buchakte (5.5):** Ein bestelltes Exemplar, das nie eintraf, steht nach „Exemplar löschen"
   nicht mehr im Abgangsbuch; ausgesonderte und bestellte Exemplare heißen dort seit dem
   07.10.2026 „Ausgesondert" und „Bestellt".
-- [ ] **Nie eingetroffene Exemplare (5.5):** Sie zählen noch an zwei Stellen als Abgang, in der
-  Zahl „aus dem Katalog gelöscht" unter dem Abgangsbuch und in der Verlustquote der Statistik.
+- [x] **Nie eingetroffene Exemplare (5.5):** Sie zählen seit dem 07.10.2026 auch in der Zahl
+  „aus dem Katalog gelöscht" unter dem Abgangsbuch und in der Statistik nicht mehr mit; die
+  Statistik zählt ein bestelltes Exemplar erst mit dem Eintreffen zum Bestand.
 - [ ] **Druck-Center (5.45):** Die Auswahlliste nennt auch ein bestelltes Exemplar
   „(Neuwertig)". Die Vorschau zeichnet seit dem 07.10.2026 nur den ersten Bogen.
 - [ ] **Überläufe (5.45):** Bestellwesen 40 px, Signaturen bei 1280 px, ein langer Name in der
@@ -151,7 +161,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Protokoll und Tilgung (5.35):** Einträge, die einen Leser nur über seine Forderung meinen;
   am Testserver alte Einträge zu schon gelöschten Lesern.
 - [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
-- [ ] **Zwei Helfer (5.5):** Beträge und Fehlertexte schreiben 27 Stellen selbst.
+- [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
+  ihren Helfern, die Regel „überfällig" ebenso; eine Ratsche hält die ersten beiden fest.
 - [ ] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Benutzer, Gerät, Lieferant und die
   Kategorien der Einstellungen; am Titel und am Leser ist es behoben.
 - [x] **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es an
@@ -160,10 +171,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Spur im Protokoll (5.57):** die übrigen ändernden Routen lesen und je Tür festlegen, ob
   sie einen Eintrag schreibt. Klassenleitungen, Mail-Vorlagen, Lieferanten und die
   Verlängerung der Lernmittel einer Klasse schreiben ihn seit dem 07.10.2026.
-- [ ] **Beim Umstellen der Farben aufgefallen (5.21):** In der Inventur zeigt ein unbekannter
-  Barcode einen technischen Fehlertext; die Titelliste öffnet einen Titel nur mit der Maus;
-  englische Wörter in der Oberfläche; eine überfällige Ausleihe ist in der Buchakte nur an der
-  Farbe zu erkennen; in der Bestellhistorie die Spalte „Lieferant" im Browser nachmessen.
+- [ ] **Beim Umstellen der Farben aufgefallen (5.21):** In der Bestellhistorie die Spalte
+  „Lieferant" im Browser nachmessen.
 
 ### Nur mit Anlass: kein Schritt
 
@@ -367,26 +376,13 @@ Vermerk.
 - Geräte: Eine doppelte Seriennummer meldet „Barcode ist bereits an ein anderes Gerät
   vergeben" (`CreateGeraet` in `repository/geraete.go` liest jede Eindeutigkeits-Verletzung
   als Barcode; am 07.10.2026 am Code gelesen, nicht nachgestellt). Kategorie C.
-- **Ein bestelltes Exemplar, das nie eintraf, zählt noch an zwei Stellen als Abgang** (gefunden
-  am 07.10.2026, am Code gelesen, nicht nachgestellt). In den Zeilen des Abgangsbuchs und in
-  seiner Zahl der Abgänge ohne Zeitpunkt steht es seit dem 07.10.2026 nicht mehr
-  (`sqlIstAbgang` in `repository/abgangsbuch.go`). Die Zahl „aus dem Katalog gelöscht" darunter
-  zählt weiter jedes Exemplar, das mit seinem Titel gelöscht oder in der Inventur als Verlust
-  endgültig gelöscht wurde: Die drei Schreiber der Spur vermerken nicht, ob es je im Bestand
-  war (`repository/audit_books.go`, `inventur/db_books_delete_spur.go`,
-  `repository/inventur_verlust_aktionen.go`). Verlustquote und Wiederbeschaffungswert der
-  Statistik zählen jedes Exemplar mit dem Grund VERLUST oder BESCHAEDIGUNG
-  (`queryBestandKennzahlen` in `api/stats.go`); ein bestelltes Exemplar, das im Status-Editor
-  als „Verloren" ausgesondert wird, bekommt VERLUST. Abhilfe: Die Schreiber vermerken es an
-  der Spur, die Statistik nimmt die Grenze des Abgangsbuchs. Kategorie B.
-- Zwei Schreibweisen stehen neben ihrem Helfer (gezählt am 06.10.2026). Einen Betrag in Euro
-  schreiben sieben Stellen selbst: sechs mit `toLocaleString` und `+ ' €'`
-  (`useFehlbestand.svelte.js`, `StudentBescheideCard`, `BestellHistorie`, `BestellDetail`,
-  `BescheidDialog`, `BescheideTabelle`), eine mit `toFixed` (`OrderCart.svelte`), alle mit
-  gewöhnlichem statt geschütztem Leerzeichen; dafür gibt es `formatEuro` (`utils/format.js`).
-  Den Text eines gefangenen Fehlers (`e instanceof Error ? e.message : String(e)`) schreiben 20
-  Stellen in 12 Dateien selbst; `fehlertext` (`utils/fehlertext.js`) rufen vier Dateien.
-  Kategorie B.
+- **Zugangsdatum am Testserver nachzählen** (07.10.2026). Abgangsbuch und Statistik zählen
+  nur, was ein Zugangsdatum trägt (`repository.SQLWarImBestand`). Nach Migration 129 und
+  ihren zwei Triggern fehlt es nur bestellten Exemplaren; lokal trifft das zu (26 von 73.785
+  Exemplaren ohne Datum, alle im Zulauf). Am Testserver zeigt es (lesend):
+  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE bestellstatus IS NULL AND NOT ist_ausgesondert) AS im_bestand, count(*) FILTER (WHERE ist_ausgesondert) AS ausgesondert, count(*) FILTER (WHERE bestellstatus IS NOT NULL AND NOT ist_ausgesondert) AS im_zulauf FROM buecher_exemplare WHERE zugang_am IS NULL;"`
+  Erwartet: „im_bestand" 0. „ausgesondert" sind bestellte Exemplare, die nie eintrafen und
+  ausgebucht wurden; sie stehen in keinem der beiden Bücher und nicht in der Statistik.
 
 ### 5.10 Gates und Werkzeuge
 
@@ -515,32 +511,13 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Beim Umstellen der Farben aufgefallen
 
-Jeweils am Code nachgesehen:
+Am Code nachgesehen:
 
-- Buchakte, Liste der Ausleiher: Eine überfällige Ausleihe ist nur an der Farbe des Datums zu
-  erkennen (`BorrowersListe.svelte`). Die Leserakte setzt für dieselbe Ausleihe ein Zeichen und
-  für Screenreader das Wort „Überfällig" dazu (`AusleiheRueckgabe.svelte`).
-- Einstellungen, „E-Mail Routing für Mahnungen": Die Oberfläche sagt „Mapping" (leere Liste,
-  Meldung nach dem Löschen, Sprechblase am Papierkorb; `SystemSettingsRouting.svelte`); ein
-  deutsches Wort wäre „Zuordnung".
-- Titel-Verwaltung: Ein Titel lässt sich in der Liste nur mit der Maus öffnen. Der Klick hängt
-  an der Zeile (`BookTableZeile.svelte`, `onclick` am `<tr>`), die Zeile nimmt keinen Fokus. Die
-  Leserdatei öffnet die Akte über den Namen als Knopf.
-- Titel-Verwaltung: Der Knopf „Retry Cover" trägt eine englische Beschriftung.
 - Bestellhistorie: Die Zelle „Lieferant" trägt `max-w-0` ohne volle Breite an der Spalte
   (`BestellHistorieTabelle.svelte`). Dieselbe Form ließ im Fehlbestandsbericht der Inventur dem
   Titel 191 von 918 px (gemessen und behoben am 05.10.2026). Name und Kundennummer tragen
   `truncate` und keine Sprechblase (M3, Text truncation: „Don't truncate content without
   providing users another way to see it"). Am Code gelesen, im Browser nicht gemessen.
-- Inventur: Die Wörter „Inventur-Scope" (Überschrift des Start-Dialogs) und „aus dem aktuellen
-  Scope" (Rückfrage vor dem Abschluss) stehen so in der Oberfläche; ein deutsches Wort wäre
-  „Umfang" oder „Bereich".
-- Inventur: Ein unbekannter Barcode zeigt am Scanner den rohen Fehlertext „exemplar für
-  inventur-scan nicht ladbar: no rows in result set" (`GetExemplarForInventoryScan` hüllt
-  `pgx.ErrNoRows` ein, `ladeExemplarFuerScan` gibt ihn mit 404 unverändert weiter). Der Status
-  stimmt, der Satz nicht.
-- Ausweis-Designer: Die Knöpfe der Textausrichtung tragen englische Hinweise („left",
-  „center", „right"; `PropertiesText.svelte`).
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 
