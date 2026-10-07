@@ -66,15 +66,14 @@ func TestGDPRAnonymizeOldData_LeertAllePII(t *testing.T) {
 	s := NewScheduler(pool, repository.NewAuditRepository(pool))
 	s.RunGDPRAnonymizeOldData()
 
-	// (a) Die Anonymisierung MUSS gelaufen sein. Vor dem Fix scheiterte die Query still
-	// (foto_url/anonymized_at existierten nicht) → anonymized_at bliebe NULL.
+	// (a) Die Anonymisierung MUSS gelaufen sein.
 	var anonymisiert bool
 	if err := pool.QueryRow(ctx,
 		`SELECT anonymized_at IS NOT NULL FROM schueler WHERE id = $1`, id).Scan(&anonymisiert); err != nil {
 		t.Fatalf("anonymized_at lesen: %v", err)
 	}
 	if !anonymisiert {
-		t.Fatal("RunGDPRAnonymizeOldData hat den fälligen Schüler NICHT anonymisiert (Query still gescheitert?)")
+		t.Fatal("RunGDPRAnonymizeOldData hat den fälligen Schüler NICHT anonymisiert")
 	}
 
 	// (b) KEIN Sentinel darf überleben — die ganze Zeile als Text zusammenziehen und prüfen.
