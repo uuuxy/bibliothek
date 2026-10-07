@@ -170,8 +170,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Spur im Protokoll (5.57):** die übrigen ändernden Routen lesen und je Tür festlegen, ob
   sie einen Eintrag schreibt. Klassenleitungen, Mail-Vorlagen, Lieferanten und die
   Verlängerung der Lernmittel einer Klasse schreiben ihn seit dem 07.10.2026.
-- [ ] **Beim Umstellen der Farben aufgefallen (5.21):** In der Bestellhistorie die Spalte
-  „Lieferant" im Browser nachmessen.
+- [x] **Beim Umstellen der Farben aufgefallen (5.21):** In der Bestellhistorie bekommt die
+  Spalte „Lieferant" seit dem 08.10.2026 die übrige Breite.
 
 ### Nur mit Anlass: kein Schritt
 
@@ -478,16 +478,6 @@ lehnt die Tür seit dem 21.09.2026 ab.
 SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
 SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
 ```
-
-### 5.21 Beim Umstellen der Farben aufgefallen
-
-Am Code nachgesehen:
-
-- Bestellhistorie: Die Zelle „Lieferant" trägt `max-w-0` ohne volle Breite an der Spalte
-  (`BestellHistorieTabelle.svelte`). Dieselbe Form ließ im Fehlbestandsbericht der Inventur dem
-  Titel 191 von 918 px (gemessen und behoben am 05.10.2026). Name und Kundennummer tragen
-  `truncate` und keine Sprechblase (M3, Text truncation: „Don't truncate content without
-  providing users another way to see it"). Am Code gelesen, im Browser nicht gemessen.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 

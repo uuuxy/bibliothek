@@ -66,7 +66,9 @@
 					<td class="font-semibold whitespace-nowrap tabular-nums">
 						{datum(b.bestelldatum)}
 					</td>
-					<td class="max-w-0">
+					<!-- max-w-0 mit w-full: Die Zelle nimmt den Rest der Breite, und der Name kürzt sich
+					     erst, wenn sie nicht reicht. Ganz steht er in der Bestellung, die die Zeile öffnet. -->
+					<td class="w-full max-w-0">
 						<span class="block truncate font-semibold text-on-surface">{b.lieferant_name}</span>
 						<span class="block truncate text-sm text-on-surface-variant">
 							{b.kundennummer ? 'Kd.-Nr. ' + b.kundennummer : b.lieferant_email}
