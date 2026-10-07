@@ -9,17 +9,13 @@
 	import AdminBuchAktionen from '$lib/components/admin/AdminBuchAktionen.svelte';
 	import ClassAssignPicker from '$lib/components/admin/ClassAssignPicker.svelte';
 	import { leeresBuchFormular } from '$lib/components/admin/buch_form_optionen.js';
-	import {
-		holeBuecherListe,
-		loescheBuecher,
-		holeExterneCover,
-		retryExterneCover
-	} from '$lib/admin_api.js';
+	import { loescheBuecher, holeExterneCover, retryExterneCover } from '$lib/admin_api.js';
 	import { titelFuerMaske } from '$lib/buch_speichern.js';
+	import { erstelleTitelListe } from '$lib/titelListe.svelte.js';
 
-	/** @type {any[]} */
-	let buecher = $state.raw([]);
-	let wirdGeladen = $state(false);
+	// Laden und Ändern der Liste: titelListe.svelte.js.
+	const liste = erstelleTitelListe();
+	const aktualisiereBuecher = liste.lade;
 	let istBearbeitenModus = $state(false);
 	let wirdGescannt = $state(false);
 	let buchAktionen = $state();
@@ -60,24 +56,6 @@
 		});
 	});
 
-	// Nur die jüngste Abfrage gilt: Die ganze Liste lädt länger als ein Suchergebnis und
-	// stünde sonst, wenn sie danach ankommt, unter dem Suchwort.
-	let ladeLauf = 0;
-	async function aktualisiereBuecher() {
-		const lauf = ++ladeLauf;
-		wirdGeladen = true;
-		try {
-			const geladene = await holeBuecherListe();
-			if (lauf !== ladeLauf) return;
-			buecher = geladene;
-			appState.adminAuthenticated = true;
-		} catch {
-			if (lauf === ladeLauf) appState.adminAuthenticated = false;
-		} finally {
-			if (lauf === ladeLauf) wirdGeladen = false;
-		}
-	}
-
 	// Nur die jüngste Öffnung gilt: Die Antwort zu einem früher angeklickten Titel legte sich
 	// sonst über die Maske des späteren, samt dem dort Getippten.
 	let oeffnung = 0;
@@ -116,7 +94,7 @@
 		if (!(await loeschenBestaetigen(`${ids.length} Bücher mit allen Exemplaren löschen?`))) return;
 		try {
 			await loescheBuecher(ids);
-			buecher = buecher.filter((b) => !ids.includes(b.id));
+			liste.buecher = liste.buecher.filter((b) => !ids.includes(b.id));
 		} catch (fehler) {
 			showToast(/** @type {any} */ (fehler).message, 'error');
 		}
@@ -169,8 +147,8 @@
 		</div>
 	{:else}
 		<BookTable
-			books={buecher}
-			loading={wirdGeladen}
+			books={liste.buecher}
+			loading={liste.wirdGeladen}
 			onOpenDetail={oeffneDetails}
 			onCreateNew={neuesBuchErstellen}
 			onScan={neuesBuchScannen}
@@ -182,7 +160,7 @@
 
 	<AdminBuchAktionen
 		bind:this={buchAktionen}
-		bind:books={buecher}
+		bind:books={liste.buecher}
 		bind:isEditMode={istBearbeitenModus}
 		bind:formular
 	/>

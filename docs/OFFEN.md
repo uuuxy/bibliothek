@@ -401,10 +401,6 @@ Vermerk.
   davor fokussiert. `fokussiertMessen` wartet auf zwei gleiche Messungen und prüft nicht, ob
   das Feld den Fokus noch trägt; was ihn dort nimmt, ist nicht gefunden. Abhilfe: nach der
   Messung prüfen, dass das Feld `document.activeElement` ist, sonst neu fokussieren. Kategorie B.
-- `e2e/feld-roundtrip.spec.js` („Buch anlegen") war am 07.10.2026 lokal in einem Lauf über 21
-  Specs einmal rot und allein wiederholt grün (6 von 6): Nach „Speichern" wartet die Spec zehn
-  Sekunden darauf, dass der neue Titel in der Liste steht; die lokale Datenbank trägt 12.909
-  Titel. Am Stack nachgestellt: Das Buch wird gespeichert und steht in der Liste. Kategorie C.
 - 46 Specs klicken Menüpunkte per `page.getByTitle('<Name>')`, 94 Stellen (gezählt am
   06.10.2026). Das trifft jedes Element, dessen `title` den Namen enthält, auch die Kachel
   eines Buchs. `e2e/abgaenger-management.spec.js` legt Titel „Abgänger Buch …" an und räumt
@@ -451,13 +447,6 @@ Vermerk.
   Eine neue Stelle dieser Regeln meldet gosec nicht. Abhilfe: je Stelle ein `#nosec` mit Grund,
   dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
   Nur mit Anlass.
-- **Ein Browser-Test war viermal rot.** `e2e/feld-roundtrip.spec.js` („Buch anlegen: Bestand
-  und Zähldatum kommen in der DB an") fand am 05.10.2026 in zwei vollen Läufen und am
-  06.10.2026 in einem Lauf über neun Dateien und in einem vollen Lauf am lokalen Stack den
-  neuen Titel nicht binnen 10 s; einzeln lief die Datei danach jedes Mal grün. Beim zweiten
-  Mal war die Maske zu und die Liste stand da („Bücher (10618)"), der neue Titel fehlte in
-  der Ansicht. Die lokale Datenbank trägt 12.455 Titel (gezählt am 06.10.2026), darunter die
-  Reste früherer Testläufe.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
