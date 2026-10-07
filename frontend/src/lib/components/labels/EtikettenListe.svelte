@@ -59,7 +59,12 @@
 						/>
 					</td>
 					<td class="max-w-0">
-						<span class="block truncate font-medium text-on-surface">
+						<!-- Titel und Autor kürzen sich; die Sprechblase nennt beide ganz, wie in der
+						     Ausleihliste der Leserakte. -->
+						<span
+							class="block truncate font-medium text-on-surface"
+							data-tip={[e.titel, e.autor].filter(Boolean).join(' · ')}
+						>
 							{e.titel}
 							<!-- Nur in den gemischten Ansichten: In „Offen" wäre der Vermerk an
 							     jeder Zeile derselbe und damit ohne Aussage. -->
