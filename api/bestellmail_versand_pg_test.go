@@ -195,6 +195,39 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 	}
 }
 
+// Bestellt ohne Vorab-Barcode zählt die Mail die Exemplare trotzdem: Die Zahl kam aus den
+// Etiketten des Barcodebogens, und eine Position ohne Vorab-Barcode hat keine.
+func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+
+	setzeOeffentlicheAdresse(t, pool, "")
+	sitzungen := mailAbfangen(t)
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	lieferant := haendler(t, pool, "Naacher-OhneBarcode", false)
+	mitBarcode := titelMitMeldebestand(t, pool, "LMF-Mathe-MitBarcode", 0)
+	ohneBarcode := titelMitMeldebestand(t, pool, "LMF-Mathe-OhneBarcode", 0)
+
+	rumpf := fmt.Sprintf(`{"supplier_id":%q,"mittel":"land","items":[
+		{"titel_id":%q,"menge":2,"preis":9.5,"generate_barcodes":true},
+		{"titel_id":%q,"menge":3,"preis":9.5,"generate_barcodes":false}]}`, lieferant, mitBarcode, ohneBarcode)
+	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	srv.SubmitOrderHandler(NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)), NewPDFService())(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+
+	nachricht := warteAufMail(t, sitzungen)
+	for _, zeile := range []string{"Bestellte Titel: 2", "Gesamtanzahl Exemplare: 5"} {
+		if !strings.Contains(nachricht, zeile) {
+			t.Errorf("%q fehlt in der Mail:\n%s", zeile, kopf(nachricht))
+		}
+	}
+}
+
 // kopf kürzt die Nachricht auf den Textteil; die base64-kodierten Anhänge machen jede
 // Fehlermeldung sonst unlesbar.
 func kopf(nachricht string) string {

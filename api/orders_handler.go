@@ -119,7 +119,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	subject, body := resolveBestellMail(betreff, textBody, bestellMailWerte{
 		kundennummer:    res.CustomerNumber,
 		anzahlTitel:     len(res.SummaryItems),
-		anzahlExemplare: len(res.Labels),
+		anzahlExemplare: res.TotalAllocated,
 		link:            link,
 		gueltigBis:      res.LinkGueltigBis,
 		mittel:          res.Mittel,
