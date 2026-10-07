@@ -515,7 +515,7 @@ Bestand am 07.10.2026:
   Fenster mit dem alten Programm, laufende Anmeldungen, eingereihte Vorgänge,
   zwischengespeicherte Seiten — und versteht jede Seite die Form der anderen? Belege:
   Anmeldungen ohne Zeile in `sitzungen` nach dem Einspielen von Migration 155 (`0d6ff8e0`);
-  die neuere Startseite nach einem Rückbau (OFFEN.md 6.1).
+  die neuere Startseite nach einem Rückbau (ARCHITEKTUR.md 11.5).
 - **Frage 14, die Menge:** Schneidet der Pfad an einer Grenze ab, und sagt er es? Beleg: die
   Vorschläge nur aus den 500 häufigsten Wörtern (`1a0ba055`, 30.09.2026).
 - **Frage 14, die Zeile ohne den Pflichtwert:** Verlangt eine Maske oder ihre Tür beim Ändern

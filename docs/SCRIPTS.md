@@ -212,7 +212,7 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
   gematcht; ein zweiter Lauf legt keinen Titel doppelt an. Einträge mit demselben Titeltext
   oder derselben ISBN legt schon der erste Lauf zu einem Titel zusammen, und beim zweiten
   kommen Titeltext, Autor, Verlag, Jahr und Signatur aus dem Eintrag, der zuletzt passt — am
-  Katalogisat vom Juni 2026 änderte der zweite Lauf 789 Titel (docs/OFFEN.md 6.1).
+  Katalogisat vom Juni 2026 änderte der zweite Lauf 789 Titel (docs/ARCHITEKTUR.md 11.5).
 - Signaturen landen in `buecher_titel.signatur` (der echten Spalte) — **unverändert, wie
   Littera sie liefert** („LMF Bio 7"). Bis Migration 093 (02.09.2026) schnitt der Import „LMF"
   aus der Signatur und stellte es dem Titel voran („LMF-Biologie heute 7"); das ist vorbei.

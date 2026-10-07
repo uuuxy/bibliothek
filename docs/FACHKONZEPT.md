@@ -326,7 +326,7 @@ dieser Abschnitt beschrieb die Absicht als Realität):
 - Fehlendes Zubehör bei der Rückgabe: Das Personal bricht im Dialog ab. Eine
   Forderung für ein Gerät legt das Programm noch nicht an — der Schadensfall-Weg am
   Profil nimmt nur Buch-Exemplare, die Datenbank sieht Geräte-Forderungen vor
-  ([OFFEN.md](OFFEN.md) 5.25).
+  ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5).
 
 ---
 
@@ -1003,7 +1003,7 @@ der hat nicht stattgefunden.
 - Der Ausweis-Designer (Zeichenfläche `designer/CanvasArea`) ist Maus- und Touch-Arbeit ohne
   Tastaturweg.
 - Die PDFs (maroto/gofpdf) sind ungetaggt — HTML-Druckweg oder begründete Ausnahme, offen
-  ([OFFEN.md](OFFEN.md) 6.1).
+  ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5).
 - Nicht gescannte Zustände (Reiter, Dialoge, Unteransichten) können weitere Verstöße tragen;
   gemessen sind sie nicht.
 

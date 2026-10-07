@@ -10,7 +10,7 @@
 	 * confirmed_checklist erneut — dieselbe Mechanik wie der Sperr-Override. War der
 	 * Scan schon ein Übergehen, geht override_block mit (checklistAnfrage.overrideBlock).
 	 * Gilt für Ausleihe UND Rückgabe. Fehlt ein Teil bei der Rückgabe, wird abgebrochen;
-	 * eine Forderung für ein Gerät legt das Programm noch nicht an (docs/OFFEN.md 5.25).
+	 * eine Forderung für ein Gerät legt das Programm noch nicht an (docs/ARCHITEKTUR.md 11.5).
 	 *
 	 * Seit 07.09.2026 auf Modal.svelte, Ebene „oberst": Die Theke liegt selbst als
 	 * Overlay über allem, und diese Rückfrage muss über der Theke stehen.

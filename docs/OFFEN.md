@@ -25,6 +25,7 @@ Liste geführt wird, steht am Ende.
   geschlossen; aus sieben davon sind die Tests übernommen (d1dba610).
 - [x] **PR 722** durchgesehen und geschlossen am 06.10.2026: Die Prüfung beim Löschen einer
   Sachgruppe (`api/systematik_handler.go`) würde durch ihn höchstens 1 ms schneller.
+- [ ] **PRs 723 und 724 auf GitHub** (beide vom 07.10.2026) durchsehen.
 - [x] **Doku-Ordner:** Aus 36 Markdown-Dateien in `docs/` sind am 07.10.2026 20 geworden. Die
   Architektur ist eine Datei (`ARCHITEKTUR.md`); das LUSD-Messprotokoll, die Vorlage für das
   Blatt bei der Schule, die Liste „Datenschutz — offene Punkte" und das zweite README sind in
@@ -151,11 +152,11 @@ Bekannt und beschrieben. Gebaut wird erst, wenn der dort genannte Anlass eintrit
 - 5.5 Die kurze Nummer der Littera-Etiketten an der Theke: entscheidet sich mit der Generalprobe.
 - 5.5 Listenimport: Trägt eine Zeile die Ausweisnummer eines Lesers als Buchnummer, nennt die
   Meldung weder Zeile noch Weg.
-- 5.25 Eine Forderung für ein Gerät lässt sich nicht anlegen.
 - 5.45 Bedienung am Tablet und in Fenstern unter 1280 px.
-- 5.49 Versetzung, wenn eine Klasse mit einer Zahl beginnt, die kein Jahrgang ist.
-- 5.54 Klassensätze aus den Ausleihen für ET1 bis ET3, weitere Hinweise an der Theke.
-- Abschnitt 6: Beobachtungen und Kategorie C.
+
+Beobachtungen und Kleinigkeiten ohne geplanten Schritt stehen seit dem 07.10.2026 nicht mehr
+hier, sondern in [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen" (bis dahin Abschnitt 6
+und die Punkte 5.25, 5.49 und 5.54).
 
 ---
 
@@ -523,24 +524,6 @@ Jeweils am Code nachgesehen:
 - Ausweis-Designer: Die Knöpfe der Textausrichtung tragen englische Hinweise („left",
   „center", „right"; `PropertiesText.svelte`).
 
-### 5.25 Eine Forderung für ein Gerät lässt sich nicht anlegen
-
-Die Datenbank sieht sie vor (`check_damage_item`: genau eines von `exemplar_id` und
-`geraet_id`), die Rechnung an die Eltern kann sie drucken (`queryRechnungItems`), aber der
-einzige Schreiber `meldeSchaden` (`repository/schaden_melden.go`) nimmt nur ein Buch-Exemplar:
-Er sondert das Exemplar aus und legt die Forderung mit `exemplar_id` an. Fehlt bei der Rückgabe
-Zubehör oder ist ein Gerät kaputt, gibt es keinen Weg zur Forderung; das FACHKONZEPT (Abschnitt
-5) behauptete bis zum 24.09.2026 einen. Gesperrt würde wie heute (Schülerbücherei und
-Geräte).
-
-Beim Bau mitnehmen (bis zum 01.10.2026 als 5.37 geführt, am Code gelesen): Der Bescheid-Dialog
-listet auch eine Forderung ohne Exemplar (`topf` leer). Sie steht richtig gesperrt da, darunter
-aber der Satz „Buch der Schülerbücherei — gehört nicht auf den Bescheid des Landes."
-(`frontend/src/lib/components/mahnwesen/BescheidPositionen.svelte`). Die Zeile darüber zeigt
-„ohne ISBN" und, weil ein Gerät keinen Buchpreis hat, „kein Preis hinterlegt — Betrag bitte
-eintragen" neben dem gesperrten Feld. Heute nicht zu sehen: Ohne Schreiber gibt es keine
-Forderung für ein Gerät.
-
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 
 **Entschieden am 28.09.2026, nicht gebaut.** Vor dem Echtstart; gebaut wird, sobald der
@@ -660,42 +643,6 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem 01.10.2026
   „Forderungen".
 
-### 5.49 Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
-
-Die Versetzung liest die Zahl am Anfang der Klasse (`promoteStudentsQuery` und
-`leseKlassenlehrerVersetzung` in `api/student_promotion.go`). Nachgestellt am 04.10.2026 am
-Router, in der Vorschau (`dry_run`):
-
-- Trägt ein aktiver Schüler eine Klasse, deren Zahl am Anfang größer ist als 2.147.483.647 (eine
-  Buchnummer im Feld Klasse, „9783123456789"), antwortet die Versetzung mit 500 und versetzt
-  niemanden. Die Meldung nennt weder die Klasse noch den Schüler.
-- Jede Zahl ab 13 gilt als Abschlussklasse (`repository.AbschlussklasseSQL`): Der Schüler der
-  Klasse „2147483647A" wird in der Vorschau als Abgänger gezählt (`archived_count` 1).
-
-Die lesenden Türen (Jahrgangs-Auswahl und Jahrgangsfilter der Leserdatei, LMF-Planer,
-Abgängerliste) antworten auch mit einer solchen Klasse (`klassenZahlSQL` in
-`repository/abschlussklasse.go`, `api/klasse_lange_ziffernfolge_pg_test.go`); offen ist nur die
-Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächster Schritt mit
-Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
-sie in der Vorschau. Kategorie B.
-
-### 5.54 Klassensätze aus den Ausleihen und Hinweise an der Theke
-
-Am 03.10.2026 auf eine Frage hin am Code gelesen. Ein Auftrag dazu liegt nicht vor; gebaut
-wird nur mit Anlass.
-
-- Für ET1 bis ET3 entsteht kein Klassensatz „aus Ausleihen": Die Übersicht zählt nur Klassen,
-  deren Name mit einer Ziffer beginnt (`GetClassGroups` in `inventur/datenbank_klassen.go`).
-  Gezählt werden Ausleihen auf die Ausweise der Kinder; ein Stapel auf dem Ausweis der Lehrkraft
-  erscheint nicht bei der Klasse.
-- Die Theke warnt, wenn ein Kind eine andere Auflage bekommt als seine Klasse, und wenn ein Buch
-  auf ein anderes Kind verbucht ist. Sie warnt nicht, wenn ein Kind ein Buch bekommt, das nicht
-  zu seinem Jahrgang gehört, oder ein zweites Exemplar eines Titels, den es schon hat (am Code
-  gelesen am 03.10.2026, nicht nachgestellt). Die Kachel eines Klassensatzes nennt die Zahl der
-  Leser, nicht, wem das Buch fehlt.
-
-Kategorie B.
-
 ### 5.57 Spur im Protokoll: welche Tür schreibt einen Eintrag
 
 Raster, Frage 19 (neu am 07.10.2026). Die Rechte-Matrix schreibt seit dem 07.10.2026 einen
@@ -718,345 +665,6 @@ Variable nicht (die Buchung der Theke) und keine Trigger; die Liste ist ein Such
 Befund. Nächster Schritt: je Tür festlegen, ob sie einen Eintrag schreibt, und was darin
 steht, ohne neuen Personenbezug (eine Adresse im Eintrag bliebe bis zur Audit-Aufbewahrung).
 Kategorie B.
-
----
-
-## 6. Beobachten und Kategorie C (nur mit Anlass)
-
-### 6.1 Beobachtungen
-
-- Im Feld „Auflage" führt die Bücherei in Littera nicht nur Auflagen: bei Zeitschriften steht
-  dort die Heftnummer („34 / 2010"), an einem Teil der Bücher eine eigene Nummer der Form
-  „D-Ga-066". Nach der Form gezählt am 07.10.2026: in der Sicherung von 2010 2.512 Auflagen,
-  199 Heftnummern, 432 solche Nummern (an Titeln mit zusammen 11.278 Exemplaren) und 39 andere
-  Angaben; im Katalog-Export vom Juni 2026 5.033, 955, 69 und 96. Die Übernahme bringt alles ins
-  Feld „Auflage"; es steht in der Buchakte, in der Maske „Buch bearbeiten" und in „Suche &
-  Filter" unter dem Titel. Keine Suche vergleicht das Feld (`repository/book_search.go`,
-  `inventur/datenbank_buecher_leser.go`): Ein Heft lässt sich nicht über seine Nummer finden,
-  ein Buch nicht über „D-Ga-066". Anlass zum Bauen: Die Bücherei sucht nach einer dieser
-  Angaben.
-- Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, gekappt
-  erst bei 50.000 Titeln), „Suche & Filter" bei jedem Öffnen, die Titel-Verwaltung beim Öffnen und bei leerem
-  Suchfeld; gezeigt werden je 50 Titel. Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,
-  4,87 MB, gepackt über die Leitung 0,43 MB (`api/middleware_kompression.go`); auch über den
-  Proxy des Testservers kommen die Antworten gepackt an. Größe und Dauer am Server über das
-  Schulnetz sind nicht gemessen (im Browser: F12, Netzwerk, Zeile `books`). Anlass zum Bauen:
-  Der Katalog öffnet am Server spürbar verzögert. Dann beantwortet der Server einen
-  unveränderten Bestand mit 304 statt mit der Liste, wie bei den Buchnummern der Theke
-  (`api/buchbarcodes_handler.go`).
-- Breite der Textfelder: Textfelder folgen Material 3 (Text fields, Guidelines: „Text fields
-  shouldn’t span the full width of a large screen"; entschieden am 03.10.2026). Umgesetzt ist das
-  in der Maske „Buch bearbeiten" (Felder bis 704 px); die übrigen Masken sind nicht
-  durchgesehen. Der Wert steht bisher nur in `BuchFormular.svelte`; mit der zweiten Maske gehört
-  er an eine Stelle.
-- Die Meldungen der Anwendung (`ToastContainer.svelte`) erscheinen oben rechts, bis 384 px
-  breit, 5 s lang, und halten ihre Standzeit an, solange der Mauszeiger auf ihnen ruht. Was
-  dort steht, ist in dieser Zeit verdeckt (gemessen am 02.10.2026 bei 1280 × 720: Meldung bei
-  x 975 bis 1256, y 24 bis 68). In der Maske „Buch bearbeiten" steht „Speichern" deshalb
-  hinter der Überschrift statt am rechten Rand (`e2e/scrollbereiche.spec.js`); unter rund
-  1070 px Fensterbreite reicht eine Meldung in voller Breite trotzdem bis an den Knopf. M3,
-  Snackbar, Guidelines: „Snackbars should be placed at the bottom of a UI, in front of the
-  main content" und „avoid positioning the snackbar in a way that completely obscures
-  actionable elements". Am unteren Rand stehen die Auswahlleisten der Listen
-  (`ui/AuswahlLeiste`, `AuswahlAktionsleiste`); dort müssten die Meldungen ausweichen.
-- Das Zugangsbuch baut alle Zugänge des Zeitraums auf einmal auf
-  (`components/bestand/Bestandsbuch.svelte`; die Abfrage in `repository/zugangsbuch.go` hat
-  keine Grenze). Gemessen am 02.10.2026 an der lokalen Datenbank: 34.621 Zeilen im laufenden
-  Halbjahr, 5,4 MB, Abruf 0,1 s, Aufbau im Browser 4,2 s. Die lokalen Zugangsdaten stammen aus
-  Importen und Testläufen und sagen nichts über die Schule; ein neues Exemplar übernimmt sein
-  Erwerbsdatum als Zugangsdatum (`stempel_zugang_am`). Anlass zum Bauen: ein Halbjahr mit
-  mehreren tausend Zugängen am Server. Die Felder je Topf über der Liste bauen dabei nichts
-  neu auf: Eine Liste mit Zeilen bleibt im Dokument und wird aus- und eingeblendet (gemessen am
-  02.10.2026 mit 38.810 Zeilen: ausblenden 0,1 s, einblenden 0,8 bis 0,9 s).
-- Bei 390 px Breite ist die Bestellspalte (Bestellwesen, das Fenster vor dem Warenkorb) 68 px
-  breit, auch das Eingabefeld der Schlagworte; die Chips ragen darüber hinaus (gemessen am
-  30.09.2026 im echten Chrome, schon vor der zweiten Vorschlagszeile so). Unterhalb von `lg` legt
-  `BestellWorkspace.svelte` die Spalten untereinander (`grid-cols-1`); woher die Breite kommt, ist
-  nicht nachgesehen. Anlass zum Bauen: Bestellen soll am Telefon gehen.
-- Die Leiste der markierten Exemplare in der Buchakte trägt mit „Standort ändern" vier Knöpfe
-  und ist 692 px breit. Sie passt bis zu einem Fenster von 768 px. Bei 640 px ragt das × um
-  10 px über die Leiste, bei 390 px sind „Eigentum ändern", „Löschen" und das × abgeschnitten
-  (gemessen am 06.10.2026 im Browser). Mit drei Knöpfen war sie 553 px breit (gerechnet aus den
-  Knopfbreiten) und bei 390 px schon abgeschnitten. Material 3, Toolbars: „If there's not
-  enough space for all items, put them in an overflow menu in the trailing slot";
-  `ui/AuswahlLeiste` hat kein solches Menü. Anlass zum Bauen: Die Buchakte soll am Telefon oder
-  an einem kleinen Tablet bedient werden.
-- Der Stand-Merker der Barcode-Liste (Anzahl + `max(aktualisiert_am)`) rechnet mit dem Beginn
-  der Transaktion: Ändert eine lange Transaktion ein Etikett und committet nach einem kürzeren
-  Schreiber, bleibt es bei 304. Nachgestellt hinter dem Build-Tag `raster`
-  (`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_ ./repository/`). Heute ändert nur
-  `UpdateCopyBarcode` einen Barcode, als kurzer Einzelbefehl — scharf wird es erst mit einem
-  Schreiber, der in einer langen Transaktion umetikettiert (Durchgang 15.09.2026).
-- Ein Ausweis aus dem Altbestand ohne Vorsilbe (gemessen `B97601826457`) ist ohne Netz „unklar"
-  und wird abgewiesen. Hängt am Ausweis-Neudruck und entscheidet sich mit dem frischen
-  Littera-Backup (7.2).
-- Band „Keine Verbindung": Der Herzschlag-Wächter (`App.svelte`, 25 s ohne `ping`) unterscheidet
-  nicht zwischen „kein Ping gekommen" und „der Tab selbst stand" (Standby, eingefrorener
-  Hintergrund-Tab). Beim Aufwachen wäre der Herzschlag alt und das Band stünde bis zum nächsten
-  Ping, höchstens 15 s. Nicht nachgestellt.
-- Schreibweise der Nummern (entschieden am 23.09.2026: am Server nichts bauen). Der Server
-  schlägt Nummern exakt nach (`GetLeserByBarcode`, `GetCopyByBarcode`); die Theke
-  vereinheitlicht vorher (`normalisiereScan`, nur mit Ziffer hinter der Vorsilbe) — beim
-  Buchen und in der Offline-Warteschlange. Roh fragt nur die Vorschau beim Tippen
-  (`/api/search`). Gemessen am Testserver am 23.09.2026: alle gespeicherten Vorsilben groß
-  (40 Leser, 4.130 Exemplare, keine klein). **Anlass zum Bauen:** ein zweiter Aufrufer, der
-  rohe Nummern schickt — dann die Eingabe am Server vereinheitlichen (nicht `upper(barcode_id)`,
-  das nimmt den Index), mit einer gemeinsamen Fall-Tabelle für Go und JS.
-- Von Hand lässt sich eine ausgeschiedene `A-`-Nummer wieder eintragen, in der Akte wie in
-  „Benutzer & Rechte" — gewollt für die alte Karte eines Schülers, der zurückkommt (Migration
-  146). Die Maske sagt dabei nicht, dass die Nummer schon einmal vergeben war; nur der Generator
-  und die Littera-Übernahme lesen `ausweisnummern_ausgeschieden`. Anlass zum Bauen: eine alte
-  Karte, die auf diesem Weg an eine andere Person gerät.
-- Cover-Dateien ohne Titel (`uploads/cover_auto_…`): Eine ISBN-Abfrage, nach der nicht
-  gespeichert wird, lässt eine Datei je ISBN liegen (der Name kommt seit dem 02.10.2026 aus
-  ISBN und Inhalt, eine Wiederholung legt keine weitere ab), und ein ersetztes Cover die alte
-  Datei. Was vorher entstand, liegt weiter dort; gemessen ist die Menge an keinem Server.
-  Im Zwischenspeicher des Cover-Abrufs (`uploads/covers`) liegen dazu die Ersatzbilder von
-  Google Books, die bis zum 02.10.2026 als Cover abgelegt wurden (je 1.118 Byte); abgerufen
-  werden sie nicht mehr. Anlass zum Bauen: Der Ordner wird merklich groß.
-- Ein Titel ohne gespeichertes Cover zeigt, was Google Books oder OpenLibrary liefern. Für
-  Schulbücher ist das wenig (gemessen am 02.10.2026 an sieben ISBN der Reihen Deutschbuch,
-  Lambacher Schweizer, Green Line und Mensch und Politik): Google Books hat eines, OpenLibrary
-  keines, der Cover-Dienst der DNB fünf. Die DNB fragt nur der Cover-Abgleich des Servers
-  (beim Start und alle sechs Stunden); bis er einen Titel erreicht hat, steht dort die
-  Initiale. Anlass zum Bauen: Nach der Littera-Übernahme fehlen in den Katalogen merklich
-  Cover, die es bei der DNB gibt.
-- Der Cover-Abgleich fragt eine ISBN, die kein Katalogdienst kennt, alle sechs Stunden und bei
-  jedem Start neu (am Code gelesen am 02.10.2026): `processCover`
-  (`internal/service/cover_service.go`) setzt `FAILED`, sobald die Abfrage einen Fehler
-  liefert, und „nicht gefunden" ist dort ein Fehler; `NOT_FOUND` gibt es nur für einen Treffer
-  ohne Cover. Je Titel sind das bis zu fünf Anfragen an DNB, Google Books und OpenLibrary,
-  gedrosselt auf zwei Titel je Sekunde. Wie viele Titel es trifft, zeigt
-  `SELECT cover_status, count(*) FROM buecher_titel GROUP BY 1` am Server. Anlass zum Bauen:
-  Ein Dienst sperrt die Adresse der Schule, oder der Lauf dauert merklich.
-- Die Sperrprüfung liest aus dem Pool, während die Checkout-Transaktion mit `FOR UPDATE` offen ist
-  (drei Abfragen über eine zweite Verbindung). Bei `MaxConns = 50` ohne Wirkung; beim Nachbuchen
-  vieler Ausleihen (Abschnitt 2) beobachten.
-- Die Rate-Limiter-Maps räumen erst ab 5.000 Einträgen; nur mit vielen frischen Adressen ein
-  CPU-Thema.
-- Das Druck-Center hängt im Menü an `view_students`, seine Buch-Etiketten brauchen nur
-  `view_books` und `edit_books`. Ab Werk hat jede Rolle mit `edit_books` auch `view_students`;
-  wer die Rechte anders verteilt, erreicht die Buch-Etiketten nicht (Sammelpunkt wie
-  „Einstellungen"). Der Etikett-Knopf der Buchakte fragt deshalb beides ab.
-- Dieselbe Form bei der Klassenauswahl (Rasterdurchgang 30.09.2026): `GET /api/klassen` verlangt
-  `view_students`, gewählt wird die Klasse aber auch in den Klassensätzen und der
-  LMF-Verlängerung (`edit_books`) und im Mahnwesen-Routing (`manage_settings`). Ab Werk hat jede
-  Rolle mit einem dieser Rechte auch `view_students`. Wer die Rechte anders verteilt, sieht dort
-  „Klassen nicht geladen", und der Rat „Bitte neu öffnen" hilft ihm nicht.
-- Auch die Katalogdienste werden in einer Anfrage gefragt, die die Oberfläche nach 10 s
-  aufgibt: `POST /api/buecher/aus-isbn` fragt DNB, Google Books und OpenLibrary
-  (`SucheNachISBN`), „Cover erneut lokalisieren" läuft in der Anfrage über alle gewählten
-  Titel (`handleRetryExternalCovers`). Am Code gelesen am 07.10.2026, die Dauer nicht
-  gemessen. Anlass zum Bauen: ein Abbruch, nach dem unklar ist, was gespeichert wurde.
-- Die Inventur meldet einen Scan nur auf dem Bildschirm; einen Ton wie an der Theke gibt es
-  nicht. Ein unbekannter Barcode in einer schnellen Folge steht nur so lange da, bis der
-  nächste Scan gebucht ist.
-- Die Meldung „Änderungen gespeichert." der Maske „Stammdaten bearbeiten" erscheint nie: Die
-  Maske schließt mit dem Speichern, und die Meldung gehört zu ihr (`StudentEditSheet.svelte`).
-  Die Akte zeigt danach den gespeicherten Stand.
-- Theke: Antwortet der Server nicht, wartet jeder eingereihte Scan seine eigene Frist ab
-  (10 s, `apiFetch.js`), bevor er ohne Netz abgelegt wird; die Reihe läuft dann langsam ab.
-  Ein Neuladen oder Schließen der Seite nimmt die wartenden Scans mit, ohne Meldung (am Code
-  gelesen am 07.10.2026). Anlass zum Bauen: Die Theke reagiert bei hängendem Server spürbar
-  verzögert auf einen Stapel.
-- Die Datenbank ordnet Text nach Codepunkt (gemessen am 07.10.2026 am lokalen Stack:
-  „Banane < Mathe 10 < Mathe 5 < Ofen < Zebra < apfel < Ägypten < Ökologie"). Die Titelliste
-  ordnet deshalb in Go. 30 Abfragen ordnen in der Datenbank nach Titel oder Nachname, darunter
-  die Schüler-Etiketten, die Abgängerliste, die Suche des öffentlichen Katalogs und die
-  Bestandsliste; ob die Oberfläche ihre Antwort neu ordnet, ist je Liste nicht durchgesehen
-  (die Mahnliste tut es). Anlass zum Bauen: ein Name oder Titel, der in einer Liste nicht an
-  seinem Platz steht.
-- Theke: Kommt die Antwort auf einen Ausweis-Scan erst nach „Theke leeren" (Abmelden, während
-  die Anfrage läuft), lädt sie den Leser doch (`verarbeiteLeser`; am Store nachgestellt am
-  07.10.2026). Nach der nächsten Anmeldung stünde sein Konto offen.
-- Ausfallmatrix A3 und B4; A3 erst nach S3 (7.3).
-- Anmeldungen stehen nicht im Protokoll (am Code nachgesehen am 28.09.2026): `LoginHandler` in
-  `auth/handlers.go` schreibt keinen Eintrag, nur die Selbstanmeldung
-  (`auth/selbstanmeldung.go`). Nach einem Missbrauch lässt sich nicht nachsehen, wann und von wo
-  ein Konto angemeldet war; der Datenschutz-Nachweis (Abschnitte 8 und 9) sagt das so. Ein
-  Protokoll der Anmeldungen wären neue Personendaten des Personals (Zeitpunkt, Netzadresse) mit
-  eigener Frist. Anlass zum Bauen: ein Vorfall oder eine Frage des Datenschutzbeauftragten.
-- Skripte, die Titel löschen, lassen Werke zurück (Rasterdurchgang 25.09.2026):
-  `e2e_altlasten.sql`, `entferne_demo_daten.sql` und `seed_demo.sql` löschen Titel per DELETE;
-  das erreicht `werke` nicht, der Verweis zeigt vom Titel zum Werk. Zurück bleiben Werke ohne
-  Titel, die keine Ansicht zeigt, oder mit einem einzigen Titel, der überall wie ein Titel ohne
-  weitere Auflage erscheint (Titelmaske: unter „Andere Auflagen" steht keine Liste). Kein Schaden; die
-  Ratsche `auflagen_schreibpfad_ratsche_test.go` liest keine Skripte.
-- Der Katalogisat-Import legt Einträge über den Titeltext zusammen, und ein zweiter Lauf schreibt
-  die Angaben des zuletzt passenden Eintrags darüber (`queueTitelUpsert` in
-  `BulkUpsertBookTitles` sucht über die ISBN, sonst über den Titeltext). Gemessen am 30.09.2026
-  am Export vom Juni 2026: Aus 13.708 Einträgen werden 11.302 Titel (226 echte Dubletten, 432
-  mit gleicher ISBN und anderem Text, 1.748 mit gleichem Text bei anderer oder fehlender ISBN) —
-  „Harry Potter und der Feuerkelch" steht als Buch, Taschenbuch und DVD in der Datei und wird
-  ein Titel. Ein zweiter Lauf ändert 789 Titel; der letzte passende Eintrag gewinnt. Der Import
-  aus CSV und Excel (`internal/service/import_dynamic.go`) gleicht ebenso ab, dort nicht
-  gemessen; die Übernahme aus der Sicherung (`internal/littera`), mit der der Echtbetrieb
-  beginnt, tut es nicht. Der Katalog am Testserver stammt aus diesem Import. Anlass zum Bauen:
-  Das Katalogisat wird wieder ein Weg in den Echtbetrieb, oder ein gepflegter Katalog soll es
-  erneut einlesen.
-- Nach einem Rückbau auf einen älteren Stand behält ein Browser die neuere Startseite: Sie geht
-  mit `Last-Modified` und ohne `Cache-Control` hinaus (`http.ServeFileFS` in `api/router.go`),
-  und auf die Rückfrage mit dem jüngeren Datum antwortet der ältere Stand mit 304 (gemessen am
-  01.10.2026: 304 mit späterem, 200 mit früherem Datum). Die Seite verlangt dann ein Bundle,
-  das der Server nicht hat, bis jemand ohne Zwischenspeicher neu lädt. Bei einem Update nach
-  vorn tritt es nicht auf. Abhilfe mit Anlass: `Cache-Control: no-cache` und ein ETag aus dem
-  Namen des Bundles für die Startseite. Ein Fenster, das über den Rückbau hinweg offen bleibt,
-  arbeitet mit dem neueren Programm weiter: Sperrt es nach Inaktivität, lässt es sich nicht
-  aufschließen, weil dem älteren Stand die Wege zum Sperren und Aufschließen fehlen (am
-  01.10.2026 am Code gelesen, nicht nachgestellt); es hilft nur das Neuladen ohne
-  Zwischenspeicher.
-- Der LMF-Planer erfährt nur über die Live-Leitung, dass ein anderer Platz den Plan geändert
-  hat (`fremdesSignal`). War die Leitung unterbrochen — kein Netz, oder die Sperre nach
-  Inaktivität, hinter der sie ruht —, fehlt der Hinweis, und wer danach speichert,
-  überschreibt die fremde Änderung. Am Code gelesen am 01.10.2026, nicht nachgestellt. Seit
-  dem 01.10.2026 bleibt der Planer hinter der Sperre mit seinen ungespeicherten Änderungen
-  stehen; vorher gingen sie mit der Sperre verloren. Abhilfe mit Anlass: nach dem
-  Wiederaufbau der Leitung und nach dem Aufschließen den Stand am Server vergleichen.
-- Ungespeichertes übersteht seit dem 01.10.2026 die Sperre nach Inaktivität, aber nicht, was
-  ihr vorausgeht oder folgen kann (Rasterdurchgang vom 02.10.2026, Frage 15). Nach fünf Minuten
-  ohne Bedienung leert sich die Theke und baut die Akte des Lesers ab (am Stack nachgestellt),
-  samt einem offenen Dialog — Schaden melden, Stammdaten bearbeiten, Rückgabedatum ändern — und
-  dem, was darin getippt war. „Abmelden und als andere Person anmelden" am Sperrbildschirm
-  verwirft, was dahinter ungespeichert steht, ohne es zu sagen (am Code gelesen). Ob etwas
-  ungespeichert ist, weiß die Anwendung nur beim LMF-Planer (`uiStore.verlassenSperre`), und
-  gefragt wird nur beim Wechsel des Menüpunkts und beim Schließen des Fensters. Das Leeren der
-  Theke ist gewollt (Datenschutz-Nachweis, Abschnitt 5). Anlass zum Bauen: eine verlorene Eingabe an
-  der Theke.
-- Das Schließen-Symbol der Maske „Buch bearbeiten" und „Neues Buch" verwirft, was getippt und
-  nicht gespeichert ist, ohne Rückfrage: `onClose` schaltet nur zurück zur Titelliste
-  (`inventur/routes/admin/+page.svelte`). Seit dem 02.10.2026 steht „Speichern" im Kopf neben
-  dem Symbol. M3, Dialogs, Guidelines: „When someone dismisses a full-screen dialog, a basic
-  dialog should appear to confirm that they want to discard the unsaved changes." Dafür müsste
-  die Maske wissen, ob etwas geändert ist (wie `uiStore.verlassenSperre` beim LMF-Planer).
-- Die Live-Leitung (`GET /events`) verlangt nur eine Anmeldung, und ihre Meldung „action"
-  trägt zu jeder Buchung die Kennung des Lesers, die Buchnummer und den Titel
-  (`broadcastActionEvent`). Jedes angemeldete Konto bekommt sie, auch das Kollegium ohne
-  Leserecht; einen Namen trägt sie nicht (PII-Matrix, Stufe 0). Gelesen am 01.10.2026, nicht
-  nachgestellt. Zuhörer sind nur die Theke und die Abgänger-Seite. Frage mit Anlass: Braucht
-  die Meldung die Kennung des Lesers für jeden Empfänger?
-- Das Anfrage-Log nennt weder Dauer noch Anfragekennung (aus der Durchsicht von PR 631 am
-  21.09.2026): nicht gebaut, die Doku steht auf dem Ist-Stand. Mehr Logzeilen am Schulserver
-  sind eine Betriebsfrage.
-- Barrierefreiheit: Ob das System eine Erklärung zur Barrierefreiheit und barrierefreie PDFs
-  braucht (HTML-Druckweg oder begründete Ausnahme), ist nicht geklärt; bis dahin geparkt. Was
-  die Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
-
-### 6.2 Kategorie C
-
-- Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (16.09.2026), gefunden am
-  01.10.2026: das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
-  Vormerk-Liste (`permissionMetadata.js`, `BookVormerkungenTab.svelte`), das Etikett der
-  Reiterleiste (`StudentDirectory.svelte`), „Öffnet die Schülerdatei …" im Druck-Einstieg
-  (`KlassenDruckEinstieg.svelte`), „Schülerakte" in drei Erklärtexten (`permissionMetadata.js`,
-  `DatenschutzKategorie.svelte`, `BescheideTabelle.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
-  auch das Kollegium steht (`DeletedStudentList.svelte`). Beim Umbenennen die E2E-Specs
-  mitziehen.
-- Drei Knöpfe tun bei leerem Feld nichts und sagen es nicht (gefunden am 01.10.2026 beim
-  Durchgang über die Speichern-Wege der Oberfläche, am Code gelesen): die Nummer eines
-  Exemplars speichern (`saveBarcode` in `BookExemplarCard.svelte`), eine Sachgruppe „Sichern"
-  (`speichereBearbeitung` in `SystematikVerwaltung.svelte`) und „Anmelden" mit leerer Adresse
-  oder leerem Passwort (`authStore.handleLogin`). Verloren geht nichts. Den Knopf in dem
-  Zustand sperren oder das Feld nennen.
-- Die Maske „Buch bearbeiten" speichert nur per Klick auf „Speichern": Sie ist kein Formular,
-  die Eingabetaste und ein Tastenkürzel lösen nichts aus (`BuchFormular.svelte`, am Code
-  gelesen am 02.10.2026). In der Reihenfolge der Tabulatortaste steht „Speichern" seit dem
-  02.10.2026 vor den Feldern; wer mit der Tastatur ausfüllt, erreicht den Knopf nach dem
-  letzten Feld nur rückwärts.
-- Elf Dialoge sperren „Abbrechen", solange ihre Anfrage läuft (etwa
-  `StudentProfileDeleteModal.svelte`, `BescheidDialog.svelte`, `PapierkorbLoeschenDialog.svelte`),
-  dazu sieben Stellen in Formularen und Listen (`PromoteStudentsView.svelte` zweimal,
-  `GeraeteVerwaltung.svelte`, `AnliegenListe.svelte`, `KlassensatzReservierungen.svelte`,
-  `AusleiheRueckgabe.svelte`, `portal/ProblemFormular.svelte`; gezählt am 06.10.2026). M3 Dialogs, Guidelines: „Disable confirming
-  actions until a choice is made. Dismissive actions are never disabled." Abbrechen bricht die
-  laufende Anfrage am Server nicht ab. In der Lösch-Rückfrage der Benutzerliste schließt der
-  Knopf den Dialog wie Escape, und das Ergebnis der Anfrage steht auf der Seite; zu entscheiden
-  wäre, ob das für die übrigen ebenso gilt. Voraussetzung je Stelle: Erfolg und Ablehnung werden
-  außerhalb des Dialogs gemeldet.
-- Mahnwesen: „Neu laden" ist ein Symbolknopf ohne Wort (`MahnwesenAktionen.svelte`); auf den
-  anderen Seiten heißt der Knopf „Aktualisieren" oder „Neu prüfen".
-- `ui/Menue` kann einen Kopf über den Einträgen und Gruppen-Überschriften (`kopf`,
-  `ueberschriftDavor`); seit dem 05.10.2026 nutzt beides kein Aufrufer mehr.
-- Die Akte eines Kollegen ohne Ausweisnummer sagt am gesperrten Ausweisdruck „die Nummer steht
-  in „Benutzer & Rechte""; ohne Konto hat er dort keinen Eintrag. Die Nummer kommt mit dem
-  freigeschalteten Zugang (`StudentProfileActions.svelte`, `data-tip`).
-- Browser-Gates: Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst nur den
-  Anfangszustand; kein Screenreader-Durchgang; der Ausweis-Designer geht nur per Maus.
-- Symbol-Knöpfe haben 32 × 32 px ohne größere Trefferfläche (`.icon-btn` in
-  `styles/komponenten.css`, Gate `e2e/icon-trefferflaechen.spec.js` mit 32 px als Untergrenze).
-  M3, Icon buttons: „Extra small and small icon buttons must have a target size of 48x48dp or
-  larger to be accessible." `CLAUDE.md` nennt 48 px Trefferfläche als Hausmaß; gemessen wird
-  sie nirgends. In Tabellenzeilen stehen bis zu drei Symbole ohne Abstand nebeneinander
-  (Ausleihliste der Leserakte: verlängern, Schaden melden, zurückgeben). Anlass zum Bauen:
-  Fehlklicks an der Theke oder Bedienung am Tablet.
-- 9 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`).
-  Umstellen beim fachlichen Anfassen, nicht in einem Rutsch.
-- 3.000 Titel ohne ISBN: Die Textsuche der DNB (`SucheTextDNB`, heute nur in der Bestellsuche)
-  nur mit Bestätigung durch einen Menschen für sie verdrahten.
-- Titel aus der DNB tragen deren Platzhalter für eine fehlende Zählung („Deutschbuch [...]
-  Gymnasium 5."), und der Zusatz zum Sachtitel (MARC 245 $b) steht im Titel statt im Feld
-  Untertitel („Lambacher Schweizer Mathematik 6. Ausgabe Hessen Schulbuch mit Medien Klasse
-  6"; an Sätzen der DNB gelesen am 02.10.2026). Die Maske zeigt den Titel vor dem Speichern.
-- Die Altersangabe der DNB (653 „(Zielgruppe)ab 10 Jahre", `MetadatenErgebnis.Zielgruppe`) wird
-  gelesen und nicht gespeichert: Es gibt keine Spalte und keinen Leser. Anlass zum Bauen: ein
-  Leser, etwa ein Filter im Portal.
-- `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=time.Now()` in der Zone des
-  Testprozesses; unter `TZ=Pacific/Midway` ist das der Vortag und der Zähler nennt 0. Kein
-  Produktfehler — im Betrieb kommt dieses Datum aus dem Browser in Berlin. Beim nächsten Anfassen
-  auf `schulzeit.Zone()` umstellen (gefunden am 18.09.2026, als die volle Suite einmal unter einer
-  fremden Prozesszone lief).
-- `github.com/jung-kurt/gofpdf` ist seit 2021 archiviert und steckt in 17 Dateien (ohne Tests,
-  gezählt am 30.09.2026); gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto
-  mitbringt. Neue PDFs nicht mehr auf dem archivierten; die 17 beim fachlichen Anfassen
-  umstellen, mit den PDF-Gates.
-- Reste des Nie-verdrahtet-Sweeps: `abgaenger_jahr` in der Aktivlisten-Antwort ohne
-  Konsument; bei den Geräten `ActionEvent.GeraetID` ohne Broadcast und mit Null-Zeitstempel.
-- Die Prüfung der UUID-Pfadparameter (`ValidateUUIDParamsMiddleware`) sitzt in
-  `RequirePermission`. Eine Route mit `{id}`, `{schueler_id}` oder `{ausleihe_id}` unter
-  `RequireAuthenticated` liefe an ihr vorbei, und die Kennung ginge ungeprüft an die Datenbank.
-  Heute gibt es keine: Am 04.10.2026 antworteten alle 65 Routen mit UUID-Platzhalter am echten
-  Router auf eine Kennung, die keine UUID ist, mit 400. Kein Gate hält das;
-  `api/uuid_pfadparameter_test.go` prüft die Namen der Platzhalter, nicht die Hülle der Route.
-  Anlass zum Bauen: die erste Route mit UUID-Platzhalter ohne `RequirePermission`.
-- `auth.Claims.BarcodeID` liest niemand mehr; die Ausweisnummer kommt seit Migration 125
-  als LEFT JOIN aus der Leserzeile in die Sitzung, nur damit das Feld gefüllt bleibt.
-- Tabellen-Inline-Felder mit 36 px: eine `size="sm"`-Variante von `Feld` erst bei Bedienbefund.
-- `LabelHeight >= 30` steht zweimal (`api/label_pdf.go`, `api/schueler_etikett_pdf.go`).
-- Zwei Normalformen für Namen (`repository.Suchnorm`, `normName` in `api/lusd_paarung.go`); beim
-  Anfassen der Paarung zusammenführen.
-- Der Paritätstest vergleicht keine COMMENTs und Seeds.
-- Erbe der PR-Zulieferungen: Go-Testdateien über 200 Zeilen, ein schwacher Export-CSV-Test.
-- Klone: Go 9 Gruppen (05.09.2026), Frontend 0,41 %.
-- 48 Handler-Dateien in `api/` formulieren rohes SQL neben `repository/` (gezählt am 06.10.2026);
-  der Bestand ist seit dem 07.08.2026 eingefroren (`handlerMitSQL` in `api/schichtung_test.go`).
-  Umstellen beim fachlichen Anfassen einer Datei, nicht in einem Rutsch.
-- Exemplarkarte der Buchakte (`BookExemplarCard.svelte`): Die vier Symbolknöpfe sind 14 px groß
-  statt 32 px (`.icon-btn`), drei erklären sich per `title` statt `data-tip`; die Buchakte fehlt
-  in `icon-trefferflaechen.spec.js` und `icon-tooltips.spec.js`. Ein 32-px-Knopf bricht die
-  Kopfzeile bei 1280 px um (gemessen am 24.09.2026: Karte 70 → 100 px) — die Knöpfe brauchen
-  eine eigene Zeile; eine Layoutfrage, nicht einzeln. „Barcode scannen" ist 24 px hoch, und
-  „Interne ID generieren" bricht bei 1280 px im Knopf in zwei Zeilen um (gemessen am
-  06.10.2026).
-- Vorschläge an einem Textfeld zeichnet der Browser (`datalist`): am Feld „Signatur", im
-  Dialog „Standort ändern", in der Schlagwort-Pflege und in `ui/ChipFeld` (sechs Stellen,
-  gezählt am 06.10.2026). Die Liste sieht je Browser anders aus und folgt nicht Material 3;
-  im Haus ist sie einheitlich. Anlass zum Bauen: Die Vorschläge sollen aussehen wie die Menüs
-  der Anwendung.
-
-### 6.3 Parkdeck (bewusste Nicht-Entscheidungen)
-
-Integer-Cent statt float64 · Bundle-Splitting · TypeScript-Migration · `inventur/` ins Haupt-API
-verschmelzen · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
-geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (23 Dateien
-mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Zugangsbuch-Ausdruck je
-Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides nennt
-[mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als Verfahrensvorgabe; nicht gebaut) ·
-ein Schüler wird Lehrkraft (die Datenbank verbietet es, `chk_leser_nur_schueler_werden_abgaenger`;
-heute ein zweiter Leser, bei Häufung ein Umzugspfad wie Migration 072) ·
-Schlagwortliste drucken, Schlagwortkatalog als Datei aus- und einlesen (wie Littera, nur wenn die
-Bücherei es braucht; 23.09.2026) · Verweise für Autoren (der Autor ist ein Textfeld, kein
-Personensatz) · Statistik nach Zweigen (braucht den Zweig an der Ausleihe ohne Namen, weil eine
-Ausleihe der Bücherei seit dem 29.09.2026 den Namen nach einem Tag verliert; nur mit eigener
-Frage).
 
 ---
 
@@ -1337,7 +945,7 @@ jemandem schaden?"**
 | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | **A** | Kann **stillschweigend** ein falsches Ergebnis für einen echten Menschen erzeugen: doppelte Mahnung an Eltern, Daten beim falschen Empfänger, verlorene Eingabe, ein Gate, das nicht rot werden kann | **Sofort**, eigener Commit, eigener Test, eigene Deploy-Entscheidung |
 | **B** | Fehler, der sich **laut** meldet, oder Unordnung ohne Wirkung nach außen: totes Codestück, wackeliger Test, Doppelung                                                                                | Hier notieren, gebündelt abarbeiten                                  |
-| **C** | „Wenn ich schon mal hier bin" — Umbenennungen, Stilfragen, Refactorings ohne Anlass                                                                                                                  | Nur mit Anlass und Zeit                                              |
+| **C** | „Wenn ich schon mal hier bin" — Umbenennungen, Stilfragen, Refactorings ohne Anlass                                                                                                                  | Nur mit Anlass und Zeit; steht in ARCHITEKTUR.md 11.5, nicht hier    |
 
 1. **Ein Fund = ein Commit.** Was beim Reparieren zusätzlich auffällt, kommt hierher, nicht in
    denselben Commit.
@@ -1345,7 +953,8 @@ jemandem schaden?"**
    Fund nachgestellt ist, heißt er „Verdacht".
 3. **Neues kommt nur hierher** — Funde, offene Fragen, Betriebspunkte: als Zeile im Fahrplan,
    wenn es ein Schritt ist, und mit Beleg unter einer Nummer in den Einzelheiten. Kein Issue,
-   kein anderes Dokument. Eine Frage steht hier, bevor die Antwort kommt.
+   kein anderes Dokument. Eine Frage steht hier, bevor die Antwort kommt. Eine Beobachtung
+   ohne Schritt (Kategorie C) kommt nach [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5.
 4. **Erledigt heißt:** im Fahrplan abhaken, in den Einzelheiten löschen — Datum und Begründung
    stehen in der Commit-Nachricht, ein Archiv gibt es nicht. Eine Antwort bekommt „Entschieden am …" und fällt weg, sobald
    sie umgesetzt ist. Die Nummer eines gelöschten Punkts wird nicht wieder vergeben —
