@@ -184,15 +184,9 @@ describe('idleLock', () => {
 		expect(omniboxStore.activeStudent).not.toBeNull();
 	});
 
-	// Ohne Netz sperrt die Theke nicht (Stufe 3, entschieden am 13.09.2026, belegt vom
-	// Stufe-1-Nachweis am 16.09.2026).
-	//
-	// Der Sperrbildschirm wird mit dem Passwort gegen den Schul-Mailserver aufgemacht.
-	// Ohne Netz passt der Schluessel nicht ins Schloss: Die Sitzung dahinter laeuft
-	// weiter (12 Stunden, 30-Minuten-Erneuerung), erreichbar ist sie nicht mehr — und
-	// die offline gescannten Vorgaenge liegen hinter einer Tuer, die niemand oeffnen
-	// kann. Peter am Stack: „falls aufgrund von inatkivität sich der bildschirm
-	// abmeldet, kann ich mich nicht mehr anmelden wenn das netz weg ist".
+	// Ohne Netz sperrt die Theke nicht: Der Sperrbildschirm öffnet nur mit dem Passwort
+	// gegen den Schul-Mailserver, und die offline gescannten Vorgänge lägen sonst hinter
+	// einer Tür, die niemand öffnen kann.
 	describe('ohne Netz', () => {
 		it('leert die Theke, sperrt aber nicht', () => {
 			netz.isOffline = true;
