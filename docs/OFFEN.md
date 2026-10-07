@@ -107,6 +107,12 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   Buch scannen (ausprobiert am 07.10.2026 mit dem Handscanner: Das Fenster bleibt stehen, rot
   und Fehlerton)
 - [ ] Theke: eine unbekannte Nummer scannen
+- [ ] Buchakte: Kopf und Reiter „Exemplare" bei einem Titel mit einem bestellten oder
+  ausgesonderten Exemplar („1 von 2 verfügbar", daneben „1 bestellt", am Reiter die 2)
+- [ ] Druck-Center: Vorschau bei einem Titel mit mehr Exemplaren, als auf einen Bogen passen
+  (ein Bogen, darunter „Bogen 1 von …")
+- [ ] Bestellhistorie: Spalte „Stand". Scheitert der Versand einer Bestellmail, steht dort
+  „Mail nicht versendet" und in der Bestellung „Erneut senden"
 
 **Erledigen:**
 
