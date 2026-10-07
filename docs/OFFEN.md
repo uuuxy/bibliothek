@@ -36,6 +36,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 (entschieden am 28.09.2026).
 
 - [ ] Die Littera-Übernahme überträgt die Auflage. (5.5)
+- [ ] Die Littera-Übernahme nimmt die Nichtsortierzeichen aus dem Titel („¬Die¬ schwarze
+  Katze"). (5.59)
 - [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt:
   Ausweisnummern, offene Ausleihen, Standorte, Verweise der Schlagworte. (7.2, 4.20)
 - [ ] `update.sh` für den Schulserver: nur Releases, Images frisch. (5.31)
@@ -57,9 +59,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   nicht gemeldet; in der Schnellrückgabe bleibt das Buch verliehen. Vorschlag: einen Scan mit
   anderer Nummer einreihen wie seit dem 07.10.2026 in der Inventur, dieselbe Nummer weiter
   verwerfen. (5.56)
-- [ ] Titelliste: Sie steht in der Reihenfolge des Anlegens, und jede Zeile lässt sich ziehen;
-  das Ablegen schreibt die Reihenfolge ohne Rückfrage. Vorschlag: nach Titel sortieren, das
-  Ziehen entfernen. (5.58)
+- [x] Die Titelliste steht nach dem Titel, das Ziehen der Zeilen ist entfernt (entschieden
+  und gebaut am 07.10.2026).
+- [ ] Titelliste: Ein Artikel am Anfang zählt beim Ordnen mit, „Die schwarze Katze" steht
+  unter D; Littera ordnet solche Titel ohne den Artikel. Vorschlag: bleibt so. (5.59)
 - [x] „Mahnbriefe drucken" verlangt dasselbe Recht wie der Mahnversand (`create_orders`,
   entschieden und gebaut am 07.10.2026).
 - [x] Das Aussehen nach der Umstellung der Farben auf M3-Rollen bleibt so (entschieden am
@@ -79,6 +82,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Buchakte: Status eines gesperrten Exemplars öffnen und speichern
 - [ ] Bestandsliste (Einstellungen → Datenverwaltung): Spalte „Standort"; gefüllt bei
   Exemplaren, die einen Standort tragen (Buchakte, „Standort ändern")
+- [ ] Medienkatalog: Titel-Verwaltung und „Suche & Filter" stehen nach dem Titel
 
 **Erledigen:**
 
@@ -728,25 +732,28 @@ Befund. Nächster Schritt: je Tür festlegen, ob sie einen Eintrag schreibt, und
 steht, ohne neuen Personenbezug (eine Adresse im Eintrag bliebe bis zur Audit-Aufbewahrung).
 Kategorie B.
 
-### 5.58 Titelliste: Reihenfolge und Ziehen
+### 5.59 Titel aus Littera: Nichtsortierzeichen und Artikel am Anfang
 
-Am 07.10.2026 am Code gelesen, die Belegung an der lokalen Datenbank gezählt.
+Gemessen am 07.10.2026 an der Littera-Sicherung von 2010 (Tabelle `Titel`, 10.643 Titel).
 
-- Die Titelliste (`GET /api/books`, Titel-Verwaltung und Medienkatalog) sortiert zuerst nach
-  `sort_order`. Die Spalte ist eine laufende Nummer aus dem Anlegen (`SERIAL`): lokal 12.551
-  Titel mit 12.551 verschiedenen Werten. Die Sortierung nach Titel dahinter
-  (`sortiereBuecherNatuerlich`, „Teil 2 vor Teil 10") greift damit nie; die Liste steht in der
-  Reihenfolge des Anlegens.
-- Jede Zeile der Titel-Verwaltung lässt sich ziehen (`BookTableZeile.svelte`,
-  `draggable="true"`). Das Ablegen schreibt die Reihenfolge aller geladenen Titel
-  (`PUT /api/admin/books/reorder`), ohne Rückfrage. In einer gefilterten Liste bekommen die
-  Treffer die Nummern 1 bis n und rücken an den Anfang der Liste, neben die zuerst angelegten
-  Titel. Erfolg und Fehler meldet die
-  Seite nicht: `addToast` in `BookTable.svelte` schreibt nur in die Konsole. Einen Weg zurück
-  zur alten Reihenfolge gibt es nicht.
+- Littera schließt den Artikel am Anfang eines Titels in Nichtsortierzeichen ein („¬Die¬
+  schwarze Katze") und führt einen Sortiertitel ohne ihn (`HaupttitelSort`); das Handbuch:
+  „nicht unter D für Die sortiert, sondern unter S wie schwarze". 1.401 Titel tragen die
+  Zeichen, weitere 489 beginnen mit einem Artikel ohne sie.
+- **Die Übernahme schreibt die Zeichen in den Titel** (`LeseTitel` in
+  `internal/littera/mapping.go`; nachgestellt: Aus „¬Die¬ schwarze Katze" wird der Titel
+  „¬Die¬ schwarze Katze"). So stünde er überall, wo das Programm den Titel zeigt oder druckt,
+  und die Titelliste begänne mit diesen Titeln: Das Zeichen ordnet vor Ziffern und
+  Buchstaben. Der Katalog-Import (`internal/service/import_service.go`) und die Abfrage der
+  DNB (`inventur/metadaten_anbieter.go`) nehmen die Zeichen weg. Nächster Schritt: Die
+  Übernahme nimmt sie ebenfalls weg. Kategorie B.
+- Die Titelliste (`GET /api/books`) ordnet nach dem Titel, wie er dasteht: Ohne die Zeichen
+  steht „Die schwarze Katze" unter D.
 
-**Zu entscheiden:** Soll die Liste nach Titel sortiert sein, und wird das Ziehen gebraucht?
-Vorschlag: nach Titel sortieren, Ziehen und Route entfernen. Kategorie B.
+**Zu entscheiden:** Bleibt es bei der Ordnung nach dem Titel, wie er dasteht (gefunden wird
+ein Titel über das Suchfeld), oder bringt die Übernahme Litteras Sortiertitel in einer
+eigenen Spalte mit, nach der die Liste ordnet? Das zweite braucht eine Migration und eine
+Regel für neu angelegte Titel. Vorschlag: bleibt so.
 
 ---
 

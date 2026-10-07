@@ -1,0 +1,59 @@
+{
+	"_zweck": "Geteilte Prüffälle zur Reihenfolge der Titelliste (GET /api/books): Der Server ordnet mit sortiereBuecherNachTitel (inventur/endpunkte_buecher_lesen.go), die Listen der Oberfläche ordnen mit Intl.Collator('de', {numeric: true}). Beide Tests lesen diese Datei; jede Liste steht in der erwarteten Reihenfolge. Ordnen die Seiten verschieden, steht derselbe Titel am Server woanders als in einer Liste des Browsers.",
+	"faelle": [
+		{
+			"fall": "Zahlen nach ihrer Größe",
+			"erwartet": ["Mathe 5", "Mathe 6", "Mathe 10"]
+		},
+		{
+			"fall": "Zahl mitten im Titel",
+			"erwartet": ["Green Line 1 Workbook", "Green Line 2 Schülerbuch", "Green Line 10 Workbook"]
+		},
+		{
+			"fall": "die Null vor weiterem Text",
+			"erwartet": [
+				"Heft 0 Einführung",
+				"Heft 1 Grundlagen",
+				"Heft 5 Vertiefung",
+				"Heft 10 Abschluss"
+			]
+		},
+		{
+			"fall": "die Null in einer Kennung",
+			"erwartet": ["Buch v0mh", "Buch v8u1", "Buch v90x"]
+		},
+		{
+			"fall": "führende Nullen zählen nicht",
+			"erwartet": ["Band 007", "Band 8", "Band 0010"]
+		},
+		{
+			"fall": "Umlaute beim Grundbuchstaben",
+			"erwartet": [
+				"Agua con sal",
+				"Ägypten",
+				"Ahlan",
+				"Ofen",
+				"Ökologie",
+				"Über Kafka",
+				"Uhr",
+				"Zebra"
+			]
+		},
+		{
+			"fall": "Groß und klein trennt nicht",
+			"erwartet": ["apfel", "Banane", "zebra", "Zoo"]
+		},
+		{
+			"fall": "Eszett wie ss",
+			"erwartet": ["Strand", "Straße", "Strauch"]
+		},
+		{
+			"fall": "Zeichen vor Ziffern vor Buchstaben",
+			"erwartet": ["\"Ab mit dir\"", "20.000 Meilen", "1984", "Abend"]
+		},
+		{
+			"fall": "der Artikel am Anfang zählt mit",
+			"erwartet": ["Der Hobbit", "Die Räuber", "Emil und die Detektive"]
+		}
+	]
+}

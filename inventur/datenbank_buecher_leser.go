@@ -148,6 +148,9 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 // Reiter „Suche & Filter" lädt die ganze Liste und sucht im Browser — ohne die Wörter fände
 // er über ein Schlagwort nichts, während die Titel-Verwaltung daneben am Server sucht und
 // es fände.
+//
+// Die Reihenfolge der Abfrage hält die Kappung und gleiche Titel fest; nach dem Titel ordnet
+// der Aufrufer (sortiereBuecherNachTitel), weil die Datenbank keine deutsche Sortierregel hat.
 func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string, nurOhneExemplare bool) ([]Book, error) {
 	sicht := repository.SQLTitelHatExemplar("bt")
 	if nurOhneExemplare {
@@ -161,7 +164,7 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 		       OR ` + repository.SQLSuchtextIstISBN("bt", "$3") + `
 		       OR ` + repository.SQLTitelUeberSchlagwort("bt", "$3") + `)
 	` + buchListenGroupBySchlank + `
-		ORDER BY bt.sort_order ASC, bt.titel ASC
+		ORDER BY bt.titel ASC, bt.id ASC
 		LIMIT $4`
 
 	rows, err := repo.db.Query(ctx, query, subject, grade, searchQuery, listBooksSicherheitsLimit)

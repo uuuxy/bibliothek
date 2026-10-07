@@ -1,10 +1,12 @@
 package inventur
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -13,56 +15,70 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestExtrahiereZahlenUndBasis(t *testing.T) {
-	tests := []struct {
-		name         string
-		titel        string
-		expectedZahl int
-		expectedBase string
-	}{
-		{
-			name:         "Normal string with number at the end",
-			titel:        "Band 1",
-			expectedZahl: 1,
-			expectedBase: "Band",
-		},
-		{
-			name:         "String without numbers",
-			titel:        "Buch",
-			expectedZahl: 0,
-			expectedBase: "Buch",
-		},
-		{
-			name:         "String with numbers at the start",
-			titel:        "123 Test",
-			expectedZahl: 123,
-			expectedBase: "Test",
-		},
-		{
-			name:         "String with multiple numbers",
-			titel:        "Buch 42 mit 99",
-			expectedZahl: 42,
-			expectedBase: "Buch  mit",
-		},
-		{
-			name:         "Empty string",
-			titel:        "",
-			expectedZahl: 0,
-			expectedBase: "",
-		},
+// sortiertWieErwartet gibt die Titel rückwärts hinein und vergibt die laufende Nummer aus dem
+// Anlegen (sort_order) dabei aufsteigend: Die alte Reihenfolge wäre die umgekehrte.
+func sortiertWieErwartet(t *testing.T, erwartet []string) {
+	t.Helper()
+	buecher := make([]Book, 0, len(erwartet))
+	for i := len(erwartet) - 1; i >= 0; i-- {
+		buecher = append(buecher, Book{Title: erwartet[i], SortOrder: len(buecher) + 1})
 	}
+	sortiereBuecherNachTitel(buecher)
+	ist := make([]string, len(buecher))
+	for i, b := range buecher {
+		ist[i] = b.Title
+	}
+	assert.Equal(t, erwartet, ist)
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			zahl, basis := extrahiereZahlenUndBasis(tt.titel)
-			if zahl != tt.expectedZahl {
-				t.Errorf("extrahiereZahlenUndBasis(%q) got zahl = %d, want %d", tt.titel, zahl, tt.expectedZahl)
-			}
-			if basis != tt.expectedBase {
-				t.Errorf("extrahiereZahlenUndBasis(%q) got basis = %q, want %q", tt.titel, basis, tt.expectedBase)
-			}
+// Die Titelliste steht nach dem Titel, wie ein deutsches Register: Umlaute bei ihrem
+// Grundbuchstaben, Zahlen nach ihrer Größe, Groß- und Kleinschreibung trennt keine Buchstaben.
+// Dieselbe Reihenfolge gibt der Browser mit Intl.Collator('de', {numeric: true}); beide Seiten
+// lesen dieselben Fälle (Bauart wie auflagenText.faelle.json). Ordnen sie verschieden, steht
+// ein Titel am Server woanders als in einer Liste des Browsers.
+func TestSortiereBuecherNachTitel_WieImBrowser(t *testing.T) {
+	const faelleDatei = "../frontend/src/lib/utils/titelReihenfolge.faelle.json"
+	roh, err := os.ReadFile(faelleDatei)
+	require.NoError(t, err)
+	var pruefung struct {
+		Faelle []struct {
+			Fall     string   `json:"fall"`
+			Erwartet []string `json:"erwartet"`
+		} `json:"faelle"`
+	}
+	require.NoError(t, json.Unmarshal(roh, &pruefung))
+	require.GreaterOrEqual(t, len(pruefung.Faelle), 10, "liest der Test noch titelReihenfolge.faelle.json?")
+
+	for _, f := range pruefung.Faelle {
+		t.Run(f.Fall, func(t *testing.T) {
+			require.GreaterOrEqual(t, len(f.Erwartet), 3)
+			sortiertWieErwartet(t, f.Erwartet)
 		})
 	}
+
+	// Liest die JavaScript-Seite dieselbe Datei? Sonst prüfte jede Seite nur sich selbst.
+	vitest, err := os.ReadFile("../frontend/src/lib/utils/titelReihenfolge.test.js")
+	require.NoError(t, err)
+	assert.Contains(t, string(vitest), "./titelReihenfolge.faelle.json")
+	assert.Contains(t, string(vitest), "new Intl.Collator('de', { numeric: true })")
+}
+
+// Leerzeichen am Rand eines Titels zählen nicht.
+func TestSortiereBuecherNachTitel_OhneLeerzeichenAmRand(t *testing.T) {
+	sortiertWieErwartet(t, []string{"Apfel", " Banane", "Clown "})
+}
+
+// Gleiche Titel behalten die Reihenfolge, in der die Abfrage sie liefert.
+func TestSortiereBuecherNachTitel_GleicheTitelBleibenInAbfrageReihenfolge(t *testing.T) {
+	buecher := []Book{
+		{ID: "c", Title: "Mathe 7"}, {ID: "x", Title: "Zebra"}, {ID: "a", Title: "Mathe 7"}, {ID: "b", Title: "Mathe 7"},
+	}
+	sortiereBuecherNachTitel(buecher)
+	ist := make([]string, len(buecher))
+	for i, b := range buecher {
+		ist[i] = b.ID
+	}
+	assert.Equal(t, []string{"c", "a", "b", "x"}, ist)
 }
 
 func TestBearbeiteBuecherListe(t *testing.T) {

@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"log"
@@ -8,12 +9,15 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"golang.org/x/text/collate"
+	"golang.org/x/text/language"
 )
 
 // BearbeiteBuecherListe verarbeitet GET-Anfragen für die Bücherübersicht.
 // Die Funktion liest Suchparameter (Fach, Klasse, Suchbegriff) aus,
 // nutzt ein Wörterbuch für Synonyme (z.B. powi -> politik) und fragt die Datenbank ab.
-// Danach werden die Bücher logisch (natürlich) sortiert und als JSON gesendet.
+// Danach stehen die Bücher nach dem Titel (sortiereBuecherNachTitel) und gehen als JSON hinaus.
 func (handler *APIHandler) BearbeiteBuecherListe(antwort http.ResponseWriter, anfrage *http.Request) {
 	anfrageParameter := anfrage.URL.Query()
 	fach := strings.TrimSpace(anfrageParameter.Get("subject"))
@@ -57,7 +61,7 @@ func (handler *APIHandler) BearbeiteBuecherListe(antwort http.ResponseWriter, an
 		return
 	}
 
-	sortiereBuecherNatuerlich(buecher)
+	sortiereBuecherNachTitel(buecher)
 
 	writeJSON(antwort, http.StatusOK, map[string]any{"data": buecher})
 }
@@ -80,95 +84,73 @@ var suchSynonyme = map[string]string{
 	"reli":  "religion",
 }
 
-// extrahiereZahlenUndBasis parst manuell die erste Zahl aus dem Titel
-// und gibt diese sowie den bereinigten Basis-String (ohne Ziffern) zurück.
-// Dies ersetzt langsame Regex-Operationen für performantes Sortieren.
-func extrahiereZahlenUndBasis(titel string) (int, string) {
-	var basis strings.Builder
-	basis.Grow(len(titel))
-	zahl := 0
-	erstesGefunden := false
-	inZahl := false
-	var currentZahl int
-
-	for i := 0; i < len(titel); i++ {
-		b := titel[i]
-		if b >= '0' && b <= '9' {
-			if !erstesGefunden {
-				currentZahl = currentZahl*10 + int(b-'0')
-				inZahl = true
-			}
-			// Wir ignorieren alle Ziffern für die Basis (wie Regex ReplaceAllString)
-		} else {
-			if inZahl {
-				zahl = currentZahl
-				erstesGefunden = true
-				inZahl = false
-			}
-			basis.WriteByte(b)
-		}
-	}
-
-	if inZahl && !erstesGefunden {
-		zahl = currentZahl
-	}
-
-	return zahl, strings.TrimSpace(basis.String())
-}
-
-// sortKey hält vorberechnete Werte für performantes Sortieren (Schwartzian Transform)
-type sortKey struct {
-	bookPtr   *Book
-	basis     string
-	zahl      int
-	titel     string
-	sortOrder int
-}
-
-// sortiereBuecherNatuerlich führt eine intelligente Sortierung auf dem Array aus.
-// Sie sorgt dafür, dass Ziffern logisch sortiert werden (Teil 2 vor Teil 10).
-// Nutzt zur Performance die Schwartzian Transform Methode. Groß-/Kleinschreibung wird ignoriert.
-func sortiereBuecherNatuerlich(buecher []Book) {
+// sortiereBuecherNachTitel ordnet die Liste nach dem Titel, wie ein deutsches Register:
+// Umlaute stehen bei ihrem Grundbuchstaben, Zahlen nach ihrer Größe („Teil 2" vor „Teil 10"),
+// Groß- und Kleinschreibung trennt keine Buchstaben. Dieselbe Reihenfolge gibt der Browser
+// mit Intl.Collator('de', {numeric: true}), nach dem die Listen der Oberfläche ordnen; beide
+// Seiten prüft titelReihenfolge.faelle.json. Gleiche Titel behalten die Reihenfolge der
+// Abfrage.
+//
+// Der Collator entsteht je Aufruf: Er hält Zustand und darf nicht zwei Anfragen zugleich
+// dienen.
+func sortiereBuecherNachTitel(buecher []Book) {
 	if len(buecher) <= 1 {
 		return
 	}
 
-	keys := make([]sortKey, len(buecher))
+	ordnung := collate.New(language.German)
+	var puffer collate.Buffer
+	schluessel := make([][]byte, len(buecher))
+	reihenfolge := make([]int, len(buecher))
 	for i := range buecher {
-		t := strings.ToLower(buecher[i].Title)
-		zahl, basis := extrahiereZahlenUndBasis(t)
-		keys[i] = sortKey{
-			bookPtr:   &buecher[i],
-			basis:     basis,
-			zahl:      zahl,
-			titel:     t,
-			sortOrder: buecher[i].SortOrder,
-		}
+		titel := zahlenNachGroesse(strings.TrimSpace(buecher[i].Title))
+		schluessel[i] = ordnung.KeyFromString(&puffer, titel)
+		reihenfolge[i] = i
 	}
-
-	sort.SliceStable(keys, func(i, j int) bool {
-		// Manuelle Sortierfolge (sort_order) des Admins respektieren, falls gesetzt
-		if keys[i].sortOrder != keys[j].sortOrder {
-			return keys[i].sortOrder < keys[j].sortOrder
-		}
-
-		if keys[i].basis != keys[j].basis {
-			return keys[i].basis < keys[j].basis
-		}
-
-		if keys[i].zahl != keys[j].zahl {
-			return keys[i].zahl < keys[j].zahl
-		}
-
-		return keys[i].titel < keys[j].titel
+	sort.SliceStable(reihenfolge, func(a, b int) bool {
+		return bytes.Compare(schluessel[reihenfolge[a]], schluessel[reihenfolge[b]]) < 0
 	})
 
-	result := make([]Book, len(buecher))
-	for i, k := range keys {
-		result[i] = *k.bookPtr
+	sortiert := make([]Book, len(buecher))
+	for ziel, quelle := range reihenfolge {
+		sortiert[ziel] = buecher[quelle]
 	}
-	copy(buecher, result)
+	copy(buecher, sortiert)
 }
+
+// zahlenNachGroesse schreibt jede Ziffernfolge so um, dass die Buchstabenfolge sie nach ihrer
+// Größe ordnet: Führende Nullen fallen weg, davor steht zweistellig die Zahl der Stellen
+// („5" wird „015", „10" wird „0210").
+//
+// collate.Numeric leistet das nicht: Es ordnet die Zahl 0 hinter jede andere, sobald Text
+// folgt („Heft 5 …" vor „Heft 0 …").
+func zahlenNachGroesse(text string) string {
+	var umgeschrieben strings.Builder
+	umgeschrieben.Grow(len(text) + 8)
+	for i := 0; i < len(text); {
+		if !istZiffer(text[i]) {
+			umgeschrieben.WriteByte(text[i])
+			i++
+			continue
+		}
+		ende := i
+		for ende < len(text) && istZiffer(text[ende]) {
+			ende++
+		}
+		ziffern := strings.TrimLeft(text[i:ende], "0")
+		if ziffern == "" {
+			ziffern = "0"
+		}
+		stellen := min(len(ziffern), 99)
+		umgeschrieben.WriteByte(byte('0' + stellen/10))
+		umgeschrieben.WriteByte(byte('0' + stellen%10))
+		umgeschrieben.WriteString(ziffern)
+		i = ende
+	}
+	return umgeschrieben.String()
+}
+
+func istZiffer(zeichen byte) bool { return zeichen >= '0' && zeichen <= '9' }
 
 // BearbeiteBuchLesen verarbeitet GET-Anfragen für ein einzelnes Buch.
 func (handler *APIHandler) BearbeiteBuchLesen(antwort http.ResponseWriter, anfrage *http.Request) {

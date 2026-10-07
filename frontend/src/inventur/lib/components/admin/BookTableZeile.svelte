@@ -1,5 +1,5 @@
 <script>
-	import { ChevronRight, Menu } from '@lucide/svelte';
+	import { ChevronRight } from '@lucide/svelte';
 	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
@@ -22,61 +22,26 @@
 	 *     lastCounted: string,
 	 *     standorte?: import('../../../../lib/utils/standorte.js').StandortZahl[]
 	 *   },
-	 *   index: number,
-	 *   dragOverIndex: number|null,
 	 *   isSelected: boolean,
 	 *   onOpenDetail: (book: any) => void,
-	 *   onToggleSelect: (id: string) => void,
-	 *   onDragStart: (event: any, index: number) => void,
-	 *   onDragOver: (event: any, index: number) => void,
-	 *   onDragLeave: (event: any, index: number) => void,
-	 *   onDrop: (event: any, index: number) => void,
-	 *   onDragEnd: (event: any) => void
+	 *   onToggleSelect: (id: string) => void
 	 * }}
 	 */
-	let {
-		book,
-		index,
-		dragOverIndex,
-		isSelected,
-		onOpenDetail,
-		onToggleSelect,
-		onDragStart,
-		onDragOver,
-		onDragLeave,
-		onDrop,
-		onDragEnd
-	} = $props();
+	let { book, isSelected, onOpenDetail, onToggleSelect } = $props();
 
 	// Die Standorte der Exemplare im Bestand, gezählt vom Server (docs/OFFEN.md 5.53).
 	const standort = $derived(standortZeile(book.standorte));
 </script>
 
 <!-- Abstand, Trennlinie, Rückmeldung beim Zeigen und die Fläche der gewählten Zeile kommen
-     aus ui/Tabelle. Hier steht nur, was diese Zeile eigen hat: die Marke beim Verschieben. -->
-<tr
-	class="group cursor-pointer {dragOverIndex === index ? 'border-t-2 border-primary' : ''}"
-	aria-selected={isSelected}
-	draggable="true"
-	ondragstart={(event) => onDragStart(event, index)}
-	ondragover={(event) => onDragOver(event, index)}
-	ondragleave={(event) => onDragLeave(event, index)}
-	ondrop={(event) => onDrop(event, index)}
-	ondragend={onDragEnd}
-	onclick={() => onOpenDetail(book)}
->
+     aus ui/Tabelle. -->
+<tr class="group cursor-pointer" aria-selected={isSelected} onclick={() => onOpenDetail(book)}>
 	<td onclick={(event) => event.stopPropagation()}>
-		<div class="flex items-center gap-2">
-			<Menu
-				class="h-4 w-4 cursor-grab text-on-surface-variant active:cursor-grabbing"
-				aria-hidden="true"
-			/>
-			<Kaestchen
-				aria-label="Buch auswählen"
-				checked={isSelected}
-				onchange={() => onToggleSelect(book.id)}
-			/>
-		</div>
+		<Kaestchen
+			aria-label="Buch auswählen"
+			checked={isSelected}
+			onchange={() => onToggleSelect(book.id)}
+		/>
 	</td>
 
 	<!-- Der Titel steht in der Nachbarzelle; das Cover sagt ihn kein zweites Mal an. -->

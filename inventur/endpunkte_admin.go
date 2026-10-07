@@ -37,13 +37,6 @@ func (handler *APIHandler) handleAdminBooks(w http.ResponseWriter, request *http
 		default:
 			writeError(w, http.StatusNotFound, routeNotFoundMsg)
 		}
-	case http.MethodPut:
-		switch path {
-		case "/api/admin/books/reorder":
-			handler.handleReorderBooks(w, request)
-		default:
-			writeError(w, http.StatusNotFound, routeNotFoundMsg)
-		}
 	case http.MethodDelete:
 		switch path {
 		case routeClassBooks:

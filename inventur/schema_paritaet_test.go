@@ -32,7 +32,7 @@ import (
 var nichtVonUpdateBook = map[string]string{
 	"id":            "Schlüssel der WHERE-Klausel, nicht der SET-Liste",
 	"erstellt_am":   "wird beim Anlegen gesetzt und danach nie wieder",
-	"sort_order":    "manuelle Reihenfolge des Admins, gesetzt in reorder_handler.go (Ziehen und Ablegen)",
+	"sort_order":    "laufende Nummer aus dem Anlegen (SERIAL), ohne Schreiber; die Dublettenkontrolle liest sie als Reihenfolge des Anlegens",
 	"search_vector": "GENERATED ALWAYS — Postgres pflegt die Spalte, ein Schreibversuch wäre ein Fehler",
 	"cover_status":  "gehört der asynchronen Cover-Beschaffung (internal/service/cover_service.go)",
 	"werk_id": "gehört repository/auflagen.go (FasseAuflagenZusammen, LoeseAuflage, Migration 148): " +

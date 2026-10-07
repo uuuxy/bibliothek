@@ -106,7 +106,6 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 
 	handler.mux.Handle("GET /api/admin/", adminH)
 	handler.mux.Handle("POST /api/admin/", adminH)
-	handler.mux.Handle("PUT /api/admin/", adminH)
 	handler.mux.Handle("DELETE /api/admin/", adminH)
 
 	handler.mux.Handle("POST /api/books/import", adminH)

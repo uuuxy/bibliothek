@@ -1,7 +1,6 @@
 <script>
 	import { erzeugeAuswahl } from './bookTableAuswahl.svelte.js';
 	import Tabelle from '../../../../lib/components/ui/Tabelle.svelte';
-	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import BookTableToolbar from '$lib/components/admin/BookTableToolbar.svelte';
 	import BookTableZeile from '$lib/components/admin/BookTableZeile.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
@@ -35,22 +34,8 @@
 	const auswahl = erzeugeAuswahl();
 	$effect(() => auswahl.angleichen(books));
 
-	/** @type {number|null} */
-	let draggedIndex = $state(null);
-	/** @type {number|null} */
-	let dragOverIndex = $state(null);
-
 	// Performance: Begrenzung der gerenderten DOM-Elemente
 	let maxVisible = $state(50);
-
-	/**
-	 * @param {{ type: string, message: string }} param0
-	 */
-	function addToast({ type, message }) {
-		if (type === 'error') {
-			console.error(message);
-		}
-	}
 
 	function handleDelete() {
 		onDelete(auswahl.ids);
@@ -61,94 +46,6 @@
 		// Auswahl bleibt bestehen, bis der Dialog abgeschlossen/abgebrochen ist —
 		// der Picker hält die IDs bereits über seine Prop.
 		onAssignClass(auswahl.ids);
-	}
-
-	/**
-	 * @param {DragEvent} event
-	 * @param {number} index
-	 */
-	function onDragStart(event, index) {
-		draggedIndex = index;
-		if (event.dataTransfer) {
-			event.dataTransfer.effectAllowed = 'move';
-			event.dataTransfer.setData('text/plain', String(index));
-		}
-		const target = /** @type {HTMLElement} */ (event.target);
-		setTimeout(() => {
-			target.classList.add('opacity-50');
-		}, 0);
-	}
-
-	/**
-	 * @param {DragEvent} event
-	 * @param {number} index
-	 */
-	function onDragOver(event, index) {
-		event.preventDefault();
-		if (event.dataTransfer) {
-			event.dataTransfer.dropEffect = 'move';
-		}
-		if (draggedIndex === null || draggedIndex === index) return;
-		dragOverIndex = index;
-	}
-
-	/**
-	 * @param {DragEvent} event
-	 * @param {number} index
-	 */
-	function onDragLeave(event, index) {
-		if (dragOverIndex === index) {
-			dragOverIndex = null;
-		}
-	}
-
-	/**
-	 * @param {DragEvent} event
-	 */
-	function onDragEnd(event) {
-		const target = /** @type {HTMLElement} */ (event.target);
-		target.classList.remove('opacity-50');
-		draggedIndex = null;
-		dragOverIndex = null;
-	}
-
-	/**
-	 * @param {DragEvent} event
-	 * @param {number} index
-	 */
-	async function onDrop(event, index) {
-		event.preventDefault();
-		if (draggedIndex === null || draggedIndex === index) return;
-
-		const movedBook = books[draggedIndex];
-		const reorderedBooks = [...books];
-		reorderedBooks.splice(draggedIndex, 1);
-		reorderedBooks.splice(index, 0, movedBook);
-
-		books.length = 0;
-		books.push(...reorderedBooks);
-		draggedIndex = null;
-		dragOverIndex = null;
-
-		try {
-			const bookIds = books.map((book) => book.id);
-			const response = await apiFetch('/api/admin/books/reorder', {
-				method: 'PUT',
-				credentials: 'include',
-				headers: /** @type {HeadersInit} */ ({
-					'Content-Type': 'application/json'
-				}),
-				body: JSON.stringify({ bookIds })
-			});
-
-			if (!response.ok) {
-				throw new Error('Network response was not ok');
-			}
-			addToast({ type: 'success', message: 'Sortierung gespeichert' });
-		} catch (error) {
-			console.error('Fehler beim Speichern der Sortierung:', error);
-			addToast({ type: 'error', message: 'Sortierung konnte nicht gespeichert werden' });
-		}
 	}
 </script>
 
@@ -187,19 +84,13 @@
 			</thead>
 
 			<tbody>
-				{#each books.slice(0, maxVisible) as book, index (book.id)}
+				<!-- Die Reihenfolge kommt vom Server: nach dem Titel (GET /api/books). -->
+				{#each books.slice(0, maxVisible) as book (book.id)}
 					<BookTableZeile
 						{book}
-						{index}
-						{dragOverIndex}
 						isSelected={auswahl.enthaelt(book.id)}
 						{onOpenDetail}
 						onToggleSelect={(id) => auswahl.umschalten(id)}
-						{onDragStart}
-						{onDragOver}
-						{onDragLeave}
-						{onDrop}
-						{onDragEnd}
 					/>
 				{/each}
 

@@ -28,16 +28,9 @@ function zeile(book, isSelected = false) {
 	const nichts = () => {};
 	return render(BookTableZeile, {
 		book,
-		index: 0,
-		dragOverIndex: null,
 		isSelected,
 		onOpenDetail: nichts,
-		onToggleSelect: nichts,
-		onDragStart: nichts,
-		onDragOver: nichts,
-		onDragLeave: nichts,
-		onDrop: nichts,
-		onDragEnd: nichts
+		onToggleSelect: nichts
 	});
 }
 
@@ -97,6 +90,13 @@ describe('Titel-Verwaltung: Zeile', () => {
 		expect(zeile(buch(), false).container.querySelector('tr')?.getAttribute('aria-selected')).toBe(
 			'false'
 		);
+	});
+
+	// Die Liste steht nach dem Titel; von Hand umsortiert wird sie nicht.
+	it('lässt sich nicht ziehen', () => {
+		const { container } = zeile(buch());
+		expect(container.querySelector('[draggable]')).toBeNull();
+		expect(container.querySelector('.cursor-grab')).toBeNull();
 	});
 
 	// Der Titel steht in der Nachbarzelle; das Cover sagt ihn kein zweites Mal an.

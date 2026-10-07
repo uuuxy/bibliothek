@@ -113,7 +113,10 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   Kartenansicht mit Cover und Signatur. Ein Verweis findet sein Schlagwort: „Tierfantasy"
   findet die Bücher mit „Fantasy", wenn es unter _Einstellungen → Schlagworte_ so
   eingetragen ist. Dasselbe gilt für die Suche der Titel-Verwaltung, den öffentlichen
-  Katalog und _Mein Portal_.
+  Katalog und _Mein Portal_. Die Liste steht nach dem Titel, hier wie in der
+  Titel-Verwaltung: Umlaute bei ihrem Grundbuchstaben („Ökologie" bei O), Zahlen nach ihrer
+  Größe („Mathe 5" vor „Mathe 10"). Ein Artikel am Anfang zählt mit: „Die Räuber" steht
+  unter D.
 - **Buchakte** (Klick auf eine Karte): Exemplare mit Status, aktuelle Ausleiher, Vormerkungen
   (Warteliste mit Schüler-Suche), Historie. Wo bei einem Schüler die Klasse steht, steht beim
   Kollegium die Art, etwa „Lehrkraft" oder „Fachbereich". Das Drucksymbol an einem Exemplar

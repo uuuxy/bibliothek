@@ -1,7 +1,6 @@
 package inventur
 
 import (
-	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -28,12 +27,12 @@ func TestHandleAdminBooks_Routing(t *testing.T) {
 		RequireAuthenticated: func(h http.Handler) http.Handler { return h },
 	})
 
+	// Keiner der Fälle erreicht die Datenbank: Das Mock hat keine Erwartung.
 	tests := []struct {
 		name           string
 		method         string
 		path           string
 		expectedStatus int
-		setupMock      func()
 	}{
 		{
 			// Der 501-Zweig zu diesem Pfad ist am 01.09.2026 zurückgebaut (C-Posten,
@@ -75,36 +74,17 @@ func TestHandleAdminBooks_Routing(t *testing.T) {
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "PUT /api/admin/books/reorder - Success triggers backup",
+			// Das Umsortieren von Hand gibt es nicht mehr: Die Titelliste steht nach dem Titel.
+			name:           "PUT /api/admin/books/reorder - zurückgebaut, 404",
 			method:         http.MethodPut,
 			path:           "/api/admin/books/reorder",
-			expectedStatus: http.StatusOK,
-			setupMock: func() {
-				mockPool.ExpectBegin()
-				mockPool.ExpectExec(`UPDATE buecher_titel SET sort_order = daten.neue_reihenfolge`).
-					WithArgs(
-						pgxmock.AnyArg(), // input.BookIDs []string
-						pgxmock.AnyArg(), // sortOrders []int
-					).
-					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
-				mockPool.ExpectCommit()
-			},
+			expectedStatus: http.StatusNotFound,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.setupMock != nil {
-				tc.setupMock()
-			}
-
-			var req *http.Request
-			if tc.method == http.MethodPut && tc.path == "/api/admin/books/reorder" {
-				payload := `{"bookIds": ["b95d0df8-2b87-4d69-a1d2-069bc1399f57"]}`
-				req = httptest.NewRequest(tc.method, tc.path, bytes.NewBufferString(payload))
-			} else {
-				req = httptest.NewRequest(tc.method, tc.path, nil)
-			}
+			req := httptest.NewRequest(tc.method, tc.path, nil)
 			rec := httptest.NewRecorder()
 
 			handler.handleAdminBooks(rec, req)

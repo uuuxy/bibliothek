@@ -31,7 +31,6 @@ func TestUngueltigeTitelKennungIst400VorDerDatenbank(t *testing.T) {
 		rumpf   string
 	}{
 		{"Bücher löschen", handler.BearbeiteBuecherLoeschen, http.MethodDelete, `{"ids":["x"]}`},
-		{"Bücher umsortieren", handler.handleReorderBooks, http.MethodPut, `{"bookIds":["x"]}`},
 		{"Klassenbücher hinzufügen", handler.handleAddClassBooks, http.MethodPost, `{"classNames":["05G1"],"bookIds":["x"]}`},
 		{"Klassenbücher ändern", handler.handleUpdateClassBooks, http.MethodPut, `{"className":"05G1","bookIds":["x"]}`},
 		{"Cover neu laden", handler.handleRetryExternalCovers, http.MethodPost, `{"ids":["x"]}`},
