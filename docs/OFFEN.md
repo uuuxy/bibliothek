@@ -418,6 +418,14 @@ Vermerk.
   auf ein Merkmal des Inhalts warten (Kachel, Tabellenzeile). Dieselbe Form des Wartens steht
   in `typo-rollen.spec.js`, `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`, dort
   nicht nachgemessen. Kategorie B.
+- CI, Schritt „Install Playwright" (`.github/workflows/ci.yml`): Am 07.10.2026 endete der Job
+  `e2e` rot, bevor ein Test lief (Lauf 37670559983, Commit f2009b9b). Der erste Versuch von
+  `npx playwright install --with-deps chromium` blieb beim Lesen der Paketlisten stehen (ab
+  18:58:06 Uhr UTC keine Ausgabe mehr, davor „Ign" für `azure.archive.ubuntu.com`) und lief
+  in die Frist von 600 s. Sein `apt-get` (Prozess 8370) lief danach weiter und hielt
+  `/var/lib/apt/lists/lock`; Versuch 2 und 3 scheiterten binnen einer Sekunde an dieser Sperre.
+  `DPkg::Lock::Timeout` hat auf sie nicht gewartet. Abhilfe: vor einem neuen Versuch warten,
+  bis kein `apt-get` mehr läuft, oder den übrig gebliebenen beenden. Kategorie B.
 - `e2e/suchpille-einheitlich.spec.js` war am 07.10.2026 in der CI einmal rot und in der
   Wiederholung für denselben Commit grün (Lauf 37662472141, Commit 4b6b0311; lokal 54 von 54
   grün): Auf der Seite „Signaturen" maß die Spec die Pille ohne Fokus, obwohl sie das Feld
