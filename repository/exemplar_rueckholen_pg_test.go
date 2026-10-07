@@ -64,6 +64,19 @@ func TestHoleExemplarZurueck_HaeltBeideHaelftenInDerTransaktionDesAufrufers(t *t
 	if ausgesondert, offen := lage(); ausgesondert || offen {
 		t.Fatalf("nach Commit: ausgesondert=%v, forderung offen=%v — erwartet beides false", ausgesondert, offen)
 	}
+
+	// Der Eintrag der Stornierung trägt die Kennung des Lesers; an ihr findet die Tilgung
+	// den Grund, wie bei der Stornierung von Hand.
+	var mitKennung int
+	if err := pool.QueryRow(ctx, `
+		SELECT count(*) FROM audit_log al JOIN schadensfaelle f ON f.id = al.datensatz_id
+		WHERE al.tabelle = 'schadensfaelle' AND al.aktion = 'STORNIERUNG' AND f.id = $1
+		  AND al.details->>'schueler_id' = f.schueler_id::text`, schadensfallID).Scan(&mitKennung); err != nil {
+		t.Fatalf("Eintrag der Stornierung lesen: %v", err)
+	}
+	if mitKennung != 1 {
+		t.Errorf("%d Einträge STORNIERUNG mit der Kennung des Lesers, erwartet 1", mitKennung)
+	}
 }
 
 // Ein Exemplar, das es nicht (mehr) gibt, ist kein stiller Erfolg.

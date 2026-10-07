@@ -693,7 +693,9 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
   (Erlass, Buch wiedergefunden, Kulanz). Beides verlangt das Recht `edit_students` —
   bewusst nicht die Kiosk-/Helfer-Rolle. Der Betrag im revisionssicheren Audit-Eintrag
   stammt immer aus der Datenbank, nie aus der Anfrage; eine bereits erledigte Gebühr
-  meldet dem zweiten Bearbeiter einen Konflikt (409) statt einer Doppelbuchung.
+  meldet dem zweiten Bearbeiter einen Konflikt (409) statt einer Doppelbuchung. Die getippte
+  Begründung steht an der Forderung und im Eintrag; mit der Anonymisierung oder dem
+  endgültigen Löschen des Lesers fällt sie an beiden Stellen, Betrag und Zeitpunkt bleiben.
   Stornierte wie bezahlte Gebühren geben Schülerlöschung, LUSD-Abgleich und Ausleihe
   wieder frei; die DSGVO-Auskunft weist Stornierungszeitpunkt und -grund transparent aus.
 

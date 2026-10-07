@@ -13,7 +13,7 @@ import "strings"
 //   - lusd_id: die staatliche Schüler-ID (LUSD_ID_NACHGETRAGEN)
 //   - barcode, aufgeloest_barcode: Ausweisnummern (SCHUELER_ZUSAMMENGEFUEHRT)
 //   - grund, reason: der Sperrgrund (LESER_GESPERRT, LESER_ENTSPERRT; OVERRIDE_BLOCK bis
-//     zum 24.09.2026)
+//     zum 24.09.2026) und der getippte Grund einer Stornierung (STORNIERUNG in audit_log)
 //   - schuldner, beschreibung: Name und Freitext einer offenen Forderung, die mit ihrem
 //     Titel gelöscht wurde (audit_books_forderung.go, inventur/db_books_delete_spur.go)
 //   - betrifft: Name eines Lesers, dessen Vormerkung mit dem Titel fiel

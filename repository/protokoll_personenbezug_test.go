@@ -35,17 +35,20 @@ import (
 //
 // Blind für: Schlüssel, die erst zur Laufzeit entstehen (Variable als Schlüssel); verschachtelte
 // Maps (eingeordnet wird der äußere Schlüssel); Strukturen mit JSON-Tag schueler_id als
-// Protokoll-Details (heute keine); Protokolleinträge, die einen Leser ohne schueler_id meinen
-// (docs/OFFEN.md 5.35); generierter Code unter docs/.
+// Protokoll-Details (heute keine); Protokolleinträge, die einen Leser meinen und seine Kennung
+// nicht tragen — wer Freitext in einen Eintrag schreibt, setzt die Kennung daneben, wie die
+// Stornierung einer Forderung; generierter Code unter docs/.
 
 // bleibtSchluessel: Schlüssel neben schueler_id, die die Tilgung stehen lässt, mit Grund.
 var bleibtSchluessel = map[string]string{
 	"action":                  "fester Merker der Spur (titel_geloescht_mit_…), kein Wert der Person",
+	"anlass":                  "fester Merker der Stornierung (rueckgabe), kein Wert der Person",
 	"aufgeloest_id":           "Kennung der zusammengeführten, danach gelöschten Leserzeile — ein Pseudonym wie schueler_id",
 	"ausgeliehen_am":          "Datum; die Ausleihspur verliert schueler_id und entleiher (Lesehistorie-Befristung, Tilgung)",
 	"ausleihe_id":             "Kennung der Ausleihe, die mit dem Titel gelöscht wurde",
 	"ausleihen":               "Zahl der umgehängten Ausleihen beim Zusammenführen",
 	"barcode_id":              "Nummer des Exemplars, nicht des Lesers",
+	"bearbeiter_id":           "Kennung des Kontos, das die Forderung storniert hat",
 	"benutzer_id":             "Konto-Kennung aus der Zeit getrennter Lehrerausleihen; alle Aufrufer von LogAusleihe und LogRueckgabe übergeben heute einen leeren Wert",
 	"bescheid_id":             "Kennung des Bescheids; er bleibt als Beleg, sein Empfänger wird getilgt",
 	"betrag":                  "Betrag der Forderung, Beleg",
@@ -61,8 +64,9 @@ var bleibtSchluessel = map[string]string{
 	"schadensfall_id":         "Kennung der Forderung",
 	"schaeden":                "Zahl der umgehängten Forderungen beim Zusammenführen",
 	"status":                  "Zustand der Vormerkung (wartend, abholbereit)",
+	"storniert_am":            "Zeitpunkt der Stornierung",
 	"tabelle":                 "Name der Tabelle, aus der der Bezug stammt",
-	"titel":                   "Buchtitel; nach der Anonymisierung hängt er an einem Pseudonym (Frist dieser Spuren: docs/OFFEN.md 5.35)",
+	"titel":                   "Buchtitel; nach der Anonymisierung hängt er an einem Pseudonym (Frist dieser Spuren: PredikatLesehistorieVormerkspur)",
 	"vom_programm":            "Wahrheitswert: Die Sperre davor kam vom Programm",
 	"von_hand":                "Wahrheitswert: Die Sperre davor kam von Hand",
 	"vormerkungen":            "Zahl der umgehängten Vormerkungen beim Zusammenführen",

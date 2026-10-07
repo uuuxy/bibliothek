@@ -56,7 +56,8 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 		return err
 	}
 
-	if _, err := tx.Exec(ctx, `
+	var leserID *string
+	if err := tx.QueryRow(ctx, `
 		UPDATE schadensfaelle
 		SET ist_bezahlt = true,
 		    storniert_am = NOW(),
@@ -64,20 +65,27 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 		    stornierungsgrund = $2,
 		    aktualisiert_am = NOW()
 		WHERE id = $3
-	`, bearbeiterID, grund, schadensfallID); err != nil {
+		RETURNING schueler_id::text
+	`, bearbeiterID, grund, schadensfallID).Scan(&leserID); err != nil {
 		return fmt.Errorf("stornierung schadensfaelle: %w", err)
 	}
 
+	// Der getippte Grund kann die Person nennen. Die Kennung des Lesers steht daneben, damit
+	// die Tilgung den Eintrag findet, auch wenn die Forderung schon gelöscht ist.
+	details := map[string]any{
+		"betrag":        betrag,
+		"grund":         grund,
+		"storniert_am":  time.Now().UTC().Format(time.RFC3339),
+		"bearbeiter_id": bearbeiterID,
+	}
+	if leserID != nil {
+		details["schueler_id"] = *leserID
+	}
 	kontext := "Gebühr storniert"
 	if err = r.insertAuditLog(ctx, tx, auditEntry{
 		Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", DatensatzID: schadensfallID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
-		Details: map[string]any{
-			"betrag":        betrag,
-			"grund":         grund,
-			"storniert_am":  time.Now().UTC().Format(time.RFC3339),
-			"bearbeiter_id": bearbeiterID,
-		},
+		Details: details,
 	}); err != nil {
 		return fmt.Errorf("writing audit log: %w", err)
 	}

@@ -597,23 +597,16 @@ var spurTilgungen = []SpurTilgung{
 		sql:          tilgePersonenbezugImProtokoll("audit_logs"),
 	},
 	{
-		// Schadensfall-Freitext (entschieden am 16.09.2026, OFFEN.md 4.15): Der FALL bleibt
-		// als Beleg stehen — Betrag, Datum, bezahlt oder storniert; daran hängen
-		// Kassenbuch und Bescheid. Was fällt, ist die Geschichte dazu: „Buch im Bus liegen
-		// gelassen, Mutter angerufen" ist Personenbezug, der die Anonymisierung sonst
-		// überlebt.
-		//
-		// Nur bei ERLEDIGTEN Fällen (ist_bezahlt deckt bezahlt UND storniert ab, siehe
-		// audit_system.go). Eine offene Forderung behält ihre Begründung: Sie wird noch
-		// gebraucht — jemand muss sie einziehen, erklären oder stornieren können. Dass ein
-		// Schüler mit offener Forderung überhaupt anonymisiert wird, verhindert das
-		// Prädikat (loeschfristen.go); diese Bedingung ist der Gürtel dazu.
-		//
-		// Idempotent über `beschreibung <> ''`.
+		// Die Forderung bleibt als Beleg stehen: Betrag, Datum, bezahlt oder storniert. Was
+		// dazu getippt wurde, fällt, weil es die Person oder ihre Familie nennen kann: die
+		// Beschreibung und der Grund einer Stornierung. Nur bei erledigten Fällen (ist_bezahlt
+		// deckt bezahlt und storniert ab); eine offene Forderung braucht ihre Begründung noch,
+		// und dass ihr Leser anonymisiert wird, verhindert schon das Prädikat in loeschfristen.go.
 		Beschreibung: "schadensfaelle (Freitext erledigter Fälle)",
 		sql: `UPDATE schadensfaelle
-			SET beschreibung = ''
-			WHERE schueler_id = ANY($1::uuid[]) AND ist_bezahlt = true AND beschreibung <> ''`,
+			SET beschreibung = '', stornierungsgrund = NULL
+			WHERE schueler_id = ANY($1::uuid[]) AND ist_bezahlt = true
+			  AND (beschreibung <> '' OR stornierungsgrund IS NOT NULL)`,
 	},
 	{
 		// Vormerkungen: die Freitext-Notiz kann personenbezogen sein, und die Vormerkung

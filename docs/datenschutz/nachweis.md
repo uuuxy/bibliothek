@@ -1,6 +1,6 @@
 # Datenschutz-Nachweis
 
-Stand: 07.10.2026 (Entwurf)
+Stand: 08.10.2026 (Entwurf)
 
 Eine Übersicht zum Weitergeben an Schulleitung, schulischen Datenschutzbeauftragten und
 Schulträger: was das Programm mit Personendaten tut, woran sich jede Zusage prüfen lässt, was
@@ -212,11 +212,12 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
 - Ein gelöschtes Zugangskonto nennt die Auskunft seit dem 29.09.2026; Löschungen von davor
   trugen den Bezug zum Leser nicht und bleiben für sie unsichtbar. Die Selbstanmeldung und der
   Nachtrag einer Schul-E-Mail stehen danach nicht unter dem früheren Konto (5.19).
-- Viermal gelangte ein Wert einer Person ins Protokoll, den die Anonymisierung nicht kannte;
-  jedes Mal behoben, zuletzt am 29.09.2026 Name und Freitext aus der Löschspur eines Titels.
-  Seit dem 29.09.2026 prüft ein Test jede Stelle im Code, die einen Protokolleintrag mit der
-  Kennung eines Lesers baut. Offen sind Einträge, die einen Leser ohne diese Kennung meinen,
-  und Einträge zu Lesern, die vor der jeweiligen Behebung gelöscht wurden (5.35).
+- Sechsmal gelangte ein Wert einer Person ins Protokoll, den die Anonymisierung nicht kannte
+  oder dessen Eintrag sie nicht fand; jedes Mal behoben, zuletzt am 08.10.2026 der getippte
+  Grund einer Stornierung und die Löschspur einer zusammengeführten Leserzeile. Seit dem
+  29.09.2026 prüft ein Test jede Stelle im Code, die einen Protokolleintrag mit der Kennung
+  eines Lesers baut. Offen sind Einträge von vor der jeweiligen Behebung: zu Lesern, die schon
+  gelöscht waren, und Stornierungen, die die Kennung noch nicht trugen (5.35).
 - Anmeldungen stehen nicht im Protokoll; nach einem Missbrauch lässt sich nicht nachsehen, wann
   und von wo ein Konto angemeldet war (6.1).
 

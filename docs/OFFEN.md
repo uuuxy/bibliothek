@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 07.10.2026
+Stand: 08.10.2026
 
 **Der Fahrplan.** Oben steht, was als Nächstes getan wird, in der Reihenfolge der Arbeit: je
 Schritt eine Zeile mit Kästchen. Die Nummer in Klammern führt zu den Einzelheiten weiter unten.
@@ -158,8 +158,8 @@ der Nummer nichts mehr dazu offen ist.
   Leserakte.
 - [ ] **Auskunft (5.19):** Zwei Einträge über die Anlage eines Kontos fehlen, sobald das Konto
   gelöscht ist; zu klären, welche Rohdaten aufs Blatt gehören.
-- [ ] **Protokoll und Tilgung (5.35):** Einträge, die einen Leser nur über seine Forderung meinen;
-  am Testserver alte Einträge zu schon gelöschten Lesern.
+- [ ] **Protokoll und Tilgung (5.35):** am Testserver alte Einträge zählen (zu schon gelöschten
+  Lesern; Stornierungen ohne die Kennung des Lesers), danach bereinigen.
 - [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
 - [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
   ihren Helfern, die Regel „überfällig" ebenso; eine Ratsche hält die ersten beiden fest.
@@ -561,11 +561,14 @@ beiden Protokollen (`repository/protokoll_personenbezug.go`). Sie erreicht nicht
   Schulserver beginnt leer (Neuaufbau), betroffen ist nur der Testserver. Erst messen, dann wie
   Migration 147 bereinigen:
   `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FROM audit_log a WHERE a.details ?| ARRAY['schuldner','beschreibung','betrifft'] AND a.details ? 'schueler_id' AND NOT EXISTS (SELECT 1 FROM leser l WHERE l.id::text = lower(a.details->>'schueler_id'));"`
-- **Einträge, die einen Leser nur über seine Forderung meinen.** Das Stornieren einer Forderung
-  schreibt `grund` in die Datensatz-Historie (`tabelle = 'schadensfaelle'`, Kennung der
-  Forderung, ohne `schueler_id`), ebenso das Stornieren bei der Rückgabe
-  (`repository/bescheid_rueckkehr.go`). Die Tilgung findet solche Einträge nicht. Ob in diesem
-  Grund Personenbezug steht, ist nicht nachgestellt.
+- **Stornierungen von vor dem 08.10.2026.** Seitdem trägt der Eintrag `STORNIERUNG` die
+  Kennung des Lesers, und die Tilgung nimmt ihm den getippten Grund. Ältere Einträge tragen
+  sie nicht und behalten den Grund bis zur Audit-Aufbewahrung. Der Schulserver beginnt leer,
+  betroffen ist nur der Testserver. Erst messen:
+  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE sf.id IS NOT NULL) AS forderung_steht_noch, count(*) FILTER (WHERE sf.id IS NULL) AS forderung_geloescht FROM audit_log al LEFT JOIN schadensfaelle sf ON sf.id = al.datensatz_id WHERE al.tabelle = 'schadensfaelle' AND al.aktion = 'STORNIERUNG' AND al.details ? 'grund' AND NOT (al.details ? 'schueler_id');"`
+  „forderung_steht_noch" lässt sich die Kennung aus der Forderung nachtragen;
+  „forderung_geloescht" hat keinen Weg mehr zum Leser, dort fällt der Grund. Beides wäre eine
+  Migration wie 147.
 
 ### 5.45 Listen in einem Kasten mit eigenem Scrollen
 

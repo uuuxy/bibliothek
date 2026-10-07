@@ -2,10 +2,13 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"bibliothek/pkg/schulzeit"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Das abgeschriebene Buch kommt zurück (#597, Etappe 2).
@@ -121,26 +124,33 @@ func VerbucheRueckkehr(ctx context.Context, q DBQueryer, exemplarID, bearbeiterI
 // gesetzt (alle Offen-Filter hängen daran), storniert_am unterscheidet sie von einer
 // echten Zahlung. Dieselbe Audit-Aktion STORNIERUNG, damit die Revision EINE Form kennt.
 func storniereWeilZurueck(ctx context.Context, q DBQueryer, schadensfallID string, betrag float64, bearbeiterID, grund string) error {
-	tag, err := q.Exec(ctx, `
+	var leserID *string
+	err := q.QueryRow(ctx, `
 		UPDATE schadensfaelle
 		SET ist_bezahlt = true, storniert_am = NOW(), storniert_von = $1,
 		    stornierungsgrund = $2, aktualisiert_am = NOW()
 		WHERE id = $3 AND storniert_am IS NULL
-	`, bearbeiterID, grund, schadensfallID)
+		RETURNING schueler_id::text
+	`, bearbeiterID, grund, schadensfallID).Scan(&leserID)
+	// Keine Zeile: Die Forderung ist zwischen Lesen und Schreiben verschwunden oder wurde
+	// anderswo storniert. Die Theke meldete sonst „Forderung storniert" über eine Forderung,
+	// die weiter offen steht.
+	if errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("forderung %s ließ sich nicht stornieren — sie ist nicht mehr offen", schadensfallID)
+	}
 	if err != nil {
 		return fmt.Errorf("forderung stornieren: %w", err)
 	}
-	// 0 Zeilen: Die Forderung ist zwischen Lesen und Schreiben verschwunden oder wurde
-	// anderswo storniert. Ohne diese Prüfung meldete die Theke „Forderung storniert" über
-	// eine Forderung, die weiter offen steht (Phantom-Erfolg-Sweep 31.08.2026).
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("forderung %s ließ sich nicht stornieren — sie ist nicht mehr offen", schadensfallID)
+	// Dieselben Schlüssel wie StornierungGebuehr; die Kennung des Lesers ist der Griff der Tilgung.
+	details := map[string]any{"betrag": betrag, "grund": grund, "anlass": "rueckgabe"}
+	if leserID != nil {
+		details["schueler_id"] = *leserID
 	}
 	kontext := "Forderung storniert: das Buch ist zurück"
 	return schreibeAuditLog(ctx, q, auditEntry{
 		Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", DatensatzID: schadensfallID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
-		Details: map[string]any{"betrag": betrag, "grund": grund, "anlass": "rueckgabe"},
+		Details: details,
 	})
 }
 

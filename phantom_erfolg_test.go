@@ -137,7 +137,6 @@ var phantomBestand = map[string]int{
 	"repository/audit.go:insertAuditLog":                      1,
 	"repository/audit_books.go:DeleteTitle":                   3,
 	"repository/audit_system.go:BezahltGebuehr":               1,
-	"repository/audit_system.go:StornierungGebuehr":           1,
 	"repository/audit_users.go:TilgeSchuelerSpuren":           1,
 	"repository/audit_users.go:entferneSchuelerPIIUndLoesche": 2,
 	"repository/barcode_vergabe.go:hebeSequenzUeberBestand":   1,
