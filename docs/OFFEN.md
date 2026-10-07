@@ -61,9 +61,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   und gebaut am 07.10.2026).
 - [ ] Titelliste: Ein Artikel am Anfang zählt beim Ordnen mit, „Die schwarze Katze" steht
   unter D; Littera ordnet solche Titel ohne den Artikel. Vorschlag: bleibt so. (5.59)
-- [ ] Theke: Ein gescheiterter Scan gibt außerhalb der Schnellrückgabe keinen Ton. Scheitert
-  ein Ausweis, während der Leser davor geladen ist, geht das nächste Buch an den Leser
-  davor. Vorschlag: Ein gescheiterter Scan gibt immer den Fehlerton. (5.60)
+- [x] Theke: Ein gescheiterter Scan gibt immer den Fehlerton, auch außerhalb der
+  Schnellrückgabe (entschieden und gebaut am 07.10.2026).
 - [ ] Theke: Ein Scan bei offener Rückfrage (Sperre, Vormerkung, Zubehör) schließt sie und
   geht ohne Meldung verloren. Vorschlag: Die Rückfragen fangen einen Scan ab wie der
   Sperrbildschirm, mit Fehlerton. (5.61)
@@ -738,22 +737,6 @@ Gemessen am 07.10.2026 an der Littera-Sicherung von 2010 (Tabelle `Titel`, 10.64
 ein Titel über das Suchfeld), oder bringt die Übernahme Litteras Sortiertitel in einer
 eigenen Spalte mit, nach der die Liste ordnet? Das zweite braucht eine Migration und eine
 Regel für neu angelegte Titel. Vorschlag: bleibt so.
-
-### 5.60 Theke: ein gescheiterter Scan ohne Ton, der Leser davor bleibt geladen
-
-Nachgestellt am 07.10.2026 im Browser.
-
-- Außerhalb der Schnellrückgabe meldet die Theke einen gescheiterten Scan im Banner (6 s),
-  ohne Ton (`verarbeiteAntwortfehler` in `stores/omnibox.svelte.js`; am Store nachgestellt).
-- Scheitert der Scan eines Ausweises (unbekannte Nummer), während der Leser davor noch geladen
-  ist, geht das nächste Buch an den Leser davor. Gemessen: ein freies Buch, 1,5 s nach dem
-  gescheiterten Ausweis gescannt, stand danach auf dem Konto des Lesers davor; die Theke
-  meldet es wie jede Ausleihe.
-- Die Scan-Reihe hält in diesem Fall an und nennt, was wartet. Wer nach der Meldung
-  weiterscannt, bucht wie beschrieben.
-
-**Zu entscheiden:** Gibt ein gescheiterter Scan an der Theke immer den Fehlerton, wie in der
-Schnellrückgabe? Vorschlag: ja. Kategorie A.
 
 ### 5.61 Theke: ein Scan bei offener Rückfrage schließt sie und geht verloren
 

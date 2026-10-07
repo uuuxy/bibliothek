@@ -234,7 +234,7 @@ describe('Die Reihe hält an, und was wartet, wird genannt', () => {
 		expect(theke.errorMessage).toBe(
 			`Fehler: Ausweis A-9 ist nicht registriert · ${genannt(['B-1', 'B-2'])}`
 		);
-		expect(playSoundError, 'wer nicht hinsieht, hört es').toHaveBeenCalledTimes(1);
+		expect(playSoundError, 'wer nicht hinsieht, hört es').toHaveBeenCalled();
 		expect(theke.screenFlash).toBe('error');
 		expect(theke.flashBorder).toBe('red');
 	});

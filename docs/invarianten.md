@@ -551,9 +551,10 @@ Bestand am 07.10.2026:
   der Scan davor hinterlassen hat. Was geschieht mit den wartenden, wenn der Scan davor
   scheitert, eine Rückfrage aufgeht oder jemand den Zustand von außen ändert (Escape,
   Abmelden)? Beleg vom 07.10.2026: An der Theke geht nach einem gescheiterten Ausweis das
-  nächste Buch an den Leser davor (im Browser nachgestellt, [OFFEN.md](OFFEN.md) 5.60); die
-  Reihe der Theke hält deshalb nach jedem Scan an, der nicht glatt durchging
-  (`frontend/src/lib/stores/omniboxScanReihe.test.js`).
+  nächste Buch an den Leser davor (im Browser nachgestellt); die Reihe der Theke hält deshalb
+  nach jedem Scan an, der nicht glatt durchging
+  (`frontend/src/lib/stores/omniboxScanReihe.test.js`), und jeder gescheiterte Scan gibt den
+  Fehlerton (`frontend/src/lib/stores/omniboxAntwortArten.test.js`).
 - **Frage 17, die Fristenkette:** Welche Frist endet zuerst — die der Oberfläche, die des
   Servers, die des fremden Dienstes —, und was sieht die Person, wenn die Oberfläche zuerst
   aufgibt? Der Server arbeitet dann weiter, seine Antwort sieht niemand, und der zweite

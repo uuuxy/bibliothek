@@ -14,7 +14,7 @@ vi.mock('../audio.js', () => ({
 }));
 
 import { apiClient } from '../apiFetch.js';
-import { playSoundSuccess } from '../audio.js';
+import { playSoundSuccess, playSoundError } from '../audio.js';
 import { toastStore } from './toastStore.svelte.js';
 import { createOmniboxStore } from './omnibox.svelte.js';
 
@@ -211,6 +211,26 @@ describe('Theke: der Server lehnt den Scan ab', () => {
 		expect(store.flashBorder).toBe('red');
 		expect(toastStore.addToast).not.toHaveBeenCalled();
 		expect(neuLaden).not.toHaveBeenCalled();
+	});
+
+	it('ist zu hören: Ein unbekannter Ausweis lässt den Leser davor geladen', async () => {
+		const store = neuerStore(IDA);
+
+		await scanneMitAntwort(
+			store,
+			{
+				ok: false,
+				status: 404,
+				headers: new Headers(),
+				text: async () => JSON.stringify({ error: 'Ausweis A-9 ist nicht registriert' })
+			},
+			'A-9'
+		);
+
+		expect(playSoundError, 'das nächste Buch ginge an Ida').toHaveBeenCalledTimes(1);
+		expect(store.screenFlash).toBe('error');
+		expect(playSoundSuccess).not.toHaveBeenCalled();
+		expect(store.activeStudent?.id).toBe('l-1');
 	});
 });
 

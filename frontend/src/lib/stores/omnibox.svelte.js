@@ -738,16 +738,11 @@ export function createOmniboxStore() {
 	// Eine Antwort kam an — nichts ist offline. Was ihre Auswertung wirft, wird gezeigt.
 	/** @param {unknown} e */
 	function verarbeiteAntwortfehler(e) {
-		if (e instanceof Error && e.message === 'BLOCK_ALERT') {
-			triggerScreenFlash('error');
-			playSoundError();
-			return;
-		}
-		// Am Stapel wird blind gescannt: Ein Scan, der nichts gebucht hat, ist dort zu hören.
-		if (schnellrueckgabe) {
-			triggerScreenFlash('error');
-			playSoundError();
-		}
+		// Wer scannt, sieht auf das Buch: Ein Scan, der nichts gebucht hat, ist zu hören. Nach
+		// einem gescheiterten Ausweis steht der Leser davor noch an der Theke.
+		triggerScreenFlash('error');
+		playSoundError();
+		if (e instanceof Error && e.message === 'BLOCK_ALERT') return;
 		// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
 		// Kein zusätzlicher Toast — das war die doppelte Anzeige desselben Fehlers.
 		zeigeFehlerBanner(`Fehler: ${fehlertext(e)}`);

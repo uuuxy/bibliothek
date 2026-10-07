@@ -68,7 +68,9 @@ mit Fehlerton, bis zum nächsten Scan.
 **Am Ton ist zu hören, was gebucht wurde** (seit 06.10.2026): Eine Ausleihe klingt mit zwei
 Tönen abwärts; eine Rückgabe und ein gescannter Ausweis klingen mit denselben zwei Tönen
 aufwärts. Klingt es beim Zurücknehmen abwärts, ist das Buch ausgeliehen worden: Erneut scannen
-nimmt es zurück.
+nimmt es zurück. Ein Scan, der nichts gebucht hat (unbekannte Nummer, abgelehnte Buchung),
+meldet sich rot mit Fehlerton (seit 07.10.2026). Nach einem unbekannten Ausweis ist das Konto
+davor noch geöffnet: Ein Buch, das jetzt gescannt wird, geht an dieses Konto.
 
 **Ein Stapel vom Rückgabetisch** geht über die **Schnellrückgabe** (seit 06.10.2026): den Knopf
 rechts neben dem Scanfeld anklicken, dann die Bücher scannen. Jedes verliehene Buch wird
