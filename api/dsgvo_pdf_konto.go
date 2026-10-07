@@ -202,7 +202,8 @@ func dsgvoAnfrageArt(art string) string {
 }
 
 // dsgvoKontoAktion schreibt die Aktion eines Kontoereignisses aus (Schreiber:
-// api/user_admin_mutations.go, auth/selbstanmeldung.go). Ein unbekannter Wert bleibt stehen.
+// api/user_admin_mutations.go, auth/selbstanmeldung.go, api/student_update.go). Ein
+// unbekannter Wert bleibt stehen.
 func dsgvoKontoAktion(aktion string) string {
 	switch aktion {
 	case "USER_CREATE":
@@ -211,6 +212,8 @@ func dsgvoKontoAktion(aktion string) string {
 		return "Konto geändert"
 	case "SELBSTANMELDUNG":
 		return "Zugang über die eigene Anmeldung beantragt"
+	case "KOLLEGIUMSKONTO_NACHGETRAGEN":
+		return "Konto angelegt: Schul-E-Mail in der Leserakte nachgetragen"
 	}
 	return aktion
 }

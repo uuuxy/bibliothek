@@ -156,8 +156,7 @@ der Nummer nichts mehr dazu offen ist.
   „(Neuwertig)". Die Vorschau zeichnet seit dem 07.10.2026 nur den ersten Bogen.
 - [ ] **Überläufe (5.45):** Bestellwesen 40 px, Signaturen bei 1280 px, ein langer Name in der
   Leserakte.
-- [ ] **Auskunft (5.19):** Zwei Einträge über die Anlage eines Kontos fehlen, sobald das Konto
-  gelöscht ist; zu klären, welche Rohdaten aufs Blatt gehören.
+- [ ] **Auskunft (5.19):** zu klären, welche Rohdaten der Protokolleinträge aufs Blatt gehören.
 - [ ] **Protokoll und Tilgung (5.35):** am Testserver alte Einträge zählen (zu schon gelöschten
   Lesern; Stornierungen ohne die Kennung des Lesers), danach bereinigen.
 - [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
@@ -485,19 +484,6 @@ Nachgesehen am 24.09.2026: Die bearbeitende Person steht in eigenen Spalten (`be
 `admin_id`), die die Auskunft nicht ausgibt; Freitexte in den Details — etwa der Grund einer
 Sperre (`LESER_GESPERRT`, `LESER_ENTSPERRT`; bis zum 24.09.2026 auch `OVERRIDE_BLOCK`) —
 können aber andere Personen nennen.
-
-**Zwei Einträge über die Anlage eines Kontos** (gefunden am 29.09.2026) tragen seine Kennung
-nicht als `ziel_id` und fehlen deshalb unter den früheren Zugangskonten der Auskunft, sobald
-das Konto gelöscht ist.
-
-- `SELBSTANMELDUNG` trägt das Konto nur als `admin_id`; die Spalte geht beim Löschen des
-  Kontos auf NULL (`auth/selbstanmeldung.go`).
-- `KOLLEGIUMSKONTO_NACHGETRAGEN` (Schul-E-Mail in der Akte nachgetragen) trägt die Leserkennung,
-  nicht die des Kontos; die Auskunft zeigt ihn unter den Verwaltungseingriffen, nicht beim Konto
-  (`api/student_update.go`).
-
-Abhilfe in beiden Fällen: `ziel_id` in die Details, für den Nachtrag dazu eine Beschriftung im
-PDF (`dsgvoKontoAktion`).
 
 **Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
 sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung

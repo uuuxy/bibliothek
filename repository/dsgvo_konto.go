@@ -90,11 +90,12 @@ const dsgvoAnfragenSQL = `
 	WHERE k.angefordert_von = $1
 	ORDER BY 7 DESC`
 
-// dsgvoKontoEreignisseSQL findet die Einträge über das Konto. Eine Änderung trägt das Konto
-// als ziel_id, die Selbstanmeldung als admin_id (das neue Konto meldet sich selbst an). Die
-// Anlage durch die Verwaltung trug bis zum 24.09.2026 nur die Adresse — deshalb für diese
-// Altzeilen der Vergleich über die Adresse, und nur ab der Anlage dieses Kontos: Eine
-// frühere Zeile mit derselben Adresse gehörte zu einem anderen, inzwischen gelöschten Konto.
+// dsgvoKontoEreignisseSQL findet die Einträge über das Konto: Jeder Schreiber setzt die
+// Kennung des Kontos als ziel_id. Zwei Formen älterer Zeilen tragen sie nicht: die
+// Selbstanmeldung (dort steht das Konto als admin_id) und die Anlage durch die Verwaltung,
+// die nur die Adresse trug. Für sie gilt der Vergleich über die Adresse, und nur ab der
+// Anlage dieses Kontos: Eine frühere Zeile mit derselben Adresse gehörte zu einem anderen,
+// inzwischen gelöschten Konto.
 const dsgvoKontoEreignisseSQL = `
 	SELECT aktion, zeitstempel, details
 	FROM audit_logs

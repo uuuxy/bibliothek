@@ -211,7 +211,8 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
   (4.23).
 - Ein gelöschtes Zugangskonto nennt die Auskunft seit dem 29.09.2026; Löschungen von davor
   trugen den Bezug zum Leser nicht und bleiben für sie unsichtbar. Die Selbstanmeldung und der
-  Nachtrag einer Schul-E-Mail stehen danach nicht unter dem früheren Konto (5.19).
+  Nachtrag einer Schul-E-Mail stehen seit dem 08.10.2026 unter dem früheren Konto; Einträge von
+  davor tragen die Kennung des Kontos nicht.
 - Sechsmal gelangte ein Wert einer Person ins Protokoll, den die Anonymisierung nicht kannte
   oder dessen Eintrag sie nicht fand; jedes Mal behoben, zuletzt am 08.10.2026 der getippte
   Grund einer Stornierung und die Löschspur einer zusammengeführten Leserzeile. Seit dem

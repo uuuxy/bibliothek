@@ -121,15 +121,15 @@ func antworteAufKontoFehler(w http.ResponseWriter, err error, email string) {
 // trageKontoNach legt das Konto zu einer bestehenden Leserzeile an. Namen kommen aus der
 // Zeile SELBST und nicht aus dem Request: Wer im selben Speichern den Namen ändert, soll
 // ihn nicht in zwei Schreibweisen bekommen — Leserzeile und Konto sind dieselbe Person.
-func (s *Server) trageKontoNach(ctx context.Context, w http.ResponseWriter, leserID, email string, aktiv bool) bool {
+func (s *Server) trageKontoNach(ctx context.Context, w http.ResponseWriter, leserID, email string, aktiv bool) (kontoID string, ok bool) {
 	vorname, nachname, err := repository.LeserName(ctx, s.DB.Pool, leserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
-			return false
+			return "", false
 		}
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return false
+		return "", false
 	}
 	params := repository.LegeKollegiumskontoParams{
 		Vorname:  vorname,
@@ -138,11 +138,12 @@ func (s *Server) trageKontoNach(ctx context.Context, w http.ResponseWriter, lese
 		LeserID:  leserID,
 		Aktiv:    aktiv,
 	}
-	if _, err := repository.LegeKollegiumskonto(ctx, s.DB.Pool, params); err != nil {
+	kontoID, err = repository.LegeKollegiumskonto(ctx, s.DB.Pool, params)
+	if err != nil {
 		antworteAufKontoFehler(w, err, email)
-		return false
+		return "", false
 	}
-	return true
+	return kontoID, true
 }
 
 // pruefeAusweisLeerung hält die Pflicht zur Ausweisnummer an der ART fest — dieselbe

@@ -297,11 +297,15 @@ func (s *Server) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 		// Das Konto entsteht immer, aktiv nur bei manage_users — dieselbe Paarung wie beim
 		// Anlegen (student_create.go). Wer hier nur edit_students hat, bekäme sonst still
 		// das Recht, Zugänge freizuschalten.
-		if !s.trageKontoNach(ctx, w, id, a.kontoAdresse, s.BesitztRecht(r, "manage_users")) {
+		kontoID, ok := s.trageKontoNach(ctx, w, id, a.kontoAdresse, s.BesitztRecht(r, "manage_users"))
+		if !ok {
 			return false
 		}
+		// ziel_id ist die Kennung des Kontos: Daran findet die Auskunft den Eintrag beim Konto,
+		// auch nachdem es gelöscht ist. Mit dem Leser fällt sie wieder (Tilgung).
 		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "KOLLEGIUMSKONTO_NACHGETRAGEN", getIP(r), map[string]any{
 			"schueler_id": id,
+			"ziel_id":     kontoID,
 		}); logErr != nil {
 			log.Printf("Audit für Kontonachtrag fehlgeschlagen: %v", logErr)
 		}
