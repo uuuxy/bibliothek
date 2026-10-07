@@ -1,6 +1,6 @@
 <script>
 	import { strichcodeBildUrl } from '../../strichcodeBild.js';
-	import { formatKurzname } from '../../etikettformate.js';
+	import { etikettFormat } from '../../etikettformate.js';
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import { printQueue } from '../../stores/printQueue.svelte.js';
 
@@ -9,6 +9,11 @@
 	// die verkleinerte Größe ein, damit das Blatt nichts neben sich verdeckt.
 	const BLATT_BREITE_MM = 140;
 	const PX_JE_MM = 96 / 25.4;
+	// Raster und Ränder kommen aus dem gewählten Format, gedruckt wird nach denselben Zahlen
+	// (api/label_formats.go). Die Spalten dürfen schmaler werden als ihr Maß: Drei Etiketten
+	// von 70 mm füllen das Blatt ganz, und sein Rahmen nimmt ihnen zwei Pixel.
+	const format = $derived(etikettFormat(labelStore.formatId));
+	const mm = (/** @type {number} */ wert) => `${Math.floor(((wert * 2) / 3) * 10) / 10}mm`;
 	let platz = $state(0);
 	let blattHoehe = $state(0);
 	const massstab = $derived(platz > 0 ? Math.min(1, platz / (BLATT_BREITE_MM * PX_JE_MM)) : 1);
@@ -22,7 +27,7 @@
 	class="lg:col-span-5 flex flex-col items-center justify-start rounded-xl bg-surface-container p-6"
 >
 	<span class="text-xs text-on-surface-variant font-medium mb-4"
-		>A4 Etiketten-Vorschau · {formatKurzname(labelStore.formatId)}</span
+		>A4 Etiketten-Vorschau · {format.kurz}</span
 	>
 
 	{#if !labelStore.selectedTitle && (printQueue.copies?.length ?? 0) === 0}
@@ -48,17 +53,21 @@
 					bind:clientHeight={blattHoehe}
 					data-testid="etiketten-blatt"
 					class="bg-surface-container-lowest border border-outline-variant shadow-2xl relative flex origin-top-left flex-col items-start select-none"
-					style="width: {BLATT_BREITE_MM}mm; min-height: 198mm; padding: 10.1mm 4.8mm 0; box-sizing: border-box; transform: scale({massstab});"
+					style="width: {BLATT_BREITE_MM}mm; min-height: 198mm; padding: {mm(format.randOben)} {mm(
+						format.randLinks
+					)} 0; box-sizing: border-box; transform: scale({massstab});"
 				>
 					<div
-						style="display: grid; grid-template-columns: repeat(3, 42.3mm); column-gap: 1.7mm; row-gap: 0; width: 100%;"
+						style="display: grid; grid-template-columns: repeat({format.spalten}, minmax(0, {mm(
+							format.breite
+						)})); column-gap: {mm(format.abstandX)}; row-gap: {mm(format.abstandY)}; width: 100%;"
 					>
 						{#each labelStore.finalLabels as lbl, _i (_i)}
 							{#if lbl.isBlank}
 								<!-- Blank Label placeholder representation -->
 								<div
 									class="border border-dashed border-outline-variant bg-surface flex items-center justify-center"
-									style="width: 42.3mm; height: 25.4mm;"
+									style="width: {mm(format.breite)}; max-width: 100%; height: {mm(format.hoehe)};"
 								>
 									<span class="text-[6px] text-on-surface-variant tracking-wider font-bold"
 										>LEER</span
@@ -69,7 +78,9 @@
 									class="bg-surface-container-lowest text-on-surface text-left overflow-hidden flex flex-col justify-between {labelStore.labelBorder
 										? 'border border-outline-variant'
 										: ''}"
-									style="width: 42.3mm; height: 25.4mm; padding: 1.5mm; font-size: 5px; box-sizing: border-box;"
+									style="width: {mm(format.breite)}; max-width: 100%; height: {mm(
+										format.hoehe
+									)}; padding: 1.5mm; font-size: 5px; box-sizing: border-box;"
 								>
 									<div
 										class="font-extrabold text-on-surface title-clamp tracking-tight mb-0.5"

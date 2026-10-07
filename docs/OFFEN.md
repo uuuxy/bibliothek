@@ -131,8 +131,7 @@ der Nummer nichts mehr dazu offen ist.
   07.10.2026 „Ausgesondert" und „Bestellt".
 - [ ] **Nie eingetroffene Exemplare (5.5):** Sie zählen noch an zwei Stellen als Abgang, in der
   Zahl „aus dem Katalog gelöscht" unter dem Abgangsbuch und in der Verlustquote der Statistik.
-- [ ] **Druck-Center (5.5, 5.45):** Die Vorschau zeigt immer denselben Bogen, und bei vielen
-  Exemplaren wird die Seite sehr lang.
+- [ ] **Druck-Center (5.45):** Bei vielen Exemplaren wird die Seite sehr lang.
 - [ ] **Überläufe (5.45):** Bestellwesen 40 px, Signaturen bei 1280 px, ein langer Name in der
   Leserakte.
 - [ ] **Auskunft (5.19):** Zwei Einträge über die Anlage eines Kontos fehlen, sobald das Konto
@@ -379,12 +378,6 @@ Vermerk.
   (`queryBestandKennzahlen` in `api/stats.go`); ein bestelltes Exemplar, das im Status-Editor
   als „Verloren" ausgesondert wird, bekommt VERLUST. Abhilfe: Die Schreiber vermerken es an
   der Spur, die Statistik nimmt die Grenze des Abgangsbuchs. Kategorie B.
-- Druck-Center, Buch-Etiketten: Die Vorschau zeichnet für jedes Etikettenformat dasselbe Blatt,
-  drei Spalten mit Etiketten von 42,3 × 25,4 mm (`LabelPreview.svelte`). Das ist der Bogen
-  „Zweckform L4760" in zwei Dritteln der Größe. Für „Avery 3475" (3 × 8) und „Kleine Barcodes"
-  (4 × 13) zeigt sie damit nicht den gewählten Bogen; gedruckt wird nach
-  `api/label_formats.go`, die Überschrift der Vorschau nennt das gewählte Format (gemessen am
-  03.10.2026).
 - Zwei Schreibweisen stehen neben ihrem Helfer (gezählt am 06.10.2026). Einen Betrag in Euro
   schreiben sieben Stellen selbst: sechs mit `toLocaleString` und `+ ' €'`
   (`useFehlbestand.svelte.js`, `StudentBescheideCard`, `BestellHistorie`, `BestellDetail`,

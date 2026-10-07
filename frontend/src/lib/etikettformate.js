@@ -19,7 +19,11 @@
  * `label` steht in der Auswahlliste, `kurz` dort, wo nur der Bogenname hingehört
  * (Vorschau-Überschrift) — sonst schreibt jemand die Namen ein zweites Mal hin.
  *
- * @type {{ value: string, label: string, kurz: string, spalten: number, zeilen: number }[]}
+ * Die Maße in Millimetern (Etikett, Rand des Blatts, Abstand zwischen den Etiketten) braucht
+ * die Vorschau des Druck-Centers, damit sie den gewählten Bogen zeichnet.
+ *
+ * @typedef {{ value: string, label: string, kurz: string, spalten: number, zeilen: number, breite: number, hoehe: number, randOben: number, randLinks: number, abstandX: number, abstandY: number }} EtikettFormat
+ * @type {EtikettFormat[]}
  */
 export const ETIKETT_FORMATE = [
 	{
@@ -27,33 +31,51 @@ export const ETIKETT_FORMATE = [
 		label: 'Zweckform L4760 (3x7, 21 Etiketten)',
 		kurz: 'Zweckform L4760',
 		spalten: 3,
-		zeilen: 7
+		zeilen: 7,
+		breite: 63.5,
+		hoehe: 38.1,
+		randOben: 15.1,
+		randLinks: 7.2,
+		abstandX: 2.5,
+		abstandY: 0
 	},
 	{
 		value: 'avery_3475',
 		label: 'Avery 3475 (3x8, 24 Etiketten)',
 		kurz: 'Avery 3475',
 		spalten: 3,
-		zeilen: 8
+		zeilen: 8,
+		breite: 70,
+		hoehe: 37,
+		randOben: 0.5,
+		randLinks: 0,
+		abstandX: 0,
+		abstandY: 0
 	},
 	{
 		value: 'standard_52',
 		label: 'Kleine Barcodes (4x13, 52 Etiketten)',
 		kurz: 'Standard 52',
 		spalten: 4,
-		zeilen: 13
+		zeilen: 13,
+		breite: 48.3,
+		hoehe: 21.2,
+		randOben: 10.7,
+		randLinks: 3.4,
+		abstandX: 0,
+		abstandY: 0
 	}
 ];
 
 /**
- * Kurzer Bogenname für Überschriften. Unbekanntes Format liefert den ersten Eintrag,
- * damit die Überschrift nicht leer bleibt.
+ * Das Format zu einer Kennung. Unbekanntes liefert den ersten Eintrag, damit Überschrift,
+ * Startposition und Vorschau bedienbar bleiben.
  *
  * @param {string} formatId
- * @returns {string}
+ * @returns {EtikettFormat}
  */
-export function formatKurzname(formatId) {
-	return (ETIKETT_FORMATE.find((f) => f.value === formatId) ?? ETIKETT_FORMATE[0]).kurz;
+export function etikettFormat(formatId) {
+	return ETIKETT_FORMATE.find((f) => f.value === formatId) ?? ETIKETT_FORMATE[0];
 }
 
 /**
@@ -67,6 +89,6 @@ export function formatKurzname(formatId) {
  * @returns {number}
  */
 export function felderProBogen(formatId) {
-	const format = ETIKETT_FORMATE.find((f) => f.value === formatId) ?? ETIKETT_FORMATE[0];
+	const format = etikettFormat(formatId);
 	return format.spalten * format.zeilen;
 }

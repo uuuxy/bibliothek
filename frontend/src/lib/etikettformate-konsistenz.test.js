@@ -25,9 +25,19 @@ const repoRoot = join(libDir, '..', '..', '..');
 
 const goQuelle = readFileSync(join(repoRoot, 'api', 'label_formats.go'), 'utf8');
 
+// Die sechs Maße eines Bogens in Millimetern: Feld in Go, Feld in etikettformate.js.
+const MASSE = /** @type {const} */ ([
+	['LabelWidth', 'breite'],
+	['LabelHeight', 'hoehe'],
+	['MarginTop', 'randOben'],
+	['MarginLeft', 'randLinks'],
+	['GapX', 'abstandX'],
+	['GapY', 'abstandY']
+]);
+
 /**
- * Liest die Formate aus api/label_formats.go: ID, Cols, Rows.
- * @returns {{id: string, cols: number, rows: number}[]}
+ * Liest die Formate aus api/label_formats.go: ID, Cols, Rows und die Maße.
+ * @returns {{id: string, cols: number, rows: number, masse: Record<string, number>}[]}
  */
 function formateAusGo() {
 	const out = [];
@@ -38,7 +48,13 @@ function formateAusGo() {
 		const [, id, rumpf] = m;
 		const cols = rumpf.match(/Cols:\s*(\d+)/);
 		const rows = rumpf.match(/Rows:\s*(\d+)/);
-		if (cols && rows) out.push({ id, cols: Number(cols[1]), rows: Number(rows[1]) });
+		/** @type {Record<string, number>} */
+		const masse = {};
+		for (const [goFeld] of MASSE) {
+			const wert = rumpf.match(new RegExp(`${goFeld}:\\s*([0-9.]+)`));
+			if (wert) masse[goFeld] = Number(wert[1]);
+		}
+		if (cols && rows) out.push({ id, cols: Number(cols[1]), rows: Number(rows[1]), masse });
 	}
 	return out;
 }
@@ -80,6 +96,17 @@ describe('Etikettenformate: Go-Liste und Oberfläche', () => {
 				throw new Error(`Format ${f.id} fehlt in etikettformate.js`);
 			}
 			expect([e.spalten, e.zeilen], `Raster von ${f.id}`).toEqual([f.cols, f.rows]);
+		}
+	});
+
+	it('die Maße in Millimetern stimmen mit dem Backend überein', () => {
+		// Die Vorschau zeichnet den Bogen aus diesen Zahlen, gedruckt wird nach der Go-Liste.
+		for (const f of goFormate) {
+			const e = /** @type {Record<string, any>} */ (ETIKETT_FORMATE.find((x) => x.value === f.id));
+			expect(Object.keys(f.masse), `Maße von ${f.id} in der Go-Datei`).toHaveLength(MASSE.length);
+			for (const [goFeld, feld] of MASSE) {
+				expect(e[feld], `${feld} von ${f.id}`).toBe(f.masse[goFeld]);
+			}
 		}
 	});
 
