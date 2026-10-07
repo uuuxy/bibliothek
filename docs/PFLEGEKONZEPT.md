@@ -296,6 +296,10 @@ Draußen bleibt, was Zugänge, Orte oder Namen nennt (Abschnitt 7.3), was nur de
 der Entwicklung betrifft, und der Verlauf einzelner Sitzungen; der steht in den
 Commit-Nachrichten.
 
+Neue Notizen entstehen weiter. Damit sich nichts wieder ansammelt, gilt seit dem 07.10.2026:
+Was für die Pflege zählt, kommt mit dem Commit, der es hervorbringt, in eines der Dokumente
+oben (`CLAUDE.md`, Abschnitt 4).
+
 ### 7.3 Das Blatt bei der Schule
 
 Auf Papier bei der Schule, nicht im Repository:
