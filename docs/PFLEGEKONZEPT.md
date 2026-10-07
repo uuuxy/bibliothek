@@ -65,6 +65,28 @@ Kopie; bei Stillstand zusätzlich ein Anruf. Nie über die Issues auf GitHub, we
 5. **Die Datenbank** passt sich beim Start selbst an (Migrationen). Migrationen laufen nur
    vorwärts: Zurück geht es über die Vorab-Sicherung, nicht über den alten Code allein.
 
+**Eine Änderung von außen** — ein Pull Request, auch von Dependabot oder von einem Werkzeug,
+das Vorschläge selbst erzeugt — wird vor dem Übernehmen so geprüft:
+
+- Grün in der CI genügt nicht; rot ist ein Befund und kein Rauschen.
+- Welche Dateien ändert er (`gh pr view <Nummer> --json files`)? Beifang fällt hier auf: eine
+  fremde Sperrdatei, Notizdateien, eine zurückgestufte Go-Version.
+- Was er ändert, zeigt `git diff --stat origin/main...origin/<Zweig>` mit drei Punkten. Titel
+  und Zweigname sagen es nicht, und mit zwei Punkten erscheint bei einem alten Zweig alles als
+  Löschung, was `main` seither dazubekam.
+- Ändert er einen Test, eine Ratsche oder die Stelle, an der ein Browser-Test sein Element
+  sucht, ist das eine Lockerung, bis das Gegenteil belegt ist (Gegenprobe am Rückbau,
+  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14).
+- „Schneller" wird gemessen, bevor es geglaubt wird (`EXPLAIN ANALYZE` an echten Mengen). Ein
+  Zwischenspeicher ohne Messung und ohne Regel, wann er verfällt, wird abgelehnt.
+- Neue Tests an der Datenbank laufen am Arbeitsplatz gegen Postgres; die CI zeigt nur den
+  ersten Fehler.
+- Ein Sammel-Update der Pakete wird in einem eigenen Arbeitsverzeichnis mit `npm ci` geprüft,
+  bevor es übernommen wird.
+- Ein Zweig auf GitHub ist kein offener Vorschlag: `gh pr list --state all --head <Zweig>`
+  zeigt, ob er schon übernommen oder abgelehnt ist.
+- Ändert der Vorschlag eine Funktion ohne Test, gehört der Test zur Übernahme.
+
 ---
 
 ## 3. Die zwei Handgriffe der Vertretung
@@ -214,8 +236,15 @@ Für die Entwicklung und für jeden, der sie übernimmt.
 - **svelte-check meldet „Invalid character" in einem Kommentar (25.09.2026).** Steht in einer
   JSDoc-Zeile direkt hinter dem Namen des Parameters ein deutsches Anführungszeichen („), liest
   der Parser es als Teil des Namens. Ein Wort davor genügt.
-- **Welche Prüfläufe zu einem Stand gehören,** zeigt `gh run list --commit <sha>`. Die Liste
-  je Zweig zeigte am 05.10.2026 nach einem Push nur ältere Läufe.
+- **Welche Prüfläufe zu einem Stand gehören,** zeigt `gh run list --commit <sha>` mit der
+  vollen Kennung des Commits (`git rev-parse <kurz>`); mit der gekürzten bleibt die Liste leer
+  (07.10.2026). Die Liste je Zweig zeigte am 05.10.2026 nach einem Push nur ältere Läufe.
+- **Ein Lauf steht als „cancelled" (23.08.2026).** Das heißt „nicht geprüft", nicht „nichts
+  gefunden". Auf einem Zweig bricht ein neuer Push den laufenden Lauf ab; auf `main` läuft
+  jeder zu Ende (`.github/workflows/ci.yml`, `cancel-in-progress` gilt nur außerhalb von
+  `main`). Vorher brach bei Pushes im Abstand weniger Minuten jeder Lauf den vorigen ab, und
+  `main` war in der Zeit ungeprüft. Der Bau des Images bricht weiter ab
+  (`docker-publish.yml`): Dort zählt nur der neueste Stand.
 
 ---
 
@@ -250,9 +279,22 @@ urheberrechtlich geschützt, die Sicherung enthält Personendaten. Ort auf dem B
 ### 7.2 Arbeitsnotizen der Entwicklung
 
 Entwickelt wird mit einem KI-Assistenten. Dessen Arbeitsnotizen zum Projekt — Entscheidungen,
-Fallen, Messungen, am 07.10.2026 256 Einträge — liegen außerhalb des Repositorys. Was davon
-für die Pflege zählt, kommt entlang der Gliederung dieses Dokuments ins Repository; den Anfang
-machen die Fälle in Abschnitt 5, was aussteht, nennt [OFFEN.md](OFFEN.md) 9.9.
+Fallen, Messungen, am 07.10.2026 257 Einträge — liegen außerhalb des Repositorys. Was davon
+für die Pflege zählt, steht seit dem 07.10.2026 im Repository, jede Aussage vor dem Eintragen
+am Stand des Tages geprüft:
+
+| Was | Wo |
+| --- | --- |
+| Fälle roter Prüfläufe, Prüfung einer Änderung von außen | Abschnitte 5 und 2 |
+| Fehlerarten mit ihrem Gate | [sweeps.md](sweeps.md), Register |
+| Handgriffe beim Prüfen | [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14 |
+| Druck, Mail, Fehlerantworten, Regeln der Oberfläche | [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.9, 8.10, 8.6, 5.3 |
+| Littera und LUSD | [littera_schema_befund.md](littera_schema_befund.md), [LUSD.md](LUSD.md), [SCRIPTS.md](SCRIPTS.md) |
+| Regeln des Fachs, verworfene Vorschläge | [FACHKONZEPT.md](FACHKONZEPT.md), dort §20 |
+
+Draußen bleibt, was Zugänge, Orte oder Namen nennt (Abschnitt 7.3), was nur den Arbeitsplatz
+der Entwicklung betrifft, und der Verlauf einzelner Sitzungen; der steht in den
+Commit-Nachrichten.
 
 ### 7.3 Das Blatt bei der Schule
 

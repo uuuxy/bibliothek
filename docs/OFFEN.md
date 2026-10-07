@@ -46,7 +46,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   (7.2, 4.20)
 - [ ] `update.sh` für den Schulserver: nur Releases, Images frisch. (5.31)
 - [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
-- [ ] Arbeitsnotizen der Entwicklung ins Repository, entlang dem Pflegekonzept. (9.9)
+- [x] Arbeitsnotizen der Entwicklung ins Repository, entlang dem Pflegekonzept (abgeschlossen
+  am 07.10.2026; wo was steht, nennt [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 7.2).
 - [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3), Uptime-Signal (7.5),
   Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9). Danach nachsehen:
   Admin-Konten, Verbindung zur DNB (7.8).
@@ -1315,31 +1316,7 @@ Buch eine Zeile; einmal ausdrucken und ansehen.
   1. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — ausfüllen bei dir, Vorlage im
      Anhang des Entwurfs. Vorschlag: die zwei Schlüssel in einem Passwortmanager
      und als Papier im verschlossenen Umschlag im Tresor der Schule, nie per E-Mail.
-  2. **Die Arbeitsnotizen der Entwicklung** (am 07.10.2026 256 Einträge, 14.322 Zeilen) entlang
-     der Gliederung des Entwurfs ins Repository — bei mir. Draußen bleibt, was Zugänge, Orte
-     oder Namen nennt; von den 82 Einträgen zur Arbeitsweise kommt nur der Handgriff hinein,
-     nicht die Anweisung. Jede Aussage wird vor dem Eintragen am heutigen Stand geprüft und
-     jede Zahl neu gezählt: Von den Notizen zu Abschnitt 5 waren zwei überholt, von denen zu
-     Littera und LUSD drei. Eingetragen am 07.10.2026: Abschnitt 5, „Fälle, die vorkamen";
-     fünfzehn Fehlerarten im Register von [sweeps.md](sweeps.md), darunter die Fallen an
-     Postgres, pgx und Tailwind; die Einträge zu Littera und LUSD in
-     [littera_schema_befund.md](littera_schema_befund.md), [LUSD.md](LUSD.md) und
-     [SCRIPTS.md](SCRIPTS.md) 1b; die Handgriffe beim Prüfen in
-     [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14; was vorgeschlagen und verworfen wurde, als Liste
-     in [FACHKONZEPT.md](FACHKONZEPT.md) §20. Kein Dokument und kein Kommentar im Code verweist
-     mehr auf eine Notiz. Die Regeln, die [FACHKONZEPT.md](FACHKONZEPT.md) und
-     [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9 nennen, sind am 07.10.2026 gegen den Code
-     gehalten: 471 genannte Dateien, Funktionen, Routen und Einstellungen per Skript gesucht,
-     Zahlen und Abläufe je Abschnitt nachgelesen; fünfzehn Stellen berichtigt, vier Regeln
-     nachgetragen (Recht statt Rolle in der Oberfläche, Titel speichern nur mit den genannten
-     Feldern, Kalendertag der Schule in SQL, die Einstellung zur Gültigkeit des
-     Bestätigungs-Links). Die Prüfungen fanden dabei etwas am Programm: den Abgleich der
-     Buchnummern (behoben), zwei Punkte der Übernahme, die Signaturen und die Sperren (7.2),
-     und einen toten Eintrag in der Liste der Routen ohne Anmeldung (entfernt).
-     Es steht aus: ein Durchgang über die 93 Einträge, die in keinem dieser Schritte lagen;
-     dazu gehört das Druck-Center, das [FACHKONZEPT.md](FACHKONZEPT.md) §9 in zwei Sätzen
-     beschreibt.
-  3. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
+  2. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
      mit dem Dokument.
 
 ---

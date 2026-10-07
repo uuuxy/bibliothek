@@ -761,7 +761,26 @@ frontend/src
 - **Logikfreie Teilkomponenten mit `{#snippet}` / `{@render}`** statt kopierter
   Markup-Blöcke (gemessen 18.09.2026: 67 Dateien).
 - **Flat & Edge-to-Edge:** Trennung über `border-b`, nicht über Karten; Karten bleiben
-  Modals, Toasts, Dropdowns und Cover-Kacheln.
+  Modals, Toasts, Dropdowns und Cover-Kacheln. Gemeint sind die Flächen der Seite, nicht die
+  Eingabefelder (klargestellt am 03.10.2026): Ein Textfeld läuft nicht über die volle Breite
+  eines großen Bildschirms (Material 3, Text fields: „Text fields shouldn't span the full
+  width of a large screen").
+- **Rahmen oder Erhebung, nie beides.** In den Token von Material 3 trägt kein Bauteil einen
+  Rahmen und eine Erhebung zugleich; welcher Teil weicht, entscheidet die Rolle des Bauteils
+  (Dialog: Erhebung, Tabelle und umrandeter Knopf: Rahmen). Gemessen wird im Browser:
+  `frontend/e2e/m3-bauform.spec.js`.
+- **Ein Knopf steht bei dem Inhalt, den er betrifft** (Material 3, Spacing: „buttons should be
+  close to the content they're affecting"), nicht am fernen Rand der Zeile.
+- **Was jemand sieht, entscheidet das Recht der Route,** nicht die Rolle: `hatRecht` aus
+  `menu.js` (Ratsche `frontend-hygiene-rechte.test.js`, [FACHKONZEPT.md §12.2](FACHKONZEPT.md)).
+- **Suchen, Sortieren und Filtern einer gekappten Liste geschehen am Server.** Im Browser
+  sortiert, ordnete die Liste nur die Zeilen um, die die Kappung durchgelassen hat
+  ([sweeps.md](sweeps.md), „Sortierung hinter der Kappung"; sortierbare Spaltenköpfe:
+  `ui/TabelleSortKopf.svelte`).
+- **Gekürzter Text braucht einen Weg zum Rest.** Material 3 („Text truncation"): „Don't cut
+  off text without providing a way for users to view it." Wo es keinen gibt, läuft der Text
+  um — auf Papier immer. Die Sprechblase des Hauses (`data-tip`, `actions/tooltip.js`)
+  erscheint an einer Tabellenzelle nur mit der Maus und ist dort kein Weg für die Tastatur.
 
 ---
 
@@ -1776,6 +1795,7 @@ höchstens Serverzeit).
 | **Schweigen ist kein Erfolg**                                   | Ein Nachbuch-Schlüssel ohne Antwort bleibt in der Warteschlange liegen                                                                          |
 | **Eine gekappte Liste sagt es**                                 | Wo eine Ausgabe begrenzt wird, steht die Begrenzung dabei — auch wenn zusätzlich gefiltert wurde                                                 |
 | **Fehlerantworten einheitlich**                                 | `apierrors.SendHTTPError`; Fehlermeldungen sind deutsch und nennen die nächste Handlung                                                          |
+| **Ein 500 trägt nie den Text des Fehlers**                     | Bei jedem 500 ersetzt `apierrors` die Meldung durch einen neutralen Satz (`sanitizeInternalError`); nur unterhalb von 500 geht der Fehlertext hinaus. Eine Diagnose, die jemand lesen soll, braucht deshalb 400 (Eingabe), 409 (Fachfall) oder 502 (ein fremder Dienst versagt, etwa der Mailserver: `mailFehlerStatus`). Soll die Ursache nur ins Log, trennt `SendHTTPErrorMitMeldung` Meldung und Ursache |
 | **Ein Panic beendet nicht den Prozess**                         | `PanicRecoveryMiddleware` für Handler, `pkg/safego` für Goroutinen                                                                              |
 
 Die Testklasse dazu heißt `phantom_erfolg_test.go` und `fehler_kollaps_test.go`: „Hat es
@@ -1802,7 +1822,8 @@ in die Ferien, gilt der nächste (`lmfplan.Ferientabelle.Tagesfrist`, seit 24.09
 Abholfrist seit 29.09.2026). Die Ferien stehen als Tabelle im
 Programm (`pkg/lmfplan/ferien.go`, `pkg/lmfplan/schulferien.go`). Stichtage rücken nicht. Das
 Werkzeug für „Bücher über die Sommerferien mitnehmen" bleibt der Ferien-Leseclub (aktiv +
-Zieldatum ⇒ feste Rückgabefrist für alle Ausleihen); das Mahnwesen wird nur von Hand bedient.
+Zieldatum ⇒ feste Rückgabefrist für Ausleihen von Schülern außer Lernmitteln, bis das Datum
+vorbei ist); das Mahnwesen wird nur von Hand bedient.
 
 ---
 
@@ -1855,6 +1876,40 @@ Cover werden für die PDF-Einbettung aus WebP konvertiert (`pkg/coverdatei`) —
 `gofpdf` noch `maroto` kennen WebP. Ein Gate (`npm run test:druck`) prüft die
 Drucksektionen am gebauten Frontend.
 
+**Ausweise: zwei Renderer, einer fürs Papier.** Der Ausweis-Designer zeichnet die Karte
+zweimal: `designer/CanvasElement.svelte` auf dem Bildschirm, mit den Griffen zum Bearbeiten,
+und `designer/CardFace.svelte` für das Papier. `CardFace` ist die eine Quelle für den
+Testdruck des Designers, den Stapeldruck aus der Leserdatei und den Einzeldruck aus der Akte.
+Wo die beiden auseinanderlaufen, sieht man es nur auf dem Papier (24.08.2026: Der Testdruck
+ließ leere Bildfelder weg, die der Bildschirm als gestrichelten Rahmen zeigte). Daraus folgen
+drei Regeln. Eine neue Elementart wird an drei Stellen gebaut — `CardFace`, `CanvasElement`,
+`PropertiesPanel`; der Server speichert das Layout als Ganzes und prüft die Arten nicht.
+Platzhalter für leere Felder zeichnet `CardFace` nur, wenn der Designer es verlangt
+(`platzhalter`): Ein echter Ausweis trägt nie „PASSBILD", weil ein Foto fehlt. Die Größe
+des Strichcodes rechnet eine Funktion für beide (`strichcodeBildOptionenFuerElement` in
+`strichcodeBild.js`). Farbflächen der Vorlagen sind Elemente der Art `box`, keine Bilder: Ein
+Bild ließ weiße Streifen am Kartenrand, und seine Farbe war nicht zu ändern.
+
+**Das Design liegt am Server** (`GET`/`PUT /api/ausweis-layout`), samt der Betriebsart
+(`printMode`: Karte oder Etikett) und dem Bogenformat. Mehrere Arbeitsplätze drucken
+deshalb dasselbe; im Browser gespeichert, hätte jeder Rechner sein eigenes Design.
+
+**Etiketten: drei Wege zum selben Blatt.** Ein Buch-Etikett entsteht über „Barcodes
+drucken" am Titel (`GET /api/buecher/titel/{id}/etiketten`), über das Druck-Center
+(`POST /api/print/labels`) und für den Händler (Seite und Mailanhang,
+`ladeBestellEtiketten`). Das Druck-Center schickt nur Nummer, Titel und Autor; was der Server
+weiß — Anschaffungsjahr, Signatur, Eigentum —, trägt `ergaenzeServerfelder` nach. Ein neues
+Feld auf dem Etikett gehört an alle drei Wege. Das Gate liest den gedruckten Text:
+`api/etiketten_pdf_paritaet_pg_test.go` fährt die Handler, entpackt die Inhaltsströme des PDF
+und vergleicht die Textstücke; Statuscode und Dateigröße sind bei einem fehlenden Feld
+dieselben. Einen eigenen Endpunkt für ein einzelnes Etikett gibt es seit dem 24.09.2026 nicht
+mehr; der Knopf an der Exemplarkarte übergibt an das Druck-Center.
+
+**Was auf ein Blatt gehört, wird am fertigen PDF gemessen.** Der LMF-Plan hängt als ein Blatt
+aus; `pdf/lmfplan_satz.go` wählt vor dem Setzen den größten Schriftgrad, mit dem alles auf
+eine Seite geht, erst in einer Spalte, dann in zweien. Eine feste Zeilenhöhe brach ab rund
+vierzig Terminen von selbst um.
+
 ---
 
 ### 8.10 Mail
@@ -1870,6 +1925,13 @@ Drucksektionen am gebauten Frontend.
   EHLO-Antwort streicht („STARTTLS stripping"), bekam Mahntexte mit Schülernamen.
   `SMTP_ALLOW_PLAINTEXT=true` erlaubt es ausdrücklich und protokolliert die Folgen.
 - **Kopfzeilen-Härtung** direkt an der Schreibstelle (Betreff, Absender, Empfänger).
+- **Jede Verbindung hat eine Frist:** 10 Sekunden für den Aufbau, 60 Sekunden für die ganze
+  Sitzung (`mailservice/versand.go`). Ohne sie hing ein Versand an einem Server, der die
+  Verbindung annimmt und dann schweigt, für immer — auch die Alarm-Mail des Wächters.
+- **Eine Mail nach dem Speichern meldet ihr Ergebnis.** „Klassensatz liegt bereit" und
+  „Meldung erledigt" gehen nach dem Commit hinaus; die Antwort der Tür nennt im Feld `mail`,
+  ob sie versendet wurde, fehlschlug oder keine Adresse hatte, und die Oberfläche warnt dann
+  („bitte die Lehrkraft selbst benachrichtigen"). Vorher stand ein Ausfall nur im Log des Servers.
 - **Wer Post bekommt:** Klassenleitung (Mahnlisten), Händler (Bestellung), Admins
   (Bereitschafts-Wächter), Lehrkräfte (Portal-Vorgänge). **Nicht** Schüler.
 - Vorlagen mit Platzhaltern liegen in `mail_vorlagen` und sind in der Oberfläche pflegbar.
@@ -1995,6 +2057,23 @@ wenn man ihn einmal gebraucht hat.
   mit dem `reverse_proxy`-Block aus `update_caddy.sh` vor dem lokalen Stack
   (`host.docker.internal:8084`, `auto_https off`). Nachgestellt am 07.10.2026; TLS und HTTP/2
   des Servers bildet das nicht nach.
+- **Browser-Tests verschicken keine Mail.** Der Stack, gegen den die Suite läuft, hat einen
+  Mailserver eingetragen, und mehrere Abläufe verschicken Mail (Meldung erledigt, Klassensatz
+  bereit, Alarme). Für die Dauer des Laufs zeigt die Einstellung deshalb auf eine Adresse, an
+  der nichts zuhört (`frontend/e2e/mailserver.js`); `frontend/e2e/mailserver-stumm.spec.js`
+  hält es fest. Eine Spec, die einen Versand bis zum Ende klickt, fängt die Anfrage ab.
+- **Eine neue Tabelle oder Route macht Register rot, die ein gezielter Testlauf nicht sieht**
+  (23.09.2026, Migration 138: sechs auf einmal). Nach der ersten grünen Einzelprobe deshalb
+  die ganze Suite fahren, `go test ./...` mit `TEST_DATABASE_URL`. Erwartet wird je ein
+  Eintrag: in `phantom_erfolg_test.go` für jeden `Exec`, dessen Ergebnis verworfen wird; in
+  `docs/PII_MATRIX.de.md` eine Zeile je Route (`api/pii_matrix_test.go`); in `bauePIIAufrufe`
+  ein Aufruf je GET-Route (`api/pii_antwort_gate_pg_test.go`); am Ende von `schema.sql` die
+  neue Migration in der Liste der angewendeten (`db/migrations_drift_test.go`); in
+  `repository/schema_gegenrichtung_pg_test.go` jede neue Lösch-Folge und jede neue Bedingung
+  mit der Antwort, wer die Folge behandelt. Dazu Tests, die JSON wörtlich vergleichen (ein
+  neues Feld erscheint dort als `null`), Swagger (`docs/swagger_drift_test.go`),
+  [api_inventar.md](api_inventar.md) und die Liste der Bauteile in `CLAUDE.md`. Ein Eintrag
+  ist eine Antwort, keine hochgesetzte Zahl.
 
 ---
 
