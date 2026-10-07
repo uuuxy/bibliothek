@@ -7,6 +7,7 @@
 <script>
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Segmente from '../ui/Segmente.svelte';
@@ -58,6 +59,12 @@
 					<div class="flex items-center justify-center py-4">
 						<Ladekreis size="md" />
 					</div>
+				{:else if labelStore.exemplareNichtGeladen}
+					<LadeFehler
+						titel="Exemplare nicht geladen"
+						text="Die Exemplare dieses Titels konnten nicht abgerufen werden. Welche es schon gibt, ist deshalb nicht zu sehen."
+						onerneut={labelStore.ladeExemplare}
+					/>
 				{:else if labelStore.existingCopies.length === 0}
 					<p class="text-xs text-on-surface-variant">
 						Zu diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann.

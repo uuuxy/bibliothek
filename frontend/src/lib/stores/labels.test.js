@@ -91,6 +91,53 @@ describe('labelStore: ausgesonderte Exemplare', () => {
 	});
 });
 
+// Scheitert der Abruf der Exemplare, sagt der Store das eigens. Eine leere Liste hieße „kein
+// Exemplar“ und legte nahe, neue Barcodes zu erzeugen.
+describe('labelStore: Exemplare nicht geladen', () => {
+	const titel = { id: 't9', titel: 'Titel', autor: '' };
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		labelStore.generationMode = 'existing';
+	});
+
+	it('meldet eine Fehlantwort als Ladefehler', async () => {
+		apiFetchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 500 }));
+		await labelStore.selectBookTitle(titel);
+
+		expect(labelStore.exemplareNichtGeladen).toBe(true);
+		expect(aufDemBogen()).toEqual([]);
+	});
+
+	it('meldet einen Netzwerkfehler ebenso', async () => {
+		const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+		apiFetchMock.mockRejectedValueOnce(new Error('Failed to fetch'));
+		await labelStore.selectBookTitle(titel);
+
+		expect(labelStore.exemplareNichtGeladen).toBe(true);
+		stumm.mockRestore();
+	});
+
+	it('lädt erneut und zeigt danach die Exemplare', async () => {
+		apiFetchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 500 }));
+		await labelStore.selectBookTitle(titel);
+		apiFetchMock.mockResolvedValueOnce(exemplare(['B-1']));
+		await labelStore.ladeExemplare();
+
+		expect(labelStore.exemplareNichtGeladen).toBe(false);
+		expect(aufDemBogen()).toEqual(['B-1']);
+	});
+
+	// Die Gegenprobe: Ein Titel ohne Exemplar ist kein Ladefehler.
+	it('unterscheidet davon den Titel ohne Exemplar', async () => {
+		apiFetchMock.mockResolvedValueOnce(exemplare([]));
+		await labelStore.selectBookTitle(titel);
+
+		expect(labelStore.exemplareNichtGeladen).toBe(false);
+		expect(labelStore.existingCopies).toEqual([]);
+	});
+});
+
 // Über der Liste steht ein Kästchen für alle und ein Feld für die Nummer. Die Nummern stammen
 // aus den gemeinsamen Prüffällen: 58968 ist ein Littera-Exemplar, dessen Etikett den
 // EAN-13 5896800039556 trägt; B-100016 ist B-10001 mit dem Prüfzeichen früherer Etiketten.

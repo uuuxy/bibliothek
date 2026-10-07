@@ -66,6 +66,9 @@ function createLabelStore() {
 	// Zahl steht als Hinweis darunter. Dieselbe Regel wie repository.EtikettOffenBedingung.
 	let ausgesondertAnzahl = $state(0);
 	let loadingCopies = $state(false);
+	// Ein gescheiterter Abruf ist ein eigener Zustand: Eine leere Liste hieße „kein Exemplar"
+	// und legte nahe, neue Barcodes zu erzeugen.
+	let exemplareNichtGeladen = $state(false);
 	// Der Text im Nummernfeld über der Liste: zeigt nur die Exemplare, deren Nummer ihn enthält.
 	let exemplarSuche = $state('');
 	let sichtbareExemplare = $derived.by(() => {
@@ -151,6 +154,7 @@ function createLabelStore() {
 		selectedTitle = null;
 		existingCopies = [];
 		ausgesondertAnzahl = 0;
+		exemplareNichtGeladen = false;
 		exemplarSuche = '';
 	}
 
@@ -239,6 +243,7 @@ function createLabelStore() {
 		loadingCopies = true;
 		exemplarSuche = '';
 		ausgesondertAnzahl = 0;
+		exemplareNichtGeladen = false;
 		try {
 			const res = await apiFetch(`/api/buecher/titel/${selectedTitle.id}/exemplare`);
 			if (res.ok) {
@@ -250,10 +255,12 @@ function createLabelStore() {
 				ausgesondertAnzahl = alle.length - existingCopies.length;
 			} else {
 				existingCopies = [];
+				exemplareNichtGeladen = true;
 			}
 		} catch (err) {
 			console.error('Fehler beim Laden der Exemplare:', err);
 			existingCopies = [];
+			exemplareNichtGeladen = true;
 		} finally {
 			loadingCopies = false;
 		}
@@ -364,6 +371,9 @@ function createLabelStore() {
 		get loadingCopies() {
 			return loadingCopies;
 		},
+		get exemplareNichtGeladen() {
+			return exemplareNichtGeladen;
+		},
 		get ausgesondertAnzahl() {
 			return ausgesondertAnzahl;
 		},
@@ -406,6 +416,7 @@ function createLabelStore() {
 		handleClassChange,
 		handleSearchInput,
 		selectBookTitle,
+		ladeExemplare: loadExistingCopies,
 		setzeSichtbare,
 		uebernimmNummer,
 		triggerPrint,
