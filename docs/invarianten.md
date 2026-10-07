@@ -640,5 +640,5 @@ abgearbeitet:
   Kiosk, kein Zugriff auf fremde Bereiche. `GET /api/scan` hatte im ganzen Repository keinen
   Aufrufer und ist seit dem 08.08.2026 ausgebaut; der Kiosk scannt über die Omnibox.
 - **Echter LUSD-Export:** am 02.09.2026 zwei echte Exporte importiert
-  ([lusd-simulation-2026-09-02.md](lusd-simulation-2026-09-02.md)).
+  ([LUSD.md](LUSD.md), §9).
 - **Branch-Protection:** steht als Punkt 7.6 in [OFFEN.md](OFFEN.md).

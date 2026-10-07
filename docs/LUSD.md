@@ -1,13 +1,12 @@
 # LUSD-Import — Schülerdaten ohne Schüler-ID
 
-Stand: 2026-09-23. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
+Stand: 2026-10-07. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
 wie der Import Schüler wiedererkennt, was mit Abgängern passiert, und wie man eine falsche
 Zuordnung repariert. Der Code steht in `api/lusd_*.go` und
 `repository/lusd_bestand.go`; die fachliche Kurzfassung im [Fachkonzept §8](FACHKONZEPT.md),
 die Bedienung im [Handbuch](HANDBUCH.md), die Abnahme in der
-[Abnahme-Checkliste §1](abnahme_checkliste.md). Die Messwerte einer Simulation in
-Schulgröße (1.890 Schüler, drei Schuljahre) stehen in
-[lusd-simulation-2026-09-02.md](lusd-simulation-2026-09-02.md).
+[Abnahme-Checkliste §1](abnahme_checkliste.md). Was eine Simulation in Schulgröße ergab
+(1.890 Schüler, drei Schuljahre), steht in §9.
 
 **Für wen welcher Abschnitt:**
 
@@ -18,6 +17,7 @@ Schulgröße (1.890 Schüler, drei Schuljahre) stehen in
 | Bibliothek — „Ein Kind steht mit altem Ausweis an der Theke" | §5             |
 | Datenschutz — „Was wird gespeichert, wann gelöscht?"         | §4, §7         |
 | Entwicklung — „Wo steht was im Code?"                        | §8             |
+| Wer wissen will, womit der Import geprüft ist                | §9             |
 
 ---
 
@@ -213,3 +213,24 @@ Grenzen, die bleiben: Ohne Schüler-ID sind zwei Zeilen mit gleichem Namen **und
 Geburtsdatum in einer Datei eine Person (zusammengelegt, nicht „mehrdeutig"). Eine
 Umbenennung **und** ein Umzug **und** ein Klassensprung im selben Jahr ohne Schuleintritt
 im Bericht ergibt kein Paar — dann §5.
+
+---
+
+## 9. Geprüft in Schulgröße
+
+Am 02.09.2026 lief der Import am lokalen Stack über die Oberfläche: zuerst mit zwei echten
+Exporten der Schule (126 und 31 Schüler), dann mit einem erzeugten Bestand über drei
+Schuljahre. Gezählt wurde nach jedem Schritt an der Datenbank.
+
+| Schritt                    | Was die Datei enthielt                                                                                                              | Ergebnis                                                                                                                             |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Jahr 1, Erstimport         | 1.890 Schüler in 80 Klassen, Namen mit Umlauten, Bindestrich und Apostroph, 20 Namensdoppel mit verschiedenem Geburtsdatum          | 1.890 angelegt, keine Dublette, keine falsche Klasse, Dauer unter 2 Sekunden; danach jedem drei Bücher ausgeliehen (5.670 Ausleihen) |
+| Jahr 2, Schuljahreswechsel | 1.587 Klassenwechsel, 202 Abgänge, 251 Neue, davon 6 mit dem Namen eines vorhandenen Schülers                                       | jede Klasse wie in der Datei, kein Ausweis geändert, alle 5.670 Ausleihen an vorhandenen Lesern, Abgänger mit Büchern gesperrt       |
+| Jahr 3                     | 10 Abgänger ohne und 10 mit offenen Büchern, 5 Rückkehrer, zwei Zeilen mit gleichem Namen und Geburtsdatum in verschiedenen Klassen | Rückkehrer mit derselben Kennung wieder aktiv, keine Dublette; die zwei Zeilen wurden eine Person                                    |
+
+Aus den Befunden dieses Laufs entstanden die Paarung bei Umbenennung (§3), die Karenzzeit
+vor der Anonymisierung (§4) und das Zusammenführen von Hand (§5): Im zweiten Jahr waren aus
+8 Nachnamensänderungen und 5 berichtigten Geburtsdaten 13 doppelte Datensätze entstanden,
+und im dritten verloren Abgänger ohne offene Bücher ihren Namen noch im Import. Das
+Messprotokoll mit allen Zahlen steht im Verlauf des Repositorys:
+`git show 424f186a:docs/lusd-simulation-2026-09-02.md`.
