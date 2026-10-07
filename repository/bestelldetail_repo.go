@@ -58,8 +58,9 @@ type BestellungKopf struct {
 	// Zuordnung", nie einen geratenen Topf.
 	Mittel string `json:"mittel"`
 
-	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail
-	// (Migration 161). nil = kein gescheiterter Versand vermerkt.
+	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail,
+	// solange die Bestellung nicht bestätigt ist (SQLBestellmailOffen). nil = kein offener
+	// gescheiterter Versand.
 	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
 }
 
@@ -149,8 +150,8 @@ func (r *pgBestelldetailRepository) ladeKopf(ctx context.Context, bestellungID s
 		       bestaetigt_am, bestaetigt_durch, etiketten_groesse,
 		       (bestaetigungs_token_hash IS NOT NULL
 		        AND (token_gueltig_bis IS NULL OR token_gueltig_bis > now())),
-		       coalesce(mittel, ''), mail_gescheitert_am
-		FROM bestellungen_verlauf
+		       coalesce(mittel, ''), `+SQLBestellmailOffen+`
+		FROM bestellungen_verlauf b
 		WHERE id = $1
 	`, bestellungID).Scan(&k.ID, &k.LieferantName, &k.LieferantEmail, &k.Kundennummer,
 		&k.Bestelldatum, &k.Gesamtbetrag, &k.AnzahlExemplare, &k.MitBestaetigung,

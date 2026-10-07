@@ -78,6 +78,11 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [x] Feld „Signatur" nach der Übernahme: Vorschläge, die Seite „Signaturen" und die Auswahl
   der Inventur fassen nach der Regaladresse zusammen, dem Teil vor „ / "; am Titel bleibt die
   ganze Aufschrift (entschieden und gebaut am 07.10.2026).
+- [ ] Bestellung mit dem Vermerk „Mail nicht versendet", die den Händler auf anderem Weg
+  erreicht hat (Telefon, eigene Mail): Bei einem Händler mit Bestätigungsschritt nimmt die
+  nachgetragene Bestätigung den Vermerk. Bei den übrigen bleibt er, bis jemand „Erneut senden"
+  wählt; dann geht die Bestellung noch einmal raus. Soll die Bestellung dafür einen zweiten
+  Knopf bekommen, der den Vermerk nach einer Rückfrage entfernt? (5.5)
 - [x] Buchakte: Kopf und Reiter zählen den Bestand, ein bestelltes Exemplar steht im Kopf als
   „1 bestellt"; die Zahl „Exemplare" im Kopf ist entfallen (entschieden und gebaut am
   07.10.2026).
@@ -347,6 +352,16 @@ Vermerk.
     (`handleUpdateSupplier`). Kategorie C.
   - **Einstellungen:** Jede Kategorie schickt alle ihre Felder (`speichereKategorie`).
     Kategorie C.
+- **Vermerk „Mail nicht versendet" ohne Rückweg von Hand** (gefunden am 07.10.2026 beim
+  Raster, Frage 8). Den Vermerk (`mail_gescheitert_am`) nimmt ein gelungener erneuter Versand
+  und, wo die Bestellung einen Bestätigungsschritt hat, die Bestätigung
+  (`repository.SQLBestellmailOffen`). Eine Bestellung bei einem Händler ohne Bestätigungsschritt,
+  die den Händler auf anderem Weg erreicht hat, behält ihn; „Erneut senden" brächte sie ein
+  zweites Mal zu ihm. Vorschlag: ein zweiter, leiser Knopf im Hinweisblock („Auf anderem Weg
+  bestellt"), der den Vermerk nach einer Rückfrage entfernt und einen Eintrag ins Protokoll
+  schreibt. Littera kennt den Fall so nicht: Der Fehlschlag steht dort nur im E-Mailprotokoll,
+  und eine Bestellung lässt sich ohne Mail drucken und per Post oder Fax schicken (Handbuch,
+  „Erwerb", „Drucken").
 - **Status-Editor, Altbestand:** Bis zum 07.10.2026 öffnete der Editor ein gesperrtes
   Exemplar als „Verloren", wenn die Notiz das Wort enthielt, und das Speichern sonderte es
   mit dem Grund VERLUST aus. Ob das am Testserver Exemplare getroffen hat, zeigt (lesend):

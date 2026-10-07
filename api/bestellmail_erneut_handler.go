@@ -52,7 +52,7 @@ func (s *Server) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request, 
 	case errors.Is(err, repository.ErrBestellmailNichtOffen):
 		//nolint:staticcheck // ST1005: ganze Sätze, diese Meldung steht so vor der Bibliothekskraft.
 		apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
-			"Für diese Bestellung ist kein gescheiterter Versand vermerkt. Die Mail wird nicht noch einmal gesendet."))
+			"Für diese Bestellung ist kein gescheiterter Versand offen: Die Mail ging raus, oder die Bestellung ist bestätigt. Sie wird nicht noch einmal gesendet."))
 		return
 	case err != nil:
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

@@ -1950,7 +1950,9 @@ vierzig Terminen von selbst um.
   steht also auch, wenn der Browser das Warten aufgibt, während der Mailserver nicht antwortet.
   Und der erneute Versand nimmt der Bestellung den Vermerk, bevor er sendet
   (`repository.BeanspruchBestellmail`): Ein zweiter Klick bekommt 409 und schickt nichts
-  doppelt; scheitert der Versuch, kommt der Vermerk zurück.
+  doppelt; scheitert der Versuch, kommt der Vermerk zurück. Liste, Detail und der erneute
+  Versand lesen den Vermerk über einen Ausdruck (`repository.SQLBestellmailOffen`): Er gilt,
+  solange die Bestellung nicht bestätigt ist.
 - **Wer Post bekommt:** Klassenleitung (Mahnlisten), Händler (Bestellung), Admins
   (Bereitschafts-Wächter), Lehrkräfte (Portal-Vorgänge). **Nicht** Schüler.
 - Vorlagen mit Platzhaltern liegen in `mail_vorlagen` und sind in der Oberfläche pflegbar.

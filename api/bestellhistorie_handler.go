@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // BestellPositionResponse ist eine Position innerhalb einer Bestellung des Verlaufs.
@@ -81,8 +82,9 @@ type BestellVerlaufResponse struct {
 	// LinkGueltigBis: Ablauf des aktuellen Links (nil ohne Link) — damit die Bibliothek
 	// sieht, bis wann der Händler noch bestätigen und Etiketten drucken kann.
 	LinkGueltigBis *time.Time `json:"link_gueltig_bis,omitempty"`
-	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail
-	// (Migration 161). nil = kein gescheiterter Versand vermerkt.
+	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail,
+	// solange die Bestellung nicht bestätigt ist (repository.SQLBestellmailOffen). nil =
+	// kein offener gescheiterter Versand.
 	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
 }
 
@@ -154,7 +156,7 @@ func (s *Server) ladeBestellhistorie(ctx context.Context, limit int, mittel stri
 		       b.bestaetigt_am, b.etiketten_groesse, b.bestaetigt_durch,
 		       (b.bestaetigungs_token_hash IS NOT NULL
 		        AND (b.token_gueltig_bis IS NULL OR b.token_gueltig_bis > now())),
-		       b.token_gueltig_bis, coalesce(b.mittel, ''), b.mail_gescheitert_am
+		       b.token_gueltig_bis, coalesce(b.mittel, ''), ` + repository.SQLBestellmailOffen + `
 		FROM bestellungen_verlauf b
 		WHERE true`
 	if bedingung, arg := mittelBedingung(mittel, "b.mittel", len(args)+1); bedingung != "" {

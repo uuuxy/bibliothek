@@ -138,6 +138,30 @@ func (l *bestellmailLage) gescheitert(t *testing.T, bestellungID string) bool {
 	return kopf.MailGescheitertAm != nil
 }
 
+// inListeGescheitert liest über die Liste der Bestellhistorie, ob die Zeile dieser Bestellung
+// einen gescheiterten Versand trägt.
+func (l *bestellmailLage) inListeGescheitert(t *testing.T, bestellungID string) bool {
+	t.Helper()
+	rec := l.rufe(t, http.MethodGet, "/api/bestellhistorie", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Liste: Status %d: %s", rec.Code, rec.Body.String())
+	}
+	var zeilen []struct {
+		ID                string     `json:"id"`
+		MailGescheitertAm *time.Time `json:"mail_gescheitert_am"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &zeilen); err != nil {
+		t.Fatalf("Liste unlesbar: %v", err)
+	}
+	for _, z := range zeilen {
+		if z.ID == bestellungID {
+			return z.MailGescheitertAm != nil
+		}
+	}
+	t.Fatalf("Die Bestellung %s steht nicht in der Liste", bestellungID)
+	return false
+}
+
 func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "erneut")
 	setzeOeffentlicheAdresse(t, l.pool, "https://bib.example.invalid")
@@ -153,9 +177,8 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 	if !l.gescheitert(t, bestellung) {
 		t.Fatal("Die Bestellung trägt keinen gescheiterten Versand, obwohl die Mail nicht rausging")
 	}
-	liste := l.rufe(t, http.MethodGet, "/api/bestellhistorie", "")
-	if !strings.Contains(liste.Body.String(), `"mail_gescheitert_am"`) {
-		t.Errorf("Die Liste der Bestellhistorie nennt den gescheiterten Versand nicht: %s", liste.Body.String())
+	if !l.inListeGescheitert(t, bestellung) {
+		t.Error("Die Liste der Bestellhistorie nennt den gescheiterten Versand nicht")
 	}
 
 	// 2. Erneut senden bei weiter totem Mailserver: Die Antwort sagt es, der Vermerk bleibt.
@@ -288,6 +311,42 @@ func TestBestellmail_ErneutNurNachGescheitertemVersand(t *testing.T) {
 	select {
 	case zweite := <-sitzungen:
 		t.Errorf("Eine weitere Mail ging raus, an %v", zweite.Empfaenger)
+	case <-time.After(300 * time.Millisecond):
+	}
+}
+
+// Hat der Händler bestätigt oder die Bibliothek seine Zusage nachgetragen, hat er die
+// Bestellung: Der Vermerk gilt dann nicht mehr, und die Mail geht nicht noch einmal raus.
+func TestBestellmail_BestaetigteBestellungTraegtKeinenVermerk(t *testing.T) {
+	l := bestellmailLageAnlegen(t, "bestaetigt")
+	lieferant := haendler(t, l.pool, "Naacher-Bestaetigt", true)
+	titel := titelMitMeldebestand(t, l.pool, "LMF-Mathe-Bestaetigt", 0)
+
+	mailserverNichtErreichbar(t, nil)
+	bestellung, _ := l.bestelle(t, lieferant, titel)
+	if !l.gescheitert(t, bestellung) {
+		t.Fatal("Die Bestellung trägt keinen Vermerk, obwohl die Mail nicht rausging")
+	}
+
+	// Der Händler sagt am Telefon zu, die Bibliothek trägt es nach.
+	if rec := l.rufe(t, http.MethodPut, "/api/bestellungen/"+bestellung+"/bestaetigen",
+		`{"etiketten_groesse":"klein"}`); rec.Code != http.StatusOK {
+		t.Fatalf("Bestätigung nachtragen: Status %d: %s", rec.Code, rec.Body.String())
+	}
+	if l.gescheitert(t, bestellung) {
+		t.Error("Die bestätigte Bestellung trägt den Vermerk weiter")
+	}
+	if l.inListeGescheitert(t, bestellung) {
+		t.Error("Die Liste nennt für die bestätigte Bestellung einen gescheiterten Versand")
+	}
+
+	sitzungen := mailAbfangen(t)
+	if rec := l.rufe(t, http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusConflict {
+		t.Errorf("Erneut senden nach der Bestätigung: Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
+	}
+	select {
+	case mail := <-sitzungen:
+		t.Errorf("Die bestätigte Bestellung ging noch einmal raus, an %v", mail.Empfaenger)
 	case <-time.After(300 * time.Millisecond):
 	}
 }

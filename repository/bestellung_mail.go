@@ -11,11 +11,18 @@ import (
 
 // Der Versand der Bestellmail an der Bestellung (Migration 161). mail_gescheitert_am trägt
 // den Zeitpunkt des letzten gescheiterten Versuchs; NULL heißt, dass kein gescheiterter
-// Versand vermerkt ist. Geschrieben wird die Spalte nur über diese Datei.
+// Versand vermerkt ist.
 
-// ErrBestellmailNichtOffen meldet: Die Bestellung trägt keinen gescheiterten Versand. Ihre
-// Mail ging raus, ein anderer Arbeitsplatz sendet sie gerade erneut, oder die Bestellung ist
-// älter als der Vermerk.
+// SQLBestellmailOffen ist der Vermerk, wie Liste, Detail und der erneute Versand ihn lesen:
+// der Zeitpunkt des gescheiterten Versands, solange die Bestellung nicht bestätigt ist. Hat
+// der Händler über den Link bestätigt oder die Bibliothek seine Zusage nachgetragen, hat er
+// die Bestellung; „Mail nicht versendet" wäre dann falsch, und ein erneuter Versand brächte
+// sie ein zweites Mal zu ihm. Die Bestellung muss als `b` gebunden sein.
+const SQLBestellmailOffen = `CASE WHEN b.bestaetigt_am IS NULL THEN b.mail_gescheitert_am END`
+
+// ErrBestellmailNichtOffen meldet: Die Bestellung trägt keinen offenen gescheiterten Versand.
+// Ihre Mail ging raus, ein anderer Arbeitsplatz sendet sie gerade erneut, sie ist bestätigt,
+// oder sie ist älter als der Vermerk.
 var ErrBestellmailNichtOffen = errors.New("für diese Bestellung ist kein gescheiterter Versand vermerkt")
 
 // BestellmailAuftrag ist, was der erneute Versand über die Bestellung wissen muss.
@@ -58,15 +65,15 @@ func MerkeBestellmailGescheitert(ctx context.Context, pool db.PgxPoolIface, best
 func BeanspruchBestellmail(ctx context.Context, pool db.PgxPoolIface, bestellungID string) (*BestellmailAuftrag, error) {
 	var a BestellmailAuftrag
 	err := pool.QueryRow(ctx, `
-		UPDATE bestellungen_verlauf b
+		UPDATE bestellungen_verlauf ziel
 		   SET mail_gescheitert_am = NULL
-		  FROM (SELECT v.id, COALESCE(l.email, v.lieferant_email) AS empfaenger
-		          FROM bestellungen_verlauf v
-		          LEFT JOIN lieferanten l ON l.id = v.lieferant_id
-		         WHERE v.id = $1 AND v.mail_gescheitert_am IS NOT NULL
-		           FOR UPDATE OF v) offen
-		 WHERE b.id = offen.id
-		RETURNING b.lieferant_name, offen.empfaenger, COALESCE(b.kundennummer, ''), COALESCE(b.mittel, '')`,
+		  FROM (SELECT b.id, COALESCE(l.email, b.lieferant_email) AS empfaenger
+		          FROM bestellungen_verlauf b
+		          LEFT JOIN lieferanten l ON l.id = b.lieferant_id
+		         WHERE b.id = $1 AND `+SQLBestellmailOffen+` IS NOT NULL
+		           FOR UPDATE OF b) offen
+		 WHERE ziel.id = offen.id
+		RETURNING ziel.lieferant_name, offen.empfaenger, COALESCE(ziel.kundennummer, ''), COALESCE(ziel.mittel, '')`,
 		bestellungID).Scan(&a.LieferantName, &a.Empfaenger, &a.Kundennummer, &a.Mittel)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, bestellmailNichtOffenOderUnbekannt(ctx, pool, bestellungID)
