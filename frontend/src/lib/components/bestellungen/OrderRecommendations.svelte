@@ -6,6 +6,7 @@
 	import NeueAuflageDialog from './NeueAuflageDialog.svelte';
 	import { filtereBedarf } from './bedarfFilter.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import { resthoehe } from '../../actions/resthoehe.js';
 	let { recommendations, onAddToCart } = $props();
 
 	// „Neue Auflage bestellen" (docs/OFFEN.md 4.18, Stufe 4): die Zeile, deren Dialog offen ist.
@@ -153,7 +154,8 @@
 		     Zeilentext steht damit auf derselben Kante wie Ueberschrift und Spaltenkopf,
 		     waehrend die Hover-Flaeche weiterhin ueber den Text hinausreicht. Ohne den
 		     Kartenrahmen faellt eine Fehlausrichtung von 12 px sofort auf. -->
-		<div class="overflow-y-auto max-h-[calc(100vh-19rem)] -mx-3 py-3 space-y-1.5">
+		<!-- Die Liste endet am unteren Rand der Seite; die Höhe misst actions/resthoehe.js. -->
+		<div use:resthoehe class="overflow-y-auto max-h-(--resthoehe) -mx-3 py-3 space-y-1.5">
 			{#each sichtbare as r, _i (_i)}
 				<BedarfZeile {r} {onAddToCart} onNeueAuflage={(z) => (neueAuflageFuer = z)} />
 			{/each}

@@ -15,6 +15,10 @@
 // Geprüft wird deshalb das, was im Alltag zählt: Der Absenden-Knopf muss erreichbar sein,
 // OHNE die Seite zu verlassen, an der man gerade arbeitet. Der Warenkorb bringt dafür
 // seinen eigenen Scrollbalken mit; die Seite darunter bleibt stehen.
+//
+// Dasselbe gilt für die Bedarfsliste daneben: Liste und Spalte enden am unteren Rand der
+// Seite und scrollen in sich. Mit einer festen Rechnung für die Höhe der Liste ragte sie
+// darunter hinaus, und die Seite bekam einen zweiten Scrollbalken für die letzten Pixel.
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedBestellbedarf } from './helpers.js';
 
@@ -25,7 +29,8 @@ import { uiLogin, seedBestellbedarf } from './helpers.js';
 /** @type {(() => void) | undefined} */
 let aufraeumen;
 test.beforeEach(() => {
-	aufraeumen = seedBestellbedarf();
+	// Mehr Titel, als in das höchste Fenster passen: Erst dann stößt die Liste an ihre Grenze.
+	aufraeumen = seedBestellbedarf(30);
 });
 test.afterEach(() => {
 	aufraeumen?.();
@@ -98,11 +103,44 @@ for (const [breite, hoehe] of FENSTER) {
 					message:
 						`Die Bestellspalte reicht unter den ${hoehe}-px-Fensterrand und ist damit ` +
 						`„abgeschnitten". Sie braucht eine Höhengrenze mit eigenem Scrollbalken, die den ` +
-						`tatsächlichen Abstand zum oberen Rand berücksichtigt (siehe railMaxHeight in ` +
-						`BestellWorkspace.svelte).`
+						`tatsächlichen Abstand zum oberen Rand berücksichtigt (actions/resthoehe.js).`
 				}
 			)
 			.toBeLessThanOrEqual(hoehe);
+
+		// Die Seite selbst läuft nicht über: Die Bedarfsliste endet am unteren Rand des Bereichs,
+		// der die Seite scrollt. Gesucht wird er von der Liste aus; eine Klasse am Rahmen der
+		// Anwendung trifft auch Elemente, die gar nicht scrollen.
+		const seitenLage = await page.evaluate(() => {
+			const plus = [...document.querySelectorAll('button')].find((b) =>
+				/zur Bestellung hinzufügen/.test(b.getAttribute('aria-label') || '')
+			);
+			const bereiche = [];
+			for (let e = plus?.parentElement; e; e = e.parentElement) {
+				if (/(auto|scroll)/.test(getComputedStyle(e).overflowY)) bereiche.push(e);
+			}
+			if (bereiche.length < 2) return null;
+			const [liste, seite] = bereiche;
+			return {
+				listeUnten: Math.round(liste.getBoundingClientRect().bottom),
+				seiteUnten: Math.round(seite.getBoundingClientRect().bottom),
+				seiteUeberlauf: seite.scrollHeight - seite.clientHeight
+			};
+		});
+		expect(
+			seitenLage,
+			'Bedarfsliste und Seitenbereich wurden nicht als zwei Scrollbereiche gefunden'
+		).not.toBeNull();
+		expect(
+			seitenLage?.listeUnten,
+			`Die Bedarfsliste endet bei ${seitenLage?.listeUnten} px, der Seitenbereich bei ` +
+				`${seitenLage?.seiteUnten} px: Die Seite läuft über. Die Liste endet am unteren Rand ` +
+				`der Seite und scrollt in sich (actions/resthoehe.js).`
+		).toBeLessThanOrEqual((seitenLage?.seiteUnten ?? 0) + 1);
+		expect(
+			seitenLage?.seiteUeberlauf,
+			`Der Seitenbereich läuft ${seitenLage?.seiteUeberlauf} px über.`
+		).toBeLessThanOrEqual(1);
 
 		// Gemessen wird die Geometrie der RAIL-Spalte selbst, nicht ein Scroll-Weg.
 		//

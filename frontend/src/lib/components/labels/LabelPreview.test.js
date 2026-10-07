@@ -19,15 +19,6 @@ import LabelPreview from './LabelPreview.svelte';
 describe('Druck-Center: Vorschau je Etikettenformat', () => {
 	beforeEach(async () => {
 		vi.clearAllMocks();
-		// Die Vorschau misst ihre Spalte (bind:clientWidth); jsdom kennt den Beobachter nicht.
-		vi.stubGlobal(
-			'ResizeObserver',
-			class {
-				observe() {}
-				unobserve() {}
-				disconnect() {}
-			}
-		);
 		vi.mocked(apiFetch).mockResolvedValueOnce(
 			/** @type {any} */ ({
 				ok: true,
@@ -37,10 +28,6 @@ describe('Druck-Center: Vorschau je Etikettenformat', () => {
 		labelStore.generationMode = 'existing';
 		labelStore.startPosition = 1;
 		await labelStore.selectBookTitle({ id: 't1', titel: 'Titel', autor: 'Autorin' });
-	});
-
-	afterEach(() => {
-		vi.unstubAllGlobals();
 	});
 
 	/** @param {string} formatId */
@@ -86,21 +73,12 @@ describe('Druck-Center: Vorschau je Etikettenformat', () => {
 describe('Druck-Center: Die Vorschau zeichnet den ersten Bogen', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		vi.stubGlobal(
-			'ResizeObserver',
-			class {
-				observe() {}
-				unobserve() {}
-				disconnect() {}
-			}
-		);
 		labelStore.formatId = 'zweckform_l4760';
 		labelStore.generationMode = 'existing';
 		labelStore.startPosition = 1;
 	});
 
 	afterEach(() => {
-		vi.unstubAllGlobals();
 		labelStore.startPosition = 1;
 	});
 

@@ -550,9 +550,6 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   als Auswahlliste; darüber stehen ein Kästchen für alle und ein Feld für die Nummer. Offen:
   Jede Zeile nennt „(Neuwertig)", wenn das Exemplar keine Zustandsnotiz trägt, auch ein
   bestelltes.
-- **Bestellwesen:** Die Seite läuft 40 px über (857 von 817 px bei 1710 × 952 px, bei
-  1280 × 720 px sind es 60 px; gemessen am 06.10.2026). Darin scrollt die Bedarfsliste in
-  einem eigenen Kasten (`OrderRecommendations.svelte`, `max-h-[calc(100vh-19rem)]`).
 - **Signaturen bei 1280 px:** Liste und Regal sind zusammen 1.010 px breit, Platz sind 960 px
   (gemessen am 06.10.2026). Die Spalte „verliehen" endet 18 px hinter dem Fensterrand, die
   Seite bekommt eine waagerechte Scrollleiste. Die rechte Spalte des Rasters ist `1fr` ohne

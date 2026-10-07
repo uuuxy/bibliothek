@@ -33,3 +33,13 @@ if (!window.matchMedia) {
 	window.matchMedia = (abfrage) =>
 		/** @type {any} */ (Object.assign(new EventTarget(), { matches: false, media: abfrage }));
 }
+
+// jsdom kennt auch `ResizeObserver` nicht; actions/resthoehe.js beobachtet damit, ob sich über
+// einem Element etwas verschiebt. Die Attrappe beobachtet nichts: jsdom rechnet kein Layout.
+if (!globalThis.ResizeObserver) {
+	globalThis.ResizeObserver = class {
+		observe() {}
+		unobserve() {}
+		disconnect() {}
+	};
+}
