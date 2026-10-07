@@ -166,6 +166,50 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   wenn ein Schreibpfad seine Form wechselt), in [ARCHITEKTUR.md](ARCHITEKTUR.md#9-architekturentscheidungen),
   Kapitel 9 (Entscheidungen), und in [OFFEN.md](OFFEN.md) (alles Offene).
 
+**Fälle, die vorkamen,** je mit dem Tag:
+
+- **Die Sicherheitsprüfung ist rot, am Stand hat sich nichts geändert (npm, 06.10.2026).** Zu
+  einem Paket, das nur über ein anderes hereinkommt, wurde eine Schwachstelle veröffentlicht.
+  Im Ordner `frontend` nennt `npm ls <Paket>`, wer es hereinzieht. Geprüft wird ohne die
+  Entwicklungspakete (`npm audit --audit-level=high --omit=dev`); `@tailwindcss/vite` steht
+  unter `dependencies`, sein Unterbaum zählt deshalb mit. Abhilfe: `npm update` mit genau den
+  gemeldeten Paketnamen; das ändert nur `package-lock.json`. Die Sammel-PRs von Dependabot
+  heben direkte Pakete und enthielten die gemeldeten nicht.
+- **Nach einem Update der Pakete baut das Frontend nicht mehr (21.08.2026).** Ein `npm update`
+  ohne Paketnamen hob auch den Bundler, und `npm run build` brach an gültigem Code;
+  svelte-check, ESLint und Vitest blieben grün. Pakete deshalb einzeln heben und danach
+  `npm run build` laufen lassen; der Hook vor dem Push baut das Frontend nicht.
+- **Go, eine Schwachstelle ohne genannten Fix (17.09.2026).** Die Meldung nannte alle
+  Fassungen als betroffen. Erst am Quelltext der benutzten Fassung nachsehen, welcher Zweig
+  ungeschützt ist und ob die eigenen Aufrufe ihn erreichen; die Antwort als Test ins
+  Repository, dann die Ausnahme nach Abschnitt 4. Der Fall steht in
+  [SECURITY.md](SECURITY.md) („Automatische Sicherheitsprüfungen").
+- **CodeQL meldet eine Stelle, die mit der Quelle nichts zu tun hat (17.09.2026).** Geht ein
+  Aufruf gegen eine Schnittstelle (`io.Writer`), nimmt CodeQL jede Methode dieser Form im
+  Programm als Ziel. Den gemeldeten Weg aus der Analyse lesen (`codeFlows` im SARIF, über
+  `gh api`), nicht raten.
+- **Eine verworfene CodeQL-Meldung ist wieder da (06.10.2026).** Zieht die Stelle im Code um,
+  schließt CodeQL die alte Meldung und legt eine mit neuer Nummer an. Vor der Bewertung die
+  verworfenen lesen (`gh api "repos/uuuxy/bibliothek/code-scanning/alerts?state=dismissed"`)
+  und die Anlagezeit der neuen gegen die Schließzeit der alten halten. Der Kommentar an einer
+  verworfenen Meldung fasst 280 Zeichen; die Begründung steht im Code neben der Stelle.
+- **Ein grüner Job trägt eine rote Markierung (17.09.2026).** `actions/setup-go` liest jede
+  Logzeile der Form `datei.go: Text` als Fehlermeldung des Compilers. Skripte, die in einem
+  Workflow laufen, nennen eine Datei deshalb als „Testname in pfad.go";
+  `docs/vuln_ausnahmen_form_test.go` hält diese Form für die Sicherheits-Ausnahmen fest.
+- **Die Browser-Tests (`e2e`) sind in der CI rot, am Arbeitsplatz war alles grün
+  (16.09.2026).** Die Hooks fahren die Browser-Tests nicht. Diese greifen über Beschriftungen
+  und Rollen zu. Wer ein sichtbares Wort umbenennt, eine Eingabe zur Pflicht macht oder eine
+  Antwort ändert, sucht vorher in `frontend/e2e/` (auch in `helpers.js`) nach dem Wort und dem
+  Endpunkt und lässt die Suite am neu gebauten Stack laufen ([SCRIPTS.md](SCRIPTS.md) §4).
+- **Am Arbeitsplatz scheitert jede Spec.** Zuerst die Umgebung: Läuft Docker (`docker info`)?
+  Nach einem Update von Playwright fehlen die Browser der neuen Fassung
+  (`npx playwright install chromium`). Läuft schon eine Suite? Solange ihr Merkzettel
+  `frontend/.e2e-hauptlieferant` liegt, bricht der Aufbau jeder weiteren ab
+  (`e2e/global-setup.js`), auch der einer einzelnen Spec.
+- **Welche Prüfläufe zu einem Stand gehören,** zeigt `gh run list --commit <sha>`. Die Liste
+  je Zweig zeigte am 05.10.2026 nach einem Push nur ältere Läufe.
+
 ---
 
 ## 6. Kann jemand anderes das Programm weiterführen?
@@ -199,8 +243,9 @@ urheberrechtlich geschützt, die Sicherung enthält Personendaten. Ort auf dem B
 ### 7.2 Arbeitsnotizen der Entwicklung
 
 Entwickelt wird mit einem KI-Assistenten. Dessen Arbeitsnotizen zum Projekt — Entscheidungen,
-Fallen, Messungen, am 24.09.2026 219 Einträge — liegen außerhalb des Repositorys. Was davon
-für die Pflege zählt, kommt entlang der Gliederung dieses Dokuments ins Repository.
+Fallen, Messungen, am 07.10.2026 256 Einträge — liegen außerhalb des Repositorys. Was davon
+für die Pflege zählt, kommt entlang der Gliederung dieses Dokuments ins Repository; den Anfang
+machen die Fälle in Abschnitt 5, was aussteht, nennt [OFFEN.md](OFFEN.md) 9.9.
 
 ### 7.3 Das Blatt bei der Schule
 

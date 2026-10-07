@@ -1296,8 +1296,17 @@ Buch eine Zeile; einmal ausdrucken und ansehen.
   1. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — ausfüllen bei dir, Vorlage im
      Anhang des Entwurfs. Vorschlag: die zwei Schlüssel in einem Passwortmanager
      und als Papier im verschlossenen Umschlag im Tresor der Schule, nie per E-Mail.
-  2. **Die Arbeitsnotizen der Entwicklung** (am 24.09.2026 219 Einträge) entlang der Gliederung
-     des Entwurfs ins Repository — bei mir.
+  2. **Die Arbeitsnotizen der Entwicklung** (am 07.10.2026 256 Einträge, 14.322 Zeilen) entlang
+     der Gliederung des Entwurfs ins Repository — bei mir. Nicht ins Repository gehören die 82
+     Einträge zur Arbeitsweise und alles, was Zugänge, Orte oder Namen nennt. Jede Aussage wird
+     vor dem Eintragen am heutigen Stand geprüft: Von den Notizen zu Abschnitt 5 waren zwei
+     überholt. Eingetragen am 07.10.2026: Abschnitt 5, „Fälle, die vorkamen". Es stehen aus, je
+     als eigener Schritt: die Einträge zu Fehlerarten gegen [sweeps.md](sweeps.md), die zu
+     Entscheidungen gegen [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9 und
+     [FACHKONZEPT.md](FACHKONZEPT.md), die zu Littera und LUSD gegen
+     [littera_schema_befund.md](littera_schema_befund.md) und [LUSD.md](LUSD.md), die zu den
+     Prüfwegen (Tests an der Datenbank, im Browser, Gegenprobe am Rückbau) gegen
+     [SCRIPTS.md](SCRIPTS.md) §7.
   3. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
      mit dem Dokument.
 
