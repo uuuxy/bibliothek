@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 02.10.2026 (Entwurf)
+Stand: 07.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -214,7 +214,8 @@ Auf Papier bei der Schule, nicht im Repository:
 - Ort der Quelldokumente (7.1)
 - Zugang zum Repository mit Schreibrecht, falls die Pflege übergeben wird
 
-Vorlage zum Ausdrucken: [blatt_vorlage.md](blatt_vorlage.md).
+Vorlage zum Ausdrucken: der [Anhang](#anhang-das-blatt-bei-der-schule--vorlage) am Ende dieses
+Dokuments.
 
 ---
 
@@ -254,3 +255,55 @@ Vorlage zum Ausdrucken: [blatt_vorlage.md](blatt_vorlage.md).
 5. **Betrieb:** Sicherung außer Haus (entschieden am 28.09.2026: zuerst beim Schulträger nach
    einem Speicher fragen), externes Signal bei Ausfall, Probe der Wiederherstellung an einem
    fremden Ziel — [OFFEN.md](OFFEN.md) 7.3, 7.5 und 7.4.
+
+---
+
+## Anhang: Das Blatt bei der Schule — Vorlage
+
+Zum Ausdrucken und Ausfüllen von Hand. Das ausgefüllte Blatt liegt auf Papier bei der Schule,
+nicht im Repository: Es trägt Zugänge und den Ort der Schlüssel. Wozu die Angaben dienen, steht
+in Abschnitt 7.3.
+
+Ausgefüllt am: ________________ von: ______________________________
+
+### Erreichbarkeit
+
+| Rolle                   | Name                         | E-Mail                         | Telefon              |
+| ----------------------- | ---------------------------- | ------------------------------ | -------------------- |
+| Entwicklung             | ____________________________ | ______________________________ | ____________________ |
+| Vertretung              | ____________________________ | ______________________________ | ____________________ |
+| IT des Schulträgers     | ____________________________ | ______________________________ | ____________________ |
+| Schulleitung            | ____________________________ | ______________________________ | ____________________ |
+| Datenschutzbeauftragter | ____________________________ | ______________________________ | ____________________ |
+
+**Einen Fehler melden:** per E-Mail an die Entwicklung, die Vertretung in Kopie; bei Stillstand
+zusätzlich anrufen. Nie über GitHub (Abschnitt 1).
+
+**Bei einer Datenpanne:** sofort Bibliotheksleitung und Admin, dann der Ablauf im
+[Datenschutz-Nachweis](datenschutz/nachweis.md), Abschnitt 8.
+
+### Server
+
+| Was                               | Eintrag                                              |
+| --------------------------------- | ---------------------------------------------------- |
+| Adresse des Servers               | ____________________________________________________ |
+| Konto für die Anmeldung am Server | ____________________________________________________ |
+| Programmverzeichnis               | ____________________________________________________ |
+
+### Schlüssel
+
+Die beiden Schlüssel aus der `.env` liegen als Kopie außerhalb des Servers. Ohne
+`BACKUP_ENCRYPTION_KEY` lässt sich keine Sicherung öffnen, ohne `APP_ENCRYPTION_KEY` bleiben
+Schülerfotos und das Mail-Passwort unlesbar (Abschnitt 3.2).
+
+| Schlüssel               | Ort der Kopie außerhalb des Servers                  |
+| ----------------------- | ---------------------------------------------------- |
+| `APP_ENCRYPTION_KEY`    | ____________________________________________________ |
+| `BACKUP_ENCRYPTION_KEY` | ____________________________________________________ |
+
+### Weiteres
+
+| Was                                                                     | Eintrag                          |
+| ----------------------------------------------------------------------- | -------------------------------- |
+| Ort der Quelldokumente (Abschnitt 7.1)                                  | ________________________________ |
+| Zugang zum Repository mit Schreibrecht, falls die Pflege übergeben wird | ________________________________ |

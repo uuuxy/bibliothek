@@ -1320,8 +1320,8 @@ Buch eine Zeile; einmal ausdrucken und ansehen.
   Das gehört zu Teil B, B4.
 - **Hosting- und Programmpflegekonzept.** Der Entwurf steht:
   [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md). Offen:
-  1. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — ausfüllen bei dir, Vorlage in
-     [blatt_vorlage.md](blatt_vorlage.md). Vorschlag: die zwei Schlüssel in einem Passwortmanager
+  1. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — ausfüllen bei dir, Vorlage im
+     Anhang des Entwurfs. Vorschlag: die zwei Schlüssel in einem Passwortmanager
      und als Papier im verschlossenen Umschlag im Tresor der Schule, nie per E-Mail.
   2. **Die Arbeitsnotizen der Entwicklung** (am 24.09.2026 219 Einträge) entlang der Gliederung
      des Entwurfs ins Repository — bei mir.
