@@ -1,7 +1,11 @@
 <!-- @component BorrowersListe — wer dieses Buch gerade hat, eine Zeile je Exemplar.
      Ein Klick auf den Namen legt den Schüler-Barcode in den Scan-Kanal und springt
-     zurück: derselbe Weg wie ein Scan am Pult. -->
+     zurück: derselbe Weg wie ein Scan am Pult.
+
+     Überfällig trägt Farbe, Zeichen und für Vorleseprogramme das Wort, wie in der Leserakte
+     (AusleiheRueckgabe.svelte). -->
 <script>
+	import { CircleAlert } from '@lucide/svelte';
 	import { appState } from '../../inventur/lib/store.svelte.js';
 
 	/**
@@ -57,8 +61,16 @@
 					</div>
 					<div class="text-right">
 						<p class="text-label-small font-medium text-on-surface-variant">Rückgabe bis</p>
-						<p class="text-sm font-bold {ueberfaellig ? 'text-error' : 'text-on-surface'}">
+						<p
+							class="flex items-center justify-end gap-1 text-sm font-bold {ueberfaellig
+								? 'text-error'
+								: 'text-on-surface'}"
+						>
 							{dauerleihe ? 'ohne Frist' : fmtDate(b.rueckgabe_frist)}
+							{#if ueberfaellig}
+								<CircleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
+								<span class="sr-only">Überfällig</span>
+							{/if}
 						</p>
 					</div>
 				</div>
