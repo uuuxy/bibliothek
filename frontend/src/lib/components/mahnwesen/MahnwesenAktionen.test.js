@@ -28,6 +28,9 @@ vi.mock('../../apiFetch.js', async (importOriginal) => ({
  *
  * Dieselbe Lücke wie beim Abgänger-Mail-Knopf (AbgaengerKopfzeile.test.js, 12.09.2026),
  * dieselbe Regel: Sichtbarkeit einer Aktion = hatRecht(user, '<Recht der Route>').
+ *
+ * „Mahnbriefe drucken" hängt am selben Recht: Der Druck zählt die Mahnung
+ * (POST /api/admin/mahnungen/bulk-print, api/routes_system.go).
  */
 const PROPS = { onMahnlauf: () => {}, onBescheid: () => {} };
 
@@ -57,16 +60,37 @@ beforeAll(async () => {
 });
 
 describe('MahnwesenAktionen', () => {
-	it('zeigt „Alle anmahnen" nur mit dem Recht der Route (darfMahnlauf)', () => {
-		const mit = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnlauf: true });
+	it('zeigt „Alle anmahnen" nur mit dem Recht der Route (darfMahnen)', () => {
+		const mit = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnen: true });
 		expect(mit.queryByRole('button', { name: /Alle anmahnen/ })).toBeTruthy();
 		mit.unmount();
 
-		const ohne = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnlauf: false });
+		const ohne = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnen: false });
 		expect(ohne.queryByRole('button', { name: /Alle anmahnen/ })).toBeNull();
-		// Die Seite bleibt bedienbar: Neu laden und Drucken hängen an view_students, also
-		// am Recht, mit dem sie überhaupt offen ist. Papier ist hier der Notweg.
+		// Die Seite bleibt bedienbar: Neu laden und „Liste drucken" hängen an view_students,
+		// also am Recht, mit dem sie überhaupt offen ist. Die Liste zählt keine Mahnung.
 		expect(ohne.queryByRole('button', { name: 'Daten neu laden' })).toBeTruthy();
+		expect(ohne.queryByRole('button', { name: 'Liste drucken' })).toBeTruthy();
+	});
+
+	it('zeigt „Mahnbriefe drucken" nur mit dem Recht der Route (darfMahnen)', () => {
+		// Der Knopf gehört zur Auswahl: Ohne ein markiertes Kind wäre „kein Knopf" auch ohne
+		// Rechteprüfung wahr.
+		mahnwesenStore.selectAllSchueler();
+		try {
+			expect(mahnwesenStore.selectedIds.size).toBe(1);
+			const mit = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnen: true });
+			expect(mit.queryByRole('button', { name: 'Mahnbriefe drucken' })).toBeTruthy();
+			mit.unmount();
+
+			const ohne = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnen: false });
+			expect(ohne.queryByRole('button', { name: 'Mahnbriefe drucken' })).toBeNull();
+			// Die Auswahl selbst bleibt bedienbar.
+			expect(ohne.queryByText('1 ausgewählt')).toBeTruthy();
+			expect(ohne.queryByRole('button', { name: 'Auswahl aufheben' })).toBeTruthy();
+		} finally {
+			mahnwesenStore.deselectAllSchueler();
+		}
 	});
 
 	it('druckt mit „Liste drucken" die Liste, wie sie gerade dasteht', async () => {
@@ -80,7 +104,7 @@ describe('MahnwesenAktionen', () => {
 			const zeile = render(MahnwesenAktionen, {
 				...PROPS,
 				darfBescheid: false,
-				darfMahnlauf: false
+				darfMahnen: false
 			});
 			await fireEvent.click(zeile.getByRole('button', { name: 'Liste drucken' }));
 
@@ -97,7 +121,7 @@ describe('MahnwesenAktionen', () => {
 			const leer = render(MahnwesenAktionen, {
 				...PROPS,
 				darfBescheid: false,
-				darfMahnlauf: false
+				darfMahnen: false
 			});
 			expect(leer.getByRole('button', { name: 'Liste drucken' })).toHaveProperty('disabled', true);
 		} finally {
@@ -106,10 +130,10 @@ describe('MahnwesenAktionen', () => {
 		}
 	});
 
-	it('bindet den Knopf in Mahnwesen.svelte an create_orders — das Recht der Route', () => {
+	it('bindet beide Knöpfe in Mahnwesen.svelte an create_orders — das Recht der Routen', () => {
 		// Quelltext-Prüfung, weil die Seite selbst (Live-Ereignisse, Laden beim Mount) hier
-		// nicht gerendert wird. Der Knopf hängt an einem Prop; ohne diese Prüfung könnte die
-		// Seite ihn an ein beliebiges Recht binden, und der Test oben bliebe grün.
+		// nicht gerendert wird. Die Knöpfe hängen an einem Prop; ohne diese Prüfung könnte die
+		// Seite sie an ein beliebiges Recht binden, und die Tests oben blieben grün.
 		let verzeichnis = process.cwd();
 		while (!existsSync(resolve(verzeichnis, 'src/lib/Mahnwesen.svelte'))) {
 			const eltern = dirname(verzeichnis);
@@ -120,9 +144,9 @@ describe('MahnwesenAktionen', () => {
 		// Bekannte Zeile als Nicht-leer-Garantie: Sie steht seit dem Bescheid-Knopf dort.
 		expect(seite).toContain("hatRecht(authStore.currentUser, 'edit_students')");
 		expect(seite).toContain(
-			"const darfMahnlauf = $derived(hatRecht(authStore.currentUser, 'create_orders'))"
+			"const darfMahnen = $derived(hatRecht(authStore.currentUser, 'create_orders'))"
 		);
-		expect(seite).toContain('{darfMahnlauf}');
+		expect(seite).toContain('{darfMahnen}');
 		// Der Versand-Dialog bietet nur Klassen an, nicht die Gruppe der Ehemaligen.
 		expect(seite).toContain('klassen={mahnwesenStore.versandKlassen}');
 	});
@@ -145,7 +169,7 @@ describe('MahnwesenAktionen', () => {
 		expect(mahnwesenStore.klassen).toHaveLength(1);
 		expect(mahnwesenStore.versandKlassen).toEqual([]);
 
-		const zeile = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnlauf: true });
+		const zeile = render(MahnwesenAktionen, { ...PROPS, darfBescheid: false, darfMahnen: true });
 		expect(zeile.queryByRole('button', { name: /Alle anmahnen/ })).toBeNull();
 		expect(zeile.queryByRole('button', { name: 'Daten neu laden' })).toBeTruthy();
 	});

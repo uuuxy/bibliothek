@@ -60,8 +60,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Titelliste: Sie steht in der Reihenfolge des Anlegens, und jede Zeile lässt sich ziehen;
   das Ablegen schreibt die Reihenfolge ohne Rückfrage. Vorschlag: nach Titel sortieren, das
   Ziehen entfernen. (5.58)
-- [ ] „Mahnbriefe drucken" zählt die Mahnstufe hoch und verlangt nur das Leserecht
-  `view_students`. Vorschlag: dasselbe Recht wie der Mahnversand. (6.1)
+- [x] „Mahnbriefe drucken" verlangt dasselbe Recht wie der Mahnversand (`create_orders`,
+  entschieden und gebaut am 07.10.2026).
 - [x] Das Aussehen nach der Umstellung der Farben auf M3-Rollen bleibt so (entschieden am
   06.10.2026). Eigene Farben je Fach gibt es nicht.
 
@@ -862,11 +862,6 @@ Vorschlag: nach Titel sortieren, Ziehen und Route entfernen. Kategorie B.
   LMF-Verlängerung (`edit_books`) und im Mahnwesen-Routing (`manage_settings`). Ab Werk hat jede
   Rolle mit einem dieser Rechte auch `view_students`. Wer die Rechte anders verteilt, sieht dort
   „Klassen nicht geladen", und der Rat „Bitte neu öffnen" hilft ihm nicht.
-- „Mahnbriefe drucken" (`POST /api/admin/mahnungen/bulk-print`) zählt die Mahnstufe hoch und
-  verlangt `view_students`; der Mahnversand und der Versand an die Abgänger verlangen
-  `create_orders`, weil „Versand ist mehr als Lesen" (`api/routes_students.go`). Ab Werk hat
-  jede Rolle mit `view_students` auch `create_orders`. Wer die Rechte anders verteilt, lässt
-  eine Rolle mit Leserecht Mahnstufen erhöhen (Rasterdurchgang 07.10.2026, Frage 4).
 - Auch die Katalogdienste werden in einer Anfrage gefragt, die die Oberfläche nach 10 s
   aufgibt: `POST /api/buecher/aus-isbn` fragt DNB, Google Books und OpenLibrary
   (`SucheNachISBN`), „Cover erneut lokalisieren" läuft in der Anfrage über alle gewählten

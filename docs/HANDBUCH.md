@@ -467,6 +467,10 @@ das Fenster für den Bescheid je Buch; an die Zahl knüpft das Programm nichts. 
 entsteht nur für ein Buch, dessen Frist abgelaufen ist; wurde ein Buch zwischen dem Laden der
 Liste und dem Druck verlängert, steht es nicht auf dem Brief.
 
+_Mahnbriefe drucken_ und den Mahnlauf bietet die Seite nur an, wenn die Rolle _Bestellungen
+verwalten_ darf (→ Benutzer & Rechte). Mit _Schülerdatei anzeigen_ allein lässt sich die Liste
+ansehen und drucken.
+
 **Sammel-Mahnlauf** per Mail an die Klassenleitungen (Klassen wählen, Empfänger prüfen, dann
 senden): Jede Klassenleitung bekommt ein Blatt je Kind zum Austeilen. **Liste drucken** druckt
 die Mahnliste als Tabelle, je Buch eine Zeile mit Klasse, Kind, Buch, Frist und Zahl der

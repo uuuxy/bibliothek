@@ -18,7 +18,7 @@ export const permissionsMetadata = [
 			{
 				key: 'view_students',
 				label: 'Schülerdatei anzeigen',
-				desc: 'Schülerdatei und Klassen einsehen, Ausleihhistorie eines Titels; Mahnwesen, Kontoauszug, Ersatzforderung, Schüler-Etiketten und Ausweise drucken; Druck-Center'
+				desc: 'Schülerdatei und Klassen einsehen, Ausleihhistorie eines Titels; Mahnwesen einsehen und die Mahnliste drucken; Kontoauszug, Ersatzforderung, Schüler-Etiketten und Ausweise drucken; Druck-Center'
 			},
 			{
 				key: 'create_students',
@@ -105,7 +105,7 @@ export const permissionsMetadata = [
 			{
 				key: 'create_orders',
 				label: 'Bestellungen verwalten',
-				desc: 'Bestellungen anlegen, bestätigen und Lieferungen einbuchen; Titel per ISBN anlegen und Signatur setzen; Lieferanten pflegen; Mahn- und Abgänger-Mails versenden; Reservierungen und Anliegen erledigen'
+				desc: 'Bestellungen anlegen, bestätigen und Lieferungen einbuchen; Titel per ISBN anlegen und Signatur setzen; Lieferanten pflegen; Mahnbriefe drucken, Mahn- und Abgänger-Mails versenden; Reservierungen und Anliegen erledigen'
 			},
 			{
 				key: 'view_graduates',

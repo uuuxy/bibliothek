@@ -29,9 +29,9 @@
 	 * onBescheid bekommt die ID des einen markierten Schülers. Als Prop, weil den Dialog
 	 * Mahnwesen.svelte auf oberster Ebene rendert — ein Overlay hat in dieser Flex-Zeile
 	 * mit `print:hidden` nichts verloren (dieselbe Regel wie beim Mahnlauf-Dialog).
-	 * @type {{ onMahnlauf: () => void, onBescheid: (schuelerId: string) => void, darfBescheid: boolean, darfMahnlauf: boolean }}
+	 * @type {{ onMahnlauf: () => void, onBescheid: (schuelerId: string) => void, darfBescheid: boolean, darfMahnen: boolean }}
 	 */
-	let { onMahnlauf, onBescheid, darfBescheid, darfMahnlauf } = $props();
+	let { onMahnlauf, onBescheid, darfBescheid, darfMahnen } = $props();
 
 	// Der Bescheid ist ein Einzelfall, kein Massenlauf: Jeder Betrag ist eine
 	// Ermessensentscheidung, und jede Referenznummer wird unwiderruflich verbraucht.
@@ -73,14 +73,17 @@
 	<span class="text-sm font-semibold text-on-surface"
 		>{mahnwesenStore.selectedIds.size} ausgewählt</span
 	>
-	<Button onclick={mahnwesenStore.printSelectedMahnungen} disabled={mahnwesenStore.pdfLoading}>
-		{#if mahnwesenStore.pdfLoading}
-			<Ladekreis size="sm" farbe="aktuell" />
-		{:else}
-			<Printer class="h-4 w-4" aria-hidden="true" />
-		{/if}
-		Mahnbriefe drucken
-	</Button>
+	<!-- Der Druck zählt die Mahnung: nur mit dem Recht der Route dahinter (create_orders). -->
+	{#if darfMahnen}
+		<Button onclick={mahnwesenStore.printSelectedMahnungen} disabled={mahnwesenStore.pdfLoading}>
+			{#if mahnwesenStore.pdfLoading}
+				<Ladekreis size="sm" farbe="aktuell" />
+			{:else}
+				<Printer class="h-4 w-4" aria-hidden="true" />
+			{/if}
+			Mahnbriefe drucken
+		</Button>
+	{/if}
 	{#if darfBescheid && einzelnMarkiert}
 		<!-- Getönt, nicht gefüllt: In diesem Bereich ist „Mahnbriefe drucken" die eine
 		     gefüllte Aktion (M3). -->
@@ -111,9 +114,9 @@
 	</Button>
 
 	<!-- „Alle anmahnen" ist die einzige E-Mail-Aktion, nur hier steht das Umschlag-Symbol.
-	     Nur mit dem Recht der Route dahinter (create_orders, entschieden in Mahnwesen.svelte);
-	     Drucken bleibt — das hängt wie die Seite an view_students, Papier ist der Notweg. -->
-	{#if darfMahnlauf && countAlle > 0}
+	     Nur mit dem Recht der Route dahinter (create_orders, entschieden in Mahnwesen.svelte).
+	     „Liste drucken" bleibt: Das Blatt entsteht im Browser und zählt keine Mahnung. -->
+	{#if darfMahnen && countAlle > 0}
 		<Button
 			variant="danger"
 			onclick={() => onMahnlauf()}
