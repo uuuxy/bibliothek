@@ -107,19 +107,42 @@ func (r *BetriebszustandRepository) rueckstandLeserUndLesehistorie(ctx context.C
 	} {
 		zeile := LoeschRueckstand{Routine: k.routine, Frist: tageText(k.tage), Aus: k.tage <= 0}
 		if !zeile.Aus {
-			ausleihen, err := r.zaehle(ctx, "ausleihen", "a", PredikatLesehistorieAusleihen(k.lernmittel, k.tage, KulanzWaechter))
+			zeilen, err := r.zaehleLesehistorie(ctx, k.tage, k.lernmittel)
 			if err != nil {
 				return fehler(err)
 			}
-			protokoll, err := r.zaehle(ctx, "audit_log", "al", PredikatLesehistorieProtokoll(k.lernmittel, k.tage, KulanzWaechter))
-			if err != nil {
-				return fehler(err)
-			}
-			zeile.Zeilen = ausleihen + protokoll
+			zeile.Zeilen = zeilen
 		}
 		stand = append(stand, zeile)
 	}
 	return stand, nil
+}
+
+// zaehleLesehistorie zählt, was der Lauf der Lesehistorie für eine Klasse noch vor sich hat:
+// Ausleihen und ihre Protokollzeilen, bei der Schülerbücherei dazu die Spuren von
+// Vormerkungen, die mit ihrem Titel gelöscht wurden. Sie folgen der Frist der Schülerbücherei,
+// der Lauf nimmt ihnen den Leser im selben Durchgang.
+func (r *BetriebszustandRepository) zaehleLesehistorie(ctx context.Context, tage int, lernmittel bool) (int, error) {
+	type frage struct {
+		tabelle, alias string
+		bedingung      Loeschbedingung
+	}
+	fragen := []frage{
+		{"ausleihen", "a", PredikatLesehistorieAusleihen(lernmittel, tage, KulanzWaechter)},
+		{"audit_log", "al", PredikatLesehistorieProtokoll(lernmittel, tage, KulanzWaechter)},
+	}
+	if !lernmittel {
+		fragen = append(fragen, frage{"audit_log", "al", PredikatLesehistorieVormerkspur(tage, KulanzWaechter)})
+	}
+	summe := 0
+	for _, f := range fragen {
+		n, err := r.zaehle(ctx, f.tabelle, f.alias, f.bedingung)
+		if err != nil {
+			return 0, err
+		}
+		summe += n
+	}
+	return summe, nil
 }
 
 // rueckstandVorgaengeUndProtokoll zählt die Routinen für erledigte Vorgänge und die

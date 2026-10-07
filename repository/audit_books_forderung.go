@@ -20,9 +20,9 @@ import (
 //
 // `schueler_id` ist nicht nur Information, sondern der Schlüssel, an dem die Tilgung die
 // Zeile findet: Beim Anonymisieren und beim endgültigen Löschen fallen schuldner und
-// beschreibung (protokollSchluesselMitPersonenbezug). Die Lesehistorie-Befristung erreicht
-// die Zeile nicht, sie arbeitet nur auf tabelle = 'ausleihen'; bis dahin gilt die
-// Audit-Aufbewahrung (24 Monate).
+// beschreibung (protokollSchluesselMitPersonenbezug). Die Lesehistorie-Befristung nimmt der
+// Zeile den Leser nicht: Sie belegt, wessen Forderung mit dem Titel gelöscht wurde. Bis zur
+// Tilgung gilt die Audit-Aufbewahrung (24 Monate).
 func protokolliereOffeneForderungen(ctx context.Context, tx pgx.Tx, titelID string) error {
 	rows, err := tx.Query(ctx, `
 		SELECT sf.id, e.id, e.barcode_id,

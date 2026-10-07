@@ -78,6 +78,7 @@ Datenschutz & Sitzung.
 | Kollegin oder Kollege im Papierkorb                                  | endgültig gelöscht nach 180 Tagen, außer eine Ausleihe oder eine unbezahlte Forderung ist offen; das Zugangskonto geht schon beim Löschen | nein        |
 | erledigte Wünsche, Meldungen und Klassensatz-Reservierungen des Kollegiums                       | 365 Tage nach der Erledigung                                                                    | ja          |
 | quittierte Meldungen der Theke nach einem Netzausfall                | Frist der Schülerbücherei, höchstens 30 Tage                                                    | über diese  |
+| Protokollzeile einer Vormerkung, die mit ihrem Titel gelöscht wurde  | Kennung und Name fallen nach der Frist der Schülerbücherei, die Zeile bleibt                    | über diese  |
 | Protokoll                                                            | 24 Monate                                                                                       | ja, mindestens 6 |
 | Sicherung jede Nacht                                                 | die jüngsten 14 bleiben, dazu von den älteren je Kalenderwoche eine für 12 Wochen (etwa drei Monate) | nein        |
 | Sicherung vor einem Update                                           | gelöscht beim ersten Update, bei dem sie älter als 30 Tage ist                                  | nein        |

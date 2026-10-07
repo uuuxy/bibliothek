@@ -49,10 +49,12 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 	getrenntLernmittel := s.trenneAusleihen(ctx, lernmittelTage, true)
 	protokollFreihand := s.tilgeAusleihProtokoll(ctx, freihandTage, false)
 	protokollLernmittel := s.tilgeAusleihProtokoll(ctx, lernmittelTage, true)
+	protokollVormerkung := s.tilgeVormerkSpur(ctx, freihandTage)
 
-	gesamt := getrenntFreihand + getrenntLernmittel + protokollFreihand + protokollLernmittel
+	protokoll := protokollFreihand + protokollLernmittel + protokollVormerkung
+	gesamt := getrenntFreihand + getrenntLernmittel + protokoll
 	log.Printf("Scheduler Lesehistorie: %d Ausleihen vom Schüler getrennt (Schülerbücherei %d nach %d Tagen, Lernmittel %d nach %d Tagen), %d Protokolleinträge bereinigt",
-		getrenntFreihand+getrenntLernmittel, getrenntFreihand, freihandTage, getrenntLernmittel, lernmittelTage, protokollFreihand+protokollLernmittel)
+		getrenntFreihand+getrenntLernmittel, getrenntFreihand, freihandTage, getrenntLernmittel, lernmittelTage, protokoll)
 	if gesamt == 0 {
 		return
 	}
@@ -63,7 +65,7 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 			"schuelerbuecherei_tage":     freihandTage,
 			"lernmittel_getrennt":        getrenntLernmittel,
 			"lernmittel_tage":            lernmittelTage,
-			"protokoll_bereinigt":        protokollFreihand + protokollLernmittel,
+			"protokoll_bereinigt":        protokoll,
 			"ausgefuehrt_am":             time.Now().UTC().Format(time.RFC3339),
 		},
 	); err != nil {
@@ -114,6 +116,26 @@ func (s *Scheduler) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmit
 	tag, err := s.db.Exec(ctx, query, bedingung.Args...)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Protokoll-Bereinigung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
+		return 0
+	}
+	return tag.RowsAffected()
+}
+
+// tilgeVormerkSpur nimmt der Spur einer Vormerkung, die mit ihrem Titel gelöscht wurde, den
+// Leser: Kennung und Name. Die Zeile selbst bleibt, mit Titel, Zeitpunkt und Anlass. Es gilt
+// die Frist der Schülerbücherei; die Bedingung steht in repository/loeschfristen.go.
+func (s *Scheduler) tilgeVormerkSpur(ctx context.Context, tage int) int64 {
+	if tage <= 0 {
+		return 0
+	}
+	bedingung := repository.PredikatLesehistorieVormerkspur(tage, repository.KulanzJob)
+	query := `
+		UPDATE audit_log al
+		SET details = al.details - 'schueler_id' - 'betrifft'
+		WHERE ` + bedingung.Where
+	tag, err := s.db.Exec(ctx, query, bedingung.Args...)
+	if err != nil {
+		log.Printf("Scheduler Lesehistorie: Bereinigung der Vormerk-Spuren fehlgeschlagen: %v", err)
 		return 0
 	}
 	return tag.RowsAffected()

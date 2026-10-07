@@ -138,8 +138,7 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Auskunft (5.19):** Zwei Einträge über die Anlage eines Kontos fehlen, sobald das Konto
   gelöscht ist; zu klären, welche Rohdaten aufs Blatt gehören.
 - [ ] **Protokoll und Tilgung (5.35):** Einträge, die einen Leser nur über seine Forderung meinen;
-  die Frist für die Löschspur von Forderung und Vormerkung; am Testserver alte Einträge zu schon
-  gelöschten Lesern.
+  am Testserver alte Einträge zu schon gelöschten Lesern.
 - [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
 - [ ] **Zwei Helfer (5.5):** Beträge und Fehlertexte schreiben 27 Stellen selbst.
 - [ ] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Benutzer, Gerät, Lieferant und die
@@ -583,18 +582,6 @@ beiden Protokollen (`repository/protokoll_personenbezug.go`). Sie erreicht nicht
   Forderung, ohne `schueler_id`), ebenso das Stornieren bei der Rückgabe
   (`repository/bescheid_rueckkehr.go`). Die Tilgung findet solche Einträge nicht. Ob in diesem
   Grund Personenbezug steht, ist nicht nachgestellt.
-- **Frage: Gilt für die Löschspur von Forderung und Vormerkung die Lesehistorie-Frist?** Die
-  Ausleihspur eines gelöschten Titels verliert Kennung und Namen nach der Lesehistorie-Frist
-  der Schülerbücherei (`tabelle = 'ausleihen'`; das Exemplar gibt es nicht mehr, es zählt als
-  Nicht-Lernmittel). Die Spuren von Forderung und Vormerkung behalten die Kennung bis zur
-  Anonymisierung, sonst bis zur Audit-Aufbewahrung (24 Monate). Die Kommentare in beiden
-  Löschwegen hatten 90 Tage angenommen; zu den Nachbuch-Meldungen steht in
-  `repository/loeschfristen.go`: „länger als die Lesehistorie darf nichts den Schüler an ein Buch
-  binden". Vorschlag (07.10.2026): Die Spur der Vormerkung folgt der Lesehistorie-Frist der
-  Schülerbücherei. Die Spur der Forderung bleibt wie heute, weil sie belegt, wessen Forderung
-  mit dem Titel gelöscht wurde. Koha behandelt die Vormerk-Historie nach derselben Einstellung
-  wie die Lesehistorie
-  ([Fehler 29525](https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=29525)).
 
 ### 5.45 Listen in einem Kasten mit eigenem Scrollen
 

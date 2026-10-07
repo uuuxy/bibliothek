@@ -257,6 +257,21 @@ func PredikatLesehistorieProtokoll(land bool, tage, kulanz int) Loeschbedingung 
 		  AND ` + klasse("al.datensatz_id", land)}
 }
 
+// PredikatLesehistorieVormerkspur liefert die WHERE-Bedingung, mit der der Spur einer
+// Vormerkung, die mit ihrem Titel gelöscht wurde (audit_log, Alias `al`), der Leser genommen
+// wird: Kennung und Name. Die Zeile nennt den Titel des Buchs, und länger als die Lesehistorie
+// bindet nichts einen Leser an ein Buch. Den Titel gibt es nicht mehr, ein Eigentum also auch
+// nicht: Es gilt die Frist der Schülerbücherei, wie für die Ausleihspur eines gelöschten Titels.
+//
+// Die Spur einer gelöschten Forderung (tabelle 'schadensfaelle') fällt nicht darunter: Sie
+// belegt, wessen Forderung mit dem Titel gelöscht wurde, und behält den Leser bis zu seiner
+// Tilgung.
+func PredikatLesehistorieVormerkspur(tage, kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `al.tabelle = 'vormerkungen'
+		  AND al.details ?| ARRAY['schueler_id', 'betrifft']
+		  AND al.timestamp < NOW() - make_interval(days => $1::int + $2::int)`}
+}
+
 // ── Erledigte Anliegen ($1 Tage, $2 Kulanz) ───────────────────────────────────
 
 // PredikatAnliegen liefert die WHERE-Bedingung der Anliegen-Befristung. Die Rechnung
