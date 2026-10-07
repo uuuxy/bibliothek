@@ -9,6 +9,7 @@
 	import CoverPeek from './components/ui/CoverPeek.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import StatusChip from './components/ui/StatusChip.svelte';
+	import { istUeberfaellig } from './utils/ueberfaellig.js';
 
 	/** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void }} */
 	let { books = [], onReturnClick = undefined, onDamageClick = undefined } = $props();
@@ -63,7 +64,7 @@
 		<tbody>
 			{#each books as book (book.id || book.barcode_id || Math.random())}
 				<!-- Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Sperr-Automatik. -->
-				{@const ueberfaellig = !book.ist_dauerleihe && new Date(book.rueckgabe_frist) < new Date()}
+				{@const ueberfaellig = istUeberfaellig(book)}
 				{@const ausleiheId = book.ausleihe_id || book.id}
 				<tr>
 					<!-- max-w-0 mit w-full: Die Zelle nimmt den Rest der Breite, und der Titel kürzt

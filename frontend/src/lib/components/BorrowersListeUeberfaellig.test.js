@@ -3,7 +3,8 @@ import { render } from '@testing-library/svelte';
 import BorrowersListe from './BorrowersListe.svelte';
 
 // Überfällig trägt Farbe, Zeichen und für Vorleseprogramme das Wort, wie in der Leserakte
-// (AusleiheRueckgabe.svelte). Wer Farben schlecht unterscheidet, sah vorher keinen Unterschied.
+// (UeberfaelligZeichen.svelte). Wer Farben schlecht unterscheidet, sieht an der Farbe allein
+// keinen Unterschied.
 describe('Ausleiher-Liste: überfällig', () => {
 	const tag = 24 * 60 * 60 * 1000;
 	/** @param {number} fristInTagen @param {boolean} [dauerleihe] */

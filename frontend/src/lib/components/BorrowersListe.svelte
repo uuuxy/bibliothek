@@ -3,10 +3,11 @@
      zurück: derselbe Weg wie ein Scan am Pult.
 
      Überfällig trägt Farbe, Zeichen und für Vorleseprogramme das Wort, wie in der Leserakte
-     (AusleiheRueckgabe.svelte). -->
+     (UeberfaelligZeichen.svelte). -->
 <script>
-	import { CircleAlert } from '@lucide/svelte';
+	import UeberfaelligZeichen from './UeberfaelligZeichen.svelte';
 	import { appState } from '../../inventur/lib/store.svelte.js';
+	import { istUeberfaellig } from '../utils/ueberfaellig.js';
 
 	/**
 	 * @type {{
@@ -23,7 +24,7 @@
 		{#each zeilen as b, _i (_i)}
 			<!-- Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Akte. -->
 			{@const dauerleihe = !!b.ist_dauerleihe}
-			{@const ueberfaellig = !dauerleihe && new Date(b.rueckgabe_frist) < new Date()}
+			{@const ueberfaellig = istUeberfaellig(b)}
 			<li
 				class="px-5 py-3.5 hover:bg-surface transition-colors flex items-center justify-between group"
 			>
@@ -68,8 +69,7 @@
 						>
 							{dauerleihe ? 'ohne Frist' : fmtDate(b.rueckgabe_frist)}
 							{#if ueberfaellig}
-								<CircleAlert class="h-4 w-4 shrink-0" aria-hidden="true" />
-								<span class="sr-only">Überfällig</span>
+								<UeberfaelligZeichen />
 							{/if}
 						</p>
 					</div>

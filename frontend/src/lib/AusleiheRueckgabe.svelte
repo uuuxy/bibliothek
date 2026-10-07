@@ -9,8 +9,9 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
-	import { Check, CircleAlert, Pencil, X } from '@lucide/svelte';
+	import { Check, Pencil, X } from '@lucide/svelte';
 	import Feld from './components/ui/Feld.svelte';
+	import UeberfaelligZeichen from './components/UeberfaelligZeichen.svelte';
 
 	/** @type {{ book: any, ueberfaellig: boolean }} */
 	let { book, ueberfaellig } = $props();
@@ -97,8 +98,7 @@
 			</span>
 			<span class="sr-only">, geliehen am {geliehenAm}</span>
 			{#if ueberfaellig}
-				<CircleAlert class="h-4 w-4 shrink-0 text-error" aria-hidden="true" />
-				<span class="sr-only">Überfällig</span>
+				<UeberfaelligZeichen />
 			{/if}
 		{/if}
 		<button

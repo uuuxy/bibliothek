@@ -8,6 +8,7 @@
 
 import { baueListenDruckHtml } from './listenDruck.js';
 import { fmtDateDE } from './dates.js';
+import { istUeberfaellig } from './ueberfaellig.js';
 
 /**
  * @param {any[]} ausleiher Bereits gefilterte Zeilen
@@ -20,7 +21,7 @@ export function baueAusleiherDruckHtml(ausleiher, buch, filterKlasse, jetzt = ne
 	const zeilen = ausleiher.map((b) => {
 		// Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Akte.
 		const dauerleihe = !!b.ist_dauerleihe;
-		const ueberfaellig = !dauerleihe && new Date(b.rueckgabe_frist) < jetzt;
+		const ueberfaellig = istUeberfaellig(b, jetzt);
 		return [
 			`${b.schueler_name ?? ''} ${b.schueler_nachname ?? ''}`,
 			b.klasse || '-',
