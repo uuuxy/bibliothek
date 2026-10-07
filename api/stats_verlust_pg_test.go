@@ -55,28 +55,16 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 	}
 }
 
-// Ein bestelltes Exemplar zählt erst zum Bestand, wenn es eingetroffen ist. Vorher stand es im
+// Ein bestelltes Exemplar zählt erst zum Bestand, wenn es eingetroffen ist. Sonst stünde es im
 // Gesamtbestand und unter den aktiven Exemplaren, und die Zirkulationsquote teilte durch es mit.
 func TestStatistik_BestelltesZaehltNichtZumBestand(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
-	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	titelID := titelMitSignatur(t, pool, "Statistik Bestand", "Sta 2", 0)
 	zulaufExemplar(t, pool, titelID, "SB-ZULAUF")
 	imBestand := exemplar(t, pool, titelID, "SB-BESTAND", true, "")
-	var leserID string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Statistik', 'Leserin', 'statistik-bestand@test.invalid', 'admin', true)
-		RETURNING leser_id`).Scan(&leserID); err != nil {
-		t.Fatalf("Leserin anlegen: %v", err)
-	}
-	if _, err := pool.Exec(ctx, `
-		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
-		VALUES ($1, $2, NOW(), NOW() + interval '14 days')`, imBestand, leserID); err != nil {
-		t.Fatalf("Ausleihe anlegen: %v", err)
-	}
+	seedLeserAusleihe(t, pool, imBestand, seedSchueler(t, pool, "SB-LESER", "Statistik", "07A"))
 
 	rec := httptest.NewRecorder()
 	srv.GetStatisticsHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/statistiken", nil))
