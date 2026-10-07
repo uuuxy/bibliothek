@@ -967,5 +967,35 @@ der hat nicht stattgefunden.
   gemessen sind sie nicht.
 
 Regel für neue Oberfläche: Ein interaktiver Container (Zeile, Kachel) enthält keine weiteren
-Bedienelemente — der Name oder Titel ist der Knopf. Und `slate-*` ist im Theme auf
-M3-Neutraltöne gelegt; `slate-400` ist Dunkelgrau, auf dunklem Grund unlesbar.
+Bedienelemente — der Name oder Titel ist der Knopf. Farben kommen nur aus den Rollen in
+`frontend/src/styles/rollen.css`; Palettenklassen wie `slate-*` trägt die Oberfläche nicht mehr
+(`frontend/src/lib/frontend-hygiene-farben.test.js`).
+
+---
+
+## 20. Bewusst nicht gebaut
+
+Was vorgeschlagen, zum Teil gebaut und dann verworfen wurde. Der Code zeigt es nicht; ohne
+diese Liste käme derselbe Vorschlag wieder. Je Zeile: was, wann entschieden, warum nicht.
+Technische Alternativen stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 4.3.
+
+| Was | Entschieden | Warum nicht, und was gilt |
+| --- | --- | --- |
+| **Zahlen oder Kacheln auf dem Ruhebildschirm der Theke** (überfällig, Abholfach, Klassensätze, Meldungen) | 02.09.2026, gebaut mit `50464daa`, entfernt mit `1da97db4` | „Überfällig" ist im Schuljahr immer groß, hinter dem Abholfach stand keine Liste, die übrigen Zahlen standen schon als Abzeichen im Menü. Die Theke zeigt im Ruhezustand nur das Scanfeld; Zahlen stehen in Statistik, Mahnwesen und Bestellungen |
+| **Sperre für den zweiten Scan desselben Buchs an der Theke** | 06.10.2026 (`639b6414`) | Sie hätte nur den doppelten Scan gefangen und den gewollten zweiten Scan verweigert; Littera hat sie auch nicht. Stattdessen klingt eine Ausleihe anders als eine Rückgabe (`1701418f`); den Stand hält `frontend/e2e/theke-schnellrueckgabe.spec.js` |
+| **Eigene oder einstellbare Farbe für die Ausleihe, Schalter für die Töne der Theke** | 06.10.2026 | Ausleihe und Rückgabe bleiben grün, der Unterschied liegt im Ton |
+| **Eigene Uhr für die Schnellrückgabe** | 06.10.2026 | Sie endet mit dem Leeren der Theke (Einstellungen → Datenschutz & Sitzung); eine zweite Frist gibt es nicht |
+| **Farben je Fach** | 06.10.2026 | Die Oberfläche trägt nur die Farbrollen; ein Titel ohne Cover zeigt einen neutralen Platzhalter (`ui/BuchCover`) |
+| **Enddatum am Leser, Liste der Gegangenen aus dem Kollegium** | 30.09.2026 (`2074db30`) | Wer geht und noch Bücher hat, klärt bei Bedarf das Sekretariat |
+| **Meldung, wenn zwei Plätze dasselbe Feld eines Titels ändern** | 06.10.2026 (`ddeba157`) | Die Maske schickt nur geänderte Felder; damit verliert niemand, was er nicht angefasst hat. Ändern beide dasselbe Feld, gilt der spätere Eintrag (`frontend/e2e/buchmaske-zwei-plaetze.spec.js`) |
+| **Seite zum Umbenennen, Zusammenlegen und Löschen von Klassen** | 30.09.2026 (`160b4cf2`) | Die Klasse wird an den Eingabestellen ausgewählt statt getippt; falsche Klassen entstehen so nicht, und die Klassen selbst kommen aus der LUSD |
+| **Sammelseite „Schuljahreswechsel"** mit LMF-Plan, Abgängern und LUSD/Versetzung als Reitern | 05.09.2026 | Sie stand einen Abend und verwirrte. Der LMF-Plan steht unter System → Schuljahreswechsel, die Abgänger unter Verwaltung, LUSD und Versetzung in den Einstellungen (`frontend/src/lib/menu.js`) |
+| **Unterteilung der Ausleihliste der Leserakte nach Bücherei und Lernmittel** | 01.10.2026 | Abgelehnt; das Kennzeichen „Lernmittel" an der Zeile bleibt |
+| **Zugang ohne Mailserver für Tester** | 08.09.2026, gebaut mit `cb6dd13b`, zurückgenommen mit `94577bbe` | Er wurde nicht mehr gebraucht. Angemeldet wird nur gegen den Mailserver der Schule ([ARCHITEKTUR.md](ARCHITEKTUR.md) A2); die fertige Fassung liegt im ersten Commit |
+
+An anderer Stelle beschrieben, weil die Entscheidung dort zum Ablauf gehört: keine
+seitenübergreifende Suchleiste ([HANDBUCH.md](HANDBUCH.md), „Suchen"), kein Buchwunsch und kein
+Ticketsystem für Meldungen (§4.4), keine Mahnung an Lehrkräfte ([HANDBUCH.md](HANDBUCH.md),
+„Mahnwesen"), keine Mahnung per E-Mail an Eltern ([LUSD.md](LUSD.md) §1), kein Sortiertitel aus
+Littera ([littera_schema_befund.md](littera_schema_befund.md)), keine Ausgabe von Lesern und
+Ausleihen für ein anderes Programm ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) §8).

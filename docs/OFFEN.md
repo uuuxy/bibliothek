@@ -1325,12 +1325,14 @@ Buch eine Zeile; einmal ausdrucken und ansehen.
      Postgres, pgx und Tailwind; die Einträge zu Littera und LUSD in
      [littera_schema_befund.md](littera_schema_befund.md), [LUSD.md](LUSD.md) und
      [SCRIPTS.md](SCRIPTS.md) 1b; die Handgriffe beim Prüfen in
-     [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14. Kein Dokument und kein Kommentar im Code verweist
+     [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14; was vorgeschlagen und verworfen wurde, als Liste
+     in [FACHKONZEPT.md](FACHKONZEPT.md) §20. Kein Dokument und kein Kommentar im Code verweist
      mehr auf eine Notiz. Die Prüfungen fanden dabei etwas am Programm: den Abgleich der
      Buchnummern (behoben) und zwei Punkte der Übernahme, die Signaturen und die Sperren (7.2).
-     Es stehen aus, je als eigener Schritt: die Einträge zu Entscheidungen gegen
-     [FACHKONZEPT.md](FACHKONZEPT.md) und [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9; zuletzt
-     ein Durchgang über die 93 Einträge, die in keinem dieser Schritte lagen.
+     Es stehen aus, je als eigener Schritt: die Regeln, die [FACHKONZEPT.md](FACHKONZEPT.md)
+     und [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9 schon nennen, gegen den Code halten und
+     nachtragen, was aus den Einträgen zu Entscheidungen in keinem Dokument steht; zuletzt ein
+     Durchgang über die 93 Einträge, die in keinem dieser Schritte lagen.
   3. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
      mit dem Dokument.
 
