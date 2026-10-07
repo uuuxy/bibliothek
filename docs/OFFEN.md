@@ -86,8 +86,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   Exemplaren, die einen Standort tragen (Buchakte, „Standort ändern")
 - [ ] Medienkatalog: Titel-Verwaltung und „Suche & Filter" stehen nach dem Titel
 - [ ] Theke: Ausweis und Bücher ohne Pause hintereinander scannen
-- [ ] Theke: bei offenem Fenster „Ausleihe blockiert" noch ein Buch scannen; eine unbekannte
-  Nummer scannen
+- [x] Theke: bei offenem Fenster „Ausleihe blockiert" oder „Achtung! Vorgemerkt!" noch ein
+  Buch scannen (ausprobiert am 07.10.2026 mit dem Handscanner: Das Fenster bleibt stehen, rot
+  und Fehlerton)
+- [ ] Theke: eine unbekannte Nummer scannen
 
 **Erledigen:**
 
@@ -1199,16 +1201,13 @@ Littera-Übernahme, die dort läuft (7.2).
 Nach `git pull` und `./update.sh`.
 
 **Mit dem Handscanner.** Die Browser-Tests tippen die Zeichen blind wie ein Scanner; ob der
-Scanner der Schule schnell genug tippt (höchstens 50 ms je Zeichen), zeigt nur das Gerät.
+Scanner der Schule schnell genug tippt (höchstens 50 ms je Zeichen), zeigt nur das Gerät. An
+einem offenen Fenster der Theke ist es am 07.10.2026 belegt: Der Scan wurde erkannt.
 
 - Sperrbildschirm (Sperrfrist dafür unter Einstellungen kurz stellen): ein Buch scannen.
   Erwartet: „Scan erkannt", kein Fehlversuch; danach schließt das getippte Passwort auf.
 - Theke: Leser scannen, einen Reiter der Akte anklicken, in der Akte nach unten rollen, ein
   Buch scannen. Erwartet: Die Suchleiste steht noch im Fenster, das Buch ist gebucht.
-- Theke, ein Scan bei offenem Fenster: einen Leser von Hand sperren, seinen Ausweis und ein
-  Buch scannen, und bei offenem Fenster „Ausleihe blockiert" noch ein Buch scannen. Erwartet:
-  Das Fenster bleibt stehen, die Theke blitzt rot und gibt den Fehlerton, gebucht ist nichts.
-  Mit „Abbrechen" schließen: Der nächste Scan landet wieder im Scanfeld.
 - Theke, ein gescheiterter Scan: eine Nummer scannen, die das Programm nicht kennt. Erwartet:
   die rote Meldung unter dem Scanfeld, dazu roter Blitz und Fehlerton.
 - Buchmaske: einen Titel halb ausfüllen, sperren lassen, aufschließen. Erwartet: Die
