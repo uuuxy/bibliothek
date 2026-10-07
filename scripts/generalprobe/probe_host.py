@@ -6,6 +6,7 @@ Gibt nie einen Namen aus: nur Nummern, Zählungen und Gruppenbezeichnungen.
   stichprobe VERZ VERLIEHEN AUS           Etikettenwerte je Stellenzahl, dazu ein verliehenes Buch
   protokoll  LOG                          littera_import.log nach Schwere und Grund gezählt
   leerraum   VERZ                         Titel mit zwei Leerzeichen in Folge oder geschütztem Leerzeichen
+  auflage    VERZ DBLISTE                 Titel, deren Auflage in der Datenbank anders steht als in Littera
 """
 import csv
 import json
@@ -110,9 +111,22 @@ def leerraum(verz):
     print(sum(1 for t in titel if "  " in t or chr(160) in t))
 
 
+def auflage(verz, db_liste):
+    """Vergleicht je Titel der Datenbank die Auflage mit Litteras Spalte, hier unabhängig vom Code
+    der Übernahme gelesen: ein Leerzeichen zwischen den Wörtern, höchstens 50 Zeichen. Gibt aus:
+    Abweichungen, verglichene Titel, Titel mit Auflage im Export."""
+    with open(verz + "/titel.csv", encoding="utf-8", newline="") as f:
+        soll = {(z.get("Buchungsnummer") or "").strip(): " ".join((z.get("Auflage") or "").split())[:50]
+                for z in csv.DictReader(f)}
+    in_db = [json.loads(z) for z in open(db_liste, encoding="utf-8") if z.strip()]
+    abweichend = sum(1 for t in in_db if t["auflage"] != soll.get(t["id"], ""))
+    print(abweichend, len(in_db), sum(1 for a in soll.values() if a))
+
+
 if __name__ == "__main__":
     befehl, argumente = sys.argv[1], sys.argv[2:]
     {"zuordnen": lambda: zuordnen(argumente[0], argumente[1:]),
      "stichprobe": lambda: stichprobe(*argumente),
      "protokoll": lambda: protokoll(*argumente),
-     "leerraum": lambda: leerraum(*argumente)}[befehl]()
+     "leerraum": lambda: leerraum(*argumente),
+     "auflage": lambda: auflage(*argumente)}[befehl]()

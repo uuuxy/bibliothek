@@ -44,6 +44,9 @@ type Titel struct {
 	VerlagID         string // Schlüssel auf Verlag.Buchungsnummer, kein Freitext
 	MedienartID      string // Schlüssel auf Medienart.Buchungsnummer, kein Freitext
 	Erscheinungsjahr int
+	// Auflage ist die Auflagenbezeichnung, Freitext mit 50 Zeichen („2. Aufl.", „Sonderausg.").
+	// Ohne sie sind zwei Ausgaben desselben Buchs im Katalog nicht zu unterscheiden.
+	Auflage string
 }
 
 // Exemplar ist ein physisches Stück aus der Littera-Tabelle `Exemplar`.
@@ -128,6 +131,7 @@ func LeseTitel(r io.Reader) ([]Titel, error) {
 			VerlagID:         strings.TrimSpace(z["Verlag"]),
 			MedienartID:      strings.TrimSpace(z["Medienart"]),
 			Erscheinungsjahr: jahrAus(z["Erscheinungsjahr"]),
+			Auflage:          strings.TrimSpace(z["Auflage"]),
 		})
 	}
 	return titel, nil

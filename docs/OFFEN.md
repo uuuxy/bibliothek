@@ -35,7 +35,7 @@ Liste geführt wird, steht am Ende.
 Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Littera-Übernahme
 (entschieden am 28.09.2026).
 
-- [ ] Die Littera-Übernahme überträgt die Auflage. (5.5)
+- [x] Die Littera-Übernahme überträgt die Auflage („2. Aufl.", gebaut am 07.10.2026).
 - [x] Die Littera-Übernahme nimmt die Nichtsortierzeichen aus Titel und Verfasser („¬Die¬
   schwarze Katze", gebaut am 07.10.2026).
 - [x] Titel, Untertitel, Autor und Verlag stehen mit einem Leerzeichen zwischen den Wörtern,
@@ -360,12 +360,6 @@ Vermerk.
   gefunden oder bereits ausgebucht". An einem bestellten sondert es aus, was nie eingetroffen
   ist (`DeleteCopy`): Das Exemplar steht danach im Abgangsbuch, ohne je im Zugangsbuch
   gestanden zu haben. Kategorie B.
-- Die Übernahme aus Littera überträgt die Auflage nicht (gefunden am 03.10.2026, am Code
-  gelesen und an der Sicherung gezählt): `sqlTitelEinfuegen` in `internal/littera` schreibt die
-  Spalte `auflage` nicht, das Feld am Titel gibt es seit dem 17.09.2026. In der Sicherung von
-  2010 tragen 3.182 von 10.732 Titeln eine Angabe in `Titel.Auflage` („1. Aufl.", „2. Aufl."),
-  663 davon stehen nach der Übernahme ohne ISBN da. Ohne die Auflage sind zwei Ausgaben
-  desselben Buchs im Katalog nicht zu unterscheiden. Vor dem Echtstart, mit 7.2. Kategorie B.
 - Druck-Center, Buch-Etiketten: Scheitert das Laden der Exemplare eines Titels, steht dort „Zu
   diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann." (`loadExistingCopies` in
   `stores/labels.svelte.js` leert die Liste bei jeder Fehlantwort; am Code gelesen im
@@ -727,6 +721,16 @@ Kategorie B.
 
 ### 6.1 Beobachtungen
 
+- Im Feld „Auflage" führt die Bücherei in Littera nicht nur Auflagen: bei Zeitschriften steht
+  dort die Heftnummer („34 / 2010"), an einem Teil der Bücher eine eigene Nummer der Form
+  „D-Ga-066". Nach der Form gezählt am 07.10.2026: in der Sicherung von 2010 2.512 Auflagen,
+  199 Heftnummern, 432 solche Nummern (an Titeln mit zusammen 11.278 Exemplaren) und 39 andere
+  Angaben; im Katalog-Export vom Juni 2026 5.033, 955, 69 und 96. Die Übernahme bringt alles ins
+  Feld „Auflage"; es steht in der Buchakte, in der Maske „Buch bearbeiten" und in „Suche &
+  Filter" unter dem Titel. Keine Suche vergleicht das Feld (`repository/book_search.go`,
+  `inventur/datenbank_buecher_leser.go`): Ein Heft lässt sich nicht über seine Nummer finden,
+  ein Buch nicht über „D-Ga-066". Anlass zum Bauen: Die Bücherei sucht nach einer dieser
+  Angaben.
 - Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, gekappt
   erst bei 50.000 Titeln), „Suche & Filter" bei jedem Öffnen, die Titel-Verwaltung beim Öffnen und bei leerem
   Suchfeld; gezeigt werden je 50 Titel. Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,

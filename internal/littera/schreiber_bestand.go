@@ -52,9 +52,9 @@ const sqlTitelEinfuegen = `
 	INSERT INTO buecher_titel
 		(titel, untertitel, autor, isbn, verlag, erscheinungsjahr,
 		 medientyp, signatur, erweiterte_eigenschaften, erstellt_am,
-		 ist_lernmittel, subject, grade_level, jahrgang_von, jahrgang_bis)
+		 ist_lernmittel, subject, grade_level, jahrgang_von, jahrgang_bis, auflage)
 	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
-	        $11, NULLIF($12, ''), NULLIF($13, 0)::smallint, COALESCE(NULLIF($14, 0), 5), COALESCE(NULLIF($15, 0), 10))
+	        $11, NULLIF($12, ''), NULLIF($13, 0)::smallint, COALESCE(NULLIF($14, 0), 5), COALESCE(NULLIF($15, 0), 10), $16)
 	RETURNING id`
 
 // etikett_gedruckt ($7): Altbestand traegt seine Littera-Etiketten physisch —
@@ -284,6 +284,7 @@ func (l *bestandslauf) schreibeTitel(
 		jahrOderNil(t.Erscheinungsjahr),
 		f.medientyp, f.signatur, eigenschaften, l.s.opt.Jetzt,
 		lern.IstLernmittel, kanonisch[lern.Fach], lern.Stufe, lern.JahrgangVon, lern.JahrgangBis,
+		f.auflage,
 	).Scan(&titelID)
 	if err != nil {
 		return "", nil, reservierteISBN, fmt.Errorf("beim Titel %q: %w", f.titel, err)
@@ -392,6 +393,7 @@ type titelfelder struct {
 	autor      *string
 	verlag     *string
 	signatur   *string
+	auflage    *string
 	medientyp  string
 }
 
@@ -409,7 +411,10 @@ func (l *bestandslauf) felder(t Titel) titelfelder {
 		autor:      kn("autor", t.Autor, uebernahme.MaxFreitext),
 		verlag:     kn("verlag", l.ab.Verlage[t.VerlagID], uebernahme.MaxFreitext),
 		signatur:   kn("signatur", l.ab.Signaturen[t.ID], uebernahme.MaxFreitext),
-		medientyp:  "Buch",
+		// Die Datenbank bringt nur Titel, Untertitel, Autor und Verlag selbst in die Form der
+		// Titeltexte; die Auflage vergleicht die Dublettenkontrolle im Wortlaut.
+		auflage:   kn("auflage", repository.TiteltextNormalform(t.Auflage), uebernahme.MaxAuflage),
+		medientyp: "Buch",
 	}
 	// buecher_titel.titel ist NOT NULL; ein Katalogeintrag ohne Aufschrift wäre in der
 	// Oberfläche eine leere Zeile, die niemand zuordnen kann.

@@ -45,8 +45,20 @@ Schalter richtig; der Schreibpfad ist dafür gebaut und geprüft.
 
 ### `Titel` → `buecher_titel`
 `Buchungsnummer` (Schlüssel) · `Haupttitel` → `titel` · `Untertitel` → `untertitel` ·
-`ISBN` → `isbn` · `Erscheinungsjahr` (Text!) · `Medienart` (Long → Nachschlagetabelle) ·
+`ISBN` → `isbn` · `Erscheinungsjahr` (Text!) · `Auflage` → `auflage` ·
+`Medienart` (Long → Nachschlagetabelle) ·
 `Verlag` (Long → Nachschlagetabelle, **kein Freitext**) · `Annotation` (nicht übernommen)
+
+**Auflage** (Text 50): Litteras Feld, wie es dasteht. In der Sicherung von 2010 tragen 3.182
+von 10.732 Titeln eine Angabe, im Katalog-Export vom Juni 2026 (MAB 403) 6.153 von 14.858;
+keine ist länger als 50 Zeichen. Die Bücherei führt darin dreierlei, nach der Form gezählt am
+07.10.2026: die Auflagenbezeichnung („2. Aufl.", „Sonderausg."; 2.512 Titel, im Juni 2026
+5.033), bei Zeitschriften die Heftnummer („34 / 2010"; 199, im Juni 2026 955) und eine eigene
+Nummer der Form „D-Ga-066" (432 Titel mit 11.278 Exemplaren, im Juni 2026 69); dazu 39 und 96
+andere Angaben („compact disc", „Windows 95"). Die Übernahme ändert den Wortlaut nicht. Sie
+nimmt Leerraum am Rand weg (in der Sicherung von 2010 23 Werte), macht aus Leerraum in Folge
+ein Leerzeichen (4 Werte) und kürzt auf die Spaltenbreite von 50 Zeichen, mit Vermerk im
+Protokoll.
 
 Titel, Untertitel und Verfasser kommen ohne Litteras Nichtsortierzeichen: Aus „¬Die¬ schwarze
 Katze" wird „Die schwarze Katze" (`littera.OhneNichtsortierzeichen`, dieselbe Regel im

@@ -166,6 +166,13 @@ pruefe "$(sql "SELECT count(*) FROM buecher_titel WHERE concat(titel, untertitel
 # Titel mit zwei Leerzeichen in Folge und mit geschütztem Leerzeichen.
 pruefe "$(sql "SELECT count(*) FROM buecher_titel WHERE concat_ws('|', titel, untertitel, autor, verlag) ~ ('  |' || chr(160))")" 0 \
 	"kein Titel trägt Leerraum in Folge (im Export: $(python3 "$HIER/probe_host.py" leerraum "$ARBEIT/export") Titel)"
+# Die Auflage unterscheidet zwei Ausgaben desselben Buchs; verglichen wird je Titel.
+sql "SELECT json_build_object('id', erweiterte_eigenschaften->>'littera_id', 'auflage', coalesce(auflage, ''))
+	FROM buecher_titel" >"$ARBEIT/auflagen.txt"
+auflagen="$(python3 "$HIER/probe_host.py" auflage "$ARBEIT/export" "$ARBEIT/auflagen.txt")" || abbruch "Vergleich der Auflagen scheiterte"
+read -r abweichend verglichen im_export <<<"$auflagen"
+pruefe "$abweichend von $verglichen" "0 von $(sql 'SELECT count(*) FROM buecher_titel')" \
+	"die Auflage steht an jedem Titel wie in Littera (im Export: $im_export Titel mit Auflage)"
 echo "  Protokoll nach Grund (ohne Werte):"
 python3 "$HIER/probe_host.py" protokoll "$ARBEIT/littera_import.log"
 echo "  In der Datenbank: $(sql "SELECT count(*) || ' Titel, ' || (SELECT count(*) FROM buecher_exemplare) || ' Exemplare, ' ||

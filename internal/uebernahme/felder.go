@@ -11,6 +11,7 @@ const (
 	MaxMedientyp = 100 // medientyp, vorname, nachname
 	MaxKlasse    = 20  // schueler.klasse
 	MaxBarcode   = 100 // barcode_id
+	MaxAuflage   = 50  // auflage
 )
 
 // Kuerzung enthält die Parameter für die Kuerze-Funktionen.
