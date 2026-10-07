@@ -138,6 +138,98 @@ describe('labelStore: Exemplare nicht geladen', () => {
 	});
 });
 
+// Zwei Titel kurz nacheinander gewählt: Die langsamere Antwort des ersten darf die Exemplare des
+// zweiten nicht ersetzen. Auf dem Bogen stünden sonst die Nummern des ersten unter dem Titel
+// des zweiten.
+describe('labelStore: zwei Titel kurz nacheinander', () => {
+	it('zeigt die Exemplare des zuletzt gewählten Titels', async () => {
+		vi.clearAllMocks();
+		labelStore.generationMode = 'existing';
+		/** @type {(antwort: any) => void} */
+		let liefereErsten = () => {};
+		apiFetchMock.mockReturnValueOnce(new Promise((fertig) => (liefereErsten = fertig)));
+		apiFetchMock.mockResolvedValueOnce(exemplare(['B-ZWEI']));
+
+		const erster = labelStore.selectBookTitle({ id: 'a', titel: 'Erster', autor: '' });
+		await labelStore.selectBookTitle({ id: 'b', titel: 'Zweiter', autor: '' });
+		liefereErsten(exemplare(['B-EINS']));
+		await erster;
+
+		expect(labelStore.finalLabels).toEqual([{ barcode_id: 'B-ZWEI', titel: 'Zweiter', autor: '' }]);
+		expect(labelStore.loadingCopies).toBe(false);
+	});
+
+	// Dieselbe Lage nach dem Wechsel der Klasse: Die späte Antwort füllt keine geleerte Liste.
+	it('lässt die Liste nach dem Wechsel der Klasse leer', async () => {
+		vi.clearAllMocks();
+		labelStore.generationMode = 'existing';
+		/** @type {(antwort: any) => void} */
+		let liefere = () => {};
+		apiFetchMock.mockReturnValueOnce(new Promise((fertig) => (liefere = fertig)));
+
+		const laden = labelStore.selectBookTitle({ id: 'a', titel: 'Erster', autor: '' });
+		labelStore.handleClassChange();
+		liefere(exemplare(['B-EINS']));
+		await laden;
+
+		expect(labelStore.existingCopies).toEqual([]);
+		expect(labelStore.loadingCopies).toBe(false);
+	});
+});
+
+// Dasselbe an der Titelsuche: Die langsamere Antwort auf einen älteren Suchtext darf die Treffer
+// des jüngeren nicht ersetzen und nach der Wahl eines Titels keine Liste mehr öffnen.
+describe('labelStore: Titelsuche, späte Antwort', () => {
+	/** @param {string[]} titel @returns {any} */
+	const treffer = (titel) => ({
+		ok: true,
+		json: async () => ({ books: titel.map((t) => ({ id: t, titel: t })) })
+	});
+
+	/** Tippt den Text und lässt die Wartezeit der Suche verstreichen. */
+	async function tippe(/** @type {string} */ text) {
+		labelStore.searchVal = text;
+		labelStore.handleSearchInput();
+		await vi.advanceTimersByTimeAsync(300);
+	}
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.useFakeTimers();
+	});
+
+	it('zeigt die Treffer des jüngsten Suchtexts', async () => {
+		/** @type {(antwort: any) => void} */
+		let liefereErste = () => {};
+		apiFetchMock.mockReturnValueOnce(new Promise((fertig) => (liefereErste = fertig)));
+		apiFetchMock.mockResolvedValueOnce(treffer(['Faust II']));
+
+		await tippe('Faust');
+		await tippe('Faust II');
+		liefereErste(treffer(['Faust', 'Faust II', 'Doktor Faustus']));
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(labelStore.searchResults.map((b) => b.titel)).toEqual(['Faust II']);
+		expect(labelStore.isSearching).toBe(false);
+		vi.useRealTimers();
+	});
+
+	it('öffnet nach der Wahl eines Titels keine Trefferliste mehr', async () => {
+		/** @type {(antwort: any) => void} */
+		let liefere = () => {};
+		apiFetchMock.mockReturnValueOnce(new Promise((fertig) => (liefere = fertig)));
+		apiFetchMock.mockResolvedValueOnce(exemplare(['B-1']));
+
+		await tippe('Faust');
+		await labelStore.selectBookTitle({ id: 't1', titel: 'Faust', autor: '' });
+		liefere(treffer(['Faust', 'Faust II']));
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(labelStore.searchResults).toEqual([]);
+		vi.useRealTimers();
+	});
+});
+
 // Über der Liste steht ein Kästchen für alle und ein Feld für die Nummer. Die Nummern stammen
 // aus den gemeinsamen Prüffällen: 58968 ist ein Littera-Exemplar, dessen Etikett den
 // EAN-13 5896800039556 trägt; B-100016 ist B-10001 mit dem Prüfzeichen früherer Etiketten.

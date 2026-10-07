@@ -69,6 +69,9 @@ function createLabelStore() {
 	// Ein gescheiterter Abruf ist ein eigener Zustand: Eine leere Liste hieße „kein Exemplar"
 	// und legte nahe, neue Barcodes zu erzeugen.
 	let exemplareNichtGeladen = $state(false);
+	// Zählt die Abrufe der Exemplare: Nur die Antwort des jüngsten zählt. Die langsamere
+	// Antwort eines früher gewählten Titels stellte sonst dessen Nummern unter den neuen Titel.
+	let exemplarLauf = 0;
 	// Der Text im Nummernfeld über der Liste: zeigt nur die Exemplare, deren Nummer ihn enthält.
 	let exemplarSuche = $state('');
 	let sichtbareExemplare = $derived.by(() => {
@@ -90,6 +93,8 @@ function createLabelStore() {
 	let newStartNum = $state(20060);
 
 	let searchTimeout = /** @type {any} */ (null);
+	// Zählt die Titelsuchen wie exemplarLauf die Abrufe der Exemplare.
+	let suchLauf = 0;
 
 	/** @type {Array<{isBlank?: boolean, barcode_id?: string, titel?: string, autor?: string}>} */
 	let finalLabels = $derived.by(() => {
@@ -156,6 +161,8 @@ function createLabelStore() {
 		ausgesondertAnzahl = 0;
 		exemplareNichtGeladen = false;
 		exemplarSuche = '';
+		exemplarLauf++;
+		loadingCopies = false;
 	}
 
 	/**
@@ -194,8 +201,10 @@ function createLabelStore() {
 
 	function handleSearchInput() {
 		if (searchTimeout) clearTimeout(searchTimeout);
+		const lauf = ++suchLauf;
 		if (!searchVal.trim()) {
 			searchResults = [];
+			isSearching = false;
 			return;
 		}
 		isSearching = true;
@@ -211,8 +220,9 @@ function createLabelStore() {
 				);
 				if (res.ok) {
 					const body = await res.json();
+					if (lauf !== suchLauf) return;
 					searchResults = body.books || [];
-				} else {
+				} else if (lauf === suchLauf) {
 					// Sweep „verschluckte Fehlantwort" (06.09.2026): Vorher blieben die
 					// Treffer des VORIGEN Suchtextes stehen — man klickt auf eine Zeile,
 					// die zu einer anderen Eingabe gehört, und druckt deren Etikett.
@@ -220,10 +230,11 @@ function createLabelStore() {
 					toastStore.addToast('Titelsuche fehlgeschlagen — bitte erneut versuchen.', 'error');
 				}
 			} catch (err) {
+				if (lauf !== suchLauf) return;
 				searchResults = [];
 				console.error('Fehler bei Buchtitelsuche:', err);
 			} finally {
-				isSearching = false;
+				if (lauf === suchLauf) isSearching = false;
 			}
 		}, 300);
 	}
@@ -231,6 +242,9 @@ function createLabelStore() {
 	/** @param {any} titleObj */
 	async function selectBookTitle(titleObj) {
 		selectedTitle = titleObj;
+		if (searchTimeout) clearTimeout(searchTimeout);
+		suchLauf++;
+		isSearching = false;
 		searchResults = [];
 		searchVal = titleObj.titel;
 		selectedClass = '';
@@ -240,6 +254,7 @@ function createLabelStore() {
 
 	async function loadExistingCopies() {
 		if (!selectedTitle) return;
+		const lauf = ++exemplarLauf;
 		loadingCopies = true;
 		exemplarSuche = '';
 		ausgesondertAnzahl = 0;
@@ -249,20 +264,22 @@ function createLabelStore() {
 			if (res.ok) {
 				/** @type {any[]} */
 				const alle = (await res.json()) || [];
+				if (lauf !== exemplarLauf) return;
 				existingCopies = alle
 					.filter((c) => !c.ist_ausgesondert)
 					.map((c) => ({ ...c, checked: true }));
 				ausgesondertAnzahl = alle.length - existingCopies.length;
-			} else {
+			} else if (lauf === exemplarLauf) {
 				existingCopies = [];
 				exemplareNichtGeladen = true;
 			}
 		} catch (err) {
+			if (lauf !== exemplarLauf) return;
 			console.error('Fehler beim Laden der Exemplare:', err);
 			existingCopies = [];
 			exemplareNichtGeladen = true;
 		} finally {
-			loadingCopies = false;
+			if (lauf === exemplarLauf) loadingCopies = false;
 		}
 	}
 
