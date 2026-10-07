@@ -12,13 +12,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+const meldungUnbekannterBarcode = "Zu diesem Barcode gibt es kein Exemplar."
+
 // ladeExemplarFuerScan lädt die für die Inventur-Logik nötigen Exemplardetails.
 // ok=false: die Fehlerantwort (404 bei unbekanntem Barcode, sonst 500) wurde bereits geschrieben.
 func ladeExemplarFuerScan(ctx context.Context, invRepo *repository.InventoryRepository, w http.ResponseWriter, barcodeID string) (*repository.InventoryScanResult, bool) {
 	res, err := invRepo.GetExemplarForInventoryScan(ctx, barcodeID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			// Der Satz steht am Scanner unter „Unbekanntes Buch“; der Fehler der Datenbank geht ins Log.
+			apierrors.SendHTTPErrorMitMeldung(w, http.StatusNotFound, meldungUnbekannterBarcode, err)
 			return nil, false
 		}
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -129,7 +132,7 @@ func (s *Server) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 			Titel:     res.Title,
 			CoverURL:  res.CoverURL,
 			Status:    "ausser_scope",
-			Warnungen: []string{"Buch gehört nicht zum Scope dieser Inventur — es wurde NICHT erfasst. Bitte im zuständigen Inventur-Bereich scannen."},
+			Warnungen: []string{"Buch gehört nicht zum Bereich dieser Inventur — es wurde NICHT erfasst. Bitte im zuständigen Inventur-Bereich scannen."},
 		})
 		return
 	}

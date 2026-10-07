@@ -30,7 +30,7 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
 		await neu.click();
 
 		// Escape schließt den Dialog, und der Knopf öffnet ihn danach wieder.
-		const startTitel = page.getByRole('heading', { name: 'Inventur-Scope wählen' });
+		const startTitel = page.getByRole('heading', { name: 'Bereich der Inventur wählen' });
 		await expect(startTitel).toBeVisible();
 		await page.keyboard.press('Escape');
 		await expect(startTitel).toBeHidden();

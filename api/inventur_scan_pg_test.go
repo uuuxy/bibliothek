@@ -112,6 +112,36 @@ func erfasstFuer(t *testing.T, pool *pgxpool.Pool, sessionID, exemplarID string)
 	return n
 }
 
+// Ein unbekannter Barcode bekommt am Scanner einen Satz, den das Personal lesen kann. Der
+// Fehlertext der Datenbank gehört ins Log, nicht auf den Bildschirm.
+func TestInventurScan_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
+		t.Fatalf("Sessions leeren: %v", err)
+	}
+	resetBestandsdaten(t, pool)
+	session, err := repository.NewInventoryRepository(pool).
+		CreateInventurSession(ctx, "global", repository.InventurScope{}, "Komplette Bibliothek", "")
+	if err != nil {
+		t.Fatalf("Inventur anlegen: %v", err)
+	}
+
+	rec := inventurScan(t, &Server{DB: &db.Database{Pool: pool}}, session.ID, "GIBT-ES-NICHT")
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("Status %d, erwartet 404: %s", rec.Code, rec.Body.String())
+	}
+	var antwort struct {
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort lesen: %v", err)
+	}
+	if antwort.Error != "Zu diesem Barcode gibt es kein Exemplar." {
+		t.Errorf("Meldung am Scanner: %q", antwort.Error)
+	}
+}
+
 // TestInventurScan_Fehlerfaelle sichert diverse Edge Cases und Fehlerabbrüche ab,
 // wie eine fehlende/unbekannte Session, unbekannte oder ausgesonderte Exemplare
 // sowie Warnungen bei ausgeliehenen Büchern.

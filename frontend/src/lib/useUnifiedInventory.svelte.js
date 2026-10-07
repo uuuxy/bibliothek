@@ -10,11 +10,11 @@ import { useInventurSession } from './useInventurSession.svelte.js';
  */
 export function abschlussText(offen) {
 	if (offen <= 0) {
-		return 'Alle Bücher aus dem aktuellen Scope sind gescannt. Es wird keines als verloren markiert.';
+		return 'Alle Bücher aus dem Bereich dieser Inventur sind gescannt. Es wird keines als verloren markiert.';
 	}
 	return offen === 1
-		? '1 Buch aus dem aktuellen Scope ist nicht gescannt. Es wird unwiderruflich als verloren markiert und ausgesondert.'
-		: `${offen} Bücher aus dem aktuellen Scope sind nicht gescannt. Sie werden unwiderruflich als verloren markiert und ausgesondert.`;
+		? '1 Buch aus dem Bereich dieser Inventur ist nicht gescannt. Es wird unwiderruflich als verloren markiert und ausgesondert.'
+		: `${offen} Bücher aus dem Bereich dieser Inventur sind nicht gescannt. Sie werden unwiderruflich als verloren markiert und ausgesondert.`;
 }
 
 /**

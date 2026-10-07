@@ -83,7 +83,7 @@ export function deuteScanErgebnis(r, barcode) {
 				title: r.data.titel || 'Buch',
 				warnings: r.data.warnungen?.length
 					? r.data.warnungen
-					: ['Buch gehört nicht zum Scope dieser Inventur.']
+					: ['Buch gehört nicht zum Bereich dieser Inventur.']
 			}
 		};
 	}
