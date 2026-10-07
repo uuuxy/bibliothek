@@ -38,7 +38,6 @@ import (
 var phantomBestand = map[string]int{
 	"api/ausweis_layout.go:SaveAusweisLayoutHandler":          1,
 	"api/dsgvo_auskunft.go:protokolliereDsgvoAuskunft":        1,
-	"api/klassen_mapping.go:UpsertKlassenMappingHandler":      1,
 	"api/lusd.go:computeLusdLauf":                             1,
 	"api/lusd_apply.go:adoptiereWaisen":                       1,
 	"api/lusd_apply.go:aktualisiereBestandsschuelerBatch":     1,
@@ -50,7 +49,7 @@ var phantomBestand = map[string]int{
 	"api/student_promotion.go:finalisiereSchuljahreswechsel":  1,
 	"api/student_promotion.go:fuehreSchuljahreswechselAus":    1,
 	"api/student_promotion.go:versetzeKlassenlehrerZuordnung": 2,
-	"api/supplier_handler.go:handleUpdateSupplier":            1,
+	"api/supplier_handler.go:schreibeHauptlieferant":          1,
 	"api/supplier_handler.go:setzeHauptlieferant":             2,
 	"api/systematik_handler.go:DeleteSystematikHandler":       1,
 	"api/systematik_handler.go:handleUpdateSystematik":        2,

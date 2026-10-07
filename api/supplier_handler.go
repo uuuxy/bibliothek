@@ -162,6 +162,9 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
+		// An diese Adresse gehen Bestellungen. Der Eintrag nennt den Händler, nicht die Adresse.
+		s.protokolliereVerwaltung(ctx, auditLieferantAngelegt,
+			map[string]any{"lieferant_id": newID, "name": req.Name})
 
 		// Bewusst NICHT im INSERT: Gibt es schon einen Hauptlieferanten, bräche der
 		// Teil-Index den Anlegevorgang ab — der neue Lieferant wäre gar nicht erst
@@ -214,15 +217,24 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 	// RETURNING statt Exec + RowsAffected, damit die Antwort den GESPEICHERTEN Stand nennt
 	// und nicht die Eingabe zurückspiegelt — sonst meldete sie eine leere zweite
 	// Kundennummer, während in der Datenbank die alte steht.
+	//
+	// Der Stand davor (alt) sagt dem Protokoll, welche Felder sich geändert haben.
 	var gespeicherteZweitnummer string
+	var alt lieferantStand
 	err := s.DB.Pool.QueryRow(ctx, `
-		UPDATE lieferanten
+		WITH alt AS (
+			SELECT name, email, kundennummer, kundennummer_schultraeger, ist_hauptlieferant
+			  FROM lieferanten WHERE id = $4 FOR UPDATE
+		)
+		UPDATE lieferanten l
 		   SET name = $1, email = $2, kundennummer = $3,
-		       kundennummer_schultraeger = COALESCE($5, kundennummer_schultraeger)
-		 WHERE id = $4
-		RETURNING kundennummer_schultraeger`,
+		       kundennummer_schultraeger = COALESCE($5, l.kundennummer_schultraeger)
+		  FROM alt
+		 WHERE l.id = $4
+		RETURNING l.kundennummer_schultraeger,
+		          alt.name, alt.email, alt.kundennummer, alt.kundennummer_schultraeger, alt.ist_hauptlieferant`,
 		req.Name, req.Email, req.CustomerNumber, id, kundennummerSchultraegerOderNil(req),
-	).Scan(&gespeicherteZweitnummer)
+	).Scan(&gespeicherteZweitnummer, &alt.name, &alt.email, &alt.kundennummer, &alt.zweitnummer, &alt.haupt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
 		return
@@ -231,6 +243,14 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	felder := geaenderteFelder(
+		feldWechsel{"name", alt.name != req.Name},
+		feldWechsel{"email", alt.email != req.Email},
+		feldWechsel{"kundennummer", alt.kundennummer != req.CustomerNumber},
+		feldWechsel{"kundennummer_schultraeger", alt.zweitnummer != gespeicherteZweitnummer},
+	)
+	eintrag := map[string]any{"lieferant_id": id, "name": req.Name}
 
 	// Das Merkmal steht bewusst NICHT im UPDATE oben: Trägt es schon ein anderer, bräche
 	// der Teil-Index das ganze UPDATE ab — und damit auch die Korrektur einer E-Mail.
@@ -241,16 +261,14 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 	// jemand anderem zu geben. Der Aufrufer schickt beim Bearbeiten immer den aktuellen
 	// Stand mit (startEdit liest ihn aus der Zeile), ein versehentliches Abschalten beim
 	// Korrigieren der E-Mail ist damit ausgeschlossen.
-	if req.IstHauptlieferant {
-		if err := setzeHauptlieferant(ctx, s.DB.Pool, id); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-	} else if _, err := s.DB.Pool.Exec(ctx,
-		`UPDATE lieferanten SET ist_hauptlieferant = false WHERE id = $1`, id); err != nil {
+	if err := s.schreibeHauptlieferant(ctx, id, req.IstHauptlieferant); err != nil {
+		// Die Stammdaten sind geschrieben: Der Eintrag nennt, was sich daran geändert hat.
+		s.protokolliereGeaenderteFelder(ctx, auditLieferantGeaendert, eintrag, felder)
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
+	felder = append(felder, geaenderteFelder(feldWechsel{"hauptlieferant", alt.haupt != req.IstHauptlieferant})...)
+	s.protokolliereGeaenderteFelder(ctx, auditLieferantGeaendert, eintrag, felder)
 
 	RespondJSON(w, http.StatusOK, SupplierResponse{
 		ID:                       id,
@@ -260,6 +278,21 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 		IstHauptlieferant:        req.IstHauptlieferant,
 		KundennummerSchultraeger: gespeicherteZweitnummer,
 	})
+}
+
+// lieferantStand sind die Stammdaten eines Lieferanten vor einer Änderung.
+type lieferantStand struct {
+	name, email, kundennummer, zweitnummer string
+	haupt                                  bool
+}
+
+// schreibeHauptlieferant gibt dem Lieferanten das Merkmal oder nimmt es ihm.
+func (s *Server) schreibeHauptlieferant(ctx context.Context, id string, soll bool) error {
+	if soll {
+		return setzeHauptlieferant(ctx, s.DB.Pool, id)
+	}
+	_, err := s.DB.Pool.Exec(ctx, `UPDATE lieferanten SET ist_hauptlieferant = false WHERE id = $1`, id)
+	return err
 }
 
 // DeleteSupplierHandler removes a supplier.
@@ -291,8 +324,9 @@ func (s *Server) DeleteSupplierHandler() http.HandlerFunc {
 		// Weg bleibt offen — erst einen anderen zum Hauptlieferanten machen (oder den
 		// Schalter abwählen), dann löschen.
 		var istHaupt bool
+		var name string
 		if err := s.DB.Pool.QueryRow(ctx,
-			"SELECT ist_hauptlieferant FROM lieferanten WHERE id = $1", id).Scan(&istHaupt); err != nil {
+			"SELECT ist_hauptlieferant, name FROM lieferanten WHERE id = $1", id).Scan(&istHaupt, &name); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
 				return
@@ -318,6 +352,8 @@ func (s *Server) DeleteSupplierHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
 			return
 		}
+		s.protokolliereVerwaltung(ctx, auditLieferantGeloescht,
+			map[string]any{"lieferant_id": id, "name": name})
 
 		w.WriteHeader(http.StatusNoContent)
 	}

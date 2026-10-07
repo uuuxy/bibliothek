@@ -1,10 +1,13 @@
 package api
 
 import (
-	"bibliothek/apierrors"
 	"errors"
 	"net/http"
 	"time"
+
+	"bibliothek/apierrors"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // GetMailTemplatesHandler gibt alle Mail-Vorlagen zurück
@@ -62,17 +65,28 @@ func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		tag, err := s.DB.Pool.Exec(ctx, "UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE id = $3", req.Betreff, req.TextBody, id)
+		// Der Stand davor sagt, was sich geändert hat: Im Protokoll stehen die Vorlage und
+		// die Namen der geänderten Felder, nicht der Wortlaut.
+		var typ string
+		var betreffNeu, textNeu bool
+		err := s.DB.Pool.QueryRow(ctx, `
+			WITH alt AS (SELECT betreff, text_body FROM mail_vorlagen WHERE id = $3 FOR UPDATE)
+			UPDATE mail_vorlagen v SET betreff = $1, text_body = $2
+			  FROM alt
+			 WHERE v.id = $3
+			RETURNING v.typ, alt.betreff IS DISTINCT FROM $1, alt.text_body IS DISTINCT FROM $2
+		`, req.Betreff, req.TextBody, id).Scan(&typ, &betreffNeu, &textNeu)
+		// Eine unbekannte Vorlage ist ein Fehler, kein „Erfolgreich gespeichert".
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("mail-Vorlage nicht gefunden"))
+			return
+		}
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Aktualisieren der Vorlage"))
 			return
 		}
-		// Phantom-Erfolg-Sweep 31.08.2026: Unbekannte Vorlagen-ID war ein stilles
-		// „Erfolgreich gespeichert" — 0 Zeilen sind hier ein Fehler, kein Erfolg.
-		if tag.RowsAffected() == 0 {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("mail-Vorlage nicht gefunden"))
-			return
-		}
+		s.protokolliereGeaenderteFelder(ctx, auditMailvorlageGeaendert, map[string]any{"vorlage": typ},
+			geaenderteFelder(feldWechsel{"betreff", betreffNeu}, feldWechsel{"text", textNeu}))
 
 		RespondJSON(w, http.StatusOK, map[string]string{"message": "Erfolgreich gespeichert"})
 	}

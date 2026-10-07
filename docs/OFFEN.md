@@ -146,8 +146,9 @@ der Nummer nichts mehr dazu offen ist.
   Kategorien der Einstellungen; am Titel und am Leser ist es behoben.
 - [ ] **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es
   danach nirgends an der Bestellung.
-- [ ] **Spur im Protokoll (5.57):** je Tür festlegen, ob sie einen Eintrag schreibt; ohne Eintrag
-  sind die Zuordnung der Klassenleitungen, die Mail-Vorlagen und die Lieferanten.
+- [ ] **Spur im Protokoll (5.57):** die übrigen ändernden Routen lesen und je Tür festlegen, ob
+  sie einen Eintrag schreibt. Klassenleitungen, Mail-Vorlagen, Lieferanten und die
+  Verlängerung der Lernmittel einer Klasse schreiben ihn seit dem 07.10.2026.
 - [ ] **Beim Umstellen der Farben aufgefallen (5.21):** In der Inventur zeigt ein unbekannter
   Barcode einen technischen Fehlertext; die Titelliste öffnet einen Titel nur mit der Maus;
   englische Wörter in der Oberfläche; eine überfällige Ausleihe ist in der Buchakte nur an der
@@ -658,35 +659,14 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
 
 ### 5.57 Spur im Protokoll: welche Tür schreibt einen Eintrag
 
-Raster, Frage 19 (neu am 07.10.2026). Die Rechte-Matrix schreibt seit dem 07.10.2026 einen
-Eintrag (`RECHT_GEAENDERT`). Am Code gelesen und ohne Eintrag:
-
-- **Zuordnung der Klassenleitungen** (`POST` und `DELETE /api/klassen-mapping`): An diese
-  Adressen gehen die Mahnlisten mit Namen und Titeln. Wer eine Adresse geändert hat, steht
-  nirgends; der Mahnlauf selbst schreibt Klassen und eine abweichende Adresse ins Protokoll.
-- **Mail-Vorlagen** (`PUT /api/mail-templates/{id}`): der Wortlaut von Mahnbrief und
-  Bestellmail.
-- **Lieferanten** (`POST`, `PUT`, `DELETE /api/lieferanten`): die Adresse, an die
-  Bestellungen gehen.
-- **Lernmittel einer Klasse verlängern** (`POST /api/ausleihen/global-extend-lmf`): eine neue
-  Frist für alle Lernmittel einer Klasse. Die Frist einer einzelnen Ausleihe von Hand zu
-  ändern schreibt einen Eintrag (`OverrideDueDateHandler`), der Lauf über die Klasse nicht.
-
-Eine grobe Messung über sechs Pakete nennt 60 von 97 ändernden Routen, deren Anmeldung keine
-Funktion nennt, die in `audit_log` oder `audit_logs` schreibt. Sie sieht Routen über eine
-Variable nicht (die Buchung der Theke) und keine Trigger; die Liste ist ein Suchvorrat, kein
-Befund. Nächster Schritt: je Tür festlegen, ob sie einen Eintrag schreibt, und was darin
-steht, ohne neuen Personenbezug (eine Adresse im Eintrag bliebe bis zur Audit-Aufbewahrung).
-Kategorie B.
-
-Vorschlag (07.10.2026): Alle vier Türen schreiben einen Eintrag mit Bearbeiter, Zeit und
-Gegenstand: die Klasse; der Name der Vorlage; der Name des Lieferanten und die Namen der
-geänderten Felder; die Klasse mit neuer Frist und Zahl der Ausleihen. Die Adresse selbst steht
-nicht darin. Das [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
-zählt Verwaltungshandlungen zu den Ereignissen, die protokolliert werden, und Namen und
-Mailadressen zu den Angaben, die nicht im Klartext ins Protokoll gehören. Littera führt kein
-Änderungsprotokoll für Stammdaten; das Handbuch nennt das E-Mailprotokoll, das Protokoll der
-Verrechnung und die Protokolle der Abgleiche.
+Raster, Frage 19. Eine grobe Messung über sechs Pakete (07.10.2026) nennt 60 von 97 ändernden
+Routen, deren Anmeldung keine Funktion nennt, die in `audit_log` oder `audit_logs` schreibt.
+Sie sieht Routen über eine Variable nicht (die Buchung der Theke) und keine Trigger; die Liste
+ist ein Suchvorrat, kein Befund. Gelesen und mit Eintrag versehen sind die Rechte-Matrix, die
+Zuordnung der Klassenleitungen, die Mail-Vorlagen, die Lieferanten und die Verlängerung der
+Lernmittel einer Klasse; der Rest ist nicht gelesen. Nächster Schritt: je Tür festlegen, ob
+sie einen Eintrag schreibt. Was darin steht, regelt `api/verwaltung_protokoll.go`: Bearbeiter,
+Gegenstand und die Namen der geänderten Felder, keine Mailadresse. Kategorie B.
 
 ---
 

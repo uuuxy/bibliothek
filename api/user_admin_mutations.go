@@ -3,11 +3,9 @@ package api
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 
 	"bibliothek/apierrors"
-	"bibliothek/auth"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 )
@@ -25,18 +23,7 @@ func (s *Server) auditiereBenutzerMutation(r *http.Request, aktion string, detai
 // auditiereKonto schreibt einen Eintrag über ein Konto mit der angemeldeten Person als
 // Handelnder — für Türen, die nur den Kontext in der Hand haben.
 func (s *Server) auditiereKonto(ctx context.Context, aktion string, details map[string]any) {
-	claims, ok := auth.GetClaims(ctx)
-	if !ok {
-		return
-	}
-	// Server ohne Datenbank (nackte Testkonstruktion &Server{}): nichts zu schreiben.
-	if s.DB == nil || s.DB.Pool == nil {
-		return
-	}
-	if err := repository.NewAuditRepository(s.DB.Pool).
-		LogAdminAktion(ctx, claims.UserID, aktion, "", details); err != nil {
-		log.Printf("Benutzer-Audit (%s) fehlgeschlagen: %v", aktion, err)
-	}
+	s.protokolliereVerwaltung(ctx, aktion, details)
 }
 
 // protokolliereKontoAnlage schreibt USER_CREATE — für jede Tür im Handler-Paket, über die ein

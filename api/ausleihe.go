@@ -333,6 +333,16 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			return
 		}
 
+		// Wie bei der Frist einer einzelnen Ausleihe (FRIST_OVERRIDE): Wer die Fristen einer
+		// ganzen Klasse verschiebt, steht im Protokoll. Bewegt sich keine Frist, steht nichts.
+		if tag.RowsAffected() > 0 {
+			s.protokolliereVerwaltung(ctx, auditFristKlasseGeaendert, map[string]any{
+				"klasse":            req.Klasse,
+				"neue_frist":        newDate.Format(time.RFC3339),
+				"fristen_angepasst": tag.RowsAffected(),
+			})
+		}
+
 		RespondJSON(w, http.StatusOK, map[string]interface{}{
 			"success":       true,
 			"updated_count": tag.RowsAffected(),

@@ -36,9 +36,9 @@ func TestUpdateMailTemplateHandler_Success(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	mock.ExpectExec(`UPDATE mail_vorlagen SET betreff = \$1, text_body = \$2 WHERE id = \$3`).
+	mock.ExpectQuery(`UPDATE mail_vorlagen v SET betreff = \$1, text_body = \$2`).
 		WithArgs("Neuer Betreff", "Neuer Text", "mahnung_1").
-		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		WillReturnRows(pgxmock.NewRows([]string{"typ", "betreff_neu", "text_neu"}).AddRow("mahnung_1", true, true))
 
 	server.UpdateMailTemplateHandler().ServeHTTP(w, req)
 
@@ -124,7 +124,7 @@ func TestUpdateMailTemplateHandler_DBError(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	mock.ExpectExec(`UPDATE mail_vorlagen SET betreff = \$1, text_body = \$2 WHERE id = \$3`).
+	mock.ExpectQuery(`UPDATE mail_vorlagen v SET betreff = \$1, text_body = \$2`).
 		WithArgs("Neuer Betreff", "Neuer Text", "mahnung_1").
 		WillReturnError(errors.New("db error"))
 

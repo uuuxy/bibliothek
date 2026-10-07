@@ -597,9 +597,10 @@ Audit-Aufbewahrung; Werte einer Person darin muss die Tilgung kennen
 Ein Gate hat die Frage nicht. Eine grobe Messung am 07.10.2026 (Syntaxbaum über sechs
 Pakete, nach Namen verbunden) nennt 60 von 97 ändernden Routen, deren Anmeldung keine
 Funktion nennt, die in ein Protokoll schreibt; sie sieht keine Routen über Variablen und
-keine Trigger. Am Code gelesen und ohne Eintrag: die Zuordnung der Klassenleitungen, die
-Mail-Vorlagen, die Lieferanten, die Verlängerung der Lernmittel einer ganzen Klasse. Der Rest
-ist nicht gelesen ([OFFEN.md](OFFEN.md) 5.57).
+keine Trigger. Am Code gelesen und seit dem 07.10.2026 mit Eintrag: die Zuordnung der
+Klassenleitungen, die Mail-Vorlagen, die Lieferanten, die Verlängerung der Lernmittel einer
+ganzen Klasse (`api/verwaltung_protokoll_pg_test.go`). Der Rest ist nicht gelesen
+([OFFEN.md](OFFEN.md) 5.57).
 
 ### Frontend-Lesart (ergänzt 31.08.2026)
 

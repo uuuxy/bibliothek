@@ -70,14 +70,30 @@ func (s *Server) UpsertKlassenMappingHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		_, err := s.DB.Pool.Exec(ctx, `
+		// Der Stand davor entscheidet über den Protokolleintrag: neu eingetragen, geändert
+		// oder dieselbe Adresse noch einmal gespeichert.
+		var neu, unveraendert bool
+		err := s.DB.Pool.QueryRow(ctx, `
+			WITH alt AS (SELECT lehrer_email FROM klassen_lehrer_mapping WHERE klasse = $1)
 			INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email)
 			VALUES ($1, $2)
 			ON CONFLICT (klasse) DO UPDATE SET lehrer_email = EXCLUDED.lehrer_email
-		`, req.Klasse, req.LehrerEmail)
+			RETURNING NOT EXISTS (SELECT 1 FROM alt),
+			          EXISTS (SELECT 1 FROM alt WHERE lehrer_email = $2)
+		`, req.Klasse, req.LehrerEmail).Scan(&neu, &unveraendert)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
+		}
+		// An diese Adresse gehen die Mahnlisten der Klasse mit Namen und Titeln. Der Eintrag
+		// nennt die Klasse, nicht die Adresse.
+		if !unveraendert {
+			art := "geaendert"
+			if neu {
+				art = "eingetragen"
+			}
+			s.protokolliereVerwaltung(ctx, auditKlassenleitungGeaendert,
+				map[string]any{"klasse": req.Klasse, "art": art})
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
@@ -107,6 +123,7 @@ func (s *Server) DeleteKlassenMappingHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("kein Eintrag für diese Klasse"))
 			return
 		}
+		s.protokolliereVerwaltung(ctx, auditKlassenleitungEntfernt, map[string]any{"klasse": klasse})
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

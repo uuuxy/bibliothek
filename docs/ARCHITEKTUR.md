@@ -1694,6 +1694,12 @@ nicht mehr zustellen.
   galt die Ausleihe **ohne** Revisionsspur.
 - Admin-Aktionen (Übergehen eines Hinweises, Wareneingang-Sammelbuchung) stehen weiter neben dem
   Vorgang.
+- **Einträge der Verwaltung nennen den Gegenstand, keine Adresse.** Die Zuordnung der
+  Klassenleitungen, die Mail-Vorlagen, die Lieferanten und die Verlängerung der Lernmittel
+  einer Klasse schreiben Bearbeiter, Zeit, Gegenstand und die Namen der geänderten Felder
+  (`api/verwaltung_protokoll.go`). Die Mailadresse steht nicht im Eintrag: Sie bliebe bis zur
+  Aufbewahrungsfrist des Protokolls, und die Tilgung findet nur Einträge mit der Kennung eines
+  Lesers. Ein Speichern, das nichts ändert, schreibt keinen Eintrag.
 - **Keine IP-Adressen in der Anfrage-Logzeile.**
 
 #### Datenminimierung als Entwurfsprinzip
