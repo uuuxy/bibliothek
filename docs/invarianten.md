@@ -547,6 +547,13 @@ Bestand am 07.10.2026:
   ihn ein und bucht ihn danach, dieselbe Nummer fällt weiter weg; ging ein Scan nicht glatt
   durch, wird der Rest nicht gebucht und genannt (`frontend/e2e/theke-scan-reihe.spec.js`,
   `frontend/src/lib/stores/omniboxScanReihe.test.js`).
+- **Frage 16, was wartet:** Reiht ein Scanfeld Scans ein, bucht es sie in dem Zustand, den
+  der Scan davor hinterlassen hat. Was geschieht mit den wartenden, wenn der Scan davor
+  scheitert, eine Rückfrage aufgeht oder jemand den Zustand von außen ändert (Escape,
+  Abmelden)? Beleg vom 07.10.2026: An der Theke geht nach einem gescheiterten Ausweis das
+  nächste Buch an den Leser davor (im Browser nachgestellt, [OFFEN.md](OFFEN.md) 5.60); die
+  Reihe der Theke hält deshalb nach jedem Scan an, der nicht glatt durchging
+  (`frontend/src/lib/stores/omniboxScanReihe.test.js`).
 - **Frage 17, die Fristenkette:** Welche Frist endet zuerst — die der Oberfläche, die des
   Servers, die des fremden Dienstes —, und was sieht die Person, wenn die Oberfläche zuerst
   aufgibt? Der Server arbeitet dann weiter, seine Antwort sieht niemand, und der zweite

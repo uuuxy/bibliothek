@@ -893,9 +893,17 @@ Zubehör) einen Scan ebenso ab, mit Fehlerton? Vorschlag: ja. Kategorie A.
   Maske schließt mit dem Speichern, und die Meldung gehört zu ihr (`StudentEditSheet.svelte`).
   Die Akte zeigt danach den gespeicherten Stand.
 - Theke: Antwortet der Server nicht, wartet jeder eingereihte Scan seine eigene Frist ab
-  (10 s, `apiFetch.js`), bevor er ohne Netz abgelegt wird; die Reihe läuft dann langsam ab
-  (am Code gelesen am 07.10.2026). Anlass zum Bauen: Die Theke reagiert bei hängendem Server
-  spürbar verzögert auf einen Stapel.
+  (10 s, `apiFetch.js`), bevor er ohne Netz abgelegt wird; die Reihe läuft dann langsam ab.
+  Ein Neuladen oder Schließen der Seite nimmt die wartenden Scans mit, ohne Meldung (am Code
+  gelesen am 07.10.2026). Anlass zum Bauen: Die Theke reagiert bei hängendem Server spürbar
+  verzögert auf einen Stapel.
+- Die Datenbank ordnet Text nach Codepunkt (gemessen am 07.10.2026 am lokalen Stack:
+  „Banane < Mathe 10 < Mathe 5 < Ofen < Zebra < apfel < Ägypten < Ökologie"). Die Titelliste
+  ordnet deshalb in Go. 30 Abfragen ordnen in der Datenbank nach Titel oder Nachname, darunter
+  die Schüler-Etiketten, die Abgängerliste, die Suche des öffentlichen Katalogs und die
+  Bestandsliste; ob die Oberfläche ihre Antwort neu ordnet, ist je Liste nicht durchgesehen
+  (die Mahnliste tut es). Anlass zum Bauen: ein Name oder Titel, der in einer Liste nicht an
+  seinem Platz steht.
 - Theke: Kommt die Antwort auf einen Ausweis-Scan erst nach „Theke leeren" (Abmelden, während
   die Anfrage läuft), lädt sie den Leser doch (`verarbeiteLeser`; am Store nachgestellt am
   07.10.2026). Nach der nächsten Anmeldung stünde sein Konto offen.

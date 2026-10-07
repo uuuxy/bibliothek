@@ -222,6 +222,17 @@ Warteschlange der Theke ohne Netz. Was offen ist, steht in [OFFEN.md](OFFEN.md).
 | **Prüfung nur an einer von zwei Türen** | Zwei Türen führen zum selben Vorgang; eine prüft den Stand (läuft die Ausleihe noch, wem gehört das Exemplar), die andere nimmt ihn aus der Anfrage | `repository/damage_race_test.go`, `api/schaden_schuldner_pg_test.go` | 07.10.2026: „Verlust melden" in der Akte gegen den Bescheid (`bucheVerluste`). Verwandt: „Zwei Türen zum selben Zustand", „Geschwister-Asymmetrie". Suchmuster: jede Kennung im Rumpf einer Anfrage, die auch an der Zeile steht, auf die eine andere Kennung des Rumpfs zeigt |
 | **Vorgang ohne Spur** | Eine Tür legt fest, wer etwas darf oder wohin etwas geht, und schreibt keinen Protokolleintrag (Raster, Frage 19) | `api/rechte_matrix_protokoll_pg_test.go` für die Rechte-Matrix; für die Form keins | 07.10.2026: Rechte-Matrix behoben. Gelesen und ohne Eintrag: Zuordnung der Klassenleitungen, Mail-Vorlagen, Lieferanten (OFFEN.md 5.57). Suchmuster: ändernde Routen, deren Anmeldung keine Funktion nennt, die `INSERT INTO audit_log` erreicht |
 
+### Rasterdurchgang 07.10.2026 (zweiter) — vier Änderungen, zwei Formen
+
+Über die Commits seit dem Durchgang der Nacht: Bestandsliste mit Standort, Recht für
+„Mahnbriefe drucken", Titelliste nach Titel, Scan-Reihe der Theke; dazu neun Commits an
+Dokumenten, Kommentaren und Tests, ohne Befund.
+
+| Bugklasse | Form | Gate | Stand |
+| --------- | ---- | ---- | ----- |
+| **Reihenfolge aus der Datenbank** | Eine Liste nach Titel oder Namen, die die Datenbank ordnet (`ORDER BY`), steht nach Codepunkt: Umlaute hinter Z, Kleinbuchstaben hinter den großen, „Mathe 10" vor „Mathe 5" | `frontend/src/lib/utils/titelReihenfolge.faelle.json`, gelesen vom Go-Test (`inventur/endpunkte_buecher_lesen_test.go`) und von einem Vitest gegen `Intl.Collator('de', {numeric: true})`; `inventur/titelliste_reihenfolge_pg_test.go` | 07.10.2026: Titelliste behoben, geordnet in Go. Nicht durchgesehen: 30 Abfragen mit `ORDER BY` über `titel` oder `nachname` und ob die Oberfläche ihre Antwort neu ordnet (die Mahnliste tut es). Suchmuster: `ORDER BY` über eine Textspalte, deren Reihenfolge jemand liest |
+| **Wartende Eingabe trifft einen anderen Zustand** | Ein Scanfeld hebt auf, was während einer Anfrage kommt, und bucht es in dem Zustand, den die Anfrage hinterlässt. Scheitert sie, geht eine Rückfrage auf oder ändert jemand den Zustand von außen, gilt der Scan einem Leser oder einem Modus, den niemand gemeint hat | `frontend/src/lib/stores/omniboxScanReihe.test.js` (zwölf Rückbauten, je rot), `frontend/e2e/theke-scan-reihe.spec.js` | 07.10.2026: Die Reihe der Theke hält nach jedem Scan an, der nicht glatt durchging, und nennt, was wartet. Dieselbe Folge ohne Reihe, bei gewöhnlichem Tempo: OFFEN.md 5.60. Suchmuster: jede Stelle, die Eingaben aufhebt und später ausführt |
+
 ### Die ISBN in einer Länge, 03.10.2026 — eine Form mit Ratsche
 
 Anlass: Migration 157 lässt die Datenbank eine zehnstellige ISBN beim Schreiben
