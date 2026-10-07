@@ -25,7 +25,7 @@ Liste geführt wird, steht am Ende.
   geschlossen; aus sieben davon sind die Tests übernommen (d1dba610).
 - [x] **PR 722** durchgesehen und geschlossen am 06.10.2026: Die Prüfung beim Löschen einer
   Sachgruppe (`api/systematik_handler.go`) würde durch ihn höchstens 1 ms schneller.
-- [ ] **PRs 723 und 724 auf GitHub** (beide vom 07.10.2026) durchsehen.
+- [x] **PRs 723 und 724** durchgesehen und geschlossen am 07.10.2026, nichts übernommen.
 - [x] **Doku-Ordner:** Aus 36 Markdown-Dateien in `docs/` sind am 07.10.2026 20 geworden. Die
   Architektur ist eine Datei (`ARCHITEKTUR.md`); das LUSD-Messprotokoll, die Vorlage für das
   Blatt bei der Schule, die Liste „Datenschutz — offene Punkte" und das zweite README sind in
@@ -80,7 +80,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Buchakte: Die Zahl „Exemplare" im Kopf und am Reiter zählt ausgesonderte und bestellte
   mit; bei zwei Exemplaren im Bestand, einem bestellten und einem ausgesonderten steht dort
   „1 von 2 verfügbar" und daneben „4 Exemplare" (gesehen am 07.10.2026). Soll sie nur den
-  Bestand zählen?
+  Bestand zählen? (5.5)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -356,7 +356,28 @@ Vermerk.
   „Mail versendet am" (Migration), der Hinweis an der Bestellung und „erneut senden". Seit dem
   07.10.2026 wartet die Oberfläche bis zu 90 s auf diese Antwort (`FRIST_MAILVERSAND_MS`);
   vorher gab sie nach 10 s auf, und die Wiederholung meldete „war bereits erfasst".
-  Kategorie B.
+  Kategorie B. Nachgelesen am 07.10.2026: Nach einem gescheiterten Versand nennt die
+  Bestellung weiter „Der Bestätigungs-Link ging mit der Bestellmail raus"
+  (`BestellStatusBlock.svelte`). Für „erneut senden" liegt alles an der Bestellung: Kopf,
+  Positionen und Exemplare (`repository/bestelldetail_repo.go`); der Link braucht einen neuen
+  Schlüssel, wie bei „Neuen Link erzeugen". Littera führt ein E-Mailprotokoll mit der Spalte
+  „Erfolgreich" und öffnet bei einem Fehlschlag die Fehlermeldung; eine gesendete Bestellung
+  lässt sich dort erneut drucken (Handbuch, „E-Mailprotokoll" und „Erwerb"). Koha bietet an
+  einer gescheiterten Nachricht „Resend"
+  ([Fehler 12426](https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=12426)).
+- **Buchakte, Zahl „Exemplare"** (gesehen am 07.10.2026). Der Kopf nennt drei Zahlen:
+  „1 von 2 verfügbar" (`book.gesamt`, die Grenze `SQLExemplarImBestand`), die Ausleiher und
+  „Exemplare" (`exemplare.length` in `BookAkteMeta.svelte`: jede Karte des Reiters, auch
+  bestellte und ausgesonderte). Der Reiter zählt dieselbe Liste (`zaehler` in
+  `BookAkte.svelte`). Vorschlag: Die dritte Zahl im Kopf entfällt, weil die erste den Bestand
+  nennt; ist etwas bestellt, steht dort „1 bestellt", in den Worten des Katalogs
+  (`zulaufSatz`). Der Reiter zählt den Bestand, die Karten „Bestellt" und „Ausgesondert"
+  bleiben darin stehen. Littera zeigt am Titel die „Gesamtanzahl der vorhandenen Exemplare"
+  und daneben die verliehenen; bestellte zählen mit (Status „Bestellt"), gelöschte stehen nur
+  im Abgangsbuch (Handbuch, „Exemplardatenbearbeitung"). Koha führt ausgesonderte und
+  bestellte Exemplare in der Trefferliste getrennt als nicht verfügbar
+  ([Fehler 9427](https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=9427),
+  [8975](https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=8975)).
 - **Status-Editor, Altbestand:** Bis zum 07.10.2026 öffnete der Editor ein gesperrtes
   Exemplar als „Verloren", wenn die Notiz das Wort enthielt, und das Speichern sonderte es
   mit dem Grund VERLUST aus. Ob das am Testserver Exemplare getroffen hat, zeigt (lesend):
@@ -580,7 +601,11 @@ beiden Protokollen (`repository/protokoll_personenbezug.go`). Sie erreicht nicht
   Anonymisierung, sonst bis zur Audit-Aufbewahrung (24 Monate). Die Kommentare in beiden
   Löschwegen hatten 90 Tage angenommen; zu den Nachbuch-Meldungen steht in
   `repository/loeschfristen.go`: „länger als die Lesehistorie darf nichts den Schüler an ein Buch
-  binden".
+  binden". Vorschlag (07.10.2026): Die Spur der Vormerkung folgt der Lesehistorie-Frist der
+  Schülerbücherei. Die Spur der Forderung bleibt wie heute, weil sie belegt, wessen Forderung
+  mit dem Titel gelöscht wurde. Koha behandelt die Vormerk-Historie nach derselben Einstellung
+  wie die Lesehistorie
+  ([Fehler 29525](https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=29525)).
 
 ### 5.45 Listen in einem Kasten mit eigenem Scrollen
 
@@ -593,7 +618,15 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   Bei einem Titel mit 409 Exemplaren ist die Seite durch die Vorschau 13.462 px hoch (gemessen
   am 02.10.2026), und „A4-Bogen drucken" steht unter beiden Spalten (`LabelPrinter.svelte`).
   Jede Zeile nennt „(Neuwertig)", wenn das Exemplar keine Zustandsnotiz trägt, auch ein
-  bestelltes.
+  bestelltes. Vorschlag (07.10.2026): Die Vorschau zeichnet den ersten Bogen, darunter steht
+  „Bogen 1 von 20 · 409 Etiketten" (21 Etiketten je Bogen beim voreingestellten Format); ohne
+  Blättern. „A4-Bogen drucken" öffnet die PDF mit allen Bogen in einem neuen Tab
+  (`triggerPrint` in `stores/labels.svelte.js`), dort sind sie vor dem Druck zu sehen; Format,
+  Rahmen und Startposition zeigt der erste Bogen. M3 hat kein Bauteil zum Blättern
+  ([Bauteilliste](https://m3.material.io/components), gelesen am 07.10.2026), im Projekt gibt
+  es keins. Littera zeigt das Druckbild am Bildschirm und druckt „von Seite bis Seite"
+  (Handbuch, „Export des Druckbildes"); Avery Design & Print zeigt einen Bogen und wechselt
+  per Pfeil zum nächsten.
 - **Bestellwesen:** Die Seite läuft 40 px über (857 von 817 px bei 1710 × 952 px, bei
   1280 × 720 px sind es 60 px; gemessen am 06.10.2026). Darin scrollt die Bedarfsliste in
   einem eigenen Kasten (`OrderRecommendations.svelte`, `max-h-[calc(100vh-19rem)]`).
@@ -667,6 +700,15 @@ Variable nicht (die Buchung der Theke) und keine Trigger; die Liste ist ein Such
 Befund. Nächster Schritt: je Tür festlegen, ob sie einen Eintrag schreibt, und was darin
 steht, ohne neuen Personenbezug (eine Adresse im Eintrag bliebe bis zur Audit-Aufbewahrung).
 Kategorie B.
+
+Vorschlag (07.10.2026): Alle vier Türen schreiben einen Eintrag mit Bearbeiter, Zeit und
+Gegenstand: die Klasse; der Name der Vorlage; der Name des Lieferanten und die Namen der
+geänderten Felder; die Klasse mit neuer Frist und Zahl der Ausleihen. Die Adresse selbst steht
+nicht darin. Das [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
+zählt Verwaltungshandlungen zu den Ereignissen, die protokolliert werden, und Namen und
+Mailadressen zu den Angaben, die nicht im Klartext ins Protokoll gehören. Littera führt kein
+Änderungsprotokoll für Stammdaten; das Handbuch nennt das E-Mailprotokoll, das Protokoll der
+Verrechnung und die Protokolle der Abgleiche.
 
 ---
 
@@ -757,6 +799,12 @@ Büchern der Schülerbücherei nur die Regaladressen (gemessen am 22.09.2026); n
 der Sicherung von 2010 wären es 6.251 Einträge, 4.840 davon mit einem einzigen Titel. Gezählt
 mit `SignaturJeTitel` an der Sicherung, an einer geladenen Datenbank nicht angesehen. Zu
 entscheiden: ob Vorschläge und Liste nach der Regaladresse zusammenfassen, dem Teil vor „ / ".
+Vorschlag (07.10.2026): ja, 732 Regaladressen statt 6.251 Aufschriften; am Titel bleibt die
+ganze Aufschrift. Littera baut die Signatur aus zwei Zeilen, in der Vorgabe „1. Systematik + 3
+Anfangsbuchstaben des Verfassers" (Handbuch, „Generierung der Signatur"). In der Sicherung von
+2010 trägt die zweite Zeile bei 58.653 von 61.520 Exemplaren genau drei Zeichen („Gri", „Bie",
+„Ber"; gezählt am 07.10.2026 an `Exemplar.Sig2`). Sie ordnet innerhalb des Regals und nennt
+kein Regal.
 
 **Sperren und Salden aus Littera (gefunden am 07.10.2026).** Die Übernahme liest sie nicht: Wer
 in Littera gesperrt ist, kommt ohne Sperre an
