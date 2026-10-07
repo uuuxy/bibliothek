@@ -178,11 +178,14 @@ func (s *Server) PostSchlagwortZusammenfuehrenHandler() http.HandlerFunc {
 		if req.AlteAlsVerweis == nil {
 			return errAlteAlsVerweisFehlt()
 		}
-		titel, err := repository.FuehreSchlagworteZusammen(r.Context(), s.DB.Pool, id, req.ZielID, *req.AlteAlsVerweis)
+		ergebnis, err := repository.FuehreSchlagworteZusammen(r.Context(), s.DB.Pool, id, req.ZielID, *req.AlteAlsVerweis)
 		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}
-		RespondJSON(w, http.StatusOK, SchlagwortAenderung{Titel: titel})
+		s.protokolliereVerwaltung(r.Context(), auditSchlagwortZusammengefuehrt, map[string]any{
+			"von": ergebnis.Von, "in": ergebnis.In, "titel": ergebnis.Titel, "alte_als_verweis": *req.AlteAlsVerweis,
+		})
+		RespondJSON(w, http.StatusOK, SchlagwortAenderung{Titel: ergebnis.Titel})
 		return nil
 	})
 }
@@ -205,9 +208,14 @@ func (s *Server) PostSchlagwortVerweisHandler() http.HandlerFunc {
 		if !DecodeAndValidate(w, r, &req) {
 			return nil
 		}
-		if err := repository.SetzeSchlagwortVerweis(r.Context(), s.DB.Pool, req.Wort, req.ZielID); err != nil {
+		ergebnis, err := repository.SetzeSchlagwortVerweis(r.Context(), s.DB.Pool, req.Wort, req.ZielID)
+		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}
+		// Trug die Schreibweise schon Titel, hängen sie jetzt am Ziel; „titel" nennt, wie viele.
+		s.protokolliereVerwaltung(r.Context(), auditSchlagwortVerweis, map[string]any{
+			"wort": ergebnis.Von, "in": ergebnis.In, "titel": ergebnis.Titel,
+		})
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	})
@@ -241,11 +249,26 @@ func (s *Server) PostSchlagworteLoeschenHandler() http.HandlerFunc {
 		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}
+		s.protokolliereVerwaltung(r.Context(), auditSchlagwortGeloescht, map[string]any{
+			"woerter": geloeschteWoerter(geloescht.Namen), "anzahl": geloescht.Woerter,
+			"titel": geloescht.Titel, "verweise": geloescht.Verweise,
+		})
 		RespondJSON(w, http.StatusOK, SchlagwortAenderung{
 			Woerter: geloescht.Woerter, Titel: geloescht.Titel, Verweise: geloescht.Verweise,
 		})
 		return nil
 	})
+}
+
+// geloeschteWoerterMax begrenzt die Liste im Eintrag; „anzahl" nennt daneben alle.
+const geloeschteWoerterMax = 50
+
+// geloeschteWoerter kürzt die Liste der gelöschten Wörter für den Eintrag.
+func geloeschteWoerter(namen []string) []string {
+	if len(namen) > geloeschteWoerterMax {
+		return namen[:geloeschteWoerterMax]
+	}
+	return namen
 }
 
 // errAlteAlsVerweisFehlt ist die Antwort auf einen Körper ohne alte_als_verweis.

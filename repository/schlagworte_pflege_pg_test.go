@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -86,12 +87,15 @@ func TestSchlagwortPflege_ZusammenfuehrenMachtDasAlteWortZumVerweis(t *testing.T
 		t.Fatal(err)
 	}
 
-	titel, err := FuehreSchlagworteZusammen(ctx, pool, ids["Tierfantasy"], ids["Fantasy"], true)
+	ergebnis, err := FuehreSchlagworteZusammen(ctx, pool, ids["Tierfantasy"], ids["Fantasy"], true)
 	if err != nil {
 		t.Fatalf("zusammenführen: %v", err)
 	}
-	if titel != 2 {
-		t.Errorf("gemeldet %d Titel, „Tierfantasy“ trug 2", titel)
+	if ergebnis.Titel != 2 {
+		t.Errorf("gemeldet %d Titel, „Tierfantasy“ trug 2", ergebnis.Titel)
+	}
+	if ergebnis.Von != "Tierfantasy" || ergebnis.In != "Fantasy" {
+		t.Errorf("gemeldet „%s“ in „%s“, erwartet „Tierfantasy“ in „Fantasy“", ergebnis.Von, ergebnis.In)
 	}
 	// Woodwalkers trug beide — danach genau einmal „Fantasy".
 	for titelName, want := range map[string][]string{
@@ -136,7 +140,7 @@ func TestSchlagwortPflege_ZusammenfuehrenInEinenVerweisNimmtDessenZiel(t *testin
 		"Tintenherz":    {"Tierfantasy"},
 		"Drachenreiter": {"Fantasy"},
 	})
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Phantastik", ids["Fantasy"]); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Phantastik", ids["Fantasy"]); err != nil {
 		t.Fatal(err)
 	}
 	var verweisID string
@@ -144,12 +148,16 @@ func TestSchlagwortPflege_ZusammenfuehrenInEinenVerweisNimmtDessenZiel(t *testin
 		t.Fatal(err)
 	}
 
-	titel, err := FuehreSchlagworteZusammen(ctx, pool, ids["Tierfantasy"], verweisID, true)
+	ergebnis, err := FuehreSchlagworteZusammen(ctx, pool, ids["Tierfantasy"], verweisID, true)
 	if err != nil {
 		t.Fatalf("in einen Verweis zusammenführen: %v", err)
 	}
-	if titel != 1 {
-		t.Errorf("gemeldet %d Titel, „Tierfantasy“ trug 1", titel)
+	if ergebnis.Titel != 1 {
+		t.Errorf("gemeldet %d Titel, „Tierfantasy“ trug 1", ergebnis.Titel)
+	}
+	// Gemeldet wird das Wort, an dem die Titel jetzt hängen, nicht der gewählte Verweis.
+	if ergebnis.In != "Fantasy" {
+		t.Errorf("gemeldet als Ziel „%s“, die Titel hängen an „Fantasy“", ergebnis.In)
 	}
 	if got := woerterAm(t, pool, "Tintenherz"); !slices.Equal(got, []string{"Fantasy"}) {
 		t.Errorf("Tintenherz trägt %q, erwartet [Fantasy]", got)
@@ -179,7 +187,7 @@ func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 	}
 
 	// Ein neuer Verweis entsteht ohne Titel; als Filter lässt er sich nicht markieren.
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Zauberei", ids["Magie"]); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Zauberei", ids["Magie"]); err != nil {
 		t.Fatalf("Verweis anlegen: %v", err)
 	}
 	verweis := pflegeZeile(t, pool, "Zauberei")
@@ -191,7 +199,7 @@ func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 	}
 
 	// Verweis auf eine Schreibweise, die Titel trägt: das ist ein Zusammenführen.
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Schule", ids["gewalt"]); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Schule", ids["gewalt"]); err != nil {
 		t.Fatalf("Verweis auf vorhandenes Wort: %v", err)
 	}
 	if got := woerterAm(t, pool, "Die Welle"); !slices.Equal(got, []string{"Gewalt"}) {
@@ -200,7 +208,8 @@ func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 
 	// Löschen: Titel verlieren das Wort, Verweise darauf fallen mit.
 	geloescht, err := LoescheSchlagworte(ctx, pool, []string{ids["Magie"]})
-	if err != nil || geloescht != (SchlagwortLoeschung{Woerter: 1, Titel: 1, Verweise: 1}) {
+	want := SchlagwortLoeschung{Woerter: 1, Titel: 1, Verweise: 1, Namen: []string{"Magie"}}
+	if err != nil || !reflect.DeepEqual(geloescht, want) {
 		t.Errorf("löschen: %+v err=%v, want 1 Wort, 1 Titel, 1 Verweis", geloescht, err)
 	}
 	if got := woerterAm(t, pool, "Krabat"); len(got) != 0 {
@@ -222,7 +231,7 @@ func TestSchlagwortPflege_DatenbankHaeltDieRegeln(t *testing.T) {
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
 	ids := pflegeStand(t, pool, map[string][]string{"Momo": {"Zeit", "Freundschaft"}})
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Uhren", ids["Zeit"]); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Uhren", ids["Zeit"]); err != nil {
 		t.Fatal(err)
 	}
 	uhren := pflegeZeile(t, pool, "Uhren").ID
@@ -395,7 +404,7 @@ func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
 		t.Fatal(err)
 	}
 	ids := pflegeStand(t, pool, map[string][]string{"Pinguine der Antarktis": {"Zwergpinguin"}})
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Frackvogel", ids["Zwergpinguin"]); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Frackvogel", ids["Zwergpinguin"]); err != nil {
 		t.Fatal(err)
 	}
 	if err := SetzeSchlagwortFilter(ctx, pool, ids["Zwergpinguin"], true); err != nil {

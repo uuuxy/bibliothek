@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-07
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-08
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -599,8 +599,33 @@ Pakete, nach Namen verbunden) nennt 60 von 97 ändernden Routen, deren Anmeldung
 Funktion nennt, die in ein Protokoll schreibt; sie sieht keine Routen über Variablen und
 keine Trigger. Am Code gelesen und seit dem 07.10.2026 mit Eintrag: die Zuordnung der
 Klassenleitungen, die Mail-Vorlagen, die Lieferanten, die Verlängerung der Lernmittel einer
-ganzen Klasse (`api/verwaltung_protokoll_pg_test.go`). Der Rest ist nicht gelesen
-([OFFEN.md](OFFEN.md) 5.57).
+ganzen Klasse (`api/verwaltung_protokoll_pg_test.go`).
+
+Am 08.10.2026 durchgesehen: die 107 Anmeldungen ändernder Routen (POST, PUT, PATCH, DELETE)
+gegen die Stellen, die in `audit_log` oder `audit_logs` schreiben. Seitdem mit Eintrag:
+Schlagworte zusammenführen, umleiten und löschen (die Titel hängen danach an einem anderen Wort
+oder an keinem; `TestSchlagwortPflege_UnumkehrbaresStehtImProtokoll`). Ohne Eintrag bleiben
+Türen, die nichts von dem tun, was die Frage nennt, oder deren Zeile die Person selbst festhält:
+
+- Theke: ausleihen und zurücknehmen, auch nach einem Netzausfall (die Ausleihe trägt, wer sie
+  gebucht und wer sie beendet hat), eine Ausleihe verlängern, eine Vormerkung anlegen oder
+  löschen, eine Meldung nach Netzausfall bearbeiten (die Meldung trägt, wer sie bearbeitet
+  hat), „Verlust/Schaden melden" (die Ausleihe trägt, wer sie beendet hat).
+- Leser: einen Leser von Hand anlegen, sein Foto. Ändern, sperren, löschen, wiederherstellen
+  und zusammenführen schreiben einen Eintrag.
+- Katalog: Titel anlegen und ändern, Signatur, Lernmittel, Schlagworte am Titel, Auflagen
+  zusammenlegen und lösen, Cover, den Barcode eines Exemplars ändern, ein Schlagwort umbenennen
+  oder als Filter setzen, eine Sachgruppe anlegen, ändern oder löschen (gelöscht wird nur eine,
+  an der kein Titel hängt), Listenimport.
+- Inventur: beginnen (die Inventur trägt, wer sie begonnen hat), scannen, abbrechen (verwirft
+  die Zählung, bucht nichts ab).
+- Druck und Etiketten: Etiketten, Ausweise, Mahnbriefe, das Layout der Ausweise.
+- Bestellung: aufgeben, bestätigen, den Link für den Lieferanten erneuern, die Bestätigung des
+  Lieferanten. Die Bestellung selbst ist der Beleg; der Wareneingang schreibt einen Eintrag.
+- Geräte, Wünsche und Meldungen des Kollegiums, Klassensatz-Reservierungen, die Sperre des
+  Bildschirms, An- und Abmelden.
+
+Offen ist das Aussondern auf drei Wegen, die keine Person festhalten ([OFFEN.md](OFFEN.md) 5.57).
 
 ### Frontend-Lesart (ergänzt 31.08.2026)
 

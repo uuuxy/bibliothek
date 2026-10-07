@@ -36,10 +36,10 @@ func TestSchlagworteAusStichwoertern_NurWasDieEigeneListeKennt(t *testing.T) {
 		}
 		return id
 	}
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Science Fiction", wortID("Science-Fiction")); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Science Fiction", wortID("Science-Fiction")); err != nil {
 		t.Fatal(err)
 	}
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Weltall", wortID("Weltraum")); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Weltall", wortID("Weltraum")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -131,7 +131,7 @@ func TestSchlagworteAusNormdaten_VorhandenUndNeu(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT id FROM schlagworte WHERE wort = 'Zweiter Weltkrieg'`).Scan(&weltkrieg); err != nil {
 		t.Fatal(err)
 	}
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Weltkrieg <1939-1945>", weltkrieg); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Weltkrieg <1939-1945>", weltkrieg); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := pool.Exec(ctx, `INSERT INTO schlagworte (wort) VALUES ('Judo')`); err != nil { // ohne Titel

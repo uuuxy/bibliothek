@@ -30,7 +30,7 @@ func TestSchlagwortSuche_ServerUndBrowserFindenDieselbenTitel(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT id FROM schlagworte WHERE wort = 'Fantasy'`).Scan(&fantasy); err != nil {
 		t.Fatal(err)
 	}
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Tierfantasy", fantasy); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Tierfantasy", fantasy); err != nil {
 		t.Fatalf("Verweis anlegen: %v", err)
 	}
 

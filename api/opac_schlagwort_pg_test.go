@@ -38,7 +38,7 @@ func TestOpacSuche_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT id FROM schlagworte WHERE wort = 'Weltraum'`).Scan(&weltraum); err != nil {
 		t.Fatal(err)
 	}
-	if err := repository.SetzeSchlagwortVerweis(ctx, pool, "Raumfahrt", weltraum); err != nil {
+	if _, err := repository.SetzeSchlagwortVerweis(ctx, pool, "Raumfahrt", weltraum); err != nil {
 		t.Fatal(err)
 	}
 

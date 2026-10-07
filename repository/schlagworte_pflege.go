@@ -264,38 +264,46 @@ func macheSchreibweiseFrei(ctx context.Context, tx pgx.Tx, id, wort string) erro
 // FuehreSchlagworteZusammen hängt die Titel von „von" an „in". Mit alteAlsVerweis wird „von"
 // zum Verweis auf „in" — wer das alte Wort gewohnt ist, landet weiter richtig —, sonst fällt
 // es weg, wie in Littera. Verweise auf „von" zeigen danach auf „in", eine Filter-Markierung
-// geht auf „in" über. Ist „in" selbst ein Verweis, gilt sein Ziel. Liefert die Zahl der
-// Titel, die „von" trug.
-func FuehreSchlagworteZusammen(ctx context.Context, q DBQueryer, vonID, inID string, alteAlsVerweis bool) (int, error) {
+// geht auf „in" über. Ist „in" selbst ein Verweis, gilt sein Ziel.
+func FuehreSchlagworteZusammen(ctx context.Context, q DBQueryer, vonID, inID string, alteAlsVerweis bool) (SchlagwortZusammenfuehrung, error) {
 	tx, err := q.Begin(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("zusammenführen: transaktion öffnen: %w", err)
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("zusammenführen: transaktion öffnen: %w", err)
 	}
 	defer db.SafeRollback(ctx, tx)
-	titel, err := fuehreZusammenIn(ctx, tx, vonID, inID, alteAlsVerweis)
+	ergebnis, err := fuehreZusammenIn(ctx, tx, vonID, inID, alteAlsVerweis)
 	if err != nil {
-		return 0, err
+		return SchlagwortZusammenfuehrung{}, err
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return 0, fmt.Errorf("zusammenführen: commit: %w", err)
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("zusammenführen: commit: %w", err)
 	}
-	return titel, nil
+	return ergebnis, nil
+}
+
+// SchlagwortZusammenfuehrung sagt, was ein Zusammenführen oder ein Verweis getan hat: das alte
+// Wort, das Wort, an dem die Titel jetzt hängen, und die Zahl der Titel, die das alte trug.
+// Beide Wörter in der gespeicherten Schreibweise.
+type SchlagwortZusammenfuehrung struct {
+	Von   string
+	In    string
+	Titel int
 }
 
 // fuehreZusammenIn ist das Zusammenführen innerhalb einer laufenden Transaktion.
-func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string, alteAlsVerweis bool) (int, error) {
+func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string, alteAlsVerweis bool) (SchlagwortZusammenfuehrung, error) {
 	von, ziel, err := sperreVonUndZiel(ctx, tx, vonID, inID)
 	if err != nil {
-		return 0, err
+		return SchlagwortZusammenfuehrung{}, err
 	}
 	if von.id == ziel.id {
-		return 0, fmt.Errorf("%w: ein Wort lässt sich nicht mit sich selbst zusammenführen", ErrSchlagwortRegel)
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("%w: ein Wort lässt sich nicht mit sich selbst zusammenführen", ErrSchlagwortRegel)
 	}
 
-	var titel int
+	ergebnis := SchlagwortZusammenfuehrung{Von: von.wort, In: ziel.wort}
 	if err := tx.QueryRow(ctx,
-		`SELECT count(*)::int FROM titel_schlagworte WHERE schlagwort_id = $1`, von.id).Scan(&titel); err != nil {
-		return 0, fmt.Errorf("zusammenführen: titel zählen: %w", err)
+		`SELECT count(*)::int FROM titel_schlagworte WHERE schlagwort_id = $1`, von.id).Scan(&ergebnis.Titel); err != nil {
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("zusammenführen: titel zählen: %w", err)
 	}
 	// Die Reihenfolge ist die Regel der Trigger: erst Titel und Verweise von „von"
 	// wegnehmen, dann wird „von" selbst zum Verweis (oder fällt weg).
@@ -327,10 +335,10 @@ func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string, alteAl
 			schritt.args = []any{ziel.id}
 		}
 		if _, err := tx.Exec(ctx, schritt.sql, schritt.args...); err != nil {
-			return 0, regelFehler(err, "zusammenführen: "+schritt.was)
+			return SchlagwortZusammenfuehrung{}, regelFehler(err, "zusammenführen: "+schritt.was)
 		}
 	}
-	return titel, nil
+	return ergebnis, nil
 }
 
 // sperreVonUndZiel sperrt beide Wörter in fester Reihenfolge, damit zwei gegenläufige Aufrufe
@@ -361,11 +369,12 @@ func sperreVonUndZiel(ctx context.Context, tx pgx.Tx, vonID, inID string) (von, 
 
 // SchlagwortLoeschung sagt, was ein Löschen getroffen hat: die gewählten Wörter, die Titel,
 // die dadurch Schlagworte verloren (jeder Titel einmal), und die Verweise, die mitfielen, ohne
-// selbst gewählt zu sein.
+// selbst gewählt zu sein. Namen sind die gewählten Wörter in Reihenfolge des Alphabets.
 type SchlagwortLoeschung struct {
 	Woerter  int
 	Titel    int
 	Verweise int
+	Namen    []string
 }
 
 // LoescheSchlagworte löscht die gewählten Wörter in einer Transaktion — alle oder keins; die
@@ -398,10 +407,11 @@ func LoescheSchlagworte(ctx context.Context, q DBQueryer, ids []string) (Schlagw
 	}
 	// In fester Reihenfolge sperren (LockRows steht über dem Sort), wie fuehreZusammenIn —
 	// zwei Löschende mit überlappender Auswahl verklemmen sich nicht.
+	var namen []string
 	if err := tx.QueryRow(ctx, `
-		SELECT count(*)::int FROM (
-			SELECT id FROM schlagworte WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
-		) g`, ids).Scan(&gesperrt); err != nil {
+		SELECT count(*)::int, coalesce(array_agg(g.wort ORDER BY lower(g.wort), g.wort), '{}') FROM (
+			SELECT id, wort FROM schlagworte WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
+		) g`, ids).Scan(&gesperrt, &namen); err != nil {
 		return ergebnis, fmt.Errorf("löschen: sperren: %w", err)
 	}
 	if gesperrt != gewaehlt {
@@ -426,7 +436,7 @@ func LoescheSchlagworte(ctx context.Context, q DBQueryer, ids []string) (Schlagw
 	if err := tx.Commit(ctx); err != nil {
 		return ergebnis, fmt.Errorf("löschen: commit: %w", err)
 	}
-	ergebnis.Woerter = gewaehlt
+	ergebnis.Woerter, ergebnis.Namen = gewaehlt, namen
 	return ergebnis, nil
 }
 
@@ -434,14 +444,15 @@ func LoescheSchlagworte(ctx context.Context, q DBQueryer, ids []string) (Schlagw
 // Gibt es die Schreibweise noch nicht, entsteht sie als Verweis. Gibt es sie und trägt sie
 // Titel oder Verweise, wird sie mit dem Ziel zusammengeführt — das ist, was ein Verweis
 // bedeutet. Ist das Ziel selbst ein Verweis, gilt dessen Ziel.
-func SetzeSchlagwortVerweis(ctx context.Context, q DBQueryer, roh, zielID string) error {
+func SetzeSchlagwortVerweis(ctx context.Context, q DBQueryer, roh, zielID string) (SchlagwortZusammenfuehrung, error) {
+	var ergebnis SchlagwortZusammenfuehrung
 	wort, err := einWort(roh)
 	if err != nil {
-		return err
+		return ergebnis, err
 	}
 	tx, err := q.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("verweis: transaktion öffnen: %w", err)
+		return ergebnis, fmt.Errorf("verweis: transaktion öffnen: %w", err)
 	}
 	defer db.SafeRollback(ctx, tx)
 
@@ -449,32 +460,42 @@ func SetzeSchlagwortVerweis(ctx context.Context, q DBQueryer, roh, zielID string
 	err = tx.QueryRow(ctx, `SELECT id::text FROM schlagworte WHERE lower(wort) = lower($1)`, wort).Scan(&vorhandenID)
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
-		ziel, err := sperreSchlagwort(ctx, tx, zielID)
-		if err != nil {
-			return err
-		}
-		if ziel.verweisAuf != nil {
-			zielID = *ziel.verweisAuf
-		}
-		tag, err := tx.Exec(ctx,
-			`INSERT INTO schlagworte (wort, verweis_auf) VALUES ($1, $2)`, wort, zielID)
-		if err != nil {
-			return regelFehler(err, "verweis anlegen")
-		}
-		if tag.RowsAffected() != 1 {
-			return fmt.Errorf("verweis anlegen: %d Zeilen statt 1", tag.RowsAffected())
+		if ergebnis, err = legeVerweisAn(ctx, tx, wort, zielID); err != nil {
+			return SchlagwortZusammenfuehrung{}, err
 		}
 	case err != nil:
-		return fmt.Errorf("verweis: vorhandenes wort suchen: %w", err)
+		return ergebnis, fmt.Errorf("verweis: vorhandenes wort suchen: %w", err)
 	default:
-		if _, err := fuehreZusammenIn(ctx, tx, vorhandenID, zielID, true); err != nil {
-			return err
+		if ergebnis, err = fuehreZusammenIn(ctx, tx, vorhandenID, zielID, true); err != nil {
+			return SchlagwortZusammenfuehrung{}, err
 		}
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("verweis: commit: %w", err)
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("verweis: commit: %w", err)
 	}
-	return nil
+	return ergebnis, nil
+}
+
+// legeVerweisAn legt eine neue Schreibweise als Verweis an. Ist das Ziel selbst ein Verweis,
+// zeigt sie auf dessen Ziel.
+func legeVerweisAn(ctx context.Context, tx pgx.Tx, wort, zielID string) (SchlagwortZusammenfuehrung, error) {
+	ziel, err := sperreSchlagwort(ctx, tx, zielID)
+	if err != nil {
+		return SchlagwortZusammenfuehrung{}, err
+	}
+	if ziel.verweisAuf != nil {
+		if ziel, err = sperreSchlagwort(ctx, tx, *ziel.verweisAuf); err != nil {
+			return SchlagwortZusammenfuehrung{}, err
+		}
+	}
+	tag, err := tx.Exec(ctx, `INSERT INTO schlagworte (wort, verweis_auf) VALUES ($1, $2)`, wort, ziel.id)
+	if err != nil {
+		return SchlagwortZusammenfuehrung{}, regelFehler(err, "verweis anlegen")
+	}
+	if tag.RowsAffected() != 1 {
+		return SchlagwortZusammenfuehrung{}, fmt.Errorf("verweis anlegen: %d Zeilen statt 1", tag.RowsAffected())
+	}
+	return SchlagwortZusammenfuehrung{Von: wort, In: ziel.wort}, nil
 }
 
 // SetzeSchlagwortFilter markiert ein Wort als Filter im Portal (oder nimmt die Markierung

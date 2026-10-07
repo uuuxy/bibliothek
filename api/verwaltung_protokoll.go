@@ -20,6 +20,11 @@ const (
 	auditLieferantGeaendert      = "LIEFERANT_GEAENDERT"
 	auditLieferantGeloescht      = "LIEFERANT_GELOESCHT"
 	auditFristKlasseGeaendert    = "FRIST_KLASSE_GEAENDERT"
+	// Schlagworte: Zusammenführen, Umleiten und Löschen lassen sich nicht zurücknehmen. Die
+	// Wörter sind Vokabular des Katalogs und stehen deshalb im Eintrag.
+	auditSchlagwortZusammengefuehrt = "SCHLAGWORT_ZUSAMMENGEFUEHRT"
+	auditSchlagwortVerweis          = "SCHLAGWORT_VERWEIS"
+	auditSchlagwortGeloescht        = "SCHLAGWORT_GELOESCHT"
 )
 
 // protokolliereVerwaltung schreibt einen Eintrag mit der angemeldeten Person als Bearbeiter.

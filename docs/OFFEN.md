@@ -168,9 +168,10 @@ der Nummer nichts mehr dazu offen ist.
 - [x] **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es an
   der Bestellung und in der Bestellhistorie („Mail nicht versendet"), und die Bestellung lässt
   sich erneut senden (entschieden und gebaut am 07.10.2026, Migration 161).
-- [ ] **Spur im Protokoll (5.57):** die übrigen ändernden Routen lesen und je Tür festlegen, ob
-  sie einen Eintrag schreibt. Klassenleitungen, Mail-Vorlagen, Lieferanten und die
-  Verlängerung der Lernmittel einer Klasse schreiben ihn seit dem 07.10.2026.
+- [ ] **Spur im Protokoll (5.57):** Aussondern über den Status in der Buchakte, die
+  Bestandskorrektur und den Abschluss einer Inventur nennt keine Person. Die übrigen Türen
+  sind seit dem 08.10.2026 durchgesehen; Schlagworte zusammenführen, umleiten und löschen
+  schreiben seitdem einen Eintrag.
 - [x] **Beim Umstellen der Farben aufgefallen (5.21):** In der Bestellhistorie bekommt die
   Spalte „Lieferant" seit dem 08.10.2026 die übrige Breite.
 
@@ -557,16 +558,25 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem 01.10.2026
   „Forderungen".
 
-### 5.57 Spur im Protokoll: welche Tür schreibt einen Eintrag
+### 5.57 Spur im Protokoll: Aussondern nennt keine Person
 
-Raster, Frage 19. Eine grobe Messung über sechs Pakete (07.10.2026) nennt 60 von 97 ändernden
-Routen, deren Anmeldung keine Funktion nennt, die in `audit_log` oder `audit_logs` schreibt.
-Sie sieht Routen über eine Variable nicht (die Buchung der Theke) und keine Trigger; die Liste
-ist ein Suchvorrat, kein Befund. Gelesen und mit Eintrag versehen sind die Rechte-Matrix, die
-Zuordnung der Klassenleitungen, die Mail-Vorlagen, die Lieferanten und die Verlängerung der
-Lernmittel einer Klasse; der Rest ist nicht gelesen. Nächster Schritt: je Tür festlegen, ob
-sie einen Eintrag schreibt. Was darin steht, regelt `api/verwaltung_protokoll.go`: Bearbeiter,
-Gegenstand und die Namen der geänderten Felder, keine Mailadresse. Kategorie B.
+Raster, Frage 19. Am 08.10.2026 sind die ändernden Routen gegen die Dateien gehalten, die in
+ein Protokoll schreiben, und nach der Regel eingeordnet; das Ergebnis steht in
+[invarianten.md](invarianten.md), „Zu Frage 19". Offen ist das Aussondern: Das Abgangsbuch
+nennt Datum und Grund eines ausgesonderten Exemplars, nicht, wer es ausgesondert hat. Mit der
+Person protokollieren „Exemplar löschen" und das endgültige Löschen eines Verlusts. Ohne
+Person bleiben drei Wege:
+
+- der Status in der Buchakte (`UpdateCopyStatus` in `repository/book_inventory.go`),
+- ein kleinerer Bestand in der Maske „Buch bearbeiten" (`inventur/db_books_update.go`, Grund
+  BESTANDSKORREKTUR),
+- der Abschluss einer Inventur (`repository/inventur_session_finish.go`, Grund VERLUST; die
+  Inventur nennt, wer sie begonnen hat, nicht, wer sie abschloss).
+
+„Verlust/Schaden melden" hält die Person an der Ausleihe fest (`rueckgabe_bearbeiter_id`).
+Nächster Schritt: an den drei Wegen einen Eintrag in der Form von „Standort ändern" schreiben
+(`repository/exemplar_standort.go`: Datensatz-Historie, Bearbeiter, Grund), ohne die
+Zustandsnotiz. Kategorie B.
 
 ---
 

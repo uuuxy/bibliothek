@@ -10,7 +10,10 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/repository"
 	"bibliothek/sse"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Vier Türen der Verwaltung ändern, wohin Mahnlisten und Bestellungen gehen, was in den Mails
@@ -18,20 +21,19 @@ import (
 // Bearbeiter, Zeit und Gegenstand. Die Mailadresse selbst steht nicht darin, sie bliebe bis
 // zur Aufbewahrungsfrist des Protokolls, auch wenn die Lehrkraft die Schule verlassen hat.
 // Eine Anfrage, die nichts ändert, und eine abgelehnte schreiben keinen Eintrag.
-func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
-	ctx := t.Context()
-
+// protokollWelt legt ein Admin-Konto mit Sitzung an und liefert seine Kennung und einen Aufruf
+// über den ganzen Router.
+func protokollWelt(t *testing.T, pool *pgxpool.Pool) (adminID string, rufe func(t *testing.T, methode, pfad, rumpf string) *httptest.ResponseRecorder) {
+	t.Helper()
 	authenticator, err := auth.NewAuthenticator(
 		"verwaltung-protokoll-testgeheimnis-32-b!!", pool, time.Hour)
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	var adminID string
-	if err := pool.QueryRow(ctx, `
+	if err := pool.QueryRow(t.Context(), `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
 		VALUES ('Vera', 'Verwaltung', 'verwaltung-protokoll@example.org', 'admin', true)
+		ON CONFLICT (lower(email)) DO UPDATE SET aktiv = true
 		RETURNING id`).Scan(&adminID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
@@ -40,6 +42,22 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 		t.Fatalf("Sitzung: %v", err)
 	}
 	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	return adminID, func(t *testing.T, methode, pfad, rumpf string) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, mitCSRF(req))
+		return rec
+	}
+}
+
+func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := t.Context()
+	adminID, rufe := protokollWelt(t, pool)
 
 	const (
 		adresseLeitung  = "frau.beispiel@schule.example"
@@ -55,15 +73,6 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 		aufraeumen(t, pool, `DELETE FROM lieferanten WHERE name LIKE 'Buchhandlung Protokoll%'`)
 	})
 
-	rufe := func(t *testing.T, methode, pfad, rumpf string) *httptest.ResponseRecorder {
-		t.Helper()
-		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
-		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
-		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, mitCSRF(req))
-		return rec
-	}
 	eintraege := func(t *testing.T, aktion string) int {
 		t.Helper()
 		return zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = $1`, aktion)
@@ -261,4 +270,109 @@ func fmtFelder(wert any) string {
 		}
 	}
 	return strings.Join(namen, ",")
+}
+
+// Zusammenführen, Umleiten und Löschen von Schlagworten lassen sich nicht zurücknehmen: Die
+// Titel hängen danach an einem anderen Wort oder an keinem. Wer es getan hat, steht im
+// Protokoll, mit den Wörtern und der Zahl der Titel. Eine abgelehnte Anfrage schreibt nichts.
+func TestSchlagwortPflege_UnumkehrbaresStehtImProtokoll(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := t.Context()
+	adminID, rufe := protokollWelt(t, pool)
+	t.Cleanup(func() {
+		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
+		aufraeumen(t, pool, `DELETE FROM schlagworte WHERE wort LIKE 'Protokollprobe%'`)
+	})
+
+	var titelID string
+	if err := pool.QueryRow(ctx,
+		`INSERT INTO buecher_titel (titel, autor) VALUES ('Protokollprobe Schlagworte', 'Test') RETURNING id`).Scan(&titelID); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+	if _, err := repository.SetzeSchlagworte(ctx, pool, titelID,
+		[]string{"Protokollprobe Tierfantasy", "Protokollprobe Fantasy", "Protokollprobe Weg"}); err != nil {
+		t.Fatalf("Schlagworte setzen: %v", err)
+	}
+	kennung := func(wort string) string {
+		t.Helper()
+		var id string
+		if err := pool.QueryRow(ctx, `SELECT id::text FROM schlagworte WHERE wort = $1`, wort).Scan(&id); err != nil {
+			t.Fatalf("Schlagwort %q lesen: %v", wort, err)
+		}
+		return id
+	}
+	// letzter liest den jüngsten Eintrag der Aktion und prüft den Bearbeiter.
+	letzter := func(t *testing.T, aktion string) map[string]any {
+		t.Helper()
+		var wer string
+		var roh []byte
+		if err := pool.QueryRow(ctx, `
+			SELECT coalesce(admin_id::text, ''), details FROM audit_logs
+			WHERE aktion = $1 ORDER BY zeitstempel DESC, id DESC LIMIT 1`, aktion).Scan(&wer, &roh); err != nil {
+			t.Fatalf("%s: kein Eintrag im Protokoll: %v", aktion, err)
+		}
+		if wer != adminID {
+			t.Errorf("%s: Bearbeiter %q, erwartet %q", aktion, wer, adminID)
+		}
+		details := map[string]any{}
+		if err := json.Unmarshal(roh, &details); err != nil {
+			t.Fatalf("%s: Details unlesbar: %v", aktion, err)
+		}
+		return details
+	}
+	eintraege := func(t *testing.T) int {
+		t.Helper()
+		return zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
+	}
+	tierfantasy, fantasy, weg := kennung("Protokollprobe Tierfantasy"), kennung("Protokollprobe Fantasy"), kennung("Protokollprobe Weg")
+
+	if rec := rufe(t, http.MethodPost, "/api/schlagworte/"+tierfantasy+"/zusammenfuehren",
+		`{"ziel_id":"`+fantasy+`","alte_als_verweis":false}`); rec.Code != http.StatusOK {
+		t.Fatalf("zusammenführen: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	if d := letzter(t, "SCHLAGWORT_ZUSAMMENGEFUEHRT"); d["von"] != "Protokollprobe Tierfantasy" ||
+		d["in"] != "Protokollprobe Fantasy" || d["titel"] != float64(1) || d["alte_als_verweis"] != false {
+		t.Errorf("Eintrag nach dem Zusammenführen: %v", d)
+	}
+
+	if rec := rufe(t, http.MethodPost, "/api/schlagworte/verweise",
+		`{"wort":"Protokollprobe Phantastik","ziel_id":"`+fantasy+`"}`); rec.Code != http.StatusNoContent {
+		t.Fatalf("Verweis setzen: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	if d := letzter(t, "SCHLAGWORT_VERWEIS"); d["wort"] != "Protokollprobe Phantastik" ||
+		d["in"] != "Protokollprobe Fantasy" || d["titel"] != float64(0) {
+		t.Errorf("Eintrag nach dem Verweis: %v", d)
+	}
+
+	// Eine Schreibweise, die es schon als Schlagwort mit einem Titel gibt, wird mit dem Ziel
+	// zusammengeführt. Gewählt ist der Verweis „Phantastik"; der Eintrag nennt das Wort
+	// dahinter, die gespeicherte Schreibweise und den Titel, der umgehängt wurde.
+	phantastik := kennung("Protokollprobe Phantastik")
+	if rec := rufe(t, http.MethodPost, "/api/schlagworte/verweise",
+		`{"wort":"  protokollprobe   WEG ","ziel_id":"`+phantastik+`"}`); rec.Code != http.StatusNoContent {
+		t.Fatalf("vorhandenes Wort umleiten: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	if d := letzter(t, "SCHLAGWORT_VERWEIS"); d["wort"] != "Protokollprobe Weg" ||
+		d["in"] != "Protokollprobe Fantasy" || d["titel"] != float64(1) {
+		t.Errorf("Eintrag nach dem Umleiten eines vorhandenen Wortes: %v", d)
+	}
+
+	vorher := eintraege(t)
+	if rec := rufe(t, http.MethodPost, "/api/schlagworte/loeschen",
+		`{"ids":["`+weg+`","00000000-0000-0000-0000-000000000000"]}`); rec.Code != http.StatusNotFound {
+		t.Fatalf("löschen mit einer unbekannten Kennung: Status %d, erwartet 404", rec.Code)
+	}
+	if n := eintraege(t); n != vorher {
+		t.Errorf("die abgelehnte Löschung hat einen Eintrag geschrieben (%d statt %d)", n, vorher)
+	}
+
+	if rec := rufe(t, http.MethodPost, "/api/schlagworte/loeschen", `{"ids":["`+weg+`"]}`); rec.Code != http.StatusOK {
+		t.Fatalf("löschen: Status %d — %s", rec.Code, rec.Body.String())
+	}
+	d := letzter(t, "SCHLAGWORT_GELOESCHT")
+	woerter, ok := d["woerter"].([]any)
+	if !ok || len(woerter) != 1 || woerter[0] != "Protokollprobe Weg" || d["anzahl"] != float64(1) || d["titel"] != float64(0) {
+		t.Errorf("Eintrag nach dem Löschen: %v", d)
+	}
 }

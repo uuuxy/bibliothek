@@ -97,7 +97,7 @@ func TestSchlagwortPflege_UmbenennenAufDenEigenenVerweisTauscht(t *testing.T) {
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
 	ids := pflegeStand(t, pool, map[string][]string{"Emil": {"Krimi"}})
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Kriminalroman", ids["Krimi"]); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Kriminalroman", ids["Krimi"]); err != nil {
 		t.Fatal(err)
 	}
 
@@ -141,16 +141,16 @@ func TestSchlagwortPflege_ZusammenfuehrenOhneVerweis(t *testing.T) {
 		"Tintenherz":  {"Tierfantasy", "Abenteuer"},
 		"Woodwalkers": {"Tierfantasy", "Fantasy"},
 	})
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Tierfantasie", ids["Tierfantasy"]); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Tierfantasie", ids["Tierfantasy"]); err != nil {
 		t.Fatal(err)
 	}
 	if err := SetzeSchlagwortFilter(ctx, pool, ids["Tierfantasy"], true); err != nil {
 		t.Fatal(err)
 	}
 
-	titel, err := FuehreSchlagworteZusammen(ctx, pool, ids["Tierfantasy"], ids["Fantasy"], false)
-	if err != nil || titel != 2 {
-		t.Fatalf("zusammenführen ohne Verweis: titel=%d, %v — want 2", titel, err)
+	ergebnis, err := FuehreSchlagworteZusammen(ctx, pool, ids["Tierfantasy"], ids["Fantasy"], false)
+	if err != nil || ergebnis.Titel != 2 {
+		t.Fatalf("zusammenführen ohne Verweis: titel=%d, %v — want 2", ergebnis.Titel, err)
 	}
 	if n := schreibweisenGibtEs(t, pool, "Tierfantasy"); n != 0 {
 		t.Errorf("%d Zeile(n) „Tierfantasy“ nach dem Zusammenführen ohne Verweis, want 0", n)

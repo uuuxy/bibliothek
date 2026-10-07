@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -19,10 +20,10 @@ func TestSchlagwortPflege_MehrereLoeschen(t *testing.T) {
 		"Momo":      {"Zeit", "Freundschaft"},
 		"Die Welle": {"Schule"},
 	})
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Zauberei", ids["Magie"]); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Zauberei", ids["Magie"]); err != nil {
 		t.Fatal(err)
 	}
-	if err := SetzeSchlagwortVerweis(ctx, pool, "Hexerei", ids["Magie"]); err != nil {
+	if _, err := SetzeSchlagwortVerweis(ctx, pool, "Hexerei", ids["Magie"]); err != nil {
 		t.Fatal(err)
 	}
 	zauberei := pflegeZeile(t, pool, "Zauberei").ID
@@ -58,7 +59,8 @@ func TestSchlagwortPflege_MehrereLoeschen(t *testing.T) {
 	if err != nil {
 		t.Fatalf("mehrere löschen: %v", err)
 	}
-	if want := (SchlagwortLoeschung{Woerter: 4, Titel: 2, Verweise: 1}); geloescht != want {
+	want := SchlagwortLoeschung{Woerter: 4, Titel: 2, Verweise: 1, Namen: []string{"Magie", "Mühle", "Zauberei", "Zeit"}}
+	if !reflect.DeepEqual(geloescht, want) {
 		t.Errorf("mehrere löschen: %+v, want %+v", geloescht, want)
 	}
 	if got := anzahl(); got != vorher-5 {
