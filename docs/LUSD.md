@@ -48,6 +48,13 @@ Formate: CSV (Komma/Semikolon, BOM) oder XLSX; mehrere Blätter (eines je Klasse
 eine Tabelle gelesen; Kopfzeilen in drei Stilen (`Vorname`, `Schueler_Vorname`,
 `SLR_Vorname`). Altes `.xls` wird mit Anleitung abgewiesen.
 
+**Die Klassen der Schule,** in der Schreibweise des Programms: Jahrgang 5 und 6 als Förderstufe
+(„05F1") und Gymnasialzweig („05G1"); ab Jahrgang 7 die Zweige H, R und G („07H1", „10R2",
+„10G4"); die Oberstufe als Tutorien („ET1", „12T1", „13T1"). Eine „10a" gibt es nicht.
+Beispiele und Testdaten folgen diesem Schema (`scripts/seed_demo.sql`). Welche Klasse eine
+Abschlussklasse ist, liest das Programm aus Jahrgang und Zweig
+(`repository.AbschlussklasseSQL`): H ab 9, R ab 10, sonst 13.
+
 ## 2. Wie der Import Schüler wiedererkennt — drei Stufen
 
 Die Datei entscheidet, die Vorschau nennt die Stufe im Banner:
@@ -208,6 +215,15 @@ auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_gate_pg_test.
 | Karenz-Prädikat, Job, Wächter                                        | `repository/loeschfristen.go`, `jobs/cron_dsgvo.go`, `repository/loeschrueckstand.go`; Uhr: `migrations/137_letzter_vorgang_am_leser.sql`              |
 | Oberfläche                                                           | `frontend/src/lib/components/students/LusdImportView.svelte`, `LusdUmbenennungen.svelte`, `lusdVorschauRubriken.js`, `SchuelerZusammenfuehren*.svelte` |
 | Tests, die den Jahreszyklus spielen                                  | `api/lusd_namensmodus_pg_test.go`, `api/lusd_umbenennung_pg_test.go`, `api/student_zusammenfuehren_pg_test.go`, `api/lusd_paarung_test.go`             |
+
+Zwei Tests halten fest, was ein Umbau des Schreibens nicht verlieren darf.
+`api/lusd_klassenwechsel_pg_test.go` prüft die Paarung: Jeder Schüler bekommt die Klasse, die
+für ihn im Export steht, auch wenn viele in einem Lauf wechseln. Ein Test auf „die Klasse hat
+sich geändert" bliebe grün, wenn jeder die Klasse seines Nachbarn bekäme.
+`api/lusd_dublette_pg_test.go` schickt dieselbe ID zweimal in einer Datei: Der Schutz liegt
+darin, dass jeder Neuzugang sofort geschrieben wird und die zweite Zeile ihn in derselben
+Transaktion sieht; wer das Einfügen ans Ende der Schleife verschiebt, bricht den ganzen Import
+ab. Die Stufe „nur Name" spielt `api/lusd_nurname_pg_test.go` durch.
 
 Grenzen, die bleiben: Ohne Schüler-ID sind zwei Zeilen mit gleichem Namen **und** gleichem
 Geburtsdatum in einer Datei eine Person (zusammengelegt, nicht „mehrdeutig"). Eine

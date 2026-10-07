@@ -1983,7 +1983,7 @@ wenn man ihn einmal gebraucht hat.
 
 ## 9. Architekturentscheidungen
 
-Stand: 05.10.2026
+Stand: 07.10.2026
 
 Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -2283,7 +2283,7 @@ Weg in jedes Konto. Ein Admin-**Konto** bleibt der Leitung auch mit dem Recht ve
 ### A13 — Eine Vorsilbe `A-` für alle Ausweise; die Vorsilbe bleibt
 
 **Entscheidung.** Neue Ausweisnummern tragen `A-`. `S-` und `L-` werden weiter **gelesen**.
-Bücher `B-`, Geräte `G-`.
+Bücher `B-` und `LMF-`, Geräte `G-`.
 
 **Anlass.** Die beiden alten Vorsilben behaupteten etwas über die Person (`S-` aus
 Handanlage/LUSD, `L-` aus dem Littera-Personenlauf). Seit A10 ist das die falsche Aussage:

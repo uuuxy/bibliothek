@@ -16,13 +16,23 @@ Der Fahrplan sprach von einem **MySQL-Dump**. Geliefert wurde **MS Access**:
 | `ressourcen.mdb` (5 MB) | Ressourcen/Stammwerte |
 | `LUSD-XML.xml` | **PGP-verschlüsselt**, kein XML — so nicht importierbar |
 
+**Das Programm der Schule** ist LITTERA Windows (5.4), das Programm des Herstellers für
+Bibliotheken; darauf bezieht sich auch das Handbuch. Eigens für Lernmittel gebaut ist es nicht.
+Die Schule führt die Lernmittel darin als Behelf mit: über die Signatur „LMF …" (in der
+Sicherung von 2010 beginnt `Sig1` bei 24.730 von 61.520 Exemplaren so, gezählt am 07.10.2026)
+und über zwei Verrechnungsgruppen, `LMF` und `LMF-Oberstufe`. Das Handbuch nennt dazu einen
+Schalter „Lernmittelfreiheit verwenden", der eine Verrechnungsgruppe mit dem Namen LMF anlegt.
+Das Lernmittel-Programm des Herstellers (LITTERA LM) ist ein anderes; das Handbuch nennt es nur
+dort, wo beide Programme Leserdaten und Ausweise teilen. Was es über Verleih, Gebühren und
+Löschen sagt, gilt für die Bibliothek.
+
 ### Datenstand — wichtig
 
-| Tabelle | Zeilen |
+| Tabelle | Datensätze |
 |---|---|
-| `Titel` | 11.076 |
-| `Exemplar` | 61.580 |
-| `Leser` | 2.008 |
+| `Titel` | 10.732 |
+| `Exemplar` | 61.520 |
+| `Leser` | 1.991 |
 | `Verleih` | 15.615 (davon 15.614 ohne Rückgabe gebucht) |
 
 **Der Bestand endet 2010** — und das ist inzwischen nicht mehr nur wahrscheinlich,
@@ -140,9 +150,21 @@ Adresse 1.927 · Anmeldedatum 834 · **eMail nur 3** · Abmeldedatum 0.
 Die Mahnung per E-Mail hat aus dieser Quelle also praktisch keine Grundlage —
 `eltern_email` muss aus LUSD kommen, nicht aus Littera.
 
+**Lesernummern und Exemplarnummern** zählt Littera getrennt, beide ab 1: In der Sicherung von
+2010 ist jede der 1.991 Lesernummern zugleich eine Exemplarnummer (gezählt am 07.10.2026).
+Littera unterscheidet an der Maske, in die gescannt wird, nicht an der Zahl. Frei gewordene
+Nummern kann es wieder vergeben (Einstellung „freie Nummern wieder vergeben"); eine
+Lesernummer kann also früher einer anderen Person gehört haben. Hier kommt eine A-Nummer nicht
+wieder (Migration 146), und Ausweis und Buch unterscheidet die Form des Scanwerts
+([FACHKONZEPT.md](FACHKONZEPT.md) §1).
+
 ### `Verleih` → `ausleihen`
 `Exemplar` (FK) · `Leser` (FK) · `Verleihdatum` · `Rückgabedatum` (Frist) ·
 `IstRückgabedatum` (tatsächlich) · `Zurückgegeben` (Boolean) · `Mahnungen`
+
+`Mahnungen` kommt als Mahnstufe der Ausleihe mit. In der Sicherung von 2010 steht sie bei allen
+15.615 Ausleihen auf 0, und `LetzteMahnung` ist nie gesetzt (gezählt am 07.10.2026): Ob die
+Bücherei in Littera mahnt, zeigt erst die Sicherung von 2026.
 
 ## Die Signatur — betrifft die Umstellung von Migration 060
 
@@ -153,7 +175,7 @@ Littera führt die Signatur **am Exemplar, nicht am Titel**, und **zweiteilig**:
 
 Zusammen ergibt das die Aufschrift vom Buchrücken: `LMF Deu 7 / Bie`.
 
-**Belegung: 61.546 von 61.580 Exemplaren haben `Sig1`** — praktisch vollständig.
+**Belegung: 61.516 von 61.520 Exemplaren haben `Sig1`** — praktisch vollständig.
 
 Zwei Folgerungen:
 
@@ -168,6 +190,24 @@ Zwei Folgerungen:
    verwirft ihn.) Für 99,3 % ist die Titel-Ebene verlustfrei; für die übrigen nimmt
    `SignaturJeTitel` den häufigsten Wert und meldet den Titel als abweichend, statt
    still den ersten zu nehmen.
+
+**Jedes Exemplar behält seine eigene Signatur:** Sie steht in `erweiterte_eigenschaften` unter
+`littera_signatur`, auch wo der Titel die häufigste bekommen hat.
+
+**Was am Titel ankommt, hängt vom Weg ab** (gezählt am 07.10.2026). Die Übernahme aus einer
+Sicherung schreibt beide Teile, die Aufschrift des Buchrückens („LMF Deu 7 / Bie"). Der
+Katalog-Import ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1a) liest aus dem MAB-Export nur das erste
+Teil (Feld 700, Reihung 1), die Regaladresse. In der Sicherung von 2010 fehlt das zweite Teil
+nur bei elf Exemplaren mit Signatur, bei den Büchern der Schülerbücherei so wenig wie bei den
+Lernmitteln. An den 10.422 Titeln stehen nach der Übernahme 6.251 verschiedene Aufschriften mit
+732 verschiedenen Regaladressen; 4.840 Aufschriften gehören zu genau einem Titel.
+
+**Das Programm erfindet keine Signatur** (entschieden am 22.09.2026): Sie klebt am Buch, und
+nach ihr steht es im Regal. Für einen neuen Titel bietet das Feld an, was an den Titeln des
+Bestands steht (`GET /api/signaturen`, im Buchformular und im Bestellkorb über
+`frontend/src/lib/utils/signaturen.js`); aus der Gattung der DNB wird keine gebildet. Ein Fach
+liest die Übernahme nur aus einer Lernmittel-Signatur (`lmf.Zerlege`), sonst aus den
+Schlagworten.
 
 ## Der Standort — am Exemplar und am Titel
 
@@ -308,6 +348,15 @@ die Exemplarnummer. Die Spalte `Barcode` ist diese EAN-13 in der Setzform einer 
 sechs Stellen links aufgefüllt und mit einer festen 6 an Stelle 12 — anders als die beiden
 Scans oben; getroffen hätte es jedes Exemplar dieser Sicherung. Siehe [SCRIPTS.md](SCRIPTS.md).
 
+**Lernmittel mit „LMF" im Strichcode:** Manche Lernmittel tragen im Strichcode „LMF" und eine
+lange Nummer; an der Theke bestätigt am 01.10.2026: Sie buchen. In der Sicherung von 2010 steht
+„LMF" in keiner Zeichenkette der Spalte `Barcode` und in keiner `Exemplarnummer`, nur in `Sig1`
+(gezählt am 07.10.2026); woher diese Etiketten stammen, ist nicht belegt. Die Theke schlägt
+eine solche Nummer nach, wie sie gescannt wird, und `LMF-` ist eine Vorsilbe für Bücher wie
+`B-`: am Server (`internal/service/omnibox_service.go`) und ohne Netz (`BUCH_VORSILBEN` in
+`frontend/src/lib/scanEinordnen.js`); `internal/service/vorsilben_zwilling_test.go` hält beide
+gleich. Sie gehört nicht zu den Resten des früheren Titelzusatzes „LMF-" und bleibt.
+
 ### Zwei Fehler, die der Schreibpfad aufgedeckt hat
 
 **Das Autorenfeld war verschmutzt.** Die frühere Angabe „10.002 von 10.732 Titeln mit
@@ -332,6 +381,12 @@ Zweck laut `schema.sql` ist aber der Versand von Schadens-Rechnungen und Eltern-
 Zweifel veraltet, und eine Rechnung an die falsche Adresse ist schlechter als gar keine.
 Das Geburtsdatum kommt mit, weil `unique_schueler_name_gebdatum` nur dann greift: Ohne es
 legt der spätere LUSD-Import dieselben Schüler ein zweites Mal an.
+
+Sperren und Salden der Leser. Die Übernahme liest aus `Leser` weder die Sperre (`GesperrtAm`,
+`SperrenBegründung`) noch den `Saldo`, und die Tabellen der Verrechnung gehören nicht zu den
+fünfzehn, die sie liest: Wer in Littera gesperrt ist, kommt ohne Sperre an. In der Sicherung
+von 2010 tragen 5 Leser eine Sperre und 4 einen Saldo ungleich 0 (gezählt am 07.10.2026). Was
+daraus für die Sicherung von 2026 folgt, steht in [OFFEN.md](OFFEN.md) 7.2.
 
 Lehrkräfte bekommen einen unzustellbaren Platzhalter unter `.invalid` (RFC 2606) statt
 einer erfundenen Adresse unter der Schuldomäne — die ginge irgendwann an eine echte,

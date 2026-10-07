@@ -29,6 +29,7 @@ den Bereich direkt an:
 - **`A-[Barcode]` (Leser):** Lädt das Konto eines Lesers (inkl. offener Ausleihen, Mahnungen und Sperren).
 - **`S-[Barcode]`, `L-[Barcode]`:** dasselbe für Nummern von früher. Vergeben werden sie seit dem 16.09.2026 nicht mehr.
 - **`B-[Barcode]` (Buch-Exemplar):** Führt eine Aktion mit einem Buch aus.
+- **`LMF-[Barcode]`:** dasselbe wie `B-`. Manche Lernmittel tragen ein Etikett, das so beginnt ([littera_schema_befund.md](littera_schema_befund.md), „Das Etikett ist entschlüsselt").
 - **`G-[Barcode]` (Gerät):** Führt eine Aktion mit Hardware (z. B. Laptops, iPads) aus.
 
 **Eine Vorsilbe für alle Ausweise: `A-` (seit 16.09.2026).** Vorher gab es zwei, und beide

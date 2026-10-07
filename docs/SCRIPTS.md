@@ -287,6 +287,12 @@ Was die Probe tut, in dieser Reihenfolge:
 
 **Rückgabewerte:** 0 jede Prüfung bestanden · 1 eine Prüfung abgewichen oder abgebrochen.
 
+**Die Probe läuft in keinem Prüflauf der CI.** Sie spricht die Türen der Anwendung selbst an
+(`scripts/generalprobe/theke.py`); wer eine Route entfernt oder umbenennt, sucht sie auch dort.
+Vom 05.10. bis zum 07.10.2026 rief die Prüfung der Mahnbriefe eine entfernte Route ab und
+meldete „0 von 73 Klassen"; aufgefallen ist es erst beim nächsten Lauf (behoben mit
+`b1fd6cfd`). Die Probe deshalb laufen lassen, bevor ein Stand als Beleg für die Übernahme dient.
+
 **Ergebnis am 28.09.2026** mit der Sicherung von 2010 (Stand `0437fecc`): jede Prüfung
 bestanden. 10.732 Titel, 61.520 Exemplare, 1.991 Leser (1.810 Schüler, 181 im Kollegium),
 15.612 von 15.615 Ausleihen; die übrigen drei sind Widersprüche in Littera (ein Exemplar fehlt

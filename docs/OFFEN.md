@@ -42,7 +42,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   an jeder Tür: „La  Peste" aus Littera wird „La Peste", und die Suche nimmt den Suchtext in
   derselben Form (gebaut am 07.10.2026).
 - [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt:
-  Ausweisnummern, offene Ausleihen, Standorte, Verweise der Schlagworte. (7.2, 4.20)
+  Ausweisnummern, offene Ausleihen, Standorte, Verweise der Schlagworte, Sperren und Salden.
+  (7.2, 4.20)
 - [ ] `update.sh` für den Schulserver: nur Releases, Images frisch. (5.31)
 - [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
 - [ ] Arbeitsnotizen der Entwicklung ins Repository, entlang dem Pflegekonzept. (9.9)
@@ -72,6 +73,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   entschieden und gebaut am 07.10.2026).
 - [x] Das Aussehen nach der Umstellung der Farben auf M3-Rollen bleibt so (entschieden am
   06.10.2026). Eigene Farben je Fach gibt es nicht.
+- [ ] Feld „Signatur" nach der Übernahme: An den Titeln steht dann die ganze Aufschrift des
+  Buchrückens. Sollen Vorschläge und Liste nach der Regaladresse zusammenfassen? (7.2)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -1134,6 +1137,22 @@ Bibliothek" und „Bibliothek" als Standort mitkommen, falls sie noch an Titeln 
 7.471 Titeln; sie nennen den gewöhnlichen Platz). Die Generalprobe zeigt nur die Zahlen; die
 Listen liest, wer den Trockenlauf selbst startet.
 
+**Signaturen nach der Übernahme (gefunden am 07.10.2026).** Die Übernahme schreibt an den Titel
+die ganze Aufschrift des Buchrückens („LMF Deu 7 / Bie"), der Katalog-Import nur die
+Regaladresse ([littera_schema_befund.md](littera_schema_befund.md), „Die Signatur"). Das Feld
+„Signatur" im Buchformular und im Bestellkorb und die Liste der Signaturen
+(`GET /api/signaturen`) fassen nach dem ganzen Wortlaut zusammen. Am Testserver stehen bei den
+Büchern der Schülerbücherei nur die Regaladressen (gemessen am 22.09.2026); nach der Übernahme
+der Sicherung von 2010 wären es 6.251 Einträge, 4.840 davon mit einem einzigen Titel. Gezählt
+mit `SignaturJeTitel` an der Sicherung, an einer geladenen Datenbank nicht angesehen. Zu
+entscheiden: ob Vorschläge und Liste nach der Regaladresse zusammenfassen, dem Teil vor „ / ".
+
+**Sperren und Salden aus Littera (gefunden am 07.10.2026).** Die Übernahme liest sie nicht: Wer
+in Littera gesperrt ist, kommt ohne Sperre an
+([littera_schema_befund.md](littera_schema_befund.md), „Was NICHT übernommen wird"). In der
+Sicherung von 2010 sind es 5 Sperren und 4 Salden ungleich 0. An der Sicherung von 2026 zählen
+(`Leser.GesperrtAm`, `Leser.Saldo`), danach entscheiden, ob Nachtragen von Hand genügt.
+
 ### 7.3 S3-Auslagerung der Backups
 
 `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` und `S3_BUCKET` sind leer (13.09.2026); alles
@@ -1299,16 +1318,20 @@ Buch eine Zeile; einmal ausdrucken und ansehen.
   2. **Die Arbeitsnotizen der Entwicklung** (am 07.10.2026 256 Einträge, 14.322 Zeilen) entlang
      der Gliederung des Entwurfs ins Repository — bei mir. Nicht ins Repository gehören die 82
      Einträge zur Arbeitsweise und alles, was Zugänge, Orte oder Namen nennt. Jede Aussage wird
-     vor dem Eintragen am heutigen Stand geprüft: Von den Notizen zu Abschnitt 5 waren zwei
-     überholt. Eingetragen am 07.10.2026: Abschnitt 5, „Fälle, die vorkamen", und fünfzehn
-     Fehlerarten im Register von [sweeps.md](sweeps.md), darunter die Fallen an Postgres, pgx
-     und Tailwind; eine fand noch eine Stelle im Bestand (Abgleich der Buchnummern, behoben).
-     Es stehen aus, je als eigener Schritt: die
-     Einträge zu Entscheidungen gegen [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9 und
-     [FACHKONZEPT.md](FACHKONZEPT.md), die zu Littera und LUSD gegen
-     [littera_schema_befund.md](littera_schema_befund.md) und [LUSD.md](LUSD.md), die zu den
-     Prüfwegen (Tests an der Datenbank, im Browser, Gegenprobe am Rückbau) gegen
-     [SCRIPTS.md](SCRIPTS.md) §7.
+     vor dem Eintragen am heutigen Stand geprüft und jede Zahl neu gezählt: Von den Notizen zu
+     Abschnitt 5 waren zwei überholt, von denen zu Littera und LUSD drei. Eingetragen am
+     07.10.2026: Abschnitt 5, „Fälle, die vorkamen"; fünfzehn Fehlerarten im Register von
+     [sweeps.md](sweeps.md), darunter die Fallen an Postgres, pgx und Tailwind; die Einträge zu
+     Littera und LUSD in [littera_schema_befund.md](littera_schema_befund.md),
+     [LUSD.md](LUSD.md) und [SCRIPTS.md](SCRIPTS.md) 1b. Die Prüfungen fanden dabei etwas am
+     Programm: den Abgleich der Buchnummern (behoben) und zwei Punkte der Übernahme, die
+     Signaturen und die Sperren (7.2).
+     Es stehen aus, je als eigener Schritt: die Einträge zu Entscheidungen gegen
+     [FACHKONZEPT.md](FACHKONZEPT.md) und [ARCHITEKTUR.md](ARCHITEKTUR.md) Kapitel 9; die zu
+     den Prüfwegen (Tests an der Datenbank, im Browser, Gegenprobe am Rückbau) gegen
+     [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14 und [SCRIPTS.md](SCRIPTS.md) §7, dazu die zwölf
+     Stellen in [sweeps.md](sweeps.md) und im Code, die auf eine Notiz verweisen; zuletzt ein
+     Durchgang über die 93 Einträge, die in keinem dieser Schritte lagen.
   3. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
      mit dem Dokument.
 
