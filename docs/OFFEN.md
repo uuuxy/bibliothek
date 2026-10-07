@@ -74,7 +74,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [ ] Portal: „Problem melden" unter dem Suchfeld
 - [ ] Buchakte: „Standort ändern", auch mit dem Handscanner
-- [ ] Theke: Schnellrückgabe mit einem Stapel
+- [x] Theke: Schnellrückgabe mit einem Stapel (ausprobiert am 07.10.2026 mit zwei Büchern)
 - [ ] Die übrigen Proben mit dem Handscanner
 - [ ] Maske „Buch bearbeiten"
 - [ ] Mahnwesen: Mahnbriefe und Liste drucken
@@ -86,6 +86,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   Exemplaren, die einen Standort tragen (Buchakte, „Standort ändern")
 - [ ] Medienkatalog: Titel-Verwaltung und „Suche & Filter" stehen nach dem Titel
 - [ ] Theke: Ausweis und Bücher ohne Pause hintereinander scannen
+- [ ] Theke: bei offenem Fenster „Ausleihe blockiert" noch ein Buch scannen; eine unbekannte
+  Nummer scannen
 
 **Erledigen:**
 
@@ -1203,11 +1205,12 @@ Scanner der Schule schnell genug tippt (höchstens 50 ms je Zeichen), zeigt nur 
   Erwartet: „Scan erkannt", kein Fehlversuch; danach schließt das getippte Passwort auf.
 - Theke: Leser scannen, einen Reiter der Akte anklicken, in der Akte nach unten rollen, ein
   Buch scannen. Erwartet: Die Suchleiste steht noch im Fenster, das Buch ist gebucht.
-- Theke, Schnellrückgabe: den Knopf neben dem Scanfeld anklicken und einen Stapel scannen, in
-  dem zwei verliehene Bücher, ein Buch aus dem Regal und eines doppelt liegen. Erwartet: Die
-  verliehenen sind zurück und die Meldung nennt den Leser; das Buch aus dem Regal und der
-  zweite Scan melden sich rot mit Fehlerton; kein Konto erscheint. Danach einen Ausweis
-  scannen. Erwartet: Der Knopf ist aus, das Konto steht da.
+- Theke, ein Scan bei offenem Fenster: einen Leser von Hand sperren, seinen Ausweis und ein
+  Buch scannen, und bei offenem Fenster „Ausleihe blockiert" noch ein Buch scannen. Erwartet:
+  Das Fenster bleibt stehen, die Theke blitzt rot und gibt den Fehlerton, gebucht ist nichts.
+  Mit „Abbrechen" schließen: Der nächste Scan landet wieder im Scanfeld.
+- Theke, ein gescheiterter Scan: eine Nummer scannen, die das Programm nicht kennt. Erwartet:
+  die rote Meldung unter dem Scanfeld, dazu roter Blitz und Fehlerton.
 - Buchmaske: einen Titel halb ausfüllen, sperren lassen, aufschließen. Erwartet: Die
   Eingaben stehen noch da.
 - „Neues Buch" öffnen und ein Buch scannen, ohne ins Feld zu klicken. Erwartet: Die ISBN
