@@ -245,6 +245,14 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   `main`). Vorher brach bei Pushes im Abstand weniger Minuten jeder Lauf den vorigen ab, und
   `main` war in der Zeit ungeprüft. Der Bau des Images bricht weiter ab
   (`docker-publish.yml`): Dort zählt nur der neueste Stand.
+- **Der Job der Browser-Tests endet rot, bevor ein Test läuft (07.10.2026, zweimal).** Im
+  Schritt „Install Playwright" blieb das Lesen der Paketlisten an einer Paketquelle von GitHub
+  stehen und lief in die Frist von 600 s. Das `apt-get` dahinter läuft unter `sudo` und
+  überlebte den Abbruch; es hielt die Sperre der Paketlisten, und die zwei weiteren Versuche
+  scheiterten binnen Sekunden an ihr („Could not get lock /var/lib/apt/lists/lock").
+  Seit dem 07.10.2026 beendet der Schritt vor jedem neuen Versuch ein übrig gebliebenes
+  `apt-get` (`.github/workflows/ci.yml`, `beende_apt`). Am Code liegt ein solcher Lauf nicht;
+  die gescheiterten Jobs starten mit `gh run rerun <Nummer des Laufs> --failed` neu.
 
 ---
 

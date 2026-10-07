@@ -308,7 +308,7 @@ jobs:
     #   1. Cache (oben): npm-Tarballs + Browser-Binaries — das Netz ist im Normalfall
     #      kaum noch beteiligt. `install --with-deps` überspringt den Browser-Download bei
     #      Cache-Treffer und installiert nur die System-Abhängigkeiten via apt.
-    #   2. wiederhole: jeder Versuch hart auf 4 min begrenzt (timeout), bis zu drei
+    #   2. wiederhole: jeder Versuch hart auf 10 min begrenzt (timeout), bis zu drei
     #      Versuche mit Backoff — ein hängender Spiegel kostet einen Versuch, nicht
     #      den Lauf.
     #   3. timeout-minutes als Reißleine, falls doch alles klemmt: roter Schritt zum
@@ -332,10 +332,22 @@ jobs:
     - name: Install Playwright
       timeout-minutes: 15
       run: |
+        # Läuft ein Versuch in die Frist, überlebt sein apt-get den Abbruch (es läuft unter
+        # sudo) und hält die Sperre der Paketlisten; der nächste Versuch scheiterte daran.
+        beende_apt() {
+          sudo pkill -x apt-get || true
+          for _ in $(seq 1 20); do
+            pgrep -x apt-get >/dev/null || break
+            sleep 1
+          done
+          sudo pkill -KILL -x apt-get || true
+          sudo dpkg --configure -a || true
+        }
         wiederhole() {
           for versuch in 1 2 3; do
             timeout 600 "$@" && return 0
             echo "::warning::Versuch $versuch fehlgeschlagen: $* — neuer Versuch"
+            beende_apt
             sleep $((versuch * 10))
           done
           return 1
