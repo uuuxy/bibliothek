@@ -9,6 +9,10 @@ vi.mock('idb', () => ({
 	})
 }));
 
+// Ob Netz da ist, sagt netzLage (gemessen an /health); der Test stellt die Auskunft selbst.
+const netz = vi.hoisted(() => ({ offline: false }));
+vi.mock('./netzLage.svelte.js', () => ({ netzLage: netz }));
+
 import { apiFetch } from '../apiFetch.js';
 import { buchBarcodes } from './buchBarcodes.svelte.js';
 
@@ -32,6 +36,7 @@ describe('Barcode-Liste: stündlich nachfassen', () => {
 
 	afterEach(() => {
 		buchBarcodes.stoppeZeitgeber();
+		netz.offline = false;
 		vi.useRealTimers();
 		vi.clearAllMocks();
 	});
@@ -50,16 +55,22 @@ describe('Barcode-Liste: stündlich nachfassen', () => {
 	// Ohne Netz wäre die Frage ein Fehler pro Stunde im Protokoll für nichts. Die Liste
 	// vom letzten Mal gilt weiter — das ist der ganze Sinn der Ablage.
 	it('fragt ohne Netz gar nicht erst', async () => {
-		// `onLine` liegt am PROTOTYP, nicht an der Instanz: Ein
-		// getOwnPropertyDescriptor(navigator, 'onLine') liefert undefined, und ein
-		// Zurückschreiben „des Originals" gäbe es nicht — der Rechner bliebe für alle
-		// folgenden Tests dieser Datei offline. Deshalb wird die eigene Eigenschaft
-		// angelegt und danach wieder entfernt, damit der Prototyp wieder gilt.
+		netz.offline = true;
+		buchBarcodes.starteAbgleich();
+		await vi.advanceTimersByTimeAsync(3 * 60 * 60 * 1000);
+		expect(apiFetch).not.toHaveBeenCalled();
+	});
+
+	// Ein Browser kann „offline" melden, obwohl der Server antwortet. Hinge der Abgleich an
+	// dieser Auskunft, bliebe die Liste an so einem Rechner den ganzen Tag alt.
+	it('fragt nach, wenn nur der Browser „offline" meldet', async () => {
+		// `onLine` liegt am Prototyp, nicht an der Instanz: Die eigene Eigenschaft wird
+		// angelegt und danach entfernt, damit für die folgenden Tests der Prototyp gilt.
 		Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
 		try {
 			buchBarcodes.starteAbgleich();
-			await vi.advanceTimersByTimeAsync(3 * 60 * 60 * 1000);
-			expect(apiFetch).not.toHaveBeenCalled();
+			await vi.advanceTimersByTimeAsync(60 * 60 * 1000);
+			expect(apiFetch).toHaveBeenCalledTimes(1);
 		} finally {
 			Reflect.deleteProperty(navigator, 'onLine');
 		}

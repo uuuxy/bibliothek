@@ -1,5 +1,6 @@
 import { openDB } from 'idb';
 import { apiFetch } from '../apiFetch.js';
+import { netzLage } from './netzLage.svelte.js';
 
 /**
  * Die Buch-Barcode-Liste auf dem Theken-Rechner (Stufe 1 des Offline-Baus).
@@ -121,7 +122,9 @@ class BuchBarcodes {
 	 * Der Server antwortet im Normalfall 304, weil sich der Bestand selten aendert.
 	 *
 	 * Ohne Netz wird gar nicht erst gefragt — das waere ein Fehler pro Stunde im Protokoll
-	 * fuer nichts. Das Handle liegt am Store, damit der Aufrufer ihn wegraeumen kann; ein
+	 * fuer nichts. Ob Netz da ist, misst netzLage: Ein Browser kann „offline" melden, obwohl
+	 * der Server antwortet, und die Liste bliebe dann den ganzen Tag alt.
+	 * Das Handle liegt am Store, damit der Aufrufer ihn wegraeumen kann; ein
 	 * ueberlebender Zeitgeber faerbt sonst einen ganzen Testlauf rot
 	 * (frontend-hygiene-thekenzeitgeber.test.js).
 	 *
@@ -130,7 +133,7 @@ class BuchBarcodes {
 	starteAbgleich(intervallMs = 60 * 60 * 1000) {
 		this.stoppeZeitgeber();
 		this.#zeitgeber = setInterval(() => {
-			if (typeof navigator === 'undefined' || navigator.onLine) void this.auffrischen();
+			if (!netzLage.offline) void this.auffrischen();
 		}, intervallMs);
 	}
 
