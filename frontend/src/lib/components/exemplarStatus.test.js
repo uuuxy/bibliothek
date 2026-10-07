@@ -40,15 +40,32 @@ describe('exemplarZahlen', () => {
 	// zählt nicht zum Bestand.
 	it('zählt den Bestand und die bestellten getrennt, ausgesonderte in keiner der Zahlen', () => {
 		const liste = [
-			{ im_bestand: true },
-			{ im_bestand: true, ist_ausleihbar: false },
-			{ im_bestand: false },
+			{ im_bestand: true, ist_ausleihbar: true, ist_verfuegbar: true },
+			{ im_bestand: true, ist_ausleihbar: false, ist_verfuegbar: true },
+			{ im_bestand: false, ist_ausleihbar: false, ist_verfuegbar: true },
 			{ im_bestand: false, ist_ausgesondert: true }
 		];
-		expect(exemplarZahlen(liste)).toEqual({ bestand: 2, bestellt: 1 });
+		expect(exemplarZahlen(liste)).toEqual({ bestand: 2, verfuegbar: 1, bestellt: 1 });
+	});
+
+	// Verfügbar ist, was die Karte „Verfügbar" nennt: im Bestand, ausleihbar, nicht verliehen.
+	it('zählt als verfügbar nur, was im Bestand steht, ausleihbar ist und niemand hat', () => {
+		const liste = [
+			{ im_bestand: true, ist_ausleihbar: true, ist_verfuegbar: true },
+			{ im_bestand: true, ist_ausleihbar: true, ist_verfuegbar: false },
+			{ im_bestand: true, ist_ausleihbar: false, ist_verfuegbar: true }
+		];
+		expect(exemplarZahlen(liste).verfuegbar).toBe(1);
+		for (const ex of liste) {
+			expect(exemplarStatus(ex).text === 'Verfügbar').toBe(ex === liste[0]);
+		}
 	});
 
 	it('zählt ein Exemplar ohne das Feld im_bestand zum Bestand', () => {
-		expect(exemplarZahlen([{}, { ist_ausgesondert: true }])).toEqual({ bestand: 1, bestellt: 0 });
+		expect(exemplarZahlen([{}, { ist_ausgesondert: true }])).toEqual({
+			bestand: 1,
+			verfuegbar: 0,
+			bestellt: 0
+		});
 	});
 });

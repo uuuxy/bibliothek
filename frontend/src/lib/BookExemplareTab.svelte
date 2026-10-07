@@ -7,6 +7,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from './apiFetch.js';
 	import BookExemplarCard from './components/BookExemplarCard.svelte';
+	import { exemplarZahlen } from './components/exemplarStatus.js';
 	import ExemplarEigentumDialog from './components/ExemplarEigentumDialog.svelte';
 	import ExemplarStandortDialog from './components/ExemplarStandortDialog.svelte';
 	import AuswahlLeiste from './components/ui/AuswahlLeiste.svelte';
@@ -68,11 +69,12 @@
 			});
 			if (res.ok) {
 				exemplare = exemplare.filter((e) => e.id !== ex.id);
+				// Den Kopf aus der Liste nachführen, nach der Grenze der Karten: Ein bestelltes
+				// Exemplar stand nie im Bestand, sein Löschen ändert „1 von 2 verfügbar" nicht.
 				if (book) {
-					book.gesamt = Math.max(0, (book.gesamt || 0) - 1);
-					if (book.verfuegbar !== undefined && ex.ist_ausleihbar) {
-						book.verfuegbar = Math.max(0, (book.verfuegbar || 0) - 1);
-					}
+					const zahlen = exemplarZahlen(exemplare);
+					book.gesamt = zahlen.bestand;
+					if (book.verfuegbar !== undefined) book.verfuegbar = zahlen.verfuegbar;
 				}
 				showToast('Exemplar erfolgreich gelöscht', 'success');
 			} else {
