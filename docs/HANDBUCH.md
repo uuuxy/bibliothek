@@ -57,6 +57,11 @@ Schritt).
 der Akte. Nur ein offenes Fenster (etwa „Gebühr stornieren") und ein Feld, in dem gerade getippt
 wird, behalten die Tastatur.
 
+**Ein Scan beantwortet keine Rückfrage** (seit 07.10.2026): Steht „Ausleihe blockiert",
+„Achtung! Vorgemerkt!" oder „Zubehör prüfen" offen, bleibt das Fenster bei einem Scan stehen.
+Der Scan wird nicht gebucht und meldet sich rot mit Fehlerton. Erst das Fenster mit Maus oder
+Tastatur beantworten, dann erneut scannen.
+
 **Schneller scannen, als das Programm antwortet** (seit 07.10.2026): Die Theke bucht die Scans
 der Reihe nach, auch wenn der nächste kommt, bevor der vorige beantwortet ist — erst der
 Ausweis, dann die Bücher an diesen Leser. Dieselbe Nummer noch einmal, bevor sie gebucht ist,

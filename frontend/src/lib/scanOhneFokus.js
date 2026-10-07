@@ -1,6 +1,9 @@
 // An der Theke tippt ein Handscanner blind in das Element, das den Fokus hat. Steht der Fokus
 // nach einem Klick auf einem Reiter, einem Knopf oder nirgends, bekommt das Scanfeld das Zeichen
-// — eine Regel für die ganze Seite statt eines Rückrufs je Knopf.
+// — eine Regel für die ganze Seite statt eines Rückrufs je Knopf. Steht er in einer Rückfrage,
+// drückt das Enter des Scans dort keinen Knopf.
+
+import { erzeugeScanErkennung } from './scanErkennung.js';
 
 // Elemente, die Getipptes selbst entgegennehmen. Kästchen und Knöpfe sind <input>, tippen aber
 // nichts.
@@ -62,4 +65,26 @@ export function tasteInsScanfeld(e, bereit) {
 	const feld = document.getElementById('omnibox-input');
 	if (!feld || !bereit() || document.querySelector(AUSWAHL_OFFEN) || !liegtFrei(feld)) return;
 	feld.focus();
+}
+
+/**
+ * Die Tasten der Theke, für einen Zuhörer der ganzen Seite in der Capture-Phase. Solange eine
+ * Rückfrage offen ist, gilt das Enter eines Scans nicht: Sie bleibt stehen, bis ein Mensch sie
+ * beantwortet, gebucht wird nichts, und scanBeiRueckfrage meldet es. Gezählt wird jede Taste
+ * der Seite, damit ein Scan ganz zählt, bei dessen ersten Zeichen die Rückfrage noch nicht
+ * offen war.
+ * @param {{ scanfeldBereit: () => boolean, rueckfrageOffen: () => boolean, scanBeiRueckfrage: () => void }} theke
+ * @returns {(e: KeyboardEvent) => void}
+ */
+export function thekenTasten(theke) {
+	const erkennung = erzeugeScanErkennung();
+	return (e) => {
+		if (erkennung.taste(e) && theke.rueckfrageOffen()) {
+			e.preventDefault();
+			e.stopPropagation();
+			theke.scanBeiRueckfrage();
+			return;
+		}
+		tasteInsScanfeld(e, theke.scanfeldBereit);
+	};
 }

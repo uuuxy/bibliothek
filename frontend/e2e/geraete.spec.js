@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, uniqueSuffix, scanneWieScanner } from './helpers.js';
 
 // Die Geräteausleihe am ganzen Weg (16.08.2026 — vorher war sie ein Backend-Torso:
 // keine Verwaltung, und die Omnibox konnte die Zubehör-Checkliste nie bestätigen).
@@ -48,6 +48,11 @@ test('Geräteausleihe: anlegen, Checkliste bestätigen, ausleihen, zurückgeben'
 	await expect(page.getByRole('heading', { name: 'Zubehör prüfen' })).toBeVisible();
 	await expect(page.getByText('Ladekabel', { exact: true })).toBeVisible();
 	await expect(page.getByText('Eingabestift', { exact: true })).toBeVisible();
+
+	// Ein Scan bei offener Checkliste: Sein Enter träfe „Abbrechen". Sie bleibt stehen.
+	await scanneWieScanner(page, BARCODE);
+	await page.waitForTimeout(300);
+	await expect(page.getByRole('heading', { name: 'Zubehör prüfen' })).toBeVisible();
 
 	// 4. Bestätigen → Ausleihe geht durch.
 	await page.getByRole('button', { name: 'Alles vollständig — weiter' }).click();

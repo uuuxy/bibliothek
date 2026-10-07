@@ -405,3 +405,25 @@ describe('Ohne Netz', () => {
 		expect(theke.errorMessage).toBe('');
 	});
 });
+
+// Der Scan kommt, wenn die Rückfrage schon offen ist: Die Tasten der Theke fangen ihn ab
+// (scanOhneFokus.js) und melden ihn hier.
+describe('Ein Scan bei offener Rückfrage', () => {
+	it.each([
+		['Sperre', { blockAlert: { message: 'Mia ist gesperrt.', query: 'B-1', art: 'leser' } }],
+		['Vormerkung', { vormerkungAlert: { titel: 'Natura 2', user: 'Tom Test' } }],
+		['Zubehör', { checklistAnfrage: { query: 'G-1', geraet: { modellname: 'Tablet' } } }]
+	])('%s: rot und Fehlerton, gebucht wird nichts, sie bleibt offen', (_name, zustand) => {
+		const theke = neueTheke();
+		expect(theke.rueckfrageOffen()).toBe(false);
+		Object.assign(theke, zustand);
+		expect(theke.rueckfrageOffen()).toBe(true);
+
+		theke.scanBeiRueckfrage();
+
+		expect(playSoundError, 'wer auf das Buch sieht, hört es').toHaveBeenCalledTimes(1);
+		expect(theke.screenFlash).toBe('error');
+		expect(apiClient.post).not.toHaveBeenCalled();
+		expect(theke.rueckfrageOffen(), 'ein Mensch beantwortet sie').toBe(true);
+	});
+});

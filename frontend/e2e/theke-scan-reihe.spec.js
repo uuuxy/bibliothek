@@ -1,10 +1,19 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, querySQL, uniqueSuffix, scanneWieScanner } from './helpers.js';
+import {
+	uiLogin,
+	apiPost,
+	apiPatch,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	scanneWieScanner
+} from './helpers.js';
 
 /**
  * Ein Handscanner wartet nicht auf die Antwort des Servers. Kommt sie spät (langsames Netz,
  * wartende Datenbank), trifft der nächste Scan ein, solange die Buchung läuft. Die Theke
- * reiht ihn ein und bucht ihn danach; dieselbe Nummer noch einmal verwirft sie.
+ * reiht ihn ein und bucht ihn danach; dieselbe Nummer noch einmal verwirft sie. Trifft er
+ * auf eine offene Rückfrage, bleibt sie stehen, und er wird nicht gebucht.
  *
  * Gescannt wird blind, ohne Klick ins Feld, und belegt wird an den Ausleihen in der
  * Datenbank. Die Antwort auf den ersten Scan kommt jeweils nach anderthalb Sekunden.
@@ -200,6 +209,85 @@ test('Nach einem gescheiterten Scan wird das eingereihte Buch nicht gebucht und 
 		).toBeVisible();
 		await page.waitForTimeout(500);
 		expect(ausleihen(buch.p), 'das Buch ist an den Leser davor gegangen').toBe('0/0');
+	} finally {
+		raeumeAuf(s);
+	}
+});
+
+test('Ein Scan bei offener Rückfrage lässt sie stehen und wird nicht gebucht', async ({ page }) => {
+	const { s, ben, buch } = await theke(page);
+	try {
+		// Ben ist von Hand gesperrt: Sein erstes Buch öffnet die Rückfrage.
+		const benId = querySQL(`SELECT id FROM leser WHERE barcode_id = '${ben}';`);
+		const gesperrt = await apiPatch(page, `/api/admin/students/${benId}/lock`, {
+			is_locked: true,
+			reason: 'E2E: Scan bei offener Rückfrage'
+		});
+		expect(gesperrt.ok(), `Sperren: ${gesperrt.status()}`).toBeTruthy();
+
+		await scanneWieScanner(page, ben);
+		await expect(page.getByRole('heading', { name: new RegExp(`Ben.*Reihe-${s}`) })).toBeVisible();
+		await expect.poll(() => fokus(page)).toBe('omnibox-input');
+		await scanneWieScanner(page, buch.p);
+		const rueckfrage = page.getByRole('alertdialog');
+		const blockiert = rueckfrage.getByRole('heading', { name: 'Ausleihe blockiert' });
+		await expect(blockiert).toBeVisible();
+		await expect(rueckfrage.getByRole('button', { name: 'Abbrechen' })).toBeFocused();
+
+		// Das Enter des nächsten Scans träfe „Abbrechen".
+		await scanneWieScanner(page, buch.q);
+		await page.waitForTimeout(500);
+		await expect(blockiert, 'der Scan hat die Rückfrage geschlossen').toBeVisible();
+		expect(ausleihen(buch.q), 'der Scan bei offener Rückfrage ist gebucht').toBe('0/0');
+		expect(ausleihen(buch.p), 'das gesperrte Buch ist gebucht').toBe('0/0');
+
+		// Ein Mensch beantwortet sie mit der Tastatur; danach landet der Scan wieder im Feld.
+		await page.keyboard.press('Enter');
+		await expect(rueckfrage).toHaveCount(0);
+		await expect.poll(() => fokus(page), 'der nächste Scan landet im Feld').toBe('omnibox-input');
+		await expect(page.locator('#omnibox-input')).toHaveValue('');
+	} finally {
+		raeumeAuf(s);
+	}
+});
+
+test('Ein Scan bei offenem Vormerk-Hinweis lässt ihn stehen und wird nicht gebucht', async ({
+	page
+}) => {
+	const { s, ben, buch } = await theke(page);
+	try {
+		// Ben hat das Buch vorgemerkt, das Anna zurückbringt.
+		seedSQL(`
+			INSERT INTO vormerkungen (titel_id, schueler_id)
+			SELECT e.titel_id, l.id FROM buecher_exemplare e, leser l
+			WHERE e.barcode_id = '${buch.x}' AND l.barcode_id = '${ben}';
+		`);
+		await page.getByRole('button', { name: 'Schnellrückgabe' }).click();
+		await expect(page.getByPlaceholder('Schnellrückgabe: Bücher scannen')).toBeVisible();
+		await expect.poll(() => fokus(page)).toBe('omnibox-input');
+
+		await scanneWieScanner(page, buch.x);
+		const hinweis = page.getByRole('alertdialog');
+		const vorgemerkt = hinweis.getByRole('heading', { name: 'Achtung! Vorgemerkt!' });
+		await expect(vorgemerkt).toBeVisible();
+		expect(ausleihen(buch.x), 'das vorgemerkte Buch ist zurück').toBe('1/0');
+
+		// Das Enter des nächsten Scans träfe „Verstanden", und das vorgemerkte Buch ginge ins Regal.
+		await scanneWieScanner(page, buch.y);
+		await page.waitForTimeout(500);
+		await expect(vorgemerkt, 'der Scan hat den Hinweis geschlossen').toBeVisible();
+		expect(ausleihen(buch.y), 'der Scan bei offenem Hinweis ist gebucht').toBe('1/1');
+
+		await hinweis.getByRole('button', { name: 'Verstanden' }).click();
+		await expect(hinweis).toHaveCount(0);
+		await expect.poll(() => fokus(page), 'der nächste Scan landet im Feld').toBe('omnibox-input');
+		await scanneWieScanner(page, buch.y);
+		await expect
+			.poll(() => ausleihen(buch.y), {
+				message: 'nach dem Hinweis bucht der Scan wieder',
+				timeout: 10_000
+			})
+			.toBe('1/0');
 	} finally {
 		raeumeAuf(s);
 	}

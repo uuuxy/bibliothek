@@ -63,9 +63,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   unter D; Littera ordnet solche Titel ohne den Artikel. Vorschlag: bleibt so. (5.59)
 - [x] Theke: Ein gescheiterter Scan gibt immer den Fehlerton, auch außerhalb der
   Schnellrückgabe (entschieden und gebaut am 07.10.2026).
-- [ ] Theke: Ein Scan bei offener Rückfrage (Sperre, Vormerkung, Zubehör) schließt sie und
-  geht ohne Meldung verloren. Vorschlag: Die Rückfragen fangen einen Scan ab wie der
-  Sperrbildschirm, mit Fehlerton. (5.61)
+- [x] Theke: Ein Scan bei offener Rückfrage (Sperre, Vormerkung, Zubehör) lässt sie stehen,
+  wird nicht gebucht und gibt den Fehlerton (entschieden und gebaut am 07.10.2026).
 - [x] „Mahnbriefe drucken" verlangt dasselbe Recht wie der Mahnversand (`create_orders`,
   entschieden und gebaut am 07.10.2026).
 - [x] Das Aussehen nach der Umstellung der Farben auf M3-Rollen bleibt so (entschieden am
@@ -737,18 +736,6 @@ Gemessen am 07.10.2026 an der Littera-Sicherung von 2010 (Tabelle `Titel`, 10.64
 ein Titel über das Suchfeld), oder bringt die Übernahme Litteras Sortiertitel in einer
 eigenen Spalte mit, nach der die Liste ordnet? Das zweite braucht eine Migration und eine
 Regel für neu angelegte Titel. Vorschlag: bleibt so.
-
-### 5.61 Theke: ein Scan bei offener Rückfrage schließt sie und geht verloren
-
-Nachgestellt am 07.10.2026 im Browser: Sperre von Hand, die Rückfrage „Ausleihe blockiert"
-ist offen, der Fokus steht auf „Abbrechen". Ein weiterer Scan schließt die Rückfrage (sein
-Enter drückt den Knopf); gebucht wird er nicht, eine Meldung gibt es nicht. Die Rückfrage
-zur Vormerkung hat nur den Knopf „Verstanden" (`OmniboxVormerkungAlert.svelte`, nicht
-nachgestellt): Dort ginge der Hinweis verloren, dass das Buch nicht ins Regal gehört.
-
-Anmeldung, Sperrbildschirm und „Standort ändern" fangen einen Scan ab (`scanSchutz` in
-`scanErkennung.js`). **Zu entscheiden:** Fangen die Rückfragen der Theke (Sperre, Vormerkung,
-Zubehör) einen Scan ebenso ab, mit Fehlerton? Vorschlag: ja. Kategorie A.
 
 ---
 

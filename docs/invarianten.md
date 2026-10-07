@@ -441,7 +441,9 @@ veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderunge
   02.10.2026, `frontend/e2e/buch-anlegen-handscanner.spec.js`). Dieselbe Form
   früher: das Scanfeld der Theke ohne Fokus nach dem ersten Scan (`768f44f`, 28.07.2026),
   ein Dialog, der beim Scan aufgeht und den nächsten Scan bekommt (24.09.2026,
-  `frontend/e2e/sperre.spec.js`). Derselbe Durchgang fand den Sperrbildschirm: Dort steht
+  `frontend/e2e/sperre.spec.js`; seit dem 07.10.2026 drückt das Enter eines Scans in den
+  Rückfragen der Theke keinen Knopf, `frontend/src/lib/scanOhneFokus.js`,
+  `frontend/e2e/theke-scan-reihe.spec.js`). Derselbe Durchgang fand den Sperrbildschirm: Dort steht
   der Fokus im Passwortfeld, ein Scan ging als Passwort zum Server und zählte als
   Fehlversuch, und nach fünf Scans war das Konto an diesem Rechner 15 Minuten gesperrt.
   Behoben am 01.10.2026 (`frontend/src/lib/scanErkennung.js`,

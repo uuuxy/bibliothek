@@ -954,6 +954,13 @@ export function createOmniboxStore() {
 	// Eine Rückfrage, die ein Mensch beantwortet: Sperre, Vormerkung, Zubehör.
 	const rueckfrageOffen = () => !!(blockAlert || vormerkungAlert || checklistAnfrage);
 
+	// Ein Scan bei offener Rückfrage ist nicht gebucht, und sie bleibt stehen (scanOhneFokus.js).
+	// Wer auf das Buch sieht, hört es.
+	function scanBeiRueckfrage() {
+		triggerScreenFlash('error');
+		playSoundError();
+	}
+
 	// Eine offene Rückfrage oder die laufende Kamera: Beide behalten ihre Eingabe.
 	const entscheidungOffen = () => showCamera || rueckfrageOffen();
 
@@ -1155,6 +1162,8 @@ export function createOmniboxStore() {
 		stoppeZeitgeber,
 		fokussiereScanfeld,
 		scanfeldBereit,
+		rueckfrageOffen,
+		scanBeiRueckfrage,
 		triggerScreenFlash,
 		triggerShake,
 		triggerFlash,

@@ -11,7 +11,7 @@
 	import OmniboxSchnellrueckgabe from './components/OmniboxSchnellrueckgabe.svelte';
 	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import { omniboxStore } from './stores/omnibox.svelte.js';
-	import { tasteInsScanfeld } from './scanOhneFokus.js';
+	import { thekenTasten } from './scanOhneFokus.js';
 	import { abonniere } from './liveEvents.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
 
@@ -83,14 +83,14 @@
 			}
 		}
 		// Ein Scan landet im Scanfeld, auch wenn der Fokus auf einem Reiter, einem Knopf oder
-		// nirgends steht. In der Capture-Phase, damit das Zeichen schon im Feld ankommt.
-		const insScanfeld = (/** @type {KeyboardEvent} */ e) =>
-			tasteInsScanfeld(e, omniboxStore.scanfeldBereit);
+		// nirgends steht; bei offener Rückfrage drückt er dort keinen Knopf. In der
+		// Capture-Phase, damit Zeichen und Enter abgefangen sind, bevor ein Element sie bekommt.
+		const thekenTaste = thekenTasten(omniboxStore);
 		window.addEventListener('keydown', handleKeyDown);
-		window.addEventListener('keydown', insScanfeld, true);
+		window.addEventListener('keydown', thekenTaste, true);
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
-			window.removeEventListener('keydown', insScanfeld, true);
+			window.removeEventListener('keydown', thekenTaste, true);
 		};
 	});
 

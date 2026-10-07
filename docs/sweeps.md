@@ -357,6 +357,7 @@ steht im Kopfkommentar der Datei.
 | `frontend-hygiene-schrift.test.js`         | Nur literale Klassen `text-<display\|headline\|title\|body\|label>-<small\|medium\|large>`; eine zusammengesetzte Klasse, eine Größe in `.css` oder im `style`-Attribut nicht. Die erlaubten Rollen liest er aus `theme-mass.css`. |
 | `frontend-hygiene-tabellen.test.js`        | Nur literale `<table>`- und Zellen-Tags mit `class="…"`; Klassen aus Variablen und eine Tabelle aus `<div role="table">` nicht. |
 | `frontend-hygiene-thekenzeitgeber.test.js` | Nur Testdateien, die aus `omnibox.svelte.js` importieren, und nur das VORKOMMEN eines Aufräum-Wortes; ob das Aufräumen auch läuft (afterEach), nicht. |
+| `frontend-hygiene-theken-fenster.test.js` | Nur Fenster, die `Omnibox.svelte` selbst einhängt (Datei `components/Omnibox…` mit `aria-modal` oder `<Modal`), und nur die Form `{#if omniboxStore.<Zustand>}` in der Datei des Fensters; ein Fenster tiefer in der Akte nicht. Ob ein Scan abgefangen wird, prüft `e2e/theke-scan-reihe.spec.js`. |
 | `frontend-hygiene-seitenweite-zuhoerer.test.js` | Nur literale Ereignisnamen an `window`, `document` und `<svelte:window\|document\|body>`; ein Zuhörer an `document.body` oder einem anderen Vorfahren nicht. Ob der Schild das Ereignis anhält, prüft `sperrSchild.test.js`. Zuhörer in der Fang-Phase an `window` sehen Ereignisse des Sperrbildschirms weiter. |
 
 **Browser-Gates (Playwright — NUR in CI, nie in pre-push)**
