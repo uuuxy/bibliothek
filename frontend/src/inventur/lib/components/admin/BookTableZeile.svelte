@@ -55,8 +55,19 @@
 		/>
 	</td>
 
+	<!-- Der Titel ist ein Knopf wie der Name in der Leserdatei: So öffnet auch die Tastatur die
+	     Akte. Der Klick bleibt beim Knopf, sonst öffnete die Zeile ein zweites Mal. -->
 	<td>
-		<span class="font-semibold">{book.title}</span>
+		<button
+			type="button"
+			onclick={(event) => {
+				event.stopPropagation();
+				onOpenDetail(book);
+			}}
+			class="text-left font-semibold text-on-surface hover:text-primary hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary"
+		>
+			{book.title}
+		</button>
 		<div class="text-on-surface-variant">{book.author}</div>
 	</td>
 

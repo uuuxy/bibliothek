@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/svelte';
 import BookTableZeile from './BookTableZeile.svelte';
 
 /** @param {any} [zusatz] */
@@ -90,6 +90,25 @@ describe('Titel-Verwaltung: Zeile', () => {
 		expect(zeile(buch(), false).container.querySelector('tr')?.getAttribute('aria-selected')).toBe(
 			'false'
 		);
+	});
+
+	// Der Titel ist ein Knopf wie der Name in der Leserdatei: Die Tastatur erreicht ihn, und
+	// Eingabe oder Leertaste öffnen die Akte. Der Klick auf die Zeile öffnet sie weiter.
+	it('öffnet die Akte über den Knopf am Titel und über die Zeile je einmal', async () => {
+		const geoeffnet = vi.fn();
+		const { getByRole, container } = render(BookTableZeile, {
+			book: buch(),
+			isSelected: false,
+			onOpenDetail: geoeffnet,
+			onToggleSelect: () => {}
+		});
+		await fireEvent.click(getByRole('button', { name: 'Die Räuber' }));
+		expect(
+			geoeffnet,
+			'der Klick am Knopf öffnet einmal, nicht auch über die Zeile'
+		).toHaveBeenCalledTimes(1);
+		await fireEvent.click(container.querySelectorAll('td')[3]);
+		expect(geoeffnet, 'der Klick in die Zeile öffnet weiter').toHaveBeenCalledTimes(2);
 	});
 
 	// Die Liste steht nach dem Titel; von Hand umsortiert wird sie nicht.
