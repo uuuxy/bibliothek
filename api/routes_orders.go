@@ -33,6 +33,8 @@ func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *OrderService,
 	mux.Handle("POST /api/bestellungen/bulk-receive", s.RequirePermission("create_orders")(s.BulkReceiveOrderHandler()))
 	mux.Handle("PUT /api/bestellungen/{id}/bestaetigen", s.RequirePermission("create_orders")(s.BestaetigenBestellungHandler()))
 	mux.Handle("PUT /api/bestellungen/{id}/bestaetigungs-link", s.RequirePermission("create_orders")(s.NeuerBestaetigungsLinkHandler()))
+	// Erneuter Versand der Bestellmail nach einem gescheiterten Versuch (Migration 161).
+	mux.Handle("POST /api/bestellungen/{id}/mail", s.RequirePermission("create_orders")(s.SendeBestellmailErneutHandler(pdfSvc)))
 	// Rückweg für den Topf (Migration 109): mit Pflicht-Grund, im Admin-Audit-Log.
 	mux.Handle("PUT /api/bestellungen/{id}/mittel", s.RequirePermission("create_orders")(s.UpdateBestellungMittelHandler()))
 }

@@ -11,7 +11,6 @@ import (
 	"bibliothek/auth"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
-	"bibliothek/pdf"
 	"bibliothek/repository"
 )
 
@@ -88,6 +87,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 
 	if !smtpKonfiguriert() {
 		log.Println("WARNUNG: Kein (echter) SMTP-Server hinterlegt. E-Mail-Versand übersprungen, die Bestellung ist gespeichert.")
+		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
 			"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.SupplierName),
@@ -96,48 +96,21 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		return
 	}
 
-	// Sum up how many items have generate_barcodes to pass to pdfSvc
-	anyBarcodesGenerated := hatVorabBarcodes(req.Items)
-
-	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-	settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
-	schule := pdf.SchuleInfo{
-		Name:    settings.SchuleName,
-		Strasse: settings.SchuleStrasse,
-		PLZ:     settings.SchulePLZ,
-		Ort:     settings.SchuleOrt,
-	}
-
-	betreff, textBody := s.loadBestellTemplate(ctx)
-	// Ohne hinterlegte öffentliche Adresse bleibt der Link leer: Die Bestellung geht
-	// dann wie bisher raus, nur ohne Bestätigungsschritt. Ein Link auf den internen
-	// Servernamen wäre beim Lieferanten wertlos und sähe trotzdem echt aus.
-	link := ""
-	if settings.OeffentlicheAdresse != nil {
-		link = bestaetigungsLink(*settings.OeffentlicheAdresse, res.BestaetigungsToken)
-	}
-	subject, body := resolveBestellMail(betreff, textBody, bestellMailWerte{
-		kundennummer:    res.CustomerNumber,
-		anzahlTitel:     len(res.SummaryItems),
-		anzahlExemplare: res.TotalAllocated,
-		link:            link,
-		gueltigBis:      res.LinkGueltigBis,
-		mittel:          res.Mittel,
+	mitLink, err := s.sendeBestellmail(ctx, pdfSvc, bestellmailDaten{
+		Empfaenger:        res.SupplierEmail,
+		Kundennummer:      res.CustomerNumber,
+		Mittel:            res.Mittel,
+		Positionen:        res.SummaryItems,
+		Exemplare:         res.TotalAllocated,
+		Etiketten:         res.Labels,
+		IstHauptlieferant: res.IstHauptlieferant,
+		Token:             res.BestaetigungsToken,
+		LinkGueltigBis:    res.LinkGueltigBis,
 	})
-
-	if err := pdfSvc.DispatchOrderEmail(BestellMail{
-		Empfaenger:           res.SupplierEmail,
-		Betreff:              subject,
-		Text:                 body,
-		Positionen:           res.SummaryItems,
-		Etiketten:            res.Labels,
-		MitVorabBarcodes:     anyBarcodesGenerated,
-		IstHauptlieferant:    res.IstHauptlieferant,
-		MitBestaetigungsLink: link != "",
-		Schule:               schule,
-		EtikettKopf:          etikettKopfAus(settings),
-		Mittel:               res.Mittel,
-	}); err != nil {
+	if err != nil {
+		// Die Bestellung ist gespeichert, die Mail nicht raus: Der Vermerk an der Bestellung
+		// bleibt, wenn diese Meldung vom Bildschirm verschwunden ist.
+		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "warning",
 			"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
@@ -146,7 +119,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		return
 	}
 
-	status, meldung := bestellVersandMeldung(res.SupplierName, res.IstHauptlieferant && link == "")
+	status, meldung := bestellVersandMeldung(res.SupplierName, res.IstHauptlieferant && !mitLink)
 	RespondJSON(w, http.StatusOK, map[string]any{
 		"status":      status,
 		"message":     meldung,
@@ -169,16 +142,6 @@ func mapProcessOrderError(err error) int {
 // istPlaceholderSMTP ist entfallen: Die Platzhalter-Erkennung steckt jetzt in
 // mailservice.SMTPKonfig.IstKonfiguriert und gilt damit für alle Versender — vorher
 // kannte nur die Bestell-Abwicklung sie.
-
-// hatVorabBarcodes prüft, ob mindestens eine Bestellposition Vorab-Barcodes generiert.
-func hatVorabBarcodes(items []OrderItemRequest) bool {
-	for _, item := range items {
-		if item.GenerateBarcodes {
-			return true
-		}
-	}
-	return false
-}
 
 // GetIncomingShipmentsHandler returns a list of ordered copies that are currently in transit,
 // grouped by creation date and supplier.

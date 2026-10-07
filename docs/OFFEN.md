@@ -143,8 +143,9 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Zwei Helfer (5.5):** Beträge und Fehlertexte schreiben 27 Stellen selbst.
 - [ ] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Benutzer, Gerät, Lieferant und die
   Kategorien der Einstellungen; am Titel und am Leser ist es behoben.
-- [ ] **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es
-  danach nirgends an der Bestellung.
+- [x] **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es an
+  der Bestellung und in der Bestellhistorie („Mail nicht versendet"), und die Bestellung lässt
+  sich erneut senden (entschieden und gebaut am 07.10.2026, Migration 161).
 - [ ] **Spur im Protokoll (5.57):** die übrigen ändernden Routen lesen und je Tür festlegen, ob
   sie einen Eintrag schreibt. Klassenleitungen, Mail-Vorlagen, Lieferanten und die
   Verlängerung der Lernmittel einer Klasse schreiben ihn seit dem 07.10.2026.
@@ -346,26 +347,6 @@ Vermerk.
     (`handleUpdateSupplier`). Kategorie C.
   - **Einstellungen:** Jede Kategorie schickt alle ihre Felder (`speichereKategorie`).
     Kategorie C.
-- **Bestellung ohne Versandstand** (gefunden am 07.10.2026, am Code gelesen). Scheitert die
-  Mail an den Lieferanten, antwortet `POST /api/bestellungen` „Bestellung gespeichert, aber
-  E-Mail-Versand … fehlgeschlagen"; die Meldung steht fünf Sekunden da. An der Bestellung
-  steht danach nichts (`bestellungen_verlauf` hat keine Spalte dafür), die Bestellhistorie
-  zeigt sie wie jede andere, und einen Knopf zum erneuten Senden gibt es nicht. Rückweg heute:
-  in der Bestellung einen neuen Bestätigungs-Link erzeugen und von Hand schicken
-  (`BestellStatusBlock.svelte`; braucht die öffentliche Adresse in den Einstellungen). Eine
-  Ansicht der Bestellung als Datei zum Weiterleiten gibt es nicht. Nächster Schritt: eine Spalte
-  „Mail versendet am" (Migration), der Hinweis an der Bestellung und „erneut senden". Seit dem
-  07.10.2026 wartet die Oberfläche bis zu 90 s auf diese Antwort (`FRIST_MAILVERSAND_MS`);
-  vorher gab sie nach 10 s auf, und die Wiederholung meldete „war bereits erfasst".
-  Kategorie B. Nachgelesen am 07.10.2026: Nach einem gescheiterten Versand nennt die
-  Bestellung weiter „Der Bestätigungs-Link ging mit der Bestellmail raus"
-  (`BestellStatusBlock.svelte`). Für „erneut senden" liegt alles an der Bestellung: Kopf,
-  Positionen und Exemplare (`repository/bestelldetail_repo.go`); der Link braucht einen neuen
-  Schlüssel, wie bei „Neuen Link erzeugen". Littera führt ein E-Mailprotokoll mit der Spalte
-  „Erfolgreich" und öffnet bei einem Fehlschlag die Fehlermeldung; eine gesendete Bestellung
-  lässt sich dort erneut drucken (Handbuch, „E-Mailprotokoll" und „Erwerb"). Koha bietet an
-  einer gescheiterten Nachricht „Resend"
-  ([Fehler 12426](https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=12426)).
 - **Status-Editor, Altbestand:** Bis zum 07.10.2026 öffnete der Editor ein gesperrtes
   Exemplar als „Verloren", wenn die Notiz das Wort enthielt, und das Speichern sonderte es
   mit dem Grund VERLUST aus. Ob das am Testserver Exemplare getroffen hat, zeigt (lesend):
@@ -416,6 +397,16 @@ Vermerk.
   auf ein Merkmal des Inhalts warten (Kachel, Tabellenzeile). Dieselbe Form des Wartens steht
   in `typo-rollen.spec.js`, `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`, dort
   nicht nachgemessen. Kategorie B.
+- `e2e/suchpille-einheitlich.spec.js` war am 07.10.2026 in der CI einmal rot und in der
+  Wiederholung für denselben Commit grün (Lauf 37662472141, Commit 4b6b0311; lokal 54 von 54
+  grün): Auf der Seite „Signaturen" maß die Spec die Pille ohne Fokus, obwohl sie das Feld
+  davor fokussiert. `fokussiertMessen` wartet auf zwei gleiche Messungen und prüft nicht, ob
+  das Feld den Fokus noch trägt; was ihn dort nimmt, ist nicht gefunden. Abhilfe: nach der
+  Messung prüfen, dass das Feld `document.activeElement` ist, sonst neu fokussieren. Kategorie B.
+- `e2e/feld-roundtrip.spec.js` („Buch anlegen") war am 07.10.2026 lokal in einem Lauf über 21
+  Specs einmal rot und allein wiederholt grün (6 von 6): Nach „Speichern" wartet die Spec zehn
+  Sekunden darauf, dass der neue Titel in der Liste steht; die lokale Datenbank trägt 12.909
+  Titel. Am Stack nachgestellt: Das Buch wird gespeichert und steht in der Liste. Kategorie C.
 - 46 Specs klicken Menüpunkte per `page.getByTitle('<Name>')`, 94 Stellen (gezählt am
   06.10.2026). Das trifft jedes Element, dessen `title` den Namen enthält, auch die Kachel
   eines Buchs. `e2e/abgaenger-management.spec.js` legt Titel „Abgänger Buch …" an und räumt

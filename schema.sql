@@ -1464,7 +1464,11 @@ CREATE TABLE bestellungen_verlauf (
     -- (Go-Guard, 400 an der Tür); NULL nur bei Alt-Bestellungen ohne eindeutige Zuordnung.
     mittel             TEXT
         CONSTRAINT bestellungen_verlauf_mittel_check
-        CHECK (mittel IS NULL OR mittel IN ('land', 'schultraeger'))
+        CHECK (mittel IS NULL OR mittel IN ('land', 'schultraeger')),
+    -- Zeitpunkt des letzten gescheiterten Versands der Bestellmail (Migration 161). NULL =
+    -- kein gescheiterter Versand vermerkt: die Mail ging raus, oder die Bestellung ist älter
+    -- als die Spalte. Ein gelungener erneuter Versand setzt sie wieder auf NULL.
+    mail_gescheitert_am TIMESTAMPTZ
 );
 
 -- Doppelklick-Schutz Bestellung: zweite Anfrage mit demselben Schlüssel läuft hier auf.
@@ -1975,7 +1979,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('157_isbn_eine_laenge.sql'),
 ('158_exemplar_standort.sql'),
 ('159_standort_am_titel_entfaellt.sql'),
-('160_titeltext_normalform.sql')
+('160_titeltext_normalform.sql'),
+('161_bestellung_mail_gescheitert.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

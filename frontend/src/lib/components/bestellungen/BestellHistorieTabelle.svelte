@@ -14,7 +14,7 @@
 <script>
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Tabelle from '../ui/Tabelle.svelte';
-	import { CircleCheck, Clock, ChevronRight } from '@lucide/svelte';
+	import { CircleCheck, Clock, ChevronRight, MailWarning } from '@lucide/svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import { mittelLabel } from './mittel.js';
 
@@ -42,7 +42,7 @@
 				<!-- Der Topf (Migration 109): Land oder Schulträger. Eigene Spalte aus demselben
 			     Grund wie die Bestätigung — in der Lieferantenzelle würde das Chip zerquetscht. -->
 				<th>Mittel</th>
-				<th>Bestätigung</th>
+				<th>Stand</th>
 				<th class="text-right">Exemplare</th>
 				{#if orderStore.preiseErfassen}<th class="text-right">Betrag</th>{/if}
 				<th class="w-8"><span class="sr-only">Bestellung öffnen</span></th>
@@ -79,10 +79,19 @@
 							<span class="text-sm text-on-surface-variant">ohne Zuordnung</span>
 						{/if}
 					</td>
-					<!-- Nur Lieferanten mit dem externen Schritt tragen hier etwas. Ein „—" in
-				     jeder anderen Zeile wäre Rauschen: Auffallen soll die Abweichung. -->
+					<!-- Nur Lieferanten mit dem externen Schritt und Bestellungen, deren Mail nicht
+				     rausging, tragen hier etwas. Ein „—" in jeder anderen Zeile wäre Rauschen:
+				     Auffallen soll die Abweichung. Der gescheiterte Versand steht zuerst, ohne
+				     Mail kann der Händler nichts bestätigen. -->
 					<td class="whitespace-nowrap">
-						{#if b.mit_bestaetigung && b.bestaetigt_am}
+						{#if b.mail_gescheitert_am}
+							<StatusChip
+								ton="fehler"
+								icon={MailWarning}
+								text="Mail nicht versendet"
+								tip="Die Bestellmail ist nicht rausgegangen. In der Bestellung lässt sie sich erneut senden."
+							/>
+						{:else if b.mit_bestaetigung && b.bestaetigt_am}
 							<StatusChip
 								ton="erfolg"
 								icon={CircleCheck}

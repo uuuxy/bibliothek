@@ -16,6 +16,7 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
 	import BestellStatusBlock from './BestellStatusBlock.svelte';
+	import BestellMailBlock from './BestellMailBlock.svelte';
 	import BestellDetailPositionen from './BestellDetailPositionen.svelte';
 	import BestellDetailExemplare from './BestellDetailExemplare.svelte';
 	import Button from '../ui/Button.svelte';
@@ -137,6 +138,10 @@
 				</div>
 			</div>
 		</div>
+
+		{#if bestellung.mail_gescheitert_am}
+			<BestellMailBlock b={bestellung} darfSenden={darfKorrigieren} onAktualisieren={laden} />
+		{/if}
 
 		<!-- Unverändert dieselbe Komponente wie in der Historie: Der Bestätigungs-Ablauf
 		     gehört an EINE Stelle. -->

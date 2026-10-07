@@ -1938,6 +1938,19 @@ vierzig Terminen von selbst um.
   „Meldung erledigt" gehen nach dem Commit hinaus; die Antwort der Tür nennt im Feld `mail`,
   ob sie versendet wurde, fehlschlug oder keine Adresse hatte, und die Oberfläche warnt dann
   („bitte die Lehrkraft selbst benachrichtigen"). Vorher stand ein Ausfall nur im Log des Servers.
+- **Die Bestellmail hält ihr Scheitern an der Bestellung fest** (Migration 161,
+  `bestellungen_verlauf.mail_gescheitert_am`). Die Bestellung ist gespeichert, bevor die Mail
+  geht. Scheitert der Versand oder ist kein Mailserver eingerichtet, steht der Zeitpunkt an
+  der Bestellung, die Bestellhistorie nennt „Mail nicht versendet", und die Bestellung lässt
+  sich erneut senden (`POST /api/bestellungen/{id}/mail`). Erster und erneuter Versand bauen
+  die Mail über dieselbe Funktion (`sendeBestellmail`); der erneute liest Positionen und
+  Etiketten aus der gespeicherten Bestellung, sendet an die heutige Adresse des Lieferanten
+  und erzeugt einen neuen Bestätigungs-Link, weil vom alten nur der Hash gespeichert ist.
+  Zwei Dinge schützen den Vermerk: Er hängt nicht an der Anfrage (`context.WithoutCancel`),
+  steht also auch, wenn der Browser das Warten aufgibt, während der Mailserver nicht antwortet.
+  Und der erneute Versand nimmt der Bestellung den Vermerk, bevor er sendet
+  (`repository.BeanspruchBestellmail`): Ein zweiter Klick bekommt 409 und schickt nichts
+  doppelt; scheitert der Versuch, kommt der Vermerk zurück.
 - **Wer Post bekommt:** Klassenleitung (Mahnlisten), Händler (Bestellung), Admins
   (Bereitschafts-Wächter), Lehrkräfte (Portal-Vorgänge). **Nicht** Schüler.
 - Vorlagen mit Platzhaltern liegen in `mail_vorlagen` und sind in der Oberfläche pflegbar.

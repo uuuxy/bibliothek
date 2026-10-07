@@ -81,6 +81,9 @@ type BestellVerlaufResponse struct {
 	// LinkGueltigBis: Ablauf des aktuellen Links (nil ohne Link) — damit die Bibliothek
 	// sieht, bis wann der Händler noch bestätigen und Etiketten drucken kann.
 	LinkGueltigBis *time.Time `json:"link_gueltig_bis,omitempty"`
+	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail
+	// (Migration 161). nil = kein gescheiterter Versand vermerkt.
+	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
 }
 
 // bestellhistorieStandardLimit / -MaxLimit deckeln die Liste.
@@ -151,7 +154,7 @@ func (s *Server) ladeBestellhistorie(ctx context.Context, limit int, mittel stri
 		       b.bestaetigt_am, b.etiketten_groesse, b.bestaetigt_durch,
 		       (b.bestaetigungs_token_hash IS NOT NULL
 		        AND (b.token_gueltig_bis IS NULL OR b.token_gueltig_bis > now())),
-		       b.token_gueltig_bis, coalesce(b.mittel, '')
+		       b.token_gueltig_bis, coalesce(b.mittel, ''), b.mail_gescheitert_am
 		FROM bestellungen_verlauf b
 		WHERE true`
 	if bedingung, arg := mittelBedingung(mittel, "b.mittel", len(args)+1); bedingung != "" {
@@ -177,7 +180,8 @@ func (s *Server) ladeBestellhistorie(ctx context.Context, limit int, mittel stri
 		var o BestellVerlaufResponse
 		if err := rows.Scan(&o.ID, &o.LieferantName, &o.LieferantEmail, &o.Kundennummer,
 			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.MitBestaetigung,
-			&o.BestaetigtAm, &o.EtikettenGroesse, &o.BestaetigtDurch, &o.LinkAktiv, &o.LinkGueltigBis, &o.Mittel); err != nil {
+			&o.BestaetigtAm, &o.EtikettenGroesse, &o.BestaetigtDurch, &o.LinkAktiv, &o.LinkGueltigBis, &o.Mittel,
+			&o.MailGescheitertAm); err != nil {
 			return nil, nil, err
 		}
 		o.Positionen = []BestellPositionResponse{}

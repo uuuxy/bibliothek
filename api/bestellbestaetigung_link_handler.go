@@ -56,19 +56,7 @@ func (s *Server) NeuerBestaetigungsLinkHandler() http.HandlerFunc {
 			return
 		}
 
-		token, hash, err := neuerBestaetigungsToken()
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		var gueltigBis time.Time
-		err = s.DB.Pool.QueryRow(ctx, `
-			UPDATE bestellungen_verlauf
-			SET bestaetigungs_token_hash = $1, token_gueltig_bis = now() + make_interval(days => $2)
-			WHERE id = $3
-			RETURNING token_gueltig_bis
-		`, hash, s.bestellinkGueltigkeitTage(ctx), id).Scan(&gueltigBis)
+		token, gueltigBis, err := s.erneuereBestaetigungsToken(ctx, id)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -79,6 +67,27 @@ func (s *Server) NeuerBestaetigungsLinkHandler() http.HandlerFunc {
 			"gueltig_bis": gueltigBis,
 		})
 	}
+}
+
+// erneuereBestaetigungsToken gibt der Bestellung einen neuen Bestätigungs-Link mit neuer
+// Frist und liefert seinen Klartext. Ein früherer Link ist damit ungültig: Gespeichert ist
+// immer nur der Hash des einen gültigen. „Neuen Link erzeugen" und der erneute Versand der
+// Bestellmail gehen beide hier durch.
+func (s *Server) erneuereBestaetigungsToken(ctx context.Context, bestellungID string) (token string, gueltigBis time.Time, err error) {
+	token, hash, err := neuerBestaetigungsToken()
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	err = s.DB.Pool.QueryRow(ctx, `
+		UPDATE bestellungen_verlauf
+		SET bestaetigungs_token_hash = $1, token_gueltig_bis = now() + make_interval(days => $2)
+		WHERE id = $3
+		RETURNING token_gueltig_bis
+	`, hash, s.bestellinkGueltigkeitTage(ctx), bestellungID).Scan(&gueltigBis)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	return token, gueltigBis, nil
 }
 
 // oeffentlicheAdresse liest die Adresse, unter der Dritte das System erreichen. Leer =

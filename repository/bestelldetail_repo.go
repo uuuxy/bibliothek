@@ -57,6 +57,10 @@ type BestellungKopf struct {
 	// Alt-Bestellungen ohne eindeutige Zuordnung — die Oberfläche zeigt dann „ohne
 	// Zuordnung", nie einen geratenen Topf.
 	Mittel string `json:"mittel"`
+
+	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail
+	// (Migration 161). nil = kein gescheiterter Versand vermerkt.
+	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
 }
 
 // BestellPositionDetail ist eine bestellte Zeile samt Angaben aus dem Titelsatz.
@@ -145,12 +149,13 @@ func (r *pgBestelldetailRepository) ladeKopf(ctx context.Context, bestellungID s
 		       bestaetigt_am, bestaetigt_durch, etiketten_groesse,
 		       (bestaetigungs_token_hash IS NOT NULL
 		        AND (token_gueltig_bis IS NULL OR token_gueltig_bis > now())),
-		       coalesce(mittel, '')
+		       coalesce(mittel, ''), mail_gescheitert_am
 		FROM bestellungen_verlauf
 		WHERE id = $1
 	`, bestellungID).Scan(&k.ID, &k.LieferantName, &k.LieferantEmail, &k.Kundennummer,
 		&k.Bestelldatum, &k.Gesamtbetrag, &k.AnzahlExemplare, &k.MitBestaetigung,
-		&k.BestaetigtAm, &k.BestaetigtDurch, &k.EtikettenGroesse, &k.LinkAktiv, &k.Mittel)
+		&k.BestaetigtAm, &k.BestaetigtDurch, &k.EtikettenGroesse, &k.LinkAktiv, &k.Mittel,
+		&k.MailGescheitertAm)
 	if err != nil {
 		return nil, err
 	}

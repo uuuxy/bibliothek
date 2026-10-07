@@ -36,6 +36,16 @@
 			.join(' · ')
 	);
 
+	// Ist die Bestellmail nicht rausgegangen, hat der Händler auch den Link darin nicht.
+	let linkSatz = $derived.by(() => {
+		if (b.mail_gescheitert_am) {
+			return 'Der Händler hat den Bestätigungs-Link nicht erhalten: Die Bestellmail ist nicht rausgegangen.';
+		}
+		if (!b.link_aktiv) return 'Für diese Bestellung ist kein gültiger Link unterwegs.';
+		const frist = b.link_gueltig_bis ? ` und gilt bis zum ${langdatum(b.link_gueltig_bis)}` : '';
+		return `Der Bestätigungs-Link ging mit der Bestellmail raus${frist}. Sobald der Händler dort bestätigt, erscheint es hier von selbst.`;
+	});
+
 	/** @param {string} iso */
 	function langdatum(iso) {
 		return new Date(iso).toLocaleDateString('de-DE', {
@@ -107,11 +117,7 @@
 				<Clock size={20} class="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
 				<div>
 					<p class="text-sm font-semibold text-on-surface">Warten auf den Händler</p>
-					<p class="mt-0.5 text-xs text-on-surface-variant">
-						{b.link_aktiv
-							? `Der Bestätigungs-Link ging mit der Bestellmail raus${b.link_gueltig_bis ? ` und gilt bis zum ${langdatum(b.link_gueltig_bis)}` : ''}. Sobald der Händler dort bestätigt, erscheint es hier von selbst.`
-							: 'Für diese Bestellung ist kein gültiger Link unterwegs.'}
-					</p>
+					<p class="mt-0.5 text-xs text-on-surface-variant">{linkSatz}</p>
 				</div>
 			</div>
 			<Button variant="secondary" size="sm" disabled={laeuft} onclick={linkErzeugen}>

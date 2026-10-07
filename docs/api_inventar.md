@@ -15,7 +15,7 @@
 - `/api/print/`
 - `/api/public/`
 
-## Alle registrierten Routen (227)
+## Alle registrierten Routen (228)
 
 - `/`
 - `/api/admin`
@@ -176,6 +176,7 @@
 - `POST /api/bestellungen`
 - `POST /api/bestellungen/bulk-receive`
 - `POST /api/bestellungen/suche`
+- `POST /api/bestellungen/{id}/mail`
 - `POST /api/books`
 - `POST /api/books/import`
 - `POST /api/books/{id}/cover-upload`
