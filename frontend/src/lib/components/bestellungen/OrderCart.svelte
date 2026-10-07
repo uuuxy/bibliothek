@@ -12,9 +12,8 @@
 	import Button from '../ui/Button.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import OrderCartPosition from './OrderCartPosition.svelte';
+	import { formatEuro } from '../../utils/format.js';
 
-	/** @param {number} betrag */
-	const euro = (betrag) => betrag.toFixed(2).replace('.', ',') + ' €';
 	const anzahlBestellungen = $derived(orderStore.gruppen.length);
 </script>
 
@@ -49,7 +48,7 @@
 					</h3>
 					<span class="text-xs text-on-surface-variant tabular-nums">
 						{gruppe.menge} Expl.{#if orderStore.preiseErfassen}
-							· {euro(gruppe.summe)}{/if}
+							· {formatEuro(gruppe.summe)}{/if}
 					</span>
 				</div>
 				{#each gruppe.items as item (item.id)}
@@ -66,7 +65,7 @@
 				{#if orderStore.preiseErfassen}
 					<span class="text-sm font-semibold text-on-surface-variant">Gesamt</span>
 					<span class="text-xl font-bold text-on-surface tabular-nums"
-						>{euro(orderStore.total)}</span
+						>{formatEuro(orderStore.total)}</span
 					>
 				{:else}
 					<span class="text-sm font-semibold text-on-surface-variant">Exemplare</span>

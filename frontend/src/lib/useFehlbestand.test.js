@@ -27,7 +27,7 @@ describe('Fehlbestand: als gefunden verbuchen', () => {
 		await useFehlbestand().fehlbestandGefunden('ex-1');
 
 		expect(toastStore.addToast).toHaveBeenCalledWith(
-			'Als gefunden verbucht — Exemplar ist wieder verfügbar. Die Forderung über 1.234,50 € wurde storniert.',
+			'Als gefunden verbucht — Exemplar ist wieder verfügbar. Die Forderung über 1.234,50\u00a0€ wurde storniert.',
 			'success'
 		);
 	});

@@ -23,6 +23,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { BescheidFormular } from './bescheidFormular.svelte.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { formatEuro } from '../../utils/format.js';
 
 	/**
 	 * @type {{
@@ -41,11 +42,6 @@
 	// svelte-ignore state_referenced_locally
 	const formular = new BescheidFormular(schuelerId);
 	formular.laden();
-
-	/** @param {number} n */
-	const euro = (n) =>
-		Number(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
-		' €';
 
 	async function erstellen() {
 		const bescheid = await formular.erstellen();
@@ -113,7 +109,9 @@
 				/>
 				<div class="text-right">
 					<div class="text-xs font-semibold text-on-surface-variant">Gesamtbetrag</div>
-					<div class="text-2xl font-bold text-on-surface tabular-nums">{euro(formular.summe)}</div>
+					<div class="text-2xl font-bold text-on-surface tabular-nums">
+						{formatEuro(formular.summe)}
+					</div>
 				</div>
 			</div>
 		{/if}

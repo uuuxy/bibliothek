@@ -18,14 +18,11 @@
 	import Button from '../ui/Button.svelte';
 	import { bescheidStatus } from '../../bescheidStatus.js';
 	import { FileText, Printer } from '@lucide/svelte';
+	import { formatEuro } from '../../utils/format.js';
 
 	/** @type {{ darfSchreiben: boolean, onBescheid: (schuelerId: string) => void }} */
 	let { darfSchreiben, onBescheid } = $props();
 
-	/** @param {number} n */
-	const euro = (n) =>
-		Number(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
-		' €';
 	/** @param {string} iso */
 	const datum = (iso) => new Date(iso).toLocaleDateString('de-DE');
 
@@ -93,7 +90,7 @@
 									{z.anzahl === 1 ? 'Forderung' : 'Forderungen'} · seit {datum(z.seit)}
 								</span>
 							</td>
-							<td class="text-right tabular-nums">{euro(z.summe)}</td>
+							<td class="text-right tabular-nums">{formatEuro(z.summe)}</td>
 							<td><span class="text-on-surface-variant">–</span></td>
 							<td>
 								{#if z.land}
@@ -137,7 +134,7 @@
 									)}
 								</span>
 							</td>
-							<td class="text-right tabular-nums">{euro(b.gesamtbetrag)}</td>
+							<td class="text-right tabular-nums">{formatEuro(b.gesamtbetrag)}</td>
 							<td class="tabular-nums">{datum(b.frist_bis)}</td>
 							<td>
 								<StatusChip

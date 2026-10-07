@@ -13,14 +13,11 @@
 	import StatusChip from './components/ui/StatusChip.svelte';
 	import Button from './components/ui/Button.svelte';
 	import { Printer } from '@lucide/svelte';
+	import { formatEuro } from './utils/format.js';
 
 	/** @type {{ bescheide: any[] }} */
 	let { bescheide = [] } = $props();
 
-	/** @param {number} n */
-	const euro = (n) =>
-		Number(n ?? 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) +
-		' €';
 	/** @param {string} iso */
 	const datum = (iso) => new Date(iso).toLocaleDateString('de-DE');
 
@@ -51,9 +48,8 @@
 						<h4 class="font-mono font-bold text-on-surface">{b.referenznummer}</h4>
 						<span class="text-sm text-on-surface-variant">
 							{b.anzahl_positionen}
-							{b.anzahl_positionen === 1 ? 'Position' : 'Positionen'} · {euro(b.gesamtbetrag)} · vom {datum(
-								b.brief_datum
-							)}
+							{b.anzahl_positionen === 1 ? 'Position' : 'Positionen'} · {formatEuro(b.gesamtbetrag)} ·
+							vom {datum(b.brief_datum)}
 						</span>
 						<span class="text-sm text-on-surface-variant">Frist: {datum(b.frist_bis)}</span>
 						<div class="mt-1">

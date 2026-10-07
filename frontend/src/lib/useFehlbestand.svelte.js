@@ -5,16 +5,7 @@ import {
 	meldeVerlustGefunden,
 	loescheVerlustEndgueltig
 } from './inventurApi.js';
-
-/** @param {number} n */
-function euro(n) {
-	return (
-		Number(n ?? 0).toLocaleString('de-DE', {
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2
-		}) + ' €'
-	);
-}
+import { formatEuro } from './utils/format.js';
 
 /**
  * Der Fehlbestandsbericht: Liste, frühere Läufe, und die zwei Handlungen darauf
@@ -70,7 +61,7 @@ export function useFehlbestand() {
 		const storniert = Number(r.data?.stornierte_forderungen) || 0;
 		toastStore.addToast(
 			storniert > 0
-				? `Als gefunden verbucht — Exemplar ist wieder verfügbar. Die Forderung über ${euro(r.data.stornierter_betrag)} wurde storniert.`
+				? `Als gefunden verbucht — Exemplar ist wieder verfügbar. Die Forderung über ${formatEuro(r.data.stornierter_betrag)} wurde storniert.`
 				: 'Als gefunden verbucht — Exemplar ist wieder verfügbar.',
 			'success'
 		);

@@ -6,6 +6,7 @@
 	import BestellHistorieKopf from './BestellHistorieKopf.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
+	import { formatEuro } from '../../utils/format.js';
 
 	/** @type {any[]} */
 	let bestellungen = $state([]);
@@ -95,11 +96,6 @@
 	const topfLabel = (wert) =>
 		wert && wert in MITTEL ? `${MITTEL[/** @type {any} */ (wert)].label}` : 'ohne Zuordnung';
 
-	/** @param {number} n */
-	function euro(n) {
-		return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-	}
-
 	/** @param {string} iso */
 	function datum(iso) {
 		return new Date(iso).toLocaleDateString('de-DE', {
@@ -147,7 +143,7 @@
 			{gesamtsumme}
 			{gesamtExemplare}
 			{aufteilung}
-			{euro}
+			euro={formatEuro}
 			{topfLabel}
 			{mittelFilter}
 			zeigeKennzahlen={bestellungen.length > 0}
@@ -176,7 +172,13 @@
 				{/if}
 			</div>
 		{:else}
-			<BestellHistorieTabelle {bestellungen} {euro} {datum} {kurzdatum} onOeffnen={oeffne} />
+			<BestellHistorieTabelle
+				{bestellungen}
+				euro={formatEuro}
+				{datum}
+				{kurzdatum}
+				onOeffnen={oeffne}
+			/>
 
 			<!-- Ehrlich sagen, dass die Liste nicht alles zeigt. Ohne den Satz sucht jemand eine
 		     ältere Bestellung, findet sie nicht und hält sie für gelöscht. -->

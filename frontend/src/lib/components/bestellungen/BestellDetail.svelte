@@ -27,6 +27,7 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menu.js';
 	import { ArrowLeft } from '@lucide/svelte';
+	import { formatEuro } from '../../utils/format.js';
 
 	/** @type {{ bestellungId: string, onBack: () => void }} */
 	let { bestellungId, onBack } = $props();
@@ -60,11 +61,6 @@
 	// wird diese Komponente je Bestellung neu aufgebaut, und ein Effekt, der auf einen
 	// Wechsel horcht, der nicht stattfinden kann, wäre nur eine Behauptung über den Ablauf.
 	onMount(laden);
-
-	/** @param {number} n */
-	function euro(n) {
-		return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-	}
 
 	/** @param {string} iso */
 	function langdatum(iso) {
@@ -131,7 +127,9 @@
 			<div class="text-right">
 				{#if orderStore.preiseErfassen}
 					<div class="text-xs font-semibold text-on-surface-variant">Bestellwert</div>
-					<div class="text-2xl font-black text-on-surface">{euro(bestellung.gesamtbetrag)}</div>
+					<div class="text-2xl font-black text-on-surface">
+						{formatEuro(bestellung.gesamtbetrag)}
+					</div>
 				{/if}
 				<div class="text-sm text-on-surface-variant tabular-nums">
 					{bestellung.anzahl_exemplare} Exemplare bestellt
@@ -161,7 +159,7 @@
 			<h3 class="mb-2 text-base font-bold text-on-surface">Bestellte Titel</h3>
 			<BestellDetailPositionen
 				positionen={bestellung.positionen}
-				{euro}
+				euro={formatEuro}
 				onNachdruck={zumNachdruck}
 				onTitel={zumTitel}
 			/>
