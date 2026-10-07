@@ -631,7 +631,8 @@ verworfen werden. Verwerfen bucht nichts: Unter _Frühere Inventuren_ steht der 
 Bestand, aktuell verliehen, Zirkulationsquote, Wiederbeschaffungswert; Ausleihen pro Monat;
 Überfällige nach Dauer; **Renner** (meistausgeliehen) und **Ladenhüter** (seit über zwei Jahren
 nicht ausgeliehen) mit Detailseite und Filter. Ohne Schülernamen — die Statistik zählt
-Ausleihen, nicht Personen. (§11)
+Ausleihen, nicht Personen. Ein bestelltes Buch zählt erst zum Bestand, wenn es eingetroffen
+ist. (§11)
 
 ## Bestandsbücher
 

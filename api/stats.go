@@ -125,8 +125,9 @@ func (s *Server) queryBestandKennzahlen(ctx context.Context, typeFilter string) 
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		LEFT JOIN aktive_ausleihen al ON al.exemplar_id = e.id
-		WHERE 1=1 %[2]s
-	`, istVerlust, typeFilter)
+		-- Gezählt wird, was im Bestand ist oder war; ein bestelltes Exemplar zählt ab dem Eintreffen.
+		WHERE %[3]s %[2]s
+	`, istVerlust, typeFilter, repository.SQLWarImBestand)
 
 	k := &bestandKennzahlen{}
 	err := s.DB.Pool.QueryRow(ctx, q).Scan(
