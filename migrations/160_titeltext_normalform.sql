@@ -29,8 +29,11 @@
 -- Spaltenbreite scheitern. Keine Tür trennt in diesen Spalten mit Zeilenumbruch oder
 -- Tabulator (mehrere Verfasser stehen mit „; " hintereinander): Es geht nur Leerraum verloren,
 -- der nichts bedeutet. Gemessen an der lokalen Datenbank am 07.10.2026: Kein Titel ist
--- betroffen; am Testserver ist nicht gemessen. Idempotent: Beim zweiten Lauf steht jeder Text
--- schon in der Form.
+-- betroffen; am Testserver ist nicht gemessen. Im Katalog-Export vom Juni 2026 (14.858
+-- Einträge, die Quelle des Katalog-Imports; gemessen am 07.10.2026) tragen 195 Titel, 18
+-- Verfasser und 11 Verlage zwei Leerzeichen in Folge und 3 Titel ein geschütztes Leerzeichen,
+-- sonst keine Form von Leerraum. Idempotent: Beim zweiten Lauf steht jeder Text schon in der
+-- Form.
 -- =============================================================================
 
 CREATE OR REPLACE FUNCTION titeltext_normalform(roh text)

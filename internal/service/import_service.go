@@ -112,8 +112,9 @@ func parseKatalogisat(kat Katalogisat) litteraFelder {
 	var f litteraFelder
 	for _, feld := range kat.Felder {
 		mab := strings.TrimSpace(feld.MAB)
-		val := strings.TrimSpace(feld.Value)
-		val = littera.OhneNichtsortierzeichen(val)
+		// Erst die Zeichen, dann der Rand, wie in der Übernahme: Ein Titel nur aus
+		// Nichtsortierzeichen ist leer und fällt weg.
+		val := strings.TrimSpace(littera.OhneNichtsortierzeichen(feld.Value))
 
 		switch mab {
 		case "100":

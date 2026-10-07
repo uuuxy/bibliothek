@@ -9,6 +9,32 @@ import (
 	"bibliothek/pkg/lmf"
 )
 
+// Der Katalog-Import liest einen Wert wie die Übernahme (littera.LeseTitel): erst die
+// Nichtsortierzeichen weg, dann der Rand. Andersherum bliebe das Leerzeichen neben einem
+// Zeichen stehen, und ein Titel nur aus Nichtsortierzeichen käme ohne Wortlaut in den Katalog.
+func TestParseKatalogisat_NichtsortierzeichenVorDemRand(t *testing.T) {
+	lies := func(roh string) (litteraFelder, bool) {
+		f := parseKatalogisat(Katalogisat{Felder: []Feld{{MAB: "310 ", Value: roh}}})
+		_, ok := bookTitleAusFelder(f)
+		return f, ok
+	}
+	for _, roh := range []string{"¬ ¬", " ¬ ", "¬¬", "  "} {
+		if f, ok := lies(roh); ok {
+			t.Errorf("%q: als Titel %q übernommen — ein Titel ohne Wortlaut fällt weg", roh, f.titel)
+		}
+	}
+	faelle := map[string]string{
+		"¬ Das IGL-Buch 1 ¬":    "Das IGL-Buch 1",
+		" ¬Die¬ schwarze Katze": "Die schwarze Katze",
+		"Die Welle":             "Die Welle",
+	}
+	for roh, erwartet := range faelle {
+		if f, ok := lies(roh); !ok || f.titel != erwartet {
+			t.Errorf("%q: Titel %q (übernommen %v), erwartet %q", roh, f.titel, ok, erwartet)
+		}
+	}
+}
+
 // Falsche XML-Dateien (z. B. der Schlagwort-Export systematik+.xml mit
 // <Schlagworte>-Wurzel) sind Nutzer-Formatfehler: ParseLitteraXML muss sie als
 // ErrKeinKatalogisat melden, damit der Handler 400 statt 500 antwortet.
