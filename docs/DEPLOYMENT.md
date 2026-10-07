@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-10-01
+> Zuletzt aktualisiert: 2026-10-07
 
 ---
 
@@ -514,7 +514,8 @@ die Anwendung nach einem Neustart des Hosts einfach aus — `unattended-upgrades
 genau das auf diesem Server schon einmal ausgelöst, und gemerkt hat es niemand, weil
 kein Fehler auftrat: Es lief nur nichts mehr.
 
-Optional: Sentry-Integration für Error-Tracking via `SENTRY_DSN`.
+Optional: Sentry-Integration für Error-Tracking via `SENTRY_DSN`. Im Echtbetrieb leer lassen
+(sonst gehen Fehlerberichte in die USA) oder eine Instanz in der EU eintragen.
 
 ---
 
