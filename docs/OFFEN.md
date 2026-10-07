@@ -75,8 +75,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   entschieden und gebaut am 07.10.2026).
 - [x] Das Aussehen nach der Umstellung der Farben auf M3-Rollen bleibt so (entschieden am
   06.10.2026). Eigene Farben je Fach gibt es nicht.
-- [ ] Feld „Signatur" nach der Übernahme: An den Titeln steht dann die ganze Aufschrift des
-  Buchrückens. Sollen Vorschläge und Liste nach der Regaladresse zusammenfassen? (7.2)
+- [x] Feld „Signatur" nach der Übernahme: Vorschläge, die Seite „Signaturen" und die Auswahl
+  der Inventur fassen nach der Regaladresse zusammen, dem Teil vor „ / "; am Titel bleibt die
+  ganze Aufschrift (entschieden und gebaut am 07.10.2026).
 - [x] Buchakte: Kopf und Reiter zählen den Bestand, ein bestelltes Exemplar steht im Kopf als
   „1 bestellt"; die Zahl „Exemplare" im Kopf ist entfallen (entschieden und gebaut am
   07.10.2026).
@@ -766,22 +767,6 @@ danach an der Exemplarkarte, in der Titel-Verwaltung und in den Vorschlägen von
 Bibliothek" und „Bibliothek" als Standort mitkommen, falls sie noch an Titeln stehen (2010 an
 7.471 Titeln; sie nennen den gewöhnlichen Platz). Die Generalprobe zeigt nur die Zahlen; die
 Listen liest, wer den Trockenlauf selbst startet.
-
-**Signaturen nach der Übernahme (gefunden am 07.10.2026).** Die Übernahme schreibt an den Titel
-die ganze Aufschrift des Buchrückens („LMF Deu 7 / Bie"), der Katalog-Import nur die
-Regaladresse ([littera_schema_befund.md](littera_schema_befund.md), „Die Signatur"). Das Feld
-„Signatur" im Buchformular und im Bestellkorb und die Liste der Signaturen
-(`GET /api/signaturen`) fassen nach dem ganzen Wortlaut zusammen. Am Testserver stehen bei den
-Büchern der Schülerbücherei nur die Regaladressen (gemessen am 22.09.2026); nach der Übernahme
-der Sicherung von 2010 wären es 6.251 Einträge, 4.840 davon mit einem einzigen Titel. Gezählt
-mit `SignaturJeTitel` an der Sicherung, an einer geladenen Datenbank nicht angesehen. Zu
-entscheiden: ob Vorschläge und Liste nach der Regaladresse zusammenfassen, dem Teil vor „ / ".
-Vorschlag (07.10.2026): ja, 732 Regaladressen statt 6.251 Aufschriften; am Titel bleibt die
-ganze Aufschrift. Littera baut die Signatur aus zwei Zeilen, in der Vorgabe „1. Systematik + 3
-Anfangsbuchstaben des Verfassers" (Handbuch, „Generierung der Signatur"). In der Sicherung von
-2010 trägt die zweite Zeile bei 58.653 von 61.520 Exemplaren genau drei Zeichen („Gri", „Bie",
-„Ber"; gezählt am 07.10.2026 an `Exemplar.Sig2`). Sie ordnet innerhalb des Regals und nennt
-kein Regal.
 
 **Sperren und Salden aus Littera (gefunden am 07.10.2026).** Die Übernahme liest sie nicht: Wer
 in Littera gesperrt ist, kommt ohne Sperre an

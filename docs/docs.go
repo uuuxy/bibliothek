@@ -3258,14 +3258,14 @@ const docTemplate = `{
         },
         "/signaturen": {
             "get": {
-                "description": "Returns the signatures that actually occur on titles, with title and copy counts.",
+                "description": "Returns the shelf addresses (the part of a signature before \" / \") that occur on titles, with title and copy counts.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "books"
                 ],
-                "summary": "List signatures in stock",
+                "summary": "List shelf addresses in stock",
                 "responses": {
                     "200": {
                         "description": "OK",

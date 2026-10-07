@@ -32,6 +32,8 @@ import (
 	"io"
 	"strconv"
 	"strings"
+
+	"bibliothek/repository"
 )
 
 // Titel ist ein Katalogeintrag aus der Littera-Tabelle `Titel`.
@@ -242,7 +244,7 @@ func SignaturAus(sig1, sig2 string) string {
 	b := bereinigeSignaturteil(sig2)
 	switch {
 	case a != "" && b != "":
-		return a + " / " + b
+		return a + repository.SignaturTrenner + b
 	case a != "":
 		return a
 	default:

@@ -202,9 +202,21 @@ nur bei elf Exemplaren mit Signatur, bei den Büchern der Schülerbücherei so w
 Lernmitteln. An den 10.422 Titeln stehen nach der Übernahme 6.251 verschiedene Aufschriften mit
 732 verschiedenen Regaladressen; 4.840 Aufschriften gehören zu genau einem Titel.
 
+**Liste und Vorschläge nennen die Regaladresse** (entschieden und gebaut am 07.10.2026). Die
+Seite „Signaturen", die Vorschläge im Feld „Signatur" (Buchformular, Bestellkorb) und die
+Auswahl der Inventur lesen `GET /api/signaturen`; die Liste fasst nach dem Teil vor dem ersten
+„ / " zusammen (`repository.SQLSignaturRegaladresse`, der Trenner ist
+`repository.SignaturTrenner`, mit dem `SignaturAus` die Aufschrift zusammensetzt). Am Titel
+bleibt die ganze Aufschrift, die Regalansicht zeigt sie. Littera baut die zweite Zeile in der
+Vorgabe aus den „3 Anfangsbuchstaben des Verfassers" (Handbuch, „Generierung der Signatur"); in
+der Sicherung von 2010 trägt `Sig2` bei 58.653 von 61.520 Exemplaren genau drei Zeichen. `Sig1`
+enthält den Trenner nie, `Sig2` bei 235 Exemplaren („PoWi / Ich"): Geteilt wird deshalb am
+ersten. Einen Schrägstrich ohne Leerzeichen tragen 1.411 Exemplare in `Sig1` („Pa/KL",
+„DvD/Sp"); er trennt nicht (gezählt am 07.10.2026).
+
 **Das Programm erfindet keine Signatur** (entschieden am 22.09.2026): Sie klebt am Buch, und
-nach ihr steht es im Regal. Für einen neuen Titel bietet das Feld an, was an den Titeln des
-Bestands steht (`GET /api/signaturen`, im Buchformular und im Bestellkorb über
+nach ihr steht es im Regal. Für einen neuen Titel bietet das Feld die Regaladressen an, die an
+den Titeln des Bestands stehen (`GET /api/signaturen`, im Buchformular und im Bestellkorb über
 `frontend/src/lib/utils/signaturen.js`); aus der Gattung der DNB wird keine gebildet. Ein Fach
 liest die Übernahme nur aus einer Lernmittel-Signatur (`lmf.Zerlege`), sonst aus den
 Schlagworten.

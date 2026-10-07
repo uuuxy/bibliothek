@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/littera"
 	"bibliothek/repository"
 )
 
@@ -130,5 +132,74 @@ func TestSignaturenEndpunkte(t *testing.T) {
 		httptest.NewRequest(http.MethodGet, "/api/signaturen/buecher?signatur=%20", nil))
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("leere Signatur: erwartet 400, war %d", rec.Code)
+	}
+}
+
+// Die Liste fasst nach der Regaladresse zusammen, dem Teil vor dem Trenner. Die Littera-
+// Übernahme schreibt an jeden Titel die ganze Aufschrift des Buchrückens („LMF Deu 7 / Bie"):
+// Je Aufschrift eine Zeile wären in der Sicherung von 2010 6.251 Einträge, 4.840 davon mit
+// einem einzigen Titel. Schreiber (littera.SignaturAus) und Leser stehen im selben Test.
+func TestSignaturenListe_FasstNachRegaladresseZusammen(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	regal := "Sk " + suffix
+	nachbar := regal + "X"
+	aufschriften := []string{
+		regal,
+		littera.SignaturAus(regal, "Bie"),
+		littera.SignaturAus(regal, "Gri"),
+		// Die zweite Zeile trägt in der Sicherung 235-mal selbst den Trenner.
+		littera.SignaturAus(regal, "PoWi / Ich"),
+		littera.SignaturAus(nachbar, "Abc"),
+	}
+	for i, aufschrift := range aufschriften {
+		seedSignaturMitExemplar(t, pool, aufschrift, fmt.Sprintf("SIGR-%d-%s", i, suffix))
+	}
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	rec := httptest.NewRecorder()
+	srv.GetSignaturenHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/signaturen", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Signaturliste: Status %d", rec.Code)
+	}
+	var gruppen []SignaturGruppe
+	if err := json.Unmarshal(rec.Body.Bytes(), &gruppen); err != nil {
+		t.Fatalf("Signaturliste unlesbar: %v", err)
+	}
+	gefunden := map[string]SignaturGruppe{}
+	for _, g := range gruppen {
+		if strings.Contains(g.Signatur, repository.SignaturTrenner) {
+			t.Errorf("Die Liste nennt eine ganze Aufschrift: %q", g.Signatur)
+		}
+		gefunden[g.Signatur] = g
+	}
+	if g := gefunden[regal]; g.Titel != 4 || g.Exemplare != 4 {
+		t.Errorf("Regal %q: %d Titel und %d Exemplare, erwartet je 4", regal, g.Titel, g.Exemplare)
+	}
+	if g := gefunden[nachbar]; g.Titel != 1 || g.Exemplare != 1 {
+		t.Errorf("Regal %q: %d Titel und %d Exemplare, erwartet je 1", nachbar, g.Titel, g.Exemplare)
+	}
+
+	// Die Regalansicht zu einer Zeile der Liste zeigt deren Titel mit der ganzen Aufschrift.
+	rec = httptest.NewRecorder()
+	srv.GetSignaturBuecherHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet,
+		"/api/signaturen/buecher?signatur="+url.QueryEscape(regal), nil))
+	var ansicht SignaturBuecherResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &ansicht); err != nil {
+		t.Fatalf("Regalansicht unlesbar: %v", err)
+	}
+	if len(ansicht.Buecher) != 4 {
+		t.Fatalf("Regal %q: %d Titel in der Ansicht, erwartet 4", regal, len(ansicht.Buecher))
+	}
+	ganze := map[string]bool{}
+	for _, b := range ansicht.Buecher {
+		ganze[b.Signatur] = true
+	}
+	for _, aufschrift := range aufschriften[:4] {
+		if !ganze[aufschrift] {
+			t.Errorf("Aufschrift %q fehlt in der Ansicht des Regals %q", aufschrift, regal)
+		}
 	}
 }

@@ -15,21 +15,27 @@ import (
 // /api/audit schon einmal gelaufen ist. Die Kappung wird gemeldet, nicht verschwiegen.
 const signaturBuecherLimit = 500
 
-// SignaturGruppe ist eine im Bestand tatsächlich vorkommende Signatur samt Umfang.
+// SignaturGruppe ist eine im Bestand vorkommende Regaladresse samt Umfang.
 type SignaturGruppe struct {
 	Signatur  string `json:"signatur"`
 	Titel     int    `json:"titel"`
 	Exemplare int    `json:"exemplare"`
 }
 
-// GetSignaturenHandler liefert die im Bestand vorkommenden Signaturen mit Umfang.
+// GetSignaturenHandler liefert die im Bestand vorkommenden Regaladressen mit Umfang.
 //
 // Die Liste wird aus buecher_titel.signatur ABGELEITET, nicht aus einer Stammtabelle.
 // Die frühere Tabelle `signatures` war eine zweite, ungepflegte Wahrheit: Sie kannte
 // Namen, die an keinem Buch hingen, und kannte die Signaturen der Bücher nicht.
 //
-// @Summary      List signatures in stock
-// @Description  Returns the signatures that actually occur on titles, with title and copy counts.
+// Zusammengefasst wird nach der Regaladresse (repository.SQLSignaturRegaladresse): „LMF Deu 7
+// / Bie" und „LMF Deu 7 / Gri" stehen im selben Regal. Das Kürzel dahinter ordnet in Littera
+// innerhalb des Regals (Vorgabe: die ersten drei Buchstaben des Verfassers) und gehört meist
+// zu einem einzigen Titel; als Vorschlag für ein neues Buch und als Bereich einer Inventur
+// taugt nur das Regal.
+//
+// @Summary      List shelf addresses in stock
+// @Description  Returns the shelf addresses (the part of a signature before " / ") that occur on titles, with title and copy counts.
 // @Tags         books
 // @Produce      json
 // @Success      200  {array}   SignaturGruppe
@@ -37,15 +43,16 @@ type SignaturGruppe struct {
 // @Router       /signaturen [get]
 func (s *Server) GetSignaturenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		regal := repository.SQLSignaturRegaladresse("t.signatur")
 		rows, err := s.DB.Pool.Query(r.Context(), `
-			SELECT btrim(t.signatur) AS signatur,
+			SELECT `+regal+` AS signatur,
 			       count(DISTINCT t.id) AS titel,
 			       count(e.id) FILTER (WHERE e.ist_ausgesondert = false) AS exemplare
 			FROM buecher_titel t
 			LEFT JOIN buecher_exemplare e ON e.titel_id = t.id
 			WHERE COALESCE(btrim(t.signatur), '') <> ''
-			GROUP BY btrim(t.signatur)
-			ORDER BY btrim(t.signatur)
+			GROUP BY `+regal+`
+			ORDER BY `+regal+`
 		`)
 		if err != nil {
 			return apierrors.Internal("Signaturen konnten nicht geladen werden", err)

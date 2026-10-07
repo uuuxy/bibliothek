@@ -25,3 +25,18 @@ func SignaturPraefixBedingung(spalte string, platzhalter int) string {
 		"(btrim(%[1]s) = btrim($%[2]d) OR left(btrim(%[1]s), length(btrim($%[2]d)) + 1) = btrim($%[2]d) || ' ')",
 		spalte, platzhalter)
 }
+
+// SignaturTrenner steht in einer zweiteiligen Signatur zwischen der Regaladresse und dem
+// Kürzel des Titels darin: „LMF Deu 7 / Bie". Die Littera-Übernahme setzt die Aufschrift
+// des Buchrückens damit zusammen (littera.SignaturAus), die Liste der Signaturen fasst an
+// ihm zusammen. Die Leerzeichen gehören dazu: An ihnen endet die Regaladresse für
+// SignaturPraefixBedingung.
+const SignaturTrenner = " / "
+
+// SQLSignaturRegaladresse liefert den Ausdruck für die Regaladresse einer Signatur: den Teil
+// vor dem ersten Trenner, bei einer einteiligen Signatur sie selbst. In der Sicherung von
+// 2010 trägt die erste Zeile der Aufschrift nie den Trenner, die zweite 235-mal; geteilt wird
+// deshalb am ersten.
+func SQLSignaturRegaladresse(spalte string) string {
+	return fmt.Sprintf("btrim(split_part(btrim(%s), '%s', 1))", spalte, SignaturTrenner)
+}
