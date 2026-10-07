@@ -1,5 +1,6 @@
 <script>
 	import { coverSrc } from './utils/coverSrc.js';
+	import { istUeberfaellig } from './utils/ueberfaellig.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -75,12 +76,11 @@
 							</td>
 							<td class="py-3 px-2 text-center font-mono text-xs">{book.barcode_id || '-'}</td>
 							<td class="py-3 px-2 text-center">{formatDate(book.ausgeliehen_am)}</td>
+							<!-- Eine Dauerleihe hat keine Frist, wie in der Leserakte. -->
 							<td
-								class="py-3 px-2 text-right font-bold {new Date(book.rueckgabe_frist) < new Date()
-									? 'text-error'
-									: ''}"
+								class="py-3 px-2 text-right font-bold {istUeberfaellig(book) ? 'text-error' : ''}"
 							>
-								{formatDate(book.rueckgabe_frist)}
+								{book.ist_dauerleihe ? 'ohne Frist' : formatDate(book.rueckgabe_frist)}
 							</td>
 						</tr>
 					{/each}

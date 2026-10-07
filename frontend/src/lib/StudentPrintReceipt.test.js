@@ -29,4 +29,35 @@ describe('StudentPrintReceipt', () => {
 		expect(text).toContain('24.09.2026');
 		expect(text).not.toContain('Keine Angabe');
 	});
+
+	// Eine Dauerleihe (Kollegium) hat keine Frist und wird nie überfällig, wie in der Leserakte.
+	// Ihr Datum gehört deshalb nicht auf die Quittung.
+	it('nennt eine Dauerleihe „ohne Frist“ und färbt nur die abgelaufene Frist', () => {
+		/** @param {boolean} dauerleihe */
+		const quittung = (dauerleihe) =>
+			render(StudentPrintReceipt, {
+				profile: {
+					vorname: 'Kim',
+					nachname: 'Kollegin',
+					entliehene_buecher: [
+						{
+							titel: 'Handapparat',
+							barcode_id: 'B-1',
+							ausgeliehen_am: '2025-01-01T10:00:00Z',
+							rueckgabe_frist: '2025-02-01T10:00:00Z',
+							ist_dauerleihe: dauerleihe
+						}
+					]
+				}
+			}).container;
+
+		const dauer = quittung(true);
+		expect(dauer.textContent ?? '').toContain('ohne Frist');
+		expect(dauer.textContent ?? '').not.toContain('01.02.2025');
+		expect(dauer.querySelector('.text-error'), 'die Dauerleihe steht als überfällig da').toBeNull();
+
+		const befristet = quittung(false);
+		expect(befristet.textContent ?? '').toContain('01.02.2025');
+		expect(befristet.querySelector('.text-error')).not.toBeNull();
+	});
 });
