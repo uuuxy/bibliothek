@@ -152,8 +152,9 @@ der Nummer nichts mehr dazu offen ist.
 - [x] **Nie eingetroffene Exemplare (5.5):** Sie zählen seit dem 07.10.2026 auch in der Zahl
   „aus dem Katalog gelöscht" unter dem Abgangsbuch und in der Statistik nicht mehr mit; die
   Statistik zählt ein bestelltes Exemplar erst mit dem Eintreffen zum Bestand.
-- [ ] **Druck-Center (5.45):** Die Auswahlliste nennt auch ein bestelltes Exemplar
-  „(Neuwertig)". Die Vorschau zeichnet seit dem 07.10.2026 nur den ersten Bogen.
+- [x] **Druck-Center (5.45):** Ein bestelltes Exemplar ohne Notiz heißt in der Auswahlliste
+  seit dem 08.10.2026 „(Bestellt)". Die Vorschau zeichnet seit dem 07.10.2026 nur den ersten
+  Bogen.
 - [x] **Überläufe (5.45):** Bestellwesen, Signaturen bei 1280 px und ein langer Name in der
   Leserakte sind seit dem 08.10.2026 behoben.
 - [ ] **Auskunft (5.19):** zu klären, welche Rohdaten der Protokolleinträge aufs Blatt gehören.
@@ -536,10 +537,6 @@ Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich der Seite
 (`e2e/scrollbereiche.spec.js`); so stehen die Ausleihliste der Leserakte, die Positionen im
 Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Offen:
 
-- **Druck-Center, Schritt 2** (`LabelBarcodeSchritt.svelte`, `max-h-40`): Der Kasten bleibt
-  als Auswahlliste; darüber stehen ein Kästchen für alle und ein Feld für die Nummer. Offen:
-  Jede Zeile nennt „(Neuwertig)", wenn das Exemplar keine Zustandsnotiz trägt, auch ein
-  bestelltes.
 - **Die Exemplare in „Buch bearbeiten" bei Mengen wie an der Schule** (am Testserver lesend
   gezählt am 02.10.2026): 2.253 Titel haben Exemplare, mindestens die Hälfte davon eines, 90 %
   höchstens 58; über 100 Exemplare haben 68 Titel, der größte 383. Lokal mit 403 Exemplaren

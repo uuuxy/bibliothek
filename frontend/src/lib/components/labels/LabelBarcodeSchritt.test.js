@@ -50,3 +50,36 @@ describe('Druck-Center, Schritt 2: Exemplare nicht geladen', () => {
 		expect(k.queryByRole('alert')).toBeNull();
 	});
 });
+
+// Hinter der Nummer steht die Zustandsnotiz. Fehlt sie, steht dort ein Wort für den Zustand:
+// „Neuwertig" am Exemplar im Bestand, „Bestellt" an einem, das noch nicht eingetroffen ist.
+describe('Druck-Center, Schritt 2: Angabe hinter der Nummer', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		labelStore.generationMode = 'existing';
+	});
+
+	it('nennt ein bestelltes Exemplar ohne Notiz „Bestellt“', async () => {
+		apiFetchMock.mockResolvedValueOnce(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{ barcode_id: 'B-0000001', zustand_notiz: '', im_bestand: true },
+					{ barcode_id: 'B-0000002', zustand_notiz: '', im_bestand: false },
+					{ barcode_id: 'B-0000003', zustand_notiz: 'Im Zulauf - Buchhandlung', im_bestand: false },
+					{ barcode_id: 'B-0000004', zustand_notiz: 'Einband lose', im_bestand: true }
+				]
+			})
+		);
+		await labelStore.selectBookTitle({ id: 't3', titel: 'Titel', autor: '' });
+		const k = render(LabelBarcodeSchritt);
+		await waitFor(() => expect(k.getByText('B-0000002')).toBeTruthy());
+
+		const zeile = (/** @type {string} */ nummer) =>
+			k.getByText(nummer).closest('label')?.textContent ?? '';
+		expect(zeile('B-0000001')).toContain('(Neuwertig)');
+		expect(zeile('B-0000002')).toContain('(Bestellt)');
+		expect(zeile('B-0000003')).toContain('(Im Zulauf - Buchhandlung)');
+		expect(zeile('B-0000004')).toContain('(Einband lose)');
+	});
+});
