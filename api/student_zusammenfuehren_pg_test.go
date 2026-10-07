@@ -205,9 +205,21 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 				VALUES ('ausleihen', 'CREATE', gen_random_uuid(), 'USER', jsonb_build_object('schueler_id', $1::text))`, quelle)
 			exec(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
 				VALUES ('schueler', 'UPDATE', $1::uuid, 'USER', '{"feld":"klasse"}'::jsonb)`, quelle)
+			// Die Spur einer Forderung und einer Vormerkung, die mit ihrem Titel gelöscht
+			// wurden, trägt den Leser ebenfalls in den Details (protokolliereOffeneForderungen,
+			// ProtokolliereWartendeBezuege). Bliebe sie an der Quelle, fände die Tilgung des
+			// Ziels den Namen darin nicht.
+			exec(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
+				VALUES ('schadensfaelle', 'DELETE', gen_random_uuid(), 'SYSTEM',
+					jsonb_build_object('schueler_id', $1::text, 'schuldner', 'Quelle Tabelle'))`, quelle)
+			exec(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
+				VALUES ('vormerkungen', 'DELETE', gen_random_uuid(), 'SYSTEM',
+					jsonb_build_object('schueler_id', $1::text, 'betrifft', 'Quelle Tabelle'))`, quelle)
 			zaehlungen = append(zaehlungen,
 				zaehlung{"audit_log Lesehistorie", `SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $1`},
-				zaehlung{"audit_log Datensatz-Historie", `SELECT count(*) FROM audit_log WHERE tabelle = 'schueler' AND aktion = 'UPDATE' AND datensatz_id = $1::uuid`})
+				zaehlung{"audit_log Datensatz-Historie", `SELECT count(*) FROM audit_log WHERE tabelle = 'schueler' AND aktion = 'UPDATE' AND datensatz_id = $1::uuid`},
+				zaehlung{"audit_log Spur einer gelöschten Forderung", `SELECT count(*) FROM audit_log WHERE tabelle = 'schadensfaelle' AND details->>'schueler_id' = $1`},
+				zaehlung{"audit_log Spur einer gelöschten Vormerkung", `SELECT count(*) FROM audit_log WHERE tabelle = 'vormerkungen' AND details->>'schueler_id' = $1`})
 		case "audit_logs":
 			exec(`INSERT INTO audit_logs (aktion, details) VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text))`, quelle)
 			zaehlungen = append(zaehlungen, zaehlung{"audit_logs", `SELECT count(*) FROM audit_logs WHERE aktion = 'LUSD_ID_NACHGETRAGEN' AND details->>'schueler_id' = $1`})

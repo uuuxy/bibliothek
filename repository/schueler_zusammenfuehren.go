@@ -346,9 +346,11 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		return nil, fmt.Errorf("foto verschieben: %w", err)
 	}
 	g.Foto = len(fotos) == 1
+	// Die Kennung in den Details wandert in jedem Eintrag, gleich zu welcher Tabelle: Auch die
+	// Spur einer gelöschten Forderung oder Vormerkung trägt sie, und die Tilgung sucht danach.
 	for _, sql := range []string{
 		`UPDATE audit_log SET details = jsonb_set(details, '{schueler_id}', to_jsonb($1::text))
-			WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $2`,
+			WHERE details->>'schueler_id' = $2`,
 		`UPDATE audit_log SET datensatz_id = $1::uuid WHERE tabelle = 'schueler' AND datensatz_id = $2::uuid`,
 		`UPDATE audit_logs SET details = jsonb_set(details, '{schueler_id}', to_jsonb($1::text))
 			WHERE details->>'schueler_id' = $2`,
