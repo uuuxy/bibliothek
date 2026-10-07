@@ -25,13 +25,18 @@ import (
 // kleiner werden kann: Ein NEUER Handler nimmt repository/, und wer eine Datei
 // umstellt, nimmt sie unten heraus.
 
-// Nur Anweisungen, keine Bezeichner: `UPDATE x SET` statt `UPDATE`, sonst schlaegt
-// jedes Wort "update" in einem Bezeichner an.
-//
-// KEIN abschliessendes \b: Es verlangte eine Wortgrenze direkt hinter dem ersten
-// Buchstaben des Tabellennamens und traf damit nur einbuchstabige Namen — der erste
-// Anlauf zaehlte deshalb eine Datei anders als derselbe Ausdruck in der Shell.
-var sqlAnweisung = regexp.MustCompile(`(?i)\b(SELECT\s+[a-z_*(]|INSERT\s+INTO\s+[a-z_]+|DELETE\s+FROM\s+[a-z_]+|UPDATE\s+[a-z_.]+\s+SET)`)
+// Nur Anweisungen, keine Bezeichner: `UPDATE x SET` statt `UPDATE`, sonst schlägt jedes Wort
+// "update" in einem Bezeichner an. Hinter dem Tabellennamen steht kein \b: Es verlangte eine
+// Wortgrenze nach dem ersten Buchstaben und traf nur einbuchstabige Namen. Welche Formen das
+// Muster kennen muss, hält TestSQLAnweisung_ErkenntJedeForm fest.
+var sqlAnweisung = regexp.MustCompile(`(?i)\b(` +
+	`SELECT\s+[a-z_*(0-9$']` +
+	`|INSERT\s+INTO\s+[a-z_]+` +
+	`|DELETE\s+FROM\s+[a-z_]+` +
+	`|UPDATE\s+(ONLY\s+)?[a-z_.]+(\s+(AS\s+)?[a-z_]+)?\s+SET\b` +
+	`|TRUNCATE\s+(TABLE\s+)?[a-z_]+` +
+	`|MERGE\s+INTO\s+[a-z_]+` +
+	`|LOCK\s+TABLE\s+[a-z_]+)`)
 
 // Kommentare zaehlen nicht: In bestellbestaetigung_handler.go steht "zwischen SELECT
 // und UPDATE ein Wettlauf-Fenster" — eine Erklaerung, keine Abfrage.
@@ -138,6 +143,51 @@ func TestHandlerFormulierenKeinNeuesSQL(t *testing.T) {
 		if !slices.Contains(gefunden, f) {
 			t.Errorf("api/%s enthaelt kein SQL mehr — bitte aus handlerMitSQL entfernen,\n"+
 				"damit die Ratsche greift.", f)
+		}
+	}
+}
+
+// Das Muster erkennt jede Form, in der ein Handler eine Anweisung schreiben kann. Eine Form,
+// die es nicht kennt, ließe einen neuen Handler mit genau dieser Anweisung unbemerkt.
+func TestSQLAnweisung_ErkenntJedeForm(t *testing.T) {
+	anweisungen := []string{
+		"SELECT id FROM leser",
+		"SELECT * FROM leser",
+		"SELECT count(*) FROM leser",
+		"select\n\t\tid from leser",
+		"SELECT 1 FROM leser WHERE id = $1",
+		"SELECT $1::int",
+		"SELECT 'fest'",
+		"INSERT INTO leser (vorname) VALUES ($1)",
+		"DELETE FROM leser WHERE id = $1",
+		"UPDATE leser SET vorname = $1",
+		"UPDATE public.leser\n\t\tSET vorname = $1",
+		"UPDATE ausleihen a SET rueckgabe_am = NOW()",
+		"UPDATE ausleihen AS a SET rueckgabe_am = NOW()",
+		"UPDATE ONLY leser SET vorname = $1",
+		"TRUNCATE leser",
+		"TRUNCATE TABLE leser",
+		"MERGE INTO leser l USING neu n ON l.id = n.id",
+		"LOCK TABLE leser IN EXCLUSIVE MODE",
+	}
+	for _, a := range anweisungen {
+		if !sqlAnweisung.MatchString(a) {
+			t.Errorf("das Muster erkennt die Anweisung nicht: %q", a)
+		}
+	}
+	// Bezeichner und Wörter, die wie der Anfang einer Anweisung aussehen.
+	keine := []string{
+		"updateSettings(ctx)",
+		"selectListe := []string{}",
+		"insertInto(ziel)",
+		"deleteFromCart()",
+		`aktion == "UPDATE"`,
+		`meldung := "Update fehlgeschlagen"`,
+		"truncated := true",
+	}
+	for _, k := range keine {
+		if sqlAnweisung.MatchString(k) {
+			t.Errorf("das Muster hält für eine Anweisung, was keine ist: %q", k)
 		}
 	}
 }

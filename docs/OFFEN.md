@@ -385,13 +385,6 @@ Vermerk.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
-- `TestHandlerFormulierenKeinNeuesSQL` (`api/schichtung_test.go`) sieht ein `UPDATE` mit
-  Tabellenkürzel nicht: Das Muster verlangt `UPDATE <Tabelle> SET`, und `UPDATE ausleihen a SET`
-  trifft es nicht. Fünf Anweisungen dieser Form stehen in `api/ausleihe.go`,
-  `api/etiketten_offen.go`, `api/mail_routes.go`, `api/student_promotion.go` und
-  `api/supplier_handler.go` (gezählt am 07.10.2026); die Dateien stehen wegen anderer
-  Anweisungen in der Liste. Ein neuer Handler, dessen einzige Anweisung so aussieht, bliebe
-  unbemerkt. Kategorie B.
 - `e2e/kontrast.spec.js` misst den Medienkatalog nicht in jedem Lauf mit seinen Kacheln
   (gefunden am 02.10.2026, lokal mit 8.600 Titeln). `warteAufStabilenBaum` gilt als stabil,
   sobald zwei Zählungen im Abstand von 100 ms gleich sind; kommt die Titelliste später, misst
