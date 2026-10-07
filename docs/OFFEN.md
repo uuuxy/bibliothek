@@ -36,8 +36,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 (entschieden am 28.09.2026).
 
 - [ ] Die Littera-Übernahme überträgt die Auflage. (5.5)
-- [ ] Die Littera-Übernahme nimmt die Nichtsortierzeichen aus dem Titel („¬Die¬ schwarze
-  Katze"). (5.59)
+- [x] Die Littera-Übernahme nimmt die Nichtsortierzeichen aus Titel und Verfasser („¬Die¬
+  schwarze Katze", gebaut am 07.10.2026).
 - [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt:
   Ausweisnummern, offene Ausleihen, Standorte, Verweise der Schlagworte. (7.2, 4.20)
 - [ ] `update.sh` für den Schulserver: nur Releases, Images frisch. (5.31)
@@ -59,8 +59,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   danach gebucht; dieselbe Nummer fällt weiter weg (entschieden und gebaut am 07.10.2026).
 - [x] Die Titelliste steht nach dem Titel, das Ziehen der Zeilen ist entfernt (entschieden
   und gebaut am 07.10.2026).
-- [ ] Titelliste: Ein Artikel am Anfang zählt beim Ordnen mit, „Die schwarze Katze" steht
-  unter D; Littera ordnet solche Titel ohne den Artikel. Vorschlag: bleibt so. (5.59)
+- [x] Titelliste: Ein Artikel am Anfang zählt beim Ordnen mit, „Die schwarze Katze" steht
+  unter D; Litteras Sortiertitel kommt nicht mit (entschieden am 07.10.2026: bleibt so).
 - [x] Theke: Ein gescheiterter Scan gibt immer den Fehlerton, auch außerhalb der
   Schnellrückgabe (entschieden und gebaut am 07.10.2026).
 - [x] Theke: Ein Scan bei offener Rückfrage (Sperre, Vormerkung, Zubehör) lässt sie stehen,
@@ -714,35 +714,18 @@ Befund. Nächster Schritt: je Tür festlegen, ob sie einen Eintrag schreibt, und
 steht, ohne neuen Personenbezug (eine Adresse im Eintrag bliebe bis zur Audit-Aufbewahrung).
 Kategorie B.
 
-### 5.59 Titel aus Littera: Nichtsortierzeichen und Artikel am Anfang
-
-Gemessen am 07.10.2026 an der Littera-Sicherung von 2010 (Tabelle `Titel`, 10.643 Titel).
-
-- Littera schließt den Artikel am Anfang eines Titels in Nichtsortierzeichen ein („¬Die¬
-  schwarze Katze") und führt einen Sortiertitel ohne ihn (`HaupttitelSort`); das Handbuch:
-  „nicht unter D für Die sortiert, sondern unter S wie schwarze". 1.401 Titel tragen die
-  Zeichen, weitere 489 beginnen mit einem Artikel ohne sie.
-- **Die Übernahme schreibt die Zeichen in den Titel** (`LeseTitel` in
-  `internal/littera/mapping.go`; nachgestellt: Aus „¬Die¬ schwarze Katze" wird der Titel
-  „¬Die¬ schwarze Katze"). So stünde er überall, wo das Programm den Titel zeigt oder druckt,
-  und die Titelliste begänne mit diesen Titeln: Das Zeichen ordnet vor Ziffern und
-  Buchstaben. Der Katalog-Import (`internal/service/import_service.go`) und die Abfrage der
-  DNB (`inventur/metadaten_anbieter.go`) nehmen die Zeichen weg. Nächster Schritt: Die
-  Übernahme nimmt sie ebenfalls weg. Kategorie B.
-- Die Titelliste (`GET /api/books`) ordnet nach dem Titel, wie er dasteht: Ohne die Zeichen
-  steht „Die schwarze Katze" unter D.
-
-**Zu entscheiden:** Bleibt es bei der Ordnung nach dem Titel, wie er dasteht (gefunden wird
-ein Titel über das Suchfeld), oder bringt die Übernahme Litteras Sortiertitel in einer
-eigenen Spalte mit, nach der die Liste ordnet? Das zweite braucht eine Migration und eine
-Regel für neu angelegte Titel. Vorschlag: bleibt so.
-
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
 
 ### 6.1 Beobachtungen
 
+- In der Littera-Sicherung von 2010 tragen 103 von 10.732 Titeln und 73 Untertitel zwei
+  Leerzeichen in Folge („La  Peste"); die Übernahme und der Katalog-Import übernehmen sie, wie
+  sie stehen (gemessen am 07.10.2026). `GET /api/books` sucht nach dem Wortlaut (`ILIKE`,
+  `inventur/datenbank_buecher_leser.go`): „La Peste" träfe diesen Titel nicht. Bei Anlass:
+  Leerraum im Titel beim Schreiben zusammenziehen, an jeder Tür gleich (Übernahme,
+  Katalog-Import, Maske).
 - Der Medienkatalog lädt in beiden Reitern die ganze Titelliste (`GET /api/books`, gekappt
   erst bei 50.000 Titeln), „Suche & Filter" bei jedem Öffnen, die Titel-Verwaltung beim Öffnen und bei leerem
   Suchfeld; gezeigt werden je 50 Titel. Gemessen am 04.10.2026 am lokalen Stack: 9.738 Titel,

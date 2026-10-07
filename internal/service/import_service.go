@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"bibliothek/db"
+	"bibliothek/internal/littera"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
@@ -112,7 +113,7 @@ func parseKatalogisat(kat Katalogisat) litteraFelder {
 	for _, feld := range kat.Felder {
 		mab := strings.TrimSpace(feld.MAB)
 		val := strings.TrimSpace(feld.Value)
-		val = strings.ReplaceAll(val, "¬", "")
+		val = littera.OhneNichtsortierzeichen(val)
 
 		switch mab {
 		case "100":

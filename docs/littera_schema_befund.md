@@ -48,6 +48,12 @@ Schalter richtig; der Schreibpfad ist dafür gebaut und geprüft.
 `ISBN` → `isbn` · `Erscheinungsjahr` (Text!) · `Medienart` (Long → Nachschlagetabelle) ·
 `Verlag` (Long → Nachschlagetabelle, **kein Freitext**) · `Annotation` (nicht übernommen)
 
+Titel, Untertitel und Verfasser kommen ohne Litteras Nichtsortierzeichen: Aus „¬Die¬ schwarze
+Katze" wird „Die schwarze Katze" (`littera.OhneNichtsortierzeichen`, dieselbe Regel im
+Katalog-Import). In der Sicherung von 2010 tragen es 1.403 von 10.732 Titeln und 3 von 7.364
+Verfassern, die übrigen Tabellen der Übernahme nicht. Litteras Sortiertitel (`HaupttitelSort`)
+kommt nicht mit: Die Titelliste ordnet nach dem Titel, wie er dasteht.
+
 ### `Exemplar` → `buecher_exemplare`
 `Buchungsnummer` (Schlüssel) · `Titel` (FK) · `Barcode` → `barcode_id` ·
 `Zugangsdatum` → `erworben_am` · `Preis` · `Status` (Long) · `Sig1` + `Sig2` (siehe unten) ·

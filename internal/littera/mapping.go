@@ -121,8 +121,8 @@ func LeseTitel(r io.Reader) ([]Titel, error) {
 		}
 		titel = append(titel, Titel{
 			ID:               id,
-			Haupttitel:       strings.TrimSpace(z["Haupttitel"]),
-			Untertitel:       strings.TrimSpace(z["Untertitel"]),
+			Haupttitel:       freitext(z["Haupttitel"]),
+			Untertitel:       freitext(z["Untertitel"]),
 			Autor:            autorAus(z),
 			ISBN:             strings.TrimSpace(z["ISBN"]),
 			VerlagID:         strings.TrimSpace(z["Verlag"]),
@@ -143,10 +143,24 @@ func LeseTitel(r io.Reader) ([]Titel, error) {
 // Bestandsvermerke fliegen raus (siehe ohneBestandsmarken): In 2.316 Titeln steht in
 // diesem Freitextfeld „Buchbestand Bibliothek" oder „LMF" statt oder neben einem Namen.
 func autorAus(z map[string]string) string {
-	if v := ohneBestandsmarken(strings.TrimSpace(z["Verfasserangabe"])); v != "" {
+	if v := ohneBestandsmarken(freitext(z["Verfasserangabe"])); v != "" {
 		return v
 	}
-	return ohneBestandsmarken(strings.TrimSpace(z["Urheber"]))
+	return ohneBestandsmarken(freitext(z["Urheber"]))
+}
+
+// OhneNichtsortierzeichen nimmt Litteras Nichtsortierzeichen aus einem Wert. Littera schließt
+// damit ein, was beim Ordnen übersprungen wird („¬Die¬ schwarze Katze"); zum Titel und zum
+// Namen gehören sie nicht. In der Datenbank zeigte und druckte das Programm sie, und die Suche
+// nach „Die schwarze Katze" träfe den Titel nicht.
+func OhneNichtsortierzeichen(wert string) string {
+	return strings.ReplaceAll(wert, "¬", "")
+}
+
+// freitext liest einen Titel oder Namen: ohne Nichtsortierzeichen, ohne Leerraum am Rand.
+// Erst die Zeichen, dann der Rand, sonst bliebe das Leerzeichen neben einem Zeichen stehen.
+func freitext(wert string) string {
+	return strings.TrimSpace(OhneNichtsortierzeichen(wert))
 }
 
 // jahrAus wandelt das als TEXT geführte Erscheinungsjahr in eine Zahl.

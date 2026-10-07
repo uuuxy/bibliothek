@@ -75,7 +75,7 @@ func LesePersonen(r io.Reader) (map[string]string, error) {
 	namen := make(map[string]string, len(zeilen))
 	for _, z := range zeilen {
 		id := strings.TrimSpace(z["Buchungsnummer"])
-		name := strings.TrimSpace(z["Name"])
+		name := freitext(z["Name"])
 		if id == "" || name == "" {
 			continue
 		}

@@ -159,6 +159,9 @@ echo "  Dauer $((SECONDS - start)) s, Rückgabe $code (0 vollständig, 2 mit FEH
 if grep -q "ABGLEICH FEHLGESCHLAGEN" "$ARBEIT/lauf.out"; then abweichung "Abgleich an der Datenbank"; else ok "alle Abgleiche an der Datenbank"; fi
 pruefe "$(sed -nE 's/.*nicht übernommen ([0-9]+)$/\1/p' "$ARBEIT/lauf.out" | tail -1)" 0 "jeder Leser übernommen"
 pruefe "$(sed -nE 's/.*ohne Entleiher ([0-9]+),.*/\1/p' "$ARBEIT/lauf.out" | tail -1)" 0 "keine Ausleihe ohne Entleiher"
+# Litteras Nichtsortierzeichen („¬Die¬ schwarze Katze") gehören weder zum Titel noch zum Namen.
+pruefe "$(sql "SELECT count(*) FROM buecher_titel WHERE concat(titel, untertitel, autor) LIKE '%¬%'")" 0 \
+	"kein Titel trägt ein Nichtsortierzeichen (im Export: $(grep -c '¬' "$ARBEIT/export/titel.csv" || true) Zeilen)"
 echo "  Protokoll nach Grund (ohne Werte):"
 python3 "$HIER/probe_host.py" protokoll "$ARBEIT/littera_import.log"
 echo "  In der Datenbank: $(sql "SELECT count(*) || ' Titel, ' || (SELECT count(*) FROM buecher_exemplare) || ' Exemplare, ' ||

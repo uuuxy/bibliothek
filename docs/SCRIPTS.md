@@ -264,7 +264,8 @@ Was die Probe tut, in dieser Reihenfolge:
    `--gruppe 'Undefinierte Untergruppe=Schüler'`: Das stellt nach, was die Bücherei in Littera
    täte, und zwar nur in der Kopie des Exports.
 5. **Übernahme:** alle Abgleiche an der Datenbank, jeder Leser übernommen, keine Ausleihe ohne
-   Entleiher; das Protokoll nach Grund gezählt, ohne Werte.
+   Entleiher, kein Titel mit einem Nichtsortierzeichen; das Protokoll nach Grund gezählt, ohne
+   Werte.
 6. **Theke,** über das interne Netz so angesprochen wie von der Oberfläche: Etikettenwerte je
    Stellenzahl der Exemplarnummer (aus Litteras Spalte `Barcode`, unabhängig vom Code der
    Übernahme gelesen), Ausweis, Ausleihe und Rückgabe, Rückgabe eines in Littera verliehenen
