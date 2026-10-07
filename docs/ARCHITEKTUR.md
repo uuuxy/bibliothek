@@ -2053,6 +2053,14 @@ wenn man ihn einmal gebraucht hat.
 - **Ein Umbau, der die Oberfläche nicht ändern soll,** wird am Bau belegt: `npx vite build
   --outDir <Ordner>` vor und nach dem Umbau, dann die Prüfsummen der Dateien vergleichen. Zwei
   Bauten desselben Stands sind gleich (15 Dateien, nachgestellt am 07.10.2026).
+- **Eine Änderung der Oberfläche ansehen, ohne den Stack neu zu bauen:** `npm run dev` im
+  Ordner `frontend` (Port 5173, reicht die Abrufe an den laufenden Stack durch) und eine
+  Wegwerf-Spec in `frontend/e2e/`, gestartet mit
+  `E2E_BASE_URL=http://localhost:5173 npx playwright test e2e/<Datei>`. Die Spec legt ihre
+  Daten selbst an, misst in der Seite, legt ein Bild ab und räumt über die Kennung auf; eine
+  gescheiterte Antwort stellt `page.route` her. Der Server ist dabei der des laufenden Stacks:
+  Was eine Änderung am Server braucht, zeigt die Ansicht erst nach `scripts/stack-neu.sh`. Die
+  Spec wird nicht eingecheckt.
 - **Verhalten hinter dem Proxy** lässt sich am Arbeitsplatz nachstellen: ein Caddy-Container
   mit dem `reverse_proxy`-Block aus `update_caddy.sh` vor dem lokalen Stack
   (`host.docker.internal:8084`, `auto_https off`). Nachgestellt am 07.10.2026; TLS und HTTP/2
