@@ -19,3 +19,21 @@ export function exemplarStatus(ex) {
 	if (!ex.ist_verfuegbar) return { ton: 'warten', text: 'Ausgeliehen' };
 	return { ton: 'erfolg', text: 'Verfügbar' };
 }
+
+/**
+ * Zählt die Exemplare eines Titels nach derselben Grenze wie die Wörter der Karten: im
+ * Bestand und bestellt. Ein ausgesondertes Exemplar steht in keiner der beiden Zahlen.
+ *
+ * @param {{ ist_ausgesondert?: boolean, im_bestand?: boolean }[]} exemplare
+ * @returns {{ bestand: number, bestellt: number }}
+ */
+export function exemplarZahlen(exemplare) {
+	let bestand = 0;
+	let bestellt = 0;
+	for (const ex of exemplare) {
+		if (ex.ist_ausgesondert) continue;
+		if (ex.im_bestand === false) bestellt += 1;
+		else bestand += 1;
+	}
+	return { bestand, bestellt };
+}

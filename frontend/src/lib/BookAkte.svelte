@@ -12,6 +12,7 @@
 	import Reiter from './components/ui/Reiter.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { hatRecht } from './menu.js';
+	import { exemplarZahlen } from './components/exemplarStatus.js';
 	import { ChevronLeft, FaceSlightlyFrowning } from '@lucide/svelte';
 	import { untrack } from 'svelte';
 
@@ -30,14 +31,16 @@
 	// Eine Zahl, die niemand kennt, ist ein Fragezeichen — kein „(0)". Der Abruf einer
 	// Liste kann scheitern (Sweep „verschluckte Fehlantwort", 06.09.2026), und „Ausleiher
 	// (0)" wäre dann eine Aussage über den Bestand, die niemand geprüft hat.
-	/** @param {string} name @param {any[]} liste */
-	const zaehler = (name, liste) =>
-		`${name} (${akte.fehlendeListen.includes(name) ? '?' : liste.length})`;
+	/** @param {string} name @param {number} anzahl */
+	const zaehler = (name, anzahl) =>
+		`${name} (${akte.fehlendeListen.includes(name) ? '?' : anzahl})`;
+	// „Exemplare" zählt den Bestand wie „1 von 2 verfügbar" im Kopf; bestellte und
+	// ausgesonderte stehen im Reiter mit ihrem Wort an der Karte.
 	const tabs = $derived([
-		{ id: 'ausleiher', label: zaehler('Ausleiher', akte.borrowers) },
-		{ id: 'exemplare', label: zaehler('Exemplare', akte.exemplare) },
+		{ id: 'ausleiher', label: zaehler('Ausleiher', akte.borrowers.length) },
+		{ id: 'exemplare', label: zaehler('Exemplare', exemplarZahlen(akte.exemplare).bestand) },
 		...(darfVormerken
-			? [{ id: 'vormerkungen', label: zaehler('Vormerkungen', akte.vormerkungen) }]
+			? [{ id: 'vormerkungen', label: zaehler('Vormerkungen', akte.vormerkungen.length) }]
 			: []),
 		{ id: 'historie', label: 'Historie' }
 	]);

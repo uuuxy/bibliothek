@@ -36,3 +36,52 @@ describe('Buchakte: Reiter', () => {
 		expect(screen.getByText('Noch keine Ausleihen in der Datenbank vorhanden.')).toBeTruthy();
 	});
 });
+
+// „1 von 2 verfügbar" nennt den Bestand; eine Zahl daneben, die auch bestellte und
+// ausgesonderte Exemplare zählte, widersprach ihr („4 Exemplare").
+describe('Buchakte: Zahlen zu den Exemplaren', () => {
+	const exemplare = [
+		{ id: 'e1', barcode_id: '1', ist_ausleihbar: true, ist_verfuegbar: true, im_bestand: true },
+		{ id: 'e2', barcode_id: '2', ist_ausleihbar: true, ist_verfuegbar: false, im_bestand: true },
+		{ id: 'e3', barcode_id: '3', ist_ausleihbar: false, ist_verfuegbar: true, im_bestand: false },
+		{
+			id: 'e4',
+			barcode_id: '4',
+			ist_ausleihbar: false,
+			ist_verfuegbar: true,
+			im_bestand: false,
+			ist_ausgesondert: true
+		}
+	];
+
+	/** @param {any[]} liste */
+	function antworteMitExemplaren(liste) {
+		vi.mocked(apiFetch).mockImplementation(
+			async (url) =>
+				/** @type {any} */ ({
+					ok: true,
+					status: 200,
+					json: async () => (String(url).endsWith('/exemplare') ? liste : [])
+				})
+		);
+	}
+
+	it('der Reiter zählt den Bestand, der Kopf nennt die bestellten', async () => {
+		antworteMitExemplaren(exemplare);
+		const screen = render(BookAkte, { bookId: 'A', onBack: vi.fn() });
+
+		expect(await screen.findByRole('tab', { name: 'Exemplare (2)' })).toBeTruthy();
+		const bestellt = screen.getByText('bestellt', { selector: 'dt' });
+		expect(bestellt.parentElement?.querySelector('dd')?.textContent?.trim()).toBe('1');
+		expect(screen.queryByText('Exemplare', { selector: 'dt' })).toBeNull();
+	});
+
+	it('ohne bestelltes Exemplar steht im Kopf keine dritte Zahl', async () => {
+		antworteMitExemplaren(exemplare.filter((ex) => ex.im_bestand));
+		const screen = render(BookAkte, { bookId: 'A', onBack: vi.fn() });
+
+		expect(await screen.findByRole('tab', { name: 'Exemplare (2)' })).toBeTruthy();
+		expect(screen.queryByText('bestellt', { selector: 'dt' })).toBeNull();
+		expect(screen.queryByText('Exemplare', { selector: 'dt' })).toBeNull();
+	});
+});

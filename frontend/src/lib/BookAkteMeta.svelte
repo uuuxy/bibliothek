@@ -1,7 +1,7 @@
 <!-- @component BookAkteMeta — der Kopf der Buchakte wie eine Play-Store-Detailseite: Titel
      groß links, darunter in ruhigem Grau die Einordnung (Fach · Jahrgang · Zweig ·
      Medienart), dann ISBN, Signatur und Standorte als Textzeilen, eine Zahlenreihe
-     (verfügbar, Ausleiher, Exemplare) und die Aktionen als Knopfreihe. Das Cover steht
+     (verfügbar, Ausleiher, bestellt) und die Aktionen als Knopfreihe. Das Cover steht
      rechts mit Luft.
 
      Der Standort steht am Exemplar: Die Zeile nennt die Standorte der Exemplare im Bestand
@@ -11,6 +11,7 @@
 	import Button from './components/ui/Button.svelte';
 	import BuchKarteCover from '../inventur/lib/components/BuchKarteCover.svelte';
 	import { standorteAusExemplaren, standortZeile } from './utils/standorte.js';
+	import { exemplarZahlen } from './components/exemplarStatus.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -62,6 +63,8 @@
 	const nummerArt = $derived(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN');
 	const signatur = $derived(book.signatur || book.erweiterte_eigenschaften?.signatur || '');
 	const standort = $derived(standortZeile(standorteAusExemplaren(exemplare)));
+	// Den Bestand nennt „1 von 2 verfügbar"; daneben steht nur, was diese Zahl nicht sagt.
+	const bestellt = $derived(exemplarZahlen(exemplare).bestellt);
 
 	function kopieren() {
 		if (!book.isbn) return;
@@ -123,10 +126,12 @@
 				<dd class="text-lg font-semibold tabular-nums text-on-surface">{borrowers.length}</dd>
 				<dt class="text-xs text-on-surface-variant">Ausleiher</dt>
 			</div>
-			<div class="pl-6">
-				<dd class="text-lg font-semibold tabular-nums text-on-surface">{exemplare.length}</dd>
-				<dt class="text-xs text-on-surface-variant">Exemplare</dt>
-			</div>
+			{#if bestellt > 0}
+				<div class="pl-6">
+					<dd class="text-lg font-semibold tabular-nums text-on-surface">{bestellt}</dd>
+					<dt class="text-xs text-on-surface-variant">bestellt</dt>
+				</div>
+			{/if}
 		</dl>
 
 		{#if onEdit || onDelete}

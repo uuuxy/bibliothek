@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { exemplarStatus } from './exemplarStatus.js';
+import { exemplarStatus, exemplarZahlen } from './exemplarStatus.js';
 
 describe('exemplarStatus', () => {
 	const imRegal = { ist_ausleihbar: true, ist_verfuegbar: true, im_bestand: true };
@@ -32,5 +32,23 @@ describe('exemplarStatus', () => {
 
 	it('zählt ein Exemplar ohne das Feld im_bestand zum Bestand', () => {
 		expect(exemplarStatus({ ist_ausleihbar: false, ist_verfuegbar: true }).text).toBe('Gesperrt');
+	});
+});
+
+describe('exemplarZahlen', () => {
+	// Dieselbe Grenze wie die Wörter der Karten: Was „Bestellt" oder „Ausgesondert" heißt,
+	// zählt nicht zum Bestand.
+	it('zählt den Bestand und die bestellten getrennt, ausgesonderte in keiner der Zahlen', () => {
+		const liste = [
+			{ im_bestand: true },
+			{ im_bestand: true, ist_ausleihbar: false },
+			{ im_bestand: false },
+			{ im_bestand: false, ist_ausgesondert: true }
+		];
+		expect(exemplarZahlen(liste)).toEqual({ bestand: 2, bestellt: 1 });
+	});
+
+	it('zählt ein Exemplar ohne das Feld im_bestand zum Bestand', () => {
+		expect(exemplarZahlen([{}, { ist_ausgesondert: true }])).toEqual({ bestand: 1, bestellt: 0 });
 	});
 });
