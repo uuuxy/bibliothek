@@ -194,10 +194,10 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 		}
 	}
 	aendere := func(aktiv bool) error {
-		return users.UpdateUser(ctx, repository.UpdateUserParams{
-			ID: kontoID, Vorname: "Leeren", Nachname: "Probe", Email: "ausweis-leeren@example.org",
-			Rolle: "kollegium", Aktiv: aktiv,
+		_, err := users.UpdateUser(ctx, repository.UpdateUserParams{
+			ID: kontoID, Aktiv: &aktiv, BarcodeGenannt: true,
 		})
+		return err
 	}
 	pruefe("nach dem Anlegen", "A-10001")
 

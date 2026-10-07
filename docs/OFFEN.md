@@ -163,8 +163,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
 - [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
   ihren Helfern, die Regel „überfällig" ebenso; eine Ratsche hält die ersten beiden fest.
-- [ ] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Benutzer, Gerät, Lieferant und die
-  Kategorien der Einstellungen; am Titel und am Leser ist es behoben.
+- [ ] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Gerät, Lieferant und die
+  Kategorien der Einstellungen; am Titel, am Leser und am Benutzer ist es behoben.
 - [x] **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es an
   der Bestellung und in der Bestellhistorie („Mail nicht versendet"), und die Bestellung lässt
   sich erneut senden (entschieden und gebaut am 07.10.2026, Migration 161).
@@ -351,15 +351,8 @@ Vermerk.
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
 - **Eine Maske schickt alle Felder zurück, auch die, die niemand angefasst hat** (Raster,
   Frage 18; [sweeps.md](sweeps.md), „Absoluter Wert aus dem Ladezeitpunkt"). Am Titel
-  (06.10.2026) und an der Leserakte (07.10.2026) behoben. Am 07.10.2026 am Code gelesen,
-  mit derselben Form:
-  - **Benutzer:** `PUT /api/benutzer/{id}` schreibt Name, E-Mail, Rolle, „aktiv" und die
-    Ausweisnummer der Leserzeile (`UpdateUser` in `repository/user.go`); die Maske füllt
-    sich aus der Zeile der Liste (`benutzerFormularAus`), die beim Öffnen der Seite und nach
-    jedem eigenen Speichern lädt. Hat inzwischen jemand das Konto deaktiviert, die Rolle
-    geändert oder in der Leserakte eine Ausweisnummer eingetragen, schreibt das Speichern den
-    alten Stand zurück. Dafür muss die Tür Teil-Änderungen annehmen (heute sind alle Felder
-    Pflicht). Kategorie B.
+  (06.10.2026), an der Leserakte (07.10.2026) und in der Benutzerverwaltung (08.10.2026)
+  behoben. Am 07.10.2026 am Code gelesen, mit derselben Form:
   - **Gerät:** „Bearbeiten" und „Defekt melden" schicken Modell, Zubehör und Notiz aus der
     Zeile der Liste (`GeraeteVerwaltung.svelte`). Kategorie C.
   - **Lieferant:** „Hauptlieferant" geht aus der Zeile mit; Stammdaten und Hauptlieferant

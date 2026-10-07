@@ -35,7 +35,7 @@ type UserRepository interface {
 	CreateUser(ctx context.Context, barcode *string, vorname, nachname, email, rolle string) (string, error)
 
 	// UpdateUser aktualisiert die Daten eines bestehenden Systembenutzers.
-	UpdateUser(ctx context.Context, p UpdateUserParams) error
+	UpdateUser(ctx context.Context, p UpdateUserParams) (KontoStand, error)
 
 	// GetRolleByID liefert die AKTUELL gespeicherte Rolle eines Benutzers in
 	// Großschreibung. Kein Treffer ergibt ("", nil).
@@ -187,15 +187,33 @@ func (r *postgresUserRepo) CreateUser(ctx context.Context, barcode *string, vorn
 	return userID, tx.Commit(ctx)
 }
 
-// UpdateUserParams bündelt die aktualisierbaren Felder eines Benutzers.
+// UpdateUserParams nennt, was an einem Konto geändert wird. Ein Feld ohne Wert (nil) ist nicht
+// genannt und bleibt, wie es ist: Was ein anderer Platz inzwischen daran gespeichert hat,
+// überschreibt die Änderung nicht.
 type UpdateUserParams struct {
 	ID       string
-	Barcode  *string
-	Vorname  string
-	Nachname string
-	Email    string
-	Rolle    string
-	Aktiv    bool
+	Vorname  *string
+	Nachname *string
+	Email    *string
+	Rolle    *string
+	Aktiv    *bool
+	// BarcodeGenannt: Die Änderung nennt die Ausweisnummer. Barcode nil oder leer heißt dann
+	// „kein Ausweis"; ohne BarcodeGenannt bleibt die Nummer der Leserzeile stehen.
+	BarcodeGenannt bool
+	Barcode        *string
+}
+
+// Leer sagt, ob die Änderung kein Feld nennt.
+func (p UpdateUserParams) Leer() bool {
+	return p.Vorname == nil && p.Nachname == nil && p.Email == nil && p.Rolle == nil &&
+		p.Aktiv == nil && !p.BarcodeGenannt
+}
+
+// KontoStand ist ein Konto nach dem Ändern: was der Protokolleintrag darüber festhält.
+type KontoStand struct {
+	Email string
+	Rolle string
+	Aktiv bool
 }
 
 // ErrBenutzerNichtGefunden meldet eine unbekannte Benutzer-ID beim Ändern/Löschen — 0 Zeilen sind
@@ -209,46 +227,54 @@ var ErrBenutzerNichtGefunden = errors.New("benutzer nicht gefunden")
 // Liefen sie auseinander, hieße dieselbe Person an der Theke anders als in der
 // Benutzerverwaltung, und der Ausweis, den jemand hier einträgt, bliebe wirkungslos.
 // Deshalb ein Schreibvorgang über beide Tabellen, in EINER Transaktion.
-func (r *postgresUserRepo) UpdateUser(ctx context.Context, p UpdateUserParams) error {
+func (r *postgresUserRepo) UpdateUser(ctx context.Context, p UpdateUserParams) (KontoStand, error) {
+	var stand KontoStand
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return err
+		return stand, err
 	}
 	defer db.SafeRollback(ctx, tx)
 
+	// Ein nicht genanntes Feld kommt als NULL an und behält seinen Wert; leeren lässt sich
+	// über diese Tür keine der Spalten.
 	var leserID *string
 	err = tx.QueryRow(ctx, `
 		UPDATE benutzer
-		SET vorname = $1, nachname = $2, email = $3, rolle = $4::benutzer_rolle, aktiv = $5,
+		SET vorname = COALESCE($1, vorname), nachname = COALESCE($2, nachname),
+		    email = COALESCE($3, email), rolle = COALESCE($4::benutzer_rolle, rolle),
+		    aktiv = COALESCE($5, aktiv),
 		    -- Freischalten erledigt den Antrag; ein späteres Deaktivieren soll nicht
 		    -- wieder wie ein Antrag aussehen (Migration 086).
-		    zugang_beantragt_am = CASE WHEN $5 THEN NULL ELSE zugang_beantragt_am END,
+		    zugang_beantragt_am = CASE WHEN $5 IS TRUE THEN NULL ELSE zugang_beantragt_am END,
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $6
-		RETURNING leser_id::text
-	`, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID).Scan(&leserID)
+		RETURNING leser_id::text, email, rolle::text, aktiv
+	`, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID).Scan(&leserID, &stand.Email, &stand.Rolle, &stand.Aktiv)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrBenutzerNichtGefunden
+		return stand, ErrBenutzerNichtGefunden
 	}
 	if err != nil {
-		return err
+		return stand, err
 	}
 
-	if leserID != nil {
+	// Die Leserzeile nur anfassen, wenn die Änderung eines ihrer Felder nennt.
+	if leserID != nil && (p.Vorname != nil || p.Nachname != nil || p.BarcodeGenannt) {
 		tag, err := tx.Exec(ctx, `
-			UPDATE leser SET vorname = $1, nachname = $2, barcode_id = NULLIF($3::text, '')
-			WHERE id = $4
-		`, p.Vorname, p.Nachname, barcodeText(p.Barcode), *leserID)
+			UPDATE leser
+			SET vorname = COALESCE($1, vorname), nachname = COALESCE($2, nachname),
+			    barcode_id = CASE WHEN $3::boolean THEN NULLIF($4::text, '') ELSE barcode_id END
+			WHERE id = $5
+		`, p.Vorname, p.Nachname, p.BarcodeGenannt, barcodeText(p.Barcode), *leserID)
 		if err != nil {
-			return err
+			return stand, err
 		}
 		// Ein stiller Erfolg hieße: Der Name wurde am Konto geändert, an der Leserzeile
 		// nicht — dieselbe Person hieße an der Theke anders als in der Verwaltung.
 		if tag.RowsAffected() == 0 {
-			return fmt.Errorf("die Leserzeile %s zu Konto %s fehlt", *leserID, p.ID)
+			return stand, fmt.Errorf("die Leserzeile %s zu Konto %s fehlt", *leserID, p.ID)
 		}
 	}
-	return tx.Commit(ctx)
+	return stand, tx.Commit(ctx)
 }
 
 // barcodeText macht aus dem optionalen Ausweis einen Text: nil und "" heißen beide

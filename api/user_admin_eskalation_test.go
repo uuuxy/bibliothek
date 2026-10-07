@@ -43,9 +43,9 @@ func (r *eskalationsRepo) CreateUser(_ context.Context, _ *string, _, _, _, _ st
 	return "neu-1", nil
 }
 
-func (r *eskalationsRepo) UpdateUser(_ context.Context, _ repository.UpdateUserParams) error {
+func (r *eskalationsRepo) UpdateUser(_ context.Context, _ repository.UpdateUserParams) (repository.KontoStand, error) {
 	r.geaendert = true
-	return nil
+	return repository.KontoStand{}, nil
 }
 
 // anfrageAls baut eine Anfrage mit Sitzungs-Claims. rolle ist die Rolle des AUFRUFERS,
@@ -271,5 +271,55 @@ func TestEigeneDeaktivierungWirdAbgelehnt(t *testing.T) {
 
 	if w.Code != http.StatusForbidden {
 		t.Errorf("Selbstdeaktivierung: Status %d, erwartet 403", w.Code)
+	}
+}
+
+// Die Schutzregeln gelten auch, wenn der Rumpf nur einzelne Felder nennt: Ein fehlendes Feld
+// ändert nichts und gibt nichts frei; ein genanntes wird geprüft wie bisher.
+func TestSchutzregelnBeiEinzelnenFeldern(t *testing.T) {
+	faelle := []struct {
+		name          string
+		rollen        map[string]string
+		ziel, rumpf   string
+		aufrufer      string
+		aufruferRolle auth.Role
+		status        int
+		geschrieben   bool
+	}{
+		{"das eigene Konto abschalten", map[string]string{"mitarbeiter-1": "MITARBEITER"},
+			"mitarbeiter-1", `{"aktiv":false}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusForbidden, false},
+		{"sich selbst zum Administrator machen", map[string]string{"mitarbeiter-1": "MITARBEITER"},
+			"mitarbeiter-1", `{"rolle":"admin"}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusForbidden, false},
+		{"den eigenen Namen ändern", map[string]string{"mitarbeiter-1": "MITARBEITER"},
+			"mitarbeiter-1", `{"vorname":"Max"}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusOK, true},
+		{"den Namen eines Administrators ändern, ohne einer zu sein", map[string]string{"chef-1": "ADMIN"},
+			"chef-1", `{"vorname":"Max"}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusForbidden, false},
+		{"die Adresse eines Administrators ändern, ohne einer zu sein", map[string]string{"chef-1": "ADMIN"},
+			"chef-1", `{"email":"ich@schule.de"}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusForbidden, false},
+		{"einen anderen zum Administrator machen, ohne einer zu sein", map[string]string{"kollege-1": "HELFER"},
+			"kollege-1", `{"rolle":"admin"}`, "mitarbeiter-1", auth.RoleMitarbeiter, http.StatusForbidden, false},
+		{"als Administrator eine Rolle vergeben", map[string]string{"kollege-1": "HELFER"},
+			"kollege-1", `{"rolle":"admin"}`, "chef-1", auth.RoleAdmin, http.StatusOK, true},
+		{"ein Rumpf ohne Feld schreibt nichts", map[string]string{"kollege-1": "HELFER"},
+			"kollege-1", `{}`, "chef-1", auth.RoleAdmin, http.StatusOK, false},
+		{"ein Rumpf ohne Feld an ein unbekanntes Konto", map[string]string{},
+			"niemand-1", `{}`, "chef-1", auth.RoleAdmin, http.StatusNotFound, false},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			repo := &eskalationsRepo{rollen: f.rollen}
+			req := anfrageAls(t, http.MethodPut, "/api/benutzer/"+f.ziel, f.rumpf, f.aufrufer, f.aufruferRolle)
+			req.SetPathValue("id", f.ziel)
+			w := httptest.NewRecorder()
+
+			(&Server{}).UpdateUserHandler(repo).ServeHTTP(w, req)
+
+			if w.Code != f.status {
+				t.Errorf("Status %d, erwartet %d (%s)", w.Code, f.status, w.Body.String())
+			}
+			if repo.geaendert != f.geschrieben {
+				t.Errorf("geschrieben = %v, erwartet %v", repo.geaendert, f.geschrieben)
+			}
+		})
 	}
 }

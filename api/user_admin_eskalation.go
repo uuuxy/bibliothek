@@ -86,17 +86,20 @@ func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request
 // mit „eigene Admin-Rolle kann nicht herabgestuft werden", und die einzige
 // Selbstbearbeitung, die durchging, war rolle:"admin". Der Wächter verhinderte die
 // Eskalation nicht — er ließ nur sie übrig.
-func pruefeSelbstschutz(w http.ResponseWriter, r *http.Request, id string, neueRolle string, aktiv bool) bool {
+//
+// neueRolle und aktiv sind nil, wenn die Änderung das Feld nicht nennt: Dann bleibt es, wie
+// es ist, und es gibt nichts zu schützen.
+func pruefeSelbstschutz(w http.ResponseWriter, r *http.Request, id string, neueRolle *string, aktiv *bool) bool {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok || claims.UserID != id {
 		return true
 	}
-	if !strings.EqualFold(strings.TrimSpace(neueRolle), strings.TrimSpace(string(claims.Rolle))) {
+	if neueRolle != nil && !strings.EqualFold(strings.TrimSpace(*neueRolle), strings.TrimSpace(string(claims.Rolle))) {
 		apierrors.SendHTTPError(w, http.StatusForbidden,
 			errors.New("die eigene Rolle kann nicht geändert werden — das muss eine andere Person mit Administratorrechten tun"))
 		return false
 	}
-	if !aktiv {
+	if aktiv != nil && !*aktiv {
 		apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("eigenes Konto kann nicht deaktiviert werden"))
 		return false
 	}

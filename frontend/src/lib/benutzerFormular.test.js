@@ -48,16 +48,78 @@ describe('benutzerFormular', () => {
 		expect(ohne.aktiv).toBe(false);
 	});
 
-	it('schickt die Ausweisnummer mit und nie die id', () => {
-		const nutzlast = benutzerNutzlast({
+	it('schickt die Ausweisnummer mit und nie die id oder den Stand vom Öffnen', () => {
+		const neu = benutzerNutzlast({
 			...leeresBenutzerFormular(),
-			id: 'x',
 			barcode_id: 'A-7',
 			vorname: 'A',
 			nachname: 'B',
 			email: 'a@b'
 		});
-		expect(nutzlast).toHaveProperty('barcode_id', 'A-7');
-		expect(nutzlast).not.toHaveProperty('id');
+		expect(neu).toHaveProperty('barcode_id', 'A-7');
+		expect(neu).not.toHaveProperty('id');
+
+		const form = benutzerFormularAus({
+			id: 'x',
+			vorname: 'A',
+			nachname: 'B',
+			email: 'a@b',
+			rolle: 'helfer',
+			aktiv: true
+		});
+		form.barcode_id = 'A-8';
+		const vorhanden = benutzerNutzlast(form);
+		expect(vorhanden).toEqual({ barcode_id: 'A-8' });
+		expect(vorhanden).not.toHaveProperty('geladen');
+	});
+	// Die Maske füllt sich aus der Zeile der Liste; die lädt beim Öffnen der Seite. Schickte das
+	// Speichern jedes Feld zurück, schriebe es den alten Stand über das, was ein anderer Platz
+	// inzwischen geändert hat: die Rolle, „aktiv", die Ausweisnummer aus der Leserakte.
+	describe('ein vorhandenes Konto', () => {
+		const konto = {
+			id: '7',
+			vorname: 'Gerda',
+			nachname: 'Genannt',
+			email: 'gerda@x',
+			rolle: 'mitarbeiter',
+			aktiv: true,
+			barcode_id: 'A-10001'
+		};
+
+		it('schickt nur die Felder, die seit dem Öffnen geändert wurden', () => {
+			const form = benutzerFormularAus(konto);
+			form.vorname = 'Gerdi';
+			expect(benutzerNutzlast(form)).toEqual({ vorname: 'Gerdi' });
+
+			form.aktiv = false;
+			form.barcode_id = '';
+			expect(benutzerNutzlast(form)).toEqual({ vorname: 'Gerdi', aktiv: false, barcode_id: '' });
+		});
+
+		it('schickt nichts, wenn nichts geändert wurde, auch nach Hin und Zurück', () => {
+			const form = benutzerFormularAus(konto);
+			expect(benutzerNutzlast(form)).toEqual({});
+			form.rolle = 'helfer';
+			form.rolle = 'mitarbeiter';
+			expect(benutzerNutzlast(form)).toEqual({});
+		});
+
+		it('weigert sich ohne den Stand vom Öffnen: Sonst gälte jedes Feld als geändert', () => {
+			expect(() => benutzerNutzlast({ ...leeresBenutzerFormular(), id: '7' })).toThrow(
+				/Stand vom Öffnen/
+			);
+		});
+	});
+
+	it('ein neues Konto schickt alle Felder', () => {
+		const form = { ...leeresBenutzerFormular(), vorname: 'N', nachname: 'K', email: 'n@k' };
+		expect(benutzerNutzlast(form)).toEqual({
+			barcode_id: '',
+			vorname: 'N',
+			nachname: 'K',
+			email: 'n@k',
+			rolle: 'mitarbeiter',
+			aktiv: true
+		});
 	});
 });

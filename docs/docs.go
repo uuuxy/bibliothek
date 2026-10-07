@@ -424,7 +424,7 @@ const docTemplate = `{
         },
         "/benutzer/{id}": {
             "put": {
-                "description": "Modifies an existing user's properties, role, or active status.",
+                "description": "Ändert an einem Konto die Felder, die der Rumpf nennt; ein fehlendes Feld bleibt, wie es ist.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5460,12 +5460,6 @@ const docTemplate = `{
         },
         "api.UpdateUserRequest": {
             "type": "object",
-            "required": [
-                "email",
-                "nachname",
-                "rolle",
-                "vorname"
-            ],
             "properties": {
                 "aktiv": {
                     "type": "boolean"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
@@ -120,25 +121,22 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, userRe
 	httpresp.Write(w, []byte(`{"status":"success"}`))
 }
 
-// UpdateUserRequest ist der Änderungssatz für ein Mitarbeiterkonto. Warum hier bewusst
-// KEIN Passwort steht, erklärt der Kommentar am Ende des Structs.
+// UpdateUserRequest nennt, was an einem Konto geändert wird. Ein fehlendes Feld bleibt, wie es
+// ist: Die Maske schickt nur, was sie seit dem Öffnen geändert hat, damit sie nichts
+// überschreibt, was ein anderer Platz inzwischen gespeichert hat. Ein Passwort gibt es hier
+// nicht; Anmeldungen laufen über den Schul-Mailserver (IMAP).
 type UpdateUserRequest struct {
-	BarcodeID string `json:"barcode_id"`
-	Vorname   string `json:"vorname" validate:"required"`
-	Nachname  string `json:"nachname" validate:"required"`
-	Email     string `json:"email" validate:"required,email"`
-	Rolle     string `json:"rolle" validate:"required"`
-	Aktiv     bool   `json:"aktiv"`
-	// Kein Passwort-Feld: Staff-Logins laufen über den Schul-Mailserver (IMAP) bzw.
-	// Barcode/PIN — es gibt keine lokale Passwortspalte (siehe Migration 012). Ein früher
-	// hier vorhandenes `password`-Feld wurde ersatzlos entfernt, weil der Wert nirgends
-	// gespeichert wurde und Admins fälschlich glauben ließ, ein Passwort zu setzen.
+	BarcodeID *string `json:"barcode_id"`
+	Vorname   *string `json:"vorname"`
+	Nachname  *string `json:"nachname"`
+	Email     *string `json:"email" validate:"omitempty,email"`
+	Rolle     *string `json:"rolle"`
+	Aktiv     *bool   `json:"aktiv"`
 }
 
-// UpdateUserHandler modifies user properties (Name, E-Mail, Barcode, Rolle, Aktiv-Status).
-// Passwörter gibt es hier nicht — Login läuft über IMAP/Barcode (siehe CreateUserHandler).
+// UpdateUserHandler ändert Name, E-Mail, Ausweisnummer, Rolle oder „aktiv" eines Kontos.
 // @Summary      Update system user
-// @Description  Modifies an existing user's properties, role, or active status.
+// @Description  Ändert an einem Konto die Felder, die der Rumpf nennt; ein fehlendes Feld bleibt, wie es ist.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
@@ -167,13 +165,15 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRe
 	if !DecodeAndValidate(w, r, &req) {
 		return
 	}
-
-	if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("vorname, Nachname, E-Mail und Rolle sind Pflichtfelder"))
+	if !pruefeGenanntePflichtfelder(w, req) {
 		return
 	}
 
 	ctx := r.Context()
+	if req.nenntNichts() {
+		antworteOhneKontoAenderung(ctx, w, userRepo, id)
+		return
+	}
 
 	// Reihenfolge ist Absicht: erst die eigene Rolle/Aktivierung schützen, dann die
 	// Vergabe der Admin-Rolle, dann den Schutz bestehender Admin-Konten. Alle drei
@@ -181,46 +181,96 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRe
 	if !pruefeSelbstschutz(w, r, id, req.Rolle, req.Aktiv) {
 		return
 	}
-	if !pruefeAdminVergabe(w, r, req.Rolle) {
+	if req.Rolle != nil && !pruefeAdminVergabe(w, r, *req.Rolle) {
 		return
 	}
 	if !pruefeAdminZiel(ctx, w, r, userRepo, id) {
 		return
 	}
 
-	if !pruefeEmailEindeutig(ctx, w, userRepo, req.Email, id) {
-		return
-	}
-
-	barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, BarcodePruefOptionen{
-		BarcodeID:   req.BarcodeID,
-		ExcludeID:   id,
-		KonfliktMsg: "dieser Barcode wird bereits von einem anderen Benutzer verwendet",
-	})
+	aenderung, ok := kontoAenderungAus(ctx, w, userRepo, id, req)
 	if !ok {
 		return
 	}
-
-	dbEnumRole := normalisiereBenutzerRolle(req.Rolle)
-
-	if err := userRepo.UpdateUser(ctx, repository.UpdateUserParams{
-		ID: id, Barcode: barcode, Vorname: req.Vorname, Nachname: req.Nachname,
-		Email: req.Email, Rolle: dbEnumRole, Aktiv: req.Aktiv,
-	}); err != nil {
+	stand, err := userRepo.UpdateUser(ctx, aenderung)
+	if err != nil {
 		// Kein Protokolleintrag und kein Cache-Invalidate für eine Änderung, die nie
 		// stattfand.
 		antworteAufKontoAenderungsfehler(w, err)
 		return
 	}
 
+	// Der Eintrag nennt den Stand nach der Änderung, auch für Felder, die der Rumpf nicht nannte.
 	s.auditiereBenutzerMutation(r, "USER_UPDATE", map[string]any{
-		"ziel_id": id, "email": req.Email, "rolle": dbEnumRole, "aktiv": req.Aktiv,
+		"ziel_id": id, "email": stand.Email, "rolle": stand.Rolle, "aktiv": stand.Aktiv,
 	})
 
 	InvalidatePermissionCache()
 
 	w.Header().Set(headerContentType, contentTypeJSON)
 	httpresp.Write(w, []byte(`{"status":"success"}`))
+}
+
+// nenntNichts sagt, ob der Rumpf kein Feld des Kontos nennt.
+func (req UpdateUserRequest) nenntNichts() bool {
+	return req.BarcodeID == nil && req.Vorname == nil && req.Nachname == nil &&
+		req.Email == nil && req.Rolle == nil && req.Aktiv == nil
+}
+
+// pruefeGenanntePflichtfelder lehnt ein genanntes, aber leeres Pflichtfeld ab: Vorname,
+// Nachname, E-Mail und Rolle lassen sich ändern, nicht leeren.
+func pruefeGenanntePflichtfelder(w http.ResponseWriter, req UpdateUserRequest) bool {
+	for _, wert := range []*string{req.Vorname, req.Nachname, req.Email, req.Rolle} {
+		if wert != nil && strings.TrimSpace(*wert) == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest,
+				errors.New("vorname, Nachname, E-Mail und Rolle dürfen nicht leer sein"))
+			return false
+		}
+	}
+	return true
+}
+
+// antworteOhneKontoAenderung beantwortet einen Rumpf, der nichts nennt: nichts geschrieben,
+// kein Protokolleintrag. Ein unbekanntes Konto bleibt eine 404.
+func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, id string) {
+	rolle, err := userRepo.GetRolleByID(ctx, id)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if rolle == "" {
+		apierrors.SendHTTPError(w, http.StatusNotFound, repository.ErrBenutzerNichtGefunden)
+		return
+	}
+	w.Header().Set(headerContentType, contentTypeJSON)
+	httpresp.Write(w, []byte(`{"status":"success"}`))
+}
+
+// kontoAenderungAus prüft die genannte E-Mail und Ausweisnummer auf Eindeutigkeit und baut die
+// Änderung für das Repository. ok=false: Die Ablehnung ist schon beantwortet.
+func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, id string, req UpdateUserRequest) (repository.UpdateUserParams, bool) {
+	aenderung := repository.UpdateUserParams{
+		ID: id, Vorname: req.Vorname, Nachname: req.Nachname, Email: req.Email, Aktiv: req.Aktiv,
+	}
+	if req.Email != nil && !pruefeEmailEindeutig(ctx, w, userRepo, *req.Email, id) {
+		return aenderung, false
+	}
+	if req.BarcodeID != nil {
+		barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, BarcodePruefOptionen{
+			BarcodeID:   *req.BarcodeID,
+			ExcludeID:   id,
+			KonfliktMsg: "dieser Barcode wird bereits von einem anderen Benutzer verwendet",
+		})
+		if !ok {
+			return aenderung, false
+		}
+		aenderung.BarcodeGenannt, aenderung.Barcode = true, barcode
+	}
+	if req.Rolle != nil {
+		rolle := normalisiereBenutzerRolle(*req.Rolle)
+		aenderung.Rolle = &rolle
+	}
+	return aenderung, true
 }
 
 // antworteAufKontoAenderungsfehler ordnet den Fehler beim Ändern eines Kontos ein: unbekannte

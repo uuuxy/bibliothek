@@ -205,8 +205,9 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT id FROM benutzer WHERE LOWER(email) = $1`, email).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
-	if err := repository.NewUserRepository(pool).UpdateUser(ctx, repository.UpdateUserParams{
-		ID: id, Vorname: vorname, Nachname: nachname, Email: email, Rolle: rolle, Aktiv: true,
+	wahr, falsch := true, false
+	if _, err := repository.NewUserRepository(pool).UpdateUser(ctx, repository.UpdateUserParams{
+		ID: id, Aktiv: &wahr,
 	}); err != nil {
 		t.Fatalf("freischalten: %v", err)
 	}
@@ -224,8 +225,8 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 
 	// 5. Bewusst deaktivieren: Das ist kein Antrag mehr — die Meldung sagt „deaktiviert",
 	//    nicht „beantragt". Sonst wartete die Person auf eine Freischaltung, die nicht kommt.
-	if err := repository.NewUserRepository(pool).UpdateUser(ctx, repository.UpdateUserParams{
-		ID: id, Vorname: vorname, Nachname: nachname, Email: email, Rolle: rolle, Aktiv: false,
+	if _, err := repository.NewUserRepository(pool).UpdateUser(ctx, repository.UpdateUserParams{
+		ID: id, Aktiv: &falsch,
 	}); err != nil {
 		t.Fatalf("deaktivieren: %v", err)
 	}
