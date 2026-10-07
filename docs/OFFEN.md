@@ -55,14 +55,18 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [x] Die Bestandsliste (CSV) nennt je Exemplar den Standort (entschieden und gebaut am
   07.10.2026).
-- [ ] Theke: Ein Scan, der eintrifft, solange die vorige Buchung läuft, wird nicht gebucht und
-  nicht gemeldet; in der Schnellrückgabe bleibt das Buch verliehen. Vorschlag: einen Scan mit
-  anderer Nummer einreihen wie seit dem 07.10.2026 in der Inventur, dieselbe Nummer weiter
-  verwerfen. (5.56)
+- [x] Theke: Ein Scan, der eintrifft, solange die vorige Buchung läuft, wird eingereiht und
+  danach gebucht; dieselbe Nummer fällt weiter weg (entschieden und gebaut am 07.10.2026).
 - [x] Die Titelliste steht nach dem Titel, das Ziehen der Zeilen ist entfernt (entschieden
   und gebaut am 07.10.2026).
 - [ ] Titelliste: Ein Artikel am Anfang zählt beim Ordnen mit, „Die schwarze Katze" steht
   unter D; Littera ordnet solche Titel ohne den Artikel. Vorschlag: bleibt so. (5.59)
+- [ ] Theke: Ein gescheiterter Scan gibt außerhalb der Schnellrückgabe keinen Ton. Scheitert
+  ein Ausweis, während der Leser davor geladen ist, geht das nächste Buch an den Leser
+  davor. Vorschlag: Ein gescheiterter Scan gibt immer den Fehlerton. (5.60)
+- [ ] Theke: Ein Scan bei offener Rückfrage (Sperre, Vormerkung, Zubehör) schließt sie und
+  geht ohne Meldung verloren. Vorschlag: Die Rückfragen fangen einen Scan ab wie der
+  Sperrbildschirm, mit Fehlerton. (5.61)
 - [x] „Mahnbriefe drucken" verlangt dasselbe Recht wie der Mahnversand (`create_orders`,
   entschieden und gebaut am 07.10.2026).
 - [x] Das Aussehen nach der Umstellung der Farben auf M3-Rollen bleibt so (entschieden am
@@ -83,6 +87,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Bestandsliste (Einstellungen → Datenverwaltung): Spalte „Standort"; gefüllt bei
   Exemplaren, die einen Standort tragen (Buchakte, „Standort ändern")
 - [ ] Medienkatalog: Titel-Verwaltung und „Suche & Filter" stehen nach dem Titel
+- [ ] Theke: Ausweis und Bücher ohne Pause hintereinander scannen
 
 **Erledigen:**
 
@@ -688,27 +693,6 @@ wird nur mit Anlass.
 
 Kategorie B.
 
-### 5.56 Theke: ein Scan, solange die vorige Buchung läuft
-
-Gefunden und im Browser nachgestellt am 07.10.2026. Die Theke nimmt dem Scanfeld während
-einer Buchung den Fokus und lässt bis zur Antwort kein Zeichen hinein (`submitAction` und
-`scanfeldBereit` in `stores/omnibox.svelte.js`); gewollt ist das gegen den Doppelscan
-desselben Buchs. Es trifft auch das nächste Buch: Kommt die Antwort spät, ist dessen Scan
-weg, ohne Meldung und ohne Ton.
-
-Messung: Schnellrückgabe, zwei verliehene Bücher, die Antwort auf den ersten Scan um 1,5 s
-verzögert, beide blind hintereinander gescannt. Danach ist das erste Buch zurück, das zweite
-steht weiter auf dem Konto; das Feld ist leer, auf dem Bildschirm steht nur die Meldung zum
-ersten. Der Fall braucht eine Antwort, die länger dauert als der Griff zum nächsten Buch
-(langsames Netz, wartende Datenbank); wie lange eine Buchung am Server dauert, ist nicht
-gemessen. Das Buch wird dann später gemahnt, obwohl es im Regal steht.
-
-Die Inventur hatte dieselbe Form und reiht Scans seit dem 07.10.2026 ein
-(`frontend/e2e/inventur-scan-reihe.spec.js`). **Zu entscheiden:** An der Theke einen Scan mit
-anderer Nummer einreihen und nach der laufenden Buchung buchen, dieselbe Nummer weiter
-verwerfen (Schutz gegen den Doppelscan bleibt); oder beim Verwerfen den Fehlerton geben.
-Kategorie A, sobald es eintritt.
-
 ### 5.57 Spur im Protokoll: welche Tür schreibt einen Eintrag
 
 Raster, Frage 19 (neu am 07.10.2026). Die Rechte-Matrix schreibt seit dem 07.10.2026 einen
@@ -754,6 +738,34 @@ Gemessen am 07.10.2026 an der Littera-Sicherung von 2010 (Tabelle `Titel`, 10.64
 ein Titel über das Suchfeld), oder bringt die Übernahme Litteras Sortiertitel in einer
 eigenen Spalte mit, nach der die Liste ordnet? Das zweite braucht eine Migration und eine
 Regel für neu angelegte Titel. Vorschlag: bleibt so.
+
+### 5.60 Theke: ein gescheiterter Scan ohne Ton, der Leser davor bleibt geladen
+
+Nachgestellt am 07.10.2026 im Browser.
+
+- Außerhalb der Schnellrückgabe meldet die Theke einen gescheiterten Scan im Banner (6 s),
+  ohne Ton (`verarbeiteAntwortfehler` in `stores/omnibox.svelte.js`; am Store nachgestellt).
+- Scheitert der Scan eines Ausweises (unbekannte Nummer), während der Leser davor noch geladen
+  ist, geht das nächste Buch an den Leser davor. Gemessen: ein freies Buch, 1,5 s nach dem
+  gescheiterten Ausweis gescannt, stand danach auf dem Konto des Lesers davor; die Theke
+  meldet es wie jede Ausleihe.
+- Die Scan-Reihe hält in diesem Fall an und nennt, was wartet. Wer nach der Meldung
+  weiterscannt, bucht wie beschrieben.
+
+**Zu entscheiden:** Gibt ein gescheiterter Scan an der Theke immer den Fehlerton, wie in der
+Schnellrückgabe? Vorschlag: ja. Kategorie A.
+
+### 5.61 Theke: ein Scan bei offener Rückfrage schließt sie und geht verloren
+
+Nachgestellt am 07.10.2026 im Browser: Sperre von Hand, die Rückfrage „Ausleihe blockiert"
+ist offen, der Fokus steht auf „Abbrechen". Ein weiterer Scan schließt die Rückfrage (sein
+Enter drückt den Knopf); gebucht wird er nicht, eine Meldung gibt es nicht. Die Rückfrage
+zur Vormerkung hat nur den Knopf „Verstanden" (`OmniboxVormerkungAlert.svelte`, nicht
+nachgestellt): Dort ginge der Hinweis verloren, dass das Buch nicht ins Regal gehört.
+
+Anmeldung, Sperrbildschirm und „Standort ändern" fangen einen Scan ab (`scanSchutz` in
+`scanErkennung.js`). **Zu entscheiden:** Fangen die Rückfragen der Theke (Sperre, Vormerkung,
+Zubehör) einen Scan ebenso ab, mit Fehlerton? Vorschlag: ja. Kategorie A.
 
 ---
 
@@ -880,6 +892,13 @@ Regel für neu angelegte Titel. Vorschlag: bleibt so.
 - Die Meldung „Änderungen gespeichert." der Maske „Stammdaten bearbeiten" erscheint nie: Die
   Maske schließt mit dem Speichern, und die Meldung gehört zu ihr (`StudentEditSheet.svelte`).
   Die Akte zeigt danach den gespeicherten Stand.
+- Theke: Antwortet der Server nicht, wartet jeder eingereihte Scan seine eigene Frist ab
+  (10 s, `apiFetch.js`), bevor er ohne Netz abgelegt wird; die Reihe läuft dann langsam ab
+  (am Code gelesen am 07.10.2026). Anlass zum Bauen: Die Theke reagiert bei hängendem Server
+  spürbar verzögert auf einen Stapel.
+- Theke: Kommt die Antwort auf einen Ausweis-Scan erst nach „Theke leeren" (Abmelden, während
+  die Anfrage läuft), lädt sie den Leser doch (`verarbeiteLeser`; am Store nachgestellt am
+  07.10.2026). Nach der nächsten Anmeldung stünde sein Konto offen.
 - Ausfallmatrix A3 und B4; A3 erst nach S3 (7.3).
 - Anmeldungen stehen nicht im Protokoll (am Code nachgesehen am 28.09.2026): `LoginHandler` in
   `auth/handlers.go` schreibt keinen Eintrag, nur die Selbstanmeldung

@@ -2,12 +2,11 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 /**
- * Regression: Das Scanfeld muss nach JEDER Aktion den Fokus behalten.
+ * Das Scanfeld hat nach jeder Aktion den Fokus.
  *
- * submitAction() nimmt ihn bewusst weg (blur, verhindert Doppel-Scans während der
- * Verarbeitung) — es fehlte nur das Gegenstück. Folge am Tresen: Nach dem
- * Schüler-Scan musste man vor jedem Buch erst ins Feld klicken, sonst verpuffte
- * der Scan lautlos. Kein Fehler, keine Meldung, keine Ausleihe.
+ * Fehlt er, muss man am Tresen vor jedem Buch erst ins Feld klicken, sonst verpufft der
+ * Scan lautlos: kein Fehler, keine Meldung, keine Ausleihe. Was während einer laufenden
+ * Buchung gescannt wird, prüft theke-scan-reihe.spec.js.
  *
  * Warum das keiner der bestehenden e2e-Tests gefunden hat: Sie benutzen alle
  * `locator.fill()`, und das fokussiert das Element implizit. Damit testen sie

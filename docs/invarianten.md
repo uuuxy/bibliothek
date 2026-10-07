@@ -542,9 +542,11 @@ Bestand am 07.10.2026:
   verloren, ohne Meldung. Beleg vom 07.10.2026: Die Inventur zählte von drei Büchern eines,
   wenn die Antwort auf das erste nach 1,5 s kam, und der Abschluss hätte die zwei anderen
   als Verlust ausgesondert (`frontend/e2e/inventur-scan-reihe.spec.js`, behoben). Die Theke
-  lässt einen Scan während einer laufenden Buchung ebenfalls fallen, mit Absicht gegen den
-  Doppelscan; in der Schnellrückgabe bleibt das zweite Buch dabei verliehen (im Browser
-  nachgestellt am 07.10.2026, [OFFEN.md](OFFEN.md) 5.56).
+  ließ einen Scan während einer laufenden Buchung ebenfalls fallen, gegen den Doppelscan; in
+  der Schnellrückgabe blieb das zweite Buch dabei verliehen. Seit dem 07.10.2026 reiht sie
+  ihn ein und bucht ihn danach, dieselbe Nummer fällt weiter weg; ging ein Scan nicht glatt
+  durch, wird der Rest nicht gebucht und genannt (`frontend/e2e/theke-scan-reihe.spec.js`,
+  `frontend/src/lib/stores/omniboxScanReihe.test.js`).
 - **Frage 17, die Fristenkette:** Welche Frist endet zuerst — die der Oberfläche, die des
   Servers, die des fremden Dienstes —, und was sieht die Person, wenn die Oberfläche zuerst
   aufgibt? Der Server arbeitet dann weiter, seine Antwort sieht niemand, und der zweite

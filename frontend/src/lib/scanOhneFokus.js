@@ -55,7 +55,7 @@ function liegtFrei(feld) {
  * Tastendruck an der Theke: Fiele das Zeichen ins Leere, bekommt das Scanfeld den Fokus, bevor
  * der Browser das Zeichen einsetzt.
  * @param {KeyboardEvent} e
- * @param {() => boolean} bereit false, solange eine Buchung läuft oder ein Dialog der Theke wartet
+ * @param {() => boolean} bereit false, solange eine Rückfrage der Theke offen ist oder die Kamera scannt
  */
 export function tasteInsScanfeld(e, bereit) {
 	if (!istTippzeichen(e) || nimmtTastenAn(document.activeElement)) return;

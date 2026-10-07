@@ -57,6 +57,14 @@ Schritt).
 der Akte. Nur ein offenes Fenster (etwa „Gebühr stornieren") und ein Feld, in dem gerade getippt
 wird, behalten die Tastatur.
 
+**Schneller scannen, als das Programm antwortet** (seit 07.10.2026): Die Theke bucht die Scans
+der Reihe nach, auch wenn der nächste kommt, bevor der vorige beantwortet ist — erst der
+Ausweis, dann die Bücher an diesen Leser. Dieselbe Nummer noch einmal, bevor sie gebucht ist,
+zählt nicht. Geht ein Scan nicht glatt durch (er scheitert, eine Rückfrage geht auf oder ein
+Hinweis erscheint über dem Konto), bucht die Theke nicht, was danach schon gescannt war: Die
+Nummern stehen rot unter dem Scanfeld („Gescannt und NICHT gebucht: … — bitte erneut scannen"),
+mit Fehlerton, bis zum nächsten Scan.
+
 **Am Ton ist zu hören, was gebucht wurde** (seit 06.10.2026): Eine Ausleihe klingt mit zwei
 Tönen abwärts; eine Rückgabe und ein gescannter Ausweis klingen mit denselben zwei Tönen
 aufwärts. Klingt es beim Zurücknehmen abwärts, ist das Buch ausgeliehen worden: Erneut scannen

@@ -128,8 +128,21 @@ export function createOmniboxStore() {
 	let flashTimer = null;
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let fokusTimer = null;
-	// Während einer Buchung nimmt das Scanfeld nichts an (blur in submitAction).
+
+	// Die Reihe der Scans. Ein Handscanner wartet nicht auf die Antwort: Ein Scan, der
+	// eintrifft, solange eine Buchung läuft, wartet hier und wird danach gebucht. Verworfen
+	// bliebe er unbemerkt, in der Schnellrückgabe bliebe das Buch verliehen.
+	/**
+	 * @typedef {{ q: string, reloadProfileCb?: (() => void) | null, overrideBlock: boolean,
+	 *   confirmedChecklist: boolean, absicht: 'ausleihe' | 'rueckgabe' | null }} Auftrag
+	 */
 	let buchungLaeuft = false;
+	/** @type {Auftrag[]} */
+	const wartend = [];
+	// Die Nummer, die gerade gebucht wird.
+	let laufendeNummer = '';
+	// Löst sich auf, sobald kein Scan mehr unterwegs ist oder wartet.
+	let reiheGebucht = Promise.resolve();
 
 	function triggerScreenFlash(type) {
 		screenFlash = type;
@@ -180,25 +193,45 @@ export function createOmniboxStore() {
 		debounceTimer = null;
 	}
 
-	// Zeigt das Inline-Fehlerbanner an der Omnibox und blendet es nach 6s automatisch
-	// aus. Ein noch laufender Timer wird verworfen, damit ein neuer Fehler die volle
-	// Anzeigedauer bekommt (und nicht der alte Timer das frische Banner sofort löscht).
-	function zeigeFehlerBanner(message) {
-		clearFehlerBanner();
-		errorMessage = message;
-		errorMessageTimer = setTimeout(() => {
-			errorMessage = '';
-			errorMessageTimer = null;
-		}, 6000);
+	// Das Fehlerbanner hat zwei Teile. Was ein Scan meldet, verschwindet nach 6 s von selbst.
+	// Die Nummern der Scans, die eine Reihe nicht gebucht hat, bleiben stehen, bis der nächste
+	// Scan kommt: Die Rückfrage, vor der sie gescannt wurden, kann länger offen sein.
+	let bannerMeldung = '';
+	/** @type {string[]} */
+	let nichtGebucht = [];
+
+	function zeichneBanner() {
+		const nummern = nichtGebucht.map((nummer) => `„${nummer}“`).join(', ');
+		const rest = nummern ? `Gescannt und NICHT gebucht: ${nummern} — bitte erneut scannen.` : '';
+		errorMessage = [bannerMeldung, rest].filter(Boolean).join(' · ');
 	}
 
-	// Blendet das Inline-Fehlerbanner sofort aus und stoppt den Auto-Dismiss-Timer.
-	function clearFehlerBanner() {
+	function stoppeBannerUhr() {
 		if (errorMessageTimer) {
 			clearTimeout(errorMessageTimer);
 			errorMessageTimer = null;
 		}
-		errorMessage = '';
+	}
+
+	// Zeigt die Meldung im Fehlerbanner an der Omnibox. Eine laufende Uhr wird verworfen,
+	// damit ein neuer Fehler die volle Anzeigedauer bekommt.
+	function zeigeFehlerBanner(message) {
+		stoppeBannerUhr();
+		bannerMeldung = message;
+		errorMessageTimer = setTimeout(() => {
+			errorMessageTimer = null;
+			bannerMeldung = '';
+			zeichneBanner();
+		}, 6000);
+		zeichneBanner();
+	}
+
+	// Leert das Fehlerbanner ganz, auch die Nummern der nicht gebuchten Scans.
+	function clearFehlerBanner() {
+		stoppeBannerUhr();
+		bannerMeldung = '';
+		nichtGebucht = [];
+		zeichneBanner();
 	}
 
 	// Such-Logik. suchLauf zählt jeden gestarteten Abruf — nur die Antwort des zuletzt
@@ -363,6 +396,7 @@ export function createOmniboxStore() {
 	// ohne Netz gemerkt ist: Sonst ginge das nächste freie Buch an ihn.
 	/** @param {boolean} an */
 	function schalteSchnellrueckgabe(an) {
+		verwirfWartende();
 		schnellrueckgabe = an;
 		if (!an) return;
 		activeStudent = null;
@@ -432,27 +466,41 @@ export function createOmniboxStore() {
 
 	// Verarbeitet die erfolgreiche Server-Antwort je nach data.type. overrideBlock ist das
 	// Übergehen, mit dem der Scan geschickt wurde — die Zubehör-Liste reicht es weiter.
+	//
+	// Das Ergebnis sagt, ob danach ein wartender Scan gebucht werden darf: nur nach einer
+	// glatten Buchung. Eine Hinweiszeile über dem Konto (Fremdrückgabe, andere Auflage) steht
+	// bis zum nächsten Scan und verlangt einen Blick; der wartende Scan nähme sie gleich weg.
+	/** @returns {boolean} */
 	function verarbeiteAktionsErgebnis(data, reloadProfileCb, q = '', overrideBlock = false) {
 		if (data.type === 'student') {
 			verarbeiteLeser(data);
-		} else if (data.type === 'geraet_check') {
-			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
-			checklistAnfrage = { query: q, geraet: data.geraet, overrideBlock };
-		} else if (data.type === 'ausleihe') {
+			return true;
+		}
+		if (data.type === 'ausleihe') {
 			verarbeiteAusleihe(data, reloadProfileCb);
-		} else if (data.type === 'rueckgabe') {
+			return !data.auflagen_hinweis;
+		}
+		if (data.type === 'rueckgabe') {
 			verarbeiteRueckgabe(data, reloadProfileCb);
-		} else if (data.type === 'info') {
+			return !data.fremdrueckgabe;
+		}
+		if (data.type === 'info') {
 			triggerScreenFlash('success');
 			playSoundSuccess();
 			triggerFlash('green');
 			showToast(data.message, 'success');
 			zeigeRueckkehrHinweise(data, { ohneMeldung: true });
 			if (reloadProfileCb) reloadProfileCb();
+			return true;
+		}
+		if (data.type === 'geraet_check') {
+			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
+			checklistAnfrage = { query: q, geraet: data.geraet, overrideBlock };
 		} else if (data.type === 'search_results') {
 			triggerShake();
 			showToast('Bitte wähle ein Ergebnis aus der Liste.', 'warning');
 		}
+		return false;
 	}
 
 	// Der Schnappschuss VOM SCAN: Absicht, Person, Zeitpunkt und Idempotenz-Schlüssel, bevor
@@ -510,12 +558,15 @@ export function createOmniboxStore() {
 	// Gebucht wird unter der NUMMER aus der Einordnung, nicht unter dem Aufdruck: Ein
 	// Littera-Etikett traegt im Strichcode eine EAN-13, der Server kennt nur die Nummer
 	// darin.
-	/** @param {import('../offlineQueue.js').OfflineEintrag} eintrag */
+	/**
+	 * @param {import('../offlineQueue.js').OfflineEintrag} eintrag
+	 * @returns {Promise<boolean>} true: gespeichert oder als Ausweis gemerkt
+	 */
 	async function speichereOfflineAktion(eintrag) {
 		const einordnung = ordneScanEin(eintrag.barcode, buchBarcodes.istBuch);
 		if (einordnung.art === 'ausweis') {
 			merkeOfflineAusweis(einordnung.nummer);
-			return;
+			return true;
 		}
 		if (einordnung.art !== 'buch') {
 			// „unklar" sperrt die Zuordnung bis zum naechsten eindeutigen Ausweis
@@ -523,7 +574,7 @@ export function createOmniboxStore() {
 			// nicht einer Person zugeschrieben wird, bei der niemand mehr sicher ist.
 			if (einordnung.art === 'unklar') offlineAusweis = '';
 			verwirfOfflineScan(einordnung);
-			return;
+			return false;
 		}
 		eintrag = { ...eintrag, barcode: einordnung.nummer };
 		try {
@@ -538,12 +589,13 @@ export function createOmniboxStore() {
 				`NICHT gespeichert: „${eintrag.barcode}“ konnte nicht auf diesem Rechner abgelegt werden — Buch zurücklegen und den Vorgang notieren.`
 			);
 			offlineSync.updateCount();
-			return;
+			return false;
 		}
 		offlineSync.updateCount();
 		triggerScreenFlash('warning');
 		playSoundSuccess();
 		showToast(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
+		return true;
 	}
 
 	// Was die Theke ohne Netz NICHT annimmt — und warum der Bediener das erfahren muss.
@@ -674,10 +726,13 @@ export function createOmniboxStore() {
 
 	// Der Versand ist gescheitert (Netzfehler, Timeout, CSRF-Bootstrap ohne Netz): Der
 	// Server hat den Scan nicht gesehen, der Schnappschuss geht in die Warteschlange.
-	/** @param {unknown} e @param {import('../offlineQueue.js').OfflineEintrag} eintrag */
-	async function verarbeiteVersandfehler(e, eintrag) {
+	/**
+	 * @param {unknown} e @param {import('../offlineQueue.js').OfflineEintrag} eintrag
+	 * @returns {Promise<boolean>} true: gespeichert oder als Ausweis gemerkt
+	 */
+	function verarbeiteVersandfehler(e, eintrag) {
 		console.warn('Scan nicht zugestellt, wird eingereiht:', e);
-		await speichereOfflineAktion(eintrag);
+		return speichereOfflineAktion(eintrag);
 	}
 
 	// Eine Antwort kam an — nichts ist offline. Was ihre Auswertung wirft, wird gezeigt.
@@ -751,13 +806,81 @@ export function createOmniboxStore() {
 
 		queryVal = '';
 		isDropdownOpen = false;
+
+		/** @type {Auftrag} */
+		const auftrag = { q, reloadProfileCb, overrideBlock, confirmedChecklist, absicht };
+		if (buchungLaeuft) {
+			// Dieselbe Nummer, bevor sie gebucht ist, ist der Doppelscan: Er fällt weg. Gebucht
+			// gäbe er das eben geliehene Buch gleich wieder zurück.
+			if (!istUnterwegs(q)) wartend.push(auftrag);
+			return reiheGebucht;
+		}
+		buchungLaeuft = true;
+		reiheGebucht = bucheReihe(auftrag);
+		return reiheGebucht;
+	}
+
+	/** Wird die Nummer gerade gebucht oder wartet sie? @param {string} q */
+	const istUnterwegs = (q) => q === laufendeNummer || wartend.some((w) => w.q === q);
+
+	// Bucht den Scan und danach, der Reihe nach, was inzwischen gescannt wurde. Jeder Scan
+	// findet vor, was der vorige hinterlassen hat: Nach einem Ausweis gehen die Bücher an
+	// diesen Leser.
+	//
+	// Weiter geht es nur nach einer glatten Buchung. Scheitert ein Scan, kann er ein Ausweis
+	// gewesen sein, und die folgenden Bücher gingen an den Leser davor; nach einer Rückfrage
+	// entscheidet ein Mensch, was gilt. Was dann noch wartet, wird nicht gebucht und genannt.
+	/** @param {Auftrag} erster */
+	async function bucheReihe(erster) {
+		try {
+			/** @type {Auftrag | undefined} */
+			let auftrag = erster;
+			while (auftrag) {
+				laufendeNummer = auftrag.q;
+				const glatt = await bucheScan(auftrag);
+				laufendeNummer = '';
+				if (rueckfrageOffen()) {
+					// Die Rückfrage hat jetzt die Tastatur. Was vom nächsten Scan schon im Feld
+					// steht, stünde sonst vor dem übernächsten.
+					queryVal = '';
+				}
+				if (!glatt || rueckfrageOffen()) break;
+				auftrag = wartend.shift();
+			}
+		} catch (e) {
+			// Unerwartet abgebrochen: Ob der laufende Scan gebucht ist, weiß hier niemand.
+			console.error('Buchung abgebrochen:', e);
+			triggerFlash('red');
+			verarbeiteAntwortfehler(e);
+		} finally {
+			laufendeNummer = '';
+			verwirfWartende();
+			buchungLaeuft = false;
+			scanfeldWiederScharfstellen();
+		}
+	}
+
+	// Die wartenden Scans werden nicht gebucht. Das Banner nennt sie, bis der nächste Scan
+	// kommt; der Ton sagt es dem, der nicht hinsieht.
+	function verwirfWartende() {
+		if (wartend.length === 0) return;
+		nichtGebucht = [...nichtGebucht, ...wartend.splice(0).map((w) => w.q)];
+		triggerScreenFlash('error');
+		playSoundError();
+		triggerFlash('red');
+		zeichneBanner();
+	}
+
+	// Bucht einen Scan. Das Ergebnis sagt, ob er glatt durchging: Leser geladen, gebucht oder
+	// für später abgelegt.
+	/**
+	 * @param {Auftrag} auftrag
+	 * @returns {Promise<boolean>}
+	 */
+	async function bucheScan({ q, reloadProfileCb, overrideBlock, confirmedChecklist, absicht }) {
 		lastFremdrueckgabe = null;
 		lastAuflagenHinweis = null;
 		clearFehlerBanner();
-
-		// Disable input while processing
-		document.getElementById('omnibox-input')?.blur();
-		buchungLaeuft = true;
 
 		// Der Schnappschuss entsteht VOR allem Weiteren (OFFEN.md 2.2, Commit 1): Escape
 		// oder „Theke leeren" waehrend einer laufenden Anfrage darf die Absicht des Scans
@@ -767,15 +890,8 @@ export function createOmniboxStore() {
 		// Steht ein ohne Netz gemerkter Ausweis, gehoert das naechste Buch IHM — erst
 		// aufloesen, dann buchen (merkerAufgeloest). Ohne Merker bleibt dieser Weg
 		// unberuehrt: kein zusaetzlicher Wartepunkt zwischen Scan und Versand.
-		//
-		// Der Fokus geht zurueck ans Scanfeld, auch wenn der Scan bewusst nicht
-		// ausgefuehrt wird: Ein Handscanner tippt blind, ohne Fokus landet der naechste
-		// Scan im Nichts.
 		if (offlineAusweis) {
-			if (!(await merkerAufgeloest(q, reloadProfileCb))) {
-				scanfeldWiederScharfstellen();
-				return;
-			}
+			if (!(await merkerAufgeloest(q, reloadProfileCb))) return false;
 			// Die Aufloesung hat die Person geladen: Sie gehoert in den Schnappschuss, und
 			// der Merker faellt aus ihm heraus — sonst truege der Eintrag beides, und beim
 			// Nachbuchen entschiede die Reihenfolge der Felder, wem das Buch gehoert.
@@ -791,9 +907,9 @@ export function createOmniboxStore() {
 		// Was ihre Auswertung wirft, wird gezeigt und nicht eingereiht. Der Server kennt den
 		// Idempotenz-Schlüssel schon; nach Ablauf seines Caches (24 h) würde neu gebucht.
 		//
-		// Rot gehört in den Fehlerfall, nicht ins finally: Dort feuerte es bei jedem Scan und
-		// überschriebe das Grün des Erfolgspfads und das Orange der Fremdrückgabe. Sieht Erfolg
-		// wie Fehler aus, schaut niemand mehr auf die Farbe.
+		// Rot gehört in den Fehlerfall: Feuerte es bei jedem Scan, überschriebe es das Grün des
+		// Erfolgspfads und das Orange der Fremdrückgabe. Sieht Erfolg wie Fehler aus, schaut
+		// niemand mehr auf die Farbe.
 		let res;
 		try {
 			res = await apiClient.post('/api/action', {
@@ -805,9 +921,7 @@ export function createOmniboxStore() {
 			});
 		} catch (e) {
 			triggerFlash('red');
-			await verarbeiteVersandfehler(e, eintrag);
-			scanfeldWiederScharfstellen();
-			return;
+			return verarbeiteVersandfehler(e, eintrag);
 		}
 
 		try {
@@ -815,45 +929,43 @@ export function createOmniboxStore() {
 				await handleActionHttpError(res, q); // wirft immer
 			}
 			const data = await res.json();
-			verarbeiteAktionsErgebnis(data, reloadProfileCb, q, overrideBlock);
+			return verarbeiteAktionsErgebnis(data, reloadProfileCb, q, overrideBlock);
 		} catch (e) {
 			triggerFlash('red');
 			verarbeiteAntwortfehler(e);
-		} finally {
-			scanfeldWiederScharfstellen();
+			return false;
 		}
 	}
 
 	/**
-	 * Gibt dem Scanfeld den Fokus zurück, den submitAction oben bewusst weggenommen hat.
+	 * Gibt dem Scanfeld nach einer Buchung den Fokus.
 	 *
-	 * Der blur() ist richtig — er verhindert Doppel-Scans, während die Aktion läuft. Ihm
-	 * fehlte nur das Gegenstück: Ein Handscanner ist eine Tastatur und tippt blind. Ohne
-	 * Fokus landen seine Zeichen im Nichts — keine Ausleihe, keine Fehlermeldung, gar
-	 * nichts. Am Tresen musste man deshalb vor JEDEM Buch erst ins Feld klicken.
+	 * Ein Handscanner ist eine Tastatur und tippt blind. Ohne Fokus landen seine Zeichen im
+	 * Nichts — keine Ausleihe, keine Fehlermeldung. Das Feld behält den Fokus während der
+	 * Buchung; ein Klick davor oder das neu gerenderte Profil kann ihn woanders gelassen haben.
 	 *
-	 * Der bestehende $effect in Omnibox.svelte fängt das nicht ab: Er läuft nur, solange
-	 * KEIN Schüler geladen ist (`!isActive`) — also genau nicht während des Ausleihens.
+	 * Der $effect in Omnibox.svelte fängt das nicht ab: Er läuft nur, solange KEIN Leser
+	 * geladen ist (`!isActive`) — also genau nicht während des Ausleihens.
 	 *
 	 * Nicht zurückholen, solange ein Dialog eine menschliche Entscheidung braucht
 	 * (Sperre, Vormerkung) oder die Kamera scannt — dort würde der Fokussprung die
 	 * Bedienung stören und den Dialog wegtippbar machen.
 	 */
 	function scanfeldWiederScharfstellen() {
-		buchungLaeuft = false;
 		if (entscheidungOffen()) return;
 		fokussiereScanfeld();
 	}
 
-	// Ein Dialog, der eine menschliche Entscheidung braucht, oder die laufende Kamera.
-	function entscheidungOffen() {
-		return !!(showCamera || blockAlert || vormerkungAlert || checklistAnfrage);
-	}
+	// Eine Rückfrage, die ein Mensch beantwortet: Sperre, Vormerkung, Zubehör.
+	const rueckfrageOffen = () => !!(blockAlert || vormerkungAlert || checklistAnfrage);
 
-	// Darf ein Zeichen, das ohne Fokus getippt wird, ins Scanfeld (scanOhneFokus.js)? Nicht,
-	// solange eine Buchung läuft — sonst buchte ein Doppelscan zweimal — oder eine Entscheidung
-	// offen ist.
-	const scanfeldBereit = () => !buchungLaeuft && !entscheidungOffen();
+	// Eine offene Rückfrage oder die laufende Kamera: Beide behalten ihre Eingabe.
+	const entscheidungOffen = () => showCamera || rueckfrageOffen();
+
+	// Darf ein Zeichen, das ohne Fokus getippt wird, ins Scanfeld (scanOhneFokus.js)? Auch
+	// während einer Buchung: Der Scan wird eingereiht (bucheReihe). Nicht, solange eine
+	// Rückfrage offen ist oder die Kamera scannt.
+	const scanfeldBereit = () => !entscheidungOffen();
 
 	// Der Fokussprung selbst — DIE Stelle, an der ein Zeitgeber dieses Stores die Seite
 	// anfasst, und damit die, die nach dem Abbau der Testumgebung den ganzen Lauf riss
@@ -914,10 +1026,14 @@ export function createOmniboxStore() {
 		get offlineAusweis() {
 			return offlineAusweis;
 		},
+		// Von außen gesetzt (Escape, Akte schließen, Theke leeren): Was noch wartet, wurde für
+		// den Zustand davor gescannt und wird nicht gebucht.
 		set offlineAusweis(v) {
+			verwirfWartende();
 			offlineAusweis = v;
 		},
 		set activeStudent(v) {
+			verwirfWartende();
 			if (v) schnellrueckgabe = false;
 			activeStudent = v;
 		},
