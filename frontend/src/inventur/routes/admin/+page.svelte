@@ -141,7 +141,7 @@
 			const ergebnis = await retryExterneCover(ids);
 			await aktualisiereBuecher();
 			showToast(
-				`Cover-Retry fertig. Aktualisiert: ${ergebnis.updated}, Übersprungen: ${ergebnis.skipped}, Fehler: ${ergebnis.failed}`,
+				`Cover lokalisiert. Aktualisiert: ${ergebnis.updated}, Übersprungen: ${ergebnis.skipped}, Fehler: ${ergebnis.failed}`,
 				'info'
 			);
 		} catch (fehler) {

@@ -49,7 +49,7 @@
 			newMappingKlasse = '';
 			newMappingEmail = '';
 			await fetchMapping();
-			toastStore.addToast('Mapping gespeichert.', 'success');
+			toastStore.addToast('Zuordnung gespeichert.', 'success');
 		} catch {
 			// Toast already shown by apiPost
 		} finally {
@@ -62,7 +62,7 @@
 		try {
 			await apiDelete(`/api/klassen-mapping/${encodeURIComponent(klasse)}`);
 			await fetchMapping();
-			toastStore.addToast(`Mapping für ${klasse} gelöscht.`, 'success');
+			toastStore.addToast(`Zuordnung für ${klasse} gelöscht.`, 'success');
 		} catch {
 			// Toast already shown by apiDelete
 		}
@@ -84,7 +84,7 @@
 			<Ladekreis size="lg" />
 		</div>
 	{:else if mappingRows.length === 0}
-		<p class="text-sm text-on-surface-variant py-4">Noch keine Mappings vorhanden.</p>
+		<p class="text-sm text-on-surface-variant py-4">Noch keine Zuordnungen vorhanden.</p>
 	{:else}
 		<Tabelle beschriftung="Klassenleitungen und ihre E-Mail-Adressen">
 			<thead>
@@ -103,8 +103,8 @@
 							<button
 								onclick={() => deleteMapping(row.klasse)}
 								class="icon-btn h-9 w-9 text-error"
-								aria-label="Mapping für {row.klasse} löschen"
-								data-tip="Mapping löschen"
+								aria-label="Zuordnung für {row.klasse} löschen"
+								data-tip="Zuordnung löschen"
 							>
 								<Trash class="w-5 h-5" aria-hidden="true" />
 							</button>

@@ -20,9 +20,9 @@
 	let { el, istDynamisch, schriften } = $props();
 
 	const AUSRICHTUNG = [
-		{ wert: 'left', zeichen: '⬅' },
-		{ wert: 'center', zeichen: '↔' },
-		{ wert: 'right', zeichen: '➡' }
+		{ wert: 'left', zeichen: '⬅', name: 'Linksbündig' },
+		{ wert: 'center', zeichen: '↔', name: 'Zentriert' },
+		{ wert: 'right', zeichen: '➡', name: 'Rechtsbündig' }
 	];
 </script>
 
@@ -65,7 +65,8 @@
 				class="py-1 rounded-lg text-sm transition-colors {el.style?.textAlign === a.wert
 					? 'bg-secondary-container text-on-secondary-container'
 					: 'bg-surface-container text-on-surface-variant'}"
-				title={a.wert}>{a.zeichen}</button
+				title={a.name}
+				aria-label={a.name}>{a.zeichen}</button
 			>
 		{/each}
 	</div>

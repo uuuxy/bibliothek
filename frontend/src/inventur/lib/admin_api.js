@@ -104,7 +104,7 @@ export async function retryExterneCover(ids = []) {
 		},
 		body: JSON.stringify({ ids, limit: 300 })
 	});
-	if (!res.ok) throw new Error('Cover-Retry fehlgeschlagen');
+	if (!res.ok) throw new Error('Cover konnten nicht lokalisiert werden');
 	const json = await res.json();
 	return json.data;
 }

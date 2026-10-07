@@ -60,7 +60,7 @@
 
 		<Button variant="secondary" onclick={onRetryCovers} class="flex-1 sm:flex-none">
 			<RefreshCw class="w-4 h-4" aria-hidden="true" />
-			Retry Cover
+			Cover lokalisieren
 		</Button>
 
 		<!-- Öffnet die Maske „Neues Buch" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
