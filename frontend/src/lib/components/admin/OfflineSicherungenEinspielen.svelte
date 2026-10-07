@@ -20,6 +20,7 @@
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import { Upload } from '@lucide/svelte';
+	import { fehlertext } from '../../utils/fehlertext.js';
 
 	/** @type {HTMLInputElement | null} */
 	let fileInput = $state(null);
@@ -42,7 +43,7 @@
 			try {
 				vorgaenge += await offlineSync.importQueueFromJSON(file);
 			} catch (err) {
-				fehler.push(`${file.name}: ${err instanceof Error ? err.message : String(err)}`);
+				fehler.push(`${file.name}: ${fehlertext(err)}`);
 			}
 		}
 

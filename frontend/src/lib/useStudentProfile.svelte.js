@@ -1,6 +1,7 @@
 import { apiFetch, apiClient, extractApiError } from './apiFetch.js';
 import { istKollegium } from './leserArt.js';
 import { toastStore } from './stores/toastStore.svelte.js';
+import { fehlertext } from './utils/fehlertext.js';
 
 export function useStudentProfile() {
 	/** @type {any} */
@@ -136,7 +137,7 @@ export function useStudentProfile() {
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			globalErrorToast = e instanceof Error ? e.message : String(e);
+			globalErrorToast = fehlertext(e);
 			setTimeout(() => (globalErrorToast = null), 4000);
 		} finally {
 			rechnungPdfLoading = false;
@@ -160,7 +161,7 @@ export function useStudentProfile() {
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			globalErrorToast = e instanceof Error ? e.message : String(e);
+			globalErrorToast = fehlertext(e);
 			setTimeout(() => (globalErrorToast = null), 4000);
 		} finally {
 			kontoauszugPdfLoading = false;

@@ -13,6 +13,7 @@
 	import { uebernimmGespeichert } from '../../buch_felder.js';
 	import { hatRecht } from '../../../../lib/menu.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
+	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 
 	let { books = $bindable(), isEditMode = $bindable(), formular = $bindable() } = $props();
 
@@ -30,7 +31,7 @@
 			isEditMode = false;
 			showToast('Titel gelöscht.', 'success');
 		} catch (fehler) {
-			showToast(fehler instanceof Error ? fehler.message : String(fehler), 'error');
+			showToast(fehlertext(fehler), 'error');
 		}
 	}
 
@@ -83,7 +84,7 @@
 			if (e instanceof BestandVeraltetFehler) {
 				formular.stock = formular.stockGesehen = e.bestand;
 			}
-			showToast(e instanceof Error ? e.message : String(e), 'error');
+			showToast(fehlertext(e), 'error');
 		} finally {
 			speichert = false;
 		}
@@ -138,7 +139,7 @@
 			books = books.map((/** @type {any} */ b) => (b.id === formular.id ? { ...b, coverUrl } : b));
 			showToast('Cover neu geholt', 'success');
 		} catch (err) {
-			showToast(err instanceof Error ? err.message : String(err), 'error');
+			showToast(fehlertext(err), 'error');
 		}
 	}
 
@@ -186,7 +187,7 @@
 			);
 			showToast('Cover erfolgreich hochgeladen', 'success');
 		} catch (err) {
-			showToast(err instanceof Error ? err.message : String(err), 'error');
+			showToast(fehlertext(err), 'error');
 		}
 	}
 </script>

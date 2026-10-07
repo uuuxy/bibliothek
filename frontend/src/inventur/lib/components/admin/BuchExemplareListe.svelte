@@ -8,6 +8,7 @@
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
 	import { exemplarStatus } from '../../../../lib/components/exemplarStatus.js';
 	import BuchEingabefelderInventar from './BuchEingabefelderInventar.svelte';
+	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 
 	let { formular = $bindable() } = $props();
 
@@ -52,7 +53,7 @@
 			ausgesondert = alle.filter((e) => e.im_bestand === false && e.ist_ausgesondert).length;
 			bestellt = alle.length - exemplare.length - ausgesondert;
 		} catch (err) {
-			error = err instanceof Error ? err.message : String(err);
+			error = fehlertext(err);
 		} finally {
 			loading = false;
 		}

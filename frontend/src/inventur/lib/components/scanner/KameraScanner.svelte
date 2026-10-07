@@ -3,6 +3,7 @@
 	import { createBarcodeDetector } from '$lib/components/scanner/barcode_detector.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { ruhtWennTraege } from '../../../../lib/actions/ruhtWennTraege.js';
+	import { fehlertext } from '../../../../lib/utils/fehlertext.js';
 
 	let { onDecode, onStatusChange, showControls = true, scanning = $bindable(false) } = $props();
 
@@ -64,7 +65,7 @@
 			scanLoop();
 		} catch (error) {
 			console.error('Kamerafehler:', error);
-			const errMsg = error instanceof Error ? error.message : String(error);
+			const errMsg = fehlertext(error);
 			onStatusChange(`Kamerafehler: ${errMsg}`);
 		} finally {
 			starting = false;
@@ -102,7 +103,7 @@
 				// gescannt, falls es an einzelnen Bildern lag.
 				fehlerInFolge += 1;
 				if (fehlerInFolge === 3) {
-					const text = fehler instanceof Error ? fehler.message : String(fehler);
+					const text = fehlertext(fehler);
 					onStatusChange(`Erkennung meldet: ${text}`);
 				}
 			}

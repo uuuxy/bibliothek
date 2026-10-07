@@ -11,6 +11,7 @@
 	import Button from './components/ui/Button.svelte';
 	import StatusChip from './components/ui/StatusChip.svelte';
 	import { ScanBarcode, Search } from '@lucide/svelte';
+	import { fehlertext } from './utils/fehlertext.js';
 
 	let barcode = $state('');
 	/** @type {{ barcode: string, exemplare: any[], ereignisse: any[] } | null} */
@@ -42,7 +43,7 @@
 			}
 			auskunft = await res.json();
 		} catch (err) {
-			fehler = err instanceof Error ? err.message : String(err);
+			fehler = fehlertext(err);
 		} finally {
 			laedt = false;
 		}

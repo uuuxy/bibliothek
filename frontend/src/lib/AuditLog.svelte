@@ -8,6 +8,7 @@
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { formatZeitpunkt } from './utils/format.js';
 	import { RefreshCw } from '@lucide/svelte';
+	import { fehlertext } from './utils/fehlertext.js';
 
 	// Aktionen lesbar und mit BEDEUTUNG in der Farbe: Vorher stand jede Aktion in
 	// derselben roten Pille — CHECKOUT wie DELETE — und Rot heißt überall sonst
@@ -44,7 +45,7 @@
 			}
 			logs = await res.json();
 		} catch (err) {
-			error = err instanceof Error ? err.message : String(err);
+			error = fehlertext(err);
 		} finally {
 			loading = false;
 		}

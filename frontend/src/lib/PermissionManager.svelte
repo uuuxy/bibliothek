@@ -9,6 +9,7 @@
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import { permissionsMetadata } from './permissionMetadata.js';
+	import { fehlertext } from './utils/fehlertext.js';
 
 	// State Runes (Svelte 5)
 	let activeSubTab = $state('users'); // "users" | "permissions"
@@ -46,7 +47,7 @@
 			});
 			permissionsState = newState;
 		} catch (err) {
-			error = err instanceof Error ? err.message : String(err);
+			error = fehlertext(err);
 		} finally {
 			loadingPermissions = false;
 		}
@@ -85,7 +86,7 @@
 
 			toastStore.addToast('Rechte erfolgreich aktualisiert.', 'success');
 		} catch (err) {
-			toastStore.addToast(err instanceof Error ? err.message : String(err), 'error');
+			toastStore.addToast(fehlertext(err), 'error');
 		} finally {
 			const copy = { ...updatingKeys };
 			delete copy[updateKey];

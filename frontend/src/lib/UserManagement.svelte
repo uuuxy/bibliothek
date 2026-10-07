@@ -17,6 +17,7 @@
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import Button from './components/ui/Button.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
+	import { fehlertext } from './utils/fehlertext.js';
 
 	/** @type {any[]} */
 	let users = $state.raw([]);
@@ -63,7 +64,7 @@
 			}
 			users = await res.json();
 		} catch (err) {
-			error = err instanceof Error ? err.message : String(err);
+			error = fehlertext(err);
 		} finally {
 			loadingUsers = false;
 		}
@@ -83,9 +84,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
 			});
-			if (!res.ok) {
-				throw new Error(await extractApiError(res));
-			}
+			if (!res.ok) throw new Error(await extractApiError(res));
 			showUserModal = false;
 			toastStore.addToast(
 				isEditingUser ? 'Benutzer erfolgreich aktualisiert.' : 'Benutzer erfolgreich angelegt.',
@@ -93,7 +92,7 @@
 			);
 			fetchUsers();
 		} catch (err) {
-			error = err instanceof Error ? err.message : String(err);
+			error = fehlertext(err);
 		} finally {
 			submittingUser = false;
 		}
@@ -117,7 +116,7 @@
 		} catch (err) {
 			// Der Dialog bleibt offen: Der Satz des Servers sagt, was zu tun ist, und steht
 			// deshalb dort, wo die Frage gestellt wurde.
-			error = err instanceof Error ? err.message : String(err);
+			error = fehlertext(err);
 		} finally {
 			deletingUser = false;
 		}

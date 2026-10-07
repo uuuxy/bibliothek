@@ -3,6 +3,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import { CircleCheck, TriangleAlert, OctagonAlert, RefreshCw } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
+	import { fehlertext } from './utils/fehlertext.js';
 
 	let bericht = $state(/** @type {{ gesamt: string, befunde: any[] } | null} */ (null));
 	let laedt = $state(true);
@@ -37,7 +38,7 @@
 			if (!res.ok) throw new Error(`Abruf fehlgeschlagen (HTTP ${res.status})`);
 			bericht = await res.json();
 		} catch (e) {
-			fehler = String(e instanceof Error ? e.message : e);
+			fehler = fehlertext(e);
 		} finally {
 			laedt = false;
 		}

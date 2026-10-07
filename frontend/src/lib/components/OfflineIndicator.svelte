@@ -21,6 +21,7 @@
 	import { authStore } from '../stores/authStore.svelte.js';
 	import Button from './ui/Button.svelte';
 	import NachbuchMeldungen from './NachbuchMeldungen.svelte';
+	import { fehlertext } from '../utils/fehlertext.js';
 
 	// Der Herzschlag kommt von aussen (App.svelte): Bis zum 16.09.2026 legte SEIN Ausfall
 	// ein eigenes Vollbild ueber die Seite. Dieselbe Lage, dieselbe Zeile — nicht zwei.
@@ -72,7 +73,7 @@
 			try {
 				gesamt += await offlineSync.importQueueFromJSON(file);
 			} catch (err) {
-				fehler.push(`${file.name}: ${err instanceof Error ? err.message : String(err)}`);
+				fehler.push(`${file.name}: ${fehlertext(err)}`);
 			}
 		}
 

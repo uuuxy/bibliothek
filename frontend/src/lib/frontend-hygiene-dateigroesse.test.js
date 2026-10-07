@@ -29,7 +29,7 @@ const BESTAND = {
 	'src/lib/StatsDashboard.svelte': 351,
 	'src/lib/StudentProfile.svelte': 231,
 	'src/lib/UnifiedInventory.svelte': 237,
-	'src/lib/UserManagement.svelte': 209,
+	'src/lib/UserManagement.svelte': 208,
 	'src/lib/components/labels/EtikettenNachdruck.svelte': 364,
 	'src/lib/components/stats/StatsTrendChart.svelte': 242,
 	'src/lib/components/students/LusdImportView.svelte': 311,

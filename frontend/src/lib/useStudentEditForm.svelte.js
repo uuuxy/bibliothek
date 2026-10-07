@@ -1,5 +1,6 @@
 import { apiClient } from './apiFetch.js';
 import { istKollegium, artMitKonto } from './leserArt.js';
+import { fehlertext } from './utils/fehlertext.js';
 
 /**
  * Custom hook to manage the state and submission of the student edit form.
@@ -178,7 +179,7 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 			showSnackbar('Änderungen gespeichert.', 'success');
 			onSave();
 		} catch (e) {
-			showSnackbar(e instanceof Error ? e.message : String(e), 'error');
+			showSnackbar(fehlertext(e), 'error');
 		} finally {
 			saving = false;
 		}

@@ -7,6 +7,7 @@
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { RefreshCw } from '@lucide/svelte';
+	import { fehlertext } from './utils/fehlertext.js';
 
 	/** @type {any[]} */
 	let logs = $state.raw([]);
@@ -28,7 +29,7 @@
 			}
 			logs = await res.json();
 		} catch (err) {
-			error = err instanceof Error ? err.message : String(err);
+			error = fehlertext(err);
 		} finally {
 			loading = false;
 		}
