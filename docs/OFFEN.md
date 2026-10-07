@@ -129,8 +129,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Am Testserver zählen, wie viele gesperrte Exemplare „verloren" in der Notiz tragen. (5.5)
 - [ ] Am Testserver zählen, ob jedes Exemplar im Bestand ein Zugangsdatum trägt. (5.5)
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9)
-- [ ] Theke ohne Netz: der Nachweis von Hand im echten Chrome, zurückgestellt am 24.09.2026.
-  (2.3)
+- [ ] Theke ohne Netz: der Nachweis von Hand im echten Chrome (Stufe 1 und 3), zurückgestellt
+  am 24.09.2026. Stufe 2 über die Tür ist seit dem 08.10.2026 belegt. (2.3)
 
 ### Termine
 
@@ -197,9 +197,10 @@ werden nicht neu vergeben; Kommentare im Code nennen sie als Herkunft.
 
 ## 2. Offline-Betrieb der Theke — der Nachweis steht aus
 
-Offen ist **der Nachweis (2.3):** Stufe 1 und 3 gehören von Hand in den echten Chrome, Stufe 2
-über die Tür (`POST /api/action/nachbuchen`). Wie sich die Theke ohne Verbindung verhält, steht
-in [FACHKONZEPT.md](FACHKONZEPT.md) 18.4 und im [Handbuch](HANDBUCH.md).
+Offen ist **der Nachweis (2.3):** Stufe 1 und 3 gehören von Hand in den echten Chrome. Stufe 2
+über die Tür (`POST /api/action/nachbuchen`) ist am 08.10.2026 am lokalen Stack belegt. Wie sich
+die Theke ohne Verbindung verhält, steht in [FACHKONZEPT.md](FACHKONZEPT.md) 18.4 und im
+[Handbuch](HANDBUCH.md).
 
 ### 2.3 Nachweis am Stack (je Stufe, echter Chrome)
 
@@ -207,12 +208,6 @@ in [FACHKONZEPT.md](FACHKONZEPT.md) 18.4 und im [Handbuch](HANDBUCH.md).
   Offline „zurückgeben" im Profil → Rückgabe. Lehrkraft laden, Buch scannen → Ausleihe auf die
   Lehrkraft. IndexedDB blockiert → „NICHT gespeichert". Zwei Sicherungen einspielen → ein
   Stapel. Zwei parallele Anfragen mit einem Schlüssel gegen `/api/action` → eine Ausleihe.
-- Stufe 2: curl mit Cookie gegen `/nachbuchen`: Umbuchung, Doppelscan, gesperrter Ausweis,
-  Rückgabe vor älterer Ausleihe (409 `veraltet`), abgebrochener Online-Versand mit gleichem
-  Schlüssel (Ausleihe nachgeholt), verloren gemeldetes Buch (Forderung endet, Hinweis in der
-  Meldung), zwei parallele Aufrufe auf ein Exemplar, ein Online-Scan parallel zum Nachbuchen
-  desselben Kindes (kein Deadlock); `docker stop` der Datenbank → 503 → Eintrag bleibt;
-  `pg_stat_activity` beim Nachbuchen von 200 Einträgen (eine Verbindung je Eintrag).
 - Stufe 3: Netz aus, Bücher aller Formen und zwei Ausweise scannen, ein Band, kein Vollbild,
   20 Minuten warten ohne Sperre, Netz an → Sperre; anmelden, nachgebucht, Meldungen an einem
   zweiten Browser; Format-1-Sicherung eines anderen Rechners einspielen.
