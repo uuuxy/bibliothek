@@ -77,10 +77,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   06.10.2026). Eigene Farben je Fach gibt es nicht.
 - [ ] Feld „Signatur" nach der Übernahme: An den Titeln steht dann die ganze Aufschrift des
   Buchrückens. Sollen Vorschläge und Liste nach der Regaladresse zusammenfassen? (7.2)
-- [ ] Buchakte: Die Zahl „Exemplare" im Kopf und am Reiter zählt ausgesonderte und bestellte
-  mit; bei zwei Exemplaren im Bestand, einem bestellten und einem ausgesonderten steht dort
-  „1 von 2 verfügbar" und daneben „4 Exemplare" (gesehen am 07.10.2026). Soll sie nur den
-  Bestand zählen? (5.5)
+- [x] Buchakte: Kopf und Reiter zählen den Bestand, ein bestelltes Exemplar steht im Kopf als
+  „1 bestellt"; die Zahl „Exemplare" im Kopf ist entfallen (entschieden und gebaut am
+  07.10.2026).
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -131,7 +130,8 @@ der Nummer nichts mehr dazu offen ist.
   07.10.2026 „Ausgesondert" und „Bestellt".
 - [ ] **Nie eingetroffene Exemplare (5.5):** Sie zählen noch an zwei Stellen als Abgang, in der
   Zahl „aus dem Katalog gelöscht" unter dem Abgangsbuch und in der Verlustquote der Statistik.
-- [ ] **Druck-Center (5.45):** Bei vielen Exemplaren wird die Seite sehr lang.
+- [ ] **Druck-Center (5.45):** Die Auswahlliste nennt auch ein bestelltes Exemplar
+  „(Neuwertig)". Die Vorschau zeichnet seit dem 07.10.2026 nur den ersten Bogen.
 - [ ] **Überläufe (5.45):** Bestellwesen 40 px, Signaturen bei 1280 px, ein langer Name in der
   Leserakte.
 - [ ] **Auskunft (5.19):** Zwei Einträge über die Anlage eines Kontos fehlen, sobald das Konto
@@ -365,19 +365,6 @@ Vermerk.
   lässt sich dort erneut drucken (Handbuch, „E-Mailprotokoll" und „Erwerb"). Koha bietet an
   einer gescheiterten Nachricht „Resend"
   ([Fehler 12426](https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=12426)).
-- **Buchakte, Zahl „Exemplare"** (gesehen am 07.10.2026). Der Kopf nennt drei Zahlen:
-  „1 von 2 verfügbar" (`book.gesamt`, die Grenze `SQLExemplarImBestand`), die Ausleiher und
-  „Exemplare" (`exemplare.length` in `BookAkteMeta.svelte`: jede Karte des Reiters, auch
-  bestellte und ausgesonderte). Der Reiter zählt dieselbe Liste (`zaehler` in
-  `BookAkte.svelte`). Vorschlag: Die dritte Zahl im Kopf entfällt, weil die erste den Bestand
-  nennt; ist etwas bestellt, steht dort „1 bestellt", in den Worten des Katalogs
-  (`zulaufSatz`). Der Reiter zählt den Bestand, die Karten „Bestellt" und „Ausgesondert"
-  bleiben darin stehen. Littera zeigt am Titel die „Gesamtanzahl der vorhandenen Exemplare"
-  und daneben die verliehenen; bestellte zählen mit (Status „Bestellt"), gelöschte stehen nur
-  im Abgangsbuch (Handbuch, „Exemplardatenbearbeitung"). Koha führt ausgesonderte und
-  bestellte Exemplare in der Trefferliste getrennt als nicht verfügbar
-  ([Fehler 9427](https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=9427),
-  [8975](https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=8975)).
 - **Status-Editor, Altbestand:** Bis zum 07.10.2026 öffnete der Editor ein gesperrtes
   Exemplar als „Verloren", wenn die Notiz das Wort enthielt, und das Speichern sonderte es
   mit dem Grund VERLUST aus. Ob das am Testserver Exemplare getroffen hat, zeigt (lesend):
@@ -615,18 +602,8 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
 
 - **Druck-Center, Schritt 2** (`LabelBarcodeSchritt.svelte`, `max-h-40`): Der Kasten bleibt
   als Auswahlliste; darüber stehen ein Kästchen für alle und ein Feld für die Nummer. Offen:
-  Bei einem Titel mit 409 Exemplaren ist die Seite durch die Vorschau 13.462 px hoch (gemessen
-  am 02.10.2026), und „A4-Bogen drucken" steht unter beiden Spalten (`LabelPrinter.svelte`).
   Jede Zeile nennt „(Neuwertig)", wenn das Exemplar keine Zustandsnotiz trägt, auch ein
-  bestelltes. Vorschlag (07.10.2026): Die Vorschau zeichnet den ersten Bogen, darunter steht
-  „Bogen 1 von 20 · 409 Etiketten" (21 Etiketten je Bogen beim voreingestellten Format); ohne
-  Blättern. „A4-Bogen drucken" öffnet die PDF mit allen Bogen in einem neuen Tab
-  (`triggerPrint` in `stores/labels.svelte.js`), dort sind sie vor dem Druck zu sehen; Format,
-  Rahmen und Startposition zeigt der erste Bogen. M3 hat kein Bauteil zum Blättern
-  ([Bauteilliste](https://m3.material.io/components), gelesen am 07.10.2026), im Projekt gibt
-  es keins. Littera zeigt das Druckbild am Bildschirm und druckt „von Seite bis Seite"
-  (Handbuch, „Export des Druckbildes"); Avery Design & Print zeigt einen Bogen und wechselt
-  per Pfeil zum nächsten.
+  bestelltes.
 - **Bestellwesen:** Die Seite läuft 40 px über (857 von 817 px bei 1710 × 952 px, bei
   1280 × 720 px sind es 60 px; gemessen am 06.10.2026). Darin scrollt die Bedarfsliste in
   einem eigenen Kasten (`OrderRecommendations.svelte`, `max-h-[calc(100vh-19rem)]`).

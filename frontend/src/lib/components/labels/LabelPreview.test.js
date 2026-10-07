@@ -80,3 +80,71 @@ describe('Druck-Center: Vorschau je Etikettenformat', () => {
 		labelStore.formatId = 'zweckform_l4760';
 	});
 });
+
+// Bei einem Titel mit 409 Exemplaren zeichnete die Vorschau alle Bogen untereinander, die
+// Seite war rund 13.000 px hoch. Alle Bogen zeigt die PDF, die „A4-Bogen drucken" öffnet.
+describe('Druck-Center: Die Vorschau zeichnet den ersten Bogen', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		vi.stubGlobal(
+			'ResizeObserver',
+			class {
+				observe() {}
+				unobserve() {}
+				disconnect() {}
+			}
+		);
+		labelStore.formatId = 'zweckform_l4760';
+		labelStore.generationMode = 'existing';
+		labelStore.startPosition = 1;
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		labelStore.startPosition = 1;
+	});
+
+	/** @param {number} anzahl */
+	async function waehleTitelMit(anzahl) {
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () =>
+					Array.from({ length: anzahl }, (_, i) => ({ barcode_id: `B-${1000 + i}` }))
+			})
+		);
+		await labelStore.selectBookTitle({ id: `t${anzahl}`, titel: 'Titel', autor: 'Autorin' });
+		flushSync();
+	}
+
+	const felder = () =>
+		/** @type {HTMLElement} */ (
+			document.querySelector('[data-testid="etiketten-blatt"]')?.firstElementChild
+		).children.length;
+
+	it('nennt bei mehr Etiketten, als auf einen Bogen passen, die Zahl der Bogen', async () => {
+		const screen = render(LabelPreview);
+		await waehleTitelMit(50);
+
+		expect(felder()).toBe(21);
+		expect(screen.getByText('Bogen 1 von 3 · 50 Etiketten')).toBeTruthy();
+	});
+
+	it('zählt freigelassene Felder zum Bogen und nicht zu den Etiketten', async () => {
+		const screen = render(LabelPreview);
+		await waehleTitelMit(41);
+		labelStore.startPosition = 3;
+		flushSync();
+
+		expect(felder()).toBe(21);
+		expect(screen.getByText('Bogen 1 von 3 · 41 Etiketten')).toBeTruthy();
+	});
+
+	it('zeigt bei einem einzigen Bogen keine Zeile darunter', async () => {
+		const screen = render(LabelPreview);
+		await waehleTitelMit(21);
+
+		expect(felder()).toBe(21);
+		expect(screen.queryByText(/^Bogen 1 von/)).toBeNull();
+	});
+});

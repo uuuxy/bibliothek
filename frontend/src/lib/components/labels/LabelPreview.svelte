@@ -17,12 +17,16 @@
 	let platz = $state(0);
 	let blattHoehe = $state(0);
 	const massstab = $derived(platz > 0 ? Math.min(1, platz / (BLATT_BREITE_MM * PX_JE_MM)) : 1);
+	// Gezeichnet wird der erste Bogen: Format, Rahmen und Startposition stehen darauf. Alle
+	// Bogen zeigt die PDF, die „A4-Bogen drucken" in einem neuen Tab öffnet.
+	const ersterBogen = $derived(labelStore.finalLabels.slice(0, labelStore.maxPositions));
+	const bogenZahl = $derived(Math.ceil(labelStore.finalLabels.length / labelStore.maxPositions));
+	const etikettenZahl = $derived(labelStore.finalLabels.filter((lbl) => !lbl.isBlank).length);
 </script>
 
 <!-- Die Vorschau bekommt die kleinere Hälfte (5 von 12): Die Arbeit geschieht im Formular
      daneben. Eine getönte Fläche ohne gestrichelten Rand, denn gestrichelt heißt in dieser
-     Anwendung „hier gehört etwas hin", und die Vorschau ist die Ausgabe. Sie wächst mit
-     ihrem Inhalt. -->
+     Anwendung „hier gehört etwas hin", und die Vorschau ist die Ausgabe. -->
 <div
 	class="lg:col-span-5 flex flex-col items-center justify-start rounded-xl bg-surface-container p-6"
 >
@@ -62,7 +66,7 @@
 							format.breite
 						)})); column-gap: {mm(format.abstandX)}; row-gap: {mm(format.abstandY)}; width: 100%;"
 					>
-						{#each labelStore.finalLabels as lbl, _i (_i)}
+						{#each ersterBogen as lbl, _i (_i)}
 							{#if lbl.isBlank}
 								<!-- Blank Label placeholder representation -->
 								<div
@@ -118,6 +122,11 @@
 				</div>
 			</div>
 		</div>
+		{#if bogenZahl > 1}
+			<p class="mt-4 text-xs font-medium text-on-surface-variant">
+				Bogen 1 von {bogenZahl} · {etikettenZahl} Etiketten
+			</p>
+		{/if}
 	{/if}
 </div>
 
