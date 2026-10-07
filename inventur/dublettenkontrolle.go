@@ -117,13 +117,16 @@ func isbnVergeben(ctx context.Context, q repository.DBQueryer, isbn, eigeneID st
 	return nil
 }
 
-// gleichnamigOhneISBN nennt den Titel, der ohne ISBN in Titel, Autor und Auflage gleich ist —
-// wie Littera, das ohne Nummer Verfasser und Haupttitel vergleicht und ein weiteres Exemplar
-// anbietet. Wer die Auflage füllt, meint ein anderes Buch. Von mehreren gleichnamigen kommt
-// zuerst einer mit Exemplar: Den zeigt auch der Katalog.
+// gleichnamigOhneISBN nennt den Titel, der ohne ISBN in Titel und Autor gleich ist — wie
+// Littera, das ohne Nummer Verfasser und Haupttitel vergleicht und ein weiteres Exemplar
+// anbietet. Wer die Auflage füllt, meint ein anderes Buch als den Titel mit anderer Auflage;
+// ohne Angabe zählt jeder gleichnamige, auch einer, der eine Auflage trägt (aus Littera kommt
+// sie mit). Von mehreren gleichnamigen kommt zuerst einer mit Exemplar: Den zeigt auch der
+// Katalog.
 //
 // Titel und Autor der Eingabe gehen in die Form, in der die Datenbank sie speichert
-// (titeltext_normalform): Mit zwei Leerzeichen getippt ist es derselbe Titel.
+// (titeltext_normalform): Mit zwei Leerzeichen getippt ist es derselbe Titel. Die Auflage
+// speichert die Datenbank, wie sie kommt; verglichen werden beide Seiten in dieser Form.
 func gleichnamigOhneISBN(ctx context.Context, q repository.DBQueryer, b Book) error {
 	vorhanden := DubletteTitel{}
 	hatExemplar := repository.SQLTitelHatExemplar("bt")
@@ -133,7 +136,8 @@ func gleichnamigOhneISBN(ctx context.Context, q repository.DBQueryer, b Book) er
 		WHERE bt.isbn IS NULL
 		  AND lower(bt.titel) = lower(titeltext_normalform($1))
 		  AND lower(coalesce(bt.autor, '')) = lower(titeltext_normalform($2))
-		  AND lower(btrim(coalesce(bt.auflage, ''))) = lower(btrim($3))
+		  AND (titeltext_normalform($3) = ''
+		       OR lower(titeltext_normalform(coalesce(bt.auflage, ''))) = lower(titeltext_normalform($3)))
 		ORDER BY `+hatExemplar+` DESC, bt.sort_order
 		LIMIT 1`, b.Title, b.Author, b.Auflage).Scan(&vorhanden.ID, &vorhanden.Titel, &vorhanden.HatExemplar)
 	switch {

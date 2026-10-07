@@ -70,6 +70,30 @@ func TestDublettenkontrolle_BeimAnlegen(t *testing.T) {
 		}
 	})
 
+	// Aus Littera kommt die Auflage mit an den Titel. Wer einen gleichnamigen Titel aufnimmt und
+	// keine Auflage nennt, hat nicht gesagt, dass er ein anderes Buch meint: Die Tür fragt.
+	// Die Auflage steht, wie sie getippt wurde; dieselbe Angabe mit anderem Leerraum oder in
+	// anderer Großschreibung ist dieselbe Auflage.
+	t.Run("ohne ISBN: ein Titel mit Auflage zählt, wenn die Eingabe keine nennt", func(t *testing.T) {
+		const titel = "Dubletten-Probe mit Auflage"
+		aufraeumen(t, titel)
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE titel = $1`, titel); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := repo.CreateBook(ctx, Book{Title: titel, Author: "Meyer", Auflage: "3.  Aufl."}); err != nil {
+			t.Fatalf("erster Titel: %v", err)
+		}
+		for _, auflage := range []string{"", "3. aufl. ", "3.   Aufl."} {
+			_, err := repo.CreateBook(ctx, Book{Title: titel, Author: "Meyer", Auflage: auflage})
+			if !errors.Is(err, ErrDubletteTitel) {
+				t.Errorf("Auflage %q: Fehler %v, erwartet ErrDubletteTitel", auflage, err)
+			}
+		}
+		if _, err := repo.CreateBook(ctx, Book{Title: titel, Author: "Meyer", Auflage: "4. Aufl."}); err != nil {
+			t.Errorf("andere Auflage: %v — mit eigener Auflage ist es ein anderes Buch", err)
+		}
+	})
+
 	// Die Datenbank speichert Titel und Autor mit einem Leerzeichen zwischen den Wörtern
 	// (Migration 160). Die Kontrolle vergleicht die Eingabe in derselben Form: Sonst legte,
 	// wer denselben Wortlaut ein zweites Mal tippt, ohne Rückfrage einen zweiten Titel an.
