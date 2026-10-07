@@ -76,7 +76,7 @@
 			<StatusChip ton="fehler" text="Ausleihe gesperrt" icon={Lock} />
 		{/if}
 
-		<h3 class="text-3xl font-bold text-on-surface leading-tight">
+		<h3 class="text-3xl leading-tight font-bold wrap-break-word text-on-surface">
 			{profile.vorname}
 			{profile.nachname}
 		</h3>

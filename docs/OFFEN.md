@@ -154,8 +154,8 @@ der Nummer nichts mehr dazu offen ist.
   Statistik zählt ein bestelltes Exemplar erst mit dem Eintreffen zum Bestand.
 - [ ] **Druck-Center (5.45):** Die Auswahlliste nennt auch ein bestelltes Exemplar
   „(Neuwertig)". Die Vorschau zeichnet seit dem 07.10.2026 nur den ersten Bogen.
-- [ ] **Überläufe (5.45):** Bestellwesen 40 px, Signaturen bei 1280 px, ein langer Name in der
-  Leserakte.
+- [x] **Überläufe (5.45):** Bestellwesen, Signaturen bei 1280 px und ein langer Name in der
+  Leserakte sind seit dem 08.10.2026 behoben.
 - [ ] **Auskunft (5.19):** zu klären, welche Rohdaten der Protokolleinträge aufs Blatt gehören.
 - [ ] **Protokoll und Tilgung (5.35):** am Testserver alte Einträge zählen (zu schon gelöschten
   Lesern; Stornierungen ohne die Kennung des Lesers), danach bereinigen.
@@ -569,12 +569,6 @@ Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Of
   zusammen; M3: „A navigation rail can be expanded by default on larger screen sizes, or can
   be expanded over content on smaller screen sizes". Anlass zum Bauen: Die Anwendung wird
   an einem Tablet oder in Fenstern unter 1280 px bedient.
-- **Leserakte, langer Name:** Ein Name aus einem Wort von 22 Zeichen ragt 72 px aus der
-  Leserkarte in die rechte Spalte (gemessen am 06.10.2026 bei 1280 × 900 px an einem
-  Testleser). Er liegt dort unter den Reitern auf der ersten Zeile des Inhalts: In
-  „Stammdaten & Adresse" verdeckt er den Anfang der Überschrift (gesehen am 06.10.2026), in
-  „Gebühren & Schäden" ebenso, in „Ausleihen & Vormerkungen" endet er an der Oberkante der
-  Überschrift (gemessen am 03.10.2026). Namen mit Leerzeichen oder Bindestrich brechen um.
 - **Leserakte, Autor und Nummer des Exemplars:** Der Autor steht nur in der Sprechblase am
   Titel, die Nummer in Fenstern bis rund 1580 px ebenfalls (darüber hat sie ihre Spalte;
   gemessen bei ausgeklappter Seitenleiste). Die Sprechblase erscheint beim Zeigen mit der
