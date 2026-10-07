@@ -32,6 +32,36 @@ beforeEach(() => {
 	vi.mocked(apiClient.put).mockReset().mockResolvedValue(ERFOLG);
 });
 
+// Ob das Exemplar nach dem Speichern zum Bestand zählt, steht in der Antwort des Servers.
+// Die Karte benennt den Zustand danach und rechnet die Regel nicht selbst nach.
+describe('Status-Editor: nach dem Speichern', () => {
+	const zurueckgeholt = () => ({
+		id: 'ex-4',
+		ist_ausleihbar: false,
+		ist_ausgesondert: true,
+		im_bestand: false,
+		zustand_notiz: ''
+	});
+
+	it('übernimmt im_bestand aus der Antwort', async () => {
+		vi.mocked(apiClient.put).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({ im_bestand: true }) })
+		);
+		const ex = zurueckgeholt();
+		await oeffneUndSpeichere(ex);
+
+		await vi.waitFor(() => expect(ex.im_bestand).toBe(true));
+	});
+
+	it('lässt im_bestand stehen, wenn die Antwort das Feld nicht nennt', async () => {
+		const ex = zurueckgeholt();
+		await oeffneUndSpeichere(ex);
+
+		await vi.waitFor(() => expect(vi.mocked(apiClient.put)).toHaveBeenCalled());
+		expect(ex.im_bestand).toBe(false);
+	});
+});
+
 describe('Status-Editor: der Status beim Öffnen', () => {
 	it('lässt ein gesperrtes Exemplar gesperrt, auch wenn die Notiz „verloren“ enthält', async () => {
 		const { gewaehlt, koerper } = await oeffneUndSpeichere({

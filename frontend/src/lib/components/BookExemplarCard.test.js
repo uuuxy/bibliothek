@@ -10,6 +10,43 @@ vi.mock('../apiFetch.js', async (original) => ({
 import { apiClient } from '../apiFetch.js';
 import BookExemplarCard from './BookExemplarCard.svelte';
 
+// Was nicht zum Bestand zählt, heißt nicht „Gesperrt". Ein ausgesondertes Exemplar hat keinen
+// Papierkorb: Die Tür weist es als schon ausgebucht ab.
+describe('Exemplarkarte: Zustand', () => {
+	/** @param {Record<string, any>} ex */
+	const karte = (ex) =>
+		render(BookExemplarCard, {
+			ex: { id: 'e1', barcode_id: 'B-0041873', ist_verfuegbar: true, ...ex },
+			selected: false,
+			darfBearbeiten: true,
+			onToggleSelect: () => {},
+			onDelete: () => {}
+		});
+	/** @param {ReturnType<typeof karte>} k */
+	const wort = (k) => k.container.querySelector('[data-chip]')?.textContent?.trim();
+
+	it('nennt ein bestelltes Exemplar bestellt und bietet das Löschen an', () => {
+		const k = karte({ ist_ausleihbar: false, ist_ausgesondert: false, im_bestand: false });
+
+		expect(wort(k)).toBe('Bestellt');
+		expect(k.queryByRole('button', { name: 'Exemplar löschen' })).not.toBeNull();
+	});
+
+	it('nennt ein ausgesondertes Exemplar ausgesondert und bietet kein Löschen an', () => {
+		const k = karte({ ist_ausleihbar: false, ist_ausgesondert: true, im_bestand: false });
+
+		expect(wort(k)).toBe('Ausgesondert');
+		expect(k.queryByRole('button', { name: 'Exemplar löschen' })).toBeNull();
+		expect(k.queryByRole('button', { name: 'Status ändern' })).not.toBeNull();
+	});
+
+	it('nennt ein nicht ausleihbares Exemplar im Bestand gesperrt', () => {
+		const k = karte({ ist_ausleihbar: false, ist_ausgesondert: false, im_bestand: true });
+
+		expect(wort(k)).toBe('Gesperrt');
+	});
+});
+
 // Lehnt der Server einen Barcode ab, steht sein Grund ungekürzt am Feld und ist dessen
 // Beschreibung: Ein Screenreader liest ihn mit dem Feld vor.
 describe('Exemplarkarte: abgelehnter Barcode', () => {

@@ -2,6 +2,7 @@
 	import { apiFetch, apiClient } from '../apiFetch.js';
 	import BookExemplarStatusEditor from './BookExemplarStatusEditor.svelte';
 	import BookExemplarZustand from './BookExemplarZustand.svelte';
+	import { exemplarStatus } from './exemplarStatus.js';
 	import StatusChip from './ui/StatusChip.svelte';
 	import Button from './ui/Button.svelte';
 	import Feld from './ui/Feld.svelte';
@@ -20,6 +21,7 @@
 	let barcodeError = $state('');
 
 	let editingStatus = $state(false);
+	const status = $derived(exemplarStatus(ex));
 	// Platzhalter (AUTO-, SYS-) bekommen statt des Etikett-Knopfs „Barcode scannen".
 	const platzhalter = $derived(/^(AUTO|SYS)-/.test(ex.barcode_id));
 
@@ -163,10 +165,7 @@
 			</div>
 		{/if}
 		<div class="flex items-center gap-2">
-			<StatusChip
-				ton={!ex.ist_ausleihbar ? 'fehler' : !ex.ist_verfuegbar ? 'warten' : 'erfolg'}
-				text={!ex.ist_ausleihbar ? 'Gesperrt' : !ex.ist_verfuegbar ? 'Ausgeliehen' : 'Verfügbar'}
-			/>
+			<StatusChip {...status} />
 			{#if !editingStatus}
 				<button
 					title="Status ändern"
@@ -178,16 +177,17 @@
 				>
 					<Pencil class="w-3.5 h-3.5" aria-hidden="true" />
 				</button>
-				<button
-					title="Exemplar löschen"
-					aria-label="Exemplar löschen"
-					class="text-on-surface-variant hover:text-error transition-colors cursor-pointer"
-					onclick={() => {
-						onDelete();
-					}}
-				>
-					<Trash class="w-3.5 h-3.5" aria-hidden="true" />
-				</button>
+				<!-- Ein ausgesondertes Exemplar ist schon ausgebucht; zurück kommt es über den Status. -->
+				{#if !ex.ist_ausgesondert}
+					<button
+						title="Exemplar löschen"
+						aria-label="Exemplar löschen"
+						class="text-on-surface-variant hover:text-error transition-colors cursor-pointer"
+						onclick={onDelete}
+					>
+						<Trash class="w-3.5 h-3.5" aria-hidden="true" />
+					</button>
+				{/if}
 			{/if}
 		</div>
 	</div>

@@ -77,6 +77,9 @@
 				// hier: Sonst stünde an der Karte eine zweite Zahl für dasselbe Buch —
 				// und ohne ihn zeigte sie nach dem Speichern den alten Wert.
 				const antwort = await res.json().catch(() => ({}));
+				// Ob das Exemplar jetzt zum Bestand zählt, sagt ebenfalls der Server: Freigeben
+				// und Aussondern holen ein bestelltes Exemplar aus dem Zulauf.
+				if (typeof antwort.im_bestand === 'boolean') ex.im_bestand = antwort.im_bestand;
 				if (typeof antwort.ersatzwert === 'number') {
 					ex.ersatzwert = antwort.ersatzwert;
 					ex.ersatzwert_herleitung = antwort.ersatzwert_herleitung ?? '';

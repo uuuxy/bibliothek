@@ -96,5 +96,10 @@ func (s *Server) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 		antwort["ersatzwert_herleitung"] = v.Herleitung
 		antwort["ersatzwert_bekannt"] = v.Bekannt
 	}
+	// Ob das Exemplar jetzt zum Bestand zählt: Freigeben und Aussondern holen ein bestelltes
+	// Exemplar aus dem Zulauf, und die Karte der Buchakte benennt den Zustand danach.
+	if imBestand, bestandErr := bookRepo.ExemplarImBestand(ctx, id); bestandErr == nil {
+		antwort["im_bestand"] = imBestand
+	}
 	RespondJSON(w, http.StatusOK, antwort)
 }

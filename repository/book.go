@@ -38,6 +38,9 @@ type BookRepository interface {
 	// nicht stillschweigend auf 0 zurückstellen (Upsert-Blanking).
 	UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int) error
 
+	// ExemplarImBestand sagt, ob ein Exemplar zum Bestand zählt (SQLExemplarImBestand).
+	ExemplarImBestand(ctx context.Context, id string) (bool, error)
+
 	// GenerateBarcodes erzeugt eine Serie fortlaufender Buch-Barcodes (Präfix "B-") über eine DB-Sequence.
 	GenerateBarcodes(ctx context.Context, count int) ([]string, error)
 

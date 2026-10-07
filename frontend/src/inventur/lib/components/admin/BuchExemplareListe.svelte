@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { Trash } from '@lucide/svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
+	import { exemplarStatus } from '../../../../lib/components/exemplarStatus.js';
 	import BuchEingabefelderInventar from './BuchEingabefelderInventar.svelte';
 
 	let { formular = $bindable() } = $props();
@@ -124,14 +125,7 @@
 								>
 									{ex.barcode_id}
 								</span>
-								<StatusChip
-									ton={!ex.ist_ausleihbar ? 'fehler' : !ex.ist_verfuegbar ? 'warten' : 'erfolg'}
-									text={!ex.ist_ausleihbar
-										? 'Gesperrt'
-										: !ex.ist_verfuegbar
-											? 'Ausgeliehen'
-											: 'Verfügbar'}
-								/>
+								<StatusChip {...exemplarStatus(ex)} />
 								{#if ex.zustand_notiz}
 									<span
 										class="text-label-small text-on-surface-variant truncate max-w-37.5"

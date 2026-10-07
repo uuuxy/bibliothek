@@ -77,6 +77,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   06.10.2026). Eigene Farben je Fach gibt es nicht.
 - [ ] Feld „Signatur" nach der Übernahme: An den Titeln steht dann die ganze Aufschrift des
   Buchrückens. Sollen Vorschläge und Liste nach der Regaladresse zusammenfassen? (7.2)
+- [ ] Buchakte: Die Zahl „Exemplare" im Kopf und am Reiter zählt ausgesonderte und bestellte
+  mit; bei zwei Exemplaren im Bestand, einem bestellten und einem ausgesonderten steht dort
+  „1 von 2 verfügbar" und daneben „4 Exemplare" (gesehen am 07.10.2026). Soll sie nur den
+  Bestand zählen?
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -122,8 +126,11 @@ der Nummer nichts mehr dazu offen ist.
 
 - [ ] **Jahrgang am Titel (5.5):** „Klasse" und „von … bis" werden eine Angabe, „unbekannt" eine
   eigene (entschieden am 24.09.2026). Davor: je Titel festlegen, welche Spanne gilt.
-- [ ] **Buchakte (5.5):** „Exemplar löschen" an einem bestellten Exemplar schreibt einen Abgang ohne
-  Zugang; ausgesonderte und bestellte Exemplare heißen dort „Gesperrt".
+- [x] **Buchakte (5.5):** Ein bestelltes Exemplar, das nie eintraf, steht nach „Exemplar löschen"
+  nicht mehr im Abgangsbuch; ausgesonderte und bestellte Exemplare heißen dort seit dem
+  07.10.2026 „Ausgesondert" und „Bestellt".
+- [ ] **Nie eingetroffene Exemplare (5.5):** Sie zählen noch an zwei Stellen als Abgang, in der
+  Zahl „aus dem Katalog gelöscht" unter dem Abgangsbuch und in der Verlustquote der Statistik.
 - [ ] **Druck-Center (5.5, 5.45):** Ein Ladefehler steht als „kein Exemplar" da, die Vorschau zeigt
   immer denselben Bogen, und bei vielen Exemplaren wird die Seite sehr lang.
 - [ ] **Überläufe (5.45):** Bestellwesen 40 px, Signaturen bei 1280 px, ein langer Name in der
@@ -360,12 +367,18 @@ Vermerk.
 - Geräte: Eine doppelte Seriennummer meldet „Barcode ist bereits an ein anderes Gerät
   vergeben" (`CreateGeraet` in `repository/geraete.go` liest jede Eindeutigkeits-Verletzung
   als Barcode; am 07.10.2026 am Code gelesen, nicht nachgestellt). Kategorie C.
-- Die Buchakte führt ausgesonderte und bestellte Exemplare als „Gesperrt" (Reiter
-  „Exemplare", `BookExemplarCard.svelte`; die Buchmaske listet seit dem 02.10.2026 nur den
-  Bestand). „Exemplar löschen" antwortet dort an einem ausgesonderten „exemplar nicht
-  gefunden oder bereits ausgebucht". An einem bestellten sondert es aus, was nie eingetroffen
-  ist (`DeleteCopy`): Das Exemplar steht danach im Abgangsbuch, ohne je im Zugangsbuch
-  gestanden zu haben. Kategorie B.
+- **Ein bestelltes Exemplar, das nie eintraf, zählt noch an zwei Stellen als Abgang** (gefunden
+  am 07.10.2026, am Code gelesen, nicht nachgestellt). In den Zeilen des Abgangsbuchs und in
+  seiner Zahl der Abgänge ohne Zeitpunkt steht es seit dem 07.10.2026 nicht mehr
+  (`sqlIstAbgang` in `repository/abgangsbuch.go`). Die Zahl „aus dem Katalog gelöscht" darunter
+  zählt weiter jedes Exemplar, das mit seinem Titel gelöscht oder in der Inventur als Verlust
+  endgültig gelöscht wurde: Die drei Schreiber der Spur vermerken nicht, ob es je im Bestand
+  war (`repository/audit_books.go`, `inventur/db_books_delete_spur.go`,
+  `repository/inventur_verlust_aktionen.go`). Verlustquote und Wiederbeschaffungswert der
+  Statistik zählen jedes Exemplar mit dem Grund VERLUST oder BESCHAEDIGUNG
+  (`queryBestandKennzahlen` in `api/stats.go`); ein bestelltes Exemplar, das im Status-Editor
+  als „Verloren" ausgesondert wird, bekommt VERLUST. Abhilfe: Die Schreiber vermerken es an
+  der Spur, die Statistik nimmt die Grenze des Abgangsbuchs. Kategorie B.
 - Druck-Center, Buch-Etiketten: Scheitert das Laden der Exemplare eines Titels, steht dort „Zu
   diesem Titel gibt es kein Exemplar, das ein Etikett bekommen kann." (`loadExistingCopies` in
   `stores/labels.svelte.js` leert die Liste bei jeder Fehlantwort; am Code gelesen im

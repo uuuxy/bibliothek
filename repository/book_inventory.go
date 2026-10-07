@@ -91,6 +91,16 @@ func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istA
 	return nil
 }
 
+// ExemplarImBestand sagt, ob ein Exemplar zum Bestand zählt: weder ausgesondert noch
+// bestellt. Die Status-Tür nennt den Wert nach dem Speichern, damit die Oberfläche die Regel
+// von UpdateCopyStatus nicht nachbaut.
+func (r *pgBookRepository) ExemplarImBestand(ctx context.Context, id string) (bool, error) {
+	var imBestand bool
+	err := r.db.QueryRow(ctx,
+		`SELECT (`+SQLExemplarImBestand+`) FROM buecher_exemplare e WHERE e.id = $1`, id).Scan(&imBestand)
+	return imBestand, err
+}
+
 // deuteAussonderungsHindernis unterscheidet, WARUM der Aussonderungs-Guard nichts traf:
 // verliehen (400 mit Auskunft) oder unbekannt (404) — statt eines stillen „Erfolgs".
 func (r *pgBookRepository) deuteAussonderungsHindernis(ctx context.Context, id string) error {
