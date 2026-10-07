@@ -14,7 +14,9 @@ vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi
 // Klassensätze sind Unterrichtsvorbereitung — wer hier wartet, wartet auf Bücher für
 // eine Stunde mit Termin.
 describe('KlassensatzReservierungen', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('unterscheidet „niemand wartet" von „nicht geladen"', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(

@@ -12,7 +12,9 @@ import { coverNeuHolen } from './admin_api.js';
 const antwort = (ok, status, body) => ({ ok, status, json: async () => body });
 
 describe('admin_api: coverNeuHolen', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('ruft die Tür des einen Titels auf und liefert den neuen Cover-Pfad', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(

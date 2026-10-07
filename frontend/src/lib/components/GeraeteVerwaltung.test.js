@@ -16,7 +16,9 @@ vi.mock('../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn
 // Laptops ein zweites Mal anzulegen, die längst im Bestand stehen (Register,
 // Bestands-Durchgang 10.09.2026).
 describe('GeraeteVerwaltung', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('unterscheidet „Schrank leer" von „nicht geladen"', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(

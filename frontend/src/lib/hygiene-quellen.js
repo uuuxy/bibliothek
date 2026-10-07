@@ -28,6 +28,20 @@ export function sammleQuelldateien(p) {
 	return out;
 }
 
+/** Alle `.test.js` unter p: das Gegenstück zu sammleQuelldateien, das sie auslässt.
+ * @param {string} p @returns {string[]} */
+export function sammleTestdateien(p) {
+	/** @type {string[]} */
+	const out = [];
+	for (const entry of readdirSync(p)) {
+		if (entry === 'node_modules') continue;
+		const full = join(p, entry);
+		if (statSync(full).isDirectory()) out.push(...sammleTestdateien(full));
+		else if (entry.endsWith('.test.js')) out.push(full);
+	}
+	return out;
+}
+
 /** Pfad relativ zu `frontend/`, mit Schrägstrichen — so stehen sie in den Listen.
  * @param {string} f */
 export const relPfad = (f) => relative(repoFrontend, f).replaceAll('\\', '/');

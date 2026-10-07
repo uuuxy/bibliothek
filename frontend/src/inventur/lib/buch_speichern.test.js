@@ -16,7 +16,9 @@ const geoeffnet = (formular) => ({ ...formular, geladen: { ...formular } });
 // Exemplar steht dieser Titel in keiner Suche — die Maske braucht seine Kennung, um zu ihm
 // zu führen.
 describe('buch_speichern: speichereBuch', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('legt ohne id an und ändert mit id', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(201, { data: { id: 'neu', stock: 1 } }));

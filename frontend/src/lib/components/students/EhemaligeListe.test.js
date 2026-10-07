@@ -31,7 +31,9 @@ const ehemalige = [
 const antwort = (daten) => ({ ok: true, json: async () => daten });
 
 describe('EhemaligeListe', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('lädt über /api/schueler?status=ehemalige und zeigt Abgang, Name, offene Bücher', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(antwort(ehemalige));

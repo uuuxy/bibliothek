@@ -42,7 +42,9 @@ function sicherungsdatei(items) {
 }
 
 describe('Einspielen einer Offline-Sicherung', () => {
-	beforeEach(() => enqueueSpy.mockClear());
+	beforeEach(() => {
+		enqueueSpy.mockClear();
+	});
 
 	it('reicht die Idempotenz-ID aus der Datei durch', async () => {
 		const { offlineSync } = await import('./stores/offlineSync.svelte.js');

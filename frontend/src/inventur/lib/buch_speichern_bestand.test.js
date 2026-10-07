@@ -28,7 +28,9 @@ async function gesendet(formular) {
 	return JSON.parse(String(vi.mocked(apiFetch).mock.calls[0][1]?.body));
 }
 
-beforeEach(() => vi.mocked(apiFetch).mockReset());
+beforeEach(() => {
+	vi.mocked(apiFetch).mockReset();
+});
 
 // Eine offen gelassene Maske schickte bei jedem Speichern den Bestand vom Öffnen mit, und
 // der Server setzte ihn durch: Was ein anderer Platz inzwischen angelegt hatte, wurde

@@ -9,7 +9,9 @@ const ANLIEGEN = [
 ];
 
 describe('Eigene Anliegen (Kollegiums-Portal)', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	// Nachladen passiert direkt nach dem Absenden eines Wunsches (onaktualisiert). Scheitert
 	// es, darf der gerade abgeschickte Wunsch nicht wieder vom Bildschirm verschwinden:

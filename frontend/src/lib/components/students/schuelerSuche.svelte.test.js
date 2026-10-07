@@ -27,7 +27,9 @@ const fehler = (meldung) =>
 	});
 
 describe('Leserdatei-Suche', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('zeigt nach einem gescheiterten Lauf keine Treffer von vorher', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(ok(treffer));

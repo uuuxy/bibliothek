@@ -36,7 +36,9 @@ async function waehleDatei(container, name) {
 }
 
 describe('LusdImportView: Massenabgang-Bestätigung', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('gilt nicht für eine danach gewählte andere Datei', async () => {
 		vi.mocked(apiFetch)

@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
-import { srcRoot, relPfad, ohneKommentare } from './hygiene-quellen.js';
+import { readFileSync } from 'node:fs';
+import { srcRoot, relPfad, ohneKommentare, sammleTestdateien } from './hygiene-quellen.js';
 
 // Wer die Theke im Test bedient, räumt ihre Zeitgeber weg.
 //
@@ -22,19 +21,6 @@ import { srcRoot, relPfad, ohneKommentare } from './hygiene-quellen.js';
 //   - `vi.useFakeTimers()` — dann gibt es nach dem Test keine echten Timer mehr.
 //   - `stoppeZeitgeber()` — der Store löscht sie selbst (Vorbild: omniboxZeitgeber.test.js).
 const ERLAUBT = ['useFakeTimers', 'stoppeZeitgeber'];
-
-/** @param {string} p @returns {string[]} */
-function sammleTestdateien(p) {
-	/** @type {string[]} */
-	const out = [];
-	for (const eintrag of readdirSync(p)) {
-		if (eintrag === 'node_modules') continue;
-		const voll = join(p, eintrag);
-		if (statSync(voll).isDirectory()) out.push(...sammleTestdateien(voll));
-		else if (eintrag.endsWith('.test.js')) out.push(voll);
-	}
-	return out;
-}
 
 describe('Zeitgeber der Theke in Tests', () => {
 	it('jede Testdatei, die den Omnibox-Store lädt, räumt seine Zeitgeber weg', () => {

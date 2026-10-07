@@ -56,7 +56,9 @@ const ZEILEN = [
 ];
 
 describe('LmfPlan: gescheitertes Laden', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('zeigt den Fehler statt eines leeren Plans — und keinen Speichern-Knopf', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(
@@ -83,7 +85,9 @@ describe('LmfPlan: gescheitertes Laden', () => {
 });
 
 describe('LmfPlan: Entwurf und Veröffentlichung', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	/** @param {any} stand */
 	function antworte(stand) {
@@ -137,7 +141,9 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 // Antwort — und das konnte die ÄLTERE sein: Der Kopf zeigte „Bücherausgabe", die Tabelle
 // die Büchertausch-Zeilen, und „Plan speichern" schrieb sie nach ausgabe.
 describe('LmfPlan: Art umschalten', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	/** Antwortet je Art — die Rückgabe erst, wenn `loesen()` gerufen wird. */
 	function antworteVerzoegert() {
@@ -183,7 +189,9 @@ describe('LmfPlan: Art umschalten', () => {
 });
 
 describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	/** @param {any} stand @returns {any[]} die Körper der Vorschau-Aufrufe */
 	function antworte(stand) {

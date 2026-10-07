@@ -435,12 +435,6 @@ Vermerk.
   kein JSON war).
   Abhilfe je Route: ein Test mit Datenbank und eine Gegenprobe je Zusicherung, Muster in
   `api/inventur_verlust_aktionen_pg_test.go`. Kategorie B.
-- `beforeEach(() => attrappe.mockReset())` steht in 16 Testdateien der Oberfläche an 19
-  Stellen, in einer davon mit `mockClear` (gezählt am 06.10.2026). Die Kurzform gibt die
-  Attrappe zurück, und Vitest ruft eine Funktion, die ein Hook zurückgibt, nach dem Test als
-  Aufräumer auf: Jeder Test ruft die Attrappe danach noch einmal. Wirft oder scheitert sie dann (`mockRejectedValue`), wird der Test rot, obwohl seine
-  Erwartungen stimmen; nachgestellt an `klassensatzReservierung.svelte.test.js`. Abhilfe: der
-  Rumpf des Hooks in geschweiften Klammern. Kategorie B.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das

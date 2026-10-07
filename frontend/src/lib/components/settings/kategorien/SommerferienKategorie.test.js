@@ -17,7 +17,9 @@ const DATEN = {
 };
 
 describe('SommerferienKategorie', () => {
-	beforeEach(() => vi.mocked(speichereKategorie).mockReset());
+	beforeEach(() => {
+		vi.mocked(speichereKategorie).mockReset();
+	});
 
 	it('zeigt Programm und eigene Einträge in einer Liste — das eigene Jahr gewinnt', () => {
 		const { container } = render(SommerferienKategorie, { daten: DATEN });

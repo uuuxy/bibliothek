@@ -15,7 +15,9 @@ vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi
 // Kollegiums blieben dann liegen, ohne dass jemand davon wusste (Register,
 // Bestands-Durchgang 10.09.2026).
 describe('AnliegenListe', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('unterscheidet „nichts zu tun" von „nicht geladen"', async () => {
 		vi.mocked(apiFetch).mockResolvedValue(

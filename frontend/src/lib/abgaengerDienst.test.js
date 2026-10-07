@@ -13,7 +13,9 @@ import { sendeKontoauszuege, kontoauszugAdresse, ladeKontoauszuege } from './abg
 // Nutzlast fiele sonst erst im Mai auf — mitten in der Saison (Bestands-Durchgang
 // 10.09.2026, „Kalender-Gate"). Dieser Test hält die Nutzlast das ganze Jahr.
 describe('abgaengerDienst.sendeKontoauszuege', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('schickt genau die gewählten Klassen und die Ausnahme-Adresse', async () => {
 		vi.mocked(apiFetch).mockResolvedValueOnce(

@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import {
 	srcRoot,
 	repoFrontend,
 	sammleQuelldateien,
+	sammleTestdateien,
 	relPfad,
 	vergleicheMitBestand
 } from './hygiene-quellen.js';
@@ -192,17 +193,3 @@ describe('Oberflächen-Hygiene', () => {
 		).toEqual([]);
 	});
 });
-
-/** Alle `.test.js` unter p — das Gegenstück zu sammleQuelldateien, das sie auslässt.
- * @param {string} p @returns {string[]} */
-function sammleTestdateien(p) {
-	/** @type {string[]} */
-	const out = [];
-	for (const entry of readdirSync(p)) {
-		if (entry === 'node_modules') continue;
-		const full = join(p, entry);
-		if (statSync(full).isDirectory()) out.push(...sammleTestdateien(full));
-		else if (entry.endsWith('.test.js')) out.push(full);
-	}
-	return out;
-}

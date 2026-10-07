@@ -48,7 +48,9 @@ function antworten(id, kopfFehler = false) {
 }
 
 describe('useBookAkte.loadAll', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('lässt den Kopf des vorigen Titels nicht stehen — sonst löscht der Knopf den falschen', async () => {
 		vi.mocked(apiFetch).mockImplementation(antworten('A'));

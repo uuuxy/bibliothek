@@ -8,7 +8,9 @@ vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
 // (Befund-Register, Entscheidung 3 vom 05.09.2026). Hier ohne Browser: welche Tür, welche
 // Form, welche Kappung.
 describe('Schülersuche des Vormerkungs-Reiters', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	const antwort = (liste, ok = true) =>
 		vi.mocked(apiFetch).mockResolvedValue(/** @type {any} */ ({ ok, json: async () => liste }));
