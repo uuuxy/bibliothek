@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-06. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-07. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -138,7 +138,9 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   Standorte der Exemplare mit ihrer Zahl, etwa „Bibliothek, Regal 3B (2)". Ein neues Exemplar
   erbt den Standort, wenn alle Exemplare des Titels im Bestand denselben tragen — beim Erhöhen
   des Bestands, beim Listenimport und bei einer Bestellung. Tragen sie verschiedene oder trägt
-  eines keinen, kommt es ohne Standort an.
+  eines keinen, kommt es ohne Standort an. An der Ausleihe ändert der Standort nichts: Ein
+  Titel ist Bibliothek oder Lernmittel, mit allen Exemplaren; auch die Exemplare eines
+  Schulbuchs, die in der Bücherei stehen, werden wie Lernmittel verliehen.
 - **Titel-Verwaltung**: neuen Titel anlegen (die ISBN-Eingabe holt die Angaben zum Buch — vor
   dem Speichern prüfen; die Signatur trägt man selbst ein, das Feld bietet die Signaturen des
   Bestands an), bearbeiten, Cover tauschen,
@@ -688,7 +690,7 @@ eingebaut und je Schule nicht verstellbar. (§12)
 | Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger                                                                                                                                                                                                                                                                                                          |
 | Mail                    | Postausgang mit Verbindungstest, zwei Vorlagen: Elternbrief zur Mahnung (gedruckt) und Bestellmail an den Händler                                                                                                                                                                                                                                                                             |
 | LMF-Aktionen            | alle Lernmittel einer Klasse auf ein neues Datum verlängern                                                                                                                                                                                                                                                                                                                                   |
-| Datenverwaltung         | Katalog-Import (Littera; bringt die Schlagworte an Titel, die noch keine tragen), Bestands-Import (Kombi-CSV, übernimmt vorhandene Nummern), Listenimport (ISBN + Stückzahl → neue Titel samt Exemplaren mit B-Nummern; der Knopf fehlte vom 21.06. bis 07.09.2026; ein zweiter Klick mit derselben Dateiauswahl legt nichts doppelt an, eine neue Auswahl ist ein neuer Lauf), Cover-Synchronisation, Katalog-Export (Bestandsliste als CSV, eine Zeile je Exemplar: Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte, Eigentum), Offline-Sicherungen einspielen |
+| Datenverwaltung         | Katalog-Import (Littera; bringt die Schlagworte an Titel, die noch keine tragen), Bestands-Import (Kombi-CSV, übernimmt vorhandene Nummern), Listenimport (ISBN + Stückzahl → neue Titel samt Exemplaren mit B-Nummern; der Knopf fehlte vom 21.06. bis 07.09.2026; ein zweiter Klick mit derselben Dateiauswahl legt nichts doppelt an, eine neue Auswahl ist ein neuer Lauf), Cover-Synchronisation, Katalog-Export (Bestandsliste als CSV, eine Zeile je Exemplar: Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte, Eigentum, Standort), Offline-Sicherungen einspielen |
 | LUSD & Versetzung       | LUSD-Abgleich, Versetzung zum Schuljahresende, Sommerferien für den LMF-Plan                                                                                                                                                                                                                                                                                                                  |
 | Betriebsbereitschaft    | Selbstprüfung: eingerichtet, aber nicht in Betrieb? (§15)                                                                                                                                                                                                                                                                                                                                     |
 

@@ -16,7 +16,7 @@ import (
 )
 
 // exportSpalten sind die Spalten der Export-Abfrage in ihrer Reihenfolge.
-var exportSpalten = []string{"titel", "autor", "verlag", "isbn", "jahr", "subject", "barcode", "zustand", "signatur", "schlagworte", "topf"}
+var exportSpalten = []string{"titel", "autor", "verlag", "isbn", "jahr", "subject", "barcode", "zustand", "signatur", "schlagworte", "topf", "standort"}
 
 func TestStreamBooksForCSVExport(t *testing.T) {
 	t.Run("successful stream", func(t *testing.T) {
@@ -28,8 +28,8 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		ctx := context.Background()
 
 		rows := pgxmock.NewRows(exportSpalten).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "land").
-			AddRow("Buch 2", "", "", "", 0, "", "", "", "", "", "")
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "land", "Regal 3B").
+			AddRow("Buch 2", "", "", "", 0, "", "", "", "", "", "", "")
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
 			WithArgs(exportSchlagwortTrenner).
@@ -51,8 +51,8 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, kopfCalled)
 		require.Len(t, resultRows, 2)
-		assert.Equal(t, []string{"Buch 1", "Autor 1", "Verlag 1", "'1234567890", "2021", "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "Land"}, resultRows[0])
-		assert.Equal(t, []string{"Buch 2", "", "", "", "", "", "", "", "", "", ""}, resultRows[1])
+		assert.Equal(t, []string{"Buch 1", "Autor 1", "Verlag 1", "'1234567890", "2021", "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "Land", "Regal 3B"}, resultRows[0])
+		assert.Equal(t, []string{"Buch 2", "", "", "", "", "", "", "", "", "", "", ""}, resultRows[1])
 
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -118,7 +118,7 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		ctx := context.Background()
 
 		rows := pgxmock.NewRows(exportSpalten).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "schultraeger")
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "schultraeger", "")
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
 			WithArgs(exportSchlagwortTrenner).
@@ -147,8 +147,8 @@ func TestHandleExportCSV(t *testing.T) {
 		handler := &APIHandler{repo: repo}
 
 		rows := pgxmock.NewRows(exportSpalten).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "schultraeger").
-			AddRow("=Buch 2", "", "", "", 0, "", "", "", "", "", "") // check formula sanitization
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "schultraeger", "Bibliothek, Regal 3B").
+			AddRow("=Buch 2", "", "", "", 0, "", "", "", "", "", "", "-Keller") // Formelschutz: Titel und Standort
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
 			WithArgs(exportSchlagwortTrenner).
@@ -176,9 +176,9 @@ func TestHandleExportCSV(t *testing.T) {
 		bodyStr := string(bytes.TrimPrefix(body, []byte{0xEF, 0xBB, 0xBF}))
 		lines := strings.Split(strings.TrimSpace(bodyStr), "\n")
 		require.Len(t, lines, 3)
-		assert.Equal(t, "Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand;Signatur;Schlagworte;Eigentum", lines[0])
-		assert.Equal(t, "Buch 1;Autor 1;Verlag 1;'1234567890;2021;Kategorie 1;BC1;Gut;Ma 8;Algebra | Geometrie;Schulträger", lines[1])
-		assert.Equal(t, "'=Buch 2;;;;;;;;;;", lines[2]) // sanitized
+		assert.Equal(t, "Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand;Signatur;Schlagworte;Eigentum;Standort", lines[0])
+		assert.Equal(t, "Buch 1;Autor 1;Verlag 1;'1234567890;2021;Kategorie 1;BC1;Gut;Ma 8;Algebra | Geometrie;Schulträger;Bibliothek, Regal 3B", lines[1])
+		assert.Equal(t, "'=Buch 2;;;;;;;;;;;'-Keller", lines[2])
 
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -221,7 +221,7 @@ func TestHandleExportCSV(t *testing.T) {
 		handler := &APIHandler{repo: repo}
 
 		rows := pgxmock.NewRows(exportSpalten).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "land").
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "land", "").
 			RowError(0, errors.New("connection lost"))
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").

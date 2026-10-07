@@ -51,7 +51,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 **Entscheiden:**
 
-- [ ] Bekommt die Bestandsliste (CSV) eine Spalte „Standort"? Vorschlag: ja. (5.53)
+- [x] Die Bestandsliste (CSV) nennt je Exemplar den Standort (entschieden und gebaut am
+  07.10.2026).
 - [ ] Theke: Ein Scan, der eintrifft, solange die vorige Buchung läuft, wird nicht gebucht und
   nicht gemeldet; in der Schnellrückgabe bleibt das Buch verliehen. Vorschlag: einen Scan mit
   anderer Nummer einreihen wie seit dem 07.10.2026 in der Inventur, dieselbe Nummer weiter
@@ -76,6 +77,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Inventur: mehrere Bücher schnell hintereinander scannen
 - [ ] Leserakte: „Stammdaten bearbeiten" speichern
 - [ ] Buchakte: Status eines gesperrten Exemplars öffnen und speichern
+- [ ] Bestandsliste (Einstellungen → Datenverwaltung): Spalte „Standort"; gefüllt bei
+  Exemplaren, die einen Standort tragen (Buchakte, „Standort ändern")
 
 **Erledigen:**
 
@@ -664,20 +667,6 @@ Versetzung. Die Klassen der Schule lösen keinen der beiden Fälle aus. Nächste
 Anlass: Die Versetzung nimmt Klassen aus, deren Zahl nicht zwischen 1 und 13 liegt, und nennt
 sie in der Vorschau. Kategorie B.
 
-### 5.53 Standort am Exemplar: was offen ist
-
-Offen ist ein Punkt:
-
-- **Bestandsliste.** Die Bestandsliste als CSV ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
-  Abschnitt 8) nennt je Exemplar die Signatur, den Standort nicht. Nächster Schritt: eine
-  Spalte „Standort" in `inventur/export_csv.go` und im Pflegekonzept.
-
-Unberührt bleibt: Ein Titel ist Bibliothek oder Lernmittel, mit allen Exemplaren. Die
-Exemplare eines Schulbuchs, die in der Bücherei stehen, werden wie Lernmittel verliehen.
-
-Am Testserver sind die Standorte aus Littera erst mit einer Übernahme aus der
-Littera-Datenbank zu sehen (7.2). Kategorie B.
-
 ### 5.54 Klassensätze aus den Ausleihen und Hinweise an der Theke
 
 Am 03.10.2026 auf eine Frage hin am Code gelesen. Ein Auftrag dazu liegt nicht vor; gebaut
@@ -1146,7 +1135,7 @@ Abschnitt 1b; mit der Sicherung von 2010 am 28.09.2026 bestanden, 15.612 von 15.
 nennt sie Gruppen, setzt die Bücherei diese Personen in Littera in ihre Gruppe, bevor die
 Sicherung für den Umstieg gezogen wird.
 
-**Standorte vor dem Lauf lesen (5.53).** Der Trockenlauf listet jeden Vermerk am Titel und jeden
+**Standorte vor dem Lauf lesen.** Der Trockenlauf listet jeden Vermerk am Titel und jeden
 Sonderstandort mit seiner Zahl ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1). An der Sicherung von 2026
 prüfen: (1) Die Zahl der Vermerke liegt in der Größe der Titelliste vom Juni 2026 (678 Einträge);
 bei null hat `Personen_Zuordnung.Flags` in der SQL-Server-Fassung eine andere Form. (2) Was kein

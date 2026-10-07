@@ -38,7 +38,7 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 		// Write UTF-8 BOM so Excel opens it correctly with UTF-8
 		_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF}) //nolint:errcheck
 		kopfGesendet = true
-		return writer.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand", "Signatur", "Schlagworte", "Eigentum"})
+		return writer.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand", "Signatur", "Schlagworte", "Eigentum", "Standort"})
 	}
 
 	// Schutz vor Formel-Injection: Titel/Autor/Notizen stammen aus Importen und
@@ -66,7 +66,8 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 // Signatur und Schlagworte stehen am Titel und wiederholen sich je Exemplar; die Schlagworte
 // teilen sich eine Zelle (exportSchlagwortTrenner), alphabetisch wie in der Buchmaske. Das
 // Eigentum ist das des Exemplars nach repository.ExemplarTopfSQL, dieselbe Regel wie am
-// Etikett. Eine Zeile ohne Exemplar hat keins.
+// Etikett. Der Standort steht am Exemplar. Eine Zeile ohne Exemplar hat weder Eigentum noch
+// Standort.
 func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf func() error, schreibe func(row []string) error) error {
 	query := `
 		SELECT
@@ -80,7 +81,8 @@ func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf fu
 			coalesce(e.zustand_notiz, ''),
 			coalesce(t.signatur, ''),
 			coalesce(sw.woerter, ''),
-			CASE WHEN e.id IS NULL THEN '' ELSE ` + repository.ExemplarTopfSQL + ` END
+			CASE WHEN e.id IS NULL THEN '' ELSE ` + repository.ExemplarTopfSQL + ` END,
+			coalesce(e.standort, '')
 		FROM buecher_titel t
 		LEFT JOIN buecher_exemplare e ON t.id = e.titel_id AND e.ist_ausgesondert = false
 		` + repository.ExemplarTopfJoin + `
@@ -104,10 +106,10 @@ func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf fu
 	}
 
 	for pgRows.Next() {
-		var titel, autor, verlag, isbn, subject, barcode, zustand, signatur, schlagworte, topf string
+		var titel, autor, verlag, isbn, subject, barcode, zustand, signatur, schlagworte, topf, standort string
 		var jahr int
 
-		if err := pgRows.Scan(&titel, &autor, &verlag, &isbn, &jahr, &subject, &barcode, &zustand, &signatur, &schlagworte, &topf); err != nil {
+		if err := pgRows.Scan(&titel, &autor, &verlag, &isbn, &jahr, &subject, &barcode, &zustand, &signatur, &schlagworte, &topf, &standort); err != nil {
 			return err
 		}
 
@@ -121,7 +123,7 @@ func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf fu
 			isbn = "'" + isbn
 		}
 
-		zeile := []string{titel, autor, verlag, isbn, jahrStr, subject, barcode, zustand, signatur, schlagworte, repository.MittelTraeger(topf)}
+		zeile := []string{titel, autor, verlag, isbn, jahrStr, subject, barcode, zustand, signatur, schlagworte, repository.MittelTraeger(topf), standort}
 		if err := schreibe(zeile); err != nil {
 			return err
 		}

@@ -227,11 +227,12 @@ Dokuments.
    kommen aus der nächtlichen Sicherung, und die Schule wechselt auf ein Kaufprogramm. Was es
    dafür gibt: die Sicherung selbst, eine vollständige PostgreSQL-Datenbank, und die
    Bestandsliste als CSV (Einstellungen → Datenverwaltung). Sie trägt je Exemplar Titel,
-   Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte und Eigentum
-   — den Teil des Bestands, der sich nicht neu erfassen lässt. Mehrere Schlagworte stehen in
-   einer Zelle, getrennt durch „ | "; das Eigentum ist „Land" oder „Schulträger", wie auf dem
-   Etikett. Die Liste führt auch bestellte, noch nicht eingetroffene Exemplare (Zustand „Im
-   Zulauf …") und Titel ohne Exemplar (Zeile ohne Barcode). Leser und Ausleihen gibt das
+   Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte, Eigentum
+   und Standort — den Teil des Bestands, der sich nicht neu erfassen lässt. Mehrere
+   Schlagworte stehen in einer Zelle, getrennt durch „ | "; das Eigentum ist „Land" oder
+   „Schulträger", wie auf dem Etikett; der Standort ist der des Exemplars, ohne Eintrag bleibt
+   die Zelle leer. Die Liste führt auch bestellte, noch nicht eingetroffene Exemplare (Zustand
+   „Im Zulauf …") und Titel ohne Exemplar (Zeile ohne Barcode). Leser und Ausleihen gibt das
    Programm nicht in einer Form aus, die ein anderes Programm einliest (entschieden am
    01.10.2026): Schüler kommen in jedem Programm aus der LUSD, das Kollegium meldet sich neu
    an, und gewechselt wird zum Schuljahresende, wenn die Lernmittel zurück sind.
