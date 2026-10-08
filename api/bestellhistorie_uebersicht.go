@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // BestellhistorieUebersicht sind die Kennzahlen über den GESAMTEN Bestellverlauf.
@@ -38,30 +39,14 @@ type BestellhistorieTopf struct {
 // GetBestellhistorieUebersichtHandler liefert die Kennzahlen über alle Bestellungen.
 func (s *Server) GetBestellhistorieUebersichtHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var u BestellhistorieUebersicht
-		// Eine Abfrage, vier Zahlen: Aggregate über den Bestellkopf sind billig, die teure
-		// Seite waren die Positionen — und die braucht die Übersicht nicht.
-		//
-		// „Wartet auf Bestätigung" hängt am TOKEN der Bestellung, nicht am heutigen Haken
-		// des Lieferanten. Der Token entsteht beim Bestellen genau dann, wenn der Lieferant
-		// den Bestelllink trägt (insertBestellverlauf), und bleibt danach unverändert —
-		// die Bestellung IST mit Link rausgegangen, daran ändert sich später nichts.
-		//
-		// Über den Haken gezählt, verschwänden diese Bestellungen still aus der Zahl,
-		// sobald der Bestelllink an einen anderen Händler wandert: Genau eine Zeile hält
-		// ihn (idx_lieferanten_ein_bestelllink), also verliert ihn der bisherige dabei —
-		// samt seiner offenen Bestellungen, auf deren Bestätigung weiterhin gewartet wird.
-		// Die Listenansicht rechnet aus demselben Grund schon länger über den Token.
-		err := s.DB.Pool.QueryRow(r.Context(), `
-			SELECT count(*), coalesce(sum(b.gesamtbetrag), 0), coalesce(sum(b.anzahl_exemplare), 0),
-			       count(*) FILTER (
-			           WHERE b.bestaetigt_am IS NULL AND b.bestaetigungs_token_hash IS NOT NULL
-			       )
-			FROM bestellungen_verlauf b
-		`).Scan(&u.Gesamt, &u.Gesamtbetrag, &u.GesamtExemplare, &u.OffeneBestaetigungen)
+		k, err := repository.LadeBestellKennzahlen(r.Context(), s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
+		}
+		u := BestellhistorieUebersicht{
+			Gesamt: k.Gesamt, Gesamtbetrag: k.Gesamtbetrag, GesamtExemplare: k.GesamtExemplare,
+			OffeneBestaetigungen: k.OffeneBestaetigungen,
 		}
 
 		u.NachMittel, err = s.kennzahlenJeTopf(r.Context())
@@ -80,33 +65,15 @@ func (s *Server) GetBestellhistorieUebersichtHandler() http.HandlerFunc {
 // Eine eigene Abfrage statt eines zweiten Aggregats in der ersten: Die Gesamtzahlen
 // darüber sollen nicht davon abhängen, dass die Gruppierung gelingt.
 func (s *Server) kennzahlenJeTopf(ctx context.Context) ([]BestellhistorieTopf, error) {
-	rows, err := s.DB.Pool.Query(ctx, `
-		SELECT coalesce(mittel, ''), count(*), coalesce(sum(gesamtbetrag), 0),
-		       coalesce(sum(anzahl_exemplare), 0)
-		FROM bestellungen_verlauf
-		GROUP BY coalesce(mittel, '')
-	`)
+	gezaehlt, err := repository.LadeBestellKennzahlenJeTopf(ctx, s.DB.Pool)
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	gezaehlt := map[string]BestellhistorieTopf{}
-	for rows.Next() {
-		var t BestellhistorieTopf
-		if err := rows.Scan(&t.Mittel, &t.Gesamt, &t.Gesamtbetrag, &t.GesamtExemplare); err != nil {
-			return nil, err
-		}
-		gezaehlt[t.Mittel] = t
-	}
-	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
 	aus := make([]BestellhistorieTopf, 0, len(mittelReihenfolge))
 	for _, topf := range mittelReihenfolge {
 		if t, ok := gezaehlt[topf]; ok {
-			aus = append(aus, t)
+			aus = append(aus, BestellhistorieTopf(t))
 			continue
 		}
 		aus = append(aus, BestellhistorieTopf{Mittel: topf})

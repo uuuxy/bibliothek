@@ -1,10 +1,11 @@
 package api
 
 import (
-	"bibliothek/apierrors"
 	"errors"
-
 	"net/http"
+
+	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // DashboardSummary holds key metrics for the library reporting dashboard.
@@ -34,41 +35,21 @@ func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		var summary DashboardSummary
-
-		// Gesamtzahl, längste Dauer und die Dauer-Verteilung in EINEM aggregierten
-		// Scan über die offenen, überfälligen Ausleihen. Keine JOINs auf schueler/titel:
-		// es verlässt bewusst kein personenbezogenes Feld die Datenbank.
-		var b1, b2, b3, b4 int
-		err := s.DB.Pool.QueryRow(ctx, `
-			WITH offen AS (
-				SELECT (CURRENT_TIMESTAMP - rueckgabe_frist) AS verzug
-				FROM ausleihen
-				-- Ohne Dauerleihen: Sie werden nicht überfällig (dieselbe Regel wie in der
-				-- Sperr-Automatik und in der Leserliste). Sonst zählt die Übersicht
-				-- Mahnfälle, die es nicht gibt — ein Kollege wird nicht gemahnt.
-				WHERE rueckgabe_am IS NULL AND rueckgabe_frist < CURRENT_TIMESTAMP
-				  AND ist_handapparat = false
-			)
-			SELECT
-				COUNT(*)::int,
-				COALESCE(MAX(GREATEST(0, EXTRACT(DAY FROM verzug)::int)), 0)::int,
-				COUNT(*) FILTER (WHERE verzug <= INTERVAL '14 days')::int,
-				COUNT(*) FILTER (WHERE verzug > INTERVAL '14 days' AND verzug <= INTERVAL '30 days')::int,
-				COUNT(*) FILTER (WHERE verzug > INTERVAL '30 days' AND verzug <= INTERVAL '60 days')::int,
-				COUNT(*) FILTER (WHERE verzug > INTERVAL '60 days')::int
-			FROM offen
-		`).Scan(&summary.TotalOverdue, &summary.MaxTageOverdue, &b1, &b2, &b3, &b4)
+		k, err := repository.LadeMahnKennzahlen(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Mahnkennzahlen"))
 			return
 		}
 
-		summary.OverdueBuckets = []OverdueBucket{
-			{Label: "1–14 Tage", Count: b1},
-			{Label: "15–30 Tage", Count: b2},
-			{Label: "31–60 Tage", Count: b3},
-			{Label: "über 60 Tage", Count: b4},
+		summary := DashboardSummary{
+			TotalOverdue:   k.Ueberfaellig,
+			MaxTageOverdue: k.MaxTage,
+			OverdueBuckets: []OverdueBucket{
+				{Label: "1–14 Tage", Count: k.Bis14},
+				{Label: "15–30 Tage", Count: k.Bis30},
+				{Label: "31–60 Tage", Count: k.Bis60},
+				{Label: "über 60 Tage", Count: k.Ueber60},
+			},
 		}
 
 		RespondJSON(w, http.StatusOK, summary)
