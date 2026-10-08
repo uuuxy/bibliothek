@@ -36,6 +36,14 @@ func NewScheduler(db db.PgxPoolIface, auditRepo repository.AuditRepository) *Sch
 	}
 }
 
+// Die drei Zeiten der Nacht hängen aneinander: erst die Sicherung, dann die
+// Audit-Aufbewahrung, dann am Sonntag die Restore-Probe. Die Reihenfolge prüft zeitplan_test.go.
+const (
+	zeitSicherung         = "30 2 * * *"
+	zeitAuditAufbewahrung = "0 3 * * *"
+	zeitRestoreProbe      = "30 3 * * 0"
+)
+
 // Start registriert alle Cronjobs für DSGVO, Backup und Vorhaltefristen.
 func (s *Scheduler) Start() {
 	// Tägliche DSGVO-Anonymisierung und Abgänger-Löschung um Mitternacht
@@ -46,7 +54,7 @@ func (s *Scheduler) Start() {
 
 	// Nächtliche Audit-Aufbewahrung um 03:00 UTC — nach dem Backup (02:30), damit die
 	// Sicherung des Tages die Einträge noch VOR ihrer Löschung enthält.
-	if _, err := s.cron.AddFunc("0 3 * * *", s.RunAuditAufbewahrung); err != nil {
+	if _, err := s.cron.AddFunc(zeitAuditAufbewahrung, s.RunAuditAufbewahrung); err != nil {
 		log.Printf("Scheduler: Failed to register audit retention job: %v", err)
 	}
 
@@ -70,7 +78,7 @@ func (s *Scheduler) Start() {
 			"Backup-Datei offline durchprobierbar.", MinBackupSchluesselLaenge)
 	}
 
-	if _, err := s.cron.AddFunc("30 2 * * *", func() {
+	if _, err := s.cron.AddFunc(zeitSicherung, func() {
 		log.Println("Scheduler Backup: starting scheduled daily database backup...")
 		backup.RunDatabaseBackup()
 	}); err != nil {
@@ -106,7 +114,7 @@ func (s *Scheduler) Start() {
 	// Audit-Aufbewahrung (03:00), damit sie die jüngste Datei prüft und keinem Job in
 	// die Quere kommt. Beweist, dass die ECHTEN Dateien auf der Platte wiederherstellbar
 	// sind — die CI-Drill beweist nur den Mechanismus (jobs/restore_probe.go).
-	if _, err := s.cron.AddFunc("30 3 * * 0", s.RunRestoreProbe); err != nil {
+	if _, err := s.cron.AddFunc(zeitRestoreProbe, s.RunRestoreProbe); err != nil {
 		log.Printf("Scheduler: Failed to register restore probe job: %v", err)
 	}
 	// Nach einem FEHLGESCHLAGENEN Lauf probt der Start erneut — sonst stünde die
