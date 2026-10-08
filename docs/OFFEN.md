@@ -123,8 +123,9 @@ Ohne feste Reihenfolge. Jede Zeile bündelt, was unter ihrer Nummer in den Einze
 Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wird sie, wenn unter
 der Nummer nichts mehr dazu offen ist.
 
-- [ ] **Gates und Werkzeuge (5.10):** zwei Lücken in Prüfregeln, der erste Lauf von
-  `release.yml` auf Ubuntu 26, die Excel-Bibliothek auf einem unveröffentlichten Stand.
+- [ ] **Gates und Werkzeuge (5.10):** der Bestand der Schema-Ratsche ist nicht befragt, kein
+  Gate gegen Listen ohne Obergrenze, der erste Lauf von `release.yml` auf Ubuntu 26, die
+  Excel-Bibliothek auf einem unveröffentlichten Stand.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -250,7 +251,14 @@ offen ist die Entscheidung.
 
 ### 5.10 Gates und Werkzeuge
 
-- Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
+- **Der Bestand der Schema-Ratsche ist nicht befragt.** Seit dem 08.10.2026 friert
+  `repository/schema_gegenrichtung_sperren_pg_test.go` ein, was die Datenbank ablehnt oder
+  weiterträgt: 12 Fremdschlüssel, an denen ein Löschen scheitert, 6, die ein Umbenennen
+  weitertragen (Klasse, Sachgruppe), 35 Eindeutigkeitsregeln. Eine neue Regel macht den Test
+  rot. Zu den vorhandenen steht erst an einer die Antwort (Sachgruppe löschen: 409 mit Satz).
+  Nächster Schritt: je Eintrag den Schreiber suchen, der dagegen laufen kann, und nachstellen,
+  was er bekommt; ohne eigene Behandlung ist es der neutrale Satz von `apierrors`. Zuerst die
+  elf übrigen Löschsperren (Leser, Exemplar, Gerät, Klasse). Kategorie B.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - **Ubuntu 26 als Runner: der erste Lauf von `release.yml`.** Alle zehn Jobs der vier
   Workflows laufen auf `ubuntu-26.04`; `ci.yml`, `security-scan.yml` und `docker-publish.yml`

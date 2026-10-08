@@ -2167,7 +2167,9 @@ wenn man ihn einmal gebraucht hat.
   ein Aufruf je GET-Route (`api/pii_antwort_gate_pg_test.go`); am Ende von `schema.sql` die
   neue Migration in der Liste der angewendeten (`db/migrations_drift_test.go`); in
   `repository/schema_gegenrichtung_pg_test.go` jede neue Lösch-Folge und jede neue Bedingung
-  mit der Antwort, wer die Folge behandelt. Dazu Tests, die JSON wörtlich vergleichen (ein
+  mit der Antwort, wer die Folge behandelt; in
+  `repository/schema_gegenrichtung_sperren_pg_test.go` jeder neue Fremdschlüssel, an dem ein
+  Löschen scheitert oder der ein Umbenennen weiterträgt, und jede neue Eindeutigkeit. Dazu Tests, die JSON wörtlich vergleichen (ein
   neues Feld erscheint dort als `null`), Swagger (`docs/swagger_drift_test.go`),
   [api_inventar.md](api_inventar.md) und die Liste der Bauteile in `CLAUDE.md`. Ein Eintrag
   ist eine Antwort, keine hochgesetzte Zahl.

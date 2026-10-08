@@ -319,7 +319,7 @@ und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
 9. **Ausleitung** — wo verlässt eine Kopie die Anwendung (Datei, Mail, Export, Log, Fremdsystem)? Wer liest sie, wie lange lebt sie, ist sie verschlüsselt?
 10. **Rückweg** — ist der Weg zurück begehbar und am Ergebnis bewiesen, nicht am Vorgang?
 11. **Geteilter Zustand** — wer lädt ihn auf diesem Pfad, was gilt vor dem Laden und bei Fehlschlag, überlebt der Lader sein eigenes Ergebnis?
-12. **Gegenrichtung Schema** — was TUT die Datenbank, das im Code nirgends steht? Fremdschlüssel mit Löschwirkung (CASCADE/SET NULL), CHECK-Bedingungen, Trigger.
+12. **Gegenrichtung Schema** — was TUT die Datenbank, das im Code nirgends steht? Fremdschlüssel mit Löschwirkung (CASCADE/SET NULL), CHECK-Bedingungen, Trigger; dazu, was sie ablehnt oder weiterträgt: Fremdschlüssel, an denen ein Löschen scheitert oder die ein Umbenennen weitertragen, und Eindeutigkeit, auch die eines Teilindex.
 13. **Bedeutungswechsel unter gleichem Namen** — hat dieser Name seit gestern eine andere Bedeutung, und wer liest ihn noch in der alten?
 14. **Datenlage** — was steht in den Zeilen, auf die der Pfad trifft, gemessen am echten Bestand und nicht an der Seed-Datenbank? Trägt die neue Regel jede Form, die dort vorkommt?
 15. **Ungespeichertes** — was steht nur im Browser (getippt, gewählt, eingereiht), und was nimmt es weg: die Sperre, das Ende der Anmeldung, ein Wechsel der Ansicht, ein Neuladen, eine Rückfrage? Bleibt es stehen, oder sagt das Programm es vorher?
@@ -351,6 +351,12 @@ ein (Stand 16.09.2026, an der Datenbank gemessen: 38 Fremdschlüssel mit Löschw
 44 CHECK-Bedingungen, 22 Trigger). Jede
 Schema-Änderung wird damit rot und verlangt die Antwort: **Wer behandelt die Folge?** Die
 schon befragten Einträge tragen ihre Antwort als Kommentar; der Rest ist Arbeitsliste.
+
+`repository/schema_gegenrichtung_sperren_pg_test.go` friert drei weitere Inventare ein
+(Stand 08.10.2026, an der Datenbank gemessen: 12 Fremdschlüssel, an denen ein Löschen
+scheitert, 6, die eine Änderung des Schlüssels weitertragen, 35 Eindeutigkeitsregeln, davon
+14 mit Bedingung). Hier lautet die Frage: **Wer läuft dagegen, und was bekommt er — einen
+Satz oder einen Abbruch?**
 
 Die Zahlen stehen hier zur Einordnung, nicht als Zusicherung — sie veralten mit jeder
 Migration, und rot wird nicht dieser Satz, sondern das Gate.
