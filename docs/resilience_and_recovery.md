@@ -325,6 +325,121 @@ dropdb -U postgres bibliothek_restore_test
 
 Anschließend die Anwendung neu starten.
 
+### 2f. Totalverlust: Der Server ist weg
+
+Rechner oder Platte sind verloren, es gibt keinen laufenden Stack und keine alte Datenbank mehr.
+Durchgespielt am 08.10.2026 an einem frischen Klon auf einem anderen Rechner, mit einer
+Nachtsicherung vom 03.10.2026: Einspielen zwei Sekunden, der Start zog sechs Migrationen nach.
+Die Befehle unten sind die, die dabei liefen.
+
+**Was man braucht:**
+
+- Eine verschlüsselte Sicherung (`….sql.gz.enc`), die nicht auf dem verlorenen Server lag.
+  Ohne Kopie an einem zweiten Ort gibt es nach einem Totalverlust nichts einzuspielen
+  ([OFFEN.md](OFFEN.md) 7.3).
+- Die zwei Schlüssel vom Blatt bei der Schule ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 7.3):
+  `BACKUP_ENCRYPTION_KEY` öffnet die Sicherung, `APP_ENCRYPTION_KEY` die Schülerfotos und das
+  Mail-Passwort darin. Beide in der Fassung, die zur Zeit der Sicherung galt.
+- Die übrigen Angaben der `.env`, die keine Geheimnisse sind ([DEPLOYMENT.md](DEPLOYMENT.md) 2.1).
+
+**Was danach fehlt:**
+
+- Alles zwischen der Sicherung und dem Ausfall: Ausleihen, Rückgaben, neue Leser, Änderungen.
+  Bei der Nachtsicherung ist das höchstens ein Tag. Scans, die ein Theken-Rechner ohne
+  Verbindung gesammelt hat, bucht er nach der nächsten Anmeldung nach
+  ([FACHKONZEPT.md](FACHKONZEPT.md) 18.4).
+- Wer seit der Sicherung von Hand endgültig gelöscht wurde, ist wieder da. Die Liste aus 2a,
+  Schritt 5b, gibt es hier nicht: Sie käme aus der alten Datenbank. Die Löschläufe nach Frist
+  holen ihren Teil in der nächsten Nacht nach.
+- Die Buchcover (Schritt 9) und jede Anmeldung: Alle melden sich neu an.
+
+Alles in **derselben** Shell-Sitzung (bash), im Programmverzeichnis des neuen Servers.
+
+```bash
+# 1. Den Server vorbereiten wie bei der ersten Installation: Docker, das Repository, das Netz
+#    für Caddy (DEPLOYMENT.md, Abschnitte 2 und 3). Den Stack noch NICHT starten.
+cd /root/bibliothek
+
+# 2. Die .env anlegen. Die zwei Schlüssel kommen vom Blatt und werden nicht neu erzeugt;
+#    Datenbank-Passwort und JWT_SECRET sind neu. Die Eingabe erscheint nicht am Bildschirm.
+read -rsp "APP_ENCRYPTION_KEY vom Blatt: " A; echo
+read -rsp "BACKUP_ENCRYPTION_KEY vom Blatt: " B; echo
+{
+  echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
+  echo "JWT_SECRET=$(openssl rand -hex 32)"
+  echo "APP_ENCRYPTION_KEY=$A"
+  echo "BACKUP_ENCRYPTION_KEY=$B"
+} >> .env; unset A B; chmod 600 .env
+#    Dazu von Hand die Einstellungen aus DEPLOYMENT.md 2.1 (APP_ENV, COOKIE_SECURE, IMAP_HOST …).
+#    Ohne IMAP_HOST startet Schritt 4 nicht.
+
+# 3. Die Sicherung vom zweiten Ort nach ./backups legen und beim Namen nennen. Gewählt wird
+#    die Datei, nicht ein Muster: Die Änderungszeit einer kopierten Datei ist die der Kopie.
+mkdir -p backups
+ls -1 backups/
+read -rp "Dateiname der Sicherung: " NAME
+DATEI="backups/$NAME"; ls -lh "$DATEI"
+
+# 4. Nur die Datenbank starten. Das Backend bleibt aus, bis die Sicherung eingespielt ist: Es
+#    legt beim Start seine Tabellen an, und die Sicherung bringt ihre eigenen mit.
+docker compose up -d postgres-db
+for i in $(seq 1 30); do st=$(docker inspect -f '{{.State.Health.Status}}' bibliothek-db); [ "$st" = "healthy" ] && break; sleep 2; done; echo "Datenbank: $st"
+
+# 5. Das Image des Backends bauen (einige Minuten). Ein eigener Schritt: Baute erst Schritt 6
+#    das Image, liefe die Ausgabe des Baus mit in die Datenbank, und das Einspielen bräche ab.
+docker compose build backend
+
+# 6. Entschlüsseln und einspielen in einem Zug. Das Werkzeug kommt aus dem Image des Backends
+#    und liest die Datei über die Standardeingabe: kein eingehängtes Verzeichnis, und der
+#    Klartext berührt die Platte nicht. Erst weiter, wenn hier „Exit: 0 0" steht.
+docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < "$DATEI" | docker compose exec -T postgres-db psql -v ON_ERROR_STOP=1 -q -o /dev/null -U postgres -d bibliothek; echo "Exit: ${PIPESTATUS[*]} (beide müssen 0 sein)"
+
+# 7. Ansehen, was zurück ist: Größenordnung und Stand der Sicherung.
+docker compose exec -T postgres-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM leser) AS leser, (SELECT count(*) FROM buecher_titel) AS titel, (SELECT count(*) FROM buecher_exemplare) AS exemplare, (SELECT count(*) FROM ausleihen WHERE rueckgabe_am IS NULL) AS offene_ausleihen, (SELECT to_char(max(ausgeliehen_am) AT TIME ZONE 'Europe/Berlin', 'DD.MM.YYYY HH24:MI') FROM ausleihen) AS juengste_ausleihe;"
+
+# 8. Den ganzen Stack starten. Das Backend zieht die Migrationen nach, die seit der Sicherung
+#    dazugekommen sind.
+docker compose up -d
+for i in $(seq 1 60); do st=$(docker inspect -f '{{.State.Health.Status}}' bibliothek-backend); [ "$st" = "healthy" ] && break; sleep 2; done; echo "Backend: $st"
+docker logs bibliothek-backend 2>&1 | grep -iE "migration|fatal|panic"
+curl -s -o /dev/null -w "health: %{http_code}\n" http://127.0.0.1:8083/health
+
+# 9. Buchcover: Das Volume ist leer. Status und Pfad zurücksetzen, dann lädt der nächste Lauf
+#    nach (DEPLOYMENT.md, Abschnitt 6; von Hand hochgeladene Cover kommen so nicht zurück).
+docker compose exec -T postgres-db psql -U postgres -d bibliothek -c "UPDATE buecher_titel SET cover_status = 'PENDING', cover_url = NULL WHERE cover_url LIKE '/uploads/%';"
+```
+
+**Woran man sieht, dass es stimmt:**
+
+- Schritt 6 endet mit `Exit: 0 0`. Bei `Exit: 1 0` und der Meldung „entschlüsselung
+  fehlgeschlagen" ist der `BACKUP_ENCRYPTION_KEY` in der `.env` nicht der, mit dem die
+  Sicherung geschrieben wurde; die Datenbank ist dann weiter leer. Den Schlüssel in der `.env`
+  berichtigen und Schritt 6 wiederholen.
+- Schritt 7 nennt die Zahlen der Sicherung; die jüngste Ausleihe liegt kurz vor ihrem Zeitpunkt.
+- Schritt 8 meldet `Backend: healthy` und `health: 200`; das Log nennt die nachgezogenen
+  Migrationen. Steht dort „Fresh database detected", ist das Backend auf einer leeren Datenbank
+  gestartet: weiter unten bei „Das Backend lief zu früh an".
+- Nach der Anmeldung unter _System → Betriebsbereitschaft_: „Schlüssel und Bestand" meldet, dass
+  der `APP_ENCRYPTION_KEY` zum Bestand passt. „Nächtliches Backup" meldet bis zum ersten
+  Nachtlauf „Noch nie ein Backup geschrieben"; eine erste Sicherung von Hand legt
+  `./scripts/backup.sh` in `./backups` an.
+
+Danach: Caddy einrichten ([DEPLOYMENT.md](DEPLOYMENT.md) 3), das Uptime-Signal auf den neuen
+Server zeigen lassen (7.0) und die eingespielte Datei aus `./backups` nehmen; sie bleibt am
+zweiten Ort.
+
+**Das Backend lief zu früh an.** Startet der ganze Stack, bevor die Sicherung eingespielt ist
+(Schritt 6 nicht bei `Exit: 0 0`), legt das Backend seine leeren Tabellen an, und das Einspielen
+bricht danach an der ersten ab. Der Weg zurück, in der Probe so entstanden und so behoben:
+
+```bash
+docker compose stop backend
+docker compose exec -T postgres-db dropdb -U postgres bibliothek; echo "dropdb: $? (muss 0 sein)"
+docker compose exec -T postgres-db createdb -U postgres bibliothek; echo "createdb: $? (muss 0 sein)"
+```
+
+Danach weiter bei Schritt 6.
+
 ## 3. Soft-Deletes und Datenintegrität
 
 Die Bibliothek implementiert für zentrale Entitäten wie **Schüler** sogenannte *Soft-Deletes*.

@@ -682,15 +682,13 @@ Vertragsfrage, außerhalb des Programms; das ist eine Betriebsentscheidung.
 
 Die automatische Wochenprobe im Container lief am 13.09.2026 erfolgreich; sie ersetzt die
 manuelle Probe nicht. Anleitung: [resilience_and_recovery.md](resilience_and_recovery.md),
-Abschnitt 2e — dabei die neuen Befehle erproben, die bisher nur am Text geprüft sind. Sinnvoll
+Abschnitt 2e — dabei die Befehle aus 2a erproben, die bisher nur am Text geprüft sind. Sinnvoll
 nach S3 oder am Schulserver. Machen soll sie die Vertretung allein mit dem Pflegekonzept (9.9);
 sie wartet also auf den Schulserver und auf die benannte Vertretung.
 
-**Der Totalverlust des Servers ist nicht beschrieben** (aus der Durchsicht von PR 631 am
-21.09.2026). Der Entwurf im PR ist nach eigener Angabe unerprobt und scheitert in Schritt 5:
-Das Backend hat nur benannte Volumes, die Sicherung vom zweiten Ort liegt also nicht im
-Container, und die entschlüsselte Datei entsteht in einem Wegwerf-Container und ist danach
-fort. Schreiben und an einem fremden Ziel durchspielen, nicht herleiten.
+Der Totalverlust des Servers steht seit dem 08.10.2026 in Abschnitt 2f, durchgespielt an einem
+frischen Klon auf dem Entwicklungsrechner. Er setzt eine Sicherung voraus, die nicht auf dem
+Server lag (7.3).
 
 ### 7.5 Externes Uptime-Signal
 

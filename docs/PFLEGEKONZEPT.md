@@ -135,7 +135,8 @@ Betriebsbereitschaft als kritisch, und die tägliche Alarm-Mail geht hinaus.
 
 **Ablauf:** [resilience_and_recovery.md](resilience_and_recovery.md) §2a (einspielen), §2c
 (der Weg zurück, falls es misslingt), §2d (Arbeitsdateien löschen — sie enthalten alle Namen
-im Klartext). Danach die Betriebsbereitschaft ansehen: „Schlüssel und Bestand" meldet, ob der
+im Klartext). Ist der Server selbst verloren: §2f, auf einem neuen Rechner und mit einer
+Sicherung, die nicht auf dem alten lag. Danach die Betriebsbereitschaft ansehen: „Schlüssel und Bestand" meldet, ob der
 laufende Schlüssel zu den Daten passt. Buchcover sind nicht in der Sicherung. Fehlen sie nach
 einer Wiederherstellung auf einem neuen Server, lädt das Programm sie nach einem Befehl aus
 [DEPLOYMENT.md](DEPLOYMENT.md) §6 neu; von Hand hochgeladene Cover kommen so nicht zurück.

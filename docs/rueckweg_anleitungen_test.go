@@ -80,10 +80,11 @@ func TestRueckweg_RollbackFuehrtZurueck(t *testing.T) {
 // update.sh bis zum 10.09.2026 und die Anleitung für den Ernstfall bis zum 28.09.2026, an vier
 // Stellen (2a, 2b, 2c, 2e; gefunden in der Generalprobe).
 //
-// Blindheit: Erkannt wird `psql … -f …` und `| psql` auf einer Zeile, nur in dieser Datei. Ein
-// Einspielen mit `<` oder über mehrere Zeilen mit dem psql-Aufruf vor dem Umbruch sieht der Test nicht.
+// Blindheit: Erkannt wird `psql … -f …` und `| psql` auf einer Zeile, auch hinter
+// `docker compose exec`, nur in dieser Datei. Ein Einspielen mit `<` oder über mehrere Zeilen
+// mit dem psql-Aufruf vor dem Umbruch sieht der Test nicht.
 func TestRueckweg_EinspielenBrichtBeimErstenFehlerAb(t *testing.T) {
-	einspielen := regexp.MustCompile(`psql\b.*\s-f\s|\|\s*psql\b`)
+	einspielen := regexp.MustCompile(`psql\b.*\s-f\s|\|\s*(?:docker compose exec(?:\s+-T)?\s+\S+\s+)?psql\b`)
 	gesehen := 0
 	for i, zeile := range strings.Split(lies(t, "resilience_and_recovery.md"), "\n") {
 		if !einspielen.MatchString(zeile) {
@@ -95,8 +96,25 @@ func TestRueckweg_EinspielenBrichtBeimErstenFehlerAb(t *testing.T) {
 				i+1, strings.TrimSpace(zeile))
 		}
 	}
-	if gesehen < 4 {
-		t.Fatalf("nur %d Einspiel-Zeilen gefunden, erwartet mindestens 4 (2a, 2b, 2c, 2e) — der Detektor sieht nichts", gesehen)
+	if gesehen < 5 {
+		t.Fatalf("nur %d Einspiel-Zeilen gefunden, erwartet mindestens 5 (2a, 2b, 2c, 2e, 2f) — der Detektor sieht nichts", gesehen)
+	}
+}
+
+// Beim Totalverlust (2f) kommt das Werkzeug aus dem Image des Backends, und seine Ausgabe geht
+// in die Datenbank. Baut erst dieser Aufruf das Image, läuft die Ausgabe des Baus mit hinein,
+// und das Einspielen bricht an ihrer ersten Zeile ab (so geschehen beim Durchspielen am
+// 08.10.2026). Deshalb steht der Bau als eigener Schritt davor.
+func TestRueckweg_TotalverlustBautVorDemEinspielen(t *testing.T) {
+	anleitung := lies(t, "resilience_and_recovery.md")
+	einspielen := strings.Index(anleitung, "docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend")
+	if einspielen < 0 {
+		t.Fatal("die Einspiel-Zeile des Totalverlusts (docker compose run … restore-backup) fehlt — Anleitung oder Gate nachziehen")
+	}
+	bau := strings.Index(anleitung, "\ndocker compose build backend\n")
+	if bau < 0 || bau > einspielen {
+		t.Error("vor dem Einspielen beim Totalverlust fehlt der eigene Schritt `docker compose build backend` — " +
+			"baut erst der Einspiel-Aufruf das Image, läuft die Ausgabe des Baus in die Datenbank")
 	}
 }
 
