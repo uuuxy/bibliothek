@@ -1,7 +1,7 @@
 package inventur
 
 import (
-	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -67,61 +67,81 @@ func TestHandleLookupSucheFehlschlag(t *testing.T) {
 	}
 }
 
-func TestHandleLookupHappyPath(t *testing.T) {
-	mockTr := &mockTransportForLookup{
-		RoundTripFunc: func(req *http.Request) (*http.Response, error) {
-			if strings.Contains(req.URL.String(), "services.dnb.de") {
-				dnbXML := `<?xml version="1.0" encoding="UTF-8"?>
+// lookupMitDNB fragt die Tür nach einer ISBN, zu der die DNB die genannten Datenfelder meldet;
+// die übrigen Katalogdienste kennen sie nicht.
+func lookupMitDNB(t *testing.T, datenfelder string) *httptest.ResponseRecorder {
+	t.Helper()
+	dnbXML := `<?xml version="1.0" encoding="UTF-8"?>
 <searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
   <records>
     <record>
       <recordData>
-        <record xmlns="http://www.loc.gov/MARC21/slim">
+        <record xmlns="http://www.loc.gov/MARC21/slim">` + datenfelder + `</record>
+      </recordData>
+    </record>
+  </records>
+</searchRetrieveResponse>`
+	mockTr := &mockTransportForLookup{
+		RoundTripFunc: func(req *http.Request) (*http.Response, error) {
+			status, koerper := http.StatusNotFound, ""
+			if strings.Contains(req.URL.String(), "services.dnb.de") {
+				status, koerper = http.StatusOK, dnbXML
+			}
+			return &http.Response{
+				StatusCode: status,
+				Body:       io.NopCloser(strings.NewReader(koerper)),
+				Header:     make(http.Header),
+			}, nil
+		},
+	}
+	metadaten := NeuerMetadatenClient()
+	metadaten.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTr})
+	handler := &APIHandler{metadaten: metadaten}
+
+	rr := httptest.NewRecorder()
+	handler.handleLookup(rr, lookupAnfrage("9783161484100"))
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, rr.Code, rr.Body.String())
+	}
+	return rr
+}
+
+func TestHandleLookupHappyPath(t *testing.T) {
+	rr := lookupMitDNB(t, `
           <datafield tag="245" ind1="1" ind2="0">
             <subfield code="a">Mocked Title</subfield>
           </datafield>
           <datafield tag="100" ind1="1" ind2=" ">
             <subfield code="a">Mocked Author</subfield>
-          </datafield>
-        </record>
-      </recordData>
-    </record>
-  </records>
-</searchRetrieveResponse>`
-				return &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewBufferString(dnbXML)),
-					Header:     make(http.Header),
-				}, nil
-			}
-			return &http.Response{
-				StatusCode: http.StatusNotFound,
-				Body:       io.NopCloser(bytes.NewBufferString("")),
-				Header:     make(http.Header),
-			}, nil
-		},
-	}
-
-	mockClient := &http.Client{Transport: mockTr}
-	metadaten := NeuerMetadatenClient()
-	metadaten.SetzeHTTPClientFuerTest(mockClient)
-
-	handler := &APIHandler{
-		metadaten: metadaten,
-	}
-
-	req := lookupAnfrage("9783161484100")
-	rr := httptest.NewRecorder()
-
-	handler.handleLookup(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d. Body: %s", http.StatusOK, rr.Code, rr.Body.String())
-	}
+          </datafield>`)
 
 	expectedJSONSnippet := `"title":"Mocked Title"`
 	if !strings.Contains(rr.Body.String(), expectedJSONSnippet) {
 		t.Fatalf("expected response to contain %s, got %s", expectedJSONSnippet, rr.Body.String())
+	}
+}
+
+// Nennt der Titel zwei Jahrgänge, trägt die Antwort die Spanne in „jahrgangVon" und
+// „jahrgangBis". Das Titelfeld ist das der DNB zur ISBN 9783141096835.
+func TestHandleLookup_SpanneAusDemTitel(t *testing.T) {
+	rr := lookupMitDNB(t, `
+          <datafield tag="245" ind1="1" ind2="0">
+            <subfield code="a">EinFach Deutsch Unterrichtsmodelle</subfield>
+            <subfield code="b">John Green: Eine wie Alaska Klassen 8 - 10</subfield>
+          </datafield>`)
+
+	var antwort struct {
+		Data struct {
+			JahrgangVon int `json:"jahrgangVon"`
+			JahrgangBis int `json:"jahrgangBis"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Antwort nicht lesbar: %v — %s", err, rr.Body.String())
+	}
+	if antwort.Data.JahrgangVon != 8 || antwort.Data.JahrgangBis != 10 {
+		t.Fatalf("jahrgangVon = %d, jahrgangBis = %d, erwartet 8 und 10 — %s", antwort.Data.JahrgangVon, antwort.Data.JahrgangBis, rr.Body.String())
 	}
 }
 

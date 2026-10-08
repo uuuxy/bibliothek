@@ -27,8 +27,9 @@ const AUSGAENGE = {
  */
 function felderAus(daten) {
 	const jahr = Number.parseInt(daten.jahr);
-	// Die Stufe aus dem Titel ist ein Jahrgang, „von" und „bis" bekommen dieselbe Zahl.
-	const jahrgang = Number.parseInt(daten.grade) || undefined;
+	// Die Stufe aus dem Titel: 0 heißt unbekannt, „von" und „bis" kommen zusammen oder gar nicht.
+	const von = daten.jahrgangVon || undefined;
+	const bis = daten.jahrgangBis || undefined;
 	/** @type {[string, any][]} */
 	const felder = [
 		['title', daten.title],
@@ -38,8 +39,8 @@ function felderAus(daten) {
 		['erscheinungsjahr', jahr > 0 ? jahr : undefined],
 		['coverUrl', daten.coverUrl],
 		['subject', daten.subject],
-		['jahrgangVon', jahrgang],
-		['jahrgangBis', jahrgang]
+		['jahrgangVon', bis && von],
+		['jahrgangBis', von && bis]
 	];
 	return felder.filter(([, wert]) => wert !== undefined && wert !== '');
 }

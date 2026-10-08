@@ -2,8 +2,9 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Was die Katalogdienste zu einer ISBN wissen, steht nach der Abfrage in der Maske, auch
-// Untertitel und Listenpreis. Gespeichert wird, was dort steht: Der Server fragt beim
-// Speichern keinen Dienst und trägt nichts nach.
+// Untertitel, Listenpreis und die Schulstufe aus dem Titel als Jahrgang „von … bis".
+// Gespeichert wird, was dort steht: Der Server fragt beim Speichern keinen Dienst und trägt
+// nichts nach.
 const s = uniqueSuffix().slice(0, 6);
 const kern = ('978' + String(Date.now()).slice(-9)).slice(0, 12);
 const ISBN =
@@ -15,7 +16,7 @@ test.afterAll(() => {
 		DELETE FROM buecher_titel WHERE isbn = '${ISBN}';`);
 });
 
-test('die ISBN-Abfrage zeigt Untertitel und Listenpreis; gespeichert wird der Stand der Maske', async ({
+test('die ISBN-Abfrage zeigt Untertitel, Listenpreis und Jahrgang; gespeichert wird der Stand der Maske', async ({
 	page
 }) => {
 	// Die Katalogdienste sind ersetzt: Der Test hängt nicht daran, was sie zu einer
@@ -29,6 +30,8 @@ test('die ISBN-Abfrage zeigt Untertitel und Listenpreis; gespeichert wird der St
 					title: `Angaben ${s}`,
 					subtitle: `Untertitel ${s}`,
 					author: 'Probe, Paula',
+					jahrgangVon: 7,
+					jahrgangBis: 10,
 					preis: 12.5
 				}
 			})
@@ -44,6 +47,8 @@ test('die ISBN-Abfrage zeigt Untertitel und Listenpreis; gespeichert wird der St
 	await expect(page.locator('#buch-titel')).toHaveValue(`Angaben ${s}`);
 	await expect(page.locator('#buch-untertitel')).toHaveValue(`Untertitel ${s}`);
 	await expect(page.locator('#buch-listenpreis')).toHaveValue('12.5');
+	await expect(page.locator('#buch-jahrgang-von')).toHaveValue('7');
+	await expect(page.locator('#buch-jahrgang-bis')).toHaveValue('10');
 
 	// Der Preis ist ein Vorschlag: Was jemand einträgt, gilt.
 	await page.locator('#buch-listenpreis').fill('15');
@@ -53,7 +58,7 @@ test('die ISBN-Abfrage zeigt Untertitel und Listenpreis; gespeichert wird der St
 
 	expect(
 		querySQL(
-			`SELECT titel || '|' || untertitel || '|' || autor || '|' || listenpreis FROM buecher_titel WHERE isbn = '${ISBN}'`
+			`SELECT titel || '|' || untertitel || '|' || autor || '|' || listenpreis || '|' || jahrgang_von || '|' || jahrgang_bis FROM buecher_titel WHERE isbn = '${ISBN}'`
 		)
-	).toBe(`Angaben ${s}|Untertitel ${s}|Probe, Paula|15.00`);
+	).toBe(`Angaben ${s}|Untertitel ${s}|Probe, Paula|15.00|7|10`);
 });

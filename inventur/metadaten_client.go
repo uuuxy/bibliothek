@@ -25,16 +25,19 @@ type MetadatenClient struct {
 // MetadatenErgebnis bündelt die gefundenen Metadaten eines Buches in einer
 // einheitlichen Struktur über alle genutzten APIs hinweg.
 type MetadatenErgebnis struct {
-	ISBN         string `json:"isbn"`
-	Titel        string `json:"title"`
-	Untertitel   string `json:"subtitle"`
-	Autor        string `json:"author"`
-	CoverURL     string `json:"coverUrl"`
-	Fach         string `json:"subject"`
-	KlassenStufe string `json:"grade"`
-	Verlag       string `json:"verlag"`
-	Jahr         string `json:"jahr"`
-	Zielgruppe   string `json:"zielgruppe"` // Altersempfehlung des Verlags, z. B. "ab 10 Jahre" (DNB 653)
+	ISBN       string `json:"isbn"`
+	Titel      string `json:"title"`
+	Untertitel string `json:"subtitle"`
+	Autor      string `json:"author"`
+	CoverURL   string `json:"coverUrl"`
+	Fach       string `json:"subject"`
+	// JahrgangVon und JahrgangBis nennen die Schulstufe aus dem Titel als Spanne; 0 und 0
+	// heißt wie am Buch, dass keine bekannt ist (stufenAusText).
+	JahrgangVon int    `json:"jahrgangVon"`
+	JahrgangBis int    `json:"jahrgangBis"`
+	Verlag      string `json:"verlag"`
+	Jahr        string `json:"jahr"`
+	Zielgruppe  string `json:"zielgruppe"` // Altersempfehlung des Verlags, z. B. "ab 10 Jahre" (DNB 653)
 	// Preis ist der DNB-Ladenpreis (MARC21 020 $c) als VORSCHLAG. 0 = keiner ermittelbar.
 	// Er gilt zum Erscheinungszeitpunkt und ist NICHT der Schulpreis — die Oberflaeche
 	// darf ihn nur vorschlagen, nie als erfasste Ausgabe verbuchen.
@@ -165,13 +168,11 @@ func (client *MetadatenClient) SucheNachISBN(kontext context.Context, isbn strin
 }
 
 // beendeSuche füllt das MetadatenErgebnis mit fehlenden Informationen auf:
-// automatische Kategorisierung (Fach + Klasse) sowie das lokal gespeicherte Cover.
+// automatische Kategorisierung (Fach und Schulstufe) sowie das lokal gespeicherte Cover.
 func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) *MetadatenErgebnis {
 	ergebnis.CoverURL = client.aufloeseCover(kontext, ergebnis, isbn)
 
-	fach, klassenStufe := automatischeKategorisierung(ergebnis.Titel, ergebnis.Untertitel)
-	ergebnis.Fach = fach
-	ergebnis.KlassenStufe = klassenStufe
+	ergebnis.Fach, ergebnis.JahrgangVon, ergebnis.JahrgangBis = automatischeKategorisierung(ergebnis.Titel, ergebnis.Untertitel)
 	return ergebnis
 }
 

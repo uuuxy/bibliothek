@@ -34,19 +34,21 @@ func (handler *APIHandler) handleLookup(writer http.ResponseWriter, request *htt
 	}
 
 	// Der Preis ist der Ladenpreis der DNB und ein Vorschlag für den Listenpreis; 0 heißt,
-	// es ließ sich keiner ermitteln. Die Maske zeigt ihn, bevor gespeichert wird.
+	// es ließ sich keiner ermitteln. Die Maske zeigt ihn, bevor gespeichert wird. Die
+	// Jahrgangsspanne kommt aus dem Titel; 0 und 0 heißt, er nennt keine.
 	writeJSON(writer, http.StatusOK, map[string]any{
 		"data": map[string]any{
-			"title":      result.Titel,
-			"subtitle":   result.Untertitel,
-			"author":     result.Autor,
-			"coverUrl":   result.CoverURL,
-			"subject":    result.Fach,
-			"grade":      result.KlassenStufe,
-			"verlag":     result.Verlag,
-			"jahr":       result.Jahr,
-			"zielgruppe": result.Zielgruppe,
-			"preis":      result.Preis,
+			"title":       result.Titel,
+			"subtitle":    result.Untertitel,
+			"author":      result.Autor,
+			"coverUrl":    result.CoverURL,
+			"subject":     result.Fach,
+			"jahrgangVon": result.JahrgangVon,
+			"jahrgangBis": result.JahrgangBis,
+			"verlag":      result.Verlag,
+			"jahr":        result.Jahr,
+			"zielgruppe":  result.Zielgruppe,
+			"preis":       result.Preis,
 		},
 	})
 }

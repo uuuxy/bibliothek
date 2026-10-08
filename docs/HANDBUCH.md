@@ -209,9 +209,10 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   es leer ist oder dieselbe Zahl zeigt wie „von"; ein eigener Wert bleibt stehen (7, Tab, 10
   ergibt „7 bis 10"). Die Titel-Verwaltung nennt den Jahrgang in der Spalte „Jahrgang" („7",
   „7–10"), die Buchakte im Kopf, die Karten der Klassenzuweisung als Marke („Jg. 7"). Die
-  ISBN-Abfrage schlägt einen Jahrgang nur vor, wenn der Titel ihn als Schulstufe nennt
-  („Klasse 7", „7. Schuljahr"); aus „Band 2" oder einer bloßen Zahl („Green Line 5") macht sie
-  keinen. Eine Liste mit der Spalte „Klasse" trägt den Jahrgang als „von … bis" ein. (§2)
+  ISBN-Abfrage schlägt den Jahrgang nur vor, wenn der Titel ihn als Schulstufe nennt: einen
+  einzelnen („Klasse 7", „7. Schuljahr") oder eine Spanne („Klassen 7–10", „5./6. Schuljahr");
+  aus „Band 2" oder einer bloßen Zahl („Green Line 5") macht sie keinen. Eine Liste mit der
+  Spalte „Klasse" trägt den Jahrgang als „von … bis" ein. (§2)
 - **Jahrgang ohne Eintrag**: Bleiben „von" und „bis" leer, ist der Jahrgang des Titels
   unbekannt (seit 08.10.2026; vorher trug jeder neue Titel „5 bis 10"). Ein solcher Titel
   liegt in keiner Inventur nach Klasse und steht im Portal unter keinem Jahrgang; ohne

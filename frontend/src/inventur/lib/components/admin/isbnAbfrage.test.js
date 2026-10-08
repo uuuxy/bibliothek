@@ -9,7 +9,8 @@ import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 
 const A = '9783791504650';
 const B = '9783551551672';
-/** Was die Katalogdienste je ISBN kennen; B nennt nur den Titel. */
+const C = '9783141096835';
+/** Was die Katalogdienste je ISBN kennen; B nennt nur den Titel, C nur eine Hälfte der Stufe. */
 const DIENSTE = {
 	[A]: {
 		title: 'Buch A',
@@ -17,10 +18,12 @@ const DIENSTE = {
 		author: 'Autor A',
 		verlag: 'Verlag A',
 		jahr: '2001',
-		grade: '7',
+		jahrgangVon: 7,
+		jahrgangBis: 10,
 		preis: 12.5
 	},
-	[B]: { title: 'Buch B', preis: 0 }
+	[B]: { title: 'Buch B', preis: 0 },
+	[C]: { title: 'Buch C', jahrgangVon: 8, jahrgangBis: 0 }
 };
 
 /** @param {number} status @param {any} koerper */
@@ -38,12 +41,12 @@ async function nachAbfrageA() {
 		() => undefined
 	);
 	await abfrage.nachschlagen(false);
-	// Die Stufe aus dem Titel steht als Jahrgang da, „von" und „bis" mit derselben Zahl.
+	// Die Stufe aus dem Titel steht als Spanne da, mit zwei verschiedenen Zahlen.
 	expect(formular).toMatchObject({
 		title: 'Buch A',
 		author: 'Autor A',
 		jahrgangVon: 7,
-		jahrgangBis: 7
+		jahrgangBis: 10
 	});
 	expect(formular).not.toHaveProperty('gradeLevel');
 	return { formular, abfrage };
@@ -153,6 +156,22 @@ describe('isbnAbfrage: eine andere ISBN in derselben Maske', () => {
 			title: 'Vorhandener Titel',
 			author: 'Autor A'
 		});
+	});
+});
+
+// „von" und „bis" lassen sich nur zusammen speichern: Eine halbe Stufe trägt die Abfrage nicht ein.
+describe('isbnAbfrage: die Stufe aus dem Titel', () => {
+	it('nennt die Antwort nur „von", bleibt der Jahrgang leer', async () => {
+		const formular = /** @type {any} */ ({ id: null, isbn: C, title: '' });
+		const abfrage = erzeugeIsbnAbfrage(
+			() => formular,
+			() => undefined
+		);
+
+		await abfrage.nachschlagen(false);
+
+		expect(formular.title).toBe('Buch C');
+		expect([formular.jahrgangVon, formular.jahrgangBis]).toEqual([undefined, undefined]);
 	});
 });
 

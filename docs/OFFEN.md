@@ -112,8 +112,6 @@ Ohne feste Reihenfolge. Jede Zeile bündelt, was unter ihrer Nummer in den Einze
 Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wird sie, wenn unter
 der Nummer nichts mehr dazu offen ist.
 
-- [ ] **Jahrgang am Titel (5.5):** Die ISBN-Abfrage schlägt nur einen einzelnen Jahrgang vor,
-  keine Spanne.
 - [ ] **Gates und Werkzeuge (5.10):** zwei Lücken in Prüfregeln, der erste Lauf von
   `release.yml` auf Ubuntu 26, die Excel-Bibliothek auf einem unveröffentlichten Stand.
 
@@ -220,15 +218,6 @@ Vermerk.
 ---
 
 ## 5. Abarbeitbar (Kategorie B)
-
-### 5.5 Bestand, Katalog, Druck
-
-- **Jahrgang am Titel: die ISBN-Abfrage schlägt keine Spanne vor.** Nennt ein Titel mehrere
-  Jahrgänge („Klassen 7–10", „5./6. Schuljahr"), schlägt die ISBN-Abfrage nichts vor; einen
-  einzelnen („Klasse 7", „7. Schuljahr") trägt sie bei „von" und „bis" ein. Für eine Spanne
-  braucht die Antwort ein zweites Feld neben `grade` (`inventur/isbn_suche.go`, `stufeAusText`
-  in `inventur/metadaten_helfer.go`). Die Regel zum Jahrgang steht in
-  [FACHKONZEPT.md](FACHKONZEPT.md).
 
 ### 5.10 Gates und Werkzeuge
 
