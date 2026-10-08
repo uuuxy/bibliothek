@@ -89,9 +89,12 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   „1 bestellt"; die Zahl „Exemplare" im Kopf ist entfallen (entschieden und gebaut am
   07.10.2026).
 - [x] Jahrgang am Titel: Der Umbau wie in 5.5 ist freigegeben (entschieden am 08.10.2026).
-  „Klasse" entfällt, „von" und „bis" werden Auswahlfelder, ohne Eintrag gilt „unbekannt"; die
-  Klassen-Einträge des Testservers verfallen. Die Maske wird als Bild gezeigt, bevor sie
-  sichtbar wird.
+  Ohne Eintrag gilt „unbekannt", gebaut als Stufe 1. „von" und „bis" bleiben Felder zum
+  Tippen; die Auswahlfelder sind nach dem Bild vom 08.10.2026 verworfen.
+- [ ] Jahrgang am Titel, Stufe 2: Soll sie so gebaut werden? „Klasse" fällt aus der Maske,
+  und „bis" bekommt die Zahl aus „von", solange es leer ist oder dieselbe Zahl zeigt
+  (gewünscht am 08.10.2026). Vorschlag: ja. Mit der Klasse verfallen die Klassen-Einträge des
+  Testservers. (5.5)
 - [x] Auskunft: Die Protokolleinträge auf dem Blatt nennen in Worten, worum es ging (Buch,
   Grund, Betrag), ohne die Kennungen des Programms und ohne das Konto, das gebucht hat
   (entschieden am 08.10.2026). (5.19)
@@ -179,8 +182,9 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Jahrgang am Titel (5.5):** „Klasse" und „von … bis" werden eine Angabe, „unbekannt" eine
   eigene (entschieden am 24.09.2026, Bauplan freigegeben am 08.10.2026). Stufe 1 ist seit dem
   08.10.2026 gebaut: Ohne Eintrag ist der Jahrgang unbekannt, die Vorgabe 5 bis 10 gibt es
-  nicht mehr (Migration 162). Offen: Stufe 2, die Maske ohne „Klasse", zuerst als Bild; danach
-  Stufe 3, die Klasse entfällt ganz. Gebaut wird vor der Übernahme am Schulserver.
+  nicht mehr (Migration 162). Offen: die Frage unter „Bei dir", ob Stufe 2 so gebaut wird (die
+  Maske ohne „Klasse", „bis" geht mit „von" mit); danach Stufe 3, die Klasse entfällt ganz.
+  Gebaut wird vor der Übernahme am Schulserver.
 - [x] **Buchakte (5.5):** Ein bestelltes Exemplar, das nie eintraf, steht nach „Exemplar löschen"
   nicht mehr im Abgangsbuch; ausgesonderte und bestellte Exemplare heißen dort seit dem
   07.10.2026 „Ausgesondert" und „Bestellt".
@@ -353,11 +357,34 @@ Vermerk.
   der Spanne führt der Titel weiter die „Klasse" (`grade_level`). Offen sind zwei Stufen; die
   Spalte der Klasse fällt zuletzt, damit jeder Stand auf `main` zusammenpasst.
 
-  **Stufe 2, die Oberfläche.** Die Maske verliert das Feld „Klasse"; „von" und „bis" werden
-  Auswahlfelder mit „–" für keine Angabe und 5 bis 13 (M3, Menus: „Select menus"; ein
-  Schieberegler scheidet aus, M3, Sliders: „Changes made with sliders must take effect
-  immediately"). Titel-Tabelle und Klassenzuweisung zeigen die Spanne („7", „7–10", „–"). Die
-  Maske wird als Bild gezeigt, bevor sie sichtbar wird.
+  **Stufe 2, die Oberfläche.** Die Maske verliert das Feld „Klasse"; „von" und „bis" bleiben
+  Zahlenfelder und stehen in zwei Spalten wie „Fach" und „Schulzweig". Die ISBN-Abfrage trägt
+  die erkannte Stufe bei „von" und „bis" ein statt bei „Klasse" (`isbnAbfrage.svelte.js`).
+  Titel-Tabelle und Klassenzuweisung zeigen die Spanne („7", „7–10", „–"). Gebaut wird nach
+  der Antwort auf die Frage unter „Bei dir".
+
+  „bis" geht mit „von" mit (gewünscht am 08.10.2026, weil die meisten Schulbücher für ein
+  Jahr gelten): Wer 7 tippt, hat 7 bis 7. Es geht mit, solange es leer ist oder dieselbe Zahl
+  zeigt wie „von"; ein eigener Wert in „bis" bleibt stehen, und ein geleertes „von" leert ein
+  mitgegangenes „bis". Nach Tab ersetzt die getippte Zahl den Inhalt von „bis" (gemessen am
+  lokalen Stack), eine Spanne bleibt bei vier Tasten. Der Preis: Aus 7 bis 7 wird beim Ändern
+  von „von" auf 5 die Spanne 5 bis 5, wer 5 bis 7 will, tippt „bis" neu. Verworfen ist die
+  engere Regel, nur ein leeres „bis" zu füllen: Wer an 7 bis 7 die 7 auf 6 berichtigt,
+  speicherte damit 6 bis 7.
+
+  Auswahlfelder für „von" und „bis" sind nach dem Bild vom 08.10.2026 verworfen, gemessen am
+  lokalen Stack: „7 bis 10" sind im Zahlenfeld vier Tasten (7, Tab, 1, 0), im Auswahlfeld des
+  Hauses acht (zugeklappt nimmt es keine Ziffer an: Eingabetaste, 7, Eingabetaste, Tab,
+  Eingabetaste, 1, 0, Eingabetaste). Seine Liste zeigt sechs von zehn Einträgen, für 10 bis 13
+  wird gerollt. Ein leeres Zahlenfeld heißt seit Stufe 1 „unbekannt".
+
+  **Warum die Klasse entfällt.** Kein Ablauf rechnet mit ihr: Inventur nach Klasse
+  (`repository/inventur_scope.go`), Portal-Filter und Schulbuchliste
+  (`inventur/datenbank_lernmittel.go`) lesen nur die Spanne. Angezeigt wird sie in der
+  Titel-Tabelle, an der Karte der Klassenzuweisung und, ohne Spanne, im Kopf der Buchakte;
+  die Katalogsuche findet sie. Die ISBN-Abfrage schreibt die Stufe aus dem Titel in die
+  Klasse und lässt die Spanne leer, und die Maske legt jedes neue Buch mit der Klasse 5 an
+  (`leeresBuchFormular`).
 
   **Stufe 3, die Klasse entfällt.** Übernahme (`internal/littera/schreiber_bestand.go`),
   Katalog-Import (`repository/book_inventory.go`), Sammelimport
