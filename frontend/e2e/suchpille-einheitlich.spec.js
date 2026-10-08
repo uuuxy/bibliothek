@@ -101,13 +101,24 @@ const MESSEN = (/** @type {string} */ id) => {
  * Bauteil anfassen.
  */
 async function fokussiertMessen(/** @type {import('@playwright/test').Page} */ page, id) {
-	await page.focus(`#${id}`);
+	const traegtFokus = () =>
+		page.evaluate((/** @type {string} */ feldId) => document.activeElement?.id === feldId, id);
 
 	let vorher = null;
 	for (let i = 0; i < 20; i++) {
+		// Eine Messung zählt nur, wenn das Feld den Fokus davor und danach trägt. Nimmt ihn
+		// etwas auf der Seite weg, wären zwei gleiche Messungen sonst zwei Messungen ohne Fokus.
+		if (!(await traegtFokus())) {
+			await page.focus(`#${id}`);
+			vorher = null;
+		}
 		const jetzt = await page.evaluate(MESSEN, id);
-		if (vorher && JSON.stringify(vorher) === JSON.stringify(jetzt)) return jetzt;
-		vorher = jetzt;
+		if (await traegtFokus()) {
+			if (vorher && JSON.stringify(vorher) === JSON.stringify(jetzt)) return jetzt;
+			vorher = jetzt;
+		} else {
+			vorher = null;
+		}
 		await page.waitForTimeout(50);
 	}
 	return vorher;

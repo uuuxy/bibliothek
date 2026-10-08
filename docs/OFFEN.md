@@ -390,12 +390,6 @@ Vermerk.
   auf ein Merkmal des Inhalts warten (Kachel, Tabellenzeile). Dieselbe Form des Wartens steht
   in `typo-rollen.spec.js`, `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`, dort
   nicht nachgemessen. Kategorie B.
-- `e2e/suchpille-einheitlich.spec.js` war am 07.10.2026 in der CI einmal rot und in der
-  Wiederholung für denselben Commit grün (Lauf 37662472141, Commit 4b6b0311; lokal 54 von 54
-  grün): Auf der Seite „Signaturen" maß die Spec die Pille ohne Fokus, obwohl sie das Feld
-  davor fokussiert. `fokussiertMessen` wartet auf zwei gleiche Messungen und prüft nicht, ob
-  das Feld den Fokus noch trägt; was ihn dort nimmt, ist nicht gefunden. Abhilfe: nach der
-  Messung prüfen, dass das Feld `document.activeElement` ist, sonst neu fokussieren. Kategorie B.
 - 46 Specs klicken Menüpunkte per `page.getByTitle('<Name>')`, 94 Stellen (gezählt am
   06.10.2026). Das trifft jedes Element, dessen `title` den Namen enthält, auch die Kachel
   eines Buchs. `e2e/abgaenger-management.spec.js` legt Titel „Abgänger Buch …" an und räumt
