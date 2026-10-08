@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/repository"
 )
 
 // PermissionSetting holds a single role-permission flag returned by the API.
@@ -30,29 +31,16 @@ func (s *Server) GetPermissionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		query := `
-			SELECT role::text, permission, allowed 
-			FROM role_permissions 
-			ORDER BY role, permission
-		`
-		rows, err := s.DB.Pool.Query(ctx, query)
+		rechte, err := repository.ListeRollenRechte(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer rows.Close()
 
 		settings := []PermissionSetting{}
-		for rows.Next() {
-			var ps PermissionSetting
-			if err := rows.Scan(&ps.Role, &ps.Permission, &ps.Allowed); err == nil {
-				ps.Role = strings.ToLower(ps.Role) // Normalize for frontend
-				settings = append(settings, ps)
-			}
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+		for _, re := range rechte {
+			// Die Oberfläche führt die Rollen klein geschrieben.
+			settings = append(settings, PermissionSetting{Role: strings.ToLower(re.Rolle), Permission: re.Recht, Allowed: re.Erlaubt})
 		}
 
 		RespondJSON(w, http.StatusOK, settings)
@@ -99,12 +87,7 @@ func (s *Server) UpdatePermissionsHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		query := `
-			UPDATE role_permissions
-			SET allowed = $1
-			WHERE UPPER(role) = UPPER($2) AND permission = $3
-		`
-		tag, err := s.DB.Pool.Exec(ctx, query, req.Allowed, strings.ToUpper(req.Role), req.Permission)
+		getroffen, err := repository.SetzeRollenRecht(ctx, s.DB.Pool, strings.ToUpper(req.Role), req.Permission, req.Allowed)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -115,7 +98,7 @@ func (s *Server) UpdatePermissionsHandler() http.HandlerFunc {
 		// Tippfehler im Rechtenamen sah in der Oberfläche aus wie ein gesetzter Haken,
 		// blieb in der Datenbank aber wirkungslos. Genau die Bugklasse "still verworfen,
 		// trotzdem 200", die dieses Projekt schon mehrfach getroffen hat.
-		if tag.RowsAffected() == 0 {
+		if getroffen == 0 {
 			apierrors.SendHTTPError(w, http.StatusBadRequest,
 				fmt.Errorf("unbekannte Kombination aus Rolle %q und Recht %q — nichts geändert", req.Role, req.Permission))
 			return

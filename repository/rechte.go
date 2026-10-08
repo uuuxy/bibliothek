@@ -53,3 +53,48 @@ func ErlaubteRechteJeRolle(ctx context.Context, db DBQueryer) (map[string][]stri
 	}
 	return rechte, nil
 }
+
+// RollenRecht ist eine Zeile der Rechte-Matrix.
+type RollenRecht struct {
+	Rolle, Recht string
+	Erlaubt      bool
+}
+
+// ListeRollenRechte liefert die ganze Rechte-Matrix, nach Rolle und Recht geordnet.
+func ListeRollenRechte(ctx context.Context, db DBQueryer) ([]RollenRecht, error) {
+	query := `
+			SELECT role::text, permission, allowed 
+			FROM role_permissions 
+			ORDER BY role, permission
+		`
+	rows, err := db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	rechte := []RollenRecht{}
+	for rows.Next() {
+		var re RollenRecht
+		if err := rows.Scan(&re.Rolle, &re.Recht, &re.Erlaubt); err == nil {
+			rechte = append(rechte, re)
+		}
+	}
+	return rechte, rows.Err()
+}
+
+// SetzeRollenRecht erteilt oder entzieht der Rolle das Recht und nennt die Zahl der getroffenen
+// Zeilen. Null heißt: Diese Paarung aus Rolle und Recht gibt es nicht; der Aufrufer darf das
+// nicht als Erfolg melden.
+func SetzeRollenRecht(ctx context.Context, db DBQueryer, rolle, recht string, erlaubt bool) (int64, error) {
+	query := `
+			UPDATE role_permissions
+			SET allowed = $1
+			WHERE UPPER(role) = UPPER($2) AND permission = $3
+		`
+	tag, err := db.Exec(ctx, query, erlaubt, rolle, recht)
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}

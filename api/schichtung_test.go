@@ -101,7 +101,6 @@ var handlerMitSQL = map[string]int{
 	"klassen_mapping.go":                  6,
 	"labels.go":                           2,
 	"littera_import.go":                   2,
-	"lookups.go":                          2,
 	"mahnwesen_bulk_mail.go":              1,
 	"mail_settings.go":                    1,
 	"order_service.go":                    2,
@@ -119,7 +118,6 @@ var handlerMitSQL = map[string]int{
 	"student_update.go":                   12,
 	"supplier_handler.go":                 9,
 	"systematik_handler.go":               8,
-	"user_admin_permissions.go":           2,
 }
 
 func TestHandlerFormulierenKeinNeuesSQL(t *testing.T) {
