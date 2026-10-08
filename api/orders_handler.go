@@ -238,7 +238,7 @@ func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 			IPAddr:      getIP(r),
 		})
 		if err != nil {
-			if err.Error() == "keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)" {
+			if errors.Is(err, service.ErrNichtsEinzubuchen) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)
 				return
 			}

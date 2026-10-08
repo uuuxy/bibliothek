@@ -360,6 +360,12 @@ type ReceivedItem struct {
 	EtikettGedruckt bool   `json:"etikett_gedruckt"`
 }
 
+// ErrNichtsEinzubuchen meldet, dass keines der genannten Exemplare im Zulauf stand — ein
+// anderer Platz war schneller, oder die Liste ist veraltet. Die Tür antwortet mit 404. Ein
+// benannter Fehler statt eines Wortlauts: Die Tür verglich bis zum 08.10.2026 den Text der
+// Meldung, und eine Umformulierung hier hätte aus der Auskunft still einen 500 gemacht.
+var ErrNichtsEinzubuchen = errors.New("keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)")
+
 // BulkReceiveParams encapsulates the parameters needed to bulk receive orders.
 type BulkReceiveParams struct {
 	ExemplarIDs []string
@@ -402,7 +408,7 @@ func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repos
 	}
 
 	if len(items) == 0 {
-		return nil, errors.New("keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)")
+		return nil, ErrNichtsEinzubuchen
 	}
 
 	logAuditErr("wareneingang-bulk", auditRepo.LogAdminAktion(ctx, params.AdminID, "BULK_RECEIVE_ITEMS", params.IPAddr, map[string]any{
