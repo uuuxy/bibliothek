@@ -114,7 +114,7 @@
 	     dem Kollegium — ein Schüler hat kein Konto, ihm sagte der Satz nichts. -->
 	{#if kollege}
 		<div
-			class="flex items-start gap-3 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant"
+			class="flex items-start gap-3 rounded-xl border border-outline-variant px-4 py-3 text-sm text-on-surface-variant"
 		>
 			<Info class="h-5 w-5 shrink-0 text-outline" aria-hidden="true" />
 			<p>

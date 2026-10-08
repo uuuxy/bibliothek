@@ -68,7 +68,7 @@
 />
 
 <div
-	class="flex items-start gap-3 rounded-xl border border-outline-variant bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant"
+	class="flex items-start gap-3 rounded-xl border border-outline-variant px-4 py-3 text-sm text-on-surface-variant"
 >
 	<Info class="h-5 w-5 shrink-0 text-outline" aria-hidden="true" />
 	{#if mitKonto}

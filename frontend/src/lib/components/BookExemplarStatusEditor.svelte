@@ -100,7 +100,7 @@
 	}
 </script>
 
-<div class="mt-2 rounded-xl border border-outline-variant bg-surface-container-low p-3">
+<div class="mt-2 rounded-xl border border-outline-variant p-3">
 	<div class="flex items-center gap-2 mb-2">
 		<Select bind:value={editStatusType} options={STATUS} aria-label="Status des Exemplars" />
 	</div>

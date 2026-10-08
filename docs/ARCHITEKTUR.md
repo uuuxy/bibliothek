@@ -772,6 +772,10 @@ frontend/src
   Rahmen und eine Erhebung zugleich; welcher Teil weicht, entscheidet die Rolle des Bauteils
   (Dialog: Erhebung, Tabelle und umrandeter Knopf: Rahmen). Gemessen wird im Browser:
   `frontend/e2e/m3-bauform.spec.js`.
+- **Eine Karte trägt einen Rahmen oder einen Flächenton, nicht beides.** Material 3, Cards,
+  Specs: die umrandete Karte „Surface" mit „Outline variant", die gefüllte „Surface container
+  highest" ohne Rahmen, die erhöhte „Surface container low" mit Schatten. Im Haus ist die
+  Karte umrandet und zeigt die Fläche der Seite; ihre Ecke ist 12 px (`rounded-xl`).
 - **Ein Knopf ohne Fläche steht in der Hauptfarbe; trägt er nur ein Symbol, nicht.**
   Material 3, Buttons: „since there's no container, the label text color must always be
   recognizable from non-button text and elements" (Specs: „Text icon & label: Primary");

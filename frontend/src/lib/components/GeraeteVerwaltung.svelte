@@ -101,7 +101,7 @@
 	</div>
 
 	{#if formOffen}
-		<div class="rounded-2xl border border-outline-variant bg-surface-container-low p-4">
+		<div class="rounded-xl border border-outline-variant p-4">
 			<div class="grid gap-3 sm:grid-cols-2">
 				<Feld label="Modellname *" bind:value={form.modellname} placeholder="z. B. iPad 9. Gen" />
 				<Feld label="Barcode (G-…) *" bind:value={form.barcode_id} disabled={bearbeiteId != null} />
