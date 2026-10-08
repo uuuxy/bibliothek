@@ -216,9 +216,12 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 		if n := eintraege(t, "LIEFERANT_GELOESCHT"); n != 0 {
 			t.Errorf("%d Einträge zu einem abgelehnten Löschen", n)
 		}
-		erwarte(t, rufe(t, http.MethodPut, "/api/lieferanten/"+angelegt.ID,
-			`{"name":"Buchhandlung Protokoll 2","email":"neu-`+adresseHaendler+`","customerNumber":"K-2"}`),
+		// Abgewählt wird ausdrücklich: Ein Rumpf ohne das Merkmal lässt es stehen.
+		erwarte(t, rufe(t, http.MethodPut, "/api/lieferanten/"+angelegt.ID, `{"ist_hauptlieferant":false}`),
 			http.StatusOK, "Hauptlieferant abwählen")
+		if d := letzter(t, "LIEFERANT_GEAENDERT"); fmtFelder(d["felder"]) != "hauptlieferant" {
+			t.Errorf("Eintrag nach dem Abwählen: %v", d)
+		}
 		erwarte(t, rufe(t, http.MethodDelete, "/api/lieferanten/"+angelegt.ID, ""), http.StatusNoContent, "löschen")
 		if d := letzter(t, "LIEFERANT_GELOESCHT"); d["lieferant_id"] != angelegt.ID || d["name"] != "Buchhandlung Protokoll 2" {
 			t.Errorf("Eintrag nach dem Löschen: %v", d)

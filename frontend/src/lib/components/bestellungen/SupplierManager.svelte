@@ -27,17 +27,10 @@
 		newIstHaupt = false;
 	}
 
-	/** @param {{ name: string, email: string, customerNumber: string, istHauptlieferant: boolean, kundennummerSchultraeger: string }} w */
-	async function saveEdit(w) {
+	/** @param {Record<string, any>} aenderung die seit dem Öffnen geänderten Felder */
+	async function saveEdit(aenderung) {
 		if (!editingId) return;
-		await onEditSupplier(
-			editingId,
-			w.name,
-			w.email,
-			w.customerNumber,
-			w.istHauptlieferant,
-			w.kundennummerSchultraeger
-		);
+		await onEditSupplier(editingId, aenderung);
 		editingId = null;
 	}
 </script>

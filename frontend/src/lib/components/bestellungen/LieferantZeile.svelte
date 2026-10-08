@@ -12,6 +12,7 @@
 	import Switch from '../ui/Switch.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import { untrack } from 'svelte';
+	import { lieferantStand, lieferantAenderung } from '../../lieferantFormular.js';
 
 	/**
 	 * @type {{
@@ -19,7 +20,7 @@
 	 *   bearbeiten: boolean,
 	 *   onEdit: (s: any) => void,
 	 *   onRemove: (id: string) => void,
-	 *   onSave: (werte: { name: string, email: string, customerNumber: string, istHauptlieferant: boolean, kundennummerSchultraeger: string }) => Promise<void>,
+	 *   onSave: (aenderung: Record<string, any>) => Promise<void>,
 	 *   onCancel: () => void
 	 * }}
 	 */
@@ -31,11 +32,16 @@
 	// zweite Kundennummer. Bewusst der Anfangswert (untrack): SupplierManager hängt die
 	// Zeile beim Wechsel in den Bearbeiten-Zustand neu ein ({#key}); ein Formular, das
 	// dem Prop weiter folgt, verlöre die Eingabe beim nächsten Nachladen der Liste.
-	let editName = $state(untrack(() => s.name));
-	let editEmail = $state(untrack(() => s.email));
-	let editCustNum = $state(untrack(() => s.customerNumber));
-	let editCustNumSchultraeger = $state(untrack(() => s.kundennummer_schultraeger ?? ''));
-	let editIstHaupt = $state(untrack(() => s.ist_hauptlieferant ?? false));
+	//
+	// Gespeichert wird nur, was sich seit diesem Stand geändert hat (lieferantFormular.js): Die
+	// Liste kann älter sein als der Lieferant, und das Merkmal Hauptlieferant ginge sonst aus
+	// ihr zurück, auch wenn es inzwischen ein anderer Händler trägt.
+	const geladen = untrack(() => lieferantStand(s));
+	let editName = $state(geladen.name);
+	let editEmail = $state(geladen.email);
+	let editCustNum = $state(geladen.customerNumber);
+	let editCustNumSchultraeger = $state(geladen.kundennummer_schultraeger);
+	let editIstHaupt = $state(geladen.ist_hauptlieferant);
 </script>
 
 {#if bearbeiten}
@@ -56,13 +62,15 @@
 		<td class="text-right whitespace-nowrap">
 			<button
 				onclick={() =>
-					onSave({
-						name: editName,
-						email: editEmail,
-						customerNumber: editCustNum,
-						istHauptlieferant: editIstHaupt,
-						kundennummerSchultraeger: editCustNumSchultraeger
-					})}
+					onSave(
+						lieferantAenderung(geladen, {
+							name: editName,
+							email: editEmail,
+							customerNumber: editCustNum,
+							ist_hauptlieferant: editIstHaupt,
+							kundennummer_schultraeger: editCustNumSchultraeger
+						})
+					)}
 				aria-label="Änderungen für Lieferant {s.name} speichern"
 				class="text-primary font-bold cursor-pointer text-sm mr-3">Speichern</button
 			>

@@ -263,23 +263,14 @@ class OrderStore {
 		}
 	}
 
-	/** @param {string} id @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [istHauptlieferant] @param {string} [kundennummerSchultraeger] */
-	async editSupplier(
-		id,
-		name,
-		email,
-		customerNumber,
-		istHauptlieferant = false,
-		kundennummerSchultraeger = ''
-	) {
+	/**
+	 * Schickt die geänderten Felder eines Lieferanten (lieferantFormular.js). Der Server schreibt
+	 * nur, was der Rumpf nennt.
+	 * @param {string} id @param {Record<string, any>} aenderung
+	 */
+	async editSupplier(id, aenderung) {
 		try {
-			await apiPut(`/api/lieferanten/${id}`, {
-				name,
-				email,
-				customerNumber,
-				ist_hauptlieferant: istHauptlieferant,
-				kundennummer_schultraeger: kundennummerSchultraeger
-			});
+			await apiPut(`/api/lieferanten/${id}`, aenderung);
 			await this.loadSuppliers();
 			toastStore.addToast('Lieferant aktualisiert.', 'success');
 		} catch {

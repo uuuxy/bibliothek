@@ -11,6 +11,7 @@ import (
 	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // SupplierResponse represents the supplier data sent to the client.
@@ -60,14 +61,17 @@ func kundennummerSchultraeger(req CreateSupplierRequest) string {
 	return strings.TrimSpace(*req.KundennummerSchultraeger)
 }
 
-// kundennummerSchultraegerOderNil liefert nil, wenn das Feld in der Anfrage fehlt — das
-// COALESCE im UPDATE lässt die hinterlegte Nummer dann unangetastet.
-func kundennummerSchultraegerOderNil(req CreateSupplierRequest) *string {
-	if req.KundennummerSchultraeger == nil {
-		return nil
-	}
-	getrimmt := strings.TrimSpace(*req.KundennummerSchultraeger)
-	return &getrimmt
+// UpdateSupplierRequest nennt, was an einem Lieferanten geändert wird. Ein fehlendes Feld
+// bleibt, wie es ist: Die Maske schickt nur, was sie seit dem Öffnen geändert hat, damit sie
+// nichts überschreibt, was ein anderer Platz inzwischen gespeichert hat — auch nicht das
+// Merkmal Hauptlieferant. Ein unbekanntes Feld lehnt die Tür ab. Eine leere zweite
+// Kundennummer heißt „dieselbe wie die erste".
+type UpdateSupplierRequest struct {
+	Name                     *string `json:"name"`
+	Email                    *string `json:"email"`
+	CustomerNumber           *string `json:"customerNumber"`
+	IstHauptlieferant        *bool   `json:"ist_hauptlieferant"`
+	KundennummerSchultraeger *string `json:"kundennummer_schultraeger"`
 }
 
 // setzeHauptlieferant macht genau einen Lieferanten zum Hauptlieferanten und nimmt das
@@ -88,16 +92,25 @@ func setzeHauptlieferant(ctx context.Context, pool db.PgxPoolIface, id string) e
 		return err
 	}
 	defer db.SafeRollback(ctx, tx)
-
-	if _, err := tx.Exec(ctx,
-		`UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant AND id <> $1`, id); err != nil {
-		return err
-	}
-	if _, err := tx.Exec(ctx,
-		`UPDATE lieferanten SET ist_hauptlieferant = true WHERE id = $1`, id); err != nil {
+	if _, err := setzeHauptlieferantIn(ctx, tx, id); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
+}
+
+// setzeHauptlieferantIn ist der Setzer in einer laufenden Transaktion. geaendert sagt, ob der
+// Lieferant das Merkmal vorher nicht trug.
+func setzeHauptlieferantIn(ctx context.Context, tx pgx.Tx, id string) (geaendert bool, err error) {
+	if _, err := tx.Exec(ctx,
+		`UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant AND id <> $1`, id); err != nil {
+		return false, err
+	}
+	tag, err := tx.Exec(ctx,
+		`UPDATE lieferanten SET ist_hauptlieferant = true WHERE id = $1 AND NOT ist_hauptlieferant`, id)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
 }
 
 // ListSuppliersHandler returns a list of all suppliers.
@@ -201,40 +214,24 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req CreateSupplierRequest
-	if !DecodeAndValidate(w, r, &req) {
+	var req UpdateSupplierRequest
+	// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
+	if !DecodeStrictAndValidate(w, r, &req) {
 		return
 	}
-	if req.Name == "" || req.Email == "" || req.CustomerNumber == "" {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("name, email and customerNumber are required"))
-		return
+	for _, wert := range []*string{req.Name, req.Email, req.CustomerNumber} {
+		if wert != nil && *wert == "" {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("name, email and customerNumber must not be empty"))
+			return
+		}
+	}
+	if req.KundennummerSchultraeger != nil {
+		getrimmt := strings.TrimSpace(*req.KundennummerSchultraeger)
+		req.KundennummerSchultraeger = &getrimmt
 	}
 
 	ctx := r.Context()
-	// COALESCE mit einem Zeiger-Parameter: Fehlt das Feld in der Anfrage (nil → SQL NULL),
-	// bleibt die hinterlegte Nummer stehen; ein leerer String löscht sie ausdrücklich.
-	//
-	// RETURNING statt Exec + RowsAffected, damit die Antwort den GESPEICHERTEN Stand nennt
-	// und nicht die Eingabe zurückspiegelt — sonst meldete sie eine leere zweite
-	// Kundennummer, während in der Datenbank die alte steht.
-	//
-	// Der Stand davor (alt) sagt dem Protokoll, welche Felder sich geändert haben.
-	var gespeicherteZweitnummer string
-	var alt lieferantStand
-	err := s.DB.Pool.QueryRow(ctx, `
-		WITH alt AS (
-			SELECT name, email, kundennummer, kundennummer_schultraeger, ist_hauptlieferant
-			  FROM lieferanten WHERE id = $4 FOR UPDATE
-		)
-		UPDATE lieferanten l
-		   SET name = $1, email = $2, kundennummer = $3,
-		       kundennummer_schultraeger = COALESCE($5, l.kundennummer_schultraeger)
-		  FROM alt
-		 WHERE l.id = $4
-		RETURNING l.kundennummer_schultraeger,
-		          alt.name, alt.email, alt.kundennummer, alt.kundennummer_schultraeger, alt.ist_hauptlieferant`,
-		req.Name, req.Email, req.CustomerNumber, id, kundennummerSchultraegerOderNil(req),
-	).Scan(&gespeicherteZweitnummer, &alt.name, &alt.email, &alt.kundennummer, &alt.zweitnummer, &alt.haupt)
+	alt, neu, err := s.aendereLieferant(ctx, id, req)
 	if errors.Is(err, pgx.ErrNoRows) {
 		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
 		return
@@ -244,55 +241,86 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	felder := geaenderteFelder(
-		feldWechsel{"name", alt.name != req.Name},
-		feldWechsel{"email", alt.email != req.Email},
-		feldWechsel{"kundennummer", alt.kundennummer != req.CustomerNumber},
-		feldWechsel{"kundennummer_schultraeger", alt.zweitnummer != gespeicherteZweitnummer},
-	)
-	eintrag := map[string]any{"lieferant_id": id, "name": req.Name}
+	s.protokolliereGeaenderteFelder(ctx, auditLieferantGeaendert,
+		map[string]any{"lieferant_id": id, "name": neu.name},
+		geaenderteFelder(
+			feldWechsel{"name", alt.name != neu.name},
+			feldWechsel{"email", alt.email != neu.email},
+			feldWechsel{"kundennummer", alt.kundennummer != neu.kundennummer},
+			feldWechsel{"kundennummer_schultraeger", alt.zweitnummer != neu.zweitnummer},
+			feldWechsel{"hauptlieferant", alt.haupt != neu.haupt},
+		))
 
-	// Das Merkmal steht bewusst NICHT im UPDATE oben: Trägt es schon ein anderer, bräche
-	// der Teil-Index das ganze UPDATE ab — und damit auch die Korrektur einer E-Mail.
-	// Erst die Stammdaten, dann das Merkmal über den Setzer, der vorher räumt.
-	//
-	// Abschalten ist erlaubt: „Kein Hauptlieferant" ist ein normaler Zustand — wer
-	// aufhört, über Naacher zu bestellen, muss ihn loswerden können, ohne ihn erst
-	// jemand anderem zu geben. Der Aufrufer schickt beim Bearbeiten immer den aktuellen
-	// Stand mit (startEdit liest ihn aus der Zeile), ein versehentliches Abschalten beim
-	// Korrigieren der E-Mail ist damit ausgeschlossen.
-	if err := s.schreibeHauptlieferant(ctx, id, req.IstHauptlieferant); err != nil {
-		// Die Stammdaten sind geschrieben: Der Eintrag nennt, was sich daran geändert hat.
-		s.protokolliereGeaenderteFelder(ctx, auditLieferantGeaendert, eintrag, felder)
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return
-	}
-	felder = append(felder, geaenderteFelder(feldWechsel{"hauptlieferant", alt.haupt != req.IstHauptlieferant})...)
-	s.protokolliereGeaenderteFelder(ctx, auditLieferantGeaendert, eintrag, felder)
-
+	// Die Antwort nennt den gespeicherten Stand, nicht die Eingabe.
 	RespondJSON(w, http.StatusOK, SupplierResponse{
 		ID:                       id,
-		Name:                     req.Name,
-		Email:                    req.Email,
-		CustomerNumber:           req.CustomerNumber,
-		IstHauptlieferant:        req.IstHauptlieferant,
-		KundennummerSchultraeger: gespeicherteZweitnummer,
+		Name:                     neu.name,
+		Email:                    neu.email,
+		CustomerNumber:           neu.kundennummer,
+		IstHauptlieferant:        neu.haupt,
+		KundennummerSchultraeger: neu.zweitnummer,
 	})
 }
 
-// lieferantStand sind die Stammdaten eines Lieferanten vor einer Änderung.
+// lieferantStand sind die Stammdaten eines Lieferanten vor oder nach einer Änderung.
 type lieferantStand struct {
 	name, email, kundennummer, zweitnummer string
 	haupt                                  bool
 }
 
-// schreibeHauptlieferant gibt dem Lieferanten das Merkmal oder nimmt es ihm.
-func (s *Server) schreibeHauptlieferant(ctx context.Context, id string, soll bool) error {
-	if soll {
-		return setzeHauptlieferant(ctx, s.DB.Pool, id)
+// aendereLieferant schreibt Merkmal und Stammdaten in einer Transaktion und liefert den Stand
+// davor und danach. Bis zum 08.10.2026 waren es zwei Schritte: Scheiterte das Merkmal, waren
+// die Stammdaten schon geschrieben.
+//
+// Zuerst das Merkmal, dann die Stammdaten: Der Setzer sperrt den bisherigen Hauptlieferanten
+// vor der eigenen Zeile, wie beim Anlegen. Ein unbekannter Lieferant ist pgx.ErrNoRows; was der
+// Setzer bis dahin geräumt hat, rollt mit zurück.
+func (s *Server) aendereLieferant(ctx context.Context, id string, req UpdateSupplierRequest) (alt, neu lieferantStand, err error) {
+	tx, err := s.DB.Pool.Begin(ctx)
+	if err != nil {
+		return alt, neu, err
 	}
-	_, err := s.DB.Pool.Exec(ctx, `UPDATE lieferanten SET ist_hauptlieferant = false WHERE id = $1`, id)
-	return err
+	defer db.SafeRollback(ctx, tx)
+
+	merkmalGeaendert := false
+	if req.IstHauptlieferant != nil {
+		if *req.IstHauptlieferant {
+			merkmalGeaendert, err = setzeHauptlieferantIn(ctx, tx, id)
+		} else {
+			// Abschalten ist erlaubt: „Kein Hauptlieferant" ist ein normaler Zustand.
+			var tag pgconn.CommandTag
+			tag, err = tx.Exec(ctx,
+				`UPDATE lieferanten SET ist_hauptlieferant = false WHERE id = $1 AND ist_hauptlieferant`, id)
+			merkmalGeaendert = err == nil && tag.RowsAffected() == 1
+		}
+		if err != nil {
+			return alt, neu, err
+		}
+	}
+
+	// COALESCE mit Zeiger-Parametern: Ein fehlendes Feld (nil → SQL NULL) behält seinen Wert.
+	// RETURNING nennt den gespeicherten Stand und, aus der gesperrten Zeile davor, den alten.
+	err = tx.QueryRow(ctx, `
+		WITH alt AS (
+			SELECT name, email, kundennummer, kundennummer_schultraeger
+			  FROM lieferanten WHERE id = $4 FOR UPDATE
+		)
+		UPDATE lieferanten l
+		   SET name = COALESCE($1, l.name), email = COALESCE($2, l.email),
+		       kundennummer = COALESCE($3, l.kundennummer),
+		       kundennummer_schultraeger = COALESCE($5, l.kundennummer_schultraeger)
+		  FROM alt
+		 WHERE l.id = $4
+		RETURNING l.name, l.email, l.kundennummer, l.kundennummer_schultraeger, l.ist_hauptlieferant,
+		          alt.name, alt.email, alt.kundennummer, alt.kundennummer_schultraeger`,
+		req.Name, req.Email, req.CustomerNumber, id, req.KundennummerSchultraeger,
+	).Scan(&neu.name, &neu.email, &neu.kundennummer, &neu.zweitnummer, &neu.haupt,
+		&alt.name, &alt.email, &alt.kundennummer, &alt.zweitnummer)
+	if err != nil {
+		return alt, neu, err
+	}
+	alt.haupt = neu.haupt != merkmalGeaendert
+	return alt, neu, tx.Commit(ctx)
 }
 
 // DeleteSupplierHandler removes a supplier.

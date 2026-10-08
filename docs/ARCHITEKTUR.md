@@ -3041,7 +3041,7 @@ Gewicht.
 
 #### Leserakte und Titel verwerfen unbekannte Felder still
 
-Die Türen für Benutzer, Gerät und Einstellungen lehnen ein Feld ab, das sie nicht kennen
+Die Türen für Benutzer, Gerät, Lieferant und Einstellungen lehnen ein Feld ab, das sie nicht kennen
 (`DecodeStrictAndValidate`). `PATCH /api/schueler/{id}` und `PUT /api/books/{id}` verwerfen es
 still: Steht ein vertippter Name neben einem richtigen, wird der richtige gespeichert, und der
 andere fällt ohne Meldung. Die Leserakte lehnt nur einen Rumpf ab, der gar kein bekanntes Feld

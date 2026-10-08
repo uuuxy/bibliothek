@@ -49,13 +49,13 @@ var phantomBestand = map[string]int{
 	"api/student_promotion.go:finalisiereSchuljahreswechsel":  1,
 	"api/student_promotion.go:fuehreSchuljahreswechselAus":    1,
 	"api/student_promotion.go:versetzeKlassenlehrerZuordnung": 2,
-	"api/supplier_handler.go:schreibeHauptlieferant":          1,
-	"api/supplier_handler.go:setzeHauptlieferant":             2,
-	"api/systematik_handler.go:DeleteSystematikHandler":       1,
-	"api/systematik_handler.go:handleUpdateSystematik":        2,
-	"auth/blacklist.go:Add":                                   1,
-	"auth/blacklist.go:cleanup":                               1,
-	"auth/selbstanmeldung.go:legeZugangsanfrageAn":            1,
+	// Räumt den bisherigen Hauptlieferanten; null Zeilen heißt, es gab keinen.
+	"api/supplier_handler.go:setzeHauptlieferantIn":     1,
+	"api/systematik_handler.go:DeleteSystematikHandler": 1,
+	"api/systematik_handler.go:handleUpdateSystematik":  2,
+	"auth/blacklist.go:Add":                             1,
+	"auth/blacklist.go:cleanup":                         1,
+	"auth/selbstanmeldung.go:legeZugangsanfrageAn":      1,
 	// sitzungen (Migration 155): 0 Zeilen heißt jedes Mal „die Zeile der Anmeldung gibt es
 	// nicht (mehr)" — dann ist nichts gesperrt, kein Prüfwert zu halten, nichts zu löschen.
 	// Wo die Zahl etwas entscheidet (Sperre, Verlaengere), wird sie gelesen.

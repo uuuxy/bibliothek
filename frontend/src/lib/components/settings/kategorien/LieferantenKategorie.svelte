@@ -31,22 +31,7 @@
 				istHauptlieferant,
 				kundennummerSchultraeger
 			)}
-		onEditSupplier={(
-			id,
-			name,
-			email,
-			customerNumber,
-			istHauptlieferant,
-			kundennummerSchultraeger
-		) =>
-			orderStore.editSupplier(
-				id,
-				name,
-				email,
-				customerNumber,
-				istHauptlieferant,
-				kundennummerSchultraeger
-			)}
+		onEditSupplier={(id, aenderung) => orderStore.editSupplier(id, aenderung)}
 		onRemoveSupplier={(id) => orderStore.removeSupplier(id)}
 	/>
 </KategorieRahmen>
