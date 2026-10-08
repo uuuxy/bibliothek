@@ -71,7 +71,7 @@
 			platzhalter="Titel, Autor oder ISBN …"
 			etikett="Titel suchen & hinzufügen"
 		/>
-		{#if orderStore.showDropdown && (localResults.length > 0 || dnbResults.length > 0)}
+		{#if orderStore.showDropdown && (orderStore.searchResults.length > 0 || orderStore.dnbAusfall)}
 			<!-- M3 Lists: Titel in on-surface, Autor und ISBN sowie die Angabe rechts („trailing
 			     text") in on-surface-variant, keine Trennlinien zwischen den Zeilen. Das Cover
 			     kommt aus ui/BuchCover — mit dessen Platzhalter, wenn keine Quelle ein Bild hat.
@@ -79,6 +79,14 @@
 			<div
 				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl max-h-72 overflow-y-auto"
 			>
+				{#if orderStore.dnbAusfall}
+					<!-- Ohne die Zeile sähe ein Buch, das die DNB kennt, aus wie eines, das sie nicht
+					     kennt. Sie steht oben: Unter vielen Treffern aus dem Bestand läse sie niemand.
+					     Der Wortlaut ist der des Schlagwort-Vorschlags aus der DNB. -->
+					<p class="px-3.5 py-2.5 text-sm text-error" role="alert">
+						Die DNB ist nicht erreichbar — bitte später erneut versuchen.
+					</p>
+				{/if}
 				{#if localResults.length > 0}
 					<div
 						class="bg-surface-container px-3.5 py-2 text-xs font-medium text-on-surface-variant sticky top-0 z-5"

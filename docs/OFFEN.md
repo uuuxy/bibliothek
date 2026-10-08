@@ -175,8 +175,8 @@ der Nummer nichts mehr dazu offen ist.
   die Excel-Bibliothek auf einem unveröffentlichten Stand.
 - [x] **Ausweis aus der Leserakte (5.5):** Lässt sich das Ausweis-Design nicht laden, drucken
   Leserakte und Leserdatei seit dem 08.10.2026 nicht und sagen es beim Druck.
-- [ ] **Bestellsuche (5.5):** Antwortet die DNB nicht, zeigt die Suche nur die Treffer aus dem
-  eigenen Katalog, ohne es zu sagen.
+- [x] **Bestellsuche (5.5):** Antwortet die DNB nicht, steht es seit dem 08.10.2026 oben in der
+  Trefferliste, auch ohne Treffer aus dem eigenen Katalog.
 - [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
   ihren Helfern, die Regel „überfällig" ebenso; eine Ratsche hält die ersten beiden fest.
 - [x] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Am Titel, am Leser, am Benutzer,
@@ -376,15 +376,6 @@ Vermerk.
   `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE bestellstatus IS NULL AND NOT ist_ausgesondert) AS im_bestand, count(*) FILTER (WHERE ist_ausgesondert) AS ausgesondert, count(*) FILTER (WHERE bestellstatus IS NOT NULL AND NOT ist_ausgesondert) AS im_zulauf FROM buecher_exemplare WHERE zugang_am IS NULL;"`
   Erwartet: „im_bestand" 0. „ausgesondert" sind bestellte Exemplare, die nie eintrafen und
   ausgebucht wurden; sie stehen in keinem der beiden Bücher und nicht in der Statistik.
-- **Bestellsuche ohne Hinweis, wenn die DNB nicht antwortet** (gefunden am 08.10.2026 beim
-  Test der Tür, `api/bestellsuche_pg_test.go`). `POST /api/bestellungen/suche` liefert bei
-  einem Ausfall der DNB die Treffer aus dem eigenen Katalog und sonst nichts
-  (`searchDNBOrders` in `internal/service/order_service.go` gibt bei einem Fehler eine leere
-  Liste zurück); die Oberfläche (`orderStore`) öffnet bei null Treffern keine Liste. Ein Buch,
-  das die DNB kennt, sieht dann aus wie eines, das sie nicht kennt. Für die drei
-  ISBN-Abfragen ist dieser Fall am 31.08.2026 entschieden (502 „Katalogdienste nicht
-  erreichbar", [sweeps.md](sweeps.md)); die Bestellsuche war nicht dabei. Abhilfe: die Antwort
-  um ein Merkmal „DNB nicht erreichbar" ergänzen und es an der Trefferliste zeigen. Kategorie B.
 
 ### 5.10 Gates und Werkzeuge
 

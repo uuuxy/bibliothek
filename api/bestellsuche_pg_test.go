@@ -55,12 +55,15 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 		dnbSatz(isbn10, "Bestellsuche Probeband") + dnbSatz("9789991940045", "Ein anderes Buch") +
 		`</records></searchRetrieveResponse>`
 
+	// ausfall ist der Kopf der jüngsten Antwort, mit dem die Tür einen Ausfall der DNB nennt.
+	var ausfall string
 	suche := func(t *testing.T, dnb http.RoundTripper, rumpf string) (int, []service.OrderSearchItem, string) {
 		t.Helper()
 		client := inventur.NeuerMetadatenClient()
 		client.SetzeHTTPClientFuerTest(&http.Client{Transport: dnb})
 		rec := httptest.NewRecorder()
 		srv.sucheBestellung(client)(rec, httptest.NewRequest(http.MethodPost, "/api/bestellungen/suche", strings.NewReader(rumpf)))
+		ausfall = rec.Header().Get(dnbAusfallKopf)
 		var treffer []service.OrderSearchItem
 		if rec.Code == http.StatusOK {
 			if err := json.Unmarshal(rec.Body.Bytes(), &treffer); err != nil {
@@ -94,6 +97,9 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 		if !lokal[0].IstLernmittel {
 			t.Error("der Treffer trägt das Merkmal Lernmittel nicht; daran hängt der Vorschlag für den Topf")
 		}
+		if ausfall != "" {
+			t.Errorf("die DNB hat geantwortet, die Antwort nennt einen Ausfall (%s: %q)", dnbAusfallKopf, ausfall)
+		}
 	})
 
 	// Die DNB nennt ältere Bücher zehnstellig und mit Bindestrichen. Fehlt die Markierung,
@@ -119,8 +125,10 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 		}
 	})
 
-	// Ein Ausfall der DNB nimmt der Suche nicht die Treffer aus dem eigenen Katalog.
-	t.Run("DNB nicht erreichbar: die Treffer aus dem Katalog kommen trotzdem", func(t *testing.T) {
+	// Ein Ausfall der DNB nimmt der Suche nicht die Treffer aus dem eigenen Katalog, und die
+	// Antwort nennt ihn: Ein Buch, das die DNB kennt, sähe sonst aus wie eines, das sie nicht
+	// kennt.
+	t.Run("DNB nicht erreichbar: die Treffer aus dem Katalog kommen trotzdem, die Antwort nennt den Ausfall", func(t *testing.T) {
 		code, treffer, rumpf := suche(t, dnbAttrappe{status: http.StatusServiceUnavailable}, `{"query":"Probeband"}`)
 		if code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200: %s", code, rumpf)
@@ -130,6 +138,31 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 		}
 		if dnb := aus(treffer, "dnb"); len(dnb) != 0 {
 			t.Errorf("%d Treffer der DNB bei einem Ausfall", len(dnb))
+		}
+		if ausfall != "1" {
+			t.Errorf("%s = %q, erwartet 1", dnbAusfallKopf, ausfall)
+		}
+	})
+
+	// Ohne Treffer im Katalog bliebe von einem Ausfall sonst nur eine leere Liste.
+	t.Run("DNB nicht erreichbar, kein Treffer im Katalog: leere Liste mit dem Ausfall im Kopf", func(t *testing.T) {
+		code, treffer, rumpf := suche(t, dnbAttrappe{status: http.StatusBadGateway}, `{"query":"gibtesnichtimkatalog"}`)
+		if code != http.StatusOK || len(treffer) != 0 {
+			t.Fatalf("Status %d mit %d Treffern, erwartet 200 und keinen: %s", code, len(treffer), rumpf)
+		}
+		if ausfall != "1" {
+			t.Errorf("%s = %q, erwartet 1", dnbAusfallKopf, ausfall)
+		}
+	})
+
+	t.Run("die DNB antwortet ohne Treffer: kein Ausfall", func(t *testing.T) {
+		leer := `<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><numberOfRecords>0</numberOfRecords></searchRetrieveResponse>`
+		code, treffer, rumpf := suche(t, dnbAttrappe{satz: leer}, `{"query":"gibtesnichtimkatalog"}`)
+		if code != http.StatusOK || len(treffer) != 0 {
+			t.Fatalf("Status %d mit %d Treffern, erwartet 200 und keinen: %s", code, len(treffer), rumpf)
+		}
+		if ausfall != "" {
+			t.Errorf("%s = %q bei einer Antwort ohne Treffer", dnbAusfallKopf, ausfall)
 		}
 	})
 

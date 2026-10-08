@@ -596,6 +596,9 @@ der Liste.
 
 Über _Titel suchen & hinzufügen_ kommen auch Titel dazu, die es noch nicht gibt; vor dem
 Warenkorb steht ein Fenster mit Signatur, Schlagworten, der Frage „Lernmittel?" und der Menge.
+Die Suche fragt den eigenen Bestand und die DNB. Antwortet die DNB nicht, steht oben in der
+Trefferliste _Die DNB ist nicht erreichbar — bitte später erneut versuchen_; die Liste zeigt
+dann nur den eigenen Bestand, und ein Titel, der darin fehlt, kann der DNB trotzdem bekannt sein.
 Entsteht der Titel dabei neu aus der DNB, stehen unter den Schlagworten die Wörter, die der
 DNB-Satz nennt und die es unter _Einstellungen → Schlagworte_ schon gibt (auch über einen
 Verweis), als _Vorschläge aus der DNB_: Ein Klick übernimmt eines; eingetragen wird nur, was

@@ -80,9 +80,12 @@ func TestSearchOrders_ReturnsCombinedResults(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"isbn_normalform"}).
 			AddRow("9780987654321"))
 
-	results, err := SearchOrders(ctx, mock, metaClient, "TestBook")
+	results, dnbAusfall, err := SearchOrders(ctx, mock, metaClient, "TestBook")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if dnbAusfall {
+		t.Error("die DNB hat geantwortet, die Suche meldet einen Ausfall")
 	}
 
 	if len(results) != 2 {
@@ -130,9 +133,13 @@ func TestSearchOrders_LocalOnlyWhenDNBFails(t *testing.T) {
 	metaClient := inventur.NeuerMetadatenClient()
 	metaClient.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTransport})
 
-	results, err := SearchOrders(ctx, mock, metaClient, "TestBook")
+	results, dnbAusfall, err := SearchOrders(ctx, mock, metaClient, "TestBook")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	// Ohne das Merkmal sähe ein Buch, das die DNB kennt, aus wie eines, das sie nicht kennt.
+	if !dnbAusfall {
+		t.Error("die DNB hat nicht geantwortet, die Suche meldet keinen Ausfall")
 	}
 
 	if len(results) != 1 {
@@ -199,9 +206,12 @@ func TestSearchOrders_DNBOnlyWhenLocalFails(t *testing.T) {
 		WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"isbn_normalform"}))
 
-	results, err := SearchOrders(ctx, mock, metaClient, "TestBook")
+	results, dnbAusfall, err := SearchOrders(ctx, mock, metaClient, "TestBook")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+	if dnbAusfall {
+		t.Error("die DNB hat geantwortet, die Suche meldet einen Ausfall")
 	}
 
 	if len(results) != 1 {

@@ -215,11 +215,13 @@ type OrderSearchItem struct {
 	IstLernmittel bool `json:"ist_lernmittel"`
 }
 
-// SearchOrders searches local DB and DNB for book orders.
-func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventur.MetadatenClient, query string) ([]OrderSearchItem, error) {
-	results := searchLocalOrders(ctx, pool, query)
-	results = append(results, searchDNBOrders(ctx, pool, metaClient, query)...)
-	return results, nil
+// SearchOrders sucht einen Titel zum Bestellen im eigenen Katalog und bei der DNB. dnbAusfall
+// sagt, dass die DNB nicht geantwortet hat: Die Liste trägt dann nur den eigenen Katalog, und
+// ein Buch, das die DNB kennt, sähe ohne das Merkmal aus wie eines, das sie nicht kennt.
+func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventur.MetadatenClient, query string) (treffer []OrderSearchItem, dnbAusfall bool, err error) {
+	treffer = searchLocalOrders(ctx, pool, query)
+	vonDNB, dnbAusfall := searchDNBOrders(ctx, pool, metaClient, query)
+	return append(treffer, vonDNB...), dnbAusfall, nil
 }
 
 // searchLocalOrders durchsucht den lokalen Bestand (Volltext + ILIKE-Fallbacks).
@@ -276,11 +278,13 @@ func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) 
 }
 
 // searchDNBOrders fragt die DNB nach Titeln und markiert bereits lokal vorhandene ISBNs.
-// Bei einem DNB-Fehler wird nil geliefert (best-effort).
-func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventur.MetadatenClient, query string) []OrderSearchItem {
+// Jeder Fehler der Abfrage ist ein Ausfall: Eine Suche ohne Treffer beantwortet die DNB mit
+// einer leeren Liste, nicht mit einem Fehler.
+func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventur.MetadatenClient, query string) (treffer []OrderSearchItem, ausfall bool) {
 	dnbResults, errDNB := metaClient.SucheTextDNB(ctx, query)
 	if errDNB != nil {
-		return nil
+		log.Printf("bestellsuche: die DNB hat nicht geantwortet: %v", errDNB)
+		return nil, true
 	}
 
 	var isbns []string
@@ -292,11 +296,10 @@ func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inve
 
 	existingISBNs := sammleExistierendeISBNs(ctx, pool, isbns)
 
-	var results []OrderSearchItem
 	for _, dr := range dnbResults {
-		results = append(results, baueDNBSuchItem(dr, existingISBNs))
+		treffer = append(treffer, baueDNBSuchItem(dr, existingISBNs))
 	}
-	return results
+	return treffer, false
 }
 
 // sammleExistierendeISBNs fragt in einer Abfrage, welche der ISBNs schon ein Titel trägt, und

@@ -3,7 +3,15 @@
 // Zulauf und Bestellbedarf. Die Views (BestellWorkspace & Kinder) bleiben rein
 // darstellend.
 
-import { apiGet, apiPost, apiPut, apiDelete, FRIST_MAILVERSAND_MS } from '../apiFetch.js';
+import {
+	apiClient,
+	apiGet,
+	apiPost,
+	apiPut,
+	apiDelete,
+	extractApiError,
+	FRIST_MAILVERSAND_MS
+} from '../apiFetch.js';
 import { toastStore } from './toastStore.svelte.js';
 import {
 	MITTEL,
@@ -91,6 +99,9 @@ class OrderStore {
 	searchResults = $state([]);
 	showDropdown = $state(false);
 	searchLoading = $state(false);
+	// Die DNB hat auf die jüngste Suche nicht geantwortet: Die Treffer stammen dann nur aus
+	// dem eigenen Katalog, und die Trefferliste sagt es.
+	dnbAusfall = $state(false);
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	#searchTimeout;
 	#searchSeq = 0;
@@ -292,8 +303,7 @@ class OrderStore {
 		clearTimeout(this.#searchTimeout);
 		const raw = this.searchQuery.trim();
 		if (raw.length < 2) {
-			this.searchResults = [];
-			this.showDropdown = false;
+			this.#leereTreffer();
 			return;
 		}
 		this.#searchTimeout = setTimeout(() => this.#performSearch(raw), 300);
@@ -318,23 +328,36 @@ class OrderStore {
 		const seq = ++this.#searchSeq;
 		this.searchLoading = true;
 		try {
-			const data = await apiPost('/api/bestellungen/suche', { query });
+			// Die rohe Antwort statt apiPost: Den Ausfall der DNB nennt ein Kopf, weil der
+			// Rumpf die Liste der Treffer ist.
+			const res = await apiClient.post('/api/bestellungen/suche', { query });
+			if (seq !== this.#searchSeq) return;
+			if (!res.ok) {
+				toastStore.addToast(await extractApiError(res), 'error');
+				this.#leereTreffer();
+				return;
+			}
+			const data = await res.json();
 			if (seq !== this.#searchSeq) return;
 			this.searchResults = data || [];
-			this.showDropdown = this.searchResults.length > 0;
+			this.dnbAusfall = res.headers.get('X-DNB-Ausfall') === '1';
+			this.showDropdown = this.searchResults.length > 0 || this.dnbAusfall;
 		} catch {
-			if (seq !== this.#searchSeq) return;
-			this.searchResults = [];
-			this.showDropdown = false;
+			if (seq === this.#searchSeq) this.#leereTreffer();
 		} finally {
 			if (seq === this.#searchSeq) this.searchLoading = false;
 		}
 	}
 
+	#leereTreffer() {
+		this.searchResults = [];
+		this.dnbAusfall = false;
+		this.showDropdown = false;
+	}
+
 	resetSearch() {
 		this.searchQuery = '';
-		this.searchResults = [];
-		this.showDropdown = false;
+		this.#leereTreffer();
 	}
 
 	/**

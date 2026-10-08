@@ -179,6 +179,11 @@ type OrderSearchRequest struct {
 	Query string `json:"query"`
 }
 
+// dnbAusfallKopf sagt der Bestellsuche, dass die DNB nicht geantwortet hat und die Liste nur
+// den eigenen Katalog trägt. Ein Kopf statt eines Felds, weil die Antwort eine Liste ist, wie
+// X-Treffer-Gesamt an der Katalogsuche (opac.go).
+const dnbAusfallKopf = "X-DNB-Ausfall"
+
 // SearchOrdersHandler sucht einen Titel zum Bestellen, zuerst im eigenen Katalog und
 // zusätzlich bei der DNB. Der Metadaten-Client wird EINMAL beim Registrieren der Route
 // gebaut, nicht je Anfrage — er hält seinen eigenen HTTP-Client mit Zeitgrenze.
@@ -202,10 +207,13 @@ func (s *Server) sucheBestellung(metaClient *inventur.MetadatenClient) http.Hand
 		}
 
 		ctx := r.Context()
-		results, err := service.SearchOrders(ctx, s.DB.Pool, metaClient, query)
+		results, dnbAusfall, err := service.SearchOrders(ctx, s.DB.Pool, metaClient, query)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
+		}
+		if dnbAusfall {
+			w.Header().Set(dnbAusfallKopf, "1")
 		}
 
 		RespondJSON(w, http.StatusOK, results)

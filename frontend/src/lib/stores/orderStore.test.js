@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('../apiFetch.js', async (original) => ({
 	.../** @type {any} */ (await original()),
+	apiClient: { post: vi.fn() },
 	apiGet: vi.fn(async () => []),
 	apiPost: vi.fn(async () => ({})),
 	apiPut: vi.fn(async () => ({})),
@@ -11,8 +12,9 @@ vi.mock('./toastStore.svelte.js', () => ({
 	toastStore: { addToast: vi.fn() }
 }));
 
-import { apiGet, apiPost, FRIST_MAILVERSAND_MS } from '../apiFetch.js';
+import { apiClient, apiGet, apiPost, FRIST_MAILVERSAND_MS } from '../apiFetch.js';
 import { orderStore } from './orderStore.svelte.js';
+import { toastStore } from './toastStore.svelte.js';
 
 const apiPostMock = vi.mocked(apiPost);
 
@@ -24,6 +26,21 @@ function resetStore() {
 	orderStore.searchQuery = '';
 	orderStore.searchResults = [];
 	orderStore.showDropdown = false;
+	orderStore.dnbAusfall = false;
+}
+
+/**
+ * Die Antwort der Bestellsuche: die Treffer als Rumpf, der Ausfall der DNB als Kopf.
+ * @param {any[]} treffer @param {{ dnbAusfall?: boolean, status?: number }} [lage]
+ */
+function suchAntwort(treffer, { dnbAusfall = false, status = 200 } = {}) {
+	return /** @type {any} */ ({
+		ok: status < 400,
+		status,
+		json: async () => treffer,
+		text: async () => JSON.stringify({ error: 'Suche gescheitert' }),
+		headers: new Headers(dnbAusfall ? { 'X-DNB-Ausfall': '1' } : {})
+	});
 }
 
 // Seit dem DNB-Preisvorschlag loest addToCart im Hintergrund eine Suche ueber
@@ -260,30 +277,31 @@ describe('orderStore Suche', () => {
 	});
 
 	it('sucht erst ab 2 Zeichen und debounced 300ms', async () => {
+		vi.mocked(apiClient.post).mockResolvedValue(suchAntwort([]));
 		orderStore.searchQuery = 'f';
 		orderStore.handleSearchInput();
 		await vi.advanceTimersByTimeAsync(400);
-		expect(apiPost).not.toHaveBeenCalled();
+		expect(apiClient.post).not.toHaveBeenCalled();
 
 		orderStore.searchQuery = 'faust';
 		orderStore.handleSearchInput();
 		await vi.advanceTimersByTimeAsync(299);
-		expect(apiPost).not.toHaveBeenCalled();
+		expect(apiClient.post).not.toHaveBeenCalled();
 		await vi.advanceTimersByTimeAsync(1);
-		expect(apiPost).toHaveBeenCalledWith('/api/bestellungen/suche', { query: 'faust' });
+		expect(apiClient.post).toHaveBeenCalledWith('/api/bestellungen/suche', { query: 'faust' });
 	});
 
 	it('verwirft veraltete Antworten (Out-of-Order-Race)', async () => {
 		/** @type {(value: any) => void} */
 		let resolveFirst = () => {};
-		apiPostMock
+		vi.mocked(apiClient.post)
 			.mockImplementationOnce(
 				() =>
 					new Promise((res) => {
 						resolveFirst = res;
 					})
 			)
-			.mockImplementationOnce(async () => [{ titel: 'Neu', source: 'local' }]);
+			.mockImplementationOnce(async () => suchAntwort([{ titel: 'Neu', source: 'local' }]));
 
 		orderStore.searchQuery = 'alte suche';
 		orderStore.handleSearchInput();
@@ -296,11 +314,61 @@ describe('orderStore Suche', () => {
 		expect(orderStore.searchResults).toEqual([{ titel: 'Neu', source: 'local' }]);
 
 		// Jetzt trudelt die ALTE Antwort ein — sie darf nichts überschreiben
-		resolveFirst([{ titel: 'Alt', source: 'local' }]);
+		resolveFirst(suchAntwort([{ titel: 'Alt', source: 'local' }], { dnbAusfall: true }));
 		await vi.advanceTimersByTimeAsync(1);
 
 		expect(orderStore.searchResults).toEqual([{ titel: 'Neu', source: 'local' }]);
 		expect(orderStore.showDropdown).toBe(true);
+		expect(orderStore.dnbAusfall).toBe(false);
+	});
+
+	// Ohne das Merkmal sähe ein Buch, das die DNB kennt, aus wie eines, das sie nicht kennt:
+	// Bei null Treffern öffnete die Trefferliste gar nicht.
+	it('öffnet die Trefferliste bei einem Ausfall der DNB auch ohne Treffer', async () => {
+		vi.mocked(apiClient.post).mockResolvedValue(suchAntwort([], { dnbAusfall: true }));
+
+		await orderStore.sucheSofort('9783060130764');
+
+		expect(orderStore.searchResults).toEqual([]);
+		expect(orderStore.dnbAusfall).toBe(true);
+		expect(orderStore.showDropdown).toBe(true);
+	});
+
+	it('nennt keinen Ausfall, wenn die DNB ohne Treffer geantwortet hat', async () => {
+		vi.mocked(apiClient.post).mockResolvedValue(suchAntwort([]));
+
+		await orderStore.sucheSofort('gibt es nicht');
+
+		expect(orderStore.dnbAusfall).toBe(false);
+		expect(orderStore.showDropdown).toBe(false);
+	});
+
+	it('vergisst den Ausfall mit der nächsten Suche und beim Leeren', async () => {
+		vi.mocked(apiClient.post).mockResolvedValueOnce(suchAntwort([], { dnbAusfall: true }));
+		await orderStore.sucheSofort('faust');
+		expect(orderStore.dnbAusfall).toBe(true);
+
+		vi.mocked(apiClient.post).mockResolvedValueOnce(
+			suchAntwort([{ titel: 'Faust', source: 'dnb' }])
+		);
+		await orderStore.sucheSofort('faust');
+		expect(orderStore.dnbAusfall).toBe(false);
+
+		vi.mocked(apiClient.post).mockResolvedValueOnce(suchAntwort([], { dnbAusfall: true }));
+		await orderStore.sucheSofort('faust');
+		orderStore.resetSearch();
+		expect(orderStore.dnbAusfall).toBe(false);
+		expect(orderStore.showDropdown).toBe(false);
+	});
+
+	it('meldet eine abgewiesene Suche und zeigt keine Treffer', async () => {
+		vi.mocked(apiClient.post).mockResolvedValue(suchAntwort([], { status: 500 }));
+
+		await orderStore.sucheSofort('faust');
+
+		expect(toastStore.addToast).toHaveBeenCalledWith('Suche gescheitert', 'error');
+		expect(orderStore.searchResults).toEqual([]);
+		expect(orderStore.showDropdown).toBe(false);
 	});
 });
 

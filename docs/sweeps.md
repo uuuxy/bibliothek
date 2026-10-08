@@ -538,3 +538,13 @@ nicht erreichbar"**, 404 nur wenn mindestens eine Quelle geantwortet hat. Umsetz
 `holeInhalt`), `errors.Is` in allen drei Handlern; die drei Ratschen-Ausnahmen sind
 ausgetragen. Gate: `inventur/lookup_ausfall_test.go` (kaputtes Netz → 502, erreichbar ohne
 Treffer → 404) — am alten Stand rot gesehen.
+
+Die Bestellsuche (`POST /api/bestellungen/suche`) war nicht dabei. Sie fragt den eigenen Katalog
+und die DNB und gab bei einem Ausfall der DNB nur die Treffer aus dem Katalog zurück; ohne
+Treffer öffnete die Oberfläche keine Liste. Seit dem 08.10.2026 bleibt es bei 200 mit den
+Treffern aus dem Katalog, und der Kopf `X-DNB-Ausfall` nennt den Ausfall (ein 502 nähme die
+Treffer aus dem Katalog mit); die Trefferliste zeigt ihn oben. Als Ausfall zählt jeder Fehler
+der Abfrage: Eine Suche ohne Treffer beantwortet die DNB mit einer leeren Liste. Gate:
+`api/bestellsuche_pg_test.go` (Ausfall mit und ohne Treffer im Katalog, Antwort ohne Treffer),
+`stores/orderStore.test.js`, im Browser `e2e/bestellsuche-dnb-ausfall.spec.js`; alle am Rückbau
+rot gesehen.
