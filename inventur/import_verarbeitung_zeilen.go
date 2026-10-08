@@ -47,12 +47,18 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 	// überall sonst „ohne Fach", und genau das ist hier gemeint.
 	subject := lmf.FachExakt(getCol("fach"))
 
+	// Die Spalte „klasse" nennt einen Jahrgang. Er steht als Spanne N bis N am Titel: Mit ihr
+	// rechnen Inventur und Portal, und die Titelliste zeigt sie. 0 heißt unbekannt.
+	klasse := parseKlassenStufe(getCol("klasse"))
+
 	book := Book{
 		ISBN:        isbn,
 		Title:       title,
 		Author:      author,
 		Subject:     subject,
-		GradeLevel:  parseKlassenStufe(getCol("klasse")),
+		GradeLevel:  klasse,
+		JahrgangVon: int(klasse),
+		JahrgangBis: int(klasse),
 		Stock:       parseBestand(getCol("bestand")),
 		LastCounted: nil,
 	}

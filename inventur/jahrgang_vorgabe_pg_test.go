@@ -299,3 +299,70 @@ func TestListenimport_JahrgangBleibtUnbekanntUndWirdNachgetragen(t *testing.T) {
 		}
 	}
 }
+
+// Die Spalte „klasse" einer Liste nennt einen Jahrgang. Er kommt als Spanne N bis N am Titel
+// an, auf beiden Wegen: Mit der Spanne rechnen Inventur und Portal, die Klasse allein liest
+// kein Ablauf. Eine Klasse außerhalb von 5 bis 13 gilt als unbekannt.
+func TestListenimport_SpalteKlasseWirdSpanne(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	repo := NewBookRepository(pool)
+
+	wege := map[string]func(Book) error{
+		"UpsertBooksBatch": func(b Book) error {
+			_, err := repo.UpsertBooksBatch(ctx, []Book{b})
+			return err
+		},
+		"UpsertBook (Einzel-Rückfall)": func(b Book) error {
+			_, err := repo.UpsertBook(ctx, b)
+			return err
+		},
+	}
+	faelle := []struct {
+		klasse, soll string
+		isbns        map[string]string
+	}{
+		{"7", "7 bis 7", map[string]string{"UpsertBooksBatch": "978-9-99-200001-1", "UpsertBook (Einzel-Rückfall)": "978-9-99-200001-2"}},
+		{"3", "leer bis leer", map[string]string{"UpsertBooksBatch": "978-9-99-200001-3", "UpsertBook (Einzel-Rückfall)": "978-9-99-200001-4"}},
+	}
+
+	for _, fall := range faelle {
+		for weg, importiere := range wege {
+			isbn := fall.isbns[weg]
+			loesche := func() {
+				for _, sql := range []string{
+					`DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn = isbn_normalform($1))`,
+					`DELETE FROM buecher_titel WHERE isbn = isbn_normalform($1)`,
+				} {
+					if _, err := pool.Exec(context.Background(), sql, isbn); err != nil {
+						t.Errorf("%s: Aufräumen: %v", weg, err)
+					}
+				}
+			}
+			loesche()
+			t.Cleanup(loesche)
+
+			zeile, err := verarbeiteImportZeile(ImportConfig{
+				Ctx:       ctx,
+				Row:       []string{isbn, "Die Welle", "Rhue", fall.klasse},
+				ColIdx:    map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": -1, "klasse": 3, "bestand": -1},
+				Metadaten: offlineMetadatenClient(),
+			})
+			if err != nil || zeile == nil {
+				t.Fatalf("%s, Klasse %s: Zeile: %v", weg, fall.klasse, err)
+			}
+			if err := importiere(*zeile); err != nil {
+				t.Fatalf("%s, Klasse %s: %v", weg, fall.klasse, err)
+			}
+			var ist string
+			if err := pool.QueryRow(ctx, `
+				SELECT coalesce(jahrgang_von::text, 'leer') || ' bis ' || coalesce(jahrgang_bis::text, 'leer')
+				FROM buecher_titel WHERE isbn = isbn_normalform($1)`, isbn).Scan(&ist); err != nil {
+				t.Fatalf("%s, Klasse %s: %v", weg, fall.klasse, err)
+			}
+			if ist != fall.soll {
+				t.Errorf("%s, Klasse %s in der Liste: am Titel steht %s, erwartet %s", weg, fall.klasse, ist, fall.soll)
+			}
+		}
+	}
+}
