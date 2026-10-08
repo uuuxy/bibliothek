@@ -92,12 +92,10 @@
 	}
 </script>
 
-<!-- Umrandete Fläche in surface-container-low (M3 Color roles: Surface container low, „Low-
-     emphasis container color"), damit die weißen Felder darin stehen. Bis zum 23.09.2026
-     blau getönt, mit einer Palettenfarbe ohne Rolle. -->
-<div
-	class="mt-3 p-4 rounded-xl border border-outline-variant bg-surface-container-low space-y-3.5 animate-fade-in"
->
+<!-- Eine umrandete Karte auf der Fläche der Seite (M3 Cards, Specs, Outlined card: „Surface"
+     mit „Outline variant"). Ohne Flächenton: Den trägt in M3 die gefüllte Karte, und die hat
+     keinen Rahmen. -->
+<div class="mt-3 p-4 rounded-xl border border-outline-variant space-y-3.5 animate-fade-in">
 	<div class="flex items-center gap-3 min-w-0">
 		<BuchCover coverUrl={book.cover_url} isbn={book.isbn} titel={book.titel} klasse="shrink-0" />
 		<div class="min-w-0">

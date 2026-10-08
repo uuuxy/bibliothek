@@ -38,6 +38,10 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
   einstellt, braucht es dann nicht. (7.3, R8)
+- [ ] Fünf weitere Kästen sind grau hinterlegt und umrandet, wie das Bestellfenster bis zum
+  08.10.2026: der Status eines Exemplars in der Buchakte, „Gerät anlegen", je ein Hinweis in
+  der Leserakte einer Lehrkraft und beim Anlegen im Kollegium, „Doppelter Datensatz?".
+  Vorschlag: wie dort bleibt der Rahmen, das Grau geht. (4.33)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -89,6 +93,10 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   führt die Spalte „Jahrgang". Im Portal unter „Schulbücher" zeigt der Filter „Jahrgang" nur
   Bücher, an denen ein Jahrgang eingetragen ist; die laufende Inventur nach Klasse erwartet
   nur noch solche Bücher (7.10)
+- [ ] Bestellwesen, einen Titel aus der Suche wählen: Das Fenster ist weiß mit Rahmen; der
+  Knopf unter den Schlagworten heißt „Vorschläge aus der DNB holen" und steht wie „Abbrechen"
+  in Blau. Knöpfe ohne Fläche sind im ganzen Programm blau (etwa „Abbrechen" in den Dialogen,
+  „Cover ändern" am Buch); Knöpfe, die nur ein Symbol zeigen, bleiben grau
 - [ ] Jahrgang aus der ISBN-Abfrage: „Neues Buch" öffnen und die ISBN 9783141096835 eingeben
   („EinFach Deutsch Unterrichtsmodelle … Klassen 8 - 10"). Erwartet: „von" zeigt 8, „bis"
   zeigt 10. Bei einem Buch für einen Jahrgang (9783060623198, „… 5. Schuljahr") zeigen beide 5
@@ -217,6 +225,24 @@ den Schulträger, bei 90 Büchern ein seltener Fall.
 Schülerbücherei tragen den Wortlaut der alten Littera-Etiketten. Er wird beim Einrichten unter
 Einstellungen → Schule eingetragen; das Feld ist heute leer, neue Etiketten tragen also keinen
 Vermerk.
+
+### 4.33 Fünf Kästen mit Flächenton und Rahmen
+
+Material 3 kennt drei Karten (Cards, Specs): umrandet („Surface" mit „Outline variant"),
+gefüllt („Surface container highest", ohne Rahmen) und erhöht („Surface container low" mit
+Schatten). Das Bestellfenster trug bis zum 08.10.2026 den Ton der dritten mit dem Rahmen der
+ersten und ist seitdem eine umrandete Karte. Dieselbe Mischung (`bg-surface-container-low` mit
+`border-outline-variant`) steht noch an fünf Stellen:
+
+- zwei Formulare wie das Bestellfenster: der Status eines Exemplars in der Buchakte
+  (`BookExemplarStatusEditor.svelte`) und „Gerät anlegen" (`GeraeteVerwaltung.svelte`);
+- zwei Hinweise mit Info-Symbol: in den Stammdaten der Leserakte einer Lehrkraft
+  (`StudentProfileStammdaten.svelte`) und beim Anlegen im Kollegium
+  (`KollegiumFormFelder.svelte`);
+- der Kasten „Doppelter Datensatz?" in der Leserakte (`SchuelerZusammenfuehren.svelte`).
+
+**Vorschlag:** An allen fünf bleibt der Rahmen, der Ton geht. Je Stelle ist das eine Klasse;
+offen ist die Entscheidung.
 
 ---
 

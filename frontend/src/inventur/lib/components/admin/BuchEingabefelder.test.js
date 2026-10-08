@@ -76,7 +76,7 @@ describe('BuchEingabefelder: Schlagworte aus der DNB', () => {
 		expect(
 			screen.getByRole('group', { name: 'Neue Schlagworte aus der DNB' }).textContent
 		).toContain('Schulstress');
-		expect(screen.queryByRole('button', { name: 'Vorschläge aus der DNB' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Vorschläge aus der DNB holen' })).toBeNull();
 	});
 
 	it('fragt bei einem vorhandenen Titel erst auf Knopfdruck und nur nach dem, was fehlt', async () => {
@@ -89,7 +89,7 @@ describe('BuchEingabefelder: Schlagworte aus der DNB', () => {
 		expect(screen.queryByRole('group', { name: 'Vorschläge aus der DNB' })).toBeNull();
 		expect(dnbGefragt()).toBe(false);
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
 
 		const liste = await vi.waitFor(() =>
 			screen.getByRole('group', { name: 'Vorschläge aus der DNB' })

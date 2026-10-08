@@ -137,7 +137,7 @@
 		{@render ausloeser({ offen, umschalten: () => (offen ? schliessen() : oeffnen()) })}
 	{:else}
 		<Button
-			variant="ghost"
+			variant="symbol"
 			size="sm"
 			aria-haspopup="menu"
 			aria-expanded={offen}

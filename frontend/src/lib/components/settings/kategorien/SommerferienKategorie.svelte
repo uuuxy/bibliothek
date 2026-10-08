@@ -127,7 +127,7 @@
 					<td class="text-right">
 						{#if z.eigen}
 							<Button
-								variant="ghost"
+								variant="symbol"
 								size="sm"
 								onclick={() => entfernen(z.jahr)}
 								title="Sommerferien {z.jahr} entfernen"

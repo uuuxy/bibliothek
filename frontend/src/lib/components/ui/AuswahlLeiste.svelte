@@ -41,7 +41,7 @@
 		<div class="ml-4 flex items-center gap-2">
 			{@render children()}
 			<Button
-				variant="ghost"
+				variant="symbol"
 				size="sm"
 				aria-label="Markierung aufheben"
 				data-tip="Markierung aufheben"

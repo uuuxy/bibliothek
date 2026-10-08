@@ -181,7 +181,7 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   01.10.2026). **Schlagworte aus der DNB** (seit 30.09.2026): Holt die ISBN Titel und Autor,
   stehen unter _Schlagworte_ die Wörter, die die DNB zu dieser ISBN nennt, zum Anklicken — wie
   beim Bestellen als _Vorschläge aus der DNB_ und _Neue Schlagworte aus der DNB_. Bei einem
-  Titel, den es schon gibt, holt sie der Knopf _Vorschläge aus der DNB_ unter dem Feld.
+  Titel, den es schon gibt, holt sie der Knopf _Vorschläge aus der DNB holen_ unter dem Feld.
   Angeboten wird nur, was der Titel noch nicht trägt; eingetragen wird nur, was jemand anklickt,
   und erst mit dem Speichern. Kennt die DNB die ISBN nicht oder ist sie nicht erreichbar, steht
   das in einem Satz darunter. (§13)
@@ -639,8 +639,8 @@ Verweis), als _Vorschläge aus der DNB_: Ein Klick übernimmt eines; eingetragen
 jemand übernommen hat. Darunter stehen, seit dem 30.09.2026, die Schlagwörter der Normdatei der
 DNB, die es in der Liste noch nicht gibt, als _Neue Schlagworte aus der DNB_ — Personen in der
 Schreibweise der Liste („Kafka <Franz>"). Ein Klick übernimmt auch hier; mit dem Warenkorb kommt
-das Wort in die Liste. Stand der Titel schon im Katalog, holt der Knopf _Vorschläge aus der DNB_
-unter den Schlagworten dieselben Vorschläge (seit 30.09.2026) — nur die Wörter, die der Titel
+das Wort in die Liste. Stand der Titel schon im Katalog, holt der Knopf _Vorschläge aus der DNB
+holen_ unter den Schlagworten dieselben Vorschläge (seit 30.09.2026) — nur die Wörter, die der Titel
 noch nicht trägt.
 
 **Dieselbe ISBN, zehn- oder dreizehnstellig** (seit 03.10.2026): Auf dem Titelblatt älterer

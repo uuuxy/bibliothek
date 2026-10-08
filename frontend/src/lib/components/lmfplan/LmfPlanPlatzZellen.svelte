@@ -36,7 +36,7 @@
 	<td class="px-4 py-1 whitespace-nowrap text-on-surface-variant">
 		<span class="inline-flex items-center gap-1">
 			<Button
-				variant="ghost"
+				variant="symbol"
 				size="sm"
 				onclick={onfest}
 				title="Festen Platz lösen"

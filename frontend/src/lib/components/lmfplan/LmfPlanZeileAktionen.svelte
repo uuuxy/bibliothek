@@ -77,7 +77,7 @@
 </script>
 
 <Button
-	variant="ghost"
+	variant="symbol"
 	size="sm"
 	onclick={onhoch}
 	disabled={nummer === 1}
@@ -87,7 +87,7 @@
 	<ArrowUp class="h-4 w-4" aria-hidden="true" />
 </Button>
 <Button
-	variant="ghost"
+	variant="symbol"
 	size="sm"
 	onclick={onrunter}
 	disabled={nummer === anzahl}

@@ -772,6 +772,12 @@ frontend/src
   Rahmen und eine Erhebung zugleich; welcher Teil weicht, entscheidet die Rolle des Bauteils
   (Dialog: Erhebung, Tabelle und umrandeter Knopf: Rahmen). Gemessen wird im Browser:
   `frontend/e2e/m3-bauform.spec.js`.
+- **Ein Knopf ohne Fläche steht in der Hauptfarbe; trägt er nur ein Symbol, nicht.**
+  Material 3, Buttons: „since there's no container, the label text color must always be
+  recognizable from non-button text and elements" (Specs: „Text icon & label: Primary");
+  Icon buttons, Specs: „Standard icon: On surface variant". In `ui/Button.svelte` sind das die
+  Varianten `ghost` und `symbol`, auseinandergehalten von `frontend-hygiene-knoepfe.test.js`.
+  Die Beschriftung nennt die Handlung („It describes the action that will occur").
 - **Ein Knopf steht bei dem Inhalt, den er betrifft** (Material 3, Spacing: „buttons should be
   close to the content they're affecting"), nicht am fernen Rand der Zeile.
 - **Was jemand sieht, entscheidet das Recht der Route,** nicht die Rolle: `hatRecht` aus

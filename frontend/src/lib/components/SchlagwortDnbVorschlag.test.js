@@ -24,7 +24,7 @@ function knopf(props = {}) {
 	return { vorschlag, screen };
 }
 
-// Der Knopf „Vorschläge aus der DNB" unter einem Schlagwort-Feld (entschieden am 30.09.2026) und
+// Der Knopf „Vorschläge aus der DNB holen" unter einem Schlagwort-Feld und
 // die Zeile, die die Antwort der DNB ansagt. Jede Antwort hat ihren Satz: Sähen „die DNB kennt
 // die ISBN nicht", „nichts Neues" und „nicht erreichbar" gleich aus, tippte an der Theke jemand
 // Wörter von Hand, die die DNB eine Minute später geliefert hätte.
@@ -39,11 +39,11 @@ describe('SchlagwortDnbVorschlag', () => {
 		});
 		const { vorschlag, screen } = knopf();
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
 
 		expect(apiFetch).toHaveBeenCalledWith(URL);
 		await vi.waitFor(() => expect(vorschlag.liste(ISBN)).toEqual(['Krieg']));
-		expect(screen.queryByRole('button', { name: 'Vorschläge aus der DNB' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Vorschläge aus der DNB holen' })).toBeNull();
 		expect(screen.queryByRole('status')).toBeNull();
 	});
 
@@ -51,7 +51,7 @@ describe('SchlagwortDnbVorschlag', () => {
 		dnbAntwortet({ dnb_satz: false, schlagwort_vorschlaege: [], schlagwort_vorschlaege_neu: [] });
 		const { screen } = knopf();
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
 
 		await vi.waitFor(() =>
 			expect(screen.getByRole('status').textContent).toMatch(/Die DNB kennt diese ISBN nicht\./)
@@ -66,7 +66,7 @@ describe('SchlagwortDnbVorschlag', () => {
 		});
 		const { screen } = knopf({ werte: ['krieg'] });
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
 
 		await vi.waitFor(() =>
 			expect(screen.getByRole('status').textContent).toMatch(
@@ -79,12 +79,12 @@ describe('SchlagwortDnbVorschlag', () => {
 		dnbAntwortet({ error: 'DNB nicht erreichbar' }, 502);
 		const { screen } = knopf();
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
 
 		await vi.waitFor(() =>
 			expect(screen.getByRole('alert').textContent).toMatch(/Die DNB ist nicht erreichbar/)
 		);
-		expect(screen.getByRole('button', { name: 'Vorschläge aus der DNB' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' })).toBeTruthy();
 	});
 
 	it('zeigt ohne ISBN keinen Knopf', () => {

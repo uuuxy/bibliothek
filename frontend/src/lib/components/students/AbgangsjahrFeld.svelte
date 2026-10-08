@@ -86,7 +86,7 @@
 		<Button size="sm" onclick={speichere} disabled={speichert}>
 			{speichert ? '…' : 'Speichern'}
 		</Button>
-		<Button variant="ghost" size="sm" onclick={() => (bearbeiten = false)}>✕</Button>
+		<Button variant="symbol" size="sm" onclick={() => (bearbeiten = false)}>✕</Button>
 	</div>
 	{#if fehler}<p class="text-xs text-error mt-1">{fehler}</p>{/if}
 {:else if darfBearbeiten}

@@ -55,10 +55,10 @@
 			<ArrowRight class="h-3.5 w-3.5" />
 		</Button>
 		<Button
-			variant="ghost"
+			variant="symbol"
 			size="sm"
 			onclick={() => (weggeklickt = true)}
-			class="icon-btn mt-0.5 shrink-0 px-2 text-on-surface-variant"
+			class="icon-btn mt-0.5 shrink-0 px-2"
 			aria-label="Hinweis für diese Sitzung ausblenden"
 			data-tip="Für diese Sitzung ausblenden — beim nächsten Laden wieder da"
 		>

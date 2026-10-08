@@ -245,7 +245,7 @@ describe('OrderStaging: Schlagworte', () => {
 		const screen = fenster({ ...titel, isbn: '978-3-7512-0053-0' });
 		await feldBereit(screen);
 
-		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB holen' }));
 		const liste = await vi.waitFor(() =>
 			screen.getByRole('group', { name: 'Vorschläge aus der DNB' })
 		);
@@ -272,7 +272,7 @@ describe('OrderStaging: Schlagworte', () => {
 			dnb_vorschlag_da: true
 		});
 		await feldBereit(screen);
-		expect(screen.queryByRole('button', { name: 'Vorschläge aus der DNB' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Vorschläge aus der DNB holen' })).toBeNull();
 		expect(screen.getByRole('group', { name: 'Vorschläge aus der DNB' }).textContent).toContain(
 			'Krieg'
 		);

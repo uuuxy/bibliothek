@@ -1,13 +1,15 @@
-<!-- @component Der Knopf „Vorschläge aus der DNB" unter einem Schlagwort-Feld und die Zeile, die
-     sagt, was die DNB geantwortet hat (entschieden am 30.09.2026). Im Buchformular und beim
-     Nachbestellen eines Titels, den es schon gibt; die Vorschläge selbst zeigt das Feld darüber
+<!-- @component Der Knopf „Vorschläge aus der DNB holen" unter einem Schlagwort-Feld und die
+     Zeile, die sagt, was die DNB geantwortet hat. Im Buchformular und beim Nachbestellen
+     eines Titels, den es schon gibt; die Vorschläge selbst zeigt das Feld darüber
      als Chips zum Anklicken (ui/ChipFeld, angebote und angeboteNeu) — nur die Wörter, die der
      Titel noch nicht trägt. Littera kennt dasselbe als „Online-Abgleich" in der Titelmaske, dort
      wahlweise „hinzufügen" oder „ersetzen"; hier gibt es nur das Hinzufügen, Wort für Wort.
 
-     Ein Knopf der niedrigsten Stufe: M3 Buttons, „The text button has no outline or fill. It
-     should be used for actions not essential to the user journey." Dieselbe Form wie „Cover neu
-     holen" im selben Formular (ui/Button ghost), auch beim Laden: Beschriftung statt Kreis.
+     Ein Knopf der niedrigsten Stufe (M3 Buttons: „The text button style should be used for
+     the lowest priority actions"), dieselbe Form wie „Cover neu holen" im selben Formular
+     (ui/Button ghost), auch beim Laden: Beschriftung statt Kreis. Die Beschriftung nennt die
+     Handlung (M3: „It describes the action that will occur"); ohne das Verb hieße der Knopf
+     wie die Zeile der Vorschläge, die nach dem Klick über ihm steht.
      Eigene Datei, weil Buchformular und Bestellfenster ihn beide tragen und keins der
      vorhandenen Bauteile Knopf und Antwortzeile verbindet. -->
 <script>
@@ -51,7 +53,7 @@
 			disabled={disabled || status === 'laedt'}
 			onclick={() => vorschlag.lade(isbn)}
 		>
-			{status === 'laedt' ? 'Wird gefragt …' : 'Vorschläge aus der DNB'}
+			{status === 'laedt' ? 'Wird gefragt …' : 'Vorschläge aus der DNB holen'}
 		</Button>
 	{/if}
 {/if}

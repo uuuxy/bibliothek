@@ -1,7 +1,7 @@
 <script>
 	/** @type {{
 	 *   children?: any,
-	 *   variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'danger-solid' | 'ghost',
+	 *   variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'danger-solid' | 'ghost' | 'symbol',
 	 *   size?: 'sm' | 'md' | 'lg',
 	 *   class?: string,
 	 *   element?: HTMLButtonElement,
@@ -23,15 +23,22 @@
 	// trägt ein Bauteil entweder einen Rahmen oder eine Erhebung, nie beides.
 	//
 	// Farben nach M3, Buttons, Specs: gefüllt „Primary" mit „On primary"; umrandet „Outline
-	// variant" mit „On surface variant". danger und success sind getönte Knöpfe in den
-	// Container-Rollen von error und success, danger-solid der gefüllte in error.
+	// variant" mit „On surface variant"; der Textknopf (ghost) „Primary". danger und success
+	// sind getönte Knöpfe in den Container-Rollen von error und success, danger-solid der
+	// gefüllte in error.
+	//
+	// ghost steht in der Hauptfarbe, weil er keine Fläche hat (M3 Buttons, Guidelines): „the
+	// label text color must always be recognizable from non-button text and elements". symbol
+	// ist der Knopf, der nur ein Symbol trägt (M3 Icon buttons, Specs: „Standard icon: On
+	// surface variant"); Button.test.js hält die beiden auseinander.
 	const variants = {
 		primary: 'bg-primary text-on-primary border-transparent',
 		secondary: 'bg-surface-container-lowest border-outline-variant text-on-surface-variant',
 		danger: 'bg-error-container text-on-error-container border-transparent',
 		'danger-solid': 'bg-error text-on-error border-transparent',
 		success: 'bg-success-container text-on-success-container border-transparent',
-		ghost: 'bg-transparent border-transparent text-on-surface-variant'
+		ghost: 'bg-transparent border-transparent text-primary',
+		symbol: 'bg-transparent border-transparent text-on-surface-variant'
 	};
 
 	// Feste Höhen statt reinem Padding: Nur so stehen Buttons neben Eingabefeldern und in
