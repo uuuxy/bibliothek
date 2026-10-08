@@ -30,6 +30,19 @@ type GeraetRequest struct {
 	IstAusleihbar *bool   `json:"ist_ausleihbar,omitempty"`
 }
 
+// GeraetAenderungRequest nennt, was an einem Gerät geändert wird. Ein fehlendes Feld bleibt,
+// wie es ist: Der Bearbeiten-Dialog schickt nur, was seit dem Öffnen geändert wurde, der
+// Defekt-Knopf nur das Kennzeichen. barcode_id nimmt die Tür an und liest es nicht: Barcodes
+// kleben, sie wandern nicht, und ein Dialog aus einem älteren Stand schickt das Feld noch mit.
+type GeraetAenderungRequest struct {
+	Modellname    *string `json:"modellname"`
+	Seriennummer  *string `json:"seriennummer"`
+	BarcodeID     *string `json:"barcode_id"`
+	Zubehoer      *string `json:"zubehoer"`
+	ZustandNotiz  *string `json:"zustand_notiz"`
+	IstAusleihbar *bool   `json:"ist_ausleihbar"`
+}
+
 // ListGeraeteHandler liefert die Geräteliste samt aktuellem Ausleiher.
 // GET /api/geraete
 func (s *Server) ListGeraeteHandler(repo repository.GeraeteRepository) http.HandlerFunc {
@@ -93,22 +106,23 @@ func (s *Server) CreateGeraetHandler(repo repository.GeraeteRepository) http.Han
 // PUT /api/geraete/{id}
 func (s *Server) UpdateGeraetHandler(repo repository.GeraeteRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		var req GeraetRequest
+		var req GeraetAenderungRequest
 		if !DecodeAndValidate(w, r, &req) {
 			return nil
 		}
-		req.Modellname = strings.TrimSpace(req.Modellname)
-		if req.Modellname == "" {
+		aenderung := repository.GeraetAenderung{
+			Modellname:   getrimmterZeiger(req.Modellname),
+			Zubehoer:     getrimmterZeiger(req.Zubehoer),
+			ZustandNotiz: getrimmterZeiger(req.ZustandNotiz),
+			Seriennummer: getrimmterZeiger(req.Seriennummer),
+			// Durchgereicht, nicht vorbelegt: Ein fehlendes Kennzeichen ist „unverändert". Mit
+			// einer Vorgabe hob jede Änderung der Stammdaten die Defekt-Markierung auf.
+			IstAusleihbar: req.IstAusleihbar,
+		}
+		if aenderung.Modellname != nil && *aenderung.Modellname == "" {
 			return apierrors.BadRequest("Ein Modellname ist erforderlich", nil)
 		}
-		// req.IstAusleihbar wird DURCHGEREICHT, nicht auf true vorbelegt: Ein fehlendes
-		// Feld ist "unveraendert" und kein Wert. Vorher stand hier `istAusleihbar := true`,
-		// und weil der Bearbeiten-Dialog das Kennzeichen nicht kennt (es liegt auf einem
-		// eigenen Knopf), hob jede Stammdaten-Aenderung die Defekt-Markierung auf —
-		// mit der Meldung "Geraet gespeichert" daneben.
-		err := repo.UpdateGeraet(r.Context(), r.PathValue("id"), req.Modellname,
-			strings.TrimSpace(req.Zubehoer), nullableString(strings.TrimSpace(req.ZustandNotiz)),
-			getrimmterZeiger(req.Seriennummer), req.IstAusleihbar)
+		err := repo.UpdateGeraet(r.Context(), r.PathValue("id"), aenderung)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Gerät nicht gefunden", err)

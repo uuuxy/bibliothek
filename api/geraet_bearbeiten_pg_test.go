@@ -229,3 +229,127 @@ func TestGeraetBearbeiten_LeereSeriennummerBleibtLeer(t *testing.T) {
 		t.Errorf("%d der zwei Geräte tragen nach dem Bearbeiten keine Seriennummer (NULL), erwartet 2", n)
 	}
 }
+
+// Die Tür „Gerät ändern" schreibt nur, was der Rumpf nennt.
+//
+// Die Maske und der Defekt-Knopf füllen sich aus der Zeile der Liste, die beim Öffnen der
+// Seite lädt. Schickten sie Modell, Zubehör und Notiz von dort zurück, schrieben sie den alten
+// Stand über das, was ein anderer Platz inzwischen gespeichert hat.
+func TestGeraetAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := t.Context()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	repo := repository.NewGeraeteRepository(pool)
+	aufraeumenGeraete := func() { aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NGF-%'`) }
+	aufraeumenGeraete()
+	t.Cleanup(aufraeumenGeraete)
+
+	var id string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO geraete (modellname, barcode_id, seriennummer, zubehoer, zustand_notiz, ist_ausleihbar)
+		VALUES ('Tablet 12', 'G-NGF-1', 'SN-NGF', 'Ladekabel', 'Kratzer am Rand', true)
+		RETURNING id`).Scan(&id); err != nil {
+		t.Fatalf("Gerät anlegen: %v", err)
+	}
+	aendere := func(t *testing.T, geraet, rumpf string) int {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPut, "/api/geraete/"+geraet, strings.NewReader(rumpf))
+		req.SetPathValue("id", geraet)
+		rec := httptest.NewRecorder()
+		srv.UpdateGeraetHandler(repo)(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Logf("Antwort auf %s: %s", rumpf, rec.Body.String())
+		}
+		return rec.Code
+	}
+	type stand struct {
+		modell, zubehoer, notiz, seriennummer string
+		ausleihbar                            bool
+		geaendert                             time.Time
+	}
+	lies := func(t *testing.T) stand {
+		t.Helper()
+		var s stand
+		if err := pool.QueryRow(ctx, `
+			SELECT modellname, coalesce(zubehoer, ''), coalesce(zustand_notiz, '<null>'),
+			       coalesce(seriennummer, '<null>'), ist_ausleihbar, aktualisiert_am
+			FROM geraete WHERE id = $1`, id).
+			Scan(&s.modell, &s.zubehoer, &s.notiz, &s.seriennummer, &s.ausleihbar, &s.geaendert); err != nil {
+			t.Fatalf("Stand lesen: %v", err)
+		}
+		return s
+	}
+
+	// Ein anderer Platz hat inzwischen Modell und Zubehör berichtigt.
+	if _, err := pool.Exec(ctx,
+		`UPDATE geraete SET modellname = 'Tablet 12 Pro', zubehoer = 'Ladekabel, Stift' WHERE id = $1`, id); err != nil {
+		t.Fatal(err)
+	}
+
+	// Der Defekt-Knopf nennt nur das Kennzeichen.
+	if code := aendere(t, id, `{"ist_ausleihbar":false}`); code != http.StatusOK {
+		t.Fatalf("das Kennzeichen allein ändern: Status %d, erwartet 200", code)
+	}
+	if s := lies(t); s.ausleihbar || s.modell != "Tablet 12 Pro" || s.zubehoer != "Ladekabel, Stift" ||
+		s.notiz != "Kratzer am Rand" || s.seriennummer != "SN-NGF" {
+		t.Errorf("nach dem Defekt-Knopf: %+v — erwartet defekt, alles andere wie zuvor", s)
+	}
+
+	// Die Maske vom Morgen speichert nur die Notiz.
+	if code := aendere(t, id, `{"zustand_notiz":"Display gesprungen"}`); code != http.StatusOK {
+		t.Fatalf("die Notiz allein ändern: Status %d, erwartet 200", code)
+	}
+	if s := lies(t); s.notiz != "Display gesprungen" || s.ausleihbar || s.modell != "Tablet 12 Pro" ||
+		s.zubehoer != "Ladekabel, Stift" {
+		t.Errorf("nach dem Ändern der Notiz: %+v — erwartet die neue Notiz, alles andere wie zuvor", s)
+	}
+
+	t.Run("ein geleertes Feld heißt keins", func(t *testing.T) {
+		if code := aendere(t, id, `{"zubehoer":"","zustand_notiz":" "}`); code != http.StatusOK {
+			t.Fatalf("Status %d, erwartet 200", code)
+		}
+		if s := lies(t); s.zubehoer != "" || s.notiz != "<null>" || s.modell != "Tablet 12 Pro" {
+			t.Errorf("nach dem Leeren: %+v — erwartet Zubehör leer, Notiz NULL, Modell wie zuvor", s)
+		}
+	})
+
+	t.Run("ein Rumpf ohne Feld schreibt nichts", func(t *testing.T) {
+		vorher := lies(t)
+		if code := aendere(t, id, `{}`); code != http.StatusOK {
+			t.Fatalf("Status %d, erwartet 200", code)
+		}
+		if nachher := lies(t); nachher != vorher {
+			t.Errorf("der Stand hat sich geändert: %+v, vorher %+v", nachher, vorher)
+		}
+	})
+
+	t.Run("ein genannter Modellname darf nicht leer sein", func(t *testing.T) {
+		vorher := lies(t)
+		if code := aendere(t, id, `{"modellname":"  "}`); code != http.StatusBadRequest {
+			t.Errorf("Status %d, erwartet 400", code)
+		}
+		if nachher := lies(t); nachher != vorher {
+			t.Errorf("die abgelehnte Anfrage hat geschrieben: %+v, vorher %+v", nachher, vorher)
+		}
+	})
+
+	t.Run("ein unbekanntes Gerät ist eine 404, mit und ohne Feld", func(t *testing.T) {
+		const unbekannt = "00000000-0000-0000-0000-000000000000"
+		for _, rumpf := range []string{`{}`, `{"ist_ausleihbar":true}`} {
+			if code := aendere(t, unbekannt, rumpf); code != http.StatusNotFound {
+				t.Errorf("%s: Status %d, erwartet 404", rumpf, code)
+			}
+		}
+	})
+
+	// Ein Dialog aus einem älteren Stand schickt alle fünf Felder samt Barcode; die Tür nimmt
+	// ihn an und liest den Barcode nicht.
+	t.Run("der Rumpf eines älteren Dialogs bleibt gültig", func(t *testing.T) {
+		if code := aendere(t, id, `{"modellname":"Tablet 13","barcode_id":"G-NGF-ANDERS","seriennummer":"SN-NGF","zubehoer":"Hülle","zustand_notiz":""}`); code != http.StatusOK {
+			t.Fatalf("Status %d, erwartet 200", code)
+		}
+		if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE id = $1 AND barcode_id = 'G-NGF-1' AND modellname = 'Tablet 13'`, id); n != 1 {
+			t.Errorf("der Barcode ist gewandert oder das Modell nicht gespeichert")
+		}
+	})
+}

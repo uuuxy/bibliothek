@@ -51,6 +51,7 @@ var uuidEingabenAusnahmen = map[string]string{
 	"api.CreateUserRequest.BarcodeID":         "benutzer.barcode_id ist VARCHAR",
 	"api.UpdateUserRequest.BarcodeID":         "benutzer.barcode_id ist VARCHAR",
 	"api.GeraetRequest.BarcodeID":             "geraete.barcode_id ist VARCHAR",
+	"api.GeraetAenderungRequest.BarcodeID":    "geraete.barcode_id ist VARCHAR; beim Ändern angenommen und nicht gelesen",
 	"api.InventurScanRequest.BarcodeID":       "gescannter Exemplar-Barcode, buecher_exemplare.barcode_id ist VARCHAR",
 	"api.PrintLabelsRequest.FormatID":         "Formatschlüssel aus api/label_formats.go (zweckform_l4760), keine Spalte",
 	"api.SchuelerEtikettenRequest.FormatID":   "Formatschlüssel aus api/label_formats.go (zweckform_l4760), keine Spalte",

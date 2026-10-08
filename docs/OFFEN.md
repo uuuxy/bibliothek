@@ -163,8 +163,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
 - [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
   ihren Helfern, die Regel „überfällig" ebenso; eine Ratsche hält die ersten beiden fest.
-- [ ] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Gerät, Lieferant und die
-  Kategorien der Einstellungen; am Titel, am Leser und am Benutzer ist es behoben.
+- [ ] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Lieferant und die Kategorien
+  der Einstellungen; am Titel, am Leser, am Benutzer und am Gerät ist es behoben.
 - [x] **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es an
   der Bestellung und in der Bestellhistorie („Mail nicht versendet"), und die Bestellung lässt
   sich erneut senden (entschieden und gebaut am 07.10.2026, Migration 161).
@@ -347,10 +347,8 @@ Vermerk.
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
 - **Eine Maske schickt alle Felder zurück, auch die, die niemand angefasst hat** (Raster,
   Frage 18; [sweeps.md](sweeps.md), „Absoluter Wert aus dem Ladezeitpunkt"). Am Titel
-  (06.10.2026), an der Leserakte (07.10.2026) und in der Benutzerverwaltung (08.10.2026)
-  behoben. Am 07.10.2026 am Code gelesen, mit derselben Form:
-  - **Gerät:** „Bearbeiten" und „Defekt melden" schicken Modell, Zubehör und Notiz aus der
-    Zeile der Liste (`GeraeteVerwaltung.svelte`). Kategorie C.
+  (06.10.2026), an der Leserakte (07.10.2026), in der Benutzerverwaltung und an den Geräten
+  (08.10.2026) behoben. Am 07.10.2026 am Code gelesen, mit derselben Form:
   - **Lieferant:** „Hauptlieferant" geht aus der Zeile mit; Stammdaten und Hauptlieferant
     schreibt die Tür in zwei Schritten ohne gemeinsame Transaktion
     (`handleUpdateSupplier`). Kategorie C.

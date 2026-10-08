@@ -48,7 +48,9 @@ func TestGeraeteVerwaltung_AnlegenListeStatus(t *testing.T) {
 	// (4) Defekt-Schalter + Stammdaten-Pflege.
 	notiz := "Display-Kratzer"
 	defekt := false
-	if err := repo.UpdateGeraet(ctx, id, "iPad 9. Gen (Leihgerät)", "Ladekabel", &notiz, nil, &defekt); err != nil {
+	modell, zubehoer := "iPad 9. Gen (Leihgerät)", "Ladekabel"
+	if err := repo.UpdateGeraet(ctx, id, GeraetAenderung{
+		Modellname: &modell, Zubehoer: &zubehoer, ZustandNotiz: &notiz, IstAusleihbar: &defekt}); err != nil {
 		t.Fatalf("Update: %v", err)
 	}
 	g = geraetAusListe(t, repo, id)
@@ -58,7 +60,7 @@ func TestGeraeteVerwaltung_AnlegenListeStatus(t *testing.T) {
 
 	// (5) Unbekannte ID → pgx.ErrNoRows für das 404-Mapping.
 	ausleihbar := true
-	if err := repo.UpdateGeraet(ctx, "00000000-0000-0000-0000-000000000000", "X", "", nil, nil, &ausleihbar); !errors.Is(err, pgx.ErrNoRows) {
+	if err := repo.UpdateGeraet(ctx, "00000000-0000-0000-0000-000000000000", GeraetAenderung{IstAusleihbar: &ausleihbar}); !errors.Is(err, pgx.ErrNoRows) {
 		t.Fatalf("unbekannte ID: erwartet ErrNoRows, bekam %v", err)
 	}
 }

@@ -3,6 +3,7 @@
 	import { apiClient } from '../apiFetch.js';
 	import { erzeugeGeraeteListe } from './geraeteListe.svelte.js';
 	import { toastStore } from '../stores/toastStore.svelte.js';
+	import { leeresGeraetFormular, geraetFormularAus, geraetNutzlast } from '../geraetFormular.js';
 	import Button from './ui/Button.svelte';
 	import Feld from './ui/Feld.svelte';
 	import LadeFehler from './ui/LadeFehler.svelte';
@@ -19,33 +20,22 @@
 	let formOffen = $state(false);
 	/** @type {string | null} */
 	let bearbeiteId = $state(null);
-	let form = $state({
-		modellname: '',
-		barcode_id: '',
-		seriennummer: '',
-		zubehoer: '',
-		zustand_notiz: ''
-	});
+	/** @type {any} */
+	let form = $state(leeresGeraetFormular());
 	let speichert = $state(false);
 
 	onMount(geraete.lade);
 
 	function oeffneAnlegen() {
 		bearbeiteId = null;
-		form = { modellname: '', barcode_id: 'G-', seriennummer: '', zubehoer: '', zustand_notiz: '' };
+		form = leeresGeraetFormular();
 		formOffen = true;
 	}
 
 	/** @param {any} g */
 	function oeffneBearbeiten(g) {
 		bearbeiteId = g.id;
-		form = {
-			modellname: g.modellname,
-			barcode_id: g.barcode_id,
-			seriennummer: g.seriennummer ?? '',
-			zubehoer: g.zubehoer ?? '',
-			zustand_notiz: g.zustand_notiz ?? ''
-		};
+		form = geraetFormularAus(g);
 		formOffen = true;
 	}
 
@@ -57,9 +47,10 @@
 	async function speichere() {
 		speichert = true;
 		try {
+			// Ein vorhandenes Gerät schickt nur das Geänderte (geraetFormular.js).
 			const res = bearbeiteId
-				? await apiClient.put(`/api/geraete/${bearbeiteId}`, form)
-				: await apiClient.post('/api/geraete', form);
+				? await apiClient.put(`/api/geraete/${bearbeiteId}`, geraetNutzlast(form, true))
+				: await apiClient.post('/api/geraete', geraetNutzlast(form, false));
 			if (res.ok) {
 				toastStore.addToast(bearbeiteId ? 'Gerät gespeichert.' : 'Gerät angelegt.', 'success');
 				schliesseForm();
@@ -78,10 +69,8 @@
 	/** @param {any} g */
 	async function schalteDefekt(g) {
 		try {
+			// Nur das Kennzeichen: Die Zeile der Liste kann älter sein als das Gerät.
 			const res = await apiClient.put(`/api/geraete/${g.id}`, {
-				modellname: g.modellname,
-				zubehoer: g.zubehoer ?? '',
-				zustand_notiz: g.zustand_notiz ?? '',
 				ist_ausleihbar: !g.ist_ausleihbar
 			});
 			if (res.ok) {

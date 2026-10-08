@@ -53,7 +53,25 @@ type GeraeteRepository interface {
 	ListGeraete(ctx context.Context) ([]GeraetMitStatus, error)
 	CreateGeraet(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer string) (string, error)
 	// UpdateGeraet pflegt Stammdaten und Ausleihstatus (ist_ausleihbar=false = defekt/gesperrt).
-	UpdateGeraet(ctx context.Context, id, modellname, zubehoer string, zustandNotiz, seriennummer *string, istAusleihbar *bool) error
+	UpdateGeraet(ctx context.Context, id string, a GeraetAenderung) error
+}
+
+// GeraetAenderung nennt, was an einem Gerät geändert wird. Ein Feld ohne Wert (nil) ist nicht
+// genannt und bleibt, wie es ist: Was ein anderer Platz inzwischen daran gespeichert hat,
+// überschreibt die Änderung nicht. Ein leerer Wert heißt bei Zubehör, Zustandsnotiz und
+// Seriennummer „keins".
+type GeraetAenderung struct {
+	Modellname    *string
+	Zubehoer      *string
+	ZustandNotiz  *string
+	Seriennummer  *string
+	IstAusleihbar *bool
+}
+
+// Leer sagt, ob die Änderung kein Feld nennt.
+func (a GeraetAenderung) Leer() bool {
+	return a.Modellname == nil && a.Zubehoer == nil && a.ZustandNotiz == nil &&
+		a.Seriennummer == nil && a.IstAusleihbar == nil
 }
 
 type pgGeraeteRepository struct {
@@ -116,21 +134,32 @@ func (r *pgGeraeteRepository) CreateGeraet(ctx context.Context, modellname strin
 	return id, nil
 }
 
-// UpdateGeraet schreibt die Stammdaten. seriennummer und istAusleihbar sind Zeiger: nil heißt
-// „nicht mitgeschickt" und lässt die Spalte in Ruhe. Der Bearbeiten-Dialog schickt das
-// Defekt-Kennzeichen nie (es liegt auf einem eigenen Knopf); eine Vorgabe dafür gäbe ein
-// defektes Gerät bei jeder Korrektur wieder frei. Eine leere Seriennummer heißt „keine" und
-// wird wie beim Anlegen NULL: Als leerer Text stieße das zweite Gerät ohne Seriennummer an
-// die Eindeutigkeit.
-func (r *pgGeraeteRepository) UpdateGeraet(ctx context.Context, id, modellname, zubehoer string, zustandNotiz, seriennummer *string, istAusleihbar *bool) error {
+// UpdateGeraet schreibt, was die Änderung nennt. Der Bearbeiten-Dialog nennt das
+// Defekt-Kennzeichen nie (es liegt auf einem eigenen Knopf), der Knopf nennt nur das
+// Kennzeichen. Eine leere Seriennummer oder Zustandsnotiz wird NULL: Als leerer Text stieße
+// das zweite Gerät ohne Seriennummer an die Eindeutigkeit. Nennt die Änderung nichts, wird
+// nichts geschrieben; ein unbekanntes Gerät bleibt pgx.ErrNoRows.
+func (r *pgGeraeteRepository) UpdateGeraet(ctx context.Context, id string, a GeraetAenderung) error {
+	if a.Leer() {
+		var vorhanden bool
+		if err := r.db.QueryRow(ctx,
+			`SELECT EXISTS (SELECT 1 FROM geraete WHERE id = $1 AND ist_ausgesondert = false)`, id).Scan(&vorhanden); err != nil {
+			return err
+		}
+		if !vorhanden {
+			return pgx.ErrNoRows
+		}
+		return nil
+	}
 	tag, err := r.db.Exec(ctx, `
 		UPDATE geraete
-		SET modellname = $1, zubehoer = $2, zustand_notiz = $3,
+		SET modellname = COALESCE($1, modellname), zubehoer = COALESCE($2, zubehoer),
+		    zustand_notiz = CASE WHEN $3::text IS NULL THEN zustand_notiz ELSE NULLIF($3, '') END,
 		    seriennummer = CASE WHEN $4::text IS NULL THEN seriennummer ELSE NULLIF($4, '') END,
 		    ist_ausleihbar = COALESCE($5, ist_ausleihbar),
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $6 AND ist_ausgesondert = false
-	`, modellname, zubehoer, zustandNotiz, seriennummer, istAusleihbar, id)
+	`, a.Modellname, a.Zubehoer, a.ZustandNotiz, a.Seriennummer, a.IstAusleihbar, id)
 	if err != nil {
 		return geraetEindeutigkeit(err)
 	}
