@@ -80,8 +80,6 @@ func produktivDateien(t *testing.T) []string {
 // handlerMitSQL: Zahl der SQL-Anweisungen je Datei. Wer eine Abfrage nach repository/ verlegt,
 // senkt die Zahl; steht sie auf null, fällt die Zeile weg.
 var handlerMitSQL = map[string]int{
-	"audit_handler.go":                    1,
-	"audit_logs_handler.go":               1,
 	"ausleihe.go":                         5,
 	"ausweis_layout.go":                   2,
 	"bestellbericht_handler.go":           2,

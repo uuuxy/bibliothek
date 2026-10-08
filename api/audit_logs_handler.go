@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // AdminAuditLogEntry ist eine Zeile des Admin-Prüfprotokolls, wie die Oberfläche sie
@@ -25,37 +26,15 @@ func (s *Server) GetAdminAuditLogsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		query := `
-			SELECT 
-				a.id, a.admin_id, coalesce(b.vorname || ' ' || b.nachname, 'System/Unbekannt'),
-				a.aktion, a.details, coalesce(a.ip_adresse, ''), a.zeitstempel
-			FROM audit_logs a
-			LEFT JOIN benutzer b ON a.admin_id = b.id
-			ORDER BY a.zeitstempel DESC
-			LIMIT 1000
-		`
-		rows, err := s.DB.Pool.Query(ctx, query)
+		zeilen, err := repository.ListeAdminProtokoll(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer rows.Close()
 
-		var logs []AdminAuditLogEntry
-		for rows.Next() {
-			var l AdminAuditLogEntry
-			if err := rows.Scan(&l.ID, &l.AdminID, &l.AdminName, &l.Aktion, &l.Details, &l.IpAdresse, &l.Zeitstempel); err != nil {
-				continue
-			}
-			logs = append(logs, l)
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		if logs == nil {
-			logs = []AdminAuditLogEntry{}
+		logs := []AdminAuditLogEntry{}
+		for _, z := range zeilen {
+			logs = append(logs, AdminAuditLogEntry(z))
 		}
 
 		RespondJSON(w, http.StatusOK, logs)

@@ -5,10 +5,10 @@ package api
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // AuditLogEntry represents a joined row in the audit log table.
@@ -52,45 +52,15 @@ func (s *Server) GetAuditLogsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// LEFT JOIN, nicht JOIN: Systemgesteuerte Vorgänge (DSGVO-Bereinigung, Backups,
-		// automatische Sperren) schreiben ohne bearbeiter_id und mit akteur='SYSTEM'
-		// (repository/audit_system.go). Der frühere Inner Join hat genau diese Zeilen
-		// aussortiert — ein Prüfprotokoll, das ausgerechnet die unbeaufsichtigten
-		// Aktionen verschweigt, ist das Gegenteil von dem, wofür es geführt wird.
-		//
-		// COALESCE ist dabei Pflicht, nicht Kosmetik: bearbeiter_id, vorname und nachname
-		// sind ab jetzt nullbar, die Go-Felder sind es nicht — ohne COALESCE stünde hier
-		// ein "cannot scan NULL" statt des Logbuchs.
-		query := `
-			SELECT l.id, l.tabelle, l.aktion, l.datensatz_id, l.timestamp,
-			       COALESCE(l.bearbeiter_id::text, ''),
-			       COALESCE(b.vorname, ''), COALESCE(b.nachname, ''),
-			       l.akteur
-			FROM audit_log l
-			LEFT JOIN benutzer b ON l.bearbeiter_id = b.id
-			ORDER BY l.timestamp DESC
-			LIMIT ` + strconv.Itoa(auditLogMaxZeilen)
-		rows, err := s.DB.Pool.Query(ctx, query)
+		zeilen, err := repository.ListeAuditLog(ctx, s.DB.Pool, auditLogMaxZeilen)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer rows.Close()
 
 		logs := []AuditLogEntry{}
-		for rows.Next() {
-			var l AuditLogEntry
-			err := rows.Scan(&l.ID, &l.Tabelle, &l.Aktion, &l.DatensatzID, &l.Timestamp,
-				&l.BearbeiterID, &l.BearbeiterVorname, &l.BearbeiterNachname, &l.Akteur)
-			if err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			logs = append(logs, l)
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+		for _, z := range zeilen {
+			logs = append(logs, AuditLogEntry(z))
 		}
 
 		RespondJSON(w, http.StatusOK, logs)
