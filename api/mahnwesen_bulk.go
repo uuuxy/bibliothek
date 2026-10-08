@@ -73,7 +73,7 @@ func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 // Die Auswahl kommt aus der Oberfläche, nicht aus einer serverseitigen Abfrage — wer
 // mahnt, soll vorher sehen, wen es trifft.
 type BulkPrintRequest struct {
-	AusleihIDs []string `json:"ausleih_ids" validate:"omitempty,dive,uuid_oder_leer"`
+	AusleihIDs []string `json:"ausleih_ids" validate:"omitempty,dive,required,uuid_oder_leer"`
 }
 
 // BulkPrintMahnungenHandler druckt die Mahnbriefe zu den gewählten Ausleihen und zählt die

@@ -208,7 +208,7 @@ func (s *Server) SearchOrdersHandler() http.HandlerFunc {
 
 // BulkReceiveRequest represents the payload for bulk receiving an order.
 type BulkReceiveRequest struct {
-	ExemplarIDs []string `json:"exemplar_ids" validate:"omitempty,dive,uuid_oder_leer"`
+	ExemplarIDs []string `json:"exemplar_ids" validate:"omitempty,dive,required,uuid_oder_leer"`
 }
 
 // BulkReceiveOrderHandler marks all pre-allocated items for a specific order group as received.

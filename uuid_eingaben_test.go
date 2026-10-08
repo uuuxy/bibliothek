@@ -389,6 +389,8 @@ func pruefeStructFelder(p *uuidPaket, paket, funktion string, typ ast.Expr, besu
 					melde(schluessel, funktion)
 				} else if istListe(feld.Type) && !strings.Contains(validate, "dive") {
 					melde(schluessel+":ohne dive", funktion)
+				} else if istListe(feld.Type) && !elementIstPflicht(validate) {
+					melde(schluessel+":leeres Element", funktion)
 				}
 			}
 			continue
@@ -404,6 +406,28 @@ func pruefeStructFelder(p *uuidPaket, paket, funktion string, typ ast.Expr, besu
 			}
 		}
 	}
+}
+
+// elementIstPflicht sagt, ob ein Listen-Tag jedes Element als Pflicht prüft: `required`
+// hinter `dive`. uuid_oder_leer lässt "" durch — für ein optionales Einzelfeld richtig. In
+// einer Liste von Kennungen ist ein leeres Element aber keine Angabe, sondern ein Fehler,
+// und es lief bis zur Datenbank: am 08.10.2026 am Wareneingang nachgestellt, 500 statt 400.
+// Das Muster der Geschwister (Eigentum, Standort, Schlagwort-Pflege) ist
+// `dive,required,uuid_oder_leer`.
+func elementIstPflicht(validate string) bool {
+	teile := strings.Split(validate, ",")
+	for i, t := range teile {
+		if t != "dive" {
+			continue
+		}
+		for _, regel := range teile[i+1:] {
+			if regel == "required" {
+				return true
+			}
+		}
+		return false
+	}
+	return false
 }
 
 func istListe(typ ast.Expr) bool {
@@ -535,12 +559,16 @@ type eintrag struct { ID string ` + "`json:\"id\" validate:\"uuid_oder_leer\"`" 
 type stapel struct { Eintraege []eintrag ` + "`json:\"eintraege\"`" + ` }
 type stapelDive struct { Eintraege []eintrag ` + "`json:\"eintraege\" validate:\"dive\"`" + ` }
 type listeOhneDive struct { IDs []string ` + "`json:\"ids\" validate:\"omitempty,uuid_oder_leer\"`" + ` }
+type listeLeeresElement struct { IDs []string ` + "`json:\"ids\" validate:\"omitempty,dive,uuid_oder_leer\"`" + ` }
+type listeSauber struct { IDs []string ` + "`json:\"ids\" validate:\"omitempty,dive,required,uuid_oder_leer\"`" + ` }
 func oKurz(w, r any) { req := ohneTag2{}; DecodeAndValidate(w, r, &req) }
 func pQueryVar(r any) { q := r.URL.Query(); _ = q.Get("schueler_id") }
 func qStapel(w, r any) { var req stapel; DecodeAndValidate(w, r, &req) }
 func rStapelDive(w, r any) { var req stapelDive; DecodeAndValidate(w, r, &req) }
 func sListeOhneDive(w, r any) { var req listeOhneDive; DecodeAndValidate(w, r, &req) }
 func tFremd(w, r any) { var req fremd.Anfrage; DecodeAndValidate(w, r, &req) }
+func uListeLeer(w, r any) { var req listeLeeresElement; DecodeAndValidate(w, r, &req) }
+func vListeSauber(w, r any) { var req listeSauber; DecodeAndValidate(w, r, &req) }
 `
 	fremdQuelle := `package fremd
 type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
@@ -560,10 +588,13 @@ type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 	maengel, _ := pruefeUUIDEingaben(map[string]*uuidPaket{"p": p, "fremd": fremd})
 	// Seit dem 22.09.2026 auch: Kurzform `req := T{}` (oKurz), Query-Variable (pQueryVar),
 	// Liste von Structs ohne `dive` (qStapel), Kennungsliste ohne `dive` (sListeOhneDive),
-	// Typ aus fremdem Paket (tFremd). rStapelDive ist die saubere Gegenprobe.
+	// Typ aus fremdem Paket (tFremd). rStapelDive ist die saubere Gegenprobe. Seit dem
+	// 08.10.2026 auch: Kennungsliste mit `dive`, aber ohne `required` je Element
+	// (uListeLeer); vListeSauber ist ihre Gegenprobe.
 	erwartet := []string{
 		"fremd.Anfrage.ID (tFremd)",
 		"p.liste.IDs (fListe)",
+		"p.listeLeeresElement.IDs:leeres Element (uListeLeer)",
 		"p.listeOhneDive.IDs:ohne dive (sListeOhneDive)",
 		"p.ohneTag.SessionID (aTag)",
 		"p.ohneTag2.SessionID (oKurz)",

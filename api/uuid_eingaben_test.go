@@ -71,6 +71,13 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 		{"Inventur abschließen", s.InventurFinishHandler(), http.MethodPost, "/api/inventur/finish", `{"session_id":"x"}`},
 		{"Inventur abbrechen", s.InventurAbortHandler(), http.MethodPost, "/api/inventur/abort", `{"session_id":"x"}`},
 		{"Verluste endgültig löschen", s.InventurVerlusteLoeschenHandler(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":["x"]}`},
+		// Eine leere Kennung IN einer Liste: uuid_oder_leer lässt "" durch, `required` hinter
+		// `dive` nicht. Bis zum 08.10.2026 erreichten diese vier Türen damit die Datenbank
+		// (am Wareneingang nachgestellt: 500 statt 400).
+		{"Verluste endgültig löschen, leeres Element", s.InventurVerlusteLoeschenHandler(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":[""]}`},
+		{"Wareneingang einbuchen, leeres Element", s.BulkReceiveOrderHandler(), http.MethodPost, "/api/bestellungen/bulk-receive", `{"exemplar_ids":[""]}`},
+		{"Mahnbriefe drucken, leeres Element", s.BulkPrintMahnungenHandler(), http.MethodPost, "/api/mahnwesen/bulk-print", `{"ausleih_ids":[""]}`},
+		{"Schüler-Etiketten, leeres Element", s.PrintSchuelerEtikettenHandler(nil), http.MethodPost, "/api/print/schueler-etiketten", `{"formatId":"x","schuelerIds":[""]}`},
 		{"Fehlbestand ?session_id in urn-Form", s.InventurFehlbestandHandler(), http.MethodGet, "/api/inventur/fehlbestand?session_id=" + urnForm, ""},
 		{"Inventur abschließen, urn-Form", s.InventurFinishHandler(), http.MethodPost, "/api/inventur/finish", `{"session_id":"` + urnForm + `"}`},
 		{"Schüler zusammenführen, urn-Form", s.ZusammenfuehrenSchuelerHandler(nil), http.MethodPost, "/api/schueler/11111111-1111-1111-1111-111111111111/zusammenfuehren", `{"quelle_id":"` + urnForm + `"}`},

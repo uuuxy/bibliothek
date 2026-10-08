@@ -75,7 +75,7 @@ type VerlustGefundenResponse struct {
 
 // verlustLoeschenRequest benennt die endgültig zu löschenden Exemplare.
 type verlustLoeschenRequest struct {
-	ExemplarIDs []string `json:"exemplar_ids" validate:"omitempty,dive,uuid_oder_leer"`
+	ExemplarIDs []string `json:"exemplar_ids" validate:"omitempty,dive,required,uuid_oder_leer"`
 }
 
 // InventurVerlusteLoeschenHandler löscht als Verlust gebuchte Exemplare endgültig.
