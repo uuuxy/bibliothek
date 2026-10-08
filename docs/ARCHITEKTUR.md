@@ -1300,7 +1300,7 @@ kürzer als der Heartbeat-Abstand und länger als jede normale Anfrage.
 
 ## 7. Verteilungssicht
 
-Stand: 26.09.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
+Stand: 08.10.2026 · Betriebsanleitung: [DEPLOYMENT.md](DEPLOYMENT.md)
 
 ---
 
@@ -1422,7 +1422,7 @@ protokolliert das beim Start ausdrücklich.
 | `TRUSTED_PROXIES`                               | praktisch ja| Ohne den Wert sieht das Backend hinter Caddy nur eine Proxy-IP: fünf Fehl-Logins eines Nutzers sperren **alle** (globaler DoS). Compose setzt das private Docker-Netz als Vorgabe |
 | `IMAP_HOST`, `IMAP_PORT`                        | ja          | `PruefeIMAPKonfiguration()` bricht früh ab — fehlt der Host, kann sich niemand anmelden; steht er auf `mock`, jeder |
 | `SELBSTANMELDUNG_DOMAIN`                        | nein        | Leer ⇒ der Weg ist zu; richtige Zugangsdaten enden in „Anmeldung fehlgeschlagen". Die Selbstprüfung meldet das als Warnung |
-| `INITIAL_ADMIN_EMAIL`                           | nein        | Leer ⇒ System startet ohne Admin-Zugang und sagt das in einer Logzeile. **Kein** Passwort — es gibt keins      |
+| `INITIAL_ADMIN_EMAIL`                           | nein        | Leer ⇒ System startet ohne Admin-Zugang und sagt das in einer Logzeile; keine Adresse ⇒ der erste Start bricht ab. **Kein** Passwort — es gibt keins |
 | `BACKUP_ENCRYPTION_KEY`, `BACKUP_DIR`           | nein        | Ohne Schlüssel **überspringt** sich der Backup-Job — die Selbstprüfung macht genau das sichtbar                 |
 | `S3_ENDPOINT/ACCESS_KEY/SECRET_KEY/BUCKET/USE_SSL` | nein     | Nur bei vollständiger Angabe läuft der Offsite-Upload; sonst überspringt der Job ihn und protokolliert es       |
 | `ALLOWED_ORIGIN`                                | nein        | CORS-Herkunft der Schuldomain                                                                                 |

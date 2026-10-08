@@ -413,9 +413,9 @@ Vermerk.
 - Code, den kein Go-Test ausführt (gemessen am 08.10.2026 mit der ganzen Suite und `-coverpkg`
   über alle Pakete: 86,0 % der Anweisungen, 27.869 von 32.402; ohne das Go-Paket, das npm unter
   `frontend/node_modules/flatted` ablegt und das `./...` lokal mitzählt). Unter 50 % liegen, ohne
-  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, zwei Dateien:
-  `internal/service/cover_service.go` 18,2 % und `db/seed.go` 35,5 %. In
-  `api/orders_handler.go` führt kein Test die Bestellsuche aus (13,3 %).
+  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, eine Datei:
+  `internal/service/cover_service.go` mit 18,2 %. In `api/orders_handler.go` führt kein Test
+  die Bestellsuche aus (13,3 %).
   Ob Browser-Tests diesen Code erreichen, ist nicht gemessen. Anlass: Das Nachziehen der
   Tests für fünf Routen am 03.10.2026 fand drei Fehler (zwei Abweisungen beim Zusammenführen
   ohne Grund, ein unlesbares Bild als Störung gemeldet, eine Antwort des Foto-Uploads, die

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/mail"
 	"os"
+	"strings"
 )
 
 const (
@@ -14,9 +16,9 @@ const (
 		ON CONFLICT (role, permission) DO NOTHING
 	`
 
-	// Ohne Ausweisnummer: Die gehört seit Migration 125 zur Leserzeile, die der Trigger
-	// trg_benutzer_hat_leserzeile mit anlegt. Der Admin bekommt seine Nummer, wenn ein
-	// Ausweis für ihn gedruckt wird.
+	// Ohne Ausweisnummer: Sie gehört zur Leserzeile, die der Trigger
+	// trg_benutzer_hat_leserzeile mit anlegt. Die Nummer vergibt
+	// trg_aktives_konto_hat_ausweis mit dem Commit.
 	insertInitialAdminSQL = `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
 		VALUES ('System', 'Administrator', $1, 'admin', true)
@@ -340,11 +342,18 @@ func (db *Database) InitAdmin(ctx context.Context) error {
 		return nil // Users exist, no need to bootstrap
 	}
 
-	email := os.Getenv("INITIAL_ADMIN_EMAIL")
+	// Gespeichert wird die Adresse, wie die Anmeldung sie sucht und wie die übrigen Wege ein
+	// Konto anlegen (repository.LegeKollegiumskonto): klein und ohne Leerraum.
+	email := strings.ToLower(strings.TrimSpace(os.Getenv("INITIAL_ADMIN_EMAIL")))
 
 	if email == "" {
 		log.Println("Warnung: Keine Benutzer in der Datenbank und INITIAL_ADMIN_EMAIL nicht gesetzt. System startet ohne Admin-Zugang.")
 		return nil
+	}
+	// Ein Wert ohne die Form einer Adresse ergäbe ein Konto, in das niemand kommt, und nach
+	// diesem Start wirkt die Variable nicht mehr. Der Abbruch lässt die Tabelle leer.
+	if adresse, err := mail.ParseAddress(email); err != nil || adresse.Address != email {
+		return fmt.Errorf("INITIAL_ADMIN_EMAIL ist keine E-Mail-Adresse: %q", email)
 	}
 
 	// Ein einzelnes INSERT ist für sich atomar — die frühere Transaktion klammerte den
