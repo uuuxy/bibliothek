@@ -1,35 +1,15 @@
 <!-- @component StudentBatchPrint — versteckte Druckfläche für einen Stapel Ausweise aus
      der Schülerdatei.
 
-     Rendert über PrintPreview und damit über dieselbe CardFace-Quelle wie der
-     Einzeldruck im Profil (StudentPrintCard) und die Vorschau im Ausweis-Designer.
-     Drei Wege, ein optisches Ergebnis — ein eigener Renderer hier hätte über kurz oder
-     lang eine zweite Kartenoptik ergeben, die niemand pflegt.
-
-     Das Ausweis-Design wird zentral geladen (GET /api/ausweis-layout), genau wie im
-     Profil. Ohne das stünden hier die Store-Defaults und der Stapel sähe anders aus als
-     die Karte, die man vorher im Designer eingerichtet hat.
-
-     Kartendrucker oder A4-Bogen entscheidet NICHT dieser Bildschirm, sondern das
-     gespeicherte Design (idStore.printMode). Der Ausweis-Designer legt fest, wie
-     gedruckt wird; die Schülerdatei legt fest, WER gedruckt wird.
-
-     Dieser Satz stand hier, war aber bis zum 24.08.2026 nicht wahr: Der Umschalter im
-     Designer schrieb in ein LOKALES $state seines Bildschirms, nicht in den Store.
-     idStore.printMode hat damit nie eine Stelle im Programm geschrieben — er stand
-     für immer auf 'card'. Wer im Designer auf A4 stellte, bekam dort einen A4-
-     Testdruck und aus dieser Ansicht danach trotzdem Kartendruck. Zwei Türen zum
-     selben Zustand, von denen nur eine ihn wirklich anfasst. Seitdem schreibt der
-     Designer in den Store, und der Wert läuft über serializeDesign() in die zentrale
-     Speicherung — er gilt also an allen Arbeitsplätzen wie der Rest des Designs. -->
+     Zeichnet über PrintPreview und damit über dieselbe CardFace-Quelle wie der Einzeldruck
+     der Akte (StudentPrintCard) und die Vorschau im Ausweis-Designer: Ein eigener Renderer
+     ergäbe eine zweite Karte, die niemand pflegt. Ob Karten oder Etiketten gedruckt werden,
+     entscheidet das gespeicherte Design (idStore.printMode); die Schülerdatei legt fest,
+     wer gedruckt wird. -->
 <script>
 	import { onMount } from 'svelte';
-	import {
-		idStore,
-		applyDesign,
-		designWurdeGeladen
-	} from '../../designer/idDesignerStore.svelte.js';
-	import { apiFetch } from '../../apiFetch.js';
+	import { idStore } from '../../designer/idDesignerStore.svelte.js';
+	import { ladeAusweisDesign } from '../../designer/ausweisDesignLaden.js';
 	import PrintPreview from '../../designer/PrintPreview.svelte';
 
 	/** @type {{ students: any[] }} */
@@ -40,17 +20,7 @@
 	let timestamp = $state(Date.now());
 
 	onMount(async () => {
-		// Nur beim ERSTEN Bedarf der Sitzung laden (designWurdeGeladen): Ein erneuter
-		// GET bei jedem Mount überschrieb frische, noch nicht fertig gespeicherte
-		// Designer-Änderungen mit dem alten Serverstand — siehe idDesignerStore.
-		try {
-			if (!designWurdeGeladen()) {
-				const res = await apiFetch('/api/ausweis-layout');
-				if (res.ok) applyDesign(await res.json());
-			}
-		} catch (e) {
-			console.error('Ausweis-Design konnte nicht geladen werden:', e);
-		}
+		await ladeAusweisDesign();
 		timestamp = Date.now();
 	});
 </script>

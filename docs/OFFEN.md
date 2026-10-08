@@ -173,8 +173,8 @@ der Nummer nichts mehr dazu offen ist.
   Lesern; Stornierungen ohne die Kennung des Lesers), danach bereinigen.
 - [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26,
   die Excel-Bibliothek auf einem unveröffentlichten Stand.
-- [ ] **Ausweis aus der Leserakte (5.5):** Scheitert das Laden des Ausweis-Designs, druckt die
-  Leserakte mit den Vorgabewerten, ohne es zu melden; der Stapeldruck meldet es.
+- [x] **Ausweis aus der Leserakte (5.5):** Lässt sich das Ausweis-Design nicht laden, drucken
+  Leserakte und Leserdatei seit dem 08.10.2026 nicht und sagen es beim Druck.
 - [ ] **Bestellsuche (5.5):** Antwortet die DNB nicht, zeigt die Suche nur die Treffer aus dem
   eigenen Katalog, ohne es zu sagen.
 - [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
@@ -376,15 +376,6 @@ Vermerk.
   `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE bestellstatus IS NULL AND NOT ist_ausgesondert) AS im_bestand, count(*) FILTER (WHERE ist_ausgesondert) AS ausgesondert, count(*) FILTER (WHERE bestellstatus IS NOT NULL AND NOT ist_ausgesondert) AS im_zulauf FROM buecher_exemplare WHERE zugang_am IS NULL;"`
   Erwartet: „im_bestand" 0. „ausgesondert" sind bestellte Exemplare, die nie eintrafen und
   ausgebucht wurden; sie stehen in keinem der beiden Bücher und nicht in der Statistik.
-- **„Ausweis drucken" in der Leserakte nach einem gescheiterten Laden des Designs** (gefunden
-  am 08.10.2026, am Code gelesen, nicht nachgestellt). Drei Stellen laden das Design der
-  Ausweise mit je eigenem Code: der Stapeldruck der Schülerdatei
-  (`components/students/ausweisdruck.svelte.js`), `StudentBatchPrint.svelte` und
-  `StudentPrintCard.svelte`. Nur der erste meldet ein gescheitertes Laden („Druckeinstellung
-  (Karte/Etikett) konnte nicht geladen werden"); die Leserakte druckt dann mit den
-  Vorgabewerten, ohne es zu sagen. Der falsche Ausweis liegt sichtbar im Drucker, deshalb
-  Kategorie B. Abhilfe: ein Lader für alle drei, mit der Meldung und so, dass zwei Bauteile
-  auf derselben Seite nur einmal laden.
 - **Bestellsuche ohne Hinweis, wenn die DNB nicht antwortet** (gefunden am 08.10.2026 beim
   Test der Tür, `api/bestellsuche_pg_test.go`). `POST /api/bestellungen/suche` liefert bei
   einem Ausfall der DNB die Treffer aus dem eigenen Katalog und sonst nichts

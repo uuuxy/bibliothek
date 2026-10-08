@@ -1903,6 +1903,17 @@ Antwort `{}` heißt „noch keines gespeichert": Der Designer zeigt danach seine
 und speichert sie. Ein gescheitertes Lesen beantwortet der Server deshalb mit einem Fehler,
 nie mit `{}` (`api/ausweis_layout_tuer_pg_test.go`).
 
+**Gedruckt wird nur mit geladenem Design.** Die Druckwege — Stapeldruck und Druckfläche der
+Leserdatei, Einzeldruck der Akte — laden es über einen Lader (`designer/ausweisDesignLaden.js`):
+einmal je Sitzung, Bauteile derselben Seite teilen sich den Abruf. Er meldet nichts, weil die
+Akte auch an der Theke lädt und die Meldung dort bei jedem Leser aufginge. Vor dem Druckdialog
+fragt jeder Weg `designFuerDruck`: Fehlt das Design, wird es jetzt geladen; scheitert das, steht
+die Meldung da und nichts wird gedruckt. Mit den Standardwerten käme sonst eine Karte aus dem
+Drucker, die richtig aussieht und es nicht ist, oder eine Karte statt des eingestellten
+Etiketts. Der Designer lädt eigens (`idDesignPersistenz.svelte.js`): Er zeigt den Fehler an
+der Leinwand und sperrt das Speichern. Einen weiteren Abrufer hält
+`designer/ausweisDesignLaden.test.js` auf.
+
 **Etiketten: drei Wege zum selben Blatt.** Ein Buch-Etikett entsteht über „Barcodes
 drucken" am Titel (`GET /api/buecher/titel/{id}/etiketten`), über das Druck-Center
 (`POST /api/print/labels`) und für den Händler (Seite und Mailanhang,

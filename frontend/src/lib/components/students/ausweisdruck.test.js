@@ -7,11 +7,9 @@ import { toastStore } from '../../stores/toastStore.svelte.js';
 vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
 vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
 
-// Raster-Fund 24.08.2026 („wer lädt den geteilten Zustand?"): Dieses Modul entscheidet
-// am zentral gespeicherten printMode, ob Karten oder Etiketten aus dem Drucker kommen —
-// geladen hat den Wert auf dem Schülerdatei-Pfad aber nur StudentBatchPrint, also genau
-// die Komponente, die das Ergebnis des eigenen Ladens wieder abräumt. Das ging nur
-// zufällig gut. Hier steht deshalb fest: Wer den Zustand liest, lädt ihn auch selbst.
+// Dieses Modul entscheidet am zentral gespeicherten printMode, ob Karten oder Etiketten aus
+// dem Drucker kommen. Wer den Zustand liest, lädt ihn auch selbst: Die Druckfläche
+// (StudentBatchPrint) hängt nur im Baum, solange Karten markiert sind.
 
 /** Lässt die anstehenden Microtasks (fetch → json → applyDesign) durchlaufen. */
 const stillhalten = () => new Promise((fertig) => setTimeout(fertig, 0));
@@ -51,7 +49,7 @@ describe('erzeugeAusweisdruck: lädt das zentrale Design selbst', () => {
 
 		expect(druck.etikettModus).toBe(false);
 		expect(toastStore.addToast).toHaveBeenCalledWith(
-			expect.stringContaining('Druckeinstellung'),
+			expect.stringContaining('Ausweis-Design nicht geladen'),
 			'error'
 		);
 	});
@@ -109,5 +107,40 @@ describe('erzeugeAusweisdruck: Karten über den Druck des Browsers', () => {
 		expect(document.body.hasAttribute('data-print-mode')).toBe(false);
 		expect(document.body.hasAttribute('data-print-side')).toBe(false);
 		expect(seitenregelDa()).toBe(false);
+	});
+
+	// Ohne das gespeicherte Design gälte der Kartendruck mit den Standardwerten, auch wenn
+	// die Schule Etiketten eingestellt hat.
+	it('druckt nicht, solange das Design nicht zu laden ist', async () => {
+		vi.mocked(apiFetch).mockRejectedValue(new Error('Netz weg'));
+		const drucken = vi.fn();
+		vi.stubGlobal('print', drucken);
+		const druck = erzeugeAusweisdruck();
+		await stillhalten();
+		vi.mocked(toastStore.addToast).mockClear();
+
+		await druck.drucke([{ id: 's1' }]);
+
+		expect(drucken).not.toHaveBeenCalled();
+		expect(toastStore.addToast).toHaveBeenCalledWith(
+			'Nicht gedruckt: Das Ausweis-Design ist nicht geladen.',
+			'error'
+		);
+	});
+
+	it('lädt das Design beim Drucken nach, wenn der erste Abruf gescheitert war', async () => {
+		vi.mocked(apiFetch).mockRejectedValueOnce(new Error('Netz weg'));
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			/** @type {any} */ ({ ok: true, json: async () => ({ printMode: 'card' }) })
+		);
+		const drucken = vi.fn();
+		vi.stubGlobal('print', drucken);
+		const druck = erzeugeAusweisdruck();
+		await stillhalten();
+
+		await druck.drucke([{ id: 's1' }]);
+
+		expect(apiFetch).toHaveBeenCalledTimes(2);
+		expect(drucken).toHaveBeenCalledTimes(1);
 	});
 });

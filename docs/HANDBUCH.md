@@ -426,6 +426,9 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
   mit `A-`; ältere Karten mit `S-` oder `L-` bleiben gültig und werden weiter gelesen. Eine
   `A-`-Nummer vergibt das Programm nur einmal: Wird eine Person gelöscht oder anonymisiert,
   bekommt niemand sonst ihre Nummer, und ihre alte Karte findet an der Theke niemanden.
+  Gedruckt wird mit dem Design aus dem Ausweis-Designer. Lässt es sich gerade nicht laden,
+  druckt das Programm nicht und meldet _Nicht gedruckt: Das Ausweis-Design ist nicht geladen_;
+  der nächste Klick versucht es erneut. Dasselbe gilt für _Ausweise drucken_ in der Leserdatei.
 - **Gebühren & Schäden** (eigener Reiter; die Zahl daran nennt die offenen Forderungen): offen /
   bezahlt / storniert; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
   Grund. Steht eine offene Forderung noch auf keinem Brief, gibt es hier _Bescheid erstellen_

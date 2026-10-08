@@ -14,7 +14,7 @@ import { findeVerschluckteFehlantworten } from './fehlerausgangScanner.js';
 //   - Der Ausweis-Designer schrieb nach einem fehlgeschlagenen Laden das VORGABE-Design
 //     an alle Arbeitsplätze — ohne Klick, nur durch Öffnen des Bildschirms (c2be1069).
 //
-// Die sechzehn Reste stehen hier mit Begründung. Das ist ein Bestand bewusster
+// Die vierzehn Reste stehen hier mit Begründung. Das ist ein Bestand bewusster
 // Ausnahmen, KEINE Erlaubnis: Neues gehört behandelt, nicht eingetragen.
 //
 // Ausgetragen am 30.09.2026: die Klassen in klassenVorschlaege.svelte.js und in ClassAssignPicker.
@@ -54,16 +54,6 @@ const BESTAND = {
 	'src/lib/lmfplanPlaner.svelte.js': [
 		1,
 		'kein Response, sondern ein Ergebnis-Objekt — der Toast steht eine Zeile davor'
-	],
-
-	// — Ausweis-Design in den Druckwegen: Fällt der Abruf aus, greifen die Vorgabewerte,
-	//   und genau die zeigt die Vorschau auf dem Bildschirm, bevor irgendetwas gedruckt
-	//   wird. Der gefährliche Zwilling war der Designer selbst (Auto-Speicherung) — der
-	//   ist behoben; diese beiden schreiben nichts zurück.
-	'src/lib/StudentPrintCard.svelte': [1, 'Ausweis-Design; Vorschau zeigt, was gedruckt wird'],
-	'src/lib/components/students/StudentBatchPrint.svelte': [
-		1,
-		'Ausweis-Design; Vorschau zeigt, was gedruckt wird'
 	],
 
 	// — Seit dem 12.09.2026 sieht der Detektor zwei weitere Formen (UND-Kette und

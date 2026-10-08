@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
-	import { idStore, applyDesign, designWurdeGeladen } from './designer/idDesignerStore.svelte.js';
-	import { apiFetch } from './apiFetch.js';
+	import { idStore } from './designer/idDesignerStore.svelte.js';
+	import { ladeAusweisDesign } from './designer/ausweisDesignLaden.js';
 	import CardFace from './designer/CardFace.svelte';
 	import { kartenStil } from './designer/kartenFarben.js';
 
@@ -11,22 +11,10 @@
 	// Rückseite nur mitdrucken, wenn sie Inhalt hat (sonst leere zweite Kartenseite).
 	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
 
-	// Zentrales Ausweis-Design laden, damit der profilseitige Einzeldruck EXAKT dasselbe
-	// Layout wie der DruckCenter-Batchdruck zeigt. Beide rendern über CardFace aus
-	// demselben idStore — es gibt nur noch ein optisches Ergebnis pro Ausweis, egal von
-	// welchem Button/Arbeitsplatz gedruckt wird.
-	onMount(async () => {
-		// Nur beim ERSTEN Bedarf der Sitzung laden (designWurdeGeladen): Ein erneuter
-		// GET bei jedem Mount überschrieb frische, noch nicht fertig gespeicherte
-		// Designer-Änderungen mit dem alten Serverstand — siehe idDesignerStore.
-		try {
-			if (!designWurdeGeladen()) {
-				const res = await apiFetch('/api/ausweis-layout');
-				if (res.ok) applyDesign(await res.json());
-			}
-		} catch (e) {
-			console.error('Ausweis-Design konnte nicht geladen werden:', e);
-		}
+	// Der Einzeldruck der Akte zeigt dasselbe Design wie der Stapeldruck: Beide zeichnen über
+	// CardFace aus dem idStore, und beide laden ihn über denselben Lader.
+	onMount(() => {
+		ladeAusweisDesign();
 	});
 </script>
 

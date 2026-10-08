@@ -1,5 +1,8 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { druckeAusweis } from './ausweisDruck.js';
+import { designFuerDruck } from './designer/ausweisDesignLaden.js';
+
+vi.mock('./designer/ausweisDesignLaden.js', () => ({ designFuerDruck: vi.fn() }));
 
 const SEITENREGEL = '85.6mm 53.98mm';
 
@@ -27,29 +30,44 @@ function beimDrucken() {
 	return gesehen;
 }
 
+beforeEach(() => {
+	vi.mocked(designFuerDruck).mockResolvedValue(true);
+});
 afterEach(() => vi.unstubAllGlobals());
 
 describe('druckeAusweis', () => {
-	it('druckt beide Seiten im Kartenformat, ohne eine Seite zu nennen', () => {
+	it('druckt beide Seiten im Kartenformat, ohne eine Seite zu nennen', async () => {
 		const gesehen = beimDrucken();
 
-		druckeAusweis();
+		await druckeAusweis();
 
 		expect(gesehen).toEqual([{ modus: 'card-single', seite: null, seitenregel: true }]);
 	});
 
-	it.each(['front', 'back'])('nennt der Druck-CSS die Seite „%s“', (seite) => {
+	it.each(['front', 'back'])('nennt der Druck-CSS die Seite „%s“', async (seite) => {
 		const gesehen = beimDrucken();
 
-		druckeAusweis(/** @type {'front' | 'back'} */ (seite));
+		await druckeAusweis(/** @type {'front' | 'back'} */ (seite));
 
 		expect(gesehen).toEqual([{ modus: 'card-single', seite, seitenregel: true }]);
 	});
 
-	it('räumt nach dem Drucken Attribute und Seitenregel wieder ab', () => {
+	// Ohne das gespeicherte Design käme die Karte mit den Standardwerten aus dem Drucker.
+	it('druckt nicht, solange das Ausweis-Design nicht geladen ist', async () => {
+		vi.mocked(designFuerDruck).mockResolvedValue(false);
+		const gesehen = beimDrucken();
+
+		await druckeAusweis();
+
+		expect(gesehen).toEqual([]);
+		expect(document.body.hasAttribute('data-print-mode')).toBe(false);
+		expect(seitenregelDa()).toBe(false);
+	});
+
+	it('räumt nach dem Drucken Attribute und Seitenregel wieder ab', async () => {
 		beimDrucken();
 
-		druckeAusweis('front');
+		await druckeAusweis('front');
 
 		// Bliebe etwas stehen, druckte die nächste Seite dieses Tabs im Kartenformat.
 		expect(document.body.hasAttribute('data-print-mode')).toBe(false);

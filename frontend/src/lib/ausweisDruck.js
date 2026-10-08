@@ -1,17 +1,17 @@
 // Der Ausweisdruck aus der Akte: eine Karte, Scheckkartenformat.
 //
-// Eigene Datei, weil StudentProfile.svelte an der Größen-Ratsche steht und das Setzen
-// von Seitengröße und Druckmodus nichts mit dem Führen der Akte zu tun hat.
-//
 // Die @page-Regel wird als <style> eingehängt und danach wieder entfernt: Bliebe sie
-// stehen, druckte die NÄCHSTE Seite dieses Tabs (Liste, Bericht) ebenfalls auf 85,6 ×
+// stehen, druckte die nächste Seite dieses Tabs (Liste, Bericht) ebenfalls auf 85,6 ×
 // 54 mm.
+import { designFuerDruck } from './designer/ausweisDesignLaden.js';
 
 /**
- * Druckt die Ausweiskarte des gerade offenen Lesers.
+ * Druckt die Ausweiskarte des gerade offenen Lesers, mit dem gespeicherten Design oder gar
+ * nicht.
  * @param {'front'|'back'|'both'} [seite] Zu druckende Ausweisseite(n).
  */
-export function druckeAusweis(seite = 'both') {
+export async function druckeAusweis(seite = 'both') {
+	if (!(await designFuerDruck())) return;
 	const stil = document.createElement('style');
 	stil.textContent = '@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }';
 	document.head.appendChild(stil);
