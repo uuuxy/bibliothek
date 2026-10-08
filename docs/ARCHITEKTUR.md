@@ -2101,6 +2101,14 @@ wenn man ihn einmal gebraucht hat.
   Fokus hat; `locator.fill()` und `locator.click()` setzen den Fokus selbst und verdecken, dass
   er fehlt. Vorlage: `frontend/e2e/kiosk-scannerfokus.spec.js` (`page.keyboard.type`, Enter,
   Nachweis an der Datenbank).
+- **Nach dem Speichern wartet ein Browser-Test auf den gespeicherten Stand, nicht auf die
+  Meldung.** Eine Meldung der Oberfläche steht fünf Sekunden
+  (`frontend/src/lib/stores/toastStore.svelte.js`). Speichert ein Test zweimal kurz
+  hintereinander, ist die Erwartung an den Text „Buch erfolgreich gespeichert!" gleich nach dem
+  Klick an der Meldung vom ersten Mal erfüllt und belegt das zweite Speichern nicht; erscheint
+  die zweite dazu, trifft der Ausdruck zwei Elemente, und der Test bricht ab. Am Arbeitsplatz
+  blieb das grün, im Prüflauf wurde es rot. Vorlage: `expect.poll` auf eine Abfrage der
+  Datenbank in `frontend/e2e/feld-roundtrip.spec.js`.
 - **Eine Druckseite wird in der Druckansicht gemessen.** `window.print` durch eine Attrappe
   ersetzen, den echten Auslöser klicken, `page.emulateMedia({ media: 'print' })`, dann in der
   Seite messen (`frontend/e2e/ausweis-druckseite.spec.js`). Am DOM allein fällt nicht auf, wenn
