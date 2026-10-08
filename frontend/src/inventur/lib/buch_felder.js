@@ -29,7 +29,10 @@ const vergleichbar = (wert) => JSON.stringify(wert === '' || wert === undefined 
  * @param {any} formular
  */
 export function merkeStand(formular) {
-	formular.geladen = JSON.parse(JSON.stringify({ ...formular, geladen: undefined }));
+	const stand = structuredClone({ ...formular, geladen: undefined });
+	// Die Kopie führt keinen eigenen Stand vom Öffnen.
+	delete stand.geladen;
+	formular.geladen = stand;
 }
 
 /**

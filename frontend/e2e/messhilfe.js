@@ -63,15 +63,24 @@ export async function warteAufInhalt(anfragen, zaehle) {
 				{ timeout: 20_000, intervals: [200, 300, 400, 500] }
 			)
 			.toBeGreaterThanOrEqual(2);
-	} catch (fehler) {
+	} catch (err) {
 		throw new Error(
 			`Die Seite kommt nicht zur Ruhe. Offene Datenanfragen: ${anfragen.pfade().join(', ') || 'keine'}; ` +
 				`letzte Zählung: ${vorherige}.`,
-			{ cause: fehler }
+			{ cause: err }
 		);
 	}
 	return vorherige;
 }
+
+/**
+ * Eine Antwort ist da, bevor sie gezeichnet ist: zwei Bilder abwarten.
+ * @param {import('@playwright/test').Page} page
+ */
+const zweiBilder = (page) =>
+	page.evaluate(
+		() => new Promise((fertig) => requestAnimationFrame(() => requestAnimationFrame(fertig)))
+	);
 
 /**
  * Die Gegenprobe nach einer Messung. Sie traut dem Warten davor nicht: Steht nach dem Ende
@@ -88,10 +97,7 @@ export async function pruefeNichtZuFruehGemessen(page, anfragen, zaehle, gemesse
 		.poll(
 			async () => {
 				if (anfragen.offen() > 0) return false;
-				// Eine Antwort ist da, bevor sie gezeichnet ist: zwei Bilder abwarten.
-				await page.evaluate(
-					() => new Promise((fertig) => requestAnimationFrame(() => requestAnimationFrame(fertig)))
-				);
+				await zweiBilder(page);
 				return anfragen.offen() === 0;
 			},
 			{ timeout: 20_000, intervals: [100, 200, 300] }

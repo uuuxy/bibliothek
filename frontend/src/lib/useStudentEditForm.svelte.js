@@ -4,6 +4,60 @@ import { fehlertext } from './utils/fehlertext.js';
 import { nurGeaendertes } from './utils/geaendert.js';
 
 /**
+ * Klasse, Abgangsjahr und LUSD-ID gehören dem Schüler, die Schul-Adresse dem Kollegium:
+ * Die Felder der anderen Seite gehen nicht mit, auch nicht leer. Ein leerer String hieße
+ * am Server „räum das weg" und käme als 400 zurück.
+ * @param {any} daten Werte der Maske
+ * @param {any} student der geladene Leser
+ * @param {boolean} hatKonto
+ * @returns {Record<string, unknown>}
+ */
+function schulfelder(daten, student, hatKonto) {
+	const ausweis = { barcode_id: daten.barcode_id };
+	if (istKollegium({ art: daten.art })) {
+		// Ohne Zugang zur Art und ohne Konto ist das Feld verschlossen: Eine davor getippte
+		// Adresse geht nicht mit.
+		return { ...ausweis, email: artMitKonto(daten.art) || hatKonto ? daten.email : '' };
+	}
+	// Das Abgangsjahr geht nicht mit, wenn die Klasse wechselt und niemand es angefasst
+	// hat: Dann leitet der Server es aus der neuen Klasse ab (calculateAbgaengerJahr).
+	const geladenesJahr = student?.abgaenger_jahr ? String(student.abgaenger_jahr) : '';
+	const jahrAngefasst = daten.abgaenger_jahr !== geladenesJahr;
+	const klasseGeaendert = daten.klasse !== (student?.klasse || '');
+
+	/** @type {Record<string, unknown>} */
+	const felder = { ...ausweis, lusd_id: daten.lusd_id, klasse: daten.klasse };
+	if (!(klasseGeaendert && !jahrAngefasst)) {
+		felder.abgaenger_jahr = daten.abgaenger_jahr ? Number.parseInt(daten.abgaenger_jahr, 10) : null;
+	}
+	return felder;
+}
+
+/**
+ * Die Maske in der Form, in der sie an den Server geht. Geräumte Felder sind leere Strings:
+ * JSON-null hieße dort „nicht mitgeschickt", und Löschen wäre nicht möglich. Nur das
+ * Geburtsdatum geht leer als null hinaus, der Server lässt es sich nicht leeren.
+ * @param {any} daten
+ * @param {any} student
+ * @param {boolean} hatKonto
+ * @returns {Record<string, unknown>}
+ */
+function nutzlast(daten, student, hatKonto) {
+	return {
+		vorname: daten.vorname,
+		nachname: daten.nachname,
+		art: daten.art,
+		geburtsdatum: daten.geburtsdatum || null,
+		strasse: daten.strasse,
+		hausnummer: daten.hausnummer,
+		plz: daten.plz,
+		ort: daten.ort,
+		eltern_email: daten.eltern_email,
+		...schulfelder(daten, student, hatKonto)
+	};
+}
+
+/**
  * Custom hook to manage the state and submission of the student edit form.
  *
  * `getStudent` ist bewusst ein GETTER und kein Wert. Vorher stand hier
@@ -90,62 +144,6 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 		Object.assign(formData, werte);
 		kontoVorhanden = !!student.email;
 		geladen = nutzlast(werte, student, !!student.email);
-	}
-
-	/**
-	 * Klasse, Abgangsjahr und LUSD-ID gehören dem Schüler, die Schul-Adresse dem Kollegium:
-	 * Die Felder der anderen Seite gehen nicht mit, auch nicht leer. Ein leerer String hieße
-	 * am Server „räum das weg" und käme als 400 zurück.
-	 * @param {any} daten Werte der Maske
-	 * @param {any} student der geladene Leser
-	 * @param {boolean} hatKonto
-	 * @returns {Record<string, unknown>}
-	 */
-	function schulfelder(daten, student, hatKonto) {
-		const ausweis = { barcode_id: daten.barcode_id };
-		if (istKollegium({ art: daten.art })) {
-			// Ohne Zugang zur Art und ohne Konto ist das Feld verschlossen: Eine davor getippte
-			// Adresse geht nicht mit.
-			return { ...ausweis, email: artMitKonto(daten.art) || hatKonto ? daten.email : '' };
-		}
-		// Das Abgangsjahr geht nicht mit, wenn die Klasse wechselt und niemand es angefasst
-		// hat: Dann leitet der Server es aus der neuen Klasse ab (calculateAbgaengerJahr).
-		const geladenesJahr = student?.abgaenger_jahr ? String(student.abgaenger_jahr) : '';
-		const jahrAngefasst = daten.abgaenger_jahr !== geladenesJahr;
-		const klasseGeaendert = daten.klasse !== (student?.klasse || '');
-
-		/** @type {Record<string, unknown>} */
-		const felder = { ...ausweis, lusd_id: daten.lusd_id, klasse: daten.klasse };
-		if (!(klasseGeaendert && !jahrAngefasst)) {
-			felder.abgaenger_jahr = daten.abgaenger_jahr
-				? Number.parseInt(daten.abgaenger_jahr, 10)
-				: null;
-		}
-		return felder;
-	}
-
-	/**
-	 * Die Maske in der Form, in der sie an den Server geht. Geräumte Felder sind leere Strings:
-	 * JSON-null hieße dort „nicht mitgeschickt", und Löschen wäre nicht möglich. Nur das
-	 * Geburtsdatum geht leer als null hinaus, der Server lässt es sich nicht leeren.
-	 * @param {any} daten
-	 * @param {any} student
-	 * @param {boolean} hatKonto
-	 * @returns {Record<string, unknown>}
-	 */
-	function nutzlast(daten, student, hatKonto) {
-		return {
-			vorname: daten.vorname,
-			nachname: daten.nachname,
-			art: daten.art,
-			geburtsdatum: daten.geburtsdatum || null,
-			strasse: daten.strasse,
-			hausnummer: daten.hausnummer,
-			plz: daten.plz,
-			ort: daten.ort,
-			eltern_email: daten.eltern_email,
-			...schulfelder(daten, student, hatKonto)
-		};
 	}
 
 	/**

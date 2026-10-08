@@ -38,8 +38,8 @@ if (!window.matchMedia) {
 // einem Element etwas verschiebt. Die Attrappe beobachtet nichts: jsdom rechnet kein Layout.
 if (!globalThis.ResizeObserver) {
 	globalThis.ResizeObserver = class {
-		observe() {}
-		unobserve() {}
-		disconnect() {}
+		observe = vi.fn();
+		unobserve = vi.fn();
+		disconnect = vi.fn();
 	};
 }

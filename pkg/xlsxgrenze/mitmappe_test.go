@@ -66,7 +66,7 @@ func TestMitMappe_KaputtesZipIstBeschaedigtNichtFehler500(t *testing.T) {
 	}
 }
 
-func TestMitMappe_LiestUndReichtEigeneFehlerUnverändertDurch(t *testing.T) {
+func TestMitMappe_LiestUndReichtEigeneFehlerUnveraendertDurch(t *testing.T) {
 	zeilen, err := MitMappe(bytes.NewReader(kleineMappe(t)), func(f *excelize.File) ([][]string, error) {
 		return f.GetRows(f.GetSheetList()[0])
 	})
