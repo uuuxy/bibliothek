@@ -33,10 +33,7 @@ func TestRunRestoreProbe_EchterRoundtripUndKorrupteDatei(t *testing.T) {
 	t.Setenv("S3_ENDPOINT", "")
 
 	(&BackupJob{}).RunDatabaseBackup()
-	treffer, err := filepath.Glob(filepath.Join(backupDir, "backup_*.sql.gz.enc"))
-	if err != nil || len(treffer) != 1 {
-		t.Fatalf("genau eine Backup-Datei erwartet, gefunden: %v (err=%v)", treffer, err)
-	}
+	sicherung := einzigeSicherung(t, backupDir)
 
 	pool, err := pgxpool.New(ctx, quellDSN)
 	if err != nil {
@@ -45,32 +42,17 @@ func TestRunRestoreProbe_EchterRoundtripUndKorrupteDatei(t *testing.T) {
 	t.Cleanup(pool.Close)
 	s := &Scheduler{db: pool}
 
-	leseErgebnis := func(t *testing.T) RestoreProbeErgebnis {
-		t.Helper()
-		var wert string
-		if err := pool.QueryRow(ctx,
-			`SELECT wert FROM system_einstellungen WHERE schluessel = $1`,
-			RestoreProbeSchluessel).Scan(&wert); err != nil {
-			t.Fatalf("Ergebnis nicht gespeichert: %v", err)
-		}
-		var e RestoreProbeErgebnis
-		if err := json.Unmarshal([]byte(wert), &e); err != nil {
-			t.Fatalf("Ergebnis kein JSON: %v — %s", err, wert)
-		}
-		return e
-	}
-
 	t.Run("echtes Backup wird wiederhergestellt", func(t *testing.T) {
 		s.RunRestoreProbe()
-		e := leseErgebnis(t)
+		e := leseProbeErgebnis(t, pool)
 		if !e.Erfolg {
 			t.Fatalf("Probe meldet Fehlschlag: %s", e.Fehler)
 		}
 		if e.Tabellen < restoreProbeMinTabellen {
 			t.Errorf("nur %d Tabellen — das ist kein vollständiges Schema", e.Tabellen)
 		}
-		if e.BackupDatei != filepath.Base(treffer[0]) {
-			t.Errorf("Probe prüfte %q statt %q", e.BackupDatei, filepath.Base(treffer[0]))
+		if e.BackupDatei != filepath.Base(sicherung) {
+			t.Errorf("Probe prüfte %q statt %q", e.BackupDatei, filepath.Base(sicherung))
 		}
 	})
 
@@ -87,18 +69,18 @@ func TestRunRestoreProbe_EchterRoundtripUndKorrupteDatei(t *testing.T) {
 	})
 
 	t.Run("korrumpierte Datei wird als Fehlschlag gemeldet", func(t *testing.T) {
-		roh, err := os.ReadFile(treffer[0]) // #nosec G304 - Pfad aus t.TempDir()
+		roh, err := os.ReadFile(sicherung) // #nosec G304 - Pfad aus t.TempDir()
 		if err != nil {
 			t.Fatalf("Backup-Datei nicht lesbar: %v", err)
 		}
 		// Ein Byte mitten im Ciphertext kippen — GCM muss die Manipulation erkennen.
 		roh[len(roh)/2] ^= 0xFF
-		if err := os.WriteFile(treffer[0], roh, 0o600); err != nil {
+		if err := os.WriteFile(sicherung, roh, 0o600); err != nil {
 			t.Fatalf("Korrumpieren fehlgeschlagen: %v", err)
 		}
 
 		s.RunRestoreProbe()
-		e := leseErgebnis(t)
+		e := leseProbeErgebnis(t, pool)
 		if e.Erfolg {
 			t.Fatal("Probe meldet ERFOLG für eine korrumpierte Backup-Datei — damit wäre sie gefährlicher als keine Probe")
 		}
@@ -106,4 +88,21 @@ func TestRunRestoreProbe_EchterRoundtripUndKorrupteDatei(t *testing.T) {
 			t.Errorf("Fehler nennt die Entschlüsselung nicht: %s", e.Fehler)
 		}
 	})
+}
+
+// leseProbeErgebnis liest das Ergebnis des letzten Probelaufs dort, wo die
+// Betriebsbereitschaft es liest.
+func leseProbeErgebnis(t *testing.T, pool *pgxpool.Pool) RestoreProbeErgebnis {
+	t.Helper()
+	var wert string
+	if err := pool.QueryRow(context.Background(),
+		`SELECT wert FROM system_einstellungen WHERE schluessel = $1`,
+		RestoreProbeSchluessel).Scan(&wert); err != nil {
+		t.Fatalf("Ergebnis nicht gespeichert: %v", err)
+	}
+	var e RestoreProbeErgebnis
+	if err := json.Unmarshal([]byte(wert), &e); err != nil {
+		t.Fatalf("Ergebnis kein JSON: %v — %s", err, wert)
+	}
+	return e
 }

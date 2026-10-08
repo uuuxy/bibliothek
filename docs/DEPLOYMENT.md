@@ -195,6 +195,10 @@ Exit-Code 1 bei kritischem Befund, damit es sich in ein Deploy-Skript hängen l�
 > verschlüsselt und wären danach verloren. Der Weg mit Umschlüsselung steht in
 > [SECURITY.md](SECURITY.md#app_encryption_key-wechseln) (`cmd/rotate-encryption-key`).
 
+> **`BACKUP_ENCRYPTION_KEY` ändern?** Die vorhandenen Sicherungen öffnet danach weiter nur
+> der alte Schlüssel. Er bleibt aufbewahrt, bis die letzte Sicherung von davor gelöscht ist;
+> der Ablauf steht in [SECURITY.md](SECURITY.md#backup_encryption_key-wechseln).
+
 > **Fehlt `BACKUP_ENCRYPTION_KEY`,** protokolliert der Server das beim Start
 > (`ACHTUNG: … es werden KEINE Datenbank-Backups erstellt`) und das Admin-Dashboard
 > meldet den Backup-Status als `critical`.

@@ -60,11 +60,7 @@ func TestBackupRestoreDrill(t *testing.T) {
 
 	(&BackupJob{}).RunDatabaseBackup()
 
-	treffer, err := filepath.Glob(filepath.Join(backupDir, "backup_*.sql.gz.enc"))
-	if err != nil || len(treffer) != 1 {
-		t.Fatalf("genau eine Backup-Datei erwartet, gefunden: %v (err=%v)", treffer, err)
-	}
-	rohBackup, err := os.ReadFile(treffer[0]) // #nosec G304 - Pfad aus t.TempDir()
+	rohBackup, err := os.ReadFile(einzigeSicherung(t, backupDir)) // #nosec G304 - Pfad aus t.TempDir()
 	if err != nil {
 		t.Fatalf("Backup-Datei nicht lesbar: %v", err)
 	}
@@ -78,22 +74,8 @@ func TestBackupRestoreDrill(t *testing.T) {
 		t.Fatalf("wiederhergestelltes SQL enthält kein CREATE TABLE — Dump unbrauchbar")
 	}
 
-	sqlPfad := filepath.Join(backupDir, "restore.sql")
-	if err := os.WriteFile(sqlPfad, []byte(sqlText), 0o600); err != nil {
-		t.Fatalf("SQL konnte nicht abgelegt werden: %v", err)
-	}
-
 	// ── Schritt 3: in die leere Zieldatenbank einspielen ──────────────────────
-	// ON_ERROR_STOP=1 ist hier nicht Kosmetik: ohne den Schalter arbeitet psql nach
-	// einem fehlgeschlagenen Statement einfach weiter und endet mit Rückgabewert 0.
-	// Eine Wiederherstellung, die zur Hälfte misslingt, sähe damit erfolgreich aus.
-	cmd := exec.Command("psql", "--dbname="+zielDSN, "--file="+sqlPfad,
-		"--quiet", "--no-psqlrc", "-v", "ON_ERROR_STOP=1")
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("psql-Wiederherstellung fehlgeschlagen: %v\n%s", err, stderr.String())
-	}
+	spieleInZielEin(t, zielDSN, sqlText)
 
 	// ── Schritt 4: Gegenprobe an den Daten ────────────────────────────────────
 	tatsaechlich := zaehleAlleTabellen(t, zielDSN)
@@ -111,6 +93,25 @@ func TestBackupRestoreDrill(t *testing.T) {
 		t.Errorf("Barcode B-DRILL-1 erwartet, wiederhergestellt: %q", barcode)
 	}
 	t.Logf("Wiederherstellung bestätigt: %d Tabellen, Beispielsatz %q/%s", len(tatsaechlich), titel, barcode)
+}
+
+// spieleInZielEin schiebt den Dump per psql in die leere Zieldatenbank. ON_ERROR_STOP=1 ist
+// Pflicht: Ohne den Schalter arbeitet psql nach einem fehlgeschlagenen Statement weiter und
+// endet mit 0 — eine Wiederherstellung, die zur Hälfte misslingt, sähe erfolgreich aus.
+func spieleInZielEin(t *testing.T, zielDSN, sqlText string) {
+	t.Helper()
+
+	sqlPfad := filepath.Join(t.TempDir(), "restore.sql")
+	if err := os.WriteFile(sqlPfad, []byte(sqlText), 0o600); err != nil {
+		t.Fatalf("SQL konnte nicht abgelegt werden: %v", err)
+	}
+	cmd := exec.Command("psql", "--dbname="+zielDSN, "--file="+sqlPfad,
+		"--quiet", "--no-psqlrc", "-v", "ON_ERROR_STOP=1")
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("psql-Wiederherstellung fehlgeschlagen: %v\n%s", err, stderr.String())
+	}
 }
 
 // pruefeVoraussetzungen überspringt den Test mit klarer Begründung statt still.

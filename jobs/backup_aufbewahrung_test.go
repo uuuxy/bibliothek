@@ -1,9 +1,11 @@
 package jobs
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -82,5 +84,50 @@ func TestRunDatabaseBackup_RotiertMitDenKonstanten(t *testing.T) {
 	})
 	if len(aufrufe) != 1 || aufrufe[0] != "backupDir, BehalteNaechte, BehalteWochen" {
 		t.Errorf("rotateBackups in backup.go: %q, erwartet genau einmal (backupDir, BehalteNaechte, BehalteWochen)", aufrufe)
+	}
+}
+
+// Wie lange eine Nachtsicherung höchstens liegt, folgt aus den zwei Konstanten: Bei einer
+// Sicherung je Nacht fällt jede nach 15 oder nach 92 Tagen heraus. Die Anleitung zum Wechsel
+// des BACKUP_ENCRYPTION_KEY (docs/SECURITY.md) nennt die Zahl als Zeit, nach der am alten
+// Schlüssel keine Nachtsicherung mehr hängt. Wer die Aufbewahrung verlängert, zieht die
+// Anleitung nach: Sonst wird der alte Schlüssel gestrichen, solange ihn Sicherungen brauchen.
+//
+// Blindheit: Gerechnet wird mit einer Sicherung je Nacht. Fällt der Lauf aus, bleibt eine
+// Datei länger liegen; die Anleitung nennt dafür den Blick ins Verzeichnis.
+func TestAufbewahrung_AnleitungNenntDasHoechstalter(t *testing.T) {
+	start := time.Date(2026, time.January, 1, 2, 30, 0, 0, time.UTC)
+	entstanden := map[string]int{}
+	var dateien []BackupDatei
+	hoechst := 0
+	for tag := range 800 {
+		name := backupPraefix + start.AddDate(0, 0, tag).Format(sicherungsStempel) + backupEndung
+		dateien = append(dateien, BackupDatei{Name: name})
+		entstanden[name] = tag
+		weg := zuLoeschen(dateien, BehalteNaechte, BehalteWochen)
+		for _, d := range weg {
+			hoechst = max(hoechst, tag-entstanden[d.Name])
+		}
+		dateien = slices.DeleteFunc(dateien, func(d BackupDatei) bool {
+			return slices.ContainsFunc(weg, func(w BackupDatei) bool { return w.Name == d.Name })
+		})
+	}
+	if hoechst < BehalteNaechte {
+		t.Fatalf("höchstes Alter %d Tage — die Rechnung sieht die Aufbewahrung nicht", hoechst)
+	}
+
+	anleitung, err := os.ReadFile("../docs/SECURITY.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, abschnitt, gefunden := strings.Cut(string(anleitung), "#### `BACKUP_ENCRYPTION_KEY` wechseln")
+	if !gefunden {
+		t.Fatal("docs/SECURITY.md hat keinen Abschnitt „BACKUP_ENCRYPTION_KEY wechseln\" mehr — Gate nachziehen")
+	}
+	abschnitt, _, _ = strings.Cut(abschnitt, "\n### ")
+	if soll := fmt.Sprintf("nach %d Tagen", hoechst); !strings.Contains(abschnitt, soll) {
+		t.Errorf("nach der Aufbewahrung (%d Nächte, %d Wochen) liegt eine Nachtsicherung bis zu %d Tage; "+
+			"die Anleitung zum Schlüsselwechsel in docs/SECURITY.md nennt nicht %q",
+			BehalteNaechte, BehalteWochen, hoechst, soll)
 	}
 }

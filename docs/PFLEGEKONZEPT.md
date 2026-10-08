@@ -129,7 +129,9 @@ Betriebsbereitschaft als kritisch, und die tägliche Alarm-Mail geht hinaus.
 (Ort auf dem Blatt). Die `.env` steht in keiner Sicherung.
 
 - Ohne `BACKUP_ENCRYPTION_KEY` — den, der zur Zeit der Sicherung galt — lässt sich keine
-  Sicherung öffnen.
+  Sicherung öffnen. Nach einem Wechsel bleibt der alte Schlüssel deshalb in der Kopie, bis die
+  letzte Sicherung von davor gelöscht ist; der Wechsel und das Öffnen einer älteren Sicherung
+  stehen in [SECURITY.md](SECURITY.md#backup_encryption_key-wechseln).
 - Ohne `APP_ENCRYPTION_KEY` kommt die Datenbank zurück, aber Schülerfotos und das gespeicherte
   Mail-Passwort bleiben unlesbar.
 
@@ -416,6 +418,14 @@ Schülerfotos und das Mail-Passwort unlesbar (Abschnitt 3.2).
 | ----------------------- | ---------------------------------------------------- |
 | `APP_ENCRYPTION_KEY`    | ____________________________________________________ |
 | `BACKUP_ENCRYPTION_KEY` | ____________________________________________________ |
+
+Nach einem Wechsel des `BACKUP_ENCRYPTION_KEY` bleibt der frühere Schlüssel in der Kopie, bis
+keine Sicherung von davor mehr liegt ([SECURITY.md](SECURITY.md#backup_encryption_key-wechseln)):
+
+| Früherer `BACKUP_ENCRYPTION_KEY` | Eintrag                                       |
+| -------------------------------- | --------------------------------------------- |
+| Tag des Wechsels                 | _____________________________________________ |
+| Ausgetragen am                   | _____________________________________________ |
 
 ### Weiteres
 

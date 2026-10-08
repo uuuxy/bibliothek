@@ -151,6 +151,52 @@ func TestRun_SuccessFile(t *testing.T) {
 	assert.Equal(t, sqlData, outData)
 }
 
+// Nach einem Wechsel des BACKUP_ENCRYPTION_KEY öffnet jede Sicherung nur der Schlüssel, der bei
+// ihrem Entstehen galt (docs/SECURITY.md, „BACKUP_ENCRYPTION_KEY wechseln"). Mit dem anderen
+// nennt die Meldung den falschen Schlüssel, und es entsteht keine Ausgabedatei.
+func TestRun_NachSchluesselwechsel(t *testing.T) {
+	const (
+		alt = "alter-schluessel-mit-mehr-als-32-zeichen-0001"
+		neu = "neuer-schluessel-mit-mehr-als-32-zeichen-0002"
+	)
+	dir := t.TempDir()
+	standVorher, standNachher := []byte("-- Stand vor dem Wechsel\n"), []byte("-- Stand nach dem Wechsel\n")
+	vorher := filepath.Join(dir, "vorher.sql.gz.enc")
+	nachher := filepath.Join(dir, "nachher.sql.gz.enc")
+	require.NoError(t, os.WriteFile(vorher, createBackup(t, alt, gzipData(t, standVorher)), 0o600))
+	require.NoError(t, os.WriteFile(nachher, createBackup(t, neu, gzipData(t, standNachher)), 0o600))
+
+	faelle := []struct {
+		name       string
+		schluessel string
+		datei      string
+		inhalt     []byte // nil: Das Werkzeug lehnt ab.
+	}{
+		{"laufender Schlüssel, Sicherung von vor dem Wechsel", neu, vorher, nil},
+		{"alter Schlüssel, Sicherung von vor dem Wechsel", alt, vorher, standVorher},
+		{"laufender Schlüssel, Sicherung nach dem Wechsel", neu, nachher, standNachher},
+		{"alter Schlüssel, Sicherung nach dem Wechsel", alt, nachher, nil},
+	}
+	for _, fall := range faelle {
+		t.Run(fall.name, func(t *testing.T) {
+			ausgabe := filepath.Join(t.TempDir(), "wiederherstellung.sql")
+			setupArgs(t, fall.datei, ausgabe)
+			t.Setenv("BACKUP_ENCRYPTION_KEY", fall.schluessel)
+
+			err := run()
+			if fall.inhalt == nil {
+				assert.ErrorContains(t, err, "falscher Schlüssel")
+				assert.NoFileExists(t, ausgabe)
+				return
+			}
+			require.NoError(t, err)
+			inhalt, err := os.ReadFile(ausgabe)
+			require.NoError(t, err)
+			assert.Equal(t, fall.inhalt, inhalt)
+		})
+	}
+}
+
 func TestRun_FileCreateFails(t *testing.T) {
 	dir := t.TempDir()
 	inFile := filepath.Join(dir, "backup.enc")

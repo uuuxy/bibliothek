@@ -581,6 +581,86 @@ neue Schlüssel hinein (er steht im Scrollback des Rotationslaufs, den das Komma
 ausdrücklich ausgibt). Im Notfall führt der Weg über `vor-rotation.sql` und
 `cmd/restore-backup`.
 
+#### `BACKUP_ENCRYPTION_KEY` wechseln
+
+Der Wechsel schlüsselt nichts um: Jede Sicherung öffnet nur der Schlüssel, der bei ihrem
+Entstehen galt (`cmd/restore-backup` nimmt ihn aus der Umgebung). Durch den Wechsel geht
+nichts verloren, solange der alte Schlüssel aufbewahrt wird, bis die letzte Sicherung von
+davor gelöscht ist. Geschützt sind nur die Sicherungen, die danach entstehen: Eine Datei von
+davor liest weiter, wer sie und den alten Schlüssel hat.
+
+Was nach dem Wechsel am alten Schlüssel hängt:
+
+| Sicherung                      | Ort                                   | fällt weg                                                                                              |
+| ------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Nachtsicherung `backup_…`      | Volume des Containers, `/app/backups` | nach 92 Tagen, wenn jede Nacht eine neue entsteht (`jobs/backup_aufbewahrung.go`)                      |
+| vor einem Update `vordeploy_…` | `backups/` im Programmverzeichnis     | beim ersten Update nach 30 Tagen                                                                       |
+| von Hand `bibliothek_backup_…` | `backups/` im Programmverzeichnis     | beim ersten Lauf von `scripts/backup.sh` nach 7 Tagen                                                  |
+| Kopie außer Haus               | S3-Speicher, falls eingerichtet       | nach der Löschregel des Speichers; das Programm löscht dort nie ([OFFEN.md](OFFEN.md) 7.3)             |
+
+**Auf dem Server,** im Programmverzeichnis, alles in **derselben** Shell-Sitzung:
+
+```bash
+# 1. Stimmt die Kopie des alten Schlüssels außerhalb des Servers? Nach Schritt 3 steht er
+#    nirgends sonst mehr. Verglichen wird im Container; der Schlüssel des laufenden
+#    Programms verlässt ihn nicht.
+read -rsp "Alter Schlüssel aus der Kopie außerhalb des Servers: " KOPIE; echo
+printf '%s' "$KOPIE" | docker compose exec -T backend sh -c '[ "$(cat)" = "$BACKUP_ENCRYPTION_KEY" ]' && echo "Kopie stimmt" || echo "Kopie weicht ab: nicht weitermachen"
+```
+
+Erst wenn dort **„Kopie stimmt"** steht, weiter:
+
+```bash
+# 2. Neuen Schlüssel erzeugen und anzeigen. Er kommt jetzt in die Kopie außerhalb des
+#    Servers. Der alte bleibt dort stehen, mit dem Datum von heute als Tag des Wechsels.
+NEU=$(openssl rand -hex 32)
+echo "Neuer Schlüssel: $NEU"
+
+# 3. Die Zeile in der .env ersetzen und das Backend mit dem neuen Schlüssel starten.
+sed -i '/^BACKUP_ENCRYPTION_KEY=/d' .env
+echo "BACKUP_ENCRYPTION_KEY=$NEU" >> .env
+grep -c '^BACKUP_ENCRYPTION_KEY=' .env      # genau 1
+docker compose up -d backend
+```
+
+Kontrolle:
+
+```bash
+# 4. Gilt der neue Schlüssel im Programm?
+printf '%s' "$NEU" | docker compose exec -T backend sh -c '[ "$(cat)" = "$BACKUP_ENCRYPTION_KEY" ]' && echo "neuer Schlüssel gilt" || echo "im Programm gilt ein anderer Schlüssel"
+
+# 5. Eine Sicherung mit dem neuen Schlüssel. Das Skript öffnet die Datei zur Probe wieder,
+#    bevor es Erfolg meldet.
+./scripts/backup.sh
+```
+
+Bis zur nächsten Nachtsicherung (02:30 UTC) öffnet der laufende Schlüssel keine der
+Nachtsicherungen im Container. Die Probe am Sonntag (03:30 UTC) nimmt die jüngste und läuft
+nach dieser Nacht wieder durch.
+
+**Eine Sicherung von vor dem Wechsel öffnen.** Mit dem laufenden Schlüssel endet das Werkzeug
+mit „entschlüsselung fehlgeschlagen (falscher Schlüssel oder beschädigte/manipulierte
+Datei?)" und schreibt nichts. Der alte Schlüssel kommt aus der Kopie und wird für diesen
+einen Aufruf über die Shell gereicht: Bei `docker compose` geht eine Variable der Shell der
+`.env` vor. `$ENC` ist die Datei, gewählt wie in
+[resilience_and_recovery.md](resilience_and_recovery.md) §2a, Schritt 1.
+
+```bash
+read -rsp "BACKUP_ENCRYPTION_KEY aus der Zeit der Sicherung: " ALT; echo
+BACKUP_ENCRYPTION_KEY="$ALT" docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < "$ENC" > wiederherstellung.sql
+```
+
+**Wann der alte Schlüssel wegkann:** wenn keine Datei von vor dem Wechsel mehr liegt. Die
+Namen tragen den Zeitpunkt.
+
+```bash
+docker compose exec -T backend ls /app/backups
+ls backups
+```
+
+Dann den alten Schlüssel aus der Kopie streichen und auf dem Blatt bei der Schule austragen
+([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Anhang).
+
 ### Adressdaten, Eltern-E-Mail und Rechtsgrundlage (VVT-Grundlage)
 
 Adressspalten (`strasse`, `hausnummer`, `plz`, `ort`) und `eltern_email` sind **bewusst

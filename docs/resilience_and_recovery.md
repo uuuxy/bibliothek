@@ -26,7 +26,9 @@ Nachtbackups.
   entwendete Backup-Datei nicht mit hoher Rate offline durchprobiert werden kann.
   Dateiformat versioniert (`BKDF`+`0x02`+Salt+Nonce+Ciphertext). Der frühere schwache
   SHA-256-Weg ist **ganz entfernt**: Dateien ohne die `BKDF`-Kennung werden abgelehnt,
-  nicht mehr schwach entschlüsselt (`internal/backupkrypto`).
+  nicht mehr schwach entschlüsselt (`internal/backupkrypto`). Ein Wechsel des Schlüssels
+  schlüsselt vorhandene Sicherungen nicht um; sie öffnet weiter nur der alte
+  ([SECURITY.md](SECURITY.md#backup_encryption_key-wechseln)).
   **Folge für den Betrieb:** Backups von **vor dem 21.08.2026** (Deploy von 5265698c) sind
   **nicht mehr entschlüsselbar** — lokal wie auf S3. Nach diesem Deploy gibt es bis zum
   nächsten 02:30-UTC-Lauf **kein lesbares Backup**; deshalb direkt nach dem Deploy einen
@@ -132,7 +134,8 @@ docker compose cp "backend:${IM_CONTAINER}" ./backups/
 ENC="backups/$(basename "$IM_CONTAINER")"
 echo "Verwende: $ENC"
 
-# 2. Schlüssel setzen (der ORIGINALE aus der Zeit des Backups)
+# 2. Schlüssel setzen (der ORIGINALE aus der Zeit des Backups; nach einem Wechsel der alte,
+#    SECURITY.md, „BACKUP_ENCRYPTION_KEY wechseln")
 read -rsp "BACKUP_ENCRYPTION_KEY: " KEY; echo
 
 # 3. Entschlüsseln in eine Datei — noch wird nichts gelöscht

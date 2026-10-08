@@ -186,9 +186,8 @@ der Nummer nichts mehr dazu offen ist.
 - [x] **Protokoll und Tilgung (5.35):** Am Testserver am 08.10.2026 gezählt: kein alter Eintrag
   zu einem gelöschten Leser, keine Stornierung ohne die Kennung des Lesers, kein Eintrag über
   ein früheres Konto. Zu bereinigen ist nichts.
-- [ ] **Gates und Werkzeuge (5.10):** zwei Lücken in Prüfregeln, die Anleitung zum Wechsel des
-  Schlüssels der Sicherungen, der erste Lauf von `release.yml` auf Ubuntu 26, die
-  Excel-Bibliothek auf einem unveröffentlichten Stand.
+- [ ] **Gates und Werkzeuge (5.10):** zwei Lücken in Prüfregeln, der erste Lauf von
+  `release.yml` auf Ubuntu 26, die Excel-Bibliothek auf einem unveröffentlichten Stand.
 - [x] **Ausweis aus der Leserakte (5.5):** Lässt sich das Ausweis-Design nicht laden, drucken
   Leserakte und Leserdatei seit dem 08.10.2026 nicht und sagen es beim Druck.
 - [x] **Bestellsuche (5.5):** Antwortet die DNB nicht, steht es seit dem 08.10.2026 oben in der
@@ -427,11 +426,6 @@ Vermerk.
 
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
-- Kein beschriebener Weg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`. Das
-  Werkzeug nimmt den Schlüssel aus der Umgebung (`cmd/restore-backup`), eine ältere Sicherung
-  öffnet also der Schlüssel, der zu ihrer Zeit galt. Es fehlen die Anleitung zum Wechsel (den
-  alten Schlüssel aufbewahren, bis die letzte Sicherung damit aus der Aufbewahrung gefallen
-  ist) und ein Test, der eine Sicherung nach dem Wechsel mit dem alten Schlüssel einspielt.
 - **Ubuntu 26 als Runner: der erste Lauf von `release.yml`.** Seit dem 08.10.2026 laufen alle
   zehn Jobs der vier Workflows fest auf `ubuntu-26.04`; der Name steht für actionlint in
   `.github/actionlint.yaml`. Die ersten Läufe von `ci.yml`, `security-scan.yml` und
