@@ -44,8 +44,12 @@ env:
 #
 # Ein Gate, das nie fertig wird, ist kein Gate — und "cancelled" liest sich in der Liste
 # wie "war halt nichts", nicht wie "wir wissen es nicht".
+#
+# Der Handstart hat eine eigene Gruppe. In der Gruppe von main wartete er hinter dem
+# laufenden Lauf, und von wartenden Läufen behält GitHub je Gruppe nur den jüngsten: Ein
+# Probelauf verdrängte den wartenden Lauf zu einem Push, oder ein Push den Probelauf.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}${{ github.event_name == 'workflow_dispatch' && '-probelauf' || '' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
