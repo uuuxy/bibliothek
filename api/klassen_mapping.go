@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 )
 
 // KlassenLehrerMapping associates a class with the class teacher's e-mail address.
@@ -22,27 +22,17 @@ func (s *Server) GetKlassenMappingHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		rows, err := s.DB.Pool.Query(ctx,
-			`SELECT klasse, lehrer_email, erstellt_am FROM klassen_lehrer_mapping ORDER BY klasse`)
+		zeilen, err := repository.ListeKlassenleitungen(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer rows.Close()
 
 		mappings := []KlassenLehrerMapping{}
-		for rows.Next() {
-			var m KlassenLehrerMapping
-			var t time.Time
-			if err := rows.Scan(&m.Klasse, &m.LehrerEmail, &t); err != nil {
-				continue
-			}
-			m.ErstelltAm = t.Format("2006-01-02")
-			mappings = append(mappings, m)
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+		for _, z := range zeilen {
+			mappings = append(mappings, KlassenLehrerMapping{
+				Klasse: z.Klasse, LehrerEmail: z.LehrerEmail, ErstelltAm: z.ErstelltAm.Format("2006-01-02"),
+			})
 		}
 
 		RespondJSON(w, http.StatusOK, mappings)
@@ -72,15 +62,7 @@ func (s *Server) UpsertKlassenMappingHandler() http.HandlerFunc {
 
 		// Der Stand davor entscheidet über den Protokolleintrag: neu eingetragen, geändert
 		// oder dieselbe Adresse noch einmal gespeichert.
-		var neu, unveraendert bool
-		err := s.DB.Pool.QueryRow(ctx, `
-			WITH alt AS (SELECT lehrer_email FROM klassen_lehrer_mapping WHERE klasse = $1)
-			INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email)
-			VALUES ($1, $2)
-			ON CONFLICT (klasse) DO UPDATE SET lehrer_email = EXCLUDED.lehrer_email
-			RETURNING NOT EXISTS (SELECT 1 FROM alt),
-			          EXISTS (SELECT 1 FROM alt WHERE lehrer_email = $2)
-		`, req.Klasse, req.LehrerEmail).Scan(&neu, &unveraendert)
+		neu, unveraendert, err := repository.SetzeKlassenleitung(ctx, s.DB.Pool, req.Klasse, req.LehrerEmail)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -112,14 +94,13 @@ func (s *Server) DeleteKlassenMappingHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		tag, err := s.DB.Pool.Exec(ctx,
-			`DELETE FROM klassen_lehrer_mapping WHERE klasse = $1`, klasse)
+		getroffen, err := repository.LoescheKlassenleitung(ctx, s.DB.Pool, klasse)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 		// 204 für etwas, das nie existierte, wäre ein Phantom-Erfolg (Sweep 31.08.2026).
-		if tag.RowsAffected() == 0 {
+		if getroffen == 0 {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("kein Eintrag für diese Klasse"))
 			return
 		}

@@ -115,22 +115,7 @@ func (s *Server) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 // „0 versendet, 12 übersprungen" — ein stiller Totalausfall, der wie ein Ergebnis
 // aussieht.
 func (s *Server) klassenlehrerAdressen(ctx context.Context) (map[string]string, error) {
-	rows, err := s.DB.Pool.Query(ctx, `SELECT klasse, lehrer_email FROM klassen_lehrer_mapping`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	adressen := map[string]string{}
-	for rows.Next() {
-		var klasse, email string
-		if err := rows.Scan(&klasse, &email); err != nil {
-			return nil, err
-		}
-		// Normalisiert ablegen — „5A" im Mapping muss die Klasse „5a" treffen.
-		adressen[repository.KlassenSchluessel(klasse)] = email
-	}
-	return adressen, rows.Err()
+	return repository.KlassenleitungsAdressen(ctx, s.DB.Pool)
 }
 
 // waehleAbgaengerKlassen gruppiert die Kontoauszüge nach Klasse, hängt den
