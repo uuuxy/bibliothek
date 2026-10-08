@@ -382,19 +382,13 @@ Vermerk.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
-- **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
-  `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
-  (actions/runner-images#14748). **Probelauf am 08.10.2026:** Die vier Jobs von `ci.yml` sind
-  auf `ubuntu-26.04` grün (Lauf 37756014701 am Stand f7571e37, im Protokoll „Image:
-  ubuntu-26.04", Betriebssystem 26.04.1): actionlint, die Go-Suite mit Linter, Datenbank und
-  PostgreSQL-Client, ESLint, svelte-check und Vitest, die Browser-Tests mit dem lokalen Stack.
-  Gestartet mit `gh workflow run ci.yml -f runner=ubuntu-26.04`; der Handstart läuft in
-  eigener Gruppe neben den Läufen zu `main`. Nicht probiert sind die sechs Jobs der drei
-  anderen Workflows (`security-scan.yml`, `docker-publish.yml`, `release.yml`): Sie nehmen kein
-  Abbild als Eingabe, `release.yml` läuft nur bei einem v-Tag. Offen: den Wechsel legen, also
-  die Runner-Zeilen aller vier Workflows umstellen und den ersten Lauf je Workflow ansehen;
-  spätestens, wenn GitHub `ubuntu-24.04` abkündigt. Nicht darunter: CodeQL läuft
-  in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine Workflow-Datei) auf
+- **Ubuntu 26 als Runner: die ersten Läufe.** Seit dem 08.10.2026 laufen alle zehn Jobs der
+  vier Workflows fest auf `ubuntu-26.04` (bis dahin `ubuntu-24.04`; `ubuntu-latest` nimmt
+  keiner, weil GitHub es am 19. Oktober 2026 selbst umstellt). Vorher war `ci.yml` im
+  Probelauf auf `ubuntu-26.04` grün (Lauf 37756014701 am Stand f7571e37). Offen: den ersten
+  Lauf je Workflow ansehen. `release.yml` läuft erst mit dem nächsten v-Tag; es braucht dort
+  nur `git`, `gh` und `scripts/tag-gate.sh`. Nicht darunter: CodeQL läuft in der
+  Standard-Einrichtung von GitHub (Repository-Einstellung, keine Workflow-Datei) auf
   `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf steht an jedem
   CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der CodeQL-Lauf rot.
 - **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist seit dem 08.10.2026

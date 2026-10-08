@@ -6,14 +6,14 @@ on:
   pull_request:
     branches: [ "main" ]
   # Probelauf gegen ein anderes Runner-Abbild, ohne Zweig und ohne Pull Request:
-  #   gh workflow run ci.yml -f runner=ubuntu-26.04
-  # Push und Pull Request bekommen kein `inputs` und laufen weiter auf ubuntu-24.04.
+  #   gh workflow run ci.yml -f runner=ubuntu-24.04
+  # Push und Pull Request bekommen kein `inputs` und laufen auf ubuntu-26.04.
   workflow_dispatch:
     inputs:
       runner:
         description: Runner-Abbild für einen Probelauf
         type: string
-        default: ubuntu-24.04
+        default: ubuntu-26.04
 
 # Kein Job schreibt ins Repo — der GITHUB_TOKEN braucht nur Lesezugriff.
 permissions:
@@ -23,9 +23,9 @@ permissions:
 # - Jede Action per Commit-SHA, die Version als Kommentar dahinter. Einen Tag wie `v7` kann
 #   der Eigentümer auf anderen Code umhängen (so im März 2025 bei tj-actions/changed-files),
 #   einen SHA nicht. Dependabot (github-actions) hebt SHA und Kommentar gemeinsam.
-# - Der Runner fest auf ubuntu-24.04. GitHub stellt ubuntu-latest ab dem 19. Oktober 2026 auf
-#   Ubuntu 26 um; den Wechsel legen wir selbst, mit eigenem Lauf (docs/OFFEN.md 5.10). In
-#   ci.yml geht das über den Handstart oben; ohne `inputs` gilt weiter ubuntu-24.04.
+# - Der Runner fest auf ubuntu-26.04 statt auf ubuntu-latest: Wann das Abbild wechselt, legen
+#   wir selbst, nach einem eigenen Lauf. In ci.yml geht der Probelauf über den Handstart oben;
+#   ohne `inputs` gilt ubuntu-26.04.
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -56,7 +56,7 @@ jobs:
   # Workflow-Syntax wird geprüft, BEVOR ein Tippfehler erst beim nächsten v-Tag auffällt
   # (release.yml/docker-publish.yml laufen nur dort; Prüfung 22.08.2026).
   actionlint:
-    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
+    runs-on: ${{ inputs.runner || 'ubuntu-26.04' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: actionlint
@@ -65,7 +65,7 @@ jobs:
           args: -color
 
   build-and-test:
-    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
+    runs-on: ${{ inputs.runner || 'ubuntu-26.04' }}
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       # Aktiviert die DB-Integrationstests (db/constraints_pg_test.go). Ohne diese
@@ -151,12 +151,11 @@ jobs:
       # zum 6-Stunden-Abbruch und sieht dabei aus wie "läuft noch".
       timeout-minutes: 5
       run: |
-        # `command -v` allein reicht seit dem 18er-Service NICHT mehr: Das Runner-Image
-        # (Ubuntu 24.04) bringt pg_dump 16 mit, und ein ÄLTERER Client verweigert den
-        # neueren Server — die Probe fiele dann bei jedem Lauf um, obwohl "pg_dump da"
-        # war. Deshalb Major-Version prüfen und bei Bedarf Client 18 aus dem
-        # PGDG-Repo nachziehen (Ubuntu-Archiv führt nur 16) — mit harten Netz-Timeouts
-        # statt der apt-Vorgabe, die an einem hängenden Spiegel klebt.
+        # `command -v` allein reicht nicht: Ein Runner-Abbild kann einen älteren Client
+        # mitbringen als den Server (Ubuntu 24.04: pg_dump 16; Ubuntu 26.04 bringt 18 mit),
+        # und ein älterer Client verweigert den neueren Server. Deshalb die Hauptversion
+        # prüfen und bei Bedarf den Client aus dem PGDG-Repo nachziehen, mit harten
+        # Netz-Timeouts statt der apt-Vorgabe, die an einem hängenden Spiegel klebt.
         PG_MAJOR=18   # == Service-Image oben und Produktionsversion (docker-compose.yml)
         client_major() { pg_dump --version 2>/dev/null | grep -oE '[0-9]+' | head -1; }
         if ! command -v pg_dump >/dev/null 2>&1 || [ "$(client_major)" -lt "$PG_MAJOR" ]; then
@@ -169,7 +168,7 @@ jobs:
           sudo apt-get "${APT_OPTS[@]}" update -qq
           sudo apt-get "${APT_OPTS[@]}" install -y -qq "postgresql-client-${PG_MAJOR}"
           # Ubuntu legt die Binaries versioniert ab; der Wrapper in /usr/bin zeigt sonst
-          # weiter auf den 16er-Client des Runner-Images.
+          # weiter auf den Client des Runner-Abbilds.
           export PATH="/usr/lib/postgresql/${PG_MAJOR}/bin:$PATH"
           echo "/usr/lib/postgresql/${PG_MAJOR}/bin" >> "$GITHUB_PATH"
         fi
@@ -213,7 +212,7 @@ jobs:
         grep -A 1 -E "^\s*--- SKIP" /tmp/gotest.log || echo "(kein Test übersprungen)"
 
   frontend-test:
-    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
+    runs-on: ${{ inputs.runner || 'ubuntu-26.04' }}
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
@@ -274,7 +273,7 @@ jobs:
         npm run test
 
   e2e:
-    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
+    runs-on: ${{ inputs.runner || 'ubuntu-26.04' }}
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:

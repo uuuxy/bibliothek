@@ -15,7 +15,7 @@ permissions:
   # `actions: read` stand hier nur fuer den eigenen CodeQL-Job (siehe unten, entfernt).
   # Die vier verbliebenen Pruefungen brauchen es nicht.
 
-# Actions per Commit-SHA, Runner fest auf ubuntu-24.04 — warum: Kopf von ci.yml.
+# Actions per Commit-SHA, Runner fest auf ubuntu-26.04 — warum: Kopf von ci.yml.
 
 
 env:
@@ -25,7 +25,7 @@ jobs:
   # ── Go: govulncheck (official Go Vulnerability Database) ──────────────────
   go-vuln-scan:
     name: Go – govulncheck
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
@@ -54,7 +54,7 @@ jobs:
   # ── Go: gosec (static security analysis) ─────────────────────────────────
   go-sec-scan:
     name: Go – gosec static analysis
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
@@ -124,7 +124,7 @@ jobs:
   # (Settings → Code security → Code scanning). Vorher nicht.
   npm-audit:
     name: npm – audit (frontend)
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     defaults:
@@ -171,7 +171,7 @@ jobs:
   # ── Docker image scan (Trivy) ─────────────────────────────────────────────
   docker-scan:
     name: Docker – Trivy image scan
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:

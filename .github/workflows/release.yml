@@ -20,11 +20,11 @@ on:
 permissions:
   contents: write
 
-# Actions per Commit-SHA, Runner fest auf ubuntu-24.04 — warum: Kopf von ci.yml.
+# Actions per Commit-SHA, Runner fest auf ubuntu-26.04 — warum: Kopf von ci.yml.
 
 jobs:
   release:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       # fetch-depth 0: Die generierten Notes brauchen die Historie bis zum vorigen Tag.
       - name: Quellcode auschecken

@@ -31,12 +31,12 @@ permissions:
   contents: read
   packages: write
 
-# Actions per Commit-SHA, Runner fest auf ubuntu-24.04 — warum: Kopf von ci.yml. Hier zählt
+# Actions per Commit-SHA, Runner fest auf ubuntu-26.04 — warum: Kopf von ci.yml. Hier zählt
 # es am meisten: Die vier Docker-Actions laufen mit Schreibrecht auf die Registry.
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Quellcode auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
