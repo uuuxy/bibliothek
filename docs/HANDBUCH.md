@@ -54,7 +54,7 @@ die Forderung steht danach in der Akte unter _Gebühren & Schäden_, der Beschei
 Schritt).
 
 **Der Scan landet immer im Scanfeld**, auch nach einem Klick auf einen Reiter oder einen Knopf
-der Akte. Nur ein offenes Fenster (etwa „Gebühr stornieren") und ein Feld, in dem gerade getippt
+der Akte. Nur ein offenes Fenster (etwa „Gebühr wirklich stornieren?") und ein Feld, in dem gerade getippt
 wird, behalten die Tastatur.
 
 **Ein Scan beantwortet keine Rückfrage** (seit 07.10.2026): Steht „Ausleihe blockiert",
@@ -168,7 +168,7 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   ISBN schon ein Titel mit demselben Autor gleich, fragt die Maske _Ist es dasselbe Medium?_:
   _Titel öffnen_ führt zum vorhandenen Titel, dort kommt das Exemplar dazu; _Anderes Medium_
   legt den Titel an (ein anderes Heft, ein anderer Band). Darunter steht die Gruppe _An der Schule_: die Wahl _Bibliothek |
-  Lernmittel_, die Signatur, Fach, Schulzweig, Klasse und Jahrgänge, das
+  Lernmittel_, die Signatur, Fach, Schulzweig, der Jahrgang („von" und „bis"), das
   Mehrjahresband und die anderen Auflagen. Bestand und Zähldatum stehen unter _Exemplare_,
   über der Liste; der Standort steht am Exemplar und wird in der Buchakte geändert. Wird der Bestand nach oben
   korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
@@ -227,7 +227,10 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
 ## Signaturen
 
 Sachgruppen (Kürzel + Bezeichnung, z. B. _Jug_ – Jugendliteratur) pflegen und Regale per
-Präfixsuche durchsehen („Jug" findet „Jug Her", „Jug Pre" …). (§13)
+Präfixsuche durchsehen („Jug" findet „Jug Her", „Jug Pre" …). Trägt ein Buch eine zweiteilige
+Aufschrift wie „LMF Deu 7 / Bie" — so kommen die Signaturen aus Littera —, fasst die Liste
+nach dem Teil vor „ / " zusammen; am Titel und im Regal steht die ganze Aufschrift. Dasselbe
+gilt für die Vorschläge im Feld _Signatur_ und für die Auswahl der Inventur. (§13)
 
 ## Druck-Center
 
@@ -235,7 +238,8 @@ Vier Reiter: **Buch-Etiketten** (Format, Startposition auf dem Bogen, Titel aus 
 oder aus einer Klasse) · **Fehlende Etiketten** (alle Exemplare, die noch keins haben — die
 Zahl steht als Badge in der Navigation) · **Schülerausweise** (Designer für Vorder- und
 Rückseite) · **Klassenweise drucken** (Ausweise für eine ganze Klasse). Der Druck läuft
-über den Browser-Druckdialog. (§9)
+über den Browser-Druckdialog. Die Vorschau der Buch-Etiketten zeigt den ersten Bogen; darunter
+steht, wie viele es werden („Bogen 1 von 3 · 68 Etiketten"). (§9)
 
 ## Klassensätze
 
@@ -406,7 +410,10 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
   Sekretariat, U-plus oder Fachbereich. Die Art entscheidet keine Rechte; ausleihen darf
   jeder aktive Leser, und für jede Art außer Schüler gilt dasselbe wie für das Kollegium.
   Praktikum und Fachbereich haben keinen Zugang zu „Mein Portal". Ein Fachbereich ist ein
-  Sammelkonto, das die Kollegen des Fachs benutzen.
+  Sammelkonto, das die Kollegen des Fachs benutzen. Eine Ausleihe an das Kollegium ist eine
+  Dauerleihe: Sie wird nicht überfällig und nicht gemahnt. In der Akte steht statt des
+  Rückgabedatums „Dauerleihe", in der Liste der Ausleiher einer Buchakte und auf Ausdrucken
+  „ohne Frist".
 - **Reiter**: _Aktive Leser_, _Ehemalige / Archiv_ und (mit dem Recht zum Löschen)
   _Papierkorb_.
 - **Suche** über den ganzen Bestand (Name, Klasse, Barcode). Zeile anklicken → Akte.
@@ -596,6 +603,14 @@ Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Be
 **Meldungen** (Meldungen aus dem Portal, darunter ältere Wünsche; _Abhaken_ mit
 Notiz an die Lehrkraft).
 Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
+
+**Kommt die Bestellmail nicht an** (seit 07.10.2026): Scheitert der Versand oder ist kein
+Mailserver eingerichtet, ist die Bestellung trotzdem gespeichert. In der Bestellhistorie steht
+dann in der Spalte _Stand_ „Mail nicht versendet", in der Bestellung der Knopf _Erneut senden_.
+Hat der Händler die Bestellung auf anderem Weg bekommen (Telefon, eigene Mail), nimmt _Auf
+anderem Weg bestellt_ den Hinweis nach einer Rückfrage weg, ohne zu senden; danach lässt sich
+die Bestellung nicht mehr aus dem Programm senden. Diesen Knopf gibt es nur an Bestellungen ohne
+Bestätigungs-Link; mit Link wird stattdessen die Zusage des Händlers nachgetragen. (§7)
 
 **Auflagen im Bestellbedarf** (seit 25.09.2026): Sind Auflagen eines Schulbuchs in der
 Titel-Verwaltung zusammengefasst (siehe _Auflagen_ bei der Titel-Verwaltung), steht das Buch

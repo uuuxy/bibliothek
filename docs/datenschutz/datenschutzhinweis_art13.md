@@ -1,6 +1,6 @@
 # Datenschutzhinweis Schulbibliothek / Lernmittel — Entwurf (Art. 13 DSGVO)
 
-**Status:** Entwurf aus dem Projekt (22.08.2026) für die Schule. **Nachtrag 05.09.2026:** Absatz „Wie lange" an die Karenz ab dem letzten Vorgang angepasst — zum Gegenlesen durch die Schule. Zwei Fassungen, weil zwei
+**Status:** Entwurf aus dem Projekt (22.08.2026) für die Schule. **Nachtrag 05.09.2026:** Absatz „Wie lange" an die Karenz ab dem letzten Vorgang angepasst — zum Gegenlesen durch die Schule. **Nachtrag 08.10.2026:** Herkunft aus dem bisherigen Programm ergänzt, wie im Verzeichnis. Zwei Fassungen, weil zwei
 Rechtsgrundlagen: **A** gehört in die Information bei der Schulaufnahme (§ 5 Abs. 2 SchDSV),
 **B** wird bei der Anmeldung zur Schülerbücherei ausgegeben (HBDI-Muster) — mit
 Einwilligungsfeld. Eckige Klammern füllt die Schule. Fachlich prüft der schulische
@@ -31,8 +31,9 @@ oder Beschädigung der Schadensfall mit Betrag.
 [Falls Schülerausweis mit Foto: „Das Lichtbild auf dem Schülerausweis wird verschlüsselt
 gespeichert; Rechtsgrundlage: Einwilligung (gesondertes Formular)."]
 
-**Woher die Daten stammen.** Aus der Schülerliste der Schule (LUSD) und aus dem
-Ausleihvorgang selbst.
+**Woher die Daten stammen.** Aus der Schülerliste der Schule (LUSD), aus dem
+Ausleihvorgang selbst und, einmalig bei der Umstellung, aus dem bisherigen
+Bibliotheksprogramm (Name, Klasse, Ausweisnummer, Geburtsdatum).
 
 **Wer die Daten sieht.** Das Bibliothekspersonal der Schule; Helferinnen und Helfer am
 Ausleihtresen sehen nur Name, Klasse und ob eine Ausleihsperre besteht. Die
