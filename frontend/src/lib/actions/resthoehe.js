@@ -74,12 +74,18 @@ function scrollbereich(node) {
 }
 
 /**
+ * Kleiner wird das Element nicht: Bleibt darunter weniger Platz, etwa in einem kurzen Fenster
+ * mit Hinweisbändern über der Liste, behält es diese Höhe, und die Seite scrollt um den Rest.
+ */
+export const MINDESTHOEHE = 240;
+
+/**
  * Die Rechnung ohne Dokument. Kanten in Fensterkoordinaten.
  * @param {{ bereichUnten: number, gescrollt: number, oben: number }} lage
  * @param {{ haftet?: boolean, mindestens?: number }} [wahl]
  * @returns {number}
  */
-export function resthoeheAus(lage, { haftet = false, mindestens = 240 } = {}) {
+export function resthoeheAus(lage, { haftet = false, mindestens = MINDESTHOEHE } = {}) {
 	const oben = haftet ? lage.oben : lage.oben + lage.gescrollt;
 	return Math.max(mindestens, Math.floor(lage.bereichUnten - oben));
 }

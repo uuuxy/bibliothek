@@ -21,6 +21,7 @@
 // darunter hinaus, und die Seite bekam einen zweiten Scrollbalken für die letzten Pixel.
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedBestellbedarf } from './helpers.js';
+import { MINDESTHOEHE } from '../src/lib/actions/resthoehe.js';
 
 // Der Test bringt seinen Bedarf selbst mit, statt ihn vorauszusetzen. Vorher war er rot,
 // sobald in den Einstellungen die Bestellbedarfs-Warnung ausgeschaltet war — dann liefert
@@ -121,26 +122,47 @@ for (const [breite, hoehe] of FENSTER) {
 			}
 			if (bereiche.length < 2) return null;
 			const [liste, seite] = bereiche;
+			const l = liste.getBoundingClientRect();
 			return {
-				listeUnten: Math.round(liste.getBoundingClientRect().bottom),
+				listeOben: Math.round(l.top),
+				listeUnten: Math.round(l.bottom),
+				listeHoehe: Math.round(l.height),
 				seiteUnten: Math.round(seite.getBoundingClientRect().bottom),
 				seiteUeberlauf: seite.scrollHeight - seite.clientHeight
 			};
 		});
-		expect(
-			seitenLage,
-			'Bedarfsliste und Seitenbereich wurden nicht als zwei Scrollbereiche gefunden'
-		).not.toBeNull();
-		expect(
-			seitenLage?.listeUnten,
-			`Die Bedarfsliste endet bei ${seitenLage?.listeUnten} px, der Seitenbereich bei ` +
-				`${seitenLage?.seiteUnten} px: Die Seite läuft über. Die Liste endet am unteren Rand ` +
-				`der Seite und scrollt in sich (actions/resthoehe.js).`
-		).toBeLessThanOrEqual((seitenLage?.seiteUnten ?? 0) + 1);
-		expect(
-			seitenLage?.seiteUeberlauf,
-			`Der Seitenbereich läuft ${seitenLage?.seiteUeberlauf} px über.`
-		).toBeLessThanOrEqual(1);
+		if (!seitenLage) {
+			throw new Error(
+				'Bedarfsliste und Seitenbereich wurden nicht als zwei Scrollbereiche gefunden'
+			);
+		}
+		const platz = seitenLage.seiteUnten - seitenLage.listeOben;
+		if (platz >= MINDESTHOEHE) {
+			expect(
+				seitenLage.listeUnten,
+				`Die Bedarfsliste endet bei ${seitenLage.listeUnten} px, der Seitenbereich bei ` +
+					`${seitenLage.seiteUnten} px: Die Seite läuft über. Die Liste endet am unteren Rand ` +
+					`der Seite und scrollt in sich (actions/resthoehe.js).`
+			).toBeLessThanOrEqual(seitenLage.seiteUnten + 1);
+			expect(
+				seitenLage.seiteUeberlauf,
+				`Der Seitenbereich läuft ${seitenLage.seiteUeberlauf} px über.`
+			).toBeLessThanOrEqual(1);
+		} else {
+			// Wenig Platz: In einem kurzen Fenster mit Hinweisbändern über der Liste (der Stack der
+			// CI zeigt zwei) bleiben unter der Mindesthöhe. Die Liste behält sie, und die Seite
+			// scrollt nur um das, was dazu fehlt.
+			expect(
+				seitenLage.listeHoehe,
+				`Unter der Liste bleiben ${platz} px, sie ist ${seitenLage.listeHoehe} px hoch: mehr ` +
+					`als die Mindesthöhe von ${MINDESTHOEHE} px (actions/resthoehe.js).`
+			).toBeLessThanOrEqual(MINDESTHOEHE + 1);
+			expect(
+				seitenLage.seiteUeberlauf,
+				`Der Seitenbereich läuft ${seitenLage.seiteUeberlauf} px über; die Mindesthöhe der ` +
+					`Liste verlangt ${MINDESTHOEHE - platz} px.`
+			).toBeLessThanOrEqual(MINDESTHOEHE - platz + 1);
+		}
 
 		// Gemessen wird die Geometrie der RAIL-Spalte selbst, nicht ein Scroll-Weg.
 		//
