@@ -399,18 +399,13 @@ Vermerk.
   Lauf der drei Specs gleich (Titel, Exemplare, Zulauf ohne Bestellung, offene Ausleihen,
   Leser, Bestellungen, Lieferanten); ohne das Aufräumen in `bestellung-detail` weichen
   Exemplare, Titel und Zulauf ab.
-- Code, den kein Go-Test ausführt (gemessen am 07.10.2026 mit der ganzen Suite und `-coverpkg`
-  über alle Pakete: 85,3 % der Anweisungen; lokal zählt `./...` das Go-Paket mit, das npm unter
-  `frontend/node_modules/flatted` ablegt, mit ihm sind es 84,9 %). Unter 50 % liegen, ohne
-  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, vier Dateien
-  (`api/geraete.go` und `api/littera_import.go` am 08.10.2026 nachgemessen, nicht mehr
-  darunter; die zweite stieg von 0,7 % auf 81,2 % mit `api/littera_import_pg_test.go`):
-  `api/schueler_etiketten.go` 2,3 %,
+- Code, den kein Go-Test ausführt (gemessen am 08.10.2026 mit der ganzen Suite und `-coverpkg`
+  über alle Pakete: 86,0 % der Anweisungen, 27.869 von 32.402; ohne das Go-Paket, das npm unter
+  `frontend/node_modules/flatted` ablegt und das `./...` lokal mitzählt). Unter 50 % liegen, ohne
+  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, drei Dateien:
   `internal/service/cover_service.go` 18,2 %, `api/ausweis_layout.go` 33,3 %, `db/seed.go`
-  35,5 %. Ebenfalls am 08.10.2026: `repository/mail_settings.go` von 38,1 % auf 95,2 %
-  (`repository/mail_settings_pg_test.go`), `api/orders_handler.go`
-  von 44,2 % auf 67,4 % (Einbuchen im Wareneingang von 4,3 % auf 91,3 %,
-  `api/wareneingang_einbuchen_pg_test.go`; offen die Bestellsuche mit 13,3 %).
+  35,5 %. In `api/orders_handler.go` (67,4 %) führt kein Test die Bestellsuche (13,3 %) und
+  die Zuordnung der Fehler beim Absenden einer Bestellung (0 %) aus.
   Ob Browser-Tests diesen Code erreichen, ist nicht gemessen. Anlass: Das Nachziehen der
   Tests für fünf Routen am 03.10.2026 fand drei Fehler (zwei Abweisungen beim Zusammenführen
   ohne Grund, ein unlesbares Bild als Störung gemeldet, eine Antwort des Foto-Uploads, die
