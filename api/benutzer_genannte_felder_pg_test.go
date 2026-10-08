@@ -130,6 +130,23 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		}
 	})
 
+	// Ein Feld, das die Tür nicht kennt, ist ein Fehler. Sonst nennte ein vertippter Name
+	// nichts: „aktive" statt „aktiv" meldete Erfolg, und das Konto bliebe freigeschaltet.
+	t.Run("ein unbekanntes Feld wird abgelehnt", func(t *testing.T) {
+		vorher, eintraegeVorher := lies(t), eintraege(t)
+		for _, rumpf := range []string{`{"aktive":false}`, `{"nachname":"Anders","passwort":"x"}`} {
+			if code := aendere(t, rumpf); code != http.StatusBadRequest {
+				t.Errorf("%s: Status %d, erwartet 400", rumpf, code)
+			}
+		}
+		if nachher := lies(t); nachher != vorher {
+			t.Errorf("eine abgelehnte Anfrage hat geschrieben: %+v, vorher %+v", nachher, vorher)
+		}
+		if n := eintraege(t); n != eintraegeVorher {
+			t.Errorf("%d Einträge USER_UPDATE, vorher %d", n, eintraegeVorher)
+		}
+	})
+
 	t.Run("ein genanntes Pflichtfeld darf nicht leer sein", func(t *testing.T) {
 		vorher := lies(t)
 		for _, rumpf := range []string{`{"vorname":""}`, `{"nachname":" "}`, `{"email":""}`, `{"email":"keine-adresse"}`, `{"rolle":""}`} {

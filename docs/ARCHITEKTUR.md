@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 07.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
+Stand: 08.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
 07.10.2026 aus dreizehn Dateien zu dieser einen zusammengeführt; jedes Kapitel nennt seinen
 eigenen Stand
 
@@ -3038,6 +3038,17 @@ der das Programm eine Grenze hat, mit Beleg am Code oder Messwert, und nennt, wo
 den Anlass, bei dem gebaut würde. Tritt ein Anlass ein, kommt der Schritt in den Fahrplan von
 [OFFEN.md](OFFEN.md), und der Punkt fällt hier weg. Die Reihenfolge sagt nichts über das
 Gewicht.
+
+#### Leserakte und Titel verwerfen unbekannte Felder still
+
+Die Türen für Benutzer, Gerät und Einstellungen lehnen ein Feld ab, das sie nicht kennen
+(`DecodeStrictAndValidate`). `PATCH /api/schueler/{id}` und `PUT /api/books/{id}` verwerfen es
+still: Steht ein vertippter Name neben einem richtigen, wird der richtige gespeichert, und der
+andere fällt ohne Meldung. Die Leserakte lehnt nur einen Rumpf ab, der gar kein bekanntes Feld
+nennt (am Stack geprüft am 08.10.2026); der Titel nimmt das ganze Objekt entgegen, samt der
+Felder, die nur der Server füllt. Einziger Aufrufer sind die Masken, und die prüfen Browser-Tests
+am gespeicherten Wert. Anlass zum Bauen: ein zweiter Aufrufer oder ein Feld, das eine Maske
+schickt und das nicht ankommt.
 
 #### Der Vermerk „Mail nicht versendet" fällt mit der Lieferung nicht weg
 

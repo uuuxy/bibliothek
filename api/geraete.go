@@ -29,8 +29,9 @@ type GeraetRequest struct {
 
 // GeraetAenderungRequest nennt, was an einem Gerät geändert wird. Ein fehlendes Feld bleibt,
 // wie es ist: Der Bearbeiten-Dialog schickt nur, was seit dem Öffnen geändert wurde, der
-// Defekt-Knopf nur das Kennzeichen. barcode_id nimmt die Tür an und liest es nicht: Barcodes
-// kleben, sie wandern nicht, und ein Dialog aus einem älteren Stand schickt das Feld noch mit.
+// Defekt-Knopf nur das Kennzeichen. Ein unbekanntes Feld lehnt die Tür ab. barcode_id nimmt sie
+// an und liest es nicht: Barcodes kleben, sie wandern nicht, und ein Dialog aus einem älteren
+// Stand schickt das Feld noch mit.
 type GeraetAenderungRequest struct {
 	Modellname    *string `json:"modellname"`
 	Seriennummer  *string `json:"seriennummer"`
@@ -69,7 +70,8 @@ func (s *Server) ListGeraeteHandler(repo repository.GeraeteRepository) http.Hand
 func (s *Server) CreateGeraetHandler(repo repository.GeraeteRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req GeraetRequest
-		if !DecodeAndValidate(w, r, &req) {
+		// Streng: Ein Feld, das die Tür nicht liest, ist ein Fehler und kein stiller Verlust.
+		if !DecodeStrictAndValidate(w, r, &req) {
 			return nil
 		}
 		req.Modellname = strings.TrimSpace(req.Modellname)
@@ -104,7 +106,8 @@ func (s *Server) CreateGeraetHandler(repo repository.GeraeteRepository) http.Han
 func (s *Server) UpdateGeraetHandler(repo repository.GeraeteRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req GeraetAenderungRequest
-		if !DecodeAndValidate(w, r, &req) {
+		// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
+		if !DecodeStrictAndValidate(w, r, &req) {
 			return nil
 		}
 		aenderung := repository.GeraetAenderung{

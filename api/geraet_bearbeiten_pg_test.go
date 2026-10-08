@@ -342,6 +342,20 @@ func TestGeraetAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		}
 	})
 
+	// Ein Feld, das die Tür nicht kennt, ist ein Fehler. Sonst nennte ein vertippter Name
+	// nichts, und die Tür meldete Erfolg, ohne zu schreiben.
+	t.Run("ein unbekanntes Feld wird abgelehnt", func(t *testing.T) {
+		vorher := lies(t)
+		for _, rumpf := range []string{`{"zustandnotiz":"vertippt"}`, `{"ist_ausleihbar":false,"defekt":true}`} {
+			if code := aendere(t, id, rumpf); code != http.StatusBadRequest {
+				t.Errorf("%s: Status %d, erwartet 400", rumpf, code)
+			}
+		}
+		if nachher := lies(t); nachher != vorher {
+			t.Errorf("die abgelehnte Anfrage hat geschrieben: %+v, vorher %+v", nachher, vorher)
+		}
+	})
+
 	// Ein Dialog aus einem älteren Stand schickt alle fünf Felder samt Barcode; die Tür nimmt
 	// ihn an und liest den Barcode nicht.
 	t.Run("der Rumpf eines älteren Dialogs bleibt gültig", func(t *testing.T) {
@@ -377,6 +391,18 @@ func TestGeraetAnlegen_SpeichertDieZustandsnotiz(t *testing.T) {
 	lege(t, `{"modellname":"Tablet 14","barcode_id":"G-NOTIZ-1","seriennummer":"","zubehoer":"Hülle","zustand_notiz":" Akku schwach "}`)
 	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-NOTIZ-1' AND zustand_notiz = 'Akku schwach'`); n != 1 {
 		t.Errorf("die Zustandsnotiz aus der Maske steht nicht am Gerät")
+	}
+	// Das Defekt-Kennzeichen kennt das Anlegen nicht; ein Rumpf damit wird abgelehnt und nicht
+	// still ohne das Kennzeichen angelegt.
+	req := httptest.NewRequest(http.MethodPost, "/api/geraete",
+		strings.NewReader(`{"modellname":"Tablet 16","barcode_id":"G-NOTIZ-3","ist_ausleihbar":false}`))
+	rec := httptest.NewRecorder()
+	srv.CreateGeraetHandler(repo)(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("anlegen mit Defekt-Kennzeichen: Status %d, erwartet 400 — %s", rec.Code, rec.Body.String())
+	}
+	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-NOTIZ-3'`); n != 0 {
+		t.Errorf("das abgelehnte Anlegen hat ein Gerät angelegt")
 	}
 	// Ohne Notiz bleibt sie leer (NULL), nicht ein leerer Text.
 	lege(t, `{"modellname":"Tablet 15","barcode_id":"G-NOTIZ-2","seriennummer":"","zubehoer":"","zustand_notiz":""}`)

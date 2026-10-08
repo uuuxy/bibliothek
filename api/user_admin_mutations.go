@@ -162,7 +162,9 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRe
 	}
 
 	var req UpdateUserRequest
-	if !DecodeAndValidate(w, r, &req) {
+	// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg, ohne zu
+	// schreiben („aktive" statt „aktiv" ließe ein Konto freigeschaltet).
+	if !DecodeStrictAndValidate(w, r, &req) {
 		return
 	}
 	if !pruefeGenanntePflichtfelder(w, req) {
