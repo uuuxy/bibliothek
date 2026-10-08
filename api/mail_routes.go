@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -14,12 +15,11 @@ import (
 func (s *Server) GetMailTemplatesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		rows, err := s.DB.Pool.Query(ctx, "SELECT id, typ, betreff, text_body, updated_at FROM mail_vorlagen ORDER BY typ ASC")
+		vorlagen, err := repository.ListeMailVorlagen(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Vorlagen"))
 			return
 		}
-		defer rows.Close()
 
 		type MailTemplate struct {
 			ID        string `json:"id"`
@@ -30,17 +30,11 @@ func (s *Server) GetMailTemplatesHandler() http.HandlerFunc {
 		}
 
 		var templates []MailTemplate
-		for rows.Next() {
-			var t MailTemplate
-			var ts time.Time
-			if err := rows.Scan(&t.ID, &t.Typ, &t.Betreff, &t.TextBody, &ts); err == nil {
-				t.UpdatedAt = ts.Format(time.RFC3339)
-				templates = append(templates, t)
-			}
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Laden der Vorlagen"))
-			return
+		for _, v := range vorlagen {
+			templates = append(templates, MailTemplate{
+				ID: v.ID, Typ: v.Typ, Betreff: v.Betreff, TextBody: v.TextBody,
+				UpdatedAt: v.UpdatedAt.Format(time.RFC3339),
+			})
 		}
 
 		RespondJSON(w, http.StatusOK, templates)
@@ -67,15 +61,7 @@ func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
 		ctx := r.Context()
 		// Der Stand davor sagt, was sich geändert hat: Im Protokoll stehen die Vorlage und
 		// die Namen der geänderten Felder, nicht der Wortlaut.
-		var typ string
-		var betreffNeu, textNeu bool
-		err := s.DB.Pool.QueryRow(ctx, `
-			WITH alt AS (SELECT betreff, text_body FROM mail_vorlagen WHERE id = $3 FOR UPDATE)
-			UPDATE mail_vorlagen v SET betreff = $1, text_body = $2
-			  FROM alt
-			 WHERE v.id = $3
-			RETURNING v.typ, alt.betreff IS DISTINCT FROM $1, alt.text_body IS DISTINCT FROM $2
-		`, req.Betreff, req.TextBody, id).Scan(&typ, &betreffNeu, &textNeu)
+		typ, betreffNeu, textNeu, err := repository.AendereMailVorlage(ctx, s.DB.Pool, id, req.Betreff, req.TextBody)
 		// Eine unbekannte Vorlage ist ein Fehler, kein „Erfolgreich gespeichert".
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("mail-Vorlage nicht gefunden"))

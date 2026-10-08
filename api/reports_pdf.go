@@ -28,7 +28,7 @@ type mahnbriefVorlage struct {
 // und ohne Anschreiben. Dieselbe Prüfung hatte die Bestell-Schwester
 // (loadBestellTemplate) von Anfang an.
 func (s *Server) loadMahnungTemplate(ctx context.Context) (betreff, textBody string) {
-	err := s.DB.Pool.QueryRow(ctx, "SELECT betreff, text_body FROM mail_vorlagen WHERE typ = 'MAHNUNG_ELTERN'").Scan(&betreff, &textBody)
+	betreff, textBody, err := repository.LadeMahnVorlage(ctx, s.DB.Pool)
 	if err != nil || strings.TrimSpace(betreff) == "" || strings.TrimSpace(textBody) == "" {
 		betreff = "Mahnung: Überfällige Bücher"
 		textBody = "Sehr geehrte Eltern von {{.Vorname}} {{.Nachname}},\n\nbitte geben Sie folgende Bücher umgehend in die Bibliothek zurück:\n\n{{.BuchListe}}\n\nVielen Dank."

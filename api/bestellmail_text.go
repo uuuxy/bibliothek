@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bibliothek/pkg/schulzeit"
+	"bibliothek/repository"
 )
 
 // Der TEXT der Bestellmail: Vorlage laden, Platzhalter ersetzen, Link unterbringen — und
@@ -51,7 +52,7 @@ const (
 // loadBestellTemplate lädt die Händler-Bestellvorlage aus der Datenbank; fehlt sie
 // oder ist ein Feld leer, greift der hartkodierte Fallback.
 func (s *Server) loadBestellTemplate(ctx context.Context) (betreff, textBody string) {
-	err := s.DB.Pool.QueryRow(ctx, "SELECT betreff, text_body FROM mail_vorlagen WHERE typ = 'BESTELLUNG_HAENDLER'").Scan(&betreff, &textBody)
+	betreff, textBody, err := repository.LadeBestellVorlage(ctx, s.DB.Pool)
 	if err != nil || betreff == "" || textBody == "" {
 		return bestellMailFallbackBetreff, bestellMailFallbackBody
 	}
