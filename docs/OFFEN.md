@@ -126,8 +126,8 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Signaturen bei 1280 px Breite: Das Regal steht neben der Liste, lange Titel brechen um
 - [ ] Medienkatalog → Geräte: ein Gerät mit Zustandsnotiz anlegen; die Notiz steht danach in
   der Liste
-- [ ] Leserakte, Brief zu einem Schadensfall drucken: Der Betrag steht mit Komma
-  („12,50 EUR")
+- [ ] Leserakte eines Schülers mit offenem Schadensfall, „Ersatzforderung" drucken: Die
+  Beträge stehen mit Komma („12,50 EUR")
 
 **Erledigen:**
 
