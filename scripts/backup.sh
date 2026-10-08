@@ -70,9 +70,10 @@ if krypto_moeglich; then
       | gzip | krypto_pipe > "$BACKUP_FILE") \
      && pruefe_enc_datei "$BACKUP_FILE" && pruefe_enc_rundweg "$BACKUP_FILE"; then
     echo "Backup erfolgreich (verschlüsselt, Rückweg geprüft): $BACKUP_FILE"
-    # Die Datei liegt auf dem Host, das Werkzeug im Container: Sie geht über die
-    # Standardeingabe hinein, wie in pruefe_enc_rundweg.
-    echo "  Entschlüsseln: docker exec -i ${BACKEND_CONTAINER} ./restore-backup /dev/stdin < \"$BACKUP_FILE\" > wiederherstellung.sql"
+    # Die Datei liegt auf dem Host, das Werkzeug im Image: Sie geht über die Standardeingabe
+    # hinein. Ein Wegwerf-Container statt docker exec, weil das Backend beim Wiederherstellen
+    # angehalten sein kann.
+    echo "  Entschlüsseln, im Programmverzeichnis: docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin < \"$BACKUP_FILE\" > wiederherstellung.sql"
     echo "  Einspielen: docs/resilience_and_recovery.md, Abschnitt 2b"
   else
     echo "FEHLER: Backup fehlgeschlagen (Dump, Verschlüsselung oder Rückweg-Prüfung)!"

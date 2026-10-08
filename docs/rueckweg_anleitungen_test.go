@@ -122,7 +122,8 @@ func TestRueckweg_TotalverlustBautVorDemEinspielen(t *testing.T) {
 // lässt sich wörtlich einfügen (so am 06.08.2026 mit einer Anleitung geschehen), und der Hinweis
 // zum Entschlüsseln nannte bis zum 08.10.2026 einen Aufruf, der die Datei im Container suchte:
 // Die Sicherungen von update.sh und scripts/backup.sh liegen auf dem Host. Die Datei geht
-// deshalb über die Standardeingabe in das Werkzeug.
+// deshalb über die Standardeingabe in das Werkzeug, in einem Wegwerf-Container: Beim
+// Wiederherstellen ist das Backend angehalten, docker exec liefe dann nicht.
 //
 // Blindheit: nur Zeilen mit echo, printf oder log_ in update.sh und scripts/*.sh; ein Befehl,
 // der über eine Variable oder ein Here-Dokument gedruckt wird, bleibt unsichtbar.
@@ -157,9 +158,9 @@ func TestSkripte_GedruckteBefehleOhnePlatzhalter(t *testing.T) {
 			}
 			if strings.Contains(zeile, "restore-backup") {
 				oeffnet++
-				if !strings.Contains(zeile, "./restore-backup /dev/stdin <") {
-					t.Errorf("%s:%d nennt restore-backup ohne die Datei über die Standardeingabe — die Sicherung liegt "+
-						"auf dem Host, das Werkzeug im Container: %s", datei, i+1, strings.TrimSpace(zeile))
+				if !strings.Contains(zeile, "docker compose run --rm --no-deps -T --entrypoint ./restore-backup backend /dev/stdin <") {
+					t.Errorf("%s:%d nennt restore-backup nicht in der erprobten Form (Wegwerf-Container, Datei über die "+
+						"Standardeingabe; docs/resilience_and_recovery.md 2f): %s", datei, i+1, strings.TrimSpace(zeile))
 				}
 			}
 		}
