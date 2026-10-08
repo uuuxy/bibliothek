@@ -1,0 +1,7 @@
+# actionlint führt die Namen der Runner-Abbilder von GitHub als feste Liste je Fassung. Die
+# eingesetzte (1.7.12, die jüngste) kennt ubuntu-26.04 nicht und meldet jede Zeile damit als
+# unbekannt. Unter diesem Schlüssel nimmt actionlint weitere Namen an; ein eigener Runner ist
+# es nicht. Der Eintrag fällt weg, sobald eine Fassung von actionlint den Namen kennt.
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04

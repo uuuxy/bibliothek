@@ -427,14 +427,14 @@ Vermerk.
   öffnet also der Schlüssel, der zu ihrer Zeit galt. Es fehlen die Anleitung zum Wechsel (den
   alten Schlüssel aufbewahren, bis die letzte Sicherung damit aus der Aufbewahrung gefallen
   ist) und ein Test, der eine Sicherung nach dem Wechsel mit dem alten Schlüssel einspielt.
-- **Ubuntu 26 als Runner: die ersten Läufe.** Seit dem 08.10.2026 laufen alle zehn Jobs der
-  vier Workflows fest auf `ubuntu-26.04` (bis dahin `ubuntu-24.04`; `ubuntu-latest` nimmt
-  keiner, weil GitHub es am 19. Oktober 2026 selbst umstellt). Vorher war `ci.yml` im
-  Probelauf auf `ubuntu-26.04` grün (Lauf 37756014701 am Stand f7571e37). Offen: den ersten
-  Lauf je Workflow ansehen. `release.yml` läuft erst mit dem nächsten v-Tag; es braucht dort
-  nur `git`, `gh` und `scripts/tag-gate.sh`. Nicht darunter: CodeQL läuft in der
-  Standard-Einrichtung von GitHub (Repository-Einstellung, keine Workflow-Datei) auf
-  `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf steht an jedem
+- **Ubuntu 26 als Runner: der erste Lauf von `release.yml`.** Seit dem 08.10.2026 laufen alle
+  zehn Jobs der vier Workflows fest auf `ubuntu-26.04`; der Name steht für actionlint in
+  `.github/actionlint.yaml`. Die ersten Läufe von `ci.yml`, `security-scan.yml` und
+  `docker-publish.yml` sind angesehen (am Stand 3bae78b9 grün bis auf actionlint, das den
+  Namen nicht kannte). Offen: `release.yml` läuft erst mit dem nächsten v-Tag; den Lauf dann
+  ansehen. Es braucht dort nur `git`, `gh` und `scripts/tag-gate.sh`. Nicht darunter: CodeQL
+  läuft in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine Workflow-Datei)
+  auf `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf steht an jedem
   CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der CodeQL-Lauf rot.
 - **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist seit dem 08.10.2026
   `v2.11.1-0.20260910071107-696050fbf14e`, der Entwicklungsstand der Bibliothek vom

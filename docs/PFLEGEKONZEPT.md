@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 07.10.2026 (Entwurf)
+Stand: 08.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -156,6 +156,7 @@ einmal allein, nur mit diesen Seiten.
 | Wiedervorlage einer Ausnahme | je Eintrag in `security/vuln-ausnahmen.json`; seit dem 25.09.2026 ist die Liste leer                                        | ab dem Tag nach der Wiedervorlage ist die Sicherheitsprüfung rot, bei jedem Push und im Wochenlauf                                               | nachsehen, ob es einen Fix gibt; dann die Abhängigkeit heben und die Ausnahme löschen                                                                                                                                                |
 | Go                           | halbjährlich (Februar, August); unterstützt sind die zwei neuesten Linien, zurzeit 1.26 und 1.27                            | Dependabot schlägt die neue Docker-Basis vor; ein Test verlangt dieselbe Version in `go.mod` und `Dockerfile` (`docs/umgebung_paritaet_test.go`) | `go.mod` und `Dockerfile` gemeinsam heben; `golangci-lint` und `govulncheck` am Arbeitsplatz mitziehen, sonst verweigern die Hooks; die festen Versionen von gosec und govulncheck in `.github/workflows/security-scan.yml` mitheben |
 | Node                         | Node 24 ist bis zum 20. Oktober 2026 aktive LTS, danach in Wartung bis 30. April 2028; Node 26 wird am 28. Oktober 2026 LTS | Projektregel: immer die aktive LTS; ein Test verlangt dieselbe Hauptversion an allen Stellen                                                     | `Dockerfile` und `.github/workflows/ci.yml` gemeinsam heben                                                                                                                                                                          |
+| Runner-Abbild der Prüfläufe  | wenn GitHub ein neues Ubuntu-Abbild bereitstellt oder das eingesetzte abkündigt; seit dem 08.10.2026 `ubuntu-26.04` | Ankündigung von GitHub; alle vier Workflows nennen das Abbild fest, `ubuntu-latest` nimmt keiner | Probelauf mit `gh workflow run ci.yml -f runner=<Abbild>`, dann `runs-on` in allen vier Workflows umstellen und den Namen in `.github/actionlint.yaml` eintragen, solange actionlint ihn nicht kennt; den ersten Lauf je Workflow ansehen |
 | PostgreSQL, Hauptversion     | 18 wird bis 14. November 2030 gepflegt                                                                                      | ein Test verlangt eine Hauptversion an allen Stellen (`docs/umgebung_paritaet_test.go`)                                                          | nur über Sicherung und Wiederherstellung ([DEPLOYMENT.md](DEPLOYMENT.md) §5); den `pg_dump`-Client im `Dockerfile` mitziehen, sonst schlägt die sonntägliche Probe Alarm                                                             |
 | PostgreSQL, Nebenversion     | vierteljährlich                                                                                                             | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` holt das Datenbank-Image bei jedem Update neu; nicht gebaut ([OFFEN.md](OFFEN.md) 5.31)                                                                                                       |
 | Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` baut mit `--pull --no-cache`; bis dahin hält der Build-Cache die Schicht mit `apk upgrade` fest, und ein Neubau holt die Korrekturen nicht ([OFFEN.md](OFFEN.md) 5.31)                        |
@@ -254,6 +255,13 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   Seit dem 07.10.2026 beendet der Schritt vor jedem neuen Versuch ein übrig gebliebenes
   `apt-get` (`.github/workflows/ci.yml`, `beende_apt`). Am Code liegt ein solcher Lauf nicht;
   die gescheiterten Jobs starten mit `gh run rerun <Nummer des Laufs> --failed` neu.
+- **`actionlint` ist rot nach dem Wechsel des Runner-Abbilds (08.10.2026).** actionlint führt
+  die Namen der Abbilder von GitHub als feste Liste je Fassung; die jüngste kannte
+  `ubuntu-26.04` nicht und meldete jede Zeile `runs-on` damit („label … is unknown"). Der
+  Probelauf davor war grün, weil er den Namen als Eingabe übergibt und die Dateien noch den
+  alten trugen. Der Name steht seitdem in `.github/actionlint.yaml`; kennt ihn eine neue
+  Fassung von actionlint, fällt der Eintrag weg. Am Arbeitsplatz nachstellen: das Abbild aus
+  `ci.yml` (`docker run --rm -v "$PWD:/repo:ro" --workdir /repo rhysd/actionlint:…`).
 
 ---
 
