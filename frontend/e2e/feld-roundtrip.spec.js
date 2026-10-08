@@ -148,14 +148,14 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await expect(page.getByText(/gehören zusammen/)).toBeVisible({ timeout: 10000 });
 		expect(spanne(), 'eine halbe Spanne ist nicht gespeichert').toBe('leer-leer');
 
-		// Mit „bis" dazu ist es eine Spanne.
+		// Mit „bis" dazu ist es eine Spanne. Die Meldung „Buch erfolgreich gespeichert!" vom
+		// Anlegen kann noch stehen, mit der neuen sind es dann zwei: Die Probe wartet deshalb
+		// auf den Stand in der Datenbank.
 		await page.locator('#buch-jahrgang-bis').fill('9');
 		await speichern.click();
-		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible({ timeout: 15000 });
-		expect(spanne()).toBe('7-9');
+		await expect.poll(spanne, { timeout: 15000 }).toBe('7-9');
 
-		// Beide Felder geleert: Der Jahrgang ist wieder unbekannt. Die Meldung des Speicherns
-		// davor kann noch stehen, deshalb wartet die Probe auf den Stand in der Datenbank.
+		// Beide Felder geleert: Der Jahrgang ist wieder unbekannt.
 		await maskeIstZu();
 		await suche.fill(titel);
 		await page.getByText(titel).first().click();
