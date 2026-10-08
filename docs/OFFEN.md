@@ -126,7 +126,7 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Gates und Werkzeuge (5.10):** die Bestände zweier Ratschen sind nicht befragt (Schema:
   was die Datenbank ablehnt; Listen: was sie begrenzt), die Form-Ratsche sieht umrandete
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
-  Excel-Bibliothek auf einem unveröffentlichten Stand.
+  Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
 - [ ] **Schichtung des Backends (5.62):** Was in `api/` keine Tür ist, zieht je Thema in ein
   eigenes Paket; das SQL der Türen zieht nach `repository/`.
 
@@ -290,6 +290,13 @@ Vermerk.
   vorher eine weitere Meldung, wird der Sicherheits-Scan rot; der Handgriff steht in
   [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 5. Fällt an einem der drei Importe etwas
   auf, zuerst gegen v2.11.0 gegenprüfen. Kategorie B.
+- **gosec auf einem unveröffentlichten Stand.** Der Sicherheits-Prüflauf baut seit dem
+  09.10.2026 gosec vom Entwicklungsstand des 05.10.2026
+  (`v2.29.1-0.20261005092323-d2b649ec0182`, mit `golang.org/x/tools` 0.51). Die jüngste
+  veröffentlichte Fassung 2.29.0 liest die Paketdaten von Go 1.27.2 nicht. Am Stand des
+  Tages meldet der neue Stand mit denselben Ausnahmen nichts (457 Dateien, 60 Vermerke
+  `#nosec`). Offen: auf die nächste veröffentlichte Fassung heben, sobald sie erscheint; sie
+  kann neue Regeln mitbringen, deshalb mit eigenem Commit. Kategorie B.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 

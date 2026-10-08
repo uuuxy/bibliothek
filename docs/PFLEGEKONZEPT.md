@@ -230,10 +230,15 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   version 5 is greater than maximum supported version 4": Es liest die Paketdaten der neuen
   Go-Fassung nicht. Es braucht 2.14.0, am Arbeitsplatz (`brew upgrade golangci-lint`) und in
   `.github/workflows/ci.yml` (`version:`); sonst scheitert schon der Hook vor dem Commit, und
-  in der CI fiele der Lint-Schritt vor den Tests. gosec 2.29.0 und govulncheck 1.8.0 baut der
-  Sicherheits-Prüflauf aus dem Quelltext; beide laufen mit Go 1.27.2 (am Arbeitsplatz mit
-  `GOBIN=<Ordner> go install …@<Fassung>` nachgestellt). Danach die Go-Suite und ein Bau des
-  Images unter einem Probe-Namen (`docker build -t <Name> .`).
+  in der CI fiele der Lint-Schritt vor den Tests. Dasselbe traf gosec: 2.29.0 (mit
+  `golang.org/x/tools` 0.49) beendete in der CI jedes Paket mit „has type errors" und den Job
+  mit Exit 1; es braucht einen Stand mit x/tools ab 0.50, den der Sicherheits-Prüflauf seitdem
+  festgeschrieben baut (`.github/workflows/security-scan.yml`). govulncheck 1.8.0 läuft mit Go
+  1.27.2. Die Werkzeuge der CI vor dem Push am Arbeitsplatz nachstellen, mit
+  `GOBIN=<Ordner> go install …@<Fassung>` und dem Aufruf wörtlich aus dem Workflow: Mit dem
+  zusätzlichen Schalter `-quiet` endet gosec ohne Fund mit Exit 0, auch wenn es kein Paket
+  laden konnte, und der Fehler fiel so erst im Lauf auf GitHub auf. Danach die Go-Suite und
+  ein Bau des Images unter einem Probe-Namen (`docker build -t <Name> .`).
 - **Nach einem Update der Pakete baut das Frontend nicht mehr (21.08.2026).** Ein `npm update`
   ohne Paketnamen hob auch den Bundler, und `npm run build` brach an gültigem Code;
   svelte-check, ESLint und Vitest blieben grün. Pakete deshalb einzeln heben und danach

@@ -70,9 +70,15 @@ jobs:
       # Feste Version statt @latest (28.09.2026), wie bei govulncheck: Ein neues gosec bringt
       # neue Regeln mit, und die sollen sich mit einem eigenen Commit melden, nicht mitten in
       # anderer Arbeit.
+      #
+      # Seit dem 09.10.2026 ein Entwicklungsstand statt einer veröffentlichten Fassung: v2.29.0
+      # bringt golang.org/x/tools 0.49 mit und liest die Paketdaten von Go 1.27.2 nicht (jedes
+      # Paket endete mit „has type errors", der Job mit Exit 1). Der Stand vom 05.10.2026 trägt
+      # x/tools 0.51 und meldet am selben Code nichts Neues. Auf die nächste veröffentlichte
+      # Fassung heben, sobald sie erscheint (docs/OFFEN.md 5.10).
       - name: Install gosec
         run: |
-          go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.29.1-0.20261005092323-d2b649ec0182
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       # Ausgenommen sind nur Regeln, die heute Stellen melden — je Regel mit Grund und der
