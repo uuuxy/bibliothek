@@ -2841,7 +2841,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 07.10.2026
+Stand: 08.10.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3442,6 +3442,14 @@ wird nur mit Anlass.
   gezählt am 06.10.2026). Die Liste sieht je Browser anders aus und folgt nicht Material 3;
   im Haus ist sie einheitlich. Anlass zum Bauen: Die Vorschläge sollen aussehen wie die Menüs
   der Anwendung.
+- Die Ausleih-Quittung der Leserakte (`StudentPrintReceipt.svelte`) hat keinen Knopf. Sie
+  erscheint, wenn jemand die offene Akte über den Browser druckt (Strg+P; so gesehen am
+  05.10.2026, 1c4fbdd4), und sonst nirgends (`styles/druck-ausweise.css`). Den Knopf
+  „Ausleihen-Liste" nahm 9e225604 am 23.07.2026 aus der Akte; für Schüler ist seitdem der
+  Kontoauszug das Ausleih-Dokument. Für einen Kollegen gibt es den Kontoauszug nicht
+  (`StudentProfileActions.svelte`), die Quittung ist dort der einzige Ausdruck seiner
+  Ausleihen. Anlass zum Bauen: Jemand braucht den Ausdruck an der Theke, etwa die Dauerleihen
+  einer Lehrkraft; dann bekommt er einen Knopf.
 
 #### Bewusst nicht entschieden
 

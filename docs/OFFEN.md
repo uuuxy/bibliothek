@@ -99,7 +99,7 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Mahnwesen: Mahnbriefe und Liste drucken
 - [ ] Ausweise aus der Leserdatei am Kartendrucker drucken
 - [ ] Inventur: mehrere Bücher schnell hintereinander scannen
-- [ ] Leserakte: „Stammdaten bearbeiten" speichern
+- [ ] Leserakte: im Reiter „Stammdaten & Adresse" über „Bearbeiten" ändern und speichern
 - [ ] Buchakte: Status eines gesperrten Exemplars öffnen und speichern
 - [ ] Bestandsliste (Einstellungen → Datenverwaltung): Spalte „Standort"; gefüllt bei
   Exemplaren, die einen Standort tragen (Buchakte, „Standort ändern")
@@ -122,8 +122,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Inventur: eine unbekannte Nummer scannen („Zu diesem Barcode gibt es kein Exemplar.")
 - [ ] Statistiken: „Gesamtbestand" und „aktive Exemplare" zählen bestellte Exemplare nicht
   mehr mit
-- [ ] Leserakte einer Lehrkraft mit Dauerleihe, „Quittung drucken": Die Zeile nennt „ohne
-  Frist" statt eines Datums
+- [ ] Leserakte einer Lehrkraft mit Dauerleihe über den Browser drucken (Strg+P; einen Knopf
+  dafür hat die Akte nicht): Die Ausleih-Quittung nennt in der Zeile „ohne Frist" statt eines
+  Datums
 - [ ] Bestellwesen in einem kleinen Fenster (1366 × 700): Bedarfsliste und Bestellspalte enden
   am unteren Rand und scrollen in sich; „Bestellung auslösen" bleibt im Bild
 - [ ] Signaturen bei 1280 px Breite: Das Regal steht neben der Liste, lange Titel brechen um
@@ -369,8 +370,9 @@ Vermerk.
   bei denen nachzusehen ist, ob das Buch wirklich fehlt.
 - **Zugangsdatum am Testserver nachzählen** (07.10.2026). Abgangsbuch und Statistik zählen
   nur, was ein Zugangsdatum trägt (`repository.SQLWarImBestand`). Nach Migration 129 und
-  ihren zwei Triggern fehlt es nur bestellten Exemplaren; lokal trifft das zu (26 von 73.785
-  Exemplaren ohne Datum, alle im Zulauf). Am Testserver zeigt es (lesend):
+  ihren zwei Triggern fehlt es nur bestellten Exemplaren; lokal trifft das zu (nachgezählt am
+  08.10.2026: kein Exemplar im Bestand ohne Datum, die ohne Datum stehen alle im Zulauf). Am
+  Testserver zeigt es (lesend):
   `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE bestellstatus IS NULL AND NOT ist_ausgesondert) AS im_bestand, count(*) FILTER (WHERE ist_ausgesondert) AS ausgesondert, count(*) FILTER (WHERE bestellstatus IS NOT NULL AND NOT ist_ausgesondert) AS im_zulauf FROM buecher_exemplare WHERE zugang_am IS NULL;"`
   Erwartet: „im_bestand" 0. „ausgesondert" sind bestellte Exemplare, die nie eintrafen und
   ausgebucht wurden; sie stehen in keinem der beiden Bücher und nicht in der Statistik.
@@ -398,16 +400,6 @@ Vermerk.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
-- **Behoben am 08.10.2026:** Browser-Tests ließen Daten liegen (in der CI ist die Datenbank je
-  Lauf frisch; lokale Zahlen trugen die Reste mit). `e2e/bestellung-detail.spec.js` bestellte
-  drei Exemplare am ersten Titel des Katalogs und nahm nur den Lieferanten wieder weg; es legt
-  jetzt einen eigenen Titel an und löscht Bestellung und Titel. `e2e/zugangsbuch.spec.js` und
-  die Tests „Leserakte" und „Wareneingang" in `e2e/scrollbereiche.spec.js` räumen über ihre
-  Kennung auf; der Leserakte-Test stand nicht in der Liste, ließ aber zwölf offene Ausleihen
-  auf einem Schüler zurück. Belegt am Draht: Zählung der lokalen Datenbank vor und nach einem
-  Lauf der drei Specs gleich (Titel, Exemplare, Zulauf ohne Bestellung, offene Ausleihen,
-  Leser, Bestellungen, Lieferanten); ohne das Aufräumen in `bestellung-detail` weichen
-  Exemplare, Titel und Zulauf ab.
 - **Fehler am Wortlaut erkannt.** Sieben Stellen in sechs Dateien entscheiden den Status ihrer
   Antwort am Text einer Fehlermeldung statt an einem benannten Fehler; eine Umformulierung an
   der Quelle macht dort aus einer Auskunft einen Serverfehler oder umgekehrt, ohne dass ein
@@ -440,12 +432,15 @@ Vermerk.
   eine veröffentlichte Fassung damit gibt es nicht, die jüngste ist v2.11.0 vom 06.07.2026.
   Mit dem Stand ändert sich sonst nur `richardlehane/mscfb` (1.0.7 auf 1.0.8). Belegt: Die
   ganze Go-Suite ist mit ihm grün, und der Absturz auf dem Auslagerungs-Weg, den v2.11.0 noch
-  hat, ist weg (`pkg/xlsxgrenze/negativer_sharedstring_test.go`). Das Programm liest mit der
-  Bibliothek nur, an drei Stellen hinter Anmeldung und Fachrecht (`inventur/excel_import.go`,
-  `api/lusd_parser_quelle.go`, `api/littera_import.go`), alle durch `xlsxgrenze.MitMappe`;
-  die Schranke dort bleibt als zweite Lage. Offen: auf die veröffentlichte Fassung heben,
-  sobald sie erscheint (Dependabot schlägt sie vor). Fällt bis dahin an einem der drei Importe
-  etwas auf, zuerst gegen v2.11.0 gegenprüfen. Kategorie B.
+  hat, ist weg (`pkg/xlsxgrenze/negativer_sharedstring_test.go`). 38 Excel-Dateien vom
+  Entwicklungsrechner, darunter Klassen- und Schülerlisten und eine Medienliste mit 559
+  Blättern, liest er wie v2.11.0: je Blatt dieselbe Zahl der Zeilen und Zellen und dieselbe
+  Prüfsumme über die Werte, roh und formatiert (verglichen am 08.10.2026). Das Programm liest
+  mit der Bibliothek nur, an drei Stellen hinter Anmeldung und Fachrecht
+  (`inventur/excel_import.go`, `api/lusd_parser_quelle.go`, `api/littera_import.go`), alle
+  durch `xlsxgrenze.MitMappe`; die Schranke dort bleibt als zweite Lage. Offen: auf die
+  veröffentlichte Fassung heben, sobald sie erscheint (Dependabot schlägt sie vor). Fällt bis
+  dahin an einem der drei Importe etwas auf, zuerst gegen v2.11.0 gegenprüfen. Kategorie B.
 - **gosec: acht Regeln global ausgenommen** (gemessen mit v2.29.0 am 28.09.2026, ohne
   `-exclude`): G706 (38 Stellen in 20 Dateien, nachgezählt am 07.10.2026), G704 (6), G703 (5),
   G120 (5), G124 (4), G404 (4), G115 (3), G101 (1); der Grund je Regel steht in

@@ -56,10 +56,10 @@
 		break-after: avoid !important;
 	}
 
-	/* Die Ausleih-Quittung wird über einen eigenen Button mit reinem window.print()
-     (OHNE data-print-mode) gedruckt. Tailwind-Klassen werden hier NICHT verwendet,
-     da @layer utilities in Tailwind v4 !important-Regeln in unlayered CSS überschreibt.
-     Sichtbarkeit wird komplett über diese reinen CSS-Regeln gesteuert. */
+	/* Die Ausleih-Quittung erscheint, wenn die offene Leserakte über den Browser gedruckt
+     wird (ohne data-print-mode); einen eigenen Knopf hat sie nicht. Ohne Tailwind-Klassen:
+     @layer utilities überschreibt in Tailwind v4 !important-Regeln in CSS ohne Layer, die
+     Sichtbarkeit steuern deshalb allein diese Regeln. */
 	body:not([data-print-mode]) .print-receipt-section {
 		display: block !important;
 		position: absolute !important;
