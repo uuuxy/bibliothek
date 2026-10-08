@@ -234,22 +234,26 @@ Vermerk.
   Workflow-Datei) auf `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf
   steht an jedem CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der
   CodeQL-Lauf rot.
-- **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist seit dem 08.10.2026
-  `v2.11.1-0.20260910071107-696050fbf14e`, der Entwicklungsstand der Bibliothek vom
-  10.09.2026. Er enthält die Korrekturen zu den neun Meldungen vom 07.10.2026 (GitHub,
-  Dependabot Nr. 21 bis 29, CVE-2026-107217 bis CVE-2026-107225: drei „high", sechs „medium");
-  eine veröffentlichte Fassung damit gibt es nicht, die jüngste ist v2.11.0 vom 06.07.2026.
-  Mit dem Stand ändert sich sonst nur `richardlehane/mscfb` (1.0.7 auf 1.0.8). Belegt: Die
-  ganze Go-Suite ist mit ihm grün, und der Absturz auf dem Auslagerungs-Weg, den v2.11.0 noch
-  hat, ist weg (`pkg/xlsxgrenze/negativer_sharedstring_test.go`). 38 Excel-Dateien vom
-  Entwicklungsrechner, darunter Klassen- und Schülerlisten und eine Medienliste mit 559
-  Blättern, liest er wie v2.11.0: je Blatt dieselbe Zahl der Zeilen und Zellen und dieselbe
-  Prüfsumme über die Werte, roh und formatiert (verglichen am 08.10.2026). Das Programm liest
-  mit der Bibliothek nur, an drei Stellen hinter Anmeldung und Fachrecht
+- **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist seit dem 08.10.2026 abends
+  `v2.11.1-0.20261003002531-6258dcebc4e2`, der Entwicklungsstand der Bibliothek vom
+  03.10.2026. Er enthält die Korrekturen zu den neun Meldungen vom 07.10.2026 (CVE-2026-107217
+  bis CVE-2026-107225) und zu den sechs vom 08.10.2026 (CVE-2026-107211 bis CVE-2026-107216,
+  alle „high"); eine veröffentlichte Fassung damit gibt es nicht, die jüngste ist v2.11.0 vom
+  06.07.2026. Mit dem Stand ändert sich sonst nur `xuri/efp` (0.0.1 auf 0.0.2). Belegt: Die
+  ganze Go-Suite ist mit ihm grün. 38 Excel-Dateien vom Entwicklungsrechner, darunter Klassen-
+  und Schülerlisten und eine Medienliste mit 559 Blättern, liest er wie der Stand vom
+  10.09.2026: je Blatt dieselbe Zahl der Zeilen und Zellen und dieselbe Prüfsumme über die
+  Werte, roh und formatiert (1.176 Blätter, 72.836 Zeilen, verglichen am 08.10.2026). Eine der
+  sechs Meldungen trifft den eigenen Lesepfad: Eine Zeilennummer jenseits der Blattgrenze ließ
+  `GetRows` jede fehlende Zeile abzählen, nach der Meldung bis zu elf Tage lang
+  (CVE-2026-107212; `pkg/xlsxgrenze/zeilennummer_test.go`, am Stand davor rot). Das Programm
+  liest mit der Bibliothek nur, an drei Stellen hinter Anmeldung und Fachrecht
   (`inventur/excel_import.go`, `api/lusd_parser_quelle.go`, `api/littera_import.go`), alle
   durch `xlsxgrenze.MitMappe`; die Schranke dort bleibt als zweite Lage. Offen: auf die
-  veröffentlichte Fassung heben, sobald sie erscheint (Dependabot schlägt sie vor). Fällt bis
-  dahin an einem der drei Importe etwas auf, zuerst gegen v2.11.0 gegenprüfen. Kategorie B.
+  veröffentlichte Fassung heben, sobald sie erscheint (Dependabot schlägt sie vor). Kommt
+  vorher eine weitere Meldung, wird der Sicherheits-Scan rot; der Handgriff steht in
+  [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 5. Fällt an einem der drei Importe etwas
+  auf, zuerst gegen v2.11.0 gegenprüfen. Kategorie B.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 

@@ -4,7 +4,7 @@ Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sich
 
 > Zuletzt aktualisiert: 2026-10-08 (XLSX-Importe: alle Lesestellen durch
 > `xlsxgrenze.MitMappe` — Absturz-Schranke und Abweisung verschlüsselter Container; excelize
-> auf dem Stand mit den Korrekturen zu neun gemeldeten Schwachstellen).
+> auf dem Stand mit den Korrekturen zu fünfzehn gemeldeten Schwachstellen).
 > Davor 2026-10-07 (Rechte-Matrix: Jede Änderung steht im Protokoll;
 > Bestätigungs-Link: die Angabe „180 Tage" berichtigt, gültig ist er 21 Tage als Vorgabe).
 > Davor 2026-10-02 (Scan im Passwortfeld: ein in Scannergeschwindigkeit
@@ -875,10 +875,21 @@ Entschlüsselungsweg in excelize an einer selbst gewählten Zahl ungebremst rech
 CVE-2026-107219) und eine Schranke, die einen Absturz der Bibliothek an einer präparierten
 Datei zum Fehler „ungültige Datei" macht, statt den Prozess zu reißen — excelize fängt eigene
 Abstürze nicht ab. Am 07.10.2026 wurden neun Schwachstellen dieser Art gemeldet (Dependabot
-Nr. 21 bis 29). Ihre Korrekturen liegen auf dem Entwicklungsstand der Bibliothek, eine
-veröffentlichte Fassung damit gibt es am 08.10.2026 nicht; eingesetzt ist deshalb der Stand
-vom 10.09.2026 (`v2.11.1-0.20260910071107-696050fbf14e`), der alle neun enthält (OFFEN.md
-5.10). Wer eine vierte Lesestelle baut, geht durch `MitMappe`, nicht an ihr vorbei.
+Nr. 21 bis 29), am 08.10.2026 sechs weitere (CVE-2026-107211 bis CVE-2026-107216). Ihre
+Korrekturen liegen auf dem Entwicklungsstand der Bibliothek, eine veröffentlichte Fassung damit
+gibt es am 08.10.2026 nicht; eingesetzt ist deshalb der Stand vom 03.10.2026
+(`v2.11.1-0.20261003002531-6258dcebc4e2`), der alle fünfzehn enthält (OFFEN.md 5.10). Wer eine
+vierte Lesestelle baut, geht durch `MitMappe`, nicht an ihr vorbei.
+
+Die Schranke fängt einen Absturz, keine Schleife. Eine der sechs Meldungen vom 08.10.2026
+betrifft das Lesen der Zeilen selbst (CVE-2026-107212): Stand hinter einer gültigen Zeile eine
+mit einer Nummer weit jenseits der Blattgrenze von 1.048.576, zählte `GetRows` jede fehlende
+Zeile ab; nach der Meldung hält eine Datei von 1,5 KB die Anfrage elf Tage auf einem
+Prozessorkern fest. Dagegen hilft nur der korrigierte Stand der Bibliothek, der die Zeile mit
+einem Fehler abweist (`TestMitMappe_ZeilennummerJenseitsDerBlattgrenzeWirdAbgewiesen` in
+`pkg/xlsxgrenze/zeilennummer_test.go`, am Stand vom 10.09.2026 rot). Die übrigen fünf liegen
+auf Wegen, die das Programm nicht geht: Entschlüsselung (der OLE-Container wird vorher
+abgewiesen), Pivot-Tabellen, Datenschnitte und das Rechnen von Formeln.
 
 **CodeQL läuft daneben, ohne Datei im Repository.** Für dieses Repository ist GitHubs
 **Standard-Setup** aktiv (Settings → Code security → Code scanning). Es analysiert `go`,

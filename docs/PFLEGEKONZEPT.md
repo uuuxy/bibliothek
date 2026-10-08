@@ -201,6 +201,22 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   unter `dependencies`, sein Unterbaum zählt deshalb mit. Abhilfe: `npm update` mit genau den
   gemeldeten Paketnamen; das ändert nur `package-lock.json`. Die Sammel-PRs von Dependabot
   heben direkte Pakete und enthielten die gemeldeten nicht.
+- **Die Sicherheitsprüfung ist rot, am Stand hat sich nichts geändert (Go, 08.10.2026).** Der
+  Job „Docker – Trivy image scan" meldete sechs Schwachstellen in `xuri/excelize`; am Stand
+  davor war er anderthalb Stunden früher grün, die Meldungen waren am selben Tag veröffentlicht
+  worden. govulncheck blieb grün, Dependabot hatte nichts gemeldet. Eine veröffentlichte
+  Fassung mit den Korrekturen gab es nicht; jede Meldung nennt einen Entwicklungsstand der
+  Bibliothek. Abhilfe: auf den Stand heben, den die jüngste Meldung nennt
+  (`go get github.com/xuri/excelize/v2@<Commit>`, dann `go mod tidy`). Am Arbeitsplatz zeigt
+  `trivy fs --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 <Ordner>`
+  an einem Ordner mit dem alten `go.mod` und `go.sum` dieselben Meldungen und am neuen keine.
+  Danach die Go-Suite und ein Lesevergleich an echten Excel-Dateien: ein kleines Programm,
+  einmal mit jedem Stand gebaut, das je Blatt die Zahl der Zeilen und Zellen und eine Prüfsumme
+  über die Werte ausgibt, roh und formatiert. Trifft eine Meldung einen Aufruf des Programms
+  (`OpenReader`, `GetRows`), kommt ein Test dazu, der am alten Stand rot ist
+  (`pkg/xlsxgrenze/`); den alten Stand nimmt
+  `GOWORK=off go test -modfile=<altes go.mod> ./pkg/xlsxgrenze/`. Was offen bleibt, steht in
+  [OFFEN.md](OFFEN.md) 5.10.
 - **Nach einem Update der Pakete baut das Frontend nicht mehr (21.08.2026).** Ein `npm update`
   ohne Paketnamen hob auch den Bundler, und `npm run build` brach an gültigem Code;
   svelte-check, ESLint und Vitest blieben grün. Pakete deshalb einzeln heben und danach

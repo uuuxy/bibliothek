@@ -23,6 +23,12 @@ import (
 // bosartigeMappe baut die kleinste .xlsx mit einer Zelle `t="s"` und dem gegebenen Index.
 func bosartigeMappe(t *testing.T, index string) []byte {
 	t.Helper()
+	return mappeMitZeilen(t, fmt.Sprintf(`<row r="1"><c r="A1" t="s"><v>%s</v></c></row>`, index))
+}
+
+// mappeMitZeilen baut die kleinste .xlsx, deren Blatt „Tabelle1" die gegebenen Zeilen trägt.
+func mappeMitZeilen(t *testing.T, zeilen string) []byte {
+	t.Helper()
 	puffer := &bytes.Buffer{}
 	z := zip.NewWriter(puffer)
 	teile := map[string]string{
@@ -48,9 +54,9 @@ func bosartigeMappe(t *testing.T, index string) []byte {
 </Relationships>`,
 		"xl/sharedStrings.xml": `<?xml version="1.0" encoding="UTF-8"?>
 <sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="1" uniqueCount="1"><si><t>harmlos</t></si></sst>`,
-		"xl/worksheets/sheet1.xml": fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
+		"xl/worksheets/sheet1.xml": `<?xml version="1.0" encoding="UTF-8"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<sheetData><row r="1"><c r="A1" t="s"><v>%s</v></c></row></sheetData></worksheet>`, index),
+<sheetData>` + zeilen + `</sheetData></worksheet>`,
 	}
 	for name, inhalt := range teile {
 		w, err := z.Create(name)
