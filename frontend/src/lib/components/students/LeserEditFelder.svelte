@@ -18,7 +18,7 @@
          (chk_leser_nur_schueler_werden_abgaenger). Durch die LUSD kommen nur Schüler.
        - Klasse und Abgangsjahr: „eine klasse muss ja keinem lehrer/liv zugeordnet
          werden" . Das Abgangsjahr hängt an der Klasse — der Server leitet es aus
-         ihr ab (calculateAbgaengerJahr), also gehören beide zusammen.
+         ihr ab (repository.AbgaengerJahr), also gehören beide zusammen.
        - Die Art über die Schüler-Grenze: Ein Schüler bleibt Schüler.
 
      REIHENFOLGE (16.09.2026, nach der Blick auf die fertige Maske): Die Art steht

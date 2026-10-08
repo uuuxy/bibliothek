@@ -338,6 +338,9 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **SQL nach `repository/`.** Je Datei ein Commit, die Anweisung wörtlich und in derselben
   Transaktion wie vorher. Vor dem Umzug einer Anweisung muss ein Test an der Datenbank sie
   ausführen; fehlt er, kommt er zuerst.
+- **Rest aus dem Umzug der Regeln:** `repository.ZusammenfuehrenAuftrag` bekommt die Rechnung des
+  Abgangsjahrs weiter als Funktion gereicht (`AbgaengerJahr`), obwohl `repository.AbgaengerJahr`
+  seit dem 09.10.2026 im selben Paket steht. Das Feld kann entfallen.
 - **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. 363 Türen sind Methoden an
   einem Typ (`Server`), rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt,
   zeigt der Stand nach den beiden Schritten davor.

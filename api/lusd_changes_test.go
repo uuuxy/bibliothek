@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/repository"
 
 	"github.com/pashagolub/pgxmock/v5"
 )
@@ -37,11 +38,11 @@ func TestGenerateImportBarcode_WieDieHandanlage(t *testing.T) {
 		if seen[b] {
 			t.Fatalf("Barcode-Kollision bei Nummer %d: %s", i, b)
 		}
-		if !strings.HasPrefix(b, AusweisPraefix) {
-			t.Fatalf("unerwartetes Format: %s — erwartet die Vorsilbe %q", b, AusweisPraefix)
+		if !strings.HasPrefix(b, repository.AusweisPraefix) {
+			t.Fatalf("unerwartetes Format: %s — erwartet die Vorsilbe %q", b, repository.AusweisPraefix)
 		}
-		if b != AusweisNummer(i) {
-			t.Fatalf("Import erzeugt %q, die Handanlage %q — eine Form, eine Quelle", b, AusweisNummer(i))
+		if b != repository.AusweisNummer(i) {
+			t.Fatalf("Import erzeugt %q, die Handanlage %q — eine Form, eine Quelle", b, repository.AusweisNummer(i))
 		}
 		seen[b] = true
 	}

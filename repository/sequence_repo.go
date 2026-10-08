@@ -31,8 +31,20 @@ func NewSequenceRepository(db DBQueryer) *SequenceRepository {
 	return &SequenceRepository{db: db}
 }
 
+// AusweisPraefix steht auf jeder Ausweisnummer, die das Programm vergibt, für Schüler wie für
+// das Kollegium: Wer jemand ist, steht in den Stammdaten, nicht auf dem Ausweis. Ohne Netz ist
+// die Vorsilbe das Einzige, woran die Theke einen Ausweis von einem Buch unterscheidet
+// (frontend/src/lib/stores/omnibox.svelte.js). Die früheren Vorsilben „S-" und „L-" versteht
+// der Scanner weiter (internal/service/omnibox_service.go); vergeben werden sie nicht mehr.
+const AusweisPraefix = "A-"
+
+// AusweisNummer setzt eine laufende Zahl in die Form, die auf den Ausweis gedruckt wird:
+// fünfstellig mit führenden Nullen, damit die Nummern gleich lang bleiben und sich nach
+// Zeichen wie nach Wert gleich sortieren.
+func AusweisNummer(n int) string { return fmt.Sprintf("%s%05d", AusweisPraefix, n) }
+
 // NaechsteAusweisnummer liefert die nächste freie laufende Ausweisnummer (ohne Vorsilbe;
-// die gedruckte Form setzt api.AusweisNummer). Der Generator steht seit Migration 136 in
+// die gedruckte Form setzt AusweisNummer). Der Generator steht seit Migration 136 in
 // der Datenbank (ausweis_nummer_start), weil auch die Trigger aktives_konto_hat_ausweis und
 // aktives_konto_behaelt_ausweis (Migration 145) ihn brauchen: Ein Nummernkreis hat EINEN
 // Zähler — zwei daneben waren der Fehler aus Migration 068. Bis dahin rechnete

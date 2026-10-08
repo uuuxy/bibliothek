@@ -2,6 +2,8 @@ package repository
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -11,7 +13,7 @@ import (
 // Versetzung und der LUSD-Import, und beide setzen dabei das tatsächliche Jahr
 // (api/student_promotion.go, repository/lusd_import.go).
 //
-// Verbraucher: die Handanlage und der LUSD-Import (api.abgaengerJahrAm) und die
+// Verbraucher: die Handanlage und der LUSD-Import (AbgaengerJahrAm) und die
 // Littera-Übernahme für die Gruppe „Im Ausland" — eine Antwort auf dieselbe Frage.
 func AbgangsjahrOhneKlasse(jetzt time.Time) int {
 	return jetzt.Year() + 5
@@ -52,4 +54,67 @@ func AbschlussklasseSQL(spalte string) string {
 		   (%[2]s >= 9  AND %[3]s = 'h')
 		OR (%[2]s >= 10 AND %[3]s = 'r')
 		OR  %[2]s >= 13))`, spalte, jahrgang, zweig)
+}
+
+// AbschlussJahrgang liest aus einer Klasse ihren Jahrgang und den Jahrgang, mit dem ihr
+// Bildungsgang endet: H endet mit 9, R mit 10, alles andere mit 13. „E" ohne Ziffer ist die
+// Einführungsphase, Jahrgang 11. Es ist der Go-Zwilling von AbschlussklasseSQL; das Paar-Gate
+// api/abgaenger_jahr_paar_pg_test.go vergleicht beide über den ganzen Formenraum.
+//
+// ok=false heißt: keine lesbare Jahrgangszahl (ABG, Q4, leer). Der Aufrufer nimmt dann einen
+// Rückfallwert.
+func AbschlussJahrgang(klasse string) (jahrgang, abschluss int, ok bool) {
+	klasse = strings.ToLower(strings.TrimSpace(klasse))
+	if strings.HasPrefix(klasse, "e") {
+		return 11, 13, true // Einführungsphase: ET, E1, E2 — Jahrgang 11
+	}
+
+	gradeStr := ""
+	suffix := ""
+	for i, c := range klasse {
+		if c >= '0' && c <= '9' {
+			gradeStr += string(c)
+		} else {
+			suffix = strings.TrimSpace(klasse[i:])
+			break
+		}
+	}
+	grade, err := strconv.Atoi(gradeStr)
+	if err != nil || grade < 1 {
+		return 0, 0, false
+	}
+
+	switch {
+	case strings.HasPrefix(suffix, "h"):
+		return grade, 9, true
+	case strings.HasPrefix(suffix, "r"):
+		return grade, 10, true
+	default:
+		return grade, 13, true
+	}
+}
+
+// AbgaengerJahr errechnet das voraussichtliche Abgangsjahr eines Schülers aus seiner Klasse
+// und dem laufenden Schuljahr. Die Anlage von Hand, das Ändern der Klasse, das Zusammenführen
+// und der LUSD-Import fragen hier: eine Antwort auf dieselbe Frage.
+func AbgaengerJahr(klasse string) int {
+	return AbgaengerJahrAm(klasse, time.Now())
+}
+
+// AbgaengerJahrAm rechnet wie AbgaengerJahr zu einem genannten Zeitpunkt. Das Schuljahr endet
+// im Juli; ab August zählt das folgende Kalenderjahr als Basis.
+func AbgaengerJahrAm(klasse string, jetzt time.Time) int {
+	jahrgang, abschluss, ok := AbschlussJahrgang(klasse)
+	if !ok {
+		return AbgangsjahrOhneKlasse(jetzt)
+	}
+	yearsLeft := abschluss - jahrgang
+	if yearsLeft < 0 {
+		yearsLeft = 0
+	}
+	baseYear := jetzt.Year()
+	if jetzt.Month() >= time.August {
+		baseYear++
+	}
+	return baseYear + yearsLeft
 }

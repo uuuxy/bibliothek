@@ -16,7 +16,7 @@ import (
 // Protokollspuren zeigen auf den verbliebenen Datensatz.
 
 func zfAuftrag(ziel, quelle string) repository.ZusammenfuehrenAuftrag {
-	return repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle, AbgaengerJahr: calculateAbgaengerJahr}
+	return repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle, AbgaengerJahr: repository.AbgaengerJahr}
 }
 
 func zfZaehle(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) int {
@@ -276,7 +276,7 @@ func TestZusammenfuehren_RueckwegAusDemProtokoll(t *testing.T) {
 	}
 	seedOffeneAusleihe(t, pool, quelle, "ZFR")
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle, AbgaengerJahr: calculateAbgaengerJahr}); err != nil {
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle, AbgaengerJahr: repository.AbgaengerJahr}); err != nil {
 		t.Fatal(err)
 	}
 

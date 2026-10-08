@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -22,75 +21,6 @@ import (
 // Schreibweise, denn genau die ist der Fall, den man vor sich hat, wenn man den Namen
 // in der Liste nicht findet.
 const meldungSchuelerDuplikat = "achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System"
-
-// abschlussJahrgang liest aus der Klassenbezeichnung den aktuellen Jahrgang und den
-// Jahrgang, mit dem der Bildungsgang endet. Es ist der Go-Zwilling von
-// repository.AbschlussklasseSQL — DIESELBE Regel (H ab 9, R ab 10, alles andere ab 13),
-// belegt durch das Paar-Gate abgaenger_jahr_paar_pg_test.go, das beide über den ganzen
-// Formenraum vergleicht (Zwilling mit Vollprobe, sweeps.md).
-//
-// Bis zum 07.09.2026 rechnete diese Funktion „R, G und unmarkiert → 10“: Ein 10G stand in
-// der Akte mit dem Abgang des laufenden Jahres, obwohl der Gymnasialzweig an dieser Schule
-// in die Oberstufe weiterläuft (Register B, 05.09.2026). Die Oberstufe selbst heißt hier
-// ET/12T/13T: „E“ ohne Ziffer ist die Einführungsphase, Jahrgang 11.
-//
-// ok=false: keine lesbare Jahrgangszahl (ABG, Q4, leer) — der Aufrufer nimmt einen
-// Rückfallwert.
-func abschlussJahrgang(klasse string) (jahrgang, abschluss int, ok bool) {
-	klasse = strings.ToLower(strings.TrimSpace(klasse))
-	if strings.HasPrefix(klasse, "e") {
-		return 11, 13, true // Einführungsphase: ET, E1, E2 — Jahrgang 11
-	}
-
-	gradeStr := ""
-	suffix := ""
-	for i, c := range klasse {
-		if c >= '0' && c <= '9' {
-			gradeStr += string(c)
-		} else {
-			suffix = strings.TrimSpace(klasse[i:])
-			break
-		}
-	}
-	grade, err := strconv.Atoi(gradeStr)
-	if err != nil || grade < 1 {
-		return 0, 0, false
-	}
-
-	switch {
-	case strings.HasPrefix(suffix, "h"):
-		return grade, 9, true
-	case strings.HasPrefix(suffix, "r"):
-		return grade, 10, true
-	default:
-		return grade, 13, true
-	}
-}
-
-// calculateAbgaengerJahr errechnet das voraussichtliche Abgangsjahr eines Schülers aus
-// der Klasse (abschlussJahrgang) und dem laufenden Schuljahr.
-//
-// Das Schuljahr endet im Juli; ab August läuft das neue Schuljahr, daher wird das
-// Basisjahr um 1 erhöht, wenn wir uns ab August befinden.
-func calculateAbgaengerJahr(klasse string) int {
-	return abgaengerJahrAm(klasse, time.Now())
-}
-
-func abgaengerJahrAm(klasse string, jetzt time.Time) int {
-	jahrgang, abschluss, ok := abschlussJahrgang(klasse)
-	if !ok {
-		return repository.AbgangsjahrOhneKlasse(jetzt)
-	}
-	yearsLeft := abschluss - jahrgang
-	if yearsLeft < 0 {
-		yearsLeft = 0
-	}
-	baseYear := jetzt.Year()
-	if jetzt.Month() >= time.August {
-		baseYear++
-	}
-	return baseYear + yearsLeft
-}
 
 // CreateStudentRequest defines the payload for creating a new reader.
 //
@@ -326,7 +256,7 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	var klasse *string
 	var abgaengerJahr *int
 	if istSchuelerArt(req.Art) {
-		jahr := calculateAbgaengerJahr(req.Klasse)
+		jahr := repository.AbgaengerJahr(req.Klasse)
 		klasse, abgaengerJahr = &req.Klasse, &jahr
 	}
 	qInsert := `
@@ -481,29 +411,6 @@ func pruefeLeserNamensdublette(ctx context.Context, tx pgx.Tx, vorname, nachname
 	return belegt, err
 }
 
-// AusweisPraefix steht auf JEDER Ausweisnummer, die dieses System vergibt — für einen
-// Schüler wie für einen Kollegen.
-//
-// „A" wie Ausweis (16.09.2026). Vorher gab es zwei: „S-" aus der Handanlage und
-// dem LUSD-Import, „L-" aus dem Littera-Personenlauf. Beide Buchstaben behaupteten etwas
-// über die PERSON — Schüler, Lehrer —, und das ist seit der Leserdatei falsch: Wer jemand
-// ist, steht in den Stammdaten, nicht auf seinem Ausweis. Ein Nummernkreis, ein Buchstabe.
-//
-// Die Vorsilbe bleibt, sie ist kein Schmuck: OHNE NETZ ist sie die einzige Information,
-// an der die Theke einen Buchscan von einem Ausweisscan unterscheiden kann — offline gibt
-// es niemanden zu fragen (frontend/src/lib/stores/omnibox.svelte.js). Littera braucht sie
-// nicht, weil dort Nummer und Scanwert zwei verschiedene Felder sind und der Scanwert vom
-// Kartenhersteller kommt.
-//
-// Die alten Vorsilben versteht der Scanner weiterhin (internal/service/omnibox_service.go);
-// vergeben werden sie nicht mehr.
-const AusweisPraefix = "A-"
-
-// AusweisNummer setzt eine laufende Zahl in die Form, die auf den Ausweis gedruckt wird.
-// Fünfstellig mit führenden Nullen, damit die Nummern gleich lang bleiben und sich
-// lexikografisch wie numerisch gleich sortieren.
-func AusweisNummer(n int) string { return fmt.Sprintf("%s%05d", AusweisPraefix, n) }
-
 // resolveNeueBarcodeID liefert die zu verwendende Barcode-ID: entweder die vom Client
 // gewünschte (nach Eindeutigkeitsprüfung) oder eine neu generierte S-Nummer aus der
 // zentralen Sequenz. ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
@@ -522,7 +429,7 @@ func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter,
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return "", false
 		}
-		return AusweisNummer(startNum), true
+		return repository.AusweisNummer(startNum), true
 	}
 
 	// Die Ausweisnummer gehört genau einer Person — Schüler wie Kollegium. Gefragt wird die

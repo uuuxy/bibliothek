@@ -70,7 +70,7 @@ describe('useStudentEditForm.save', () => {
 	});
 
 	// Ein Klassenwechsel rechnet das Abgangsjahr neu — das tut der Server, sobald eine
-	// Klasse OHNE Abgangsjahr ankommt (calculateAbgaengerJahr). Bis zum 17.09.2026 kam
+	// Klasse OHNE Abgangsjahr ankommt (repository.AbgaengerJahr). Bis zum 17.09.2026 kam
 	// nie eine an: Dieses Formular schickte immer den geladenen Wert mit. Ein Kind, das
 	// von der 7 in die 10 wechselt, behielt das Abgangsjahr des alten Jahrgangs — und
 	// daran hängen die Abgängerliste, die Versetzung und die Löschuhr.

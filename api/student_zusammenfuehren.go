@@ -44,7 +44,7 @@ func (s *Server) ZusammenfuehrenSchuelerHandler(auditRepo repository.AuditReposi
 			bearbeiterID = claims.UserID
 		}
 		erg, err := repository.ZusammenfuehrenSchueler(r.Context(), s.DB.Pool, repository.ZusammenfuehrenAuftrag{
-			ZielID: zielID, QuelleID: rumpf.QuelleID, AbgaengerJahr: calculateAbgaengerJahr, BearbeiterID: bearbeiterID,
+			ZielID: zielID, QuelleID: rumpf.QuelleID, AbgaengerJahr: repository.AbgaengerJahr, BearbeiterID: bearbeiterID,
 		})
 		switch {
 		case errors.Is(err, repository.ErrZusammenfuehrenGleich):

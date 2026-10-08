@@ -20,7 +20,7 @@ function schulfelder(daten, student, hatKonto) {
 		return { ...ausweis, email: artMitKonto(daten.art) || hatKonto ? daten.email : '' };
 	}
 	// Das Abgangsjahr geht nicht mit, wenn die Klasse wechselt und niemand es angefasst
-	// hat: Dann leitet der Server es aus der neuen Klasse ab (calculateAbgaengerJahr).
+	// hat: Dann leitet der Server es aus der neuen Klasse ab (repository.AbgaengerJahr).
 	const geladenesJahr = student?.abgaenger_jahr ? String(student.abgaenger_jahr) : '';
 	const jahrAngefasst = daten.abgaenger_jahr !== geladenesJahr;
 	const klasseGeaendert = daten.klasse !== (student?.klasse || '');

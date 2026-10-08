@@ -147,7 +147,7 @@ func readLusdUpload(r *http.Request) (lusdDatei, error) {
 //  2. Der Generator wusste nichts von GetNextSequence. Ein Nummernkreis, zwei
 //     Vergabestellen, von denen nur eine mitzählt — genau der Fehler aus Migration 068,
 //     nur eine Tabelle weiter.
-func generateImportBarcode(nummer int) string { return AusweisNummer(nummer) }
+func generateImportBarcode(nummer int) string { return repository.AusweisNummer(nummer) }
 
 // computeLusdLauf vergleicht die Datei mit dem Bestand in einer Transaktion und liefert
 // entweder die Vorschau oder wendet die Änderungen an — samt der Umbenennungs-Wahl des

@@ -91,7 +91,7 @@ func adoptiereWaisen(ctx context.Context, tx pgx.Tx, adoptionen []AdoptionDiff) 
 }
 
 // legeNeuenSchuelerAn legt einen Schüler an, den der Export neu nennt. Das Abgangsjahr folgt
-// der Klasse wie bei der Anlage von Hand (calculateAbgaengerJahr): eine Antwort auf dieselbe
+// der Klasse wie bei der Anlage von Hand (repository.AbgaengerJahr): eine Antwort auf dieselbe
 // Frage.
 func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, barcodeCounter int) error {
 	return repository.LegeLusdSchuelerAn(ctx, tx, repository.LusdNeuzugang{
@@ -99,7 +99,7 @@ func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, b
 		Vorname:       rec.Vorname,
 		Nachname:      rec.Nachname,
 		Klasse:        rec.Klasse,
-		AbgaengerJahr: calculateAbgaengerJahr(rec.Klasse),
+		AbgaengerJahr: repository.AbgaengerJahr(rec.Klasse),
 		LusdID:        rec.LusdID,
 		Geburtsdatum:  rec.GebDatum,
 		EintrittAm:    rec.EintrittAm,

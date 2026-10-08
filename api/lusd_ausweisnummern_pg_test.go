@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 	"time"
+
+	"bibliothek/repository"
 )
 
 // Zwei LUSD-Importe dürfen sich nicht ins Gehege kommen — und der Import darf der
@@ -74,8 +76,8 @@ func TestLusdAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 	// Jede Nummer trägt die EINE Vorsilbe, und sie hat dieselbe Form wie die der
 	// Handanlage — nicht mehr die der Uhr.
 	for _, bc := range ersteNummern {
-		if len(bc) < len(AusweisPraefix) || bc[:len(AusweisPraefix)] != AusweisPraefix {
-			t.Fatalf("Ausweis %q trägt nicht die Vorsilbe %q", bc, AusweisPraefix)
+		if len(bc) < len(repository.AusweisPraefix) || bc[:len(repository.AusweisPraefix)] != repository.AusweisPraefix {
+			t.Fatalf("Ausweis %q trägt nicht die Vorsilbe %q", bc, repository.AusweisPraefix)
 		}
 	}
 
@@ -99,7 +101,7 @@ func TestLusdAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 	var hoechste int
 	if err := pool.QueryRow(ctx, `
 		SELECT COALESCE(MAX((substring(barcode_id from '([0-9]{1,15})$'))::bigint), 0)
-		  FROM leser WHERE barcode_id LIKE $1`, AusweisPraefix+"%").Scan(&hoechste); err != nil {
+		  FROM leser WHERE barcode_id LIKE $1`, repository.AusweisPraefix+"%").Scan(&hoechste); err != nil {
 		t.Fatalf("höchste Nummer lesen: %v", err)
 	}
 	if hoechste == 0 {
@@ -115,7 +117,7 @@ func TestLusdAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 	if !ok {
 		t.Fatal("die Handanlage konnte keine Nummer ziehen")
 	}
-	if erwartet := AusweisNummer(hoechste + 1); naechste != erwartet {
+	if erwartet := repository.AusweisNummer(hoechste + 1); naechste != erwartet {
 		t.Fatalf("die Handanlage vergibt %q, erwartet %q — zwei Zähler in einem Nummernkreis",
 			naechste, erwartet)
 	}

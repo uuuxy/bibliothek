@@ -9,7 +9,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Paar-Gate: Die Go-Rechnung des Abgangsjahres (abschlussJahrgang) und das SQL-Prädikat
+// Paar-Gate: Die Go-Rechnung des Abgangsjahres (repository.AbschlussJahrgang) und das SQL-Prädikat
 // „ist Abschlussklasse" (repository.AbschlussklasseSQL) sind Zwillinge derselben Regel.
 // Verglichen wird nicht eine Stichprobe, sondern der Formenraum: Jahrgang 1–13 × Zweig
 // (keiner, F, G, H, R, T, plus Kleinschreibung und Leerzeichen) × Zug. Zwilling mit
@@ -31,7 +31,7 @@ func TestAbgaengerJahr_GoUndSQLSindEineRegel(t *testing.T) {
 
 	gesehen := 0
 	for _, klasse := range formen {
-		jahrgang, abschluss, ok := abschlussJahrgang(klasse)
+		jahrgang, abschluss, ok := repository.AbschlussJahrgang(klasse)
 		if !ok {
 			t.Errorf("%q: Go liest keinen Jahrgang", klasse)
 			continue
@@ -73,7 +73,7 @@ func TestAbgaengerJahrAm(t *testing.T) {
 		{"ABG", sept, 2031}, // kein Jahrgang lesbar: Rückfall Jahr+5
 	}
 	for _, f := range faelle {
-		if got := abgaengerJahrAm(f.klasse, f.jetzt); got != f.want {
+		if got := repository.AbgaengerJahrAm(f.klasse, f.jetzt); got != f.want {
 			t.Errorf("%s am %s = %d, want %d", f.klasse, f.jetzt.Format("2006-01"), got, f.want)
 		}
 	}

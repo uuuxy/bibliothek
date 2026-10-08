@@ -500,7 +500,7 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 	}
 	// Bei Klassenänderung ohne explizites Abgängerjahr dieses automatisch ableiten.
 	if req.Klasse != nil && req.AbgaengerJahr == nil {
-		newJahr := calculateAbgaengerJahr(*req.Klasse)
+		newJahr := repository.AbgaengerJahr(*req.Klasse)
 		req.AbgaengerJahr = &newJahr
 	}
 
@@ -510,7 +510,7 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 	// hier waren sie es nicht, und ein leerer String kam mit 200 durch — der Schüler
 	// verlor Namen, Klasse und Ausweisnummer, die Oberfläche meldete "Änderungen
 	// gespeichert". Bei der Klasse kam ein zweiter Schaden dazu: Aus dem leeren Namen
-	// leitete calculateAbgaengerJahr noch ein Abgängerjahr ab.
+	// leitete repository.AbgaengerJahr noch ein Abgängerjahr ab.
 	//
 	// Dass das bis zum 23.08.2026 nie passierte, war Zufall und keine Regel: Das
 	// Formular schickte geräumte Felder als JSON-null, und null landet im *string als

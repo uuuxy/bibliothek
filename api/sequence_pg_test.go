@@ -73,7 +73,7 @@ func TestAusweisnummer_UeberlangeNummerBlockiertNicht(t *testing.T) {
 }
 
 // Go und Datenbank setzen dieselbe gedruckte Form: Der Trigger schreibt mit
-// ausweisnummer(n), die Handanlage und der LUSD-Import mit AusweisNummer(n).
+// ausweisnummer(n), die Handanlage und der LUSD-Import mit repository.AusweisNummer(n).
 func TestAusweisnummer_FormGleichInGoUndSQL(t *testing.T) {
 	pool := pgTestPool(t)
 	for _, n := range []int{7, 10001, 99999, 100000, 1234567} {
@@ -81,8 +81,8 @@ func TestAusweisnummer_FormGleichInGoUndSQL(t *testing.T) {
 		if err := pool.QueryRow(context.Background(), `SELECT ausweisnummer($1)`, n).Scan(&sql); err != nil {
 			t.Fatal(err)
 		}
-		if sql != AusweisNummer(n) {
-			t.Errorf("n=%d: Datenbank %q, Go %q", n, sql, AusweisNummer(n))
+		if sql != repository.AusweisNummer(n) {
+			t.Errorf("n=%d: Datenbank %q, Go %q", n, sql, repository.AusweisNummer(n))
 		}
 	}
 }
@@ -233,7 +233,7 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 	// Die gezogene Nummer geht durch die Buch-Prüfung (trg_leser_nummer_ist_kein_buch
 	// feuert nach diesem Trigger): Trägt ein Buch die nächste Nummer, scheitert das Leeren
 	// laut, statt dem Kollegen die Nummer eines Buchs zu geben.
-	naechste := AusweisNummer(naechsteAusweisnummer(t, pool))
+	naechste := repository.AusweisNummer(naechsteAusweisnummer(t, pool))
 	if _, err := pool.Exec(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Leeren: Nummernprobe')`); err != nil {
 		t.Fatal(err)
 	}

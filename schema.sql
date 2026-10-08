@@ -953,7 +953,7 @@ CREATE TRIGGER trg_leser_ausweisnummer_ausgeschieden
 AFTER DELETE OR UPDATE OF barcode_id ON leser
 FOR EACH ROW EXECUTE FUNCTION ausweisnummer_ausgeschieden();
 
--- Die gedruckte Form, gleich api.AusweisNummer: „A-" und mindestens fünf Ziffern.
+-- Die gedruckte Form, gleich repository.AusweisNummer: „A-" und mindestens fünf Ziffern.
 CREATE OR REPLACE FUNCTION ausweisnummer(n bigint)
 RETURNS text LANGUAGE sql IMMUTABLE AS $$
     SELECT 'A-' || CASE WHEN length(n::text) < 5 THEN lpad(n::text, 5, '0') ELSE n::text END
