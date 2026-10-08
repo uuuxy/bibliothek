@@ -11,7 +11,7 @@ import (
 // dieselbe lusd_id zweimal enthält (kommt in der Praxis vor, siehe Migration 048).
 //
 // Der Schutz dagegen steckt nicht in einer expliziten Prüfung, sondern in der Reihenfolge:
-// Solange jeder Neuzugang sofort eingefügt wird, sieht findeAktivenSchuelerNachLusdID die
+// Solange jeder Neuzugang sofort eingefügt wird, sieht repository.FindeAktivenSchuelerNachLusdID die
 // erste Zeile bereits innerhalb derselben Transaktion und behandelt die zweite als
 // Rückkehrer-Update. Wird das Einfügen dagegen bis zum Schleifenende aufgeschoben
 // (Batch/CopyFrom), findet die zweite Zeile nichts, beide landen im Batch und kollidieren am

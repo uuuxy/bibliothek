@@ -12,8 +12,6 @@ import (
 // Die Bestandsdaten und ihre Schlüssel liegen in repository/lusd_bestand.go (Schichtung:
 // ein Handler formuliert kein SQL). Hier stehen nur die Nachschlagekarten des Imports.
 
-const litteraHerkunftPraefix = repository.LitteraHerkunftPraefix
-
 type lusdBestandsSchueler = repository.LusdBestandsSchueler
 
 func waisenSchluessel(vorname, nachname string, geb *time.Time) string {

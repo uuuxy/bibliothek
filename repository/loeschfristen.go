@@ -136,7 +136,7 @@ func PredikatKollegenPapierkorb(kulanz int) Loeschbedingung {
 // letzten Vorgang) galt damit nur bis zum Stichtag: Wer im November zurückgab, hatte
 // 77 statt 90 Tage Reparaturfenster, wer nach dem Stichtag zurückgab, keines. Mit dieser
 // einen Bedingung gilt die EINE Einstellung abgaenger_karenz_tage für beides; 0 heißt
-// weiter „sofort", weil dann schon der Import anonymisiert (anonymisiereAbgaenger).
+// weiter „sofort", weil dann schon der Import anonymisiert (AnonymisiereAbgaenger).
 func PredikatAbgaengerLoeschung(jetzt time.Time) Loeschbedingung {
 	return Loeschbedingung{Args: []any{AbgaengerStichjahr(jetzt)}, Where: `art = 'schueler'
 		  AND ist_abgaenger = true

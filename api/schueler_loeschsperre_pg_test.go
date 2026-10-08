@@ -20,7 +20,7 @@ import (
 //	PurgeStudent (endgültig, von Hand)   → blockiereBeiOffenenVorgaengen
 //	PurgeAbgaenger (Cronjob, nachts)     → blockiereBeiOffenenVorgaengen
 //	Anonymisierungs-Cronjob              → PredikatAnonymisierung (jobs-Paket getestet)
-//	LUSD-Import                          → sperreAbgaenger statt anonymisieren
+//	LUSD-Import                          → repository.SperreAbgaenger statt anonymisieren
 //
 // Belegt war davon bisher genau eine (PurgeStudent bei offener Ausleihe). Für die
 // übrigen stand der Schutz teils NUR IM KOMMENTAR — „unbezahlte würden die Löschung
@@ -144,7 +144,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 // Diese Zusage trägt das ganze Gebäude: Wäre sie falsch, bliebe eine stornierte Gebühr
 // für immer „offen" und der Schüler damit dauerhaft unlöschbar — eine DSGVO-Frist, die
 // nie ablaufen kann, und zwar lautlos. Bisher stand sie nur als Kommentar in
-// api/lusd_apply.go.
+// repository/lusd_import.go.
 func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)

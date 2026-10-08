@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/repository"
 )
 
 // Der Grund einer Sperre fällt mit der Anonymisierung auch im Admin-Protokoll.
 //
-// anonymisiereAbgaenger ersetzt block_reason, weil ein alter Grund andere Personen nennen
+// repository.AnonymisiereAbgaenger ersetzt block_reason, weil ein alter Grund andere Personen nennen
 // kann. Seit dem 24.09.2026 schreibt die Sperr-Tür denselben Freitext ins Admin-Protokoll
 // (LESER_GESPERRT, LESER_ENTSPERRT: grund), und bis zum 24.09.2026 stand er im Übergehen an
 // der Theke (OVERRIDE_BLOCK: reason). Die Spuren-Tilgung räumte dort nur LUSD-ID und
@@ -68,7 +69,7 @@ func TestAnonymisierung_TilgtDenSperrgrundImProtokoll(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.SafeRollback(ctx, tx)
-	if err := anonymisiereAbgaenger(ctx, tx, id); err != nil {
+	if err := repository.AnonymisiereAbgaenger(ctx, tx, id); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {

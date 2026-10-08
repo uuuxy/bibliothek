@@ -87,7 +87,7 @@ func TestAnonymisierung_TilgtNameUndFreitextDerTitelLoeschspur(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.SafeRollback(ctx, tx)
-	if err := anonymisiereAbgaenger(ctx, tx, schuelerID); err != nil {
+	if err := repository.AnonymisiereAbgaenger(ctx, tx, schuelerID); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -160,7 +160,7 @@ func TestAnonymisierung_TilgtDieLoeschspurAuchNachDemZusammenfuehren(t *testing.
 		t.Fatal(err)
 	}
 	defer db.SafeRollback(ctx, tx)
-	if err := anonymisiereAbgaenger(ctx, tx, ziel); err != nil {
+	if err := repository.AnonymisiereAbgaenger(ctx, tx, ziel); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {

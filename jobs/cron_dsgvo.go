@@ -74,7 +74,7 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	// (NOT NULL); block_reason auf einen festen Text statt NULL — chk_schueler_block_reason
 	// verlangt bei gesperrten Schülern einen nicht-leeren Grund, und ein alter Freitext-
 	// Grund könnte selbst personenbezogen sein. Deckt dieselben identifizierenden Felder ab
-	// wie anonymisiereAbgaenger (LUSD-Pfad).
+	// wie repository.AnonymisiereAbgaenger (LUSD-Pfad).
 	// Bei unlesbaren Einstellungen wird NICHT anonymisiert (Rasterdurchgang 06.09.2026).
 	// Die Vorgabe-Karenz von 90 Tagen ist hier kein sicherer Rückfall, sondern der
 	// gefährlichste Wert: Eine KLEINERE Karenz wählt MEHR Zeilen. Hat die Schule 365 Tage

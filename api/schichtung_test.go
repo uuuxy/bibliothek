@@ -103,8 +103,6 @@ var handlerMitSQL = map[string]int{
 	"labels.go":                           2,
 	"littera_import.go":                   2,
 	"lookups.go":                          2,
-	"lusd.go":                             1,
-	"lusd_apply.go":                       15,
 	"mahnwesen_bulk_mail.go":              1,
 	"mail_routes.go":                      3,
 	"mail_settings.go":                    1,

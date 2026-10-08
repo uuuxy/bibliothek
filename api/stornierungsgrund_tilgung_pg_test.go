@@ -85,7 +85,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer db.SafeRollback(ctx, tx)
-		if err := anonymisiereAbgaenger(ctx, tx, leserID); err != nil {
+		if err := repository.AnonymisiereAbgaenger(ctx, tx, leserID); err != nil {
 			t.Fatalf("anonymisieren: %v", err)
 		}
 		if err := tx.Commit(ctx); err != nil {

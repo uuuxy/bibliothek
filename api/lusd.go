@@ -71,10 +71,6 @@ type LusdPreviewResult struct {
 	DublettenAbweichend []StudentDiff `json:"dubletten_abweichend"`
 }
 
-// lusdImportLockKey serialisiert gleichzeitige LUSD-Importe (Advisory-Lock). Eigener
-// Nummernkreis, überschneidet sich nicht mit anderen Advisory-Keys im Projekt.
-const lusdImportLockKey int64 = 750_2026
-
 // massGraduationThresholdPct: Ab diesem Anteil an Abgängern (bezogen auf die
 // abgleichbaren aktiven DB-Schüler) verweigert der Import ohne explizite Bestätigung —
 // die Abgänger-Behandlung anonymisiert irreversibel. Schutz gegen versehentliche
@@ -176,7 +172,7 @@ func (s *Server) computeLusdLauf(ctx context.Context, datei lusdDatei, lauf lusd
 	// einen Abgänger, den der andere gerade wieder aktiviert. Die Vorschau (apply=false)
 	// nimmt den Lock NICHT — sie liest nur.
 	if apply {
-		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, lusdImportLockKey); err != nil {
+		if err := repository.SperreLusdImport(ctx, tx); err != nil {
 			return nil, fmt.Errorf("lusd-import sperren fehlgeschlagen: %w", err)
 		}
 	}

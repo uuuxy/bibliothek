@@ -711,7 +711,7 @@ Rahmen (SchDSV, § 83a HSchG, HBDI-Muster); bestätigen muss sie der schulische
 Datenschutzbeauftragte.
 
 **Aufbewahrung/Löschung:** Beim Abgang eines Schülers (ohne offene Vorgänge) leert die
-Anonymisierungsroutine (`anonymisiereAbgaenger`) diese Felder umgehend; Lesehistorie
+Anonymisierungsroutine (`repository.AnonymisiereAbgaenger`) diese Felder umgehend; Lesehistorie
 nach Frist (oben). Was bei der Schule liegt: [datenschutz/nachweis.md](datenschutz/nachweis.md#10-was-bei-der-schule-liegt), Abschnitt 10.
 
 ---

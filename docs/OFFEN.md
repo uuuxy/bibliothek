@@ -328,9 +328,9 @@ Schulserver feststeht.
 Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko steht in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1 unter R4, die Messwerte vom 09.10.2026 ebenfalls.
 
-- **Die Bremse steht.** `api/schichtung_test.go` zählt die SQL-Anweisungen je Datei (48 Dateien,
-  177 Anweisungen) und führt die Dateien ohne Tür als Bestand (44); beides kann nur kleiner
-  werden.
+- **Die Bremse steht.** `api/schichtung_test.go` zählt die SQL-Anweisungen je Datei und führt
+  die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 46
+  Dateien mit 161 Anweisungen (am Anfang 48 mit 177), 44 Dateien ohne Tür.
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket: der LUSD-Import, der
   Aufbau der PDFs, die Selbstprüfung, danach der Rest der 44. Je Thema ein Commit; die Tests
   der Türen bleiben stehen und belegen, dass sich nichts ändert. Eine Datei mit SQL zieht erst

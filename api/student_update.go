@@ -145,7 +145,7 @@ func (b *updateBuilder) addStr(spalte string, wert *string) {
 
 // addStrLeerbar ist addStr für Felder, die man LÖSCHEN können muss: Ein leerer Wert
 // wird zu NULL, nicht zum leeren String. Das ist dieselbe Schreibweise, die der
-// DSGVO-Cron und die LUSD-Ausleitung verwenden (jobs/cron_dsgvo.go, api/lusd_apply.go)
+// DSGVO-Cron und die LUSD-Ausleitung verwenden (jobs/cron_dsgvo.go, repository/lusd_import.go)
 // — sonst stünde für „gelöscht" je nach Weg mal NULL und mal ” in der Spalte.
 //
 // nil heißt weiterhin „nicht mitgeschickt" und lässt die Spalte in Ruhe.

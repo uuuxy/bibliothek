@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -48,8 +50,8 @@ func TestSperreAbgaenger_SetztGrund(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := sperreAbgaenger(ctx, tx, sid, abgaengerSperrgrundOffen); err != nil {
-		t.Fatalf("sperreAbgaenger: %v", err)
+	if err := repository.SperreAbgaenger(ctx, tx, sid, abgaengerSperrgrundOffen); err != nil {
+		t.Fatalf("repository.SperreAbgaenger: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatal(err)
@@ -60,7 +62,7 @@ func TestSperreAbgaenger_SetztGrund(t *testing.T) {
 		t.Fatal("Abgänger mit offenem Buch soll gesperrt sein")
 	}
 	if strings.TrimSpace(grund) == "" {
-		t.Error("sperreAbgaenger muss einen block_reason setzen (sonst Zombie-Sperre)")
+		t.Error("repository.SperreAbgaenger muss einen block_reason setzen (sonst Zombie-Sperre)")
 	}
 }
 
@@ -77,8 +79,8 @@ func TestAnonymisiereAbgaenger_SetztFestenGrund(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := anonymisiereAbgaenger(ctx, tx, sid); err != nil {
-		t.Fatalf("anonymisiereAbgaenger: %v", err)
+	if err := repository.AnonymisiereAbgaenger(ctx, tx, sid); err != nil {
+		t.Fatalf("repository.AnonymisiereAbgaenger: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatal(err)

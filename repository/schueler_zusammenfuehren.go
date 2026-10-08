@@ -522,7 +522,7 @@ type schreibeZusammengefuehrtesZielParams struct {
 // schreibeZusammengefuehrtesZiel setzt die Stammdaten des führenden Datensatzes (f) auf
 // das Ziel, füllt Lücken aus dem anderen (o) und macht das Ziel wieder aktiv. Die CASE-
 // Ausdrücke für die Sperre lesen die ALTEN Werte (Postgres wertet die rechte Seite vor
-// der Zuweisung aus) — dieselbe Bauart wie der Rückkehrer-Pfad in api/lusd_apply.go.
+// der Zuweisung aus) — dieselbe Bauart wie der Rückkehrer-Pfad in AktualisiereLusdBestand.
 //
 // Eine MANUELLE Sperre der Quelle (Ausweis gestohlen, Hausverbot …) gehört zur Person,
 // nicht zum Datensatz: Sie geht auf das Ziel über — mit ihrem Grund, sofern das Ziel

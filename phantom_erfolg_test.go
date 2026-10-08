@@ -36,15 +36,19 @@ import (
 // anheben und im Commit begründen. Sinkt ein Zähler (Stelle behoben/entfernt), wird
 // er hier ABGESENKT — die Ratsche dreht nur zu.
 var phantomBestand = map[string]int{
-	"api/ausweis_layout.go:SaveAusweisLayoutHandler":          1,
-	"api/dsgvo_auskunft.go:protokolliereDsgvoAuskunft":        1,
-	"api/lusd.go:computeLusdLauf":                             1,
-	"api/lusd_apply.go:adoptiereWaisen":                       1,
-	"api/lusd_apply.go:aktualisiereBestandsschuelerBatch":     1,
-	"api/lusd_apply.go:anonymisiereAbgaenger":                 2,
-	"api/lusd_apply.go:behandleAbgaenger":                     1,
-	"api/lusd_apply.go:legeNeuenSchuelerAn":                   1,
-	"api/lusd_apply.go:sperreAbgaenger":                       1,
+	"api/ausweis_layout.go:SaveAusweisLayoutHandler":   1,
+	"api/dsgvo_auskunft.go:protokolliereDsgvoAuskunft": 1,
+	// Die Anweisungen des LUSD-Imports: die Sperre des Laufs (kein Schreibvorgang), Adoption
+	// und Aktualisierung (null Zeilen heißt, der Schutz der Bedingung hat gegriffen, der Lauf
+	// geht weiter), Neuanlage (INSERT), wartende Vormerkungen (null ist der Normalfall),
+	// Sperre und Anonymisierung eines Abgängers aus dem eben gelesenen Bestand.
+	"repository/lusd_import.go:SperreLusdImport":              1,
+	"repository/lusd_import.go:AdoptiereLusdWaise":            1,
+	"repository/lusd_import.go:AktualisiereLusdBestand":       1,
+	"repository/lusd_import.go:AnonymisiereAbgaenger":         2,
+	"repository/lusd_import.go:LoescheWartendeVormerkungen":   1,
+	"repository/lusd_import.go:LegeLusdSchuelerAn":            1,
+	"repository/lusd_import.go:SperreAbgaenger":               1,
 	"api/pdf.go:markElternbriefGenerated":                     1,
 	"api/student_promotion.go:finalisiereSchuljahreswechsel":  1,
 	"api/student_promotion.go:fuehreSchuljahreswechselAus":    1,

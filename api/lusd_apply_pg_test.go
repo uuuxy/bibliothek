@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -32,8 +34,8 @@ func TestAnonymisiereAbgaenger_LoeschtFoto(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
-	if err := anonymisiereAbgaenger(ctx, tx, id); err != nil {
-		t.Fatalf("anonymisiereAbgaenger: %v", err)
+	if err := repository.AnonymisiereAbgaenger(ctx, tx, id); err != nil {
+		t.Fatalf("repository.AnonymisiereAbgaenger: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatal(err)
@@ -267,8 +269,8 @@ func TestAnonymisiereAbgaenger_SetztMarkerUndTilgtSpuren(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
-	if err := anonymisiereAbgaenger(ctx, tx, id); err != nil {
-		t.Fatalf("anonymisiereAbgaenger: %v", err)
+	if err := repository.AnonymisiereAbgaenger(ctx, tx, id); err != nil {
+		t.Fatalf("repository.AnonymisiereAbgaenger: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatal(err)

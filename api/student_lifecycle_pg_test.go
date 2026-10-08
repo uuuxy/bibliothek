@@ -98,7 +98,7 @@ func TestLusdRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 	ctx := context.Background()
 
 	var id string
-	// Anonymisierter Abgänger, wie ihn anonymisiereAbgaenger hinterlässt: gesperrt MIT
+	// Anonymisierter Abgänger, wie ihn repository.AnonymisiereAbgaenger hinterlässt: gesperrt MIT
 	// Grund (chk_schueler_block_reason verlangt ihn).
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id,
@@ -311,13 +311,13 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Abgang mit offenem Buch -> sperreAbgaenger (über eine Tx, wie im Sync).
+	// Abgang mit offenem Buch -> repository.SperreAbgaenger (über eine Tx, wie im Sync).
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := sperreAbgaenger(ctx, tx, sid, abgaengerSperrgrundOffen); err != nil {
-		t.Fatalf("sperreAbgaenger: %v", err)
+	if err := repository.SperreAbgaenger(ctx, tx, sid, abgaengerSperrgrundOffen); err != nil {
+		t.Fatalf("repository.SperreAbgaenger: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatal(err)

@@ -253,7 +253,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	// Soft-Delete durchführen anstatt physisch zu löschen.
 	//
 	// COALESCE(NULLIF(...)) statt blindem Überschreiben (31.08.2026): Ein BESTEHENDER
-	// Sperrgrund bleibt stehen — dasselbe Muster wie in api/lusd_apply.go und
+	// Sperrgrund bleibt stehen — dasselbe Muster wie in SperreAbgaenger (lusd_import.go) und
 	// api/student_promotion.go. Vorher war dieser Schreiber der einzige, der den Grund
 	// plattmachte, und der Restore erkannte die Zeile dann an seinem eigenen Marker als
 	// bloße Lösch-Sperre: Er setzte ist_gesperrt=false und block_reason=NULL, während
@@ -631,7 +631,7 @@ var spurTilgungen = []SpurTilgung{
 }
 
 // TilgeSchuelerSpuren entfernt die Personendaten EINES Schülers aus den Neben-Tabellen —
-// gemeinsamer Schritt von LUSD-Abgänger-Anonymisierung (api/lusd_apply.go) und Purge.
+// gemeinsamer Schritt von LUSD-Abgänger-Anonymisierung (AnonymisiereAbgaenger) und Purge.
 // Historie der Lücken: Bis 22.08.2026 hatte nur der Cron-Pfad alle damaligen Statements
 // (A3: LUSD-ID überlebte 24 Monate); bis 31.08.2026 fehlte hier die Lesehistorie, danach
 // fehlte sie dem Cron — seither ist spurTilgungen die eine Liste für beide.

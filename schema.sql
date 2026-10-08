@@ -168,7 +168,7 @@ CREATE TABLE role_permissions (
 -- und eltern_email. Zweck der Adress-/Kontaktdaten ist ausschließlich der Versand
 -- von Schadens-Rechnungen (Anschrift) und Eltern-Mahnungen (E-Mail).
 -- Löschung: Beim Abgang ohne offene Vorgänge werden diese Felder in der
--- Anonymisierung geleert (siehe api/lusd_apply.go: anonymisiereAbgaenger).
+-- Anonymisierung geleert (siehe repository/lusd_import.go: AnonymisiereAbgaenger).
 -- Hinweis: Rechtsgrundlage & Aufbewahrungsfrist für das Verzeichnis von
 -- Verarbeitungstätigkeiten (VVT) sind in docs/SECURITY.de.md dokumentiert.
 CREATE TABLE leser (

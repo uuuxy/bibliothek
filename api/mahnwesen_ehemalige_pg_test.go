@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/repository"
 	"bibliothek/sse"
 )
 
@@ -57,7 +58,7 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Transaktion: %v", err)
 	}
-	if err := sperreAbgaenger(ctx, tx, erik, "Abgänger laut LUSD"); err != nil {
+	if err := repository.SperreAbgaenger(ctx, tx, erik, "Abgänger laut LUSD"); err != nil {
 		t.Fatalf("Erik als Ehemaligen markieren: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
