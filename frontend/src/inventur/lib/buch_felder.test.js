@@ -20,7 +20,6 @@ const titel = () => ({
 	untertitel: '',
 	verlag: 'Klett',
 	erscheinungsjahr: 2019,
-	gradeLevel: 7,
 	istLernmittel: true,
 	lastCounted: '2026-01-15T00:00:00Z',
 	listenpreis: 12.5,

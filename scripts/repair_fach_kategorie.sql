@@ -132,7 +132,6 @@ UPDATE buecher_titel t
 
 UPDATE buecher_titel t
    SET jahrgang_von = a.von, jahrgang_bis = a.bis,
-       grade_level = CASE WHEN a.von = a.bis THEN a.von ELSE grade_level END,
        aktualisiert_am = CURRENT_TIMESTAMP
   FROM ableitung a
  WHERE t.id = a.id AND a.von BETWEEN 5 AND 13 AND a.bis BETWEEN 5 AND 13 AND a.von <= a.bis

@@ -496,7 +496,6 @@ CREATE TABLE buecher_titel (
     subject VARCHAR(255) CONSTRAINT fk_titel_subject_systematik
         REFERENCES systematik_kategorien (bezeichnung)
         ON UPDATE CASCADE ON DELETE RESTRICT,
-    grade_level SMALLINT,                             -- Integrated from books table
     track VARCHAR(100),                               -- Integrated from books table
     -- Migration 093: Lernmittel (Schulbuch der Lernmittelfreiheit) ist ein Feld, kein
     -- Textpräfix „LMF" in Titel oder Signatur mehr. Frist, Ausleihlimit, öffentlicher
@@ -1981,7 +1980,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('159_standort_am_titel_entfaellt.sql'),
 ('160_titeltext_normalform.sql'),
 ('161_bestellung_mail_gescheitert.sql'),
-('162_jahrgang_unbekannt.sql')
+('162_jahrgang_unbekannt.sql'),
+('163_klasse_entfaellt.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -2229,8 +2229,8 @@ BEGIN
     END IF;
 END $$;
 
--- Wertemengen-Constraints für Status-Felder + grade_level-Untergrenze (siehe
--- Migration 040). Hier für Neuinstallationen; idempotent per DO-Guard.
+-- Wertemengen-Constraints für Status-Felder (siehe Migration 040). Hier für
+-- Neuinstallationen; idempotent per DO-Guard.
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_vormerkung_status') THEN
@@ -2239,10 +2239,8 @@ BEGIN
     END IF;
     -- chk_inventur_status (Migration 040) entfiel mit Migration 045: die Spalte
     -- inventur_status existiert nicht mehr, der Zustand lebt in inventur_erfassungen.
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_grade_level_bereich') THEN
-        ALTER TABLE buecher_titel ADD CONSTRAINT chk_grade_level_bereich
-            CHECK (grade_level IS NULL OR grade_level BETWEEN 0 AND 13);
-    END IF;
+    -- chk_grade_level_bereich (Migration 040) entfiel mit Migration 163: Die Spalte
+    -- grade_level existiert nicht mehr, der Jahrgang steht in jahrgang_von und jahrgang_bis.
     -- cover_status-Wertemenge (siehe Migration 041).
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_cover_status') THEN
         ALTER TABLE buecher_titel ADD CONSTRAINT chk_cover_status

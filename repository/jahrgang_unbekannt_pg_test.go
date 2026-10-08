@@ -102,6 +102,85 @@ func TestJahrgangUnbekannt_Migration162(t *testing.T) {
 	}
 }
 
+// Migration 163: Die Spalte grade_level („Klasse") und ihre Bedingung entfallen. In die Spanne
+// wird nichts übernommen: Ein Titel, der nur eine Klasse trug, bleibt ohne Jahrgang, eine
+// eingetragene Spanne bleibt, wie sie ist. Geprüft wird die echte Migrationsdatei am Stand
+// davor (Spalte und Bedingung wie in Migration 040), in einer Transaktion, die zurückgerollt
+// wird. Dass sich die Spalte anlegen lässt, belegt zugleich, dass schema.sql sie nicht mehr
+// führt.
+func TestKlasseEntfaellt_Migration163(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	tx := beginne(t, pool)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			t.Errorf("zurückrollen: %v", err)
+		}
+	}()
+
+	for _, sql := range []string{
+		`ALTER TABLE buecher_titel ADD COLUMN grade_level SMALLINT`,
+		`ALTER TABLE buecher_titel ADD CONSTRAINT chk_grade_level_bereich
+			CHECK (grade_level IS NULL OR grade_level BETWEEN 0 AND 13)`,
+	} {
+		if _, err := tx.Exec(ctx, sql); err != nil {
+			t.Fatalf("Stand vor der Migration herstellen: %v", err)
+		}
+	}
+	titel := func(name, spalten, werte string) string {
+		t.Helper()
+		var id string
+		if err := tx.QueryRow(ctx, `INSERT INTO buecher_titel (titel`+spalten+`) VALUES ($1`+werte+`) RETURNING id`, name).Scan(&id); err != nil {
+			t.Fatalf("Titel %q: %v", name, err)
+		}
+		return id
+	}
+	nurKlasse := titel("M163 Klasse ohne Spanne", ", grade_level", ", 7")
+	beides := titel("M163 Klasse und Spanne", ", grade_level, jahrgang_von, jahrgang_bis", ", 7, 7, 10")
+	nichts := titel("M163 ohne Angabe", "", "")
+
+	migration, err := os.ReadFile(filepath.Join("..", "migrations", "163_klasse_entfaellt.sql"))
+	if err != nil {
+		t.Fatalf("Migration lesen: %v", err)
+	}
+	// Zweimal: Der zweite Lauf findet nichts mehr vor und ändert nichts.
+	for lauf := 1; lauf <= 2; lauf++ {
+		if _, err := tx.Exec(ctx, string(migration)); err != nil {
+			t.Fatalf("Lauf %d: Migration scheitert: %v", lauf, err)
+		}
+	}
+
+	var spalten, bedingungen int
+	if err := tx.QueryRow(ctx, `
+		SELECT (SELECT count(*) FROM information_schema.columns
+		        WHERE table_schema = current_schema() AND table_name = 'buecher_titel' AND column_name = 'grade_level'),
+		       (SELECT count(*) FROM pg_constraint WHERE conname = 'chk_grade_level_bereich')`).
+		Scan(&spalten, &bedingungen); err != nil {
+		t.Fatal(err)
+	}
+	if spalten != 0 || bedingungen != 0 {
+		t.Errorf("nach der Migration: %d Spalte grade_level, %d Bedingung chk_grade_level_bereich; erwartet 0 und 0", spalten, bedingungen)
+	}
+
+	for name, fall := range map[string]struct {
+		id   string
+		soll [2]int
+	}{
+		"nur eine Klasse: bleibt ohne Jahrgang": {nurKlasse, [2]int{0, 0}},
+		"Klasse und Spanne: die Spanne bleibt":  {beides, [2]int{7, 10}},
+		"ohne Angabe: bleibt ohne Jahrgang":     {nichts, [2]int{0, 0}},
+	} {
+		var von, bis int
+		if err := tx.QueryRow(ctx, `SELECT coalesce(jahrgang_von, 0), coalesce(jahrgang_bis, 0)
+			FROM buecher_titel WHERE id = $1`, fall.id).Scan(&von, &bis); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if ist := [2]int{von, bis}; ist != fall.soll {
+			t.Errorf("%s: Spanne %v, erwartet %v", name, ist, fall.soll)
+		}
+	}
+}
+
 // Die Theke liest zu jedem gescannten Buch, bis zu welchem Jahrgang ein Mehrjahresband beim
 // Kind bleibt. An einem Titel ohne Jahrgang ist das 0: An der leeren Spalte darf der Scan
 // nicht scheitern.

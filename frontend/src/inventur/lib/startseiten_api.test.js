@@ -102,16 +102,14 @@ describe('buecherSuchen', () => {
 describe('buecherSuchen: Jahrgang ohne Angabe', () => {
 	const katalog = [
 		buch({ title: 'Atlas', jahrgangVon: 0, jahrgangBis: 0 }),
-		buch({ title: 'Erdkunde', jahrgangVon: 0, jahrgangBis: 0, gradeLevel: 7 }),
+		buch({ title: 'Erdkunde', jahrgangVon: 0, jahrgangBis: 0 }),
 		buch({ title: 'Physik', jahrgangVon: 7, jahrgangBis: 7 }),
 		buch({ title: 'Geschichte', jahrgangVon: 5, jahrgangBis: 9 }),
 		buch({ title: 'Lesebuch', jahrgangVon: 5, jahrgangBis: 10 })
 	];
 	const titel = (/** @type {string} */ q) => buecherSuchen(katalog, q).map((b) => b.title);
 
-	// „Erdkunde" trägt noch die frühere Angabe „Klasse 7": Sie zählt nicht mehr, gesucht wird
-	// über „von … bis".
-	it('ein Titel ohne Spanne trifft keinen Jahrgang, auch nicht über die frühere Klasse', () => {
+	it('ein Titel ohne Spanne trifft keinen Jahrgang', () => {
 		expect(titel('klasse 7')).toEqual(['Physik', 'Geschichte', 'Lesebuch']);
 		expect(titel('11')).toEqual([]);
 	});

@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"sort"
-	"strconv"
 	"strings"
 
 	"golang.org/x/text/collate"
@@ -32,21 +31,6 @@ func (handler *APIHandler) BearbeiteBuecherListe(antwort http.ResponseWriter, an
 		suchbegriff = uebersetzt
 	}
 
-	var klassenStufe *int16
-	stufenRohwert := strings.TrimSpace(anfrageParameter.Get("gradeLevel"))
-	if stufenRohwert == "" {
-		stufenRohwert = strings.TrimSpace(anfrageParameter.Get("grade"))
-	}
-	if stufenRohwert != "" {
-		geparsed, fehler := strconv.ParseInt(stufenRohwert, 10, 16)
-		if fehler != nil {
-			writeError(antwort, http.StatusBadRequest, "ungültiger query-parameter gradeLevel")
-			return
-		}
-		stufenWert := int16(geparsed)
-		klassenStufe = &stufenWert
-	}
-
 	// bestand=ohne ist die Aufräumsicht der Verwaltung: nur Titel ohne ein einziges
 	// nicht ausgesondertes Exemplar. Ohne den Parameter ist es der Katalog.
 	sicht := strings.TrimSpace(anfrageParameter.Get("bestand"))
@@ -54,7 +38,7 @@ func (handler *APIHandler) BearbeiteBuecherListe(antwort http.ResponseWriter, an
 		writeError(antwort, http.StatusBadRequest, "ungültiger query-parameter bestand (erlaubt: ohne)")
 		return
 	}
-	buecher, fehler := handler.repo.ListBooks(anfrage.Context(), fach, klassenStufe, suchbegriff, sicht == "ohne")
+	buecher, fehler := handler.repo.ListBooks(anfrage.Context(), fach, suchbegriff, sicht == "ohne")
 	if fehler != nil {
 		log.Printf("Fehler beim Laden der Bücherliste: %v", fehler)
 		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Laden der Bücher")

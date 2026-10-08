@@ -33,7 +33,6 @@ test('Bücher: anlegen, Exemplare, Katalog-Suche, Signatur übersteht Littera-Im
 			signatur: 'E2E SIG',
 			coverUrl: '/covers/e2e-dummy.jpg',
 			subject: '',
-			gradeLevel: 7,
 			track: '',
 			stock: 2
 		});
@@ -104,7 +103,6 @@ test('Bücher: Bearbeiten ohne Änderung erhält die erweiterten Eigenschaften',
 			signatur: 'E2E SIG',
 			coverUrl: '/covers/e2e-dummy.jpg',
 			subject: '',
-			gradeLevel: 7,
 			track: '',
 			stock: 1,
 			erweiterteEigenschaften: { regal: `R-${suffix}`, notiz: `N-${suffix}` }

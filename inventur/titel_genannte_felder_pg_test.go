@@ -72,10 +72,10 @@ func (p *genanntProbe) lege() string {
 	var id string
 	if err := p.pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, untertitel, autor, isbn, verlag, erscheinungsjahr, cover_url,
-			signatur, subject, grade_level, track, ist_lernmittel, last_counted, medientyp,
+			signatur, subject, track, ist_lernmittel, last_counted, medientyp,
 			erweiterte_eigenschaften, auflage, listenpreis, jahrgang_von, jahrgang_bis, mehrjahresband)
 		VALUES ($1, 'Alter Untertitel', 'Alter Autor', $2, 'Alter Verlag', 2019, '/covers/alt.webp',
-			'Bio 7', $3, 7, 'G', true, DATE '2026-01-15', 'Buch',
+			'Bio 7', $3, 'G', true, DATE '2026-01-15', 'Buch',
 			'{"probe": "alt"}', '1. Aufl.', 12.50, 5, 10, false)
 		RETURNING id::text`,
 		fmt.Sprintf("%sTitel %d", genanntVorsatz, p.nr), fmt.Sprintf("97899977%05d", p.nr), fach).
@@ -165,7 +165,6 @@ func TestTitelAendern_SchreibtNurDasGenannteFeld(t *testing.T) {
 		"author":                  {"Neue Autorin", "autor", `"Neue Autorin"`},
 		"coverUrl":                {"/covers/neu.webp", "cover_url", `"/covers/neu.webp"`},
 		"subject":                 {genanntVorsatz + "Fach neu", "subject", `"` + genanntVorsatz + `Fach neu"`},
-		"gradeLevel":              {8, "grade_level", "8"},
 		"track":                   {"R", "track", `"R"`},
 		"lastCounted":             {"2026-09-30", "last_counted", `"2026-09-30"`},
 		"medientyp":               {"DVD", "medientyp", `"DVD"`},
@@ -207,6 +206,23 @@ func TestTitelAendern_SchreibtNurDasGenannteFeld(t *testing.T) {
 				t.Errorf("geändert: %v, erwartet nur %s", spalten, beispiel.spalte)
 			}
 		})
+	}
+}
+
+// „gradeLevel" schickt nur noch ein Browser-Fenster, das vor dem Wegfall der Klasse geladen
+// wurde. Die Tür kennt das Feld nicht mehr: Sie ändert dafür nichts, scheitert nicht daran und
+// speichert, was der Rumpf daneben nennt (docs/ARCHITEKTUR.md 11.5).
+func TestTitelAendern_FruehereKlasseWirdNichtGelesen(t *testing.T) {
+	p := neueGenanntProbe(t)
+	id := p.lege()
+	vorher := p.zeile(id)
+
+	status, antwort := p.aendere(id, map[string]any{"gradeLevel": 8, "verlag": "Neuer Verlag"})
+	if status != http.StatusOK {
+		t.Fatalf("Status %d, erwartet 200: %s", status, antwort)
+	}
+	if spalten := geaenderteSpalten(vorher, p.zeile(id)); len(spalten) != 1 || spalten[0] != "verlag" {
+		t.Errorf("geändert wurden %v, erwartet nur verlag", spalten)
 	}
 }
 

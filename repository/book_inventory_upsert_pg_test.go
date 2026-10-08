@@ -294,3 +294,40 @@ func TestBulkUpsertBookTitles_OhneJahrgangBleibtUnbekannt(t *testing.T) {
 		t.Errorf("der vorhandene Titel trägt nach dem Import %d bis %d, erwartet weiter 7 bis 9", von, bis)
 	}
 }
+
+// Nennt die Quelle eine Spanne über mehrere Jahrgänge, steht sie als „von" und „bis" am Titel,
+// am neuen wie am vorhandenen ohne Jahrgang. Mit einem einzigen Jahrgang fiele nicht auf, wenn
+// die zwei Werte vertauscht ankämen.
+func TestBulkUpsertBookTitles_SpanneKommtAlsVonUndBisAn(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	repo := NewBookRepository(pool)
+	const isbnNeu, isbnVorhanden = "9780000163018", "9780000163025"
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn IN ($1, $2)`, isbnNeu, isbnVorhanden); err != nil {
+			t.Errorf("aufräumen: %v", err)
+		}
+	})
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO buecher_titel (titel, isbn) VALUES ('Oberstufenband ohne Jahrgang', $1)`, isbnVorhanden); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+
+	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{
+		{Titel: "Natur und Technik 7 bis 9", ISBN: isbnNeu, IstLernmittel: true, JahrgangVon: 7, JahrgangBis: 9},
+		{Titel: "Oberstufenband ohne Jahrgang", ISBN: isbnVorhanden, JahrgangVon: 11, JahrgangBis: 13},
+	}); err != nil {
+		t.Fatalf("Import: %v", err)
+	}
+
+	for isbn, soll := range map[string][2]int{isbnNeu: {7, 9}, isbnVorhanden: {11, 13}} {
+		var von, bis int
+		if err := pool.QueryRow(ctx,
+			`SELECT coalesce(jahrgang_von, 0), coalesce(jahrgang_bis, 0) FROM buecher_titel WHERE isbn = $1`, isbn).Scan(&von, &bis); err != nil {
+			t.Fatal(err)
+		}
+		if von != soll[0] || bis != soll[1] {
+			t.Errorf("Titel %s trägt %d bis %d, erwartet %d bis %d", isbn, von, bis, soll[0], soll[1])
+		}
+	}
+}

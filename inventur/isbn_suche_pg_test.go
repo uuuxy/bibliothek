@@ -38,7 +38,7 @@ func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	}
 
 	for _, suchtext := range []string{zehn, "0-306-40615-2", dreizehn, "978-0-306-40615-7"} {
-		liste, err := repo.ListBooks(ctx, "", nil, suchtext, false)
+		liste, err := repo.ListBooks(ctx, "", suchtext, false)
 		if err != nil {
 			t.Fatalf("ListBooks(%q): %v", suchtext, err)
 		}
@@ -55,7 +55,7 @@ func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	}
 
 	// Gegenprobe: Dieselben Ziffern mit falschem Prüfzeichen sind eine andere Nummer.
-	if liste, err := repo.ListBooks(ctx, "", nil, "0306406153", false); err != nil || len(liste) != 0 {
+	if liste, err := repo.ListBooks(ctx, "", "0306406153", false); err != nil || len(liste) != 0 {
 		t.Errorf("Titel-Verwaltung mit falschem Prüfzeichen: %d Treffer, %v — erwartet keinen", len(liste), err)
 	}
 }

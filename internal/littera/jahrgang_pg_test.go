@@ -41,3 +41,39 @@ func TestJahrgangOhneAngabeBleibtUnbekannt(t *testing.T) {
 		t.Errorf("%d von %d übernommenen Titeln tragen eine Jahrgangsspanne, erwartet keiner von 2", mitSpanne, titel)
 	}
 }
+
+// Nennt die Lernmittel-Signatur mehrere Jahrgänge, steht die Spanne als „von" und „bis" am
+// übernommenen Titel; ein einzelner Jahrgang steht in beiden. Mit einem einzigen Jahrgang
+// allein fiele nicht auf, wenn die zwei Werte vertauscht ankämen.
+func TestJahrgangAusDerSignatur_SpanneUndEinJahr(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, _ := testSchreiber(t, pool, nil)
+	ctx := context.Background()
+
+	gelesen, err := LeseTitel(strings.NewReader(
+		"Buchungsnummer,Haupttitel,Verlag,Medienart\n" +
+			`1,"Natur und Technik",1,1` + "\n" +
+			`2,"Deutschbuch",1,1` + "\n"))
+	if err != nil {
+		t.Fatalf("Titel lesen: %v", err)
+	}
+	ab := bestand(gelesen...)
+	ab.Signaturen["1"] = "LMF Bio 7-9 / Nat"
+	ab.Signaturen["2"] = "LMF Deu 7 / Bie"
+	if _, err := s.SchreibeBestand(ctx, ab); err != nil {
+		t.Fatalf("SchreibeBestand: %v", err)
+	}
+
+	for titel, soll := range map[string][2]int{"Natur und Technik": {7, 9}, "Deutschbuch": {7, 7}} {
+		var von, bis int
+		if err := pool.QueryRow(ctx, `
+			SELECT coalesce(jahrgang_von, 0), coalesce(jahrgang_bis, 0) FROM buecher_titel WHERE titel = $1`, titel).
+			Scan(&von, &bis); err != nil {
+			t.Fatalf("%s: %v", titel, err)
+		}
+		if von != soll[0] || bis != soll[1] {
+			t.Errorf("%s: übernommen mit %d bis %d, erwartet %d bis %d", titel, von, bis, soll[0], soll[1])
+		}
+	}
+}

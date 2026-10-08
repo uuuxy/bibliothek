@@ -31,7 +31,7 @@ var buchListenSelect = `
 		bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author,
 		COALESCE(bt.signatur, '') AS signatur,
 		COALESCE(bt.cover_url, '') AS cover_url, COALESCE(bt.subject, '') AS subject,
-		COALESCE(bt.grade_level, 0) AS grade_level, COALESCE(bt.track, '') AS track, bt.ist_lernmittel,
+		COALESCE(bt.track, '') AS track, bt.ist_lernmittel,
 		COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
 		COUNT(e.id) FILTER (WHERE ` + repository.SQLExemplarImBestand + `) AS gesamt,
 		` + repository.SQLFilterImZulauf + ` AS im_zulauf,
@@ -46,7 +46,7 @@ var buchListenSelect = `
 `
 
 const buchListenGroupBy = `
-	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.erweiterte_eigenschaften, bt.auflage, bt.listenpreis, bt.mehrjahresband, bt.werk_id
+	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.erweiterte_eigenschaften, bt.auflage, bt.listenpreis, bt.mehrjahresband, bt.werk_id
 `
 
 // buchListenSelectSchlank ist die Listen-Variante: gleiche Spaltenzahl und -reihenfolge
@@ -59,7 +59,7 @@ var buchListenSelectSchlank = `
 		bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author,
 		COALESCE(bt.signatur, '') AS signatur,
 		COALESCE(bt.cover_url, '') AS cover_url, COALESCE(bt.subject, '') AS subject,
-		COALESCE(bt.grade_level, 0) AS grade_level, COALESCE(bt.track, '') AS track, bt.ist_lernmittel,
+		COALESCE(bt.track, '') AS track, bt.ist_lernmittel,
 		COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
 		COUNT(e.id) FILTER (WHERE ` + repository.SQLExemplarImBestand + `) AS gesamt,
 		` + repository.SQLFilterImZulauf + ` AS im_zulauf,
@@ -76,7 +76,7 @@ var buchListenSelectSchlank = `
 // buchListenGroupBySchlank lässt die Konstanten-Spalte aus der Gruppierung weg: Eine
 // Konstante muss nicht gruppiert werden, das spart dem Server das Hashen großer Werte.
 const buchListenGroupBySchlank = `
-	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.auflage, bt.listenpreis, bt.mehrjahresband, bt.werk_id
+	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.auflage, bt.listenpreis, bt.mehrjahresband, bt.werk_id
 `
 
 // listBooksSicherheitsLimit kappt die Katalogliste als reine Runaway-/Speicher-Bremse.
@@ -99,7 +99,6 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 			&book.Signatur,
 			&book.CoverURL,
 			&book.Subject,
-			&book.GradeLevel,
 			&book.Track,
 			&book.IstLernmittel,
 			&book.Verfuegbar,
@@ -132,7 +131,7 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 	return books, nil
 }
 
-// ListBooks lists books matching subject, grade level, and text query.
+// ListBooks liefert die Titel zu Fach und Suchtext.
 //
 // Nutzt die schlanke Listen-Variante (ohne erweiterte_eigenschaften) und
 // eine Sicherheits-Kappung gegen unbegrenztes Wachstum — siehe buchListenSelectSchlank
@@ -154,7 +153,7 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 //
 // Der Suchtext wird als Wortlaut verglichen und geht deshalb in die Form, in der Titeltexte
 // und Schlagworte gespeichert sind (repository.TiteltextNormalform).
-func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string, nurOhneExemplare bool) ([]Book, error) {
+func (repo *BookRepository) ListBooks(ctx context.Context, subject string, searchQuery string, nurOhneExemplare bool) ([]Book, error) {
 	searchQuery = repository.TiteltextNormalform(searchQuery)
 	sicht := repository.SQLTitelHatExemplar("bt")
 	if nurOhneExemplare {
@@ -163,15 +162,14 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 	query := buchListenSelectSchlank + `
 		WHERE ` + sicht + `
 		  AND ($1 = '' OR bt.subject = $1)
-		  AND ($2::smallint IS NULL OR bt.grade_level = $2)
-		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($3, '[- ]', '', 'g') || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%'
-		       OR ` + repository.SQLSuchtextIstISBN("bt", "$3") + `
-		       OR ` + repository.SQLTitelUeberSchlagwort("bt", "$3") + `)
+		  AND ($2 = '' OR bt.titel ILIKE '%' || $2 || '%' OR bt.autor ILIKE '%' || $2 || '%' OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($2, '[- ]', '', 'g') || '%' OR bt.subject ILIKE '%' || $2 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $2 || '%'
+		       OR ` + repository.SQLSuchtextIstISBN("bt", "$2") + `
+		       OR ` + repository.SQLTitelUeberSchlagwort("bt", "$2") + `)
 	` + buchListenGroupBySchlank + `
 		ORDER BY bt.titel ASC, bt.id ASC
-		LIMIT $4`
+		LIMIT $3`
 
-	rows, err := repo.db.Query(ctx, query, subject, grade, searchQuery, listBooksSicherheitsLimit)
+	rows, err := repo.db.Query(ctx, query, subject, searchQuery, listBooksSicherheitsLimit)
 	if err != nil {
 		return nil, fmt.Errorf("bücher konnten nicht geladen werden: %w", err)
 	}

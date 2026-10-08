@@ -24,27 +24,26 @@ var titelFelder = []titelFeld{
 	{"author", "autor", "$3"},
 	{"coverUrl", "cover_url", "$4"},
 	{"subject", "subject", "NULLIF($5, '')"},
-	{"gradeLevel", "grade_level", "$6"},
-	{"track", "track", "$7"},
-	{"lastCounted", "last_counted", "NULLIF($8::text, '')::date"},
-	{"medientyp", "medientyp", "$9"},
-	{"erweiterteEigenschaften", "erweiterte_eigenschaften", "$10"},
+	{"track", "track", "$6"},
+	{"lastCounted", "last_counted", "NULLIF($7::text, '')::date"},
+	{"medientyp", "medientyp", "$8"},
+	{"erweiterteEigenschaften", "erweiterte_eigenschaften", "$9"},
 	// 0 heißt „unbekannt" und wird NULL (Migration 162).
-	{"jahrgangVon", "jahrgang_von", "NULLIF($11, 0)"},
-	{"jahrgangBis", "jahrgang_bis", "NULLIF($12, 0)"},
-	{"untertitel", "untertitel", "$13"},
-	{"verlag", "verlag", "$14"},
-	{"erscheinungsjahr", "erscheinungsjahr", "$15"},
+	{"jahrgangVon", "jahrgang_von", "NULLIF($10, 0)"},
+	{"jahrgangBis", "jahrgang_bis", "NULLIF($11, 0)"},
+	{"untertitel", "untertitel", "$12"},
+	{"verlag", "verlag", "$13"},
+	{"erscheinungsjahr", "erscheinungsjahr", "$14"},
 	// Ein leerer Wert lässt die verklebte Signatur unangetastet.
-	{"signatur", "signatur", "COALESCE(NULLIF($17, ''), signatur)"},
-	{"istLernmittel", "ist_lernmittel", "$18"},
-	{"auflage", "auflage", "NULLIF($19, '')"},
+	{"signatur", "signatur", "COALESCE(NULLIF($16, ''), signatur)"},
+	{"istLernmittel", "ist_lernmittel", "$17"},
+	{"auflage", "auflage", "NULLIF($18, '')"},
 	// Ein Listenpreis ohne Wert (nil) löscht ihn: „nicht erfasst" ist etwas anderes als 0.
-	{"listenpreis", "listenpreis", "$20"},
-	{"mehrjahresband", "mehrjahresband", "$21"},
+	{"listenpreis", "listenpreis", "$19"},
+	{"mehrjahresband", "mehrjahresband", "$20"},
 }
 
-// sqlTitelAendern setzt je Spalte den neuen Wert, wenn $22 ihr Feld nennt, und sonst den, der
+// sqlTitelAendern setzt je Spalte den neuen Wert, wenn $21 ihr Feld nennt, und sonst den, der
 // in der Zeile steht. Die Anweisung nennt jede Spalte (schema_paritaet_test.go) und ist für
 // jede Änderung dieselbe.
 //
@@ -54,9 +53,9 @@ var sqlTitelAendern = func() string {
 	var b strings.Builder
 	b.WriteString("UPDATE buecher_titel SET ")
 	for _, f := range titelFelder {
-		fmt.Fprintf(&b, "%[2]s = CASE WHEN '%[1]s' = ANY($22::text[]) THEN %[3]s ELSE %[2]s END, ", f.name, f.spalte, f.wert)
+		fmt.Fprintf(&b, "%[2]s = CASE WHEN '%[1]s' = ANY($21::text[]) THEN %[3]s ELSE %[2]s END, ", f.name, f.spalte, f.wert)
 	}
-	b.WriteString("aktualisiert_am = NOW() WHERE id = $16")
+	b.WriteString("aktualisiert_am = NOW() WHERE id = $15")
 	return b.String()
 }()
 
@@ -151,7 +150,7 @@ func (repo *BookRepository) titelWerte(ctx context.Context, id string, book Book
 		felder = []string{}
 	}
 	return []any{
-		book.ISBN, book.Title, book.Author, book.CoverURL, subject, book.GradeLevel, book.Track,
+		book.ISBN, book.Title, book.Author, book.CoverURL, subject, book.Track,
 		book.LastCounted, medientyp, properties, book.JahrgangVon, book.JahrgangBis,
 		book.Untertitel, book.Verlag, book.Erscheinungsjahr, id, book.Signatur,
 		book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,

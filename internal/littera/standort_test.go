@@ -177,8 +177,8 @@ func TestVermerkMachtLernmittel(t *testing.T) {
 		}
 	}
 	// Fach und Jahrgang kommen weiter aus der Signatur.
-	if lern, _ := ab.lernmittelFuer("3"); lern.Fach == "" || lern.Stufe != 7 {
-		t.Errorf("Titel 3: Fach %q, Stufe %d", lern.Fach, lern.Stufe)
+	if lern, _ := ab.lernmittelFuer("3"); lern.Fach == "" || lern.JahrgangVon != 7 || lern.JahrgangBis != 7 {
+		t.Errorf("Titel 3: Fach %q, Jahrgang %d bis %d", lern.Fach, lern.JahrgangVon, lern.JahrgangBis)
 	}
 }
 

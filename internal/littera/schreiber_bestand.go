@@ -45,16 +45,16 @@ type BestandBericht struct {
 	ExemplarIDs map[string]string
 }
 
-// ist_lernmittel, subject, grade_level, jahrgang_von/bis (Migration 093): aus der
+// ist_lernmittel, subject, jahrgang_von/bis (Migration 093): aus der
 // Littera-Signatur „LMF Deu 7 / Bie" gelesen (pkg/lmf.Zerlege). Ohne Jahrgang bleibt
 // die Spanne leer (unbekannt, Migration 162).
 const sqlTitelEinfuegen = `
 	INSERT INTO buecher_titel
 		(titel, untertitel, autor, isbn, verlag, erscheinungsjahr,
 		 medientyp, signatur, erweiterte_eigenschaften, erstellt_am,
-		 ist_lernmittel, subject, grade_level, jahrgang_von, jahrgang_bis, auflage)
+		 ist_lernmittel, subject, jahrgang_von, jahrgang_bis, auflage)
 	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
-	        $11, NULLIF($12, ''), NULLIF($13, 0)::smallint, NULLIF($14, 0), NULLIF($15, 0), $16)
+	        $11, NULLIF($12, ''), NULLIF($13, 0), NULLIF($14, 0), $15)
 	RETURNING id`
 
 // etikett_gedruckt ($7): Altbestand traegt seine Littera-Etiketten physisch —
@@ -283,7 +283,7 @@ func (l *bestandslauf) schreibeTitel(
 		f.titel, f.untertitel, f.autor, uebernahme.Nullbar(reservierteISBN), f.verlag,
 		jahrOderNil(t.Erscheinungsjahr),
 		f.medientyp, f.signatur, eigenschaften, l.s.opt.Jetzt,
-		lern.IstLernmittel, kanonisch[lern.Fach], lern.Stufe, lern.JahrgangVon, lern.JahrgangBis,
+		lern.IstLernmittel, kanonisch[lern.Fach], lern.JahrgangVon, lern.JahrgangBis,
 		f.auflage,
 	).Scan(&titelID)
 	if err != nil {
@@ -354,7 +354,6 @@ func (l *bestandslauf) schreibeExemplare(
 type lernmittelfelder struct {
 	IstLernmittel            bool
 	Fach                     string
-	Stufe                    int // eine Klassenstufe, nur wenn die Signatur genau einen Jahrgang nennt
 	JahrgangVon, JahrgangBis int
 }
 
@@ -379,11 +378,7 @@ func lernmittelAusSignatur(signatur string) lernmittelfelder {
 	if !ok {
 		return lernmittelfelder{}
 	}
-	f := lernmittelfelder{IstLernmittel: true, Fach: z.Fach, JahrgangVon: z.JahrgangVon, JahrgangBis: z.JahrgangBis}
-	if z.JahrgangVon > 0 && z.JahrgangVon == z.JahrgangBis {
-		f.Stufe = z.JahrgangVon
-	}
-	return f
+	return lernmittelfelder{IstLernmittel: true, Fach: z.Fach, JahrgangVon: z.JahrgangVon, JahrgangBis: z.JahrgangBis}
 }
 
 // titelfelder sind die auf Spaltenbreite gebrachten Textfelder eines Titels.

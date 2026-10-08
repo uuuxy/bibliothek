@@ -166,7 +166,7 @@ func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
 	}
 	defer mock.Close()
 	zeile := pgxmock.NewRows(reihenfolgeBuchSpalten).AddRow(
-		reihenfolgeBuchID, "9781234567890", "Titel", "Autor", "", "", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil, "",
+		reihenfolgeBuchID, "9781234567890", "Titel", "Autor", "", "", "", "", 1, nil, 1, "Buch", 5, 10, nil, "",
 	)
 	mock.ExpectQuery("(?s)SELECT id, COALESCE.*").WithArgs(reihenfolgeBuchID).WillReturnRows(zeile)
 	mock.ExpectExec("(?s)UPDATE buecher_titel.*").

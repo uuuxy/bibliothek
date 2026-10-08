@@ -5,19 +5,17 @@ import (
 	"testing"
 )
 
-// Der Listenimport nimmt die Klasse nur aus der Spalte „klasse". Bis zum 22.09.2026 riet er
-// sie aus der ersten Zahl im Titel, wenn die Spalte fehlte, leer oder keine Zahl war
-// (inferGradeLevelFromTitle): „Die 13½ Leben des Käpt'n Blaubär" bekam Klasse 13. Eine
-// geratene Klasse ist in der Datenbank von einer gepflegten nicht zu unterscheiden, und
-// genau diese Unterscheidung braucht die Entscheidung, wie die Klasse in die Spanne
-// übergeht (docs/OFFEN.md 5.5).
-func TestVerarbeiteImportZeile_KlasseNurAusDerSpalte(t *testing.T) {
+// Der Listenimport nimmt den Jahrgang nur aus der Spalte „klasse" und rät ihn nicht aus einer
+// Zahl im Titel: „Die 13½ Leben des Käpt'n Blaubär" bekäme sonst Jahrgang 13. Ein geratener
+// Jahrgang ist in der Datenbank von einem gepflegten nicht zu unterscheiden. Die Spalte ergibt
+// die Spanne N bis N.
+func TestVerarbeiteImportZeile_JahrgangNurAusDerSpalte(t *testing.T) {
 	faelle := []struct {
 		name      string
 		titel     string
 		mitSpalte bool
 		klasse    string
-		want      int16
+		want      int
 	}{
 		{"Zahl im Titel, keine Spalte", "Die 13½ Leben des Käpt'n Blaubär", false, "", 0},
 		{"Schulbuchtitel, keine Spalte", "Mathematik 7", false, "", 0},
@@ -42,8 +40,9 @@ func TestVerarbeiteImportZeile_KlasseNurAusDerSpalte(t *testing.T) {
 			if err != nil || buch == nil {
 				t.Fatalf("Zeile: %v", err)
 			}
-			if buch.GradeLevel != f.want {
-				t.Errorf("Titel %q, Spalte %q: Klasse %d, erwartet %d", f.titel, f.klasse, buch.GradeLevel, f.want)
+			if buch.JahrgangVon != f.want || buch.JahrgangBis != f.want {
+				t.Errorf("Titel %q, Spalte %q: Jahrgang %d bis %d, erwartet %d bis %d",
+					f.titel, f.klasse, buch.JahrgangVon, buch.JahrgangBis, f.want, f.want)
 			}
 		})
 	}

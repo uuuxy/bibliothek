@@ -19,7 +19,7 @@ function karten(books) {
 }
 
 // Die Karten der Klassenzuweisung tragen den Jahrgang als Marke, aus „von … bis" wie Maske
-// und Titelliste. Die frühere Angabe „Klasse" (gradeLevel) zählt nicht mehr.
+// und Titelliste.
 describe('Klassenzuweisung: die Marke für den Jahrgang', () => {
 	it('nennt ein Jahr und eine Spanne', () => {
 		const [einJahr, spanne] = karten([
@@ -31,8 +31,8 @@ describe('Klassenzuweisung: die Marke für den Jahrgang', () => {
 		expect(spanne).toContain('Jg. 7–10');
 	});
 
-	it('trägt ohne „von … bis" keine Marke, auch nicht aus der früheren Klasse', () => {
-		const [karte] = karten([buch({ jahrgangVon: 0, jahrgangBis: 0, gradeLevel: 7 })]);
+	it('trägt ohne „von … bis" keine Marke', () => {
+		const [karte] = karten([buch({ jahrgangVon: 0, jahrgangBis: 0 })]);
 		expect(karte).toContain('Natura');
 		expect(karte).not.toMatch(/Jg\.|Kl\./);
 	});

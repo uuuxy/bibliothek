@@ -52,7 +52,6 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Author:                  eingabe.Autor,
 		CoverURL:                eingabe.CoverURL,
 		Subject:                 eingabe.Fach,
-		GradeLevel:              eingabe.KlassenStufe,
 		Track:                   eingabe.Schulzweig,
 		IstLernmittel:           eingabe.IstLernmittel,
 		LastCounted:             eingabe.ZaehlDatum,
@@ -179,9 +178,6 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 	eingabe.Untertitel = strings.TrimSpace(eingabe.Untertitel)
 	eingabe.Verlag = strings.TrimSpace(eingabe.Verlag)
 
-	if eingabe.KlassenStufe < 0 || eingabe.KlassenStufe > 13 {
-		return errors.New("gradeLevel muss zwischen 0 und 13 sein")
-	}
 	if eingabe.Bestand != nil && *eingabe.Bestand < 0 {
 		return errors.New("stock muss >= 0 sein")
 	}

@@ -95,11 +95,11 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				dateStr := "2023-01-01"
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", pgxmock.AnyArg(), "", 50000).
+					WithArgs("", "", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}).AddRow(
-						"b1", "123", "Book 1", "Author 1", "Sig 1", "url", "Math", int16(5), "G", false, int64(5), int64(10), int64(2), &dateStr, 0, "Buch", 5, 10, "Sub", "Ver", 2020, map[string]any{}, "4. Aufl. 2023", nil, false, "", 0,
+						"b1", "123", "Book 1", "Author 1", "Sig 1", "url", "Math", "G", false, int64(5), int64(10), int64(2), &dateStr, 0, "Buch", 5, 10, "Sub", "Ver", 2020, map[string]any{}, "4. Aufl. 2023", nil, false, "", 0,
 					))
 				// Die Suchwörter der gelieferten Titel (repository.SuchwoerterDerTitel).
 				m.ExpectQuery("(?s)SELECT tsw.titel_id.*FROM schlagworte sw").
@@ -117,16 +117,16 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 			// nur der Einzel-Read lädt sie, und ein PUT mit null lässt sie unangetastet.
 			// suchwoerter trägt die Wörter, über die die Suche im Browser den Titel findet,
 			// standorte die Standorte der Exemplare für die Spalte der Titel-Verwaltung.
-			expectedBody: `{"data":[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","gradeLevel":5,"track":"G","istLernmittel":false,"stock":10,"verfuegbar":5,"gesamt":10,"imZulauf":2,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"mehrjahresband":false,"untertitel":"Sub","auflage":"4. Aufl. 2023","listenpreis":null,"verlag":"Ver","erscheinungsjahr":2020,"erweiterteEigenschaften":{},"schlagworte":null,"suchwoerter":["Fantasy","Tierfantasy"],"standorte":[{"standort":"Lehrerschrank","anzahl":2}]}]}`,
+			expectedBody: `{"data":[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","track":"G","istLernmittel":false,"stock":10,"verfuegbar":5,"gesamt":10,"imZulauf":2,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"mehrjahresband":false,"untertitel":"Sub","auflage":"4. Aufl. 2023","listenpreis":null,"verlag":"Ver","erscheinungsjahr":2020,"erweiterteEigenschaften":{},"schlagworte":null,"suchwoerter":["Fantasy","Tierfantasy"],"standorte":[{"standort":"Lehrerschrank","anzahl":2}]}]}`,
 		},
 		{
 			name: "Success - synonym translation",
 			url:  "/api/books?q=powi",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", pgxmock.AnyArg(), "politik", 50000).
+					WithArgs("", "politik", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}))
 			},
 			expectedStatus: http.StatusOK,
@@ -138,9 +138,9 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 			url:  "/api/books?bestand=ohne",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*WHERE NOT EXISTS.*").
-					WithArgs("", pgxmock.AnyArg(), "", 50000).
+					WithArgs("", "", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}))
 			},
 			expectedStatus: http.StatusOK,
@@ -159,26 +159,15 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 			expectedBody:   `{"error":"suchbegriff zu lang (max. 200 zeichen)"}`,
 		},
 		{
-			name:           "Error - invalid gradeLevel",
-			url:            "/api/books?gradeLevel=abc",
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"error":"ungültiger query-parameter gradeLevel"}`,
-		},
-		{
-			name:           "Error - invalid grade",
-			url:            "/api/books?grade=xyz",
-			expectedStatus: http.StatusBadRequest,
-			expectedBody:   `{"error":"ungültiger query-parameter gradeLevel"}`,
-		},
-		{
-			name: "Success - grade param fallback",
-			url:  "/api/books?grade=7",
+			// Die Liste kennt keinen Filter nach Klasse mehr: Der Parameter wird nicht gelesen,
+			// auch kein unlesbarer Wert.
+			name: "Success - gradeLevel wird nicht mehr gelesen",
+			url:  "/api/books?gradeLevel=abc&grade=7",
 			setupMock: func(m pgxmock.PgxPoolIface) {
-				grade := int16(7)
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", &grade, "", 50000).
+					WithArgs("", "", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}))
 			},
 			expectedStatus: http.StatusOK,
@@ -189,7 +178,7 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 			url:  "/api/books",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("", pgxmock.AnyArg(), "", 50000).
+					WithArgs("", "", 50000).
 					WillReturnError(errors.New("db fail"))
 			},
 			expectedStatus: http.StatusInternalServerError,

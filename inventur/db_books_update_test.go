@@ -28,7 +28,6 @@ func TestUpdateBook(t *testing.T) {
 		Author:                  "Author",
 		CoverURL:                "URL",
 		Subject:                 "Math",
-		GradeLevel:              5,
 		Track:                   "A",
 		Stock:                   10,
 		LastCounted:             nil, // handle date logic if needed
@@ -53,7 +52,7 @@ func TestUpdateBook(t *testing.T) {
 		erwarteTitelstand(mock, book.ISBN, book.Author)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
@@ -87,7 +86,7 @@ func TestUpdateBook(t *testing.T) {
 		erwarteTitelstand(mock, book.ISBN, book.Author)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
@@ -106,7 +105,7 @@ func TestUpdateBook(t *testing.T) {
 		erwarteTitelstand(mock, book.ISBN, book.Author)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband, felder,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare`).

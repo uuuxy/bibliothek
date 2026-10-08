@@ -71,7 +71,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 		"Camus, Albert",
 		"Camus,  Alb",
 	} {
-		liste, err := repo.ListBooks(ctx, "", nil, suchtext, false)
+		liste, err := repo.ListBooks(ctx, "", suchtext, false)
 		if err != nil {
 			t.Fatalf("ListBooks(%+q): %v", suchtext, err)
 		}
@@ -84,7 +84,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	}
 
 	// Gegenprobe: Der Leerraum fällt nicht weg, zwei Wörter bleiben zwei.
-	if liste, err := repo.ListBooks(ctx, "", nil, "Leerraumprobe LaPeste", false); err != nil || len(liste) != 0 {
+	if liste, err := repo.ListBooks(ctx, "", "Leerraumprobe LaPeste", false); err != nil || len(liste) != 0 {
 		t.Errorf("Titel-Verwaltung ohne Leerzeichen: %d Treffer, %v — erwartet keinen", len(liste), err)
 	}
 	if treffer := lernmittel("Leerraumprobe LaPeste"); len(treffer) != 0 {

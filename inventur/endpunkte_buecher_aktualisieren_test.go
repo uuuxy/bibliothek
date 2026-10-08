@@ -62,10 +62,9 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		{
 			name: "Valid input",
 			eingabe: BuchEingabe{
-				ISBN:         "978-3-16-148410-0",
-				KlassenStufe: 5,
-				Bestand:      zeigerAuf(10),
-				Titel:        " Test Titel ",
+				ISBN:    "978-3-16-148410-0",
+				Bestand: zeigerAuf(10),
+				Titel:   " Test Titel ",
 			},
 			wantErr: false,
 		},
@@ -74,47 +73,24 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		{
 			name: "Ohne ISBN",
 			eingabe: BuchEingabe{
-				ISBN:         "",
-				KlassenStufe: 5,
-				Bestand:      zeigerAuf(10),
+				ISBN:    "",
+				Bestand: zeigerAuf(10),
 			},
 			wantErr: false,
 		},
 		{
 			name: "Nummer ohne ISBN-Form",
 			eingabe: BuchEingabe{
-				ISBN:         "123",
-				KlassenStufe: 5,
-				Bestand:      zeigerAuf(10),
+				ISBN:    "123",
+				Bestand: zeigerAuf(10),
 			},
 			wantErr: false,
 		},
 		{
-			name: "Negative gradeLevel",
-			eingabe: BuchEingabe{
-				ISBN:         "978-3-16-148410-0",
-				KlassenStufe: -1,
-				Bestand:      zeigerAuf(10),
-			},
-			wantErr: true,
-			errMsg:  "gradeLevel muss zwischen 0 und 13 sein",
-		},
-		{
-			name: "gradeLevel too high",
-			eingabe: BuchEingabe{
-				ISBN:         "978-3-16-148410-0",
-				KlassenStufe: 14,
-				Bestand:      zeigerAuf(10),
-			},
-			wantErr: true,
-			errMsg:  "gradeLevel muss zwischen 0 und 13 sein",
-		},
-		{
 			name: "Negative stock",
 			eingabe: BuchEingabe{
-				ISBN:         "978-3-16-148410-0",
-				KlassenStufe: 5,
-				Bestand:      zeigerAuf(-1),
+				ISBN:    "978-3-16-148410-0",
+				Bestand: zeigerAuf(-1),
 			},
 			wantErr: true,
 			errMsg:  "stock muss >= 0 sein",
@@ -124,9 +100,8 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		{
 			name: "Negativer Listenpreis",
 			eingabe: BuchEingabe{
-				ISBN:         "978-3-16-148410-0",
-				KlassenStufe: 5,
-				Listenpreis:  zeigerAufPreis(-0.01),
+				ISBN:        "978-3-16-148410-0",
+				Listenpreis: zeigerAufPreis(-0.01),
 			},
 			wantErr: true,
 			errMsg:  "listenpreis muss >= 0 sein (leer lassen, wenn unbekannt)",
@@ -134,9 +109,8 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		{
 			name: "Listenpreis 0 ist erlaubt",
 			eingabe: BuchEingabe{
-				ISBN:         "978-3-16-148410-0",
-				KlassenStufe: 5,
-				Listenpreis:  zeigerAufPreis(0),
+				ISBN:        "978-3-16-148410-0",
+				Listenpreis: zeigerAufPreis(0),
 			},
 			wantErr: false,
 		},
@@ -205,7 +179,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 		// Kein einziger syncBookStock-Aufruf darf folgen: Das Feld "stock" fehlt im Rumpf.
 		erwarteFachBekannt(mock, "Mathe")
 		mock.ExpectBegin()
-		beliebig := make([]any, 22) // eine Stelle je Spalte, die Kennung und die genannten Felder
+		beliebig := make([]any, 21) // eine Stelle je Spalte, die Kennung und die genannten Felder
 		for i := range beliebig {
 			beliebig[i] = pgxmock.AnyArg()
 		}
@@ -275,7 +249,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 			if fall.hatAutor {
 				mock.ExpectRollback()
 			} else {
-				beliebig := make([]any, 22)
+				beliebig := make([]any, 21)
 				for i := range beliebig {
 					beliebig[i] = pgxmock.AnyArg()
 				}

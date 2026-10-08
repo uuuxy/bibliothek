@@ -67,14 +67,12 @@ describe('Titel-Verwaltung: Zeile', () => {
 		expect(zellen(zeile(buch({ jahrgangVon: 7, jahrgangBis: 10 })).container)).toContain('7–10');
 	});
 
-	// Die frühere Angabe „Klasse" (gradeLevel) zeigt die Zeile nicht mehr: Ohne „von … bis"
-	// ist der Jahrgang unbekannt.
+	// Ohne „von … bis" ist der Jahrgang unbekannt.
 	it('nennt ein Buch der Bücherei ohne Schildchen und setzt einen Strich, wo nichts steht', () => {
 		const { container } = zeile(
 			buch({
 				istLernmittel: false,
 				subject: '',
-				gradeLevel: 7,
 				jahrgangVon: 0,
 				jahrgangBis: 0,
 				lastCounted: '',

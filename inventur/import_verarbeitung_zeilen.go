@@ -56,7 +56,6 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 		Title:       title,
 		Author:      author,
 		Subject:     subject,
-		GradeLevel:  klasse,
 		JahrgangVon: int(klasse),
 		JahrgangBis: int(klasse),
 		Stock:       parseBestand(getCol("bestand")),
@@ -74,16 +73,11 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 	return &book, nil
 }
 
-// parseKlassenStufe liest die Klassenstufe aus der Spalte „klasse". Gültig ist 5–13
-// (kooperative Gesamtschule inkl. Oberstufe). Fehlt die Spalte, ist sie leer oder liegt der
-// Wert daneben, ist die Klasse unbekannt (0); beide Upserts schreiben dafür NULL — dieselbe
-// Regel wie Littera-Übernahme und Sammelimport (NULLIF(…, 0)).
-//
-// Bis zum 22.09.2026 riet der Import stattdessen: erst die erste Zahl im Titel („Die 13½
-// Leben des Käpt'n Blaubär" bekam Klasse 13), sonst die Vorgabe 5. Eine geratene Klasse ist
-// in der Datenbank von einer gepflegten nicht zu unterscheiden, und das Upsert behält eine
-// vorhandene Klasse ungleich 0 — eine spätere Liste mit der echten Klasse kam gegen die
-// geratene nicht mehr an (docs/OFFEN.md 5.5).
+// parseKlassenStufe liest den Jahrgang aus der Spalte „klasse". Gültig ist 5–13 (kooperative
+// Gesamtschule inkl. Oberstufe). Fehlt die Spalte, ist sie leer oder liegt der Wert daneben,
+// ist der Jahrgang unbekannt (0), und beide Upserts schreiben NULL in die Spanne. Geraten
+// wird nicht: Ein geratener Jahrgang ist in der Datenbank von einem gepflegten nicht zu
+// unterscheiden, und das Upsert behält eine vorhandene Spanne.
 //
 // Early Return statt Clamp-Zuweisung: die int16-Konvertierung muss auf
 // einem Pfad liegen, den der Bounds-Check exklusiv kontrolliert — nach einem Merge

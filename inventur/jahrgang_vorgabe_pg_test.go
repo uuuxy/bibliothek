@@ -72,7 +72,7 @@ func TestNeuerTitel_OhneJahrgang_BleibtUnbekannt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Titel lesen: %v", err)
 	}
-	liste, err := repo.ListBooks(ctx, "", nil, "978-9-99-200000", true)
+	liste, err := repo.ListBooks(ctx, "", "978-9-99-200000", true)
 	if err != nil {
 		t.Fatalf("Titelliste lesen: %v", err)
 	}

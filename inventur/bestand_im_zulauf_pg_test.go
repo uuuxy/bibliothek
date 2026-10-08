@@ -75,7 +75,7 @@ func TestBestandNenntDenZulauf(t *testing.T) {
 		}
 	}
 
-	liste, err := repo.ListBooks(ctx, "", nil, marke, false)
+	liste, err := repo.ListBooks(ctx, "", marke, false)
 	if err != nil {
 		t.Fatalf("ListBooks: %v", err)
 	}

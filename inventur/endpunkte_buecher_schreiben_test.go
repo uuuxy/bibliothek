@@ -23,13 +23,11 @@ func TestValidiereBuchErstellenEingabe(t *testing.T) {
 		wantResult bool
 		wantError  string
 	}{
-		{name: "Titel und ISBN", eingabe: BuchEingabe{Titel: "T", ISBN: "978-3-16-148410-0", KlassenStufe: 5}, wantResult: true},
-		{name: "ohne ISBN", eingabe: BuchEingabe{Titel: "T", KlassenStufe: 5}, wantResult: true},
+		{name: "Titel und ISBN", eingabe: BuchEingabe{Titel: "T", ISBN: "978-3-16-148410-0"}, wantResult: true},
+		{name: "ohne ISBN", eingabe: BuchEingabe{Titel: "T"}, wantResult: true},
 		{name: "ohne Titel", eingabe: BuchEingabe{ISBN: "978-3-16-148410-0"}, wantError: "titel darf nicht leer sein"},
 		{name: "Titel nur aus Leerzeichen", eingabe: BuchEingabe{Titel: "  "}, wantError: "titel darf nicht leer sein"},
 		{name: "Nummer ohne ISBN-Form", eingabe: BuchEingabe{Titel: "T", ISBN: "123"}, wantError: "ungültiges ISBN-Format"},
-		{name: "Klassenstufe unter 0", eingabe: BuchEingabe{Titel: "T", KlassenStufe: -1}, wantError: "gradeLevel muss zwischen 0 und 13 sein"},
-		{name: "Klassenstufe über 13", eingabe: BuchEingabe{Titel: "T", KlassenStufe: 14}, wantError: "gradeLevel muss zwischen 0 und 13 sein"},
 	}
 
 	for _, tt := range tests {
@@ -176,7 +174,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 	})
 
 	t.Run("ohne Titel wird nichts angelegt", func(t *testing.T) {
-		body := `{"isbn": "978-3-16-148410-0", "subject": "Math", "gradeLevel": 5}`
+		body := `{"isbn": "978-3-16-148410-0", "subject": "Math"}`
 		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(body))
 		rec := httptest.NewRecorder()
 		handler.BearbeiteBuchErstellen(rec, req)
@@ -209,6 +207,8 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
+		// „gradeLevel" nennt ein Browser-Fenster von vor dem Umbau noch: Die Tür liest das Feld
+		// nicht mehr und legt den Titel ohne es an.
 		body := `{
 			"isbn": "978-3-16-148410-0",
 			"subject": "Math",
@@ -230,7 +230,6 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 				"Test Author",       // author
 				"test.jpg",          // cover_url
 				"Math",              // subject
-				int16(5),            // grade_level
 				"",                  // track
 				pgxmock.AnyArg(),    // last_counted
 				"Buch",              // medientyp

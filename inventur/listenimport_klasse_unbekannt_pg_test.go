@@ -7,11 +7,10 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Eine Liste ohne Klasse schreibt „unbekannt" (NULL), nicht die Vorgabe 5 — dieselbe Regel
-// wie Littera-Übernahme und Sammelimport. Und weil das Upsert eine vorhandene Klasse
-// ungleich 0 behält, muss eine spätere Liste MIT Klasse die Lücke noch füllen können: Mit
-// der Vorgabe 5 bis zum 22.09.2026 kam sie gegen die geratene 5 nicht mehr an.
-func TestListenimport_UnbekannteKlasseBleibtNullUndWirdNachgetragen(t *testing.T) {
+// Eine Liste ohne die Spalte „klasse" lässt den Jahrgang unbekannt (NULL), auch wenn der Titel
+// eine Zahl trägt. Eine spätere Liste mit der Spalte füllt die Lücke: Das Upsert behält nur
+// eine eingetragene Spanne, und eine geratene stünde der echten im Weg.
+func TestListenimport_OhneKlasseUnbekanntUndSpaeterNachgetragen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	repo := NewBookRepository(pool)
@@ -41,40 +40,44 @@ func TestListenimport_UnbekannteKlasseBleibtNullUndWirdNachgetragen(t *testing.T
 			}
 		})
 
-		klasse := func() *int16 {
+		spanne := func() string {
 			t.Helper()
-			var k *int16
-			if err := pool.QueryRow(ctx, `SELECT grade_level FROM buecher_titel WHERE isbn = isbn_normalform($1)`, isbn).Scan(&k); err != nil {
+			var s string
+			if err := pool.QueryRow(ctx, `
+				SELECT coalesce(jahrgang_von::text, 'leer') || ' bis ' || coalesce(jahrgang_bis::text, 'leer')
+				FROM buecher_titel WHERE isbn = isbn_normalform($1)`, isbn).Scan(&s); err != nil {
 				t.Fatalf("%s: %v", weg, err)
 			}
-			return k
+			return s
+		}
+		zeile := func(spalten map[string]int, werte ...string) Book {
+			t.Helper()
+			buch, err := verarbeiteImportZeile(ImportConfig{
+				Ctx:       ctx,
+				Row:       append([]string{isbn, "Die 13½ Leben des Käpt'n Blaubär", "Moers"}, werte...),
+				ColIdx:    spalten,
+				Metadaten: offlineMetadatenClient(),
+			})
+			if err != nil || buch == nil {
+				t.Fatalf("%s: Zeile: %v", weg, err)
+			}
+			return *buch
 		}
 
-		ohneSpalte, err := verarbeiteImportZeile(ImportConfig{
-			Ctx:       ctx,
-			Row:       []string{isbn, "Die 13½ Leben des Käpt'n Blaubär", "Moers"},
-			ColIdx:    map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": -1, "klasse": -1, "bestand": -1},
-			Metadaten: offlineMetadatenClient(),
-		})
-		if err != nil || ohneSpalte == nil {
-			t.Fatalf("%s: Zeile: %v", weg, err)
-		}
-		if err := importiere(*ohneSpalte); err != nil {
+		ohneSpalte := map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": -1, "klasse": -1, "bestand": -1}
+		if err := importiere(zeile(ohneSpalte)); err != nil {
 			t.Fatalf("%s: erster Import: %v", weg, err)
 		}
-		if k := klasse(); k != nil {
-			t.Fatalf("%s: Klasse %d nach einer Liste ohne Klasse, erwartet NULL", weg, *k)
+		if ist := spanne(); ist != "leer bis leer" {
+			t.Fatalf("%s: nach einer Liste ohne Klasse steht %s, erwartet leer bis leer", weg, ist)
 		}
 
-		mitSpalte := *ohneSpalte
-		mitSpalte.GradeLevel = parseKlassenStufe("8")
-		if err := importiere(mitSpalte); err != nil {
+		mitSpalte := map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": -1, "klasse": 3, "bestand": -1}
+		if err := importiere(zeile(mitSpalte, "8")); err != nil {
 			t.Fatalf("%s: zweiter Import: %v", weg, err)
 		}
-		if k := klasse(); k == nil {
-			t.Errorf("%s: Klasse NULL nach einer Liste mit Klasse 8, erwartet 8", weg)
-		} else if *k != 8 {
-			t.Errorf("%s: Klasse %d nach einer Liste mit Klasse 8, erwartet 8", weg, *k)
+		if ist := spanne(); ist != "8 bis 8" {
+			t.Errorf("%s: nach einer Liste mit Klasse 8 steht %s, erwartet 8 bis 8", weg, ist)
 		}
 	}
 }

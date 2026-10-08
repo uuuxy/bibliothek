@@ -54,7 +54,7 @@ func TestKatalog_TraegtBuchUndRangDerAuflage(t *testing.T) {
 		}
 	}
 
-	liste, err := repo.ListBooks(ctx, "", nil, "", false)
+	liste, err := repo.ListBooks(ctx, "", "", false)
 	if err != nil {
 		t.Fatalf("ListBooks: %v", err)
 	}

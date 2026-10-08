@@ -123,8 +123,8 @@ func sqlVonUpdateBook(t *testing.T) string {
 	// Migration 073; 19 mit ist_lernmittel, Migration 093; 20 mit auflage, Migration 126;
 	// 21 mit listenpreis, Migration 127; 22 mit mehrjahresband, Migration 134 — der Schalter
 	// ersetzt ziel_jahrgang aus Migration 030, das nie einen Schreiber hatte; 21 ohne die
-	// Beschreibung, Migration 156.)
-	beliebig := make([]any, 22) // 21 Werte und die Namen der Felder, die die Änderung nennt
+	// Beschreibung, Migration 156; 20 ohne die Klasse, Migration 163.)
+	beliebig := make([]any, 21) // 20 Werte und die Namen der Felder, die die Änderung nennt
 	for i := range beliebig {
 		beliebig[i] = pgxmock.AnyArg()
 	}

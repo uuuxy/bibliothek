@@ -74,7 +74,7 @@ func TestListBooks_TitelOhneExemplarNurInDerAufraeumsicht(t *testing.T) {
 		}
 	}
 
-	katalog, err := repo.ListBooks(ctx, "", nil, marke, false)
+	katalog, err := repo.ListBooks(ctx, "", marke, false)
 	if err != nil {
 		t.Fatalf("Katalog: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestListBooks_TitelOhneExemplarNurInDerAufraeumsicht(t *testing.T) {
 		map[string]string{"Mit Exemplar": mit, "Nur im Zulauf": zulauf},
 		map[string]string{"Ohne Exemplar": ohne, "Nur ausgesondert": ausgesondert})
 
-	aufraeumen, err := repo.ListBooks(ctx, "", nil, marke, true)
+	aufraeumen, err := repo.ListBooks(ctx, "", marke, true)
 	if err != nil {
 		t.Fatalf("Aufräumsicht: %v", err)
 	}

@@ -262,7 +262,7 @@ var checkBedingungenBestand = []string{
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
 	// (api/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.
 	"chk_exemplar_bestellstatus_nur_im_zulauf",
-	"chk_grade_level_bereich", "chk_inv_session_scope",
+	"chk_inv_session_scope",
 	// Migration 162, befragt am 08.10.2026: Die Spanne ist ganz gesetzt oder gar nicht, 1 bis
 	// 13, „von" nicht über „bis". Der Code kennt die Regel: inventur.pruefeJahrgangsSpanne weist
 	// beim Anlegen und beim Ändern mit einem Satz ab (400), beim Ändern am Stand nach der

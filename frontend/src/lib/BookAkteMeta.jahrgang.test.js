@@ -18,7 +18,7 @@ function einordnung(zusatz) {
 }
 
 // Der Kopf der Buchakte nennt den Jahrgang, wie Maske und Titelliste ihn führen: aus „von …
-// bis". Die frühere Angabe „Klasse" (gradeLevel) zählt nicht mehr.
+// bis".
 describe('Buchakte, Kopf: der Jahrgang', () => {
 	it('nennt ein Jahr und eine Spanne', () => {
 		const einJahr = einordnung({ jahrgangVon: 7, jahrgangBis: 7 });
@@ -27,8 +27,8 @@ describe('Buchakte, Kopf: der Jahrgang', () => {
 		expect(einordnung({ jahrgangVon: 7, jahrgangBis: 10 })).toContain('Jahrgang 7–10');
 	});
 
-	it('nennt ohne „von … bis" keinen Jahrgang, auch nicht aus der früheren Klasse', () => {
-		const text = einordnung({ jahrgangVon: 0, jahrgangBis: 0, gradeLevel: 7 });
+	it('nennt ohne „von … bis" keinen Jahrgang', () => {
+		const text = einordnung({ jahrgangVon: 0, jahrgangBis: 0 });
 		expect(text).toContain('Biologie');
 		expect(text).not.toContain('Jahrgang');
 	});

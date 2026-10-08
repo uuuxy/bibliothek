@@ -14,7 +14,6 @@ import (
 
 func TestBookRepository_ListBooks(t *testing.T) {
 	ctx := context.Background()
-	grade5 := int16(5)
 	lastCounted := "2023-01-01"
 
 	t.Run("success", func(t *testing.T) {
@@ -24,14 +23,14 @@ func TestBookRepository_ListBooks(t *testing.T) {
 		repo := NewBookRepository(mock)
 
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
-			WithArgs("Math", &grade5, "algebra", 50000).
+			WithArgs("Math", "algebra", 50000).
 			WillReturnRows(pgxmock.NewRows([]string{
-				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel",
+				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel",
 				"verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
 				"untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage",
 				"listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 			}).AddRow(
-				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", int16(5), "A", false,
+				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", "A", false,
 				2, 3, 0, &lastCounted, 1, "Buch", 5, 6,
 				"", "", 2020, map[string]any{}, "4. Aufl. 2023", nil, false, "werk-1", 2,
 			))
@@ -43,7 +42,7 @@ func TestBookRepository_ListBooks(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "standort", "anzahl"}).
 				AddRow("book-1", "Lehrerschrank", 2))
 
-		books, err := repo.ListBooks(ctx, "Math", &grade5, "algebra", false)
+		books, err := repo.ListBooks(ctx, "Math", "algebra", false)
 		assert.NoError(t, err)
 		assert.Len(t, books, 1)
 		if len(books) > 0 {
@@ -65,10 +64,10 @@ func TestBookRepository_ListBooks(t *testing.T) {
 		repo := NewBookRepository(mock)
 
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
-			WithArgs("", (*int16)(nil), "", 50000).
+			WithArgs("", "", 50000).
 			WillReturnError(fmt.Errorf("db connection failed"))
 
-		books, err := repo.ListBooks(ctx, "", nil, "", false)
+		books, err := repo.ListBooks(ctx, "", "", false)
 		assert.ErrorContains(t, err, "bücher konnten nicht geladen werden")
 		assert.Nil(t, books)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -197,12 +196,12 @@ func TestBookRepository_ListBooksByIDs(t *testing.T) {
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{
-				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel",
+				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "ist_lernmittel",
 				"verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
 				"untertitel", "verlag", "erscheinungsjahr", "erweiterte_eigenschaften", "auflage",
 				"listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 			}).AddRow(
-				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", int16(5), "A", false,
+				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", "A", false,
 				2, 3, 0, &lastCounted, 1, "Buch", 5, 6,
 				"", "", 2020, map[string]any{}, "4. Aufl. 2023", nil, false, "", 0,
 			))

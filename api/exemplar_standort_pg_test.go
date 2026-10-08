@@ -214,7 +214,7 @@ func TestExemplarStandort_ListeUndVorschlaegeZaehlenDenBestand(t *testing.T) {
 	setze(roman, "SL-7", "Lehrerschrank")
 
 	// Die Titel-Verwaltung: je Titel der häufigste Standort zuerst, ohne das ausgesonderte.
-	liste, err := inventur.NewBookRepository(pool).ListBooks(ctx, "", nil, "", false)
+	liste, err := inventur.NewBookRepository(pool).ListBooks(ctx, "", "", false)
 	if err != nil {
 		t.Fatalf("Katalogliste: %v", err)
 	}

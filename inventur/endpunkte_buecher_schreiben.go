@@ -11,7 +11,7 @@ import (
 	"bibliothek/pkg/kennung"
 )
 
-// validiereBuchErstellenEingabe prüft Titel, ISBN und Klassenstufe. Pflicht ist der Titel;
+// validiereBuchErstellenEingabe prüft Titel und ISBN. Pflicht ist der Titel;
 // die ISBN darf fehlen (Zeitschrift, Spiel, altes Buch) und wird nur geprüft, wenn sie dasteht.
 // ok=false: die Fehlerantwort wurde bereits geschrieben.
 func validiereBuchErstellenEingabe(antwort http.ResponseWriter, eingabe BuchEingabe) bool {
@@ -21,10 +21,6 @@ func validiereBuchErstellenEingabe(antwort http.ResponseWriter, eingabe BuchEing
 	}
 	if isbn := strings.TrimSpace(eingabe.ISBN); isbn != "" && !validiereISBN(isbn) {
 		writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
-		return false
-	}
-	if eingabe.KlassenStufe < 0 || eingabe.KlassenStufe > 13 {
-		writeError(antwort, http.StatusBadRequest, "gradeLevel muss zwischen 0 und 13 sein")
 		return false
 	}
 	return true
@@ -193,7 +189,6 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 	buch := Book{
 		ISBN:                    strings.TrimSpace(eingabe.ISBN),
 		Subject:                 strings.TrimSpace(eingabe.Fach),
-		GradeLevel:              eingabe.KlassenStufe,
 		Track:                   strings.TrimSpace(eingabe.Schulzweig),
 		IstLernmittel:           eingabe.IstLernmittel,
 		Stock:                   bestandOderNull(eingabe.Bestand),
