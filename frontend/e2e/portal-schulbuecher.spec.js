@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Lehrerportal → Reiter „Schulbücher" (03.09.2026): Die Fachsprecher wollen wissen,
 // wie viele Mathebücher die Schule hat. Grundlage ist allein die Angabe „Lernmittel" am
@@ -47,7 +47,7 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 		page
 	}) => {
 		await uiLogin(page, LEHRER_EMAIL);
-		await page.getByTitle('Mein Portal').click();
+		await menuepunkt(page, 'Mein Portal').click();
 		await page.getByRole('tab', { name: 'Schulbücher' }).click();
 
 		// Die Fach-Karte: 4 Exemplare, 1 Titel (der Freihand-Titel zählt nicht).

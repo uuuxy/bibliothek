@@ -5,7 +5,7 @@ import { test, expect } from '@playwright/test';
 // Warum bis in die DB: Der Fund des Tages (SettingField hatte type="number" als Standard,
 // Feld "text" — 13 Aufrufer schickten Strings ans Backend) war in der Oberfläche unsichtbar
 // und fiel erst am 400 des Servers auf. Ein Attribut-Vergleich alt/neu fand ihn nicht.
-import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, menuepunkt } from './helpers.js';
 const s = uniqueSuffix().slice(0, 6);
 const LEHRER = 'e2e-rt-lehrer@test.local';
 // Gültige ISBN-13 aus der Zeit: 978 + 9 Ziffern + Prüfziffer.
@@ -150,7 +150,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		const l = await browser.newContext();
 		const lp = await l.newPage();
 		await uiLogin(lp, LEHRER);
-		await lp.getByTitle('Mein Portal').click();
+		await menuepunkt(lp, 'Mein Portal').click();
 		await lp.getByRole('button', { name: 'Problem melden' }).click();
 		await lp.getByLabel('Worum geht es? *').fill(`RT Meldung ${s}`);
 		await lp.getByLabel('Klasse / Kurs').fill('7A');

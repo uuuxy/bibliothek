@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Mein Portal → „Schulbücher" (docs/OFFEN.md 4.18, Stufe 6): Ein Buch in zwei Auflagen ist
 // eine Kachel, die Fach-Karte zählt es als einen Titel, und die Kachel sagt, woraus die Zahl
@@ -29,7 +29,7 @@ test('Portal Schulbücher: ein Buch in zwei Auflagen ist eine Kachel mit der Sum
 
 	try {
 		await uiLogin(page, LEHRER_EMAIL);
-		await page.getByTitle('Mein Portal').click();
+		await menuepunkt(page, 'Mein Portal').click();
 		await page.getByRole('tab', { name: 'Schulbücher' }).click();
 
 		const karte = page.getByRole('button', { name: new RegExp(FACH) });

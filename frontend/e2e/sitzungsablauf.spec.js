@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, menuepunkt } from './helpers.js';
 
 // Sitzungsverlust mitten in der Arbeit (Betreiber-Befund 16.08. abends): Nach
 // Ablauf der 12h-Sitzung pollte das Badge in ein 401 nach dem anderen, die
@@ -24,8 +24,7 @@ test('Abgelaufene Sitzung führt zur Anmeldung statt zu stillen Fehlern', async 
 	// Gemessen wird ohnehin nicht, WER den 401 zuerst sieht — es ist derselbe Haken in
 	// apiFetch —, sondern was die App daraus macht. Kurze Frist, damit der Toast (5 s)
 	// darunter noch steht, wenn er im frühen Fall schon ausgelöst wurde.
-	await page
-		.getByTitle('Medienkatalog')
+	await menuepunkt(page, 'Medienkatalog')
 		.click({ timeout: 3000 })
 		.catch(() => {});
 

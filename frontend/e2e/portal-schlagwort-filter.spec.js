@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // „Mein Portal → Reservieren & Melden": Die Schlagworte, die die Pflegeseite als Filter
 // markiert, stehen als Filter-Chips unter der Suche (docs/OFFEN.md 4.20). Über den Draht
@@ -41,7 +41,7 @@ test.describe('Mein Portal: Filter nach Schlagwort', () => {
 		page
 	}) => {
 		await uiLogin(page, LEHRER_EMAIL);
-		await page.getByTitle('Mein Portal').click();
+		await menuepunkt(page, 'Mein Portal').click();
 
 		const filter = page.getByRole('group', { name: 'Nach Schlagwort filtern' });
 		const chip = filter.getByRole('button', { name: WORT });

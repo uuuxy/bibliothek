@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Die Aufschrift des gedruckten Ausweises, gemessen am LIVE-Pfad.
 //
@@ -35,7 +35,7 @@ function alterTitelImGespeichertenDesign() {
 
 /** @param {import('@playwright/test').Page} page */
 async function oeffneAkte(page, vorname, nachname) {
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 	const suche = page.getByLabel('Leser suchen');
 	await suche.click();
 	await suche.fill(nachname);

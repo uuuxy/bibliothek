@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Der Schalter "Preise im Bestellwesen" (Einstellungen → Bestellwesen).
 //
@@ -38,7 +38,7 @@ test('Preise aus: Warenkorb, Historie und Berichte zeigen Mengen statt Geld', as
 
 	setzePreiseErfassen(false);
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 	await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
 
 	// Kopfzeile: keine Ausgaben, sondern Exemplare.
@@ -58,14 +58,14 @@ test('Preise aus: Warenkorb, Historie und Berichte zeigen Mengen statt Geld', as
 
 	// Berichte: "Lieferantenabrechnung" waere ohne Preise schlicht falsch — abgerechnet
 	// wird nichts.
-	await page.getByTitle('Bestellberichte').click();
+	await menuepunkt(page, 'Bestellberichte').click();
 	await expect(page.getByText('Lieferantenübersicht')).toBeVisible();
 	await expect(page.getByText('Lieferantenabrechnung')).toHaveCount(0);
 
 	// BEWEIS, dass nichts gelöscht wurde: Schalter zurück, Beträge wieder da.
 	setzePreiseErfassen(true);
 	await page.reload();
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 	await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
 	await expect(page.getByText('Gesamtausgaben')).toBeVisible();
 	await page.getByRole('button', { name: new RegExp(`E2E-Preis-Lieferant ${s}`) }).click();

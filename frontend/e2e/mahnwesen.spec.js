@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Mahnwesen: überfällige Ausleihe erscheint in der Übersicht, und „Liste drucken" druckt
 // die Liste als Tabelle mit dem Buch.
@@ -24,7 +24,7 @@ test('Mahnwesen: überfälliger Schüler erscheint, „Liste drucken" druckt ihn
         SELECT e.id, s.id, (SELECT id FROM benutzer ORDER BY erstellt_am LIMIT 1), NOW() - INTERVAL '30 days', NOW() - INTERVAL '10 days' FROM e, s;
     `);
 
-	await page.getByTitle('Mahnwesen').click();
+	await menuepunkt(page, 'Mahnwesen').click();
 	// Die Tabelle listet Schüler (Medien nur als Zähler, keine Titel)
 	const zeile = page.getByRole('row', { name: new RegExp(`Saeumig-${suffix}`) });
 	await expect(zeile).toBeVisible();
@@ -69,7 +69,7 @@ test('Mahnbrief: aus der Auswahl gedruckt, danach steht die Mahnung in der Liste
         SELECT e.id, s.id, (SELECT id FROM benutzer ORDER BY erstellt_am LIMIT 1), NOW() - INTERVAL '30 days', NOW() - INTERVAL '10 days' FROM e, s;
     `);
 
-	await page.getByTitle('Mahnwesen').click();
+	await menuepunkt(page, 'Mahnwesen').click();
 	const zeile = page.getByRole('row', { name: new RegExp(`Briefkind-${suffix}`) });
 	await expect(zeile).toContainText('noch nicht gemahnt');
 	await expect(zeile).toContainText('10 Tage überfällig');

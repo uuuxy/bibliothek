@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, querySQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Settings-Enforcement: Eine Limit-Änderung muss beim NÄCHSTEN Checkout
 // sofort greifen (der Checkout liest system_einstellungen pro Vorgang).
@@ -39,7 +39,7 @@ test('Ausleihlimit 1: zweiter Checkout blockt sofort', async ({ page }) => {
             SELECT id, 'B-' || RIGHT(titel, LENGTH('Limit1-${suffix}')), true FROM t;
         `);
 
-		await page.getByTitle('Ausleihe').click();
+		await menuepunkt(page, 'Ausleihe').click();
 		const scanInput = page.getByPlaceholder(/scannen/i).first();
 		await scanInput.fill(`S-${suffix}`);
 		await scanInput.press('Enter');

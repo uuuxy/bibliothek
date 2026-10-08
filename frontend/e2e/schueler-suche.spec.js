@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Die Schülersuche fand Leute nicht — je nachdem, wie ihre Klasse heißt.
 //
@@ -20,7 +20,7 @@ test('Schülerdatei findet auch Schüler hinter der 500er-Grenze', async ({ page
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 
 	const suchfeld = page.getByLabel('Leser suchen');
 	await suchfeld.click();
@@ -42,7 +42,7 @@ test('Schülersuche: Reihenfolge und Schreibweise des Namens sind egal', async (
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 	const suchfeld = page.getByLabel('Leser suchen');
 	const treffer = page.getByText(`Jörg Müllermann${s}`).first();
 
@@ -79,7 +79,7 @@ test('Schülerdatei sucht auch nach Klasse — allein und zusammen mit einem Nam
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 	const suchfeld = page.getByLabel('Leser suchen');
 
 	// Klasse allein: beide Kinder.

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Inventur-Ablauf: starten (Signatur-Scope!) → scannen → abschließen.
 // WICHTIG: Der Test nutzt bewusst NUR den Signatur-Scope — ein globaler
@@ -25,7 +25,7 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
             SELECT id, b, true FROM t, unnest(ARRAY['B-INVA-${suffix}', 'B-INVB-${suffix}']) AS b;
         `);
 
-		await page.getByTitle('Inventur').click();
+		await menuepunkt(page, 'Inventur').click();
 		const neu = page.getByRole('button', { name: 'Neue Bestandsprüfung starten' });
 		await neu.click();
 
@@ -131,7 +131,7 @@ test('Inventur: verworfen steht nicht als vollständig in der Liste', async ({ p
             SELECT id, b, true FROM t, unnest(ARRAY['B-VERWA-${suffix}', 'B-VERWB-${suffix}']) AS b;
         `);
 
-		await page.getByTitle('Inventur').click();
+		await menuepunkt(page, 'Inventur').click();
 		await page.getByRole('button', { name: 'Neue Bestandsprüfung starten' }).click();
 		await page.getByText('Nur bestimmte Signatur').click();
 		await page.getByLabel('Signatur auswählen').fill(sigName);

@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, csrfToken, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import {
+	uiLogin,
+	apiPost,
+	csrfToken,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	menuepunkt
+} from './helpers.js';
 
 // DSGVO-Löschkette: Schüler über die UI archivieren (Tipp-Bestätigung),
 // im Papierkorb wiederfinden, wiederherstellen — plus die Schutzregel,
@@ -21,7 +29,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 	const { id: studentId } = await created.json();
 
 	// Konto öffnen → Stammdaten-Tab → Gefahrenzone
-	await page.getByTitle('Ausleihe').click();
+	await menuepunkt(page, 'Ausleihe').click();
 	const scanInput = page.getByPlaceholder(/scannen/i).first();
 	await scanInput.fill(`S-${suffix}`);
 	await scanInput.press('Enter');
@@ -35,7 +43,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 	await page.getByRole('button', { name: 'In den Papierkorb' }).click();
 
 	// Papierkorb zeigt den Gelöschten, Wiederherstellen bringt ihn zurück
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 	await page.getByRole('tab', { name: 'Papierkorb' }).click();
 	const zeile = page.getByRole('row', { name: new RegExp(`Korb-${suffix}`) });
 	await expect(zeile).toBeVisible();
@@ -43,7 +51,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 	await expect(zeile).not.toBeVisible();
 
 	// Wiederhergestellt: Konto per Scan wieder erreichbar
-	await page.getByTitle('Ausleihe').click();
+	await menuepunkt(page, 'Ausleihe').click();
 	await scanInput.fill(`S-${suffix}`);
 	await scanInput.press('Enter');
 	await expect(page.getByText(`Korb-${suffix}`).first()).toBeVisible();
@@ -108,7 +116,7 @@ test('Papierkorb: Endgültig löschen mit Rückfrage — und Blockade zeigt den 
         SELECT '${studentId}', e.id, 'E2E offener Schaden', 4.50, false FROM e;
     `);
 
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 	await page.getByRole('tab', { name: 'Papierkorb' }).click();
 	const zeile = page.getByRole('row', { name: new RegExp(`Purge-${suffix}`) });
 	await expect(zeile).toBeVisible();

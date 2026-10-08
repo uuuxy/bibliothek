@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Gemischte Auflagen an der Theke (docs/OFFEN.md 4.18, Stufe 5): Ein Kind der 7B hat die
 // 3. Auflage, ein zweites bekommt die 4. Auflage desselben Buchs. Die Ausleihe geht durch, und
@@ -27,7 +27,7 @@ test('Theke: Hinweis, wenn eine Klasse gemischte Auflagen bekommt', async ({ pag
 
 	try {
 		await uiLogin(page);
-		await page.getByTitle('Ausleihe').click();
+		await menuepunkt(page, 'Ausleihe').click();
 		const scan = page.getByPlaceholder(/scannen/i).first();
 		await scan.fill(`S-AUFB${s}`);
 		await scan.press('Enter');

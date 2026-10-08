@@ -42,29 +42,40 @@ test('Abgänger: Abschlussklasse mit offenem Buch — Saison entscheidet über L
         FROM ex, sA;
     `);
 
-	await uiLogin(page);
-	const antwort = await (await page.request.get('/api/abgaenger')).json();
-	await page.goto('/abgaenger');
+	// Der Titel heißt „Abgänger Buch …": Bliebe er liegen, träfe ein Klick auf den Menüpunkt
+	// „Abgänger" in späteren Läufen auch seine Kachel im Katalog.
+	try {
+		await uiLogin(page);
+		const antwort = await (await page.request.get('/api/abgaenger')).json();
+		await page.goto('/abgaenger');
 
-	if (!antwort.fenster.offen) {
-		// Außerhalb der Saison: Hinweis statt Liste — und der 9H1-Schüler mit Buch fehlt.
-		await expect(page.getByText('Abschlussklassen erscheinen hier ab Mai')).toBeVisible();
-		await expect(page.getByText(`Schuldet Noch-${s}`)).toHaveCount(0);
-		expect(antwort.abgaenger).toEqual([]);
-		expect((await page.request.get('/api/abgaenger/pdf')).status()).toBe(404);
-		return;
+		if (!antwort.fenster.offen) {
+			// Außerhalb der Saison: Hinweis statt Liste — und der 9H1-Schüler mit Buch fehlt.
+			await expect(page.getByText('Abschlussklassen erscheinen hier ab Mai')).toBeVisible();
+			await expect(page.getByText(`Schuldet Noch-${s}`)).toHaveCount(0);
+			expect(antwort.abgaenger).toEqual([]);
+			expect((await page.request.get('/api/abgaenger/pdf')).status()).toBe(404);
+			return;
+		}
+
+		// Schüler A (offene Ausleihe) erscheint …
+		await expect(page.getByText(`Schuldet Noch-${s}`)).toBeVisible();
+		// … Schüler B (entlastet, keine Ausleihe) NICHT. Erst nach dem sichtbaren
+		// A-Eintrag prüfen, damit die Liste sicher fertig geladen ist.
+		await expect(page.getByText(`Ist Entlastet-${s}`)).not.toBeVisible();
+
+		// Kontoauszug-PDF (Smoke): Der frühere „Laufzettel" ist längst der Kontoauszug mit
+		// Freigabezeile — jetzt heißt auch der Knopf so.
+		const downloadPromise = page.waitForEvent('download');
+		await page.getByRole('button', { name: /Kontoauszüge drucken/i }).click();
+		const download = await downloadPromise;
+		expect(download.suggestedFilename()).toBe('Kontoauszuege_Abgaenger.pdf');
+	} finally {
+		seedSQL(`
+			DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE barcode_id = 'B-abg-${s}');
+			DELETE FROM buecher_exemplare WHERE barcode_id = 'B-abg-${s}';
+			DELETE FROM buecher_titel WHERE isbn = '978a${s}';
+			DELETE FROM leser WHERE barcode_id IN ('S-abg1-${s}', 'S-abg2-${s}');
+		`);
 	}
-
-	// Schüler A (offene Ausleihe) erscheint …
-	await expect(page.getByText(`Schuldet Noch-${s}`)).toBeVisible();
-	// … Schüler B (entlastet, keine Ausleihe) NICHT. Erst nach dem sichtbaren
-	// A-Eintrag prüfen, damit die Liste sicher fertig geladen ist.
-	await expect(page.getByText(`Ist Entlastet-${s}`)).not.toBeVisible();
-
-	// Kontoauszug-PDF (Smoke): Der frühere „Laufzettel" ist längst der Kontoauszug mit
-	// Freigabezeile — jetzt heißt auch der Knopf so.
-	const downloadPromise = page.waitForEvent('download');
-	await page.getByRole('button', { name: /Kontoauszüge drucken/i }).click();
-	const download = await downloadPromise;
-	expect(download.suggestedFilename()).toBe('Kontoauszuege_Abgaenger.pdf');
 });

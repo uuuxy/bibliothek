@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 /** Die Abgänger-Ansicht zeigt ihre Zeilen nur in der Saison (01.05.–31.07.), die der
  *  Server bestimmt. Außerhalb gibt es keine Zeile zum Anklicken — dann überspringen,
@@ -40,7 +40,7 @@ test('Abgänger-Zeile klickbar → Schülerprofil öffnet sich', async ({ page }
 
 	await uiLogin(page);
 	await saisonOderUeberspringen(page);
-	await page.getByTitle('Abgänger').click();
+	await menuepunkt(page, 'Abgänger').click();
 
 	// Die Abgänger-Zeile ist als Button zugänglich (a11y) — anklicken.
 	await page
@@ -91,7 +91,7 @@ test('Profil-Reiter folgt der Absicht: Abgänger → Ausleihen, eigene Suche →
 	await saisonOderUeberspringen(page);
 
 	// Weg 1: aus den Abgängern heraus — die Frage ist "hat der noch Bücher?"
-	await page.getByTitle('Abgänger').click();
+	await menuepunkt(page, 'Abgänger').click();
 	await page
 		.getByRole('button', { name: new RegExp(`Profil von Reiter${s} Testschueler`) })
 		.click();

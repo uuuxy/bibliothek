@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedBenutzer } from './helpers.js';
+import { uiLogin, seedBenutzer, menuepunkt } from './helpers.js';
 
 // Rolle Leitung (Migration 121/122): alles außer den zwei Türen der Systempflege.
 //
@@ -28,13 +28,13 @@ test.describe('Rolle Leitung', () => {
 		// Solange sie „admin oder mitarbeiter" aufzählte, wäre eine Leitung hier im
 		// Kollegiums-Portal gelandet — ohne Fehlermeldung, einfach mit dem falschen
 		// Bildschirm.
-		await expect(page.getByTitle('Leserdatei')).toBeVisible();
-		await expect(page.getByTitle('Mahnwesen')).toBeVisible();
-		await expect(page.getByTitle('Medienkatalog')).toBeVisible();
+		await expect(menuepunkt(page, 'Leserdatei')).toBeVisible();
+		await expect(menuepunkt(page, 'Mahnwesen')).toBeVisible();
+		await expect(menuepunkt(page, 'Medienkatalog')).toBeVisible();
 
 		// „Statistiken" steht seit dem 17.09.2026 in der Sektion „Berichte" und ist damit
 		// OHNE Aufklappen sichtbar — deshalb steht die Prüfung vor dem Klick auf „System".
-		await expect(page.getByTitle('Statistiken')).toBeVisible();
+		await expect(menuepunkt(page, 'Statistiken')).toBeVisible();
 
 		// Die Gruppe „System" ist zugeklappt (so gebaut) — dort stehen die übrigen Punkte,
 		// um die es hier geht. Also aufklappen und DANN hinsehen: Die Prüfung soll den
@@ -43,10 +43,10 @@ test.describe('Rolle Leitung', () => {
 
 		// Das Logbuch gehört zur Führung der Bibliothek (audit_logs) und unterscheidet
 		// die Leitung vom Mitarbeiter, der es ab Werk nicht sieht.
-		await expect(page.getByTitle('System-Logs')).toBeVisible();
+		await expect(menuepunkt(page, 'System-Logs')).toBeVisible();
 
 		// „Benutzer & Rechte" bleibt weg — der Punkt hängt an genau einem Recht.
-		await expect(page.getByTitle('Benutzer & Rechte')).toHaveCount(0);
+		await expect(menuepunkt(page, 'Benutzer & Rechte')).toHaveCount(0);
 
 		// „Einstellungen" bleibt SICHTBAR, und das ist richtig: Der Punkt ist ein
 		// Sammelpunkt über sechs Kategorien mit verschiedenen Rechten (LUSD & Versetzung,
@@ -54,7 +54,7 @@ test.describe('Rolle Leitung', () => {
 		// führt, braucht diese Kategorien; verschlossen ist nur, was an manage_settings
 		// hängt — Schule, Fristen, Mailversand. Gemessen am 16.09.2026: Erst dieser Lauf
 		// hat gezeigt, dass „außer Einstellungen" nicht „außer dem Menüpunkt" heißt.
-		await expect(page.getByTitle('Einstellungen')).toBeVisible();
+		await expect(menuepunkt(page, 'Einstellungen')).toBeVisible();
 
 		// Die Grenze zieht der Server, nicht das Menü: Ein fehlender Menüpunkt ist eine
 		// Anzeige, kein Schloss — und ein VORHANDENER Menüpunkt sagt nichts darüber, was

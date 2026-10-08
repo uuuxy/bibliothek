@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL } from './helpers.js';
+import { uiLogin, seedSQL, menuepunkt } from './helpers.js';
 
 // Massendaten: realistische Obergrenze der Schule × 1,5 (2.000 Schüler) plus
 // der echte Wachstumstreiber — 50.000 Ausleihen Historie über die Jahre.
@@ -68,7 +68,7 @@ test('Massendaten: 2.000 Schüler + 50.000 Ausleihen — UI bleibt bedienbar', a
 		await uiLogin(page);
 
 		// Schülerdatei: öffnet und die Suche findet einen konkreten Schüler
-		await page.getByTitle('Leserdatei').click();
+		await menuepunkt(page, 'Leserdatei').click();
 		// Über das aria-Label statt über den Platzhaltertext: Der Platzhalter ist
 		// Beschriftung und darf sich ändern, ohne dass Tests reihenweise umfallen.
 		const suche = page.getByLabel('Leser suchen');
@@ -77,7 +77,7 @@ test('Massendaten: 2.000 Schüler + 50.000 Ausleihen — UI bleibt bedienbar', a
 		await expect(page.getByText('Schueler1234').first()).toBeVisible({ timeout: 15000 });
 
 		// Mahnwesen: lädt trotz 50k-Historie und zeigt die überfälligen Schüler
-		await page.getByTitle('Mahnwesen').click();
+		await menuepunkt(page, 'Mahnwesen').click();
 		await expect(page.getByRole('row', { name: /Mass Schueler/ }).first()).toBeVisible({
 			timeout: 15000
 		});

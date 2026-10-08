@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, csrfToken, seedBenutzer, seedSQL, uniqueSuffix, gehZu } from './helpers.js';
+import {
+	uiLogin,
+	csrfToken,
+	seedBenutzer,
+	seedSQL,
+	uniqueSuffix,
+	gehZu,
+	menuepunkt
+} from './helpers.js';
 
 // LMF-Plan als Reihenfolge (Absprache vom 05.09.2026, am echten Plan der Schule): Der Planer
 // bekommt Rahmen und Reihenfolge, der Server gießt sie auf Schultage × Stunden. Geprüft
@@ -164,7 +172,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	const lehrer = await lehrerKontext.newPage();
 	try {
 		await uiLogin(lehrer, LEHRER_EMAIL);
-		await lehrer.getByTitle('Mein Portal').click();
+		await menuepunkt(lehrer, 'Mein Portal').click();
 		await lehrer.getByRole('tab', { name: 'LMF-Plan' }).click();
 		const portal = lehrer.getByRole('region', { name: 'Bücherausgabe nach den Sommerferien' });
 		const portalZeile = portal.getByRole('row').filter({ hasText: vermerk });
@@ -456,7 +464,7 @@ test('LMF-Plan: Menüwechsel mit ungespeicherter Änderung fragt nach', async ({
 	const feld = tabelle.getByLabel(`Besonderheiten Zeile ${nummer}`);
 	await feld.fill('E2E ungespeichert');
 
-	await page.getByTitle('Ausleihe').click();
+	await menuepunkt(page, 'Ausleihe').click();
 	const dialog = page.getByRole('dialog', { name: 'Ungespeicherte Änderungen' });
 	await expect(dialog).toBeVisible();
 	await dialog.getByRole('button', { name: 'Bleiben' }).click();
@@ -464,7 +472,7 @@ test('LMF-Plan: Menüwechsel mit ungespeicherter Änderung fragt nach', async ({
 	await expect(page).toHaveURL(/\/schuljahr$/);
 	await expect(feld, 'die Eingabe steht noch').toHaveValue('E2E ungespeichert');
 
-	await page.getByTitle('Ausleihe').click();
+	await menuepunkt(page, 'Ausleihe').click();
 	await dialog.getByRole('button', { name: 'Verwerfen und weiter' }).click();
 	await expect(page).toHaveURL(/\/kiosk$/);
 });

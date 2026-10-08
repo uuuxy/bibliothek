@@ -10,7 +10,7 @@
 // nachweislich kein Auslagerungsziel für Backups, und genau das muss dastehen. Eine Seite,
 // die eine leere Liste zeigt, bestünde sonst jeden Test.
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedBenutzer, einstellungsKategorie } from './helpers.js';
+import { uiLogin, seedBenutzer, einstellungsKategorie, menuepunkt } from './helpers.js';
 
 // Eigene Anmeldeadresse, nicht die von helfer-kiosk.spec.js.
 //
@@ -32,7 +32,7 @@ test('Betriebsbereitschaft nennt die fehlende Auslagerung samt Abhilfe', async (
 	// — der Weg der Verwaltungskraft führt über die zugeklappte System-Gruppe, die
 	// Einstellungen und die Kategorie.
 	await page.getByRole('button', { name: 'System', exact: true }).click();
-	await page.getByTitle('Einstellungen').click();
+	await menuepunkt(page, 'Einstellungen').click();
 	await expect(page).toHaveURL(/\/einstellungen$/);
 	await einstellungsKategorie(page, 'Betriebsbereitschaft').click();
 

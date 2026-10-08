@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Hardware-Dauerfeuer: Barcode-Scanner tippen nicht wie Menschen — sie
 // feuern Zeichenkette + Enter in Millisekunden. Drei Bücher direkt
@@ -29,7 +29,7 @@ test('Scan-Dauerfeuer: drei Bücher in schneller Folge werden alle verbucht', as
         SELECT id, 'B-' || RIGHT(titel, LENGTH('Feuer1-${suffix}')), true FROM t;
     `);
 
-	await page.getByTitle('Ausleihe').click();
+	await menuepunkt(page, 'Ausleihe').click();
 	const scanInput = page.getByPlaceholder(/scannen/i).first();
 	await scanInput.fill(`S-${suffix}`);
 	await scanInput.press('Enter');

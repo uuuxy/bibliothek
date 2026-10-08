@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, navigationSteht } from './helpers.js';
+import { uiLogin, navigationSteht, menuepunkt } from './helpers.js';
 
 // Nebenbefund vom 25.08.2026 (Feld-Migration, Register): Die Bestell-Reiter brachen
 // bei 1280 px in zwei Zeilen um. Beim Nachmessen am 31.08. war der Fall durch den
@@ -36,7 +36,7 @@ async function misstEineZeile(page, name) {
 test('Bestell-Reiter: eine Zeile bei 1280 px (historischer Befund)', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 800 });
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 	await misstEineZeile(page, 'Bereiche des Bestellwesens');
 });
 
@@ -47,7 +47,7 @@ test('Bestell-Reiter: eine Zeile auch bei 860 px — scrollen statt umbrechen', 
 	// den die 860 px kalibriert sind: mit ausgeklappter Navigation.
 	await page.getByRole('button', { name: 'Navigation ausklappen' }).click();
 	await navigationSteht(page, 'ausgeklappt');
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 	await misstEineZeile(page, 'Bereiche des Bestellwesens');
 });
 
@@ -67,7 +67,7 @@ test('Reiter tragen die M3-Masse: Label 500/14px, Indikator 3 px oben gerundet',
 	page
 }) => {
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 	const leiste = page.getByRole('tablist', { name: 'Bereiche des Bestellwesens' });
 	await expect(leiste).toBeVisible();
 

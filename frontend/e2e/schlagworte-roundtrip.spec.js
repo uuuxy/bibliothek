@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, querySQL, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, querySQL, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Schlagworte am Titel (Migration 138) über den echten Klickpfad bis in die Datenbank.
 //
@@ -32,7 +32,7 @@ test('Schlagworte: eintragen, erhalten beim Speichern ohne Änderung, einzeln en
 
 	/** Öffnet die Maske „Buch bearbeiten" über die Titel-Verwaltung. */
 	async function oeffne() {
-		await page.getByTitle('Medienkatalog').click();
+		await menuepunkt(page, 'Medienkatalog').click();
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 		const suche = page.getByRole('searchbox', { name: 'Bücher durchsuchen' });
 		await expect(suche).toBeVisible({ timeout: 15000 });

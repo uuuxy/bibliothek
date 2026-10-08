@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, apiPatch, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, apiPatch, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 /**
  * Legt einen Schüler samt ausleihbarem Buch an, sperrt ihn auf die gewünschte Art und
@@ -56,7 +56,7 @@ async function openBlockedStudent(page, suffix, art) {
     `);
 
 	// Ausleihe: Schüler scannen → Profil öffnet sich
-	await page.getByTitle('Ausleihe').click();
+	await menuepunkt(page, 'Ausleihe').click();
 	const scanInput = page.getByPlaceholder(/scannen/i).first();
 	await scanInput.fill(studentBarcode);
 	await scanInput.press('Enter');

@@ -390,20 +390,12 @@ Vermerk.
   auf ein Merkmal des Inhalts warten (Kachel, Tabellenzeile). Dieselbe Form des Wartens steht
   in `typo-rollen.spec.js`, `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`, dort
   nicht nachgemessen. Kategorie B.
-- 46 Specs klicken Menüpunkte per `page.getByTitle('<Name>')`, 94 Stellen (gezählt am
-  06.10.2026). Das trifft jedes Element, dessen `title` den Namen enthält, auch die Kachel
-  eines Buchs. `e2e/abgaenger-management.spec.js` legt Titel „Abgänger Buch …" an und räumt
-  sie nicht ab. Die zwei Klicks auf „Abgänger" (`schueler-profil-klick.spec.js`) kommen heute
-  von der Theke, wo keine Kachel steht; vom Katalog aus träfen sie auch die Kachel. Abhilfe:
-  `menuepunkt` aus `e2e/helpers.js` an allen Stellen (heute in drei Specs), und die Spec räumt
-  ihren Titel ab. Kategorie B.
 - Browser-Tests lassen Daten liegen (in der CI ist die Datenbank je Lauf frisch; lokale
   Zahlen tragen die Reste mit). Am 06.10.2026 einzeln gestartet und an der lokalen Datenbank
   gezählt: `e2e/bestellung-detail.spec.js` bestellt drei Exemplare am ersten Titel des
   Katalogs und nimmt nur den Lieferanten wieder weg; der Teardown löscht die Bestellung, die
-  drei Exemplare bleiben „im Zulauf" ohne Bestellung. `e2e/abgaenger-management.spec.js` lässt
-  einen Titel „Abgänger Buch …" mit einem Exemplar liegen, `e2e/zugangsbuch.spec.js` einen
-  Titel mit zwei Exemplaren. Am Code gelesen: Der Wareneingang-Test in
+  drei Exemplare bleiben „im Zulauf" ohne Bestellung. `e2e/zugangsbuch.spec.js` lässt einen
+  Titel mit zwei Exemplaren liegen. Am Code gelesen: Der Wareneingang-Test in
   `e2e/scrollbereiche.spec.js` legt acht Titel mit je einem Exemplar im Zulauf an und räumt
   sie nicht ab. Abhilfe je Spec: eigener Titel, Aufräumen über die Kennung. Kategorie B.
 - Code, den kein Go-Test ausführt (gemessen am 07.10.2026 mit der ganzen Suite und `-coverpkg`

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Lehrerportal → Reiter „Lernmittel" (Betreiber-Entscheidung 24.08.2026): Das
 // Kollegium sieht die Klassensatz-Zuordnung (der Jahrgangs-Reiter ist seit 02.09.2026 weg) —
@@ -57,7 +57,7 @@ test.describe('Lehrerportal: Lernmittel', () => {
 
 	test('Lehrkraft sieht die Klassensatz-Zuordnung, nur lesend', async ({ page }) => {
 		await uiLogin(page, LEHRER_EMAIL);
-		await page.getByTitle('Mein Portal').click();
+		await menuepunkt(page, 'Mein Portal').click();
 		// Seit 25.08.2026 zwei Reiter statt eines gestapelten Lernmittel-Reiters.
 		await page.getByRole('tab', { name: 'Klassensätze' }).click();
 

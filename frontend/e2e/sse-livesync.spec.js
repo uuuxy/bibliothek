@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Mehrplatz-Betrieb (bis zu 10 PCs): Das System verspricht per SSE, dass
 // alle Plätze denselben Stand sehen. Zwei echte Browser-Kontexte:
@@ -32,14 +32,14 @@ test('Livesync: Rückgabe an PC A aktualisiert das offene Konto an PC B', async 
 		await uiLogin(pageB);
 
 		// PC B: Konto öffnen, Buch ist sichtbar
-		await pageB.getByTitle('Ausleihe').click();
+		await menuepunkt(pageB, 'Ausleihe').click();
 		const scanB = pageB.getByPlaceholder(/scannen/i).first();
 		await scanB.fill(`S-${suffix}`);
 		await scanB.press('Enter');
 		await expect(pageB.getByText(`E2E-Syncbuch-${suffix}`).first()).toBeVisible();
 
 		// PC A: Rückgabe buchen
-		await pageA.getByTitle('Ausleihe').click();
+		await menuepunkt(pageA, 'Ausleihe').click();
 		const scanA = pageA.getByPlaceholder(/scannen/i).first();
 		await scanA.fill(`B-${suffix}`);
 		await scanA.press('Enter');

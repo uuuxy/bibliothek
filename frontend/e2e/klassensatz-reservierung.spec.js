@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, seedBenutzer, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, seedBenutzer, uniqueSuffix, menuepunkt } from './helpers.js';
 
 test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
 	// 1. Seed a book title and a reservation
@@ -16,7 +16,7 @@ test('Klassensatz-Reservierung "erledigen"', async ({ page }) => {
 	await uiLogin(page);
 
 	// 3. Navigation zu Bestellwesen -> Klassensätze
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 
 	// Über die Rolle „tab", nicht „button": Seit dem 09.08.2026 trägt die Reiterzeile
 	// role=tablist/tab (vorher nackte <button>, ein Screenreader hörte sechs
@@ -90,7 +90,7 @@ test('Klassensatz: Bibliotheks-Notiz und Bereit-Status stehen im Portal der Lehr
     `);
 
 	await uiLogin(page, LEHRKRAFT);
-	await page.getByTitle('Mein Portal').click();
+	await menuepunkt(page, 'Mein Portal').click();
 
 	await expect(page.getByText('Bereitgestellt', { exact: true })).toBeVisible();
 	await expect(page.getByText(`E2E Notizweg Buch ${s}`)).toBeVisible();
@@ -122,7 +122,7 @@ test('Klassensatz-Warteschlange: Chip vor dem Klick, Vordermann nach dem Absende
 	const LEHRKRAFT = `e2e-ksq-${s}@test.local`;
 	seedBenutzer(LEHRKRAFT, 'kollegium');
 	await uiLogin(page, LEHRKRAFT);
-	await page.getByTitle('Mein Portal').click();
+	await menuepunkt(page, 'Mein Portal').click();
 
 	await page
 		.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' })
@@ -176,7 +176,7 @@ test('Klassensatz-Warteschlange: Reihenfolge und Regal-Blick im Erledigen-Tab', 
     `);
 
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 	await page.getByRole('tab', { name: /Klassensatz-Reservierungen/i }).click();
 
 	const zeilen = page.locator('li').filter({ hasText: `E2E KSQ Tab ${s}` });

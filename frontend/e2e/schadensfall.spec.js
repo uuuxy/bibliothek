@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix, gehZu } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, uniqueSuffix, gehZu, menuepunkt } from './helpers.js';
 
 // Schadensfall: Verlust melden beendet die Ausleihe und macht die offene Forderung im
 // Profil sichtbar — samt „Bescheid erstellen" an der Gebühren-Karte (seit 15.09.2026) und
@@ -32,7 +32,7 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
     `);
 
 	// Konto öffnen, entliehenes Buch sichtbar
-	await page.getByTitle('Ausleihe').click();
+	await menuepunkt(page, 'Ausleihe').click();
 	const scanInput = page.getByPlaceholder(/scannen/i).first();
 	await scanInput.fill(`S-${suffix}`);
 	await scanInput.press('Enter');

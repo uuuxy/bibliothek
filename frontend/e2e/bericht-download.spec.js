@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, menuepunkt } from './helpers.js';
 
 // "Ich klicke auf PDF herunterladen und lande in der Ausleihe."
 //
@@ -17,7 +17,7 @@ test('Bericht-Download liefert das PDF, nicht die App', async ({ page, context }
 	await uiLogin(page);
 	// Eigener Bildschirm unter „Berichte" seit dem 17.09.2026 (vorher ein Reiter im
 	// Bestellwesen) — der Klick geht über den Menüpunkt, damit der Weg mitgeprüft wird.
-	await page.getByTitle('Bestellberichte').click();
+	await menuepunkt(page, 'Bestellberichte').click();
 
 	const link = page.getByRole('link', { name: /PDF herunterladen/ });
 	await expect(link).toHaveAttribute('href', /\/api\/bestellhistorie\/bericht\?/);

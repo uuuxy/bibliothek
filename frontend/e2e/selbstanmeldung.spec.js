@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, ADMIN_PASSWORD } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, ADMIN_PASSWORD, menuepunkt } from './helpers.js';
 
 // Der ganze Weg einer Lehrkraft OHNE Konto (26.08.2026). Bis dahin war jedes Glied
 // einzeln getestet (PG-Test für die Anlage, Unit-Test für die Meldung), aber nie die
@@ -51,7 +51,7 @@ test('Selbstanmeldung: Antrag → sichtbar → freigeschaltet → nur Mein Porta
 	//    Punkt irgendwo darin — und schaltet frei.
 	await uiLogin(page);
 	await page.getByRole('button', { name: 'System', exact: true }).click(); // Gruppe aufklappen
-	await page.getByTitle('Benutzer & Rechte').click();
+	await menuepunkt(page, 'Benutzer & Rechte').click();
 	await expect(page.getByRole('status')).toContainText(/Zugangsanfrage[\s\S]*Erika Selbst/);
 	await page.getByRole('searchbox', { name: 'Benutzer suchen' }).fill(EMAIL);
 	const zeile = page.locator('tr').filter({ hasText: EMAIL });

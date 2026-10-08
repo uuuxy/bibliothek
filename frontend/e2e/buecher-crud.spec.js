@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, csrfToken, querySQL, seedSQL, uniqueSuffix } from './helpers.js';
+import {
+	uiLogin,
+	apiPost,
+	csrfToken,
+	querySQL,
+	seedSQL,
+	uniqueSuffix,
+	menuepunkt
+} from './helpers.js';
 
 // Bücher-CRUD über die /api/books-Schnittstelle (die auch das Admin-Formular
 // nutzt) + Katalog-Suche im UI + der Signatur-Schutz aus Migration 038:
@@ -38,7 +46,7 @@ test('Bücher: anlegen, Exemplare, Katalog-Suche, Signatur übersteht Littera-Im
 		).toBe('2');
 
 		// 2. Katalog-Suche im UI: Titel finden, Karte zeigt die ISBN
-		await page.getByTitle('Medienkatalog').click();
+		await menuepunkt(page, 'Medienkatalog').click();
 		await page.getByRole('tab', { name: 'Suche & Filter' }).click();
 		// Ueber den zugaenglichen Namen, nicht ueber den Platzhalter: Der Text im Feld ist
 		// Beschriftung und darf sich aendern (am 10.08.2026 tat er das, als alle Suchfelder
@@ -103,7 +111,7 @@ test('Bücher: Bearbeiten ohne Änderung erhält die erweiterten Eigenschaften',
 		});
 		expect(created.ok(), `Buch anlegen: ${created.status()}`).toBeTruthy();
 
-		await page.getByTitle('Medienkatalog').click();
+		await menuepunkt(page, 'Medienkatalog').click();
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 		const suche = page.getByRole('searchbox', { name: 'Bücher durchsuchen' });
 		await expect(suche).toBeVisible({ timeout: 15000 });

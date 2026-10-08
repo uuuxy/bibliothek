@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // „Mein Portal" findet auch Schulbücher (Lernmittel) und Titel, deren Exemplare bestellt und
 // noch nicht eingetroffen sind. Der öffentliche Katalog zeigt beides nicht; reserviert
@@ -30,7 +30,7 @@ test.describe.serial('Portal: Schulbücher und bestellte Titel in der Suche', ()
 
 	test('Ein Schulbuch wird gefunden und lässt sich reservieren', async ({ page }) => {
 		await uiLogin(page, LEHRER);
-		await page.getByTitle('Mein Portal').click();
+		await menuepunkt(page, 'Mein Portal').click();
 		const suchfeld = page.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' });
 
 		await suchfeld.fill(SCHULBUCH);
@@ -57,7 +57,7 @@ test.describe.serial('Portal: Schulbücher und bestellte Titel in der Suche', ()
 		page
 	}) => {
 		await uiLogin(page, LEHRER);
-		await page.getByTitle('Mein Portal').click();
+		await menuepunkt(page, 'Mein Portal').click();
 		await page
 			.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' })
 			.fill(SCHULBUCH);
@@ -68,7 +68,7 @@ test.describe.serial('Portal: Schulbücher und bestellte Titel in der Suche', ()
 
 	test('Ein Titel, der nur bestellt ist, steht mit „bestellt" in der Liste', async ({ page }) => {
 		await uiLogin(page, LEHRER);
-		await page.getByTitle('Mein Portal').click();
+		await menuepunkt(page, 'Mein Portal').click();
 		await page
 			.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' })
 			.fill(BESTELLT);

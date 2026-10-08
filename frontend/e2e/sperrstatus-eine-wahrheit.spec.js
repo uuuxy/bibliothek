@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Fund 31.08.2026 (auf flasch3): Ein Demo-Schüler stand als „Gesperrt" in Liste
 // und Profil, der Knopf bot trotzdem „Schüler sperren" an; nach Sperren+Entsperren
@@ -46,7 +46,7 @@ test('Sperrstatus: eine Wahrheit für Liste, Profil und Umschalter', async ({ pa
 
 	// 1) Die LISTE nennt beide „Gesperrt" — vorher stand der manuell Gesperrte
 	//    als „Alles ok" da (Liste las nur ist_gesperrt).
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 	const suche = page.getByPlaceholder(/Name, Klasse oder Ausweisnummer/);
 	await suche.fill(`Handschloss-${suffix}`);
 	// Die Zeile trägt role="button" (klickbare Zeile) — daher tr-Locator statt Rolle.
@@ -75,7 +75,7 @@ test('Sperrstatus: eine Wahrheit für Liste, Profil und Umschalter', async ({ pa
 	// Die Anzeige bleibt bei der Wahrheit der Datenbank — auch nach dem Neuladen, der Stelle,
 	// an der am 31.08.2026 die erfundene Formel aufflog.
 	await page.reload();
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 	await suche.fill(`Systemsperre-${suffix}`);
 	await expect(zeile2.getByText('Alles ok')).toBeVisible();
 });

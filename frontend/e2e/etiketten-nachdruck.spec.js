@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu, menuepunkt } from './helpers.js';
 
 // Der Anlass (Betreiber): Eine Lieferung ist im System freigegeben, aber die Etiketten
 // kamen nie aus dem Drucker. Danach gab es keinen Weg mehr zu genau diesen Exemplaren
@@ -22,7 +22,7 @@ test('Fehlende Etiketten: Exemplare finden, auswählen und an den Druck übergeb
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Druck-Center').click();
+	await menuepunkt(page, 'Druck-Center').click();
 	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 
 	// Auf den eigenen Bestand eingrenzen — die Liste zeigt alles, was noch kein Etikett hat.
@@ -59,7 +59,7 @@ test('Nach dem Druck sind die Exemplare als gedruckt vermerkt', async ({ page, c
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Druck-Center').click();
+	await menuepunkt(page, 'Druck-Center').click();
 	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 
 	const filter = page.getByLabel('Exemplare filtern');
@@ -108,7 +108,7 @@ test('Bestellwesen weist auf offene Etiketten hin und führt in die Liste', asyn
 	// 09.08.2026 aber als BADGE am Ziel statt als Streifen im Bestellwesen. Das ist die
 	// M3-Aufgabe eines Badges: am Navigationsziel anzeigen, dass dort Arbeit liegt. Der
 	// Streifen stand auf einer Seite, die mit dem Drucken nichts zu tun hat.
-	const druckCenter = page.getByTitle('Druck-Center');
+	const druckCenter = menuepunkt(page, 'Druck-Center');
 	await expect(druckCenter.locator('span').filter({ hasText: /^\d+\+?$|^999\+$/ })).toBeVisible();
 
 	// BEWEIS: Der Weg endet nicht irgendwo im Druck-Center, sondern in der Liste — der
@@ -206,7 +206,7 @@ test('Bestellhistorie verweist auf Nachdruck und Titelsatz — und nur, wenn es 
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 	await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
 
 	// Bestellung aufklappen
@@ -259,7 +259,7 @@ test('Altbestand aufräumen vermerkt nur Exemplare bis zum Stichtag', async ({ p
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Druck-Center').click();
+	await menuepunkt(page, 'Druck-Center').click();
 	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 
 	// Seit dem 04.09.2026 ein Dialog statt eines <details> am Fuß der Liste: Die Aktion ist
@@ -312,7 +312,7 @@ test('Etiketten von Hand vermerken und wieder öffnen', async ({ page }) => {
 	expect(flag(), 'Ausgangslage: Etikett steht aus').toBe('f');
 
 	await uiLogin(page);
-	await page.getByTitle('Druck-Center').click();
+	await menuepunkt(page, 'Druck-Center').click();
 	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 
 	// 1. Von Hand als erledigt vermerken — ohne Druck.
@@ -357,7 +357,7 @@ test('Ist die Liste gedeckelt, sagt sie es — mit beiden Zahlen', async ({ page
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Druck-Center').click();
+	await menuepunkt(page, 'Druck-Center').click();
 	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 	await page.getByRole('searchbox', { name: 'Exemplare filtern' }).fill(marke);
 
@@ -389,7 +389,7 @@ test('Der gefüllte Knopf trägt in jeder Stufe eine Aktion, die dort möglich i
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Druck-Center').click();
+	await menuepunkt(page, 'Druck-Center').click();
 	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 	await page.getByRole('button', { name: 'Erledigt', exact: true }).click();
 	await page.getByRole('searchbox', { name: 'Exemplare filtern' }).fill(`E2E-STUF-${s}`);

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Stapeldruck der Schülerausweise aus der Schülerdatei.
 //
@@ -36,7 +36,7 @@ test.describe('Ausweis-Stapeldruck', () => {
 		page
 	}) => {
 		await uiLogin(page);
-		await page.getByTitle('Leserdatei').click();
+		await menuepunkt(page, 'Leserdatei').click();
 
 		// Auf die drei Testschüler eingrenzen — die Suche läuft auf dem Server.
 		await page.getByLabel('Leser suchen').fill(`Stapel${marke}`);
@@ -75,7 +75,7 @@ test.describe('Ausweis-Stapeldruck', () => {
 
 	test('Einzelauswahl öffnet nicht das Profil', async ({ page }) => {
 		await uiLogin(page);
-		await page.getByTitle('Leserdatei').click();
+		await menuepunkt(page, 'Leserdatei').click();
 		await page.getByLabel('Leser suchen').fill(`Stapel${marke}`);
 		await expect(page.locator('tbody tr').filter({ hasText: `Stapel${marke}` })).toHaveCount(3);
 

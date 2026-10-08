@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Fund 31.08.2026 nachts (Duc-Bauer-Spur, flasch3): ListStudentsWithStats filterte
 // nur deleted_at — ein als Abgänger markierter Schüler stand zusätzlich mitten in
@@ -34,7 +34,7 @@ test('Aktive Schüler zeigt keine Ehemaligen — die stehen im Archiv-Reiter', a
         SELECT ex.id, '${id}', NOW() + INTERVAL '10 days' FROM ex;
     `);
 
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 	const suche = page.getByPlaceholder(/Name, Klasse oder Ausweisnummer/);
 	await suche.fill(`Weggegangen-${suffix}`);
 

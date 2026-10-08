@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, uniqueSuffix, scanneWieScanner } from './helpers.js';
+import { uiLogin, apiPost, uniqueSuffix, scanneWieScanner, menuepunkt } from './helpers.js';
 
 // Die Geräteausleihe am ganzen Weg (16.08.2026 — vorher war sie ein Backend-Torso:
 // keine Verwaltung, und die Omnibox konnte die Zubehör-Checkliste nie bestätigen).
@@ -15,7 +15,7 @@ test('Geräteausleihe: anlegen, Checkliste bestätigen, ausleihen, zurückgeben'
 	await uiLogin(page);
 
 	// 1. Gerät im Medienkatalog anlegen (Bereich „Geräte").
-	await page.getByTitle('Medienkatalog').click();
+	await menuepunkt(page, 'Medienkatalog').click();
 	await page.getByRole('tab', { name: 'Geräte' }).click();
 	await page.getByRole('button', { name: 'Gerät anlegen' }).click();
 	await page.getByLabel('Modellname *').fill(`E2E-Tablet ${s}`);
@@ -37,7 +37,7 @@ test('Geräteausleihe: anlegen, Checkliste bestätigen, ausleihen, zurückgeben'
 	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
 
 	// 3. Kiosk: Schüler scannen, Gerät scannen → Checkliste erscheint, nichts ist gebucht.
-	await page.getByTitle('Ausleihe').click();
+	await menuepunkt(page, 'Ausleihe').click();
 	const scan = page.getByPlaceholder(/scannen/i).first();
 	await scan.fill(`S-${s}`);
 	await scan.press('Enter');

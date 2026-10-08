@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, csrfToken, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, csrfToken, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Etikettendruck — die Brücke zur physischen Welt: ohne funktionierende
 // Barcode-Bögen kann das Sekretariat keine neuen Bücher auszeichnen.
@@ -84,7 +84,7 @@ test('Wareneingang → Druck-Vorschlag öffnet den Etikettendruck (keine weiße 
     `);
 
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 
 	// Wareneingang öffnen. Seit 09.08.2026 ein eigener Reiter statt eines Streifens über
 	// dem Bestellbedarf: Ein Banner ist in M3 kein Bauteil mehr, und der Zulauf ist eine

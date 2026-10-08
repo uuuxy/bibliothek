@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Positiv-Pfad der Klassensatz-Reservierung: bisher war nur das Abschließen
 // durch den Admin getestet (klassensatz-reservierung.spec.js) — hier legt
@@ -32,7 +32,7 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
 	// hat, und der Router stellt sie ohnehin dorthin. Der Klick schadet nicht und hält
 	// den Test unabhängig davon, welcher Tab beim Start gewinnt.
 	await uiLogin(page, LEHRER_EMAIL);
-	await page.getByTitle('Mein Portal').click();
+	await menuepunkt(page, 'Mein Portal').click();
 	// KEINE Ueberschrift pruefen: Seiten tragen seit a3e4184 bewusst keinen eigenen
 	// Titel — die Seitenleiste sagt, wo man ist. Geprueft wird stattdessen das, was die
 	// Seite AUSMACHT: ihr Suchfeld — ueber den zugaenglichen Namen, nicht ueber den

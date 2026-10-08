@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 /**
  * Seedet einen Schüler mit aktiver Ausleihe direkt in der DB —
@@ -28,7 +28,7 @@ test('Rückgabe: entliehenes Buch scannen bucht es zurück', async ({ page }) =>
 	await uiLogin(page);
 	const { bookBarcode, bookTitle } = seedStudentWithLoan(uniqueSuffix());
 
-	await page.getByTitle('Ausleihe').click();
+	await menuepunkt(page, 'Ausleihe').click();
 	const scanInput = page.getByPlaceholder(/scannen/i).first();
 	await scanInput.fill(bookBarcode);
 	await scanInput.press('Enter');
@@ -57,7 +57,7 @@ test('Fremdrückgabe: Scan 1 bucht nur beim Vorbesitzer aus, Scan 2 leiht an die
 	});
 	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
 
-	await page.getByTitle('Ausleihe').click();
+	await menuepunkt(page, 'Ausleihe').click();
 	const scanInput = page.getByPlaceholder(/scannen/i).first();
 	await scanInput.fill(`S-Z${suffix}`);
 	await scanInput.press('Enter');

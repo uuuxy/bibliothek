@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { seedSQL, querySQL, uniqueSuffix, uiLogin } from './helpers.js';
+import { seedSQL, querySQL, uniqueSuffix, uiLogin, menuepunkt } from './helpers.js';
 
 // Der Bestätigungs-Link, den der Lieferant aus der Bestellmail öffnet.
 //
@@ -168,7 +168,7 @@ test('Die Bestellung erscheint im Haus als bestätigt — ohne die Zeile aufzukl
 
 	// Und die Bibliothek sieht es in der Bestellhistorie, in der eingeklappten Zeile.
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 	await page.getByRole('tab', { name: 'Bestellhistorie', exact: true }).click();
 
 	const zeile = page.locator('tbody tr', { hasText: `K-${s}` }).first();

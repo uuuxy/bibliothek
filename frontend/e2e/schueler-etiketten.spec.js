@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix, csrfToken } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, csrfToken, menuepunkt } from './helpers.js';
 
 // Schüler-Etiketten (Betreiber-Entscheidung 24.08.2026): Der A4-Kartenbogen ist
 // abgeschafft, an seiner Stelle steht ein Klebebogen mit Name, Klasse und Barcode.
@@ -40,7 +40,7 @@ test.describe('Schüler-Etiketten', () => {
 		await uiLogin(page);
 
 		// ── Ausweis-Designer: der Schalter, wo früher „A4-Bogen" stand ──
-		await page.getByTitle('Druck-Center').click();
+		await menuepunkt(page, 'Druck-Center').click();
 		await page.getByRole('tab', { name: 'Schülerausweise' }).click();
 
 		const kartendrucker = page.getByRole('button', { name: 'Kartendrucker', exact: true });
@@ -75,7 +75,7 @@ test.describe('Schüler-Etiketten', () => {
 		await expect(page.getByText('Zentral gespeichert')).toBeVisible();
 
 		// ── Schülerdatei: derselbe Zustand, anderer Bildschirm ──
-		await page.getByTitle('Leserdatei').click();
+		await menuepunkt(page, 'Leserdatei').click();
 		await page.getByLabel('Leser suchen').fill(`Etikett${s}`);
 		// GESAMTzahl der Zeilen, nicht nur die passenden: Mit 10.000 Schülern in der DB
 		// standen die zwei gesuchten schon in der ungefilterten ersten Seite (500), die
@@ -132,7 +132,7 @@ test.describe('Schüler-Etiketten', () => {
 		page
 	}) => {
 		await uiLogin(page);
-		await page.getByTitle('Druck-Center').click();
+		await menuepunkt(page, 'Druck-Center').click();
 		await page.getByRole('tab', { name: 'Klassenweise drucken' }).click();
 
 		await page.getByRole('combobox', { name: 'Klasse' }).click();
@@ -156,7 +156,7 @@ test.describe('Schüler-Etiketten', () => {
 		// Gegenprobe zum Test darüber. Ohne sie belegte er nur, dass IRGENDETWAS anders
 		// wird, sobald man den Schalter umlegt — nicht, dass der Kartenweg heil ist.
 		await uiLogin(page);
-		await page.getByTitle('Leserdatei').click();
+		await menuepunkt(page, 'Leserdatei').click();
 		await page.getByLabel('Leser suchen').fill(`Etikett${s}`);
 		await expect(page.locator('tbody tr').filter({ hasText: `Etikett${s}` })).toHaveCount(2);
 		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();

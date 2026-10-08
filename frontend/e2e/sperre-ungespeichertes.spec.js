@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix, ADMIN_PASSWORD } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, ADMIN_PASSWORD, menuepunkt } from './helpers.js';
 
 // Hinter dem Sperrbildschirm bleibt die Anwendung stehen, ausgeblendet und träge: Was getippt
 // und nicht gespeichert war, steht nach dem Aufschließen noch da. Gesperrt zeigt die
@@ -20,7 +20,7 @@ async function anmelden(page) {
 	await uiLogin(page);
 	await fristen;
 	// Ohne Neuladen in die Titel-Verwaltung: Ein Neuladen stellte die Uhr der Sperre neu.
-	await page.getByTitle('Medienkatalog').click();
+	await menuepunkt(page, 'Medienkatalog').click();
 	await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 }
 

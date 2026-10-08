@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Escape bringt von überall zurück an die Theke. Der Kurzbefehl galt bedingungslos —
 // und machte damit die Berichte unbenutzbar: Die Ansicht besteht aus Monats-, Jahres- und
@@ -11,7 +11,7 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 // Berichte fielen nur zuerst auf, weil sie fast nur aus solchen Feldern bestehen.
 test('Escape in einem Eingabefeld verlässt die Ansicht nicht', async ({ page }) => {
 	await uiLogin(page);
-	await page.getByTitle('Bestellberichte').click();
+	await menuepunkt(page, 'Bestellberichte').click();
 	await expect(page.getByText('Bestellbericht erstellen')).toBeVisible();
 
 	// So bedient man ein Monatsfeld: anklicken, Auswahlfenster mit Escape schließen.
@@ -31,7 +31,7 @@ test('Escape in einem Eingabefeld verlässt die Ansicht nicht', async ({ page })
 // sonst wäre der Fehler nur gegen den Verlust der Funktion eingetauscht.
 test('Escape außerhalb von Eingabefeldern führt weiter zur Ausleihe', async ({ page }) => {
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
+	await menuepunkt(page, 'Bestellungen').click();
 	await expect(page.getByRole('tab', { name: 'Bestellhistorie', exact: true })).toBeVisible();
 
 	await page.locator('body').click({ position: { x: 5, y: 5 } });
@@ -53,7 +53,7 @@ test('Escape in einem offenen Menü schliesst nur das Menü', async ({ page }) =
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 	// Ueber den zugaenglichen Namen statt ueber den Platzhalter: Der Platzhaltertext ist
 	// Beschriftung und aendert sich (am 10.08.2026 beim Zusammenlegen der Suchfelder auf
 	// components/ui/Suchfeld.svelte). Der aria-label sagt, WAS das Feld ist.

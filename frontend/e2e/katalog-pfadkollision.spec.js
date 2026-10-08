@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, menuepunkt } from './helpers.js';
 
 // Audit-Befund vom 01.08.2026: /katalog war doppelt vergeben.
 //
@@ -14,7 +14,7 @@ test('Medienkatalog überlebt das Neuladen und wird nicht zum öffentlichen OPAC
 }) => {
 	await uiLogin(page);
 
-	await page.getByTitle('Medienkatalog').click();
+	await menuepunkt(page, 'Medienkatalog').click();
 	await expect(page).toHaveURL(/\/medienkatalog$/);
 
 	// Der Kern: neu laden. Vorher stand danach der OPAC da.
@@ -23,7 +23,7 @@ test('Medienkatalog überlebt das Neuladen und wird nicht zum öffentlichen OPAC
 	// Die Navigation beweist, dass wir in der angemeldeten Anwendung sind — der
 	// öffentliche OPAC hat keine.
 	await expect(
-		page.getByTitle('Medienkatalog'),
+		menuepunkt(page, 'Medienkatalog'),
 		'nach dem Neuladen muss die interne Navigation da sein, nicht der oeffentliche OPAC'
 	).toBeVisible();
 	await expect(page).toHaveURL(/\/medienkatalog$/);
@@ -32,5 +32,5 @@ test('Medienkatalog überlebt das Neuladen und wird nicht zum öffentlichen OPAC
 	// Navigation, und die Kopfzeile nennt ihn beim Namen.
 	await page.goto('/katalog');
 	await expect(page.getByText('Öffentlicher Medienkatalog')).toBeVisible();
-	await expect(page.getByTitle('Medienkatalog')).toHaveCount(0);
+	await expect(menuepunkt(page, 'Medienkatalog')).toHaveCount(0);
 });

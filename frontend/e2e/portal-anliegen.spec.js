@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
 // Portal, „Problem melden": Am Treffer der Suche ist das Buch gewählt, sein Titel steht in
 // der Meldung. Ohne Buch steht der Knopf unter der Suche, und das Formular fragt, worum es
@@ -31,7 +31,7 @@ test.describe.serial('Portal: Problem melden', () => {
 
 	test('Am Treffer: das Buch ist gewählt, die Beschreibung ist Pflicht', async ({ page }) => {
 		await uiLogin(page, LEHRER);
-		await page.getByTitle('Mein Portal').click();
+		await menuepunkt(page, 'Mein Portal').click();
 		await page.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }).fill(TITEL);
 		await expect(page.getByRole('heading', { name: TITEL })).toBeVisible();
 
@@ -63,7 +63,7 @@ test.describe.serial('Portal: Problem melden', () => {
 		page
 	}) => {
 		await uiLogin(page, LEHRER);
-		await page.getByTitle('Mein Portal').click();
+		await menuepunkt(page, 'Mein Portal').click();
 
 		// Vier Reiter, keiner für Anliegen, und kein Buchwunsch.
 		await expect(page.getByRole('tab')).toHaveText([
@@ -113,7 +113,7 @@ test.describe.serial('Portal: Problem melden', () => {
 		page
 	}) => {
 		await uiLogin(page, LEHRER);
-		await page.getByTitle('Mein Portal').click();
+		await menuepunkt(page, 'Mein Portal').click();
 		const getippt = `Scanner kaputt ${s}`;
 		await page
 			.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' })

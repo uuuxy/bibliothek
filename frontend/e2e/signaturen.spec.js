@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu, menuepunkt } from './helpers.js';
 
 // Signaturen: Regal suchen (Präfix!) und das Vokabular pflegen, aus dem das
 // Buchformular die Signatur vorschlägt.
@@ -24,7 +24,7 @@ test('Signaturen: Regal per Präfix finden, Sachgruppe anlegen', async ({ page }
                 ('E2E-Sig-Nachbar-${suffix}', 'Autor C', '${basis}X');
         `);
 
-		await page.getByTitle('Signaturen').click();
+		await menuepunkt(page, 'Signaturen').click();
 
 		// Regal öffnen: über die Suche eingrenzen, dann die Signatur wählen.
 		await page.getByLabel('Signatur suchen').fill(basis);
