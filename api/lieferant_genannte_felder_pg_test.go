@@ -78,6 +78,18 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		t.Errorf("die Antwort nennt nicht den gespeicherten Stand: %+v", antwort)
 	}
 
+	// Die Gegenrichtung: Wer am Hauptlieferanten selbst etwas korrigiert, nennt das Merkmal
+	// nicht. Gälte ein fehlendes Merkmal als abgewählt, verlöre er es mit jeder Korrektur.
+	t.Run("der Hauptlieferant behält das Merkmal, wenn der Rumpf es nicht nennt", func(t *testing.T) {
+		antwort := lieferantAendernUeberHandler(t, srv, neu, `{"email":"ngf-neu-korrigiert@test.invalid"}`)
+		if n := lies(t, neu); !n.haupt || n.email != "ngf-neu-korrigiert@test.invalid" {
+			t.Errorf("nach dem Korrigieren der E-Mail am Hauptlieferanten: %+v — erwartet die neue Adresse und weiter das Merkmal", n)
+		}
+		if !antwort.IstHauptlieferant {
+			t.Errorf("die Antwort nennt den Hauptlieferanten nicht mehr als solchen: %+v", antwort)
+		}
+	})
+
 	t.Run("ein Rumpf ohne Feld ändert nichts", func(t *testing.T) {
 		vorher := lies(t, alt)
 		lieferantAendernUeberHandler(t, srv, alt, `{}`)

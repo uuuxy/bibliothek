@@ -177,6 +177,20 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		}
 	})
 
+	// Die Gegenrichtung zum Anfang: Gälte ein fehlendes „aktiv" als false, sperrte jede
+	// Korrektur am Namen die Person aus.
+	t.Run("ein freigeschaltetes Konto bleibt es, wenn der Rumpf „aktiv“ nicht nennt", func(t *testing.T) {
+		if code := aendere(t, `{"aktiv":true}`); code != http.StatusOK {
+			t.Fatalf("freischalten: Status %d", code)
+		}
+		if code := aendere(t, `{"nachname":"Genannt"}`); code != http.StatusOK {
+			t.Fatalf("Nachnamen ändern: Status %d", code)
+		}
+		if s := lies(t); !s.aktiv || s.nachname != "Genannt" {
+			t.Errorf("nach dem Ändern des Nachnamens: aktiv=%v nachname=%q, erwartet true und „Genannt“", s.aktiv, s.nachname)
+		}
+	})
+
 	// Die Maske schickt beim Freischalten nur „aktiv". Die Ausweisnummer zieht die Datenbank
 	// (trg_aktives_konto_hat_ausweis), ohne dass die Tür die Leserzeile anfasst.
 	t.Run("ein freigeschaltetes Konto bekommt seine Ausweisnummer", func(t *testing.T) {
