@@ -1,8 +1,7 @@
-package api
+package bereitschaft
 
 import (
 	"os"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -571,16 +570,6 @@ func TestKlassenDrift(t *testing.T) {
 	})
 }
 
-// Eine Klassenleitung erwartet die Prüfung bis Jahrgang 10, in jeder Schreibweise der Schule.
-// „70R1" steht für einen Tippfehler: keine lesbare Stufe, aber Schüler ohne Lehrkraft.
-func TestMitKlassenleitung(t *testing.T) {
-	klassen := []string{"05F1", "10G6", "10H1", "ET1", "E2", "Q3", "11", "12T5", "13T3", "ABG", "AUS", "70R1", ""}
-	soll := []string{"05F1", "10G6", "10H1", "70R1"}
-	if ist := mitKlassenleitung(klassen); !slices.Equal(ist, soll) {
-		t.Errorf("mit Klassenleitung: %v, erwartet %v", ist, soll)
-	}
-}
-
 // rueckstandSauber: alle Routinen erhoben, keine überfällige Zeile, keine Frist auf 0 —
 // der Ausgangspunkt „die Nacht hat getan, was sie soll".
 func rueckstandSauber() []repository.LoeschRueckstand {
@@ -656,7 +645,7 @@ func TestPruefeDsgvoRoutinen(t *testing.T) {
 // wird dieser Test rot statt der Wächter blind (Sicherheits-Audit 07.09.2026: genau
 // das war passiert — drei alte Compose-Defaults gesperrt, die zwei Beispielwerte nicht).
 func TestIstBekanntesDefaultGeheimnis_KenntEnvExample(t *testing.T) {
-	inhalt, err := os.ReadFile("../.env.example")
+	inhalt, err := os.ReadFile("../../.env.example")
 	if err != nil {
 		t.Fatalf(".env.example lesen: %v", err)
 	}

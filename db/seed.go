@@ -48,7 +48,7 @@ type RechteEintrag struct {
 
 // RechteVorgabe ist die EINE Quelle der Soll-Rechte: Der Seed schreibt sie (nur
 // fehlende Zeilen — ON CONFLICT DO NOTHING fasst Bestehendes nie an), und die
-// Selbstprüfung (api/betriebsbereitschaft.go) liest sie zum Abgleich gegen die
+// Selbstprüfung (internal/bereitschaft/bereitschaft.go) liest sie zum Abgleich gegen die
 // Live-Tabelle. Genau dieses DO NOTHING ist der Grund für den Abgleich: Ändert
 // sich die Vorgabe hier im Code, erreicht sie eine bestehende Anlage NIE von
 // selbst — so sah das Kollegium wochenlang nur einen Teil seiner Menüpunkte.
@@ -316,7 +316,7 @@ func (db *Database) seedRolePermissions(ctx context.Context) error {
 // Startdaten im Boot-Pfad sind auf einer echten Anlage von echten Händlern nicht zu
 // unterscheiden. Der Bestellweg schickte die Mail wirklich dorthin, die Historie meldete
 // „gesendet“. Lieferanten pflegt man in den Einstellungen; Migration 107 räumt die drei
-// Zeilen ab, und die Selbstprüfung (api/betriebsbereitschaft.go) meldet Reste als kritisch.
+// Zeilen ab, und die Selbstprüfung (internal/bereitschaft/bereitschaft.go) meldet Reste als kritisch.
 //
 // Was der Boot heute anlegt, steht vollständig in der Selbstprüfung: Rechte-Vorgabe
 // (InitPermissions → Bereich „Rechte-Vorgabe"), erster Admin (InitAdmin → „Admin-Konten"),

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/bereitschaft"
 	"bibliothek/repository"
 )
 
@@ -52,7 +53,7 @@ func TestZaehleEhemaligeMitOffenenVorgaengen(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	n, err := repository.NewBetriebszustandRepository(pool).ZaehleEhemaligeMitOffenenVorgaengen(ctx, ehemaligeOffenSeitTagen)
+	n, err := repository.NewBetriebszustandRepository(pool).ZaehleEhemaligeMitOffenenVorgaengen(ctx, bereitschaft.EhemaligeOffenSeitTagen)
 	if err != nil {
 		t.Fatalf("zählen: %v", err)
 	}

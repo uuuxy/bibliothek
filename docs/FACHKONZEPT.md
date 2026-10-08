@@ -760,7 +760,7 @@ schweigt der Alarm — die lokale `.env` zeigt auf den echten Schul-SMTP.
 
 Die Seite ist eine **reine Prüffunktion**: Sie ändert nichts, sie schaltet nichts frei.
 Die Urteile sind als reine Funktion über eine eingesammelte Lage gebaut
-(`api/betriebsbereitschaft.go`) und damit vollständig testbar, ohne
+(`internal/bereitschaft/bereitschaft.go`) und damit vollständig testbar, ohne
 Umgebungsvariablen zu verbiegen oder eine Datenbank zu brauchen; das Zusammentragen der
 Lage steht daneben im Handler.
 

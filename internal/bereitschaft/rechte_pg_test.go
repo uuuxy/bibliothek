@@ -1,4 +1,4 @@
-package api
+package bereitschaft
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 )
 
@@ -15,7 +16,7 @@ import (
 // stehen) meldet sie exakt diese eine Zeile. Reine Funktionstests können die
 // Paarung Seed↔Tabelle↔Leser nicht beweisen; genau die ist hier die Aussage.
 func TestRechteVorgabe_DriftKetteAmEchtenPostgres(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
 	datenbank := &db.Database{Pool: pool}

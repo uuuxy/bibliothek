@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/bereitschaft"
 	"bibliothek/repository"
 )
 
@@ -12,9 +13,9 @@ import (
 // ein Alarm, der bei Warnungen feuert, wird stummgeschaltet.
 func TestFormatiereAlarmMail(t *testing.T) {
 	t.Run("ohne Kritisches keine Mail", func(t *testing.T) {
-		_, _, n := formatiereAlarmMail([]Befund{
-			{Bereich: "Demo-Daten", Stufe: StufeWarnung, Befund: "2000 Demo-Schüler"},
-			{Bereich: "Anmeldung", Stufe: StufeOK},
+		_, _, n := formatiereAlarmMail([]bereitschaft.Befund{
+			{Bereich: "Demo-Daten", Stufe: bereitschaft.StufeWarnung, Befund: "2000 Demo-Schüler"},
+			{Bereich: "Anmeldung", Stufe: bereitschaft.StufeOK},
 		})
 		if n != 0 {
 			t.Fatalf("kritische = %d, erwartet 0", n)
@@ -22,11 +23,11 @@ func TestFormatiereAlarmMail(t *testing.T) {
 	})
 
 	t.Run("Kritisches traegt Befund, Folge, Abhilfe und die Warnungs-Fussnote", func(t *testing.T) {
-		betreff, text, n := formatiereAlarmMail([]Befund{
-			{Bereich: "Auslagerung der Backups", Stufe: StufeKritisch,
+		betreff, text, n := formatiereAlarmMail([]bereitschaft.Befund{
+			{Bereich: "Auslagerung der Backups", Stufe: bereitschaft.StufeKritisch,
 				Befund: "Kein Ziel außer Haus eingerichtet.", Folge: "Ein Plattenausfall kostet alles.",
 				Abhilfe: "S3_ENDPOINT setzen."},
-			{Bereich: "Demo-Daten", Stufe: StufeWarnung, Befund: "2000 Demo-Schüler"},
+			{Bereich: "Demo-Daten", Stufe: bereitschaft.StufeWarnung, Befund: "2000 Demo-Schüler"},
 		})
 		if n != 1 {
 			t.Fatalf("kritische = %d, erwartet 1", n)

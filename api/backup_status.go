@@ -14,14 +14,6 @@ import (
 	"bibliothek/jobs"
 )
 
-const (
-	// backupWarnAge: Der Job läuft täglich 02:30 — ist das jüngste Backup älter
-	// als 26h, wurde mindestens ein Lauf verpasst.
-	backupWarnAge = 26 * time.Hour
-	// backupCriticalAge: Ab 48h ohne Backup ist der Datenverlust-Puffer weg.
-	backupCriticalAge = 48 * time.Hour
-)
-
 // BackupStatusResponse beschreibt den Zustand der nächtlichen Datenbank-Backups.
 type BackupStatusResponse struct {
 	LastBackupAt      *time.Time `json:"last_backup_at"` // RFC3339; null = noch nie
@@ -50,27 +42,6 @@ func newestBackupTime(dir string) *time.Time {
 	return &newest
 }
 
-// computeBackupStatus wendet die Schwellen an — als reine Funktion testbar.
-//
-// keyWeak stuft auf "warning" hoch, überschreibt aber niemals ein "critical": Ein
-// fehlendes Backup wiegt schwerer als ein schwach abgeleitetes.
-func computeBackupStatus(keySet, keyWeak bool, last *time.Time, now time.Time) string {
-	if !keySet || last == nil {
-		return "critical"
-	}
-	age := now.Sub(*last)
-	switch {
-	case age > backupCriticalAge:
-		return "critical"
-	case age > backupWarnAge:
-		return "warning"
-	case keyWeak:
-		return "warning"
-	default:
-		return "ok"
-	}
-}
-
 // BackupStatusHandler liefert den Backup-Zustand fürs Admin-Badge.
 // GET /api/admin/system/backup-status
 func (s *Server) BackupStatusHandler() http.HandlerFunc {
@@ -89,7 +60,7 @@ func (s *Server) BackupStatusHandler() http.HandlerFunc {
 			LastBackupAt:      last,
 			EncryptionKeySet:  keySet,
 			EncryptionKeyWeak: keyWeak,
-			Status:            computeBackupStatus(keySet, keyWeak, last, time.Now()),
+			Status:            jobs.BackupStatus(keySet, keyWeak, last, time.Now()),
 		})
 	}
 }

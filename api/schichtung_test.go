@@ -248,7 +248,6 @@ var dateienOhneTuer = []string{
 	"bestellbestaetigung_token.go",
 	"bestellmail_text.go",
 	"bestellmail_versand.go",
-	"betriebsbereitschaft.go",
 	"betriebsbereitschaft_alarm.go",
 	"constants.go",
 	"dsgvo_pdf_konto.go",

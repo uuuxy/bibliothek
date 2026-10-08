@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/bereitschaft"
 	"bibliothek/repository"
 )
 
@@ -38,19 +39,19 @@ func TestBescheidAngabenErreichenDieSelbstpruefung(t *testing.T) {
 			t.Fatalf("Schulnummer setzen: %v", err)
 		}
 	}
-	befund := func() Befund {
+	befund := func() bereitschaft.Befund {
 		t.Helper()
-		for _, b := range Pruefe(srv.sammleLage(ctx, settingsRepo, mailRepo, zustandRepo)) {
+		for _, b := range bereitschaft.Pruefe(srv.sammleLage(ctx, settingsRepo, mailRepo, zustandRepo)) {
 			if b.Bereich == "Schadensersatz-Bescheid" {
 				return b
 			}
 		}
 		t.Fatal("Die Selbstprüfung enthält keinen Bereich 'Schadensersatz-Bescheid'")
-		return Befund{}
+		return bereitschaft.Befund{}
 	}
 
 	setze("")
-	if b := befund(); b.Stufe != StufeWarnung || !strings.Contains(b.Befund, "Schulnummer") {
+	if b := befund(); b.Stufe != bereitschaft.StufeWarnung || !strings.Contains(b.Befund, "Schulnummer") {
 		t.Fatalf("leere Schulnummer erreicht die Selbstprüfung nicht: %+v", b)
 	}
 	setze("1234")

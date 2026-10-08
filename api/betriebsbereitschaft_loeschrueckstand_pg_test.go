@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/bereitschaft"
 	"bibliothek/repository"
 )
 
@@ -25,15 +26,15 @@ func TestLoeschRueckstandErreichtDieSelbstpruefung(t *testing.T) {
 	mailRepo := repository.NewMailSettingsRepository(pool)
 	zustandRepo := repository.NewBetriebszustandRepository(pool)
 
-	dsgvoBefund := func() Befund {
+	dsgvoBefund := func() bereitschaft.Befund {
 		t.Helper()
-		for _, b := range Pruefe(srv.sammleLage(ctx, settingsRepo, mailRepo, zustandRepo)) {
+		for _, b := range bereitschaft.Pruefe(srv.sammleLage(ctx, settingsRepo, mailRepo, zustandRepo)) {
 			if b.Bereich == "DSGVO-Löschroutinen" {
 				return b
 			}
 		}
 		t.Fatal("Die Selbstprüfung enthält keinen Bereich 'DSGVO-Löschroutinen'")
-		return Befund{}
+		return bereitschaft.Befund{}
 	}
 
 	// Erhoben heißt erhoben: Ohne Zutun darf der Bereich nicht auf „nicht erhoben"
@@ -56,7 +57,7 @@ func TestLoeschRueckstandErreichtDieSelbstpruefung(t *testing.T) {
 	}
 
 	b := dsgvoBefund()
-	if b.Stufe != StufeKritisch {
+	if b.Stufe != bereitschaft.StufeKritisch {
 		t.Fatalf("überfälliger Datensatz erreicht die Selbstprüfung nicht: %+v", b)
 	}
 	if !strings.Contains(b.Befund, "Erledigte Anliegen") {

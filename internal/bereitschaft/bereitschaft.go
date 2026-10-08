@@ -1,25 +1,14 @@
-package api
-
-// betriebsbereitschaft.go — beantwortet EINE Frage: Was ist eingerichtet, aber nicht in
-// Betrieb?
+// Package bereitschaft beantwortet eine Frage: Was ist eingerichtet, aber nicht in Betrieb?
 //
-// Diese Anlage hat eine wiederkehrende Fehlerart, und sie ist immer dieselbe: Eine
-// Funktion ist fertig programmiert, getestet und verdrahtet — und tut nichts, weil eine
-// Einstellung fehlt. Kein Fehler, kein Statuscode, kein Log-Eintrag, der jemandem
-// auffiele. Dreimal gefunden, jedes Mal von Hand:
+// Eine Funktion kann fertig gebaut und verdrahtet sein und trotzdem nichts tun, weil eine
+// Einstellung fehlt: Die Auslagerung der Sicherung überspringt sich ohne Zugangsdaten, die
+// nächtliche Sicherung ohne Schlüssel, und die Bestellmail geht ohne öffentliche Adresse ohne
+// ihren Link hinaus. Kein Fehler und kein Statuscode zeigt das an; die Selbstprüfung nennt es.
 //
-//   * uploadBackupToS3 (jobs/backup.go) überspringt sich mit "skipping offsite upload",
-//     weil vier Variablen leer sind. Verschlüsselte Backups und Host-Dumps liegen
-//     seitdem beide auf derselben Platte.
-//   * BACKUP_ENCRYPTION_KEY stand in der .env, kam aber nicht im Container an — der
-//     nächtliche Job übersprang sich still. Dafür gibt es seither api/backup_status.go;
-//     diese Datei ist dessen Verallgemeinerung.
-//   * Der Bestelllink fiel aus, weil `oeffentliche_adresse` nie gesetzt war. Die Mails
-//     gingen raus, nur ohne den Link, um dessentwillen es sie gibt.
-//
-// Die Prüfungen sind bewusst als REINE Funktion über eine Lage gebaut: Sie lassen sich
-// vollständig testen, ohne Umgebungsvariablen zu verbiegen oder eine Datenbank zu
-// brauchen. Das Zusammentragen der Lage steht daneben in betriebsbereitschaft_handler.go.
+// Die Prüfungen sind eine reine Funktion über eine Lage: Sie lassen sich ganz testen, ohne
+// Umgebungsvariablen zu verbiegen oder eine Datenbank zu brauchen. Die Lage trägt die Tür
+// zusammen (api/betriebsbereitschaft_handler.go).
+package bereitschaft
 
 import (
 	"fmt"
@@ -215,11 +204,10 @@ func IstBekanntesDefaultGeheimnis(wert string) bool {
 	return false
 }
 
-// istEchterBetrieb: local/development/test sind Spielwiesen — dort sind mock-Anmeldung
-// und Beispiel-Geheimnisse richtig und dürfen nicht als Mangel gemeldet werden. Ein
-// Wächter, der auf dem Entwicklungsrechner dauernd rot ist, wird abgeschaltet statt
-// gelesen.
-func istEchterBetrieb(appEnv string) bool {
+// IstEchterBetrieb sagt, ob die Umgebung der Betrieb ist. In local, development und test
+// sind die Anmeldung ohne Mailserver und Beispiel-Geheimnisse richtig und kein Mangel: Ein
+// Wächter, der am Entwicklungsrechner dauernd rot ist, wird abgeschaltet statt gelesen.
+func IstEchterBetrieb(appEnv string) bool {
 	switch appEnv {
 	case "local", "development", "test":
 		return false
@@ -229,7 +217,7 @@ func istEchterBetrieb(appEnv string) bool {
 
 // Pruefe wendet alle Regeln auf eine Lage an. Reine Funktion, keine Seiteneffekte.
 func Pruefe(l Lage) []Befund {
-	echt := istEchterBetrieb(l.AppEnv)
+	echt := IstEchterBetrieb(l.AppEnv)
 
 	befunde := []Befund{
 		pruefeAuslagerung(l),
@@ -297,9 +285,9 @@ func pruefeUebrigeFerien(l Lage) Befund {
 	return b
 }
 
-// ehemaligeOffenSeitTagen ist die Schwelle des Wächters: ein Jahr. Kürzer meldete er
+// EhemaligeOffenSeitTagen ist die Schwelle des Wächters: ein Jahr. Kürzer meldete er
 // jede Herbst-Mahnung, länger ließe die Akte Jahre stehen.
-const ehemaligeOffenSeitTagen = 365
+const EhemaligeOffenSeitTagen = 365
 
 // pruefeEhemaligeOffen: Bleibt jemand, der die Schule verlassen hat, mit Name und
 // Anschrift stehen, weil ein Vorgang nie geschlossen wurde? Kein Automatismus — was zu
@@ -416,7 +404,7 @@ func pruefeRestoreProbe(l Lage, echt bool) Befund {
 
 // pruefeBackupAlter hebt den Backup-Wächter des Dashboard-Badges in die Befunde —
 // und damit in die tägliche Kritisch-Alarm-Mail. Die Schwellen und ihre Anwendung
-// (computeBackupStatus, backup_status.go) bleiben die EINE Quelle; hier wird nur
+// (jobs.BackupStatus) bleiben die eine Quelle; hier wird nur
 // übersetzt, damit Badge und Alarm nie auseinanderlaufen.
 func pruefeBackupAlter(l Lage, echt bool) Befund {
 	b := Befund{Bereich: "Nächtliches Backup"}
@@ -425,7 +413,7 @@ func pruefeBackupAlter(l Lage, echt bool) Befund {
 		b.Befund = befundNichtImEchtbetrieb("Kein Backup-Betrieb", l.AppEnv)
 		return b
 	}
-	switch computeBackupStatus(l.BackupKeySet, l.BackupKeyWeak, l.LetztesBackup, l.Jetzt) {
+	switch jobs.BackupStatus(l.BackupKeySet, l.BackupKeyWeak, l.LetztesBackup, l.Jetzt) {
 	case "critical":
 		b.Stufe = StufeKritisch
 		switch {
@@ -439,13 +427,13 @@ func pruefeBackupAlter(l Lage, echt bool) Befund {
 			b.Abhilfe = "Backup-Job und BACKUP_DIR prüfen; der Job läuft täglich 02:30."
 		default:
 			b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden — mehr als %d Stunden alt.",
-				int(l.Jetzt.Sub(*l.LetztesBackup).Hours()), int(backupCriticalAge.Hours()))
+				int(l.Jetzt.Sub(*l.LetztesBackup).Hours()), int(jobs.BackupKritischAlter.Hours()))
 			b.Folge = "Der Datenverlust-Puffer ist aufgebraucht; der Job steht offenbar still."
 			b.Abhilfe = "Container-Logs des Backup-Jobs prüfen (läuft täglich 02:30)."
 		}
 	case "warning":
 		b.Stufe = StufeWarnung
-		if l.LetztesBackup != nil && l.Jetzt.Sub(*l.LetztesBackup) > backupWarnAge {
+		if l.LetztesBackup != nil && l.Jetzt.Sub(*l.LetztesBackup) > jobs.BackupWarnAlter {
 			b.Befund = fmt.Sprintf("Letztes Backup vor %d Stunden — mindestens ein Lauf wurde verpasst.",
 				int(l.Jetzt.Sub(*l.LetztesBackup).Hours()))
 			b.Folge = "Bleibt es dabei, ist der Datenverlust-Puffer in Kürze aufgebraucht."
@@ -873,9 +861,9 @@ func pruefeKlassenDrift(l Lage) Befund {
 	return b
 }
 
-// nachbuchOffenSeitTagen ist die Schwelle des Wächters: zwei Wochen (Entscheidung vom
+// NachbuchOffenSeitTagen ist die Schwelle des Wächters: zwei Wochen (Entscheidung vom
 // 13.09.2026). Eine Meldung, die so lange niemand quittiert, hat niemand angesehen.
-const nachbuchOffenSeitTagen = 14
+const NachbuchOffenSeitTagen = 14
 
 // pruefeNachbuchMeldungenOffen: Abweichungen zwischen Offline-Scan und Wirklichkeit —
 // umgebuchte Bücher, abgewiesene Ausleihen, veraltete Scans — stehen als Meldung, bis

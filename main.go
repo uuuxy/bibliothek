@@ -28,6 +28,7 @@ import (
 	"bibliothek/api"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/bereitschaft"
 	"bibliothek/internal/crypto"
 	"bibliothek/internal/service"
 	"bibliothek/jobs"
@@ -262,14 +263,14 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	}
 	if enforceProdSecrets {
 		// Die Liste der Beispiel-Geheimnisse steht seit dem 11.08.2026 in
-		// api.IstBekanntesDefaultGeheimnis und wird von der Selbstpruefung
-		// (api/betriebsbereitschaft.go) mitbenutzt. Zwei Listen waeren genau die Fehlerart,
+		// bereitschaft.IstBekanntesDefaultGeheimnis und wird von der Selbstpruefung
+		// (internal/bereitschaft/bereitschaft.go) mitbenutzt. Zwei Listen waeren genau die Fehlerart,
 		// gegen die die Selbstpruefung antritt: Sie meldete "alles gut", waehrend der Server
 		// aus demselben Grund den Start verweigert.
-		if api.IstBekanntesDefaultGeheimnis(jwtSecret) {
+		if bereitschaft.IstBekanntesDefaultGeheimnis(jwtSecret) {
 			log.Fatalf("FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
 		}
-		if api.IstBekanntesDefaultGeheimnis(aesKey) {
+		if bereitschaft.IstBekanntesDefaultGeheimnis(aesKey) {
 			log.Fatalf("FATAL: APP_ENCRYPTION_KEY nutzt einen bekannten Default-Wert. Setze einen eigenen 32-Byte-Schlüssel — oder ENFORCE_PROD_SECRETS=false während der Testphase.")
 		}
 	}

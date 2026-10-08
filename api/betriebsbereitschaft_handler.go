@@ -2,12 +2,13 @@ package api
 
 // betriebsbereitschaft_handler.go — trägt die Lage zusammen und liefert sie aus.
 //
-// Getrennt von den Regeln in betriebsbereitschaft.go, und zwar aus einem Grund: Die
+// Getrennt von den Regeln in internal/bereitschaft/bereitschaft.go, und zwar aus einem Grund: Die
 // Regeln sollen ohne Umgebungsvariablen und ohne Datenbank prüfbar sein. Alles, was die
 // Aussenwelt befragt, steht hier.
 
 import (
 	"bibliothek/auth"
+	"bibliothek/internal/bereitschaft"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -26,19 +27,19 @@ import (
 // Gesamt fasst zusammen, damit die Oberfläche nicht selbst rechnen muss — die schärfste
 // Stufe gewinnt. Sonst stünde die Regel an zwei Stellen und liefe auseinander.
 type BetriebsbereitschaftResponse struct {
-	Gesamt  string   `json:"gesamt"`
-	Befunde []Befund `json:"befunde"`
+	Gesamt  string                `json:"gesamt"`
+	Befunde []bereitschaft.Befund `json:"befunde"`
 }
 
 // schaerfste liefert die höchste vorkommende Stufe.
-func schaerfste(befunde []Befund) string {
-	gesamt := StufeOK
+func schaerfste(befunde []bereitschaft.Befund) string {
+	gesamt := bereitschaft.StufeOK
 	for _, b := range befunde {
 		switch b.Stufe {
-		case StufeKritisch:
-			return StufeKritisch
-		case StufeWarnung:
-			gesamt = StufeWarnung
+		case bereitschaft.StufeKritisch:
+			return bereitschaft.StufeKritisch
+		case bereitschaft.StufeWarnung:
+			gesamt = bereitschaft.StufeWarnung
 		}
 	}
 	return gesamt
@@ -52,8 +53,8 @@ func (s *Server) sammleLage(
 	settingsRepo repository.SystemSettingsRepository,
 	mailRepo *repository.MailSettingsRepository,
 	zustandRepo *repository.BetriebszustandRepository,
-) Lage {
-	lage := Lage{
+) bereitschaft.Lage {
+	lage := bereitschaft.Lage{
 		AppEnv:             strings.ToLower(os.Getenv("APP_ENV")),
 		S3Endpoint:         os.Getenv("S3_ENDPOINT"),
 		S3AccessKey:        os.Getenv("S3_ACCESS_KEY"),
@@ -84,11 +85,11 @@ func (s *Server) sammleLage(
 		lage.LoeschRueckstand = rueckstand
 	}
 	// Ehemalige mit offenen Vorgängen: bei Fehler nil → „nicht erhoben" statt „alles gut".
-	if n, err := zustandRepo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, ehemaligeOffenSeitTagen); err == nil {
+	if n, err := zustandRepo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, bereitschaft.EhemaligeOffenSeitTagen); err == nil {
 		lage.EhemaligeMitOffenenVorgaengen = &n
 	}
 	// Nachbuch-Meldungen, die seit zwei Wochen niemand quittiert hat: bei Fehler nil.
-	if n, err := zustandRepo.ZaehleNachbuchMeldungenOffenSeit(ctx, nachbuchOffenSeitTagen); err == nil {
+	if n, err := zustandRepo.ZaehleNachbuchMeldungenOffenSeit(ctx, bereitschaft.NachbuchOffenSeitTagen); err == nil {
 		lage.NachbuchMeldungenOffen = &n
 	}
 	if mail, err := mailRepo.GetConfig(ctx); err == nil && mail != nil {
@@ -119,7 +120,7 @@ func (s *Server) sammleLage(
 }
 
 // einstellungenInDieLage übernimmt, was die Prüfungen aus den Einstellungen brauchen.
-func einstellungenInDieLage(lage *Lage, settings *repository.SystemEinstellungen) {
+func einstellungenInDieLage(lage *bereitschaft.Lage, settings *repository.SystemEinstellungen) {
 	if settings.OeffentlicheAdresse != nil {
 		lage.OeffentlicheAdresse = strings.TrimSpace(*settings.OeffentlicheAdresse)
 	}
@@ -138,7 +139,7 @@ func einstellungenInDieLage(lage *Lage, settings *repository.SystemEinstellungen
 // rechteKlassenUndAdminsInDieLage liest Rechte, Klassen-Zuordnungen und Admin-Konten. Bei
 // einem Lesefehler bleibt die jeweilige Liste nil: Die Prüfung meldet dann „nicht lesbar"
 // oder „nicht erhoben" statt eines falschen „alles gut".
-func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandRepository, lage *Lage) {
+func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandRepository, lage *bereitschaft.Lage) {
 	if rechte, err := zustandRepo.LadeRollenRechte(ctx); err == nil {
 		lage.RechteLive = rechte
 	}
@@ -159,7 +160,7 @@ func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandRepo *repositor
 
 // sicherungUndFerienInDieLage trägt den Stand der Backups, die Reichweite der Ferientabelle
 // und das Ergebnis der Restore-Probe ein.
-func sicherungUndFerienInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandRepository, lage *Lage) {
+func sicherungUndFerienInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandRepository, lage *bereitschaft.Lage) {
 	// Backup-Zustand aus derselben Quelle wie das Dashboard-Badge (backup_status.go).
 	encKey := os.Getenv("BACKUP_ENCRYPTION_KEY")
 	lage.BackupKeySet = encKey != ""
@@ -201,7 +202,7 @@ func (s *Server) BetriebsbereitschaftHandler(
 	zustandRepo *repository.BetriebszustandRepository,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		befunde := Pruefe(s.sammleLage(r.Context(), settingsRepo, mailRepo, zustandRepo))
+		befunde := bereitschaft.Pruefe(s.sammleLage(r.Context(), settingsRepo, mailRepo, zustandRepo))
 		RespondJSON(w, http.StatusOK, BetriebsbereitschaftResponse{
 			Gesamt:  schaerfste(befunde),
 			Befunde: befunde,

@@ -20,6 +20,7 @@ import (
 	"log"
 	"strings"
 
+	"bibliothek/internal/bereitschaft"
 	"bibliothek/repository"
 )
 
@@ -32,11 +33,11 @@ func (s *Server) BereitschaftsAlarm(ctx context.Context) {
 	zustandRepo := repository.NewBetriebszustandRepository(s.DB.Pool)
 
 	lage := s.sammleLage(ctx, settingsRepo, mailRepo, zustandRepo)
-	if !istEchterBetrieb(lage.AppEnv) {
+	if !bereitschaft.IstEchterBetrieb(lage.AppEnv) {
 		return
 	}
 
-	befunde := Pruefe(lage)
+	befunde := bereitschaft.Pruefe(lage)
 	betreff, textkoerper, kritische := formatiereAlarmMail(befunde)
 	if kritische == 0 {
 		return
@@ -70,14 +71,14 @@ func (s *Server) BereitschaftsAlarm(ctx context.Context) {
 
 // formatiereAlarmMail baut Betreff und Text aus den Befunden. Reine Funktion —
 // prüfbar ohne Mailserver, Datenbank oder Umgebung.
-func formatiereAlarmMail(befunde []Befund) (betreff, textkoerper string, kritische int) {
-	var kritischeBefunde []Befund
+func formatiereAlarmMail(befunde []bereitschaft.Befund) (betreff, textkoerper string, kritische int) {
+	var kritischeBefunde []bereitschaft.Befund
 	warnungen := 0
 	for _, b := range befunde {
 		switch b.Stufe {
-		case StufeKritisch:
+		case bereitschaft.StufeKritisch:
 			kritischeBefunde = append(kritischeBefunde, b)
-		case StufeWarnung:
+		case bereitschaft.StufeWarnung:
 			warnungen++
 		}
 	}

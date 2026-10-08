@@ -1,4 +1,4 @@
-package api
+package bereitschaft
 
 import (
 	"os"
@@ -26,7 +26,7 @@ func TestFachkonzeptNenntDieZahlDerGeprueftenBereiche(t *testing.T) {
 		"fünfundzwanzig": 25,
 	}
 
-	roh, err := os.ReadFile("../docs/FACHKONZEPT.md")
+	roh, err := os.ReadFile("../../docs/FACHKONZEPT.md")
 	if err != nil {
 		t.Fatalf("FACHKONZEPT.md lesen: %v", err)
 	}

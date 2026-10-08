@@ -74,7 +74,7 @@ func TestRechteVorgabeLeitung(t *testing.T) {
 // startet mit allen Rechten außer Benutzer & Rechte und Einstellungen; was nicht passt,
 // nimmt der Admin im Rechte-Editor weg."
 //
-// Daraus folgt für die Selbstprüfung (api/betriebsbereitschaft.go): Sie darf einen
+// Daraus folgt für die Selbstprüfung (internal/bereitschaft/bereitschaft.go): Sie darf einen
 // abweichenden LIVE-Wert nicht als Drift melden, sonst steht jede Anlage, die die Rolle
 // einmal angepasst hat, dauerhaft mit einer Warnung da — und Dauerwarnungen erziehen zum
 // Wegsehen (derselbe Grund, aus dem MITARBEITER/manage_settings dort steht). Die EXISTENZ

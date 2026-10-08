@@ -1,10 +1,14 @@
 package api
 
-import "strings"
+import (
+	"strings"
+
+	"bibliothek/internal/bereitschaft"
+)
 
 // ErzwingeProdGeheimnisse entscheidet, ob der Server den Start mit einem bekannten
 // Beispiel-Geheimnis verweigert (main.go) — und ob die Selbstprüfung
-// (betriebsbereitschaft.go) die Absicherung als scharf meldet. EINE Funktion für beide,
+// (internal/bereitschaft/bereitschaft.go) die Absicherung als scharf meldet. EINE Funktion für beide,
 // sonst sagt die Seite „scharf", während der Server aus demselben Grund durchstartet.
 //
 // Bis zum 05.09.2026 galt: aus, solange niemand ENFORCE_PROD_SECRETS=true schrieb. Das
@@ -25,7 +29,7 @@ func ErzwingeProdGeheimnisse(appEnv, roh string) bool {
 	if wert == "false" {
 		return false
 	}
-	if wert == "" && !istEchterBetrieb(strings.ToLower(strings.TrimSpace(appEnv))) {
+	if wert == "" && !bereitschaft.IstEchterBetrieb(strings.ToLower(strings.TrimSpace(appEnv))) {
 		return false
 	}
 	return true

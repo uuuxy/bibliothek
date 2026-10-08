@@ -1,6 +1,6 @@
 package repository
 
-// betriebszustand.go — Abfragen, die die Selbstprüfung (api/betriebsbereitschaft.go)
+// betriebszustand.go — Abfragen, die die Selbstprüfung (internal/bereitschaft/bereitschaft.go)
 // braucht, um den Zustand der Anlage zu beurteilen.
 //
 // Eigene Datei statt einer Zeile im Handler: Handler lesen und schreiben über repository/,

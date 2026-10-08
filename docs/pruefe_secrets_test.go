@@ -16,7 +16,7 @@ import (
 // Blindheit: Geprüft wird das Skript an erdachten .env-Dateien. Ob es am Server je läuft
 // (nur von Hand), sieht der Test nicht; ebenso wenig einen schwachen Wert, der kein
 // Beispiel ist, und einen Beispielwert, der weder in .env.example noch in
-// api.IstBekanntesDefaultGeheimnis steht.
+// bereitschaft.IstBekanntesDefaultGeheimnis steht.
 
 // pruefeSecrets lässt scripts/pruefe_secrets.sh über eine .env laufen und liefert Ausgabe
 // und Exit-Code.
@@ -85,10 +85,10 @@ func TestPruefeSecrets_KenntDieBeispielwerteDerVorlage(t *testing.T) {
 	}
 }
 
-// Was der Server als Beispiel-Geheimnis kennt (api.IstBekanntesDefaultGeheimnis), meldet
+// Was der Server als Beispiel-Geheimnis kennt (bereitschaft.IstBekanntesDefaultGeheimnis), meldet
 // auch das Skript. Die Liste kommt aus dem Quelltext des Servers, nicht aus diesem Test.
 func TestPruefeSecrets_KenntDieBeispielwerteDesServers(t *testing.T) {
-	quelle := lies(t, "../api/betriebsbereitschaft.go")
+	quelle := lies(t, "../internal/bereitschaft/bereitschaft.go")
 	start := strings.Index(quelle, "func IstBekanntesDefaultGeheimnis")
 	if start < 0 {
 		t.Fatal("IstBekanntesDefaultGeheimnis nicht gefunden — Gate nachziehen")

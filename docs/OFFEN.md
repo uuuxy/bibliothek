@@ -330,11 +330,15 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 
 - **Die Bremse steht.** `api/schichtung_test.go` zählt die SQL-Anweisungen je Datei und führt
   die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 46
-  Dateien mit 161 Anweisungen (am Anfang 48 mit 177), 37 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 28.668 Zeilen in 161 Dateien (am Anfang 30.785 in 168).
+  Dateien mit 161 Anweisungen (am Anfang 48 mit 177), 36 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 27.741 Zeilen in 160 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
-  `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`). Offen:
-  der Aufbau der PDFs, die Selbstprüfung, danach der Rest der 37. Je Thema ein Commit; die
+  `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
+  Selbstprüfung in `internal/bereitschaft`. Offen: der Aufbau der PDFs und der Rest der 36.
+  Die PDF-Erzeuger hängen an rund 30 Namen aus `api/` (Typen der Auskunft, Etikettformate,
+  Mailversand), gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler; sie ziehen je Sache
+  um (Etiketten, Bescheid, Auskunft, Bestell-PDF, Bestandsbücher), nicht in einem Zug. Je
+  Thema ein Commit; die
   Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Eine Datei mit SQL
   zieht erst um, wenn ihr SQL in `repository/` steht: Die Ratsche zählt nur `api/` und verlöre
   sie sonst. Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was

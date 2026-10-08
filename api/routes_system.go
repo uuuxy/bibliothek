@@ -36,7 +36,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/admin/permissions", s.RequirePermission("manage_users")(s.GetPermissionsHandler()))
 	mux.Handle("GET /api/admin/system/backup-status", s.RequirePermission("manage_settings")(s.BackupStatusHandler()))
 	// Die Verallgemeinerung des Backup-Waechters: Was ist eingerichtet, aber nicht in
-	// Betrieb? Siehe api/betriebsbereitschaft.go.
+	// Betrieb? Siehe internal/bereitschaft/bereitschaft.go.
 	//
 	// Bewusst EINE Zeile: routes_authz_coverage_test.go liest die Registrierungen zeilenweise
 	// und sah bei einem Umbruch keinen Schutz-Wrapper — es meldete die Route als ungeschuetzt,

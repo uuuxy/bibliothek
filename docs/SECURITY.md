@@ -393,7 +393,7 @@ Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Default
 ### Lösung (`main.go/loadConfig` + `api.ErzwingeProdGeheimnisse`)
 
 Der Server **verweigert den Start**, wenn ein bekanntes Beispiel-Geheimnis
-(`api.IstBekanntesDefaultGeheimnis`) aktiv ist — und zwar **als Vorgabe** (seit 05.09.2026):
+(`bereitschaft.IstBekanntesDefaultGeheimnis`) aktiv ist — und zwar **als Vorgabe** (seit 05.09.2026):
 
 | Umgebung                         | `ENFORCE_PROD_SECRETS` | Verhalten                                     |
 | -------------------------------- | ---------------------- | --------------------------------------------- |
@@ -406,7 +406,7 @@ Der Server **verweigert den Start**, wenn ein bekanntes Beispiel-Geheimnis
 Bis zum 05.09.2026 galt `== "true"`: aus, solange niemand den Schalter setzte. Eine
 vergessene Zeile in der `.env` genügte, damit der Schulserver mit dem JWT-Schlüssel aus dem
 Repository lief — Admin-Sitzungen fälschbar, nichts rot. Dieselbe Regel liest die
-Selbstprüfung (`betriebsbereitschaft.go`), damit Seite und Server nicht verschieden
+Selbstprüfung (`internal/bereitschaft/bereitschaft.go`), damit Seite und Server nicht verschieden
 entscheiden. Gates: `api/prod_geheimnisse_test.go`,
 `TestLoadConfig_ProduktionOhneSchalterVerweigertBeispielJWT` (mit dem alten Code rot).
 
