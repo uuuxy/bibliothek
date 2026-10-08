@@ -18,16 +18,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// GeraetRequest ist die Eingabe für Anlegen und Pflegen.
+// GeraetRequest sind die Angaben eines neuen Geräts.
 type GeraetRequest struct {
-	Modellname string `json:"modellname"`
-	// Zeiger: Der Defekt-Knopf schickt die Seriennummer nicht mit, das Bearbeiten-
-	// Formular schon. nil heisst "nicht angefasst", "" heisst "geloescht".
-	Seriennummer  *string `json:"seriennummer,omitempty"`
-	BarcodeID     string  `json:"barcode_id,omitempty"` // nur beim Anlegen; Barcodes kleben, sie wandern nicht
-	Zubehoer      string  `json:"zubehoer"`
-	ZustandNotiz  string  `json:"zustand_notiz,omitempty"`
-	IstAusleihbar *bool   `json:"ist_ausleihbar,omitempty"`
+	Modellname   string  `json:"modellname"`
+	Seriennummer *string `json:"seriennummer,omitempty"`
+	BarcodeID    string  `json:"barcode_id,omitempty"`
+	Zubehoer     string  `json:"zubehoer"`
+	ZustandNotiz string  `json:"zustand_notiz,omitempty"`
 }
 
 // GeraetAenderungRequest nennt, was an einem Gerät geändert wird. Ein fehlendes Feld bleibt,
@@ -90,7 +87,7 @@ func (s *Server) CreateGeraetHandler(repo repository.GeraeteRepository) http.Han
 			seriennummer = getrimmt
 		}
 		id, err := repo.CreateGeraet(r.Context(), req.Modellname,
-			seriennummer, req.BarcodeID, strings.TrimSpace(req.Zubehoer))
+			seriennummer, req.BarcodeID, strings.TrimSpace(req.Zubehoer), strings.TrimSpace(req.ZustandNotiz))
 		if err != nil {
 			if istGeraetKonflikt(err) {
 				return apierrors.Conflict(err.Error(), err)

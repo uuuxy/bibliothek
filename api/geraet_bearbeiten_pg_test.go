@@ -353,3 +353,34 @@ func TestGeraetAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		}
 	})
 }
+
+// Die Maske „Gerät anlegen" bietet die Zustandsnotiz an; sie steht danach am Gerät. Das
+// Anlegen nahm das Feld an und speicherte es nicht, mit „Gerät angelegt" daneben.
+func TestGeraetAnlegen_SpeichertDieZustandsnotiz(t *testing.T) {
+	pool := pgTestPool(t)
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	repo := repository.NewGeraeteRepository(pool)
+	aufraeumenGeraete := func() { aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NOTIZ-%'`) }
+	aufraeumenGeraete()
+	t.Cleanup(aufraeumenGeraete)
+
+	lege := func(t *testing.T, rumpf string) {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPost, "/api/geraete", strings.NewReader(rumpf))
+		rec := httptest.NewRecorder()
+		srv.CreateGeraetHandler(repo)(rec, req)
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("anlegen: Status %d — %s", rec.Code, rec.Body.String())
+		}
+	}
+	// Der Rumpf der Maske: fünf Felder.
+	lege(t, `{"modellname":"Tablet 14","barcode_id":"G-NOTIZ-1","seriennummer":"","zubehoer":"Hülle","zustand_notiz":" Akku schwach "}`)
+	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-NOTIZ-1' AND zustand_notiz = 'Akku schwach'`); n != 1 {
+		t.Errorf("die Zustandsnotiz aus der Maske steht nicht am Gerät")
+	}
+	// Ohne Notiz bleibt sie leer (NULL), nicht ein leerer Text.
+	lege(t, `{"modellname":"Tablet 15","barcode_id":"G-NOTIZ-2","seriennummer":"","zubehoer":"","zustand_notiz":""}`)
+	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-NOTIZ-2' AND zustand_notiz IS NULL`); n != 1 {
+		t.Errorf("ein Gerät ohne Notiz trägt keine leere Notiz (NULL)")
+	}
+}

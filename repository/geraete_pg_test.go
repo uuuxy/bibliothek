@@ -16,13 +16,13 @@ func TestGeraeteVerwaltung_AnlegenListeStatus(t *testing.T) {
 	ctx := context.Background()
 	repo := NewGeraeteRepository(pool)
 
-	id, err := repo.CreateGeraet(ctx, "iPad 9. Gen", nil, "G-E2E-IPAD-1", "Ladekabel, Stift")
+	id, err := repo.CreateGeraet(ctx, "iPad 9. Gen", nil, "G-E2E-IPAD-1", "Ladekabel, Stift", "")
 	if err != nil {
 		t.Fatalf("Anlegen: %v", err)
 	}
 
 	// (1) Doppelter Barcode → Sentinel, kein roher 23505.
-	if _, err := repo.CreateGeraet(ctx, "Zweitgerät", nil, "G-E2E-IPAD-1", ""); !errors.Is(err, ErrGeraetBarcodeVergeben) {
+	if _, err := repo.CreateGeraet(ctx, "Zweitgerät", nil, "G-E2E-IPAD-1", "", ""); !errors.Is(err, ErrGeraetBarcodeVergeben) {
 		t.Fatalf("Duplikat: erwartet ErrGeraetBarcodeVergeben, bekam %v", err)
 	}
 

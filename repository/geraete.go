@@ -51,7 +51,7 @@ type GeraetMitStatus struct {
 // GeraeteRepository kapselt die Datenbankzugriffe der Geräte-Verwaltung.
 type GeraeteRepository interface {
 	ListGeraete(ctx context.Context) ([]GeraetMitStatus, error)
-	CreateGeraet(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer string) (string, error)
+	CreateGeraet(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer, zustandNotiz string) (string, error)
 	// UpdateGeraet pflegt Stammdaten und Ausleihstatus (ist_ausleihbar=false = defekt/gesperrt).
 	UpdateGeraet(ctx context.Context, id string, a GeraetAenderung) error
 }
@@ -121,13 +121,13 @@ func (r *pgGeraeteRepository) ListGeraete(ctx context.Context) ([]GeraetMitStatu
 	return geraete, rows.Err()
 }
 
-func (r *pgGeraeteRepository) CreateGeraet(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer string) (string, error) {
+func (r *pgGeraeteRepository) CreateGeraet(ctx context.Context, modellname string, seriennummer *string, barcode, zubehoer, zustandNotiz string) (string, error) {
 	var id string
 	err := r.db.QueryRow(ctx, `
-		INSERT INTO geraete (modellname, seriennummer, barcode_id, zubehoer)
-		VALUES ($1, NULLIF($2, ''), $3, $4)
+		INSERT INTO geraete (modellname, seriennummer, barcode_id, zubehoer, zustand_notiz)
+		VALUES ($1, NULLIF($2, ''), $3, $4, NULLIF($5, ''))
 		RETURNING id
-	`, modellname, seriennummer, barcode, zubehoer).Scan(&id)
+	`, modellname, seriennummer, barcode, zubehoer, zustandNotiz).Scan(&id)
 	if err != nil {
 		return "", geraetEindeutigkeit(err)
 	}
