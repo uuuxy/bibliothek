@@ -136,6 +136,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   der Liste
 - [ ] Leserakte eines Schülers mit offenem Schadensfall, „Ersatzforderung" drucken: Die
   Beträge stehen mit Komma („12,50 EUR")
+- [ ] Bestellwesen, „Titel suchen & hinzufügen" bei leerem Warenkorb: Die Trefferliste ist
+  ganz zu sehen, mit ihrem unteren Rand; die Linie links der Bestellspalte reicht bis zum
+  unteren Rand der Seite
 
 **Erledigen:**
 
