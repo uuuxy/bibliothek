@@ -775,7 +775,8 @@ frontend/src
 - **Eine Karte trägt einen Rahmen oder einen Flächenton, nicht beides.** Material 3, Cards,
   Specs: die umrandete Karte „Surface" mit „Outline variant", die gefüllte „Surface container
   highest" ohne Rahmen, die erhöhte „Surface container low" mit Schatten. Im Haus ist die
-  Karte umrandet und zeigt die Fläche der Seite; ihre Ecke ist 12 px (`rounded-xl`).
+  Karte umrandet und zeigt die Fläche der Seite; ihre Ecke ist 12 px (`rounded-xl`). Den Ton
+  hält `frontend-hygiene-karten.test.js` fern.
 - **Ein Knopf ohne Fläche steht in der Hauptfarbe; trägt er nur ein Symbol, nicht.**
   Material 3, Buttons: „since there's no container, the label text color must always be
   recognizable from non-button text and elements" (Specs: „Text icon & label: Primary");

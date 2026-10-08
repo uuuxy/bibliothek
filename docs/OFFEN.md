@@ -124,8 +124,9 @@ Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wir
 der Nummer nichts mehr dazu offen ist.
 
 - [ ] **Gates und Werkzeuge (5.10):** die Bestände zweier Ratschen sind nicht befragt (Schema:
-  was die Datenbank ablehnt; Listen: was sie begrenzt), der erste Lauf von `release.yml` auf
-  Ubuntu 26, die Excel-Bibliothek auf einem unveröffentlichten Stand.
+  was die Datenbank ablehnt; Listen: was sie begrenzt), die Form-Ratsche sieht umrandete
+  Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
+  Excel-Bibliothek auf einem unveröffentlichten Stand.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -250,6 +251,15 @@ Vermerk.
   Zeit wächst (Bestellhistorie, Vormerkungen, Bescheide, Nachbuch-Meldungen, Inventuren,
   Historie eines Titels). Fehlt eine Grenze: Obergrenze in der Abfrage, Index auf der
   Sortierspalte, die Kappung in der Oberfläche ansagen. Kategorie B.
+- **Die Form-Ratsche sieht eine umrandete Karte nicht.** `frontend-hygiene-layout.test.js`
+  nennt 16 px Ecke auf einer Karte falsch, erkennt eine Karte aber nur an weißer Füllung
+  (`bg-white`, `bg-surface-container-lowest`). Eine umrandete Karte ohne Füllung oder in
+  `bg-surface` fällt durch. Drei Stellen tragen so `rounded-2xl`: in der Buchakte das Formular
+  „Schüler vormerken" (`BookVormerkungenTab.svelte`), im Mahnwesen der Kasten „Keine offenen
+  Schadensersatz-Fälle" (`BescheideTabelle.svelte`), im Ausweis-Designer die Auswahl
+  (`designer/ToolbarAuswahl.svelte`). Nächster Schritt: die Erkennung auf den ganzen Rahmen
+  erweitern und die drei auf `rounded-xl` stellen; der Sperrbildschirm trägt als Dialog 28 px
+  und bleibt. Sichtbar sind je 4 px an der Ecke. Kategorie B.
 - **Ubuntu 26 als Runner: der erste Lauf von `release.yml`.** Alle zehn Jobs der vier
   Workflows laufen auf `ubuntu-26.04`; `ci.yml`, `security-scan.yml` und `docker-publish.yml`
   sind dort grün (zuletzt am Stand 9687c973). `release.yml` läuft erst mit dem nächsten v-Tag;
