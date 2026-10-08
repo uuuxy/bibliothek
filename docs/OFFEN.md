@@ -409,12 +409,13 @@ Vermerk.
 - Code, den kein Go-Test ausführt (gemessen am 07.10.2026 mit der ganzen Suite und `-coverpkg`
   über alle Pakete: 85,3 % der Anweisungen; lokal zählt `./...` das Go-Paket mit, das npm unter
   `frontend/node_modules/flatted` ablegt, mit ihm sind es 84,9 %). Unter 50 % liegen, ohne
-  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, acht Dateien:
+  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, sieben Dateien
+  (`api/geraete.go` am 08.10.2026 nachgemessen, nicht mehr darunter):
   `api/littera_import.go` 0,7 % (Littera- und Bestandsdatei hochladen; die Regeln in
   `internal/littera` 88,6 %), `api/schueler_etiketten.go` 2,3 %,
   `internal/service/cover_service.go` 18,2 %, `api/ausweis_layout.go` 33,3 %, `db/seed.go`
   35,5 %, `repository/mail_settings.go` 38,1 %, `api/orders_handler.go` 44,2 % (mehrere
-  Exemplare im Wareneingang buchen 4,3 %, die Bestellsuche 13,3 %), `api/geraete.go` 49,0 %.
+  Exemplare im Wareneingang buchen 4,3 %, die Bestellsuche 13,3 %).
   Ob Browser-Tests diesen Code erreichen, ist nicht gemessen. Anlass: Das Nachziehen der
   Tests für fünf Routen am 03.10.2026 fand drei Fehler (zwei Abweisungen beim Zusammenführen
   ohne Grund, ein unlesbares Bild als Störung gemeldet, eine Antwort des Foto-Uploads, die
