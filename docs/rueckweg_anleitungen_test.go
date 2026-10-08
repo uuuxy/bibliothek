@@ -118,6 +118,65 @@ func TestRueckweg_TotalverlustBautVorDemEinspielen(t *testing.T) {
 	}
 }
 
+// Was ein Skript als Befehl druckt, wird abgetippt. Ein Platzhalter in spitzen Klammern darin
+// lässt sich wörtlich einfügen (so am 06.08.2026 mit einer Anleitung geschehen), und der Hinweis
+// zum Entschlüsseln nannte bis zum 08.10.2026 einen Aufruf, der die Datei im Container suchte:
+// Die Sicherungen von update.sh und scripts/backup.sh liegen auf dem Host. Die Datei geht
+// deshalb über die Standardeingabe in das Werkzeug.
+//
+// Blindheit: nur Zeilen mit echo, printf oder log_ in update.sh und scripts/*.sh; ein Befehl,
+// der über eine Variable oder ein Here-Dokument gedruckt wird, bleibt unsichtbar.
+func TestSkripte_GedruckteBefehleOhnePlatzhalter(t *testing.T) {
+	// ausgenommen: Datei → Platzhalter, mit Grund.
+	ausgenommen := map[string]string{
+		// Den Namen des Caddy-Containers kennt das Skript nicht; er hängt am Server.
+		"../scripts/deploy.sh": "<caddy_container>",
+	}
+	dateien, err := filepath.Glob("../scripts/*.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dateien = append(dateien, "../update.sh")
+	druckt := regexp.MustCompile(`\b(echo|printf|log_[a-z]+)\b`)
+	platzhalter := regexp.MustCompile(`<[A-Za-zäöüÄÖÜß_.-]+>`)
+	gedruckt, oeffnet := 0, 0
+	benutzt := map[string]bool{}
+	for _, datei := range dateien {
+		for i, zeile := range strings.Split(lies(t, datei), "\n") {
+			if strings.HasPrefix(strings.TrimSpace(zeile), "#") || !druckt.MatchString(zeile) {
+				continue
+			}
+			gedruckt++
+			for _, fund := range platzhalter.FindAllString(zeile, -1) {
+				if ausgenommen[datei] == fund {
+					benutzt[datei] = true
+					continue
+				}
+				t.Errorf("%s:%d druckt einen Befehl mit dem Platzhalter %s — den Wert einsetzen oder abfragen (read): %s",
+					datei, i+1, fund, strings.TrimSpace(zeile))
+			}
+			if strings.Contains(zeile, "restore-backup") {
+				oeffnet++
+				if !strings.Contains(zeile, "./restore-backup /dev/stdin <") {
+					t.Errorf("%s:%d nennt restore-backup ohne die Datei über die Standardeingabe — die Sicherung liegt "+
+						"auf dem Host, das Werkzeug im Container: %s", datei, i+1, strings.TrimSpace(zeile))
+				}
+			}
+		}
+	}
+	if gedruckt < 100 {
+		t.Fatalf("nur %d druckende Zeilen gefunden — der Detektor sieht die Skripte nicht", gedruckt)
+	}
+	if oeffnet < 3 {
+		t.Fatalf("nur %d gedruckte Hinweise auf restore-backup gefunden, erwartet mindestens 3 (update.sh zweimal, scripts/backup.sh)", oeffnet)
+	}
+	for datei := range ausgenommen {
+		if !benutzt[datei] {
+			t.Errorf("die Ausnahme für %s greift nicht mehr — austragen", datei)
+		}
+	}
+}
+
 // umgebungOhneGit liefert die Umgebung ohne die Variablen, mit denen git sein Repository
 // findet. Unter einem Hook in einer verknüpften Arbeitskopie zeigt GIT_DIR auf das echte
 // Repository — die Wegwerf-Repositories des Tests schrieben sonst dorthin.

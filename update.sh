@@ -159,8 +159,11 @@ print_rollback_instructions() {
     echo -e "${YELLOW}Alle verfügbaren Backups:${NC}"
     ls -lh "${BACKUP_DIR}"/*.sql.gz "${BACKUP_DIR}"/*.sql.gz.enc 2>/dev/null || echo "  (keine Backups gefunden)"
     echo ""
+    # Die Dateien liegen auf dem Host, das Werkzeug im Container: Die Datei geht über die
+    # Standardeingabe hinein.
     echo -e "${YELLOW}Verschlüsselte Sicherungen (.enc) zuerst öffnen:${NC}"
-    echo "     docker compose exec backend ./restore-backup <datei>.sql.gz.enc /tmp/dump.sql"
+    echo "     read -rp \"Datei: \" ENC"
+    echo "     docker exec -i ${BACKEND_CONTAINER} ./restore-backup /dev/stdin < \"\$ENC\" > wiederherstellung.sql"
     echo ""
 }
 
@@ -401,7 +404,7 @@ elif krypto_moeglich; then
     log_info "Verschlüssele ${BACKUP_FILE} …"
     if verschluessele_datei "${BACKUP_FILE}"; then
         log_ok "Verschlüsselt: ${KRYPTO_ZIEL} (Klartext gelöscht)."
-        log_info "Öffnen mit: docker compose exec backend ./restore-backup <datei> /tmp/dump.sql"
+        log_info "Öffnen mit: docker exec -i ${BACKEND_CONTAINER} ./restore-backup /dev/stdin < \"${KRYPTO_ZIEL}\" > wiederherstellung.sql"
     else
         log_warn "Verschlüsselung fehlgeschlagen — die Sicherung bleibt im KLARTEXT liegen:"
         log_warn "  ${BACKUP_FILE}"

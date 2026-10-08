@@ -690,6 +690,11 @@ Der Totalverlust des Servers steht seit dem 08.10.2026 in Abschnitt 2f, durchges
 frischen Klon auf dem Entwicklungsrechner. Er setzt eine Sicherung voraus, die nicht auf dem
 Server lag (7.3).
 
+Für die Probe von 2a: Der Abschnitt setzt `pg_dump`, `dropdb`, `createdb`, `psql` und ein
+gebautes `restore-backup` auf dem Rechner voraus, an dem die Befehle laufen. Ob der Zielserver
+sie hat, zeigt die Probe; die Form über die Container (`docker compose exec`, die Datei über
+die Standardeingabe) ist in 2f erprobt.
+
 ### 7.5 Externes Uptime-Signal
 
 Fällt der Server ganz aus, meldet es niemand. Ein externer Monitor ruft alle 5 Minuten `/health`
