@@ -422,17 +422,18 @@ Vermerk.
   Liste der Ausnahmen ist leer. Eine hochgeladene Datei lesen drei Stellen, alle hinter
   Anmeldung und Fachrecht: `inventur/excel_import.go`, `api/lusd_parser_quelle.go`,
   `api/littera_import.go` (`OpenReader`, `GetSheetList` oder `GetSheetName`, `GetRows`). Nach
-  dem Wortlaut der Meldungen, nicht nachgestellt: Sieben beschreiben einen Absturz beim Lesen
-  einer präparierten Datei (einen Absturz in einer Anfrage fängt `api/middleware.go` ab),
-  drei davon in Funktionen, die das Programm nicht aufruft (`GetStyle`,
+  dem Wortlaut der Meldungen: Sieben beschreiben einen Absturz beim Lesen einer präparierten
+  Datei, drei davon in Funktionen, die das Programm nicht aufruft (`GetStyle`,
   `GetConditionalFormats`, die Formel `RIGHT`). Zwei beschreiben eine ausgelastete Maschine:
   beim Öffnen einer verschlüsselten Datei (CVE-2026-107219) und in Funktionen, die Spalten
-  ändern (CVE-2026-107223); die zweiten ruft das Programm nicht auf. Nächster
-  Schritt: je Meldung, die `OpenReader` oder `GetRows` trifft, eine präparierte Datei an den
-  drei Türen nachstellen (Muster `pkg/xlsxgrenze/negativer_sharedstring_test.go`); auf 2.11.1
-  heben, sobald es erscheint. Meldet `govulncheck` eine davon vorher, braucht sie eine
-  benannte Ausnahme mit Nachweis (`security/vuln-ausnahmen.json`,
-  [SECURITY.md](SECURITY.md)). Kategorie B.
+  ändern (CVE-2026-107223); die zweiten ruft das Programm nicht auf.
+  **Seit dem 08.10.2026 gehen alle drei Stellen durch `xlsxgrenze.MitMappe`:** Ein Absturz
+  der Bibliothek beim Öffnen oder Lesen wird dort zum Fehler „ungültige Datei" statt zum Ende
+  des Prozesses, und ein OLE-Container (der Weg der verschlüsselten Datei) wird vor excelize
+  abgewiesen. Beides rot gesehen (`pkg/xlsxgrenze/mitmappe_test.go`). Offen bleibt: auf 2.11.1
+  heben, sobald es erscheint; die Schranke bleibt danach als zweite Lage. Meldet `govulncheck`
+  eine der neun vorher, braucht sie eine benannte Ausnahme mit Nachweis
+  (`security/vuln-ausnahmen.json`, [SECURITY.md](SECURITY.md)). Kategorie B.
 - **gosec: acht Regeln global ausgenommen** (gemessen mit v2.29.0 am 28.09.2026, ohne
   `-exclude`): G706 (38 Stellen in 20 Dateien, nachgezählt am 07.10.2026), G704 (6), G703 (5),
   G120 (5), G124 (4), G404 (4), G115 (3), G101 (1); der Grund je Regel steht in

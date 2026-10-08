@@ -8,8 +8,6 @@ import (
 	"io"
 	"strings"
 
-	"bibliothek/pkg/closeutil"
-
 	"github.com/xuri/excelize/v2"
 )
 
@@ -91,19 +89,36 @@ func leseCsvZeilen(content []byte) ([]tabellenZeile, error) {
 // in anderer Reihenfolge tragen und werden umsortiert. Gelesen werden Rohwerte: Datumszellen
 // kommen als Excel-Serienzahl und werden in parseLUSDDatum zurückgerechnet.
 func leseXlsxZeilen(content []byte) ([]tabellenZeile, error) {
-	f, err := excelize.OpenReader(bytes.NewReader(content), xlsxgrenze.Optionen())
+	// Nur das Lesen der Blätter liegt hinter der Schranke; die Kopfzeilen-Suche darunter
+	// arbeitet auf fertigen Zeichenketten und darf keinen eigenen Fehler an sie verlieren.
+	blaetter, err := xlsxgrenze.MitMappe(bytes.NewReader(content), func(f *excelize.File) ([][]tabellenZeile, error) {
+		var alle [][]tabellenZeile
+		for _, blatt := range f.GetSheetList() {
+			rows, err := leseXlsxBlatt(f, blatt)
+			if err != nil {
+				return nil, err
+			}
+			alle = append(alle, rows)
+		}
+		return alle, nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("Excel-Datei konnte nicht geöffnet werden: %w", err)
+		if xlsxgrenze.IstUnlesbar(err) {
+			return nil, fmt.Errorf("Excel-Datei konnte nicht geöffnet werden: %w", err)
+		}
+		return nil, err
 	}
-	defer closeutil.LogClose(f, "lusd xlsx")
 
+	return fuegeBlaetterZusammen(blaetter)
+}
+
+// fuegeBlaetterZusammen sammelt aus den Blättern die mit Kopfzeile zu einer Tabelle; ohne
+// ein solches Blatt kommen die Zeilen des ersten nicht leeren zurück, damit die
+// Kopfzeilen-Meldung dort entsteht.
+func fuegeBlaetterZusammen(blaetter [][]tabellenZeile) ([]tabellenZeile, error) {
 	var ersteZeilen []tabellenZeile
 	var gesamt xlsxTabelle
-	for _, blatt := range f.GetSheetList() {
-		rows, err := leseXlsxBlatt(f, blatt)
-		if err != nil {
-			return nil, err
-		}
+	for _, rows := range blaetter {
 		if len(rows) == 0 {
 			continue
 		}

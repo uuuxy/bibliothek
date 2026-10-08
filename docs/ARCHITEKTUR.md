@@ -646,7 +646,7 @@ HTTP-Anfrage
 | `imageutil`        | Bildkonvertierung (JPEG/PNG/GIF/WebP → JPEG), Qualitätsvorgabe                                                                    |
 | `csvutil`          | Schutz vor CSV-/Formel-Injection (CWE-1236) beim Export                                                                           |
 | `pdfzeichen`       | Die eine Zeichenersetzung für alle PDFs: gofpdf druckt in cp1252, ş, ł, ğ … würden sonst zum Punkt (seit 21.09.2026, Ratsche `pdfzeichen_ratsche_test.go`) |
-| `xlsxgrenze`       | Grenzprüfung für den Excel-Leser (Anlass: `GO-2026-6452`)                                                                          |
+| `xlsxgrenze`       | Die eine Tür zu einer hochgeladenen XLSX: Entpackgrenze, Abweisung verschlüsselter Container, Schranke gegen Abstürze der Bibliothek |
 | `isbnutil`         | ISBN normalisieren                                                                                                                |
 | `code39`           | Rechnet das Prüfzeichen wieder heraus, das bis zum 17.09.2026 auf jedem Aufdruck stand                                            |
 | `kennung`          | UUID-Form genau so prüfen, wie Postgres sie annimmt (nicht `urn:uuid:…`)                                                          |
@@ -2124,7 +2124,7 @@ wenn man ihn einmal gebraucht hat.
   kennt (`security/vuln-ausnahmen.json`) — nicht ein globales Abschalten. Ein Befund, der
   begründet keiner ist, wird am Code nachgemessen und dokumentiert (Beispiel: die
   Schwachstelle im Excel-Leser, die diesen Code nicht erreicht;
-  `pkg/xlsxgrenze` hält die Grenze fest).
+  `pkg/xlsxgrenze` hält Grenze und Schranke fest).
 - **Dependabot** (`.github/dependabot.yml`) gruppiert Updates; die Gates entscheiden, ob
   sie durchgehen. Achtung: Dependabot hebt bei einem Go-Bump nur `go.mod` — die
   `Dockerfile`-Zeile muss mitziehen, und genau das erzwingt

@@ -65,14 +65,14 @@ func istLitteraXML(filename, contentStr string) bool {
 // leseTabellarischeDaten liest die Zeilen aus einer XLSX- oder CSV-Datei.
 func leseTabellarischeDaten(filename string, content []byte, contentStr string) (rows [][]string, isXLSX bool, err error) {
 	if strings.HasSuffix(strings.ToLower(filename), ".xlsx") {
-		f, err := excelize.OpenReader(bytes.NewReader(content), xlsxgrenze.Optionen())
-		if err != nil {
+		rows, err := xlsxgrenze.MitMappe(bytes.NewReader(content), func(f *excelize.File) ([][]string, error) {
+			sheetName := f.GetSheetName(f.GetActiveSheetIndex())
+			return f.GetRows(sheetName, excelize.Options{RawCellValue: true})
+		})
+		switch {
+		case xlsxgrenze.IstUnlesbar(err):
 			return nil, true, fmt.Errorf("failed to open excel file: %w", err)
-		}
-		defer closeutil.LogClose(f, litteraImportSource)
-		sheetName := f.GetSheetName(f.GetActiveSheetIndex())
-		rows, err = f.GetRows(sheetName, excelize.Options{RawCellValue: true})
-		if err != nil {
+		case err != nil:
 			return nil, true, fmt.Errorf("failed to get excel rows: %w", err)
 		}
 		return rows, true, nil

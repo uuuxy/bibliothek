@@ -61,25 +61,25 @@ func parseCSVRows(file io.Reader) ([][]string, error) {
 	return rows, nil
 }
 
-// parseExcelRows liest die erste Tabelle einer Excel-Datei.
+// parseExcelRows liest die erste Tabelle einer Excel-Datei, hinter der Schranke aus
+// xlsxgrenze: Eine kaputte oder verschlüsselte Datei wird eine „ungültige excel-datei",
+// kein Absturz.
 func parseExcelRows(file io.Reader) ([][]string, error) {
-	f, err := excelize.OpenReader(file, xlsxgrenze.Optionen())
-	if err != nil {
+	rows, err := xlsxgrenze.MitMappe(file, func(f *excelize.File) ([][]string, error) {
+		sheets := f.GetSheetList()
+		if len(sheets) == 0 {
+			return nil, errors.New("excel-datei ist leer")
+		}
+		rows, err := f.GetRows(sheets[0])
+		if err != nil || len(rows) < 1 {
+			return nil, errors.New("keine daten gefunden")
+		}
+		return rows, nil
+	})
+	if xlsxgrenze.IstUnlesbar(err) {
 		return nil, errors.New("ungültige excel-datei")
 	}
-	defer func() { _ = f.Close() }() //nolint:errcheck
-
-	sheets := f.GetSheetList()
-	if len(sheets) == 0 {
-		return nil, errors.New("excel-datei ist leer")
-	}
-
-	rows, err := f.GetRows(sheets[0])
-	if err != nil || len(rows) < 1 {
-		return nil, errors.New("keine daten gefunden")
-	}
-
-	return rows, nil
+	return rows, err
 }
 
 func determineColumnIndices(header []string) (map[string]int, bool) {

@@ -2,10 +2,10 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-07 (Rechte-Matrix: Jede Änderung steht im Protokoll;
+> Zuletzt aktualisiert: 2026-10-08 (XLSX-Importe: alle Lesestellen durch
+> `xlsxgrenze.MitMappe` — Absturz-Schranke und Abweisung verschlüsselter Container).
+> Davor 2026-10-07 (Rechte-Matrix: Jede Änderung steht im Protokoll;
 > Bestätigungs-Link: die Angabe „180 Tage" berichtigt, gültig ist er 21 Tage als Vorgabe).
-> Davor 2026-10-05 (Anmeldung: Bei einem Ausfall des Mailservers bleibt es
-> dabei, dass sich niemand neu anmelden kann).
 > Davor 2026-10-02 (Scan im Passwortfeld: ein in Scannergeschwindigkeit
 > getipptes Passwort gilt als Scan).
 > Davor 2026-10-01 (Einrichtung: was `APP_ENV` schaltet, die Vorlage ohne
@@ -785,6 +785,15 @@ in 2.11.0 nur der gewöhnliche Weg. Auf dem Auslagerungs-Weg stürzt 2.11.0 weit
 die beiden Entpackgrenzen auseinanderliegen (`TestNegativerSharedStringIndex_IstEineEchteGefahr`
 in `pkg/xlsxgrenze/negativer_sharedstring_test.go`, am 25.09.2026 grün, also mit Absturz).
 `xlsxgrenze.Optionen()` setzt beide gleich, und die Tests daneben halten das fest.
+
+Seit dem 08.10.2026 öffnen und lesen die drei Importwege ihre Datei nur noch über
+`xlsxgrenze.MitMappe`: Die Entpackgrenze, die Abweisung verschlüsselter OLE-Container (deren
+Entschlüsselungsweg in excelize an einer selbst gewählten Zahl ungebremst rechnet,
+CVE-2026-107219) und eine Schranke, die einen Absturz der Bibliothek an einer präparierten
+Datei zum Fehler „ungültige Datei" macht, statt den Prozess zu reißen — excelize fängt eigene
+Abstürze nicht ab, und am 07.10.2026 wurden mehrere solcher Abstürze gemeldet, für die es noch
+keine veröffentlichte Fassung mit Korrektur gibt (OFFEN.md 5.10). Wer eine vierte Lesestelle
+baut, geht durch `MitMappe`, nicht an ihr vorbei.
 
 **CodeQL läuft daneben, ohne Datei im Repository.** Für dieses Repository ist GitHubs
 **Standard-Setup** aktiv (Settings → Code security → Code scanning). Es analysiert `go`,
