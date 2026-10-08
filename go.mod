@@ -1,6 +1,6 @@
 module bibliothek
 
-go 1.27.1
+go 1.27.2
 
 require (
 	github.com/boombuler/barcode v1.1.0
@@ -26,7 +26,7 @@ require (
 	github.com/xuri/excelize/v2 v2.11.1-0.20261003002531-6258dcebc4e2
 	golang.org/x/crypto v0.57.0
 	golang.org/x/image v0.46.0
-	golang.org/x/net v0.59.0
+	golang.org/x/net v0.60.0
 	golang.org/x/text v0.42.0
 )
 

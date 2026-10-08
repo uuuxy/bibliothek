@@ -63,7 +63,7 @@ if command -v golangci-lint &> /dev/null; then
     fi
 else
     echo -e "${YELLOW}⚠ golangci-lint nicht installiert — das ERSTE Gate der CI läuft hier NICHT mit.${NC}"
-    echo -e "${YELLOW}  Version bitte wie in .github/workflows/ci.yml halten (dort v2.13.2):${NC}"
+    echo -e "${YELLOW}  Version bitte wie in .github/workflows/ci.yml halten (dort v2.14.0):${NC}"
     echo -e "${YELLOW}  https://golangci-lint.run/docs/welcome/install/${NC}"
 fi
 

@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 08.10.2026 (Entwurf)
+Stand: 09.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -156,7 +156,7 @@ einmal allein, nur mit diesen Seiten.
 | Abhängigkeiten               | wöchentlich, montags 06:00 Berliner Zeit                                                                                    | Dependabot öffnet Pull Requests; die CI prüft sie                                                                                                | einzeln ansehen, bei grüner CI übernehmen. Kein automatisches Übernehmen; TypeScript 7 ist bewusst zurückgehalten (`.github/dependabot.yml`)                                                                                         |
 | Sicherheitsprüfung           | bei jedem Push und montags 07:00 UTC                                                                                        | `.github/workflows/security-scan.yml` wird rot                                                                                                   | Abhängigkeit heben. Gibt es keinen Fix und trifft die Lücke den Code nicht: Ausnahme nach den Regeln in `security/vuln-ausnahmen.json` — mit Nachweis als Test und Wiedervorlage                                                     |
 | Wiedervorlage einer Ausnahme | je Eintrag in `security/vuln-ausnahmen.json`; seit dem 25.09.2026 ist die Liste leer                                        | ab dem Tag nach der Wiedervorlage ist die Sicherheitsprüfung rot, bei jedem Push und im Wochenlauf                                               | nachsehen, ob es einen Fix gibt; dann die Abhängigkeit heben und die Ausnahme löschen                                                                                                                                                |
-| Go                           | halbjährlich (Februar, August); unterstützt sind die zwei neuesten Linien, zurzeit 1.26 und 1.27                            | Dependabot schlägt die neue Docker-Basis vor; ein Test verlangt dieselbe Version in `go.mod` und `Dockerfile` (`docs/umgebung_paritaet_test.go`) | `go.mod` und `Dockerfile` gemeinsam heben; `golangci-lint` und `govulncheck` am Arbeitsplatz mitziehen, sonst verweigern die Hooks; die festen Versionen von gosec und govulncheck in `.github/workflows/security-scan.yml` mitheben |
+| Go                           | halbjährlich (Februar, August); unterstützt sind die zwei neuesten Linien, zurzeit 1.26 und 1.27                            | Dependabot schlägt die neue Docker-Basis vor; ein Test verlangt dieselbe Version in `go.mod` und `Dockerfile` (`docs/umgebung_paritaet_test.go`) | `go.mod`, `go.work` und `Dockerfile` gemeinsam heben; `golangci-lint` und `govulncheck` am Arbeitsplatz mitziehen, sonst verweigern die Hooks; die festen Versionen von gosec und govulncheck in `.github/workflows/security-scan.yml` mitheben |
 | Node                         | Node 24 ist bis zum 20. Oktober 2026 aktive LTS, danach in Wartung bis 30. April 2028; Node 26 wird am 28. Oktober 2026 LTS | Projektregel: immer die aktive LTS; ein Test verlangt dieselbe Hauptversion an allen Stellen                                                     | `Dockerfile` und `.github/workflows/ci.yml` gemeinsam heben                                                                                                                                                                          |
 | Runner-Abbild der Prüfläufe  | wenn GitHub ein neues Ubuntu-Abbild bereitstellt oder das eingesetzte abkündigt; seit dem 08.10.2026 `ubuntu-26.04` | Ankündigung von GitHub; alle vier Workflows nennen das Abbild fest, `ubuntu-latest` nimmt keiner | Probelauf mit `gh workflow run ci.yml -f runner=<Abbild>`, dann `runs-on` in allen vier Workflows umstellen und den Namen in `.github/actionlint.yaml` eintragen, solange actionlint ihn nicht kennt; den ersten Lauf je Workflow ansehen |
 | PostgreSQL, Hauptversion     | 18 wird bis 14. November 2030 gepflegt                                                                                      | ein Test verlangt eine Hauptversion an allen Stellen (`docs/umgebung_paritaet_test.go`)                                                          | nur über Sicherung und Wiederherstellung ([DEPLOYMENT.md](DEPLOYMENT.md) §5); den `pg_dump`-Client im `Dockerfile` mitziehen, sonst schlägt die sonntägliche Probe Alarm                                                             |
@@ -217,6 +217,23 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   (`pkg/xlsxgrenze/`); den alten Stand nimmt
   `GOWORK=off go test -modfile=<altes go.mod> ./pkg/xlsxgrenze/`. Was offen bleibt, steht in
   [OFFEN.md](OFFEN.md) 5.10.
+- **Der Push bricht an der Schwachstellen-Prüfung ab, am Stand hat sich nichts geändert
+  (Go-Standardbibliothek, 09.10.2026).** govulncheck meldete 13 Schwachstellen in der
+  Standardbibliothek von Go 1.27.1 (`net/http`, `crypto/tls`, `html/template`, `os`,
+  `net/textproto`), alle behoben in Go 1.27.2 vom selben Tag; eine halbe Stunde vorher war
+  derselbe Hook grün. Abhilfe: die Fassung an drei Stellen gemeinsam heben (`go.mod`,
+  `go.work`, `FROM golang:…` im `Dockerfile`; `docs/umgebung_paritaet_test.go` hält sie
+  gleich) und `golang.org/x/net` auf die Fassung, die die Meldung nennt
+  (`go get golang.org/x/net@v0.60.0`). Vorher nachsehen, dass es die Fassung gibt:
+  `GOTOOLCHAIN=go1.27.2 go version` und `docker manifest inspect golang:1.27.2-alpine`.
+  Mit Go 1.27.2 meldete golangci-lint 2.13.2 an jeder Datei „could not import … export data
+  version 5 is greater than maximum supported version 4": Es liest die Paketdaten der neuen
+  Go-Fassung nicht. Es braucht 2.14.0, am Arbeitsplatz (`brew upgrade golangci-lint`) und in
+  `.github/workflows/ci.yml` (`version:`); sonst scheitert schon der Hook vor dem Commit, und
+  in der CI fiele der Lint-Schritt vor den Tests. gosec 2.29.0 und govulncheck 1.8.0 baut der
+  Sicherheits-Prüflauf aus dem Quelltext; beide laufen mit Go 1.27.2 (am Arbeitsplatz mit
+  `GOBIN=<Ordner> go install …@<Fassung>` nachgestellt). Danach die Go-Suite und ein Bau des
+  Images unter einem Probe-Namen (`docker build -t <Name> .`).
 - **Nach einem Update der Pakete baut das Frontend nicht mehr (21.08.2026).** Ein `npm update`
   ohne Paketnamen hob auch den Bundler, und `npm run build` brach an gültigem Code;
   svelte-check, ESLint und Vitest blieben grün. Pakete deshalb einzeln heben und danach
