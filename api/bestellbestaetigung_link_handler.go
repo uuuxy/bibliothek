@@ -78,12 +78,7 @@ func (s *Server) erneuereBestaetigungsToken(ctx context.Context, bestellungID st
 	if err != nil {
 		return "", time.Time{}, err
 	}
-	err = s.DB.Pool.QueryRow(ctx, `
-		UPDATE bestellungen_verlauf
-		SET bestaetigungs_token_hash = $1, token_gueltig_bis = now() + make_interval(days => $2)
-		WHERE id = $3
-		RETURNING token_gueltig_bis
-	`, hash, s.bestellinkGueltigkeitTage(ctx), bestellungID).Scan(&gueltigBis)
+	gueltigBis, err = repository.ErneuereBestaetigungsToken(ctx, s.DB.Pool, bestellungID, hash, s.bestellinkGueltigkeitTage(ctx))
 	if err != nil {
 		return "", time.Time{}, err
 	}

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -45,7 +46,7 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 	resetBestandsdaten(t, pool)
 	_, rufe := protokollWelt(t, pool)
 	ohneDesign := func() {
-		aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, ausweisLayoutKey)
+		aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
 	}
 	ohneDesign()
 	t.Cleanup(ohneDesign)
@@ -85,7 +86,7 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 	// Eine Zeile ohne Inhalt ist dasselbe wie keine Zeile: Die Antwort muss JSON bleiben.
 	t.Run("leere Zeile: leeres Objekt", func(t *testing.T) {
 		if _, err := pool.Exec(t.Context(),
-			`INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, '  ')`, ausweisLayoutKey); err != nil {
+			`INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, '  ')`, repository.AusweisLayoutSchluessel); err != nil {
 			t.Fatal(err)
 		}
 		if rumpf := lade(t); rumpf != "{}" {
@@ -114,7 +115,7 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 			t.Errorf("geladen %q, gespeichert %q", rumpf, zweites)
 		}
 		if n := zaehleZeilen(t, pool,
-			`SELECT count(*) FROM system_einstellungen WHERE schluessel = $1`, ausweisLayoutKey); n != 1 {
+			`SELECT count(*) FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel); n != 1 {
 			t.Errorf("%d Zeilen für das Design, erwartet 1", n)
 		}
 		if rec := speichere(t, design); rec.Code != http.StatusOK {
@@ -154,14 +155,14 @@ func TestAusweisLayout_LesefehlerIstKeinLeeresDesign(t *testing.T) {
 	const design = `{"printMode":"karte","front":[{"id":"e1"}],"back":[]}`
 	if _, err := pool.Exec(t.Context(), `
 		INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)
-		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`, ausweisLayoutKey, design); err != nil {
+		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`, repository.AusweisLayoutSchluessel, design); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, ausweisLayoutKey)
+		aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
 	})
 
-	gestoert := poolMitLesefehlerBei{PgxPoolIface: pool, muster: "FROM system_einstellungen", schluessel: ausweisLayoutKey}
+	gestoert := poolMitLesefehlerBei{PgxPoolIface: pool, muster: "FROM system_einstellungen", schluessel: repository.AusweisLayoutSchluessel}
 	_, sitzung, router := routerMitSitzungUeber(t, pool, gestoert,
 		"ausweis-layout-lesefehler@example.org", "Lea", "Lesefehler")
 	req := httptest.NewRequest(http.MethodGet, "/api/ausweis-layout", nil)

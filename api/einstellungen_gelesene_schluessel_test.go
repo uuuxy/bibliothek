@@ -80,7 +80,7 @@ func TestKeineNeuenRohenEinstellungsLeser(t *testing.T) {
 		"repository/betriebszustand.go":  "LadeEinstellungswert — generisch, liest das Ergebnis der Restore-Probe",
 		"repository/system_settings.go":  "die Einstellungs-Schicht selbst",
 		"internal/service/loan_rules.go": "liest ALLE Zeilen und bildet sie über applyEinstellung ab (vom Gate oben erfasst)",
-		"api/ausweis_layout.go":          "eigener Endpunkt, schreibt und liest dieselbe Zeile",
+		"repository/ausweis_layout.go":   "eigene Tür (api/ausweis_layout.go), schreibt und liest dieselbe Zeile",
 		"jobs/restore_probe.go":          "schreibt und liest sein eigenes Ergebnis",
 	}
 

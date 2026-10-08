@@ -9,15 +9,10 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
-
-// ausweisLayoutKey ist der Schlüssel des Ausweis-Designs im Key-Value-Store
-// system_einstellungen (wert TEXT). Das Design wird zentral gehalten, damit alle
-// vernetzten Arbeitsplätze (Ausleihe vorn, Druck im Hintergrundbüro) exakt denselben
-// Stand sehen — localStorage wäre bei mehreren PCs eine Sackgasse.
-const ausweisLayoutKey = "ausweis_layout"
 
 // maxAusweisLayoutBytes begrenzt das Design (Base64-Logos können groß werden).
 const maxAusweisLayoutBytes = 5 << 20 // 5 MiB
@@ -31,9 +26,7 @@ const maxAusweisLayoutBytes = 5 << 20 // 5 MiB
 // geprüft — nach einem gescheiterten Scan ist der Wert immer leer.
 func (s *Server) GetAusweisLayoutHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var wert string
-		err := s.DB.Pool.QueryRow(r.Context(),
-			`SELECT wert FROM system_einstellungen WHERE schluessel = $1`, ausweisLayoutKey).Scan(&wert)
+		wert, err := repository.LadeAusweisLayout(r.Context(), s.DB.Pool)
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
 			wert = "{}"
@@ -65,11 +58,7 @@ func (s *Server) SaveAusweisLayoutHandler() http.HandlerFunc {
 			return
 		}
 
-		if _, err := s.DB.Pool.Exec(r.Context(),
-			`INSERT INTO system_einstellungen (schluessel, wert, aktualisiert_am)
-			 VALUES ($1, $2, CURRENT_TIMESTAMP)
-			 ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert, aktualisiert_am = CURRENT_TIMESTAMP`,
-			ausweisLayoutKey, string(body)); err != nil {
+		if err := repository.SpeichereAusweisLayout(r.Context(), s.DB.Pool, string(body)); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Ausweis-Design konnte nicht gespeichert werden"))
 			return
 		}

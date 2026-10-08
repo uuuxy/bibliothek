@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -22,29 +23,9 @@ type BestaetigenRequest struct {
 
 // bestellungImBestaetigungsweg beantwortet für BEIDE Bestätigungs-Handler dieselbe Frage:
 // Gehört diese Bestellung überhaupt zum Bestätigungs-Weg?
-//
-// Zwei Wege führen dorthin, und beide zählen:
-//
-//   - Die Bestellung IST mit einem Link rausgegangen (Token vorhanden). Daran ändert ein
-//     späterer Wechsel des Hauptlieferanten nichts — sie wartet weiter auf Bestätigung.
-//     Über das heutige Merkmal des Lieferanten gefragt, verlöre sie ihren Bestätigen-
-//     Schritt in dem Moment, in dem jemand anderes Hauptlieferant wird.
-//   - Ihr Lieferant ist der heutige Hauptlieferant, die Bestellung hat aber noch keinen
-//     Link — der Fall, für den es NeuerBestaetigungsLinkHandler gibt (beim Bestellen war
-//     noch keine öffentliche Adresse hinterlegt).
-//
-// COALESCE gegen lieferant_id IS NULL (ON DELETE SET NULL, Migration 037): Eine Bestellung
-// überlebt den gelöschten Lieferanten als Beleg, ein NULL-Scan in bool würde das sonst mit
-// einem 500 abbrechen (Bugklasse NULL-Scan, docs/sweeps.md).
+// Die Abfrage und ihre zwei Wege stehen an repository.BestellungImBestaetigungsweg.
 func (s *Server) bestellungImBestaetigungsweg(ctx context.Context, id string) (bool, error) {
-	var ok bool
-	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT b.bestaetigungs_token_hash IS NOT NULL OR coalesce(l.ist_hauptlieferant, false)
-		FROM bestellungen_verlauf b
-		LEFT JOIN lieferanten l ON l.id = b.lieferant_id
-		WHERE b.id = $1
-	`, id).Scan(&ok)
-	return ok, err
+	return repository.BestellungImBestaetigungsweg(ctx, s.DB.Pool, id)
 }
 
 // BestaetigenBestellungHandler trägt einen rein externen Vorgang nach: Lieferanten wie
@@ -120,28 +101,9 @@ func (s *Server) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// bestaetigeBestellung trägt die Bestätigung ein und meldet über bereits=true, dass sie
-// schon vorlag. Beide Wege — Link und manueller Nachtrag — laufen hier durch, damit es
-// nur EINE Stelle gibt, an der der Zustand kippt.
-//
-// bestaetigt_am IS NULL macht das atomar: Bestätigen der Lieferant und die Bibliothek
-// gleichzeitig (oder zwei Arbeitsplätze im Multi-PC-Betrieb), gewinnt genau einer — der
-// andere bekommt 409, statt den Eintrag still zu überschreiben. Eine getrennte
-// Vorab-Prüfung hätte zwischen SELECT und UPDATE ein Wettlauf-Fenster.
-//
-// groesse darf leer sein: Über den Link ist die Etikettengröße nur eine Notiz, kein
-// Pflichtfeld. NULLIF hält die Spalte dann auf NULL, wie es der CHECK verlangt.
+// bestaetigeBestellung trägt die Bestätigung ein und meldet über bereits=true, dass sie schon
+// vorlag. Der Link und der Nachtrag von Hand laufen beide hier durch: eine Stelle, an der der
+// Zustand kippt. Die Anweisung steht an repository.BestaetigeBestellung.
 func (s *Server) bestaetigeBestellung(ctx context.Context, bestellungID, groesse, format, durch string) (bereits bool, err error) {
-	tag, err := s.DB.Pool.Exec(ctx, `
-		UPDATE bestellungen_verlauf
-		SET bestaetigt_am = now(), etiketten_groesse = NULLIF($1, ''),
-		    etiketten_format = NULLIF($2, ''), bestaetigt_durch = $3
-		WHERE id = $4 AND bestaetigt_am IS NULL
-	`, groesse, format, durch, bestellungID)
-	if err != nil {
-		return false, err
-	}
-	// Kein Löschpfad für bestellungen_verlauf existiert — 0 betroffene Zeilen nach der
-	// Existenzprüfung des Aufrufers heißt daher immer: schon bestätigt.
-	return tag.RowsAffected() == 0, nil
+	return repository.BestaetigeBestellung(ctx, s.DB.Pool, bestellungID, groesse, format, durch)
 }
