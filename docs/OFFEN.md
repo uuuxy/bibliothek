@@ -433,9 +433,16 @@ Vermerk.
   Absenden einer Bestellung, dazu eine Ratsche im Wurzelpaket. Kategorie B.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
-  (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
-  neue Abbild — brechen kann etwa der Postgres-Client oder die Chromium-Abhängigkeiten von
-  Playwright; spätestens, wenn GitHub `ubuntu-24.04` abkündigt. Nicht darunter: CodeQL läuft
+  (actions/runner-images#14748). **Probelauf am 08.10.2026:** Die vier Jobs von `ci.yml` sind
+  auf `ubuntu-26.04` grün (Lauf 37756014701 am Stand f7571e37, im Protokoll „Image:
+  ubuntu-26.04", Betriebssystem 26.04.1): actionlint, die Go-Suite mit Linter, Datenbank und
+  PostgreSQL-Client, ESLint, svelte-check und Vitest, die Browser-Tests mit dem lokalen Stack.
+  Gestartet mit `gh workflow run ci.yml -f runner=ubuntu-26.04`; der Handstart läuft in
+  eigener Gruppe neben den Läufen zu `main`. Nicht probiert sind die sechs Jobs der drei
+  anderen Workflows (`security-scan.yml`, `docker-publish.yml`, `release.yml`): Sie nehmen kein
+  Abbild als Eingabe, `release.yml` läuft nur bei einem v-Tag. Offen: den Wechsel legen, also
+  die Runner-Zeilen aller vier Workflows umstellen und den ersten Lauf je Workflow ansehen;
+  spätestens, wenn GitHub `ubuntu-24.04` abkündigt. Nicht darunter: CodeQL läuft
   in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine Workflow-Datei) auf
   `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf steht an jedem
   CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der CodeQL-Lauf rot.
