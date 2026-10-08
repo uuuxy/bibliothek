@@ -2086,6 +2086,20 @@ wenn man ihn einmal gebraucht hat.
   `git status` leer. Ratschen, die Go-Quelltext oder SQL-Dateien zur Laufzeit lesen, sehen das
   Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren. Bleibt eine Probe grün,
   misst der Test den Fall nicht.
+- **Eine Regel über Titeltexte wird an Sätzen der DNB gemessen.** Die Datenbank am
+  Arbeitsplatz trägt keine Untertitel, und eine Schulstufe nennen dort nur Titel aus
+  Testläufen. Die DNB liefert Sätze über SRU ohne Anmeldung, 100 je Abruf, `startRecord`
+  blättert:
+  `https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=tit%3DSchuljahr&recordSchema=MARC21-xml&maximumRecords=100&startRecord=1`.
+  Ein Wegwerf-Test im Paket `inventur`, über `go test -overlay` als zusätzliche Datei
+  eingehängt, liest die Antworten mit `dekodiereMARC`, bildet den Titel wie die ISBN-Abfrage
+  (`marcBibDaten`: die Unterfelder a, b, n und p von Feld 245, mit Leerzeichen verbunden) und
+  lässt alte und neue Regel nebeneinander laufen. Gezählt wird je Titel: neu, geändert,
+  verloren, unverändert; jede Gruppe wird gelesen. So gemessen am 08.10.2026 für den Vorschlag
+  des Jahrgangs an 1.327 Sätzen: Ein Strich mit Leerzeichen trennt dort Band und Jahrgang
+  („Band 1 - 11. Schuljahr"), und vor der Stufe steht oft eine Jahreszahl („Ausgabe 2027 - 5.
+  Schuljahr"). Die Regel dazu steht in [FACHKONZEPT.md](FACHKONZEPT.md) §13, „Jahrgang am
+  Titel".
 - **Welchen Code kein Go-Test ausführt,** zeigt die ganze Suite mit `-coverpkg` über alle
   Pakete des Moduls (ohne das Go-Paket, das npm unter `frontend/node_modules` ablegt). Am
   08.10.2026 führt sie 86,5 % der Anweisungen aus (28.016 von 32.405); ohne `cmd/`, `main.go`
