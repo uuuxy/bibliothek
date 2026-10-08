@@ -36,7 +36,7 @@ var buchListenSelect = `
 		COUNT(e.id) FILTER (WHERE ` + repository.SQLExemplarImBestand + `) AS gesamt,
 		` + repository.SQLFilterImZulauf + ` AS im_zulauf,
 		TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp,
-		COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis,
+		COALESCE(bt.jahrgang_von, 0) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 0) AS jahrgang_bis,
 		COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag,
 		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr,
 		bt.erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, bt.mehrjahresband` + buchWerkSpalten + `
@@ -64,7 +64,7 @@ var buchListenSelectSchlank = `
 		COUNT(e.id) FILTER (WHERE ` + repository.SQLExemplarImBestand + `) AS gesamt,
 		` + repository.SQLFilterImZulauf + ` AS im_zulauf,
 		TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp,
-		COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis,
+		COALESCE(bt.jahrgang_von, 0) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 0) AS jahrgang_bis,
 		COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag,
 		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr,
 		'{}'::jsonb AS erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, bt.mehrjahresband` + buchWerkSpalten + `

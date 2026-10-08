@@ -255,12 +255,12 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 
 	// Lernmittel, Fach und Jahrgang (Migration 093): Der Import liest sie aus Litteras
 	// Signatur „LMF Bio 7", den Schlagwörtern und der Zielgruppe (pkg/lmf). Beim
-	// Insert werden sie gesetzt; Jahrgang ohne Angabe fällt auf die Spaltenvorgabe 5–10.
+	// Insert werden sie gesetzt; ohne Angabe bleibt der Jahrgang leer (unbekannt, Migration 162).
 	const qInsert = `
 		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, signatur,
 		                           ist_lernmittel, subject, grade_level, jahrgang_von, jahrgang_bis, aktualisiert_am)
 		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), NULLIF($6, ''),
-		        $7, NULLIF($8, ''), NULLIF($9, 0)::smallint, COALESCE(NULLIF($10, 0), 5), COALESCE(NULLIF($11, 0), 10),
+		        $7, NULLIF($8, ''), NULLIF($9, 0)::smallint, NULLIF($10, 0), NULLIF($11, 0),
 		        CURRENT_TIMESTAMP)
 	`
 	// autor/verlag/erscheinungsjahr sind wie signatur/isbn per COALESCE geschützt:
@@ -270,9 +270,9 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	// ist_lernmittel wird per OR nur GESETZT, nie gelöscht: Ein Buch, das jemand in der
 	// Maske als Lernmittel markiert hat, verliert das nicht durch einen Export, der es
 	// nicht kennt. Fach und Klassenstufe füllen nur Leerstellen. Die Jahrgangsspanne
-	// dagegen folgt der Quelle, sobald sie eine nennt — sie hat eine Spaltenvorgabe
-	// (5–10), an der sich „ungepflegt" nicht von „gepflegt" unterscheiden lässt, und
-	// Litteras Signatur ist für den Altbestand die gepflegte Quelle.
+	// dagegen folgt der Quelle, sobald sie beide Werte nennt: Litteras Signatur ist für
+	// den Altbestand die gepflegte Quelle. Nennt die Quelle keine, bleibt am Titel, was
+	// dort steht.
 	//
 	// Ausgenommen ist ein Mehrjahresband (Migration 134): Den Schalter gibt es nur in
 	// der Titel-Verwaltung, und wer ihn setzt, setzt die Spanne mit — sie ist dann
@@ -290,8 +290,8 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 			ist_lernmittel = ist_lernmittel OR $8,
 			subject = COALESCE(subject, NULLIF($9, '')),
 			grade_level = COALESCE(NULLIF(grade_level, 0), NULLIF($10, 0)::smallint),
-			jahrgang_von = CASE WHEN $11 > 0 AND NOT mehrjahresband THEN $11 ELSE jahrgang_von END,
-			jahrgang_bis = CASE WHEN $12 > 0 AND NOT mehrjahresband THEN $12 ELSE jahrgang_bis END,
+			jahrgang_von = CASE WHEN $11 > 0 AND $12 > 0 AND NOT mehrjahresband THEN $11 ELSE jahrgang_von END,
+			jahrgang_bis = CASE WHEN $11 > 0 AND $12 > 0 AND NOT mehrjahresband THEN $12 ELSE jahrgang_bis END,
 			aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $1
 	`

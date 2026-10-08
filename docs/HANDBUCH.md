@@ -202,7 +202,12 @@ Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort 
   mit: „Bleibt beim Kind bis zum Ende von Jahrgang 9." Die Frist ist dann der Stichtag des
   Schuljahres, in dem das Kind diesen Jahrgang beendet — ein Kind der 7 gibt ein Buch „7 bis
   9" nach drei Schuljahren zurück. Der Haken geht nur mit einer Spanne über mehr als
-  einen Jahrgang; und Vorsicht mit der Vorgabe 5 bis 10, die jeder neue Titel trägt. (§2)
+  einen Jahrgang. (§2)
+- **Jahrgang ohne Eintrag**: Bleiben „von" und „bis" leer, ist der Jahrgang des Titels
+  unbekannt (seit 08.10.2026; vorher trug jeder neue Titel „5 bis 10"). Ein solcher Titel
+  liegt in keiner Inventur nach Klasse und steht im Portal unter keinem Jahrgang; ohne
+  Filter erscheint er wie bisher. „von" und „bis" gehören zusammen: Nur eines von beiden
+  lässt sich nicht speichern. (§2)
 - **Titel ohne Exemplar** stehen in keinem Katalog und in keiner Trefferliste — weder im
   Portal noch an der Theke (seit 22.09.2026; ein bestelltes Exemplar zählt schon). Sie sind
   aber nicht weg: In der Titel-Verwaltung schaltet der Umschalter _Mit Exemplaren | Ohne
@@ -749,7 +754,8 @@ es mehr, steht die Gesamtzahl darüber) · **Klassensätze** der
 eigenen Klassen · **LMF-Plan** (seit 05.09.2026: Rückgabe- und Ausgabetermine je Klasse,
 für alle gleich, als PDF; → _LMF-Plan_) · **Schulbücher** (seit 03.09.2026, für die Fachsprecher: aufgebaut wie die
 Klassensätze, nur nach Fach statt Klasse. Oben Suche (Titel, ISBN, Autor, Fach) und die
-Filter Jahrgang und Schulzweig; darunter je Fach eine Zeile mit Exemplaren, Titeln und
+Filter Jahrgang und Schulzweig (der Filter Jahrgang zeigt nur Bücher, an denen ein Jahrgang
+eingetragen ist); darunter je Fach eine Zeile mit Exemplaren, Titeln und
 Verliehenen, die sich zu den Cover-Kacheln der Bücher aufklappt. „Als PDF" sitzt an
 jedem Fach und druckt genau dieses Fach mit der aktuellen Filterung: eine Zeile je Buch
 mit Coverbild, Titel, Autor, ISBN, Jahrgang, Schulzweig, Zähldatum und den Zahlen. Die

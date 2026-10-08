@@ -151,6 +151,14 @@ func TestInventurFilterScopeFachKlasse(t *testing.T) {
 	matheKl5 := seedFachExemplar(t, pool, "Mathematik", 5, 6, "BC-MA5")  // im Scope
 	matheKl9 := seedFachExemplar(t, pool, "Mathematik", 9, 10, "BC-MA9") // falsche Klasse
 	deutschKl5 := seedFachExemplar(t, pool, "Deutsch", 5, 6, "BC-DE5")   // falsches Fach
+	// Ein Titel ohne Jahrgangsangabe gehört zu keiner Klasse (Migration 162). Mit der früheren
+	// Vorgabe 5 bis 10 lag er in jeder Inventur dieser Klassen und stand beim Abschluss als
+	// Verlust im Bericht.
+	matheOhne := seedFachExemplar(t, pool, "Mathematik", 5, 6, "BC-MA0")
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = NULL, jahrgang_bis = NULL
+		WHERE id = (SELECT titel_id FROM buecher_exemplare WHERE id = $1)`, matheOhne); err != nil {
+		t.Fatalf("Titel ohne Jahrgang: %v", err)
+	}
 
 	subject, grade := "Mathematik", 5
 	scope := InventurScope{Subject: &subject, Grade: &grade}
@@ -173,6 +181,11 @@ func TestInventurFilterScopeFachKlasse(t *testing.T) {
 	} else if in {
 		t.Error("Deutsch Kl.5 sollte NICHT im Scope sein (falsches Fach)")
 	}
+	if in, err := repo.ExemplarImScope(ctx, matheOhne, scope); err != nil {
+		t.Fatalf("ExemplarImScope matheOhne: %v", err)
+	} else if in {
+		t.Error("Mathe ohne Jahrgang sollte NICHT im Scope einer Klasse sein")
+	}
 
 	sess, err := repo.CreateInventurSession(ctx, "filter", scope, "Mathematik · Kl. 5", "")
 	if err != nil {
@@ -190,7 +203,7 @@ func TestInventurFilterScopeFachKlasse(t *testing.T) {
 	if aus := ausgesonderteZahl(t, pool, []string{matheKl5}); aus != 1 {
 		t.Errorf("In-Scope Mathe Kl.5 nicht als Verlust ausgesondert: %d", aus)
 	}
-	if aus := ausgesonderteZahl(t, pool, []string{matheKl9, deutschKl5}); aus != 0 {
+	if aus := ausgesonderteZahl(t, pool, []string{matheKl9, deutschKl5, matheOhne}); aus != 0 {
 		t.Errorf("Out-of-Scope-Exemplare fälschlich ausgesondert: %d", aus)
 	}
 }

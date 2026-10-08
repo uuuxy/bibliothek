@@ -31,7 +31,7 @@ func (repo *BookRepository) legeTitelAn(ctx context.Context, book Book, anderesM
 
 	query := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, signatur, ist_lernmittel, auflage, listenpreis, mehrjahresband)
-		VALUES (NULLIF($1, ''), $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, COALESCE(NULLIF($11, 0), 5), COALESCE(NULLIF($12, 0), 10), $13, $14, $15, NULLIF($16, ''), $17, NULLIF($18, ''), $19, $20)
+		VALUES (NULLIF($1, ''), $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, NULLIF($11, 0), NULLIF($12, 0), $13, $14, $15, NULLIF($16, ''), $17, NULLIF($18, ''), $19, $20)
 		RETURNING id`
 
 	medientyp := book.Medientyp
@@ -133,8 +133,10 @@ const titelBeiKonflikt = `ON CONFLICT (isbn) DO UPDATE SET
 			track = COALESCE(NULLIF(buecher_titel.track, ''), EXCLUDED.track),
 			last_counted = COALESCE(buecher_titel.last_counted, EXCLUDED.last_counted),
 			medientyp = COALESCE(NULLIF(buecher_titel.medientyp, ''), EXCLUDED.medientyp),
-			jahrgang_von = COALESCE(NULLIF(buecher_titel.jahrgang_von, 0), EXCLUDED.jahrgang_von),
-			jahrgang_bis = COALESCE(NULLIF(buecher_titel.jahrgang_bis, 0), EXCLUDED.jahrgang_bis),
+			-- Eine gepflegte Spanne bleibt, eine fehlende kommt aus der Datei. Beide Spalten
+			-- hängen an derselben Bedingung: Die Spanne ist ganz gesetzt oder gar nicht.
+			jahrgang_von = CASE WHEN buecher_titel.jahrgang_von IS NULL THEN EXCLUDED.jahrgang_von ELSE buecher_titel.jahrgang_von END,
+			jahrgang_bis = CASE WHEN buecher_titel.jahrgang_von IS NULL THEN EXCLUDED.jahrgang_bis ELSE buecher_titel.jahrgang_bis END,
 			untertitel = COALESCE(NULLIF(buecher_titel.untertitel, ''), EXCLUDED.untertitel),
 			verlag = COALESCE(NULLIF(buecher_titel.verlag, ''), EXCLUDED.verlag),
 			erscheinungsjahr = COALESCE(NULLIF(buecher_titel.erscheinungsjahr, 0), EXCLUDED.erscheinungsjahr),
@@ -239,7 +241,7 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, q dbSch
 	// diese Spalte darf ein markiertes Schulbuch nicht zum Bibliotheksbuch machen.
 	query := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis)
-		SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF(t.subject, ''), NULLIF(t.grade_level, 0)::smallint, t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, COALESCE(NULLIF(t.jahrgang_von, 0), 5), COALESCE(NULLIF(t.jahrgang_bis, 0), 10), t.untertitel, t.verlag, t.erscheinungsjahr, t.erweiterte_eigenschaften, NULLIF(t.signatur, ''), t.ist_lernmittel, NULLIF(t.auflage, ''), t.listenpreis
+		SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF(t.subject, ''), NULLIF(t.grade_level, 0)::smallint, t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, NULLIF(t.jahrgang_von, 0), NULLIF(t.jahrgang_bis, 0), t.untertitel, t.verlag, t.erscheinungsjahr, t.erweiterte_eigenschaften, NULLIF(t.signatur, ''), t.ist_lernmittel, NULLIF(t.auflage, ''), t.listenpreis
 		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::text[], $9::text[], $10::int[], $11::int[], $12::text[], $13::text[], $14::int[], $15::jsonb[], $16::text[], $17::boolean[], $18::text[], $19::numeric[])
 		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis)
 		` + titelBeiKonflikt + `
@@ -370,7 +372,7 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 
 	query := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis)
-		VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, 0)::smallint, $7, NULLIF($8::text, '')::date, $9, COALESCE(NULLIF($10, 0), 5), COALESCE(NULLIF($11, 0), 10), $12, $13, $14, $15, NULLIF($16, ''), $17, NULLIF($18, ''), $19)
+		VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, 0)::smallint, $7, NULLIF($8::text, '')::date, $9, NULLIF($10, 0), NULLIF($11, 0), $12, $13, $14, $15, NULLIF($16, ''), $17, NULLIF($18, ''), $19)
 		` + titelBeiKonflikt + `
 		RETURNING id`
 

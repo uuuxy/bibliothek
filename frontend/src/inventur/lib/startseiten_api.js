@@ -40,9 +40,8 @@ const suchSynonyme = new Map([
 ]);
 
 /**
- * Trifft ein Buch den Jahrgang? Entweder über gradeLevel oder über die gepflegte
- * Spanne von–bis. Die Spalten-Vorgabe 5 bis 10 steht an jedem Titel ohne Angabe und sagt
- * nichts über den Jahrgang (wie jahrgangText in inventur/lernmittel_pdf.go).
+ * Trifft ein Buch den Jahrgang? Entweder über gradeLevel oder über die Spanne von–bis; ohne
+ * Spanne (0) trifft sie keinen.
  * @param {any} b
  * @param {number} jahrgang
  */
@@ -50,7 +49,7 @@ function trifftJahrgang(b, jahrgang) {
 	if (b.gradeLevel && Number(b.gradeLevel) === jahrgang) return true;
 	const von = Number(b.jahrgangVon);
 	const bis = Number(b.jahrgangBis);
-	if (!von || !bis || (von === 5 && bis === 10)) return false;
+	if (!von || !bis) return false;
 	return jahrgang >= von && jahrgang <= bis;
 }
 

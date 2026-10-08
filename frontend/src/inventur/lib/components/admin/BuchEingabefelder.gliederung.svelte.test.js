@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/svelte';
+import { render, fireEvent } from '@testing-library/svelte';
+import { tick } from 'svelte';
 
 vi.mock('../../../../lib/apiFetch.js', () => ({
 	apiFetch: vi.fn(),
@@ -98,10 +99,23 @@ describe('BuchEingabefelder: Reihenfolge und Gruppen', () => {
 		/** @type {any} */
 		const formular = $state({ ...leeresBuchFormular(), id: 't-1' });
 		const screen = maske(formular);
-		// Die Maske ergänzt ihre Vorgaben in einem Effekt; erst danach steht das Formular fest.
-		await waitFor(() => expect(formular.jahrgangVon).toBeDefined());
+		await tick();
 		expect(screen.queryByLabelText(/Standort/)).toBeNull();
 		expect(JSON.stringify(formular)).not.toContain('standort');
+	});
+
+	// Ohne Eingabe bleibt der Jahrgang unbekannt: Die Maske trägt keine Vorgabe ein. Bis
+	// Migration 162 setzte sie 5 und 10, und der Titel war von einem für 5 bis 10 nicht zu
+	// unterscheiden.
+	it('trägt an einem neuen Titel keinen Jahrgang ein', async () => {
+		/** @type {any} */
+		const formular = $state(leeresBuchFormular());
+		const screen = maske(formular);
+		await tick();
+		expect(formular.jahrgangVon ?? null).toBeNull();
+		expect(formular.jahrgangBis ?? null).toBeNull();
+		expect(/** @type {HTMLInputElement} */ (screen.getByLabelText(/Jahrgang von/)).value).toBe('');
+		expect(/** @type {HTMLInputElement} */ (screen.getByLabelText('bis Jahrgang')).value).toBe('');
 	});
 
 	it('trägt eine Überschrift nur über der zweiten Gruppe', () => {

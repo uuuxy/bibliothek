@@ -29,3 +29,28 @@ func TestPruefeMehrjahresband(t *testing.T) {
 		})
 	}
 }
+
+func TestPruefeJahrgangsSpanne(t *testing.T) {
+	faelle := []struct {
+		name     string
+		von, bis int
+		ok       bool
+	}{
+		{"unbekannt: 0 und 0", 0, 0, true},
+		{"ein Jahrgang", 7, 7, true},
+		{"5 bis 10 ist eine Angabe wie jede andere", 5, 10, true},
+		{"Ränder 1 bis 13", 1, 13, true},
+		{"nur von", 7, 0, false},
+		{"nur bis", 0, 9, false},
+		{"von über bis", 9, 7, false},
+		{"bis über 13", 12, 14, false},
+		{"von unter 1", -1, 5, false},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			if err := pruefeJahrgangsSpanne(f.von, f.bis); (err == nil) != f.ok {
+				t.Errorf("%d bis %d: err=%v, erwartet ok=%v", f.von, f.bis, err, f.ok)
+			}
+		})
+	}
+}

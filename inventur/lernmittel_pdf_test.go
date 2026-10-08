@@ -242,7 +242,7 @@ func TestSchulbuecherAlsPDF_JahrgangText(t *testing.T) {
 		want string
 	}{
 		{"0-0", LernmittelTitel{JahrgangVon: 0, JahrgangBis: 0}, ""},
-		{"5-10 (unbekannt)", LernmittelTitel{JahrgangVon: 5, JahrgangBis: 10}, ""},
+		{"5-10 ist eine Angabe wie jede andere", LernmittelTitel{JahrgangVon: 5, JahrgangBis: 10}, "5–10"},
 		{"Einzeljahrgang", LernmittelTitel{JahrgangVon: 7, JahrgangBis: 7}, "7"},
 		{"Von-Bis", LernmittelTitel{JahrgangVon: 7, JahrgangBis: 13}, "7–13"},
 	}

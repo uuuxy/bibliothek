@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
 import { apiFetch } from '../../lib/apiFetch.js';
-import { speichereBuch, stehtInSicht, DubletteFehler } from './buch_speichern.js';
+import { speichereBuch, stehtInSicht, titelFuerMaske, DubletteFehler } from './buch_speichern.js';
+import { geaenderteFelder } from './buch_felder.js';
 
 /** @param {number} status @param {any} koerper */
 const antwort = (status, koerper) =>
@@ -99,5 +100,34 @@ describe('buch_speichern: stehtInSicht', () => {
 		[3, 'ohne', false]
 	])('Bestand %s in der Sicht „%s": %s', (bestand, sicht, erwartet) => {
 		expect(stehtInSicht(bestand, /** @type {'mit'|'ohne'} */ (sicht))).toBe(erwartet);
+	});
+});
+
+// Ohne Angabe liefert der Server 0 und 0 (Migration 162). In der Maske stehen die zwei Felder
+// dann leer, und der Stand vom Öffnen trägt dasselbe: Ein unberührter Titel schickt nichts.
+describe('buch_speichern: titelFuerMaske', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
+
+	it('ein unbekannter Jahrgang steht als leeres Feld da und gilt als unverändert', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort(200, { id: 't-1', title: 'Atlas', stock: 2, jahrgangVon: 0, jahrgangBis: 0 })
+		);
+		const formular = await titelFuerMaske({ id: 't-1' });
+		expect(formular.jahrgangVon).toBeNull();
+		expect(formular.jahrgangBis).toBeNull();
+		expect(geaenderteFelder(formular)).toEqual({});
+	});
+
+	it('eine Spanne bleibt, und ein geleertes Feld geht als null hinaus', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			antwort(200, { id: 't-2', title: 'Bio 7', stock: 1, jahrgangVon: 7, jahrgangBis: 9 })
+		);
+		const formular = await titelFuerMaske({ id: 't-2' });
+		expect([formular.jahrgangVon, formular.jahrgangBis]).toEqual([7, 9]);
+		formular.jahrgangVon = null;
+		formular.jahrgangBis = null;
+		expect(geaenderteFelder(formular)).toEqual({ jahrgangVon: null, jahrgangBis: null });
 	});
 });

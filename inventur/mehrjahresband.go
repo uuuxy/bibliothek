@@ -15,6 +15,22 @@ import "errors"
 // lesbaren Antwort (400), bevor die Datenbank sie zu einem 500 macht.
 var errMehrjahresband = errors.New("mehrjahresband: nur bei einem Lernmittel und nur mit einer Spanne über mehr als einen Jahrgang (bis über von, beide 1 bis 13)")
 
+// errJahrgangsSpanne: Die Spanne „im Unterricht von Jahrgang … bis" ist ganz angegeben oder gar
+// nicht. 0 und 0 heißt „unbekannt" und ist eine eigene Angabe (Migration 162); eine Vorgabe
+// gibt es nicht. Dieselbe Regel steht als CHECK chk_jahrgang_spanne in der Datenbank.
+var errJahrgangsSpanne = errors.New("jahrgang: „von“ und „bis“ gehören zusammen (beide 1 bis 13, „von“ nicht über „bis“) oder bleiben beide leer")
+
+// pruefeJahrgangsSpanne prüft die Spanne für Anlegen und Ändern.
+func pruefeJahrgangsSpanne(von, bis int) error {
+	if von == 0 && bis == 0 {
+		return nil
+	}
+	if von < 1 || bis > 13 || bis < von {
+		return errJahrgangsSpanne
+	}
+	return nil
+}
+
 // pruefeMehrjahresband prüft die Angabe für Anlegen und Ändern — dieselbe Regel an beiden
 // Türen.
 func pruefeMehrjahresband(istLernmittel, mehrjahresband bool, von, bis int) error {

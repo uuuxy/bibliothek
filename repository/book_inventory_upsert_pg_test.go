@@ -251,3 +251,46 @@ func TestBulkUpsertBookTitles_FachWirdRegistriertUndEingetragen(t *testing.T) {
 		t.Errorf("%d Sachgruppen mit der Bezeichnung %q, erwartet 1", registriert, fach)
 	}
 }
+
+// Nennt die Quelle keinen Jahrgang, bleibt er am neuen Titel unbekannt (NULL, Migration 162),
+// und ein vorhandener Titel behält seine Spanne: Der Import überschreibt sie nicht mit nichts.
+func TestBulkUpsertBookTitles_OhneJahrgangBleibtUnbekannt(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	repo := NewBookRepository(pool)
+	const isbnNeu, isbnMitSpanne = "9780000162011", "9780000162028"
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn IN ($1, $2)`, isbnNeu, isbnMitSpanne); err != nil {
+			t.Errorf("aufräumen: %v", err)
+		}
+	})
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO buecher_titel (titel, isbn, jahrgang_von, jahrgang_bis)
+		VALUES ('Lesebuch 7 bis 9', $1, 7, 9)`, isbnMitSpanne); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+
+	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{
+		{Titel: "Roman ohne Jahrgang", ISBN: isbnNeu},
+		{Titel: "Lesebuch 7 bis 9", ISBN: isbnMitSpanne},
+	}); err != nil {
+		t.Fatalf("Import: %v", err)
+	}
+
+	var unbekannt bool
+	if err := pool.QueryRow(ctx,
+		`SELECT jahrgang_von IS NULL AND jahrgang_bis IS NULL FROM buecher_titel WHERE isbn = $1`, isbnNeu).Scan(&unbekannt); err != nil {
+		t.Fatal(err)
+	}
+	if !unbekannt {
+		t.Error("der neue Titel ohne Jahrgang trägt eine Spanne, erwartet NULL und NULL")
+	}
+	var von, bis int
+	if err := pool.QueryRow(ctx,
+		`SELECT coalesce(jahrgang_von, 0), coalesce(jahrgang_bis, 0) FROM buecher_titel WHERE isbn = $1`, isbnMitSpanne).Scan(&von, &bis); err != nil {
+		t.Fatal(err)
+	}
+	if von != 7 || bis != 9 {
+		t.Errorf("der vorhandene Titel trägt nach dem Import %d bis %d, erwartet weiter 7 bis 9", von, bis)
+	}
+}

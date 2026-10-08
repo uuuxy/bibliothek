@@ -37,8 +37,8 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 			UPDATE system_einstellungen SET wert = '${FRIST_VORHER}' WHERE schluessel = 'frist_buch_tage';
 			DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE barcode_id LIKE 'RT-%${s}%');
 			DELETE FROM lehrer_anliegen WHERE titel_text LIKE 'RT Meldung ${s}%';
-			DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn IN ('978rt${s}','${ISBN}','${ISBN_LM}'));
-			DELETE FROM buecher_titel WHERE isbn IN ('978rt${s}','${ISBN}','${ISBN_LM}');
+			DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn IN ('978rt${s}','${ISBN}','${ISBN_LM}') OR titel = 'RT Ohne Jahrgang ${s}');
+			DELETE FROM buecher_titel WHERE isbn IN ('978rt${s}','${ISBN}','${ISBN_LM}') OR titel = 'RT Ohne Jahrgang ${s}';
 			DELETE FROM schueler WHERE barcode_id = 'RT-${s}';
 		`);
 	});
@@ -105,6 +105,65 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 				`SELECT ist_lernmittel::text || '|' || coalesce(track, '') || '|' || jahrgang_von || '-' || jahrgang_bis || '|' || mehrjahresband::text FROM buecher_titel WHERE isbn = '${ISBN_LM}'`
 			)
 		).toBe('true|Realschule|7-9|true');
+	});
+
+	// Ohne Eintrag bleibt der Jahrgang unbekannt (Migration 162): Die zwei Felder stehen an einem
+	// neuen Titel leer, und in der Datenbank steht keine Spanne. Eine halbe Spanne lehnt der
+	// Server mit einem Satz ab; geleert wird eine Spanne wieder unbekannt.
+	test('Jahrgang ohne Eintrag bleibt unbekannt, eine halbe Spanne wird abgelehnt', async ({
+		page
+	}) => {
+		const titel = `RT Ohne Jahrgang ${s}`;
+		const spanne = () =>
+			querySQL(
+				`SELECT coalesce(jahrgang_von::text, 'leer') || '-' || coalesce(jahrgang_bis::text, 'leer') FROM buecher_titel WHERE titel = '${titel}'`
+			);
+		// Nach dem Speichern schließt die Maske einen Augenblick später. Wer den Titel vorher
+		// wieder öffnet, tippt noch in die alte Maske.
+		const maskeIstZu = () => expect(page.locator('#buch-jahrgang-von')).toHaveCount(0);
+		await uiLogin(page);
+		await page.goto('/medienkatalog');
+		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+		await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+		await page.locator('#buch-titel').fill(titel);
+		await page.locator('#buch-signatur').fill('BIB Rt');
+		await expect(page.locator('#buch-jahrgang-von')).toHaveValue('');
+		await expect(page.locator('#buch-jahrgang-bis')).toHaveValue('');
+		const speichern = page.getByRole('button', { name: 'Speichern' });
+		await speichern.click();
+		await expect(page.getByText(titel).first()).toBeVisible({ timeout: 10000 });
+		expect(spanne(), 'ohne Eintrag steht keine Spanne in der Datenbank').toBe('leer-leer');
+
+		// Den Titel wieder öffnen: Die Felder stehen leer da, nicht mit einer Null.
+		await maskeIstZu();
+		const suche = page.getByRole('searchbox', { name: 'Bücher durchsuchen' });
+		await suche.fill(titel);
+		await page.getByText(titel).first().click();
+		await expect(page.locator('#buch-signatur')).toHaveValue('BIB Rt', { timeout: 15000 });
+		await expect(page.locator('#buch-jahrgang-von')).toHaveValue('');
+
+		// Nur „von": Der Server lehnt ab und sagt, warum; gespeichert ist nichts.
+		await page.locator('#buch-jahrgang-von').fill('7');
+		await speichern.click();
+		await expect(page.getByText(/gehören zusammen/)).toBeVisible({ timeout: 10000 });
+		expect(spanne(), 'eine halbe Spanne ist nicht gespeichert').toBe('leer-leer');
+
+		// Mit „bis" dazu ist es eine Spanne.
+		await page.locator('#buch-jahrgang-bis').fill('9');
+		await speichern.click();
+		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible({ timeout: 15000 });
+		expect(spanne()).toBe('7-9');
+
+		// Beide Felder geleert: Der Jahrgang ist wieder unbekannt. Die Meldung des Speicherns
+		// davor kann noch stehen, deshalb wartet die Probe auf den Stand in der Datenbank.
+		await maskeIstZu();
+		await suche.fill(titel);
+		await page.getByText(titel).first().click();
+		await expect(page.locator('#buch-jahrgang-von')).toHaveValue('7', { timeout: 15000 });
+		await page.locator('#buch-jahrgang-von').fill('');
+		await page.locator('#buch-jahrgang-bis').fill('');
+		await speichern.click();
+		await expect.poll(spanne, { timeout: 15000 }).toBe('leer-leer');
 	});
 
 	test('Abgangsjahr und Rückgabedatum im Profil', async ({ page }) => {

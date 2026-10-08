@@ -172,6 +172,10 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 	if !validiereBuchErstellenEingabe(antwort, eingabe) {
 		return
 	}
+	if fehler := pruefeJahrgangsSpanne(eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
+		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		return
+	}
 	if fehler := pruefeMehrjahresband(eingabe.IstLernmittel, eingabe.Mehrjahresband, eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
 		writeError(antwort, http.StatusBadRequest, fehler.Error())
 		return

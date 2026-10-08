@@ -50,11 +50,6 @@
 	});
 
 	const schlagworteGeladen = $derived(Array.isArray(formular.schlagworte));
-
-	$effect(() => {
-		if (formular.jahrgangVon === undefined) formular.jahrgangVon = 5;
-		if (formular.jahrgangBis === undefined) formular.jahrgangBis = 10;
-	});
 </script>
 
 <!-- Die Angaben zum Buch tragen keine Überschrift: Der Kopf der Maske benennt sie. Zuerst

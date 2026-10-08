@@ -19,8 +19,8 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 			ON CONFLICT (email) DO UPDATE SET aktiv = true;
 			INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ('E2EF${s}', '${FACH}');
 			WITH t AS (
-				INSERT INTO buecher_titel (isbn, titel, autor, subject, ist_lernmittel)
-				VALUES ('978sb${s}', '${TITEL}', 'Portal Autor', '${FACH}', true)
+				INSERT INTO buecher_titel (isbn, titel, autor, subject, ist_lernmittel, jahrgang_von, jahrgang_bis)
+				VALUES ('978sb${s}', '${TITEL}', 'Portal Autor', '${FACH}', true, 5, 10)
 				RETURNING id
 			), f AS (
 				-- Kein Lernmittel: darf in der Fach-Kachel NICHT mitzählen.
@@ -73,10 +73,8 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 		await suche.fill('');
 		await expect(page.getByRole('button', { name: new RegExp(`${FACH}`) })).toBeVisible();
 
-		// Jahrgang-Filter über den Draht: Der Seed-Titel trägt die Spalten-Vorgabe 5–10, ist
-		// also unter Jahrgang 7 dabei und unter Jahrgang 12 nicht. Bis zum 03.09.2026 abends
-		// prüfte diese Spec nur die Suche — der Filter-Zweig des Handlers war an keiner
-		// Stelle über den Draht belegt (Rasterdurchgang, Frage 7).
+		// Jahrgang-Filter über den Draht: Der Seed-Titel trägt die Spanne 5 bis 10, ist also
+		// unter Jahrgang 7 dabei und unter Jahrgang 12 nicht.
 		const jahrgang = page.getByLabel('Nach Jahrgang filtern');
 		await jahrgang.click();
 		await page.getByRole('option', { name: 'Jahrgang 7' }).click();
@@ -86,6 +84,20 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 		await expect(page.getByRole('button', { name: new RegExp(FACH) })).toHaveCount(0);
 		await jahrgang.click();
 		await page.getByRole('option', { name: 'Alle Jahrgänge' }).click();
+		await expect(page.getByRole('button', { name: new RegExp(FACH) })).toBeVisible();
+
+		// Ohne Spanne ist der Jahrgang unbekannt (Migration 162): Der Titel steht unter keinem
+		// Jahrgang und ohne Filter weiter in der Liste. Jahrgang 8 lag in seiner Spanne und war
+		// in dieser Sitzung noch nicht gewählt.
+		seedSQL(
+			`UPDATE buecher_titel SET jahrgang_von = NULL, jahrgang_bis = NULL WHERE isbn = '978sb${s}'`
+		);
+		await jahrgang.click();
+		await page.getByRole('option', { name: 'Jahrgang 8' }).click();
+		await expect(page.getByRole('button', { name: new RegExp(FACH) })).toHaveCount(0);
+		await jahrgang.click();
+		await page.getByRole('option', { name: 'Alle Jahrgänge' }).click();
+		await expect(page.getByRole('button', { name: new RegExp(FACH) })).toBeVisible();
 
 		// Schulzweig: Der Seed-Titel trägt keinen Zweig — „leer heißt gilt für alle", er muss
 		// also auch unter Gymnasium erscheinen und unter „Ohne Schulzweig" ebenfalls.

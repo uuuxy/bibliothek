@@ -80,16 +80,18 @@ func TestMehrjahresband_StehtAmWerkUndErreichtDieFristregel(t *testing.T) {
 	}
 
 	// Die Datenbank hält die Regel auch für Schreiber, die nicht durch pruefeMehrjahresband
-	// gehen: kein Schalter am Bibliotheksbuch, keiner an einer Spanne über einen Jahrgang.
-	for name, sql := range map[string]string{
-		"Bibliotheksbuch": `UPDATE buecher_titel SET ist_lernmittel = false, mehrjahresband = true WHERE id = $1`,
-		"Spanne 7 bis 7":  `UPDATE buecher_titel SET jahrgang_von = 7, jahrgang_bis = 7, mehrjahresband = true WHERE id = $1`,
-		"bis unter von":   `UPDATE buecher_titel SET jahrgang_von = 9, jahrgang_bis = 7, mehrjahresband = true WHERE id = $1`,
+	// gehen: kein Schalter am Bibliotheksbuch, keiner an einer Spanne über einen Jahrgang,
+	// keiner ohne Spanne. „bis" unter „von" weist schon die Regel der Spanne ab.
+	for _, fall := range []struct{ name, sql, regel string }{
+		{"Bibliotheksbuch", `UPDATE buecher_titel SET ist_lernmittel = false, mehrjahresband = true WHERE id = $1`, "chk_mehrjahresband_spanne"},
+		{"Spanne 7 bis 7", `UPDATE buecher_titel SET jahrgang_von = 7, jahrgang_bis = 7, mehrjahresband = true WHERE id = $1`, "chk_mehrjahresband_spanne"},
+		{"ohne Spanne", `UPDATE buecher_titel SET jahrgang_von = NULL, jahrgang_bis = NULL, mehrjahresband = true WHERE id = $1`, "chk_mehrjahresband_spanne"},
+		{"bis unter von", `UPDATE buecher_titel SET jahrgang_von = 9, jahrgang_bis = 7, mehrjahresband = true WHERE id = $1`, "chk_jahrgang_spanne"},
 	} {
-		_, err := pool.Exec(ctx, sql, id)
+		_, err := pool.Exec(ctx, fall.sql, id)
 		var pgErr *pgconn.PgError
-		if !errors.As(err, &pgErr) || pgErr.ConstraintName != "chk_mehrjahresband_spanne" {
-			t.Errorf("%s: die Datenbank muss den Schalter abweisen (chk_mehrjahresband_spanne), bekam %v", name, err)
+		if !errors.As(err, &pgErr) || pgErr.ConstraintName != fall.regel {
+			t.Errorf("%s: die Datenbank muss den Schalter abweisen (%s), bekam %v", fall.name, fall.regel, err)
 		}
 	}
 }

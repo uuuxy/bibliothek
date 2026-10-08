@@ -36,8 +36,7 @@ type LernmittelTitel struct {
 	Gesamt     int    `json:"gesamt"`
 	Verliehen  int    `json:"verliehen"`
 	Verfuegbar int    `json:"verfuegbar"`
-	// Jahrgang aus Signatur/Import (Migration 093); 5–10 ist die Spalten-Vorgabe und
-	// damit von „unbekannt" nicht zu unterscheiden — die Oberfläche zeigt sie nicht.
+	// Jahrgang aus Signatur, Import oder Maske; 0 und 0 heißt „unbekannt" (Migration 162).
 	JahrgangVon int `json:"jahrgangVon"`
 	JahrgangBis int `json:"jahrgangBis"`
 	// Schulzweig (buecher_titel.track): am Schulbuch gepflegt, seit 03.09.2026 wieder in
@@ -117,7 +116,8 @@ func lernmittelJeBuchSQL() string {
 		WITH titel AS (
 			SELECT b.id, COALESCE(b.werk_id, b.id) AS buch, b.titel, COALESCE(b.autor, '') AS autor,
 			       COALESCE(b.subject, '') AS subject, COALESCE(b.cover_url, '') AS cover_url,
-			       COALESCE(b.isbn, '') AS isbn, b.jahrgang_von, b.jahrgang_bis, COALESCE(b.track, '') AS track,
+			       COALESCE(b.isbn, '') AS isbn, COALESCE(b.jahrgang_von, 0) AS jahrgang_von,
+			       COALESCE(b.jahrgang_bis, 0) AS jahrgang_bis, COALESCE(b.track, '') AS track,
 			       COALESCE(TO_CHAR(b.last_counted, 'DD.MM.YYYY'), '') AS gezaehlt,
 			       b.auflage, b.erscheinungsjahr, b.erstellt_am,` + lernmittelZaehlung + `,
 			       (true ` + lernmittelFilterSQL + `) AS getroffen` + lernmittelJoins + `
@@ -172,7 +172,7 @@ func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context, f Lernmitt
 func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, f LernmittelFilter) ([]LernmittelTitel, error) {
 	rows, err := repo.db.Query(ctx, lernmittelJeBuchSQL()+`
 		WHERE ($4 OR v.subject = $5)
-		ORDER BY (v.subject = ''), v.subject, v.jahrgang_von, v.titel`,
+		ORDER BY (v.subject = ''), v.subject, NULLIF(v.jahrgang_von, 0) NULLS LAST, v.titel`,
 		f.Jahrgang, f.Zweig, f.Suche, alleFaecher, fach)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel eines fachs: %w", err)

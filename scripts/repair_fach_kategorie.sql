@@ -77,7 +77,7 @@ ON CONFLICT (lower(bezeichnung)) DO NOTHING;
 -- Die Signatur („Deu 12", „Ges7", „Re1213", „Bio 7/Nat 106") und der Standorttext
 -- („Buch Bio 7/Nat 106 Exemplare …") tragen beides; die Kürzel sind dieselben wie in
 -- pkg/lmf (fachKuerzel). Nur Lernmittel, nur wo das Fach noch kein kanonisches ist bzw.
--- der Jahrgang noch auf der Vorgabe 5–10 steht.
+-- der Jahrgang fehlt (NULL seit Migration 162; davor stand dort die Vorgabe 5–10).
 CREATE TEMP TABLE kuerzel (k, fach) ON COMMIT DROP AS VALUES
     ('ma','Mathematik'), ('m','Mathematik'), ('deu','Deutsch'), ('d','Deutsch'),
     ('eng','Englisch'), ('e','Englisch'), ('fra','Französisch'), ('f','Französisch'),
@@ -136,7 +136,7 @@ UPDATE buecher_titel t
        aktualisiert_am = CURRENT_TIMESTAMP
   FROM ableitung a
  WHERE t.id = a.id AND a.von BETWEEN 5 AND 13 AND a.bis BETWEEN 5 AND 13 AND a.von <= a.bis
-   AND (t.jahrgang_von, t.jahrgang_bis) IN ((5, 10), (0, 0));
+   AND t.jahrgang_von IS NULL;
 
 -- Schritt 2a: Varianten auf das kanonische Fach ziehen.
 UPDATE buecher_titel t

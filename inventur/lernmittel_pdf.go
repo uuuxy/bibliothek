@@ -228,9 +228,9 @@ func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y float64, fehlend *int
 	pdf.ImageOptions(pfad, x, y, 0, coverH, false, opt, 0, "")
 }
 
-// jahrgangText: „7", „12–13"; die Spalten-Vorgabe 5–10 (= unbekannt) und 0 bleiben leer.
+// jahrgangText: „7", „12–13"; ohne Angabe (0) leer.
 func jahrgangText(t LernmittelTitel) string {
-	if t.JahrgangVon == 0 || (t.JahrgangVon == 5 && t.JahrgangBis == 10) {
+	if t.JahrgangVon == 0 {
 		return ""
 	}
 	if t.JahrgangVon == t.JahrgangBis {

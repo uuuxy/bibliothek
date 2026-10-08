@@ -161,6 +161,9 @@ export async function titelFuerMaske(buch) {
 	if (!formular.medientyp) formular.medientyp = 'Buch';
 	if (formular.lastCounted?.includes('T'))
 		formular.lastCounted = formular.lastCounted.split('T')[0];
+	// 0 heißt „unbekannt": Die zwei Felder stehen dann leer da, nicht mit einer Null.
+	formular.jahrgangVon = formular.jahrgangVon || null;
+	formular.jahrgangBis = formular.jahrgangBis || null;
 	if (formular.id) merkeStand(formular);
 	return formular;
 }

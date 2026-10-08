@@ -145,6 +145,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Leserakte eines Schülers mit Ausleihen, „DSGVO-Auskunft": Die Abschnitte 8 und 9 nennen
   jeden Vorgang in Worten, bei Ausleihe und Rückgabe mit Buchtitel und Nummer; die Beträge
   stehen mit Komma
+- [ ] Jahrgang am Titel: „Neues Buch" öffnen, die zwei Felder zum Jahrgang stehen leer; im
+  Portal unter „Schulbücher" zeigt der Filter „Jahrgang" nur Bücher, an denen ein Jahrgang
+  eingetragen ist; die laufende Inventur nach Klasse erwartet nur noch solche Bücher (7.10)
 
 **Erledigen:**
 
@@ -174,8 +177,10 @@ Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wir
 der Nummer nichts mehr dazu offen ist.
 
 - [ ] **Jahrgang am Titel (5.5):** „Klasse" und „von … bis" werden eine Angabe, „unbekannt" eine
-  eigene (entschieden am 24.09.2026). Der Bauplan in drei Stufen ist seit dem 08.10.2026
-  freigegeben; gebaut wird vor der Übernahme am Schulserver, die Maske zuerst als Bild.
+  eigene (entschieden am 24.09.2026, Bauplan freigegeben am 08.10.2026). Stufe 1 ist seit dem
+  08.10.2026 gebaut: Ohne Eintrag ist der Jahrgang unbekannt, die Vorgabe 5 bis 10 gibt es
+  nicht mehr (Migration 162). Offen: Stufe 2, die Maske ohne „Klasse", zuerst als Bild; danach
+  Stufe 3, die Klasse entfällt ganz. Gebaut wird vor der Übernahme am Schulserver.
 - [x] **Buchakte (5.5):** Ein bestelltes Exemplar, das nie eintraf, steht nach „Exemplar löschen"
   nicht mehr im Abgangsbuch; ausgesonderte und bestellte Exemplare heißen dort seit dem
   07.10.2026 „Ausgesondert" und „Bestellt".
@@ -341,41 +346,48 @@ Vermerk.
   nicht die Ausnahme). Laut, also richtig — nur die Meldung nennt weder Zeile noch Weg.
   Kategorie C, bis es einmal vorkommt.
 - **Jahrgang am Titel: eine Angabe, „unbekannt" als eigener Wert** (entschieden am 24.09.2026,
-  gemessen am 08.10.2026). Der Titel führt zwei Angaben, „Klasse" (`grade_level`) und „von …
-  bis" (`jahrgang_von/bis`); die Spanne trägt an jedem Titel ohne Angabe die Vorgabe 5 bis 10.
+  Bauplan freigegeben am 08.10.2026). Stufe 1 ist seit dem 08.10.2026 gebaut: Die Spanne „von
+  … bis" (`jahrgang_von/bis`) darf fehlen, ohne Eintrag ist der Jahrgang unbekannt, und die
+  Vorgabe 5 bis 10 gibt es nicht mehr (Migration 162; die Regel steht in
+  [FACHKONZEPT.md](FACHKONZEPT.md), die zwei Bugklassen dazu in [sweeps.md](sweeps.md)). Neben
+  der Spanne führt der Titel weiter die „Klasse" (`grade_level`). Offen sind zwei Stufen; die
+  Spalte der Klasse fällt zuletzt, damit jeder Stand auf `main` zusammenpasst.
 
-  **Was die Vorgabe bewirkt:**
-  - Die Inventur „Nach Fach / Klasse" (`InventoryStartModal`, `repository.InventurScope`)
-    trifft für jede Klasse von 5 bis 10 den ganzen Bestand im Regal und für 11 bis 13 nichts:
-    am Testserver je Klasse 34.667 bis 34.757 Exemplare, höchstens 90 davon an Titeln mit
-    eigener Spanne. Beim Abschluss stehen die nicht gescannten als Verlust im Bericht
-    (`FinishInventurSession`). Eine Inventur mit Fach und Klasse 5 wurde dort am 23.07.2026
-    begonnen und nicht abgeschlossen.
-  - Der Filter „Jahrgang" der Schulbücher im Portal (`lernmittelFilterSQL`) zeigt für 5 bis 10
-    jedes Lernmittel mit der Vorgabe, für 11 bis 13 keines davon.
-  - Der Kopf der Buchakte nennt „Jahrgang 5–10" (`BookAkteMeta`).
-  - Ein Mehrjahresband mit der Vorgabe bleibt bis zum Ende von Jahrgang 10.
-  - Katalogsuche (`trifftJahrgang`) und Schulbuchliste (`jahrgangText`) werten 5 bis 10 als
-    „keine Angabe"; eine gepflegte Spanne 5 bis 10 fällt dort heraus.
+  **Stufe 2, die Oberfläche.** Die Maske verliert das Feld „Klasse"; „von" und „bis" werden
+  Auswahlfelder mit „–" für keine Angabe und 5 bis 13 (M3, Menus: „Select menus"; ein
+  Schieberegler scheidet aus, M3, Sliders: „Changes made with sliders must take effect
+  immediately"). Titel-Tabelle und Klassenzuweisung zeigen die Spanne („7", „7–10", „–"). Die
+  Maske wird als Bild gezeigt, bevor sie sichtbar wird.
 
-  **Die Klasse** lesen die Titel-Tabelle, die Klassenzuweisung und die Katalogsuche. Es
-  schreiben sie die Maske (Vorgabe 5 bei einem neuen Buch), der Listenimport (Spalte „klasse")
-  und der Vorschlag der ISBN-Abfrage, der auch aus „Band 2", „Level 9" und jeder Zahl von 5
-  bis 13 im Titel eine Klasse macht (`automatischeKategorisierung`).
+  **Stufe 3, die Klasse entfällt.** Übernahme (`internal/littera/schreiber_bestand.go`),
+  Katalog-Import (`repository/book_inventory.go`), Sammelimport
+  (`internal/service/import_dynamic.go`) und Listenimport
+  (`inventur/import_verarbeitung_zeilen.go`) schreiben nur noch die Spanne; aus der Spalte
+  „klasse" einer Liste wird die Spanne N bis N. Der Vorschlag der ISBN-Abfrage liest nur noch
+  „Klasse N", „Klassen N–M" und „Jahrgangsstufe N"; heute macht er auch aus „Band 2", „Level
+  9" und jeder Zahl von 5 bis 13 im Titel eine Klasse (`automatischeKategorisierung`). Der
+  Filter `?gradeLevel=` der Titelliste, den keine Seite ruft, entfällt. Die Migration entfernt
+  die Spalte, mit einer Messung davor; `scripts/repair_fach_kategorie.sql` schreibt sie noch.
+  In der Oberfläche kennen die Klasse: die Titel-Tabelle (`BookTableZeile`, `book_sorting.js`),
+  die Klassenzuweisung (`ClassAssignmentBookGrid`), die Katalogsuche (`startseiten_api.js`),
+  der Kopf der Buchakte (`BookAkteMeta`), die Maske (`BuchEingabefelderKategorisierung`,
+  `buch_felder.js`, die Vorgabe 5 in `buch_form_optionen.js`) und die ISBN-Abfrage
+  (`isbnAbfrage.svelte.js`).
 
-  **Testserver (08.10.2026, lesend):** 13.056 von 13.062 Titeln tragen die Vorgabe. 155 tragen
-  eine Klasse: 22 die 5, 133 eine von 6 bis 13; 129 dieser 133 bei der Vorgabe, 90 davon
-  Lernmittel. In 57 der 133 steht die Zahl im Titel, bei 62 der 129 nennt die Signatur
-  dieselbe Zahl; mehrjährige Bände tragen ein einziges Jahr („Natur und Technik - Biologie 7
-  - 10": Klasse 7). Woher die Werte stammen, ist nicht belegt.
+  **Die Klassen-Einträge des Testservers verfallen** mit der Spalte (entschieden am
+  08.10.2026). Gemessen am 08.10.2026, lesend: 155 Titel tragen eine Klasse, 22 die 5 und 133
+  eine von 6 bis 13. Fünf davon tragen eine eigene Spanne, die Klasse liegt bei allen darin.
+  Die übrigen 150 (129 von 6 bis 13, 21 mit der 5) trugen die Vorgabe 5 bis 10 und sind mit
+  Migration 162 ohne Spanne; 90 der 129 sind Lernmittel. In 57 der 133 steht die Zahl im
+  Titel, bei 62 der 129 nennt die Signatur dieselbe Zahl; mehrjährige Bände tragen ein
+  einziges Jahr („Natur und Technik - Biologie 7 - 10": Klasse 7). Woher die Werte stammen,
+  ist nicht belegt. Der Schulserver beginnt mit leerer Datenbank, dort gibt es sie nicht.
 
-  **Nach der Littera-Übernahme** (Sicherung von 2010, gezählt mit dem Code der Übernahme):
-  7.467 von 10.732 Titeln bekommen eine Spanne, 257 aus der Signatur (alle ein Jahrgang) und
-  7.210 aus dem Interessenkreis: 11 bis 13 an 2.982 Titeln, 5 bis 13 an 2.414, 5 bis 10 an
-  1.723, 5 bis 6 an 91. 3.265 Titel bekommen keine. Die Klasse steht an den 257 und weicht nie
-  von der Spanne ab. Die 1.723 Titel mit 5 bis 10 wären nach der Übernahme von den 3.265 ohne
-  Angabe nicht zu unterscheiden, und eine spätere Migration könnte sie nicht mehr trennen. Der
-  Umbau gehört deshalb vor die Übernahme am Schulserver.
+  **Nach der Littera-Übernahme** (Sicherung von 2010, gezählt mit dem Code der Übernahme)
+  bekommen 7.467 von 10.732 Titeln eine Spanne: 257 aus der Signatur (alle ein Jahrgang) und
+  7.210 aus dem Interessenkreis (11 bis 13 an 2.982 Titeln, 5 bis 13 an 2.414, 5 bis 10 an
+  1.723, 5 bis 6 an 91). 3.265 Titel bekommen keine; von den 1.723 mit 5 bis 10 sind sie seit
+  Stufe 1 zu unterscheiden. Die Klasse steht an den 257 und weicht nie von der Spanne ab.
 
   **Andere Programme:** Littera führt am Titel keine Klasse; die Schule trug die Stufe als
   Interessenkreis ein (eine Liste, mehrere je Titel: „Sekundarstufe 1", „Sekundarstufe 2",
@@ -385,24 +397,6 @@ Vermerk.
   Level" nach Klassenstufen. Koha führt die Zielgruppe als Auswahl aus acht Stufen („Primary",
   „Adolescent" …; MARC 21, Feld 008, Stelle 22) und sucht die Klassenstufe im Text von Feld
   521. Eine einzelne Zahl neben einer Spanne führt keines.
-
-  **Bauplan, freigegeben am 08.10.2026:**
-  1. Datenbank: Die Spanne darf fehlen (beide Werte oder keiner; 1 bis 13, „von" nicht über
-     „bis"). Die Migration setzt die Vorgabe 5 bis 10 auf „unbekannt" und entfernt die Spalte
-     der Klasse. Die fünf Titel mit Klasse und eigener Spanne verlieren nichts, die Klasse
-     liegt bei allen in der Spanne. Die Klassen bei der Vorgabe verfallen (129 von 6 bis 13,
-     dazu 21 mit der 5, der Vorgabe der Maske): Der Schulserver beginnt mit leerer Datenbank,
-     dort gibt es sie nicht.
-  2. Server: Übernahme, Katalog-Import, Listenimport (die Spalte „klasse" wird die Spanne N
-     bis N) und Maske schreiben nur die Spanne; ohne Angabe bleibt sie leer. Inventur und
-     Portal-Filter treffen nur Titel mit Spanne. Der Vorschlag der ISBN-Abfrage liest nur
-     noch „Klasse N", „Klassen N–M" und „Jahrgangsstufe N". Der Filter `?gradeLevel=` der
-     Titelliste, den keine Seite ruft, entfällt.
-  3. Oberfläche: Die Maske verliert das Feld „Klasse"; „von" und „bis" werden Auswahlfelder
-     mit „–" für keine Angabe und 5 bis 13 (M3, Menus: „Select menus"; ein Schieberegler
-     scheidet aus, M3, Sliders: „Changes made with sliders must take effect immediately").
-     Titel-Tabelle und Klassenzuweisung zeigen die Spanne („7", „7–10", „–"); der Kopf der
-     Buchakte nennt den Jahrgang nur, wenn er feststeht.
 
   Je Stufe ein Test, der am alten Stand rot ist, und die volle Suite; danach die Generalprobe
   der Übernahme. Zum Nachzählen am Testserver:
@@ -782,6 +776,16 @@ Druck-Center, Reiter „Schülerausweise". Gemessen ist das in der Druckansicht 
 kommt je Kind der Brief an die Eltern mit Anschrift; die Liste zeigt danach
 „1× gemahnt, zuletzt …". Seit dem 05.10.2026 druckt „Liste drucken" die Liste als Tabelle, je
 Buch eine Zeile; einmal ausdrucken und ansehen.
+
+**Der Jahrgang am Titel.** Das Update nimmt jedem Titel, der „5 bis 10" trug, den Jahrgang (am
+Testserver 13.056 von 13.062, gemessen am 08.10.2026; sechs Titel behalten ihre eigene Spanne).
+„Neues Buch" öffnen. Erwartet: Die zwei Felder zum Jahrgang stehen leer. Einen Titel öffnen,
+nur „von" eintragen, „Speichern". Erwartet: Die Meldung sagt, dass „von" und „bis"
+zusammengehören; mit beiden Werten speichert die Maske, mit beiden geleert auch. Portal, Reiter
+„Schulbücher", Filter „Jahrgang 7". Erwartet: nur Bücher, an denen ein Jahrgang eingetragen
+ist; ohne Filter steht die Liste da wie vorher. Inventur: Die am 23.07.2026 begonnene und nicht
+abgeschlossene Inventur (Fach und Klasse 5) erwartet nur noch Exemplare von Titeln, an denen
+Jahrgang 5 eingetragen ist; vorher zählte dort jedes Exemplar des Fachs.
 
 ---
 

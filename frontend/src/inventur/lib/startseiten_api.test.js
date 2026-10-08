@@ -97,18 +97,23 @@ describe('buecherSuchen', () => {
 	});
 });
 
-// Die Spalten-Vorgabe 5 bis 10 steht an jedem Titel, dessen Jahrgang niemand eingetragen hat.
+// Ohne Angabe liefert der Server 0 und 0; eine Vorgabe gibt es nicht (Migration 162).
 describe('buecherSuchen: Jahrgang ohne Angabe', () => {
 	const katalog = [
-		buch({ title: 'Atlas', jahrgangVon: 5, jahrgangBis: 10 }),
-		buch({ title: 'Erdkunde', jahrgangVon: 5, jahrgangBis: 10, gradeLevel: 7 }),
-		buch({ title: 'Geschichte', jahrgangVon: 5, jahrgangBis: 9 })
+		buch({ title: 'Atlas', jahrgangVon: 0, jahrgangBis: 0 }),
+		buch({ title: 'Erdkunde', jahrgangVon: 0, jahrgangBis: 0, gradeLevel: 7 }),
+		buch({ title: 'Geschichte', jahrgangVon: 5, jahrgangBis: 9 }),
+		buch({ title: 'Lesebuch', jahrgangVon: 5, jahrgangBis: 10 })
 	];
 	const titel = (/** @type {string} */ q) => buecherSuchen(katalog, q).map((b) => b.title);
 
-	it('die Vorgabe 5 bis 10 trifft keinen Jahrgang, die Klasse am Titel schon', () => {
-		expect(titel('klasse 7')).toEqual(['Erdkunde', 'Geschichte']);
-		expect(titel('10')).toEqual([]);
+	it('ein Titel ohne Spanne trifft keinen Jahrgang, die Klasse am Titel schon', () => {
+		expect(titel('klasse 7')).toEqual(['Erdkunde', 'Geschichte', 'Lesebuch']);
+		expect(titel('11')).toEqual([]);
+	});
+
+	it('eine eingetragene Spanne 5 bis 10 ist eine Angabe wie jede andere', () => {
+		expect(titel('10')).toEqual(['Lesebuch']);
 	});
 });
 

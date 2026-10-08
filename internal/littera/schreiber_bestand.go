@@ -46,15 +46,15 @@ type BestandBericht struct {
 }
 
 // ist_lernmittel, subject, grade_level, jahrgang_von/bis (Migration 093): aus der
-// Littera-Signatur „LMF Deu 7 / Bie" gelesen (pkg/lmf.Zerlege). Ohne Jahrgang gilt
-// die Spaltenvorgabe 5–10.
+// Littera-Signatur „LMF Deu 7 / Bie" gelesen (pkg/lmf.Zerlege). Ohne Jahrgang bleibt
+// die Spanne leer (unbekannt, Migration 162).
 const sqlTitelEinfuegen = `
 	INSERT INTO buecher_titel
 		(titel, untertitel, autor, isbn, verlag, erscheinungsjahr,
 		 medientyp, signatur, erweiterte_eigenschaften, erstellt_am,
 		 ist_lernmittel, subject, grade_level, jahrgang_von, jahrgang_bis, auflage)
 	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
-	        $11, NULLIF($12, ''), NULLIF($13, 0)::smallint, COALESCE(NULLIF($14, 0), 5), COALESCE(NULLIF($15, 0), 10), $16)
+	        $11, NULLIF($12, ''), NULLIF($13, 0)::smallint, NULLIF($14, 0), NULLIF($15, 0), $16)
 	RETURNING id`
 
 // etikett_gedruckt ($7): Altbestand traegt seine Littera-Etiketten physisch —

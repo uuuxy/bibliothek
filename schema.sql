@@ -1980,7 +1980,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('158_exemplar_standort.sql'),
 ('159_standort_am_titel_entfaellt.sql'),
 ('160_titeltext_normalform.sql'),
-('161_bestellung_mail_gescheitert.sql')
+('161_bestellung_mail_gescheitert.sql'),
+('162_jahrgang_unbekannt.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -2053,9 +2054,25 @@ CREATE INDEX IF NOT EXISTS idx_idempotency_keys_created_at ON idempotency_keys(c
 -- fehlte. Frische Datenbanken bekämen diese Objekte sonst nie — die
 -- Migrationen laufen wegen des schema_migrations-Seeds nicht mehr.
 
+-- Migration 162: NULL in beiden Spalten heißt „unbekannt"; eine Vorgabe gibt es nicht. Beide
+-- gesetzt oder keine, 1 bis 13, „von" nicht über „bis".
 ALTER TABLE buecher_titel
-    ADD COLUMN IF NOT EXISTS jahrgang_von INTEGER NOT NULL DEFAULT 5,
-    ADD COLUMN IF NOT EXISTS jahrgang_bis INTEGER NOT NULL DEFAULT 10;
+    ADD COLUMN IF NOT EXISTS jahrgang_von INTEGER,
+    ADD COLUMN IF NOT EXISTS jahrgang_bis INTEGER;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_jahrgang_spanne') THEN
+        ALTER TABLE buecher_titel ADD CONSTRAINT chk_jahrgang_spanne
+            CHECK ((jahrgang_von IS NULL AND jahrgang_bis IS NULL)
+                   OR (jahrgang_von IS NOT NULL AND jahrgang_bis IS NOT NULL
+                       AND jahrgang_von BETWEEN 1 AND 13 AND jahrgang_bis BETWEEN 1 AND 13
+                       AND jahrgang_von <= jahrgang_bis));
+    END IF;
+END $$;
+COMMENT ON COLUMN buecher_titel.jahrgang_von IS
+    'Erster Jahrgang, für den der Titel gilt; NULL zusammen mit jahrgang_bis = unbekannt (Migration 162).';
+COMMENT ON COLUMN buecher_titel.jahrgang_bis IS
+    'Letzter Jahrgang, für den der Titel gilt; NULL zusammen mit jahrgang_von = unbekannt (Migration 162).';
 
 -- Migration 134: Ein Mehrjahresband ist ein Schalter am Werk; die Jahreszahl, bis zu der
 -- das Buch beim Kind bleibt, ist jahrgang_bis. Nur an einem Lernmittel und nur mit einer

@@ -26,8 +26,10 @@ type Book struct {
 	LastCounted   *string `json:"lastCounted" db:"last_counted"`
 	SortOrder     int     `json:"sortOrder" db:"sort_order"`
 	Medientyp     string  `json:"medientyp" db:"medientyp"`
-	JahrgangVon   int     `json:"jahrgangVon" db:"jahrgang_von"`
-	JahrgangBis   int     `json:"jahrgangBis" db:"jahrgang_bis"`
+	// JahrgangVon, JahrgangBis: „im Unterricht von Jahrgang … bis". 0 und 0 heißt „unbekannt"
+	// und ist eine eigene Angabe; in der Datenbank steht dann NULL (Migration 162).
+	JahrgangVon int `json:"jahrgangVon" db:"jahrgang_von"`
+	JahrgangBis int `json:"jahrgangBis" db:"jahrgang_bis"`
 	// Mehrjahresband (Migration 134, Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.6):
 	// Das Buch bleibt über die Spanne JahrgangVon..JahrgangBis beim Kind; die Frist rechnet
 	// bis zum Stichtag des Schuljahres, in dem das Kind JahrgangBis beendet. Nur an einem

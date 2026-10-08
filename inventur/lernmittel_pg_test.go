@@ -73,17 +73,29 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Errorf("Export-Liste: erwartet 3 Lernmittel, ohne Fach zuletzt: %+v", alle)
 	}
 
-	// Jahrgang-Filter (03.09.2026): Mathe 8 nur Jahrgang 8, die anderen tragen die
-	// Vorgabe 5–10 und zählen bei jedem Jahrgang darin mit; Jahrgang 12 trifft nichts.
+	// Jahrgang-Filter: Mathe 8 nur Jahrgang 8, Mathe 7 trägt die Spanne 5 bis 10 als Angabe.
+	// Das Lesebuch trägt keine und steht unter keinem Jahrgang (Migration 162): Bis dahin
+	// zählte jeder Titel ohne Angabe über die Vorgabe 5 bis 10 bei jedem Jahrgang darin mit.
+	// Jahrgang 12 trifft nichts.
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 8, jahrgang_bis = 8 WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 5, jahrgang_bis = 10 WHERE id = '00000000-0000-0000-0000-00000000a001'`); err != nil {
 		t.Fatal(err)
 	}
 	jg7, err := repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{Jahrgang: 7})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(jg7) != 2 || jg7[0].Title != "Mathe 7" || jg7[1].Title != "Lesebuch" {
-		t.Errorf("Jahrgang 7: erwartet Mathe 7 + Lesebuch, bekam %+v", jg7)
+	if len(jg7) != 1 || jg7[0].Title != "Mathe 7" {
+		t.Errorf("Jahrgang 7: erwartet nur Mathe 7 (das Lesebuch trägt keinen Jahrgang), bekam %+v", jg7)
+	}
+	ohneFilter, err := repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ohneFilter) != 3 || ohneFilter[2].Title != "Lesebuch" || ohneFilter[2].JahrgangVon != 0 || ohneFilter[2].JahrgangBis != 0 {
+		t.Errorf("ohne Filter: erwartet drei Lernmittel, das Lesebuch mit 0 und 0 (unbekannt), bekam %+v", ohneFilter)
 	}
 	f12, err := repo.GetLernmittelFaecher(ctx, LernmittelFilter{Jahrgang: 12})
 	if err != nil {
@@ -98,6 +110,22 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	}
 	if len(jg8) != 2 || jg8[0].JahrgangVon != 5 || jg8[1].JahrgangVon != 8 {
 		t.Errorf("Jahrgang 8 in Mathematik: erwartet Mathe 7 (5–10) und Mathe 8 (8), bekam %+v", jg8)
+	}
+
+	// In der Liste eines Fachs steht ein Titel ohne Jahrgang hinter denen mit Jahrgang, nicht
+	// als „Jahrgang 0" davor.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = NULL, jahrgang_bis = NULL WHERE id = '00000000-0000-0000-0000-00000000a001'`); err != nil {
+		t.Fatal(err)
+	}
+	reihe, err := repo.GetLernmittelTitel(ctx, "Mathematik", false, LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reihe) != 2 || reihe[0].Title != "Mathe 8" || reihe[1].Title != "Mathe 7" {
+		t.Errorf("Reihenfolge im Fach: erwartet Mathe 8 (Jahrgang 8) vor Mathe 7 (ohne Jahrgang), bekam %+v", reihe)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 5, jahrgang_bis = 10 WHERE id = '00000000-0000-0000-0000-00000000a001'`); err != nil {
+		t.Fatal(err)
 	}
 
 	// Schulzweig-Filter (03.09.2026): Mathe 8 auf Gymnasium; "-" trifft die ohne Zweig.

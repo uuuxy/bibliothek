@@ -237,7 +237,7 @@ func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*
 		INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject, signatur,
 		                           ist_lernmittel, grade_level, jahrgang_von, jahrgang_bis)
 		VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), NULLIF($6, ''), NULLIF($7, ''),
-		        $8, NULLIF($9, 0)::smallint, COALESCE(NULLIF($10, 0), 5), COALESCE(NULLIF($11, 0), 10))
+		        $8, NULLIF($9, 0)::smallint, NULLIF($10, 0), NULLIF($11, 0))
 		RETURNING id
 	`
 	for _, key := range newTitlesOrder {

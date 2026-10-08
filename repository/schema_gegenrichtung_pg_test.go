@@ -263,6 +263,16 @@ var checkBedingungenBestand = []string{
 	// (api/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.
 	"chk_exemplar_bestellstatus_nur_im_zulauf",
 	"chk_grade_level_bereich", "chk_inv_session_scope",
+	// Migration 162, befragt am 08.10.2026: Die Spanne ist ganz gesetzt oder gar nicht, 1 bis
+	// 13, „von" nicht über „bis". Der Code kennt die Regel: inventur.pruefeJahrgangsSpanne weist
+	// beim Anlegen und beim Ändern mit einem Satz ab (400), beim Ändern am Stand nach der
+	// Änderung, weil die Maske nur die geänderten Felder schickt. Die übrigen Schreiber: Listen-
+	// und Scanner-Anlage schicken keinen Jahrgang (0 und 0 wird NULL); Katalog-Import,
+	// Sammelimport und Littera-Übernahme bekommen ihn aus pkg/lmf, das nur Paare zwischen 5 und
+	// 13 liefert oder 0 und 0. Ein Schreiber, der nur eine Seite setzt, bekommt einen Abbruch
+	// (23514), keinen Satz. Gegenfrage: Die Regel verbietet eine Spanne unter 5 nicht, die Maske
+	// bietet sie nicht an (inventur/jahrgang_vorgabe_pg_test.go).
+	"chk_jahrgang_spanne",
 	// Migration 149, befragt am 29.09.2026: Eine laufende Inventur ist nie verworfen. Die
 	// Schreiber der beiden Spalten: CreateInventurSession legt ohne beide an (false, NULL),
 	// FinishInventurSession setzt nur abgeschlossen_am, AbortInventurSession setzt beide in

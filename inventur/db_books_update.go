@@ -29,8 +29,9 @@ var titelFelder = []titelFeld{
 	{"lastCounted", "last_counted", "NULLIF($8::text, '')::date"},
 	{"medientyp", "medientyp", "$9"},
 	{"erweiterteEigenschaften", "erweiterte_eigenschaften", "$10"},
-	{"jahrgangVon", "jahrgang_von", "$11"},
-	{"jahrgangBis", "jahrgang_bis", "$12"},
+	// 0 heißt „unbekannt" und wird NULL (Migration 162).
+	{"jahrgangVon", "jahrgang_von", "NULLIF($11, 0)"},
+	{"jahrgangBis", "jahrgang_bis", "NULLIF($12, 0)"},
 	{"untertitel", "untertitel", "$13"},
 	{"verlag", "verlag", "$14"},
 	{"erscheinungsjahr", "erscheinungsjahr", "$15"},
@@ -196,10 +197,10 @@ type titelSpanne struct {
 	von, bis                   int
 }
 
-// pruefeSpanneNachAenderung prüft das Mehrjahresband am Stand nach der Änderung: die genannten
-// Felder aus der Eingabe, die übrigen vom Titel (stand). Nennt die Änderung keins der vier,
-// prüft sie nichts: Was unverändert am Titel steht, hindert das Speichern eines anderen Felds
-// nicht.
+// pruefeSpanneNachAenderung prüft Spanne und Mehrjahresband am Stand nach der Änderung: die
+// genannten Felder aus der Eingabe, die übrigen vom Titel (stand). Nennt die Änderung keins der
+// vier, prüft sie nichts: Was unverändert am Titel steht, hindert das Speichern eines anderen
+// Felds nicht.
 func pruefeSpanneNachAenderung(book Book, nennt func(string) bool, stand titelSpanne) error {
 	if !nennt("istLernmittel") && !nennt("mehrjahresband") && !nennt("jahrgangVon") && !nennt("jahrgangBis") {
 		return nil
@@ -215,6 +216,9 @@ func pruefeSpanneNachAenderung(book Book, nennt func(string) bool, stand titelSp
 	}
 	if nennt("jahrgangBis") {
 		stand.bis = book.JahrgangBis
+	}
+	if err := pruefeJahrgangsSpanne(stand.von, stand.bis); err != nil {
+		return err
 	}
 	return pruefeMehrjahresband(stand.lernmittel, stand.mehrjahresband, stand.von, stand.bis)
 }

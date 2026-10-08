@@ -108,14 +108,14 @@ func leseAenderung(anfrage *http.Request) (BuchEingabe, []string, error) {
 }
 
 // antworteAufAenderungsfehler ordnet ein, warum ein Titel sich nicht ändern ließ: doppelte
-// ISBN, veralteter Bestand, unbekannter Titel, geleerter Autor, ISBN-Format, Mehrjahresband
-// ohne Spanne, kleinerer Bestand ohne Sitzung; alles andere 500.
+// ISBN, veralteter Bestand, unbekannter Titel, geleerter Autor, ISBN-Format, halbe Spanne,
+// Mehrjahresband ohne Spanne, kleinerer Bestand ohne Sitzung; alles andere 500.
 func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler error) {
 	if errors.Is(fehler, ErrDuplicateISBN) {
 		schreibeDubletteISBN(antwort, fehler)
 		return
 	}
-	if errors.Is(fehler, errMehrjahresband) {
+	if errors.Is(fehler, errMehrjahresband) || errors.Is(fehler, errJahrgangsSpanne) {
 		writeError(antwort, http.StatusBadRequest, fehler.Error())
 		return
 	}
