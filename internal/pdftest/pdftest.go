@@ -148,14 +148,28 @@ func Inhalt(t *testing.T, roh []byte) []byte {
 }
 
 func texteAus(inhalt []byte) []string {
+	texte := texteInReihenfolge(inhalt)
+	sort.Strings(texte)
+	return texte
+}
+
+func texteInReihenfolge(inhalt []byte) []string {
 	var texte []string
 	for _, treffer := range tjText.FindAllSubmatch(inhalt, -1) {
 		if s := strings.TrimSpace(nachUTF8(treffer[1])); s != "" {
 			texte = append(texte, s)
 		}
 	}
-	sort.Strings(texte)
 	return texte
+}
+
+// TexteInReihenfolge liefert die Textstücke so, wie der Erzeuger sie setzt: Seite für Seite, von
+// oben nach unten. Für Prüfungen, die einen Abschnitt des Blatts meinen. Texte sortiert sie und
+// taugt dafür nicht.
+func TexteInReihenfolge(t *testing.T, roh []byte) []string {
+	t.Helper()
+	inhalt, _ := lies(t, roh)
+	return texteInReihenfolge(inhalt)
 }
 
 // nachUTF8 macht aus einem PDF-Textstück lesbares Go: erst die PDF-Escapes auflösen,

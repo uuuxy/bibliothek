@@ -142,6 +142,9 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [ ] Bestellwesen, „Titel suchen & hinzufügen" bei leerem Warenkorb: Die Trefferliste ist
   ganz zu sehen, mit ihrem unteren Rand; die Linie links der Bestellspalte reicht bis zum
   unteren Rand der Seite
+- [ ] Leserakte eines Schülers mit Ausleihen, „DSGVO-Auskunft": Die Abschnitte 8 und 9 nennen
+  jeden Vorgang in Worten, bei Ausleihe und Rückgabe mit Buchtitel und Nummer; die Beträge
+  stehen mit Komma
 
 **Erledigen:**
 
@@ -184,8 +187,9 @@ der Nummer nichts mehr dazu offen ist.
   Bogen.
 - [x] **Überläufe (5.45):** Bestellwesen, Signaturen bei 1280 px und ein langer Name in der
   Leserakte sind seit dem 08.10.2026 behoben.
-- [ ] **Auskunft (5.19):** Die Protokolleinträge auf dem Blatt nennen in Worten, worum es ging
-  (entschieden am 08.10.2026). Der Bau steht aus.
+- [x] **Auskunft (5.19):** Die Protokolleinträge stehen seit dem 08.10.2026 in Worten auf dem
+  Blatt, mit Buch, Grund und Betrag, ohne die Kennungen des Programms und ohne das Konto, das
+  gebucht hat.
 - [x] **Protokoll und Tilgung (5.35):** Am Testserver am 08.10.2026 gezählt: kein alter Eintrag
   zu einem gelöschten Leser, keine Stornierung ohne die Kennung des Lesers, kein Eintrag über
   ein früheres Konto. Zu bereinigen ist nichts.
@@ -463,51 +467,6 @@ Vermerk.
   Nur mit Anlass.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
-
-**Protokolleinträge auf dem Blatt:** Das Blatt nennt je Eintrag den Zeitpunkt und die Aktion
-in der Schreibweise des Programms („CHECKOUT", „LESER_GESPERRT", „PURGE_STUDENT"), in der
-Datensatz-Historie dazu „USER" oder „SYSTEM" (`dsgvoAuditAbschnitt`,
-`dsgvoVerwaltungAbschnitt`). Worum es ging, steht nur in den Rohdaten (`details`) der
-abgerufenen Auskunft, und die bekommt die Person nicht; das Gate
-`TestDsgvoPDF_DrucktJedeAngabeDerAuskunft` führt die vier Stellen als begründete Ausnahme.
-
-Was die Rohdaten neben der Kennung des Lesers tragen (gezählt am 08.10.2026 an
-`repository/protokoll_personenbezug.go`, seinem Test und den Einträgen der lokalen Datenbank):
-
-- Angaben zur Person: den Grund einer Sperre, Entsperrung oder Stornierung (Freitext, kann
-  andere nennen), die Ausweisnummern beim Zusammenführen, die LUSD-ID, Name und Klasse bei
-  einer Änderung der Leserzeile, Betrag und Referenznummer eines Bescheids;
-- bei Ausleihe und Rückgabe nur die Kennung des Exemplars, keinen Titel;
-- Kennungen des Programms (Exemplar, Forderung, Bescheid, aufgelöste Leserzeile);
-- die Kennung des Kontos, das gebucht hat (`bearbeiter_id`, `benutzer_id`).
-
-Aus der Datensatz-Historie liest die Auskunft nur Einträge zur Leserzeile und zu Ausleihen
-(`dsgvoQueryAuditEintraege`). Einträge anderer Tabellen, die den Leser nennen, nennt sie
-nicht: die Stornierung einer Forderung (trägt die Kennung seit dem 08.10.2026) und die Spur
-einer Forderung oder Vormerkung, die mit ihrem Titel gelöscht wurde. Stornierung und
-Forderung stehen im Abschnitt „Schadensfälle", solange es die Forderung gibt.
-
-Nachgelesen am 08.10.2026: DSGVO Art. 15 Abs. 3 verlangt eine Kopie der Daten, Abs. 4 nimmt
-die Rechte anderer aus, Art. 12 Abs. 1 verlangt eine verständliche Form. EuGH C-487/21
-(04.05.2023): Die Kopie ist „eine originalgetreue und verständliche Reproduktion aller dieser
-Daten". EuGH C-579/21 (22.06.2023): Zur Auskunft gehören Informationen über Abfragen, die
-„sich auf den Zeitpunkt und die Zwecke dieser Vorgänge beziehen"; die Namen der Beschäftigten,
-die sie ausgeführt haben, nur, wenn es unerlässlich ist. Im Littera-Handbuch steht keine
-Auskunft an Betroffene. Google nennt im Export von „Meine Aktivitäten" je Eintrag das Produkt,
-den Zeitpunkt und den Vorgang in Worten („High level summary of the user activity", etwa „Nach
-… gesucht"); unter den dort genannten Feldern ist keine Kennung. Die Seite von OCLC zu
-BIBLIOTHECAplus und der DSGVO nennt keine Auskunft an Leser; dort wurden die Protokolldateien
-gekürzt, damit „dort keine personenbezogenen Daten verbleiben".
-
-**Entschieden am 08.10.2026:** Das Blatt nennt je Eintrag den
-Vorgang in Worten („Ausleihe", „Sperre von Hand") und die Angaben zur Person: bei Ausleihe und
-Rückgabe Titel und Nummer des Buchs, sonst Grund, Betrag, Referenznummer, Ausweisnummern und
-LUSD-ID. Nicht aufs Blatt kommen die Kennungen des Programms und das Konto, das gebucht hat.
-Ein Freitext steht da, wie er gespeichert ist, wie heute schon der Sperrgrund und der Grund
-einer Stornierung in den Abschnitten darüber; wer das Blatt aushändigt, liest es vorher. Der
-Abschnitt nennt dann jeden Eintrag, der den Leser nennt, gleich aus welcher Tabelle. Das Gate
-verlangt danach jede dieser Angaben auf dem Blatt und führt nur noch die Kennungen als
-Ausnahme.
 
 **Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
 sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung

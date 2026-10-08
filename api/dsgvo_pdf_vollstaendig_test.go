@@ -32,16 +32,11 @@ import (
 // BLINDHEIT: Ja/Nein-Werte prüft es nicht — „Ja" steht zu oft auf dem Blatt, um einem
 // Feld zugeordnet zu werden.
 func TestDsgvoPDF_DrucktJedeAngabeDerAuskunft(t *testing.T) {
-	// Ausnahmen: Pfad → Begründung.
-	ausnahmen := map[string]string{
-		"protokolleintraege[].details": "Rohdaten des Protokolls; sie nennen auch die bearbeitende " +
-			"Person. Was davon aufs Blatt gehört, ist offen (OFFEN.md 5.19).",
-		"verwaltungsprotokolle[].details": "wie protokolleintraege[].details",
-		"zugangskonto.ereignisse_im_verwaltungsprotokoll[].details": "Rohdaten des Protokolls wie " +
-			"verwaltungsprotokolle[].details; dieselbe offene Frage (OFFEN.md 5.19).",
-		"fruehere_zugangskonten[].ereignisse_im_verwaltungsprotokoll[].details": "wie " +
-			"zugangskonto.ereignisse_im_verwaltungsprotokoll[].details",
-	}
+	// Ausnahmen: Pfad → Begründung. Die Angaben der Protokolleinträge (details) sind keine mehr:
+	// Das Blatt druckt jeden Schlüssel, den es nicht als Kennung des Programms oder als buchendes
+	// Konto führt (repository/protokoll_auskunft.go) — auch einen, den es nicht kennt, wie den
+	// Prüfwert hier.
+	ausnahmen := map[string]string{}
 
 	var a DsgvoAuskunftResponse
 	w := &pruefwerte{pfade: map[string]bool{}}

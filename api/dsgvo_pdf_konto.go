@@ -44,10 +44,7 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 	if len(k.Ereignisse) == 0 {
 		dsgvoLeer(p, tr)
 	}
-	p.SetFont("Arial", "", 8)
-	for _, e := range k.Ereignisse {
-		p.MultiCell(0, 5, tr(dsgvoZeit(e.Zeitpunkt)+" — "+dsgvoKontoAktion(e.Aktion)), "", "L", false)
-	}
+	dsgvoKontoEreignisse(p, tr, k.Ereignisse)
 
 	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Vorgänge, die diese Person im System bearbeitet hat (%d)", len(k.EigeneVorgaenge)))
 	dsgvoHinweis(p, tr, "Ohne Angaben zu anderen Personen (Art. 15 Abs. 4 DSGVO). Eine Buchung kann zweimal "+
@@ -112,10 +109,7 @@ func dsgvoFruehereKontenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, konten
 			"Rolle: " + dsgvoRolle(k.Rolle),
 			"gelöscht: " + dsgvoZeit(k.GeloeschtAm),
 		}, " · "))
-		p.SetFont("Arial", "", 8)
-		for _, e := range k.Ereignisse {
-			p.MultiCell(0, 5, tr(dsgvoZeit(e.Zeitpunkt)+" — "+dsgvoKontoAktion(e.Aktion)), "", "L", false)
-		}
+		dsgvoKontoEreignisse(p, tr, k.Ereignisse)
 	}
 }
 

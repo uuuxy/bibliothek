@@ -235,7 +235,7 @@ func dsgvoSchadensAbschnitt(p *gofpdf.Fpdf, tr func(string) string, schaeden []D
 		}
 		dsgvoEintragTitel(p, tr, f.Beschreibung)
 		dsgvoEintragZeile(p, tr, fmt.Sprintf("Betrag: %s EUR · Status: %s · gemeldet: %s",
-			f.Betrag, status, dsgvoDatum(f.ErstelltAm)))
+			dsgvoBetrag(f.Betrag), status, dsgvoDatum(f.ErstelltAm)))
 	}
 }
 
@@ -265,7 +265,7 @@ func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []
 		dsgvoEintragTitel(p, tr, "Bescheid "+b.Referenznummer)
 		dsgvoEintragZeile(p, tr, fmt.Sprintf("vom %s · Frist: %s · Betrag: %s EUR · Status: %s",
 			dsgvoDatum(b.BriefDatum), dsgvoDatum(b.FristBis),
-			b.Gesamtbetrag, b.Status))
+			dsgvoBetrag(b.Gesamtbetrag), b.Status))
 	}
 }
 
@@ -330,39 +330,6 @@ func dsgvoNachbuchRolle(rolle string) string {
 		return "bisherige/r Ausleiher/in"
 	}
 	return rolle
-}
-
-func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAuditEintrag) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("8. Protokolleinträge zu diesem Datensatz (%d)", len(audit)))
-	if len(audit) == 0 {
-		dsgvoLeer(p, tr)
-		return
-	}
-	p.SetFont("Arial", "", 8)
-	for _, e := range audit {
-		kontext := ""
-		if e.Kontext != nil && *e.Kontext != "" {
-			kontext = " · " + *e.Kontext
-		}
-		p.MultiCell(0, 5, tr(fmt.Sprintf("%s — %s — %s%s",
-			dsgvoZeit(e.Zeitpunkt), e.Aktion, e.Akteur, kontext)), "", "L", false)
-	}
-}
-
-// dsgvoVerwaltungAbschnitt listet die Verwaltungsprotokolle (audit_logs) — seit dem
-// 31.08.2026 Teil der Auskunft; vorher war audit_logs die eine Quelle mit Schülerbezug,
-// die die Auskunft nicht las.
-func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege []DsgvoVerwaltungsEintrag) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("9. Verwaltungsprotokolle zu diesem Datensatz (%d)", len(eintraege)))
-	if len(eintraege) == 0 {
-		dsgvoLeer(p, tr)
-		return
-	}
-	p.SetFont("Arial", "", 8)
-	for _, e := range eintraege {
-		p.MultiCell(0, 5, tr(fmt.Sprintf("%s — %s",
-			dsgvoZeit(e.Zeitpunkt), e.Aktion)), "", "L", false)
-	}
 }
 
 func dsgvoVerarbeitungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, va DsgvoVerarbeitungsangaben) {

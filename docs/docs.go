@@ -4189,11 +4189,22 @@ const docTemplate = `{
                 "aktion": {
                     "type": "string"
                 },
+                "barcode": {
+                    "type": "string"
+                },
                 "details": {
                     "description": "swaggertype: json.RawMessage ist ein []byte-Alias aus der Standardbibliothek, das\nswag ohne --parseDependency nicht auflösen kann. Ohne diesen Hinweis bricht die\nGenerierung für DIESEN Endpunkt still ab — die DSGVO-Auskunft fehlte deshalb\nkomplett in der Swagger-Datei, obwohl sie annotiert war (gefunden 05.08.2026).",
                     "type": "object"
                 },
+                "gegenstand": {
+                    "description": "Gegenstand und Barcode: Titel und Nummer des Buchs oder Geräts einer Ausleihe oder\nRückgabe; der Eintrag selbst trägt nur die Kennung des Exemplars. Leer, wenn es das\nExemplar nicht mehr gibt oder der Eintrag kein Buch betrifft.",
+                    "type": "string"
+                },
                 "kontext": {
+                    "type": "string"
+                },
+                "tabelle": {
+                    "description": "Tabelle sagt, woran der Eintrag hängt (ausleihen, schueler, schadensfaelle …). Mit der\nAktion ergibt sie den Vorgang, den das Blatt in Worten nennt (dsgvoVorgang).",
                     "type": "string"
                 },
                 "zeitpunkt": {

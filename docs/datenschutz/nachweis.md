@@ -131,7 +131,7 @@ falsch, wird der Test rot, und aus diesem Stand entsteht kein Release.
 | Ohne das Recht wird jeder schreibende Aufruf abgewiesen, auch am Menü vorbei                  | `api/rechte_schreibwege_pg_test.go`                                                                     |
 | Die Löschläufe halten Frist und Reihenfolge; Löschlauf und Warnung folgen derselben Regel     | `jobs/cron_dsgvo_karenz_pg_test.go`, `jobs/cron_dsgvo_abgaenger_pg_test.go`, `jobs/cron_dsgvo_lesehistorie_pg_test.go`, `jobs/cron_dsgvo_anliegen_pg_test.go`, `jobs/loeschpraedikat_ratsche_test.go` |
 | Die Anonymisierung entfernt, was an der Person hängt                                          | `api/dsgvo_paar_rundreise_pg_test.go` (Grenze: Abschnitt 9)                                              |
-| Die Auskunft druckt jede Angabe, die sie enthält                                              | `api/dsgvo_pdf_vollstaendig_test.go`                                                                    |
+| Die Auskunft druckt jede Angabe, die sie enthält; Protokolleinträge stehen in Worten da, ohne Kennungen des Programms und ohne das buchende Konto | `api/dsgvo_pdf_vollstaendig_test.go`, `api/dsgvo_blatt_pg_test.go`, `repository/protokoll_auskunft_test.go` |
 | Eine Sicherung lässt sich zurückspielen                                                       | `jobs/backup_drill_pg_test.go`, `jobs/restore_probe_pg_test.go`; im Betrieb die Probe jeden Sonntag      |
 | Update und Sicherung von Hand löschen je nur ihre eigenen verschlüsselten Sicherungen; jeden unverschlüsselten Rest löschen und melden beide | `docs/backup_ablage_test.go`                                                                            |
 | Antworten mit Personendaten legt der Browser nicht ab                                       | `api/pii_antwort_gate_pg_test.go` verlangt an jeder lesenden Adresse ab Stufe 1 den Kopf `Cache-Control: no-store` |
@@ -142,7 +142,12 @@ falsch, wird der Test rot, und aus diesem Stand entsteht kein Release.
 
 - **Auskunft:** in der Akte jedes Lesers als PDF, ab Werk für Admin und Leitung. Hat die Person
   ein Zugangskonto, braucht es zusätzlich das Recht, Konten zu verwalten (ab Werk nur Admin).
-  Jeder Abruf steht im Protokoll.
+  Jeder Abruf steht im Protokoll. Die Einträge beider Protokolle nennt das Blatt seit dem
+  08.10.2026 in Worten („Ausleihe", „Von Hand gesperrt"), mit Titel und Nummer des Buchs oder
+  mit Grund, Betrag, Referenznummer, Ausweisnummern und LUSD-ID. Nicht darauf stehen die
+  Kennungen des Programms und das Konto, das gebucht hat (Art. 15 Abs. 4 DSGVO; EuGH C-579/21).
+  Ein frei getippter Grund steht da, wie er gespeichert ist, und kann eine andere Person
+  nennen: Wer das Blatt aushändigt, liest es vorher.
 - **Berichtigung:** Stammdaten in der Akte. Anschrift und Eltern-E-Mail lassen sich einzeln
   leeren; Name, Klasse und Ausweisnummer lassen sich ändern, aber nicht leeren. Das
   Geburtsdatum bleibt, es verbindet die Person mit dem LUSD-Export.

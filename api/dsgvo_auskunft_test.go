@@ -86,8 +86,8 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"rolle", "barcode", "ergebnis", "grund", "gescannt_am", "quittiert_am"}))
 	mock.ExpectQuery(`FROM audit_log`).
 		WithArgs(dsgvoTestID).
-		WillReturnRows(pgxmock.NewRows([]string{"aktion", "akteur", "timestamp", "kontext", "details"}).
-			AddRow("update", "USER", time.Now(), (*string)(nil), []byte(`{"feld":"klasse"}`)))
+		WillReturnRows(pgxmock.NewRows([]string{"tabelle", "aktion", "akteur", "timestamp", "kontext", "details", "gegenstand", "barcode"}).
+			AddRow("ausleihen", "CHECKOUT", "USER", time.Now(), (*string)(nil), []byte(`{"exemplar_id":"e-1"}`), "Mathebuch 7", "B-500"))
 	mock.ExpectQuery(`FROM audit_logs`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"aktion", "zeitstempel", "details"}).

@@ -22,6 +22,8 @@ internal/pdftest/pdftest.go: unreachable func: lies
 internal/pdftest/pdftest.go: unreachable func: texteAus
 internal/pdftest/pdftest.go: unreachable func: TexteJeSeite
 internal/pdftest/pdftest.go: unreachable func: stroemeAus
+internal/pdftest/pdftest.go: unreachable func: TexteInReihenfolge
+internal/pdftest/pdftest.go: unreachable func: texteInReihenfolge
 
 # Testinfrastruktur per Paket-Design: eigener SMTP-Server für Tests, weil die
 # lokale .env auf den echten Schulserver zeigt (siehe Paketkommentar).

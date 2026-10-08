@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-10-07. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-08. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -413,7 +413,11 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
   Schaden), DSGVO-Auskunft. Kontoauszug und Ersatzforderung gibt es nur beim Schüler, die
   DSGVO-Auskunft für jeden Leser; beim Kollegen nennt sie auch sein Zugangskonto, seine
   Wünsche und Reservierungen im Portal, seine Klassenleitungen und die Vorgänge, die er selbst
-  bearbeitet hat — mit Zeitpunkt und Handlung, ohne Angaben zu anderen Personen. Die Auskunft
+  bearbeitet hat — mit Zeitpunkt und Handlung, ohne Angaben zu anderen Personen. Die Vorgänge
+  aus dem Protokoll stehen in Worten auf dem Blatt (Ausleihe, Rückgabe, Sperre, Stornierung),
+  mit Buchtitel und Nummer, Grund und Betrag; welches Konto gebucht hat, steht nicht darauf.
+  Ein frei getippter Grund steht da, wie er gespeichert ist: das Blatt vor dem Aushändigen
+  durchlesen. Die Auskunft
   über jemanden mit Zugang erstellt nur, wer zusätzlich _Benutzer & Rechte verwalten_ darf; sonst
   fehlt der Knopf in dieser Akte. Gibt es für das
   Kind einen Schadensersatz-Bescheid, steht im Reiter _Gebühren & Schäden_ die Liste

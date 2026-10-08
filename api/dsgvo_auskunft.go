@@ -125,12 +125,20 @@ type DsgvoVormerkung struct {
 	ErstelltAm time.Time `json:"erstellt_am"`
 }
 
-// DsgvoAuditEintrag ist ein Protokolleintrag, der den Schülerdatensatz betrifft.
+// DsgvoAuditEintrag ist ein Eintrag der Datensatz-Historie (audit_log), der den Leser nennt.
 type DsgvoAuditEintrag struct {
+	// Tabelle sagt, woran der Eintrag hängt (ausleihen, schueler, schadensfaelle …). Mit der
+	// Aktion ergibt sie den Vorgang, den das Blatt in Worten nennt (dsgvoVorgang).
+	Tabelle   string    `json:"tabelle"`
 	Aktion    string    `json:"aktion"`
 	Akteur    string    `json:"akteur"`
 	Zeitpunkt time.Time `json:"zeitpunkt"`
 	Kontext   *string   `json:"kontext"`
+	// Gegenstand und Barcode: Titel und Nummer des Buchs oder Geräts einer Ausleihe oder
+	// Rückgabe; der Eintrag selbst trägt nur die Kennung des Exemplars. Leer, wenn es das
+	// Exemplar nicht mehr gibt oder der Eintrag kein Buch betrifft.
+	Gegenstand string `json:"gegenstand"`
+	Barcode    string `json:"barcode"`
 	// swaggertype: json.RawMessage ist ein []byte-Alias aus der Standardbibliothek, das
 	// swag ohne --parseDependency nicht auflösen kann. Ohne diesen Hinweis bricht die
 	// Generierung für DIESEN Endpunkt still ab — die DSGVO-Auskunft fehlte deshalb
@@ -482,15 +490,21 @@ func (s *Server) dsgvoQueryBescheide(ctx context.Context, id string) ([]DsgvoBes
 }
 
 func (s *Server) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]DsgvoAuditEintrag, error) {
-	// Auch die Ausleih-Protokolle (CHECKOUT/RETURN) gehören zur Auskunft: Dort steht der
-	// Schüler in details.schueler_id, datensatz_id ist das Exemplar. Ohne diesen Zweig
-	// fehlte die Lesehistorie im Audit-Teil der Art.-15-Auskunft (Prüfung 22.08.2026, A5).
+	// Jeder Eintrag, der den Leser nennt: die Einträge an seiner Leserzeile (datensatz_id) und
+	// die jeder anderen Tabelle, die seine Kennung in details tragen — Ausleihe und Rückgabe
+	// (datensatz_id ist dort das Exemplar oder Gerät), die Stornierung einer Forderung, die Spur
+	// einer Ausleihe, Forderung oder Vormerkung, deren Titel gelöscht wurde. Den Löscheintrag
+	// eines Zugangskontos liest LeseDsgvoFruehereZugangskonten.
 	const q = `
-		SELECT aktion, akteur, timestamp, kontext, COALESCE(details, 'null'::jsonb)
-		FROM audit_log
-		WHERE (tabelle = 'schueler' AND datensatz_id = $1::uuid)
-		   OR (tabelle = 'ausleihen' AND details->>'schueler_id' = $1::text)
-		ORDER BY timestamp DESC`
+		SELECT al.tabelle, al.aktion, al.akteur, al.timestamp, al.kontext, COALESCE(al.details, 'null'::jsonb),
+		       COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, '')
+		FROM audit_log al
+		LEFT JOIN buecher_exemplare e ON al.tabelle = 'ausleihen' AND e.id = al.datensatz_id
+		LEFT JOIN buecher_titel t ON t.id = e.titel_id
+		LEFT JOIN geraete g ON al.tabelle = 'ausleihen' AND g.id = al.datensatz_id
+		WHERE (al.tabelle = 'schueler' AND al.datensatz_id = $1::uuid)
+		   OR (al.tabelle <> 'benutzer' AND al.details->>'schueler_id' = $1::text)
+		ORDER BY al.timestamp DESC`
 	rows, err := s.DB.Pool.Query(ctx, q, id)
 	if err != nil {
 		return nil, err
@@ -500,7 +514,8 @@ func (s *Server) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]Dsg
 	out := []DsgvoAuditEintrag{}
 	for rows.Next() {
 		var e DsgvoAuditEintrag
-		if err := rows.Scan(&e.Aktion, &e.Akteur, &e.Zeitpunkt, &e.Kontext, &e.Details); err != nil {
+		if err := rows.Scan(&e.Tabelle, &e.Aktion, &e.Akteur, &e.Zeitpunkt, &e.Kontext, &e.Details,
+			&e.Gegenstand, &e.Barcode); err != nil {
 			return nil, err
 		}
 		out = append(out, e)
