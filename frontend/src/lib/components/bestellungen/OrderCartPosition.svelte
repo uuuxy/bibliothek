@@ -47,8 +47,11 @@
 		>
 			<button
 				aria-label="Menge verringern"
+				title={item.menge <= 1 ? 'Mindestmenge erreicht' : ''}
+				disabled={item.menge <= 1}
 				onclick={() => (item.menge = Math.max(1, item.menge - 1))}
-				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant">−</button
+				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant disabled:opacity-50 disabled:cursor-not-allowed"
+				>−</button
 			><span class="min-w-6 px-2 text-center text-sm font-bold text-on-surface tabular-nums"
 				>{item.menge}</span
 			><button
