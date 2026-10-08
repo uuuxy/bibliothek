@@ -50,7 +50,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 
 	// 1. Status-Editor: auf „verfügbar" gestellt → kein Zulauf mehr, im OPAC gezählt.
 	frei := zulauf("Zulauf-Editor-Titel", "ZL-EDIT")
-	if err := books.UpdateCopyStatus(ctx, frei, true, false, "", nil); err != nil {
+	if err := books.UpdateCopyStatus(ctx, frei, true, false, "", nil, ""); err != nil {
 		t.Fatalf("UpdateCopyStatus: %v", err)
 	}
 	if s := bestellstatus(frei); s != nil {
@@ -62,7 +62,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 
 	// 2. Aussondern: kein Zulauf mehr, nicht im Wareneingang, und einbuchen belebt es nicht.
 	weg := zulauf("Zulauf-Storno-Titel", "ZL-STORNO")
-	if err := books.UpdateCopyStatus(ctx, weg, false, true, "", nil); err != nil {
+	if err := books.UpdateCopyStatus(ctx, weg, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("DecommissionCopy: %v", err)
 	}
 	if s := bestellstatus(weg); s != nil {

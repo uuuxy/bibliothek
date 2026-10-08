@@ -36,7 +36,10 @@ type BookRepository interface {
 	// nil heißt UNANGETASTET, nicht 0: Der Status-Editor schickt das Feld nur mit, wenn ein
 	// Mensch es angefasst hat, und ein Statuswechsel darf einen erfassten Wasserschaden
 	// nicht stillschweigend auf 0 zurückstellen (Upsert-Blanking).
-	UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int) error
+	//
+	// bearbeiterID nennt, wer speichert. Aussondern verlangt sie
+	// (ErrAussonderungOhneBearbeiter): Der Wechsel steht mit der Person im Protokoll.
+	UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int, bearbeiterID string) error
 
 	// ExemplarImBestand sagt, ob ein Exemplar zum Bestand zählt (SQLExemplarImBestand).
 	ExemplarImBestand(ctx context.Context, id string) (bool, error)

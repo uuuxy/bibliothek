@@ -27,7 +27,7 @@ func TestCopyStatus_AntwortNenntDenBestand(t *testing.T) {
 	ausgesondert := func(barcode string) string {
 		t.Helper()
 		id := exemplar(t, pool, titelID, barcode, true, "")
-		if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil); err != nil {
+		if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
 			t.Fatalf("aussondern %s: %v", barcode, err)
 		}
 		return id
@@ -55,7 +55,7 @@ func TestCopyStatus_AntwortNenntDenBestand(t *testing.T) {
 			req.SetPathValue("id", f.id)
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
-			handler.ServeHTTP(rec, req)
+			handler.ServeHTTP(rec, alsBenutzer(req, adminFuerAudit(t, pool)))
 			if rec.Code != http.StatusOK {
 				t.Fatalf("Status speichern: HTTP %d: %s", rec.Code, rec.Body.String())
 			}

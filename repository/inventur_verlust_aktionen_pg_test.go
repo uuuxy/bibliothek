@@ -10,7 +10,7 @@ import (
 // Exemplar-ID — also genau den Zustand, den MarkiereVerlustAlsGefunden und
 // EndgueltigLoescheVerlustExemplare in der Praxis vorfinden (ist_ausgesondert=true,
 // aussonderung_grund='VERLUST', eine Zeile in inventur_verluste).
-func seedVerlorenesExemplar(t *testing.T, ctx context.Context, repo *InventoryRepository, titel, barcode string) string {
+func seedVerlorenesExemplar(t *testing.T, ctx context.Context, repo *InventoryRepository, titel, barcode, bearbeiterID string) string {
 	t.Helper()
 	var titelID string
 	if err := repo.db.QueryRow(ctx,
@@ -31,7 +31,7 @@ func seedVerlorenesExemplar(t *testing.T, ctx context.Context, repo *InventoryRe
 	).Scan(&sessionID); err != nil {
 		t.Fatalf("Session anlegen: %v", err)
 	}
-	if _, err := repo.FinishInventurSession(ctx, sessionID, InventurScope{}); err != nil {
+	if _, err := repo.FinishInventurSession(ctx, sessionID, InventurScope{}, bearbeiterID); err != nil {
 		t.Fatalf("Session abschliessen (Exemplar als Verlust buchen): %v", err)
 	}
 	return exemplarID
@@ -48,7 +48,7 @@ func TestMarkiereVerlustAlsGefunden(t *testing.T) {
 	repo := NewInventoryRepository(pool)
 
 	bearbeiterID := seedBearbeiter(t, pool)
-	exemplarID := seedVerlorenesExemplar(t, ctx, repo, "Physikbuch 8", "GEF-1")
+	exemplarID := seedVerlorenesExemplar(t, ctx, repo, "Physikbuch 8", "GEF-1", bearbeiterID)
 
 	gefunden, _, err := repo.MarkiereVerlustAlsGefunden(ctx, exemplarID, bearbeiterID)
 	if err != nil {
@@ -121,8 +121,8 @@ func TestEndgueltigLoescheVerlustExemplare(t *testing.T) {
 	repo := NewInventoryRepository(pool)
 
 	bearbeiterID := seedBearbeiter(t, pool)
-	verloren1 := seedVerlorenesExemplar(t, ctx, repo, "Chemiebuch 9", "LOE-1")
-	verloren2 := seedVerlorenesExemplar(t, ctx, repo, "Biobuch 9", "LOE-2")
+	verloren1 := seedVerlorenesExemplar(t, ctx, repo, "Chemiebuch 9", "LOE-1", bearbeiterID)
+	verloren2 := seedVerlorenesExemplar(t, ctx, repo, "Biobuch 9", "LOE-2", bearbeiterID)
 
 	// Ein ganz normales, nicht ausgesondertes Exemplar dazwischen — darf nicht
 	// gelöscht werden, selbst wenn seine ID mitgeschickt wird.

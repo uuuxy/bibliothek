@@ -15,6 +15,7 @@ func TestListAbgeschlosseneInventurSessions(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventoryRepository(pool)
+	bearbeiter := seedBearbeiter(t, pool)
 
 	// Drei Inventuren mit UNTERSCHIEDLICHEN Erfassungs- und Verlustzahlen — sonst
 	// belegt der Test nicht, dass die beiden Zählungen an der richtigen Spalte hängen.
@@ -40,7 +41,7 @@ func TestListAbgeschlosseneInventurSessions(t *testing.T) {
 				t.Fatalf("Scan %s: %v", f.signatur, err)
 			}
 		}
-		if _, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{Signatur: &signatur}); err != nil {
+		if _, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{Signatur: &signatur}, bearbeiter); err != nil {
 			t.Fatalf("Abschluss %s: %v", f.signatur, err)
 		}
 	}
@@ -86,6 +87,7 @@ func TestListAbgeschlosseneInventurSessions_Kappung(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventoryRepository(pool)
+	bearbeiter := seedBearbeiter(t, pool)
 
 	namen := []string{"Alpha", "Beta", "Gamma", "Delta"}
 	for _, name := range namen {
@@ -95,7 +97,7 @@ func TestListAbgeschlosseneInventurSessions_Kappung(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Session %s anlegen: %v", name, err)
 		}
-		if _, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{Signatur: &signatur}); err != nil {
+		if _, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{Signatur: &signatur}, bearbeiter); err != nil {
 			t.Fatalf("Abschluss %s: %v", name, err)
 		}
 	}

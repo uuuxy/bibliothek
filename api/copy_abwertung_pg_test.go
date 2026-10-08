@@ -44,7 +44,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 		req.SetPathValue("id", exID)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
-		statusTuer.ServeHTTP(rec, req)
+		statusTuer.ServeHTTP(rec, alsBenutzer(req, adminFuerAudit(t, pool)))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status setzen (%s): erwartet 200, war %d: %s", koerper, rec.Code, rec.Body.String())
 		}

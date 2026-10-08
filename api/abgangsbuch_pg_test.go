@@ -112,7 +112,7 @@ func TestAbgangsbuch_ZurueckgeholtesStehtNichtDrin(t *testing.T) {
 
 	titelID := titelMitSignatur(t, pool, "Irrtum", "Irr 1", 0)
 	id := exemplar(t, pool, titelID, "AB-IRRTUM", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil); err != nil {
+	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("aussondern: %v", err)
 	}
 	von, bis := schulzeit.Halbjahr(schulzeit.Jetzt())
@@ -148,7 +148,7 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 		t.Fatalf("bestelltes Exemplar löschen: %v", err)
 	}
 	ausgesondert := zulaufExemplar(t, pool, titelID, "AB-ZULAUF-STATUS")
-	if err := repository.NewBookRepository(pool).UpdateCopyStatus(ctx, ausgesondert, false, true, "", nil); err != nil {
+	if err := repository.NewBookRepository(pool).UpdateCopyStatus(ctx, ausgesondert, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
 	}
 	// Gegenprobe: Dieselbe Tür an einem Exemplar aus dem Bestand ist ein Abgang.
@@ -219,7 +219,7 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	// Verlust endgültig löschen: ein bestelltes Exemplar, im Status-Editor als verloren ausgebucht.
 	zweiterTitel := titelMitSignatur(t, pool, "Nie geliefert, verloren", "Zul 2", 0)
 	verloren := zulaufExemplar(t, pool, zweiterTitel, "AG-ZULAUF-VERLOREN")
-	if err := repository.NewBookRepository(pool).UpdateCopyStatus(ctx, verloren, false, true, "", nil); err != nil {
+	if err := repository.NewBookRepository(pool).UpdateCopyStatus(ctx, verloren, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
 	}
 	entfernt, err := repository.NewInventoryRepository(pool).EndgueltigLoescheVerlustExemplare(ctx, []string{verloren}, bearbeiter)

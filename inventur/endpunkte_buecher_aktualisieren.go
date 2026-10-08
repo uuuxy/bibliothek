@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+
+	"bibliothek/auth"
+	"bibliothek/repository"
 )
 
 // BearbeiteBuchAktualisieren verarbeitet PUT-Anfragen für ein bestehendes Buch. Geschrieben
@@ -67,7 +70,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Schlagworte:             schlagworte,
 	}
 
-	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch, felder, bestandsangabe(eingabe)); fehler != nil {
+	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch, felder, bestandsangabe(anfrage, eingabe)); fehler != nil {
 		antworteAufAenderungsfehler(antwort, id, fehler)
 		return
 	}
@@ -106,7 +109,7 @@ func leseAenderung(anfrage *http.Request) (BuchEingabe, []string, error) {
 
 // antworteAufAenderungsfehler ordnet ein, warum ein Titel sich nicht ändern ließ: doppelte
 // ISBN, veralteter Bestand, unbekannter Titel, geleerter Autor, ISBN-Format, Mehrjahresband
-// ohne Spanne; alles andere 500.
+// ohne Spanne, kleinerer Bestand ohne Sitzung; alles andere 500.
 func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler error) {
 	if errors.Is(fehler, ErrDuplicateISBN) {
 		schreibeDubletteISBN(antwort, fehler)
@@ -139,17 +142,26 @@ func antworteAufAenderungsfehler(antwort http.ResponseWriter, id string, fehler 
 		writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
 		return
 	}
+	if errors.Is(fehler, repository.ErrAussonderungOhneBearbeiter) {
+		writeError(antwort, http.StatusUnauthorized, "nicht angemeldet")
+		return
+	}
 	log.Printf("Fehler beim Aktualisieren von Buch ID %s: %v", id, fehler)
 	writeError(antwort, http.StatusInternalServerError, "buch konnte nicht aktualisiert werden")
 }
 
 // bestandsangabe liest aus der Eingabe, was sie zum Bestand sagt. Ohne das Feld „stock" sagt
-// sie nichts (nil), und die Exemplare bleiben unangetastet.
-func bestandsangabe(eingabe BuchEingabe) *Bestandsangabe {
+// sie nichts (nil), und die Exemplare bleiben unangetastet. Wer speichert, nennt die Sitzung
+// der Anfrage; ohne sie lehnt der Schreibpfad einen kleineren Bestand ab.
+func bestandsangabe(anfrage *http.Request, eingabe BuchEingabe) *Bestandsangabe {
 	if eingabe.Bestand == nil {
 		return nil
 	}
-	return &Bestandsangabe{Soll: *eingabe.Bestand, Gesehen: eingabe.BestandGesehen}
+	angabe := &Bestandsangabe{Soll: *eingabe.Bestand, Gesehen: eingabe.BestandGesehen}
+	if claims, ok := auth.GetClaims(anfrage.Context()); ok {
+		angabe.BearbeiterID = claims.UserID
+	}
+	return angabe
 }
 
 // bereinigeUndValidiereBuchEingabe trimmt Leerzeichen der Eingabefelder und prüft auf Gültigkeit.

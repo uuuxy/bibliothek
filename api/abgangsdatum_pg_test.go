@@ -55,7 +55,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	// Tür 1: die Repository-Methode des Status-Editors, direkt (POST /aussondern ist am
 	// 22.09.2026 gestrichen, OFFEN.md 4.16)
 	eins := exemplar(t, pool, titelID, "ABG-1", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, eins, false, true, "", nil); err != nil {
+	if err := bookRepo.UpdateCopyStatus(ctx, eins, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
 	}
 
@@ -70,7 +70,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	// Einstellungen — ohne Pool stürzt er dort ab (dieselbe Falle wie bei der Leserdatei
 	// am 17.09.2026).
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, req)
+	srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, alsBenutzer(req, adminFuerAudit(t, pool)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status-Tür: HTTP %d: %s", rec.Code, rec.Body.String())
 	}
@@ -119,7 +119,7 @@ func TestAbgangsdatum_ZweitesUpdateVerschiebtNichts(t *testing.T) {
 
 	titelID := titelMitSignatur(t, pool, "Abgangs-Titel 2", "Abg 2", 0)
 	id := exemplar(t, pool, titelID, "ABG-STABIL", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil); err != nil {
+	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
 	}
 	erst := abgangsdatum(t, pool, id)
@@ -136,7 +136,7 @@ func TestAbgangsdatum_ZweitesUpdateVerschiebtNichts(t *testing.T) {
 	alt := abgangsdatum(t, pool, id)
 
 	// Nochmal dieselbe Tür, und ein UPDATE, das die Spalte gar nicht nennt.
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil); err == nil {
+	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, adminFuerAudit(t, pool)); err == nil {
 		// UpdateCopyStatus meldet bei einem bereits ausgesonderten Exemplar keinen Fehler;
 		// entscheidend ist der Stempel darunter.
 		_ = err
@@ -161,7 +161,7 @@ func TestAbgangsdatum_RueckholenLoeschtDenStempel(t *testing.T) {
 
 	titelID := titelMitSignatur(t, pool, "Abgangs-Titel 3", "Abg 3", 0)
 	id := exemplar(t, pool, titelID, "ABG-ZURUECK", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil); err != nil {
+	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
 	}
 	if abgangsdatum(t, pool, id) == nil {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"bibliothek/db"
 	"bibliothek/pkg/isbnutil"
 )
 
@@ -60,7 +61,33 @@ func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, bar
 // Der Beschädigungsgrad (Migration 127) reist mit, weil er im selben Dialog steht — aber
 // nur, wenn er mitgeschickt wird: COALESCE($5, alter Wert). Ohne das wäre jeder
 // Statuswechsel eine stille 0, und der Ersatzbetrag stiege wieder auf den vollen Zeitwert.
-func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int) error {
+//
+// Wird ein Exemplar dabei ausgesondert, steht es mit der Person im Protokoll
+// (ProtokolliereAussonderung), in derselben Transaktion wie der Wechsel. Wer ein schon
+// ausgesondertes Exemplar noch einmal speichert, etwa mit geänderter Notiz, schreibt keinen
+// zweiten Eintrag.
+func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int, bearbeiterID string) error {
+	if istAusgesondert && bearbeiterID == "" {
+		return ErrAussonderungOhneBearbeiter
+	}
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("status: transaktion öffnen: %w", err)
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	// Der Stand vor dem Wechsel, unter Sperre: Zwei Plätze, die dasselbe Exemplar zugleich
+	// aussondern, schrieben sonst beide einen Eintrag.
+	var warAusgesondert bool
+	err = tx.QueryRow(ctx, `SELECT ist_ausgesondert FROM buecher_exemplare WHERE id = $1 FOR UPDATE`, id).
+		Scan(&warAusgesondert)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrExemplarNichtGefunden
+	}
+	if err != nil {
+		return fmt.Errorf("status: alten stand lesen: %w", err)
+	}
+
 	query := `
 		UPDATE buecher_exemplare
 		SET ist_ausleihbar = $1,
@@ -78,15 +105,23 @@ func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istA
 		  AND NOT ($2::boolean AND EXISTS (
 		      SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $4 AND a.rueckgabe_am IS NULL))
 	`
-	tag, err := r.db.Exec(ctx, query, istAusleihbar, istAusgesondert, zustandNotiz, id, zustandAbwertungProzent)
+	tag, err := tx.Exec(ctx, query, istAusleihbar, istAusgesondert, zustandNotiz, id, zustandAbwertungProzent)
 	if err != nil {
 		return err
 	}
 	if tag.RowsAffected() == 0 {
 		if istAusgesondert {
-			return r.deuteAussonderungsHindernis(ctx, id)
+			return deuteAussonderungsHindernis(ctx, tx, id)
 		}
 		return ErrExemplarNichtGefunden
+	}
+	if istAusgesondert && !warAusgesondert {
+		if err := ProtokolliereAussonderung(ctx, tx, []string{id}, bearbeiterID, AussonderungsWegStatus, nil); err != nil {
+			return err
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("status: commit: %w", err)
 	}
 	return nil
 }
@@ -103,9 +138,9 @@ func (r *pgBookRepository) ExemplarImBestand(ctx context.Context, id string) (bo
 
 // deuteAussonderungsHindernis unterscheidet, WARUM der Aussonderungs-Guard nichts traf:
 // verliehen (400 mit Auskunft) oder unbekannt (404) — statt eines stillen „Erfolgs".
-func (r *pgBookRepository) deuteAussonderungsHindernis(ctx context.Context, id string) error {
+func deuteAussonderungsHindernis(ctx context.Context, q DBQueryer, id string) error {
 	var verliehen bool
-	if err := r.db.QueryRow(ctx,
+	if err := q.QueryRow(ctx,
 		`SELECT EXISTS (SELECT 1 FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL)`,
 		id).Scan(&verliehen); err != nil {
 		return err

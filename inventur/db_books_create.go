@@ -97,7 +97,7 @@ func (repo *BookRepository) legeTitelAn(ctx context.Context, book Book, anderesM
 	}
 
 	if book.Stock > 0 {
-		if err := repo.syncBookStock(ctx, tx, id, book.Stock); err != nil {
+		if err := repo.syncBookStock(ctx, tx, id, book.Stock, ""); err != nil {
 			return "", fmt.Errorf("exemplare konnten nicht angelegt werden: %w", err)
 		}
 	}

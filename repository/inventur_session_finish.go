@@ -106,7 +106,14 @@ func (r *InventoryRepository) ExemplarImScope(ctx context.Context, exemplarID st
 // Entscheidend gegenüber dem alten Modell: Nur die NICHT in dieser Session erfassten
 // Exemplare gelten als vermisst — der Fortschritt einer parallelen Session bleibt
 // unberührt, weil er session-gebunden in inventur_erfassungen liegt.
-func (r *InventoryRepository) FinishInventurSession(ctx context.Context, sessionID string, scope InventurScope) (int, error) {
+//
+// bearbeiterID nennt, wer abschließt: Die Inventur trägt nur, wer sie begonnen hat, und jedes
+// als Verlust gebuchte Exemplar steht mit dieser Person im Protokoll
+// (ProtokolliereAussonderung).
+func (r *InventoryRepository) FinishInventurSession(ctx context.Context, sessionID string, scope InventurScope, bearbeiterID string) (int, error) {
+	if bearbeiterID == "" {
+		return 0, ErrAussonderungOhneBearbeiter
+	}
 	// Scope-Prädikat (physisch + Dimensionen) aus der einen Quelle; die Session-ID hängt
 	// als letzter Platzhalter hinten dran.
 	bedingung, args := scope.Bedingung(1)
@@ -135,7 +142,7 @@ func (r *InventoryRepository) FinishInventurSession(ctx context.Context, session
 	// abschliessenden INSERT dessen Zeilenzahl, nicht die des UPDATE. Solange beide gleich
 	// sind, faellt das nicht auf; ueberspringt ON CONFLICT je eine Zeile, meldete die
 	// Inventur weniger Verluste, als sie tatsaechlich gebucht hat. Deshalb liefert das
-	// abschliessende SELECT die Zahl aus dem UPDATE-CTE.
+	// abschliessende SELECT die Kennungen aus dem UPDATE-CTE; ihre Zahl ist die der Verluste.
 	query := fmt.Sprintf(`
 		WITH verloren AS (
 			UPDATE buecher_exemplare e
@@ -160,11 +167,16 @@ func (r *InventoryRepository) FinishInventurSession(ctx context.Context, session
 			ON CONFLICT DO NOTHING
 			RETURNING 1
 		)
-		SELECT (SELECT count(*) FROM verloren)
+		SELECT coalesce(array_agg(v.id::text), '{}') FROM verloren v
 	`, bedingung, sessionIdx, sessionIdx)
-	var verloren int
-	if err := r.db.QueryRow(ctx, query, args...).Scan(&verloren); err != nil {
+	var verlorenIDs []string
+	if err := r.db.QueryRow(ctx, query, args...).Scan(&verlorenIDs); err != nil {
 		return 0, fmt.Errorf("verluste markieren fehlgeschlagen: %w", err)
+	}
+	verloren := len(verlorenIDs)
+	if err := ProtokolliereAussonderung(ctx, r.db, verlorenIDs, bearbeiterID, AussonderungsWegInventur,
+		map[string]any{"inventur_session_id": sessionID}); err != nil {
+		return 0, err
 	}
 
 	// erfasst_gemeldet mit einfrieren (Migration 103): inventur_erfassungen fällt per

@@ -15,6 +15,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventoryRepository(pool)
+	bearbeiter := seedBearbeiter(t, pool)
 
 	mathe, deutsch := "Mathematik", "Deutsch"
 	matheEx := seedSignaturMitExemplaren(t, pool, mathe, 5)
@@ -44,7 +45,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 	}
 
 	// A schließt ab: genau die 2 nicht gescannten Mathe-Exemplare gelten als Verlust.
-	verloren, err := repo.FinishInventurSession(ctx, sessA.ID, InventurScope{Signatur: &mathe})
+	verloren, err := repo.FinishInventurSession(ctx, sessA.ID, InventurScope{Signatur: &mathe}, bearbeiter)
 	if err != nil {
 		t.Fatalf("Finish A: %v", err)
 	}
@@ -67,6 +68,7 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventoryRepository(pool)
+	bearbeiter := seedBearbeiter(t, pool)
 
 	physik := "Physik"
 	ex := seedSignaturMitExemplaren(t, pool, physik, 3)
@@ -87,7 +89,7 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Session anlegen: %v", err)
 	}
-	verloren, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{Signatur: &physik})
+	verloren, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{Signatur: &physik}, bearbeiter)
 	if err != nil {
 		t.Fatalf("Finish: %v", err)
 	}
@@ -144,6 +146,7 @@ func TestInventurFilterScopeFachKlasse(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventoryRepository(pool)
+	bearbeiter := seedBearbeiter(t, pool)
 
 	matheKl5 := seedFachExemplar(t, pool, "Mathematik", 5, 6, "BC-MA5")  // im Scope
 	matheKl9 := seedFachExemplar(t, pool, "Mathematik", 9, 10, "BC-MA9") // falsche Klasse
@@ -177,7 +180,7 @@ func TestInventurFilterScopeFachKlasse(t *testing.T) {
 	}
 
 	// Nichts scannen, abschließen: genau das eine In-Scope-Exemplar fehlt.
-	verloren, err := repo.FinishInventurSession(ctx, sess.ID, scope)
+	verloren, err := repo.FinishInventurSession(ctx, sess.ID, scope, bearbeiter)
 	if err != nil {
 		t.Fatalf("Finish: %v", err)
 	}

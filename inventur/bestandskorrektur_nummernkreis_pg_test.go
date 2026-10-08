@@ -60,7 +60,7 @@ func TestBestandskorrekturUndImportZiehenAusBarcodeSeq(t *testing.T) {
 	repo := NewBookRepository(pool)
 
 	// Bestandskorrektur: 1 vorhanden, 4 gewünscht → 3 neue.
-	if err := repo.syncBookStock(ctx, pool, titelKorrektur, 4); err != nil {
+	if err := repo.syncBookStock(ctx, pool, titelKorrektur, 4, ""); err != nil {
 		t.Fatalf("syncBookStock: %v", err)
 	}
 	pruefeNummernkreis(t, pool, titelKorrektur, 4)

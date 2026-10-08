@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 	"bibliothek/repository"
 )
 
@@ -55,6 +56,13 @@ func (s *Server) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
+	// Wer speichert, steht beim Aussondern im Protokoll.
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("nicht angemeldet"))
+		return
+	}
+
 	ctx := r.Context()
 
 	// Wenn ein Buch manuell auf "Verfügbar" gesetzt wird, zwingend Notizen und Ausgesondert-Flag löschen
@@ -69,7 +77,7 @@ func (s *Server) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 	}
 
 	if err := bookRepo.UpdateCopyStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert,
-		req.ZustandNotiz, req.ZustandAbwertungProzent); err != nil {
+		req.ZustandNotiz, req.ZustandAbwertungProzent, claims.UserID); err != nil {
 		if errors.Is(err, repository.ErrExemplarNochVerliehen) {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return

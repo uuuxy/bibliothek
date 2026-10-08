@@ -81,8 +81,9 @@ func TestBestandskorrektur_RechnetOhneDenZulauf(t *testing.T) {
 		{"von 3 auf 1 verringert", 1, [3]int{1, 2, 2}},
 		{"auf 0 gesetzt", 0, [3]int{0, 2, 3}},
 	}
+	bearbeiter := bearbeiterFuerAussonderung(t, pool)
 	for _, s := range schritte {
-		if err := repo.syncBookStock(ctx, pool, titelID, s.soll); err != nil {
+		if err := repo.syncBookStock(ctx, pool, titelID, s.soll, bearbeiter); err != nil {
 			t.Fatalf("%s: %v", s.name, err)
 		}
 		if ist := zaehle(); ist != s.erwarte {

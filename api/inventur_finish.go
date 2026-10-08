@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/repository"
 
@@ -54,6 +55,13 @@ func (s *Server) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Wer abschließt, steht an jedem Exemplar, das der Abschluss als Verlust bucht.
+	claims, ok := auth.GetClaims(r.Context())
+	if !ok {
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("nicht angemeldet"))
+		return
+	}
+
 	ctx := r.Context()
 
 	tx, err := s.DB.Pool.Begin(ctx)
@@ -79,7 +87,7 @@ func (s *Server) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := invRepo.FinishInventurSession(ctx, session.ID, session.Scope())
+	count, err := invRepo.FinishInventurSession(ctx, session.ID, session.Scope(), claims.UserID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return

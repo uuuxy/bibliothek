@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Die Bestandskorrektur der Buchmaske ist die fünfte und sechste Tür zum Zustand
@@ -34,11 +36,11 @@ func TestAbgangsdatum_BestandskorrekturStempelt(t *testing.T) {
 	})
 
 	repo := NewBookRepository(pool)
-	if err := repo.syncBookStock(ctx, pool, titelID, 3); err != nil {
+	if err := repo.syncBookStock(ctx, pool, titelID, 3, ""); err != nil {
 		t.Fatalf("Bestand aufbauen: %v", err)
 	}
 	// Runter auf 1 — zwei Exemplare gehen ab.
-	if err := repo.syncBookStock(ctx, pool, titelID, 1); err != nil {
+	if err := repo.syncBookStock(ctx, pool, titelID, 1, bearbeiterFuerAussonderung(t, pool)); err != nil {
 		t.Fatalf("Bestand korrigieren: %v", err)
 	}
 
@@ -56,4 +58,29 @@ func TestAbgangsdatum_BestandskorrekturStempelt(t *testing.T) {
 		t.Errorf("%d von %d ausgesonderten Exemplaren ohne Abgangsdatum — diese Zeilen fehlen im Abgangsbuch",
 			ausgesondert-mitDatum, ausgesondert)
 	}
+}
+
+// bearbeiterFuerAussonderung legt das Konto an, das ein kleinerer Bestand im Protokoll nennt,
+// und räumt es nach dem Test mit seinen Einträgen wieder ab.
+func bearbeiterFuerAussonderung(t *testing.T, pool *pgxpool.Pool) string {
+	t.Helper()
+	var id string
+	if err := pool.QueryRow(context.Background(), `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Bestand', 'Korrektur', 'bestandskorrektur@schule.invalid', 'mitarbeiter', true)
+		ON CONFLICT (lower(email)) DO UPDATE SET aktiv = true
+		RETURNING id`).Scan(&id); err != nil {
+		t.Fatalf("Bearbeiter anlegen: %v", err)
+	}
+	t.Cleanup(func() {
+		for _, sql := range []string{
+			`DELETE FROM audit_log WHERE bearbeiter_id = $1`,
+			`DELETE FROM benutzer WHERE id = $1`,
+		} {
+			if _, err := pool.Exec(context.Background(), sql, id); err != nil {
+				t.Errorf("Aufräumen Bearbeiter: %v", err)
+			}
+		}
+	})
+	return id
 }

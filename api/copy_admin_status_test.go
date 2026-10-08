@@ -47,16 +47,32 @@ func sendeStatusUpdate(t *testing.T, handler http.HandlerFunc, body string) *htt
 	req.Header.Set("Content-Type", "application/json")
 
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
+	handler.ServeHTTP(rec, alsBenutzer(req, statusBearbeiter))
 	return rec
+}
+
+// statusBearbeiter ist die Person, unter der die Tests speichern.
+const statusBearbeiter = "bearbeiter-1"
+
+// erwarteStatusSpeichern erwartet den Ablauf von UpdateCopyStatus bis zur Anweisung: die
+// Transaktion, den Stand vor dem Wechsel unter Sperre und die Anweisung selbst.
+func erwarteStatusSpeichern(mock pgxmock.PgxPoolIface, muster string, args ...any) {
+	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT ist_ausgesondert FROM buecher_exemplare WHERE id = \$1 FOR UPDATE`).
+		WithArgs("ex-1").
+		WillReturnRows(pgxmock.NewRows([]string{"ist_ausgesondert"}).AddRow(false))
+	mock.ExpectExec(muster).WithArgs(args...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 }
 
 func TestUpdateCopyStatus_AussondernFuehrtGrundMit(t *testing.T) {
 	mock, handler := neuerCopyStatusAufbau(t)
 
-	mock.ExpectExec(updateCopyStatusPattern).
-		WithArgs(false, true, "Wasserschaden", "ex-1", (*int)(nil)).
-		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	erwarteStatusSpeichern(mock, updateCopyStatusPattern, false, true, "Wasserschaden", "ex-1", (*int)(nil))
+	// Der Wechsel in „ausgesondert" steht mit der Person im Protokoll, ohne die Notiz.
+	mock.ExpectExec(`INSERT INTO audit_log`).
+		WithArgs([]string{"ex-1"}, statusBearbeiter, repository.AussonderungsWegStatus, repository.AuditAktionAusgesondert, "{}").
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectCommit()
 
 	rec := sendeStatusUpdate(t, handler, `{"ist_ausleihbar":false,"ist_ausgesondert":true,"zustand_notiz":"Wasserschaden"}`)
 
@@ -73,9 +89,8 @@ func TestUpdateCopyStatus_ReaktivierenLoeschtGrund(t *testing.T) {
 
 	// Der Handler erzwingt bei ist_ausleihbar=true den Weg zurück in den Umlauf
 	// (ist_ausgesondert=false, Notiz geleert) — der ELSE-Zweig muss den Grund räumen.
-	mock.ExpectExec(updateCopyStatusPattern).
-		WithArgs(true, false, "", "ex-1", (*int)(nil)).
-		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	erwarteStatusSpeichern(mock, updateCopyStatusPattern, true, false, "", "ex-1", (*int)(nil))
+	mock.ExpectCommit()
 
 	rec := sendeStatusUpdate(t, handler, `{"ist_ausleihbar":true,"ist_ausgesondert":true,"zustand_notiz":"war mal Verlust"}`)
 
@@ -100,9 +115,8 @@ func TestUpdateCopyStatus_BeschaedigungsgradWirdGeschrieben(t *testing.T) {
 	mock, handler := neuerCopyStatusAufbau(t)
 
 	zwanzig := 20
-	mock.ExpectExec(updateCopyAbwertungPattern).
-		WithArgs(false, false, "Wasserrand, lesbar", "ex-1", &zwanzig).
-		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	erwarteStatusSpeichern(mock, updateCopyAbwertungPattern, false, false, "Wasserrand, lesbar", "ex-1", &zwanzig)
+	mock.ExpectCommit()
 
 	rec := sendeStatusUpdate(t, handler,
 		`{"ist_ausleihbar":false,"ist_ausgesondert":false,"zustand_notiz":"Wasserrand, lesbar","zustand_abwertung_prozent":20}`)
@@ -120,9 +134,8 @@ func TestUpdateCopyStatus_BeschaedigungsgradWirdGeschrieben(t *testing.T) {
 func TestUpdateCopyStatus_OhneFeldBleibtDerGradUnangetastet(t *testing.T) {
 	mock, handler := neuerCopyStatusAufbau(t)
 
-	mock.ExpectExec(updateCopyAbwertungPattern).
-		WithArgs(false, false, "gesperrt", "ex-1", (*int)(nil)).
-		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	erwarteStatusSpeichern(mock, updateCopyAbwertungPattern, false, false, "gesperrt", "ex-1", (*int)(nil))
+	mock.ExpectCommit()
 
 	rec := sendeStatusUpdate(t, handler,
 		`{"ist_ausleihbar":false,"ist_ausgesondert":false,"zustand_notiz":"gesperrt"}`)
@@ -141,9 +154,8 @@ func TestUpdateCopyStatus_VerfuegbarBehaeltDenBeschaedigungsgrad(t *testing.T) {
 	mock, handler := neuerCopyStatusAufbau(t)
 
 	dreissig := 30
-	mock.ExpectExec(updateCopyAbwertungPattern).
-		WithArgs(true, false, "", "ex-1", &dreissig).
-		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	erwarteStatusSpeichern(mock, updateCopyAbwertungPattern, true, false, "", "ex-1", &dreissig)
+	mock.ExpectCommit()
 
 	rec := sendeStatusUpdate(t, handler,
 		`{"ist_ausleihbar":true,"ist_ausgesondert":false,"zustand_notiz":"Wasserrand","zustand_abwertung_prozent":30}`)

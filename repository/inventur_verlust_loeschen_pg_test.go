@@ -24,7 +24,7 @@ func TestEndgueltigLoescheVerlust_MitAusleihhistorie(t *testing.T) {
 	repo := NewInventoryRepository(pool)
 	bearbeiter := seedBearbeiter(t, pool)
 
-	exemplarID := seedVerlorenesExemplar(t, ctx, repo, "Erdkundebuch 7", "VL-HIST")
+	exemplarID := seedVerlorenesExemplar(t, ctx, repo, "Erdkundebuch 7", "VL-HIST", bearbeiter)
 	schuelerID := seedSchuelerFuerVerlust(t, ctx, pool, "VL-S1")
 	ausleiheID := seedZurueckgegebeneAusleihe(t, ctx, pool, exemplarID, schuelerID)
 
@@ -78,8 +78,8 @@ func TestEndgueltigLoescheVerlust_OffeneGebuehrSperrt(t *testing.T) {
 	repo := NewInventoryRepository(pool)
 	bearbeiter := seedBearbeiter(t, pool)
 
-	frei := seedVerlorenesExemplar(t, ctx, repo, "Mathebuch 5", "VL-FREI")
-	gesperrt := seedVerlorenesExemplar(t, ctx, repo, "Mathebuch 6", "VL-GEBUEHR")
+	frei := seedVerlorenesExemplar(t, ctx, repo, "Mathebuch 5", "VL-FREI", bearbeiter)
+	gesperrt := seedVerlorenesExemplar(t, ctx, repo, "Mathebuch 6", "VL-GEBUEHR", bearbeiter)
 	schuelerID := seedSchuelerFuerVerlust(t, ctx, pool, "VL-S2")
 	ausleiheID := seedZurueckgegebeneAusleihe(t, ctx, pool, gesperrt, schuelerID)
 	if _, err := pool.Exec(ctx, `

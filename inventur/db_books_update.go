@@ -225,6 +225,9 @@ func pruefeSpanneNachAenderung(book Book, nennt func(string) bool, stand titelSp
 type Bestandsangabe struct {
 	Soll    int
 	Gesehen *int
+	// BearbeiterID nennt, wer speichert. Ein kleinerer Bestand verlangt sie: Die überzähligen
+	// Exemplare stehen mit der Person im Protokoll.
+	BearbeiterID string
 }
 
 // BestandVeraltet lehnt eine Bestandsänderung ab, deren Maske einen anderen Stand gesehen
@@ -270,7 +273,7 @@ func (repo *BookRepository) setzeBestand(ctx context.Context, q repository.DBQue
 	if angabe.Gesehen == nil || *angabe.Gesehen != aktuell {
 		return &BestandVeraltet{Gesehen: angabe.Gesehen, Aktuell: aktuell}
 	}
-	if err := repo.gleicheExemplareAn(ctx, q, titelID, aktuell, angabe.Soll); err != nil {
+	if err := repo.gleicheExemplareAn(ctx, q, titelID, aktuell, angabe.Soll, angabe.BearbeiterID); err != nil {
 		return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)
 	}
 	return nil
@@ -290,20 +293,22 @@ func zaehleBestand(ctx context.Context, q repository.DBQueryer, titelID string) 
 // syncBookStock synchronizes the physical buecher_exemplare records to match the expected stock.
 //
 // q ist repository.DBQueryer statt dbSchreiber, weil die Nummernvergabe (barcode_seq gegen
-// Bestandsabgleich) Query braucht — pgx.Tx und der Pool erfüllen beides.
-func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQueryer, titelID string, expectedStock int) error {
+// Bestandsabgleich) Query braucht — pgx.Tx und der Pool erfüllen beides. bearbeiterID darf
+// leer sein, solange der Bestand nicht sinkt: Das Anlegen eines Titels sondert nichts aus.
+func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQueryer, titelID string, expectedStock int, bearbeiterID string) error {
 	currentStock, err := zaehleBestand(ctx, q, titelID)
 	if err != nil {
 		return err
 	}
-	return repo.gleicheExemplareAn(ctx, q, titelID, currentStock, expectedStock)
+	return repo.gleicheExemplareAn(ctx, q, titelID, currentStock, expectedStock, bearbeiterID)
 }
 
 // gleicheExemplareAn legt fehlende Exemplare an oder sondert überzählige aus, bis der Bestand
 // expectedStock erreicht. Ausgesondert wird nur aus dem Bestand: Bestellte Exemplare lassen
 // sich über die Zahl nicht aussondern. Ein neues Exemplar erbt den Standort der vorhandenen
-// (repository.SQLGeerbterStandort).
-func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository.DBQueryer, titelID string, currentStock, expectedStock int) error {
+// (repository.SQLGeerbterStandort). Jedes ausgesonderte Exemplar steht mit bearbeiterID im
+// Protokoll (repository.ProtokolliereAussonderung); ohne sie sondert der Abgleich nichts aus.
+func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository.DBQueryer, titelID string, currentStock, expectedStock int, bearbeiterID string) error {
 	if expectedStock > currentStock {
 		// Nummern aus barcode_seq — dieselbe Quelle wie Bestellwesen, Handvergabe und
 		// Littera-Import (Migration 068: eine Quelle für alle Wege).
@@ -322,6 +327,9 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 	}
 	if expectedStock == currentStock {
 		return nil
+	}
+	if bearbeiterID == "" {
+		return repository.ErrAussonderungOhneBearbeiter
 	}
 	numToRetire := currentStock - expectedStock
 
@@ -342,19 +350,16 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 				WHERE e.titel_id = $1 AND ` + repository.SQLExemplarImBestand + ` AND a.id IS NULL
 				LIMIT $2
 			)
+			RETURNING id::text
 		`
-	result, err := q.Exec(ctx, query, titelID, numToRetire)
+	ausgesondert, err := sondereAus(ctx, q, query, titelID, numToRetire)
 	if err != nil {
 		return fmt.Errorf("fehler beim aussondern von exemplaren: %w", err)
 	}
 
-	retired := result.RowsAffected()
-	if retired >= int64(numToRetire) {
-		return nil
-	}
 	// 2. Fallback: Auch ausgeliehene Exemplare aussondern, falls nötig
-	remainingToRetire := int64(numToRetire) - retired
-	fallbackQuery := `
+	if len(ausgesondert) < numToRetire {
+		fallbackQuery := `
 				UPDATE buecher_exemplare
 				SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR', bestellstatus = NULL, letzte_bewegung_am = CURRENT_TIMESTAMP,
 				    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert (war ausgeliehen)'
@@ -364,10 +369,32 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 					WHERE e.titel_id = $1 AND ` + repository.SQLExemplarImBestand + `
 					LIMIT $2
 				)
+				RETURNING id::text
 			`
-	_, err = q.Exec(ctx, fallbackQuery, titelID, remainingToRetire)
-	if err != nil {
-		return fmt.Errorf("fehler beim aussondern (fallback): %w", err)
+		rest, err := sondereAus(ctx, q, fallbackQuery, titelID, numToRetire-len(ausgesondert))
+		if err != nil {
+			return fmt.Errorf("fehler beim aussondern (fallback): %w", err)
+		}
+		ausgesondert = append(ausgesondert, rest...)
 	}
-	return nil
+	return repository.ProtokolliereAussonderung(ctx, q, ausgesondert, bearbeiterID, repository.AussonderungsWegBestandskorrektur, nil)
+}
+
+// sondereAus führt eine der beiden Anweisungen von gleicheExemplareAn aus und nennt die
+// Exemplare, die sie ausgesondert hat.
+func sondereAus(ctx context.Context, q repository.DBQueryer, anweisung, titelID string, anzahl int) ([]string, error) {
+	rows, err := q.Query(ctx, anweisung, titelID, anzahl)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
 }

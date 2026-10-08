@@ -43,7 +43,7 @@ func TestAussondern_StatusTuerPrueftAusleihe(t *testing.T) {
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		// Server MIT Datenbank: Der Erfolgsfall fragt den Ersatzwert nach (9.8, Stufe 2b).
-		(&Server{DB: &db.Database{Pool: pool}}).UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, req)
+		(&Server{DB: &db.Database{Pool: pool}}).UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, alsBenutzer(req, adminFuerAudit(t, pool)))
 		return rec
 	}
 	istAusgesondert := func(id string) bool {

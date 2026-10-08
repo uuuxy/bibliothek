@@ -31,7 +31,7 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 		return id
 	}
 
-	var titelID string
+	var titelID, bearbeiter string
 	t.Cleanup(func() {
 		ctx := context.Background()
 		if titelID != "" {
@@ -39,7 +39,15 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 				t.Errorf("Aufräumen Titel: %v", err)
 			}
 		}
+		if bearbeiter != "" {
+			if _, err := pool.Exec(ctx, `DELETE FROM benutzer WHERE id = $1`, bearbeiter); err != nil {
+				t.Errorf("Aufräumen Bearbeiter: %v", err)
+			}
+		}
 	})
+	bearbeiter = eins("Bearbeiter anlegen",
+		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		 VALUES ('Inventur', 'Abschluss', 'inventur-eingefroren@schule.invalid', 'mitarbeiter', true) RETURNING id`)
 
 	titelID = eins("Titel anlegen",
 		`INSERT INTO buecher_titel (titel, autor, signatur) VALUES ('Inventur-Titel', 'Test', 'INV 1') RETURNING id`)
@@ -59,7 +67,7 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 		}
 	}
 
-	if _, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{Signatur: &praefix}); err != nil {
+	if _, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{Signatur: &praefix}, bearbeiter); err != nil {
 		t.Fatalf("Session abschließen: %v", err)
 	}
 

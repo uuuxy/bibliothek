@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"
 	"github.com/stretchr/testify/assert"
@@ -136,7 +138,7 @@ func TestSyncBookStock(t *testing.T) {
 			WithArgs("book-123", codes).
 			WillReturnResult(pgxmock.NewResult("INSERT", 3))
 
-		err := repo.syncBookStock(ctx, mock, "book-123", 5)
+		err := repo.syncBookStock(ctx, mock, "book-123", 5, "")
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -147,11 +149,12 @@ func TestSyncBookStock(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
 		// Try to retire 2 unused
-		mock.ExpectExec(`UPDATE buecher_exemplare SET ist_ausgesondert = true`).
+		mock.ExpectQuery(`UPDATE buecher_exemplare SET ist_ausgesondert = true`).
 			WithArgs("book-123", 2).
-			WillReturnResult(pgxmock.NewResult("UPDATE", 2))
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("ex-1").AddRow("ex-2"))
+		erwarteAussonderungsSpur(mock, "ex-1", "ex-2")
 
-		err := repo.syncBookStock(ctx, mock, "book-123", 3)
+		err := repo.syncBookStock(ctx, mock, "book-123", 3, "bearbeiter-1")
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -162,17 +165,28 @@ func TestSyncBookStock(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
 		// Try to retire 2 unused, but only 1 found
-		mock.ExpectExec(`UPDATE buecher_exemplare SET ist_ausgesondert = true`).
+		mock.ExpectQuery(`UPDATE buecher_exemplare SET ist_ausgesondert = true`).
 			WithArgs("book-123", 2).
-			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("ex-1"))
 
 		// Fallback for remaining 1
-		mock.ExpectExec(`UPDATE buecher_exemplare SET ist_ausgesondert = true`).
-			WithArgs("book-123", int64(1)).
-			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectQuery(`UPDATE buecher_exemplare SET ist_ausgesondert = true`).
+			WithArgs("book-123", 1).
+			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("ex-2"))
+		erwarteAussonderungsSpur(mock, "ex-1", "ex-2")
 
-		err := repo.syncBookStock(ctx, mock, "book-123", 3)
+		err := repo.syncBookStock(ctx, mock, "book-123", 3, "bearbeiter-1")
 		assert.NoError(t, err)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("decrease stock - ohne Bearbeiter abgelehnt", func(t *testing.T) {
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare e WHERE e.titel_id = \$1 AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL`).
+			WithArgs("book-123").
+			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
+
+		err := repo.syncBookStock(ctx, mock, "book-123", 3, "")
+		assert.ErrorIs(t, err, repository.ErrAussonderungOhneBearbeiter)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -181,8 +195,15 @@ func TestSyncBookStock(t *testing.T) {
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
-		err := repo.syncBookStock(ctx, mock, "book-123", 5)
+		err := repo.syncBookStock(ctx, mock, "book-123", 5, "")
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
+}
+
+// erwarteAussonderungsSpur erwartet den Protokolleintrag für die genannten Exemplare.
+func erwarteAussonderungsSpur(mock pgxmock.PgxPoolIface, exemplarIDs ...string) {
+	mock.ExpectExec(`INSERT INTO audit_log`).
+		WithArgs(exemplarIDs, "bearbeiter-1", repository.AussonderungsWegBestandskorrektur, repository.AuditAktionAusgesondert, "{}").
+		WillReturnResult(pgxmock.NewResult("INSERT", int64(len(exemplarIDs))))
 }

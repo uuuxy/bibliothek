@@ -625,7 +625,13 @@ Türen, die nichts von dem tun, was die Frage nennt, oder deren Zeile die Person
 - Geräte, Wünsche und Meldungen des Kollegiums, Klassensatz-Reservierungen, die Sperre des
   Bildschirms, An- und Abmelden.
 
-Offen ist das Aussondern auf drei Wegen, die keine Person festhalten ([OFFEN.md](OFFEN.md) 5.57).
+Das Aussondern steht seit dem 08.10.2026 auch auf den drei Wegen mit der Person im Protokoll,
+die bis dahin keine festhielten: der Status in der Buchakte, ein kleinerer Bestand in „Buch
+bearbeiten", der Abschluss einer Inventur (`repository.ProtokolliereAussonderung`,
+`TestAussondern_StehtMitDerPersonImProtokoll`). Der Eintrag nennt Bearbeiter, Weg und Grund;
+den Grund liest er vom Exemplar. Die Zustandsnotiz steht nicht darin: Sie ist Freitext, kann
+eine Person nennen und bliebe bis zur Audit-Aufbewahrung. Das Abgangsbuch liest diese Einträge
+nicht, es zählt im Protokoll nur gelöschte Exemplare (`aktion = 'DELETE'`).
 
 ### Frontend-Lesart (ergänzt 31.08.2026)
 

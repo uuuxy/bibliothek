@@ -104,7 +104,7 @@ var phantomBestand = map[string]int{
 	// Dritte Zeile derselben Bauart (Frage 12 „Gegenrichtung Schema", 06.09.2026):
 	// ein INSERT ins Protokoll je Zeile, die der CASCADE gleich nimmt.
 	"repository/titel_loeschen_wartende.go:ProtokolliereWartendeBezuege": 1,
-	"inventur/db_books_update.go:gleicheExemplareAn":                     2,
+	"inventur/db_books_update.go:gleicheExemplareAn":                     1,
 	"repository/systematik_sicherung.go:registriereFach":                 2,
 	"jobs/cron_dsgvo.go:RunGDPRAnonymizeOldData":                         1,
 	"jobs/restore_probe.go:fuehreRestoreProbeAus":                        3,

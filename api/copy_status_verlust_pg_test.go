@@ -35,7 +35,7 @@ func TestCopyStatusVerloren_ZaehltAlsVerlust(t *testing.T) {
 	req.SetPathValue("id", exID)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
+	handler.ServeHTTP(rec, alsBenutzer(req, adminFuerAudit(t, pool)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status setzen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}

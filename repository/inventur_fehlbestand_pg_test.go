@@ -24,6 +24,7 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
+	bearbeiter := seedBearbeiter(t, pool)
 
 	// Ein Titel mit Signatur, damit der Bericht auch die Regalangabe trägt — danach
 	// sortiert man beim Nachsuchen. Quelle ist buecher_titel.signatur, der Text vom
@@ -64,7 +65,7 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 		t.Fatalf("Scan erfassen: %v", err)
 	}
 
-	verloren, err := repo.FinishInventurSession(ctx, sessionID, InventurScope{})
+	verloren, err := repo.FinishInventurSession(ctx, sessionID, InventurScope{}, bearbeiter)
 	if err != nil {
 		t.Fatalf("Abschluss: %v", err)
 	}
@@ -125,6 +126,7 @@ func TestInventurScanFinishKoordination(t *testing.T) {
 
 	for runde := 0; runde < 8; runde++ {
 		resetInventurDaten(t, pool)
+		bearbeiter := seedBearbeiter(t, pool)
 		var titelID string
 		if err := pool.QueryRow(ctx,
 			`INSERT INTO buecher_titel (titel) VALUES ('KoordTitel') RETURNING id`).Scan(&titelID); err != nil {
@@ -167,7 +169,7 @@ func TestInventurScanFinishKoordination(t *testing.T) {
 				finishErr = err
 				return
 			}
-			if _, err := txRepo.FinishInventurSession(ctx, s.ID, s.Scope()); err != nil {
+			if _, err := txRepo.FinishInventurSession(ctx, s.ID, s.Scope(), bearbeiter); err != nil {
 				finishErr = err
 				return
 			}
