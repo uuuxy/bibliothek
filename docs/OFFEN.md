@@ -12,97 +12,37 @@ Liste geführt wird, steht am Ende.
 
 ## Fahrplan
 
-### Etappe 1: als Nächstes
-
-- [x] **Theke: zweiter Scan desselben Buchs.** Eine Ausleihe klingt seit dem 06.10.2026
-  anders als eine Rückgabe. Eine Sperre und eine eigene Farbe gibt es nicht.
-- [x] **Standort: Ein neues Exemplar erbt ihn,** wenn alle übrigen Exemplare des Titels
-  denselben tragen. Gebaut am 06.10.2026.
-- [x] **Titel speichern:** Die Maske schickt seit dem 06.10.2026 nur die geänderten Felder,
-  der Server schreibt nur diese. Zwei Plätze mit demselben Titel behalten beide, was sie an
-  verschiedenen Feldern speichern. Ändern beide dasselbe Feld, gilt der spätere Eintrag.
-- [x] **PRs auf GitHub:** 21 durchgesehen am 06.10.2026. Zwei sind hereingeholt (701, 702), 19
-  geschlossen; aus sieben davon sind die Tests übernommen (d1dba610).
-- [x] **PR 722** durchgesehen und geschlossen am 06.10.2026: Die Prüfung beim Löschen einer
-  Sachgruppe (`api/systematik_handler.go`) würde durch ihn höchstens 1 ms schneller.
-- [x] **PRs 723 und 724** durchgesehen und geschlossen am 07.10.2026, nichts übernommen.
-- [x] **PR 725** durchgesehen am 08.10.2026, nicht übernommen; die Idee ist gebaut: Im Warenkorb
-  des Bestellwesens ist „Menge verringern" bei Menge 1 gesperrt, in der Form der anderen
-  gesperrten Symbolknöpfe.
-- [x] **Doku-Ordner:** Aus 36 Markdown-Dateien in `docs/` sind am 07.10.2026 20 geworden. Die
-  Architektur ist eine Datei (`ARCHITEKTUR.md`); das LUSD-Messprotokoll, die Vorlage für das
-  Blatt bei der Schule, die Liste „Datenschutz — offene Punkte" und das zweite README sind in
-  `LUSD.md`, im Pflegekonzept, im Datenschutz-Nachweis und im Haupt-README aufgegangen.
-
-### Etappe 2: vor dem Echtstart
+### Etappe 1: vor dem Echtstart
 
 Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Littera-Übernahme
-(entschieden am 28.09.2026).
+(entschieden am 28.09.2026). Steht an einem Schritt R7, R8 oder R9, verkleinert er das Risiko
+dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
-- [x] Die Littera-Übernahme überträgt die Auflage („2. Aufl.", gebaut am 07.10.2026).
-- [x] Die Littera-Übernahme nimmt die Nichtsortierzeichen aus Titel und Verfasser („¬Die¬
-  schwarze Katze", gebaut am 07.10.2026).
-- [x] Titel, Untertitel, Autor und Verlag stehen mit einem Leerzeichen zwischen den Wörtern,
-  an jeder Tür: „La  Peste" aus Littera wird „La Peste", und die Suche nimmt den Suchtext in
-  derselben Form (gebaut am 07.10.2026).
 - [ ] Generalprobe der Übernahme mit der Sicherung von 2026, sobald sie sich öffnen lässt:
   Ausweisnummern, offene Ausleihen, Standorte, Verweise der Schlagworte, Sperren und Salden.
-  (7.2, 4.20)
+  Danach entscheidet sich, ob die Theke die kurze Nummer der Littera-Etiketten annehmen muss
+  ([ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5). (7.2, 4.20)
 - [ ] `update.sh` für den Schulserver: nur Releases, Images frisch. (5.31)
 - [ ] Eingang des Servers: Von außen ist nur die Seite der Lieferanten erreichbar. (4.23)
-- [x] Arbeitsnotizen der Entwicklung ins Repository, entlang dem Pflegekonzept (abgeschlossen
-  am 07.10.2026; wo was steht, nennt [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 7.2).
-- [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3), Uptime-Signal (7.5),
+- [ ] Am Schulserver einrichten: Sicherung außer Haus (7.3, R8), Uptime-Signal (7.5, R9),
   Eigentumsvermerk der Etiketten (4.24), Frist bis zum Sperrbildschirm (9.9). Danach nachsehen:
   Admin-Konten, Verbindung zur DNB (7.8).
 - [ ] Abnahmen mit echten Daten. (7.7)
-- [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4)
+- [ ] Wiederherstellung an einem fremden Ziel proben, allein mit dem Pflegekonzept. (7.4, R7)
 
 ### Bei dir
 
 **Entscheiden:**
 
-- [x] Die Bestandsliste (CSV) nennt je Exemplar den Standort (entschieden und gebaut am
-  07.10.2026).
-- [x] Theke: Ein Scan, der eintrifft, solange die vorige Buchung läuft, wird eingereiht und
-  danach gebucht; dieselbe Nummer fällt weiter weg (entschieden und gebaut am 07.10.2026).
-- [x] Die Titelliste steht nach dem Titel, das Ziehen der Zeilen ist entfernt (entschieden
-  und gebaut am 07.10.2026).
-- [x] Titelliste: Ein Artikel am Anfang zählt beim Ordnen mit, „Die schwarze Katze" steht
-  unter D; Litteras Sortiertitel kommt nicht mit (entschieden am 07.10.2026: bleibt so).
-- [x] Theke: Ein gescheiterter Scan gibt immer den Fehlerton, auch außerhalb der
-  Schnellrückgabe (entschieden und gebaut am 07.10.2026).
-- [x] Theke: Ein Scan bei offener Rückfrage (Sperre, Vormerkung, Zubehör) lässt sie stehen,
-  wird nicht gebucht und gibt den Fehlerton (entschieden und gebaut am 07.10.2026).
-- [x] „Mahnbriefe drucken" verlangt dasselbe Recht wie der Mahnversand (`create_orders`,
-  entschieden und gebaut am 07.10.2026).
-- [x] Das Aussehen nach der Umstellung der Farben auf M3-Rollen bleibt so (entschieden am
-  06.10.2026). Eigene Farben je Fach gibt es nicht.
-- [x] Feld „Signatur" nach der Übernahme: Vorschläge, die Seite „Signaturen" und die Auswahl
-  der Inventur fassen nach der Regaladresse zusammen, dem Teil vor „ / "; am Titel bleibt die
-  ganze Aufschrift (entschieden und gebaut am 07.10.2026).
-- [x] Bestellung mit dem Hinweis „Mail nicht versendet", die den Händler auf anderem Weg
-  erreicht hat (Telefon, eigene Mail): „Auf anderem Weg bestellt" entfernt den Hinweis nach
-  einer Rückfrage, ohne zu senden. An einer Bestellung mit Bestätigungs-Link wird stattdessen
-  die Zusage des Händlers nachgetragen (entschieden und gebaut am 07.10.2026).
-- [x] Buchakte: Kopf und Reiter zählen den Bestand, ein bestelltes Exemplar steht im Kopf als
-  „1 bestellt"; die Zahl „Exemplare" im Kopf ist entfallen (entschieden und gebaut am
-  07.10.2026).
-- [x] Jahrgang am Titel: Der Umbau wie in 5.5 ist freigegeben (entschieden am 08.10.2026).
-  Ohne Eintrag gilt „unbekannt", gebaut als Stufe 1. „von" und „bis" bleiben Felder zum
-  Tippen; die Auswahlfelder sind nach dem Bild vom 08.10.2026 verworfen.
-- [x] Jahrgang am Titel: „Klasse" fällt aus der Maske, und „bis" bekommt die Zahl aus „von",
-  solange es leer ist oder dieselbe Zahl zeigt (entschieden und gebaut am 08.10.2026). Mit
-  der Klasse verfallen die Klassen-Einträge des Testservers. (5.5)
-- [x] Auskunft: Die Protokolleinträge auf dem Blatt nennen in Worten, worum es ging (Buch,
-  Grund, Betrag), ohne die Kennungen des Programms und ohne das Konto, das gebucht hat
-  (entschieden am 08.10.2026). (5.19)
+- [ ] Sicherung außer Haus: Alte Sicherungen löscht das Programm nur auf dem Server, am
+  Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
+  Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
+  einstellt, braucht es dann nicht. (7.3, R8)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
 - [ ] Portal: „Problem melden" unter dem Suchfeld
 - [ ] Buchakte: „Standort ändern", auch mit dem Handscanner
-- [x] Theke: Schnellrückgabe mit einem Stapel (ausprobiert am 07.10.2026 mit zwei Büchern)
 - [ ] Die übrigen Proben mit dem Handscanner
 - [ ] Maske „Buch bearbeiten"
 - [ ] Mahnwesen: Mahnbriefe und Liste drucken
@@ -114,9 +54,6 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   Exemplaren, die einen Standort tragen (Buchakte, „Standort ändern")
 - [ ] Medienkatalog: Titel-Verwaltung und „Suche & Filter" stehen nach dem Titel
 - [ ] Theke: Ausweis und Bücher ohne Pause hintereinander scannen
-- [x] Theke: bei offenem Fenster „Ausleihe blockiert" oder „Achtung! Vorgemerkt!" noch ein
-  Buch scannen (ausprobiert am 07.10.2026 mit dem Handscanner: Das Fenster bleibt stehen, rot
-  und Fehlerton)
 - [ ] Theke: eine unbekannte Nummer scannen
 - [ ] Buchakte: Kopf und Reiter „Exemplare" bei einem Titel mit einem bestellten oder
   ausgesonderten Exemplar („1 von 2 verfügbar", daneben „1 bestellt", am Reiter die 2)
@@ -155,16 +92,11 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 **Erledigen:**
 
-- [x] SonarQube-Scan starten.
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
-- [x] Am Testserver gezählt am 08.10.2026: Kein gesperrtes Exemplar trägt „verloren" in der
-  Notiz. Mit dieser Notiz als Verlust ausgebucht ist eines, die Nummer 2424.
 - [ ] Am Testserver nachsehen, ob das Buch mit der Nummer 2424 („Mathematik heute", Band 6)
   fehlt; es ist seit dem 17.09.2026 als Verlust ausgebucht. Liegt es im Regal: in der Buchakte
   den Status des Exemplars zurückstellen.
-- [x] Am Testserver gezählt am 08.10.2026: Jedes Exemplar im Bestand trägt ein Zugangsdatum;
-  ohne Datum sind nur die 26 bestellten im Zulauf.
-- [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9)
+- [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9, R7)
 - [ ] Theke ohne Netz: der Nachweis von Hand im echten Chrome (Stufe 1 und 3), zurückgestellt
   am 24.09.2026. Stufe 2 über die Tür ist seit dem 08.10.2026 belegt. (2.3)
 
@@ -180,60 +112,13 @@ Ohne feste Reihenfolge. Jede Zeile bündelt, was unter ihrer Nummer in den Einze
 Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wird sie, wenn unter
 der Nummer nichts mehr dazu offen ist.
 
-- [ ] **Jahrgang am Titel (5.5):** Der Titel führt eine Angabe, „von … bis", und ohne Eintrag
-  ist der Jahrgang unbekannt (gebaut am 08.10.2026 in drei Stufen, Migrationen 162 und 163; das
-  Feld „Klasse" gibt es nicht mehr). Offen: Die ISBN-Abfrage schlägt nur einen einzelnen
-  Jahrgang vor, keine Spanne.
-- [x] **Buchakte (5.5):** Ein bestelltes Exemplar, das nie eintraf, steht nach „Exemplar löschen"
-  nicht mehr im Abgangsbuch; ausgesonderte und bestellte Exemplare heißen dort seit dem
-  07.10.2026 „Ausgesondert" und „Bestellt".
-- [x] **Nie eingetroffene Exemplare (5.5):** Sie zählen seit dem 07.10.2026 auch in der Zahl
-  „aus dem Katalog gelöscht" unter dem Abgangsbuch und in der Statistik nicht mehr mit; die
-  Statistik zählt ein bestelltes Exemplar erst mit dem Eintreffen zum Bestand.
-- [x] **Druck-Center (5.45):** Ein bestelltes Exemplar ohne Notiz heißt in der Auswahlliste
-  seit dem 08.10.2026 „(Bestellt)". Die Vorschau zeichnet seit dem 07.10.2026 nur den ersten
-  Bogen.
-- [x] **Überläufe (5.45):** Bestellwesen, Signaturen bei 1280 px und ein langer Name in der
-  Leserakte sind seit dem 08.10.2026 behoben.
-- [x] **Auskunft (5.19):** Die Protokolleinträge stehen seit dem 08.10.2026 in Worten auf dem
-  Blatt, mit Buch, Grund und Betrag, ohne die Kennungen des Programms und ohne das Konto, das
-  gebucht hat.
-- [x] **Protokoll und Tilgung (5.35):** Am Testserver am 08.10.2026 gezählt: kein alter Eintrag
-  zu einem gelöschten Leser, keine Stornierung ohne die Kennung des Lesers, kein Eintrag über
-  ein früheres Konto. Zu bereinigen ist nichts.
+- [ ] **Jahrgang am Titel (5.5):** Die ISBN-Abfrage schlägt nur einen einzelnen Jahrgang vor,
+  keine Spanne.
 - [ ] **Gates und Werkzeuge (5.10):** zwei Lücken in Prüfregeln, der erste Lauf von
   `release.yml` auf Ubuntu 26, die Excel-Bibliothek auf einem unveröffentlichten Stand.
-- [x] **Ausweis aus der Leserakte (5.5):** Lässt sich das Ausweis-Design nicht laden, drucken
-  Leserakte und Leserdatei seit dem 08.10.2026 nicht und sagen es beim Druck.
-- [x] **Bestellsuche (5.5):** Antwortet die DNB nicht, steht es seit dem 08.10.2026 oben in der
-  Trefferliste, auch ohne Treffer aus dem eigenen Katalog.
-- [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
-  ihren Helfern, die Regel „überfällig" ebenso; eine Ratsche hält die ersten beiden fest.
-- [x] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Am Titel, am Leser, am Benutzer,
-  am Gerät, am Lieferanten und seit dem 08.10.2026 in den Kategorien der Einstellungen schickt
-  die Maske nur, was geändert wurde.
-- [x] **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es an
-  der Bestellung und in der Bestellhistorie („Mail nicht versendet"), und die Bestellung lässt
-  sich erneut senden (entschieden und gebaut am 07.10.2026, Migration 161).
-- [x] **Spur im Protokoll (5.57):** Aussondern über den Status in der Buchakte, die
-  Bestandskorrektur und den Abschluss einer Inventur steht seit dem 08.10.2026 mit der Person
-  im Protokoll. Die übrigen Türen sind seit dem 08.10.2026 durchgesehen; Schlagworte
-  zusammenführen, umleiten und löschen schreiben seitdem einen Eintrag.
-- [x] **Beim Umstellen der Farben aufgefallen (5.21):** In der Bestellhistorie bekommt die
-  Spalte „Lieferant" seit dem 08.10.2026 die übrige Breite.
 
-### Nur mit Anlass: kein Schritt
-
-Bekannt und beschrieben. Gebaut wird erst, wenn der dort genannte Anlass eintritt.
-
-- 5.5 Die kurze Nummer der Littera-Etiketten an der Theke: entscheidet sich mit der Generalprobe.
-- 5.5 Listenimport: Trägt eine Zeile die Ausweisnummer eines Lesers als Buchnummer, nennt die
-  Meldung weder Zeile noch Weg.
-- 5.45 Bedienung am Tablet und in Fenstern unter 1280 px.
-
-Beobachtungen und Kleinigkeiten ohne geplanten Schritt stehen seit dem 07.10.2026 nicht mehr
-hier, sondern in [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen" (bis dahin Abschnitt 6
-und die Punkte 5.25, 5.49 und 5.54).
+Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
+[ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
 
 ---
 
@@ -259,12 +144,6 @@ die Theke ohne Verbindung verhält, steht in [FACHKONZEPT.md](FACHKONZEPT.md) 18
   20 Minuten warten ohne Sperre, Netz an → Sperre; anmelden, nachgebucht, Meldungen an einem
   zweiten Browser; Format-1-Sicherung eines anderen Rechners einspielen.
 
-### 2.4 Nicht im Umfang
-
-Anmeldung ohne Server · Schülerdaten auf dem Rechner · Umbuchen im Online-Weg · Geräte offline ·
-scannende Person im Protokoll (nachgebucht wird unter dem beim Sync angemeldeten Konto; steht in
-der Doku).
-
 ## 4. Entscheidungen
 
 Die Nummern bleiben fest; beantwortete Fragen fallen weg, sobald sie umgesetzt sind.
@@ -284,8 +163,9 @@ andere nur aus dem Schulnetz. Lehrkräfte erreichen das Programm vorerst nicht v
 (ebenfalls entschieden am 28.09.2026); der Katalog ohne Anmeldung (`/api/public/opac/…`) ist nur
 in der Schule durchsuchbar. Caddy holt das Zertifikat selbst bei Let's Encrypt wie am
 Testserver (`Caddyfile`: keine `tls`-Zeile). Ohne HTTPS ginge im Betrieb nicht einmal die
-Anmeldung: Das Sitzungs-Cookie wird nur über HTTPS gesetzt (`ermittleCookieSecure` in
-`main.go`). Mit einem Zertifikat, dem die Browser nicht vertrauen, stünde an jedem Gerät eine
+Anmeldung: Der Browser schickt das Sitzungs-Cookie in der Vorgabe nur über HTTPS mit
+(`ermittleCookieSecure` in `main.go`; ein ausdrückliches `COOKIE_SECURE=false` hebt das auf und
+warnt beim Start). Mit einem Zertifikat, dem die Browser nicht vertrauen, stünde an jedem Gerät eine
 Warnung, und die Theke ließe sich bei einem Netzausfall nicht neu laden (Service Worker,
 [Architektur 8.8](ARCHITEKTUR.md#88-echtzeit-und-offline), „Offline"). Das Uptime-Signal von außen (7.5)
 ruft `/health` ab.
@@ -343,46 +223,25 @@ Vermerk.
 
 ### 5.5 Bestand, Katalog, Druck
 
-- Listenimport gegen den Nummern-Wächter (Migration 131): Trägt eine Zeile der Datei die
-  Ausweisnummer eines Lesers als Buch-Barcode, lehnt der Wächter ab und der ganze Import
-  bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,
-  nicht die Ausnahme). Laut, also richtig — nur die Meldung nennt weder Zeile noch Weg.
-  Kategorie C, bis es einmal vorkommt.
-- **Jahrgang am Titel: die ISBN-Abfrage schlägt keine Spanne vor.** Der Umbau zu einer Angabe
-  ist seit dem 08.10.2026 gebaut (Migrationen 162 und 163, die Regel steht in
-  [FACHKONZEPT.md](FACHKONZEPT.md)). Offen aus dem Bauplan: Nennt ein Titel mehrere Jahrgänge
-  („Klassen 7–10", „5./6. Schuljahr"), schlägt die ISBN-Abfrage nichts vor; einen einzelnen
-  („Klasse 7", „7. Schuljahr") trägt sie bei „von" und „bis" ein. Für eine Spanne braucht die
-  Antwort ein zweites Feld neben `grade` (`inventur/isbn_suche.go`, `stufeAusText` in
-  `inventur/metadaten_helfer.go`).
-
-- **Die kurze Nummer der alten Littera-Etiketten lässt sich an der Theke nicht eintippen**
-  (gefunden am 30.09.2026, am Code gelesen, nicht nachgestellt). Nach der Übernahme ist die
-  Nummer eines Littera-Exemplars der EAN-13 seines Etiketts (`5896800039556`); lesbar steht auf
-  dem Etikett nur „Exemplar-Nr.: 58968". Liest der Scanner das Etikett nicht mehr, findet die
-  Theke das Buch über die getippte kurze Nummer nicht: `resolveOhnePraefix`
-  (`internal/service/omnibox_service.go`) sucht die Nummer genau und rechnet nur 13-stellige
-  Scans zurück; die kurze Nummer steht in `erweiterte_eigenschaften` als `littera_exemplarnr`
-  und wird nirgends gelesen. Ist `FremdLeserNummer` im frischen Backup leer (7.2), tragen die
-  Ausweise die Littera-Lesernummer, und beide Nummernkreise beginnen bei 1: Eine getippte kurze
-  Buchnummer kann dann einen Leser laden. Bis dahin: den Titel suchen (die 13 Ziffern beginnen
-  mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
-  kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
-  Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
+- **Jahrgang am Titel: die ISBN-Abfrage schlägt keine Spanne vor.** Nennt ein Titel mehrere
+  Jahrgänge („Klassen 7–10", „5./6. Schuljahr"), schlägt die ISBN-Abfrage nichts vor; einen
+  einzelnen („Klasse 7", „7. Schuljahr") trägt sie bei „von" und „bis" ein. Für eine Spanne
+  braucht die Antwort ein zweites Feld neben `grade` (`inventur/isbn_suche.go`, `stufeAusText`
+  in `inventur/metadaten_helfer.go`). Die Regel zum Jahrgang steht in
+  [FACHKONZEPT.md](FACHKONZEPT.md).
 
 ### 5.10 Gates und Werkzeuge
 
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
-- **Ubuntu 26 als Runner: der erste Lauf von `release.yml`.** Seit dem 08.10.2026 laufen alle
-  zehn Jobs der vier Workflows fest auf `ubuntu-26.04`; der Name steht für actionlint in
-  `.github/actionlint.yaml`. Die ersten Läufe von `ci.yml`, `security-scan.yml` und
-  `docker-publish.yml` sind angesehen (am Stand 3bae78b9 grün bis auf actionlint, das den
-  Namen nicht kannte). Offen: `release.yml` läuft erst mit dem nächsten v-Tag; den Lauf dann
-  ansehen. Es braucht dort nur `git`, `gh` und `scripts/tag-gate.sh`. Nicht darunter: CodeQL
-  läuft in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine Workflow-Datei)
-  auf `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf steht an jedem
-  CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der CodeQL-Lauf rot.
+- **Ubuntu 26 als Runner: der erste Lauf von `release.yml`.** Alle zehn Jobs der vier
+  Workflows laufen auf `ubuntu-26.04`; `ci.yml`, `security-scan.yml` und `docker-publish.yml`
+  sind dort grün (zuletzt am Stand 9687c973). `release.yml` läuft erst mit dem nächsten v-Tag;
+  den Lauf dann ansehen. Es braucht dort nur `git`, `gh` und `scripts/tag-gate.sh`. Nicht
+  darunter: CodeQL läuft in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine
+  Workflow-Datei) auf `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf
+  steht an jedem CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der
+  CodeQL-Lauf rot.
 - **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist seit dem 08.10.2026
   `v2.11.1-0.20260910071107-696050fbf14e`, der Entwicklungsstand der Bibliothek vom
   10.09.2026. Er enthält die Korrekturen zu den neun Meldungen vom 07.10.2026 (GitHub,
@@ -399,25 +258,6 @@ Vermerk.
   durch `xlsxgrenze.MitMappe`; die Schranke dort bleibt als zweite Lage. Offen: auf die
   veröffentlichte Fassung heben, sobald sie erscheint (Dependabot schlägt sie vor). Fällt bis
   dahin an einem der drei Importe etwas auf, zuerst gegen v2.11.0 gegenprüfen. Kategorie B.
-- **gosec: acht Regeln global ausgenommen** (gemessen mit v2.29.0 am 28.09.2026, ohne
-  `-exclude`): G706 (38 Stellen in 20 Dateien, nachgezählt am 07.10.2026), G704 (6), G703 (5),
-  G120 (5), G124 (4), G404 (4), G115 (3), G101 (1); der Grund je Regel steht in
-  `.github/workflows/security-scan.yml`.
-  Eine neue Stelle dieser Regeln meldet gosec nicht. Abhilfe: je Stelle ein `#nosec` mit Grund,
-  dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
-  Nur mit Anlass.
-
-### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
-
-**Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
-sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung
-hinweg. Am Testserver waren beide Zählungen 0 (zuletzt am 08.10.2026); neue Vormerkungen für
-Kollegen lehnt die Tür seit dem 21.09.2026 ab.
-
-```
-SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
-SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
-```
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 
@@ -449,50 +289,6 @@ Schulserver feststeht.
   entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
-
-### 5.45 Listen in einem Kasten mit eigenem Scrollen
-
-Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich der Seite
-(`e2e/scrollbereiche.spec.js`); so stehen die Ausleihliste der Leserakte, die Positionen im
-Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Kategorie B. Offen:
-
-- **Die Exemplare in „Buch bearbeiten" bei Mengen wie an der Schule** (am Testserver lesend
-  gezählt am 02.10.2026): 2.253 Titel haben Exemplare, mindestens die Hälfte davon eines, 90 %
-  höchstens 58; über 100 Exemplare haben 68 Titel, der größte 383. Lokal mit 403 Exemplaren
-  öffnet die Maske in 0,3 s, „Speichern", Cover und Knöpfe bleiben im Bild, die Seite ist
-  28.377 px hoch. In der Liste lässt sich nicht suchen (`BuchExemplareListe.svelte`); ein
-  einzelnes Exemplar findet dort nur die Suche des Browsers. Anlass zum Bauen: Jemand sucht in
-  der Maske ein bestimmtes Exemplar.
-- **Der Abstand des Rahmens liegt um den Scrollbereich, nicht in ihm** (alle Seiten, gemessen
-  am 02.10.2026 bei 1710 × 952 px): `Anwendungsrahmen.svelte` gibt der Arbeitsfläche 24 px
-  oben und unten und 32 px an den Seiten, gescrollt wird erst das Element darin
-  (`Router.svelte`, `overflow-y-auto`). Die Scrollleiste sitzt deshalb 32 px vom Fensterrand,
-  und über und unter dem Inhalt bleiben beim Scrollen je 24 px stehen. Betrifft jedes
-  Bauteil, das beim Scrollen stehen bleibt (`sticky top-0`).
-- **Leserakte bei 1024 bis 1065 px Fensterbreite:** Seit dem 02.10.2026 beginnt die
-  Navigation unter 1280 px eingeklappt (`Sidebar.svelte`); der Titel in der Ausleihliste hat
-  damit ab 1066 px mindestens 140 px (`e2e/ausleihliste-zeilen.spec.js`). Darunter, bis zur
-  Grenze von 1024 px, an der die Akte Leserkarte (320 px) und Inhalt nebeneinanderstellt,
-  bleiben ihm 98 bis 139 px (gemessen am 02.10.2026 mit zwölf Ausleihen). Wer die
-  Navigation unter 1258 px von Hand ausklappt, lässt dem Titel weniger als 140 px, unter
-  1118 px nichts. Bei 1024 bis rund 1035 px ist auch die
-  Reiterzeile der Akte 12 px zu schmal, sobald „Gebühren & Schäden" eine Zahl trägt (gemessen am
-  05.10.2026: 540 von 528 px); sie lässt sich dann seitlich schieben.
-- **Eingeklappte Navigation:** Sie zeigt nur Symbole, bis zu 18; der Name steht im `title`
-  des Knopfs und erscheint beim Zeigen mit der Maus. M3, Navigation rail, Guidelines: „All
-  navigation items require a one word label text" und „The collapsed nav rail … should
-  contain 3–7 navigation items". Ausgeklappt schiebt sie in schmalen Fenstern den Inhalt
-  zusammen; M3: „A navigation rail can be expanded by default on larger screen sizes, or can
-  be expanded over content on smaller screen sizes". Anlass zum Bauen: Die Anwendung wird
-  an einem Tablet oder in Fenstern unter 1280 px bedient.
-- **Leserakte, Autor und Nummer des Exemplars:** Der Autor steht nur in der Sprechblase am
-  Titel, die Nummer in Fenstern bis rund 1580 px ebenfalls (darüber hat sie ihre Spalte;
-  gemessen bei ausgeklappter Seitenleiste). Die Sprechblase erscheint beim Zeigen mit der
-  Maus; an einem Tablet ohne Maus sind beide Angaben in der Akte nicht zu sehen.
-  Vorleseprogramme bekommen sie als unsichtbaren Text.
-- **Leserakte, doppelte Beschriftung:** Unter dem Reiter „Stammdaten & Adresse" steht dieselbe
-  Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem 01.10.2026
-  „Forderungen".
 
 ---
 
@@ -601,7 +397,7 @@ Abschnitt 2e — dabei die Befehle aus 2a erproben, die bisher nur am Text gepr�
 nach S3 oder am Schulserver. Machen soll sie die Vertretung allein mit dem Pflegekonzept (9.9);
 sie wartet also auf den Schulserver und auf die benannte Vertretung.
 
-Der Totalverlust des Servers steht seit dem 08.10.2026 in Abschnitt 2f, durchgespielt an einem
+Der Totalverlust des Servers steht in Abschnitt 2f, durchgespielt am 08.10.2026 an einem
 frischen Klon auf dem Entwicklungsrechner. Er setzt eine Sicherung voraus, die nicht auf dem
 Server lag (7.3).
 
@@ -620,7 +416,7 @@ von außen durchlässt, und Port 443 frei ist.
 ### 7.6 Ruleset `main`
 
 PR-Pflicht entfernen (Solo-Entscheidung 30.07.2026), „Block force pushes" und „Restrict
-deletions" anlassen. Am 06.10.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
+deletions" anlassen. Am 08.10.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
 Admin-Bypass.
 
 ### 7.7 Abnahmen
@@ -768,8 +564,8 @@ Jahrgang 5 eingetragen ist; vorher zählte dort jedes Exemplar des Fachs.
 ## So wird die Liste geführt
 
 **Kästchen stehen nur im Fahrplan.** Abgehakt wird im selben Commit, der den Schritt erledigt.
-Abgehakte Zeilen bleiben stehen, bis ihre Etappe fertig ist; dann fällt die Etappe weg. In den
-Einzelheiten wird Erledigtes gelöscht.
+Abgehakte Zeilen fallen bei der nächsten Durchsicht der Liste weg, eine fertige Etappe als
+Ganzes. In den Einzelheiten wird Erledigtes gelöscht.
 
 **Hier steht nur Arbeit, die einer von uns beiden tun kann:** am Programm, an den Servern, auf
 GitHub. Fragen an Dritte und das Warten auf ihre Antworten stehen hier nicht.

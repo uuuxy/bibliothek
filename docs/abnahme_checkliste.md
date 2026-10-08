@@ -1,6 +1,6 @@
 # Abnahme-Checkliste: Admin-Flows mit echten Daten
 
-> Stand: 2026-09-05. Für die Abnahme mit dem Sekretariat.
+> Stand: 2026-10-08. Für die Abnahme mit dem Sekretariat.
 > Alle fünf Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
 > LUSD-Exportdatei, reale Klassenbezeichnungen, gewachsener Buchbestand) so aussehen wie
@@ -58,7 +58,7 @@ zuordnen kann, und sagt es im Banner über der Vorschau:
    - **Nicht abgleichbar** → im Bestand fehlt das Geburtsdatum; bleibt unverändert.
      Abhilfe: Geburtsdatum im Profil nachtragen, dann beim nächsten Import erneut prüfen
 4. [ ] **„Import finalisieren"** → Erfolgsmeldung „Import abgeschlossen".
-5. [ ] Gegenprobe: 2–3 Schüler aus jeder Gruppe in der Schülerverwaltung suchen und prüfen.
+5. [ ] Gegenprobe: 2–3 Schüler aus jeder Gruppe in der Leserdatei suchen und prüfen.
 6. [ ] Bei „Mehrdeutig" oder „Nicht abgleichbar": stichprobenartig einen Fall im Profil
        nachpflegen und den Import wiederholen — die Gruppe muss kleiner werden.
 7. [ ] **Umbenennungs-Probe:** In einer Testdatei einen bestehenden Schüler umbenennen
@@ -94,7 +94,7 @@ oder nur die Versetzung nutzen, wenn kein frischer LUSD-Export vorliegt.
 3. [ ] Ausführen (rote Bestätigungsstufe) → Erfolgsmeldung.
 4. [ ] Gegenprobe: je einen Schüler aus niedrigster und höchster Stufe prüfen.
 
-**Eingebaute Bremsen:** Doppellauf-Schutz (zweiter Lauf innerhalb von 10 Minuten wird abgewiesen),
+**Eingebaute Bremsen:** Doppellauf-Schutz (zweiter Lauf innerhalb von 12 Stunden wird abgewiesen),
 Vorschau und Ausführung rechnen identisches SQL.
 
 **Bestanden, wenn:** Vorschau-Zahlen stimmen mit der realen Klassenstruktur überein, Gegenproben korrekt.

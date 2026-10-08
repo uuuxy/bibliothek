@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-10-07. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-10-08. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 

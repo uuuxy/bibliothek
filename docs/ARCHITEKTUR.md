@@ -74,9 +74,10 @@ Dokumenten unter [`docs/`](../README.md#dokumentation):
    `docs/stand_angaben_test.go` prüft für jede Datei unter `docs/`, dass **kein im Text
    genanntes Datum jünger ist als der Kopf**. Wer hier einen datierten Absatz ergänzt, zieht
    den Stand des Kapitels und den Kopf mit — sonst wird der Test rot.
-2. **Zahlen tragen ihr Messdatum.** Alle Umfangszahlen in Kapitel 5 sind am 17.09.2026 mit
-   den Befehlen aus [Kapitel 5](#anhang-die-zahlen-selbst-nachmessen)
-   erhoben. Sie altern; der Befehl daneben altert nicht.
+2. **Zahlen tragen ihr Messdatum.** Die Umfangszahlen in Kapitel 1.4 und Kapitel 5 sind am
+   08.10.2026 mit den Befehlen aus dem
+   [Anhang von Kapitel 5](#anhang-die-zahlen-selbst-nachmessen) erhoben. Sie altern; der
+   Befehl daneben altert nicht.
 3. **Fundstellen werden beim Namen genannt, nicht gezählt.** Keine Zeilennummern: Datei-,
    Paket-, Constraint- und Indexnamen halten, Zeilennummern wandern. Das ist dieselbe Regel,
    die [invarianten.md](invarianten.md) seit dem 06.08.2026 anwendet — dort waren nach
@@ -90,7 +91,7 @@ Dokumenten unter [`docs/`](../README.md#dokumentation):
 
 ## 1. Einführung und Ziele
 
-Stand: 26.09.2026
+Stand: 08.10.2026
 
 ---
 
@@ -114,7 +115,7 @@ Grund, nicht der Geschmack.
 | #  | Anforderung                                                                                                                                  | Fundstelle                                       |
 | -- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | F1 | **Ein Eingabefeld für alle Scans** (Omnibox). Ohne Präfix wird in der Reihenfolge Buch → Ausweis → Volltextsuche aufgelöst.                   | `internal/service/omnibox_service.go`, FACHKONZEPT §1 |
-| F2 | **Fristen** je Medienart: Lernmittel auf den Stichtag 31. Juli bzw. den Klassentermin des LMF-Plans, Freihand rollierend, Lehrkraft ein Jahr. | `internal/service/loan_rules.go`, `pkg/lmf`, `pkg/lmfplan` |
+| F2 | **Fristen** je Medienart: Lernmittel auf den Stichtag 31. Juli bzw. den Klassentermin des LMF-Plans, Freihand rollierend, Kollegium als Dauerleihe (gespeichert wird ein Jahr, überfällig wird sie nie). | `internal/service/loan_rules.go`, `pkg/lmf`, `pkg/lmfplan` |
 | F3 | **Bis zu 8 Kiosk-Stationen gleichzeitig** am selben Bestand, ohne Doppelbuchung und ohne Phantom-Erfolg.                                      | `migrations/033_unique_active_loan.sql`, `sse/`  |
 | F4 | **Mahnwesen**: Mahnstufe steigt ausschließlich beim PDF-Druck (dem physischen Verwaltungsakt), nie beim Mailversand; Listen gehen an die Klassenleitung, nie an Schüler. | `api/mahnwesen_bulk.go`                          |
 | F5 | **Schülerdaten unter DSGVO**: Löschfristen, Karenz, Anonymisierung, verschlüsselte Fotos, Auskunftsrecht, Audit-Trail.                        | `jobs/cron_dsgvo*.go`, `internal/crypto`, [SECURITY.md](SECURITY.md) |
@@ -169,7 +170,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | **Bibliotheksleitung**               | Überblick, Mahnwesen, Bestellung, Statistik ohne Klarnamen; Systempflege nicht übernehmen müssen                                   | Eigene Rolle `leitung` = Admin **minus** `manage_users`/`manage_settings`, abgeleitet statt abgeschrieben (Migration 122) |
 | **Bibliotheks-Mitarbeiter**          | Tagesgeschäft an der Theke, schnell, ohne Systemwissen                                                                             | Omnibox als einziges Eingabefeld; Fehler sprechen deutsch und sagen die nächste Handlung                             |
 | **Helfer** (Eltern, Hilfskräfte)     | Ausleihe/Rückgabe und die Frage „habt ihr Band 3 noch da?" beantworten — ohne Zugriff auf Personendaten                            | Genau zwei Rechte (`perform_actions`, `view_books`), Grenze zu Personendaten über `view_students`                     |
-| **Kollegium** (~160 Lehrkräfte)      | Selbst anmelden können, Klassensätze reservieren, LMF-Termine sehen, Wünsche melden                                                 | Selbstanmeldung über die Schuldomain mit **Freischaltung durch die Bibliothek**; Portal hängt am Recht `create_reservations`, nicht an der Rolle |
+| **Kollegium** (~160 Lehrkräfte)      | Selbst anmelden können, Klassensätze reservieren, LMF-Termine sehen, Probleme melden                                                | Selbstanmeldung über die Schuldomain mit **Freischaltung durch die Bibliothek**; Portal hängt am Recht `create_reservations`, nicht an der Rolle |
 | **Schüler und Eltern**               | Sehen, ob ein Buch da ist — ohne Konto                                                                                             | Öffentlicher Katalog und Monitor, die ausschließlich Titeldaten liefern (PII-Stufe 0)                                |
 | **Sekretariat / Schulleitung**        | Schülerdaten müssen ohne Doppelerfassung hereinkommen; Versetzung und Abgang müssen funktionieren                                   | LUSD-Import mit drei Zuordnungsstufen, Umbenennungs-Paarung und Karenzzeit ([LUSD.md](LUSD.md))                   |
 | **Datenschutzbeauftragte(r)**        | Nachweisbare Fristen, Rechtsgrundlagen, Verarbeitungsverzeichnis, Auskunft                                                          | PII-Matrix je Route als Gate, automatische Löschroutinen, VVT- und Art.-13-Entwürfe unter `docs/datenschutz/`         |
@@ -179,16 +180,16 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 
 ---
 
-### 1.4 Umfang in Zahlen (gemessen 26.09.2026)
+### 1.4 Umfang in Zahlen (gemessen 08.10.2026)
 
 | Gegenstand                        | Umfang                                    |
 | --------------------------------- | ----------------------------------------- |
-| Go-Produktivcode                  | 70.004 Zeilen (ohne das generierte `docs/docs.go`) |
-| Go-Tests                          | 93.136 Zeilen in 657 Testdateien           |
-| Svelte/JavaScript (`frontend/src`) | 68.139 Zeilen, davon 301 `.svelte`-Dateien |
-| e2e-Spezifikationen (Playwright)  | 118 Dateien                                |
-| Registrierte HTTP-Routen          | 220 (davon 82 Operationen Swagger-annotiert) |
-| Datenbank-Migrationen             | 151                                        |
+| Go-Produktivcode                  | 76.340 Zeilen (ohne das generierte `docs/docs.go`) |
+| Go-Tests                          | 118.234 Zeilen in 811 Testdateien          |
+| Svelte/JavaScript (`frontend/src`) | 83.128 Zeilen in 745 Dateien, davon 309 `.svelte` |
+| e2e (Playwright, `frontend/e2e`)  | 161 Dateien, davon 156 Specs               |
+| Registrierte HTTP-Routen          | 230 (davon 88 Operationen Swagger-annotiert) |
+| Datenbank-Migrationen             | 166 Dateien, die höchste Nummer ist 163    |
 | Tabellen / Sichten in `schema.sql`| 44 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
 
 Die Befehle, mit denen diese Zahlen in zehn Sekunden neu erhoben werden, stehen in
@@ -200,7 +201,7 @@ Testzeilen um 47 % daneben, weil sie gepflegt statt gemessen war.
 
 ## 2. Randbedingungen
 
-Stand: 17.09.2026
+Stand: 08.10.2026
 
 Randbedingungen sind das, was **nicht zur Diskussion stand**. Sie erklären mehr von dieser
 Architektur als jede Entwurfsvorliebe: Der Grund für die Omnibox, für IMAP als
@@ -217,7 +218,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | T2 | **Kein Web-Framework** — `net/http` mit `http.ServeMux`                       | Routing, Middleware-Kette und RBAC sind Eigenbau (`api/router.go`, `api/middleware.go`, `api/permission_middleware.go`). Preis: Die Kettenreihenfolge ist Handarbeit und braucht ein Gate (`routes_authz_coverage_test.go`). |
 | T3 | **PostgreSQL 18** über `pgx/v5` (Pool), keine ORM-Schicht                     | SQL steht im Repository-Paket sichtbar da. Constraints sind ein Entwurfsmittel, nicht eine Absicherung „unten" — siehe [invarianten.md](invarianten.md).                                                |
 | T4 | **CGO_ENABLED=1** für das Hauptbinary                                         | `chai2010/webp` (Cover-Dekodierung) braucht CGO. Folge: Der Build braucht `build-base` im Builder-Image; die CLI-Werkzeuge werden dagegen mit `CGO_ENABLED=0` gebaut.                                      |
-| T5 | **Svelte 5 (Runes), Tailwind 4, Vite — kein TypeScript**                       | Typsicherheit kommt über JSDoc + `svelte-check --fail-on-warnings`, nicht über `.ts`. Eine Umstellung wäre ein Umbau von 286 Komponenten und ist bewusst nicht erfolgt.                                    |
+| T5 | **Svelte 5 (Runes), Tailwind 4, Vite — kein TypeScript**                       | Typsicherheit kommt über JSDoc + `svelte-check --fail-on-warnings`, nicht über `.ts`. Eine Umstellung wäre ein Umbau von rund 300 Komponenten und ist bewusst nicht erfolgt.                                    |
 | T6 | **Ein Host, ein Prozess**                                                      | Der Prozess hält Zustand im Speicher: SSE-Abonnenten, Rechte-Cache, Rate-Limit-Zähler, Idempotenz-Warteschleife. Eine zweite Instanz hinter einem Load Balancer wäre **nicht** nur Konfiguration.         |
 | T7 | **Anmeldung gegen den Schul-Mailserver (IMAP)**                                | Die Anwendung speichert **kein** Benutzerpasswort; eine Passwortspalte gibt es seit Migration 012 nicht. Für die Dauer einer Anmeldung hält sie einen Prüfwert davon (Migration 155, A2). Folge: Die E-Mail **ist** die Identität, und `benutzer.email` schreiben zu dürfen heißt, ein Konto übernehmen zu können. |
 | T8 | **Barcodes des Altbestands dürfen nicht neu geklebt werden**                   | Ausweise und Etiketten aus Littera tragen nackte Nummern ohne Präfix. Deshalb löst die Omnibox **ohne** Präfix der Reihe nach auf, und deshalb gibt es die Prüfzeichen-Nachsicht (`pkg/code39`).           |
@@ -236,7 +237,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | O2 | **Der Betrieb läuft, während gebaut wird**                            | Migrationen müssen idempotent sein und beim Start von selbst laufen; ein Deploy darf offene SSE-Verbindungen nicht mit `os.Exit(1)` beenden (der Grund für den Broker-Umbau).         |
 | O3 | **Lernmittelfreiheit ist Landesrecht**                                | Der Stichtag 31. Juli, die Ersatzwert-Staffel und der Bescheid-Weg (Konto statt Bargeld) sind Vorgaben, keine Produktentscheidungen. Die Staffel ist bewusst ein **Vorschlag mit Herleitung**, weil der Betrag im Ermessen der Schule liegt. |
 | O4 | **~160 Lehrkräfte legt niemand von Hand an**                          | Selbstanmeldung über die Schuldomain ist Pflicht, die Freischaltung bleibt aber bei der Schule: IMAP beantwortet „wer bist du", nicht „darfst du rein".                               |
-| O5 | **Anforderungsprotokoll vom 16.09.2026 (zwölf Punkte)** | Das aktuelle Abnahme-Gate. Zwei Punkte wiegen architektonisch: alte Aufdrucke müssen lesbar bleiben, und mehrjährige Ausleihen an dasselbe Kind müssen möglich sein. Stand und Fragen: [OFFEN.md](OFFEN.md) Abschnitt 9. |
+| O5 | **Zwei Anforderungen aus dem Anforderungsprotokoll vom 16.09.2026** | Alte Aufdrucke bleiben lesbar (A14), und ein Lernmittel kann über mehrere Jahre beim selben Kind bleiben (Mehrjahresband am Titel, Spalte `mehrjahresband`). Beides ist gebaut. Wie die übrigen der zwölf Punkte behandelt sind, steht in den Commits vom 17. und 22.09.2026, die begründeten Abweichungen im Mahnwesen in [mittel_konzept.md](mittel_konzept.md), Abschnitt 3. |
 | O6 | **Kein Passwort-Selbstservice, kein Nutzerverzeichnis**                | Es gibt keinen „Passwort vergessen"-Pfad und keine Registrierung außer der Selbstanmeldung — beides liegt beim Schul-IT-Betrieb.                                                       |
 | O7 | **Altbestand aus Littera muss verlustfrei übernommen werden**          | Übernahme als eigenes Kommando gegen dieselbe Datenbank, mit Savepoint **je Datensatz** und Abgleich gegen den tatsächlichen Zeilenzuwachs — ein abgebrochener Batch darf nicht alles mitnehmen. |
 | O8 | **Datenschutz ist nachweispflichtig, nicht nur einzuhalten**            | Die PII-Einstufung je Route ist ein Dokument **mit Gate** (`api/pii_matrix_test.go`), nicht eine Zusage.                                                                              |
@@ -254,7 +255,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | **Eine Wahrheitsquelle für Menü und Router**      | Welche Seite eine Rolle erreicht, entscheidet `canSeeItem()` in `frontend/src/lib/menu.js` — und nur diese Funktion.                                                                                                | `frontend/e2e/menue-fuehrt-irgendwohin.spec.js`                      |
 | **Autorisierung pro Route**                       | Kein globaler Auth-Filter: jede nicht-öffentliche Route trägt `RequirePermission(...)` oder, wo jede Sitzung genügt, `RequireAuthenticated()`; öffentliche Routen stehen in einer Allowlist.                        | `api/routes_authz_coverage_test.go`                                  |
 | **Fundstellen beim Namen**                        | In der Dokumentation werden Constraint-, Index-, Datei- und Paketnamen genannt — keine Zeilennummern und keine Migrationsnummern als Beleg (eine Datei existiert weiter, auch wenn eine spätere Migration sie aufhebt). | `docs/invarianten_fundstellen_test.go`                               |
-| **Stand-Angaben**                                 | Kein Dokument behauptet im Kopf einen Stand, unter dem es jüngere Vorgänge beschreibt.                                                                                                                             | `docs/stand_angaben_test.go` (greift auch für `docs/arc42/*.md`)     |
+| **Stand-Angaben**                                 | Kein Dokument behauptet im Kopf einen Stand, unter dem es jüngere Vorgänge beschreibt.                                                                                                                             | `docs/stand_angaben_test.go` (jede `.md` unter `docs/`)              |
 | **Keine Changelog-Datei**                         | Die Commit-Historie ist Teil der Dokumentation; Erledigtes wird aus `OFFEN.md` gelöscht, nicht archiviert.                                                                                                          | Entscheidung vom 15.09.2026                                          |
 | **Jedes Gate einmal rot gesehen**                 | Ein Detektor, dessen Aussage nicht verloren gehen kann, prüft nichts. Neue Gates werden gegen den echten Fehlerfall gehalten, bevor sie grün bleiben dürfen.                                                        | [sweeps.md](sweeps.md) Regel 2; „Rot-Beweis-Battery"              |
 
@@ -280,7 +281,7 @@ Diese Werkzeuge sind keine Beigabe: Ohne sie wären mehrere Entscheidungen in
 
 ## 3. Kontextabgrenzung
 
-Stand: 17.09.2026
+Stand: 08.10.2026
 
 ---
 
@@ -326,11 +327,11 @@ graph TB
 | Nachbar                     | Eingang in das System                                                                                       | Ausgang aus dem System                                                                                                | Besonderheit                                                                                                    |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | **Bibliothekspersonal**     | Barcode-Scans, Stammdatenpflege, Mahnlauf, Inventurzählung, Wareneingang                                     | Bildschirm-Rückmeldung je Scan, PDFs (Mahnungen, Etiketten, Ausweise, Bescheide, Listen)                              | Bedienung ist auf **Tastatur und Scanner** ausgelegt; die Maus ist optional                                     |
-| **Kollegium**               | Selbstanmeldung mit dem Schulpostfach, Reservierungen, Buchwünsche, Meldungen                                 | Portal-Ansichten (Klassensätze, LMF-Plan, Schulbücher als PDF), Terminbestätigungen                                    | Zugang entsteht **inaktiv** und wird von der Bibliothek freigeschaltet                                          |
+| **Kollegium**               | Selbstanmeldung mit dem Schulpostfach, Reservierungen, Meldungen                                              | Portal-Ansichten (Klassensätze, LMF-Plan, Schulbücher als PDF), Terminbestätigungen                                    | Zugang entsteht **inaktiv** und wird von der Bibliothek freigeschaltet                                          |
 | **Sekretariat**             | LUSD-Bericht als `.xlsx` **oder** Semikolon-CSV (LANIS-Klassenliste, UTF-8 mit BOM)                           | Abgleichbericht: neu, geändert, Umbenennung, Abgänger                                                                  | Die Kopfzeile wird **gesucht, nicht vorausgesetzt** — LUSD-Berichte tragen Titelzeilen darüber                  |
 | **Schüler und Eltern**      | Suchanfragen im öffentlichen Katalog                                                                         | Titel, Cover, Verfügbarkeit                                                                                            | **Nie** Ausleiherdaten — PII-Stufe 0, im Gate `api/pii_matrix_test.go` festgehalten                              |
 | **Buchhändler**             | Bestätigung über einen Token-Link, ohne Konto                                                                 | Bestellmail mit Positionsliste und Barcodebogen                                                                        | Der Token steht **im Pfad** und wird im Log maskiert (`maskiereToken`); gespeichert wird nur sein Hash           |
-| **Schulträger**             | Anforderungsprotokoll, Nachweispflichten                                                                      | Zugangs-/Abgangsbuch je Halbjahr, getrennt nach Land und Träger; Bestandsnachweis zum Stichtag (15.3./15.9.)           | Bücher ohne hinterlegte Bestellung erscheinen ausdrücklich „ohne Zuordnung" — die ehrliche Lücke statt einer Erfindung |
+| **Schulträger**             | Nachweispflichten                                                                                             | Zugangs-/Abgangsbuch je Halbjahr, getrennt nach Land und Träger; Bestandsnachweis zum Stichtag (15.3./15.9.)           | Bücher ohne hinterlegte Bestellung erscheinen ausdrücklich „ohne Zuordnung" — die ehrliche Lücke statt einer Erfindung |
 | **Datenschutzbeauftragte**  | Prüffragen                                                                                                    | DSGVO-Auskunft als PDF, PII-Matrix, VVT-Entwurf, Nachweis der Löschläufe im Audit-Trail                                | Die Audit-Tilgung ist die **bewusste Ausnahme** von der Append-only-Konvention                                  |
 
 ---
@@ -406,7 +407,7 @@ graph TB
 
 ## 4. Lösungsstrategie
 
-Stand: 26.09.2026
+Stand: 08.10.2026
 
 Dieses Kapitel nennt die tragenden Entscheidungen in Kurzform und ordnet sie den
 Qualitätszielen aus [Kapitel 1](#12-qualitätsziele) zu. Die
@@ -529,7 +530,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 08.10.2026 · alle Umfangszahlen gemessen am 26.09.2026
+Stand: 08.10.2026 · alle Umfangszahlen gemessen am 08.10.2026
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -543,8 +544,8 @@ Stand: 08.10.2026 · alle Umfangszahlen gemessen am 26.09.2026
 │  ┌────────────────────────────┐        ┌───────────────────────────────────┐ │
 │  │  Frontend (SPA + PWA)      │        │  Backend (Go)                     │ │
 │  │  Svelte 5 Runes, Tailwind  │◄──────►│  net/http, pgx/v5                 │ │
-│  │  301 .svelte, 68.139 Zeilen│  JSON  │  70.004 Zeilen Produktivcode      │ │
-│  │  IndexedDB-Warteschlange   │  SSE   │  220 Routen, 151 Migrationen      │ │
+│  │  309 .svelte, 83.128 Zeilen│  JSON  │  76.340 Zeilen Produktivcode      │ │
+│  │  IndexedDB-Warteschlange   │  SSE   │  230 Routen, 166 Migrationen      │ │
 │  └────────────────────────────┘        └──────────────┬────────────────────┘ │
 │           ausgeliefert AUS dem Backend                │                       │
 │           (frontend/dist, os.OpenRoot)                │ pgx-Pool              │
@@ -618,22 +619,22 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 29.083 Zeilen, 158 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Selbstprüfung, Mail-Routen, LUSD-Parser und -Anwendung, öffentliche Seiten     |
-| `repository/`           | 14.695 Zeilen, 87 Dateien  | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
-| `internal/service/`     | Teil von 8.674 Zeilen  | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
-| `inventur/`             | 6.144 Zeilen, 43 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
-| `auth/`                 | 1.342 Zeilen, 8 Dateien    | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh                  |
-| `jobs/`                 | 1.536 Zeilen, 11 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
-| `db/`                   | 715 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
-| `pkg/` (19 Pakete)      | 2.231 Zeilen, 25 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 1.394 Zeilen, 11 Dateien   | Erzeugte Dokumente: Mahnliste, Kontoauszug, Rechnung, Schadensfall, LMF-Plan, Zahlungsweg, Schulkopf                                                                      |
+| `api/`                  | 30.785 Zeilen, 168 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Selbstprüfung, Mail-Routen, LUSD-Parser und -Anwendung, öffentliche Seiten     |
+| `repository/`           | 17.036 Zeilen, 100 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
+| `internal/service/`     | Teil von 9.908 Zeilen  | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
+| `inventur/`             | 6.514 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
+| `auth/`                 | 1.854 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
+| `jobs/`                 | 1.751 Zeilen, 13 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
+| `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
+| `pkg/` (21 Pakete)      | 2.459 Zeilen, 29 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
+| `pdf/`                  | 1.297 Zeilen, 10 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, LMF-Plan, Zahlungsweg, Schulkopf                                                                                 |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
-| `internal/*` (übrige)   | Teil von 8.674 Zeilen  | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest` (Prüfhilfen) |
-| `migrations/`           | 151 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
+| `internal/*` (übrige)   | Teil von 9.908 Zeilen  | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest` (Prüfhilfen) |
+| `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
-| `cmd/` (9 Kommandos)    | 2.430 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
+| `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
 
 ##### Die `pkg/`-Pakete im Einzelnen
 
@@ -643,6 +644,8 @@ HTTP-Anfrage
 | `safehttp`         | HTTP-Clients für **fremde** Ziele; Verbindungen zu nicht-öffentlichen IP-Adressen werden abgelehnt (SSRF)                          |
 | `coverquelle`      | Host-Allowlists für Cover und Metadaten; baut die URL aus geprüften Teilen **neu** auf (Parsing-Differential)                     |
 | `coverdatei`       | Lokal gespeicherte WebP-Cover in einer Form, die `gofpdf`/`maroto` einbetten können                                               |
+| `coverablage`      | Der Ort der lokal gespeicherten Cover: Pfad einer Cover-URL prüfen, Verzeichnis öffnen, Datei entfernen — ohne Bildbibliothek, damit auch die ohne CGO gebauten Werkzeuge es einbinden können |
+| `betrag`           | Geldbeträge in der deutschen Form (zwei Nachkommastellen, Komma) — eine Stelle für Briefe, Berichte und die Meldungen der Theke   |
 | `imageutil`        | Bildkonvertierung (JPEG/PNG/GIF/WebP → JPEG), Qualitätsvorgabe                                                                    |
 | `csvutil`          | Schutz vor CSV-/Formel-Injection (CWE-1236) beim Export                                                                           |
 | `pdfzeichen`       | Die eine Zeichenersetzung für alle PDFs: gofpdf druckt in cp1252, ş, ł, ğ … würden sonst zum Punkt (seit 21.09.2026, Ratsche `pdfzeichen_ratsche_test.go`) |
@@ -692,7 +695,7 @@ Savepoint war jahrelang unbemerkt und kostete im Fehlerfall ganze Batches.
 
 #### 5.2.5 Fremdbibliotheken des Backends
 
-Maßgeblich ist `go.mod` (23 direkte Abhängigkeiten am 23.09.2026). Die Tabelle nennt, **wo**
+Maßgeblich ist `go.mod` (25 direkte Abhängigkeiten am 08.10.2026). Die Tabelle nennt, **wo**
 jede eingesetzt wird — gemessen über die Importe des Produktivcodes, nicht abgeschrieben:
 
 | Modul                                                          | eingesetzt in                                                    | Rolle                                                                                   |
@@ -727,7 +730,7 @@ Modul `grep -rl '"<modul>' --include='*.go' . | grep -v _test.go`.
 frontend/src
 ├─ main.js               Einstiegspunkt, Service-Worker-Registrierung
 ├─ App.svelte            App-Shell: Layout, Menü, SSE-Abonnement, Sperrbildschirm
-├─ lib/                  179 Einträge — Ansichten, Komponenten, Stores, Metadaten
+├─ lib/                  237 Einträge — Ansichten, Komponenten, Stores, Metadaten
 │   ├─ Router.svelte     Client-Routing; fragt canSeeItem() aus menu.js
 │   ├─ menu.js           EINZIGE Wahrheitsquelle: welche Rolle erreicht welche Seite
 │   ├─ Omnibox.svelte    Das Eingabefeld des Tresens
@@ -860,7 +863,7 @@ Stand **nach** der Invalidierung zurückschreiben — und er wirkte bis zu 60 s 
 
 | Job                       | Zeitplan (UTC)                  | Inhalt                                                                                                     |
 | ------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `RunNaechtlicheDSGVO`     | `0 0 * * *`                     | Anonymisierung Ausleihen → Anonymisierung fälliger Schüler-PII → Hard-Delete Abgänger → Lesehistorie → Anliegen, **in dieser Reihenfolge** |
+| `RunNaechtlicheDSGVO`     | `0 0 * * *`                     | Anonymisierung Ausleihen → Anonymisierung fälliger Schüler-PII → Hard-Delete Abgänger → Papierkorb der Kollegen → Lesehistorie → Anliegen → Klassensatz-Reservierungen → Nachbuch-Meldungen, **in dieser Reihenfolge** |
 | `RunAuditAufbewahrung`    | `0 3 * * *`                     | Audit-Einträge jenseits der Frist löschen (Vorgabe 24 Monate)                                              |
 | `RunDatabaseBackup`       | `30 2 * * *`                    | `pg_dump` → gzip → AES-256-GCM (scrypt), Ablage im Volume, optional S3-Upload                              |
 | Idempotenz-TTL            | `17 * * * *`                    | Schlüssel älter als 24 h entfernen (**stündlicher Takt**, 24 h ist die Aufbewahrung)                        |
@@ -883,9 +886,9 @@ Vollständig: `schema.sql` (44 Tabellen) und [invarianten.md](invarianten.md).
 | Tabelle / Sicht                | Bedeutung                                                                                                        |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | `buecher_titel`                | Katalog: Metadaten (ISBN, Titel, Autor, Verlag, Jahrgang, `ist_lernmittel`), `erweiterte_eigenschaften JSONB`      |
-| `buecher_exemplare`            | Bestand: das physische Stück (Barcode, Zustand, `ist_ausleihbar`, `letzte_bewegung_am`)                          |
+| `buecher_exemplare`            | Bestand: das physische Stück (Barcode, Zustand, `standort`, `ist_ausleihbar`, `letzte_bewegung_am`)              |
 | `ausleihen`                    | Aktive und historische Ausleihen; `exemplar_id` XOR `geraet_id`; aktiv = `rueckgabe_am IS NULL`                    |
-| `leser`                        | **Alle** Entleiher mit `art` ∈ {`schueler`, `lehrkraft`, `liv`}, ein gemeinsamer Ausweis-Nummernkreis             |
+| `leser`                        | **Alle** Entleiher mit ihrer `art` (`schueler`, `lehrkraft`, `liv`, `praktikum`, `sekretariat`, `uplus`, `fachbereich`), ein gemeinsamer Ausweis-Nummernkreis |
 | `ausweisnummern_ausgeschieden` | Jede `A-`-Nummer, die eine Leserzeile verlassen hat — nur die Zahl, ohne Person; der Generator zählt über sie hinweg (Migration 146) |
 | `schueler` (**Sicht**)         | `WHERE art = 'schueler'` + `WITH CHECK OPTION` — trägt die alte Bedeutung „wirklich Schüler" weiter               |
 | `benutzer`                     | Anmeldekonten; `UNIQUE lower(email)`; **keine** Passwortspalte                                                    |
@@ -913,13 +916,14 @@ Vollständig: `schema.sql` (44 Tabellen) und [invarianten.md](invarianten.md).
 # Migrationen
 ls migrations/*.sql | wc -l
 
-# Go-Produktivcode (ohne das generierte Swagger-Dokument)
-find . -name '*.go' -not -name '*_test.go' -not -path './node_modules/*' \
+# Go-Produktivcode (ohne das generierte Swagger-Dokument; unter frontend/node_modules
+# liegt eine fremde Go-Datei, deshalb jedes node_modules ausschließen)
+find . -name '*.go' -not -name '*_test.go' -not -path '*/node_modules/*' \
      -not -path './docs/docs.go' | xargs cat | wc -l
 
 # Go-Tests
-find . -name '*_test.go' -not -path './node_modules/*' | wc -l
-find . -name '*_test.go' -not -path './node_modules/*' | xargs cat | wc -l
+find . -name '*_test.go' -not -path '*/node_modules/*' | wc -l
+find . -name '*_test.go' -not -path '*/node_modules/*' | xargs cat | wc -l
 
 # Frontend — node_modules ausschließen: Vitest legt einen Cache unter
 # frontend/src/lib/node_modules an (gitignored); mit ihm zählt der Befehl das Doppelte.
@@ -939,7 +943,7 @@ Für das vollständige Routenverzeichnis samt Abgleich gegen die Frontend-Aufruf
 
 ## 6. Laufzeitsicht
 
-Stand: 26.09.2026
+Stand: 08.10.2026
 
 Zehn Szenarien, ausgewählt nach einem Kriterium: **Wo ist die Architektur an der
 Arbeit?** Der Normalfall („Liste laden, JSON zurückgeben") kommt nicht vor — er erklärt
@@ -1035,8 +1039,8 @@ sequenceDiagram
         S->>DB: SELECT … FOR UPDATE — Reihenfolge: Schüler → Ausleihe → Exemplar
         S->>S: Regeln: Sperre, Überfällig-Automatik, Ausleihlimit,<br/>Vormerkungskonflikt, Frist (LMF/Freihand/Lehrkraft)
         S->>DB: INSERT ausleihen / UPDATE rueckgabe_am, letzte_bewegung_am stempeln
+        S->>DB: Audit-Zeile, in derselben Transaktion
         S->>DB: COMMIT
-        S->>DB: Audit-Zeile
         H-->>K: 200 + Ergebnis (oder 409 bei Unique-Verletzung)
         H->>SSE: Broadcast nach dem Commit
         SSE-->>K: Aktualisierung an alle Stationen
@@ -1226,7 +1230,9 @@ die Klassenleitung, **nie** an Schüler.
              2. RunGDPRAnonymizeOldData    fällige Schüler-PII inkl. Audit-Spuren tilgen
              3. RunGDPRDeleteAbgaenger     Hard-Delete ab 30. Januar des Folgejahres,
                                            NUR anonymisierte Zeilen
-             4. Lesehistorie   5. Anliegen
+             4. Papierkorb: gelöschte Kollegen nach 180 Tagen endgültig löschen
+             5. Lesehistorie   6. Anliegen   7. Klassensatz-Reservierungen
+             8. quittierte Nachbuch-Meldungen
            └─ Die Reihenfolge ist die Zusage: Löschung NACH Anonymisierung, damit die
               Karenz für beides gilt.
 
@@ -1642,10 +1648,10 @@ Gate rot.
   Theken-Scan und LUSD-Vorschau) über den **echten** Router mit genau dem Recht ihrer Zeile
   auf und prüft die Antwort — inklusive entpackter PDF-Ströme — gegen Kanarienwerte je
   Stufe. Schlüsselrouten tragen Positiv-Kontrollen gegen leere Antworten.
-- `api/rechte_schreibwege_pg_test.go` — fährt alle 87 Schreibrouten mit Fachrecht mit einer
-  Rolle, die das Recht **nicht** hat, und verlangt 403 mit der Begründung des
-  Rechte-Wächters. Damit ist auch der Fall abgedeckt, den ein Textvergleich nie sieht: ein
-  Recht, das im Seed ohnehin jede Rolle hält.
+- `api/rechte_schreibwege_pg_test.go` — fährt jede Schreibroute mit Fachrecht (am 08.10.2026
+  sind es 101) mit einer Rolle, die das Recht **nicht** hat, und verlangt 403 mit der
+  Begründung des Rechte-Wächters. Damit ist auch der Fall abgedeckt, den ein Textvergleich
+  nie sieht: ein Recht, das im Seed ohnehin jede Rolle hält.
 
 #### Verschlüsselung
 
@@ -2726,7 +2732,7 @@ eigene Offen-Liste**; Kapitel 11 benennt Risiken und verweist für den Stand auf
 
 ## 10. Qualitätsanforderungen
 
-Stand: 26.09.2026
+Stand: 08.10.2026
 
 ---
 
@@ -2783,7 +2789,7 @@ vermerkt.
 | ID  | Auslöser / Situation                                                                                   | Erwartete Reaktion                                                                                     | Nachweis                                                                       |
 | --- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
 | S6  | Jemand ruft ohne Anmeldung `/katalog`, `/monitor`, `/uploads/…` auf                                     | Titeldaten, Cover, Verfügbarkeit — **nie** Ausleiher, Namen, Klassen                                    | `api/pii_matrix_test.go` + `api/pii_antwort_gate_pg_test.go` (Kanarienwerte je Stufe) |
-| S7  | Eine Rolle ohne Fachrecht ruft eine Schreibroute direkt per HTTP auf (Menü umgangen)                     | **403** mit der Begründung des Rechte-Wächters                                                          | `api/rechte_schreibwege_pg_test.go` (alle 87 Schreibrouten), `api/routes_authz_coverage_test.go` |
+| S7  | Eine Rolle ohne Fachrecht ruft eine Schreibroute direkt per HTTP auf (Menü umgangen)                     | **403** mit der Begründung des Rechte-Wächters                                                          | `api/rechte_schreibwege_pg_test.go` (jede Schreibroute mit Fachrecht), `api/routes_authz_coverage_test.go` |
 | S8  | Ein Abgänger hat keine offenen Vorgänge mehr                                                             | Sperre + Karenz (Vorgabe 90 Tage) → Anonymisierung → Hard-Delete ab 30. Januar des Folgejahres, **in dieser Folge** | `jobs/cron_dsgvo_karenz_pg_test.go`, `jobs/cron_dsgvo_abgaenger_pg_test.go`, `jobs/loeschpraedikat_ratsche_test.go` |
 | S9  | Der Server startet mit einem Beispiel-Geheimnis aus dem Repository                                       | **Start verweigert** (außerhalb local/development/test); nur ein ausdrückliches `ENFORCE_PROD_SECRETS=false` lässt ihn los, mit Warnung | `api/prod_geheimnisse.go` + Selbstprüfung (**eine** gemeinsame Liste), `scripts/pruefe_secrets.sh` |
 | S19 | Ein Mailserver bietet kein STARTTLS an (oder ein Angreifer streicht es aus der EHLO-Antwort)              | **Versand abgebrochen** — Mahntexte mit Schülernamen gehen nicht im Klartext über das Netz               | `mailservice/versand_test.go`, `internal/smtptest`                             |
@@ -2855,7 +2861,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 - **Barrierefreiheit ist im Anfangszustand gemessen.** Zustände nach mehreren
   Interaktionsschritten sind nur teilweise abgedeckt; Umfang und bekannte Lücken stehen in
   [FACHKONZEPT.md §19](FACHKONZEPT.md).
-- **Swagger deckt 82 von 220 Routen ab** (Messung in Kapitel 1.4). Das vollständige Verzeichnis ist
+- **Swagger deckt 88 von 230 Routen ab** (Messung in Kapitel 1.4). Das vollständige Verzeichnis ist
   [api_inventar.md](api_inventar.md) — generiert, nicht gepflegt.
 
 ---
@@ -2921,7 +2927,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 29.083 Zeilen in 158 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 30.785 Zeilen in 168 Dateien das schwerste Paket
 
 | | |
 | --- | --- |
@@ -2944,8 +2950,12 @@ nach `internal/service` ist begonnen, nicht abgeschlossen.
 keine Anzeigefrage, sondern eine echte Rechteerweiterung — genau das war am 10.08.2026 der
 Fall, als ein Kollegiums-Konto zehn von fünfzehn Menüpunkten sah. Gegenmittel: Die Vorgabe
 steht in `db/seed.go`, `leitung` wird abgeleitet (A12), Migrationen laufen nur einmal (eine
-spätere Handvergabe wird **nicht** zurückgedreht). Es gibt keinen laufenden Wächter, der
-eine verstellte Matrix meldet.
+spätere Handvergabe wird **nicht** zurückgedreht). Die Betriebsbereitschaft vergleicht die
+Matrix mit der Vorgabe und nennt jede Abweichung (`pruefeRechteVorgabe`, Bereich
+„Rechte-Vorgabe") — als Warnung, weil eine Abweichung eine Entscheidung des Admins sein kann.
+Eine Warnung löst keine Alarm-Mail aus; sie steht auf der Seite, bis jemand hinsieht. Seit dem
+07.10.2026 steht jede Änderung an der Matrix mit Person, Rolle und Recht im Protokoll
+(`RECHT_GEAENDERT`).
 
 #### R6 — Die E-Mail ist die Identität
 
@@ -2973,19 +2983,25 @@ fehlgeschlagenem Deploy, Wiederherstellungswerkzeuge **im Image**. Das ersetzt k
 Person. Seit dem 24.09.2026 ist eine benannte Vertretung für zwei Handgriffe vorgesehen — ein
 Update einspielen, eine Sicherung zurückholen — und dafür das
 [Pflegekonzept und Wartungshandbuch](PFLEGEKONZEPT.md) (Entwurf). Änderungen am Code
-bleiben bei einer Person.
+bleiben bei einer Person. Zwei Schritte dazu stehen aus: das Blatt mit den zwei Schlüsseln
+bei der Schule und die Probe der Wiederherstellung durch die Vertretung
+([OFFEN.md](OFFEN.md) 9.9 und 7.4).
 
 #### R8 — Offsite-Backup ist optional und standardmäßig aus
 
 | | |
 | --- | --- |
 | **Auswirkung** | hoch (Totalverlust des Hosts) |
-| **Sichtbarkeit** | mittel — der Job protokolliert das Überspringen |
+| **Sichtbarkeit** | hoch — die Betriebsbereitschaft führt es als kritischen Befund |
 
 Ohne vollständige S3-Zugangsdaten liegen alle Sicherungen im Volume **desselben Hosts**.
 Der Job sagt es („S3 credentials not fully configured – skipping offsite upload"), und die
-Selbstprüfung macht ein fehlendes Backup-Geheimnis sichtbar. Ein Host-Verlust ohne Offsite
-ist trotzdem ein Datenverlust.
+Betriebsbereitschaft führt es unter „Auslagerung der Backups" als kritisch
+(`pruefeAuslagerung`); im echten Betrieb geht ein kritischer Befund täglich per Mail an die
+Admins. Ein Host-Verlust ohne Offsite ist trotzdem ein Datenverlust. Ist ein Speicher
+eingerichtet, löscht das Programm dort nichts: Die Aufbewahrung (`jobs.BehalteNaechte`,
+`jobs.BehalteWochen`) gilt nur dem lokalen Verzeichnis. Das Einrichten und die Frage des
+Löschens stehen in [OFFEN.md](OFFEN.md) 7.3.
 
 #### R9 — Kein externes Uptime-Signal
 
@@ -3021,10 +3037,10 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 | #  | Schuld                                                                                                                  | Kosten heute                                                     | Warum sie (noch) steht                                                                      |
 | -- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | D1 | **Invarianten auf Ebene 🟡** (Sperren des Lesers, Überfällig-Automatik, Ausleihlimit, Sperrreihenfolge)                   | Ein zweiter Schreibpfad kann sie auslassen                        | Teils Ermessen enthalten (Override mit Audit), teils über Funktionsgrenzen verteilt          |
-| D2 | **Swagger deckt 82 von 220 Routen** (Kapitel 1.4)                                                                        | Interaktive Doku ist unvollständig                                | Das **vollständige** Verzeichnis ist generiert (`api_inventar.md`); Annotationen sind Handarbeit |
+| D2 | **Swagger deckt 88 von 230 Routen** (Kapitel 1.4)                                                                        | Interaktive Doku ist unvollständig                                | Das **vollständige** Verzeichnis ist generiert (`api_inventar.md`); Annotationen sind Handarbeit |
 | D3 | **Doppelte Migrationsnummern** (003, 008, 021, 022)                                                                      | Style-Smell; sortiert deterministisch                            | Umnummerieren würde bereits gelaufene Migrationen betreffen — Risiko ohne Nutzen              |
 | D4 | **Frontend-Altbestand über 200 Zeilen**                                                                                  | Große Komponenten sind schwer zu ändern                          | Ratsche friert den Bestand ein (darf nicht wachsen); Umbau läuft nebenher                    |
-| D5 | **Gemischte Sprache im Code** (`book`/`loan`/`student` neben `leser`/`ausleihen`)                                         | Kognitive Last beim Lesen                                        | Eine Umbenennung quer durch 87 Repository-Dateien wäre ein Risiko ohne fachlichen Gewinn      |
+| D5 | **Gemischte Sprache im Code** (`book`/`loan`/`student` neben `leser`/`ausleihen`)                                         | Kognitive Last beim Lesen                                        | Eine Umbenennung quer durch 100 Repository-Dateien wäre ein Risiko ohne fachlichen Gewinn     |
 | D6 | **`docs/` ist Go-Paket und Dokumentverzeichnis in einem**                                                                | Verwirrend; Gates liegen bei den Dokumenten                      | Die Gates **wollen** neben ihren Dokumenten liegen (`stand_angaben`, `invarianten_fundstellen`) |
 | D7 | **PG-Tests lokal still übersprungen**                                                                                    | Ein Lauf kann grün aussehen, ohne Constraints geprüft zu haben    | Ein Postgres gehört nicht in einen Push; Gegenmittel ist die Skip-Bilanz                     |
 | D8 | **Die `Caddyfile` im Repo ist nicht maßgeblich**                                                                         | Zwei Orte, ein Zustand                                           | Der Host betreibt mehrere Dienste in einer Datei; die Repo-Datei sagt das in Zeile 1          |
@@ -3048,28 +3064,29 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 
 ---
 
-### 11.4 Das aktuelle Abnahme-Gate
+### 11.4 Was vor dem Echtstart steht
 
-Über allem steht derzeit ein fachliches, nicht ein technisches Risiko: Das
-**Anforderungsprotokoll vom 16.09.2026** nennt zwölf Punkte und schließt
-damit, dass das Programm nach deren Abstellen für Schulen nutzbar wäre. Architektonisch
-wiegen zwei:
+Das Programm läuft heute an einem Testserver; der Echtbetrieb beginnt am Schulserver mit einer
+leeren Datenbank und der Littera-Übernahme (entschieden am 28.09.2026). Über den Risiken aus
+11.1 steht bis dahin ein fachliches: Die Übernahme ist mit der Sicherung von 2010 erprobt, die
+Sicherung von 2026 lässt sich noch nicht öffnen. Ob die vorhandenen Ausweise weiter gelten,
+welche Ausleihen offen sind und was an Standorten, Verweisen, Sperren und Salden mitkommt,
+zeigt erst die Generalprobe mit ihr.
 
-1. **Alte Aufdrucke** — Ausweise und Etiketten, die vor dem 17.09.2026 gedruckt wurden
-   (siehe R10 und A14).
-2. **Mehrjährige Ausleihen** an dasselbe Kind — eine Anforderung, die einer erst am
-   15.09.2026 getroffenen Streichung entgegensteht; die Entscheidung ist gestoppt und hängt
-   an vier offenen Fragen.
+Die zwölf Punkte des Anforderungsprotokolls vom 16.09.2026 sind bearbeitet (Randbedingung O5
+in Kapitel 2). Daneben stehen der Datenschutz-Nachweis und das Pflegekonzept als Entwürfe
+([OFFEN.md](OFFEN.md) 9.9).
 
-Stand, Reihenfolge und Fragen: [OFFEN.md](OFFEN.md), Abschnitt 9. Hier steht das nur,
-damit niemand die Architekturdokumentation liest und das größte Risiko darin nicht findet.
+Schritte und Reihenfolge: [OFFEN.md](OFFEN.md), Etappe 1 „vor dem Echtstart". Hier steht das
+nur, damit niemand die Architekturdokumentation liest und das größte Risiko darin nicht findet.
 
 ---
 
 ### 11.5 Bekannte Grenzen — beschrieben, gebaut wird nur mit Anlass
 
 Bis zum 07.10.2026 standen diese Punkte in [OFFEN.md](OFFEN.md), dort als Abschnitt 6 und als
-Punkte 5.25, 5.49 und 5.54. Sie sind keine geplante Arbeit. Jeder beschreibt eine Stelle, an
+Punkte 5.25, 5.49 und 5.54; am 08.10.2026 kamen 5.19 und 5.45 dazu, aus 5.5 und 5.10 die Teile
+ohne geplanten Schritt. Sie sind keine geplante Arbeit. Jeder beschreibt eine Stelle, an
 der das Programm eine Grenze hat, mit Beleg am Code oder Messwert, und nennt, wo es einen gibt,
 den Anlass, bei dem gebaut würde. Tritt ein Anlass ein, kommt der Schritt in den Fahrplan von
 [OFFEN.md](OFFEN.md), und der Punkt fällt hier weg. Die Reihenfolge sagt nichts über das
@@ -3145,8 +3162,86 @@ wird nur mit Anlass.
   gelesen am 03.10.2026, nicht nachgestellt). Die Kachel eines Klassensatzes nennt die Zahl der
   Leser, nicht, wem das Buch fehlt.
 
+#### Die kurze Nummer der alten Littera-Etiketten an der Theke
+
+Gefunden am 30.09.2026, am Code gelesen, nicht nachgestellt. Nach der Übernahme ist die Nummer
+eines Littera-Exemplars der EAN-13 seines Etiketts (`5896800039556`); lesbar steht auf dem
+Etikett nur „Exemplar-Nr.: 58968". Liest der Scanner das Etikett nicht mehr, findet die Theke
+das Buch über die getippte kurze Nummer nicht: `resolveOhnePraefix`
+(`internal/service/omnibox_service.go`) sucht die Nummer genau und rechnet nur 13-stellige
+Scans zurück; die kurze Nummer steht in `erweiterte_eigenschaften` als `littera_exemplarnr`
+und wird nirgends gelesen. Ist `FremdLeserNummer` in der Sicherung von 2026 leer
+([OFFEN.md](OFFEN.md) 7.2), tragen die Ausweise die Littera-Lesernummer, und beide
+Nummernkreise beginnen bei 1: Eine getippte kurze Buchnummer kann dann einen Leser laden. Bis
+dahin: den Titel suchen (die 13 Ziffern beginnen mit der kurzen Nummer) oder im Druck-Center
+unter „Fehlende Etiketten", Stufe „Alle", nach der kurzen Nummer suchen und das Etikett
+nachdrucken; der Nachdruck trägt die volle Nummer als Strichcode und als Text. Entschieden
+wird, sobald die Generalprobe zeigt, ob `FremdLeserNummer` gefüllt ist.
+
+#### Vormerkungen und Schadensfälle an einem Kollegen
+
+Die Lesepfade gegen die Sicht `schueler` sehen sie nicht: Die Warteschlange geht über eine
+solche Vormerkung hinweg. Neue Vormerkungen für Kollegen lehnt die Tür seit dem 21.09.2026 ab
+(`ErrVormerkungNurFuerSchueler`); am Testserver waren beide Zählungen 0 (zuletzt am
+08.10.2026). Auf einer anderen Anlage vorher zählen:
+
+```
+SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
+SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
+```
+
+#### Lange Listen, schmale Fenster und Tablet
+
+Eine Liste zeigt alle Zeilen, gescrollt wird der Bereich der Seite
+(`e2e/scrollbereiche.spec.js`); so stehen die Ausleihliste der Leserakte, die Positionen im
+Wareneingang und die Exemplare in der Maske „Buch bearbeiten". Was daran und an schmalen
+Fenstern bekannt ist:
+
+- **Die Exemplare in „Buch bearbeiten" bei Mengen wie an der Schule** (am Testserver lesend
+  gezählt am 02.10.2026): 2.253 Titel haben Exemplare, mindestens die Hälfte davon eines, 90 %
+  höchstens 58; über 100 Exemplare haben 68 Titel, der größte 383. Lokal mit 403 Exemplaren
+  öffnet die Maske in 0,3 s, „Speichern", Cover und Knöpfe bleiben im Bild, die Seite ist
+  28.377 px hoch. In der Liste lässt sich nicht suchen (`BuchExemplareListe.svelte`); ein
+  einzelnes Exemplar findet dort nur die Suche des Browsers. Anlass zum Bauen: Jemand sucht in
+  der Maske ein bestimmtes Exemplar.
+- **Der Abstand des Rahmens liegt um den Scrollbereich, nicht in ihm** (alle Seiten, gemessen
+  am 02.10.2026 bei 1710 × 952 px): `Anwendungsrahmen.svelte` gibt der Arbeitsfläche 24 px
+  oben und unten und 32 px an den Seiten, gescrollt wird erst das Element darin
+  (`Router.svelte`, `overflow-y-auto`). Die Scrollleiste sitzt deshalb 32 px vom Fensterrand,
+  und über und unter dem Inhalt bleiben beim Scrollen je 24 px stehen. Betrifft jedes
+  Bauteil, das beim Scrollen stehen bleibt (`sticky top-0`).
+- **Leserakte bei 1024 bis 1065 px Fensterbreite:** Seit dem 02.10.2026 beginnt die
+  Navigation unter 1280 px eingeklappt (`Sidebar.svelte`); der Titel in der Ausleihliste hat
+  damit ab 1066 px mindestens 140 px (`e2e/ausleihliste-zeilen.spec.js`). Darunter, bis zur
+  Grenze von 1024 px, an der die Akte Leserkarte (320 px) und Inhalt nebeneinanderstellt,
+  bleiben ihm 98 bis 139 px (gemessen am 02.10.2026 mit zwölf Ausleihen). Wer die
+  Navigation unter 1258 px von Hand ausklappt, lässt dem Titel weniger als 140 px, unter
+  1118 px nichts. Bei 1024 bis rund 1035 px ist auch die
+  Reiterzeile der Akte 12 px zu schmal, sobald „Gebühren & Schäden" eine Zahl trägt (gemessen am
+  05.10.2026: 540 von 528 px); sie lässt sich dann seitlich schieben.
+- **Eingeklappte Navigation:** Sie zeigt nur Symbole, bis zu 18; der Name steht im `title`
+  des Knopfs und erscheint beim Zeigen mit der Maus. M3, Navigation rail, Guidelines: „All
+  navigation items require a one word label text" und „The collapsed nav rail … should
+  contain 3–7 navigation items". Ausgeklappt schiebt sie in schmalen Fenstern den Inhalt
+  zusammen; M3: „A navigation rail can be expanded by default on larger screen sizes, or can
+  be expanded over content on smaller screen sizes". Anlass zum Bauen: Die Anwendung wird
+  an einem Tablet oder in Fenstern unter 1280 px bedient.
+- **Leserakte, Autor und Nummer des Exemplars:** Der Autor steht nur in der Sprechblase am
+  Titel, die Nummer in Fenstern bis rund 1580 px ebenfalls (darüber hat sie ihre Spalte;
+  gemessen bei ausgeklappter Seitenleiste). Die Sprechblase erscheint beim Zeigen mit der
+  Maus; an einem Tablet ohne Maus sind beide Angaben in der Akte nicht zu sehen.
+  Vorleseprogramme bekommen sie als unsichtbaren Text.
+- **Leserakte, doppelte Beschriftung:** Unter dem Reiter „Stammdaten & Adresse" steht dieselbe
+  Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem 01.10.2026
+  „Forderungen".
+
 #### Beobachtungen
 
+- Listenimport gegen den Nummern-Wächter (Migration 131): Trägt eine Zeile der Datei die
+  Ausweisnummer eines Lesers als Buch-Barcode, lehnt der Wächter ab und der ganze Import
+  bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,
+  nicht die Ausnahme). Laut, also richtig — nur die Meldung nennt weder Zeile noch Weg.
+  Anlass zum Bauen: Es kommt einmal vor.
 - Im Feld „Auflage" führt die Bücherei in Littera nicht nur Auflagen: bei Zeitschriften steht
   dort die Heftnummer („34 / 2010"), an einem Teil der Bücher eine eigene Nummer der Form
   „D-Ga-066". Nach der Form gezählt am 07.10.2026: in der Sicherung von 2010 2.512 Auflagen,
@@ -3365,6 +3460,12 @@ wird nur mit Anlass.
 
 #### Kleinigkeiten
 
+- gosec nimmt acht Regeln global aus (gemessen mit v2.29.0 am 28.09.2026, ohne `-exclude`):
+  G706 (38 Stellen in 20 Dateien, nachgezählt am 08.10.2026), G704 (6), G703 (5), G120 (5),
+  G124 (4), G404 (4), G115 (3), G101 (1); der Grund je Regel steht in
+  `.github/workflows/security-scan.yml`. Eine neue Stelle dieser Regeln meldet gosec nicht.
+  Abhilfe mit Anlass: je Stelle ein `#nosec` mit Grund, dann die Regel aus `-exclude` nehmen —
+  außerhalb von G706 sind es 28 Stellen in 14 Dateien.
 - Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (16.09.2026), gefunden am
   01.10.2026: das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
   Vormerk-Liste (`permissionMetadata.js`, `BookVormerkungenTab.svelte`), das Etikett der
@@ -3492,7 +3593,7 @@ Frage).
 
 ## 12. Glossar
 
-Stand: 23.09.2026
+Stand: 08.10.2026
 
 Die Fachsprache des Hauses, mit dem Code-Bezug daneben. Wo ein Begriff im Code **anders**
 heißt als in der Oberfläche, steht beides — das ist die häufigste Stolperstelle beim
@@ -3510,10 +3611,11 @@ Einstieg.
 | **Abwertung**               | Minderung des Ersatzwerts nach Alter und Zustand des Exemplars                                                                                                          | `pkg/ersatzwert`, `repository/ersatzwert_groessen.go`       |
 | **Auflage**                 | Eine Ausgabe eines Buchs mit eigener ISBN und eigenen Seitenzahlen — im Katalog ein eigener Titel. Auflagen desselben Buchs lassen sich zu einem **Werk** zusammenfassen | `buecher_titel.auflage` (Migration 126), `repository/auflagen.go` |
 | **Art** (des Lesers)        | `schueler`, `lehrkraft`, `liv`, `praktikum`, `sekretariat`, `uplus` oder `fachbereich` (Migration 153). Sagt, **wer an der Theke Bücher bekommt** — entscheidet **keine** Rechte | `leser.art`                                                |
-| **Aussonderung**            | Ausbuchen eines Exemplars aus dem Bestand mit Grund (Verlust, Verschleiß, Makulatur)                                                                                     | `repository/aussonderung_paritaet_test.go`                  |
+| **Aussonderung**            | Ausbuchen eines Exemplars aus dem Bestand mit Grund (Verlust, Beschädigung, Aussortiert, Bestandskorrektur)                                                                                     | `repository/aussonderung_paritaet_test.go`                  |
 | **Ausweis**                 | Karte des Lesers. Alle neuen Nummern tragen die Vorsilbe `A-`; die Aufschrift richtet sich nach der **Art**                                                             | `internal/ausweis`, `api/ausweis_layout.go`                 |
 | **Bescheid**                | Schadensersatz-Bescheid für Landes-Lernmittel; nennt das Konto (Barzahlung ist laut Erlass nicht der Weg), hat eine eigene Nummernfolge                                  | `schadensersatz_bescheide`, `api/bescheid_pdf.go`           |
 | **Bestand**                 | Die physischen Stücke — im Unterschied zum **Katalog** (den Titeln)                                                                                                     | `buecher_exemplare`                                        |
+| **Dauerleihe**              | Ausleihe an das Kollegium: Sie wird nie überfällig und nie gemahnt, die Akte zeigt „ohne Frist"; gespeichert wird eine Frist von einem Jahr | `resolveBorrowerAndDueTime` (`internal/service/loan_checkout_validation.go`) |
 | **Bestandsbuch / Zugangsbuch** | Nachweis der in den Bestand gekommenen Bücher je Halbjahr, mit Lieferant                                                                                             | `api/bestandsbuch.go`                                      |
 | **Betriebsbereitschaft**    | Die Selbstprüfung: „Was ist eingerichtet, aber nicht in Betrieb?"                                                                                                       | `api/betriebsbereitschaft*.go`                              |
 | **Exemplar**                | Ein einzelnes physisches Buch mit eigenem Barcode                                                                                                                       | `buecher_exemplare`                                        |
@@ -3521,6 +3623,7 @@ Einstieg.
 | **Freihand**                | Sonderbestände (CDs, DVDs, Hörbücher) mit rollierender Frist statt Jahresfrist                                                                                          | `internal/service/loan_rules.go`                            |
 | **Gerät**                   | Ausleihbare Hardware (Laptop, Tablet) mit Zubehör-Checkliste; Vorsilbe `G-`                                                                                             | `geraete`, `internal/service/device_service.go`             |
 | **Inventur-Session**        | Sitzungsgebundene Zählung, damit parallele Zählungen sich nicht überschreiben                                                                                            | `inventur_sessions`, `repository/inventur_session_repo.go`   |
+| **Jahrgang** (am Titel)     | „Im Unterricht von Jahrgang … bis": ganz eingetragen oder gar nicht. Ohne Eintrag ist der Jahrgang unbekannt; eine Vorgabe gibt es nicht | `buecher_titel.jahrgang_von`, `jahrgang_bis` |
 | **Karenzzeit**              | Frist ab dem späteren von Abgang und letztem abgeschlossenem Vorgang bis zur Anonymisierung (Vorgabe 90 Tage) — das Fenster, in dem eine falsche Zuordnung noch reparierbar ist | `abgaenger_karenz_tage`, `repository.KarenzUhr`, `PredikatAnonymisierung` |
 | **Katalog**                 | Die Titel (Metadaten), einer je **Auflage** — im Unterschied zum **Bestand**                                                                                            | `buecher_titel`                                            |
 | **Klassensatz**             | Mehrere Exemplare eines Titels für eine Klasse. Zwei Quellen: Handliste und live aus den Ausleihen abgeleitet                                                            | `class_books`, `klassensatz_reservierungen`                  |
@@ -3534,12 +3637,16 @@ Einstieg.
 | **LMF-Plan**                | Termine je Klasse für Büchertausch (vor den Sommerferien) und Bücherausgabe (danach). Ein Termin **verschiebt die Frist**                                                | `lmf_plaene`, `lmf_termine`, `pkg/lmfplan`                  |
 | **LUSD**                    | Das Schulverwaltungssystem des Landes. Liefert Schülerdaten als Bericht (`.xlsx`) — in der Praxis **ohne** Schüler-ID                                                     | `api/lusd*.go`, [LUSD.md](LUSD.md)                       |
 | **Mahnstufe**              | Zählt die gedruckten Mahnungen. Steigt **nur** beim PDF-Druck, nie beim Mailversand                                                                                      | `api/mahnwesen_bulk.go`                                     |
+| **Mehrjahresband**          | Lernmittel, das über seine Jahrgangsspanne beim selben Kind bleibt, statt am Rückgabetermin der Klasse zurückzukommen | `buecher_titel.mehrjahresband` (Migration 134) |
 | **Mittel**                  | Herkunft des Geldes: Landesmittel (Lernmittel) oder Kreis-/Trägermittel (Schülerbücherei). Trennt Töpfe in Beschaffung und Nachweis                                      | `repository/bestellung_mittel.go`, [mittel_konzept.md](mittel_konzept.md) |
 | **Nachbuchen**              | Das Einbuchen offline erfasster Scans nach Rückkehr des Netzes, mit Scan-Zeitpunkt und Abweichungsmeldung                                                                | `api/nachbuchen_handler.go`, `internal/service/nachbuchen.go` |
 | **Omnibox**                 | Das **eine** Eingabefeld des Tresens für alle Scans und Suchen                                                                                                          | `internal/service/omnibox_service.go`, `frontend/src/lib/Omnibox.svelte` |
 | **OPAC**                    | Der öffentliche Katalog unter `/katalog` — ohne Anmeldung, ohne Personendaten                                                                                            | `api/opac.go`                                               |
+| **Regaladresse**            | Der Teil einer Signatur vor „ / ". Vorschläge, die Seite „Signaturen" und die Auswahl der Inventur fassen nach ihr zusammen; am Titel bleibt die ganze Aufschrift | `SQLSignaturRegaladresse` (`repository/signatur_praefix.go`) |
 | **Schlagwort**              | Freies Wort am Titel (Thema, Gattung), mehrere je Titel, wie in Littera; ein Wort ist seine Kleinschreibung. Gepflegt unter Einstellungen → Schlagworte                 | `schlagworte`, `titel_schlagworte`, `repository.SetzeSchlagworte` |
-| **Signatur / Systematik**   | Ordnungsbegriff und Standort im Regal                                                                                                                                    | `systematik_kategorien`, `repository/signatur_praefix.go`     |
+| **Schnellrückgabe**         | Modus der Theke für einen Stapel vom Rückgabetisch: Jeder Scan nimmt nur zurück und leiht nie aus; ein gescannter Ausweis beendet ihn | `stores/omnibox.svelte.js`, `OmniboxSchnellrueckgabe.svelte` |
+| **Signatur / Systematik**   | Ordnungsbegriff im Regal. Der Teil vor „ / " ist die **Regaladresse**; wo ein einzelnes Stück abweichend steht, sagt der **Standort** | `systematik_kategorien`, `repository/signatur_praefix.go` |
+| **Standort**                | Wo ein Exemplar steht, wenn nicht an seinem Platz nach der Signatur (etwa „Bibliothek, Regal 3B"). Kommt aus Littera mit; ein neues Exemplar erbt ihn, wenn alle übrigen des Titels denselben tragen | `buecher_exemplare.standort`, `repository/exemplar_standort.go` |
 | **Theke / Tresen**          | Der Arbeitsplatz mit Scanner; „Kiosk" meint dasselbe aus Sicht der Bauform                                                                                               | `frontend/src/lib/Omnibox.svelte`, `stores/thekeLeeren.js`    |
 | **Verweis**                 | Schreibweise, die auf ein Schlagwort umleitet („Tierfantasy“ → „Fantasy“): am Titel und in der Suche gilt das Ziel. Trägt selbst keine Titel                           | `schlagworte.verweis_auf` (Migration 143)                  |
 | **Vormerkung**              | Reservierung eines Exemplars durch einen Leser; rückt bei Rückgabe nach und wird „abholbereit"                                                                           | `vormerkungen`, `repository/vormerkung_nachruecken.go`        |
@@ -3600,7 +3707,7 @@ Barcode-Anmeldeweg (A2). Welche Seiten eine Rolle erreicht, entscheidet `canSeeI
 | **DSB**     | Datenschutzbeauftragte(r)                                                      |
 | **EAN-13**  | 13-stelliger Strichcode der Buchetiketten                                      |
 | **EUPL**    | European Union Public Licence — die Lizenz dieses Projekts (1.2)               |
-| **LANIS**   | Landesabiturinformationssystem; liefert Klassenlisten als Semikolon-CSV        |
+| **LANIS**   | LANiS, „Leichte Administration von Netzwerken in Schulen" (Hessen); liefert Klassenlisten als Semikolon-CSV |
 | **LMF**     | Lernmittelfreiheit                                                            |
 | **LUSD**    | Lehrer- und Schülerdatenbank (Schulverwaltung des Landes)                      |
 | **OPAC**    | Online Public Access Catalogue — der öffentliche Katalog                        |

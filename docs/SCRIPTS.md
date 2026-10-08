@@ -221,8 +221,8 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
 - **Fach und Jahrgang** kommen aus der Lernmittelsignatur („LMF Bio 7" → Biologie, 7;
   `pkg/lmf.Zerlege`), sonst aus Litteras Schlagwörtern (MAB 710, nur wenn sie genau ein
   Fach nennen) und den Zielgruppen (MAB 070b, Litteras Interessenkreise, alle Werte eines
-  Eintrags: Sek I → 5–10, Sek II → 11–13, beide → 5–13). Fach und
-  Klassenstufe füllen nur Leerstellen, die Jahrgangsspanne folgt der Quelle.
+  Eintrags: Sek I → 5–10, Sek II → 11–13, beide → 5–13). Das Fach füllt nur eine
+  Leerstelle; die Jahrgangsspanne folgt der Quelle, außer an einem Mehrjahresband.
 - **Schlagworte (seit dem 30.09.2026, docs/OFFEN.md 4.20):** Die Wörter aus MAB 710 und dahinter
   die Interessenkreise aus MAB 070b („Lehrer", „Referendare", „Sekundarstufe 2") kommen an
   Titel, die noch keine tragen, über den Pfad des Buchformulars (`repository.SetzeSchlagworte`)

@@ -402,6 +402,7 @@ daraus für die Sicherung von 2026 folgt, steht in [OFFEN.md](OFFEN.md) 7.2.
 
 Lehrkräfte bekommen einen unzustellbaren Platzhalter unter `.invalid` (RFC 2606) statt
 einer erfundenen Adresse unter der Schuldomäne — die ginge irgendwann an eine echte,
-fremde Person. Und sie werden **inaktiv** angelegt: Die Anmeldung läuft über den Barcode,
-158 aktive Konten aus einem Altbestand wären 158 Zugänge für Leute, die vielleicht längst
-weg sind. `-lehrer-aktiv` schaltet das um.
+fremde Person. Und sie werden **aktiv** angelegt: Die Ausweis-Suche der Theke findet nur
+aktive Leser, und anmelden kann sich mit der Platzhalter-Adresse niemand, weil die Anmeldung
+über das Schul-Postfach läuft. `-lehrer-inaktiv` kehrt das um; die Karten gelten dann an der
+Theke nicht.

@@ -334,8 +334,8 @@ dieser Abschnitt beschrieb die Absicht als Realität):
 
 Die Inventur findet im laufenden Betrieb statt, ohne dass die Bibliothek zwingend schließen muss.
 
-- **Session-basiert:** Jede Inventur erhält einen Scope (z. B. "Raum 2, Regal A") und läuft in einer eigenen Session (`inventur_sessions`). Mehrere Mitarbeiter können mit Handscannern parallel inventarisieren, ohne sich gegenseitig zu überschreiben.
-- **Fehlmengen-Ausbuchung:** Wird die Session beendet (`Finish`), vergleicht das System alle gescannten Exemplare mit dem theoretischen Bestand in diesem Scope.
+- **Session-basiert:** Jede Inventur erhält einen Bereich — die ganze Bibliothek, eine Signatur oder Fach und Klasse (im Code `scope`) — und läuft in einer eigenen Session (`inventur_sessions`). Mehrere Mitarbeiter können mit Handscannern parallel inventarisieren, ohne sich gegenseitig zu überschreiben.
+- **Fehlmengen-Ausbuchung:** Wird die Session beendet (`Finish`), vergleicht das System alle gescannten Exemplare mit dem theoretischen Bestand in diesem Bereich.
 - **Schutz aktiver Ausleihen:** Bücher, die laut Datenbank aktuell _verliehen_ sind, werden vom System bei der Fehlmengenberechnung ignoriert – sie können nicht versehentlich als Verlust ausgebucht werden, nur weil sie nicht im Regal standen.
 - Fehlende, nicht verliehene Exemplare erhalten automatisch den Status `VERLUST`.
 
@@ -946,8 +946,10 @@ als Datei sichern und an einem anderen Rechner unter _Datenverwaltung → Offlin
 einspielen_ nachbuchen. Der Idempotenz-Schlüssel wandert mit: Dieselbe Datei zweimal eingespielt
 bucht nichts doppelt.
 
-Nicht im Umfang: Anmelden ohne Server, Schülerdaten auf dem Rechner, Geräteausgabe ohne Netz.
-Was davon noch offen ist, steht in [OFFEN.md](OFFEN.md), Abschnitt 2.
+Nicht im Umfang: Anmelden ohne Server, Schülerdaten auf dem Rechner, Geräteausgabe ohne Netz,
+Umbuchen im Online-Weg und die scannende Person im Protokoll (nachgebucht wird unter dem Konto,
+das beim Übertragen angemeldet ist). Offen ist der Nachweis von Hand: [OFFEN.md](OFFEN.md),
+Abschnitt 2.
 
 ### 18.5 Selbstanmeldung fürs Kollegium
 

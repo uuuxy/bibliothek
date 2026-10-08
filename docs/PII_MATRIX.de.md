@@ -11,26 +11,28 @@ die Antwort (inkl. entpackter PDF-Ströme) gegen Kanarienwerte je Stufe — nich
 oberhalb der dokumentierten Stufe darf erscheinen, Schlüsselrouten tragen
 Positiv-Kontrollen gegen leere Antworten. Auch die LESENDEN POST-Routen sind
 seit dem 01.09.2026 gemessen (`TestPIIAntwortenHaltenIhreStufe_LesendePosts`):
-der Theken-Scan (`POST /api/action` samt Batch) und die LUSD-Vorschau
+der Theken-Scan (`POST /api/action`) und die LUSD-Vorschau
 (`POST /api/lusd/preview`) laufen durch denselben Apparat. Für die übrigen
 Nicht-GET-Routen (Schreibpfade) bleibt die STUFE Handarbeit: Wer eine Zeile
 anlegt, hat den Handler gelesen. Ihr RECHT dagegen ist seit dem 06.09.2026
-gemessen: `api/rechte_schreibwege_pg_test.go` fährt alle 87 Schreibrouten mit
-Fachrecht über den echten Router mit einer Rolle, die das Recht ihrer Zeile
-NICHT hat, und verlangt 403 mit der Begründung des Rechte-Wächters. Damit ist
+gemessen: `api/rechte_schreibwege_pg_test.go` fährt jede Schreibroute mit
+Fachrecht (am 08.10.2026 sind es 101) über den echten Router mit einer Rolle,
+die das Recht ihrer Zeile NICHT hat, und verlangt 403 mit der Begründung des
+Rechte-Wächters. Damit ist
 auch der Fall abgedeckt, den ein Textvergleich nie sieht: ein Recht, das im
 Seed ohnehin jede Rolle hält.
 Seit dem 30.09.2026 prüft das Antwort-Gate auch den Kopf: Eine Antwort ab Stufe 1
 muss `Cache-Control: no-store` tragen, damit der Browser sie nicht ablegt
 (`pruefeKeinAblegen`), ebenso eine Route der Stufe 0, deren Adresse eine
 Personenkennung trägt (`adresseTraegtPersonendaten`, heute `GET /api/barcode`).
-Stand: 30.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
+Stand: 08.10.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
 Antwort-Gate eingezogen; 24.09.: die Sperr-Tür und das Protokoll der Sperren am Code
 nachgetragen; 25.09.: die Auflagen-Türen und der Auflagen-Hinweis der Theke am Code
 nachgetragen; 28.09.: das Zusatzrecht der Auskunft über einen Leser mit Zugangskonto
-nachgetragen; 30.09.: der Kopf gegen das Ablegen im Browser am Antwort-Gate; die übrigen
-Zeilen nicht erneut erhoben).
+nachgetragen; 30.09.: der Kopf gegen das Ablegen im Browser am Antwort-Gate; 05. bis
+07.10.: die Suche des Portals, der Standort am Exemplar, die Mahnbriefe und der Versandstand
+der Bestellung am Code nachgetragen; die übrigen Zeilen nicht erneut erhoben).
 
 **Seit dem 16.09.2026 stehen hinter denselben Routen auch Daten von Lehrkräften.** Die
 Leserdatei führt Schüler und Kollegium in einer Tabelle (`leser`, FACHKONZEPT §12.3); die
