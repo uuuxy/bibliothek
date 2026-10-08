@@ -2067,11 +2067,15 @@ wenn man ihn einmal gebraucht hat.
   `git status` leer. Ratschen, die Go-Quelltext oder SQL-Dateien zur Laufzeit lesen, sehen das
   Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren. Bleibt eine Probe grün,
   misst der Test den Fall nicht.
-- **Browser-Tests warten auf einen stabilen Messwert.** `networkidle` tritt nie ein, weil die
-  Live-Leitung offen bleibt; gewartet wird auf zwei gleiche Messungen hintereinander
-  (`warteAufStabileFelder` in `frontend/e2e/control-hoehen.spec.js`). `gehZu` in
-  `frontend/e2e/helpers.js` ruft eine Seite auf und belegt, dass die Anwendung dort geblieben
-  ist: Einen unbekannten Pfad schiebt sie auf die Theke, und ein Gate mäße die Theke zweimal.
+- **Messende Browser-Tests warten auf die Daten der Seite.** `networkidle` tritt nie ein, weil
+  die Live-Leitung offen bleibt. `frontend/e2e/messhilfe.js` führt deshalb Buch über die
+  Datenanfragen einer Seite (fetch und XHR unter `/api/`): Gemessen wird, wenn keine mehr offen
+  ist und die Zählung dreimal hintereinander gleich ausfällt. Nach der Messung zählt eine
+  Gegenprobe noch einmal und macht den Test rot, wenn inzwischen etwas dazugekommen ist; eine
+  feste Untergrenze je Seite gibt es nicht, weil die CI mit einer frischen Datenbank läuft.
+  `gehZu` in `frontend/e2e/helpers.js` ruft eine Seite auf und belegt, dass die Anwendung dort
+  geblieben ist: Einen unbekannten Pfad schiebt sie auf die Theke, und ein Gate mäße die Theke
+  zweimal.
 - **Scanfelder werden getippt, nicht gefüllt.** Ein Handscanner tippt in das Element, das den
   Fokus hat; `locator.fill()` und `locator.click()` setzen den Fokus selbst und verdecken, dass
   er fehlt. Vorlage: `frontend/e2e/kiosk-scannerfokus.spec.js` (`page.keyboard.type`, Enter,

@@ -29,6 +29,7 @@
 // die Kompaktheit.
 import { test, expect } from '@playwright/test';
 import { uiLogin, gehZu, einstellungsKategorie } from './helpers.js';
+import { beobachteDatenanfragen, warteAufInhalt, pruefeNichtZuFruehGemessen } from './messhilfe.js';
 
 const CONTROL_HOEHE = 36; // Button size="md" (h-9) = M3-Dichte -1
 
@@ -96,40 +97,6 @@ const AUSNAHMEN = [
 	{ kennung: 'abgaenger-suchfeld', grund: 'Suchpille der Abgänger-Ansicht' }
 ];
 
-/**
- * Wartet, bis die Feldliste eines Bildschirms zur Ruhe gekommen ist.
- *
- * Ersetzt ein blindes waitForTimeout(1000): zu kurz auf einem langsamen Rechner, zu
- * lang auf einem schnellen — vierzehnmal hintereinander.
- *
- * Bewusst NICHT „warte auf mindestens ein Feld": MESSEN erfasst nur input und select,
- * und Bildschirme wie Kiosk oder Statistiken haben davon womöglich gar keines. Eine
- * solche Bedingung liefe dort in den Timeout und machte aus einem grünen Test einen
- * roten. Stattdessen wird auf einen STABILEN Messwert gewartet — zwei gleiche Messungen
- * hintereinander —, was die Null einschließt.
- * @param {import('@playwright/test').Page} page
- */
-async function warteAufStabileFelder(page) {
-	await page.waitForLoadState('domcontentloaded');
-	// Drei gleiche Messungen statt zwei, mit größerem Abstand: Zwei gleiche im Abstand von
-	// 100 ms traten auch im Zustand „Gerüst steht, Liste kommt noch" ein, und dann maß der
-	// Test die Seite ohne ihren Inhalt (am 08.10.2026 am Medienkatalog in kontrast.spec.js
-	// belegt: 4 statt 187 Textstellen, in jedem Lauf).
-	let vorherige = -1;
-	let gleich = 0;
-	await expect
-		.poll(
-			async () => {
-				const jetzt = (await page.evaluate(MESSEN)).length;
-				gleich = jetzt === vorherige ? gleich + 1 : 0;
-				vorherige = jetzt;
-				return gleich;
-			},
-			{ timeout: 20_000, intervals: [200, 300, 400, 500] }
-		)
-		.toBeGreaterThanOrEqual(2);
-}
-
 // `[role=combobox]` steht hier seit der Ablösung der nativen <select>: Ohne den
 // Zusatz hätte die Umstellung die Messmenge still verkleinert — der Test wäre grün
 // geblieben, gerade WEIL er die neuen Auswahlfelder nicht mehr gesehen hätte.
@@ -153,6 +120,8 @@ const MESSEN = () =>
 		}));
 
 test('Alle Eingabefelder stehen auf der 36-px-Grundlinie', async ({ page }) => {
+	const anfragen = beobachteDatenanfragen(page);
+	const zaehle = async () => (await page.evaluate(MESSEN)).length;
 	await uiLogin(page);
 
 	/** @type {string[]} */
@@ -161,7 +130,7 @@ test('Alle Eingabefelder stehen auf der 36-px-Grundlinie', async ({ page }) => {
 
 	/** Misst alles, was gerade sichtbar ist, und schreibt Abweichler mit. */
 	async function messen(/** @type {string} */ name) {
-		await warteAufStabileFelder(page);
+		const gemessen = await warteAufInhalt(anfragen, zaehle);
 		for (const feld of await page.evaluate(MESSEN)) {
 			if (AUSNAHMEN.some((a) => a.kennung === feld.kennung)) continue;
 			geprueft++;
@@ -169,6 +138,7 @@ test('Alle Eingabefelder stehen auf der 36-px-Grundlinie', async ({ page }) => {
 				abweichler.push(`${name}: <${feld.tag}> „${feld.kennung}" = ${feld.hoehe} px`);
 			}
 		}
+		await pruefeNichtZuFruehGemessen(page, anfragen, zaehle, gemessen, name);
 	}
 
 	for (const [name, pfad] of SCREENS) {

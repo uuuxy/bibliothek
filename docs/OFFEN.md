@@ -384,22 +384,6 @@ Vermerk.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
-- **Behoben am 08.10.2026:** `e2e/kontrast.spec.js` maß den Medienkatalog ohne seine Kacheln
-  (gefunden am 02.10.2026). `warteAufStabilenBaum` zählte alle Knoten in `main` und galt als
-  fertig, sobald zwei Zählungen im Abstand von 100 ms gleich waren — das traf auch „Reiter
-  stehen, Liste kommt noch". Am 08.10.2026 nachgemessen: Der Medienkatalog stand mit 4
-  Textstellen in der Messung, in jedem Lauf; die Gesamt-Untergrenze von 300 verdeckte es, weil
-  Mahnwesen allein 9.012 beisteuert. Jetzt zählt das Warten genau das, was die Messung ansieht,
-  und verlangt drei gleiche Messungen mit größerem Abstand: Der Medienkatalog steht bei 187
-  Textstellen, die Titel-Verwaltung bei 465 statt 19, der Schuljahreswechsel bei 207 statt 99
-  (je zwei Läufe, gleiche Zahlen). Dieselbe Verschärfung steht jetzt auch in
-  `typo-rollen.spec.js`, `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`.
-  **Offen bleibt die Untergrenze je Seite:** Sie wäre der Wächter dagegen, dass eine einzelne
-  Seite wieder still leer gemessen wird, lässt sich aber nicht über die Textmenge ziehen — die
-  CI fährt eine frische Datenbank und liegt insgesamt bei rund 300 Textstellen statt bei den
-  15.000 hier, jede feste Zahl je Seite wäre dort eine Zufallsgrenze. Dafür braucht es je Seite
-  ein Merkmal des Inhalts (eine Kachel, eine Tabellenzeile), das auch bei wenig Daten dasteht.
-  Kategorie B.
 - **Behoben am 08.10.2026:** Browser-Tests ließen Daten liegen (in der CI ist die Datenbank je
   Lauf frisch; lokale Zahlen trugen die Reste mit). `e2e/bestellung-detail.spec.js` bestellte
   drei Exemplare am ersten Titel des Katalogs und nahm nur den Lieferanten wieder weg; es legt

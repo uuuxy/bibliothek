@@ -20,6 +20,7 @@
 // und dadurch übersehen).
 import { test, expect } from '@playwright/test';
 import { uiLogin, gehZu, seedBestellung, oeffneBestellungsDetail } from './helpers.js';
+import { beobachteDatenanfragen, warteAufInhalt, pruefeNichtZuFruehGemessen } from './messhilfe.js';
 
 const MIN_FLAECHE = 32; // px — Material 3 Icon-Button „extra small"
 
@@ -77,37 +78,6 @@ const MESSEN = () => {
 };
 
 /**
- * Wartet, bis die Icon-Button-Liste eines Bildschirms zur Ruhe gekommen ist.
- *
- * Kein networkidle: Die App hält über den Livesync eine SSE-Verbindung offen, das
- * Netz wird nie ruhig — der Test lief damit in den Timeout. Und kein blindes
- * waitForTimeout: zu kurz auf einem langsamen Rechner, zu lang auf einem schnellen.
- * Gewartet wird wie in control-hoehen.spec.js auf einen STABILEN Messwert; das
- * schließt Bildschirme ohne einen einzigen Icon-Button ein.
- * @param {import('@playwright/test').Page} page
- */
-async function warteAufStabileButtons(page) {
-	await page.waitForLoadState('domcontentloaded');
-	// Drei gleiche Messungen statt zwei, mit größerem Abstand: Zwei gleiche im Abstand von
-	// 100 ms traten auch im Zustand „Gerüst steht, Liste kommt noch" ein, und dann maß der
-	// Test die Seite ohne ihren Inhalt (am 08.10.2026 am Medienkatalog in kontrast.spec.js
-	// belegt: 4 statt 187 Textstellen, in jedem Lauf).
-	let vorherige = -1;
-	let gleich = 0;
-	await expect
-		.poll(
-			async () => {
-				const jetzt = (await page.evaluate(MESSEN)).length;
-				gleich = jetzt === vorherige ? gleich + 1 : 0;
-				vorherige = jetzt;
-				return gleich;
-			},
-			{ timeout: 20_000, intervals: [200, 300, 400, 500] }
-		)
-		.toBeGreaterThanOrEqual(2);
-}
-
-/**
  * Die zu kleinen unter ihnen.
  * @param {import('@playwright/test').Page} page
  */
@@ -118,6 +88,8 @@ async function zuKleine(page) {
 
 test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 	test.setTimeout(180_000);
+	const anfragen = beobachteDatenanfragen(page);
+	const zaehle = async () => (await page.evaluate(MESSEN)).length;
 	await uiLogin(page);
 
 	/** @type {string[]} */
@@ -129,17 +101,18 @@ test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 
 	for (const [name, pfad] of SCREENS) {
 		await gehZu(page, pfad);
-		await warteAufStabileButtons(page);
+		let gemessen = await warteAufInhalt(anfragen, zaehle);
 
 		// Die Symbole der Bestellhistorie (Nachdruck, Titelsatz) stehen in der Detailansicht
 		// einer Bestellung. Der Helfer wartet hart auf beide: Ein übersprungener Messpunkt
 		// sähe aus wie ein bestandener.
 		if (pfad === '/bestellungen') {
 			await oeffneBestellungsDetail(page, marke);
-			await warteAufStabileButtons(page);
+			gemessen = await warteAufInhalt(anfragen, zaehle);
 		}
 
 		const gefunden = await page.evaluate(MESSEN);
+		await pruefeNichtZuFruehGemessen(page, anfragen, zaehle, gemessen, name);
 		untersucht += gefunden.length;
 		for (const t of gefunden.filter((t) => t.breite < MIN_FLAECHE || t.hoehe < MIN_FLAECHE)) {
 			zuKlein.push(`${name}: "${t.label}" ist ${t.breite}×${t.hoehe} px [${t.klassen}]`);
@@ -158,7 +131,7 @@ test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 	// Zustand und ist ein anderer Button als der zum Einklappen — beim ersten
 	// Messen war er unsichtbar und dadurch übersehen.
 	await page.goto('/bestellungen');
-	await warteAufStabileButtons(page);
+	await warteAufInhalt(anfragen, zaehle);
 	await page.getByRole('button', { name: 'Navigation einklappen' }).click();
 	await page.getByRole('button', { name: 'Navigation ausklappen' }).waitFor();
 	for (const t of await zuKleine(page)) {

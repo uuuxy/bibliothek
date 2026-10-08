@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin } from './helpers.js';
+import { beobachteDatenanfragen, warteAufInhalt, pruefeNichtZuFruehGemessen } from './messhilfe.js';
 
 // Gate aus dem M3-Typografie-Audit vom 25.08.2026 (Bericht aufgelöst, Historie in git log):
 // Lesetext liegt auf der Skala, nicht eine Stufe darunter. Gemessen wird im
@@ -92,27 +93,11 @@ const MESSE_TYPO = () => {
 	return { verstoesse: [...new Set(verstoesse)].slice(0, 20), geprueft };
 };
 
-/** Stabiler Baum wie in kontrast.spec.js — kein networkidle (SSE). */
-async function warteAufStabilenBaum(page) {
-	let vorherige = -1;
-	let gleich = 0;
-	await expect
-		.poll(
-			async () => {
-				const jetzt = (await page.evaluate(MESSE_TYPO)).geprueft;
-				gleich = jetzt === vorherige ? gleich + 1 : 0;
-				vorherige = jetzt;
-				return gleich;
-			},
-			{ timeout: 20_000, intervals: [200, 300, 400, 500] }
-		)
-		.toBeGreaterThanOrEqual(2);
-	return vorherige;
-}
-
 test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht <= 700)', async ({
 	page
 }) => {
+	const anfragen = beobachteDatenanfragen(page);
+	const zaehle = async () => (await page.evaluate(MESSE_TYPO)).geprueft;
 	await uiLogin(page);
 
 	// Geprüft wird JEDE Verwaltungsseite, nicht eine Auswahl. Bis zum 04.09.2026 standen
@@ -186,8 +171,9 @@ test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht
 	for (const a of ansichten) {
 		await a.oeffne();
 		await page.locator('main').first().waitFor();
-		await warteAufStabilenBaum(page);
+		const gemessen = await warteAufInhalt(anfragen, zaehle);
 		const { verstoesse, geprueft } = await page.evaluate(MESSE_TYPO);
+		await pruefeNichtZuFruehGemessen(page, anfragen, zaehle, gemessen, a.name);
 		geprueftGesamt += geprueft;
 		for (const v of verstoesse) alle.push(`[${a.name}] ${v}`);
 	}

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedBestellbedarf, menuepunkt } from './helpers.js';
+import { beobachteDatenanfragen, warteAufInhalt, pruefeNichtZuFruehGemessen } from './messhilfe.js';
 
 // Gate gegen unlesbaren Text (WCAG 2.1 AA).
 //
@@ -37,49 +38,23 @@ test.afterEach(() => {
 });
 
 /**
- * Wartet, bis die nachgeladenen Listen im Baum STEHEN — statt einer geratenen Zeitspanne
- * (vorher 700 ms: zu kurz auf einem langsamen Rechner, zu lang auf einem schnellen;
- * `javascript:S2925`). Bewusst KEIN networkidle: Die Anwendung hält eine dauerhafte
- * SSE-Verbindung offen, der Zustand tritt also nie ein (siehe sse-livesync.spec.js).
- *
- * Gezählt wird GENAU das, was die Messung danach ansieht: sichtbare Elemente mit eigenem
- * Text. Bis zum 08.10.2026 zählte das Warten alle Knoten in `main` und galt als fertig,
- * sobald zwei Messungen im Abstand von 100 ms gleich waren — das traf auch den Zustand
- * „Reiter stehen, Liste kommt noch". Der Medienkatalog wurde dadurch mit 4 Textknoten
- * gemessen statt mit seinen Kacheln, und zwar in JEDEM Lauf; die Gesamt-Untergrenze von
- * 300 Knoten verdeckte es, weil Mahnwesen allein 9.000 beisteuert. Drei gleiche Messungen
- * statt zwei, längerer Abstand, längere Frist: Am 08.10.2026 lokal gemessen stieg der
- * Medienkatalog damit von 4 auf 187 Textstellen, in zwei Läufen gleich.
+ * Zählt, was die Messung ansieht: sichtbare Elemente mit eigenem Text. Das Warten davor und
+ * die Gegenprobe danach (messhilfe.js) zählen damit dasselbe wie die Messung.
  * @param {import('@playwright/test').Page} page
- * @returns {Promise<number>} die Zahl der sichtbaren Elemente mit eigenem Text
  */
-async function warteAufInhalt(page) {
-	const zaehle = () =>
-		page.evaluate(
-			() =>
-				[...document.querySelectorAll('main *')].filter(
-					(el) =>
-						/** @type {HTMLElement} */ (el).offsetParent &&
-						[...el.childNodes].some((k) => k.nodeType === 3 && k.textContent?.trim())
-				).length
-		);
-	let vorherige = -1;
-	let gleich = 0;
-	await expect
-		.poll(
-			async () => {
-				const jetzt = await zaehle();
-				gleich = jetzt === vorherige ? gleich + 1 : 0;
-				vorherige = jetzt;
-				return gleich;
-			},
-			{ timeout: 20_000, intervals: [200, 300, 400, 500] }
-		)
-		.toBeGreaterThanOrEqual(2);
-	return vorherige;
-}
+const textstellen = (page) => () =>
+	page.evaluate(
+		() =>
+			[...document.querySelectorAll('main *')].filter(
+				(el) =>
+					/** @type {HTMLElement} */ (el).offsetParent &&
+					[...el.childNodes].some((k) => k.nodeType === 3 && k.textContent?.trim())
+			).length
+	);
 
 test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
+	const anfragen = beobachteDatenanfragen(page);
+	const zaehle = textstellen(page);
 	await uiLogin(page);
 
 	/** @type {string[]} */
@@ -96,7 +71,7 @@ test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
 		// wirklich stehen, sonst misst der Test den vorigen Bildschirm.
 		await expect(ziel).toHaveAttribute('aria-current', 'page');
 		await page.locator('main').first().waitFor();
-		await warteAufInhalt(page);
+		const gemessen = await warteAufInhalt(anfragen, zaehle);
 
 		const ergebnis = await page.evaluate(() => {
 			const leuchtdichte = (/** @type {string} */ rgb) => {
@@ -171,16 +146,16 @@ test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
 			return { treffer, n, weg };
 		});
 
+		await pruefeNichtZuFruehGemessen(page, anfragen, zaehle, gemessen, seite);
+
 		geprueft += ergebnis.n;
 		uebersprungen += ergebnis.weg;
 		for (const t of ergebnis.treffer) verstoesse.push(`[${seite}] ${t}`);
 	}
 
-	// Aussagekraft-Untergrenze über ALLE Seiten. Eine Grenze je Seite gibt es bewusst nicht:
-	// Die CI fährt eine frische Datenbank, dort liegt die Gesamtzahl bei rund 300 statt bei
-	// den 15.000 einer gewachsenen Entwicklungsdatenbank — jede feste Zahl je Seite wäre
-	// dort eine Zufallsgrenze. Dass eine einzelne Seite ohne ihren Inhalt gemessen wird,
-	// hält stattdessen das Warten oben auf (OFFEN.md 5.10 nennt den Rest).
+	// Aussagekraft-Untergrenze über alle Seiten. Eine Zahl je Seite gibt es nicht: Die CI fährt
+	// eine frische Datenbank, jede feste Grenze wäre dort Zufall. Dass eine einzelne Seite ohne
+	// ihren Inhalt gemessen wird, hält die Gegenprobe nach jeder Messung fest.
 	expect(geprueft, 'zu wenige Textknoten erfasst — greift der Test noch?').toBeGreaterThan(300);
 
 	expect(
