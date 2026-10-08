@@ -26,8 +26,9 @@ Liste geführt wird, steht am Ende.
 - [x] **PR 722** durchgesehen und geschlossen am 06.10.2026: Die Prüfung beim Löschen einer
   Sachgruppe (`api/systematik_handler.go`) würde durch ihn höchstens 1 ms schneller.
 - [x] **PRs 723 und 724** durchgesehen und geschlossen am 07.10.2026, nichts übernommen.
-- [ ] **PR 725** (zugeliefert am 08.10.2026) durchsehen: Im Warenkorb des Bestellwesens soll der
-  Minus-Knopf bei Menge 1 ausgegraut sein.
+- [x] **PR 725** durchgesehen am 08.10.2026, nicht übernommen; die Idee ist gebaut: Im Warenkorb
+  des Bestellwesens ist „Menge verringern" bei Menge 1 gesperrt, in der Form der anderen
+  gesperrten Symbolknöpfe.
 - [x] **Doku-Ordner:** Aus 36 Markdown-Dateien in `docs/` sind am 07.10.2026 20 geworden. Die
   Architektur ist eine Datei (`ARCHITEKTUR.md`); das LUSD-Messprotokoll, die Vorlage für das
   Blatt bei der Schule, die Liste „Datenschutz — offene Punkte" und das zweite README sind in

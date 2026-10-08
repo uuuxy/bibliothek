@@ -45,10 +45,14 @@
 		<div
 			class="flex items-center overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest"
 		>
+			<!-- Unter 1 geht die Menge nicht; entfernt wird die Position über das Kreuz. Der Knopf
+			     ist dann gesperrt, statt ohne Wirkung zu bleiben. -->
 			<button
 				aria-label="Menge verringern"
+				disabled={item.menge <= 1}
 				onclick={() => (item.menge = Math.max(1, item.menge - 1))}
-				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant">−</button
+				class="cursor-pointer px-2.5 py-1 font-bold text-on-surface-variant disabled:cursor-not-allowed disabled:text-on-surface/38"
+				>−</button
 			><span class="min-w-6 px-2 text-center text-sm font-bold text-on-surface tabular-nums"
 				>{item.menge}</span
 			><button
