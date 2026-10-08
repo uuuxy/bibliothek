@@ -167,7 +167,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Auskunft (5.19):** zu klären, welche Rohdaten der Protokolleinträge aufs Blatt gehören.
 - [ ] **Protokoll und Tilgung (5.35):** am Testserver alte Einträge zählen (zu schon gelöschten
   Lesern; Stornierungen ohne die Kennung des Lesers), danach bereinigen.
-- [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26.
+- [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26,
+  neun Meldungen zur Excel-Bibliothek ohne veröffentlichte Korrektur.
 - [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
   ihren Helfern, die Regel „überfällig" ebenso; eine Ratsche hält die ersten beiden fest.
 - [ ] **Masken, die ihren ganzen Stand zurückschicken (5.5):** die Kategorien der
@@ -422,6 +423,25 @@ Vermerk.
   in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine Workflow-Datei) auf
   `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf steht an jedem
   CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der CodeQL-Lauf rot.
+- **excelize: neun Meldungen ohne veröffentlichte Korrektur** (GitHub, Dependabot Nr. 21 bis
+  29, angelegt am 07.10.2026, gesehen beim Push am 08.10.2026: drei „high", sechs „medium",
+  CVE-2026-107217 bis CVE-2026-107225). Eingesetzt ist v2.11.0, die jüngste veröffentlichte
+  Fassung; die Korrekturen liegen nur auf unveröffentlichten Ständen des Hauptzweigs
+  (`2.11.1-0.2026…`). `govulncheck` meldet am 08.10.2026 keine davon (Gate grün beim Push), die
+  Liste der Ausnahmen ist leer. Eine hochgeladene Datei lesen drei Stellen, alle hinter
+  Anmeldung und Fachrecht: `inventur/excel_import.go`, `api/lusd_parser_quelle.go`,
+  `api/littera_import.go` (`OpenReader`, `GetSheetList` oder `GetSheetName`, `GetRows`). Nach
+  dem Wortlaut der Meldungen, nicht nachgestellt: Sieben beschreiben einen Absturz beim Lesen
+  einer präparierten Datei (einen Absturz in einer Anfrage fängt `api/middleware.go` ab),
+  drei davon in Funktionen, die das Programm nicht aufruft (`GetStyle`,
+  `GetConditionalFormats`, die Formel `RIGHT`). Zwei beschreiben eine ausgelastete Maschine:
+  beim Öffnen einer verschlüsselten Datei (CVE-2026-107219) und in Funktionen, die Spalten
+  ändern (CVE-2026-107223); die zweiten ruft das Programm nicht auf. Nächster
+  Schritt: je Meldung, die `OpenReader` oder `GetRows` trifft, eine präparierte Datei an den
+  drei Türen nachstellen (Muster `pkg/xlsxgrenze/negativer_sharedstring_test.go`); auf 2.11.1
+  heben, sobald es erscheint. Meldet `govulncheck` eine davon vorher, braucht sie eine
+  benannte Ausnahme mit Nachweis (`security/vuln-ausnahmen.json`,
+  [SECURITY.md](SECURITY.md)). Kategorie B.
 - **gosec: acht Regeln global ausgenommen** (gemessen mit v2.29.0 am 28.09.2026, ohne
   `-exclude`): G706 (38 Stellen in 20 Dateien, nachgezählt am 07.10.2026), G704 (6), G703 (5),
   G120 (5), G124 (4), G404 (4), G115 (3), G101 (1); der Grund je Regel steht in
