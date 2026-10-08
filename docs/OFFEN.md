@@ -376,7 +376,9 @@ Vermerk.
   „Förderstufe") und bei Lernmitteln in die Signatur („LMF Bio 7"). MARC 21, Feld 521, nennt
   die Klassenstufe als Text, „9-12" oder „7 & up"; ONIX, die Meldeform des Buchhandels, kennt
   „genau", „von", „bis" und „von … bis". Follett Destiny führt ein Auswahlfeld „Interest
-  Level" nach Klassenstufen. Eine einzelne Zahl neben einer Spanne führt keines.
+  Level" nach Klassenstufen. Koha führt die Zielgruppe als Auswahl aus acht Stufen („Primary",
+  „Adolescent" …; MARC 21, Feld 008, Stelle 22) und sucht die Klassenstufe im Text von Feld
+  521. Eine einzelne Zahl neben einer Spanne führt keines.
 
   **Vorschlag, zur Freigabe (Fahrplan, „Entscheiden"):**
   1. Datenbank: Die Spanne darf fehlen (beide Werte oder keiner; 1 bis 13, „von" nicht über
@@ -494,7 +496,11 @@ die Rechte anderer aus, Art. 12 Abs. 1 verlangt eine verständliche Form. EuGH C
 Daten". EuGH C-579/21 (22.06.2023): Zur Auskunft gehören Informationen über Abfragen, die
 „sich auf den Zeitpunkt und die Zwecke dieser Vorgänge beziehen"; die Namen der Beschäftigten,
 die sie ausgeführt haben, nur, wenn es unerlässlich ist. Im Littera-Handbuch steht keine
-Auskunft an Betroffene.
+Auskunft an Betroffene. Google nennt im Export von „Meine Aktivitäten" je Eintrag das Produkt,
+den Zeitpunkt und den Vorgang in Worten („High level summary of the user activity", etwa „Nach
+… gesucht"); unter den dort genannten Feldern ist keine Kennung. Die Seite von OCLC zu
+BIBLIOTHECAplus und der DSGVO nennt keine Auskunft an Leser; dort wurden die Protokolldateien
+gekürzt, damit „dort keine personenbezogenen Daten verbleiben".
 
 **Vorschlag, zur Entscheidung (Fahrplan, „Entscheiden"):** Das Blatt nennt je Eintrag den
 Vorgang in Worten („Ausleihe", „Sperre von Hand") und die Angaben zur Person: bei Ausleihe und
