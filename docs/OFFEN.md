@@ -402,12 +402,13 @@ Vermerk.
 - Code, den kein Go-Test ausführt (gemessen am 07.10.2026 mit der ganzen Suite und `-coverpkg`
   über alle Pakete: 85,3 % der Anweisungen; lokal zählt `./...` das Go-Paket mit, das npm unter
   `frontend/node_modules/flatted` ablegt, mit ihm sind es 84,9 %). Unter 50 % liegen, ohne
-  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, fünf Dateien
+  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, vier Dateien
   (`api/geraete.go` und `api/littera_import.go` am 08.10.2026 nachgemessen, nicht mehr
   darunter; die zweite stieg von 0,7 % auf 81,2 % mit `api/littera_import_pg_test.go`):
   `api/schueler_etiketten.go` 2,3 %,
   `internal/service/cover_service.go` 18,2 %, `api/ausweis_layout.go` 33,3 %, `db/seed.go`
-  35,5 %, `repository/mail_settings.go` 38,1 %. Ebenfalls am 08.10.2026: `api/orders_handler.go`
+  35,5 %. Ebenfalls am 08.10.2026: `repository/mail_settings.go` von 38,1 % auf 95,2 %
+  (`repository/mail_settings_pg_test.go`), `api/orders_handler.go`
   von 44,2 % auf 67,4 % (Einbuchen im Wareneingang von 4,3 % auf 91,3 %,
   `api/wareneingang_einbuchen_pg_test.go`; offen die Bestellsuche mit 13,3 %).
   Ob Browser-Tests diesen Code erreichen, ist nicht gemessen. Anlass: Das Nachziehen der
