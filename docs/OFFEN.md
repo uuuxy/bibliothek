@@ -168,7 +168,7 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Protokoll und Tilgung (5.35):** am Testserver alte Einträge zählen (zu schon gelöschten
   Lesern; Stornierungen ohne die Kennung des Lesers), danach bereinigen.
 - [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26,
-  neun Meldungen zur Excel-Bibliothek ohne veröffentlichte Korrektur.
+  die Excel-Bibliothek auf einem unveröffentlichten Stand.
 - [ ] **Ausweis aus der Leserakte (5.5):** Scheitert das Laden des Ausweis-Designs, druckt die
   Leserakte mit den Vorgabewerten, ohne es zu melden; der Stapeldruck meldet es.
 - [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
@@ -440,26 +440,19 @@ Vermerk.
   in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine Workflow-Datei) auf
   `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf steht an jedem
   CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der CodeQL-Lauf rot.
-- **excelize: neun Meldungen ohne veröffentlichte Korrektur** (GitHub, Dependabot Nr. 21 bis
-  29, angelegt am 07.10.2026, gesehen beim Push am 08.10.2026: drei „high", sechs „medium",
-  CVE-2026-107217 bis CVE-2026-107225). Eingesetzt ist v2.11.0, die jüngste veröffentlichte
-  Fassung; die Korrekturen liegen nur auf unveröffentlichten Ständen des Hauptzweigs
-  (`2.11.1-0.2026…`). `govulncheck` meldet am 08.10.2026 keine davon (Gate grün beim Push), die
-  Liste der Ausnahmen ist leer. Eine hochgeladene Datei lesen drei Stellen, alle hinter
-  Anmeldung und Fachrecht: `inventur/excel_import.go`, `api/lusd_parser_quelle.go`,
-  `api/littera_import.go` (`OpenReader`, `GetSheetList` oder `GetSheetName`, `GetRows`). Nach
-  dem Wortlaut der Meldungen: Sieben beschreiben einen Absturz beim Lesen einer präparierten
-  Datei, drei davon in Funktionen, die das Programm nicht aufruft (`GetStyle`,
-  `GetConditionalFormats`, die Formel `RIGHT`). Zwei beschreiben eine ausgelastete Maschine:
-  beim Öffnen einer verschlüsselten Datei (CVE-2026-107219) und in Funktionen, die Spalten
-  ändern (CVE-2026-107223); die zweiten ruft das Programm nicht auf.
-  **Seit dem 08.10.2026 gehen alle drei Stellen durch `xlsxgrenze.MitMappe`:** Ein Absturz
-  der Bibliothek beim Öffnen oder Lesen wird dort zum Fehler „ungültige Datei" statt zum Ende
-  des Prozesses, und ein OLE-Container (der Weg der verschlüsselten Datei) wird vor excelize
-  abgewiesen. Beides rot gesehen (`pkg/xlsxgrenze/mitmappe_test.go`). Offen bleibt: auf 2.11.1
-  heben, sobald es erscheint; die Schranke bleibt danach als zweite Lage. Meldet `govulncheck`
-  eine der neun vorher, braucht sie eine benannte Ausnahme mit Nachweis
-  (`security/vuln-ausnahmen.json`, [SECURITY.md](SECURITY.md)). Kategorie B.
+- **excelize auf einem unveröffentlichten Stand.** Eingesetzt ist seit dem 08.10.2026
+  `v2.11.1-0.20260910071107-696050fbf14e`, der Entwicklungsstand der Bibliothek vom
+  10.09.2026. Er enthält die Korrekturen zu den neun Meldungen vom 07.10.2026 (GitHub,
+  Dependabot Nr. 21 bis 29, CVE-2026-107217 bis CVE-2026-107225: drei „high", sechs „medium");
+  eine veröffentlichte Fassung damit gibt es nicht, die jüngste ist v2.11.0 vom 06.07.2026.
+  Mit dem Stand ändert sich sonst nur `richardlehane/mscfb` (1.0.7 auf 1.0.8). Belegt: Die
+  ganze Go-Suite ist mit ihm grün, und der Absturz auf dem Auslagerungs-Weg, den v2.11.0 noch
+  hat, ist weg (`pkg/xlsxgrenze/negativer_sharedstring_test.go`). Das Programm liest mit der
+  Bibliothek nur, an drei Stellen hinter Anmeldung und Fachrecht (`inventur/excel_import.go`,
+  `api/lusd_parser_quelle.go`, `api/littera_import.go`), alle durch `xlsxgrenze.MitMappe`;
+  die Schranke dort bleibt als zweite Lage. Offen: auf die veröffentlichte Fassung heben,
+  sobald sie erscheint (Dependabot schlägt sie vor). Fällt bis dahin an einem der drei Importe
+  etwas auf, zuerst gegen v2.11.0 gegenprüfen. Kategorie B.
 - **gosec: acht Regeln global ausgenommen** (gemessen mit v2.29.0 am 28.09.2026, ohne
   `-exclude`): G706 (38 Stellen in 20 Dateien, nachgezählt am 07.10.2026), G704 (6), G703 (5),
   G120 (5), G124 (4), G404 (4), G115 (3), G101 (1); der Grund je Regel steht in

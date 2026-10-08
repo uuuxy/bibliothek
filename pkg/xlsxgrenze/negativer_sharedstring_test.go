@@ -12,30 +12,13 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// GO-2026-6452 (CVE-2026-59162, veröffentlicht 16.09.2026): „Panic via negative
-// shared-string index in github.com/xuri/excelize". Eine Zelle vom Typ `s` mit einem
-// NEGATIVEN Index in die Zeichenkettentabelle greift am Bereichsschutz vorbei.
+// Eine Zelle vom Typ `s` mit einem negativen Index in die Zeichenkettentabelle ließ excelize
+// bis v2.11.0 abstürzen, sobald die Tabelle in eine Temp-Datei ausgelagert war (GO-2026-6452).
+// Ausgelagert wird nur eine Tabelle, die größer ist als UnzipXMLSizeLimit. Optionen() setzt
+// beide Entpackgrenzen gleich: Eine so große Datei scheitert damit vorher an der Gesamtgrenze.
 //
-// Es gibt dafür keine heile Fassung — der Eintrag in der Datenbank führt alle Versionen
-// ab 0 und nennt keine mit Fix. Deshalb steht hier nachgemessen, statt geglaubt, warum
-// dieses Programm den Panic nicht auslösen kann. Am 17.09.2026 an v2.11.0 geprüft:
-//
-//  1. Der gewöhnliche Weg (Zeichenkettentabelle im Speicher) HAT den Bereichsschutz —
-//     `getValueFrom` in cell.go prüft `xlsxSI < 0 || xlsxSI >= len(d.SI)`. Der Fix des
-//     Advisories ist dort also bereits eingebaut, nur trägt der Datenbank-Eintrag das
-//     nicht nach.
-//  2. Ungeschützt ist allein der AUSLAGERUNGS-Weg: Ist die Zeichenkettentabelle größer
-//     als UnzipXMLSizeLimit, schreibt excelize sie in eine Temp-Datei, und
-//     `getFromStringItem` prüft dort nur die OBERE Grenze (`len(...) <= index`). Ein
-//     Index von -1 läuft daran vorbei und trifft `f.sharedStringItem[-1]`.
-//
-// Und genau dieser Weg ist mit unseren Optionen unerreichbar: Optionen() setzt BEIDE
-// Grenzen auf denselben Wert. Eine Datei, deren Zeichenkettentabelle groß genug zum
-// Auslagern wäre, überschreitet damit zwangsläufig auch die Gesamtgrenze — und die prüft
-// excelize VORHER (lib.go: `unzipSize += fileSize` vor der Auslagerung).
-//
-// Diese Tests halten beides fest. Wer die beiden Grenzen auseinanderzieht — etwa um
-// Speicher zu sparen —, öffnet den verwundbaren Weg und wird hier rot.
+// Die Tests halten die gleichen Grenzen fest und melden, wenn der Absturz mit einer späteren
+// Fassung der Bibliothek zurückkommt.
 
 // bosartigeMappe baut die kleinste .xlsx mit einer Zelle `t="s"` und dem gegebenen Index.
 func bosartigeMappe(t *testing.T, index string) []byte {
@@ -101,22 +84,18 @@ func liesMit(daten []byte, opt excelize.Options) (gepanickt any) {
 	return nil
 }
 
-// Der Nachweis, dass der Panic ECHT ist. Ohne ihn wäre der Test darunter ein grüner
-// Test über eine Gefahr, die es vielleicht gar nicht gibt — und niemand wüsste, ob die
-// Optionen ihn abwehren oder ob nie etwas zu abzuwehren war.
-func TestNegativerSharedStringIndex_IstEineEchteGefahr(t *testing.T) {
+// Die eingesetzte Fassung trägt die Korrektur: Auch mit auseinandergezogenen Grenzen, also
+// auf dem Auslagerungs-Weg, stürzt sie nicht ab. Wird dieser Test rot, hat eine spätere
+// Fassung den Absturz wieder, und die gleichen Grenzen in Optionen() sind die einzige Abwehr.
+func TestNegativerSharedStringIndex_AuslagerungsWegStuerztNichtAb(t *testing.T) {
 	daten := bosartigeMappe(t, "-1")
-	// Die Grenzen auseinandergezogen: kleine XML-Grenze, große Gesamtgrenze. Dann lagert
-	// excelize die Zeichenkettentabelle aus, und der ungeschützte Weg greift.
-	gepanickt := liesMit(daten, excelize.Options{UnzipSizeLimit: 1 << 20, UnzipXMLSizeLimit: 64})
-	if gepanickt == nil {
-		t.Skip("kein Panic mehr — vermutlich ist GO-2026-6452 in dieser excelize-Fassung behoben. " +
-			"Dann gehört die Ausnahme in security/vuln-ausnahmen.json gelöscht.")
+	if gepanickt := liesMit(daten, excelize.Options{UnzipSizeLimit: 1 << 20, UnzipXMLSizeLimit: 64}); gepanickt != nil {
+		t.Errorf("Panic im Auslagerungs-Weg: %v — diese excelize-Fassung trägt die Korrektur zu "+
+			"GO-2026-6452 nicht", gepanickt)
 	}
-	t.Logf("erwarteter Panic im Auslagerungs-Weg: %v", gepanickt)
 }
 
-// Und der Test, auf den es ankommt: MIT unseren Optionen passiert nichts.
+// Mit den Optionen dieses Programms passiert an keiner Fassung etwas.
 func TestNegativerSharedStringIndex_UnsereOptionenWehrenAb(t *testing.T) {
 	for _, index := range []string{"-1", "-2147483648", "0", "99999"} {
 		t.Run("index="+index, func(t *testing.T) {

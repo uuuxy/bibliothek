@@ -529,7 +529,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 26.09.2026 · alle Umfangszahlen gemessen am 26.09.2026
+Stand: 08.10.2026 · alle Umfangszahlen gemessen am 26.09.2026
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -705,7 +705,7 @@ jede eingesetzt wird — gemessen über die Importe des Produktivcodes, nicht ab
 | `chai2010/webp`                                                | `api`, `pkg/imageutil`                                           | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
 | `jung-kurt/gofpdf`, `phpdave11/gofpdf`, `johnfercher/maroto/v2` | `pdf`, `api`, `inventur`                                        | Erzeugte Dokumente (8.9)                                                                |
 | `boombuler/barcode`                                            | `api`                                                            | Code 128, Code 39 und QR auf Aufdrucken (A14)                                           |
-| `xuri/excelize/v2`                                             | `api`, `inventur`, `pkg/xlsxgrenze`                              | Excel lesen (`OpenReader`) und schreiben (`NewFile`); Grenzprüfung in `pkg/xlsxgrenze`  |
+| `xuri/excelize/v2`                                             | `api`, `inventur`, `pkg/xlsxgrenze`                              | Excel lesen (`OpenReader`), nur über `pkg/xlsxgrenze`; geschrieben wird nur in Tests    |
 | `robfig/cron/v3`                                               | `jobs`                                                           | Zeitplan der Hintergrundläufe, auf UTC (A16)                                            |
 | `minio/minio-go/v7`                                            | `jobs`                                                           | optionaler S3-Upload des Backups (A17)                                                  |
 | `google/uuid`                                                  | `api`, `cmd/seed`                                                | Kennungen erzeugen                                                                      |
