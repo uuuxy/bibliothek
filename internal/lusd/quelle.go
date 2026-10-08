@@ -1,4 +1,4 @@
-package api
+package lusd
 
 import (
 	"bibliothek/pkg/xlsxgrenze"

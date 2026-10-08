@@ -92,8 +92,8 @@ type StudentRepository interface {
 	// kennzeichnen und zeigt stillschweigend nur die ersten Namen.
 	SearchStudentsFuzzy(ctx context.Context, queryText string, limit int) ([]Student, int, error)
 
-	// Hinweis: Der LUSD-Abgleich läuft ausschließlich über den Handler-Pfad in
-	// api/lusd.go (ladeAktiveSchueler → wendeLusdAenderungenAn). Eine frühere
+	// Hinweis: Der LUSD-Abgleich läuft ausschließlich über die Tür in api/lusd.go und den
+	// Lauf in internal/lusd (Fuehre → WendeAenderungenAn). Eine frühere
 	// Massen-Pipeline (BulkSyncLUSD/GetAllLUSDStudents) wurde entfernt: ungenutzt und
 	// mit latenten Fehlern (u. a. Ghost-Block bei Rückkehrern).
 

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -36,8 +38,8 @@ func legeUmbSchuelerAn(t *testing.T, pool *pgxpool.Pool, s umbSchueler) string {
 	return id
 }
 
-func umbZeile(line int, vorname, nachname, klasse string, geb, eintritt *time.Time) parsedStudentRow {
-	return parsedStudentRow{Vorname: vorname, Nachname: nachname, Klasse: klasse, GebDatum: geb, EintrittAm: eintritt, LineNum: line}
+func umbZeile(line int, vorname, nachname, klasse string, geb, eintritt *time.Time) lusd.Zeile {
+	return lusd.Zeile{Vorname: vorname, Nachname: nachname, Klasse: klasse, GebDatum: geb, EintrittAm: eintritt, LineNum: line}
 }
 
 // Namensänderung mit Schuleintritt im Bericht: sicheres Paar. Bestätigt → derselbe
@@ -56,11 +58,11 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 	for i := 0; i < 12; i++ {
 		legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ruhig", nachname: "Kind" + string(rune('A'+i)), klasse: "07A", barcode: "UMB-R" + string(rune('A'+i)), geb: datum(2012, 1, 1+i)})
 	}
-	zeilen := []parsedStudentRow{umbZeile(2, "Anna", "Mueller-Schmidt", "06F1", geb, eintritt)}
+	zeilen := []lusd.Zeile{umbZeile(2, "Anna", "Mueller-Schmidt", "06F1", geb, eintritt)}
 	for i := 0; i < 12; i++ {
 		zeilen = append(zeilen, umbZeile(3+i, "Ruhig", "Kind"+string(rune('A'+i)), "08A", datum(2012, 1, 1+i), nil))
 	}
-	datei := lusdDatei{Zeilen: zeilen, Modus: lusdModusName}
+	datei := lusd.Datei{Zeilen: zeilen, Modus: lusd.ModusName}
 
 	prev, err := s.computeLusd(ctx, datei, false, false)
 	if err != nil {
@@ -77,8 +79,8 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 		t.Errorf("Vorschau nennt Karenz %d, erwartet Vorgabe 90", prev.KarenzTage)
 	}
 
-	res, err := s.computeLusdLauf(ctx, datei, lusdLauf{apply: true, allowMassGraduation: true,
-		umbenennungen: []umbenennungWahl{{Zeile: 2, SchuelerID: annaID}}})
+	res, err := s.computeLusdLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
+		Umbenennungen: []lusd.UmbenennungWahl{{Zeile: 2, SchuelerID: annaID}}})
 	if err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
@@ -95,7 +97,7 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 		Scan(&nachname, &klasse, &barcode, &abg, &bestaetigt, &eintrittDB); err != nil {
 		t.Fatal(err)
 	}
-	if nachname != "Mueller-Schmidt" || !klassenGleich(klasse, "06F1") || barcode != "UMB-1" || abg || bestaetigt == nil || time.Since(*bestaetigt) > time.Minute {
+	if nachname != "Mueller-Schmidt" || !lusd.KlassenGleich(klasse, "06F1") || barcode != "UMB-1" || abg || bestaetigt == nil || time.Since(*bestaetigt) > time.Minute {
 		t.Errorf("Anna: nachname=%q klasse=%q barcode=%q abg=%v bestaetigt=%v", nachname, klasse, barcode, abg, bestaetigt)
 	}
 	// Der Import SCHREIBT den Schuleintritt (Bestand + Neuanlage) — kein Test sah das
@@ -133,14 +135,14 @@ func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 	geb := datum(2013, 5, 4)
 
 	annaID := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Anna", nachname: "Müller", klasse: "05F1", barcode: "UMB-2", geb: geb})
-	datei := lusdDatei{Modus: lusdModusName, Zeilen: []parsedStudentRow{umbZeile(2, "Anna", "Schulz", "06F1", geb, nil)}}
+	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Anna", "Schulz", "06F1", geb, nil)}}
 
 	err := func() error {
-		_, err := s.computeLusdLauf(ctx, datei, lusdLauf{apply: true, allowMassGraduation: true,
-			umbenennungen: []umbenennungWahl{{Zeile: 2, SchuelerID: "00000000-0000-0000-0000-000000000000"}}})
+		_, err := s.computeLusdLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
+			Umbenennungen: []lusd.UmbenennungWahl{{Zeile: 2, SchuelerID: "00000000-0000-0000-0000-000000000000"}}})
 		return err
 	}()
-	if _, ok := err.(*errUmbenennungUngueltig); !ok {
+	if _, ok := err.(*lusd.UmbenennungUngueltigFehler); !ok {
 		t.Fatalf("fremde Wahl muss abgewiesen werden, bekam %v", err)
 	}
 	if n := zaehle(t, pool, "nachname = 'Schulz'"); n != 0 {
@@ -159,7 +161,7 @@ func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 		Scan(&vorname, &abg, &gesperrt, &grund, &seit); err != nil {
 		t.Fatal(err)
 	}
-	if vorname != "Anna" || !abg || !gesperrt || grund != abgaengerSperrgrundKarenz || !seit {
+	if vorname != "Anna" || !abg || !gesperrt || grund != repository.AbgaengerSperrgrundKarenz || !seit {
 		t.Errorf("Karenz-Abgänger falsch: vorname=%q abg=%v gesperrt=%v grund=%q seit=%v", vorname, abg, gesperrt, grund, seit)
 	}
 }
@@ -174,7 +176,7 @@ func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
 	s := &Server{DB: &db.Database{Pool: pool}}
 
 	benID := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ben", nachname: "Meier", klasse: "06B", barcode: "UMB-3", geb: datum(2012, 1, 1)})
-	datei := lusdDatei{Modus: lusdModusName, Zeilen: []parsedStudentRow{umbZeile(2, "Ben", "Meier", "07B", datum(2012, 1, 10), nil)}}
+	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Ben", "Meier", "07B", datum(2012, 1, 10), nil)}}
 
 	prev, err := s.computeLusd(ctx, datei, false, false)
 	if err != nil {
@@ -183,8 +185,8 @@ func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
 	if len(prev.Umbenennungen) != 1 || prev.Umbenennungen[0].Sicher || prev.Umbenennungen[0].NeuGeburtsdatum != "2012-01-10" {
 		t.Fatalf("erwartet ein vermutliches Paar mit neuem Datum: %+v", prev.Umbenennungen)
 	}
-	if _, err := s.computeLusdLauf(ctx, datei, lusdLauf{apply: true, allowMassGraduation: true,
-		umbenennungen: []umbenennungWahl{{Zeile: 2, SchuelerID: benID}}}); err != nil {
+	if _, err := s.computeLusdLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
+		Umbenennungen: []lusd.UmbenennungWahl{{Zeile: 2, SchuelerID: benID}}}); err != nil {
 		t.Fatal(err)
 	}
 	var geb time.Time
@@ -207,7 +209,7 @@ func TestUmbenennung_FruehererAbgaengerWirdReaktiviert(t *testing.T) {
 	geb, eintritt := datum(2011, 3, 3), datum(2022, 8, 22)
 
 	altID := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Cem", nachname: "Yilmaz", klasse: "08C", barcode: "UMB-4", geb: geb, eintritt: eintritt, abgaenger: true})
-	datei := lusdDatei{Modus: lusdModusName, Zeilen: []parsedStudentRow{umbZeile(2, "Cem", "Yılmaz-Kaya", "09C", geb, eintritt)}}
+	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Cem", "Yılmaz-Kaya", "09C", geb, eintritt)}}
 
 	prev, err := s.computeLusd(ctx, datei, false, false)
 	if err != nil {
@@ -216,8 +218,8 @@ func TestUmbenennung_FruehererAbgaengerWirdReaktiviert(t *testing.T) {
 	if len(prev.Umbenennungen) != 1 || !prev.Umbenennungen[0].WarAbgaenger || !prev.Umbenennungen[0].Sicher {
 		t.Fatalf("erwartet sicheres Paar mit früherem Abgänger: %+v", prev.Umbenennungen)
 	}
-	if _, err := s.computeLusdLauf(ctx, datei, lusdLauf{apply: true, allowMassGraduation: true,
-		umbenennungen: []umbenennungWahl{{Zeile: 2, SchuelerID: altID}}}); err != nil {
+	if _, err := s.computeLusdLauf(ctx, datei, lusd.Lauf{Anwenden: true, MassenabgangBestaetigt: true,
+		Umbenennungen: []lusd.UmbenennungWahl{{Zeile: 2, SchuelerID: altID}}}); err != nil {
 		t.Fatal(err)
 	}
 	var nachname string

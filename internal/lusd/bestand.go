@@ -1,4 +1,4 @@
-package api
+package lusd
 
 import (
 	"context"
@@ -24,11 +24,11 @@ func namensSchluessel(vorname, nachname string) string {
 
 // bestandsSchluessel liefert den Schlüssel, unter dem der Modus einen Bestandsschüler
 // nachschlägt: LUSD-ID, Name+Geburtsdatum oder nur Name.
-func bestandsSchluessel(s *lusdBestandsSchueler, modus lusdModus) string {
+func bestandsSchluessel(s *lusdBestandsSchueler, modus Modus) string {
 	switch modus {
-	case lusdModusName:
+	case ModusName:
 		return s.Schluessel
-	case lusdModusNurName:
+	case ModusNurName:
 		return s.Namensschluessel
 	default:
 		return s.LusdID
@@ -66,7 +66,7 @@ type lusdIndex struct {
 }
 
 // baueLusdIndex sortiert den Bestand in die Karten des Modus ein.
-func baueLusdIndex(bestand []lusdBestandsSchueler, modus lusdModus) lusdIndex {
+func baueLusdIndex(bestand []lusdBestandsSchueler, modus Modus) lusdIndex {
 	idx := lusdIndex{
 		aktiv:             make(map[string]*lusdBestandsSchueler),
 		abgaenger:         make(map[string]*lusdBestandsSchueler),
@@ -77,7 +77,7 @@ func baueLusdIndex(bestand []lusdBestandsSchueler, modus lusdModus) lusdIndex {
 		s := &bestand[i]
 		key := bestandsSchluessel(s, modus)
 		switch {
-		case key == "" && modus == lusdModusName && !s.IstAbgaenger:
+		case key == "" && modus == ModusName && !s.IstAbgaenger:
 			idx.ohneSchluessel = append(idx.ohneSchluessel, *s)
 			trageEin(idx.ohneDatumNachName, s.Namensschluessel, s)
 		case key == "":

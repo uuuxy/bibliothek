@@ -15,7 +15,7 @@ import (
 
 // Zwei Datensätze, ein Mensch. Ohne Schüler-ID im LUSD-Export entsteht bei einer
 // Namensänderung oder Datumskorrektur ein zweiter Datensatz (Abgänger + Neuanlage,
-// siehe api/lusd_paarung.go für den Fang beim Import). Fällt das erst später auf — das
+// siehe internal/lusd/paarung.go für den Fang beim Import). Fällt das erst später auf — das
 // Kind steht mit dem alten Ausweis an der Theke und gilt als gesperrter Abgänger — führt
 // diese Funktion beide Zeilen zu einer zusammen. Sie ist das Sicherheitsnetz hinter der
 // Vorschau-Paarung und gilt genauso für Dubletten aus Handanlage + Import.

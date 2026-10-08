@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -27,7 +28,7 @@ func seedGesperrterAbgaenger(t *testing.T, pool *pgxpool.Pool, barcode, lusdID s
 }
 
 // TestLusdImport_ReturningBlockedAbgaenger fährt die ECHTE Import-Pipeline
-// (computeLusdChanges → wendeLusdAenderungenAn) mit einem zurückkehrenden, als Abgänger
+// (computeLusdChanges → lusd.WendeAenderungenAn) mit einem zurückkehrenden, als Abgänger
 // gesperrten Schüler. Der Unit-Test der Runde 6/7 prüfte nur die Aktualisierung des Bestandsschuelers
 // isoliert; er blieb aber unerreichbar, weil ladeAktiveSchueler Abgänger ausfiltert und der
 // Rückkehrer so als Neuzugang am partiellen Unique-Index (lusd_id) kollidierte — der GESAMTE
@@ -41,7 +42,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 		id := seedGesperrterAbgaenger(t, pool, "OLD-1", "L-RETURN")
 
 		s := &Server{DB: &db.Database{Pool: pool}}
-		if _, err := s.computeLusdChanges(ctx, []parsedStudentRow{
+		if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 			{LusdID: "L-RETURN", Vorname: "Max", Nachname: "Muster", Klasse: "E1"},
 		}, true, true); err != nil {
 			t.Fatalf("Import eines Rückkehrers darf nicht fehlschlagen: %v", err)
@@ -91,7 +92,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 		}
 
 		s := &Server{DB: &db.Database{Pool: pool}}
-		if _, err := s.computeLusdChanges(ctx, []parsedStudentRow{
+		if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 			{LusdID: "L-DEBT", Vorname: "Max", Nachname: "Muster", Klasse: "E1"},
 		}, true, true); err != nil {
 			t.Fatalf("Import darf nicht fehlschlagen: %v", err)
@@ -128,7 +129,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 			t.Fatalf("offene Ausleihe anlegen: %v", err)
 		}
 		s := &Server{DB: &db.Database{Pool: pool}}
-		zeile := []parsedStudentRow{{LusdID: "L-DEBT3", Vorname: "Max", Nachname: "Muster", Klasse: "E1"}}
+		zeile := []lusd.Zeile{{LusdID: "L-DEBT3", Vorname: "Max", Nachname: "Muster", Klasse: "E1"}}
 		if _, err := s.computeLusdChanges(ctx, zeile, true, true); err != nil {
 			t.Fatalf("erster Import: %v", err)
 		}

@@ -1,5 +1,5 @@
 <!-- @component LusdUmbenennungen — die Paare „Abgänger ↔ Neuzugang", die nach Geburtsdatum,
-     Schuleintritt, Klasse und Anschrift dieselbe Person sind (Backend: api/lusd_paarung.go).
+     Schuleintritt, Klasse und Anschrift dieselbe Person sind (Backend: internal/lusd/paarung.go).
 
      Der Export der Schule hat keine Schüler-ID; eine Namensänderung oder Datumskorrektur
      in der LUSD ergäbe sonst Abgänger + Neuanlage. Der Admin kreuzt an, welche Paare

@@ -2,9 +2,11 @@ package api
 
 import (
 	"testing"
+
+	"bibliothek/internal/lusd"
 )
 
-// Parität Go ↔ SQL: klassenNormkey (Klassenvergleich im LUSD-Import) muss dasselbe
+// Parität Go ↔ SQL: lusd.KlassenNormkey (Klassenvergleich im LUSD-Import) muss dasselbe
 // liefern wie klassen_normkey (Migration 079, der Trigger-Schlüssel des Klassen-
 // Vokabulars). Driften die beiden, meldet die Vorschau Klassenwechsel, die der Trigger
 // anschließend wegkanonisiert — oder übersieht echte. Zwei Implementierungen derselben
@@ -22,8 +24,8 @@ func TestKlassenNormkey_ParitaetZurSQLFunktion(t *testing.T) {
 		if err := pool.QueryRow(ctx, `SELECT klassen_normkey($1)`, in).Scan(&sql); err != nil {
 			t.Fatalf("klassen_normkey(%q): %v", in, err)
 		}
-		if got := klassenNormkey(in); got != sql {
-			t.Errorf("klassenNormkey(%q) = %q, SQL liefert %q", in, got, sql)
+		if got := lusd.KlassenNormkey(in); got != sql {
+			t.Errorf("lusd.KlassenNormkey(%q) = %q, SQL liefert %q", in, got, sql)
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package api
+package lusd
 
 import (
 	"testing"
@@ -119,11 +119,11 @@ func TestParseLUSDCSV_IDSpalteOhneWerteUndOhneGeburtsdatumIstNurName(t *testing.
 		",Max,Mustermann,5a\n" +
 		",Erika,Musterfrau,7b\n"
 
-	datei, err := parseLusdDatei([]byte(csv))
+	datei, err := ParseDatei([]byte(csv))
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	if datei.Modus != lusdModusNurName || len(datei.Zeilen) != 2 {
+	if datei.Modus != ModusNurName || len(datei.Zeilen) != 2 {
 		t.Fatalf("erwartet Nur-Name-Modus mit 2 Zeilen, war %v / %d", datei.Modus, len(datei.Zeilen))
 	}
 }

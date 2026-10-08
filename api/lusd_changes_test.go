@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
 	"bibliothek/repository"
 
 	"github.com/pashagolub/pgxmock/v5"
@@ -34,7 +35,7 @@ import (
 func TestGenerateImportBarcode_WieDieHandanlage(t *testing.T) {
 	seen := make(map[string]bool, 5000)
 	for i := 1; i <= 5000; i++ {
-		b := generateImportBarcode(i)
+		b := repository.AusweisNummer(i)
 		if seen[b] {
 			t.Fatalf("Barcode-Kollision bei Nummer %d: %s", i, b)
 		}
@@ -86,15 +87,15 @@ func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
 	// Statement greifen. Unerwartete Execs ließen den Mock fehlschlagen.
 	mock.ExpectRollback()
 
-	records := []parsedStudentRow{
+	records := []lusd.Zeile{
 		{LusdID: "L-a", Vorname: "Vora", Nachname: "Nacha", Klasse: "8A"},
 		{LusdID: "L-b", Vorname: "Vorb", Nachname: "Nachb", Klasse: "8A"},
 	}
 
 	_, err = s.computeLusdChanges(t.Context(), records, true, false)
-	var massErr *errMassGraduation
+	var massErr *lusd.MassenabgangFehler
 	if !errors.As(err, &massErr) {
-		t.Fatalf("erwartet errMassGraduation, bekam: %v", err)
+		t.Fatalf("erwartet lusd.MassenabgangFehler, bekam: %v", err)
 	}
 	if massErr.Graduates != 8 || massErr.Active != 10 {
 		t.Errorf("Zahlen falsch: %+v", massErr)
@@ -118,7 +119,7 @@ func TestComputeLusdChanges_PreviewNeverWrites(t *testing.T) {
 		WillReturnRows(lusdStudentRows(10))
 	mock.ExpectRollback()
 
-	records := []parsedStudentRow{
+	records := []lusd.Zeile{
 		{LusdID: "L-a", Vorname: "Vora", Nachname: "Nacha", Klasse: "8A"}, // Klassenwechsel
 		{LusdID: "L-neu", Vorname: "Neu", Nachname: "Kind", Klasse: "5A"}, // Neuzugang
 		{Vorname: "Ohne", Nachname: "ID", Klasse: "5A"},                   // ohne LUSD-ID → übersprungen

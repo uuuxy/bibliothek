@@ -27,7 +27,7 @@ import (
 var registriertePrivilegFelder = map[string]string{
 	"api/action_types.go:override_block":        "Gate an der HTTP-Grenze: nur mit BesitztRecht(edit_students), sonst wird das Feld ignoriert (154c1f85)",
 	"api/mahnwesen_bulk_mail.go:override_email": "Route hinter create_orders (nur Mitarbeiter/Admin); Umleitung dokumentiert und namentlich auditiert",
-	"api/lusd.go:skipped_no_id":                 "Antwort-Zähler, kein Request-Feld",
+	"internal/lusd/lauf.go:skipped_no_id":       "Antwort-Zähler, kein Request-Feld",
 	"api/mahnwesen_bulk_mail.go:skipped_count":  "Antwort-Zähler, kein Request-Feld",
 	"api/mahnwesen_bulk_mail.go:skipped":        "Antwort-Zähler, kein Request-Feld",
 }

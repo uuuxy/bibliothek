@@ -114,9 +114,9 @@ func TestLusdRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	rec := parsedStudentRow{LusdID: "LUSD-42", Vorname: "Lena", Nachname: "Zurück", Klasse: "EF"}
-	if err := aktualisiereBestandsschuelerBatch(ctx, tx, []parsedStudentRow{rec}, []string{id}); err != nil {
-		t.Fatalf("aktualisiereBestandsschuelerBatch: %v", err)
+	zeile := repository.LusdAktualisierung{SchuelerID: id, Vorname: "Lena", Nachname: "Zurück", Klasse: "EF"}
+	if err := repository.AktualisiereLusdBestand(ctx, tx, []repository.LusdAktualisierung{zeile}); err != nil {
+		t.Fatalf("AktualisiereLusdBestand: %v", err)
 	}
 
 	var vorname, nachname, klasse string
@@ -316,7 +316,7 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := repository.SperreAbgaenger(ctx, tx, sid, abgaengerSperrgrundOffen); err != nil {
+	if err := repository.SperreAbgaenger(ctx, tx, sid, repository.AbgaengerSperrgrundOffen); err != nil {
 		t.Fatalf("repository.SperreAbgaenger: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {

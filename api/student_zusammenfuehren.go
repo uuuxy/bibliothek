@@ -14,7 +14,7 @@ import (
 )
 
 // Zusammenführen zweier Schülerdatensätze — das Sicherheitsnetz hinter der Umbenennungs-
-// Paarung des LUSD-Imports (lusd_paarung.go). Regeln und SQL stehen in
+// Paarung des LUSD-Imports (internal/lusd/paarung.go). Regeln und SQL stehen in
 // repository/schueler_zusammenfuehren.go; hier nur Recht, Rumpf, Fehlerbild und Audit.
 //
 // Recht merge_students (eigenes Recht seit 03.09.2026, vorher manage_students_admin wie

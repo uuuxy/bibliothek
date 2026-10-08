@@ -56,4 +56,9 @@ internal/uebernahme/protokoll.go: unreachable func: Protokoll.Leeren
 # Die Tests der beiden Ladewege (api, inventur) melden deshalb ein eigenes Bild an
 # und prüfen so die Erkennung selbst statt einer Attrappe.
 pkg/coverquelle/ersatzbild.go: unreachable func: MerkeErsatzbildFuerTest
-
+# Testinfrastruktur per Paket-Design: die Test-Arbeitsmappe für die Excel-Leser (vorher
+# Helfer in api/lusd_quelle_test.go, seit dem 09.10.2026 von internal/lusd und api
+# gebraucht). Wird ausschließlich von *_test.go importiert.
+internal/xlsxtest/xlsxtest.go: unreachable func: Baue
+internal/xlsxtest/xlsxtest.go: unreachable func: legeBlattAn
+internal/xlsxtest/xlsxtest.go: unreachable func: fuelleBlatt

@@ -1,4 +1,4 @@
-package api
+package lusd
 
 import (
 	"fmt"
@@ -10,7 +10,10 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-type parsedStudentRow struct {
+// Zeile ist eine gelesene Zeile des Exports: ein Schüler, wie die LUSD ihn nennt. LineNum
+// ist die Zeilennummer in der Datei; an ihr hängt die Wahl der Umbenennungen zwischen
+// Vorschau und Import.
+type Zeile struct {
 	LusdID      string
 	Vorname     string
 	Nachname    string
@@ -22,7 +25,7 @@ type parsedStudentRow struct {
 	Ort         string
 	ElternEmail string
 	// EintrittAm ist der Schuleintritt laut Bericht (Schueler_Eintritt_AktuelleSchule) —
-	// der zweite Schlüssel der Umbenennungs-Paarung (lusd_paarung.go); nil ohne Spalte.
+	// der zweite Schlüssel der Umbenennungs-Paarung (paarung.go); nil ohne Spalte.
 	EintrittAm *time.Time
 	LineNum    int
 	// geburtsdatumUebernehmen: nur für bestätigte Umbenennungs-Paare — der Bestands-Batch
@@ -31,21 +34,21 @@ type parsedStudentRow struct {
 }
 
 // schluessel ist der Name+Geburtsdatum-Schlüssel der Zeile ("" ohne Datum).
-func (r parsedStudentRow) schluessel() string {
+func (r Zeile) schluessel() string {
 	return waisenSchluessel(r.Vorname, r.Nachname, r.GebDatum)
 }
 
 // namensschluessel ist der Nur-Name-Schlüssel (Vorname + Nachname, normalisiert).
-func (r parsedStudentRow) namensschluessel() string {
+func (r Zeile) namensschluessel() string {
 	return namensSchluessel(r.Vorname, r.Nachname)
 }
 
 // schluesselFuer liefert den Nachschlage-Schlüssel dieser Zeile für den gegebenen Modus —
-// das Gegenstück zu bestandsSchluessel (lusd_bestand.go), das dasselbe für die Bestandszeile
+// das Gegenstück zu bestandsSchluessel (bestand.go), das dasselbe für die Bestandszeile
 // tut. Zwei Seiten, EINE Regel: Solange beide über den Modus gehen, kann niemand versehentlich
 // den Namensschlüssel gegen den Name+Datum-Index schlagen (das matchte still niemanden).
-func (r parsedStudentRow) schluesselFuer(modus lusdModus) string {
-	if modus == lusdModusNurName {
+func (r Zeile) schluesselFuer(modus Modus) string {
+	if modus == ModusNurName {
 		return r.namensschluessel()
 	}
 	return r.schluessel()
@@ -70,40 +73,40 @@ const (
 	lusdColEintritt = "eintritt"
 )
 
-// lusdModus sagt, worüber der Import die Schüler zuordnet — die Datei entscheidet.
+// Modus sagt, worüber der Import die Schüler zuordnet — die Datei entscheidet.
 // Der Export der Schule hat keine Schüler-ID und bekommt auch keine; der LANIS-
 // Klassenlisten-Export hat nicht einmal ein Geburtsdatum. Drei Stufen, absteigend
 // sicher; die Vorschau sagt dem Sekretariat, welche gilt und was sie kostet.
-type lusdModus int
+type Modus int
 
 const (
-	// lusdModusID: Schlüssel LUSD-ID; Zeilen ohne ID werden übersprungen.
-	lusdModusID lusdModus = iota
-	// lusdModusName: Schlüssel Vorname + Nachname + Geburtsdatum; das Datum ist dann
-	// in JEDER Zeile Pflicht (harter Abbruch, nicht stilles Überspringen).
-	lusdModusName
-	// lusdModusNurName: Schlüssel nur Vorname + Nachname — wenn die Datei weder ID
-	// noch Geburtsdatum trägt. Namensgleiche werden NIE zugeordnet, sondern gemeldet.
-	lusdModusNurName
+	// ModusID ordnet über die LUSD-ID zu; Zeilen ohne ID werden übersprungen.
+	ModusID Modus = iota
+	// ModusName ordnet über Vorname, Nachname und Geburtsdatum zu. Das Datum ist dann in
+	// jeder Zeile Pflicht; fehlt es, bricht der Lauf ab, statt die Zeile zu überspringen.
+	ModusName
+	// ModusNurName ordnet nur über Vorname und Nachname zu, wenn die Datei weder ID noch
+	// Geburtsdatum trägt. Namensgleiche werden nicht zugeordnet, sondern gemeldet.
+	ModusNurName
 )
 
 // String ist der Wert, den die Vorschau dem Frontend meldet.
-func (m lusdModus) String() string {
+func (m Modus) String() string {
 	switch m {
-	case lusdModusName:
+	case ModusName:
 		return "name_geburtsdatum"
-	case lusdModusNurName:
+	case ModusNurName:
 		return "name"
 	default:
 		return "lusd_id"
 	}
 }
 
-// lusdDatei ist das Parse-Ergebnis: die Zeilen plus der Modus, in dem sie zugeordnet
+// Datei ist das Parse-Ergebnis: die Zeilen plus der Modus, in dem sie zugeordnet
 // werden, plus das, was beim Zusammenlegen doppelter Zeilen verloren ging.
-type lusdDatei struct {
-	Zeilen []parsedStudentRow
-	Modus  lusdModus
+type Datei struct {
+	Zeilen []Zeile
+	Modus  Modus
 	// DublettenInDatei zählt Zeilen, die auf denselben Schlüssel fielen und von der
 	// späteren überschrieben wurden (ID- und Name+Geburtsdatum-Modus: letzte gewinnt).
 	// Im Nur-Name-Modus wird NICHT zusammengelegt — gleiche Namen sind dort mehrdeutig.
@@ -176,17 +179,17 @@ func plausiblerEintritt(eintritt, geburtsdatum *time.Time) *time.Time {
 
 // parseLUSDRow parst eine Datenzeile und validiert die Pflichtfelder. Alle Spalten
 // laufen über spaltenWert, weil ID- und Geburtsdatum-Spalte fehlen dürfen.
-func parseLUSDRow(row []string, headerMap map[string]int, lineNum int) (parsedStudentRow, error) {
+func parseLUSDRow(row []string, headerMap map[string]int, lineNum int) (Zeile, error) {
 	vorname := spaltenWert(row, headerMap, lusdColVorname)
 	nachname := spaltenWert(row, headerMap, lusdColNachname)
 	klasse := spaltenWert(row, headerMap, lusdColKlasse)
 
 	if vorname == "" || nachname == "" || klasse == "" {
-		return parsedStudentRow{}, fmt.Errorf("zeile %d enthält ein leeres Pflichtfeld (Vorname/Nachname/Klasse)", lineNum)
+		return Zeile{}, fmt.Errorf("zeile %d enthält ein leeres Pflichtfeld (Vorname/Nachname/Klasse)", lineNum)
 	}
 
 	geb := parseLUSDDatum(row, headerMap, lusdColGeburtsdatum)
-	return parsedStudentRow{
+	return Zeile{
 		LusdID:      spaltenWert(row, headerMap, lusdColID),
 		Vorname:     vorname,
 		Nachname:    nachname,
@@ -213,21 +216,21 @@ func istLeereZeile(row []string) bool {
 	return true
 }
 
-// parseLusdDatei liest die Datei (CSV oder Excel) vollständig, bestimmt den Modus und
+// ParseDatei liest die Datei (CSV oder Excel) vollständig, bestimmt den Modus und
 // legt doppelte Zeilen zusammen. Harte Fehler statt stillem Überspringen: Das
 // Sekretariat soll eine kaputte Datei als Meldung sehen, nicht als halb importierten
 // Bestand.
-func parseLusdDatei(content []byte) (lusdDatei, error) {
+func ParseDatei(content []byte) (Datei, error) {
 	rows, err := leseLusdTabelle(content)
 	if err != nil {
-		return lusdDatei{}, err
+		return Datei{}, err
 	}
 	kopfIdx, headerMap, err := findeKopfzeile(rows)
 	if err != nil {
-		return lusdDatei{}, err
+		return Datei{}, err
 	}
 
-	var zeilen []parsedStudentRow
+	var zeilen []Zeile
 	irgendeineID, irgendeinDatum := false, false
 	for i := kopfIdx + 1; i < len(rows); i++ {
 		if istLeereZeile(rows[i].zellen) {
@@ -235,7 +238,7 @@ func parseLusdDatei(content []byte) (lusdDatei, error) {
 		}
 		sRow, err := parseLUSDRow(rows[i].zellen, headerMap, rows[i].nr)
 		if err != nil {
-			return lusdDatei{}, err
+			return Datei{}, err
 		}
 		irgendeineID = irgendeineID || sRow.LusdID != ""
 		irgendeinDatum = irgendeinDatum || sRow.GebDatum != nil
@@ -245,19 +248,19 @@ func parseLusdDatei(content []byte) (lusdDatei, error) {
 	// Eine Spalte, in der kein einziger Wert steht, zählt nicht — LUSD exportiert
 	// Spalten mitunter leer. Was die Datei wirklich hergibt, bestimmt den Modus.
 	if _, hatIDSpalte := headerMap[lusdColID]; hatIDSpalte && irgendeineID {
-		return legeDublettenZusammen(zeilen, lusdModusID, func(r parsedStudentRow) string { return r.LusdID }), nil
+		return legeDublettenZusammen(zeilen, ModusID, func(r Zeile) string { return r.LusdID }), nil
 	}
 	if irgendeinDatum {
 		if err := pruefeGeburtsdatumJeZeile(zeilen); err != nil {
-			return lusdDatei{}, err
+			return Datei{}, err
 		}
-		return legeDublettenZusammen(zeilen, lusdModusName, parsedStudentRow.schluessel), nil
+		return legeDublettenZusammen(zeilen, ModusName, Zeile.schluessel), nil
 	}
-	return lusdDatei{Zeilen: zeilen, Modus: lusdModusNurName}, nil
+	return Datei{Zeilen: zeilen, Modus: ModusNurName}, nil
 }
 
 // pruefeGeburtsdatumJeZeile meldet die erste Zeile ohne lesbares Geburtsdatum.
-func pruefeGeburtsdatumJeZeile(zeilen []parsedStudentRow) error {
+func pruefeGeburtsdatumJeZeile(zeilen []Zeile) error {
 	for _, z := range zeilen {
 		if z.GebDatum == nil {
 			// Nur die Zeilennummer, kein Name: Die Meldung geht über SendHTTPError auch ins
@@ -272,8 +275,8 @@ func pruefeGeburtsdatumJeZeile(zeilen []parsedStudentRow) error {
 // gewinnen (an ihrem ersten Platz) und zählt, was dabei überschrieben wurde. Zeilen
 // ohne Schlüssel (ID-Modus: leere ID) bleiben einzeln erhalten — die Klassifizierung
 // meldet sie als übersprungen.
-func legeDublettenZusammen(zeilen []parsedStudentRow, modus lusdModus, schluessel func(parsedStudentRow) string) lusdDatei {
-	datei := lusdDatei{Modus: modus}
+func legeDublettenZusammen(zeilen []Zeile, modus Modus, schluessel func(Zeile) string) Datei {
+	datei := Datei{Modus: modus}
 	platz := make(map[string]int)
 	for _, z := range zeilen {
 		key := schluessel(z)
@@ -282,7 +285,7 @@ func legeDublettenZusammen(zeilen []parsedStudentRow, modus lusdModus, schluesse
 			continue
 		}
 		if idx, gesehen := platz[key]; gesehen {
-			if vorher := datei.Zeilen[idx]; !klassenGleich(vorher.Klasse, z.Klasse) {
+			if vorher := datei.Zeilen[idx]; !KlassenGleich(vorher.Klasse, z.Klasse) {
 				datei.Zusammengelegt = append(datei.Zusammengelegt, diffZeile(z.zeilenKennung(), z, vorher.Klasse, z.Klasse))
 			}
 			datei.Zeilen[idx] = z

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/lusd"
 	"bibliothek/repository"
 )
 
@@ -12,7 +13,7 @@ import (
 // Handanlage keine Nummer wegnehmen.
 //
 // Das ist die Zusage, die bis zum 16.09.2026 NIEMAND geprüft hat, obwohl es einen Test
-// gab. `generateImportBarcode` baute die Nummer aus `time.Now().Unix()%1000000` plus der
+// gab. `repository.AusweisNummer` baute die Nummer aus `time.Now().Unix()%1000000` plus der
 // Zeilennummer. Der Zeitteil wiederholt sich alle 11,6 Tage; zwei Läufe im richtigen
 // Abstand und von ähnlicher Größe erzeugen dieselben Nummern. Der eindeutige Index
 // (uniq_schueler_barcode_active) hätte das quittiert — mit dem Abbruch des GESAMTEN
@@ -29,15 +30,11 @@ func TestLusdAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 
 	lauf := func(t *testing.T, namen ...string) {
 		t.Helper()
-		datei := lusdDatei{Modus: lusdModusID}
-		z := lusdZuordnung{
-			zielID:             map[int]string{},
-			ueberspringen:      map[int]bool{},
-			geburtsdatumSetzen: map[int]bool{},
-		}
+		datei := lusd.Datei{Modus: lusd.ModusID}
+		z := lusd.Zuordnung{}
 		geb := time.Date(2012, 5, 4, 0, 0, 0, 0, time.UTC)
 		for i, n := range namen {
-			datei.Zeilen = append(datei.Zeilen, parsedStudentRow{
+			datei.Zeilen = append(datei.Zeilen, lusd.Zeile{
 				LusdID: "LUSD-" + n, Vorname: "Vor", Nachname: n, Klasse: "07A",
 				GebDatum: &geb, LineNum: i + 2,
 			})
@@ -47,7 +44,7 @@ func TestLusdAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer tx.Rollback(ctx) //nolint:errcheck
-		if err := wendeLusdAenderungenAn(ctx, tx, datei, z); err != nil {
+		if err := lusd.WendeAenderungenAn(ctx, tx, datei, z); err != nil {
 			t.Fatalf("Import: %v", err)
 		}
 		if err := tx.Commit(ctx); err != nil {

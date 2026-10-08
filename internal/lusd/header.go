@@ -1,4 +1,4 @@
-package api
+package lusd
 
 import (
 	"fmt"
@@ -47,7 +47,7 @@ var lusdFieldAliases = map[string][]string{
 }
 
 // lusdPflichtspalten müssen in jedem Export stehen. Den ZUORDNUNGSSCHLÜSSEL bestimmt
-// die Datei selbst (lusd_parser.go): LUSD-ID, sonst Name + Geburtsdatum, sonst nur der
+// die Datei selbst (parser.go): LUSD-ID, sonst Name + Geburtsdatum, sonst nur der
 // Name — der LANIS-Klassenlisten-Export der Schule hat genau diese drei Spalten.
 var lusdPflichtspalten = []string{lusdColVorname, lusdColNachname, lusdColKlasse}
 

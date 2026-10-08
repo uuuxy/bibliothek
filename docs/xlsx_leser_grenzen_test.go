@@ -23,9 +23,9 @@ import (
 // OLE-Containern (OFFEN.md 5.10); ein direkter OpenReader-Aufruf ginge an beidem vorbei.
 // Deshalb: **Eine vierte Lesestelle ist eine Frage.**
 var xlsxLeserBestand = map[string]string{
-	"api/littera_import.go":     "Littera-Katalogübernahme (POST /api/import/littera, manage_inventory)",
-	"api/lusd_parser_quelle.go": "LUSD-Schülerabgleich (POST /api/lusd/preview und /import, import_students)",
-	"inventur/excel_import.go":  "Listenimport des Bestands",
+	"api/littera_import.go":    "Littera-Katalogübernahme (POST /api/import/littera, manage_inventory)",
+	"internal/lusd/quelle.go":  "LUSD-Schülerabgleich (POST /api/lusd/preview und /import, import_students)",
+	"inventur/excel_import.go": "Listenimport des Bestands",
 }
 
 // einzigerOpenReader ist die eine Datei, die excelize.OpenReader rufen darf; dass die

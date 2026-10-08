@@ -1,4 +1,4 @@
-package api
+package lusd
 
 import (
 	"context"
@@ -10,25 +10,24 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// wendeLusdAenderungenAn führt den zweiten Durchlauf aus: bestehende Schüler
-// aktualisieren (Klasse + Kontaktdaten) und Neuzugänge anlegen — entlang der
-// Zuordnung aus der Klassifizierung, Zeile für Zeile in Dateireihenfolge.
-func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, datei lusdDatei, z lusdZuordnung) error {
-	// Die Ausweisnummern der Neuzugänge kommen aus DERSELBEN Quelle wie die der
-	// Handanlage — einmal je Lauf gezogen, dann fortlaufend weitergezählt.
-	//
-	// Einmal und nicht je Zeile: NaechsteAusweisnummer (ausweis_nummer_start, Migration 136)
-	// hält einen Advisory-Lock in DIESER Transaktion, bis sie endet. Der Lauf hat den Nummernkreis damit für sich, und die
-	// Nummern sind lückenlos. Gefragt wird die TABELLE `leser`, nicht die Sicht
-	// `schueler`: Die höchste Nummer kann seit Migration 125 an einem Kollegen hängen,
-	// und über die Sicht gerechnet gäbe der Generator sie ein zweites Mal aus.
+// WendeAenderungenAn führt den zweiten Durchlauf aus: Schüler des Bestands aktualisieren
+// (Klasse und Kontaktdaten) und Neuzugänge anlegen, entlang der Zuordnung aus der
+// Klassifizierung, Zeile für Zeile in der Reihenfolge der Datei. Ein Neuzugang wird sofort
+// eingefügt: Die nächste Zeile mit derselben LUSD-ID findet ihn dann in der Transaktion.
+func WendeAenderungenAn(ctx context.Context, tx pgx.Tx, datei Datei, z Zuordnung) error {
+	// Die Ausweisnummern der Neuzugänge kommen aus derselben Quelle wie die der Anlage von
+	// Hand, einmal je Lauf gezogen und dann fortlaufend weitergezählt. Einmal und nicht je
+	// Zeile: NaechsteAusweisnummer hält eine Sperre in dieser Transaktion, bis sie endet. Der
+	// Lauf hat den Nummernkreis damit für sich, und die Nummern sind lückenlos. Der Zähler
+	// rechnet über die Tabelle `leser`, nicht über die Sicht `schueler`: Die höchste Nummer
+	// kann an einem Kollegen hängen.
 	startNum, err := repository.NewSequenceRepository(tx).NaechsteAusweisnummer(ctx)
 	if err != nil {
 		return fmt.Errorf("ausweisnummern für die Neuzugänge: %w", err)
 	}
 	barcodeCounter := 0
 
-	var batchRecords []parsedStudentRow
+	var batchRecords []Zeile
 	var batchIDs []string
 
 	for i, rec := range datei.Zeilen {
@@ -69,15 +68,15 @@ func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, datei lusdDatei, z l
 // sie nicht kennt: den eben adoptierten Waisen oder einen Rückkehrer. Ein INSERT liefe dort auf
 // uniq_schueler_lusd_id_active auf und risse den ganzen Import mit. Soft-gelöschte Zeilen
 // belegen den Index nicht und entstehen als frischer Datensatz neu.
-func belegteLusdID(ctx context.Context, tx pgx.Tx, modus lusdModus, lusdID string) (string, error) {
-	if modus != lusdModusID {
+func belegteLusdID(ctx context.Context, tx pgx.Tx, modus Modus, lusdID string) (string, error) {
+	if modus != ModusID {
 		return "", nil
 	}
 	return repository.FindeAktivenSchuelerNachLusdID(ctx, tx, lusdID)
 }
 
 // adoptiereWaisen heftet die LUSD-ID an bestehende Schüler ohne ID (Adoption über Name und
-// Geburtsdatum). Danach behandelt wendeLusdAenderungenAn sie wie Schüler des Bestands. Im
+// Geburtsdatum). Danach behandelt WendeAenderungenAn sie wie Schüler des Bestands. Im
 // Abgleich über den Namen ist die LUSD-ID leer: Dann trägt die Adoption nur das Geburtsdatum
 // nach, Klasse und Bestätigung übernimmt der Batch. Was die Anweisung gegen einen Wettlauf
 // schützt, steht an repository.AdoptiereLusdWaise.
@@ -93,9 +92,9 @@ func adoptiereWaisen(ctx context.Context, tx pgx.Tx, adoptionen []AdoptionDiff) 
 // legeNeuenSchuelerAn legt einen Schüler an, den der Export neu nennt. Das Abgangsjahr folgt
 // der Klasse wie bei der Anlage von Hand (repository.AbgaengerJahr): eine Antwort auf dieselbe
 // Frage.
-func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, barcodeCounter int) error {
+func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec Zeile, barcodeCounter int) error {
 	return repository.LegeLusdSchuelerAn(ctx, tx, repository.LusdNeuzugang{
-		Ausweisnummer: generateImportBarcode(barcodeCounter),
+		Ausweisnummer: repository.AusweisNummer(barcodeCounter),
 		Vorname:       rec.Vorname,
 		Nachname:      rec.Nachname,
 		Klasse:        rec.Klasse,
@@ -114,7 +113,7 @@ func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, b
 // aktualisiereBestandsschuelerBatch übergibt die Zeilen des Exports, die zu einem Schüler des
 // Bestands gehören. Das Geburtsdatum geht nur für ein bestätigtes Umbenennungs-Paar mit; die
 // Regeln der Anweisung stehen an repository.AktualisiereLusdBestand.
-func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records []parsedStudentRow, ids []string) error {
+func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records []Zeile, ids []string) error {
 	zeilen := make([]repository.LusdAktualisierung, len(records))
 	for i, rec := range records {
 		var gebFuerPaar *time.Time
@@ -138,14 +137,14 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 	return repository.AktualisiereLusdBestand(ctx, tx, zeilen)
 }
 
-// behandleAbgaenger verarbeitet Schüler, die nicht mehr im Export stehen.
-// Mit offenen Ausleihen bleiben Name UND Kontaktdaten erhalten (fürs Mahnwesen und
-// die Schadens-Rechnung noch nötig). Ohne offene Vorgänge entscheidet die Karenzzeit
-// (karenzTage, Einstellung abgaenger_karenz_tage): > 0 heißt nur sperren — der
-// nächtliche Job anonymisiert nach Ablauf (PredikatAnonymisierung, Uhr abgaenger_seit);
-// 0 heißt sofort anonymisieren, wie bis zum 02.09.2026. Die Karenz ist der Raum, in
-// dem eine falsche Zuordnung (Umbenennung ohne Schüler-ID) noch repariert werden kann —
-// per Vorschau-Paarung beim nächsten Lauf oder von Hand (Zusammenführen).
+// behandleAbgaenger verarbeitet Schüler, die nicht mehr im Export stehen. Mit offenen
+// Vorgängen bleiben Name und Kontaktdaten erhalten: Mahnwesen und Schadensrechnung brauchen
+// sie noch. Ohne offene Vorgänge entscheidet die Karenzzeit (Einstellung
+// abgaenger_karenz_tage): Über 0 wird nur gesperrt, und der nächtliche Lauf anonymisiert
+// nach Ablauf (PredikatAnonymisierung, Uhr abgaenger_seit); bei 0 wird sofort anonymisiert.
+// In der Karenz lässt sich eine falsche Zuordnung noch beheben, etwa eine Umbenennung ohne
+// Schüler-ID: über die Paarung der Vorschau beim nächsten Lauf oder von Hand
+// (Zusammenführen).
 func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string, karenzTage int) error {
 	if len(gradIDs) == 0 {
 		return nil
@@ -183,17 +182,10 @@ func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string, karenzT
 func sperreOderAnonymisiere(ctx context.Context, tx pgx.Tx, schuelerID string, offen bool, karenzTage int) error {
 	switch {
 	case offen:
-		return repository.SperreAbgaenger(ctx, tx, schuelerID, abgaengerSperrgrundOffen)
+		return repository.SperreAbgaenger(ctx, tx, schuelerID, repository.AbgaengerSperrgrundOffen)
 	case karenzTage > 0:
-		return repository.SperreAbgaenger(ctx, tx, schuelerID, abgaengerSperrgrundKarenz)
+		return repository.SperreAbgaenger(ctx, tx, schuelerID, repository.AbgaengerSperrgrundKarenz)
 	default:
 		return repository.AnonymisiereAbgaenger(ctx, tx, schuelerID)
 	}
 }
-
-// Die beiden automatischen Sperrgründe teilen das Präfix, an dem der Rückkehrer-Pfad
-// (aktualisiereBestandsschuelerBatch) und das Zusammenführen die Automatik erkennen.
-const (
-	abgaengerSperrgrundOffen  = repository.AbgaengerSperrgrundOffen
-	abgaengerSperrgrundKarenz = repository.AbgaengerSperrgrundKarenz
-)

@@ -58,6 +58,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/xlsxtest"
 	"bibliothek/repository"
 	"bibliothek/sse"
 
@@ -712,7 +713,7 @@ func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
 		t.Helper()
 		// Klassenwechsel des Kanari-Schülers (05A → 06A), Zuordnung über
 		// Name+Geburtsdatum — die Vorschau (apply=false) schreibt nichts.
-		xlsx := baueXlsx(t, map[string][][]any{
+		xlsx := xlsxtest.Baue(t, map[string][][]any{
 			"Klassenliste": {
 				{"Klassenliste — Schuljahr 2026/27"},
 				{"Nachname", "Vorname", "Klasse", "Geburtsdatum"},

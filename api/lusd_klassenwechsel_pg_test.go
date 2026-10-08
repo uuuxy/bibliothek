@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
+	"bibliothek/repository"
 )
 
 // TestLusdImport_KlassenwechselMehrererSchueler sichert den Zweck des LUSD-Imports ab:
@@ -51,9 +53,9 @@ func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 	}
 
 	// Der Export nennt für jeden dieselbe Person, aber die neue Klasse.
-	records := make([]parsedStudentRow, 0, len(faelle))
+	records := make([]lusd.Zeile, 0, len(faelle))
 	for i, f := range faelle {
-		records = append(records, parsedStudentRow{
+		records = append(records, lusd.Zeile{
 			LusdID: f.lusdID, Vorname: f.vorname, Nachname: f.nachname,
 			Klasse: f.neueKlasse, LineNum: i + 1,
 		})
@@ -75,7 +77,7 @@ func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 		if vorname != f.vorname {
 			t.Errorf("%s: Vorname %q, erwartet %q — die Zeilen sind vertauscht", f.lusdID, vorname, f.vorname)
 		}
-		if !klassenGleich(klasse, f.neueKlasse) {
+		if !lusd.KlassenGleich(klasse, f.neueKlasse) {
 			t.Errorf("%s (%s %s): Klasse %q, erwartet %q — die Zuordnung im Batch stimmt nicht",
 				f.lusdID, f.vorname, f.nachname, klasse, f.neueKlasse)
 		}
@@ -110,7 +112,7 @@ func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 	}
 
 	s := &Server{DB: &db.Database{Pool: pool}}
-	if _, err := s.computeLusdChanges(ctx, []parsedStudentRow{
+	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 		{LusdID: "L-LEER", Vorname: "Greta", Nachname: "Gruen", Klasse: "", LineNum: 1},
 	}, true, true); err != nil {
 		t.Fatalf("Import scheiterte: %v", err)
@@ -163,7 +165,7 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 
 	// Der neue Export nennt KEINEN der drei mehr — alle sind Abgänger.
 	s := &Server{DB: &db.Database{Pool: pool}}
-	if _, err := s.computeLusdChanges(ctx, []parsedStudentRow{
+	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 		{LusdID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", LineNum: 1},
 	}, true, true); err != nil {
 		t.Fatalf("Abgängerlauf scheiterte: %v", err)
@@ -174,9 +176,9 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 	// abgaenger_seit, damit der nächtliche Job die Frist rechnen kann. Die beiden anderen
 	// tragen offene Vorgaenge und den Grund dafür; anonymisiert wird keiner.
 	sollGrund := map[string]string{
-		"sauber":   abgaengerSperrgrundKarenz,
-		"ausleihe": abgaengerSperrgrundOffen,
-		"schaden":  abgaengerSperrgrundOffen,
+		"sauber":   repository.AbgaengerSperrgrundKarenz,
+		"ausleihe": repository.AbgaengerSperrgrundOffen,
+		"schaden":  repository.AbgaengerSperrgrundOffen,
 	}
 	for name, grund := range sollGrund {
 		var vorname, blockReason string
@@ -212,7 +214,7 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 		[]string{ids["sauber"], ids["ausleihe"], ids["schaden"]}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.computeLusdChanges(ctx, []parsedStudentRow{
+	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 		{LusdID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", LineNum: 1},
 	}, true, true); err != nil {
 		t.Fatalf("zweiter Abgängerlauf scheiterte: %v", err)

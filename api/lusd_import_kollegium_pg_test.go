@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
 )
 
 // Der LUSD-Import DURCH DIE VORDERTÜR — und zwar der schreibende Lauf, mit Kollegium im
@@ -92,7 +93,7 @@ func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 		"Mia,Muster,8a,2012-03-04\n" +
 		"Nora,Neuling,5c,2015-07-08\n"
 
-	antwort := func(t *testing.T, pfad string, felder map[string]string) (*httptest.ResponseRecorder, *LusdPreviewResult) {
+	antwort := func(t *testing.T, pfad string, felder map[string]string) (*httptest.ResponseRecorder, *lusd.PreviewResult) {
 		t.Helper()
 		var koerper bytes.Buffer
 		mw := multipart.NewWriter(&koerper)
@@ -120,7 +121,7 @@ func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 		} else {
 			srv.PostLusdPreviewHandler().ServeHTTP(rec, req)
 		}
-		var res LusdPreviewResult
+		var res lusd.PreviewResult
 		if rec.Code == http.StatusOK {
 			if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {
 				t.Fatalf("Antwort lesen: %v (%s)", err, rec.Body.String())

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
 )
 
 // Auto-Matching: Eine LUSD-Zeile, deren ID im Bestand fehlt, trifft über
@@ -31,13 +32,13 @@ func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 		t.Fatalf("Waise anlegen: %v", err)
 	}
 
-	rec := parsedStudentRow{
+	rec := lusd.Zeile{
 		LusdID: "LUSD-ADOPT-1", Vorname: "Mia", Nachname: "Waise", Klasse: "8a",
 		GebDatum: &geb, LineNum: 1,
 	}
 
 	// Vorschau: als Adoption erkannt, NICHT als Neuzugang.
-	prev, err := s.computeLusdChanges(ctx, []parsedStudentRow{rec}, false, false)
+	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
@@ -55,7 +56,7 @@ func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	}
 
 	// Anwenden: derselbe Datensatz bekommt die LUSD-ID + neue Klasse, KEIN Duplikat.
-	if _, err := s.computeLusdChanges(ctx, []parsedStudentRow{rec}, true, true); err != nil {
+	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	var anzahl int
@@ -94,8 +95,8 @@ func TestLusdAutoMatching_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 		t.Fatalf("Waise anlegen: %v", err)
 	}
 
-	rec := parsedStudentRow{LusdID: "LUSD-ADOPT-2", Vorname: "Tom", Nachname: "Waise", Klasse: "8b", GebDatum: nil}
-	prev, err := s.computeLusdChanges(ctx, []parsedStudentRow{rec}, false, false)
+	rec := lusd.Zeile{LusdID: "LUSD-ADOPT-2", Vorname: "Tom", Nachname: "Waise", Klasse: "8b", GebDatum: nil}
+	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
@@ -132,8 +133,8 @@ func TestLusdAutoMatching_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T)
 		t.Fatalf("Schreibvariante desselben Menschen wurde angelegt — Migration 108 greift nicht: %v", err)
 	}
 
-	rec := parsedStudentRow{LusdID: "LUSD-AMB", Vorname: "Anna", Nachname: "Zwilling", Klasse: "8c", GebDatum: &geb}
-	prev, err := s.computeLusdChanges(ctx, []parsedStudentRow{rec}, false, false)
+	rec := lusd.Zeile{LusdID: "LUSD-AMB", Vorname: "Anna", Nachname: "Zwilling", Klasse: "8c", GebDatum: &geb}
+	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}

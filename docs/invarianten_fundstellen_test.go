@@ -61,7 +61,7 @@ var fundstelleSpalte = regexp.MustCompile(`(?m)^\|.*\|([^|]*)\|\s*$`)
 var backtickToken = regexp.MustCompile("`([^`]+)`")
 
 // sammleSchemaBezeichner liest aus der Fundstellen-Spalte alle Namen, die ein Objekt in
-// schema.sql bezeichnen sollen. Dateipfade (`lusd_apply.go`, `migrations/042`) gehören
+// schema.sql bezeichnen sollen. Dateipfade (`internal/lusd/anwenden.go`, `migrations/042`) gehören
 // nicht dazu — sie zeigen bewusst woandershin und werden hier übersprungen.
 func sammleSchemaBezeichner(katalog string) []string {
 	gesehen := map[string]bool{}

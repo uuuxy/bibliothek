@@ -5,14 +5,15 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
 )
 
 // Nur-Name-Modus: Der Export hat weder ID noch Geburtsdatum (LANIS-Klassenliste).
 // Dritte, unsicherste Stufe — deshalb gilt: Gleicher Name doppelt (in der Datei ODER
 // im Bestand) wird nie zugeordnet, nur gemeldet.
 
-func nnDatei(zeilen ...parsedStudentRow) lusdDatei {
-	return lusdDatei{Zeilen: zeilen, Modus: lusdModusNurName}
+func nnDatei(zeilen ...lusd.Zeile) lusd.Datei {
+	return lusd.Datei{Zeilen: zeilen, Modus: lusd.ModusNurName}
 }
 
 // Handanlage (mit oder ohne Geburtsdatum) wird über den Namen zugeordnet, Klasse
@@ -50,7 +51,7 @@ func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
 		if err := pool.QueryRow(ctx, `SELECT klasse, lusd_bestaetigt_am IS NOT NULL FROM schueler WHERE id=$1`, id).Scan(&k, &bestaetigt); err != nil {
 			t.Fatal(err)
 		}
-		if !klassenGleich(k, klasse) || !bestaetigt {
+		if !lusd.KlassenGleich(k, klasse) || !bestaetigt {
 			t.Errorf("Schüler %s: Klasse %q (erwartet %q), bestätigt=%v", id, k, klasse, bestaetigt)
 		}
 	}
@@ -117,7 +118,7 @@ func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 	for i := 0; i < 12; i++ {
 		legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Ruhig", nachname: "Kind" + string(rune('A'+i)), klasse: "7a", barcode: "NN-R" + string(rune('A'+i)), geb: datum(2012, 1, 1+i), bestaetigt: true})
 	}
-	zeilen := []parsedStudentRow{nmZeile(2, "Tom", "Doppelt", "6a", nil), nmZeile(3, "Tom", "Doppelt", "6b", nil)}
+	zeilen := []lusd.Zeile{nmZeile(2, "Tom", "Doppelt", "6a", nil), nmZeile(3, "Tom", "Doppelt", "6b", nil)}
 	for i := 0; i < 12; i++ {
 		zeilen = append(zeilen, nmZeile(4+i, "Ruhig", "Kind"+string(rune('A'+i)), "8a", nil))
 	}

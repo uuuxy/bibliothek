@@ -44,10 +44,10 @@ func LusdNamensSchluessel(vorname, nachname string) string {
 // Bis 05.09.2026 stand hier nur lower+trim — „Anna Müller" von Hand angelegt wurde vom
 // Export „Anna Mueller" nie gefunden: Neuanlage plus „nicht im Export" statt Zuordnung.
 // Gefahrlos ist die weitere Regel, weil der Import einen doppelt belegten Schlüssel als
-// mehrdeutig markiert und dann niemanden anfasst (api/lusd_bestand.go, trageEin): Ein
+// mehrdeutig markiert und dann niemanden anfasst (internal/lusd/bestand.go, trageEin): Ein
 // Schlüssel, der zwei Menschen zusammenwirft, fällt auf das alte Verhalten zurück, nie
 // in eine falsche Zuordnung. Bindestriche bleiben bewusst stehen — „Anna-Lena" und
-// „Anna" sind verschiedene Vornamen; die Umbenennungs-Paarung (api/lusd_paarung.go)
+// „Anna" sind verschiedene Vornamen; die Umbenennungs-Paarung (internal/lusd/paarung.go)
 // hat dafür ihre eigene, weitere Regel mit menschlicher Bestätigung.
 func namensteilNorm(s string) string {
 	return Suchnorm(strings.Join(strings.Fields(s), " "))
@@ -59,7 +59,7 @@ func namensteilNorm(s string) string {
 // LusdBestaetigt spiegelt lusd_bestaetigt_am IS NOT NULL (Migration 084).
 //
 // Geburtsdatum, EintrittAm, Strasse und PLZ trägt die Zeile seit dem 02.09.2026 roh mit:
-// Die Umbenennungs-Paarung (api/lusd_paarung.go) vergleicht damit einen Abgänger mit
+// Die Umbenennungs-Paarung (internal/lusd/paarung.go) vergleicht damit einen Abgänger mit
 // einem vermeintlichen Neuzugang — gleiches Geburtsdatum, gleicher Schuleintritt, gleiche
 // Anschrift sind die Signale, die eine Namensänderung überstehen. Anonymisiert sagt, ob
 // die Zeile bereits ihre Personendaten verloren hat; sie taugt dann für keine Paarung.

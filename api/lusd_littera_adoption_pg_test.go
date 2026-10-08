@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
 )
 
 // Ein aus Littera übernommener Schüler trägt als Herkunftsmarke lusd_id = 'littera:<ID>'
@@ -30,12 +31,12 @@ func TestLusdAutoMatching_LitteraSchuelerWirdAdoptiert(t *testing.T) {
 		t.Fatalf("Littera-Schüler anlegen: %v", err)
 	}
 
-	rec := parsedStudentRow{
+	rec := lusd.Zeile{
 		LusdID: "LUSD-9001", Vorname: "Lena", Nachname: "Littera", Klasse: "7b",
 		GebDatum: &geb, LineNum: 1,
 	}
 
-	prev, err := s.computeLusdChanges(ctx, []parsedStudentRow{rec}, false, false)
+	prev, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, false, false)
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
@@ -44,7 +45,7 @@ func TestLusdAutoMatching_LitteraSchuelerWirdAdoptiert(t *testing.T) {
 			len(prev.Adoptions), len(prev.NewStudents))
 	}
 
-	if _, err := s.computeLusdChanges(ctx, []parsedStudentRow{rec}, true, true); err != nil {
+	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{rec}, true, true); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
 	var anzahl int

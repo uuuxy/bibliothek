@@ -1,4 +1,4 @@
-package api
+package lusd
 
 import (
 	"sort"
@@ -10,7 +10,7 @@ import (
 // Umbenennung ohne Schüler-ID.
 //
 // Der LUSD-Export der Schule hat keine Schüler-ID und bekommt so schnell keine. Der
-// Import ordnet über Name + Geburtsdatum zu (lusd_parser.go). Ändert die LUSD den Namen
+// Import ordnet über Name + Geburtsdatum zu (parser.go). Ändert die LUSD den Namen
 // (Schreibkorrektur, Umlaut, zweiter Vorname fällt weg, Adoption) oder korrigiert sie
 // das Geburtsdatum, findet der Schlüssel niemanden mehr: Der Bestandsschüler steht als
 // Abgänger da, die Exportzeile als Neuzugang — zwei Datensätze für ein Kind, das seinen
@@ -60,8 +60,8 @@ type UmbenennungDiff struct {
 	Bestaetigt bool `json:"bestaetigt"`
 }
 
-// umbenennungWahl ist, was der Admin zurückschickt: Zeile → Bestandsdatensatz.
-type umbenennungWahl struct {
+// UmbenennungWahl ist, was der Admin zurückschickt: Zeile → Bestandsdatensatz.
+type UmbenennungWahl struct {
 	Zeile      int    `json:"zeile"`
 	SchuelerID string `json:"schueler_id"`
 }
@@ -81,8 +81,8 @@ type paarKandidat struct {
 // Nur im Modus Name + Geburtsdatum: Im ID-Modus findet die LUSD-ID eine Umbenennung selbst;
 // ein Paar behielte dort die alte lusd_id und erschiene beim nächsten Lauf erneut als
 // Abgänger und Neuzugang.
-func findeUmbenennungen(datei lusdDatei, bestand []lusdBestandsSchueler, idx lusdIndex, z lusdZuordnung) []UmbenennungDiff {
-	if datei.Modus != lusdModusName || len(z.neuZeilen) == 0 {
+func findeUmbenennungen(datei Datei, bestand []lusdBestandsSchueler, idx lusdIndex, z Zuordnung) []UmbenennungDiff {
+	if datei.Modus != ModusName || len(z.neuZeilen) == 0 {
 		return nil
 	}
 	seite := umbenennungsSeite(bestand, idx, z)
@@ -101,7 +101,7 @@ func findeUmbenennungen(datei lusdDatei, bestand []lusdBestandsSchueler, idx lus
 // umbenennungsSeite sammelt die Bestandsschüler, die für ein Paar in Frage kommen, nach ID
 // sortiert. Wen dieser Lauf schon per Schlüssel zuordnet (Rückkehrer in z.zielID), der
 // bleibt draußen: Sonst zeigten zwei Zeilen auf dieselbe ID.
-func umbenennungsSeite(bestand []lusdBestandsSchueler, idx lusdIndex, z lusdZuordnung) []*lusdBestandsSchueler {
+func umbenennungsSeite(bestand []lusdBestandsSchueler, idx lusdIndex, z Zuordnung) []*lusdBestandsSchueler {
 	nachID := make(map[string]*lusdBestandsSchueler, len(bestand))
 	for i := range bestand {
 		nachID[bestand[i].ID] = &bestand[i]
@@ -130,7 +130,7 @@ type paarSignale struct {
 	eintritt, geb, nachname, vorname, klasse, adresse bool
 }
 
-func lesePaarSignale(rec parsedStudentRow, s *lusdBestandsSchueler) paarSignale {
+func lesePaarSignale(rec Zeile, s *lusdBestandsSchueler) paarSignale {
 	return paarSignale{
 		eintritt: datumGleich(rec.EintrittAm, s.EintrittAm),
 		geb:      datumGleich(rec.GebDatum, s.Geburtsdatum),
@@ -168,7 +168,7 @@ func (p paarSignale) gruende() []string {
 }
 
 // bewertePaar sammelt die Signale zwischen einer Exportzeile und einem Bestandsschüler.
-func bewertePaar(i int, rec parsedStudentRow, s *lusdBestandsSchueler) (paarKandidat, bool) {
+func bewertePaar(i int, rec Zeile, s *lusdBestandsSchueler) (paarKandidat, bool) {
 	p := lesePaarSignale(rec, s)
 	gruende := p.gruende()
 	k := paarKandidat{zeile: i, s: s, signale: len(gruende)}
@@ -200,7 +200,7 @@ func bewertePaar(i int, rec parsedStudentRow, s *lusdBestandsSchueler) (paarKand
 // starken Signalen (oder ein Bestandsschüler für zwei gleich starke Zeilen), wird nicht
 // gewürfelt, sondern kein Paar gebildet — das Kind bleibt Abgänger + Neuzugang, und der
 // Admin führt bei Bedarf über die Akte zusammen.
-func waehlePaare(datei lusdDatei, kandidaten []paarKandidat) []UmbenennungDiff {
+func waehlePaare(datei Datei, kandidaten []paarKandidat) []UmbenennungDiff {
 	sort.SliceStable(kandidaten, func(a, b int) bool {
 		ka, kb := kandidaten[a], kandidaten[b]
 		if ka.sicher != kb.sicher {
@@ -258,7 +258,7 @@ func hatGleichstand(rest []paarKandidat, k paarKandidat, zeileBelegt map[int]boo
 // uebernimmUmbenennungen wendet die Wahl des Admins auf Zuordnung und Vorschau an.
 // Nur Paare, die diese Vorschau selbst vorgeschlagen hat, zählen — eine fremde
 // Kombination (verändertes Formular, veraltete Vorschau) wird abgewiesen, nicht geraten.
-func uebernimmUmbenennungen(datei lusdDatei, wahl []umbenennungWahl, paare []UmbenennungDiff, z *lusdZuordnung, res *LusdPreviewResult) error {
+func uebernimmUmbenennungen(datei Datei, wahl []UmbenennungWahl, paare []UmbenennungDiff, z *Zuordnung, res *PreviewResult) error {
 	if len(wahl) == 0 {
 		return nil
 	}
@@ -273,7 +273,7 @@ func uebernimmUmbenennungen(datei lusdDatei, wahl []umbenennungWahl, paare []Umb
 	for _, w := range wahl {
 		pi, ok := vorgeschlagen[w.Zeile]
 		if !ok || paare[pi].SchuelerID != w.SchuelerID {
-			return &errUmbenennungUngueltig{Zeile: w.Zeile}
+			return &UmbenennungUngueltigFehler{Zeile: w.Zeile}
 		}
 		p := &paare[pi]
 		if p.Bestaetigt {
@@ -290,9 +290,11 @@ func uebernimmUmbenennungen(datei lusdDatei, wahl []umbenennungWahl, paare []Umb
 	return nil
 }
 
-type errUmbenennungUngueltig struct{ Zeile int }
+// UmbenennungUngueltigFehler meldet eine gewählte Umbenennung, die es im Lauf nicht mehr
+// gibt: Der Bestand hat sich seit der Vorschau geändert.
+type UmbenennungUngueltigFehler struct{ Zeile int }
 
-func (e *errUmbenennungUngueltig) Error() string {
+func (e *UmbenennungUngueltigFehler) Error() string {
 	return "Zuordnung für Zeile " + strconv.Itoa(e.Zeile) + " ist nicht mehr gültig — Vorschau neu laden."
 }
 
@@ -351,7 +353,7 @@ func namensteilGleich(a, b string) bool {
 // klassenNachbar: gleiche Klasse (Normkey) oder derselbe Zug im Nachbarjahrgang —
 // „05F1" und „06F1" sind beim Schuljahreswechsel dieselbe Klasse ein Jahr später.
 func klassenNachbar(a, b string) bool {
-	ka, kb := klassenNormkey(a), klassenNormkey(b)
+	ka, kb := KlassenNormkey(a), KlassenNormkey(b)
 	if ka == kb {
 		return true
 	}

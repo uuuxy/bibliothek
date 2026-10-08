@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/xlsxtest"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -114,7 +116,7 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 	})
 
 	t.Run("XLSX: dieselben Spalten aus einer Arbeitsmappe", func(t *testing.T) {
-		xlsx := baueXlsx(t, map[string][][]any{
+		xlsx := xlsxtest.Baue(t, map[string][][]any{
 			"Bestand": {
 				{"Titel", "Verfasser", "ISBN", "Exemplarnummer"},
 				{"E2E-Imp-Physik 9", "Musterfrau", "9783333333333", "IMP-B1"},
@@ -213,7 +215,7 @@ func TestBestandImport_UeberDieTuer(t *testing.T) {
 	// bevor sie gelesen wird — anders als bei der Littera-Tür daneben, und das ist Absicht.
 	t.Run("Nur CSV: eine Arbeitsmappe wird abgewiesen", func(t *testing.T) {
 		rec := ladeImport(t, rufeRoh, "/api/admin/import-bestand", "bestand.xlsx",
-			baueXlsx(t, map[string][][]any{"B": {{"Titel", "Exemplarnummer"}, {"X", "IMP-D1"}}}))
+			xlsxtest.Baue(t, map[string][][]any{"B": {{"Titel", "Exemplarnummer"}, {"X", "IMP-D1"}}}))
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 		}

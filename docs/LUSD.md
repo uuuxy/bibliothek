@@ -87,7 +87,7 @@ Abgängerliste zum Abhaken). Die Antwort darauf sind §3 bis §5.
 
 Aus den Abgängern und den Neuzugängen **einer** Vorschau bildet der Import Paare, die nach
 allem, was der Export sonst hergibt, dieselbe Person sind
-(`api/lusd_paarung.go`). Signale, absteigend nach Gewicht:
+(`internal/lusd/paarung.go`). Signale, absteigend nach Gewicht:
 
 1. **Schuleintritt** (`Schueler_Eintritt_AktuelleSchule` → `schueler.schul_eintritt_am`,
    Migration 094) — übersteht jede Umbenennung. Ein „Neuzugang", dessen Eintritt Jahre
@@ -204,13 +204,14 @@ auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_gate_pg_test.
 
 | Frage                                                                | Datei                                                                                                                                                  |
 | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Kopfzeilen, Aliase, Pflichtspalten                                   | `api/lusd_header.go`                                                                                                                                   |
-| Parsen, Modus-Erkennung, Dubletten in der Datei                      | `api/lusd_parser.go`, `api/lusd_parser_quelle.go`                                                                                                      |
-| Bestandsindex je Modus                                               | `api/lusd_bestand.go`, `repository/lusd_bestand.go`                                                                                                    |
-| Klassifizierung (neu / Wechsel / Rückkehrer / Abgänger / mehrdeutig) | `api/lusd_klassifizierung.go`                                                                                                                          |
-| Umbenennungs-Paare                                                   | `api/lusd_paarung.go`                                                                                                                                  |
-| Anwenden: Batch, Neuanlage, Abgänger, Karenz                         | `api/lusd_apply.go` (Reihenfolge und Regeln), `repository/lusd_import.go` (die Anweisungen)                                                            |
-| Lauf, Bremse, Wahl des Admins, Audit                                 | `api/lusd.go`                                                                                                                                          |
+| Kopfzeilen, Aliase, Pflichtspalten                                   | `internal/lusd/header.go`                                                                                                                                   |
+| Parsen, Modus-Erkennung, Dubletten in der Datei                      | `internal/lusd/parser.go`, `internal/lusd/quelle.go`                                                                                                      |
+| Bestandsindex je Modus                                               | `internal/lusd/bestand.go`, `repository/lusd_bestand.go`                                                                                                    |
+| Klassifizierung (neu / Wechsel / Rückkehrer / Abgänger / mehrdeutig) | `internal/lusd/klassifizierung.go`                                                                                                                          |
+| Umbenennungs-Paare                                                   | `internal/lusd/paarung.go`                                                                                                                                  |
+| Anwenden: Batch, Neuanlage, Abgänger, Karenz                         | `internal/lusd/anwenden.go` (Reihenfolge und Regeln), `repository/lusd_import.go` (die Anweisungen)                                                            |
+| Lauf, Bremse des Massenabgangs                                       | `internal/lusd/lauf.go`                                                                                                                                |
+| Tür: Upload, Wahl des Admins, Audit                                  | `api/lusd.go`                                                                                                                                          |
 | Zusammenführen                                                       | `repository/schueler_zusammenfuehren.go`, `api/student_zusammenfuehren.go`                                                                             |
 | Karenz-Prädikat, Job, Wächter                                        | `repository/loeschfristen.go`, `jobs/cron_dsgvo.go`, `repository/loeschrueckstand.go`; Uhr: `migrations/137_letzter_vorgang_am_leser.sql`              |
 | Oberfläche                                                           | `frontend/src/lib/components/students/LusdImportView.svelte`, `LusdUmbenennungen.svelte`, `lusdVorschauRubriken.js`, `SchuelerZusammenfuehren*.svelte` |

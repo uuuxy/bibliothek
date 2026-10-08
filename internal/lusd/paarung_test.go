@@ -1,4 +1,4 @@
-package api
+package lusd
 
 import (
 	"strings"
@@ -56,17 +56,17 @@ func TestBewertePaar_Signale(t *testing.T) {
 	s := bestandsZeile("s1", "Anna", "Müller", "05F1", geb, eintritt)
 	faelle := []struct {
 		name         string
-		rec          parsedStudentRow
+		rec          Zeile
 		paar, sicher bool
 		grund        string
 	}{
-		{"Umbenennung mit Eintritt", parsedStudentRow{Vorname: "Anna", Nachname: "Mueller-Schmidt", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt}, true, true, "gleicher Schuleintritt"},
-		{"Datumskorrektur mit Eintritt", parsedStudentRow{Vorname: "Anna", Nachname: "Müller", Klasse: "09A", GebDatum: tag(2013, 5, 14), EintrittAm: eintritt}, true, true, "gleicher Name"},
-		{"Nachname neu, gleiche Klasse", parsedStudentRow{Vorname: "Anna", Nachname: "Schulz", Klasse: "05F1", GebDatum: geb}, true, false, "gleicher Vorname"},
-		{"Datumskorrektur ohne Eintritt", parsedStudentRow{Vorname: "Anna", Nachname: "Müller", Klasse: "06F1", GebDatum: tag(2013, 5, 14)}, true, false, "Korrektur"},
-		{"nur Geburtsdatum", parsedStudentRow{Vorname: "Ben", Nachname: "Schulz", Klasse: "09A", GebDatum: geb}, false, false, ""},
-		{"nur Name, andere Klasse, anderes Datum", parsedStudentRow{Vorname: "Anna", Nachname: "Müller", Klasse: "09A", GebDatum: tag(2013, 5, 14)}, false, false, ""},
-		{"Anschrift + Geburtsdatum", parsedStudentRow{Vorname: "Lea", Nachname: "Klein", Klasse: "09A", GebDatum: geb, Strasse: "Weg 1", PLZ: "61381"}, false, false, ""},
+		{"Umbenennung mit Eintritt", Zeile{Vorname: "Anna", Nachname: "Mueller-Schmidt", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt}, true, true, "gleicher Schuleintritt"},
+		{"Datumskorrektur mit Eintritt", Zeile{Vorname: "Anna", Nachname: "Müller", Klasse: "09A", GebDatum: tag(2013, 5, 14), EintrittAm: eintritt}, true, true, "gleicher Name"},
+		{"Nachname neu, gleiche Klasse", Zeile{Vorname: "Anna", Nachname: "Schulz", Klasse: "05F1", GebDatum: geb}, true, false, "gleicher Vorname"},
+		{"Datumskorrektur ohne Eintritt", Zeile{Vorname: "Anna", Nachname: "Müller", Klasse: "06F1", GebDatum: tag(2013, 5, 14)}, true, false, "Korrektur"},
+		{"nur Geburtsdatum", Zeile{Vorname: "Ben", Nachname: "Schulz", Klasse: "09A", GebDatum: geb}, false, false, ""},
+		{"nur Name, andere Klasse, anderes Datum", Zeile{Vorname: "Anna", Nachname: "Müller", Klasse: "09A", GebDatum: tag(2013, 5, 14)}, false, false, ""},
+		{"Anschrift + Geburtsdatum", Zeile{Vorname: "Lea", Nachname: "Klein", Klasse: "09A", GebDatum: geb, Strasse: "Weg 1", PLZ: "61381"}, false, false, ""},
 	}
 	for _, f := range faelle {
 		k, ok := bewertePaar(0, f.rec, &s)
@@ -79,7 +79,7 @@ func TestBewertePaar_Signale(t *testing.T) {
 	}
 	// Anschrift zählt, wenn der Bestand sie hat.
 	s.Strasse, s.PLZ = "Weg 1", "61381"
-	if _, ok := bewertePaar(0, parsedStudentRow{Vorname: "Lea", Nachname: "Klein", Klasse: "09A", GebDatum: geb, Strasse: "Weg 1", PLZ: "61381"}, &s); !ok {
+	if _, ok := bewertePaar(0, Zeile{Vorname: "Lea", Nachname: "Klein", Klasse: "09A", GebDatum: geb, Strasse: "Weg 1", PLZ: "61381"}, &s); !ok {
 		t.Error("Geburtsdatum + Anschrift muss ein Paar ergeben")
 	}
 }
@@ -92,11 +92,11 @@ func TestFindeUmbenennungen_KonkurrenzUndModus(t *testing.T) {
 		bestandsZeile("alt", "Anna", "Müller", "05F1", geb, eintritt),
 		bestandsZeile("weg", "Tim", "Weg", "10A", tag(2009, 1, 1), nil),
 	}
-	datei := lusdDatei{Modus: lusdModusName, Zeilen: []parsedStudentRow{
+	datei := Datei{Modus: ModusName, Zeilen: []Zeile{
 		{LineNum: 2, Vorname: "Anna", Nachname: "Schulz", Klasse: "06F1", GebDatum: geb},                        // vermutlich
 		{LineNum: 3, Vorname: "Anna", Nachname: "Mueller", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt}, // sicher
 	}}
-	z := lusdZuordnung{neuZeilen: []int{0, 1}, abgaengerIDs: []string{"alt", "weg"}}
+	z := Zuordnung{neuZeilen: []int{0, 1}, abgaengerIDs: []string{"alt", "weg"}}
 	idx := lusdIndex{abgaenger: map[string]*lusdBestandsSchueler{}}
 
 	paare := findeUmbenennungen(datei, bestand, idx, z)
@@ -107,7 +107,7 @@ func TestFindeUmbenennungen_KonkurrenzUndModus(t *testing.T) {
 		t.Errorf("Paar trägt falsche Angaben: %+v", paare[0])
 	}
 
-	datei.Modus = lusdModusNurName
+	datei.Modus = ModusNurName
 	if p := findeUmbenennungen(datei, bestand, idx, z); len(p) != 0 {
 		t.Errorf("Nur-Name-Modus darf keine Paare bilden: %+v", p)
 	}
@@ -121,10 +121,10 @@ func TestFindeUmbenennungen_FruehereAbgaenger(t *testing.T) {
 	anon := bestandsZeile("anon", "Abgänger", "Anonymisiert-x", "ABG", nil, nil)
 	anon.IstAbgaenger, anon.Anonymisiert = true, true
 	idx := lusdIndex{abgaenger: map[string]*lusdBestandsSchueler{"k1": &alt, "k2": &anon}}
-	datei := lusdDatei{Modus: lusdModusName, Zeilen: []parsedStudentRow{
+	datei := Datei{Modus: ModusName, Zeilen: []Zeile{
 		{LineNum: 2, Vorname: "Anna", Nachname: "Müller-Klein", Klasse: "06F1", GebDatum: geb},
 	}}
-	paare := findeUmbenennungen(datei, nil, idx, lusdZuordnung{neuZeilen: []int{0}})
+	paare := findeUmbenennungen(datei, nil, idx, Zuordnung{neuZeilen: []int{0}})
 	if len(paare) != 1 || paare[0].SchuelerID != "alt" || !paare[0].WarAbgaenger {
 		t.Fatalf("erwartet Paar mit dem früheren Abgänger (war_abgaenger): %+v", paare)
 	}
@@ -133,14 +133,14 @@ func TestFindeUmbenennungen_FruehereAbgaenger(t *testing.T) {
 // Die Wahl des Admins: Nur vorgeschlagene Paare zählen; ein bestätigtes Paar verlässt
 // Neuzugänge und Abgänger und landet in der Zuordnung mit Datumsübernahme.
 func TestUebernimmUmbenennungen(t *testing.T) {
-	datei := lusdDatei{Zeilen: []parsedStudentRow{{LineNum: 2}, {LineNum: 3}}}
+	datei := Datei{Zeilen: []Zeile{{LineNum: 2}, {LineNum: 3}}}
 	paare := []UmbenennungDiff{{Zeile: 3, SchuelerID: "alt"}}
-	z := lusdZuordnung{zielID: map[int]string{}, geburtsdatumSetzen: map[int]bool{}, abgaengerIDs: []string{"alt", "weg"}}
-	res := &LusdPreviewResult{
+	z := Zuordnung{zielID: map[int]string{}, geburtsdatumSetzen: map[int]bool{}, abgaengerIDs: []string{"alt", "weg"}}
+	res := &PreviewResult{
 		NewStudents: []StudentDiff{{ID: "zeile-2"}, {ID: "zeile-3"}},
 		Graduates:   []StudentDiff{{ID: "alt"}, {ID: "weg"}},
 	}
-	if err := uebernimmUmbenennungen(datei, []umbenennungWahl{{Zeile: 3, SchuelerID: "alt"}}, paare, &z, res); err != nil {
+	if err := uebernimmUmbenennungen(datei, []UmbenennungWahl{{Zeile: 3, SchuelerID: "alt"}}, paare, &z, res); err != nil {
 		t.Fatal(err)
 	}
 	if z.zielID[1] != "alt" || !z.geburtsdatumSetzen[1] || len(z.abgaengerIDs) != 1 || z.abgaengerIDs[0] != "weg" {
@@ -155,10 +155,10 @@ func TestUebernimmUmbenennungen(t *testing.T) {
 
 	// Fremde Kombination → Fehler, nichts geraten: unbekannte Zeile UND bekannte Zeile
 	// mit fremder ID (die zweite Form fasste der Test bis 02.09.2026 nicht).
-	for _, w := range []umbenennungWahl{{Zeile: 2, SchuelerID: "weg"}, {Zeile: 3, SchuelerID: "weg"}} {
-		err := uebernimmUmbenennungen(datei, []umbenennungWahl{w}, paare, &z, res)
-		if _, ok := err.(*errUmbenennungUngueltig); !ok {
-			t.Errorf("Wahl %+v: erwartet errUmbenennungUngueltig, bekam %v", w, err)
+	for _, w := range []UmbenennungWahl{{Zeile: 2, SchuelerID: "weg"}, {Zeile: 3, SchuelerID: "weg"}} {
+		err := uebernimmUmbenennungen(datei, []UmbenennungWahl{w}, paare, &z, res)
+		if _, ok := err.(*UmbenennungUngueltigFehler); !ok {
+			t.Errorf("Wahl %+v: erwartet UmbenennungUngueltigFehler, bekam %v", w, err)
 		}
 	}
 }
@@ -187,7 +187,7 @@ func TestLusdHeader_SchuleintrittAlias(t *testing.T) {
 func TestBewertePaar_ZwillingNieSicher(t *testing.T) {
 	geb, eintritt := tag(2013, 5, 4), tag(2024, 8, 19)
 	anna := bestandsZeile("anna", "Anna", "Müller", "05F1", geb, eintritt)
-	lena := parsedStudentRow{Vorname: "Lena", Nachname: "Müller", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt}
+	lena := Zeile{Vorname: "Lena", Nachname: "Müller", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt}
 	k, ok := bewertePaar(0, lena, &anna)
 	if !ok {
 		t.Fatal("Zwilling darf als vermutliches Paar angeboten werden")
@@ -200,7 +200,7 @@ func TestBewertePaar_ZwillingNieSicher(t *testing.T) {
 	}
 	// Vorname-Tippfehler ohne Präfix-Beziehung ebenso: nur vermutlich.
 	aiman := bestandsZeile("s", "Ayman", "Sharaf", "05F1", geb, eintritt)
-	k, _ = bewertePaar(0, parsedStudentRow{Vorname: "Aiman", Nachname: "Sharaf", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt}, &aiman)
+	k, _ = bewertePaar(0, Zeile{Vorname: "Aiman", Nachname: "Sharaf", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt}, &aiman)
 	if k.sicher {
 		t.Errorf("abweichender Vorname bei gleichem Datum: nicht sicher, bekam %+v", k)
 	}
@@ -213,12 +213,12 @@ func TestWaehlePaare_GleichstandKeinPaarUndReihenfolgeEgal(t *testing.T) {
 	geb, eintritt := tag(2013, 5, 4), tag(2024, 8, 19)
 	anna := bestandsZeile("anna", "Anna", "Müller", "05F1", geb, eintritt)
 	lena := bestandsZeile("lena", "Lena", "Müller", "05F1", geb, eintritt)
-	datei := lusdDatei{Modus: lusdModusName, Zeilen: []parsedStudentRow{
+	datei := Datei{Modus: ModusName, Zeilen: []Zeile{
 		{LineNum: 2, Vorname: "Mia", Nachname: "Müller", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt},
 	}}
 	idx := lusdIndex{abgaenger: map[string]*lusdBestandsSchueler{}}
 	for _, reihenfolge := range [][]lusdBestandsSchueler{{anna, lena}, {lena, anna}} {
-		z := lusdZuordnung{neuZeilen: []int{0}, abgaengerIDs: []string{reihenfolge[0].ID, reihenfolge[1].ID}}
+		z := Zuordnung{neuZeilen: []int{0}, abgaengerIDs: []string{reihenfolge[0].ID, reihenfolge[1].ID}}
 		if p := findeUmbenennungen(datei, reihenfolge, idx, z); len(p) != 0 {
 			t.Errorf("Gleichstand darf kein Paar ergeben, Reihenfolge %s/%s: %+v", reihenfolge[0].ID, reihenfolge[1].ID, p)
 		}
@@ -227,7 +227,7 @@ func TestWaehlePaare_GleichstandKeinPaarUndReihenfolgeEgal(t *testing.T) {
 	// gewählt — unabhängig von der Reihenfolge.
 	datei.Zeilen[0].Vorname = "Lena-Marie"
 	for _, reihenfolge := range [][]lusdBestandsSchueler{{anna, lena}, {lena, anna}} {
-		z := lusdZuordnung{neuZeilen: []int{0}, abgaengerIDs: []string{reihenfolge[0].ID, reihenfolge[1].ID}}
+		z := Zuordnung{neuZeilen: []int{0}, abgaengerIDs: []string{reihenfolge[0].ID, reihenfolge[1].ID}}
 		p := findeUmbenennungen(datei, reihenfolge, idx, z)
 		if len(p) != 1 || p[0].SchuelerID != "lena" {
 			t.Errorf("Reihenfolge %s/%s: erwartet genau Lena, bekam %+v", reihenfolge[0].ID, reihenfolge[1].ID, p)
@@ -241,10 +241,10 @@ func TestWaehlePaare_GleichstandKeinPaarUndReihenfolgeEgal(t *testing.T) {
 func TestFindeUmbenennungen_NurImNamensmodus(t *testing.T) {
 	geb, eintritt := tag(2013, 5, 4), tag(2024, 8, 19)
 	bestand := []lusdBestandsSchueler{bestandsZeile("alt", "Anna", "Müller", "05F1", geb, eintritt)}
-	datei := lusdDatei{Modus: lusdModusID, Zeilen: []parsedStudentRow{
+	datei := Datei{Modus: ModusID, Zeilen: []Zeile{
 		{LineNum: 2, LusdID: "L-NEU", Vorname: "Anna", Nachname: "Mueller", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt},
 	}}
-	z := lusdZuordnung{neuZeilen: []int{0}, abgaengerIDs: []string{"alt"}}
+	z := Zuordnung{neuZeilen: []int{0}, abgaengerIDs: []string{"alt"}}
 	if p := findeUmbenennungen(datei, bestand, lusdIndex{abgaenger: map[string]*lusdBestandsSchueler{}}, z); len(p) != 0 {
 		t.Errorf("ID-Modus darf keine Paare bilden: %+v", p)
 	}
@@ -258,11 +258,11 @@ func TestFindeUmbenennungen_RueckkehrerIstKeinKandidat(t *testing.T) {
 	alt := bestandsZeile("alt", "Anna", "Müller", "05F1", geb, nil)
 	alt.IstAbgaenger = true
 	idx := lusdIndex{abgaenger: map[string]*lusdBestandsSchueler{"k1": &alt}}
-	datei := lusdDatei{Modus: lusdModusName, Zeilen: []parsedStudentRow{
+	datei := Datei{Modus: ModusName, Zeilen: []Zeile{
 		{LineNum: 2, Vorname: "Anna", Nachname: "Müller", Klasse: "06F1", GebDatum: geb},       // Rückkehrer per Schlüssel
 		{LineNum: 3, Vorname: "Anna", Nachname: "Müller-Klein", Klasse: "06F1", GebDatum: geb}, // sähe wie ein Paar aus
 	}}
-	z := lusdZuordnung{neuZeilen: []int{1}, zielID: map[int]string{0: "alt"}}
+	z := Zuordnung{neuZeilen: []int{1}, zielID: map[int]string{0: "alt"}}
 	if p := findeUmbenennungen(datei, nil, idx, z); len(p) != 0 {
 		t.Errorf("schon zugeordneter Rückkehrer darf kein Paar-Kandidat sein: %+v", p)
 	}

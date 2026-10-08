@@ -50,7 +50,7 @@ func TestSperreAbgaenger_SetztGrund(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := repository.SperreAbgaenger(ctx, tx, sid, abgaengerSperrgrundOffen); err != nil {
+	if err := repository.SperreAbgaenger(ctx, tx, sid, repository.AbgaengerSperrgrundOffen); err != nil {
 		t.Fatalf("repository.SperreAbgaenger: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {

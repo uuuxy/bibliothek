@@ -81,9 +81,9 @@ func TestLusdBestandKenntNurSchueler(t *testing.T) {
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 
-	bestand, err := ladeLusdBestand(ctx, tx)
+	bestand, err := repository.LadeLusdBestand(ctx, tx)
 	if err != nil {
-		t.Fatalf("ladeLusdBestand: %v", err)
+		t.Fatalf("repository.LadeLusdBestand: %v", err)
 	}
 
 	var sahSchueler, sahKollegen bool

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
 )
 
 // TestLusdImport_DubletteInDerselbenDatei prüft, was passiert, wenn EIN LUSD-Export
@@ -23,7 +24,7 @@ func TestLusdImport_DubletteInDerselbenDatei(t *testing.T) {
 	ctx := context.Background()
 
 	s := &Server{DB: &db.Database{Pool: pool}}
-	if _, err := s.computeLusdChanges(ctx, []parsedStudentRow{
+	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 		{LusdID: "L-DUP", Vorname: "Anna", Nachname: "Doppelt", Klasse: "5a", LineNum: 1},
 		{LusdID: "L-DUP", Vorname: "Anna", Nachname: "Doppelt", Klasse: "5b", LineNum: 2},
 	}, true, true); err != nil {

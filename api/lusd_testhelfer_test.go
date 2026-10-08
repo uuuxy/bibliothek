@@ -1,35 +1,26 @@
 package api
 
-import "context"
+import (
+	"context"
 
-// Testsichten auf den LUSD-Import. Beide lebten bis 22.08.2026 im Produktionscode und
-// waren von main() aus unerreichbar — das deadcode-Gate hat sie zu Recht gemeldet.
-// Hier sind sie, was sie sind: Helfer der Bestandstests.
+	"bibliothek/internal/lusd"
+)
 
-// computeLusdChanges ist die ID-Modus-Sicht auf computeLusd.
-// computeLusd ist der Lauf ohne Umbenennungs-Wahl — die Form, in der die Jahreszyklus-
-// Tests seit dem 22.08.2026 sprechen. Seit dem 02.09.2026 nur noch Testhelfer (der
-// Handler ruft computeLusdLauf); die Produktion kennt keinen Lauf ohne Wahl mehr.
-func (s *Server) computeLusd(ctx context.Context, datei lusdDatei, apply bool, allowMassGraduation bool) (*LusdPreviewResult, error) {
-	return s.computeLusdLauf(ctx, datei, lusdLauf{apply: apply, allowMassGraduation: allowMassGraduation})
+// Testsichten auf den LUSD-Import: der Lauf über den Pool des Servers, mit der Karenzzeit
+// aus den Einstellungen, wie die Tür ihn fährt.
+
+// computeLusdLauf fährt den Lauf mit den genannten Vorgaben.
+func (s *Server) computeLusdLauf(ctx context.Context, datei lusd.Datei, lauf lusd.Lauf) (*lusd.PreviewResult, error) {
+	lauf.KarenzTage = s.abgaengerKarenzTage(ctx)
+	return lusd.Fuehre(ctx, s.DB.Pool, datei, lauf)
 }
 
-func (s *Server) computeLusdChanges(ctx context.Context, records []parsedStudentRow, apply bool, allowMassGraduation bool) (*LusdPreviewResult, error) {
-	return s.computeLusd(ctx, lusdDatei{Zeilen: records, Modus: lusdModusID}, apply, allowMassGraduation)
+// computeLusd ist der Lauf ohne Umbenennungs-Wahl.
+func (s *Server) computeLusd(ctx context.Context, datei lusd.Datei, apply bool, allowMassGraduation bool) (*lusd.PreviewResult, error) {
+	return s.computeLusdLauf(ctx, datei, lusd.Lauf{Anwenden: apply, MassenabgangBestaetigt: allowMassGraduation})
 }
 
-// parseLUSDCSV ist die schmale Sicht auf parseLusdDatei: Zeilen plus die Liste der
-// LUSD-IDs (in Dateireihenfolge, ohne Leere).
-func parseLUSDCSV(content []byte) ([]parsedStudentRow, []string, error) {
-	datei, err := parseLusdDatei(content)
-	if err != nil {
-		return nil, nil, err
-	}
-	var ids []string
-	for _, z := range datei.Zeilen {
-		if z.LusdID != "" {
-			ids = append(ids, z.LusdID)
-		}
-	}
-	return datei.Zeilen, ids, nil
+// computeLusdChanges ist computeLusd für Zeilen im Abgleich über die LUSD-ID.
+func (s *Server) computeLusdChanges(ctx context.Context, records []lusd.Zeile, apply bool, allowMassGraduation bool) (*lusd.PreviewResult, error) {
+	return s.computeLusd(ctx, lusd.Datei{Zeilen: records, Modus: lusd.ModusID}, apply, allowMassGraduation)
 }

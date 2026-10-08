@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -44,12 +45,12 @@ func legeNmSchuelerAn(t *testing.T, ctx context.Context, pool *pgxpool.Pool, s n
 	return id
 }
 
-func nmZeile(line int, vorname, nachname, klasse string, geb *time.Time) parsedStudentRow {
-	return parsedStudentRow{Vorname: vorname, Nachname: nachname, Klasse: klasse, GebDatum: geb, LineNum: line}
+func nmZeile(line int, vorname, nachname, klasse string, geb *time.Time) lusd.Zeile {
+	return lusd.Zeile{Vorname: vorname, Nachname: nachname, Klasse: klasse, GebDatum: geb, LineNum: line}
 }
 
-func nmDatei(zeilen ...parsedStudentRow) lusdDatei {
-	return lusdDatei{Zeilen: zeilen, Modus: lusdModusName}
+func nmDatei(zeilen ...lusd.Zeile) lusd.Datei {
+	return lusd.Datei{Zeilen: zeilen, Modus: lusd.ModusName}
 }
 
 func zaehle(t *testing.T, pool *pgxpool.Pool, where string, args ...any) int {
@@ -101,9 +102,9 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 		if err := pool.QueryRow(ctx, `SELECT klasse, lusd_bestaetigt_am FROM schueler WHERE id=$1`, id).Scan(&k, &bestaetigt); err != nil {
 			t.Fatal(err)
 		}
-		// klassenGleich statt ==: Der Klassen-Trigger (Migration 079) kanonisiert "06A" auf
+		// lusd.KlassenGleich statt ==: Der Klassen-Trigger (Migration 079) kanonisiert "06A" auf
 		// die registrierte Schreibweise ("6a"), wenn die Schule so schreibt.
-		if !klassenGleich(k, klasse) || bestaetigt == nil {
+		if !lusd.KlassenGleich(k, klasse) || bestaetigt == nil {
 			t.Errorf("Schüler %s: Klasse %q (erwartet %q), bestätigt=%v", id, k, klasse, bestaetigt != nil)
 		}
 	}
@@ -285,7 +286,7 @@ func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT geburtsdatum, klasse, lusd_bestaetigt_am IS NOT NULL FROM schueler WHERE id=$1`, lisa).Scan(&geb, &klasse, &bestaetigt); err != nil {
 		t.Fatal(err)
 	}
-	if geb == nil || geb.Format("2006-01-02") != "2013-03-03" || !klassenGleich(klasse, "6a") || !bestaetigt {
+	if geb == nil || geb.Format("2006-01-02") != "2013-03-03" || !lusd.KlassenGleich(klasse, "6a") || !bestaetigt {
 		t.Errorf("Lisa: geb=%v klasse=%q bestaetigt=%v — Datum nachgetragen, Klasse übernommen, bestätigt erwartet", geb, klasse, bestaetigt)
 	}
 	if n := zaehle(t, pool, "nachname='Doppel' AND geburtsdatum IS NOT NULL"); n != 0 {

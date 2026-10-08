@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
 )
 
 // Handanlage „Anna Müller", Export „Anna Mueller" (LANIS-Klassenliste, nur Name): derselbe
@@ -27,7 +28,7 @@ func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 	bauerID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Tom", nachname: "Bauer", klasse: "7b", barcode: "UM-2", bestaetigt: true})
 	baurID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Tom", nachname: "Baur", klasse: "7c", barcode: "UM-3", bestaetigt: true})
 
-	datei := lusdDatei{Modus: lusdModusNurName, Zeilen: []parsedStudentRow{
+	datei := lusd.Datei{Modus: lusd.ModusNurName, Zeilen: []lusd.Zeile{
 		nmZeile(2, "Anna", "Mueller", "06A", nil),
 		nmZeile(3, "Tom", "Bauer", "08B", nil),
 	}}
@@ -55,7 +56,7 @@ func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT klasse, lusd_bestaetigt_am IS NOT NULL FROM schueler WHERE id=$1`, muellerID).Scan(&klasse, &bestaetigt); err != nil {
 		t.Fatal(err)
 	}
-	if !klassenGleich(klasse, "06A") || !bestaetigt {
+	if !lusd.KlassenGleich(klasse, "06A") || !bestaetigt {
 		t.Errorf("Anna Müller: Klasse %q (erwartet 06A), bestätigt=%v", klasse, bestaetigt)
 	}
 	for _, id := range []string{bauerID, baurID} {

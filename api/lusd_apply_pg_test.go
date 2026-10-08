@@ -56,7 +56,7 @@ func TestAnonymisiereAbgaenger_LoeschtFoto(t *testing.T) {
 
 // Bug 5 (Permanent Ghost-Block): Ein Abgänger, der wegen offener Vorgänge nur GESPERRT (nicht
 // anonymisiert) wurde, behielt seine "Automatisierte Abgänger-Sperre" beim LUSD-Wiedereintritt
-// dauerhaft. aktualisiereBestandsschuelerBatch muss beim Rückkehrer prüfen, ob noch Vorgänge offen
+// dauerhaft. repository.AktualisiereLusdBestand muss beim Rückkehrer prüfen, ob noch Vorgänge offen
 // sind, und andernfalls automatisch entsperren. Der Kern ist SQL-CASE-Logik mit Sub-Selects —
 // nur ein echter DB-Test (nicht pgxmock) prüft sie.
 
@@ -99,14 +99,14 @@ func seedOffenerSchaden(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePra
 	}
 }
 
-// runAktualisiere führt aktualisiereBestandsschuelerBatch für EINEN Schüler in einer
+// runAktualisiere führt repository.AktualisiereLusdBestand für einen Schüler in einer
 // echten Transaktion aus.
 //
 // Bis zum 10.08.2026 stand dafür eine Einzelfassung im Produktivcode, die nur noch an
 // die Batch-Fassung durchreichte und außer von Tests von niemandem gerufen wurde. Das
 // Verpacken in Ein-Element-Slices ist Test-Gerüst und gehört hierher — im Produktivcode
 // war es ein zweiter Einstiegspunkt, an dem obendrein die ganze Erklärung hing.
-func runAktualisiere(t *testing.T, pool *pgxpool.Pool, rec parsedStudentRow, id string) {
+func runAktualisiere(t *testing.T, pool *pgxpool.Pool, zeile repository.LusdAktualisierung, id string) {
 	t.Helper()
 	ctx := context.Background()
 	tx, err := pool.Begin(ctx)
@@ -114,8 +114,9 @@ func runAktualisiere(t *testing.T, pool *pgxpool.Pool, rec parsedStudentRow, id 
 		t.Fatalf("Begin: %v", err)
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck // Rollback nach Commit ist no-op
-	if err := aktualisiereBestandsschuelerBatch(ctx, tx, []parsedStudentRow{rec}, []string{id}); err != nil {
-		t.Fatalf("aktualisiereBestandsschuelerBatch: %v", err)
+	zeile.SchuelerID = id
+	if err := repository.AktualisiereLusdBestand(ctx, tx, []repository.LusdAktualisierung{zeile}); err != nil {
+		t.Fatalf("AktualisiereLusdBestand: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatalf("Commit: %v", err)
@@ -141,7 +142,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 		id := insertGesperrterAbgaenger(t, pool, "R-A", "Max", "Muster", "ABG",
 			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
 
-		runAktualisiere(t, pool, parsedStudentRow{Vorname: "Max", Nachname: "Muster", Klasse: "9a"}, id)
+		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Max", Nachname: "Muster", Klasse: "9a"}, id)
 
 		gesperrt, abgaenger, reason, _ := leseSchuelerStatus(t, pool, id)
 		if gesperrt {
@@ -161,7 +162,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
 		seedOffeneAusleihe(t, pool, id, "B")
 
-		runAktualisiere(t, pool, parsedStudentRow{Vorname: "Lea", Nachname: "Klein", Klasse: "9a"}, id)
+		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Lea", Nachname: "Klein", Klasse: "9a"}, id)
 
 		gesperrt, abgaenger, reason, _ := leseSchuelerStatus(t, pool, id)
 		if !gesperrt {
@@ -181,7 +182,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
 		seedOffenerSchaden(t, pool, id, "C")
 
-		runAktualisiere(t, pool, parsedStudentRow{Vorname: "Tom", Nachname: "Groß", Klasse: "9a"}, id)
+		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Tom", Nachname: "Groß", Klasse: "9a"}, id)
 
 		gesperrt, _, reason, _ := leseSchuelerStatus(t, pool, id)
 		if !gesperrt {
@@ -197,7 +198,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 		const manuell = "Manuell gesperrt: wiederholter Vandalismus"
 		id := insertGesperrterAbgaenger(t, pool, "R-D", "Nia", "Wolf", "ABG", manuell)
 
-		runAktualisiere(t, pool, parsedStudentRow{Vorname: "Nia", Nachname: "Wolf", Klasse: "9a"}, id)
+		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Nia", Nachname: "Wolf", Klasse: "9a"}, id)
 
 		gesperrt, abgaenger, reason, _ := leseSchuelerStatus(t, pool, id)
 		if !gesperrt {
@@ -217,7 +218,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 		id := insertGesperrterAbgaenger(t, pool, "R-E", "Abgänger", "Anonymisiert-xyz", "ABG",
 			"Abgänger anonymisiert")
 
-		runAktualisiere(t, pool, parsedStudentRow{Vorname: "Sophie", Nachname: "Real", Klasse: "Q1"}, id)
+		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Sophie", Nachname: "Real", Klasse: "Q1"}, id)
 
 		gesperrt, abgaenger, reason, vorname := leseSchuelerStatus(t, pool, id)
 		if gesperrt {

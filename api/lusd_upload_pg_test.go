@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/lusd"
+	"bibliothek/internal/xlsxtest"
 )
 
 // Durch die Vordertür: Eine Excel-Datei ohne Schüler-ID geht als Multipart-Upload an den
@@ -25,7 +27,7 @@ func TestLusdPreviewHandler_XlsxOhneIDDurchDieVordertuer(t *testing.T) {
 	geb := time.Date(2012, 3, 4, 0, 0, 0, 0, time.UTC)
 	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Mustermann", klasse: "5a", barcode: "UP-1", geb: &geb})
 
-	xlsx := baueXlsx(t, map[string][][]any{
+	xlsx := xlsxtest.Baue(t, map[string][][]any{
 		"Klassenliste": {
 			{"Klassenliste — Schuljahr 2026/27"},
 			{"Nachname", "Vorname", "Klasse", "Geburtsdatum"},
@@ -54,7 +56,7 @@ func TestLusdPreviewHandler_XlsxOhneIDDurchDieVordertuer(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
-	var res LusdPreviewResult
+	var res lusd.PreviewResult
 	if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {
 		t.Fatal(err)
 	}

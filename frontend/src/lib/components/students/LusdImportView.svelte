@@ -3,7 +3,7 @@
      „Import finalisieren“ erneut an /api/lusd/import gesendet — samt der bestätigten
      Umbenennungs-Paare (LusdUmbenennungen).
 
-     Drei Zuordnungsstufen, die Datei entscheidet (Backend: api/lusd_parser.go):
+     Drei Zuordnungsstufen, die Datei entscheidet (Backend: internal/lusd/parser.go):
      LUSD-ID → Name + Geburtsdatum → nur Name. Der Export der Schule hat keine Schüler-ID;
      die Vorschau sagt, welche Stufe gilt, und was unangetastet bleibt. Texte und Rubriken
      stehen in lusdVorschauRubriken.js. -->

@@ -284,7 +284,7 @@ Vermerk.
   `GetRows` jede fehlende Zeile abzählen, nach der Meldung bis zu elf Tage lang
   (CVE-2026-107212; `pkg/xlsxgrenze/zeilennummer_test.go`, am Stand davor rot). Das Programm
   liest mit der Bibliothek nur, an drei Stellen hinter Anmeldung und Fachrecht
-  (`inventur/excel_import.go`, `api/lusd_parser_quelle.go`, `api/littera_import.go`), alle
+  (`inventur/excel_import.go`, `internal/lusd/quelle.go`, `api/littera_import.go`), alle
   durch `xlsxgrenze.MitMappe`; die Schranke dort bleibt als zweite Lage. Offen: auf die
   veröffentlichte Fassung heben, sobald sie erscheint (Dependabot schlägt sie vor). Kommt
   vorher eine weitere Meldung, wird der Sicherheits-Scan rot; der Handgriff steht in
@@ -330,11 +330,15 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 
 - **Die Bremse steht.** `api/schichtung_test.go` zählt die SQL-Anweisungen je Datei und führt
   die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 46
-  Dateien mit 161 Anweisungen (am Anfang 48 mit 177), 44 Dateien ohne Tür.
-- **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket: der LUSD-Import, der
-  Aufbau der PDFs, die Selbstprüfung, danach der Rest der 44. Je Thema ein Commit; die Tests
-  der Türen bleiben stehen und belegen, dass sich nichts ändert. Eine Datei mit SQL zieht erst
-  um, wenn ihr SQL in `repository/` steht: Die Ratsche zählt nur `api/` und verlöre sie sonst.
+  Dateien mit 161 Anweisungen (am Anfang 48 mit 177), 37 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 28.668 Zeilen in 161 Dateien (am Anfang 30.785 in 168).
+- **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
+  `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`). Offen:
+  der Aufbau der PDFs, die Selbstprüfung, danach der Rest der 37. Je Thema ein Commit; die
+  Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Eine Datei mit SQL
+  zieht erst um, wenn ihr SQL in `repository/` steht: Die Ratsche zählt nur `api/` und verlöre
+  sie sonst. Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was
+  sie aus einem umgezogenen Paket brauchen, ist dort sichtbar gemacht.
 - **SQL nach `repository/`.** Je Datei ein Commit, die Anweisung wörtlich und in derselben
   Transaktion wie vorher. Vor dem Umzug einer Anweisung muss ein Test an der Datenbank sie
   ausführen; fehlt er, kommt er zuerst.
