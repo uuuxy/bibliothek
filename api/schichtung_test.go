@@ -1,29 +1,28 @@
 package api
 
 import (
+	"go/parser"
+	"go/token"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 )
 
-// Strukturinvariante der Backend-Schichtung: Ein Handler formuliert kein SQL.
+// Schichtung des Backends: Eine Tür in api/ formuliert kein SQL und trägt keine Regeln. Jede
+// Regel einer Abfrage (NULL-Behandlung, Schutz vor leeren Werten, Reihenfolge in der
+// Transaktion) steht in repository/ einmal; eine Abfrage im Handler daneben kennt sie nicht.
 //
-// Warum das zaehlt: Am 07.08.2026 enthielten 50 der 109 Dateien in api/ rohes SQL,
-// waehrend 56 die repository-Schicht benutzen — und 20 machten BEIDES, in derselben
-// Datei. Wer eine Abfrage aendert, muss sie also an zwei Stellen suchen.
+// Die zwei Bestände unten können nur kleiner werden: handlerMitSQL zählt die Anweisungen je
+// Datei, dateienOhneTuer nennt, was ohne Tür in api/ liegt.
 //
-// Das ist keine Theorie. Die Bugklassen, die dieses Projekt einzeln gefixt hat,
-// stammen genau daher: nullbare Spalte in nicht-nullbaren Go-Typ ("cannot scan
-// NULL"), Upsert ohne COALESCE-Schutz (autor/verlag/jahr wurden geleert), und
-// Read-your-own-writes, das ein Batch-Refactoring still entfernt hat. Jede dieser
-// Regeln steht in repository/ genau einmal — und im Handler daneben nochmal nicht.
-//
-// Diese Ratsche MIGRIERT nichts. Sie friert den Bestand ein, damit er nur noch
-// kleiner werden kann: Ein NEUER Handler nimmt repository/, und wer eine Datei
-// umstellt, nimmt sie unten heraus.
+// Blindheit: SQL, das erst aus Variablen oder Sprintf-Teilen entsteht; eine Anweisung, die
+// eine andere ersetzt (die Zahl bleibt gleich); Regeln in einer Datei, die auch eine Tür
+// trägt; eine Datei, die net/http nur für eine Konstante einbindet.
 
 // Nur Anweisungen, keine Bezeichner: `UPDATE x SET` statt `UPDATE`, sonst schlägt jedes Wort
 // "update" in einem Bezeichner an. Hinter dem Tabellennamen steht kein \b: Es verlangte eine
@@ -38,8 +37,8 @@ var sqlAnweisung = regexp.MustCompile(`(?i)\b(` +
 	`|MERGE\s+INTO\s+[a-z_]+` +
 	`|LOCK\s+TABLE\s+[a-z_]+)`)
 
-// Kommentare zaehlen nicht: In bestellbestaetigung_handler.go steht "zwischen SELECT
-// und UPDATE ein Wettlauf-Fenster" — eine Erklaerung, keine Abfrage.
+// Kommentare zählen nicht: Ein Satz wie „zwischen SELECT und UPDATE ein Wettlauf-Fenster"
+// erklärt eine Abfrage und ist keine.
 func ohneKommentare(quelle string) string {
 	var b strings.Builder
 	for line := range strings.Lines(quelle) {
@@ -52,97 +51,121 @@ func ohneKommentare(quelle string) string {
 	return b.String()
 }
 
-// Bestand vom 07.08.2026. Wer eine Datei auf repository/ umstellt, nimmt sie hier
-// heraus — der Test meldet beides, neu hinzugekommene UND inzwischen saubere.
-var handlerMitSQL = []string{
-	"audit_handler.go",
-	"audit_logs_handler.go",
-	"ausleihe.go",
-	"ausweis_layout.go",
-	"bestellbericht_handler.go",
-	"bestellbestaetigung_etiketten.go",
-	"bestellbestaetigung_handler.go",
-	"bestellbestaetigung_link_handler.go",
-	"bestellbestaetigung_public.go",
-	"bestellhistorie_handler.go",
-	"bestellhistorie_uebersicht.go",
-	"bestellmail_text.go",
-	"book_systematik_handler.go",
-	"copy_admin.go",
-	"dsgvo_auskunft.go",
-	"etiketten_offen.go",
-	"graduates.go",
-	"graduates_mail.go",
-	"isbn_handler.go",
-	"klassen_mapping.go",
-	"labels.go",
-	"littera_import.go",
-	"lookups.go",
-	"lusd.go",
-	"lusd_apply.go",
-	"mahnwesen_bulk_mail.go",
-	"mail_routes.go",
-	"mail_settings.go",
-	"order_service.go",
-	"pdf.go",
-	"permission_middleware.go",
-	"photo_serve.go",
-	"print.go",
-	"reorders.go",
-	"reporting_dashboard.go",
-	"reports_pdf.go",
-	"settings.go",
-	"signaturen_handler.go",
-	"stats.go",
-	"student_create.go",
-	"student_deleted.go",
-	"student_lock.go",
-	"student_promotion.go",
-	"student_update.go",
-	"supplier_handler.go",
-	"systematik_handler.go",
-	"user_admin.go",
-	"user_admin_permissions.go",
+func sqlAnweisungenIn(quelle string) int {
+	return len(sqlAnweisung.FindAllStringIndex(ohneKommentare(quelle), -1))
 }
 
-func TestHandlerFormulierenKeinNeuesSQL(t *testing.T) {
+// produktivDateien nennt die Go-Dateien dieses Ordners ohne Tests. Die Untergrenze hält einen
+// umbenannten Ordner davon ab, beide Tests still grün zu stellen.
+func produktivDateien(t *testing.T) []string {
+	t.Helper()
 	eintraege, err := os.ReadDir(".")
 	if err != nil {
 		t.Fatalf("api/ nicht lesbar: %v", err)
 	}
-
-	var gefunden []string
+	var namen []string
 	for _, e := range eintraege {
 		name := e.Name()
 		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
 			continue
 		}
+		namen = append(namen, name)
+	}
+	if len(namen) < 50 {
+		t.Fatalf("nur %d Go-Dateien in api/ gefunden — der Test misst offenbar nichts mehr", len(namen))
+	}
+	return namen
+}
+
+// handlerMitSQL: Zahl der SQL-Anweisungen je Datei. Wer eine Abfrage nach repository/ verlegt,
+// senkt die Zahl; steht sie auf null, fällt die Zeile weg.
+var handlerMitSQL = map[string]int{
+	"audit_handler.go":                    1,
+	"audit_logs_handler.go":               1,
+	"ausleihe.go":                         5,
+	"ausweis_layout.go":                   2,
+	"bestellbericht_handler.go":           2,
+	"bestellbestaetigung_etiketten.go":    3,
+	"bestellbestaetigung_handler.go":      2,
+	"bestellbestaetigung_link_handler.go": 1,
+	"bestellbestaetigung_public.go":       4,
+	"bestellhistorie_handler.go":          3,
+	"bestellhistorie_uebersicht.go":       2,
+	"bestellmail_text.go":                 1,
+	"book_systematik_handler.go":          2,
+	"copy_admin.go":                       4,
+	"dsgvo_auskunft.go":                   11,
+	"etiketten_offen.go":                  5,
+	"graduates.go":                        2,
+	"graduates_mail.go":                   1,
+	"isbn_handler.go":                     2,
+	"klassen_mapping.go":                  6,
+	"labels.go":                           2,
+	"littera_import.go":                   2,
+	"lookups.go":                          2,
+	"lusd.go":                             1,
+	"lusd_apply.go":                       15,
+	"mahnwesen_bulk_mail.go":              1,
+	"mail_routes.go":                      3,
+	"mail_settings.go":                    1,
+	"order_service.go":                    2,
+	"pdf.go":                              2,
+	"permission_middleware.go":            1,
+	"photo_serve.go":                      1,
+	"print.go":                            6,
+	"reorders.go":                         6,
+	"reporting_dashboard.go":              2,
+	"reports_pdf.go":                      1,
+	"settings.go":                         1,
+	"signaturen_handler.go":               2,
+	"stats.go":                            8,
+	"student_create.go":                   7,
+	"student_deleted.go":                  5,
+	"student_lock.go":                     2,
+	"student_promotion.go":                12,
+	"student_update.go":                   12,
+	"supplier_handler.go":                 9,
+	"systematik_handler.go":               8,
+	"user_admin.go":                       1,
+	"user_admin_permissions.go":           2,
+}
+
+func TestHandlerFormulierenKeinNeuesSQL(t *testing.T) {
+	gefunden := map[string]int{}
+	for _, name := range produktivDateien(t) {
 		quelle, err := os.ReadFile(filepath.Clean(name))
 		if err != nil {
 			t.Fatalf("%s nicht lesbar: %v", name, err)
 		}
-		if sqlAnweisung.MatchString(ohneKommentare(string(quelle))) {
-			gefunden = append(gefunden, name)
+		if n := sqlAnweisungenIn(string(quelle)); n > 0 {
+			gefunden[name] = n
 		}
 	}
-	slices.Sort(gefunden)
-
-	// Ohne diese Zusicherung waere ein umbenanntes Verzeichnis ein still gruener Test.
 	if len(gefunden) == 0 {
 		t.Fatal("kein einziger Handler mit SQL gefunden — der Test misst offenbar nichts mehr")
 	}
 
-	for _, f := range gefunden {
-		if !slices.Contains(handlerMitSQL, f) {
-			t.Errorf("api/%s formuliert SQL. Handler lesen und schreiben ueber repository/ —\n"+
-				"dort steht jede Regel (COALESCE-Schutz, NULL-Behandlung, Reihenfolge in der Tx)\n"+
-				"genau einmal. Neuer Bedarf gehoert in eine repository-Funktion.", f)
+	for _, name := range slices.Sorted(maps.Keys(gefunden)) {
+		n := gefunden[name]
+		bestand, bekannt := handlerMitSQL[name]
+		switch {
+		case !bekannt:
+			t.Errorf("api/%s formuliert SQL (%d Anweisungen). Handler lesen und schreiben über "+
+				"repository/ — dort steht jede Regel (COALESCE-Schutz, NULL-Behandlung, Reihenfolge "+
+				"in der Transaktion) einmal. Neuer Bedarf gehört in eine repository-Funktion.", name, n)
+		case n > bestand:
+			t.Errorf("api/%s formuliert %d SQL-Anweisungen, im Bestand stehen %d. Eine neue "+
+				"Abfrage gehört in eine repository-Funktion, auch in einer Datei aus dem Bestand.",
+				name, n, bestand)
+		case n < bestand:
+			t.Errorf("api/%s formuliert nur noch %d SQL-Anweisungen statt %d — bitte die Zahl in "+
+				"handlerMitSQL senken, damit die Ratsche greift.", name, n, bestand)
 		}
 	}
-	for _, f := range handlerMitSQL {
-		if !slices.Contains(gefunden, f) {
-			t.Errorf("api/%s enthaelt kein SQL mehr — bitte aus handlerMitSQL entfernen,\n"+
-				"damit die Ratsche greift.", f)
+	for _, name := range slices.Sorted(maps.Keys(handlerMitSQL)) {
+		if _, ok := gefunden[name]; !ok {
+			t.Errorf("api/%s enthält kein SQL mehr — bitte aus handlerMitSQL entfernen, damit "+
+				"die Ratsche greift.", name)
 		}
 	}
 }
@@ -188,6 +211,145 @@ func TestSQLAnweisung_ErkenntJedeForm(t *testing.T) {
 	for _, k := range keine {
 		if sqlAnweisung.MatchString(k) {
 			t.Errorf("das Muster hält für eine Anweisung, was keine ist: %q", k)
+		}
+	}
+}
+
+// Die Zahl je Datei trägt die Ratsche: Der Zähler muss jede Anweisung einzeln zählen und einen
+// Kommentar auslassen.
+func TestSQLAnweisungenIn_ZaehltJedeAnweisung(t *testing.T) {
+	faelle := []struct {
+		name   string
+		quelle string
+		soll   int
+	}{
+		{"keine", "x := 1\n", 0},
+		{"eine", "q := `SELECT id FROM leser`\n", 1},
+		{"zwei auf einer Zeile", "a, b := `SELECT 1 FROM leser`, `DELETE FROM leser`\n", 2},
+		{"drei über Zeilen", "`INSERT INTO leser (a) VALUES ($1)`\n`UPDATE leser\n SET a = $1`\n`SELECT a FROM leser`\n", 3},
+		{"Unterabfrage zählt mit", "`DELETE FROM leser WHERE id IN (SELECT id FROM alt)`\n", 2},
+		{"nur im Kommentar", "// erst SELECT id FROM leser, dann UPDATE leser SET a = 1\nx := 1\n", 0},
+		{"Kommentar hinter Code", "q := `SELECT id FROM leser` // und kein DELETE FROM leser\n", 1},
+	}
+	for _, f := range faelle {
+		if ist := sqlAnweisungenIn(f.quelle); ist != f.soll {
+			t.Errorf("%s: %d Anweisungen gezählt, erwartet %d", f.name, ist, f.soll)
+		}
+	}
+}
+
+// dateienOhneTuer: Dateien in api/, die net/http nicht einbinden. Sie nehmen keine Anfrage an
+// und geben keine Antwort; was davon Regel oder Erzeuger ist, zieht in ein eigenes Paket und
+// fällt hier weg.
+var dateienOhneTuer = []string{
+	"abgaenger_fenster.go",
+	"abgangsbuch_pdf.go",
+	"action_types.go",
+	"bescheid_absender.go",
+	"bescheid_pdf.go",
+	"bestellbestaetigung_token.go",
+	"bestellmail_text.go",
+	"bestellmail_versand.go",
+	"betriebsbereitschaft.go",
+	"betriebsbereitschaft_alarm.go",
+	"constants.go",
+	"dsgvo_pdf_konto.go",
+	"dsgvo_pdf_protokoll.go",
+	"dsgvo_pflichtangaben_kollegium.go",
+	"exec_log.go",
+	"import_helpers.go",
+	"label_formats.go",
+	"label_pdf.go",
+	"lernmittel_etikett_pdf.go",
+	"leser_art.go",
+	"lmf_plan_live.go",
+	"lmf_plan_vorgabe.go",
+	"lmf_termine_frist.go",
+	"lusd_apply.go",
+	"lusd_bestand.go",
+	"lusd_header.go",
+	"lusd_klassifizierung.go",
+	"lusd_paarung.go",
+	"lusd_parser.go",
+	"lusd_parser_quelle.go",
+	"mahnwesen_mail.go",
+	"mahnwesen_pdf.go",
+	"mittel_filter.go",
+	"mittel_vermerk.go",
+	"order_pdf.go",
+	"order_service.go",
+	"pdf_service.go",
+	"prod_geheimnisse.go",
+	"reports_pdf.go",
+	"schueler_etikett_pdf.go",
+	"schueler_kiosk.go",
+	"student_klasse_regel.go",
+	"verwaltung_protokoll.go",
+	"zugangsbuch_pdf.go",
+}
+
+// bindetHTTPEin sagt, ob die Quelle net/http einbindet, unter welchem Namen auch immer.
+func bindetHTTPEin(t *testing.T, name string, quelle any) bool {
+	t.Helper()
+	datei, err := parser.ParseFile(token.NewFileSet(), name, quelle, parser.ImportsOnly)
+	if err != nil {
+		t.Fatalf("%s nicht lesbar: %v", name, err)
+	}
+	for _, imp := range datei.Imports {
+		if pfad, err := strconv.Unquote(imp.Path.Value); err == nil && pfad == "net/http" {
+			return true
+		}
+	}
+	return false
+}
+
+func TestNeueDateiInApiTraegtEineTuer(t *testing.T) {
+	var gefunden []string
+	for _, name := range produktivDateien(t) {
+		if !bindetHTTPEin(t, name, nil) {
+			gefunden = append(gefunden, name)
+		}
+	}
+	for _, name := range gefunden {
+		if !slices.Contains(dateienOhneTuer, name) {
+			t.Errorf("api/%s trägt keine Tür (bindet net/http nicht ein). Regeln, Leser fremder "+
+				"Dateien und Erzeuger von Dokumenten gehören in ein eigenes Paket unter internal/, "+
+				"pkg/ oder pdf/; api/ ruft sie auf. Gehört die Datei zu den Türen (Typen einer "+
+				"Anfrage, Helfer mehrerer Handler), trage sie in dateienOhneTuer ein.", name)
+		}
+	}
+	for _, name := range dateienOhneTuer {
+		if !slices.Contains(gefunden, name) {
+			t.Errorf("api/%s liegt nicht mehr ohne Tür in api/ — bitte aus dateienOhneTuer "+
+				"entfernen, damit die Ratsche greift.", name)
+		}
+	}
+}
+
+// Der Detektor liest die Einbindungen, nicht den Text: Ein Wort im Kommentar oder ein
+// Nachbarpaket darf er nicht für die Tür halten, einen umbenannten Import muss er erkennen.
+func TestBindetHTTPEin_ErkenntJedeForm(t *testing.T) {
+	mit := map[string]string{
+		"einzeln":     "package x\nimport \"net/http\"\n",
+		"im Block":    "package x\nimport (\n\t\"fmt\"\n\t\"net/http\"\n)\n",
+		"umbenannt":   "package x\nimport web \"net/http\"\n",
+		"mit Punkt":   "package x\nimport . \"net/http\"\n",
+		"zwei Blöcke": "package x\nimport \"fmt\"\nimport (\n\t\"net/http\"\n)\n",
+	}
+	for name, quelle := range mit {
+		if !bindetHTTPEin(t, name+".go", quelle) {
+			t.Errorf("%s: die Einbindung von net/http wird nicht erkannt", name)
+		}
+	}
+	ohne := map[string]string{
+		"keine Einbindung": "package x\n",
+		"Nachbarpaket":     "package x\nimport (\n\t\"net/http/httptest\"\n\t\"net/url\"\n)\n",
+		"nur im Kommentar": "package x\n// braucht net/http nicht\nimport \"fmt\"\n",
+		"nur als Text":     "package x\nimport \"fmt\"\nvar s = \"net/http\"\n",
+	}
+	for name, quelle := range ohne {
+		if bindetHTTPEin(t, name+".go", quelle) {
+			t.Errorf("%s: gilt als Tür, obwohl net/http nicht eingebunden ist", name)
 		}
 	}
 }

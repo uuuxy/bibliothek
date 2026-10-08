@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 08.10.2026
+Stand: 09.10.2026
 
 **Der Fahrplan.** Oben steht, was als Nächstes getan wird, in der Reihenfolge der Arbeit: je
 Schritt eine Zeile mit Kästchen. Die Nummer in Klammern führt zu den Einzelheiten weiter unten.
@@ -127,6 +127,8 @@ der Nummer nichts mehr dazu offen ist.
   was die Datenbank ablehnt; Listen: was sie begrenzt), die Form-Ratsche sieht umrandete
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek auf einem unveröffentlichten Stand.
+- [ ] **Schichtung des Backends (5.62):** Was in `api/` keine Tür ist, zieht je Thema in ein
+  eigenes Paket; das SQL der Türen zieht nach `repository/`.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -319,6 +321,31 @@ Schulserver feststeht.
   entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
+
+### 5.62 Schichtung des Backends: `api/` trägt Regeln und SQL
+
+**Entschieden am 09.10.2026: wird jetzt abgebaut,** vor dem Echtstart und in einzelnen
+Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko steht in
+[ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1 unter R4, die Messwerte vom 09.10.2026 ebenfalls.
+
+- **Die Bremse steht.** `api/schichtung_test.go` zählt die SQL-Anweisungen je Datei (48 Dateien,
+  177 Anweisungen) und führt die Dateien ohne Tür als Bestand (44); beides kann nur kleiner
+  werden.
+- **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket: der LUSD-Import, der
+  Aufbau der PDFs, die Selbstprüfung, danach der Rest der 44. Je Thema ein Commit; die Tests
+  der Türen bleiben stehen und belegen, dass sich nichts ändert. Eine Datei mit SQL zieht erst
+  um, wenn ihr SQL in `repository/` steht: Die Ratsche zählt nur `api/` und verlöre sie sonst.
+- **SQL nach `repository/`.** Je Datei ein Commit, die Anweisung wörtlich und in derselben
+  Transaktion wie vorher. Vor dem Umzug einer Anweisung muss ein Test an der Datenbank sie
+  ausführen; fehlt er, kommt er zuerst.
+- **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. 363 Türen sind Methoden an
+  einem Typ (`Server`), rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt,
+  zeigt der Stand nach den beiden Schritten davor.
+
+Außerhalb von `api/` und `repository/` stehen weitere SQL-Anweisungen (gezählt am 09.10.2026):
+`inventur/` 73 mit eigener Datenbankschicht ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.3),
+`internal/service` 32, `auth/` 20, `jobs/` 17. Die Ratsche zählt sie nicht; sie gehören nicht
+zu diesem Punkt.
 
 ---
 

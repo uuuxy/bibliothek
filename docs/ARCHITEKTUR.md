@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 08.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
+Stand: 09.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
 07.10.2026 aus dreizehn Dateien zu dieser einen zusammengeführt; jedes Kapitel nennt seinen
 eigenen Stand
 
@@ -2897,7 +2897,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 08.10.2026
+Stand: 09.10.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -2964,9 +2964,17 @@ generischen Helfern sieht er nicht.
 | **Sichtbarkeit** | hoch |
 
 Das Paket trägt Router, Middleware, Handler **und** Teile der Fachlogik (LUSD-Parser,
-Selbstprüfung, Bestellwesen). `api/schichtung_test.go` hält die Schichtung — aber
-**datei-granular**: Eine Bestandsdatei darf beliebig SQL **dazu**bekommen. Der Schnitt
-nach `internal/service` ist begonnen, nicht abgeschlossen.
+Selbstprüfung, Bestellwesen), dazu eigenes SQL neben `repository/`. Gemessen am 09.10.2026: In
+drei Monaten wuchs es von 10.463 auf 30.785 Zeilen, `internal/service` in derselben Zeit von
+2.491 auf 4.440. 48 Dateien formulieren 177 SQL-Anweisungen; seit dem 08.08.2026 sank die Zahl
+der Dateien von 53, die Zahl der Anweisungen in den 48 stieg von 143, weil die Prüfung nur neue
+Dateien abwies. 44 Dateien mit 7.503 Zeilen binden `net/http` nicht ein, sind also keine Tür.
+
+Seit dem 09.10.2026 hält `api/schichtung_test.go` zwei Bestände, die nur kleiner werden können:
+die Zahl der SQL-Anweisungen je Datei und die Dateien ohne Tür. Der Abbau läuft
+([OFFEN.md](OFFEN.md) 5.62): Was keine Tür ist, zieht je Thema in ein eigenes Paket, das SQL
+nach `repository/`. Die Türen selbst bleiben in einem Paket; 363 von ihnen sind Methoden an
+einem Typ (`Server`).
 
 #### R5 — Die Rechtematrix ist konfigurierbar und damit verstellbar
 
@@ -3578,9 +3586,6 @@ Fenstern bekannt ist:
 - Der Paritätstest vergleicht keine COMMENTs und Seeds.
 - Erbe der PR-Zulieferungen: Go-Testdateien über 200 Zeilen, ein schwacher Export-CSV-Test.
 - Klone: Go 9 Gruppen (05.09.2026), Frontend 0,41 %.
-- 48 Handler-Dateien in `api/` formulieren rohes SQL neben `repository/` (gezählt am 06.10.2026);
-  der Bestand ist seit dem 07.08.2026 eingefroren (`handlerMitSQL` in `api/schichtung_test.go`).
-  Umstellen beim fachlichen Anfassen einer Datei, nicht in einem Rutsch.
 - Exemplarkarte der Buchakte (`BookExemplarCard.svelte`): Die vier Symbolknöpfe sind 14 px groß
   statt 32 px (`.icon-btn`), drei erklären sich per `title` statt `data-tip`; die Buchakte fehlt
   in `icon-trefferflaechen.spec.js` und `icon-tooltips.spec.js`. Ein 32-px-Knopf bricht die
