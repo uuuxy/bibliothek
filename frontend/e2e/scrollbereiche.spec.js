@@ -58,23 +58,35 @@ test('Leserakte: zwölf Ausleihen stehen in einer Liste ohne eigenen Scrollkaste
 		SELECT ex.id, sch.id, CURRENT_DATE + 20 FROM ex, sch;
 	`);
 
-	await uiLogin(page);
-	await oeffneSchuelerProfil(page, `Scroll${s}`);
-	await expect(page.getByText('Entliehene Bücher (12)')).toBeVisible();
+	try {
+		await uiLogin(page);
+		await oeffneSchuelerProfil(page, `Scroll${s}`);
+		await expect(page.getByText('Entliehene Bücher (12)')).toBeVisible();
 
-	const lage = await page.evaluate(scrollLage, {
-		beschriftung: 'Ausgeliehene Bücher',
-		ueberschrift: 'Entliehene Bücher'
-	});
-	expect(lage, 'Tabelle oder Überschrift der Ausleihliste nicht gefunden').not.toBeNull();
-	expect(
-		lage?.ueberschriftImSelbenBereich,
-		'Die Ausleihliste scrollt in einem eigenen Kasten, getrennt von ihrer Überschrift.'
-	).toBe(true);
-	expect(
-		lage?.ueberlaufend,
-		'Um die Ausleihliste scrollen mehrere Bereiche ineinander.'
-	).toBeLessThanOrEqual(1);
+		const lage = await page.evaluate(scrollLage, {
+			beschriftung: 'Ausgeliehene Bücher',
+			ueberschrift: 'Entliehene Bücher'
+		});
+		expect(lage, 'Tabelle oder Überschrift der Ausleihliste nicht gefunden').not.toBeNull();
+		expect(
+			lage?.ueberschriftImSelbenBereich,
+			'Die Ausleihliste scrollt in einem eigenen Kasten, getrennt von ihrer Überschrift.'
+		).toBe(true);
+		expect(
+			lage?.ueberlaufend,
+			'Um die Ausleihliste scrollen mehrere Bereiche ineinander.'
+		).toBeLessThanOrEqual(1);
+	} finally {
+		// Zwölf offene Ausleihen auf einem Schüler blieben sonst stehen und zählten in
+		// jeder lokalen Messung von Mahnwesen und Statistik mit. Erst die Ausleihen: Die
+		// Exemplare stehen unter ON DELETE RESTRICT, sie fallen danach mit ihrem Titel.
+		seedSQL(`
+			DELETE FROM ausleihen WHERE schueler_id IN (
+				SELECT id FROM leser WHERE barcode_id = 'E2E-SCR-S-${s}');
+			DELETE FROM buecher_titel WHERE titel LIKE 'E2E-Scrollbuch ${s} %';
+			DELETE FROM leser WHERE barcode_id = 'E2E-SCR-S-${s}';
+		`);
+	}
 });
 
 test('Wareneingang: die Positionen scrollen mit der Seite, und nur ein Bereich scrollt', async ({
@@ -96,43 +108,51 @@ test('Wareneingang: die Positionen scrollen mit der Seite, und nur ein Bereich s
 		FROM t;
 	`);
 
-	await uiLogin(page);
-	await gehZu(page, '/bestellungen');
-	await page.getByRole('tab', { name: /Wareneingang/ }).click();
-	await expect(page.getByRole('heading', { name: 'Wareneingang bearbeiten' })).toBeVisible();
-	await expect(page.getByText(`E2E Scroll-Zulauf ${s} 8`)).toBeAttached();
+	try {
+		await uiLogin(page);
+		await gehZu(page, '/bestellungen');
+		await page.getByRole('tab', { name: /Wareneingang/ }).click();
+		await expect(page.getByRole('heading', { name: 'Wareneingang bearbeiten' })).toBeVisible();
+		await expect(page.getByText(`E2E Scroll-Zulauf ${s} 8`)).toBeAttached();
 
-	const lage = await page.evaluate(scrollLage, {
-		beschriftung: 'Bestellte Exemplare im Zulauf',
-		ueberschrift: 'Wareneingang bearbeiten'
-	});
-	expect(lage, 'Tabelle oder Überschrift des Wareneingangs nicht gefunden').not.toBeNull();
-	expect(lage?.tabellen, 'Die Testdaten ergeben keine vier Lieferanten.').toBeGreaterThanOrEqual(4);
-	expect(
-		lage?.ueberschriftImSelbenBereich,
-		'Die Positionen scrollen in einem eigenen Kasten, getrennt von ihrer Überschrift.'
-	).toBe(true);
-	expect(
-		lage?.seiteLaeuftUeber,
-		'Die unsichtbare Beschriftung einer Tabelle verlängert die Seite über das Fenster hinaus.'
-	).toBe(false);
-	expect(
-		lage?.ueberlaufend,
-		'Im Wareneingang scrollen mehrere Bereiche ineinander.'
-	).toBeLessThanOrEqual(1);
+		const lage = await page.evaluate(scrollLage, {
+			beschriftung: 'Bestellte Exemplare im Zulauf',
+			ueberschrift: 'Wareneingang bearbeiten'
+		});
+		expect(lage, 'Tabelle oder Überschrift des Wareneingangs nicht gefunden').not.toBeNull();
+		expect(lage?.tabellen, 'Die Testdaten ergeben keine vier Lieferanten.').toBeGreaterThanOrEqual(
+			4
+		);
+		expect(
+			lage?.ueberschriftImSelbenBereich,
+			'Die Positionen scrollen in einem eigenen Kasten, getrennt von ihrer Überschrift.'
+		).toBe(true);
+		expect(
+			lage?.seiteLaeuftUeber,
+			'Die unsichtbare Beschriftung einer Tabelle verlängert die Seite über das Fenster hinaus.'
+		).toBe(false);
+		expect(
+			lage?.ueberlaufend,
+			'Im Wareneingang scrollen mehrere Bereiche ineinander.'
+		).toBeLessThanOrEqual(1);
 
-	// Einbuchen steht in der Leiste unter der Liste und bleibt beim Scrollen im Fenster. Der
-	// Knopf im Kopf der Seite war bei einer langen Lieferung aus dem Bild.
-	await expect(page.getByRole('button', { name: 'Einbuchen', exact: true })).toHaveCount(0);
-	await page.getByRole('checkbox', { name: `E2E Scroll-Zulauf ${s} 1 auswählen` }).check();
-	const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Positionen' });
-	await expect(leiste).toContainText('1 Exemplar markiert');
-	await page.getByText(`E2E Scroll-Zulauf ${s} 8`).scrollIntoViewIfNeeded();
-	await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
-	await page.getByRole('heading', { name: 'Wareneingang bearbeiten' }).scrollIntoViewIfNeeded();
-	await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
-	await leiste.getByRole('button', { name: 'Markierung aufheben' }).click();
-	await expect(leiste).toHaveCount(0);
+		// Einbuchen steht in der Leiste unter der Liste und bleibt beim Scrollen im Fenster. Der
+		// Knopf im Kopf der Seite war bei einer langen Lieferung aus dem Bild.
+		await expect(page.getByRole('button', { name: 'Einbuchen', exact: true })).toHaveCount(0);
+		await page.getByRole('checkbox', { name: `E2E Scroll-Zulauf ${s} 1 auswählen` }).check();
+		const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Positionen' });
+		await expect(leiste).toContainText('1 Exemplar markiert');
+		await page.getByText(`E2E Scroll-Zulauf ${s} 8`).scrollIntoViewIfNeeded();
+		await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
+		await page.getByRole('heading', { name: 'Wareneingang bearbeiten' }).scrollIntoViewIfNeeded();
+		await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
+		await leiste.getByRole('button', { name: 'Markierung aufheben' }).click();
+		await expect(leiste).toHaveCount(0);
+	} finally {
+		// Acht Titel mit je einem Exemplar im Zulauf blieben sonst im Wareneingang stehen
+		// und verlängerten dort jede lokale Messung. Die Exemplare fallen mit dem Titel.
+		seedSQL(`DELETE FROM buecher_titel WHERE titel LIKE 'E2E Scroll-Zulauf ${s} %';`);
+	}
 });
 
 test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf bleibt stehen', async ({

@@ -88,18 +88,23 @@ const MESSEN = () => {
  */
 async function warteAufStabileButtons(page) {
 	await page.waitForLoadState('domcontentloaded');
+	// Drei gleiche Messungen statt zwei, mit größerem Abstand: Zwei gleiche im Abstand von
+	// 100 ms traten auch im Zustand „Gerüst steht, Liste kommt noch" ein, und dann maß der
+	// Test die Seite ohne ihren Inhalt (am 08.10.2026 am Medienkatalog in kontrast.spec.js
+	// belegt: 4 statt 187 Textstellen, in jedem Lauf).
 	let vorherige = -1;
+	let gleich = 0;
 	await expect
 		.poll(
 			async () => {
 				const jetzt = (await page.evaluate(MESSEN)).length;
-				const stabil = jetzt === vorherige;
+				gleich = jetzt === vorherige ? gleich + 1 : 0;
 				vorherige = jetzt;
-				return stabil;
+				return gleich;
 			},
-			{ timeout: 10_000, intervals: [100, 150, 200, 300] }
+			{ timeout: 20_000, intervals: [200, 300, 400, 500] }
 		)
-		.toBe(true);
+		.toBeGreaterThanOrEqual(2);
 }
 
 /**

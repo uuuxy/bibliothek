@@ -373,23 +373,32 @@ Vermerk.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
-- `e2e/kontrast.spec.js` misst den Medienkatalog nicht in jedem Lauf mit seinen Kacheln
-  (gefunden am 02.10.2026, lokal mit 8.600 Titeln). `warteAufStabilenBaum` gilt als stabil,
-  sobald zwei Zählungen im Abstand von 100 ms gleich sind; kommt die Titelliste später, misst
-  der Test die Seite ohne Kacheln und geht weiter. Belegt an einer Kachel, die den Klick auf
-  den nächsten Menüpunkt scheitern ließ, solange der Test ihn per Teilwort traf: fünf von
-  sechs Läufen rot, einer grün, die Kacheln standen dort also noch nicht. Abhilfe: je Seite
-  auf ein Merkmal des Inhalts warten (Kachel, Tabellenzeile). Dieselbe Form des Wartens steht
-  in `typo-rollen.spec.js`, `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`, dort
-  nicht nachgemessen. Kategorie B.
-- Browser-Tests lassen Daten liegen (in der CI ist die Datenbank je Lauf frisch; lokale
-  Zahlen tragen die Reste mit). Am 06.10.2026 einzeln gestartet und an der lokalen Datenbank
-  gezählt: `e2e/bestellung-detail.spec.js` bestellt drei Exemplare am ersten Titel des
-  Katalogs und nimmt nur den Lieferanten wieder weg; der Teardown löscht die Bestellung, die
-  drei Exemplare bleiben „im Zulauf" ohne Bestellung. `e2e/zugangsbuch.spec.js` lässt einen
-  Titel mit zwei Exemplaren liegen. Am Code gelesen: Der Wareneingang-Test in
-  `e2e/scrollbereiche.spec.js` legt acht Titel mit je einem Exemplar im Zulauf an und räumt
-  sie nicht ab. Abhilfe je Spec: eigener Titel, Aufräumen über die Kennung. Kategorie B.
+- **Behoben am 08.10.2026:** `e2e/kontrast.spec.js` maß den Medienkatalog ohne seine Kacheln
+  (gefunden am 02.10.2026). `warteAufStabilenBaum` zählte alle Knoten in `main` und galt als
+  fertig, sobald zwei Zählungen im Abstand von 100 ms gleich waren — das traf auch „Reiter
+  stehen, Liste kommt noch". Am 08.10.2026 nachgemessen: Der Medienkatalog stand mit 4
+  Textstellen in der Messung, in jedem Lauf; die Gesamt-Untergrenze von 300 verdeckte es, weil
+  Mahnwesen allein 9.012 beisteuert. Jetzt zählt das Warten genau das, was die Messung ansieht,
+  und verlangt drei gleiche Messungen mit größerem Abstand: Der Medienkatalog steht bei 187
+  Textstellen, die Titel-Verwaltung bei 465 statt 19, der Schuljahreswechsel bei 207 statt 99
+  (je zwei Läufe, gleiche Zahlen). Dieselbe Verschärfung steht jetzt auch in
+  `typo-rollen.spec.js`, `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`.
+  **Offen bleibt die Untergrenze je Seite:** Sie wäre der Wächter dagegen, dass eine einzelne
+  Seite wieder still leer gemessen wird, lässt sich aber nicht über die Textmenge ziehen — die
+  CI fährt eine frische Datenbank und liegt insgesamt bei rund 300 Textstellen statt bei den
+  15.000 hier, jede feste Zahl je Seite wäre dort eine Zufallsgrenze. Dafür braucht es je Seite
+  ein Merkmal des Inhalts (eine Kachel, eine Tabellenzeile), das auch bei wenig Daten dasteht.
+  Kategorie B.
+- **Behoben am 08.10.2026:** Browser-Tests ließen Daten liegen (in der CI ist die Datenbank je
+  Lauf frisch; lokale Zahlen trugen die Reste mit). `e2e/bestellung-detail.spec.js` bestellte
+  drei Exemplare am ersten Titel des Katalogs und nahm nur den Lieferanten wieder weg; es legt
+  jetzt einen eigenen Titel an und löscht Bestellung und Titel. `e2e/zugangsbuch.spec.js` und
+  die Tests „Leserakte" und „Wareneingang" in `e2e/scrollbereiche.spec.js` räumen über ihre
+  Kennung auf; der Leserakte-Test stand nicht in der Liste, ließ aber zwölf offene Ausleihen
+  auf einem Schüler zurück. Belegt am Draht: Zählung der lokalen Datenbank vor und nach einem
+  Lauf der drei Specs gleich (Titel, Exemplare, Zulauf ohne Bestellung, offene Ausleihen,
+  Leser, Bestellungen, Lieferanten); ohne das Aufräumen in `bestellung-detail` weichen
+  Exemplare, Titel und Zulauf ab.
 - Code, den kein Go-Test ausführt (gemessen am 07.10.2026 mit der ganzen Suite und `-coverpkg`
   über alle Pakete: 85,3 % der Anweisungen; lokal zählt `./...` das Go-Paket mit, das npm unter
   `frontend/node_modules/flatted` ablegt, mit ihm sind es 84,9 %). Unter 50 % liegen, ohne

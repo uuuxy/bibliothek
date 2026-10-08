@@ -27,54 +27,64 @@ test('Zugangsbuch: Zugänge des Halbjahres nach Topf, Lieferant dabei — und al
 		FROM buecher_titel t WHERE t.titel = 'E2E-Zugang-Titel ${s}';
 	`);
 
-	await uiLogin(page);
-	// Der Menüpunkt steht unter „Berichte → Bestandsbücher".
-	await gehZu(page, '/bestandsbuecher');
-	await page.getByRole('tab', { name: 'Zugangsbuch' }).click();
+	try {
+		await uiLogin(page);
+		// Der Menüpunkt steht unter „Berichte → Bestandsbücher".
+		await gehZu(page, '/bestandsbuecher');
+		await page.getByRole('tab', { name: 'Zugangsbuch' }).click();
 
-	// 1. Der Zugang aus der Bestellung steht unter dem Topf des Landes, mit Lieferant.
-	// Die Seite baut alle Zugänge des Halbjahres auf einmal auf. Auf einer großen Datenbank
-	// sind das Zehntausende Zeilen und mehrere Sekunden, deshalb die längere Frist.
-	const land = page.getByRole('table', { name: /Zugangsbuch — Lernmittelfreiheit \(Land\)/ });
-	await expect(land.getByText(`E2E-ZUG-A-${s}`)).toBeVisible({ timeout: 30_000 });
-	await expect(land.getByText(`E2E-Haendler ${s}`)).toBeVisible();
+		// 1. Der Zugang aus der Bestellung steht unter dem Topf des Landes, mit Lieferant.
+		// Die Seite baut alle Zugänge des Halbjahres auf einmal auf. Auf einer großen Datenbank
+		// sind das Zehntausende Zeilen und mehrere Sekunden, deshalb die längere Frist.
+		const land = page.getByRole('table', { name: /Zugangsbuch — Lernmittelfreiheit \(Land\)/ });
+		await expect(land.getByText(`E2E-ZUG-A-${s}`)).toBeVisible({ timeout: 30_000 });
+		await expect(land.getByText(`E2E-Haendler ${s}`)).toBeVisible();
 
-	// 2. Der Zugang OHNE Bestellung steht nicht dort, sondern unter „ohne Zuordnung" —
-	//    geraten wird der Topf nicht.
-	await expect(land.getByText(`E2E-ZUG-B-${s}`)).toHaveCount(0);
-	const ohne = page.getByRole('table', { name: /Zugangsbuch — ohne Zuordnung/ });
-	await expect(ohne.getByText(`E2E-ZUG-B-${s}`)).toBeVisible();
+		// 2. Der Zugang OHNE Bestellung steht nicht dort, sondern unter „ohne Zuordnung" —
+		//    geraten wird der Topf nicht.
+		await expect(land.getByText(`E2E-ZUG-B-${s}`)).toHaveCount(0);
+		const ohne = page.getByRole('table', { name: /Zugangsbuch — ohne Zuordnung/ });
+		await expect(ohne.getByText(`E2E-ZUG-B-${s}`)).toBeVisible();
 
-	// 3. Und die Einschränkung steht dabei, statt Vollständigkeit zu behaupten.
-	await expect(page.getByText(/keine Bestellung hinterlegt/)).toBeVisible();
+		// 3. Und die Einschränkung steht dabei, statt Vollständigkeit zu behaupten.
+		await expect(page.getByText(/keine Bestellung hinterlegt/)).toBeVisible();
 
-	// 4. Der Ausdruck trägt den Zeitraum, den der Bildschirm zeigt.
-	const druck = page.getByRole('link', { name: 'Ausdrucken' });
-	const adresse = await druck.getAttribute('href');
-	expect(adresse).toMatch(
-		/\/api\/bestand\/zugangsbuch\/pdf\?von=\d{4}-\d{2}-\d{2}&bis=\d{4}-\d{2}-\d{2}$/
-	);
+		// 4. Der Ausdruck trägt den Zeitraum, den der Bildschirm zeigt.
+		const druck = page.getByRole('link', { name: 'Ausdrucken' });
+		const adresse = await druck.getAttribute('href');
+		expect(adresse).toMatch(
+			/\/api\/bestand\/zugangsbuch\/pdf\?von=\d{4}-\d{2}-\d{2}&bis=\d{4}-\d{2}-\d{2}$/
+		);
 
-	// 5. Die Töpfe stehen als Felder mit ihrer Zahl unter dem Zeitraum. Ein Klick zeigt einen
-	//    Topf allein, und der Hinweis zu „ohne Zuordnung" geht mit seiner Liste. Der Ausdruck
-	//    bleibt das ganze Buch: Die Wahl ändert seine Adresse nicht.
-	const feldLand = page
-		.getByRole('group', { name: 'Nach Mittelherkunft filtern' })
-		.getByRole('button', { name: /^Lernmittelfreiheit \(Land\) · \d/ });
-	await feldLand.click();
-	await expect(feldLand).toHaveAttribute('aria-pressed', 'true');
-	await expect(land.getByText(`E2E-ZUG-A-${s}`)).toBeVisible();
-	await expect(ohne).toHaveCount(0);
-	await expect(page.getByText(/keine Bestellung hinterlegt/)).toHaveCount(0);
-	await expect(druck).toHaveAttribute('href', adresse ?? '');
+		// 5. Die Töpfe stehen als Felder mit ihrer Zahl unter dem Zeitraum. Ein Klick zeigt einen
+		//    Topf allein, und der Hinweis zu „ohne Zuordnung" geht mit seiner Liste. Der Ausdruck
+		//    bleibt das ganze Buch: Die Wahl ändert seine Adresse nicht.
+		const feldLand = page
+			.getByRole('group', { name: 'Nach Mittelherkunft filtern' })
+			.getByRole('button', { name: /^Lernmittelfreiheit \(Land\) · \d/ });
+		await feldLand.click();
+		await expect(feldLand).toHaveAttribute('aria-pressed', 'true');
+		await expect(land.getByText(`E2E-ZUG-A-${s}`)).toBeVisible();
+		await expect(ohne).toHaveCount(0);
+		await expect(page.getByText(/keine Bestellung hinterlegt/)).toHaveCount(0);
+		await expect(druck).toHaveAttribute('href', adresse ?? '');
 
-	// Der zweite Klick zeigt wieder alle.
-	await feldLand.click();
-	await expect(ohne.getByText(`E2E-ZUG-B-${s}`)).toBeVisible();
+		// Der zweite Klick zeigt wieder alle.
+		await feldLand.click();
+		await expect(ohne.getByText(`E2E-ZUG-B-${s}`)).toBeVisible();
 
-	// 6. Der Ausdruck antwortet mit einem PDF.
-	const antwort = await page.request.get(adresse ?? '');
-	expect(antwort.status()).toBe(200);
-	expect(antwort.headers()['content-type']).toContain('application/pdf');
-	expect((await antwort.body()).subarray(0, 4).toString()).toBe('%PDF');
+		// 6. Der Ausdruck antwortet mit einem PDF.
+		const antwort = await page.request.get(adresse ?? '');
+		expect(antwort.status()).toBe(200);
+		expect(antwort.headers()['content-type']).toContain('application/pdf');
+		expect((await antwort.body()).subarray(0, 4).toString()).toBe('%PDF');
+	} finally {
+		// Ohne das stünden Titel, Bestellung und zwei Exemplare nach jedem Lauf im
+		// Zugangsbuch und verschöben jede lokale Zählung. Die Exemplare fallen mit dem
+		// Titel (ON DELETE CASCADE).
+		seedSQL(`
+			DELETE FROM bestellungen_verlauf WHERE lieferant_name = 'E2E-Haendler ${s}';
+			DELETE FROM buecher_titel WHERE titel = 'E2E-Zugang-Titel ${s}';
+		`);
+	}
 });

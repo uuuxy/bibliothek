@@ -37,27 +37,46 @@ test.afterEach(() => {
 });
 
 /**
- * Wartet, bis die nachgeladenen Listen im Baum STEHEN — zwei gleiche Messungen der
- * Knotenzahl hintereinander — statt einer geratenen Zeitspanne (vorher 700 ms: zu kurz
- * auf einem langsamen Rechner, zu lang auf einem schnellen; `javascript:S2925`).
- * Dasselbe Muster wie warteAufStabileFelder in control-hoehen.spec.js. Bewusst KEIN
- * networkidle: Die Anwendung hält eine dauerhafte SSE-Verbindung offen, der Zustand
- * tritt also nie ein (siehe sse-livesync.spec.js).
+ * Wartet, bis die nachgeladenen Listen im Baum STEHEN — statt einer geratenen Zeitspanne
+ * (vorher 700 ms: zu kurz auf einem langsamen Rechner, zu lang auf einem schnellen;
+ * `javascript:S2925`). Bewusst KEIN networkidle: Die Anwendung hält eine dauerhafte
+ * SSE-Verbindung offen, der Zustand tritt also nie ein (siehe sse-livesync.spec.js).
+ *
+ * Gezählt wird GENAU das, was die Messung danach ansieht: sichtbare Elemente mit eigenem
+ * Text. Bis zum 08.10.2026 zählte das Warten alle Knoten in `main` und galt als fertig,
+ * sobald zwei Messungen im Abstand von 100 ms gleich waren — das traf auch den Zustand
+ * „Reiter stehen, Liste kommt noch". Der Medienkatalog wurde dadurch mit 4 Textknoten
+ * gemessen statt mit seinen Kacheln, und zwar in JEDEM Lauf; die Gesamt-Untergrenze von
+ * 300 Knoten verdeckte es, weil Mahnwesen allein 9.000 beisteuert. Drei gleiche Messungen
+ * statt zwei, längerer Abstand, längere Frist: Am 08.10.2026 lokal gemessen stieg der
+ * Medienkatalog damit von 4 auf 187 Textstellen, in zwei Läufen gleich.
  * @param {import('@playwright/test').Page} page
+ * @returns {Promise<number>} die Zahl der sichtbaren Elemente mit eigenem Text
  */
-async function warteAufStabilenBaum(page) {
+async function warteAufInhalt(page) {
+	const zaehle = () =>
+		page.evaluate(
+			() =>
+				[...document.querySelectorAll('main *')].filter(
+					(el) =>
+						/** @type {HTMLElement} */ (el).offsetParent &&
+						[...el.childNodes].some((k) => k.nodeType === 3 && k.textContent?.trim())
+				).length
+		);
 	let vorherige = -1;
+	let gleich = 0;
 	await expect
 		.poll(
 			async () => {
-				const jetzt = await page.evaluate(() => document.querySelectorAll('main *').length);
-				const stabil = jetzt === vorherige;
+				const jetzt = await zaehle();
+				gleich = jetzt === vorherige ? gleich + 1 : 0;
 				vorherige = jetzt;
-				return stabil;
+				return gleich;
 			},
-			{ timeout: 10_000, intervals: [100, 150, 200, 300] }
+			{ timeout: 20_000, intervals: [200, 300, 400, 500] }
 		)
-		.toBe(true);
+		.toBeGreaterThanOrEqual(2);
+	return vorherige;
 }
 
 test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
@@ -77,7 +96,7 @@ test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
 		// wirklich stehen, sonst misst der Test den vorigen Bildschirm.
 		await expect(ziel).toHaveAttribute('aria-current', 'page');
 		await page.locator('main').first().waitFor();
-		await warteAufStabilenBaum(page);
+		await warteAufInhalt(page);
 
 		const ergebnis = await page.evaluate(() => {
 			const leuchtdichte = (/** @type {string} */ rgb) => {
@@ -157,10 +176,11 @@ test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
 		for (const t of ergebnis.treffer) verstoesse.push(`[${seite}] ${t}`);
 	}
 
-	// Aussagekraft-Untergrenze: Findet der Test kaum Text, misst er nichts und wäre als
-	// grüner Lauf wertlos — genau die Sorte Gate, die alles durchwinkt. Der Wert liegt
-	// deutlich unter dem gemessenen Bestand, damit normales Datenwachstum ihn nicht
-	// auslöst, aber weit über dem, was ein leerer Bildschirm liefert.
+	// Aussagekraft-Untergrenze über ALLE Seiten. Eine Grenze je Seite gibt es bewusst nicht:
+	// Die CI fährt eine frische Datenbank, dort liegt die Gesamtzahl bei rund 300 statt bei
+	// den 15.000 einer gewachsenen Entwicklungsdatenbank — jede feste Zahl je Seite wäre
+	// dort eine Zufallsgrenze. Dass eine einzelne Seite ohne ihren Inhalt gemessen wird,
+	// hält stattdessen das Warten oben auf (OFFEN.md 5.10 nennt den Rest).
 	expect(geprueft, 'zu wenige Textknoten erfasst — greift der Test noch?').toBeGreaterThan(300);
 
 	expect(

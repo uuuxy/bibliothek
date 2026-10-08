@@ -16,13 +16,24 @@
 // Der Versand scheitert an ihr, bevor eine Verbindung entsteht (api/mail_sender.go,
 // TestSendEmail_InvalidRecipient), und der Handler antwortet trotzdem mit 200.
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, csrfToken } from './helpers.js';
+import { uiLogin, apiPost, csrfToken, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
-const LIEFERANT = 'E2E-Detail-Haendler';
 const KEINE_ADRESSE = 'keine Adresse';
 const MENGE = 3;
 
 test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', async ({ page }) => {
+	// Eigener Titel statt des ersten im Katalog: Die Bestellung legt drei Exemplare im
+	// Zulauf an, und die hingen sonst an einem fremden Titel. Das Aufräumen unten löscht
+	// den eigenen Titel, und seine Exemplare fallen mit ihm (ON DELETE CASCADE).
+	const s = uniqueSuffix();
+	const LIEFERANT = `E2E-Detail-Haendler ${s}`;
+	seedSQL(`INSERT INTO buecher_titel (titel, isbn) VALUES ('E2E-Detail-Titel ${s}', '97d${s}');`);
+	const titel = {
+		id: querySQL(`SELECT id FROM buecher_titel WHERE isbn = '97d${s}'`),
+		title: `E2E-Detail-Titel ${s}`
+	};
+	expect(titel.id, 'eigener Titel angelegt').toBeTruthy();
+
 	await uiLogin(page);
 
 	// --- Eine echte Bestellung über den echten Weg aufgeben ---------------------
@@ -35,10 +46,6 @@ test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', 
 	});
 	expect(lieferantRes.ok(), `Lieferant anlegen: ${await lieferantRes.text()}`).toBeTruthy();
 	const lieferantId = (await lieferantRes.json()).id;
-
-	const buecher = await (await page.request.get('/api/books')).json();
-	const titel = (buecher.data ?? [])[0];
-	expect(titel, 'Testdaten: mindestens ein Titel nötig').toBeTruthy();
 
 	const bestellRes = await apiPost(page, '/api/bestellungen', {
 		supplier_id: lieferantId,
@@ -90,5 +97,12 @@ test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', 
 		await page.request.delete(`/api/lieferanten/${lieferantId}`, {
 			headers: { 'X-CSRF-Token': token }
 		});
+		// Die Bestellung zuerst: buecher_exemplare.bestellung_id steht auf ON DELETE SET
+		// NULL, ihre drei Exemplare blieben sonst als Zulauf ohne Bestellung stehen. Sie
+		// fallen mit dem eigenen Titel.
+		seedSQL(`
+			DELETE FROM bestellungen_verlauf WHERE lieferant_name = 'E2E-Detail-Haendler ${s}';
+			DELETE FROM buecher_titel WHERE isbn = '97d${s}';
+		`);
 	}
 });
