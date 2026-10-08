@@ -88,10 +88,13 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [x] Buchakte: Kopf und Reiter zählen den Bestand, ein bestelltes Exemplar steht im Kopf als
   „1 bestellt"; die Zahl „Exemplare" im Kopf ist entfallen (entschieden und gebaut am
   07.10.2026).
-- [ ] Jahrgang am Titel: den Umbau wie in 5.5 vorgeschlagen freigeben, vor der Übernahme am
-  Schulserver; die Klassen-Einträge des Testservers verfallen dabei. (5.5)
-- [ ] Auskunft: Die Protokolleinträge auf dem Blatt nennen auch, worum es ging (Buch, Grund,
-  Betrag), ohne interne Kennungen und ohne die Person, die gebucht hat. (5.19)
+- [x] Jahrgang am Titel: Der Umbau wie in 5.5 ist freigegeben (entschieden am 08.10.2026).
+  „Klasse" entfällt, „von" und „bis" werden Auswahlfelder, ohne Eintrag gilt „unbekannt"; die
+  Klassen-Einträge des Testservers verfallen. Die Maske wird als Bild gezeigt, bevor sie
+  sichtbar wird.
+- [x] Auskunft: Die Protokolleinträge auf dem Blatt nennen in Worten, worum es ging (Buch,
+  Grund, Betrag), ohne die Kennungen des Programms und ohne das Konto, das gebucht hat
+  (entschieden am 08.10.2026). (5.19)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -168,8 +171,8 @@ Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wir
 der Nummer nichts mehr dazu offen ist.
 
 - [ ] **Jahrgang am Titel (5.5):** „Klasse" und „von … bis" werden eine Angabe, „unbekannt" eine
-  eigene (entschieden am 24.09.2026). Gemessen am 08.10.2026; der Bauplan wartet auf die
-  Freigabe (oben, „Entscheiden"). Gebaut wird vor der Übernahme am Schulserver.
+  eigene (entschieden am 24.09.2026). Der Bauplan in drei Stufen ist seit dem 08.10.2026
+  freigegeben; gebaut wird vor der Übernahme am Schulserver, die Maske zuerst als Bild.
 - [x] **Buchakte (5.5):** Ein bestelltes Exemplar, das nie eintraf, steht nach „Exemplar löschen"
   nicht mehr im Abgangsbuch; ausgesonderte und bestellte Exemplare heißen dort seit dem
   07.10.2026 „Ausgesondert" und „Bestellt".
@@ -181,8 +184,8 @@ der Nummer nichts mehr dazu offen ist.
   Bogen.
 - [x] **Überläufe (5.45):** Bestellwesen, Signaturen bei 1280 px und ein langer Name in der
   Leserakte sind seit dem 08.10.2026 behoben.
-- [ ] **Auskunft (5.19):** welche Angaben der Protokolleinträge aufs Blatt gehören. Der
-  Vorschlag wartet auf die Entscheidung (oben, „Entscheiden").
+- [ ] **Auskunft (5.19):** Die Protokolleinträge auf dem Blatt nennen in Worten, worum es ging
+  (entschieden am 08.10.2026). Der Bau steht aus.
 - [x] **Protokoll und Tilgung (5.35):** Am Testserver am 08.10.2026 gezählt: kein alter Eintrag
   zu einem gelöschten Leser, keine Stornierung ohne die Kennung des Lesers, kein Eintrag über
   ein früheres Konto. Zu bereinigen ist nichts.
@@ -379,7 +382,7 @@ Vermerk.
   „Adolescent" …; MARC 21, Feld 008, Stelle 22) und sucht die Klassenstufe im Text von Feld
   521. Eine einzelne Zahl neben einer Spanne führt keines.
 
-  **Vorschlag, zur Freigabe (Fahrplan, „Entscheiden"):**
+  **Bauplan, freigegeben am 08.10.2026:**
   1. Datenbank: Die Spanne darf fehlen (beide Werte oder keiner; 1 bis 13, „von" nicht über
      „bis"). Die Migration setzt die Vorgabe 5 bis 10 auf „unbekannt" und entfernt die Spalte
      der Klasse. Die fünf Titel mit Klasse und eigener Spanne verlieren nichts, die Klasse
@@ -496,7 +499,7 @@ den Zeitpunkt und den Vorgang in Worten („High level summary of the user activ
 BIBLIOTHECAplus und der DSGVO nennt keine Auskunft an Leser; dort wurden die Protokolldateien
 gekürzt, damit „dort keine personenbezogenen Daten verbleiben".
 
-**Vorschlag, zur Entscheidung (Fahrplan, „Entscheiden"):** Das Blatt nennt je Eintrag den
+**Entschieden am 08.10.2026:** Das Blatt nennt je Eintrag den
 Vorgang in Worten („Ausleihe", „Sperre von Hand") und die Angaben zur Person: bei Ausleihe und
 Rückgabe Titel und Nummer des Buchs, sonst Grund, Betrag, Referenznummer, Ausweisnummern und
 LUSD-ID. Nicht aufs Blatt kommen die Kennungen des Programms und das Konto, das gebucht hat.
