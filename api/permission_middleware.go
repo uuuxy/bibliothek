@@ -11,8 +11,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
-
-	"github.com/jackc/pgx/v5"
+	"bibliothek/repository"
 )
 
 var (
@@ -125,17 +124,10 @@ func (s *Server) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permis
 	// darf damit noch antworten, aber der Cache darf ihn nicht festhalten.
 	epocheBeimStart := leseCacheEpoche()
 
-	var allowed bool
-	query := `
-		SELECT allowed
-		FROM role_permissions
-		WHERE UPPER(role) = UPPER($1) AND permission = $2
-	`
-	err := s.DB.Pool.QueryRow(ctx, query, rolle, permission).Scan(&allowed)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+	finalAllowed, err := repository.RechtDerRolle(ctx, s.DB.Pool, rolle, permission)
+	if err != nil {
 		return false, err
 	}
-	finalAllowed := err == nil && allowed
 
 	permCacheMu.Lock()
 	if permCacheEpoche == epocheBeimStart {

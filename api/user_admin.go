@@ -106,28 +106,10 @@ func (s *Server) ListUsersHandler(userRepo repository.UserRepository) http.Handl
 //
 // Die Rollen kommen kleingeschrieben zurueck, passend zu UserResponse.Rolle.
 func (s *Server) rechteAllerRollen(ctx context.Context) (map[string][]string, error) {
-	rows, err := s.DB.Pool.Query(ctx, `
-		SELECT lower(role), permission
-		FROM role_permissions
-		WHERE allowed = true
-	`)
+	rechte, err := repository.ErlaubteRechteJeRolle(ctx, s.DB.Pool)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	rechte := map[string][]string{}
-	for rows.Next() {
-		var rolle, recht string
-		if err := rows.Scan(&rolle, &recht); err != nil {
-			return nil, err
-		}
-		rechte[rolle] = append(rechte[rolle], recht)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
 	rechte[strings.ToLower(string(auth.RoleAdmin))] = []string{"*"}
 	return rechte, nil
 }

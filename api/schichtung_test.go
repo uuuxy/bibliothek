@@ -108,8 +108,6 @@ var handlerMitSQL = map[string]int{
 	"mail_settings.go":                    1,
 	"order_service.go":                    2,
 	"pdf.go":                              2,
-	"permission_middleware.go":            1,
-	"photo_serve.go":                      1,
 	"print.go":                            6,
 	"reorders.go":                         6,
 	"reporting_dashboard.go":              2,
@@ -124,7 +122,6 @@ var handlerMitSQL = map[string]int{
 	"student_update.go":                   12,
 	"supplier_handler.go":                 9,
 	"systematik_handler.go":               8,
-	"user_admin.go":                       1,
 	"user_admin_permissions.go":           2,
 }
 
