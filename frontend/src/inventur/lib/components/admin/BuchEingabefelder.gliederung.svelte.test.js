@@ -65,7 +65,6 @@ describe('BuchEingabefelder: Reihenfolge und Gruppen', () => {
 			'buch-signatur',
 			'buch-fach',
 			'buch-schulzweig',
-			'buch-klasse',
 			'buch-jahrgang-von',
 			'buch-jahrgang-bis',
 			'buch-mehrjahresband'
@@ -79,7 +78,6 @@ describe('BuchEingabefelder: Reihenfolge und Gruppen', () => {
 			...TITELANGABEN,
 			'buch-signatur',
 			'buch-fach',
-			'buch-klasse',
 			'buch-jahrgang-von',
 			'buch-jahrgang-bis'
 		]);

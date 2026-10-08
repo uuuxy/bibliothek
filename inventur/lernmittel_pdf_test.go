@@ -257,6 +257,44 @@ func TestSchulbuecherAlsPDF_JahrgangText(t *testing.T) {
 	}
 }
 
+// Der Jahrgang im Ausdruck ist der Zwilling der Browser-Seite (frontend/src/lib/utils/format.js,
+// jahrgangSpanne). Beide Seiten lesen dieselben Prüffälle (jahrgangSpanne.faelle.json) —
+// rechnen sie verschieden, nennt der Ausdruck einen Jahrgang anders als Titelliste und Buchakte.
+func TestJahrgangText_WieImBrowser(t *testing.T) {
+	const faelleDatei = "../frontend/src/lib/utils/jahrgangSpanne.faelle.json"
+	roh, err := os.ReadFile(faelleDatei)
+	if err != nil {
+		t.Fatalf("Prüffälle lesen: %v", err)
+	}
+	var pruefung struct {
+		Faelle []struct {
+			Fall string `json:"fall"`
+			Von  int    `json:"von"`
+			Bis  int    `json:"bis"`
+			Soll string `json:"soll"`
+		} `json:"faelle"`
+	}
+	if err := json.Unmarshal(roh, &pruefung); err != nil {
+		t.Fatalf("Prüffälle parsen: %v", err)
+	}
+	if len(pruefung.Faelle) == 0 {
+		t.Fatal("keine Prüffälle gelesen — zeigt der Pfad noch auf jahrgangSpanne.faelle.json?")
+	}
+	for _, f := range pruefung.Faelle {
+		if ist := jahrgangText(LernmittelTitel{JahrgangVon: f.Von, JahrgangBis: f.Bis}); ist != f.Soll {
+			t.Errorf("%s: jahrgangText(%d, %d) = %q, erwartet %q", f.Fall, f.Von, f.Bis, ist, f.Soll)
+		}
+	}
+	// Die Browser-Seite muss dieselbe Datei lesen, sonst prüft jede Seite ihre eigenen Fälle.
+	vitest, err := os.ReadFile("../frontend/src/lib/utils/format.test.js")
+	if err != nil {
+		t.Fatalf("format.test.js lesen: %v", err)
+	}
+	if !strings.Contains(string(vitest), "./jahrgangSpanne.faelle.json") {
+		t.Error("format.test.js liest jahrgangSpanne.faelle.json nicht mehr ein")
+	}
+}
+
 // Die Beschriftung einer Auflage im Ausdruck ist der Zwilling der Browser-Seite
 // (frontend/src/lib/utils/auflagenText.js). Beide Seiten lesen dieselben Prüffälle
 // (auflagenText.faelle.json, Bauart wie code39.faelle.json) — rechnen sie verschieden, nennt

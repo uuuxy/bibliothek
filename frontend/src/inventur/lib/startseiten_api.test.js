@@ -25,7 +25,8 @@ const bestand = [
 		signatur: 'Mat Ana',
 		verfuegbar: 0,
 		gesamt: 5,
-		gradeLevel: 11
+		jahrgangVon: 11,
+		jahrgangBis: 11
 	}),
 	buch({ title: 'Ohne Bestand', subject: 'Deutsch', signatur: '', verfuegbar: 0, gesamt: 0 }),
 	buch({ title: 'Hörbuch', subject: 'Englisch', medientyp: 'CD', verfuegbar: 1, gesamt: 1 })
@@ -33,8 +34,8 @@ const bestand = [
 
 describe('buecherSuchen', () => {
 	const katalog = [
-		buch({ title: 'Mathematik 1', subject: 'Mathematik', gradeLevel: 5 }),
-		buch({ title: 'Politik und Wirtschaft', subject: 'PoWi', gradeLevel: 10 }),
+		buch({ title: 'Mathematik 1', subject: 'Mathematik', jahrgangVon: 5, jahrgangBis: 5 }),
+		buch({ title: 'Politik und Wirtschaft', subject: 'PoWi', jahrgangVon: 10, jahrgangBis: 10 }),
 		buch({ title: 'Englisch G21', author: 'Schwarz', isbn: '978-3-06-031306-8' }),
 		buch({ title: 'Biologie heute', istLernmittel: true }),
 		buch({ title: 'Chemie', jahrgangVon: 8, jahrgangBis: 10 })
@@ -57,7 +58,7 @@ describe('buecherSuchen', () => {
 		expect(finde('powi')).toEqual(['Politik und Wirtschaft']);
 	});
 
-	it('findet über Jahrgangsstufe (gradeLevel) oder Spanne (jahrgangVon-Bis)', () => {
+	it('findet über den Jahrgang: ein Jahr oder eine Spanne (jahrgangVon bis jahrgangBis)', () => {
 		expect(finde('10')).toEqual(['Politik und Wirtschaft', 'Chemie']);
 		expect(finde('5')).toEqual(['Mathematik 1']);
 	});
@@ -102,13 +103,16 @@ describe('buecherSuchen: Jahrgang ohne Angabe', () => {
 	const katalog = [
 		buch({ title: 'Atlas', jahrgangVon: 0, jahrgangBis: 0 }),
 		buch({ title: 'Erdkunde', jahrgangVon: 0, jahrgangBis: 0, gradeLevel: 7 }),
+		buch({ title: 'Physik', jahrgangVon: 7, jahrgangBis: 7 }),
 		buch({ title: 'Geschichte', jahrgangVon: 5, jahrgangBis: 9 }),
 		buch({ title: 'Lesebuch', jahrgangVon: 5, jahrgangBis: 10 })
 	];
 	const titel = (/** @type {string} */ q) => buecherSuchen(katalog, q).map((b) => b.title);
 
-	it('ein Titel ohne Spanne trifft keinen Jahrgang, die Klasse am Titel schon', () => {
-		expect(titel('klasse 7')).toEqual(['Erdkunde', 'Geschichte', 'Lesebuch']);
+	// „Erdkunde" trägt noch die frühere Angabe „Klasse 7": Sie zählt nicht mehr, gesucht wird
+	// über „von … bis".
+	it('ein Titel ohne Spanne trifft keinen Jahrgang, auch nicht über die frühere Klasse', () => {
+		expect(titel('klasse 7')).toEqual(['Physik', 'Geschichte', 'Lesebuch']);
 		expect(titel('11')).toEqual([]);
 	});
 
@@ -148,8 +152,8 @@ describe('buecherSuchen: jedes Feld für sich', () => {
 // Was ein Begriff ist (Jahrgang, ISBN), entscheidet sich je Begriff, nicht am ersten.
 describe('buecherSuchen: mehrere Begriffe', () => {
 	const katalog = [
-		buch({ title: 'Mathematik A', isbn: '978-3-06-031306-8', gradeLevel: 5 }),
-		buch({ title: 'Mathematik B', gradeLevel: 7 })
+		buch({ title: 'Mathematik A', isbn: '978-3-06-031306-8', jahrgangVon: 5, jahrgangBis: 5 }),
+		buch({ title: 'Mathematik B', jahrgangVon: 7, jahrgangBis: 7 })
 	];
 	const titel = (/** @type {string} */ q) => buecherSuchen(katalog, q).map((b) => b.title);
 

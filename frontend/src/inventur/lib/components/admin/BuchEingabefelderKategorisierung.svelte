@@ -2,10 +2,7 @@
      entscheidet. Die Wahl Bibliothek oder Lernmittel steht oben, weil die Pflicht zur
      Signatur, der Schulzweig, das Mehrjahresband und die anderen Auflagen von ihr abhängen. -->
 <script>
-	import {
-		klassenStufen,
-		mehrjahresbandHinweis
-	} from '$lib/components/admin/buch_form_optionen.js';
+	import { bisNachVon, mehrjahresbandHinweis } from '$lib/components/admin/buch_form_optionen.js';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import Segmente from '../../../../lib/components/ui/Segmente.svelte';
@@ -26,7 +23,6 @@
 			label: `${s.kuerzel} - ${s.bezeichnung}`
 		}))
 	]);
-	const klassen = klassenStufen.map((/** @type {number} */ k) => ({ value: k, label: String(k) }));
 	// Der Schulzweig steht nur am Lernmittel: Der Portal-Reiter der Schulbücher filtert nach
 	// ihm, über ein Bibliotheksbuch sagt er nichts.
 	const ZWEIGE = [
@@ -37,6 +33,13 @@
 		}))
 	];
 	const BESCHRIFTUNG = 'text-sm font-medium text-on-surface-variant';
+
+	/** „bis" geht mit „von" mit, solange es keinen eigenen Wert trägt (bisNachVon).
+	 * @param {number|string|null|undefined} von */
+	function setzeVon(von) {
+		formular.jahrgangBis = bisNachVon(formular.jahrgangVon, von, formular.jahrgangBis);
+		formular.jahrgangVon = von;
+	}
 
 	/** @param {string} art */
 	function waehleArt(art) {
@@ -99,18 +102,14 @@
 
 		<!-- Bei einem Lernmittel ist die Spanne der Unterricht, kein Lesealter, und bei einem
 		     Mehrjahresband die Laufzeit beim Kind: Die Zahl kommt aus „bis". -->
-		<div class="grid grid-cols-3 gap-4">
-			<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
-				<label for="buch-klasse" class={BESCHRIFTUNG}>Klasse</label>
-				<Select id="buch-klasse" bind:value={formular.gradeLevel} options={klassen} />
-			</div>
+		<div class="grid grid-cols-2 gap-4">
 			<Feld
 				id="buch-jahrgang-von"
 				label={formular.istLernmittel ? 'Im Unterricht von Jahrgang' : 'Geeignet für Jahrgang von'}
 				type="number"
 				min="1"
 				max="13"
-				bind:value={formular.jahrgangVon}
+				bind:value={() => formular.jahrgangVon, setzeVon}
 			/>
 			<Feld
 				id="buch-jahrgang-bis"

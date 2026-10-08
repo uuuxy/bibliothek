@@ -27,7 +27,8 @@ const AUSGAENGE = {
  */
 function felderAus(daten) {
 	const jahr = Number.parseInt(daten.jahr);
-	const klasse = Number.parseInt(daten.grade);
+	// Die Stufe aus dem Titel ist ein Jahrgang, „von" und „bis" bekommen dieselbe Zahl.
+	const jahrgang = Number.parseInt(daten.grade) || undefined;
 	/** @type {[string, any][]} */
 	const felder = [
 		['title', daten.title],
@@ -37,7 +38,8 @@ function felderAus(daten) {
 		['erscheinungsjahr', jahr > 0 ? jahr : undefined],
 		['coverUrl', daten.coverUrl],
 		['subject', daten.subject],
-		['gradeLevel', Number.isNaN(klasse) ? undefined : klasse]
+		['jahrgangVon', jahrgang],
+		['jahrgangBis', jahrgang]
 	];
 	return felder.filter(([, wert]) => wert !== undefined && wert !== '');
 }

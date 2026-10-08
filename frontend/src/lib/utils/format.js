@@ -103,3 +103,20 @@ export function bestandSatz(gesamt, verfuegbar, imZulauf) {
 export function zulaufSatz(imZulauf) {
 	return imZulauf ? `${imZulauf} bestellt` : '';
 }
+
+/**
+ * Der Jahrgang eines Titels als Text: „7" für ein Jahr, „7–10" für eine Spanne. Ohne Eintrag
+ * ist er unbekannt und der Text leer. Dieselbe Regel wie im Ausdruck der Schulbuchliste
+ * (inventur/lernmittel_pdf.go, jahrgangText); beide Seiten lesen dieselben Prüffälle
+ * (jahrgangSpanne.faelle.json).
+ *
+ * @param {number | string | null | undefined} von
+ * @param {number | string | null | undefined} bis
+ * @returns {string} leer, wenn kein Jahrgang eingetragen ist
+ */
+export function jahrgangSpanne(von, bis) {
+	const v = Number(von);
+	const b = Number(bis);
+	if (!v || !b) return '';
+	return v === b ? String(v) : `${v}–${b}`;
+}

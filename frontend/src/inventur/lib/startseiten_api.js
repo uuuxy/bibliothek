@@ -40,13 +40,11 @@ const suchSynonyme = new Map([
 ]);
 
 /**
- * Trifft ein Buch den Jahrgang? Entweder über gradeLevel oder über die Spanne von–bis; ohne
- * Spanne (0) trifft sie keinen.
+ * Trifft ein Buch den Jahrgang? Über die Spanne von–bis; ohne Spanne (0) trifft sie keinen.
  * @param {any} b
  * @param {number} jahrgang
  */
 function trifftJahrgang(b, jahrgang) {
-	if (b.gradeLevel && Number(b.gradeLevel) === jahrgang) return true;
 	const von = Number(b.jahrgangVon);
 	const bis = Number(b.jahrgangBis);
 	if (!von || !bis) return false;
@@ -55,7 +53,7 @@ function trifftJahrgang(b, jahrgang) {
 
 /**
  * Die Buch-Suche des Medienkatalogs: Jeder Begriff muss mindestens ein Feld treffen. Eine
- * Zahl zählt als Jahrgang (gradeLevel oder die Spanne von–bis), Füllwörter wie
+ * Zahl zählt als Jahrgang (die Spanne von–bis), Füllwörter wie
  * „Klasse"/„Jg." fallen dann weg.
  * @param {any[]} buecherArray
  * @param {string} searchQuery

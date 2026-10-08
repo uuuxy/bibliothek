@@ -1,6 +1,7 @@
 <script>
 	import { Book, Check } from '@lucide/svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
+	import { jahrgangSpanne } from '../../../../lib/utils/format.js';
 	// buecherFehler: Der Abruf der Bücher ist gescheitert. Ein leeres Gitter sähe sonst aus
 	// wie „kein Buch im Bestand" — der Dialog wäre unbenutzbar, ohne zu sagen, warum.
 	let { books = [], buecherFehler = false, selectedBookIds = $bindable(new Set()) } = $props();
@@ -80,6 +81,7 @@
 	class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 pb-2 mt-6 sm:mt-8"
 >
 	{#each sichtbareBuecher as book (book.id)}
+		{@const jahrgang = jahrgangSpanne(book.jahrgangVon, book.jahrgangBis)}
 		<button
 			onclick={() => toggleBook(book.id)}
 			aria-pressed={selectedBookIds.has(book.id)}
@@ -125,8 +127,8 @@
 
 			<!-- Content -->
 			<div class="p-5 flex flex-col grow justify-end space-y-3 w-full">
-				<!-- Beide Marken nur, wenn sie etwas zu sagen haben: Eine Karte ohne Jahrgang
-				     trüge sonst „Kl. 0", und eine Klasse 0 gibt es nicht. -->
+				<!-- Beide Marken nur, wenn sie etwas zu sagen haben: Ohne Eintrag ist der Jahrgang
+				     unbekannt, und die Karte trägt keine Marke dafür. -->
 				<div class="flex flex-wrap gap-1.5 items-start">
 					{#if book.subject}
 						<span
@@ -134,11 +136,11 @@
 							>{book.subject}</span
 						>
 					{/if}
-					{#if book.gradeLevel}
+					{#if jahrgang}
 						<span
 							class="px-2.5 py-0.5 bg-surface-container-high text-on-surface-variant text-xs font-black rounded-lg"
 						>
-							Kl. {book.gradeLevel}
+							Jg. {jahrgang}
 						</span>
 					{/if}
 				</div>

@@ -1,0 +1,10 @@
+{
+	"_zweck": "Geteilte Prüffälle: Der Jahrgang eines Titels steht zweimal als Text, im Browser (format.js, jahrgangSpanne) und im Ausdruck der Schulbuchliste (inventur/lernmittel_pdf.go, jahrgangText). Beide Tests lesen diese Datei; rechnen die Seiten verschieden, nennt der Ausdruck einen Jahrgang anders als der Bildschirm.",
+	"faelle": [
+		{ "fall": "ein Jahr", "von": 7, "bis": 7, "soll": "7" },
+		{ "fall": "eine Spanne", "von": 7, "bis": 10, "soll": "7–10" },
+		{ "fall": "die Oberstufe", "von": 12, "bis": 13, "soll": "12–13" },
+		{ "fall": "5 bis 10 ist eine Angabe", "von": 5, "bis": 10, "soll": "5–10" },
+		{ "fall": "ohne Eintrag", "von": 0, "bis": 0, "soll": "" }
+	]
+}

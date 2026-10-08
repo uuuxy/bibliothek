@@ -4,6 +4,7 @@
 	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
 	import { standortZeile } from '../../../../lib/utils/standorte.js';
+	import { jahrgangSpanne } from '../../../../lib/utils/format.js';
 
 	/**
 	 * @type {{
@@ -13,7 +14,8 @@
 	 *     title: string,
 	 *     author: string,
 	 *     subject: string,
-	 *     gradeLevel: number,
+	 *     jahrgangVon: number,
+	 *     jahrgangBis: number,
 	 *     istLernmittel: boolean,
 	 *     stock: number,
 	 *     verfuegbar: number,
@@ -31,6 +33,7 @@
 
 	// Die Standorte der Exemplare im Bestand, gezählt vom Server (docs/OFFEN.md 5.53).
 	const standort = $derived(standortZeile(book.standorte));
+	const jahrgang = $derived(jahrgangSpanne(book.jahrgangVon, book.jahrgangBis));
 </script>
 
 <!-- Abstand, Trennlinie, Rückmeldung beim Zeigen und die Fläche der gewählten Zeile kommen
@@ -75,10 +78,9 @@
 	<td>
 		{#if book.subject}{book.subject}{:else}<span class="text-on-surface-variant">–</span>{/if}
 	</td>
-	<!-- Klasse 0 = nicht zugeordnet: „–" statt einer sinnlosen „Kl. 0". -->
+	<!-- Ohne Eintrag ist der Jahrgang unbekannt: ein Strich. -->
 	<td>
-		{#if book.gradeLevel}Kl. {book.gradeLevel}{:else}<span class="text-on-surface-variant">–</span
-			>{/if}
+		{#if jahrgang}{jahrgang}{:else}<span class="text-on-surface-variant">–</span>{/if}
 	</td>
 
 	<td>

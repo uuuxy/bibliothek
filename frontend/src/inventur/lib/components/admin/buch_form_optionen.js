@@ -1,4 +1,16 @@
-export const klassenStufen = [0, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+/**
+ * Der Wert für „bis", wenn sich „von" ändert: „bis" geht mit, solange es leer ist oder dieselbe
+ * Zahl zeigt wie „von" vor der Änderung. Die meisten Schulbücher gelten für ein Jahr; wer 7
+ * tippt, hat 7 bis 7. Ein eigener Wert in „bis" bleibt stehen.
+ * @param {number|string|null|undefined} vonVorher
+ * @param {number|string|null|undefined} vonNeu
+ * @param {number|string|null|undefined} bis
+ * @returns {number|string|null|undefined}
+ */
+export function bisNachVon(vonVorher, vonNeu, bis) {
+	const leer = bis === null || bis === undefined || bis === '';
+	return leer || String(bis) === String(vonVorher ?? '') ? vonNeu : bis;
+}
 
 /**
  * Der Hinweis unter dem Kästchen „Mehrjahresband" (docs/OFFEN.md 9.6): Die Zahl, bis zu der
@@ -59,11 +71,10 @@ export function bestandHinweis(id, bestand) {
 }
 
 /**
- * leeresBuchFormular: die EINE Vorlage für ein neues Buch. Sie stand bis zum 03.09.2026
- * zweimal wörtlich in routes/admin/+page.svelte (Anfangszustand und „Neues Buch"); beim
- * Nachtragen des Schulzweigs fiel auf, dass ein neues Feld an beiden Stellen gepflegt
- * werden muss — vergisst man eine, schickt genau einer der beiden Wege das Feld nie mit.
- * @returns {{ id: null, isbn: string, title: string, author: string, subject: string, gradeLevel: number, istLernmittel: boolean, track: string, mehrjahresband: boolean, stock: number, coverUrl: string, lastCounted: string, medientyp: string, auflage: string, schlagworte: string[], listenpreis: number|null }}
+ * leeresBuchFormular: die eine Vorlage für ein neues Buch. Anfangszustand und „Neues Buch"
+ * lesen sie beide, ein neues Feld steht damit an einer Stelle. Einen Jahrgang trägt sie
+ * nicht: Ohne Eintrag ist er unbekannt.
+ * @returns {{ id: null, isbn: string, title: string, author: string, subject: string, istLernmittel: boolean, track: string, mehrjahresband: boolean, stock: number, coverUrl: string, lastCounted: string, medientyp: string, auflage: string, schlagworte: string[], listenpreis: number|null }}
  */
 export function leeresBuchFormular() {
 	return {
@@ -72,7 +83,6 @@ export function leeresBuchFormular() {
 		title: '',
 		author: '',
 		subject: '',
-		gradeLevel: 5,
 		istLernmittel: false,
 		track: '',
 		mehrjahresband: false,

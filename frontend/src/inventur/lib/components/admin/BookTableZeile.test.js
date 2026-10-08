@@ -9,7 +9,8 @@ const buch = (zusatz = {}) => ({
 	title: 'Die Räuber',
 	author: 'Friedrich Schiller',
 	subject: 'Deutsch',
-	gradeLevel: 9,
+	jahrgangVon: 9,
+	jahrgangBis: 9,
 	istLernmittel: true,
 	stock: 12,
 	verfuegbar: 10,
@@ -34,6 +35,10 @@ function zeile(book, isSelected = false) {
 	});
 }
 
+/** Der Text jeder Zelle der Zeile. */
+const zellen = (/** @type {HTMLElement} */ container) =>
+	[...container.querySelectorAll('td')].map((z) => (z.textContent ?? '').trim());
+
 /** Der Text aller Schildchen der Zeile (ui/StatusChip trägt data-chip). */
 const schildchen = (/** @type {HTMLElement} */ container) =>
 	[...container.querySelectorAll('[data-chip]')].map((c) => (c.textContent ?? '').trim());
@@ -49,7 +54,6 @@ describe('Titel-Verwaltung: Zeile', () => {
 			'Die Räuber',
 			'Friedrich Schiller',
 			'Deutsch',
-			'Kl. 9',
 			'Raum 12 (10) · Lehrerschrank (2)',
 			'1.9.2026',
 			'12'
@@ -57,12 +61,22 @@ describe('Titel-Verwaltung: Zeile', () => {
 			expect(text, wort).toContain(wort);
 	});
 
+	// Der Jahrgang steht in seiner Spalte, wie die Maske ihn führt: ein Jahr oder eine Spanne.
+	it('zeigt den Jahrgang als Zahl oder als Spanne', () => {
+		expect(zellen(zeile(buch()).container)).toContain('9');
+		expect(zellen(zeile(buch({ jahrgangVon: 7, jahrgangBis: 10 })).container)).toContain('7–10');
+	});
+
+	// Die frühere Angabe „Klasse" (gradeLevel) zeigt die Zeile nicht mehr: Ohne „von … bis"
+	// ist der Jahrgang unbekannt.
 	it('nennt ein Buch der Bücherei ohne Schildchen und setzt einen Strich, wo nichts steht', () => {
 		const { container } = zeile(
 			buch({
 				istLernmittel: false,
 				subject: '',
-				gradeLevel: 0,
+				gradeLevel: 7,
+				jahrgangVon: 0,
+				jahrgangBis: 0,
 				lastCounted: '',
 				standorte: undefined
 			})

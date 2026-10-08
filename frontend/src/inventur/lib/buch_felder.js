@@ -3,15 +3,13 @@
 // an den übrigen Feldern gespeichert hat, bleibt stehen.
 
 /**
- * Der Titel, wie er hinausgeht: die Klasse als Zahl, Lernmittel als Ja oder Nein, ein leeres
- * Zähldatum als null.
+ * Der Titel, wie er hinausgeht: Lernmittel als Ja oder Nein, ein leeres Zähldatum als null.
  * @param {any} formular
  * @returns {Record<string, any>}
  */
 export function alsRumpf(formular) {
 	return {
 		...formular,
-		gradeLevel: Number(formular.gradeLevel),
 		istLernmittel: !!formular.istLernmittel,
 		lastCounted: formular.lastCounted || null
 	};

@@ -32,13 +32,20 @@ const abfragenZu = (isbn) =>
 
 /** Eine neue Maske, in der zur ISBN A schon abgefragt ist. */
 async function nachAbfrageA() {
-	const formular = /** @type {any} */ ({ id: null, isbn: A, title: '', author: '', gradeLevel: 5 });
+	const formular = /** @type {any} */ ({ id: null, isbn: A, title: '', author: '' });
 	const abfrage = erzeugeIsbnAbfrage(
 		() => formular,
 		() => undefined
 	);
 	await abfrage.nachschlagen(false);
-	expect(formular).toMatchObject({ title: 'Buch A', author: 'Autor A', gradeLevel: 7 });
+	// Die Stufe aus dem Titel steht als Jahrgang da, „von" und „bis" mit derselben Zahl.
+	expect(formular).toMatchObject({
+		title: 'Buch A',
+		author: 'Autor A',
+		jahrgangVon: 7,
+		jahrgangBis: 7
+	});
+	expect(formular).not.toHaveProperty('gradeLevel');
 	return { formular, abfrage };
 }
 
@@ -68,7 +75,10 @@ describe('isbnAbfrage: eine andere ISBN in derselben Maske', () => {
 			undefined,
 			undefined
 		]);
-		expect(formular.gradeLevel, 'die Vorgabe der Maske').toBe(5);
+		expect([formular.jahrgangVon, formular.jahrgangBis], 'der Jahrgang des ersten Buchs').toEqual([
+			undefined,
+			undefined
+		]);
 	});
 
 	it('lässt stehen, was jemand nach der Abfrage geändert hat', async () => {
@@ -98,7 +108,12 @@ describe('isbnAbfrage: eine andere ISBN in derselben Maske', () => {
 		formular.isbn = '9783000000003';
 		await abfrage.nachschlagen(false);
 
-		expect([formular.title, formular.author, formular.gradeLevel]).toEqual(['', '', 5]);
+		expect([formular.title, formular.author, formular.jahrgangVon, formular.jahrgangBis]).toEqual([
+			'',
+			'',
+			undefined,
+			undefined
+		]);
 		expect(abfrage.ausgang?.text).toContain('nichts bekannt');
 	});
 
@@ -111,7 +126,12 @@ describe('isbnAbfrage: eine andere ISBN in derselben Maske', () => {
 
 		formular.isbn = '9783000000003';
 		await abfrage.nachschlagen(false);
-		expect([formular.title, formular.author, formular.gradeLevel]).toEqual(['', '', 5]);
+		expect([formular.title, formular.author, formular.jahrgangVon, formular.jahrgangBis]).toEqual([
+			'',
+			'',
+			undefined,
+			undefined
+		]);
 	});
 
 	it('zeigt die Maske inzwischen einen anderen Titel, bleibt er unberührt', async () => {

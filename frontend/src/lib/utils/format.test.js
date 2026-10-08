@@ -5,8 +5,10 @@ import {
 	formatZeitpunkt,
 	formatZahl,
 	bestandSatz,
-	zulaufSatz
+	zulaufSatz,
+	jahrgangSpanne
 } from './format.js';
+import jahrgangFaelle from './jahrgangSpanne.faelle.json';
 
 describe('format.js — eine deutsche Schreibweise', () => {
 	it('Prozent: Komma, eine Nachkommastelle, geschütztes Leerzeichen; Rohstring vom Backend geht auch', () => {
@@ -60,5 +62,23 @@ describe('format.js — eine deutsche Schreibweise', () => {
 		expect(zulaufSatz(0)).toBe('');
 		expect(zulaufSatz(null)).toBe('');
 		expect(zulaufSatz(undefined)).toBe('');
+	});
+
+	// Dieselben Fälle prüft die Go-Seite am Ausdruck der Schulbuchliste
+	// (inventur/lernmittel_pdf_test.go).
+	it('Jahrgang: ein Jahr, eine Spanne, und leer ohne Eintrag', () => {
+		expect(jahrgangFaelle.faelle.length).toBeGreaterThan(0);
+		for (const f of jahrgangFaelle.faelle) {
+			expect(jahrgangSpanne(f.von, f.bis), f.fall).toBe(f.soll);
+		}
+	});
+
+	// Die Maske liefert leere Felder als null oder leeren Text, die Liste als 0.
+	it('Jahrgang: eine halbe oder fehlende Angabe ergibt keinen Text', () => {
+		expect(jahrgangSpanne(null, null)).toBe('');
+		expect(jahrgangSpanne('', '')).toBe('');
+		expect(jahrgangSpanne(undefined, undefined)).toBe('');
+		expect(jahrgangSpanne(7, 0)).toBe('');
+		expect(jahrgangSpanne('7', '9')).toBe('7–9');
 	});
 });

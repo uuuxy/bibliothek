@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { bestandHinweis, leeresBuchFormular, mehrjahresbandHinweis } from './buch_form_optionen.js';
+import {
+	bestandHinweis,
+	bisNachVon,
+	leeresBuchFormular,
+	mehrjahresbandHinweis
+} from './buch_form_optionen.js';
 
 // Mehrjahresband (docs/OFFEN.md 9.6): ein Kästchen am Werk, die Zahl kommt aus der Spanne
 // „bis". Ein neues Buch beginnt ohne Haken; fehlte der Wert in der Vorlage,
@@ -74,5 +79,38 @@ describe('buch_form_optionen: Bestand eines neuen Buchs', () => {
 		for (const leer of ['', null, undefined]) {
 			expect(bestandHinweis('titel-1', leer)).toBe('Ohne Zahl bleibt der Bestand, wie er ist.');
 		}
+	});
+});
+
+// „bis" geht mit „von" mit: Die meisten Schulbücher gelten für ein Jahr, wer 7 tippt, hat 7
+// bis 7. Ein eigener Wert in „bis" bleibt stehen. Die Maske liefert ein leeres Zahlenfeld als
+// undefined, ein geöffneter Titel ohne Jahrgang trägt null.
+describe('buch_form_optionen: „bis" geht mit „von" mit', () => {
+	it.each([
+		['ein leeres „bis" bekommt die Zahl', undefined, 7, undefined, 7],
+		['auch nach dem Öffnen eines Titels ohne Jahrgang', null, 7, null, 7],
+		['Ziffer für Ziffer: aus 1 wird 10', 1, 10, 1, 10],
+		['ein Jahr berichtigen: beide gehen mit', 7, 6, 7, 6],
+		['ein geleertes „von" leert ein mitgegangenes „bis"', 7, undefined, 7, undefined],
+		['ein eigener Wert in „bis" bleibt', 7, 8, 10, 10],
+		['auch wenn „von" geleert wird', 7, undefined, 10, 10],
+		['ein „bis", das vor „von" eingetragen war, bleibt', undefined, 7, 10, 10]
+	])('%s', (_fall, vonVorher, vonNeu, bis, soll) => {
+		expect(bisNachVon(vonVorher, vonNeu, bis)).toBe(soll);
+	});
+
+	// Aus der Maske kommen Zahlen, aus einem Test oder einem Import auch Text.
+	it('vergleicht Zahl und Text als dieselbe Angabe', () => {
+		expect(bisNachVon(7, 8, '7')).toBe(8);
+		expect(bisNachVon('7', 8, 7)).toBe(8);
+	});
+
+	it('die Vorlage eines neuen Buchs trägt weder Jahrgang noch Klasse', () => {
+		const vorlage = /** @type {any} */ (leeresBuchFormular());
+		expect([vorlage.jahrgangVon, vorlage.jahrgangBis, vorlage.gradeLevel]).toEqual([
+			undefined,
+			undefined,
+			undefined
+		]);
 	});
 });

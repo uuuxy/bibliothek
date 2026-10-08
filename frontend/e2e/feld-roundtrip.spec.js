@@ -107,10 +107,11 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		).toBe('true|Realschule|7-9|true');
 	});
 
-	// Ohne Eintrag bleibt der Jahrgang unbekannt (Migration 162): Die zwei Felder stehen an einem
-	// neuen Titel leer, und in der Datenbank steht keine Spanne. Eine halbe Spanne lehnt der
-	// Server mit einem Satz ab; geleert wird eine Spanne wieder unbekannt.
-	test('Jahrgang ohne Eintrag bleibt unbekannt, eine halbe Spanne wird abgelehnt', async ({
+	// Der Jahrgang am Titel: Ohne Eintrag ist er unbekannt (Migration 162), die zwei Felder stehen
+	// an einem neuen Titel leer, und ein Feld „Klasse" führt die Maske nicht. Wer in „von" eine
+	// Zahl tippt, hat dieselbe in „bis". Eine halbe Spanne lehnt der Server mit einem Satz ab;
+	// geleert ist der Jahrgang wieder unbekannt.
+	test('Jahrgang: ohne Eintrag unbekannt, „bis" geht mit „von" mit, eine halbe Spanne wird abgelehnt', async ({
 		page
 	}) => {
 		const titel = `RT Ohne Jahrgang ${s}`;
@@ -118,50 +119,69 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 			querySQL(
 				`SELECT coalesce(jahrgang_von::text, 'leer') || '-' || coalesce(jahrgang_bis::text, 'leer') FROM buecher_titel WHERE titel = '${titel}'`
 			);
+		const von = page.locator('#buch-jahrgang-von');
+		const bis = page.locator('#buch-jahrgang-bis');
+		const suche = page.getByRole('searchbox', { name: 'Bücher durchsuchen' });
 		// Nach dem Speichern schließt die Maske einen Augenblick später. Wer den Titel vorher
 		// wieder öffnet, tippt noch in die alte Maske.
-		const maskeIstZu = () => expect(page.locator('#buch-jahrgang-von')).toHaveCount(0);
+		const maskeIstZu = () => expect(von).toHaveCount(0);
+		const oeffne = async () => {
+			await maskeIstZu();
+			await suche.fill(titel);
+			await page.getByText(titel).first().click();
+			await expect(page.locator('#buch-signatur')).toHaveValue('BIB Rt', { timeout: 15000 });
+		};
 		await uiLogin(page);
 		await page.goto('/medienkatalog');
 		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 		await page.getByRole('button', { name: 'Neues Buch' }).first().click();
 		await page.locator('#buch-titel').fill(titel);
 		await page.locator('#buch-signatur').fill('BIB Rt');
-		await expect(page.locator('#buch-jahrgang-von')).toHaveValue('');
-		await expect(page.locator('#buch-jahrgang-bis')).toHaveValue('');
+		await expect(von).toHaveValue('');
+		await expect(bis).toHaveValue('');
+		await expect(page.locator('#buch-klasse'), 'die Maske führt kein Feld „Klasse"').toHaveCount(0);
 		const speichern = page.getByRole('button', { name: 'Speichern' });
 		await speichern.click();
 		await expect(page.getByText(titel).first()).toBeVisible({ timeout: 10000 });
 		expect(spanne(), 'ohne Eintrag steht keine Spanne in der Datenbank').toBe('leer-leer');
 
-		// Den Titel wieder öffnen: Die Felder stehen leer da, nicht mit einer Null.
-		await maskeIstZu();
-		const suche = page.getByRole('searchbox', { name: 'Bücher durchsuchen' });
-		await suche.fill(titel);
-		await page.getByText(titel).first().click();
-		await expect(page.locator('#buch-signatur')).toHaveValue('BIB Rt', { timeout: 15000 });
-		await expect(page.locator('#buch-jahrgang-von')).toHaveValue('');
+		// Den Titel wieder öffnen: Die Felder stehen leer da, nicht mit einer Null. Eine 7 in
+		// „von" steht sofort auch in „bis", gespeichert ist der eine Jahrgang. Die Meldung „Buch
+		// erfolgreich gespeichert!" vom Anlegen kann noch stehen: Die Probe wartet deshalb auf den
+		// Stand in der Datenbank.
+		await oeffne();
+		await expect(von).toHaveValue('');
+		await von.pressSequentially('7');
+		await expect(bis).toHaveValue('7');
+		await speichern.click();
+		await expect.poll(spanne, { timeout: 15000 }).toBe('7-7');
 
-		// Nur „von": Der Server lehnt ab und sagt, warum; gespeichert ist nichts.
-		await page.locator('#buch-jahrgang-von').fill('7');
+		// „bis" geleert: Der Server lehnt die halbe Spanne ab und sagt, warum; gespeichert ist
+		// nichts.
+		await oeffne();
+		await expect(von).toHaveValue('7');
+		await bis.fill('');
 		await speichern.click();
 		await expect(page.getByText(/gehören zusammen/)).toBeVisible({ timeout: 10000 });
-		expect(spanne(), 'eine halbe Spanne ist nicht gespeichert').toBe('leer-leer');
+		expect(spanne(), 'eine halbe Spanne ist nicht gespeichert').toBe('7-7');
 
-		// Mit „bis" dazu ist es eine Spanne. Die Meldung „Buch erfolgreich gespeichert!" vom
-		// Anlegen kann noch stehen, mit der neuen sind es dann zwei: Die Probe wartet deshalb
-		// auf den Stand in der Datenbank.
-		await page.locator('#buch-jahrgang-bis').fill('9');
+		// Ein eigener Wert in „bis" macht daraus eine Spanne, und die Titelliste nennt sie in der
+		// Spalte „Jahrgang".
+		await bis.fill('9');
 		await speichern.click();
 		await expect.poll(spanne, { timeout: 15000 }).toBe('7-9');
-
-		// Beide Felder geleert: Der Jahrgang ist wieder unbekannt.
 		await maskeIstZu();
 		await suche.fill(titel);
+		await expect(page.getByRole('columnheader', { name: 'Jahrgang' })).toBeVisible();
+		await expect(page.getByRole('row').filter({ hasText: titel })).toContainText('7–9');
+
+		// „von" geleert: Der eigene Wert in „bis" bleibt stehen. Beide Felder geleert: Der
+		// Jahrgang ist wieder unbekannt.
 		await page.getByText(titel).first().click();
-		await expect(page.locator('#buch-jahrgang-von')).toHaveValue('7', { timeout: 15000 });
-		await page.locator('#buch-jahrgang-von').fill('');
-		await page.locator('#buch-jahrgang-bis').fill('');
+		await expect(von).toHaveValue('7', { timeout: 15000 });
+		await von.fill('');
+		await expect(bis).toHaveValue('9');
+		await bis.fill('');
 		await speichern.click();
 		await expect.poll(spanne, { timeout: 15000 }).toBe('leer-leer');
 	});

@@ -3,7 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
 vi.mock('./store.svelte.js', () => ({ appState: {}, showToast: vi.fn() }));
 import { apiFetch } from '../../lib/apiFetch.js';
-import { geaenderteFelder, merkeStand, uebernimmGespeichert } from './buch_felder.js';
+import { alsRumpf, geaenderteFelder, merkeStand, uebernimmGespeichert } from './buch_felder.js';
+import { leeresBuchFormular } from './components/admin/buch_form_optionen.js';
 import { speichereBuch, titelFuerMaske } from './buch_speichern.js';
 
 /** @param {number} status @param {any} koerper */
@@ -86,12 +87,10 @@ describe('buch_felder: geaenderteFelder', () => {
 		}
 	);
 
-	it('die Klasse kommt aus der Auswahl als Text und zählt als Zahl', async () => {
-		const formular = await oeffne();
-		formular.gradeLevel = '7';
-		expect(geaenderteFelder(formular)).toEqual({});
-		formular.gradeLevel = '8';
-		expect(geaenderteFelder(formular)).toEqual({ gradeLevel: 8 });
+	// Die Maske führt die Klasse nicht mehr: Ein neuer Titel geht ohne sie hinaus, sonst
+	// schriebe der Server eine Angabe, die niemand eingetragen hat.
+	it('ein neuer Titel geht ohne Klasse hinaus', () => {
+		expect(alsRumpf(leeresBuchFormular())).not.toHaveProperty('gradeLevel');
 	});
 
 	it('das Zähldatum vergleicht den Tag, den die Maske zeigt', async () => {

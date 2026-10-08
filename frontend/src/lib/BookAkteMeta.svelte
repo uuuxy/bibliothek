@@ -12,6 +12,7 @@
 	import BuchKarteCover from '../inventur/lib/components/BuchKarteCover.svelte';
 	import { standorteAusExemplaren, standortZeile } from './utils/standorte.js';
 	import { exemplarZahlen } from './components/exemplarStatus.js';
+	import { jahrgangSpanne } from './utils/format.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -41,17 +42,13 @@
 
 	let copied = $state(false);
 
+	const jahrgang = $derived(jahrgangSpanne(book.jahrgangVon, book.jahrgangBis));
+
 	/** Einordnung in einer Zeile, wie „Sept. 2026 · Buch 3 · Verlag" im Play Store. */
 	const einordnung = $derived(
 		[
 			book.subject,
-			book.jahrgangVon && book.jahrgangBis
-				? book.jahrgangVon === book.jahrgangBis
-					? `Jahrgang ${book.jahrgangVon}`
-					: `Jahrgang ${book.jahrgangVon}–${book.jahrgangBis}`
-				: book.gradeLevel
-					? `Jahrgang ${book.gradeLevel}`
-					: '',
+			jahrgang ? `Jahrgang ${jahrgang}` : '',
 			book.istLernmittel ? 'Lernmittel' : '',
 			book.auflage || '',
 			book.medientyp && book.medientyp !== 'Buch' ? book.medientyp : ''
