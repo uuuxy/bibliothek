@@ -3,6 +3,8 @@
  * eines vorhandenen Geräts und die Nutzlast, die an den Server geht.
  */
 
+import { nurGeaendertes } from './utils/geaendert.js';
+
 /** Die Felder, die sich an einem vorhandenen Gerät ändern lassen. Der Barcode klebt. */
 const AENDERBAR = ['modellname', 'seriennummer', 'zubehoer', 'zustand_notiz'];
 
@@ -49,7 +51,8 @@ export function geraetNutzlast(form, vorhanden) {
 			'Der Stand vom Öffnen des Geräts fehlt. Nichts gespeichert: bitte das Gerät neu öffnen.'
 		);
 	}
-	return Object.fromEntries(
-		AENDERBAR.filter((name) => form[name] !== form.geladen[name]).map((name) => [name, form[name]])
+	return nurGeaendertes(
+		form.geladen,
+		Object.fromEntries(AENDERBAR.map((name) => [name, form[name]]))
 	);
 }

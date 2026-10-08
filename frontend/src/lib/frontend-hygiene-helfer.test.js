@@ -7,6 +7,10 @@ import { sammleQuelldateien, srcRoot, relPfad, ohneKommentare } from './hygiene-
 // laufen die Stellen auseinander, etwa im Leerzeichen vor dem Zeichen und im Tausenderpunkt. Wer
 // eine der beiden außerhalb ihres Helfers schreibt, wird hier rot.
 //
+// Ebenso der Vergleich einer Maske mit ihrem Stand vom Öffnen (nurGeaendertes in
+// utils/geaendert.js): Er stand in vier Masken von Hand. Der Titel vergleicht in
+// inventur/lib/buch_felder.js mit eigener Regel und anderer Form.
+//
 // Sieht nicht: einen Betrag ohne Leerzeichen vor dem Zeichen in einer Vorlage (`{wert}€`), ein
 // Zeichen aus einer Variablen und einen Fehlertext mit eigenem Ersatzsatz
 // (`e instanceof Error ? e.message : 'Export fehlgeschlagen'`); der ist gewollt.
@@ -14,6 +18,8 @@ const FORMAT = 'src/lib/utils/format.js';
 const BETRAG = /\+\s*['"`](?:\s|\\u00a0)*€|\}(?:\s|\\u00a0|&nbsp;)+€|currency\s*:\s*['"`]EUR/;
 const FEHLERTEXT =
 	/instanceof\s+Error\s*\?\s*[\w$.]+\.message\s*:\s*String\(|String\(\s*[\w$.]+\s+instanceof\s+Error\s*\?/;
+const GEAENDERT = 'src/lib/utils/geaendert.js';
+const VERGLEICH_MIT_GELADEN = /!==\s*(?:[\w$]+\.)*geladen\[/;
 
 describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 	const dateien = sammleQuelldateien(srcRoot);
@@ -40,6 +46,23 @@ describe('Betrag und Fehlertext nur über ihre Helfer', () => {
 			treffer(FEHLERTEXT),
 			'Fehlertext von Hand geschrieben — fehlertext aus utils/fehlertext.js nehmen'
 		).toEqual([]);
+	});
+
+	it('keine Maske vergleicht von Hand mit ihrem Stand vom Öffnen', () => {
+		const von_hand = treffer(VERGLEICH_MIT_GELADEN);
+		expect(von_hand, 'der Detektor findet nurGeaendertes nicht').toContain(GEAENDERT);
+		expect(
+			von_hand.filter((f) => f !== GEAENDERT),
+			'Vergleich mit dem geladenen Stand von Hand — nurGeaendertes aus utils/geaendert.js nehmen'
+		).toEqual([]);
+		for (const form of [
+			'.filter(([name, wert]) => wert !== form.geladen[name])',
+			'AENDERBAR.filter((name) => form[name] !== form.geladen[name])',
+			'.filter((name) => jetzt[name] !== geladen[name])'
+		]) {
+			expect(VERGLEICH_MIT_GELADEN.test(form), form).toBe(true);
+		}
+		expect(VERGLEICH_MIT_GELADEN.test('return nurGeaendertes(form.geladen, felder);')).toBe(false);
 	});
 
 	it('Selbstprobe: die Detektoren fassen die Formen', () => {

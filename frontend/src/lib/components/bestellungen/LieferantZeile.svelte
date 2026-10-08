@@ -12,7 +12,8 @@
 	import Switch from '../ui/Switch.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import { untrack } from 'svelte';
-	import { lieferantStand, lieferantAenderung } from '../../lieferantFormular.js';
+	import { lieferantStand } from '../../lieferantFormular.js';
+	import { nurGeaendertes } from '../../utils/geaendert.js';
 
 	/**
 	 * @type {{
@@ -33,7 +34,7 @@
 	// Zeile beim Wechsel in den Bearbeiten-Zustand neu ein ({#key}); ein Formular, das
 	// dem Prop weiter folgt, verlöre die Eingabe beim nächsten Nachladen der Liste.
 	//
-	// Gespeichert wird nur, was sich seit diesem Stand geändert hat (lieferantFormular.js): Die
+	// Gespeichert wird nur, was sich seit diesem Stand geändert hat (utils/geaendert.js): Die
 	// Liste kann älter sein als der Lieferant, und das Merkmal Hauptlieferant ginge sonst aus
 	// ihr zurück, auch wenn es inzwischen ein anderer Händler trägt.
 	const geladen = untrack(() => lieferantStand(s));
@@ -63,7 +64,7 @@
 			<button
 				onclick={() =>
 					onSave(
-						lieferantAenderung(geladen, {
+						nurGeaendertes(geladen, {
 							name: editName,
 							email: editEmail,
 							customerNumber: editCustNum,

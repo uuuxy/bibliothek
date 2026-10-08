@@ -1,6 +1,7 @@
 import { apiClient } from './apiFetch.js';
 import { istKollegium, artMitKonto } from './leserArt.js';
 import { fehlertext } from './utils/fehlertext.js';
+import { nurGeaendertes } from './utils/geaendert.js';
 
 /**
  * Custom hook to manage the state and submission of the student edit form.
@@ -158,11 +159,7 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 			showSnackbar('Kein Schüler ausgewählt.', 'error');
 			return;
 		}
-		const payload = Object.fromEntries(
-			Object.entries(nutzlast(formData, student, kontoVorhanden)).filter(
-				([name, wert]) => wert !== geladen[name]
-			)
-		);
+		const payload = nurGeaendertes(geladen, nutzlast(formData, student, kontoVorhanden));
 		// Ohne Änderung gibt es nichts zu schicken; der Server wiese den leeren Rumpf ab.
 		if (Object.keys(payload).length === 0) {
 			showSnackbar('Änderungen gespeichert.', 'success');

@@ -11,6 +11,8 @@
  * Passwortspalte.
  */
 
+import { nurGeaendertes } from './utils/geaendert.js';
+
 export function leeresBenutzerFormular() {
 	return {
 		id: '',
@@ -64,7 +66,5 @@ export function benutzerNutzlast(form) {
 			'Der Stand vom Öffnen des Kontos fehlt. Nichts gespeichert: bitte das Konto neu öffnen.'
 		);
 	}
-	return Object.fromEntries(
-		Object.entries(felder).filter(([name, wert]) => wert !== form.geladen[name])
-	);
+	return nurGeaendertes(form.geladen, felder);
 }
