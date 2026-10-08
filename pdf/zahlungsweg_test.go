@@ -86,7 +86,7 @@ func TestRechnungMitBeidenToepfenZeigtBeideWegeMitTeilsummen(t *testing.T) {
 	}
 	blatt := blattText(t, got)
 
-	for _, muss := range []string{"HCC-Schulbereich", "nicht hinterlegt", "19.90 EUR", "9.95 EUR"} {
+	for _, muss := range []string{"HCC-Schulbereich", "nicht hinterlegt", "19,90 EUR", "9,95 EUR"} {
 		if !strings.Contains(blatt, muss) {
 			t.Errorf("auf dem gemischten Blatt fehlt %q:\n%s", muss, blatt)
 		}

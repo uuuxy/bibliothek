@@ -218,7 +218,7 @@ func TestNachbuchen_RueckkehrNenntDenGrund(t *testing.T) {
 	verlorenGemeldet(t, mit)
 	time.Sleep(50 * time.Millisecond)
 	erg, err = mit.svc.Nachbuchen(ctx, mit.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
-	const storniert = "Buch war abgeschrieben; Forderung über 12.00 € storniert"
+	const storniert = "Buch war abgeschrieben; Forderung über 12,00 € storniert"
 	if err != nil || erg.Ergebnis != repository.NachbuchNurReaktiviert || erg.Grund != storniert {
 		t.Fatalf("mit Forderung: %v %+v — erwartet nur_reaktiviert mit dem Grund %q", err, erg, storniert)
 	}

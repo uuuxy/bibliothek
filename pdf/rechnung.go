@@ -17,6 +17,7 @@ import (
 	"github.com/johnfercher/maroto/v2/pkg/core"
 	"github.com/johnfercher/maroto/v2/pkg/props"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -177,7 +178,7 @@ func buildItemsTableBlock(m core.Maroto, items []RechnungItem) {
 	// Total Row
 	m.AddRow(15,
 		col.New(10).Add(text.New("Summe:", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
-		col.New(2).Add(text.New(fmt.Sprintf("%.2f EUR", total), props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
+		col.New(2).Add(text.New(betrag.Text(total)+" EUR", props.Text{Size: 10, Style: fontstyle.Bold, Align: align.Right})),
 	)
 }
 
@@ -217,7 +218,7 @@ func generateItemRow(item RechnungItem) []core.Row {
 			col.New(5).Add(text.New(item.Titel, props.Text{Size: 10})),
 			code.NewBarCol(3, item.Barcode, props.Barcode{Center: true, Percent: 90}),
 			col.New(2).Add(text.New(item.Ausleihdatum.Format("02.01.2006"), props.Text{Size: 10})),
-			col.New(2).Add(text.New(fmt.Sprintf("%.2f EUR", item.Ersatzpreis), props.Text{Size: 10, Align: align.Right})),
+			col.New(2).Add(text.New(betrag.Text(item.Ersatzpreis)+" EUR", props.Text{Size: 10, Align: align.Right})),
 		),
 		row.New(5).Add(
 			col.New(5),

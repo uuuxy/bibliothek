@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -55,7 +56,7 @@ func (s *defaultLoanService) rueckgabeOhneAusleihe(ctx context.Context, tx pgx.T
 	hinweis := l.befund.AufsichtHinweis()
 	grund := "Buch war abgeschrieben und ist wieder im Umlauf"
 	if l.befund.StornierteForderungen > 0 {
-		grund = fmt.Sprintf("Buch war abgeschrieben; Forderung über %.2f € storniert", l.befund.StornierterBetrag)
+		grund = fmt.Sprintf("Buch war abgeschrieben; Forderung über %s storniert", betrag.Euro(l.befund.StornierterBetrag))
 	}
 	if hinweis != "" {
 		grund = hinweis

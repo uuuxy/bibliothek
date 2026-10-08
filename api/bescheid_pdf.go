@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/pdf"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/pdfzeichen"
 
 	"github.com/jung-kurt/gofpdf"
@@ -299,7 +300,7 @@ func bescheidTabelle(p *gofpdf.Fpdf, tr func(string) string, positionen []Besche
 		}
 		y := p.GetY()
 		x := bescheidRandLinks
-		werte := []string{pos.SchuelerName, pos.Titel, pos.ISBN, euroBetrag(pos.Betrag)}
+		werte := []string{pos.SchuelerName, pos.Titel, pos.ISBN, betrag.Euro(pos.Betrag)}
 		p.SetFont("Times", "", 10)
 		for i, wert := range werte {
 			p.Rect(x, y, bescheidSpalten[i], bescheidZeileHoehe, "D")
@@ -352,7 +353,7 @@ func bescheidPlatzOderNeueSeite(p *gofpdf.Fpdf, hoehe float64) bool {
 
 // bescheidZahlung zeichnet Gesamtbetrag, Zahlstelle, Bankverbindung und Referenznummer.
 func bescheidZahlung(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
-	bescheidAbsatz(p, tr, fmt.Sprintf(bescheidZahlsatz, euroBetrag(b.Gesamtbetrag), b.Zahlstelle))
+	bescheidAbsatz(p, tr, fmt.Sprintf(bescheidZahlsatz, betrag.Euro(b.Gesamtbetrag), b.Zahlstelle))
 	p.SetFont("Times", "", 11)
 	for _, zeile := range strings.Split(b.Bankverbindung, "\n") {
 		p.SetX(bescheidRandLinks)
@@ -410,10 +411,4 @@ func bescheidAbsatz(p *gofpdf.Fpdf, tr func(string) string, text string) {
 	p.SetFont("Times", "", 11)
 	p.MultiCell(bescheidBreite, 5.5, tr(text), "", "L", false)
 	p.Ln(4)
-}
-
-// euroBetrag formatiert einen Betrag deutsch mit Euro-Zeichen.
-func euroBetrag(betrag float64) string {
-	s := fmt.Sprintf("%.2f", betrag)
-	return strings.Replace(s, ".", ",", 1) + " €"
 }

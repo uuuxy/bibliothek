@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/code39"
 	"bibliothek/repository"
 )
@@ -467,7 +468,7 @@ func (s *defaultOmniboxService) holeExemplarZurueck(ctx context.Context, exempla
 // übergebenen Forderung, dass sie etwas tun muss, das die Anwendung nicht kann.
 func rueckkehrMeldung(b repository.RueckkehrBefund) string {
 	if b.StornierteForderungen > 0 {
-		return fmt.Sprintf("Buch reaktiviert. Die Forderung über %.2f € wurde storniert — das Buch ist zurück.", b.StornierterBetrag)
+		return fmt.Sprintf("Buch reaktiviert. Die Forderung über %s wurde storniert — das Buch ist zurück.", betrag.Euro(b.StornierterBetrag))
 	}
 	return "Buch reaktiviert"
 }

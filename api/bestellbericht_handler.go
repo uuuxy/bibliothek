@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"math"
 	"net/http"
-	"strings"
 	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -238,13 +237,6 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 
 // --- PDF generation ---
 
-func euroStr(n float64) string {
-	rounded := math.Round(n*100) / 100
-	s := fmt.Sprintf("%.2f", rounded)
-	s = strings.Replace(s, ".", ",", 1)
-	return s + " €" // €
-}
-
 var monthNames = [...]string{"Januar", "Februar", "März", "April", "Mai", "Juni",
 	"Juli", "August", "September", "Oktober", "November", "Dezember"}
 
@@ -300,7 +292,7 @@ func zeichneMonatsuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []be
 			p.CellFormat(bAnzahl, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
 			if mitPreisen {
 				p.CellFormat(bExemplare, 6, fmt.Sprintf("%d", stat.exemplare), "1", 0, "C", false, 0, "")
-				p.CellFormat(35, 6, tr(euroStr(stat.betrag)), "1", 1, "R", false, 0, "")
+				p.CellFormat(35, 6, tr(betrag.Euro(stat.betrag)), "1", 1, "R", false, 0, "")
 			} else {
 				p.CellFormat(bExemplare, 6, fmt.Sprintf("%d", stat.exemplare), "1", 1, "C", false, 0, "")
 			}
@@ -312,7 +304,7 @@ func zeichneMonatsuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []be
 	p.CellFormat(bAnzahl, 7, fmt.Sprintf("%d", len(orders)), "1", 0, "C", true, 0, "")
 	if mitPreisen {
 		p.CellFormat(bExemplare, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 0, "C", true, 0, "")
-		p.CellFormat(35, 7, tr(euroStr(gesamtBetrag)), "1", 1, "R", true, 0, "")
+		p.CellFormat(35, 7, tr(betrag.Euro(gesamtBetrag)), "1", 1, "R", true, 0, "")
 	} else {
 		p.CellFormat(bExemplare, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 1, "C", true, 0, "")
 	}
@@ -357,7 +349,7 @@ func zeichneLieferantenuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders
 		p.CellFormat(85, 6, tr(name), "1", 0, "L", false, 0, "")
 		p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
 		if mitPreisen {
-			p.CellFormat(45, 6, tr(euroStr(stat.betrag)), "1", 1, "R", false, 0, "")
+			p.CellFormat(45, 6, tr(betrag.Euro(stat.betrag)), "1", 1, "R", false, 0, "")
 		} else {
 			p.CellFormat(45, 6, fmt.Sprintf("%d", stat.exemplare), "1", 1, "C", false, 0, "")
 		}
@@ -433,8 +425,8 @@ func zeichnePositionen(p *gofpdf.Fpdf, tr func(string) string, positionen []beri
 		p.CellFormat(s.ISBN, 5, tr(isbn), "1", 0, "C", false, 0, "")
 		if mitPreisen {
 			p.CellFormat(s.Menge, 5, fmt.Sprintf("%d", pos.Menge), "1", 0, "C", false, 0, "")
-			p.CellFormat(20, 5, tr(euroStr(pos.Einzelpreis)), "1", 0, "R", false, 0, "")
-			p.CellFormat(20, 5, tr(euroStr(float64(pos.Menge)*pos.Einzelpreis)), "1", 1, "R", false, 0, "")
+			p.CellFormat(20, 5, tr(betrag.Euro(pos.Einzelpreis)), "1", 0, "R", false, 0, "")
+			p.CellFormat(20, 5, tr(betrag.Euro(float64(pos.Menge)*pos.Einzelpreis)), "1", 1, "R", false, 0, "")
 		} else {
 			p.CellFormat(s.Menge, 5, fmt.Sprintf("%d", pos.Menge), "1", 1, "C", false, 0, "")
 		}
@@ -447,7 +439,7 @@ func zeichneBestellSumme(p *gofpdf.Fpdf, tr func(string) string, o berichtOrder,
 	p.SetFillColor(235, 235, 245)
 	if mitPreisen {
 		p.CellFormat(150, 6, tr(fmt.Sprintf("Summe (%d Exemplare)", o.AnzahlExemplare)), "LBR", 0, "R", true, 0, "")
-		p.CellFormat(20, 6, tr(euroStr(o.Gesamtbetrag)), "1", 1, "R", true, 0, "")
+		p.CellFormat(20, 6, tr(betrag.Euro(o.Gesamtbetrag)), "1", 1, "R", true, 0, "")
 	} else {
 		p.CellFormat(170, 6, tr(fmt.Sprintf("Summe: %d Exemplare", o.AnzahlExemplare)), "LBR", 1, "R", true, 0, "")
 	}
@@ -463,7 +455,7 @@ func zeichneGesamtsumme(p *gofpdf.Fpdf, tr func(string) string, r berichtRahmen)
 	zeitraum := fmt.Sprintf("%s – %s", r.Von.Format(dateFormatDE), r.Bis.Format(dateFormatDE))
 	if r.MitPreisen {
 		p.CellFormat(150, 9, tr("Gesamtbetrag "+zeitraum), "1", 0, "R", true, 0, "")
-		p.CellFormat(20, 9, tr(euroStr(r.GesamtBetrag)), "1", 1, "R", true, 0, "")
+		p.CellFormat(20, 9, tr(betrag.Euro(r.GesamtBetrag)), "1", 1, "R", true, 0, "")
 	} else {
 		p.CellFormat(150, 9, tr("Gesamt "+zeitraum), "1", 0, "R", true, 0, "")
 		p.CellFormat(20, 9, fmt.Sprintf("%d", r.GesamtExemplare), "1", 1, "R", true, 0, "")
@@ -553,14 +545,14 @@ func zeichneTopfKopf(p *gofpdf.Fpdf, tr func(string) string, mittel string) {
 // zeichneTopfSumme setzt die Abschlusszeile eines Topf-Blocks — die Zahl, die in die
 // Abrechnung dieses Topfs geht.
 func zeichneTopfSumme(p *gofpdf.Fpdf, tr func(string) string, mittel string, block []berichtOrder, mitPreisen bool) {
-	betrag, exemplare := summiereBestellungen(block)
+	summe, exemplare := summiereBestellungen(block)
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(225, 232, 245)
 	beschriftung := fmt.Sprintf("Summe %s (%d Bestellungen, %d Exemplare)",
 		mittelBeschriftung(mittel), len(block), exemplare)
 	if mitPreisen {
 		p.CellFormat(150, 7, tr(beschriftung), "1", 0, "R", true, 0, "")
-		p.CellFormat(20, 7, tr(euroStr(betrag)), "1", 1, "R", true, 0, "")
+		p.CellFormat(20, 7, tr(betrag.Euro(summe)), "1", 1, "R", true, 0, "")
 	} else {
 		p.CellFormat(170, 7, tr(beschriftung), "1", 1, "R", true, 0, "")
 	}
@@ -626,7 +618,7 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, opt
 	if opts.MitPreisen {
 		p.CellFormat(60, 10, tr(fmt.Sprintf("Bestellungen: %d", len(orders))), "1", 0, "C", true, 0, "")
 		p.CellFormat(60, 10, tr(fmt.Sprintf("Exemplare: %d", gesamtExemplare)), "1", 0, "C", true, 0, "")
-		p.CellFormat(50, 10, tr("Gesamtbetrag: "+euroStr(gesamtBetrag)), "1", 1, "C", true, 0, "")
+		p.CellFormat(50, 10, tr("Gesamtbetrag: "+betrag.Euro(gesamtBetrag)), "1", 1, "C", true, 0, "")
 	} else {
 		p.CellFormat(85, 10, tr(fmt.Sprintf("Bestellungen: %d", len(orders))), "1", 0, "C", true, 0, "")
 		p.CellFormat(85, 10, tr(fmt.Sprintf("Exemplare: %d", gesamtExemplare)), "1", 1, "C", true, 0, "")

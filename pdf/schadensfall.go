@@ -8,6 +8,7 @@ import (
 
 	"github.com/jung-kurt/gofpdf"
 
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 )
@@ -132,12 +133,12 @@ func addSchadensfallBody(pdf *gofpdf.Fpdf, data SchadensfallInfo, zahlung Zahlun
 	// Bescheid trüge dann das Datum von gestern und die Frist einen Tag zu wenig.
 	dueTime := schulzeit.Jetzt().AddDate(0, 0, 14).Format(dateFormatDE)
 	instructions := fmt.Sprintf("Gemäß der Schulbibliotheksordnung bitten wir Sie, für den entstandenen Schaden "+
-		"einen Ersatzbetrag von %.2f EUR bis spätestens zum %s zu begleichen.\n\n"+
+		"einen Ersatzbetrag von %s EUR bis spätestens zum %s zu begleichen.\n\n"+
 		"%s\n\n"+
 		"Sollten Sie Fragen zum Schadensfall haben, können Sie sich gerne zu den Öffnungszeiten "+
 		"an das Bibliotheksteam wenden.\n\n"+
 		"Vielen Dank für Ihr Verständnis und Ihre Kooperation.",
-		data.Betrag, dueTime, strings.Join(ZahlungswegZeilen(data.Land, zahlung), "\n"))
+		betrag.Text(data.Betrag), dueTime, strings.Join(ZahlungswegZeilen(data.Land, zahlung), "\n"))
 	pdf.MultiCell(0, 5, tr(instructions), "", "L", false)
 	pdf.Ln(15)
 }

@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/ersatzwert"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -247,10 +248,10 @@ func bescheidHerleitung(v ersatzwert.Vorschlag) string {
 	// ausdrücklich „ohne ALTERSabschlag" sagen, weil ein Zustandsabschlag gleich
 	// dahinter stehen kann.
 	satz := fmt.Sprintf("Bücherei-Bestand: Neuwert ohne Altersabschlag, %s (%s)",
-		euroBetrag(v.BasisPreis), basis)
+		betrag.Euro(v.BasisPreis), basis)
 	if v.Verleihjahr > 0 {
 		satz = fmt.Sprintf("%d. Verleihjahr → %d %% von %s (%s)",
-			v.Verleihjahr, v.Prozent, euroBetrag(v.BasisPreis), basis)
+			v.Verleihjahr, v.Prozent, betrag.Euro(v.BasisPreis), basis)
 	}
 	if v.ZustandAbschlag > 0 {
 		satz += fmt.Sprintf(", abzüglich %d %% für den Zustand", v.ZustandAbschlag)

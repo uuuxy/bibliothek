@@ -3,6 +3,8 @@ package pdf
 import (
 	"fmt"
 	"strings"
+
+	"bibliothek/pkg/betrag"
 )
 
 // Wohin gezahlt wird — EIN Wortlaut für die beiden Altbriefe (Elternbrief `schadensfall.go`,
@@ -81,14 +83,14 @@ func ZahlungswegBloecke(betragLand, betragTraeger float64, a Zahlungsangaben) []
 	if betragLand > 0 {
 		b := ZahlungswegBlock{Zeilen: ZahlungswegZeilen(true, a)}
 		if beide {
-			b.Ueberschrift = fmt.Sprintf("Für die Lernmittel des Landes (%.2f EUR):", betragLand)
+			b.Ueberschrift = fmt.Sprintf("Für die Lernmittel des Landes (%s EUR):", betrag.Text(betragLand))
 		}
 		bloecke = append(bloecke, b)
 	}
 	if betragTraeger > 0 {
 		b := ZahlungswegBlock{Zeilen: ZahlungswegZeilen(false, a)}
 		if beide {
-			b.Ueberschrift = fmt.Sprintf("Für die Bücher der Schülerbücherei (%.2f EUR):", betragTraeger)
+			b.Ueberschrift = fmt.Sprintf("Für die Bücher der Schülerbücherei (%s EUR):", betrag.Text(betragTraeger))
 		}
 		bloecke = append(bloecke, b)
 	}
