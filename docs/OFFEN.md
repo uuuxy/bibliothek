@@ -169,6 +169,8 @@ der Nummer nichts mehr dazu offen ist.
   Lesern; Stornierungen ohne die Kennung des Lesers), danach bereinigen.
 - [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26,
   neun Meldungen zur Excel-Bibliothek ohne veröffentlichte Korrektur.
+- [ ] **Ausweis aus der Leserakte (5.5):** Scheitert das Laden des Ausweis-Designs, druckt die
+  Leserakte mit den Vorgabewerten, ohne es zu melden; der Stapeldruck meldet es.
 - [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
   ihren Helfern, die Regel „überfällig" ebenso; eine Ratsche hält die ersten beiden fest.
 - [x] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Am Titel, am Leser, am Benutzer,
@@ -367,6 +369,15 @@ Vermerk.
   `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE bestellstatus IS NULL AND NOT ist_ausgesondert) AS im_bestand, count(*) FILTER (WHERE ist_ausgesondert) AS ausgesondert, count(*) FILTER (WHERE bestellstatus IS NOT NULL AND NOT ist_ausgesondert) AS im_zulauf FROM buecher_exemplare WHERE zugang_am IS NULL;"`
   Erwartet: „im_bestand" 0. „ausgesondert" sind bestellte Exemplare, die nie eintrafen und
   ausgebucht wurden; sie stehen in keinem der beiden Bücher und nicht in der Statistik.
+- **„Ausweis drucken" in der Leserakte nach einem gescheiterten Laden des Designs** (gefunden
+  am 08.10.2026, am Code gelesen, nicht nachgestellt). Drei Stellen laden das Design der
+  Ausweise mit je eigenem Code: der Stapeldruck der Schülerdatei
+  (`components/students/ausweisdruck.svelte.js`), `StudentBatchPrint.svelte` und
+  `StudentPrintCard.svelte`. Nur der erste meldet ein gescheitertes Laden („Druckeinstellung
+  (Karte/Etikett) konnte nicht geladen werden"); die Leserakte druckt dann mit den
+  Vorgabewerten, ohne es zu sagen. Der falsche Ausweis liegt sichtbar im Drucker, deshalb
+  Kategorie B. Abhilfe: ein Lader für alle drei, mit der Meldung und so, dass zwei Bauteile
+  auf derselben Seite nur einmal laden.
 
 ### 5.10 Gates und Werkzeuge
 
@@ -402,9 +413,9 @@ Vermerk.
 - Code, den kein Go-Test ausführt (gemessen am 08.10.2026 mit der ganzen Suite und `-coverpkg`
   über alle Pakete: 86,0 % der Anweisungen, 27.869 von 32.402; ohne das Go-Paket, das npm unter
   `frontend/node_modules/flatted` ablegt und das `./...` lokal mitzählt). Unter 50 % liegen, ohne
-  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, drei Dateien:
-  `internal/service/cover_service.go` 18,2 %, `api/ausweis_layout.go` 33,3 %, `db/seed.go`
-  35,5 %. In `api/orders_handler.go` führt kein Test die Bestellsuche aus (13,3 %).
+  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, zwei Dateien:
+  `internal/service/cover_service.go` 18,2 % und `db/seed.go` 35,5 %. In
+  `api/orders_handler.go` führt kein Test die Bestellsuche aus (13,3 %).
   Ob Browser-Tests diesen Code erreichen, ist nicht gemessen. Anlass: Das Nachziehen der
   Tests für fünf Routen am 03.10.2026 fand drei Fehler (zwei Abweisungen beim Zusammenführen
   ohne Grund, ein unlesbares Bild als Störung gemeldet, eine Antwort des Foto-Uploads, die

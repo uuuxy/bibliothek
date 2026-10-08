@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -24,17 +25,23 @@ const maxAusweisLayoutBytes = 5 << 20 // 5 MiB
 // GetAusweisLayoutHandler liefert das gespeicherte Ausweis-Design als JSON.
 // Ist noch keines gespeichert, wird "{}" zurückgegeben, damit das Frontend sauber
 // auf seine Defaults zurückfällt.
+//
+// Ein Lesefehler ist kein „noch keines": Der Designer speichert nach einem leeren Objekt
+// seine Vorgabewerte, für alle Arbeitsplätze. Der Fehler wird deshalb vor dem leeren Wert
+// geprüft — nach einem gescheiterten Scan ist der Wert immer leer.
 func (s *Server) GetAusweisLayoutHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var wert string
 		err := s.DB.Pool.QueryRow(r.Context(),
 			`SELECT wert FROM system_einstellungen WHERE schluessel = $1`, ausweisLayoutKey).Scan(&wert)
 		switch {
-		case errors.Is(err, pgx.ErrNoRows) || strings.TrimSpace(wert) == "":
+		case errors.Is(err, pgx.ErrNoRows):
 			wert = "{}"
 		case err != nil:
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Ausweis-Design konnte nicht geladen werden"))
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("ausweis-design laden: %w", err))
 			return
+		case strings.TrimSpace(wert) == "":
+			wert = "{}"
 		}
 		w.Header().Set(headerContentType, "application/json; charset=utf-8")
 		_, _ = w.Write([]byte(wert)) //nolint:errcheck // Antwort bereits committet

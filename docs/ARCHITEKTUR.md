@@ -1502,7 +1502,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 07.10.2026
+Stand: 08.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -1898,7 +1898,10 @@ Bild ließ weiße Streifen am Kartenrand, und seine Farbe war nicht zu ändern.
 
 **Das Design liegt am Server** (`GET`/`PUT /api/ausweis-layout`), samt der Betriebsart
 (`printMode`: Karte oder Etikett) und dem Bogenformat. Mehrere Arbeitsplätze drucken
-deshalb dasselbe; im Browser gespeichert, hätte jeder Rechner sein eigenes Design.
+deshalb dasselbe; im Browser gespeichert, hätte jeder Rechner sein eigenes Design. Die
+Antwort `{}` heißt „noch keines gespeichert": Der Designer zeigt danach seine Vorgabewerte
+und speichert sie. Ein gescheitertes Lesen beantwortet der Server deshalb mit einem Fehler,
+nie mit `{}` (`api/ausweis_layout_tuer_pg_test.go`).
 
 **Etiketten: drei Wege zum selben Blatt.** Ein Buch-Etikett entsteht über „Barcodes
 drucken" am Titel (`GET /api/buecher/titel/{id}/etiketten`), über das Druck-Center
