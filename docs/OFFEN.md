@@ -121,6 +121,13 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
   mehr mit
 - [ ] Leserakte einer Lehrkraft mit Dauerleihe, „Quittung drucken": Die Zeile nennt „ohne
   Frist" statt eines Datums
+- [ ] Bestellwesen in einem kleinen Fenster (1366 × 700): Bedarfsliste und Bestellspalte enden
+  am unteren Rand und scrollen in sich; „Bestellung auslösen" bleibt im Bild
+- [ ] Signaturen bei 1280 px Breite: Das Regal steht neben der Liste, lange Titel brechen um
+- [ ] Medienkatalog → Geräte: ein Gerät mit Zustandsnotiz anlegen; die Notiz steht danach in
+  der Liste
+- [ ] Leserakte, Brief zu einem Schadensfall drucken: Der Betrag steht mit Komma
+  („12,50 EUR")
 
 **Erledigen:**
 
@@ -349,8 +356,12 @@ Vermerk.
   Frage 18; [sweeps.md](sweeps.md), „Absoluter Wert aus dem Ladezeitpunkt"). Am Titel
   (06.10.2026), an der Leserakte (07.10.2026), in der Benutzerverwaltung, an den Geräten und
   an den Lieferanten (08.10.2026) behoben. Am 07.10.2026 am Code gelesen, mit derselben Form:
-  - **Einstellungen:** Jede Kategorie schickt alle ihre Felder (`speichereKategorie`).
-    Kategorie C.
+  - **Einstellungen:** Jede Kategorie schickt alle ihre Felder (`speichereKategorie` in
+    `frontend/src/lib/einstellungenSpeichern.js`). Die Tür schreibt schon nur, was der Rumpf
+    nennt, und lehnt unbekannte Felder ab; zu ändern ist die Maske: Jede Kategorie gibt die
+    Werte mit, mit denen ihre Felder beim Öffnen standen (auch die Vorgaben für nie gesetzte
+    Einstellungen), und `speichereKategorie` schickt nur, was davon abweicht. Einen leeren
+    Rumpf lehnt die Tür ab (400); ohne Änderung sendet die Maske dann nichts. Kategorie C.
 - **Status-Editor, Altbestand:** Bis zum 07.10.2026 öffnete der Editor ein gesperrtes
   Exemplar als „Verloren", wenn die Notiz das Wort enthielt, und das Speichern sonderte es
   mit dem Grund VERLUST aus. Ob das am Testserver Exemplare getroffen hat, zeigt (lesend):
