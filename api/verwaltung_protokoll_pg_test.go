@@ -8,10 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"bibliothek/auth"
-	"bibliothek/db"
 	"bibliothek/repository"
-	"bibliothek/sse"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -25,23 +22,8 @@ import (
 // über den ganzen Router.
 func protokollWelt(t *testing.T, pool *pgxpool.Pool) (adminID string, rufe func(t *testing.T, methode, pfad, rumpf string) *httptest.ResponseRecorder) {
 	t.Helper()
-	authenticator, err := auth.NewAuthenticator(
-		"verwaltung-protokoll-testgeheimnis-32-b!!", pool, time.Hour)
-	if err != nil {
-		t.Fatalf("Authenticator: %v", err)
-	}
-	if err := pool.QueryRow(t.Context(), `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Vera', 'Verwaltung', 'verwaltung-protokoll@example.org', 'admin', true)
-		ON CONFLICT (lower(email)) DO UPDATE SET aktiv = true
-		RETURNING id`).Scan(&adminID); err != nil {
-		t.Fatalf("Konto anlegen: %v", err)
-	}
-	sitzung, err := authenticator.GenerateToken(adminID, "VERW-1", auth.RoleAdmin, "")
-	if err != nil {
-		t.Fatalf("Sitzung: %v", err)
-	}
-	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	adminID, sitzung, router := routerMitSitzung(t, pool,
+		"verwaltung-protokoll@example.org", "Vera", "Verwaltung")
 	return adminID, func(t *testing.T, methode, pfad, rumpf string) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))

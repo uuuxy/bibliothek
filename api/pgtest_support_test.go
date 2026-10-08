@@ -2,12 +2,17 @@ package api
 
 import (
 	"context"
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
+	"bibliothek/auth"
+	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/pkg/lmf"
+	"bibliothek/sse"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -115,4 +120,31 @@ func inTx(t *testing.T, pool *pgxpool.Pool, f func(tx pgx.Tx) error) {
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatalf("Commit: %v", err)
 	}
+}
+
+// routerMitSitzung legt ein Admin-Konto an, erzeugt dafür eine Sitzung und baut den GANZEN
+// Router. Jeder Test, der eine Tür am Live-Pfad prüfen will, nimmt ihn: Recht, CSRF und
+// Middleware hängen am Router, nicht am Handler, und genau dort saßen in diesem Projekt
+// schon Fehler, die der nackte Handler nicht zeigte.
+//
+// Die E-Mail gehört dem Test (ON CONFLICT hält den Aufruf wiederholbar), damit zwei Tests
+// sich nicht dasselbe Konto teilen und seine Protokolleinträge zählen.
+func routerMitSitzung(t *testing.T, pool *pgxpool.Pool, email, vorname, nachname string) (adminID, sitzung string, router http.Handler) {
+	t.Helper()
+	authenticator, err := auth.NewAuthenticator("pg-test-sitzungsgeheimnis-32-zeichen!!", pool, time.Hour)
+	if err != nil {
+		t.Fatalf("Authenticator: %v", err)
+	}
+	if err := pool.QueryRow(context.Background(), `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ($1, $2, $3, 'admin', true)
+		ON CONFLICT (lower(email)) DO UPDATE SET aktiv = true
+		RETURNING id`, vorname, nachname, email).Scan(&adminID); err != nil {
+		t.Fatalf("Konto %s anlegen: %v", email, err)
+	}
+	sitzung, err = authenticator.GenerateToken(adminID, "PG-TEST-1", auth.RoleAdmin, "")
+	if err != nil {
+		t.Fatalf("Sitzung: %v", err)
+	}
+	return adminID, sitzung, NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 }
