@@ -16,7 +16,7 @@ import (
 
 // OrderItemRequest represents a single item to order from the cart
 type OrderItemRequest struct {
-	TitelID          string  `json:"titel_id" validate:"omitempty,uuid_oder_leer"`
+	TitelID          string  `json:"titel_id" validate:"required,uuid_oder_leer"`
 	Menge            int     `json:"menge"`
 	Preis            float64 `json:"preis"`
 	GenerateBarcodes bool    `json:"generate_barcodes"`
@@ -127,12 +127,13 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	})
 }
 
-// mapProcessOrderError bildet die (textbasierten) Fehler von ProcessOrder auf HTTP-Status ab.
+// mapProcessOrderError ordnet die benannten Ablehnungen von ProcessOrder ihrem Status zu.
+// Alles andere ist ein Serverfehler, dessen Text die Tür nicht ausgibt.
 func mapProcessOrderError(err error) int {
 	switch {
-	case err.Error() == "supplier not found":
+	case errors.Is(err, ErrLieferantUnbekannt), errors.Is(err, ErrTitelUnbekannt):
 		return http.StatusNotFound
-	case errors.Is(err, ErrMittelUngueltig), strings.HasPrefix(err.Error(), "invalid quantity"):
+	case errors.Is(err, ErrMittelUngueltig), errors.Is(err, ErrMengeUngueltig):
 		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError

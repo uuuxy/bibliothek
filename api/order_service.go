@@ -63,6 +63,16 @@ type OrderResult struct {
 // Fehler, den Migration 109 abschafft. Der Handler macht daraus 400.
 var ErrMittelUngueltig = errors.New("mittel muss 'land' (Lernmittelfreiheit) oder 'schultraeger' (Schülerbücherei) sein")
 
+// Ablehnungen eines Warenkorbs. Die Tür erkennt sie am Wert, nicht am Wortlaut
+// (mapProcessOrderError); der Text geht als Meldung an die Person im Bestellwesen. Der
+// Warenkorb steht nur im Browser, ein anderer Platz kann Lieferant oder Titel inzwischen
+// gelöscht haben.
+var (
+	ErrLieferantUnbekannt = errors.New("der Lieferant ist nicht mehr angelegt, bitte einen anderen wählen")
+	ErrTitelUnbekannt     = errors.New("der Titel steht nicht mehr im Katalog, bitte aus dem Warenkorb nehmen")
+	ErrMengeUngueltig     = errors.New("die Menge muss zwischen 1 und 200 liegen")
+)
+
 type bestellungPosition struct {
 	titelID   string
 	titelName string
@@ -97,7 +107,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	supplier, err := s.supplierRepo.GetSupplierByID(ctx, req.SupplierID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.New("supplier not found")
+			return nil, ErrLieferantUnbekannt
 		}
 		return nil, err
 	}
@@ -178,10 +188,12 @@ type bestellPosten struct {
 // Etiketten und Summen der Bestellung.
 func (s *OrderService) verarbeiteBestellItems(ctx context.Context, tx pgx.Tx, req SubmitOrderRequest, supplier *repository.Supplier) (bestellPosten, error) {
 	posten := bestellPosten{labels: make([]BarcodeLabelDetail, 0), summary: make([]OrderedItem, 0)}
-	for _, item := range req.Items {
+	for i, item := range req.Items {
 		res, err := s.verarbeiteBestellItem(ctx, tx, item, supplier)
 		if err != nil {
-			return bestellPosten{}, err
+			// Die Nummer zählt wie die Liste im Warenkorb, der die Positionen in dieser
+			// Reihenfolge schickt.
+			return bestellPosten{}, fmt.Errorf("%w (Position %d)", err, i+1)
 		}
 		posten.summary = append(posten.summary, res.summary)
 		posten.positionen = append(posten.positionen, res.position)
@@ -218,13 +230,13 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 	supplierName := supplier.Name
 
 	if item.Menge <= 0 || item.Menge > 200 {
-		return nil, fmt.Errorf("invalid quantity %d for title %s", item.Menge, item.TitelID)
+		return nil, fmt.Errorf("%w, angegeben ist %d", ErrMengeUngueltig, item.Menge)
 	}
 
 	title, err := s.bookRepo.GetTitleByIDTx(ctx, tx, item.TitelID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("book title %s not found", item.TitelID)
+			return nil, ErrTitelUnbekannt
 		}
 		return nil, err
 	}

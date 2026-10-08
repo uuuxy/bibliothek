@@ -404,14 +404,23 @@ Vermerk.
   `frontend/node_modules/flatted` ablegt und das `./...` lokal mitzählt). Unter 50 % liegen, ohne
   `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, drei Dateien:
   `internal/service/cover_service.go` 18,2 %, `api/ausweis_layout.go` 33,3 %, `db/seed.go`
-  35,5 %. In `api/orders_handler.go` (67,4 %) führt kein Test die Bestellsuche (13,3 %) und
-  die Zuordnung der Fehler beim Absenden einer Bestellung (0 %) aus.
+  35,5 %. In `api/orders_handler.go` führt kein Test die Bestellsuche aus (13,3 %).
   Ob Browser-Tests diesen Code erreichen, ist nicht gemessen. Anlass: Das Nachziehen der
   Tests für fünf Routen am 03.10.2026 fand drei Fehler (zwei Abweisungen beim Zusammenführen
   ohne Grund, ein unlesbares Bild als Störung gemeldet, eine Antwort des Foto-Uploads, die
   kein JSON war).
   Abhilfe je Route: ein Test mit Datenbank und eine Gegenprobe je Zusicherung, Muster in
   `api/inventur_verlust_aktionen_pg_test.go`. Kategorie B.
+- **Fehler am Wortlaut erkannt.** Sieben Stellen in sechs Dateien entscheiden den Status ihrer
+  Antwort am Text einer Fehlermeldung statt an einem benannten Fehler; eine Umformulierung an
+  der Quelle macht dort aus einer Auskunft einen Serverfehler oder umgekehrt, ohne dass ein
+  Test es merkt. Gezählt am 08.10.2026: `inventur/endpunkte_buecher_schreiben.go` („Löschen
+  abgebrochen"), `inventur/upload_handler.go` („fehler bei der bildverarbeitung"),
+  `api/systematik_handler.go` (zweimal „no rows"), `api/book_systematik_handler.go` („no
+  rows"), `api/bescheid_handler.go` („zugeordnet werden"), `api/copy_admin_labels.go` („unique
+  constraint", „duplicate key"). Keine Prüfregel hält das Muster fest. Abhilfe: benannter
+  Fehler und `errors.Is`, wie seit dem 08.10.2026 beim Einbuchen im Wareneingang und beim
+  Absenden einer Bestellung, dazu eine Ratsche im Wurzelpaket. Kategorie B.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
