@@ -88,6 +88,10 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 - [x] Buchakte: Kopf und Reiter zählen den Bestand, ein bestelltes Exemplar steht im Kopf als
   „1 bestellt"; die Zahl „Exemplare" im Kopf ist entfallen (entschieden und gebaut am
   07.10.2026).
+- [ ] Jahrgang am Titel: den Umbau wie in 5.5 vorgeschlagen freigeben, vor der Übernahme am
+  Schulserver; die Klassen-Einträge des Testservers verfallen dabei. (5.5)
+- [ ] Auskunft: Die Protokolleinträge auf dem Blatt nennen auch, worum es ging (Buch, Grund,
+  Betrag), ohne interne Kennungen und ohne die Person, die gebucht hat. (5.19)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -137,8 +141,13 @@ Der Echtbetrieb beginnt am Schulserver mit einer leeren Datenbank und der Litter
 
 - [x] SonarQube-Scan starten.
 - [ ] PR-Pflicht im Regelwerk für `main` entfernen. (7.6)
-- [ ] Am Testserver zählen, wie viele gesperrte Exemplare „verloren" in der Notiz tragen. (5.5)
-- [ ] Am Testserver zählen, ob jedes Exemplar im Bestand ein Zugangsdatum trägt. (5.5)
+- [x] Am Testserver gezählt am 08.10.2026: Kein gesperrtes Exemplar trägt „verloren" in der
+  Notiz. Mit dieser Notiz als Verlust ausgebucht ist eines, die Nummer 2424.
+- [ ] Am Testserver nachsehen, ob das Buch mit der Nummer 2424 („Mathematik heute", Band 6)
+  fehlt; es ist seit dem 17.09.2026 als Verlust ausgebucht. Liegt es im Regal: in der Buchakte
+  den Status des Exemplars zurückstellen.
+- [x] Am Testserver gezählt am 08.10.2026: Jedes Exemplar im Bestand trägt ein Zugangsdatum;
+  ohne Datum sind nur die 26 bestellten im Zulauf.
 - [ ] Das Blatt mit den zwei Schlüsseln ausfüllen. (9.9)
 - [ ] Theke ohne Netz: der Nachweis von Hand im echten Chrome (Stufe 1 und 3), zurückgestellt
   am 24.09.2026. Stufe 2 über die Tür ist seit dem 08.10.2026 belegt. (2.3)
@@ -156,7 +165,8 @@ Was davon fertig ist, wird dort gelöscht und fällt aus der Zeile; abgehakt wir
 der Nummer nichts mehr dazu offen ist.
 
 - [ ] **Jahrgang am Titel (5.5):** „Klasse" und „von … bis" werden eine Angabe, „unbekannt" eine
-  eigene (entschieden am 24.09.2026). Davor: je Titel festlegen, welche Spanne gilt.
+  eigene (entschieden am 24.09.2026). Gemessen am 08.10.2026; der Bauplan wartet auf die
+  Freigabe (oben, „Entscheiden"). Gebaut wird vor der Übernahme am Schulserver.
 - [x] **Buchakte (5.5):** Ein bestelltes Exemplar, das nie eintraf, steht nach „Exemplar löschen"
   nicht mehr im Abgangsbuch; ausgesonderte und bestellte Exemplare heißen dort seit dem
   07.10.2026 „Ausgesondert" und „Bestellt".
@@ -168,11 +178,14 @@ der Nummer nichts mehr dazu offen ist.
   Bogen.
 - [x] **Überläufe (5.45):** Bestellwesen, Signaturen bei 1280 px und ein langer Name in der
   Leserakte sind seit dem 08.10.2026 behoben.
-- [ ] **Auskunft (5.19):** zu klären, welche Rohdaten der Protokolleinträge aufs Blatt gehören.
-- [ ] **Protokoll und Tilgung (5.35):** am Testserver alte Einträge zählen (zu schon gelöschten
-  Lesern; Stornierungen ohne die Kennung des Lesers), danach bereinigen.
-- [ ] **Gates und Werkzeuge (5.10):** Lücken in Prüfregeln und Tests, der Wechsel auf Ubuntu 26,
-  die Excel-Bibliothek auf einem unveröffentlichten Stand.
+- [ ] **Auskunft (5.19):** welche Angaben der Protokolleinträge aufs Blatt gehören. Der
+  Vorschlag wartet auf die Entscheidung (oben, „Entscheiden").
+- [x] **Protokoll und Tilgung (5.35):** Am Testserver am 08.10.2026 gezählt: kein alter Eintrag
+  zu einem gelöschten Leser, keine Stornierung ohne die Kennung des Lesers, kein Eintrag über
+  ein früheres Konto. Zu bereinigen ist nichts.
+- [ ] **Gates und Werkzeuge (5.10):** zwei Lücken in Prüfregeln, die Anleitung zum Wechsel des
+  Schlüssels der Sicherungen, der erste Lauf von `release.yml` auf Ubuntu 26, die
+  Excel-Bibliothek auf einem unveröffentlichten Stand.
 - [x] **Ausweis aus der Leserakte (5.5):** Lässt sich das Ausweis-Design nicht laden, drucken
   Leserakte und Leserdatei seit dem 08.10.2026 nicht und sagen es beim Druck.
 - [x] **Bestellsuche (5.5):** Antwortet die DNB nicht, steht es seit dem 08.10.2026 oben in der
@@ -318,35 +331,77 @@ Vermerk.
   bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,
   nicht die Ausnahme). Laut, also richtig — nur die Meldung nennt weder Zeile noch Weg.
   Kategorie C, bis es einmal vorkommt.
-- „Klasse" neben der Spanne: Der Titel führt zwei Jahrgangsangaben, „Klasse" (`grade_level`)
-  und „von … bis" (`jahrgang_von/bis`). Inventur nach Klasse und die Mehrjahresband-Frist lesen
-  nur die Spanne; Titel-Tabelle, Klassenzuweisung und Listenfilter lesen die Klasse;
-  Portal-Filter und die Suche im Medienkatalog (`trifftJahrgang` in
-  `frontend/src/inventur/lib/startseiten_api.js`) lesen beide. Die Zusammenlegung (Migration
-  135) ist zurückgenommen: Aus Klasse N wurde die Spanne N bis N, und das trifft die Daten
-  nicht. Gemessen am Testserver: 153 Titel mit Klasse, 129 davon Klasse 6–13 bei der Vorgabe 5
-  bis 10, 89 dieser 129 Lernmittel; 13.057 von 13.062 Titeln tragen die Vorgabe (01.10.2026).
-  Mehrjährige Bände tragen ein einziges Jahr („Natur und Technik - Biologie 7 - 10" und
-  „Pontes Gesamtband": Klasse 7), Klasse und Signatur widersprechen sich („Forum Geschichte
-  4 (Schulbuch Klasse 9)": Signatur Ges9, Klasse 10). Woher die Werte stammen, ist nicht
-  belegt; eine Klasse 5 aus einem älteren Listenimport ist von einer gepflegten nicht zu
-  unterscheiden. Katalogsuche und Schulbuchliste (`jahrgangText`) werten die Vorgabe 5 bis 10
-  nicht als Jahrgang; eine bewusst gepflegte Spanne 5 bis 10 fällt damit bis zum Umbau
-  ebenfalls heraus. Nächster Schritt: je Titel entscheiden, welche Spanne gilt (Liste per
-  Einzeiler unten), dann die Spalte mit genau diesen Werten ablösen. Dabei mitentscheiden: die
-  Spalte „klasse" des Listenimports und der Klassenvorschlag der ISBN-Suche, der auch aus
-  „Band 2", „Level 9" und jeder Zahl von 5 bis 13 im Titel eine Klasse macht.
-  **Entschieden am 24.09.2026, im selben Umbau:** „Jahrgang unbekannt" wird eine eigene Vorgabe
-  (NULL) statt 5 bis 10 — heute ist beides nicht zu unterscheiden, und wer das Mehrjahresband
-  (Migration 134) an einem Titel mit der Vorgabe anhakt, bekommt die 10. Die Leser der Spanne
-  (Inventur, Portal-Filter, Katalogsuche) lernen „unbekannt" mit. Vorher am Testserver messen.
+- **Jahrgang am Titel: eine Angabe, „unbekannt" als eigener Wert** (entschieden am 24.09.2026,
+  gemessen am 08.10.2026). Der Titel führt zwei Angaben, „Klasse" (`grade_level`) und „von …
+  bis" (`jahrgang_von/bis`); die Spanne trägt an jedem Titel ohne Angabe die Vorgabe 5 bis 10.
+
+  **Was die Vorgabe bewirkt:**
+  - Die Inventur „Nach Fach / Klasse" (`InventoryStartModal`, `repository.InventurScope`)
+    trifft für jede Klasse von 5 bis 10 den ganzen Bestand im Regal und für 11 bis 13 nichts:
+    am Testserver je Klasse 34.667 bis 34.757 Exemplare, höchstens 90 davon an Titeln mit
+    eigener Spanne. Beim Abschluss stehen die nicht gescannten als Verlust im Bericht
+    (`FinishInventurSession`). Eine Inventur mit Fach und Klasse 5 wurde dort am 23.07.2026
+    begonnen und nicht abgeschlossen.
+  - Der Filter „Jahrgang" der Schulbücher im Portal (`lernmittelFilterSQL`) zeigt für 5 bis 10
+    jedes Lernmittel mit der Vorgabe, für 11 bis 13 keines davon.
+  - Der Kopf der Buchakte nennt „Jahrgang 5–10" (`BookAkteMeta`).
+  - Ein Mehrjahresband mit der Vorgabe bleibt bis zum Ende von Jahrgang 10.
+  - Katalogsuche (`trifftJahrgang`) und Schulbuchliste (`jahrgangText`) werten 5 bis 10 als
+    „keine Angabe"; eine gepflegte Spanne 5 bis 10 fällt dort heraus.
+
+  **Die Klasse** lesen die Titel-Tabelle, die Klassenzuweisung und die Katalogsuche. Es
+  schreiben sie die Maske (Vorgabe 5 bei einem neuen Buch), der Listenimport (Spalte „klasse")
+  und der Vorschlag der ISBN-Abfrage, der auch aus „Band 2", „Level 9" und jeder Zahl von 5
+  bis 13 im Titel eine Klasse macht (`automatischeKategorisierung`).
+
+  **Testserver (08.10.2026, lesend):** 13.056 von 13.062 Titeln tragen die Vorgabe. 155 tragen
+  eine Klasse: 22 die 5, 133 eine von 6 bis 13; 129 dieser 133 bei der Vorgabe, 90 davon
+  Lernmittel. In 57 der 133 steht die Zahl im Titel, bei 62 der 129 nennt die Signatur
+  dieselbe Zahl; mehrjährige Bände tragen ein einziges Jahr („Natur und Technik - Biologie 7
+  - 10": Klasse 7). Woher die Werte stammen, ist nicht belegt.
+
+  **Nach der Littera-Übernahme** (Sicherung von 2010, gezählt mit dem Code der Übernahme):
+  7.467 von 10.732 Titeln bekommen eine Spanne, 257 aus der Signatur (alle ein Jahrgang) und
+  7.210 aus dem Interessenkreis: 11 bis 13 an 2.982 Titeln, 5 bis 13 an 2.414, 5 bis 10 an
+  1.723, 5 bis 6 an 91. 3.265 Titel bekommen keine. Die Klasse steht an den 257 und weicht nie
+  von der Spanne ab. Die 1.723 Titel mit 5 bis 10 wären nach der Übernahme von den 3.265 ohne
+  Angabe nicht zu unterscheiden, und eine spätere Migration könnte sie nicht mehr trennen. Der
+  Umbau gehört deshalb vor die Übernahme am Schulserver.
+
+  **Andere Programme:** Littera führt am Titel keine Klasse; die Schule trug die Stufe als
+  Interessenkreis ein (eine Liste, mehrere je Titel: „Sekundarstufe 1", „Sekundarstufe 2",
+  „Förderstufe") und bei Lernmitteln in die Signatur („LMF Bio 7"). MARC 21, Feld 521, nennt
+  die Klassenstufe als Text, „9-12" oder „7 & up"; ONIX, die Meldeform des Buchhandels, kennt
+  „genau", „von", „bis" und „von … bis". Follett Destiny führt ein Auswahlfeld „Interest
+  Level" nach Klassenstufen. Eine einzelne Zahl neben einer Spanne führt keines.
+
+  **Vorschlag, zur Freigabe (Fahrplan, „Entscheiden"):**
+  1. Datenbank: Die Spanne darf fehlen (beide Werte oder keiner; 1 bis 13, „von" nicht über
+     „bis"). Die Migration setzt die Vorgabe 5 bis 10 auf „unbekannt" und entfernt die Spalte
+     der Klasse. Die fünf Titel mit Klasse und eigener Spanne verlieren nichts, die Klasse
+     liegt bei allen in der Spanne. Die Klassen bei der Vorgabe verfallen (129 von 6 bis 13,
+     dazu 21 mit der 5, der Vorgabe der Maske): Der Schulserver beginnt mit leerer Datenbank,
+     dort gibt es sie nicht.
+  2. Server: Übernahme, Katalog-Import, Listenimport (die Spalte „klasse" wird die Spanne N
+     bis N) und Maske schreiben nur die Spanne; ohne Angabe bleibt sie leer. Inventur und
+     Portal-Filter treffen nur Titel mit Spanne. Der Vorschlag der ISBN-Abfrage liest nur
+     noch „Klasse N", „Klassen N–M" und „Jahrgangsstufe N". Der Filter `?gradeLevel=` der
+     Titelliste, den keine Seite ruft, entfällt.
+  3. Oberfläche: Die Maske verliert das Feld „Klasse"; „von" und „bis" werden Auswahlfelder
+     mit „–" für keine Angabe und 5 bis 13 (M3, Menus: „Select menus"; ein Schieberegler
+     scheidet aus, M3, Sliders: „Changes made with sliders must take effect immediately").
+     Titel-Tabelle und Klassenzuweisung zeigen die Spanne („7", „7–10", „–"); der Kopf der
+     Buchakte nennt den Jahrgang nur, wenn er feststeht.
+
+  Je Stufe ein Test, der am alten Stand rot ist, und die volle Suite; danach die Generalprobe
+  der Übernahme. Zum Nachzählen am Testserver:
 
   ```sql
+  SELECT jahrgang_von, jahrgang_bis, count(*) FROM buecher_titel GROUP BY 1, 2 ORDER BY 3 DESC;
+
   SELECT grade_level, jahrgang_von, jahrgang_bis, ist_lernmittel, signatur, titel
   FROM buecher_titel WHERE grade_level BETWEEN 1 AND 13
   ORDER BY ist_lernmittel DESC, signatur NULLS LAST, titel;
-
-  SELECT jahrgang_von, jahrgang_bis, count(*) FROM buecher_titel GROUP BY 1, 2 ORDER BY 3 DESC;
   ```
 
 - **Die kurze Nummer der alten Littera-Etiketten lässt sich an der Theke nicht eintippen**
@@ -362,26 +417,16 @@ Vermerk.
   mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
   kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
-- **Status-Editor, Altbestand:** Bis zum 07.10.2026 öffnete der Editor ein gesperrtes
-  Exemplar als „Verloren", wenn die Notiz das Wort enthielt, und das Speichern sonderte es
-  mit dem Grund VERLUST aus. Ob das am Testserver Exemplare getroffen hat, zeigt (lesend):
-  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE NOT ist_ausgesondert) AS gesperrt, count(*) FILTER (WHERE ist_ausgesondert AND aussonderung_grund = 'VERLUST') AS als_verlust FROM buecher_exemplare WHERE NOT ist_ausleihbar AND zustand_notiz ILIKE '%verloren%';"`
-  „gesperrt" sind Exemplare, die der Fehler noch hätte treffen können; „als_verlust" sind die,
-  bei denen nachzusehen ist, ob das Buch wirklich fehlt.
-- **Zugangsdatum am Testserver nachzählen** (07.10.2026). Abgangsbuch und Statistik zählen
-  nur, was ein Zugangsdatum trägt (`repository.SQLWarImBestand`). Nach Migration 129 und
-  ihren zwei Triggern fehlt es nur bestellten Exemplaren; lokal trifft das zu (nachgezählt am
-  08.10.2026: kein Exemplar im Bestand ohne Datum, die ohne Datum stehen alle im Zulauf). Am
-  Testserver zeigt es (lesend):
-  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE bestellstatus IS NULL AND NOT ist_ausgesondert) AS im_bestand, count(*) FILTER (WHERE ist_ausgesondert) AS ausgesondert, count(*) FILTER (WHERE bestellstatus IS NOT NULL AND NOT ist_ausgesondert) AS im_zulauf FROM buecher_exemplare WHERE zugang_am IS NULL;"`
-  Erwartet: „im_bestand" 0. „ausgesondert" sind bestellte Exemplare, die nie eintrafen und
-  ausgebucht wurden; sie stehen in keinem der beiden Bücher und nicht in der Statistik.
 
 ### 5.10 Gates und Werkzeuge
 
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
-- Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
+- Kein beschriebener Weg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`. Das
+  Werkzeug nimmt den Schlüssel aus der Umgebung (`cmd/restore-backup`), eine ältere Sicherung
+  öffnet also der Schlüssel, der zu ihrer Zeit galt. Es fehlen die Anleitung zum Wechsel (den
+  alten Schlüssel aufbewahren, bis die letzte Sicherung damit aus der Aufbewahrung gefallen
+  ist) und ein Test, der eine Sicherung nach dem Wechsel mit dem alten Schlüssel einspielt.
 - **Ubuntu 26 als Runner: die ersten Läufe.** Seit dem 08.10.2026 laufen alle zehn Jobs der
   vier Workflows fest auf `ubuntu-26.04` (bis dahin `ubuntu-24.04`; `ubuntu-latest` nimmt
   keiner, weil GitHub es am 19. Oktober 2026 selbst umstellt). Vorher war `ci.yml` im
@@ -417,19 +462,51 @@ Vermerk.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
-**Rohdaten der Protokolleinträge:** Die Rohdaten der Protokolleinträge
-(`details`) stehen nur in der abgerufenen Auskunft, nicht auf dem Blatt; das Gate
-`TestDsgvoPDF_DrucktJedeAngabeDerAuskunft` führt sie als begründete Ausnahme, seit dem
-24.09.2026 auch die Details der Kontoereignisse. Offen ist, was davon aufs Blatt gehört.
-Nachgesehen am 24.09.2026: Die bearbeitende Person steht in eigenen Spalten (`bearbeiter_id`,
-`admin_id`), die die Auskunft nicht ausgibt; Freitexte in den Details — etwa der Grund einer
-Sperre (`LESER_GESPERRT`, `LESER_ENTSPERRT`; bis zum 24.09.2026 auch `OVERRIDE_BLOCK`) —
-können aber andere Personen nennen.
+**Protokolleinträge auf dem Blatt:** Das Blatt nennt je Eintrag den Zeitpunkt und die Aktion
+in der Schreibweise des Programms („CHECKOUT", „LESER_GESPERRT", „PURGE_STUDENT"), in der
+Datensatz-Historie dazu „USER" oder „SYSTEM" (`dsgvoAuditAbschnitt`,
+`dsgvoVerwaltungAbschnitt`). Worum es ging, steht nur in den Rohdaten (`details`) der
+abgerufenen Auskunft, und die bekommt die Person nicht; das Gate
+`TestDsgvoPDF_DrucktJedeAngabeDerAuskunft` führt die vier Stellen als begründete Ausnahme.
+
+Was die Rohdaten neben der Kennung des Lesers tragen (gezählt am 08.10.2026 an
+`repository/protokoll_personenbezug.go`, seinem Test und den Einträgen der lokalen Datenbank):
+
+- Angaben zur Person: den Grund einer Sperre, Entsperrung oder Stornierung (Freitext, kann
+  andere nennen), die Ausweisnummern beim Zusammenführen, die LUSD-ID, Name und Klasse bei
+  einer Änderung der Leserzeile, Betrag und Referenznummer eines Bescheids;
+- bei Ausleihe und Rückgabe nur die Kennung des Exemplars, keinen Titel;
+- Kennungen des Programms (Exemplar, Forderung, Bescheid, aufgelöste Leserzeile);
+- die Kennung des Kontos, das gebucht hat (`bearbeiter_id`, `benutzer_id`).
+
+Aus der Datensatz-Historie liest die Auskunft nur Einträge zur Leserzeile und zu Ausleihen
+(`dsgvoQueryAuditEintraege`). Einträge anderer Tabellen, die den Leser nennen, nennt sie
+nicht: die Stornierung einer Forderung (trägt die Kennung seit dem 08.10.2026) und die Spur
+einer Forderung oder Vormerkung, die mit ihrem Titel gelöscht wurde. Stornierung und
+Forderung stehen im Abschnitt „Schadensfälle", solange es die Forderung gibt.
+
+Nachgelesen am 08.10.2026: DSGVO Art. 15 Abs. 3 verlangt eine Kopie der Daten, Abs. 4 nimmt
+die Rechte anderer aus, Art. 12 Abs. 1 verlangt eine verständliche Form. EuGH C-487/21
+(04.05.2023): Die Kopie ist „eine originalgetreue und verständliche Reproduktion aller dieser
+Daten". EuGH C-579/21 (22.06.2023): Zur Auskunft gehören Informationen über Abfragen, die
+„sich auf den Zeitpunkt und die Zwecke dieser Vorgänge beziehen"; die Namen der Beschäftigten,
+die sie ausgeführt haben, nur, wenn es unerlässlich ist. Im Littera-Handbuch steht keine
+Auskunft an Betroffene.
+
+**Vorschlag, zur Entscheidung (Fahrplan, „Entscheiden"):** Das Blatt nennt je Eintrag den
+Vorgang in Worten („Ausleihe", „Sperre von Hand") und die Angaben zur Person: bei Ausleihe und
+Rückgabe Titel und Nummer des Buchs, sonst Grund, Betrag, Referenznummer, Ausweisnummern und
+LUSD-ID. Nicht aufs Blatt kommen die Kennungen des Programms und das Konto, das gebucht hat.
+Ein Freitext steht da, wie er gespeichert ist, wie heute schon der Sperrgrund und der Grund
+einer Stornierung in den Abschnitten darüber; wer das Blatt aushändigt, liest es vorher. Der
+Abschnitt nennt dann jeden Eintrag, der den Leser nennt, gleich aus welcher Tabelle. Das Gate
+verlangt danach jede dieser Angaben auf dem Blatt und führt nur noch die Kennungen als
+Ausnahme.
 
 **Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
 sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung
-hinweg. Am Testserver waren am 21.09.2026 beide Zählungen 0; neue Vormerkungen für Kollegen
-lehnt die Tür seit dem 21.09.2026 ab.
+hinweg. Am Testserver waren beide Zählungen 0 (zuletzt am 08.10.2026); neue Vormerkungen für
+Kollegen lehnt die Tür seit dem 21.09.2026 ab.
 
 ```
 SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
@@ -466,32 +543,6 @@ Schulserver feststeht.
   entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
-
-### 5.35 Protokolleinträge zu Lesern, die die Tilgung noch nicht erreicht
-
-Gefunden am 29.09.2026. Die Tilgung nimmt Name und Freitext neben der Kennung des Lesers aus
-beiden Protokollen (`repository/protokoll_personenbezug.go`). Sie erreicht nicht:
-
-- **Einträge zu Lesern, die schon endgültig gelöscht sind.** Der Nachtlauf räumt nur Einträge
-  zu anonymisierten Lesern, die noch in der Tabelle stehen. Wer vor dem Einspielen endgültig
-  gelöscht wurde, behält in der Löschspur Name oder Freitext bis zur Audit-Aufbewahrung. Der
-  Schulserver beginnt leer (Neuaufbau), betroffen ist nur der Testserver. Erst messen, dann wie
-  Migration 147 bereinigen:
-  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FROM audit_log a WHERE a.details ?| ARRAY['schuldner','beschreibung','betrifft'] AND a.details ? 'schueler_id' AND NOT EXISTS (SELECT 1 FROM leser l WHERE l.id::text = lower(a.details->>'schueler_id'));"`
-- **Stornierungen von vor dem 08.10.2026.** Seitdem trägt der Eintrag `STORNIERUNG` die
-  Kennung des Lesers, und die Tilgung nimmt ihm den getippten Grund. Ältere Einträge tragen
-  sie nicht und behalten den Grund bis zur Audit-Aufbewahrung. Der Schulserver beginnt leer,
-  betroffen ist nur der Testserver. Erst messen:
-  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE sf.id IS NOT NULL) AS forderung_steht_noch, count(*) FILTER (WHERE sf.id IS NULL) AS forderung_geloescht FROM audit_log al LEFT JOIN schadensfaelle sf ON sf.id = al.datensatz_id WHERE al.tabelle = 'schadensfaelle' AND al.aktion = 'STORNIERUNG' AND al.details ? 'grund' AND NOT (al.details ? 'schueler_id');"`
-  „forderung_steht_noch" lässt sich die Kennung aus der Forderung nachtragen;
-  „forderung_geloescht" hat keinen Weg mehr zum Leser, dort fällt der Grund. Beides wäre eine
-  Migration wie 147.
-- **Einträge über frühere Zugangskonten.** Seit dem 08.10.2026 nimmt die Tilgung Name und
-  Adresse auch aus Anlage, Änderung und eigener Anmeldung eines gelöschten Kontos, dessen
-  Löscheintrag den Leser nennt; für anonymisierte Leser, die noch in der Tabelle stehen, holt
-  der Nachtlauf es nach. Wer zwischen dem 29.09. und dem 08.10.2026 endgültig gelöscht wurde,
-  behält sie bis zur Audit-Aufbewahrung. Betroffen ist nur der Testserver. Erst messen:
-  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FROM audit_logs p WHERE p.details ?| ARRAY['vorname','nachname','email'] AND p.details->>'ziel_id' IN (SELECT a.datensatz_id::text FROM audit_log a WHERE a.tabelle = 'benutzer' AND a.aktion = 'DELETE' AND a.details ? 'schueler_id' AND NOT EXISTS (SELECT 1 FROM leser l WHERE l.id::text = a.details->>'schueler_id'))"`
 
 ### 5.45 Listen in einem Kasten mit eigenem Scrollen
 
