@@ -111,6 +111,59 @@ test('Eine Kategorie speichern lässt alle anderen unangetastet', async ({ page 
 	});
 });
 
+// Zwei Plätze mit derselben Kategorie: Die Maske schickt nur, was sie geändert hat. Mit allen
+// Feldern schriebe sie den Stand vom Öffnen über das, was der andere Platz inzwischen an einem
+// anderen Feld gespeichert hat.
+test('Ein Feld speichern lässt die anderen Felder derselben Kategorie unangetastet', async ({
+	page
+}) => {
+	ausgangsstand();
+	await uiLogin(page);
+	await gehZu(page, '/einstellungen');
+	await einstellungsKategorie(page, 'Ausleihe & Fristen').click();
+	const feld = page.getByLabel('Tage / Buch');
+	await feld.waitFor();
+
+	// Ein anderer Platz speichert inzwischen ein anderes Feld derselben Kategorie.
+	seedSQL(`UPDATE system_einstellungen SET wert = '13' WHERE schluessel = 'frist_medien_tage'`);
+
+	await feld.fill('35');
+	const anfrage = page.waitForRequest(
+		(r) => r.method() === 'PUT' && r.url().endsWith('/api/einstellungen')
+	);
+	await page.getByRole('button', { name: 'Ausleihe & Fristen speichern' }).click();
+	expect((await anfrage).postDataJSON(), 'der Rumpf nennt nur das geänderte Feld').toEqual({
+		frist_buch_tage: 35
+	});
+	await expect(page.getByText('Gespeichert.')).toBeVisible();
+
+	expect(wert('frist_buch_tage')).toBe('35');
+	expect(wert('frist_medien_tage'), 'das Feld des anderen Platzes').toBe('13');
+	expect(wert('max_ausleihen_schueler')).toBe('9');
+	expect(wert('lmf_stichtag')).toBe('08-15');
+	// Die Maske zeigt danach den Stand des Servers, auch das Feld des anderen Platzes.
+	await expect(page.getByLabel('Tage / Medien')).toHaveValue('13');
+});
+
+test('Speichern ohne Änderung schickt keine Anfrage und meldet den Stand als gespeichert', async ({
+	page
+}) => {
+	ausgangsstand();
+	await uiLogin(page);
+	await gehZu(page, '/einstellungen');
+	await einstellungsKategorie(page, 'Ausleihe & Fristen').click();
+	await page.getByLabel('Tage / Buch').waitFor();
+
+	let anfragen = 0;
+	page.on('request', (r) => {
+		if (r.method() === 'PUT' && r.url().endsWith('/api/einstellungen')) anfragen++;
+	});
+	await page.getByRole('button', { name: 'Ausleihe & Fristen speichern' }).click();
+	await expect(page.getByText('Gespeichert.')).toBeVisible();
+	expect(anfragen, 'ein leerer Rumpf wäre eine Ablehnung (400)').toBe(0);
+	expect(wert('frist_buch_tage')).toBe('28');
+});
+
 // Die Kehrseite derselben Entscheidung: Weil es keine „leer = lass es wie es war"-Regel
 // mehr gibt, darf ein leer geräumtes Zahlenfeld auch nicht stillschweigend als 0
 // durchgehen — genau so schaltete sich am 22.08. die Lesehistorie-Befristung ab.

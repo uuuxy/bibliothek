@@ -171,8 +171,9 @@ der Nummer nichts mehr dazu offen ist.
   neun Meldungen zur Excel-Bibliothek ohne veröffentlichte Korrektur.
 - [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
   ihren Helfern, die Regel „überfällig" ebenso; eine Ratsche hält die ersten beiden fest.
-- [ ] **Masken, die ihren ganzen Stand zurückschicken (5.5):** die Kategorien der
-  Einstellungen; am Titel, am Leser, am Benutzer, am Gerät und am Lieferanten ist es behoben.
+- [x] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Am Titel, am Leser, am Benutzer,
+  am Gerät, am Lieferanten und seit dem 08.10.2026 in den Kategorien der Einstellungen schickt
+  die Maske nur, was geändert wurde.
 - [x] **Bestellung ohne Versandstand (5.5):** Scheitert die Mail an den Lieferanten, steht es an
   der Bestellung und in der Bestellhistorie („Mail nicht versendet"), und die Bestellung lässt
   sich erneut senden (entschieden und gebaut am 07.10.2026, Migration 161).
@@ -353,16 +354,6 @@ Vermerk.
   mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
   kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
-- **Eine Maske schickt alle Felder zurück, auch die, die niemand angefasst hat** (Raster,
-  Frage 18; [sweeps.md](sweeps.md), „Absoluter Wert aus dem Ladezeitpunkt"). Am Titel
-  (06.10.2026), an der Leserakte (07.10.2026), in der Benutzerverwaltung, an den Geräten und
-  an den Lieferanten (08.10.2026) behoben. Am 07.10.2026 am Code gelesen, mit derselben Form:
-  - **Einstellungen:** Jede Kategorie schickt alle ihre Felder (`speichereKategorie` in
-    `frontend/src/lib/einstellungenSpeichern.js`). Die Tür schreibt schon nur, was der Rumpf
-    nennt, und lehnt unbekannte Felder ab; zu ändern ist die Maske: Jede Kategorie gibt die
-    Werte mit, mit denen ihre Felder beim Öffnen standen (auch die Vorgaben für nie gesetzte
-    Einstellungen), und `speichereKategorie` schickt nur, was davon abweicht. Einen leeren
-    Rumpf lehnt die Tür ab (400); ohne Änderung sendet die Maske dann nichts. Kategorie C.
 - **Status-Editor, Altbestand:** Bis zum 07.10.2026 öffnete der Editor ein gesperrtes
   Exemplar als „Verloren", wenn die Notiz das Wort enthielt, und das Speichern sonderte es
   mit dem Grund VERLUST aus. Ob das am Testserver Exemplare getroffen hat, zeigt (lesend):

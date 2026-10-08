@@ -31,8 +31,14 @@
 	// halb getippte Eingabe überschreiben.
 	const start = untrack(() => daten);
 
-	let adresse = $state(start.oeffentliche_adresse ?? '');
-	let alarmEmpfaenger = $state(start.alarm_empfaenger ?? '');
+	// Der Stand beim Öffnen unter den Namen der Anfrage, mit der Vorgabe für eine nie gesetzte
+	// Einstellung. Gespeichert wird nur, was davon abweicht (einstellungenSpeichern.js).
+	const geladen = {
+		oeffentliche_adresse: start.oeffentliche_adresse ?? '',
+		alarm_empfaenger: start.alarm_empfaenger ?? ''
+	};
+	let adresse = $state(geladen.oeffentliche_adresse);
+	let alarmEmpfaenger = $state(geladen.alarm_empfaenger);
 
 	// Die beiden öffentlichen Seiten (Katalog, Flur-Monitor) haben keinen Menüpunkt — wer
 	// ihre Adresse nicht kennt, findet sie nicht (Befund 30.08.2026). Hier stehen sie,
@@ -64,6 +70,7 @@
 
 	const speichern = () =>
 		speichereKategorie({
+			geladen,
 			felder: { oeffentliche_adresse: adresse, alarm_empfaenger: alarmEmpfaenger },
 			onSaved
 		});

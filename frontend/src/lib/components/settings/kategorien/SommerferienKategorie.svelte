@@ -38,8 +38,17 @@
 		}
 	}
 
+	/**
+	 * Die Liste in der Form, in der sie gespeichert wird; leer heißt: keine eigenen Termine.
+	 * @param {Eintrag[]} liste
+	 */
+	const alsText = (liste) => (liste.length ? JSON.stringify(liste) : '');
+
 	/** @type {Eintrag[]} */
 	let eigene = $state(gelesen(start.sommerferien));
+	// Der Stand beim Öffnen in derselben Form: Gespeichert wird nur, wenn die Liste davon
+	// abweicht (einstellungenSpeichern.js).
+	const geladen = { sommerferien: alsText(gelesen(start.sommerferien)) };
 	let von = $state('');
 	let bis = $state('');
 
@@ -71,7 +80,8 @@
 
 	const speichern = () =>
 		speichereKategorie({
-			felder: { sommerferien: eigene.length ? JSON.stringify(eigene) : '' },
+			geladen,
+			felder: { sommerferien: alsText(eigene) },
 			onSaved
 		});
 

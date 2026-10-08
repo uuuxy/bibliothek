@@ -20,13 +20,22 @@
 	// halb getippte Eingabe überschreiben.
 	const start = untrack(() => daten);
 
-	let warnungAktiv = $state(start.bestellbedarf_warnung_aktiv ?? true);
-	let schwelle = $state(start.bestellbedarf_schwelle ?? 3);
-	let preiseErfassen = $state(start.preise_erfassen ?? true);
-	let linkTage = $state(start.bestelllink_gueltigkeit_tage ?? 21);
+	// Der Stand beim Öffnen unter den Namen der Anfrage, mit der Vorgabe für eine nie gesetzte
+	// Einstellung. Gespeichert wird nur, was davon abweicht (einstellungenSpeichern.js).
+	const geladen = {
+		bestellbedarf_warnung_aktiv: start.bestellbedarf_warnung_aktiv ?? true,
+		bestellbedarf_schwelle: start.bestellbedarf_schwelle ?? 3,
+		preise_erfassen: start.preise_erfassen ?? true,
+		bestelllink_gueltigkeit_tage: start.bestelllink_gueltigkeit_tage ?? 21
+	};
+	let warnungAktiv = $state(geladen.bestellbedarf_warnung_aktiv);
+	let schwelle = $state(geladen.bestellbedarf_schwelle);
+	let preiseErfassen = $state(geladen.preise_erfassen);
+	let linkTage = $state(geladen.bestelllink_gueltigkeit_tage);
 
 	const speichern = () =>
 		speichereKategorie({
+			geladen,
 			felder: {
 				bestellbedarf_warnung_aktiv: warnungAktiv,
 				preise_erfassen: preiseErfassen

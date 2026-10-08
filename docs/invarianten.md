@@ -478,8 +478,12 @@ veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderunge
   spätere Eintrag. Behoben am 07.10.2026 für die Leserakte: „Stammdaten bearbeiten" schickte
   bis zu dreizehn Felder mit dem Stand vom Laden der Akte, darunter Klasse und Abgangsjahr;
   nach einer Versetzung oder einem LUSD-Import dazwischen stand wieder der alte Wert in der
-  Zeile (`frontend/e2e/leserakte-zwei-plaetze.spec.js`). Benutzer, Gerät, Lieferant und die
-  Kategorien der Einstellungen schicken weiter ihren ganzen Stand ([OFFEN.md](OFFEN.md) 5.5).
+  Zeile (`frontend/e2e/leserakte-zwei-plaetze.spec.js`). Behoben am 08.10.2026 für Benutzer,
+  Gerät, Lieferant und die Kategorien der Einstellungen (`benutzer-nur-geaendertes.spec.js`,
+  `geraet-nur-geaendertes.spec.js`, `lieferant-nur-geaendertes.spec.js` und
+  `einstellungen-kategorien.spec.js` in `frontend/e2e/`). Eine Kategorie gibt dafür den Stand
+  beim Öffnen mit, auch die Vorgabe für eine nie gesetzte Einstellung: Verglichen mit dem
+  rohen Wert vom Server wiche die Vorgabe immer ab und ginge bei jedem Speichern mit.
 
 Ein Gate hat von den vier Fragen nur ein Teil von 17 (die Fristen an den Aufrufen mit
 Mailversand, `api/mail_routen_frist_test.go`). Für 16 gibt es ein Muster

@@ -75,7 +75,47 @@ function schluesselIn(datei) {
 	return ALLE_SCHLUESSEL.filter((k) => new RegExp(`\\b${k}\\b`).test(aufruf));
 }
 
+/**
+ * Der Stand beim Öffnen, den eine Kategorie ihrem Speichern mitgibt: der Text des Objekts
+ * `const geladen = { … }` (leer, wenn es keins gibt).
+ * @param {string} datei
+ * @returns {string}
+ */
+function geladenerStand(datei) {
+	const quelle = readFileSync(join(KATEGORIE_DIR, datei), 'utf8');
+	const start = quelle.indexOf('const geladen = {');
+	if (start === -1) return '';
+	let tiefe = 0;
+	for (let i = quelle.indexOf('{', start); i < quelle.length; i++) {
+		if (quelle[i] === '{') tiefe++;
+		else if (quelle[i] === '}' && --tiefe === 0) return quelle.slice(start, i);
+	}
+	return quelle.slice(start);
+}
+
 describe('Einstellungs-Kategorien', () => {
+	// Gespeichert wird nur, was vom Stand beim Öffnen abweicht (einstellungenSpeichern.js).
+	// Ein Feld, das im Aufruf steht und im Stand fehlt, weicht immer ab: Es ginge bei jedem
+	// Speichern mit und überschriebe, was ein anderer Platz inzwischen gespeichert hat.
+	it('gibt für jedes Feld, das eine Kategorie speichert, den Stand beim Öffnen mit', () => {
+		const dateien = readdirSync(KATEGORIE_DIR).filter(
+			(f) => f.endsWith('.svelte') && schluesselIn(f).length > 0
+		);
+		expect(dateien.length, 'der Detektor findet keine speichernde Kategorie').toBeGreaterThan(5);
+		const ohneStand = dateien.flatMap((datei) => {
+			const stand = geladenerStand(datei);
+			const imAufruf = /\bgeladen\b/.test(speicherAufruf(datei));
+			return schluesselIn(datei)
+				.filter((k) => !imAufruf || !new RegExp(`\\b${k}:`).test(stand))
+				.map((k) => `${datei}: ${k}`);
+		});
+		expect(
+			ohneStand,
+			'Diese Felder gehen bei jedem Speichern mit, auch unverändert — im Objekt „geladen" ' +
+				'der Kategorie eintragen und „geladen" an speichereKategorie geben'
+		).toEqual([]);
+	});
+
 	it('lässt keine zwei Kategorien dasselbe Feld anfassen', () => {
 		/** @type {Map<string, string[]>} */
 		const besitzer = new Map();

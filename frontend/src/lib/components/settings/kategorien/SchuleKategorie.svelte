@@ -31,17 +31,29 @@
 	// halb getippte Eingabe überschreiben.
 	const start = untrack(() => daten);
 
-	let name = $state(start.schule_name ?? '');
-	let strasse = $state(start.schule_strasse ?? '');
-	let plz = $state(start.schule_plz ?? '');
-	let ort = $state(start.schule_ort ?? '');
-	let eigentumsvermerk = $state(start.etikett_eigentumsvermerk ?? '');
+	// Der Stand beim Öffnen unter den Namen der Anfrage, mit der Vorgabe für eine nie gesetzte
+	// Einstellung. Gespeichert wird nur, was davon abweicht (einstellungenSpeichern.js).
+	const geladen = {
+		schule_name: start.schule_name ?? '',
+		schule_strasse: start.schule_strasse ?? '',
+		schule_plz: start.schule_plz ?? '',
+		schule_ort: start.schule_ort ?? '',
+		etikett_eigentumsvermerk: start.etikett_eigentumsvermerk ?? '',
+		etikett_eigentumsvermerk_schuelerbuecherei:
+			start.etikett_eigentumsvermerk_schuelerbuecherei ?? ''
+	};
+	let name = $state(geladen.schule_name);
+	let strasse = $state(geladen.schule_strasse);
+	let plz = $state(geladen.schule_plz);
+	let ort = $state(geladen.schule_ort);
+	let eigentumsvermerk = $state(geladen.etikett_eigentumsvermerk);
 	let eigentumsvermerkSchuelerbuecherei = $state(
-		start.etikett_eigentumsvermerk_schuelerbuecherei ?? ''
+		geladen.etikett_eigentumsvermerk_schuelerbuecherei
 	);
 
 	const speichern = () =>
 		speichereKategorie({
+			geladen,
 			felder: {
 				schule_name: name,
 				schule_strasse: strasse,

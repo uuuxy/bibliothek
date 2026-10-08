@@ -21,24 +21,40 @@
 	// Benutzer; frische Werte kommen über den {#key}-Block nach dem Speichern.
 	const start = untrack(() => daten);
 
-	let bereichNr = $state(start.bescheid_bereich_nr ?? '');
-	let schulnummer = $state(start.bescheid_schulnummer ?? '');
-	let aufsicht = $state(start.bescheid_aufsicht ?? '');
-	let schulleitung = $state(start.bescheid_schulleitung ?? '');
-	let geschaeftszeichen = $state(start.bescheid_geschaeftszeichen ?? '');
-	let bearbeiter = $state(start.bescheid_bearbeiter ?? '');
-	let durchwahl = $state(start.bescheid_durchwahl ?? '');
-	let zahlstelle = $state(start.bescheid_zahlstelle ?? '');
-	let bankverbindung = $state(start.bescheid_bankverbindung ?? '');
-	let fristTage = $state(start.bescheid_frist_tage ?? 28);
+	// Der Stand beim Öffnen unter den Namen der Anfrage, mit der Vorgabe für eine nie gesetzte
+	// Einstellung. Gespeichert wird nur, was davon abweicht (einstellungenSpeichern.js).
+	const geladen = {
+		bescheid_bereich_nr: start.bescheid_bereich_nr ?? '',
+		bescheid_schulnummer: start.bescheid_schulnummer ?? '',
+		bescheid_aufsicht: start.bescheid_aufsicht ?? '',
+		bescheid_schulleitung: start.bescheid_schulleitung ?? '',
+		bescheid_geschaeftszeichen: start.bescheid_geschaeftszeichen ?? '',
+		bescheid_bearbeiter: start.bescheid_bearbeiter ?? '',
+		bescheid_durchwahl: start.bescheid_durchwahl ?? '',
+		bescheid_zahlstelle: start.bescheid_zahlstelle ?? '',
+		bescheid_bankverbindung: start.bescheid_bankverbindung ?? '',
+		bescheid_frist_tage: start.bescheid_frist_tage ?? 28,
+		ersatzwert_immer_kaufpreis: start.ersatzwert_immer_kaufpreis === true
+	};
+	let bereichNr = $state(geladen.bescheid_bereich_nr);
+	let schulnummer = $state(geladen.bescheid_schulnummer);
+	let aufsicht = $state(geladen.bescheid_aufsicht);
+	let schulleitung = $state(geladen.bescheid_schulleitung);
+	let geschaeftszeichen = $state(geladen.bescheid_geschaeftszeichen);
+	let bearbeiter = $state(geladen.bescheid_bearbeiter);
+	let durchwahl = $state(geladen.bescheid_durchwahl);
+	let zahlstelle = $state(geladen.bescheid_zahlstelle);
+	let bankverbindung = $state(geladen.bescheid_bankverbindung);
+	let fristTage = $state(geladen.bescheid_frist_tage);
 	// Welcher Preis die Grundlage ist (Anforderungsliste des Medienzentrums Nr. 3).
 	// Die Frage steht als „immer Einkaufspreis", damit NICHT angehakt die Regel der
 	// Arbeitshilfe ist — eine Anlage, in der niemand etwas einstellt, rechnet mit dem
 	// heutigen Listenpreis, so wie es der Erlass verlangt.
-	let immerKaufpreis = $state(start.ersatzwert_immer_kaufpreis === true);
+	let immerKaufpreis = $state(geladen.ersatzwert_immer_kaufpreis);
 
 	const speichern = () =>
 		speichereKategorie({
+			geladen,
 			felder: {
 				ersatzwert_immer_kaufpreis: immerKaufpreis,
 				bescheid_bereich_nr: bereichNr,

@@ -22,16 +22,28 @@
 	// halb getippte Eingabe überschreiben.
 	const start = untrack(() => daten);
 
-	let fristBuch = $state(start.frist_buch_tage ?? 21);
-	let fristMedien = $state(start.frist_medien_tage ?? 7);
-	let maxAusleihen = $state(start.max_ausleihen_schueler ?? 5);
-	let lmfStichtag = $state(start.lmf_stichtag ?? '07-31');
-	let lmfEingang = $state(start.lmf_eingangsjahrgaenge ?? '5, 7');
-	let leseclubAktiv = $state(start.ferien_leseclub_aktiv ?? false);
-	let leseclubZieldatum = $state(start.ferien_leseclub_zieldatum ?? '');
+	// Der Stand beim Öffnen unter den Namen der Anfrage, mit der Vorgabe für eine nie gesetzte
+	// Einstellung. Gespeichert wird nur, was davon abweicht (einstellungenSpeichern.js).
+	const geladen = {
+		frist_buch_tage: start.frist_buch_tage ?? 21,
+		frist_medien_tage: start.frist_medien_tage ?? 7,
+		max_ausleihen_schueler: start.max_ausleihen_schueler ?? 5,
+		lmf_stichtag: start.lmf_stichtag ?? '07-31',
+		lmf_eingangsjahrgaenge: start.lmf_eingangsjahrgaenge ?? '5, 7',
+		ferien_leseclub_aktiv: start.ferien_leseclub_aktiv ?? false,
+		ferien_leseclub_zieldatum: start.ferien_leseclub_zieldatum ?? ''
+	};
+	let fristBuch = $state(geladen.frist_buch_tage);
+	let fristMedien = $state(geladen.frist_medien_tage);
+	let maxAusleihen = $state(geladen.max_ausleihen_schueler);
+	let lmfStichtag = $state(geladen.lmf_stichtag);
+	let lmfEingang = $state(geladen.lmf_eingangsjahrgaenge);
+	let leseclubAktiv = $state(geladen.ferien_leseclub_aktiv);
+	let leseclubZieldatum = $state(geladen.ferien_leseclub_zieldatum);
 
 	const speichern = () =>
 		speichereKategorie({
+			geladen,
 			felder: {
 				lmf_stichtag: lmfStichtag,
 				lmf_eingangsjahrgaenge: lmfEingang,

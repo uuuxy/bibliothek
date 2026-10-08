@@ -22,11 +22,18 @@
 	// halb getippte Eingabe überschreiben.
 	const start = untrack(() => daten);
 
-	let tageBisSperre = $state(start.max_overdue_days ?? 14);
-	let abMedien = $state(start.max_overdue_items ?? 1);
+	// Der Stand beim Öffnen unter den Namen der Anfrage, mit der Vorgabe für eine nie gesetzte
+	// Einstellung. Gespeichert wird nur, was davon abweicht (einstellungenSpeichern.js).
+	const geladen = {
+		max_overdue_days: start.max_overdue_days ?? 14,
+		max_overdue_items: start.max_overdue_items ?? 1
+	};
+	let tageBisSperre = $state(geladen.max_overdue_days);
+	let abMedien = $state(geladen.max_overdue_items);
 
 	const speichern = () =>
 		speichereKategorie({
+			geladen,
 			zahlen: [
 				// min: 0 — „sofort sperren" ist hier ein Wert, kein leeres Feld.
 				{ schluessel: 'max_overdue_days', label: 'Tage bis Sperre', wert: tageBisSperre, min: 0 },

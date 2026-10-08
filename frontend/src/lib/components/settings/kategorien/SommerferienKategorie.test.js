@@ -51,6 +51,9 @@ describe('SommerferienKategorie', () => {
 		await fireEvent.click(getByRole('button', { name: 'Sommerferien speichern' }));
 		expect(speichereKategorie).toHaveBeenCalledWith(
 			expect.objectContaining({
+				// Der Stand beim Öffnen geht in der gespeicherten Form mit: Verglichen wird Text
+				// mit Text.
+				geladen: { sommerferien: '[{"jahr":2030,"von":"2030-07-01","bis":"2030-08-09"}]' },
 				felder: {
 					sommerferien:
 						'[{"jahr":2030,"von":"2030-07-01","bis":"2030-08-09"},{"jahr":2031,"von":"2031-07-07","bis":"2031-08-15"}]'

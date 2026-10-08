@@ -27,16 +27,28 @@
 	// halb getippte Eingabe überschreiben.
 	const start = untrack(() => daten);
 
-	let lesehistorie = $state(start.lesehistorie_tage ?? 1);
-	let lesehistorieLmf = $state(start.lesehistorie_lernmittel_tage ?? 730);
-	let anliegen = $state(start.anliegen_tage ?? 365);
-	let auditMonate = $state(start.audit_aufbewahrung_monate ?? 24);
-	let thekeLeeren = $state(start.theke_leeren_minuten ?? 5);
-	let sperre = $state(start.sperre_minuten ?? 15);
-	let abgaengerKarenz = $state(start.abgaenger_karenz_tage ?? 90);
+	// Der Stand beim Öffnen unter den Namen der Anfrage, mit der Vorgabe für eine nie gesetzte
+	// Einstellung. Gespeichert wird nur, was davon abweicht (einstellungenSpeichern.js).
+	const geladen = {
+		lesehistorie_tage: start.lesehistorie_tage ?? 1,
+		lesehistorie_lernmittel_tage: start.lesehistorie_lernmittel_tage ?? 730,
+		anliegen_tage: start.anliegen_tage ?? 365,
+		audit_aufbewahrung_monate: start.audit_aufbewahrung_monate ?? 24,
+		theke_leeren_minuten: start.theke_leeren_minuten ?? 5,
+		sperre_minuten: start.sperre_minuten ?? 15,
+		abgaenger_karenz_tage: start.abgaenger_karenz_tage ?? 90
+	};
+	let lesehistorie = $state(geladen.lesehistorie_tage);
+	let lesehistorieLmf = $state(geladen.lesehistorie_lernmittel_tage);
+	let anliegen = $state(geladen.anliegen_tage);
+	let auditMonate = $state(geladen.audit_aufbewahrung_monate);
+	let thekeLeeren = $state(geladen.theke_leeren_minuten);
+	let sperre = $state(geladen.sperre_minuten);
+	let abgaengerKarenz = $state(geladen.abgaenger_karenz_tage);
 
 	const speichern = () =>
 		speichereKategorie({
+			geladen,
 			zahlen: [
 				{
 					schluessel: 'lesehistorie_tage',
