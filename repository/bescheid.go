@@ -117,6 +117,18 @@ func NewBescheidRepository(pool db.PgxPoolIface) BescheidRepository {
 	return &pgBescheidRepository{db: pool}
 }
 
+// ForderungenNichtZugeordnet lehnt einen Bescheid ab, dessen Forderungen sich nicht alle
+// zuordnen ließen: Eine ist bezahlt, storniert, steht schon auf einem Brief, gehört einem anderen
+// Leser oder ist kein Buch des Landes. Die Lage hat sich geändert, seit der Dialog offen steht;
+// die Tür antwortet mit 409 und diesem Satz.
+type ForderungenNichtZugeordnet struct{ Fehlend, Verlangt int }
+
+func (e *ForderungenNichtZugeordnet) Error() string {
+	return fmt.Sprintf("%d von %d Forderungen konnten nicht zugeordnet werden — "+
+		"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?",
+		e.Fehlend, e.Verlangt)
+}
+
 // Erstelle schreibt den Bescheid und ordnet ihm seine Positionen zu.
 //
 // Geprüft wird IN der Transaktion, dass jede Position dem Schüler gehört, offen ist und
@@ -191,9 +203,7 @@ func (r *pgBescheidRepository) Erstelle(ctx context.Context, e BescheidEingabe) 
 		return nil, err
 	}
 	if zugeordnet != len(e.Positionen) {
-		return nil, fmt.Errorf("%d von %d Forderungen konnten nicht zugeordnet werden — "+
-			"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?",
-			len(e.Positionen)-zugeordnet, len(e.Positionen))
+		return nil, &ForderungenNichtZugeordnet{Fehlend: len(e.Positionen) - zugeordnet, Verlangt: len(e.Positionen)}
 	}
 	b.AnzahlPositionen = zugeordnet
 

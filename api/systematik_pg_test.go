@@ -148,6 +148,10 @@ func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 	if code := loeschen(); code != http.StatusNoContent {
 		t.Errorf("Loeschen einer freien Sachgruppe: erwartet 204, war %d", code)
 	}
+	// Sie ist jetzt fort: Ein zweites Löschen findet sie nicht, und das ist keine Störung.
+	if code := loeschen(); code != http.StatusNotFound {
+		t.Errorf("Loeschen einer unbekannten Sachgruppe: erwartet 404, war %d", code)
+	}
 }
 
 // TestSystematikRenameZiehtTitelMit belegt den F3-Fix: Wird eine Sachgruppe

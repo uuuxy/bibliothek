@@ -253,6 +253,10 @@ func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 	if rec.Code != http.StatusConflict {
 		t.Errorf("zweiter Bescheid auf dieselbe Forderung: %d, want 409: %s", rec.Code, rec.Body.String())
 	}
+	// Die Antwort trägt den Satz, an dem das Sekretariat abliest, was zu prüfen ist.
+	if !strings.Contains(rec.Body.String(), "1 von 1 Forderungen konnten nicht zugeordnet werden") {
+		t.Errorf("die Antwort nennt die nicht zugeordnete Forderung nicht: %s", rec.Body.String())
+	}
 
 	// Und die Nummer des abgewiesenen Briefs ist NICHT verbraucht: Die Transaktion ist
 	// zurückgerollt, der Zähler steht auf 1.

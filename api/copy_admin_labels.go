@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"net/http"
-	"strings"
 
 	"bibliothek/apierrors"
 	"bibliothek/repository"
@@ -65,7 +64,7 @@ func (s *Server) handleUpdateCopyBarcode(w http.ResponseWriter, r *http.Request,
 			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("diese Nummer ist der Ausweis eines Lesers und kann kein Buch-Barcode sein"))
 			return
 		}
-		if strings.Contains(err.Error(), "unique constraint") || strings.Contains(err.Error(), "duplicate key") {
+		if repository.IstExemplarBarcodeVergeben(err) {
 			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("dieser Barcode wird bereits von einem anderen Exemplar verwendet"))
 			return
 		}

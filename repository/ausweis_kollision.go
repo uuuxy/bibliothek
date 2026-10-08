@@ -36,3 +36,12 @@ func IstNummerBuchOderAusweisKollision(err error) bool {
 	return errors.As(err, &pgErr) && pgErr.Code == "23505" &&
 		pgErr.ConstraintName == ConstraintNummerUeberBuchUndAusweis
 }
+
+// IstExemplarBarcodeVergeben sagt, ob err meldet, dass ein anderes Exemplar die Nummer schon
+// trägt (buecher_exemplare.barcode_id ist eindeutig). Für den Aufrufer ist das eine Auskunft
+// (409), kein 500.
+func IstExemplarBarcodeVergeben(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505" &&
+		pgErr.ConstraintName == "buecher_exemplare_barcode_id_key"
+}

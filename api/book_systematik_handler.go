@@ -55,7 +55,7 @@ func (s *Server) UpdateTitelSignaturHandler() http.HandlerFunc {
 			RETURNING coalesce(signatur, '')
 		`, id, signatur).Scan(&neueSignatur)
 		if err != nil {
-			if strings.Contains(err.Error(), "no rows") {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Titel nicht gefunden", err)
 			}
 			return apierrors.Internal("Signatur konnte nicht gespeichert werden", err)

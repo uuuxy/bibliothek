@@ -329,7 +329,7 @@ func (s *Server) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 		// Die Zuordnungs-Prüfung ist ein Bedienfehler (Forderung bezahlt, storniert
 		// oder schon auf einem Brief), kein Serverfehler — ebenso ein Buch, das
 		// inzwischen zurück ist, schon gemeldet wurde oder einem anderen Kind gehört.
-		if strings.Contains(err.Error(), "zugeordnet werden") || istBescheidBedienfehler(err) {
+		if istBescheidBedienfehler(err) {
 			return apierrors.Conflict(err.Error(), err)
 		}
 		return apierrors.Internal("Bescheid konnte nicht erstellt werden", err)
@@ -408,7 +408,9 @@ func bescheidPostenAus(req BescheidErstellenRequest) ([]repository.BescheidPosit
 
 // istBescheidBedienfehler: Die Lage hat sich geändert, seit der Dialog offen steht.
 func istBescheidBedienfehler(err error) bool {
-	return errors.Is(err, repository.ErrAusleiheInzwischenZurueck) ||
+	var nichtZugeordnet *repository.ForderungenNichtZugeordnet
+	return errors.As(err, &nichtZugeordnet) ||
+		errors.Is(err, repository.ErrAusleiheInzwischenZurueck) ||
 		errors.Is(err, repository.ErrAusleiheSchonGemeldet) ||
 		errors.Is(err, repository.ErrAusleiheFremd) ||
 		errors.Is(err, repository.ErrExemplarNeuVerliehen)

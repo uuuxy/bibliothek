@@ -217,7 +217,7 @@ func sachgruppenBezeichnung(ctx context.Context, tx pgx.Tx, id string) (string, 
 	var bezeichnung string
 	if err := tx.QueryRow(ctx,
 		`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&bezeichnung); err != nil {
-		if strings.Contains(err.Error(), "no rows") {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return "", apierrors.NotFound("Sachgruppe nicht gefunden", err)
 		}
 		return "", apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)
@@ -248,7 +248,7 @@ func (s *Server) DeleteSystematikHandler() http.HandlerFunc {
 		err := s.DB.Pool.QueryRow(r.Context(),
 			`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&bezeichnung)
 		if err != nil {
-			if strings.Contains(err.Error(), "no rows") {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Sachgruppe nicht gefunden", err)
 			}
 			return apierrors.Internal("Sachgruppe konnte nicht geladen werden", err)

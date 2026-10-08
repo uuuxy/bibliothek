@@ -27,6 +27,10 @@ const (
 	coverJPEGQuality    = 82
 )
 
+// errBildverarbeitung heißt: Das Bild ließ sich lesen, aber nicht verkleinert speichern. Eine
+// Störung am Server (500), kein unbrauchbares Bild (400).
+var errBildverarbeitung = errors.New("fehler bei der bildverarbeitung")
+
 func processUploadedImage(fileBytes []byte, id string) ([]byte, string, error) {
 	// Decompression-Bomb-Schutz: Dimensionen anhand des Headers prüfen, bevor die
 	// vollständige Pixelmatrix alloziert wird (image.Decode würde sonst sofort
@@ -79,7 +83,7 @@ func processUploadedImage(fileBytes []byte, id string) ([]byte, string, error) {
 		err = jpeg.Encode(&buf, dst, &jpeg.Options{Quality: coverJPEGQuality})
 		if err != nil {
 			log.Printf("cover-upload: jpeg encode failed for book %s: %v", logger.SanitizeLog(id), err)
-			return nil, "", fmt.Errorf("fehler bei der bildverarbeitung: %w", err)
+			return nil, "", fmt.Errorf("%w: %w", errBildverarbeitung, err)
 		}
 		finalBytes = buf.Bytes()
 		saveExt = ".jpg" // Wenn wir serverseitig verkleinern, speichern wir mangels WebP-Encoder als JPG
@@ -116,8 +120,8 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 
 	finalBytes, saveExt, err := processUploadedImage(fileBytes, id)
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "fehler bei der bildverarbeitung") {
-			writeError(writer, http.StatusInternalServerError, "fehler bei der bildverarbeitung")
+		if errors.Is(err, errBildverarbeitung) {
+			writeError(writer, http.StatusInternalServerError, errBildverarbeitung.Error())
 		} else {
 			writeError(writer, http.StatusBadRequest, err.Error())
 		}

@@ -382,16 +382,6 @@ Vermerk.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
-- **Fehler am Wortlaut erkannt.** Sieben Stellen in sechs Dateien entscheiden den Status ihrer
-  Antwort am Text einer Fehlermeldung statt an einem benannten Fehler; eine Umformulierung an
-  der Quelle macht dort aus einer Auskunft einen Serverfehler oder umgekehrt, ohne dass ein
-  Test es merkt. Gezählt am 08.10.2026: `inventur/endpunkte_buecher_schreiben.go` („Löschen
-  abgebrochen"), `inventur/upload_handler.go` („fehler bei der bildverarbeitung"),
-  `api/systematik_handler.go` (zweimal „no rows"), `api/book_systematik_handler.go` („no
-  rows"), `api/bescheid_handler.go` („zugeordnet werden"), `api/copy_admin_labels.go` („unique
-  constraint", „duplicate key"). Keine Prüfregel hält das Muster fest. Abhilfe: benannter
-  Fehler und `errors.Is`, wie seit dem 08.10.2026 beim Einbuchen im Wareneingang und beim
-  Absenden einer Bestellung, dazu eine Ratsche im Wurzelpaket. Kategorie B.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). **Probelauf am 08.10.2026:** Die vier Jobs von `ci.yml` sind
