@@ -183,7 +183,12 @@ type OrderSearchRequest struct {
 // zusätzlich bei der DNB. Der Metadaten-Client wird EINMAL beim Registrieren der Route
 // gebaut, nicht je Anfrage — er hält seinen eigenen HTTP-Client mit Zeitgrenze.
 func (s *Server) SearchOrdersHandler() http.HandlerFunc {
-	metaClient := inventur.NeuerMetadatenClient()
+	return s.sucheBestellung(inventur.NeuerMetadatenClient())
+}
+
+// sucheBestellung ist die Tür mit ihrem Client für die DNB als Parameter: Ein Test stellt
+// die Antwort der DNB nach, wie bei isbnZuTitel.
+func (s *Server) sucheBestellung(metaClient *inventur.MetadatenClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req OrderSearchRequest
 		if !DecodeAndValidate(w, r, &req) {

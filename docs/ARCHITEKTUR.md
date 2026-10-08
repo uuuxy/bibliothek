@@ -2067,6 +2067,14 @@ wenn man ihn einmal gebraucht hat.
   `git status` leer. Ratschen, die Go-Quelltext oder SQL-Dateien zur Laufzeit lesen, sehen das
   Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren. Bleibt eine Probe grün,
   misst der Test den Fall nicht.
+- **Welchen Code kein Go-Test ausführt,** zeigt die ganze Suite mit `-coverpkg` über alle
+  Pakete des Moduls (ohne das Go-Paket, das npm unter `frontend/node_modules` ablegt). Am
+  08.10.2026 führt sie 86,5 % der Anweisungen aus (28.016 von 32.405); ohne `cmd/`, `main.go`
+  und Dateien mit weniger als 20 Anweisungen liegt keine Datei unter 50 %. Eine Datei darunter
+  bekommt einen Test über ihre Tür, mit Datenbank und einer Gegenprobe je Zusicherung (Muster:
+  `api/inventur_verlust_aktionen_pg_test.go`). Das Nachziehen solcher Tests fand am 03.10. und
+  am 08.10.2026 je mehrere Fehler, die bis dahin kein Test zeigte. Ob Browser-Tests den übrigen
+  Code erreichen, ist nicht gemessen.
 - **Messende Browser-Tests warten auf die Daten der Seite.** `networkidle` tritt nie ein, weil
   die Live-Leitung offen bleibt. `frontend/e2e/messhilfe.js` führt deshalb Buch über die
   Datenanfragen einer Seite (fetch und XHR unter `/api/`): Gemessen wird, wenn keine mehr offen

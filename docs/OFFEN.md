@@ -26,6 +26,8 @@ Liste geführt wird, steht am Ende.
 - [x] **PR 722** durchgesehen und geschlossen am 06.10.2026: Die Prüfung beim Löschen einer
   Sachgruppe (`api/systematik_handler.go`) würde durch ihn höchstens 1 ms schneller.
 - [x] **PRs 723 und 724** durchgesehen und geschlossen am 07.10.2026, nichts übernommen.
+- [ ] **PR 725** (zugeliefert am 08.10.2026) durchsehen: Im Warenkorb des Bestellwesens soll der
+  Minus-Knopf bei Menge 1 ausgegraut sein.
 - [x] **Doku-Ordner:** Aus 36 Markdown-Dateien in `docs/` sind am 07.10.2026 20 geworden. Die
   Architektur ist eine Datei (`ARCHITEKTUR.md`); das LUSD-Messprotokoll, die Vorlage für das
   Blatt bei der Schule, die Liste „Datenschutz — offene Punkte" und das zweite README sind in
@@ -171,6 +173,8 @@ der Nummer nichts mehr dazu offen ist.
   die Excel-Bibliothek auf einem unveröffentlichten Stand.
 - [ ] **Ausweis aus der Leserakte (5.5):** Scheitert das Laden des Ausweis-Designs, druckt die
   Leserakte mit den Vorgabewerten, ohne es zu melden; der Stapeldruck meldet es.
+- [ ] **Bestellsuche (5.5):** Antwortet die DNB nicht, zeigt die Suche nur die Treffer aus dem
+  eigenen Katalog, ohne es zu sagen.
 - [x] **Zwei Helfer (5.5):** Beträge in Euro und Fehlertexte kommen seit dem 07.10.2026 aus
   ihren Helfern, die Regel „überfällig" ebenso; eine Ratsche hält die ersten beiden fest.
 - [x] **Masken, die ihren ganzen Stand zurückschicken (5.5):** Am Titel, am Leser, am Benutzer,
@@ -378,6 +382,15 @@ Vermerk.
   Vorgabewerten, ohne es zu sagen. Der falsche Ausweis liegt sichtbar im Drucker, deshalb
   Kategorie B. Abhilfe: ein Lader für alle drei, mit der Meldung und so, dass zwei Bauteile
   auf derselben Seite nur einmal laden.
+- **Bestellsuche ohne Hinweis, wenn die DNB nicht antwortet** (gefunden am 08.10.2026 beim
+  Test der Tür, `api/bestellsuche_pg_test.go`). `POST /api/bestellungen/suche` liefert bei
+  einem Ausfall der DNB die Treffer aus dem eigenen Katalog und sonst nichts
+  (`searchDNBOrders` in `internal/service/order_service.go` gibt bei einem Fehler eine leere
+  Liste zurück); die Oberfläche (`orderStore`) öffnet bei null Treffern keine Liste. Ein Buch,
+  das die DNB kennt, sieht dann aus wie eines, das sie nicht kennt. Für die drei
+  ISBN-Abfragen ist dieser Fall am 31.08.2026 entschieden (502 „Katalogdienste nicht
+  erreichbar", [sweeps.md](sweeps.md)); die Bestellsuche war nicht dabei. Abhilfe: die Antwort
+  um ein Merkmal „DNB nicht erreichbar" ergänzen und es an der Trefferliste zeigen. Kategorie B.
 
 ### 5.10 Gates und Werkzeuge
 
@@ -394,17 +407,6 @@ Vermerk.
   Lauf der drei Specs gleich (Titel, Exemplare, Zulauf ohne Bestellung, offene Ausleihen,
   Leser, Bestellungen, Lieferanten); ohne das Aufräumen in `bestellung-detail` weichen
   Exemplare, Titel und Zulauf ab.
-- Code, den kein Go-Test ausführt (gemessen am 08.10.2026 mit der ganzen Suite und `-coverpkg`
-  über alle Pakete: 86,0 % der Anweisungen, 27.869 von 32.402; ohne das Go-Paket, das npm unter
-  `frontend/node_modules/flatted` ablegt und das `./...` lokal mitzählt). Unter 50 % liegt, ohne
-  `cmd/`, `main.go` und Dateien mit weniger als 20 Anweisungen, seit dem 08.10.2026 keine Datei
-  mehr. In `api/orders_handler.go` führt kein Test die Bestellsuche aus (13,3 %).
-  Ob Browser-Tests diesen Code erreichen, ist nicht gemessen. Anlass: Das Nachziehen der
-  Tests für fünf Routen am 03.10.2026 fand drei Fehler (zwei Abweisungen beim Zusammenführen
-  ohne Grund, ein unlesbares Bild als Störung gemeldet, eine Antwort des Foto-Uploads, die
-  kein JSON war).
-  Abhilfe je Route: ein Test mit Datenbank und eine Gegenprobe je Zusicherung, Muster in
-  `api/inventur_verlust_aktionen_pg_test.go`. Kategorie B.
 - **Fehler am Wortlaut erkannt.** Sieben Stellen in sechs Dateien entscheiden den Status ihrer
   Antwort am Text einer Fehlermeldung statt an einem benannten Fehler; eine Umformulierung an
   der Quelle macht dort aus einer Auskunft einen Serverfehler oder umgekehrt, ohne dass ein
