@@ -154,23 +154,15 @@
 						/>
 					</div>
 
-					<!-- RAIL: die Bestellung wächst sichtbar mit, bleibt beim Scrollen stehen. Der
-					     Etiketten-Hinweis ist raus (steht jetzt oben bei den offenen Aufgaben) — die
-					     Spalte trägt damit nur noch EINE Sache: die Bestellung, die man gerade schreibt.
-					     Aus dem Betrieb gemeldet als „Bestellung abgeschnitten". Gemessen bei
-					     1366×700 mit fünf Positionen im Korb: Die Spalte wurde 1288 px hoch und
-					     ragte 826 px unter den Fensterrand — der Absenden-Knopf war nur noch zu
-					     erreichen, indem man die ganze Bestellbedarfs-Liste daneben (105 Titel)
-					     nach unten scrollte, bis der klebende Rahmen endete. Erreichbar im
-					     technischen Sinn, unbrauchbar im täglichen.
-					     Höhengrenze plus eigener Scrollbalken: Wird die Spalte zu hoch, scrollt sie
-					     in sich selbst. Der Warenkorb bleibt damit dort bedienbar, wo er steht. Die
-					     Grenze misst actions/resthoehe.js bis zum unteren Rand der Seite.
-					     Verankert im E2E-Gate e2e/bestellung-erreichbar.spec.js. -->
+					<!-- Die Bestellspalte klebt beim Scrollen und reicht bis zum unteren Rand der Seite
+					     (actions/resthoehe.js); ein voller Warenkorb scrollt in ihr, der Knopf zum
+					     Absenden bleibt erreichbar. Die feste Höhe braucht die Titelsuche: In einer
+					     Spalte, die mit einem leeren Korb früher endet, läge ihre Trefferliste zum
+					     Teil unter dem Rand. Gate: e2e/bestellung-erreichbar.spec.js. -->
 					<div
 						use:resthoehe={{ haftet: true }}
 						id="bestellspalte"
-						class="space-y-3 lg:sticky lg:top-2 lg:max-h-(--resthoehe) lg:overflow-y-auto {railOffen
+						class="space-y-3 lg:sticky lg:top-2 lg:h-(--resthoehe) lg:overflow-y-auto {railOffen
 							? 'lg:col-span-5 xl:col-span-4 lg:border-l lg:border-outline-variant lg:pl-6'
 							: 'lg:col-span-1 xl:col-span-1'}"
 					>

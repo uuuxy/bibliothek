@@ -1,8 +1,8 @@
 /**
  * `use:resthoehe` — setzt am Element `--resthoehe`: die Höhe von seiner Oberkante bis zur
  * Unterkante des Bereichs, der die Seite scrollt. Mit `max-h-(--resthoehe)` und
- * `overflow-y-auto` scrollt das Element in sich und endet am Rand der Seite; die Seite
- * selbst läuft nicht über.
+ * `overflow-y-auto` scrollt das Element in sich und endet spätestens am Rand der Seite; die
+ * Seite selbst läuft nicht über. Mit `h-(--resthoehe)` reicht es immer bis dorthin.
  *
  * Gemessen statt gerechnet: Ein `calc(100vh - fester Abzug)` stimmt nicht, weil die Oberkante
  * wandert — mit einem Hinweisband darüber, mit einer Kopfzeile, die umbricht, beim Scrollen.

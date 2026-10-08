@@ -208,3 +208,52 @@ for (const [breite, hoehe] of FENSTER) {
 		).toBe(true);
 	});
 }
+
+// Mit leerem Warenkorb endete die Spalte mit ihrem Inhalt, und die Trefferliste der Titelsuche
+// lag zum Teil unter ihrem Rand: Bei 1710 × 952 waren von 288 px 202 zu sehen. Die Spalte reicht
+// deshalb immer bis zum unteren Rand der Seite.
+//
+// Die Antwort der Suche ist nachgestellt; der Stack fragte sonst die DNB. Geprüft wird im
+// hohen Fenster: In einem kurzen mit Hinweisbändern darüber passt die Liste nicht ganz, dort
+// scrollt die Spalte.
+test('Die Trefferliste der Titelsuche liegt bei leerem Warenkorb ganz in der Bestellspalte', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 1920, height: 1080 });
+	const treffer = Array.from({ length: 6 }, (_, i) => ({
+		id: `00000000-0000-4000-8000-00000000000${i}`,
+		titel: `Trefferprobe ${i + 1}`,
+		autor: 'Muster, Erika',
+		isbn: `978000000000${i}`,
+		source: 'local',
+		current_stock: i
+	}));
+	await page.route('**/api/bestellungen/suche', (route) =>
+		route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(treffer) })
+	);
+	await uiLogin(page);
+	await page.goto('/bestellungen');
+	const antwort = page.waitForResponse('**/api/bestellungen/suche');
+	await page.getByRole('searchbox', { name: 'Titel suchen & hinzufügen' }).fill('trefferprobe');
+	await antwort;
+
+	const liste = page.getByText('Im lokalen Bestand').locator('..');
+	await expect(page.getByRole('button', { name: /Trefferprobe 1/ })).toBeVisible();
+	const lage = await liste.evaluate((el) => {
+		const spalte = document.getElementById('bestellspalte');
+		if (!spalte) throw new Error('Die Bestellspalte (#bestellspalte) gibt es nicht mehr');
+		return {
+			listeUnten: Math.round(el.getBoundingClientRect().bottom),
+			listeHoehe: Math.round(el.getBoundingClientRect().height),
+			spalteUnten: Math.round(spalte.getBoundingClientRect().bottom),
+			spalteScrollt: spalte.scrollHeight > spalte.clientHeight
+		};
+	});
+	// Sechs Treffer sind höher als die Liste: Sie steht an ihrer Höchstgrenze und scrollt in sich.
+	expect(lage.listeHoehe, 'Die Trefferliste steht nicht an ihrer Höchstgrenze').toBe(288);
+	expect(
+		lage.listeUnten,
+		`Die Trefferliste endet bei ${lage.listeUnten} px, die Bestellspalte bei ${lage.spalteUnten} px`
+	).toBeLessThanOrEqual(lage.spalteUnten);
+	expect(lage.spalteScrollt, 'Die Bestellspalte scrollt wegen der Trefferliste').toBe(false);
+});
