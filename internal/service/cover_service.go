@@ -15,12 +15,16 @@ import (
 // CoverService handles fetching book covers asynchronously.
 type CoverService struct {
 	db db.PgxPoolIface
+	// katalog baut den Client für die Katalogdienste. Ein Test stellt die Dienste darüber
+	// nach, statt DNB, Google Books und OpenLibrary im Netz zu fragen.
+	katalog func() *inventur.MetadatenClient
 }
 
 // NewCoverService creates a new CoverService.
 func NewCoverService(dbPool db.PgxPoolIface) *CoverService {
 	return &CoverService{
-		db: dbPool,
+		db:      dbPool,
+		katalog: inventur.NeuerMetadatenClient,
 	}
 }
 
@@ -58,11 +62,16 @@ type missingCover struct {
 const coverSyncAuswahl = `
 		SELECT id, isbn FROM buecher_titel
 		WHERE isbn IS NOT NULL AND isbn != ''
-		  AND COALESCE(cover_url, '') NOT LIKE '/uploads/%'
+		  AND ` + coverNichtLokal + `
 		  AND (
 		        cover_status IN ('PENDING', 'FAILED')
 		     OR COALESCE(cover_url, '') <> ''
 		      )`
+
+// coverNichtLokal heißt: Der Titel trägt kein lokal liegendes Cover. Die Bedingung gilt
+// beim Auswählen und noch einmal bei jedem Schreiben. Dazwischen liegt die Laufzeit des
+// Abgleichs; ein in dieser Zeit von Hand hochgeladenes Cover bleibt mit seinem Stand stehen.
+const coverNichtLokal = `COALESCE(cover_url, '') NOT LIKE '/uploads/%'`
 
 // SyncMissingCoversAsync lädt für alle Titel ohne lokales Cover die Cover parallel nach.
 // Es werden PENDING- (noch nie versucht) UND FAILED-Titel (erneuter Versuch) verarbeitet,
@@ -112,7 +121,7 @@ func (s *CoverService) SyncMissingCoversAsync() {
 
 	log.Printf("Cover Sync: Starte parallelen Download für %d Cover (%d Worker)...", len(missing), coverSyncConcurrency)
 
-	client := inventur.NeuerMetadatenClient()
+	client := s.katalog()
 
 	var found, notFound, failed atomic.Int64
 	// Gepuffert auf die Zahl der Aufgaben: Der Dispatcher blockiert damit NIE beim Senden.
@@ -162,7 +171,7 @@ func (s *CoverService) processCover(ctx context.Context, client *inventur.Metada
 		s.setCoverStatus(ctx, mc.ID, "FAILED")
 	case res.CoverURL != "":
 		found.Add(1)
-		if _, derr := s.db.Exec(ctx, `UPDATE buecher_titel SET cover_url = $1, cover_status = 'FOUND' WHERE id = $2`, res.CoverURL, mc.ID); derr != nil {
+		if _, derr := s.db.Exec(ctx, `UPDATE buecher_titel SET cover_url = $1, cover_status = 'FOUND' WHERE id = $2 AND `+coverNichtLokal, res.CoverURL, mc.ID); derr != nil {
 			log.Printf("Cover Sync: DB-Update für Titel %s fehlgeschlagen: %v", mc.ID, derr)
 		}
 	default:
@@ -173,7 +182,7 @@ func (s *CoverService) processCover(ctx context.Context, client *inventur.Metada
 
 // setCoverStatus aktualisiert den cover_status eines Titels (Best-Effort, geloggt).
 func (s *CoverService) setCoverStatus(ctx context.Context, id, status string) {
-	if _, err := s.db.Exec(ctx, `UPDATE buecher_titel SET cover_status = $1 WHERE id = $2`, status, id); err != nil {
+	if _, err := s.db.Exec(ctx, `UPDATE buecher_titel SET cover_status = $1 WHERE id = $2 AND `+coverNichtLokal, status, id); err != nil {
 		log.Printf("Cover Sync: Status %q für Titel %s konnte nicht gesetzt werden: %v", status, id, err)
 	}
 }
