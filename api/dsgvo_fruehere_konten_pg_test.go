@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/auskunft"
 	"bibliothek/internal/pdftest"
 	"bibliothek/repository"
 )
@@ -40,14 +41,14 @@ func fkAlsAdmin(t *testing.T, admin string, h http.HandlerFunc, methode, pfad, b
 }
 
 // fkAuskunft ruft die Auskunft eines Lesers über ihren Handler ab.
-func fkAuskunft(t *testing.T, srv *Server, admin, leserID string) DsgvoAuskunftResponse {
+func fkAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.DsgvoAuskunftResponse {
 	t.Helper()
 	rec := fkAlsAdmin(t, admin, srv.DsgvoAuskunftHandler(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", "",
 		map[string]string{"id": leserID})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Auskunft: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	var a DsgvoAuskunftResponse
+	var a auskunft.DsgvoAuskunftResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 		t.Fatalf("Auskunft lesen: %v", err)
 	}
@@ -73,7 +74,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 		t.Helper()
 		return fkAlsAdmin(t, admin, h, methode, pfad, body, pfadwerte)
 	}
-	auskunft := func(leserID string) DsgvoAuskunftResponse {
+	auskunftZu := func(leserID string) auskunft.DsgvoAuskunftResponse {
 		t.Helper()
 		return fkAuskunft(t, srv, admin, leserID)
 	}
@@ -100,7 +101,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 		t.Fatalf("Konto löschen: Status %d — %s", rec.Code, rec.Body.String())
 	}
 
-	a := auskunft(leserID)
+	a := auskunftZu(leserID)
 	if a.Zugangskonto != nil {
 		t.Fatalf("das gelöschte Konto steht als bestehendes Konto in der Auskunft: %+v", a.Zugangskonto)
 	}
@@ -158,7 +159,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	if err := auditRepo.DeleteStudent(ctx, kollege, admin, "Test"); err != nil {
 		t.Fatalf("Kollegen löschen: %v", err)
 	}
-	a = auskunft(kollege)
+	a = auskunftZu(kollege)
 	if len(a.FruehereZugangskonten) != 1 || a.FruehereZugangskonten[0].Email != "paul@fruehere-konten.invalid" {
 		t.Errorf("das mit der Leserzeile gelöschte Konto fehlt in der Auskunft: %+v", a.FruehereZugangskonten)
 	}

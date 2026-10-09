@@ -55,7 +55,7 @@ func TestZuLoeschen_OhneStempelZaehltDieAenderungszeit(t *testing.T) {
 	}
 }
 
-// Die Auskunft nennt BehalteNaechte und BehalteWochen (api, dsgvoSicherungen). Rotierte die
+// Die Auskunft nennt BehalteNaechte und BehalteWochen (internal/auskunft, dsgvoSicherungen). Rotierte die
 // Nachtsicherung mit anderen Zahlen, stimmte sie nicht mehr; deshalb steht der Aufruf hier fest.
 // Gelesen am Syntaxbaum von backup.go, nicht am Text — ein Kommentar zählt nicht.
 func TestRunDatabaseBackup_RotiertMitDenKonstanten(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 // wöchentliche Stände. Ein Fehler, der still Daten verändert — ein falscher Import, ein
 // Löschlauf, ein Reparaturskript — und erst nach den sechs Wochen der Sommerferien auffällt,
 // steckte mit 14 Nächten allein in jeder vorhandenen Sicherung. Folge: Gelöschte Personen stehen
-// bis zu etwa drei Monate in den Sicherungen; die Auskunft nennt es (api, dsgvoSicherungen).
+// bis zu etwa drei Monate in den Sicherungen; die Auskunft nennt es (internal/auskunft, dsgvoSicherungen).
 //
 // Nur die Nachtsicherung im Backup-Verzeichnis des Containers. Die Sicherung vor einem Update
 // (update.sh, vordeploy_…) und die von Hand (scripts/backup.sh, bibliothek_backup_…) liegen in

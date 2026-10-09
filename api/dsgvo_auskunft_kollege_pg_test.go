@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/auskunft"
 	"bibliothek/internal/pdftest"
 	"bibliothek/repository"
 )
@@ -101,7 +102,7 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 	}
 
 	rec := rufe(t, srv.DsgvoAuskunftHandler(), "/api/schueler/"+leser+"/dsgvo-auskunft")
-	var a DsgvoAuskunftResponse
+	var a auskunft.DsgvoAuskunftResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}

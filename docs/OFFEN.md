@@ -143,8 +143,8 @@ der Nummer nichts mehr dazu offen ist.
   was die Datenbank ablehnt; Listen: was sie begrenzt), die Form-Ratsche sieht umrandete
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
-- [ ] **Schichtung des Backends (5.62):** Die PDF-Erzeuger und der Rest der Dateien ohne Tür
-  ziehen je Sache aus `api/` in eigene Pakete.
+- [ ] **Schichtung des Backends (5.62):** Sechs Dateien mit Regeln ziehen je Sache aus `api/`
+  in eigene Pakete; danach die Regeln in Dateien, die auch eine Tür tragen.
 - [ ] **Etiketten kürzen nach Zeichenzahl (5.63):** an neun Stellen messen, ob ein Text über
   den Rand des Etiketts läuft.
 
@@ -356,57 +356,35 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
-  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 21 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 23.551 Zeilen in 145 Dateien (am Anfang 30.785 in 168).
+  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 18 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 22.308 Zeilen in 142 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
-  Selbstprüfung und die Regel zu den Start-Geheimnissen in `internal/bereitschaft`, der
+  Selbstprüfung und die Regel zu den Start-Geheimnissen in `internal/bereitschaft`, die
+  Auskunft nach Art. 15 DSGVO mit ihrem Blatt in `internal/auskunft` (Türen in
+  `api/dsgvo_auskunft.go` und `api/dsgvo_pdf.go`), der
   Strichcode in `pkg/strichcode`, die Arten eines Lesers in `pkg/leserart`, die Zuordnung der
   Kopfzeile einer Importdatei beim Importer in `internal/service`; in `pdf/` stehen
   der Bescheid (`bescheid.go`), die Etiketten mit ihren Bogenformaten (`etikett_*.go`), die
   Bestandsbücher (`abgangsbuch.go`, `zugangsbuch.go`), die Mahnliste (`mahnliste.go`), der
-  Mahnbrief (`mahnbrief.go`) und das Bestellanschreiben (`bestellanschreiben.go`). Offen: der
-  Aufbau der übrigen PDFs und der Rest der 21. Was ein Erzeuger aus `repository/` liest, bekommt
-  er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2). Je Thema ein Commit; die
-  Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Von den PDF-Erzeugern
-  steht nur noch die Auskunft in `api/` (`dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`, dazu
-  der Erzeuger in `dsgvo_pdf.go`). Gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler:
-  Sie hängt an 15 Namen aus `api/` und 17 aus `repository/` und nimmt den Typ der Antwort für
-  den Bildschirm; sie ist die größte Sache. Sie unterscheidet sich von den übrigen Erzeugern:
-  Das Blatt nennt 16 Typen der Antwort und die Tabelle der Protokoll-Angaben aus `repository/`
-  (`ProtokollAngabe…`). Eigene Eingabetypen in `pdf/` hießen, diese 16 Typen zu doppeln, und
-  `pdf/` dürfte die Tabelle aus `repository/` nicht einbinden. Die Anlagen der Bestellmail
+  Mahnbrief (`mahnbrief.go`) und das Bestellanschreiben (`bestellanschreiben.go`). Kein
+  PDF-Erzeuger steht mehr in `api/`. Offen: der Rest der 18. Was ein Erzeuger aus `repository/`
+  liest, bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2; dort
+  steht auch, warum die Auskunft ein eigenes Paket hat). Je Thema ein Commit; die
+  Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Die Anlagen der Bestellmail
   (`bestellmail_anhaenge.go`, bisher `pdf_service.go`) sind kein Erzeuger: Die Datei stellt sie
   zusammen und verschickt die Mail; sie bleibt als Helfer bei ihren Türen.
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
   umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
-- **Plan für die Auskunft** (zweiter Probe-Umzug am Compiler, 09.10.2026). Ziel ist ein eigenes
-  Paket `internal/auskunft`, wie beim LUSD-Import, nicht `pdf/`. Dorthin zieht alles, was keine
-  Methode der Tür ist: die Typen der Antwort, die Pflichtangaben mit ihren Fristen, der Wortlaut
-  der Vorgänge und das Blatt, zusammen 1.316 Zeilen aus fünf Dateien (`dsgvo_auskunft.go`,
-  `dsgvo_pdf.go`, `dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`,
-  `dsgvo_pflichtangaben_kollegium.go`). Dem Paket fehlt dann aus `api/` ein einziger Name
-  (`auditBescheidErstellt`, eine Zeile im Wortlaut der Vorgänge). In `api/` bleiben die Abfragen
-  über `repository/`, das Sammeln, der Protokolleintrag und die zwei Türen (285 Zeilen); sie
-  brauchen 14 Namen aus dem Paket, die dafür öffentlich werden. Mit zu ziehen sind die Tests des
-  Blatts und des Wortlauts, das Gate, das den Quelltext von `dsgvo_pdf.go` liest
-  (`api/dsgvo_pdf_felder_gate_test.go`), und die Schnittstellenbeschreibung: Sie nennt
-  `DsgvoAuskunftResponse` dann unter dem neuen Paket, wie schon Typen aus `repository/`
-  (`docs/swagger_drift_test.go`). 28 Testdateien in `api/` nennen Namen der Auskunft; die Tests
-  über die Tür bleiben dort. Beleg wie bei den übrigen Umzügen: Vergleichsblätter über die
-  Fälle der Antwort (leer, vollständig, Kollegium, mit und ohne Zugangskonto) und die Antwort
-  als JSON vorher und nachher. Danach führt der Bestand 18 Dateien.
-- **Was von den 21 umzieht und was bleibt** (eingeteilt am 09.10.2026 nach dem Inhalt jeder
-  Datei). Zwei gehören zur Auskunft (`dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`, 548
-  Zeilen). Sieben tragen Regeln und ziehen um (1.123 Zeilen):
+- **Was von den 18 umzieht und was bleibt** (eingeteilt am 09.10.2026 nach dem Inhalt jeder
+  Datei). Sechs tragen Regeln und ziehen um (1.060 Zeilen):
   `order_service.go` (397, legt eine Bestellung in einer Transaktion an; Ziel
   `internal/service`, zuletzt, weil `bestellmail_anhaenge.go` an seinen Namen hängt),
   `lmf_termine_frist.go` (207) und `lmf_plan_vorgabe.go` (117, Fristen und Rahmen des
   LMF-Plans), `bestellmail_text.go` (146, Platzhalter der Bestellmail), `mittel_vermerk.go`
-  (99, Texte je Topf; das Bestellanschreiben bekommt sie aus der Tür),
-  `bestellbestaetigung_token.go` (94) und `dsgvo_pflichtangaben_kollegium.go` (63, zieht mit
-  der Auskunft). Zwölf sind Typen einer Anfrage oder Antwort, Füll-Funktionen
+  (99, Texte je Topf; das Bestellanschreiben bekommt sie aus der Tür) und
+  `bestellbestaetigung_token.go` (94). Zwölf sind Typen einer Anfrage oder Antwort, Füll-Funktionen
   und Helfer mehrerer Türen und bleiben (939 Zeilen): `abgaenger_fenster.go` (trägt daneben die
   Grenzen der Abgänger-Saison), `action_types.go`, `bescheid_absender.go`,
   `bestellmail_anhaenge.go` (216, stellt die Anlagen der Bestellmail zusammen und verschickt
@@ -414,17 +392,17 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   `mahnwesen_mail.go`, `schueler_kiosk.go`, `verwaltung_protokoll.go` und
   `student_klasse_regel.go` (prüft eine Eingabe der zwei Türen zum Anlegen und Ändern und trägt
   deren Meldung; keine andere Schicht ruft sie). Der Bestand kann damit
-  nicht auf null fallen; fertig ist dieser Schritt, wenn die neun ausgezogen sind. Zuerst
+  nicht auf null fallen; fertig ist dieser Schritt, wenn die sechs ausgezogen sind. Zuerst
   kommt, was eine zweite Schicht braucht: Eine Regel in `api/` können `repository/` und
   `internal/service/` nicht einbinden und formulieren sie selbst (so die Leserart, ARCHITEKTUR
   5.2.2).
 - **Was der Bestand nicht sieht.** Zwei Dateien binden `net/http` nur für Statuswerte ein und
   tragen keine Tür: `mail_sender.go` (227 Zeilen) und `nachbuchen_schluessel.go` (148). Und
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
-  Typ aus `net/http` tragen `bestellbericht_handler.go` (365), `dsgvo_pdf.go` (320),
-  `lmf_plan.go` (260), `bescheid_handler.go` (246), `dsgvo_auskunft.go` (207),
+  Typ aus `net/http` tragen `bestellbericht_handler.go` (367),
+  `lmf_plan.go` (260), `bescheid_handler.go` (246), `dsgvo_auskunft.go` (193),
   `betriebsbereitschaft_handler.go` (177) und `graduates_mail.go` (157). Die Messung und ihre
-  Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt nach den neun: diese Dateien
+  Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt nach den sechs: diese Dateien
   der Reihe nach lesen und trennen, was Regel und was Füll-Funktion ist.
 - **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 354
   Methoden, rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt, zeigt der

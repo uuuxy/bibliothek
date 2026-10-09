@@ -1,4 +1,4 @@
-package api
+package auskunft
 
 import (
 	"encoding/json"
@@ -77,7 +77,7 @@ func TestDsgvoAngabenZeilen(t *testing.T) {
 			`{"schueler_id":"` + kennung + `","grund":"Buch überfällig","von_hand":true,"vom_programm":false}`,
 			false, []string{"Grund der aufgehobenen Sperre: Buch überfällig · Sperre war von Hand gesetzt: Ja · Sperre kam vom Programm: Nein"}},
 		{"Sperre gesetzt", "LESER_GESPERRT", `{"schueler_id":"` + kennung + `","grund":"Buch überfällig"}`, false, []string{"Sperrgrund: Buch überfällig"}},
-		{"Bescheid", auditBescheidErstellt,
+		{"Bescheid", "SCHADENSERSATZ_BESCHEID_ERSTELLT",
 			`{"bescheid_id":"` + kennung + `","schueler_id":"` + kennung + `","referenznummer":"LMF-2026-0007","mittel":"land","gesamtbetrag":31,"positionen":2}`,
 			false, []string{"Gesamtbetrag: 31,00 EUR · Referenznummer: LMF-2026-0007 · Mittel: land · Positionen: 2"}},
 		{"Spur einer gelöschten Forderung", "DELETE",
@@ -165,7 +165,7 @@ func TestDsgvoPDF_ProtokollzeilenInWorten(t *testing.T) {
 			{Aktion: "LUSD_ID_NACHGETRAGEN", Zeitpunkt: zeit, Details: json.RawMessage(`{"schueler_id":"` + kennung + `","lusd_id":"4711"}`)},
 		},
 	}
-	roh, err := generateDsgvoAuskunftPDF(a, pdf.SchuleInfo{Name: "Testschule"})
+	roh, err := GenerateDsgvoAuskunftPDF(a, pdf.SchuleInfo{Name: "Testschule"})
 	if err != nil {
 		t.Fatal(err)
 	}

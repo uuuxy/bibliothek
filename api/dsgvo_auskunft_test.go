@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/auskunft"
 
 	"github.com/pashagolub/pgxmock/v5"
 )
@@ -109,7 +111,7 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
 	}
 
-	var resp DsgvoAuskunftResponse
+	var resp auskunft.DsgvoAuskunftResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Antwort kein valides JSON: %v", err)
 	}
@@ -177,32 +179,23 @@ func TestDsgvoAuskunft_AuditFehlerVerhindertAuskunftNicht(t *testing.T) {
 	}
 }
 
-// Die Speicherdauer-Angabe nennt die EINGESTELLTE Karenzzeit, keine feste Zahl
-// (Rasterdurchgang 02.09.2026: „Altfälle nach 360 Tagen" stand noch im Text, der Job
-// rechnete längst mit abgaenger_karenz_tage).
-func TestDsgvoVerarbeitungsangaben_KarenzAusEinstellung(t *testing.T) {
-	va := dsgvoVerarbeitungsangaben(90, 730, 5, 24)
-	if !strings.Contains(va.Speicherdauer, "Karenzzeit von 5 Tagen") {
-		t.Errorf("Speicherdauer nennt die Karenz nicht: %q", va.Speicherdauer)
+// Sind die Einstellungen nicht lesbar, nennt die Auskunft die Vorgaben, jede an ihrer Stelle:
+// Lesehistorie der Bücherei 1 Tag, der Lernmittel 730 Tage, Karenz 90 Tage, Protokolle 24
+// Monate, erledigte Anliegen 365 Tage.
+func TestDsgvoFristen_OhneEinstellungenGeltenDieVorgaben(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
 	}
-	if strings.Contains(va.Speicherdauer, "360") {
-		t.Errorf("Speicherdauer trägt noch die alte feste Frist: %q", va.Speicherdauer)
-	}
-	if va := dsgvoVerarbeitungsangaben(90, 730, 0, 24); !strings.Contains(va.Speicherdauer, "sofort nach dem letzten Vorgang") {
-		t.Errorf("Karenz 0 muss sofort heißen: %q", va.Speicherdauer)
-	}
-}
+	defer mock.Close()
+	mock.ExpectQuery(`FROM system_einstellungen`).WillReturnError(errors.New("Datenbank nicht erreichbar"))
 
-// Die Herkunft nennt jeden Weg, auf dem Stammdaten in die Leserdatei kommen — auch die
-// Übernahme aus dem bisherigen Bibliotheksprogramm (internal/littera/schreiber_personen.go
-// legt Schüler und Lehrkräfte an). Bis zum 24.09.2026 fehlte sie in der Auskunft der Schüler.
-func TestDsgvoHerkunft_NenntDieUebernahme(t *testing.T) {
-	for art, va := range map[string]DsgvoVerarbeitungsangaben{
-		"schueler":  dsgvoVerarbeitungsangaben(90, 730, 90, 24),
-		"lehrkraft": dsgvoVerarbeitungsangabenKollegium(dsgvoFristWerte{90, 730, 90, 24, 365}),
-	} {
-		if !strings.Contains(va.Herkunft, "Übernahme aus dem bisherigen Bibliotheksprogramm") {
-			t.Errorf("%s: Herkunft nennt die Übernahme nicht: %q", art, va.Herkunft)
-		}
+	s := &Server{DB: &db.Database{Pool: mock}}
+	soll := auskunft.DsgvoFristWerte{LesehistorieTage: 1, LernmittelTage: 730, KarenzTage: 90, AuditMonate: 24, AnliegenTage: 365}
+	if ist := s.dsgvoFristen(context.Background()); ist != soll {
+		t.Errorf("Fristen ohne Einstellungen = %+v, erwartet die Vorgaben %+v", ist, soll)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("die Einstellungen wurden nicht gelesen: %s", err)
 	}
 }

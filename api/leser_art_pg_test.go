@@ -16,7 +16,8 @@ import (
 // und Browser beide lesen (leserArt.faelle.json). Eine Art, die an einer Stelle fehlt, hieße
 // im Browser „Schüler", käme beim Server als „Unbekannte Art" zurück oder bekäme ein Konto,
 // das sie nicht haben soll. Wort, Grenze zum Kollegium und Zugang je Art hält der Test in
-// pkg/leserart gegen die Prüffälle; hier stehen die Datenbank und die Auskunft.
+// pkg/leserart gegen die Prüffälle, das Wort auf dem Blatt der Auskunft der Test in
+// internal/auskunft; hier steht die Datenbank.
 func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
 	const faelleDatei = "../frontend/src/lib/leserArt.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
@@ -41,9 +42,6 @@ func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
 		ausDatei = append(ausDatei, a.Art)
 		if !leserart.Bekannt(a.Art) {
 			t.Errorf("%s: steht in den Prüffällen, der Server kennt die Art nicht", a.Art)
-		}
-		if dsgvoLeserart(a.Art) == a.Art {
-			t.Errorf("%s: Die Auskunft schreibt die Art nicht aus", a.Art)
 		}
 	}
 

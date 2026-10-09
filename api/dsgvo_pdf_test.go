@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/auskunft"
 	"bibliothek/pdf"
 
 	"github.com/pashagolub/pgxmock/v5"
@@ -25,23 +26,23 @@ func TestGenerateDsgvoAuskunftPDF(t *testing.T) {
 	kontext := "Import"
 
 	daten := &dsgvoDaten{
-		stammdaten: &DsgvoStammdaten{
+		stammdaten: &auskunft.DsgvoStammdaten{
 			ID: "abc-123", BarcodeID: "S-10001", Vorname: "Erika", Nachname: "Mustermann",
 			Klasse: "7b", Geburtsdatum: &gebdatum, AbgaengerJahr: 2030, LusdID: &lusd,
 			Strasse: "Hauptstr.", Hausnummer: "5", Plz: "60311", Ort: "Frankfurt",
 			ElternEmail: "eltern@example.org", IstGesperrt: true, IsManuallyBlocked: true,
 			BlockReason: &sperrgrund, ErstelltAm: time.Now(), AktualisiertAm: time.Now(),
 		},
-		foto:           DsgvoFoto{Vorhanden: true, AktualisiertAm: &rueckgabe, Hinweis: "verschlüsselt"},
-		ausleihen:      []DsgvoAusleihe{{Gegenstand: "Mathebuch 7", Barcode: "B-500", AusgeliehenAm: time.Now(), RueckgabeFrist: time.Now(), RueckgabeAm: &rueckgabe}},
-		schaeden:       []DsgvoSchadensfall{{Beschreibung: "Wasserschaden", Betrag: "12.50", IstBezahlt: false, ErstelltAm: time.Now()}},
-		vormerkungen:   []DsgvoVormerkung{{Titel: "Deutschbuch 7", Status: "wartend", Notiz: &notiz, ErstelltAm: time.Now()}},
-		auditEintraege: []DsgvoAuditEintrag{{Aktion: "update", Akteur: "USER", Zeitpunkt: time.Now(), Kontext: &kontext}},
+		foto:           auskunft.DsgvoFoto{Vorhanden: true, AktualisiertAm: &rueckgabe, Hinweis: "verschlüsselt"},
+		ausleihen:      []auskunft.DsgvoAusleihe{{Gegenstand: "Mathebuch 7", Barcode: "B-500", AusgeliehenAm: time.Now(), RueckgabeFrist: time.Now(), RueckgabeAm: &rueckgabe}},
+		schaeden:       []auskunft.DsgvoSchadensfall{{Beschreibung: "Wasserschaden", Betrag: "12.50", IstBezahlt: false, ErstelltAm: time.Now()}},
+		vormerkungen:   []auskunft.DsgvoVormerkung{{Titel: "Deutschbuch 7", Status: "wartend", Notiz: &notiz, ErstelltAm: time.Now()}},
+		auditEintraege: []auskunft.DsgvoAuditEintrag{{Aktion: "update", Akteur: "USER", Zeitpunkt: time.Now(), Kontext: &kontext}},
 	}
 
-	out, err := generateDsgvoAuskunftPDF(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
+	out, err := auskunft.GenerateDsgvoAuskunftPDF(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
 	if err != nil {
-		t.Fatalf("generateDsgvoAuskunftPDF: %v", err)
+		t.Fatalf("GenerateDsgvoAuskunftPDF: %v", err)
 	}
 	if !bytes.HasPrefix(out, []byte("%PDF")) {
 		t.Errorf("Ausgabe ist kein PDF (Prefix %q)", out[:min(8, len(out))])

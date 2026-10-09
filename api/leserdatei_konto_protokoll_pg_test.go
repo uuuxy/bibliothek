@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/auskunft"
 )
 
 // Ein Konto, das über die Leserdatei entsteht, hinterlässt dieselbe Spur wie über Benutzer &
@@ -75,7 +76,7 @@ func TestLeserdatei_KontoAnlageSchreibtUserCreate(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Auskunft: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	var a DsgvoAuskunftResponse
+	var a auskunft.DsgvoAuskunftResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 		t.Fatalf("Auskunft lesen: %v", err)
 	}

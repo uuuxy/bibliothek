@@ -3,284 +3,35 @@ package api
 import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
-	"bibliothek/jobs"
-	"bibliothek/pkg/leserart"
+	"bibliothek/internal/auskunft"
 	"bibliothek/repository"
 	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 )
 
-// DsgvoStammdaten umfasst sämtliche im Leserdatensatz gespeicherten
-// Stammdaten — bewusst inklusive Soft-Delete-Zeitpunkt und Sperrgrund,
-// denn die Auskunft nach Art. 15 DSGVO deckt alles ab, was gespeichert ist.
-// „Sämtliche" ist gemessen: TestDsgvoAuskunft_KenntJedeLeserSpalte hält jede Spalte von leser
-// gegen repository.DsgvoStammdatenSQL. Die Felder stehen in derselben Reihenfolge wie in
-// repository.DsgvoStammdatenZeile, sonst greift die Typumwandlung nicht.
-type DsgvoStammdaten struct {
-	ID                string     `json:"id"`
-	BarcodeID         string     `json:"barcode_id"`
-	Vorname           string     `json:"vorname"`
-	Nachname          string     `json:"nachname"`
-	Klasse            string     `json:"klasse"`
-	Geburtsdatum      *string    `json:"geburtsdatum"`
-	AbgaengerJahr     int        `json:"abgaenger_jahr"`
-	IstGesperrt       bool       `json:"ist_gesperrt"`
-	IstAbgaenger      bool       `json:"ist_abgaenger"`
-	LusdID            *string    `json:"lusd_id"`
-	Strasse           string     `json:"strasse"`
-	Hausnummer        string     `json:"hausnummer"`
-	Plz               string     `json:"plz"`
-	Ort               string     `json:"ort"`
-	ElternEmail       string     `json:"eltern_email"`
-	IsManuallyBlocked bool       `json:"manuell_gesperrt"`
-	BlockReason       *string    `json:"sperrgrund"`
-	ErstelltAm        time.Time  `json:"erfasst_am"`
-	AktualisiertAm    time.Time  `json:"zuletzt_aktualisiert_am"`
-	GeloeschtAm       *time.Time `json:"geloescht_am"`
-	// Seit Migration 084/094 (nachgetragen 02.09.2026 — die Auskunft war um vier Spalten
-	// unvollständig; Gate: TestDsgvoAuskunft_KenntJedeLeserSpalte).
-	SchulEintrittAm *string    `json:"schul_eintritt_am"`
-	AbgaengerSeit   *time.Time `json:"abgaenger_seit"`
-	// Migration 137: der Zeitpunkt des letzten abgeschlossenen Vorgangs — die zweite Uhr
-	// der Karenz neben abgaenger_seit. Er gehört in die Auskunft, weil er ein über diese
-	// Person gespeicherter Zeitpunkt ist und weil er mitbestimmt, wann ihre Daten
-	// anonymisiert werden. WAS ausgeliehen war, sagt er nicht.
-	LetzterVorgangAm *time.Time `json:"letzter_vorgang_am"`
-	LusdBestaetigtAm *time.Time `json:"lusd_bestaetigt_am"`
-	AnonymisiertAm   *time.Time `json:"anonymisiert_am"`
-	// Migration 123: Die Tabelle führt alle Leser. Die Art gehört in die Auskunft, weil
-	// sie über die Person etwas aussagt — und weil sie entscheidet, welche Felder
-	// überhaupt gefüllt sind (ein Kollege hat keine Klasse und kein Abgängerjahr).
-	Art string `json:"art"`
-	// Zeigt ein Zugangskonto auf diesen Leser? Die Anmeldedaten selbst (E-Mail, Rolle)
-	// stehen nicht hier, sondern im eigenen Teil der Auskunft (DsgvoAuskunftResponse.
-	// Zugangskonto): Sie gehören zum Konto, nicht zum Leser.
-	HatZugangskonto bool `json:"hat_zugangskonto"`
-}
-
-// DsgvoFoto beschreibt das (verschlüsselt gespeicherte) Ausweisfoto.
-type DsgvoFoto struct {
-	Vorhanden      bool       `json:"vorhanden"`
-	AktualisiertAm *time.Time `json:"aktualisiert_am"`
-	Hinweis        string     `json:"hinweis"`
-}
-
-// DsgvoAusleihe ist ein Eintrag der vollständigen Ausleihhistorie.
-type DsgvoAusleihe struct {
-	Gegenstand     string     `json:"gegenstand"`
-	Barcode        string     `json:"barcode"`
-	AusgeliehenAm  time.Time  `json:"ausgeliehen_am"`
-	RueckgabeFrist time.Time  `json:"rueckgabe_frist"`
-	RueckgabeAm    *time.Time `json:"rueckgabe_am"`
-	IstHandapparat bool       `json:"ist_handapparat"`
-}
-
-// DsgvoSchadensfall ist ein gemeldeter Schadens-/Verlustfall des Schülers.
-type DsgvoSchadensfall struct {
-	Beschreibung      string     `json:"beschreibung"`
-	Betrag            string     `json:"betrag_eur"`
-	IstBezahlt        bool       `json:"ist_bezahlt"`
-	ErstelltAm        time.Time  `json:"erstellt_am"`
-	StorniertAm       *time.Time `json:"storniert_am"`
-	Stornierungsgrund *string    `json:"stornierungsgrund"`
-}
-
-// DsgvoVormerkung ist eine Vormerkung auf einen Buchtitel.
-type DsgvoVormerkung struct {
-	Titel      string    `json:"titel"`
-	Status     string    `json:"status"`
-	Notiz      *string   `json:"notiz"`
-	ErstelltAm time.Time `json:"erstellt_am"`
-}
-
-// DsgvoAuditEintrag ist ein Eintrag der Datensatz-Historie (audit_log), der den Leser nennt.
-type DsgvoAuditEintrag struct {
-	// Tabelle sagt, woran der Eintrag hängt (ausleihen, schueler, schadensfaelle …). Mit der
-	// Aktion ergibt sie den Vorgang, den das Blatt in Worten nennt (dsgvoVorgang).
-	Tabelle   string    `json:"tabelle"`
-	Aktion    string    `json:"aktion"`
-	Akteur    string    `json:"akteur"`
-	Zeitpunkt time.Time `json:"zeitpunkt"`
-	Kontext   *string   `json:"kontext"`
-	// Gegenstand und Barcode: Titel und Nummer des Buchs oder Geräts einer Ausleihe oder
-	// Rückgabe; der Eintrag selbst trägt nur die Kennung des Exemplars. Leer, wenn es das
-	// Exemplar nicht mehr gibt oder der Eintrag kein Buch betrifft.
-	Gegenstand string `json:"gegenstand"`
-	Barcode    string `json:"barcode"`
-	// swaggertype: json.RawMessage ist ein []byte-Alias aus der Standardbibliothek, das
-	// swag ohne --parseDependency nicht auflösen kann. Ohne diesen Hinweis bricht die
-	// Generierung für DIESEN Endpunkt still ab — die DSGVO-Auskunft fehlte deshalb
-	// komplett in der Swagger-Datei, obwohl sie annotiert war (gefunden 05.08.2026).
-	Details json.RawMessage `json:"details" swaggertype:"object"`
-}
-
-// DsgvoVerwaltungsEintrag ist ein Eintrag des Verwaltungsprotokolls (audit_logs):
-// Admin-Eingriffe wie DELETE/RESTORE/PURGE_STUDENT oder LUSD_ID_NACHGETRAGEN, die den
-// Schüler über details->>'schueler_id' referenzieren. admin_id und ip_adresse sind
-// Daten des BEARBEITERS, nicht des Schülers — sie gehören nicht in dessen Auskunft.
-type DsgvoVerwaltungsEintrag struct {
-	Aktion    string          `json:"aktion"`
-	Zeitpunkt time.Time       `json:"zeitpunkt"`
-	Details   json.RawMessage `json:"details" swaggertype:"object"`
-}
-
-// DsgvoBescheid ist ein Schadensersatz-Bescheid, der an diese Person gerichtet war
-// (Migration 110). Die Positionen selbst stehen als Schadensfälle im Abschnitt darüber;
-// hier steht der BRIEF: Nummer, Datum, Frist, Summe, Zustand.
-type DsgvoBescheid struct {
-	Referenznummer string    `json:"referenznummer"`
-	BriefDatum     time.Time `json:"brief_datum"`
-	FristBis       time.Time `json:"frist_bis"`
-	Gesamtbetrag   string    `json:"gesamtbetrag"`
-	Status         string    `json:"status"`
-}
-
-// DsgvoVerarbeitungsangaben sind die Pflichtangaben nach Art. 15 Abs. 1 DSGVO: Zwecke
-// (lit. a), Empfänger (lit. c), Speicherdauer (lit. d), Herkunft (lit. g) und die
-// Betroffenenrechte samt Beschwerderecht (lit. e und f). Die Datenkategorien (lit. b)
-// stehen als die Daten selbst in der Auskunft.
-//
-// Die Rechtsgrundlage ist KEINE Angabe des Art. 15 — sie gehört zur Information bei der
-// Erhebung (Art. 13 Abs. 1 lit. c) und steht hier freiwillig mit, weil die Auskunft sonst
-// den Grund der Verarbeitung nicht nennt. Maßgeblich bleibt das Verzeichnis von
-// Verarbeitungstätigkeiten der Schule.
-//
-// Geprüft am 10.09.2026 gegen die Fundstellen: § 83 HSchG ist die Norm zur Erhebung und
-// Verarbeitung personenbezogener Daten durch Schulen, § 153 HSchG die Lernmittelfreiheit
-// (Schulbücher bleiben Eigentum des Landes und werden befristet überlassen). Bis dahin
-// klammerte dieser Text beide Paragrafen unter „(Lernmittelfreiheit)" und nannte die LUSD
-// „Landesschülerdatenbank" — zwei falsche Angaben in einem Dokument, das die betroffene
-// Person in die Hand bekommt. VVT-Entwurf und SECURITY.md waren die ganze Zeit richtig.
-type DsgvoVerarbeitungsangaben struct {
-	Zwecke            []string `json:"zwecke"`
-	Rechtsgrundlage   string   `json:"rechtsgrundlage"`
-	Empfaenger        string   `json:"empfaenger"`
-	Speicherdauer     string   `json:"speicherdauer"`
-	Herkunft          string   `json:"herkunft_der_daten"`
-	Betroffenenrechte string   `json:"betroffenenrechte"`
-}
-
-// DsgvoAuskunftResponse ist die vollständige Betroffenenauskunft nach Art. 15 DSGVO.
-type DsgvoAuskunftResponse struct {
-	Art               string                    `json:"art"`
-	ErstelltAm        time.Time                 `json:"auskunft_erstellt_am"`
-	Stammdaten        DsgvoStammdaten           `json:"stammdaten"`
-	Foto              DsgvoFoto                 `json:"ausweisfoto"`
-	Ausleihen         []DsgvoAusleihe           `json:"ausleihhistorie"`
-	Schadensfaelle    []DsgvoSchadensfall       `json:"schadensfaelle"`
-	Vormerkungen      []DsgvoVormerkung         `json:"vormerkungen"`
-	Bescheide         []DsgvoBescheid           `json:"schadensersatz_bescheide"`
-	NachbuchMeldungen []DsgvoNachbuchMeldung    `json:"nachbuch_meldungen"`
-	AuditEintraege    []DsgvoAuditEintrag       `json:"protokolleintraege"`
-	Verwaltung        []DsgvoVerwaltungsEintrag `json:"verwaltungsprotokolle"`
-	// Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;
-	// null, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).
-	Zugangskonto *repository.DsgvoZugangskonto `json:"zugangskonto"`
-	// Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie (seit
-	// 29.09.2026). Leer, wenn es keine gab.
-	FruehereZugangskonten []repository.DsgvoFrueheresZugangskonto `json:"fruehere_zugangskonten"`
-	Verarbeitungsangaben  DsgvoVerarbeitungsangaben               `json:"verarbeitungsangaben"`
-}
-
-// dsgvoVerarbeitungsangaben formuliert die Pflichtangaben nach Art. 15 Abs. 1 DSGVO —
-// aus DENSELBEN Fristen, mit denen das System arbeitet (Einstellungen „Datenschutz &
-// Sitzung"). Bis 22.08.2026 stand hier pauschal lit. e ohne Fristen, während SECURITY.md,
-// VVT- und Art.-13-Entwurf längst zwei Tätigkeiten mit zwei Grundlagen und 90/730 Tagen
-// beschrieben — eine Betroffenenauskunft mit falscher Pflichtangabe (Prüfung 22.08., B).
-// dsgvoVerarbeitungsangaben baut die Pflichtangaben aus den EINGESTELLTEN Fristen — die
-// Karenzzeit vor der Anonymisierung (abgaenger_karenz_tage) ebenso wie die Lesehistorie.
-// Bis 02.09.2026 stand hier ein festes „Altfälle nach 360 Tagen", während der Job längst
-// mit der Karenz rechnete: eine Pflichtangabe an die betroffene Person, die nicht stimmte.
-//
-// DRITTER Fall derselben Klasse, gefunden am 10.09.2026: „Protokolle 24 Monate" stand
-// starr im Text, während die Aufbewahrung der beiden Protokolle seit dem 16.08.2026 eine
-// Einstellung ist (audit_aufbewahrung_monate, Untergrenze 6). Wer sie auf 6 stellte, gab
-// der betroffenen Person eine falsche Frist. Jetzt liest die Auskunft dieselbe Quelle wie
-// der Löschjob (jobs/cron_audit_retention.go) und der Rückstands-Wächter
-// (repository/loeschrueckstand.go): AufbewahrungMonateOderStandard.
-func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, auditMonate int) DsgvoVerarbeitungsangaben {
-	karenz := "sofort nach dem letzten Vorgang"
-	if karenzTage > 0 {
-		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem letzten Vorgang (Abgang, letzte Rückgabe oder Schadensregulierung)", karenzTage)
-	}
-	frist := func(tage int) string {
-		if tage <= 0 {
-			return "bis zur Löschung des Schülerdatensatzes (Befristung in dieser Installation abgeschaltet)"
-		}
-		return repository.TageMitZahl(tage) + " nach Rückgabe"
-	}
-	return DsgvoVerarbeitungsangaben{
-		Zwecke: []string{
-			"Verwaltung der Lernmittelausleihe im Rahmen der Lernmittelfreiheit (Nachweis von Ausleihe und Rücklauf, Mahnung, Schadensersatz)",
-			"Betrieb der Schülerbücherei (Ausleihe, Vormerkung, Rückgabeerinnerung)",
-			"Abwicklung von Schadens- und Verlustfällen",
-		},
-		Rechtsgrundlage: "Lernmittelausleihe: Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 HSchG (Erhebung und Verarbeitung personenbezogener Daten durch Schulen) und § 153 HSchG (Lernmittelfreiheit) sowie SchDSV — öffentlich-rechtliches Nutzungsverhältnis. " +
-			"Schülerbücherei: Einwilligung, Art. 6 Abs. 1 lit. a DSGVO, § 3 SchDSV (freiwillige Nutzung; bei Minderjährigen durch die Erziehungsberechtigten), sofern die Schule sie nicht als schulische Aufgabe nach Art. 6 Abs. 1 lit. e führt — maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
-		Empfaenger: "Keine Übermittlung an Dritte; Verarbeitung durch das Bibliothekspersonal der Schule. Klassenleitungen erhalten die Liste überfälliger Medien ihrer Klasse. Helfer an der Theke sehen nur Name, Klasse und Sperrstatus.",
-		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + frist(lesehistorieTage) + ", Lernmittel " + frist(lernmittelTage) + "; danach automatisch getrennt. " +
-			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz nach dem Abgang: solange eine Ausleihe offen oder ein Schadensfall unbezahlt ist, bleibt er erhalten; danach wird er " + karenz + " anonymisiert und ab dem 30. Januar des Folgejahres endgültig gelöscht. Papierkorb nach 180 Tagen. Protokolle " + fmt.Sprintf("%d", auditMonate) + " Monate. " + dsgvoSicherungen,
-		Herkunft:          "Stammdaten aus der Lehrer- und Schülerdatenbank (LUSD) der Schule (Export/Import), Übernahme aus dem bisherigen Bibliotheksprogramm (Name, Klasse, Ausweisnummer, Geburtsdatum) bzw. manuelle Erfassung durch das Bibliotheksteam",
-		Betroffenenrechte: dsgvoBetroffenenrechte,
-	}
-}
-
-// Die Sicherungen nennt die Auskunft jeder Leserart gleich. Die Aufbewahrung der
-// Nachtsicherung liest sie aus dem Job (jobs.BehalteNaechte, jobs.BehalteWochen); die zwei
-// anderen Fristen stehen in Shell-Skripten (update.sh, scripts/backup.sh), und
-// dsgvo_sicherungen_test.go hält sie deckungsgleich. Bis zum 28.09.2026 stand hier nur
-// „Verschlüsselte Backups 14 Tage" — die Sicherung vor einem Update und die von Hand fehlten.
-// Die wöchentlichen Stände gibt es seit dem 29.09.2026.
-const (
-	sicherungVorUpdateTage = 30 // update.sh, BACKUP_RETENTION_DAYS
-	sicherungVonHandTage   = 7  // scripts/backup.sh, RETENTION_ENC_TAGE
-)
-
-var dsgvoSicherungen = fmt.Sprintf("Verschlüsselte Sicherungen: die der letzten %d Nächte, "+
-	"dazu von den älteren je Kalenderwoche eine, für %d Wochen (zusammen etwa drei Monate); "+
-	"eine Sicherung vor einem Update wird beim ersten Update nach %d Tagen gelöscht, "+
-	"eine von Hand angelegte beim ersten weiteren Lauf nach %d Tagen.",
-	jobs.BehalteNaechte, jobs.BehalteWochen, sicherungVorUpdateTage, sicherungVonHandTage)
-
-// dsgvoBetroffenenrechte gilt für jede Leserart gleich.
-const dsgvoBetroffenenrechte = "Recht auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18) und Widerspruch (Art. 21) sowie Widerruf einer Einwilligung; Beschwerderecht beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit (HBDI)"
-
-// dsgvoFristWerte sind die eingestellten Fristen, die die Pflichtangaben nennen.
-type dsgvoFristWerte struct {
-	lesehistorieTage, lernmittelTage, karenzTage, auditMonate, anliegenTage int
-}
-
 // dsgvoFristen liest Lesehistorie-Befristung, Abgänger-Karenz, Protokoll-Aufbewahrung und
 // die Frist erledigter Anliegen aus den Einstellungen; bei Fehlern gelten die Vorgaben (so
 // arbeiten auch die Jobs).
-func (s *Server) dsgvoFristen(ctx context.Context) dsgvoFristWerte {
+func (s *Server) dsgvoFristen(ctx context.Context) auskunft.DsgvoFristWerte {
 	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
 	if err != nil || einst == nil {
-		return dsgvoFristWerte{repository.StandardLesehistorieTage, repository.StandardLesehistorieLernmittelTage,
-			repository.StandardAbgaengerKarenzTage, repository.StandardAuditAufbewahrungMonate,
-			repository.StandardAnliegenTage}
+		return auskunft.DsgvoFristWerte{
+			LesehistorieTage: repository.StandardLesehistorieTage,
+			LernmittelTage:   repository.StandardLesehistorieLernmittelTage,
+			KarenzTage:       repository.StandardAbgaengerKarenzTage,
+			AuditMonate:      repository.StandardAuditAufbewahrungMonate,
+			AnliegenTage:     repository.StandardAnliegenTage,
+		}
 	}
-	return dsgvoFristWerte{
-		lesehistorieTage: repository.TageOderStandard(einst.LesehistorieTage, repository.StandardLesehistorieTage),
-		lernmittelTage:   repository.TageOderStandard(einst.LesehistorieLernmittelTage, repository.StandardLesehistorieLernmittelTage),
-		karenzTage:       repository.AbgaengerKarenzTageOderStandard(einst),
-		auditMonate:      repository.AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate),
-		anliegenTage:     repository.TageOderStandard(einst.AnliegenTage, repository.StandardAnliegenTage),
+	return auskunft.DsgvoFristWerte{
+		LesehistorieTage: repository.TageOderStandard(einst.LesehistorieTage, repository.StandardLesehistorieTage),
+		LernmittelTage:   repository.TageOderStandard(einst.LesehistorieLernmittelTage, repository.StandardLesehistorieLernmittelTage),
+		KarenzTage:       repository.AbgaengerKarenzTageOderStandard(einst),
+		AuditMonate:      repository.AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate),
+		AnliegenTage:     repository.TageOderStandard(einst.AnliegenTage, repository.StandardAnliegenTage),
 	}
-}
-
-// dsgvoPflichtangaben wählt die Pflichtangaben nach der Art des Lesers: Für einen Schüler
-// gelten Lernmittelfreiheit und Schülerbücherei, für jede andere Art (Kollegium und
-// Sonderkonten, Migration 153) das Beschäftigungsverhältnis (dsgvo_pflichtangaben_kollegium.go).
-func dsgvoPflichtangaben(art string, f dsgvoFristWerte) DsgvoVerarbeitungsangaben {
-	if leserart.IstSchueler(art) {
-		return dsgvoVerarbeitungsangaben(f.lesehistorieTage, f.lernmittelTage, f.karenzTage, f.auditMonate)
-	}
-	return dsgvoVerarbeitungsangabenKollegium(f)
 }
 
 // alsAntwort wandelt die Zeilen einer Abfrage in den Typ der Antwort. Eine leere Liste bleibt
@@ -296,89 +47,92 @@ func alsAntwort[Z, T any](zeilen []Z, err error, als func(Z) T) ([]T, error) {
 	return out, nil
 }
 
-func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*DsgvoStammdaten, error) {
+func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*auskunft.DsgvoStammdaten, error) {
 	zeile, err := repository.LeseDsgvoStammdaten(ctx, s.DB.Pool, id)
 	if err != nil || zeile == nil {
 		return nil, err
 	}
-	st := DsgvoStammdaten(*zeile)
+	st := auskunft.DsgvoStammdaten(*zeile)
 	return &st, nil
 }
 
-func (s *Server) dsgvoQueryFoto(ctx context.Context, id string) (DsgvoFoto, error) {
-	foto := DsgvoFoto{Hinweis: "Foto wird verschlüsselt gespeichert; Kopie über die Akte in der Leserdatei abrufbar"}
+func (s *Server) dsgvoQueryFoto(ctx context.Context, id string) (auskunft.DsgvoFoto, error) {
+	foto := auskunft.DsgvoFoto{Hinweis: "Foto wird verschlüsselt gespeichert; Kopie über die Akte in der Leserdatei abrufbar"}
 	aktualisiert, err := repository.LeseDsgvoFotoStand(ctx, s.DB.Pool, id)
 	if err != nil {
 		return foto, err
 	}
 	if aktualisiert == nil {
-		return DsgvoFoto{Vorhanden: false, Hinweis: "Kein Foto gespeichert"}, nil
+		return auskunft.DsgvoFoto{Vorhanden: false, Hinweis: "Kein Foto gespeichert"}, nil
 	}
 	foto.Vorhanden = true
 	foto.AktualisiertAm = aktualisiert
 	return foto, nil
 }
 
-func (s *Server) dsgvoQueryAusleihen(ctx context.Context, id string) ([]DsgvoAusleihe, error) {
+func (s *Server) dsgvoQueryAusleihen(ctx context.Context, id string) ([]auskunft.DsgvoAusleihe, error) {
 	zeilen, err := repository.LeseDsgvoAusleihen(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoAusleiheZeile) DsgvoAusleihe { return DsgvoAusleihe(z) })
+	return alsAntwort(zeilen, err, func(z repository.DsgvoAusleiheZeile) auskunft.DsgvoAusleihe {
+		return auskunft.DsgvoAusleihe(z)
+	})
 }
 
-func (s *Server) dsgvoQuerySchadensfaelle(ctx context.Context, id string) ([]DsgvoSchadensfall, error) {
+func (s *Server) dsgvoQuerySchadensfaelle(ctx context.Context, id string) ([]auskunft.DsgvoSchadensfall, error) {
 	zeilen, err := repository.LeseDsgvoSchadensfaelle(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoSchadensfallZeile) DsgvoSchadensfall { return DsgvoSchadensfall(z) })
+	return alsAntwort(zeilen, err, func(z repository.DsgvoSchadensfallZeile) auskunft.DsgvoSchadensfall {
+		return auskunft.DsgvoSchadensfall(z)
+	})
 }
 
-func (s *Server) dsgvoQueryVormerkungen(ctx context.Context, id string) ([]DsgvoVormerkung, error) {
+func (s *Server) dsgvoQueryVormerkungen(ctx context.Context, id string) ([]auskunft.DsgvoVormerkung, error) {
 	zeilen, err := repository.LeseDsgvoVormerkungen(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoVormerkungZeile) DsgvoVormerkung { return DsgvoVormerkung(z) })
+	return alsAntwort(zeilen, err, func(z repository.DsgvoVormerkungZeile) auskunft.DsgvoVormerkung {
+		return auskunft.DsgvoVormerkung(z)
+	})
 }
 
-// DsgvoNachbuchMeldung ist eine Nachbuch-Meldung der Theke (Migration 117), in der die
-// Person als Ausleiher oder Vorbesitzer steht — mit Rolle, Barcode, Ergebnis und Zeitpunkt.
-type DsgvoNachbuchMeldung struct {
-	Rolle       string     `json:"rolle"` // ausleiher | vorbesitzer
-	Barcode     string     `json:"barcode"`
-	Ergebnis    string     `json:"ergebnis"`
-	Grund       *string    `json:"grund"`
-	GescanntAm  time.Time  `json:"gescannt_am"`
-	QuittiertAm *time.Time `json:"quittiert_am"`
-}
-
-func (s *Server) dsgvoQueryNachbuchMeldungen(ctx context.Context, id string) ([]DsgvoNachbuchMeldung, error) {
+func (s *Server) dsgvoQueryNachbuchMeldungen(ctx context.Context, id string) ([]auskunft.DsgvoNachbuchMeldung, error) {
 	zeilen, err := repository.LeseDsgvoNachbuchMeldungen(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoNachbuchZeile) DsgvoNachbuchMeldung { return DsgvoNachbuchMeldung(z) })
+	return alsAntwort(zeilen, err, func(z repository.DsgvoNachbuchZeile) auskunft.DsgvoNachbuchMeldung {
+		return auskunft.DsgvoNachbuchMeldung(z)
+	})
 }
 
-func (s *Server) dsgvoQueryBescheide(ctx context.Context, id string) ([]DsgvoBescheid, error) {
+func (s *Server) dsgvoQueryBescheide(ctx context.Context, id string) ([]auskunft.DsgvoBescheid, error) {
 	zeilen, err := repository.LeseDsgvoBescheide(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoBescheidZeile) DsgvoBescheid { return DsgvoBescheid(z) })
+	return alsAntwort(zeilen, err, func(z repository.DsgvoBescheidZeile) auskunft.DsgvoBescheid {
+		return auskunft.DsgvoBescheid(z)
+	})
 }
 
-func (s *Server) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]DsgvoAuditEintrag, error) {
+func (s *Server) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]auskunft.DsgvoAuditEintrag, error) {
 	zeilen, err := repository.LeseDsgvoAuditEintraege(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoAuditZeile) DsgvoAuditEintrag { return DsgvoAuditEintrag(z) })
+	return alsAntwort(zeilen, err, func(z repository.DsgvoAuditZeile) auskunft.DsgvoAuditEintrag {
+		return auskunft.DsgvoAuditEintrag(z)
+	})
 }
 
-func (s *Server) dsgvoQueryVerwaltungsEintraege(ctx context.Context, id string) ([]DsgvoVerwaltungsEintrag, error) {
+func (s *Server) dsgvoQueryVerwaltungsEintraege(ctx context.Context, id string) ([]auskunft.DsgvoVerwaltungsEintrag, error) {
 	zeilen, err := repository.LeseDsgvoVerwaltungsEintraege(ctx, s.DB.Pool, id)
-	return alsAntwort(zeilen, err, func(z repository.DsgvoVerwaltungZeile) DsgvoVerwaltungsEintrag { return DsgvoVerwaltungsEintrag(z) })
+	return alsAntwort(zeilen, err, func(z repository.DsgvoVerwaltungZeile) auskunft.DsgvoVerwaltungsEintrag {
+		return auskunft.DsgvoVerwaltungsEintrag(z)
+	})
 }
 
 // dsgvoDaten bündelt alle personenbezogenen Daten eines Lesers für die Auskunft.
 type dsgvoDaten struct {
-	stammdaten        *DsgvoStammdaten
-	foto              DsgvoFoto
-	ausleihen         []DsgvoAusleihe
-	schaeden          []DsgvoSchadensfall
-	vormerkungen      []DsgvoVormerkung
-	bescheide         []DsgvoBescheid
-	nachbuchMeldungen []DsgvoNachbuchMeldung
-	auditEintraege    []DsgvoAuditEintrag
-	verwaltung        []DsgvoVerwaltungsEintrag
+	stammdaten        *auskunft.DsgvoStammdaten
+	foto              auskunft.DsgvoFoto
+	ausleihen         []auskunft.DsgvoAusleihe
+	schaeden          []auskunft.DsgvoSchadensfall
+	vormerkungen      []auskunft.DsgvoVormerkung
+	bescheide         []auskunft.DsgvoBescheid
+	nachbuchMeldungen []auskunft.DsgvoNachbuchMeldung
+	auditEintraege    []auskunft.DsgvoAuditEintrag
+	verwaltung        []auskunft.DsgvoVerwaltungsEintrag
 	zugangskonto      *repository.DsgvoZugangskonto
 	fruehereKonten    []repository.DsgvoFrueheresZugangskonto
-	verarbeitung      DsgvoVerarbeitungsangaben
+	verarbeitung      auskunft.DsgvoVerarbeitungsangaben
 }
 
 // dsgvoKontoRecht verlangt die Auskunft zusätzlich zum Recht der Route, sobald auf den Leser
@@ -451,7 +205,7 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string, darfKonto bool
 		return nil, apierrors.New(http.StatusForbidden,
 			"Die Auskunft über einen Leser mit Zugangskonto verlangt das Recht „Benutzer & Rechte verwalten“.", nil)
 	}
-	verarbeitung := dsgvoPflichtangaben(stammdaten.Art, s.dsgvoFristen(ctx))
+	verarbeitung := auskunft.DsgvoPflichtangaben(stammdaten.Art, s.dsgvoFristen(ctx))
 
 	return &dsgvoDaten{
 		verarbeitung:      verarbeitung,
@@ -494,7 +248,7 @@ func (s *Server) protokolliereDsgvoAuskunft(ctx context.Context, id string) {
 // @Tags         students
 // @Produce      json
 // @Param        id   path      string  true  "Reader ID (UUID)"
-// @Success      200  {object}  DsgvoAuskunftResponse
+// @Success      200  {object}  auskunft.DsgvoAuskunftResponse
 // @Failure      404  {object}  map[string]string
 // @Router       /schueler/{id}/dsgvo-auskunft [get]
 func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
@@ -522,8 +276,8 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 // beide daraus. Bis zum 24.09.2026 setzte der JSON-Handler sein Objekt selbst zusammen und
 // das PDF las die Einzelteile — das PDF ließ dabei die Nachbuch-Meldungen aus, und niemand
 // merkte es. Gate: TestDsgvoPDF_DrucktJedeAngabeDerAuskunft.
-func dsgvoAntwort(daten *dsgvoDaten, erstelltAm time.Time) DsgvoAuskunftResponse {
-	return DsgvoAuskunftResponse{
+func dsgvoAntwort(daten *dsgvoDaten, erstelltAm time.Time) auskunft.DsgvoAuskunftResponse {
+	return auskunft.DsgvoAuskunftResponse{
 		Art:                   "Auskunft nach Art. 15 DSGVO",
 		ErstelltAm:            erstelltAm,
 		Stammdaten:            *daten.stammdaten,

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/auskunft"
 	"bibliothek/internal/pdftest"
 	"bibliothek/pdf"
 	"bibliothek/repository"
@@ -98,9 +99,9 @@ func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sammleDsgvoDaten: %v", err)
 	}
-	roh, err := generateDsgvoAuskunftPDF(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule"})
+	roh, err := auskunft.GenerateDsgvoAuskunftPDF(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule"})
 	if err != nil {
-		t.Fatalf("generateDsgvoAuskunftPDF: %v", err)
+		t.Fatalf("GenerateDsgvoAuskunftPDF: %v", err)
 	}
 	// Mit Leerzeichen verbunden: Eine lange Zeile bricht das Blatt um, die Angabe steht dann in
 	// zwei Textstücken.

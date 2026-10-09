@@ -1,4 +1,4 @@
-package api
+package auskunft
 
 import (
 	"os"
@@ -21,8 +21,8 @@ func TestDsgvoSicherungen_FolgenDenQuellen(t *testing.T) {
 		muster     string
 		inAuskunft int
 	}{
-		{"../update.sh", `(?m)^BACKUP_RETENTION_DAYS=(\d+)$`, sicherungVorUpdateTage},
-		{"../scripts/backup.sh", `(?m)^RETENTION_ENC_TAGE=(\d+)$`, sicherungVonHandTage},
+		{"../../update.sh", `(?m)^BACKUP_RETENTION_DAYS=(\d+)$`, sicherungVorUpdateTage},
+		{"../../scripts/backup.sh", `(?m)^RETENTION_ENC_TAGE=(\d+)$`, sicherungVonHandTage},
 	}
 	for _, f := range faelle {
 		b, err := os.ReadFile(f.pfad)
@@ -39,7 +39,7 @@ func TestDsgvoSicherungen_FolgenDenQuellen(t *testing.T) {
 			t.Fatalf("%s: %q ist keine Zahl: %v", f.pfad, treffer[0][1], err)
 		}
 		if quelle != f.inAuskunft {
-			t.Errorf("%s hält %d, die Auskunft nennt %d — dsgvoSicherungen in dsgvo_auskunft.go nachziehen",
+			t.Errorf("%s hält %d, die Auskunft nennt %d — dsgvoSicherungen in pflichtangaben.go nachziehen",
 				f.pfad, quelle, f.inAuskunft)
 		}
 	}

@@ -3332,7 +3332,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.DsgvoAuskunftResponse"
+                            "$ref": "#/definitions/auskunft.DsgvoAuskunftResponse"
                         }
                     },
                     "404": {
@@ -4177,366 +4177,6 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
-                }
-            }
-        },
-        "api.DsgvoAuditEintrag": {
-            "type": "object",
-            "properties": {
-                "akteur": {
-                    "type": "string"
-                },
-                "aktion": {
-                    "type": "string"
-                },
-                "barcode": {
-                    "type": "string"
-                },
-                "details": {
-                    "description": "swaggertype: json.RawMessage ist ein []byte-Alias aus der Standardbibliothek, das\nswag ohne --parseDependency nicht auflösen kann. Ohne diesen Hinweis bricht die\nGenerierung für DIESEN Endpunkt still ab — die DSGVO-Auskunft fehlte deshalb\nkomplett in der Swagger-Datei, obwohl sie annotiert war (gefunden 05.08.2026).",
-                    "type": "object"
-                },
-                "gegenstand": {
-                    "description": "Gegenstand und Barcode: Titel und Nummer des Buchs oder Geräts einer Ausleihe oder\nRückgabe; der Eintrag selbst trägt nur die Kennung des Exemplars. Leer, wenn es das\nExemplar nicht mehr gibt oder der Eintrag kein Buch betrifft.",
-                    "type": "string"
-                },
-                "kontext": {
-                    "type": "string"
-                },
-                "tabelle": {
-                    "description": "Tabelle sagt, woran der Eintrag hängt (ausleihen, schueler, schadensfaelle …). Mit der\nAktion ergibt sie den Vorgang, den das Blatt in Worten nennt (dsgvoVorgang).",
-                    "type": "string"
-                },
-                "zeitpunkt": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.DsgvoAuskunftResponse": {
-            "type": "object",
-            "properties": {
-                "art": {
-                    "type": "string"
-                },
-                "auskunft_erstellt_am": {
-                    "type": "string"
-                },
-                "ausleihhistorie": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.DsgvoAusleihe"
-                    }
-                },
-                "ausweisfoto": {
-                    "$ref": "#/definitions/api.DsgvoFoto"
-                },
-                "fruehere_zugangskonten": {
-                    "description": "Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie (seit\n29.09.2026). Leer, wenn es keine gab.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.DsgvoFrueheresZugangskonto"
-                    }
-                },
-                "nachbuch_meldungen": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.DsgvoNachbuchMeldung"
-                    }
-                },
-                "protokolleintraege": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.DsgvoAuditEintrag"
-                    }
-                },
-                "schadensersatz_bescheide": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.DsgvoBescheid"
-                    }
-                },
-                "schadensfaelle": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.DsgvoSchadensfall"
-                    }
-                },
-                "stammdaten": {
-                    "$ref": "#/definitions/api.DsgvoStammdaten"
-                },
-                "verarbeitungsangaben": {
-                    "$ref": "#/definitions/api.DsgvoVerarbeitungsangaben"
-                },
-                "verwaltungsprotokolle": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.DsgvoVerwaltungsEintrag"
-                    }
-                },
-                "vormerkungen": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.DsgvoVormerkung"
-                    }
-                },
-                "zugangskonto": {
-                    "description": "Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;\nnull, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/repository.DsgvoZugangskonto"
-                        }
-                    ]
-                }
-            }
-        },
-        "api.DsgvoAusleihe": {
-            "type": "object",
-            "properties": {
-                "ausgeliehen_am": {
-                    "type": "string"
-                },
-                "barcode": {
-                    "type": "string"
-                },
-                "gegenstand": {
-                    "type": "string"
-                },
-                "ist_handapparat": {
-                    "type": "boolean"
-                },
-                "rueckgabe_am": {
-                    "type": "string"
-                },
-                "rueckgabe_frist": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.DsgvoBescheid": {
-            "type": "object",
-            "properties": {
-                "brief_datum": {
-                    "type": "string"
-                },
-                "frist_bis": {
-                    "type": "string"
-                },
-                "gesamtbetrag": {
-                    "type": "string"
-                },
-                "referenznummer": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.DsgvoFoto": {
-            "type": "object",
-            "properties": {
-                "aktualisiert_am": {
-                    "type": "string"
-                },
-                "hinweis": {
-                    "type": "string"
-                },
-                "vorhanden": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "api.DsgvoNachbuchMeldung": {
-            "type": "object",
-            "properties": {
-                "barcode": {
-                    "type": "string"
-                },
-                "ergebnis": {
-                    "type": "string"
-                },
-                "gescannt_am": {
-                    "type": "string"
-                },
-                "grund": {
-                    "type": "string"
-                },
-                "quittiert_am": {
-                    "type": "string"
-                },
-                "rolle": {
-                    "description": "ausleiher | vorbesitzer",
-                    "type": "string"
-                }
-            }
-        },
-        "api.DsgvoSchadensfall": {
-            "type": "object",
-            "properties": {
-                "beschreibung": {
-                    "type": "string"
-                },
-                "betrag_eur": {
-                    "type": "string"
-                },
-                "erstellt_am": {
-                    "type": "string"
-                },
-                "ist_bezahlt": {
-                    "type": "boolean"
-                },
-                "storniert_am": {
-                    "type": "string"
-                },
-                "stornierungsgrund": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.DsgvoStammdaten": {
-            "type": "object",
-            "properties": {
-                "abgaenger_jahr": {
-                    "type": "integer"
-                },
-                "abgaenger_seit": {
-                    "type": "string"
-                },
-                "anonymisiert_am": {
-                    "type": "string"
-                },
-                "art": {
-                    "description": "Migration 123: Die Tabelle führt alle Leser. Die Art gehört in die Auskunft, weil\nsie über die Person etwas aussagt — und weil sie entscheidet, welche Felder\nüberhaupt gefüllt sind (ein Kollege hat keine Klasse und kein Abgängerjahr).",
-                    "type": "string"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "eltern_email": {
-                    "type": "string"
-                },
-                "erfasst_am": {
-                    "type": "string"
-                },
-                "geburtsdatum": {
-                    "type": "string"
-                },
-                "geloescht_am": {
-                    "type": "string"
-                },
-                "hat_zugangskonto": {
-                    "description": "Zeigt ein Zugangskonto auf diesen Leser? Die Anmeldedaten selbst (E-Mail, Rolle)\nstehen nicht hier, sondern im eigenen Teil der Auskunft (DsgvoAuskunftResponse.\nZugangskonto): Sie gehören zum Konto, nicht zum Leser.",
-                    "type": "boolean"
-                },
-                "hausnummer": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ist_abgaenger": {
-                    "type": "boolean"
-                },
-                "ist_gesperrt": {
-                    "type": "boolean"
-                },
-                "klasse": {
-                    "type": "string"
-                },
-                "letzter_vorgang_am": {
-                    "description": "Migration 137: der Zeitpunkt des letzten abgeschlossenen Vorgangs — die zweite Uhr\nder Karenz neben abgaenger_seit. Er gehört in die Auskunft, weil er ein über diese\nPerson gespeicherter Zeitpunkt ist und weil er mitbestimmt, wann ihre Daten\nanonymisiert werden. WAS ausgeliehen war, sagt er nicht.",
-                    "type": "string"
-                },
-                "lusd_bestaetigt_am": {
-                    "type": "string"
-                },
-                "lusd_id": {
-                    "type": "string"
-                },
-                "manuell_gesperrt": {
-                    "type": "boolean"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "ort": {
-                    "type": "string"
-                },
-                "plz": {
-                    "type": "string"
-                },
-                "schul_eintritt_am": {
-                    "description": "Seit Migration 084/094 (nachgetragen 02.09.2026 — die Auskunft war um vier Spalten\nunvollständig; Gate: TestDsgvoAuskunft_KenntJedeLeserSpalte).",
-                    "type": "string"
-                },
-                "sperrgrund": {
-                    "type": "string"
-                },
-                "strasse": {
-                    "type": "string"
-                },
-                "vorname": {
-                    "type": "string"
-                },
-                "zuletzt_aktualisiert_am": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.DsgvoVerarbeitungsangaben": {
-            "type": "object",
-            "properties": {
-                "betroffenenrechte": {
-                    "type": "string"
-                },
-                "empfaenger": {
-                    "type": "string"
-                },
-                "herkunft_der_daten": {
-                    "type": "string"
-                },
-                "rechtsgrundlage": {
-                    "type": "string"
-                },
-                "speicherdauer": {
-                    "type": "string"
-                },
-                "zwecke": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "api.DsgvoVerwaltungsEintrag": {
-            "type": "object",
-            "properties": {
-                "aktion": {
-                    "type": "string"
-                },
-                "details": {
-                    "type": "object"
-                },
-                "zeitpunkt": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.DsgvoVormerkung": {
-            "type": "object",
-            "properties": {
-                "erstellt_am": {
-                    "type": "string"
-                },
-                "notiz": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "titel": {
-                    "type": "string"
                 }
             }
         },
@@ -5561,6 +5201,366 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.DsgvoAuditEintrag": {
+            "type": "object",
+            "properties": {
+                "akteur": {
+                    "type": "string"
+                },
+                "aktion": {
+                    "type": "string"
+                },
+                "barcode": {
+                    "type": "string"
+                },
+                "details": {
+                    "description": "swaggertype: json.RawMessage ist ein []byte-Alias aus der Standardbibliothek, das\nswag ohne --parseDependency nicht auflösen kann. Ohne diesen Hinweis bricht die\nGenerierung für DIESEN Endpunkt still ab — die DSGVO-Auskunft fehlte deshalb\nkomplett in der Swagger-Datei, obwohl sie annotiert war (gefunden 05.08.2026).",
+                    "type": "object"
+                },
+                "gegenstand": {
+                    "description": "Gegenstand und Barcode: Titel und Nummer des Buchs oder Geräts einer Ausleihe oder\nRückgabe; der Eintrag selbst trägt nur die Kennung des Exemplars. Leer, wenn es das\nExemplar nicht mehr gibt oder der Eintrag kein Buch betrifft.",
+                    "type": "string"
+                },
+                "kontext": {
+                    "type": "string"
+                },
+                "tabelle": {
+                    "description": "Tabelle sagt, woran der Eintrag hängt (ausleihen, schueler, schadensfaelle …). Mit der\nAktion ergibt sie den Vorgang, den das Blatt in Worten nennt (dsgvoVorgang).",
+                    "type": "string"
+                },
+                "zeitpunkt": {
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.DsgvoAuskunftResponse": {
+            "type": "object",
+            "properties": {
+                "art": {
+                    "type": "string"
+                },
+                "auskunft_erstellt_am": {
+                    "type": "string"
+                },
+                "ausleihhistorie": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.DsgvoAusleihe"
+                    }
+                },
+                "ausweisfoto": {
+                    "$ref": "#/definitions/auskunft.DsgvoFoto"
+                },
+                "fruehere_zugangskonten": {
+                    "description": "Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie (seit\n29.09.2026). Leer, wenn es keine gab.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.DsgvoFrueheresZugangskonto"
+                    }
+                },
+                "nachbuch_meldungen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.DsgvoNachbuchMeldung"
+                    }
+                },
+                "protokolleintraege": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.DsgvoAuditEintrag"
+                    }
+                },
+                "schadensersatz_bescheide": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.DsgvoBescheid"
+                    }
+                },
+                "schadensfaelle": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.DsgvoSchadensfall"
+                    }
+                },
+                "stammdaten": {
+                    "$ref": "#/definitions/auskunft.DsgvoStammdaten"
+                },
+                "verarbeitungsangaben": {
+                    "$ref": "#/definitions/auskunft.DsgvoVerarbeitungsangaben"
+                },
+                "verwaltungsprotokolle": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.DsgvoVerwaltungsEintrag"
+                    }
+                },
+                "vormerkungen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auskunft.DsgvoVormerkung"
+                    }
+                },
+                "zugangskonto": {
+                    "description": "Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;\nnull, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.DsgvoZugangskonto"
+                        }
+                    ]
+                }
+            }
+        },
+        "auskunft.DsgvoAusleihe": {
+            "type": "object",
+            "properties": {
+                "ausgeliehen_am": {
+                    "type": "string"
+                },
+                "barcode": {
+                    "type": "string"
+                },
+                "gegenstand": {
+                    "type": "string"
+                },
+                "ist_handapparat": {
+                    "type": "boolean"
+                },
+                "rueckgabe_am": {
+                    "type": "string"
+                },
+                "rueckgabe_frist": {
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.DsgvoBescheid": {
+            "type": "object",
+            "properties": {
+                "brief_datum": {
+                    "type": "string"
+                },
+                "frist_bis": {
+                    "type": "string"
+                },
+                "gesamtbetrag": {
+                    "type": "string"
+                },
+                "referenznummer": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.DsgvoFoto": {
+            "type": "object",
+            "properties": {
+                "aktualisiert_am": {
+                    "type": "string"
+                },
+                "hinweis": {
+                    "type": "string"
+                },
+                "vorhanden": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "auskunft.DsgvoNachbuchMeldung": {
+            "type": "object",
+            "properties": {
+                "barcode": {
+                    "type": "string"
+                },
+                "ergebnis": {
+                    "type": "string"
+                },
+                "gescannt_am": {
+                    "type": "string"
+                },
+                "grund": {
+                    "type": "string"
+                },
+                "quittiert_am": {
+                    "type": "string"
+                },
+                "rolle": {
+                    "description": "ausleiher | vorbesitzer",
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.DsgvoSchadensfall": {
+            "type": "object",
+            "properties": {
+                "beschreibung": {
+                    "type": "string"
+                },
+                "betrag_eur": {
+                    "type": "string"
+                },
+                "erstellt_am": {
+                    "type": "string"
+                },
+                "ist_bezahlt": {
+                    "type": "boolean"
+                },
+                "storniert_am": {
+                    "type": "string"
+                },
+                "stornierungsgrund": {
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.DsgvoStammdaten": {
+            "type": "object",
+            "properties": {
+                "abgaenger_jahr": {
+                    "type": "integer"
+                },
+                "abgaenger_seit": {
+                    "type": "string"
+                },
+                "anonymisiert_am": {
+                    "type": "string"
+                },
+                "art": {
+                    "description": "Migration 123: Die Tabelle führt alle Leser. Die Art gehört in die Auskunft, weil\nsie über die Person etwas aussagt — und weil sie entscheidet, welche Felder\nüberhaupt gefüllt sind (ein Kollege hat keine Klasse und kein Abgängerjahr).",
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "eltern_email": {
+                    "type": "string"
+                },
+                "erfasst_am": {
+                    "type": "string"
+                },
+                "geburtsdatum": {
+                    "type": "string"
+                },
+                "geloescht_am": {
+                    "type": "string"
+                },
+                "hat_zugangskonto": {
+                    "description": "Zeigt ein Zugangskonto auf diesen Leser? Die Anmeldedaten selbst (E-Mail, Rolle)\nstehen nicht hier, sondern im eigenen Teil der Auskunft (DsgvoAuskunftResponse.\nZugangskonto): Sie gehören zum Konto, nicht zum Leser.",
+                    "type": "boolean"
+                },
+                "hausnummer": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ist_abgaenger": {
+                    "type": "boolean"
+                },
+                "ist_gesperrt": {
+                    "type": "boolean"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "letzter_vorgang_am": {
+                    "description": "Migration 137: der Zeitpunkt des letzten abgeschlossenen Vorgangs — die zweite Uhr\nder Karenz neben abgaenger_seit. Er gehört in die Auskunft, weil er ein über diese\nPerson gespeicherter Zeitpunkt ist und weil er mitbestimmt, wann ihre Daten\nanonymisiert werden. WAS ausgeliehen war, sagt er nicht.",
+                    "type": "string"
+                },
+                "lusd_bestaetigt_am": {
+                    "type": "string"
+                },
+                "lusd_id": {
+                    "type": "string"
+                },
+                "manuell_gesperrt": {
+                    "type": "boolean"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "ort": {
+                    "type": "string"
+                },
+                "plz": {
+                    "type": "string"
+                },
+                "schul_eintritt_am": {
+                    "description": "Seit Migration 084/094 (nachgetragen 02.09.2026 — die Auskunft war um vier Spalten\nunvollständig; Gate: TestDsgvoAuskunft_KenntJedeLeserSpalte).",
+                    "type": "string"
+                },
+                "sperrgrund": {
+                    "type": "string"
+                },
+                "strasse": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
+                },
+                "zuletzt_aktualisiert_am": {
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.DsgvoVerarbeitungsangaben": {
+            "type": "object",
+            "properties": {
+                "betroffenenrechte": {
+                    "type": "string"
+                },
+                "empfaenger": {
+                    "type": "string"
+                },
+                "herkunft_der_daten": {
+                    "type": "string"
+                },
+                "rechtsgrundlage": {
+                    "type": "string"
+                },
+                "speicherdauer": {
+                    "type": "string"
+                },
+                "zwecke": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "auskunft.DsgvoVerwaltungsEintrag": {
+            "type": "object",
+            "properties": {
+                "aktion": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "object"
+                },
+                "zeitpunkt": {
+                    "type": "string"
+                }
+            }
+        },
+        "auskunft.DsgvoVormerkung": {
+            "type": "object",
+            "properties": {
+                "erstellt_am": {
+                    "type": "string"
+                },
+                "notiz": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "titel": {
                     "type": "string"
                 }
             }

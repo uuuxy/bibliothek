@@ -1,4 +1,4 @@
-package api
+package auskunft
 
 import (
 	"encoding/json"
@@ -54,16 +54,16 @@ var dsgvoProgrammSaetze = map[string]bool{
 // dsgvoVerwaltungsVorgaenge nennt je Aktion des Verwaltungsprotokolls (audit_logs) die Worte
 // des Blatts.
 var dsgvoVerwaltungsVorgaenge = map[string]string{
-	"DELETE_STUDENT":               "Leserdatensatz in den Papierkorb gelegt",
-	"RESTORE_STUDENT":              "Leserdatensatz aus dem Papierkorb zurückgeholt",
-	"PURGE_STUDENT":                "Leserdatensatz endgültig gelöscht",
-	"LESER_GESPERRT":               "Von Hand gesperrt",
-	"LESER_ENTSPERRT":              "Sperre aufgehoben",
-	"OVERRIDE_BLOCK":               "Ausleihe trotz eines Hinweises gebucht",
-	"LUSD_ID_NACHGETRAGEN":         "LUSD-ID nachgetragen",
-	"KOLLEGIUMSKONTO_NACHGETRAGEN": "Zugangskonto angelegt: Schul-E-Mail in der Leserakte nachgetragen",
-	"SCHUELER_ZUSAMMENGEFUEHRT":    "Mit einem zweiten Datensatz derselben Person zusammengeführt",
-	auditBescheidErstellt:          "Schadensersatz-Bescheid erstellt",
+	"DELETE_STUDENT":                   "Leserdatensatz in den Papierkorb gelegt",
+	"RESTORE_STUDENT":                  "Leserdatensatz aus dem Papierkorb zurückgeholt",
+	"PURGE_STUDENT":                    "Leserdatensatz endgültig gelöscht",
+	"LESER_GESPERRT":                   "Von Hand gesperrt",
+	"LESER_ENTSPERRT":                  "Sperre aufgehoben",
+	"OVERRIDE_BLOCK":                   "Ausleihe trotz eines Hinweises gebucht",
+	"LUSD_ID_NACHGETRAGEN":             "LUSD-ID nachgetragen",
+	"KOLLEGIUMSKONTO_NACHGETRAGEN":     "Zugangskonto angelegt: Schul-E-Mail in der Leserakte nachgetragen",
+	"SCHUELER_ZUSAMMENGEFUEHRT":        "Mit einem zweiten Datensatz derselben Person zusammengeführt",
+	"SCHADENSERSATZ_BESCHEID_ERSTELLT": "Schadensersatz-Bescheid erstellt",
 }
 
 // dsgvoVorgang schreibt einen Eintrag der Datensatz-Historie in Worten. Kennt das Blatt den

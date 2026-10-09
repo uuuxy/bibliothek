@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/auskunft"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -171,7 +172,7 @@ func TestDsgvoAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Gegenprobe: der Administrator bekommt die Auskunft nicht (Status %d) — %s", rec.Code, rec.Body.String())
 	}
-	var a DsgvoAuskunftResponse
+	var a auskunft.DsgvoAuskunftResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
 	}

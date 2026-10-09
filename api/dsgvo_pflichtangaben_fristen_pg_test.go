@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/auskunft"
 	"bibliothek/repository"
 )
 
@@ -24,7 +25,9 @@ import (
 //
 // Der Test setzt jede Frist auf einen Wert, der von der Vorgabe abweicht, und verlangt
 // GENAU diesen Wert im Text — eine vergessene Einstellung fällt damit auf, statt still
-// die Werksvorgabe zu behaupten.
+// die Werksvorgabe zu behaupten. Er verlangt ihn an seiner Stelle im Satz: Zwei vertauschte
+// Fristen stünden sonst beide im Text. Die Frist erledigter Anliegen nennt nur die Auskunft
+// eines Kollegen, deshalb steht einer daneben.
 func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
@@ -37,6 +40,7 @@ func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 		"lesehistorie_tage":                    "111",
 		"lesehistorie_lernmittel_tage":         "222",
 		"abgaenger_karenz_tage":                "33",
+		"anliegen_tage":                        "44",
 	}
 	for schluessel, wert := range einstellungen {
 		if _, err := pool.Exec(ctx, `
@@ -55,31 +59,51 @@ func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 	})
 
 	sid := seedSchueler(t, pool, "S-FRISTEN-PROBE", "Fristenkind", "5F1")
+	var kollege string
+	if err := pool.QueryRow(ctx, `INSERT INTO leser (vorname, nachname, art)
+		VALUES ('Frieda', 'Fristenkollegin', 'lehrkraft') RETURNING id`).Scan(&kollege); err != nil {
+		t.Fatalf("Kollegin anlegen: %v", err)
+	}
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+sid+"/dsgvo-auskunft", nil)
-	req.SetPathValue("id", sid)
-	rec := httptest.NewRecorder()
-	srv.DsgvoAuskunftHandler()(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
-	}
-
-	var antwort DsgvoAuskunftResponse
-	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
-		t.Fatalf("Antwort lesen: %v", err)
-	}
-	dauer := antwort.Verarbeitungsangaben.Speicherdauer
-
-	for _, erwartet := range []string{"7 Monate", "111 Tage", "222 Tage", "Karenzzeit von 33 Tagen"} {
-		if !strings.Contains(dauer, erwartet) {
-			t.Errorf("Speicherdauer nennt %q nicht — die Auskunft ignoriert die Einstellung:\n%s", erwartet, dauer)
+	speicherdauer := func(leserID string) string {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", nil)
+		req.SetPathValue("id", leserID)
+		rec := httptest.NewRecorder()
+		srv.DsgvoAuskunftHandler()(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 		}
+		var antwort auskunft.DsgvoAuskunftResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Antwort lesen: %v", err)
+		}
+		return antwort.Verarbeitungsangaben.Speicherdauer
 	}
-	// Die Werksvorgaben dürfen NICHT im Text stehen, wenn etwas anderes eingestellt ist.
-	for _, verboten := range []string{"24 Monate", "360"} {
-		if strings.Contains(dauer, verboten) {
-			t.Errorf("Speicherdauer behauptet die Werksvorgabe %q:\n%s", verboten, dauer)
+
+	for _, fall := range []struct {
+		name, leserID string
+		erwartet      []string
+	}{
+		{"Schüler", sid, []string{
+			"Schülerbücherei 111 Tage nach Rückgabe", "Lernmittel 222 Tage nach Rückgabe",
+			"Karenzzeit von 33 Tagen", "Protokolle 7 Monate"}},
+		{"Kollegin", kollege, []string{
+			"Schülerbücherei 111 Tage nach Rückgabe", "Lernmittel 222 Tage nach Rückgabe",
+			"Reservierungen: 44 Tage nach der Erledigung", "Protokolle 7 Monate"}},
+	} {
+		dauer := speicherdauer(fall.leserID)
+		for _, erwartet := range fall.erwartet {
+			if !strings.Contains(dauer, erwartet) {
+				t.Errorf("%s: Speicherdauer nennt %q nicht — die Auskunft ignoriert die Einstellung:\n%s", fall.name, erwartet, dauer)
+			}
+		}
+		// Die Werksvorgaben dürfen NICHT im Text stehen, wenn etwas anderes eingestellt ist.
+		for _, verboten := range []string{"24 Monate", "360", "365 Tage"} {
+			if strings.Contains(dauer, verboten) {
+				t.Errorf("%s: Speicherdauer behauptet die Werksvorgabe %q:\n%s", fall.name, verboten, dauer)
+			}
 		}
 	}
 }

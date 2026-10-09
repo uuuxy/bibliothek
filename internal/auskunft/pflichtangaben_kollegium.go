@@ -1,4 +1,4 @@
-package api
+package auskunft
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ import (
 //
 // Die Fristen kommen aus denselben Einstellungen wie bei den Jobs (dsgvoFristen), damit eine
 // geänderte Frist hier nicht als Werksvorgabe stehen bleibt.
-func dsgvoVerarbeitungsangabenKollegium(f dsgvoFristWerte) DsgvoVerarbeitungsangaben {
+func dsgvoVerarbeitungsangabenKollegium(f DsgvoFristWerte) DsgvoVerarbeitungsangaben {
 	const abgeschaltet = "ohne Frist (Befristung in dieser Installation abgeschaltet)"
 	nachRueckgabe := func(tage int) string {
 		if tage <= 0 {
@@ -37,8 +37,8 @@ func dsgvoVerarbeitungsangabenKollegium(f dsgvoFristWerte) DsgvoVerarbeitungsang
 		return repository.TageMitZahl(tage) + " nach Rückgabe"
 	}
 	anliegen := abgeschaltet
-	if f.anliegenTage > 0 {
-		anliegen = fmt.Sprintf("%d Tage nach der Erledigung", f.anliegenTage)
+	if f.AnliegenTage > 0 {
+		anliegen = fmt.Sprintf("%d Tage nach der Erledigung", f.AnliegenTage)
 	}
 	return DsgvoVerarbeitungsangaben{
 		Zwecke: []string{
@@ -52,9 +52,9 @@ func dsgvoVerarbeitungsangabenKollegium(f dsgvoFristWerte) DsgvoVerarbeitungsang
 			"Eigene Ausleihen: dieselben Grundlagen wie bei der Ausleihe an Schülerinnen und Schüler. Maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
 		Empfaenger: "Keine Übermittlung an Dritte. Das Bibliothekspersonal der Schule sieht die eigenen Ausleihen sowie Wünsche, Meldungen und Reservierungen mit dem Namen der anfragenden Person; " +
 			"die Liste der Zugangskonten und die Protokolle sehen nur Personen, denen die Schule deren Verwaltung übertragen hat. Helfer an der Theke sehen nur Name, Ausweisnummer und Sperrstatus.",
-		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + nachRueckgabe(f.lesehistorieTage) + ", Lernmittel " + nachRueckgabe(f.lernmittelTage) + "; danach automatisch getrennt. " +
+		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + nachRueckgabe(f.LesehistorieTage) + ", Lernmittel " + nachRueckgabe(f.LernmittelTage) + "; danach automatisch getrennt. " +
 			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Erledigte Wünsche, Meldungen und Klassensatz-Reservierungen: " + anliegen + ". " +
-			"Protokolle " + fmt.Sprintf("%d", f.auditMonate) + " Monate. Leserdatensatz und Zugangskonto bis zum Ausscheiden; gelöscht werden sie von Hand durch die Schule, das Zugangskonto dabei sofort. " +
+			"Protokolle " + fmt.Sprintf("%d", f.AuditMonate) + " Monate. Leserdatensatz und Zugangskonto bis zum Ausscheiden; gelöscht werden sie von Hand durch die Schule, das Zugangskonto dabei sofort. " +
 			"Der gelöschte Leserdatensatz liegt 180 Tage im Papierkorb und wird danach automatisch endgültig gelöscht, solange keine Ausleihe und keine unbezahlte Forderung offen ist. " +
 			dsgvoSicherungen,
 		Herkunft:          "Anlage durch die Bibliothek oder die Verwaltung der Zugangskonten, die eigene Anmeldung mit der dienstlichen E-Mail-Adresse oder die Übernahme aus dem bisherigen Bibliotheksprogramm; Protokolleinträge entstehen bei der Arbeit im System",

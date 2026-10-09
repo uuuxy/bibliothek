@@ -1,4 +1,4 @@
-package api
+package auskunft
 
 import (
 	"encoding/json"
@@ -46,9 +46,9 @@ func TestDsgvoPDF_DrucktJedeAngabeDerAuskunft(t *testing.T) {
 		t.Fatalf("Liveness: nur %d Angaben in der Auskunft gefunden", len(w.erwartet))
 	}
 
-	roh, err := generateDsgvoAuskunftPDF(a, pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
+	roh, err := GenerateDsgvoAuskunftPDF(a, pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
 	if err != nil {
-		t.Fatalf("generateDsgvoAuskunftPDF: %v", err)
+		t.Fatalf("GenerateDsgvoAuskunftPDF: %v", err)
 	}
 	blatt := strings.Join(pdftest.Texte(t, roh), "\n")
 	if !strings.Contains(blatt, "Stammdaten") {
@@ -61,7 +61,7 @@ func TestDsgvoPDF_DrucktJedeAngabeDerAuskunft(t *testing.T) {
 		}
 		if !strings.Contains(blatt, e.text) {
 			t.Errorf("%s steht in der abgerufenen Auskunft, aber nicht auf dem Blatt (Prüfwert %q) — "+
-				"drucken (api/dsgvo_pdf.go) oder hier begründet ausnehmen", e.pfad, e.text)
+				"drucken (internal/auskunft/blatt.go) oder hier begründet ausnehmen", e.pfad, e.text)
 		}
 	}
 	for pfad := range ausnahmen {
