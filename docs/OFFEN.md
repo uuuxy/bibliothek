@@ -421,10 +421,13 @@ und zählen darin die Tabellen, und keine der Anweisungen trifft eine Tabelle de
 Ratsche zählt je Datei die Texte von Anweisungen und die Aufrufe, die eine abschicken (zusammen
 29 und 30). Die Anweisungen der Nachtläufe, die von `auth/` und aus `internal/service` die zu
 Passbild und Cover-Abgleich stehen in `repository/` (ARCHITEKTUR 5.2.2). Offene Stufen, je ein
-Commit und in dieser Reihenfolge: aus `internal/service` Geräte (`device_service.go`), Import
-(`import_dynamic.go`) und Bestellung (`order_service.go`), danach die Ausleihe an der Theke
-(`loan_*.go`, `ausleih_sperren.go`, `nachbuchen.go`, `omnibox_service.go`), zuletzt die eine
-Abfrage in `mailservice/`. Der Handgriff steht in ARCHITEKTUR 8.14.
+Commit und in dieser Reihenfolge: aus `internal/service` der Import (`import_dynamic.go`) und
+die Bestellung (`order_service.go`); danach die Ausleihe an der Theke mit der Geräte-Ausleihe
+(`device_service.go`, `loan_*.go`, `ausleih_sperren.go`, `nachbuchen.go`,
+`omnibox_service.go`); zuletzt die eine Abfrage in `mailservice/`. Der Handgriff steht in
+ARCHITEKTUR 8.14. Die Stufe der Theke öffnet Transaktionen mit Zeilensperren (ARCHITEKTUR A7):
+Dort die Aufnahme an der Datenbank je Test auch in ihrer Reihenfolge vergleichen, der
+Vergleich als Menge sagt über die Reihenfolge der Sperren nichts.
 
 ### 5.63 Etiketten kürzen nach Zeichenzahl
 
