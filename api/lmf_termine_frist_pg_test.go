@@ -134,8 +134,10 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	erwarte("Emils Schulbuch mit Termin", emilLmf, tag("2027-07-01"))
 
 	// 4. Ein Ausgabe-Plan setzt keine Frist — auch nicht für 8G1, auch nicht veröffentlicht.
+	//    9H1 steht mit im Plan: Annas Mehrjahresband hat seine Frist im Schuljahr der Ausgabe
+	//    und wäre die Ausleihe, die ein Ausgabe-Plan als Rückgabe-Plan umschriebe.
 	rec = lmfPlanAufruf(t, srv, http.MethodPut, "ausgabe",
-		`{"erster_tag":"2027-08-10","startstunde":2,"stunden_je_tag":6,"zeilen":[{"klassen":["8G1"],"vermerk":"neu"}]}`)
+		`{"erster_tag":"2027-08-10","startstunde":2,"stunden_je_tag":6,"zeilen":[{"klassen":["8G1"],"vermerk":"neu"},{"klassen":["9H1"]}]}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"fristen_angepasst":0`) {
 		t.Fatalf("Ausgabe-Plan: %d %s", rec.Code, rec.Body.String())
 	}
@@ -143,6 +145,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 		t.Fatalf("Ausgabe-Plan veröffentlichen: %d %s", rec.Code, rec.Body.String())
 	}
 	erwarte("Emils Schulbuch nach dem Ausgabe-Plan", emilLmf, tag("2027-07-01"))
+	erwarte("Annas Mehrjahresband nach dem Ausgabe-Plan", annaMehrjahr, tag("2028-07-31"))
 
 	// 5. Verwerfen: Rückweg, aber nur für Fristen, die auf dem Termin lagen.
 	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_frist = $1 WHERE id = $2`, tag("2027-05-15"), emilLmf); err != nil {
@@ -400,6 +403,56 @@ func klassenFolge(zeilen []repository.LmfPlanZeile) string {
 		teile = append(teile, strings.Join(z.Klassen, "/"))
 	}
 	return strings.Join(teile, ",")
+}
+
+// Verliert eine Klasse ihren Termin, kehrt die Frist zum eingestellten Stichtag zurück, nicht zur
+// Vorgabe des Programms. Die Kopplung liest die Einstellung in der Transaktion der Tür.
+func TestLmfPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	setzeStichtag := func(wert string) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO system_einstellungen (schluessel, wert) VALUES ('lmf_stichtag', $1)
+			ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`, wert); err != nil {
+			t.Fatalf("Stichtag setzen: %v", err)
+		}
+	}
+	t.Cleanup(func() {
+		setzeStichtag("07-31")
+		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
+			t.Logf("Aufräumen: %v", err)
+		}
+	})
+	tagesEnde := func(jahr int, monat time.Month, tag int) time.Time {
+		return service.TagesEndeInSchulzeitzone(time.Date(jahr, monat, tag, 0, 0, 0, 0, schulzeit.Zone()))
+	}
+
+	setzeStichtag("06-30")
+	anna := seedSchueler(t, pool, "ST-1", "Anna", "9H1")
+	annaLmf := seedAusleihe(t, pool, anna, "LMF Mathe 9 Anna", tagesEnde(2027, time.June, 30))
+
+	if rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
+		`{"letzter_tag":"2027-06-21","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`); rec.Code != http.StatusOK {
+		t.Fatalf("Plan anlegen: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec := lmfPlanAufruf(t, srv, http.MethodPost, "rueckgabe", ""); rec.Code != http.StatusOK {
+		t.Fatalf("veröffentlichen: %d %s", rec.Code, rec.Body.String())
+	}
+	if ist := fristVon(t, pool, annaLmf); !ist.Equal(tagesEnde(2027, time.June, 21)) {
+		t.Fatalf("Aufbau: Annas Frist %v folgt dem Termin am 21.06.2027 nicht", ist.In(schulzeit.Zone()))
+	}
+
+	// 9H1 fällt aus dem Plan: zurück zum 30.06., dem eingestellten Stichtag dieses Schuljahres.
+	if rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
+		`{"letzter_tag":"2027-06-21","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"vermerk":"Bücher setzen"}]}`); rec.Code != http.StatusOK {
+		t.Fatalf("Klasse aus dem Plan nehmen: %d %s", rec.Code, rec.Body.String())
+	}
+	if ist, will := fristVon(t, pool, annaLmf), tagesEnde(2027, time.June, 30); !ist.Equal(will) {
+		t.Errorf("Annas Frist ohne Termin: %v, erwartet den eingestellten Stichtag %v", ist.In(schulzeit.Zone()), will)
+	}
 }
 
 // lmfPlanAufruf ruft die Plan-Handler wie der Router: {art} im Pfad.

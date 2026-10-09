@@ -484,7 +484,7 @@ func (s *Server) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 	// veröffentlichter Plan bleibt es, und seine Korrektur gilt sofort.
 	var angepasst int64
 	if stand.Plan.VeroeffentlichtAm != nil {
-		if angepasst, err = service.KoppleLmfPlanFristen(r.Context(), s.DB.Pool, tx, art, alt, stand.Zeilen); err != nil {
+		if angepasst, err = service.KoppleLmfPlanFristen(r.Context(), repo, tx, art, alt, stand.Zeilen); err != nil {
 			return keine, false, apierrors.Internal("Fristen koppeln", err)
 		}
 	}
@@ -655,7 +655,7 @@ func (s *Server) verwerfeLmfPlan(r *http.Request) (int64, error) {
 	// Nur ein veröffentlichter Plan hat Fristen gesetzt, die zurückkehren müssen.
 	var angepasst int64
 	if st.Plan.VeroeffentlichtAm != nil {
-		if angepasst, err = service.KoppleLmfPlanFristen(r.Context(), s.DB.Pool, tx, art, st.Zeilen, nil); err != nil {
+		if angepasst, err = service.KoppleLmfPlanFristen(r.Context(), repo, tx, art, st.Zeilen, nil); err != nil {
 			return 0, apierrors.Internal("Fristen koppeln", err)
 		}
 	}

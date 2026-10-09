@@ -621,7 +621,7 @@ HTTP-Anfrage
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
 | `api/`                  | 21.797 Zeilen, 138 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
 | `repository/`           | 21.022 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
-| `internal/service/`     | 4.831 Zeilen, 26 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen (Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan, Importe, Littera-Etiketten                          |
+| `internal/service/`     | 4.800 Zeilen, 26 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen (Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 924 Zeilen, 2 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/betriebsbereitschaft_alarm.go` |
 | `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/dsgvo_auskunft.go` und `api/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
@@ -675,6 +675,12 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   `api/bestellmail_versand.go`) und entscheidet die Rückmeldung an die Oberfläche
   (`bestellVersandMeldung`). Das Gate der Platzhalter liest den Renderer beim Dateinamen
   (`api/mail_vorlagen_platzhalter_test.go`); zieht er um, zieht der Pfad dort mit.
+- Fachlogik, die in der Transaktion einer Tür läuft, bekommt diese Transaktion und keinen
+  Pool daneben: `service.KoppleLmfPlanFristen` liest die Einstellungen
+  (`repository.EinstellungenUeber`) und schreibt die Fristen über denselben Zugang. Mit Pool
+  und Transaktion als Nachbar-Argumenten ließe sich die Kopplung am Pool rufen, und kein
+  Compiler merkte es. Ein Test der Tür lässt die Kopplung nach ihrer ersten Änderung scheitern
+  und verlangt, dass keine Frist umgeschrieben bleibt (`api/lmf_plan_transaktion_pg_test.go`).
 - Die Auskunft nach Art. 15 DSGVO steht in `internal/auskunft` und nicht in `pdf/`. Antwort und
   Blatt entstehen aus einem Objekt (`DsgvoAuskunftResponse`), damit das Blatt nichts auslässt,
   was die abgerufene Auskunft nennt; eigene Eingabetypen in `pdf/` hießen, 16 Typen zu doppeln.

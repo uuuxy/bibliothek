@@ -5,7 +5,6 @@ import (
 	"sort"
 	"time"
 
-	"bibliothek/db"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -23,8 +22,8 @@ import (
 
 // KoppleLmfPlanFristen gleicht die Fristen ab, nachdem ein ganzer Plan gespeichert,
 // veröffentlicht oder verworfen wurde: alt sind die Zeilen vorher, neu die Zeilen nachher (nil
-// beim Verwerfen). Die Änderungen gehen über ex, die Transaktion der Tür, damit Plan und
-// Fristen zusammen gelten oder zusammen nicht. Liefert die Zahl der umgeschriebenen Ausleihen.
+// beim Verwerfen). Gelesen und geschrieben wird über ex, die Transaktion der Tür: Plan und
+// Fristen gelten zusammen oder zusammen nicht. Liefert die Zahl der umgeschriebenen Ausleihen.
 //
 // Maßgeblich ist der früheste Termin einer Klasse, nicht ihre letzte Zeile: Ein Plan kann eine
 // Klasse zweimal nennen, etwa mit einem nachgeschobenen Termin, und der Ausleihdienst nimmt
@@ -33,25 +32,21 @@ import (
 //
 // Zuerst kehren die Klassen, die im neuen Plan nicht mehr stehen, zum Stichtag zurück, dann
 // bekommt jede Klasse des neuen Plans ihren frühesten Termin.
-func KoppleLmfPlanFristen(ctx context.Context, pool db.PgxPoolIface, ex repository.DBQueryer, art string, alt, neu []repository.LmfPlanZeile) (int64, error) {
+func KoppleLmfPlanFristen(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.DBQueryer, art string, alt, neu []repository.LmfPlanZeile) (int64, error) {
 	if art != repository.LmfTerminRueckgabe {
 		return 0, nil
 	}
 	termine := fruehesteTermineJeKlasse(neu)
 	var gesamt int64
 	for _, z := range alt {
-		verlierer := ohneTermin(z.Klassen, termine)
-		if len(verlierer) == 0 {
-			continue
-		}
-		n, err := koppleLmfFristen(ctx, pool, ex, &repository.LmfTermin{Art: art, Datum: z.Datum, Klassen: verlierer}, nil)
+		n, err := loeseLmfFristenVomTermin(ctx, repo, ex, z.Datum, ohneTermin(z.Klassen, termine))
 		if err != nil {
 			return gesamt, err
 		}
 		gesamt += n
 	}
 	for _, datum := range sortierteSchluessel(termine) {
-		n, err := koppleLmfFristen(ctx, pool, ex, nil, &repository.LmfTermin{Art: art, Datum: datum, Klassen: termine[datum]})
+		n, err := setzeLmfFristenAufTermin(ctx, repo, ex, datum, termine[datum])
 		if err != nil {
 			return gesamt, err
 		}
@@ -60,66 +55,40 @@ func KoppleLmfPlanFristen(ctx context.Context, pool db.PgxPoolIface, ex reposito
 	return gesamt, nil
 }
 
-// koppleLmfFristen gleicht die Fristen für einen Termin ab: alt ist der Stand vorher (nil, wenn
-// es keinen gab), neu der Stand danach (nil, wenn er entfällt).
-func koppleLmfFristen(ctx context.Context, pool db.PgxPoolIface, ex repository.DBQueryer, alt, neu *repository.LmfTermin) (int64, error) {
-	repo := repository.NewLmfTerminRepository(pool)
-	gesamt, err := loeseLmfFristenVomTermin(ctx, pool, ex, repo, alt, neu)
-	if err != nil {
-		return gesamt, err
-	}
-	n, err := setzeLmfFristenAufTermin(ctx, ex, repo, neu)
-	if err != nil {
-		return gesamt, err
-	}
-	return gesamt + n, nil
-}
-
-// loeseLmfFristenVomTermin bringt die Fristen der Klassen, die ihren Rückgabe-Termin verlieren,
-// zurück zum Stichtag.
-func loeseLmfFristenVomTermin(ctx context.Context, pool db.PgxPoolIface, ex repository.DBQueryer, repo *repository.LmfTerminRepository, alt, neu *repository.LmfTermin) (int64, error) {
-	if alt == nil || alt.Art != repository.LmfTerminRueckgabe {
-		return 0, nil
-	}
-	verlierer := alt.Klassen
-	if neu != nil && neu.Art == repository.LmfTerminRueckgabe {
-		verlierer = ohne(alt.Klassen, neu.Klassen)
-	}
+// loeseLmfFristenVomTermin bringt die Fristen der Klassen, die ihren Rückgabe-Termin an diesem
+// Tag verlieren, zurück zum Stichtag.
+func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.DBQueryer, datum string, verlierer []string) (int64, error) {
 	if len(verlierer) == 0 {
 		return 0, nil
 	}
-	altTag, err := schulzeit.Kalendertag(alt.Datum)
+	altTag, err := schulzeit.Kalendertag(datum)
 	if err != nil {
 		return 0, err
 	}
-	einstellungen, err := repository.NewSystemSettingsRepository(pool).GetSettings(ctx)
+	einstellungen, err := repository.EinstellungenUeber(ctx, ex)
 	if err != nil {
 		return 0, err
 	}
 	// Der Stichtag des Schuljahres, in dem der Termin lag, nicht der nächste ab heute: Angefasst
 	// werden nur Fristen dieses Schuljahres, und sie gehen dorthin zurück, wo sie ohne Plan
-	// gestanden hätten.
+	// gestanden hätten. Und nur Fristen, die auf dem Termin lagen: Eine Frist von Hand bleibt.
 	stichtag := repository.LmfStichtagImSchuljahr(altTag, einstellungen.LmfStichtag)
 	von, bis := schuljahrGrenzen(altTag)
-	n, err := repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, verlierer,
+	return repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, verlierer,
 		TagesEndeInSchulzeitzone(stichtag), von, bis, &altTag)
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
 }
 
 // setzeLmfFristenAufTermin setzt die Fristen der Klassen eines Rückgabe-Termins auf dessen Tag.
-func setzeLmfFristenAufTermin(ctx context.Context, ex repository.DBQueryer, repo *repository.LmfTerminRepository, neu *repository.LmfTermin) (int64, error) {
-	if neu == nil || neu.Art != repository.LmfTerminRueckgabe || len(neu.Klassen) == 0 {
+func setzeLmfFristenAufTermin(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.DBQueryer, datum string, klassen []string) (int64, error) {
+	if len(klassen) == 0 {
 		return 0, nil
 	}
-	neuTag, err := schulzeit.Kalendertag(neu.Datum)
+	neuTag, err := schulzeit.Kalendertag(datum)
 	if err != nil {
 		return 0, err
 	}
 	von, bis := schuljahrGrenzen(neuTag)
-	return repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, neu.Klassen,
+	return repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, klassen,
 		TagesEndeInSchulzeitzone(neuTag), von, bis, nil)
 }
 

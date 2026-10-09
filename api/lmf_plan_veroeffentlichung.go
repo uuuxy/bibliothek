@@ -129,7 +129,7 @@ func (s *Server) veroeffentlicheLmfPlan(r *http.Request) (LmfPlanSpeicherAntwort
 	if antwort.LmfPlanStand, err = repo.VeroeffentlicheLmfPlanIn(r.Context(), tx, st.Plan.ID, s.jetzt()); err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan veröffentlichen", err)
 	}
-	if antwort.FristenAngepasst, err = service.KoppleLmfPlanFristen(r.Context(), s.DB.Pool, tx, art, nil, antwort.Zeilen); err != nil {
+	if antwort.FristenAngepasst, err = service.KoppleLmfPlanFristen(r.Context(), repo, tx, art, nil, antwort.Zeilen); err != nil {
 		return keine, false, apierrors.Internal("Fristen koppeln", err)
 	}
 	if err := tx.Commit(r.Context()); err != nil {
