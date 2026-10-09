@@ -61,17 +61,12 @@ var sqlBestand = map[string]sqlFunde{
 	"internal/service/omnibox_service.go":     {texte: 1, aufrufe: 1},
 	"internal/service/order_service.go":       {texte: 6, aufrufe: 4},
 	"internal/service/photo_service.go":       {texte: 2, aufrufe: 2},
-	"jobs/cron.go":                            {texte: 1, aufrufe: 1},
-	"jobs/cron_audit_retention.go":            {texte: 0, aufrufe: 1},
-	"jobs/cron_dsgvo.go":                      {texte: 5, aufrufe: 4},
-	"jobs/cron_dsgvo_abgaenger.go":            {texte: 1, aufrufe: 1},
-	"jobs/cron_dsgvo_anliegen.go":             {texte: 2, aufrufe: 2},
-	"jobs/cron_dsgvo_lesehistorie.go":         {texte: 3, aufrufe: 3},
-	"jobs/cron_dsgvo_nachbuch.go":             {texte: 1, aufrufe: 1},
-	"jobs/cron_dsgvo_papierkorb.go":           {texte: 1, aufrufe: 1},
-	"jobs/restore_probe.go":                   {texte: 2, aufrufe: 5},
-	"jobs/restore_probe_hilfen.go":            {texte: 1, aufrufe: 1},
-	"mailservice/smtp_konfig.go":              {texte: 1, aufrufe: 1},
+	// Die Restore-Probe legt auf dem Server eine Wegwerf-Datenbank an, entfernt sie und zählt
+	// darin über eine eigene Verbindung die Tabellen. Keine der Anweisungen trifft eine Tabelle
+	// der Anwendung; sie bleiben bei der Probe.
+	"jobs/restore_probe.go":        {texte: 0, aufrufe: 3},
+	"jobs/restore_probe_hilfen.go": {texte: 1, aufrufe: 1},
+	"mailservice/smtp_konfig.go":   {texte: 1, aufrufe: 1},
 }
 
 // Nur Anweisungen, keine Bezeichner: `UPDATE x SET` statt `UPDATE`, sonst schlägt jedes Wort

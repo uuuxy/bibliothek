@@ -34,26 +34,15 @@ func (s *Scheduler) RunAnliegenBefristung() {
 		return
 	}
 	tage := repository.TageOderStandard(einst.AnliegenTage, repository.StandardAnliegenTage)
-	if tage <= 0 {
-		// 0 heißt "aus" — eine bewusste Entscheidung der Schule, kein Fehler.
-		return
-	}
 
-	// Das Prädikat kommt aus repository/loeschfristen.go — DERSELBE String, den der
-	// Rückstands-Wächter benutzt (loeschrueckstand.go). Bis zum 31.08.2026 war dieser
-	// Job der einzige der sechs Löschroutinen, der seine Bedingung selbst hinschrieb:
-	// Genau die Bauform, gegen die der Dateikopf dort geschrieben ist („Der Wächter
-	// beruhigt, während der Job schläft"). Beide Fassungen stimmten nur zufällig
-	// überein; eine Ausnahme im Prädikat hätte der Job ignoriert, und der Wächter
-	// hätte dazu weiter „0 Rückstand" gemeldet.
-	bedingung := repository.PredikatAnliegen(tage, repository.KulanzJob)
-	tag, err := s.db.Exec(ctx, `DELETE FROM lehrer_anliegen WHERE `+bedingung.Where, bedingung.Args...)
+	// Anweisung und Bedingung stehen in repository/: dieselbe Bedingung, die der Wächter des
+	// Rückstands zählt. Eine Frist von 0 schaltet die Befristung ab; dann löscht die Abfrage
+	// nichts, und der Lauf endet hier ohne Eintrag.
+	geloescht, err := repository.LoescheErledigteAnliegen(ctx, s.db, tage)
 	if err != nil {
 		log.Printf("Scheduler Anliegen: Löschen fehlgeschlagen: %v", err)
 		return
 	}
-
-	geloescht := tag.RowsAffected()
 	if geloescht == 0 {
 		return
 	}
@@ -84,19 +73,13 @@ func (s *Scheduler) RunKlassensatzBefristung() {
 		return
 	}
 	tage := repository.TageOderStandard(einst.AnliegenTage, repository.StandardAnliegenTage)
-	if tage <= 0 {
-		// 0 heißt "aus" — dieselbe Einstellung wie bei den Anliegen.
-		return
-	}
 
-	bedingung := repository.PredikatKlassensatzReservierungen(tage, repository.KulanzJob)
-	tag, err := s.db.Exec(ctx, `DELETE FROM klassensatz_reservierungen WHERE `+bedingung.Where, bedingung.Args...)
+	// Dieselbe Einstellung wie bei den Anliegen; eine Frist von 0 schaltet auch hier ab.
+	geloescht, err := repository.LoescheErledigteKlassensatzReservierungen(ctx, s.db, tage)
 	if err != nil {
 		log.Printf("Scheduler Klassensatz: Löschen fehlgeschlagen: %v", err)
 		return
 	}
-
-	geloescht := tag.RowsAffected()
 	if geloescht == 0 {
 		return
 	}

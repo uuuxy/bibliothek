@@ -33,12 +33,12 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	// 30-tägige Karenzzeit als Stichjahr. Die Rechnung steht in repository/, weil die
 	// Selbstprüfung mit demselben Jahr zählen muss — zwei Jahresrechnungen wären zwei
 	// Fristen, von denen eine still danebenläge.
-	bedingung := repository.PredikatAbgaengerLoeschung(time.Now())
-	cutoffYear := repository.AbgaengerStichjahr(time.Now())
+	jetzt := time.Now()
+	cutoffYear := repository.AbgaengerStichjahr(jetzt)
 
-	// Berechtigte Abgänger laden. Der Helfer schließt die Rows per defer — die
-	// Connection ist damit zurück im Pool, bevor die eigentliche Löschphase beginnt.
-	students, err := s.fetchDeletionEligibleStudents(ctx, bedingung)
+	// Die Zeilen sind gelesen und geschlossen, die Verbindung ist zurück im Pool, bevor die
+	// Löschphase beginnt.
+	students, err := repository.LoeschreifeAbgaenger(ctx, s.db, jetzt)
 	if err != nil {
 		log.Printf("Scheduler GDPR Delete: Failed to fetch eligible students: %v", err)
 		return
@@ -90,40 +90,4 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	} else {
 		log.Printf("Scheduler GDPR Delete: successfully deleted %d student(s)", deleted)
 	}
-}
-
-// deletionEligibleStudent ist ein für die DSGVO-Löschung berechtigter Abgänger.
-type deletionEligibleStudent struct {
-	ID            string
-	Vorname       string
-	Nachname      string
-	Klasse        string
-	BarcodeID     string
-	AbgaengerJahr int
-}
-
-// fetchDeletionEligibleStudents lädt alle löschberechtigten Abgänger (Abgangsjahr <
-// Stichjahr, ohne offene Ausleihen und ohne unbezahlte Schadensgebühren). Die Rows
-// werden per defer geschlossen — robust gegen künftige Early-Returns und die
-// Connection kehrt vor der Löschphase in den Pool zurück.
-func (s *Scheduler) fetchDeletionEligibleStudents(ctx context.Context, bedingung repository.Loeschbedingung) ([]deletionEligibleStudent, error) {
-	query := `
-		SELECT id, vorname, nachname, klasse, barcode_id, abgaenger_jahr
-		FROM schueler
-		WHERE ` + bedingung.Where
-	rows, err := s.db.Query(ctx, query, bedingung.Args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var students []deletionEligibleStudent
-	for rows.Next() {
-		var st deletionEligibleStudent
-		if err := rows.Scan(&st.ID, &st.Vorname, &st.Nachname, &st.Klasse, &st.BarcodeID, &st.AbgaengerJahr); err != nil {
-			return nil, err
-		}
-		students = append(students, st)
-	}
-	return students, rows.Err()
 }

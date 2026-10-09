@@ -40,7 +40,7 @@ var lesepfadeGeprueft = map[string]struct {
 }{
 	"repository/lusd_import.go":        {2, "LUSD-Abgleich sucht über lusd_id — die LUSD kennt nur Schüler"},
 	"repository/schuljahreswechsel.go": {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
-	"jobs/cron_dsgvo.go":               {2, "Anonymisierung der Abgänger; das Kollegium hat keine Abgangslogik"},
+	"repository/nachtlauf.go":          {3, "Nachtläufe: Fotos und Kennungen der anonymisierten Schüler, löschreife Abgänger; das Kollegium hat keine Abgangslogik und wird nicht anonymisiert"},
 	// Durchsicht der Theken-Pfade, 21.09.2026 (OFFEN.md 5.19).
 	"internal/service/loan_checkout.go":    {2, "Zeilensperre fürs Ausleihlimit nur hinter istSchueler(); Abholfach-Prüfung liest Vormerkungen, und die gibt es nur für Schüler (Tür: VormerkungRepository.Create, TestVormerkungCreate_NurFuerSchueler)"},
 	"internal/service/loan_return.go":      {1, "Warteschlange bei der Rückgabe — Vormerkungen gibt es nur für Schüler (Tür: Create)"},
@@ -59,7 +59,6 @@ var lesepfadeGeprueft = map[string]struct {
 	"cmd/migrate-fotos/main.go":             {1, "Einmal-Werkzeug für Littera-Schülerfotos; eine Nummer ohne Schüler steht als Warnung im Lauf, nicht still"},
 	"internal/littera/schreiber.go":         {1, "Zielbestand-Probe zählt die littera:-Herkunft, die nur schreibeSchueler setzt; Kollegen aus Littera werden Konten (benutzer)"},
 	"inventur/datenbank_klassen.go":         {2, "Klassengruppen der Inventur — Klassen haben nur Schüler"},
-	"jobs/cron_dsgvo_abgaenger.go":          {1, "Löschung der Abgänger; das Kollegium hat keine Abgangslogik (wie cron_dsgvo.go)"},
 	"repository/betriebszustand.go":         {3, "Demo-Zähler (scripts/seed_demo.sql legt nur Schüler an, Präfix DEMO-S-), Klassenliste und Wächter Ehemalige (ist_abgaenger gibt es nur bei Schülern)"},
 	"repository/lmf_plan.go":                {1, "Klassen im LMF-Plan — Klassen haben nur Schüler"},
 	"repository/lmf_termine.go":             {1, "Fristübernahme je KLASSE für Lernmittel; ein Kollege hat keine Klasse und leiht auf Dauer (wie repository/ausleihe_frist.go)"},

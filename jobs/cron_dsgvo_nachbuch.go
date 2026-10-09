@@ -14,8 +14,8 @@ import (
 // 30 Tagen (entschieden am 13.09.2026). Offene Meldungen haben keine Frist — sie
 // sind ausstehende Arbeit und werden vom Wächter der Betriebsbereitschaft genannt.
 //
-// Das Prädikat kommt aus repository/loeschfristen.go — DERSELBE String wie im
-// Rückstands-Wächter (loeschrueckstand.go), nur mit anderer Kulanz.
+// Anweisung und Bedingung stehen in repository/: dieselbe Bedingung wie im Wächter des
+// Rückstands (loeschrueckstand.go), nur mit anderer Kulanz.
 
 // RunNachbuchMeldungenBefristung löscht quittierte Meldungen nach Ablauf der Frist.
 func (s *Scheduler) RunNachbuchMeldungenBefristung() {
@@ -28,13 +28,11 @@ func (s *Scheduler) RunNachbuchMeldungenBefristung() {
 		return
 	}
 	tage := repository.NachbuchMeldungenTage(einst)
-	bedingung := repository.PredikatNachbuchMeldungen(tage, repository.KulanzJob)
-	tag, err := s.db.Exec(ctx, `DELETE FROM nachbuch_meldungen WHERE `+bedingung.Where, bedingung.Args...)
+	geloescht, err := repository.LoescheQuittierteNachbuchMeldungen(ctx, s.db, tage)
 	if err != nil {
 		log.Printf("Scheduler Nachbuch-Meldungen: Löschen fehlgeschlagen: %v", err)
 		return
 	}
-	geloescht := tag.RowsAffected()
 	if geloescht == 0 {
 		return
 	}

@@ -24,8 +24,9 @@ func (s *Scheduler) RunPapierkorbKollegenLoeschung() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	bedingung := repository.PredikatKollegenPapierkorb(repository.KulanzJob)
-	ids, err := s.ladeKollegenImPapierkorb(ctx, bedingung)
+	// Die Kennungen sind vorab gelesen und die Zeilen geschlossen, bevor die Löschungen je
+	// eine eigene Transaktion öffnen.
+	ids, err := repository.KollegenImPapierkorb(ctx, s.db)
 	if err != nil {
 		log.Printf("Scheduler Papierkorb: Kollegen konnten nicht gelesen werden: %v", err)
 		return
@@ -56,23 +57,4 @@ func (s *Scheduler) RunPapierkorbKollegenLoeschung() {
 		log.Printf("Scheduler Papierkorb: Audit-Eintrag fehlgeschlagen: %v", err)
 	}
 	log.Printf("Scheduler Papierkorb: %d Kollegen endgültig gelöscht, %d Fehlschläge", geloescht, len(fehlschlaege))
-}
-
-// ladeKollegenImPapierkorb liest die Kennungen vorab; die Rows sind geschlossen, bevor die
-// Löschungen je eine eigene Transaktion öffnen.
-func (s *Scheduler) ladeKollegenImPapierkorb(ctx context.Context, bedingung repository.Loeschbedingung) ([]string, error) {
-	rows, err := s.db.Query(ctx, `SELECT id::text FROM leser WHERE `+bedingung.Where, bedingung.Args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, rows.Err()
 }

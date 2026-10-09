@@ -24,6 +24,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"bibliothek/repository"
 )
 
 // RestoreProbeErgebnis ist das gespeicherte Resultat des letzten Probelaufs.
@@ -135,10 +137,8 @@ func (s *Scheduler) speichereRestoreProbe(e RestoreProbeErgebnis) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if _, err := s.db.Exec(ctx, `
-		INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)
-		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert, aktualisiert_am = CURRENT_TIMESTAMP`,
-		RestoreProbeSchluessel, string(wert)); err != nil {
+	zustand := repository.NewBetriebszustandRepository(s.db)
+	if err := zustand.SpeichereEinstellungswert(ctx, RestoreProbeSchluessel, string(wert)); err != nil {
 		log.Printf("Restore-Probe: Ergebnis konnte nicht gespeichert werden: %v", err)
 	}
 }
@@ -148,9 +148,8 @@ func (s *Scheduler) speichereRestoreProbe(e RestoreProbeErgebnis) {
 func (s *Scheduler) probeBeimStartNachFehlschlag() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	var wert string
-	if err := s.db.QueryRow(ctx, `SELECT COALESCE(wert, '') FROM system_einstellungen WHERE schluessel = $1`,
-		RestoreProbeSchluessel).Scan(&wert); err != nil || wert == "" {
+	wert, err := repository.NewBetriebszustandRepository(s.db).LadeEinstellungswert(ctx, RestoreProbeSchluessel)
+	if err != nil || wert == "" {
 		return // noch nie geprobt oder nicht lesbar — der Sonntagslauf übernimmt
 	}
 	var letzte RestoreProbeErgebnis

@@ -36,15 +36,12 @@ func (s *Scheduler) RunAuditAufbewahrung() {
 	}
 	monate := repository.AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate)
 
-	var geloeschtDatensatz int64
-	geloeschtDatensatz, err = s.loescheAeltereAls(ctx, "audit_log",
-		repository.PredikatAuditLog(monate, repository.KulanzJob))
+	geloeschtDatensatz, err := repository.LoescheAuditLog(ctx, s.db, monate)
 	if err != nil {
 		log.Printf("Audit-Aufbewahrung: audit_log: %v", err)
 		return
 	}
-	geloeschtAdmin, err := s.loescheAeltereAls(ctx, "audit_logs",
-		repository.PredikatAuditLogs(monate, repository.KulanzJob))
+	geloeschtAdmin, err := repository.LoescheAuditLogs(ctx, s.db, monate)
 	if err != nil {
 		log.Printf("Audit-Aufbewahrung: audit_logs: %v", err)
 		return
@@ -66,12 +63,4 @@ func (s *Scheduler) RunAuditAufbewahrung() {
 	}
 	log.Printf("Audit-Aufbewahrung: %d + %d Einträge älter als %d Monate entfernt",
 		geloeschtDatensatz, geloeschtAdmin, monate)
-}
-
-func (s *Scheduler) loescheAeltereAls(ctx context.Context, tabelle string, b repository.Loeschbedingung) (int64, error) {
-	tag, err := s.db.Exec(ctx, `DELETE FROM `+tabelle+` WHERE `+b.Where, b.Args...)
-	if err != nil {
-		return 0, err
-	}
-	return tag.RowsAffected(), nil
 }

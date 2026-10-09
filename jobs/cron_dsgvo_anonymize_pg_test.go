@@ -109,6 +109,66 @@ func TestGDPRAnonymizeOldData_LeertAllePII(t *testing.T) {
 	}
 }
 
+// Mit der Anonymisierung fällt das Passfoto. Das gilt für den Schüler, den der Lauf dieser
+// Nacht anonymisiert, und für einen früher anonymisierten, dessen Foto stehen geblieben ist;
+// das Foto eines Schülers, der nicht anonymisiert ist, bleibt.
+func TestGDPRAnonymize_LoeschtFotosAnonymisierterSchueler(t *testing.T) {
+	adminDSN := os.Getenv(drillEnvVar)
+	if adminDSN == "" {
+		t.Skipf("%s nicht gesetzt — Test übersprungen", drillEnvVar)
+	}
+	_, dsn := legeProbeDatenbankAn(t, adminDSN, "gdprfotos")
+	befuelleQuelle(t, dsn)
+
+	ctx := context.Background()
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("Pool: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	schueler := func(was, sql string) string {
+		t.Helper()
+		var id string
+		if err := pool.QueryRow(ctx, sql).Scan(&id); err != nil {
+			t.Fatalf("%s: %v", was, err)
+		}
+		if _, err := pool.Exec(ctx, `INSERT INTO schueler_fotos (schueler_id, foto_encrypted) VALUES ($1, 'foto')`, id); err != nil {
+			t.Fatalf("Foto zu %s: %v", was, err)
+		}
+		return id
+	}
+	heute := schueler("Schüler im Papierkorb", `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at)
+		VALUES ('S-FOTO-HEUTE', 'Paula', 'Papierkorb', '9c', 2030, NOW() - interval '200 days') RETURNING id`)
+	frueher := schueler("früher anonymisierter Schüler", `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at, anonymized_at)
+		VALUES ('ANON-FRUEHER', 'x', 'Anonym', '', 2030, NOW() - interval '300 days', NOW() - interval '100 days') RETURNING id`)
+	aktiv := schueler("aktiver Schüler", `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		VALUES ('S-FOTO-AKTIV', 'Anna', 'Aktiv', '7a', 2030) RETURNING id`)
+
+	NewScheduler(pool, repository.NewAuditRepository(pool)).RunGDPRAnonymizeOldData()
+
+	hatFoto := func(id string) bool {
+		t.Helper()
+		var n int
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM schueler_fotos WHERE schueler_id = $1`, id).Scan(&n); err != nil {
+			t.Fatalf("Foto lesen: %v", err)
+		}
+		return n > 0
+	}
+	if hatFoto(heute) {
+		t.Error("Das Foto des Schülers, den dieser Lauf anonymisiert hat, steht noch")
+	}
+	if hatFoto(frueher) {
+		t.Error("Das Foto eines früher anonymisierten Schülers steht noch")
+	}
+	if !hatFoto(aktiv) {
+		t.Error("Das Foto eines Schülers, der nicht anonymisiert ist, wurde gelöscht")
+	}
+}
+
 // TestGDPRAnonymize_TilgtNebenTabellenPII deckt den DSGVO-Fund vom 21.08.2026 ab: Die
 // Feld-Anonymisierung leerte nur die schueler-Zeile, ließ aber den Klarnamen im
 // audit_log, die LUSD-ID im audit_logs und die Vormerkungs-Notiz stehen — der

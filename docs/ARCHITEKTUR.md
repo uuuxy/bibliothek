@@ -704,6 +704,18 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   das Blatt (`api/bescheid_auskunft_test.go`).
 - Unterscheidet eine Tür in ihrer Meldung, ob die Abfrage scheiterte oder das Lesen ihrer
   Zeilen, trägt der Fehler des Lesens `repository.ErrZeileUnlesbar`.
+- Für die Nachtläufe gilt dieselbe Teilung. `jobs/` bestimmt, wann ein Lauf fährt, liest die
+  Einstellungen, schreibt Protokollzeile und Systemeintrag und entscheidet, ob ein Fehler den
+  Lauf beendet. Die Anweisungen stehen in `repository/nachtlauf.go`. Wo eine Frist gilt, setzt
+  die Funktion die Bedingung aus `loeschfristen.go` selbst ein, mit der Kulanz des Laufs; der
+  Aufrufer reicht nur die Frist. So kann kein Lauf einer Tabelle die Bedingung einer anderen
+  reichen. Eine Frist von 0 schaltet eine Befristung ab: Die Funktion schickt dann keine
+  Anweisung. `repository/nachtlauf_ratsche_test.go` hält zweierlei: Jede Funktion, die `jobs/`
+  ruft und die ändert oder löscht, setzt eine Bedingung aus `loeschfristen.go` ein oder steht
+  mit Grund als Ausnahme da, und eine `Loeschbedingung` entsteht nur in `loeschfristen.go`.
+  Dass Lauf und Wächter des Rückstands dieselbe Frage stellen, misst
+  `jobs/loeschrueckstand_paarung_pg_test.go` an der Datenbank; dass der Lauf ohne die Kulanz
+  des Wächters rechnet, `jobs/cron_dsgvo_kulanz_pg_test.go`.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf
@@ -729,7 +741,7 @@ Produktivdatei: Anweisungen formuliert und schickt nur die Datenbankschicht, das
 Einmal-Werkzeuge; die Liste mit dem Grund je Paket steht in der Datei. Sie hat zwei Detektoren:
 den Text einer Anweisung und den Aufruf, der sie abschickt (`Exec`, `Query`, `QueryRow`,
 `SendBatch`, `CopyFrom`). Der zweite sieht auch eine Anweisung, deren Text erst aus Variablen
-entsteht: Das Löschen der Audit-Aufbewahrung in `jobs/` setzt den Tabellennamen als Variable
+entsteht: Das Löschen der Audit-Aufbewahrung setzte in `jobs/` den Tabellennamen als Variable
 ein, der Textzähler sah es nicht. Was außerhalb der Datenbankschicht noch Anweisungen trägt,
 führt die Ratsche je Datei als Bestand, der nur sinken kann ([OFFEN.md](OFFEN.md) 5.62). Dass
 die Detektoren messen, belegen sie an `repository/`: Dort müssen sie Anweisungen finden.
@@ -1634,7 +1646,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt
+Stand: 08.10.2026 · am 09.10.2026 in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2334,8 +2346,13 @@ wenn man ihn einmal gebraucht hat.
   denen jede Spalte einen eigenen Wert trägt. Ob der Vergleich misst, zeigt eine absichtlich
   vertauschte Spalte. Umzubuchen sind für einen verworfenen `CommandTag`
   `phantom_erfolg_test.go`, für `FROM schueler` `docs/lesepfade_gegen_sicht_test.go`, für
-  `CURRENT_DATE` `docs/kalendertag_bestand_test.go`; die ganze Suite nennt jeden Eintrag, der
-  fehlt. Zieht ein Erzeuger eines PDFs um, das Blatt vorher und nachher am entpackten Inhalt
+  `CURRENT_DATE` `docs/kalendertag_bestand_test.go`, für ein UPDATE oder DELETE an einem der
+  Protokolle `audit_schreibtueren_test.go`, für `FROM system_einstellungen`
+  `api/einstellungen_gelesene_schluessel_test.go`, dazu der Bestand in
+  `schichtung_ratsche_test.go`; die ganze Suite nennt jeden Eintrag, der
+  fehlt. Eine Ratsche, die die Dateien des alten Pakets liest, verliert mit dem Umzug ihren
+  Gegenstand: Ihre Aussage zieht mit und prüft die Funktionen am neuen Ort (so
+  `repository/nachtlauf_ratsche_test.go` für die Löschbedingungen der Nachtläufe). Zieht ein Erzeuger eines PDFs um, das Blatt vorher und nachher am entpackten Inhalt
   vergleichen (die Ströme als Menge): gofpdf schreibt Zeitstempel und legt Schriften und
   Bilder in der Reihenfolge einer Go-Map ab, die Datei selbst ist deshalb von Lauf zu Lauf
   verschieden. Die Fälle dafür über die Verzweigungen des Erzeugers legen (jedes Format,
@@ -2347,6 +2364,19 @@ wenn man ihn einmal gebraucht hat.
   einen Weg von der Anfrage in die Antwort, den sie vorher nicht sah
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5, Fall vom 09.10.2026). Der Hook vor dem Push fährt
   das Skript mit, meldet sich aber erst nach dem Commit.
+- **Vorher und nachher aufnehmen, was die Tests an die Datenbank schicken.** Der Testlauf des
+  Pakets läuft mit `PGOPTIONS="-c log_statement=all"` in der Umgebung. Die Einstellung gilt
+  dann für jede Verbindung des Laufs, auch zu den Wegwerf-Datenbanken, die sich die Tests von
+  `jobs/` anlegen; ein Zusatz in der Adresse ginge dort verloren, weil die Tests sie neu
+  bauen. Währenddessen schreibt `docker logs -f --tail 0` das Protokoll des
+  Datenbank-Containers in eine Datei. Hinterher lesen ging am 09.10.2026 nicht: `--since`
+  lieferte nichts, ein großes `--tail` brach an einer alten Stelle ab. Aus dem Protokoll je
+  Zeile `LOG:  execute …:` oder `LOG:  statement:` eine Anweisung schneiden (sie reicht bis
+  zur nächsten Zeile mit Zeitstempel), Leerraum zusammenziehen, Zahlen ab sechs Stellen und
+  die Prozessnummer im Namen der Wegwerf-Datenbanken ersetzen (`pg_dump` nennt Objekte mit
+  ihrer Nummer), und beide Aufnahmen als Menge mit Anzahl vergleichen. Die Aufnahme vom alten
+  Stand zeigt zugleich, ob ein Test jede Anweisung ausführt, die umzieht. So belegt für die
+  Nachtläufe: 4.329 Anweisungen vorher wie nachher, bei einer gewollten Abweichung.
 - **Ein Name zieht in ein anderes Paket,** etwa ein Vokabular aus `repository/` nach `pkg/`.
   `gofmt -r 'repository.Alt -> paket.Neu' -w <Datei>` stellt jede Nennung im Code um,
   `goimports -w` richtet die Einbindungen. Danach dreierlei prüfen. Kommentare schreibt

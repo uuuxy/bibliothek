@@ -202,9 +202,34 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	      ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`)
 	fAus := leihe("F-AUS", exemplar(freihandTitel, "B-F6"), 100)
 	lAus := leihe("L-AUS", exemplar(lmfTitel, "B-L3"), 800)
+	ids["F-AUS"] = fAus
+	// Abgeschaltet ist die Befristung ganz: Auch die Protokollzeile der Ausleihe und die Spur
+	// einer gelöschten Vormerkung behalten den Leser.
+	must(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details, timestamp)
+	      VALUES ('ausleihen', 'RETURN', $1::uuid, 'USER',
+	              jsonb_build_object('exemplar_id', $1::text, 'schueler_id', $2::text),
+	              NOW() - interval '100 days')`, exemplarVon(fAus), schuelerID)
+	var spurAus string
+	if err := pool.QueryRow(ctx, `INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details, timestamp)
+	      VALUES ('vormerkungen', 'DELETE', gen_random_uuid(), 'USER',
+	              jsonb_build_object('schueler_id', $1::text, 'betrifft', 'Probe Schüler', 'titel', 'Der Roman'),
+	              NOW() - interval '100 days') RETURNING id`, schuelerID).Scan(&spurAus); err != nil {
+		t.Fatalf("Spur einer Vormerkung: %v", err)
+	}
 	s.RunLesehistorieBefristung()
 	if !hatSchueler(fAus) {
 		t.Errorf("F-AUS: bei lesehistorie_tage=0 darf die Schülerbücherei NICHT getrennt werden")
+	}
+	if !auditTraegtSchueler("F-AUS") {
+		t.Errorf("F-AUS: bei lesehistorie_tage=0 darf die Protokollzeile den Leser nicht verlieren")
+	}
+	var spurTraegtLeser bool
+	if err := pool.QueryRow(ctx, `SELECT details ? 'schueler_id' AND details ? 'betrifft' FROM audit_log WHERE id = $1`,
+		spurAus).Scan(&spurTraegtLeser); err != nil {
+		t.Fatalf("Spur einer Vormerkung lesen: %v", err)
+	}
+	if !spurTraegtLeser {
+		t.Errorf("bei lesehistorie_tage=0 darf die Spur einer gelöschten Vormerkung den Leser nicht verlieren")
 	}
 	if hatSchueler(lAus) {
 		t.Errorf("L-AUS: Lernmittel-Frist muss unabhängig vom Schülerbücherei-Schalter weiterlaufen")

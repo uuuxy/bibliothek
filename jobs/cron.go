@@ -139,12 +139,12 @@ func (s *Scheduler) RunIdempotencyCleanup() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tag, err := s.db.Exec(ctx, "DELETE FROM idempotency_keys WHERE created_at < NOW() - INTERVAL '24 hours'")
+	n, err := repository.LoescheAlteIdempotenzSchluessel(ctx, s.db)
 	if err != nil {
 		log.Printf("Scheduler Idempotency Cleanup: Fehler beim Löschen abgelaufener Schlüssel: %v", err)
 		return
 	}
-	if n := tag.RowsAffected(); n > 0 {
+	if n > 0 {
 		log.Printf("Scheduler Idempotency Cleanup: %d abgelaufene Idempotenz-Schlüssel entfernt.", n)
 	}
 }

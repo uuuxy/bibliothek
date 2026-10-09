@@ -37,7 +37,7 @@ var schreibpfadeGegenSicht = map[string]struct {
 	"internal/littera/schreiber_personen.go": {1, "Littera-Schülerlauf; der Personenlauf des Kollegiums schreibt in benutzer"},
 	"repository/schuljahreswechsel.go":       {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
 	"repository/lusd_import.go":              {5, "LUSD-Abgleich: anlegen, ändern, Abgang buchen — die LUSD kennt nur Schüler"},
-	"jobs/cron_dsgvo.go":                     {1, "Anonymisierung der Abgänger; das Kollegium hat keine Abgangslogik"},
+	"repository/nachtlauf.go":                {1, "Anonymisierung der Abgänger; das Kollegium hat keine Abgangslogik"},
 }
 
 var musterSchreibpfad = regexp.MustCompile(`(?i)\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+schueler\b`)

@@ -77,11 +77,10 @@ func schluesselAusUebernahme(t *testing.T) map[string]bool {
 // nicht wachsen.
 func TestKeineNeuenRohenEinstellungsLeser(t *testing.T) {
 	erlaubt := map[string]string{
-		"repository/betriebszustand.go":  "LadeEinstellungswert — generisch, liest das Ergebnis der Restore-Probe",
+		"repository/betriebszustand.go":  "LadeEinstellungswert — generisch, liest das Ergebnis der Restore-Probe für die Selbstprüfung und für den Start",
 		"repository/system_settings.go":  "die Einstellungs-Schicht selbst",
 		"internal/service/loan_rules.go": "liest ALLE Zeilen und bildet sie über applyEinstellung ab (vom Gate oben erfasst)",
 		"repository/ausweis_layout.go":   "eigene Tür (api/ausweis_layout.go), schreibt und liest dieselbe Zeile",
-		"jobs/restore_probe.go":          "schreibt und liest sein eigenes Ergebnis",
 	}
 
 	gefunden := map[string]bool{}

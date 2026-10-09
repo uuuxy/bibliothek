@@ -73,70 +73,36 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 	}
 }
 
-// trenneAusleihen setzt schueler_id = NULL für abgeschlossene Ausleihen, deren Rückgabe
-// länger als `tage` zurückliegt. tage <= 0 = aus. Die Bedingung selbst steht in
-// repository/loeschfristen.go — dieselbe, die die Selbstprüfung als count(*) stellt.
+// trenneAusleihen nimmt abgeschlossenen Ausleihen nach der Frist den Leser. Scheitert eine
+// Klasse, läuft die andere trotzdem: Der Fehler steht im Protokoll, die Zahl ist dann 0.
 func (s *Scheduler) trenneAusleihen(ctx context.Context, tage int, lernmittel bool) int64 {
-	if tage <= 0 {
-		return 0
-	}
-	bedingung := repository.PredikatLesehistorieAusleihen(lernmittel, tage, repository.KulanzJob)
-	query := `
-		UPDATE ausleihen a
-		SET schueler_id = NULL
-		WHERE ` + bedingung.Where
-	tag, err := s.db.Exec(ctx, query, bedingung.Args...)
+	getrennt, err := repository.TrenneAusleihenVomLeser(ctx, s.db, lernmittel, tage)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Trennung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
 		return 0
 	}
-	return tag.RowsAffected()
+	return getrennt
 }
 
-// tilgeAusleihProtokoll nimmt dem Ausleih-Protokoll (audit_log CHECKOUT/RETURN, Details
-// mit schueler_id) die Schüler-Zuordnung nach derselben Frist wie den Ausleihen selbst.
-// Getilgt werden BEIDE Formen des Personenbezugs: die ID und — seit dem 23.08.2026 — der
-// Klarname `entleiher`, den die Spur einer mit dem Titel gelöschten Ausleihe mitträgt
-// (inventur/db_books_delete_spur.go). Eine Kopie, die den Namen behält, nachdem die ID
-// weg ist, wäre kein halber Schutz, sondern gar keiner.
-// Ohne das trug das Protokoll die Lesehistorie bis zur Audit-Aufbewahrung (24 Monate)
-// weiter — die Trennung der Ausleihe wäre nur Kosmetik gewesen (Prüfung 22.08.2026, A5).
-// datensatz_id ist dort das EXEMPLAR (so schreibt logLoanEvent), die Klasse kommt über
-// sein Eigentum. Ein Eintrag bleibt, solange dieser Schüler dieses Exemplar noch offen hat
-// oder ein offener Schadensfall daran hängt — dort ist der Zweck nicht erreicht.
+// tilgeAusleihProtokoll nimmt dem Protokoll von Ausleihe und Rückgabe nach derselben Frist
+// den Leser. Ohne das trüge das Protokoll die Lesehistorie bis zum Ende seiner Aufbewahrung
+// weiter, und die Trennung der Ausleihe bliebe ohne Wirkung.
 func (s *Scheduler) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmittel bool) int64 {
-	if tage <= 0 {
-		return 0
-	}
-	bedingung := repository.PredikatLesehistorieProtokoll(lernmittel, tage, repository.KulanzJob)
-	query := `
-		UPDATE audit_log al
-		SET details = al.details - 'schueler_id' - 'entleiher'
-		WHERE ` + bedingung.Where
-	tag, err := s.db.Exec(ctx, query, bedingung.Args...)
+	bereinigt, err := repository.TilgeLeserImAusleihProtokoll(ctx, s.db, lernmittel, tage)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Protokoll-Bereinigung (lernmittel=%v) fehlgeschlagen: %v", lernmittel, err)
 		return 0
 	}
-	return tag.RowsAffected()
+	return bereinigt
 }
 
 // tilgeVormerkSpur nimmt der Spur einer Vormerkung, die mit ihrem Titel gelöscht wurde, den
-// Leser: Kennung und Name. Die Zeile selbst bleibt, mit Titel, Zeitpunkt und Anlass. Es gilt
-// die Frist der Schülerbücherei; die Bedingung steht in repository/loeschfristen.go.
+// Leser. Es gilt die Frist der Schülerbücherei.
 func (s *Scheduler) tilgeVormerkSpur(ctx context.Context, tage int) int64 {
-	if tage <= 0 {
-		return 0
-	}
-	bedingung := repository.PredikatLesehistorieVormerkspur(tage, repository.KulanzJob)
-	query := `
-		UPDATE audit_log al
-		SET details = al.details - 'schueler_id' - 'betrifft'
-		WHERE ` + bedingung.Where
-	tag, err := s.db.Exec(ctx, query, bedingung.Args...)
+	bereinigt, err := repository.TilgeLeserInVormerkSpuren(ctx, s.db, tage)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Bereinigung der Vormerk-Spuren fehlgeschlagen: %v", err)
 		return 0
 	}
-	return tag.RowsAffected()
+	return bereinigt
 }

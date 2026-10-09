@@ -21,8 +21,10 @@ func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 		// Die Anweisungen, die SpurTilgungen aus den Schlüssellisten baut: Personenbezug neben
 		// der Kennung eines Lesers und in den Einträgen seiner früheren Zugangskonten.
 		"repository/protokoll_personenbezug.go": "Anweisungen der SpurTilgungen (Schlüssel mit Personenbezug)",
-		"jobs/cron_dsgvo_lesehistorie.go":       "tilgeAusleihProtokoll (Lesehistorie-Frist)",
-		"jobs/cron_audit_retention.go":          "Aufbewahrung 24 Monate",
+		// Die Anweisungen der Nachtläufe: Leser aus dem Protokoll der Ausleihen und aus den
+		// Spuren gelöschter Vormerkungen nach der Frist der Lesehistorie, und das Löschen nach
+		// der Aufbewahrungsfrist beider Protokolle.
+		"repository/nachtlauf.go": "Lesehistorie-Frist und Aufbewahrung der Protokolle",
 		// Zusammenführen zweier Schülerdatensätze (02.09.2026): Die Protokollspuren der
 		// aufgelösten Quelle (details->>'schueler_id', datensatz_id) werden auf das Ziel
 		// UMGESCHLÜSSELT, nicht gelöscht oder geändert — sonst verlöre die Art.-15-Auskunft
@@ -32,6 +34,7 @@ func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 	}
 	muster := regexp.MustCompile(`(?i)\b(UPDATE|DELETE\s+FROM)\s+audit_logs?\b`)
 	var verstoesse []string
+	gefunden := map[string]bool{}
 	err := filepath.WalkDir(".", func(pfad string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -52,6 +55,7 @@ func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 		if !muster.Match(inhalt) {
 			return nil
 		}
+		gefunden[filepath.ToSlash(pfad)] = true
 		if _, ok := erlaubt[filepath.ToSlash(pfad)]; !ok {
 			verstoesse = append(verstoesse, pfad)
 		}
@@ -64,9 +68,11 @@ func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 		t.Fatalf("neue Schreibtür auf audit_log/audit_logs in %v — Append-only ist Konvention; "+
 			"nur DSGVO-Tilgung und Aufbewahrung dürfen das. Begründen und in die Liste in diesem Test aufnehmen.", verstoesse)
 	}
+	// Ein Eintrag, dessen Datei keine solche Anweisung mehr trägt, deckte beim nächsten Mal
+	// eine neue Tür in derselben Datei.
 	for datei := range erlaubt {
-		if _, err := os.Stat(datei); err != nil {
-			t.Errorf("erlaubte Datei %s existiert nicht mehr — Liste pflegen", datei)
+		if !gefunden[datei] {
+			t.Errorf("erlaubte Datei %s ändert oder löscht audit_log/audit_logs nicht mehr — Eintrag entfernen", datei)
 		}
 	}
 }

@@ -21,20 +21,11 @@ func (s *Scheduler) RunGDPRAnonymizeLoans() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	query := `
-		UPDATE ausleihen
-		SET bearbeiter_id = NULL,
-		    rueckgabe_bearbeiter_id = NULL
-		WHERE rueckgabe_am < NOW() - INTERVAL '14 days'
-		  AND (bearbeiter_id IS NOT NULL OR rueckgabe_bearbeiter_id IS NOT NULL)
-	`
-	tag, err := s.db.Exec(ctx, query)
+	count, err := repository.AnonymisiereBearbeiterAlterAusleihen(ctx, s.db)
 	if err != nil {
 		log.Printf("Scheduler GDPR Anonymize: Error anonymizing operator IDs: %v", err)
 		return
 	}
-
-	count := tag.RowsAffected()
 	log.Printf("Scheduler GDPR Anonymize: anonymized %d loans (returned > 14 days ago)", count)
 
 	// System-Audit-Eintrag schreiben
@@ -64,67 +55,26 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	// ALLE direkt identifizierenden Spalten leeren, nicht nur den Namen: Bis 19.08.2026
-	// referenzierte diese Query eine nicht existente Spalte foto_url und scheiterte
-	// deshalb ZUR LAUFZEIT beim Planen — die Anonymisierung lief NIE, der Fehler wurde nur
-	// geloggt. Zudem hätte barcode_id = NULL an der NOT-NULL-Constraint gescheitert, und
-	// Adresse, Eltern-E-Mail, Geburtsdatum und LUSD-ID blieben in Klarschrift stehen (eine
-	// Namens-Anonymisierung ohne diese ist wirkungslos: Adresse+Geburtsdatum
-	// reidentifizieren). barcode_id wird auf einen anonymen, eindeutigen Wert gesetzt
-	// (NOT NULL); block_reason auf einen festen Text statt NULL — chk_schueler_block_reason
-	// verlangt bei gesperrten Schülern einen nicht-leeren Grund, und ein alter Freitext-
-	// Grund könnte selbst personenbezogen sein. Deckt dieselben identifizierenden Felder ab
-	// wie repository.AnonymisiereAbgaenger (LUSD-Pfad).
-	// Bei unlesbaren Einstellungen wird NICHT anonymisiert (Rasterdurchgang 06.09.2026).
-	// Die Vorgabe-Karenz von 90 Tagen ist hier kein sicherer Rückfall, sondern der
-	// gefährlichste Wert: Eine KLEINERE Karenz wählt MEHR Zeilen. Hat die Schule 365 Tage
-	// eingestellt, hätte ein einziger Lesefehler die Abgänger zwischen Tag 91 und 365
-	// anonymisiert — Name, Adresse, Geburtsdatum, LUSD-ID, Eltern-Mail, Foto, und der
-	// Löschjob räumt die Hülle in derselben Nacht. Die drei Geschwister
-	// (Audit-Aufbewahrung, Lesehistorie, Anliegen) steigen an dieser Stelle seit jeher aus;
-	// ausgerechnet der destruktivste Lauf tat es nicht.
+	// Bei unlesbaren Einstellungen wird nicht anonymisiert. Die Vorgabe von 90 Tagen wäre
+	// kein sicherer Rückfall: Eine kleinere Karenz wählt mehr Zeilen, und hat die Schule 365
+	// Tage eingestellt, träfe ein einziger Lesefehler die Abgänger zwischen Tag 91 und 365.
 	einst, err := repository.NewSystemSettingsRepository(s.db).GetSettings(ctx)
 	if err != nil {
 		log.Printf("Scheduler GDPR Anonymize: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
 		return
 	}
 	karenzTage := repository.AbgaengerKarenzTageOderStandard(einst)
-	bedingung := repository.PredikatAnonymisierung(karenzTage, repository.KulanzJob)
-	query := `
-		UPDATE schueler
-		SET vorname = left(md5(random()::text), 8),
-		    nachname = 'Anonym',
-		    klasse = '',
-		    barcode_id = 'ANON-' || id::text,
-		    geburtsdatum = NULL,
-		    schul_eintritt_am = NULL,
-		    lusd_id = NULL,
-		    strasse = NULL,
-		    hausnummer = NULL,
-		    plz = NULL,
-		    ort = NULL,
-		    eltern_email = NULL,
-		    block_reason = 'Anonymisiert (DSGVO)',
-		    anonymized_at = NOW(),
-		    aktualisiert_am = NOW()
-		WHERE ` + bedingung.Where
-
-	// Die Bedingung kommt aus repository/loeschfristen.go — DIESELBE, die die
-	// Selbstprüfung als count(*) stellt, samt ihrer Zahlen. Vorher stand sie hier und
-	// dort getrennt: Der Wächter hätte weiter „alles gut" gemeldet, wenn diese Abfrage
-	// sich ändert.
-	tag, err := s.db.Exec(ctx, query, bedingung.Args...)
+	// Anweisung und Bedingung stehen in repository/: dieselbe Bedingung, die die Selbstprüfung
+	// als Rückstand zählt.
+	count, err := repository.AnonymisiereSchueler(ctx, s.db, karenzTage)
 	if err != nil {
 		log.Printf("Scheduler GDPR Anonymize: Error anonymizing old students: %v", err)
 		return
 	}
 
-	// Verschlüsselte Passfotos anonymisierter Schüler entfernen. Selbstheilend: räumt auch
-	// Altbestände, deren Anonymisierung vor der Foto-Löschung lief. Das Foto lebt in
-	// schueler_fotos (BYTEA), es gibt keine schueler.foto_url-Spalte.
-	if _, delErr := s.db.Exec(ctx,
-		"DELETE FROM schueler_fotos WHERE schueler_id IN (SELECT id FROM schueler WHERE anonymized_at IS NOT NULL)",
-	); delErr != nil {
+	// Scheitert das Löschen der Fotos, läuft die Tilgung der Spuren trotzdem; die nächste
+	// Nacht räumt die Fotos nach.
+	if delErr := repository.LoescheFotosAnonymisierterSchueler(ctx, s.db); delErr != nil {
 		log.Printf("Scheduler GDPR Anonymize: Fotos anonymisierter Schüler konnten nicht gelöscht werden: %v", delErr)
 	}
 
@@ -138,7 +88,6 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	// Altbestände nachgezogen werden.
 	s.bereinigeAnonymisierteSchuelerSpuren(ctx)
 
-	count := tag.RowsAffected()
 	if count > 0 {
 		log.Printf("Scheduler GDPR Anonymize: successfully anonymized %d old student records.", count)
 		if err := s.auditRepo.LogSystemAktion(ctx, "schueler", "ANONYMIZE",
@@ -169,23 +118,9 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 // (etwa am Append-Only-Trigger auf audit_log, den es nur auf manchen Altbeständen
 // gibt), bricht das die übrigen NICHT ab; das ist der Unterschied zur Tx des Purge.
 func (s *Scheduler) bereinigeAnonymisierteSchuelerSpuren(ctx context.Context) {
-	rows, err := s.db.Query(ctx, `SELECT id::text FROM schueler WHERE anonymized_at IS NOT NULL`)
+	ids, err := repository.AnonymisierteSchuelerIDs(ctx, s.db)
 	if err != nil {
 		log.Printf("Scheduler GDPR Anonymize: anonymisierte Schüler konnten nicht gelesen werden: %v", err)
-		return
-	}
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			log.Printf("Scheduler GDPR Anonymize: Schüler-ID lesen: %v", err)
-			return
-		}
-		ids = append(ids, id)
-	}
-	if rows.Err() != nil {
-		log.Printf("Scheduler GDPR Anonymize: anonymisierte Schüler konnten nicht gelesen werden: %v", rows.Err())
 		return
 	}
 	if len(ids) == 0 {

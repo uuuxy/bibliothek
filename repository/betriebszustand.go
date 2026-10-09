@@ -206,6 +206,16 @@ func (r *BetriebszustandRepository) LadeEinstellungswert(ctx context.Context, sc
 	return wert, err
 }
 
+// SpeichereEinstellungswert legt einen rohen Wert unter seinem Schlüssel ab oder ersetzt ihn:
+// das Gegenstück zu LadeEinstellungswert, für Ergebnisse, die das Programm selbst schreibt.
+func (r *BetriebszustandRepository) SpeichereEinstellungswert(ctx context.Context, schluessel, wert string) error {
+	_, err := r.pool.Exec(ctx, `
+		INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)
+		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert, aktualisiert_am = CURRENT_TIMESTAMP`,
+		schluessel, wert)
+	return err
+}
+
 // ZaehleEhemaligeMitOffenenVorgaengen zählt Weggegangene (ist_abgaenger, nicht gelöscht), die
 // seit mehr als `tage` Tagen weg sind und noch ein offenes Buch oder eine unbezahlte Forderung
 // haben. Der offene Vorgang schützt den Datensatz vor Anonymisierung und Löschung; schließt

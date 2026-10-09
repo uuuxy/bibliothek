@@ -141,3 +141,14 @@ func GibIdempotenzSchluesselFrei(ctx context.Context, pool db.PgxPoolIface, schl
 	}
 	return tag.RowsAffected() > 0, nil
 }
+
+// LoescheAlteIdempotenzSchluessel entfernt Schlüssel, die älter sind als 24 Stunden, und
+// liefert ihre Zahl. Die Wiederholung eines Scans kommt nach Sekunden oder Minuten; ohne das
+// Aufräumen wüchse die Tabelle mit jeder Buchung.
+func LoescheAlteIdempotenzSchluessel(ctx context.Context, pool db.PgxPoolIface) (int64, error) {
+	tag, err := pool.Exec(ctx, "DELETE FROM idempotency_keys WHERE created_at < NOW() - INTERVAL '24 hours'")
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}

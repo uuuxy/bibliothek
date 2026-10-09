@@ -1,6 +1,6 @@
 # Datenschutz-Nachweis
 
-Stand: 08.10.2026 (Entwurf)
+Stand: 09.10.2026 (Entwurf)
 
 Eine Übersicht zum Weitergeben an Schulleitung, schulischen Datenschutzbeauftragten und
 Schulträger: was das Programm mit Personendaten tut, woran sich jede Zusage prüfen lässt, was
@@ -129,7 +129,7 @@ falsch, wird der Test rot, und aus diesem Stand entsteht kein Release.
 | Katalog, Monitor und Bilder liefern keine Personendaten; jede Adresse liefert höchstens ihre Stufe | `api/pii_antwort_gate_pg_test.go` ruft jede lesende Adresse mit dem Recht ihrer Zeile auf und sucht in der Antwort nach eingestreuten Prüfwerten |
 | Jede Adresse des Programms ist eingestuft und verlangt ein Recht                              | `api/pii_matrix_test.go`, `api/routes_authz_coverage_test.go`                                           |
 | Ohne das Recht wird jeder schreibende Aufruf abgewiesen, auch am Menü vorbei                  | `api/rechte_schreibwege_pg_test.go`                                                                     |
-| Die Löschläufe halten Frist und Reihenfolge; Löschlauf und Warnung folgen derselben Regel     | `jobs/cron_dsgvo_karenz_pg_test.go`, `jobs/cron_dsgvo_abgaenger_pg_test.go`, `jobs/cron_dsgvo_lesehistorie_pg_test.go`, `jobs/cron_dsgvo_anliegen_pg_test.go`, `jobs/loeschpraedikat_ratsche_test.go` |
+| Die Löschläufe halten Frist und Reihenfolge; Löschlauf und Warnung folgen derselben Regel     | `jobs/cron_dsgvo_karenz_pg_test.go`, `jobs/cron_dsgvo_abgaenger_pg_test.go`, `jobs/cron_dsgvo_lesehistorie_pg_test.go`, `jobs/cron_dsgvo_anliegen_pg_test.go`, `jobs/cron_dsgvo_kulanz_pg_test.go`, `jobs/loeschrueckstand_paarung_pg_test.go`, `repository/nachtlauf_ratsche_test.go` |
 | Die Anonymisierung entfernt, was an der Person hängt                                          | `api/dsgvo_paar_rundreise_pg_test.go` (Grenze: Abschnitt 9)                                              |
 | Die Auskunft druckt jede Angabe, die sie enthält; Protokolleinträge stehen in Worten da, ohne Kennungen des Programms und ohne das buchende Konto | `internal/auskunft/blatt_vollstaendig_test.go`, `api/dsgvo_blatt_pg_test.go`, `repository/protokoll_auskunft_test.go` |
 | Eine Sicherung lässt sich zurückspielen                                                       | `jobs/backup_drill_pg_test.go`, `jobs/restore_probe_pg_test.go`; im Betrieb die Probe jeden Sonntag      |

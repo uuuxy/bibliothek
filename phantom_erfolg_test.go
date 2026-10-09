@@ -112,9 +112,12 @@ var phantomBestand = map[string]int{
 	"repository/titel_loeschen_wartende.go:ProtokolliereWartendeBezuege": 1,
 	"inventur/db_books_update.go:gleicheExemplareAn":                     1,
 	"repository/systematik_sicherung.go:registriereFach":                 2,
-	"jobs/cron_dsgvo.go:RunGDPRAnonymizeOldData":                         1,
-	"jobs/restore_probe.go:fuehreRestoreProbeAus":                        3,
-	"jobs/restore_probe.go:speichereRestoreProbe":                        1,
+	// Räumt die Fotos aller anonymisierten Schüler; null Zeilen ist der Normalfall.
+	"repository/nachtlauf.go:LoescheFotosAnonymisierterSchueler": 1,
+	"jobs/restore_probe.go:fuehreRestoreProbeAus":                3,
+	// Legt das Ergebnis der Restore-Probe an oder ersetzt es: Die Anweisung trifft immer
+	// genau eine Zeile.
+	"repository/betriebszustand.go:SpeichereEinstellungswert": 1,
 	// Ersetzt Zeilen und Auslassungen eines Plans vollständig: DELETE + INSERT. Null
 	// gelöschte Zeilen sind der Normalfall beim Anlegen — RowsAffected sagt hier nichts.
 	// Seit 07.09.2026 heißt der Rumpf SaveLmfPlanIn (Transaktion des Aufrufers);
