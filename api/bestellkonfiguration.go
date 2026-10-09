@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"strings"
 
 	"bibliothek/apierrors"
 	"bibliothek/repository"
@@ -52,14 +51,8 @@ func (s *Server) BestellKonfigurationHandler(settingsRepo repository.SystemSetti
 
 		RespondJSON(w, http.StatusOK, BestellKonfiguration{
 			PreiseErfassen:         settings.PreiseErfassen,
-			BestelllinkOhneAdresse: hauptlieferant && !adresseHinterlegt(settings),
+			BestelllinkOhneAdresse: hauptlieferant && settings.AdresseFuerLinks() == "",
 		})
 		return nil
 	})
-}
-
-// adresseHinterlegt prüft die öffentliche Adresse so, wie bestelllink.Adresse sie später
-// benutzt: Ein Feld mit lauter Leerzeichen ist keine Adresse und ergäbe keinen Link.
-func adresseHinterlegt(settings *repository.SystemEinstellungen) bool {
-	return settings.OeffentlicheAdresse != nil && strings.TrimSpace(*settings.OeffentlicheAdresse) != ""
 }

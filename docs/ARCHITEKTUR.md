@@ -1053,7 +1053,7 @@ Für das vollständige Routenverzeichnis samt Abgleich gegen die Frontend-Aufruf
 
 ## 6. Laufzeitsicht
 
-Stand: 08.10.2026 · am 09.10.2026 in 6.9 ergänzt, wo Token, Adresse und Frist des Links entstehen
+Stand: 08.10.2026 · am 09.10.2026 in 6.9 ergänzt, wo Token, Adresse und Frist des Links entstehen und wer die öffentliche Adresse prüft
 
 Zehn Szenarien, ausgewählt nach einem Kriterium: **Wo ist die Architektur an der
 Arbeit?** Der Normalfall („Liste laden, JSON zurückgeben") kommt nicht vor — er erklärt
@@ -1383,7 +1383,13 @@ Der Händler druckt über denselben Link seine Etiketten und bestätigt die Best
 Das ist der einzige schreibende Pfad ohne Anmeldung — und er steht als solcher in der
 Allowlist von `routes_authz_coverage_test.go`. Wie Token, Hash, Adresse und Frist des Links
 entstehen, steht in `pkg/bestelllink`; die eingestellte Frist liest
-`service.BestelllinkTage`, beim Bestellen wie bei „Neuen Link erzeugen".
+`service.BestelllinkTage`, beim Bestellen wie bei „Neuen Link erzeugen". Ob eine öffentliche
+Adresse hinterlegt ist, fragt jede Stelle über `SystemEinstellungen.AdresseFuerLinks`
+(`repository/system_settings.go`): die Warnung im Warenkorb, „Neuen Link erzeugen", der
+erneute Versand, die Bestellmail und die Selbstprüfung. Ein Feld aus lauter Leerzeichen ist
+keine Adresse. Bis zum 09.10.2026 prüften vier Stellen je für sich, zwei davon ohne den
+Leerraum zu kürzen: „Neuen Link erzeugen" entwertete dann den alten Link und lieferte einen
+leeren.
 
 ---
 

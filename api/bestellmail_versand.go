@@ -70,10 +70,7 @@ func (s *Server) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 	// Ohne hinterlegte öffentliche Adresse bleibt der Link leer: Die Bestellung geht dann
 	// ohne Bestätigungsschritt raus. Ein Link auf den internen Servernamen wäre beim
 	// Lieferanten wertlos und sähe trotzdem echt aus.
-	link := ""
-	if settings.OeffentlicheAdresse != nil {
-		link = bestelllink.Adresse(*settings.OeffentlicheAdresse, d.Token)
-	}
+	link := bestelllink.Adresse(settings.AdresseFuerLinks(), d.Token)
 	subject, body := service.LoeseBestellMailAuf(betreff, textBody, service.BestellMailWerte{
 		Kundennummer:    d.Kundennummer,
 		AnzahlTitel:     len(d.Positionen),

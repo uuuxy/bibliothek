@@ -6,6 +6,7 @@ import (
 	"bibliothek/pkg/lmfplan"
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -116,6 +117,17 @@ type SystemEinstellungen struct {
 	// „ListenpreisBevorzugen", rechnete jede bestehende Anlage nach dem Update plötzlich
 	// mit dem alten Einkaufspreis, ohne dass jemand etwas geändert hätte.
 	ErsatzwertImmerKaufpreis bool `json:"ersatzwert_immer_kaufpreis"`
+}
+
+// AdresseFuerLinks liefert die öffentliche Adresse ohne Leerraum am Rand, "" wenn keine
+// hinterlegt ist. Ein Feld aus lauter Leerzeichen ist keine Adresse. Wer einen Link nach außen
+// baut oder prüft, ob einer entstehen kann, fragt hier: Mit je eigener Prüfung hielt eine Tür
+// für eine Adresse, woraus die nächste keinen Link baute.
+func (s *SystemEinstellungen) AdresseFuerLinks() string {
+	if s == nil || s.OeffentlicheAdresse == nil {
+		return ""
+	}
+	return strings.TrimSpace(*s.OeffentlicheAdresse)
 }
 
 // StandardEigentumsvermerk greift, solange in den Einstellungen nichts hinterlegt ist.

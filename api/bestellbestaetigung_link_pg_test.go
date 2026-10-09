@@ -183,3 +183,27 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 		t.Fatalf("neuer Token = %d, want 200", rec.Code)
 	}
 }
+
+// Ein Feld aus lauter Leerzeichen ist keine öffentliche Adresse: „Neuen Link erzeugen" lehnt
+// ab, und der alte Link gilt weiter. Ein neuer Token ohne Adresse entwertete den Link, den der
+// Lieferant hat, und die Antwort trüge einen leeren.
+func TestNeuerLink_AdresseAusLeerzeichenLaesstDenAltenLinkGelten(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	lieferant := haendler(t, pool, "Naacher", true)
+	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
+	setzeOeffentlicheAdresse(t, pool, "   ")
+	t.Cleanup(func() { setzeOeffentlicheAdresse(t, pool, "") })
+
+	req := httptest.NewRequest(http.MethodPut, "/api/bestellungen/"+bestellungID+"/bestaetigungs-link", nil)
+	req.SetPathValue("id", bestellungID)
+	rec := httptest.NewRecorder()
+	srv.NeuerBestaetigungsLinkHandler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "keine öffentliche Adresse") {
+		t.Errorf("Status %d, erwartet 400 mit dem Hinweis auf die fehlende Adresse: %s", rec.Code, rec.Body.String())
+	}
+	if rec := getOeffentlicheBestellung(srv, alterToken); rec.Code != http.StatusOK {
+		t.Errorf("der alte Link antwortet mit %d, erwartet 200: Er gilt weiter, solange kein neuer entsteht", rec.Code)
+	}
+}

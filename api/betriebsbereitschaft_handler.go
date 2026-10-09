@@ -121,9 +121,7 @@ func (s *Server) sammleLage(
 
 // einstellungenInDieLage übernimmt, was die Prüfungen aus den Einstellungen brauchen.
 func einstellungenInDieLage(lage *bereitschaft.Lage, settings *repository.SystemEinstellungen) {
-	if settings.OeffentlicheAdresse != nil {
-		lage.OeffentlicheAdresse = strings.TrimSpace(*settings.OeffentlicheAdresse)
-	}
+	lage.OeffentlicheAdresse = settings.AdresseFuerLinks()
 	if settings.AlarmEmpfaenger != nil {
 		lage.AlarmEmpfaenger = strings.TrimSpace(*settings.AlarmEmpfaenger)
 	}

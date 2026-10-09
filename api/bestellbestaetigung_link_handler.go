@@ -91,8 +91,8 @@ func (s *Server) erneuereBestaetigungsToken(ctx context.Context, bestellungID st
 // nicht hinterlegt; dann verschickt das System keine Links, statt kaputte zu erzeugen.
 func (s *Server) oeffentlicheAdresse(ctx context.Context) string {
 	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
-	if err != nil || settings.OeffentlicheAdresse == nil {
+	if err != nil {
 		return ""
 	}
-	return *settings.OeffentlicheAdresse
+	return settings.AdresseFuerLinks()
 }
