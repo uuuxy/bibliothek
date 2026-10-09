@@ -118,32 +118,21 @@ func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email str
 
 	// aktiv = false ist der Kern dieser Funktion: Der Login lehnt inaktive Konten ab.
 	// Die Zeile entsteht, der Zugang nicht.
-	tag, err := dbPool.Exec(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, zugang_beantragt_am)
-		VALUES ($1, $2, LOWER($3), 'kollegium', false, CURRENT_TIMESTAMP)
-		ON CONFLICT DO NOTHING
-	`, vorname, nachname, email)
+	// neuAngelegt nur, wenn dabei wirklich eine Zeile entstand: Trifft die Anlage ein
+	// vorhandenes Konto, bekäme sonst eine längst freigeschaltete Lehrkraft „Zugang
+	// beantragt", und das Protokoll nennte eine Selbstanmeldung, die nie stattfand.
+	neuAngelegt, err := repository.LegeZugangsanfrageAn(ctx, dbPool, vorname, nachname, email)
 	if err != nil {
 		return loginUser{}, fmt.Errorf("%w: zugangsanfrage konnte nicht angelegt werden: %v", ErrAnmeldedienstGestoert, err)
 	}
-	// neuAngelegt NUR, wenn der INSERT wirklich eine Zeile geschrieben hat (31.08.2026):
-	// Vorher stand das Flag bedingungslos — landete ein BESTEHENDES Konto durch einen
-	// transienten Fehler der ersten Abfrage hier, bekam eine längst freigeschaltete
-	// Lehrkraft „Zugang beantragt", und der Audit-Trail behauptete eine Selbstanmeldung,
-	// die nie stattfand.
-	neuAngelegt := tag.RowsAffected() == 1
 
-	var u loginUser
-	err = dbPool.QueryRow(ctx, `
-		SELECT b.id, coalesce(l.barcode_id, ''), b.rolle, b.vorname, b.nachname, b.aktiv,
-		       b.zugang_beantragt_am IS NOT NULL
-		FROM benutzer b
-		LEFT JOIN leser l ON l.id = b.leser_id
-		WHERE LOWER(b.email) = LOWER($1) LIMIT 1
-	`, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv, &u.beantragt)
+	// Dasselbe Lesen wie in der Anmeldung: Trifft die Anlage ein vorhandenes Konto, geht die
+	// Anmeldung mit ihm weiter.
+	konto, err := repository.LiesAnmeldeKonto(ctx, dbPool, email)
 	if err != nil {
 		return loginUser{}, fmt.Errorf("%w: zugangsanfrage konnte nicht gelesen werden: %v", ErrAnmeldedienstGestoert, err)
 	}
+	u := loginUserAus(konto)
 	u.neuAngelegt = neuAngelegt
 	if !neuAngelegt {
 		// Bestehendes Konto (aktiv oder wartend) — kein neuer Vorgang, kein Audit-Eintrag.

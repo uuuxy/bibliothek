@@ -54,6 +54,33 @@ func ErlaubteRechteJeRolle(ctx context.Context, db DBQueryer) (map[string][]stri
 	return rechte, nil
 }
 
+// ErlaubteRechteDerRolle liefert die Rechte, die role_permissions einer Rolle erteilt; die
+// Schreibweise der Rolle spielt keine Rolle. Ohne erteiltes Recht ist die Liste leer, nicht nil:
+// Die Anmeldung schickt sie so an den Browser.
+func ErlaubteRechteDerRolle(ctx context.Context, db DBQueryer, rolle string) ([]string, error) {
+	rechte := []string{}
+	rows, err := db.Query(ctx, `
+		SELECT permission
+		FROM role_permissions
+		WHERE UPPER(role) = UPPER($1) AND allowed = true
+	`, rolle)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var recht string
+		if err := rows.Scan(&recht); err != nil {
+			return nil, err
+		}
+		rechte = append(rechte, recht)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return rechte, nil
+}
+
 // RollenRecht ist eine Zeile der Rechte-Matrix.
 type RollenRecht struct {
 	Rolle, Recht string

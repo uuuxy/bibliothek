@@ -371,3 +371,42 @@ func TestSelbstanmeldung_ZweiterVersuchLaesstKeineLeserzeileZurueck(t *testing.T
 		t.Fatalf("%d Konten unter derselben Adresse", konten)
 	}
 }
+
+// Zwischen dem ersten Lesen der Anmeldung und dem Anlegen kann das Konto entstanden sein:
+// von einem zweiten Gerät derselben Person oder in der Benutzerverwaltung. Die Anlage trifft
+// dann die vorhandene Zeile, und die Anmeldung geht mit ihr weiter. Sie muss dasselbe Konto
+// liefern wie das erste Lesen, mit der Adresse: Aus ihr entsteht die Antwort an den Browser.
+func TestSelbstanmeldung_VorhandenesKontoKommtVollstaendigZurueck(t *testing.T) {
+	t.Setenv(selbstanmeldeDomainEnv, "schule-test.invalid")
+	pool := pgPoolFuerSelbstanmeldung(t)
+	const mail = "wettlauf.konto@schule-test.invalid"
+	raeumeKontoAb(t, pool, mail)
+	ctx := context.Background()
+
+	var id string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Wanda', 'Wettlauf', $1, 'kollegium', true)
+		RETURNING id::text`, mail).Scan(&id); err != nil {
+		t.Fatalf("Konto anlegen: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM leser WHERE nachname = 'Wettlauf'`); err != nil {
+			t.Errorf("Aufräumen leser: %v", err)
+		}
+	})
+
+	konto, err := legeZugangsanfrageAn(ctx, pool, mail)
+	if err != nil {
+		t.Fatalf("legeZugangsanfrageAn: %v", err)
+	}
+	if konto.neuAngelegt {
+		t.Error("ein vorhandenes Konto gilt als neu angelegt")
+	}
+	if konto.id != id || !konto.aktiv || konto.vorname != "Wanda" || konto.nachname != "Wettlauf" {
+		t.Errorf("Konto = %+v, erwartet das vorhandene, aktive Konto %s", konto, id)
+	}
+	if konto.email != mail {
+		t.Errorf("Adresse des Kontos = %q, erwartet %q", konto.email, mail)
+	}
+}

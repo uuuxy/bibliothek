@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -34,12 +36,8 @@ func (s *Sitzungen) Beginne(ctx context.Context, benutzerID, passwort string, la
 	if err != nil {
 		return "", err
 	}
-	var id string
-	if err := s.pool.QueryRow(ctx, `
-		INSERT INTO sitzungen (benutzer_id, passwort_pruefwert, laeuft_ab)
-		VALUES ($1, $2, $3)
-		RETURNING id::text
-	`, benutzerID, pruefwert, laeuftAb).Scan(&id); err != nil {
+	id, err := repository.LegeSitzungAn(ctx, s.pool, benutzerID, pruefwert, laeuftAb)
+	if err != nil {
 		return "", fmt.Errorf("sitzung anlegen: %w", err)
 	}
 	return id, nil
@@ -54,10 +52,7 @@ func (s *Sitzungen) IstGesperrt(sitzungID string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	var gesperrt bool
-	err := s.pool.QueryRow(ctx, `
-		SELECT gesperrt_seit IS NOT NULL FROM sitzungen WHERE id = $1
-	`, sitzungID).Scan(&gesperrt)
+	gesperrt, err := repository.SitzungGesperrt(ctx, s.pool, sitzungID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, nil
 	}
@@ -73,13 +68,11 @@ func (s *Sitzungen) Sperre(ctx context.Context, sitzungID string) (bool, error) 
 	if sitzungID == "" {
 		return false, nil
 	}
-	tag, err := s.pool.Exec(ctx, `
-		UPDATE sitzungen SET gesperrt_seit = COALESCE(gesperrt_seit, NOW()) WHERE id = $1
-	`, sitzungID)
+	zeilen, err := repository.SperreSitzung(ctx, s.pool, sitzungID)
 	if err != nil {
 		return false, err
 	}
-	return tag.RowsAffected() == 1, nil
+	return zeilen == 1, nil
 }
 
 // Entsperre hebt die Sperre auf. Keine Zeile ist kein Fehler: Dann war nichts gesperrt.
@@ -87,8 +80,7 @@ func (s *Sitzungen) Entsperre(ctx context.Context, sitzungID string) error {
 	if sitzungID == "" {
 		return nil
 	}
-	_, err := s.pool.Exec(ctx, `UPDATE sitzungen SET gesperrt_seit = NULL WHERE id = $1`, sitzungID)
-	return err
+	return repository.EntsperreSitzung(ctx, s.pool, sitzungID)
 }
 
 // PasswortPasst prüft ein Passwort gegen den Prüfwert der Anmeldung. vorhanden=false heißt:
@@ -97,10 +89,7 @@ func (s *Sitzungen) PasswortPasst(ctx context.Context, sitzungID, passwort strin
 	if sitzungID == "" {
 		return false, false, nil
 	}
-	var pruefwert string
-	err = s.pool.QueryRow(ctx, `
-		SELECT passwort_pruefwert FROM sitzungen WHERE id = $1
-	`, sitzungID).Scan(&pruefwert)
+	pruefwert, err := repository.SitzungsPruefwert(ctx, s.pool, sitzungID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return false, false, nil
 	}
@@ -121,10 +110,7 @@ func (s *Sitzungen) MerkePasswort(ctx context.Context, sitzungID, passwort strin
 	if err != nil {
 		return err
 	}
-	_, err = s.pool.Exec(ctx, `
-		UPDATE sitzungen SET passwort_pruefwert = $2 WHERE id = $1
-	`, sitzungID, pruefwert)
-	return err
+	return repository.SetzeSitzungsPruefwert(ctx, s.pool, sitzungID, pruefwert)
 }
 
 // Verlaengere schiebt das Ende der Zeile mit dem erneuerten Token hinaus und meldet, ob es
@@ -133,13 +119,11 @@ func (s *Sitzungen) Verlaengere(ctx context.Context, sitzungID string, laeuftAb 
 	if sitzungID == "" {
 		return false, nil
 	}
-	tag, err := s.pool.Exec(ctx, `
-		UPDATE sitzungen SET laeuft_ab = $2 WHERE id = $1
-	`, sitzungID, laeuftAb)
+	zeilen, err := repository.VerlaengereSitzung(ctx, s.pool, sitzungID, laeuftAb)
 	if err != nil {
 		return false, err
 	}
-	return tag.RowsAffected() == 1, nil
+	return zeilen == 1, nil
 }
 
 // Beende löscht die Zeile der Anmeldung und mit ihr den Prüfwert (Abmelden).
@@ -147,8 +131,7 @@ func (s *Sitzungen) Beende(ctx context.Context, sitzungID string) error {
 	if sitzungID == "" {
 		return nil
 	}
-	_, err := s.pool.Exec(ctx, `DELETE FROM sitzungen WHERE id = $1`, sitzungID)
-	return err
+	return repository.LoescheSitzung(ctx, s.pool, sitzungID)
 }
 
 // Stop beendet das Abräumen.
@@ -169,12 +152,11 @@ func (s *Sitzungen) raeumSchleife() {
 	}
 }
 
-// raeumeAb löscht Zeilen, deren Token abgelaufen ist. Eine gesperrte Zeile wird dabei nicht
-// geschont: Ihr Token gilt nicht mehr, aufzuschließen gibt es nichts.
+// raeumeAb löscht Zeilen, deren Token abgelaufen ist.
 func (s *Sitzungen) raeumeAb() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if _, err := s.pool.Exec(ctx, `DELETE FROM sitzungen WHERE laeuft_ab < NOW()`); err != nil {
+	if err := repository.LoescheAbgelaufeneSitzungen(ctx, s.pool); err != nil {
 		log.Printf("sitzungen: Abräumen abgelaufener Zeilen fehlgeschlagen: %v", err)
 	}
 }

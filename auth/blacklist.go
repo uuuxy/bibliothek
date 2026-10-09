@@ -7,15 +7,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
+	"bibliothek/repository"
 )
 
-// DatabasePool defines the interface for database operations needed by the blacklist.
-type DatabasePool interface {
-	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
-	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
-}
+// DatabasePool ist der Zugang zur Datenbank, den auth/ an die Abfragen in repository/ reicht.
+type DatabasePool = repository.DBQueryer
 
 // TokenBlacklist is a database-backed store for invalidated JWTs.
 // It stores the SHA-256 hash of the token mapped to its expiration time.
@@ -56,20 +52,15 @@ func hashToken(token string) string {
 // bleibt (bis zu zwölf Stunden). Wer danach „abgemeldet" meldet, meldet etwas, das nicht
 // stattgefunden hat (Register 12.09.2026; Frage 5 in docs/sweeps.md).
 //
-// 0 betroffene Zeilen sind KEIN Fehlschlag: ON CONFLICT DO NOTHING trifft den Fall, dass
-// dasselbe Token schon widerrufen ist — das Ziel ist erreicht. Deshalb wird der
-// CommandTag hier bewusst verworfen (Eintrag im Bestand von phantom_erfolg_test.go).
+// Null betroffene Zeilen sind kein Fehlschlag: Dasselbe Token ist dann schon widerrufen, das
+// Ziel ist erreicht (repository.WiderrufeToken).
 func (b *TokenBlacklist) Add(token string, expiresAt time.Time) error {
 	hash := hashToken(token)
 	// We use a short timeout for the DB operation, since this is called on logout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if _, err := b.pool.Exec(ctx, `
-		INSERT INTO revoked_tokens (token_signature, expires_at)
-		VALUES ($1, $2)
-		ON CONFLICT (token_signature) DO NOTHING
-	`, hash, expiresAt); err != nil {
+	if err := repository.WiderrufeToken(ctx, b.pool, hash, expiresAt); err != nil {
 		// Security-relevant: a failed revocation means the token stays valid until expiry.
 		log.Printf("token-blacklist: WARN Token konnte nicht widerrufen werden: %v", err)
 		return err
@@ -85,10 +76,8 @@ func (b *TokenBlacklist) IsBlacklisted(token string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	var exists bool
-	if err := b.pool.QueryRow(ctx, `
-		SELECT EXISTS(SELECT 1 FROM revoked_tokens WHERE token_signature = $1)
-	`, hash).Scan(&exists); err != nil {
+	exists, err := repository.TokenWiderrufen(ctx, b.pool, hash)
+	if err != nil {
 		return false, err
 	}
 	return exists, nil
@@ -119,7 +108,7 @@ func (b *TokenBlacklist) cleanup() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if _, err := b.pool.Exec(ctx, `DELETE FROM revoked_tokens WHERE expires_at < NOW()`); err != nil {
+	if err := repository.LoescheAbgelaufeneWiderrufe(ctx, b.pool); err != nil {
 		log.Printf("token-blacklist: Aufräumen abgelaufener Tokens fehlgeschlagen: %v", err)
 	}
 }

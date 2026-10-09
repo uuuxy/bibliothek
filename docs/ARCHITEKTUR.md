@@ -716,6 +716,17 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   Dass Lauf und Wächter des Rückstands dieselbe Frage stellen, misst
   `jobs/loeschrueckstand_paarung_pg_test.go` an der Datenbank; dass der Lauf ohne die Kulanz
   des Wächters rechnet, `jobs/cron_dsgvo_kulanz_pg_test.go`.
+- Auch `auth/` formuliert kein SQL. Die Zeilen der Sitzungen, die Sperrliste widerrufener
+  Token und was die Anmeldung über ein Konto liest und schreibt, stehen in
+  `repository/sitzungen.go`, `widerrufene_token.go` und `anmeldung.go`, die Rechte einer Rolle
+  in `rechte.go`. `auth/` behält, was eine fehlende Zeile bedeutet (nicht gesperrt, keine
+  Sitzung, Selbstanmeldung), den Prüfwert des Passworts, die Fristen der Abfragen und die
+  Antworten; die Lesefunktionen reichen `pgx.ErrNoRows` deshalb durch. Anmeldung und
+  Selbstanmeldung lesen das Konto mit derselben Funktion (`LiesAnmeldeKonto`) und füllen den
+  Stand der Anmeldung an einer Stelle (`loginUserAus`, `auth/handlers.go`). Bis zum
+  09.10.2026 las die Selbstanmeldung mit einer eigenen Abfrage ohne die Adresse: Traf sie auf
+  ein Konto, das zwischen dem ersten Lesen und der Anlage entstanden war, ging die Anmeldung
+  mit leerer Adresse weiter.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf

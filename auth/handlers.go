@@ -5,16 +5,18 @@ import (
 	"bibliothek/db"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/repository"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5"
 	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // loginFailureEntry tracks failed login attempts per IP for brute-force protection.
@@ -322,19 +324,8 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 	}
 
 	// IMAP succeeded, check if the user is registered in our local DB
-	var u loginUser
-	// Die Ausweisnummer steht seit Migration 125 an der Leserzeile des Kontos, nicht am
-	// Konto selbst — LEFT JOIN, weil ein Konto ohne Leserzeile (Altbestand) sich weiter
-	// anmelden können muss.
-	query := `
-		SELECT b.id, coalesce(l.barcode_id, ''), b.rolle, b.vorname, b.nachname, b.aktiv, b.email,
-		       b.zugang_beantragt_am IS NOT NULL
-		FROM benutzer b
-		LEFT JOIN leser l ON l.id = b.leser_id
-		WHERE LOWER(b.email) = LOWER($1)
-		LIMIT 1
-	`
-	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv, &u.email, &u.beantragt); err != nil {
+	konto, err := repository.LiesAnmeldeKonto(ctx, dbPool, email)
+	if err != nil {
 		// NUR „Zeile nicht vorhanden" ist der Selbstanmelde-Fall. Jeder andere Fehler
 		// (Verbindungsabriss, Pool erschöpft, ctx-Frist) ist ein Ausfall des
 		// Anmeldedienstes — bis zum 31.08.2026 lief er in den 401-Pfad und wurde als
@@ -360,7 +351,22 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 		}
 		return neu, nil
 	}
-	return u, nil
+	return loginUserAus(konto), nil
+}
+
+// loginUserAus füllt den Stand der Anmeldung aus dem gelesenen Konto: die eine Stelle für die
+// Anmeldung und für die Selbstanmeldung, die auf ein vorhandenes Konto trifft.
+func loginUserAus(k repository.AnmeldeKonto) loginUser {
+	return loginUser{
+		id:        k.ID,
+		email:     k.Email,
+		barcodeID: k.Ausweisnummer,
+		roleStr:   k.Rolle,
+		vorname:   k.Vorname,
+		nachname:  k.Nachname,
+		aktiv:     k.Aktiv,
+		beantragt: k.ZugangBeantragt,
+	}
 }
 
 // loadPermissionsForRole lädt die effektiven Rechte aus der konfigurierbaren
@@ -372,27 +378,7 @@ func loadPermissionsForRole(ctx context.Context, dbPool db.PgxPoolIface, roleStr
 		return []string{"*"}, nil
 	}
 
-	permissions := []string{}
-	permRows, err := dbPool.Query(ctx, `
-		SELECT permission
-		FROM role_permissions
-		WHERE UPPER(role) = UPPER($1) AND allowed = true
-	`, roleStr)
-	if err != nil {
-		return nil, err
-	}
-	defer permRows.Close()
-	for permRows.Next() {
-		var p string
-		if err := permRows.Scan(&p); err != nil {
-			return nil, err
-		}
-		permissions = append(permissions, p)
-	}
-	if err := permRows.Err(); err != nil {
-		return nil, err
-	}
-	return permissions, nil
+	return repository.ErlaubteRechteDerRolle(ctx, dbPool, roleStr)
 }
 
 // leseSitzung liest das Session-Cookie und prüft das Token, ohne auf die Sperre nach
@@ -429,17 +415,10 @@ func leseSitzung(w http.ResponseWriter, r *http.Request, authenticator *Authenti
 func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolIface, userID string) (LoginResponse, bool) {
 	ctx := r.Context()
 
-	var roleStr, vorname, nachname, email string
-	var aktiv bool
-	err := dbPool.QueryRow(ctx, `
-			SELECT rolle, vorname, nachname, aktiv, email
-			FROM benutzer
-			WHERE id = $1
-			LIMIT 1
-		`, userID).Scan(&roleStr, &vorname, &nachname, &aktiv, &email)
+	konto, err := repository.LiesSitzungsKonto(ctx, dbPool, userID)
 	// Ein fehlendes und ein deaktiviertes Konto sind beide keine aktive Sitzung. Ein DB-Fehler
 	// ist es nicht: 500 statt 401, sonst meldete der Client ab.
-	keineSitzung := errors.Is(err, pgx.ErrNoRows) || (err == nil && !aktiv)
+	keineSitzung := errors.Is(err, pgx.ErrNoRows) || (err == nil && !konto.Aktiv)
 	switch {
 	case keineSitzung:
 		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
@@ -449,7 +428,7 @@ func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolI
 		return LoginResponse{}, false
 	}
 
-	permissions, err := loadPermissionsForRole(ctx, dbPool, roleStr)
+	permissions, err := loadPermissionsForRole(ctx, dbPool, konto.Rolle)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
 		return LoginResponse{}, false
@@ -457,10 +436,10 @@ func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolI
 
 	return LoginResponse{
 		UserID:      userID,
-		Email:       email,
-		Rolle:       Role(roleStr),
-		Vorname:     vorname,
-		Nachname:    nachname,
+		Email:       konto.Email,
+		Rolle:       Role(konto.Rolle),
+		Vorname:     konto.Vorname,
+		Nachname:    konto.Nachname,
 		Permissions: permissions,
 	}, true
 }

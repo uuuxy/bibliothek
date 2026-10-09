@@ -307,6 +307,14 @@ func TestSperre_ZeileEndetMitDerAnmeldung(t *testing.T) {
 	if n := zeilen(); n != 1 {
 		t.Fatalf("nach dem Abräumen: %d Zeilen, erwartet 1 (die laufende)", n)
 	}
+	var laufende int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM sitzungen WHERE benutzer_id = $1 AND laeuft_ab > NOW()`,
+		benutzerID).Scan(&laufende); err != nil {
+		t.Fatalf("Zeilen zählen: %v", err)
+	}
+	if laufende != 1 {
+		t.Fatalf("nach dem Abräumen steht die abgelaufene Zeile da und die laufende ist weg")
+	}
 
 	// Konto gelöscht.
 	if _, err := pool.Exec(ctx, `DELETE FROM benutzer WHERE id = $1`, benutzerID); err != nil {

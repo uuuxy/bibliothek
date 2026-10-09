@@ -44,11 +44,6 @@ type sqlFunde struct{ texte, aufrufe int }
 // sqlBestand: Dateien außerhalb der Datenbankschicht, die noch Anweisungen tragen. Die Zahlen
 // können nur sinken, und eine Datei ohne Fund fällt aus der Liste.
 var sqlBestand = map[string]sqlFunde{
-	"auth/blacklist.go":                       {texte: 4, aufrufe: 3},
-	"auth/handlers.go":                        {texte: 3, aufrufe: 3},
-	"auth/jwt.go":                             {texte: 1, aufrufe: 1},
-	"auth/selbstanmeldung.go":                 {texte: 2, aufrufe: 2},
-	"auth/sitzungen.go":                       {texte: 9, aufrufe: 9},
 	"internal/service/ausleih_sperren.go":     {texte: 1, aufrufe: 1},
 	"internal/service/cover_service.go":       {texte: 3, aufrufe: 3},
 	"internal/service/device_service.go":      {texte: 5, aufrufe: 5},

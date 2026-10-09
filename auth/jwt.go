@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/repository"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 )
@@ -201,9 +203,8 @@ func (a *Authenticator) ladeKontoStatus(userID string) (Role, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	var aktiv bool
-	var rolle string
-	if err := a.pool.QueryRow(ctx, `SELECT aktiv, rolle FROM benutzer WHERE id = $1`, userID).Scan(&aktiv, &rolle); err != nil {
+	aktiv, rolle, err := repository.KontoAktivUndRolle(ctx, a.pool, userID)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", errors.New("user account no longer exists")
 		}
