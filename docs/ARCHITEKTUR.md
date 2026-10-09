@@ -638,6 +638,27 @@ HTTP-Anfrage
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
 
+##### Tür und Abfrage
+
+Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.62):
+
+- Die Tür prüft Eingabe und Recht, öffnet die Transaktion, bestimmt die Reihenfolge der
+  Schritte, entscheidet Status und Meldung und schreibt ins Protokoll. Die Anweisung und das
+  Lesen ihrer Zeilen stehen in `repository/`, als Funktion über `DBQueryer`; den erfüllen der
+  Pool und eine Transaktion.
+- Eine Abfrage liefert ihren eigenen Zeilentyp. Typen, die die Schnittstellenbeschreibung
+  nennt, bleiben in `api/`; bei gleichen Feldern genügt die Typumwandlung
+  (`SignaturGruppe(zeile)`).
+- `repository/` und `pdf/` kennen einander nicht. Die Tür füllt die Typen der PDF-Erzeuger
+  aus den Zeilen.
+- Unterscheidet eine Tür in ihrer Meldung, ob die Abfrage scheiterte oder das Lesen ihrer
+  Zeilen, trägt der Fehler des Lesens `repository.ErrZeileUnlesbar`.
+- Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
+  `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg.
+
+`api/schichtung_test.go` hält den Stand: die Zahl der SQL-Anweisungen je Datei von `api/` und
+die Dateien ohne Tür.
+
 ##### Die `pkg/`-Pakete im Einzelnen
 
 | Paket              | Zweck                                                                                                                             |
@@ -1521,7 +1542,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026
+Stand: 08.10.2026 · 8.14 um den Handgriff zum Umzug einer Anweisung ergänzt am 09.10.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2182,6 +2203,15 @@ wenn man ihn einmal gebraucht hat.
   neues Feld erscheint dort als `null`), Swagger (`docs/swagger_drift_test.go`),
   [api_inventar.md](api_inventar.md) und die Liste der Bauteile in `CLAUDE.md`. Ein Eintrag
   ist eine Antwort, keine hochgesetzte Zahl.
+- **Eine Anweisung zieht aus `api/` nach `repository/`** (5.2.2, Tür und Abfrage). Vorher
+  messen, ob ein Test an der Datenbank sie ausführt: `go test ./api/` mit `-coverprofile`,
+  `-coverpkg=./api/` und `-run` über die Namen der Tests aus den `*_pg_test.go`; die Zeile der
+  Anweisung muss im Profil gezählt sein, sonst kommt der Test zuerst. Das Literal aus der Quelle schneiden, nicht
+  abtippen. Danach alle Zeichenketten-Literale der berührten Dateien vor und nach dem Umzug
+  vergleichen (mit `go/scanner` gelesen): Unterschiede nur bei den Einbindungen. Umzubuchen
+  sind `api/schichtung_test.go`, für einen verworfenen `CommandTag` `phantom_erfolg_test.go`,
+  für `FROM schueler` `docs/lesepfade_gegen_sicht_test.go`, für `CURRENT_DATE`
+  `docs/kalendertag_bestand_test.go`; die ganze Suite nennt jeden Eintrag, der fehlt.
 
 ---
 

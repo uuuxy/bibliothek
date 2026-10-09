@@ -345,14 +345,27 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Die PDF-Erzeuger hängen an rund 30 Namen aus `api/` (Typen der Auskunft, Etikettformate,
   Mailversand), gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler; sie ziehen je Sache
   um (Etiketten, Bescheid, Auskunft, Bestell-PDF, Bestandsbücher), nicht in einem Zug. Je
-  Thema ein Commit; die
-  Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Eine Datei mit SQL
+  Thema ein Commit; die Tests der Türen bleiben stehen und belegen, dass sich nichts ändert.
+  Eine Datei mit SQL
   zieht erst um, wenn ihr SQL in `repository/` steht: Die Ratsche zählt nur `api/` und verlöre
   sie sonst. Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was
   sie aus einem umgezogenen Paket brauchen, ist dort sichtbar gemacht.
-- **SQL nach `repository/`.** Je Datei ein Commit, die Anweisung wörtlich und in derselben
+- **SQL nach `repository/`.** Je Thema ein Commit, die Anweisung wörtlich und in derselben
   Transaktion wie vorher. Vor dem Umzug einer Anweisung muss ein Test an der Datenbank sie
-  ausführen; fehlt er, kommt er zuerst.
+  ausführen; fehlt er, kommt er zuerst. Der Handgriff steht in
+  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14, die Regeln für Tür und Abfrage in 5.2.2. Drei Dateien
+  tragen noch SQL:
+  - `api/dsgvo_auskunft.go` (11): die Abfragen der Auskunft.
+    `api/dsgvo_paar_vollstaendigkeit_test.go` liest den Quelltext dieser Datei und verlangt
+    jede Tabelle mit Leserbezug in einer ihrer Abfragen. Mit den Abfragen zieht das Gate an
+    die neue Datei; danach wird es am Rückbau einer Quelle rot gesehen.
+  - `api/student_promotion.go` (12): der Schuljahreswechsel. Eine Transaktion mit der Sperre
+    des Laufs, dem Schutz vor dem zweiten Lauf über den Eintrag im Protokoll, der Versetzung
+    und den Klassenleitungen; `api/wegweiser_test.go` verweist auf einen Kommentar in einer
+    ihrer Abfragen. Die Datei zieht als Ganzes um.
+  - `api/student_update.go` (1): die Anweisung, die das Ändern der Leserzeile aus den
+    genannten Feldern zusammensetzt (`updateBuilder`). Vorher ist zu entscheiden, welche
+    Schicht die Spalten nennt, die sich ändern lassen.
 - **Rest beim Protokoll der Verwaltung:** Die Einträge in `audit_logs` schreibt eine Anweisung,
   `repository.SchreibeAdminProtokoll`. Zwei Stellen schreiben noch selbst: der
   Schuljahreswechsel in seiner Transaktion (`api/student_promotion.go`; zieht mit den übrigen
