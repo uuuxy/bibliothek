@@ -15,6 +15,13 @@ package main
 //
 // Positionale Literale (`coverBox{x, y, b, h}`) zwingt der Compiler bereits zur
 // Vollständigkeit; sie werden deshalb nicht bemängelt.
+//
+// Ein Literal zählt mit und ohne Paketnamen: Zieht eine Struktur in ein anderes Paket, steht
+// an ihren Aufrufstellen `paket.Typ{…}`. Verglichen wird der Typname allein; zwei gelistete
+// Strukturen gleichen Namens in verschiedenen Paketen kann die Ratsche nicht unterscheiden.
+//
+// Blindheit: Strukturen, die nicht in der Liste stehen; Nullwerte über Zwischenvariablen; ein
+// Literal ohne Typnamen in einer Liste (`[]Typ{{…}}`).
 
 import (
 	"fmt"
@@ -102,6 +109,14 @@ func luecke() DueDateOptions {
 		FristBuchTage: 21, AdditionalYears: 0}
 }
 func positional() coverBox { return coverBox{1, 2, 3, 4} }
+func mitPaketnamen() any {
+	return fremd.DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31",
+		FristBuchTage: 21, FristMedienTage: 7}
+}
+func mitPaketnamenVollstaendig() any {
+	return &fremd.DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31",
+		FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0}
+}
 `
 	felder, literale := sammleParameterStrukturen(t, quelle)
 	if len(felder["coverBox"]) != 4 {
@@ -114,10 +129,13 @@ func positional() coverBox { return coverBox{1, 2, 3, 4} }
 			gemeldet = append(gemeldet, l.typ+":"+strings.Join(fehlt, ","))
 		}
 	}
-	if len(gemeldet) != 1 || gemeldet[0] != "DueDateOptions:FristMedienTage" {
-		t.Errorf("Selbstprobe: erwartet genau eine Lücke (DueDateOptions:FristMedienTage), "+
-			"gemeldet %v — ein auskommentiertes Feld darf nicht als gesetzt gelten, ein "+
-			"positionales Literal nicht als lückenhaft", gemeldet)
+	sort.Strings(gemeldet)
+	will := []string{"DueDateOptions:AdditionalYears", "DueDateOptions:FristMedienTage"}
+	if len(gemeldet) != len(will) || gemeldet[0] != will[0] || gemeldet[1] != will[1] {
+		t.Errorf("Selbstprobe: erwartet genau zwei Lücken %v (das Literal mit Paketnamen ohne "+
+			"AdditionalYears, das ohne Paketnamen ohne FristMedienTage), gemeldet %v — ein "+
+			"auskommentiertes Feld darf nicht als gesetzt gelten, ein positionales Literal nicht "+
+			"als lückenhaft", will, gemeldet)
 	}
 }
 
@@ -153,8 +171,8 @@ func sammleParameterStrukturen(t *testing.T, quelle string) (map[string][]string
 					}
 				}
 			case *ast.CompositeLit:
-				ident, ok := k.Type.(*ast.Ident)
-				if !ok || !istParameterStruktur(ident.Name, quelle) || len(k.Elts) == 0 {
+				typ := literalTypName(k.Type)
+				if !istParameterStruktur(typ, quelle) || len(k.Elts) == 0 {
 					return true
 				}
 				gesetzt := map[string]bool{}
@@ -173,7 +191,7 @@ func sammleParameterStrukturen(t *testing.T, quelle string) (map[string][]string
 					return true
 				}
 				literale = append(literale, strukturLiteral{
-					typ: ident.Name, gesetzt: gesetzt,
+					typ: typ, gesetzt: gesetzt,
 					ort: fmt.Sprintf("%s:%d", filepath.ToSlash(pfad), fset.Position(k.Pos()).Line),
 				})
 			}
@@ -208,6 +226,17 @@ func sammleParameterStrukturen(t *testing.T, quelle string) (map[string][]string
 		t.Fatal(err)
 	}
 	return felder, literale
+}
+
+// literalTypName nennt den Typ eines Literals ohne Paketnamen, "" für eine Form ohne Namen.
+func literalTypName(typ ast.Expr) string {
+	switch t := typ.(type) {
+	case *ast.Ident:
+		return t.Name
+	case *ast.SelectorExpr:
+		return t.Sel.Name
+	}
+	return ""
 }
 
 // istParameterStruktur: im Selbstproben-Modus zählt jede Struktur der Quelle, sonst die

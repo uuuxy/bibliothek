@@ -82,7 +82,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 		}
 	}
 	if _, err := service.BulkReceiveOrder(ctx, pool, repository.NewAuditRepository(pool), service.BulkReceiveParams{
-		ExemplarIDs: []string{weg}, AdminID: adminFuerAudit(t, pool),
+		ExemplarIDs: []string{weg}, AdminID: adminFuerAudit(t, pool), IPAddr: "",
 	}); err != nil {
 		t.Logf("Wareneingang meldet: %v", err)
 	}
