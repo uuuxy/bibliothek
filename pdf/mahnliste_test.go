@@ -350,3 +350,26 @@ func TestMahnliste_FortsetzungOhneKlasseNenntNurDenNamen(t *testing.T) {
 		t.Errorf("Folgeseite beginnt mit %q, erwartet %q", fortsetzung, "Fortsetzung: Anna Apfel")
 	}
 }
+
+// Das Cover steht im Seitenverhältnis des Bilds in seiner Zelle, nicht auf ihr Maß gestreckt:
+// Ein Bild von 60 × 90 Punkten ist in 7 × 17 mm Platz 7 mm breit und 10,5 mm hoch.
+func TestMahnliste_CoverBehaeltSeinSeitenverhaeltnis(t *testing.T) {
+	mahnlisteUmgebung(t)
+	roh := mahnliste(t, mahnlisteMit(schreibeCoverDatei(t, "cover_form.webp")))
+
+	const mm = 72 / 25.4
+	gefunden := false
+	for _, m := range bildOrt.FindAllSubmatch(pdftest.Inhalt(t, roh), -1) {
+		breite, hoehe := zahl(t, string(m[1]))/mm, zahl(t, string(m[2]))/mm
+		if breite > 20 {
+			continue // der Strichcode
+		}
+		gefunden = true
+		if math.Abs(breite-7) > 0.05 || math.Abs(hoehe-10.5) > 0.05 {
+			t.Errorf("Cover ist %.1f × %.1f mm, erwartet 7 × 10,5", breite, hoehe)
+		}
+	}
+	if !gefunden {
+		t.Error("kein Cover auf dem Blatt")
+	}
+}

@@ -41,8 +41,7 @@ const (
 	randUnten = 281.0
 	zeilenH   = 17.0
 	coverH    = 15.0
-	// coverBrt ist nur die ANGENOMMENE Breite fürs Zentrieren (Cover sind 2:3); die
-	// echte Breite bestimmt gofpdf beim Skalieren über die Höhe.
+	// coverBrt und coverH sind der Platz des Covers in seiner Spalte (Cover sind meist 2:3).
 	coverBrt = 10.0
 )
 
@@ -182,7 +181,10 @@ func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Lernmitte
 		pdf.AddPage()
 	}
 	oben := pdf.GetY()
-	bindeCoverEin(pdf, t.CoverURL, randLinks+(spCover-coverBrt)/2, oben+(zeilenH-coverH)/2, fehlend)
+	platz := coverdatei.CoverPlatz{X: randLinks + (spCover-coverBrt)/2, Y: oben + (zeilenH-coverH)/2, Breite: coverBrt, Hoehe: coverH}
+	if !coverdatei.BindeEin(pdf, t.CoverURL, platz) && t.CoverURL != "" {
+		*fehlend++
+	}
 
 	pdf.SetFont("Arial", "", 8)
 	pdf.SetXY(randLinks, oben)
@@ -198,34 +200,6 @@ func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Lernmitte
 	pdf.CellFormat(spZahl, zeilenH, strconv.Itoa(t.Gesamt), "1", 0, "R", false, 0, "")
 	pdf.CellFormat(spZahl, zeilenH, strconv.Itoa(t.Verliehen), "1", 0, "R", false, 0, "")
 	pdf.CellFormat(spZahl, zeilenH, strconv.Itoa(t.Verfuegbar), "1", 1, "R", false, 0, "")
-}
-
-// bindeCoverEin bettet das lokale Cover als JPEG ein. Alle Fehler bleiben still: Ein
-// defektes Cover darf nie die ganze Liste kosten (die Lehre aus dem Mahnwesen, wo ein
-// einziges WebP den Fehlerzustand des PDF-Objekts setzte und den Lauf mit 500 beendete).
-// gofpdf hält registrierte Bilder unter ihrem Namen vor — derselbe Titel in zwei Fächern
-// wird nur einmal dekodiert.
-func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y float64, fehlend *int) {
-	opt := gofpdf.ImageOptions{ImageType: "JPG"}
-	pfad := coverdatei.Pfad(coverURL)
-	if pfad == "" {
-		if coverURL != "" {
-			*fehlend++
-		}
-		return
-	}
-	if pdf.GetImageInfo(pfad) == nil {
-		jpg, _, ok := coverdatei.AlsJPEG(coverURL)
-		if !ok {
-			*fehlend++
-			return
-		}
-		pdf.RegisterImageOptionsReader(pfad, opt, bytes.NewReader(jpg))
-	}
-	// Nur die Höhe vorgeben, Breite 0: gofpdf skaliert dann seitenverhältnistreu. Mit
-	// beiden Maßen wurde jedes Cover auf 10×15 mm gequetscht — bei einem Buchrücken
-	// sieht man das sofort.
-	pdf.ImageOptions(pfad, x, y, 0, coverH, false, opt, 0, "")
 }
 
 // jahrgangText: „7", „12–13"; ohne Angabe (0) leer.

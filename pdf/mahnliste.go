@@ -44,38 +44,12 @@ const (
 	mahnlisteSpalteAutor = 26.0
 )
 
-// coverBox nennt Ort und Maße eines Covers auf dem Blatt.
-type coverBox struct {
-	x, y, breite, hoehe float64
-}
-
-// bindeCoverEin setzt das lokal gespeicherte Cover in die box, als JPEG, weil gofpdf kein WebP
-// liest (pkg/coverdatei). Fehler bleiben still: Ein Fehler am Dokument bleibt bis Output stehen,
-// ein unlesbares Cover kostete sonst die ganze Liste.
-func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, box coverBox) {
-	opt := gofpdf.ImageOptions{ImageType: "JPG"}
-	pfad := coverdatei.Pfad(coverURL)
-	if pfad == "" {
-		return
-	}
-	// gofpdf hält ein Bild unter seinem Namen vor: Mehrere Exemplare desselben Titels lesen
-	// und wandeln ihr Cover nur einmal.
-	if pdf.GetImageInfo(pfad) == nil {
-		jpg, _, ok := coverdatei.AlsJPEG(coverURL)
-		if !ok {
-			return
-		}
-		pdf.RegisterImageOptionsReader(pfad, opt, bytes.NewReader(jpg))
-	}
-	pdf.ImageOptions(pfad, box.x, box.y, box.breite, box.hoehe, false, opt, 0, "")
-}
-
 // zeichneMahnMedienZeile setzt die Zeile eines Buchs: Cover, Titel, Autor, Barcode, Frist und
 // die Tage über der Frist, ab 15 Tagen in Rot.
 func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med MahnlisteMedium, rowHeight float64) {
 	startY := pdf.GetY()
 
-	bindeCoverEin(pdf, med.CoverURL, coverBox{x: 18, y: startY + 0.5, breite: 7, hoehe: rowHeight - 1})
+	coverdatei.BindeEin(pdf, med.CoverURL, coverdatei.CoverPlatz{X: 18, Y: startY + 0.5, Breite: 7, Hoehe: rowHeight - 1})
 
 	// Den Rahmen der Cover-Zelle gibt es auch ohne Bild.
 	pdf.SetXY(18, startY)

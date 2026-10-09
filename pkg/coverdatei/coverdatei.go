@@ -10,11 +10,15 @@
 package coverdatei
 
 import (
+	"bytes"
 	"io"
+	"math"
 
 	"bibliothek/pkg/closeutil"
 	"bibliothek/pkg/coverablage"
 	"bibliothek/pkg/imageutil"
+
+	"github.com/jung-kurt/gofpdf"
 )
 
 // Wurzel ist das Verzeichnis aller lokal gespeicherten Bilder, relativ zum
@@ -75,4 +79,38 @@ func AlsJPEG(coverURL string) (bilddaten []byte, pfad string, ok bool) {
 		return nil, "", false
 	}
 	return jpg, pfad, true
+}
+
+// CoverPlatz nennt, wohin ein Cover auf dem Blatt kommt: die Ecke oben links und die größte
+// Breite und Höhe, in der Einheit des Dokuments.
+type CoverPlatz struct {
+	X, Y, Breite, Hoehe float64
+}
+
+// BindeEin setzt das lokal gespeicherte Cover in den Platz, im Seitenverhältnis des Bilds und
+// darin mittig, und meldet, ob es eines gab. Fehler bleiben still: Ein Fehler an einem
+// gofpdf-Dokument bleibt bis Output stehen, ein unlesbares Cover kostete sonst das ganze Blatt.
+func BindeEin(doc *gofpdf.Fpdf, coverURL string, platz CoverPlatz) bool {
+	opt := gofpdf.ImageOptions{ImageType: "JPG"}
+	name := Pfad(coverURL)
+	if name == "" {
+		return false
+	}
+	// gofpdf hält ein Bild unter seinem Namen vor: Derselbe Titel in mehreren Zeilen wird nur
+	// einmal gelesen und gewandelt.
+	info := doc.GetImageInfo(name)
+	if info == nil {
+		jpg, _, ok := AlsJPEG(coverURL)
+		if !ok {
+			return false
+		}
+		info = doc.RegisterImageOptionsReader(name, opt, bytes.NewReader(jpg))
+	}
+	if info == nil || info.Width() <= 0 || info.Height() <= 0 {
+		return false
+	}
+	massstab := math.Min(platz.Breite/info.Width(), platz.Hoehe/info.Height())
+	breite, hoehe := info.Width()*massstab, info.Height()*massstab
+	doc.ImageOptions(name, platz.X+(platz.Breite-breite)/2, platz.Y+(platz.Hoehe-hoehe)/2, breite, hoehe, false, opt, 0, "")
+	return true
 }

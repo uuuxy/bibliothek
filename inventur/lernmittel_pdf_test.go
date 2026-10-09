@@ -399,3 +399,51 @@ func TestSchulbuecherAlsPDF_AuflagenUnterDemTitel(t *testing.T) {
 		t.Errorf("die Aufschlüsselung steht %d-mal im PDF — erwartet nur beim Buch in zwei Auflagen", n)
 	}
 }
+
+// Ein Cover im Querformat bleibt in seiner Spalte. Skaliert nur über die Höhe, wäre es breiter
+// als die Spalte und läge über dem Titel.
+func TestSchulbuecherAlsPDF_QuerformatBleibtInSeinerSpalte(t *testing.T) {
+	verzeichnis := t.TempDir()
+	t.Chdir(verzeichnis)
+	if err := os.MkdirAll(filepath.Join(verzeichnis, "uploads"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	bild := image.NewRGBA(image.Rect(0, 0, 120, 40))
+	for y := 0; y < 40; y++ {
+		for x := 0; x < 120; x++ {
+			bild.Set(x, y, color.RGBA{R: 160, G: 60, B: 20, A: 255})
+		}
+	}
+	var puffer bytes.Buffer
+	if err := png.Encode(&puffer, bild); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(verzeichnis, "uploads", "quer.png"), puffer.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	doc, err := SchulbuecherAlsPDF([]LernmittelTitel{{ID: "1", Title: "Atlas", CoverURL: "/uploads/quer.png", Gesamt: 1}}, "Erdkunde", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	const mm = 72 / 25.4
+	treffer := bildMatrix.FindAllStringSubmatch(string(pdftest.Inhalt(t, doc)), -1)
+	if len(treffer) != 1 {
+		t.Fatalf("%d Bildplatzierungen, erwartet das eine Cover", len(treffer))
+	}
+	var masse [3]float64 // Breite, Höhe, linker Rand
+	for i := range masse {
+		zahl, err := strconv.ParseFloat(treffer[0][i+1], 64)
+		if err != nil {
+			t.Fatalf("Bildmatrix unlesbar: %v", treffer[0])
+		}
+		masse[i] = zahl
+	}
+	breite, hoehe, links := masse[0], masse[1], masse[2]
+	if breite/mm > coverBrt+0.05 || hoehe/mm > coverH+0.05 {
+		t.Errorf("Cover ist %.1f × %.1f mm, der Platz %.0f × %.0f", breite/mm, hoehe/mm, coverBrt, coverH)
+	}
+	if links/mm < randLinks || (links+breite)/mm > randLinks+spCover {
+		t.Errorf("Cover reicht von %.1f bis %.1f mm, die Spalte von %.0f bis %.0f", links/mm, (links+breite)/mm, randLinks, randLinks+spCover)
+	}
+}

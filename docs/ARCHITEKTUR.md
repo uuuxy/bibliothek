@@ -624,12 +624,12 @@ HTTP-Anfrage
 | `internal/service/`     | 4.496 Zeilen, 23 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 924 Zeilen, 2 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/betriebsbereitschaft_alarm.go` |
-| `inventur/`             | 6.571 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
+| `inventur/`             | 6.545 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
 | `auth/`                 | 1.852 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
-| `pkg/` (23 Pakete)      | 2.665 Zeilen, 32 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 3.396 Zeilen, 22 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
+| `pkg/` (23 Pakete)      | 2.703 Zeilen, 32 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
+| `pdf/`                  | 3.370 Zeilen, 22 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
@@ -694,7 +694,7 @@ ohne Tür stehen als Bestand, der nur kleiner werden kann. Dass der Zähler miss
 | `clientip`         | Echte Client-IP hinter dem Proxy — `X-Forwarded-For` wird **nur** von konfigurierten Proxies geglaubt (sonst wäre Rate-Limiting ein globaler DoS) |
 | `safehttp`         | HTTP-Clients für **fremde** Ziele; Verbindungen zu nicht-öffentlichen IP-Adressen werden abgelehnt (SSRF)                          |
 | `coverquelle`      | Host-Allowlists für Cover und Metadaten; baut die URL aus geprüften Teilen **neu** auf (Parsing-Differential)                     |
-| `coverdatei`       | Lokal gespeicherte WebP-Cover in einer Form, die `gofpdf`/`maroto` einbetten können                                               |
+| `coverdatei`       | Lokal gespeicherte WebP-Cover in einer Form, die `gofpdf`/`maroto` einbetten können; dazu die eine Stelle, die ein Cover im Seitenverhältnis in ein gofpdf-Dokument setzt (`BindeEin`) |
 | `coverablage`      | Der Ort der lokal gespeicherten Cover: Pfad einer Cover-URL prüfen, Verzeichnis öffnen, Datei entfernen — ohne Bildbibliothek, damit auch die ohne CGO gebauten Werkzeuge es einbinden können |
 | `betrag`           | Geldbeträge in der deutschen Form (zwei Nachkommastellen, Komma) — eine Stelle für Briefe, Berichte und die Meldungen der Theke   |
 | `imageutil`        | Bildkonvertierung (JPEG/PNG/GIF/WebP → JPEG), Qualitätsvorgabe                                                                    |
@@ -1954,7 +1954,9 @@ Trefferliste erzeugt, sah es an der Theke aus, als täte der Scanner **gar nicht
 `pkg/code39` rechnet das Zeichen für alte Aufdrucke wieder heraus.
 
 Cover werden für die PDF-Einbettung aus WebP konvertiert (`pkg/coverdatei`) — weder
-`gofpdf` noch `maroto` kennen WebP. Ein Gate (`npm run test:druck`) prüft die
+`gofpdf` noch `maroto` kennen WebP. In ein gofpdf-Dokument setzt sie eine Stelle,
+`coverdatei.BindeEin`: im Seitenverhältnis des Bilds und mittig in dem Platz, den der Erzeuger
+nennt (Mahnliste, Schulbuch-Export). Ein Gate (`npm run test:druck`) prüft die
 Drucksektionen am gebauten Frontend.
 
 **Tabellen über mehrere Seiten.** Eine Zeile, die Bild oder Text an Stellen setzt, die sie aus
