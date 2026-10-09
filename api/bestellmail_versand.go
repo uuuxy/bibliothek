@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/pdf"
+	"bibliothek/pkg/bestelllink"
 	"bibliothek/repository"
 )
 
@@ -44,7 +45,7 @@ func (s *Server) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 	// Lieferanten wertlos und sähe trotzdem echt aus.
 	link := ""
 	if settings.OeffentlicheAdresse != nil {
-		link = bestaetigungsLink(*settings.OeffentlicheAdresse, d.Token)
+		link = bestelllink.Adresse(*settings.OeffentlicheAdresse, d.Token)
 	}
 	subject, body := resolveBestellMail(betreff, textBody, bestellMailWerte{
 		kundennummer:    d.Kundennummer,

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"bibliothek/db"
+	"bibliothek/pkg/bestelllink"
 	"bibliothek/pkg/lmfplan"
 	"context"
 	"strconv"
@@ -33,8 +34,8 @@ type SystemEinstellungen struct {
 	BestellbedarfWarnungAktiv bool `json:"bestellbedarf_warnung_aktiv"`
 	BestellbedarfSchwelle     int  `json:"bestellbedarf_schwelle"`
 	// BestelllinkGueltigkeitTage: Lebensdauer des Bestätigungs-Links in Tagen, den der
-	// Hauptlieferant mit der Bestellmail bekommt (Einstellung seit 08.09.2026; vorher
-	// fest 21). Gilt für neu erzeugte Links; laufende behalten ihr Ablaufdatum.
+	// Hauptlieferant mit der Bestellmail bekommt (Vorgabe und Begründung in pkg/bestelllink).
+	// Gilt für neu erzeugte Links; laufende behalten ihr Ablaufdatum.
 	BestelllinkGueltigkeitTage int `json:"bestelllink_gueltigkeit_tage"`
 	// PreiseErfassen entscheidet, ob das Bestellwesen mit Geld arbeitet.
 	//
@@ -121,12 +122,6 @@ type SystemEinstellungen struct {
 // Die Vorgabe passt zum Betreiber dieses Systems; jede Schule kann sie überschreiben.
 const StandardEigentumsvermerk = "Eigentum des Landes Hessen"
 
-// BestelllinkGueltigkeitTageVorgabe ist, wie lange ein Bestätigungs-Link für den Lieferanten
-// lebt, wenn die Schule nichts anderes einstellt. Drei Wochen decken den üblichen Vorgang
-// (Bestellung, Etiketten drucken, bekleben, bestätigen); wer länger braucht, stellt es in
-// „Bestellwesen" um. Die Begründung der Frist steht in api/bestellbestaetigung_token.go.
-const BestelllinkGueltigkeitTageVorgabe = 21
-
 // SystemSettingsRepository defines operations for managing global system settings.
 type SystemSettingsRepository interface {
 	GetSettings(ctx context.Context) (*SystemEinstellungen, error)
@@ -158,7 +153,7 @@ func standardEinstellungen() *SystemEinstellungen {
 		// ruhigerer Startwert — der Betreiber justiert sie in den Einstellungen.
 		BestellbedarfWarnungAktiv:  true,
 		BestellbedarfSchwelle:      3,
-		BestelllinkGueltigkeitTage: BestelllinkGueltigkeitTageVorgabe,
+		BestelllinkGueltigkeitTage: bestelllink.VorgabeTage,
 		// An als Vorgabe: Das ist das bisherige Verhalten, und wer Preise fuehrt,
 		// soll sie nach einem Update nicht ploetzlich vermissen.
 		PreiseErfassen: true,

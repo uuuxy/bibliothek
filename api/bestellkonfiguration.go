@@ -58,7 +58,7 @@ func (s *Server) BestellKonfigurationHandler(settingsRepo repository.SystemSetti
 	})
 }
 
-// adresseHinterlegt prüft die öffentliche Adresse so, wie bestaetigungsLink sie später
+// adresseHinterlegt prüft die öffentliche Adresse so, wie bestelllink.Adresse sie später
 // benutzt: Ein Feld mit lauter Leerzeichen ist keine Adresse und ergäbe keinen Link.
 func adresseHinterlegt(settings *repository.SystemEinstellungen) bool {
 	return settings.OeffentlicheAdresse != nil && strings.TrimSpace(*settings.OeffentlicheAdresse) != ""

@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/service"
+	"bibliothek/pkg/bestelllink"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -117,14 +119,14 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	// und bestätigt. Alle anderen bekämen eine Seite, auf der es nichts zu tun gibt —
 	// für sie bleibt es bei der reinen Bestellmail.
 	var token, tokenHash string
-	linkTage := TokenGueltigkeitTage
+	linkTage := bestelllink.VorgabeTage
 	if supplier.IstHauptlieferant {
-		token, tokenHash, err = neuerBestaetigungsToken()
+		token, tokenHash, err = bestelllink.NeuerToken()
 		if err != nil {
 			return nil, fmt.Errorf("bestaetigungs-token: %w", err)
 		}
 		// Die Frist ist Einstellungssache („Bestellwesen"), nicht Konstante.
-		linkTage = bestellinkTageAus(repository.NewSystemSettingsRepository(s.db.Pool).GetSettings(ctx))
+		linkTage = service.BestelllinkTage(ctx, s.db.Pool)
 	}
 
 	tx, err := s.db.Pool.Begin(ctx)

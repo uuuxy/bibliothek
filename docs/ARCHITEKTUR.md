@@ -619,9 +619,9 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 22.224 Zeilen, 141 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
-| `repository/`           | 21.027 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
-| `internal/service/`     | 4.496 Zeilen, 23 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
+| `api/`                  | 22.136 Zeilen, 140 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `repository/`           | 21.022 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
+| `internal/service/`     | 4.516 Zeilen, 24 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 924 Zeilen, 2 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/betriebsbereitschaft_alarm.go` |
 | `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/dsgvo_auskunft.go` und `api/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
@@ -629,7 +629,7 @@ HTTP-Anfrage
 | `auth/`                 | 1.852 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
-| `pkg/` (24 Pakete)      | 2.832 Zeilen, 33 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
+| `pkg/` (25 Pakete)      | 2.907 Zeilen, 34 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
 | `pdf/`                  | 3.356 Zeilen, 21 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
@@ -722,6 +722,7 @@ ohne Tür stehen als Bestand, der nur kleiner werden kann. Dass der Zähler miss
 | `kennung`          | UUID-Form genau so prüfen, wie Postgres sie annimmt (nicht `urn:uuid:…`)                                                          |
 | `schulzeit`        | „Jetzt" aus Sicht der Schule, Stichtage der Bestandskartei (15.3./15.9.), Kalendertag-Rechnung                                    |
 | `lmf`              | Das Wissen über Lernmittel: Schuljahresfrist, Ausleihlimit, Katalogsichtbarkeit, Löschfrist                                       |
+| `bestelllink`      | Der Bestätigungs-Link einer Bestellung: das Geheimnis im Link, sein Hash für die Datenbank, die Adresse aus der öffentlichen Adresse der Einstellungen, die Frist mit ihrer Vorgabe — eine Stelle für das Anlegen der Bestellung und die Türen |
 | `leserart`         | Das Wissen über die Arten eines Lesers: welche es gibt, ihr Wort, Schüler oder Kollegium, Zugang zu „Mein Portal" — eine Stelle für Türen, Fachlogik und Abfragen |
 | `mitteltopf`       | Das Wissen über die zwei Töpfe, aus denen die Schule Bücher bezahlt: welche es gibt, ihr Wort, ihr Träger, Betreff und Vermerk einer Bestellung, die Reihenfolge in Berichten — eine Stelle für Türen, Abfragen, den Export des Bestands und die Littera-Übernahme |
 | `lmfplan`          | Feiertage (Osterformel), freie Tage, Terminlagen des LMF-Plans                                                                    |
@@ -1023,7 +1024,7 @@ Für das vollständige Routenverzeichnis samt Abgleich gegen die Frontend-Aufruf
 
 ## 6. Laufzeitsicht
 
-Stand: 08.10.2026
+Stand: 08.10.2026 · am 09.10.2026 in 6.9 ergänzt, wo Token, Adresse und Frist des Links entstehen
 
 Zehn Szenarien, ausgewählt nach einem Kriterium: **Wo ist die Architektur an der
 Arbeit?** Der Normalfall („Liste laden, JSON zurückgeben") kommt nicht vor — er erklärt
@@ -1351,7 +1352,9 @@ Bestellung abschicken
 
 Der Händler druckt über denselben Link seine Etiketten und bestätigt die Bestellung selbst.
 Das ist der einzige schreibende Pfad ohne Anmeldung — und er steht als solcher in der
-Allowlist von `routes_authz_coverage_test.go`.
+Allowlist von `routes_authz_coverage_test.go`. Wie Token, Hash, Adresse und Frist des Links
+entstehen, steht in `pkg/bestelllink`; die eingestellte Frist liest
+`service.BestelllinkTage`, beim Bestellen wie bei „Neuen Link erzeugen".
 
 ---
 
@@ -3087,7 +3090,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 22.224 Zeilen in 141 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 22.136 Zeilen in 140 Dateien das schwerste Paket
 
 | | |
 | --- | --- |
@@ -3102,14 +3105,14 @@ Dateien von 53 gesunken, die Zahl der Anweisungen in den 48 von 143 gestiegen, w
 nur neue Dateien abwies. 44 Dateien mit 7.503 Zeilen banden `net/http` nicht ein, waren also
 keine Tür.
 
-Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 17 Dateien ohne Tür
-mit 1.908 Zeilen, darunter kein PDF-Erzeuger mehr. Der LUSD-Import steht in
+Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 16 Dateien ohne Tür
+mit 1.817 Zeilen, darunter kein PDF-Erzeuger mehr. Der LUSD-Import steht in
 `internal/lusd`, die Selbstprüfung und die Regel zu den Start-Geheimnissen in
 `internal/bereitschaft`, die Auskunft nach Art. 15 DSGVO mit ihrem Blatt in `internal/auskunft`,
 die Zuordnung der Kopfzeile einer Importdatei beim Importer in
 `internal/service`, der Bescheid, die Etiketten, die
 Bestandsbücher, Mahnliste, Mahnbrief und Bestellanschreiben in `pdf/`, der Strichcode in `pkg/strichcode`,
-die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung in `pkg/mitteltopf`, die
+die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung in `pkg/mitteltopf`, ihr Bestätigungs-Link in `pkg/bestelllink`, die
 Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `api/schichtung_test.go` weist jede SQL-Anweisung in
 `api/` ab und führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Was
 bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst bleiben in einem Paket: Der Typ
@@ -3121,7 +3124,7 @@ Syntaxbaum (`go/parser`): 9.237 Zeilen stehen in Funktionen, deren Signatur eine
 Rest in Kommentaren, Einbindungen und Werten. Die 21 % sind eine Obergrenze für das, was keine
 Tür ist: Dazu zählen auch Füll-Funktionen (5.2.2) und Helfer, die aus einer Tür herausgelöst
 sind, um die Grenze der Komplexität zu halten. Als Schranke taugt die Zahl deshalb nicht; sie
-zeigt, wo zu lesen ist. Auch wenn alle 17 Dateien ausziehen, bleibt `api/` bei rund 20.300
+zeigt, wo zu lesen ist. Auch wenn alle 16 Dateien ausziehen, bleibt `api/` bei rund 20.300
 Zeilen: Das Paket trägt 230 Routen.
 
 #### R5 — Die Rechtematrix ist konfigurierbar und damit verstellbar

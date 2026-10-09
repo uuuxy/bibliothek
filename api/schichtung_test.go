@@ -188,7 +188,6 @@ var dateienOhneTuer = []string{
 	"abgaenger_fenster.go",
 	"action_types.go",
 	"bescheid_absender.go",
-	"bestellbestaetigung_token.go",
 	"bestellmail_anhaenge.go",
 	"bestellmail_text.go",
 	"bestellmail_versand.go",

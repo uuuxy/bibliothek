@@ -356,15 +356,15 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
-  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 17 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 22.224 Zeilen in 141 Dateien (am Anfang 30.785 in 168).
+  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 16 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 22.136 Zeilen in 140 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung und die Regel zu den Start-Geheimnissen in `internal/bereitschaft`, die
   Auskunft nach Art. 15 DSGVO mit ihrem Blatt in `internal/auskunft` (Türen in
   `api/dsgvo_auskunft.go` und `api/dsgvo_pdf.go`), der
   Strichcode in `pkg/strichcode`, die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung mit ihren Texten in
-  `pkg/mitteltopf`, die Zuordnung der
+  `pkg/mitteltopf`, ihr Bestätigungs-Link in `pkg/bestelllink`, die Zuordnung der
   Kopfzeile einer Importdatei beim Importer in `internal/service`; in `pdf/` stehen
   der Bescheid (`bescheid.go`), die Etiketten mit ihren Bogenformaten (`etikett_*.go`), die
   Bestandsbücher (`abgangsbuch.go`, `zugangsbuch.go`), die Mahnliste (`mahnliste.go`), der
@@ -380,12 +380,11 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
 - **Was umzieht und was bleibt** (eingeteilt am 09.10.2026 nach dem Inhalt jeder Datei).
   Regeln tragen und ziehen noch um:
-  `order_service.go` (398 Zeilen, legt eine Bestellung in einer Transaktion an; Ziel
+  `order_service.go` (400 Zeilen, legt eine Bestellung in einer Transaktion an; Ziel
   `internal/service`, zuletzt, weil `bestellmail_anhaenge.go` an seinen Namen hängt),
   `lmf_termine_frist.go` (207) und `lmf_plan_vorgabe.go` (117, Fristen und Rahmen des
-  LMF-Plans), `bestellmail_text.go` (152, Platzhalter der Bestellmail) und
-  `bestellbestaetigung_token.go` (94). Zwölf sind Typen einer Anfrage oder Antwort, Füll-Funktionen
-  und Helfer mehrerer Türen und bleiben (940 Zeilen): `abgaenger_fenster.go` (trägt daneben die
+  LMF-Plans) und `bestellmail_text.go` (152, Platzhalter der Bestellmail). Zwölf sind Typen einer Anfrage oder Antwort, Füll-Funktionen
+  und Helfer mehrerer Türen und bleiben (941 Zeilen): `abgaenger_fenster.go` (trägt daneben die
   Grenzen der Abgänger-Saison), `action_types.go`, `bescheid_absender.go`,
   `bestellmail_anhaenge.go` (217, stellt die Anlagen der Bestellmail zusammen und verschickt
   sie), `bestellmail_versand.go`, `betriebsbereitschaft_alarm.go`, `constants.go`, `lmf_plan_live.go`,

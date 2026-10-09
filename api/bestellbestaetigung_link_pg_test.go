@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/pkg/bestelllink"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -19,7 +20,7 @@ import (
 // bestellungMitToken legt eine Bestellung samt Link-Token an und liefert den KLARTEXT.
 func bestellungMitToken(t *testing.T, pool *pgxpool.Pool, lieferantID string, gueltigTage int) (bestellungID, token string) {
 	t.Helper()
-	token, hash, err := neuerBestaetigungsToken()
+	token, hash, err := bestelllink.NeuerToken()
 	if err != nil {
 		t.Fatalf("Token erzeugen: %v", err)
 	}
@@ -62,7 +63,7 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	lieferant := haendler(t, pool, "Naacher", true)
-	bestellungID, token := bestellungMitToken(t, pool, lieferant, TokenGueltigkeitTage)
+	bestellungID, token := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
 
 	rec := getOeffentlicheBestellung(srv, token)
 	if rec.Code != http.StatusOK {
@@ -102,7 +103,7 @@ func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	lieferant := haendler(t, pool, "Naacher", true)
-	_, token := bestellungMitToken(t, pool, lieferant, TokenGueltigkeitTage)
+	_, token := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
 
 	if rec := postOeffentlichBestaetigen(srv, token, `{}`); rec.Code != http.StatusOK {
 		t.Fatalf("erster POST = %d, want 200", rec.Code)
@@ -148,7 +149,7 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	lieferant := haendler(t, pool, "Naacher", true)
-	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, TokenGueltigkeitTage)
+	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
 
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO system_einstellungen (schluessel, wert) VALUES ('oeffentliche_adresse', 'https://bib.example.invalid')

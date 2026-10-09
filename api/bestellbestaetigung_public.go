@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/bestelllink"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -75,7 +76,7 @@ func (s *Server) bestellungPerToken(ctx context.Context, token string) (string, 
 	if token == "" {
 		return "", pgx.ErrNoRows
 	}
-	return repository.BestellungZuTokenHash(ctx, s.DB.Pool, hashBestaetigungsToken(token))
+	return repository.BestellungZuTokenHash(ctx, s.DB.Pool, bestelllink.Hash(token))
 }
 
 // sendeTokenFehler bildet jeden Zugriffsfehler auf 404 ab — abgelaufen, zurückgezogen

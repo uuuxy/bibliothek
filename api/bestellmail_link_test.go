@@ -85,56 +85,6 @@ func TestBestellmail_OhneLinkBleibtDieMailSauber(t *testing.T) {
 	}
 }
 
-// Die Adresse kommt aus einem Eingabefeld — sie kann alles Mögliche enthalten.
-func TestBestaetigungsLink_AdresseWirdNormalisiert(t *testing.T) {
-	faelle := []struct {
-		name, basis, token, erwartet string
-	}{
-		{"mit Schema", "https://bib.schule.de", "ABC", "https://bib.schule.de/bestellung/ABC"},
-		{"Schrägstrich am Ende", "https://bib.schule.de/", "ABC", "https://bib.schule.de/bestellung/ABC"},
-		{"ohne Schema", "bib.schule.de", "ABC", "https://bib.schule.de/bestellung/ABC"},
-		{"http bleibt http", "http://intern.schule", "ABC", "http://intern.schule/bestellung/ABC"},
-		{"Leerzeichen", "  https://bib.schule.de  ", "ABC", "https://bib.schule.de/bestellung/ABC"},
-		// Leer heißt: kein Link. Ein "/bestellung/ABC" ohne Host wäre in einer Mail wertlos
-		// und sähe trotzdem nach einem echten Link aus.
-		{"keine Adresse", "", "ABC", ""},
-		{"kein Token", "https://bib.schule.de", "", ""},
-	}
-	for _, f := range faelle {
-		t.Run(f.name, func(t *testing.T) {
-			if got := bestaetigungsLink(f.basis, f.token); got != f.erwartet {
-				t.Errorf("bestaetigungsLink(%q, %q) = %q, want %q", f.basis, f.token, got, f.erwartet)
-			}
-		})
-	}
-}
-
-// Zwei Bestellungen dürfen nie denselben Token bekommen, und der gespeicherte Hash darf
-// den Token nicht preisgeben.
-func TestBestaetigungsToken_EinmaligUndNurAlsHashGespeichert(t *testing.T) {
-	tokenA, hashA, err := neuerBestaetigungsToken()
-	if err != nil {
-		t.Fatalf("Token erzeugen: %v", err)
-	}
-	tokenB, hashB, err := neuerBestaetigungsToken()
-	if err != nil {
-		t.Fatalf("Token erzeugen: %v", err)
-	}
-
-	if tokenA == tokenB || hashA == hashB {
-		t.Fatal("zwei Aufrufe lieferten denselben Token — der Zufall funktioniert nicht")
-	}
-	if strings.Contains(hashA, tokenA) || hashA == tokenA {
-		t.Fatal("der gespeicherte Hash enthält den Token im Klartext")
-	}
-	if len(hashA) != 64 {
-		t.Errorf("Hashlänge = %d, erwartet 64 (SHA-256 als Hex)", len(hashA))
-	}
-	if hashBestaetigungsToken(tokenA) != hashA {
-		t.Error("hashBestaetigungsToken liefert für denselben Token einen anderen Wert — der Lookup fände die Bestellung nie")
-	}
-}
-
 // Die Frist steht als Datum in der Mail — sowohl im angehängten Absatz als auch über den
 // Platzhalter {{.LinkGueltigBis}} in einer eigenen Vorlage.
 func TestBestellmail_FristStehtAlsDatumInDerMail(t *testing.T) {

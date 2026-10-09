@@ -6627,7 +6627,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "bestelllink_gueltigkeit_tage": {
-                    "description": "BestelllinkGueltigkeitTage: Lebensdauer des Bestätigungs-Links in Tagen, den der\nHauptlieferant mit der Bestellmail bekommt (Einstellung seit 08.09.2026; vorher\nfest 21). Gilt für neu erzeugte Links; laufende behalten ihr Ablaufdatum.",
+                    "description": "BestelllinkGueltigkeitTage: Lebensdauer des Bestätigungs-Links in Tagen, den der\nHauptlieferant mit der Bestellmail bekommt (Vorgabe und Begründung in pkg/bestelllink).\nGilt für neu erzeugte Links; laufende behalten ihr Ablaufdatum.",
                     "type": "integer"
                 },
                 "ersatzwert_immer_kaufpreis": {

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/internal/service"
+	"bibliothek/pkg/bestelllink"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -63,7 +65,7 @@ func (s *Server) NeuerBestaetigungsLinkHandler() http.HandlerFunc {
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]any{
-			"link":        bestaetigungsLink(basis, token),
+			"link":        bestelllink.Adresse(basis, token),
 			"gueltig_bis": gueltigBis,
 		})
 	}
@@ -74,11 +76,11 @@ func (s *Server) NeuerBestaetigungsLinkHandler() http.HandlerFunc {
 // immer nur der Hash des einen gültigen. „Neuen Link erzeugen" und der erneute Versand der
 // Bestellmail gehen beide hier durch.
 func (s *Server) erneuereBestaetigungsToken(ctx context.Context, bestellungID string) (token string, gueltigBis time.Time, err error) {
-	token, hash, err := neuerBestaetigungsToken()
+	token, hash, err := bestelllink.NeuerToken()
 	if err != nil {
 		return "", time.Time{}, err
 	}
-	gueltigBis, err = repository.ErneuereBestaetigungsToken(ctx, s.DB.Pool, bestellungID, hash, s.bestellinkGueltigkeitTage(ctx))
+	gueltigBis, err = repository.ErneuereBestaetigungsToken(ctx, s.DB.Pool, bestellungID, hash, service.BestelllinkTage(ctx, s.DB.Pool))
 	if err != nil {
 		return "", time.Time{}, err
 	}

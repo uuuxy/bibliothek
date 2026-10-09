@@ -11,6 +11,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
 	"bibliothek/pdf"
+	"bibliothek/pkg/bestelllink"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -224,7 +225,7 @@ func TestLieferantenBestaetigung_MerktSichDasRaster(t *testing.T) {
 		SELECT etiketten_groesse, etiketten_format
 		FROM bestellungen_verlauf
 		WHERE bestaetigungs_token_hash = $1
-	`, hashBestaetigungsToken(token)).Scan(&groesse, &format); err != nil {
+	`, bestelllink.Hash(token)).Scan(&groesse, &format); err != nil {
 		t.Fatalf("Bestellung lesen: %v", err)
 	}
 	if groesse == nil || *groesse != "klein" {
