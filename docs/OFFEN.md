@@ -38,6 +38,12 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
   einstellt, braucht es dann nicht. (7.3, R8)
+- [ ] gosec vor dem Push: Der Hook vor dem Push fährt gosec nicht; am 09.10.2026 stand `main`
+  deshalb mit rotem Sicherheits-Lauf. Vorschlag: gosec in den Hook nehmen, mit dem Aufruf des
+  Workflows. (5.10)
+- [ ] Ändern eines Lesers: Die Tür setzt die Anweisung aus den genannten Feldern zusammen.
+  Vorschlag: `repository/` nennt die Spalten, die sich ändern lassen, die Tür reicht nur
+  Werte. (5.62)
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -127,8 +133,9 @@ der Nummer nichts mehr dazu offen ist.
   was die Datenbank ablehnt; Listen: was sie begrenzt), die Form-Ratsche sieht umrandete
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
-- [ ] **Schichtung des Backends (5.62):** Was in `api/` keine Tür ist, zieht je Thema in ein
-  eigenes Paket; das SQL der Türen zieht nach `repository/`.
+- [ ] **Schichtung des Backends (5.62):** Die PDF-Erzeuger und der Rest der Dateien ohne Tür
+  ziehen je Sache aus `api/` in eigene Pakete; zwei Dateien von `api/` tragen noch SQL (die
+  Auskunft und das Ändern eines Lesers).
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -294,9 +301,16 @@ Vermerk.
   09.10.2026 gosec vom Entwicklungsstand des 05.10.2026
   (`v2.29.1-0.20261005092323-d2b649ec0182`, mit `golang.org/x/tools` 0.51). Die jüngste
   veröffentlichte Fassung 2.29.0 liest die Paketdaten von Go 1.27.2 nicht. Am Stand des
-  Tages meldet der neue Stand mit denselben Ausnahmen nichts (457 Dateien, 60 Vermerke
+  Tages meldet der neue Stand mit denselben Ausnahmen nichts (489 Dateien, 61 Vermerke
   `#nosec`). Offen: auf die nächste veröffentlichte Fassung heben, sobald sie erscheint; sie
   kann neue Regeln mitbringen, deshalb mit eigenem Commit. Kategorie B.
+- **gosec läuft nicht vor dem Push.** Der Hook vor dem Push fährt Go-Tests, svelte-check mit
+  Vitest, npm audit, govulncheck, Trivy und deadcode, gosec nicht. Am 09.10.2026 meldete gosec
+  erst auf GitHub eine Stelle, die ein Umzug hervorgebracht hatte
+  ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 5). Offen, nach Entscheidung: gosec mit der
+  Fassung und dem Aufruf aus `.github/workflows/security-scan.yml` in
+  `scripts/git-hooks/pre-push` aufnehmen. Gemessen am 09.10.2026 am Arbeitsplatz: 4 Sekunden,
+  wenn die Pakete schon gebaut sind. Kategorie B.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 
@@ -338,7 +352,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **Die Bremse steht.** `api/schichtung_test.go` zählt die SQL-Anweisungen je Datei und führt
   die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 2
   Dateien mit 12 Anweisungen (am Anfang 48 mit 177), 34 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 25.846 Zeilen in 158 Dateien (am Anfang 30.785 in 168).
+  `api/` hat 25.847 Zeilen in 158 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`. Offen: der Aufbau der PDFs und der Rest der 34.
