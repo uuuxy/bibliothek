@@ -56,8 +56,8 @@ type Texte struct {
 	Vermerk string
 }
 
-// Das Wort „Schulträger" steht nur im Vermerk dieses einen Topfs; daran unterscheidet der Test
-// am fertigen Anschreiben die beiden Briefe.
+// Auf dem Anschreiben steht das Wort „Schulträger" nur im Vermerk dieses einen Topfs; daran
+// unterscheidet ein Test die zwei fertigen Briefe (api/bestellanschreiben_test.go).
 var texte = map[string]Texte{
 	Land: {
 		Kurz:    "Lernmittelfreiheit",
