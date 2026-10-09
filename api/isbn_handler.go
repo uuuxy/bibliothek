@@ -33,12 +33,9 @@ func parseErscheinungsjahr(raw string) *int {
 // fragt dafür nie erneut DNB/eine Kategorisierung ab (siehe upsertTitelAusMetadaten,
 // die dieser Funktion vorgeschaltet ist und nur bei NICHT gefundenem Titel läuft).
 func (s *Server) findeLokalenTitel(ctx context.Context, isbn string) (*ISBNLookupResponse, error) {
-	var resp ISBNLookupResponse
-	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel, isbn
-		FROM buecher_titel WHERE `+repository.SQLTitelTraegtISBN("", "$1")+` LIMIT 1
-	`, isbn).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel, &resp.ISBN)
+	titel, err := repository.FindeTitelZuISBN(ctx, s.DB.Pool, isbn)
 	if err == nil {
+		resp := isbnAntwortAus(titel)
 		resp.Exists = true
 		return &resp, nil
 	}
@@ -64,28 +61,37 @@ func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta 
 	// Die Altersangabe (Zielgruppe) bleibt ungespeichert: Es gibt für sie keine Spalte und
 	// keinen Leser.
 	listenpreis := inventur.ListenpreisAusNachschlagen(nil, meta.Preis)
-	var resp ISBNLookupResponse
-	err = s.DB.Pool.QueryRow(ctx, `
-		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url, subject, untertitel, listenpreis)
-		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF(btrim($8), ''), $9)
-		ON CONFLICT (isbn) DO UPDATE
-			SET titel      = EXCLUDED.titel,
-			    autor      = EXCLUDED.autor,
-			    verlag     = EXCLUDED.verlag,
-			    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
-			    cover_url  = COALESCE(NULLIF(EXCLUDED.cover_url, ''), buecher_titel.cover_url),
-			    untertitel = COALESCE(NULLIF(buecher_titel.untertitel, ''), EXCLUDED.untertitel),
-			    listenpreis = COALESCE(buecher_titel.listenpreis, EXCLUDED.listenpreis),
-			    aktualisiert_am = CURRENT_TIMESTAMP
-		RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel, isbn
-	`, meta.Titel, meta.Autor, isbn, meta.Verlag, jahrInt, meta.CoverURL, kanonisch[meta.Fach],
-		meta.Untertitel, listenpreis).
-		Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel, &resp.ISBN)
+	titel, err := repository.LegeTitelAusMetadatenAn(ctx, s.DB.Pool, repository.TitelMetadaten{
+		Titel:            meta.Titel,
+		Autor:            meta.Autor,
+		ISBN:             isbn,
+		Verlag:           meta.Verlag,
+		Erscheinungsjahr: jahrInt,
+		CoverURL:         meta.CoverURL,
+		Fach:             kanonisch[meta.Fach],
+		Untertitel:       meta.Untertitel,
+		Listenpreis:      listenpreis,
+	})
 	if err != nil {
 		return ISBNLookupResponse{}, err
 	}
+	resp := isbnAntwortAus(titel)
 	resp.Exists = false
 	return resp, nil
+}
+
+// isbnAntwortAus übernimmt die Angaben eines Titels aus dem Katalog in die Antwort.
+func isbnAntwortAus(t repository.TitelZuISBN) ISBNLookupResponse {
+	return ISBNLookupResponse{
+		TitelID:       t.TitelID,
+		Titel:         t.Titel,
+		Autor:         t.Autor,
+		Verlag:        t.Verlag,
+		CoverURL:      t.CoverURL,
+		Signatur:      t.Signatur,
+		IstLernmittel: t.IstLernmittel,
+		ISBN:          t.ISBN,
+	}
 }
 
 // ISBNLookupResponse is the result of a live ISBN metadata query.

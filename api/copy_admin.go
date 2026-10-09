@@ -133,29 +133,11 @@ func (s *Server) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 
 	ctx := r.Context()
 
-	// Eigentum und Herkunft nach der einen Regel (repository.ExemplarTopfSQL,
-	// ExemplarTopfHerkunftSQL), dazu der Wortlaut des Littera-Vermerks, wenn es einen gab
-	// (docs/OFFEN.md 4.24, Stufe 3).
-	query := `
-		SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.ist_ausleihbar, e.ist_ausgesondert,
-		       (` + repository.SQLExemplarImBestand + `) AS im_bestand,
-		       coalesce(e.zustand_abwertung_prozent, 0),
-		       NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL) AS ist_verfuegbar,
-		       ` + repository.ExemplarTopfSQL + `, ` + repository.ExemplarTopfHerkunftSQL + `,
-		       coalesce(e.erweiterte_eigenschaften->>'littera_eigentumsvermerk', ''),
-		       coalesce(e.standort, '')
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON t.id = e.titel_id
-		` + repository.ExemplarTopfJoin + `
-		WHERE e.titel_id = $1
-		ORDER BY e.ist_ausgesondert ASC, e.barcode_id
-	`
-	rows, err := s.DB.Pool.Query(ctx, query, id)
+	zeilen, err := repository.ListeExemplareDesTitels(ctx, s.DB.Pool, id)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
-	defer rows.Close()
 
 	// CopyResponse is the per-copy DTO returned by this handler.
 	type CopyResponse struct {
@@ -194,22 +176,22 @@ func (s *Server) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 		Standort string `json:"standort"`
 	}
 
-	copies := []CopyResponse{}
-	for rows.Next() {
-		var cp CopyResponse
-		// Eine unlesbare Zeile ist ein Fehler, kein Exemplar, das still von der Buchakte
-		// verschwindet.
-		if err := rows.Scan(&cp.ID, &cp.BarcodeID, &cp.ZustandNotiz, &cp.IstAusleihbar,
-			&cp.IstAusgesondert, &cp.ImBestand, &cp.ZustandAbwertungProzent, &cp.IstVerfuegbar,
-			&cp.Eigentum, &cp.EigentumHerkunft, &cp.LitteraEigentumsvermerk, &cp.Standort); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		copies = append(copies, cp)
-	}
-	if err := rows.Err(); err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return
+	copies := make([]CopyResponse, 0, len(zeilen))
+	for _, z := range zeilen {
+		copies = append(copies, CopyResponse{
+			ID:                      z.ID,
+			BarcodeID:               z.BarcodeID,
+			ZustandNotiz:            z.ZustandNotiz,
+			ZustandAbwertungProzent: z.ZustandAbwertungProzent,
+			IstAusleihbar:           z.IstAusleihbar,
+			IstAusgesondert:         z.IstAusgesondert,
+			ImBestand:               z.ImBestand,
+			IstVerfuegbar:           z.IstVerfuegbar,
+			Eigentum:                z.Eigentum,
+			EigentumHerkunft:        z.EigentumHerkunft,
+			LitteraEigentumsvermerk: z.LitteraEigentumsvermerk,
+			Standort:                z.Standort,
+		})
 	}
 
 	// Der Ersatzwert je Exemplar: EINE Abfrage für den ganzen Titel, dann die
@@ -262,49 +244,26 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		// LEFT JOIN auf BEIDE Ausleiher-Arten: Eine Ausleihe an eine Lehrkraft trägt keine
-		// schueler_id, und der frühere INNER JOIN auf schueler ließ sie damit verschwinden
-		// — der Reiter zeigte weniger Ausleiher, als der Titel hat, und wer das Exemplar
-		// suchte, suchte im Regal. Beim Kollegen steht statt der Klasse das Wort seiner Art
-		// (klasseOderArt), dieselbe Auskunft wie in der Titel-Historie; der Klassenfilter des
-		// Reiters liest genau dieses Feld. COALESCE auf 'Anonym' deckt die getrennte Ausleihe
-		// ab — laufende trifft die Lesehistorie-Befristung zwar nicht, aber die Antwort soll
-		// auch dann keinen leeren Namen tragen.
-		query := `
-			SELECT
-			  COALESCE(l.vorname, 'Anonym') AS vorname,
-			  COALESCE(l.nachname, '') AS nachname,
-			  COALESCE(l.klasse, '') AS klasse,
-			  COALESCE(l.art, '') AS art,
-			  COALESCE(l.barcode_id, '') AS ausleiher_barcode,
-			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist, a.ist_handapparat
-			FROM ausleihen a
-			JOIN buecher_exemplare e ON a.exemplar_id = e.id
-			LEFT JOIN leser l ON a.schueler_id = l.id
-			WHERE e.titel_id = $1 AND a.rueckgabe_am IS NULL
-			ORDER BY a.rueckgabe_frist ASC
-		`
-		rows, err := s.DB.Pool.Query(ctx, query, id)
+		zeilen, err := repository.ListeAusleiherDesTitels(ctx, s.DB.Pool, id)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer rows.Close()
 
-		borrowers := []TitleBorrower{}
-		for rows.Next() {
-			var b TitleBorrower
-			var art string
-			if err := rows.Scan(&b.Vorname, &b.Nachname, &b.Klasse, &art, &b.SchuelerBarcode, &b.ExemplarBarcode, &b.AusgeliehenAm, &b.RueckgabeFrist, &b.IstDauerleihe); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			b.Klasse = klasseOderArt(b.Klasse, art)
-			borrowers = append(borrowers, b)
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+		// Beim Kollegen steht statt der Klasse das Wort seiner Art (klasseOderArt), dieselbe
+		// Auskunft wie in der Titel-Historie; der Klassenfilter des Reiters liest dieses Feld.
+		borrowers := make([]TitleBorrower, 0, len(zeilen))
+		for _, z := range zeilen {
+			borrowers = append(borrowers, TitleBorrower{
+				Vorname:         z.Vorname,
+				Nachname:        z.Nachname,
+				Klasse:          klasseOderArt(z.Klasse, z.Art),
+				SchuelerBarcode: z.AusleiherBarcode,
+				ExemplarBarcode: z.ExemplarBarcode,
+				AusgeliehenAm:   z.AusgeliehenAm,
+				RueckgabeFrist:  z.RueckgabeFrist,
+				IstDauerleihe:   z.IstDauerleihe,
+			})
 		}
 
 		RespondJSON(w, http.StatusOK, borrowers)
@@ -344,43 +303,22 @@ func (s *Server) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	query := `
-			SELECT 
-			  l.vorname AS vorname,
-			  l.nachname AS nachname,
-			  l.klasse AS klasse,
-			  l.art AS art,
-			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_am
-			FROM ausleihen a
-			JOIN buecher_exemplare e ON a.exemplar_id = e.id
-			LEFT JOIN leser l ON a.schueler_id = l.id
-			WHERE e.titel_id = $1
-			ORDER BY a.ausgeliehen_am DESC
-			LIMIT 200
-		`
-	rows, err := s.DB.Pool.Query(ctx, query, id)
+	zeilen, err := repository.ListeAusleihhistorieDesTitels(ctx, s.DB.Pool, id)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
-	defer rows.Close()
 
-	history := []TitleHistory{}
-	for rows.Next() {
-		var h TitleHistory
-		var vorname, nachname, klasse, art *string
-		if err := rows.Scan(&vorname, &nachname, &klasse, &art, &h.ExemplarBarcode, &h.AusgeliehenAm, &h.RueckgabeAm); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		h.Vorname = stringOrDefault(vorname, "Anonym")
-		h.Nachname = stringOrDefault(nachname, "")
-		h.Klasse = klasseOderArt(stringOrDefault(klasse, ""), stringOrDefault(art, ""))
-		history = append(history, h)
-	}
-	if err := rows.Err(); err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return
+	history := make([]TitleHistory, 0, len(zeilen))
+	for _, z := range zeilen {
+		history = append(history, TitleHistory{
+			Vorname:         stringOrDefault(z.Vorname, "Anonym"),
+			Nachname:        stringOrDefault(z.Nachname, ""),
+			Klasse:          klasseOderArt(stringOrDefault(z.Klasse, ""), stringOrDefault(z.Art, "")),
+			ExemplarBarcode: z.ExemplarBarcode,
+			AusgeliehenAm:   z.AusgeliehenAm,
+			RueckgabeAm:     z.RueckgabeAm,
+		})
 	}
 
 	RespondJSON(w, http.StatusOK, history)

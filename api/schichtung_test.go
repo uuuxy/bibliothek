@@ -81,9 +81,7 @@ func produktivDateien(t *testing.T) []string {
 // senkt die Zahl; steht sie auf null, fällt die Zeile weg.
 var handlerMitSQL = map[string]int{
 	"ausleihe.go":          5,
-	"copy_admin.go":        4,
 	"dsgvo_auskunft.go":    11,
-	"isbn_handler.go":      2,
 	"student_create.go":    7,
 	"student_deleted.go":   3,
 	"student_lock.go":      2,
