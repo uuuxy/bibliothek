@@ -2,7 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-08 (XLSX-Importe: alle Lesestellen durch
+> Zuletzt aktualisiert: 2026-10-09 (gosec läuft im Hook vor dem Push mit; Fassung, Aufruf und
+> Ausschlussliste stehen in `scripts/gosec-gate.sh`).
+> Davor 2026-10-08 (XLSX-Importe: alle Lesestellen durch
 > `xlsxgrenze.MitMappe` — Absturz-Schranke und Abweisung verschlüsselter Container; excelize
 > auf dem Stand mit den Korrekturen zu fünfzehn gemeldeten Schwachstellen).
 > Davor 2026-10-07 (Rechte-Matrix: Jede Änderung steht im Protokoll;
@@ -846,7 +848,7 @@ Code, der sich nicht geändert hat) und auf Knopfdruck:
 | Prüfung                   | Sieht                                                                                                                                                              | Blinder Fleck                       |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
 | `govulncheck`             | Bekannte CVEs in Go-Abhängigkeiten, **aufrufbezogen** (meldet nur, was tatsächlich erreicht wird)                                                                  | Eigener Code                        |
-| `gosec`                   | Muster im Go-Quelltext (SAST), Ausschlussliste im Workflow                                                                                                         | Zusammenhänge über Funktionsgrenzen |
+| `gosec`                   | Muster im Go-Quelltext (SAST), Ausschlussliste in `scripts/gosec-gate.sh`                                                                                          | Zusammenhänge über Funktionsgrenzen |
 | `npm audit`               | CVEs in Frontend-Abhängigkeiten (`--audit-level=high --omit=dev`)                                                                                                  | Eigener Code                        |
 | `trivy` + Container-Smoke | Das gebaute Image; dazu: läuft es unprivilegiert, sind die per `exec.Command` gerufenen Werkzeuge da (`pg_dump`), ist jedes Volume-Ziel für `appuser` beschreibbar | Anwendungslogik                     |
 
@@ -937,9 +939,9 @@ diesen Schutz auf.
 
 ### Prüfungen vor dem Push (lokal)
 
-- `scripts/git-hooks/pre-push` (installiert per `scripts/install-hooks.sh`): acht Gates
-  (Schritte 1–6 samt 1b und 2b), darunter Go-Tests, `golangci-lint`, `svelte-check`,
-  Vitest und `npm audit`. Der Hook sagt außerdem an, **was er
+- `scripts/git-hooks/pre-push` (installiert per `scripts/install-hooks.sh`): neun Gates
+  (Schritte 1–6 samt 1b, 2b und 4b), darunter Go-Tests, `golangci-lint`, `svelte-check`,
+  Vitest, `npm audit` und `gosec`. Der Hook sagt außerdem an, **was er
   nicht geprüft hat** — die `*_pg_test.go` überspringen sich ohne `TEST_DATABASE_URL`
   still, mit grünem „ok" daneben.
 - `../security-scan.sh`, `scripts/pruefe_secrets.sh`, `scripts/sonar_scan.sh` — siehe

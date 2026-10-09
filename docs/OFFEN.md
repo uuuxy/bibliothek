@@ -38,9 +38,9 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
   einstellt, braucht es dann nicht. (7.3, R8)
-- [ ] gosec vor dem Push: Der Hook vor dem Push fährt gosec nicht; am 09.10.2026 stand `main`
-  deshalb mit rotem Sicherheits-Lauf. Vorschlag: gosec in den Hook nehmen, mit dem Aufruf des
-  Workflows. (5.10)
+- [x] gosec vor dem Push: Der Hook fährt gosec seit dem 09.10.2026 mit, über dasselbe Skript
+  wie der Sicherheits-Lauf (`scripts/gosec-gate.sh`). Gebaut nach dem Vorschlag; zurücknehmen
+  lässt es sich mit dem Rückbau dieses einen Commits.
 - [ ] Ändern eines Lesers: Die Tür setzt die Anweisung aus den genannten Feldern zusammen.
   Vorschlag: `repository/` nennt die Spalten, die sich ändern lassen, die Tür reicht nur
   Werte. (5.62)
@@ -297,20 +297,14 @@ Vermerk.
   vorher eine weitere Meldung, wird der Sicherheits-Scan rot; der Handgriff steht in
   [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 5. Fällt an einem der drei Importe etwas
   auf, zuerst gegen v2.11.0 gegenprüfen. Kategorie B.
-- **gosec auf einem unveröffentlichten Stand.** Der Sicherheits-Prüflauf baut seit dem
-  09.10.2026 gosec vom Entwicklungsstand des 05.10.2026
-  (`v2.29.1-0.20261005092323-d2b649ec0182`, mit `golang.org/x/tools` 0.51). Die jüngste
+- **gosec auf einem unveröffentlichten Stand.** Der Sicherheits-Prüflauf und der Hook vor dem
+  Push bauen seit dem 09.10.2026 gosec vom Entwicklungsstand des 05.10.2026
+  (`v2.29.1-0.20261005092323-d2b649ec0182`, mit `golang.org/x/tools` 0.51); die Fassung steht
+  in `scripts/gosec-gate.sh`. Die jüngste
   veröffentlichte Fassung 2.29.0 liest die Paketdaten von Go 1.27.2 nicht. Am Stand des
   Tages meldet der neue Stand mit denselben Ausnahmen nichts (489 Dateien, 61 Vermerke
   `#nosec`). Offen: auf die nächste veröffentlichte Fassung heben, sobald sie erscheint; sie
   kann neue Regeln mitbringen, deshalb mit eigenem Commit. Kategorie B.
-- **gosec läuft nicht vor dem Push.** Der Hook vor dem Push fährt Go-Tests, svelte-check mit
-  Vitest, npm audit, govulncheck, Trivy und deadcode, gosec nicht. Am 09.10.2026 meldete gosec
-  erst auf GitHub eine Stelle, die ein Umzug hervorgebracht hatte
-  ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 5). Offen, nach Entscheidung: gosec mit der
-  Fassung und dem Aufruf aus `.github/workflows/security-scan.yml` in
-  `scripts/git-hooks/pre-push` aufnehmen. Gemessen am 09.10.2026 am Arbeitsplatz: 4 Sekunden,
-  wenn die Pakete schon gebaut sind. Kategorie B.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 

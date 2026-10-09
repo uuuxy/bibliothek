@@ -67,49 +67,11 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      # Feste Version statt @latest (28.09.2026), wie bei govulncheck: Ein neues gosec bringt
-      # neue Regeln mit, und die sollen sich mit einem eigenen Commit melden, nicht mitten in
-      # anderer Arbeit.
-      #
-      # Seit dem 09.10.2026 ein Entwicklungsstand statt einer veröffentlichten Fassung: v2.29.0
-      # bringt golang.org/x/tools 0.49 mit und liest die Paketdaten von Go 1.27.2 nicht (jedes
-      # Paket endete mit „has type errors", der Job mit Exit 1). Der Stand vom 05.10.2026 trägt
-      # x/tools 0.51 und meldet am selben Code nichts Neues. Auf die nächste veröffentlichte
-      # Fassung heben, sobald sie erscheint (docs/OFFEN.md 5.10).
-      - name: Install gosec
-        run: |
-          go install github.com/securego/gosec/v2/cmd/gosec@v2.29.1-0.20261005092323-d2b649ec0182
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-
-      # Ausgenommen sind nur Regeln, die heute Stellen melden — je Regel mit Grund und der
-      # Zahl, gemessen mit v2.29.0 ohne -exclude am 28.09.2026. Bis dahin standen hier 13
-      # Regeln mit einer Begründung für zwei; fünf davon (G110, G204, G304, G401, G702)
-      # meldeten gar nichts, weil ihre Stellen einzeln `#nosec` tragen. Sie sind wieder scharf:
-      # Eine neue Stelle ohne Vermerk wird rot.
-      #
-      # Eine global ausgenommene Regel meldet auch eine NEUE Stelle nicht. Die Umstellung auf
-      # einzelne Vermerke steht in docs/OFFEN.md 5.10.
-      #   G706 (36 Stellen)  Log-Einschleusung: log.Printf läuft über slog.SetDefault durch den
-      #                      JSON-Handler, ein Umbruch bleibt im String (docs/SECURITY.md,
-      #                      „Log-Injection", am Container nachgestellt).
-      #   G704 (6)           SSRF: Abrufe bei DNB, Open Library, Google Books und Cover-Quellen;
-      #                      Cover-Adressen gegen eine feste Host-Liste (docs/SECURITY.md,
-      #                      „Cover-Proxy").
-      #   G703 (5)           Pfad aus Eingabe: Cover-Cache und Oberfläche über os.Root gebunden,
-      #                      Backup-Pfade aus Umgebung und Kommandozeile des Betreibers.
-      #   G120 (5)           Formular ohne Grenze: Importe und Uploads; die Body-Grenze der
-      #                      Anfragekette begrenzt jeden Rumpf.
-      #   G124 (4)           Cookie-Attribute: Secure hängt an COOKIE_SECURE (im Betrieb true),
-      #                      HttpOnly und SameSite=Strict stehen fest; zwei Stellen im Lasttest.
-      #   G404 (4)           math/rand: nur im Demo-Seed (cmd/seed).
-      #   G115 (3)           int nach rune: Prüfziffern der Littera-Etiketten (Ziffern 0 bis 9)
-      #                      und der Demo-Seed.
-      #   G101 (1)           „Zugangsdaten": der Kopfname X-CSRF-Token im Lasttest.
+      # Über das Gate-Skript statt direkt: Es trägt die feste Fassung, den Aufruf und die
+      # ausgenommenen Regeln samt Grund, und es baut das Werkzeug selbst. Der Hook vor dem Push
+      # ruft dasselbe Skript.
       - name: Run gosec
-        run: >
-          gosec
-          -exclude=G706,G704,G703,G120,G124,G404,G115,G101
-          ./...
+        run: ./scripts/gosec-gate.sh
 
   # ── CodeQL steht NICHT hier ──────────────────────────────────────────────
   #

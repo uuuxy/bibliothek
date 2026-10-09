@@ -5,10 +5,11 @@ echo "🛡️  Starte Security-Audit für Go-Backend..."
 echo "========================================="
 
 # 1. Statische Code-Analyse (SAST) mit gosec
-# Dieselbe Fassung wie in .github/workflows/security-scan.yml; dort steht, warum es ein
-# Entwicklungsstand ist. Beim Heben beide Stellen ziehen.
+# Die Fassung steht in scripts/gosec-gate.sh. Hier läuft gosec ohne dessen Ausnahmen: Der
+# Sammel-Scan zeigt auch die Stellen der global ausgenommenen Regeln.
 echo -e "\n---> 1. Führe gosec aus (Quellcode-Analyse)..."
-go run github.com/securego/gosec/v2/cmd/gosec@v2.29.1-0.20261005092323-d2b649ec0182 ./...
+GOSEC_FASSUNG="$(sed -n 's/^GOSEC_FASSUNG="\(.*\)"$/\1/p' scripts/gosec-gate.sh)"
+go run "github.com/securego/gosec/v2/cmd/gosec@${GOSEC_FASSUNG}" ./...
 
 # 2. Abhängigkeiten und Konfigurationen mit Trivy prüfen
 # (Voraussetzung: Trivy ist installiert, z. B. via 'brew install trivy')

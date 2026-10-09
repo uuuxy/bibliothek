@@ -148,6 +148,19 @@ else
     exit 1
 fi
 
+# 4b. gosec (statische Sicherheitsanalyse)
+#
+# Dasselbe Skript wie im Sicherheits-Prüflauf: Die Fluss-Analyse meldet auch eine Stelle, an
+# der sich nur der Weg der Daten geändert hat, etwa nach dem Umzug einer Abfrage in eine
+# andere Schicht. Ohne diese Stufe fällt das erst auf GitHub auf.
+echo "[4b/6] Führe gosec (Backend, statische Analyse) aus..."
+if ./scripts/gosec-gate.sh; then
+    echo -e "${GREEN}✓ gosec bestanden.${NC}"
+else
+    echo -e "${RED}✗ gosec fehlgeschlagen! Push abgebrochen.${NC}"
+    exit 1
+fi
+
 # 5. Trivy (Container Security)
 #
 # Mit Zeitlimit, seit der Scan am 07.09.2026 einen Push 50 Minuten lang festhielt:

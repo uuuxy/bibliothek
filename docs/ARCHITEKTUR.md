@@ -1500,13 +1500,13 @@ liest, muss in Compose ankommen.
 | Workflow              | Auslöser                          | Stufen                                                                                                                                                                                       |
 | --------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ci.yml`              | Push, Pull Request                | `actionlint` · `build-and-test` (gofmt, **golangci-lint**, Deadcode-Gate, Postgres-Client für die Restore-Probe, `go test -race ./...`, **Skip-Bilanz**) · `frontend-test` (ESLint, Prettier, `svelte-check`, Vitest) · e2e (lokaler Stack **bauen**, Playwright-Browser aus Cache, Druck-Sektionen-Gate, Playwright; bei Fehlschlag Traces und Backend-Logs als Artefakt) |
-| `security-scan.yml`   | Push, Pull Request, **Zeitplan**  | `govulncheck` über `scripts/govulncheck-gate.sh` (benannte Ausnahmen in `security/vuln-ausnahmen.json`) · `gosec` · `npm audit` · Trivy-Scan des **gebauten Images** samt Container-Smoke (läuft unprivilegiert? sind die Laufzeitwerkzeuge da? ist jedes Volume beschreibbar?) |
+| `security-scan.yml`   | Push, Pull Request, **Zeitplan**  | `govulncheck` über `scripts/govulncheck-gate.sh` (benannte Ausnahmen in `security/vuln-ausnahmen.json`) · `gosec` über `scripts/gosec-gate.sh` · `npm audit` · Trivy-Scan des **gebauten Images** samt Container-Smoke (läuft unprivilegiert? sind die Laufzeitwerkzeuge da? ist jedes Volume beschreibbar?) |
 | `docker-publish.yml`  | Push auf `main`, `v*.*.*`, manuell | Build und Push nach `ghcr.io/uuuxy/bibliothek`, `linux/amd64`                                                                                                                                 |
 | `release.yml`         | Tag `v*.*.*`                      | Prüft Muster, Zugehörigkeit zu `main` und **grüne CI**, dann GitHub-Release mit generierten Notes                                                                                             |
 
 Dazu lokal: `scripts/install-hooks.sh` installiert pre-commit (Formatierung, ESLint,
 `golangci-lint`) und pre-push (Go-Tests, `golangci-lint`, `svelte-check`, Vitest,
-`npm audit`, `govulncheck`, Trivy, `deadcode` — plus die Skip-Bilanz).
+`npm audit`, `govulncheck`, `gosec`, Trivy, `deadcode` — plus die Skip-Bilanz).
 
 **Die Lehre vom 12.09.2026 steckt in dieser Reihenfolge:** Weil der Lint-Schritt in CI
 **vor** den Tests kommt, hat ein einziger ungenutzter Typ in einer Testdatei auch
@@ -2212,10 +2212,10 @@ wenn man ihn einmal gebraucht hat.
   sind `api/schichtung_test.go`, für einen verworfenen `CommandTag` `phantom_erfolg_test.go`,
   für `FROM schueler` `docs/lesepfade_gegen_sicht_test.go`, für `CURRENT_DATE`
   `docs/kalendertag_bestand_test.go`; die ganze Suite nennt jeden Eintrag, der fehlt. Zum
-  Schluss gosec mit dem Aufruf aus dem Sicherheits-Prüflauf fahren: Seine Taint-Analyse sieht
-  nach dem Umzug einen Weg von der Anfrage in die Antwort, den sie vorher nicht sah
-  ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5, Fall vom 09.10.2026); der Hook vor dem Push fährt
-  gosec nicht.
+  Schluss `./scripts/gosec-gate.sh` fahren: Die Taint-Analyse von gosec sieht nach dem Umzug
+  einen Weg von der Anfrage in die Antwort, den sie vorher nicht sah
+  ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5, Fall vom 09.10.2026). Der Hook vor dem Push fährt
+  das Skript mit, meldet sich aber erst nach dem Commit.
 
 ---
 
@@ -3540,7 +3540,7 @@ Fenstern bekannt ist:
 - gosec nimmt acht Regeln global aus (gemessen mit v2.29.0 am 28.09.2026, ohne `-exclude`):
   G706 (38 Stellen in 20 Dateien, nachgezählt am 08.10.2026), G704 (6), G703 (5), G120 (5),
   G124 (4), G404 (4), G115 (3), G101 (1); der Grund je Regel steht in
-  `.github/workflows/security-scan.yml`. Eine neue Stelle dieser Regeln meldet gosec nicht.
+  `scripts/gosec-gate.sh`. Eine neue Stelle dieser Regeln meldet gosec nicht.
   Abhilfe mit Anlass: je Stelle ein `#nosec` mit Grund, dann die Regel aus `-exclude` nehmen —
   außerhalb von G706 sind es 28 Stellen in 14 Dateien.
 - Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (16.09.2026), gefunden am

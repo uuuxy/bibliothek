@@ -114,8 +114,8 @@ Der Anspruch ist nicht „es gibt Tests", sondern: **Jedes Gate muss man einmal 
 haben.** Ein Gate, das seine Aussage nicht verlieren kann, prüft nichts.
 
 - **`scripts/install-hooks.sh`** installiert zwei Hooks: pre-commit prüft Formatierung,
-  ESLint und `golangci-lint`; pre-push fährt acht Stufen — Go-Tests, `golangci-lint`,
-  `svelte-check`, Vitest, `npm audit`, `govulncheck`, Trivy und `deadcode`. Der pre-push-Hook meldet außerdem, was
+  ESLint und `golangci-lint`; pre-push fährt neun Stufen — Go-Tests, `golangci-lint`,
+  `svelte-check`, Vitest, `npm audit`, `govulncheck`, `gosec`, Trivy und `deadcode`. Der pre-push-Hook meldet außerdem, was
   er **nicht** geprüft hat: Die DB-Integrationstests überspringen sich ohne
   `TEST_DATABASE_URL` stillschweigend, mit einem grünen „ok" daneben.
 - **DB-Integrationstests gegen echtes PostgreSQL** (`*_pg_test.go`, gated auf
