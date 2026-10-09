@@ -374,16 +374,29 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Sie hängt an 15 Namen aus `api/` und 17 aus `repository/` und nimmt den Typ der Antwort für
   den Bildschirm; sie ist die größte Sache. Sie unterscheidet sich von den übrigen Erzeugern:
   Das Blatt nennt 16 Typen der Antwort und die Tabelle der Protokoll-Angaben aus `repository/`
-  (`ProtokollAngabe…`). Eigene Eingabetypen in `pdf/` hießen, diese 16 Typen zu doppeln; der
-  andere Weg ist ein eigenes Paket für die Typen der Auskunft, das Tür und Blatt teilen. Vor dem
-  Umzug steht deshalb ein Plan, der beide Wege am Compiler misst; ein Gate liest den Quelltext
-  von `dsgvo_pdf.go` (`api/dsgvo_pdf_felder_gate_test.go`) und zieht mit. Die Anlagen der
-  Bestellmail
+  (`ProtokollAngabe…`). Eigene Eingabetypen in `pdf/` hießen, diese 16 Typen zu doppeln, und
+  `pdf/` dürfte die Tabelle aus `repository/` nicht einbinden. Die Anlagen der Bestellmail
   (`bestellmail_anhaenge.go`, bisher `pdf_service.go`) sind kein Erzeuger: Die Datei stellt sie
   zusammen und verschickt die Mail; sie bleibt als Helfer bei ihren Türen.
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
   umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
+- **Plan für die Auskunft** (zweiter Probe-Umzug am Compiler, 09.10.2026). Ziel ist ein eigenes
+  Paket `internal/auskunft`, wie beim LUSD-Import, nicht `pdf/`. Dorthin zieht alles, was keine
+  Methode der Tür ist: die Typen der Antwort, die Pflichtangaben mit ihren Fristen, der Wortlaut
+  der Vorgänge und das Blatt, zusammen 1.316 Zeilen aus fünf Dateien (`dsgvo_auskunft.go`,
+  `dsgvo_pdf.go`, `dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`,
+  `dsgvo_pflichtangaben_kollegium.go`). Dem Paket fehlt dann aus `api/` ein einziger Name
+  (`auditBescheidErstellt`, eine Zeile im Wortlaut der Vorgänge). In `api/` bleiben die Abfragen
+  über `repository/`, das Sammeln, der Protokolleintrag und die zwei Türen (285 Zeilen); sie
+  brauchen 14 Namen aus dem Paket, die dafür öffentlich werden. Mit zu ziehen sind die Tests des
+  Blatts und des Wortlauts, das Gate, das den Quelltext von `dsgvo_pdf.go` liest
+  (`api/dsgvo_pdf_felder_gate_test.go`), und die Schnittstellenbeschreibung: Sie nennt
+  `DsgvoAuskunftResponse` dann unter dem neuen Paket, wie schon Typen aus `repository/`
+  (`docs/swagger_drift_test.go`). 28 Testdateien in `api/` nennen Namen der Auskunft; die Tests
+  über die Tür bleiben dort. Beleg wie bei den übrigen Umzügen: Vergleichsblätter über die
+  Fälle der Antwort (leer, vollständig, Kollegium, mit und ohne Zugangskonto) und die Antwort
+  als JSON vorher und nachher. Danach führt der Bestand 18 Dateien.
 - **Was von den 21 umzieht und was bleibt** (eingeteilt am 09.10.2026 nach dem Inhalt jeder
   Datei). Zwei gehören zur Auskunft (`dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`, 548
   Zeilen). Sieben tragen Regeln und ziehen um (1.123 Zeilen):
