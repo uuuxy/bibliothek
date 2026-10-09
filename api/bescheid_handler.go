@@ -368,7 +368,7 @@ func pruefeBescheidAnfrage(req BescheidErstellenRequest) (time.Time, error) {
 		//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
 		return time.Time{}, apierrors.BadRequest("Bitte mindestens ein Buch auswählen.", errors.New("keine positionen"))
 	}
-	frist, err := time.ParseInLocation(dateFormatISO, req.FristBis, schulzeit.Zone())
+	frist, err := schulzeit.Kalendertag(req.FristBis)
 	if err != nil {
 		//nolint:staticcheck // ST1005: ganzer Satz.
 		return time.Time{}, apierrors.BadRequest("Die Frist muss ein Datum sein (JJJJ-MM-TT).", err)

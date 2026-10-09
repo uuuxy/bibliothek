@@ -44,3 +44,28 @@ func TestTagesEndeFaelltAufDenBerlinerKalendertag(t *testing.T) {
 		t.Errorf("TagesEnde liefert die Zone %v statt der Schulzeitzone", ende.Location())
 	}
 }
+
+// Ein Datum wird als Mitternacht in der Zone der Schule gelesen, im Sommer wie im Winter; was
+// kein Datum der Form JJJJ-MM-TT ist, ergibt einen Fehler.
+func TestKalendertag(t *testing.T) {
+	for datum, utc := range map[string]string{
+		"2027-06-29": "2027-06-28T22:00:00Z", // Sommerzeit: zwei Stunden vor UTC
+		"2027-01-15": "2027-01-14T23:00:00Z", // Winterzeit: eine Stunde vor UTC
+	} {
+		tag, err := Kalendertag(datum)
+		if err != nil {
+			t.Fatalf("%s: %v", datum, err)
+		}
+		if ist := tag.UTC().Format(time.RFC3339); ist != utc {
+			t.Errorf("Kalendertag(%q) ist in UTC %s, erwartet %s", datum, ist, utc)
+		}
+		if tag.Format(time.DateOnly) != datum || tag.Location() != Zone() {
+			t.Errorf("Kalendertag(%q) = %s in %s, erwartet denselben Tag in der Zone der Schule", datum, tag, tag.Location())
+		}
+	}
+	for _, kein := range []string{"", "29.06.2027", "2027-6-29", "2027-06-29T10:00:00Z", "2027-02-30"} {
+		if tag, err := Kalendertag(kein); err == nil {
+			t.Errorf("Kalendertag(%q) = %s ohne Fehler", kein, tag)
+		}
+	}
+}

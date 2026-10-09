@@ -63,6 +63,13 @@ func Jetzt() time.Time {
 	return time.Now().In(Zone())
 }
 
+// Kalendertag liest ein Datum (JJJJ-MM-TT) als Kalendertag der Schule: Mitternacht in ihrer
+// Zone. Türen, Fachlogik und Abfragen lesen ein Datum aus einer Eingabe oder aus dem LMF-Plan
+// hierüber; in UTC gelesen läge der Tag in der Schulzeit um eine oder zwei Stunden daneben.
+func Kalendertag(datum string) (time.Time, error) {
+	return time.ParseInLocation(time.DateOnly, datum, Zone())
+}
+
 // TagesEnde normalisiert einen Zeitpunkt auf das Ende seines Kalendertags (23:59:59)
 // in der Schul-Zeitzone. Dies ist die EINZIGE Definition von "Ende des Tages" im
 // System; internal/service reicht seine TagesEndeInSchulzeitzone hierher durch.

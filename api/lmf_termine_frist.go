@@ -52,7 +52,7 @@ func (s *Server) loeseLmfFristenVomTermin(ctx context.Context, ex repository.DBQ
 	if len(verlierer) == 0 {
 		return 0, nil
 	}
-	altTag, err := planTag(alt.Datum)
+	altTag, err := schulzeit.Kalendertag(alt.Datum)
 	if err != nil {
 		return 0, err
 	}
@@ -79,18 +79,13 @@ func setzeLmfFristenAufTermin(ctx context.Context, ex repository.DBQueryer, repo
 	if neu == nil || neu.Art != repository.LmfTerminRueckgabe || len(neu.Klassen) == 0 {
 		return 0, nil
 	}
-	neuTag, err := planTag(neu.Datum)
+	neuTag, err := schulzeit.Kalendertag(neu.Datum)
 	if err != nil {
 		return 0, err
 	}
 	von, bis := schuljahrGrenzen(neuTag)
 	return repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, neu.Klassen,
 		service.TagesEndeInSchulzeitzone(neuTag), von, bis, nil)
-}
-
-// planTag liest das Plan-Datum (JJJJ-MM-TT) als Kalendertag der Schule.
-func planTag(datum string) (time.Time, error) {
-	return time.ParseInLocation("2006-01-02", datum, schulzeit.Zone())
 }
 
 // schuljahrGrenzen liefert [1. August des Schuljahres, 1. August des nächsten).

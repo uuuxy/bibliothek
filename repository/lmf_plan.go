@@ -204,7 +204,7 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 	if len(plaetze) != len(zeilen) {
 		return LmfPlanStand{}, fmt.Errorf("lmf-plan: %d Plätze für %d Zeilen", len(plaetze), len(zeilen))
 	}
-	ersterTag, err := time.ParseInLocation("2006-01-02", plan.ErsterTag, schulzeit.Zone())
+	ersterTag, err := schulzeit.Kalendertag(plan.ErsterTag)
 	if err != nil {
 		return LmfPlanStand{}, err
 	}

@@ -126,7 +126,7 @@ func lmfPlanAbschnitte(termine []repository.LmfTermin, eingang []int) ([]pdf.Lmf
 		{Titel: strings.ToUpper(LmfArtTitel(repository.LmfTerminAusgabe)), Untertitel: LmfArtErklaerung(repository.LmfTerminAusgabe, eingang)},
 	}
 	for _, t := range termine {
-		datum, err := time.ParseInLocation("2006-01-02", t.Datum, schulzeit.Zone())
+		datum, err := schulzeit.Kalendertag(t.Datum)
 		if err != nil {
 			return nil, err
 		}

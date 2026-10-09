@@ -378,7 +378,7 @@ func pruefeLmfPlanZeile(nr int, z lmfPlanRequestZeile) (repository.LmfPlanZeile,
 	if z.Fest == nil {
 		return zeile, nil, nil
 	}
-	tag, err := planTag(strings.TrimSpace(z.Fest.Datum))
+	tag, err := schulzeit.Kalendertag(strings.TrimSpace(z.Fest.Datum))
 	if err != nil {
 		return zeile, nil, fmt.Errorf("zeile %d: fester Termin braucht ein Datum (JJJJ-MM-TT)", nr)
 	}
@@ -519,7 +519,7 @@ func (s *Server) verteileLmfPlan(e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanA
 	if rueckwaerts {
 		ankerTag = e.Plan.LetzterTag
 	}
-	anker, err := planTag(ankerTag)
+	anker, err := schulzeit.Kalendertag(ankerTag)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -538,7 +538,7 @@ func (s *Server) verteileLmfPlan(e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanA
 		r := lmfplan.Rahmen{ErsterTag: anker, Startstunde: e.Plan.Startstunde, StundenJeTag: e.Plan.StundenJeTag}
 		plaetze = lmfplan.VerteileMit(r, e.Fest, lmfplan.Schultage(frei))
 	}
-	ersterTag, err := planTag(e.Plan.ErsterTag)
+	ersterTag, err := schulzeit.Kalendertag(e.Plan.ErsterTag)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -562,7 +562,7 @@ func (s *Server) verteileLmfPlan(e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanA
 func lmfPlanFreieZeitraeume(tage []repository.LmfFreierTag) ([]lmfplan.Zeitraum, error) {
 	frei := []lmfplan.Zeitraum{}
 	for _, f := range tage {
-		tag, err := planTag(f.Datum)
+		tag, err := schulzeit.Kalendertag(f.Datum)
 		if err != nil {
 			return nil, err
 		}
@@ -597,7 +597,7 @@ func (s *Server) lmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTe
 	if err != nil {
 		return nil, err
 	}
-	tag, err := planTag(ersterTag)
+	tag, err := schulzeit.Kalendertag(ersterTag)
 	if err != nil {
 		return nil, err
 	}

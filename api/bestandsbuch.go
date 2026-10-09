@@ -77,7 +77,7 @@ func bestandsbuchZeitraum(r *http.Request) (von, bis time.Time, err error) {
 		if roh == "" {
 			return nil
 		}
-		t, fehler := time.ParseInLocation(dateFormatISO, roh, schulzeit.Zone())
+		t, fehler := schulzeit.Kalendertag(roh)
 		if fehler != nil {
 			return fmt.Errorf("%s muss ein Datum sein (JJJJ-MM-TT)", schluessel)
 		}

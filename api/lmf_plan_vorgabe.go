@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"bibliothek/pkg/lmfplan"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -87,13 +88,13 @@ func lmfPlanSommerferien(art string, plan *repository.LmfPlan, laufend bool, jet
 // Nachfolger hinaus muss.
 func lmfPlanEigeneFerien(rueckgabe bool, plan *repository.LmfPlan, jetzt time.Time, tab lmfplan.Ferientabelle) (lmfplan.Zeitraum, int, bool) {
 	if rueckgabe {
-		anker, err := planTag(plan.LetzterTag)
+		anker, err := schulzeit.Kalendertag(plan.LetzterTag)
 		if err != nil {
 			anker = jetzt
 		}
 		return tab.Naechste(anker, true)
 	}
-	beginn, err := planTag(plan.ErsterTag)
+	beginn, err := schulzeit.Kalendertag(plan.ErsterTag)
 	if err != nil {
 		beginn = jetzt
 	}
