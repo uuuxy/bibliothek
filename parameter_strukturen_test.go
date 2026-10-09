@@ -58,7 +58,7 @@ var parameterStrukturen = map[string]string{
 	"paarSignale":       "fehlendes Feld = ein Signal der Umbenennungs-Paarung zählt still nie",
 	"schuelerAenderung": "fehlendes Feld = Nachtrag ohne Protokolleintrag oder Schul-E-Mail ohne Konto",
 	"nachbuchAbsender":  "fehlendes Feld = Nachbuchung ohne Bearbeiter, mit unberichtigter Uhr oder ohne Entscheidung über den Sperrgrund",
-	"bestellMailWerte":  "fehlendes Feld = Bestellmail ohne Kundennummer, ohne Bestätigungs-Link oder ohne den Vermerk zum Topf",
+	"BestellMailWerte":  "fehlendes Feld = Bestellmail ohne Kundennummer, ohne Bestätigungs-Link oder ohne den Vermerk zum Topf",
 }
 
 func TestParameterStrukturen_JedesLiteralSetztJedesFeld(t *testing.T) {

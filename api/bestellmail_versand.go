@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
+	"bibliothek/internal/service"
 	"bibliothek/pdf"
 	"bibliothek/pkg/bestelllink"
 	"bibliothek/repository"
@@ -39,7 +41,7 @@ func (s *Server) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 		Ort:     settings.SchuleOrt,
 	}
 
-	betreff, textBody := s.loadBestellTemplate(ctx)
+	betreff, textBody := service.BestellVorlage(ctx, s.DB.Pool)
 	// Ohne hinterlegte öffentliche Adresse bleibt der Link leer: Die Bestellung geht dann
 	// ohne Bestätigungsschritt raus. Ein Link auf den internen Servernamen wäre beim
 	// Lieferanten wertlos und sähe trotzdem echt aus.
@@ -47,13 +49,13 @@ func (s *Server) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 	if settings.OeffentlicheAdresse != nil {
 		link = bestelllink.Adresse(*settings.OeffentlicheAdresse, d.Token)
 	}
-	subject, body := resolveBestellMail(betreff, textBody, bestellMailWerte{
-		kundennummer:    d.Kundennummer,
-		anzahlTitel:     len(d.Positionen),
-		anzahlExemplare: d.Exemplare,
-		link:            link,
-		gueltigBis:      d.LinkGueltigBis,
-		mittel:          d.Mittel,
+	subject, body := service.LoeseBestellMailAuf(betreff, textBody, service.BestellMailWerte{
+		Kundennummer:    d.Kundennummer,
+		AnzahlTitel:     len(d.Positionen),
+		AnzahlExemplare: d.Exemplare,
+		Link:            link,
+		GueltigBis:      d.LinkGueltigBis,
+		Mittel:          d.Mittel,
 	})
 
 	err = verschickeBestellmail(BestellMail{
@@ -70,6 +72,21 @@ func (s *Server) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitL
 		Mittel:               d.Mittel,
 	})
 	return link != "", err
+}
+
+// bestellVersandMeldung formuliert die Rückmeldung nach dem Versand. ohneLink heißt: Der
+// Hauptlieferant soll über einen Link bestätigen, aber es ist keine öffentliche Adresse
+// hinterlegt, und die Mail ging ohne Link hinaus. Sie sieht dabei vollständig aus; ohne die
+// Warnung fiele es erst auf, wenn die Bestätigung ausbleibt. Eine Warnung und kein Fehler: Die
+// Bestellung ist gespeichert, die Barcodes sind reserviert, und der Link lässt sich in der
+// Bestellhistorie nachträglich erzeugen.
+func bestellVersandMeldung(lieferantName string, ohneLink bool) (status, meldung string) {
+	if ohneLink {
+		return "warning", fmt.Sprintf(
+			"Bestellung an %s gesendet — aber OHNE Bestätigungs-Link: In den Einstellungen ist keine öffentliche Adresse hinterlegt. "+
+				"Link nachträglich in der Bestellhistorie erzeugen.", lieferantName)
+	}
+	return "success", fmt.Sprintf("Bestellung erfolgreich per E-Mail an %s gesendet.", lieferantName)
 }
 
 // fristBestellmailVermerk begrenzt das Schreiben des Vermerks nach einem Versandversuch.

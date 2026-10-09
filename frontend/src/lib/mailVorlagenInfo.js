@@ -1,7 +1,8 @@
 // Was die Anwendung je Vorlagen-Typ (mail_vorlagen.typ) weiß: den Namen in der Liste, wofür der
 // Text verwendet wird und welche Platzhalter der Renderer ersetzt. Die Platzhalter hält
-// api/mail_vorlagen_platzhalter_test.go deckungsgleich mit den Go-Renderern (reports_pdf.go,
-// bestellmail_text.go); ein Platzhalter, den nur diese Liste nennt, stünde wörtlich im Versand.
+// api/mail_vorlagen_platzhalter_test.go deckungsgleich mit den Go-Renderern (pdf/mahnbrief.go,
+// internal/service/bestellmail_text.go); ein Platzhalter, den nur diese Liste nennt, stünde
+// wörtlich im Versand.
 /** @type {Record<string, { name: string, verwendung: string, platzhalter: string[] }>} */
 export const vorlagenInfo = {
 	MAHNUNG_ELTERN: {

@@ -5,7 +5,7 @@ package api
 // Drei Orte behaupten je Vorlagen-Typ, welche {{.X}}-Platzhalter gelten:
 //
 //   1. der GO-RENDERER — die einzige Menge, die wirklich ersetzt wird
-//      (pdf/mahnbrief.go für MAHNUNG_ELTERN, bestellmail_text.go für
+//      (pdf/mahnbrief.go für MAHNUNG_ELTERN, internal/service/bestellmail_text.go für
 //      BESTELLUNG_HAENDLER),
 //   2. die ANZEIGE im Vorlagen-Editor (vorlagenInfo in mailVorlagenInfo.js),
 //   3. die SEED-TEXTE (schema.sql).
@@ -34,7 +34,7 @@ var platzhalterMuster = regexp.MustCompile(`\{\{\.[A-Za-z]+\}\}`)
 // Platzhalter-Menge tragen (Replacer, Split, Fallback-Vorlage).
 var rendererQuellen = map[string]string{
 	"MAHNUNG_ELTERN":      filepath.Join("..", "pdf", "mahnbrief.go"),
-	"BESTELLUNG_HAENDLER": "bestellmail_text.go",
+	"BESTELLUNG_HAENDLER": filepath.Join("..", "internal", "service", "bestellmail_text.go"),
 }
 
 // standardtextQuellen: je Typ die Go-Datei mit dem Text, der gilt, wenn die gespeicherte
@@ -216,7 +216,7 @@ func TestVorlagenPlatzhalterDetektorGreift(t *testing.T) {
 	if m := sammlePlatzhalter(ohneKommentare("// {{.Kommentar}}\nx := 1")); len(m) != 0 {
 		t.Error("Kommentar-Platzhalter dürfen nicht zählen")
 	}
-	if leseRendererPlatzhalter(t, "bestellmail_text.go")["{{.BuchListe}}"] {
+	if leseRendererPlatzhalter(t, rendererQuellen["BESTELLUNG_HAENDLER"])["{{.BuchListe}}"] {
 		t.Error("Händler-Renderer dürfte {{.BuchListe}} nie führen — Detektor liest offenbar die falsche Quelle")
 	}
 }

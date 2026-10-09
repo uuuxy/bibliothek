@@ -12,6 +12,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/smtptest"
 	"bibliothek/mailservice"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -189,6 +190,41 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 
 	nachricht := warteAufMail(t, sitzungen)
 	for _, zeile := range []string{"Kundennummer: K-Naacher-Zahlen", "Bestellte Titel: 1", "Gesamtanzahl Exemplare: 2"} {
+		if !strings.Contains(nachricht, zeile) {
+			t.Errorf("%q fehlt in der Mail:\n%s", zeile, kopf(nachricht))
+		}
+	}
+}
+
+// Die Mail nennt den Topf der Bestellung, im Betreff und im Text, und den Ablauf des Links als
+// Kalendertag der Schule. Beides reicht die Tür an den Mailtext; fehlt eines, sieht die Mail
+// trotzdem vollständig aus.
+func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+
+	setzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
+	sitzungen := mailAbfangen(t)
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	lieferant := haendler(t, pool, "Naacher-Topf", true)
+	titel := titelMitMeldebestand(t, pool, "LMF-Mathe-Topf", 0)
+
+	if rec := bestelleUeberHandler(t, srv, lieferant, titel); rec.Code != http.StatusOK {
+		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
+	}
+	var gueltigBis time.Time
+	if err := pool.QueryRow(context.Background(),
+		`SELECT token_gueltig_bis FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant).Scan(&gueltigBis); err != nil {
+		t.Fatalf("Ablauf des Links lesen: %v", err)
+	}
+
+	nachricht := warteAufMail(t, sitzungen)
+	for _, zeile := range []string{
+		"Subject: Buchbestellung Lernmittelfreiheit - ",
+		"Diese Bestellung: Lernmittelfreiheit",
+		"bis zum " + gueltigBis.In(schulzeit.Zone()).Format(dateFormatDE),
+	} {
 		if !strings.Contains(nachricht, zeile) {
 			t.Errorf("%q fehlt in der Mail:\n%s", zeile, kopf(nachricht))
 		}

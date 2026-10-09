@@ -97,10 +97,10 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 			supplierName = *lieferantName
 		default:
 			supplierName = resolveSupplierName(zustandNotiz)
-			groupKey = zeitpunkt.In(schulzeit.Zone()).Format("02.01.2006") + "|" + supplierName
+			groupKey = zeitpunkt.In(schulzeit.Zone()).Format(dateFormatDE) + "|" + supplierName
 			groupID = groupKey
 		}
-		dateStr := zeitpunkt.In(schulzeit.Zone()).Format("02.01.2006")
+		dateStr := zeitpunkt.In(schulzeit.Zone()).Format(dateFormatDE)
 
 		group, exists := groupsMap[groupKey]
 		if !exists {

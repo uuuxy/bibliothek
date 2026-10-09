@@ -1,4 +1,4 @@
-package api
+package service
 
 import (
 	"strings"
@@ -13,8 +13,8 @@ import (
 // und ein Ablauf, der still weiterläuft.
 
 func TestBestellMailTraegtDenTopfAuchOhnePlatzhalter(t *testing.T) {
-	subject, body := resolveBestellMail("Buchbestellung {{.Datum}}", "Sehr geehrte Damen und Herren,\n\nanbei die Bestellung.",
-		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: "", gueltigBis: nil, mittel: mitteltopf.Schultraeger})
+	subject, body := LoeseBestellMailAuf("Buchbestellung {{.Datum}}", "Sehr geehrte Damen und Herren,\n\nanbei die Bestellung.",
+		BestellMailWerte{Kundennummer: "K-1", AnzahlTitel: 2, AnzahlExemplare: 5, Link: "", GueltigBis: nil, Mittel: mitteltopf.Schultraeger})
 
 	if !strings.HasSuffix(subject, "– Schülerbücherei") {
 		t.Errorf("Betreff ohne Topf: %q", subject)
@@ -28,8 +28,8 @@ func TestBestellMailTraegtDenTopfAuchOhnePlatzhalter(t *testing.T) {
 }
 
 func TestBestellMailErsetztDenPlatzhalterUndHaengtDannNichtsAn(t *testing.T) {
-	subject, body := resolveBestellMail("Bestellung {{.Mittel}} {{.Datum}}", "Diese Bestellung: {{.Mittel}}.",
-		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 2, anzahlExemplare: 5, link: "", gueltigBis: nil, mittel: mitteltopf.Land})
+	subject, body := LoeseBestellMailAuf("Bestellung {{.Mittel}} {{.Datum}}", "Diese Bestellung: {{.Mittel}}.",
+		BestellMailWerte{Kundennummer: "K-1", AnzahlTitel: 2, AnzahlExemplare: 5, Link: "", GueltigBis: nil, Mittel: mitteltopf.Land})
 
 	if !strings.HasPrefix(subject, "Bestellung Lernmittelfreiheit ") {
 		t.Errorf("Platzhalter im Betreff nicht ersetzt: %q", subject)
@@ -45,13 +45,13 @@ func TestBestellMailErsetztDenPlatzhalterUndHaengtDannNichtsAn(t *testing.T) {
 // Die Werksvorgabe (Fallback, wenn die Vorlage fehlt) trägt den Platzhalter selbst —
 // sonst käme jede Fallback-Mail mit dem angehängten Absatz statt mit dem Topf im Betreff.
 func TestBestellMailFallbackKenntDenTopf(t *testing.T) {
-	for _, vorlage := range []string{bestellMailFallbackBetreff, bestellMailFallbackBody} {
+	for _, vorlage := range []string{bestellMailVorgabeBetreff, bestellMailVorgabeText} {
 		if !strings.Contains(vorlage, "{{.Mittel}}") {
 			t.Errorf("Fallback ohne {{.Mittel}}: %q", vorlage)
 		}
 	}
-	subject, _ := resolveBestellMail(bestellMailFallbackBetreff, bestellMailFallbackBody,
-		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 1, anzahlExemplare: 1, link: "", gueltigBis: nil, mittel: mitteltopf.Land})
+	subject, _ := LoeseBestellMailAuf(bestellMailVorgabeBetreff, bestellMailVorgabeText,
+		BestellMailWerte{Kundennummer: "K-1", AnzahlTitel: 1, AnzahlExemplare: 1, Link: "", GueltigBis: nil, Mittel: mitteltopf.Land})
 	if !strings.Contains(subject, "Lernmittelfreiheit") || strings.Contains(subject, "{{") {
 		t.Errorf("Fallback-Betreff: %q", subject)
 	}
@@ -61,8 +61,8 @@ func TestBestellMailFallbackKenntDenTopf(t *testing.T) {
 // Handlung, der Vermerk die Einordnung; beides muss da sein, wenn die Vorlage keins von
 // beiden platziert.
 func TestBestellMailVermerkStehtVorDemLinkAbsatz(t *testing.T) {
-	_, body := resolveBestellMail("Betreff", "anbei die Bestellung.",
-		bestellMailWerte{kundennummer: "K-1", anzahlTitel: 1, anzahlExemplare: 1, link: "https://bib.example.invalid/bestellung/x", gueltigBis: nil, mittel: mitteltopf.Land})
+	_, body := LoeseBestellMailAuf("Betreff", "anbei die Bestellung.",
+		BestellMailWerte{Kundennummer: "K-1", AnzahlTitel: 1, AnzahlExemplare: 1, Link: "https://bib.example.invalid/bestellung/x", GueltigBis: nil, Mittel: mitteltopf.Land})
 	vermerk := strings.Index(body, "Lernmittelfreiheit")
 	link := strings.Index(body, "https://bib.example.invalid/bestellung/x")
 	if vermerk < 0 || link < 0 || vermerk > link {

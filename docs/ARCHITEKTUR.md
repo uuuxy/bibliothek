@@ -619,9 +619,9 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 22.136 Zeilen, 140 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `api/`                  | 22.001 Zeilen, 139 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
 | `repository/`           | 21.022 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
-| `internal/service/`     | 4.516 Zeilen, 24 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
+| `internal/service/`     | 4.641 Zeilen, 25 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen (Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 924 Zeilen, 2 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/betriebsbereitschaft_alarm.go` |
 | `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/dsgvo_auskunft.go` und `api/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
@@ -668,6 +668,13 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   lädt die Tür aus Vorlage und Einstellungen. Das Bestellanschreiben bekommt Betreff und Vermerk
   als fertige Texte zum Topf der Bestellung und den Weg der Etiketten als Wert
   (`bestellanschreiben`, `api/bestellmail_anhaenge.go`); den Satz dazu wählt der Brief.
+- Den Text der Bestellmail formuliert `internal/service` (`bestellmail_text.go`): die Vorlage
+  mit ihrem Rückfall auf den Vorgabetext, die Platzhalter und die zwei Absätze zu Topf und
+  Bestätigungs-Link, die `LoeseBestellMailAuf` anhängt, wenn die Vorlage sie nicht selbst
+  setzt. Die Tür reicht Kundennummer, Zahlen, Link, Ablauf und Topf (`sendeBestellmail`,
+  `api/bestellmail_versand.go`) und entscheidet die Rückmeldung an die Oberfläche
+  (`bestellVersandMeldung`). Das Gate der Platzhalter liest den Renderer beim Dateinamen
+  (`api/mail_vorlagen_platzhalter_test.go`); zieht er um, zieht der Pfad dort mit.
 - Die Auskunft nach Art. 15 DSGVO steht in `internal/auskunft` und nicht in `pdf/`. Antwort und
   Blatt entstehen aus einem Objekt (`DsgvoAuskunftResponse`), damit das Blatt nichts auslässt,
   was die abgerufene Auskunft nennt; eigene Eingabetypen in `pdf/` hießen, 16 Typen zu doppeln.
@@ -3090,7 +3097,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 22.136 Zeilen in 140 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 22.001 Zeilen in 139 Dateien das schwerste Paket
 
 | | |
 | --- | --- |
@@ -3105,11 +3112,11 @@ Dateien von 53 gesunken, die Zahl der Anweisungen in den 48 von 143 gestiegen, w
 nur neue Dateien abwies. 44 Dateien mit 7.503 Zeilen banden `net/http` nicht ein, waren also
 keine Tür.
 
-Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 16 Dateien ohne Tür
-mit 1.817 Zeilen, darunter kein PDF-Erzeuger mehr. Der LUSD-Import steht in
+Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 15 Dateien ohne Tür
+mit 1.682 Zeilen, darunter kein PDF-Erzeuger mehr. Der LUSD-Import steht in
 `internal/lusd`, die Selbstprüfung und die Regel zu den Start-Geheimnissen in
 `internal/bereitschaft`, die Auskunft nach Art. 15 DSGVO mit ihrem Blatt in `internal/auskunft`,
-die Zuordnung der Kopfzeile einer Importdatei beim Importer in
+die Zuordnung der Kopfzeile einer Importdatei beim Importer und der Text der Bestellmail in
 `internal/service`, der Bescheid, die Etiketten, die
 Bestandsbücher, Mahnliste, Mahnbrief und Bestellanschreiben in `pdf/`, der Strichcode in `pkg/strichcode`,
 die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung in `pkg/mitteltopf`, ihr Bestätigungs-Link in `pkg/bestelllink`, die
@@ -3124,7 +3131,7 @@ Syntaxbaum (`go/parser`): 9.237 Zeilen stehen in Funktionen, deren Signatur eine
 Rest in Kommentaren, Einbindungen und Werten. Die 21 % sind eine Obergrenze für das, was keine
 Tür ist: Dazu zählen auch Füll-Funktionen (5.2.2) und Helfer, die aus einer Tür herausgelöst
 sind, um die Grenze der Komplexität zu halten. Als Schranke taugt die Zahl deshalb nicht; sie
-zeigt, wo zu lesen ist. Auch wenn alle 16 Dateien ausziehen, bleibt `api/` bei rund 20.300
+zeigt, wo zu lesen ist. Auch wenn alle 15 Dateien ausziehen, bleibt `api/` bei rund 20.300
 Zeilen: Das Paket trägt 230 Routen.
 
 #### R5 — Die Rechtematrix ist konfigurierbar und damit verstellbar

@@ -189,7 +189,6 @@ var dateienOhneTuer = []string{
 	"action_types.go",
 	"bescheid_absender.go",
 	"bestellmail_anhaenge.go",
-	"bestellmail_text.go",
 	"bestellmail_versand.go",
 	"betriebsbereitschaft_alarm.go",
 	"constants.go",

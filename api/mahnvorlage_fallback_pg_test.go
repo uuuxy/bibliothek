@@ -4,7 +4,7 @@ package api
 // fiel nur bei DB-FEHLER auf den Standardtext zurück — eine versehentlich leer
 // gespeicherte Vorlage (der Editor lässt '' durch, die Spalten sind NOT NULL,
 // aber '' ist erlaubt) erzeugte Mahnbriefe ohne Betreff und ohne Anschreiben.
-// Die Bestell-Schwester (loadBestellTemplate) prüfte von Anfang an auf leer.
+// Die Bestell-Schwester (service.BestellVorlage) prüfte von Anfang an auf leer.
 // Echtes Postgres, weil genau das Zusammenspiel aus gespeicherter Zeile und
 // Fallback-Entscheidung geprüft wird.
 
