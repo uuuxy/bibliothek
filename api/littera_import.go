@@ -79,7 +79,7 @@ func leseTabellarischeDaten(filename string, content []byte, contentStr string) 
 	}
 
 	reader := csv.NewReader(strings.NewReader(contentStr))
-	reader.Comma = detectCSVDelimiter(contentStr)
+	reader.Comma = service.ImportTrennzeichen(contentStr)
 	reader.LazyQuotes = true
 	rows, err = reader.ReadAll()
 	if err != nil {
@@ -94,7 +94,7 @@ func importHeaderMitPflichtspalten(rows [][]string) (map[string]int, error) {
 	if len(rows) < 1 {
 		return nil, fmt.Errorf("empty file")
 	}
-	headerMap := buildImportHeaderMap(rows[0])
+	headerMap := service.ImportKopfzeile(rows[0])
 	if _, ok := headerMap["titel"]; !ok {
 		return nil, fmt.Errorf("missing required column: titel")
 	}
@@ -225,7 +225,7 @@ func (s *Server) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 	contentStr := string(content)
 
 	reader := csv.NewReader(strings.NewReader(contentStr))
-	reader.Comma = detectCSVDelimiter(contentStr)
+	reader.Comma = service.ImportTrennzeichen(contentStr)
 	reader.LazyQuotes = true
 	rows, err := reader.ReadAll()
 	if err != nil {
@@ -237,7 +237,7 @@ func (s *Server) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	headerMap := buildImportHeaderMap(rows[0])
+	headerMap := service.ImportKopfzeile(rows[0])
 	if _, ok := headerMap["titel"]; !ok {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, fmt.Errorf("pflichtspalte fehlt: Titel"))
 		return

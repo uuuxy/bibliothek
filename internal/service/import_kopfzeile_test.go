@@ -1,8 +1,8 @@
-package api
+package service
 
 import "testing"
 
-func TestDetectCSVDelimiter(t *testing.T) {
+func TestImportTrennzeichen(t *testing.T) {
 	tests := []struct {
 		name    string
 		content string
@@ -15,19 +15,20 @@ func TestDetectCSVDelimiter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := detectCSVDelimiter(tt.content); got != tt.want {
-				t.Errorf("detectCSVDelimiter(%q) = %q, want %q", tt.content, got, tt.want)
+			if got := ImportTrennzeichen(tt.content); got != tt.want {
+				t.Errorf("ImportTrennzeichen(%q) = %q, want %q", tt.content, got, tt.want)
 			}
 		})
 	}
 }
 
-func TestBuildImportHeaderMap(t *testing.T) {
+func TestImportKopfzeile(t *testing.T) {
 	// Schlanker Littera-Export (7 Spalten, ohne Zustand)
-	m := buildImportHeaderMap([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode"})
+	m := ImportKopfzeile([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode"})
+	// Mit ok gelesen: Eine fehlende Spalte ergäbe sonst 0 und gälte als die erste.
 	for col, want := range map[string]int{"titel": 0, "autor": 1, "verlag": 2, "isbn": 3, "jahr": 4, "kategorie": 5, "barcode": 6} {
-		if m[col] != want {
-			t.Errorf("Littera-Header: %s = %d, want %d", col, m[col], want)
+		if idx, ok := m[col]; !ok || idx != want {
+			t.Errorf("Littera-Header: %s = %d (ok=%v), want %d", col, idx, ok, want)
 		}
 	}
 	if _, ok := m["zustand"]; ok {
@@ -35,23 +36,25 @@ func TestBuildImportHeaderMap(t *testing.T) {
 	}
 
 	// Volle Bestandsdatei (8 Spalten, inkl. Zustand)
-	full := buildImportHeaderMap([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand"})
+	full := ImportKopfzeile([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand"})
 	if idx, ok := full["zustand"]; !ok || idx != 7 {
 		t.Errorf("Bestand-Header: zustand = %d (ok=%v), want 7", idx, ok)
 	}
 
 	// Alternative Spaltennamen (Exemplarnummer statt Barcode, Systematik statt Kategorie)
-	alt := buildImportHeaderMap([]string{"Titelliste", "Verfasser", "Systematik", "Exemplarnummer"})
-	if alt["titel"] != 0 || alt["autor"] != 1 || alt["kategorie"] != 2 || alt["barcode"] != 3 {
-		t.Errorf("Alternative Header falsch gemappt: %+v", alt)
+	alt := ImportKopfzeile([]string{"Titelliste", "Verfasser", "Systematik", "Exemplarnummer"})
+	for col, want := range map[string]int{"titel": 0, "autor": 1, "kategorie": 2, "barcode": 3} {
+		if idx, ok := alt[col]; !ok || idx != want {
+			t.Errorf("Alternative Header: %s = %d (ok=%v), want %d", col, idx, ok, want)
+		}
 	}
 }
 
 // Regressionstest: Signatur ist das Rücken-Etikett (buecher_titel.signatur) und
 // KEIN Barcode-Alias. Das frühere Mapping signatur→barcode hat Signaturen als
 // Exemplar-Barcodes importiert und die echte Barcode-Spalte verdrängt.
-func TestBuildImportHeaderMap_SignaturIstKeinBarcode(t *testing.T) {
-	m := buildImportHeaderMap([]string{"Titel", "Signatur", "Barcode"})
+func TestImportKopfzeile_SignaturIstKeinBarcode(t *testing.T) {
+	m := ImportKopfzeile([]string{"Titel", "Signatur", "Barcode"})
 	if idx, ok := m["signatur"]; !ok || idx != 1 {
 		t.Errorf("signatur = %d (ok=%v), want 1", idx, ok)
 	}
@@ -62,7 +65,7 @@ func TestBuildImportHeaderMap_SignaturIstKeinBarcode(t *testing.T) {
 	// Datei nur mit Signatur-Spalte: kein Barcode-Mapping mehr — der Handler
 	// meldet dann sauber die fehlende Pflichtspalte, statt Signaturen als
 	// Barcodes zu importieren.
-	nurSignatur := buildImportHeaderMap([]string{"Titel", "Signatur"})
+	nurSignatur := ImportKopfzeile([]string{"Titel", "Signatur"})
 	if _, ok := nurSignatur["barcode"]; ok {
 		t.Errorf("Signatur-Spalte darf nicht mehr als barcode gemappt werden: %+v", nurSignatur)
 	}
