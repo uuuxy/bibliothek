@@ -2,10 +2,14 @@ package pdf
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/color"
+	"math"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -218,5 +222,156 @@ func TestMahnliste_BarcodeAlsBildUndNummer(t *testing.T) {
 	}
 	if bytes.Contains(ohne, []byte("/Subtype /Image")) {
 		t.Error("ohne Barcode trägt das Blatt ein Bild")
+	}
+}
+
+// Text und Bild im Inhaltsstrom einer Seite, in Punkt und von unten gemessen:
+// `BT 76.54 584.37 Td (Titel 1)Tj ET` und `q 19.84 0 0 48.19 51.02 562.68 cm /I… Do Q`.
+var (
+	mahnlisteTextOrt = regexp.MustCompile(`BT ([0-9.]+) ([0-9.]+) Td \(((?:\\.|[^()\\])*)\)Tj ET`)
+	mahnlisteBildOrt = regexp.MustCompile(`q ([0-9.]+) 0 0 ([0-9.]+) ([0-9.]+) ([0-9.]+) cm /I[0-9a-f]+ Do Q`)
+)
+
+// mahnlisteSeite ist, was auf einer Seite steht: jeder Text mit seiner Höhe und die Mitten der
+// Bilder.
+type mahnlisteSeite struct {
+	texte       map[string]float64
+	bildMitten  []float64
+	reihenfolge []string
+}
+
+func zahl(t *testing.T, s string) float64 {
+	t.Helper()
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		t.Fatalf("Zahl im Inhaltsstrom unlesbar: %q", s)
+	}
+	return f
+}
+
+func mahnlisteSeiten(t *testing.T, roh []byte) []mahnlisteSeite {
+	t.Helper()
+	var seiten []mahnlisteSeite
+	for _, strom := range pdftest.InhaltJeSeite(t, roh) {
+		seite := mahnlisteSeite{texte: map[string]float64{}}
+		for _, m := range mahnlisteTextOrt.FindAllSubmatch(strom, -1) {
+			seite.texte[string(m[3])] = zahl(t, string(m[2]))
+			seite.reihenfolge = append(seite.reihenfolge, string(m[3]))
+		}
+		for _, m := range mahnlisteBildOrt.FindAllSubmatch(strom, -1) {
+			seite.bildMitten = append(seite.bildMitten, zahl(t, string(m[4]))+zahl(t, string(m[2]))/2)
+		}
+		seiten = append(seiten, seite)
+	}
+	return seiten
+}
+
+// langeMahnliste baut einen Schüler mit n Büchern, jedes mit Cover und eigenen Texten.
+func langeMahnliste(n int, coverURL string) []MahnlisteSchueler {
+	medien := make([]MahnlisteMedium, 0, n)
+	for i := 1; i <= n; i++ {
+		medien = append(medien, MahnlisteMedium{
+			Titel: fmt.Sprintf("Titel %02d", i), Autor: fmt.Sprintf("Autor %02d", i), Barcode: fmt.Sprintf("B-9%03d", i),
+			CoverURL: coverURL, FaelligAm: fmt.Sprintf("%02d.06.2026", i), TageUeberfaellig: 100 + i,
+		})
+	}
+	return []MahnlisteSchueler{{Name: "Anna Apfel", Klasse: "05F", Medien: medien}}
+}
+
+// Eine Zeile setzt Cover, Strichcode und Nummer an feste Stellen. Bricht gofpdf mitten in ihr
+// um, stehen ihre Teile auf drei Seiten; Schulbücher eines Jahres sind schnell mehr als zehn.
+func TestMahnliste_LangeListeHaeltJedeZeileBeisammen(t *testing.T) {
+	mahnlisteUmgebung(t)
+	const anzahl = 25
+	seiten := mahnlisteSeiten(t, mahnliste(t, langeMahnliste(anzahl, schreibeCoverDatei(t, "cover_lang.webp"))))
+
+	// Eine Zeile ist 18 mm hoch; halb so viel über und unter dem Titel gehört zu ihr.
+	const halbeZeile = 18.0 / 2 / 25.4 * 72
+	gefunden := 0
+	var jeSeite []int
+	for nr, seite := range seiten {
+		zeilen := 0
+		for i := 1; i <= anzahl; i++ {
+			titelHoehe, da := seite.texte[fmt.Sprintf("Titel %02d", i)]
+			if !da {
+				continue
+			}
+			zeilen++
+			for _, teil := range []string{fmt.Sprintf("Autor %02d", i), fmt.Sprintf("B-9%03d", i), fmt.Sprintf("%02d.06.2026", i), fmt.Sprintf("%d Tage", 100+i)} {
+				hoehe, da := seite.texte[teil]
+				if !da {
+					t.Errorf("Seite %d: %q steht nicht auf der Seite seines Titels", nr+1, teil)
+				} else if math.Abs(hoehe-titelHoehe) > halbeZeile {
+					t.Errorf("Seite %d: %q steht %.0f Punkt neben seinem Titel", nr+1, teil, hoehe-titelHoehe)
+				}
+			}
+			bilder := 0
+			for _, mitte := range seite.bildMitten {
+				if math.Abs(mitte-titelHoehe) <= halbeZeile {
+					bilder++
+				}
+			}
+			if bilder != 2 {
+				t.Errorf("Seite %d, Zeile %d: %d Bilder in der Zeile, erwartet Cover und Strichcode", nr+1, i, bilder)
+			}
+		}
+		gefunden += zeilen
+		jeSeite = append(jeSeite, zeilen)
+		if _, koepfe := seite.texte["Buchtitel"]; zeilen > 0 && !koepfe {
+			t.Errorf("Seite %d: %d Zeilen ohne Spaltenköpfe", nr+1, zeilen)
+		}
+		if _, fortsetzung := seite.texte["Fortsetzung: Anna Apfel, 05F"]; fortsetzung != (nr > 0) {
+			t.Errorf("Seite %d: Fortsetzung mit Name und Klasse = %v, erwartet ab der zweiten Seite", nr+1, fortsetzung)
+		}
+		if len(seite.bildMitten) != 2*zeilen {
+			t.Errorf("Seite %d: %d Bilder bei %d Zeilen", nr+1, len(seite.bildMitten), zeilen)
+		}
+	}
+	if gefunden != anzahl {
+		t.Errorf("%d Zeilen gedruckt, erwartet %d", gefunden, anzahl)
+	}
+	if fmt.Sprint(jeSeite) != "[10 12 3]" {
+		t.Errorf("Zeilen je Seite: %v, erwartet [10 12 3]", jeSeite)
+	}
+}
+
+// Bis zehn Bücher bleibt es eine Seite. Die Fußzeile steht nie allein auf einem Blatt: Jede
+// Seite trägt mindestens eine Zeile, die letzte dazu die Fußzeile.
+func TestMahnliste_FusszeileStehtBeiDerLetztenZeile(t *testing.T) {
+	const fuss = "Schulbibliothek – Bei Fragen wende dich bitte an das Bibliotheksteam."
+	for n := 1; n <= 40; n++ {
+		seiten := pdftest.TexteJeSeite(t, mahnliste(t, langeMahnliste(n, "")))
+		wieViele := 1 + (max(n, 10)-10+11)/12
+		if len(seiten) != wieViele {
+			t.Errorf("%d Bücher: %d Seiten, erwartet %d", n, len(seiten), wieViele)
+		}
+		for nr, seite := range seiten {
+			text := strings.Join(seite, "\n")
+			if !strings.Contains(text, "Titel ") {
+				t.Errorf("%d Bücher, Seite %d: keine Zeile auf der Seite:\n%s", n, nr+1, text)
+			}
+			if strings.Contains(text, fuss) != (nr == len(seiten)-1) {
+				t.Errorf("%d Bücher, Seite %d von %d: Fußzeile = %v, erwartet nur auf der letzten", n, nr+1, len(seiten), strings.Contains(text, fuss))
+			}
+		}
+	}
+}
+
+// Ohne Klasse nennt die Folgeseite nur den Namen, ohne ein Komma ins Leere.
+func TestMahnliste_FortsetzungOhneKlasseNenntNurDenNamen(t *testing.T) {
+	schueler := langeMahnliste(11, "")
+	schueler[0].Klasse = ""
+	seiten := pdftest.TexteJeSeite(t, mahnliste(t, schueler))
+	if len(seiten) != 2 {
+		t.Fatalf("%d Seiten, erwartet 2", len(seiten))
+	}
+	fortsetzung := ""
+	for _, text := range seiten[1] {
+		if strings.HasPrefix(text, "Fortsetzung") {
+			fortsetzung = text
+		}
+	}
+	if fortsetzung != "Fortsetzung: Anna Apfel" {
+		t.Errorf("Folgeseite beginnt mit %q, erwartet %q", fortsetzung, "Fortsetzung: Anna Apfel")
 	}
 }

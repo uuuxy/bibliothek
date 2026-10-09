@@ -1561,7 +1561,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.9 Mahnliste und Mahnbrief getrennt, 8.14 um den Handgriff zum Umzug einer Anweisung ergänzt
+Stand: 08.10.2026 · am 09.10.2026 in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um den Handgriff zum Umzug einer Anweisung ergänzt
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -1925,7 +1925,7 @@ gegen die Tür klopft.
 
 | Dokument                                  | Erzeuger                               | Besonderheit                                                                                         |
 | ----------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Mahnliste                                 | `pdf/mahnliste.go`                     | Anhang der Mail an die Klassenleitung, je Schüler eine Seite; der Versand zählt keine Mahnung         |
+| Mahnliste                                 | `pdf/mahnliste.go`                     | Anhang der Mail an die Klassenleitung, je Schüler eine Seite, ab dem elften Buch Folgeseiten mit seinem Namen; der Versand zählt keine Mahnung |
 | Mahnbrief                                 | `api/reports_pdf.go`                   | Der **Druck** ist der Verwaltungsakt: nur hier steigt die Mahnstufe                                   |
 | Kontoauszug, Rechnung, Schadensfall, LMF-Plan | `pdf/` (gofpdf/maroto)             | Rechnung und Schadensfall nennen den Zahlungsweg je Topf (`pdf/zahlungsweg.go`)                       |
 | Bescheid (Landes-Lernmittel)              | `pdf/bescheid.go`                      | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
@@ -1944,6 +1944,13 @@ Trefferliste erzeugt, sah es an der Theke aus, als täte der Scanner **gar nicht
 Cover werden für die PDF-Einbettung aus WebP konvertiert (`pkg/coverdatei`) — weder
 `gofpdf` noch `maroto` kennen WebP. Ein Gate (`npm run test:druck`) prüft die
 Drucksektionen am gebauten Frontend.
+
+**Tabellen über mehrere Seiten.** Eine Zeile, die Bild oder Text an Stellen setzt, die sie aus
+ihrer Höhe rechnet, prüft vorher den Platz und beginnt sonst selbst die nächste Seite, mit
+Spaltenköpfen (`bescheidPlatzOderNeueSeite` in `pdf/bescheid.go`, die Schleife in
+`zeichneMahnSeite`). gofpdf bricht erst in der Zelle um, die nicht mehr passt; die Teile der
+Zeile stünden dann auf verschiedenen Seiten ([sweeps.md](sweeps.md), „Zeile an festen Stellen
+über dem Seitenumbruch").
 
 **Ausweise: zwei Renderer, einer fürs Papier.** Der Ausweis-Designer zeichnet die Karte
 zweimal: `designer/CanvasElement.svelte` auf dem Bildschirm, mit den Griffen zum Bearbeiten,

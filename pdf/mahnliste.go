@@ -33,6 +33,15 @@ type MahnlisteSchueler struct {
 	Medien []MahnlisteMedium
 }
 
+// Maße der Mahnliste in Millimetern. Unter mahnlisteSeitenende bricht gofpdf von sich aus um;
+// mahnlisteFussHoehe ist der Platz der Fußzeile samt Abstand unter der letzten Zeile.
+const (
+	mahnlisteRandUnten   = 20.0
+	mahnlisteSeitenende  = 297.0 - mahnlisteRandUnten
+	mahnlisteZeilenHoehe = 18.0
+	mahnlisteFussHoehe   = 15.0
+)
+
 // coverBox nennt Ort und Maße eines Covers auf dem Blatt.
 type coverBox struct {
 	x, y, breite, hoehe float64
@@ -104,7 +113,7 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med Mahnli
 	pdf.SetFont("Arial", "", 8)
 }
 
-// zeichneMahnSeite setzt die Seite eines Schülers: Kopf, Name und Klasse, die Tabelle seiner
+// zeichneMahnSeite setzt die Seiten eines Schülers: Kopf, Name und Klasse, die Tabelle seiner
 // Bücher und die Fußzeile.
 func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSchueler) {
 	pdf.SetFont("Arial", "B", 14)
@@ -143,19 +152,16 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSch
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(8)
 
-	pdf.SetFont("Arial", "B", 8)
-	pdf.SetFillColor(220, 225, 240)
-	pdf.CellFormat(8, 8, "", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(52, 8, tr("Buchtitel"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(26, 8, tr("Autor"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(40, 8, tr("Barcode"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(22, 8, tr("Fällig"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(26, 8, tr("Tage überfällig"), "1", 1, "C", true, 0, "")
-
-	pdf.SetFont("Arial", "", 8)
-	rowHeight := 18.0
+	zeichneMahnSpaltenkoepfe(pdf, tr)
 	for _, med := range sch.Medien {
-		zeichneMahnMedienZeile(pdf, tr, med, rowHeight)
+		// Eine Zeile setzt Cover, Strichcode und Nummer an feste Stellen; ein Umbruch mitten
+		// in ihr verteilte sie über drei Seiten. Passt sie mit der Fußzeile nicht mehr auf
+		// die Seite, beginnt sie auf der nächsten.
+		if pdf.GetY()+mahnlisteZeilenHoehe+mahnlisteFussHoehe > mahnlisteSeitenende {
+			pdf.AddPage()
+			zeichneMahnFortsetzung(pdf, tr, sch)
+		}
+		zeichneMahnMedienZeile(pdf, tr, med, mahnlisteZeilenHoehe)
 	}
 
 	pdf.Ln(10)
@@ -165,11 +171,38 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSch
 	pdf.SetTextColor(0, 0, 0)
 }
 
-// GenerateMahnlistePDF setzt die Mahnliste auf A4, je Schüler eine Seite. Ohne Schüler trägt
-// das Blatt einen Satz, der das sagt.
+// zeichneMahnSpaltenkoepfe setzt die Köpfe der Tabelle und stellt die Schrift der Zeilen ein.
+func zeichneMahnSpaltenkoepfe(pdf *gofpdf.Fpdf, tr func(string) string) {
+	pdf.SetFont("Arial", "B", 8)
+	pdf.SetFillColor(220, 225, 240)
+	pdf.CellFormat(8, 8, "", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(52, 8, tr("Buchtitel"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(26, 8, tr("Autor"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(40, 8, tr("Barcode"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(22, 8, tr("Fällig"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(26, 8, tr("Tage überfällig"), "1", 1, "C", true, 0, "")
+	pdf.SetFont("Arial", "", 8)
+}
+
+// zeichneMahnFortsetzung beginnt eine Folgeseite: Die Seiten eines Schülers werden einzeln
+// ausgeteilt, deshalb nennt jede, wem sie gehört.
+func zeichneMahnFortsetzung(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSchueler) {
+	zeile := "Fortsetzung: " + sch.Name
+	if sch.Klasse != "" {
+		zeile += ", " + sch.Klasse
+	}
+	pdf.SetFont("Arial", "B", 9)
+	pdf.Cell(0, 5, tr(zeile))
+	pdf.Ln(8)
+	zeichneMahnSpaltenkoepfe(pdf, tr)
+}
+
+// GenerateMahnlistePDF setzt die Mahnliste auf A4, je Schüler eine Seite und bei mehr als zehn
+// Büchern Folgeseiten. Ohne Schüler trägt das Blatt einen Satz, der das sagt.
 func GenerateMahnlistePDF(schueler []MahnlisteSchueler) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(18, 18, 18)
+	pdf.SetAutoPageBreak(true, mahnlisteRandUnten)
 	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	for _, sch := range schueler {

@@ -378,6 +378,17 @@ PDF, eine CSV oder eine Excel-Datei erzeugt (`api/`, `pdf/`, `inventur/`, `inter
 | --------- | ---- | ---- | ----- |
 | **Reihenfolge aus einer Map im Ausdruck** | Ein Erzeuger sammelt Zeilen in einer Map und druckt sie in der Reihenfolge der Schleife. Go mischt diese Reihenfolge bei jedem Lauf: Dasselbe Blatt nennt seine Zeilen bei jedem Druck anders, und zwei Ausdrucke desselben Berichts lassen sich nicht nebeneinanderlegen | `api/bestellbericht_handler_test.go` (acht Lieferanten stehen nach dem Namen geordnet; am Stand davor in drei Läufen rot) | 09.10.2026: eine Stelle, die Übersicht nach Lieferant im Jahres-Bestellbericht; sie ordnet jetzt nach dem Namen. Die eine andere Schleife über eine Map in diesen Dateien sortiert vor der Ausgabe (`dsgvoAngabenOhneBezeichnung` in `api/dsgvo_pdf_protokoll.go`). Die Suche sah Maps, die in derselben Datei entstehen, dazu jeden Schleifen-Ausdruck dieser Dateien von Hand; eine Map hinter einem Funktionsaufruf fände erst der Vergleich zweier Läufe |
 
+### Zeile an festen Stellen über dem Seitenumbruch, 09.10.2026 — eine Form
+
+Anlass: OFFEN 5.62. Vor dem Umzug der Mahnliste aus `api/` lagen ihre Vergleichsblätter für 1
+bis 60 Zeilen nebeneinander: Zehn Zeilen ergaben eine Seite, elf ergaben drei. Über den Bestand
+gesucht am selben Tag: jede Stelle in einem Erzeuger mit gofpdf, die sich eine Höhe merkt
+(`:= ….GetY()`) und danach an ihr zeichnet (`api/`, `pdf/`, `inventur/`).
+
+| Bugklasse | Form | Gate | Stand |
+| --------- | ---- | ---- | ----- |
+| **Zeile an festen Stellen über dem Seitenumbruch** | Eine Tabellenzeile merkt sich ihre Höhe und setzt Bild und Text an Stellen, die sie daraus rechnet. gofpdf bricht erst in der ersten Zelle um, die nicht mehr passt: Das Cover steht dann noch auf der alten Seite, Titel und Autor stehen oben auf der neuen, Strichcode und Nummer an der gemerkten Höhe unten auf der neuen, und die nächste Zelle bricht dort ein zweites Mal um | `pdf/mahnliste_test.go` (25 Bücher: jeder Text und beide Bilder einer Zeile stehen auf einer Seite in ihrer Höhe; 1 bis 40 Bücher: Seitenzahl, keine Seite ohne Zeile, Fußzeile nur auf der letzten; am Stand davor rot), `inventur/lernmittel_pdf_test.go` (Cover im Schulbuch-Export) | 09.10.2026: Die Mahnliste prüft vor jeder Zeile den Platz samt Fußzeile und beginnt sonst eine Folgeseite mit Name und Spaltenköpfen. Sieben Stellen merken sich eine Höhe. Geschützt sind fünf: der Schulbuch-Export (Platzprüfung vor der Zeile seit dem 03.09.2026), die Mahnliste, drei im Bescheid (`bescheidPlatzOderNeueSeite` vor Kästchen, Tabellenkopf und jeder Zeile). Die Auskunft liest die Höhe erst nach ihrer Zelle und zieht dort eine Linie; sie ist keine Zeile. Ungeschützt ist der Mahnbrief (`api/reports_pdf.go`): gemessen ab dem neunten Buch vier Seiten, steht in OFFEN 5.62. Nicht gesucht: eine Überschrift, die am Seitenende allein bleibt, während ihr Inhalt auf der nächsten Seite beginnt; Erzeuger mit maroto setzen ihre Zeilen selbst, die Etiketten schalten den Umbruch ab |
+
 ## Landkarte der Ratschen — was jede systembedingt NICHT sieht (07.09.2026)
 
 Anlass: An einem Tag dreimal dieselbe Erfahrung — die Schema-Parität war blind für DDL, das

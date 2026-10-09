@@ -79,6 +79,23 @@ func TexteJeSeite(t *testing.T, roh []byte) [][]string {
 	return seiten
 }
 
+// InhaltJeSeite liefert die entpackten Inhaltsströme getrennt, je Seite einen. Für Prüfungen am
+// Ort von Text und Bild: Koordinaten gelten je Seite.
+func InhaltJeSeite(t *testing.T, roh []byte) [][]byte {
+	t.Helper()
+	var seiten [][]byte
+	for _, strom := range stroemeAus(t, roh) {
+		// Ströme ohne Gedrucktes (Schriften, Bilder) sind keine Seiten.
+		if len(texteAus(strom)) > 0 {
+			seiten = append(seiten, strom)
+		}
+	}
+	if len(seiten) == 0 {
+		t.Fatalf("keine Seite mit Text im PDF (%d Bytes) — Textextraktion kaputt", len(roh))
+	}
+	return seiten
+}
+
 // lies entpackt alle Inhaltsströme des Dokuments und liefert sie roh und als Textstücke.
 func lies(t *testing.T, roh []byte) ([]byte, []string) {
 	t.Helper()
