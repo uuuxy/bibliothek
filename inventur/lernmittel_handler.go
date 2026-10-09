@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -73,7 +73,7 @@ func (handler *APIHandler) handlePortalLernmittelExport(w http.ResponseWriter, r
 		name += "_" + dateinamenTeil(fachName)
 	}
 	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s_%s.pdf"`, name, time.Now().Format("2006-01-02")))
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s_%s.pdf"`, name, schulzeit.Jetzt().Format("2006-01-02")))
 	if _, err := w.Write(datei); err != nil {
 		log.Printf("Portal Lernmittel-Export: schreiben: %v", err)
 	}

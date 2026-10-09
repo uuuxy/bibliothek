@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"bibliothek/pkg/csvutil"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -34,7 +34,7 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 	kopfGesendet := false
 	kopf := func() error {
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="bestand_export_%s.csv"`, time.Now().Format("2006-01-02")))
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="bestand_export_%s.csv"`, schulzeit.Jetzt().Format("2006-01-02")))
 		// Write UTF-8 BOM so Excel opens it correctly with UTF-8
 		_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF}) //nolint:errcheck
 		kopfGesendet = true

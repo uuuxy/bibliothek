@@ -5,10 +5,10 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
-	"time"
 
 	"bibliothek/pdf"
 	"bibliothek/pkg/csvutil"
+	"bibliothek/pkg/schulzeit"
 )
 
 // OrderedItem ist ein bestellter Titel mit seiner Menge, wie Anschreiben und Mail ihn nennen.
@@ -208,8 +208,9 @@ func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlief
 		MailAttachment{Name: datiertName("etiketten_gross", "pdf"), ContentType: contentTypePDF, Data: lernmittelPDF}), nil
 }
 
-// datiertName baut den Dateinamen einer Anlage — das Datum steht im Postfach des Händlers
-// zwischen allen anderen Bestellungen und ist dort die einzige Unterscheidung.
+// datiertName baut den Dateinamen einer Anlage mit dem Kalendertag der Schule: Das Datum steht
+// im Postfach des Händlers zwischen allen anderen Bestellungen und ist dort die einzige
+// Unterscheidung.
 func datiertName(basis, endung string) string {
-	return fmt.Sprintf("%s_%s.%s", basis, time.Now().Format(dateFormatISO), endung)
+	return fmt.Sprintf("%s_%s.%s", basis, schulzeit.Jetzt().Format(dateFormatISO), endung)
 }

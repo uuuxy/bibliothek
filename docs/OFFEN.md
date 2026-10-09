@@ -137,8 +137,7 @@ der Nummer nichts mehr dazu offen ist.
   ziehen je Sache aus `api/` in eigene Pakete.
 - [ ] **Gedruckter Text nach Zeichenzahl gekürzt (5.63):** an 18 Stellen messen, ob ein Text
   über seine Zelle läuft.
-- [ ] **Bestellanschreiben (5.64):** Zellen ohne Kürzen, Kopf am falschen Rand, Dateiname mit
-  dem Tag des Servers.
+- [ ] **Bestellanschreiben (5.64):** Zellen ohne Kürzen, Kopf am falschen Rand.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -424,19 +423,15 @@ und Zellenbreite messen, ob die zugelassene Zahl breiter Buchstaben über die Ze
 dann auf die Breite kürzen. Die Etiketten sind im Aussehen abgenommen; dort ändert sich mit der
 Umstellung, wo ein langer Titel endet.
 
-### 5.64 Bestellanschreiben: drei Funde
+### 5.64 Bestellanschreiben: zwei Funde
 
-Gefunden am 09.10.2026 beim Umzug des Bestellanschreibens nach `pdf/`; alle drei sind älter als
-der Umzug.
+Gefunden am 09.10.2026 beim Umzug des Bestellanschreibens nach `pdf/`; beide sind älter als der
+Umzug.
 
 - **Zellen ohne Kürzen.** Titel, Autor und ISBN stehen im Bestellanschreiben ungekürzt in
   Zellen fester Breite; ein langer Titel läuft über die Nachbarzelle (wie 5.63).
 - **Kopf am falschen Rand.** Das Bestellanschreiben setzt seine Ränder nach dem Anlegen der
   Seite: Der Name der Schule steht 10 mm vom Rand, alles Weitere 20 mm.
-- **Dateiname mit dem Tag des Servers.** `datiertName` (`api/bestellmail_anhaenge.go`) nimmt die
-  Uhr des Servers statt den Kalendertag der Schule; zwischen 0 und 2 Uhr trägt eine Anlage der
-  Bestellmail den Vortag im Namen. Die Stelle steht mit zwei Downloads in `inventur/` als
-  hingenommener Bestand in `docs/kalendertag_bestand_test.go`.
 
 ---
 
