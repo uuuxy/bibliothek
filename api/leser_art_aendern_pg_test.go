@@ -128,6 +128,14 @@ func TestLeserArtAendern(t *testing.T) {
 		}
 	})
 
+	// Ein Leser, den es nicht gibt, ist ein 404 mit seinem Satz und kein Serverfehler.
+	t.Run("unbekannter Leser", func(t *testing.T) {
+		rec := patch(t, "00000000-0000-4000-8000-00000000a47e", `{"art":"liv"}`)
+		if rec.Code != http.StatusNotFound || !strings.Contains(rec.Body.String(), "leser nicht gefunden") {
+			t.Fatalf("PATCH gab %d, erwartet 404 mit dem Satz zum fehlenden Leser: %s", rec.Code, rec.Body.String())
+		}
+	})
+
 	t.Run("eine vierte Art ist ein Tippfehler", func(t *testing.T) {
 		id := legeKollegen(t, "Tippfehler", "lehrkraft")
 		if rec := patch(t, id, `{"art":"referendar"}`); rec.Code != http.StatusBadRequest {

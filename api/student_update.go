@@ -23,32 +23,24 @@ import (
 func (s *Server) pruefeSchuelerLoeschbar(ctx context.Context, id string) (int, error) {
 	// `leser` statt der Sicht `schueler`: Die zeigt nur Schüler, und ein Kollege kam hier
 	// als „nicht gefunden" zurück, bevor auch nur eine Regel geprüft war.
-	var studentExists bool
-	if err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM leser WHERE id = $1)", id).Scan(&studentExists); err != nil {
+	studentExists, err := repository.LeserVorhanden(ctx, s.DB.Pool, id)
+	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 	if !studentExists {
 		return http.StatusNotFound, errors.New("leser nicht gefunden")
 	}
 
-	var hasActiveLoans bool
-	if err := s.DB.Pool.QueryRow(ctx, `
-		SELECT EXISTS(
-			SELECT 1
-			FROM ausleihen
-			WHERE schueler_id = $1 AND rueckgabe_am IS NULL
-		)
-	`, id).Scan(&hasActiveLoans); err != nil {
+	hasActiveLoans, err := repository.LeserHatOffeneAusleihen(ctx, s.DB.Pool, id)
+	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 	if hasActiveLoans {
 		return http.StatusBadRequest, errors.New("löschen nicht möglich: Dieser Leser hat noch entliehene Bücher")
 	}
 
-	var hasUnpaidDamages bool
-	if err := s.DB.Pool.QueryRow(ctx, `
-		SELECT EXISTS(SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)
-	`, id).Scan(&hasUnpaidDamages); err != nil {
+	hasUnpaidDamages, err := repository.LeserHatUnbezahlteForderungen(ctx, s.DB.Pool, id)
+	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 	if hasUnpaidDamages {
@@ -337,8 +329,8 @@ func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 	}
 	neu := strings.TrimSpace(*reqLusd)
 
-	var aktuell string
-	if err := s.DB.Pool.QueryRow(ctx, "SELECT COALESCE(lusd_id, '') FROM leser WHERE id = $1", id).Scan(&aktuell); err != nil {
+	aktuell, err := repository.LusdIDDesLesers(ctx, s.DB.Pool, id)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 			return "", false
@@ -362,9 +354,8 @@ func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 
 	// Eindeutigkeit VOR dem Schreiben prüfen, damit statt eines 500 am partiellen
 	// Unique-Index (uniq_schueler_lusd_id_active) eine klare 409 zurückkommt.
-	var belegt bool
-	if err := s.DB.Pool.QueryRow(ctx,
-		"SELECT EXISTS(SELECT 1 FROM schueler WHERE lusd_id = $1 AND deleted_at IS NULL AND id <> $2)", neu, id).Scan(&belegt); err != nil {
+	belegt, err := repository.LusdIDBeiAnderemSchueler(ctx, s.DB.Pool, neu, id)
+	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", false
 	}
@@ -416,11 +407,11 @@ func (s *Server) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 		return false
 	}
 
-	var aktuell string
-	// `leser` und nicht die Sicht `schueler`: Die Sicht ist auf art='schueler'
-	// eingeschraenkt (schema.sql), ein Kollege steht schlicht nicht darin.
-	if err := s.DB.Pool.QueryRow(ctx, "SELECT art FROM leser WHERE id = $1", id).Scan(&aktuell); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+	// Gelesen wird die Tabelle leser, nicht die Sicht schueler: Ein Kollege steht nicht in der
+	// Sicht.
+	aktuell, err := repository.LeserArt(ctx, s.DB.Pool, id)
+	if err != nil {
+		if errors.Is(err, repository.ErrLeserNichtGefunden) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
 			return false
 		}
