@@ -2,8 +2,11 @@ package api
 
 import (
 	"bytes"
+	"cmp"
 	"fmt"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -246,7 +249,20 @@ func zeichneLieferantenuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders
 	}
 	p.SetFont("Arial", "", 9)
 	p.SetFillColor(255, 255, 255)
-	for name, stat := range bySupplier {
+	// Eine Map hat keine Reihenfolge: Ohne die sortierten Namen stünden die Lieferanten bei
+	// jedem Druck anders untereinander.
+	namen := make([]string, 0, len(bySupplier))
+	for name := range bySupplier {
+		namen = append(namen, name)
+	}
+	slices.SortFunc(namen, func(a, b string) int {
+		if c := cmp.Compare(strings.ToLower(a), strings.ToLower(b)); c != 0 {
+			return c
+		}
+		return cmp.Compare(a, b)
+	})
+	for _, name := range namen {
+		stat := bySupplier[name]
 		p.CellFormat(85, 6, tr(name), "1", 0, "L", false, 0, "")
 		p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
 		if mitPreisen {

@@ -2,9 +2,11 @@ package api
 
 import (
 	"bytes"
+	"slices"
 	"testing"
 	"time"
 
+	"bibliothek/internal/pdftest"
 	"bibliothek/pdf"
 	"bibliothek/repository"
 )
@@ -96,6 +98,53 @@ func TestBerichtOhneBestellungen(t *testing.T) {
 		}
 		if !bytes.HasPrefix(daten, []byte("%PDF-")) {
 			t.Errorf("mitPreisen=%v: Ergebnis ist kein PDF", mitPreisen)
+		}
+	}
+}
+
+// Die Übersicht nach Lieferant der Jahresansicht nennt die Lieferanten nach dem Namen
+// geordnet, ohne Rücksicht auf Groß- und Kleinschreibung. Gesammelt werden sie in einer Map;
+// ohne feste Ordnung stünden sie bei jedem Druck desselben Berichts anders untereinander.
+func TestBericht_LieferantenStehenNachNamenGeordnet(t *testing.T) {
+	// Acht Lieferanten in der Reihenfolge ihrer Bestellungen: Dass eine Map sie zufällig
+	// geordnet ausgibt, kommt einmal in 40.320 Läufen vor.
+	namen := []string{"Klett", "cornelsen", "Westermann", "Buchner", "Auer", "Schroedel", "Diesterweg", "Oldenbourg"}
+	want := []string{"Auer", "Buchner", "cornelsen", "Diesterweg", "Klett", "Oldenbourg", "Schroedel", "Westermann"}
+	orders := make([]repository.BerichtBestellung, 0, len(namen))
+	for i, name := range namen {
+		orders = append(orders, repository.BerichtBestellung{
+			LieferantName: name, Bestelldatum: time.Date(2026, time.Month(i+1), 10, 0, 0, 0, 0, time.UTC),
+			Gesamtbetrag: float64(10 * (i + 1)), AnzahlExemplare: i + 1,
+		})
+	}
+
+	for _, f := range []struct {
+		ueberschrift string
+		mitPreisen   bool
+	}{{"Ausgaben nach Lieferant", true}, {"Bestellungen nach Lieferant", false}} {
+		roh, err := generateBestellBerichtPDF(orders, pdf.SchuleInfo{Name: "Testbibliothek"}, bestellBerichtOpts{
+			Titel: "Jahresbericht",
+			Von:   time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Bis: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
+			Jahresansicht: true, MitPreisen: f.mitPreisen,
+		})
+		if err != nil {
+			t.Fatalf("%s: Bericht drucken: %v", f.ueberschrift, err)
+		}
+		texte := pdftest.TexteInReihenfolge(t, roh)
+		anfang := slices.Index(texte, f.ueberschrift)
+		if anfang < 0 {
+			t.Fatalf("die Überschrift %q steht nicht auf dem Blatt", f.ueberschrift)
+		}
+		// Die ersten acht Zellen nach der Überschrift, die genau einen Lieferantennamen tragen,
+		// sind die Zeilen der Übersicht; die Detailliste folgt dahinter.
+		var gedruckt []string
+		for _, text := range texte[anfang:] {
+			if slices.Contains(namen, text) && len(gedruckt) < len(namen) {
+				gedruckt = append(gedruckt, text)
+			}
+		}
+		if !slices.Equal(gedruckt, want) {
+			t.Errorf("%s: Lieferanten in der Reihenfolge %q, erwartet %q", f.ueberschrift, gedruckt, want)
 		}
 	}
 }

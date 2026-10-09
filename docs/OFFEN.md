@@ -345,7 +345,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
   keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 27 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 24.147 Zeilen in 151 Dateien (am Anfang 30.785 in 168).
+  `api/` hat 24.163 Zeilen in 151 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`, der Strichcode in `pkg/strichcode`; in `pdf/` stehen
