@@ -41,17 +41,18 @@ var phantomBestand = map[string]int{
 	// und Aktualisierung (null Zeilen heißt, der Schutz der Bedingung hat gegriffen, der Lauf
 	// geht weiter), Neuanlage (INSERT), wartende Vormerkungen (null ist der Normalfall),
 	// Sperre und Anonymisierung eines Abgängers aus dem eben gelesenen Bestand.
-	"repository/lusd_import.go:SperreLusdImport":              1,
-	"repository/lusd_import.go:AdoptiereLusdWaise":            1,
-	"repository/lusd_import.go:AktualisiereLusdBestand":       1,
-	"repository/lusd_import.go:AnonymisiereAbgaenger":         2,
-	"repository/lusd_import.go:LoescheWartendeVormerkungen":   1,
-	"repository/lusd_import.go:LegeLusdSchuelerAn":            1,
-	"repository/lusd_import.go:SperreAbgaenger":               1,
-	"repository/schadensbrief.go:MerkeElternbriefErzeugt":     1,
-	"api/student_promotion.go:finalisiereSchuljahreswechsel":  1,
-	"api/student_promotion.go:fuehreSchuljahreswechselAus":    1,
-	"api/student_promotion.go:versetzeKlassenlehrerZuordnung": 2,
+	"repository/lusd_import.go:SperreLusdImport":            1,
+	"repository/lusd_import.go:AdoptiereLusdWaise":          1,
+	"repository/lusd_import.go:AktualisiereLusdBestand":     1,
+	"repository/lusd_import.go:AnonymisiereAbgaenger":       2,
+	"repository/lusd_import.go:LoescheWartendeVormerkungen": 1,
+	"repository/lusd_import.go:LegeLusdSchuelerAn":          1,
+	"repository/lusd_import.go:SperreAbgaenger":             1,
+	"repository/schadensbrief.go:MerkeElternbriefErzeugt":   1,
+	// Schuljahreswechsel: die Sperre des Laufs (kein Schreibvorgang) und das Umhängen einer
+	// Klassenleitung, deren Zeile die Transaktion unmittelbar davor gelesen hat.
+	"repository/schuljahreswechsel.go:SperreSchuljahreswechsel": 1,
+	"repository/klassenleitung.go:BenenneKlassenleitungUm":      1,
 	// Räumt den bisherigen Hauptlieferanten; null Zeilen heißt, es gab keinen.
 	"repository/lieferanten_pflege.go:SetzeHauptlieferant": 1,
 	// Sachgruppe ändern und löschen: Die Tür liest die Zeile unmittelbar davor und antwortet

@@ -336,9 +336,9 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1 unter R4, die Messwerte vom 09.10.2026 ebenfalls.
 
 - **Die Bremse steht.** `api/schichtung_test.go` zählt die SQL-Anweisungen je Datei und führt
-  die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 3
-  Dateien mit 24 Anweisungen (am Anfang 48 mit 177), 34 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 25.960 Zeilen in 158 Dateien (am Anfang 30.785 in 168).
+  die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 2
+  Dateien mit 12 Anweisungen (am Anfang 48 mit 177), 34 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 25.846 Zeilen in 158 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`. Offen: der Aufbau der PDFs und der Rest der 34.
@@ -353,24 +353,18 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **SQL nach `repository/`.** Je Thema ein Commit, die Anweisung wörtlich und in derselben
   Transaktion wie vorher. Vor dem Umzug einer Anweisung muss ein Test an der Datenbank sie
   ausführen; fehlt er, kommt er zuerst. Der Handgriff steht in
-  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14, die Regeln für Tür und Abfrage in 5.2.2. Drei Dateien
+  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14, die Regeln für Tür und Abfrage in 5.2.2. Zwei Dateien
   tragen noch SQL:
   - `api/dsgvo_auskunft.go` (11): die Abfragen der Auskunft.
     `api/dsgvo_paar_vollstaendigkeit_test.go` liest den Quelltext dieser Datei und verlangt
     jede Tabelle mit Leserbezug in einer ihrer Abfragen. Mit den Abfragen zieht das Gate an
     die neue Datei; danach wird es am Rückbau einer Quelle rot gesehen.
-  - `api/student_promotion.go` (12): der Schuljahreswechsel. Eine Transaktion mit der Sperre
-    des Laufs, dem Schutz vor dem zweiten Lauf über den Eintrag im Protokoll, der Versetzung
-    und den Klassenleitungen; `api/wegweiser_test.go` verweist auf einen Kommentar in einer
-    ihrer Abfragen. Die Datei zieht als Ganzes um.
   - `api/student_update.go` (1): die Anweisung, die das Ändern der Leserzeile aus den
     genannten Feldern zusammensetzt (`updateBuilder`). Vorher ist zu entscheiden, welche
     Schicht die Spalten nennt, die sich ändern lassen.
 - **Rest beim Protokoll der Verwaltung:** Die Einträge in `audit_logs` schreibt eine Anweisung,
-  `repository.SchreibeAdminProtokoll`. Zwei Stellen schreiben noch selbst: der
-  Schuljahreswechsel in seiner Transaktion (`api/student_promotion.go`; zieht mit den übrigen
-  Anweisungen der Datei um) und die Selbstanmeldung (`auth/selbstanmeldung.go`; `auth/` bindet
-  `repository/` nicht ein).
+  `repository.SchreibeAdminProtokoll`. Eine Stelle schreibt noch selbst: die Selbstanmeldung
+  (`auth/selbstanmeldung.go`); `auth/` bindet `repository/` nicht ein.
 - **Rest aus dem Umzug der Regeln:** `repository.ZusammenfuehrenAuftrag` bekommt die Rechnung des
   Abgangsjahrs weiter als Funktion gereicht (`AbgaengerJahr`), obwohl `repository.AbgaengerJahr`
   seit dem 09.10.2026 im selben Paket steht. Das Feld kann entfallen.

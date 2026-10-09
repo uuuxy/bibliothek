@@ -254,7 +254,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	//
 	// COALESCE(NULLIF(...)) statt blindem Überschreiben (31.08.2026): Ein BESTEHENDER
 	// Sperrgrund bleibt stehen — dasselbe Muster wie in SperreAbgaenger (lusd_import.go) und
-	// api/student_promotion.go. Vorher war dieser Schreiber der einzige, der den Grund
+	// schuljahreswechsel.go. Vorher war dieser Schreiber der einzige, der den Grund
 	// plattmachte, und der Restore erkannte die Zeile dann an seinem eigenen Marker als
 	// bloße Lösch-Sperre: Er setzte ist_gesperrt=false und block_reason=NULL, während
 	// is_manually_blocked=true stehen blieb — Verstoß gegen chk_schueler_block_reason

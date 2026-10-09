@@ -104,7 +104,7 @@ func TestPromoteStudents_CommitPathWritesAuditLog(t *testing.T) {
 	mock.ExpectQuery(`FROM klassen_lehrer_mapping`).
 		WillReturnRows(pgxmock.NewRows([]string{"klasse", "neue_klasse", "abschluss"}))
 	mock.ExpectExec(`INSERT INTO audit_logs`).
-		WithArgs("admin-1", `{"versetzt": 300, "abgaenger": 42}`, pgxmock.AnyArg()).
+		WithArgs("admin-1", "SCHULJAHRESWECHSEL", `{"versetzt": 300, "abgaenger": 42}`, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 

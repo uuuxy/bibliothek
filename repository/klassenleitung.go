@@ -80,3 +80,56 @@ func LoescheKlassenleitung(ctx context.Context, db DBQueryer, klasse string) (in
 	}
 	return tag.RowsAffected(), nil
 }
+
+// KlassenleitungVersetzung ist eine Zeile der Zuordnung mit ihrem Namen nach dem
+// Schuljahreswechsel. Entfaellt heißt: Die Klasse gibt es danach nicht mehr (Abschlussklasse)
+// oder sie wird neu gebildet (nach der 6 und nach der 10).
+type KlassenleitungVersetzung struct {
+	Alt, Neu  string
+	Entfaellt bool
+}
+
+// LeseKlassenleitungVersetzungen liest die Zuordnungen absteigend nach Stufe und liest sie ganz,
+// bevor die Transaktion wieder schreibt.
+func LeseKlassenleitungVersetzungen(ctx context.Context, db DBQueryer) ([]KlassenleitungVersetzung, error) {
+	rows, err := db.Query(ctx, `
+		SELECT klasse,
+		       lpad((substring(klasse from '^\d+')::int + 1)::text,
+		            greatest(length(substring(klasse from '^\d+')), length((substring(klasse from '^\d+')::int + 1)::text)), '0')
+		         || substring(klasse from '^\d+(.*)$') AS neue_klasse,
+		       (`+AbschlussklasseSQL("klasse")+`
+		        OR substring(klasse from '^\d+')::int IN (6, 10)) AS entfaellt
+		FROM klassen_lehrer_mapping
+		WHERE klasse ~ '^\d+'
+		ORDER BY substring(klasse from '^\d+')::int DESC, klasse DESC`)
+	if err != nil {
+		return nil, err
+	}
+	var zeilen []KlassenleitungVersetzung
+	for rows.Next() {
+		var z KlassenleitungVersetzung
+		if err := rows.Scan(&z.Alt, &z.Neu, &z.Entfaellt); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		zeilen = append(zeilen, z)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return zeilen, nil
+}
+
+// KlassenleitungVorhanden sagt, ob es für die Klasse eine Zuordnung gibt.
+func KlassenleitungVorhanden(ctx context.Context, db DBQueryer, klasse string) (bool, error) {
+	var vorhanden bool
+	err := db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM klassen_lehrer_mapping WHERE klasse = $1)`, klasse).Scan(&vorhanden)
+	return vorhanden, err
+}
+
+// BenenneKlassenleitungUm hängt die Zuordnung einer Klasse an deren neuen Namen.
+func BenenneKlassenleitungUm(ctx context.Context, db DBQueryer, neu, alt string) error {
+	_, err := db.Exec(ctx, `UPDATE klassen_lehrer_mapping SET klasse = $1 WHERE klasse = $2`, neu, alt)
+	return err
+}

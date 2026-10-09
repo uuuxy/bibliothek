@@ -43,7 +43,7 @@ func SchuljahrEnde(jetzt time.Time) int {
 //	"05F1" → 5, "F1"      "5F1" → 5, "F1"
 //	"7H1"  → 7, "H1"      "9R1" → 9, "R1"
 //
-// Dieselbe Auslegung wie im Versetzungslauf (api/student_promotion.go:
+// Dieselbe Auslegung wie im Versetzungslauf (repository/schuljahreswechsel.go:
 // substring(klasse from '^\d+')) und im Littera-Import (internal/littera/abgang.go).
 // Drei Stellen, eine Konvention — liefen sie auseinander, bekäme derselbe Schüler je
 // nach Weg ein anderes Datum.

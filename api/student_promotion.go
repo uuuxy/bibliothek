@@ -17,12 +17,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// schuljahreswechselLockKey ist der feste Advisory-Lock-Schlüssel, der gleichzeitige
-// Versetzungsläufe hart serialisiert (siehe fuehreSchuljahreswechselAus). Ein beliebiger,
-// aber im Projekt eindeutiger Wert — er teilt keinen Namensraum mit den tabellenbasierten
-// Sequenz-Locks (advisoryLockKey in repository/sequence_repo.go).
-const schuljahreswechselLockKey int64 = 748_2026
-
 // PromoteStudentsResponse liefert die Statistik des Schuljahreswechsels zurück.
 // Bei DryRun=true wurde nichts geschrieben — die Zahlen sind die exakte Vorschau
 // (identisches SQL, Transaktion wird zurückgerollt).
@@ -52,67 +46,6 @@ type promoteStudentsRequest struct {
 	Confirm bool `json:"confirm"`
 	DryRun  bool `json:"dry_run"`
 }
-
-// promoteStudentsQuery zählt Klassenbezeichnungen um eine Stufe hoch und markiert
-// Abschlussklassen als Abgänger. WER Abschlussklasse ist, sagt allein
-// repository.AbschlussklasseSQL — dieselbe Regel, nach der die Abgängerliste
-// (api/graduates.go) diese Klassen von Mai bis Juli zum Einsammeln zeigt. Bis zum
-// 05.09.2026 stand die Regel hier zweimal als eigener CASE-Block und in der Liste gar
-// nicht (dort galt ist_abgaenger — ein anderer Begriff unter demselben Namen).
-//
-// Wichtige Invarianten:
-//   - klasse ist NOT NULL (schema.sql) — Abgänger bekommen 'ABG', exakt wie der
-//     LUSD-Import-Pfad (computeLusdChanges), damit beide Wege dieselbe Konvention
-//     schreiben.
-//   - lpad erhält führende Nullen ('05a' → '06a'), ohne beim Stellenwechsel zu
-//     kürzen ('09' → '10', greatest() verhindert lpad-Truncation).
-var promoteStudentsQuery = `
-	WITH parsed AS (
-		SELECT id,
-			   klasse,
-			   substring(klasse from '^\d+') AS old_digits,
-			   (substring(klasse from '^\d+')::int + 1) AS new_grade,
-			   substring(klasse from '^\d+(.*)$') AS new_suffix,
-			   ` + repository.AbschlussklasseSQL("klasse") + ` AS is_graduating
-		FROM schueler
-		WHERE ist_abgaenger = false
-		  AND deleted_at IS NULL
-		  AND klasse ~ '^\d+'
-	),
-	calculated AS (
-		SELECT id,
-			   (lpad(new_grade::text, greatest(length(old_digits), length(new_grade::text)), '0') || new_suffix) AS new_klasse,
-			   is_graduating
-		FROM parsed
-	),
-	updated AS (
-		UPDATE schueler s
-		SET
-			klasse = CASE WHEN c.is_graduating THEN 'ABG' ELSE c.new_klasse END,
-			ist_abgaenger = c.is_graduating,
-			ist_gesperrt = CASE WHEN c.is_graduating THEN true ELSE s.ist_gesperrt END,
-			-- Abgänger werden gesperrt → chk_schueler_block_reason verlangt einen Grund.
-			-- Ein vorhandener (z. B. manueller) Grund bleibt erhalten.
-			block_reason = CASE WHEN c.is_graduating
-			                    THEN COALESCE(NULLIF(s.block_reason, ''), '` + repository.AbgaengerSperrgrundSchuljahreswechsel + `')
-			                    ELSE s.block_reason END,
-			-- Karenz-Uhr (Migration 094): beim ERSTEN Abgang gestempelt, wie im LUSD-Pfad
-			-- (sperreAbgaenger) — Import, Job und Wächter rechnen die Anonymisierung daran.
-			abgaenger_seit = CASE WHEN c.is_graduating THEN COALESCE(s.abgaenger_seit, NOW()) ELSE s.abgaenger_seit END,
-			abgaenger_jahr = CASE
-				WHEN c.is_graduating THEN EXTRACT(YEAR FROM NOW() AT TIME ZONE $1)
-				ELSE s.abgaenger_jahr
-			END,
-			aktualisiert_am = CURRENT_TIMESTAMP
-		FROM calculated c
-		WHERE s.id = c.id
-		RETURNING c.is_graduating
-	)
-	SELECT
-		COUNT(*) FILTER (WHERE is_graduating = false) AS versetzt,
-		COUNT(*) FILTER (WHERE is_graduating = true) AS abgaenger
-	FROM updated;
-`
 
 // PromoteStudentsHandler führt den automatischen Schuljahreswechsel durch.
 // @Summary      Automatische Versetzung (Schuljahreswechsel)
@@ -171,7 +104,7 @@ func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 		// irreversibel). Der Advisory-Lock (transaktionsgebunden, gibt beim Commit/
 		// Rollback automatisch frei) zwingt den zweiten Lauf zu warten, bis der erste
 		// fertig ist; danach sieht dessen COUNT den Audit-Eintrag und antwortet 409.
-		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, schuljahreswechselLockKey); err != nil {
+		if err := repository.SperreSchuljahreswechsel(ctx, tx); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return resp, false
 		}
@@ -180,7 +113,7 @@ func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 		}
 	}
 
-	if err := tx.QueryRow(ctx, promoteStudentsQuery, schulzeit.Zone().String()).Scan(&resp.PromotedCount, &resp.ArchivedCount); err != nil {
+	if resp.PromotedCount, resp.ArchivedCount, err = repository.VersetzeSchueler(ctx, tx, schulzeit.Zone().String()); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return resp, false
 	}
@@ -204,7 +137,7 @@ func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 }
 
 // versetzeKlassenlehrerZuordnung zählt die Klassennamen der Lehrer-Zuordnung mit
-// derselben Regel hoch wie promoteStudentsQuery die Schüler. Absteigend nach
+// derselben Regel hoch wie repository.VersetzeSchueler die Schüler. Absteigend nach
 // Stufe, damit '9a' erst nach dem Wegzug von '10a' auf den freien Namen rücken
 // kann; Abschlussklassen-Zeilen werden entfernt (die Kohorte verlässt die
 // Schule). Ebenso die Zeilen der Jahrgänge 6 und 10: Nach
@@ -218,71 +151,33 @@ func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 // die Kanonisierung nicht mehr entstehen. Er bleibt, damit ein Namenskonflikt
 // den Schuljahreswechsel auch künftig nie scheitern lässt.
 func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *PromoteStudentsResponse) error {
-	zeilen, err := leseKlassenlehrerVersetzung(ctx, tx)
+	zeilen, err := repository.LeseKlassenleitungVersetzungen(ctx, tx)
 	if err != nil {
 		return err
 	}
 
 	for _, z := range zeilen {
-		if z.entfaellt {
-			if _, err := tx.Exec(ctx, `DELETE FROM klassen_lehrer_mapping WHERE klasse = $1`, z.alt); err != nil {
+		if z.Entfaellt {
+			if _, err := repository.LoescheKlassenleitung(ctx, tx, z.Alt); err != nil {
 				return err
 			}
 			resp.MappingEntfernt++
 			continue
 		}
-		var belegt bool
-		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM klassen_lehrer_mapping WHERE klasse = $1)`, z.neu).Scan(&belegt); err != nil {
+		belegt, err := repository.KlassenleitungVorhanden(ctx, tx, z.Neu)
+		if err != nil {
 			return err
 		}
 		if belegt {
-			resp.MappingKonflikte = append(resp.MappingKonflikte, z.alt+" -> "+z.neu)
+			resp.MappingKonflikte = append(resp.MappingKonflikte, z.Alt+" -> "+z.Neu)
 			continue
 		}
-		if _, err := tx.Exec(ctx, `UPDATE klassen_lehrer_mapping SET klasse = $1 WHERE klasse = $2`, z.neu, z.alt); err != nil {
+		if err := repository.BenenneKlassenleitungUm(ctx, tx, z.Neu, z.Alt); err != nil {
 			return err
 		}
 		resp.MappingVersetzt++
 	}
 	return nil
-}
-
-// mappingVersetzung ist eine Zeile der Lehrer-Zuordnung mit ihrem Namen nach der Versetzung.
-type mappingVersetzung struct {
-	alt, neu  string
-	entfaellt bool
-}
-
-// leseKlassenlehrerVersetzung liest die Zuordnungen absteigend nach Stufe und liest sie ganz,
-// bevor die Transaktion wieder schreibt.
-func leseKlassenlehrerVersetzung(ctx context.Context, tx pgx.Tx) ([]mappingVersetzung, error) {
-	rows, err := tx.Query(ctx, `
-		SELECT klasse,
-		       lpad((substring(klasse from '^\d+')::int + 1)::text,
-		            greatest(length(substring(klasse from '^\d+')), length((substring(klasse from '^\d+')::int + 1)::text)), '0')
-		         || substring(klasse from '^\d+(.*)$') AS neue_klasse,
-		       (`+repository.AbschlussklasseSQL("klasse")+`
-		        OR substring(klasse from '^\d+')::int IN (6, 10)) AS entfaellt
-		FROM klassen_lehrer_mapping
-		WHERE klasse ~ '^\d+'
-		ORDER BY substring(klasse from '^\d+')::int DESC, klasse DESC`)
-	if err != nil {
-		return nil, err
-	}
-	var zeilen []mappingVersetzung
-	for rows.Next() {
-		var z mappingVersetzung
-		if err := rows.Scan(&z.alt, &z.neu, &z.entfaellt); err != nil {
-			rows.Close()
-			return nil, err
-		}
-		zeilen = append(zeilen, z)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return zeilen, nil
 }
 
 // parsePromoteRequest dekodiert den Request-Body und erzwingt die explizite Bestätigung
@@ -312,12 +207,7 @@ func parsePromoteRequest(w http.ResponseWriter, r *http.Request) (promoteStudent
 // Audit-Eintrag wird atomar mit dem Batch committet (finalisiereSchuljahreswechsel),
 // ein abgebrochener Lauf hinterlässt also keinen Eintrag und keine Sperre.
 func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWriter) bool {
-	var recentRuns int
-	err := tx.QueryRow(ctx, `
-		SELECT COUNT(*) FROM audit_logs
-		WHERE aktion = 'SCHULJAHRESWECHSEL'
-		  AND zeitstempel > NOW() - INTERVAL '12 hours'
-	`).Scan(&recentRuns)
+	recentRuns, err := repository.ZaehleJuengsteSchuljahreswechsel(ctx, tx)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
@@ -334,12 +224,8 @@ func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWrite
 // trägt zugleich den Doppellauf-Schutz) und committet die Transaktion. ok=false: die
 // Fehlerantwort wurde bereits geschrieben.
 func (s *Server) finalisiereSchuljahreswechsel(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, r *http.Request, userID string, promoted, archived int) bool {
-	if _, err := tx.Exec(ctx, `
-		INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse, zeitstempel)
-		VALUES ($1, 'SCHULJAHRESWECHSEL', $2::jsonb, $3, CURRENT_TIMESTAMP)
-	`, userID,
-		fmt.Sprintf(`{"versetzt": %d, "abgaenger": %d}`, promoted, archived),
-		getIP(r)); err != nil {
+	if err := repository.SchreibeAdminProtokoll(ctx, tx, userID, repository.AktionSchuljahreswechsel, getIP(r),
+		fmt.Sprintf(`{"versetzt": %d, "abgaenger": %d}`, promoted, archived)); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
 	}

@@ -35,7 +35,7 @@ var schreibpfadeGegenSicht = map[string]struct {
 }{
 	"cmd/seed/main.go":                       {1, "Testdaten: Schüler anlegen"},
 	"internal/littera/schreiber_personen.go": {1, "Littera-Schülerlauf; der Personenlauf des Kollegiums schreibt in benutzer"},
-	"api/student_promotion.go":               {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
+	"repository/schuljahreswechsel.go":       {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
 	"repository/lusd_import.go":              {5, "LUSD-Abgleich: anlegen, ändern, Abgang buchen — die LUSD kennt nur Schüler"},
 	"jobs/cron_dsgvo.go":                     {1, "Anonymisierung der Abgänger; das Kollegium hat keine Abgangslogik"},
 }

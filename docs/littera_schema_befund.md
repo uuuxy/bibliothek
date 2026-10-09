@@ -297,7 +297,7 @@ Kartenhersteller bzw. Ersatzetiketten, in den Stammdaten stehen sie nicht.
 * **Abgangsjahr — erledigt** (`AbgaengerJahr`, `IstAbschlussklasse`). `schueler.abgaenger_jahr`
   ist NOT NULL, Litteras `Abmeldedatum` aber bei **0 von 1.991** gefüllt — der Wert wird
   aus der Klasse gerechnet. Die Abschlussklassen sind **9H, 10R und 13**; die Regel ist
-  nicht neu erfunden, sondern aus `api/student_promotion.go` (`is_graduating`) übernommen,
+  nicht neu erfunden, sondern aus `repository/schuljahreswechsel.go` (`is_graduating`) übernommen,
   damit Import und Schuljahreswechsel dieselbe Aussage treffen. Die Förderstufe rechnet
   bewusst mit dem längsten Weg (13): Solange der Schüler da ist, steht das Jahr nur im
   Profil; als Abgänger markieren ihn Versetzung und LUSD-Import, und beide setzen dann das

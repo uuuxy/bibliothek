@@ -74,7 +74,7 @@ func TestWegweiserNennenOrteDieEsGibt(t *testing.T) {
 // wegKeinWeg nennt die Texte, in denen der Pfeil keinen Weg durch das Menü zeigt. Eine Ausnahme
 // zählt nur an einem Text, den die Prüfung sonst beanstanden könnte.
 var wegKeinWeg = []struct{ datei, stueck, grund string }{
-	{"api/student_promotion.go", "Abgänger werden gesperrt → chk_schueler_block_reason", "Kommentar in einer Abfrage"},
+	{"repository/schuljahreswechsel.go", "Abgänger werden gesperrt → chk_schueler_block_reason", "Kommentar in einer Abfrage"},
 	{"db/seed.go", "vererbung manage_", "Fehlertext über zwei Rechte"},
 	{"jobs/backup.go", "S3 upload successful → s3://", "Protokollzeile mit dem Ziel der Auslagerung"},
 	{"frontend/src/lib/UserManagementZugangsanfragen.svelte", "„Bearbeiten“ → Aktiv", "Knopf und Wert im Dialog"},

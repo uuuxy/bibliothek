@@ -8,13 +8,13 @@ import (
 
 // klassenMuster zerlegt eine Littera-Klassenbezeichnung: führende Ziffern = Jahrgang,
 // Rest = Zweig und Zug ("07H1" → 7, "H1"; "12T3" → 12, "T3"). Dieselbe Auslegung wie im
-// Versetzungslauf (api/student_promotion.go: substring(klasse from '^\d+')).
+// Versetzungslauf (repository/schuljahreswechsel.go: substring(klasse from '^\d+')).
 var klassenMuster = regexp.MustCompile(`^(\d+)(.*)$`)
 
 // AbschlussJahrgang liefert den Jahrgang, nach dem ein Zweig die Schule verlässt.
 //
 // Die Regel ist NICHT hier erfunden: Der Versetzungslauf markiert seit jeher genau
-// 9H, 10R und 13 als Abgänger (api/student_promotion.go, is_graduating). Diese Funktion
+// 9H, 10R und 13 als Abgänger (repository/schuljahreswechsel.go, is_graduating). Diese Funktion
 // leitet daraus dieselbe Aussage für den Import ab — zwei Wege, dieselbe Konvention.
 // Liefen sie auseinander, hätte ein importierter Schüler ein anderes Abgangsjahr als
 // derselbe Schüler nach dem ersten Schuljahreswechsel.

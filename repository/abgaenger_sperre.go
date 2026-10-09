@@ -3,7 +3,7 @@ package repository
 // Die automatische Abgänger-Sperre hat EIN Präfix und EINE Uhr (Ratsche
 // abgaenger_sperre_ratsche_test.go, Rasterdurchgang 02.09.2026). Drei Wege machen
 // einen Schüler zum Abgänger — LUSD-Import (internal/lusd/anwenden.go), Versetzung
-// (api/student_promotion.go) und indirekt das Zusammenführen — und zwei Wege heben die
+// (schuljahreswechsel.go) und indirekt das Zusammenführen — und zwei Wege heben die
 // Sperre wieder auf (Rückkehr per Import, Zusammenführen). Sie erkennen die Automatik
 // am Präfix des Sperrgrunds; ein manueller Grund trägt es nicht und bleibt stehen.
 // Bis Migration 095 schrieb die Versetzung „Automatische …" — die Rückkehr erkannte das

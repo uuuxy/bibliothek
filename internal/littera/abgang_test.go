@@ -3,7 +3,7 @@ package littera
 import "testing"
 
 // Die Abschlussklassen der Schule sind 9H, 10R und 13 (Gymnasium/Oberstufe) — dieselbe
-// Regel, die api/student_promotion.go beim Schuljahreswechsel anwendet. Liefen die
+// Regel, die repository/schuljahreswechsel.go beim Schuljahreswechsel anwendet. Liefen die
 // beiden auseinander, haette ein importierter Schueler ein anderes Abgangsjahr als
 // derselbe Schueler nach dem ersten Versetzungslauf.
 func TestAbgaengerJahr(t *testing.T) {
