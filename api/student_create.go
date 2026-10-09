@@ -259,12 +259,16 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 		jahr := repository.AbgaengerJahr(req.Klasse)
 		klasse, abgaengerJahr = &req.Klasse, &jahr
 	}
-	qInsert := `
-		INSERT INTO leser (barcode_id, vorname, nachname, klasse, geburtsdatum, abgaenger_jahr, art)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id
-	`
-	if err := tx.QueryRow(ctx, qInsert, barcodeID, req.Vorname, req.Nachname, klasse, parsedGebdatum, abgaengerJahr, req.Art).Scan(&studentID); err != nil {
+	studentID, err = repository.LegeLeserAn(ctx, tx, repository.LeserNeu{
+		Barcode:       barcodeID,
+		Vorname:       req.Vorname,
+		Nachname:      req.Nachname,
+		Klasse:        klasse,
+		Geburtsdatum:  parsedGebdatum,
+		AbgaengerJahr: abgaengerJahr,
+		Art:           req.Art,
+	})
+	if err != nil {
 		antworteAufLeserInsertFehler(w, err, barcodeID)
 		return "", "", false
 	}
@@ -311,7 +315,7 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 // „Mein Portal" längst selbst angemeldet hat. false heißt: Die Antwort ist geschrieben.
 func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, req CreateStudentRequest, parsedGebdatum *time.Time) bool {
 	if istSchuelerArt(req.Art) {
-		isDuplicate, err := pruefeSchuelerDuplikat(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
+		isDuplicate, err := repository.SchuelerDubletteVorhanden(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return false
@@ -322,7 +326,7 @@ func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWri
 		}
 		return true
 	}
-	belegt, err := pruefeLeserNamensdublette(ctx, tx, req.Vorname, req.Nachname)
+	belegt, err := repository.LeserNamensdubletteVorhanden(ctx, tx, req.Vorname, req.Nachname)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
@@ -372,45 +376,6 @@ func parseCreateGeburtsdatum(w http.ResponseWriter, raw *string) (*time.Time, bo
 	return &t, true
 }
 
-// pruefeSchuelerDuplikat erkennt einen bereits existierenden Schüler anhand von
-// Vor-/Nachname und Geburtsdatum (case-insensitive, ohne soft-gelöschte Datensätze).
-//
-// Ein fehlendes Geburtsdatum ist bewusst KEIN Duplikat-Kriterium: Zwei namensgleiche
-// Schüler ohne (noch nicht aus der LUSD übernommenes) Geburtsdatum sind nicht
-// automatisch dieselbe Person. Nur bei beidseitig bekanntem, identischem Geburtsdatum
-// liegt ein echtes Duplikat vor. `geburtsdatum = $3` liefert genau das: Ist eine der
-// beiden Seiten NULL, ist der Vergleich SQL-NULL ("nicht gleich"), die Zeile zählt nicht
-// als Treffer. Vorher stülpte coalesce beiden Seiten '1900-01-01' über und machte damit
-// namensgleiche Schüler OHNE Geburtsdatum fälschlich zu Duplikaten (Zwillings-Blockade):
-// der zweite "Leon Müller" ohne Geburtsdatum konnte gar nicht angelegt werden.
-//
-// Seit Migration 108 vergleicht die Prüfung in der Normalform suchnorm — derselben, in
-// der der Unique-Index und der LUSD-Schlüssel rechnen: „Müller" und „Mueller" sind ein
-// Mensch. Vorher nur lower(): Die Schreibvariante rutschte an der Prüfung vorbei und
-// stand als zweite Zeile in der Datenbank.
-func pruefeSchuelerDuplikat(ctx context.Context, tx pgx.Tx, vorname, nachname string, gebdatum *time.Time) (bool, error) {
-	var isDuplicate bool
-	q := `SELECT EXISTS(SELECT 1 FROM schueler WHERE suchnorm(vorname) = suchnorm($1) AND suchnorm(nachname) = suchnorm($2) AND geburtsdatum = $3::DATE AND deleted_at IS NULL)`
-	err := tx.QueryRow(ctx, q, vorname, nachname, gebdatum).Scan(&isDuplicate)
-	return isDuplicate, err
-}
-
-// pruefeLeserNamensdublette sucht einen aktiven Leser mit demselben Namen — in der
-// Normalform suchnorm, also „Müller" wie „Mueller".
-//
-// Gefragt wird die TABELLE `leser` und über ALLE Arten: Ein Kollege, der schon als
-// Schülerzeile aus dem Altbestand steht, ist derselbe Mensch. Die Prüfung ist bewusst
-// grob — sie weist auch zwei echte Namensvettern ab. Das ist der seltenere Fall, und er
-// meldet sich sofort; ein stiller zweiter Eintrag meldet sich nie.
-func pruefeLeserNamensdublette(ctx context.Context, tx pgx.Tx, vorname, nachname string) (bool, error) {
-	var belegt bool
-	q := `SELECT EXISTS(SELECT 1 FROM leser
-	       WHERE suchnorm(vorname) = suchnorm($1) AND suchnorm(nachname) = suchnorm($2)
-	         AND deleted_at IS NULL)`
-	err := tx.QueryRow(ctx, q, vorname, nachname).Scan(&belegt)
-	return belegt, err
-}
-
 // resolveNeueBarcodeID liefert die zu verwendende Barcode-ID: entweder die vom Client
 // gewünschte (nach Eindeutigkeitsprüfung) oder eine neu generierte S-Nummer aus der
 // zentralen Sequenz. ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
@@ -440,10 +405,8 @@ func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter,
 	// Gelöschte Leser geben ihre Nummer frei — dieselbe Bedingung wie
 	// uniq_schueler_barcode_active, sonst wiese die Prüfung eine Nummer ab, die die
 	// Datenbank vergeben würde.
-	var exists bool
-	if err := tx.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM leser WHERE barcode_id = $1 AND deleted_at IS NULL)`,
-		requested).Scan(&exists); err != nil {
+	exists, err := repository.AusweisnummerVergeben(ctx, tx, requested)
+	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", false
 	}

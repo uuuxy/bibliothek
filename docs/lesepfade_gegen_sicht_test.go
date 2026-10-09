@@ -52,7 +52,7 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/bescheid_ausstehend.go":    {1, "Offene Forderungen ohne Bescheid — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
 	// Durchsicht der Akte und des Drucks, 21.09.2026.
 	"repository/student_profile_queries.go": {1, "Liste der Klassen — Klassen haben nur Schüler"},
-	"api/student_create.go":                 {1, "Dublette über Name UND Geburtsdatum gibt es nur bei Schülern; für alle Leser prüft direkt danach pruefeLeserNamensdublette gegen die Tabelle"},
+	"repository/leser_anlegen.go":           {1, "Dublette über Name UND Geburtsdatum gibt es nur bei Schülern; für alle Leser prüft direkt danach LeserNamensdubletteVorhanden gegen die Tabelle"},
 	"repository/schadensbrief.go":           {2, "Elternbrief je Schadensfall und Anschrift der Ersatzforderung — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
 	// Rest der Durchsicht, 22.09.2026 — die Liste der Ungeprüften ist damit leer.
 	"api/student_update.go":                 {1, "Vorprüfung der LUSD-ID: chk_leser_nur_schueler_werden_abgaenger erzwingt lusd_id IS NULL für jeden Nicht-Schüler — Sicht und Tabelle liefern hier dasselbe"},
