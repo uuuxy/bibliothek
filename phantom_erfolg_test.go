@@ -26,7 +26,6 @@ import (
 // NEUE verwerfende Stelle macht das Gate rot, bis sie entweder RowsAffected prüft oder
 // hier begründet eingefroren wird. Der Bestand ist die Liste bewusster Ausnahmen:
 // INSERT/Upsert (0 Zeilen unmöglich oder legitim), Bulk-/FK-Aufräumen (0 = Normalfall),
-// Audit-Fire-and-forget (logExec konsumiert den Tag und zählt hier nicht mit),
 // vorgelagerte Existenz-Checks/FOR-UPDATE-Locks, DDL/Seed/Migrationen. Die Einordnung
 // je Stelle steht im Sweep-Bericht (docs/sweeps.md, Zeile Phantom-Erfolg).
 //
@@ -137,7 +136,7 @@ var phantomBestand = map[string]int{
 	// RowsAffected; das Ergebnis misst repository/auflagen_pg_test.go.
 	"repository/auflagen.go:nimmAuflagenSperre":               1,
 	"repository/auflagen.go:raeumeWerkAuf":                    1,
-	"repository/audit.go:LogAdminAktion":                      1,
+	"repository/audit.go:SchreibeAdminProtokoll":              1,
 	"repository/audit.go:insertAuditLog":                      1,
 	"repository/audit_books.go:DeleteTitle":                   3,
 	"repository/audit_system.go:BezahltGebuehr":               1,
@@ -238,8 +237,8 @@ func TestPhantomErfolg_KeineNeuenVerworfenenCommandTags(t *testing.T) {
 
 // zaehleVerworfeneTags zählt in einem Funktionsrumpf die Exec-Aufrufe, deren CommandTag
 // verworfen wird: `_, err := x.Exec(...)` und der bare Aufruf als eigenes Statement.
-// Ein Exec, dessen Ergebnis irgendwohin fließt (tag-Variable, logExec(...)-Argument),
-// zählt nicht — logExec IST der Marker für bewusstes Fire-and-forget.
+// Ein Exec, dessen Ergebnis irgendwohin fließt (tag-Variable, Argument eines Aufrufs),
+// zählt nicht.
 func zaehleVerworfeneTags(body *ast.BlockStmt, schluessel string, gefunden map[string]int) {
 	ast.Inspect(body, func(n ast.Node) bool {
 		switch stmt := n.(type) {

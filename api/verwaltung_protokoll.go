@@ -44,6 +44,15 @@ func (s *Server) protokolliereVerwaltung(ctx context.Context, aktion string, det
 	}
 }
 
+// schreibeAdminProtokoll schreibt einen Eintrag, dessen Details als JSON-Text vorliegen, mit
+// der Adresse des Aufrufers oder ohne. Der Vorgang gilt auch, wenn das Protokoll klemmt; der
+// Fehlversuch steht im Server-Log.
+func (s *Server) schreibeAdminProtokoll(ctx context.Context, adminID, aktion, ip, details string) {
+	if err := repository.SchreibeAdminProtokoll(ctx, s.DB.Pool, adminID, aktion, ip, details); err != nil {
+		log.Printf("audit/idempotenz: schreibvorgang fehlgeschlagen: %v", err)
+	}
+}
+
 // protokolliereGeaenderteFelder schreibt den Eintrag einer Änderung mit den Namen der
 // geänderten Felder. Ein Speichern, das nichts geändert hat, schreibt keinen Eintrag.
 func (s *Server) protokolliereGeaenderteFelder(ctx context.Context, aktion string, details map[string]any, felder []string) {

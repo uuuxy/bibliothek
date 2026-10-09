@@ -104,7 +104,7 @@ func (s *Server) UpdateMailSettingsHandler(mailRepo *repository.MailSettingsRepo
 			if merr != nil {
 				log.Printf("audit: Mail-Settings-Details konnten nicht serialisiert werden: %v", merr)
 			} else {
-				logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, $2, $3::jsonb)", claims.UserID, "UPDATE_MAIL_SETTINGS", string(detailsBytes)))
+				s.schreibeAdminProtokoll(ctx, claims.UserID, "UPDATE_MAIL_SETTINGS", "", string(detailsBytes))
 			}
 		}
 

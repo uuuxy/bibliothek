@@ -137,7 +137,7 @@ func (s *Server) protokolliereEinstellungen(r *http.Request, req repository.Eins
 		log.Printf("audit: Settings-Details konnten nicht serialisiert werden: %v", merr)
 		return
 	}
-	logExec(s.DB.Pool.Exec(r.Context(), "INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, $2, $3::jsonb)", claims.UserID, "UPDATE_SETTINGS", string(detailsBytes)))
+	s.schreibeAdminProtokoll(r.Context(), claims.UserID, "UPDATE_SETTINGS", "", string(detailsBytes))
 }
 
 // SitzungsEinstellungen sind die zwei Inaktivitäts-Fristen des Clients: Minuten bis die

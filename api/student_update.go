@@ -118,7 +118,7 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 		// Schlüssel `schueler_id` wie überall: Auskunft und Tilgung fragen genau diesen
 		// Schlüssel ab (Migration 091 hat die alte `student_id`-Form umgeschlüsselt).
 		details := fmt.Sprintf(`{"schueler_id":"%s"}`, id)
-		logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, "DELETE_STUDENT", details, getIP(r)))
+		s.schreibeAdminProtokoll(ctx, claims.UserID, "DELETE_STUDENT", getIP(r), details)
 
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"status": "success",

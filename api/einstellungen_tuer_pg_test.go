@@ -101,8 +101,8 @@ func TestEinstellungenSpeichern_NormalformUndProtokoll(t *testing.T) {
 	}
 	if n := zaehleZeilen(t, pool, `
 		SELECT count(*) FROM audit_logs
-		WHERE aktion = 'UPDATE_SETTINGS' AND admin_id = $1
+		WHERE aktion = 'UPDATE_SETTINGS' AND admin_id = $1 AND ip_adresse IS NULL
 		  AND details->>'sommerferien' = $2 AND details->>'lmf_eingangsjahrgaenge' = '5, 7'`, admin, ferien); n != 1 {
-		t.Errorf("%d Protokolleinträge mit den gespeicherten Werten, erwartet 1", n)
+		t.Errorf("%d Protokolleinträge mit den gespeicherten Werten und ohne Adresse, erwartet 1", n)
 	}
 }

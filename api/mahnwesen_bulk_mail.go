@@ -417,5 +417,5 @@ func (s *Server) logKlassenVersandAudit(r *http.Request, aktion string, details 
 	// (Prüfung 22.08.2026, A8). Claims bleiben erhalten (WithoutCancel behält Werte).
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(r.Context()), 5*time.Second)
 	defer abbruch()
-	logExec(s.DB.Pool.Exec(ctx, "INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse) VALUES ($1, $2, $3::jsonb, $4)", claims.UserID, aktion, string(payload), getIP(r)))
+	s.schreibeAdminProtokoll(ctx, claims.UserID, aktion, getIP(r), string(payload))
 }

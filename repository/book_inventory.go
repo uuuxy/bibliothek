@@ -200,8 +200,9 @@ func (r *pgBookRepository) BulkInsertCopiesTx(ctx context.Context, tx pgx.Tx, co
 	return err
 }
 
-// leererStringAlsNull übersetzt "kein Bestellstatus" in SQL-NULL — die CHECK-
-// Constraint chk_exemplar_bestellstatus lehnt den leeren String ab.
+// leererStringAlsNull übersetzt den leeren Text in SQL-NULL: Beim Bestellstatus lehnt die
+// CHECK-Constraint chk_exemplar_bestellstatus den leeren String ab, im Protokoll der
+// Verwaltung (audit_logs) steht ein fehlender Bearbeiter und eine fehlende Adresse als NULL.
 func leererStringAlsNull(s string) any {
 	if s == "" {
 		return nil

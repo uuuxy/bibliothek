@@ -131,20 +131,17 @@ func (r *pgAuditRepository) LogAdminAktion(ctx context.Context, adminID string, 
 	} else {
 		detailsJSON = []byte("{}")
 	}
+	return SchreibeAdminProtokoll(ctx, r.db, adminID, aktion, ip, string(detailsJSON))
+}
 
+// SchreibeAdminProtokoll schreibt einen Eintrag in audit_logs, dessen Details als JSON-Text
+// vorliegen; LogAdminAktion nimmt sie als Tabelle und geht denselben Weg. Ein leerer
+// Bearbeiter und eine leere Adresse stehen als NULL in der Zeile.
+func SchreibeAdminProtokoll(ctx context.Context, q DBQueryer, adminID, aktion, ip, details string) error {
 	query := `
-		INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse, zeitstempel) 
+		INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse, zeitstempel)
 		VALUES ($1, $2, $3::jsonb, $4, CURRENT_TIMESTAMP)
 	`
-	var adminPtr *string
-	if adminID != "" {
-		adminPtr = &adminID
-	}
-	var ipPtr *string
-	if ip != "" {
-		ipPtr = &ip
-	}
-
-	_, err := r.db.Exec(ctx, query, adminPtr, aktion, string(detailsJSON), ipPtr)
+	_, err := q.Exec(ctx, query, leererStringAlsNull(adminID), aktion, details, leererStringAlsNull(ip))
 	return err
 }
