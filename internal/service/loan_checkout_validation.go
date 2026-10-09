@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 )
 
@@ -25,7 +26,7 @@ type checkoutContext struct {
 // Frist aus der Klasse. Sie hängen an der ART des Lesers, nicht mehr daran, aus welcher
 // Tabelle er kam — das war vorher dasselbe und ist es seit Migration 125 nicht mehr.
 func (c *checkoutContext) istSchueler() bool {
-	return c.leser != nil && c.leser.Art == "schueler"
+	return c.leser != nil && leserart.IstSchueler(c.leser.Art)
 }
 
 // resolveBorrowerAndDueTime lädt den aktiven LESER und bestimmt seine Leihfrist.

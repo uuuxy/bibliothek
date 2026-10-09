@@ -175,7 +175,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		req.BarcodeID = strings.TrimSpace(req.BarcodeID)
 		req.Art = strings.TrimSpace(req.Art)
 		if req.Art == "" {
-			req.Art = "schueler"
+			req.Art = leserart.Schueler
 		}
 
 		if err := pruefeLeserAngaben(&req); err != nil {

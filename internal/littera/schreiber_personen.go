@@ -267,7 +267,7 @@ func (p *personenlauf) einePerson(ctx context.Context, tx pgx.Tx, l Leser) error
 func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
 	ziel := l.Art.ZielArt()
 	switch {
-	case ziel == "schueler":
+	case leserart.IstSchueler(ziel):
 		return p.schreibeSchueler(ctx, tx, l)
 	case leserart.MitKonto(ziel):
 		return p.schreibeLehrkraft(ctx, tx, l)

@@ -676,6 +676,12 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   Spalten in einem Typ der Änderung (`LeserAenderung`: ein Feld ohne Wert bleibt, wie es ist);
   die Tür prüft und füllt nur Werte. Ein Test hält jedes Feld des Typs gegen eine Spalte, ein
   zweiter jedes Feld der Anfrage gegen die gesetzten Spalten.
+- Eine Regel, die auch `repository/` oder `internal/service/` brauchen, steht in einem Paket
+  unter `pkg/` und nicht in `api/`: Die beiden können `api/` nicht einbinden und formulieren
+  die Regel sonst ein zweites Mal. So stand die Frage „Schüler oder nicht" am 09.10.2026 neben
+  der Funktion in `api/` an acht weiteren Stellen als eigener Vergleich, mit zwei Antworten
+  auf eine leere Art. Seitdem fragen alle `pkg/leserart` (`IstSchueler`, und wo die Art fehlen
+  kann, `IstKollegium`).
 
 `api/schichtung_test.go` hält den Stand: Keine Datei von `api/` formuliert SQL, und die Dateien
 ohne Tür stehen als Bestand, der nur kleiner werden kann. Dass der Zähler misst, belegt er an

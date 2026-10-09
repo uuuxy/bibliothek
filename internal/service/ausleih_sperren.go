@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 )
 
@@ -67,10 +68,9 @@ func SperreAmLeserHaeltAn(leser *repository.Student, lernmittel bool) error {
 	return pruefeSperreAmLeser(leser, lernmittel)
 }
 
-// istKollegium: jede Art außer Schüler. Leer heißt Schüler — so liest es die Sicht `schueler`
-// (repository.Student.Art); dieselbe Regel wie leserArt.js im Browser.
+// istKollegium: jede Art außer Schüler; leer heißt Schüler (leserart.IstKollegium).
 func istKollegium(leser *repository.Student) bool {
-	return leser.Art != "" && leser.Art != "schueler"
+	return leserart.IstKollegium(leser.Art)
 }
 
 // pruefeSperreAmLeser prüft die zwei Schalter am Leser. Ihr Merkmal (SperreAmLeser) sagt der

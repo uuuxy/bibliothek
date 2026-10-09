@@ -2,6 +2,7 @@ package repository
 
 import (
 	"bibliothek/db"
+	"bibliothek/pkg/leserart"
 	"context"
 	"errors"
 	"fmt"
@@ -294,7 +295,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	// Den legt man an, indem man in der Akte die Schul-E-Mail nachträgt
 	// (api/student_schul_email.go) — derselbe Weg wie beim Altbestand.
 	var kontenGeloescht int64
-	if art != "schueler" {
+	if !leserart.IstSchueler(art) {
 		if kontenGeloescht, err = r.loescheKontenDerLeserzeile(ctx, tx, studentID, bearbeiterID); err != nil {
 			return err
 		}

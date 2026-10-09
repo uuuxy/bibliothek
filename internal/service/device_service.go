@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/leserart"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/repository"
 
@@ -196,7 +197,7 @@ func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g 
 		INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist, bearbeiter_id, ist_handapparat)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
-	`, g.ID, leser.ID, dueTime, staffID, leser.Art != "schueler").Scan(&newLoanID)
+	`, g.ID, leser.ID, dueTime, staffID, !leserart.IstSchueler(leser.Art)).Scan(&newLoanID)
 	if err != nil {
 		// Zwei gleichzeitige Scans desselben Geräts: Der Verlierer verletzt
 		// uniq_ausleihen_aktiv_geraet (23505). Die Daten sind sicher (nur EINE aktive

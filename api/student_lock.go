@@ -10,6 +10,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -90,7 +91,7 @@ func (s *Server) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 		return apierrors.Conflict("Der Leser liegt im Papierkorb. Erst wiederherstellen.", nil)
 	case alt.Anonymisiert:
 		return apierrors.Conflict("Ein anonymisierter Datensatz bleibt gesperrt.", nil)
-	case req.IsLocked && alt.Art != "schueler":
+	case req.IsLocked && !leserart.IstSchueler(alt.Art):
 		return apierrors.BadRequest("Kollegen werden nicht gesperrt.", nil)
 	}
 

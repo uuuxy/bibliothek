@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/leserart"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -107,10 +108,8 @@ type zusammenfuehrenZeile struct {
 	art                                                string
 }
 
-// istKollege sagt, auf welcher Seite der Schüler-Grenze diese Zeile steht. Dieselbe
-// Frage wie istKollegium() im Frontend und wie leserart.IstSchueler() — die Antwort
-// muss überall dieselbe sein.
-func (z *zusammenfuehrenZeile) istKollege() bool { return z.art != "schueler" }
+// istKollege sagt, auf welcher Seite der Schüler-Grenze diese Zeile steht.
+func (z *zusammenfuehrenZeile) istKollege() bool { return !leserart.IstSchueler(z.art) }
 
 func ladeZusammenfuehrenZeile(ctx context.Context, tx pgx.Tx, id string) (*zusammenfuehrenZeile, error) {
 	z := &zusammenfuehrenZeile{}

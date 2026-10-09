@@ -4,6 +4,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/jobs"
+	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 	"context"
 	"encoding/json"
@@ -276,7 +277,7 @@ func (s *Server) dsgvoFristen(ctx context.Context) dsgvoFristWerte {
 // gelten Lernmittelfreiheit und Schülerbücherei, für jede andere Art (Kollegium und
 // Sonderkonten, Migration 153) das Beschäftigungsverhältnis (dsgvo_pflichtangaben_kollegium.go).
 func dsgvoPflichtangaben(art string, f dsgvoFristWerte) DsgvoVerarbeitungsangaben {
-	if art == "schueler" {
+	if leserart.IstSchueler(art) {
 		return dsgvoVerarbeitungsangaben(f.lesehistorieTage, f.lernmittelTage, f.karenzTage, f.auditMonate)
 	}
 	return dsgvoVerarbeitungsangabenKollegium(f)
