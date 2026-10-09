@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/leserart"
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -184,7 +185,7 @@ func dsgvoLeserart(art string) string {
 		return "Fachbereich (Sammelkonto)"
 	}
 	// Praktikum und Sekretariat heißen hier wie in der Leserdatei.
-	return leserArtBezeichnung(art)
+	return leserart.Bezeichnung(art)
 }
 
 func dsgvoFotoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, foto DsgvoFoto) {

@@ -483,7 +483,7 @@ func (s *Server) protokolliereDsgvoAuskunft(ctx context.Context, id string) {
 }
 
 // DsgvoAuskunftHandler stellt die vollständige Betroffenenauskunft nach
-// Art. 15 DSGVO für einen Leser zusammen, gleich welcher Art (api/leser_art.go). Die Erteilung
+// Art. 15 DSGVO für einen Leser zusammen, gleich welcher Art (pkg/leserart). Die Erteilung
 // selbst wird im Audit-Log protokolliert (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO).
 //
 // Der Annotationsblock stand bis zum 05.08.2026 rund 70 Zeilen weiter oben — über einem

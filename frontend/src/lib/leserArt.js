@@ -9,7 +9,7 @@
 // Entschieden wird an der Art nur zweierlei: Schüler oder Kollegium (istKollegium) und, im
 // Kollegium, ob ein Zugang zu „Mein Portal" dazugehört (artMitKonto). Alles andere ist
 // Bezeichnung — ausleihen darf jeder aktive Leser. Dieselben Werte stehen im Server
-// (api/leser_art.go, repository.ArtMitKonto); beide Seiten prüft leserArt.faelle.json.
+// (pkg/leserart); beide Seiten prüft leserArt.faelle.json.
 
 /** Die Arten in der Reihenfolge der Auswahl „Art des Lesers". */
 export const LESER_ARTEN = [

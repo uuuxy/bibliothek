@@ -39,7 +39,7 @@ func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-AUSL-3') RETURNING id`, titelID).Scan(&ex3); err != nil {
 		t.Fatal(err)
 	}
-	// Ein Fachbereich hat kein Konto, nur die Leserzeile (repository.ArtMitKonto).
+	// Ein Fachbereich hat kein Konto, nur die Leserzeile (leserart.MitKonto).
 	if err := pool.QueryRow(ctx, `INSERT INTO leser (vorname, nachname, art, barcode_id)
 		VALUES ('Fachbereich', 'Erdkunde', 'fachbereich', 'L-AUSL-FB') RETURNING id`).Scan(&fachbereichID); err != nil {
 		t.Fatal(err)

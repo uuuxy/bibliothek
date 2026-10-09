@@ -33,7 +33,7 @@
 
 	const kollege = $derived(istKollegium({ art }));
 	// Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal" und deshalb keine
-	// Schul-E-Mail (30.09.2026) — dieselbe Regel wie im Server (repository.ArtMitKonto).
+	// Schul-E-Mail (30.09.2026) — dieselbe Regel wie im Server (leserart.MitKonto).
 	const mitKonto = $derived(artMitKonto(art));
 
 	// Formular zurücksetzen, sobald der Dialog aufgeht — samt Art: Wer zuletzt eine

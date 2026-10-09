@@ -36,7 +36,7 @@ const (
 	// Abgänger in die Schülerdatei, nicht als aktive Schüler.
 	ArtAbgegangen
 	// ArtPraktikum sind Praktikanten: keine Schüler, aber Entleiher. Sie kommen ins
-	// Kollegium, werden also nicht gemahnt, und bekommen kein Konto (repository.ArtMitKonto).
+	// Kollegium, werden also nicht gemahnt, und bekommen kein Konto (leserart.MitKonto).
 	// Bis zum 28.09.2026 übernahm der Lauf die Sonderkonten nicht, und mit ihnen fehlten ihre
 	// Ausleihen; bis zum 30.09.2026 kamen sie als „lehrkraft" an, und ihre Littera-Gruppe
 	// stand nur im Protokoll (docs/OFFEN.md 5.18).

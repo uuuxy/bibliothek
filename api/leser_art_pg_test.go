@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/leserart"
 	"context"
 	"encoding/json"
 	"os"
@@ -8,15 +9,14 @@ import (
 	"slices"
 	"strings"
 	"testing"
-
-	"bibliothek/repository"
 )
 
 // Die Arten eines Lesers stehen an vier Stellen: in der Datenbank (chk_leser_art), im Server
-// (leserArtenListe, repository.ArtMitKonto, dsgvoLeserart), im Browser (leserArt.js) und in
-// den Prüffällen, die Server und Browser beide lesen (leserArt.faelle.json). Seit Migration
-// 153 sind es sieben; eine Art, die an einer Stelle fehlt, hieße im Browser „Schüler", käme
-// beim Server als „Unbekannte Art" zurück oder bekäme ein Konto, das sie nicht haben soll.
+// (pkg/leserart, dsgvoLeserart), im Browser (leserArt.js) und in den Prüffällen, die Server
+// und Browser beide lesen (leserArt.faelle.json). Eine Art, die an einer Stelle fehlt, hieße
+// im Browser „Schüler", käme beim Server als „Unbekannte Art" zurück oder bekäme ein Konto,
+// das sie nicht haben soll. Wort, Grenze zum Kollegium und Zugang je Art hält der Test in
+// pkg/leserart gegen die Prüffälle; hier stehen die Datenbank und die Auskunft.
 func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
 	const faelleDatei = "../frontend/src/lib/leserArt.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)
@@ -25,10 +25,7 @@ func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
 	}
 	var pruefung struct {
 		Arten []struct {
-			Art       string `json:"art"`
-			Text      string `json:"text"`
-			Kollegium bool   `json:"kollegium"`
-			MitKonto  bool   `json:"mitKonto"`
+			Art string `json:"art"`
 		} `json:"arten"`
 	}
 	if err := json.Unmarshal(roh, &pruefung); err != nil {
@@ -42,26 +39,12 @@ func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
 	var ausDatei []string
 	for _, a := range pruefung.Arten {
 		ausDatei = append(ausDatei, a.Art)
-		if ist := leserArtBezeichnung(a.Art); ist != a.Text {
-			t.Errorf("%s: leserArtBezeichnung = %q, erwartet %q", a.Art, ist, a.Text)
-		}
-		if ist := !istSchuelerArt(a.Art); ist != a.Kollegium {
-			t.Errorf("%s: Kollegium = %v, erwartet %v", a.Art, ist, a.Kollegium)
-		}
-		if ist := repository.ArtMitKonto(a.Art); ist != a.MitKonto {
-			t.Errorf("%s: repository.ArtMitKonto = %v, erwartet %v", a.Art, ist, a.MitKonto)
+		if !leserart.Bekannt(a.Art) {
+			t.Errorf("%s: steht in den Prüffällen, der Server kennt die Art nicht", a.Art)
 		}
 		if dsgvoLeserart(a.Art) == a.Art {
 			t.Errorf("%s: Die Auskunft schreibt die Art nicht aus", a.Art)
 		}
-	}
-
-	var imServer []string
-	for _, a := range leserArtenListe {
-		imServer = append(imServer, a.art)
-	}
-	if !slices.Equal(imServer, ausDatei) {
-		t.Errorf("Server %v, Prüffälle %v — Menge und Reihenfolge müssen gleich sein", imServer, ausDatei)
 	}
 
 	// Die Datenbank: die Werte aus der CHECK-Bedingung, so wie Postgres sie ausgibt.
@@ -74,6 +57,9 @@ func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
 	var inDerDatenbank []string
 	for _, m := range regexp.MustCompile(`'([a-z]+)'`).FindAllStringSubmatch(def, -1) {
 		inDerDatenbank = append(inDerDatenbank, m[1])
+		if !leserart.Bekannt(m[1]) {
+			t.Errorf("chk_leser_art erlaubt %q, der Server kennt die Art nicht", m[1])
+		}
 	}
 	slices.Sort(inDerDatenbank)
 	sortiert := slices.Sorted(slices.Values(ausDatei))

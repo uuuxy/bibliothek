@@ -27,6 +27,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 )
 
@@ -67,12 +68,12 @@ const tresenMaxEreignisse = 100
 // tresenEreignis deutet eine Protokollzeile: der Leser (Schüler oder Kollege) vor dem
 // Konto alter Einträge, und ohne auflösbaren Namen ist der Personenbezug getilgt — keine
 // leere Zelle. Bei einem Kollegen steht statt der Klasse die Art; dieselben Wörter wie
-// frontend/src/lib/leserArt.js (klasseOderArt).
+// frontend/src/lib/leserArt.js (leserart.KlasseOderArt).
 func tresenEreignis(z repository.TresenEreignisZeile) TresenEreignis {
 	e := TresenEreignis{Zeitpunkt: z.Zeitpunkt, Aktion: z.Aktion, Bearbeiter: z.BearbeiterName}
 	switch {
 	case z.LeserName != "":
-		e.Entleiher, e.Klasse = z.LeserName, klasseOderArt(z.LeserKlasse, z.LeserArt)
+		e.Entleiher, e.Klasse = z.LeserName, leserart.KlasseOderArt(z.LeserKlasse, z.LeserArt)
 	case z.KontoName != "":
 		e.Entleiher, e.Klasse = z.KontoName, "Lehrkraft"
 	default:

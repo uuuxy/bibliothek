@@ -20,7 +20,7 @@ func leser(id, nummer, klasse string, art LeserArt) Leser {
 // als verfügbar gegolten hätten. Bis zum 30.09.2026 kamen sie als „lehrkraft" an, und ihre
 // Littera-Gruppe stand nur im Protokoll. Jetzt trägt die Leserzeile die Art (Migration 153);
 // Sekretariat und U-plus bekommen ein Konto mit Platzhalter-Adresse wie eine Lehrkraft,
-// Praktikum und Fachbereich keins (repository.ArtMitKonto).
+// Praktikum und Fachbereich keins (leserart.MitKonto).
 func TestSonderkontenKommenMitIhrerArt(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)

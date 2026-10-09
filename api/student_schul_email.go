@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 )
 
@@ -37,7 +38,7 @@ import (
 // neueArt ist die Art aus demselben Speichern (nil = nicht mitgeschickt), schon geprüft von
 // pruefeUndSetzeArt. Sie gilt vor der gespeicherten: Wer in einem Zug aus einem Praktikum eine
 // Lehrkraft macht und die Schul-E-Mail einträgt, bekommt das Konto; wer aus einer Lehrkraft
-// ohne Konto ein Praktikum macht, bekommt keins (repository.ArtMitKonto).
+// ohne Konto ein Praktikum macht, bekommt keins (leserart.MitKonto).
 //
 // Rückgabe: (nachzutragendeAdresse, ok). Eine leere Adresse heißt „nichts zu tun".
 // ok=false: Die Fehlerantwort steht bereits.
@@ -60,7 +61,7 @@ func (s *Server) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 		art = strings.TrimSpace(*neueArt)
 	}
 
-	if istSchuelerArt(art) {
+	if leserart.IstSchueler(art) {
 		if neu == "" {
 			return "", true
 		}
@@ -175,7 +176,7 @@ func (s *Server) pruefeAusweisLeerung(ctx context.Context, w http.ResponseWriter
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
 	}
-	if istSchuelerArt(art) {
+	if leserart.IstSchueler(art) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
 		apierrors.SendHTTPError(w, http.StatusBadRequest,
 			errors.New("Ausweisnummer darf nicht leer sein. Ohne sie ist der Schüler an der Theke nicht zu finden."))

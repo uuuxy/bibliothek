@@ -11,6 +11,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -32,11 +33,11 @@ const meldungSchuelerDuplikat = "achtung: Ein Schüler mit diesem Namen (auch in
 type CreateStudentRequest struct {
 	Vorname  string `json:"vorname" validate:"required"`
 	Nachname string `json:"nachname" validate:"required"`
-	// Art: eine aus leserArten (api/leser_art.go). Leer heißt „schueler" — die Vorgabe der
+	// Art: eine aus pkg/leserart. Leer heißt „schueler" — die Vorgabe der
 	// Spalte und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.
 	Art string `json:"art"`
 	// Email ist die Schuladresse und PFLICHT, wo ein Zugang zu „Mein Portal" dazugehört:
-	// Lehrkraft, LiV, Sekretariat, U-plus (repository.ArtMitKonto; Absprache vom 16.09.2026).
+	// Lehrkraft, LiV, Sekretariat, U-plus (leserart.MitKonto; Absprache vom 16.09.2026).
 	// Bei einem Schüler, einem Praktikum und einem Fachbereich bleibt sie leer — sie
 	// bekommen kein Konto (Entscheidung vom 30.09.2026).
 	//
@@ -60,7 +61,7 @@ type CreateStudentRequest struct {
 // Schüler gibt es kein Geburtsdatum, an dem die Doppelprüfung greifen könnte.
 const meldungLeserNamensdublette = "achtung: Unter diesem Namen steht bereits ein Leser in der Leserdatei. Hat sich die Person über Mein Portal schon selbst angemeldet? Ein zweiter Eintrag teilt ihre Ausleihen auf zwei Akten."
 
-// pruefeKollegiumEmail prüft die Schuladresse eines Kollegen mit Zugang (repository.ArtMitKonto).
+// pruefeKollegiumEmail prüft die Schuladresse eines Kollegen mit Zugang (leserart.MitKonto).
 //
 // PFLICHT, und zwar aus einem Grund, der nichts mit Erreichbarkeit zu tun hat: Ohne sie
 // entsteht kein Konto, und ohne Konto steht die Person zweimal in der Leserdatei, sobald
@@ -103,14 +104,14 @@ func pruefeKollegiumEmail(roh string) error {
 // ohne Klasse fällt in jeder Klassenliste und jeder Mahnung lautlos hinten runter; ein
 // Kollege MIT Klasse stünde umgekehrt in den Klassenlisten und im LUSD-Abgleich.
 func pruefeLeserAngaben(req *CreateStudentRequest) error {
-	if !leserArten[req.Art] {
+	if !leserart.Bekannt(req.Art) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-		return fmt.Errorf("Unbekannte Art %q. Möglich sind: %s.", req.Art, moeglicheArten())
+		return fmt.Errorf("Unbekannte Art %q. Möglich sind: %s.", req.Art, leserart.Moegliche())
 	}
 	if err := pruefeEmailZurArt(req.Art, req.Email); err != nil {
 		return err
 	}
-	if istSchuelerArt(req.Art) {
+	if leserart.IstSchueler(req.Art) {
 		if req.Klasse == "" {
 			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
 			return errors.New("Klasse fehlt. Ein Schüler ohne Klasse fällt aus jeder Klassenliste und jeder Mahnung.")
@@ -125,7 +126,7 @@ func pruefeLeserAngaben(req *CreateStudentRequest) error {
 }
 
 // meldungKeinZugang weist eine Schul-E-Mail bei Praktikum und Fachbereich ab. Aus der Adresse
-// entstünde ein Zugang zu „Mein Portal", und den bekommen sie nicht (repository.ArtMitKonto).
+// entstünde ein Zugang zu „Mein Portal", und den bekommen sie nicht (leserart.MitKonto).
 const meldungKeinZugang = "Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“ und deshalb keine Schul-E-Mail."
 
 // pruefeEmailZurArt paart die Schul-E-Mail an die Art: Pflicht, wo ein Zugang dazugehört;
@@ -133,11 +134,11 @@ const meldungKeinZugang = "Praktikum und Fachbereich bekommen keinen Zugang zu �
 // (pruefeSchulEmail).
 func pruefeEmailZurArt(art, email string) error {
 	switch {
-	case repository.ArtMitKonto(art):
+	case leserart.MitKonto(art):
 		return pruefeKollegiumEmail(email)
 	case strings.TrimSpace(email) == "":
 		return nil
-	case istSchuelerArt(art):
+	case leserart.IstSchueler(art):
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
 		return errors.New("Ein Schüler bekommt kein Konto und keine E-Mail-Adresse.")
 	}
@@ -192,7 +193,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		//
 		// Ein Kollege kommt nie aus der LUSD. Von ihm ein Geburtsdatum zu verlangen, wäre
 		// eine Angabe ohne Zweck — und damit eine, die nicht erhoben gehört.
-		if istSchuelerArt(req.Art) && (req.Geburtsdatum == nil || strings.TrimSpace(*req.Geburtsdatum) == "") {
+		if leserart.IstSchueler(req.Art) && (req.Geburtsdatum == nil || strings.TrimSpace(*req.Geburtsdatum) == "") {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errGeburtsdatumPflicht)
 			return
 		}
@@ -255,7 +256,7 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	// eine Klasse namens „nichts", und die Klassenlisten fragen auf NULL.
 	var klasse *string
 	var abgaengerJahr *int
-	if istSchuelerArt(req.Art) {
+	if leserart.IstSchueler(req.Art) {
 		jahr := repository.AbgaengerJahr(req.Klasse)
 		klasse, abgaengerJahr = &req.Klasse, &jahr
 	}
@@ -274,13 +275,13 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	}
 
 	// 4. Das Konto einer Lehrkraft — in DERSELBEN Transaktion. Praktikum und Fachbereich
-	// bekommen keines (repository.ArtMitKonto), ein Schüler ohnehin nicht.
+	// bekommen keines (leserart.MitKonto), ein Schüler ohnehin nicht.
 	//
 	// `leser_id` wird ausdrücklich mitgegeben, damit der Wächter trg_benutzer_hat_leserzeile
 	// NICHT anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
 	// hier die zweite — genau der Doppeleintrag, den diese Änderung abschafft.
 	var kontoID string
-	if repository.ArtMitKonto(req.Art) {
+	if leserart.MitKonto(req.Art) {
 		// Das Konto entsteht in DERSELBEN Transaktion wie die Leserzeile — scheitert es,
 		// darf auch die Zeile nicht stehen bleiben (die belegte Adresse ist der häufige
 		// Fall und heisst: Die Person steht schon da).
@@ -314,7 +315,7 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 // allein. Er hat kein Geburtsdatum, und der häufigste Fall ist der Kollege, der sich über
 // „Mein Portal" längst selbst angemeldet hat. false heißt: Die Antwort ist geschrieben.
 func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, req CreateStudentRequest, parsedGebdatum *time.Time) bool {
-	if istSchuelerArt(req.Art) {
+	if leserart.IstSchueler(req.Art) {
 		isDuplicate, err := repository.SchuelerDubletteVorhanden(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

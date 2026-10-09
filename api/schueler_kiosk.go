@@ -13,7 +13,7 @@ import "bibliothek/repository"
 // Profile gibt es weiterhin, aber nur hinter view_students (/api/schueler…).
 type SchuelerKiosk struct {
 	ID string `json:"id"`
-	// Art: eine aus api/leser_art.go (Migration 125 und 153). Die Theke zeigt sie am
+	// Art: eine aus pkg/leserart (Migration 125 und 153). Die Theke zeigt sie am
 	// Treffer an — sonst stünde ein Kollege ohne Klasse da wie ein Schüler mit fehlender
 	// Angabe. Keine Personendaten: Sie sagt nichts, was der Ausweis nicht schon sagt.
 	Art       string `json:"art,omitempty"`

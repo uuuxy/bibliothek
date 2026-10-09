@@ -108,7 +108,7 @@ type zusammenfuehrenZeile struct {
 }
 
 // istKollege sagt, auf welcher Seite der Schüler-Grenze diese Zeile steht. Dieselbe
-// Frage wie istKollegium() im Frontend und wie istSchuelerArt() in api/ — die Antwort
+// Frage wie istKollegium() im Frontend und wie leserart.IstSchueler() — die Antwort
 // muss überall dieselbe sein.
 func (z *zusammenfuehrenZeile) istKollege() bool { return z.art != "schueler" }
 

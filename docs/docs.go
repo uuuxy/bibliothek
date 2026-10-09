@@ -4106,14 +4106,14 @@ const docTemplate = `{
             ],
             "properties": {
                 "art": {
-                    "description": "Art: eine aus leserArten (api/leser_art.go). Leer heißt „schueler\" — die Vorgabe der\nSpalte und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.",
+                    "description": "Art: eine aus pkg/leserart. Leer heißt „schueler\" — die Vorgabe der\nSpalte und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.",
                     "type": "string"
                 },
                 "barcode_id": {
                     "type": "string"
                 },
                 "email": {
-                    "description": "Email ist die Schuladresse und PFLICHT, wo ein Zugang zu „Mein Portal\" dazugehört:\nLehrkraft, LiV, Sekretariat, U-plus (repository.ArtMitKonto; Absprache vom 16.09.2026).\nBei einem Schüler, einem Praktikum und einem Fachbereich bleibt sie leer — sie\nbekommen kein Konto (Entscheidung vom 30.09.2026).\n\nSie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine\nPerson (IMAP), und über sie greift ` + "`" + `benutzer_email_unique` + "`" + `. Genau das verhindert den\nDoppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein\nPortal\" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite\nLeserzeile an.",
+                    "description": "Email ist die Schuladresse und PFLICHT, wo ein Zugang zu „Mein Portal\" dazugehört:\nLehrkraft, LiV, Sekretariat, U-plus (leserart.MitKonto; Absprache vom 16.09.2026).\nBei einem Schüler, einem Praktikum und einem Fachbereich bleibt sie leer — sie\nbekommen kein Konto (Entscheidung vom 30.09.2026).\n\nSie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine\nPerson (IMAP), und über sie greift ` + "`" + `benutzer_email_unique` + "`" + `. Genau das verhindert den\nDoppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein\nPortal\" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite\nLeserzeile an.",
                     "type": "string"
                 },
                 "geburtsdatum": {
@@ -5199,7 +5199,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "art": {
-                    "description": "Art: eine aus api/leser_art.go (Migration 125 und 153). Die Theke zeigt sie am\nTreffer an — sonst stünde ein Kollege ohne Klasse da wie ein Schüler mit fehlender\nAngabe. Keine Personendaten: Sie sagt nichts, was der Ausweis nicht schon sagt.",
+                    "description": "Art: eine aus pkg/leserart (Migration 125 und 153). Die Theke zeigt sie am\nTreffer an — sonst stünde ein Kollege ohne Klasse da wie ein Schüler mit fehlender\nAngabe. Keine Personendaten: Sie sagt nichts, was der Ausweis nicht schon sagt.",
                     "type": "string"
                 },
                 "barcode_id": {
@@ -5293,7 +5293,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "art": {
-                    "description": "Art: eine aus api/leser_art.go. Die Akte richtet sich danach: Ein Kollege hat\nkeine Klasse, kein Abgangsjahr, keine Elternadresse und keine LUSD-Kennung — ohne\ndie Art zeigte die Akte ihm diese Felder als „Keine Angabe\" und behauptete damit,\ndass sie fehlen. Sie gehören ihm gar nicht.",
+                    "description": "Art: eine aus pkg/leserart. Die Akte richtet sich danach: Ein Kollege hat\nkeine Klasse, kein Abgangsjahr, keine Elternadresse und keine LUSD-Kennung — ohne\ndie Art zeigte die Akte ihm diese Felder als „Keine Angabe\" und behauptete damit,\ndass sie fehlen. Sie gehören ihm gar nicht.",
                     "type": "string"
                 },
                 "ausweis_gueltig_bis": {

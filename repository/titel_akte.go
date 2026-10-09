@@ -83,7 +83,7 @@ type TitelAusleiher struct {
 // schueler_id, und der frühere INNER JOIN auf schueler ließ sie damit verschwinden
 // — der Reiter zeigte weniger Ausleiher, als der Titel hat, und wer das Exemplar
 // suchte, suchte im Regal. Die Art reist mit: Beim Kollegen zeigt die Tür statt der Klasse
-// das Wort seiner Art (api.klasseOderArt), dieselbe Auskunft wie in der Titel-Historie; der
+// das Wort seiner Art (leserart.KlasseOderArt), dieselbe Auskunft wie in der Titel-Historie; der
 // Klassenfilter des Reiters liest dieses Feld. COALESCE auf 'Anonym' deckt die getrennte Ausleihe
 // ab — laufende trifft die Lesehistorie-Befristung zwar nicht, aber die Antwort soll
 // auch dann keinen leeren Namen tragen.

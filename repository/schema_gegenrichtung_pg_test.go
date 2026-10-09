@@ -308,7 +308,7 @@ var checkBedingungenBestand = []string{
 	"chk_pos_einzelpreis_nonneg", "chk_pos_menge_positiv", "chk_schueler_block_reason",
 	// Migration 123, befragt am 16.09.2026 — die drei Regeln der Lesertabelle:
 	//
-	// chk_leser_art: die sieben Arten aus api/leser_art.go (seit Migration 153 auch
+	// chk_leser_art: die sieben Arten aus pkg/leserart (seit Migration 153 auch
 	// Praktikum, Sekretariat, U-plus, Fachbereich). Der Code schreibt nur diese (api/...,
 	// internal/littera, db/seed.go; gegen die Datenbank gehalten in
 	// api/leser_art_pg_test.go); die Datenbank haelt die zweite Tuer fuer Reparaturskripte.

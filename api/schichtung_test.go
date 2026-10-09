@@ -197,7 +197,6 @@ var dateienOhneTuer = []string{
 	"dsgvo_pdf_protokoll.go",
 	"dsgvo_pflichtangaben_kollegium.go",
 	"import_helpers.go",
-	"leser_art.go",
 	"lmf_plan_live.go",
 	"lmf_plan_vorgabe.go",
 	"lmf_termine_frist.go",

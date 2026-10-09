@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 )
 
@@ -250,14 +251,14 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 			return
 		}
 
-		// Beim Kollegen steht statt der Klasse das Wort seiner Art (klasseOderArt), dieselbe
+		// Beim Kollegen steht statt der Klasse das Wort seiner Art (leserart.KlasseOderArt), dieselbe
 		// Auskunft wie in der Titel-Historie; der Klassenfilter des Reiters liest dieses Feld.
 		borrowers := make([]TitleBorrower, 0, len(zeilen))
 		for _, z := range zeilen {
 			borrowers = append(borrowers, TitleBorrower{
 				Vorname:         z.Vorname,
 				Nachname:        z.Nachname,
-				Klasse:          klasseOderArt(z.Klasse, z.Art),
+				Klasse:          leserart.KlasseOderArt(z.Klasse, z.Art),
 				SchuelerBarcode: z.AusleiherBarcode,
 				ExemplarBarcode: z.ExemplarBarcode,
 				AusgeliehenAm:   z.AusgeliehenAm,
@@ -289,7 +290,7 @@ func (s *Server) GetTitleHistoryHandler() http.HandlerFunc {
 // handleGetTitleHistory liefert die letzten 200 Ausleih-Vorgänge eines Titels. Seit der
 // Lesehistorie-Befristung (jobs/cron_dsgvo_lesehistorie.go) trägt ein Großteil davon keine
 // schueler_id mehr: Name → "Anonym", Klasse leer. Das Wort einer Art („Lehrkraft",
-// „Fachbereich" …, klasseOderArt) steht nur, wenn wirklich ein Kollege ausgeliehen hat —
+// „Fachbereich" …, leserart.KlasseOderArt) steht nur, wenn wirklich ein Kollege ausgeliehen hat —
 // bis zum 22.08.2026 machte COALESCE(s.klasse, 'Lehrer') aus jeder getrennten
 // Schüler-Ausleihe eine Lehrer-Ausleihe, bis zum 30.09.2026 hieß jeder Kollege „Lehrer". Als
 // Top-Level-Methode ausgelagert (nicht Inline-Closure), damit die Scan-Schleife nicht
@@ -314,7 +315,7 @@ func (s *Server) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
 		history = append(history, TitleHistory{
 			Vorname:         stringOrDefault(z.Vorname, "Anonym"),
 			Nachname:        stringOrDefault(z.Nachname, ""),
-			Klasse:          klasseOderArt(stringOrDefault(z.Klasse, ""), stringOrDefault(z.Art, "")),
+			Klasse:          leserart.KlasseOderArt(stringOrDefault(z.Klasse, ""), stringOrDefault(z.Art, "")),
 			ExemplarBarcode: z.ExemplarBarcode,
 			AusgeliehenAm:   z.AusgeliehenAm,
 			RueckgabeAm:     z.RueckgabeAm,

@@ -582,7 +582,7 @@ als Art da und nicht als zweites Feld daneben — eine Gruppe neben der Art hät
 und Sekretariat" erlaubt und eine Pflegeseite gebraucht. Das Programm unterscheidet an jeder
 Stelle nur `art = 'schueler'` gegen den Rest; für die vier gilt deshalb alles, was für das
 Kollegium gilt (Dauerleihe, keine Mahnung, keine Forderung). Praktikum und Fachbereich haben
-**kein Zugangskonto** (`repository.ArtMitKonto`): Ein Fachbereich ist keine Person, sondern ein
+**kein Zugangskonto** (`leserart.MitKonto`): Ein Fachbereich ist keine Person, sondern ein
 Sammelkonto, das die Kollegen des Fachs benutzen; ein Praktikant leiht aus, braucht aber
 „Mein Portal" nicht. Die leere Tabelle `lesergruppen` (Migration 009), die nie ein Schreibweg
 gefüllt hat, ist mit Migration 153 entfernt.

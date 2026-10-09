@@ -12,6 +12,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -336,20 +337,20 @@ func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 // die Art unveraendert mitschicken darf.
 //
 // Ein bestehendes Konto bleibt beim Wechsel stehen, auch zu Praktikum oder Fachbereich: Neu
-// angelegt wird dort keines (repository.ArtMitKonto), ueber ein vorhandenes entscheidet die
+// angelegt wird dort keines (leserart.MitKonto), ueber ein vorhandenes entscheidet die
 // Benutzerverwaltung.
 func (s *Server) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, id string, reqArt *string, b *repository.LeserAenderung) bool {
 	if reqArt == nil {
 		return true
 	}
 	neu := strings.TrimSpace(*reqArt)
-	// Dieselbe Menge wie beim Anlegen (leserArten, api/leser_art.go) und dieselbe wie
+	// Dieselbe Menge wie beim Anlegen (leserart.Bekannt) und dieselbe wie
 	// chk_leser_art in der Datenbank. Eine unbekannte Art ist ein Tippfehler, kein neuer
 	// Personenkreis — und soll als Auskunft zurueckkommen, nicht als CHECK-500.
-	if !leserArten[neu] {
+	if !leserart.Bekannt(neu) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
 		apierrors.SendHTTPError(w, http.StatusBadRequest,
-			fmt.Errorf("Unbekannte Art %q. Möglich sind: %s.", neu, moeglicheArten()))
+			fmt.Errorf("Unbekannte Art %q. Möglich sind: %s.", neu, leserart.Moegliche()))
 		return false
 	}
 
@@ -368,7 +369,7 @@ func (s *Server) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 	if neu == aktuell {
 		return true // No-op: Formular schickt den unveraenderten Wert mit.
 	}
-	if istSchuelerArt(aktuell) || istSchuelerArt(neu) {
+	if leserart.IstSchueler(aktuell) || leserart.IstSchueler(neu) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
 		apierrors.SendHTTPError(w, http.StatusBadRequest,
 			errors.New("Aus einem Schüler wird kein Kollege und umgekehrt. "+
@@ -389,7 +390,7 @@ type patchStudentRequest struct {
 	BarcodeID     *string `json:"barcode_id"`
 	AbgaengerJahr *int    `json:"abgaenger_jahr"`
 	Geburtsdatum  *string `json:"geburtsdatum"`
-	// Art des Lesers (leserArten, Migration 123 und 153). Sie steht hier, weil die Akte
+	// Art des Lesers (pkg/leserart, Migration 123 und 153). Sie steht hier, weil die Akte
 	// sie zeigen und ein Kollege innerhalb des Kollegiums wechseln koennen muss. Sie hat einen eigenen kontrollierten Pfad (pruefeUndSetzeArt) und liegt
 	// NICHT im generischen Feld-Beutel: Ein Wechsel der Art verschiebt die Zeile
 	// zwischen zwei Pflichtfeld-Welten (chk_leser_schueler_pflichtfelder,

@@ -2,6 +2,7 @@ package api
 
 import (
 	"bibliothek/apierrors"
+	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 	"context"
 	"fmt"
@@ -27,7 +28,7 @@ type StudentProfileResponse struct {
 	BarcodeID string `json:"barcode_id"`
 	Vorname   string `json:"vorname"`
 	Nachname  string `json:"nachname"`
-	// Art: eine aus api/leser_art.go. Die Akte richtet sich danach: Ein Kollege hat
+	// Art: eine aus pkg/leserart. Die Akte richtet sich danach: Ein Kollege hat
 	// keine Klasse, kein Abgangsjahr, keine Elternadresse und keine LUSD-Kennung — ohne
 	// die Art zeigte die Akte ihm diese Felder als „Keine Angabe" und behauptete damit,
 	// dass sie fehlen. Sie gehören ihm gar nicht.
@@ -133,7 +134,7 @@ func (s *Server) handleGetStudentProfile(w http.ResponseWriter, r *http.Request,
 
 	// 3.6 Die Schul-Adresse am Konto — nur beim Kollegium (ein Schüler hat keins).
 	schulEmail := ""
-	if !istSchuelerArt(student.Art) {
+	if !leserart.IstSchueler(student.Art) {
 		schulEmail, err = s.kontoEmail(ctx, student.ID)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden des Zugangs", err)
