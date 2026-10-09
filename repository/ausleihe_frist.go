@@ -52,8 +52,9 @@ func SetzeAusleihFrist(ctx context.Context, db DBQueryer, ausleiheID string, neu
 	return id, frist, err
 }
 
-// VerlaengereLernmittelDerKlasse setzt die Frist aller offenen Lernmittel-Ausleihen einer
-// Klasse und liefert die Zahl der angepassten Ausleihen.
+// VerlaengereLernmittelDerKlasse setzt die Frist der offenen Lernmittel-Ausleihen einer Klasse
+// und liefert die Zahl der angepassten Ausleihen. Ausgenommen bleibt, wer die Frist nicht
+// mitnimmt (SchulbuchFristGehtMitSQL), etwa ein Kind mit einer Sperre von Hand.
 //
 // Mass-Verlängerung setzt zugleich die Mahn-Eskalation der betroffenen Ausleihen
 // zurück (sofern die neue Frist in der Zukunft liegt) — sonst würde ein ganzer

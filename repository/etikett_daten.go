@@ -53,7 +53,7 @@ func EtikettDatenDerBestellung(ctx context.Context, db DBQueryer, bestellungID s
 	return etiketten, rows.Err()
 }
 
-// EtikettDatenDesTitels liefert alle Exemplare eines Titels, die im Bestand stehen.
+// EtikettDatenDesTitels liefert die Exemplare eines Titels, die nicht ausgesondert sind.
 func EtikettDatenDesTitels(ctx context.Context, db DBQueryer, titelID string) ([]EtikettDaten, error) {
 	// Das Jahr ist das des Zugangs (zugang_am, Migration 129) — im Bestellweg ist erworben_am
 	// der Bestelltag, und ein im Dezember bestelltes Buch käme sonst mit dem alten Jahr aufs

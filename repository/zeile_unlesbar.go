@@ -5,9 +5,9 @@ import (
 	"fmt"
 )
 
-// ErrZeileUnlesbar meldet, dass die Abfrage lief, eine Zeile der Antwort sich aber nicht in
-// die Felder lesen ließ. Die Tür unterscheidet daran ihre Meldung von der einer gescheiterten
-// Abfrage.
+// ErrZeileUnlesbar meldet, dass die Abfrage lief, das Lesen ihrer Zeilen aber scheiterte: Eine
+// Zeile passt nicht zu den Feldern, oder das Lesen brach ab. Die Tür unterscheidet daran ihre
+// Meldung von der einer gescheiterten Abfrage.
 var ErrZeileUnlesbar = errors.New("zeile unlesbar")
 
 // zeileUnlesbar hängt den Fehler des Lesens an ErrZeileUnlesbar; die Ursache bleibt in der

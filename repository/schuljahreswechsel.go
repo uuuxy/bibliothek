@@ -96,9 +96,9 @@ var versetzeSchuelerQuery = `
 	FROM updated;
 `
 
-// VersetzeSchueler zählt die Klasse jedes aktiven Schülers um eine Stufe hoch, macht die
-// Abschlussklassen zu Abgängern und liefert beide Zahlen. zone ist die Zeitzone der Schule;
-// in ihr wird das Abgangsjahr bestimmt.
+// VersetzeSchueler zählt die Klasse jedes aktiven Schülers, deren Name mit einer Zahl beginnt,
+// um eine Stufe hoch, macht die Abschlussklassen zu Abgängern und liefert beide Zahlen. zone
+// ist die Zeitzone der Schule; in ihr wird das Abgangsjahr bestimmt.
 func VersetzeSchueler(ctx context.Context, db DBQueryer, zone string) (versetzt, abgaenger int, err error) {
 	err = db.QueryRow(ctx, versetzeSchuelerQuery, zone).Scan(&versetzt, &abgaenger)
 	return versetzt, abgaenger, err

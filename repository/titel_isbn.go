@@ -41,9 +41,10 @@ type TitelMetadaten struct {
 	Listenpreis      *float64
 }
 
-// LegeTitelAusMetadatenAn legt den Titel zur ISBN an. Steht er schon da, gewinnt bei
-// Untertitel, Listenpreis und Cover, was erfasst ist; Titel, Autor, Verlag und Jahr folgen den
-// neuen Angaben. Signatur und Lernmittel-Kennzeichen bleiben unberührt.
+// LegeTitelAusMetadatenAn legt den Titel zur ISBN an. Steht er schon da, folgen Titel, Autor,
+// Verlag und Jahr den neuen Angaben, das Cover nur, wenn ein neues mitkommt; Untertitel und
+// Listenpreis behalten, was erfasst ist. Fach, Signatur und Lernmittel-Kennzeichen bleiben
+// unberührt.
 func LegeTitelAusMetadatenAn(ctx context.Context, db DBQueryer, m TitelMetadaten) (TitelZuISBN, error) {
 	var t TitelZuISBN
 	err := db.QueryRow(ctx, `

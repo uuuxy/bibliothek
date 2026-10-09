@@ -24,9 +24,9 @@ type TitelExemplar struct {
 	Standort                string
 }
 
-// ListeExemplareDesTitels liefert alle Exemplare eines Titels, die im Bestand zuerst, dann
-// nach Barcode. Eine unlesbare Zeile ist ein Fehler, kein Exemplar, das still aus der Akte
-// verschwindet.
+// ListeExemplareDesTitels liefert alle Exemplare eines Titels, die ausgesonderten zuletzt,
+// sonst nach Barcode. Eine unlesbare Zeile ist ein Fehler, kein Exemplar, das still aus der
+// Akte verschwindet.
 func ListeExemplareDesTitels(ctx context.Context, db DBQueryer, titelID string) ([]TitelExemplar, error) {
 	query := `
 		SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.ist_ausleihbar, e.ist_ausgesondert,
@@ -82,9 +82,9 @@ type TitelAusleiher struct {
 // LEFT JOIN auf BEIDE Ausleiher-Arten: Eine Ausleihe an eine Lehrkraft trägt keine
 // schueler_id, und der frühere INNER JOIN auf schueler ließ sie damit verschwinden
 // — der Reiter zeigte weniger Ausleiher, als der Titel hat, und wer das Exemplar
-// suchte, suchte im Regal. Beim Kollegen steht statt der Klasse das Wort seiner Art
-// (klasseOderArt), dieselbe Auskunft wie in der Titel-Historie; der Klassenfilter des
-// Reiters liest genau dieses Feld. COALESCE auf 'Anonym' deckt die getrennte Ausleihe
+// suchte, suchte im Regal. Die Art reist mit: Beim Kollegen zeigt die Tür statt der Klasse
+// das Wort seiner Art (api.klasseOderArt), dieselbe Auskunft wie in der Titel-Historie; der
+// Klassenfilter des Reiters liest dieses Feld. COALESCE auf 'Anonym' deckt die getrennte Ausleihe
 // ab — laufende trifft die Lesehistorie-Befristung zwar nicht, aber die Antwort soll
 // auch dann keinen leeren Namen tragen.
 func ListeAusleiherDesTitels(ctx context.Context, db DBQueryer, titelID string) ([]TitelAusleiher, error) {

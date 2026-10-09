@@ -10,8 +10,8 @@ import (
 // SetzeHauptlieferant macht in einer laufenden Transaktion genau einen Lieferanten zum
 // Hauptlieferanten: erst den bisherigen räumen, dann setzen. Der Teil-Index
 // idx_lieferanten_ein_hauptlieferant lässt nur eine Zeile mit dem Merkmal zu; in der anderen
-// Reihenfolge bräche das zweite Setzen ab. geaendert sagt, ob der Lieferant das Merkmal vorher
-// nicht trug.
+// Reihenfolge bräche das Setzen ab, sobald es schon einen Hauptlieferanten gibt. geaendert
+// sagt, ob der Lieferant das Merkmal vorher nicht trug.
 func SetzeHauptlieferant(ctx context.Context, tx pgx.Tx, id string) (geaendert bool, err error) {
 	if _, err := tx.Exec(ctx,
 		`UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant AND id <> $1`, id); err != nil {

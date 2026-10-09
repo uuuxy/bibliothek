@@ -154,7 +154,7 @@ func (r *LmfTerminRepository) RueckgabeTerminLage(ctx context.Context, klasse st
 }
 
 // SchulbuchFristGehtMitSQL sagt, wessen offene Schulbücher eine Frist für die ganze Klasse
-// mitnehmen — die Massenverlängerung (api/ausleihe.go) und der LMF-Plan
+// mitnehmen — die Massenverlängerung (VerlaengereLernmittelDerKlasse) und der LMF-Plan
 // (SetzeLernmittelFristFuerKlassenIn); s ist die Sicht `schueler`. Es ist die Regel der Theke
 // für das Lernmittel (service.SperreAmLeserHaeltAn): Die Sperre von Hand hält an, ein
 // anonymisierter Datensatz bekommt nichts, der Papierkorb ist draußen. Die Sperre, die das
