@@ -20,10 +20,12 @@ var (
 	bildOrt = regexp.MustCompile(`q ([0-9.]+) 0 0 ([0-9.]+) ([0-9.]+) ([0-9.]+) cm /I[0-9a-f]+ Do Q`)
 )
 
-// seiteMitOrten ist, was auf einer Seite steht: jeder Text mit seiner Höhe und die Mitten der
-// Bilder. Für Prüfungen, ob die Teile einer Tabellenzeile beieinander stehen.
+// seiteMitOrten ist, was auf einer Seite steht: jeder Text mit seiner Höhe und seinem linken
+// Rand, dazu die Mitten der Bilder. Für Prüfungen, ob die Teile einer Tabellenzeile beieinander
+// stehen.
 type seiteMitOrten struct {
 	texte      map[string]float64
+	links      map[string]float64
 	bildMitten []float64
 }
 
@@ -40,9 +42,10 @@ func seitenMitOrten(t *testing.T, roh []byte) []seiteMitOrten {
 	t.Helper()
 	var seiten []seiteMitOrten
 	for _, strom := range pdftest.InhaltJeSeite(t, roh) {
-		seite := seiteMitOrten{texte: map[string]float64{}}
+		seite := seiteMitOrten{texte: map[string]float64{}, links: map[string]float64{}}
 		for _, m := range textOrt.FindAllSubmatch(strom, -1) {
 			seite.texte[string(m[3])] = zahl(t, string(m[2]))
+			seite.links[string(m[3])] = zahl(t, string(m[1]))
 		}
 		for _, m := range bildOrt.FindAllSubmatch(strom, -1) {
 			seite.bildMitten = append(seite.bildMitten, zahl(t, string(m[4]))+zahl(t, string(m[2]))/2)

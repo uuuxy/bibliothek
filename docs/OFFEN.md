@@ -137,7 +137,6 @@ der Nummer nichts mehr dazu offen ist.
   ziehen je Sache aus `api/` in eigene Pakete.
 - [ ] **Gedruckter Text nach Zeichenzahl gekürzt (5.63):** an 18 Stellen messen, ob ein Text
   über seine Zelle läuft.
-- [ ] **Bestellanschreiben (5.64):** Zellen ohne Kürzen, Kopf am falschen Rand.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -348,7 +347,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
   keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 23 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 23.640 Zeilen in 147 Dateien (am Anfang 30.785 in 168).
+  `api/` hat 23.641 Zeilen in 147 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`, der Strichcode in `pkg/strichcode`, die Arten eines
@@ -370,18 +369,18 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
 - **Was von den 23 umzieht und was bleibt** (eingeteilt am 09.10.2026 nach dem Inhalt jeder
   Datei). Zwei gehören zur Auskunft (`dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`, 548
-  Zeilen). Zehn tragen Regeln und ziehen um (1.237 Zeilen):
+  Zeilen). Zehn tragen Regeln und ziehen um (1.236 Zeilen):
   `order_service.go` (397, legt eine Bestellung in einer Transaktion an; Ziel
   `internal/service`, zuletzt, weil `bestellmail_anhaenge.go` an seinen Namen hängt),
   `lmf_termine_frist.go` (207) und `lmf_plan_vorgabe.go` (117, Fristen und Rahmen des
-  LMF-Plans), `bestellmail_text.go` (147, Platzhalter der Bestellmail), `mittel_vermerk.go`
+  LMF-Plans), `bestellmail_text.go` (146, Platzhalter der Bestellmail), `mittel_vermerk.go`
   (99, Texte je Topf; das Bestellanschreiben bekommt sie aus der Tür),
   `bestellbestaetigung_token.go` (94), `dsgvo_pflichtangaben_kollegium.go` (63, zieht mit der
   Auskunft), `import_helpers.go` (55, Kopfzeile einer Importdatei), `prod_geheimnisse.go` (36)
   und `student_klasse_regel.go` (22). Elf sind Typen einer Anfrage oder Antwort, Füll-Funktionen
-  und Helfer mehrerer Türen und bleiben (915 Zeilen): `abgaenger_fenster.go` (trägt daneben die
+  und Helfer mehrerer Türen und bleiben (917 Zeilen): `abgaenger_fenster.go` (trägt daneben die
   Grenzen der Abgänger-Saison), `action_types.go`, `bescheid_absender.go`,
-  `bestellmail_anhaenge.go` (214, stellt die Anlagen der Bestellmail zusammen und verschickt
+  `bestellmail_anhaenge.go` (216, stellt die Anlagen der Bestellmail zusammen und verschickt
   sie), `bestellmail_versand.go`, `betriebsbereitschaft_alarm.go`, `constants.go`, `lmf_plan_live.go`,
   `mahnwesen_mail.go`, `schueler_kiosk.go`, `verwaltung_protokoll.go`. Der Bestand kann damit
   nicht auf null fallen; fertig ist dieser Schritt, wenn die zwölf ausgezogen sind. Zuerst
@@ -422,16 +421,6 @@ Nach Zeichen kürzen weiter 18 Stellen (gezählt am 09.10.2026): `pdf/etikett_bu
 und Zellenbreite messen, ob die zugelassene Zahl breiter Buchstaben über die Zelle läuft, und
 dann auf die Breite kürzen. Die Etiketten sind im Aussehen abgenommen; dort ändert sich mit der
 Umstellung, wo ein langer Titel endet.
-
-### 5.64 Bestellanschreiben: zwei Funde
-
-Gefunden am 09.10.2026 beim Umzug des Bestellanschreibens nach `pdf/`; beide sind älter als der
-Umzug.
-
-- **Zellen ohne Kürzen.** Titel, Autor und ISBN stehen im Bestellanschreiben ungekürzt in
-  Zellen fester Breite; ein langer Titel läuft über die Nachbarzelle (wie 5.63).
-- **Kopf am falschen Rand.** Das Bestellanschreiben setzt seine Ränder nach dem Anlegen der
-  Seite: Der Name der Schule steht 10 mm vom Rand, alles Weitere 20 mm.
 
 ---
 

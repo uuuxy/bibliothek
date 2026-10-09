@@ -619,7 +619,7 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 23.640 Zeilen, 147 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `api/`                  | 23.641 Zeilen, 147 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
 | `repository/`           | 21.058 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
 | `internal/service/`     | 4.442 Zeilen, 22 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
@@ -629,7 +629,7 @@ HTTP-Anfrage
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
 | `pkg/` (23 Pakete)      | 2.665 Zeilen, 32 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 3.361 Zeilen, 22 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
+| `pdf/`                  | 3.396 Zeilen, 22 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
@@ -1960,14 +1960,15 @@ Drucksektionen am gebauten Frontend.
 **Tabellen über mehrere Seiten.** Eine Zeile, die Bild oder Text an Stellen setzt, die sie aus
 ihrer Höhe rechnet, prüft vorher den Platz und beginnt sonst selbst die nächste Seite, mit
 Spaltenköpfen (`bescheidPlatzOderNeueSeite` in `pdf/bescheid.go`, die Schleifen in
-`zeichneMahnSeite` und `zeichneMahnbriefBuecher`). gofpdf bricht erst in der Zelle um, die nicht
+`zeichneMahnSeite`, `zeichneMahnbriefBuecher` und `GenerateBestellanschreibenPDF`). gofpdf bricht erst in der Zelle um, die nicht
 mehr passt; die Teile der Zeile stünden dann auf verschiedenen Seiten ([sweeps.md](sweeps.md),
 „Zeile an festen Stellen über dem Seitenumbruch"). Die Köpfe stehen nicht allein am Fuß einer
 Seite. Mahnliste und Mahnbrief werden je Schüler ausgeteilt oder kuvertiert: Ihre Folgeseiten
 nennen, wem sie gehören („Fortsetzung: …"), beim Mahnbrief über einen Seitenkopf, weil dort
-auch der Text der Vorlage auf die nächste Seite laufen kann. Den Text einer Zelle kürzen beide
-auf ihre gedruckte Breite (`kuerzeAufZelle` in `pdf/zelle.go`), nicht auf eine Zahl von
-Zeichen: gofpdf druckt Überlanges über die Nachbarzelle.
+auch der Text der Vorlage auf die nächste Seite laufen kann. Den Text einer Zelle kürzen sie
+und das Bestellanschreiben auf ihre gedruckte Breite (`kuerzeAufZelle` in `pdf/zelle.go`), nicht
+auf eine Zahl von Zeichen: gofpdf druckt Überlanges über die Nachbarzelle. Ein Block, der
+zusammengehört (Gruß und Unterschrift), prüft seinen Platz als Ganzes.
 
 **Ausweise: zwei Renderer, einer fürs Papier.** Der Ausweis-Designer zeichnet die Karte
 zweimal: `designer/CanvasElement.svelte` auf dem Bildschirm, mit den Griffen zum Bearbeiten,
@@ -3053,7 +3054,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 23.640 Zeilen in 147 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 23.641 Zeilen in 147 Dateien das schwerste Paket
 
 | | |
 | --- | --- |
@@ -3069,7 +3070,7 @@ nur neue Dateien abwies. 44 Dateien mit 7.503 Zeilen banden `net/http` nicht ein
 keine Tür.
 
 Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 23 Dateien ohne Tür
-mit 2.700 Zeilen, davon 2 PDF-Dateien mit 548 Zeilen (die Auskunft). Der LUSD-Import steht in
+mit 2.701 Zeilen, davon 2 PDF-Dateien mit 548 Zeilen (die Auskunft). Der LUSD-Import steht in
 `internal/lusd`, die Selbstprüfung in `internal/bereitschaft`, der Bescheid, die Etiketten, die
 Bestandsbücher, Mahnliste, Mahnbrief und Bestellanschreiben in `pdf/`, der Strichcode in `pkg/strichcode`,
 die Arten eines Lesers in `pkg/leserart`, die
