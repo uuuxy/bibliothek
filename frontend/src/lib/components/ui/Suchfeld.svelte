@@ -1,5 +1,5 @@
 <script>
-	import { Search, Camera } from '@lucide/svelte';
+	import { Search, Camera, X } from '@lucide/svelte';
 	import { tick } from 'svelte';
 
 	/**
@@ -94,11 +94,27 @@
 		aria-label={etikett}
 		placeholder={platzhalter}
 		class="h-9 w-full rounded-xl border border-outline bg-surface-container-lowest pl-9 {nachlaufend ||
-		kamera
+		kamera ||
+		wert.length > 0
 			? 'pr-10'
-			: 'pr-3'} text-sm text-on-surface transition-colors placeholder:text-outline focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+			: 'pr-3'} text-sm text-on-surface transition-colors placeholder:text-outline focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary [&::-webkit-search-cancel-button]:appearance-none"
 	/>
 	<div class="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-1">
+		{#if wert.length > 0}
+			<button
+				type="button"
+				onclick={() => {
+					wert = '';
+					feld?.focus();
+					feld?.dispatchEvent(new Event('input', { bubbles: true }));
+				}}
+				class="flex h-7 w-7 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:text-on-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+				aria-label="Eingabe löschen"
+				title="Eingabe löschen"
+			>
+				<X class="h-4 w-4" aria-hidden="true" />
+			</button>
+		{/if}
 		{#if nachlaufend}
 			<span class="mr-2">{@render nachlaufend()}</span>
 		{/if}

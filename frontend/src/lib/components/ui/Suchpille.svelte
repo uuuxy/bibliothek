@@ -1,5 +1,5 @@
 <script>
-	import { Search, Camera } from '@lucide/svelte';
+	import { Search, Camera, X } from '@lucide/svelte';
 	import { tick } from 'svelte';
 
 	/**
@@ -120,6 +120,21 @@
 		placeholder={platzhalter}
 		class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-on-surface placeholder:text-on-surface-variant text-base [&::-webkit-search-cancel-button]:appearance-none"
 	/>
+	{#if wert.length > 0}
+		<button
+			type="button"
+			onclick={() => {
+				wert = '';
+				feld?.focus();
+				feld?.dispatchEvent(new Event('input', { bubbles: true }));
+			}}
+			class="-ml-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+			aria-label="Suche leeren"
+			title="Suche leeren"
+		>
+			<X class="h-5 w-5" aria-hidden="true" />
+		</button>
+	{/if}
 	{#if nachlaufend}
 		{@render nachlaufend()}
 	{/if}
