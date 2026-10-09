@@ -145,7 +145,7 @@ wird ein- bis zweimal im Jahr gebraucht — Abgänger bleiben unter Verwaltung, 
 Versetzung in den Einstellungen). Tests: `pkg/lmfplan/layout_test.go`, `repository/lmf_termine_pg_test.go`,
 `api/lmf_termine_frist_pg_test.go`, `frontend/e2e/lmf-plan.spec.js`.
 
-**Kopplung an die Fristen** (`api/lmf_termine_frist.go`, 05.09.2026: „das wäre doch
+**Kopplung an die Fristen** (`internal/service/lmf_frist_kopplung.go`, 05.09.2026: „das wäre doch
 logisch"): Der Rückgabe-Termin einer Klasse ist die Frist ihrer Lernmittel. Beim Ausleihen
 liest `resolveCheckoutDueDate` die Lage der Klasse (`RueckgabeTerminLage`): Steht ein
 Rückgabe-Termin nach heute bevor, ist er die Frist (vor dem Stichtag; ein Mehrjahresband
@@ -155,7 +155,7 @@ dann noch ein Schulbuch bekommt, gibt es erst im nächsten Schuljahr zurück —
 Klasse noch einen Nachzügler-Termin vor sich hat. Bis zum
 14.09.2026 war am Termintag der Termin selbst die Frist und danach der Stichtag des laufenden
 Schuljahres — ein Tag in den Ferien. Beim Speichern eines Plans folgt
-der Bestand (`koppleLmfPlanFristen`): Klassen, die aus dem Plan fallen, kehren zum Stichtag
+der Bestand (`service.KoppleLmfPlanFristen`): Klassen, die aus dem Plan fallen, kehren zum Stichtag
 zurück — genau die Fristen, die auf ihrem alten Termin-Tag lagen —, jede Klasse des neuen
 Plans bekommt ihren Termin (`SetzeLernmittelFristFuerKlassenIn`: Schüler außerhalb des
 Papierkorbs, nicht anonymisiert, ohne Sperre von Hand — die Sperre der Ehemaligen zählt beim

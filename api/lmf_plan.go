@@ -32,6 +32,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
+	"bibliothek/internal/service"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -462,7 +463,7 @@ func (s *Server) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 		return lmfPlanVorschauAntwort(e, plaetze, ausfaelle), true, nil
 	}
 	// Den alten Stand dieses Schuljahres lesen: Klassen, die ihren Termin verlieren,
-	// kehren zum Stichtag zurück (lmf_termine_frist.go).
+	// kehren zum Stichtag zurück (service.KoppleLmfPlanFristen).
 	alt, err := s.lmfPlanZeilenVorher(r.Context(), repo, art, e.Plan.ErsterTag)
 	if err != nil {
 		return keine, false, apierrors.Internal("alten Plan lesen", err)
@@ -483,7 +484,7 @@ func (s *Server) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 	// veröffentlichter Plan bleibt es, und seine Korrektur gilt sofort.
 	var angepasst int64
 	if stand.Plan.VeroeffentlichtAm != nil {
-		if angepasst, err = s.koppleLmfPlanFristen(r.Context(), tx, art, alt, stand.Zeilen); err != nil {
+		if angepasst, err = service.KoppleLmfPlanFristen(r.Context(), s.DB.Pool, tx, art, alt, stand.Zeilen); err != nil {
 			return keine, false, apierrors.Internal("Fristen koppeln", err)
 		}
 	}
@@ -654,7 +655,7 @@ func (s *Server) verwerfeLmfPlan(r *http.Request) (int64, error) {
 	// Nur ein veröffentlichter Plan hat Fristen gesetzt, die zurückkehren müssen.
 	var angepasst int64
 	if st.Plan.VeroeffentlichtAm != nil {
-		if angepasst, err = s.koppleLmfPlanFristen(r.Context(), tx, art, st.Zeilen, nil); err != nil {
+		if angepasst, err = service.KoppleLmfPlanFristen(r.Context(), s.DB.Pool, tx, art, st.Zeilen, nil); err != nil {
 			return 0, apierrors.Internal("Fristen koppeln", err)
 		}
 	}
