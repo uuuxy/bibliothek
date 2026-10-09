@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
@@ -38,8 +37,8 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		}
 		// Steht die Forderung auf einem Schadensersatz-Bescheid, gilt der Bescheid: Ein
 		// Elternbrief daneben nennte sie ein zweites Mal, mit eigener Frist und eigenem
-		// Zahlungsweg. Dieselbe Regel wie bei der Ersatzforderung (print.go,
-		// bescheid_id IS NULL); docs/OFFEN.md 5.2, 23.09.2026.
+		// Zahlungsweg. Dieselbe Regel wie bei der Ersatzforderung
+		// (repository.ListeOffeneForderungenOhneBescheid); docs/OFFEN.md 5.2, 23.09.2026.
 		if aufBescheid {
 			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
 				"die Forderung steht auf einem Schadensersatz-Bescheid — dafür gilt der Bescheid, kein Elternbrief"))
@@ -83,72 +82,30 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 // fetchDamageCaseInfo lädt den Fall für den Elternbrief und sagt dazu, ob die Forderung
 // schon auf einem Schadensersatz-Bescheid steht (dann gibt es keinen Brief).
 func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.SchadensfallInfo, bool, error) {
-	var beschreibung string
-	var betrag float64
-	var erstelltAm time.Time
-	var sVorname, sNachname, sKlasse string
-	var sStrasse, sHausnummer, sPLZ, sOrt string
-	var tTitel, eBarcode string
-	var land, aufBescheid bool
-
-	// COALESCE auf den Adressspalten: nullbar in der DB, nicht-nullbar in Go
-	// (NULL-Scan-Bugklasse). Anschrift fürs Fensterkuvert, siehe SchadensfallInfo.
-	query := `
-		SELECT
-			sf.beschreibung, sf.betrag, sf.erstellt_am,
-			s.vorname, s.nachname, s.klasse,
-			COALESCE(s.strasse, ''), COALESCE(s.hausnummer, ''),
-			COALESCE(s.plz, ''), COALESCE(s.ort, ''),
-			t.titel, e.barcode_id,
-			-- Der Topf und damit der Zahlungsweg des Briefs (pdf/zahlungsweg.go): das Eigentum
-			-- des Exemplars, dieselbe Regel wie am Etikett und im Bescheid.
-			(` + repository.ExemplarTopfSQL + ` = 'land'),
-			sf.bescheid_id IS NOT NULL
-		FROM schadensfaelle sf
-		JOIN schueler s ON sf.schueler_id = s.id
-		JOIN buecher_exemplare e ON sf.exemplar_id = e.id
-		JOIN buecher_titel t ON e.titel_id = t.id
-		` + repository.ExemplarTopfJoin + `
-		WHERE sf.id = $1
-	`
-
-	err := s.DB.Pool.QueryRow(ctx, query, id).Scan(
-		&beschreibung, &betrag, &erstelltAm,
-		&sVorname, &sNachname, &sKlasse,
-		&sStrasse, &sHausnummer, &sPLZ, &sOrt,
-		&tTitel, &eBarcode, &land, &aufBescheid,
-	)
+	fall, aufBescheid, err := repository.LadeSchadensfallBrief(ctx, s.DB.Pool, id)
 	if err != nil {
 		return pdf.SchadensfallInfo{}, false, err
 	}
 
 	return pdf.SchadensfallInfo{
-		Beschreibung:     beschreibung,
-		Betrag:           betrag,
-		ErstelltAm:       erstelltAm,
-		SchuelerVorname:  sVorname,
-		SchuelerNachname: sNachname,
-		SchuelerKlasse:   sKlasse,
-		Strasse:          sStrasse,
-		Hausnummer:       sHausnummer,
-		PLZ:              sPLZ,
-		Ort:              sOrt,
-		BuchTitel:        tTitel,
-		ExemplarBarcode:  eBarcode,
-		Land:             land,
+		Beschreibung:     fall.Beschreibung,
+		Betrag:           fall.Betrag,
+		ErstelltAm:       fall.ErstelltAm,
+		SchuelerVorname:  fall.SchuelerVorname,
+		SchuelerNachname: fall.SchuelerNachname,
+		SchuelerKlasse:   fall.SchuelerKlasse,
+		Strasse:          fall.Strasse,
+		Hausnummer:       fall.Hausnummer,
+		PLZ:              fall.PLZ,
+		Ort:              fall.Ort,
+		BuchTitel:        fall.BuchTitel,
+		ExemplarBarcode:  fall.ExemplarBarcode,
+		Land:             fall.Land,
 	}, aufBescheid, nil
 }
 
 func (s *Server) markElternbriefGenerated(ctx context.Context, id string) {
-	updateQuery := `
-		UPDATE schadensfaelle
-		SET elternbrief_generiert = true,
-		    elternbrief_generiert_am = CURRENT_TIMESTAMP,
-		    aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE id = $1
-	`
-	_, dbErr := s.DB.Pool.Exec(ctx, updateQuery, id)
-	if dbErr != nil {
+	if dbErr := repository.MerkeElternbriefErzeugt(ctx, s.DB.Pool, id); dbErr != nil {
 		log.Printf("PDF Generator: Database status update failed for case %s: %v", id, dbErr)
 	}
 }

@@ -16,67 +16,16 @@ import (
 	"github.com/google/uuid"
 )
 
-// queryRechnungItems lädt die offenen (unbezahlten) Schadensfälle eines Schülers als
-// Rechnungspositionen.
-//
-// LEFT JOIN, nicht INNER (Bestands-Durchgang 06.09.2026, Frage 3): `exemplar_id` und
-// `ausleihe_id` sind beide nullbar, `ausleihe_id` steht sogar auf ON DELETE SET NULL, und
-// `geraet_id` wartet als dritte Bezugsspalte in derselben Tabelle. Mit INNER JOINs fiele
-// eine Forderung ohne diese Bezüge lautlos aus dem Brief — und wären ALLE betroffen,
-// antwortete der Weg mit „keine offenen Schadensfälle", während die Akte offene Beträge
-// zeigt und der Schüler gesperrt bleibt. Heute ist der Fall nicht erreichbar (die drei
-// Löschpfade räumen die Forderungen VOR den Ausleihen), aber das ist eine Zusicherung,
-// die nur zufällig hält: Geld darf nicht davon abhängen, ob ein Buch noch existiert.
-//
-// Die Datenbank verlangt sogar GENAU EINES von beidem (CHECK check_damage_item:
-// exemplar_id XOR geraet_id) — der Geräteschaden ist im Schema also vorgesehen, ihm fehlt
-// nur der Schreiber. Deshalb steht das Gerät hier schon als Position: Modellname statt
-// Titel, Geräte-Barcode statt Exemplar-Barcode. Bleibt beides leer, trägt die Beschreibung
-// des Schadensfalls die Zeile; Ausleihdatum ersatzweise das Datum der Forderung.
-//
-// Nicht hierher gehört eine Forderung, die schon auf einem Schadensersatz-Bescheid steht
-// (`bescheid_id`, 14.09.2026): Dieselbe Forderung auf beiden Briefen wäre zweimal dieselbe
-// Zahlungsaufforderung, mit zwei Fristen und zwei Nummern. Seit dem 17.09.2026 nennen beide
-// Briefe für ein Lernmittel dasselbe Konto (pdf/zahlungsweg.go) — bis dahin verlangte dieser
-// hier „bar in der Bibliothek", was die Arbeitshilfe untersagt.
+// queryRechnungItems lädt die offenen Forderungen eines Schülers ohne Bescheid als
+// Rechnungspositionen (repository.ListeOffeneForderungenOhneBescheid).
 func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.RechnungItem, error) {
-	query := `
-		SELECT COALESCE(t.titel, g.modellname, sf.beschreibung),
-		       COALESCE(e.barcode_id, g.barcode_id, ''),
-		       COALESCE(a.ausgeliehen_am, sf.erstellt_am),
-		       sf.betrag,
-		       -- Der Topf der Position und damit ihr Zahlungsweg: das Eigentum des Exemplars
-		       -- (repository.ExemplarTopfSQL), dieselbe Regel wie am Etikett und im Bescheid.
-		       -- Ohne Exemplar (Geräteschaden) ist es kein Buch des Landes: Die Bedingung auf
-		       -- e.id liefert dann false statt NULL (NULL-Scan-Bugklasse).
-		       (e.id IS NOT NULL AND ` + repository.ExemplarTopfSQL + ` = 'land')
-		FROM schadensfaelle sf
-		LEFT JOIN buecher_exemplare e ON sf.exemplar_id = e.id
-		LEFT JOIN buecher_titel t ON e.titel_id = t.id
-		` + repository.ExemplarTopfJoin + `
-		LEFT JOIN geraete g ON sf.geraet_id = g.id
-		LEFT JOIN ausleihen a ON sf.ausleihe_id = a.id
-		WHERE sf.schueler_id = $1 AND sf.ist_bezahlt = false
-		  AND sf.bescheid_id IS NULL
-	`
-	rows, err := dbPool.Query(ctx, query, schuelerID)
+	posten, err := repository.ListeOffeneForderungenOhneBescheid(ctx, dbPool, schuelerID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
 	var items []pdf.RechnungItem
-	for rows.Next() {
-		var item pdf.RechnungItem
-		// Kein `continue`: Eine Rechnung, der still eine Position fehlt, nennt einen zu
-		// kleinen Betrag — und niemand erfährt es. Lieber gar kein Brief als ein falscher.
-		if err := rows.Scan(&item.Titel, &item.Barcode, &item.Ausleihdatum, &item.Ersatzpreis, &item.Land); err != nil {
-			return nil, err
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
+	for _, p := range posten {
+		items = append(items, pdf.RechnungItem(p))
 	}
 	return items, nil
 }
@@ -103,13 +52,8 @@ func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPo
 	// Anschrift mitladen: Die Rechnung ist wie der Eltern-Mahnbrief ein Brief für das
 	// DIN-Fensterkuvert (VVT-Zweck „gedruckte Rechnung / Elternbrief"). COALESCE ist
 	// Pflicht: Die Spalten sind nullbar, die Go-Strings nicht.
-	var s pdf.Schueler
-	err = dbPool.QueryRow(ctx, `
-		SELECT vorname, nachname,
-		       COALESCE(strasse, ''), COALESCE(hausnummer, ''),
-		       COALESCE(plz, ''), COALESCE(ort, '')
-		FROM schueler WHERE id = $1 AND deleted_at IS NULL
-	`, schuelerID).Scan(&s.Vorname, &s.Nachname, &s.Strasse, &s.Hausnummer, &s.PLZ, &s.Ort)
+	anschrift, err := repository.LadeBriefAnschrift(ctx, dbPool, schuelerID)
+	s := pdf.Schueler(anschrift)
 	if errors.Is(err, pgx.ErrNoRows) {
 		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 		return
@@ -128,11 +72,8 @@ func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPo
 	if len(items) == 0 {
 		// Stehen die offenen Forderungen alle auf einem Bescheid, sagt die Meldung das.
 		// Sonst hieße es „keine offenen Schadensfälle", während die Akte offene Beträge zeigt.
-		var aufBescheid bool
-		if err := dbPool.QueryRow(ctx, `
-			SELECT EXISTS (SELECT 1 FROM schadensfaelle
-			               WHERE schueler_id = $1 AND ist_bezahlt = false AND bescheid_id IS NOT NULL)
-		`, schuelerID).Scan(&aufBescheid); err != nil {
+		aufBescheid, err := repository.HatOffeneForderungAufBescheid(ctx, dbPool, schuelerID)
+		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -175,30 +116,13 @@ func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPo
 // queryKontoauszugBuecher lädt die aktuell ausgeliehenen Bücher eines Schülers
 // (Frist aufsteigend).
 func queryKontoauszugBuecher(ctx context.Context, dbPool db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.KontoauszugBuch, error) {
-	query := `
-		SELECT t.titel, e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist
-		FROM ausleihen a
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE a.schueler_id = $1 AND a.rueckgabe_am IS NULL
-		ORDER BY a.rueckgabe_frist ASC
-	`
-	rows, err := dbPool.Query(ctx, query, schuelerID)
+	zeilen, err := repository.ListeKontoauszugBuecher(ctx, dbPool, schuelerID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
 	var buecher []pdf.KontoauszugBuch
-	for rows.Next() {
-		var b pdf.KontoauszugBuch
-		if err := rows.Scan(&b.Titel, &b.Barcode, &b.Ausleihdatum, &b.Rueckgabedatum); err != nil {
-			continue
-		}
-		buecher = append(buecher, b)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
+	for _, z := range zeilen {
+		buecher = append(buecher, pdf.KontoauszugBuch(z))
 	}
 	return buecher, nil
 }
@@ -215,11 +139,8 @@ func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			return
 		}
 
-		var s pdf.KontoauszugSchueler
-		err = dbPool.QueryRow(ctx, `
-			SELECT vorname, nachname, klasse
-			FROM schueler WHERE id = $1 AND deleted_at IS NULL
-		`, schuelerID).Scan(&s.Vorname, &s.Nachname, &s.Klasse)
+		kopf, err := repository.LadeKontoauszugKopf(ctx, dbPool, schuelerID)
+		s := pdf.KontoauszugSchueler(kopf)
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 			return

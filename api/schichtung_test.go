@@ -85,8 +85,6 @@ var handlerMitSQL = map[string]int{
 	"dsgvo_auskunft.go":    11,
 	"graduates.go":         2,
 	"isbn_handler.go":      2,
-	"pdf.go":               2,
-	"print.go":             6,
 	"student_create.go":    7,
 	"student_deleted.go":   3,
 	"student_lock.go":      2,

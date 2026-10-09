@@ -48,7 +48,7 @@ var phantomBestand = map[string]int{
 	"repository/lusd_import.go:LoescheWartendeVormerkungen":   1,
 	"repository/lusd_import.go:LegeLusdSchuelerAn":            1,
 	"repository/lusd_import.go:SperreAbgaenger":               1,
-	"api/pdf.go:markElternbriefGenerated":                     1,
+	"repository/schadensbrief.go:MerkeElternbriefErzeugt":     1,
 	"api/student_promotion.go:finalisiereSchuljahreswechsel":  1,
 	"api/student_promotion.go:fuehreSchuljahreswechselAus":    1,
 	"api/student_promotion.go:versetzeKlassenlehrerZuordnung": 2,

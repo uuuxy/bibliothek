@@ -53,7 +53,7 @@ var lesepfadeGeprueft = map[string]struct {
 	// Durchsicht der Akte und des Drucks, 21.09.2026.
 	"repository/student_profile_queries.go": {1, "Liste der Klassen — Klassen haben nur Schüler"},
 	"api/student_create.go":                 {1, "Dublette über Name UND Geburtsdatum gibt es nur bei Schülern; für alle Leser prüft direkt danach pruefeLeserNamensdublette gegen die Tabelle"},
-	"api/pdf.go":                            {1, "Elternbrief je Schadensfall — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
+	"repository/schadensbrief.go":           {2, "Elternbrief je Schadensfall und Anschrift der Ersatzforderung — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
 	// Rest der Durchsicht, 22.09.2026 — die Liste der Ungeprüften ist damit leer.
 	"api/student_update.go":                 {1, "Vorprüfung der LUSD-ID: chk_leser_nur_schueler_werden_abgaenger erzwingt lusd_id IS NULL für jeden Nicht-Schüler — Sicht und Tabelle liefern hier dasselbe"},
 	"cmd/migrate-fotos/main.go":             {1, "Einmal-Werkzeug für Littera-Schülerfotos; eine Nummer ohne Schüler steht als Warnung im Lauf, nicht still"},
@@ -66,7 +66,7 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/lusd_bestand.go":            {1, "LUSD-Abgleich kennt nur Schüler; die Abfrage sagt es zusätzlich mit art = 'schueler'"},
 	"repository/titel_loeschen_wartende.go": {1, "Namen zu Vormerkungen — Vormerkungen gibt es nur für Schüler (Tür: VormerkungRepository.Create)"},
 	"api/graduates.go":                      {2, "Abgänger-Liste und -Detail; das Kollegium hat keine Abgangslogik"},
-	"api/print.go":                          {2, "Rechnung (ein Kollege bekommt keine Forderung, schaden_melden.go) und Kontoauszug (für Kollegen bewusst nicht, OFFEN.md 5.16 A)"},
+	"repository/kontoauszug.go":             {1, "Kontoauszug — für Kollegen bewusst nicht (OFFEN.md 5.16 A)"},
 	// Auflagen eines Buchs, 25.09.2026 (OFFEN.md 4.18, Stufe 5).
 	"repository/auflagen_klasse.go": {2, "Hinweis an der Theke zu gemischten Auflagen in einer KLASSE — Klassen haben nur Schüler; dieselbe Klassendefinition wie inventur/datenbank_klassen.go, und der Aufruf steht nur hinter istSchueler()"},
 }
