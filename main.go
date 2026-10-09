@@ -255,8 +255,8 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	//
 	// Außerhalb von local/development/test verweigert der Server die Beispielwerte von
 	// selbst. Nur ein ausdrückliches ENFORCE_PROD_SECRETS=false schaltet das für eine
-	// Testphase ab (api.ErzwingeProdGeheimnisse, geteilt mit der Selbstprüfung).
-	enforceProdSecrets := api.ErzwingeProdGeheimnisse(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS"))
+	// Testphase ab (bereitschaft.ErzwingeProdGeheimnisse, geteilt mit der Selbstprüfung).
+	enforceProdSecrets := bereitschaft.ErzwingeProdGeheimnisse(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS"))
 	if !enforceProdSecrets && strings.EqualFold(strings.TrimSpace(os.Getenv("ENFORCE_PROD_SECRETS")), "false") {
 		slog.Warn("ENFORCE_PROD_SECRETS=false — der Server startet auch mit Beispiel-Geheimnissen aus dem Repository. Nur für die Testphase zulässig.",
 			"app_env", os.Getenv("APP_ENV"))

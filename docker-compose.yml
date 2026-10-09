@@ -104,7 +104,7 @@ services:
       # Server sie ablehnt. Eine vergessene .env-Zeile reichte, um den Schulserver mit
       # fälschbaren Admin-Sitzungen zu betreiben — ohne dass irgendetwas rot wurde.
       # Jetzt startet der Stack ohne die beiden Werte gar nicht, und die Verweigerung
-      # bekannter Beispielwerte ist im Server die Vorgabe (api.ErzwingeProdGeheimnisse);
+      # bekannter Beispielwerte ist im Server die Vorgabe (bereitschaft.ErzwingeProdGeheimnisse);
       # nur ein ausdrückliches ENFORCE_PROD_SECRETS=false schaltet sie für eine Testphase ab.
       #   JWT_SECRET=<zufällig, >=32 Zeichen>        z. B. openssl rand -hex 32
       #   APP_ENCRYPTION_KEY=<exakt 32 Byte>         z. B. openssl rand -hex 32

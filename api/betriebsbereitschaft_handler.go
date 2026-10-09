@@ -60,7 +60,7 @@ func (s *Server) sammleLage(
 		S3AccessKey:        os.Getenv("S3_ACCESS_KEY"),
 		S3SecretKey:        os.Getenv("S3_SECRET_KEY"),
 		S3Bucket:           os.Getenv("S3_BUCKET"),
-		EnforceProdSecrets: ErzwingeProdGeheimnisse(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS")),
+		EnforceProdSecrets: bereitschaft.ErzwingeProdGeheimnisse(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS")),
 		JWTSecret:          os.Getenv("JWT_SECRET"),
 		AppEncryptionKey:   os.Getenv("APP_ENCRYPTION_KEY"),
 		ImapHost:           os.Getenv("IMAP_HOST"),

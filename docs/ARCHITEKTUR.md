@@ -2673,7 +2673,7 @@ entschlüsseln können (APP_ENCRYPTION_KEY).
 wären genau die Fehlerart, gegen die die Selbstprüfung antritt: Sie meldete „alles gut",
 während der Server aus demselben Grund den Start verweigert.
 
-**Fundstelle.** `main.go/loadConfig`, `api/prod_geheimnisse.go`, `scripts/pruefe_secrets.sh`.
+**Fundstelle.** `main.go/loadConfig`, `internal/bereitschaft/geheimnisse.go`, `scripts/pruefe_secrets.sh`.
 
 ---
 

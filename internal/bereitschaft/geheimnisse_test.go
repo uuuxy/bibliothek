@@ -1,10 +1,9 @@
-package api
+package bereitschaft
 
 import "testing"
 
 // Die Vorgabe ist die sichere Richtung: Nur eine ausdrückliche „false"-Zeile oder eine
-// Spielwiesen-Umgebung ohne gesetzte Variable schaltet die Absicherung aus. Mit der
-// alten Regel (`== "true"`) sind die drei production-Zeilen rot (rot gesehen).
+// Spielwiesen-Umgebung ohne gesetzte Variable schaltet die Absicherung aus.
 func TestErzwingeProdGeheimnisse(t *testing.T) {
 	faelle := []struct {
 		appEnv, roh string

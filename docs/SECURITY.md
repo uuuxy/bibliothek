@@ -392,7 +392,7 @@ auf der Leitung, aber keines für den Speicher.
 
 Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Defaults verwenden, kann jeder mit Repo-Zugriff Admin-JWTs fälschen (vollständige Übernahme) oder AES-verschlüsselte Schülerfotos entschlüsseln.
 
-### Lösung (`main.go/loadConfig` + `api.ErzwingeProdGeheimnisse`)
+### Lösung (`main.go/loadConfig` + `bereitschaft.ErzwingeProdGeheimnisse`)
 
 Der Server **verweigert den Start**, wenn ein bekanntes Beispiel-Geheimnis
 (`bereitschaft.IstBekanntesDefaultGeheimnis`) aktiv ist — und zwar **als Vorgabe** (seit 05.09.2026):
@@ -409,7 +409,7 @@ Bis zum 05.09.2026 galt `== "true"`: aus, solange niemand den Schalter setzte. E
 vergessene Zeile in der `.env` genügte, damit der Schulserver mit dem JWT-Schlüssel aus dem
 Repository lief — Admin-Sitzungen fälschbar, nichts rot. Dieselbe Regel liest die
 Selbstprüfung (`internal/bereitschaft/bereitschaft.go`), damit Seite und Server nicht verschieden
-entscheiden. Gates: `api/prod_geheimnisse_test.go`,
+entscheiden. Gates: `internal/bereitschaft/geheimnisse_test.go`,
 `TestLoadConfig_ProduktionOhneSchalterVerweigertBeispielJWT` (mit dem alten Code rot).
 
 Die Entkopplung von `APP_ENV` bleibt für den Ausnahmefall: `APP_ENV=local` würde zugleich
@@ -543,7 +543,7 @@ APP_ENCRYPTION_KEY="$ALT" DATABASE_URL="$DATABASE_URL" \
 
 > **Reihenfolge beachten, wenn noch `ENFORCE_PROD_SECRETS=false` in der `.env` steht:**
 > Einen Schalter setzt man nicht mehr — der Guard ist seit dem 05.09.2026 von selbst
-> scharf (`api.ErzwingeProdGeheimnisse`). Erst rotieren, dann den Schlüssel in die `.env`,
+> scharf (`bereitschaft.ErzwingeProdGeheimnisse`). Erst rotieren, dann den Schlüssel in die `.env`,
 > **dann** die `false`-Zeile entfernen. Andersherum verweigert der Server den Start, weil
 > er noch den bekannten Default vorfindet.
 

@@ -204,7 +204,6 @@ var dateienOhneTuer = []string{
 	"mahnwesen_mail.go",
 	"mittel_vermerk.go",
 	"order_service.go",
-	"prod_geheimnisse.go",
 	"schueler_kiosk.go",
 	"student_klasse_regel.go",
 	"verwaltung_protokoll.go",

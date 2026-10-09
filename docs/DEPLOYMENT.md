@@ -159,7 +159,7 @@ grep -c '^JWT_SECRET=' .env          # genau 1
 
 Der Server verweigert den Start mit bekannten Beispiel-Geheimnissen für `JWT_SECRET` oder
 `APP_ENCRYPTION_KEY` **von selbst**, sobald `APP_ENV` nicht `local`/`development`/`test`
-ist (Regel: `api.ErzwingeProdGeheimnisse`, seit 05.09.2026). `docker-compose.yml`
+ist (Regel: `bereitschaft.ErzwingeProdGeheimnisse`, seit 05.09.2026). `docker-compose.yml`
 verlangt die beiden Werte zusätzlich per `${VAR:?}` — ohne sie startet der Stack nicht.
 
 | Phase              | `ENFORCE_PROD_SECRETS`   | Verhalten                                                                                                        |

@@ -135,7 +135,7 @@ pruefe_schalter() {
 }
 
 # Seit 05.09.2026 ist die Verweigerung bekannter Beispiel-Secrets die Vorgabe des Servers
-# (api.ErzwingeProdGeheimnisse): nicht gesetzt oder true ist gut, nur ein ausdrückliches
+# (bereitschaft.ErzwingeProdGeheimnisse): nicht gesetzt oder true ist gut, nur ein ausdrückliches
 # false schaltet sie ab — und das gehört gemeldet, nicht übersehen.
 enforce="$(lies ENFORCE_PROD_SECRETS | tr '[:upper:]' '[:lower:]')"
 if [ "$enforce" = "false" ]; then
