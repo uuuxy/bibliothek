@@ -82,9 +82,7 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	var alteFrist time.Time
-	err = tx.QueryRow(ctx, `SELECT rueckgabe_frist FROM ausleihen WHERE id = $1 AND rueckgabe_am IS NULL FOR UPDATE`,
-		ausleiheID).Scan(&alteFrist)
+	alteFrist, err := repository.SperreOffeneAusleiheMitFrist(ctx, tx, ausleiheID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 		return
@@ -100,18 +98,8 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	}
 	neueFrist := lmfplan.FerientabelleAus(sommerferien).Tagesfrist(basis, extensionDays)
 
-	q := `
-			UPDATE ausleihen
-			SET rueckgabe_frist = $2,
-			    mahnstufe = 0,
-			    letztes_mahndatum = NULL
-			WHERE id = $1 AND rueckgabe_am IS NULL
-			RETURNING id, rueckgabe_frist
-		`
-
-	var id string
-	var newFrist time.Time
-	if err := tx.QueryRow(ctx, q, ausleiheID, neueFrist).Scan(&id, &newFrist); err != nil {
+	_, newFrist, err := repository.VerlaengereAusleihe(ctx, tx, ausleiheID, neueFrist)
+	if err != nil {
 		log.Printf("Fehler bei Einzel-Verlaengerung: %v", err)
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
@@ -178,21 +166,7 @@ func (s *Server) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, a
 		}
 	}
 
-	// Wie bei der regulären Verlängerung: Eine neue Frist in der Zukunft macht die
-	// Ausleihe wieder "nicht überfällig" und setzt die Mahn-Eskalation zurück. Ein
-	// vorgezogenes Datum (Rückruf) lässt die Mahnstufe unberührt.
-	q := `
-			UPDATE ausleihen
-			SET rueckgabe_frist = $1,
-			    mahnstufe = CASE WHEN $1 > CURRENT_TIMESTAMP THEN 0 ELSE mahnstufe END,
-			    letztes_mahndatum = CASE WHEN $1 > CURRENT_TIMESTAMP THEN NULL ELSE letztes_mahndatum END
-			WHERE id = $2 AND rueckgabe_am IS NULL
-			RETURNING id, rueckgabe_frist
-		`
-
-	var id string
-	var newFrist time.Time
-	err = s.DB.Pool.QueryRow(ctx, q, newDate, ausleiheID).Scan(&id, &newFrist)
+	id, newFrist, err := repository.SetzeAusleihFrist(ctx, s.DB.Pool, ausleiheID, newDate)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
@@ -298,29 +272,7 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 		}
 		defer db.SafeRollback(ctx, tx)
 
-		// Mass-Verlängerung setzt zugleich die Mahn-Eskalation der betroffenen Ausleihen
-		// zurück (sofern die neue Frist in der Zukunft liegt) — sonst würde ein ganzer
-		// Klassensatz nach der Verlängerung fälschlich auf der alten Mahnstufe weiterlaufen.
-		q := `
-			UPDATE ausleihen a
-			SET rueckgabe_frist = $1,
-			    mahnstufe = CASE WHEN $1 > CURRENT_TIMESTAMP THEN 0 ELSE a.mahnstufe END,
-			    letztes_mahndatum = CASE WHEN $1 > CURRENT_TIMESTAMP THEN NULL ELSE a.letztes_mahndatum END
-			FROM schueler s, buecher_exemplare e, buecher_titel t
-			WHERE a.schueler_id = s.id
-			  AND a.exemplar_id = e.id
-			  AND e.titel_id = t.id
-			  AND a.rueckgabe_am IS NULL
-			  -- Die Sperre von Hand nimmt ein Kind aus: Sie soll zur Rückgabe zwingen, nicht
-			  -- durch eine Fristverlängerung ausgehebelt werden. Die der Ehemaligen zählt beim
-			  -- Schulbuch nicht, wie an der Theke.
-			  AND ` + repository.SchulbuchFristGehtMitSQL + `
-			  -- Über den Normal-Schlüssel (Migration 079/087): „5a" aus einem Formular und
-			  -- „05A" als registrierte Anzeigeform meinen dieselbe Klasse.
-			  AND klassen_normkey(s.klasse) = klassen_normkey($2)
-			  AND t.ist_lernmittel
-		`
-		tag, err := tx.Exec(ctx, q, newDate, req.Klasse)
+		angepasst, err := repository.VerlaengereLernmittelDerKlasse(ctx, tx, req.Klasse, newDate)
 		if err != nil {
 			log.Printf("Fehler beim globalen Verlängern: %v", err)
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Ausführen des Updates"))
@@ -335,17 +287,17 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 
 		// Wie bei der Frist einer einzelnen Ausleihe (FRIST_OVERRIDE): Wer die Fristen einer
 		// ganzen Klasse verschiebt, steht im Protokoll. Bewegt sich keine Frist, steht nichts.
-		if tag.RowsAffected() > 0 {
+		if angepasst > 0 {
 			s.protokolliereVerwaltung(ctx, auditFristKlasseGeaendert, map[string]any{
 				"klasse":            req.Klasse,
 				"neue_frist":        newDate.Format(time.RFC3339),
-				"fristen_angepasst": tag.RowsAffected(),
+				"fristen_angepasst": angepasst,
 			})
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]interface{}{
 			"success":       true,
-			"updated_count": tag.RowsAffected(),
+			"updated_count": angepasst,
 		})
 	}
 }
@@ -357,15 +309,7 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 // Bis zum 29.09.2026 stand hier eine eigene Abfrage, die jede Sperre zählte — auch die der
 // Ehemaligen beim Schulbuch, das die Theke demselben Kind ausgibt.
 func (s *Server) checkAusleiheGesperrt(ctx context.Context, ausleiheID string) (bool, string, error) {
-	var leserID *string
-	var lernmittel bool
-	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT a.schueler_id, COALESCE(t.ist_lernmittel, false)
-		FROM ausleihen a
-		LEFT JOIN buecher_exemplare e ON e.id = a.exemplar_id
-		LEFT JOIN buecher_titel t ON t.id = e.titel_id
-		WHERE a.id = $1 AND a.rueckgabe_am IS NULL
-	`, ausleiheID).Scan(&leserID, &lernmittel)
+	leserID, lernmittel, err := repository.LeserUndLernmittelDerAusleihe(ctx, s.DB.Pool, ausleiheID)
 	if err != nil || leserID == nil {
 		return false, "", err
 	}
