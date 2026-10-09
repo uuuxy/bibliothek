@@ -37,7 +37,7 @@ describe('auflagenBeschriftung und auflagenAufschluesselung, geteilte Prüffäll
 	}
 
 	// Nur im Browser: Ein Feld mit omitempty fehlt in der Antwort, wenn es leer ist — so das
-	// Erscheinungsjahr einer Zeile des Bestellbedarfs (api/reorders.go).
+	// Erscheinungsjahr einer Zeile des Bestellbedarfs (repository/bestellbedarf.go).
 	it('kommt ohne die Felder aus', () => {
 		expect(auflagenBeschriftung({})).toBe('Auflage ohne Angabe');
 		expect(auflagenAufschluesselung([{ gesamt_bestand: 3 }, { gesamt_bestand: 1 }])).toBe(

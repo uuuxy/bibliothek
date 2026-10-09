@@ -55,7 +55,7 @@ type LernmittelTitel struct {
 }
 
 // AuflageImBestand ist eine Auflage eines Schulbuchs mit ihrem Bestand. gesamt_bestand wie
-// in der Aufschlüsselung des Bestellbedarfs (api.ReorderAuflage): Die Oberfläche schreibt
+// in der Aufschlüsselung des Bestellbedarfs (repository.ReorderAuflage): Die Oberfläche schreibt
 // beide mit derselben Funktion (auflagenAufschluesselung).
 type AuflageImBestand struct {
 	ID               string `json:"id"`

@@ -49,7 +49,7 @@ func (s *Server) ExportReordersPDFHandler() http.HandlerFunc {
 // Umstellung auf die Schwelle niemand mehr pflegt: Es steht auf der Vorgabe 5. Bei
 // einer Schwelle von 30 und 10 vorhandenen Exemplaren stand auf der Bestellliste für
 // den Händler „−5". Die Auswahl kam aus der einen Zahl, die Menge aus der anderen.
-func baueBestelllistePDF(reorders []ReorderTitle, schwelle int) *gofpdf.Fpdf {
+func baueBestelllistePDF(reorders []repository.ReorderTitle, schwelle int) *gofpdf.Fpdf {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 	pdf.SetMargins(15, 15, 15)

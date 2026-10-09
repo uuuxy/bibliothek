@@ -194,9 +194,9 @@ liegt. **Entschieden:** Die frühere offene Frage („wird `meldebestand` je Tit
 ist gegenstandslos — der Auslöser ist jetzt die Einstellung `bestellbedarf_schwelle`
 (Vorgabe 3, in der Oberfläche änderbar, abschaltbar über
 `bestellbedarf_warnung_aktiv`). `meldebestand` wird nur noch informativ mitgeliefert und
-löst nichts mehr aus (`api/reorders.go`). Seit dem 25.09.2026 zählt die Liste am Buch: Auflagen
-mit derselben `werk_id` (Migration 148) bilden eine Zeile, ihre Summe steht gegen die Schwelle
-(docs/OFFEN.md 4.18, `TestQueryReorders_ZaehltAmBuch`).
+löst nichts mehr aus (`repository/bestellbedarf.go`). Seit dem 25.09.2026 zählt die Liste am
+Buch: Auflagen mit derselben `werk_id` (Migration 148) bilden eine Zeile, ihre Summe steht gegen
+die Schwelle (docs/OFFEN.md 4.18, `TestQueryReorders_ZaehltAmBuch`).
 
 ---
 

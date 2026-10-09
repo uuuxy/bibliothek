@@ -47,12 +47,12 @@ func TestQueryReorders_GesamtNichtVerfuegbar(t *testing.T) {
 	}
 
 	// Schwelle 5 = früherer Meldebestand-Default; die Auswahllogik bleibt so unverändert.
-	reorders, err := srv.queryReorders(ctx, reorderFilterFragmentLMF(), 5)
+	reorders, err := repository.ListeBestellbedarf(ctx, srv.DB.Pool, reorderFilterFragmentLMF(), 5)
 	if err != nil {
-		t.Fatalf("queryReorders: %v", err)
+		t.Fatalf("ListeBestellbedarf: %v", err)
 	}
 
-	got := map[string]ReorderTitle{}
+	got := map[string]repository.ReorderTitle{}
 	for _, r := range reorders {
 		got[r.Titel] = r
 	}
@@ -87,17 +87,17 @@ func TestQueryReorders_SchwelleSteuert(t *testing.T) {
 	}
 
 	filter := reorderFilterFragmentLMF()
-	r, err := srv.queryReorders(ctx, filter, 5)
+	r, err := repository.ListeBestellbedarf(ctx, srv.DB.Pool, filter, 5)
 	if err != nil {
-		t.Fatalf("queryReorders error: %v", err)
+		t.Fatalf("ListeBestellbedarf error: %v", err)
 	}
 	if len(r) != 1 {
 		t.Errorf("Schwelle 5: erwartet 1 Treffer (gesamt 3 < 5), waren %d", len(r))
 	}
 
-	r2, err := srv.queryReorders(ctx, filter, 2)
+	r2, err := repository.ListeBestellbedarf(ctx, srv.DB.Pool, filter, 2)
 	if err != nil {
-		t.Fatalf("queryReorders error: %v", err)
+		t.Fatalf("ListeBestellbedarf error: %v", err)
 	}
 	if len(r2) != 0 {
 		t.Errorf("Schwelle 2: erwartet 0 Treffer (gesamt 3 ≥ 2) — Schwelle steuert, nicht Meldebestand 5, waren %d", len(r2))
@@ -107,7 +107,7 @@ func TestQueryReorders_SchwelleSteuert(t *testing.T) {
 // TestQueryReorders_LMFNurInSignatur sichert den Signatur-Fix ab (05.08.2026): Der
 // Regelfall bei manueller Neuanlage über die Admin-Oberfläche ist ein Klartext-Titel
 // ("Mathematik Neue Wege 9") mit dem LMF-Kennzeichen NUR in der Signatur
-// ("LMF Ma" — Auto-Vorschlag). Vor dieser Änderung prüfte queryReorders ausschliesslich
+// ("LMF Ma" — Auto-Vorschlag). Vor dieser Änderung prüfte ListeBestellbedarf ausschliesslich
 // den Titel und liess solche Bücher nie unter die Bestellbedarf-Schwelle fallen, egal
 // wie knapp der Bestand war.
 func TestQueryReorders_LMFNurInSignatur(t *testing.T) {
@@ -121,12 +121,12 @@ func TestQueryReorders_LMFNurInSignatur(t *testing.T) {
 		exemplar(t, pool, tID, barcodeN("S", i), true, "")
 	}
 
-	reorders, err := srv.queryReorders(ctx, reorderFilterFragmentLMF(), 5)
+	reorders, err := repository.ListeBestellbedarf(ctx, srv.DB.Pool, reorderFilterFragmentLMF(), 5)
 	if err != nil {
-		t.Fatalf("queryReorders: %v", err)
+		t.Fatalf("ListeBestellbedarf: %v", err)
 	}
 
-	got := map[string]ReorderTitle{}
+	got := map[string]repository.ReorderTitle{}
 	for _, r := range reorders {
 		got[r.Titel] = r
 	}
@@ -188,8 +188,8 @@ func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
 		t.Fatalf("zusammenfassen: %v", err)
 	}
 	filter := reorderFilterFragmentLMF()
-	nachID := func(liste []ReorderTitle) map[string]ReorderTitle {
-		m := map[string]ReorderTitle{}
+	nachID := func(liste []repository.ReorderTitle) map[string]repository.ReorderTitle {
+		m := map[string]repository.ReorderTitle{}
 		for _, r := range liste {
 			m[r.ID] = r
 		}
@@ -197,9 +197,9 @@ func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
 	}
 
 	// Schwelle 3: Zusammen sind es 3 — kein Bedarf. Getrennt stünden beide da (2 und 1).
-	r, err := srv.queryReorders(ctx, filter, 3)
+	r, err := repository.ListeBestellbedarf(ctx, srv.DB.Pool, filter, 3)
 	if err != nil {
-		t.Fatalf("queryReorders: %v", err)
+		t.Fatalf("ListeBestellbedarf: %v", err)
 	}
 	got := nachID(r)
 	if _, drin := got[alt]; drin {
@@ -213,9 +213,9 @@ func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
 	}
 
 	// Schwelle 5: eine Zeile für das Buch — die neueste Auflage, die Summe, die Aufschlüsselung.
-	r, err = srv.queryReorders(ctx, filter, 5)
+	r, err = repository.ListeBestellbedarf(ctx, srv.DB.Pool, filter, 5)
 	if err != nil {
-		t.Fatalf("queryReorders: %v", err)
+		t.Fatalf("ListeBestellbedarf: %v", err)
 	}
 	got = nachID(r)
 	if _, drin := got[alt]; drin {

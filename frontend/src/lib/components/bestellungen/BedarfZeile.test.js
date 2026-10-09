@@ -5,7 +5,8 @@ import OrderRecommendations from './OrderRecommendations.svelte';
 
 // Der Bestellbedarf zählt am Buch (docs/OFFEN.md 4.18, Stufe 3): Gehört ein Titel zu einem
 // Buch mit mehreren Auflagen, ist die Zeile das Buch — Titel und ISBN der neuesten Auflage,
-// die Summe als Zahl, darunter die Auflagen einzeln (GET /api/bestellungen, api/reorders.go).
+// die Summe als Zahl, darunter die Auflagen einzeln (GET /api/bestellungen,
+// repository/bestellbedarf.go).
 
 const buch = {
 	id: 'neu',

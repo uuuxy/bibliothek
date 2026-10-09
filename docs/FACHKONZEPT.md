@@ -265,10 +265,10 @@ mit der 3.: keine hat mehr als die Hälfte), und bei 20 zu 8 blieb die Mischung 
 ein abgeleitetes Buch steht die Auflage, die die meisten Kinder der Klasse haben, bei
 Gleichstand die neueste: Die Kachel zeigt, was die Klasse hat, nicht, was zuletzt erschien —
 anders als der Bestellbedarf, der die neueste Auflage zeigt, weil sie bestellt wird
-(`api/reorders.go`). Eine Zuordnung von Hand deckt das ganze Buch ab; ein Satz aus den Ausleihen
-erscheint daneben nicht noch einmal. Haben Kinder der Klasse eine andere Auflage als die der
-Kachel, trägt sie die Aufschlüsselung (`auflagen`: jede Auflage mit der Zahl der Kinder, die
-meisten zuerst; die der Kachel mit „diese Auflage"). Belegt:
+(`repository/bestellbedarf.go`). Eine Zuordnung von Hand deckt das ganze Buch ab; ein Satz aus
+den Ausleihen erscheint daneben nicht noch einmal. Haben Kinder der Klasse eine andere Auflage
+als die der Kachel, trägt sie die Aufschlüsselung (`auflagen`: jede Auflage mit der Zahl der
+Kinder, die meisten zuerst; die der Kachel mit „diese Auflage"). Belegt:
 `inventur/klassensatz_auflagen_pg_test.go`.
 
 ### 4.4. Meldungen der Lehrkräfte
