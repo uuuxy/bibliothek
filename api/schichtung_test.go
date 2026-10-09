@@ -193,7 +193,6 @@ var dateienOhneTuer = []string{
 	"betriebsbereitschaft_alarm.go",
 	"constants.go",
 	"lmf_plan_live.go",
-	"lmf_plan_vorgabe.go",
 	"mahnwesen_mail.go",
 	"order_service.go",
 	"schueler_kiosk.go",

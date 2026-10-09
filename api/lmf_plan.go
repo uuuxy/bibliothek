@@ -46,8 +46,30 @@ type LmfPlanVorschlag struct {
 	Quelle      string                    `json:"quelle"`
 	Zeilen      []repository.LmfPlanZeile `json:"zeilen"`
 	Ausgelassen []string                  `json:"ausgelassen"`
-	// Rahmen: womit der neue Plan beginnt — aus den Sommerferien (lmf_plan_vorgabe.go).
+	// Rahmen: womit der neue Plan beginnt — aus den Sommerferien (service.LmfPlanRahmenVorgabe).
 	Rahmen LmfPlanRahmenVorgabe `json:"rahmen"`
+}
+
+// LmfPlanSommerferien sind die Sommerferien Hessen, an denen sich der Plan ausrichtet.
+type LmfPlanSommerferien struct {
+	Jahr int    `json:"jahr"`
+	Von  string `json:"von"` // YYYY-MM-DD, leer wenn nicht bekannt
+	Bis  string `json:"bis"`
+	// Bekannt: false, wenn das Jahr weder im Programm noch in der Einstellung
+	// „Sommerferien" steht — der Planer nennt dann das Jahr und bittet um den letzten
+	// bzw. ersten Tag von Hand.
+	Bekannt bool `json:"bekannt"`
+}
+
+// LmfPlanRahmenVorgabe ist der Rahmen, mit dem ein neuer Plan im Planer beginnt: beim
+// Rückgabe-Plan das Ende (Donnerstag vor den Ferien, 4. Stunde), beim Ausgabe-Plan der
+// Beginn (erster Schultag nach den Ferien, 2. Stunde). Leere Tage: Ferien nicht bekannt.
+type LmfPlanRahmenVorgabe struct {
+	ErsterTag    string `json:"erster_tag"`
+	Startstunde  int    `json:"startstunde"`
+	LetzterTag   string `json:"letzter_tag"`
+	LetzteStunde int    `json:"letzte_stunde"`
+	StundenJeTag int    `json:"stunden_je_tag"`
 }
 
 // LmfPlanStandAntwort ist die Antwort von GET /api/lmf-plan/{art}.
@@ -137,11 +159,11 @@ func (s *Server) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 		}
 	}
 	laufend := antwort.Plan != nil && !antwort.Vorbei
-	var ferien lmfplan.Zeitraum
-	antwort.Sommerferien, ferien = lmfPlanSommerferien(art, antwort.Plan, laufend, s.jetzt(), ferientabelle)
+	sommerferien, ferien := service.LmfPlanSommerferien(art, antwort.Plan, laufend, s.jetzt(), ferientabelle)
+	antwort.Sommerferien = LmfPlanSommerferien(sommerferien)
 	if !laufend {
 		antwort.Vorschlag = lmfPlanVorschlag(art, eingang, antwort.Plan != nil, stand, klassen)
-		antwort.Vorschlag.Rahmen = lmfPlanRahmenVorgabe(art, antwort.Sommerferien, ferien)
+		antwort.Vorschlag.Rahmen = LmfPlanRahmenVorgabe(service.LmfPlanRahmenVorgabe(art, sommerferien, ferien))
 	}
 	if antwort.Vorschlag != nil {
 		// „nur Rückgabe" belegt den Vermerk vor und ist keine gerechnete Marke: Der Text

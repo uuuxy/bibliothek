@@ -1,4 +1,4 @@
-package api
+package service
 
 import (
 	"os"
@@ -19,12 +19,13 @@ import (
 // Zwei Zahlen für dieselbe Vorgabe brauchen deshalb ein Gate, nicht nur einen Fix: Ohne
 // es zieht der nächste Wechsel der Schulorganisation eine Seite nach und die andere nicht.
 func TestLmfPlanVorgabeIstInGoUndImPlanerDieselbe(t *testing.T) {
-	pfad := filepath.Join("..", "frontend", "src", "lib", "lmfplanDienst.js")
+	pfad := filepath.Join("..", "..", "frontend", "src", "lib", "lmfplanDienst.js")
 	roh, err := os.ReadFile(pfad)
 	if err != nil {
 		t.Fatalf("%s lesen: %v", pfad, err)
 	}
-	quelle := ohneKommentare(string(roh))
+	// Ohne Kommentare: Eine Zahl in einer auskommentierten Zeile ist nicht die des Planers.
+	quelle := regexp.MustCompile(`(?m)//.*$`).ReplaceAllString(string(roh), "")
 
 	// Der leere Entwurf steht als Objektliteral in leererEntwurf(); gelesen werden die
 	// drei Zahlen, die auch der Server vorschlägt.

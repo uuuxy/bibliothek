@@ -4575,7 +4575,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rahmen": {
-                    "description": "Rahmen: womit der neue Plan beginnt — aus den Sommerferien (lmf_plan_vorgabe.go).",
+                    "description": "Rahmen: womit der neue Plan beginnt — aus den Sommerferien (service.LmfPlanRahmenVorgabe).",
                     "allOf": [
                         {
                             "$ref": "#/definitions/api.LmfPlanRahmenVorgabe"
