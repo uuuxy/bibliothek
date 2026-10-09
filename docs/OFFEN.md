@@ -357,16 +357,13 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   einem umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage
   stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung
   in 8.14.
-- **Rest beim Protokoll der Verwaltung:** Die Einträge in `audit_logs` schreibt eine Anweisung,
-  `repository.SchreibeAdminProtokoll`. Eine Stelle schreibt noch selbst: die Selbstanmeldung
-  (`auth/selbstanmeldung.go`); `auth/` bindet `repository/` nicht ein.
 - **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 354
   Methoden, rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt, zeigt der
-  Stand nach den beiden Schritten davor.
+  Stand nach dem Schritt davor.
 
 Außerhalb von `api/` und `repository/` stehen weitere SQL-Anweisungen (gezählt am 09.10.2026):
 `inventur/` 73 mit eigener Datenbankschicht ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.3),
-`internal/service` 32, `auth/` 20, `jobs/` 17. Die Ratsche zählt sie nicht; sie gehören nicht
+`internal/service` 32, `auth/` 19, `jobs/` 17. Die Ratsche zählt sie nicht; sie gehören nicht
 zu diesem Punkt.
 
 ---

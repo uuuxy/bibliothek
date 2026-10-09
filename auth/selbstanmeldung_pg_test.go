@@ -182,6 +182,23 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	if auditZeilen != 1 {
 		t.Errorf("%d Audit-Zeilen SELBSTANMELDUNG für das Konto, erwartet genau 1", auditZeilen)
 	}
+	// Der Eintrag nennt das Konto als Ziel, dazu Adresse, Rolle und dass es noch nicht
+	// freigeschaltet ist: Daran findet ihn die Auskunft, auch nachdem das Konto gelöscht ist.
+	// Eine IP-Adresse trägt er nicht.
+	var zielIstKonto, ohneIP bool
+	var mailImEintrag, rolleImEintrag, aktivImEintrag string
+	if err := pool.QueryRow(ctx, `
+		SELECT coalesce(a.details->>'ziel_id' = b.id::text, false), coalesce(a.details->>'email', ''),
+		       coalesce(a.details->>'rolle', ''), coalesce(a.details->>'aktiv', ''), a.ip_adresse IS NULL
+		FROM audit_logs a JOIN benutzer b ON b.id = a.admin_id
+		WHERE a.aktion = 'SELBSTANMELDUNG' AND LOWER(b.email) = $1
+	`, email).Scan(&zielIstKonto, &mailImEintrag, &rolleImEintrag, &aktivImEintrag, &ohneIP); err != nil {
+		t.Fatalf("Inhalt des Audit-Eintrags lesen: %v", err)
+	}
+	if !zielIstKonto || mailImEintrag != email || rolleImEintrag != "kollegium" || aktivImEintrag != "false" || !ohneIP {
+		t.Errorf("Audit-Eintrag: Ziel ist das Konto %v, Adresse %q, Rolle %q, aktiv %q, ohne IP %v",
+			zielIstKonto, mailImEintrag, rolleImEintrag, aktivImEintrag, ohneIP)
+	}
 
 	// 3. Zweiter Versuch, immer noch nicht freigeschaltet: weiterhin kein Zugang, dieselbe
 	//    Meldung wie beim ersten Mal, und es entsteht KEIN zweiter Eintrag. Bis 11.09.2026

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"bibliothek/db"
+	"bibliothek/repository"
 )
 
 // Selbstanmeldung: Wer sich mit einem Schul-Mailkonto anmeldet und im System noch nicht
@@ -159,10 +160,7 @@ func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email str
 	if err != nil {
 		details = []byte("{}")
 	}
-	if _, err := dbPool.Exec(ctx, `
-		INSERT INTO audit_logs (admin_id, aktion, details, zeitstempel)
-		VALUES ($1, 'SELBSTANMELDUNG', $2::jsonb, CURRENT_TIMESTAMP)
-	`, u.id, string(details)); err != nil {
+	if err := repository.SchreibeAdminProtokoll(ctx, dbPool, u.id, "SELBSTANMELDUNG", "", string(details)); err != nil {
 		slog.Warn("Selbstanmeldung: Audit-Zeile konnte nicht geschrieben werden", "fehler", err)
 	}
 	return u, nil

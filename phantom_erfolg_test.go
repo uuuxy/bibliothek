@@ -62,7 +62,6 @@ var phantomBestand = map[string]int{
 	"repository/systematik.go:LoescheSachgruppe":              1,
 	"auth/blacklist.go:Add":                                   1,
 	"auth/blacklist.go:cleanup":                               1,
-	"auth/selbstanmeldung.go:legeZugangsanfrageAn":            1,
 	// sitzungen (Migration 155): 0 Zeilen heißt jedes Mal „die Zeile der Anmeldung gibt es
 	// nicht (mehr)" — dann ist nichts gesperrt, kein Prüfwert zu halten, nichts zu löschen.
 	// Wo die Zahl etwas entscheidet (Sperre, Verlaengere), wird sie gelesen.
