@@ -137,8 +137,8 @@ der Nummer nichts mehr dazu offen ist.
   ziehen je Sache aus `api/` in eigene Pakete.
 - [ ] **Gedruckter Text nach Zeichenzahl gekürzt (5.63):** an 18 Stellen messen, ob ein Text
   über seine Zelle läuft.
-- [ ] **Bestellanschreiben und Schadensfall (5.64):** Ort mit Umlaut in der Datumszeile, Zellen
-  ohne Kürzen, Kopf am falschen Rand, Dateiname mit dem Tag des Servers.
+- [ ] **Bestellanschreiben (5.64):** Zellen ohne Kürzen, Kopf am falschen Rand, Dateiname mit
+  dem Tag des Servers.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -390,16 +390,11 @@ und Zellenbreite messen, ob die zugelassene Zahl breiter Buchstaben über die Ze
 dann auf die Breite kürzen. Die Etiketten sind im Aussehen abgenommen; dort ändert sich mit der
 Umstellung, wo ein langer Titel endet.
 
-### 5.64 Bestellanschreiben und Schadensfall: vier Funde
+### 5.64 Bestellanschreiben: drei Funde
 
-Gefunden am 09.10.2026 beim Umzug des Bestellanschreibens nach `pdf/`; alle vier sind älter als
+Gefunden am 09.10.2026 beim Umzug des Bestellanschreibens nach `pdf/`; alle drei sind älter als
 der Umzug.
 
-- **Ort ohne Zeichenersetzung.** Die Datumszeile („Ort, den …") geht im Bestellanschreiben
-  (`pdf/bestellanschreiben.go`) und im Schadensfall (`pdf/schadensfall.go`) nicht durch die
-  Zeichenersetzung. Ein Ort mit Umlaut stünde verstümmelt auf dem Papier. Über den Bestand
-  gesucht: 262 Druckaufrufe in den Erzeugern mit gofpdf, diese zwei sind die einzigen mit Text
-  ohne Ersetzung; die übrigen 27 ohne sie drucken Zahlen und Tage.
 - **Zellen ohne Kürzen.** Titel, Autor und ISBN stehen im Bestellanschreiben ungekürzt in
   Zellen fester Breite; ein langer Titel läuft über die Nachbarzelle (wie 5.63).
 - **Kopf am falschen Rand.** Das Bestellanschreiben setzt seine Ränder nach dem Anlegen der

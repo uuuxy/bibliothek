@@ -77,7 +77,7 @@ func addSchadensfallHeader(pdf *gofpdf.Fpdf, schule SchuleInfo, tr func(string) 
 	// Date line (Right-aligned)
 	pdf.SetY(40)
 	pdf.SetFont("Arial", "", 10)
-	pdf.CellFormat(0, 6, schule.OrtDatum(schulzeit.Jetzt().Format(dateFormatDE)), "", 0, "R", false, 0, "")
+	pdf.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(dateFormatDE))), "", 0, "R", false, 0, "")
 }
 
 func addSchadensfallAddress(pdf *gofpdf.Fpdf, data SchadensfallInfo, tr func(string) string) {

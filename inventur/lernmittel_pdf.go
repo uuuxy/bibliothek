@@ -195,9 +195,9 @@ func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Lernmitte
 	if mitGezaehlt {
 		pdf.CellFormat(spGezaehlt, zeilenH, tr(t.Gezaehlt), "1", 0, "C", false, 0, "")
 	}
-	pdf.CellFormat(spZahl, zeilenH, fmt.Sprint(t.Gesamt), "1", 0, "R", false, 0, "")
-	pdf.CellFormat(spZahl, zeilenH, fmt.Sprint(t.Verliehen), "1", 0, "R", false, 0, "")
-	pdf.CellFormat(spZahl, zeilenH, fmt.Sprint(t.Verfuegbar), "1", 1, "R", false, 0, "")
+	pdf.CellFormat(spZahl, zeilenH, strconv.Itoa(t.Gesamt), "1", 0, "R", false, 0, "")
+	pdf.CellFormat(spZahl, zeilenH, strconv.Itoa(t.Verliehen), "1", 0, "R", false, 0, "")
+	pdf.CellFormat(spZahl, zeilenH, strconv.Itoa(t.Verfuegbar), "1", 1, "R", false, 0, "")
 }
 
 // bindeCoverEin bettet das lokale Cover als JPEG ein. Alle Fehler bleiben still: Ein
@@ -251,15 +251,15 @@ func fachAnzeige(fach string) string {
 // bestehen — dieselben Worte wie auf dem Bildschirm. Die Zelle behält ihre Höhe: Wüchse die
 // Zeile, stimmte der Umbruch vor dem Cover nicht mehr (zeichneSchulbuchZeile).
 func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTitel, breite float64) {
-	titel := tr(kuerze(t.Title, int(breite/1.6)))
+	titel := kuerze(t.Title, int(breite/1.6))
 	if len(t.AuflagenBestand) < 2 {
-		pdf.CellFormat(breite, zeilenH, titel, "1", 0, "L", false, 0, "")
+		pdf.CellFormat(breite, zeilenH, tr(titel), "1", 0, "L", false, 0, "")
 		return
 	}
 	x, y := pdf.GetXY()
 	pdf.CellFormat(breite, zeilenH, "", "1", 0, "L", false, 0, "")
 	pdf.SetXY(x, y+1.5)
-	pdf.CellFormat(breite, 4, titel, "", 2, "L", false, 0, "")
+	pdf.CellFormat(breite, 4, tr(titel), "", 2, "L", false, 0, "")
 	pdf.SetFont("Arial", "", 6.5)
 	// Höchstens drei Zeilen (1,5 + 4 + 3 × 3 = 14,5 mm von 17): rund 1,25 mm je Zeichen in
 	// dieser Größe. Drei Auflagen passen so auch in die schmale Titelspalte (45 mm).

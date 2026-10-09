@@ -113,3 +113,15 @@ func TestBestellanschreiben_DerSatzZuDenEtikettenStehtAufDemBlatt(t *testing.T) 
 		}
 	}
 }
+
+// Der Ort der Schule steht in der Datumszeile, wie er heißt. gofpdf druckt in cp1252: Ein Ort mit
+// Umlaut, der nicht durch die Zeichenersetzung geht, stünde verstümmelt auf dem Brief.
+func TestBestellanschreiben_OrtMitUmlautStehtLesbarInDerDatumszeile(t *testing.T) {
+	roh, err := GenerateBestellanschreibenPDF(Bestellanschreiben{Betreff: "B", Vermerk: "V."},
+		SchuleInfo{Name: "Schule", Strasse: "Weg 1", PLZ: "50667", Ort: "Köln"})
+	if err != nil {
+		t.Fatalf("Anschreiben drucken: %v", err)
+	}
+	pruefeBlatt(t, strings.Join(pdftest.Texte(t, roh), "\n"),
+		[]string{"Köln, den " + schulzeit.Jetzt().Format(dateFormatDE)}, []string{"Ã"})
+}
