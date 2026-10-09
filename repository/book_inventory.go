@@ -47,7 +47,7 @@ func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, bar
 // 043): ausgesondert verlangt genau einen Grund, im Umlauf verlangt NULL. Der einzige
 // Aufrufer ist der Status-Editor, und dort setzt genau EIN Zustand aus — "Verloren".
 // Deshalb ist VERLUST der fachliche Default (Betreiber-Entscheidung 19.08.2026): "Verloren"
-// in der Oberfläche muss in der Verlustquote zählen (api/stats.go: VERLUST/BESCHAEDIGUNG),
+// in der Oberfläche muss in der Verlustquote zählen (statistik.go: VERLUST/BESCHAEDIGUNG),
 // nicht als AUSSORTIERT verschwinden. Ein bereits gesetzter, spezifischerer Grund — etwa
 // BESCHAEDIGUNG aus der Schadensmeldung — bleibt via COALESCE beim blossen Bearbeiten der
 // Notiz erhalten. Beim Reaktivieren wird der Grund gelöscht, sonst lehnt der CHECK ab.

@@ -14,7 +14,7 @@ import (
 // TestCopyStatusVerloren_ZaehltAlsVerlust belegt die Betreiber-Entscheidung vom
 // 19.08.2026 (Vokabular-Sweep P1): Wird ein Exemplar in der Schnell-Statusleiste auf
 // "Verloren" gesetzt, muss es in der Verlustquote zählen. Vorher schrieb der Editor
-// AUSSORTIERT, das api/stats.go ausdrücklich NICHT als Verlust wertet — "Verloren"
+// AUSSORTIERT, das repository/statistik.go ausdrücklich NICHT als Verlust wertet — "Verloren"
 // verschwand still aus der Statistik. Jetzt ist der Default VERLUST.
 func TestCopyStatusVerloren_ZaehltAlsVerlust(t *testing.T) {
 	pool := pgTestPool(t)

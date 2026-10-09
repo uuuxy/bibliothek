@@ -33,7 +33,7 @@ type meldeSchadenParams struct {
 // Der Aussonderungsgrund folgt der Fallgruppe: „nicht zurückgegeben" ist VERLUST,
 // „beschädigt" BESCHAEDIGUNG. Bis zum 15.09.2026 stand bei beiden BESCHAEDIGUNG; das
 // endgültige Löschen und die Fund-Meldung des Fehlbestandsberichts kennen aber nur
-// VERLUST (OFFEN.md 5.3), und die Verlustquote (api/stats.go) zählt beide.
+// VERLUST (OFFEN.md 5.3), und die Verlustquote (statistik.go) zählt beide.
 func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (string, error) {
 	ausleihe, err := ladeSchadensAusleihe(ctx, tx, params)
 	if err != nil {

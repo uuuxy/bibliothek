@@ -91,7 +91,6 @@ var handlerMitSQL = map[string]int{
 	"labels.go":                        2,
 	"pdf.go":                           2,
 	"print.go":                         6,
-	"stats.go":                         8,
 	"student_create.go":                7,
 	"student_deleted.go":               3,
 	"student_lock.go":                  2,

@@ -198,7 +198,7 @@ func TestShelfWarmers_NeuzugangKeinLadenhueter(t *testing.T) {
 	}
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	warmers := srv.queryShelfWarmers(ctx, "", 100)
+	warmers := repository.ListeLadenhueter(ctx, srv.DB.Pool, "", 100)
 
 	titel := map[string]bool{}
 	for _, w := range warmers {

@@ -51,6 +51,6 @@ func reorderFilter(r *http.Request) string {
 	if typ == "" {
 		typ = "lmf"
 	}
-	fragment, _ := resolveBestandsFilter(typ)
+	fragment, _ := repository.BestandsFilterBedingung(typ)
 	return fragment
 }

@@ -43,7 +43,7 @@ var bestandKalendertag = map[string]struct {
 	// Menschen, und es läuft ohnehin von Hand und tagsüber. Der Listen-Import stand hier
 	// bis zum 23.09.2026; seitdem nimmt er die Vorgabe der Spalte (Migration 139).
 	"cmd/migrate/pg_writer.go":         {1, "erworben_am beim Alt-Import"},
-	"api/stats.go":                     {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
+	"repository/statistik.go":          {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
 	"cmd/seed/main.go":                 {1, "erfundene Abgangsjahre für Testdaten"},
 	"inventur/lernmittel_handler.go":   {1, "Datum im DATEINAMEN eines Downloads"},
 	"inventur/export_csv.go":           {1, "Datum im DATEINAMEN eines Downloads"},

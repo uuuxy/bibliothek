@@ -137,7 +137,7 @@ func TestQueryReorders_LMFNurInSignatur(t *testing.T) {
 
 // reorderFilterFragmentLMF liefert das Default-(LMF-)Filterfragment ohne HTTP-Request.
 func reorderFilterFragmentLMF() string {
-	frag, _ := resolveBestandsFilter("lmf")
+	frag, _ := repository.BestandsFilterBedingung("lmf")
 	return frag
 }
 
