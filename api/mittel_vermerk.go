@@ -14,7 +14,7 @@ import (
 // Anschreiben „für unsere Schulbibliothek", auch für Lernmittel-Klassensätze — der Vermerk
 // stand also da, nur falsch herum.
 //
-// EINE Quelle für Anschreiben (order_pdf.go) und Mail (bestellmail_text.go): Zwei
+// EINE Quelle für Anschreiben (pdf/bestellanschreiben.go) und Mail (bestellmail_text.go): Zwei
 // Formulierungen desselben Vermerks liefen früher oder später auseinander, und der
 // Händler hielte dann zwei Dokumente in der Hand, die sich widersprechen.
 //

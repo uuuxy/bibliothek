@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pdftest"
 	"bibliothek/pdf"
 	"bibliothek/repository"
 )
@@ -103,6 +104,49 @@ func TestBestellAnhaenge_OhneVorabBarcodesNurDasAnschreiben(t *testing.T) {
 
 	if namen := anhangNamen(t, m); len(namen) != 1 || namen[0] != "bestellanschreiben" {
 		t.Errorf("Anlagen = %v, erwartet nur das Anschreiben", namen)
+	}
+}
+
+// Der Satz im Anschreiben und die Anlagen hängen an derselben Entscheidung: Der Brief nennt den
+// beigefügten Bogen nur, wenn er beiliegt, den Link nur, wenn die Etiketten dahinter liegen, und
+// ohne Vorab-Barcodes keines von beiden.
+func TestBestellAnhaenge_DasAnschreibenNenntDenWegSeinerEtiketten(t *testing.T) {
+	const bogen, link = "aus dem beigefügten Bogen", "Link in dieser E-Mail"
+	for _, f := range []struct {
+		name                   string
+		vorabBarcodes, mitLink bool
+		muss                   string
+		bogenLiegtBei          bool
+	}{
+		{"Bogen an der Mail", true, false, bogen, true},
+		{"Etiketten hinter dem Link", true, true, link, false},
+		{"ohne Vorab-Barcodes", false, false, "", false},
+		{"ohne Vorab-Barcodes, mit Link", false, true, "", false},
+	} {
+		m := testBestellMail()
+		m.MitVorabBarcodes, m.MitBestaetigungsLink = f.vorabBarcodes, f.mitLink
+		anhaenge, err := bestellAnhaenge(m)
+		if err != nil {
+			t.Fatalf("%s: %v", f.name, err)
+		}
+		brief, liegtBei := "", false
+		for _, a := range anhaenge {
+			if strings.HasPrefix(a.Name, "bestellanschreiben_") {
+				// Der Satz ist länger als die Zeile; verglichen wird ohne die Umbrüche des Blatts.
+				brief = strings.Join(pdftest.TexteInReihenfolge(t, a.Data), " ")
+			}
+			if strings.HasPrefix(a.Name, "etiketten_") {
+				liegtBei = true
+			}
+		}
+		if liegtBei != f.bogenLiegtBei {
+			t.Errorf("%s: Etikettenbogen an der Mail = %v, erwartet %v", f.name, liegtBei, f.bogenLiegtBei)
+		}
+		for _, satz := range []string{bogen, link} {
+			if steht := strings.Contains(brief, satz); steht != (satz == f.muss) {
+				t.Errorf("%s: %q im Anschreiben = %v, erwartet %v:\n%s", f.name, satz, steht, satz == f.muss, brief)
+			}
+		}
 	}
 }
 

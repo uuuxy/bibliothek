@@ -350,7 +350,8 @@ des Schulträgers (Schülerbücherei) beschafft wird.
 - **Keine Bestellung kannte ihren Topf.** `bestellungen_verlauf` trug Lieferant,
   Kundennummer, Betrag, Exemplare, Bestätigung — sonst nichts. Berichte, Historie,
   Übersicht und Detail konnten deshalb nicht trennen.
-- **Das Anschreiben behauptete für JEDE Bestellung die Schülerbücherei:** `order_pdf.go`
+- **Das Anschreiben behauptete für JEDE Bestellung die Schülerbücherei:** Der Erzeuger
+  (heute `pdf/bestellanschreiben.go`)
   schrieb „hiermit bestellen wir für unsere Schulbibliothek …" und im Betreff
   „Buchbestellung für die Schulbibliothek" — auch wenn ein Lernmittel-Klassensatz bestellt
   wurde. Das war genau der geforderte Vermerk, nur falsch herum: Ein Händler, der den
@@ -378,7 +379,7 @@ die zweite Kundennummer geschrumpft — eine eigene Rechnungsanschrift je Topf g
 nicht, beide Rechnungen gehen an die Schule. Der Vermerk nennt weder Träger noch
 Behörde, nur den Topf (Vorgabe: kein Rechts- oder Regionalbezug außerhalb der
 Formulare an Schüler). Gates: `api/bestellung_mittel_pg_test.go`,
-`api/bestellung_mittel_backfill_pg_test.go`, `api/order_pdf_mittel_test.go`,
+`api/bestellung_mittel_backfill_pg_test.go`, `api/bestellanschreiben_test.go`,
 `api/bestellmail_mittel_test.go`, `api/titel_lernmittel_pg_test.go`,
 `api/bestellung_mittel_korrektur_pg_test.go`, `api/lieferant_zweitnummer_pg_test.go`,
 `api/mittel_vokabular_paritaet_test.go`, `frontend/src/lib/stores/orderStore.test.js`.

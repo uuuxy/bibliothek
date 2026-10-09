@@ -2,12 +2,23 @@ package api
 
 import (
 	"bytes"
+	"encoding/csv"
 	"fmt"
 	"log"
 	"time"
 
 	"bibliothek/pdf"
+	"bibliothek/pkg/csvutil"
 )
+
+// OrderedItem ist ein bestellter Titel mit seiner Menge, wie Anschreiben und Mail ihn nennen.
+type OrderedItem struct {
+	Titel  string
+	Autor  string
+	ISBN   string
+	Verlag string
+	Menge  int
+}
 
 // PDFService handles the generation of PDF documents and email dispatch.
 type PDFService struct{}
@@ -89,15 +100,19 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 	// Eine Entscheidung, an der ALLES hängt: die Bögen, die CSV und der Satz im
 	// Anschreiben, der auf sie verweist. Vorher stand der Satz unabhängig davon im
 	// Brief — der Lieferant wurde auf eine Anlage hingewiesen, die nicht existierte.
-	weg := ohneEtiketten
+	weg := pdf.OhneEtiketten
 	switch {
 	case mitBarcodebogen && m.MitBestaetigungsLink:
-		weg = bogenHinterLink
+		weg = pdf.BogenHinterLink
 	case mitBarcodebogen:
-		weg = bogenLiegtBei
+		weg = pdf.BogenLiegtBei
 	}
 
-	summaryPDF, err := GenerateOrderSummaryPDF(m.Positionen, m.Schule, weg, m.Mittel)
+	anschreiben, err := bestellanschreiben(m.Positionen, weg, m.Mittel)
+	if err != nil {
+		return nil, err
+	}
+	summaryPDF, err := pdf.GenerateBestellanschreibenPDF(anschreiben, m.Schule)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +132,7 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 	anhaenge = append(anhaenge,
 		MailAttachment{Name: datiertName("barcode_mapping", "csv"), ContentType: "text/csv", Data: barcodeCSV})
 
-	if weg == bogenHinterLink {
+	if weg == pdf.BogenHinterLink {
 		return anhaenge, nil
 	}
 
@@ -126,6 +141,43 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 		return nil, err
 	}
 	return append(anhaenge, boegen...), nil
+}
+
+// bestellanschreiben füllt die Eingabe des Anschreibens. Betreff und Vermerk kommen aus den
+// Texten zum Topf (mittel_vermerk.go); ein unbekannter Topf ist ein Fehler und kein Brief ohne
+// Vermerk.
+func bestellanschreiben(positionen []OrderedItem, weg pdf.EtikettenWeg, mittel string) (pdf.Bestellanschreiben, error) {
+	texte, err := mittelTexteFuer(mittel)
+	if err != nil {
+		return pdf.Bestellanschreiben{}, err
+	}
+	zeilen := make([]pdf.BestellPosition, 0, len(positionen))
+	for _, p := range positionen {
+		zeilen = append(zeilen, pdf.BestellPosition{Titel: p.Titel, Autor: p.Autor, ISBN: p.ISBN, Menge: p.Menge})
+	}
+	return pdf.Bestellanschreiben{Betreff: texte.Betreff, Vermerk: texte.Vermerk, Etiketten: weg, Positionen: zeilen}, nil
+}
+
+// GenerateBarcodeCSV schreibt die Zuordnung von Barcode und ISBN für die Warenwirtschaft des
+// Lieferanten.
+func GenerateBarcodeCSV(labels []BarcodeLabelDetail) ([]byte, error) {
+	var buf bytes.Buffer
+	writer := csv.NewWriter(&buf)
+	writer.Comma = ';' // European CSV format
+
+	// Header
+	if err := writer.Write([]string{"ISBN", "Titel", "Autor", "Barcode"}); err != nil {
+		return nil, err
+	}
+
+	for _, l := range labels {
+		// Schutz vor Formel-Injection (CWE-1236): Titel/Autor stammen aus Katalog-Importen.
+		if err := writer.Write(csvutil.SanitizeRow([]string{l.ISBN, l.Titel, l.Autor, l.BarcodeID})); err != nil {
+			return nil, err
+		}
+	}
+	writer.Flush()
+	return buf.Bytes(), writer.Error()
 }
 
 // etikettenboegen erzeugt die Etiketten-PDFs für die Mail: immer den kleinen Bogen, für

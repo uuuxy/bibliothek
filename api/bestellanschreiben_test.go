@@ -1,12 +1,55 @@
 package api
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
 	"bibliothek/pdf"
 	"bibliothek/repository"
 )
+
+// anschreibenBlatt druckt das Anschreiben, wie die Anlagen der Bestellmail es tun.
+func anschreibenBlatt(positionen []OrderedItem, schule pdf.SchuleInfo, weg pdf.EtikettenWeg, mittel string) ([]byte, error) {
+	anschreiben, err := bestellanschreiben(positionen, weg, mittel)
+	if err != nil {
+		return nil, err
+	}
+	return pdf.GenerateBestellanschreibenPDF(anschreiben, schule)
+}
+
+// Jedes Feld der Eingabe kommt aus seiner Quelle, die Werte sind je Feld verschieden; ein Feld,
+// das die Eingabe später dazubekommt und das niemand füllt, fällt an leereFelder auf. Den Verlag
+// druckt das Anschreiben nicht.
+func TestBestellanschreiben_FuelltJedesFeldDerEingabe(t *testing.T) {
+	positionen := []OrderedItem{
+		{Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", Verlag: "Verlag 1", Menge: 30},
+		{Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", Verlag: "Verlag 2", Menge: 2},
+	}
+	for _, mittel := range []string{repository.MittelLand, repository.MittelSchultraeger} {
+		eingabe, err := bestellanschreiben(positionen, pdf.BogenHinterLink, mittel)
+		if err != nil {
+			t.Fatalf("%s: %v", mittel, err)
+		}
+		want := pdf.Bestellanschreiben{
+			Betreff: mittelTexte[mittel].Betreff, Vermerk: mittelTexte[mittel].Vermerk, Etiketten: pdf.BogenHinterLink,
+			Positionen: []pdf.BestellPosition{
+				{Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", Menge: 30},
+				{Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", Menge: 2},
+			},
+		}
+		if !reflect.DeepEqual(eingabe, want) {
+			t.Errorf("%s: Eingabe des Anschreibens =\n%+v\nerwartet\n%+v", mittel, eingabe, want)
+		}
+		if leer := leereFelder(reflect.ValueOf(eingabe), "pdf.Bestellanschreiben"); len(leer) > 0 {
+			t.Errorf("%s: bestellanschreiben füllt diese Felder nicht: %v", mittel, leer)
+		}
+	}
+	if mittelTexte[repository.MittelLand].Betreff == mittelTexte[repository.MittelSchultraeger].Betreff ||
+		mittelTexte[repository.MittelLand].Vermerk == mittelTexte[repository.MittelSchultraeger].Vermerk {
+		t.Error("die Texte der zwei Töpfe sind gleich; der Test unterschiede sie nicht")
+	}
+}
 
 // Der Vermerk des Topfs steht auf dem FERTIGEN Anschreiben — und nie der des anderen.
 //
@@ -28,7 +71,7 @@ func TestBestellanschreibenTraegtDenVermerkDesTopfsUndNieDenAnderen(t *testing.T
 
 	for mittel, erwartet := range kennzeichen {
 		t.Run(mittel, func(t *testing.T) {
-			roh, err := GenerateOrderSummaryPDF(items, schule, bogenLiegtBei, mittel)
+			roh, err := anschreibenBlatt(items, schule, pdf.BogenLiegtBei, mittel)
 			if err != nil {
 				t.Fatalf("Anschreiben erzeugen: %v", err)
 			}
@@ -59,7 +102,7 @@ func TestBestellanschreibenTraegtDenVermerkDesTopfsUndNieDenAnderen(t *testing.T
 // Dokument, das dieses Paket abschafft.
 func TestBestellanschreibenVerweigertUnbekanntenTopf(t *testing.T) {
 	for _, mittel := range []string{"", "kreis", "Land"} {
-		if _, err := GenerateOrderSummaryPDF(nil, pdf.SchuleInfo{}, ohneEtiketten, mittel); err == nil {
+		if _, err := anschreibenBlatt(nil, pdf.SchuleInfo{}, pdf.OhneEtiketten, mittel); err == nil {
 			t.Errorf("Topf %q: Anschreiben entstand ohne Vermerk", mittel)
 		}
 	}

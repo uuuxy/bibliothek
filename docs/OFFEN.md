@@ -137,6 +137,8 @@ der Nummer nichts mehr dazu offen ist.
   ziehen je Sache aus `api/` in eigene Pakete.
 - [ ] **Gedruckter Text nach Zeichenzahl gekürzt (5.63):** an 18 Stellen messen, ob ein Text
   über seine Zelle läuft.
+- [ ] **Bestellanschreiben und Schadensfall (5.64):** Ort mit Umlaut in der Datumszeile, Zellen
+  ohne Kürzen, Kopf am falschen Rand, Dateiname mit dem Tag des Servers.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -346,23 +348,22 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
-  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 25 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 23.844 Zeilen in 149 Dateien (am Anfang 30.785 in 168).
+  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 24 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 23.710 Zeilen in 148 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`, der Strichcode in `pkg/strichcode`; in `pdf/` stehen
   der Bescheid (`bescheid.go`), die Etiketten mit ihren Bogenformaten (`etikett_*.go`), die
-  Bestandsbücher (`abgangsbuch.go`, `zugangsbuch.go`), die Mahnliste (`mahnliste.go`) und der
-  Mahnbrief (`mahnbrief.go`). Offen: der Aufbau der übrigen PDFs und der Rest der 25. Was ein
-  Erzeuger aus `repository/` liest, bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn
-  (ARCHITEKTUR 5.2.2). Je Thema ein Commit; die Tests der Türen bleiben stehen und belegen, dass
-  sich nichts ändert. Gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler, was die vier
-  übrigen PDF-Dateien brauchen: Das Bestellanschreiben (`order_pdf.go`) braucht die Texte zum
-  Topf (`mittelTexteFuer`); die Typen des Druckauftrags und die Barcode-Liste in derselben Datei
-  bleiben in `api/`. `pdf_service.go` stellt die Anlagen der Bestellmail zusammen und verschickt sie; das
-  ist kein Erzeuger und hängt an 15 Namen aus `api/`. Die Auskunft (`dsgvo_pdf_konto.go`,
-  `dsgvo_pdf_protokoll.go`, dazu der Erzeuger in `dsgvo_pdf.go`) hängt an 15 Namen aus `api/` und
-  17 aus `repository/` und nimmt den Typ der Antwort für den Bildschirm; sie ist die größte Sache.
+  Bestandsbücher (`abgangsbuch.go`, `zugangsbuch.go`), die Mahnliste (`mahnliste.go`), der
+  Mahnbrief (`mahnbrief.go`) und das Bestellanschreiben (`bestellanschreiben.go`). Offen: der
+  Aufbau der übrigen PDFs und der Rest der 24. Was ein Erzeuger aus `repository/` liest, bekommt
+  er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2). Je Thema ein Commit; die
+  Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Gemessen am 09.10.2026
+  mit einem Probe-Umzug am Compiler, was die drei übrigen PDF-Dateien brauchen: `pdf_service.go`
+  stellt die Anlagen der Bestellmail zusammen und verschickt sie; das ist kein Erzeuger und
+  hängt an 15 Namen aus `api/`. Die Auskunft (`dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`,
+  dazu der Erzeuger in `dsgvo_pdf.go`) hängt an 15 Namen aus `api/` und 17 aus `repository/` und
+  nimmt den Typ der Antwort für den Bildschirm; sie ist die größte Sache.
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
   umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
@@ -388,6 +389,24 @@ Nach Zeichen kürzen weiter 18 Stellen (gezählt am 09.10.2026): `pdf/etikett_bu
 und Zellenbreite messen, ob die zugelassene Zahl breiter Buchstaben über die Zelle läuft, und
 dann auf die Breite kürzen. Die Etiketten sind im Aussehen abgenommen; dort ändert sich mit der
 Umstellung, wo ein langer Titel endet.
+
+### 5.64 Bestellanschreiben und Schadensfall: vier Funde
+
+Gefunden am 09.10.2026 beim Umzug des Bestellanschreibens nach `pdf/`; alle vier sind älter als
+der Umzug.
+
+- **Ort ohne Zeichenersetzung.** Die Datumszeile („Ort, den …") geht im Bestellanschreiben
+  (`pdf/bestellanschreiben.go`) und im Schadensfall (`pdf/schadensfall.go`) nicht durch die
+  Zeichenersetzung. Ein Ort mit Umlaut stünde verstümmelt auf dem Papier. Über den Bestand
+  gesucht: 262 Druckaufrufe in den Erzeugern mit gofpdf, diese zwei sind die einzigen mit Text
+  ohne Ersetzung; die übrigen 27 ohne sie drucken Zahlen und Tage.
+- **Zellen ohne Kürzen.** Titel, Autor und ISBN stehen im Bestellanschreiben ungekürzt in
+  Zellen fester Breite; ein langer Titel läuft über die Nachbarzelle (wie 5.63).
+- **Kopf am falschen Rand.** Das Bestellanschreiben setzt seine Ränder nach dem Anlegen der
+  Seite: Der Name der Schule steht 10 mm vom Rand, alles Weitere 20 mm.
+- **Dateiname mit dem Tag des Servers.** `datiertName` (`api/pdf_service.go`) nimmt die Uhr des
+  Servers statt den Kalendertag der Schule; zwischen 0 und 2 Uhr trägt eine Anlage der
+  Bestellmail den Vortag im Namen.
 
 ---
 

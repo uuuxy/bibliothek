@@ -13,6 +13,49 @@ import (
 	"bibliothek/repository"
 )
 
+// BarcodeLabelDetail ist ein Buchetikett auf der Seite der Tür: der Eintrag eines Druckauftrags
+// aus dem Browser und die Zeile eines Exemplars aus der Datenbank. Die Erzeuger in pdf/
+// bekommen daraus pdf.BuchEtikett (buchEtiketten).
+type BarcodeLabelDetail struct {
+	BarcodeID string
+	Titel     string
+	Autor     string
+	ISBN      string
+	// AnschaffungsJahr ist das Jahr aus buecher_exemplare.erworben_am und steht als
+	// "Ansch.J. 2016" auf dem Etikett. Leer = Zeile entfällt (etwa bei Vorab-Etiketten
+	// für eine Bestellung, deren Exemplare es noch gar nicht gibt).
+	AnschaffungsJahr string
+	// Signatur ist buecher_titel.signatur (z. B. "LMF-Deutsch 5"). Leer = Zeile entfällt,
+	// genau wie bei AnschaffungsJahr.
+	Signatur string
+	// Topf ist der Topf des Exemplars (repository.ExemplarTopfSQL) und entscheidet, welcher
+	// Eigentumsvermerk auf dem Etikett steht (EtikettKopf.vermerkFuer). Er kommt immer vom
+	// Server: json:"-", damit ihn kein Druckauftrag aus dem Browser mitbringen kann. Leer =
+	// Exemplar unbekannt (Vorab-Druck), dann gilt der allgemeine Vermerk.
+	Topf string `json:"-"`
+}
+
+// EtikettKopf trägt die schulweiten Angaben, die auf jedem Etikett stehen. Sie kommen aus den
+// Systemeinstellungen und nicht aus dem einzelnen Exemplar: Das Etikett nennt die Schule, der
+// das Buch gehört, und zeigt im Verlustfall den Weg zurück.
+type EtikettKopf struct {
+	Schulname        string // z. B. "Philipp-Reis-Schule, Friedrichsdorf"
+	Eigentumsvermerk string // z. B. "Eigentum des Landes Hessen"
+	// EigentumsvermerkSchuelerbuecherei gilt für Exemplare aus Mitteln des Schulträgers.
+	// Leer heißt kein Vermerk; eine Werksvorgabe gibt es hier nicht.
+	EigentumsvermerkSchuelerbuecherei string
+}
+
+// vermerkFuer wählt den Eigentumsvermerk nach dem Topf des Exemplars: Das Eigentum folgt dem
+// Geld. Eine Stelle für beide Erzeuger (kleines Etikett ab 30 mm, großes Lernmittel-Etikett);
+// buchEtiketten ruft sie je Exemplar und reicht den gewählten Vermerk weiter.
+func (k EtikettKopf) vermerkFuer(topf string) string {
+	if topf == repository.MittelSchultraeger {
+		return k.EigentumsvermerkSchuelerbuecherei
+	}
+	return k.Eigentumsvermerk
+}
+
 // parseLabelParams liest Format, Startposition und QR-Flag aus den Query-Parametern
 // (mit denselben Defaults wie bisher).
 func parseLabelParams(r *http.Request) (formatId string, startPos int, isQR bool) {

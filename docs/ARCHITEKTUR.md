@@ -619,7 +619,7 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 23.844 Zeilen, 149 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `api/`                  | 23.710 Zeilen, 148 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
 | `repository/`           | 21.078 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
 | `internal/service/`     | 4.440 Zeilen, 22 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
@@ -629,7 +629,7 @@ HTTP-Anfrage
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
 | `pkg/` (22 Pakete)      | 2.566 Zeilen, 31 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 3.227 Zeilen, 21 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief |
+| `pdf/`                  | 3.361 Zeilen, 22 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
@@ -663,7 +663,9 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   je Schüler eine Seite aus den Gruppen der Abfrage (`mahnlisteSeiten`,
   `api/mahnwesen_mail.go`), der Mahnbrief je Schüler Anschrift und Bücher aus den Zeilen der
   Abfrage (`mahnbriefEmpfaenger`, `api/mahnwesen_bulk.go`); Betreff, Text und Absenderzeile
-  lädt die Tür aus Vorlage und Einstellungen.
+  lädt die Tür aus Vorlage und Einstellungen. Das Bestellanschreiben bekommt Betreff und Vermerk
+  als fertige Texte zum Topf der Bestellung und den Weg der Etiketten als Wert
+  (`bestellanschreiben`, `api/pdf_service.go`); den Satz dazu wählt der Brief.
 - Unterscheidet eine Tür in ihrer Meldung, ob die Abfrage scheiterte oder das Lesen ihrer
   Zeilen, trägt der Fehler des Lesens `repository.ErrZeileUnlesbar`.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
@@ -1929,6 +1931,7 @@ gegen die Tür klopft.
 | ----------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Mahnliste                                 | `pdf/mahnliste.go`                     | Anhang der Mail an die Klassenleitung, je Schüler eine Seite, ab dem elften Buch Folgeseiten mit seinem Namen; der Versand zählt keine Mahnung |
 | Mahnbrief                                 | `pdf/mahnbrief.go`                     | Der **Druck** ist der Verwaltungsakt: nur hier steigt die Mahnstufe. Brief nach DIN 5008 für das Fensterkuvert, Betreff und Text aus der Vorlage der Schule; passt die Tabelle nicht auf die Seite, folgen Seiten mit dem Namen |
+| Bestellanschreiben                        | `pdf/bestellanschreiben.go`            | Anhang der Bestellmail. Betreff und Vermerk nennen den Topf; ein Satz nennt den Weg zu den Etiketten und stimmt mit den Anlagen der Mail überein (`bestellAnhaenge`) |
 | Kontoauszug, Rechnung, Schadensfall, LMF-Plan | `pdf/` (gofpdf/maroto)             | Rechnung und Schadensfall nennen den Zahlungsweg je Topf (`pdf/zahlungsweg.go`)                       |
 | Bescheid (Landes-Lernmittel)              | `pdf/bescheid.go`                      | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
 | Etiketten und Ausweise                    | `pdf/etikett_*.go`, `pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
@@ -3043,7 +3046,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 23.844 Zeilen in 149 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 23.710 Zeilen in 148 Dateien das schwerste Paket
 
 | | |
 | --- | --- |
@@ -3058,10 +3061,10 @@ Dateien von 53 gesunken, die Zahl der Anweisungen in den 48 von 143 gestiegen, w
 nur neue Dateien abwies. 44 Dateien mit 7.503 Zeilen banden `net/http` nicht ein, waren also
 keine Tür.
 
-Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 25 Dateien ohne Tür
-mit 2.953 Zeilen, davon 4 PDF-Dateien mit 948 Zeilen. Der LUSD-Import steht in
+Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 24 Dateien ohne Tür
+mit 2.776 Zeilen, davon 3 PDF-Dateien mit 771 Zeilen. Der LUSD-Import steht in
 `internal/lusd`, die Selbstprüfung in `internal/bereitschaft`, der Bescheid, die Etiketten, die
-Bestandsbücher, die Mahnliste und der Mahnbrief in `pdf/`, der Strichcode in `pkg/strichcode`, die
+Bestandsbücher, Mahnliste, Mahnbrief und Bestellanschreiben in `pdf/`, der Strichcode in `pkg/strichcode`, die
 Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `api/schichtung_test.go` weist jede SQL-Anweisung in
 `api/` ab und führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Was
 bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst bleiben in einem Paket: Der Typ
