@@ -79,7 +79,7 @@ func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher [
 	for _, b := range buecher {
 		startY := pdf.GetY()
 		pdf.SetX(20)
-		pdf.CellFormat(75, rowH, tr(kuerzeAufZeichen(b.Titel, 38)), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(75, rowH, tr(pdfzeichen.KuerzeAufZeichen(b.Titel, 38)), "1", 0, "L", false, 0, "")
 
 		bcX := pdf.GetX()
 		pdf.CellFormat(35, rowH, "", "1", 0, "", false, 0, "")

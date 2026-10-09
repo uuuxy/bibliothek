@@ -322,7 +322,7 @@ func zeichnePositionen(p *gofpdf.Fpdf, tr func(string) string, positionen []repo
 		if isbn == "" {
 			isbn = "—"
 		}
-		p.CellFormat(s.Titel, 5, tr(kuerzeAufZeichen(pos.TitelName, s.TitelKuerzung)), "1", 0, "L", false, 0, "")
+		p.CellFormat(s.Titel, 5, tr(pdfzeichen.KuerzeAufZeichen(pos.TitelName, s.TitelKuerzung)), "1", 0, "L", false, 0, "")
 		p.CellFormat(s.ISBN, 5, tr(isbn), "1", 0, "C", false, 0, "")
 		if mitPreisen {
 			p.CellFormat(s.Menge, 5, fmt.Sprintf("%d", pos.Menge), "1", 0, "C", false, 0, "")
@@ -545,21 +545,4 @@ func generateBestellBerichtPDF(orders []repository.BerichtBestellung, schule pdf
 		return nil, err
 	}
 	return buf.Bytes(), nil
-}
-
-// kuerzeAufZeichen kürzt s auf höchstens max ZEICHEN (das Auslassungszeichen
-// eingerechnet) — nicht auf max Bytes.
-//
-// Der Unterschied ist in einer deutschen Schulbibliothek kein Randfall: len(s) und
-// s[:n] rechnen in Bytes, ein Umlaut belegt in UTF-8 aber zwei. Ein Schnitt mitten
-// durch „ä" hinterlässt ein halbes Zeichen, und der Unicode-Übersetzer von gofpdf
-// macht daraus sichtbaren Zeichensalat — auf einem Schreiben, das an Eltern geht.
-//
-// max ist die Gesamtlänge der Ausgabe, damit sich Spaltenbreiten direkt ablesen lassen.
-func kuerzeAufZeichen(s string, max int) string {
-	runes := []rune(s)
-	if len(runes) <= max {
-		return s
-	}
-	return string(runes[:max-1]) + "…"
 }

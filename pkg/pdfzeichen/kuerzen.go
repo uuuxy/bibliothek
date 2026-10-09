@@ -28,3 +28,16 @@ func KuerzeAufBreite(pdf Breitenmesser, messbar func(string) string, text string
 	}
 	return "…"
 }
+
+// KuerzeAufZeichen kürzt s auf höchstens max Zeichen, das Auslassungszeichen eingerechnet;
+// max ist damit die Länge der Ausgabe, an der sich eine Spaltenbreite ablesen lässt. Gezählt
+// wird in Zeichen und nicht in Bytes: Ein Umlaut belegt in UTF-8 zwei, und ein Schnitt mitten
+// durch „ä" hinterlässt ein halbes Zeichen, aus dem der Übersetzer von gofpdf Zeichensalat
+// macht.
+func KuerzeAufZeichen(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	return string(runes[:max-1]) + "…"
+}

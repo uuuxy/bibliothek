@@ -1,4 +1,4 @@
-package api
+package pdfzeichen
 
 import (
 	"strings"
@@ -16,8 +16,8 @@ import (
 
 func TestKuerzeAufZeichenLaesstKurzeWerteUnberuehrt(t *testing.T) {
 	for _, s := range []string{"", "kurz", "Müller", strings.Repeat("ö", 10)} {
-		if got := kuerzeAufZeichen(s, 10); got != s {
-			t.Errorf("kuerzeAufZeichen(%q, 10) = %q — kurze Werte dürfen nicht angetastet werden", s, got)
+		if got := KuerzeAufZeichen(s, 10); got != s {
+			t.Errorf("KuerzeAufZeichen(%q, 10) = %q — kurze Werte dürfen nicht angetastet werden", s, got)
 		}
 	}
 }
@@ -37,7 +37,7 @@ func TestKuerzeAufZeichenHaeltDieObergrenze(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got := kuerzeAufZeichen(f.ein, f.max)
+			got := KuerzeAufZeichen(f.ein, f.max)
 
 			if n := utf8.RuneCountInString(got); n != f.max {
 				t.Errorf("%d Zeichen erwartet, geliefert: %d", f.max, n)
@@ -57,12 +57,12 @@ func TestKuerzeAufZeichenHaeltDieObergrenze(t *testing.T) {
 // darüber schon. Ein Off-by-one hier verschiebt jede Spaltenbreite im PDF.
 func TestKuerzeAufZeichenGrenzwert(t *testing.T) {
 	genau := strings.Repeat("ü", 20)
-	if got := kuerzeAufZeichen(genau, 20); got != genau {
+	if got := KuerzeAufZeichen(genau, 20); got != genau {
 		t.Errorf("exakt auf der Grenze darf nicht gekürzt werden, geliefert: %q", got)
 	}
 
 	einsZuViel := strings.Repeat("ü", 21)
-	got := kuerzeAufZeichen(einsZuViel, 20)
+	got := KuerzeAufZeichen(einsZuViel, 20)
 	if utf8.RuneCountInString(got) != 20 {
 		t.Errorf("ein Zeichen über der Grenze muss auf 20 kürzen, geliefert: %d",
 			utf8.RuneCountInString(got))
@@ -87,9 +87,9 @@ func TestByteweisesKuerzenWaereKaputt(t *testing.T) {
 		t.Fatal("erwartet war ungültiges UTF-8 — der byteweise Schnitt trifft hier keine Zeichengrenze")
 	}
 
-	neu := kuerzeAufZeichen(titel, 38)
+	neu := KuerzeAufZeichen(titel, 38)
 	if !utf8.ValidString(neu) {
-		t.Errorf("kuerzeAufZeichen liefert ungültiges UTF-8: %q", neu)
+		t.Errorf("KuerzeAufZeichen liefert ungültiges UTF-8: %q", neu)
 	}
 	// 30 Zeichen liegen unter der Grenze von 38 — es wird gar nicht gekürzt.
 	if neu != titel {

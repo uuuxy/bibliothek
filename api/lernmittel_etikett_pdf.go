@@ -101,19 +101,19 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item Bar
 	y := oy + 12.0
 	pdf.SetFont("Arial", "B", 11)
 	pdf.SetXY(x, y)
-	pdf.CellFormat(breite, 5, tr(kuerzeAufZeichen(kopf.Schulname, 45)), "", 0, "C", false, 0, "")
+	pdf.CellFormat(breite, 5, tr(pdfzeichen.KuerzeAufZeichen(kopf.Schulname, 45)), "", 0, "C", false, 0, "")
 
 	y += 7
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetXY(x, y)
-	pdf.CellFormat(breite, 6, tr(kuerzeAufZeichen(item.Titel, 42)), "", 0, "C", false, 0, "")
+	pdf.CellFormat(breite, 6, tr(pdfzeichen.KuerzeAufZeichen(item.Titel, 42)), "", 0, "C", false, 0, "")
 
 	zeile2 := zweiteZeile(item.AnschaffungsJahr, item.Signatur)
 	if zeile2 != "" {
 		y += 7
 		pdf.SetFont("Arial", "", 9)
 		pdf.SetXY(x, y)
-		pdf.CellFormat(breite, 4, tr(kuerzeAufZeichen(zeile2, 48)), "", 0, "C", false, 0, "")
+		pdf.CellFormat(breite, 4, tr(pdfzeichen.KuerzeAufZeichen(zeile2, 48)), "", 0, "C", false, 0, "")
 	}
 
 	y += 9
@@ -136,7 +136,7 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item Bar
 	if vermerk := kopf.vermerkFuer(item.Topf); vermerk != "" {
 		pdf.SetFont("Arial", "", 8)
 		pdf.SetXY(x, y)
-		pdf.CellFormat(breite, 4, tr(kuerzeAufZeichen(vermerk, 48)), "", 0, "C", false, 0, "")
+		pdf.CellFormat(breite, 4, tr(pdfzeichen.KuerzeAufZeichen(vermerk, 48)), "", 0, "C", false, 0, "")
 		y += 8
 	}
 

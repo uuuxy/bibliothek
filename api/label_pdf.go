@@ -91,7 +91,7 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 	y := pos.Y + 2.5
 	pdf.SetFont("Arial", "B", 8)
 	pdf.SetXY(pos.X, y)
-	pdf.CellFormat(format.LabelWidth, 3.5, tr(kuerzeAufZeichen(kopf.Schulname, 42)), "", 0, "C", false, 0, "")
+	pdf.CellFormat(format.LabelWidth, 3.5, tr(pdfzeichen.KuerzeAufZeichen(kopf.Schulname, 42)), "", 0, "C", false, 0, "")
 
 	y += 3.5
 	pdf.SetXY(pos.X, y)
@@ -102,7 +102,7 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 		y += 3.5
 		pdf.SetFont("Arial", "", 7)
 		pdf.SetXY(pos.X, y)
-		pdf.CellFormat(format.LabelWidth, 3, tr(kuerzeAufZeichen(zeile2, 45)), "", 0, "C", false, 0, "")
+		pdf.CellFormat(format.LabelWidth, 3, tr(pdfzeichen.KuerzeAufZeichen(zeile2, 45)), "", 0, "C", false, 0, "")
 		y += 3
 	} else {
 		y += 3.5
@@ -141,7 +141,7 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 		y += 4.5
 		pdf.SetFont("Arial", "", 7)
 		pdf.SetXY(pos.X, y)
-		pdf.CellFormat(format.LabelWidth, 3, tr(kuerzeAufZeichen(vermerk, 45)), "", 0, "C", false, 0, "")
+		pdf.CellFormat(format.LabelWidth, 3, tr(pdfzeichen.KuerzeAufZeichen(vermerk, 45)), "", 0, "C", false, 0, "")
 	}
 }
 
@@ -164,8 +164,8 @@ func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []Ba
 	zeichneRaster(pdf, format, startPosition, len(items), func(i int, pos labelPos) {
 		item := items[i]
 		// Titel und Autor auf die Etikettenbreite bringen (zeichen-, nicht byteweise).
-		titel := kuerzeAufZeichen(item.Titel, 40)
-		autor := kuerzeAufZeichen(item.Autor, 30)
+		titel := pdfzeichen.KuerzeAufZeichen(item.Titel, 40)
+		autor := pdfzeichen.KuerzeAufZeichen(item.Autor, 30)
 
 		if isQR {
 			zeichneQRLabel(pdf, tr, format, item, titel, autor, pos)
