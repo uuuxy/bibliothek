@@ -26,13 +26,21 @@ func SperreSchuljahreswechsel(ctx context.Context, tx pgx.Tx) error {
 // ZaehleJuengsteSchuljahreswechsel zählt die Läufe der letzten zwölf Stunden. Der Eintrag
 // eines Laufs entsteht in dessen Transaktion; ein abgebrochener Lauf hinterlässt keinen.
 func ZaehleJuengsteSchuljahreswechsel(ctx context.Context, db DBQueryer) (int, error) {
-	var laeufe int
+	// Optimization: Replaced SELECT COUNT(*) with EXISTS to short-circuit upon finding the first match
+	var hasRuns bool
 	err := db.QueryRow(ctx, `
-		SELECT COUNT(*) FROM audit_logs
-		WHERE aktion = 'SCHULJAHRESWECHSEL'
-		  AND zeitstempel > NOW() - INTERVAL '12 hours'
-	`).Scan(&laeufe)
-	return laeufe, err
+		SELECT EXISTS (
+			SELECT 1 FROM audit_logs
+			WHERE aktion = 'SCHULJAHRESWECHSEL' AND zeitstempel > NOW() - INTERVAL '12 hours'
+		)
+	`).Scan(&hasRuns)
+	if err != nil {
+		return 0, err
+	}
+	if hasRuns {
+		return 1, nil
+	}
+	return 0, nil
 }
 
 // versetzeSchuelerQuery zählt Klassenbezeichnungen um eine Stufe hoch und markiert

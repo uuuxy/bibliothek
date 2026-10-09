@@ -78,8 +78,8 @@ func TestPromoteStudents_SecondRunWithinWindowReturns409(t *testing.T) {
 	// Ein Lauf innerhalb des Schutzfensters (12 h) existiert → 409, ohne dass das UPDATE läuft.
 	mock.ExpectBegin()
 	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
-		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(1))
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectRollback()
 
 	rec := doPromote(t, s, `{"confirm": true}`)
@@ -96,8 +96,8 @@ func TestPromoteStudents_CommitPathWritesAuditLog(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
-	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
-		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+	mock.ExpectQuery(`SELECT EXISTS`).
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
 	mock.ExpectQuery(`WITH parsed AS`).
 		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit), seit 02.09.2026
 		WillReturnRows(pgxmock.NewRows([]string{"versetzt", "abgaenger"}).AddRow(300, 42))
