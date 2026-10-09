@@ -411,6 +411,17 @@ Aufrufe in 18 Dateien.
 | --------- | ---- | ---- | ----- |
 | **Gedruckter Text ohne Zeichenersetzung** | gofpdf druckt in cp1252. Ein Text, der nicht durch den Übersetzer geht (`pdfzeichen.Uebersetzer`), steht mit jedem Umlaut verstümmelt auf dem Blatt: „KÃ¶ln, den 09.10.2026". An einer Schule in einem Ort ohne Umlaut fällt es nie auf | `pdfzeichen_ratsche_test.go` (das Text-Argument jedes Druckaufrufs ist ein Aufruf des Übersetzers oder sichtbar ohne Sonderzeichen: Literal aus ASCII, Zahl, formatierter Zeitpunkt; mit einer Probe des Detektors über 24 Formen; am Stand davor rot), `pdf/bestellanschreiben_test.go` und `pdf/pdf_test.go` (ein Ort mit Umlaut steht lesbar in der Datumszeile; am Stand davor rot) | 09.10.2026: zwei Stellen, die Datumszeile im Bestellanschreiben und im Schadensfall; beide gehen jetzt durch den Übersetzer. Von den 262 Aufrufen gingen 29 nicht durch ihn: diese zwei, 25 mit Zahlen oder Tagen und zwei im Schulbuch-Export mit einem Titel, der schon übersetzt in einer Variable stand. Der Schulbuch-Export nennt den Übersetzer jetzt am Aufruf, seine Blätter sind gleich geblieben (32 Vergleichsblätter) |
 
+### Erwartung ohne Stelle, 09.10.2026 — eine Form an einer Tür
+
+Anlass: OFFEN 5.62. Mit dem Umzug der Auskunft füllt ihre Tür die fünf Fristen der Pflichtangaben
+mit Feldnamen statt in Reihenfolge. Drei Rot-Proben an diesen Zeilen blieben grün. Über den
+Bestand nicht gesucht: Gesehen sind die Werte gleichen Typs an dieser Tür; die Listen der Antwort
+trägt je ein eigener Typ, dort hält der Compiler die Zuordnung.
+
+| Bugklasse | Form | Gate | Stand |
+| --------- | ---- | ---- | ----- |
+| **Erwartung ohne Stelle** | Ein Test verlangt jeden erwarteten Wert irgendwo im erzeugten Text. Kommen zwei Felder gleichen Typs vertauscht an, stehen beide Werte da. Ein Feld, das nur eine andere Fassung des Texts nennt, und ein Zweig, den der Test nie betritt, fehlen ganz. Der Test ist grün und liest sich, als hielte er jedes Feld | `api/dsgvo_pflichtangaben_fristen_pg_test.go` (jede Frist mit ihrer Bezeichnung im Satz, für einen Schüler und eine Kollegin; an fünf Rückbauten rot), `api/dsgvo_auskunft_test.go` (`TestDsgvoFristen_OhneEinstellungenGeltenDieVorgaben`: die Vorgaben als Zahlen; an drei Rückbauten rot) | 09.10.2026: `dsgvoFristen` in `api/dsgvo_auskunft.go`. Ungeprüft waren vertauschte Fristen für Bücherei und Lernmittel, die Frist erledigter Anliegen und der Zweig ohne lesbare Einstellungen; ein Fehler lag nicht vor. Handgriff: [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14, Gegenprobe am Rückbau |
+
 ## Landkarte der Ratschen — was jede systembedingt NICHT sieht (07.09.2026)
 
 Anlass: An einem Tag dreimal dieselbe Erfahrung — die Schema-Parität war blind für DDL, das

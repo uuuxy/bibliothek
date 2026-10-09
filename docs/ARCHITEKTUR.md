@@ -2183,7 +2183,10 @@ wenn man ihn einmal gebraucht hat.
   Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren. Bleibt eine Probe grün,
   misst der Test den Fall nicht. So aufgefallen am 09.10.2026: Ein Test las geleerte Spalten
   mit `coalesce(spalte, '')` zurück und unterschied NULL nicht von leerem Text; die Regel „leer
-  wird NULL" prüft seitdem ein Test mit `IS NULL` (`api/student_update_pg_test.go`).
+  wird NULL" prüft seitdem ein Test mit `IS NULL` (`api/student_update_pg_test.go`). Reicht eine
+  Tür mehrere Werte gleichen Typs weiter (Fristen, Titel und Autor), gehört je Wert eine Probe
+  mit dem Nachbarwert dazu: Ein Test, der jeden Wert irgendwo im Text sucht, bleibt bei
+  vertauschten Feldern grün ([sweeps.md](sweeps.md), „Erwartung ohne Stelle").
 - **Eine Regel über Titeltexte wird an Sätzen der DNB gemessen.** Die Datenbank am
   Arbeitsplatz trägt keine Untertitel, und eine Schulstufe nennen dort nur Titel aus
   Testläufen. Die DNB liefert Sätze über SRU ohne Anmeldung, 100 je Abruf, `startRecord`
