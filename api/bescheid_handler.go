@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pdf"
 	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/ersatzwert"
 	"bibliothek/pkg/schulzeit"
@@ -428,7 +429,7 @@ func bescheidSnapshotAus(ctx context.Context, repo repository.BescheidRepository
 		return nil, err
 	}
 	anrede := "Sehr geehrte Erziehungsberechtigte,"
-	anZeile := bescheidAnAnErzieher
+	anZeile := pdf.BescheidAnAnErzieher
 	if d.Volljaehrig {
 		anrede = "Sehr geehrte Damen und Herren,"
 		anZeile = ""
@@ -526,7 +527,7 @@ func (s *Server) BescheidPDFHandler(bescheidRepo repository.BescheidRepository) 
 		if err != nil {
 			return err
 		}
-		roh, err := GenerateBescheidPDF(brief)
+		roh, err := pdf.GenerateBescheidPDF(brief)
 		if err != nil {
 			return apierrors.Internal("Bescheid konnte nicht erzeugt werden", err)
 		}
@@ -539,6 +540,7 @@ func (s *Server) BescheidPDFHandler(bescheidRepo repository.BescheidRepository) 
 		w.Header().Set("Content-Disposition",
 			fmt.Sprintf(`attachment; filename="bescheid_%s.pdf"`,
 				strings.ReplaceAll(bescheid.Referenznummer, " ", "-")))
+		// #nosec G705 - der Körper ist das erzeugte PDF (application/pdf, als Anhang, nosniff); aus der Anfrage stammt nur die Kennung des Bescheids
 		if _, err := w.Write(roh); err != nil {
 			log.Printf("Bescheid-PDF senden: %v", err)
 		}
@@ -547,37 +549,37 @@ func (s *Server) BescheidPDFHandler(bescheidRepo repository.BescheidRepository) 
 }
 
 // bescheidBrief baut das Blatt aus Bescheid, Snapshot, Positionen und Einstellungen.
-func (s *Server) bescheidBrief(ctx context.Context, bescheidRepo repository.BescheidRepository, id string) (BescheidBrief, *repository.Bescheid, error) {
+func (s *Server) bescheidBrief(ctx context.Context, bescheidRepo repository.BescheidRepository, id string) (pdf.BescheidBrief, *repository.Bescheid, error) {
 	bescheid, err := bescheidRepo.Lies(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return BescheidBrief{}, nil, apierrors.NotFound("Bescheid nicht gefunden", err)
+			return pdf.BescheidBrief{}, nil, apierrors.NotFound("Bescheid nicht gefunden", err)
 		}
-		return BescheidBrief{}, nil, apierrors.Internal("Bescheid konnte nicht gelesen werden", err)
+		return pdf.BescheidBrief{}, nil, apierrors.Internal("Bescheid konnte nicht gelesen werden", err)
 	}
 	snapshot, err := bescheidRepo.Snapshot(ctx, id)
 	if err != nil {
-		return BescheidBrief{}, nil, apierrors.Internal("Empfänger konnte nicht gelesen werden", err)
+		return pdf.BescheidBrief{}, nil, apierrors.Internal("Empfänger konnte nicht gelesen werden", err)
 	}
 	positionen, err := bescheidRepo.Positionen(ctx, id)
 	if err != nil {
-		return BescheidBrief{}, nil, apierrors.Internal("Positionen konnten nicht gelesen werden", err)
+		return pdf.BescheidBrief{}, nil, apierrors.Internal("Positionen konnten nicht gelesen werden", err)
 	}
 	// Die Angaben der Schule, wie sie im Brief standen (Migration 141). Ein Bescheid von
 	// vorher hat keinen Schnappschuss; für ihn gelten die Einstellungen von heute.
 	absender, err := bescheidRepo.AbsenderSnapshot(ctx, id)
 	if err != nil {
-		return BescheidBrief{}, nil, apierrors.Internal("Angaben der Schule konnten nicht gelesen werden", err)
+		return pdf.BescheidBrief{}, nil, apierrors.Internal("Angaben der Schule konnten nicht gelesen werden", err)
 	}
 	if len(absender) == 0 {
 		angaben, schule, err := s.bescheidAngaben(ctx)
 		if err != nil {
-			return BescheidBrief{}, nil, apierrors.Internal(meldungEinstellungenUnlesbar, err)
+			return pdf.BescheidBrief{}, nil, apierrors.Internal(meldungEinstellungenUnlesbar, err)
 		}
 		absender = bescheidAbsenderAus(angaben, schule)
 	}
 
-	brief := BescheidBrief{
+	brief := pdf.BescheidBrief{
 		Schule:            bescheidSchuleAus(absender),
 		Empfaenger:        bescheidEmpfaengerAus(snapshot),
 		Geschaeftszeichen: absender["geschaeftszeichen"],
@@ -594,7 +596,7 @@ func (s *Server) bescheidBrief(ctx context.Context, bescheidRepo repository.Besc
 	}
 	name := brief.Empfaenger.Name
 	for _, p := range positionen {
-		zeile := BescheidPosition{SchuelerName: name, Titel: p.Titel, ISBN: p.ISBN, Betrag: p.Betrag}
+		zeile := pdf.BescheidPosition{SchuelerName: name, Titel: p.Titel, ISBN: p.ISBN, Betrag: p.Betrag}
 		if p.Art == "nicht_zurueckgegeben" {
 			brief.NichtZurueckgegeben = append(brief.NichtZurueckgegeben, zeile)
 			continue
@@ -606,14 +608,14 @@ func (s *Server) bescheidBrief(ctx context.Context, bescheidRepo repository.Besc
 
 // bescheidEmpfaengerAus baut den Empfänger aus dem Snapshot. Ist er leer (Anonymisierung),
 // sagt der Brief das — ein Nachdruck mit erfundener Anschrift wäre schlimmer als keiner.
-func bescheidEmpfaengerAus(snapshot map[string]string) BescheidEmpfaenger {
+func bescheidEmpfaengerAus(snapshot map[string]string) pdf.BescheidEmpfaenger {
 	if len(snapshot) == 0 {
-		return BescheidEmpfaenger{
+		return pdf.BescheidEmpfaenger{
 			Anrede: "Sehr geehrte Damen und Herren,",
 			Name:   "(Empfängerangaben nach Löschfrist getilgt)",
 		}
 	}
-	return BescheidEmpfaenger{
+	return pdf.BescheidEmpfaenger{
 		Anrede:  snapshot["anrede"],
 		AnZeile: snapshot["an_zeile"],
 		Name:    snapshot["name"],

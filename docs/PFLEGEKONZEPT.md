@@ -249,7 +249,9 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   `application/pdf`, als Anhang und mit `nosniff`. Abhilfe: der Vermerk `#nosec G705` mit
   Grund an der Stelle. Seitdem fährt der Hook vor dem Push gosec mit, über dasselbe Skript
   wie der Prüflauf (`scripts/gosec-gate.sh`); nach einem solchen Umzug das Skript schon vor
-  dem Commit laufen lassen.
+  dem Commit laufen lassen. Dieselbe Meldung kommt, wenn der Erzeuger eines PDFs aus `api/`
+  in ein anderes Paket zieht: Die Tür schreibt dann die Rückgabe einer fremden Funktion in
+  die Antwort (so am Bescheid, vor dem Commit gemeldet).
 - **Nach einem Update der Pakete baut das Frontend nicht mehr (21.08.2026).** Ein `npm update`
   ohne Paketnamen hob auch den Bundler, und `npm run build` brach an gültigem Code;
   svelte-check, ESLint und Vitest blieben grün. Pakete deshalb einzeln heben und danach

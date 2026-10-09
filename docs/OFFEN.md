@@ -344,15 +344,17 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
-  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 34 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 25.581 Zeilen in 158 Dateien (am Anfang 30.785 in 168).
+  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 33 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 25.142 Zeilen in 157 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
-  Selbstprüfung in `internal/bereitschaft`. Offen: der Aufbau der PDFs und der Rest der 34.
-  Die PDF-Erzeuger hängen an rund 30 Namen aus `api/` (Typen der Auskunft, Etikettformate,
-  Mailversand), gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler; sie ziehen je Sache
-  um (Etiketten, Bescheid, Auskunft, Bestell-PDF, Bestandsbücher), nicht in einem Zug. Je
-  Thema ein Commit; die Tests der Türen bleiben stehen und belegen, dass sich nichts ändert.
+  Selbstprüfung in `internal/bereitschaft`, der Bescheid in `pdf/bescheid.go`. Offen: der
+  Aufbau der übrigen PDFs und der Rest der 33. Die PDF-Erzeuger hängen an rund 30 Namen aus
+  `api/` (Typen der Auskunft, Etikettformate, Mailversand), gemessen am 09.10.2026 mit einem
+  Probe-Umzug am Compiler; sie ziehen je Sache um (Etiketten, Auskunft, Bestell-PDF,
+  Bestandsbücher, Mahnbrief), nicht in einem Zug. Was ein Erzeuger aus `repository/` liest,
+  bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2). Je Thema ein
+  Commit; die Tests der Türen bleiben stehen und belegen, dass sich nichts ändert.
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus
   einem umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage
   stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung

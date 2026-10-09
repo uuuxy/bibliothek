@@ -1,4 +1,4 @@
-package api
+package pdf
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/pdf"
 	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/pdfzeichen"
 
@@ -73,7 +72,7 @@ const (
 		"werden. Der Widerspruch ist bei der %s schriftlich oder zur Niederschrift einzulegen. Die Frist wird " +
 		"auch durch Einlegung bei dem %s als Behörde, die den Widerspruchsbescheid zu erlassen hat, gewahrt."
 	// Die Zeile über dem Namen im Anschriftfeld, wenn der Schuldner minderjährig ist.
-	bescheidAnAnErzieher = "An die Erziehungsberechtigten des/der Schülers/in"
+	BescheidAnAnErzieher = "An die Erziehungsberechtigten des/der Schülers/in"
 )
 
 // BescheidPosition ist eine Zeile der Tabelle: ein Buch mit seinem Betrag.
@@ -98,7 +97,7 @@ type BescheidEmpfaenger struct {
 
 // BescheidBrief bündelt alles, was auf dem Blatt steht.
 type BescheidBrief struct {
-	Schule            pdf.SchuleInfo
+	Schule            SchuleInfo
 	Empfaenger        BescheidEmpfaenger
 	Geschaeftszeichen string
 	Bearbeiter        string
@@ -307,7 +306,7 @@ func bescheidTabelle(p *gofpdf.Fpdf, tr func(string) string, positionen []Besche
 			p.SetXY(x+1.5, y+1.4)
 			// Kürzen statt umbrechen: Die Zeilenhöhe ist fest, ein zu langer Titel würde
 			// sonst über den Rahmen laufen.
-			p.CellFormat(bescheidSpalten[i]-3, 4.2, tr(kuerzeAufBreite(p, tr, wert, bescheidSpalten[i]-3)), "", 0, "L", false, 0, "")
+			p.CellFormat(bescheidSpalten[i]-3, 4.2, tr(pdfzeichen.KuerzeAufBreite(p, tr, wert, bescheidSpalten[i]-3)), "", 0, "L", false, 0, "")
 			x += bescheidSpalten[i]
 		}
 		p.SetY(y + bescheidZeileHoehe)
@@ -391,7 +390,7 @@ func bescheidSchluss(p *gofpdf.Fpdf, tr func(string) string, b BescheidBrief) {
 
 // bescheidSchulanschriftEinzeilig nennt die Schule mit Anschrift in einem Satzteil —
 // dort wird der Widerspruch eingelegt.
-func bescheidSchulanschriftEinzeilig(s pdf.SchuleInfo) string {
+func bescheidSchulanschriftEinzeilig(s SchuleInfo) string {
 	teile := []string{s.Name}
 	if s.Strasse != "" {
 		teile = append(teile, s.Strasse)

@@ -189,7 +189,6 @@ var dateienOhneTuer = []string{
 	"abgangsbuch_pdf.go",
 	"action_types.go",
 	"bescheid_absender.go",
-	"bescheid_pdf.go",
 	"bestellbestaetigung_token.go",
 	"bestellmail_text.go",
 	"bestellmail_versand.go",

@@ -211,7 +211,7 @@ Ausleihen nicht kennen). Der Dialog zeigt die Herleitung („3. Verleihjahr → 
 Recht: neu `schadensersatz_bescheide` (ab Werk nur ADMIN — das Sekretariat), Anlegen
 einer Forderung bleibt `edit_students`. PII-Stufe 3 → PII-Matrix + Antwort-Gate.
 
-### 4.4 Briefe: ein Renderer, zwei Varianten (`api/bescheid_pdf.go`)
+### 4.4 Briefe: ein Renderer, zwei Varianten (`pdf/bescheid.go`)
 
 Gebaut auf der DIN-5008-Fensterkuvert-Seite aus `reports_pdf.go` (Falzmarken,
 Anschriftfeld, „(keine Adresse hinterlegt)"-Regel).
@@ -264,7 +264,7 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
 ### 4.7 Etappen
 
 1. ~~Datenmodell + Nummernkreis + Landes-Bescheid + Einstellungen.~~ **GEBAUT 10.09.2026**
-   (Migration 110, `pkg/ersatzwert`, `api/bescheid_pdf.go`, `repository/bescheid.go`,
+   (Migration 110, `pkg/ersatzwert`, `pdf/bescheid.go`, `repository/bescheid.go`,
    `api/bescheid_handler.go`, Kategorie „Schadensersatz", Reiter und Dialog im Mahnwesen).
    Abweichungen vom Plan oben, jeweils mit Grund: Der Bescheid entsteht im **Mahnwesen**
    statt in der Schülerakte (dort steht, wer überfällig ist); `schadensfaelle.art` hat

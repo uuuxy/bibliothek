@@ -1,4 +1,4 @@
-package api
+package pdf
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"bibliothek/internal/pdftest"
-	"bibliothek/pdf"
 )
 
 // Der Bescheid wird am ENTPACKTEN Inhaltsstrom geprüft, nicht an den Eingabedaten.
@@ -17,14 +16,21 @@ import (
 // sieht man das nicht — das PDF geht direkt in den Drucker und dann in ein Kuvert.
 // Dieselbe Technik wie beim Lernmittel-Etikett und beim Bestellanschreiben.
 
+// pdfText liefert das PDF als durchsuchbaren Text: die rohen Bytes und dahinter die Texte
+// der entpackten Ströme (kleine Ströme lässt gofpdf offen).
+func pdfText(t *testing.T, roh []byte) string {
+	t.Helper()
+	return string(roh) + "\n" + strings.Join(pdftest.Texte(t, roh), "\n")
+}
+
 func testBescheid() BescheidBrief {
 	return BescheidBrief{
-		Schule: pdf.SchuleInfo{
+		Schule: SchuleInfo{
 			Name: "Philipp-Reis-Schule", Strasse: "Färberstraße 4", PLZ: "61381", Ort: "Friedrichsdorf",
 		},
 		Empfaenger: BescheidEmpfaenger{
 			Anrede:  "Sehr geehrte Erziehungsberechtigte,",
-			AnZeile: bescheidAnAnErzieher,
+			AnZeile: BescheidAnAnErzieher,
 			Name:    "Ayşe Demir",
 			Strasse: "Musterweg 12",
 			PLZ:     "61381",
