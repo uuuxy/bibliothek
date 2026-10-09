@@ -12,6 +12,11 @@ package service
 // jedes. Entschieden ist: Ein Kollege wird nie gesperrt (16.09. und 24.09.2026) — auch am
 // Gerät nicht (pruefeAusleihSperren). Den gesperrten Schüler hält
 // geraet_rueckgabe_sperre_pg_test.go.
+//
+// Wer kein Schüler ist, bekommt das Gerät als Dauerleihe (ausleihen.ist_handapparat), ein
+// Schüler nicht: dieselbe Regel wie beim Buch. Ohne das Merkmal stünde die Lehrkraft nach
+// Ablauf der Frist mit einer überfälligen Ausleihe in der Leserdatei, mit ihm zählte das Gerät
+// eines Schülers dort nie als überfällig (listSchuelerMitStats).
 
 import (
 	"context"
@@ -43,6 +48,18 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 		return id
 	}
 
+	legeSchuelerAn := func() string {
+		t.Helper()
+		var id string
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+			VALUES ($1, 'Geraete', 'Schueler', '05A', 2031) RETURNING id
+		`, "GL-S-"+suffix).Scan(&id); err != nil {
+			t.Fatalf("Schüler anlegen: %v", err)
+		}
+		return id
+	}
+
 	var mitarbeiterID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
@@ -70,12 +87,14 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 	faelle := []struct {
 		name, kennung string
 		verliehen     bool
+		dauerleihe    bool
 		fehler        error
 	}{
-		{"Lehrkraft bekommt das Gerät", legeLeserAn("LK", "lehrkraft", false), true, nil},
-		{"LiV bekommt das Gerät", legeLeserAn("LIV", "liv", false), true, nil},
-		{"unbekannte Kennung", "3f2504e0-4f89-11d3-9a0c-0305e82c3301", false, ErrNotFound},
-		{"gesperrte Lehrkraft bekommt das Gerät — ein Kollege wird nie gesperrt", legeLeserAn("GES", "lehrkraft", true), true, nil},
+		{"Lehrkraft bekommt das Gerät", legeLeserAn("LK", "lehrkraft", false), true, true, nil},
+		{"LiV bekommt das Gerät", legeLeserAn("LIV", "liv", false), true, true, nil},
+		{"unbekannte Kennung", "3f2504e0-4f89-11d3-9a0c-0305e82c3301", false, false, ErrNotFound},
+		{"gesperrte Lehrkraft bekommt das Gerät — ein Kollege wird nie gesperrt", legeLeserAn("GES", "lehrkraft", true), true, true, nil},
+		{"Schüler bekommt das Gerät mit Frist", legeSchuelerAn(), true, false, nil},
 	}
 	for i, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -97,6 +116,16 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 			if f.verliehen {
 				if err != nil || res == nil || res.Type != "ausleihe" || offen != 1 {
 					t.Fatalf("erwartet Ausleihe, war err=%v, offen=%d", err, offen)
+				}
+				var dauerleihe bool
+				if qerr := pool.QueryRow(ctx, `
+					SELECT a.ist_handapparat FROM ausleihen a JOIN geraete g ON g.id = a.geraet_id
+					WHERE g.barcode_id = $1 AND a.rueckgabe_am IS NULL
+				`, barcode).Scan(&dauerleihe); qerr != nil {
+					t.Fatalf("Merkmal der Ausleihe lesen: %v", qerr)
+				}
+				if dauerleihe != f.dauerleihe {
+					t.Errorf("Dauerleihe = %v, erwartet %v", dauerleihe, f.dauerleihe)
 				}
 				return
 			}
