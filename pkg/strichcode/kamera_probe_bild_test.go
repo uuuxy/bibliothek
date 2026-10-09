@@ -1,4 +1,4 @@
-package api
+package strichcode
 
 import (
 	"os"
@@ -16,7 +16,7 @@ func TestWerkzeug_KameraBild(t *testing.T) {
 	if ziel == "" {
 		t.Skip("KAMERA_ZIEL nicht gesetzt — das Werkzeug läuft nur über scripts/kamera_probe.sh")
 	}
-	png, err := GenerateBarcodePNG(os.Getenv("KAMERA_INHALT"), os.Getenv("KAMERA_QR") == "1", 900, 260)
+	png, err := PNG(os.Getenv("KAMERA_INHALT"), os.Getenv("KAMERA_QR") == "1", 900, 260)
 	if err != nil {
 		t.Fatal(err)
 	}

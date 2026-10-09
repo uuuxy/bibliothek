@@ -10,7 +10,7 @@
 	import { ETIKETT_FORMATE } from '../../etikettformate.js';
 	const BARCODE_AUSGABE = [
 		// Der Wert heisst aus der Anfangszeit 'code39'; gedruckt wird seit dem 17.09.2026
-		// Code 128 (barcode_generate.go). Der gespeicherte Wert bleibt, weil er in den
+		// Code 128 (pkg/strichcode). Der gespeicherte Wert bleibt, weil er in den
 		// Ausweis-Layouts steht — die Beschriftung sagt, was tatsaechlich herauskommt.
 		{ value: 'code39', label: 'Strichcode (Code 128)' },
 		{ value: 'qr', label: 'QR-Code (2D)' }

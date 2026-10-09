@@ -7,6 +7,7 @@ import (
 	"bibliothek/pkg/coverdatei"
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
+	"bibliothek/pkg/strichcode"
 	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
@@ -76,7 +77,7 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med reposi
 	bcX := pdf.GetX()
 	pdf.CellFormat(40, rowHeight, "", "1", 0, "", false, 0, "")
 	if med.Barcode != "" {
-		if pngBytes, err := GenerateBarcodePNG(med.Barcode, false, 300, 80); err == nil {
+		if pngBytes, err := strichcode.PNG(med.Barcode, false, 300, 80); err == nil {
 			imgName := "bc_" + med.Barcode
 			opt := gofpdf.ImageOptions{ImageType: "PNG"}
 			pdf.RegisterImageOptionsReader(imgName, opt, bytes.NewReader(pngBytes))

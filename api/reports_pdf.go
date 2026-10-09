@@ -4,6 +4,7 @@ import (
 	"bibliothek/pdf"
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
+	"bibliothek/pkg/strichcode"
 	"bibliothek/repository"
 	"bytes"
 	"context"
@@ -84,7 +85,7 @@ func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher [
 		bcX := pdf.GetX()
 		pdf.CellFormat(35, rowH, "", "1", 0, "", false, 0, "")
 		if b.Barcode != "" {
-			if pngBytes, err := GenerateBarcodePNG(b.Barcode, false, 300, 80); err == nil {
+			if pngBytes, err := strichcode.PNG(b.Barcode, false, 300, 80); err == nil {
 				imgName := "bc_eltern_" + b.Barcode
 				opt := gofpdf.ImageOptions{ImageType: "PNG"}
 				pdf.RegisterImageOptionsReader(imgName, opt, bytes.NewReader(pngBytes))

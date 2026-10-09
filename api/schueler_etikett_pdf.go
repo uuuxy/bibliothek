@@ -2,6 +2,7 @@ package api
 
 import (
 	"bibliothek/pkg/pdfzeichen"
+	"bibliothek/pkg/strichcode"
 	"bytes"
 	"fmt"
 	"strings"
@@ -133,7 +134,7 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Lab
 
 	// Ein fehlgeschlagener Barcode darf den ganzen Bogen nicht kippen: Der Rest des
 	// Etiketts (Name, Klasse, ablesbare Nummer) ist auch ohne Bild brauchbar.
-	if bild, err := GenerateBarcodePNG(e.BarcodeID, false, 250, 70); err == nil {
+	if bild, err := strichcode.PNG(e.BarcodeID, false, 250, 70); err == nil {
 		opt := gofpdf.ImageOptions{ImageType: "PNG"}
 		bildname := fmt.Sprintf("schueler_%s", e.BarcodeID)
 		pdf.RegisterImageOptionsReader(bildname, opt, bytes.NewReader(bild))

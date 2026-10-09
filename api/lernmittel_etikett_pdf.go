@@ -2,6 +2,7 @@ package api
 
 import (
 	"bibliothek/pkg/pdfzeichen"
+	"bibliothek/pkg/strichcode"
 	"bytes"
 	"fmt"
 
@@ -117,7 +118,7 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item Bar
 	}
 
 	y += 9
-	barcodeImg, err := GenerateBarcodePNG(item.BarcodeID, false, 250, 70)
+	barcodeImg, err := strichcode.PNG(item.BarcodeID, false, 250, 70)
 	if err == nil {
 		imgReader := bytes.NewReader(barcodeImg)
 		imgName := fmt.Sprintf("lm_%s", item.BarcodeID)

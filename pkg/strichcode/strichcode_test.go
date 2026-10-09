@@ -1,4 +1,4 @@
-package api
+package strichcode
 
 import (
 	"bytes"
@@ -6,11 +6,11 @@ import (
 	"testing"
 )
 
-// Lange Inhalte sprengen die native Code39-Modulbreite der üblichen
+// Lange Inhalte sprengen die native Modulbreite der üblichen
 // 200px-Ausweisbreite — statt eines Fehlers ("can not scale barcode to an
 // image smaller than ...") muss das PNG dann eben breiter ausfallen.
-func TestGenerateBarcodePNG_LangerInhaltUnter200pxFaelltNichtAus(t *testing.T) {
-	data, err := GenerateBarcodePNG("S-GESPERRT-MRE1234567", false, 200, 50)
+func TestPNG_LangerInhaltUnter200pxFaelltNichtAus(t *testing.T) {
+	data, err := PNG("S-GESPERRT-MRE1234567", false, 200, 50)
 	if err != nil {
 		t.Fatalf("langer Inhalt bei width=200 darf nicht scheitern: %v", err)
 	}
@@ -25,8 +25,8 @@ func TestGenerateBarcodePNG_LangerInhaltUnter200pxFaelltNichtAus(t *testing.T) {
 }
 
 // Kurze Inhalte respektieren weiterhin die Wunschgröße.
-func TestGenerateBarcodePNG_KurzerInhaltBehaeltWunschbreite(t *testing.T) {
-	data, err := GenerateBarcodePNG("B-1", false, 300, 100)
+func TestPNG_KurzerInhaltBehaeltWunschbreite(t *testing.T) {
+	data, err := PNG("B-1", false, 300, 100)
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}

@@ -2,6 +2,7 @@ package api
 
 import (
 	"bibliothek/pkg/pdfzeichen"
+	"bibliothek/pkg/strichcode"
 	"bytes"
 	"fmt"
 
@@ -22,7 +23,7 @@ func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat
 	pdf.Cell(format.LabelWidth-4, 4, tr(autor))
 
 	// Generate dynamic QR code PNG
-	barcodeImg, err := GenerateBarcodePNG(item.BarcodeID, true, 200, 200)
+	barcodeImg, err := strichcode.PNG(item.BarcodeID, true, 200, 200)
 	if err == nil {
 		imgReader := bytes.NewReader(barcodeImg)
 		pdf.RegisterImageOptionsReader(item.BarcodeID, gofpdf.ImageOptions{ImageType: "PNG"}, imgReader)
@@ -115,7 +116,7 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 		bcHeight = 8.0
 	}
 
-	barcodeImg, err := GenerateBarcodePNG(item.BarcodeID, false, 250, 70)
+	barcodeImg, err := strichcode.PNG(item.BarcodeID, false, 250, 70)
 	if err == nil {
 		imgReader := bytes.NewReader(barcodeImg)
 		imgName := fmt.Sprintf("1d_%s", item.BarcodeID)

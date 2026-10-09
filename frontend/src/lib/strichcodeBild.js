@@ -15,7 +15,7 @@
  *
  * Deshalb trägt die Adresse die Fassung der Kodierung. Sie bleibt, solange Browser noch
  * Bilder von vor dem 30.09.2026 halten (höchstens bis Ende September 2027): Wer am Erzeuger
- * etwas ändert (api/barcode_generate.go), zählt FASSUNG hoch — dann ist es für jeden
+ * etwas ändert (pkg/strichcode), zählt FASSUNG hoch — dann ist es für jeden
  * Browser ein neues Bild, ohne dass jemand einen Cache leeren muss.
  */
 export const FASSUNG = 'c128';

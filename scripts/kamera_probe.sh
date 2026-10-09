@@ -27,7 +27,7 @@ done
 
 echo "1/3  Strichcode $INHALT erzeugen (mit dem Generator der Anwendung)"
 KAMERA_ZIEL="$ORDNER/code.png" KAMERA_INHALT="$INHALT" \
-	go test ./api/ -run TestWerkzeug_KameraBild -count=1 >/dev/null
+	go test ./pkg/strichcode/ -run TestWerkzeug_KameraBild -count=1 >/dev/null
 
 echo "2/3  Daraus ein Kamerabild machen (1280x720, Ruhezone ringsum)"
 magick -size 1280x720 xc:white "$ORDNER/code.png" -gravity center -composite "$ORDNER/frame.png"

@@ -345,7 +345,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
   keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 33 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 25.126 Zeilen in 157 Dateien (am Anfang 30.785 in 168).
+  `api/` hat 25.054 Zeilen in 157 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`, der Bescheid in `pdf/bescheid.go`. Offen: der
@@ -357,8 +357,8 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Commit; die Tests der Türen bleiben stehen und belegen, dass sich nichts ändert.
   Gemessen am 09.10.2026 für die nächsten zwei Sachen:
   - Etiketten (`label_formats.go`, `label_pdf.go`, `lernmittel_etikett_pdf.go`,
-    `schueler_etikett_pdf.go`, 653 Zeilen): Sie brauchen aus `api/` drei Namen
-    (`BarcodeLabelDetail`, `EtikettKopf`, `GenerateBarcodePNG`), `api/`
+    `schueler_etikett_pdf.go`, 656 Zeilen): Sie brauchen aus `api/` zwei Namen
+    (`BarcodeLabelDetail`, `EtikettKopf`), `api/`
     braucht elf Namen von ihnen, sechs Testdateien greifen auf ihre Namen zu.
     `BarcodeLabelDetail` ist zugleich der Typ des Druckauftrags aus dem Browser; sein Feld
     `Topf` ist dort gesperrt (`json:"-"`), weil der Topf immer vom Server kommt. Beim Trennen
