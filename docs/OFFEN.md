@@ -357,7 +357,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
   keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 12 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 21.331 Zeilen in 136 Dateien (am Anfang 30.785 in 168).
+  `api/` hat 21.319 Zeilen in 136 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung und die Regel zu den Start-Geheimnissen in `internal/bereitschaft`, die
@@ -381,7 +381,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
 - **Was ohne Tür bleibt.** Die zwölf Dateien des Bestands sind Typen einer Anfrage oder
-  Antwort, Füll-Funktionen und Helfer mehrerer Türen (983 Zeilen): `abgaenger_fenster.go`
+  Antwort, Füll-Funktionen und Helfer mehrerer Türen (980 Zeilen): `abgaenger_fenster.go`
   (trägt daneben die Grenzen der Abgänger-Saison), `action_types.go`, `bescheid_absender.go`,
   `bestellmail_anhaenge.go` (stellt die Anlagen der Bestellmail zusammen und verschickt sie),
   `bestellmail_versand.go` (trägt auch die Rückmeldung nach dem Versand),
@@ -395,10 +395,10 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
   Typ aus `net/http` tragen `bestellbericht_handler.go` (367),
   `lmf_plan.go` (260), `bescheid_handler.go` (246), `dsgvo_auskunft.go` (193),
-  `betriebsbereitschaft_handler.go` (177) und `graduates_mail.go` (157). Die Messung und ihre
+  `betriebsbereitschaft_handler.go` (175) und `graduates_mail.go` (157). Die Messung und ihre
   Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt: diese Dateien der Reihe nach
   lesen und trennen, was Regel und was Füll-Funktion ist.
-- **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 354
+- **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 349
   Methoden, rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt, zeigt der
   Stand nach dem Schritt davor.
 

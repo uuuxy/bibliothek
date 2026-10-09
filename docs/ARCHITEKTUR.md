@@ -619,13 +619,13 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 21.331 Zeilen, 136 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
-| `repository/`           | 21.056 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
+| `api/`                  | 21.319 Zeilen, 136 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `repository/`           | 21.068 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
 | `internal/service/`     | 5.317 Zeilen, 28 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan und womit ein neuer Plan beginnt, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 924 Zeilen, 2 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/betriebsbereitschaft_alarm.go` |
 | `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/dsgvo_auskunft.go` und `api/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
-| `inventur/`             | 6.546 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
+| `inventur/`             | 6.547 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
 | `auth/`                 | 1.852 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
@@ -634,7 +634,7 @@ HTTP-Anfrage
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
-| `internal/*` (übrige)   | 5.633 Zeilen, 34 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest` (Prüfhilfen) |
+| `internal/*` (übrige)   | 5.634 Zeilen, 34 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest` (Prüfhilfen) |
 | `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
@@ -3125,7 +3125,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 21.331 Zeilen in 136 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 21.319 Zeilen in 136 Dateien das schwerste Paket
 
 | | |
 | --- | --- |
@@ -3141,7 +3141,7 @@ nur neue Dateien abwies. 44 Dateien mit 7.503 Zeilen banden `net/http` nicht ein
 keine Tür.
 
 Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 12 Dateien ohne Tür
-mit 983 Zeilen, darunter kein PDF-Erzeuger mehr. Der LUSD-Import steht in
+mit 980 Zeilen, darunter kein PDF-Erzeuger mehr. Der LUSD-Import steht in
 `internal/lusd`, die Selbstprüfung und die Regel zu den Start-Geheimnissen in
 `internal/bereitschaft`, die Auskunft nach Art. 15 DSGVO mit ihrem Blatt in `internal/auskunft`,
 die Zuordnung der Kopfzeile einer Importdatei beim Importer, das Anlegen einer Bestellung, der Text der
@@ -3152,12 +3152,14 @@ die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung in `pkg/mi
 Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `api/schichtung_test.go` weist jede SQL-Anweisung in
 `api/` ab und führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Was
 bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst bleiben in einem Paket: Der Typ
-`Server` trägt 354 Methoden.
+`Server` trägt 349 Methoden.
 
 Der Bestand führt nur ganze Dateien. Woraus `api/` besteht, gemessen am 09.10.2026 am
-Syntaxbaum (`go/parser`): 9.237 Zeilen stehen in Funktionen, deren Signatur einen Typ aus
-`net/http` nennt (41 %), 4.788 in 312 Funktionen ohne einen solchen (21 %), 1.455 in Typen, der
-Rest in Kommentaren, Einbindungen und Werten. Die 21 % sind eine Obergrenze für das, was keine
+Syntaxbaum (`go/parser`), nachdem die sechs Dateien mit Regeln ausgezogen waren: 9.227 Zeilen
+stehen in Funktionen, deren Signatur einen Typ aus `net/http` nennt (43 %), 4.244 in 279
+Funktionen ohne einen solchen (20 %), 1.369 in Typen, der Rest in Kommentaren, Einbindungen und
+Werten; am Morgen desselben Tages waren es 4.788 Zeilen in 312 Funktionen ohne einen solchen
+Typ. Die 20 % sind eine Obergrenze für das, was keine
 Tür ist: Dazu zählen auch Füll-Funktionen (5.2.2) und Helfer, die aus einer Tür herausgelöst
 sind, um die Grenze der Komplexität zu halten. Als Schranke taugt die Zahl deshalb nicht; sie
 zeigt, wo zu lesen ist. Die zwölf Dateien bleiben (Typen einer Anfrage oder
