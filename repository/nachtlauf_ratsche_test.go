@@ -27,9 +27,8 @@ import (
 // ohneBedingungAusLoeschfristen nennt die Funktionen der Nachtläufe, die ändern oder löschen,
 // ohne eine Bedingung aus loeschfristen.go einzusetzen, und warum.
 var ohneBedingungAusLoeschfristen = map[string]string{
-	"AnonymisiereBearbeiterAlterAusleihen": "feste Frist von 14 Tagen in der Anweisung; der Wächter des Rückstands zählt sie nicht",
-	"LoescheFotosAnonymisierterSchueler":   "folgt der Anonymisierung und hat keine eigene Frist",
-	"LoescheAlteIdempotenzSchluessel":      "Schlüssel der Theke nach 24 Stunden; keine Frist aus den Einstellungen",
+	"LoescheFotosAnonymisierterSchueler": "folgt der Anonymisierung und hat keine eigene Frist",
+	"LoescheAlteIdempotenzSchluessel":    "Schlüssel der Theke nach 24 Stunden; keine Frist aus den Einstellungen",
 }
 
 var aenderndeAnweisung = regexp.MustCompile(`(?i)\b(DELETE\s+FROM|UPDATE)\s+[a-z_]+`)

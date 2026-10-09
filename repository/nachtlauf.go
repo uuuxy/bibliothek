@@ -10,17 +10,15 @@ import (
 	"time"
 )
 
-// AnonymisiereBearbeiterAlterAusleihen nimmt Ausleihen, deren Rückgabe mehr als 14 Tage
-// zurückliegt, die Kennungen der Bearbeiter von Ausgabe und Rückgabe, und liefert die Zahl
-// der Zeilen.
+// AnonymisiereBearbeiterAlterAusleihen nimmt Ausleihen, die PredikatBearbeiterKennung trifft,
+// die Kennungen der Bearbeiter von Ausgabe und Rückgabe, und liefert die Zahl der Zeilen.
 func AnonymisiereBearbeiterAlterAusleihen(ctx context.Context, db DBQueryer) (int64, error) {
+	bedingung := PredikatBearbeiterKennung(KulanzJob)
 	tag, err := db.Exec(ctx, `
 		UPDATE ausleihen
 		SET bearbeiter_id = NULL,
 		    rueckgabe_bearbeiter_id = NULL
-		WHERE rueckgabe_am < NOW() - INTERVAL '14 days'
-		  AND (bearbeiter_id IS NOT NULL OR rueckgabe_bearbeiter_id IS NOT NULL)
-	`)
+		WHERE `+bedingung.Where, bedingung.Args...)
 	if err != nil {
 		return 0, err
 	}

@@ -24,6 +24,7 @@ func TestZaehleLoeschRueckstand_EineZeileJeRoutineInFesterReihenfolge(t *testing
 		"Gelöschte Kollegen endgültig löschen",
 		"Lesehistorie Schülerbücherei",
 		"Lesehistorie Lernmittel",
+		"Bearbeiter zurückgegebener Ausleihen",
 		"Erledigte Anliegen",
 		"Erledigte Klassensatz-Reservierungen",
 		"Quittierte Nachbuch-Meldungen",

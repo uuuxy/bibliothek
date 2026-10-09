@@ -2,8 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-10-09 (gosec läuft im Hook vor dem Push mit; Fassung, Aufruf und
-> Ausschlussliste stehen in `scripts/gosec-gate.sh`).
+> Zuletzt aktualisiert: 2026-10-09 (Löschroutinen: Die Selbstprüfung zählt auch den Rückstand
+> der Bearbeiter an zurückgegebenen Ausleihen; gosec läuft im Hook vor dem Push mit, Fassung,
+> Aufruf und Ausschlussliste stehen in `scripts/gosec-gate.sh`).
 > Davor 2026-10-08 (XLSX-Importe: alle Lesestellen durch
 > `xlsxgrenze.MitMappe` — Absturz-Schranke und Abweisung verschlüsselter Container; excelize
 > auf dem Stand mit den Korrekturen zu fünfzehn gemeldeten Schwachstellen).
@@ -460,7 +461,7 @@ der Server lehnt die bekannten ab.
 
 Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
 
-- **Ausleihen-Anonymisierung (`RunGDPRAnonymizeLoans`):** Entfernt `bearbeiter_id` von Ausleihen, die vor mehr als 14 Tagen zurückgegeben wurden.
+- **Ausleihen-Anonymisierung (`RunGDPRAnonymizeLoans`):** Entfernt `bearbeiter_id` und `rueckgabe_bearbeiter_id` von Ausleihen, die vor mehr als 14 Tagen zurückgegeben wurden; eine laufende Ausleihe behält ihren Bearbeiter. Die Bedingung steht in `repository.PredikatBearbeiterKennung`, und die Selbstprüfung zählt mit ihr den Rückstand („Bearbeiter zurückgegebener Ausleihen").
 - **Abgänger-Löschung (`RunGDPRDeleteAbgaenger`):** Hard-Delete von Schülerdatensätzen (`ist_abgaenger = true`) ab dem 30. Januar des Folgejahres, nur anonymisierte Zeilen — die Löschung wartet seit 05.09.2026 die Karenz ab und läuft im Cron nach der Anonymisierung (`AbgaengerStichjahr`; nicht zu verwechseln mit der Karenzzeit vor der Anonymisierung, s. u.), sofern keine offenen Ausleihen oder unbezahlten Schadensfälle bestehen. Historische Ausleihdaten werden anonymisiert (`schueler_id = NULL`).
 - **Lesehistorie befristen (`RunLesehistorieBefristung`, seit 22.08.2026):** Trennt abgeschlossene Ausleihen nach Frist vom Schüler (`schueler_id = NULL`); der Vorgang bleibt für Statistik und Bestandskartei erhalten, nur ohne Person. Zwei Fristen, weil zwei Verarbeitungstätigkeiten (Einstellungen → „Datenschutz & Sitzung", 0 = aus): **Schülerbücherei 1 Tag** (seit dem 29.09.2026, vorher 90 Tage; HBDI-Muster „Schulbibliothek": „unverzüglich gelöscht, sofern … nicht mehr notwendig", Muster der LAG Schulbibliotheken in Hessen: „nach Rückgabe des Mediums Löschung beim Ausleiher"), **Lernmittel 730 Tage** (Bestandskartei weist Ausleihe **und** Rücklauf nach, HKM-Leitfaden LMF 11.3; Schadensersatz läuft über die Schulaufsicht, 12.3–12.7). Die lange Frist gilt jedem Buch im Eigentum des Landes (`repository.ExemplarTopfSQL`, seit dem 29.09.2026; vorher allein `ist_lernmittel` am Titel): Der Leitfaden knüpft die Bestandsverzeichnisse an „alle aus Landesmitteln beschafften Gegenstände" (11.1). Ausleihen mit **offenem Schadensfall** bleiben zugeordnet. Seit dem 16.09.2026 gilt die Befristung **jedem Leser**, auch dem Kollegium (bis Migration 125 traf sie von selbst nur Schüler, weil eine Lehrerausleihe in einer anderen Spalte stand); eine laufende Dauerleihe ist nicht betroffen, weil die Frist mit der Rückgabe beginnt. Gate: `jobs/cron_dsgvo_lesehistorie_pg_test.go` (Paarung Frist × Medienklasse, Schadensfall-Wächter, Aus-Schalter — am Rückbau rot gesehen) und `jobs/cron_dsgvo_lesehistorie_eigentum_pg_test.go` (die Klasse folgt dem Eigentum, rot an der alten Regel). Vorher behielt jede Ausleihe ihre `schueler_id` bis zur Schüler-Löschung; die Titel-Historie zeigte bis zu 200 Entleiher mit Namen.
 - **Gelöschte Kollegen endgültig löschen (`RunPapierkorbKollegenLoeschung`, seit 29.09.2026):** Ein Kollege, der seit 180 Tagen im Papierkorb liegt, wird über denselben Weg wie „Endgültig löschen" von Hand (`PurgeStudent`) entfernt; offene Ausleihen und unbezahlte Forderungen halten ihn. Anonymisieren lässt sich ein Kollege nicht (`chk_leser_nur_schueler_werden_abgaenger`), sein Zugangskonto geht schon beim Löschen.

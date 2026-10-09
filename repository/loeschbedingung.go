@@ -32,6 +32,10 @@ const (
 	// Job und Wächter die Karenz lesen — EIN Schlüssel für drei Leser.
 	AbgaengerKarenzSchluessel = "abgaenger_karenz_tage"
 
+	// BearbeiterKennungTage sind die Tage nach der Rückgabe, nach denen eine Ausleihe nicht
+	// mehr nennt, wer sie an der Theke gebucht hat. Die Frist ist fest und nicht einstellbar.
+	BearbeiterKennungTage = 14
+
 	// StandardAuditAufbewahrungMonate ist die Vorgabe-Aufbewahrung der beiden
 	// Protokolltabellen.
 	StandardAuditAufbewahrungMonate = 24

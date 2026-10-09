@@ -1663,7 +1663,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -1836,7 +1836,9 @@ Lesehistorie, Anliegen             →  eigene Läufe in derselben Nachtkette
 Die **Reihenfolge ist die Zusage**: Löschung läuft nach der Anonymisierung, damit die
 Karenz für beides gilt. Import, Nachtlauf und Selbstprüfung lesen **denselben**
 Einstellungsschlüssel und rechnen mit **demselben** Prädikat
-(`repository.PredikatAnonymisierung`). Keine Frist darf eine andere verkürzen: Die Uhr der
+(`repository.PredikatAnonymisierung`). Jede Routine mit einer Frist hat eine Zeile im Wächter
+des Rückstands, den die Selbstprüfung zeigt, seit dem 09.10.2026 auch die Bearbeiter
+zurückgegebener Ausleihen (`PredikatBearbeiterKennung`). Keine Frist darf eine andere verkürzen: Die Uhr der
 Karenz liest den letzten abgeschlossenen Vorgang am Leser (`letzter_vorgang_am`, Migration
 137), nicht aus den Ausleihen, deren Zuordnung die Lesehistorie-Befristung löst.
 

@@ -97,6 +97,16 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 	freihandLeihe, freihandExemplar := leihe("Freihand-Ausleihe", freihand, "B-KULANZ-F", freihandTage)
 	lmfLeihe, lmfExemplar := leihe("Lernmittel-Ausleihe", lmf, "B-KULANZ-L", lernmittelTage)
 
+	bearbeiter := eins("Bearbeiter", `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Theo', 'Theke', 'theke-kulanz@example.org', 'kollegium', true) RETURNING id`)
+	bearbeiteteLeihe := eins("Ausleihe mit Bearbeiter", `
+		INSERT INTO ausleihen (exemplar_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id)
+		VALUES ($1, NOW() - make_interval(days => $3 + 30), NOW() - make_interval(days => $3 + 9),
+		        NOW() - make_interval(days => $3, hours => 12), $2, $2) RETURNING id`,
+		eins("Exemplar der Ausleihe mit Bearbeiter", `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-KULANZ-B') RETURNING id`, freihand),
+		bearbeiter, repository.BearbeiterKennungTage)
+
 	vormerkSpur := eins("Spur einer gelöschten Vormerkung", `
 		INSERT INTO audit_log (tabelle, aktion, datensatz_id, timestamp, details)
 		VALUES ('vormerkungen', 'DELETE', gen_random_uuid(), NOW() - make_interval(days => $1, hours => 12),
@@ -144,6 +154,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 		{"Lesehistorie Lernmittel, Ausleihe", anzahl(`SELECT count(*) FROM ausleihen WHERE id = $1 AND schueler_id IS NOT NULL`, lmfLeihe)},
 		{"Lesehistorie Schülerbücherei, Protokoll", anzahl(`SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND datensatz_id = $1 AND details ? 'schueler_id'`, freihandExemplar)},
 		{"Lesehistorie Lernmittel, Protokoll", anzahl(`SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND datensatz_id = $1 AND details ? 'schueler_id'`, lmfExemplar)},
+		{"Bearbeiter zurückgegebener Ausleihen", anzahl(`SELECT count(*) FROM ausleihen WHERE id = $1 AND (bearbeiter_id IS NOT NULL OR rueckgabe_bearbeiter_id IS NOT NULL)`, bearbeiteteLeihe)},
 		{"Lesehistorie Schülerbücherei, Spur einer Vormerkung", anzahl(`SELECT count(*) FROM audit_log WHERE id = $1 AND details ?| ARRAY['schueler_id', 'betrifft']`, vormerkSpur)},
 		{"Erledigte Anliegen", anzahl(`SELECT count(*) FROM lehrer_anliegen WHERE titel_text = 'GERADE-FAELLIG'`)},
 		{"Erledigte Klassensatz-Reservierungen", anzahl(`SELECT count(*) FROM klassensatz_reservierungen WHERE titel_id = $1`, freihand)},

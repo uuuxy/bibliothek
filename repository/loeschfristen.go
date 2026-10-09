@@ -273,6 +273,16 @@ func PredikatLesehistorieVormerkspur(tage, kulanz int) Loeschbedingung {
 		  AND al.timestamp < NOW() - make_interval(days => $1::int + $2::int)`}
 }
 
+// ── Bearbeiter an Ausleihen ($1 Tage, $2 Kulanz) ──────────────────────────────
+
+// PredikatBearbeiterKennung liefert die Bedingung, mit der einer zurückgegebenen Ausleihe die
+// Kennungen der Bearbeiter von Ausgabe und Rückgabe genommen werden. Die Frist läuft ab der
+// Rückgabe: Eine laufende Ausleihe behält ihren Bearbeiter.
+func PredikatBearbeiterKennung(kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{BearbeiterKennungTage, kulanz}, Where: `rueckgabe_am < NOW() - make_interval(days => $1::int + $2::int)
+		  AND (bearbeiter_id IS NOT NULL OR rueckgabe_bearbeiter_id IS NOT NULL)`}
+}
+
 // ── Erledigte Anliegen ($1 Tage, $2 Kulanz) ───────────────────────────────────
 
 // PredikatAnliegen liefert die WHERE-Bedingung der Anliegen-Befristung. Die Rechnung

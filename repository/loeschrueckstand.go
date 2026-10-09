@@ -62,8 +62,8 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	return append(stand, vorgaenge...), nil
 }
 
-// rueckstandLeserUndLesehistorie zählt die Routinen, die Leser und ihre Lesehistorie
-// betreffen (1 bis 4).
+// rueckstandLeserUndLesehistorie zählt die Routinen, die Leser, ihre Lesehistorie und die
+// Bearbeiter ihrer Ausleihen betreffen (1 bis 4a).
 func (r *BetriebszustandRepository) rueckstandLeserUndLesehistorie(ctx context.Context, einst *SystemEinstellungen) ([]LoeschRueckstand, error) {
 	freihandTage := TageOderStandard(einst.LesehistorieTage, StandardLesehistorieTage)
 	lernmittelTage := TageOderStandard(einst.LesehistorieLernmittelTage, StandardLesehistorieLernmittelTage)
@@ -115,6 +115,13 @@ func (r *BetriebszustandRepository) rueckstandLeserUndLesehistorie(ctx context.C
 		}
 		stand = append(stand, zeile)
 	}
+
+	// 4a. Bearbeiter an zurückgegebenen Ausleihen (feste Frist).
+	n, err = r.zaehle(ctx, "ausleihen", "", PredikatBearbeiterKennung(KulanzWaechter))
+	if err != nil {
+		return fehler(err)
+	}
+	stand = append(stand, LoeschRueckstand{Routine: "Bearbeiter zurückgegebener Ausleihen", Frist: tageText(BearbeiterKennungTage), Zeilen: n})
 	return stand, nil
 }
 

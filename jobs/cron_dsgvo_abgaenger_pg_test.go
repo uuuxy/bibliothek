@@ -169,15 +169,56 @@ func TestGDPRAnonymizeLoans_GegenEchtesPostgres(t *testing.T) {
 		t.Fatalf("Ausleihe: %v", err)
 	}
 
+	// Die Grenzen der Bedingung, je eine Ausleihe: Nur einer der zwei Bearbeiter steht da; die
+	// Rückgabe liegt noch keine 14 Tage zurück; die Ausleihe läuft noch.
+	leihe := func(was, barcode, ausgabe, rueckgabe, werte string) string {
+		t.Helper()
+		var exemplar, id string
+		if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
+			titelID, barcode).Scan(&exemplar); err != nil {
+			t.Fatalf("Exemplar %s: %v", barcode, err)
+		}
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO ausleihen (exemplar_id, schueler_id, bearbeiter_id, rueckgabe_bearbeiter_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
+			VALUES ($1, $2, `+ausgabe+`, `+rueckgabe+`, `+werte+`) RETURNING id`,
+			exemplar, sid, bearbeiterID).Scan(&id); err != nil {
+			t.Fatalf("%s: %v", was, err)
+		}
+		return id
+	}
+	zurueckVor20Tagen := `now() - interval '40 days', now() - interval '30 days', now() - interval '20 days'`
+	nurAusgabe := leihe("nur Bearbeiter der Ausgabe", "ANL-EX2", "$3", "NULL", zurueckVor20Tagen)
+	nurRueckgabe := leihe("nur Bearbeiter der Rückgabe", "ANL-EX3", "NULL", "$3", zurueckVor20Tagen)
+	frisch := leihe("vor zehn Tagen zurück", "ANL-EX4", "$3", "$3",
+		`now() - interval '40 days', now() - interval '30 days', now() - interval '10 days'`)
+	laufend := leihe("läuft noch", "ANL-EX5", "$3", "NULL::uuid",
+		`now() - interval '60 days', now() + interval '10 days', NULL`)
+
 	s := NewScheduler(pool, repository.NewAuditRepository(pool))
 	s.RunGDPRAnonymizeLoans()
 
-	var beide bool
-	if err := pool.QueryRow(ctx,
-		`SELECT bearbeiter_id IS NULL AND rueckgabe_bearbeiter_id IS NULL FROM ausleihen WHERE id = $1`, loanID).Scan(&beide); err != nil {
-		t.Fatalf("Ausleihe lesen: %v", err)
+	ohneBearbeiter := func(id string) bool {
+		t.Helper()
+		var beide bool
+		if err := pool.QueryRow(ctx,
+			`SELECT bearbeiter_id IS NULL AND rueckgabe_bearbeiter_id IS NULL FROM ausleihen WHERE id = $1`, id).Scan(&beide); err != nil {
+			t.Fatalf("Ausleihe lesen: %v", err)
+		}
+		return beide
 	}
-	if !beide {
+	if !ohneBearbeiter(loanID) {
 		t.Error("Operator-IDs der alten Ausleihe wurden NICHT anonymisiert")
+	}
+	if !ohneBearbeiter(nurAusgabe) {
+		t.Error("Der Bearbeiter der Ausgabe steht noch, obwohl die Rückgabe 20 Tage zurückliegt")
+	}
+	if !ohneBearbeiter(nurRueckgabe) {
+		t.Error("Der Bearbeiter der Rückgabe steht noch, obwohl die Rückgabe 20 Tage zurückliegt")
+	}
+	if ohneBearbeiter(frisch) {
+		t.Error("Eine vor zehn Tagen zurückgegebene Ausleihe hat ihre Bearbeiter schon verloren")
+	}
+	if ohneBearbeiter(laufend) {
+		t.Error("Eine laufende Ausleihe hat ihren Bearbeiter verloren")
 	}
 }

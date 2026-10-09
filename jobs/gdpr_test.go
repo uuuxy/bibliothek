@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 
 	"github.com/pashagolub/pgxmock/v5"
@@ -83,6 +85,7 @@ func TestRunGDPRAnonymizeLoans_Anonymized(t *testing.T) {
 
 	// Simuliere: 1 Ausleihe wird anonymisiert
 	mock.ExpectExec("UPDATE ausleihen SET bearbeiter_id = NULL").
+		WithArgs(repository.BearbeiterKennungTage, repository.KulanzJob).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	scheduler.RunGDPRAnonymizeLoans()
@@ -108,6 +111,7 @@ func TestRunGDPRAnonymizeLoans_Empty(t *testing.T) {
 
 	// Simuliere: 0 Ausleihen (keine abgelaufenen)
 	mock.ExpectExec("UPDATE ausleihen SET bearbeiter_id = NULL").
+		WithArgs(repository.BearbeiterKennungTage, repository.KulanzJob).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
 	scheduler.RunGDPRAnonymizeLoans()

@@ -207,6 +207,17 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 		schuldner)
 	leihe("Lernmittel-Ausleihe", lmf, "B-RUECK-L", repository.StandardLesehistorieLernmittelTage+70)
 
+	// 4a. Bearbeiter an einer Ausleihe, die vor 20 Tagen zurückkam (Frist 14). Die Ausleihe
+	//     gehört niemandem mehr und ist für die Lesehistorie kein Fall.
+	bearbeiter := eins("Bearbeiter", `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Theo', 'Theke', 'theke-paarung@example.org', 'kollegium', true) RETURNING id`)
+	must("Ausleihe mit Bearbeiter", `
+		INSERT INTO ausleihen (exemplar_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id)
+		VALUES ($1, NOW() - interval '50 days', NOW() - interval '29 days', NOW() - interval '20 days', $2, $2)`,
+		eins("Exemplar der Ausleihe mit Bearbeiter", `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-BEARBEITER') RETURNING id`, freihand),
+		bearbeiter)
+
 	// 5. Erledigte Anliegen: vor 400 Tagen erledigt (Frist 365).
 	must("Anliegen", `
 		INSERT INTO lehrer_anliegen (art, titel_text, kommentar, erstellt_am, erledigt_am)
