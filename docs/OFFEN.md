@@ -379,9 +379,6 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **Rest beim Protokoll der Verwaltung:** Die Einträge in `audit_logs` schreibt eine Anweisung,
   `repository.SchreibeAdminProtokoll`. Eine Stelle schreibt noch selbst: die Selbstanmeldung
   (`auth/selbstanmeldung.go`); `auth/` bindet `repository/` nicht ein.
-- **Rest aus dem Umzug der Regeln:** `repository.ZusammenfuehrenAuftrag` bekommt die Rechnung des
-  Abgangsjahrs weiter als Funktion gereicht (`AbgaengerJahr`), obwohl `repository.AbgaengerJahr`
-  seit dem 09.10.2026 im selben Paket steht. Das Feld kann entfallen.
 - **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 354
   Methoden, rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt, zeigt der
   Stand nach den beiden Schritten davor.

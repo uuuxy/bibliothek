@@ -65,12 +65,11 @@ var (
 // Umbenennen nicht still eine der beiden Seiten stehen lässt.
 const PlatzhalterDomain = "@littera.invalid"
 
-// ZusammenfuehrenAuftrag benennt die beiden Datensätze; AbgaengerJahr rechnet das
-// Abgangsjahr aus der übernommenen Klasse (dieselbe Regel wie bei der Handanlage,
-// api/student_create.go — sie gehört dem Aufrufer, nicht dieser Schicht).
+// ZusammenfuehrenAuftrag benennt die beiden Datensätze. Das Abgangsjahr rechnet das
+// Zusammenführen aus der übernommenen Klasse, mit derselben Regel wie die Handanlage
+// (AbgaengerJahr).
 type ZusammenfuehrenAuftrag struct {
 	ZielID, QuelleID string
-	AbgaengerJahr    func(klasse string) int
 	// BearbeiterID: wer zusammenführt — steht am Rückweg-Eintrag (audit_log); leer = SYSTEM.
 	BearbeiterID string
 }
@@ -245,7 +244,7 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 		ZielID:        ziel.id,
 		F:             f,
 		O:             o,
-		AbgaengerJahr: a.AbgaengerJahr(f.klasse),
+		AbgaengerJahr: AbgaengerJahr(f.klasse),
 		Quelle:        quelle,
 	}); err != nil {
 		return nil, err
