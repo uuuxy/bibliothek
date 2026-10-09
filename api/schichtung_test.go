@@ -186,7 +186,6 @@ func TestSQLAnweisungenIn_ZaehltJedeAnweisung(t *testing.T) {
 // fällt hier weg.
 var dateienOhneTuer = []string{
 	"abgaenger_fenster.go",
-	"abgangsbuch_pdf.go",
 	"action_types.go",
 	"bescheid_absender.go",
 	"bestellbestaetigung_token.go",
@@ -213,7 +212,6 @@ var dateienOhneTuer = []string{
 	"schueler_kiosk.go",
 	"student_klasse_regel.go",
 	"verwaltung_protokoll.go",
-	"zugangsbuch_pdf.go",
 }
 
 // bindetHTTPEin sagt, ob die Quelle net/http einbindet, unter welchem Namen auch immer.

@@ -1,17 +1,16 @@
-package api
+package pdf
 
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	"github.com/jung-kurt/gofpdf"
 
-	"bibliothek/pdf"
 	"bibliothek/pkg/pdfzeichen"
-	"bibliothek/repository"
 )
 
-// Der Ausdruck des Zugangsbuchs. Aufbau wie beim Abgangsbuch (abgangsbuch_pdf.go): ein
+// Der Ausdruck des Zugangsbuchs. Aufbau wie beim Abgangsbuch (abgangsbuch.go): ein
 // Abschnitt je Topf, jeder mit eigener Stückzahl, leere werden übersprungen.
 //
 // Die Spalten sind die der Arbeitshilfe: Eingangsdatum, Inventarnummer, Titel, Lieferant
@@ -25,7 +24,35 @@ const (
 	zugangSpalteLieferant = 52.0
 )
 
-func generateZugangsbuchPDF(buch repository.Zugangsbuch, schule pdf.SchuleInfo) ([]byte, error) {
+// ZugangsZeile ist ein Zugang, wie er auf dem Blatt steht.
+type ZugangsZeile struct {
+	Datum     time.Time
+	Barcode   string
+	Titel     string
+	Lieferant string
+}
+
+// ZugangsAbschnitt ist ein Topf des Blatts mit seiner Überschrift.
+type ZugangsAbschnitt struct {
+	Titel  string
+	Zeilen []ZugangsZeile
+}
+
+// Zugangsbuch ist die Eingabe des Blatts. Gliederung, Überschriften und Zahlen kommen von der
+// Tür; sie sind dieselben wie in der Liste auf dem Bildschirm.
+type Zugangsbuch struct {
+	Von        time.Time
+	Bis        time.Time
+	Abschnitte []ZugangsAbschnitt
+	// Gesamt ist die Zahl der Zugänge im Zeitraum.
+	Gesamt int
+	// OhneZuordnung sagt, dass es Zugänge ohne hinterlegte Bestellung gibt. Das Blatt erklärt
+	// dann unter der Liste, was ihr Abschnitt bedeutet.
+	OhneZuordnung bool
+}
+
+// GenerateZugangsbuchPDF setzt das Zugangsbuch eines Zeitraums als Blatt zum Abheften.
+func GenerateZugangsbuchPDF(buch Zugangsbuch, schule SchuleInfo) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
@@ -35,11 +62,7 @@ func generateZugangsbuchPDF(buch repository.Zugangsbuch, schule pdf.SchuleInfo) 
 	bestandsbuchKopf(p, tr, "Zugangsbuch", buch.Von, buch.Bis, schule)
 
 	gezeigt := 0
-	ohneBestellung := false
-	for _, abschnitt := range abschnitteAus(buch.Zeilen, func(z repository.ZugangsZeile) string { return z.Topf }) {
-		if abschnitt.Topf == "" && len(abschnitt.Zeilen) > 0 {
-			ohneBestellung = true
-		}
+	for _, abschnitt := range buch.Abschnitte {
 		gezeigt += zugangsbuchAbschnitt(p, tr, abschnitt)
 	}
 	if gezeigt == 0 {
@@ -50,7 +73,7 @@ func generateZugangsbuchPDF(buch repository.Zugangsbuch, schule pdf.SchuleInfo) 
 		p.Ln(10)
 	}
 
-	zugangsbuchFuss(p, tr, len(buch.Zeilen), ohneBestellung)
+	zugangsbuchFuss(p, tr, buch.Gesamt, buch.OhneZuordnung)
 
 	var buf bytes.Buffer
 	if err := p.Output(&buf); err != nil {
@@ -59,7 +82,7 @@ func generateZugangsbuchPDF(buch repository.Zugangsbuch, schule pdf.SchuleInfo) 
 	return buf.Bytes(), nil
 }
 
-func zugangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Abschnitt[repository.ZugangsZeile]) int {
+func zugangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt ZugangsAbschnitt) int {
 	zeilen := abschnitt.Zeilen
 	if len(zeilen) == 0 {
 		return 0
@@ -82,8 +105,8 @@ func zugangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Absc
 		p.SetFont("Arial", "", 9)
 		p.CellFormat(zugangSpalteDatum, abgangZeilenHoehe, tr(z.Datum.Format(dateFormatDE)), "LB", 0, "L", false, 0, "")
 		p.CellFormat(zugangSpalteNummer, abgangZeilenHoehe, tr(z.Barcode), "B", 0, "L", false, 0, "")
-		p.CellFormat(zugangSpalteTitel, abgangZeilenHoehe, tr(kuerzeMitAuslassung(z.Titel, 44)), "B", 0, "L", false, 0, "")
-		p.CellFormat(zugangSpalteLieferant, abgangZeilenHoehe, tr(kuerzeMitAuslassung(z.Lieferant, 30)), "BR", 1, "L", false, 0, "")
+		p.CellFormat(zugangSpalteTitel, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZeichen(z.Titel, 44)), "B", 0, "L", false, 0, "")
+		p.CellFormat(zugangSpalteLieferant, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZeichen(z.Lieferant, 30)), "BR", 1, "L", false, 0, "")
 	}
 
 	p.SetFont("Arial", "B", 9)

@@ -13,7 +13,7 @@ import (
 // Das Abgangsbuch — Punkt 1 des Protokolls vom 16.09.2026.
 //
 // Zwei Türen auf dieselbe Abfrage: eine für den Bildschirm (JSON) und eine für das Blatt
-// (PDF). Der Zeitraum wird an EINER Stelle bestimmt (abgangsbuchZeitraum): Ließe die
+// (PDF). Der Zeitraum wird an EINER Stelle bestimmt (bestandsbuchZeitraum): Ließe die
 // Oberfläche ihn selbst vorbelegen, gäbe es zwei Auslegungen von „laufendes Halbjahr" —
 // und der Ausdruck deckte am Ende einen anderen Zeitraum ab als die Liste, aus der er
 // entstand.
@@ -42,6 +42,29 @@ func abgangsbuchAntwort(buch repository.Abgangsbuch) AbgangsbuchAntwort {
 
 		AusKatalogGeloescht: buch.AusKatalogGeloescht,
 	}
+}
+
+// abgangsbuchBlatt füllt die Eingabe des Blatts aus der Antwort für den Bildschirm: Das Blatt
+// trägt dieselben Abschnitte, Überschriften und Zahlen wie die Liste, aus der es entsteht.
+func abgangsbuchBlatt(antwort AbgangsbuchAntwort) pdf.Abgangsbuch {
+	blatt := pdf.Abgangsbuch{
+		Von:                 antwort.Von,
+		Bis:                 antwort.Bis,
+		Abschnitte:          make([]pdf.AbgangsAbschnitt, 0, len(antwort.Abschnitte)),
+		Gesamt:              antwort.Gesamt,
+		OhneZeitpunkt:       antwort.OhneZeitpunkt,
+		AusKatalogGeloescht: antwort.AusKatalogGeloescht,
+	}
+	for _, abschnitt := range antwort.Abschnitte {
+		zeilen := make([]pdf.AbgangsZeile, 0, len(abschnitt.Zeilen))
+		for _, z := range abschnitt.Zeilen {
+			zeilen = append(zeilen, pdf.AbgangsZeile{
+				Datum: z.Datum, Barcode: z.Barcode, Titel: z.Titel, Signatur: z.Signatur, GrundText: z.GrundText,
+			})
+		}
+		blatt.Abschnitte = append(blatt.Abschnitte, pdf.AbgangsAbschnitt{Titel: abschnitt.Titel, Zeilen: zeilen})
+	}
+	return blatt
 }
 
 // AbgangsbuchHandler liefert die Abgänge eines Zeitraums für den Bildschirm.
@@ -84,7 +107,7 @@ func (s *Server) AbgangsbuchPDFHandler() http.HandlerFunc {
 			PLZ: einst.SchulePLZ, Ort: einst.SchuleOrt,
 		}
 
-		blatt, err := generateAbgangsbuchPDF(buch, schule)
+		blatt, err := pdf.GenerateAbgangsbuchPDF(abgangsbuchBlatt(abgangsbuchAntwort(buch)), schule)
 		if err != nil {
 			return apierrors.Internal("Abgangsbuch konnte nicht gedruckt werden", err)
 		}

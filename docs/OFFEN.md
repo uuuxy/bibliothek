@@ -344,24 +344,28 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
-  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 29 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 24.428 Zeilen in 153 Dateien (am Anfang 30.785 in 168).
+  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 27 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 24.147 Zeilen in 151 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
-  Selbstprüfung in `internal/bereitschaft`, der Bescheid in `pdf/bescheid.go`, die Etiketten mit
-  ihren Bogenformaten in `pdf/etikett_*.go`, der Strichcode in `pkg/strichcode`. Offen: der Aufbau
-  der übrigen PDFs und der Rest der 29. Die PDF-Erzeuger hingen am 09.10.2026 an rund 30 Namen aus
-  `api/` (Typen der Auskunft, Mailversand), gemessen mit einem Probe-Umzug am Compiler; sie ziehen
-  je Sache um (Auskunft, Bestell-PDF, Bestandsbücher, Mahnbrief), nicht in einem Zug. Was ein
-  Erzeuger aus `repository/` liest, bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn
-  (ARCHITEKTUR 5.2.2). Je Thema ein Commit; die Tests der Türen bleiben stehen und belegen, dass
-  sich nichts ändert. Gemessen am 09.10.2026 für die nächste Sache, die Bestandsbücher
-  (`abgangsbuch_pdf.go`, `zugangsbuch_pdf.go`): Die Erzeuger nehmen Typen aus `repository/` und
-  teilen sich mit der Tür die Gliederung nach Topf (`Abschnitt`, `abschnitteAus` in
-  `api/bestandsbuch.go`), die auch die Antwort als JSON trägt. Die Tests an der Datenbank bleiben
-  in `api/`, weil ihre Helfer dort liegen; was sie aus einem umgezogenen Paket brauchen, ist dort
-  sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md)
-  5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
+  Selbstprüfung in `internal/bereitschaft`, der Strichcode in `pkg/strichcode`; in `pdf/` stehen
+  der Bescheid (`bescheid.go`), die Etiketten mit ihren Bogenformaten (`etikett_*.go`) und die
+  Bestandsbücher (`abgangsbuch.go`, `zugangsbuch.go`). Offen: der Aufbau der übrigen PDFs und der
+  Rest der 27. Was ein Erzeuger aus `repository/` liest, bekommt er in `pdf/` als eigenen Typ; die
+  Tür füllt ihn (ARCHITEKTUR 5.2.2). Je Thema ein Commit; die Tests der Türen bleiben stehen und
+  belegen, dass sich nichts ändert. Gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler, was
+  die sechs übrigen PDF-Dateien brauchen: Die Mahnliste (`mahnwesen_pdf.go`) braucht keinen Namen
+  aus `api/` und nimmt drei Typen aus `repository/`. Der Mahnbrief (`reports_pdf.go`) nimmt zwei
+  Typen aus `repository/`; in derselben Datei stehen zwei Methoden der Tür, die die Vorlage laden,
+  die Datei ist also zu teilen. Das Bestellanschreiben (`order_pdf.go`) braucht die Texte zum Topf
+  (`mittelTexteFuer`); die Typen des Druckauftrags und die Barcode-Liste in derselben Datei bleiben
+  in `api/`. `pdf_service.go` stellt die Anlagen der Bestellmail zusammen und verschickt sie; das
+  ist kein Erzeuger und hängt an 15 Namen aus `api/`. Die Auskunft (`dsgvo_pdf_konto.go`,
+  `dsgvo_pdf_protokoll.go`, dazu der Erzeuger in `dsgvo_pdf.go`) hängt an 15 Namen aus `api/` und
+  17 aus `repository/` und nimmt den Typ der Antwort für den Bildschirm; sie ist die größte Sache.
+  Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
+  umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
+  [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
 - **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 354
   Methoden, rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt, zeigt der
   Stand nach dem Schritt davor.

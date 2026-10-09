@@ -31,6 +31,29 @@ func zugangsbuchAntwort(buch repository.Zugangsbuch) ZugangsbuchAntwort {
 	}
 }
 
+// zugangsbuchBlatt füllt die Eingabe des Blatts aus der Antwort für den Bildschirm: Das Blatt
+// trägt dieselben Abschnitte, Überschriften und Zahlen wie die Liste, aus der es entsteht.
+func zugangsbuchBlatt(antwort ZugangsbuchAntwort) pdf.Zugangsbuch {
+	blatt := pdf.Zugangsbuch{
+		Von:        antwort.Von,
+		Bis:        antwort.Bis,
+		Abschnitte: make([]pdf.ZugangsAbschnitt, 0, len(antwort.Abschnitte)),
+		Gesamt:     antwort.Gesamt,
+	}
+	for _, abschnitt := range antwort.Abschnitte {
+		// Der Abschnitt ohne Topf trägt die Exemplare ohne hinterlegte Bestellung.
+		if abschnitt.Topf == "" && len(abschnitt.Zeilen) > 0 {
+			blatt.OhneZuordnung = true
+		}
+		zeilen := make([]pdf.ZugangsZeile, 0, len(abschnitt.Zeilen))
+		for _, z := range abschnitt.Zeilen {
+			zeilen = append(zeilen, pdf.ZugangsZeile{Datum: z.Datum, Barcode: z.Barcode, Titel: z.Titel, Lieferant: z.Lieferant})
+		}
+		blatt.Abschnitte = append(blatt.Abschnitte, pdf.ZugangsAbschnitt{Titel: abschnitt.Titel, Zeilen: zeilen})
+	}
+	return blatt
+}
+
 // ZugangsbuchHandler liefert die Zugänge eines Zeitraums für den Bildschirm.
 // GET /api/bestand/zugangsbuch?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
 func (s *Server) ZugangsbuchHandler() http.HandlerFunc {
@@ -71,7 +94,7 @@ func (s *Server) ZugangsbuchPDFHandler() http.HandlerFunc {
 			PLZ: einst.SchulePLZ, Ort: einst.SchuleOrt,
 		}
 
-		blatt, err := generateZugangsbuchPDF(buch, schule)
+		blatt, err := pdf.GenerateZugangsbuchPDF(zugangsbuchBlatt(zugangsbuchAntwort(buch)), schule)
 		if err != nil {
 			return apierrors.Internal("Zugangsbuch konnte nicht gedruckt werden", err)
 		}

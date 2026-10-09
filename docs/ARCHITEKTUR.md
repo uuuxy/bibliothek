@@ -619,7 +619,7 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 24.428 Zeilen, 153 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `api/`                  | 24.147 Zeilen, 151 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
 | `repository/`           | 21.078 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
 | `internal/service/`     | 4.440 Zeilen, 22 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
@@ -629,7 +629,7 @@ HTTP-Anfrage
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
 | `pkg/` (22 Pakete)      | 2.566 Zeilen, 31 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 2.383 Zeilen, 15 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten |
+| `pdf/`                  | 2.757 Zeilen, 18 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
@@ -657,7 +657,9 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   dort steht. Den Typ füllt nur diese Funktion (`etikett_eingabe_ratsche_test.go`). Der Typ des Druckauftrags aus
   dem Browser (`BarcodeLabelDetail`) bleibt in `api/`; sein Feld für den Topf nimmt aus einer
   Anfrage nichts an. Ein Test hält jedes Feld der Eingabe gegen seine Quelle
-  (`api/buch_etiketten_test.go`).
+  (`api/buch_etiketten_test.go`). Das Blatt eines Bestandsbuchs entsteht aus der Antwort für
+  den Bildschirm (`abgangsbuchBlatt`, `zugangsbuchBlatt`): Es trägt dieselben Abschnitte,
+  Überschriften und Zahlen wie die Liste (`api/bestandsbuch_test.go`).
 - Unterscheidet eine Tür in ihrer Meldung, ob die Abfrage scheiterte oder das Lesen ihrer
   Zeilen, trägt der Fehler des Lesens `repository.ErrZeileUnlesbar`.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
@@ -1924,7 +1926,7 @@ gegen die Tür klopft.
 | Mahnliste, Kontoauszug, Rechnung, Schadensfall, LMF-Plan | `pdf/` (gofpdf/maroto)  | Der **Druck** der Mahnung ist der Verwaltungsakt: nur hier steigt die Mahnstufe                       |
 | Bescheid (Landes-Lernmittel)              | `pdf/bescheid.go`                      | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
 | Etiketten und Ausweise                    | `pdf/etikett_*.go`, `pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
-| Zugangs-/Abgangsbuch                      | `api/bestandsbuch.go`, `api/abgangsbuch_*.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |
+| Zugangs-/Abgangsbuch                      | `pdf/abgangsbuch.go`, `pdf/zugangsbuch.go`; Gliederung nach Topf in `api/bestandsbuch.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |
 | DSGVO-Auskunft                            | `api/dsgvo_pdf.go`                     | Auskunftsrecht als Dokument                                                                           |
 | Barcodebogen für den Händler              | `api/bestellbestaetigung_etiketten.go` | Für Händler, die selbst etikettieren                                                                  |
 
@@ -3023,7 +3025,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 24.428 Zeilen in 153 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 24.147 Zeilen in 151 Dateien das schwerste Paket
 
 | | |
 | --- | --- |
@@ -3038,10 +3040,10 @@ Dateien von 53 gesunken, die Zahl der Anweisungen in den 48 von 143 gestiegen, w
 nur neue Dateien abwies. 44 Dateien mit 7.503 Zeilen banden `net/http` nicht ein, waren also
 keine Tür.
 
-Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 29 Dateien ohne Tür
-mit 3.627 Zeilen, davon 8 PDF-Erzeuger mit 1.644 Zeilen. Der LUSD-Import steht in
-`internal/lusd`, die Selbstprüfung in `internal/bereitschaft`, der Bescheid und die Etiketten
-in `pdf/`, der Strichcode in `pkg/strichcode`, die
+Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 27 Dateien ohne Tür
+mit 3.328 Zeilen, davon 6 PDF-Erzeuger mit 1.345 Zeilen. Der LUSD-Import steht in
+`internal/lusd`, die Selbstprüfung in `internal/bereitschaft`, der Bescheid, die Etiketten und
+die Bestandsbücher in `pdf/`, der Strichcode in `pkg/strichcode`, die
 Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `api/schichtung_test.go` weist jede SQL-Anweisung in
 `api/` ab und führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Was
 bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst bleiben in einem Paket: Der Typ
