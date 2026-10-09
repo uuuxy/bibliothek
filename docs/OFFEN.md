@@ -372,7 +372,13 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   steht nur noch die Auskunft in `api/` (`dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`, dazu
   der Erzeuger in `dsgvo_pdf.go`). Gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler:
   Sie hängt an 15 Namen aus `api/` und 17 aus `repository/` und nimmt den Typ der Antwort für
-  den Bildschirm; sie ist die größte Sache. Die Anlagen der Bestellmail
+  den Bildschirm; sie ist die größte Sache. Sie unterscheidet sich von den übrigen Erzeugern:
+  Das Blatt nennt 16 Typen der Antwort und die Tabelle der Protokoll-Angaben aus `repository/`
+  (`ProtokollAngabe…`). Eigene Eingabetypen in `pdf/` hießen, diese 16 Typen zu doppeln; der
+  andere Weg ist ein eigenes Paket für die Typen der Auskunft, das Tür und Blatt teilen. Vor dem
+  Umzug steht deshalb ein Plan, der beide Wege am Compiler misst; ein Gate liest den Quelltext
+  von `dsgvo_pdf.go` (`api/dsgvo_pdf_felder_gate_test.go`) und zieht mit. Die Anlagen der
+  Bestellmail
   (`bestellmail_anhaenge.go`, bisher `pdf_service.go`) sind kein Erzeuger: Die Datei stellt sie
   zusammen und verschickt die Mail; sie bleibt als Helfer bei ihren Türen.
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
