@@ -1,10 +1,6 @@
-package api
+package repository
 
-import (
-	"fmt"
-
-	"bibliothek/repository"
-)
+import "fmt"
 
 // Der Topf-Filter für Listen und Berichte (#596, Bauplan 7.3 Schritt 4).
 //
@@ -18,39 +14,39 @@ import (
 // desselben Parameters wären genau die Doppelung, bei der die Liste eine Bestellung zeigt,
 // die im Bericht daneben fehlt.
 
-// mittelOhneFilter ist der Filterwert für „ohne Zuordnung" (Spalte IS NULL).
-const mittelOhneFilter = "ohne"
+// MittelOhneFilter ist der Filterwert für „ohne Zuordnung" (Spalte IS NULL).
+const MittelOhneFilter = "ohne"
 
-// mittelFilterGueltig prüft den Parameter, bevor er in eine Abfrage geht. Leer = alle.
-func mittelFilterGueltig(filter string) bool {
-	return filter == "" || filter == mittelOhneFilter || repository.MittelGueltig(filter)
+// MittelFilterGueltig prüft den Parameter, bevor er in eine Abfrage geht. Leer = alle.
+func MittelFilterGueltig(filter string) bool {
+	return filter == "" || filter == MittelOhneFilter || MittelGueltig(filter)
 }
 
-// mittelFilterFehler ist die Meldung an der Tür — sie nennt die erlaubten Werte, damit
+// MittelFilterFehler ist die Meldung an der Tür — sie nennt die erlaubten Werte, damit
 // niemand raten muss.
-func mittelFilterFehler(filter string) error {
+func MittelFilterFehler(filter string) error {
 	return fmt.Errorf("unbekannter Topf %q — erlaubt sind %q, %q und %q",
-		filter, repository.MittelLand, repository.MittelSchultraeger, mittelOhneFilter)
+		filter, MittelLand, MittelSchultraeger, MittelOhneFilter)
 }
 
-// mittelBedingung liefert die SQL-Bedingung zum Filter und den Parameterwert dazu.
+// MittelBedingung liefert die SQL-Bedingung zum Filter und den Parameterwert dazu.
 // Die Bedingung ist leer, wenn nicht gefiltert wird; arg ist nil, wenn die Bedingung
 // ohne Parameter auskommt (IS NULL).
-func mittelBedingung(filter, spalte string, index int) (bedingung string, arg any) {
+func MittelBedingung(filter, spalte string, index int) (bedingung string, arg any) {
 	switch filter {
 	case "":
 		return "", nil
-	case mittelOhneFilter:
+	case MittelOhneFilter:
 		return fmt.Sprintf(" AND %s IS NULL", spalte), nil
 	default:
 		return fmt.Sprintf(" AND %s = $%d", spalte, index), filter
 	}
 }
 
-// mittelDatenwert übersetzt den Filterwert in den Wert, der in der Spalte steht:
+// MittelDatenwert übersetzt den Filterwert in den Wert, der in der Spalte steht:
 // „ohne" ist dort NULL und wird als leerer String gelesen (coalesce).
-func mittelDatenwert(filter string) string {
-	if filter == mittelOhneFilter {
+func MittelDatenwert(filter string) string {
+	if filter == MittelOhneFilter {
 		return ""
 	}
 	return filter

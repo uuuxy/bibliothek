@@ -323,29 +323,25 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 // macht daraus ein SQL-NULL, damit der Teil-Index (Migration 063) nicht zwei Bestellungen
 // ohne Link als Dublette ablehnt.
 func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req SubmitOrderRequest, supplier *repository.Supplier, posten bestellPosten, tokenHash string, linkTage int) (string, *time.Time, error) {
-	var bestellungID string
-	var linkGueltigBis *time.Time
-	// ON CONFLICT (idempotenz_schluessel) DO NOTHING: Ein Doppelklick mit demselben
-	// Schlüssel läuft am partiellen Unique-Index auf, liefert keine Zeile — das signalisiert
-	// ProcessOrder als ErrBestellungDuplikat (keine zweite Bestellung, keine zweite Mail).
-	//
 	// Die Kundennummer ist die des TOPFS (Supplier.KundennummerFuer): Händler führen
 	// Lernmittel und Bibliothek oft als getrennte Kundenkonten. Auf der Bestellung steht
 	// deshalb die Nummer, unter der der Händler diesen Topf abrechnet — als Abschrift, wie
 	// Name und Adresse, damit der Beleg auch nach einer Änderung am Lieferanten stimmt.
-	err := tx.QueryRow(ctx, `
-		INSERT INTO bestellungen_verlauf
-			(lieferant_id, lieferant_name, lieferant_email, kundennummer, gesamtbetrag, anzahl_exemplare,
-			 bestaetigungs_token_hash, token_gueltig_bis, idempotenz_schluessel, mittel)
-		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''),
-		        CASE WHEN $7 = '' THEN NULL ELSE now() + make_interval(days => $8) END,
-		        $9, $10)
-		ON CONFLICT (idempotenz_schluessel) WHERE idempotenz_schluessel IS NOT NULL DO NOTHING
-		RETURNING id, token_gueltig_bis`,
-		req.SupplierID, supplier.Name, supplier.Email, supplier.KundennummerFuer(req.Mittel),
-		posten.gesamtbetrag, posten.menge, tokenHash, linkTage,
-		nullableString(req.IdempotencyKey), req.Mittel,
-	).Scan(&bestellungID, &linkGueltigBis)
+	bestellungID, linkGueltigBis, err := repository.LegeBestellkopfAn(ctx, tx, repository.BestellkopfNeu{
+		LieferantID:          req.SupplierID,
+		LieferantName:        supplier.Name,
+		LieferantEmail:       supplier.Email,
+		Kundennummer:         supplier.KundennummerFuer(req.Mittel),
+		Gesamtbetrag:         posten.gesamtbetrag,
+		Menge:                posten.menge,
+		TokenHash:            tokenHash,
+		LinkTage:             linkTage,
+		IdempotenzSchluessel: nullableString(req.IdempotencyKey),
+		Mittel:               req.Mittel,
+	})
+	// Keine Zeile: Ein Doppelklick mit demselben Schlüssel lief am partiellen Unique-Index
+	// auf. ProcessOrder erkennt das an ErrBestellungDuplikat (keine zweite Bestellung, keine
+	// zweite Mail).
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil, ErrBestellungDuplikat
 	}
@@ -366,10 +362,8 @@ var ErrBestellungDuplikat = errors.New("bestellung mit diesem idempotenz-schlüs
 func (s *OrderService) ladeBestehendeBestellung(ctx context.Context, idempotenzSchluessel string) (*OrderResult, error) {
 	var res OrderResult
 	res.BereitsVorhanden = true
-	err := s.db.Pool.QueryRow(ctx, `
-		SELECT id, lieferant_name, anzahl_exemplare
-		FROM bestellungen_verlauf WHERE idempotenz_schluessel = $1`,
-		idempotenzSchluessel).Scan(&res.BestellungID, &res.SupplierName, &res.TotalAllocated)
+	var err error
+	res.BestellungID, res.SupplierName, res.TotalAllocated, err = repository.BestellungZuIdempotenzSchluessel(ctx, s.db.Pool, idempotenzSchluessel)
 	if err != nil {
 		return nil, fmt.Errorf("bestehende bestellung laden: %w", err)
 	}

@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -16,28 +15,6 @@ import (
 
 	"github.com/jung-kurt/gofpdf"
 )
-
-// berichtOrder holds one order with its line items for PDF report generation.
-type berichtOrder struct {
-	ID              string
-	LieferantName   string
-	Kundennummer    string
-	Bestelldatum    time.Time
-	Gesamtbetrag    float64
-	AnzahlExemplare int
-	// Mittel ist der Topf, aus dem die Bestellung bezahlt wird (Migration 109). Leer =
-	// Alt-Bestellung ohne eindeutige Zuordnung; sie wird als solche ausgewiesen und
-	// niemals einem Topf zugeschlagen.
-	Mittel     string
-	Positionen []berichtPosition
-}
-
-type berichtPosition struct {
-	TitelName   string
-	ISBN        string
-	Menge       int
-	Einzelpreis float64
-}
 
 // parseBerichtZeitraum validiert und parst die Zeitraum-Parameter (YYYY-MM-DD).
 func parseBerichtZeitraum(vonStr, bisStr string) (time.Time, time.Time, error) {
@@ -70,86 +47,10 @@ func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool, mittel 
 	}
 	// Ist der Bericht auf einen Topf gefiltert, gehört das in die Überschrift: Ein Blatt
 	// ohne diesen Zusatz sieht aus wie der Gesamtbericht und wird auch so abgelegt.
-	if beschriftung := mittelBeschriftung(mittelDatenwert(mittel)); mittel != "" && beschriftung != "" {
+	if beschriftung := mittelBeschriftung(repository.MittelDatenwert(mittel)); mittel != "" && beschriftung != "" {
 		titel += " — " + beschriftung
 	}
 	return titel
-}
-
-// ladeBestellungen liest die Bestellungen im Zeitraum (optional je Lieferant) und
-// liefert zusätzlich einen Index ID→Position für das Nachladen der Positionen.
-func (s *Server) ladeBestellungen(ctx context.Context, von, bisExklusiv time.Time, lieferantID, mittel string) ([]berichtOrder, map[string]int, error) {
-	orderQuery := `
-		SELECT id, lieferant_name, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare,
-		       coalesce(mittel, '')
-		FROM bestellungen_verlauf
-		WHERE bestelldatum >= $1 AND bestelldatum < $2`
-	args := []any{von, bisExklusiv}
-	if lieferantID != "" {
-		args = append(args, lieferantID)
-		orderQuery += fmt.Sprintf(" AND lieferant_id = $%d", len(args))
-	}
-	if bedingung, arg := mittelBedingung(mittel, "mittel", len(args)+1); bedingung != "" {
-		orderQuery += bedingung
-		if arg != nil {
-			args = append(args, arg)
-		}
-	}
-	orderQuery += " ORDER BY bestelldatum ASC"
-
-	orderRows, err := s.DB.Pool.Query(ctx, orderQuery, args...)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer orderRows.Close()
-
-	orders := make([]berichtOrder, 0)
-	orderIndex := map[string]int{}
-	for orderRows.Next() {
-		var o berichtOrder
-		if err := orderRows.Scan(&o.ID, &o.LieferantName, &o.Kundennummer,
-			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.Mittel); err != nil {
-			return nil, nil, err
-		}
-		orderIndex[o.ID] = len(orders)
-		orders = append(orders, o)
-	}
-	if err := orderRows.Err(); err != nil {
-		return nil, nil, err
-	}
-	return orders, orderIndex, nil
-}
-
-// ladeBestellPositionen lädt die Positionen aller Bestellungen nach und hängt sie
-// den passenden Orders an.
-func (s *Server) ladeBestellPositionen(ctx context.Context, orders []berichtOrder, orderIndex map[string]int) error {
-	if len(orders) == 0 {
-		return nil
-	}
-	ids := make([]string, len(orders))
-	for i, o := range orders {
-		ids[i] = o.ID
-	}
-	posRows, err := s.DB.Pool.Query(ctx, `
-		SELECT bestellung_id, titel_name, isbn, menge, einzelpreis
-		FROM bestellungen_positionen
-		WHERE bestellung_id = ANY($1::uuid[])
-		ORDER BY bestellung_id, titel_name`, ids)
-	if err != nil {
-		return err
-	}
-	defer posRows.Close()
-	for posRows.Next() {
-		var bestellungID string
-		var pos berichtPosition
-		if err := posRows.Scan(&bestellungID, &pos.TitelName, &pos.ISBN, &pos.Menge, &pos.Einzelpreis); err != nil {
-			return err
-		}
-		if idx, ok := orderIndex[bestellungID]; ok {
-			orders[idx].Positionen = append(orders[idx].Positionen, pos)
-		}
-	}
-	return posRows.Err()
 }
 
 // GetBestellBerichtPDFHandler generates a printable PDF report for a date range.
@@ -187,20 +88,20 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 		// stiller Gesamtbericht: Sonst prüfte das Sekretariat die Landes-Rechnung gegen
 		// eine Liste, in der auch die Schülerbücherei steht.
 		mittel := q.Get("mittel")
-		if !mittelFilterGueltig(mittel) {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, mittelFilterFehler(mittel))
+		if !repository.MittelFilterGueltig(mittel) {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, repository.MittelFilterFehler(mittel))
 			return
 		}
 		jahresansicht := q.Get("jahresansicht") == "true"
 		berichtTitel := berichtTitelAbleiten(q.Get("titel"), lieferantID, jahresansicht, mittel)
 
-		orders, orderIndex, err := s.ladeBestellungen(ctx, von, bisExklusiv, lieferantID, mittel)
+		orders, orderIndex, err := repository.LadeBerichtBestellungen(ctx, s.DB.Pool, von, bisExklusiv, lieferantID, mittel)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		if err := s.ladeBestellPositionen(ctx, orders, orderIndex); err != nil {
+		if err := repository.LadeBerichtPositionen(ctx, s.DB.Pool, orders, orderIndex); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -255,7 +156,7 @@ type berichtSupplierStat struct {
 //
 // Ohne Preiserfassung entfaellt die Betragsspalte, und die verbleibenden Spalten werden
 // auf dieselbe Gesamtbreite verteilt — sonst endete die Tabelle mitten auf der Seite.
-func zeichneMonatsuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrder, gesamtExemplare int, gesamtBetrag float64, mitPreisen bool) {
+func zeichneMonatsuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []repository.BerichtBestellung, gesamtExemplare int, gesamtBetrag float64, mitPreisen bool) {
 	monthly := map[time.Month]*berichtMonthStat{}
 	for _, o := range orders {
 		m := o.Bestelldatum.Month()
@@ -317,7 +218,7 @@ func zeichneMonatsuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []be
 // Ohne Preiserfassung heisst sie nicht mehr "Ausgaben" — es sind dann keine. Statt des
 // Betrags stehen die Exemplare, denn die Frage "wie viel haben wir wo bezogen" bleibt
 // auch ohne Geld sinnvoll.
-func zeichneLieferantenuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrder, mitPreisen bool) {
+func zeichneLieferantenuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []repository.BerichtBestellung, mitPreisen bool) {
 	bySupplier := map[string]*berichtSupplierStat{}
 	for _, o := range orders {
 		if bySupplier[o.LieferantName] == nil {
@@ -385,7 +286,7 @@ type berichtRahmen struct {
 
 // zeichneBestellKopf setzt die Kopfzeile einer einzelnen Bestellung (Datum, Lieferant,
 // Kundennummer).
-func zeichneBestellKopf(p *gofpdf.Fpdf, tr func(string) string, o berichtOrder) {
+func zeichneBestellKopf(p *gofpdf.Fpdf, tr func(string) string, o repository.BerichtBestellung) {
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(235, 235, 245)
 	header := fmt.Sprintf("%s  ·  %s  ·  Kd.-Nr. %s",
@@ -411,7 +312,7 @@ func zeichneSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string, s berichtSpalt
 }
 
 // zeichnePositionen setzt die Titelzeilen einer Bestellung, mit Seitenumbruch am Fuß.
-func zeichnePositionen(p *gofpdf.Fpdf, tr func(string) string, positionen []berichtPosition, s berichtSpalten, mitPreisen bool) {
+func zeichnePositionen(p *gofpdf.Fpdf, tr func(string) string, positionen []repository.BerichtPosition, s berichtSpalten, mitPreisen bool) {
 	p.SetFont("Arial", "", 8)
 	for _, pos := range positionen {
 		if p.GetY() > 265 {
@@ -434,7 +335,7 @@ func zeichnePositionen(p *gofpdf.Fpdf, tr func(string) string, positionen []beri
 }
 
 // zeichneBestellSumme setzt die Abschlusszeile einer einzelnen Bestellung.
-func zeichneBestellSumme(p *gofpdf.Fpdf, tr func(string) string, o berichtOrder, mitPreisen bool) {
+func zeichneBestellSumme(p *gofpdf.Fpdf, tr func(string) string, o repository.BerichtBestellung, mitPreisen bool) {
 	p.SetFont("Arial", "B", 8)
 	p.SetFillColor(235, 235, 245)
 	if mitPreisen {
@@ -471,7 +372,7 @@ func zeichneGesamtsumme(p *gofpdf.Fpdf, tr func(string) string, r berichtRahmen)
 // Closure als zusätzliche Verschachtelungsebene, ein Auslagern nach innen hätte die
 // kognitive Komplexität also nicht gesenkt (Projekt-Erfahrung aus früheren
 // S3776-Refactorings).
-func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []berichtOrder, r berichtRahmen) {
+func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []repository.BerichtBestellung, r berichtRahmen) {
 	if len(orders) == 0 {
 		p.SetFont("Arial", "I", 10)
 		p.SetTextColor(120, 120, 120)
@@ -511,8 +412,8 @@ func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []bericht
 
 // bestellungenMitMittel filtert die Bestellungen eines Topfs; "" sind die
 // Alt-Bestellungen ohne eindeutige Zuordnung.
-func bestellungenMitMittel(orders []berichtOrder, mittel string) []berichtOrder {
-	aus := make([]berichtOrder, 0, len(orders))
+func bestellungenMitMittel(orders []repository.BerichtBestellung, mittel string) []repository.BerichtBestellung {
+	aus := make([]repository.BerichtBestellung, 0, len(orders))
 	for _, o := range orders {
 		if o.Mittel == mittel {
 			aus = append(aus, o)
@@ -522,7 +423,7 @@ func bestellungenMitMittel(orders []berichtOrder, mittel string) []berichtOrder 
 }
 
 // summiereBestellungen liefert Betrag und Exemplarzahl einer Gruppe.
-func summiereBestellungen(orders []berichtOrder) (betrag float64, exemplare int) {
+func summiereBestellungen(orders []repository.BerichtBestellung) (betrag float64, exemplare int) {
 	for _, o := range orders {
 		betrag += o.Gesamtbetrag
 		exemplare += o.AnzahlExemplare
@@ -544,7 +445,7 @@ func zeichneTopfKopf(p *gofpdf.Fpdf, tr func(string) string, mittel string) {
 
 // zeichneTopfSumme setzt die Abschlusszeile eines Topf-Blocks — die Zahl, die in die
 // Abrechnung dieses Topfs geht.
-func zeichneTopfSumme(p *gofpdf.Fpdf, tr func(string) string, mittel string, block []berichtOrder, mitPreisen bool) {
+func zeichneTopfSumme(p *gofpdf.Fpdf, tr func(string) string, mittel string, block []repository.BerichtBestellung, mitPreisen bool) {
 	summe, exemplare := summiereBestellungen(block)
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(225, 232, 245)
@@ -574,7 +475,7 @@ type bestellBerichtOpts struct {
 // Formatierungsfrage: Ohne gepflegte Preise summierte der Bericht durchweg Nullen und sah
 // dabei aus wie ein Ausgabennachweis. Ein Nachweis, der Null behauptet, ist schlimmer als
 // keiner — er wird geglaubt.
-func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, opts bestellBerichtOpts) ([]byte, error) {
+func generateBestellBerichtPDF(orders []repository.BerichtBestellung, schule pdf.SchuleInfo, opts bestellBerichtOpts) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)

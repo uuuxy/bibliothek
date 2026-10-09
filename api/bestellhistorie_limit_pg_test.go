@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/repository"
 )
 
 // Die Bestellhistorie ist gedeckelt — und ihre Kennzahlen sind es NICHT.
@@ -20,7 +21,7 @@ import (
 // dem übrigen Paket, und eine Erwartung wie „genau 6 Bestellungen" wäre grün, solange
 // dieser Test allein läuft, und rot in der vollen Suite.
 
-func holeHistorie(t *testing.T, srv *Server, query string) []BestellVerlaufResponse {
+func holeHistorie(t *testing.T, srv *Server, query string) []repository.BestellVerlaufEintrag {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/bestellhistorie"+query, nil)
 	rec := httptest.NewRecorder()
@@ -29,7 +30,7 @@ func holeHistorie(t *testing.T, srv *Server, query string) []BestellVerlaufRespo
 		t.Fatalf("Historie Status = %d, body: %s", rec.Code, rec.Body.String())
 	}
 
-	var orders []BestellVerlaufResponse
+	var orders []repository.BestellVerlaufEintrag
 	if err := json.Unmarshal(rec.Body.Bytes(), &orders); err != nil {
 		t.Fatalf("Historie lesen: %v", err)
 	}

@@ -51,7 +51,7 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 	anlegen(t, "Kreis", repository.MittelSchultraeger, 45.50, 5)
 	anlegen(t, "Alt", "", 10.00, 2)
 
-	historie := func(t *testing.T, filter string) ([]BestellVerlaufResponse, int) {
+	historie := func(t *testing.T, filter string) ([]repository.BestellVerlaufEintrag, int) {
 		t.Helper()
 		ziel := "/api/bestellhistorie"
 		if filter != "" {
@@ -62,7 +62,7 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			return nil, rec.Code
 		}
-		var liste []BestellVerlaufResponse
+		var liste []repository.BestellVerlaufEintrag
 		if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {
 			t.Fatalf("Antwort lesen: %v (%s)", err, rec.Body.String())
 		}

@@ -20,8 +20,8 @@ import (
 // Geprüft am entpackten PDF-Inhaltsstrom, nicht an einer Zwischenstruktur: Der Bericht
 // ist ein Blatt Papier, gegen das eine Rechnung geprüft wird.
 
-func berichtBestellung(mittel string, betrag float64, exemplare int, titel string) berichtOrder {
-	return berichtOrder{
+func berichtBestellung(mittel string, betrag float64, exemplare int, titel string) repository.BerichtBestellung {
+	return repository.BerichtBestellung{
 		ID:              "id-" + titel,
 		LieferantName:   "Testhändler",
 		Kundennummer:    "K-1",
@@ -29,12 +29,12 @@ func berichtBestellung(mittel string, betrag float64, exemplare int, titel strin
 		Gesamtbetrag:    betrag,
 		AnzahlExemplare: exemplare,
 		Mittel:          mittel,
-		Positionen:      []berichtPosition{{TitelName: titel, ISBN: "978", Menge: exemplare, Einzelpreis: betrag / float64(exemplare)}},
+		Positionen:      []repository.BerichtPosition{{TitelName: titel, ISBN: "978", Menge: exemplare, Einzelpreis: betrag / float64(exemplare)}},
 	}
 }
 
 func TestBestellberichtTrenntDieToepfeUndIhreSummen(t *testing.T) {
-	orders := []berichtOrder{
+	orders := []repository.BerichtBestellung{
 		berichtBestellung(repository.MittelLand, 120.00, 30, "Mathematik 7"),
 		berichtBestellung(repository.MittelLand, 80.00, 20, "Englisch 8"),
 		berichtBestellung(repository.MittelSchultraeger, 45.50, 5, "Die unendliche Geschichte"),
@@ -80,7 +80,7 @@ func TestBestellberichtTrenntDieToepfeUndIhreSummen(t *testing.T) {
 // Ein Bericht über einen einzigen Topf (Lieferantenabrechnung mit Filter) nennt den
 // anderen NICHT: Das Blatt wird gegen eine Rechnung dieses Topfs gehalten.
 func TestBestellberichtUeberEinenTopfNenntDenAnderenNicht(t *testing.T) {
-	orders := []berichtOrder{berichtBestellung(repository.MittelLand, 120.00, 30, "Mathematik 7")}
+	orders := []repository.BerichtBestellung{berichtBestellung(repository.MittelLand, 120.00, 30, "Mathematik 7")}
 
 	roh, err := generateBestellBerichtPDF(orders, pdf.SchuleInfo{Name: "Testschule"}, bestellBerichtOpts{
 		Titel:         "Lieferantenabrechnung",

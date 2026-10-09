@@ -6,17 +6,18 @@ import (
 	"time"
 
 	"bibliothek/pdf"
+	"bibliothek/repository"
 )
 
-func berichtTestdaten() []berichtOrder {
-	return []berichtOrder{
+func berichtTestdaten() []repository.BerichtBestellung {
+	return []repository.BerichtBestellung{
 		{
 			LieferantName:   "Cornelsen",
 			Kundennummer:    "C-88123",
 			Bestelldatum:    time.Date(2026, 3, 14, 0, 0, 0, 0, time.UTC),
 			Gesamtbetrag:    54.00,
 			AnzahlExemplare: 2,
-			Positionen: []berichtPosition{
+			Positionen: []repository.BerichtPosition{
 				{TitelName: "Alexander Gesamtausgabe", ISBN: "9783124912008", Menge: 2, Einzelpreis: 27.00},
 			},
 		},
@@ -26,7 +27,7 @@ func berichtTestdaten() []berichtOrder {
 			Bestelldatum:    time.Date(2026, 7, 2, 0, 0, 0, 0, time.UTC),
 			Gesamtbetrag:    0,
 			AnzahlExemplare: 4,
-			Positionen: []berichtPosition{
+			Positionen: []repository.BerichtPosition{
 				{TitelName: "Ein Titel ganz ohne erfassten Preis", ISBN: "", Menge: 4, Einzelpreis: 0},
 			},
 		},

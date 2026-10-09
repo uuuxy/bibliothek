@@ -66,7 +66,7 @@ func TestBestellberichtFiltertNachTopf(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			orders, _, err := srv.ladeBestellungen(ctx, von, bis, "", f.mittel)
+			orders, _, err := repository.LadeBerichtBestellungen(ctx, srv.DB.Pool, von, bis, "", f.mittel)
 			if err != nil {
 				t.Fatalf("Bestellungen lesen: %v", err)
 			}
@@ -90,11 +90,11 @@ func TestBestellberichtFiltertNachTopf(t *testing.T) {
 
 	// Die Alt-Bestellung ohne Zuordnung gehört in KEINEN der beiden gefilterten Berichte —
 	// sie wird nie geraten (Migration 109, Backfill).
-	fuerLand, _, err := srv.ladeBestellungen(ctx, von, bis, "", repository.MittelLand)
+	fuerLand, _, err := repository.LadeBerichtBestellungen(ctx, srv.DB.Pool, von, bis, "", repository.MittelLand)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fuerKreis, _, err := srv.ladeBestellungen(ctx, von, bis, "", repository.MittelSchultraeger)
+	fuerKreis, _, err := repository.LadeBerichtBestellungen(ctx, srv.DB.Pool, von, bis, "", repository.MittelSchultraeger)
 	if err != nil {
 		t.Fatal(err)
 	}
