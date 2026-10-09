@@ -80,19 +80,18 @@ func produktivDateien(t *testing.T) []string {
 // handlerMitSQL: Zahl der SQL-Anweisungen je Datei. Wer eine Abfrage nach repository/ verlegt,
 // senkt die Zahl; steht sie auf null, fällt die Zeile weg.
 var handlerMitSQL = map[string]int{
-	"ausleihe.go":                   5,
-	"bestellbestaetigung_public.go": 4,
-	"copy_admin.go":                 4,
-	"dsgvo_auskunft.go":             11,
-	"graduates.go":                  2,
-	"isbn_handler.go":               2,
-	"pdf.go":                        2,
-	"print.go":                      6,
-	"student_create.go":             7,
-	"student_deleted.go":            3,
-	"student_lock.go":               2,
-	"student_promotion.go":          12,
-	"student_update.go":             11,
+	"ausleihe.go":          5,
+	"copy_admin.go":        4,
+	"dsgvo_auskunft.go":    11,
+	"graduates.go":         2,
+	"isbn_handler.go":      2,
+	"pdf.go":               2,
+	"print.go":             6,
+	"student_create.go":    7,
+	"student_deleted.go":   3,
+	"student_lock.go":      2,
+	"student_promotion.go": 12,
+	"student_update.go":    11,
 }
 
 func TestHandlerFormulierenKeinNeuesSQL(t *testing.T) {

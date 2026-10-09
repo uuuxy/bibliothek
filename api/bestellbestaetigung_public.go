@@ -73,13 +73,7 @@ func (s *Server) bestellungPerToken(ctx context.Context, token string) (string, 
 	if token == "" {
 		return "", pgx.ErrNoRows
 	}
-	var id string
-	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT id FROM bestellungen_verlauf
-		WHERE bestaetigungs_token_hash = $1
-		  AND (token_gueltig_bis IS NULL OR token_gueltig_bis > now())
-	`, hashBestaetigungsToken(token)).Scan(&id)
-	return id, err
+	return repository.BestellungZuTokenHash(ctx, s.DB.Pool, hashBestaetigungsToken(token))
 }
 
 // sendeTokenFehler bildet jeden Zugriffsfehler auf 404 ab — abgelaufen, zurückgezogen
@@ -114,44 +108,31 @@ func (s *Server) OeffentlicheBestellungHandler() http.HandlerFunc {
 
 // ladeOeffentlicheBestellung baut die Ansicht aus Kopf, Positionen und Schulname.
 func (s *Server) ladeOeffentlicheBestellung(ctx context.Context, bestellungID string) (*OeffentlicheBestellung, error) {
-	var a OeffentlicheBestellung
-	var mittel string
-	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT b.lieferant_name, b.kundennummer, b.bestelldatum, b.anzahl_exemplare, b.bestaetigt_am,
-		       b.token_gueltig_bis,
-		       EXISTS (SELECT 1 FROM bestellungen_positionen p
-		                WHERE p.bestellung_id = b.id AND p.mit_vorab_barcode),
-		       COALESCE(b.mittel, '')
-		FROM bestellungen_verlauf b WHERE b.id = $1
-	`, bestellungID).Scan(&a.LieferantName, &a.Kundennummer, &a.Bestelldatum, &a.AnzahlExemplare,
-		&a.BestaetigtAm, &a.LinkGueltigBis, &a.EtikettenVorhanden, &mittel)
+	kopf, err := repository.LadeOeffentlichenBestellkopf(ctx, s.DB.Pool, bestellungID)
 	if err != nil {
 		return nil, err
 	}
-	if t, err := mittelTexteFuer(mittel); err == nil {
+	a := OeffentlicheBestellung{
+		LieferantName:      kopf.LieferantName,
+		Kundennummer:       kopf.Kundennummer,
+		Bestelldatum:       kopf.Bestelldatum,
+		AnzahlExemplare:    kopf.AnzahlExemplare,
+		BestaetigtAm:       kopf.BestaetigtAm,
+		LinkGueltigBis:     kopf.LinkGueltigBis,
+		EtikettenVorhanden: kopf.EtikettenVorhanden,
+	}
+	if t, err := mittelTexteFuer(kopf.Mittel); err == nil {
 		a.Mittel = t.Kurz
 	}
-	a.GrossesEtikett = grossesLernmittelEtikettFuer(mittel)
+	a.GrossesEtikett = grossesLernmittelEtikettFuer(kopf.Mittel)
 
-	rows, err := s.DB.Pool.Query(ctx, `
-		SELECT titel_name, isbn, menge FROM bestellungen_positionen
-		WHERE bestellung_id = $1 ORDER BY titel_name
-	`, bestellungID)
+	positionen, err := repository.ListeOeffentlichePositionen(ctx, s.DB.Pool, bestellungID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	a.Positionen = []OeffentlichePosition{}
-	for rows.Next() {
-		var p OeffentlichePosition
-		if err := rows.Scan(&p.TitelName, &p.ISBN, &p.Menge); err != nil {
-			return nil, err
-		}
-		a.Positionen = append(a.Positionen, p)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
+	a.Positionen = make([]OeffentlichePosition, 0, len(positionen))
+	for _, pos := range positionen {
+		a.Positionen = append(a.Positionen, OeffentlichePosition(pos))
 	}
 
 	// Der Schulname sagt dem Lieferanten, wessen Bestellung er vor sich hat — bei

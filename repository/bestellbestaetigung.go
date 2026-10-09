@@ -57,3 +57,74 @@ func ErneuereBestaetigungsToken(ctx context.Context, db DBQueryer, bestellungID,
 	`, hash, tage, bestellungID).Scan(&gueltigBis)
 	return gueltigBis, err
 }
+
+// BestellungZuTokenHash liefert die Bestellung, zu der der Hash eines gültigen
+// Bestätigungs-Links gehört. Unbekannt und abgelaufen sind derselbe Fall: pgx.ErrNoRows.
+func BestellungZuTokenHash(ctx context.Context, db DBQueryer, tokenHash string) (string, error) {
+	var id string
+	err := db.QueryRow(ctx, `
+		SELECT id FROM bestellungen_verlauf
+		WHERE bestaetigungs_token_hash = $1
+		  AND (token_gueltig_bis IS NULL OR token_gueltig_bis > now())
+	`, tokenHash).Scan(&id)
+	return id, err
+}
+
+// OeffentlicherBestellkopf sind die Angaben einer Bestellung für die Seite hinter dem
+// Bestätigungs-Link: ohne Preise. EtikettenVorhanden sagt, ob eine Position mit Vorab-Barcode
+// bestellt wurde; Mittel ist leer bei einer Alt-Bestellung ohne Zuordnung.
+type OeffentlicherBestellkopf struct {
+	LieferantName      string
+	Kundennummer       string
+	Bestelldatum       time.Time
+	AnzahlExemplare    int
+	BestaetigtAm       *time.Time
+	LinkGueltigBis     *time.Time
+	EtikettenVorhanden bool
+	Mittel             string
+}
+
+// LadeOeffentlichenBestellkopf liest den Kopf einer Bestellung für die Seite hinter dem Link;
+// pgx.ErrNoRows, wenn es die Bestellung nicht gibt.
+func LadeOeffentlichenBestellkopf(ctx context.Context, db DBQueryer, bestellungID string) (OeffentlicherBestellkopf, error) {
+	var k OeffentlicherBestellkopf
+	err := db.QueryRow(ctx, `
+		SELECT b.lieferant_name, b.kundennummer, b.bestelldatum, b.anzahl_exemplare, b.bestaetigt_am,
+		       b.token_gueltig_bis,
+		       EXISTS (SELECT 1 FROM bestellungen_positionen p
+		                WHERE p.bestellung_id = b.id AND p.mit_vorab_barcode),
+		       COALESCE(b.mittel, '')
+		FROM bestellungen_verlauf b WHERE b.id = $1
+	`, bestellungID).Scan(&k.LieferantName, &k.Kundennummer, &k.Bestelldatum, &k.AnzahlExemplare,
+		&k.BestaetigtAm, &k.LinkGueltigBis, &k.EtikettenVorhanden, &k.Mittel)
+	return k, err
+}
+
+// OeffentlichePosition ist eine Bestellzeile ohne Preis.
+type OeffentlichePosition struct {
+	TitelName string
+	ISBN      string
+	Menge     int
+}
+
+// ListeOeffentlichePositionen liefert die Positionen einer Bestellung nach Titel geordnet.
+func ListeOeffentlichePositionen(ctx context.Context, db DBQueryer, bestellungID string) ([]OeffentlichePosition, error) {
+	rows, err := db.Query(ctx, `
+		SELECT titel_name, isbn, menge FROM bestellungen_positionen
+		WHERE bestellung_id = $1 ORDER BY titel_name
+	`, bestellungID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	positionen := []OeffentlichePosition{}
+	for rows.Next() {
+		var p OeffentlichePosition
+		if err := rows.Scan(&p.TitelName, &p.ISBN, &p.Menge); err != nil {
+			return nil, err
+		}
+		positionen = append(positionen, p)
+	}
+	return positionen, rows.Err()
+}
