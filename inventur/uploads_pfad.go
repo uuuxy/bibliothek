@@ -17,7 +17,7 @@ import (
 // Verzeichnis: Ein Name, der herausführt, scheitert am Kernel, nicht an einer
 // Zeichenkettenprüfung.
 //
-// Der Rest des Projekts arbeitet bereits so (api/image_caching.go, api/mahnwesen_pdf.go,
+// Der Rest des Projekts arbeitet bereits so (api/image_caching.go, pkg/coverdatei,
 // api/router.go, cmd/migrate-fotos). Die Inventur war die letzte Ausnahme.
 
 const uploadsVerzeichnis = "uploads"

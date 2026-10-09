@@ -2,11 +2,11 @@
 // die PDF-Erzeuger einbetten können.
 //
 // Warum ein eigenes Paket: Cover liegen als WebP unter „uploads/" (inventur/
-// cover_storage.go), aber weder gofpdf noch maroto kennen WebP. Der Weg dorthin —
+// cover_storage.go), aber weder gofpdf noch maroto kennen WebP. Den Weg dorthin —
 // Pfad prüfen, Datei innerhalb des Wurzelverzeichnisses öffnen, nach JPEG wandeln —
-// stand bis zum 03.09.2026 nur im Mahnwesen (api/mahnwesen_pdf.go). Der Schulbuch-
-// Export braucht denselben Weg; eine zweite Fassung wäre die Gelegenheit gewesen,
-// die Pfadprüfung schwächer nachzubauen.
+// brauchen die Mahnliste (pdf/mahnliste.go) und der Schulbuch-Export
+// (inventur/lernmittel_pdf.go); eine zweite Fassung wäre die Gelegenheit, die
+// Pfadprüfung schwächer nachzubauen.
 package coverdatei
 
 import (

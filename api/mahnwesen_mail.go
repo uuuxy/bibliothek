@@ -3,25 +3,47 @@ package api
 import (
 	"fmt"
 
+	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
-// Bausteine der Klassen-Mahnliste per E-Mail: Statistik und Mail-Aufbau. Benutzt vom
-// Massenversand (mahnwesen_bulk_mail.go), der je gewählte Klasse eine Liste an die
-// Klassenleitung schickt.
-//
-// Bis zum 18.09.2026 stand hier auch der Einzelversand POST /api/mahnwesen/senden — eine
-// Klasse, eine frei eingetippte Adresse. Sein Knopf in der Mahnwesen-Tabelle war am
-// 21.06.2026 in einem Refactoring verschwunden; seitdem war die Route ohne Aufrufer und
-// die Fähigkeit doppelt, denn der Massenversand kann dasselbe (Klassenauswahl plus
-// abweichende Adresse). Eine Adresse ohne Aufrufer ist Angriffsfläche und Pflege für
-// nichts; sie ist mit Handler, Dialog und Audit-Test (EINZEL_MAHN_MAIL) entfernt.
+// Bausteine der Mail mit der Mahnliste einer Klasse: Blatt, Statistik und Aufbau der Mail. Der
+// Massenversand (mahnwesen_bulk_mail.go) schickt je gewählte Klasse eine Liste an die
+// Klassenleitung.
 
 // mahnwesenSendenRequest: Klasse und Zieladresse einer Klassen-Mahnliste.
 type mahnwesenSendenRequest struct {
 	Klasse string `json:"klasse"`
 	Email  string `json:"email"`
+}
+
+// mahnlisteSeiten füllt die Eingabe der Mahnliste: je Schüler eine Seite, in der Reihenfolge
+// der Gruppen. Klassenleitung und Gruppe stehen nicht auf dem Blatt.
+func mahnlisteSeiten(klassen []repository.MahnwesenKlasse) []pdf.MahnlisteSchueler {
+	var seiten []pdf.MahnlisteSchueler
+	for _, kl := range klassen {
+		for _, sch := range kl.Schueler {
+			medien := make([]pdf.MahnlisteMedium, 0, len(sch.Medien))
+			for _, med := range sch.Medien {
+				medien = append(medien, pdf.MahnlisteMedium{
+					Titel:            med.Titel,
+					Autor:            med.Autor,
+					Barcode:          med.Barcode,
+					CoverURL:         med.CoverURL,
+					FaelligAm:        med.FaelligAm,
+					TageUeberfaellig: med.TageUeberfaellig,
+				})
+			}
+			seiten = append(seiten, pdf.MahnlisteSchueler{Name: sch.Name, Klasse: sch.Klasse, Medien: medien})
+		}
+	}
+	return seiten
+}
+
+// erzeugeMahnliste setzt die Mahnliste der Gruppen als PDF.
+func erzeugeMahnliste(klassen []repository.MahnwesenKlasse) ([]byte, error) {
+	return pdf.GenerateMahnlistePDF(mahnlisteSeiten(klassen))
 }
 
 func zaehleMahnStatistik(klassen []repository.MahnwesenKlasse) (totalSchueler, totalMedien int) {

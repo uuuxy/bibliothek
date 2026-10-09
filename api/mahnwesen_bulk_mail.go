@@ -118,9 +118,9 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 		})
 
 		// 7. Je Klasse eine eigene Mahnliste versenden.
-		//    generateMahnPDF/SendEmail werden injiziert, damit die Skip- und
+		//    erzeugeMahnliste/SendEmail werden injiziert, damit die Skip- und
 		//    Adressierungslogik ohne echten PDF-/Mailversand testbar bleibt.
-		erg := versendeKlassenMahnungen(gewaehlt, generateMahnPDF, SendEmail)
+		erg := versendeKlassenMahnungen(gewaehlt, erzeugeMahnliste, SendEmail)
 
 		// 8. Ergebnis protokollieren.
 		s.logKlassenVersandAudit(r, "BULK_OVERDUE_MAIL", klassenVersandAudit{
@@ -326,7 +326,7 @@ type versandErgebnis struct {
 // Mailserver-Fehler (ErrSMTPVersand) bricht ab: Das Relay ist weg, jede weitere Klasse
 // hinge nur bis zur Frist; die Restlichen zählen als fehlgeschlagen.
 //
-// generatePDF und sendMail sind injiziert (Produktion: generateMahnPDF/SendEmail),
+// generatePDF und sendMail sind injiziert (Produktion: erzeugeMahnliste/SendEmail),
 // damit die Skip- und Adressierungslogik ohne echten PDF-/Mailversand testbar ist.
 func versendeKlassenMahnungen(
 	klassen []repository.MahnwesenKlasse,

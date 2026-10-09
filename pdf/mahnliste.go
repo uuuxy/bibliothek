@@ -1,4 +1,4 @@
-package api
+package pdf
 
 import (
 	"bytes"
@@ -8,41 +8,47 @@ import (
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/pkg/strichcode"
-	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
 )
 
-// coverBox bündelt die Abmessungen und Position für das Einbetten eines Covers.
+// MahnlisteMedium ist eine Zeile der Mahnliste: ein Buch über der Frist.
+type MahnlisteMedium struct {
+	Titel string
+	Autor string
+	// Barcode steht als Bild und als Nummer in der Zeile, damit das Buch bei der Rückgabe vom
+	// Blatt gescannt werden kann.
+	Barcode string
+	// CoverURL ist die Adresse des Covers am Titel; gedruckt wird nur ein lokal gespeichertes Bild.
+	CoverURL string
+	// FaelligAm ist der Tag der Frist als fertiger Text.
+	FaelligAm        string
+	TageUeberfaellig int
+}
+
+// MahnlisteSchueler ist eine Seite der Mahnliste: ein Schüler mit seinen Büchern über der Frist.
+type MahnlisteSchueler struct {
+	Name   string
+	Klasse string
+	Medien []MahnlisteMedium
+}
+
+// coverBox nennt Ort und Maße eines Covers auf dem Blatt.
 type coverBox struct {
 	x, y, breite, hoehe float64
 }
 
-// bindeCoverEin bettet das Coverbild eines Mediums an der angegebenen Position ein.
-//
-// Der Umweg über JPEG ist notwendig, weil gofpdf den Bildtyp an der Dateiendung erkennt
-// und nur JPG/PNG/GIF beherrscht — unsere Cover liegen aber als WebP auf der Platte. Ein
-// direkt übergebener .webp-Pfad setzte den internen Fehlerzustand des Fpdf-Objekts, und
-// der ist KLEBRIG: er wird bei jedem weiteren Aufruf durchgereicht und schlägt am Ende in
-// pdf.Output() durch. Ein einziges WebP-Cover ließ damit die komplette Mahnliste mit
-// HTTP 500 scheitern, nicht etwa nur die eine Zeile.
-//
-// Pfadprüfung und Wandlung liegen seit dem 03.09.2026 in pkg/coverdatei: Der
-// Schulbuch-Export braucht denselben Weg, und die Prüfung gegen
-// "/uploads/../../etc/passwd" darf es nicht zweimal geben. Beim Rasterdurchgang desselben
-// Tages fiel auf, dass die Auslagerung diese Fassung zunächst stehen ließ.
-//
-// Alle Fehler bleiben still: Ein unlesbares, defektes oder überdimensioniertes Cover darf
-// das Dokument nie als Ganzes kosten. Es fehlt dann — die Rahmenzelle zeichnet der
-// Aufrufer ohnehin immer.
+// bindeCoverEin setzt das lokal gespeicherte Cover in die box, als JPEG, weil gofpdf kein WebP
+// liest (pkg/coverdatei). Fehler bleiben still: Ein Fehler am Dokument bleibt bis Output stehen,
+// ein unlesbares Cover kostete sonst die ganze Liste.
 func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, box coverBox) {
 	opt := gofpdf.ImageOptions{ImageType: "JPG"}
 	pfad := coverdatei.Pfad(coverURL)
 	if pfad == "" {
 		return
 	}
-	// gofpdf hält registrierte Bilder unter ihrem Namen vor. Mehrfach überfällige
-	// Exemplare desselben Titels lesen und dekodieren ihr Cover so nur einmal.
+	// gofpdf hält ein Bild unter seinem Namen vor: Mehrere Exemplare desselben Titels lesen
+	// und wandeln ihr Cover nur einmal.
 	if pdf.GetImageInfo(pfad) == nil {
 		jpg, _, ok := coverdatei.AlsJPEG(coverURL)
 		if !ok {
@@ -53,27 +59,23 @@ func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, box coverBox) {
 	pdf.ImageOptions(pfad, box.x, box.y, box.breite, box.hoehe, false, opt, 0, "")
 }
 
-// zeichneMahnMedienZeile rendert eine Tabellenzeile für ein überfälliges Medium
-// (inkl. lokalem Cover, gekürztem Titel/Autor und Rot-Hervorhebung ab 14 Tagen).
-func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med repository.UeberfaelligesMedium, rowHeight float64) {
+// zeichneMahnMedienZeile setzt die Zeile eines Buchs: Cover, Titel, Autor, Barcode, Frist und
+// die Tage über der Frist, ab 15 Tagen in Rot.
+func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med MahnlisteMedium, rowHeight float64) {
 	startY := pdf.GetY()
 
 	bindeCoverEin(pdf, med.CoverURL, coverBox{x: 18, y: startY + 0.5, breite: 7, hoehe: rowHeight - 1})
 
-	// Cover cell border (always draw border)
+	// Den Rahmen der Cover-Zelle gibt es auch ohne Bild.
 	pdf.SetXY(18, startY)
 	pdf.CellFormat(8, rowHeight, "", "1", 0, "", false, 0, "")
 
-	// Title cell
 	titleCell := pdfzeichen.KuerzeAufZeichen(med.Titel, 38)
 	pdf.CellFormat(52, rowHeight, tr(titleCell), "1", 0, "L", false, 0, "")
 
-	// Author
 	autorCell := pdfzeichen.KuerzeAufZeichen(med.Autor, 19)
 	pdf.CellFormat(26, rowHeight, tr(autorCell), "1", 0, "L", false, 0, "")
 
-	// Barcode-Zelle: Rahmen zeichnen, dann Barcode-Bild + darunter die Nummer einbetten —
-	// damit das Buch bei der Rückgabe direkt vom Zettel gescannt werden kann.
 	bcX := pdf.GetX()
 	pdf.CellFormat(40, rowHeight, "", "1", 0, "", false, 0, "")
 	if med.Barcode != "" {
@@ -89,11 +91,10 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med reposi
 		pdf.SetFont("Arial", "", 8)
 	}
 
-	// Zurück in die Fällig-Spalte (Barcode-Overlay hat die Position verschoben).
+	// Die Nummer unter dem Strichcode hat die Position verschoben.
 	pdf.SetXY(144, startY)
 	pdf.CellFormat(22, rowHeight, tr(med.FaelligAm), "1", 0, "C", false, 0, "")
 
-	// Days overdue (highlighted red if > 14)
 	if med.TageUeberfaellig > 14 {
 		pdf.SetTextColor(200, 30, 30)
 		pdf.SetFont("Arial", "B", 8)
@@ -103,10 +104,9 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med reposi
 	pdf.SetFont("Arial", "", 8)
 }
 
-// zeichneMahnSeite rendert die komplette Mahnseite eines Schülers (Kopf,
-// Infobox, Medien-Tabelle, Fußzeile).
-func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch repository.UeberfaelligerSchueler) {
-	// ─── Page header ─────────────────────────────────────────────
+// zeichneMahnSeite setzt die Seite eines Schülers: Kopf, Name und Klasse, die Tabelle seiner
+// Bücher und die Fußzeile.
+func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch MahnlisteSchueler) {
 	pdf.SetFont("Arial", "B", 14)
 	pdf.Cell(0, 9, tr("Mahnung – Schulbibliothek"))
 	pdf.Ln(7)
@@ -117,7 +117,6 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch repository.U
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(10)
 
-	// ─── Student info box ─────────────────────────────────────────
 	pdf.SetFont("Arial", "B", 11)
 	pdf.SetFillColor(240, 245, 255)
 	pdf.SetDrawColor(180, 195, 230)
@@ -144,24 +143,21 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch repository.U
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(8)
 
-	// ─── Table header ─────────────────────────────────────────────
 	pdf.SetFont("Arial", "B", 8)
 	pdf.SetFillColor(220, 225, 240)
-	pdf.CellFormat(8, 8, "", "1", 0, "C", true, 0, "") // cover placeholder col
+	pdf.CellFormat(8, 8, "", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(52, 8, tr("Buchtitel"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(26, 8, tr("Autor"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(40, 8, tr("Barcode"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(22, 8, tr("Fällig"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(26, 8, tr("Tage überfällig"), "1", 1, "C", true, 0, "")
 
-	// ─── Table rows ───────────────────────────────────────────────
 	pdf.SetFont("Arial", "", 8)
 	rowHeight := 18.0
 	for _, med := range sch.Medien {
 		zeichneMahnMedienZeile(pdf, tr, med, rowHeight)
 	}
 
-	// ─── Footer line ──────────────────────────────────────────────
 	pdf.Ln(10)
 	pdf.SetFont("Arial", "I", 8)
 	pdf.SetTextColor(130, 130, 130)
@@ -169,26 +165,19 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch repository.U
 	pdf.SetTextColor(0, 0, 0)
 }
 
-// generateMahnPDF creates an A4 PDF reminder list.
-// Layout: exactly one page per student (page break after every student).
-// Each page shows: student name, class, and a table of their overdue media with covers.
-func generateMahnPDF(klassen []repository.MahnwesenKlasse) ([]byte, error) {
+// GenerateMahnlistePDF setzt die Mahnliste auf A4, je Schüler eine Seite. Ohne Schüler trägt
+// das Blatt einen Satz, der das sagt.
+func GenerateMahnlistePDF(schueler []MahnlisteSchueler) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(18, 18, 18)
 	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
-	printedFirst := false
-	for _, kl := range klassen {
-		for _, sch := range kl.Schueler {
-			// Every student gets their own page
-			pdf.AddPage()
-			printedFirst = true
-			zeichneMahnSeite(pdf, tr, sch)
-		}
+	for _, sch := range schueler {
+		pdf.AddPage()
+		zeichneMahnSeite(pdf, tr, sch)
 	}
 
-	if !printedFirst {
-		// Produce an empty page if there are no overdue items
+	if len(schueler) == 0 {
 		pdf.AddPage()
 		pdf.SetFont("Arial", "", 12)
 		pdf.SetTextColor(130, 130, 130)
@@ -202,7 +191,7 @@ func generateMahnPDF(klassen []repository.MahnwesenKlasse) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// pluralMedium returns singular or plural German word for "medium".
+// pluralMedium nennt das Wort zur Zahl der Bücher.
 func pluralMedium(n int) string {
 	if n == 1 {
 		return "Medium"

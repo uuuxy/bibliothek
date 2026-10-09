@@ -344,20 +344,19 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
-  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 27 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 24.163 Zeilen in 151 Dateien (am Anfang 30.785 in 168).
+  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 26 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 23.974 Zeilen in 150 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`, der Strichcode in `pkg/strichcode`; in `pdf/` stehen
-  der Bescheid (`bescheid.go`), die Etiketten mit ihren Bogenformaten (`etikett_*.go`) und die
-  Bestandsbücher (`abgangsbuch.go`, `zugangsbuch.go`). Offen: der Aufbau der übrigen PDFs und der
-  Rest der 27. Was ein Erzeuger aus `repository/` liest, bekommt er in `pdf/` als eigenen Typ; die
-  Tür füllt ihn (ARCHITEKTUR 5.2.2). Je Thema ein Commit; die Tests der Türen bleiben stehen und
-  belegen, dass sich nichts ändert. Gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler, was
-  die sechs übrigen PDF-Dateien brauchen: Die Mahnliste (`mahnwesen_pdf.go`) braucht keinen Namen
-  aus `api/` und nimmt drei Typen aus `repository/`. Der Mahnbrief (`reports_pdf.go`) nimmt zwei
-  Typen aus `repository/`; in derselben Datei stehen zwei Methoden der Tür, die die Vorlage laden,
-  die Datei ist also zu teilen. Das Bestellanschreiben (`order_pdf.go`) braucht die Texte zum Topf
+  der Bescheid (`bescheid.go`), die Etiketten mit ihren Bogenformaten (`etikett_*.go`), die
+  Bestandsbücher (`abgangsbuch.go`, `zugangsbuch.go`) und die Mahnliste (`mahnliste.go`). Offen:
+  der Aufbau der übrigen PDFs und der Rest der 26. Was ein Erzeuger aus `repository/` liest,
+  bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2). Je Thema ein
+  Commit; die Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Gemessen am
+  09.10.2026 mit einem Probe-Umzug am Compiler, was die fünf übrigen PDF-Dateien brauchen: Der
+  Mahnbrief (`reports_pdf.go`) nimmt zwei Typen aus `repository/`; in derselben Datei stehen zwei
+  Methoden der Tür, die die Vorlage laden, die Datei ist also zu teilen. Das Bestellanschreiben (`order_pdf.go`) braucht die Texte zum Topf
   (`mittelTexteFuer`); die Typen des Druckauftrags und die Barcode-Liste in derselben Datei bleiben
   in `api/`. `pdf_service.go` stellt die Anlagen der Bestellmail zusammen und verschickt sie; das
   ist kein Erzeuger und hängt an 15 Namen aus `api/`. Die Auskunft (`dsgvo_pdf_konto.go`,

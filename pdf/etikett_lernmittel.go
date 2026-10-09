@@ -146,7 +146,7 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item Buc
 
 // zeichneLernmittelTabelle rendert die Ausleihhistorie-Tabelle (Kopfzeile + leere
 // Datenzeilen) ab der übergebenen Ecke — dieselbe Border-Zellen-Technik wie in
-// api/mahnwesen_pdf.go und api/order_pdf.go (GenerateOrderSummaryPDF).
+// mahnliste.go und api/order_pdf.go (GenerateOrderSummaryPDF).
 //
 // x wird durchgereicht und nicht mehr fest auf 10 gesetzt: Seit vier Etiketten auf einer
 // Seite stehen, liegen die beiden rechten Felder bei x = 115. Ein festes SetX(10) hätte

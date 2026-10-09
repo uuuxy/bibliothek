@@ -69,6 +69,7 @@ func TestPfadNimmtNurCoverInnerhalbDerWurzel(t *testing.T) {
 		{"ist ein Verzeichnis", "/uploads/ordner", ""},
 		{"Ausbruch nach oben", "/uploads/../geheim.txt", ""},
 		{"Ausbruch mit zwei Stufen", "/uploads/../../etc/passwd", ""},
+		{"Ausbruch über ein Unterverzeichnis", "/uploads/unter/../../geheim.txt", ""},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
