@@ -87,3 +87,69 @@ func TestProcessOrder_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
 		t.Errorf("ohne gültigen Topf entstanden %d Bestellungen und %d Exemplare", bestellungen, exemplare)
 	}
 }
+
+// Jede Spalte einer Position trägt ihr Feld: Titel und ISBN als Abschrift, Menge, Einzelpreis
+// und die Angabe zum Vorab-Barcode. Die Anweisung reiht die Werte nach ihrer Stelle auf;
+// deshalb sind sie je Feld und je Position verschieden.
+func TestProcessOrder_JedePositionStehtInIhrenSpalten(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
+	lieferant := haendler(t, pool, "Spalten", false)
+	erster := titelMitMeldebestand(t, pool, "LMF-Spalte Eins", 0)
+	zweiter := titelMitMeldebestand(t, pool, "LMF-Spalte Zwei", 0)
+	for titel, isbn := range map[string]string{erster: "9783161484100", zweiter: "9780306406157"} {
+		if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET isbn = $2 WHERE id = $1`, titel, isbn); err != nil {
+			t.Fatalf("ISBN setzen: %v", err)
+		}
+	}
+
+	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
+		Mittel: mitteltopf.Land, SupplierID: lieferant,
+		Items: []service.BestellAuftragPosition{
+			{TitelID: erster, Menge: 3, Preis: 10.5, GenerateBarcodes: true},
+			{TitelID: zweiter, Menge: 2, Preis: 4.25, GenerateBarcodes: false},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Bestellung: %v", err)
+	}
+
+	type position struct {
+		TitelID, TitelName, ISBN string
+		Menge                    int
+		Einzelpreis              float64
+		MitVorabBarcode          bool
+	}
+	zeilen, err := pool.Query(ctx, `
+		SELECT titel_id::text, titel_name, isbn, menge, einzelpreis::float8, mit_vorab_barcode
+		FROM bestellungen_positionen WHERE bestellung_id = $1 ORDER BY titel_name`, res.BestellungID)
+	if err != nil {
+		t.Fatalf("Positionen lesen: %v", err)
+	}
+	defer zeilen.Close()
+	var ist []position
+	for zeilen.Next() {
+		var p position
+		if err := zeilen.Scan(&p.TitelID, &p.TitelName, &p.ISBN, &p.Menge, &p.Einzelpreis, &p.MitVorabBarcode); err != nil {
+			t.Fatalf("Position lesen: %v", err)
+		}
+		ist = append(ist, p)
+	}
+	if err := zeilen.Err(); err != nil {
+		t.Fatalf("Positionen lesen: %v", err)
+	}
+	will := []position{
+		{TitelID: erster, TitelName: "LMF-Spalte Eins", ISBN: "9783161484100", Menge: 3, Einzelpreis: 10.5, MitVorabBarcode: true},
+		{TitelID: zweiter, TitelName: "LMF-Spalte Zwei", ISBN: "9780306406157", Menge: 2, Einzelpreis: 4.25, MitVorabBarcode: false},
+	}
+	if len(ist) != len(will) {
+		t.Fatalf("%d Positionen gelesen, erwartet %d: %+v", len(ist), len(will), ist)
+	}
+	for i := range will {
+		if ist[i] != will[i] {
+			t.Errorf("Position %d: %+v, erwartet %+v", i+1, ist[i], will[i])
+		}
+	}
+}

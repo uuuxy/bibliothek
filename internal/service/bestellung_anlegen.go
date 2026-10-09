@@ -118,23 +118,10 @@ var (
 	ErrMengeUngueltig     = errors.New("die Menge muss zwischen 1 und 200 liegen")
 )
 
-type bestellungPosition struct {
-	titelID   string
-	titelName string
-	isbn      string
-	menge     int
-	preis     float64
-	// mitVorabBarcode hält fest, ob diese Position auf dem Barcodebogen der Bestellmail stand.
-	// Ohne die Angabe könnte die Etikettenseite des Lieferanten-Links nicht dieselbe Auswahl
-	// drucken wie der Mailanhang: Sie druckte auch Exemplare, die ohne Vorab-Etikett bestellt
-	// wurden.
-	mitVorabBarcode bool
-}
-
 // bestellItemResult bündelt die aus einer einzelnen Bestellposition erzeugten Daten.
 type bestellItemResult struct {
 	summary  BestellterTitel
-	position bestellungPosition
+	position repository.BestellpositionNeu
 	copies   []repository.BookCopyInsert
 	labels   []BestellEtikett
 	betrag   float64
@@ -221,7 +208,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req BestellAuftrag) (*O
 type bestellPosten struct {
 	labels       []BestellEtikett
 	summary      []BestellterTitel
-	positionen   []bestellungPosition
+	positionen   []repository.BestellpositionNeu
 	copies       []repository.BookCopyInsert
 	gesamtbetrag float64
 	menge        int
@@ -250,7 +237,7 @@ func (s *OrderService) verarbeiteBestellItems(ctx context.Context, tx pgx.Tx, re
 		}
 		posten.labels = append(posten.labels, res.labels...)
 		posten.gesamtbetrag += res.betrag
-		posten.menge += res.position.menge
+		posten.menge += res.position.Menge
 	}
 	return posten, nil
 }
@@ -264,7 +251,10 @@ func (s *OrderService) schreibeExemplareUndPositionen(ctx context.Context, tx pg
 	if err := s.bookRepo.BulkInsertCopiesTx(ctx, tx, posten.copies); err != nil {
 		return fmt.Errorf("bulk insert error: %w", err)
 	}
-	return s.insertBestellpositionen(ctx, tx, bestellungID, posten.positionen)
+	if err := repository.SchreibeBestellpositionen(ctx, tx, bestellungID, posten.positionen); err != nil {
+		return fmt.Errorf("position bulk insert: %w", err)
+	}
+	return nil
 }
 
 // verarbeiteBestellItem prüft eine Bestellposition, lädt den Titel, reserviert die Barcodes und
@@ -292,13 +282,13 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 			Verlag: title.Verlag,
 			Menge:  item.Menge,
 		},
-		position: bestellungPosition{
-			titelID:         item.TitelID,
-			titelName:       title.Titel,
-			isbn:            title.ISBN,
-			menge:           item.Menge,
-			preis:           item.Preis,
-			mitVorabBarcode: item.GenerateBarcodes,
+		position: repository.BestellpositionNeu{
+			TitelID:         item.TitelID,
+			TitelName:       title.Titel,
+			ISBN:            title.ISBN,
+			Menge:           item.Menge,
+			Einzelpreis:     item.Preis,
+			MitVorabBarcode: item.GenerateBarcodes,
 		},
 		betrag: float64(item.Menge) * item.Preis,
 	}
@@ -412,29 +402,4 @@ func (s *OrderService) ladeBestehendeBestellung(ctx context.Context, idempotenzS
 		return nil, fmt.Errorf("bestehende bestellung laden: %w", err)
 	}
 	return &res, nil
-}
-
-// insertBestellpositionen schreibt alle Positionen des Bestellkopfs in einem Zug.
-func (s *OrderService) insertBestellpositionen(ctx context.Context, tx pgx.Tx, bestellungID string, positionen []bestellungPosition) error {
-	if len(positionen) == 0 {
-		return nil
-	}
-
-	copyRows := make([][]any, 0, len(positionen))
-	for _, pos := range positionen {
-		copyRows = append(copyRows, []any{
-			bestellungID, pos.titelID, pos.titelName, pos.isbn, pos.menge, pos.preis, pos.mitVorabBarcode,
-		})
-	}
-
-	if _, err := tx.CopyFrom(
-		ctx,
-		pgx.Identifier{"bestellungen_positionen"},
-		[]string{"bestellung_id", "titel_id", "titel_name", "isbn", "menge", "einzelpreis", "mit_vorab_barcode"},
-		pgx.CopyFromRows(copyRows),
-	); err != nil {
-		return fmt.Errorf("position bulk insert: %w", err)
-	}
-
-	return nil
 }

@@ -53,3 +53,37 @@ func BestellungZuIdempotenzSchluessel(ctx context.Context, db DBQueryer, schlues
 		schluessel).Scan(&id, &lieferantName, &anzahlExemplare)
 	return id, lieferantName, anzahlExemplare, err
 }
+
+// BestellpositionNeu ist eine Position einer neuen Bestellung. TitelName und ISBN stehen als
+// Abschrift an der Position, damit die Bestellung lesbar bleibt, wenn der Titel gelöscht ist.
+// MitVorabBarcode hält fest, ob die Position auf dem Barcodebogen der Bestellmail stand: Ohne
+// die Angabe druckte die Etikettenseite hinter dem Lieferanten-Link auch Exemplare, die ohne
+// Vorab-Etikett bestellt wurden.
+type BestellpositionNeu struct {
+	TitelID         string
+	TitelName       string
+	ISBN            string
+	Menge           int
+	Einzelpreis     float64
+	MitVorabBarcode bool
+}
+
+// SchreibeBestellpositionen schreibt die Positionen eines Bestellkopfs in einem Zug, in der
+// Transaktion der Bestellung.
+func SchreibeBestellpositionen(ctx context.Context, tx pgx.Tx, bestellungID string, positionen []BestellpositionNeu) error {
+	if len(positionen) == 0 {
+		return nil
+	}
+	zeilen := make([][]any, 0, len(positionen))
+	for _, p := range positionen {
+		zeilen = append(zeilen, []any{
+			bestellungID, p.TitelID, p.TitelName, p.ISBN, p.Menge, p.Einzelpreis, p.MitVorabBarcode,
+		})
+	}
+	_, err := tx.CopyFrom(ctx,
+		pgx.Identifier{"bestellungen_positionen"},
+		[]string{"bestellung_id", "titel_id", "titel_name", "isbn", "menge", "einzelpreis", "mit_vorab_barcode"},
+		pgx.CopyFromRows(zeilen),
+	)
+	return err
+}

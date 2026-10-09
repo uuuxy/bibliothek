@@ -21,6 +21,9 @@ import (
 //
 // Blindheit: SQL, das erst aus Variablen oder Sprintf-Teilen entsteht; Regeln in einer Datei,
 // die auch eine Tür trägt; eine Datei, die net/http nur für eine Konstante einbindet.
+//
+// Eine Massenkopie (CopyFrom) ist eine Anweisung ohne SQL-Text: Sie nennt Tabelle und Spalten
+// als Werte. Das Muster zählt den Aufruf mit.
 
 // Nur Anweisungen, keine Bezeichner: `UPDATE x SET` statt `UPDATE`, sonst schlägt jedes Wort
 // "update" in einem Bezeichner an. Hinter dem Tabellennamen steht kein \b: Es verlangte eine
@@ -33,7 +36,8 @@ var sqlAnweisung = regexp.MustCompile(`(?i)\b(` +
 	`|UPDATE\s+(ONLY\s+)?[a-z_.]+(\s+(AS\s+)?[a-z_]+)?\s+SET\b` +
 	`|TRUNCATE\s+(TABLE\s+)?[a-z_]+` +
 	`|MERGE\s+INTO\s+[a-z_]+` +
-	`|LOCK\s+TABLE\s+[a-z_]+)`)
+	`|LOCK\s+TABLE\s+[a-z_]+` +
+	`|CopyFrom\s*\()`)
 
 // Kommentare zählen nicht: Ein Satz wie „zwischen SELECT und UPDATE ein Wettlauf-Fenster"
 // erklärt eine Abfrage und ist keine.
@@ -136,6 +140,8 @@ func TestSQLAnweisung_ErkenntJedeForm(t *testing.T) {
 		"TRUNCATE TABLE leser",
 		"MERGE INTO leser l USING neu n ON l.id = n.id",
 		"LOCK TABLE leser IN EXCLUSIVE MODE",
+		"tx.CopyFrom(ctx, pgx.Identifier{\"leser\"}, spalten, pgx.CopyFromRows(zeilen))",
+		"pool.CopyFrom (ctx, tabelle, spalten, quelle)",
 	}
 	for _, a := range anweisungen {
 		if !sqlAnweisung.MatchString(a) {
@@ -151,6 +157,8 @@ func TestSQLAnweisung_ErkenntJedeForm(t *testing.T) {
 		`aktion == "UPDATE"`,
 		`meldung := "Update fehlgeschlagen"`,
 		"truncated := true",
+		"quelle := pgx.CopyFromRows(zeilen)",
+		"kopiereCopyFromDatei(pfad)",
 	}
 	for _, k := range keine {
 		if sqlAnweisung.MatchString(k) {
@@ -173,6 +181,7 @@ func TestSQLAnweisungenIn_ZaehltJedeAnweisung(t *testing.T) {
 		{"Unterabfrage zählt mit", "`DELETE FROM leser WHERE id IN (SELECT id FROM alt)`\n", 2},
 		{"nur im Kommentar", "// erst SELECT id FROM leser, dann UPDATE leser SET a = 1\nx := 1\n", 0},
 		{"Kommentar hinter Code", "q := `SELECT id FROM leser` // und kein DELETE FROM leser\n", 1},
+		{"Massenkopie", "_, err := tx.CopyFrom(ctx, pgx.Identifier{\"leser\"}, spalten, pgx.CopyFromRows(zeilen))\n", 1},
 	}
 	for _, f := range faelle {
 		if ist := sqlAnweisungenIn(f.quelle); ist != f.soll {
