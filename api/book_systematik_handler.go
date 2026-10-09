@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -48,12 +49,7 @@ func (s *Server) UpdateTitelSignaturHandler() http.HandlerFunc {
 		}
 		signatur := strings.TrimSpace(req.Signatur)
 
-		var neueSignatur string
-		err := s.DB.Pool.QueryRow(r.Context(), `
-			UPDATE buecher_titel SET signatur = $2, aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE id = $1::uuid
-			RETURNING coalesce(signatur, '')
-		`, id, signatur).Scan(&neueSignatur)
+		neueSignatur, err := repository.SetzeTitelSignatur(r.Context(), s.DB.Pool, id, signatur)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Titel nicht gefunden", err)
@@ -111,13 +107,7 @@ func (s *Server) UpdateTitelLernmittelHandler() http.HandlerFunc {
 			return nil
 		}
 
-		var istLernmittel bool
-		err := s.DB.Pool.QueryRow(r.Context(), `
-			UPDATE buecher_titel SET ist_lernmittel = $2, mehrjahresband = mehrjahresband AND $2,
-			       aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE id = $1::uuid
-			RETURNING ist_lernmittel
-		`, id, req.IstLernmittel).Scan(&istLernmittel)
+		istLernmittel, err := repository.SetzeTitelLernmittel(r.Context(), s.DB.Pool, id, req.IstLernmittel)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Titel nicht gefunden", err)

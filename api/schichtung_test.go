@@ -85,7 +85,6 @@ var handlerMitSQL = map[string]int{
 	"bestellbestaetigung_etiketten.go": 3,
 	"bestellbestaetigung_public.go":    4,
 	"bestellhistorie_handler.go":       3,
-	"book_systematik_handler.go":       2,
 	"copy_admin.go":                    4,
 	"dsgvo_auskunft.go":                11,
 	"etiketten_offen.go":               5,
@@ -96,7 +95,6 @@ var handlerMitSQL = map[string]int{
 	"pdf.go":                           2,
 	"print.go":                         6,
 	"reorders.go":                      6,
-	"signaturen_handler.go":            2,
 	"stats.go":                         8,
 	"student_create.go":                7,
 	"student_deleted.go":               3,
@@ -104,7 +102,6 @@ var handlerMitSQL = map[string]int{
 	"student_promotion.go":             12,
 	"student_update.go":                11,
 	"supplier_handler.go":              9,
-	"systematik_handler.go":            8,
 }
 
 func TestHandlerFormulierenKeinNeuesSQL(t *testing.T) {

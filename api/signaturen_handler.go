@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -43,32 +42,17 @@ type SignaturGruppe struct {
 // @Router       /signaturen [get]
 func (s *Server) GetSignaturenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		regal := repository.SQLSignaturRegaladresse("t.signatur")
-		rows, err := s.DB.Pool.Query(r.Context(), `
-			SELECT `+regal+` AS signatur,
-			       count(DISTINCT t.id) AS titel,
-			       count(e.id) FILTER (WHERE e.ist_ausgesondert = false) AS exemplare
-			FROM buecher_titel t
-			LEFT JOIN buecher_exemplare e ON e.titel_id = t.id
-			WHERE COALESCE(btrim(t.signatur), '') <> ''
-			GROUP BY `+regal+`
-			ORDER BY `+regal+`
-		`)
+		zeilen, err := repository.ListeSignaturGruppen(r.Context(), s.DB.Pool)
 		if err != nil {
-			return apierrors.Internal("Signaturen konnten nicht geladen werden", err)
-		}
-		defer rows.Close()
-
-		gruppen := []SignaturGruppe{}
-		for rows.Next() {
-			var g SignaturGruppe
-			if err := rows.Scan(&g.Signatur, &g.Titel, &g.Exemplare); err != nil {
+			if errors.Is(err, repository.ErrZeileUnlesbar) {
 				return apierrors.Internal("Signaturzeile unlesbar", err)
 			}
-			gruppen = append(gruppen, g)
-		}
-		if err := rows.Err(); err != nil {
 			return apierrors.Internal("Signaturen konnten nicht geladen werden", err)
+		}
+
+		gruppen := make([]SignaturGruppe, 0, len(zeilen))
+		for _, z := range zeilen {
+			gruppen = append(gruppen, SignaturGruppe(z))
 		}
 
 		RespondJSON(w, http.StatusOK, gruppen)
@@ -119,40 +103,17 @@ func (s *Server) GetSignaturBuecherHandler() http.HandlerFunc {
 			return apierrors.BadRequest("signatur ist erforderlich", errors.New("leere signatur"))
 		}
 
-		rows, err := s.DB.Pool.Query(r.Context(), fmt.Sprintf(`
-			SELECT t.id::text,
-			       btrim(t.signatur),
-			       t.titel,
-			       COALESCE(t.autor, ''),
-			       COALESCE(t.isbn, ''),
-			       count(e.id) FILTER (WHERE e.ist_ausgesondert = false) AS exemplare,
-			       count(e.id) FILTER (
-			           WHERE e.ist_ausgesondert = false
-			             AND EXISTS (SELECT 1 FROM ausleihen a
-			                         WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-			       ) AS verliehen
-			FROM buecher_titel t
-			LEFT JOIN buecher_exemplare e ON e.titel_id = t.id
-			WHERE %s
-			GROUP BY t.id, t.signatur, t.titel, t.autor, t.isbn
-			ORDER BY btrim(t.signatur), t.titel
-			LIMIT $2
-		`, repository.SignaturPraefixBedingung("t.signatur", 1)), signatur, signaturBuecherLimit+1)
+		zeilen, err := repository.ListeBuecherUnterSignatur(r.Context(), s.DB.Pool, signatur, signaturBuecherLimit+1)
 		if err != nil {
-			return apierrors.Internal("Bücher zur Signatur konnten nicht geladen werden", err)
-		}
-		defer rows.Close()
-
-		buecher := []SignaturBuch{}
-		for rows.Next() {
-			var b SignaturBuch
-			if err := rows.Scan(&b.TitelID, &b.Signatur, &b.Titel, &b.Autor, &b.ISBN, &b.Exemplare, &b.Verliehen); err != nil {
+			if errors.Is(err, repository.ErrZeileUnlesbar) {
 				return apierrors.Internal("Buchzeile unlesbar", err)
 			}
-			buecher = append(buecher, b)
-		}
-		if err := rows.Err(); err != nil {
 			return apierrors.Internal("Bücher zur Signatur konnten nicht geladen werden", err)
+		}
+
+		buecher := make([]SignaturBuch, 0, len(zeilen))
+		for _, z := range zeilen {
+			buecher = append(buecher, SignaturBuch(z))
 		}
 
 		// Eine Zeile mehr als das Limit geholt: Nur so lässt sich "es gibt noch mehr"

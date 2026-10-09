@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -91,12 +92,7 @@ func (s *Server) CreateSystematikHandler() http.HandlerFunc {
 			return apierrors.BadRequest(err.Error(), err)
 		}
 
-		var id string
-		err := s.DB.Pool.QueryRow(r.Context(), `
-			INSERT INTO systematik_kategorien (kuerzel, bezeichnung)
-			VALUES ($1, $2)
-			RETURNING id::text
-		`, req.Kuerzel, req.Bezeichnung).Scan(&id)
+		id, err := repository.LegeSachgruppeAn(r.Context(), s.DB.Pool, req.Kuerzel, req.Bezeichnung)
 		if err != nil {
 			if istUniqueVerletzung(err) {
 				return apierrors.Conflict(uniqueMeldung(err), err)
@@ -168,17 +164,12 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 
 	var mitgezogen int64
 	if alteBezeichnung != req.Bezeichnung {
-		if err := tx.QueryRow(ctx,
-			`SELECT count(*) FROM buecher_titel WHERE subject = $1`, alteBezeichnung).Scan(&mitgezogen); err != nil {
+		if mitgezogen, err = repository.ZaehleTitelDerSachgruppe(ctx, tx, alteBezeichnung); err != nil {
 			return apierrors.Internal("Verwendung der Sachgruppe konnte nicht geprüft werden", err)
 		}
 	}
 
-	if _, err := tx.Exec(ctx, `
-		UPDATE systematik_kategorien
-		SET kuerzel = $2, bezeichnung = $3
-		WHERE id = $1::uuid
-	`, id, req.Kuerzel, req.Bezeichnung); err != nil {
+	if err := repository.AendereSachgruppe(ctx, tx, id, req.Kuerzel, req.Bezeichnung); err != nil {
 		if istUniqueVerletzung(err) {
 			return apierrors.Conflict(uniqueMeldung(err), err)
 		}
@@ -190,10 +181,7 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 	// zählte die Session ab sofort null Exemplare und jeder Scan liefe auf 409
 	// "außer Scope". Abgeschlossene Sessions sind Historie und bleiben unangetastet.
 	if alteBezeichnung != req.Bezeichnung {
-		if _, err := tx.Exec(ctx, `
-			UPDATE inventur_sessions SET scope_subject = $2
-			WHERE abgeschlossen_am IS NULL AND scope_subject = $1
-		`, alteBezeichnung, req.Bezeichnung); err != nil {
+		if err := repository.BenenneFachOffenerInventurenUm(ctx, tx, alteBezeichnung, req.Bezeichnung); err != nil {
 			return apierrors.Internal("laufende Inventuren konnten nicht auf das neue Fach umgestellt werden", err)
 		}
 	}
@@ -214,9 +202,8 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 // sachgruppenBezeichnung liest die Bezeichnung einer Sachgruppe; eine unbekannte Kennung ist
 // ein 404.
 func sachgruppenBezeichnung(ctx context.Context, tx pgx.Tx, id string) (string, error) {
-	var bezeichnung string
-	if err := tx.QueryRow(ctx,
-		`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&bezeichnung); err != nil {
+	bezeichnung, err := repository.SachgruppenBezeichnung(ctx, tx, id)
+	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", apierrors.NotFound("Sachgruppe nicht gefunden", err)
 		}
@@ -244,9 +231,7 @@ func (s *Server) DeleteSystematikHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 
-		var bezeichnung string
-		err := s.DB.Pool.QueryRow(r.Context(),
-			`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&bezeichnung)
+		bezeichnung, err := repository.SachgruppenBezeichnung(r.Context(), s.DB.Pool, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Sachgruppe nicht gefunden", err)
@@ -264,8 +249,7 @@ func (s *Server) DeleteSystematikHandler() http.HandlerFunc {
 				errors.New("systematik noch in verwendung"))
 		}
 
-		if _, err := s.DB.Pool.Exec(r.Context(),
-			`DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id); err != nil {
+		if err := repository.LoescheSachgruppe(r.Context(), s.DB.Pool, id); err != nil {
 			// Rückfallebene zur Zählung oben: Hängt sich ZWISCHEN Prüfung und Löschen
 			// ein Titel an das Fach, schlägt der FK (ON DELETE RESTRICT) zu — das ist
 			// derselbe fachliche Konflikt, kein interner Fehler.
@@ -284,10 +268,7 @@ func (s *Server) DeleteSystematikHandler() http.HandlerFunc {
 
 // zaehleTitelMitFach zählt Titel, deren Fach (subject) auf die Bezeichnung zeigt.
 func (s *Server) zaehleTitelMitFach(ctx context.Context, bezeichnung string) (int, error) {
-	var anzahl int
-	err := s.DB.Pool.QueryRow(ctx,
-		`SELECT count(*) FROM buecher_titel WHERE btrim(COALESCE(subject, '')) = btrim($1)`,
-		bezeichnung).Scan(&anzahl)
+	anzahl, err := repository.ZaehleTitelMitFach(ctx, s.DB.Pool, bezeichnung)
 	if err != nil {
 		return 0, apierrors.Internal("Verwendung der Sachgruppe konnte nicht geprüft werden", err)
 	}
