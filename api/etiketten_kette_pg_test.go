@@ -26,7 +26,7 @@ import (
 //     er etikett_gedruckt mit, verschwänden frisch gelieferte Bücher ohne Aufkleber
 //     lautlos aus der Nachdruck-Liste — niemand vermisst, was nie in der Liste stand.
 //   - Liste und Zähler haben zwei getrennte Abfragen. Dass sie dieselbe Bedingung
-//     benutzen, behauptet bisher nur ein Kommentar (etikettenOffenBedingung); driften sie
+//     benutzen, behauptet bisher nur ein Kommentar (repository.EtikettOffenBedingung); driften sie
 //     auseinander, nennt der Hinweis im Bestellwesen eine Zahl, die zu keiner Liste passt.
 //   - Der Hauptlieferant klebt selbst. Seine Exemplare dürfen nach dem Wareneingang NICHT
 //     auf der Nachdruck-Liste stehen, sonst klebt die Bibliothek ein zweites Etikett auf
@@ -49,7 +49,7 @@ func jsonHolen(t *testing.T, handler http.HandlerFunc, pfad string, ziel any) {
 //
 // Bewusst über die HTTP-Handler und nicht über eigenes SQL: Der Helfer in
 // haendler_beklebt_pg_test.go schreibt die Bedingung noch einmal selbst hin ("bewusst
-// dieselbe wie etikettenOffenBedingung") und kann eine Abweichung im Produktivcode
+// dieselbe wie EtikettOffenBedingung") und kann eine Abweichung im Produktivcode
 // deshalb gar nicht sehen — er würde mitwandern, nur eben nur im Test.
 func offeneEtikettenUeberHandler(t *testing.T, srv *Server) (liste []ExemplarOhneEtikett, anzahl int) {
 	t.Helper()

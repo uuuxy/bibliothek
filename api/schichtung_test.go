@@ -85,7 +85,6 @@ var handlerMitSQL = map[string]int{
 	"bestellbestaetigung_public.go":    4,
 	"copy_admin.go":                    4,
 	"dsgvo_auskunft.go":                11,
-	"etiketten_offen.go":               5,
 	"graduates.go":                     2,
 	"isbn_handler.go":                  2,
 	"labels.go":                        2,

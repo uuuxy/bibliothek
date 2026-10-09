@@ -5,13 +5,15 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Indizes, die still nutzlos werden können.
 //
 // Ein Teil-Index gilt nur, wenn die Abfrage-Bedingung seine Bedingung IMPLIZIERT. Wer
-// etikettenOffenBedingung (api/etiketten_offen.go) lockert, macht
+// repository.EtikettOffenBedingung lockert, macht
 // idx_buecher_exemplare_etikett_offen unbrauchbar — ohne Fehlermeldung, ohne rotes Gate,
 // nur langsamer. Genau so etwas fällt erst auf, wenn der Bestand gewachsen ist.
 //
@@ -38,10 +40,10 @@ func TestEtikettenOffenNutztDenTeilindex(t *testing.T) {
 
 	plan := erklaere(t, conn, `
 		SELECT count(*) FROM buecher_exemplare e
-		WHERE e.titel_id = '00000000-0000-0000-0000-000000000001' AND `+etikettenOffenBedingung)
+		WHERE e.titel_id = '00000000-0000-0000-0000-000000000001' AND `+repository.EtikettOffenBedingung)
 
 	if !strings.Contains(plan, "idx_buecher_exemplare_etikett_offen") {
-		t.Fatalf("Der Teil-Index taucht im Plan nicht auf — etikettenOffenBedingung passt nicht "+
+		t.Fatalf("Der Teil-Index taucht im Plan nicht auf — EtikettOffenBedingung passt nicht "+
 			"mehr zu seiner WHERE-Bedingung (Migration 064).\nPlan:\n%s", plan)
 	}
 }

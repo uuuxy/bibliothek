@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -13,40 +14,6 @@ import (
 // druckt keinen Nachzügler mehr nach, sondern den halben Bestand — dafür ist der Weg über
 // die Titelsuche im Druck-Center gedacht.
 const etikettenOffenLimit = 300
-
-// etikettenOffenBedingung ist die EINZIGE Definition von "Etikett steht noch aus".
-// Liste und Zähler teilen sie sich — sonst zeigt der Hinweis im Bestellwesen irgendwann
-// eine andere Zahl an, als die Liste im Druck-Center Zeilen hat, und keiner der beiden
-// Werte ist mehr zu trauen.
-//
-// Ausgesonderte Exemplare stehen nicht mehr im Regal; für sie ein Etikett zu drucken
-// wäre immer falsch.
-//
-// Der Wert steht seit dem 08.08.2026 in repository/ und wird hier nur noch übernommen:
-// Die Bestell-Detailansicht braucht dieselbe Zahl, formuliert ihre Abfrage aber in der
-// Repository-Schicht (schichtung_test.go). Zwei Konstanten mit gleichem Inhalt wären
-// genau die Drift, gegen die dieser Kommentar seit jeher anschreibt. Alle bisherigen
-// Fundstellen — Liste, Zähler und die pg-Tests — lesen unverändert diesen Namen.
-const etikettenOffenBedingung = repository.EtikettOffenBedingung
-
-// etikettenStatusBedingung uebersetzt den status-Parameter in sein SQL-Praedikat.
-//
-// Vorgabe bleibt "offen": Die Liste heisst „Fehlende Etiketten" und soll ohne Zutun
-// genau das zeigen. Die anderen Stufen sind Werkzeug, nicht Alltag.
-//
-// Liste UND Zaehler lesen es hier. Sonst nennt die Fusszeile der Liste ("300 von 30.674")
-// irgendwann eine Zahl aus einer anderen Menge als die Zeilen darueber — dieselbe Drift,
-// gegen die etikettenOffenBedingung eine Zeile hoeher anschreibt.
-func etikettenStatusBedingung(status string) string {
-	switch status {
-	case "erledigt":
-		return `e.etikett_gedruckt = true AND e.ist_ausgesondert = false`
-	case "alle":
-		return `e.ist_ausgesondert = false`
-	default:
-		return etikettenOffenBedingung
-	}
-}
 
 // ExemplarOhneEtikett ist eine Zeile der Nachdruck-Liste. Die Feldnamen barcode_id/titel/
 // autor sind KEIN Zufall: In genau dieser Form nimmt der Etikettendruck seine Aufträge
@@ -96,37 +63,20 @@ func etikettenSuchtext(r *http.Request) string {
 // @Router       /exemplare/etiketten-offen [get]
 func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		suche := etikettenSuchtext(r)
-
-		statusBedingung := etikettenStatusBedingung(r.URL.Query().Get("status"))
-
-		rows, err := s.DB.Pool.Query(r.Context(), `
-			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY-MM-DD'),
-			       e.etikett_gedruckt
-			FROM buecher_exemplare e
-			JOIN buecher_titel t ON t.id = e.titel_id
-			WHERE `+statusBedingung+`
-			  AND ($1 = '' OR t.titel ILIKE '%' || $1 || '%' OR e.barcode_id ILIKE '%' || $1 || '%')
-			ORDER BY COALESCE(e.zugang_am, e.erworben_am) DESC, e.erstellt_am DESC, e.barcode_id
-			LIMIT $2
-		`, suche, etikettenOffenLimit)
+		zeilen, err := repository.ListeEtikettenExemplare(r.Context(), s.DB.Pool,
+			r.URL.Query().Get("status"), etikettenSuchtext(r), etikettenOffenLimit)
 		if err != nil {
+			if errors.Is(err, repository.ErrZeileUnlesbar) {
+				return apierrors.Internal("Fehler beim Lesen der offenen Etiketten", err)
+			}
 			return apierrors.Internal("Fehler beim Laden der offenen Etiketten", err)
 		}
-		defer rows.Close()
 
 		// Nie nil: Eine leere Liste muss als [] beim Client ankommen, sonst bricht dort
 		// .length ab (siehe TestListStudentsLeereListeIstArray).
-		liste := make([]ExemplarOhneEtikett, 0)
-		for rows.Next() {
-			var e ExemplarOhneEtikett
-			if err := rows.Scan(&e.BarcodeID, &e.Titel, &e.Autor, &e.ZugangAm, &e.EtikettGedruckt); err != nil {
-				return apierrors.Internal("Fehler beim Lesen der offenen Etiketten", err)
-			}
-			liste = append(liste, e)
-		}
-		if err := rows.Err(); err != nil {
-			return apierrors.Internal("Fehler beim Lesen der offenen Etiketten", err)
+		liste := make([]ExemplarOhneEtikett, 0, len(zeilen))
+		for _, z := range zeilen {
+			liste = append(liste, ExemplarOhneEtikett(z))
 		}
 
 		RespondJSON(w, http.StatusOK, liste)
@@ -160,26 +110,17 @@ func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 		// wuerde das Aufraeumen des Altbestands treffen?" — die Zahl, die der Betreiber vor
 		// dem Bestaetigen sehen muss.
 		bisStr := strings.TrimSpace(r.URL.Query().Get("bis"))
-		var bis any
+		var bis *time.Time
 		if bisStr != "" {
 			geparst, err := time.Parse(dateFormatISO, bisStr)
 			if err != nil {
 				return apierrors.BadRequest("Stichtag muss im Format JJJJ-MM-TT angegeben werden", err)
 			}
-			bis = geparst
+			bis = &geparst
 		}
 
-		// Derselbe JOIN wie in der Liste. Er ist verlustfrei: titel_id ist NOT NULL.
-		var anzahl int
-		err := s.DB.Pool.QueryRow(r.Context(), `
-			SELECT count(*)
-			FROM buecher_exemplare e
-			JOIN buecher_titel t ON t.id = e.titel_id
-			WHERE `+etikettenStatusBedingung(r.URL.Query().Get("status"))+`
-			  AND ($1::date IS NULL OR COALESCE(e.zugang_am, e.erworben_am) <= $1)
-			  AND ($2 = '' OR t.titel ILIKE '%' || $2 || '%' OR e.barcode_id ILIKE '%' || $2 || '%')`,
-			bis, etikettenSuchtext(r),
-		).Scan(&anzahl)
+		anzahl, err := repository.ZaehleEtikettenExemplare(r.Context(), s.DB.Pool,
+			r.URL.Query().Get("status"), bis, etikettenSuchtext(r))
 		if err != nil {
 			return apierrors.Internal("Fehler beim Zählen der offenen Etiketten", err)
 		}
@@ -226,15 +167,12 @@ func (s *Server) EtikettenAltbestandHandler() http.HandlerFunc {
 			return apierrors.BadRequest("Stichtag muss im Format JJJJ-MM-TT angegeben werden", err)
 		}
 
-		tag, err := s.DB.Pool.Exec(r.Context(), `
-			UPDATE buecher_exemplare e SET etikett_gedruckt = true, aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE `+etikettenOffenBedingung+` AND COALESCE(e.zugang_am, e.erworben_am) <= $1
-		`, bis)
+		markiert, err := repository.VermerkeAltbestandEtiketten(r.Context(), s.DB.Pool, bis)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Vermerken des Altbestands", err)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]int64{"markiert": tag.RowsAffected()})
+		RespondJSON(w, http.StatusOK, map[string]int64{"markiert": markiert})
 		return nil
 	})
 }
@@ -266,15 +204,12 @@ func (s *Server) EtikettenGedrucktHandler() http.HandlerFunc {
 			return apierrors.BadRequest("keine Exemplare angegeben", nil)
 		}
 
-		tag, err := s.DB.Pool.Exec(r.Context(), `
-			UPDATE buecher_exemplare SET etikett_gedruckt = true, aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE barcode_id = ANY($1) AND etikett_gedruckt = false
-		`, req.BarcodeIDs)
+		markiert, err := repository.VermerkeEtikettenGedruckt(r.Context(), s.DB.Pool, req.BarcodeIDs)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Vermerken der gedruckten Etiketten", err)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]int64{"markiert": tag.RowsAffected()})
+		RespondJSON(w, http.StatusOK, map[string]int64{"markiert": markiert})
 		return nil
 	})
 }
@@ -314,17 +249,12 @@ func (s *Server) EtikettenZuruecksetzenHandler() http.HandlerFunc {
 			return apierrors.BadRequest("keine Exemplare angegeben", nil)
 		}
 
-		// Ausgesonderte bleiben aussen vor: Für ein Buch, das nicht mehr im Regal steht,
-		// wäre ein Etikett immer falsch — dieselbe Regel wie in etikettenOffenBedingung.
-		tag, err := s.DB.Pool.Exec(r.Context(), `
-			UPDATE buecher_exemplare SET etikett_gedruckt = false, aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE barcode_id = ANY($1) AND etikett_gedruckt = true AND ist_ausgesondert = false
-		`, req.BarcodeIDs)
+		zurueckgesetzt, err := repository.NimmEtikettenVermerk(r.Context(), s.DB.Pool, req.BarcodeIDs)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Zurücksetzen der Etiketten", err)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]int64{"zurueckgesetzt": tag.RowsAffected()})
+		RespondJSON(w, http.StatusOK, map[string]int64{"zurueckgesetzt": zurueckgesetzt})
 		return nil
 	})
 }

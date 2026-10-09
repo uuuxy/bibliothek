@@ -53,7 +53,7 @@ func haendler(t *testing.T, pool *pgxpool.Pool, name string, istHaupt bool) stri
 }
 
 // offeneEtiketten zählt, wie viele Exemplare des Titels auf der Nachdruck-Liste stünden.
-// Bewusst dieselbe Bedingung wie etikettenOffenBedingung in etiketten_offen.go.
+// Bewusst dieselbe Bedingung wie repository.EtikettOffenBedingung.
 func offeneEtiketten(t *testing.T, pool *pgxpool.Pool, titelID string) int {
 	t.Helper()
 	var n int
