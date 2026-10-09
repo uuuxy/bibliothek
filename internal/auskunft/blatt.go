@@ -20,8 +20,8 @@ const (
 	dsgvoZeitFormat  = "02.01.2006, 15:04 Uhr"
 )
 
-// GenerateDsgvoAuskunftPDF rendert die vollständige Art.-15-Auskunft als PDF — aus
-// demselben Objekt, das die JSON-Antwort ist (dsgvoAntwort).
+// GenerateDsgvoAuskunftPDF setzt die Auskunft als PDF, aus demselben Objekt, das die Tür als
+// JSON ausliefert: Das Blatt nennt, was die abgerufene Auskunft nennt.
 func GenerateDsgvoAuskunftPDF(a DsgvoAuskunftResponse, schule pdf.SchuleInfo) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
@@ -65,8 +65,7 @@ func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a 
 	p.Ln(9)
 	p.SetFont("Arial", "", 10)
 	p.SetTextColor(90, 90, 90)
-	// Ein Kollege hat keine Klasse; bis zum 24.09.2026 gab es seine Auskunft nicht, und die
-	// Zeile hätte „(Klasse )" gelautet.
+	// Ein Kollege hat keine Klasse; bei ihm steht die Art des Lesers in der Klammer.
 	st := a.Stammdaten
 	zuordnung := "Klasse " + st.Klasse
 	if st.Klasse == "" {
@@ -85,9 +84,8 @@ func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a 
 func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *DsgvoStammdaten) {
 	dsgvoAbschnitt(p, tr, "1. Stammdaten")
 	dsgvoZeile(p, tr, "Interne ID", st.ID)
-	// Art und Zugangskonto kamen mit Migration 123 in die Auskunft, aber nicht auf dieses
-	// Blatt — die gedruckte Auskunft war damit kürzer als die abgerufene. Nachgetragen am
-	// 23.09.2026 samt Ratsche (TestDsgvoPDF_DrucktJedesStammdatenfeld).
+	// Jedes Feld der Stammdaten hat in dieser Funktion seine Zeile;
+	// TestDsgvoPDF_DrucktJedesStammdatenfeld liest ihren Quelltext dagegen.
 	dsgvoZeile(p, tr, "Art des Lesers", dsgvoLeserart(st.Art))
 	dsgvoZeile(p, tr, "Ausweis-Barcode", st.BarcodeID)
 	dsgvoZeile(p, tr, "Vorname", st.Vorname)
@@ -175,8 +173,7 @@ func dsgvoSchadensAbschnitt(p *gofpdf.Fpdf, tr func(string) string, schaeden []D
 		if f.IstBezahlt {
 			status = "bezahlt"
 		}
-		// Zeitpunkt und Grund der Stornierung standen bis zum 24.09.2026 nur in der
-		// abgerufenen Auskunft, nicht auf diesem Blatt.
+		// Eine Stornierung steht mit Zeitpunkt und Grund da und geht dem Zahlstatus vor.
 		if f.StorniertAm != nil {
 			status = "storniert am " + dsgvoDatum(*f.StorniertAm)
 			if f.Stornierungsgrund != nil && *f.Stornierungsgrund != "" {
@@ -202,9 +199,9 @@ func dsgvoVormerkAbschnitt(p *gofpdf.Fpdf, tr func(string) string, vormerkungen 
 	}
 }
 
-// dsgvoBescheidAbschnitt nennt die Schadensersatz-Bescheide, die an diese Person
-// gerichtet waren (Migration 110). Die Positionen stehen als Schadensfälle in Abschnitt 4;
-// hier steht der Brief selbst — Nummer, Frist, Summe, Zustand.
+// dsgvoBescheidAbschnitt nennt die Schadensersatz-Bescheide, die an diese Person gerichtet
+// waren. Die Positionen stehen als Schadensfälle in Abschnitt 4; hier steht der Brief selbst
+// mit Nummer, Frist, Summe und Zustand.
 func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []DsgvoBescheid) {
 	dsgvoAbschnitt(p, tr, fmt.Sprintf("6. Schadensersatz-Bescheide (%d)", len(bescheide)))
 	if len(bescheide) == 0 {
@@ -219,11 +216,9 @@ func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []
 	}
 }
 
-// dsgvoNachbuchAbschnitt nennt die Nachbuch-Meldungen, in denen die Person steht
-// (Migration 117): Die Theke hat ohne Netz gescannt, und beim späteren Buchen wich das
-// Ergebnis vom Scan ab. In der abgerufenen Auskunft seit dem 15.09.2026 (4e898c98), auf
-// diesem Blatt seit dem 24.09.2026. Eine Meldung nennt keine andere Person — nur, in
-// welcher Rolle diese hier beteiligt war.
+// dsgvoNachbuchAbschnitt nennt die Nachbuch-Meldungen, in denen die Person steht: Die Theke
+// hat ohne Netz gescannt, und beim späteren Buchen wich das Ergebnis vom Scan ab. Eine Meldung
+// nennt keine andere Person, nur die Rolle, in der diese hier beteiligt war.
 func dsgvoNachbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, meldungen []DsgvoNachbuchMeldung) {
 	dsgvoAbschnitt(p, tr, fmt.Sprintf("7. Meldungen zu Buchungen nach einem Netzausfall (%d)", len(meldungen)))
 	if len(meldungen) == 0 {
@@ -270,8 +265,8 @@ func dsgvoNachbuchErgebnis(ergebnis string) string {
 	return ergebnis
 }
 
-// dsgvoNachbuchRolle sagt, als wer die Person an der Meldung beteiligt war
-// (dsgvoQueryNachbuchMeldungen). Ein unbekannter Wert bleibt stehen.
+// dsgvoNachbuchRolle sagt, als wer die Person an der Meldung beteiligt war; die Abfrage setzt
+// das Wort (repository.LeseDsgvoNachbuchMeldungen). Ein unbekannter Wert bleibt stehen.
 func dsgvoNachbuchRolle(rolle string) string {
 	switch rolle {
 	case "ausleiher":
@@ -360,12 +355,10 @@ func dsgvoLeerWert(s string) string {
 	return s
 }
 
-// dsgvoZeit und dsgvoDatum schreiben einen Zeitpunkt so, wie die Schule ihn liest: in der
-// Schulzeitzone. Zeitpunkte aus der Datenbank kommen über pgx in der Zone des Prozesses an
-// (time.Local), und der Container läuft in UTC. Bis zum 24.09.2026 stand deshalb jede
-// Uhrzeit dieses Blatts im Sommer zwei Stunden zu früh da, ein Vorgang kurz nach
-// Mitternacht am Vortag. Ein reines Datum (DATE, Mitternacht UTC) bleibt beim Umrechnen
-// derselbe Tag, weil Berlin vor UTC liegt.
+// dsgvoZeit und dsgvoDatum schreiben einen Zeitpunkt in der Schulzeitzone. Aus der Datenbank
+// kommt er über pgx in der Zone des Prozesses an (time.Local), und der Container läuft in UTC:
+// Ohne das Umrechnen stünde ein Vorgang kurz nach Mitternacht am Vortag. Ein reines Datum
+// (DATE, Mitternacht UTC) bleibt derselbe Tag, weil Berlin vor UTC liegt.
 func dsgvoZeit(t time.Time) string {
 	return t.In(schulzeit.Zone()).Format(dsgvoZeitFormat)
 }

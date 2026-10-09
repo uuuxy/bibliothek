@@ -9,25 +9,24 @@ import (
 // dsgvoVerarbeitungsangabenKollegium sind die Pflichtangaben nach Art. 15 Abs. 1 DSGVO für
 // jeden Leser, der kein Schüler ist. Grundlage ist das Verzeichnis von Verarbeitungstätigkeiten
 // (docs/datenschutz/vvt_entwurf.md, Tätigkeit 3: Benutzerkonten und Protokollierung des
-// Personals). Die Angaben für Schüler (Lernmittelfreiheit, Eltern, LUSD, Abgang und Karenz)
-// treffen auf einen Kollegen nicht zu; bis zum 24.09.2026 gab es seine Auskunft gar nicht
-// (OFFEN.md 5.19).
+// Personals); die Angaben für Schüler (Lernmittelfreiheit, Eltern, LUSD, Abgang und Karenz)
+// treffen auf einen Kollegen nicht zu.
 //
-// Jede Aussage ist am Code nachgesehen (24.09.2026):
+// Woran jede Aussage im Code hängt:
 //   - Klassenleitung: klassen_lehrer_mapping speist die Mahnliste der Klasse und den Versand
 //     der Abgänger-Kontoauszüge (api/graduates_mail.go).
 //   - Namen am Anliegen und an der Reservierung sieht das Bibliothekspersonal
 //     (repository/anliegen_repo.go, reservation_repo.go); die Kontenliste verlangt
 //     manage_users, das Protokoll audit_logs (api/routes_system.go).
 //   - Trennen der Ausleihen: PredikatLesehistorieAusleihen fragt nicht nach der Art.
-//   - Erledigte Klassensatz-Reservierungen fallen seit dem 29.09.2026 nach derselben Frist wie
-//     erledigte Wünsche und Meldungen (RunKlassensatzBefristung). Ein gelöschter Kollege fällt
-//     seit dem 29.09.2026 nach 180 Tagen im Papierkorb endgültig (RunPapierkorbKollegenLoeschung,
-//     über PurgeStudent); offene Ausleihen und unbezahlte Forderungen halten ihn. Sein
-//     Zugangskonto geht schon beim Löschen (DeleteStudent).
+//   - Erledigte Klassensatz-Reservierungen fallen nach derselben Frist wie erledigte Wünsche
+//     und Meldungen (RunKlassensatzBefristung). Ein gelöschter Kollege fällt nach 180 Tagen im
+//     Papierkorb endgültig (RunPapierkorbKollegenLoeschung, über PurgeStudent); offene
+//     Ausleihen und unbezahlte Forderungen halten ihn. Sein Zugangskonto geht schon beim
+//     Löschen (DeleteStudent).
 //
-// Die Fristen kommen aus denselben Einstellungen wie bei den Jobs (dsgvoFristen), damit eine
-// geänderte Frist hier nicht als Werksvorgabe stehen bleibt.
+// Die Fristen sind die eingestellten, mit denen auch die Jobs rechnen (DsgvoFristWerte), damit
+// eine geänderte Frist hier nicht als Werksvorgabe stehen bleibt.
 func dsgvoVerarbeitungsangabenKollegium(f DsgvoFristWerte) DsgvoVerarbeitungsangaben {
 	const abgeschaltet = "ohne Frist (Befristung in dieser Installation abgeschaltet)"
 	nachRueckgabe := func(tage int) string {

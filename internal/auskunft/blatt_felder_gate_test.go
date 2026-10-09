@@ -8,24 +8,16 @@ import (
 	"testing"
 )
 
-// Das dritte Glied der Auskunfts-Kette (23.09.2026).
+// Das dritte Glied der Kette von der Spalte in leser über das Feld in DsgvoStammdaten zur Zeile
+// auf dem Blatt. Das erste hält api.TestDsgvoAuskunft_KenntJedeLeserSpalte, das zweite der
+// Compiler. Der Abschnitt der Stammdaten zählt seine Zeilen von Hand auf: Ohne dieses Gate
+// fehlt ein neues Feld auf dem Blatt, und die gedruckte Auskunft ist kürzer als die abgerufene.
 //
-// Die Kette ist: Spalte in `leser` → Feld in DsgvoStammdaten → Zeile auf dem Blatt,
-// das die betroffene Person bekommt. Das erste Glied hält
-// TestDsgvoAuskunft_KenntJedeLeserSpalte, das zweite der Compiler (die Abfrage wird in
-// den Struct gescannt). Das dritte hielt bis heute niemand: Der PDF-Abschnitt zählt seine
-// Zeilen von Hand auf, und wer ein Feld ergänzt, ergänzt die Zeile leicht nicht.
-//
-// Gemessen am 23.09.2026, bevor dieses Gate stand: `art` und `hat_zugangskonto` fehlten
-// seit Migration 123 auf dem Blatt. Die abgerufene Auskunft (JSON) war damit länger als
-// die gedruckte — zwei Auskünfte auf dieselbe Frage.
-//
-// Das Gate liest den Quelltext von blatt.go, weil es genau das prüfen soll, was dort
-// von Hand steht. Es nennt das Feld, nicht die Zeile: WIE ein Wert gedruckt wird, ist
-// Sache des Abschnitts; DASS er gedruckt wird, ist die Zusicherung.
+// Das Gate liest den Quelltext von blatt.go, weil es prüft, was dort von Hand steht. Es
+// verlangt, dass ein Feld gedruckt wird; wie, ist Sache des Abschnitts.
 func TestDsgvoPDF_DrucktJedesStammdatenfeld(t *testing.T) {
-	// Ausnahmen: Feld → Begründung. Heute leer — jedes Feld der Auskunft ist eine
-	// gespeicherte Angabe über die Person und gehört auf ihr Blatt.
+	// Ausnahmen: Feld → Begründung. Leer, weil jedes Feld eine gespeicherte Angabe über die
+	// Person ist und auf ihr Blatt gehört.
 	ausnahmen := map[string]string{}
 
 	quelle, err := os.ReadFile("blatt.go")

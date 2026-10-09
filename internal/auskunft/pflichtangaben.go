@@ -8,22 +8,10 @@ import (
 	"bibliothek/repository"
 )
 
-// dsgvoVerarbeitungsangaben formuliert die Pflichtangaben nach Art. 15 Abs. 1 DSGVO —
-// aus DENSELBEN Fristen, mit denen das System arbeitet (Einstellungen „Datenschutz &
-// Sitzung"). Bis 22.08.2026 stand hier pauschal lit. e ohne Fristen, während SECURITY.md,
-// VVT- und Art.-13-Entwurf längst zwei Tätigkeiten mit zwei Grundlagen und 90/730 Tagen
-// beschrieben — eine Betroffenenauskunft mit falscher Pflichtangabe (Prüfung 22.08., B).
-// dsgvoVerarbeitungsangaben baut die Pflichtangaben aus den EINGESTELLTEN Fristen — die
-// Karenzzeit vor der Anonymisierung (abgaenger_karenz_tage) ebenso wie die Lesehistorie.
-// Bis 02.09.2026 stand hier ein festes „Altfälle nach 360 Tagen", während der Job längst
-// mit der Karenz rechnete: eine Pflichtangabe an die betroffene Person, die nicht stimmte.
-//
-// DRITTER Fall derselben Klasse, gefunden am 10.09.2026: „Protokolle 24 Monate" stand
-// starr im Text, während die Aufbewahrung der beiden Protokolle seit dem 16.08.2026 eine
-// Einstellung ist (audit_aufbewahrung_monate, Untergrenze 6). Wer sie auf 6 stellte, gab
-// der betroffenen Person eine falsche Frist. Jetzt liest die Auskunft dieselbe Quelle wie
-// der Löschjob (jobs/cron_audit_retention.go) und der Rückstands-Wächter
-// (repository/loeschrueckstand.go): AufbewahrungMonateOderStandard.
+// dsgvoVerarbeitungsangaben formuliert die Pflichtangaben nach Art. 15 Abs. 1 DSGVO für einen
+// Schüler. Jede Frist im Text ist ein Wert der Einstellungen, mit dem auch die Löschjobs
+// rechnen: Eine feste Zahl im Satz gäbe der betroffenen Person eine falsche Frist, sobald die
+// Schule die Einstellung ändert.
 func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, auditMonate int) DsgvoVerarbeitungsangaben {
 	karenz := "sofort nach dem letzten Vorgang"
 	if karenzTage > 0 {
@@ -53,10 +41,8 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, aud
 
 // Die Sicherungen nennt die Auskunft jeder Leserart gleich. Die Aufbewahrung der
 // Nachtsicherung liest sie aus dem Job (jobs.BehalteNaechte, jobs.BehalteWochen); die zwei
-// anderen Fristen stehen in Shell-Skripten (update.sh, scripts/backup.sh), und
-// pflichtangaben_sicherungen_test.go hält sie deckungsgleich. Bis zum 28.09.2026 stand hier nur
-// „Verschlüsselte Backups 14 Tage" — die Sicherung vor einem Update und die von Hand fehlten.
-// Die wöchentlichen Stände gibt es seit dem 29.09.2026.
+// anderen Fristen gelten in Shell-Skripten (update.sh, scripts/backup.sh), und
+// pflichtangaben_sicherungen_test.go hält die Zahlen hier gegen sie.
 const (
 	sicherungVorUpdateTage = 30 // update.sh, BACKUP_RETENTION_DAYS
 	sicherungVonHandTage   = 7  // scripts/backup.sh, RETENTION_ENC_TAGE
@@ -78,7 +64,7 @@ type DsgvoFristWerte struct {
 
 // DsgvoPflichtangaben wählt die Pflichtangaben nach der Art des Lesers: Für einen Schüler
 // gelten Lernmittelfreiheit und Schülerbücherei, für jede andere Art (Kollegium und
-// Sonderkonten, Migration 153) das Beschäftigungsverhältnis (pflichtangaben_kollegium.go).
+// Sonderkonten) das Beschäftigungsverhältnis (pflichtangaben_kollegium.go).
 func DsgvoPflichtangaben(art string, f DsgvoFristWerte) DsgvoVerarbeitungsangaben {
 	if leserart.IstSchueler(art) {
 		return dsgvoVerarbeitungsangaben(f.LesehistorieTage, f.LernmittelTage, f.KarenzTage, f.AuditMonate)

@@ -13,28 +13,22 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Pflichtangaben der Art.-15-Auskunft nennen die EINGESTELLTEN Fristen — geprüft am
-// LIVE-PFAD, nicht an der Formulierungsfunktion.
+// Die Pflichtangaben der Auskunft nennen die eingestellten Fristen, geprüft über die Tür und
+// nicht an der Funktion, die den Text formuliert: Deren Test bleibt grün, wenn im Text eine
+// feste Zahl steht oder die Tür eine Einstellung nicht mitnimmt. Eine falsche Frist ist hier
+// schlimmer als eine fehlende, weil sie wie eine geprüfte aussieht.
 //
-// Warum am Live-Pfad: Die Funktion dsgvoVerarbeitungsangaben hat einen Unit-Test, und der
-// war zweimal grün, während die Auskunft trotzdem eine falsche Frist nannte — beim ersten
-// Mal, weil im Text eine feste Zahl stand (360 Tage, 02.09.2026), beim zweiten Mal, weil
-// die Aufbewahrung der Protokolle inzwischen eine Einstellung war und der Leser sie nicht
-// mitnahm (10.09.2026). Beides sind Pflichtangaben an die betroffene Person; falsch ist
-// hier schlimmer als fehlend, weil eine falsche Frist wie eine geprüfte aussieht.
-//
-// Der Test setzt jede Frist auf einen Wert, der von der Vorgabe abweicht, und verlangt
-// GENAU diesen Wert im Text — eine vergessene Einstellung fällt damit auf, statt still
-// die Werksvorgabe zu behaupten. Er verlangt ihn an seiner Stelle im Satz: Zwei vertauschte
-// Fristen stünden sonst beide im Text. Die Frist erledigter Anliegen nennt nur die Auskunft
-// eines Kollegen, deshalb steht einer daneben.
+// Der Test setzt jede Frist auf einen Wert, der von der Vorgabe abweicht, und verlangt ihn an
+// seiner Stelle im Satz: Eine vergessene Einstellung behauptete sonst still die Werksvorgabe,
+// und zwei vertauschte Fristen stünden beide im Text. Die Frist erledigter Anliegen nennt nur
+// die Auskunft eines Kollegen, deshalb steht eine Kollegin daneben.
 func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	// Bewusst krumme Werte: 24 (Vorgabe Protokolle), 90/730 (Vorgabe Lesehistorie) und
-	// 90 (Vorgabe Karenz) würden auch ohne Leser im Text stehen.
+	// Krumme Werte: Die Vorgaben (1 und 730 Tage Lesehistorie, 90 Tage Karenz, 24 Monate
+	// Protokolle, 365 Tage Anliegen) stünden auch ohne gelesene Einstellung im Text.
 	einstellungen := map[string]string{
 		repository.AuditAufbewahrungSchluessel: "7",
 		"lesehistorie_tage":                    "111",
@@ -99,7 +93,7 @@ func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 				t.Errorf("%s: Speicherdauer nennt %q nicht — die Auskunft ignoriert die Einstellung:\n%s", fall.name, erwartet, dauer)
 			}
 		}
-		// Die Werksvorgaben dürfen NICHT im Text stehen, wenn etwas anderes eingestellt ist.
+		// Die Werksvorgaben stehen nicht im Text, wenn etwas anderes eingestellt ist.
 		for _, verboten := range []string{"24 Monate", "360", "365 Tage"} {
 			if strings.Contains(dauer, verboten) {
 				t.Errorf("%s: Speicherdauer behauptet die Werksvorgabe %q:\n%s", fall.name, verboten, dauer)

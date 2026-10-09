@@ -11,12 +11,11 @@ import (
 	"bibliothek/repository"
 )
 
-// DsgvoStammdaten umfasst sämtliche im Leserdatensatz gespeicherten
-// Stammdaten — bewusst inklusive Soft-Delete-Zeitpunkt und Sperrgrund,
-// denn die Auskunft nach Art. 15 DSGVO deckt alles ab, was gespeichert ist.
-// „Sämtliche" ist gemessen: TestDsgvoAuskunft_KenntJedeLeserSpalte hält jede Spalte von leser
-// gegen repository.DsgvoStammdatenSQL. Die Felder stehen in derselben Reihenfolge wie in
-// repository.DsgvoStammdatenZeile, sonst greift die Typumwandlung nicht.
+// DsgvoStammdaten sind alle im Leserdatensatz gespeicherten Stammdaten, auch der Zeitpunkt des
+// Löschens und der Sperrgrund: Die Auskunft nennt alles, was gespeichert ist
+// (api.TestDsgvoAuskunft_KenntJedeLeserSpalte hält jede Spalte von leser dagegen). Die Felder
+// stehen in der Reihenfolge von repository.DsgvoStammdatenZeile, sonst greift die Typumwandlung
+// der Tür nicht.
 type DsgvoStammdaten struct {
 	ID                string     `json:"id"`
 	BarcodeID         string     `json:"barcode_id"`
@@ -38,24 +37,18 @@ type DsgvoStammdaten struct {
 	ErstelltAm        time.Time  `json:"erfasst_am"`
 	AktualisiertAm    time.Time  `json:"zuletzt_aktualisiert_am"`
 	GeloeschtAm       *time.Time `json:"geloescht_am"`
-	// Seit Migration 084/094 (nachgetragen 02.09.2026 — die Auskunft war um vier Spalten
-	// unvollständig; Gate: TestDsgvoAuskunft_KenntJedeLeserSpalte).
-	SchulEintrittAm *string    `json:"schul_eintritt_am"`
-	AbgaengerSeit   *time.Time `json:"abgaenger_seit"`
-	// Migration 137: der Zeitpunkt des letzten abgeschlossenen Vorgangs — die zweite Uhr
-	// der Karenz neben abgaenger_seit. Er gehört in die Auskunft, weil er ein über diese
-	// Person gespeicherter Zeitpunkt ist und weil er mitbestimmt, wann ihre Daten
-	// anonymisiert werden. WAS ausgeliehen war, sagt er nicht.
+	SchulEintrittAm   *string    `json:"schul_eintritt_am"`
+	AbgaengerSeit     *time.Time `json:"abgaenger_seit"`
+	// LetzterVorgangAm ist die zweite Uhr der Karenz neben AbgaengerSeit: Der Zeitpunkt bestimmt
+	// mit, wann die Daten der Person anonymisiert werden. Was ausgeliehen war, sagt er nicht.
 	LetzterVorgangAm *time.Time `json:"letzter_vorgang_am"`
 	LusdBestaetigtAm *time.Time `json:"lusd_bestaetigt_am"`
 	AnonymisiertAm   *time.Time `json:"anonymisiert_am"`
-	// Migration 123: Die Tabelle führt alle Leser. Die Art gehört in die Auskunft, weil
-	// sie über die Person etwas aussagt — und weil sie entscheidet, welche Felder
-	// überhaupt gefüllt sind (ein Kollege hat keine Klasse und kein Abgängerjahr).
+	// Art entscheidet, welche Felder gefüllt sind: Ein Kollege hat keine Klasse und kein
+	// Abgangsjahr.
 	Art string `json:"art"`
-	// Zeigt ein Zugangskonto auf diesen Leser? Die Anmeldedaten selbst (E-Mail, Rolle)
-	// stehen nicht hier, sondern im eigenen Teil der Auskunft (DsgvoAuskunftResponse.
-	// Zugangskonto): Sie gehören zum Konto, nicht zum Leser.
+	// HatZugangskonto sagt, ob ein Zugangskonto auf diesen Leser zeigt. Die Anmeldedaten stehen
+	// in DsgvoAuskunftResponse.Zugangskonto: Sie gehören zum Konto, nicht zum Leser.
 	HatZugangskonto bool `json:"hat_zugangskonto"`
 }
 
@@ -76,7 +69,7 @@ type DsgvoAusleihe struct {
 	IstHandapparat bool       `json:"ist_handapparat"`
 }
 
-// DsgvoSchadensfall ist ein gemeldeter Schadens-/Verlustfall des Schülers.
+// DsgvoSchadensfall ist ein gemeldeter Schadens- oder Verlustfall des Lesers.
 type DsgvoSchadensfall struct {
 	Beschreibung      string     `json:"beschreibung"`
 	Betrag            string     `json:"betrag_eur"`
@@ -95,9 +88,12 @@ type DsgvoVormerkung struct {
 }
 
 // DsgvoAuditEintrag ist ein Eintrag der Datensatz-Historie (audit_log), der den Leser nennt.
+// Details trägt den Hinweis swaggertype, weil swag json.RawMessage ohne --parseDependency nicht
+// auflöst: Die Beschreibung des Endpunkts bräche still ab, und er fehlte in der Swagger-Datei.
+// Was über einem Feld steht, übernimmt swag als dessen Beschreibung.
 type DsgvoAuditEintrag struct {
 	// Tabelle sagt, woran der Eintrag hängt (ausleihen, schueler, schadensfaelle …). Mit der
-	// Aktion ergibt sie den Vorgang, den das Blatt in Worten nennt (dsgvoVorgang).
+	// Aktion ergibt sie den Vorgang, den das Blatt in Worten nennt.
 	Tabelle   string    `json:"tabelle"`
 	Aktion    string    `json:"aktion"`
 	Akteur    string    `json:"akteur"`
@@ -108,26 +104,21 @@ type DsgvoAuditEintrag struct {
 	// Exemplar nicht mehr gibt oder der Eintrag kein Buch betrifft.
 	Gegenstand string `json:"gegenstand"`
 	Barcode    string `json:"barcode"`
-	// swaggertype: json.RawMessage ist ein []byte-Alias aus der Standardbibliothek, das
-	// swag ohne --parseDependency nicht auflösen kann. Ohne diesen Hinweis bricht die
-	// Generierung für DIESEN Endpunkt still ab — die DSGVO-Auskunft fehlte deshalb
-	// komplett in der Swagger-Datei, obwohl sie annotiert war (gefunden 05.08.2026).
+	// Details sind die Angaben des Eintrags, wie der Schreiber sie abgelegt hat.
 	Details json.RawMessage `json:"details" swaggertype:"object"`
 }
 
-// DsgvoVerwaltungsEintrag ist ein Eintrag des Verwaltungsprotokolls (audit_logs):
-// Admin-Eingriffe wie DELETE/RESTORE/PURGE_STUDENT oder LUSD_ID_NACHGETRAGEN, die den
-// Schüler über details->>'schueler_id' referenzieren. admin_id und ip_adresse sind
-// Daten des BEARBEITERS, nicht des Schülers — sie gehören nicht in dessen Auskunft.
+// DsgvoVerwaltungsEintrag ist ein Eintrag des Verwaltungsprotokolls (audit_logs), der den Leser
+// über details->>'schueler_id' nennt, etwa DELETE_STUDENT oder LUSD_ID_NACHGETRAGEN. admin_id
+// und ip_adresse fehlen: Sie sind Daten der bearbeitenden Person, nicht des Lesers.
 type DsgvoVerwaltungsEintrag struct {
 	Aktion    string          `json:"aktion"`
 	Zeitpunkt time.Time       `json:"zeitpunkt"`
 	Details   json.RawMessage `json:"details" swaggertype:"object"`
 }
 
-// DsgvoBescheid ist ein Schadensersatz-Bescheid, der an diese Person gerichtet war
-// (Migration 110). Die Positionen selbst stehen als Schadensfälle im Abschnitt darüber;
-// hier steht der BRIEF: Nummer, Datum, Frist, Summe, Zustand.
+// DsgvoBescheid ist ein Schadensersatz-Bescheid an diese Person: der Brief mit Nummer, Datum,
+// Frist, Summe und Zustand. Seine Positionen stehen als Schadensfälle in der Auskunft.
 type DsgvoBescheid struct {
 	Referenznummer string    `json:"referenznummer"`
 	BriefDatum     time.Time `json:"brief_datum"`
@@ -141,17 +132,11 @@ type DsgvoBescheid struct {
 // Betroffenenrechte samt Beschwerderecht (lit. e und f). Die Datenkategorien (lit. b)
 // stehen als die Daten selbst in der Auskunft.
 //
-// Die Rechtsgrundlage ist KEINE Angabe des Art. 15 — sie gehört zur Information bei der
-// Erhebung (Art. 13 Abs. 1 lit. c) und steht hier freiwillig mit, weil die Auskunft sonst
-// den Grund der Verarbeitung nicht nennt. Maßgeblich bleibt das Verzeichnis von
-// Verarbeitungstätigkeiten der Schule.
-//
-// Geprüft am 10.09.2026 gegen die Fundstellen: § 83 HSchG ist die Norm zur Erhebung und
-// Verarbeitung personenbezogener Daten durch Schulen, § 153 HSchG die Lernmittelfreiheit
-// (Schulbücher bleiben Eigentum des Landes und werden befristet überlassen). Bis dahin
-// klammerte dieser Text beide Paragrafen unter „(Lernmittelfreiheit)" und nannte die LUSD
-// „Landesschülerdatenbank" — zwei falsche Angaben in einem Dokument, das die betroffene
-// Person in die Hand bekommt. VVT-Entwurf und SECURITY.md waren die ganze Zeit richtig.
+// Die Rechtsgrundlage ist keine Angabe des Art. 15; sie gehört zur Information bei der
+// Erhebung (Art. 13 Abs. 1 lit. c) und steht hier mit, weil die Auskunft sonst den Grund der
+// Verarbeitung nicht nennt. § 83 HSchG ist die Norm zur Erhebung und Verarbeitung
+// personenbezogener Daten durch Schulen, § 153 HSchG die Lernmittelfreiheit. Maßgeblich bleibt
+// das Verzeichnis von Verarbeitungstätigkeiten der Schule.
 type DsgvoVerarbeitungsangaben struct {
 	Zwecke            []string `json:"zwecke"`
 	Rechtsgrundlage   string   `json:"rechtsgrundlage"`
@@ -177,14 +162,14 @@ type DsgvoAuskunftResponse struct {
 	// Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;
 	// null, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).
 	Zugangskonto *repository.DsgvoZugangskonto `json:"zugangskonto"`
-	// Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie (seit
-	// 29.09.2026). Leer, wenn es keine gab.
+	// Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie. Leer, wenn
+	// es keine gab.
 	FruehereZugangskonten []repository.DsgvoFrueheresZugangskonto `json:"fruehere_zugangskonten"`
 	Verarbeitungsangaben  DsgvoVerarbeitungsangaben               `json:"verarbeitungsangaben"`
 }
 
-// DsgvoNachbuchMeldung ist eine Nachbuch-Meldung der Theke (Migration 117), in der die
-// Person als Ausleiher oder Vorbesitzer steht — mit Rolle, Barcode, Ergebnis und Zeitpunkt.
+// DsgvoNachbuchMeldung ist eine Nachbuch-Meldung der Theke, in der die Person als Ausleiher
+// oder Vorbesitzer steht.
 type DsgvoNachbuchMeldung struct {
 	Rolle       string     `json:"rolle"` // ausleiher | vorbesitzer
 	Barcode     string     `json:"barcode"`

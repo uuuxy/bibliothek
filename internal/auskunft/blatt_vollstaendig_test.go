@@ -13,24 +13,20 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Die gedruckte Auskunft enthält, was die abgerufene enthält (24.09.2026).
+// Die gedruckte Auskunft enthält, was die abgerufene enthält: Die Person bekommt das PDF, nicht
+// das JSON.
 //
-// Die Person bekommt das PDF, nicht das JSON. Das JSON zeigte seit dem 15.09.2026 die
-// Nachbuch-Meldungen (4e898c98), das PDF nicht; Zeitpunkt und Grund einer Stornierung
-// standen nur im JSON, obwohl FACHKONZEPT.md sagt, die Auskunft weise sie aus. Die
-// vorhandenen PDF-Tests prüften nur, DASS ein PDF entsteht, nicht was darauf steht.
-//
-// Das Gate hängt am Merkmal, nicht an einer Liste: Es füllt JEDES Feld der Auskunft
-// (DsgvoAuskunftResponse, per Reflexion) mit einem eigenen Prüfwert, erzeugt daraus das
-// echte PDF und verlangt jeden Wert auf dem Blatt. Ein neues Feld oder ein neuer Teil der
-// Auskunft ist damit geprüft, ohne dass jemand dieses Gate anfasst.
+// Das Gate hängt am Merkmal, nicht an einer Liste: Es füllt jedes Feld der Auskunft
+// (DsgvoAuskunftResponse, per Reflexion) mit einem eigenen Prüfwert, erzeugt daraus das PDF
+// und verlangt jeden Wert auf dem Blatt. Ein neues Feld oder ein neuer Teil der Auskunft ist
+// damit geprüft, ohne dass jemand dieses Gate anfasst.
 //
 // Zeitpunkte prüft es am Datum (TT.MM.JJJJ) in der Schulzeitzone: Jeder liegt auf 23:30 UTC,
 // in Berlin also schon am nächsten Tag. Ein Abschnitt, der die Zone des Servers druckt (der
 // Container läuft in UTC), nennt den Vortag und fällt auf.
 //
-// BLINDHEIT: Ja/Nein-Werte prüft es nicht — „Ja" steht zu oft auf dem Blatt, um einem
-// Feld zugeordnet zu werden.
+// Blindheit: Ja/Nein-Werte prüft es nicht; „Ja" steht zu oft auf dem Blatt, um einem Feld
+// zugeordnet zu werden.
 func TestDsgvoPDF_DrucktJedeAngabeDerAuskunft(t *testing.T) {
 	// Ausnahmen: Pfad → Begründung. Die Angaben der Protokolleinträge (details) sind keine mehr:
 	// Das Blatt druckt jeden Schlüssel, den es nicht als Kennung des Programms oder als buchendes
@@ -125,7 +121,7 @@ func (w *pruefwerte) fuelle(t *testing.T, v reflect.Value, pfad string) {
 		v.SetInt(int64(7000 + w.n))
 		w.merke(pfad, fmt.Sprint(7000+w.n))
 	case v.Kind() == reflect.Bool:
-		v.SetBool(true) // BLINDHEIT, siehe oben
+		v.SetBool(true) // Blindheit, siehe oben
 	default:
 		t.Fatalf("%s: den Typ %s kennt das Gate nicht — in fuelle ergänzen", pfad, v.Type())
 	}

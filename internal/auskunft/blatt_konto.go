@@ -11,9 +11,8 @@ import (
 )
 
 // dsgvoKontoAbschnitt druckt das Zugangskonto samt Klassenleitungen, Anfragen und den
-// Einträgen des Verwaltungsprotokolls über das Konto (repository/dsgvo_konto.go). Seit dem
-// 24.09.2026 Teil der Auskunft, weil es sie seither für jeden Leser gibt (OFFEN.md 5.19).
-// Bei Schülern zeigt in der Regel kein Konto auf den Leser; dann steht das hier in einem Satz.
+// Einträgen des Verwaltungsprotokolls über das Konto (repository/dsgvo_konto.go). Bei
+// Schülern zeigt in der Regel kein Konto auf den Leser; dann steht das hier in einem Satz.
 func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.DsgvoZugangskonto) {
 	dsgvoAbschnitt(p, tr, "10. Zugangskonto")
 	if k == nil {
@@ -92,8 +91,8 @@ func dsgvoAnfrageZeile(a repository.DsgvoAnfrage) string {
 }
 
 // dsgvoFruehereKontenAbschnitt druckt die gelöschten Konten, die auf diesen Leser zeigten, als
-// Teil von Abschnitt 10 (repository.LeseDsgvoFruehereZugangskonten, seit 29.09.2026). Gab es
-// keine, bleibt es beim Abschnitt darüber.
+// Teil von Abschnitt 10 (repository.LeseDsgvoFruehereZugangskonten). Gab es keine, bleibt es
+// beim Abschnitt darüber.
 func dsgvoFruehereKontenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, konten []repository.DsgvoFrueheresZugangskonto) {
 	if len(konten) == 0 {
 		return

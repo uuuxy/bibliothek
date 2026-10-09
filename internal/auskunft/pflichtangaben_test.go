@@ -5,9 +5,8 @@ import (
 	"testing"
 )
 
-// Die Speicherdauer-Angabe nennt die EINGESTELLTE Karenzzeit, keine feste Zahl
-// (Rasterdurchgang 02.09.2026: „Altfälle nach 360 Tagen" stand noch im Text, der Job
-// rechnete längst mit abgaenger_karenz_tage).
+// Die Speicherdauer nennt die eingestellte Karenzzeit, keine feste Zahl: Der Löschjob rechnet
+// mit abgaenger_karenz_tage, und die Auskunft nennt dieselbe Frist.
 func TestDsgvoVerarbeitungsangaben_KarenzAusEinstellung(t *testing.T) {
 	va := dsgvoVerarbeitungsangaben(90, 730, 5, 24)
 	if !strings.Contains(va.Speicherdauer, "Karenzzeit von 5 Tagen") {
@@ -21,9 +20,9 @@ func TestDsgvoVerarbeitungsangaben_KarenzAusEinstellung(t *testing.T) {
 	}
 }
 
-// Die Herkunft nennt jeden Weg, auf dem Stammdaten in die Leserdatei kommen — auch die
+// Die Herkunft nennt jeden Weg, auf dem Stammdaten in die Leserdatei kommen, auch die
 // Übernahme aus dem bisherigen Bibliotheksprogramm (internal/littera/schreiber_personen.go
-// legt Schüler und Lehrkräfte an). Bis zum 24.09.2026 fehlte sie in der Auskunft der Schüler.
+// legt Schüler und Lehrkräfte an).
 func TestDsgvoHerkunft_NenntDieUebernahme(t *testing.T) {
 	for art, va := range map[string]DsgvoVerarbeitungsangaben{
 		"schueler":  dsgvoVerarbeitungsangaben(90, 730, 90, 24),

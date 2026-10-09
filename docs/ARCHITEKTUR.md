@@ -619,12 +619,12 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 22.308 Zeilen, 142 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `api/`                  | 22.305 Zeilen, 142 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
 | `repository/`           | 21.058 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
 | `internal/service/`     | 4.496 Zeilen, 23 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 924 Zeilen, 2 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/betriebsbereitschaft_alarm.go` |
-| `internal/auskunft/`    | 1.290 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/dsgvo_auskunft.go` und `api/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
+| `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/dsgvo_auskunft.go` und `api/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
 | `inventur/`             | 6.546 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
 | `auth/`                 | 1.852 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
@@ -3069,7 +3069,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 22.308 Zeilen in 142 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 22.305 Zeilen in 142 Dateien das schwerste Paket
 
 | | |
 | --- | --- |

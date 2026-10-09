@@ -136,13 +136,12 @@ type dsgvoDaten struct {
 }
 
 // dsgvoKontoRecht verlangt die Auskunft zusätzlich zum Recht der Route, sobald auf den Leser
-// ein Zugangskonto zeigt (seit 28.09.2026) oder einmal gezeigt hat (seit 29.09.2026: Die
-// Auskunft nennt dann das gelöschte Konto samt seinen Einträgen, dieselbe Art Daten). Dann nennt sie das Konto, seine Einträge im
-// Verwaltungsprotokoll und jeden Vorgang, den die Person selbst bearbeitet hat, bei
-// Verwaltungseingriffen mit IP-Adresse. Konten und dieses Protokoll zeigt die Anwendung sonst
-// nur mit manage_users (GET /api/benutzer, GET /api/admin/auditlog). Das Recht der Route,
-// manage_students_admin, hat ab Werk auch die Leitung, und es ist zum Delegieren ans
-// Sekretariat gedacht (db/seed.go, RechteOptional). Gate:
+// ein Zugangskonto zeigt oder einmal gezeigt hat. Dann nennt sie das Konto, auch ein
+// gelöschtes, seine Einträge im Verwaltungsprotokoll und jeden Vorgang, den die Person selbst
+// bearbeitet hat, bei Verwaltungseingriffen mit IP-Adresse. Konten und dieses Protokoll zeigt
+// die Anwendung sonst nur mit manage_users (GET /api/benutzer, GET /api/admin/auditlog). Das
+// Recht der Route, manage_students_admin, hat ab Werk auch die Leitung, und es ist zum
+// Delegieren ans Sekretariat gedacht (db/seed.go, RechteOptional). Gate:
 // TestDsgvoAuskunft_KontoVerlangtKontenrecht.
 const dsgvoKontoRecht = "manage_users"
 
@@ -241,9 +240,8 @@ func (s *Server) protokolliereDsgvoAuskunft(ctx context.Context, id string) {
 // Art. 15 DSGVO für einen Leser zusammen, gleich welcher Art (pkg/leserart). Die Erteilung
 // selbst wird im Audit-Log protokolliert (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO).
 //
-// Der Annotationsblock stand bis zum 05.08.2026 rund 70 Zeilen weiter oben — über einem
-// Struct statt über diesem Handler. swag ordnet Annotationen der FOLGENDEN Deklaration
-// zu, hat den Block deshalb übergangen, und der Endpunkt fehlte in der Swagger-Datei.
+// Die Annotationen stehen direkt über dem Handler: swag ordnet sie der folgenden Deklaration
+// zu und übergeht sie an anderer Stelle still.
 // @Summary      DSGVO-Betroffenenauskunft (Art. 15) für einen Leser
 // @Tags         students
 // @Produce      json
@@ -272,10 +270,9 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 	})
 }
 
-// dsgvoAntwort ist die Auskunft als EIN Objekt: Die JSON-Antwort und das PDF entstehen
-// beide daraus. Bis zum 24.09.2026 setzte der JSON-Handler sein Objekt selbst zusammen und
-// das PDF las die Einzelteile — das PDF ließ dabei die Nachbuch-Meldungen aus, und niemand
-// merkte es. Gate: TestDsgvoPDF_DrucktJedeAngabeDerAuskunft.
+// dsgvoAntwort ist die Auskunft als ein Objekt: Die JSON-Antwort und das PDF entstehen beide
+// daraus, damit das Blatt keinen Teil auslässt, den die Antwort nennt. Gate:
+// TestDsgvoPDF_DrucktJedeAngabeDerAuskunft (internal/auskunft).
 func dsgvoAntwort(daten *dsgvoDaten, erstelltAm time.Time) auskunft.DsgvoAuskunftResponse {
 	return auskunft.DsgvoAuskunftResponse{
 		Art:                   "Auskunft nach Art. 15 DSGVO",

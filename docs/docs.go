@@ -5218,7 +5218,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "details": {
-                    "description": "swaggertype: json.RawMessage ist ein []byte-Alias aus der Standardbibliothek, das\nswag ohne --parseDependency nicht auflösen kann. Ohne diesen Hinweis bricht die\nGenerierung für DIESEN Endpunkt still ab — die DSGVO-Auskunft fehlte deshalb\nkomplett in der Swagger-Datei, obwohl sie annotiert war (gefunden 05.08.2026).",
+                    "description": "Details sind die Angaben des Eintrags, wie der Schreiber sie abgelegt hat.",
                     "type": "object"
                 },
                 "gegenstand": {
@@ -5229,7 +5229,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tabelle": {
-                    "description": "Tabelle sagt, woran der Eintrag hängt (ausleihen, schueler, schadensfaelle …). Mit der\nAktion ergibt sie den Vorgang, den das Blatt in Worten nennt (dsgvoVorgang).",
+                    "description": "Tabelle sagt, woran der Eintrag hängt (ausleihen, schueler, schadensfaelle …). Mit der\nAktion ergibt sie den Vorgang, den das Blatt in Worten nennt.",
                     "type": "string"
                 },
                 "zeitpunkt": {
@@ -5256,7 +5256,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/auskunft.DsgvoFoto"
                 },
                 "fruehere_zugangskonten": {
-                    "description": "Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie (seit\n29.09.2026). Leer, wenn es keine gab.",
+                    "description": "Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie. Leer, wenn\nes keine gab.",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/repository.DsgvoFrueheresZugangskonto"
@@ -5431,7 +5431,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "art": {
-                    "description": "Migration 123: Die Tabelle führt alle Leser. Die Art gehört in die Auskunft, weil\nsie über die Person etwas aussagt — und weil sie entscheidet, welche Felder\nüberhaupt gefüllt sind (ein Kollege hat keine Klasse und kein Abgängerjahr).",
+                    "description": "Art entscheidet, welche Felder gefüllt sind: Ein Kollege hat keine Klasse und kein\nAbgangsjahr.",
                     "type": "string"
                 },
                 "barcode_id": {
@@ -5450,7 +5450,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "hat_zugangskonto": {
-                    "description": "Zeigt ein Zugangskonto auf diesen Leser? Die Anmeldedaten selbst (E-Mail, Rolle)\nstehen nicht hier, sondern im eigenen Teil der Auskunft (DsgvoAuskunftResponse.\nZugangskonto): Sie gehören zum Konto, nicht zum Leser.",
+                    "description": "HatZugangskonto sagt, ob ein Zugangskonto auf diesen Leser zeigt. Die Anmeldedaten stehen\nin DsgvoAuskunftResponse.Zugangskonto: Sie gehören zum Konto, nicht zum Leser.",
                     "type": "boolean"
                 },
                 "hausnummer": {
@@ -5469,7 +5469,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "letzter_vorgang_am": {
-                    "description": "Migration 137: der Zeitpunkt des letzten abgeschlossenen Vorgangs — die zweite Uhr\nder Karenz neben abgaenger_seit. Er gehört in die Auskunft, weil er ein über diese\nPerson gespeicherter Zeitpunkt ist und weil er mitbestimmt, wann ihre Daten\nanonymisiert werden. WAS ausgeliehen war, sagt er nicht.",
+                    "description": "LetzterVorgangAm ist die zweite Uhr der Karenz neben AbgaengerSeit: Der Zeitpunkt bestimmt\nmit, wann die Daten der Person anonymisiert werden. Was ausgeliehen war, sagt er nicht.",
                     "type": "string"
                 },
                 "lusd_bestaetigt_am": {
@@ -5491,7 +5491,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "schul_eintritt_am": {
-                    "description": "Seit Migration 084/094 (nachgetragen 02.09.2026 — die Auskunft war um vier Spalten\nunvollständig; Gate: TestDsgvoAuskunft_KenntJedeLeserSpalte).",
                     "type": "string"
                 },
                 "sperrgrund": {
