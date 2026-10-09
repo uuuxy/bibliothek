@@ -239,6 +239,16 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   zusätzlichen Schalter `-quiet` endet gosec ohne Fund mit Exit 0, auch wenn es kein Paket
   laden konnte, und der Fehler fiel so erst im Lauf auf GitHub auf. Danach die Go-Suite und
   ein Bau des Images unter einem Probe-Namen (`docker build -t <Name> .`).
+- **gosec meldet eine Stelle, an der sich nur der Weg der Daten geändert hat (09.10.2026).**
+  Nach dem Umzug einer Abfrage aus einer Tür nach `repository/` meldete der Job „Go – gosec
+  static analysis" an `api/pdf.go` die Regel G705 (XSS über Taint-Analyse), am Schreiben des
+  PDFs in die Antwort. Vorher las die Tür die Zeile selbst (`QueryRow(…).Scan(…)`); seit dem
+  Umzug kommt sie als Rückgabe einer Funktion, die die Kennung aus der Anfrage als Argument
+  bekommt, und die Analyse wertet die Rückgabe als von der Anfrage abhängig. Am Verhalten
+  hatte sich nichts geändert: Der Körper ist das erzeugte PDF, ausgeliefert als
+  `application/pdf`, als Anhang und mit `nosniff`. Abhilfe: der Vermerk `#nosec G705` mit
+  Grund an der Stelle. Der Hook vor dem Push fährt gosec nicht; nach einem solchen Umzug
+  gosec am Arbeitsplatz mit dem Aufruf aus `.github/workflows/security-scan.yml` fahren.
 - **Nach einem Update der Pakete baut das Frontend nicht mehr (21.08.2026).** Ein `npm update`
   ohne Paketnamen hob auch den Bundler, und `npm run build` brach an gültigem Code;
   svelte-check, ESLint und Vitest blieben grün. Pakete deshalb einzeln heben und danach

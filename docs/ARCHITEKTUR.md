@@ -2211,7 +2211,11 @@ wenn man ihn einmal gebraucht hat.
   vergleichen (mit `go/scanner` gelesen): Unterschiede nur bei den Einbindungen. Umzubuchen
   sind `api/schichtung_test.go`, für einen verworfenen `CommandTag` `phantom_erfolg_test.go`,
   für `FROM schueler` `docs/lesepfade_gegen_sicht_test.go`, für `CURRENT_DATE`
-  `docs/kalendertag_bestand_test.go`; die ganze Suite nennt jeden Eintrag, der fehlt.
+  `docs/kalendertag_bestand_test.go`; die ganze Suite nennt jeden Eintrag, der fehlt. Zum
+  Schluss gosec mit dem Aufruf aus dem Sicherheits-Prüflauf fahren: Seine Taint-Analyse sieht
+  nach dem Umzug einen Weg von der Anfrage in die Antwort, den sie vorher nicht sah
+  ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5, Fall vom 09.10.2026); der Hook vor dem Push fährt
+  gosec nicht.
 
 ---
 

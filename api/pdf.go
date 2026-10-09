@@ -72,6 +72,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=elternbrief_%s.pdf", info.SchuelerNachname))
 
+		// #nosec G705 - der Körper ist das erzeugte PDF (application/pdf, als Anhang, nosniff); aus der Anfrage stammt nur die Kennung des Falls
 		if _, err := w.Write(pdfBytes); err != nil {
 			log.Printf("PDF Generator: Output error: %v", err)
 			return
