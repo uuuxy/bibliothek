@@ -106,6 +106,16 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [ ] Jahrgang aus der ISBN-Abfrage: „Neues Buch" öffnen und die ISBN 9783141096835 eingeben
   („EinFach Deutsch Unterrichtsmodelle … Klassen 8 - 10"). Erwartet: „von" zeigt 8, „bis"
   zeigt 10. Bei einem Buch für einen Jahrgang (9783060623198, „… 5. Schuljahr") zeigen beide 5
+- [ ] Mahnwesen, „Mahnbriefe drucken" für einen Schüler mit so vielen Büchern über der Frist,
+  dass die Tabelle nicht auf die erste Seite passt (mit der Standardvorlage ab dem neunten): Die
+  Tabelle läuft auf einer Folgeseite weiter, mit „Fortsetzung: Vorname Nachname" und den
+  Spaltenköpfen; keine Zeile ist über zwei Seiten verteilt
+- [ ] Mahnwesen, Mahnliste an die Klassenleitung (Versand an eine eigene Adresse, Anhang
+  öffnen): Das Cover steht im Seitenverhältnis des Buchs; ein langer Titel endet mit „…" vor
+  der Spalte „Autor"; bei mehr als zehn Büchern eines Schülers folgt eine Seite mit
+  „Fortsetzung: Name, Klasse"
+- [ ] Bestellwesen, Anschreiben im Anhang der Bestellmail: Der Name der Schule steht am selben
+  linken Rand wie der Brief; ab der zweiten Seite stehen die Spaltenköpfe über den Positionen
 
 **Erledigen:**
 
