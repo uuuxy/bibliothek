@@ -75,7 +75,7 @@ func TestBestellAnhaenge_MitLinkKeineEtikettenbogen(t *testing.T) {
 
 // Rückfallebene: Ohne Link (keine öffentliche Adresse hinterlegt) MUSS der Bogen beiliegen
 // — sonst hat der Händler nichts zum Bekleben, und die Exemplare gelten trotzdem schon als
-// etikettiert (siehe order_service.go, beklebtGeliefert).
+// etikettiert (siehe service.ProcessOrder, beklebtGeliefert).
 func TestBestellAnhaenge_OhneLinkLiegenDieBoegenBei(t *testing.T) {
 	m := testBestellMail()
 	m.IstHauptlieferant = true

@@ -183,8 +183,8 @@ export function seedBestellbedarf(anzahl = 8) {
  *
  * Direkt in der Datenbank statt über POST /api/bestellungen: Der Bestellweg verschickt die
  * Bestellmail, und der lokale Stack trägt den Mailserver aus der .env. Die Zeilen haben die
- * Form, die der Bestellweg schreibt (api/order_service.go: Exemplare im Zulauf, nicht
- * ausleihbar, Etikett offen).
+ * Form, die der Bestellweg schreibt (internal/service/bestellung_anlegen.go: Exemplare im
+ * Zulauf, nicht ausleihbar, Etikett offen).
  *
  * @returns {{ marke: string, aufraeumen: () => void }} marke: so heißen Lieferant und Titel;
  *   aufraeumen: Exemplare, Bestellung samt Position, Titel

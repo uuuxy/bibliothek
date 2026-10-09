@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -82,7 +83,7 @@ func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
 		meldung            string
 	}{
 		{"unbekannter Topf", sid, `{"mittel":"quatsch","frist_bis":"bald","positionen":[]}`,
-			http.StatusBadRequest, ErrMittelUngueltig.Error()},
+			http.StatusBadRequest, mitteltopf.ErrUngueltig.Error()},
 		{"Topf des Schulträgers", sid, `{"mittel":"schultraeger","frist_bis":"bald","positionen":[]}`,
 			http.StatusConflict, "nur für Lernmittel des Landes"},
 		{"keine Auswahl", sid, `{"mittel":"land","frist_bis":"bald","positionen":[],"ausleihen":[]}`,

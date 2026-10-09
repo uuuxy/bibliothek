@@ -354,7 +354,7 @@ func (s *Server) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 // geschrieben wird, und liefert die Frist als Kalendertag der Schule.
 func pruefeBescheidAnfrage(req BescheidErstellenRequest) (time.Time, error) {
 	if !mitteltopf.Gueltig(req.Mittel) {
-		return time.Time{}, apierrors.BadRequest(ErrMittelUngueltig.Error(), ErrMittelUngueltig)
+		return time.Time{}, apierrors.BadRequest(mitteltopf.ErrUngueltig.Error(), mitteltopf.ErrUngueltig)
 	}
 	// Der Brief kennt nur einen Wortlaut und ein Konto: die des Landes. Die Rechnung
 	// der Schülerbücherei (Mittel des Schulträgers) ist Etappe 3 — bis dahin gäbe

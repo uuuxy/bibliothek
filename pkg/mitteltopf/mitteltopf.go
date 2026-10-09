@@ -16,7 +16,10 @@
 // können.
 package mitteltopf
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 const (
 	// Land ist die Lernmittelfreiheit: Sammelbestellung, Eigentum des Landes.
@@ -30,6 +33,11 @@ const (
 func Gueltig(mittel string) bool {
 	return mittel == Land || mittel == Schultraeger
 }
+
+// ErrUngueltig meldet, dass eine Eingabe keinen Topf des Vokabulars nennt. Einen Vorgabewert
+// gibt es nicht: Mit ihm landete eine Bestellung still im falschen Topf. Die Türen lehnen die
+// Eingabe damit ab.
+var ErrUngueltig = errors.New("mittel muss 'land' (Lernmittelfreiheit) oder 'schultraeger' (Schülerbücherei) sein")
 
 // Texte sind die Wörter eines Topfs. Anschreiben, Mail und Berichte nehmen sie von hier: Mit
 // zwei Formulierungen desselben Vermerks hielte der Händler zwei Dokumente in der Hand, die

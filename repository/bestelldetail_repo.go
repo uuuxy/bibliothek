@@ -16,7 +16,7 @@ import (
 //
 // Dass das geht, ist neuer als der Kommentar in bestellhistorie_handler.go behauptet:
 // Seit Migration 063 trägt jedes beim Bestellen angelegte Exemplar seine bestellung_id
-// (order_service.go schreibt den Kopf bewusst VOR den Exemplaren, damit die ID existiert).
+// (service.ProcessOrder schreibt den Kopf vor den Exemplaren, damit die ID existiert).
 // Für Altbestand aus dem Littera-Import ist die Spalte leer — die Ansicht sagt das dann
 // auch, statt eine leere Liste als "keine Exemplare" auszugeben.
 

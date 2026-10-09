@@ -33,14 +33,28 @@ type SubmitOrderRequest struct {
 	// keine zweite Lieferanten-Mail). Optional — ohne Schlüssel läuft alles wie bisher.
 	IdempotencyKey string `json:"idempotency_key,omitempty"`
 	// Mittel: der Topf dieser Bestellung — 'land' (Lernmittelfreiheit) oder
-	// 'schultraeger' (Schülerbücherei), siehe repository.Mittel*. PFLICHT: Der Vermerk
+	// 'schultraeger' (Schülerbücherei), siehe pkg/mitteltopf. PFLICHT: Der Vermerk
 	// muss auf der Bestellung stehen, und ein Standardwert wäre eine stille Zuordnung
 	// zum falschen Topf. Ein gemischter Warenkorb schickt zwei Anfragen — eine je Topf.
 	Mittel string `json:"mittel"`
 }
 
+// bestellAuftrag füllt den Auftrag an das Anlegen der Bestellung aus der Anfrage.
+func bestellAuftrag(req SubmitOrderRequest) service.BestellAuftrag {
+	positionen := make([]service.BestellAuftragPosition, 0, len(req.Items))
+	for _, item := range req.Items {
+		positionen = append(positionen, service.BestellAuftragPosition(item))
+	}
+	return service.BestellAuftrag{
+		SupplierID:     req.SupplierID,
+		Items:          positionen,
+		IdempotencyKey: req.IdempotencyKey,
+		Mittel:         req.Mittel,
+	}
+}
+
 // SubmitOrderHandler legt die Bestellung aus dem Warenkorb an und verschickt die Bestellmail.
-func (s *Server) SubmitOrderHandler(orderSvc *OrderService) http.HandlerFunc {
+func (s *Server) SubmitOrderHandler(orderSvc *service.OrderService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleSubmitOrder(w, r, orderSvc)
 	}
@@ -48,7 +62,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService) http.HandlerFunc {
 
 // handleSubmitOrder speichert die Bestellung und verschickt danach die Mail an den Lieferanten;
 // die Bestellung gilt auch, wenn der Versand ausbleibt.
-func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, orderSvc *OrderService) {
+func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, orderSvc *service.OrderService) {
 	var req SubmitOrderRequest
 	if !DecodeAndValidate(w, r, &req) {
 		return
@@ -63,13 +77,13 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		return
 	}
 	if !mitteltopf.Gueltig(req.Mittel) {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, ErrMittelUngueltig)
+		apierrors.SendHTTPError(w, http.StatusBadRequest, mitteltopf.ErrUngueltig)
 		return
 	}
 
 	ctx := r.Context()
 
-	res, err := orderSvc.ProcessOrder(ctx, req)
+	res, err := orderSvc.ProcessOrder(ctx, bestellAuftrag(req))
 	if err != nil {
 		apierrors.SendHTTPError(w, mapProcessOrderError(err), err)
 		return
@@ -97,17 +111,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		return
 	}
 
-	mitLink, err := s.sendeBestellmail(ctx, bestellmailDaten{
-		Empfaenger:        res.SupplierEmail,
-		Kundennummer:      res.CustomerNumber,
-		Mittel:            res.Mittel,
-		Positionen:        res.SummaryItems,
-		Exemplare:         res.TotalAllocated,
-		Etiketten:         res.Labels,
-		IstHauptlieferant: res.IstHauptlieferant,
-		Token:             res.BestaetigungsToken,
-		LinkGueltigBis:    res.LinkGueltigBis,
-	})
+	mitLink, err := s.sendeBestellmail(ctx, bestellmailDatenAus(res))
 	if err != nil {
 		// Die Bestellung ist gespeichert, die Mail nicht raus: Der Vermerk an der Bestellung
 		// bleibt, wenn diese Meldung vom Bildschirm verschwunden ist.
@@ -132,9 +136,9 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 // Alles andere ist ein Serverfehler, dessen Text die Tür nicht ausgibt.
 func mapProcessOrderError(err error) int {
 	switch {
-	case errors.Is(err, ErrLieferantUnbekannt), errors.Is(err, ErrTitelUnbekannt):
+	case errors.Is(err, service.ErrLieferantUnbekannt), errors.Is(err, service.ErrTitelUnbekannt):
 		return http.StatusNotFound
-	case errors.Is(err, ErrMittelUngueltig), errors.Is(err, ErrMengeUngueltig):
+	case errors.Is(err, mitteltopf.ErrUngueltig), errors.Is(err, service.ErrMengeUngueltig):
 		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError

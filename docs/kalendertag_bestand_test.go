@@ -42,11 +42,11 @@ var bestandKalendertag = map[string]struct {
 	// Ein um zwei Stunden verschobenes Kaufdatum ändert keine Entscheidung über einen
 	// Menschen, und es läuft ohnehin von Hand und tagsüber. Der Listen-Import stand hier
 	// bis zum 23.09.2026; seitdem nimmt er die Vorgabe der Spalte (Migration 139).
-	"cmd/migrate/pg_writer.go":         {1, "erworben_am beim Alt-Import"},
-	"repository/statistik.go":          {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
-	"cmd/seed/main.go":                 {1, "erfundene Abgangsjahre für Testdaten"},
-	"internal/uebernahme/protokoll.go": {1, "Zeitstempel einer Protokollzeile"},
-	"api/order_service.go":             {1, "Anschaffungsjahr eines Exemplars"},
+	"cmd/migrate/pg_writer.go":               {1, "erworben_am beim Alt-Import"},
+	"repository/statistik.go":                {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
+	"cmd/seed/main.go":                       {1, "erfundene Abgangsjahre für Testdaten"},
+	"internal/uebernahme/protokoll.go":       {1, "Zeitstempel einer Protokollzeile"},
+	"internal/service/bestellung_anlegen.go": {1, "Anschaffungsjahr eines Exemplars"},
 }
 
 var (

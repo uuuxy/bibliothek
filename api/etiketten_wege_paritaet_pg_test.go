@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/service"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -32,15 +33,15 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
 	lieferant := haendler(t, pool, "Naacher-Paritaet", true)
 	titel := titelMitMeldebestand(t, pool, "LMF-Paritaet", 0)
 
-	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,
 		SupplierID: lieferant,
-		Items:      []OrderItemRequest{{TitelID: titel, Menge: 3, Preis: 10, GenerateBarcodes: true}},
+		Items:      []service.BestellAuftragPosition{{TitelID: titel, Menge: 3, Preis: 10, GenerateBarcodes: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)

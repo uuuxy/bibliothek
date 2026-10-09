@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/service"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -167,11 +168,11 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
-	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Schultraeger,
 		SupplierID: haendler(t, pool, "Naacher", true),
-		Items: []OrderItemRequest{{
+		Items: []service.BestellAuftragPosition{{
 			TitelID: titelMitMeldebestand(t, pool, "LMF-Topfprobe", 0), Menge: 2, Preis: 10, GenerateBarcodes: true}},
 	})
 	if err != nil {
@@ -190,7 +191,8 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	if err != nil {
 		t.Fatalf("Einstellungen lesen: %v", err)
 	}
-	boegen, err := etikettenboegen(res.Labels, etikettKopfAus(einstellungen), true, res.Mittel)
+	// Die Etiketten gehen durch dieselbe Füll-Funktion wie an der Tür der Bestellung.
+	boegen, err := etikettenboegen(bestellmailDatenAus(res).Etiketten, etikettKopfAus(einstellungen), true, res.Mittel)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}

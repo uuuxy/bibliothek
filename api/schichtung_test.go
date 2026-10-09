@@ -194,7 +194,6 @@ var dateienOhneTuer = []string{
 	"constants.go",
 	"lmf_plan_live.go",
 	"mahnwesen_mail.go",
-	"order_service.go",
 	"schueler_kiosk.go",
 	"student_klasse_regel.go",
 	"verwaltung_protokoll.go",

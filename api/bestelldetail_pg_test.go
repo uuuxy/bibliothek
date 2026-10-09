@@ -46,7 +46,7 @@ func holeDetail(t *testing.T, srv *Server, pool *pgxpool.Pool, bestellungID stri
 }
 
 // exemplarAusBestellung legt ein Exemplar an, das seine Herkunft kennt — genau das, was
-// order_service.go beim Bestellen tut.
+// service.ProcessOrder beim Bestellen tut.
 func exemplarAusBestellung(t *testing.T, pool *pgxpool.Pool, titelID, bestellungID, barcode string, etikettGedruckt bool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(), `

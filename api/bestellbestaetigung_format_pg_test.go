@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
+	"bibliothek/internal/service"
 	"bibliothek/pdf"
 	"bibliothek/pkg/bestelllink"
 	"bibliothek/pkg/mitteltopf"
@@ -54,15 +55,15 @@ func bestellungMitEtiketten(t *testing.T, srv *Server, pool *pgxpool.Pool, menge
 func bestellungMitEtikettenAus(t *testing.T, srv *Server, pool *pgxpool.Pool, menge int, mittel string) string {
 	t.Helper()
 	ctx := context.Background()
-	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
 	lieferant := haendler(t, pool, "Naacher", true)
 	titel := titelMitMeldebestand(t, pool, "LMF-Formatprobe", 0)
 
-	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mittel,
 		SupplierID: lieferant,
-		Items:      []OrderItemRequest{{TitelID: titel, Menge: menge, Preis: 10, GenerateBarcodes: true}},
+		Items:      []service.BestellAuftragPosition{{TitelID: titel, Menge: menge, Preis: 10, GenerateBarcodes: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)

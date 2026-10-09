@@ -29,6 +29,31 @@ type bestellmailDaten struct {
 	LinkGueltigBis *time.Time
 }
 
+// bestellmailDatenAus füllt die Angaben der Mail aus der eben angelegten Bestellung. Positionen
+// und Etiketten haben in internal/service dieselben Felder wie hier; der Topf jedes Etiketts
+// kommt mit der Bestellung und nicht aus einer Anfrage.
+func bestellmailDatenAus(res *service.OrderResult) bestellmailDaten {
+	positionen := make([]OrderedItem, 0, len(res.SummaryItems))
+	for _, p := range res.SummaryItems {
+		positionen = append(positionen, OrderedItem(p))
+	}
+	etiketten := make([]BarcodeLabelDetail, 0, len(res.Labels))
+	for _, e := range res.Labels {
+		etiketten = append(etiketten, BarcodeLabelDetail(e))
+	}
+	return bestellmailDaten{
+		Empfaenger:        res.SupplierEmail,
+		Kundennummer:      res.CustomerNumber,
+		Mittel:            res.Mittel,
+		Positionen:        positionen,
+		Exemplare:         res.TotalAllocated,
+		Etiketten:         etiketten,
+		IstHauptlieferant: res.IstHauptlieferant,
+		Token:             res.BestaetigungsToken,
+		LinkGueltigBis:    res.LinkGueltigBis,
+	}
+}
+
 // sendeBestellmail baut die Mail aus Vorlage und Einstellungen und verschickt sie. mitLink
 // sagt, ob der Bestätigungs-Link darin steht. Der erste und der erneute Versand gehen beide
 // hier durch, damit der Lieferant beide Male dieselbe Mail bekommt.

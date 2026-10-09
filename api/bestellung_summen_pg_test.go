@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/service"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -16,15 +18,15 @@ func TestProcessOrder_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	resetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
 	lieferant := haendler(t, pool, "Summen", false)
 	erster := titelMitMeldebestand(t, pool, "LMF-Summe Eins", 0)
 	zweiter := titelMitMeldebestand(t, pool, "LMF-Summe Zwei", 0)
 
-	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel: mitteltopf.Land, SupplierID: lieferant,
-		Items: []OrderItemRequest{
+		Items: []service.BestellAuftragPosition{
 			{TitelID: erster, Menge: 3, Preis: 10, GenerateBarcodes: true},
 			{TitelID: zweiter, Menge: 2, Preis: 4.5, GenerateBarcodes: true},
 		},
@@ -52,5 +54,36 @@ func TestProcessOrder_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	}
 	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM buecher_exemplare WHERE bestellung_id = $1`, res.BestellungID); n != 5 {
 		t.Errorf("%d Exemplare an der Bestellung, erwartet 5", n)
+	}
+}
+
+// Ohne gültigen Topf legt das Anlegen nichts an, auch wenn kein Aufrufer vorher prüft: Die
+// Tür prüft den Topf selbst, das Anlegen ist die zweite Stelle. Abgelehnt wird mit dem Fehler
+// des Vokabulars, bevor ein Barcode reserviert ist.
+func TestProcessOrder_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
+	lieferant := haendler(t, pool, "Ohne Topf", true)
+	titel := titelMitMeldebestand(t, pool, "LMF-Ohne-Topf", 0)
+
+	for _, mittel := range []string{"", "kreis"} {
+		res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
+			Mittel: mittel, SupplierID: lieferant,
+			Items: []service.BestellAuftragPosition{{TitelID: titel, Menge: 2, Preis: 10, GenerateBarcodes: true}},
+		})
+		if !errors.Is(err, mitteltopf.ErrUngueltig) {
+			t.Errorf("Topf %q: Fehler %v und Ergebnis %+v, erwartet mitteltopf.ErrUngueltig", mittel, err, res)
+		}
+	}
+	var bestellungen, exemplare int
+	if err := pool.QueryRow(ctx, `
+		SELECT (SELECT count(*) FROM bestellungen_verlauf WHERE lieferant_id = $1),
+		       (SELECT count(*) FROM buecher_exemplare WHERE titel_id = $2)`, lieferant, titel).Scan(&bestellungen, &exemplare); err != nil {
+		t.Fatalf("zählen: %v", err)
+	}
+	if bestellungen != 0 || exemplare != 0 {
+		t.Errorf("ohne gültigen Topf entstanden %d Bestellungen und %d Exemplare", bestellungen, exemplare)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/service"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -74,7 +75,7 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
 	beklebtID := haendler(t, pool, "Beklebt", true)
 	selbstID := haendler(t, pool, "Selbst", false)
@@ -82,18 +83,18 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 	titelBeklebt := titelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
 	titelSelbst := titelMitMeldebestand(t, pool, "LMF-Selbst", 0)
 
-	if _, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+	if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,
 		SupplierID: beklebtID,
-		Items:      []OrderItemRequest{{TitelID: titelBeklebt, Menge: 2, Preis: 10, GenerateBarcodes: true}},
+		Items:      []service.BestellAuftragPosition{{TitelID: titelBeklebt, Menge: 2, Preis: 10, GenerateBarcodes: true}},
 	}); err != nil {
 		t.Fatalf("Bestellung beim beklebenden Händler: %v", err)
 	}
 
-	if _, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+	if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,
 		SupplierID: selbstID,
-		Items:      []OrderItemRequest{{TitelID: titelSelbst, Menge: 2, Preis: 10, GenerateBarcodes: true}},
+		Items:      []service.BestellAuftragPosition{{TitelID: titelSelbst, Menge: 2, Preis: 10, GenerateBarcodes: true}},
 	}); err != nil {
 		t.Fatalf("Bestellung beim normalen Händler: %v", err)
 	}
@@ -131,15 +132,15 @@ func TestProcessOrder_LabelsTragenSignatur(t *testing.T) {
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
 	lieferant := haendler(t, pool, "MitSignatur", false)
 	titel := titelMitSignatur(t, pool, "Deutschbuch 5", "LMF-Deutsch 5", 0)
 
-	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,
 		SupplierID: lieferant,
-		Items:      []OrderItemRequest{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: true}},
+		Items:      []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)
@@ -161,15 +162,15 @@ func TestProcessOrder_BeklebenderHaendlerOhneBarcodebogen(t *testing.T) {
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
 	lieferant := haendler(t, pool, "BeklebtOhneBogen", true)
 	titel := titelMitMeldebestand(t, pool, "LMF-OhneBogen", 0)
 
-	if _, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+	if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,
 		SupplierID: lieferant,
-		Items:      []OrderItemRequest{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: false}},
+		Items:      []service.BestellAuftragPosition{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: false}},
 	}); err != nil {
 		t.Fatalf("Bestellung ohne Barcodebogen: %v", err)
 	}

@@ -46,7 +46,7 @@ func naechsteInterneNummer(t *testing.T, srv *Server) string {
 }
 
 // bestelleExemplare geht den Weg des Bestellwesens: Barcodes vorab ziehen und die
-// Exemplare damit anlegen (ProcessOrder, api/order_service.go). Schlägt der Insert
+// Exemplare damit anlegen (service.ProcessOrder). Schlägt der Insert
 // fehl, kippt in der Anwendung die komplette Bestellung — deshalb ist der Insert hier
 // Teil der Prüfung und nicht nur der gezogene Barcode.
 func bestelleExemplare(t *testing.T, pool *pgxpool.Pool, repo repository.BookRepository, titelID string, menge int) []string {

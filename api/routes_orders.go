@@ -3,10 +3,11 @@ package api
 import (
 	"net/http"
 
+	"bibliothek/internal/service"
 	"bibliothek/repository"
 )
 
-func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *OrderService) {
+func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *service.OrderService) {
 	// Bestellungen & Lieferanten
 	// Anzeige-Regeln des Bestellwesens (z. B. ob mit Preisen gearbeitet wird).
 	// view_orders statt manage_users: Wer bestellen darf, muss dafuer keine

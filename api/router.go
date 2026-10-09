@@ -89,7 +89,7 @@ func (s *Server) Routes() http.Handler {
 	deviceSvc := service.NewDeviceService(s.DB.Pool, studentRepo, loanRepo, auditRepo)
 	omniboxSvc := service.NewOmniboxService(s.DB.Pool, studentRepo, bookRepo, userRepo, loanRepo, loanSvc, deviceSvc)
 	nachbuchSvc := service.NewNachbuchService(s.DB.Pool, studentRepo, bookRepo, userRepo, loanRepo, auditRepo)
-	orderSvc := NewOrderService(s.DB, bookRepo)
+	orderSvc := service.NewOrderService(s.DB, bookRepo)
 
 	s.registerInventurSubmoduleRoutes(mux)
 	s.registerAuthRoutes(mux)
