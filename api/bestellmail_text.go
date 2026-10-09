@@ -38,8 +38,7 @@ func bestellVersandMeldung(lieferantName string, ohneLink bool) (status, meldung
 }
 
 // bestellMailFallback* ist der Standardtext, falls die Vorlage BESTELLUNG_HAENDLER
-// fehlt oder ein Feld leer ist — so bleibt der Bestellversand immer versandfähig
-// (identisch zum früher hartkodierten Text in pdf_service.go).
+// fehlt oder ein Feld leer ist — so bleibt der Bestellversand immer versandfähig.
 //
 // {{.Mittel}} ist der Topf (Lernmittelfreiheit / Schülerbücherei, Migration 109) — im
 // Betreff, damit er im Postfach des Händlers zwischen allen anderen Bestellungen

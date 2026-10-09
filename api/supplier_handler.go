@@ -282,7 +282,7 @@ func (s *Server) DeleteSupplierHandler() http.HandlerFunc {
 		// LÖSCHWEG daneben war das Problem. „Löschen" in der Lieferantenverwaltung fragt
 		// nicht nach, und getroffen werden konnte auch der EINE Händler, an dem der ganze
 		// Bestellweg hängt: Bestellmail, Bestätigungs-Link (bestellbestaetigung_handler.go)
-		// und die Etiketten-Entscheidung „der Händler beklebt selbst" (pdf_service.go).
+		// und die Etiketten-Entscheidung „der Händler beklebt selbst" (bestellmail_anhaenge.go).
 		// Danach gab es keinen Hauptlieferanten mehr, und niemand erfuhr davon — die
 		// Oberfläche zeigte nur einen Händler weniger.
 		//

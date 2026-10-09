@@ -77,7 +77,7 @@ func bestelleUeberHandler(t *testing.T, srv *Server, lieferantID, titelID string
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
-	handler := srv.SubmitOrderHandler(NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)), NewPDFService())
+	handler := srv.SubmitOrderHandler(NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)))
 	handler(rec, req)
 	return rec
 }
@@ -215,7 +215,7 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.SubmitOrderHandler(NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)), NewPDFService())(rec, req)
+	srv.SubmitOrderHandler(NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)))(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
@@ -247,7 +247,7 @@ func bestelleMitSchluessel(t *testing.T, srv *Server, lieferantID, titelID, key 
 	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	handler := srv.SubmitOrderHandler(NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)), NewPDFService())
+	handler := srv.SubmitOrderHandler(NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)))
 	handler(rec, req)
 	return rec
 }

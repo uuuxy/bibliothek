@@ -99,10 +99,8 @@ func (s *Server) etikettKopf(ctx context.Context) EtikettKopf {
 	return etikettKopfAus(settings)
 }
 
-// etikettKopfAus baut den Kopf aus den Einstellungen — EINE Stelle für Selbstdruck,
-// Lieferanten-Link und Mailanhang. Bis zum 21.09.2026 baute der Mailweg seinen Kopf selbst
-// (pdf_service.go) und wiederholte die Regel „leer = Werksvorgabe"; eine zweite Einstellung
-// wäre dort die nächste Stelle gewesen, die jemand vergisst.
+// etikettKopfAus baut den Kopf aus den Einstellungen: eine Stelle für Selbstdruck,
+// Lieferanten-Link und Mailanhang, damit die Regel „leer = Werksvorgabe" nur einmal steht.
 //
 // Die Werksvorgabe gilt nur für den allgemeinen Vermerk. Der Vermerk der Schülerbücherei
 // bleibt leer, wenn nichts hinterlegt ist — leer heißt dort kein Vermerk.

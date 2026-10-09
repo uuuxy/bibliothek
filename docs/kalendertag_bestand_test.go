@@ -48,7 +48,7 @@ var bestandKalendertag = map[string]struct {
 	"inventur/lernmittel_handler.go":   {1, "Datum im DATEINAMEN eines Downloads"},
 	"inventur/export_csv.go":           {1, "Datum im DATEINAMEN eines Downloads"},
 	"internal/uebernahme/protokoll.go": {1, "Zeitstempel einer Protokollzeile"},
-	"api/pdf_service.go":               {1, "Datum im DATEINAMEN eines Downloads"},
+	"api/bestellmail_anhaenge.go":      {1, "Datum im DATEINAMEN eines Downloads"},
 	"api/order_service.go":             {1, "Anschaffungsjahr eines Exemplars"},
 }
 

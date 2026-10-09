@@ -37,7 +37,7 @@ type OrderResult struct {
 	Labels         []BarcodeLabelDetail
 	SummaryItems   []OrderedItem
 	TotalAllocated int
-	// IstHauptlieferant: siehe repository.Supplier — steuert, ob DispatchOrderEmail
+	// IstHauptlieferant: siehe repository.Supplier — steuert, ob die Bestellmail
 	// zusätzlich das große Lernmittel-Etikett anhängt.
 	IstHauptlieferant bool
 	// BestellungID der soeben geschriebenen Bestellung.

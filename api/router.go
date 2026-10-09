@@ -90,7 +90,6 @@ func (s *Server) Routes() http.Handler {
 	omniboxSvc := service.NewOmniboxService(s.DB.Pool, studentRepo, bookRepo, userRepo, loanRepo, loanSvc, deviceSvc)
 	nachbuchSvc := service.NewNachbuchService(s.DB.Pool, studentRepo, bookRepo, userRepo, loanRepo, auditRepo)
 	orderSvc := NewOrderService(s.DB, bookRepo)
-	pdfSvc := NewPDFService()
 
 	s.registerInventurSubmoduleRoutes(mux)
 	s.registerAuthRoutes(mux)
@@ -101,7 +100,7 @@ func (s *Server) Routes() http.Handler {
 	s.registerStudentRoutes(mux, studentRepo, mahnRepo, auditRepo)
 	s.registerBookRoutes(mux, bookRepo, auditRepo)
 	s.registerSystemRoutes(mux, auditRepo, userRepo, s.DB.Pool)
-	s.registerOrderRoutes(mux, orderSvc, pdfSvc)
+	s.registerOrderRoutes(mux, orderSvc)
 
 	s.registerImportRoutes(mux)
 	s.registerSwaggerRoutes(mux)

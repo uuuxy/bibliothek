@@ -6,7 +6,7 @@ import (
 	"bibliothek/repository"
 )
 
-func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *OrderService, pdfSvc *PDFService) {
+func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *OrderService) {
 	// Bestellungen & Lieferanten
 	// Anzeige-Regeln des Bestellwesens (z. B. ob mit Preisen gearbeitet wird).
 	// view_orders statt manage_users: Wer bestellen darf, muss dafuer keine
@@ -27,14 +27,14 @@ func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *OrderService,
 	mux.Handle("POST /api/lieferanten", s.RequirePermission("create_orders")(s.CreateSupplierHandler()))
 	mux.Handle("PUT /api/lieferanten/{id}", s.RequirePermission("create_orders")(s.UpdateSupplierHandler()))
 	mux.Handle("DELETE /api/lieferanten/{id}", s.RequirePermission("create_orders")(s.DeleteSupplierHandler()))
-	mux.Handle("POST /api/bestellungen", s.RequirePermission("create_orders")(s.SubmitOrderHandler(orderSvc, pdfSvc)))
+	mux.Handle("POST /api/bestellungen", s.RequirePermission("create_orders")(s.SubmitOrderHandler(orderSvc)))
 	mux.Handle("GET /api/bestellungen/zulauf", s.RequirePermission("view_orders")(s.GetIncomingShipmentsHandler()))
 	mux.Handle("POST /api/bestellungen/suche", s.RequirePermission("view_orders")(s.SearchOrdersHandler()))
 	mux.Handle("POST /api/bestellungen/bulk-receive", s.RequirePermission("create_orders")(s.BulkReceiveOrderHandler()))
 	mux.Handle("PUT /api/bestellungen/{id}/bestaetigen", s.RequirePermission("create_orders")(s.BestaetigenBestellungHandler()))
 	mux.Handle("PUT /api/bestellungen/{id}/bestaetigungs-link", s.RequirePermission("create_orders")(s.NeuerBestaetigungsLinkHandler()))
 	// Erneuter Versand der Bestellmail nach einem gescheiterten Versuch (Migration 161).
-	mux.Handle("POST /api/bestellungen/{id}/mail", s.RequirePermission("create_orders")(s.SendeBestellmailErneutHandler(pdfSvc)))
+	mux.Handle("POST /api/bestellungen/{id}/mail", s.RequirePermission("create_orders")(s.SendeBestellmailErneutHandler()))
 	// Derselbe Vermerk ohne Versand: Der Händler hat die Bestellung auf anderem Weg erhalten.
 	mux.Handle("DELETE /api/bestellungen/{id}/mail", s.RequirePermission("create_orders")(s.NimmBestellmailVermerkHandler()))
 	// Rückweg für den Topf (Migration 109): mit Pflicht-Grund, im Admin-Audit-Log.

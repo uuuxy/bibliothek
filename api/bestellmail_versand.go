@@ -29,7 +29,7 @@ type bestellmailDaten struct {
 // sendeBestellmail baut die Mail aus Vorlage und Einstellungen und verschickt sie. mitLink
 // sagt, ob der Bestätigungs-Link darin steht. Der erste und der erneute Versand gehen beide
 // hier durch, damit der Lieferant beide Male dieselbe Mail bekommt.
-func (s *Server) sendeBestellmail(ctx context.Context, pdfSvc *PDFService, d bestellmailDaten) (mitLink bool, err error) {
+func (s *Server) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitLink bool, err error) {
 	settings, _ := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx) //nolint:errcheck
 	schule := pdf.SchuleInfo{
 		Name:    settings.SchuleName,
@@ -55,7 +55,7 @@ func (s *Server) sendeBestellmail(ctx context.Context, pdfSvc *PDFService, d bes
 		mittel:          d.Mittel,
 	})
 
-	err = pdfSvc.DispatchOrderEmail(BestellMail{
+	err = verschickeBestellmail(BestellMail{
 		Empfaenger:           d.Empfaenger,
 		Betreff:              subject,
 		Text:                 body,

@@ -34,7 +34,7 @@ func bestelleMitTopf(t *testing.T, srv *Server, lieferantID, titelID, mittel str
 	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	handler := srv.SubmitOrderHandler(NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)), NewPDFService())
+	handler := srv.SubmitOrderHandler(NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)))
 	handler(rec, req)
 	return rec
 }

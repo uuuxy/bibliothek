@@ -349,7 +349,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
   keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 23 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 23.652 Zeilen in 147 Dateien (am Anfang 30.785 in 168).
+  `api/` hat 23.640 Zeilen in 147 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`, der Strichcode in `pkg/strichcode`, die Arten eines
@@ -359,31 +359,33 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Mahnbrief (`mahnbrief.go`) und das Bestellanschreiben (`bestellanschreiben.go`). Offen: der
   Aufbau der übrigen PDFs und der Rest der 23. Was ein Erzeuger aus `repository/` liest, bekommt
   er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2). Je Thema ein Commit; die
-  Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Gemessen am 09.10.2026
-  mit einem Probe-Umzug am Compiler, was die drei übrigen PDF-Dateien brauchen: `pdf_service.go`
-  stellt die Anlagen der Bestellmail zusammen und verschickt sie; das ist kein Erzeuger und
-  hängt an 15 Namen aus `api/`. Die Auskunft (`dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`,
-  dazu der Erzeuger in `dsgvo_pdf.go`) hängt an 15 Namen aus `api/` und 17 aus `repository/` und
-  nimmt den Typ der Antwort für den Bildschirm; sie ist die größte Sache.
+  Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Von den PDF-Erzeugern
+  steht nur noch die Auskunft in `api/` (`dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`, dazu
+  der Erzeuger in `dsgvo_pdf.go`). Gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler:
+  Sie hängt an 15 Namen aus `api/` und 17 aus `repository/` und nimmt den Typ der Antwort für
+  den Bildschirm; sie ist die größte Sache. Die Anlagen der Bestellmail
+  (`bestellmail_anhaenge.go`, bisher `pdf_service.go`) sind kein Erzeuger: Die Datei stellt sie
+  zusammen und verschickt die Mail; sie bleibt als Helfer bei ihren Türen.
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
   umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
 - **Was von den 23 umzieht und was bleibt** (eingeteilt am 09.10.2026 nach dem Inhalt jeder
-  Datei). Drei gehören zu den PDFs (`pdf_service.go`, `dsgvo_pdf_konto.go`,
-  `dsgvo_pdf_protokoll.go`, 771 Zeilen). Zehn tragen Regeln und ziehen um (1.237 Zeilen):
+  Datei). Zwei gehören zur Auskunft (`dsgvo_pdf_konto.go`, `dsgvo_pdf_protokoll.go`, 548
+  Zeilen). Zehn tragen Regeln und ziehen um (1.237 Zeilen):
   `order_service.go` (397, legt eine Bestellung in einer Transaktion an; Ziel
-  `internal/service`, zuletzt, weil `pdf_service.go` an seinen Namen hängt),
+  `internal/service`, zuletzt, weil `bestellmail_anhaenge.go` an seinen Namen hängt),
   `lmf_termine_frist.go` (207) und `lmf_plan_vorgabe.go` (117, Fristen und Rahmen des
   LMF-Plans), `bestellmail_text.go` (147, Platzhalter der Bestellmail), `mittel_vermerk.go`
   (99, Texte je Topf; das Bestellanschreiben bekommt sie aus der Tür),
   `bestellbestaetigung_token.go` (94), `dsgvo_pflichtangaben_kollegium.go` (63, zieht mit der
   Auskunft), `import_helpers.go` (55, Kopfzeile einer Importdatei), `prod_geheimnisse.go` (36)
-  und `student_klasse_regel.go` (22). Zehn sind Typen einer Anfrage oder Antwort, Füll-Funktionen
-  und Helfer mehrerer Türen und bleiben (701 Zeilen): `abgaenger_fenster.go` (trägt daneben die
+  und `student_klasse_regel.go` (22). Elf sind Typen einer Anfrage oder Antwort, Füll-Funktionen
+  und Helfer mehrerer Türen und bleiben (915 Zeilen): `abgaenger_fenster.go` (trägt daneben die
   Grenzen der Abgänger-Saison), `action_types.go`, `bescheid_absender.go`,
-  `bestellmail_versand.go`, `betriebsbereitschaft_alarm.go`, `constants.go`, `lmf_plan_live.go`,
+  `bestellmail_anhaenge.go` (214, stellt die Anlagen der Bestellmail zusammen und verschickt
+  sie), `bestellmail_versand.go`, `betriebsbereitschaft_alarm.go`, `constants.go`, `lmf_plan_live.go`,
   `mahnwesen_mail.go`, `schueler_kiosk.go`, `verwaltung_protokoll.go`. Der Bestand kann damit
-  nicht auf null fallen; fertig ist dieser Schritt, wenn die dreizehn ausgezogen sind. Zuerst
+  nicht auf null fallen; fertig ist dieser Schritt, wenn die zwölf ausgezogen sind. Zuerst
   kommt, was eine zweite Schicht braucht: Eine Regel in `api/` können `repository/` und
   `internal/service/` nicht einbinden und formulieren sie selbst (so die Leserart, ARCHITEKTUR
   5.2.2).
@@ -431,9 +433,10 @@ der Umzug.
   Zellen fester Breite; ein langer Titel läuft über die Nachbarzelle (wie 5.63).
 - **Kopf am falschen Rand.** Das Bestellanschreiben setzt seine Ränder nach dem Anlegen der
   Seite: Der Name der Schule steht 10 mm vom Rand, alles Weitere 20 mm.
-- **Dateiname mit dem Tag des Servers.** `datiertName` (`api/pdf_service.go`) nimmt die Uhr des
-  Servers statt den Kalendertag der Schule; zwischen 0 und 2 Uhr trägt eine Anlage der
-  Bestellmail den Vortag im Namen.
+- **Dateiname mit dem Tag des Servers.** `datiertName` (`api/bestellmail_anhaenge.go`) nimmt die
+  Uhr des Servers statt den Kalendertag der Schule; zwischen 0 und 2 Uhr trägt eine Anlage der
+  Bestellmail den Vortag im Namen. Die Stelle steht mit zwei Downloads in `inventur/` als
+  hingenommener Bestand in `docs/kalendertag_bestand_test.go`.
 
 ---
 

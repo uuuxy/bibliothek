@@ -30,15 +30,15 @@ const auditBestellmailErneutGesendet = "BESTELLMAIL_ERNEUT_GESENDET"
 // @Failure      409  {object}  map[string]string
 // @Failure      502  {object}  map[string]string
 // @Router       /bestellungen/{id}/mail [post]
-func (s *Server) SendeBestellmailErneutHandler(pdfSvc *PDFService) http.HandlerFunc {
+func (s *Server) SendeBestellmailErneutHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.sendeBestellmailErneut(w, r, pdfSvc)
+		s.sendeBestellmailErneut(w, r)
 	}
 }
 
 // sendeBestellmailErneut steht wie bestaetigenBestellung auf der obersten Ebene, eine
 // Closure zählt für die Komplexitätsmessung als eigene Ebene.
-func (s *Server) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request, pdfSvc *PDFService) {
+func (s *Server) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	ctx := r.Context()
 
@@ -75,7 +75,7 @@ func (s *Server) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request, 
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
-	mitLink, err := s.sendeBestellmail(ctx, pdfSvc, daten)
+	mitLink, err := s.sendeBestellmail(ctx, daten)
 	if err != nil {
 		s.merkeBestellmailGescheitert(ctx, id)
 		// 502: Gescheitert ist der Mailserver, nicht dieser Server. Die Meldung bleibt lesbar.

@@ -38,16 +38,16 @@ type SubmitOrderRequest struct {
 	Mittel string `json:"mittel"`
 }
 
-// SubmitOrderHandler processes a full cart order via the OrderService and dispatches PDFs via PDFService.
-func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) http.HandlerFunc {
+// SubmitOrderHandler legt die Bestellung aus dem Warenkorb an und verschickt die Bestellmail.
+func (s *Server) SubmitOrderHandler(orderSvc *OrderService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		s.handleSubmitOrder(w, r, orderSvc, pdfSvc)
+		s.handleSubmitOrder(w, r, orderSvc)
 	}
 }
 
 // handleSubmitOrder speichert die Bestellung und verschickt danach die Mail an den Lieferanten;
 // die Bestellung gilt auch, wenn der Versand ausbleibt.
-func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, orderSvc *OrderService, pdfSvc *PDFService) {
+func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, orderSvc *OrderService) {
 	var req SubmitOrderRequest
 	if !DecodeAndValidate(w, r, &req) {
 		return
@@ -96,7 +96,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		return
 	}
 
-	mitLink, err := s.sendeBestellmail(ctx, pdfSvc, bestellmailDaten{
+	mitLink, err := s.sendeBestellmail(ctx, bestellmailDaten{
 		Empfaenger:        res.SupplierEmail,
 		Kundennummer:      res.CustomerNumber,
 		Mittel:            res.Mittel,

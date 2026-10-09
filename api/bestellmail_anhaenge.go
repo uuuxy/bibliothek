@@ -20,14 +20,6 @@ type OrderedItem struct {
 	Menge  int
 }
 
-// PDFService handles the generation of PDF documents and email dispatch.
-type PDFService struct{}
-
-// NewPDFService creates a new PDFService instance.
-func NewPDFService() *PDFService {
-	return &PDFService{}
-}
-
 // BestellMail bündelt alles, was die Bestellmail an den Lieferanten braucht.
 //
 // Als Struct und nicht als Parameterreihe: Die Mail hängt an drei unabhängigen Wahrheiten
@@ -36,8 +28,8 @@ func NewPDFService() *PDFService {
 // niemandem auffällt — die Mail geht ja trotzdem raus.
 type BestellMail struct {
 	Empfaenger string
-	// Betreff und Text sind bereits aus der Vorlage BESTELLUNG_HAENDLER aufgelöst,
-	// damit dieser Service DB-frei bleibt.
+	// Betreff und Text sind bereits aus der Vorlage BESTELLUNG_HAENDLER aufgelöst; hier wird
+	// nichts aus der Datenbank gelesen.
 	Betreff    string
 	Text       string
 	Positionen []OrderedItem
@@ -63,8 +55,8 @@ type BestellMail struct {
 	Mittel string
 }
 
-// DispatchOrderEmail erzeugt die PDFs und verschickt die Bestellmail an den Lieferanten.
-func (s *PDFService) DispatchOrderEmail(m BestellMail) error {
+// verschickeBestellmail erzeugt die Anlagen und verschickt die Bestellmail an den Lieferanten.
+func verschickeBestellmail(m BestellMail) error {
 	anhaenge, err := bestellAnhaenge(m)
 	if err != nil {
 		return err
