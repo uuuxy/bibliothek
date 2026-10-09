@@ -46,7 +46,6 @@ type sqlFunde struct{ texte, aufrufe int }
 var sqlBestand = map[string]sqlFunde{
 	"internal/service/ausleih_sperren.go":     {texte: 1, aufrufe: 1},
 	"internal/service/device_service.go":      {texte: 5, aufrufe: 5},
-	"internal/service/import_dynamic.go":      {texte: 4, aufrufe: 4},
 	"internal/service/loan_checkout.go":       {texte: 3, aufrufe: 3},
 	"internal/service/loan_checkout_cases.go": {texte: 2, aufrufe: 2},
 	"internal/service/loan_return.go":         {texte: 2, aufrufe: 2},

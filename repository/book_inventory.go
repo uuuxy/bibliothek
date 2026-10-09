@@ -248,22 +248,12 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck // No-op nach erfolgreichem Commit.
 
 	// 1. Bestand einmalig vorladen (isbn→id, titel→id).
-	isbnToID, titelToID, err := ladeTitelBestand(ctx, tx)
+	isbnToID, titelToID, err := LadeTitelBestand(ctx, tx)
 	if err != nil {
 		return 0, err
 	}
 	titles = mitISBNInNormalform(titles)
 
-	// Lernmittel, Fach und Jahrgang (Migration 093): Der Import liest sie aus Litteras
-	// Signatur „LMF Bio 7", den Schlagwörtern und der Zielgruppe (pkg/lmf). Beim
-	// Insert werden sie gesetzt; ohne Angabe bleibt der Jahrgang leer (unbekannt, Migration 162).
-	const qInsert = `
-		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, signatur,
-		                           ist_lernmittel, subject, jahrgang_von, jahrgang_bis, aktualisiert_am)
-		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), NULLIF($6, ''),
-		        $7, NULLIF($8, ''), NULLIF($9, 0), NULLIF($10, 0),
-		        CURRENT_TIMESTAMP)
-	`
 	// autor/verlag/erscheinungsjahr sind wie signatur/isbn per COALESCE geschützt:
 	// eine Quelle ohne diese Angabe (z. B. MAB-Exporte ohne Autor-Feld) darf einen
 	// bereits bekannten, besseren Wert nicht stillschweigend leeren.
@@ -317,7 +307,7 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	queued := 0
 	for _, t := range titles {
 		t.Fach = kanonisch[t.Fach]
-		if queueTitelUpsert(batch, t, c, qInsert, qUpdate) {
+		if queueTitelUpsert(batch, t, c, qUpdate) {
 			queued++
 		}
 	}
@@ -389,7 +379,7 @@ func ergaenzeSchlagworteAusImport(ctx context.Context, tx pgx.Tx, titel []BookTi
 	if !slices.ContainsFunc(titel, func(t BookTitle) bool { return len(t.Schlagworte) > 0 }) {
 		return nil
 	}
-	isbnToID, titelToID, err := ladeTitelBestand(ctx, tx)
+	isbnToID, titelToID, err := LadeTitelBestand(ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -436,11 +426,11 @@ func titelOhneSchlagworte(ctx context.Context, tx pgx.Tx) (map[string]bool, erro
 	return ohne, nil
 }
 
-// ladeTitelBestand lädt den vorhandenen Titelbestand als isbn→id- und titel→id-Maps. Der
-// Schlüssel der ISBN ist ihre Normalform. Tragen zwei Titel dieselbe ISBN in verschiedener
-// Schreibweise (eine Dublette, die Migration 140 oder 157 stehen ließ), gilt der, der sie in
-// der Normalform trägt.
-func ladeTitelBestand(ctx context.Context, tx pgx.Tx) (isbnToID, titelToID map[string]string, err error) {
+// LadeTitelBestand lädt den vorhandenen Titelbestand als isbn→id- und titel→id-Maps; beide
+// Importe ordnen damit zu. Der Schlüssel der ISBN ist ihre Normalform, der des Titels
+// NormalisiereTitelKey. Tragen zwei Titel dieselbe ISBN in verschiedener Schreibweise (eine
+// Dublette, die Migration 140 oder 157 stehen ließ), gilt der, der sie in der Normalform trägt.
+func LadeTitelBestand(ctx context.Context, tx pgx.Tx) (isbnToID, titelToID map[string]string, err error) {
 	rows, err := tx.Query(ctx, "SELECT id, COALESCE(isbn, ''), titel FROM buecher_titel")
 	if err != nil {
 		return nil, nil, err
@@ -467,6 +457,25 @@ func ladeTitelBestand(ctx context.Context, tx pgx.Tx) (isbnToID, titelToID map[s
 	return isbnToID, titelToID, nil
 }
 
+// titelAusImportAnlegen legt einen Titel an, wie ein Import ihn liefert. Lernmittel, Fach und
+// Jahrgang liest der Import aus Litteras Signatur „LMF Bio 7", den Schlagwörtern und der
+// Zielgruppe (pkg/lmf); ohne Angabe bleibt der Jahrgang leer, das heißt unbekannt.
+const titelAusImportAnlegen = `
+		INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject, signatur,
+		                           ist_lernmittel, jahrgang_von, jahrgang_bis)
+		VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), NULLIF($6, ''), NULLIF($7, ''),
+		        $8, NULLIF($9, 0), NULLIF($10, 0))
+		RETURNING id
+	`
+
+// reiheTitelAnlageEin reiht das Anlegen eines Titels in einen Sammelauftrag ein. Katalog-Import
+// und Bestands-Import legen neue Titel nur hier an; das Fach muss vorher in der Systematik
+// stehen (StelleFaecherSicher).
+func reiheTitelAnlageEin(batch *pgx.Batch, t BookTitle) {
+	batch.Queue(titelAusImportAnlegen, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Erscheinungsjahr, t.Fach, t.Signatur,
+		t.IstLernmittel, t.JahrgangVon, t.JahrgangBis)
+}
+
 // titelUpsertContext bündelt die Lookup-Maps (Bestand) und die In-Batch-Dedup-Maps.
 type titelUpsertContext struct {
 	isbnToID, titelToID map[string]string
@@ -478,7 +487,7 @@ type titelUpsertContext struct {
 // auch für Datensätze MIT ISBN, weil der Bestand denselben Titel bereits ohne ISBN
 // enthalten kann (Bestands-CSV). Dedupliziert innerhalb der Datei nach ISBN und Titel.
 // Liefert false, wenn der Titel übersprungen wurde (leer oder Dublette).
-func queueTitelUpsert(batch *pgx.Batch, t BookTitle, c *titelUpsertContext, qInsert, qUpdate string) bool {
+func queueTitelUpsert(batch *pgx.Batch, t BookTitle, c *titelUpsertContext, qUpdate string) bool {
 	if t.Titel == "" {
 		return false
 	}
@@ -506,8 +515,7 @@ func queueTitelUpsert(batch *pgx.Batch, t BookTitle, c *titelUpsertContext, qIns
 		batch.Queue(qUpdate, id, t.Titel, t.Autor, t.Verlag, t.Erscheinungsjahr, t.Signatur, t.ISBN,
 			t.IstLernmittel, t.Fach, t.JahrgangVon, t.JahrgangBis)
 	} else {
-		batch.Queue(qInsert, t.Titel, t.Autor, t.ISBN, t.Verlag, t.Erscheinungsjahr, t.Signatur,
-			t.IstLernmittel, t.Fach, t.JahrgangVon, t.JahrgangBis)
+		reiheTitelAnlageEin(batch, t)
 	}
 	return true
 }

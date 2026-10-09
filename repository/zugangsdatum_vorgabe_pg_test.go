@@ -2,9 +2,6 @@ package repository
 
 import (
 	"context"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 
 	"bibliothek/internal/pgtest"
@@ -51,29 +48,45 @@ func TestZugangsdatum_VorgabeIstDerKalendertagDerSchule(t *testing.T) {
 	}
 }
 
-// Der Listenimport schrieb erworben_am selbst mit CURRENT_DATE, an der Vorgabe vorbei. Jetzt
-// nimmt er die Vorgabe — eine Regel für „heute", nicht zwei. Geprüft an der Quelle, damit
-// eine zweite Formulierung nicht unbemerkt zurückkommt.
-func TestZugangsdatum_ListenimportNimmtDieVorgabe(t *testing.T) {
-	roh, err := os.ReadFile(filepath.Join("..", "internal", "service", "import_dynamic.go"))
-	if err != nil {
-		t.Fatalf("Quelle lesen: %v", err)
-	}
-	// Kommentarzeilen fallen weg: Ein Kommentar, der die alte Form nennt, ist kein Rückfall —
-	// und ein Code-Rückfall darf sich nicht hinter einem Kommentar verstecken.
-	var code []string
-	for _, zeile := range strings.Split(string(roh), "\n") {
-		if !strings.HasPrefix(strings.TrimSpace(zeile), "//") {
-			code = append(code, zeile)
+// Der Bestands-Import schreibt kein erworben_am und nimmt die Vorgabe der Spalte: eine Regel
+// für den Tag des Zugangs, nicht zwei. Gemessen an dem Exemplar, das er anlegt, in denselben
+// zwei Sitzungszonen wie oben.
+func TestZugangsdatum_BestandsImportNimmtDieVorgabe(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	const barcode = "ZUGANG-PROBE-IMPORT-1"
+
+	for _, zone := range []string{"Etc/GMT+12", "Etc/GMT-14"} {
+		tx := beginne(t, pool)
+		var titelID, erworben, schultag string
+		var angelegt int
+		_, err := tx.Exec(ctx, `SET LOCAL TIME ZONE '`+zone+`'`)
+		if err == nil {
+			err = tx.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Zugangsdatum-Probe Import')
+				RETURNING id::text`).Scan(&titelID)
 		}
-	}
-	quelle := strings.Join(code, "\n")
-	if strings.Contains(quelle, "CURRENT_DATE") {
-		t.Error("internal/service/import_dynamic.go schreibt CURRENT_DATE — das ist der Tag der " +
-			"Datenbank-Sitzung (UTC), nicht der der Schule; erworben_am kommt aus der Vorgabe der Spalte")
-	}
-	if !strings.Contains(quelle, "INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar") {
-		t.Error("die INSERT-Anweisung des Listenimports ist nicht mehr dort, wo dieser Test sie " +
-			"sucht — Test nachziehen, sonst prüft er nichts")
+		if err == nil {
+			angelegt, _, err = LegeImportExemplareAn(ctx, tx, []ImportExemplar{
+				{TitelID: titelID, Barcode: barcode, IstAusleihbar: true},
+			})
+		}
+		if err == nil {
+			err = tx.QueryRow(ctx, `
+				SELECT erworben_am::text, ((now() AT TIME ZONE 'Europe/Berlin')::date)::text
+				FROM buecher_exemplare WHERE barcode_id = $1`, barcode).Scan(&erworben, &schultag)
+		}
+		if rbErr := tx.Rollback(ctx); rbErr != nil {
+			t.Fatalf("zurückrollen: %v", rbErr)
+		}
+		if err != nil {
+			t.Fatalf("Sitzungszone %s: %v", zone, err)
+		}
+		if angelegt != 1 {
+			t.Fatalf("Sitzungszone %s: %d Exemplare angelegt, erwartet 1", zone, angelegt)
+		}
+		if erworben != schultag {
+			t.Errorf("Sitzungszone %s: erworben_am = %s, der Kalendertag der Schule ist %s — der "+
+				"Import schreibt den Tag der Sitzung statt der Vorgabe der Spalte", zone, erworben, schultag)
+		}
 	}
 }

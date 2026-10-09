@@ -59,8 +59,8 @@ const sqlTitelEinfuegen = `
 	RETURNING id`
 
 // etikett_gedruckt ($7): Altbestand traegt seine Littera-Etiketten physisch —
-// siehe gleiche Begruendung am Sammelimport (import_dynamic.go). Ausnahme ist eine neu
-// vergebene Nummer (klaereBarcodes, ohneEtikett): Die traegt kein Etikett.
+// siehe gleiche Begruendung am Bestands-Import (repository/bestandsimport.go). Ausnahme ist
+// eine neu vergebene Nummer (klaereBarcodes, ohneEtikett): Die traegt kein Etikett.
 //
 // eigentum ($8, Migration 150): aus dem Littera-Vermerk, NULL ohne Zuordnung (eigentum.go).
 // eigentum_quelle (Migration 151) ist dann 'littera' — die Datenbank verlangt beide oder keins.

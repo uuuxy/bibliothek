@@ -733,6 +733,16 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   Bedingung „kein lokales Cover" steht einmal (`coverNichtLokal`) und gilt in der Auswahl wie
   in beiden Schreibanweisungen: Zwischen Auswählen und Schreiben liegt die Laufzeit des
   Abgleichs, und ein in dieser Zeit von Hand hochgeladenes Cover bleibt stehen.
+- Der Bestands-Import (`internal/service/import_dynamic.go`) liest die Zeilen der Datei,
+  ordnet sie Titeln zu und zählt; seine Anweisungen stehen in `repository/bestandsimport.go`.
+  Was er mit dem Katalog-Import gemeinsam hat, steht einmal: Beide laden den Titelbestand mit
+  `LadeTitelBestand`, und beide legen einen neuen Titel mit derselben Anweisung an
+  (`reiheTitelAnlageEin`, `repository/book_inventory.go`). Bis zum 09.10.2026 führte der
+  Bestands-Import eine eigene Abfrage des Bestands. Trugen zwei Titel dieselbe ISBN in
+  verschiedener Schreibweise, nahm sie den zuletzt gelesenen, der Katalog-Import den in der
+  Normalform; jetzt gilt in beiden die Normalform. Das Fach eines neuen Titels registriert
+  `LegeImportTitelAn` selbst in der Systematik, bevor es schreibt: `subject` ist ein
+  Fremdschlüssel, und ein Aufrufer kann den Schritt so nicht auslassen.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf

@@ -223,8 +223,8 @@ func TestImportDynamic_EmptyRows(t *testing.T) {
 	defer mock.Close()
 
 	mock.ExpectBegin()
-	// ladeVorhandeneTitel queries
-	mock.ExpectQuery("SELECT id, coalesce\\(isbn, ''\\), titel FROM buecher_titel").
+	// repository.LadeTitelBestand
+	mock.ExpectQuery("SELECT id, COALESCE\\(isbn, ''\\), titel FROM buecher_titel").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "titel"}))
 	mock.ExpectCommit()
 	mock.ExpectRollback() // SafeRollback

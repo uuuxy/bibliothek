@@ -6,10 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-const (
-	testQInsert = "INSERT"
-	testQUpdate = "UPDATE"
-)
+const testQUpdate = "UPDATE"
 
 func neuerUpsertContext() *titelUpsertContext {
 	return &titelUpsertContext{
@@ -31,7 +28,7 @@ func TestQueueTitelUpsert_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
 	batch := &pgx.Batch{}
 	ok := queueTitelUpsert(batch, BookTitle{
 		Titel: "LMF-Deutschbuch 9", ISBN: "9783060619000", Signatur: "De 9",
-	}, c, testQInsert, testQUpdate)
+	}, c, testQUpdate)
 
 	if !ok {
 		t.Fatal("Titel wurde übersprungen, erwartet war ein UPDATE über den Titel-Fallback")
@@ -54,13 +51,13 @@ func TestQueueTitelUpsert_InBatchDedupUeberVarianten(t *testing.T) {
 	c := neuerUpsertContext()
 	batch := &pgx.Batch{}
 
-	if ok := queueTitelUpsert(batch, BookTitle{Titel: "Faust", ISBN: "978-1"}, c, testQInsert, testQUpdate); !ok {
+	if ok := queueTitelUpsert(batch, BookTitle{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate); !ok {
 		t.Fatal("erster Datensatz muss eingereiht werden")
 	}
-	if ok := queueTitelUpsert(batch, BookTitle{Titel: "Faust"}, c, testQInsert, testQUpdate); ok {
+	if ok := queueTitelUpsert(batch, BookTitle{Titel: "Faust"}, c, testQUpdate); ok {
 		t.Error("ISBN-lose Variante desselben Titels muss als In-Batch-Dublette übersprungen werden")
 	}
-	if ok := queueTitelUpsert(batch, BookTitle{Titel: "Faust", ISBN: "978-1"}, c, testQInsert, testQUpdate); ok {
+	if ok := queueTitelUpsert(batch, BookTitle{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate); ok {
 		t.Error("identische ISBN muss als In-Batch-Dublette übersprungen werden")
 	}
 	if len(batch.QueuedQueries) != 1 {
@@ -100,7 +97,7 @@ func TestQueueTitelUpsert_QuoteVariantenMatchen(t *testing.T) {
 	c.titelToID[NormalisiereTitelKey(`"Kein Bock auf Lernen?"`)] = "id-quoted"
 
 	batch := &pgx.Batch{}
-	ok := queueTitelUpsert(batch, BookTitle{Titel: `Kein Bock auf Lernen?`}, c, testQInsert, testQUpdate)
+	ok := queueTitelUpsert(batch, BookTitle{Titel: `Kein Bock auf Lernen?`}, c, testQUpdate)
 
 	if !ok || batch.QueuedQueries[0].SQL != testQUpdate || batch.QueuedQueries[0].Arguments[0] != "id-quoted" {
 		t.Errorf("Quote-Variante muss die bestehende Zeile updaten, got ok=%v %v", ok, batch.QueuedQueries[0])
@@ -114,7 +111,7 @@ func TestQueueTitelUpsert_ISBNVorTitel(t *testing.T) {
 	c.titelToID["Faust"] = "id-titel"
 
 	batch := &pgx.Batch{}
-	queueTitelUpsert(batch, BookTitle{Titel: "Faust", ISBN: "978-1"}, c, testQInsert, testQUpdate)
+	queueTitelUpsert(batch, BookTitle{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate)
 
 	if q := batch.QueuedQueries[0]; q.SQL != testQUpdate || q.Arguments[0] != "id-isbn" {
 		t.Errorf("erwartet UPDATE auf id-isbn, got %q %v", q.SQL, q.Arguments[0])

@@ -2,8 +2,6 @@ package service
 
 import (
 	"bibliothek/db"
-	"bibliothek/inventur"
-	"bibliothek/pkg/closeutil"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
@@ -31,13 +29,8 @@ type importNewTitle struct {
 	JahrgangBis   int
 }
 
-type importCopyData struct {
-	TitelID       string
-	Barcode       string
-	IstAusleihbar bool
-	ZustandNotiz  string
-}
-
+// titelLookup ordnet eine Zeile der Datei einem Titel zu: der Bestand aus
+// repository.LadeTitelBestand, ergänzt um die Titel, die der Lauf selbst anlegt.
 type titelLookup struct {
 	isbnToID  map[string]string
 	titelToID map[string]string
@@ -91,35 +84,6 @@ func titelZeilenFelder(row []string, headerMap map[string]int) zeilenFelder {
 	z.fach, z.von, z.bis = teil.Fach, teil.JahrgangVon, teil.JahrgangBis
 	z.kategorie = entferneLMFToken(z.kategorie)
 	return z
-}
-
-// ladeVorhandeneTitel lädt die bestehenden Titel für schnelles ISBN-/Titel-Matching.
-// Die Titel-Map ist über repository.NormalisiereTitelKey geschlüsselt — identisch
-// zum XML-Pfad, damit Anführungszeichen-Varianten desselben Titels matchen.
-func ladeVorhandeneTitel(ctx context.Context, tx pgx.Tx) (titelLookup, error) {
-	dbRows, err := tx.Query(ctx, "SELECT id, coalesce(isbn, ''), titel FROM buecher_titel")
-	if err != nil {
-		return titelLookup{}, err
-	}
-	lookup := titelLookup{
-		isbnToID:  make(map[string]string),
-		titelToID: make(map[string]string),
-	}
-	for dbRows.Next() {
-		var id, isbn, titel string
-		if err := dbRows.Scan(&id, &isbn, &titel); err == nil {
-			if n := isbnutil.Normalform(isbn); n != "" {
-				lookup.isbnToID[n] = id
-			}
-			lookup.titelToID[repository.NormalisiereTitelKey(titel)] = id
-		}
-	}
-	if err := dbRows.Err(); err != nil {
-		dbRows.Close()
-		return titelLookup{}, err
-	}
-	dbRows.Close()
-	return lookup, nil
 }
 
 // sammleNeueTitel identifiziert (erster Pass) die Titel, die neu angelegt werden
@@ -211,66 +175,48 @@ func fachDerZeile(t *importNewTitle) string {
 	return lmf.FachExakt(t.Kategorie)
 }
 
-// fuegeNeueTitelEin legt die neuen Titel per Batch an und ergänzt die
-// ID-Maps um die neu vergebenen Titel-IDs.
-func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*importNewTitle, newTitlesOrder []string, lookup titelLookup) (int, error) {
-	if len(newTitlesOrder) == 0 {
-		return 0, nil
+// alsTitel füllt den Titel, wie die Datenbankschicht ihn anlegt. Das Fach kommt aus der
+// Lernmittelsignatur („LMF Ma 6" → Mathematik), sonst aus der Kategorie (fachDerZeile).
+func (t *importNewTitle) alsTitel() repository.BookTitle {
+	return repository.BookTitle{
+		Titel:            t.Titel,
+		Autor:            t.Autor,
+		Verlag:           t.Verlag,
+		ISBN:             t.ISBN,
+		Erscheinungsjahr: t.Jahr,
+		Fach:             fachDerZeile(t),
+		Signatur:         t.Signatur,
+		IstLernmittel:    t.IstLernmittel,
+		JahrgangVon:      t.JahrgangVon,
+		JahrgangBis:      t.JahrgangBis,
 	}
+}
 
-	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer VOR dem
-	// SendBatch in derselben Transaktion registrieren (danach ist die Verbindung bis
-	// br.Close() belegt) und jede Zeile auf die kanonische Schreibweise ziehen.
-	// Fach: aus der Lernmittelsignatur („LMF Ma 6" → Mathematik), sonst die
-	// Kategorie-Spalte wie bisher.
-	faecher := make([]string, 0, len(newTitlesOrder))
+// fuegeNeueTitelEin legt die neuen Titel an und ergänzt die ID-Maps um die neu vergebenen
+// Titel-IDs.
+func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*importNewTitle, newTitlesOrder []string, lookup titelLookup) (int, error) {
+	neu := make([]repository.BookTitle, 0, len(newTitlesOrder))
 	for _, key := range newTitlesOrder {
-		faecher = append(faecher, fachDerZeile(newTitlesMap[key]))
+		neu = append(neu, newTitlesMap[key].alsTitel())
 	}
-	kanonisch, err := inventur.StelleFaecherSicher(ctx, tx, faecher)
+	ids, err := repository.LegeImportTitelAn(ctx, tx, neu)
 	if err != nil {
 		return 0, err
 	}
-
-	batch := &pgx.Batch{}
-	qInsertTitel := `
-		INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject, signatur,
-		                           ist_lernmittel, jahrgang_von, jahrgang_bis)
-		VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), NULLIF($6, ''), NULLIF($7, ''),
-		        $8, NULLIF($9, 0), NULLIF($10, 0))
-		RETURNING id
-	`
-	for _, key := range newTitlesOrder {
-		t := newTitlesMap[key]
-		batch.Queue(qInsertTitel, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Jahr, kanonisch[fachDerZeile(t)], t.Signatur,
-			t.IstLernmittel, t.JahrgangVon, t.JahrgangBis)
-	}
-
-	br := tx.SendBatch(ctx, batch)
-	newTitlesCount := 0
-	for _, key := range newTitlesOrder {
-		var insertedID string
-		if err := br.QueryRow().Scan(&insertedID); err != nil {
-			closeutil.LogClose(br, "title insert batch")
-			return 0, fmt.Errorf("failed to insert title batch: %w", err)
-		}
+	for i, key := range newTitlesOrder {
 		t := newTitlesMap[key]
 		if t.ISBN != "" {
-			lookup.isbnToID[t.ISBN] = insertedID
+			lookup.isbnToID[t.ISBN] = ids[i]
 		}
-		lookup.titelToID[repository.NormalisiereTitelKey(t.Titel)] = insertedID
-		newTitlesCount++
+		lookup.titelToID[repository.NormalisiereTitelKey(t.Titel)] = ids[i]
 	}
-	if err := br.Close(); err != nil {
-		return 0, fmt.Errorf("failed to close title insert batch: %w", err)
-	}
-	return newTitlesCount, nil
+	return len(ids), nil
 }
 
 // sammleExemplare sammelt (zweiter Pass) alle einzufügenden Exemplare, jetzt mit
 // den vollständigen Titel-IDs aus Pass 1.
-func sammleExemplare(rows [][]string, headerMap map[string]int, lookup titelLookup) []importCopyData {
-	var copiesToInsert []importCopyData
+func sammleExemplare(rows [][]string, headerMap map[string]int, lookup titelLookup) []repository.ImportExemplar {
+	var copiesToInsert []repository.ImportExemplar
 
 	for i, row := range rows[1:] {
 		// Identische Titel-Normalisierung wie Pass 1, sonst verfehlt das
@@ -309,7 +255,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, lookup titelLook
 		}
 
 		if titelID != "" {
-			copiesToInsert = append(copiesToInsert, importCopyData{
+			copiesToInsert = append(copiesToInsert, repository.ImportExemplar{
 				TitelID:       titelID,
 				Barcode:       barcode,
 				IstAusleihbar: istAusleihbar,
@@ -342,85 +288,16 @@ func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, lookup tit
 	return updates
 }
 
-// schreibeSignaturUpdates setzt die gesammelten Signaturen per Batch. Nur
-// nicht-leere Werte sind im Map enthalten — die Konvention „das Rücken-Etikett
-// gewinnt, leer überschreibt nie" bleibt damit gewahrt. Trägt die Signatur Litteras
-// LMF-Kennung, wird der Bestandstitel zugleich als Lernmittel markiert (nur gesetzt,
-// nie gelöscht — Migration 093).
-func schreibeSignaturUpdates(ctx context.Context, tx pgx.Tx, updates map[string]string) error {
-	if len(updates) == 0 {
-		return nil
-	}
-
-	batch := &pgx.Batch{}
+// importSignaturen bringt die gesammelten Signaturen in die Form der Datenbankschicht. Trägt
+// eine Signatur Litteras LMF-Kennung, markiert der Import den Titel zugleich als Lernmittel.
+func importSignaturen(updates map[string]string) []repository.ImportSignatur {
+	signaturen := make([]repository.ImportSignatur, 0, len(updates))
 	for id, signatur := range updates {
-		batch.Queue(
-			"UPDATE buecher_titel SET signatur = $2, ist_lernmittel = ist_lernmittel OR $3, aktualisiert_am = CURRENT_TIMESTAMP WHERE id = $1",
-			id, signatur, lmf.HatKennung(signatur),
-		)
+		signaturen = append(signaturen, repository.ImportSignatur{
+			TitelID: id, Signatur: signatur, Lernmittel: lmf.HatKennung(signatur),
+		})
 	}
-	br := tx.SendBatch(ctx, batch)
-	for i := 0; i < len(updates); i++ {
-		if _, err := br.Exec(); err != nil {
-			closeutil.LogClose(br, "signatur update batch")
-			return fmt.Errorf("failed to update signatur batch: %w", err)
-		}
-	}
-	return br.Close()
-}
-
-// fuegeExemplareEin schreibt die Exemplare per Batch (ON CONFLICT DO NOTHING).
-func fuegeExemplareEin(ctx context.Context, tx pgx.Tx, copiesToInsert []importCopyData) (int, error) {
-	if len(copiesToInsert) == 0 {
-		return 0, nil
-	}
-
-	batchCopies := &pgx.Batch{}
-	// etikett_gedruckt = true: Der Sammelimport uebernimmt BESTAND — Buecher, die
-	// physisch laengst ein Littera-Etikett tragen. Mit dem Default false zaehlte
-	// das Druck-Center nach dem Prod-Import 30.658 "offene Etiketten" und stand
-	// dauerhaft auf 999+ (ein Waechter, der immer schreit, wird abgeschaltet).
-	// Neuzugaenge aus dem Bestellwesen behalten false — dort entsteht das Etikett
-	// wirklich erst im Haus.
-	//
-	// erworben_am kommt aus der Vorgabe der Spalte, dem Kalendertag der Schule (Migration
-	// 139). Bis zum 23.09.2026 stand hier CURRENT_DATE — der Tag der Datenbank-Sitzung
-	// (UTC), zwischen Mitternacht und 2 Uhr der Vortag, und eine zweite Regel neben der
-	// Vorgabe.
-	qInsertExemplar := `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz, etikett_gedruckt, standort)
-		VALUES ($1, $2, $3, NULLIF($4, ''), true, ` + repository.SQLGeerbterStandort("$1::uuid") + `)
-		ON CONFLICT (barcode_id) DO NOTHING
-	`
-	for _, c := range copiesToInsert {
-		batchCopies.Queue(qInsertExemplar, c.TitelID, c.Barcode, c.IstAusleihbar, c.ZustandNotiz)
-	}
-
-	bcr := tx.SendBatch(ctx, batchCopies)
-	importedCopiesCount := 0
-	skippedCount := 0
-	for i := 0; i < len(copiesToInsert); i++ {
-		ct, err := bcr.Exec()
-		if err == nil {
-			if ct.RowsAffected() == 1 {
-				importedCopiesCount++
-			} else {
-				// ON CONFLICT DO NOTHING (0 rows affected)
-				skippedCount++
-			}
-		} else {
-			log.Printf("❌ Fehler beim Insert von Barcode '%s' (Titel-ID: %s): %v", copiesToInsert[i].Barcode, copiesToInsert[i].TitelID, err)
-		}
-	}
-
-	if skippedCount > 0 {
-		log.Printf("Warnung: %d Exemplare wurden übersprungen (bereits vorhanden)", skippedCount)
-	}
-
-	if err := bcr.Close(); err != nil {
-		return 0, fmt.Errorf("failed to close copy insert batch: %w", err)
-	}
-	return importedCopiesCount, nil
+	return signaturen
 }
 
 // ImportDynamic verarbeitet die in rows übergebenen Daten (aus CSV oder XLSX).
@@ -432,10 +309,11 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	lookup, err := ladeVorhandeneTitel(ctx, tx)
+	isbnToID, titelToID, err := repository.LadeTitelBestand(ctx, tx)
 	if err != nil {
 		return 0, 0, err
 	}
+	lookup := titelLookup{isbnToID: isbnToID, titelToID: titelToID}
 
 	newTitlesMap, newTitlesOrder := sammleNeueTitel(rows, headerMap, lookup)
 
@@ -444,15 +322,19 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 		return 0, 0, err
 	}
 
-	if err := schreibeSignaturUpdates(ctx, tx, sammleSignaturUpdates(rows, headerMap, lookup)); err != nil {
+	signaturen := importSignaturen(sammleSignaturUpdates(rows, headerMap, lookup))
+	if err := repository.SetzeImportSignaturen(ctx, tx, signaturen); err != nil {
 		return 0, 0, err
 	}
 
 	copiesToInsert := sammleExemplare(rows, headerMap, lookup)
 
-	importedCopiesCount, err := fuegeExemplareEin(ctx, tx, copiesToInsert)
+	importedCopiesCount, skippedCount, err := repository.LegeImportExemplareAn(ctx, tx, copiesToInsert)
 	if err != nil {
 		return 0, 0, err
+	}
+	if skippedCount > 0 {
+		log.Printf("Warnung: %d Exemplare wurden übersprungen (bereits vorhanden)", skippedCount)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
