@@ -360,10 +360,9 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Mailversand), gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler; sie ziehen je Sache
   um (Etiketten, Bescheid, Auskunft, Bestell-PDF, Bestandsbücher), nicht in einem Zug. Je
   Thema ein Commit; die Tests der Türen bleiben stehen und belegen, dass sich nichts ändert.
-  Eine Datei mit SQL
-  zieht erst um, wenn ihr SQL in `repository/` steht: Die Ratsche zählt nur `api/` und verlöre
-  sie sonst. Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was
-  sie aus einem umgezogenen Paket brauchen, ist dort sichtbar gemacht.
+  Eine Datei mit SQL zieht erst um, wenn ihr SQL in `repository/` steht: Die Ratsche zählt nur
+  `api/` und verlöre sie sonst. Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer
+  dort liegen; was sie aus einem umgezogenen Paket brauchen, ist dort sichtbar gemacht.
 - **SQL nach `repository/`.** Je Thema ein Commit, die Anweisung wörtlich und in derselben
   Transaktion wie vorher. Vor dem Umzug einer Anweisung muss ein Test an der Datenbank sie
   ausführen; fehlt er, kommt er zuerst. Der Handgriff steht in
