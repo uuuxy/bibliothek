@@ -629,7 +629,7 @@ HTTP-Anfrage
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
 | `pkg/` (22 Pakete)      | 2.566 Zeilen, 31 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 3.168 Zeilen, 20 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief |
+| `pdf/`                  | 3.210 Zeilen, 20 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
@@ -1928,7 +1928,7 @@ gegen die Tür klopft.
 | Dokument                                  | Erzeuger                               | Besonderheit                                                                                         |
 | ----------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Mahnliste                                 | `pdf/mahnliste.go`                     | Anhang der Mail an die Klassenleitung, je Schüler eine Seite, ab dem elften Buch Folgeseiten mit seinem Namen; der Versand zählt keine Mahnung |
-| Mahnbrief                                 | `pdf/mahnbrief.go`                     | Der **Druck** ist der Verwaltungsakt: nur hier steigt die Mahnstufe. Brief nach DIN 5008 für das Fensterkuvert, Betreff und Text aus der Vorlage der Schule |
+| Mahnbrief                                 | `pdf/mahnbrief.go`                     | Der **Druck** ist der Verwaltungsakt: nur hier steigt die Mahnstufe. Brief nach DIN 5008 für das Fensterkuvert, Betreff und Text aus der Vorlage der Schule; passt die Tabelle nicht auf die Seite, folgen Seiten mit dem Namen |
 | Kontoauszug, Rechnung, Schadensfall, LMF-Plan | `pdf/` (gofpdf/maroto)             | Rechnung und Schadensfall nennen den Zahlungsweg je Topf (`pdf/zahlungsweg.go`)                       |
 | Bescheid (Landes-Lernmittel)              | `pdf/bescheid.go`                      | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
 | Etiketten und Ausweise                    | `pdf/etikett_*.go`, `pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
@@ -1949,10 +1949,13 @@ Drucksektionen am gebauten Frontend.
 
 **Tabellen über mehrere Seiten.** Eine Zeile, die Bild oder Text an Stellen setzt, die sie aus
 ihrer Höhe rechnet, prüft vorher den Platz und beginnt sonst selbst die nächste Seite, mit
-Spaltenköpfen (`bescheidPlatzOderNeueSeite` in `pdf/bescheid.go`, die Schleife in
-`zeichneMahnSeite`). gofpdf bricht erst in der Zelle um, die nicht mehr passt; die Teile der
-Zeile stünden dann auf verschiedenen Seiten ([sweeps.md](sweeps.md), „Zeile an festen Stellen
-über dem Seitenumbruch").
+Spaltenköpfen (`bescheidPlatzOderNeueSeite` in `pdf/bescheid.go`, die Schleifen in
+`zeichneMahnSeite` und `zeichneMahnbriefBuecher`). gofpdf bricht erst in der Zelle um, die nicht
+mehr passt; die Teile der Zeile stünden dann auf verschiedenen Seiten ([sweeps.md](sweeps.md),
+„Zeile an festen Stellen über dem Seitenumbruch"). Die Köpfe stehen nicht allein am Fuß einer
+Seite. Mahnliste und Mahnbrief werden je Schüler ausgeteilt oder kuvertiert: Ihre Folgeseiten
+nennen, wem sie gehören („Fortsetzung: …"), beim Mahnbrief über einen Seitenkopf, weil dort
+auch der Text der Vorlage auf die nächste Seite laufen kann.
 
 **Ausweise: zwei Renderer, einer fürs Papier.** Der Ausweis-Designer zeichnet die Karte
 zweimal: `designer/CanvasElement.svelte` auf dem Bildschirm, mit den Griffen zum Bearbeiten,

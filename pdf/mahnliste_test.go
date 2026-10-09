@@ -8,8 +8,6 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -225,47 +223,6 @@ func TestMahnliste_BarcodeAlsBildUndNummer(t *testing.T) {
 	}
 }
 
-// Text und Bild im Inhaltsstrom einer Seite, in Punkt und von unten gemessen:
-// `BT 76.54 584.37 Td (Titel 1)Tj ET` und `q 19.84 0 0 48.19 51.02 562.68 cm /I… Do Q`.
-var (
-	mahnlisteTextOrt = regexp.MustCompile(`BT ([0-9.]+) ([0-9.]+) Td \(((?:\\.|[^()\\])*)\)Tj ET`)
-	mahnlisteBildOrt = regexp.MustCompile(`q ([0-9.]+) 0 0 ([0-9.]+) ([0-9.]+) ([0-9.]+) cm /I[0-9a-f]+ Do Q`)
-)
-
-// mahnlisteSeite ist, was auf einer Seite steht: jeder Text mit seiner Höhe und die Mitten der
-// Bilder.
-type mahnlisteSeite struct {
-	texte       map[string]float64
-	bildMitten  []float64
-	reihenfolge []string
-}
-
-func zahl(t *testing.T, s string) float64 {
-	t.Helper()
-	f, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		t.Fatalf("Zahl im Inhaltsstrom unlesbar: %q", s)
-	}
-	return f
-}
-
-func mahnlisteSeiten(t *testing.T, roh []byte) []mahnlisteSeite {
-	t.Helper()
-	var seiten []mahnlisteSeite
-	for _, strom := range pdftest.InhaltJeSeite(t, roh) {
-		seite := mahnlisteSeite{texte: map[string]float64{}}
-		for _, m := range mahnlisteTextOrt.FindAllSubmatch(strom, -1) {
-			seite.texte[string(m[3])] = zahl(t, string(m[2]))
-			seite.reihenfolge = append(seite.reihenfolge, string(m[3]))
-		}
-		for _, m := range mahnlisteBildOrt.FindAllSubmatch(strom, -1) {
-			seite.bildMitten = append(seite.bildMitten, zahl(t, string(m[4]))+zahl(t, string(m[2]))/2)
-		}
-		seiten = append(seiten, seite)
-	}
-	return seiten
-}
-
 // langeMahnliste baut einen Schüler mit n Büchern, jedes mit Cover und eigenen Texten.
 func langeMahnliste(n int, coverURL string) []MahnlisteSchueler {
 	medien := make([]MahnlisteMedium, 0, n)
@@ -283,7 +240,7 @@ func langeMahnliste(n int, coverURL string) []MahnlisteSchueler {
 func TestMahnliste_LangeListeHaeltJedeZeileBeisammen(t *testing.T) {
 	mahnlisteUmgebung(t)
 	const anzahl = 25
-	seiten := mahnlisteSeiten(t, mahnliste(t, langeMahnliste(anzahl, schreibeCoverDatei(t, "cover_lang.webp"))))
+	seiten := seitenMitOrten(t, mahnliste(t, langeMahnliste(anzahl, schreibeCoverDatei(t, "cover_lang.webp"))))
 
 	// Eine Zeile ist 18 mm hoch; halb so viel über und unter dem Titel gehört zu ihr.
 	const halbeZeile = 18.0 / 2 / 25.4 * 72
@@ -305,13 +262,7 @@ func TestMahnliste_LangeListeHaeltJedeZeileBeisammen(t *testing.T) {
 					t.Errorf("Seite %d: %q steht %.0f Punkt neben seinem Titel", nr+1, teil, hoehe-titelHoehe)
 				}
 			}
-			bilder := 0
-			for _, mitte := range seite.bildMitten {
-				if math.Abs(mitte-titelHoehe) <= halbeZeile {
-					bilder++
-				}
-			}
-			if bilder != 2 {
+			if bilder := seite.bilderInDerZeile(titelHoehe, halbeZeile); bilder != 2 {
 				t.Errorf("Seite %d, Zeile %d: %d Bilder in der Zeile, erwartet Cover und Strichcode", nr+1, i, bilder)
 			}
 		}

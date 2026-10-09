@@ -43,6 +43,15 @@ type MahnbriefEmpfaenger struct {
 	Buecher    []MahnbriefBuch
 }
 
+// Maße des Mahnbriefs in Millimetern. Folgeseiten beginnen mahnbriefRand unter der Kante, und
+// unter mahnbriefSeitenende bricht gofpdf von sich aus um.
+const (
+	mahnbriefRand        = 20.0
+	mahnbriefSeitenende  = 297.0 - mahnbriefRand
+	mahnbriefKopfHoehe   = 7.0
+	mahnbriefZeilenHoehe = 15.0
+)
+
 // mahnbriefAnschrift baut das Fensterfeld. Fehlt die Anschrift, steht das im Feld: Eine leere
 // Zeile sähe aus wie ein Druckfehler, so ist zu sehen, welcher Brief über das Kind oder die
 // Klassenleitung geht.
@@ -56,20 +65,36 @@ func mahnbriefAnschrift(e MahnbriefEmpfaenger) []string {
 	return []string{name, strasse, ort}
 }
 
-// zeichneMahnbriefBuecher setzt die Tabelle der Bücher über der Frist. Der Barcode steht als
-// Bild und als Nummer da, damit das Buch bei der Rückgabe vom Brief gescannt werden kann.
-func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher []MahnbriefBuch) {
+// zeichneMahnbriefKoepfe setzt die Köpfe der Tabelle und stellt die Schrift der Zeilen ein.
+func zeichneMahnbriefKoepfe(pdf *gofpdf.Fpdf, tr func(string) string) {
 	pdf.SetFont("Arial", "B", 10)
 	pdf.SetX(20)
 	pdf.SetFillColor(240, 240, 240)
-	pdf.CellFormat(75, 7, tr("Titel"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(35, 7, tr("Barcode"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 7, tr("Ausgeliehen"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(30, 7, tr("Tage überfällig"), "1", 1, "R", true, 0, "")
-
+	pdf.CellFormat(75, mahnbriefKopfHoehe, tr("Titel"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(35, mahnbriefKopfHoehe, tr("Barcode"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, mahnbriefKopfHoehe, tr("Ausgeliehen"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(30, mahnbriefKopfHoehe, tr("Tage überfällig"), "1", 1, "R", true, 0, "")
 	pdf.SetFont("Arial", "", 10)
-	const rowH = 15.0
+}
+
+// zeichneMahnbriefBuecher setzt die Tabelle der Bücher über der Frist. Der Barcode steht als
+// Bild und als Nummer da, damit das Buch bei der Rückgabe vom Brief gescannt werden kann.
+func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher []MahnbriefBuch) {
+	// Die Köpfe stehen nicht allein am Fuß einer Seite.
+	if len(buecher) > 0 && pdf.GetY()+mahnbriefKopfHoehe+mahnbriefZeilenHoehe > mahnbriefSeitenende {
+		pdf.AddPage()
+	}
+	zeichneMahnbriefKoepfe(pdf, tr)
+
+	const rowH = mahnbriefZeilenHoehe
 	for _, b := range buecher {
+		// Eine Zeile setzt Strichcode und Nummer an feste Stellen; ein Umbruch mitten in ihr
+		// verteilte sie über drei Seiten. Passt sie nicht mehr auf die Seite, beginnt sie auf
+		// der nächsten, unter den Köpfen.
+		if pdf.GetY()+rowH > mahnbriefSeitenende {
+			pdf.AddPage()
+			zeichneMahnbriefKoepfe(pdf, tr)
+		}
 		startY := pdf.GetY()
 		pdf.SetX(20)
 		pdf.CellFormat(75, rowH, tr(pdfzeichen.KuerzeAufZeichen(b.Titel, 38)), "1", 0, "L", false, 0, "")
@@ -98,11 +123,9 @@ func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher [
 // platzhalterBuchListe steht in der Vorlage für die Tabelle der gemahnten Bücher.
 const platzhalterBuchListe = "{{.BuchListe}}"
 
-// zeichneMahnbrief setzt eine Seite nach DIN 5008 (Form A, Fensterkuvert) für einen Schüler:
-// Fensterfeld, Betreff, Text und die Tabelle seiner Bücher über der Frist.
+// zeichneMahnbrief setzt den Brief eines Schülers nach DIN 5008 (Form A, Fensterkuvert) auf die
+// eben begonnene Seite: Fensterfeld, Betreff, Text und die Tabelle seiner Bücher über der Frist.
 func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfaenger, v MahnbriefVorlage) {
-	pdf.AddPage()
-
 	// Falzmarken und Lochmarke.
 	pdf.SetLineWidth(0.2)
 	pdf.SetDrawColor(150, 150, 150)
@@ -163,11 +186,30 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfa
 	}
 }
 
-// GenerateMahnbriefePDF setzt je Schüler einen Brief in ein PDF.
+// GenerateMahnbriefePDF setzt je Schüler einen Brief in ein PDF. Ein Brief, der nicht auf eine
+// Seite passt, läuft auf Folgeseiten weiter.
 func GenerateMahnbriefePDF(briefe []MahnbriefEmpfaenger, v MahnbriefVorlage) ([]byte, error) {
 	doc := gofpdf.New("P", "mm", "A4", "")
+	doc.SetTopMargin(mahnbriefRand)
+	doc.SetAutoPageBreak(true, mahnbriefRand)
 	tr := pdfzeichen.Uebersetzer(doc.UnicodeTranslatorFromDescriptor(""))
+
+	// Ein Druck trägt viele Briefe hintereinander: Jede Folgeseite nennt über dem Rand, zu
+	// wessen Brief sie gehört, ob die Tabelle sie füllt oder der Text.
+	folgeseiteFuer := ""
+	doc.SetHeaderFunc(func() {
+		if folgeseiteFuer == "" {
+			return
+		}
+		doc.SetFont("Arial", "B", 9)
+		doc.SetXY(20, 12)
+		doc.Cell(0, 5, tr(folgeseiteFuer))
+		doc.SetY(mahnbriefRand)
+	})
 	for _, e := range briefe {
+		folgeseiteFuer = ""
+		doc.AddPage()
+		folgeseiteFuer = "Fortsetzung: " + strings.TrimSpace(e.Vorname+" "+e.Nachname)
 		zeichneMahnbrief(doc, tr, e, v)
 	}
 	var buf bytes.Buffer

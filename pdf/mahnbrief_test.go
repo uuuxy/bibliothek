@@ -6,6 +6,8 @@ package pdf
 
 import (
 	"bytes"
+	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -197,4 +199,129 @@ func TestMahnbrief_HalbeAnschriftOhneVermerk(t *testing.T) {
 	nurStrasse := testMahnbriefEmpfaenger()
 	nurStrasse.Strasse = "Blumenweg"
 	pruefeBlatt(t, renderElternMahnbrief(t, nurStrasse), []string{"Blumenweg"}, []string{"keine Adresse hinterlegt"})
+}
+
+// langerMahnbrief baut einen Brief mit n Büchern, jedes mit eigenen Texten.
+func langerMahnbrief(vorname string, n int) MahnbriefEmpfaenger {
+	e := MahnbriefEmpfaenger{Vorname: vorname, Nachname: "Musterkind", Strasse: "Blumenweg", Hausnummer: "7", PLZ: "61169", Ort: "Friedberg"}
+	for i := 1; i <= n; i++ {
+		e.Buecher = append(e.Buecher, MahnbriefBuch{
+			Titel: fmt.Sprintf("Titel %02d", i), Barcode: fmt.Sprintf("B-9%03d", i),
+			AusgeliehenAm:    time.Date(2026, time.January, i, 12, 0, 0, 0, time.UTC),
+			Frist:            time.Date(2026, time.March, i, 12, 0, 0, 0, time.UTC),
+			TageUeberfaellig: 100 + i,
+		})
+	}
+	return e
+}
+
+// mahnbriefZeilenJeSeite prüft jede Zeile der Tabelle: Nummer, Tag und Tage stehen auf der Seite
+// ihres Titels und in seiner Höhe, dazu genau ein Bild. Die Spaltenköpfe stehen auf jeder Seite
+// mit Zeilen und auf keiner ohne. Geliefert wird die Zahl der Zeilen je Seite.
+func mahnbriefZeilenJeSeite(t *testing.T, seiten []seiteMitOrten, anzahl int) []int {
+	t.Helper()
+	// Eine Zeile ist 15 mm hoch; halb so viel über und unter dem Titel gehört zu ihr.
+	const halbeZeile = 15.0 / 2 / 25.4 * 72
+	var jeSeite []int
+	for nr, seite := range seiten {
+		zeilen := 0
+		for i := 1; i <= anzahl; i++ {
+			titelHoehe, da := seite.texte[fmt.Sprintf("Titel %02d", i)]
+			if !da {
+				continue
+			}
+			zeilen++
+			for _, teil := range []string{fmt.Sprintf("B-9%03d", i), fmt.Sprintf("%02d.01.2026", i), fmt.Sprint(100 + i)} {
+				hoehe, da := seite.texte[teil]
+				if !da {
+					t.Errorf("%d Bücher, Seite %d: %q steht nicht auf der Seite seines Titels", anzahl, nr+1, teil)
+				} else if math.Abs(hoehe-titelHoehe) > halbeZeile {
+					t.Errorf("%d Bücher, Seite %d: %q steht %.0f Punkt neben seinem Titel", anzahl, nr+1, teil, hoehe-titelHoehe)
+				}
+			}
+			if bilder := seite.bilderInDerZeile(titelHoehe, halbeZeile); bilder != 1 {
+				t.Errorf("%d Bücher, Seite %d, Zeile %d: %d Bilder in der Zeile, erwartet den Strichcode", anzahl, nr+1, i, bilder)
+			}
+		}
+		if _, koepfe := seite.texte["Ausgeliehen"]; koepfe != (zeilen > 0) {
+			t.Errorf("%d Bücher, Seite %d: Spaltenköpfe = %v bei %d Zeilen", anzahl, nr+1, koepfe, zeilen)
+		}
+		if len(seite.bildMitten) != zeilen {
+			t.Errorf("%d Bücher, Seite %d: %d Bilder bei %d Zeilen", anzahl, nr+1, len(seite.bildMitten), zeilen)
+		}
+		jeSeite = append(jeSeite, zeilen)
+	}
+	return jeSeite
+}
+
+// Eine Zeile setzt Strichcode und Nummer an feste Stellen. Bricht gofpdf mitten in ihr um,
+// stehen ihre Teile auf drei Seiten; Schulbücher eines Jahres sind schnell mehr als acht.
+func TestMahnbrief_LangeTabelleHaeltJedeZeileBeisammen(t *testing.T) {
+	vorlage := MahnbriefVorlage{Betreff: "Mahnung", Text: "Zeile eins\n{{.BuchListe}}\nSchluss-Zeile", Absender: "Testschule"}
+	for anzahl := 1; anzahl <= 30; anzahl++ {
+		roh, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{langerMahnbrief("Mia", anzahl)}, vorlage)
+		if err != nil {
+			t.Fatalf("%d Bücher: %v", anzahl, err)
+		}
+		seiten := seitenMitOrten(t, roh)
+		jeSeite := mahnbriefZeilenJeSeite(t, seiten, anzahl)
+		gedruckt := 0
+		for _, zeilen := range jeSeite {
+			gedruckt += zeilen
+		}
+		if gedruckt != anzahl {
+			t.Errorf("%d Bücher: %d Zeilen gedruckt", anzahl, gedruckt)
+		}
+		if anzahl == 30 && fmt.Sprint(jeSeite) != "[9 16 5]" {
+			t.Errorf("30 Bücher: Zeilen je Seite %v, erwartet [9 16 5]", jeSeite)
+		}
+	}
+}
+
+// Ein Druck trägt viele Briefe hintereinander. Jede Folgeseite nennt, zu wessen Brief sie
+// gehört, ob die Tabelle sie füllt oder der Text; die erste Seite eines Briefs nennt es nicht.
+func TestMahnbrief_FolgeseitenNennenDenEmpfaenger(t *testing.T) {
+	vorlage := MahnbriefVorlage{Betreff: "Mahnung", Text: "Zeile eins\n{{.BuchListe}}\n" + strings.Repeat("Schluss-Zeile\n", 45), Absender: "Testschule"}
+	roh, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{langerMahnbrief("Mia", 12), langerMahnbrief("Ben", 2)}, vorlage)
+	if err != nil {
+		t.Fatalf("Mahnbriefe drucken: %v", err)
+	}
+
+	var folge []string
+	for _, seite := range pdftest.TexteJeSeite(t, roh) {
+		text := strings.Join(seite, "\n")
+		switch {
+		case strings.Contains(text, "Eltern von Mia Musterkind"):
+			folge = append(folge, "Brief Mia")
+		case strings.Contains(text, "Eltern von Ben Musterkind"):
+			folge = append(folge, "Brief Ben")
+		case strings.Contains(text, "Fortsetzung: Mia Musterkind"):
+			folge = append(folge, "Fortsetzung Mia")
+		case strings.Contains(text, "Fortsetzung: Ben Musterkind"):
+			folge = append(folge, "Fortsetzung Ben")
+		default:
+			folge = append(folge, "ohne Namen")
+		}
+		if strings.Contains(text, "Eltern von") && strings.Contains(text, "Fortsetzung:") {
+			t.Errorf("die erste Seite eines Briefs trägt die Zeile der Folgeseite:\n%s", text)
+		}
+	}
+	// Mia: Brief, die Tabelle läuft auf Seite 2 weiter, der Schluss des Texts auf Seite 3.
+	// Ben: Brief, der Schluss des Texts auf einer Folgeseite.
+	if erwartet := "Brief Mia | Fortsetzung Mia | Fortsetzung Mia | Brief Ben | Fortsetzung Ben"; strings.Join(folge, " | ") != erwartet {
+		t.Errorf("Seiten des Drucks: %s\nerwartet:          %s", strings.Join(folge, " | "), erwartet)
+	}
+}
+
+// Füllt der Text die Seite so weit, dass nur noch die Köpfe der Tabelle passen, beginnt die
+// Tabelle auf der nächsten Seite: Köpfe ohne Zeile darunter nennen Spalten ohne Inhalt.
+func TestMahnbrief_KoepfeStehenNichtAlleinAmSeitenfuss(t *testing.T) {
+	vorlage := MahnbriefVorlage{Betreff: "Mahnung", Text: strings.Repeat("Zeile\n", 24) + "{{.BuchListe}}", Absender: "Testschule"}
+	roh, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{langerMahnbrief("Mia", 3)}, vorlage)
+	if err != nil {
+		t.Fatalf("Mahnbrief drucken: %v", err)
+	}
+	if jeSeite := mahnbriefZeilenJeSeite(t, seitenMitOrten(t, roh), 3); fmt.Sprint(jeSeite) != "[0 3]" {
+		t.Errorf("Zeilen je Seite: %v, erwartet [0 3]", jeSeite)
+	}
 }

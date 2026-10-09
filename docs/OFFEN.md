@@ -134,8 +134,7 @@ der Nummer nichts mehr dazu offen ist.
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
 - [ ] **Schichtung des Backends (5.62):** Die PDF-Erzeuger und der Rest der Dateien ohne Tür
-  ziehen je Sache aus `api/` in eigene Pakete. Der Mahnbrief bricht ab dem neunten Buch falsch
-  um.
+  ziehen je Sache aus `api/` in eigene Pakete.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -365,11 +364,6 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
   umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
-- **Mahnbrief am Seitenumbruch.** Die Tabelle des Mahnbriefs (`pdf/mahnbrief.go`) setzt
-  Strichcode und Nummer wie die Mahnliste an feste Stellen und hat den Fehler, den die Mahnliste
-  hatte ([sweeps.md](sweeps.md), „Zeile an festen Stellen über dem Seitenumbruch"): gemessen am
-  09.10.2026 mit der Standardvorlage ab dem neunten Buch vier Seiten, die neunte Zeile über drei
-  verteilt.
 - **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 354
   Methoden, rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt, zeigt der
   Stand nach dem Schritt davor.
