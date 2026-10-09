@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/internal/pdftest"
 	"bibliothek/pdf"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -79,10 +80,10 @@ func TestAbgangsbuch_ZeitraumUndToepfe(t *testing.T) {
 		t.Fatalf("Zeilen im Halbjahr: %v — erwartet AB-LMF und AB-BUE", barcodes)
 	}
 	// Lernmittel zuerst: Der Ausdruck trägt sie als ersten Abschnitt.
-	if buch.Zeilen[0].Barcode != "AB-LMF" || buch.Zeilen[0].Topf != repository.MittelLand {
+	if buch.Zeilen[0].Barcode != "AB-LMF" || buch.Zeilen[0].Topf != mitteltopf.Land {
 		t.Errorf("erste Zeile: %+v — erwartet das Lernmittel", buch.Zeilen[0])
 	}
-	if buch.Zeilen[1].Barcode != "AB-BUE" || buch.Zeilen[1].Topf != repository.MittelSchultraeger {
+	if buch.Zeilen[1].Barcode != "AB-BUE" || buch.Zeilen[1].Topf != mitteltopf.Schultraeger {
 		t.Errorf("zweite Zeile: %+v — erwartet das Büchereibuch", buch.Zeilen[1])
 	}
 	if buch.Zeilen[0].GrundText != "Verlust" {
@@ -250,10 +251,10 @@ func TestAbgangsbuchPDF_ZweiAbschnitteUndHinweis(t *testing.T) {
 		Zeilen: []repository.AbgangsZeile{
 			{Datum: time.Date(2026, time.April, 12, 10, 0, 0, 0, schulzeit.Zone()),
 				Barcode: "B-00042", Titel: "Mathebuch 7", Signatur: "Mat 7",
-				Grund: "VERLUST", GrundText: "Verlust", Topf: repository.MittelLand},
+				Grund: "VERLUST", GrundText: "Verlust", Topf: mitteltopf.Land},
 			{Datum: time.Date(2026, time.May, 3, 10, 0, 0, 0, schulzeit.Zone()),
 				Barcode: "B-00815", Titel: "Gregs Tagebuch", Signatur: "Jug Gre",
-				Grund: "AUSSORTIERT", GrundText: "Aussortiert", Topf: repository.MittelSchultraeger},
+				Grund: "AUSSORTIERT", GrundText: "Aussortiert", Topf: mitteltopf.Schultraeger},
 		},
 		OhneZeitpunkt: 7,
 		// Die zweite Lücke des Nachweises (Rasterdurchgang 17.09.2026): körperlich
@@ -273,8 +274,8 @@ func TestAbgangsbuchPDF_ZweiAbschnitteUndHinweis(t *testing.T) {
 		"16.03.2026", "15.09.2026", // der Zeitraum steht auf dem Blatt
 		"B-00042", "B-00815",
 		"Verlust", "Aussortiert",
-		"Summe " + mittelBeschriftung(repository.MittelLand) + ": 1 Exemplare",
-		"Summe " + mittelBeschriftung(repository.MittelSchultraeger) + ": 1 Exemplare",
+		"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplare",
+		"Summe " + mitteltopf.Beschriftung(mitteltopf.Schultraeger) + ": 1 Exemplare",
 		"7 weitere Exemplare", // der Hinweis auf die Abgänge ohne Zeitpunkt
 		"3 Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht", // die zweite Lücke
 	} {

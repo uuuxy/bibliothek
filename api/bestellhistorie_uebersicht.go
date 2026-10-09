@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -70,8 +71,8 @@ func (s *Server) kennzahlenJeTopf(ctx context.Context) ([]BestellhistorieTopf, e
 		return nil, err
 	}
 
-	aus := make([]BestellhistorieTopf, 0, len(mittelReihenfolge))
-	for _, topf := range mittelReihenfolge {
+	aus := make([]BestellhistorieTopf, 0, len(mitteltopf.Reihenfolge()))
+	for _, topf := range mitteltopf.Reihenfolge() {
 		if t, ok := gezaehlt[topf]; ok {
 			aus = append(aus, BestellhistorieTopf(t))
 			continue

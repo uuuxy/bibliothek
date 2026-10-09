@@ -10,7 +10,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
-	"bibliothek/repository"
+	"bibliothek/pkg/mitteltopf"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -57,7 +57,7 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
 
 	lieferant := haendler(t, pool, "Korrektur-Haendler", false)
 	titel := titelMitMeldebestand(t, pool, "LMF-Korrektur", 0)
-	rec := bestelleMitTopf(t, srv, lieferant, titel, repository.MittelLand)
+	rec := bestelleMitTopf(t, srv, lieferant, titel, mitteltopf.Land)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung anlegen: %d %s", rec.Code, rec.Body.String())
 	}
@@ -138,7 +138,7 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 
 	lieferant := haendler(t, pool, "Korrektur-Haendler-2", false)
 	titel := titelMitMeldebestand(t, pool, "LMF-Korrektur-2", 0)
-	if rec := bestelleMitTopf(t, srv, lieferant, titel, repository.MittelLand); rec.Code != http.StatusOK {
+	if rec := bestelleMitTopf(t, srv, lieferant, titel, mitteltopf.Land); rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung anlegen: %d", rec.Code)
 	}
 	var id string

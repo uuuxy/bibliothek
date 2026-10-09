@@ -1,6 +1,6 @@
 // Der Topf einer Bestellung: Lernmittelfreiheit (Land) oder Schülerbücherei (Schulträger).
 //
-// Dasselbe Vokabular wie repository/mittel.go und bestellungen_verlauf.mittel (Migration
+// Dasselbe Vokabular wie pkg/mitteltopf und bestellungen_verlauf.mittel (Migration
 // 109). Eine Bestellung = ein Topf; der Titel schlägt ihn über ist_lernmittel nur vor,
 // und eine Position lässt sich im Warenkorb in den anderen Topf schieben (falsch
 // gekennzeichneter Titel).

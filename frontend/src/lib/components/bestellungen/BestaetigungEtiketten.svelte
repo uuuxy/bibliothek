@@ -2,7 +2,7 @@
      Aus BestellBestaetigung.svelte herausgezogen (21.09.2026): Die Seite steht in der
      Größen-Ratsche und darf nicht wachsen, und der Block bekam eine zweite Form — gilt die
      Bestellung der Schülerbücherei, gibt es das große Lernmittel-Etikett nicht
-     (`grosses_etikett`, entschieden in api/mittel_vermerk.go). Der Knopf entfällt dann
+     (`grosses_etikett`, entschieden in pkg/mitteltopf). Der Knopf entfällt dann
      ganz, statt deaktiviert stehen zu bleiben; die Tür liefert das Etikett auch nicht. -->
 <script>
 	import Button from '../ui/Button.svelte';

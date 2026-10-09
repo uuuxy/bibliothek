@@ -3,7 +3,7 @@ package littera
 import (
 	"strings"
 
-	"bibliothek/repository"
+	"bibliothek/pkg/mitteltopf"
 )
 
 // Der Eigentumsvermerk aus Littera (docs/OFFEN.md 4.24, entschieden am 29.09.2026).
@@ -22,7 +22,7 @@ type vermerkZuordnung struct {
 	// Wortlaut ist die Schreibweise, die am Exemplar aufgehoben wird. „land hessen" (33 Mal)
 	// wird dabei zu „Land Hessen".
 	Wortlaut string
-	// Eigentum ist repository.MittelLand oder repository.MittelSchultraeger, leer heißt:
+	// Eigentum ist mitteltopf.Land oder mitteltopf.Schultraeger, leer heißt:
 	// keine Zuordnung, es gilt die Faustregel.
 	Eigentum string
 }
@@ -30,13 +30,13 @@ type vermerkZuordnung struct {
 // vermerkeLittera ist die feste Liste, Schlüssel in Kleinschreibung. Die Zahlen sind die der
 // Medienliste vom 12.06.2026.
 var vermerkeLittera = map[string]vermerkZuordnung{
-	"land hessen":         {"Land Hessen", repository.MittelLand},             // 13.303
-	"hochtaunuskreis":     {"Hochtaunuskreis", repository.MittelSchultraeger}, // 2.942
-	"philipp-reis-schule": {"Philipp-Reis-Schule", ""},                        // 355
-	"bibliothek":          {"Bibliothek", ""},                                 // 157
-	"förderverein":        {"Förderverein", ""},                               // 86
-	"info schulprojekt":   {"Info Schulprojekt", ""},                          // 31
-	"dauerleihgabe":       {"Dauerleihgabe", ""},                              // 4
+	"land hessen":         {"Land Hessen", mitteltopf.Land},             // 13.303
+	"hochtaunuskreis":     {"Hochtaunuskreis", mitteltopf.Schultraeger}, // 2.942
+	"philipp-reis-schule": {"Philipp-Reis-Schule", ""},                  // 355
+	"bibliothek":          {"Bibliothek", ""},                           // 157
+	"förderverein":        {"Förderverein", ""},                         // 86
+	"info schulprojekt":   {"Info Schulprojekt", ""},                    // 31
+	"dauerleihgabe":       {"Dauerleihgabe", ""},                        // 4
 }
 
 // zuordnungAusVermerk liefert die Zuordnung eines Vermerks. bekannt ist false, wenn der

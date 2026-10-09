@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -64,7 +65,7 @@ func (s *Server) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 	if !DecodeAndValidate(w, r, &req) {
 		return
 	}
-	if !repository.MittelGueltig(req.Mittel) {
+	if !mitteltopf.Gueltig(req.Mittel) {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, ErrMittelUngueltig)
 		return
 	}

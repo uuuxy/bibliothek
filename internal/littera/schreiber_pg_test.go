@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -449,13 +450,13 @@ func TestEigentumsvermerkKommtMit(t *testing.T) {
 	}
 	faelle := []struct{ id, eigentum, vermerk, gilt string }{
 		// Keine LMF-Signatur — die Faustregel sagte Schulträger, Littera sagt Land.
-		{"E1", repository.MittelLand, "Land Hessen", repository.MittelLand},
+		{"E1", mitteltopf.Land, "Land Hessen", mitteltopf.Land},
 		// Ein Schulbuch, das Littera dem Schulträger zuschreibt.
-		{"E2", repository.MittelSchultraeger, "Hochtaunuskreis", repository.MittelSchultraeger},
+		{"E2", mitteltopf.Schultraeger, "Hochtaunuskreis", mitteltopf.Schultraeger},
 		// Bekannt, ohne Zuordnung: Wortlaut ja, Eigentum aus der Faustregel.
-		{"E3", "", "Förderverein", repository.MittelSchultraeger},
-		{"E4", "", "", repository.MittelSchultraeger},
-		{"E5", "", "", repository.MittelSchultraeger},
+		{"E3", "", "Förderverein", mitteltopf.Schultraeger},
+		{"E4", "", "", mitteltopf.Schultraeger},
+		{"E5", "", "", mitteltopf.Schultraeger},
 	}
 	for _, f := range faelle {
 		eigentum, vermerk, gilt := topf(f.id)

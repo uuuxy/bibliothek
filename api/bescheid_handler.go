@@ -14,6 +14,7 @@ import (
 	"bibliothek/pdf"
 	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/ersatzwert"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
@@ -352,13 +353,13 @@ func (s *Server) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 // pruefeBescheidAnfrage prüft Topf, Auswahl und Frist, bevor irgendetwas gelesen oder
 // geschrieben wird, und liefert die Frist als Kalendertag der Schule.
 func pruefeBescheidAnfrage(req BescheidErstellenRequest) (time.Time, error) {
-	if !repository.MittelGueltig(req.Mittel) {
+	if !mitteltopf.Gueltig(req.Mittel) {
 		return time.Time{}, apierrors.BadRequest(ErrMittelUngueltig.Error(), ErrMittelUngueltig)
 	}
 	// Der Brief kennt nur einen Wortlaut und ein Konto: die des Landes. Die Rechnung
 	// der Schülerbücherei (Mittel des Schulträgers) ist Etappe 3 — bis dahin gäbe
 	// „schultraeger" einen Landes-Bescheid mit Landeskonto für ein Buch des Trägers.
-	if req.Mittel != repository.MittelLand {
+	if req.Mittel != mitteltopf.Land {
 		//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
 		return time.Time{}, apierrors.Conflict("Ein Bescheid entsteht nur für Lernmittel des Landes. Die Rechnung für Bücher der Schülerbücherei ist noch nicht gebaut.",
 			errors.New("bescheid nur für mittel=land"))

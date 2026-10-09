@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -66,14 +67,14 @@ func TestBestandslisteNenntSignaturSchlagworteEigentumUndStandort(t *testing.T) 
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, mittel)
 		VALUES ($1, 'export@example.invalid', $2) RETURNING id`,
-		marke, repository.MittelLand).Scan(&bestellungLand); err != nil {
+		marke, mitteltopf.Land).Scan(&bestellungLand); err != nil {
 		t.Fatalf("Bestellung anlegen: %v", err)
 	}
 
 	// Zwei Exemplare desselben Schulbuchs an zwei Orten: Der Standort gehört zum Exemplar.
 	schulbuch := titel("A Schulbuch", "LMF Ma 8", true)
 	exemplar(schulbuch, "A1", "", "", "LMF", false)
-	exemplar(schulbuch, "A2", repository.MittelSchultraeger, "", "Bibliothek, Regal 3B", false)
+	exemplar(schulbuch, "A2", mitteltopf.Schultraeger, "", "Bibliothek, Regal 3B", false)
 	exemplar(schulbuch, "A3", "", "", "Keller", true)
 	roman := titel("B Roman", "", false)
 	exemplar(roman, "B1", "", bestellungLand, "", false)

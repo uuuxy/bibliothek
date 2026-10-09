@@ -9,6 +9,7 @@ import (
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/service"
 	"bibliothek/pdf"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -35,8 +36,8 @@ func TestZugangsbuch_ZeitraumToepfeUndBestellung(t *testing.T) {
 		}
 		return id
 	}
-	land := bestellung("Buchhandlung Land", repository.MittelLand)
-	traeger := bestellung("Buchhandlung Traeger", repository.MittelSchultraeger)
+	land := bestellung("Buchhandlung Land", mitteltopf.Land)
+	traeger := bestellung("Buchhandlung Traeger", mitteltopf.Schultraeger)
 
 	zugang := func(barcode string, wann time.Time, bestellID *string) string {
 		t.Helper()
@@ -87,10 +88,10 @@ func TestZugangsbuch_ZeitraumToepfeUndBestellung(t *testing.T) {
 	if _, drin := gefunden["ZUG-WEG"]; !drin {
 		t.Error("ein später ausgesondertes Exemplar fehlt — es ist trotzdem zugegangen")
 	}
-	if z := gefunden["ZUG-LAND"]; z.Topf != repository.MittelLand || z.Lieferant != "Buchhandlung Land" {
+	if z := gefunden["ZUG-LAND"]; z.Topf != mitteltopf.Land || z.Lieferant != "Buchhandlung Land" {
 		t.Errorf("Topf/Lieferant aus der Bestellung: %+v", z)
 	}
-	if z := gefunden["ZUG-TRAEGER"]; z.Topf != repository.MittelSchultraeger {
+	if z := gefunden["ZUG-TRAEGER"]; z.Topf != mitteltopf.Schultraeger {
 		t.Errorf("Topf des Schulträgers: %+v", z)
 	}
 	// Ohne Bestellung wird NICHT geraten — auch nicht aus ist_lernmittel des Titels.
@@ -107,9 +108,9 @@ func TestZugangsbuchPDF_AbschnitteUndHinweis(t *testing.T) {
 		Bis: time.Date(2026, time.September, 15, 0, 0, 0, 0, loc),
 		Zeilen: []repository.ZugangsZeile{
 			{Datum: time.Date(2026, time.April, 12, 0, 0, 0, 0, loc), Barcode: "B-00100",
-				Titel: "Mathebuch 7", Lieferant: "Buchhandlung Land", Topf: repository.MittelLand},
+				Titel: "Mathebuch 7", Lieferant: "Buchhandlung Land", Topf: mitteltopf.Land},
 			{Datum: time.Date(2026, time.May, 3, 0, 0, 0, 0, loc), Barcode: "B-00200",
-				Titel: "Gregs Tagebuch", Lieferant: "Buchhandlung Traeger", Topf: repository.MittelSchultraeger},
+				Titel: "Gregs Tagebuch", Lieferant: "Buchhandlung Traeger", Topf: mitteltopf.Schultraeger},
 			{Datum: time.Date(2026, time.May, 4, 0, 0, 0, 0, loc), Barcode: "B-00300",
 				Titel: "Fundstueck aus dem Schrank"},
 		},
@@ -126,9 +127,9 @@ func TestZugangsbuchPDF_AbschnitteUndHinweis(t *testing.T) {
 		"16.03.2026", "15.09.2026",
 		"B-00100", "B-00200", "B-00300",
 		"Buchhandlung Land",
-		"Summe " + mittelBeschriftung(repository.MittelLand) + ": 1 Exemplare",
-		"Summe " + mittelBeschriftung(repository.MittelSchultraeger) + ": 1 Exemplare",
-		"Summe " + mittelOhneZuordnung + ": 1 Exemplare",
+		"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplare",
+		"Summe " + mitteltopf.Beschriftung(mitteltopf.Schultraeger) + ": 1 Exemplare",
+		"Summe " + mitteltopf.OhneZuordnung + ": 1 Exemplare",
 		"keine Bestellung hinterlegt", // der Hinweis, der die Einschränkung nennt
 		"Zugänge im Zeitraum: 3 Exemplare",
 	} {
@@ -177,7 +178,7 @@ func TestZugangsbuch_ZulaufIstKeinZugang(t *testing.T) {
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, mittel)
 		VALUES ('Buchhandlung Zulauf', 'haendler@example.org', $1) RETURNING id`,
-		repository.MittelLand).Scan(&bestellID); err != nil {
+		mitteltopf.Land).Scan(&bestellID); err != nil {
 		t.Fatalf("Bestellung: %v", err)
 	}
 

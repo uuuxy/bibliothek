@@ -11,6 +11,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
 	"bibliothek/pdf"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -45,7 +46,7 @@ func etikettenBogenHolen(t *testing.T, srv *Server, token, groesse, format strin
 // bestellungMitEtiketten legt eine Bestellung mit `menge` Vorab-Barcodes an.
 func bestellungMitEtiketten(t *testing.T, srv *Server, pool *pgxpool.Pool, menge int) string {
 	t.Helper()
-	return bestellungMitEtikettenAus(t, srv, pool, menge, repository.MittelLand)
+	return bestellungMitEtikettenAus(t, srv, pool, menge, mitteltopf.Land)
 }
 
 // bestellungMitEtikettenAus wie oben, aber mit wählbarem Topf.

@@ -199,7 +199,7 @@ var fkAktionenBestand = []string{
 var checkBedingungenBestand = []string{
 	"audit_log_akteur_check", "bestellungen_verlauf_bestaetigt_durch_check",
 	"bestellungen_verlauf_etiketten_groesse_check",
-	// Befragt am 10.09.2026: dieselbe Menge wie repository.MittelGueltig — der Code prüft
+	// Befragt am 10.09.2026: dieselbe Menge wie mitteltopf.Gueltig — der Code prüft
 	// sie an der Tür (400), die Datenbank hält die zweite Tür (api/bestellung_mittel_pg_test.go).
 	"bestellungen_verlauf_mittel_check", "check_damage_item",
 	"check_loan_item",
@@ -233,7 +233,7 @@ var checkBedingungenBestand = []string{
 	// dasselbe Vokabular wie bestellungen_verlauf.mittel. Einziger Schreiber ist die
 	// Littera-Übernahme (internal/littera, sqlExemplarEinfuegen); sie schreibt nur Werte aus
 	// vermerkeLittera, und TestVermerkeLittera_NurGueltigesEigentum hält jede Zuordnung
-	// gegen repository.MittelGueltig. Liefe sie doch dagegen, verlöre sie den Titel samt
+	// gegen mitteltopf.Gueltig. Liefe sie doch dagegen, verlöre sie den Titel samt
 	// Exemplaren im Savepoint und meldete ihn als Fehler (Abbruch, kein Satz). Gegenfrage:
 	// NULL lässt die Regel zu, und NULL heißt „nicht gesetzt" — ExemplarTopfSQL fällt dann auf
 	// die Bestellung und den Titel zurück; kein Lesepfad nimmt NULL als eigenen Topf.
@@ -242,7 +242,7 @@ var checkBedingungenBestand = []string{
 	// steht genau dann, wenn Eigentum steht. Die Schreiber beider Spalten: die Littera-Übernahme
 	// (sqlExemplarEinfuegen, setzt beide aus demselben Parameter) und die Buchakte
 	// (SetzeExemplarEigentum, setzt beide in einer Anweisung, prüft das Eigentum vorher gegen
-	// MittelGueltig → 400). Keiner läuft gegen die Regel; ein dritter Schreiber, der nur
+	// mitteltopf.Gueltig → 400). Keiner läuft gegen die Regel; ein dritter Schreiber, der nur
 	// eigentum setzt, bekommt einen Abbruch (23514), keinen Satz
 	// (api/exemplar_eigentum_pg_test.go, Schritt 6). Gegenfrage: NULL/NULL ist der Normalfall —
 	// ExemplarTopfHerkunftSQL liest die Quelle nur, wenn Eigentum steht.
@@ -330,8 +330,8 @@ var checkBedingungenBestand = []string{
 	"chk_leser_art", "chk_leser_nur_schueler_werden_abgaenger",
 	"chk_leser_schueler_pflichtfelder",
 	// Migration 110, befragt am 10.09.2026: Vokabular und Wertebereiche des Bescheids.
-	// chk_bescheid_mittel und chk_nummern_mittel sind dieselbe Menge wie MittelGueltig
-	// (repository/mittel.go); chk_schaden_art sind genau die zwei Kästchen des Formulars.
+	// chk_bescheid_mittel und chk_nummern_mittel sind dieselbe Menge wie mitteltopf.Gueltig
+	// (pkg/mitteltopf); chk_schaden_art sind genau die zwei Kästchen des Formulars.
 	// chk_bescheid_laufende_nr >= 1 hält den Generator davon ab, eine 0 auszugeben — die
 	// Referenznummer „… 0000" gibt es nicht. Alle vier prüft der Code an der Tür (400),
 	// die Datenbank ist die zweite.

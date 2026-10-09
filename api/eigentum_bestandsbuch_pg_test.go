@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -39,7 +40,7 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 		t.Fatalf("Lernmittel setzen: %v", err)
 	}
 	lektuere := titelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
-	traeger := topfBestellung(t, repository.MittelSchultraeger)
+	traeger := topfBestellung(t, mitteltopf.Schultraeger)
 
 	abgang := func(titelID, barcode string, bestellung *string, eigentum string) {
 		t.Helper()
@@ -56,10 +57,10 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 			t.Fatalf("datieren %s: %v", barcode, err)
 		}
 	}
-	abgang(lernmittel, "EIG-LMF-TRAEGER", &traeger, "")               // bis 29.09.: Land
-	abgang(lektuere, "EIG-LEKTUERE-LAND", nil, repository.MittelLand) // bis 29.09.: Schulträger
-	abgang(lernmittel, "EIG-LMF-ALT", nil, "")                        // Faustregel: Land
-	abgang(lektuere, "EIG-ROMAN-ALT", nil, "")                        // Faustregel: Schulträger
+	abgang(lernmittel, "EIG-LMF-TRAEGER", &traeger, "")         // bis 29.09.: Land
+	abgang(lektuere, "EIG-LEKTUERE-LAND", nil, mitteltopf.Land) // bis 29.09.: Schulträger
+	abgang(lernmittel, "EIG-LMF-ALT", nil, "")                  // Faustregel: Land
+	abgang(lektuere, "EIG-ROMAN-ALT", nil, "")                  // Faustregel: Schulträger
 
 	buch, err := repository.LadeAbgangsbuch(ctx, pool,
 		time.Date(2026, time.March, 16, 0, 0, 0, 0, loc), time.Date(2026, time.September, 15, 0, 0, 0, 0, loc))
@@ -67,10 +68,10 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 		t.Fatalf("Abgangsbuch laden: %v", err)
 	}
 	erwartet := map[string]string{
-		"EIG-LMF-TRAEGER":   repository.MittelSchultraeger,
-		"EIG-LEKTUERE-LAND": repository.MittelLand,
-		"EIG-LMF-ALT":       repository.MittelLand,
-		"EIG-ROMAN-ALT":     repository.MittelSchultraeger,
+		"EIG-LMF-TRAEGER":   mitteltopf.Schultraeger,
+		"EIG-LEKTUERE-LAND": mitteltopf.Land,
+		"EIG-LMF-ALT":       mitteltopf.Land,
+		"EIG-ROMAN-ALT":     mitteltopf.Schultraeger,
 	}
 	if len(buch.Zeilen) != len(erwartet) {
 		t.Fatalf("Zeilen: %+v — erwartet %d", buch.Zeilen, len(erwartet))
@@ -80,7 +81,7 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 			t.Errorf("%s: Topf %q, erwartet %q", z.Barcode, z.Topf, erwartet[z.Barcode])
 		}
 		// Land zuerst — die Reihenfolge des Ausdrucks.
-		if i > 0 && buch.Zeilen[i-1].Topf == repository.MittelSchultraeger && z.Topf == repository.MittelLand {
+		if i > 0 && buch.Zeilen[i-1].Topf == mitteltopf.Schultraeger && z.Topf == mitteltopf.Land {
 			t.Errorf("Reihenfolge: %s (Land) steht hinter einer Zeile des Schulträgers", z.Barcode)
 		}
 	}
@@ -93,7 +94,7 @@ func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
 	loc := schulzeit.Zone()
 
 	titelID := titelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
-	land := topfBestellung(t, repository.MittelLand)
+	land := topfBestellung(t, mitteltopf.Land)
 
 	zugang := func(barcode string, bestellung *string, eigentum string) {
 		t.Helper()
@@ -104,10 +105,10 @@ func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
 			t.Fatalf("Zugang %s: %v", barcode, err)
 		}
 	}
-	zugang("ZEIG-LITTERA", nil, repository.MittelLand)             // bis 29.09.: ohne Zuordnung
-	zugang("ZEIG-UMGESETZT", &land, repository.MittelSchultraeger) // bis 29.09.: Land
-	zugang("ZEIG-BESTELLT", &land, "")                             // Topf der Bestellung
-	zugang("ZEIG-OHNE", nil, "")                                   // nicht geraten
+	zugang("ZEIG-LITTERA", nil, mitteltopf.Land)             // bis 29.09.: ohne Zuordnung
+	zugang("ZEIG-UMGESETZT", &land, mitteltopf.Schultraeger) // bis 29.09.: Land
+	zugang("ZEIG-BESTELLT", &land, "")                       // Topf der Bestellung
+	zugang("ZEIG-OHNE", nil, "")                             // nicht geraten
 
 	buch, err := repository.LadeZugangsbuch(ctx, pool,
 		time.Date(2026, time.March, 16, 0, 0, 0, 0, loc), time.Date(2026, time.September, 15, 0, 0, 0, 0, loc))
@@ -115,9 +116,9 @@ func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
 		t.Fatalf("Zugangsbuch laden: %v", err)
 	}
 	erwartet := map[string]string{
-		"ZEIG-LITTERA":   repository.MittelLand,
-		"ZEIG-UMGESETZT": repository.MittelSchultraeger,
-		"ZEIG-BESTELLT":  repository.MittelLand,
+		"ZEIG-LITTERA":   mitteltopf.Land,
+		"ZEIG-UMGESETZT": mitteltopf.Schultraeger,
+		"ZEIG-BESTELLT":  mitteltopf.Land,
 		"ZEIG-OHNE":      "",
 	}
 	if len(buch.Zeilen) != len(erwartet) {

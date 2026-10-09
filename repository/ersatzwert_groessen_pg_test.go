@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/pkg/ersatzwert"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
@@ -104,7 +105,7 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 		if g.Kaufpreis != 20.00 {
 			t.Errorf("Kaufpreis = %.2f, want 20.00", g.Kaufpreis)
 		}
-		if g.Topf != MittelLand {
+		if g.Topf != mitteltopf.Land {
 			t.Errorf("Topf = %q — der Titel ist als Lernmittel angelegt, ohne Bestellung und ohne Eigentum am Exemplar gilt Land", g.Topf)
 		}
 		if jahr := ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand); jahr != 1 {

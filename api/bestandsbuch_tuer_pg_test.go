@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"bibliothek/internal/pdftest"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
-	"bibliothek/repository"
 )
 
 // GET /api/bestand/abgangsbuch/pdf und /api/bestand/zugangsbuch/pdf liefern das Blatt zum
@@ -53,7 +53,7 @@ func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, mittel)
 		VALUES ('Buchhandlung Land', 'haendler@example.org', $1) RETURNING id`,
-		repository.MittelLand).Scan(&bestellung); err != nil {
+		mitteltopf.Land).Scan(&bestellung); err != nil {
 		t.Fatalf("Bestellung anlegen: %v", err)
 	}
 	zugang := func(barcode string, wann time.Time, bestellID *string) {
@@ -99,9 +99,9 @@ func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
 		pruefe(t, blatt(t, "abgangsbuch", "Abgangsbuch_2026-03-16_bis_2026-09-15.pdf"), []string{
 			"Zeitraum: 16.03.2026 bis 15.09.2026",
 			"TUER-AB-LAND", "Mathebuch 7", "Mat 7", "12.04.2026", "Verlust",
-			"Summe " + mittelBeschriftung(repository.MittelLand) + ": 1 Exemplare",
+			"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplare",
 			"TUER-AB-BUE", "Gregs Tagebuch",
-			"Summe " + mittelBeschriftung(repository.MittelSchultraeger) + ": 1 Exemplare",
+			"Summe " + mitteltopf.Beschriftung(mitteltopf.Schultraeger) + ": 1 Exemplare",
 			"Abgänge im Zeitraum: 2 Exemplare",
 		}, "TUER-AB-SPAET")
 	})
@@ -110,9 +110,9 @@ func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
 		pruefe(t, blatt(t, "zugangsbuch", "Zugangsbuch_2026-03-16_bis_2026-09-15.pdf"), []string{
 			"Zeitraum: 16.03.2026 bis 15.09.2026",
 			"TUER-ZU-LAND", "12.04.2026", "Buchhandlung Land",
-			"Summe " + mittelBeschriftung(repository.MittelLand) + ": 1 Exemplare",
+			"Summe " + mitteltopf.Beschriftung(mitteltopf.Land) + ": 1 Exemplare",
 			"TUER-ZU-OHNE",
-			"Summe " + mittelOhneZuordnung + ": 1 Exemplare",
+			"Summe " + mitteltopf.OhneZuordnung + ": 1 Exemplare",
 			"keine Bestellung hinterlegt",
 			"Zugänge im Zeitraum: 2 Exemplare",
 		}, "TUER-ZU-SPAET")

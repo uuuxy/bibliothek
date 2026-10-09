@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/pdf"
-	"bibliothek/repository"
+	"bibliothek/pkg/mitteltopf"
 )
 
 // anschreibenBlatt druckt das Anschreiben, wie die Anlagen der Bestellmail es tun.
@@ -26,13 +26,19 @@ func TestBestellanschreiben_FuelltJedesFeldDerEingabe(t *testing.T) {
 		{Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", Verlag: "Verlag 1", Menge: 30},
 		{Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", Verlag: "Verlag 2", Menge: 2},
 	}
-	for _, mittel := range []string{repository.MittelLand, repository.MittelSchultraeger} {
+	texteJeTopf := map[string]mitteltopf.Texte{}
+	for _, mittel := range []string{mitteltopf.Land, mitteltopf.Schultraeger} {
 		eingabe, err := bestellanschreiben(positionen, pdf.BogenHinterLink, mittel)
 		if err != nil {
 			t.Fatalf("%s: %v", mittel, err)
 		}
+		texte, err := mitteltopf.TexteFuer(mittel)
+		if err != nil {
+			t.Fatalf("%s: %v", mittel, err)
+		}
+		texteJeTopf[mittel] = texte
 		want := pdf.Bestellanschreiben{
-			Betreff: mittelTexte[mittel].Betreff, Vermerk: mittelTexte[mittel].Vermerk, Etiketten: pdf.BogenHinterLink,
+			Betreff: texte.Betreff, Vermerk: texte.Vermerk, Etiketten: pdf.BogenHinterLink,
 			Positionen: []pdf.BestellPosition{
 				{Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", Menge: 30},
 				{Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", Menge: 2},
@@ -45,8 +51,8 @@ func TestBestellanschreiben_FuelltJedesFeldDerEingabe(t *testing.T) {
 			t.Errorf("%s: bestellanschreiben füllt diese Felder nicht: %v", mittel, leer)
 		}
 	}
-	if mittelTexte[repository.MittelLand].Betreff == mittelTexte[repository.MittelSchultraeger].Betreff ||
-		mittelTexte[repository.MittelLand].Vermerk == mittelTexte[repository.MittelSchultraeger].Vermerk {
+	land, traeger := texteJeTopf[mitteltopf.Land], texteJeTopf[mitteltopf.Schultraeger]
+	if land.Betreff == traeger.Betreff || land.Vermerk == traeger.Vermerk {
 		t.Error("die Texte der zwei Töpfe sind gleich; der Test unterschiede sie nicht")
 	}
 }
@@ -65,8 +71,8 @@ func TestBestellanschreibenTraegtDenVermerkDesTopfsUndNieDenAnderen(t *testing.T
 	// gehalten, weil gofpdf lange Zeilen umbricht und ein ganzer Satz dann nicht mehr
 	// am Stück im Strom steht.
 	kennzeichen := map[string][]string{
-		repository.MittelLand:         {"Lernmittelfreiheit", "Sammelbestellung"},
-		repository.MittelSchultraeger: {"lerb", "Schultr"},
+		mitteltopf.Land:         {"Lernmittelfreiheit", "Sammelbestellung"},
+		mitteltopf.Schultraeger: {"lerb", "Schultr"},
 	}
 
 	for mittel, erwartet := range kennzeichen {
@@ -85,10 +91,10 @@ func TestBestellanschreibenTraegtDenVermerkDesTopfsUndNieDenAnderen(t *testing.T
 			// vorher. Für den Schulträger-Brief heißt das: „Lernmittelfreiheit" darf nur
 			// in der Verneinung stehen; der Brief nennt es einmal („keine Beschaffung im
 			// Rahmen der Lernmittelfreiheit"), also prüfen wir das Eigentums-Wort.
-			if mittel == repository.MittelSchultraeger && strings.Contains(text, "Sammelbestellung") {
+			if mittel == mitteltopf.Schultraeger && strings.Contains(text, "Sammelbestellung") {
 				t.Error("Schulträger-Anschreiben nennt sich Sammelbestellung — das ist der Lernmittel-Vermerk")
 			}
-			if mittel == repository.MittelLand && strings.Contains(text, "Schultr") {
+			if mittel == mitteltopf.Land && strings.Contains(text, "Schultr") {
 				t.Error("Land-Anschreiben nennt den Schulträger")
 			}
 			if strings.Contains(text, "unsere Schulbibliothek") {

@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -38,7 +39,7 @@ type OeffentlicheBestellung struct {
 	// vor sich hat — die Seite verlangt ja bewusst keine Anmeldung.
 	SchuleAnschrift string `json:"schule_anschrift"`
 	LieferantName   string `json:"lieferant_name"`
-	// Mittel nennt den Topf mit dem Wort des Anschreibens (mittel_vermerk.go): Der Händler
+	// Mittel nennt den Topf mit dem Wort des Anschreibens (pkg/mitteltopf): Der Händler
 	// bekommt am selben Tag zwei gleich aussehende Links und muss sie auseinanderhalten.
 	// Leer bei Alt-Bestellungen ohne Zuordnung — ihr Topf wird nicht geraten.
 	Mittel          string                 `json:"mittel"`
@@ -122,10 +123,10 @@ func (s *Server) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 		LinkGueltigBis:     kopf.LinkGueltigBis,
 		EtikettenVorhanden: kopf.EtikettenVorhanden,
 	}
-	if t, err := mittelTexteFuer(kopf.Mittel); err == nil {
+	if t, err := mitteltopf.TexteFuer(kopf.Mittel); err == nil {
 		a.Mittel = t.Kurz
 	}
-	a.GrossesEtikett = grossesLernmittelEtikettFuer(kopf.Mittel)
+	a.GrossesEtikett = mitteltopf.GrossesLernmittelEtikettFuer(kopf.Mittel)
 
 	positionen, err := repository.ListeOeffentlichePositionen(ctx, s.DB.Pool, bestellungID)
 	if err != nil {

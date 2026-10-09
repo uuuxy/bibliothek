@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/pdf"
 	"bibliothek/pkg/csvutil"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -49,9 +50,9 @@ type BestellMail struct {
 	// er den Kopf gar nicht mehr selbst.
 	EtikettKopf EtikettKopf
 	Schule      pdf.SchuleInfo
-	// Mittel: der Topf der Bestellung (repository.MittelLand / MittelSchultraeger) —
+	// Mittel: der Topf der Bestellung (mitteltopf.Land / mitteltopf.Schultraeger) —
 	// bestimmt Betreff und Vermerk des Anschreibens. Pflicht: Ohne gültigen Topf gibt es
-	// kein Anschreiben und damit keine Mail (mittelTexteFuer).
+	// kein Anschreiben und damit keine Mail (mitteltopf.TexteFuer).
 	Mittel string
 }
 
@@ -136,10 +137,10 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 }
 
 // bestellanschreiben füllt die Eingabe des Anschreibens. Betreff und Vermerk kommen aus den
-// Texten zum Topf (mittel_vermerk.go); ein unbekannter Topf ist ein Fehler und kein Brief ohne
+// Texten zum Topf (pkg/mitteltopf); ein unbekannter Topf ist ein Fehler und kein Brief ohne
 // Vermerk.
 func bestellanschreiben(positionen []OrderedItem, weg pdf.EtikettenWeg, mittel string) (pdf.Bestellanschreiben, error) {
-	texte, err := mittelTexteFuer(mittel)
+	texte, err := mitteltopf.TexteFuer(mittel)
 	if err != nil {
 		return pdf.Bestellanschreiben{}, err
 	}
@@ -175,7 +176,7 @@ func GenerateBarcodeCSV(labels []BarcodeLabelDetail) ([]byte, error) {
 // etikettenboegen erzeugt die Etiketten-PDFs für die Mail: immer den kleinen Bogen, für
 // den selbst beklebenden Hauptlieferanten zusätzlich das große Lernmittel-Etikett — er
 // wählt die Größe, Bibliosys entscheidet sie nicht vorab. Gilt die Bestellung der
-// Schülerbücherei, entfällt das große Etikett (grossesLernmittelEtikettFuer).
+// Schülerbücherei, entfällt das große Etikett (mitteltopf.GrossesLernmittelEtikettFuer).
 //
 // Der Kopf kommt fertig herein (etikettKopfAus) — derselbe wie im Selbstdruck und hinter
 // dem Lieferanten-Link, damit alle drei Wege zum selben Buch denselben Aufkleber ergeben.
@@ -196,7 +197,7 @@ func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlief
 		{Name: datiertName("etiketten_klein", "pdf"), ContentType: contentTypePDF, Data: labelBuf.Bytes()},
 	}
 
-	if !istHauptlieferant || !grossesLernmittelEtikettFuer(mittel) {
+	if !istHauptlieferant || !mitteltopf.GrossesLernmittelEtikettFuer(mittel) {
 		return boegen, nil
 	}
 

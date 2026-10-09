@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/pdf"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -35,9 +36,9 @@ func berichtBestellung(mittel string, betrag float64, exemplare int, titel strin
 
 func TestBestellberichtTrenntDieToepfeUndIhreSummen(t *testing.T) {
 	orders := []repository.BerichtBestellung{
-		berichtBestellung(repository.MittelLand, 120.00, 30, "Mathematik 7"),
-		berichtBestellung(repository.MittelLand, 80.00, 20, "Englisch 8"),
-		berichtBestellung(repository.MittelSchultraeger, 45.50, 5, "Die unendliche Geschichte"),
+		berichtBestellung(mitteltopf.Land, 120.00, 30, "Mathematik 7"),
+		berichtBestellung(mitteltopf.Land, 80.00, 20, "Englisch 8"),
+		berichtBestellung(mitteltopf.Schultraeger, 45.50, 5, "Die unendliche Geschichte"),
 		berichtBestellung("", 10.00, 2, "Alt ohne Zuordnung"),
 	}
 
@@ -80,7 +81,7 @@ func TestBestellberichtTrenntDieToepfeUndIhreSummen(t *testing.T) {
 // Ein Bericht über einen einzigen Topf (Lieferantenabrechnung mit Filter) nennt den
 // anderen NICHT: Das Blatt wird gegen eine Rechnung dieses Topfs gehalten.
 func TestBestellberichtUeberEinenTopfNenntDenAnderenNicht(t *testing.T) {
-	orders := []repository.BerichtBestellung{berichtBestellung(repository.MittelLand, 120.00, 30, "Mathematik 7")}
+	orders := []repository.BerichtBestellung{berichtBestellung(mitteltopf.Land, 120.00, 30, "Mathematik 7")}
 
 	roh, err := generateBestellBerichtPDF(orders, pdf.SchuleInfo{Name: "Testschule"}, bestellBerichtOpts{
 		Titel:         "Lieferantenabrechnung",

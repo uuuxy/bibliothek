@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -22,7 +23,7 @@ func TestProcessOrder_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	zweiter := titelMitMeldebestand(t, pool, "LMF-Summe Zwei", 0)
 
 	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
-		Mittel: repository.MittelLand, SupplierID: lieferant,
+		Mittel: mitteltopf.Land, SupplierID: lieferant,
 		Items: []OrderItemRequest{
 			{TitelID: erster, Menge: 3, Preis: 10, GenerateBarcodes: true},
 			{TitelID: zweiter, Menge: 2, Preis: 4.5, GenerateBarcodes: true},

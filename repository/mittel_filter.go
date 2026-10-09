@@ -1,6 +1,10 @@
 package repository
 
-import "fmt"
+import (
+	"fmt"
+
+	"bibliothek/pkg/mitteltopf"
+)
 
 // Der Topf-Filter für Listen und Berichte (#596, Bauplan 7.3 Schritt 4).
 //
@@ -19,14 +23,14 @@ const MittelOhneFilter = "ohne"
 
 // MittelFilterGueltig prüft den Parameter, bevor er in eine Abfrage geht. Leer = alle.
 func MittelFilterGueltig(filter string) bool {
-	return filter == "" || filter == MittelOhneFilter || MittelGueltig(filter)
+	return filter == "" || filter == MittelOhneFilter || mitteltopf.Gueltig(filter)
 }
 
 // MittelFilterFehler ist die Meldung an der Tür — sie nennt die erlaubten Werte, damit
 // niemand raten muss.
 func MittelFilterFehler(filter string) error {
 	return fmt.Errorf("unbekannter Topf %q — erlaubt sind %q, %q und %q",
-		filter, MittelLand, MittelSchultraeger, MittelOhneFilter)
+		filter, mitteltopf.Land, mitteltopf.Schultraeger, MittelOhneFilter)
 }
 
 // MittelBedingung liefert die SQL-Bedingung zum Filter und den Parameterwert dazu.

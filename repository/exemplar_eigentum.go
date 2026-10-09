@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -29,7 +30,7 @@ var ErrEigentumUngueltig = errors.New("eigentum ungültig")
 // EigentumAenderung ist eine Änderung für mehrere Exemplare.
 type EigentumAenderung struct {
 	ExemplarIDs []string
-	// Eigentum ist MittelLand oder MittelSchultraeger. Leer nimmt die Angabe am Exemplar
+	// Eigentum ist mitteltopf.Land oder mitteltopf.Schultraeger. Leer nimmt die Angabe am Exemplar
 	// weg: Dann gilt wieder der Topf der Bestellung, sonst die Faustregel aus dem Titel.
 	Eigentum     string
 	Grund        string
@@ -149,7 +150,7 @@ func pruefeEigentumAenderung(a EigentumAenderung) error {
 		return fmt.Errorf("%w: kein Exemplar gewählt", ErrEigentumUngueltig)
 	case len(a.ExemplarIDs) > ExemplarEigentumListeMax:
 		return fmt.Errorf("%w: höchstens %d Exemplare auf einmal", ErrEigentumUngueltig, ExemplarEigentumListeMax)
-	case a.Eigentum != "" && !MittelGueltig(a.Eigentum):
+	case a.Eigentum != "" && !mitteltopf.Gueltig(a.Eigentum):
 		return fmt.Errorf("%w: unbekanntes Eigentum %q", ErrEigentumUngueltig, a.Eigentum)
 	case strings.TrimSpace(a.Grund) == "":
 		return fmt.Errorf("%w: der Grund fehlt", ErrEigentumUngueltig)

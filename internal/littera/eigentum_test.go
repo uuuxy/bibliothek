@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/repository"
+	"bibliothek/pkg/mitteltopf"
 )
 
 func TestZuordnungAusVermerk(t *testing.T) {
@@ -13,11 +13,11 @@ func TestZuordnungAusVermerk(t *testing.T) {
 		bekannt            bool
 		wortlaut, eigentum string
 	}{
-		{"Land Hessen", true, "Land Hessen", repository.MittelLand},
+		{"Land Hessen", true, "Land Hessen", mitteltopf.Land},
 		// 33 Mal klein geschrieben: derselbe Vermerk, aufgehoben in der üblichen Form.
-		{"land hessen", true, "Land Hessen", repository.MittelLand},
-		{"  Land   Hessen ", true, "Land Hessen", repository.MittelLand},
-		{"Hochtaunuskreis", true, "Hochtaunuskreis", repository.MittelSchultraeger},
+		{"land hessen", true, "Land Hessen", mitteltopf.Land},
+		{"  Land   Hessen ", true, "Land Hessen", mitteltopf.Land},
+		{"Hochtaunuskreis", true, "Hochtaunuskreis", mitteltopf.Schultraeger},
 		// Bekannt, aber ohne Zuordnung, bis die Schule sie bestätigt (OFFEN.md 4.24).
 		{"Philipp-Reis-Schule", true, "Philipp-Reis-Schule", ""},
 		{"Bibliothek", true, "Bibliothek", ""},
@@ -43,7 +43,7 @@ func TestZuordnungAusVermerk(t *testing.T) {
 // der Titel samt Exemplaren an der Datenbank ab, und das erst beim einen echten Lauf.
 func TestVermerkeLittera_NurGueltigesEigentum(t *testing.T) {
 	for schluessel, z := range vermerkeLittera {
-		if z.Eigentum != "" && !repository.MittelGueltig(z.Eigentum) {
+		if z.Eigentum != "" && !mitteltopf.Gueltig(z.Eigentum) {
 			t.Errorf("%q ordnet %q zu — nicht im Vokabular von chk_exemplar_eigentum", schluessel, z.Eigentum)
 		}
 		if got, _ := zuordnungAusVermerk(z.Wortlaut); got != z {

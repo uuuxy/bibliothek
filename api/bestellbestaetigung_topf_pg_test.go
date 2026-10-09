@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
-	"bibliothek/repository"
+	"bibliothek/pkg/mitteltopf"
 )
 
 // Der Topf auf der Bestätigungsseite und an der Etiketten-Tür (OFFEN.md 4.11, entschieden
@@ -29,8 +29,8 @@ func TestLieferantenSeite_TopfUndGrossesEtikett(t *testing.T) {
 		wantGross  bool
 		wantStatus int
 	}{
-		{"Lernmittelfreiheit", repository.MittelLand, "Lernmittelfreiheit", true, http.StatusOK},
-		{"Schülerbücherei", repository.MittelSchultraeger, "Schülerbücherei", false, http.StatusNotFound},
+		{"Lernmittelfreiheit", mitteltopf.Land, "Lernmittelfreiheit", true, http.StatusOK},
+		{"Schülerbücherei", mitteltopf.Schultraeger, "Schülerbücherei", false, http.StatusNotFound},
 		{"Alt-Bestellung ohne Zuordnung", "", "", true, http.StatusOK},
 	}
 	for _, f := range faelle {
@@ -40,7 +40,7 @@ func TestLieferantenSeite_TopfUndGrossesEtikett(t *testing.T) {
 
 			anlegenMit := f.mittel
 			if anlegenMit == "" {
-				anlegenMit = repository.MittelLand
+				anlegenMit = mitteltopf.Land
 			}
 			token := bestellungMitEtikettenAus(t, srv, pool, 3, anlegenMit)
 			bestellungID, err := srv.bestellungPerToken(ctx, token)

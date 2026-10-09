@@ -56,7 +56,7 @@ export function berichtOptionen(mitPreisen) {
  *
  * `mittel` engt den Bericht auf einen Topf ein (leer = beide und die Alt-Bestellungen
  * ohne Zuordnung). Die Überschrift des Blattes hängt der Server an — dort steht die eine
- * Beschriftung, die auch Chip und Anschreiben tragen (api/mittel_vermerk.go,
+ * Beschriftung, die auch Chip und Anschreiben tragen (pkg/mitteltopf,
  * Paritäts-Gate).
  *
  * @param {{

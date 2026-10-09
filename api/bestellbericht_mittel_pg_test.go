@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -46,8 +47,8 @@ func TestBestellberichtFiltertNachTopf(t *testing.T) {
 		}
 	})
 
-	anlegen(t, "Land", repository.MittelLand, 120.00)
-	anlegen(t, "Kreis", repository.MittelSchultraeger, 45.50)
+	anlegen(t, "Land", mitteltopf.Land, 120.00)
+	anlegen(t, "Kreis", mitteltopf.Schultraeger, 45.50)
 	anlegen(t, "Alt", "", 10.00)
 
 	von := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
@@ -61,8 +62,8 @@ func TestBestellberichtFiltertNachTopf(t *testing.T) {
 		erwartetTopf string
 	}{
 		{"ohne Filter alle drei", "", 3, 175.50, ""},
-		{"nur Lernmittelfreiheit", repository.MittelLand, 1, 120.00, repository.MittelLand},
-		{"nur Schülerbücherei", repository.MittelSchultraeger, 1, 45.50, repository.MittelSchultraeger},
+		{"nur Lernmittelfreiheit", mitteltopf.Land, 1, 120.00, mitteltopf.Land},
+		{"nur Schülerbücherei", mitteltopf.Schultraeger, 1, 45.50, mitteltopf.Schultraeger},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -90,11 +91,11 @@ func TestBestellberichtFiltertNachTopf(t *testing.T) {
 
 	// Die Alt-Bestellung ohne Zuordnung gehört in KEINEN der beiden gefilterten Berichte —
 	// sie wird nie geraten (Migration 109, Backfill).
-	fuerLand, _, err := repository.LadeBerichtBestellungen(ctx, srv.DB.Pool, von, bis, "", repository.MittelLand)
+	fuerLand, _, err := repository.LadeBerichtBestellungen(ctx, srv.DB.Pool, von, bis, "", mitteltopf.Land)
 	if err != nil {
 		t.Fatal(err)
 	}
-	fuerKreis, _, err := repository.LadeBerichtBestellungen(ctx, srv.DB.Pool, von, bis, "", repository.MittelSchultraeger)
+	fuerKreis, _, err := repository.LadeBerichtBestellungen(ctx, srv.DB.Pool, von, bis, "", mitteltopf.Schultraeger)
 	if err != nil {
 		t.Fatal(err)
 	}

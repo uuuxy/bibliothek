@@ -198,7 +198,6 @@ var dateienOhneTuer = []string{
 	"lmf_plan_vorgabe.go",
 	"lmf_termine_frist.go",
 	"mahnwesen_mail.go",
-	"mittel_vermerk.go",
 	"order_service.go",
 	"schueler_kiosk.go",
 	"student_klasse_regel.go",

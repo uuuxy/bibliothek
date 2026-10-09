@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -109,7 +110,7 @@ func TestBescheidVorschlag_NenntUeberfaelligeBuecherOhneForderung(t *testing.T) 
 	if len(v.Ausleihen) != 1 || v.Ausleihen[0].AusleiheID != aUeberfaellig {
 		t.Fatalf("Ausleihen = %+v, erwartet genau die überfällige ohne Forderung", v.Ausleihen)
 	}
-	if v.Ausleihen[0].Topf != repository.MittelLand || v.Ausleihen[0].Titel != "Physik 8" || v.Ausleihen[0].FaelligSeit == "" {
+	if v.Ausleihen[0].Topf != mitteltopf.Land || v.Ausleihen[0].Titel != "Physik 8" || v.Ausleihen[0].FaelligSeit == "" {
 		t.Errorf("Ausleihe unvollständig: %+v", v.Ausleihen[0])
 	}
 	if v.Ausleihen[0].Mahnstufe != 2 || v.Ausleihen[0].LetztesMahndatum != "2026-09-26" {

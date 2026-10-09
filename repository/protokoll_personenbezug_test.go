@@ -61,7 +61,7 @@ var bleibtSchluessel = map[string]string{
 	"gesamtbetrag":            "Betrag des Bescheids, Beleg",
 	"leserzeile_bleibt_wegen": "Tabelle oder „ausweis\": warum die Leserzeile eines gelöschten Kontos blieb (loescheUnberuehrteLeserzeile)",
 	"leserzeile_geloescht":    "Wahrheitswert: Die unberührte Leserzeile ging mit dem Konto",
-	"mittel":                  "Topf des Bescheids (MittelGueltig)",
+	"mittel":                  "Topf des Bescheids (mitteltopf.Gueltig)",
 	"positionen":              "Zahl der Positionen im Bescheid",
 	"referenznummer":          "Referenznummer des Bescheids; an ihr werden Zahlungen zugeordnet, der Empfänger wird getilgt",
 	"rolle":                   "Rolle des gelöschten Zugangskontos (kollegium, mitarbeiter …), kein Wert der Leserzeile",

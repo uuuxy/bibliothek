@@ -6,7 +6,7 @@ import (
 
 	"bibliothek/internal/pdftest"
 	"bibliothek/pdf"
-	"bibliothek/repository"
+	"bibliothek/pkg/mitteltopf"
 )
 
 // Was hängt an der Bestellmail — und was ausdrücklich NICHT?
@@ -35,7 +35,7 @@ func testBestellMail() BestellMail {
 		Etiketten:        testEtiketten(),
 		MitVorabBarcodes: true,
 		Schule:           pdf.SchuleInfo{Name: "Testschule"},
-		Mittel:           repository.MittelLand,
+		Mittel:           mitteltopf.Land,
 	}
 }
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/pdf"
-	"bibliothek/repository"
+	"bibliothek/pkg/mitteltopf"
 )
 
 // Die Erzeuger in pdf/ drucken, was buchEtiketten ihnen reicht. Ein Feld, das hier fehlt,
@@ -21,7 +21,7 @@ func TestBuchEtiketten_FuelltJedesFeldDerEingabe(t *testing.T) {
 	}
 	item := BarcodeLabelDetail{
 		BarcodeID: "B-1", Titel: "Titel", Autor: "Autor", ISBN: "ISBN",
-		AnschaffungsJahr: "2016", Signatur: "Signatur", Topf: repository.MittelLand,
+		AnschaffungsJahr: "2016", Signatur: "Signatur", Topf: mitteltopf.Land,
 	}
 
 	etiketten := buchEtiketten([]BarcodeLabelDetail{item}, kopf)
@@ -52,8 +52,8 @@ func TestBuchEtiketten_FuelltJedesFeldDerEingabe(t *testing.T) {
 func TestBuchEtiketten_VermerkFolgtDemTopf(t *testing.T) {
 	kopf := EtikettKopf{Eigentumsvermerk: "Vermerk Land", EigentumsvermerkSchuelerbuecherei: "Vermerk Bücherei"}
 	items := []BarcodeLabelDetail{
-		{BarcodeID: "B-1", Topf: repository.MittelLand},
-		{BarcodeID: "B-2", Topf: repository.MittelSchultraeger},
+		{BarcodeID: "B-1", Topf: mitteltopf.Land},
+		{BarcodeID: "B-2", Topf: mitteltopf.Schultraeger},
 		{BarcodeID: "B-3"},
 	}
 

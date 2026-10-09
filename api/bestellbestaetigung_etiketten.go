@@ -10,6 +10,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -92,7 +93,7 @@ func (s *Server) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if !grossesLernmittelEtikettFuer(mittel) {
+		if !mitteltopf.GrossesLernmittelEtikettFuer(mittel) {
 			apierrors.SendHTTPError(w, http.StatusNotFound,
 				errors.New("zu dieser Bestellung gibt es kein großes Lernmittel-Etikett"))
 			return

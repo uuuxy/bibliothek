@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/internal/uebernahme"
 	"bibliothek/pkg/lmf"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -244,9 +245,9 @@ func (l *bestandslauf) bucheVermerke(exemplare []Exemplar) {
 			l.bericht.VermerkUnbekannt++
 			l.s.prot.Warnung(e.ID, e.Exemplarnummer,
 				"Eigentumsvermerk steht nicht in der festen Liste – nicht übernommen, in Littera nachsehen")
-		case vermerk.Eigentum == repository.MittelLand:
+		case vermerk.Eigentum == mitteltopf.Land:
 			l.bericht.EigentumLand++
-		case vermerk.Eigentum == repository.MittelSchultraeger:
+		case vermerk.Eigentum == mitteltopf.Schultraeger:
 			l.bericht.EigentumSchultraeger++
 		case vermerk.Wortlaut != "":
 			l.bericht.VermerkOhneZuordnung++

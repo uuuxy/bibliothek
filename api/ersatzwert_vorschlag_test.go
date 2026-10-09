@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/pkg/ersatzwert"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -32,7 +33,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 		{
 			name: "Lernmittel im 1. Verleihjahr — voller Kaufpreis",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 20.00, Topf: repository.MittelLand,
+				Kaufpreis: 20.00, Topf: mitteltopf.Land,
 				SchuljahreMitAusleihe: 1, SchuljahreImBestand: 0,
 			},
 			wantBetrag: 20.00,
@@ -42,7 +43,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 			// Das Beispiel „Schüler C" aus der Arbeitshilfe: drittes Verleihjahr, 60 %.
 			name: "Lernmittel im 3. Verleihjahr — 60 %",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 41.50, Topf: repository.MittelLand,
+				Kaufpreis: 41.50, Topf: mitteltopf.Land,
 				SchuljahreMitAusleihe: 3, SchuljahreImBestand: 2,
 			},
 			wantBetrag: 24.90,
@@ -51,7 +52,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 		{
 			name: "Lernmittel im 9. Verleihjahr — ab dem 6. sind es 10 %",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 30.00, Topf: repository.MittelLand,
+				Kaufpreis: 30.00, Topf: mitteltopf.Land,
 				SchuljahreMitAusleihe: 2, SchuljahreImBestand: 8,
 			},
 			wantBetrag: 3.00,
@@ -60,7 +61,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 		{
 			name: "Lernmittel ohne erfassten Preis — kein geratener Betrag",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 0, Topf: repository.MittelLand,
+				Kaufpreis: 0, Topf: mitteltopf.Land,
 				SchuljahreMitAusleihe: 3, SchuljahreImBestand: 2,
 			},
 			wantBetrag:    0,
@@ -70,7 +71,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 		{
 			name: "Büchereibuch, neu — Neuwert",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 12.00, Topf: repository.MittelSchultraeger,
+				Kaufpreis: 12.00, Topf: mitteltopf.Schultraeger,
 				SchuljahreMitAusleihe: 1, SchuljahreImBestand: 0,
 			},
 			wantBetrag:    12.00,
@@ -82,7 +83,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 			// 1,20 €. Die Benutzungsordnung kennt diesen Abschlag nicht.
 			name: "Büchereibuch, zehn Jahre alt — TROTZDEM voller Neuwert",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 12.00, Topf: repository.MittelSchultraeger,
+				Kaufpreis: 12.00, Topf: mitteltopf.Schultraeger,
 				SchuljahreMitAusleihe: 7, SchuljahreImBestand: 10,
 			},
 			wantBetrag:    12.00,
@@ -92,7 +93,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 		{
 			name: "Büchereibuch ohne erfassten Preis",
 			groessen: repository.ErsatzwertGroessen{
-				Kaufpreis: 0, Topf: repository.MittelSchultraeger,
+				Kaufpreis: 0, Topf: mitteltopf.Schultraeger,
 				SchuljahreMitAusleihe: 2, SchuljahreImBestand: 3,
 			},
 			wantBetrag:    0,
@@ -143,7 +144,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 	// 60 % von 41,50 € = 24,90 €, abzüglich 20 % für den Zustand = 19,92 €.
 	mitAbschlag := repository.ErsatzwertGroessen{
-		Kaufpreis: 20.00, Listenpreis: 41.50, ZustandAbschlag: 20, Topf: repository.MittelLand,
+		Kaufpreis: 20.00, Listenpreis: 41.50, ZustandAbschlag: 20, Topf: mitteltopf.Land,
 		SchuljahreMitAusleihe: 3, SchuljahreImBestand: 2,
 	}
 	got := ersatzwertVorschlagAus(mitAbschlag, ersatzwert.PreisquelleListenpreis)
@@ -184,9 +185,9 @@ func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 // gegeneinander, nicht gegen eine abgetippte Erwartung: Wer die Rechnung ändert, ändert
 // alle drei oder wird hier rot.
 func TestDreiWegeNennenDenselbenBetrag(t *testing.T) {
-	for _, topf := range []string{repository.MittelLand, repository.MittelSchultraeger} {
+	for _, topf := range []string{mitteltopf.Land, mitteltopf.Schultraeger} {
 		name := "Büchereibuch"
-		if topf == repository.MittelLand {
+		if topf == mitteltopf.Land {
 			name = "Buch des Landes"
 		}
 		t.Run(name, func(t *testing.T) {
@@ -227,7 +228,7 @@ func TestDreiWegeNennenDenselbenBetrag(t *testing.T) {
 			// abziehen (14 € minus 20 % Zustand), für das Buch des Landes schon (10 % von
 			// 14 €, davon 20 % ab).
 			wantBetrag := 11.20
-			if topf == repository.MittelLand {
+			if topf == mitteltopf.Land {
 				wantBetrag = 1.12
 			}
 			if ausExemplar.Betrag != wantBetrag {

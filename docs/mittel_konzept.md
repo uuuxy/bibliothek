@@ -3,7 +3,7 @@
 **Teil A:** Schadensersatz für verlorene und beschädigte Bücher (Abschnitte 1–6).
 **Teil B:** Getrennte Töpfe in der Beschaffung — Bestellung, Rechnung, Berichte (Abschnitt 7).
 Beide Teile teilen EIN Vokabular für die Mittelherkunft: `land` (Lernmittelfreiheit) und
-`schultraeger` (Schülerbücherei) — `repository/mittel.go`, `bestellungen_verlauf.mittel`.
+`schultraeger` (Schülerbücherei) — `pkg/mitteltopf`, `bestellungen_verlauf.mittel`.
 
 **Status (17.09.2026):** Teil A ist im ERSTEN SCHNITT GEBAUT — der Bescheid als Brief,
 Datenmodell mit Nummernkreis, Staffel, Einstellungen, Erstellen aus dem Mahnwesen,
@@ -382,7 +382,7 @@ Formulare an Schüler). Gates: `api/bestellung_mittel_pg_test.go`,
 `api/bestellung_mittel_backfill_pg_test.go`, `api/bestellanschreiben_test.go`,
 `api/bestellmail_mittel_test.go`, `api/titel_lernmittel_pg_test.go`,
 `api/bestellung_mittel_korrektur_pg_test.go`, `api/lieferant_zweitnummer_pg_test.go`,
-`api/mittel_vokabular_paritaet_test.go`, `frontend/src/lib/stores/orderStore.test.js`.
+`pkg/mitteltopf/paritaet_test.go`, `frontend/src/lib/stores/orderStore.test.js`.
 
 1. **Datenmodell:** `bestellungen_verlauf.mittel TEXT CHECK (mittel IN ('land','schultraeger'))`,
    nullbar für Alt-Bestellungen; eine Backfill-Migration ordnet eindeutige Fälle zu (alle
@@ -400,7 +400,7 @@ Formulare an Schüler). Gates: `api/bestellung_mittel_pg_test.go`,
 3. **Der Vermerk auf Bestellung und Mail:** Anschreiben-Betreff und -Text nach Topf
    („Bestellung im Rahmen der Lernmittelfreiheit — Sammelbestellung der Schule" /
    „Anschaffung für die Schülerbücherei aus Mitteln des Schulträgers"), Kundennummer des
-   Topfs. EINE Textquelle `api/mittel_vermerk.go`; Platzhalter `{{.Mittel}}` für die
+   Topfs. EINE Textquelle `pkg/mitteltopf`; Platzhalter `{{.Mittel}}` für die
    Vorlage `BESTELLUNG_HAENDLER` (Platzhalter-Paritäts-Gate zieht mit; fehlt der
    Platzhalter, ergänzt der Versand den Vermerk).
 4. **Berichte getrennt — GEBAUT 12.09.2026** (`14e6a56d`, `9f0fca8f`): Die Detailliste

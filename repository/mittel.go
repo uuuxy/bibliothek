@@ -1,41 +1,9 @@
 package repository
 
-// Mittel: aus welchem Topf eine Bestellung bezahlt wird (bestellungen_verlauf.mittel,
-// Migration 109).
-//
-// Die Schule beschafft aus zwei getrennten Haushalten: Lernmittel (Schulbücher) aus
-// Landesmitteln im Rahmen der Lernmittelfreiheit, den Bestand der Schülerbücherei aus
-// Mitteln des Schulträgers. Der Händler gewährt darauf verschiedene Nachlässe, und die
-// Rechnungen gehen getrennte Wege. Deshalb ist der Topf eine Eigenschaft der BESTELLUNG,
-// nicht des Titels: Der Titel (ist_lernmittel) schlägt ihn nur vor.
-const (
-	// MittelLand: Lernmittelfreiheit — Sammelbestellung, Eigentum des Landes.
-	MittelLand = "land"
-	// MittelSchultraeger: Schülerbücherei — Anschaffung aus Mitteln des Schulträgers.
-	MittelSchultraeger = "schultraeger"
-)
+// Der Topf eines Exemplars als SQL-Ausdruck. Welche Töpfe es gibt und wie sie heißen, steht in
+// pkg/mitteltopf; hier steht, wie eine Abfrage den Topf eines Buchs bestimmt.
 
-// MittelGueltig meldet, ob der Wert zum Vokabular gehört. Dieselbe Menge wie der CHECK
-// bestellungen_verlauf_mittel_check — hier, damit die Tür 400 sagt statt 500.
-func MittelGueltig(mittel string) bool {
-	return mittel == MittelLand || mittel == MittelSchultraeger
-}
-
-// MittelTraeger nennt, wem ein Topf gehört, wo ein Mensch es liest: „Land" oder
-// „Schulträger". Berichte (api.mittelTexte) und die Bestandsliste nehmen das Wort von hier;
-// die Oberfläche führt es in bestellungen/mittel.js, verglichen in
-// api/mittel_vokabular_paritaet_test.go. Ein leerer oder unbekannter Wert ergibt "".
-func MittelTraeger(mittel string) string {
-	switch mittel {
-	case MittelLand:
-		return "Land"
-	case MittelSchultraeger:
-		return "Schulträger"
-	}
-	return ""
-}
-
-// ExemplarTopfSQL ist der Topf eines EXEMPLARS als SQL-Ausdruck — das Eigentum folgt dem
+// ExemplarTopfSQL ist der Topf eines Exemplars als SQL-Ausdruck: Das Eigentum folgt dem
 // Geld. Zuerst gilt das Eigentum, das am Exemplar ausdrücklich steht (Migration 150: aus dem
 // Littera-Vermerk oder von Hand), dann die Zuordnung seiner Bestellung, und wo es beides
 // nicht gibt (Altbestand ohne Vermerk, Alt-Bestellungen ohne Zuordnung), das Feld
@@ -47,10 +15,9 @@ func MittelTraeger(mittel string) string {
 // Landesmitteln beschafft ist, wird als Eigentum des Landes gekennzeichnet (11.1, 11.4). Littera
 // führt solche Bücher mit „Land Hessen", ihre Signatur ist aber keine LMF-Signatur.
 //
-// EINE Formulierung für alle Wege, die Etikettendaten bauen: Vier Abfragen mit je eigenem
-// CASE liefen auseinander, und dasselbe Buch trüge je nach Druckweg einen anderen
-// Eigentumsvermerk. Der Ausdruck erwartet die Aliasse e (buecher_exemplare) und
-// t (buecher_titel) und braucht ExemplarTopfJoin.
+// Alle Wege, die Etikettendaten bauen, nehmen diesen Ausdruck: Mit je eigenem CASE trüge
+// dasselbe Buch je nach Druckweg einen anderen Eigentumsvermerk. Der Ausdruck erwartet die
+// Aliasse e (buecher_exemplare) und t (buecher_titel) und braucht ExemplarTopfJoin.
 //
 // Anders als beim Bestellen wird hier aus dem Titel abgeleitet: Dort wäre ein Fallback die
 // stille Zuordnung zum falschen Topf, hier ist er die einzige Auskunft über ein Buch, das
@@ -72,8 +39,3 @@ const ExemplarTopfBelegtSQL = `COALESCE(e.eigentum, bv_topf.mittel)`
 
 // ExemplarTopfJoin hängt die Bestellung des Exemplars an, aus der ExemplarTopfSQL liest.
 const ExemplarTopfJoin = `LEFT JOIN bestellungen_verlauf bv_topf ON bv_topf.id = e.bestellung_id`
-
-// Den VORSCHLAG aus dem Titel (Lernmittel → Land, sonst Schulträger) rechnet allein der
-// Warenkorb (frontend/src/lib/components/bestellungen/mittel.js): Er ist eine Entscheidung
-// der Bestellung, die der Server nur noch prüft — ein Server-Fallback wäre die stille
-// Zuordnung zum falschen Topf, die Migration 109 abschafft.

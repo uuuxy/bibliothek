@@ -37,7 +37,7 @@ test('Abgangsbuch: Abgänge des Halbjahres, nach Topf getrennt — und als PDF',
 	await page.getByRole('tab', { name: 'Abgangsbuch' }).click();
 
 	// 1. Beide Abschnitte stehen da, jeder mit seiner Stückzahl im Kopf.
-	// Die Überschrift kommt vom Server (mittelBeschriftung) — hier steht sie deshalb so,
+	// Die Überschrift kommt vom Server (mitteltopf.Beschriftung) — hier steht sie deshalb so,
 	// wie sie auch auf dem Ausdruck steht.
 	const lernmittel = page.getByRole('table', { name: /Lernmittelfreiheit \(Land\)/ });
 	const buecherei = page.getByRole('table', { name: /Schülerbücherei/ });

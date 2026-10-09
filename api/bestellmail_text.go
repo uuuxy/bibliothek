@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -72,7 +73,7 @@ type bestellMailWerte struct {
 	// gueltigBis ist der Ablauf des Links, nil ohne Link. Die Mail nennt ihn als Datum:
 	// Das kann der Händler in den Kalender schreiben, eine Tageszahl müsste er ausrechnen.
 	gueltigBis *time.Time
-	// mittel ist der Topf der Bestellung (repository.MittelLand / MittelSchultraeger).
+	// mittel ist der Topf der Bestellung (mitteltopf.Land / mitteltopf.Schultraeger).
 	mittel string
 }
 
@@ -82,7 +83,12 @@ type bestellMailWerte struct {
 // Der Vermerk ist Pflicht auf der Bestellung, eine umformulierte Vorlage darf ihn nicht
 // verlieren.
 func resolveBestellMail(betreff, textBody string, w bestellMailWerte) (subject, body string) {
-	texte := mittelTexte[w.mittel]
+	// Ohne gültigen Topf bleiben Platzhalter und Vermerk aus. Verschickt wird eine solche Mail
+	// nicht: Ihr Anschreiben lehnt den Topf ab (bestellanschreiben).
+	texte, err := mitteltopf.TexteFuer(w.mittel)
+	if err != nil {
+		texte = mitteltopf.Texte{}
+	}
 	replacer := strings.NewReplacer(
 		"{{.Datum}}", schulzeit.Jetzt().Format(dateFormatDE),
 		"{{.Kundennummer}}", w.kundennummer,
@@ -100,7 +106,7 @@ func resolveBestellMail(betreff, textBody string, w bestellMailWerte) (subject, 
 // platziert: an den Betreff als Zusatz, an den Text als eigenen Absatz. Geprüft wird die
 // ROHE Vorlage — dieselbe Technik wie ergaenzeLinkAbsatz. Ohne Topf (leere Texte, etwa
 // in einem Test ohne Mittel) bleibt alles unverändert.
-func ergaenzeMittelVermerk(subject, body, rohBetreff, rohText string, texte mittelText) (string, string) {
+func ergaenzeMittelVermerk(subject, body, rohBetreff, rohText string, texte mitteltopf.Texte) (string, string) {
 	if texte.Kurz == "" {
 		return subject, body
 	}

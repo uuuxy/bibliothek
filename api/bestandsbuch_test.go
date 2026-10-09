@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/pdf"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -50,7 +51,7 @@ func toepfe(abschnitte []abschnittAmDraht) []string {
 func TestBestandsbuch_BeideToepfeStehenAuchLeerInDerAntwort(t *testing.T) {
 	abschnitte := zugangsbuchAmDraht(t, nil)
 
-	erwartet := []string{repository.MittelLand, repository.MittelSchultraeger}
+	erwartet := []string{mitteltopf.Land, mitteltopf.Schultraeger}
 	if !slices.Equal(toepfe(abschnitte), erwartet) {
 		t.Fatalf("Abschnitte eines leeren Buchs: %q, erwartet %q", toepfe(abschnitte), erwartet)
 	}
@@ -67,15 +68,15 @@ func TestBestandsbuch_BeideToepfeStehenAuchLeerInDerAntwort(t *testing.T) {
 func TestBestandsbuch_OhneZuordnungNurMitZeilenUndZuletzt(t *testing.T) {
 	abschnitte := zugangsbuchAmDraht(t, []repository.ZugangsZeile{
 		{Barcode: "OHNE-1"},
-		{Barcode: "LAND-1", Topf: repository.MittelLand},
+		{Barcode: "LAND-1", Topf: mitteltopf.Land},
 	})
 
-	erwartet := []string{repository.MittelLand, repository.MittelSchultraeger, ""}
+	erwartet := []string{mitteltopf.Land, mitteltopf.Schultraeger, ""}
 	if !slices.Equal(toepfe(abschnitte), erwartet) {
 		t.Fatalf("Abschnitte: %q, erwartet %q", toepfe(abschnitte), erwartet)
 	}
-	if ohne := abschnitte[2]; ohne.Titel != mittelOhneZuordnung {
-		t.Errorf("Überschrift des dritten Abschnitts: %q, erwartet %q", ohne.Titel, mittelOhneZuordnung)
+	if ohne := abschnitte[2]; ohne.Titel != mitteltopf.OhneZuordnung {
+		t.Errorf("Überschrift des dritten Abschnitts: %q, erwartet %q", ohne.Titel, mitteltopf.OhneZuordnung)
 	}
 	var zeilen []repository.ZugangsZeile
 	if err := json.Unmarshal(abschnitte[2].Zeilen, &zeilen); err != nil {
@@ -125,8 +126,8 @@ func TestAbgangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 	buch := repository.Abgangsbuch{
 		Von: von, Bis: bis,
 		Zeilen: []repository.AbgangsZeile{
-			{Datum: tag, Barcode: "B-1", Titel: "Titel 1", Signatur: "Sig 1", Grund: "VERLUST", GrundText: "Verlust", Topf: repository.MittelSchultraeger},
-			{Datum: tag.AddDate(0, 0, 1), Barcode: "B-2", Titel: "Titel 2", Signatur: "Sig 2", Grund: "AUSSORTIERT", GrundText: "Aussortiert", Topf: repository.MittelLand},
+			{Datum: tag, Barcode: "B-1", Titel: "Titel 1", Signatur: "Sig 1", Grund: "VERLUST", GrundText: "Verlust", Topf: mitteltopf.Schultraeger},
+			{Datum: tag.AddDate(0, 0, 1), Barcode: "B-2", Titel: "Titel 2", Signatur: "Sig 2", Grund: "AUSSORTIERT", GrundText: "Aussortiert", Topf: mitteltopf.Land},
 		},
 		OhneZeitpunkt: 7, AusKatalogGeloescht: 3,
 	}
@@ -135,9 +136,9 @@ func TestAbgangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 	want := pdf.Abgangsbuch{
 		Von: von, Bis: bis,
 		Abschnitte: []pdf.AbgangsAbschnitt{
-			{Titel: mittelBeschriftung(repository.MittelLand), Zeilen: []pdf.AbgangsZeile{
+			{Titel: mitteltopf.Beschriftung(mitteltopf.Land), Zeilen: []pdf.AbgangsZeile{
 				{Datum: tag.AddDate(0, 0, 1), Barcode: "B-2", Titel: "Titel 2", Signatur: "Sig 2", GrundText: "Aussortiert"}}},
-			{Titel: mittelBeschriftung(repository.MittelSchultraeger), Zeilen: []pdf.AbgangsZeile{
+			{Titel: mitteltopf.Beschriftung(mitteltopf.Schultraeger), Zeilen: []pdf.AbgangsZeile{
 				{Datum: tag, Barcode: "B-1", Titel: "Titel 1", Signatur: "Sig 1", GrundText: "Verlust"}}},
 		},
 		Gesamt: 2, OhneZeitpunkt: 7, AusKatalogGeloescht: 3,
@@ -158,8 +159,8 @@ func TestZugangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 		Von: von, Bis: bis,
 		Zeilen: []repository.ZugangsZeile{
 			{Datum: tag, Barcode: "B-1", Titel: "Titel 1", Signatur: "Sig 1", Lieferant: "Lieferant 1"},
-			{Datum: tag.AddDate(0, 0, 1), Barcode: "B-2", Titel: "Titel 2", Signatur: "Sig 2", Lieferant: "Lieferant 2", Topf: repository.MittelSchultraeger},
-			{Datum: tag.AddDate(0, 0, 2), Barcode: "B-3", Titel: "Titel 3", Signatur: "Sig 3", Lieferant: "Lieferant 3", Topf: repository.MittelLand},
+			{Datum: tag.AddDate(0, 0, 1), Barcode: "B-2", Titel: "Titel 2", Signatur: "Sig 2", Lieferant: "Lieferant 2", Topf: mitteltopf.Schultraeger},
+			{Datum: tag.AddDate(0, 0, 2), Barcode: "B-3", Titel: "Titel 3", Signatur: "Sig 3", Lieferant: "Lieferant 3", Topf: mitteltopf.Land},
 		},
 	}
 
@@ -167,11 +168,11 @@ func TestZugangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 	want := pdf.Zugangsbuch{
 		Von: von, Bis: bis,
 		Abschnitte: []pdf.ZugangsAbschnitt{
-			{Titel: mittelBeschriftung(repository.MittelLand), Zeilen: []pdf.ZugangsZeile{
+			{Titel: mitteltopf.Beschriftung(mitteltopf.Land), Zeilen: []pdf.ZugangsZeile{
 				{Datum: tag.AddDate(0, 0, 2), Barcode: "B-3", Titel: "Titel 3", Lieferant: "Lieferant 3"}}},
-			{Titel: mittelBeschriftung(repository.MittelSchultraeger), Zeilen: []pdf.ZugangsZeile{
+			{Titel: mitteltopf.Beschriftung(mitteltopf.Schultraeger), Zeilen: []pdf.ZugangsZeile{
 				{Datum: tag.AddDate(0, 0, 1), Barcode: "B-2", Titel: "Titel 2", Lieferant: "Lieferant 2"}}},
-			{Titel: mittelOhneZuordnung, Zeilen: []pdf.ZugangsZeile{
+			{Titel: mitteltopf.OhneZuordnung, Zeilen: []pdf.ZugangsZeile{
 				{Datum: tag, Barcode: "B-1", Titel: "Titel 1", Lieferant: "Lieferant 1"}}},
 		},
 		Gesamt: 3, OhneZuordnung: true,
@@ -187,7 +188,7 @@ func TestZugangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 // Den Abschnitt ohne Zuordnung erklärt das Blatt nur, wenn er Zeilen trägt.
 func TestZugangsbuchBlatt_OhneZuordnungNurMitSolchenZeilen(t *testing.T) {
 	nurLand := zugangsbuchBlatt(zugangsbuchAntwort(repository.Zugangsbuch{
-		Zeilen: []repository.ZugangsZeile{{Barcode: "LAND-1", Topf: repository.MittelLand}}}))
+		Zeilen: []repository.ZugangsZeile{{Barcode: "LAND-1", Topf: mitteltopf.Land}}}))
 	if nurLand.OhneZuordnung {
 		t.Error("ohne Zeilen ohne Topf verlangt die Eingabe trotzdem die Erklärung zu „ohne Zuordnung“")
 	}

@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -50,7 +51,7 @@ type EtikettKopf struct {
 // Geld. Eine Stelle für beide Erzeuger (kleines Etikett ab 30 mm, großes Lernmittel-Etikett);
 // buchEtiketten ruft sie je Exemplar und reicht den gewählten Vermerk weiter.
 func (k EtikettKopf) vermerkFuer(topf string) string {
-	if topf == repository.MittelSchultraeger {
+	if topf == mitteltopf.Schultraeger {
 		return k.EigentumsvermerkSchuelerbuecherei
 	}
 	return k.Eigentumsvermerk

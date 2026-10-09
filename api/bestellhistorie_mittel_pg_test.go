@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -46,9 +47,9 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 			t.Fatalf("Bestellung %s anlegen: %v", name, err)
 		}
 	}
-	anlegen(t, "Land1", repository.MittelLand, 120.00, 30)
-	anlegen(t, "Land2", repository.MittelLand, 80.00, 20)
-	anlegen(t, "Kreis", repository.MittelSchultraeger, 45.50, 5)
+	anlegen(t, "Land1", mitteltopf.Land, 120.00, 30)
+	anlegen(t, "Land2", mitteltopf.Land, 80.00, 20)
+	anlegen(t, "Kreis", mitteltopf.Schultraeger, 45.50, 5)
 	anlegen(t, "Alt", "", 10.00, 2)
 
 	historie := func(t *testing.T, filter string) ([]repository.BestellVerlaufEintrag, int) {
@@ -75,8 +76,8 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 			anzahl int
 		}{
 			{"", 4},
-			{repository.MittelLand, 2},
-			{repository.MittelSchultraeger, 1},
+			{mitteltopf.Land, 2},
+			{mitteltopf.Schultraeger, 1},
 			// „ohne": die Alt-Bestellungen, deren Topf beim Backfill nicht eindeutig war.
 			// Genau sie sucht, wer den Rückweg benutzt.
 			{"ohne", 1},
@@ -123,8 +124,8 @@ func TestBestellhistorieNachTopf(t *testing.T) {
 				len(u.NachMittel), u.NachMittel)
 		}
 		// Die Reihenfolge ist dieselbe wie im Warenkorb und im Bericht.
-		if u.NachMittel[0].Mittel != repository.MittelLand ||
-			u.NachMittel[1].Mittel != repository.MittelSchultraeger ||
+		if u.NachMittel[0].Mittel != mitteltopf.Land ||
+			u.NachMittel[1].Mittel != mitteltopf.Schultraeger ||
 			u.NachMittel[2].Mittel != "" {
 			t.Errorf("Reihenfolge der Töpfe: %+v", u.NachMittel)
 		}

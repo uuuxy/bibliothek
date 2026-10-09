@@ -2,6 +2,7 @@ package repository
 
 import (
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"context"
 )
 
@@ -38,7 +39,7 @@ type Supplier struct {
 // genannten Topf steht: für den Schulträger die zweite Nummer, falls hinterlegt — sonst
 // (und für Landesmittel immer) die erste.
 func (s *Supplier) KundennummerFuer(mittel string) string {
-	if mittel == MittelSchultraeger && s.KundennummerSchultraeger != "" {
+	if mittel == mitteltopf.Schultraeger && s.KundennummerSchultraeger != "" {
 		return s.KundennummerSchultraeger
 	}
 	return s.Kundennummer

@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/ersatzwert"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -114,7 +115,7 @@ type ersatzwertEingabe struct {
 }
 
 func (e ersatzwertEingabe) rechne(quelle ersatzwert.Preisquelle) ersatzwert.Vorschlag {
-	if e.Topf != repository.MittelLand {
+	if e.Topf != mitteltopf.Land {
 		return ersatzwert.RechneNeuwert(e.Kaufpreis, e.Listenpreis, e.ZustandAbschlag, quelle)
 	}
 	return ersatzwert.Rechne(ersatzwert.Verleihjahr(e.SchuljahreMitAusleihe, e.SchuljahreImBestand),

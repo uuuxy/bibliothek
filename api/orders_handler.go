@@ -11,6 +11,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -61,7 +62,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("order cart cannot be empty"))
 		return
 	}
-	if !repository.MittelGueltig(req.Mittel) {
+	if !mitteltopf.Gueltig(req.Mittel) {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, ErrMittelUngueltig)
 		return
 	}

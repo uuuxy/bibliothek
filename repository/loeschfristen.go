@@ -24,6 +24,7 @@ package repository
 import (
 	"time"
 
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -193,7 +194,7 @@ func istLandExemplar(spalte string) string {
 		SELECT 1 FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		` + ExemplarTopfJoin + `
-		WHERE e.id = ` + spalte + ` AND ` + ExemplarTopfSQL + ` = '` + MittelLand + `')`
+		WHERE e.id = ` + spalte + ` AND ` + ExemplarTopfSQL + ` = '` + mitteltopf.Land + `')`
 }
 
 // klasse wählt die Frist-Klasse: true = Bücher des Landes, false = alles andere

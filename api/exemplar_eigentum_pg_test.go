@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -91,29 +92,29 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 	}
 	bestellt := exemplar(t, pool, lektuere, "EE-BESTELLT", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET bestellung_id = $2 WHERE id = $1`,
-		bestellt, topfBestellung(t, repository.MittelLand)); err != nil {
+		bestellt, topfBestellung(t, mitteltopf.Land)); err != nil {
 		t.Fatalf("Bestellung: %v", err)
 	}
 
 	// 1. Anzeigen: Eigentum und Herkunft nach der einen Regel.
 	karten := exemplarKarten(t, srv, pool, lektuere)
-	pruefeKarte(t, karten, "EE-VORGABE", repository.MittelSchultraeger, "vorgabe", "")
-	pruefeKarte(t, karten, "EE-LITTERA", repository.MittelLand, "littera", "Land Hessen")
-	pruefeKarte(t, karten, "EE-FOERDERVEREIN", repository.MittelSchultraeger, "vorgabe", "Förderverein")
-	pruefeKarte(t, karten, "EE-BESTELLT", repository.MittelLand, "bestellung", "")
+	pruefeKarte(t, karten, "EE-VORGABE", mitteltopf.Schultraeger, "vorgabe", "")
+	pruefeKarte(t, karten, "EE-LITTERA", mitteltopf.Land, "littera", "Land Hessen")
+	pruefeKarte(t, karten, "EE-FOERDERVEREIN", mitteltopf.Schultraeger, "vorgabe", "Förderverein")
+	pruefeKarte(t, karten, "EE-BESTELLT", mitteltopf.Land, "bestellung", "")
 
 	// 2. Ändern: zwei markiert, beide werden „von Hand" — auch das aus Littera, das schon Land war.
 	protokoll := func() int {
 		return zaehleZeilen(t, pool, `SELECT count(*) FROM audit_log WHERE tabelle = 'buecher_exemplare'
 			AND kontext = 'Eigentum von Hand geändert'`)
 	}
-	rec := eigentumSetzen(t, srv, pool, []string{einfach, strings.ToUpper(ausLittera)}, repository.MittelLand, " Klassensatz aus LMF-Mitteln ")
+	rec := eigentumSetzen(t, srv, pool, []string{einfach, strings.ToUpper(ausLittera)}, mitteltopf.Land, " Klassensatz aus LMF-Mitteln ")
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"geaendert":2`) {
 		t.Fatalf("Ändern: Status %d: %s — erwartet 200 und 2 geändert", rec.Code, rec.Body.String())
 	}
 	karten = exemplarKarten(t, srv, pool, lektuere)
-	pruefeKarte(t, karten, "EE-VORGABE", repository.MittelLand, "hand", "")
-	pruefeKarte(t, karten, "EE-LITTERA", repository.MittelLand, "hand", "Land Hessen")
+	pruefeKarte(t, karten, "EE-VORGABE", mitteltopf.Land, "hand", "")
+	pruefeKarte(t, karten, "EE-LITTERA", mitteltopf.Land, "hand", "Land Hessen")
 	if n := protokoll(); n != 2 {
 		t.Errorf("Protokoll: %d Einträge, erwartet 2", n)
 	}
@@ -122,12 +123,12 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 		FROM audit_log WHERE datensatz_id = $1 AND kontext = 'Eigentum von Hand geändert'`, einfach).Scan(&alt, &neu, &grund); err != nil {
 		t.Fatalf("Protokolleintrag lesen: %v", err)
 	}
-	if alt != "" || neu != repository.MittelLand || grund != "Klassensatz aus LMF-Mitteln" {
+	if alt != "" || neu != mitteltopf.Land || grund != "Klassensatz aus LMF-Mitteln" {
 		t.Errorf("Protokoll: alt %q, neu %q, Grund %q", alt, neu, grund)
 	}
 
 	// 3. Dasselbe noch einmal ändert nichts und schreibt nichts.
-	if rec := eigentumSetzen(t, srv, pool, []string{einfach}, repository.MittelLand, "doppelt"); !strings.Contains(rec.Body.String(), `"geaendert":0`) {
+	if rec := eigentumSetzen(t, srv, pool, []string{einfach}, mitteltopf.Land, "doppelt"); !strings.Contains(rec.Body.String(), `"geaendert":0`) {
 		t.Errorf("Wiederholung: %s — erwartet 0 geändert", rec.Body.String())
 	}
 	if n := protokoll(); n != 2 {
@@ -138,7 +139,7 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 	if rec := eigentumSetzen(t, srv, pool, []string{einfach}, "", "versehentlich gesetzt"); rec.Code != http.StatusOK {
 		t.Fatalf("Vorgabe: Status %d: %s", rec.Code, rec.Body.String())
 	}
-	pruefeKarte(t, exemplarKarten(t, srv, pool, lektuere), "EE-VORGABE", repository.MittelSchultraeger, "vorgabe", "")
+	pruefeKarte(t, exemplarKarten(t, srv, pool, lektuere), "EE-VORGABE", mitteltopf.Schultraeger, "vorgabe", "")
 
 	// 5. Abweisen, ohne etwas zu ändern.
 	unbekannt := "00000000-0000-4000-8000-000000000000"
@@ -149,18 +150,18 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 		grund    string
 		status   int
 	}{
-		{"ohne Grund", []string{foerderverein}, repository.MittelLand, "  ", http.StatusBadRequest},
+		{"ohne Grund", []string{foerderverein}, mitteltopf.Land, "  ", http.StatusBadRequest},
 		{"unbekanntes Eigentum", []string{foerderverein}, "stadt", "Grund", http.StatusBadRequest},
-		{"keine Kennung", []string{"EE-FOERDERVEREIN"}, repository.MittelLand, "Grund", http.StatusBadRequest},
-		{"leere Auswahl", nil, repository.MittelLand, "Grund", http.StatusBadRequest},
-		{"eine gibt es nicht", []string{foerderverein, unbekannt}, repository.MittelLand, "Grund", http.StatusNotFound},
+		{"keine Kennung", []string{"EE-FOERDERVEREIN"}, mitteltopf.Land, "Grund", http.StatusBadRequest},
+		{"leere Auswahl", nil, mitteltopf.Land, "Grund", http.StatusBadRequest},
+		{"eine gibt es nicht", []string{foerderverein, unbekannt}, mitteltopf.Land, "Grund", http.StatusNotFound},
 	}
 	for _, f := range faelle {
 		if rec := eigentumSetzen(t, srv, pool, f.ids, f.eigentum, f.grund); rec.Code != f.status {
 			t.Errorf("%s: Status %d, erwartet %d: %s", f.name, rec.Code, f.status, rec.Body.String())
 		}
 	}
-	pruefeKarte(t, exemplarKarten(t, srv, pool, lektuere), "EE-FOERDERVEREIN", repository.MittelSchultraeger, "vorgabe", "Förderverein")
+	pruefeKarte(t, exemplarKarten(t, srv, pool, lektuere), "EE-FOERDERVEREIN", mitteltopf.Schultraeger, "vorgabe", "Förderverein")
 
 	// 6. Die Datenbank verlangt zum Eigentum die Quelle (chk_exemplar_eigentum_mit_quelle).
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET eigentum = 'land' WHERE id = $1`, foerderverein); err == nil {

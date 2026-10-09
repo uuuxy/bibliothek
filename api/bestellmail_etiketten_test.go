@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
 
@@ -23,7 +24,7 @@ func testEtikettLabels() []BarcodeLabelDetail {
 func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 	kopf := etikettKopfAus(&repository.SystemEinstellungen{
 		SchuleName: "Testschule", EtikettEigentumsvermerk: "Eigentum des Kreises Wetterau"})
-	boegen, err := etikettenboegen(testEtikettLabels(), kopf, false, repository.MittelLand)
+	boegen, err := etikettenboegen(testEtikettLabels(), kopf, false, mitteltopf.Land)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
@@ -46,7 +47,7 @@ func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 
 func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T) {
 	kopf := etikettKopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
-	boegen, err := etikettenboegen(testEtikettLabels(), kopf, false, repository.MittelLand)
+	boegen, err := etikettenboegen(testEtikettLabels(), kopf, false, mitteltopf.Land)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
@@ -67,10 +68,10 @@ func TestBestellmailGrossesEtikettFolgtDemTopf(t *testing.T) {
 		mittel            string
 		wantGross         bool
 	}{
-		{"Hauptlieferant, Lernmittelfreiheit", true, repository.MittelLand, true},
-		{"Hauptlieferant, Schülerbücherei", true, repository.MittelSchultraeger, false},
+		{"Hauptlieferant, Lernmittelfreiheit", true, mitteltopf.Land, true},
+		{"Hauptlieferant, Schülerbücherei", true, mitteltopf.Schultraeger, false},
 		{"Hauptlieferant, ohne Zuordnung", true, "", true},
-		{"anderer Lieferant, Lernmittelfreiheit", false, repository.MittelLand, false},
+		{"anderer Lieferant, Lernmittelfreiheit", false, mitteltopf.Land, false},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -106,9 +107,9 @@ func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 		topf        string
 		want, nicht string
 	}{
-		{"Lernmittel trägt den allgemeinen Vermerk", stadt, repository.MittelLand, land, stadt},
-		{"Schülerbücherei trägt ihren eigenen", stadt, repository.MittelSchultraeger, stadt, land},
-		{"Schülerbücherei ohne Einstellung: kein Vermerk", "", repository.MittelSchultraeger, "", "Eigentum"},
+		{"Lernmittel trägt den allgemeinen Vermerk", stadt, mitteltopf.Land, land, stadt},
+		{"Schülerbücherei trägt ihren eigenen", stadt, mitteltopf.Schultraeger, stadt, land},
+		{"Schülerbücherei ohne Einstellung: kein Vermerk", "", mitteltopf.Schultraeger, "", "Eigentum"},
 		{"unbekanntes Exemplar (Vorab-Druck): wie bisher", stadt, "", land, stadt},
 	}
 	for _, f := range faelle {
@@ -119,7 +120,7 @@ func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 			labels[0].Topf = f.topf
 
 			// Hauptlieferant + Land-Bestellung: beide Bögen entstehen, klein UND groß.
-			boegen, err := etikettenboegen(labels, kopf, true, repository.MittelLand)
+			boegen, err := etikettenboegen(labels, kopf, true, mitteltopf.Land)
 			if err != nil {
 				t.Fatalf("etikettenboegen: %v", err)
 			}

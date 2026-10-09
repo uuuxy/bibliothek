@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/google/uuid"
@@ -52,7 +53,7 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 	schulbuch := bescheidLernmittel(t, pool, "Mathematik 7")
 	exSchulbuch := vorbereiten(schulbuch, "EB-SCHULBUCH")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET bestellung_id = $2 WHERE id = $1`,
-		exSchulbuch, topfBestellung(t, repository.MittelSchultraeger)); err != nil {
+		exSchulbuch, topfBestellung(t, mitteltopf.Schultraeger)); err != nil {
 		t.Fatalf("Bestellung zuordnen: %v", err)
 	}
 
@@ -63,12 +64,12 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 
 	// 1. Der Vorschlag: Topf und Regel.
 	vLand := bescheidVorschlagUeberHandler(t, srv, pool, sidLand)
-	if len(vLand.Positionen) != 1 || vLand.Positionen[0].Topf != repository.MittelLand ||
+	if len(vLand.Positionen) != 1 || vLand.Positionen[0].Topf != mitteltopf.Land ||
 		!strings.Contains(vLand.Positionen[0].Herleitung, "Verleihjahr") {
 		t.Errorf("Lektüre des Landes: %+v — erwartet Topf land und die Staffel", vLand.Positionen)
 	}
 	vTraeger := bescheidVorschlagUeberHandler(t, srv, pool, sidTraeger)
-	if len(vTraeger.Positionen) != 1 || vTraeger.Positionen[0].Topf != repository.MittelSchultraeger ||
+	if len(vTraeger.Positionen) != 1 || vTraeger.Positionen[0].Topf != mitteltopf.Schultraeger ||
 		strings.Contains(vTraeger.Positionen[0].Herleitung, "Verleihjahr") {
 		t.Errorf("Schulbuch des Schulträgers: %+v — erwartet Topf schultraeger und den Neuwert", vTraeger.Positionen)
 	}

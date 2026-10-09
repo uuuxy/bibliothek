@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -105,13 +106,13 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 		{"Altbestand, Lernmittel", false, "", true, "", vermerkLand, vermerkStadt},
 		{"Altbestand, kein Lernmittel", false, "", false, "", vermerkStadt, vermerkLand},
 		// Die Bestellung schlägt den Titel — das Eigentum folgt dem Geld.
-		{"Bestellung Schülerbücherei, Titel ist Lernmittel", true, repository.MittelSchultraeger, true, "", vermerkStadt, vermerkLand},
-		{"Bestellung Lernmittelfreiheit, Titel ist keins", true, repository.MittelLand, false, "", vermerkLand, vermerkStadt},
+		{"Bestellung Schülerbücherei, Titel ist Lernmittel", true, mitteltopf.Schultraeger, true, "", vermerkStadt, vermerkLand},
+		{"Bestellung Lernmittelfreiheit, Titel ist keins", true, mitteltopf.Land, false, "", vermerkLand, vermerkStadt},
 		{"Alt-Bestellung ohne Zuordnung, Lernmittel", true, "", true, "", vermerkLand, vermerkStadt},
 		// Das Eigentum am Exemplar schlägt beides (4.24): die Lektüre aus LMF-Mitteln, die
 		// Littera dem Land zuschreibt, und ein ausdrücklich umgesetztes Exemplar einer Bestellung.
-		{"Altbestand, kein Lernmittel, Eigentum Land", false, "", false, repository.MittelLand, vermerkLand, vermerkStadt},
-		{"Bestellung Lernmittelfreiheit, Eigentum Schulträger", true, repository.MittelLand, true, repository.MittelSchultraeger, vermerkStadt, vermerkLand},
+		{"Altbestand, kein Lernmittel, Eigentum Land", false, "", false, mitteltopf.Land, vermerkLand, vermerkStadt},
+		{"Bestellung Lernmittelfreiheit, Eigentum Schulträger", true, mitteltopf.Land, true, mitteltopf.Schultraeger, vermerkStadt, vermerkLand},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -147,9 +148,9 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 			pruefeVermerk(t, "Buchformular", etikettenUeberBuchformular(t, srv, titelID), f.want, f.nicht)
 
 			// Dem Druck-Center wird der jeweils ANDERE Topf untergeschoben.
-			falsch := repository.MittelSchultraeger
+			falsch := mitteltopf.Schultraeger
 			if f.want == vermerkStadt {
-				falsch = repository.MittelLand
+				falsch = mitteltopf.Land
 			}
 			pruefeVermerk(t, "Druck-Center", etikettenUeberDruckCenter(t, srv, "B-TOPF-1", falsch), f.want, f.nicht)
 		})
@@ -168,7 +169,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 
 	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
 	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
-		Mittel:     repository.MittelSchultraeger,
+		Mittel:     mitteltopf.Schultraeger,
 		SupplierID: haendler(t, pool, "Naacher", true),
 		Items: []OrderItemRequest{{
 			TitelID: titelMitMeldebestand(t, pool, "LMF-Topfprobe", 0), Menge: 2, Preis: 10, GenerateBarcodes: true}},
@@ -210,6 +211,6 @@ func TestEigentumsvermerk_TopfLaesstSichNichtUnterschieben(t *testing.T) {
 	setzeVermerkSchuelerbuecherei(t, pool, vermerkStadt)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	text := etikettenUeberDruckCenter(t, srv, "B-GIBT-ES-NICHT", repository.MittelSchultraeger)
+	text := etikettenUeberDruckCenter(t, srv, "B-GIBT-ES-NICHT", mitteltopf.Schultraeger)
 	pruefeVermerk(t, "Druck-Center, unbekannter Barcode", text, vermerkLand, vermerkStadt)
 }

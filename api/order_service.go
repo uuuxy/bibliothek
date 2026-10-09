@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -52,7 +53,7 @@ type OrderResult struct {
 	// erzeugt hat (Doppelklick). Der Handler überspringt dann den Mailversand — es gibt
 	// keine zweite Bestellung und keine zweite Lieferanten-Mail.
 	BereitsVorhanden bool
-	// Mittel: der Topf dieser Bestellung (repository.MittelLand / MittelSchultraeger).
+	// Mittel: der Topf dieser Bestellung (mitteltopf.Land / mitteltopf.Schultraeger).
 	// Steuert Vermerk in Anschreiben und Mail; CustomerNumber ist bereits die Nummer
 	// dieses Topfs (Supplier.KundennummerFuer).
 	Mittel string
@@ -99,7 +100,7 @@ type bestellItemResult struct {
 func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest) (*OrderResult, error) {
 	// Der Topf ist Pflicht — VOR jedem Datenbankzugriff, damit keine Barcodes für eine
 	// Bestellung reserviert werden, die es nie geben wird.
-	if !repository.MittelGueltig(req.Mittel) {
+	if !mitteltopf.Gueltig(req.Mittel) {
 		return nil, ErrMittelUngueltig
 	}
 

@@ -8,6 +8,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -58,7 +59,7 @@ func erbWege() []erbWeg {
 		{"Bestellung", func(t *testing.T, pool *pgxpool.Pool, titel erbTitel) {
 			svc := NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
 			if _, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
-				Mittel:     repository.MittelLand,
+				Mittel:     mitteltopf.Land,
 				SupplierID: haendler(t, pool, "Händler "+titel.isbn, false),
 				Items:      []OrderItemRequest{{TitelID: titel.id, Menge: 2, Preis: 10, GenerateBarcodes: true}},
 			}); err != nil {

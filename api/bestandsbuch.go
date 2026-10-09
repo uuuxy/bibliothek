@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -16,7 +17,7 @@ import (
 // zweimal — auf dem Bildschirm und als Blatt.
 //
 // Genau daran ist das Abgangsbuch beim ersten Wurf auseinandergelaufen: Das Blatt schrieb
-// „Lernmittelfreiheit (Land)" (mittelBeschriftung), die Oberfläche „Lernmittel (Land)" — zwei
+// „Lernmittelfreiheit (Land)" (mitteltopf.Beschriftung), die Oberfläche „Lernmittel (Land)" — zwei
 // Wörter für denselben Topf auf demselben Nachweis. Seit dem 17.09.2026 baut deshalb der
 // SERVER die Abschnitte samt Überschrift, und der Ausdruck und der Bildschirm zeigen dieselbe
 // Liste.
@@ -49,8 +50,8 @@ func abschnitteAus[T any](zeilen []T, topfVon func(T) string) []Abschnitt[T] {
 		topf := topfVon(z)
 		nach[topf] = append(nach[topf], z)
 	}
-	aus := make([]Abschnitt[T], 0, len(mittelReihenfolge))
-	for _, topf := range mittelReihenfolge {
+	aus := make([]Abschnitt[T], 0, len(mitteltopf.Reihenfolge()))
+	for _, topf := range mitteltopf.Reihenfolge() {
 		if topf == "" && len(nach[topf]) == 0 {
 			continue
 		}
@@ -58,7 +59,7 @@ func abschnitteAus[T any](zeilen []T, topfVon func(T) string) []Abschnitt[T] {
 		if zeilenDesTopfs == nil {
 			zeilenDesTopfs = []T{}
 		}
-		aus = append(aus, Abschnitt[T]{Topf: topf, Titel: mittelBeschriftung(topf), Zeilen: zeilenDesTopfs})
+		aus = append(aus, Abschnitt[T]{Topf: topf, Titel: mitteltopf.Beschriftung(topf), Zeilen: zeilenDesTopfs})
 	}
 	return aus
 }

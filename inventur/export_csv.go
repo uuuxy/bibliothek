@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"bibliothek/pkg/csvutil"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -123,7 +124,7 @@ func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf fu
 			isbn = "'" + isbn
 		}
 
-		zeile := []string{titel, autor, verlag, isbn, jahrStr, subject, barcode, zustand, signatur, schlagworte, repository.MittelTraeger(topf), standort}
+		zeile := []string{titel, autor, verlag, isbn, jahrStr, subject, barcode, zustand, signatur, schlagworte, mitteltopf.Traeger(topf), standort}
 		if err := schreibe(zeile); err != nil {
 			return err
 		}

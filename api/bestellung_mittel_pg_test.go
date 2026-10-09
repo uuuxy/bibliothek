@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -93,9 +94,9 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 	faelle := []struct {
 		name, lieferant, mittel, kundennummer string
 	}{
-		{"Land nimmt die erste Nummer", mitZweiter, repository.MittelLand, "K-ZweiKonten"},
-		{"Schulträger nimmt die zweite Nummer", mitZweiter, repository.MittelSchultraeger, "BIB-77"},
-		{"Schulträger ohne zweite Nummer nimmt die erste", ohneZweite, repository.MittelSchultraeger, "K-EinKonto"},
+		{"Land nimmt die erste Nummer", mitZweiter, mitteltopf.Land, "K-ZweiKonten"},
+		{"Schulträger nimmt die zweite Nummer", mitZweiter, mitteltopf.Schultraeger, "BIB-77"},
+		{"Schulträger ohne zweite Nummer nimmt die erste", ohneZweite, mitteltopf.Schultraeger, "K-EinKonto"},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {

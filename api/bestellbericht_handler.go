@@ -12,6 +12,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/pkg/betrag"
+	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -50,7 +51,7 @@ func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool, mittel 
 	}
 	// Ist der Bericht auf einen Topf gefiltert, gehört das in die Überschrift: Ein Blatt
 	// ohne diesen Zusatz sieht aus wie der Gesamtbericht und wird auch so abgelegt.
-	if beschriftung := mittelBeschriftung(repository.MittelDatenwert(mittel)); mittel != "" && beschriftung != "" {
+	if beschriftung := mitteltopf.Beschriftung(repository.MittelDatenwert(mittel)); mittel != "" && beschriftung != "" {
 		titel += " — " + beschriftung
 	}
 	return titel
@@ -406,7 +407,7 @@ func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []reposit
 	// Schulamt zählt der Landes-Anteil, für den Schulträger seiner. Wer die Summen von
 	// Hand aus einer gemischten Liste zieht, rechnet sie jeden Monat neu — und anders.
 	spalten := spaltenFuerBericht(r.MitPreisen)
-	for _, topf := range mittelReihenfolge {
+	for _, topf := range mitteltopf.Reihenfolge() {
 		block := bestellungenMitMittel(orders, topf)
 		if len(block) == 0 {
 			continue
@@ -455,7 +456,7 @@ func zeichneTopfKopf(p *gofpdf.Fpdf, tr func(string) string, mittel string) {
 	}
 	p.SetFont("Arial", "B", 10)
 	p.SetFillColor(235, 240, 250)
-	p.CellFormat(170, 7, tr(" "+mittelBeschriftung(mittel)), "1", 1, "L", true, 0, "")
+	p.CellFormat(170, 7, tr(" "+mitteltopf.Beschriftung(mittel)), "1", 1, "L", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 	p.Ln(2)
 }
@@ -467,7 +468,7 @@ func zeichneTopfSumme(p *gofpdf.Fpdf, tr func(string) string, mittel string, blo
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(225, 232, 245)
 	beschriftung := fmt.Sprintf("Summe %s (%d Bestellungen, %d Exemplare)",
-		mittelBeschriftung(mittel), len(block), exemplare)
+		mitteltopf.Beschriftung(mittel), len(block), exemplare)
 	if mitPreisen {
 		p.CellFormat(150, 7, tr(beschriftung), "1", 0, "R", true, 0, "")
 		p.CellFormat(20, 7, tr(betrag.Euro(summe)), "1", 1, "R", true, 0, "")
