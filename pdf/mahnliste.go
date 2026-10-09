@@ -40,6 +40,8 @@ const (
 	mahnlisteSeitenende  = 297.0 - mahnlisteRandUnten
 	mahnlisteZeilenHoehe = 18.0
 	mahnlisteFussHoehe   = 15.0
+	mahnlisteSpalteTitel = 52.0
+	mahnlisteSpalteAutor = 26.0
 )
 
 // coverBox nennt Ort und Maße eines Covers auf dem Blatt.
@@ -79,11 +81,11 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med Mahnli
 	pdf.SetXY(18, startY)
 	pdf.CellFormat(8, rowHeight, "", "1", 0, "", false, 0, "")
 
-	titleCell := pdfzeichen.KuerzeAufZeichen(med.Titel, 38)
-	pdf.CellFormat(52, rowHeight, tr(titleCell), "1", 0, "L", false, 0, "")
+	titleCell := kuerzeAufZelle(pdf, tr, med.Titel, mahnlisteSpalteTitel)
+	pdf.CellFormat(mahnlisteSpalteTitel, rowHeight, tr(titleCell), "1", 0, "L", false, 0, "")
 
-	autorCell := pdfzeichen.KuerzeAufZeichen(med.Autor, 19)
-	pdf.CellFormat(26, rowHeight, tr(autorCell), "1", 0, "L", false, 0, "")
+	autorCell := kuerzeAufZelle(pdf, tr, med.Autor, mahnlisteSpalteAutor)
+	pdf.CellFormat(mahnlisteSpalteAutor, rowHeight, tr(autorCell), "1", 0, "L", false, 0, "")
 
 	bcX := pdf.GetX()
 	pdf.CellFormat(40, rowHeight, "", "1", 0, "", false, 0, "")
@@ -176,8 +178,8 @@ func zeichneMahnSpaltenkoepfe(pdf *gofpdf.Fpdf, tr func(string) string) {
 	pdf.SetFont("Arial", "B", 8)
 	pdf.SetFillColor(220, 225, 240)
 	pdf.CellFormat(8, 8, "", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(52, 8, tr("Buchtitel"), "1", 0, "L", true, 0, "")
-	pdf.CellFormat(26, 8, tr("Autor"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(mahnlisteSpalteTitel, 8, tr("Buchtitel"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(mahnlisteSpalteAutor, 8, tr("Autor"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(40, 8, tr("Barcode"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(22, 8, tr("Fällig"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(26, 8, tr("Tage überfällig"), "1", 1, "C", true, 0, "")

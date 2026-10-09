@@ -629,7 +629,7 @@ HTTP-Anfrage
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
 | `pkg/` (22 Pakete)      | 2.566 Zeilen, 31 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 3.210 Zeilen, 20 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief |
+| `pdf/`                  | 3.227 Zeilen, 21 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
@@ -1955,7 +1955,9 @@ mehr passt; die Teile der Zeile stünden dann auf verschiedenen Seiten ([sweeps.
 „Zeile an festen Stellen über dem Seitenumbruch"). Die Köpfe stehen nicht allein am Fuß einer
 Seite. Mahnliste und Mahnbrief werden je Schüler ausgeteilt oder kuvertiert: Ihre Folgeseiten
 nennen, wem sie gehören („Fortsetzung: …"), beim Mahnbrief über einen Seitenkopf, weil dort
-auch der Text der Vorlage auf die nächste Seite laufen kann.
+auch der Text der Vorlage auf die nächste Seite laufen kann. Den Text einer Zelle kürzen beide
+auf ihre gedruckte Breite (`kuerzeAufZelle` in `pdf/zelle.go`), nicht auf eine Zahl von
+Zeichen: gofpdf druckt Überlanges über die Nachbarzelle.
 
 **Ausweise: zwei Renderer, einer fürs Papier.** Der Ausweis-Designer zeichnet die Karte
 zweimal: `designer/CanvasElement.svelte` auf dem Bildschirm, mit den Griffen zum Bearbeiten,

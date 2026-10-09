@@ -177,21 +177,45 @@ func TestMahnliste_OhneSchuelerSagtEs(t *testing.T) {
 	}
 }
 
-// Die Spalten sind schmal: Titel und Autor stehen gekürzt mit Auslassungszeichen da, nach
-// Zeichen gezählt und nicht nach Bytes. Buchstaben außerhalb von cp1252 bleiben lesbar.
-func TestMahnliste_KuerztTitelUndAutorNachZeichen(t *testing.T) {
-	genau := strings.Repeat("ä", 38)
-	zuLang := strings.Repeat("ö", 39)
-	roh := mahnliste(t, []MahnlisteSchueler{{Name: "Şafak Łukasz", Klasse: "07B", Medien: []MahnlisteMedium{
-		{Titel: genau, Autor: strings.Repeat("é", 19), Barcode: "B-1"},
-		{Titel: zuLang, Autor: strings.Repeat("ü", 20), Barcode: "B-2"},
-	}}})
+// Titel und Autor stehen gekürzt mit Auslassungszeichen da, sobald sie gedruckt breiter wären als
+// ihre Spalte. Gemessen wird die Breite und nicht die Zahl der Zeichen: 30 breite Buchstaben
+// passen nicht in die Spalte des Titels, 60 schmale schon. Buchstaben außerhalb von cp1252
+// bleiben lesbar.
+func TestMahnliste_TitelUndAutorBleibenInIhrerSpalte(t *testing.T) {
+	medien := []MahnlisteMedium{
+		{Titel: strings.Repeat("W", 30), Autor: strings.Repeat("M", 15), Barcode: "B-1"},
+		{Titel: strings.Repeat("i", 60), Autor: strings.Repeat("l", 30), Barcode: "B-2"},
+		{Titel: "Seydlitz – Geographie Gymnasium Hessen, Schülerband für die Klassen 5 und 6", Autor: "Annegret Müller-Lüdenscheidt und Kollegen", Barcode: "B-3"},
+		{Titel: "Kurz", Autor: "A. Utor", Barcode: "B-4"},
+	}
+	texte := pdftest.TexteInReihenfolge(t, mahnliste(t, []MahnlisteSchueler{{Name: "Şafak Łukasz", Klasse: "07B", Medien: medien}}))
+	if !strings.Contains(strings.Join(texte, "\n"), "Safak Lukasz") {
+		t.Errorf("der Name steht nicht lesbar auf dem Blatt: %q", texte)
+	}
 
-	pruefeBlatt(t, strings.Join(pdftest.Texte(t, roh), "\n"), []string{
-		"Safak Lukasz",
-		genau, strings.Repeat("é", 19),
-		strings.Repeat("ö", 37) + "…", strings.Repeat("ü", 18) + "…",
-	}, []string{zuLang, strings.Repeat("ü", 20)})
+	gekuerzt := map[string]bool{}
+	for stelle, text := range texte {
+		for _, med := range medien {
+			if text != med.Barcode {
+				continue
+			}
+			// Vor der Nummer des Strichcodes stehen Titel und Autor der Zeile.
+			titel, autor := texte[stelle-2], texte[stelle-1]
+			pruefeInSpalte(t, titel, med.Titel, 8, 50)
+			pruefeInSpalte(t, autor, med.Autor, 8, 24)
+			gekuerzt[med.Barcode+" Titel"] = titel != med.Titel
+			gekuerzt[med.Barcode+" Autor"] = autor != med.Autor
+		}
+	}
+	erwartet := map[string]bool{
+		"B-1 Titel": true, "B-1 Autor": true,
+		"B-2 Titel": false, "B-2 Autor": false,
+		"B-3 Titel": true, "B-3 Autor": true,
+		"B-4 Titel": false, "B-4 Autor": false,
+	}
+	if fmt.Sprint(gekuerzt) != fmt.Sprint(erwartet) {
+		t.Errorf("gekürzt: %v\nerwartet: %v", gekuerzt, erwartet)
+	}
 }
 
 // Ab 15 Tagen über der Frist steht die Zahl der Tage in Rot, bis 14 nicht.

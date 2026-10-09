@@ -166,20 +166,39 @@ func TestMahnbrief_JeSchuelerEinBriefAufEigenerSeite(t *testing.T) {
 	pruefeBlatt(t, strings.Join(seiten[1], "\n"), []string{"Eltern von Ben Birne", "Atlas", "BC-2"}, []string{"Musterkind", "Testband", "BC-1"})
 }
 
-// Der Titel steht gekürzt mit Auslassungszeichen da, nach Zeichen gezählt. Der Strichcode steht
-// als Bild über seiner Nummer; ohne Barcode bleibt die Zelle leer.
-func TestMahnbrief_KuerztDenTitelUndSetztDenStrichcode(t *testing.T) {
+// Der Titel steht gekürzt mit Auslassungszeichen da, sobald er gedruckt breiter wäre als seine
+// Spalte: 60 breite Buchstaben passen nicht, 80 schmale schon. Der Strichcode steht als Bild
+// über seiner Nummer; ohne Barcode bleibt die Zelle leer.
+func TestMahnbrief_TitelBleibtInSeinerSpalteUndStrichcodeAlsBild(t *testing.T) {
+	breit, schmal := strings.Repeat("W", 60), strings.Repeat("i", 80)
 	e := testMahnbriefEmpfaenger()
-	e.Buecher[0].Titel = strings.Repeat("ö", 39)
+	e.Buecher[0].Titel = breit
+	e.Buecher = append(e.Buecher, e.Buecher[0])
+	e.Buecher[1].Titel, e.Buecher[1].Barcode = schmal, "BC-2"
 	mit, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{e}, MahnbriefVorlage{Text: "{{.BuchListe}}"})
 	if err != nil {
 		t.Fatalf("Mahnbrief drucken: %v", err)
 	}
-	pruefeBlatt(t, blattText(t, mit), []string{strings.Repeat("ö", 37) + "…", "BC-1"}, []string{strings.Repeat("ö", 38)})
-	if n := bytes.Count(mit, []byte("/Subtype /Image")); n != 1 {
-		t.Errorf("Brief mit Barcode trägt %d Bilder, erwartet 1", n)
+	texte := pdftest.TexteInReihenfolge(t, mit)
+	for stelle, text := range texte {
+		// Vor der Nummer des Strichcodes steht der Titel der Zeile.
+		switch text {
+		case "BC-1":
+			pruefeInSpalte(t, texte[stelle-1], breit, 10, 73)
+			if texte[stelle-1] == breit {
+				t.Errorf("60 breite Buchstaben stehen ungekürzt in einer Spalte von 75 mm")
+			}
+		case "BC-2":
+			if texte[stelle-1] != schmal {
+				t.Errorf("80 schmale Buchstaben passen in die Spalte, gedruckt ist %q", texte[stelle-1])
+			}
+		}
+	}
+	if n := bytes.Count(mit, []byte("/Subtype /Image")); n != 2 {
+		t.Errorf("Brief mit zwei Barcodes trägt %d Bilder, erwartet 2", n)
 	}
 
+	e.Buecher = e.Buecher[:1]
 	e.Buecher[0].Barcode = ""
 	ohne, err := GenerateMahnbriefePDF([]MahnbriefEmpfaenger{e}, MahnbriefVorlage{Text: "{{.BuchListe}}"})
 	if err != nil {

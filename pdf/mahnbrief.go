@@ -50,6 +50,7 @@ const (
 	mahnbriefSeitenende  = 297.0 - mahnbriefRand
 	mahnbriefKopfHoehe   = 7.0
 	mahnbriefZeilenHoehe = 15.0
+	mahnbriefSpalteTitel = 75.0
 )
 
 // mahnbriefAnschrift baut das Fensterfeld. Fehlt die Anschrift, steht das im Feld: Eine leere
@@ -70,7 +71,7 @@ func zeichneMahnbriefKoepfe(pdf *gofpdf.Fpdf, tr func(string) string) {
 	pdf.SetFont("Arial", "B", 10)
 	pdf.SetX(20)
 	pdf.SetFillColor(240, 240, 240)
-	pdf.CellFormat(75, mahnbriefKopfHoehe, tr("Titel"), "1", 0, "L", true, 0, "")
+	pdf.CellFormat(mahnbriefSpalteTitel, mahnbriefKopfHoehe, tr("Titel"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(35, mahnbriefKopfHoehe, tr("Barcode"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(30, mahnbriefKopfHoehe, tr("Ausgeliehen"), "1", 0, "L", true, 0, "")
 	pdf.CellFormat(30, mahnbriefKopfHoehe, tr("Tage überfällig"), "1", 1, "R", true, 0, "")
@@ -97,7 +98,7 @@ func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher [
 		}
 		startY := pdf.GetY()
 		pdf.SetX(20)
-		pdf.CellFormat(75, rowH, tr(pdfzeichen.KuerzeAufZeichen(b.Titel, 38)), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(mahnbriefSpalteTitel, rowH, tr(kuerzeAufZelle(pdf, tr, b.Titel, mahnbriefSpalteTitel)), "1", 0, "L", false, 0, "")
 
 		bcX := pdf.GetX()
 		pdf.CellFormat(35, rowH, "", "1", 0, "", false, 0, "")

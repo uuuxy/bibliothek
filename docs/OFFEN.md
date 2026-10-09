@@ -135,6 +135,8 @@ der Nummer nichts mehr dazu offen ist.
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
 - [ ] **Schichtung des Backends (5.62):** Die PDF-Erzeuger und der Rest der Dateien ohne Tür
   ziehen je Sache aus `api/` in eigene Pakete.
+- [ ] **Gedruckter Text nach Zeichenzahl gekürzt (5.63):** an 18 Stellen messen, ob ein Text
+  über seine Zelle läuft.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -372,6 +374,20 @@ Außerhalb von `api/` und `repository/` stehen weitere SQL-Anweisungen (gezählt
 `inventur/` 73 mit eigener Datenbankschicht ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.3),
 `internal/service` 32, `auth/` 19, `jobs/` 17. Die Ratsche zählt sie nicht; sie gehören nicht
 zu diesem Punkt.
+
+### 5.63 Gedruckter Text nach Zeichenzahl gekürzt
+
+Mahnliste und Mahnbrief kürzten Titel und Autor auf eine feste Zahl von Zeichen; ein
+gewöhnlicher Titel lief damit 5 mm in die Nachbarspalte. Beide kürzen seit dem 09.10.2026 auf
+die gedruckte Breite ihrer Zelle (`kuerzeAufZelle` in `pdf/zelle.go`; die Fehlerart steht in
+[sweeps.md](sweeps.md), „Gedruckter Text nach Zeichenzahl gekürzt").
+
+Nach Zeichen kürzen weiter 18 Stellen (gezählt am 09.10.2026): `pdf/etikett_buch.go` 5,
+`pdf/etikett_lernmittel.go` 4, `inventur/lernmittel_pdf.go` 4, `pdf/zugangsbuch.go` 2,
+`pdf/abgangsbuch.go` 2, `api/bestellbericht_handler.go` 1. Zu tun je Stelle: mit ihrer Schrift
+und Zellenbreite messen, ob die zugelassene Zahl breiter Buchstaben über die Zelle läuft, und
+dann auf die Breite kürzen. Die Etiketten sind im Aussehen abgenommen; dort ändert sich mit der
+Umstellung, wo ein langer Titel endet.
 
 ---
 
