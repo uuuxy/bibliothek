@@ -674,7 +674,7 @@ Beides steht in Anlage 1 der SchDSV (1.4 Anschrift, 1.14 E-Mail der Eltern).
 geprüft):** Sie wird im Schülerprofil als `mailto:`-Link angezeigt
 (`StudentProfileStammdaten.svelte`), im Mahnwesen als Hinweis-Symbol „Eltern-Mail
 vorhanden" geführt, und die Vorlage `MAHNUNG_ELTERN` füllt den **gedruckten**
-Elternbrief (`api/reports_pdf.go`). **Es geht keine automatische E-Mail an Eltern** —
+Elternbrief (`pdf/mahnbrief.go`). **Es geht keine automatische E-Mail an Eltern** —
 Mahn-Mails des Bulk-Laufs gehen an die **Klassenleitungen**
 (`api/mahnwesen_bulk_mail.go`). Bis zum 22.08.2026 behauptete dieser Abschnitt „E-Mail
 für Eltern-Mahnungen"; das war Absicht, nicht Zustand. Entscheidung: **Doku an den Code

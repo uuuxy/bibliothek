@@ -290,4 +290,53 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 			t.Errorf("Buch des Ehemaligen: Mahnstufe %d, erwartet 1", stufe)
 		}
 	})
+
+	// Betreff und Text kommen aus der Vorlage der Schule, die Absenderzeile über dem
+	// Fensterfeld aus ihren Angaben in den Einstellungen.
+	t.Run("der Brief trägt Vorlage und Absenderzeile der Schule", func(t *testing.T) {
+		var altBetreff, altText string
+		if err := pool.QueryRow(ctx,
+			`SELECT betreff, text_body FROM mail_vorlagen WHERE typ = 'MAHNUNG_ELTERN'`).Scan(&altBetreff, &altText); err != nil {
+			t.Fatalf("Vorlage lesen: %v", err)
+		}
+		angaben := map[string]string{"schule_name": "Schule am Park", "schule_strasse": "Parkweg 2", "schule_plz": "61381", "schule_ort": "Friedrichsdorf"}
+		t.Cleanup(func() {
+			aufraeumen(t, pool, `UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE typ = 'MAHNUNG_ELTERN'`, altBetreff, altText)
+			for schluessel := range angaben {
+				aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, schluessel)
+			}
+		})
+		if _, err := pool.Exec(ctx, `
+			UPDATE mail_vorlagen SET betreff = 'Betreff-Probe {{.Vorname}}', text_body = $1
+			WHERE typ = 'MAHNUNG_ELTERN'`, "Anschreiben-Probe für {{.Vorname}} {{.Nachname}}:\n{{.BuchListe}}\nSchluss-Probe"); err != nil {
+			t.Fatalf("Vorlage setzen: %v", err)
+		}
+		for schluessel, wert := range angaben {
+			if _, err := pool.Exec(ctx, `
+				INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)
+				ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`, schluessel, wert); err != nil {
+				t.Fatalf("Einstellung %s: %v", schluessel, err)
+			}
+		}
+		kind := seedSchueler(t, pool, "MBF-S-20", "Nele", "06G")
+		buch := seedAusleihe(t, pool, kind, "Band Vorlage", abgelaufen)
+
+		rec := drucke(t, buch)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Druck: Status %d — %s", rec.Code, firstBytes(rec.Body.Bytes(), 160))
+		}
+		// In der Folge des Briefs: Der Betreff steht über dem Text, die Tabelle im Text.
+		blatt := strings.Join(pdftest.TexteInReihenfolge(t, rec.Body.Bytes()), "\n")
+		rest := blatt
+		for _, soll := range []string{
+			"Schule am Park · Parkweg 2 · 61381 Friedrichsdorf",
+			"Betreff-Probe Nele", "Anschreiben-Probe für Nele Test:", "Band Vorlage", "Schluss-Probe",
+		} {
+			_, danach, gefunden := strings.Cut(rest, soll)
+			if !gefunden {
+				t.Fatalf("auf dem Brief fehlt %q an seiner Stelle:\n%s", soll, blatt)
+			}
+			rest = danach
+		}
+	})
 }

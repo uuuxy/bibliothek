@@ -28,7 +28,7 @@ import (
 // eine Nutzung nicht möglich ist. Gezeigt wird eine Gruppe nur, wenn sie Positionen hat;
 // ein leeres Kästchen mit leerer Tabelle wäre ein unausgefülltes Formular, kein Brief.
 
-// Maße nach DIN 5008 Form A, wie beim Eltern-Mahnbrief (reports_pdf.go).
+// Maße nach DIN 5008 Form A, wie beim Eltern-Mahnbrief (mahnbrief.go).
 const (
 	bescheidRandLinks  = 25.0
 	bescheidRandRechts = 20.0

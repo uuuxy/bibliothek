@@ -345,31 +345,31 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
-  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 26 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 23.974 Zeilen in 150 Dateien (am Anfang 30.785 in 168).
+  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 25 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 23.844 Zeilen in 149 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`, der Strichcode in `pkg/strichcode`; in `pdf/` stehen
   der Bescheid (`bescheid.go`), die Etiketten mit ihren Bogenformaten (`etikett_*.go`), die
-  Bestandsbücher (`abgangsbuch.go`, `zugangsbuch.go`) und die Mahnliste (`mahnliste.go`). Offen:
-  der Aufbau der übrigen PDFs und der Rest der 26. Was ein Erzeuger aus `repository/` liest,
-  bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2). Je Thema ein
-  Commit; die Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Gemessen am
-  09.10.2026 mit einem Probe-Umzug am Compiler, was die fünf übrigen PDF-Dateien brauchen: Der
-  Mahnbrief (`reports_pdf.go`) nimmt zwei Typen aus `repository/`; in derselben Datei stehen zwei
-  Methoden der Tür, die die Vorlage laden, die Datei ist also zu teilen. Seine Tabelle setzt
-  Strichcode und Nummer wie die Mahnliste an feste Stellen und hat den Fehler am Seitenumbruch,
-  den die Mahnliste hatte ([sweeps.md](sweeps.md), „Zeile an festen Stellen über dem
-  Seitenumbruch"): gemessen am 09.10.2026 mit der Standardvorlage ab dem neunten Buch vier
-  Seiten, die neunte Zeile über drei verteilt. Das Bestellanschreiben (`order_pdf.go`) braucht die Texte zum Topf
-  (`mittelTexteFuer`); die Typen des Druckauftrags und die Barcode-Liste in derselben Datei bleiben
-  in `api/`. `pdf_service.go` stellt die Anlagen der Bestellmail zusammen und verschickt sie; das
+  Bestandsbücher (`abgangsbuch.go`, `zugangsbuch.go`), die Mahnliste (`mahnliste.go`) und der
+  Mahnbrief (`mahnbrief.go`). Offen: der Aufbau der übrigen PDFs und der Rest der 25. Was ein
+  Erzeuger aus `repository/` liest, bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn
+  (ARCHITEKTUR 5.2.2). Je Thema ein Commit; die Tests der Türen bleiben stehen und belegen, dass
+  sich nichts ändert. Gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler, was die vier
+  übrigen PDF-Dateien brauchen: Das Bestellanschreiben (`order_pdf.go`) braucht die Texte zum
+  Topf (`mittelTexteFuer`); die Typen des Druckauftrags und die Barcode-Liste in derselben Datei
+  bleiben in `api/`. `pdf_service.go` stellt die Anlagen der Bestellmail zusammen und verschickt sie; das
   ist kein Erzeuger und hängt an 15 Namen aus `api/`. Die Auskunft (`dsgvo_pdf_konto.go`,
   `dsgvo_pdf_protokoll.go`, dazu der Erzeuger in `dsgvo_pdf.go`) hängt an 15 Namen aus `api/` und
   17 aus `repository/` und nimmt den Typ der Antwort für den Bildschirm; sie ist die größte Sache.
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
   umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
+- **Mahnbrief am Seitenumbruch.** Die Tabelle des Mahnbriefs (`pdf/mahnbrief.go`) setzt
+  Strichcode und Nummer wie die Mahnliste an feste Stellen und hat den Fehler, den die Mahnliste
+  hatte ([sweeps.md](sweeps.md), „Zeile an festen Stellen über dem Seitenumbruch"): gemessen am
+  09.10.2026 mit der Standardvorlage ab dem neunten Buch vier Seiten, die neunte Zeile über drei
+  verteilt.
 - **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 354
   Methoden, rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt, zeigt der
   Stand nach dem Schritt davor.

@@ -1,60 +1,52 @@
-package api
+package pdf
 
 import (
-	"bibliothek/pdf"
+	"bytes"
+	"fmt"
+	"strings"
+	"time"
+
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/pkg/strichcode"
-	"bibliothek/repository"
-	"bytes"
-	"context"
-
-	"fmt"
-	"strings"
 
 	"github.com/jung-kurt/gofpdf"
 )
 
-// mahnbriefVorlage ist, was auf allen Briefen eines Drucks gleich steht.
-type mahnbriefVorlage struct {
+// MahnbriefVorlage ist, was auf allen Briefen eines Drucks gleich steht. Betreff und Text
+// kennen die Platzhalter {{.Vorname}}, {{.Nachname}} und {{.Frist}}, der Text dazu
+// {{.BuchListe}}.
+type MahnbriefVorlage struct {
 	Betreff  string
 	Text     string
 	Absender string
 }
 
-// loadMahnungTemplate lädt die Eltern-Mahnvorlage aus der Datenbank; ist keine
-// konfiguriert ODER die gespeicherte leer, wird die Standardvorlage verwendet.
-// Der Leer-Fall ist real: Der Vorlagen-Editor lässt ” durch (Spalten NOT NULL,
-// aber ” erlaubt) — bis zum 01.09.2026 erzeugte das Mahnbriefe ohne Betreff
-// und ohne Anschreiben. Dieselbe Prüfung hatte die Bestell-Schwester
-// (loadBestellTemplate) von Anfang an.
-func (s *Server) loadMahnungTemplate(ctx context.Context) (betreff, textBody string) {
-	betreff, textBody, err := repository.LadeMahnVorlage(ctx, s.DB.Pool)
-	if err != nil || strings.TrimSpace(betreff) == "" || strings.TrimSpace(textBody) == "" {
-		betreff = "Mahnung: Überfällige Bücher"
-		textBody = "Sehr geehrte Eltern von {{.Vorname}} {{.Nachname}},\n\nbitte geben Sie folgende Bücher umgehend in die Bibliothek zurück:\n\n{{.BuchListe}}\n\nVielen Dank."
-	}
-	return betreff, textBody
+// MahnbriefBuch ist ein Buch auf dem Mahnbrief.
+type MahnbriefBuch struct {
+	Titel            string
+	Barcode          string
+	AusgeliehenAm    time.Time
+	Frist            time.Time
+	TageUeberfaellig int
 }
 
-// ladeMahnbriefVorlage liest Betreff und Text aus der Vorlage und die Absenderzeile aus den
-// Angaben zur Schule.
-func (s *Server) ladeMahnbriefVorlage(ctx context.Context) mahnbriefVorlage {
-	betreff, text := s.loadMahnungTemplate(ctx)
-	settings, _ := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx) //nolint:errcheck
-	schule := pdf.SchuleInfo{
-		Name:    settings.SchuleName,
-		Strasse: settings.SchuleStrasse,
-		PLZ:     settings.SchulePLZ,
-		Ort:     settings.SchuleOrt,
-	}
-	return mahnbriefVorlage{Betreff: betreff, Text: text, Absender: schule.Absenderzeile()}
+// MahnbriefEmpfaenger ist ein Schüler mit seinen Büchern über der Frist und der Anschrift für
+// das Fensterkuvert.
+type MahnbriefEmpfaenger struct {
+	Vorname    string
+	Nachname   string
+	Strasse    string
+	Hausnummer string
+	PLZ        string
+	Ort        string
+	Buecher    []MahnbriefBuch
 }
 
 // mahnbriefAnschrift baut das Fensterfeld. Fehlt die Anschrift, steht das im Feld: Eine leere
 // Zeile sähe aus wie ein Druckfehler, so ist zu sehen, welcher Brief über das Kind oder die
 // Klassenleitung geht.
-func mahnbriefAnschrift(e repository.MahnbriefEmpfaenger) []string {
+func mahnbriefAnschrift(e MahnbriefEmpfaenger) []string {
 	name := fmt.Sprintf("Eltern von %s %s", e.Vorname, e.Nachname)
 	strasse := strings.TrimSpace(e.Strasse + " " + e.Hausnummer)
 	ort := strings.TrimSpace(e.PLZ + " " + e.Ort)
@@ -66,7 +58,7 @@ func mahnbriefAnschrift(e repository.MahnbriefEmpfaenger) []string {
 
 // zeichneMahnbriefBuecher setzt die Tabelle der Bücher über der Frist. Der Barcode steht als
 // Bild und als Nummer da, damit das Buch bei der Rückgabe vom Brief gescannt werden kann.
-func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher []repository.MahnbriefBuch) {
+func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher []MahnbriefBuch) {
 	pdf.SetFont("Arial", "B", 10)
 	pdf.SetX(20)
 	pdf.SetFillColor(240, 240, 240)
@@ -108,7 +100,7 @@ const platzhalterBuchListe = "{{.BuchListe}}"
 
 // zeichneMahnbrief setzt eine Seite nach DIN 5008 (Form A, Fensterkuvert) für einen Schüler:
 // Fensterfeld, Betreff, Text und die Tabelle seiner Bücher über der Frist.
-func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e repository.MahnbriefEmpfaenger, v mahnbriefVorlage) {
+func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e MahnbriefEmpfaenger, v MahnbriefVorlage) {
 	pdf.AddPage()
 
 	// Falzmarken und Lochmarke.
@@ -171,8 +163,8 @@ func zeichneMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, e repository.Mah
 	}
 }
 
-// erzeugeMahnbriefe setzt je Schüler einen Brief in ein PDF.
-func erzeugeMahnbriefe(briefe []repository.MahnbriefEmpfaenger, v mahnbriefVorlage) ([]byte, error) {
+// GenerateMahnbriefePDF setzt je Schüler einen Brief in ein PDF.
+func GenerateMahnbriefePDF(briefe []MahnbriefEmpfaenger, v MahnbriefVorlage) ([]byte, error) {
 	doc := gofpdf.New("P", "mm", "A4", "")
 	tr := pdfzeichen.Uebersetzer(doc.UnicodeTranslatorFromDescriptor(""))
 	for _, e := range briefe {

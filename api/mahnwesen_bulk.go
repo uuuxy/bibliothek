@@ -5,13 +5,69 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
+	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
+
+// loadMahnungTemplate lädt die Vorlage des Mahnbriefs. Fehlt sie oder ist ein Teil leer, gilt
+// der Standardtext: Der Editor lässt eine leere Vorlage zu, und der Brief hätte dann weder
+// Betreff noch Anschreiben.
+func (s *Server) loadMahnungTemplate(ctx context.Context) (betreff, textBody string) {
+	betreff, textBody, err := repository.LadeMahnVorlage(ctx, s.DB.Pool)
+	if err != nil || strings.TrimSpace(betreff) == "" || strings.TrimSpace(textBody) == "" {
+		betreff = "Mahnung: Überfällige Bücher"
+		textBody = "Sehr geehrte Eltern von {{.Vorname}} {{.Nachname}},\n\nbitte geben Sie folgende Bücher umgehend in die Bibliothek zurück:\n\n{{.BuchListe}}\n\nVielen Dank."
+	}
+	return betreff, textBody
+}
+
+// ladeMahnbriefVorlage liest Betreff und Text aus der Vorlage und die Absenderzeile aus den
+// Angaben zur Schule.
+func (s *Server) ladeMahnbriefVorlage(ctx context.Context) pdf.MahnbriefVorlage {
+	betreff, text := s.loadMahnungTemplate(ctx)
+	settings, _ := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx) //nolint:errcheck
+	schule := pdf.SchuleInfo{
+		Name:    settings.SchuleName,
+		Strasse: settings.SchuleStrasse,
+		PLZ:     settings.SchulePLZ,
+		Ort:     settings.SchuleOrt,
+	}
+	return pdf.MahnbriefVorlage{Betreff: betreff, Text: text, Absender: schule.Absenderzeile()}
+}
+
+// mahnbriefEmpfaenger füllt die Eingabe des Erzeugers aus den Zeilen der Abfrage: je Schüler
+// ein Brief mit Anschrift und Büchern, in ihrer Reihenfolge.
+func mahnbriefEmpfaenger(briefe []repository.MahnbriefEmpfaenger) []pdf.MahnbriefEmpfaenger {
+	eingabe := make([]pdf.MahnbriefEmpfaenger, 0, len(briefe))
+	for _, e := range briefe {
+		buecher := make([]pdf.MahnbriefBuch, 0, len(e.Buecher))
+		for _, b := range e.Buecher {
+			buecher = append(buecher, pdf.MahnbriefBuch{
+				Titel:            b.Titel,
+				Barcode:          b.Barcode,
+				AusgeliehenAm:    b.AusgeliehenAm,
+				Frist:            b.Frist,
+				TageUeberfaellig: b.TageUeberfaellig,
+			})
+		}
+		eingabe = append(eingabe, pdf.MahnbriefEmpfaenger{
+			Vorname:    e.Vorname,
+			Nachname:   e.Nachname,
+			Strasse:    e.Strasse,
+			Hausnummer: e.Hausnummer,
+			PLZ:        e.PLZ,
+			Ort:        e.Ort,
+			Buecher:    buecher,
+		})
+	}
+	return eingabe
+}
 
 // erzeugeUndCommitBulkMahnung zählt die Mahnung, liest in derselben Transaktion die Briefe
 // und schreibt erst fest, wenn das PDF steht. Läge das Lesen vor dem Zählen, könnte ein
@@ -56,7 +112,7 @@ func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 		return nil, false
 	}
 
-	pdfBytes, err := erzeugeMahnbriefe(briefe, vorlage)
+	pdfBytes, err := pdf.GenerateMahnbriefePDF(mahnbriefEmpfaenger(briefe), vorlage)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim generieren des pdfs: %w", err))
 		return nil, false

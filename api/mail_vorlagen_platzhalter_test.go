@@ -5,7 +5,7 @@ package api
 // Drei Orte behaupten je Vorlagen-Typ, welche {{.X}}-Platzhalter gelten:
 //
 //   1. der GO-RENDERER — die einzige Menge, die wirklich ersetzt wird
-//      (reports_pdf.go für MAHNUNG_ELTERN, bestellmail_text.go für
+//      (pdf/mahnbrief.go für MAHNUNG_ELTERN, bestellmail_text.go für
 //      BESTELLUNG_HAENDLER),
 //   2. die ANZEIGE im Vorlagen-Editor (vorlagenInfo in mailVorlagenInfo.js),
 //   3. die SEED-TEXTE (schema.sql).
@@ -33,8 +33,14 @@ var platzhalterMuster = regexp.MustCompile(`\{\{\.[A-Za-z]+\}\}`)
 // rendererQuellen: je Typ die Go-Datei, deren STRING-LITERALE die wirksame
 // Platzhalter-Menge tragen (Replacer, Split, Fallback-Vorlage).
 var rendererQuellen = map[string]string{
-	"MAHNUNG_ELTERN":      "reports_pdf.go",
+	"MAHNUNG_ELTERN":      filepath.Join("..", "pdf", "mahnbrief.go"),
 	"BESTELLUNG_HAENDLER": "bestellmail_text.go",
+}
+
+// standardtextQuellen: je Typ die Go-Datei mit dem Text, der gilt, wenn die gespeicherte
+// Vorlage fehlt oder leer ist, sofern er nicht beim Renderer steht.
+var standardtextQuellen = map[string]string{
+	"MAHNUNG_ELTERN": "mahnwesen_bulk.go",
 }
 
 // ohneRenderer: Seed-Typen, die BEWUSST keinen Renderer haben — mit Begründung.
@@ -154,6 +160,17 @@ func TestVorlagenPlatzhalterSindDeckungsgleich(t *testing.T) {
 		for p := range seeds[typ] {
 			if !renderer[p] {
 				t.Errorf("%s: Seed-Vorlage (schema.sql) enthält %s, der Renderer ersetzt es nicht.", typ, p)
+			}
+		}
+		if quelle, hat := standardtextQuellen[typ]; hat {
+			standard := leseRendererPlatzhalter(t, quelle)
+			if len(standard) == 0 {
+				t.Fatalf("%s: kein Platzhalter im Standardtext in %s gefunden — Detektor greift nicht mehr", typ, quelle)
+			}
+			for p := range standard {
+				if !renderer[p] {
+					t.Errorf("%s: Der Standardtext (%s) enthält %s, der Renderer ersetzt es nicht.", typ, quelle, p)
+				}
 			}
 		}
 	}

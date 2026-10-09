@@ -91,7 +91,7 @@ func buildAddressBlock(m core.Maroto, schule SchuleInfo, schueler Schueler) {
 	// Address lines. Fehlt die Anschrift, steht das AUSDRÜCKLICH im Fensterfeld —
 	// zwei leere Zeilen sähen aus wie ein Druckfehler; so ist sofort sichtbar,
 	// dass diese Rechnung nicht per Post gehen kann (gleiche Regel wie der
-	// Eltern-Mahnbrief, api/reports_pdf.go).
+	// Eltern-Mahnbrief, mahnbrief.go).
 	zeile2 := strings.TrimSpace(schueler.Strasse + " " + schueler.Hausnummer)
 	zeile3 := strings.TrimSpace(schueler.PLZ + " " + schueler.Ort)
 	if zeile2 == "" && zeile3 == "" {
