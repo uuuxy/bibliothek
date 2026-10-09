@@ -24,38 +24,23 @@ import (
 // Exemplare, die bewusst ohne Vorab-Barcode bestellt wurden — die beklebt dann die
 // Bibliothek selbst, und beide würden dasselbe Buch bekleben.
 func (s *Server) ladeBestellEtiketten(ctx context.Context, bestellungID string) ([]BarcodeLabelDetail, error) {
-	rows, err := s.DB.Pool.Query(ctx, `
-		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.signatur, ''),
-		       to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'),
-		       `+repository.ExemplarTopfSQL+`
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON t.id = e.titel_id
-		`+repository.ExemplarTopfJoin+`
-		WHERE e.bestellung_id = $1
-		  AND EXISTS (SELECT 1 FROM bestellungen_positionen p
-		               WHERE p.bestellung_id = e.bestellung_id
-		                 AND p.titel_id = e.titel_id
-		                 AND p.mit_vorab_barcode)
-		ORDER BY t.titel, e.barcode_id
-	`, bestellungID)
+	zeilen, err := repository.EtikettDatenDerBestellung(ctx, s.DB.Pool, bestellungID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	return etikettenAus(zeilen), nil
+}
 
-	etiketten := []BarcodeLabelDetail{}
-	for rows.Next() {
-		var d BarcodeLabelDetail
-		if err := rows.Scan(&d.BarcodeID, &d.Titel, &d.Autor, &d.ISBN, &d.Signatur, &d.AnschaffungsJahr, &d.Topf); err != nil {
-			return nil, err
-		}
-		// Das Anschaffungsjahr gehört auf das Etikett: Auf der physischen Vorlage der Schule
-		// steht es als „Ansch.J. 2022" unter dem Titel. Es blieb hier zunächst leer, um dem
-		// Mailanhang zu gleichen — das war der falsche Bezugspunkt, also trägt jetzt auch der
-		// Anhang das Jahr (api/order_service.go).
-		etiketten = append(etiketten, d)
+// etikettenAus übernimmt die Zeilen einer Abfrage in die Form, die die Etiketten-PDFs lesen.
+func etikettenAus(zeilen []repository.EtikettDaten) []BarcodeLabelDetail {
+	if zeilen == nil {
+		return nil
 	}
-	return etiketten, rows.Err()
+	etiketten := make([]BarcodeLabelDetail, 0, len(zeilen))
+	for _, z := range zeilen {
+		etiketten = append(etiketten, BarcodeLabelDetail(z))
+	}
+	return etiketten
 }
 
 // OeffentlicheEtikettenHandler liefert den Etikettenbogen als PDF (ohne Login, per Token).
@@ -100,10 +85,8 @@ func (s *Server) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 	// nicht — auch nicht für den, der die Adresse kennt. Die Seite blendet den Knopf
 	// aus; die Tür ist es, die das Etikett verweigert.
 	if groesse == "gross" {
-		var mittel string
-		if err := s.DB.Pool.QueryRow(ctx,
-			`SELECT COALESCE(mittel, '') FROM bestellungen_verlauf WHERE id = $1`,
-			bestellungID).Scan(&mittel); err != nil {
+		mittel, err := repository.MittelDerBestellung(ctx, s.DB.Pool, bestellungID)
+		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}

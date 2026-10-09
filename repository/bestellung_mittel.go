@@ -25,3 +25,13 @@ func KorrigiereBestellungMittel(ctx context.Context, pool db.PgxPoolIface, beste
 		RETURNING alt.mittel`, bestellungID, mittel).Scan(&vorher)
 	return vorher, err
 }
+
+// MittelDerBestellung liest den Topf einer Bestellung; leer bei einer Alt-Bestellung ohne
+// Zuordnung. pgx.ErrNoRows, wenn es die Bestellung nicht gibt.
+func MittelDerBestellung(ctx context.Context, q DBQueryer, bestellungID string) (string, error) {
+	var mittel string
+	err := q.QueryRow(ctx,
+		`SELECT COALESCE(mittel, '') FROM bestellungen_verlauf WHERE id = $1`,
+		bestellungID).Scan(&mittel)
+	return mittel, err
+}

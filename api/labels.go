@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -32,43 +33,11 @@ func parseLabelParams(r *http.Request) (formatId string, startPos int, isQR bool
 
 // queryLabelItems lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr, Signatur) eines Titels.
 func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabelDetail, error) {
-	// Das Jahr ist das des Zugangs (zugang_am, Migration 129) — im Bestellweg ist erworben_am
-	// der Bestelltag, und ein im Dezember bestelltes Buch käme sonst mit dem alten Jahr aufs
-	// Etikett und mit dem neuen ins Zugangsbuch. Der Rückfall auf erworben_am (NOT NULL,
-	// Vorgabe der Schultag, Migration 139) deckt Zeilen ohne Zugangsdatum; to_char liefert damit immer
-	// vier Ziffern und nie NULL.
-	//
-	// Ausgesonderte Exemplare bleiben draußen (17.09.2026, OFFEN.md 5.5): Wer die Etiketten
-	// eines Titels druckt, klebt sie auf Bücher, die im Regal stehen. Ein ausgesondertes
-	// Exemplar gibt es dort nicht mehr — sein Etikett ist ein Blatt Papier für ein Buch,
-	// das niemand findet, und auf einem Bogen mit fortlaufenden Plätzen verschiebt es alle
-	// folgenden. Die Zeile bleibt in der Datenbank; nur gedruckt wird sie nicht.
-	query := `
-		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'), coalesce(t.signatur, ''),
-		       ` + repository.ExemplarTopfSQL + `
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON e.titel_id = t.id
-		` + repository.ExemplarTopfJoin + `
-		WHERE e.titel_id = $1 AND e.ist_ausgesondert = false
-		ORDER BY e.barcode_id
-	`
-	rows, err := s.DB.Pool.Query(ctx, query, id)
+	zeilen, err := repository.EtikettDatenDesTitels(ctx, s.DB.Pool, id)
 	if err != nil {
-		return nil, fmt.Errorf("fehler beim laden der exemplare: %w", err)
+		return nil, err
 	}
-	defer rows.Close()
-
-	var items []BarcodeLabelDetail
-	for rows.Next() {
-		var item BarcodeLabelDetail
-		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.AnschaffungsJahr, &item.Signatur, &item.Topf); err == nil {
-			items = append(items, item)
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("datenbankfehler: %w", err)
-	}
-	return items, nil
+	return etikettenAus(zeilen), nil
 }
 
 // etikettKopf lädt Schulname und Eigentumsvermerk aus den Systemeinstellungen.
@@ -143,14 +112,6 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 	}
 }
 
-// serverEtikettFelder sind die Etikettenangaben, die der Server selbst kennt und
-// deshalb niemals vom Client entgegennimmt.
-type serverEtikettFelder struct {
-	jahr     string
-	signatur string
-	topf     string
-}
-
 // ergaenzeServerfelder füllt die Etikettenfelder nach, die NICHT aus der Anfrage
 // stammen: Anschaffungsjahr und Signatur.
 //
@@ -180,38 +141,21 @@ func (s *Server) ergaenzeServerfelder(ctx context.Context, items []BarcodeLabelD
 		return
 	}
 
-	rows, err := s.DB.Pool.Query(ctx, `
-		SELECT e.barcode_id, to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'), coalesce(t.signatur, ''),
-		       `+repository.ExemplarTopfSQL+`
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON e.titel_id = t.id
-		`+repository.ExemplarTopfJoin+`
-		WHERE e.barcode_id = ANY($1)
-	`, barcodes)
+	bekannt, err := repository.EtikettServerfelderZuBarcodes(ctx, s.DB.Pool, barcodes)
 	if err != nil {
-		log.Printf("Etiketten: Serverfelder nicht ermittelbar, drucke ohne: %v", err)
-		return
-	}
-	defer rows.Close()
-
-	bekannt := make(map[string]serverEtikettFelder, len(barcodes))
-	for rows.Next() {
-		var barcode string
-		var felder serverEtikettFelder
-		if err := rows.Scan(&barcode, &felder.jahr, &felder.signatur, &felder.topf); err == nil {
-			bekannt[barcode] = felder
+		if errors.Is(err, repository.ErrZeileUnlesbar) {
+			log.Printf("Etiketten: Serverfelder unvollständig gelesen: %v", err)
+			return
 		}
-	}
-	if err := rows.Err(); err != nil {
-		log.Printf("Etiketten: Serverfelder unvollständig gelesen: %v", err)
+		log.Printf("Etiketten: Serverfelder nicht ermittelbar, drucke ohne: %v", err)
 		return
 	}
 
 	for i := range items {
 		if felder, ok := bekannt[items[i].BarcodeID]; ok {
-			items[i].AnschaffungsJahr = felder.jahr
-			items[i].Signatur = felder.signatur
-			items[i].Topf = felder.topf
+			items[i].AnschaffungsJahr = felder.Jahr
+			items[i].Signatur = felder.Signatur
+			items[i].Topf = felder.Topf
 		}
 	}
 }
