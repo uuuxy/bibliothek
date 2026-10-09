@@ -355,6 +355,17 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Bestandsbücher, Mahnbrief), nicht in einem Zug. Was ein Erzeuger aus `repository/` liest,
   bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2). Je Thema ein
   Commit; die Tests der Türen bleiben stehen und belegen, dass sich nichts ändert.
+  Gemessen am 09.10.2026 für die nächsten zwei Sachen:
+  - Etiketten (`label_formats.go`, `label_pdf.go`, `lernmittel_etikett_pdf.go`,
+    `schueler_etikett_pdf.go`, 653 Zeilen): Sie brauchen aus `api/` vier Namen
+    (`BarcodeLabelDetail`, `EtikettKopf`, `GenerateBarcodePNG`, `kuerzeAufZeichen`), `api/`
+    braucht elf Namen von ihnen, sechs Testdateien greifen auf ihre Namen zu.
+    `BarcodeLabelDetail` ist zugleich der Typ des Druckauftrags aus dem Browser; sein Feld
+    `Topf` ist dort gesperrt (`json:"-"`), weil der Topf immer vom Server kommt. Beim Trennen
+    von Auftrag und Eingabe des Erzeugers muss das so bleiben.
+  - Bestandsbücher (`abgangsbuch_pdf.go`, `zugangsbuch_pdf.go`): Die Erzeuger nehmen Typen
+    aus `repository/` und teilen sich mit der Tür die Gliederung nach Topf (`Abschnitt`,
+    `abschnitteAus` in `api/bestandsbuch.go`), die auch die Antwort als JSON trägt.
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus
   einem umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage
   stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung
