@@ -53,7 +53,7 @@ var phantomBestand = map[string]int{
 	"api/student_promotion.go:fuehreSchuljahreswechselAus":    1,
 	"api/student_promotion.go:versetzeKlassenlehrerZuordnung": 2,
 	// Räumt den bisherigen Hauptlieferanten; null Zeilen heißt, es gab keinen.
-	"api/supplier_handler.go:setzeHauptlieferantIn": 1,
+	"repository/lieferanten_pflege.go:SetzeHauptlieferant": 1,
 	// Sachgruppe ändern und löschen: Die Tür liest die Zeile unmittelbar davor und antwortet
 	// 404, wenn es sie nicht gibt. Laufende Inventuren umstellen: null Zeilen ist der Normalfall.
 	"repository/systematik.go:AendereSachgruppe":              1,

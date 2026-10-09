@@ -101,7 +101,6 @@ var handlerMitSQL = map[string]int{
 	"student_lock.go":                  2,
 	"student_promotion.go":             12,
 	"student_update.go":                11,
-	"supplier_handler.go":              9,
 }
 
 func TestHandlerFormulierenKeinNeuesSQL(t *testing.T) {

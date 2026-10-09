@@ -9,9 +9,9 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // SupplierResponse represents the supplier data sent to the client.
@@ -92,25 +92,10 @@ func setzeHauptlieferant(ctx context.Context, pool db.PgxPoolIface, id string) e
 		return err
 	}
 	defer db.SafeRollback(ctx, tx)
-	if _, err := setzeHauptlieferantIn(ctx, tx, id); err != nil {
+	if _, err := repository.SetzeHauptlieferant(ctx, tx, id); err != nil {
 		return err
 	}
 	return tx.Commit(ctx)
-}
-
-// setzeHauptlieferantIn ist der Setzer in einer laufenden Transaktion. geaendert sagt, ob der
-// Lieferant das Merkmal vorher nicht trug.
-func setzeHauptlieferantIn(ctx context.Context, tx pgx.Tx, id string) (geaendert bool, err error) {
-	if _, err := tx.Exec(ctx,
-		`UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant AND id <> $1`, id); err != nil {
-		return false, err
-	}
-	tag, err := tx.Exec(ctx,
-		`UPDATE lieferanten SET ist_hauptlieferant = true WHERE id = $1 AND NOT ist_hauptlieferant`, id)
-	if err != nil {
-		return false, err
-	}
-	return tag.RowsAffected() == 1, nil
 }
 
 // ListSuppliersHandler returns a list of all suppliers.
@@ -120,29 +105,15 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 
 		// Der Hauptlieferant zuerst: Das Bestellformular nimmt sonst den alphabetisch
 		// ersten, und die Vorauswahl bliebe wirkungslos.
-		rows, err := s.DB.Pool.Query(ctx, `
-			SELECT id, name, email, kundennummer, erstellt_am, ist_hauptlieferant, kundennummer_schultraeger
-			FROM lieferanten
-			ORDER BY ist_hauptlieferant DESC, name ASC
-		`)
+		zeilen, err := repository.ListeLieferanten(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer rows.Close()
 
-		suppliers := []SupplierResponse{}
-		for rows.Next() {
-			var sup SupplierResponse
-			if err := rows.Scan(&sup.ID, &sup.Name, &sup.Email, &sup.CustomerNumber, &sup.ErstelltAm, &sup.IstHauptlieferant, &sup.KundennummerSchultraeger); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
-			suppliers = append(suppliers, sup)
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
+		suppliers := make([]SupplierResponse, 0, len(zeilen))
+		for _, z := range zeilen {
+			suppliers = append(suppliers, SupplierResponse(z))
 		}
 
 		RespondJSON(w, http.StatusOK, suppliers)
@@ -164,13 +135,7 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		var newID string
-		var erstelltAm time.Time
-		err := s.DB.Pool.QueryRow(ctx, `
-			INSERT INTO lieferanten (name, email, kundennummer, kundennummer_schultraeger)
-			VALUES ($1, $2, $3, $4)
-			RETURNING id, erstellt_am
-		`, req.Name, req.Email, req.CustomerNumber, kundennummerSchultraeger(req)).Scan(&newID, &erstelltAm)
+		newID, erstelltAm, err := repository.LegeLieferantAn(ctx, s.DB.Pool, req.Name, req.Email, req.CustomerNumber, kundennummerSchultraeger(req))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -242,30 +207,24 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.protokolliereGeaenderteFelder(ctx, auditLieferantGeaendert,
-		map[string]any{"lieferant_id": id, "name": neu.name},
+		map[string]any{"lieferant_id": id, "name": neu.Name},
 		geaenderteFelder(
-			feldWechsel{"name", alt.name != neu.name},
-			feldWechsel{"email", alt.email != neu.email},
-			feldWechsel{"kundennummer", alt.kundennummer != neu.kundennummer},
-			feldWechsel{"kundennummer_schultraeger", alt.zweitnummer != neu.zweitnummer},
-			feldWechsel{"hauptlieferant", alt.haupt != neu.haupt},
+			feldWechsel{"name", alt.Name != neu.Name},
+			feldWechsel{"email", alt.Email != neu.Email},
+			feldWechsel{"kundennummer", alt.Kundennummer != neu.Kundennummer},
+			feldWechsel{"kundennummer_schultraeger", alt.Zweitnummer != neu.Zweitnummer},
+			feldWechsel{"hauptlieferant", alt.Haupt != neu.Haupt},
 		))
 
 	// Die Antwort nennt den gespeicherten Stand, nicht die Eingabe.
 	RespondJSON(w, http.StatusOK, SupplierResponse{
 		ID:                       id,
-		Name:                     neu.name,
-		Email:                    neu.email,
-		CustomerNumber:           neu.kundennummer,
-		IstHauptlieferant:        neu.haupt,
-		KundennummerSchultraeger: neu.zweitnummer,
+		Name:                     neu.Name,
+		Email:                    neu.Email,
+		CustomerNumber:           neu.Kundennummer,
+		IstHauptlieferant:        neu.Haupt,
+		KundennummerSchultraeger: neu.Zweitnummer,
 	})
-}
-
-// lieferantStand sind die Stammdaten eines Lieferanten vor oder nach einer Änderung.
-type lieferantStand struct {
-	name, email, kundennummer, zweitnummer string
-	haupt                                  bool
 }
 
 // aendereLieferant schreibt Merkmal und Stammdaten in einer Transaktion und liefert den Stand
@@ -275,7 +234,7 @@ type lieferantStand struct {
 // Zuerst das Merkmal, dann die Stammdaten: Der Setzer sperrt den bisherigen Hauptlieferanten
 // vor der eigenen Zeile, wie beim Anlegen. Ein unbekannter Lieferant ist pgx.ErrNoRows; was der
 // Setzer bis dahin geräumt hat, rollt mit zurück.
-func (s *Server) aendereLieferant(ctx context.Context, id string, req UpdateSupplierRequest) (alt, neu lieferantStand, err error) {
+func (s *Server) aendereLieferant(ctx context.Context, id string, req UpdateSupplierRequest) (alt, neu repository.LieferantStand, err error) {
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
 		return alt, neu, err
@@ -285,41 +244,21 @@ func (s *Server) aendereLieferant(ctx context.Context, id string, req UpdateSupp
 	merkmalGeaendert := false
 	if req.IstHauptlieferant != nil {
 		if *req.IstHauptlieferant {
-			merkmalGeaendert, err = setzeHauptlieferantIn(ctx, tx, id)
+			merkmalGeaendert, err = repository.SetzeHauptlieferant(ctx, tx, id)
 		} else {
 			// Abschalten ist erlaubt: „Kein Hauptlieferant" ist ein normaler Zustand.
-			var tag pgconn.CommandTag
-			tag, err = tx.Exec(ctx,
-				`UPDATE lieferanten SET ist_hauptlieferant = false WHERE id = $1 AND ist_hauptlieferant`, id)
-			merkmalGeaendert = err == nil && tag.RowsAffected() == 1
+			merkmalGeaendert, err = repository.NimmHauptlieferant(ctx, tx, id)
 		}
 		if err != nil {
 			return alt, neu, err
 		}
 	}
 
-	// COALESCE mit Zeiger-Parametern: Ein fehlendes Feld (nil → SQL NULL) behält seinen Wert.
-	// RETURNING nennt den gespeicherten Stand und, aus der gesperrten Zeile davor, den alten.
-	err = tx.QueryRow(ctx, `
-		WITH alt AS (
-			SELECT name, email, kundennummer, kundennummer_schultraeger
-			  FROM lieferanten WHERE id = $4 FOR UPDATE
-		)
-		UPDATE lieferanten l
-		   SET name = COALESCE($1, l.name), email = COALESCE($2, l.email),
-		       kundennummer = COALESCE($3, l.kundennummer),
-		       kundennummer_schultraeger = COALESCE($5, l.kundennummer_schultraeger)
-		  FROM alt
-		 WHERE l.id = $4
-		RETURNING l.name, l.email, l.kundennummer, l.kundennummer_schultraeger, l.ist_hauptlieferant,
-		          alt.name, alt.email, alt.kundennummer, alt.kundennummer_schultraeger`,
-		req.Name, req.Email, req.CustomerNumber, id, req.KundennummerSchultraeger,
-	).Scan(&neu.name, &neu.email, &neu.kundennummer, &neu.zweitnummer, &neu.haupt,
-		&alt.name, &alt.email, &alt.kundennummer, &alt.zweitnummer)
+	alt, neu, err = repository.AendereLieferantStammdaten(ctx, tx, id, req.Name, req.Email, req.CustomerNumber, req.KundennummerSchultraeger)
 	if err != nil {
 		return alt, neu, err
 	}
-	alt.haupt = neu.haupt != merkmalGeaendert
+	alt.Haupt = neu.Haupt != merkmalGeaendert
 	return alt, neu, tx.Commit(ctx)
 }
 
@@ -351,10 +290,8 @@ func (s *Server) DeleteSupplierHandler() http.HandlerFunc {
 		// einzige Tür, und ein Hinweis, den nur ein Formular kennt, ist keine Regel. Der
 		// Weg bleibt offen — erst einen anderen zum Hauptlieferanten machen (oder den
 		// Schalter abwählen), dann löschen.
-		var istHaupt bool
-		var name string
-		if err := s.DB.Pool.QueryRow(ctx,
-			"SELECT ist_hauptlieferant, name FROM lieferanten WHERE id = $1", id).Scan(&istHaupt, &name); err != nil {
+		istHaupt, name, err := repository.LieferantHauptUndName(ctx, s.DB.Pool, id)
+		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
 				return
@@ -370,13 +307,13 @@ func (s *Server) DeleteSupplierHandler() http.HandlerFunc {
 			return
 		}
 
-		tag, err := s.DB.Pool.Exec(ctx, "DELETE FROM lieferanten WHERE id = $1", id)
+		geloescht, err := repository.LoescheLieferant(ctx, s.DB.Pool, id)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
-		if tag.RowsAffected() == 0 {
+		if geloescht == 0 {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
 			return
 		}
