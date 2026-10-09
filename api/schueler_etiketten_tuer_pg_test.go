@@ -8,11 +8,13 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/pdf"
+
 	"github.com/google/uuid"
 )
 
 // POST /api/print/schueler-etiketten liefert den Klebebogen mit Name, Klasse und Barcode
-// markierter Schüler. Den Erzeuger des PDFs prüft schueler_etikett_pdf_test.go; hier steht
+// markierter Schüler. Den Erzeuger des PDFs prüft pdf/etikett_schueler_test.go; hier steht
 // die Tür davor, die gemessen am 07.10.2026 kein Go-Test ausführte (2,3 %, OFFEN.md 5.10).
 //
 // Ihre Zusagen, je mit Gegenprobe: Der Bogen trägt, was in der Datenbank steht — die
@@ -76,7 +78,7 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 		}
 		text := pdfText(t, rec.Body.Bytes())
-		if !strings.Contains(text, MusterSchuelerEtikett.BarcodeID) {
+		if !strings.Contains(text, pdf.MusterSchuelerEtikett.BarcodeID) {
 			t.Errorf("das Muster-Etikett fehlt auf dem Bogen")
 		}
 		if strings.Contains(text, "S-ETI-001") {

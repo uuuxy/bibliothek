@@ -9,7 +9,7 @@ import { relPfad, sammleQuelldateien, srcRoot } from './hygiene-quellen.js';
 // diesem Projekt schon zweimal auseinandergelaufen ist (zuletzt die dreifach kopierte
 // Cover-Host-Allowlist, die eine Kopie kannte books.google nicht).
 //
-// Maßgeblich ist api/label_formats.go. Das Frontend führt seit dem 24.08.2026 GENAU EINE
+// Maßgeblich ist pdf/etikett_formate.go. Das Frontend führt seit dem 24.08.2026 GENAU EINE
 // eigene Kopie davon: src/lib/etikettformate.js. Vorher waren es zwei (Liste in
 // LabelLayoutOptionen.svelte, Stückzahlen in stores/labels.svelte.js), und mit den
 // Schüler-Etiketten wäre die Ausweis-Werkzeugleiste die dritte geworden.
@@ -23,7 +23,7 @@ import { relPfad, sammleQuelldateien, srcRoot } from './hygiene-quellen.js';
 const libDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(libDir, '..', '..', '..');
 
-const goQuelle = readFileSync(join(repoRoot, 'api', 'label_formats.go'), 'utf8');
+const goQuelle = readFileSync(join(repoRoot, 'pdf', 'etikett_formate.go'), 'utf8');
 
 // Die sechs Maße eines Bogens in Millimetern: Feld in Go, Feld in etikettformate.js.
 const MASSE = /** @type {const} */ ([
@@ -36,7 +36,7 @@ const MASSE = /** @type {const} */ ([
 ]);
 
 /**
- * Liest die Formate aus api/label_formats.go: ID, Cols, Rows und die Maße.
+ * Liest die Formate aus pdf/etikett_formate.go: ID, Cols, Rows und die Maße.
  * @returns {{id: string, cols: number, rows: number, masse: Record<string, number>}[]}
  */
 function formateAusGo() {

@@ -619,7 +619,7 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 25.054 Zeilen, 157 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `api/`                  | 24.428 Zeilen, 153 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
 | `repository/`           | 21.078 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
 | `internal/service/`     | 4.440 Zeilen, 22 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
@@ -629,11 +629,11 @@ HTTP-Anfrage
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
 | `pkg/` (22 Pakete)      | 2.566 Zeilen, 31 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 1.710 Zeilen, 11 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf                                                                                 |
+| `pdf/`                  | 2.383 Zeilen, 15 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
-| `internal/*` (übrige)   | 5.527 Zeilen, 32 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest` (Prüfhilfen) |
+| `internal/*` (übrige)   | 5.571 Zeilen, 33 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest` (Prüfhilfen) |
 | `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
@@ -650,7 +650,14 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   nennt, bleiben in `api/`; bei gleichen Feldern genügt die Typumwandlung
   (`SignaturGruppe(zeile)`).
 - `repository/` und `pdf/` kennen einander nicht. Die Tür füllt die Typen der PDF-Erzeuger
-  aus den Zeilen.
+  aus den Zeilen. Hängt ein gedruckter Text an einer Regel, die `pdf/` nicht kennt, wählt die
+  Tür ihn und reicht den fertigen Text: Den Eigentumsvermerk eines Etiketts bestimmt der Topf
+  des Exemplars, `buchEtiketten` (`api/labels.go`) setzt ihn je Exemplar in
+  `pdf.BuchEtikett`, neben dem Schulnamen aus den Einstellungen, und der Erzeuger druckt, was
+  dort steht. Den Typ füllt nur diese Funktion (`etikett_eingabe_ratsche_test.go`). Der Typ des Druckauftrags aus
+  dem Browser (`BarcodeLabelDetail`) bleibt in `api/`; sein Feld für den Topf nimmt aus einer
+  Anfrage nichts an. Ein Test hält jedes Feld der Eingabe gegen seine Quelle
+  (`api/buch_etiketten_test.go`).
 - Unterscheidet eine Tür in ihrer Meldung, ob die Abfrage scheiterte oder das Lesen ihrer
   Zeilen, trägt der Fehler des Lesens `repository.ErrZeileUnlesbar`.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
@@ -1916,7 +1923,7 @@ gegen die Tür klopft.
 | ----------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Mahnliste, Kontoauszug, Rechnung, Schadensfall, LMF-Plan | `pdf/` (gofpdf/maroto)  | Der **Druck** der Mahnung ist der Verwaltungsakt: nur hier steigt die Mahnstufe                       |
 | Bescheid (Landes-Lernmittel)              | `pdf/bescheid.go`                      | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
-| Etiketten und Ausweise                    | `api/label_pdf.go`, `pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
+| Etiketten und Ausweise                    | `pdf/etikett_*.go`, `pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
 | Zugangs-/Abgangsbuch                      | `api/bestandsbuch.go`, `api/abgangsbuch_*.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |
 | DSGVO-Auskunft                            | `api/dsgvo_pdf.go`                     | Auskunftsrecht als Dokument                                                                           |
 | Barcodebogen für den Händler              | `api/bestellbestaetigung_etiketten.go` | Für Händler, die selbst etikettieren                                                                  |
@@ -1969,7 +1976,8 @@ drucken" am Titel (`GET /api/buecher/titel/{id}/etiketten`), über das Druck-Cen
 (`POST /api/print/labels`) und für den Händler (Seite und Mailanhang,
 `ladeBestellEtiketten`). Das Druck-Center schickt nur Nummer, Titel und Autor; was der Server
 weiß — Anschaffungsjahr, Signatur, Eigentum —, trägt `ergaenzeServerfelder` nach. Ein neues
-Feld auf dem Etikett gehört an alle drei Wege. Das Gate liest den gedruckten Text:
+Feld auf dem Etikett gehört an alle drei Wege und in `pdf.BuchEtikett`, die Eingabe der
+Erzeuger, die `buchEtiketten` für alle Wege füllt. Das Gate liest den gedruckten Text:
 `api/etiketten_pdf_paritaet_pg_test.go` fährt die Handler, entpackt die Inhaltsströme des PDF
 und vergleicht die Textstücke; Statuscode und Dateigröße sind bei einem fehlenden Feld
 dieselben. Einen eigenen Endpunkt für ein einzelnes Etikett gibt es seit dem 24.09.2026 nicht
@@ -2230,7 +2238,11 @@ wenn man ihn einmal gebraucht hat.
   fehlt. Zieht ein Erzeuger eines PDFs um, das Blatt vorher und nachher am entpackten Inhalt
   vergleichen (die Ströme als Menge): gofpdf schreibt Zeitstempel und legt Schriften und
   Bilder in der Reihenfolge einer Go-Map ab, die Datei selbst ist deshalb von Lauf zu Lauf
-  verschieden. Zum
+  verschieden. Die Fälle dafür über die Verzweigungen des Erzeugers legen (jedes Format,
+  Startposition, leere Felder, Zeichen außerhalb von cp1252, jeder Topf) und zuerst zwei
+  Läufe desselben Standes gegeneinander halten: Ein Unterschied dort liegt am Erzeuger, nicht
+  am Umzug. Die Probe hängt als zusätzliche Testdatei über `go test -overlay` im Paket und
+  ruft die Erzeuger über eine zweite Datei, die es je Stand einmal gibt. Zum
   Schluss `./scripts/gosec-gate.sh` fahren: Die Taint-Analyse von gosec sieht nach dem Umzug
   einen Weg von der Anfrage in die Antwort, den sie vorher nicht sah
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5, Fall vom 09.10.2026). Der Hook vor dem Push fährt
@@ -3011,7 +3023,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 25.054 Zeilen in 157 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 24.428 Zeilen in 153 Dateien das schwerste Paket
 
 | | |
 | --- | --- |
@@ -3026,9 +3038,10 @@ Dateien von 53 gesunken, die Zahl der Anweisungen in den 48 von 143 gestiegen, w
 nur neue Dateien abwies. 44 Dateien mit 7.503 Zeilen banden `net/http` nicht ein, waren also
 keine Tür.
 
-Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 33 Dateien ohne Tür
-mit 4.274 Zeilen, davon 11 PDF-Erzeuger mit 2.170 Zeilen. Der LUSD-Import steht in
-`internal/lusd`, die Selbstprüfung in `internal/bereitschaft`, der Bescheid in `pdf/`, die
+Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 29 Dateien ohne Tür
+mit 3.627 Zeilen, davon 8 PDF-Erzeuger mit 1.644 Zeilen. Der LUSD-Import steht in
+`internal/lusd`, die Selbstprüfung in `internal/bereitschaft`, der Bescheid und die Etiketten
+in `pdf/`, der Strichcode in `pkg/strichcode`, die
 Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `api/schichtung_test.go` weist jede SQL-Anweisung in
 `api/` ab und führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Was
 bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst bleiben in einem Paket: Der Typ
@@ -3639,7 +3652,7 @@ Fenstern bekannt ist:
 - `auth.Claims.BarcodeID` liest niemand mehr; die Ausweisnummer kommt seit Migration 125
   als LEFT JOIN aus der Leserzeile in die Sitzung, nur damit das Feld gefüllt bleibt.
 - Tabellen-Inline-Felder mit 36 px: eine `size="sm"`-Variante von `Feld` erst bei Bedienbefund.
-- `LabelHeight >= 30` steht zweimal (`api/label_pdf.go`, `api/schueler_etikett_pdf.go`).
+- `LabelHeight >= 30` steht zweimal (`pdf/etikett_buch.go`, `pdf/etikett_schueler.go`).
 - Zwei Normalformen für Namen (`repository.Suchnorm`, `normName` in `internal/lusd/paarung.go`); beim
   Anfassen der Paarung zusammenführen.
 - Der Paritätstest vergleicht keine COMMENTs und Seeds.

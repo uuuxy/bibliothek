@@ -1,58 +1,21 @@
-package api
+package pdf
 
 import (
 	"bytes"
 	"fmt"
-	"regexp"
-	"strconv"
 	"strings"
 	"testing"
+
+	"bibliothek/internal/pdftest"
 )
 
 // Die Anordnung auf dem Blatt, geprüft am fertigen PDF.
 //
-// Der Umweg über die erzeugte Datei ist derselbe wie in etiketten_pdf_paritaet_pg_test.go
+// Der Umweg über die erzeugte Datei ist derselbe wie in api/etiketten_pdf_paritaet_pg_test.go
 // und aus demselben Grund: Ob vier Etiketten auf einem Blatt liegen, steht in keinem
 // Struct und in keiner Abfrage. Es steht in der Seitengröße und in der Anzahl der Seiten.
 // Ein Test, der die Generatorfunktion nur aufruft und auf "kein Fehler" prüft, wäre bei
 // einem Etikett pro Blatt genauso grün.
-
-// mediaBox findet die Seitengröße in Punkt. gofpdf schreibt sie je Seite als
-// `/MediaBox [0 0 595.28 841.89]`.
-var mediaBox = regexp.MustCompile(`/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]`)
-
-// seitenzahl liest den /Count-Eintrag des Seitenbaums.
-var seitenzahl = regexp.MustCompile(`/Count\s+(\d+)`)
-
-// pdfSeiten liefert Seitenzahl und Seitenmaß (Breite, Höhe in mm, gerundet).
-func pdfSeiten(t *testing.T, roh []byte) (seiten int, breiteMM, hoeheMM int) {
-	t.Helper()
-
-	m := seitenzahl.FindSubmatch(roh)
-	if m == nil {
-		t.Fatalf("kein /Count im PDF (%d Bytes) — Seitenzahl nicht ermittelbar", len(roh))
-	}
-	seiten, err := strconv.Atoi(string(m[1]))
-	if err != nil {
-		t.Fatalf("/Count ist keine Zahl: %v", err)
-	}
-
-	b := mediaBox.FindSubmatch(roh)
-	if b == nil {
-		t.Fatalf("keine /MediaBox im PDF — Seitengröße nicht ermittelbar")
-	}
-	breite, err := strconv.ParseFloat(string(b[1]), 64)
-	if err != nil {
-		t.Fatalf("/MediaBox-Breite ist keine Zahl: %v", err)
-	}
-	hoehe, err := strconv.ParseFloat(string(b[2]), 64)
-	if err != nil {
-		t.Fatalf("/MediaBox-Höhe ist keine Zahl: %v", err)
-	}
-	// PDF rechnet in Punkt (1 pt = 1/72 Zoll), gofpdf hat mm bekommen.
-	const mmProPunkt = 25.4 / 72.0
-	return seiten, int(breite*mmProPunkt + 0.5), int(hoehe*mmProPunkt + 0.5)
-}
 
 // asciiAnfang liefert den Teil einer Zeichenkette bis zum ersten Nicht-ASCII-Zeichen.
 //
@@ -67,22 +30,19 @@ func asciiAnfang(s string) string {
 	return s
 }
 
-func layoutEtiketten(anzahl int) []BarcodeLabelDetail {
-	items := make([]BarcodeLabelDetail, 0, anzahl)
+func layoutEtiketten(anzahl int) []BuchEtikett {
+	items := make([]BuchEtikett, 0, anzahl)
 	for i := 0; i < anzahl; i++ {
-		items = append(items, BarcodeLabelDetail{
+		items = append(items, BuchEtikett{
+			Schulname:        "Philipp-Reis-Schule, Friedrichsdorf",
 			BarcodeID:        fmt.Sprintf("100000000%03d", i),
 			Titel:            fmt.Sprintf("Deutschbuch %d", i),
 			Signatur:         "LMF-Deutsch 5",
 			AnschaffungsJahr: "2026",
+			Eigentumsvermerk: "Eigentum des Landes Hessen",
 		})
 	}
 	return items
-}
-
-var layoutKopf = EtikettKopf{
-	Schulname:        "Philipp-Reis-Schule, Friedrichsdorf",
-	Eigentumsvermerk: "Eigentum des Landes Hessen",
 }
 
 // Der Kern der telefonischen Rückmeldung von Naacher (06.08.2026): VIER große Etiketten
@@ -106,12 +66,12 @@ func TestLernmittelEtiketten_VierProA4Blatt(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.beschreibug, func(t *testing.T) {
-			roh, err := GenerateLernmittelEtikettenPDF(layoutEtiketten(f.etiketten), layoutKopf)
+			roh, err := GenerateLernmittelEtikettenPDF(layoutEtiketten(f.etiketten))
 			if err != nil {
 				t.Fatalf("PDF-Erzeugung fehlgeschlagen: %v", err)
 			}
 
-			seiten, breite, hoehe := pdfSeiten(t, roh)
+			seiten, breite, hoehe := pdftest.Seiten(t, roh)
 			if seiten != f.wantSeiten {
 				t.Errorf("%d Etiketten ergaben %d Seiten, erwartet %d",
 					f.etiketten, seiten, f.wantSeiten)
@@ -133,12 +93,12 @@ func TestLernmittelEtiketten_VierProA4Blatt(t *testing.T) {
 // Seitenzahl stimmt dann trotzdem.
 func TestLernmittelEtiketten_JedesExemplarStehtDrauf(t *testing.T) {
 	items := layoutEtiketten(4)
-	roh, err := GenerateLernmittelEtikettenPDF(items, layoutKopf)
+	roh, err := GenerateLernmittelEtikettenPDF(items)
 	if err != nil {
 		t.Fatalf("PDF-Erzeugung fehlgeschlagen: %v", err)
 	}
 
-	texte := strings.Join(pdfTexte(t, roh), "\n")
+	texte := strings.Join(pdftest.Texte(t, roh), "\n")
 	for _, item := range items {
 		if !strings.Contains(texte, item.BarcodeID) {
 			t.Errorf("Exemplar-Nr. %s steht nicht auf dem Bogen", item.BarcodeID)
@@ -167,7 +127,7 @@ func TestLernmittelEtiketten_JedesExemplarStehtDrauf(t *testing.T) {
 // Die Schnittlinien sind der einzige Hinweis darauf, wo getrennt wird. Ohne sie muss man
 // die Blattmitte schätzen.
 func TestLernmittelEtiketten_SchnittlinienVorhanden(t *testing.T) {
-	roh, err := GenerateLernmittelEtikettenPDF(layoutEtiketten(4), layoutKopf)
+	roh, err := GenerateLernmittelEtikettenPDF(layoutEtiketten(4))
 	if err != nil {
 		t.Fatalf("PDF-Erzeugung fehlgeschlagen: %v", err)
 	}
@@ -177,7 +137,7 @@ func TestLernmittelEtiketten_SchnittlinienVorhanden(t *testing.T) {
 	if !bytes.Contains(roh, []byte("endstream")) {
 		t.Fatal("PDF hat keinen Inhaltsstrom")
 	}
-	if seiten, _, _ := pdfSeiten(t, roh); seiten != 1 {
+	if seiten, _, _ := pdftest.Seiten(t, roh); seiten != 1 {
 		t.Fatalf("Aufbau des Tests stimmt nicht: %d Seiten", seiten)
 	}
 }
@@ -204,7 +164,7 @@ func TestKleineEtiketten_FormatBestimmtDieSeitenzahl(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.format, func(t *testing.T) {
-			doc, err := GenerateLabelsPDF(f.format, 1, false, layoutEtiketten(anzahl), layoutKopf)
+			doc, err := GenerateLabelsPDF(f.format, 1, false, layoutEtiketten(anzahl))
 			if err != nil {
 				t.Fatalf("PDF-Erzeugung fehlgeschlagen: %v", err)
 			}
@@ -213,7 +173,7 @@ func TestKleineEtiketten_FormatBestimmtDieSeitenzahl(t *testing.T) {
 				t.Fatalf("PDF-Ausgabe fehlgeschlagen: %v", err)
 			}
 
-			seiten, breite, hoehe := pdfSeiten(t, buf.Bytes())
+			seiten, breite, hoehe := pdftest.Seiten(t, buf.Bytes())
 			if seiten != f.wantSeiten {
 				t.Errorf("%d Etiketten im Raster %s ergaben %d Seiten, erwartet %d (%d je Bogen)",
 					anzahl, f.format, seiten, f.wantSeiten, f.proSeite)
@@ -235,7 +195,7 @@ func TestLabelFormatAuswahl_IstVollstaendigUndErzeugbar(t *testing.T) {
 	}
 
 	for _, f := range auswahl {
-		if !istBekanntesEtikettFormat(f.ID) {
+		if !IstBekanntesEtikettFormat(f.ID) {
 			t.Errorf("angebotenes Format %q gilt als unbekannt", f.ID)
 		}
 		if f.ProSeite != f.Spalten*f.Zeilen {
@@ -264,13 +224,13 @@ func TestLabelFormatAuswahl_IstVollstaendigUndErzeugbar(t *testing.T) {
 // Lieferant druckte dann im falschen Raster und merkte es am verschnittenen Bogen.
 func TestIstBekanntesEtikettFormat(t *testing.T) {
 	for _, gueltig := range []string{"", "zweckform_l4760", "avery_3475", "standard_52"} {
-		if !istBekanntesEtikettFormat(gueltig) {
-			t.Errorf("istBekanntesEtikettFormat(%q) = false, want true", gueltig)
+		if !IstBekanntesEtikettFormat(gueltig) {
+			t.Errorf("IstBekanntesEtikettFormat(%q) = false, want true", gueltig)
 		}
 	}
 	for _, ungueltig := range []string{"zweckform", "AVERY_3475", "../etc/passwd", "standard_53"} {
-		if istBekanntesEtikettFormat(ungueltig) {
-			t.Errorf("istBekanntesEtikettFormat(%q) = true, want false", ungueltig)
+		if IstBekanntesEtikettFormat(ungueltig) {
+			t.Errorf("IstBekanntesEtikettFormat(%q) = true, want false", ungueltig)
 		}
 	}
 }

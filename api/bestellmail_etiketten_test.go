@@ -38,6 +38,9 @@ func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 		if strings.Contains(text, repository.StandardEigentumsvermerk) {
 			t.Errorf("%s: Werksvorgabe steht trotz konfiguriertem Vermerk auf dem Bogen", b.Name)
 		}
+		if !strings.Contains(text, "Testschule") {
+			t.Errorf("%s: der Schulname aus den Einstellungen fehlt auf dem Bogen", b.Name)
+		}
 	}
 }
 

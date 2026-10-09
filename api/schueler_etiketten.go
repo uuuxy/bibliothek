@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/pdf"
 	"bibliothek/repository"
 )
 
@@ -53,7 +54,7 @@ func (s *Server) PrintSchuelerEtikettenHandler(studentRepo repository.StudentRep
 			return
 		}
 
-		pdf, err := GenerateSchuelerEtikettenPDF(req.FormatID, req.StartPosition, etiketten)
+		bogen, err := pdf.GenerateSchuelerEtikettenPDF(req.FormatID, req.StartPosition, etiketten)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("etikettenbogen konnte nicht erzeugt werden: %w", err))
 			return
@@ -61,7 +62,7 @@ func (s *Server) PrintSchuelerEtikettenHandler(studentRepo repository.StudentRep
 
 		w.Header().Set(headerContentType, contentTypePDF)
 		w.Header().Set(headerContentDisposition, "inline; filename=\"schueler_etiketten.pdf\"")
-		if err := pdf.Output(w); err != nil {
+		if err := bogen.Output(w); err != nil {
 			log.Printf("Fehler beim Senden des Etikettenbogens: %v", err)
 		}
 	}
@@ -71,12 +72,12 @@ func (s *Server) PrintSchuelerEtikettenHandler(studentRepo repository.StudentRep
 //
 // Ein unbekanntes Format wird abgewiesen und NICHT still auf die Vorgabe gedreht: Wer
 // avery_3475 anfordert und zweckform_l4760 bekommt, merkt es erst am verdruckten Bogen.
-// Gleiche Regel wie bei den Buch-Etiketten (istBekanntesEtikettFormat).
+// Gleiche Regel wie bei den Buch-Etiketten (pdf.IstBekanntesEtikettFormat).
 func pruefeBogenParameter(req *SchuelerEtikettenRequest) error {
-	if !istBekanntesEtikettFormat(req.FormatID) {
+	if !pdf.IstBekanntesEtikettFormat(req.FormatID) {
 		return fmt.Errorf("unbekanntes Etikettenformat %q", req.FormatID)
 	}
-	format, _ := GetLabelFormat(req.FormatID)
+	format, _ := pdf.GetLabelFormat(req.FormatID)
 
 	if req.StartPosition == 0 {
 		req.StartPosition = 1
@@ -92,9 +93,9 @@ func pruefeBogenParameter(req *SchuelerEtikettenRequest) error {
 // etikettenDesBogens liefert den Inhalt: ein Muster oder die markierten Schüler.
 // Zweiter Rückgabewert ist der HTTP-Status zum Fehler — ein Datenbankausfall ist kein
 // Eingabefehler und darf nicht als 400 bei der Theke ankommen.
-func (s *Server) etikettenDesBogens(r *http.Request, studentRepo repository.StudentRepository, req SchuelerEtikettenRequest) ([]SchuelerEtikett, int, error) {
+func (s *Server) etikettenDesBogens(r *http.Request, studentRepo repository.StudentRepository, req SchuelerEtikettenRequest) ([]pdf.SchuelerEtikett, int, error) {
 	if req.Muster {
-		return []SchuelerEtikett{MusterSchuelerEtikett}, 0, nil
+		return []pdf.SchuelerEtikett{pdf.MusterSchuelerEtikett}, 0, nil
 	}
 
 	switch {
@@ -114,9 +115,9 @@ func (s *Server) etikettenDesBogens(r *http.Request, studentRepo repository.Stud
 		return nil, http.StatusBadRequest, errors.New("Zu den markierten Schülern gibt es keine Daten mehr — inzwischen gelöscht?")
 	}
 
-	etiketten := make([]SchuelerEtikett, 0, len(zeilen))
+	etiketten := make([]pdf.SchuelerEtikett, 0, len(zeilen))
 	for _, z := range zeilen {
-		etiketten = append(etiketten, SchuelerEtikett{
+		etiketten = append(etiketten, pdf.SchuelerEtikett{
 			BarcodeID: z.BarcodeID,
 			Vorname:   z.Vorname,
 			Nachname:  z.Nachname,

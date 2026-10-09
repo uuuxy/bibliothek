@@ -15,7 +15,7 @@ import { labelStore } from '../../stores/labels.svelte.js';
 import LabelPreview from './LabelPreview.svelte';
 
 // Die Vorschau zeichnet den gewählten Bogen in zwei Dritteln der Größe: Spalten, Etikett und
-// Ränder kommen aus dem Format (etikettformate.js, gehalten gegen api/label_formats.go).
+// Ränder kommen aus dem Format (etikettformate.js, gehalten gegen pdf/etikett_formate.go).
 describe('Druck-Center: Vorschau je Etikettenformat', () => {
 	beforeEach(async () => {
 		vi.clearAllMocks();

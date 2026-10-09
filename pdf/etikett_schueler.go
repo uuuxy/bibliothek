@@ -1,4 +1,4 @@
-package api
+package pdf
 
 import (
 	"bibliothek/pkg/pdfzeichen"
@@ -17,7 +17,7 @@ import (
 // Klebeetikett mit Name, Klasse und Barcode ist das, was tatsächlich gebraucht wird.
 //
 // Bewusst dieselben Bogenformate und dasselbe Raster wie die Buch-Etiketten
-// (zeichneRaster in label_pdf.go): Es ist dieselbe Sorte Klebebogen aus demselben
+// (zeichneRaster in etikett_buch.go): Es ist dieselbe Sorte Klebebogen aus demselben
 // Schrank, und eine eigene Rastermathematik hätte sich früher oder später um eine
 // halbe Zeile von der anderen entfernt.
 

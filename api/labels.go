@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"bibliothek/apierrors"
+	"bibliothek/pdf"
 	"bibliothek/repository"
 )
 
@@ -74,6 +75,26 @@ func etikettKopfAus(settings *repository.SystemEinstellungen) EtikettKopf {
 	return kopf
 }
 
+// buchEtiketten füllt die Eingabe der Etiketten-Erzeuger aus den Etiketten eines Auftrags
+// und dem Kopf aus den Einstellungen. Der Eigentumsvermerk wird hier je Exemplar gewählt,
+// für alle Druckwege an dieser einen Stelle: Der Erzeuger kennt den Topf nicht und druckt
+// den Vermerk, den er bekommt.
+func buchEtiketten(items []BarcodeLabelDetail, kopf EtikettKopf) []pdf.BuchEtikett {
+	etiketten := make([]pdf.BuchEtikett, 0, len(items))
+	for _, item := range items {
+		etiketten = append(etiketten, pdf.BuchEtikett{
+			Schulname:        kopf.Schulname,
+			BarcodeID:        item.BarcodeID,
+			Titel:            item.Titel,
+			Autor:            item.Autor,
+			AnschaffungsJahr: item.AnschaffungsJahr,
+			Signatur:         item.Signatur,
+			Eigentumsvermerk: kopf.vermerkFuer(item.Topf),
+		})
+	}
+	return etiketten
+}
+
 // LabelsHandler returns a handler that generates an A4 PDF containing 3x8 Avery labels
 // for all copies of a given book title.
 func (s *Server) LabelsHandler() http.HandlerFunc {
@@ -97,7 +118,7 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 			return
 		}
 
-		pdf, err := GenerateLabelsPDF(formatId, startPos, isQR, items, s.etikettKopf(ctx))
+		bogen, err := pdf.GenerateLabelsPDF(formatId, startPos, isQR, buchEtiketten(items, s.etikettKopf(ctx)))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return
@@ -106,7 +127,7 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 		w.Header().Set(headerContentType, contentTypePDF)
 		w.Header().Set(headerContentDisposition, fmt.Sprintf("inline; filename=\"etiketten_%s.pdf\"", id))
 
-		if err := pdf.Output(w); err != nil {
+		if err := bogen.Output(w); err != nil {
 			log.Printf("Fehler beim Senden des PDFs: %v", err)
 		}
 	}
@@ -184,7 +205,7 @@ func (s *Server) PrintLabelsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		s.ergaenzeServerfelder(ctx, req.Items)
 
-		pdf, err := GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, req.Items, s.etikettKopf(ctx))
+		bogen, err := pdf.GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, buchEtiketten(req.Items, s.etikettKopf(ctx)))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return
@@ -193,7 +214,7 @@ func (s *Server) PrintLabelsHandler() http.HandlerFunc {
 		w.Header().Set(headerContentType, contentTypePDF)
 		w.Header().Set(headerContentDisposition, "inline; filename=\"etiketten_custom.pdf\"")
 
-		if err := pdf.Output(w); err != nil {
+		if err := bogen.Output(w); err != nil {
 			log.Printf("Fehler beim Senden des PDFs: %v", err)
 		}
 	}

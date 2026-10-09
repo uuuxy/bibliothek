@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/pdf"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 )
@@ -31,7 +32,8 @@ func (s *Server) ladeBestellEtiketten(ctx context.Context, bestellungID string) 
 	return etikettenAus(zeilen), nil
 }
 
-// etikettenAus übernimmt die Zeilen einer Abfrage in die Form, die die Etiketten-PDFs lesen.
+// etikettenAus übernimmt die Zeilen einer Abfrage in die Form eines Druckauftrags; aus ihr
+// füllt buchEtiketten die Eingabe der Erzeuger.
 func etikettenAus(zeilen []repository.EtikettDaten) []BarcodeLabelDetail {
 	if zeilen == nil {
 		return nil
@@ -67,9 +69,9 @@ func (s *Server) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 	// verschnittenen Bogen. Leer heißt Vorgabe.
 	format := r.URL.Query().Get("format")
 	if format == "" {
-		format = StandardLabelFormat
+		format = pdf.StandardLabelFormat
 	}
-	if _, bekannt := GetLabelFormat(format); !bekannt {
+	if _, bekannt := pdf.GetLabelFormat(format); !bekannt {
 		apierrors.SendHTTPError(w, http.StatusBadRequest,
 			fmt.Errorf("unbekanntes Etikettenformat %q", format))
 		return
@@ -124,13 +126,13 @@ func (s *Server) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 // format gilt nur für "klein" — das große Lernmittel-Etikett hat ein festes Raster
 // (2×2 auf A4) und wird ausgeschnitten, nicht auf vorgestanzte Bögen gedruckt.
 func (s *Server) baueEtikettenPDF(ctx context.Context, groesse, format string, etiketten []BarcodeLabelDetail) ([]byte, error) {
-	kopf := s.etikettKopf(ctx)
+	eingabe := buchEtiketten(etiketten, s.etikettKopf(ctx))
 
 	if groesse == "gross" {
-		return GenerateLernmittelEtikettenPDF(etiketten, kopf)
+		return pdf.GenerateLernmittelEtikettenPDF(eingabe)
 	}
 
-	doc, err := GenerateLabelsPDF(format, 1, false, etiketten, kopf)
+	doc, err := pdf.GenerateLabelsPDF(format, 1, false, eingabe)
 	if err != nil {
 		return nil, err
 	}

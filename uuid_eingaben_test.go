@@ -53,8 +53,8 @@ var uuidEingabenAusnahmen = map[string]string{
 	"api.GeraetRequest.BarcodeID":             "geraete.barcode_id ist VARCHAR",
 	"api.GeraetAenderungRequest.BarcodeID":    "geraete.barcode_id ist VARCHAR; beim Ändern angenommen und nicht gelesen",
 	"api.InventurScanRequest.BarcodeID":       "gescannter Exemplar-Barcode, buecher_exemplare.barcode_id ist VARCHAR",
-	"api.PrintLabelsRequest.FormatID":         "Formatschlüssel aus api/label_formats.go (zweckform_l4760), keine Spalte",
-	"api.SchuelerEtikettenRequest.FormatID":   "Formatschlüssel aus api/label_formats.go (zweckform_l4760), keine Spalte",
+	"api.PrintLabelsRequest.FormatID":         "Formatschlüssel aus pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
+	"api.SchuelerEtikettenRequest.FormatID":   "Formatschlüssel aus pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
 	"api.EtikettenGedrucktRequest.BarcodeIDs": "Exemplar-Barcodes, gehen in buecher_exemplare.barcode_id (VARCHAR)",
 }
 

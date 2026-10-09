@@ -1,7 +1,6 @@
-package api
+package pdf
 
 import (
-	"bibliothek/internal/pdftest"
 	"bytes"
 	"strings"
 	"testing"
@@ -12,20 +11,7 @@ import (
 // Ein Test, der nur „die Funktion bekam Max Mustermann" behauptet, sagt nichts darüber,
 // ob der Name auf dem Papier landet — genau daran ist beim Lernmittel-Etikett schon
 // einmal ein Weg vorbeigelaufen, der nur drei von sechs Feldern mitgeschickt hat.
-// Dieselbe Technik wie in etiketten_pdf_paritaet_pg_test.go.
-
-// pdfText liefert den lesbaren Inhalt eines PDFs: die entpackten Inhaltsströme plus die
-// Rohbytes (kleine Ströme lässt gofpdf offen).
-//
-// Die eigene Fassung ist am 03.09.2026 entfallen. Sie trug zwei Fallen, die
-// internal/pdftest längst kennt: Der Lesekopf sprang mit `rest = nach[j:]` VOR das
-// „endstream" zurück, fand dort das „stream" darin wieder und übersprang ab dem zweiten
-// Strom jeden echten — gelesen wurde nur die erste Seite. Und ohne die Windows-1252-
-// Wandlung konnte keine Erwartung mit Umlaut je zutreffen.
-func pdfText(t *testing.T, roh []byte) string {
-	t.Helper()
-	return string(roh) + "\n" + strings.Join(pdftest.Texte(t, roh), "\n")
-}
+// Dieselbe Technik wie in api/etiketten_pdf_paritaet_pg_test.go.
 
 func erzeugeBogen(t *testing.T, format string, start int, etiketten []SchuelerEtikett) string {
 	t.Helper()

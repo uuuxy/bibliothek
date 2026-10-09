@@ -344,32 +344,24 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
-  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 33 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 25.054 Zeilen in 157 Dateien (am Anfang 30.785 in 168).
+  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 29 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 24.428 Zeilen in 153 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
-  Selbstprüfung in `internal/bereitschaft`, der Bescheid in `pdf/bescheid.go`. Offen: der
-  Aufbau der übrigen PDFs und der Rest der 33. Die PDF-Erzeuger hängen an rund 30 Namen aus
-  `api/` (Typen der Auskunft, Etikettformate, Mailversand), gemessen am 09.10.2026 mit einem
-  Probe-Umzug am Compiler; sie ziehen je Sache um (Etiketten, Auskunft, Bestell-PDF,
-  Bestandsbücher, Mahnbrief), nicht in einem Zug. Was ein Erzeuger aus `repository/` liest,
-  bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2). Je Thema ein
-  Commit; die Tests der Türen bleiben stehen und belegen, dass sich nichts ändert.
-  Gemessen am 09.10.2026 für die nächsten zwei Sachen:
-  - Etiketten (`label_formats.go`, `label_pdf.go`, `lernmittel_etikett_pdf.go`,
-    `schueler_etikett_pdf.go`, 656 Zeilen): Sie brauchen aus `api/` zwei Namen
-    (`BarcodeLabelDetail`, `EtikettKopf`), `api/`
-    braucht elf Namen von ihnen, sechs Testdateien greifen auf ihre Namen zu.
-    `BarcodeLabelDetail` ist zugleich der Typ des Druckauftrags aus dem Browser; sein Feld
-    `Topf` ist dort gesperrt (`json:"-"`), weil der Topf immer vom Server kommt. Beim Trennen
-    von Auftrag und Eingabe des Erzeugers muss das so bleiben.
-  - Bestandsbücher (`abgangsbuch_pdf.go`, `zugangsbuch_pdf.go`): Die Erzeuger nehmen Typen
-    aus `repository/` und teilen sich mit der Tür die Gliederung nach Topf (`Abschnitt`,
-    `abschnitteAus` in `api/bestandsbuch.go`), die auch die Antwort als JSON trägt.
-  Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus
-  einem umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage
-  stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung
-  in 8.14.
+  Selbstprüfung in `internal/bereitschaft`, der Bescheid in `pdf/bescheid.go`, die Etiketten mit
+  ihren Bogenformaten in `pdf/etikett_*.go`, der Strichcode in `pkg/strichcode`. Offen: der Aufbau
+  der übrigen PDFs und der Rest der 29. Die PDF-Erzeuger hingen am 09.10.2026 an rund 30 Namen aus
+  `api/` (Typen der Auskunft, Mailversand), gemessen mit einem Probe-Umzug am Compiler; sie ziehen
+  je Sache um (Auskunft, Bestell-PDF, Bestandsbücher, Mahnbrief), nicht in einem Zug. Was ein
+  Erzeuger aus `repository/` liest, bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn
+  (ARCHITEKTUR 5.2.2). Je Thema ein Commit; die Tests der Türen bleiben stehen und belegen, dass
+  sich nichts ändert. Gemessen am 09.10.2026 für die nächste Sache, die Bestandsbücher
+  (`abgangsbuch_pdf.go`, `zugangsbuch_pdf.go`): Die Erzeuger nehmen Typen aus `repository/` und
+  teilen sich mit der Tür die Gliederung nach Topf (`Abschnitt`, `abschnitteAus` in
+  `api/bestandsbuch.go`), die auch die Antwort als JSON trägt. Die Tests an der Datenbank bleiben
+  in `api/`, weil ihre Helfer dort liegen; was sie aus einem umgezogenen Paket brauchen, ist dort
+  sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md)
+  5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
 - **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 354
   Methoden, rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt, zeigt der
   Stand nach dem Schritt davor.

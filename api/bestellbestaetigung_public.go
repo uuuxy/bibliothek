@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pdf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -55,7 +56,7 @@ type OeffentlicheBestellung struct {
 	// Etiketten wählen kann — er druckt auf sein eigenes Material, und davon gibt es
 	// verschiedene. Die Liste kommt aus dem Backend, damit ein neues Format nicht an
 	// zwei Stellen nachgetragen werden muss.
-	EtikettenFormate []EtikettFormatAuswahl `json:"etiketten_formate"`
+	EtikettenFormate []pdf.EtikettFormatAuswahl `json:"etiketten_formate"`
 	// EtikettenFormatVorgabe ist die Vorauswahl der Seite.
 	EtikettenFormatVorgabe string `json:"etiketten_format_vorgabe"`
 	// BestaetigtAm ist NULL, solange niemand bestätigt hat — die Seite entscheidet daran,
@@ -139,8 +140,8 @@ func (s *Server) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 	// mehreren Schulen im selben Postfach ist das keine Zierde, sondern die Zuordnung.
 	a.SchuleName = s.etikettKopf(ctx).Schulname
 	a.SchuleAnschrift = s.schulAnschrift(ctx)
-	a.EtikettenFormate = LabelFormatAuswahl()
-	a.EtikettenFormatVorgabe = StandardLabelFormat
+	a.EtikettenFormate = pdf.LabelFormatAuswahl()
+	a.EtikettenFormatVorgabe = pdf.StandardLabelFormat
 	return &a, nil
 }
 
@@ -175,7 +176,7 @@ func (s *Server) OeffentlichBestaetigenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
 			return
 		}
-		if !istBekanntesEtikettFormat(req.EtikettenFormat) {
+		if !pdf.IstBekanntesEtikettFormat(req.EtikettenFormat) {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("unbekanntes etiketten_format"))
 			return
 		}

@@ -1,4 +1,4 @@
-package api
+package pdf
 
 import (
 	"bibliothek/pkg/pdfzeichen"
@@ -50,7 +50,7 @@ const (
 // Etikett pro Blatt heraus, außer man stellte im Druckdialog von Hand „4 Seiten pro
 // Blatt" ein — was niemand tut, der einen Stapel Etiketten braucht (telefonische
 // Rückmeldung Naacher). Die Anordnung gehört in die Datei, nicht in den Druckdialog.
-func GenerateLernmittelEtikettenPDF(items []BarcodeLabelDetail, kopf EtikettKopf) ([]byte, error) {
+func GenerateLernmittelEtikettenPDF(items []BuchEtikett) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(lernmittelRand, lernmittelRand, lernmittelRand)
 	// Ohne das setzt gofpdf mitten in die Tabelle des unteren Feldes einen Seitenumbruch,
@@ -67,7 +67,7 @@ func GenerateLernmittelEtikettenPDF(items []BarcodeLabelDetail, kopf EtikettKopf
 		feld := i % lernmittelProSeite
 		ox := float64(feld%2) * lernmittelFeldBreite
 		oy := float64(feld/2) * lernmittelFeldHoehe
-		zeichneLernmittelEtikett(pdf, tr, item, kopf, ox, oy)
+		zeichneLernmittelEtikett(pdf, tr, item, ox, oy)
 	}
 
 	var buf bytes.Buffer
@@ -95,14 +95,14 @@ func zeichneSchnittlinien(pdf *gofpdf.Fpdf) {
 // zeichneLernmittelEtikett rendert EIN großes Etikett in das Feld mit der linken oberen
 // Ecke (ox, oy). Alle Maße im Rumpf sind relativ zu diesem Ursprung — genau das ist der
 // Unterschied zur Fassung davor, die absolut auf einer eigenen A6-Seite zeichnete.
-func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item BarcodeLabelDetail, kopf EtikettKopf, ox, oy float64) {
+func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item BuchEtikett, ox, oy float64) {
 	const breite = lernmittelInhalt
 	x := ox + lernmittelRand
 
 	y := oy + 12.0
 	pdf.SetFont("Arial", "B", 11)
 	pdf.SetXY(x, y)
-	pdf.CellFormat(breite, 5, tr(pdfzeichen.KuerzeAufZeichen(kopf.Schulname, 45)), "", 0, "C", false, 0, "")
+	pdf.CellFormat(breite, 5, tr(pdfzeichen.KuerzeAufZeichen(item.Schulname, 45)), "", 0, "C", false, 0, "")
 
 	y += 7
 	pdf.SetFont("Arial", "B", 12)
@@ -134,7 +134,7 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item Bar
 	pdf.CellFormat(breite, 5, tr("Exemplar-Nr.: "+item.BarcodeID), "", 0, "C", false, 0, "")
 
 	y += 7
-	if vermerk := kopf.vermerkFuer(item.Topf); vermerk != "" {
+	if vermerk := item.Eigentumsvermerk; vermerk != "" {
 		pdf.SetFont("Arial", "", 8)
 		pdf.SetXY(x, y)
 		pdf.CellFormat(breite, 4, tr(pdfzeichen.KuerzeAufZeichen(vermerk, 48)), "", 0, "C", false, 0, "")

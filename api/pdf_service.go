@@ -139,7 +139,8 @@ func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlief
 	// Derselbe Etiketten-Generator wie im Selbstdruck (Druck-Center) — voller Inhalt
 	// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
 	// diese Angaben.
-	labelDoc, err := GenerateLabelsPDF("zweckform_l4760", 1, false, labels, kopf)
+	etiketten := buchEtiketten(labels, kopf)
+	labelDoc, err := pdf.GenerateLabelsPDF("zweckform_l4760", 1, false, etiketten)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +156,7 @@ func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlief
 		return boegen, nil
 	}
 
-	lernmittelPDF, err := GenerateLernmittelEtikettenPDF(labels, kopf)
+	lernmittelPDF, err := pdf.GenerateLernmittelEtikettenPDF(etiketten)
 	if err != nil {
 		return nil, err
 	}

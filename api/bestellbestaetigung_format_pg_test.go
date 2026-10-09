@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/pdf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,7 +18,7 @@ import (
 
 // Die Formatwahl des Lieferanten — am echten Endpunkt, nicht am Generator.
 //
-// Warum es diese Datei zusätzlich zu etiketten_layout_test.go gibt: Der dortige Test ruft
+// Warum es diese Datei zusätzlich zu pdf/etikett_layout_test.go gibt: Der dortige Test ruft
 // GenerateLabelsPDF direkt auf und belegt, dass der Generator das Raster beachtet. Als der
 // Lieferanten-Weg beim Rückbau probeweise wieder auf das feste "zweckform_l4760" gesetzt
 // wurde, blieb er GRÜN — er sieht die Durchreichung gar nicht. Genau diese Lücke ist die
@@ -98,7 +100,7 @@ func TestLieferantenEtiketten_FormatWirktBisInsPDF(t *testing.T) {
 		if !bytes.HasPrefix(rec.Body.Bytes(), []byte("%PDF")) {
 			t.Fatalf("Format %s: Antwort ist kein PDF", f.format)
 		}
-		seiten, breite, hoehe := pdfSeiten(t, rec.Body.Bytes())
+		seiten, breite, hoehe := pdftest.Seiten(t, rec.Body.Bytes())
 		if seiten != f.wantSeiten {
 			t.Errorf("Format %s: %d Seiten, erwartet %d — das Raster kam nicht am Generator an",
 				f.format, seiten, f.wantSeiten)
@@ -124,13 +126,13 @@ func TestLieferantenEtiketten_OhneFormatGiltDieVorgabe(t *testing.T) {
 	token := bestellungMitEtiketten(t, srv, pool, 25)
 
 	ohne := etikettenBogenHolen(t, srv, token, "klein", "")
-	mitVorgabe := etikettenBogenHolen(t, srv, token, "klein", StandardLabelFormat)
+	mitVorgabe := etikettenBogenHolen(t, srv, token, "klein", pdf.StandardLabelFormat)
 
 	if ohne.Code != http.StatusOK || mitVorgabe.Code != http.StatusOK {
 		t.Fatalf("Status ohne=%d mitVorgabe=%d", ohne.Code, mitVorgabe.Code)
 	}
-	seitenOhne, _, _ := pdfSeiten(t, ohne.Body.Bytes())
-	seitenMit, _, _ := pdfSeiten(t, mitVorgabe.Body.Bytes())
+	seitenOhne, _, _ := pdftest.Seiten(t, ohne.Body.Bytes())
+	seitenMit, _, _ := pdftest.Seiten(t, mitVorgabe.Body.Bytes())
 	if seitenOhne != seitenMit {
 		t.Errorf("ohne Format %d Seiten, mit Vorgabe %d — die Vorgabe ist nicht dieselbe",
 			seitenOhne, seitenMit)
@@ -139,7 +141,7 @@ func TestLieferantenEtiketten_OhneFormatGiltDieVorgabe(t *testing.T) {
 
 // Ein unbekanntes Raster wird ABGEWIESEN und nicht still auf die Vorgabe gedreht.
 //
-// GetLabelFormat liefert bei Unbekanntem stillschweigend zweckform_l4760 zurück. Würde
+// pdf.GetLabelFormat liefert bei Unbekanntem stillschweigend zweckform_l4760 zurück. Würde
 // der Handler das übernehmen, druckte der Lieferant nach einem Tippfehler im falschen
 // Raster — und merkte es erst am verschnittenen Bogen.
 func TestLieferantenEtiketten_UnbekanntesFormatWirdAbgewiesen(t *testing.T) {
@@ -174,8 +176,8 @@ func TestLieferantenEtiketten_GrossIgnoriertDasRaster(t *testing.T) {
 		t.Fatalf("Status a=%d b=%d", a.Code, b.Code)
 	}
 
-	seitenA, breiteA, hoeheA := pdfSeiten(t, a.Body.Bytes())
-	seitenB, _, _ := pdfSeiten(t, b.Body.Bytes())
+	seitenA, breiteA, hoeheA := pdftest.Seiten(t, a.Body.Bytes())
+	seitenB, _, _ := pdftest.Seiten(t, b.Body.Bytes())
 	if seitenA != seitenB {
 		t.Errorf("große Etiketten reagieren auf das Raster (%d vs. %d Seiten)", seitenA, seitenB)
 	}
@@ -251,11 +253,11 @@ func TestOeffentlicheBestellung_LiefertDieFormatauswahl(t *testing.T) {
 		t.Fatalf("Ansicht laden: %v", err)
 	}
 
-	if len(ansicht.EtikettenFormate) != len(labelFormats) {
-		t.Fatalf("Seite bekommt %d Formate, es gibt %d", len(ansicht.EtikettenFormate), len(labelFormats))
+	if len(ansicht.EtikettenFormate) != len(pdf.LabelFormatAuswahl()) {
+		t.Fatalf("Seite bekommt %d Formate, es gibt %d", len(ansicht.EtikettenFormate), len(pdf.LabelFormatAuswahl()))
 	}
-	if ansicht.EtikettenFormatVorgabe != StandardLabelFormat {
-		t.Errorf("Vorgabe = %q, want %q", ansicht.EtikettenFormatVorgabe, StandardLabelFormat)
+	if ansicht.EtikettenFormatVorgabe != pdf.StandardLabelFormat {
+		t.Errorf("Vorgabe = %q, want %q", ansicht.EtikettenFormatVorgabe, pdf.StandardLabelFormat)
 	}
 	// Jedes angebotene Format muss über den Endpunkt auch wirklich druckbar sein.
 	for _, f := range ansicht.EtikettenFormate {

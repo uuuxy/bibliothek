@@ -17,6 +17,13 @@ func pdfTexte(t *testing.T, roh []byte) []string {
 	return pdftest.Texte(t, roh)
 }
 
+// pdfText liefert das PDF als durchsuchbaren Text: die rohen Bytes und dahinter die Texte
+// der entpackten Ströme (kleine Ströme lässt gofpdf offen).
+func pdfText(t *testing.T, roh []byte) string {
+	t.Helper()
+	return string(roh) + "\n" + strings.Join(pdftest.Texte(t, roh), "\n")
+}
+
 // Beide Druckwege müssen denselben Aufkleber erzeugen.
 //
 // Es gibt zwei Wege zum selben Etikett, und sie holen ihre Daten verschieden:

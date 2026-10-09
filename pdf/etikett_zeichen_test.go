@@ -1,4 +1,4 @@
-package api
+package pdf
 
 import (
 	"bytes"
@@ -12,12 +12,13 @@ import (
 // Renderer durch dieselbe Ersetzung; dieser Test hält das für die beiden Buchetiketten
 // fest — am fertigen PDF, nicht am Aufruf (drei Wege, ein Inhaltsstrom).
 func TestBuchEtikettenDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
-	items := []BarcodeLabelDetail{{
+	items := []BuchEtikett{{
+		Schulname: "Philipp-Reis-Schule, Friedrichsdorf",
 		BarcodeID: "100000000001", Titel: "Şafak, Łukasz und Wiśniewski",
-		Signatur: "Lit 5", AnschaffungsJahr: "2026",
+		Signatur: "Lit 5", AnschaffungsJahr: "2026", Eigentumsvermerk: "Eigentum des Landes Hessen",
 	}}
 
-	klein, err := GenerateLabelsPDF("zweckform_l4760", 1, false, items, layoutKopf)
+	klein, err := GenerateLabelsPDF("zweckform_l4760", 1, false, items)
 	if err != nil {
 		t.Fatalf("Buchetiketten: %v", err)
 	}
@@ -25,7 +26,7 @@ func TestBuchEtikettenDruckenZeichenAusserhalbVonCp1252(t *testing.T) {
 	if err := klein.Output(&puffer); err != nil {
 		t.Fatalf("PDF-Ausgabe: %v", err)
 	}
-	gross, err := GenerateLernmittelEtikettenPDF(items, layoutKopf)
+	gross, err := GenerateLernmittelEtikettenPDF(items)
 	if err != nil {
 		t.Fatalf("Lernmittel-Etiketten: %v", err)
 	}

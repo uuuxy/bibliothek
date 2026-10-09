@@ -10,7 +10,7 @@
 	const BLATT_BREITE_MM = 140;
 	const PX_JE_MM = 96 / 25.4;
 	// Raster und Ränder kommen aus dem gewählten Format, gedruckt wird nach denselben Zahlen
-	// (api/label_formats.go). Die Spalten dürfen schmaler werden als ihr Maß: Drei Etiketten
+	// (pdf/etikett_formate.go). Die Spalten dürfen schmaler werden als ihr Maß: Drei Etiketten
 	// von 70 mm füllen das Blatt ganz, und sein Rahmen nimmt ihnen zwei Pixel.
 	const format = $derived(etikettFormat(labelStore.formatId));
 	const mm = (/** @type {number} */ wert) => `${Math.floor(((wert * 2) / 3) * 10) / 10}mm`;

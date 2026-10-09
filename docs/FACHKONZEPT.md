@@ -425,7 +425,7 @@ Etiketten_, _Schülerausweise_ und _Klassenweise drucken_.
   (`etikett_gedruckt = false`, §13); ihre Zahl steht am Menüpunkt und am Reiter.
 - **Das große Lernmittel-Etikett** mit Ausleihtabelle entsteht mit der Bestellung, als
   Mailanhang und auf der Seite des Händlers (§7), und nur für Bestellungen aus Landesmitteln
-  (`grossesLernmittelEtikettFuer`). Aufbau von oben nach unten (`api/lernmittel_etikett_pdf.go`,
+  (`grossesLernmittelEtikettFuer`). Aufbau von oben nach unten (`pdf/etikett_lernmittel.go`,
   nach dem Etikett, das die Schule bisher klebt): Schulname, Titel, Anschaffungsjahr mit
   Signatur, Strichcode, Exemplarnummer, Eigentumsvermerk, darunter die Tabelle Schuljahr ·
   Name des Schülers · Klasse · Zustand mit sechs Zeilen zum Ausfüllen von Hand.

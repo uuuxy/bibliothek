@@ -23,7 +23,9 @@ type OrderedItem struct {
 	Menge  int
 }
 
-// BarcodeLabelDetail holds data needed to print a barcode label.
+// BarcodeLabelDetail ist ein Buchetikett auf der Seite der Tür: der Eintrag eines Druckauftrags
+// aus dem Browser und die Zeile eines Exemplars aus der Datenbank. Die Erzeuger in pdf/
+// bekommen daraus pdf.BuchEtikett (buchEtiketten).
 type BarcodeLabelDetail struct {
 	BarcodeID string
 	Titel     string
@@ -61,7 +63,8 @@ type EtikettKopf struct {
 // dem Geld. Bis zum 21.09.2026 trug ein Buch der Schülerbücherei, bezahlt vom Schulträger,
 // denselben Aufdruck „Eigentum des Landes Hessen" wie ein Lernmittel.
 //
-// EINE Stelle für beide Erzeuger (kleines Etikett ab 30 mm, großes Lernmittel-Etikett).
+// Eine Stelle für beide Erzeuger (kleines Etikett ab 30 mm, großes Lernmittel-Etikett):
+// buchEtiketten ruft sie je Exemplar und reicht den gewählten Vermerk weiter.
 func (k EtikettKopf) vermerkFuer(topf string) string {
 	if topf == repository.MittelSchultraeger {
 		return k.EigentumsvermerkSchuelerbuecherei

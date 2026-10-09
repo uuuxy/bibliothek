@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/pdf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -16,7 +17,7 @@ type BestaetigenRequest struct {
 	// EtikettenGroesse: welche Etikettengröße der Lieferant (laut externer Rückmeldung,
 	// z. B. per Naacher-Link) letztlich gewählt/gedruckt hat.
 	EtikettenGroesse string `json:"etiketten_groesse"`
-	// EtikettenFormat: bei 'klein' zusätzlich das Bogenraster (siehe LabelFormatAuswahl).
+	// EtikettenFormat: bei 'klein' zusätzlich das Bogenraster (siehe pdf.LabelFormatAuswahl).
 	// Optional — wer nachträgt, weiß es nicht immer.
 	EtikettenFormat string `json:"etiketten_format"`
 }
@@ -60,7 +61,7 @@ func (s *Server) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("etiketten_groesse muss 'klein' oder 'gross' sein"))
 		return
 	}
-	if !istBekanntesEtikettFormat(req.EtikettenFormat) {
+	if !pdf.IstBekanntesEtikettFormat(req.EtikettenFormat) {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("unbekanntes etiketten_format"))
 		return
 	}

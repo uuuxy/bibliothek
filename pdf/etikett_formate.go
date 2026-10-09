@@ -1,4 +1,4 @@
-package api
+package pdf
 
 // LabelFormat defines the dimensions and grid layout for a specific physical label sheet.
 type LabelFormat struct {
@@ -73,13 +73,13 @@ func GetLabelFormat(id string) (LabelFormat, bool) {
 	return fmt, true
 }
 
-// istBekanntesEtikettFormat prüft eine OPTIONALE Formatangabe aus einem Request.
+// IstBekanntesEtikettFormat prüft eine OPTIONALE Formatangabe aus einem Request.
 //
 // Leer ist gültig und heißt „nicht angegeben" — die Angabe ist überall freiwillig.
 // Ein gesetzter, aber unbekannter Wert wird abgewiesen statt auf die Vorgabe gedreht:
 // GetLabelFormat liefert bei Unbekanntem stillschweigend zweckform_l4760 zurück, und
 // genau dieses stille Umbiegen soll an der Eingangstür nicht passieren.
-func istBekanntesEtikettFormat(id string) bool {
+func IstBekanntesEtikettFormat(id string) bool {
 	if id == "" {
 		return true
 	}

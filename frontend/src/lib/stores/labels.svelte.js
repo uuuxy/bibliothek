@@ -52,7 +52,7 @@ function createLabelStore() {
 	let labelBorder = $state(true);
 	let startPosition = $state(1); // 1 to 21
 
-	// Vorgabe = die des Servers (api/label_formats.go StandardLabelFormat): das Papier des
+	// Vorgabe = die des Servers (pdf/etikett_formate.go StandardLabelFormat): das Papier des
 	// Lieferantenwegs. Bis 24.08.2026 stand hier avery_3475 — zwei Vorgaben für ein Raster.
 	let formatId = $state('zweckform_l4760');
 	// Aus der gemeinsamen Formatliste, nicht aus einer eigenen Zahlenkette: Die drei

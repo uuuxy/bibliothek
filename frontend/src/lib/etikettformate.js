@@ -2,7 +2,7 @@
  * Die Etikettenbögen, die das Programm bedrucken kann — EINE Liste für das ganze
  * Frontend.
  *
- * Maßgeblich bleibt `api/label_formats.go`; `etikettformate-konsistenz.test.js` hält
+ * Maßgeblich bleibt `pdf/etikett_formate.go`; `etikettformate-konsistenz.test.js` hält
  * diese Datei dagegen. Es gibt sie, weil mit den Schüler-Etiketten (24.08.2026) eine
  * zweite Oberfläche dieselben Bögen anbietet: Vorher stand die Liste hartkodiert in
  * `LabelLayoutOptionen.svelte`, und die Stückzahlen ein zweites Mal in
@@ -12,7 +12,7 @@
  * KEIN Abruf vom Server: Am 31.08.2026 geprüft und ENTSCHIEDEN so gelassen (Register,
  * Kategorie C) — ein Server-Umbau bräuchte einen neuen Endpunkt plus Ladezustand in
  * drei Verbrauchern des täglich benutzten Druck-Bildschirms. Diese Datei ist die eine
- * Kopie, die der Test gegen api/label_formats.go hält.
+ * Kopie, die der Test gegen pdf/etikett_formate.go hält.
  */
 
 /**

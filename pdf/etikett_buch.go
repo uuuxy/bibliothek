@@ -1,4 +1,4 @@
-package api
+package pdf
 
 import (
 	"bibliothek/pkg/pdfzeichen"
@@ -12,8 +12,26 @@ import (
 // labelPos ist die linke obere Ecke eines Etiketts auf der Seite.
 type labelPos struct{ X, Y float64 }
 
+// BuchEtikett ist, was auf dem Etikett eines Exemplars steht. Die Tür füllt es aus dem
+// Druckauftrag, aus dem, was der Server über das Exemplar weiß, und aus den Einstellungen.
+type BuchEtikett struct {
+	// Schulname steht als erste Zeile auf jedem Etikett; er zeigt einem gefundenen Buch den
+	// Weg zurück.
+	Schulname string
+	BarcodeID string
+	Titel     string
+	Autor     string
+	// AnschaffungsJahr und Signatur stehen zusammen in einer Zeile unter dem Titel; ein
+	// leerer Wert lässt seine Angabe weg.
+	AnschaffungsJahr string
+	Signatur         string
+	// Eigentumsvermerk ist der Vermerk dieses Exemplars. Welcher gilt, hängt am Topf des
+	// Exemplars und ist entschieden, bevor das Etikett hier ankommt; leer druckt keinen.
+	Eigentumsvermerk string
+}
+
 // zeichneQRLabel rendert ein Etikett mit QR-Code (Titel, Autor, QR, Barcode-Text).
-func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BarcodeLabelDetail, titel, autor string, pos labelPos) {
+func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BuchEtikett, titel, autor string, pos labelPos) {
 	pdf.SetFont("Arial", "B", 8)
 	pdf.SetXY(pos.X+2, pos.Y+3)
 	pdf.Cell(format.LabelWidth-4, 4, tr(titel))
@@ -86,13 +104,13 @@ func zweiteZeile(jahr, signatur string) string {
 // Auf dem kleinen Format (21,2 mm) ist für sechs Zeilen kein Platz. Dort entfallen
 // Anschaffungsjahr/Signatur und Eigentumsvermerk — lieber weniger Angaben als
 // übereinander gedruckte.
-func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BarcodeLabelDetail, titel string, kopf EtikettKopf, pos labelPos) {
+func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BuchEtikett, titel string, pos labelPos) {
 	grossesEtikett := format.LabelHeight >= 30
 
 	y := pos.Y + 2.5
 	pdf.SetFont("Arial", "B", 8)
 	pdf.SetXY(pos.X, y)
-	pdf.CellFormat(format.LabelWidth, 3.5, tr(pdfzeichen.KuerzeAufZeichen(kopf.Schulname, 42)), "", 0, "C", false, 0, "")
+	pdf.CellFormat(format.LabelWidth, 3.5, tr(pdfzeichen.KuerzeAufZeichen(item.Schulname, 42)), "", 0, "C", false, 0, "")
 
 	y += 3.5
 	pdf.SetXY(pos.X, y)
@@ -138,7 +156,7 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 	}
 	pdf.CellFormat(format.LabelWidth, 3.5, tr(beschriftung), "", 0, "C", false, 0, "")
 
-	if vermerk := kopf.vermerkFuer(item.Topf); grossesEtikett && vermerk != "" {
+	if vermerk := item.Eigentumsvermerk; grossesEtikett && vermerk != "" {
 		y += 4.5
 		pdf.SetFont("Arial", "", 7)
 		pdf.SetXY(pos.X, y)
@@ -151,8 +169,7 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 // startPosition: 1-based index to start printing on the first page (to skip used labels)
 // isQR: if true, a QR code is generated instead of a 1D Code39 barcode.
 // items: the labels to print.
-// kopf: schulweite Angaben (Schulname, Eigentumsvermerk) aus den Systemeinstellungen.
-func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []BarcodeLabelDetail, kopf EtikettKopf) (*gofpdf.Fpdf, error) {
+func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []BuchEtikett) (*gofpdf.Fpdf, error) {
 	format, _ := GetLabelFormat(formatId)
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
@@ -171,7 +188,7 @@ func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []Ba
 		if isQR {
 			zeichneQRLabel(pdf, tr, format, item, titel, autor, pos)
 		} else {
-			zeichneBarcodeLabel(pdf, tr, format, item, titel, kopf, pos)
+			zeichneBarcodeLabel(pdf, tr, format, item, titel, pos)
 		}
 	})
 
