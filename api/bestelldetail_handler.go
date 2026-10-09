@@ -18,7 +18,7 @@ import (
 // Zeilen zu hängen, holte genau dieses Problem zurück — für Daten, von denen jeweils
 // eine einzige Bestellung angesehen wird.
 //
-// Kein SQL in dieser Datei: Ein neuer Handler nimmt repository/ (siehe schichtung_test.go).
+// Kein SQL in dieser Datei: Ein neuer Handler nimmt repository/ (siehe schichtung_ratsche_test.go).
 func (s *Server) GetBestelldetailHandler(repo repository.BestelldetailRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")

@@ -4,43 +4,21 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
-	"path/filepath"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
 )
 
-// Schichtung des Backends: Eine Tür in api/ formuliert kein SQL und trägt keine Regeln. Jede
-// Regel einer Abfrage (NULL-Behandlung, Schutz vor leeren Werten, Reihenfolge in der
-// Transaktion) steht in repository/ einmal; eine Abfrage im Handler daneben kennt sie nicht.
+// Schichtung des Backends: Was in api/ liegt, ist eine Tür. Der Bestand dateienOhneTuer nennt,
+// was ohne Tür in api/ liegt, und kann nur kleiner werden. Dass kein Paket außerhalb der
+// Datenbankschicht SQL formuliert, hält schichtung_ratsche_test.go im Wurzelpaket.
 //
-// Keine Datei von api/ formuliert SQL. Der Bestand dateienOhneTuer nennt, was ohne Tür in api/
-// liegt, und kann nur kleiner werden.
-//
-// Blindheit: SQL, das erst aus Variablen oder Sprintf-Teilen entsteht; Regeln in einer Datei,
-// die auch eine Tür trägt; eine Datei, die net/http nur für eine Konstante einbindet.
-//
-// Eine Massenkopie (CopyFrom) ist eine Anweisung ohne SQL-Text: Sie nennt Tabelle und Spalten
-// als Werte. Das Muster zählt den Aufruf mit.
+// Blindheit: Regeln in einer Datei, die auch eine Tür trägt; eine Datei, die net/http nur für
+// eine Konstante einbindet.
 
-// Nur Anweisungen, keine Bezeichner: `UPDATE x SET` statt `UPDATE`, sonst schlägt jedes Wort
-// "update" in einem Bezeichner an. Hinter dem Tabellennamen steht kein \b: Es verlangte eine
-// Wortgrenze nach dem ersten Buchstaben und traf nur einbuchstabige Namen. Welche Formen das
-// Muster kennen muss, hält TestSQLAnweisung_ErkenntJedeForm fest.
-var sqlAnweisung = regexp.MustCompile(`(?i)\b(` +
-	`SELECT\s+[a-z_*(0-9$']` +
-	`|INSERT\s+INTO\s+[a-z_]+` +
-	`|DELETE\s+FROM\s+[a-z_]+` +
-	`|UPDATE\s+(ONLY\s+)?[a-z_.]+(\s+(AS\s+)?[a-z_]+)?\s+SET\b` +
-	`|TRUNCATE\s+(TABLE\s+)?[a-z_]+` +
-	`|MERGE\s+INTO\s+[a-z_]+` +
-	`|LOCK\s+TABLE\s+[a-z_]+` +
-	`|CopyFrom\s*\()`)
-
-// Kommentare zählen nicht: Ein Satz wie „zwischen SELECT und UPDATE ein Wettlauf-Fenster"
-// erklärt eine Abfrage und ist keine.
+// Kommentare zählen nicht: Ein Satz, der ein Wort erklärt, ist kein Vorkommen. Auch die Gates
+// der Mail-Platzhalter und der Einstellungs-Schlüssel lesen ihre Quellen so.
 func ohneKommentare(quelle string) string {
 	var b strings.Builder
 	for line := range strings.Lines(quelle) {
@@ -51,10 +29,6 @@ func ohneKommentare(quelle string) string {
 		b.WriteString("\n")
 	}
 	return b.String()
-}
-
-func sqlAnweisungenIn(quelle string) int {
-	return len(sqlAnweisung.FindAllStringIndex(ohneKommentare(quelle), -1))
 }
 
 // produktivDateien nennt die Go-Dateien dieses Ordners ohne Tests. Die Untergrenze hält einen
@@ -77,117 +51,6 @@ func produktivDateien(t *testing.T) []string {
 		t.Fatalf("nur %d Go-Dateien in api/ gefunden — der Test misst offenbar nichts mehr", len(namen))
 	}
 	return namen
-}
-
-func TestHandlerFormulierenKeinSQL(t *testing.T) {
-	for _, name := range produktivDateien(t) {
-		quelle, err := os.ReadFile(filepath.Clean(name))
-		if err != nil {
-			t.Fatalf("%s nicht lesbar: %v", name, err)
-		}
-		if n := sqlAnweisungenIn(string(quelle)); n > 0 {
-			t.Errorf("api/%s formuliert SQL (%d Anweisungen). Handler lesen und schreiben über "+
-				"repository/ — dort steht jede Regel (COALESCE-Schutz, NULL-Behandlung, Reihenfolge "+
-				"in der Transaktion) einmal. Die Anweisung gehört in eine repository-Funktion.", name, n)
-		}
-	}
-}
-
-// Der Zähler findet die Anweisungen dort, wo sie stehen. Fände er in repository/ nichts, wäre
-// „kein SQL in api/" keine Aussage.
-func TestSQLZaehler_FindetAnweisungenInRepository(t *testing.T) {
-	const ordner = "../repository"
-	eintraege, err := os.ReadDir(ordner)
-	if err != nil {
-		t.Fatalf("%s nicht lesbar: %v", ordner, err)
-	}
-	summe := 0
-	for _, e := range eintraege {
-		name := e.Name()
-		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
-			continue
-		}
-		quelle, err := os.ReadFile(filepath.Join(ordner, name))
-		if err != nil {
-			t.Fatalf("%s nicht lesbar: %v", name, err)
-		}
-		summe += sqlAnweisungenIn(string(quelle))
-	}
-	if summe < 300 {
-		t.Fatalf("nur %d SQL-Anweisungen in repository/ gezählt — der Zähler misst offenbar nichts mehr", summe)
-	}
-}
-
-// Das Muster erkennt jede Form, in der ein Handler eine Anweisung schreiben kann. Eine Form,
-// die es nicht kennt, ließe einen neuen Handler mit genau dieser Anweisung unbemerkt.
-func TestSQLAnweisung_ErkenntJedeForm(t *testing.T) {
-	anweisungen := []string{
-		"SELECT id FROM leser",
-		"SELECT * FROM leser",
-		"SELECT count(*) FROM leser",
-		"select\n\t\tid from leser",
-		"SELECT 1 FROM leser WHERE id = $1",
-		"SELECT $1::int",
-		"SELECT 'fest'",
-		"INSERT INTO leser (vorname) VALUES ($1)",
-		"DELETE FROM leser WHERE id = $1",
-		"UPDATE leser SET vorname = $1",
-		"UPDATE public.leser\n\t\tSET vorname = $1",
-		"UPDATE ausleihen a SET rueckgabe_am = NOW()",
-		"UPDATE ausleihen AS a SET rueckgabe_am = NOW()",
-		"UPDATE ONLY leser SET vorname = $1",
-		"TRUNCATE leser",
-		"TRUNCATE TABLE leser",
-		"MERGE INTO leser l USING neu n ON l.id = n.id",
-		"LOCK TABLE leser IN EXCLUSIVE MODE",
-		"tx.CopyFrom(ctx, pgx.Identifier{\"leser\"}, spalten, pgx.CopyFromRows(zeilen))",
-		"pool.CopyFrom (ctx, tabelle, spalten, quelle)",
-	}
-	for _, a := range anweisungen {
-		if !sqlAnweisung.MatchString(a) {
-			t.Errorf("das Muster erkennt die Anweisung nicht: %q", a)
-		}
-	}
-	// Bezeichner und Wörter, die wie der Anfang einer Anweisung aussehen.
-	keine := []string{
-		"updateSettings(ctx)",
-		"selectListe := []string{}",
-		"insertInto(ziel)",
-		"deleteFromCart()",
-		`aktion == "UPDATE"`,
-		`meldung := "Update fehlgeschlagen"`,
-		"truncated := true",
-		"quelle := pgx.CopyFromRows(zeilen)",
-		"kopiereCopyFromDatei(pfad)",
-	}
-	for _, k := range keine {
-		if sqlAnweisung.MatchString(k) {
-			t.Errorf("das Muster hält für eine Anweisung, was keine ist: %q", k)
-		}
-	}
-}
-
-// Der Zähler zählt jede Anweisung einzeln und lässt einen Kommentar aus.
-func TestSQLAnweisungenIn_ZaehltJedeAnweisung(t *testing.T) {
-	faelle := []struct {
-		name   string
-		quelle string
-		soll   int
-	}{
-		{"keine", "x := 1\n", 0},
-		{"eine", "q := `SELECT id FROM leser`\n", 1},
-		{"zwei auf einer Zeile", "a, b := `SELECT 1 FROM leser`, `DELETE FROM leser`\n", 2},
-		{"drei über Zeilen", "`INSERT INTO leser (a) VALUES ($1)`\n`UPDATE leser\n SET a = $1`\n`SELECT a FROM leser`\n", 3},
-		{"Unterabfrage zählt mit", "`DELETE FROM leser WHERE id IN (SELECT id FROM alt)`\n", 2},
-		{"nur im Kommentar", "// erst SELECT id FROM leser, dann UPDATE leser SET a = 1\nx := 1\n", 0},
-		{"Kommentar hinter Code", "q := `SELECT id FROM leser` // und kein DELETE FROM leser\n", 1},
-		{"Massenkopie", "_, err := tx.CopyFrom(ctx, pgx.Identifier{\"leser\"}, spalten, pgx.CopyFromRows(zeilen))\n", 1},
-	}
-	for _, f := range faelle {
-		if ist := sqlAnweisungenIn(f.quelle); ist != f.soll {
-			t.Errorf("%s: %d Anweisungen gezählt, erwartet %d", f.name, ist, f.soll)
-		}
-	}
 }
 
 // dateienOhneTuer: Dateien in api/, die net/http nicht einbinden. Sie nehmen keine Anfrage an

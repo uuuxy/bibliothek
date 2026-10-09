@@ -723,12 +723,20 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   die Werte, die Wörter und die Regel zum großen Lernmittel-Etikett; `repository/mittel.go`
   behält, wie eine Abfrage den Topf eines Exemplars bestimmt.
 
-`api/schichtung_test.go` hält den Stand: Keine Datei von `api/` formuliert SQL, und die Dateien
-ohne Tür stehen als Bestand, der nur kleiner werden kann. Dass der Zähler misst, belegt er an
-`repository/`: Dort muss er Anweisungen finden. Als Anweisung zählt auch eine Massenkopie
-(`CopyFrom`): Sie nennt Tabelle und Spalten als Werte und trägt keinen SQL-Text. So standen die
-Positionen einer Bestellung bis zum 09.10.2026 als einzige Schreibanweisung außerhalb von
-`repository/`, ohne dass der Zähler sie sah; sie schreibt jetzt
+Zwei Ratschen halten den Stand. `schichtung_ratsche_test.go` im Wurzelpaket liest jede
+Produktivdatei: Anweisungen formuliert und schickt nur die Datenbankschicht, das sind
+`repository/`, `inventur/` (5.2.3), `db/`, der Schreiber der Littera-Übernahme und die
+Einmal-Werkzeuge; die Liste mit dem Grund je Paket steht in der Datei. Sie hat zwei Detektoren:
+den Text einer Anweisung und den Aufruf, der sie abschickt (`Exec`, `Query`, `QueryRow`,
+`SendBatch`, `CopyFrom`). Der zweite sieht auch eine Anweisung, deren Text erst aus Variablen
+entsteht: Das Löschen der Audit-Aufbewahrung in `jobs/` setzt den Tabellennamen als Variable
+ein, der Textzähler sah es nicht. Was außerhalb der Datenbankschicht noch Anweisungen trägt,
+führt die Ratsche je Datei als Bestand, der nur sinken kann ([OFFEN.md](OFFEN.md) 5.62). Dass
+die Detektoren messen, belegen sie an `repository/`: Dort müssen sie Anweisungen finden.
+`api/schichtung_test.go` führt die Dateien von `api/` ohne Tür als Bestand, der nur kleiner
+werden kann. Als Anweisung zählt auch eine Massenkopie (`CopyFrom`): Sie nennt Tabelle und
+Spalten als Werte und trägt keinen SQL-Text. So schrieb `api/` die Positionen einer Bestellung
+bis zum 09.10.2026, ohne dass der Zähler es sah; sie schreibt jetzt
 `repository.SchreibeBestellpositionen`.
 
 ##### Die `pkg/`-Pakete im Einzelnen
@@ -3158,8 +3166,9 @@ Bestellmail, die Kopplung der Lernmittel-Fristen an den LMF-Plan und die Vorgabe
 neuen Plan in `internal/service`, der Bescheid, die Etiketten, die
 Bestandsbücher, Mahnliste, Mahnbrief und Bestellanschreiben in `pdf/`, der Strichcode in `pkg/strichcode`,
 die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung in `pkg/mitteltopf`, ihr Bestätigungs-Link in `pkg/bestelllink`, die
-Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `api/schichtung_test.go` weist jede SQL-Anweisung in
-`api/` ab und führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Was
+Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `schichtung_ratsche_test.go` weist jede
+SQL-Anweisung außerhalb der Datenbankschicht ab, `api/schichtung_test.go` führt die Dateien
+ohne Tür als Bestand, der nur kleiner werden kann. Was
 bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst bleiben in einem Paket: Der Typ
 `Server` trägt 349 Methoden.
 

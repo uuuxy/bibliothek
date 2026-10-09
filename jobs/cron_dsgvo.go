@@ -193,7 +193,7 @@ func (s *Scheduler) bereinigeAnonymisierteSchuelerSpuren(ctx context.Context) {
 	}
 
 	for _, st := range repository.SpurTilgungen() {
-		if n, err := st.Exec(ctx, s.db, ids, "DSGVO-Anonymisierung"); err != nil {
+		if n, err := st.Tilge(ctx, s.db, ids, "DSGVO-Anonymisierung"); err != nil {
 			log.Printf("Scheduler GDPR Anonymize: Spur %s konnte nicht getilgt werden: %v", st.Beschreibung, err)
 		} else if n > 0 {
 			log.Printf("Scheduler GDPR Anonymize: Spur %s — %d Zeilen bereinigt.", st.Beschreibung, n)

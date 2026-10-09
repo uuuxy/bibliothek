@@ -143,8 +143,9 @@ der Nummer nichts mehr dazu offen ist.
   was die Datenbank ablehnt; Listen: was sie begrenzt), die Form-Ratsche sieht umrandete
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
-- [ ] **Schichtung des Backends (5.62):** Die Regeln in Dateien, die auch eine Tür tragen, je
-  Datei lesen und trennen; danach die Abfragen außerhalb von `repository/`.
+- [ ] **Schichtung des Backends (5.62):** die Abfragen aus `jobs/`, `auth/` und
+  `internal/service` nach `repository/` ziehen, die Ausleihe an der Theke als eigene Stufe
+  zuletzt; danach die Regeln in Dateien, die auch eine Tür tragen, je Datei lesen und trennen.
 - [ ] **Etiketten kürzen nach Zeichenzahl (5.63):** an neun Stellen messen, ob ein Text über
   den Rand des Etiketts läuft.
 
@@ -354,10 +355,12 @@ Schulserver feststeht.
 Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko steht in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1 unter R4, die Messwerte vom 09.10.2026 ebenfalls.
 
-- **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
-  führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
-  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 12 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 21.319 Zeilen in 136 Dateien (am Anfang 30.785 in 168).
+- **Die Bremse steht.** `schichtung_ratsche_test.go` weist jede SQL-Anweisung außerhalb der
+  Datenbankschicht ab und führt die Dateien, die noch welche tragen, als Bestand, der nur
+  sinken kann; `api/schichtung_test.go` führt die Dateien von `api/` ohne Tür als Bestand, der
+  nur kleiner werden kann. Stand am 09.10.2026: keine Datei von `api/` mit SQL (am Anfang 48
+  mit 177 Anweisungen), 12 Dateien ohne Tür (am Anfang 44); `api/` hat 21.319 Zeilen in 136
+  Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung und die Regel zu den Start-Geheimnissen in `internal/bereitschaft`, die
@@ -396,20 +399,30 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Typ aus `net/http` tragen `bestellbericht_handler.go` (367),
   `lmf_plan.go` (260), `bescheid_handler.go` (246), `dsgvo_auskunft.go` (193),
   `betriebsbereitschaft_handler.go` (175) und `graduates_mail.go` (157). Die Messung und ihre
-  Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt: diese Dateien der Reihe nach
-  lesen und trennen, was Regel und was Füll-Funktion ist.
+  Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nach den Abfragen (unten): diese Dateien der
+  Reihe nach lesen und trennen, was Regel und was Füll-Funktion ist.
 - **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 349
   Methoden, rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt, zeigt der
   Stand nach dem Schritt davor.
 
-Außerhalb von `api/` und `repository/` stehen weitere SQL-Anweisungen (gezählt am 09.10.2026):
-`inventur/` 73 mit eigener Datenbankschicht ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.3),
-`internal/service` 32, `auth/` 19, `jobs/` 17. Die Ratsche zählt sie nicht; sie gehören nicht
-zu diesem Punkt. Von 40 Tabellen mit Schreibanweisungen werden 14 aus mehr als einem Paket
-beschrieben, `buecher_titel` und `buecher_exemplare` aus dreien (`repository/`, `inventur/`,
-`internal/service`), `ausleihen` aus vieren. Das wäre der nächste Punkt derselben Art: die 68
-Anweisungen aus `internal/service`, `auth/` und `jobs/` nach `repository/` ziehen und die
-Ratsche auf diese Pakete ausdehnen; die Ausleihe an der Theke als eigene Stufe.
+**Nächster Schritt, Reihenfolge entschieden am 09.10.2026: zuerst die Abfragen außerhalb der
+Datenbankschicht, danach die Regeln in den Dateien mit Tür.** Der Grund: Eine Tabelle, die aus
+mehreren Paketen beschrieben wird, hat mehrere Wege zum selben Zustand, und die Anweisung im
+einen Paket kennt die Regel im anderen nicht. Eine Regel in einer Datei mit Tür erschwert das
+Lesen, führt aber zu keinem zweiten Weg.
+
+Zur Datenbankschicht zählen `repository/`, `inventur/` mit eigener Schicht
+([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.3), `db/`, der Schreiber der Littera-Übernahme und die
+Einmal-Werkzeuge unter `cmd/`; die Liste mit dem Grund je Paket steht in
+`schichtung_ratsche_test.go`. Außerhalb davon tragen am 09.10.2026 noch 28 Dateien Anweisungen:
+`internal/service` 12 Dateien, `jobs/` 10, `auth/` 5, `mailservice/` 1. Die Ratsche zählt je
+Datei die Texte von Anweisungen und die Aufrufe, die eine abschicken (zusammen 69 und 69); vier
+Aufrufe sah der Textzähler allein nicht: Das Löschen der Audit-Aufbewahrung setzt den
+Tabellennamen als Variable ein, die Restore-Probe legt eine Datenbank an und entfernt sie. Stufen, je ein Commit und in dieser Reihenfolge: `jobs/`
+(Nachtläufe und Löschroutinen), `auth/` (Sitzungen, Anmeldung), `internal/service` ohne die
+Theke (Cover, Geräte, Import, Bestellung, Foto), die Ausleihe an der Theke (`loan_*.go`,
+`nachbuchen.go`, `omnibox_service.go`), die eine Abfrage in `mailservice/`. Der Handgriff
+steht in ARCHITEKTUR 8.14.
 
 ### 5.63 Etiketten kürzen nach Zeichenzahl
 

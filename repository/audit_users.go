@@ -494,9 +494,9 @@ type SpurTilgung struct {
 	schritt func(ctx context.Context, ex SpurenExecutor, schuelerIDs []string) (int64, error)
 }
 
-// Exec führt die Anweisung für die gegebene Schüler-Menge aus und meldet die Zahl
+// Tilge führt die Anweisung für die gegebene Schüler-Menge aus und meldet die Zahl
 // der betroffenen Zeilen.
-func (st SpurTilgung) Exec(ctx context.Context, ex SpurenExecutor, schuelerIDs []string, grund string) (int64, error) {
+func (st SpurTilgung) Tilge(ctx context.Context, ex SpurenExecutor, schuelerIDs []string, grund string) (int64, error) {
 	if st.schritt != nil {
 		return st.schritt(ctx, ex, schuelerIDs)
 	}
@@ -640,7 +640,7 @@ var spurTilgungen = []SpurTilgung{
 // details->>'schueler_id' am Schüler, nicht per FK).
 func TilgeSchuelerSpuren(ctx context.Context, ex SpurenExecutor, schuelerID, grund string) error {
 	for _, st := range spurTilgungen {
-		if _, err := st.Exec(ctx, ex, []string{schuelerID}, grund); err != nil {
+		if _, err := st.Tilge(ctx, ex, []string{schuelerID}, grund); err != nil {
 			return fmt.Errorf("tilgung %s: %w", st.Beschreibung, err)
 		}
 	}

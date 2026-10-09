@@ -4,7 +4,7 @@ package repository
 // braucht, um den Zustand der Anlage zu beurteilen.
 //
 // Eigene Datei statt einer Zeile im Handler: Handler lesen und schreiben über repository/,
-// dort steht jede Regel genau einmal (api/schichtung_test.go).
+// dort steht jede Regel genau einmal (schichtung_ratsche_test.go).
 
 import (
 	"context"
