@@ -145,8 +145,8 @@ der Nummer nichts mehr dazu offen ist.
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
 - [ ] **Schichtung des Backends (5.62):** Die PDF-Erzeuger und der Rest der Dateien ohne Tür
   ziehen je Sache aus `api/` in eigene Pakete.
-- [ ] **Gedruckter Text nach Zeichenzahl gekürzt (5.63):** an 18 Stellen messen, ob ein Text
-  über seine Zelle läuft.
+- [ ] **Etiketten kürzen nach Zeichenzahl (5.63):** an neun Stellen messen, ob ein Text über
+  den Rand des Etiketts läuft.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -357,7 +357,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
   führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
   keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 21 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 23.550 Zeilen in 145 Dateien (am Anfang 30.785 in 168).
+  `api/` hat 23.551 Zeilen in 145 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung und die Regel zu den Start-Geheimnissen in `internal/bereitschaft`, der
@@ -420,19 +420,20 @@ beschrieben, `buecher_titel` und `buecher_exemplare` aus dreien (`repository/`, 
 Anweisungen aus `internal/service`, `auth/` und `jobs/` nach `repository/` ziehen und die
 Ratsche auf diese Pakete ausdehnen; die Ausleihe an der Theke als eigene Stufe.
 
-### 5.63 Gedruckter Text nach Zeichenzahl gekürzt
+### 5.63 Etiketten kürzen nach Zeichenzahl
 
-Mahnliste und Mahnbrief kürzten Titel und Autor auf eine feste Zahl von Zeichen; ein
-gewöhnlicher Titel lief damit 5 mm in die Nachbarspalte. Beide kürzen seit dem 09.10.2026 auf
-die gedruckte Breite ihrer Zelle (`kuerzeAufZelle` in `pdf/zelle.go`; die Fehlerart steht in
-[sweeps.md](sweeps.md), „Gedruckter Text nach Zeichenzahl gekürzt").
+Die Listen und Briefe mit gofpdf kürzen den Text einer Zelle seit dem 09.10.2026 auf ihre
+gedruckte Breite (`pdfzeichen.KuerzeAufZelle`; die Fehlerart steht in [sweeps.md](sweeps.md),
+„Gedruckter Text nach Zeichenzahl gekürzt"). Nach Zeichen gekürzt lief dort ein gewöhnlicher
+langer Titel bis zu 6 mm, ein Titel in Großbuchstaben bis zu 33 mm über die Nachbarzelle.
 
-Nach Zeichen kürzen weiter 18 Stellen (gezählt am 09.10.2026): `pdf/etikett_buch.go` 5,
-`pdf/etikett_lernmittel.go` 4, `inventur/lernmittel_pdf.go` 4, `pdf/zugangsbuch.go` 2,
-`pdf/abgangsbuch.go` 2, `api/bestellbericht_handler.go` 1. Zu tun je Stelle: mit ihrer Schrift
-und Zellenbreite messen, ob die zugelassene Zahl breiter Buchstaben über die Zelle läuft, und
-dann auf die Breite kürzen. Die Etiketten sind im Aussehen abgenommen; dort ändert sich mit der
-Umstellung, wo ein langer Titel endet.
+Nach Zeichen kürzen weiter die Etiketten (gezählt am 09.10.2026): `pdf/etikett_buch.go` an fünf
+Stellen, `pdf/etikett_lernmittel.go` an vier. Zu tun je Stelle: mit ihrer Schrift und der Breite
+des Etiketts messen, ob die zugelassene Zahl breiter Buchstaben über den Rand läuft, und dann
+auf die Breite kürzen. Die Etiketten sind im Aussehen abgenommen; mit der Umstellung ändert sich,
+wo ein langer Titel endet. Die Zeile mit den Auflagen im Schulbuch-Export
+(`inventur/lernmittel_pdf.go`) kürzt ebenfalls nach Zeichen; sie bricht über drei Zeilen um und
+braucht eine andere Messung.
 
 ---
 

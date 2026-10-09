@@ -182,3 +182,60 @@ func TestBestandsbuch_JedeSeiteMitZeilenTraegtDieSpaltenkoepfe(t *testing.T) {
 		}
 	}
 }
+
+// Titel, Signatur und Lieferant stehen gekürzt mit Auslassungszeichen da, sobald sie gedruckt
+// breiter wären als ihre Spalte: Gemessen wird die Breite, nicht die Zahl der Zeichen. Ein Titel
+// in Großbuchstaben und die Signatur eines Lernmittels liefen sonst über die Nachbarzelle.
+func TestBestandsbuecher_TitelSignaturUndLieferantBleibenInIhrerSpalte(t *testing.T) {
+	const (
+		gross    = "DEUTSCHBUCH GYMNASIUM – ALLGEMEINE AUSGABE 2019, 5. SCHULJAHR, SCHÜLERBUCH MIT ARBEITSHEFT"
+		signatur = "LMF-Gesellschaftslehre 10"
+		haendler = "BUCHHANDLUNG AM MARKT, INHABERIN ANNEGRET MÜLLER-LÜDENSCHEIDT E. K."
+	)
+	tag := time.Date(2026, time.April, 12, 10, 0, 0, 0, time.UTC)
+	abgang, err := GenerateAbgangsbuchPDF(Abgangsbuch{Von: buchVon, Bis: buchBis, Gesamt: 2,
+		Abschnitte: []AbgangsAbschnitt{{Titel: "Topf Eins", Zeilen: []AbgangsZeile{
+			{Datum: tag, Barcode: "B-81", Titel: gross, Signatur: signatur, GrundText: "Verlust"},
+			{Datum: tag, Barcode: "B-82", Titel: "Atlas", Signatur: "Erd 1", GrundText: "Verlust"}}}}}, SchuleInfo{})
+	if err != nil {
+		t.Fatalf("Abgangsbuch drucken: %v", err)
+	}
+	zugang, err := GenerateZugangsbuchPDF(Zugangsbuch{Von: buchVon, Bis: buchBis, Gesamt: 2,
+		Abschnitte: []ZugangsAbschnitt{{Titel: "Topf Eins", Zeilen: []ZugangsZeile{
+			{Datum: tag, Barcode: "B-91", Titel: gross, Lieferant: haendler},
+			{Datum: tag, Barcode: "B-92", Titel: "Atlas", Lieferant: "Naacher"}}}}}, SchuleInfo{})
+	if err != nil {
+		t.Fatalf("Zugangsbuch drucken: %v", err)
+	}
+
+	// Hinter der Nummer stehen Titel und Signatur oder Lieferant der Zeile.
+	nach := func(roh []byte, nummer string) (string, string) {
+		texte := pdftest.TexteInReihenfolge(t, roh)
+		for stelle, text := range texte {
+			if text == nummer {
+				return texte[stelle+1], texte[stelle+2]
+			}
+		}
+		t.Fatalf("%s steht nicht auf dem Blatt", nummer)
+		return "", ""
+	}
+	titel, sig := nach(abgang, "B-81")
+	pdftest.InSpalte(t, titel, gross, 9, abgangSpalteTitel-2)
+	pdftest.InSpalte(t, sig, signatur, 9, abgangSpalteSignatur-2)
+	if titel == gross || sig == signatur {
+		t.Errorf("Abgangsbuch: Titel %q und Signatur %q stehen ungekürzt da", titel, sig)
+	}
+	if titel, sig = nach(abgang, "B-82"); titel != "Atlas" || sig != "Erd 1" {
+		t.Errorf("Abgangsbuch: kurze Texte stehen als %q und %q da", titel, sig)
+	}
+
+	titel, lieferant := nach(zugang, "B-91")
+	pdftest.InSpalte(t, titel, gross, 9, zugangSpalteTitel-2)
+	pdftest.InSpalte(t, lieferant, haendler, 9, zugangSpalteLieferant-2)
+	if titel == gross || lieferant == haendler {
+		t.Errorf("Zugangsbuch: Titel %q und Lieferant %q stehen ungekürzt da", titel, lieferant)
+	}
+	if titel, lieferant = nach(zugang, "B-92"); titel != "Atlas" || lieferant != "Naacher" {
+		t.Errorf("Zugangsbuch: kurze Texte stehen als %q und %q da", titel, lieferant)
+	}
+}

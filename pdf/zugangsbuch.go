@@ -105,8 +105,8 @@ func zugangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Zuga
 		p.SetFont("Arial", "", 9)
 		p.CellFormat(zugangSpalteDatum, abgangZeilenHoehe, tr(z.Datum.Format(dateFormatDE)), "LB", 0, "L", false, 0, "")
 		p.CellFormat(zugangSpalteNummer, abgangZeilenHoehe, tr(z.Barcode), "B", 0, "L", false, 0, "")
-		p.CellFormat(zugangSpalteTitel, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZeichen(z.Titel, 44)), "B", 0, "L", false, 0, "")
-		p.CellFormat(zugangSpalteLieferant, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZeichen(z.Lieferant, 30)), "BR", 1, "L", false, 0, "")
+		p.CellFormat(zugangSpalteTitel, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Titel, zugangSpalteTitel)), "B", 0, "L", false, 0, "")
+		p.CellFormat(zugangSpalteLieferant, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Lieferant, zugangSpalteLieferant)), "BR", 1, "L", false, 0, "")
 	}
 
 	p.SetFont("Arial", "B", 9)

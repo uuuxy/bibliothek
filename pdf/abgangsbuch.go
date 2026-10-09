@@ -119,8 +119,8 @@ func abgangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Abga
 		p.SetFont("Arial", "", 9)
 		p.CellFormat(abgangSpalteDatum, abgangZeilenHoehe, tr(z.Datum.Format(dateFormatDE)), "LB", 0, "L", false, 0, "")
 		p.CellFormat(abgangSpalteNummer, abgangZeilenHoehe, tr(z.Barcode), "B", 0, "L", false, 0, "")
-		p.CellFormat(abgangSpalteTitel, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZeichen(z.Titel, 46)), "B", 0, "L", false, 0, "")
-		p.CellFormat(abgangSpalteSignatur, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZeichen(z.Signatur, 12)), "B", 0, "L", false, 0, "")
+		p.CellFormat(abgangSpalteTitel, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Titel, abgangSpalteTitel)), "B", 0, "L", false, 0, "")
+		p.CellFormat(abgangSpalteSignatur, abgangZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, z.Signatur, abgangSpalteSignatur)), "B", 0, "L", false, 0, "")
 		p.CellFormat(abgangSpalteGrund, abgangZeilenHoehe, tr(z.GrundText), "BR", 1, "L", false, 0, "")
 	}
 

@@ -28,6 +28,8 @@ internal/pdftest/pdftest.go: unreachable func: texteInReihenfolge
 # Dazu Seitenzahl und Seitenmaß eines PDFs (vorher Helfer in api/etiketten_layout_test.go; seit
 # die Erzeuger der Etiketten in pdf/ stehen, brauchen ihn die Tests beider Pakete).
 internal/pdftest/seiten.go: unreachable func: Seiten
+# Dazu die Prüfung, ob ein gedruckter Text in seine Zelle passt (Tests in pdf/, api/ und inventur/).
+internal/pdftest/spalte.go: unreachable func: InSpalte
 
 # Testinfrastruktur per Paket-Design: eigener SMTP-Server für Tests, weil die
 # lokale .env auf den echten Schulserver zeigt (siehe Paketkommentar).

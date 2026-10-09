@@ -619,21 +619,21 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 23.550 Zeilen, 145 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `api/`                  | 23.551 Zeilen, 145 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
 | `repository/`           | 21.058 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
 | `internal/service/`     | 4.496 Zeilen, 23 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 924 Zeilen, 2 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/betriebsbereitschaft_alarm.go` |
-| `inventur/`             | 6.545 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
+| `inventur/`             | 6.546 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
 | `auth/`                 | 1.852 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
 | `jobs/`                 | 1.791 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
-| `pkg/` (23 Pakete)      | 2.703 Zeilen, 32 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 3.370 Zeilen, 22 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
+| `pkg/` (23 Pakete)      | 2.715 Zeilen, 32 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
+| `pdf/`                  | 3.356 Zeilen, 21 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
-| `internal/*` (übrige)   | 5.571 Zeilen, 33 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest` (Prüfhilfen) |
+| `internal/*` (übrige)   | 5.633 Zeilen, 34 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest` (Prüfhilfen) |
 | `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
@@ -699,7 +699,7 @@ ohne Tür stehen als Bestand, der nur kleiner werden kann. Dass der Zähler miss
 | `betrag`           | Geldbeträge in der deutschen Form (zwei Nachkommastellen, Komma) — eine Stelle für Briefe, Berichte und die Meldungen der Theke   |
 | `imageutil`        | Bildkonvertierung (JPEG/PNG/GIF/WebP → JPEG), Qualitätsvorgabe                                                                    |
 | `csvutil`          | Schutz vor CSV-/Formel-Injection (CWE-1236) beim Export                                                                           |
-| `pdfzeichen`       | Die eine Zeichenersetzung für alle PDFs: gofpdf druckt in cp1252, ş, ł, ğ … würden sonst zum Punkt (seit 21.09.2026, Ratsche `pdfzeichen_ratsche_test.go`: Jeder Übersetzer kommt von hier, und jeder Druckaufruf nennt ihn); dazu das Kürzen eines Texts auf eine Zeichenzahl und auf eine gedruckte Breite |
+| `pdfzeichen`       | Die eine Zeichenersetzung für alle PDFs: gofpdf druckt in cp1252, ş, ł, ğ … würden sonst zum Punkt (seit 21.09.2026, Ratsche `pdfzeichen_ratsche_test.go`: Jeder Übersetzer kommt von hier, und jeder Druckaufruf nennt ihn); dazu das Kürzen eines Texts auf eine Zeichenzahl, auf eine gedruckte Breite und auf eine Zelle (`KuerzeAufZelle`) |
 | `xlsxgrenze`       | Die eine Tür zu einer hochgeladenen XLSX: Entpackgrenze, Abweisung verschlüsselter Container, Schranke gegen Abstürze der Bibliothek |
 | `isbnutil`         | ISBN normalisieren                                                                                                                |
 | `strichcode`       | Der Strichcode eines Ausweises, Etiketts oder Briefs als PNG, Code 128 oder QR: eine Stelle für die Tür `GET /api/barcode` und die Erzeuger der PDFs |
@@ -1967,9 +1967,11 @@ mehr passt; die Teile der Zeile stünden dann auf verschiedenen Seiten ([sweeps.
 „Zeile an festen Stellen über dem Seitenumbruch"). Die Köpfe stehen nicht allein am Fuß einer
 Seite. Mahnliste und Mahnbrief werden je Schüler ausgeteilt oder kuvertiert: Ihre Folgeseiten
 nennen, wem sie gehören („Fortsetzung: …"), beim Mahnbrief über einen Seitenkopf, weil dort
-auch der Text der Vorlage auf die nächste Seite laufen kann. Den Text einer Zelle kürzen sie
-und das Bestellanschreiben auf ihre gedruckte Breite (`kuerzeAufZelle` in `pdf/zelle.go`), nicht
-auf eine Zahl von Zeichen: gofpdf druckt Überlanges über die Nachbarzelle. Ein Block, der
+auch der Text der Vorlage auf die nächste Seite laufen kann. Den Text einer Zelle kürzen sie,
+das Bestellanschreiben, Zugangs- und Abgangsbuch, der Bestellbericht und der Schulbuch-Export auf
+ihre gedruckte Breite (`pdfzeichen.KuerzeAufZelle`), nicht auf eine Zahl von Zeichen: gofpdf
+druckt Überlanges über die Nachbarzelle. Die Etiketten kürzen weiter nach Zeichen
+([OFFEN.md](OFFEN.md) 5.63). Ein Block, der
 zusammengehört (Gruß und Unterschrift), prüft seinen Platz als Ganzes.
 
 **Ausweise: zwei Renderer, einer fürs Papier.** Der Ausweis-Designer zeichnet die Karte
@@ -3056,7 +3058,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 23.550 Zeilen in 145 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 23.551 Zeilen in 145 Dateien das schwerste Paket
 
 | | |
 | --- | --- |

@@ -20,6 +20,9 @@ func (jeZeichen) GetStringWidth(text string) float64 {
 	return breite
 }
 
+// GetCellMargin: ein Millimeter Rand links und rechts vom Text einer Zelle.
+func (jeZeichen) GetCellMargin() float64 { return 1 }
+
 func gleich(s string) string { return s }
 
 func TestKuerzeAufBreite(t *testing.T) {
@@ -50,5 +53,22 @@ func TestKuerzeAufBreite_MisstDenUebersetztenText(t *testing.T) {
 	}
 	if ist := KuerzeAufBreite(jeZeichen{}, gleich, "Öztürk", 6); ist != "Öztürk" || utf8.RuneCountInString(ist) != 6 {
 		t.Errorf("Umlaute zählen als ein Zeichen: %q", ist)
+	}
+}
+
+// Von der Breite der Zelle geht ihr Rand auf beiden Seiten ab: In 13 mm passen elf Zeichen.
+func TestKuerzeAufZelle_ZiehtDenRandDerZelleAb(t *testing.T) {
+	for _, f := range []struct {
+		text   string
+		breite float64
+		soll   string
+	}{
+		{"Demir, Ayla", 13, "Demir, Ayla"},
+		{"Demir, Ayla", 12, "Demir, Ay…"},
+		{"MMMMMMMMMMM", 13, "MMM…"},
+	} {
+		if ist := KuerzeAufZelle(jeZeichen{}, gleich, f.text, f.breite); ist != f.soll {
+			t.Errorf("%q in einer Zelle von %.0f mm ergibt %q, erwartet %q", f.text, f.breite, ist, f.soll)
+		}
 	}
 }

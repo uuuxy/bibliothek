@@ -136,48 +136,48 @@ func TestSchulbuecherAlsPDF_Inhalt(t *testing.T) {
 	}
 }
 
+// Titel, Autor und Zweig stehen gekürzt mit Auslassungszeichen da, sobald sie gedruckt breiter
+// wären als ihre Spalte; kurze Texte stehen ganz da. Gemessen wird die Breite, nicht die Zahl
+// der Zeichen.
 func TestSchulbuecherAlsPDF_Kuerzen(t *testing.T) {
-	langerTitel := "Das ist ein extrem langer Buchtitel der auf jeden Fall gekürzt werden muss damit er nicht in die nächste Spalte überläuft und das Layout zerstört"
-	langerAutor := "Ein Autor mit einem unfassbar langen Namen der das Feld sprengt"
-
-	titel := []LernmittelTitel{
-		{
-			Title: langerTitel,
-			Autor: langerAutor,
-		},
-	}
-
-	doc, err := SchulbuecherAlsPDF(titel, "", "")
+	const (
+		langerTitel = "DEUTSCHBUCH GYMNASIUM – ALLGEMEINE AUSGABE 2019, 5. SCHULJAHR, SCHÜLERBUCH MIT ARBEITSHEFT"
+		langerAutor = "Annegret Müller-Lüdenscheidt und Kollegen"
+		langerZweig = "Gymnasialzweig und Realschulzweig"
+	)
+	doc, err := SchulbuecherAlsPDF([]LernmittelTitel{
+		{ID: "1", Title: langerTitel, Autor: langerAutor, ISBN: "ISBN-PROBE-1", JahrgangVon: 7, JahrgangBis: 7, Track: langerZweig},
+		{ID: "2", Title: "Atlas", Autor: "Diercke", ISBN: "ISBN-PROBE-2", JahrgangVon: 7, JahrgangBis: 7, Track: "G"},
+	}, "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	texte := pdftest.Texte(t, doc)
-
-	// kuerze schneidet bei limit ab und setzt ein '…'
-	// spAutor ist 24.0. 16 ist das Limit in zeichneSchulbuchZeile für kuerze() beim Autor.
-	erwarteterAutorGekuerzt := "Ein Autor mit e…"
-
-	// Titel Limit ist breiteTitel/1.6
-	// nutzBreite = 178.0, belegt ohne Gezaehlt = 12+24+23+12+21+(3*8) = 116. breiteTitel = 62.
-	// 62 / 1.6 = 38
-	erwarteterTitelGekuerzt := string([]rune(langerTitel)[:38-1]) + "…"
-
-	gefundenAutor := false
-	gefundenTitel := false
-	for _, text := range texte {
-		if text == erwarteterAutorGekuerzt {
-			gefundenAutor = true
-		}
-		if text == erwarteterTitelGekuerzt {
-			gefundenTitel = true
+	// Vor der ISBN stehen Titel und Autor der Zeile, hinter ihr Jahrgang und Zweig. Die Spalte
+	// des Titels nimmt, was die übrigen von der Nutzbreite lassen.
+	breiteTitel := nutzBreite - (spCover + spAutor + spISBN + spJg + spZweig + 3*spZahl)
+	texte := pdftest.TexteInReihenfolge(t, doc)
+	gefunden := 0
+	for stelle, text := range texte {
+		switch text {
+		case "ISBN-PROBE-1":
+			gefunden++
+			titel, autor, zweig := texte[stelle-2], texte[stelle-1], texte[stelle+2]
+			pdftest.InSpalte(t, titel, langerTitel, 8, breiteTitel-2)
+			pdftest.InSpalte(t, autor, langerAutor, 8, spAutor-2)
+			pdftest.InSpalte(t, zweig, langerZweig, 8, spZweig-2)
+			if titel == langerTitel || autor == langerAutor || zweig == langerZweig {
+				t.Errorf("lange Texte stehen ungekürzt da: %q, %q, %q", titel, autor, zweig)
+			}
+		case "ISBN-PROBE-2":
+			gefunden++
+			if titel, autor, zweig := texte[stelle-2], texte[stelle-1], texte[stelle+2]; titel != "Atlas" || autor != "Diercke" || zweig != "G" {
+				t.Errorf("kurze Texte stehen als %q, %q und %q da", titel, autor, zweig)
+			}
 		}
 	}
-	if !gefundenAutor {
-		t.Errorf("Langer Autor wurde nicht korrekt gekürzt (erwartet %q)", erwarteterAutorGekuerzt)
-	}
-	if !gefundenTitel {
-		t.Errorf("Langer Titel wurde nicht korrekt gekürzt (erwartet %q)", erwarteterTitelGekuerzt)
+	if gefunden != 2 {
+		t.Errorf("%d von 2 Zeilen gefunden", gefunden)
 	}
 }
 

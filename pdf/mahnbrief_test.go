@@ -184,7 +184,7 @@ func TestMahnbrief_TitelBleibtInSeinerSpalteUndStrichcodeAlsBild(t *testing.T) {
 		// Vor der Nummer des Strichcodes steht der Titel der Zeile.
 		switch text {
 		case "BC-1":
-			pruefeInSpalte(t, texte[stelle-1], breit, 10, 73)
+			pdftest.InSpalte(t, texte[stelle-1], breit, 10, 73)
 			if texte[stelle-1] == breit {
 				t.Errorf("60 breite Buchstaben stehen ungekürzt in einer Spalte von 75 mm")
 			}

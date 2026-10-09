@@ -151,9 +151,9 @@ func TestBestellanschreiben_TitelAutorUndISBNBleibenInIhrerSpalte(t *testing.T) 
 			}
 			// Vor der Menge stehen Titel, Autor und ISBN der Zeile.
 			titel, autor, isbn := texte[stelle-3], texte[stelle-2], texte[stelle-1]
-			pruefeInSpalte(t, titel, pos.Titel, 9, 73)
-			pruefeInSpalte(t, autor, pos.Autor, 9, 38)
-			pruefeInSpalte(t, isbn, pos.ISBN, 9, 33)
+			pdftest.InSpalte(t, titel, pos.Titel, 9, 73)
+			pdftest.InSpalte(t, autor, pos.Autor, 9, 38)
+			pdftest.InSpalte(t, isbn, pos.ISBN, 9, 33)
 			gekuerzt[fmt.Sprint(pos.Menge)] = titel != pos.Titel || autor != pos.Autor || isbn != pos.ISBN
 		}
 	}

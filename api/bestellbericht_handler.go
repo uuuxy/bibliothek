@@ -279,15 +279,14 @@ func zeichneLieferantenuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders
 // dieselben 170 mm.
 type berichtSpalten struct {
 	Titel, ISBN, Menge float64
-	TitelKuerzung      int // Zeichen, nicht Bytes — Umlaute zählen einfach
 }
 
 func spaltenFuerBericht(mitPreisen bool) berichtSpalten {
 	if mitPreisen {
-		return berichtSpalten{Titel: 83, ISBN: 33, Menge: 14, TitelKuerzung: 62}
+		return berichtSpalten{Titel: 83, ISBN: 33, Menge: 14}
 	}
 	// Breitere Titelspalte trägt mehr Text.
-	return berichtSpalten{Titel: 103, ISBN: 43, Menge: 24, TitelKuerzung: 78}
+	return berichtSpalten{Titel: 103, ISBN: 43, Menge: 24}
 }
 
 // berichtRahmen bündelt die Angaben, die für den GANZEN Bericht gelten. Vorher standen
@@ -338,7 +337,9 @@ func zeichnePositionen(p *gofpdf.Fpdf, tr func(string) string, positionen []repo
 		if isbn == "" {
 			isbn = "—"
 		}
-		p.CellFormat(s.Titel, 5, tr(pdfzeichen.KuerzeAufZeichen(pos.TitelName, s.TitelKuerzung)), "1", 0, "L", false, 0, "")
+		// Gekürzt wird auf die gedruckte Breite der Zelle; gofpdf druckt Überlanges über die ISBN.
+		titel := pdfzeichen.KuerzeAufZelle(p, tr, pos.TitelName, s.Titel)
+		p.CellFormat(s.Titel, 5, tr(titel), "1", 0, "L", false, 0, "")
 		p.CellFormat(s.ISBN, 5, tr(isbn), "1", 0, "C", false, 0, "")
 		if mitPreisen {
 			p.CellFormat(s.Menge, 5, fmt.Sprintf("%d", pos.Menge), "1", 0, "C", false, 0, "")

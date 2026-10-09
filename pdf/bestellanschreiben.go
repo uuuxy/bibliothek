@@ -143,9 +143,9 @@ func GenerateBestellanschreibenPDF(b Bestellanschreiben, schule SchuleInfo) ([]b
 			p.AddPage()
 			anschreibenSpaltenkoepfe(p, tr)
 		}
-		p.CellFormat(anschreibenSpalteTitel, anschreibenZeilenHoehe, tr(kuerzeAufZelle(p, tr, item.Titel, anschreibenSpalteTitel)), "1", 0, "L", false, 0, "")
-		p.CellFormat(anschreibenSpalteAutor, anschreibenZeilenHoehe, tr(kuerzeAufZelle(p, tr, item.Autor, anschreibenSpalteAutor)), "1", 0, "L", false, 0, "")
-		p.CellFormat(anschreibenSpalteISBN, anschreibenZeilenHoehe, tr(kuerzeAufZelle(p, tr, item.ISBN, anschreibenSpalteISBN)), "1", 0, "L", false, 0, "")
+		p.CellFormat(anschreibenSpalteTitel, anschreibenZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, item.Titel, anschreibenSpalteTitel)), "1", 0, "L", false, 0, "")
+		p.CellFormat(anschreibenSpalteAutor, anschreibenZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, item.Autor, anschreibenSpalteAutor)), "1", 0, "L", false, 0, "")
+		p.CellFormat(anschreibenSpalteISBN, anschreibenZeilenHoehe, tr(pdfzeichen.KuerzeAufZelle(p, tr, item.ISBN, anschreibenSpalteISBN)), "1", 0, "L", false, 0, "")
 		p.CellFormat(anschreibenSpalteMenge, anschreibenZeilenHoehe, fmt.Sprintf("%d", item.Menge), "1", 1, "C", false, 0, "")
 	}
 

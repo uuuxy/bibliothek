@@ -190,10 +190,10 @@ func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Lernmitte
 	pdf.SetXY(randLinks, oben)
 	pdf.CellFormat(spCover, zeilenH, "", "1", 0, "", false, 0, "")
 	zeichneTitelZelle(pdf, tr, t, breiteTitel)
-	pdf.CellFormat(spAutor, zeilenH, tr(kuerze(t.Autor, 16)), "1", 0, "L", false, 0, "")
+	pdf.CellFormat(spAutor, zeilenH, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, strings.TrimSpace(t.Autor), spAutor)), "1", 0, "L", false, 0, "")
 	pdf.CellFormat(spISBN, zeilenH, tr(t.ISBN), "1", 0, "L", false, 0, "")
 	pdf.CellFormat(spJg, zeilenH, tr(jahrgangText(t)), "1", 0, "C", false, 0, "")
-	pdf.CellFormat(spZweig, zeilenH, tr(kuerze(t.Track, 13)), "1", 0, "L", false, 0, "")
+	pdf.CellFormat(spZweig, zeilenH, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, strings.TrimSpace(t.Track), spZweig)), "1", 0, "L", false, 0, "")
 	if mitGezaehlt {
 		pdf.CellFormat(spGezaehlt, zeilenH, tr(t.Gezaehlt), "1", 0, "C", false, 0, "")
 	}
@@ -225,7 +225,7 @@ func fachAnzeige(fach string) string {
 // bestehen — dieselben Worte wie auf dem Bildschirm. Die Zelle behält ihre Höhe: Wüchse die
 // Zeile, stimmte der Umbruch vor dem Cover nicht mehr (zeichneSchulbuchZeile).
 func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTitel, breite float64) {
-	titel := kuerze(t.Title, int(breite/1.6))
+	titel := pdfzeichen.KuerzeAufZelle(pdf, tr, strings.TrimSpace(t.Title), breite)
 	if len(t.AuflagenBestand) < 2 {
 		pdf.CellFormat(breite, zeilenH, tr(titel), "1", 0, "L", false, 0, "")
 		return
@@ -270,6 +270,7 @@ func auflagenAufschluesselung(auflagen []AuflageImBestand) string {
 	return fmt.Sprintf("Bestand aus %d Auflagen: %s", len(auflagen), strings.Join(teile, ", "))
 }
 
+// kuerze kürzt auf eine Zahl von Zeichen, für den mehrzeiligen Text unter dem Titel.
 func kuerze(s string, max int) string {
 	r := []rune(strings.TrimSpace(s))
 	if len(r) <= max {

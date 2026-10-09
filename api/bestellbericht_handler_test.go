@@ -148,3 +148,53 @@ func TestBericht_LieferantenStehenNachNamenGeordnet(t *testing.T) {
 		}
 	}
 }
+
+// Der Titel einer Position steht gekürzt mit Auslassungszeichen da, sobald er gedruckt breiter
+// wäre als seine Spalte, mit und ohne Preisspalten. Nach Zeichen gekürzt lief ein gewöhnlicher
+// langer Titel 4 mm in die Spalte der ISBN.
+func TestBericht_TitelBleibtInSeinerSpalte(t *testing.T) {
+	const (
+		lang  = "Seydlitz – Geographie Gymnasium Hessen, Schülerband für die Klassen 5 und 6, Ausgabe 2024 mit Arbeitsheft"
+		gross = "DEUTSCHBUCH GYMNASIUM – ALLGEMEINE AUSGABE 2019, 5. SCHULJAHR, SCHÜLERBUCH MIT ARBEITSHEFT"
+	)
+	bestellungen := []repository.BerichtBestellung{{
+		LieferantName: "Cornelsen", Kundennummer: "C-1", Bestelldatum: time.Date(2026, 3, 14, 0, 0, 0, 0, time.UTC),
+		Gesamtbetrag: 81, AnzahlExemplare: 3,
+		Positionen: []repository.BerichtPosition{
+			{TitelName: lang, ISBN: "ISBN-PROBE-1", Menge: 1, Einzelpreis: 27},
+			{TitelName: gross, ISBN: "ISBN-PROBE-2", Menge: 1, Einzelpreis: 27},
+			{TitelName: "Atlas", ISBN: "ISBN-PROBE-3", Menge: 1, Einzelpreis: 27},
+		},
+	}}
+	for _, mitPreisen := range []bool{true, false} {
+		roh, err := generateBestellBerichtPDF(bestellungen, pdf.SchuleInfo{Name: "Testbibliothek"}, bestellBerichtOpts{
+			Titel: "Testbericht", Von: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), Bis: time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC),
+			Jahresansicht: false, MitPreisen: mitPreisen,
+		})
+		if err != nil {
+			t.Fatalf("mit Preisen %v: %v", mitPreisen, err)
+		}
+		platz := spaltenFuerBericht(mitPreisen).Titel - 2
+		texte := pdftest.TexteInReihenfolge(t, roh)
+		gefunden := 0
+		for stelle, text := range texte {
+			// Vor der ISBN steht der Titel der Position.
+			switch text {
+			case "ISBN-PROBE-1":
+				gefunden++
+				pdftest.InSpalte(t, texte[stelle-1], lang, 8, platz)
+			case "ISBN-PROBE-2":
+				gefunden++
+				pdftest.InSpalte(t, texte[stelle-1], gross, 8, platz)
+			case "ISBN-PROBE-3":
+				gefunden++
+				if texte[stelle-1] != "Atlas" {
+					t.Errorf("mit Preisen %v: der kurze Titel steht als %q da", mitPreisen, texte[stelle-1])
+				}
+			}
+		}
+		if gefunden != 3 {
+			t.Errorf("mit Preisen %v: %d von 3 Positionen gefunden", mitPreisen, gefunden)
+		}
+	}
+}

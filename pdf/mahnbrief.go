@@ -98,7 +98,7 @@ func zeichneMahnbriefBuecher(pdf *gofpdf.Fpdf, tr func(string) string, buecher [
 		}
 		startY := pdf.GetY()
 		pdf.SetX(20)
-		pdf.CellFormat(mahnbriefSpalteTitel, rowH, tr(kuerzeAufZelle(pdf, tr, b.Titel, mahnbriefSpalteTitel)), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(mahnbriefSpalteTitel, rowH, tr(pdfzeichen.KuerzeAufZelle(pdf, tr, b.Titel, mahnbriefSpalteTitel)), "1", 0, "L", false, 0, "")
 
 		bcX := pdf.GetX()
 		pdf.CellFormat(35, rowH, "", "1", 0, "", false, 0, "")

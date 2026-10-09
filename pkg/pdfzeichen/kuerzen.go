@@ -29,6 +29,18 @@ func KuerzeAufBreite(pdf Breitenmesser, messbar func(string) string, text string
 	return "…"
 }
 
+// Zellenmesser nennt dazu den Rand, den das Dokument links und rechts vom Text einer Zelle lässt.
+type Zellenmesser interface {
+	Breitenmesser
+	GetCellMargin() float64
+}
+
+// KuerzeAufZelle kürzt den Text, bis er in der gerade gesetzten Schrift in eine Zelle der Breite
+// passt. gofpdf druckt Überlanges über die Nachbarzelle.
+func KuerzeAufZelle(pdf Zellenmesser, messbar func(string) string, text string, breite float64) string {
+	return KuerzeAufBreite(pdf, messbar, text, breite-2*pdf.GetCellMargin())
+}
+
 // KuerzeAufZeichen kürzt s auf höchstens max Zeichen, das Auslassungszeichen eingerechnet;
 // max ist damit die Länge der Ausgabe, an der sich eine Spaltenbreite ablesen lässt. Gezählt
 // wird in Zeichen und nicht in Bytes: Ein Umlaut belegt in UTF-8 zwei, und ein Schnitt mitten

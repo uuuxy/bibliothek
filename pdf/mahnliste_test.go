@@ -201,8 +201,8 @@ func TestMahnliste_TitelUndAutorBleibenInIhrerSpalte(t *testing.T) {
 			}
 			// Vor der Nummer des Strichcodes stehen Titel und Autor der Zeile.
 			titel, autor := texte[stelle-2], texte[stelle-1]
-			pruefeInSpalte(t, titel, med.Titel, 8, 50)
-			pruefeInSpalte(t, autor, med.Autor, 8, 24)
+			pdftest.InSpalte(t, titel, med.Titel, 8, 50)
+			pdftest.InSpalte(t, autor, med.Autor, 8, 24)
 			gekuerzt[med.Barcode+" Titel"] = titel != med.Titel
 			gekuerzt[med.Barcode+" Autor"] = autor != med.Autor
 		}

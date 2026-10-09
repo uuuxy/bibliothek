@@ -55,10 +55,10 @@ func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med Mahnli
 	pdf.SetXY(18, startY)
 	pdf.CellFormat(8, rowHeight, "", "1", 0, "", false, 0, "")
 
-	titleCell := kuerzeAufZelle(pdf, tr, med.Titel, mahnlisteSpalteTitel)
+	titleCell := pdfzeichen.KuerzeAufZelle(pdf, tr, med.Titel, mahnlisteSpalteTitel)
 	pdf.CellFormat(mahnlisteSpalteTitel, rowHeight, tr(titleCell), "1", 0, "L", false, 0, "")
 
-	autorCell := kuerzeAufZelle(pdf, tr, med.Autor, mahnlisteSpalteAutor)
+	autorCell := pdfzeichen.KuerzeAufZelle(pdf, tr, med.Autor, mahnlisteSpalteAutor)
 	pdf.CellFormat(mahnlisteSpalteAutor, rowHeight, tr(autorCell), "1", 0, "L", false, 0, "")
 
 	bcX := pdf.GetX()
