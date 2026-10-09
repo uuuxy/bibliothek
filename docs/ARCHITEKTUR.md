@@ -1626,7 +1626,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung und zum Umstellen eines Namens ergänzt
+Stand: 08.10.2026 · am 09.10.2026 in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2349,6 +2349,15 @@ wenn man ihn einmal gebraucht hat.
   bis dahin keine andere aus dem Modul hatte. Und die geänderten Zeilen heben sich paarweise
   auf, sobald alter und neuer Name gleichgesetzt sind; was übrig bleibt, ist von Hand geändert
   und wird gelesen.
+- **Eine Datei wird beim Umzug von Hand neu geschrieben,** weil sie eigene Typen und neue
+  Kommentare bekommt. Den Code vorher und nachher als Folge seiner Token vergleichen, gelesen
+  mit `go/scanner` ohne Kommentare und ohne Einbindungen, nachdem die umbenannten Namen
+  gleichgesetzt sind: Übrig bleiben die gewollten Unterschiede (neue Typen, ein verlegter
+  Fehlerwert), jeder andere ist ein Tippfehler. So belegt am 09.10.2026 für das Anlegen einer
+  Bestellung (1.733 Token). Danach je Regel der Datei und je Aufrufstelle eine Probe mit
+  zurückgebauter Stelle gegen die Tests der Türen: Bei den sechs Umzügen dieses Tages blieben
+  acht solcher Proben grün; hinter jeder fehlte ein Test, oder der vorhandene traf den Fall
+  nicht.
 
 ---
 
