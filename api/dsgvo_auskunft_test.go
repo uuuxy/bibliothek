@@ -125,6 +125,10 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 	if len(resp.Verarbeitungsangaben.Zwecke) == 0 || resp.Verarbeitungsangaben.Rechtsgrundlage == "" {
 		t.Errorf("Art.-15-Pflichtangaben fehlen: %+v", resp.Verarbeitungsangaben)
 	}
+	// Eine Quelle ohne Zeile steht als leere Liste in der Antwort: „keine", nicht „unbekannt".
+	if !strings.Contains(rec.Body.String(), `"nachbuch_meldungen":[]`) {
+		t.Errorf("die leere Liste der Nachbuch-Meldungen steht nicht als [] in der Antwort: %s", rec.Body.String())
+	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unerfüllte Erwartungen: %s", err)
 	}

@@ -18,7 +18,7 @@ import (
 // dabei keine Kontaktangabe, sondern der Schlüssel: An ihr erkennt die Anmeldung (IMAP)
 // die Person, und `benutzer_email_unique` verhindert darüber den Doppeleintrag.
 //
-// Warum die Abfragen hier und nicht im Handler stehen: In api/ ist SQL eingefroren
+// Warum die Abfragen hier und nicht im Handler stehen: Eine Tür formuliert kein SQL
 // (api/schichtung_test.go). Die Regeln — welche Zeile bei mehreren Konten gilt, dass ein
 // fehlendes Konto kein Fehler ist, dass die Namen aus der LESERZEILE kommen — gehören an
 // eine Stelle.

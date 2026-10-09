@@ -4,13 +4,15 @@ import (
 	"context"
 	"regexp"
 	"testing"
+
+	"bibliothek/repository"
 )
 
 // Spalten-Gate der Art.-15-Auskunft (Rasterdurchgang 02.09.2026): Der Struct-Kommentar
 // versprach „sämtliche gespeicherten Stammdaten", aber seit Migration 084 fehlten
 // lusd_bestaetigt_am und anonymized_at, seit 094 schul_eintritt_am und abgaenger_seit —
 // das bestehende Gate (dsgvo_paar_vollstaendigkeit_test.go) prüft nur TABELLEN, nicht
-// Spalten. Hier: jede Spalte von leser steht in dsgvoStammdatenSQL, oder sie steht
+// Spalten. Hier: jede Spalte von leser steht in repository.DsgvoStammdatenSQL, oder sie steht
 // mit Begründung in der Ausnahmeliste.
 //
 // Seit dem 24.09.2026 gegen die Tabelle leser statt gegen die Sicht schueler: Die Auskunft
@@ -44,8 +46,8 @@ func TestDsgvoAuskunft_KenntJedeLeserSpalte(t *testing.T) {
 		if _, ok := ausnahmen[c]; ok {
 			continue
 		}
-		if !regexp.MustCompile(`\b` + regexp.QuoteMeta(c) + `\b`).MatchString(dsgvoStammdatenSQL) {
-			t.Errorf("Spalte leser.%s fehlt in der Art.-15-Auskunft (dsgvoStammdatenSQL) — aufnehmen oder begründet ausnehmen", c)
+		if !regexp.MustCompile(`\b` + regexp.QuoteMeta(c) + `\b`).MatchString(repository.DsgvoStammdatenSQL) {
+			t.Errorf("Spalte leser.%s fehlt in der Art.-15-Auskunft (repository.DsgvoStammdatenSQL) — aufnehmen oder begründet ausnehmen", c)
 		}
 	}
 	for c := range ausnahmen {

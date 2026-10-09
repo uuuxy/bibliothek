@@ -11,7 +11,7 @@ import (
 //
 // Fund des Komplett-Durchgangs 31.08.2026: Zwei Prädikate beantworten dieselbe Frage
 // „welche audit_log-Zeilen gehören diesem Schüler?" und waren sich nicht einig. Die
-// Art.-15-Auskunft (api/dsgvo_auskunft.go) zählt ausdrücklich auch die Ausleih-Zeilen
+// Art.-15-Auskunft (repository/dsgvo_auskunft.go) zählt ausdrücklich auch die Ausleih-Zeilen
 // dazu („Ohne diesen Zweig fehlte die Lesehistorie"): tabelle='ausleihen' AND
 // details->>'schueler_id' = id. TilgeSchuelerSpuren tilgte nur tabelle='schueler'.
 //

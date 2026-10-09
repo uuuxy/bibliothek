@@ -134,8 +134,7 @@ der Nummer nichts mehr dazu offen ist.
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
 - [ ] **Schichtung des Backends (5.62):** Die PDF-Erzeuger und der Rest der Dateien ohne Tür
-  ziehen je Sache aus `api/` in eigene Pakete; eine Datei von `api/` trägt noch SQL (die
-  Auskunft).
+  ziehen je Sache aus `api/` in eigene Pakete.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -343,10 +342,10 @@ Schulserver feststeht.
 Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko steht in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1 unter R4, die Messwerte vom 09.10.2026 ebenfalls.
 
-- **Die Bremse steht.** `api/schichtung_test.go` zählt die SQL-Anweisungen je Datei und führt
-  die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 1
-  Datei mit 11 Anweisungen (am Anfang 48 mit 177), 34 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 25.847 Zeilen in 158 Dateien (am Anfang 30.785 in 168).
+- **Die Bremse steht.** `api/schichtung_test.go` weist jede SQL-Anweisung in `api/` ab und
+  führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Stand am 09.10.2026:
+  keine Datei mit SQL (am Anfang 48 mit 177 Anweisungen), 34 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 25.581 Zeilen in 158 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`. Offen: der Aufbau der PDFs und der Rest der 34.
@@ -354,17 +353,10 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Mailversand), gemessen am 09.10.2026 mit einem Probe-Umzug am Compiler; sie ziehen je Sache
   um (Etiketten, Bescheid, Auskunft, Bestell-PDF, Bestandsbücher), nicht in einem Zug. Je
   Thema ein Commit; die Tests der Türen bleiben stehen und belegen, dass sich nichts ändert.
-  Eine Datei mit SQL zieht erst um, wenn ihr SQL in `repository/` steht: Die Ratsche zählt nur
-  `api/` und verlöre sie sonst. Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer
-  dort liegen; was sie aus einem umgezogenen Paket brauchen, ist dort sichtbar gemacht.
-- **SQL nach `repository/`.** Je Thema ein Commit, die Anweisung wörtlich und in derselben
-  Transaktion wie vorher. Vor dem Umzug einer Anweisung muss ein Test an der Datenbank sie
-  ausführen; fehlt er, kommt er zuerst. Der Handgriff steht in
-  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14, die Regeln für Tür und Abfrage in 5.2.2. Eine Datei
-  trägt noch SQL: `api/dsgvo_auskunft.go` (11), die Abfragen der Auskunft.
-  `api/dsgvo_paar_vollstaendigkeit_test.go` liest den Quelltext dieser Datei und verlangt jede
-  Tabelle mit Leserbezug in einer ihrer Abfragen. Mit den Abfragen zieht das Gate an die neue
-  Datei; danach wird es am Rückbau einer Quelle rot gesehen.
+  Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus
+  einem umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage
+  stehen in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung
+  in 8.14.
 - **Rest beim Protokoll der Verwaltung:** Die Einträge in `audit_logs` schreibt eine Anweisung,
   `repository.SchreibeAdminProtokoll`. Eine Stelle schreibt noch selbst: die Selbstanmeldung
   (`auth/selbstanmeldung.go`); `auth/` bindet `repository/` nicht ein.

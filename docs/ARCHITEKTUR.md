@@ -619,8 +619,8 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 25.847 Zeilen, 158 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
-| `repository/`           | 20.663 Zeilen, 135 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
+| `api/`                  | 25.581 Zeilen, 158 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `repository/`           | 21.078 Zeilen, 137 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
 | `internal/service/`     | 4.440 Zeilen, 22 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 892 Zeilen, 1 Datei       | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert. Die Lage trägt die Tür zusammen (`api/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/betriebsbereitschaft_alarm.go` |
@@ -660,8 +660,9 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   die Tür prüft und füllt nur Werte. Ein Test hält jedes Feld des Typs gegen eine Spalte, ein
   zweiter jedes Feld der Anfrage gegen die gesetzten Spalten.
 
-`api/schichtung_test.go` hält den Stand: die Zahl der SQL-Anweisungen je Datei von `api/` und
-die Dateien ohne Tür.
+`api/schichtung_test.go` hält den Stand: Keine Datei von `api/` formuliert SQL, und die Dateien
+ohne Tür stehen als Bestand, der nur kleiner werden kann. Dass der Zähler misst, belegt er an
+`repository/`: Dort muss er Anweisungen finden.
 
 ##### Die `pkg/`-Pakete im Einzelnen
 
@@ -2123,7 +2124,9 @@ wenn man ihn einmal gebraucht hat.
   eine geänderte Kopie zu (`{"Replace": {"/…/api/x.go": "/tmp/x_alt.go"}}`), danach ist
   `git status` leer. Ratschen, die Go-Quelltext oder SQL-Dateien zur Laufzeit lesen, sehen das
   Overlay nicht; dort die Datei kopieren, ändern und zurückkopieren. Bleibt eine Probe grün,
-  misst der Test den Fall nicht.
+  misst der Test den Fall nicht. So aufgefallen am 09.10.2026: Ein Test las geleerte Spalten
+  mit `coalesce(spalte, '')` zurück und unterschied NULL nicht von leerem Text; die Regel „leer
+  wird NULL" prüft seitdem ein Test mit `IS NULL` (`api/student_update_pg_test.go`).
 - **Eine Regel über Titeltexte wird an Sätzen der DNB gemessen.** Die Datenbank am
   Arbeitsplatz trägt keine Untertitel, und eine Schulstufe nennen dort nur Titel aus
   Testläufen. Die DNB liefert Sätze über SRU ohne Anmeldung, 100 je Abruf, `startRecord`
@@ -2207,15 +2210,21 @@ wenn man ihn einmal gebraucht hat.
   neues Feld erscheint dort als `null`), Swagger (`docs/swagger_drift_test.go`),
   [api_inventar.md](api_inventar.md) und die Liste der Bauteile in `CLAUDE.md`. Ein Eintrag
   ist eine Antwort, keine hochgesetzte Zahl.
-- **Eine Anweisung zieht aus `api/` nach `repository/`** (5.2.2, Tür und Abfrage). Vorher
-  messen, ob ein Test an der Datenbank sie ausführt: `go test ./api/` mit `-coverprofile`,
-  `-coverpkg=./api/` und `-run` über die Namen der Tests aus den `*_pg_test.go`; die Zeile der
-  Anweisung muss im Profil gezählt sein, sonst kommt der Test zuerst. Das Literal aus der Quelle schneiden, nicht
-  abtippen. Danach alle Zeichenketten-Literale der berührten Dateien vor und nach dem Umzug
-  vergleichen (mit `go/scanner` gelesen): Unterschiede nur bei den Einbindungen. Umzubuchen
-  sind `api/schichtung_test.go`, für einen verworfenen `CommandTag` `phantom_erfolg_test.go`,
-  für `FROM schueler` `docs/lesepfade_gegen_sicht_test.go`, für `CURRENT_DATE`
-  `docs/kalendertag_bestand_test.go`; die ganze Suite nennt jeden Eintrag, der fehlt. Zum
+- **Eine Anweisung zieht in eine andere Schicht,** etwa aus einer Tür nach `repository/` (5.2.2,
+  Tür und Abfrage). Vorher messen, ob ein Test an der Datenbank sie ausführt: `go test` auf das
+  Paket mit `-coverprofile`, `-coverpkg` und `-run` über die Namen der Tests aus den
+  `*_pg_test.go`; die Zeile der Anweisung muss im Profil gezählt sein, sonst kommt der Test
+  zuerst. Das Literal aus der Quelle schneiden, nicht abtippen. Danach alle
+  Zeichenketten-Literale der berührten Dateien vor und nach dem Umzug vergleichen (mit
+  `go/scanner` gelesen): Unterschiede nur bei den Einbindungen. Ändert sich mehr als der Ort
+  (eine Anweisung, die aus Feldern zusammengesetzt wird; Zeilen, die in einen anderen Typ
+  gelesen werden), den alten Code wörtlich unter anderem Namen in einen Wegwerf-Test legen und
+  alt gegen neu laufen lassen: über alle Kombinationen der Felder oder an Probe-Daten, in
+  denen jede Spalte einen eigenen Wert trägt. Ob der Vergleich misst, zeigt eine absichtlich
+  vertauschte Spalte. Umzubuchen sind für einen verworfenen `CommandTag`
+  `phantom_erfolg_test.go`, für `FROM schueler` `docs/lesepfade_gegen_sicht_test.go`, für
+  `CURRENT_DATE` `docs/kalendertag_bestand_test.go`; die ganze Suite nennt jeden Eintrag, der
+  fehlt. Zum
   Schluss `./scripts/gosec-gate.sh` fahren: Die Taint-Analyse von gosec sieht nach dem Umzug
   einen Weg von der Anfrage in die Antwort, den sie vorher nicht sah
   ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) 5, Fall vom 09.10.2026). Der Hook vor dem Push fährt
@@ -2996,7 +3005,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 25.847 Zeilen in 158 Dateien das schwerste Paket
+#### R4 — `api/` ist mit 25.581 Zeilen in 158 Dateien das schwerste Paket
 
 | | |
 | --- | --- |
@@ -3011,11 +3020,11 @@ Dateien von 53 gesunken, die Zahl der Anweisungen in den 48 von 143 gestiegen, w
 nur neue Dateien abwies. 44 Dateien mit 7.503 Zeilen banden `net/http` nicht ein, waren also
 keine Tür.
 
-Stand nach dem Abbau vom 09.10.2026: 2 Dateien mit 12 SQL-Anweisungen und 34 Dateien ohne Tür
+Stand nach dem Abbau vom 09.10.2026: Keine Datei von `api/` formuliert SQL; 34 Dateien ohne Tür
 mit 4.714 Zeilen, davon 12 PDF-Erzeuger mit 2.610 Zeilen. Der LUSD-Import steht in
 `internal/lusd`, die Selbstprüfung in `internal/bereitschaft`, die Abfragen der Türen in
-`repository/` (5.2.2, Tür und Abfrage). `api/schichtung_test.go` hält zwei Bestände, die nur
-kleiner werden können: die Zahl der SQL-Anweisungen je Datei und die Dateien ohne Tür. Was
+`repository/` (5.2.2, Tür und Abfrage). `api/schichtung_test.go` weist jede SQL-Anweisung in
+`api/` ab und führt die Dateien ohne Tür als Bestand, der nur kleiner werden kann. Was
 bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst bleiben in einem Paket: Der Typ
 `Server` trägt 354 Methoden.
 

@@ -5,10 +5,8 @@ package repository
 // Einträge des Verwaltungsprotokolls über das Konto und die Vorgänge, die die Person selbst
 // bearbeitet hat (dsgvo_konto_vorgaenge.go). Bis zum 24.09.2026 endete die Auskunft
 // eines Kollegen mit „nicht gefunden" (Stammdaten aus der Sicht `schueler`); entschieden ist
-// seither: Die Auskunft gibt es für jeden Leser (OFFEN.md 5.19).
-//
-// Hier und nicht in api/dsgvo_auskunft.go, weil ein Handler kein neues SQL formuliert
-// (api/schichtung_test.go).
+// seither: Die Auskunft gibt es für jeden Leser (OFFEN.md 5.19). Den Teil am Leser liest
+// dsgvo_auskunft.go.
 
 import (
 	"context"

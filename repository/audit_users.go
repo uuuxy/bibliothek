@@ -560,7 +560,7 @@ var spurTilgungen = []SpurTilgung{
 	},
 	{
 		// Lesehistorie: dieselben Zeilen, die die Art.-15-Auskunft dem Schüler zurechnet
-		// (api/dsgvo_auskunft.go: tabelle='ausleihen' AND details->>'schueler_id' = id).
+		// (repository/dsgvo_auskunft.go: tabelle='ausleihen' AND details->>'schueler_id' = id).
 		// Die Buchungshistorie selbst BLEIBT (Nachweis, dass ein Exemplar unterwegs war),
 		// nur ihr Personenbezug fällt — dieselben Schlüssel, die auch die
 		// Lesehistorie-Befristung entfernt (jobs/cron_dsgvo_lesehistorie.go).

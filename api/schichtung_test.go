@@ -3,7 +3,6 @@ package api
 import (
 	"go/parser"
 	"go/token"
-	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -17,12 +16,11 @@ import (
 // Regel einer Abfrage (NULL-Behandlung, Schutz vor leeren Werten, Reihenfolge in der
 // Transaktion) steht in repository/ einmal; eine Abfrage im Handler daneben kennt sie nicht.
 //
-// Die zwei Bestände unten können nur kleiner werden: handlerMitSQL zählt die Anweisungen je
-// Datei, dateienOhneTuer nennt, was ohne Tür in api/ liegt.
+// Keine Datei von api/ formuliert SQL. Der Bestand dateienOhneTuer nennt, was ohne Tür in api/
+// liegt, und kann nur kleiner werden.
 //
-// Blindheit: SQL, das erst aus Variablen oder Sprintf-Teilen entsteht; eine Anweisung, die
-// eine andere ersetzt (die Zahl bleibt gleich); Regeln in einer Datei, die auch eine Tür
-// trägt; eine Datei, die net/http nur für eine Konstante einbindet.
+// Blindheit: SQL, das erst aus Variablen oder Sprintf-Teilen entsteht; Regeln in einer Datei,
+// die auch eine Tür trägt; eine Datei, die net/http nur für eine Konstante einbindet.
 
 // Nur Anweisungen, keine Bezeichner: `UPDATE x SET` statt `UPDATE`, sonst schlägt jedes Wort
 // "update" in einem Bezeichner an. Hinter dem Tabellennamen steht kein \b: Es verlangte eine
@@ -77,49 +75,42 @@ func produktivDateien(t *testing.T) []string {
 	return namen
 }
 
-// handlerMitSQL: Zahl der SQL-Anweisungen je Datei. Wer eine Abfrage nach repository/ verlegt,
-// senkt die Zahl; steht sie auf null, fällt die Zeile weg.
-var handlerMitSQL = map[string]int{
-	"dsgvo_auskunft.go": 11,
-}
-
-func TestHandlerFormulierenKeinNeuesSQL(t *testing.T) {
-	gefunden := map[string]int{}
+func TestHandlerFormulierenKeinSQL(t *testing.T) {
 	for _, name := range produktivDateien(t) {
 		quelle, err := os.ReadFile(filepath.Clean(name))
 		if err != nil {
 			t.Fatalf("%s nicht lesbar: %v", name, err)
 		}
 		if n := sqlAnweisungenIn(string(quelle)); n > 0 {
-			gefunden[name] = n
-		}
-	}
-	if len(gefunden) == 0 {
-		t.Fatal("kein einziger Handler mit SQL gefunden — der Test misst offenbar nichts mehr")
-	}
-
-	for _, name := range slices.Sorted(maps.Keys(gefunden)) {
-		n := gefunden[name]
-		bestand, bekannt := handlerMitSQL[name]
-		switch {
-		case !bekannt:
 			t.Errorf("api/%s formuliert SQL (%d Anweisungen). Handler lesen und schreiben über "+
 				"repository/ — dort steht jede Regel (COALESCE-Schutz, NULL-Behandlung, Reihenfolge "+
-				"in der Transaktion) einmal. Neuer Bedarf gehört in eine repository-Funktion.", name, n)
-		case n > bestand:
-			t.Errorf("api/%s formuliert %d SQL-Anweisungen, im Bestand stehen %d. Eine neue "+
-				"Abfrage gehört in eine repository-Funktion, auch in einer Datei aus dem Bestand.",
-				name, n, bestand)
-		case n < bestand:
-			t.Errorf("api/%s formuliert nur noch %d SQL-Anweisungen statt %d — bitte die Zahl in "+
-				"handlerMitSQL senken, damit die Ratsche greift.", name, n, bestand)
+				"in der Transaktion) einmal. Die Anweisung gehört in eine repository-Funktion.", name, n)
 		}
 	}
-	for _, name := range slices.Sorted(maps.Keys(handlerMitSQL)) {
-		if _, ok := gefunden[name]; !ok {
-			t.Errorf("api/%s enthält kein SQL mehr — bitte aus handlerMitSQL entfernen, damit "+
-				"die Ratsche greift.", name)
+}
+
+// Der Zähler findet die Anweisungen dort, wo sie stehen. Fände er in repository/ nichts, wäre
+// „kein SQL in api/" keine Aussage.
+func TestSQLZaehler_FindetAnweisungenInRepository(t *testing.T) {
+	const ordner = "../repository"
+	eintraege, err := os.ReadDir(ordner)
+	if err != nil {
+		t.Fatalf("%s nicht lesbar: %v", ordner, err)
+	}
+	summe := 0
+	for _, e := range eintraege {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
 		}
+		quelle, err := os.ReadFile(filepath.Join(ordner, name))
+		if err != nil {
+			t.Fatalf("%s nicht lesbar: %v", name, err)
+		}
+		summe += sqlAnweisungenIn(string(quelle))
+	}
+	if summe < 300 {
+		t.Fatalf("nur %d SQL-Anweisungen in repository/ gezählt — der Zähler misst offenbar nichts mehr", summe)
 	}
 }
 
@@ -168,8 +159,7 @@ func TestSQLAnweisung_ErkenntJedeForm(t *testing.T) {
 	}
 }
 
-// Die Zahl je Datei trägt die Ratsche: Der Zähler muss jede Anweisung einzeln zählen und einen
-// Kommentar auslassen.
+// Der Zähler zählt jede Anweisung einzeln und lässt einen Kommentar aus.
 func TestSQLAnweisungenIn_ZaehltJedeAnweisung(t *testing.T) {
 	faelle := []struct {
 		name   string

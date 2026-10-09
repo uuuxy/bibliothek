@@ -35,8 +35,8 @@ import (
 // anheben und im Commit begründen. Sinkt ein Zähler (Stelle behoben/entfernt), wird
 // er hier ABGESENKT — die Ratsche dreht nur zu.
 var phantomBestand = map[string]int{
-	"repository/ausweis_layout.go:SpeichereAusweisLayout": 1,
-	"api/dsgvo_auskunft.go:protokolliereDsgvoAuskunft":    1,
+	"repository/ausweis_layout.go:SpeichereAusweisLayout":         1,
+	"repository/dsgvo_auskunft.go:SchreibeDsgvoAuskunftProtokoll": 1,
 	// Die Anweisungen des LUSD-Imports: die Sperre des Laufs (kein Schreibvorgang), Adoption
 	// und Aktualisierung (null Zeilen heißt, der Schutz der Bedingung hat gegriffen, der Lauf
 	// geht weiter), Neuanlage (INSERT), wartende Vormerkungen (null ist der Normalfall),

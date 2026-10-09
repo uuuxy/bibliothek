@@ -7,20 +7,18 @@ import (
 	"bibliothek/repository"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/jackc/pgx/v5"
 )
 
 // DsgvoStammdaten umfasst sämtliche im Leserdatensatz gespeicherten
 // Stammdaten — bewusst inklusive Soft-Delete-Zeitpunkt und Sperrgrund,
 // denn die Auskunft nach Art. 15 DSGVO deckt alles ab, was gespeichert ist.
-// „Sämtliche" ist seit 02.09.2026 gemessen: TestDsgvoAuskunft_KenntJedeLeserSpalte
-// hält jede Spalte von leser gegen dsgvoStammdatenSQL.
+// „Sämtliche" ist gemessen: TestDsgvoAuskunft_KenntJedeLeserSpalte hält jede Spalte von leser
+// gegen repository.DsgvoStammdatenSQL. Die Felder stehen in derselben Reihenfolge wie in
+// repository.DsgvoStammdatenZeile, sonst greift die Typumwandlung nicht.
 type DsgvoStammdaten struct {
 	ID                string     `json:"id"`
 	BarcodeID         string     `json:"barcode_id"`
@@ -62,33 +60,6 @@ type DsgvoStammdaten struct {
 	// Zugangskonto): Sie gehören zum Konto, nicht zum Leser.
 	HatZugangskonto bool `json:"hat_zugangskonto"`
 }
-
-// dsgvoStammdatenSQL ist die eine Spaltenliste der Auskunft. Sie steht außerhalb der
-// Funktion, damit das Spalten-Gate sie gegen information_schema.columns halten kann.
-//
-// Adress-/Kontaktfelder sind in der DB nullbar (VARCHAR ohne NOT NULL), werden aber
-// in nicht-nullbare Go-strings gescannt. Ohne COALESCE scheitert Scan(NULL → *string)
-// mit 500 — das traf jeden Schüler ohne erfasste Adresse (nicht nur Demo-Daten).
-//
-// Gelesen wird die Tabelle leser, nicht die Sicht schueler: Die Auskunft gibt es seit dem
-// 24.09.2026 für jeden Leser (OFFEN.md 5.19). Über die Sicht endete sie für einen
-// Kollegen mit „nicht gefunden".
-const dsgvoStammdatenSQL = `
-		SELECT id, COALESCE(barcode_id, '') AS barcode_id, vorname, nachname,
-		       COALESCE(klasse, '') AS klasse, geburtsdatum::text,
-		       COALESCE(abgaenger_jahr, 0) AS abgaenger_jahr,
-		       ist_gesperrt, ist_abgaenger, lusd_id,
-		       COALESCE(strasse, '') AS strasse, COALESCE(hausnummer, '') AS hausnummer,
-		       COALESCE(plz, '') AS plz, COALESCE(ort, '') AS ort,
-		       COALESCE(eltern_email, '') AS eltern_email,
-		       is_manually_blocked, block_reason,
-		       erstellt_am, aktualisiert_am, deleted_at,
-		       schul_eintritt_am::text, abgaenger_seit, letzter_vorgang_am,
-		       lusd_bestaetigt_am, anonymized_at,
-		       art,
-		       EXISTS (SELECT 1 FROM benutzer b WHERE b.leser_id = leser.id) AS hat_konto
-		FROM leser
-		WHERE id = $1`
 
 // DsgvoFoto beschreibt das (verschlüsselt gespeicherte) Ausweisfoto.
 type DsgvoFoto struct {
@@ -311,117 +282,55 @@ func dsgvoPflichtangaben(art string, f dsgvoFristWerte) DsgvoVerarbeitungsangabe
 	return dsgvoVerarbeitungsangabenKollegium(f)
 }
 
-func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*DsgvoStammdaten, error) {
-	var st DsgvoStammdaten
-	err := s.DB.Pool.QueryRow(ctx, dsgvoStammdatenSQL, id).Scan(
-		&st.ID, &st.BarcodeID, &st.Vorname, &st.Nachname, &st.Klasse, &st.Geburtsdatum,
-		&st.AbgaengerJahr, &st.IstGesperrt, &st.IstAbgaenger, &st.LusdID,
-		&st.Strasse, &st.Hausnummer, &st.Plz, &st.Ort, &st.ElternEmail,
-		&st.IsManuallyBlocked, &st.BlockReason,
-		&st.ErstelltAm, &st.AktualisiertAm, &st.GeloeschtAm,
-		&st.SchulEintrittAm, &st.AbgaengerSeit, &st.LetzterVorgangAm,
-		&st.LusdBestaetigtAm, &st.AnonymisiertAm,
-		&st.Art, &st.HatZugangskonto,
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
+// alsAntwort wandelt die Zeilen einer Abfrage in den Typ der Antwort. Eine leere Liste bleibt
+// leer und wird nicht nil: Die Auskunft sagt dann „keine" und nicht „unbekannt".
+func alsAntwort[Z, T any](zeilen []Z, err error, als func(Z) T) ([]T, error) {
 	if err != nil {
 		return nil, err
 	}
+	out := make([]T, 0, len(zeilen))
+	for _, z := range zeilen {
+		out = append(out, als(z))
+	}
+	return out, nil
+}
+
+func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*DsgvoStammdaten, error) {
+	zeile, err := repository.LeseDsgvoStammdaten(ctx, s.DB.Pool, id)
+	if err != nil || zeile == nil {
+		return nil, err
+	}
+	st := DsgvoStammdaten(*zeile)
 	return &st, nil
 }
 
 func (s *Server) dsgvoQueryFoto(ctx context.Context, id string) (DsgvoFoto, error) {
 	foto := DsgvoFoto{Hinweis: "Foto wird verschlüsselt gespeichert; Kopie über die Akte in der Leserdatei abrufbar"}
-	var aktualisiert time.Time
-	err := s.DB.Pool.QueryRow(ctx,
-		`SELECT aktualisiert_am FROM schueler_fotos WHERE schueler_id = $1`, id,
-	).Scan(&aktualisiert)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return DsgvoFoto{Vorhanden: false, Hinweis: "Kein Foto gespeichert"}, nil
-	}
+	aktualisiert, err := repository.LeseDsgvoFotoStand(ctx, s.DB.Pool, id)
 	if err != nil {
 		return foto, err
 	}
+	if aktualisiert == nil {
+		return DsgvoFoto{Vorhanden: false, Hinweis: "Kein Foto gespeichert"}, nil
+	}
 	foto.Vorhanden = true
-	foto.AktualisiertAm = &aktualisiert
+	foto.AktualisiertAm = aktualisiert
 	return foto, nil
 }
 
 func (s *Server) dsgvoQueryAusleihen(ctx context.Context, id string) ([]DsgvoAusleihe, error) {
-	const q = `
-		SELECT COALESCE(t.titel, g.modellname, 'Unbekannt') AS gegenstand,
-		       COALESCE(e.barcode_id, g.barcode_id, '') AS barcode,
-		       a.ausgeliehen_am, a.rueckgabe_frist, a.rueckgabe_am, a.ist_handapparat
-		FROM ausleihen a
-		LEFT JOIN buecher_exemplare e ON e.id = a.exemplar_id
-		LEFT JOIN buecher_titel t ON t.id = e.titel_id
-		LEFT JOIN geraete g ON g.id = a.geraet_id
-		WHERE a.schueler_id = $1
-		ORDER BY a.ausgeliehen_am DESC`
-	rows, err := s.DB.Pool.Query(ctx, q, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	out := []DsgvoAusleihe{}
-	for rows.Next() {
-		var a DsgvoAusleihe
-		if err := rows.Scan(&a.Gegenstand, &a.Barcode, &a.AusgeliehenAm, &a.RueckgabeFrist, &a.RueckgabeAm, &a.IstHandapparat); err != nil {
-			return nil, err
-		}
-		out = append(out, a)
-	}
-	return out, rows.Err()
+	zeilen, err := repository.LeseDsgvoAusleihen(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DsgvoAusleiheZeile) DsgvoAusleihe { return DsgvoAusleihe(z) })
 }
 
 func (s *Server) dsgvoQuerySchadensfaelle(ctx context.Context, id string) ([]DsgvoSchadensfall, error) {
-	const q = `
-		SELECT beschreibung, betrag::text, ist_bezahlt, erstellt_am, storniert_am, stornierungsgrund
-		FROM schadensfaelle
-		WHERE schueler_id = $1
-		ORDER BY erstellt_am DESC`
-	rows, err := s.DB.Pool.Query(ctx, q, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	out := []DsgvoSchadensfall{}
-	for rows.Next() {
-		var f DsgvoSchadensfall
-		if err := rows.Scan(&f.Beschreibung, &f.Betrag, &f.IstBezahlt, &f.ErstelltAm, &f.StorniertAm, &f.Stornierungsgrund); err != nil {
-			return nil, err
-		}
-		out = append(out, f)
-	}
-	return out, rows.Err()
+	zeilen, err := repository.LeseDsgvoSchadensfaelle(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DsgvoSchadensfallZeile) DsgvoSchadensfall { return DsgvoSchadensfall(z) })
 }
 
 func (s *Server) dsgvoQueryVormerkungen(ctx context.Context, id string) ([]DsgvoVormerkung, error) {
-	const q = `
-		SELECT t.titel, v.status, v.notiz, v.erstellt_am
-		FROM vormerkungen v
-		JOIN buecher_titel t ON t.id = v.titel_id
-		WHERE v.schueler_id = $1
-		ORDER BY v.erstellt_am DESC`
-	rows, err := s.DB.Pool.Query(ctx, q, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	out := []DsgvoVormerkung{}
-	for rows.Next() {
-		var v DsgvoVormerkung
-		if err := rows.Scan(&v.Titel, &v.Status, &v.Notiz, &v.ErstelltAm); err != nil {
-			return nil, err
-		}
-		out = append(out, v)
-	}
-	return out, rows.Err()
+	zeilen, err := repository.LeseDsgvoVormerkungen(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DsgvoVormerkungZeile) DsgvoVormerkung { return DsgvoVormerkung(z) })
 }
 
 // DsgvoNachbuchMeldung ist eine Nachbuch-Meldung der Theke (Migration 117), in der die
@@ -435,118 +344,24 @@ type DsgvoNachbuchMeldung struct {
 	QuittiertAm *time.Time `json:"quittiert_am"`
 }
 
-// dsgvoQueryNachbuchMeldungen liest die Nachbuch-Meldungen, in denen diese Person steht.
-// Nach der Tilgung findet die Abfrage nichts mehr: beide Personenspalten sind dann NULL.
 func (s *Server) dsgvoQueryNachbuchMeldungen(ctx context.Context, id string) ([]DsgvoNachbuchMeldung, error) {
-	const q = `
-		SELECT CASE WHEN ausleiher_schueler_id = $1 THEN 'ausleiher' ELSE 'vorbesitzer' END,
-		       barcode, ergebnis, grund, gescannt_am, quittiert_am
-		FROM nachbuch_meldungen
-		WHERE ausleiher_schueler_id = $1 OR vorbesitzer_schueler_id = $1
-		ORDER BY gescannt_am DESC`
-	rows, err := s.DB.Pool.Query(ctx, q, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	out := []DsgvoNachbuchMeldung{}
-	for rows.Next() {
-		var m DsgvoNachbuchMeldung
-		if err := rows.Scan(&m.Rolle, &m.Barcode, &m.Ergebnis, &m.Grund, &m.GescanntAm, &m.QuittiertAm); err != nil {
-			return nil, err
-		}
-		out = append(out, m)
-	}
-	return out, rows.Err()
+	zeilen, err := repository.LeseDsgvoNachbuchMeldungen(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DsgvoNachbuchZeile) DsgvoNachbuchMeldung { return DsgvoNachbuchMeldung(z) })
 }
 
-// dsgvoQueryBescheide liest die Schadensersatz-Bescheide dieser Person.
-//
-// Nach der Anonymisierung findet diese Abfrage nichts mehr: schueler_id ist dann NULL
-// (ON DELETE SET NULL) und der Empfänger-Snapshot geleert — der Brief bleibt als Beleg
-// ohne Person bestehen, gehört aber zu niemandem mehr.
 func (s *Server) dsgvoQueryBescheide(ctx context.Context, id string) ([]DsgvoBescheid, error) {
-	const q = `
-		SELECT referenznummer, brief_datum, frist_bis, gesamtbetrag::text, status
-		FROM schadensersatz_bescheide
-		WHERE schueler_id = $1
-		ORDER BY brief_datum DESC`
-	rows, err := s.DB.Pool.Query(ctx, q, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	out := []DsgvoBescheid{}
-	for rows.Next() {
-		var b DsgvoBescheid
-		if err := rows.Scan(&b.Referenznummer, &b.BriefDatum, &b.FristBis, &b.Gesamtbetrag, &b.Status); err != nil {
-			return nil, err
-		}
-		out = append(out, b)
-	}
-	return out, rows.Err()
+	zeilen, err := repository.LeseDsgvoBescheide(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DsgvoBescheidZeile) DsgvoBescheid { return DsgvoBescheid(z) })
 }
 
 func (s *Server) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]DsgvoAuditEintrag, error) {
-	// Jeder Eintrag, der den Leser nennt: die Einträge an seiner Leserzeile (datensatz_id) und
-	// die jeder anderen Tabelle, die seine Kennung in details tragen — Ausleihe und Rückgabe
-	// (datensatz_id ist dort das Exemplar oder Gerät), die Stornierung einer Forderung, die Spur
-	// einer Ausleihe, Forderung oder Vormerkung, deren Titel gelöscht wurde. Den Löscheintrag
-	// eines Zugangskontos liest LeseDsgvoFruehereZugangskonten.
-	const q = `
-		SELECT al.tabelle, al.aktion, al.akteur, al.timestamp, al.kontext, COALESCE(al.details, 'null'::jsonb),
-		       COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, '')
-		FROM audit_log al
-		LEFT JOIN buecher_exemplare e ON al.tabelle = 'ausleihen' AND e.id = al.datensatz_id
-		LEFT JOIN buecher_titel t ON t.id = e.titel_id
-		LEFT JOIN geraete g ON al.tabelle = 'ausleihen' AND g.id = al.datensatz_id
-		WHERE (al.tabelle = 'schueler' AND al.datensatz_id = $1::uuid)
-		   OR (al.tabelle <> 'benutzer' AND al.details->>'schueler_id' = $1::text)
-		ORDER BY al.timestamp DESC`
-	rows, err := s.DB.Pool.Query(ctx, q, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	out := []DsgvoAuditEintrag{}
-	for rows.Next() {
-		var e DsgvoAuditEintrag
-		if err := rows.Scan(&e.Tabelle, &e.Aktion, &e.Akteur, &e.Zeitpunkt, &e.Kontext, &e.Details,
-			&e.Gegenstand, &e.Barcode); err != nil {
-			return nil, err
-		}
-		out = append(out, e)
-	}
-	return out, rows.Err()
+	zeilen, err := repository.LeseDsgvoAuditEintraege(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DsgvoAuditZeile) DsgvoAuditEintrag { return DsgvoAuditEintrag(z) })
 }
 
-// dsgvoQueryVerwaltungsEintraege liest die Verwaltungs-Protokolle (audit_logs). Bis zum
-// 31.08.2026 fehlte diese Tabelle in der Auskunft komplett — sie war die eine Quelle mit
-// Schülerbezug, die sammleDsgvoDaten nicht las (Gate: dsgvo_paar_vollstaendigkeit_test.go).
 func (s *Server) dsgvoQueryVerwaltungsEintraege(ctx context.Context, id string) ([]DsgvoVerwaltungsEintrag, error) {
-	const q = `
-		SELECT aktion, zeitstempel, COALESCE(details, '{}'::jsonb)
-		FROM audit_logs
-		WHERE details->>'schueler_id' = $1
-		ORDER BY zeitstempel DESC`
-	rows, err := s.DB.Pool.Query(ctx, q, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	out := []DsgvoVerwaltungsEintrag{}
-	for rows.Next() {
-		var e DsgvoVerwaltungsEintrag
-		if err := rows.Scan(&e.Aktion, &e.Zeitpunkt, &e.Details); err != nil {
-			return nil, err
-		}
-		out = append(out, e)
-	}
-	return out, rows.Err()
+	zeilen, err := repository.LeseDsgvoVerwaltungsEintraege(ctx, s.DB.Pool, id)
+	return alsAntwort(zeilen, err, func(z repository.DsgvoVerwaltungZeile) DsgvoVerwaltungsEintrag { return DsgvoVerwaltungsEintrag(z) })
 }
 
 // dsgvoDaten bündelt alle personenbezogenen Daten eines Lesers für die Auskunft.
@@ -662,11 +477,7 @@ func (s *Server) protokolliereDsgvoAuskunft(ctx context.Context, id string) {
 		akteur = "USER"
 		bearbeiterID = &claims.UserID
 	}
-	if _, err := s.DB.Pool.Exec(ctx,
-		`INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur)
-		 VALUES ('schueler', 'dsgvo_auskunft', $1::uuid, $2, $3)`,
-		id, bearbeiterID, akteur,
-	); err != nil {
+	if err := repository.SchreibeDsgvoAuskunftProtokoll(ctx, s.DB.Pool, id, bearbeiterID, akteur); err != nil {
 		log.Printf("dsgvo-auskunft: Audit-Protokollierung fehlgeschlagen: %v", err)
 	}
 }

@@ -12,7 +12,7 @@ import (
 // Gate: Auskunft und Tilgung sind ein PAAR über derselben Tabellenliste.
 //
 // Anlass (31.08.2026): Beide Seiten zählten ihre Tabellen von Hand auf —
-// api/dsgvo_auskunft.go die eine Liste, repository/audit_users.go die andere — und
+// die Auskunft die eine Liste, repository/audit_users.go die andere — und
 // nichts hielt sie zusammen. Genau daher kam der Lesehistorie-Fund des
 // Komplett-Durchgangs (Tilgung kannte tabelle='ausleihen' nicht), und die Gegenrichtung
 // war ebenso offen: Die Auskunft kannte audit_logs nicht, obwohl dort Einträge mit
@@ -52,21 +52,24 @@ var dsgvoSchuelerQuellen = []struct {
 	{"audit_logs", "details->>'schueler_id'", false},
 }
 
+// dsgvoAuskunftAbfragen ist die Datei, in der die Abfragen der Auskunft am Leser stehen.
+const dsgvoAuskunftAbfragen = "../repository/dsgvo_auskunft.go"
+
 // TestDsgvoAuskunftLiestJedeSchuelerQuelle prüft die Auskunfts-Hälfte des Paars am
-// Quelltext: Jede Tabelle mit Schülerbezug muss in api/dsgvo_auskunft.go in einem
-// FROM/JOIN stehen. Rot gesehen am Stand vor dem 31.08.2026 (audit_logs fehlte).
+// Quelltext: Jede Tabelle mit Schülerbezug muss in repository/dsgvo_auskunft.go in einem
+// FROM/JOIN stehen.
 func TestDsgvoAuskunftLiestJedeSchuelerQuelle(t *testing.T) {
-	quelltext, err := os.ReadFile("dsgvo_auskunft.go")
+	quelltext, err := os.ReadFile(dsgvoAuskunftAbfragen)
 	if err != nil {
-		t.Fatalf("dsgvo_auskunft.go lesen: %v", err)
+		t.Fatalf("%s lesen: %v", dsgvoAuskunftAbfragen, err)
 	}
 
 	for _, q := range dsgvoSchuelerQuellen {
 		muster := regexp.MustCompile(`(?i)(FROM|JOIN)\s+` + q.Tabelle + `\b`)
 		if !muster.Match(quelltext) {
-			t.Errorf("die Art.-15-Auskunft liest %s nicht (Bezug: %s) — sammleDsgvoDaten "+
-				"braucht eine Query über diese Tabelle, sonst ist die Auskunft unvollständig.",
-				q.Tabelle, q.Bezug)
+			t.Errorf("die Art.-15-Auskunft liest %s nicht (Bezug: %s) — %s braucht eine "+
+				"Abfrage über diese Tabelle, und sammleDsgvoDaten muss sie aufrufen, sonst ist die "+
+				"Auskunft unvollständig.", q.Tabelle, q.Bezug, dsgvoAuskunftAbfragen)
 		}
 	}
 }
