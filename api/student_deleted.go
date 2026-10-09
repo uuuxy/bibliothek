@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -22,55 +21,28 @@ func (s *Server) GetDeletedStudentsHandler() http.HandlerFunc {
 		// Papierkorb ist zum Wiederherstellen der JÜNGSTEN Löschungen da; 1000 ist weit
 		// über dem realistischen Bestand einer manuell befüllten Papierkorb-Ansicht.
 		const papierkorbLimit = 1000
-		rows, err := s.DB.Pool.Query(ctx, `
-			SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''),
-			       coalesce(klasse, ''), abgaenger_jahr, coalesce(ist_gesperrt, false), deleted_at,
-			       anonymized_at
-			FROM leser
-			WHERE deleted_at IS NOT NULL
-			ORDER BY deleted_at DESC
-			LIMIT $1
-		`, papierkorbLimit)
+		zeilen, err := repository.ListePapierkorb(ctx, s.DB.Pool, papierkorbLimit)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		defer rows.Close()
 
-		students := []map[string]any{}
-		for rows.Next() {
-			var id, barcode, vorname, nachname, kl string
-			var abgaengerJahr *int
-			var gesperrt bool
-			// timestamptz braucht time.Time — ein String-Scan brach hier
-			// die Iteration ab und machte den Papierkorb zum 500er.
-			var deletedAt time.Time
-			// anonymized_at reist MIT (Rasterdurchgang 06.09.2026): Nach der
-			// 180-Tage-Anonymisierung weist RestoreStudentHandler die Wiederherstellung
-			// mit 409 ab — die Zeile ist kein Schüler mehr, sondern ein Pseudonym. Ohne
-			// dieses Feld kann die Oberfläche das nicht wissen und bietet einen Knopf an,
-			// der nur scheitern kann. Nullbar, deshalb ein Zeiger (Bugklasse „NULL-Scan").
-			var anonymizedAt *time.Time
-
-			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &kl, &abgaengerJahr, &gesperrt, &deletedAt, &anonymizedAt); err != nil {
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-				return
-			}
+		// anonymized_at reist mit: Nach der Anonymisierung weist RestoreStudentHandler das
+		// Wiederherstellen mit 409 ab, und ohne das Feld böte die Oberfläche einen Knopf an,
+		// der nur scheitern kann.
+		students := make([]map[string]any, 0, len(zeilen))
+		for _, z := range zeilen {
 			students = append(students, map[string]any{
-				"id":             id,
-				"barcode_id":     barcode,
-				"vorname":        vorname,
-				"nachname":       nachname,
-				"klasse":         kl,
-				"abgaenger_jahr": abgaengerJahr,
-				"ist_gesperrt":   gesperrt,
-				"deleted_at":     deletedAt,
-				"anonymized_at":  anonymizedAt,
+				"id":             z.ID,
+				"barcode_id":     z.Barcode,
+				"vorname":        z.Vorname,
+				"nachname":       z.Nachname,
+				"klasse":         z.Klasse,
+				"abgaenger_jahr": z.AbgaengerJahr,
+				"ist_gesperrt":   z.Gesperrt,
+				"deleted_at":     z.DeletedAt,
+				"anonymized_at":  z.AnonymizedAt,
 			})
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
 		}
 
 		RespondJSON(w, http.StatusOK, students)
@@ -91,10 +63,7 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 		// Anonymisierte Papierkorb-Zeilen (anonymized_at gesetzt) sind kein Schüler mehr,
 		// sondern ein Pseudonym ohne Namen — „wiederherstellen" ergäbe einen gesperrten
 		// „Anonym"-Datensatz in der aktiven Liste (Prüfung 22.08.2026). 409 statt Restore.
-		var anonymisiert bool
-		if err := s.DB.Pool.QueryRow(ctx,
-			`SELECT anonymized_at IS NOT NULL FROM leser WHERE id = $1 AND deleted_at IS NOT NULL`, id,
-		).Scan(&anonymisiert); err == nil && anonymisiert {
+		if anonymisiert, err := repository.PapierkorbLeserAnonymisiert(ctx, s.DB.Pool, id); err == nil && anonymisiert {
 			apierrors.SendHTTPError(w, http.StatusConflict,
 				errors.New("dieser Datensatz ist bereits anonymisiert (DSGVO) und kann nicht wiederhergestellt werden"))
 			return
@@ -104,13 +73,7 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 		// setzt ist_gesperrt=true mit block_reason='Systematisch gelöscht'; ohne das
 		// Aufheben bliebe der wiederhergestellte Schüler dauerhaft gesperrt (Zombie-Sperre)
 		// und könnte nichts ausleihen. Eine Sperre aus ANDEREM Grund bleibt bestehen.
-		tag, err := s.DB.Pool.Exec(ctx, `
-			UPDATE leser SET
-				deleted_at = NULL,
-				ist_gesperrt = CASE WHEN block_reason = 'Systematisch gelöscht' THEN false ELSE ist_gesperrt END,
-				block_reason = CASE WHEN block_reason = 'Systematisch gelöscht' THEN NULL ELSE block_reason END,
-				aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE id = $1 AND deleted_at IS NOT NULL`, id)
+		wiederhergestellt, err := repository.StelleLeserWiederHer(ctx, s.DB.Pool, id)
 		if err != nil {
 			// Drei Teilindizes gelten nur für AKTIVE Zeilen: Namensindex (Migration 108,
 			// in der Normalform suchnorm), LUSD-ID und Ausweis-Barcode. Solange die Zeile
@@ -125,7 +88,7 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 			return
 		}
 
-		if tag.RowsAffected() == 0 {
+		if wiederhergestellt == 0 {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht im Papierkorb gefunden"))
 			return
 		}

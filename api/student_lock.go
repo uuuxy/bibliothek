@@ -18,14 +18,6 @@ import (
 // meldungSperreFehler geht hinaus, wenn das Umschalten an der Datenbank scheitert.
 const meldungSperreFehler = "Fehler beim Aktualisieren der Sperre"
 
-// sperrStand ist der Zustand eines Lesers, bevor die Sperre umgeschaltet wird.
-type sperrStand struct {
-	art                     string
-	geloescht, anonymisiert bool
-	vomProgramm, vonHand    bool
-	grund                   string
-}
-
 // LockStudentHandler sperrt einen Leser von Hand oder hebt jede Sperre an ihm auf — die
 // eine Tür zu diesem Zustand (schueler_sperre_eine_tuer_pg_test.go).
 //
@@ -86,12 +78,7 @@ func (s *Server) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 
 	// `leser`, nicht die Sicht `schueler`: Die Akte eines Kollegen ruft die Tür auch, und
 	// über die Sicht antwortete sie mit „schüler nicht gefunden".
-	var alt sperrStand
-	err = tx.QueryRow(ctx, `
-		SELECT art, deleted_at IS NOT NULL, anonymized_at IS NOT NULL,
-		       ist_gesperrt, coalesce(is_manually_blocked, false), coalesce(block_reason, '')
-		FROM leser WHERE id = $1 FOR UPDATE`, id).Scan(
-		&alt.art, &alt.geloescht, &alt.anonymisiert, &alt.vomProgramm, &alt.vonHand, &alt.grund)
+	alt, err := repository.SperreLeserZeileMitStand(ctx, tx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return apierrors.NotFound("leser nicht gefunden", err)
 	}
@@ -99,11 +86,11 @@ func (s *Server) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 		return apierrors.Internal(meldungSperreFehler, err)
 	}
 	switch {
-	case alt.geloescht:
+	case alt.Geloescht:
 		return apierrors.Conflict("Der Leser liegt im Papierkorb. Erst wiederherstellen.", nil)
-	case alt.anonymisiert:
+	case alt.Anonymisiert:
 		return apierrors.Conflict("Ein anonymisierter Datensatz bleibt gesperrt.", nil)
-	case req.IsLocked && alt.art != "schueler":
+	case req.IsLocked && alt.Art != "schueler":
 		return apierrors.BadRequest("Kollegen werden nicht gesperrt.", nil)
 	}
 
@@ -117,22 +104,12 @@ func (s *Server) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 		IsManuallyBlocked bool   `json:"is_manually_blocked"`
 		IstGesperrt       bool   `json:"ist_gesperrt"`
 	}
-	// coalesce auf die Klasse: Sie ist seit Migration 123 nullbar (ein Kollege hat
-	// keine), und ein NULL in *string ist ein 500 („cannot scan NULL into *string").
-	err = tx.QueryRow(ctx, `
-		UPDATE leser
-		SET is_manually_blocked = $1,
-		    ist_gesperrt = ist_gesperrt AND $1,
-		    block_reason = CASE WHEN $1 THEN $3 ELSE NULL END,
-		    aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE id = $2
-		RETURNING id, vorname, nachname, coalesce(klasse, ''), is_manually_blocked, ist_gesperrt`,
-		req.IsLocked, id, reason).Scan(
-		&student.ID, &student.Vorname, &student.Nachname,
-		&student.Klasse, &student.IsManuallyBlocked, &student.IstGesperrt)
+	neu, err := repository.SetzeSperreVonHand(ctx, tx, id, req.IsLocked, reason)
 	if err != nil {
 		return apierrors.Internal(meldungSperreFehler, err)
 	}
+	student.ID, student.Vorname, student.Nachname, student.Klasse = neu.ID, neu.Vorname, neu.Nachname, neu.Klasse
+	student.IsManuallyBlocked, student.IstGesperrt = neu.VonHand, neu.Gesperrt
 	if err := tx.Commit(ctx); err != nil {
 		return apierrors.Internal(meldungSperreFehler, err)
 	}
@@ -147,17 +124,17 @@ func (s *Server) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 // protokolliereSperre schreibt das Sperren und das Aufheben ins Protokoll. Best effort wie
 // FRIST_OVERRIDE: Die Änderung gilt, auch wenn das Log klemmt; der Fehlversuch steht im
 // Server-Log. Aufheben ohne bestehende Sperre ändert nichts und schreibt nichts.
-func protokolliereSperre(r *http.Request, auditRepo repository.AuditRepository, adminID, id string, sperren bool, grund string, alt sperrStand) {
+func protokolliereSperre(r *http.Request, auditRepo repository.AuditRepository, adminID, id string, sperren bool, grund string, alt repository.LeserSperrStand) {
 	aktion, details := "LESER_GESPERRT", map[string]any{"schueler_id": id, "grund": grund}
 	if !sperren {
-		if !alt.vonHand && !alt.vomProgramm {
+		if !alt.VonHand && !alt.VomProgramm {
 			return
 		}
 		aktion, details = "LESER_ENTSPERRT", map[string]any{
 			"schueler_id":  id,
-			"grund":        alt.grund,
-			"von_hand":     alt.vonHand,
-			"vom_programm": alt.vomProgramm,
+			"grund":        alt.Grund,
+			"von_hand":     alt.VonHand,
+			"vom_programm": alt.VomProgramm,
 		}
 	}
 	if err := auditRepo.LogAdminAktion(r.Context(), adminID, aktion, getIP(r), details); err != nil {

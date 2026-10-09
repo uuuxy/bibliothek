@@ -71,8 +71,8 @@ func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 
 	// Sperre gesetzt und aufgehoben, LUSD-ID nachgetragen.
 	anfrage := httptest.NewRequest("POST", "/api/schueler/"+sid+"/sperre", nil)
-	protokolliereSperre(anfrage, auditRepo, bearbeiter, sid, true, "Blatt-Sperrgrund", sperrStand{})
-	protokolliereSperre(anfrage, auditRepo, bearbeiter, sid, false, "", sperrStand{vonHand: true, grund: "Blatt-Sperrgrund"})
+	protokolliereSperre(anfrage, auditRepo, bearbeiter, sid, true, "Blatt-Sperrgrund", repository.LeserSperrStand{})
+	protokolliereSperre(anfrage, auditRepo, bearbeiter, sid, false, "", repository.LeserSperrStand{VonHand: true, Grund: "Blatt-Sperrgrund"})
 	if err := auditRepo.LogAdminAktion(ctx, bearbeiter, "LUSD_ID_NACHGETRAGEN", "127.0.0.1", map[string]any{
 		"schueler_id": sid, "lusd_id": "BLATT-LUSD-4711",
 	}); err != nil {

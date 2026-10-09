@@ -336,9 +336,9 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1 unter R4, die Messwerte vom 09.10.2026 ebenfalls.
 
 - **Die Bremse steht.** `api/schichtung_test.go` zählt die SQL-Anweisungen je Datei und führt
-  die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 6
-  Dateien mit 46 Anweisungen (am Anfang 48 mit 177), 34 Dateien ohne Tür (am Anfang 44);
-  `api/` hat 26.066 Zeilen in 158 Dateien (am Anfang 30.785 in 168).
+  die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 4
+  Dateien mit 41 Anweisungen (am Anfang 48 mit 177), 34 Dateien ohne Tür (am Anfang 44);
+  `api/` hat 26.006 Zeilen in 158 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung in `internal/bereitschaft`. Offen: der Aufbau der PDFs und der Rest der 34.
