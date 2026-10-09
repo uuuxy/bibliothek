@@ -382,9 +382,9 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **Rest aus dem Umzug der Regeln:** `repository.ZusammenfuehrenAuftrag` bekommt die Rechnung des
   Abgangsjahrs weiter als Funktion gereicht (`AbgaengerJahr`), obwohl `repository.AbgaengerJahr`
   seit dem 09.10.2026 im selben Paket steht. Das Feld kann entfallen.
-- **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. 363 Türen sind Methoden an
-  einem Typ (`Server`), rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt,
-  zeigt der Stand nach den beiden Schritten davor.
+- **Nicht vorgesehen:** die Türen selbst in Themenordner zu teilen. Der Typ `Server` trägt 354
+  Methoden, rund 200 Testdateien bauen ihn selbst. Ob es sich danach noch lohnt, zeigt der
+  Stand nach den beiden Schritten davor.
 
 Außerhalb von `api/` und `repository/` stehen weitere SQL-Anweisungen (gezählt am 09.10.2026):
 `inventur/` 73 mit eigener Datenbankschicht ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.3),

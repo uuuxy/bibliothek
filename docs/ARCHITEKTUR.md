@@ -2999,18 +2999,21 @@ generischen Helfern sieht er nicht.
 | **Auswirkung** | mittel (Änderungsaufwand, Kollisionen) |
 | **Sichtbarkeit** | hoch |
 
-Das Paket trägt Router, Middleware, Handler **und** Teile der Fachlogik (LUSD-Parser,
-Selbstprüfung, Bestellwesen), dazu eigenes SQL neben `repository/`. Gemessen am 09.10.2026,
-bevor der Abbau begann: In drei Monaten wuchs es von 10.463 auf 30.785 Zeilen, `internal/service` in derselben Zeit von
-2.491 auf 4.440. 48 Dateien formulieren 177 SQL-Anweisungen; seit dem 08.08.2026 sank die Zahl
-der Dateien von 53, die Zahl der Anweisungen in den 48 stieg von 143, weil die Prüfung nur neue
-Dateien abwies. 44 Dateien mit 7.503 Zeilen binden `net/http` nicht ein, sind also keine Tür.
+Das Paket trägt Router, Middleware und Handler, dazu Teile der Fachlogik: den Aufbau der PDFs
+und Teile des Bestellwesens. Gemessen am 09.10.2026, bevor der Abbau begann: In drei Monaten
+war es von 10.463 auf 30.785 Zeilen gewachsen, `internal/service` in derselben Zeit von 2.491
+auf 4.440. 48 Dateien formulierten 177 SQL-Anweisungen; seit dem 08.08.2026 war die Zahl der
+Dateien von 53 gesunken, die Zahl der Anweisungen in den 48 von 143 gestiegen, weil die Prüfung
+nur neue Dateien abwies. 44 Dateien mit 7.503 Zeilen banden `net/http` nicht ein, waren also
+keine Tür.
 
-Seit dem 09.10.2026 hält `api/schichtung_test.go` zwei Bestände, die nur kleiner werden können:
-die Zahl der SQL-Anweisungen je Datei und die Dateien ohne Tür. Der Abbau läuft
-([OFFEN.md](OFFEN.md) 5.62): Was keine Tür ist, zieht je Thema in ein eigenes Paket, das SQL
-nach `repository/`. Die Türen selbst bleiben in einem Paket; 363 von ihnen sind Methoden an
-einem Typ (`Server`).
+Stand nach dem Abbau vom 09.10.2026: 2 Dateien mit 12 SQL-Anweisungen und 34 Dateien ohne Tür
+mit 4.714 Zeilen, davon 12 PDF-Erzeuger mit 2.610 Zeilen. Der LUSD-Import steht in
+`internal/lusd`, die Selbstprüfung in `internal/bereitschaft`, die Abfragen der Türen in
+`repository/` (5.2.2, Tür und Abfrage). `api/schichtung_test.go` hält zwei Bestände, die nur
+kleiner werden können: die Zahl der SQL-Anweisungen je Datei und die Dateien ohne Tür. Was
+bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst bleiben in einem Paket: Der Typ
+`Server` trägt 354 Methoden.
 
 #### R5 — Die Rechtematrix ist konfigurierbar und damit verstellbar
 
