@@ -727,6 +727,12 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   09.10.2026 las die Selbstanmeldung mit einer eigenen Abfrage ohne die Adresse: Traf sie auf
   ein Konto, das zwischen dem ersten Lesen und der Anlage entstanden war, ging die Anmeldung
   mit leerer Adresse weiter.
+- Aus `internal/service` stehen die Anweisungen zum Passbild in `repository/leser_foto.go`
+  und die des Cover-Abgleichs in `repository/titel_cover.go`. Der Dienst behält das Umwandeln
+  und Verschlüsseln des Bilds, den Lauf über die Katalogdienste und dessen Zählung. Die
+  Bedingung „kein lokales Cover" steht einmal (`coverNichtLokal`) und gilt in der Auswahl wie
+  in beiden Schreibanweisungen: Zwischen Auswählen und Schreiben liegt die Laufzeit des
+  Abgleichs, und ein in dieser Zeit von Hand hochgeladenes Cover bleibt stehen.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf

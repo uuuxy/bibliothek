@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 )
 
 // Der Cover-Sync darf ein lokal liegendes Cover nicht anfassen — egal, was cover_status
@@ -43,7 +44,7 @@ func TestCoverSyncAuswahl_LaesstLokaleCoverInRuhe(t *testing.T) {
 			}
 		})
 	}
-	rows, err := pool.Query(ctx, coverSyncAuswahl)
+	rows, err := pool.Query(ctx, repository.CoverAbgleichAuswahl)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +107,7 @@ func TestCoverRezeptNachRestore_WirktAufDieAuswahl(t *testing.T) {
 	}
 	gewaehlt := func() bool {
 		var n int
-		if err := tx.QueryRow(ctx, `SELECT count(*) FROM (`+coverSyncAuswahl+`) a WHERE a.id = $1`, id).Scan(&n); err != nil {
+		if err := tx.QueryRow(ctx, `SELECT count(*) FROM (`+repository.CoverAbgleichAuswahl+`) a WHERE a.id = $1`, id).Scan(&n); err != nil {
 			t.Fatalf("Auswahl lesen: %v", err)
 		}
 		return n == 1

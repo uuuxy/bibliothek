@@ -10,6 +10,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/crypto"
 	"bibliothek/pkg/imageutil"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -32,8 +33,7 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 	// (TestUploadStudentPhoto_AuchFuerKollegen). COALESCE, weil ein Kollege aus der
 	// Selbstanmeldung noch keine Nummer hat (OFFEN.md 5.16 C) — das Bild wird gespeichert,
 	// eine Bild-URL gibt es wie in resolveFotoURL erst mit der Nummer.
-	var barcodeID string
-	err := dbPool.QueryRow(ctx, "SELECT COALESCE(barcode_id, '') FROM leser WHERE id = $1", studentID).Scan(&barcodeID)
+	barcodeID, err := repository.AusweisnummerDesLesers(ctx, dbPool, studentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", ErrFotoLeserUnbekannt
@@ -64,15 +64,7 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 	}
 
 	// 5. In der Datenbank abspeichern (Upsert in schueler_fotos)
-	query := `
-		INSERT INTO schueler_fotos (schueler_id, foto_encrypted)
-		VALUES ($1, $2)
-		ON CONFLICT (schueler_id) DO UPDATE SET 
-			foto_encrypted = EXCLUDED.foto_encrypted,
-			aktualisiert_am = CURRENT_TIMESTAMP
-	`
-	_, err = dbPool.Exec(ctx, query, studentID, encryptedData)
-	if err != nil {
+	if err := repository.SpeichereFoto(ctx, dbPool, studentID, encryptedData); err != nil {
 		return "", fmt.Errorf("fehler beim speichern des fotos in der db: %w", err)
 	}
 

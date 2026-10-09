@@ -16,6 +16,7 @@ import (
 
 	"bibliothek/internal/pgtest"
 	"bibliothek/inventur"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -124,7 +125,7 @@ func inDerAuswahl(t *testing.T, pool *pgxpool.Pool, id string) bool {
 	t.Helper()
 	var n int
 	if err := pool.QueryRow(context.Background(),
-		`SELECT count(*) FROM (`+coverSyncAuswahl+`) a WHERE a.id = $1`, id).Scan(&n); err != nil {
+		`SELECT count(*) FROM (`+repository.CoverAbgleichAuswahl+`) a WHERE a.id = $1`, id).Scan(&n); err != nil {
 		t.Fatal(err)
 	}
 	return n == 1
@@ -256,7 +257,7 @@ func TestSyncMissingCovers_EinLaufUeberDieAuswahl(t *testing.T) {
 	// Drossel. Reste anderer Tests machten ihn lang; dann lieber gleich scheitern.
 	var inAuswahl int
 	if err := pool.QueryRow(context.Background(),
-		`SELECT count(*) FROM (`+coverSyncAuswahl+`) a`).Scan(&inAuswahl); err != nil {
+		`SELECT count(*) FROM (`+repository.CoverAbgleichAuswahl+`) a`).Scan(&inAuswahl); err != nil {
 		t.Fatal(err)
 	}
 	if inAuswahl > 10 {

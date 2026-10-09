@@ -45,7 +45,6 @@ type sqlFunde struct{ texte, aufrufe int }
 // können nur sinken, und eine Datei ohne Fund fällt aus der Liste.
 var sqlBestand = map[string]sqlFunde{
 	"internal/service/ausleih_sperren.go":     {texte: 1, aufrufe: 1},
-	"internal/service/cover_service.go":       {texte: 3, aufrufe: 3},
 	"internal/service/device_service.go":      {texte: 5, aufrufe: 5},
 	"internal/service/import_dynamic.go":      {texte: 4, aufrufe: 4},
 	"internal/service/loan_checkout.go":       {texte: 3, aufrufe: 3},
@@ -55,7 +54,6 @@ var sqlBestand = map[string]sqlFunde{
 	"internal/service/nachbuchen.go":          {texte: 2, aufrufe: 2},
 	"internal/service/omnibox_service.go":     {texte: 1, aufrufe: 1},
 	"internal/service/order_service.go":       {texte: 6, aufrufe: 4},
-	"internal/service/photo_service.go":       {texte: 2, aufrufe: 2},
 	// Die Restore-Probe legt auf dem Server eine Wegwerf-Datenbank an, entfernt sie und zählt
 	// darin über eine eigene Verbindung die Tabellen. Keine der Anweisungen trifft eine Tabelle
 	// der Anwendung; sie bleiben bei der Probe.

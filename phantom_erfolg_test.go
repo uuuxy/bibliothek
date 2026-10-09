@@ -84,18 +84,21 @@ var phantomBestand = map[string]int{
 	// schema.sql-Load sind DDL/Setup — 0 Zeilen ist dort kein meldbarer Erfolg.
 	// Vorher stand derselbe Code fünffach in _test.go-Dateien, die die Ratsche
 	// per Konstruktion nicht sieht.
-	"internal/pgtest/pgtest.go:baueTestDB":                            3,
-	"internal/service/cover_service.go:processCover":                  1,
-	"internal/service/cover_service.go:setCoverStatus":                1,
+	"internal/pgtest/pgtest.go:baueTestDB": 3,
+	// Cover-Abgleich: Null Zeilen heißt, der Titel trägt inzwischen ein lokales Cover oder
+	// ist gelöscht; der Abgleich geht zum nächsten Titel.
+	"repository/titel_cover.go:SetzeGefundenesCover":                  1,
+	"repository/titel_cover.go:SetzeCoverStatus":                      1,
 	"internal/service/device_service.go:gibGeraetZurueck":             1,
 	"internal/service/import_dynamic.go:schreibeSignaturUpdates":      1,
 	"internal/service/loan_checkout.go:zaehleAktiveSchuelerAusleihen": 1,
 	// FOR-UPDATE-Lock auf die Schüler-Zeile, bevor das Nachbuchen bucht (Sperrreihenfolge
 	// Schüler → Ausleihe → Exemplar). Das Statement SPERRT, es schreibt nicht; die Existenz
 	// des Schülers steht vorher fest (loesePerson). 0 Zeilen meldet hier niemand als Erfolg.
-	"internal/service/nachbuchen.go:Nachbuchen":                         1,
-	"internal/service/loan_return.go:processReturnVormerkungTx":         1,
-	"internal/service/photo_service.go:UploadStudentPhoto":              1,
+	"internal/service/nachbuchen.go:Nachbuchen":                 1,
+	"internal/service/loan_return.go:processReturnVormerkungTx": 1,
+	// Legt das Passbild an oder ersetzt es: Die Anweisung trifft immer genau eine Zeile.
+	"repository/leser_foto.go:SpeichereFoto":                            1,
 	"inventur/datenbank_klassen.go:AddBooksToClasses":                   1,
 	"inventur/datenbank_klassen.go:DeleteClassGroup":                    1,
 	"inventur/datenbank_klassen.go:NormalizeAllClasses":                 4,

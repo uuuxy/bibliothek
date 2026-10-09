@@ -10,6 +10,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/inventur"
 	"bibliothek/pkg/safego"
+	"bibliothek/repository"
 )
 
 // CoverService handles fetching book covers asynchronously.
@@ -45,33 +46,8 @@ const coverSyncMinInterval = 500 * time.Millisecond
 // Trigger erzeugen jeweils eine neue CoverService-Instanz) über einen prozessweiten Guard.
 var coverSyncRunning atomic.Bool
 
-type missingCover struct {
-	ID   string
-	ISBN string
-}
-
-// coverSyncAuswahl sind die Titel, die der Cover-Sync anfasst: noch nie versuchte
-// (PENDING), fehlgeschlagene (FAILED, erneuter Versuch) sowie Alt-Titel mit externer
-// Cover-URL (FOUND, aber nicht lokal) — diese werden auf ein lokales WebP migriert, damit
-// nichts mehr extern (mit Hotlink-/Bot-Risiko) lädt.
-//
-// Ein lokales Cover (/uploads/) fasst er NIE an, egal was cover_status sagt: Bis zum
-// 10.09.2026 blieb ein neuer Titel nach einem Hand-Upload auf 'PENDING', und der nächste
-// Lauf überschrieb das hochgeladene Cover mit dem Treffer der Katalogdienste
-// (Bestands-Durchgang, „Maschine gegen Hand").
-const coverSyncAuswahl = `
-		SELECT id, isbn FROM buecher_titel
-		WHERE isbn IS NOT NULL AND isbn != ''
-		  AND ` + coverNichtLokal + `
-		  AND (
-		        cover_status IN ('PENDING', 'FAILED')
-		     OR COALESCE(cover_url, '') <> ''
-		      )`
-
-// coverNichtLokal heißt: Der Titel trägt kein lokal liegendes Cover. Die Bedingung gilt
-// beim Auswählen und noch einmal bei jedem Schreiben. Dazwischen liegt die Laufzeit des
-// Abgleichs; ein in dieser Zeit von Hand hochgeladenes Cover bleibt mit seinem Stand stehen.
-const coverNichtLokal = `COALESCE(cover_url, '') NOT LIKE '/uploads/%'`
+// missingCover ist ein Titel, dessen Cover der Abgleich holen soll.
+type missingCover = repository.TitelMitISBN
 
 // SyncMissingCoversAsync lädt für alle Titel ohne lokales Cover die Cover parallel nach.
 // Es werden PENDING- (noch nie versucht) UND FAILED-Titel (erneuter Versuch) verarbeitet,
@@ -94,25 +70,11 @@ func (s *CoverService) SyncMissingCoversAsync() {
 	// Verarbeitet: noch nie versuchte (PENDING), fehlgeschlagene (FAILED, erneuter Versuch)
 	// sowie Alt-Titel mit externer Cover-URL (FOUND, aber nicht lokal) — diese werden auf
 	// ein lokales WebP migriert, damit nichts mehr extern (mit Hotlink-/Bot-Risiko) lädt.
-	rows, err := s.db.Query(ctx, coverSyncAuswahl)
+	missing, err := repository.TitelFuerCoverAbgleich(ctx, s.db)
 	if err != nil {
 		log.Printf("Cover Sync: Fehler beim Abrufen der fehlenden Cover: %v", err)
 		return
 	}
-
-	var missing []missingCover
-	for rows.Next() {
-		var mc missingCover
-		if err := rows.Scan(&mc.ID, &mc.ISBN); err == nil {
-			missing = append(missing, mc)
-		}
-	}
-	if err := rows.Err(); err != nil {
-		rows.Close()
-		log.Printf("Cover Sync: Fehler beim Lesen der fehlenden Cover: %v", err)
-		return
-	}
-	rows.Close()
 
 	if len(missing) == 0 {
 		log.Println("Cover Sync: Keine fehlenden Cover gefunden.")
@@ -171,7 +133,7 @@ func (s *CoverService) processCover(ctx context.Context, client *inventur.Metada
 		s.setCoverStatus(ctx, mc.ID, "FAILED")
 	case res.CoverURL != "":
 		found.Add(1)
-		if _, derr := s.db.Exec(ctx, `UPDATE buecher_titel SET cover_url = $1, cover_status = 'FOUND' WHERE id = $2 AND `+coverNichtLokal, res.CoverURL, mc.ID); derr != nil {
+		if derr := repository.SetzeGefundenesCover(ctx, s.db, mc.ID, res.CoverURL); derr != nil {
 			log.Printf("Cover Sync: DB-Update für Titel %s fehlgeschlagen: %v", mc.ID, derr)
 		}
 	default:
@@ -182,7 +144,7 @@ func (s *CoverService) processCover(ctx context.Context, client *inventur.Metada
 
 // setCoverStatus aktualisiert den cover_status eines Titels (Best-Effort, geloggt).
 func (s *CoverService) setCoverStatus(ctx context.Context, id, status string) {
-	if _, err := s.db.Exec(ctx, `UPDATE buecher_titel SET cover_status = $1 WHERE id = $2 AND `+coverNichtLokal, status, id); err != nil {
+	if err := repository.SetzeCoverStatus(ctx, s.db, id, status); err != nil {
 		log.Printf("Cover Sync: Status %q für Titel %s konnte nicht gesetzt werden: %v", status, id, err)
 	}
 }

@@ -414,16 +414,17 @@ Lesen, führt aber zu keinem zweiten Weg.
 Zur Datenbankschicht zählen `repository/`, `inventur/` mit eigener Schicht
 ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.3), `db/`, der Schreiber der Littera-Übernahme und die
 Einmal-Werkzeuge unter `cmd/`; die Liste mit dem Grund je Paket steht in
-`schichtung_ratsche_test.go`. Außerhalb davon tragen am 09.10.2026 noch 15 Dateien Anweisungen
-(am Anfang 28): `internal/service` 12 Dateien, `mailservice/` 1 und zwei Dateien der
+`schichtung_ratsche_test.go`. Außerhalb davon tragen am 09.10.2026 noch 13 Dateien Anweisungen
+(am Anfang 28): `internal/service` 10 Dateien, `mailservice/` 1 und zwei Dateien der
 Restore-Probe in `jobs/`. Die zwei bleiben: Sie legen eine Wegwerf-Datenbank an, entfernen sie
 und zählen darin die Tabellen, und keine der Anweisungen trifft eine Tabelle der Anwendung. Die
 Ratsche zählt je Datei die Texte von Anweisungen und die Aufrufe, die eine abschicken (zusammen
-34 und 35). Die Anweisungen der Nachtläufe und die von `auth/` stehen in `repository/`
-(ARCHITEKTUR 5.2.2). Offene Stufen, je ein Commit und in dieser Reihenfolge:
-`internal/service` ohne die Theke (Cover, Geräte, Import, Bestellung, Foto), die Ausleihe an
-der Theke (`loan_*.go`, `nachbuchen.go`, `omnibox_service.go`), die eine Abfrage in
-`mailservice/`. Der Handgriff steht in ARCHITEKTUR 8.14.
+29 und 30). Die Anweisungen der Nachtläufe, die von `auth/` und aus `internal/service` die zu
+Passbild und Cover-Abgleich stehen in `repository/` (ARCHITEKTUR 5.2.2). Offene Stufen, je ein
+Commit und in dieser Reihenfolge: aus `internal/service` Geräte (`device_service.go`), Import
+(`import_dynamic.go`) und Bestellung (`order_service.go`), danach die Ausleihe an der Theke
+(`loan_*.go`, `ausleih_sperren.go`, `nachbuchen.go`, `omnibox_service.go`), zuletzt die eine
+Abfrage in `mailservice/`. Der Handgriff steht in ARCHITEKTUR 8.14.
 
 ### 5.63 Etiketten kürzen nach Zeichenzahl
 
