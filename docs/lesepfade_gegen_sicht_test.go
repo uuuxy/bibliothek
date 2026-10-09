@@ -65,7 +65,7 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/lmf_termine.go":             {1, "Fristübernahme je KLASSE für Lernmittel; ein Kollege hat keine Klasse und leiht auf Dauer (wie api/ausleihe.go)"},
 	"repository/lusd_bestand.go":            {1, "LUSD-Abgleich kennt nur Schüler; die Abfrage sagt es zusätzlich mit art = 'schueler'"},
 	"repository/titel_loeschen_wartende.go": {1, "Namen zu Vormerkungen — Vormerkungen gibt es nur für Schüler (Tür: VormerkungRepository.Create)"},
-	"api/graduates.go":                      {2, "Abgänger-Liste und -Detail; das Kollegium hat keine Abgangslogik"},
+	"repository/abgaenger_liste.go":         {2, "Abgänger-Liste und -Detail; das Kollegium hat keine Abgangslogik"},
 	"repository/kontoauszug.go":             {1, "Kontoauszug — für Kollegen bewusst nicht (OFFEN.md 5.16 A)"},
 	// Auflagen eines Buchs, 25.09.2026 (OFFEN.md 4.18, Stufe 5).
 	"repository/auflagen_klasse.go": {2, "Hinweis an der Theke zu gemischten Auflagen in einer KLASSE — Klassen haben nur Schüler; dieselbe Klassendefinition wie inventur/datenbank_klassen.go, und der Aufruf steht nur hinter istSchueler()"},

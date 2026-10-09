@@ -25,12 +25,6 @@ import (
 	"bibliothek/repository"
 )
 
-// abgaengerBedingung ist die EINE Definition, wer in der Abgängerliste steht: nicht
-// gelöscht, noch an der Schule und in einer Abschlussklasse nach der Regel der Versetzung.
-// Liste, Kontoauszug-Druck und Versand lesen alle dieses Prädikat.
-var abgaengerBedingung = "s.deleted_at IS NULL AND s.ist_abgaenger = false AND " +
-	repository.AbschlussklasseSQL("s.klasse")
-
 // AbgaengerZeile ist eine Zeile der Liste: ein Schüler mit der Zahl seiner offenen und
 // davon überfälligen Bücher — das ist die handlungsrelevante Information (was muss noch
 // zurück?), nicht die Ausweisnummer.
@@ -57,39 +51,15 @@ type AbgaengerAntwort struct {
 
 // queryGraduatesBasic liefert eine Zeile je Abgänger mit offenen Ausleihen.
 func (s *Server) queryGraduatesBasic(ctx context.Context) ([]AbgaengerZeile, error) {
-	query := `
-		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
-		       COUNT(a.id)                                        AS offene_buecher,
-		       COUNT(a.id) FILTER (WHERE a.rueckgabe_frist < now()) AS ueberfaellig,
-		       coalesce(m.lehrer_email, '')                        AS lehrer_email
-		FROM schueler s
-		JOIN ausleihen a ON s.id = a.schueler_id
-		-- Klassenleitung mitliefern: Ohne sie kann die Oberfläche VOR dem Versand nicht
-		-- zeigen, welche Klasse überhaupt eine Adresse hat. Verglichen wird normalisiert
-		-- (getrimmt, Kleinschreibung) — „5a", „5A" und „5a " sind dieselbe Klasse, und
-		-- ein unsichtbares Leerzeichen darf keinen stillen Nullversand auslösen.
-		LEFT JOIN klassen_lehrer_mapping m ON lower(btrim(m.klasse)) = lower(btrim(s.klasse))
-		WHERE ` + abgaengerBedingung + `
-		  AND a.rueckgabe_am IS NULL
-		GROUP BY s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt, m.lehrer_email
-		ORDER BY s.klasse, s.nachname
-	`
-	rows, err := s.DB.Pool.Query(ctx, query)
+	liste, err := repository.ListeAbgaengerMitOffenenBuechern(ctx, s.DB.Pool)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	zeilen := []AbgaengerZeile{}
-	for rows.Next() {
-		var z AbgaengerZeile
-		if err := rows.Scan(&z.ID, &z.BarcodeID, &z.Vorname, &z.Nachname, &z.Klasse, &z.AbgaengerJahr,
-			&z.IstGesperrt, &z.OffeneBuecher, &z.Ueberfaellig, &z.LehrerEmail); err != nil {
-			return nil, err
-		}
-		zeilen = append(zeilen, z)
+	zeilen := make([]AbgaengerZeile, 0, len(liste))
+	for _, z := range liste {
+		zeilen = append(zeilen, AbgaengerZeile(z))
 	}
-	return zeilen, rows.Err()
+	return zeilen, nil
 }
 
 // GetGraduatesHandler liefert die Abgängerliste samt Saisonfenster.
@@ -133,54 +103,28 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 // ist, bekommt auch mit seiner Kennung keine Seite. So folgt der Druck der Suche der
 // Oberfläche, ohne dass der Server die Suche ein zweites Mal formuliert.
 func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string, nurIDs []string) ([]pdf.KontoauszugEintrag, error) {
-	detailQuery := `
-		SELECT s.id, s.vorname, s.nachname, s.klasse,
-		       t.titel,
-		       coalesce(e.barcode_id, '') AS ex_barcode,
-		       a.ausgeliehen_am,
-		       a.rueckgabe_frist
-		FROM schueler s
-		JOIN ausleihen a ON s.id = a.schueler_id AND a.rueckgabe_am IS NULL
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE ` + abgaengerBedingung + `
-		  AND ($1 = '' OR s.klasse = $1)
-		  AND ($2::uuid[] IS NULL OR s.id = ANY($2::uuid[]))
-		ORDER BY s.klasse, s.nachname, t.titel
-	`
-	rows, err := s.DB.Pool.Query(ctx, detailQuery, klasse, nurIDs)
+	ausleihen, err := repository.ListeAbgaengerAusleihen(ctx, s.DB.Pool, klasse, nurIDs)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	studMap := map[string]*pdf.KontoauszugEintrag{}
 	studOrder := make([]string, 0)
-	for rows.Next() {
-		var id, vorname, nachname, klasse, titel, exBarcode string
-		var ausgeliehenAm, frist time.Time
-		if err := rows.Scan(&id, &vorname, &nachname, &klasse,
-			&titel, &exBarcode, &ausgeliehenAm, &frist); err != nil {
-			return nil, err
-		}
-
-		if _, ok := studMap[id]; !ok {
-			studMap[id] = &pdf.KontoauszugEintrag{
-				Schueler: pdf.KontoauszugSchueler{Vorname: vorname, Nachname: nachname, Klasse: klasse},
+	for _, a := range ausleihen {
+		if _, ok := studMap[a.SchuelerID]; !ok {
+			studMap[a.SchuelerID] = &pdf.KontoauszugEintrag{
+				Schueler: pdf.KontoauszugSchueler{Vorname: a.Vorname, Nachname: a.Nachname, Klasse: a.Klasse},
 				Buecher:  []pdf.KontoauszugBuch{},
 			}
-			studOrder = append(studOrder, id)
+			studOrder = append(studOrder, a.SchuelerID)
 		}
 
-		studMap[id].Buecher = append(studMap[id].Buecher, pdf.KontoauszugBuch{
-			Titel:          titel,
-			Barcode:        exBarcode,
-			Ausleihdatum:   ausgeliehenAm,
-			Rueckgabedatum: frist,
+		studMap[a.SchuelerID].Buecher = append(studMap[a.SchuelerID].Buecher, pdf.KontoauszugBuch{
+			Titel:          a.Titel,
+			Barcode:        a.ExemplarBarcode,
+			Ausleihdatum:   a.AusgeliehenAm,
+			Rueckgabedatum: a.Frist,
 		})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 
 	result := make([]pdf.KontoauszugEintrag, 0, len(studOrder))
