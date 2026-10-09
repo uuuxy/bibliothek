@@ -3,6 +3,7 @@ package api
 import (
 	"net/http/httptest"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -12,7 +13,7 @@ import (
 //
 // inventur/schema_paritaet_test.go bewacht die eine Seite: eine SPALTE, die kein Schreiber
 // füllt. Diese Seite ist die gefährlichere, weil sie täglich benutzt wird: ein FELD im
-// Request-Typ, für das niemand ein b.add* aufruft.
+// Request-Typ, das baueSchuelerUpdate in der Änderung der Leserzeile nicht nennt.
 //
 // Was dann passiert, ist genau das Muster, das auf diesem Projekt schon mehrfach zugeschlagen
 // hat: Das Formular schickt den Wert, der Server nimmt ihn an, antwortet mit HTTP 200 — und
@@ -27,16 +28,16 @@ import (
 // einen Grund, der über „steht sonst rot" hinausgeht.
 var nichtInsUpdate = map[string]string{
 	// lusd_id hat einen eigenen kontrollierten Pfad (pruefeUndSetzeLusdID im Handler):
-	// nur nachtragbar wenn leer, eindeutig, auditiert. Ein rohes b.add* im generischen
-	// Builder verknüpfte den Datensatz sonst ungeprüft mit einer fremden LUSD-Identität
+	// nur nachtragbar wenn leer, eindeutig, auditiert. Ungeprüft in der Änderung genannt,
+	// verknüpfte der Wert den Datensatz mit einer fremden LUSD-Identität
 	// (Betreiber-Entscheidung 18.08.2026). Das FELD wird also sehr wohl geschrieben —
 	// nur nicht hier, sondern nach eigener Prüfung. Test: TestLusdIDKontrolliertNachtragbar.
 	"lusd_id": "kontrollierter Pfad pruefeUndSetzeLusdID (nur nachtragbar wenn leer, eindeutig, auditiert)",
 	// art ebenso (pruefeUndSetzeArt im Handler): Ein Wechsel der Art verschiebt die Zeile
 	// zwischen zwei Pflichtfeld-Welten. Schüler -> Kollege nähme ihr die LUSD-Bindung und
 	// liesse sie beim nächsten Import als Abgänger durchlaufen; Kollege -> Schüler bricht
-	// chk_leser_schueler_pflichtfelder (Klasse, Abgängerjahr, Ausweis). Roh im generischen
-	// Builder käme beides als CHECK-500 zurück statt als Auskunft. Erlaubt ist nur der
+	// chk_leser_schueler_pflichtfelder (Klasse, Abgängerjahr, Ausweis). Ungeprüft in der
+	// Änderung genannt, käme beides als CHECK-500 zurück statt als Auskunft. Erlaubt ist nur der
 	// Wechsel zwischen Lehrkraft und LiV; geschrieben wird das Feld sehr wohl, nur nach
 	// eigener Prüfung. Test: TestLeserArtAendern (PG).
 	"art": "kontrollierter Pfad pruefeUndSetzeArt (nur zwischen Lehrkraft und LiV, nie über die Schüler-Grenze)",
@@ -110,16 +111,10 @@ func TestPatchSchuelerVerwirftKeinFeld(t *testing.T) {
 	if !ok {
 		t.Fatalf("baueSchuelerUpdate hat abgelehnt (HTTP %d): %s", w.Code, w.Body.String())
 	}
-	query, _ := b.build("UPDATE schueler SET aktualisiert_am = CURRENT_TIMESTAMP", "irgendeine-id")
-
-	// Nur die SET-Liste: Das WHERE nennt id, und ohne diese Eingrenzung gälte ein Feld
-	// namens „id" als geschrieben.
-	setTeil := query
-	if i := strings.Index(query, " WHERE "); i > 0 {
-		setTeil = query[:i]
-	}
+	// Die Spalten, die die Anweisung setzt (repository.LeserAenderung).
+	spalten := b.Spalten()
 	geschrieben := func(spalte string) bool {
-		return strings.Contains(setTeil, ", "+spalte+" = $")
+		return slices.Contains(spalten, spalte)
 	}
 
 	// Drei Gegenproben gegen den stillen Nulllauf. Ohne sie wäre der Test auch dann grün,
@@ -128,7 +123,7 @@ func TestPatchSchuelerVerwirftKeinFeld(t *testing.T) {
 		t.Fatalf("nur %d Felder im Request-Typ gefunden — die Reflexion ist kaputt: %v", len(jsonNamen), jsonNamen)
 	}
 	if !geschrieben("vorname") {
-		t.Fatalf("„vorname“ gilt als nicht geschrieben — die Erkennung der SET-Liste ist kaputt.\nQuery: %s", query)
+		t.Fatalf("„vorname“ gilt als nicht geschrieben — die Erkennung der SET-Liste ist kaputt.\nGesetzte Spalten: %v", spalten)
 	}
 	if geschrieben("gibtesnicht") {
 		t.Fatal("eine erfundene Spalte gilt als geschrieben — die Erkennung ist zu großzügig")
@@ -149,10 +144,10 @@ func TestPatchSchuelerVerwirftKeinFeld(t *testing.T) {
 		t.Errorf(
 			"patchStudentRequest nimmt %d Feld(er) entgegen, die in KEINE SET-Zuweisung münden: %s\n"+
 				"Das Formular schickt sie, der Server antwortet 200 — und speichert sie nicht.\n"+
-				"Entweder in baueSchuelerUpdate ein b.add* ergänzen oder in nichtInsUpdate\n"+
-				"eintragen, MIT dem Grund und dem Weg, der stattdessen zuständig ist.\n"+
-				"Query war: %s",
-			len(verworfen), strings.Join(verworfen, ", "), query)
+				"Entweder das Feld in baueSchuelerUpdate und in repository.LeserAenderung nennen\n"+
+				"oder in nichtInsUpdate eintragen, MIT dem Grund und dem Weg, der stattdessen\n"+
+				"zuständig ist. Gesetzte Spalten: %v",
+			len(verworfen), strings.Join(verworfen, ", "), spalten)
 	}
 
 	// Die Ausnahmeliste darf nicht verwildern.

@@ -81,7 +81,6 @@ func produktivDateien(t *testing.T) []string {
 // senkt die Zahl; steht sie auf null, fällt die Zeile weg.
 var handlerMitSQL = map[string]int{
 	"dsgvo_auskunft.go": 11,
-	"student_update.go": 1,
 }
 
 func TestHandlerFormulierenKeinNeuesSQL(t *testing.T) {

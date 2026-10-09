@@ -655,6 +655,10 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   Zeilen, trägt der Fehler des Lesens `repository.ErrZeileUnlesbar`.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg.
+- Hängt die SET-Liste einer Änderung von den genannten Feldern ab, nennt `repository/` die
+  Spalten in einem Typ der Änderung (`LeserAenderung`: ein Feld ohne Wert bleibt, wie es ist);
+  die Tür prüft und füllt nur Werte. Ein Test hält jedes Feld des Typs gegen eine Spalte, ein
+  zweiter jedes Feld der Anfrage gegen die gesetzten Spalten.
 
 `api/schichtung_test.go` hält den Stand: die Zahl der SQL-Anweisungen je Datei von `api/` und
 die Dateien ohne Tür.

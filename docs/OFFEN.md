@@ -41,9 +41,9 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [x] gosec vor dem Push: Der Hook fährt gosec seit dem 09.10.2026 mit, über dasselbe Skript
   wie der Sicherheits-Lauf (`scripts/gosec-gate.sh`). Gebaut nach dem Vorschlag; zurücknehmen
   lässt es sich mit dem Rückbau dieses einen Commits.
-- [ ] Ändern eines Lesers: Die Tür setzt die Anweisung aus den genannten Feldern zusammen.
-  Vorschlag: `repository/` nennt die Spalten, die sich ändern lassen, die Tür reicht nur
-  Werte. (5.62)
+- [x] Ändern eines Lesers: `repository/` nennt seit dem 09.10.2026 die Spalten, die sich
+  ändern lassen (`repository.LeserAenderung`), die Tür reicht nur Werte. Gebaut nach dem
+  Vorschlag; die Anweisung ist dieselbe wie vorher.
 
 **Fertig gebaut — von dir am Testserver anzusehen,** nach `git pull` und `./update.sh` (7.10):
 
@@ -134,8 +134,8 @@ der Nummer nichts mehr dazu offen ist.
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
 - [ ] **Schichtung des Backends (5.62):** Die PDF-Erzeuger und der Rest der Dateien ohne Tür
-  ziehen je Sache aus `api/` in eigene Pakete; zwei Dateien von `api/` tragen noch SQL (die
-  Auskunft und das Ändern eines Lesers).
+  ziehen je Sache aus `api/` in eigene Pakete; eine Datei von `api/` trägt noch SQL (die
+  Auskunft).
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -344,8 +344,8 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1 unter R4, die Messwerte vom 09.10.2026 ebenfalls.
 
 - **Die Bremse steht.** `api/schichtung_test.go` zählt die SQL-Anweisungen je Datei und führt
-  die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 2
-  Dateien mit 12 Anweisungen (am Anfang 48 mit 177), 34 Dateien ohne Tür (am Anfang 44);
+  die Dateien ohne Tür als Bestand; beides kann nur kleiner werden. Stand am 09.10.2026: 1
+  Datei mit 11 Anweisungen (am Anfang 48 mit 177), 34 Dateien ohne Tür (am Anfang 44);
   `api/` hat 25.847 Zeilen in 158 Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
   `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
@@ -360,15 +360,11 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
 - **SQL nach `repository/`.** Je Thema ein Commit, die Anweisung wörtlich und in derselben
   Transaktion wie vorher. Vor dem Umzug einer Anweisung muss ein Test an der Datenbank sie
   ausführen; fehlt er, kommt er zuerst. Der Handgriff steht in
-  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14, die Regeln für Tür und Abfrage in 5.2.2. Zwei Dateien
-  tragen noch SQL:
-  - `api/dsgvo_auskunft.go` (11): die Abfragen der Auskunft.
-    `api/dsgvo_paar_vollstaendigkeit_test.go` liest den Quelltext dieser Datei und verlangt
-    jede Tabelle mit Leserbezug in einer ihrer Abfragen. Mit den Abfragen zieht das Gate an
-    die neue Datei; danach wird es am Rückbau einer Quelle rot gesehen.
-  - `api/student_update.go` (1): die Anweisung, die das Ändern der Leserzeile aus den
-    genannten Feldern zusammensetzt (`updateBuilder`). Vorher ist zu entscheiden, welche
-    Schicht die Spalten nennt, die sich ändern lassen.
+  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14, die Regeln für Tür und Abfrage in 5.2.2. Eine Datei
+  trägt noch SQL: `api/dsgvo_auskunft.go` (11), die Abfragen der Auskunft.
+  `api/dsgvo_paar_vollstaendigkeit_test.go` liest den Quelltext dieser Datei und verlangt jede
+  Tabelle mit Leserbezug in einer ihrer Abfragen. Mit den Abfragen zieht das Gate an die neue
+  Datei; danach wird es am Rückbau einer Quelle rot gesehen.
 - **Rest beim Protokoll der Verwaltung:** Die Einträge in `audit_logs` schreibt eine Anweisung,
   `repository.SchreibeAdminProtokoll`. Eine Stelle schreibt noch selbst: die Selbstanmeldung
   (`auth/selbstanmeldung.go`); `auth/` bindet `repository/` nicht ein.

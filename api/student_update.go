@@ -118,60 +118,6 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 	}
 }
 
-// updateBuilder sammelt optionale SET-Zuweisungen für ein dynamisches UPDATE.
-type updateBuilder struct {
-	sets []string
-	args []interface{}
-}
-
-func (b *updateBuilder) add(spalte string, wert interface{}) {
-	b.sets = append(b.sets, spalte)
-	b.args = append(b.args, wert)
-}
-
-func (b *updateBuilder) addStr(spalte string, wert *string) {
-	if wert != nil {
-		b.add(spalte, *wert)
-	}
-}
-
-// addStrLeerbar ist addStr für Felder, die man LÖSCHEN können muss: Ein leerer Wert
-// wird zu NULL, nicht zum leeren String. Das ist dieselbe Schreibweise, die der
-// DSGVO-Cron und die LUSD-Ausleitung verwenden (jobs/cron_dsgvo.go, repository/lusd_import.go)
-// — sonst stünde für „gelöscht" je nach Weg mal NULL und mal ” in der Spalte.
-//
-// nil heißt weiterhin „nicht mitgeschickt" und lässt die Spalte in Ruhe.
-func (b *updateBuilder) addStrLeerbar(spalte string, wert *string) {
-	if wert == nil {
-		return
-	}
-	if strings.TrimSpace(*wert) == "" {
-		b.add(spalte, nil)
-		return
-	}
-	b.add(spalte, *wert)
-}
-
-func (b *updateBuilder) addInt(spalte string, wert *int) {
-	if wert != nil {
-		b.add(spalte, *wert)
-	}
-}
-
-// build hängt die gesammelten SET-Zuweisungen (nummeriert ab $1) und die
-// WHERE-Bedingung an prefix an und liefert Query samt Argumentliste.
-func (b *updateBuilder) build(prefix, idValue string) (string, []interface{}) {
-	query := prefix
-	args := make([]interface{}, 0, len(b.args)+1)
-	for i, spalte := range b.sets {
-		query += fmt.Sprintf(", %s = $%d", spalte, i+1)
-		args = append(args, b.args[i])
-	}
-	query += fmt.Sprintf(" WHERE id = $%d", len(b.sets)+1)
-	args = append(args, idValue)
-	return query, args
-}
-
 // parseGeburtsdatum parst ein optionales ISO-Datum. Leerstring ergibt (nil, nil)
 // und setzt das Feld damit auf NULL.
 func parseGeburtsdatum(raw string) (*time.Time, error) {
@@ -236,7 +182,7 @@ func (s *Server) handlePatchStudent(w http.ResponseWriter, r *http.Request, audi
 // schuelerAenderung ist eine geprüfte Änderung an der Leserzeile samt dem, was nach dem
 // Schreiben noch aussteht.
 type schuelerAenderung struct {
-	update *updateBuilder
+	update *repository.LeserAenderung
 	// lusdNachgetragen ist die LUSD-ID, die diese Änderung einträgt; sie gehört ins Protokoll.
 	lusdNachgetragen string
 	// kontoAdresse ist die Schul-E-Mail, für die nach dem Schreiben ein Konto entsteht.
@@ -273,7 +219,7 @@ func (s *Server) pruefeSchuelerAenderung(ctx context.Context, w http.ResponseWri
 	// Ohne Zuweisung läuft kein UPDATE, etwa wenn nur die unveränderte LUSD-ID mitkam. Eine
 	// nachzutragende Adresse ist Arbeit, auch wenn an der Leserzeile nichts steht; sonst
 	// wäre „nur die Schul-E-Mail nachtragen" ein 400.
-	if len(b.sets) == 0 && kontoAdresse == "" {
+	if b.Leer() && kontoAdresse == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
 		return keine, false
 	}
@@ -323,7 +269,7 @@ func (s *Server) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 //
 // Rückgabe: (nachgetragenerWert, ok). nachgetragenerWert != "" heißt: bitte auditieren.
 // Ist req nil oder ein No-op (gleicher Wert), wird ("", true) zurückgegeben.
-func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter, id string, reqLusd *string, b *updateBuilder) (string, bool) {
+func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter, id string, reqLusd *string, b *repository.LeserAenderung) (string, bool) {
 	if reqLusd == nil {
 		return "", true
 	}
@@ -365,7 +311,7 @@ func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 		return "", false
 	}
 
-	b.addStr("lusd_id", &neu)
+	b.LusdID = &neu
 	return neu, true
 }
 
@@ -392,7 +338,7 @@ func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 // Ein bestehendes Konto bleibt beim Wechsel stehen, auch zu Praktikum oder Fachbereich: Neu
 // angelegt wird dort keines (repository.ArtMitKonto), ueber ein vorhandenes entscheidet die
 // Benutzerverwaltung.
-func (s *Server) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, id string, reqArt *string, b *updateBuilder) bool {
+func (s *Server) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, id string, reqArt *string, b *repository.LeserAenderung) bool {
 	if reqArt == nil {
 		return true
 	}
@@ -430,7 +376,7 @@ func (s *Server) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 		return false
 	}
 
-	b.addStr("art", &neu)
+	b.Art = &neu
 	return true
 }
 
@@ -477,10 +423,11 @@ type patchStudentRequest struct {
 	Email *string `json:"email"`
 }
 
-// baueSchuelerUpdate erzeugt aus dem PATCH-Request den dynamischen updateBuilder (inkl.
-// Klassen→Abgängerjahr-Ableitung und Geburtsdatum-Parsing). ok=false: die Fehlerantwort
-// (ungültiges Datum bzw. leerer PATCH) wurde bereits geschrieben.
-func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updateBuilder, bool) {
+// baueSchuelerUpdate prüft die Felder der Anfrage und nennt sie als Änderung der Leserzeile
+// (samt Ableitung des Abgängerjahrs aus der Klasse und dem gelesenen Geburtsdatum). Welche
+// Spalte ein Feld setzt, steht in repository.LeserAenderung. ok=false: Die Ablehnung ist
+// schon beantwortet.
+func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*repository.LeserAenderung, bool) {
 	// Die Sperre des Spezialwerts 'lehrer' gilt auch für die zweite Tür (PATCH) —
 	// siehe pruefeKlassenname und Migration 072.
 	if req.Klasse != nil {
@@ -530,20 +477,22 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 		}
 	}
 
-	b := &updateBuilder{}
-	b.addStr("vorname", req.Vorname)
-	b.addStr("nachname", req.Nachname)
-	// lusd_id NICHT hier — sie hat einen eigenen kontrollierten Pfad (nur nachtragbar
-	// wenn leer, mit Eindeutigkeits-Prüfung und Audit), siehe pruefeUndSetzeLusdID im
-	// Handler. Ein roher Wert im generischen Feld-Beutel verknüpfte den Datensatz sonst
-	// ungeprüft mit einer fremden LUSD-Identität (Betreiber-Entscheidung 18.08.2026).
-	// Leerbar, nicht addStr: Eine geräumte Ausweisnummer gehört als NULL in die Spalte.
-	// Der leere String wäre ein Wert — und `uniq_schueler_barcode_active` ließe genau
-	// einen zweiten Leser mit „" nicht zu, der dritte scheiterte an einer Kollision mit
-	// einer Nummer, die niemand hat.
-	b.addStrLeerbar("barcode_id", req.BarcodeID)
-	b.addStr("klasse", req.Klasse)
-	b.addInt("abgaenger_jahr", req.AbgaengerJahr)
+	// LusdID und Art stehen nicht hier: Beide haben einen eigenen geprüften Pfad
+	// (pruefeUndSetzeLusdID, pruefeUndSetzeArt) und kämen sonst ungeprüft in die Zeile.
+	// Anschrift und Elternkontakt sind die Angaben, deren Entfernung jemand verlangen kann:
+	// Ein mitgeschicktes leeres Feld löscht sie, ebenso die Ausweisnummer.
+	b := &repository.LeserAenderung{
+		Vorname:       req.Vorname,
+		Nachname:      req.Nachname,
+		Ausweisnummer: req.BarcodeID,
+		Klasse:        req.Klasse,
+		AbgaengerJahr: req.AbgaengerJahr,
+		Strasse:       req.Strasse,
+		Hausnummer:    req.Hausnummer,
+		Plz:           req.Plz,
+		Ort:           req.Ort,
+		ElternEmail:   req.ElternEmail,
+	}
 
 	if req.Geburtsdatum != nil {
 		// Pflichtfeld seit 21.08.2026 (Schlüssel des LUSD-Abgleichs): POST verlangt es,
@@ -560,45 +509,19 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return nil, false
 		}
-		b.add("geburtsdatum", parsedDate)
+		b.Geburtsdatum = parsedDate
 	}
 
-	// Postanschrift & Elternkontakt: nur bei vorhandenem Feld ändern — und ein
-	// mitgeschicktes LEERES Feld heißt hier wirklich löschen (NULL). Das sind genau die
-	// Angaben, deren Entfernung jemand verlangen kann; ein Weg, der Erfolg meldet und
-	// nichts tut, ist dafür der schlechteste Zustand.
-	b.addStrLeerbar("strasse", req.Strasse)
-	b.addStrLeerbar("hausnummer", req.Hausnummer)
-	b.addStrLeerbar("plz", req.Plz)
-	b.addStrLeerbar("ort", req.Ort)
-	b.addStrLeerbar("eltern_email", req.ElternEmail)
-
-	// Der Empty-PATCH-Check steht bewusst NICHT hier, sondern im Handler NACH
-	// pruefeUndSetzeLusdID: Eine reine lusd_id-Nachtragung ist ein gültiger PATCH,
-	// dessen einziges Feld erst der kontrollierte lusd_id-Pfad hinzufügt.
+	// Ob die Änderung leer ist, prüft der Handler nach pruefeUndSetzeLusdID: Eine nachgetragene
+	// LUSD-ID ist eine gültige Änderung, und ihr Feld nennt erst dieser Pfad.
 	return b, true
 }
 
-// fuehreSchuelerUpdateAus baut das dynamische UPDATE und führt es aus. ok=false: die
-// Fehlerantwort (500 bzw. 404 bei unbekanntem Schüler) wurde bereits geschrieben.
-func (s *Server) fuehreSchuelerUpdateAus(ctx context.Context, w http.ResponseWriter, id string, b *updateBuilder) bool {
-	// Geschrieben wird auf die TABELLE `leser`, nicht auf die Sicht `schueler`.
-	//
-	// Die Sicht ist `SELECT * FROM leser WHERE art = 'schueler' WITH CHECK OPTION`
-	// (Migration 123/schema.sql). Sie ist ein Schutz und bleibt einer: Jede Abfrage, die
-	// „Schueler" meint, meint durch sie auch wirklich Schueler. Fuer den Aenderungspfad
-	// der Akte ist sie aber die falsche Tuer, seit die Leserdatei alle fuehrt — ein
-	// Kollege steht NICHT in ihr, das UPDATE traf null Zeilen, und der Handler
-	// antwortete 404 „schueler nicht gefunden". Genau das war der Befund am
-	// 16.09.2026: „ich kann dort aber keine adressedaten etc nachtragen." Es fehlte
-	// nicht nur der Knopf in der Akte — der Server haette ihn ohnehin abgewiesen.
-	//
-	// Was die Sicht hier verhindert hat, verhindert jetzt pruefeUndSetzeArt mit einer
-	// Begruendung statt mit einer 404, und die Paarungs-CHECKs der Tabelle
-	// (chk_leser_schueler_pflichtfelder, chk_leser_nur_schueler_werden_abgaenger) liegen
-	// unveraendert darunter. Die Zusage ist dieselbe, nur das Mittel hat gewechselt.
-	query, args := b.build("UPDATE leser SET aktualisiert_am = CURRENT_TIMESTAMP", id)
-	tag, err := s.DB.Pool.Exec(ctx, query, args...)
+// fuehreSchuelerUpdateAus schreibt die Änderung an die Leserzeile. ok=false: Die Ablehnung
+// (409 bei einer vergebenen Nummer oder einem vergebenen Namen, 404 bei unbekanntem Leser,
+// sonst 500) ist schon beantwortet.
+func (s *Server) fuehreSchuelerUpdateAus(ctx context.Context, w http.ResponseWriter, id string, b *repository.LeserAenderung) bool {
+	gefunden, err := repository.AendereLeser(ctx, s.DB.Pool, id, *b)
 	if err != nil {
 		// Eine vergebene Ausweisnummer (unter den Schülern oder im Kollegium, Migration 118) ist
 		// eine Auskunft, kein Serverfehler.
@@ -621,7 +544,7 @@ func (s *Server) fuehreSchuelerUpdateAus(ctx context.Context, w http.ResponseWri
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
 	}
-	if tag.RowsAffected() == 0 {
+	if !gefunden {
 		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
 		return false
 	}
