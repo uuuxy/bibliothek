@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/internal/crypto"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v5"
 )
 
@@ -58,6 +59,9 @@ func TestLadeSMTPKonfigGespeichertesGewinnt(t *testing.T) {
 	if konfig.Absender != "bib@schule.de" {
 		t.Errorf("Absender = %q — die Umgebung hat gewonnen", konfig.Absender)
 	}
+	if konfig.Benutzer != "bib" {
+		t.Errorf("Benutzer = %q, want bib", konfig.Benutzer)
+	}
 	if konfig.Passwort != "geheim123" {
 		t.Errorf("Passwort wurde nicht entschlüsselt: %q", konfig.Passwort)
 	}
@@ -91,6 +95,50 @@ func TestLadeSMTPKonfigFaelltAufUmgebungZurueck(t *testing.T) {
 	// Ohne SMTP_FROM ist der Benutzer die beste verfügbare Absenderadresse.
 	if konfig.Absender != "bib@umgebung.de" {
 		t.Errorf("Absender = %q, want bib@umgebung.de", konfig.Absender)
+	}
+}
+
+// Gibt es die gespeicherte Zeile nicht oder lässt sie sich nicht lesen, trägt die Umgebung, und
+// das Laden ist kein Fehler: Ein Mahnlauf scheitert nicht an einer frischen Datenbank.
+func TestLadeSMTPKonfigOhneZeileTraegtDieUmgebung(t *testing.T) {
+	t.Setenv("SMTP_HOST", "smtp.umgebung.de")
+	t.Setenv("SMTP_PORT", "2525")
+	t.Setenv("SMTP_FROM", "bib@umgebung.de")
+
+	mock := mockPool(t)
+	mock.ExpectQuery(`SELECT smtp_host`).WillReturnError(pgx.ErrNoRows)
+
+	konfig, err := LadeSMTPKonfig(context.Background(), mock)
+	if err != nil {
+		t.Fatalf("LadeSMTPKonfig: %v", err)
+	}
+	if konfig.Adresse() != "smtp.umgebung.de:2525" || konfig.Absender != "bib@umgebung.de" {
+		t.Errorf("Konfiguration %+v, erwartet die der Umgebung", konfig)
+	}
+}
+
+// Ein gespeicherter Server ohne Port und ohne Absender bekommt die Vorgaben: Port 587 und die
+// Absenderadresse des Programms. Ohne Benutzer und Passwort entsteht keine Anmeldung.
+func TestLadeSMTPKonfigErgaenztPortUndAbsender(t *testing.T) {
+	t.Setenv("SMTP_HOST", "smtp.umgebung.de")
+	t.Setenv("SMTP_FROM", "bib@umgebung.de")
+
+	mock := mockPool(t)
+	mock.ExpectQuery(`SELECT smtp_host`).
+		WillReturnRows(konfigZeile(" smtp.schule.de ", " ", "", nil, " "))
+
+	konfig, err := LadeSMTPKonfig(context.Background(), mock)
+	if err != nil {
+		t.Fatalf("LadeSMTPKonfig: %v", err)
+	}
+	if konfig.Adresse() != "smtp.schule.de:587" {
+		t.Errorf("Adresse = %q, want smtp.schule.de:587", konfig.Adresse())
+	}
+	if konfig.Absender != defaultFromAddress {
+		t.Errorf("Absender = %q, want die Vorgabe %q", konfig.Absender, defaultFromAddress)
+	}
+	if konfig.Auth() != nil {
+		t.Error("ohne Benutzer und Passwort darf keine SMTP-Auth entstehen")
 	}
 }
 

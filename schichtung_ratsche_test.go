@@ -49,7 +49,6 @@ var sqlBestand = map[string]sqlFunde{
 	// der Anwendung; sie bleiben bei der Probe.
 	"jobs/restore_probe.go":        {texte: 0, aufrufe: 3},
 	"jobs/restore_probe_hilfen.go": {texte: 1, aufrufe: 1},
-	"mailservice/smtp_konfig.go":   {texte: 1, aufrufe: 1},
 }
 
 // Nur Anweisungen, keine Bezeichner: `UPDATE x SET` statt `UPDATE`, sonst schlägt jedes Wort

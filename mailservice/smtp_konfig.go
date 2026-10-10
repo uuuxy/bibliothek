@@ -25,6 +25,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/crypto"
+	"bibliothek/repository"
 )
 
 // ErrMailNichtKonfiguriert meldet, dass kein Mailserver hinterlegt ist. Das ist kein
@@ -93,18 +94,12 @@ func KonfigAusUmgebung() SMTPKonfig {
 	return k
 }
 
-const smtpKonfigSQL = `SELECT smtp_host, smtp_port, smtp_user, smtp_password_encrypted, sender_email
-	FROM mail_settings_config WHERE id = 1`
-
 // LadeSMTPKonfig liefert die Konfiguration, mit der tatsächlich versendet wird.
 // Jeder Versender im System benutzt diese Funktion — nur so kann der Test-Knopf
-// etwas über den Mahnlauf aussagen.
+// etwas über den Mahnlauf aussagen. Die gespeicherte Zeile liest sie über dieselbe Funktion
+// wie die Maske der Mail-Einstellungen (repository.MailSettingsRepository.GetConfig).
 func LadeSMTPKonfig(ctx context.Context, dbPool db.PgxPoolIface) (SMTPKonfig, error) {
-	var k SMTPKonfig
-	var passwortVerschluesselt []byte
-
-	err := dbPool.QueryRow(ctx, smtpKonfigSQL).
-		Scan(&k.Host, &k.Port, &k.Benutzer, &passwortVerschluesselt, &k.Absender)
+	gespeichert, err := repository.NewMailSettingsRepository(dbPool).GetConfig(ctx)
 	if err != nil {
 		// Keine Zeile (frische Datenbank, noch nicht gelaufene Migration): Die Umgebung
 		// trägt weiter, damit ein Mahnlauf nicht an einer Konfigurationslücke scheitert.
@@ -112,9 +107,15 @@ func LadeSMTPKonfig(ctx context.Context, dbPool db.PgxPoolIface) (SMTPKonfig, er
 		log.Printf("mail: gespeicherte SMTP-Konfiguration nicht lesbar, Umgebung wird benutzt: %v", err)
 		return KonfigAusUmgebung(), nil
 	}
+	k := SMTPKonfig{
+		Host:     gespeichert.SMTPHost,
+		Port:     gespeichert.SMTPPort,
+		Benutzer: gespeichert.SMTPUser,
+		Absender: gespeichert.SenderEmail,
+	}
 
-	if len(passwortVerschluesselt) > 0 {
-		entschluesselt, err := crypto.Decrypt(passwortVerschluesselt)
+	if len(gespeichert.SMTPPasswordEncrypted) > 0 {
+		entschluesselt, err := crypto.Decrypt(gespeichert.SMTPPasswordEncrypted)
 		if err != nil {
 			// Nicht auf die Umgebung ausweichen: Ein unlesbares Passwort heißt, dass der
 			// APP_ENCRYPTION_KEY nicht mehr derselbe ist. Das muss auffallen, statt still

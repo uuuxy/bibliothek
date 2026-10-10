@@ -530,7 +530,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 09.10.2026, die übrigen am 08.10.2026
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -620,8 +620,8 @@ HTTP-Anfrage
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
 | `api/`                  | 21.319 Zeilen, 136 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
-| `repository/`           | 21.677 Zeilen, 141 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen und der Anmeldung                                        |
-| `internal/service/`     | 5.271 Zeilen, 28 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan und womit ein neuer Plan beginnt, Importe, Littera-Etiketten                          |
+| `repository/`           | 22.365 Zeilen, 151 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke                                        |
+| `internal/service/`     | 4.851 Zeilen, 28 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan und womit ein neuer Plan beginnt, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 924 Zeilen, 2 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/betriebsbereitschaft_alarm.go` |
 | `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/dsgvo_auskunft.go` und `api/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
@@ -631,7 +631,7 @@ HTTP-Anfrage
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
 | `pkg/` (25 Pakete)      | 2.922 Zeilen, 34 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
 | `pdf/`                  | 3.356 Zeilen, 21 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
-| `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
+| `mailservice/`          | 477 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung)                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
 | `internal/*` (übrige)   | 5.634 Zeilen, 34 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest` (Prüfhilfen) |
@@ -790,6 +790,11 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   gelöscht, nicht gesperrt), steht als eine Bedingung in `vormerkung_nachruecken.go` und gilt
   bei der Rückgabe wie beim Nachrücken. `internal/service` formuliert damit keine Anweisung
   mehr.
+- Womit verschickt wird, bestimmt `mailservice.LadeSMTPKonfig`: die gespeicherte Zeile, und
+  solange dort kein Server steht, die Umgebung. Die Zeile liest es über
+  `repository.MailSettingsRepository.GetConfig`, dieselbe Funktion wie die Maske der
+  Mail-Einstellungen; das Paket behält den Rückfall auf die Umgebung, das Entschlüsseln des
+  Passworts und die Vorgaben für Port und Absender.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf
@@ -817,7 +822,9 @@ den Text einer Anweisung und den Aufruf, der sie abschickt (`Exec`, `Query`, `Qu
 `SendBatch`, `CopyFrom`). Der zweite sieht auch eine Anweisung, deren Text erst aus Variablen
 entsteht: Das Löschen der Audit-Aufbewahrung setzte in `jobs/` den Tabellennamen als Variable
 ein, der Textzähler sah es nicht. Was außerhalb der Datenbankschicht noch Anweisungen trägt,
-führt die Ratsche je Datei als Bestand, der nur sinken kann ([OFFEN.md](OFFEN.md) 5.62). Dass
+führt die Ratsche je Datei als Bestand, der nur sinken kann. Seit dem 10.10.2026 sind das nur
+noch die zwei Dateien der Restore-Probe in `jobs/`: Sie legen eine Wegwerf-Datenbank an und
+zählen darin die Tabellen, keine ihrer Anweisungen trifft eine Tabelle der Anwendung. Dass
 die Detektoren messen, belegen sie an `repository/`: Dort müssen sie Anweisungen finden.
 `api/schichtung_test.go` führt die Dateien von `api/` ohne Tür als Bestand, der nur kleiner
 werden kann. Als Anweisung zählt auch eine Massenkopie (`CopyFrom`): Sie nennt Tabelle und
