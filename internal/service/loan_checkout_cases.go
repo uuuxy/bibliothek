@@ -27,7 +27,7 @@ func (s *defaultLoanService) erzeugeAusleihe(
 	// Ein Schreiber für jeden Leser (Migration 125). Die Dauerleihe bleibt an die Art
 	// geknüpft — sie war vorher an die Tabelle geknüpft, was dasselbe war: Wer kein
 	// Schüler ist, bekommt das Buch fürs Schuljahr und zählt nicht in die
-	// Überfällig-Automatik (zaehleUeberfaelligeMedien).
+	// Überfällig-Automatik (repository.ZaehleUeberfaelligeBuecher).
 	loan, err := s.loanRepo.CreateLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, !chkCtx.istSchueler())
 	if err == nil {
 		return loan, nil

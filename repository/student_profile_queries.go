@@ -226,7 +226,7 @@ func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klass
 				COUNT(*) as ausgeliehen_anzahl,
 				-- Dauerleihen werden NICHT überfällig. Das ist keine neue Regel, sondern
 				-- dieselbe, nach der die Sperr-Automatik seit jeher zählt
-				-- (zaehleUeberfaelligeMedien: ist_handapparat = false). Hier fehlte sie:
+				-- (ZaehleUeberfaelligeBuecher: ist_handapparat = false). Hier fehlte sie:
 				-- Ein Kollege stand nach einem Jahr mit roter Zahl in der Leserdatei,
 				-- während die Theke ihn anstandslos bediente — zwei Wahrheiten über
 				-- dieselbe Ausleihe. Entschieden am 16.09.2026: „kollegen haben keine

@@ -128,7 +128,7 @@ func pruefeHinweise(ctx context.Context, q repository.DBQueryer, leserID string,
 		return sperrLage{}, err
 	}
 	lage.einst = einst
-	ueberfaellig, err := zaehleUeberfaelligeMedien(ctx, q, leserID, einst.MaxOverdueDays)
+	ueberfaellig, err := repository.ZaehleUeberfaelligeBuecher(ctx, q, leserID, einst.MaxOverdueDays)
 	if err != nil {
 		return sperrLage{}, err
 	}
@@ -152,20 +152,4 @@ func protokolliereUebergangen(ctx context.Context, audit repository.AuditReposit
 			"reason":      grund,
 		}))
 	}
-}
-
-// zaehleUeberfaelligeMedien zählt die überfälligen (älter als maxOverdueDays), noch nicht
-// zurückgegebenen BUCH-Medien eines Lesers (Dauerleihen und Geräte ausgenommen).
-func zaehleUeberfaelligeMedien(ctx context.Context, q repository.DBQueryer, schuelerID string, maxOverdueDays int) (int, error) {
-	var n int
-	err := q.QueryRow(ctx, `
-		SELECT COUNT(*)
-		FROM ausleihen
-		WHERE schueler_id = $1
-		  AND rueckgabe_am IS NULL
-		  AND rueckgabe_frist < CURRENT_TIMESTAMP - (INTERVAL '1 day' * $2)
-		  AND ist_handapparat = false
-		  AND geraet_id IS NULL
-	`, schuelerID, maxOverdueDays).Scan(&n)
-	return n, err
 }

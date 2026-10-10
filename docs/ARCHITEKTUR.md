@@ -762,6 +762,13 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   der Datenbank (`internal/service/geraet_ausleihe_pg_test.go`): zwei Plätze zugleich an
   derselben Ausleihe und an derselben Rückgabe, und ein Protokoll, das sich nicht schreiben
   lässt.
+- Die Sperrprüfung einer neuen Ausleihe (`internal/service/ausleih_sperren.go`) entscheidet,
+  welche Sperre hält und welcher Hinweis sich übergehen lässt. Ihre zwei Zahlen liest sie aus
+  `repository/`: die offenen Forderungen (`OffeneSchaeden`) und die überfälligen Bücher
+  (`ZaehleUeberfaelligeBuecher`: offen, kein Gerät, keine Dauerleihe, länger überfällig als
+  die Kulanz). Den Hinweis auf das Abholfach beim Scan eines Ausweises liest
+  `AbholbereiteBuecher`; lässt er sich nicht laden, bleibt er leer und der Scan geht weiter
+  (`omnibox_service.go`).
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf
