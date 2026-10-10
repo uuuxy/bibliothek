@@ -752,6 +752,16 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   Bestellsuche und Bestellbedarf: der eigene Eintrag des Titels, sonst die Cover-Adresse der
   DNB zu seiner ISBN. Bricht das Lesen der vorhandenen ISBN ab, gilt keine als vorhanden; bis
   zum 10.10.2026 galten die bis dahin gelesenen.
+- Die Geräte-Ausleihe (`internal/service/device_service.go`) entscheidet, ob ein Scan eine
+  Ausleihe oder eine Rückgabe ist, prüft Gerät und Leser, rechnet die Frist und schreibt das
+  Protokoll in der Transaktion der Buchung. Ihre Anweisungen stehen in
+  `repository/geraete_ausleihe.go`. `SperreOffeneGeraeteAusleihe` sperrt die Zeile der offenen
+  Ausleihe bis zum Ende der Transaktion; `BucheGeraeteRueckgabe` meldet eine Ausleihe, die es
+  nicht gibt, statt null Zeilen als gebucht zu nehmen. Die Funktionen nehmen Pool oder
+  Transaktion (`DBQueryer`); dass der Dienst ihnen die Transaktion reicht, halten drei Tests an
+  der Datenbank (`internal/service/geraet_ausleihe_pg_test.go`): zwei Plätze zugleich an
+  derselben Ausleihe und an derselben Rückgabe, und ein Protokoll, das sich nicht schreiben
+  lässt.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf

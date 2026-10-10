@@ -21,7 +21,7 @@ type DeviceResult struct {
 	Type string
 	// Geraet enthält die Stammdaten des betroffenen Geräts.
 	Geraet *repository.Geraet
-	// Student ist der LESER, für den die Aktion durchgeführt wurde.
+	// Student ist der Leser, für den die Aktion durchgeführt wurde.
 	Student *repository.Student
 	// DueDate gibt die berechnete Rückgabefrist für das Gerät an (nur bei Ausleihe).
 	DueDate *time.Time
@@ -29,7 +29,7 @@ type DeviceResult struct {
 	LoanID *string
 	// Fremdrueckgabe ist wahr, wenn das Gerät von einer anderen Person als dem Ausleiher zurückgegeben wurde.
 	Fremdrueckgabe bool
-	// Vorbesitzer speichert den LESER, der das Gerät zuletzt ausgeliehen hatte (bei Fremdrückgabe).
+	// Vorbesitzer ist der Leser, der das Gerät zuletzt ausgeliehen hatte (bei Fremdrückgabe).
 	Vorbesitzer *repository.Student
 }
 
@@ -61,17 +61,11 @@ func NewDeviceService(pool db.PgxPoolIface, studentRepo repository.StudentReposi
 	}
 }
 
-// ladeGeraet lädt das Gerät anhand der Barcode-ID. Ob es verliehen werden darf, prüft
-// pruefeGeraetAusleihbar, und zwar erst im Ausleih-Zweig: Bis zum 13.09.2026 stand die
-// Prüfung hier, und ein verliehenes Gerät, das danach als defekt gemeldet wurde, ließ sich
-// nicht mehr zurückgeben (geraet_rueckgabe_sperre_pg_test.go).
+// ladeGeraet lädt das Gerät zu seiner Nummer. Ob es verliehen werden darf, prüft erst der Zweig
+// der Ausleihe (pruefeGeraetAusleihbar): Ein verliehenes Gerät, das danach als defekt gemeldet
+// wurde, muss sich zurückgeben lassen (geraet_rueckgabe_sperre_pg_test.go).
 func (s *defaultDeviceService) ladeGeraet(ctx context.Context, query string) (repository.Geraet, error) {
-	var g repository.Geraet
-	err := s.pool.QueryRow(ctx, `
-		SELECT id, modellname, seriennummer, barcode_id, zubehoer, ist_ausleihbar, ist_ausgesondert, zustand_notiz
-		FROM geraete
-		WHERE barcode_id = $1
-	`, query).Scan(&g.ID, &g.Modellname, &g.Seriennummer, &g.BarcodeID, &g.Zubehoer, &g.IstAusleihbar, &g.IstAusgesondert, &g.ZustandNotiz)
+	g, err := repository.LiesGeraetNachNummer(ctx, s.pool, query)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return g, meldung(ErrNotFound, "Gerät mit Barcode %s nicht gefunden", query)
@@ -82,7 +76,7 @@ func (s *defaultDeviceService) ladeGeraet(ctx context.Context, query string) (re
 }
 
 // pruefeGeraetAusleihbar hält ausgesonderte und gesperrte Geräte (z. B. defekt) von der
-// AUSLEIHE fern. Die Rückgabe prüft sie nicht: Eine offene Ausleihe zu schließen ist immer
+// Ausleihe fern. Die Rückgabe prüft sie nicht: Eine offene Ausleihe zu schließen ist immer
 // richtig, auch für ein Gerät, das inzwischen defekt oder ausgesondert ist.
 func pruefeGeraetAusleihbar(g repository.Geraet) error {
 	if g.IstAusgesondert {
@@ -94,17 +88,11 @@ func pruefeGeraetAusleihbar(g repository.Geraet) error {
 	return nil
 }
 
-// ladeAkteur ermittelt den aktiven Leser und prüft die Sperren der AUSLEIHE — denselben
-// Prüfweg wie beim Buch (pruefeAusleihSperren, entschieden am 24.09.2026). Ein Gerät ist
-// kein Lernmittel: Es gelten die Sperre am Leser und beide Hinweise.
-//
-// Bis zum 24.09.2026 hatte das Gerät eine eigene Prüfung. Sie ließ nichts übergehen („Geräte
-// kennen bewusst KEIN override_block", seit dem 19.08.2026 so im Code, nie als Entscheidung
-// festgehalten) und prüfte auch Kollegen, die am Buch nie gesperrt waren.
-//
-// Die Rückgabe nimmt ladeRueckgeber: Ein gesperrter Leser muss sein Gerät zurückgeben
-// können. Die Lage geht mit zurück — leiheGeraetAus rechnet aus ihren Einstellungen die
-// Frist und protokolliert, was übergangen wurde.
+// ladeAkteur ermittelt den aktiven Leser und prüft die Sperren der Ausleihe auf demselben Weg
+// wie beim Buch (pruefeAusleihSperren). Ein Gerät ist kein Lernmittel: Es gelten die Sperre
+// am Leser und beide Hinweise. Die Rückgabe nimmt ladeRueckgeber, ein gesperrter Leser muss
+// sein Gerät zurückgeben können. Die Lage geht mit zurück: leiheGeraetAus rechnet aus ihren
+// Einstellungen die Frist und protokolliert, was übergangen wurde.
 func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *string, overrideBlock bool) (*repository.Student, sperrLage, error) {
 	leser, err := s.ladeRueckgeber(ctx, activeLeserID)
 	if err != nil || leser == nil {
@@ -140,29 +128,6 @@ func (s *defaultDeviceService) ladeRueckgeber(ctx context.Context, activeLeserID
 	return leser, nil
 }
 
-// ladeAktiveAusleihe sperrt und lädt die offene Ausleihe des Geräts (Row-Level-Lock via
-// FOR UPDATE). hasActiveLoan ist false, wenn keine offene Ausleihe existiert.
-func ladeAktiveAusleihe(ctx context.Context, tx pgx.Tx, geraetID string) (repository.Loan, bool, error) {
-	var activeLoan repository.Loan
-	err := tx.QueryRow(ctx, `
-		SELECT id, geraet_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
-		FROM ausleihen
-		WHERE geraet_id = $1 AND rueckgabe_am IS NULL
-		FOR UPDATE
-	`, geraetID).Scan(
-		&activeLoan.ID, &activeLoan.GeraetID, &activeLoan.SchuelerID,
-		&activeLoan.AusgeliehenAm, &activeLoan.RueckgabeFrist, &activeLoan.RueckgabeAm,
-		&activeLoan.BearbeiterID, &activeLoan.IstFremdrueckgabe, &activeLoan.IstHandapparat,
-	)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return activeLoan, false, nil
-		}
-		return activeLoan, false, err
-	}
-	return activeLoan, true, nil
-}
-
 // leiheGeraetAus behandelt Fall A: das freie Gerät wird an den aktiven Leser ausgeliehen.
 // geraeteLeihfristTage ist die Standard-Leihfrist für Hardware (2 Wochen).
 const geraeteLeihfristTage = 14
@@ -190,20 +155,19 @@ func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g 
 	}
 	dueTime := geraeteRueckgabeFrist(time.Now(), lmfplan.FerientabelleAus(sommerferien))
 	resp := &DeviceResult{Student: leser}
-	var newLoanID string
 	// Ein Schreiber für jeden Leser. Nicht-Schüler bekommen das Gerät als Dauerleihe —
 	// dieselbe Regel wie beim Buch (erzeugeAusleihe).
-	err := tx.QueryRow(ctx, `
-		INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist, bearbeiter_id, ist_handapparat)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id
-	`, g.ID, leser.ID, dueTime, staffID, !leserart.IstSchueler(leser.Art)).Scan(&newLoanID)
+	newLoanID, err := repository.LeiheGeraetAus(ctx, tx, repository.GeraeteAusleihe{
+		GeraetID:       g.ID,
+		LeserID:        leser.ID,
+		BearbeiterID:   staffID,
+		RueckgabeFrist: dueTime,
+		IstDauerleihe:  !leserart.IstSchueler(leser.Art),
+	})
 	if err != nil {
-		// Zwei gleichzeitige Scans desselben Geräts: Der Verlierer verletzt
-		// uniq_ausleihen_aktiv_geraet (23505). Die Daten sind sicher (nur EINE aktive
-		// Ausleihe entsteht), aber ohne dieses Mapping käme ein 500 "interner
-		// Datenbankfehler" statt einer klaren 409-Meldung — analog zum Buch-Pfad
-		// (loan.go: ON CONFLICT → ErrAusleiheKonflikt).
+		// Zwei Plätze leihen dasselbe Gerät zugleich aus: Der zweite verletzt
+		// uniq_ausleihen_aktiv_geraet (23505). Es entsteht nur eine Ausleihe; ohne die
+		// Übersetzung bekäme der zweite Platz statt des Konflikts einen Serverfehler.
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return nil, meldung(ErrConflict, "Gerät ist bereits ausgeliehen (woanders verbucht)")
@@ -237,12 +201,8 @@ func (s *defaultDeviceService) ermittleVorbesitzer(ctx context.Context, activeLo
 	if leser != nil && *activeLoan.SchuelerID == leser.ID {
 		return false, nil
 	}
-	// `leser` und nicht `schueler`: Sonst bliebe der Vorbesitzer namenlos, wenn ein
-	// Kollege das Gerät hatte.
-	var vorbesitzer repository.Student
-	err := s.pool.QueryRow(ctx,
-		"SELECT vorname, nachname, coalesce(klasse, '') FROM leser WHERE id = $1 AND deleted_at IS NULL",
-		*activeLoan.SchuelerID).Scan(&vorbesitzer.Vorname, &vorbesitzer.Nachname, &vorbesitzer.Klasse)
+	// Ein gelöschter Vorbesitzer bleibt ohne Namen; eine Fremdrückgabe ist es trotzdem.
+	vorbesitzer, err := repository.LeserNameUndKlasse(ctx, s.pool, *activeLoan.SchuelerID)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return false, err
 	}
@@ -259,12 +219,7 @@ func (s *defaultDeviceService) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, 
 		return nil, err
 	}
 
-	// Rückgabe in der Datenbank eintragen (rueckgabe_am und bearbeiter_id setzen).
-	if _, err := tx.Exec(ctx, `
-		UPDATE ausleihen
-		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = $1, ist_fremdrueckgabe = $2
-		WHERE id = $3
-	`, staffID, isFremd, activeLoan.ID); err != nil {
+	if err := repository.BucheGeraeteRueckgabe(ctx, tx, activeLoan.ID, staffID, isFremd); err != nil {
 		return nil, err
 	}
 
@@ -308,14 +263,14 @@ func (s *defaultDeviceService) HandleDeviceAction(
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	activeLoan, hasActiveLoan, err := ladeAktiveAusleihe(ctx, tx, g.ID)
+	activeLoan, hasActiveLoan, err := repository.SperreOffeneGeraeteAusleihe(ctx, tx, g.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Die Sperren (Gerät defekt oder ausgesondert, Leser gesperrt) gelten der AUSLEIHE.
-	// Bis zum 13.09.2026 standen sie vor dieser Weiche und hielten auch die Rückgabe auf:
-	// 403, die Ausleihe blieb offen (geraet_rueckgabe_sperre_pg_test.go).
+	// Die Sperren (Gerät defekt oder ausgesondert, Leser gesperrt) gelten der Ausleihe, nicht
+	// der Rückgabe: Eine offene Ausleihe muss sich schließen lassen
+	// (geraet_rueckgabe_sperre_pg_test.go).
 	var leser *repository.Student
 	var lage sperrLage
 	if hasActiveLoan {

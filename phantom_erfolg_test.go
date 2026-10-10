@@ -89,7 +89,6 @@ var phantomBestand = map[string]int{
 	// ist gelöscht; der Abgleich geht zum nächsten Titel.
 	"repository/titel_cover.go:SetzeGefundenesCover":                  1,
 	"repository/titel_cover.go:SetzeCoverStatus":                      1,
-	"internal/service/device_service.go:gibGeraetZurueck":             1,
 	"internal/service/loan_checkout.go:zaehleAktiveSchuelerAusleihen": 1,
 	// FOR-UPDATE-Lock auf die Schüler-Zeile, bevor das Nachbuchen bucht (Sperrreihenfolge
 	// Schüler → Ausleihe → Exemplar). Das Statement SPERRT, es schreibt nicht; die Existenz
