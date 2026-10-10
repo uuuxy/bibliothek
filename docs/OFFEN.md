@@ -38,6 +38,11 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
   einstellt, braucht es dann nicht. (7.3, R8)
+- [ ] Zwei zugelieferte Pull Requests schließen? 727 ersetzt beim Schuljahreswechsel eine
+  Zählung durch eine Existenzabfrage; sie läuft einmal je Versetzung über wenige Zeilen,
+  gemessen ist nichts. 726 setzt in `Suchfeld` und `Suchpille` einen Knopf zum Leeren; im
+  `Suchfeld` hätte er 28 px Trefferfläche statt 48. Vorschlag: beide schließen. Soll es den
+  Knopf geben, entsteht er neu nach der Seite von Material 3.
 - [x] gosec vor dem Push: Der Hook fährt gosec seit dem 09.10.2026 mit, über dasselbe Skript
   wie der Sicherheits-Lauf (`scripts/gosec-gate.sh`). Gebaut nach dem Vorschlag; zurücknehmen
   lässt es sich mit dem Rückbau dieses einen Commits.
