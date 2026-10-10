@@ -148,12 +148,11 @@ func LadeBestellVerlaufPositionen(ctx context.Context, db DBQueryer, orders []Be
 		       coalesce(p.titel_id::text, ''),
 		       coalesce(e_counts.etiketten_offen, 0)
 		FROM bestellungen_positionen p
-		LEFT JOIN (
-			SELECT titel_id, count(*) as etiketten_offen
+		LEFT JOIN LATERAL (
+			SELECT count(*) as etiketten_offen
 			FROM buecher_exemplare e
-			WHERE `+EtikettOffenBedingung+`
-			GROUP BY titel_id
-		) e_counts ON e_counts.titel_id = p.titel_id
+			WHERE e.titel_id = p.titel_id AND `+EtikettOffenBedingung+`
+		) e_counts ON true
 		WHERE p.bestellung_id = ANY($1)
 		ORDER BY p.bestellung_id, p.titel_name
 	`, geladeneIDs(orderIndex))
