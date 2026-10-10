@@ -422,6 +422,18 @@ trägt je ein eigener Typ, dort hält der Compiler die Zuordnung.
 | --------- | ---- | ---- | ----- |
 | **Erwartung ohne Stelle** | Ein Test verlangt jeden erwarteten Wert irgendwo im erzeugten Text. Kommen zwei Felder gleichen Typs vertauscht an, stehen beide Werte da. Ein Feld, das nur eine andere Fassung des Texts nennt, und ein Zweig, den der Test nie betritt, fehlen ganz. Der Test ist grün und liest sich, als hielte er jedes Feld | `api/dsgvo_pflichtangaben_fristen_pg_test.go` (jede Frist mit ihrer Bezeichnung im Satz, für einen Schüler und eine Kollegin; an fünf Rückbauten rot), `api/dsgvo_auskunft_test.go` (`TestDsgvoFristen_OhneEinstellungenGeltenDieVorgaben`: die Vorgaben als Zahlen; an drei Rückbauten rot) | 09.10.2026: `dsgvoFristen` in `api/dsgvo_auskunft.go`. Ungeprüft waren vertauschte Fristen für Bücherei und Lernmittel, die Frist erledigter Anliegen und der Zweig ohne lesbare Einstellungen; ein Fehler lag nicht vor. Handgriff: [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14, Gegenprobe am Rückbau |
 
+### Zeilensperre über einen Verbund ohne Tabelle, 10.10.2026 — eine Form mit Ratsche
+
+Anlass: OFFEN 5.62. Beim Umzug der Rückgabe nach `repository/` standen zwei Anweisungen
+nebeneinander, die die nächste wartende Vormerkung wählen: Die der Rückgabe sperrte mit
+`FOR UPDATE OF v SKIP LOCKED`, die des Nachrückens mit `FOR UPDATE SKIP LOCKED`. Über den Bestand
+gesucht: Von 29 Anweisungen mit Zeilensperre gingen fünf über einen Verbund; vier nannten ihre
+Tabelle, das Nachrücken nicht.
+
+| Bugklasse | Form | Gate | Stand |
+| --------- | ---- | ---- | ----- |
+| **Zeilensperre über einen Verbund ohne Tabelle** | `SELECT … FROM a JOIN b … FOR UPDATE` sperrt die Zeilen beider Tabellen, auch die nur mitgelesene. Mit `SKIP LOCKED` fällt ein Kandidat weg, sobald eine fremde Transaktion seine Nachbarzeile hält; ohne wartet die Anweisung auf sie, und zwei Wege mit verschiedener Reihenfolge der Sperren warten aufeinander. Kein Test merkt es, solange keine zweite Transaktion die Nachbarzeile hält | `zeilensperre_verbund_ratsche_test.go` (liest jede Anweisung, wie sie aus ihren Stücken zusammengesetzt ist; Selbstprobe über acht verbotene und fünf erlaubte Formen; am alten Stand nennt sie `repository/vormerkung_nachruecken.go`) und am Verhalten `repository/vormerkung_nachruecken_sperre_pg_test.go` (am alten Stand rot) | 10.10.2026: `bedieneNaechstenWartenden` sperrt nur die Vormerkung. Bis dahin übersprang das Nachrücken (Verfall einer Abholfrist, Löschen einer Vormerkung, Tilgung) den Ältesten der Warteschlange, wenn die Theke in diesem Augenblick seine Leserzeile für eine Ausleihe hielt, und stellte das Buch dem Nächsten bereit. Der Detektor sieht keinen Verbund über ein Komma und keine Sperre über eine Sicht, die selbst ein Verbund ist |
+
 ## Landkarte der Ratschen — was jede systembedingt NICHT sieht (07.09.2026)
 
 Anlass: An einem Tag dreimal dieselbe Erfahrung — die Schema-Parität war blind für DDL, das

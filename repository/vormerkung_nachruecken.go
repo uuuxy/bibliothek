@@ -27,11 +27,12 @@ import (
 // das Buch für jemanden im Abholfach, der es nicht holen kann, und die Nächsten gingen leer aus.
 const sqlWartenderDarfAbholen = `s.deleted_at IS NULL AND s.ist_gesperrt = false AND COALESCE(s.is_manually_blocked, false) = false`
 
-// bedieneNaechstenWartenden teilt ein freigewordenes Exemplar dem nächsten wartenden,
-// abholberechtigten Schüler desselben Titels zu (neue Abholfrist ab jetzt, Abholfrist) —
-// aber nur, wenn das Exemplar wirklich noch frei ist (nicht zwischenzeitlich ausgeliehen,
-// gesperrt oder ausgesondert). FOR UPDATE SKIP LOCKED verhindert Doppelzuteilung gegen
-// gleichzeitige Rückgaben. Liefert true, wenn jemand bedient wurde.
+// bedieneNaechstenWartenden teilt ein freigewordenes Exemplar dem nächsten wartenden Schüler
+// desselben Titels zu, der abholen darf (neue Abholfrist ab jetzt, Abholfrist), aber nur, wenn
+// das Exemplar noch frei ist: nicht ausgeliehen, gesperrt oder ausgesondert. Gesperrt wird nur
+// die Vormerkung (FOR UPDATE OF v). Eine Vormerkung, die eine Rückgabe gerade bedient, wird
+// übergangen; hält eine Ausleihe die Zeile des Schülers, bleibt er trotzdem an der Reihe.
+// Liefert true, wenn jemand bedient wurde.
 func bedieneNaechstenWartenden(ctx context.Context, ex SpurenExecutor, exemplarID, titelID string, jetzt time.Time) (bool, error) {
 	frist, err := Abholfrist(ctx, ex, jetzt)
 	if err != nil {
@@ -46,7 +47,7 @@ func bedieneNaechstenWartenden(ctx context.Context, ex SpurenExecutor, exemplarI
 			WHERE v.titel_id = $2 AND v.status = 'wartend'
 			  AND `+sqlWartenderDarfAbholen+`
 			ORDER BY v.erstellt_am ASC LIMIT 1
-			FOR UPDATE SKIP LOCKED
+			FOR UPDATE OF v SKIP LOCKED
 		)
 		AND EXISTS (
 			SELECT 1 FROM buecher_exemplare e
