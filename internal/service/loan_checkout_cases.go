@@ -105,32 +105,22 @@ func mapLoanCreateErr(err error) error {
 	return err
 }
 
-// entferneErfuellteVormerkung löscht die (erfüllte) Vormerkung des Schülers für diesen
-// Titel und erkennt dabei den "Geisterbuch"-Fall: War für ihn bereits ein ANDERES
-// Exemplar im Reservierungsfach bereitgestellt, er nimmt sich aber ein Freihand-
-// Exemplar, muss das reservierte zurück ins Regal. Der Barcode dieses Exemplars wandert
-// als Regal-Hinweis in die Antwort. Fehler hier sind nicht ausleihe-blockierend
-// (die Ausleihe selbst ist bereits verbucht) — sie werden nur protokolliert.
+// entferneErfuellteVormerkung löscht die Vormerkung des Schülers für den Titel, den er gerade
+// ausgeliehen hat. Lag für ihn ein anderes Exemplar im Abholfach als das, das er genommen hat,
+// muss es zurück ins Regal: Seine Nummer geht als Regal-Hinweis in die Antwort. Einen Fehler
+// meldet die Funktion nicht weiter, sie schreibt ihn ins Log.
 func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, schuelerID string, resp *LoanResult) {
-	var bereitgestellt *string
-	err := tx.QueryRow(ctx,
-		`DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2
-		 RETURNING bereitgestellt_exemplar_id`,
-		copy.TitelID, schuelerID).Scan(&bereitgestellt)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return // keine Vormerkung — Normalfall
-	}
+	bereitgestellt, err := repository.LoescheErfuellteVormerkung(ctx, tx, copy.TitelID, schuelerID)
 	if err != nil {
 		log.Printf("ausleihe: Vormerkung für Titel %s konnte nicht entfernt werden: %v", copy.TitelID, err)
 		return
 	}
 	if bereitgestellt == nil || *bereitgestellt == copy.ID {
-		return // nichts reserviert, oder genau dieses Exemplar wurde genommen
+		return // keine Vormerkung, nichts reserviert, oder genau dieses Exemplar wurde genommen
 	}
 
-	var barcode string
-	if err := tx.QueryRow(ctx,
-		`SELECT barcode_id FROM buecher_exemplare WHERE id = $1`, *bereitgestellt).Scan(&barcode); err != nil {
+	barcode, err := repository.ExemplarNummer(ctx, tx, *bereitgestellt)
+	if err != nil {
 		log.Printf("ausleihe: Barcode des reservierten Exemplars %s nicht ladbar: %v", *bereitgestellt, err)
 		return
 	}

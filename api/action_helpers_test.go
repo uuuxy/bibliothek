@@ -51,7 +51,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	mock.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})
 
 	// 4. Mock lock on schueler
-	mock.ExpectExec("SELECT id FROM schueler WHERE id = \\$1 FOR UPDATE").
+	mock.ExpectExec("SELECT id FROM leser WHERE id = \\$1 FOR UPDATE").
 		WithArgs(studentID).
 		WillReturnResult(pgxmock.NewResult("SELECT", 1))
 

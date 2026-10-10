@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"bibliothek/db"
@@ -11,57 +10,30 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// schuelerAbholberechtigt filtert wartende Vormerkungen auf Schüler, die das Buch auch
-// tatsächlich abholen dürfen: nicht soft-gelöscht (deleted_at) und nicht gesperrt
-// (ist_gesperrt / is_manually_blocked). Ohne diesen Filter würde ein zurückgegebenes Buch
-// für einen gelöschten oder gesperrten "Geister"-Schüler abholbereit blockiert, während
-// aktive Schüler leer ausgehen. Der Alias "s" muss dabei die schueler-Tabelle sein.
-const schuelerAbholberechtigt = `s.deleted_at IS NULL AND s.ist_gesperrt = false AND COALESCE(s.is_manually_blocked, false) = false`
-
-// processReturnVormerkungTx prüft innerhalb einer laufenden Transaktion, ob eine Vormerkung (Reservierung)
-// für das zurückgegebene Buch vorliegt. Wenn ja, wird diese Vormerkung aktiviert (Status auf 'abholbereit' gesetzt)
-// und dem nächsten wartenden, abholberechtigten Schüler zugeteilt.
+// processReturnVormerkungTx stellt das zurückgegebene Buch in der Transaktion der Rückgabe dem
+// nächsten Wartenden bereit, der abholen darf, und trägt ihn in die Antwort ein.
 //
-// returningSchuelerID ist der Schüler, der das Buch GERADE zurückgibt (nil bei Mitarbeiter-/
-// Handapparat-Rückgaben). Seine eigene Vormerkung wird bei der Zuteilung übersprungen: Sonst
-// könnte er das Buch beim Zurückgeben sofort wieder für sich selbst abholbereit stellen und die
-// Warteschlange dauerhaft monopolisieren (Vormerkungs-Monopolisierung).
-// Fehler kommen seit dem 31.08.2026 ZURÜCK statt nur ins Log: Vorher wurden die
-// Antwortfelder trotz gescheitertem UPDATE gesetzt und der Aufrufer committete — der
-// Arbeitsplatz meldete „ins Abholfach legen", die Vormerkung blieb 'wartend', das Buch
-// lag im Fach UND war frei ausleihbar, und der Verfall-Cron griff mangels
-// bereitgestellt_bis nie. Auch ein Transportfehler des SELECTs galt still als „keine
-// Vormerkung". Der Aufrufer rollt jetzt zurück; die Theke wiederholt den Scan.
+// returningSchuelerID ist, wer das Buch gerade zurückgibt (nil ohne Ausleiher). Seine eigene
+// Vormerkung wird übergangen: Sonst stellte er sich das Buch beim Zurückgeben selbst wieder
+// bereit und hielte die Warteschlange an.
+//
+// Ein Fehler kommt zurück, und der Aufrufer rollt die Rückgabe zurück: Meldete die Theke „ins
+// Abholfach legen", während die Vormerkung wartend bliebe, läge das Buch im Fach und wäre
+// zugleich frei ausleihbar. Die Theke wiederholt den Scan.
 func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, resp *LoanResult, returningSchuelerID *string) error {
-	var vID, sVorname, sNachname, sKlasse string
-	// Die älteste wartende Vormerkung eines abholberechtigten Schülers ermitteln und sperren.
-	// Die Vormerkung des gerade zurückgebenden Schülers wird ausgeschlossen ($2).
-	//
-	// FOR UPDATE OF v: NUR die vormerkungen-Zeile sperren, nicht die (nur gelesene)
-	// schueler-Zeile. Ein pauschales FOR UPDATE lockt beim JOIN auch schueler — das kann mit
-	// der Ausleih-Logik (loan_checkout.go: SELECT ... FROM schueler ... FOR UPDATE) in einen
-	// Deadlock laufen (Sperren in umgekehrter Reihenfolge). SKIP LOCKED lässt zwei zeitgleiche
-	// Rückgaben desselben Titels je die nächste freie Vormerkung greifen, statt zu blockieren.
-	err := tx.QueryRow(ctx, `
-		SELECT v.id, s.vorname, s.nachname, COALESCE(s.klasse, '')
-		FROM vormerkungen v
-		JOIN schueler s ON v.schueler_id = s.id
-		WHERE v.titel_id = $1 AND v.status = 'wartend'
-		  AND `+schuelerAbholberechtigt+`
-		  AND ($2::uuid IS NULL OR v.schueler_id <> $2::uuid)
-		ORDER BY v.erstellt_am ASC LIMIT 1
-		FOR UPDATE OF v SKIP LOCKED
-	`, copy.TitelID, returningSchuelerID).Scan(&vID, &sVorname, &sNachname, &sKlasse)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil // niemand wartet — der Normalfall
-	}
+	// Die älteste wartende Vormerkung eines Schülers, der abholen darf; die des Schülers, der
+	// gerade zurückgibt, ist ausgenommen.
+	wartende, da, err := repository.SperreNaechsteWartendeVormerkung(ctx, tx, copy.TitelID, returningSchuelerID)
 	if err != nil {
 		return fmt.Errorf("wartende Vormerkung ermitteln: %w", err)
 	}
+	if !da {
+		return nil // niemand wartet — der Normalfall
+	}
 
-	schuelerName := sVorname + " " + sNachname
-	if sKlasse != "" {
-		schuelerName += ", " + sKlasse
+	schuelerName := wartende.Vorname + " " + wartende.Nachname
+	if wartende.Klasse != "" {
+		schuelerName += ", " + wartende.Klasse
 	}
 
 	// Status der Vormerkung auf 'abholbereit' setzen. Das Buch liegt für diesen Schüler bis zum
@@ -69,10 +41,10 @@ func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx p
 	// Nachrücken in der Warteschlange (repository.Abholfrist).
 	frist, err := repository.Abholfrist(ctx, tx, s.heute())
 	if err != nil {
-		return fmt.Errorf("abholfrist für vormerkung %s: %w", vID, err)
+		return fmt.Errorf("abholfrist für vormerkung %s: %w", wartende.ID, err)
 	}
-	if _, err := tx.Exec(ctx, "UPDATE vormerkungen SET status = 'abholbereit', bereitgestellt_exemplar_id = $1, bereitgestellt_bis = $3 WHERE id = $2", copy.ID, vID, frist); err != nil {
-		return fmt.Errorf("vormerkung %s auf 'abholbereit' setzen: %w", vID, err)
+	if err := repository.StelleVormerkungBereit(ctx, tx, wartende.ID, copy.ID, frist); err != nil {
+		return fmt.Errorf("vormerkung %s auf 'abholbereit' setzen: %w", wartende.ID, err)
 	}
 
 	resp.HasVormerkung = true

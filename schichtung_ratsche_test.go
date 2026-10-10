@@ -44,10 +44,6 @@ type sqlFunde struct{ texte, aufrufe int }
 // sqlBestand: Dateien außerhalb der Datenbankschicht, die noch Anweisungen tragen. Die Zahlen
 // können nur sinken, und eine Datei ohne Fund fällt aus der Liste.
 var sqlBestand = map[string]sqlFunde{
-	"internal/service/loan_checkout.go":       {texte: 3, aufrufe: 3},
-	"internal/service/loan_checkout_cases.go": {texte: 2, aufrufe: 2},
-	"internal/service/loan_return.go":         {texte: 2, aufrufe: 2},
-	"internal/service/nachbuchen.go":          {texte: 2, aufrufe: 2},
 	// Die Restore-Probe legt auf dem Server eine Wegwerf-Datenbank an, entfernt sie und zählt
 	// darin über eine eigene Verbindung die Tabellen. Keine der Anweisungen trifft eine Tabelle
 	// der Anwendung; sie bleiben bei der Probe.

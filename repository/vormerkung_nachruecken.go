@@ -22,6 +22,11 @@ import (
 // CASCADE ist dort gar nicht der Handelnde — die Spuren-Tilgung löscht selbst, und ihr
 // fehlte der Schritt.
 
+// sqlWartenderDarfAbholen ist die Bedingung an den Schüler einer wartenden Vormerkung (Alias
+// s), damit ihm ein Exemplar bereitgestellt wird: nicht gelöscht und nicht gesperrt. Sonst läge
+// das Buch für jemanden im Abholfach, der es nicht holen kann, und die Nächsten gingen leer aus.
+const sqlWartenderDarfAbholen = `s.deleted_at IS NULL AND s.ist_gesperrt = false AND COALESCE(s.is_manually_blocked, false) = false`
+
 // bedieneNaechstenWartenden teilt ein freigewordenes Exemplar dem nächsten wartenden,
 // abholberechtigten Schüler desselben Titels zu (neue Abholfrist ab jetzt, Abholfrist) —
 // aber nur, wenn das Exemplar wirklich noch frei ist (nicht zwischenzeitlich ausgeliehen,
@@ -39,8 +44,7 @@ func bedieneNaechstenWartenden(ctx context.Context, ex SpurenExecutor, exemplarI
 		WHERE id = (
 			SELECT v.id FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id
 			WHERE v.titel_id = $2 AND v.status = 'wartend'
-			  AND s.deleted_at IS NULL AND s.ist_gesperrt = false
-			  AND COALESCE(s.is_manually_blocked, false) = false
+			  AND `+sqlWartenderDarfAbholen+`
 			ORDER BY v.erstellt_am ASC LIMIT 1
 			FOR UPDATE SKIP LOCKED
 		)

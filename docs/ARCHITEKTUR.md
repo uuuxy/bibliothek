@@ -776,6 +776,20 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   der Einstellungen. Bis zum 10.10.2026 las der Dienst die Tabelle selbst und bildete neun
   Schlüssel ein zweites Mal ab; die zwei Fassungen unterschieden sich bei einem leeren
   Stichtag, den die Rechnung des Stichtags danach auf dieselbe Vorgabe zurückführte.
+- Ausleihe, Rückgabe und Nachbuchen eines Buchs (`internal/service/loan_*.go`,
+  `nachbuchen.go`) bestimmen die Reihenfolge der Schritte in ihrer Transaktion, die Schranken
+  (Sperre, Ausleihlimit, fremde Reservierung) und die Meldung. Ihre Anweisungen stehen in
+  `repository/`: die Zeilensperren an Leser und Exemplar in `ausleihe_zeilensperren.go`, die
+  Zählung gegen das Ausleihlimit und die Reservierung eines Exemplars in
+  `ausleihe_schranken.go`, die erfüllte Vormerkung, die nächste wartende und das
+  Bereitstellen in `vormerkung_theke.go`. Eine Funktion, die sperrt, nimmt eine Transaktion
+  (`pgx.Tx`) und keinen Pool: Am Pool endete die Sperre mit der Anweisung, und der Compiler
+  weist den Aufruf jetzt ab. Den Leser sperren Scan und Nachbuchen mit derselben Anweisung
+  an `leser` (`SperreLeserzeile`); bis zum 10.10.2026 sperrte der Scan über die Sicht
+  `schueler`, für einen Schüler dieselbe Zeile. Wer als Wartender ein Buch bekommt (nicht
+  gelöscht, nicht gesperrt), steht als eine Bedingung in `vormerkung_nachruecken.go` und gilt
+  bei der Rückgabe wie beim Nachrücken. `internal/service` formuliert damit keine Anweisung
+  mehr.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf
@@ -988,7 +1002,7 @@ frontend/src
 | `loan_checkout_validation.go`  | Ausleiher und Leihfrist auflösen                                                                         |
 | `ausleih_sperren.go`           | Die Sperren einer Ausleihe — ein Prüfweg für Buch, Gerät und Nachbuchen; Übergehen mit Protokoll         |
 | `loan_checkout_cases.go`       | Abbildung der DB-Fehler auf HTTP-Fälle (`mapLoanCreateErr` → 409)                                        |
-| `loan_return.go`               | Rückgabe, inklusive Vormerkungs-Nachrücken (`FOR UPDATE OF v SKIP LOCKED`)                                |
+| `loan_return.go`               | Rückgabe; stellt das Buch dem nächsten Wartenden bereit (`repository.SperreNaechsteWartendeVormerkung`)  |
 | `loan_rules.go`                | Fristenberechnung je Medienart und Entleiherart                                                          |
 
 `HandleUnifiedCheckout` ist bewusst **eine** Tür für Ausleihe und Rückgabe: Wird ein
@@ -1299,10 +1313,10 @@ Welcher Pfad welche Zeile sperrt:
 | Pfad                       | gesperrte Zeile                                                            | Fundstelle                                                     |
 | -------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | Scan eines Exemplars       | die **aktive Ausleihe** (`ausleihen`)                                      | `GetActiveLoanByCopyIDTx` (`repository/loan.go`)               |
-| Ausleihe an einen Leser    | die **Leser**-Zeile, über die Sicht `schueler`                             | `internal/service/loan_checkout.go`                            |
-| Rückgabe mit Vormerkung    | die **Vormerkung** — `FOR UPDATE OF v SKIP LOCKED`, damit der JOIN nicht auch die nur gelesene Leser-Zeile sperrt (das könnte sich mit der Ausleih-Logik verklemmen) | `internal/service/loan_return.go`, `repository/vormerkung_nachruecken.go` |
-| Geräte-Ausleihe            | die aktive Geräte-Ausleihe                                                 | `internal/service/device_service.go`                           |
-| Nachbuchen                 | **zwei** Sperren in der festgelegten Folge: `leser`, dann `buecher_exemplare` | `internal/service/nachbuchen.go`                            |
+| Ausleihe an einen Schüler  | die **Leser**-Zeile                                                        | `SperreLeserzeile` (`repository/ausleihe_zeilensperren.go`)    |
+| Rückgabe mit Vormerkung    | die **Vormerkung** — `FOR UPDATE OF v SKIP LOCKED`, damit der JOIN nicht auch die nur gelesene Leser-Zeile sperrt (das könnte sich mit der Ausleih-Logik verklemmen) | `SperreNaechsteWartendeVormerkung` (`repository/vormerkung_theke.go`) |
+| Geräte-Ausleihe            | die aktive Geräte-Ausleihe                                                 | `SperreOffeneGeraeteAusleihe` (`repository/geraete_ausleihe.go`) |
+| Nachbuchen                 | **zwei** Sperren in der festgelegten Folge: `leser`, dann `buecher_exemplare` | `SperreLeserzeile`, `SperreExemplarzeile` (`repository/ausleihe_zeilensperren.go`); die Folge bestimmt `internal/service/nachbuchen.go` |
 | Schaden erfassen           | die **Ausleihe**-Zeile — der Schuldner wird aus ihr gelesen, nicht aus dem Request | `repository/schaden_melden.go`                          |
 | Rückgabe (Trigger, seit Migration 137) | die **Leser**-Zeile des Ausleihers, **nach** der Ausleihe — gegen die festgelegte Folge ([Kapitel 11](#11-risiken-und-technische-schulden), R2) | `trg_leser_stempel_rueckgabe` (`schema.sql`)          |
 | Verlängerung (seit 24.09.2026) | die **Ausleihe**-Zeile; die neue Frist rechnet Go, nicht mehr SQL      | `handleExtendLoan` (`api/ausleihe.go`)                         |
@@ -2441,11 +2455,16 @@ wenn man ihn einmal gebraucht hat.
   Nachtläufe: 4.329 Anweisungen vorher wie nachher, bei einer gewollten Abweichung. Die Zahl
   der Läufe einzelner Anweisungen schwankt von Lauf zu Lauf, auch am selben Stand und mit den
   Paketen nacheinander (`-p 1`): vier Anweisungen um den Abschluss einer Inventur (Erfassen,
-  sein Protokolleintrag, `commit`, `rollback`) um eins, eine Abfrage der Leserakte im Test des
+  sein Protokolleintrag, `commit`, `rollback`) um eins oder zwei, eine Abfrage der Leserakte im Test des
   LUSD-Imports um bis zu drei, die Warteschleife eines Tests (`-- ping`) um eins. Am
-  10.10.2026 lief das Erfassen bei drei Aufnahmen desselben Standes 20-, 20- und 21-mal. Eine
+  10.10.2026 lief das Erfassen bei drei Aufnahmen desselben Standes 20-, 20- und 21-mal, an
+  einem weiteren Stand 22-mal. Eine
   Abweichung in diesen Zahlen sagt über einen Umzug nichts; im Zweifel denselben Stand ein
-  zweites Mal aufnehmen.
+  zweites Mal aufnehmen. Öffnet der umgezogene Code Transaktionen mit Zeilensperren, die
+  Aufnahme auch je Transaktion vergleichen: je Verbindung die Folge der Anweisungen von
+  `begin` bis `commit` oder `rollback`, beide Stände als Menge solcher Folgen. Der Vergleich
+  einzelner Anweisungen sagt über die Reihenfolge der Sperren nichts. So belegt am 10.10.2026
+  für Ausleihe, Rückgabe und Nachbuchen an der Theke.
 - **Ein Name zieht in ein anderes Paket,** etwa ein Vokabular aus `repository/` nach `pkg/`.
   `gofmt -r 'repository.Alt -> paket.Neu' -w <Datei>` stellt jede Nennung im Code um,
   `goimports -w` richtet die Einbindungen. Danach dreierlei prüfen. Kommentare schreibt
@@ -2494,7 +2513,7 @@ wenn man ihn einmal gebraucht hat.
 
 ## 9. Architekturentscheidungen
 
-Stand: 07.10.2026
+Stand: 07.10.2026 · am 10.10.2026 in A7 die Fundstellen nachgezogen
 
 Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -2682,8 +2701,9 @@ nicht: Er sperrt die Leserzeile nach der Ausleihe. Geben zwei Kinder an zwei The
 das Buch des anderen ab, bricht Postgres eine der beiden Buchungen ab; erneutes Scannen bucht.
 Am 24.09.2026 entschieden, das so zu lassen, bis die Karenz-Uhr umgebaut wird.
 
-**Fundstelle.** `internal/service/loan_checkout.go`, `repository/loan.go`
-(`StempleBewegungZum`), [invarianten.md](invarianten.md) Abschnitt 1.
+**Fundstelle.** Die Folge der Aufrufe in `internal/service/loan_checkout.go` und
+`nachbuchen.go`; die Sperren in `repository/ausleihe_zeilensperren.go` und `repository/loan.go`
+(`GetActiveLoanByCopyIDTx`, `StempleBewegungZum`); [invarianten.md](invarianten.md) Abschnitt 1.
 
 ---
 

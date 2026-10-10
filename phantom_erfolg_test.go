@@ -87,14 +87,12 @@ var phantomBestand = map[string]int{
 	"internal/pgtest/pgtest.go:baueTestDB": 3,
 	// Cover-Abgleich: Null Zeilen heißt, der Titel trägt inzwischen ein lokales Cover oder
 	// ist gelöscht; der Abgleich geht zum nächsten Titel.
-	"repository/titel_cover.go:SetzeGefundenesCover":                  1,
-	"repository/titel_cover.go:SetzeCoverStatus":                      1,
-	"internal/service/loan_checkout.go:zaehleAktiveSchuelerAusleihen": 1,
-	// FOR-UPDATE-Lock auf die Schüler-Zeile, bevor das Nachbuchen bucht (Sperrreihenfolge
-	// Schüler → Ausleihe → Exemplar). Das Statement SPERRT, es schreibt nicht; die Existenz
-	// des Schülers steht vorher fest (loesePerson). 0 Zeilen meldet hier niemand als Erfolg.
-	"internal/service/nachbuchen.go:Nachbuchen":                 1,
-	"internal/service/loan_return.go:processReturnVormerkungTx": 1,
+	"repository/titel_cover.go:SetzeGefundenesCover": 1,
+	"repository/titel_cover.go:SetzeCoverStatus":     1,
+	// Zeilensperre am Leser, bevor Scan und Nachbuchen buchen (Reihenfolge Leser, Ausleihe,
+	// Exemplar). Die Anweisung sperrt und schreibt nicht; dass es den Leser gibt, steht beim
+	// Aufrufer vorher fest. Null Zeilen meldet hier niemand als Erfolg.
+	"repository/ausleihe_zeilensperren.go:SperreLeserzeile": 1,
 	// Signaturen aus dem Bestands-Import: Null Zeilen heißt, der Titel wurde seit dem Laden des
 	// Bestands gelöscht. Der Import meldet nur angelegte Titel und Exemplare.
 	"repository/bestandsimport.go:SetzeImportSignaturen": 1,

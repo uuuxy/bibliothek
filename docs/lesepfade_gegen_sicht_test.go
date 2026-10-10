@@ -42,8 +42,8 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/schuljahreswechsel.go": {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
 	"repository/nachtlauf.go":          {3, "Nachtläufe: Fotos und Kennungen der anonymisierten Schüler, löschreife Abgänger; das Kollegium hat keine Abgangslogik und wird nicht anonymisiert"},
 	// Durchsicht der Theken-Pfade, 21.09.2026 (OFFEN.md 5.19).
-	"internal/service/loan_checkout.go":    {2, "Zeilensperre fürs Ausleihlimit nur hinter istSchueler(); Abholfach-Prüfung liest Vormerkungen, und die gibt es nur für Schüler (Tür: VormerkungRepository.Create, TestVormerkungCreate_NurFuerSchueler)"},
-	"internal/service/loan_return.go":      {1, "Warteschlange bei der Rückgabe — Vormerkungen gibt es nur für Schüler (Tür: Create)"},
+	"repository/ausleihe_schranken.go":     {1, "Abholfach-Prüfung vor einer Ausleihe liest Vormerkungen, und die gibt es nur für Schüler (Tür: VormerkungRepository.Create, TestVormerkungCreate_NurFuerSchueler)"},
+	"repository/vormerkung_theke.go":       {1, "Warteschlange bei der Rückgabe — Vormerkungen gibt es nur für Schüler (Tür: Create)"},
 	"repository/vormerkung.go":             {3, "Create prüft gegen die Sicht, DASS es ein Schüler ist; die zwei Listen zeigen deshalb nur Schüler oder Vormerkungen ohne Person"},
 	"repository/vormerkung_nachruecken.go": {1, "Nachrücken im Abholfach — Vormerkungen gibt es nur für Schüler (Tür: Create)"},
 	"repository/ausleihe_frist.go":         {1, "Massen-Verlängerung der Lernmittel einer KLASSE; ein Kollege leiht auf Dauer (ist_handapparat) und soll keine Klassenfrist bekommen"},

@@ -111,17 +111,15 @@ func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) 
 
 	// Sperren: Leser, dann die Ausleihe des Exemplars, dann das Exemplar.
 	if l.leser != nil {
-		if _, err := tx.Exec(ctx, "SELECT id FROM leser WHERE id = $1 FOR UPDATE", l.leser.ID); err != nil {
+		if err := repository.SperreLeserzeile(ctx, tx, l.leser.ID); err != nil {
 			return nil, err
 		}
 	}
 	if l.activeLoan, err = s.loanRepo.GetActiveLoanByCopyIDTx(ctx, tx, l.copy.ID); err != nil {
 		return nil, err
 	}
-	var ausleihbar, ausgesondert bool
-	var letzteBewegung *time.Time
-	if err := tx.QueryRow(ctx, `SELECT ist_ausleihbar, ist_ausgesondert, letzte_bewegung_am
-		FROM buecher_exemplare WHERE id = $1 FOR UPDATE`, l.copy.ID).Scan(&ausleihbar, &ausgesondert, &letzteBewegung); err != nil {
+	stand, err := repository.SperreExemplarzeile(ctx, tx, l.copy.ID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -131,14 +129,14 @@ func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) 
 
 	// Der Wächter: Ein Scan, der älter ist als die letzte Bewegung, beschreibt eine
 	// Wirklichkeit, die es nicht mehr gibt.
-	if letzteBewegung != nil && l.gescannt.Before(*letzteBewegung) {
+	if stand.LetzteBewegung != nil && l.gescannt.Before(*stand.LetzteBewegung) {
 		db.SafeRollback(ctx, tx)
 		return s.meldeAbweisung(ctx, l, repository.NachbuchVeraltet,
 			fmt.Sprintf("Scan von %s liegt vor der letzten Bewegung des Exemplars (%s)",
-				l.gescannt.Format("02.01.2006 15:04"), letzteBewegung.In(schoolLocation()).Format("02.01.2006 15:04")))
+				l.gescannt.Format("02.01.2006 15:04"), stand.LetzteBewegung.In(schoolLocation()).Format("02.01.2006 15:04")))
 	}
 
-	if err := holeAbgeschriebenesZurueck(ctx, tx, l, ausleihbar, ausgesondert); err != nil {
+	if err := holeAbgeschriebenesZurueck(ctx, tx, l, stand.Ausleihbar, stand.Ausgesondert); err != nil {
 		return nil, err
 	}
 

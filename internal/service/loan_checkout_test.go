@@ -261,7 +261,7 @@ func TestZaehleAktiveAusleihen_SchuelerWirdGesperrtUndGezaehlt(t *testing.T) {
 	tx := beginTx(t, mock)
 
 	// Row-Level-Lock gegen parallele Scans, dann Zählung ohne LMF-Titel.
-	mock.ExpectExec("SELECT id FROM schueler WHERE id = \\$1 FOR UPDATE").
+	mock.ExpectExec("SELECT id FROM leser WHERE id = \\$1 FOR UPDATE").
 		WithArgs("s1").WillReturnResult(pgxmock.NewResult("SELECT", 1))
 	mock.ExpectQuery("SELECT COUNT").WithArgs("s1").
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(3))

@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"bibliothek/db"
@@ -18,22 +17,11 @@ func (s *defaultLoanService) zaehleAktiveSchuelerAusleihen(ctx context.Context, 
 	if !chkCtx.istSchueler() {
 		return 0, nil
 	}
-	if _, err := tx.Exec(ctx, "SELECT id FROM schueler WHERE id = $1 FOR UPDATE", chkCtx.borrowerID); err != nil {
+	if err := repository.SperreLeserzeile(ctx, tx, chkCtx.borrowerID); err != nil {
 		return 0, err
 	}
-	var count int
-	// Lernmittel zählen nicht ins Limit (buecher_titel.ist_lernmittel, Migration 093).
-	const query = `
-		SELECT COUNT(*)
-		FROM ausleihen a
-		JOIN buecher_exemplare be ON a.exemplar_id = be.id
-		JOIN buecher_titel bt ON be.titel_id = bt.id
-		WHERE a.schueler_id = $1
-		  AND a.rueckgabe_am IS NULL
-		  AND NOT bt.ist_lernmittel
-	`
-	err := tx.QueryRow(ctx, query, chkCtx.borrowerID).Scan(&count)
-	return count, err
+	// Lernmittel zählen nicht ins Limit.
+	return repository.ZaehleOffeneBuechereiAusleihen(ctx, tx, chkCtx.borrowerID)
 }
 
 // istEigeneRueckgabe erkennt, ob der aktive Ausleiher sein eigenes Buch scannt
@@ -74,23 +62,12 @@ func (s *defaultLoanService) pruefeVormerkungKonflikt(ctx context.Context, tx pg
 	if !neueAusleihe {
 		return nil
 	}
-	var reservedSchuelerID, resVorname, resNachname string
-	err := tx.QueryRow(ctx, `
-		SELECT v.schueler_id, s.vorname, s.nachname
-		FROM vormerkungen v
-		JOIN schueler s ON v.schueler_id = s.id
-		WHERE v.bereitgestellt_exemplar_id = $1
-		  AND v.status = 'abholbereit'
-		  AND v.bereitgestellt_bis > CURRENT_TIMESTAMP
-	`, copyID).Scan(&reservedSchuelerID, &resVorname, &resNachname)
-	if err == nil {
-		if !chkCtx.istSchueler() || chkCtx.borrowerID != reservedSchuelerID {
-			return meldung(ErrConflict, "Achtung: dieses Exemplar ist noch für %s %s reserviert", resVorname, resNachname)
-		}
-		return nil
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
+	reserviert, bereit, err := repository.ReservierungAmExemplar(ctx, tx, copyID)
+	if err != nil {
 		return err
+	}
+	if bereit && (!chkCtx.istSchueler() || chkCtx.borrowerID != reserviert.LeserID) {
+		return meldung(ErrConflict, "Achtung: dieses Exemplar ist noch für %s %s reserviert", reserviert.Vorname, reserviert.Nachname)
 	}
 	return nil
 }
