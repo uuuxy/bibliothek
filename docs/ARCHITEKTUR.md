@@ -91,7 +91,7 @@ Dokumenten unter [`docs/`](../README.md#dokumentation):
 
 ## 1. Einführung und Ziele
 
-Stand: 08.10.2026
+Stand: 08.10.2026 · am 10.10.2026 in 1.4 die Zahl der Routen berichtigt
 
 ---
 
@@ -188,7 +188,7 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 | Go-Tests                          | 118.234 Zeilen in 811 Testdateien          |
 | Svelte/JavaScript (`frontend/src`) | 83.128 Zeilen in 745 Dateien, davon 309 `.svelte` |
 | e2e (Playwright, `frontend/e2e`)  | 161 Dateien, davon 156 Specs               |
-| Registrierte HTTP-Routen          | 230 (davon 88 Operationen Swagger-annotiert) |
+| Registrierte HTTP-Routen          | 229 (davon 88 Operationen Swagger-annotiert) |
 | Datenbank-Migrationen             | 166 Dateien, die höchste Nummer ist 163    |
 | Tabellen / Sichten in `schema.sql`| 44 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
 
@@ -530,7 +530,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -545,7 +545,7 @@ Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.
 │  │  Frontend (SPA + PWA)      │        │  Backend (Go)                     │ │
 │  │  Svelte 5 Runes, Tailwind  │◄──────►│  net/http, pgx/v5                 │ │
 │  │  309 .svelte, 83.128 Zeilen│  JSON  │  76.340 Zeilen Produktivcode      │ │
-│  │  IndexedDB-Warteschlange   │  SSE   │  230 Routen, 166 Migrationen      │ │
+│  │  IndexedDB-Warteschlange   │  SSE   │  229 Routen, 166 Migrationen      │ │
 │  └────────────────────────────┘        └──────────────┬────────────────────┘ │
 │           ausgeliefert AUS dem Backend                │                       │
 │           (frontend/dist, os.OpenRoot)                │ pgx-Pool              │
@@ -1142,8 +1142,11 @@ find frontend/src -name '*.svelte' -not -path '*/node_modules/*' | wc -l
 find frontend/src \( -name '*.svelte' -o -name '*.js' \) -not -path '*/node_modules/*' | xargs cat | wc -l
 ls frontend/e2e | wc -l
 
-# Routen und Schema — „^", weil zwei Kommentarzeilen in schema.sql CREATE TABLE nennen
-grep -rhoE 'mux\.(Handle|HandleFunc)\(' api/*.go | wc -l
+# Routen — ohne Testdateien, die für sich Routen anmelden, und mit inventur/, das seine
+# Routen selbst anmeldet
+grep -rhoE '\.(Handle|HandleFunc)\(' api inventur --include='*.go' --exclude='*_test.go' | wc -l
+
+# Schema — „^", weil zwei Kommentarzeilen in schema.sql CREATE TABLE nennen
 grep -c '^CREATE TABLE' schema.sql
 ```
 
@@ -3202,14 +3205,14 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 - **Barrierefreiheit ist im Anfangszustand gemessen.** Zustände nach mehreren
   Interaktionsschritten sind nur teilweise abgedeckt; Umfang und bekannte Lücken stehen in
   [FACHKONZEPT.md §19](FACHKONZEPT.md).
-- **Swagger deckt 88 von 230 Routen ab** (Messung in Kapitel 1.4). Das vollständige Verzeichnis ist
+- **Swagger deckt 88 von 229 Routen ab** (Messung in Kapitel 1.4). Das vollständige Verzeichnis ist
   [api_inventar.md](api_inventar.md) — generiert, nicht gepflegt.
 
 ---
 
 ## 11. Risiken und technische Schulden
 
-Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt
+Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`)
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3315,7 +3318,8 @@ Tür ist: Dazu zählen auch Füll-Funktionen (5.2.2) und Helfer, die aus einer T
 sind, um die Grenze der Komplexität zu halten. Als Schranke taugt die Zahl deshalb nicht; sie
 zeigt, wo zu lesen ist. Die zwölf Dateien bleiben (Typen einer Anfrage oder
 Antwort, Füll-Funktionen, Helfer mehrerer Türen); auch ohne sie hätte `api/` rund 20.300
-Zeilen: Das Paket trägt 230 Routen.
+Zeilen: Das Paket trägt 211 der 229 Routen, im Schnitt rund 100 Zeilen je Route; die übrigen 18
+meldet `inventur/` an.
 
 #### R5 — Die Rechtematrix ist konfigurierbar und damit verstellbar
 
@@ -3415,7 +3419,7 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 | #  | Schuld                                                                                                                  | Kosten heute                                                     | Warum sie (noch) steht                                                                      |
 | -- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | D1 | **Invarianten auf Ebene 🟡** (Sperren des Lesers, Überfällig-Automatik, Ausleihlimit, Sperrreihenfolge)                   | Ein zweiter Schreibpfad kann sie auslassen                        | Teils Ermessen enthalten (Override mit Audit), teils über Funktionsgrenzen verteilt          |
-| D2 | **Swagger deckt 88 von 230 Routen** (Kapitel 1.4)                                                                        | Interaktive Doku ist unvollständig                                | Das **vollständige** Verzeichnis ist generiert (`api_inventar.md`); Annotationen sind Handarbeit |
+| D2 | **Swagger deckt 88 von 229 Routen** (Kapitel 1.4)                                                                        | Interaktive Doku ist unvollständig                                | Das **vollständige** Verzeichnis ist generiert (`api_inventar.md`); Annotationen sind Handarbeit |
 | D3 | **Doppelte Migrationsnummern** (003, 008, 021, 022)                                                                      | Style-Smell; sortiert deterministisch                            | Umnummerieren würde bereits gelaufene Migrationen betreffen — Risiko ohne Nutzen              |
 | D4 | **Frontend-Altbestand über 200 Zeilen**                                                                                  | Große Komponenten sind schwer zu ändern                          | Ratsche friert den Bestand ein (darf nicht wachsen); Umbau läuft nebenher                    |
 | D5 | **Gemischte Sprache im Code** (`book`/`loan`/`student` neben `leser`/`ausleihen`)                                         | Kognitive Last beim Lesen                                        | Eine Umbenennung quer durch 100 Repository-Dateien wäre ein Risiko ohne fachlichen Gewinn     |
