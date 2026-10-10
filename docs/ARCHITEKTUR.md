@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 09.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
+Stand: 10.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
 07.10.2026 aus dreizehn Dateien zu dieser einen zusammengeführt; jedes Kapitel nennt seinen
 eigenen Stand
 
@@ -530,7 +530,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 09.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 09.10.2026, die übrigen am 08.10.2026
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 09.10.2026, die übrigen am 08.10.2026
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -743,6 +743,15 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   Normalform; jetzt gilt in beiden die Normalform. Das Fach eines neuen Titels registriert
   `LegeImportTitelAn` selbst in der Systematik, bevor es schreibt: `subject` ist ein
   Fremdschlüssel, und ein Aufrufer kann den Schritt so nicht auslassen.
+- Wareneingang und Bestellsuche (`internal/service/order_service.go`) gruppieren den Zulauf
+  nach Bestellung, hängen die Treffer der DNB an die des eigenen Katalogs, merken an ihnen an,
+  welche ISBN ein Titel schon trägt, und schreiben das Einbuchen ins Protokoll. Ihre
+  Anweisungen stehen in `repository/bestellung_zulauf.go` (`ExemplareImZulauf`,
+  `BucheZulaufEin`) und `repository/bestellsuche.go` (`SucheTitelZumBestellen`,
+  `ISBNsImKatalog`). Das Cover einer Zeile formuliert `sqlCoverOderDNB` einmal für Zulauf,
+  Bestellsuche und Bestellbedarf: der eigene Eintrag des Titels, sonst die Cover-Adresse der
+  DNB zu seiner ISBN. Bricht das Lesen der vorhandenen ISBN ab, gilt keine als vorhanden; bis
+  zum 10.10.2026 galten die bis dahin gelesenen.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf
@@ -1673,7 +1682,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2405,7 +2414,11 @@ wenn man ihn einmal gebraucht hat.
   die Prozessnummer im Namen der Wegwerf-Datenbanken ersetzen (`pg_dump` nennt Objekte mit
   ihrer Nummer), und beide Aufnahmen als Menge mit Anzahl vergleichen. Die Aufnahme vom alten
   Stand zeigt zugleich, ob ein Test jede Anweisung ausführt, die umzieht. So belegt für die
-  Nachtläufe: 4.329 Anweisungen vorher wie nachher, bei einer gewollten Abweichung.
+  Nachtläufe: 4.329 Anweisungen vorher wie nachher, bei einer gewollten Abweichung. Mehrere
+  Pakete in einem Lauf mit `-p 1` nacheinander fahren. Ohne den Schalter wich am 10.10.2026
+  zwischen zwei Ständen die Zahl der Läufe von vier Anweisungen um eins ab (Erfassen in der
+  Inventur, sein Protokolleintrag, `commit`, `rollback`), und zwar in jedem von zwei Läufen je
+  Stand; mit `-p 1` schickten beide Stände dieselben 2.089 Anweisungen in 23.197 Läufen.
 - **Ein Name zieht in ein anderes Paket,** etwa ein Vokabular aus `repository/` nach `pkg/`.
   `gofmt -r 'repository.Alt -> paket.Neu' -w <Datei>` stellt jede Nennung im Code um,
   `goimports -w` richtet die Einbindungen. Danach dreierlei prüfen. Kommentare schreibt

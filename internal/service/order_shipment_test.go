@@ -85,6 +85,18 @@ func TestGetIncomingShipments_GruppiertNachBestellung(t *testing.T) {
 			t.Errorf("Gruppe fehlt vollständig: %s", id)
 		}
 	}
+	// Die Position nennt Titel, ISBN und Cover aus ihren Spalten und ihre Exemplare, das
+	// zuerst gelesene zuerst.
+	for _, g := range groups {
+		if g.ID != "B1" || len(g.Items) != 1 {
+			continue
+		}
+		p := g.Items[0]
+		if p.TitelID != "t1" || p.Titel != "Titel 1" || p.ISBN != "123" || p.CoverURL != "cover1" ||
+			len(p.ExemplarIDs) != 2 || p.ExemplarIDs[0] != "ex1" || p.ExemplarIDs[1] != "ex2" {
+			t.Errorf("Position der Bestellung B1: %+v", *p)
+		}
+	}
 	// Neueste Bestellung zuerst.
 	if groups[0].ID != "B1" && groups[0].ID != "B2" {
 		t.Errorf("neueste Gruppe zuerst erwartet, oben steht %q", groups[0].ID)

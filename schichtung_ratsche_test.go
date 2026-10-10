@@ -52,7 +52,6 @@ var sqlBestand = map[string]sqlFunde{
 	"internal/service/loan_rules.go":          {texte: 1, aufrufe: 1},
 	"internal/service/nachbuchen.go":          {texte: 2, aufrufe: 2},
 	"internal/service/omnibox_service.go":     {texte: 1, aufrufe: 1},
-	"internal/service/order_service.go":       {texte: 6, aufrufe: 4},
 	// Die Restore-Probe legt auf dem Server eine Wegwerf-Datenbank an, entfernt sie und zählt
 	// darin über eine eigene Verbindung die Tabellen. Keine der Anweisungen trifft eine Tabelle
 	// der Anwendung; sie bleiben bei der Probe.

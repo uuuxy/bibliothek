@@ -33,7 +33,7 @@ func TestSearchOrders_ReturnsCombinedResults(t *testing.T) {
 	mock.ExpectQuery(localQuery).
 		WithArgs("TestBook").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "verlag", "cover_url", "signatur", "ist_lernmittel", "current_stock"}).
-			AddRow("id-1", "Lokales Buch", "Autor A", "9781234567890", "Verlag X", "", "SIG-1", false, 3))
+			AddRow("id-1", "Lokales Buch", "Autor A", "9781234567890", "Verlag X", "cover-lokal", "SIG-1", true, 3))
 
 	mockTransport := &orderMockTransport{
 		roundTripFunc: func(req *http.Request) (*http.Response, error) {
@@ -92,8 +92,13 @@ func TestSearchOrders_ReturnsCombinedResults(t *testing.T) {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
 
-	if results[0].Source != "local" || results[0].Titel != "Lokales Buch" {
-		t.Errorf("unexpected local result: %+v", results[0])
+	// Jedes Feld des eigenen Treffers kommt aus seiner Spalte; jede trägt einen eigenen Wert.
+	lokal := OrderSearchItem{
+		ID: "id-1", Titel: "Lokales Buch", Autor: "Autor A", ISBN: "9781234567890", Verlag: "Verlag X",
+		CoverURL: "cover-lokal", Signatur: "SIG-1", Source: "local", CurrentStock: 3, IstLernmittel: true,
+	}
+	if results[0] != lokal {
+		t.Errorf("eigener Treffer:\n  ist  %+v\n  soll %+v", results[0], lokal)
 	}
 
 	if results[1].Source != "dnb" || results[1].Titel != "DNB Buch" {

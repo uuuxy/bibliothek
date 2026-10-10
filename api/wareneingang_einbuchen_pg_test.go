@@ -86,9 +86,10 @@ func TestWareneingang_EinbuchenUeberDieTuer(t *testing.T) {
 			}
 		}
 		if n := zaehleZeilen(t, pool,
-			`SELECT count(*) FROM audit_logs WHERE aktion = 'BULK_RECEIVE_ITEMS' AND admin_id = $1`,
+			`SELECT count(*) FROM audit_logs WHERE aktion = 'BULK_RECEIVE_ITEMS' AND admin_id = $1
+			   AND details->>'received_count' = '2'`,
 			adminID); n != 1 {
-			t.Errorf("%d Protokolleinträge mit der Person, erwartet 1", n)
+			t.Errorf("%d Protokolleinträge mit der Person und der Zahl 2, erwartet 1", n)
 		}
 	})
 

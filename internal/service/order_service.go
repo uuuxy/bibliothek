@@ -35,68 +35,34 @@ type GroupedItem struct {
 	ExemplarIDs []string `json:"exemplar_ids"`
 }
 
-// GetIncomingShipments liefert die bestellten, noch nicht eingetroffenen Exemplare —
-// gruppiert nach BESTELLUNG.
-//
-// Bis zum 21.09.2026 war der Schlüssel „Datum + aus zustand_notiz abgeleiteter
-// Lieferant" (OFFEN.md 5.7): Zwei Töpfe am selben Tag beim selben Händler ergaben eine
-// Gruppe, eine Bestellung ohne Vorab-Barcode stand als „Unbekannter Lieferant" (ihre Notiz
-// heißt seit Migration 071 „Bestellt (ohne Vorab-Barcode) - …", was der Ableiter nicht
-// kannte), und das Datum war der Kalendertag des Servers, nicht der Schule. Seit Migration
-// 063 trägt jedes bestellte Exemplar seine bestellung_id, und die Bestellung kennt
-// Lieferant und Datum — das ist der Schlüssel. Ohne bestellung_id (Altbestand vor 063)
-// bleibt der alte Weg über die Notiz.
+// GetIncomingShipments liefert die bestellten, noch nicht eingetroffenen Exemplare, gruppiert
+// nach Bestellung: Zwei Bestellungen am selben Tag beim selben Händler sind zwei Gruppen, und
+// das Datum der Gruppe ist der Kalendertag der Schule. Ein Exemplar ohne Bestellung
+// (Altbestand vor Migration 063) steht unter dem Tag seiner Anlage und dem Lieferanten, den
+// seine Notiz nennt.
 func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*ShipmentGroup, error) {
-	query := `
-		SELECT e.id, e.titel_id, e.erstellt_am, COALESCE(e.zustand_notiz, ''), t.titel, COALESCE(t.isbn, ''),
-		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
-		       e.bestellung_id::text, b.lieferant_name, b.bestelldatum
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON e.titel_id = t.id
-		LEFT JOIN bestellungen_verlauf b ON b.id = e.bestellung_id
-		WHERE e.ist_ausleihbar = false
-		  AND e.bestellstatus IS NOT NULL
-		  AND e.ist_ausgesondert = false
-		ORDER BY e.erstellt_am DESC
-	`
-
-	rows, err := pool.Query(ctx, query)
+	exemplare, err := repository.ExemplareImZulauf(ctx, pool)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	groupsMap := make(map[string]*ShipmentGroup)
 
-	for rows.Next() {
-		var exemplarID, titelID, zustandNotiz, titel, isbn, coverURL string
-		var erstelltAm time.Time
-		// Die drei Bestellspalten sind NULL bei Altbestand ohne bestellung_id — als Zeiger,
-		// sonst bricht der Scan die Iteration ab und die ganze Liste wäre ein 500. Aus
-		// demselben Grund COALESCE auf zustand_notiz: Die Spalte ist nullbar, und ein
-		// einziges Exemplar ohne Notiz legte bis zum 22.09.2026 den ganzen Wareneingang
-		// lahm; es landet jetzt unter „Unbekannter Lieferant" (resolveSupplierName).
-		var bestellungID, lieferantName *string
-		var bestelldatum *time.Time
-		if err := rows.Scan(&exemplarID, &titelID, &erstelltAm, &zustandNotiz, &titel, &isbn, &coverURL,
-			&bestellungID, &lieferantName, &bestelldatum); err != nil {
-			return nil, err
-		}
-
+	for _, e := range exemplare {
 		// Kalendertag der Schule: Ein Abend-Auftrag um 23:30 gehört zu seinem Tag, nicht
 		// zum nächsten in UTC.
-		zeitpunkt := erstelltAm
+		zeitpunkt := e.ErstelltAm
 		groupKey := ""
 		groupID := ""
 		supplierName := ""
 		switch {
-		case bestellungID != nil && lieferantName != nil && bestelldatum != nil:
-			zeitpunkt = *bestelldatum
-			groupKey = "bestellung|" + *bestellungID
-			groupID = *bestellungID
-			supplierName = *lieferantName
+		case e.BestellungID != nil && e.LieferantName != nil && e.Bestelldatum != nil:
+			zeitpunkt = *e.Bestelldatum
+			groupKey = "bestellung|" + *e.BestellungID
+			groupID = *e.BestellungID
+			supplierName = *e.LieferantName
 		default:
-			supplierName = resolveSupplierName(zustandNotiz)
+			supplierName = resolveSupplierName(e.ZustandNotiz)
 			groupKey = zeitpunkt.In(schulzeit.Zone()).Format(dateFormatDE) + "|" + supplierName
 			groupID = groupKey
 		}
@@ -115,15 +81,12 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 		}
 
 		addExemplarToGroup(group, exemplarZurGruppe{
-			TitelID:    titelID,
-			Titel:      titel,
-			ISBN:       isbn,
-			CoverURL:   coverURL,
-			ExemplarID: exemplarID,
+			TitelID:    e.TitelID,
+			Titel:      e.Titel,
+			ISBN:       e.ISBN,
+			CoverURL:   e.CoverURL,
+			ExemplarID: e.ExemplarID,
 		})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 
 	groups := make([]*ShipmentGroup, 0)
@@ -138,9 +101,8 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 	return groups, nil
 }
 
-// resolveSupplierName leitet den Lieferantennamen aus der Zustandsnotiz eines Exemplars ab —
-// nur noch für Altbestand ohne bestellung_id (vor Migration 063); seither kommt der Name
-// aus der Bestellung.
+// resolveSupplierName leitet den Lieferanten aus der Notiz eines Exemplars ab, für den
+// Altbestand ohne Bestellung (vor Migration 063); sonst nennt ihn die Bestellung.
 func resolveSupplierName(zustandNotiz string) string {
 	switch {
 	case strings.HasPrefix(zustandNotiz, "Im Zulauf - "):
@@ -154,10 +116,9 @@ func resolveSupplierName(zustandNotiz string) string {
 	}
 }
 
-// exemplarZurGruppe sind die Angaben eines Exemplars fuer addExemplarToGroup. Als
-// Struktur, weil FUENF benachbarte string-Parameter jeden Vertauscher stumm machen:
-// titel und isbn nebeneinander verwechselt haette der Compiler nie gemeldet, und in der
-// Zulaufliste stuende die ISBN als Titel. Unexportiert wie die Funktion selbst.
+// exemplarZurGruppe sind die Angaben eines Exemplars für addExemplarToGroup. Als Struktur:
+// Fünf benachbarte Parameter vom selben Typ ließen sich vertauschen, ohne dass der Compiler
+// es meldet, und in der Liste des Zulaufs stünde die ISBN als Titel.
 type exemplarZurGruppe struct {
 	TitelID    string
 	Titel      string
@@ -203,10 +164,9 @@ type OrderSearchItem struct {
 	Source       string `json:"source"`
 	CurrentStock int    `json:"current_stock,omitempty"`
 	IsDuplicate  bool   `json:"is_duplicate,omitempty"`
-	// PreisVorschlag ist der DNB-Ladenpreis (MARC21 020 $c), 0 = keiner ermittelbar.
-	// Ausdruecklich ein VORSCHLAG: Er gilt zum Erscheinungszeitpunkt und ist nicht der
-	// Schulpreis. Die Oberflaeche fuellt damit das Preisfeld vor, uebernimmt ihn aber
-	// nie ungefragt als erfasste Ausgabe.
+	// PreisVorschlag ist der Ladenpreis laut DNB (MARC21 020 $c), 0 heißt keiner. Er gilt
+	// zum Erscheinen und ist nicht der Preis der Schule: Die Oberfläche füllt damit das
+	// Preisfeld vor und übernimmt ihn nie ungefragt als Ausgabe.
 	PreisVorschlag float64 `json:"preis_vorschlag,omitempty"`
 	// IstLernmittel: nur bei source="local" aussagekräftig — der Vorschlag für den
 	// Topf der Bestellung (Lernmittel → Land, sonst Schulträger; Warenkorb, mittel.js).
@@ -224,55 +184,27 @@ func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventu
 	return append(treffer, vonDNB...), dnbAusfall, nil
 }
 
-// searchLocalOrders durchsucht den lokalen Bestand (Volltext + ILIKE-Fallbacks).
-// Bei einem Query- oder Iterationsfehler wird eine leere/nil-Liste geliefert
-// (best-effort; die DNB-Treffer werden ohnehin separat angehängt). Der Suchtext geht in die
-// Form, in der Titeltexte gespeichert sind (repository.TiteltextNormalform).
+// searchLocalOrders durchsucht den eigenen Katalog (repository.SucheTitelZumBestellen). Scheitert
+// die Abfrage, bleibt die Liste leer: Die Treffer der DNB kommen ohnehin getrennt dazu.
 func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) []OrderSearchItem {
-	query = repository.TiteltextNormalform(query)
-	var results []OrderSearchItem
-	localQuery := `
-		WITH matched_titels AS (
-			SELECT t.id, t.titel, t.autor, t.isbn, t.verlag, t.cover_url, t.signatur, t.ist_lernmittel, t.search_vector
-			FROM buecher_titel t
-			WHERE
-				t.search_vector @@ plainto_tsquery('german', $1)
-				OR t.titel ILIKE '%' || $1 || '%'
-				OR t.autor ILIKE '%' || $1 || '%'
-				OR regexp_replace(coalesce(t.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1, '[- ]', '', 'g') || '%'
-				OR replace(t.isbn, '-', '') = replace($1, '-', '')
-				OR ` + repository.SQLSuchtextIstISBN("t", "$1") + `
-			ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel ASC
-			LIMIT 50
-		)
-		SELECT mt.id, mt.titel, coalesce(mt.autor, ''), coalesce(mt.isbn, ''), coalesce(mt.verlag, ''),
-		       COALESCE(NULLIF(mt.cover_url, ''), CASE WHEN mt.isbn IS NOT NULL AND mt.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(mt.isbn, '-', '') ELSE '' END),
-		       coalesce(mt.signatur, ''), mt.ist_lernmittel,
-		       COALESCE(e.current_stock, 0)
-		FROM matched_titels mt
-		LEFT JOIN LATERAL (
-			SELECT COUNT(id)::int AS current_stock
-			FROM buecher_exemplare
-			WHERE titel_id = mt.id AND ist_ausgesondert = false
-		) e ON true
-		ORDER BY ts_rank(mt.search_vector, plainto_tsquery('german', $1)) DESC, mt.titel ASC
-	`
-	rows, err := pool.Query(ctx, localQuery, query)
+	treffer, err := repository.SucheTitelZumBestellen(ctx, pool, query)
 	if err != nil {
-		return results
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var item OrderSearchItem
-		item.Source = "local"
-		if errScan := rows.Scan(&item.ID, &item.Titel, &item.Autor, &item.ISBN, &item.Verlag, &item.CoverURL, &item.Signatur, &item.IstLernmittel, &item.CurrentStock); errScan == nil {
-			results = append(results, item)
-		}
-	}
-	// Bei Abbruch mitten in der Iteration lokale Teiltreffer verwerfen; die
-	// DNB-Ergebnisse werden anschließend ohnehin separat angehängt.
-	if err := rows.Err(); err != nil {
 		return nil
+	}
+	var results []OrderSearchItem
+	for _, t := range treffer {
+		results = append(results, OrderSearchItem{
+			ID:            t.ID,
+			Titel:         t.Titel,
+			Autor:         t.Autor,
+			ISBN:          t.ISBN,
+			Verlag:        t.Verlag,
+			CoverURL:      t.CoverURL,
+			Signatur:      t.Signatur,
+			Source:        "local",
+			CurrentStock:  t.Bestand,
+			IstLernmittel: t.IstLernmittel,
+		})
 	}
 	return results
 }
@@ -302,31 +234,16 @@ func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inve
 	return treffer, false
 }
 
-// sammleExistierendeISBNs fragt in einer Abfrage, welche der ISBNs schon ein Titel trägt, und
-// liefert sie als Menge. Beide Seiten stehen in der Normalform (isbnutil.Normalform,
-// isbn_normalform): Die DNB nennt eine ISBN mit Bindestrichen und bei älteren Sätzen
-// zehnstellig, der Katalog führt sie dreizehnstellig — der Treffer hieße sonst „Neu". Fehler
-// werden protokolliert und ergeben eine leere oder unvollständige Menge; die Suche in der DNB
-// scheitert daran nicht.
+// sammleExistierendeISBNs fragt, welche der ISBNs schon ein Titel trägt, und liefert sie als
+// Menge (repository.ISBNsImKatalog). Beide Seiten stehen in der Normalform: Die DNB nennt eine
+// ISBN mit Bindestrichen und bei älteren Sätzen zehnstellig, der Katalog führt sie
+// dreizehnstellig; der Treffer hieße sonst „Neu". Ein Fehler wird protokolliert und ergibt
+// eine leere Menge; die Suche in der DNB scheitert daran nicht.
 func sammleExistierendeISBNs(ctx context.Context, pool db.PgxPoolIface, isbns []string) map[string]struct{} {
-	existing := make(map[string]struct{})
-	if len(isbns) == 0 {
-		return existing
-	}
-	rows, err := pool.Query(ctx, "SELECT isbn_normalform(isbn) FROM buecher_titel WHERE isbn_normalform(isbn) = ANY($1)", isbns)
+	existing, err := repository.ISBNsImKatalog(ctx, pool, isbns)
 	if err != nil {
 		log.Printf("order-service: Bulk ISBN-Existenzprüfung fehlgeschlagen: %v", err)
-		return existing
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var isbn string
-		if err := rows.Scan(&isbn); err == nil {
-			existing[isbn] = struct{}{}
-		}
-	}
-	if err := rows.Err(); err != nil {
-		log.Printf("order-service: Fehler beim Lesen der Bulk ISBN-Existenzprüfung: %v", err)
+		return map[string]struct{}{}
 	}
 	return existing
 }
@@ -363,10 +280,9 @@ type ReceivedItem struct {
 	EtikettGedruckt bool   `json:"etikett_gedruckt"`
 }
 
-// ErrNichtsEinzubuchen meldet, dass keines der genannten Exemplare im Zulauf stand — ein
-// anderer Platz war schneller, oder die Liste ist veraltet. Die Tür antwortet mit 404. Ein
-// benannter Fehler statt eines Wortlauts: Die Tür verglich bis zum 08.10.2026 den Text der
-// Meldung, und eine Umformulierung hier hätte aus der Auskunft still einen 500 gemacht.
+// ErrNichtsEinzubuchen meldet, dass keines der genannten Exemplare im Zulauf stand: Ein
+// anderer Platz war schneller, oder die Liste ist veraltet. Die Tür antwortet mit 404 und
+// erkennt den Fall am Fehlerwert, nicht am Wortlaut der Meldung.
 var ErrNichtsEinzubuchen = errors.New("keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)")
 
 // BulkReceiveParams encapsulates the parameters needed to bulk receive orders.
@@ -378,40 +294,16 @@ type BulkReceiveParams struct {
 
 // BulkReceiveOrder marks all pre-allocated items as received.
 func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repository.AuditRepository, params BulkReceiveParams) ([]ReceivedItem, error) {
-	query := `
-		UPDATE buecher_exemplare e
-		SET ist_ausleihbar = true, zustand_notiz = '', bestellstatus = NULL
-		FROM buecher_titel t
-		WHERE e.titel_id = t.id
-		  AND e.ist_ausleihbar = false
-		  -- Nur echte Zulauf-Exemplare: Ein ausgesondertes (Händler liefert nicht) darf
-		  -- „alle einbuchen" nicht wiederbeleben und seine Notiz nicht verlieren.
-		  AND e.bestellstatus IS NOT NULL
-		  AND e.ist_ausgesondert = false
-		  AND e.id = ANY($1)
-		RETURNING e.barcode_id, t.titel, coalesce(t.autor, '') AS autor, e.etikett_gedruckt
-	`
-
-	rows, err := pool.Query(ctx, query, params.ExemplarIDs)
+	eingebucht, err := repository.BucheZulaufEin(ctx, pool, params.ExemplarIDs)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	items := make([]ReceivedItem, 0)
-	for rows.Next() {
-		var item ReceivedItem
-		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.EtikettGedruckt); err != nil {
-			return nil, err
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	if len(items) == 0 {
+	if len(eingebucht) == 0 {
 		return nil, ErrNichtsEinzubuchen
+	}
+	items := make([]ReceivedItem, 0, len(eingebucht))
+	for _, e := range eingebucht {
+		items = append(items, ReceivedItem(e))
 	}
 
 	logAuditErr("wareneingang-bulk", auditRepo.LogAdminAktion(ctx, params.AdminID, "BULK_RECEIVE_ITEMS", params.IPAddr, map[string]any{

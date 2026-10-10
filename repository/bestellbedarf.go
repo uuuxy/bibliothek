@@ -108,14 +108,13 @@ func ListeBestellbedarf(ctx context.Context, db DBQueryer, typeFilter string, sc
 		)
 		SELECT n.id, n.titel, coalesce(n.autor, ''), coalesce(n.isbn, ''), coalesce(n.verlag, ''),
 		       coalesce(n.signatur, ''), coalesce(n.erscheinungsjahr, 0),
-		       COALESCE(NULLIF(n.cover_url, ''), CASE WHEN n.isbn IS NOT NULL AND n.isbn != ''
-		           THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(n.isbn, '-', '') ELSE '' END),
+		       %s,
 		       n.meldebestand, b.verfuegbar, b.gesamt, n.ist_lernmittel,
 		       CASE WHEN b.anzahl > 1 THEN b.auflagen END
 		FROM buch b
 		JOIN neueste n ON n.buch = b.buch
 		ORDER BY ($1 - b.gesamt) DESC, n.titel ASC
-	`, typeFilter, neueste, neueste)
+	`, typeFilter, neueste, neueste, sqlCoverOderDNB("n"))
 
 	rows, err := db.Query(ctx, query, schwelle)
 	if err != nil {
