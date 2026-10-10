@@ -3209,7 +3209,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 09.10.2026
+Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3268,17 +3268,24 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` ist mit 21.319 Zeilen in 136 Dateien das schwerste Paket
+#### R4 — `api/` trägt die Türen in einem Paket: 21.319 Zeilen in 136 Dateien
 
 | | |
 | --- | --- |
 | **Auswirkung** | mittel (Änderungsaufwand, Kollisionen) |
 | **Sichtbarkeit** | hoch |
 
-Das Paket trägt Router, Middleware und Handler, dazu Teile der Fachlogik: den Aufbau der PDFs
-und Teile des Bestellwesens. Gemessen am 09.10.2026, bevor der Abbau begann: In drei Monaten
-war es von 10.463 auf 30.785 Zeilen gewachsen, `internal/service` in derselben Zeit von 2.491
-auf 4.440. 48 Dateien formulierten 177 SQL-Anweisungen; seit dem 08.08.2026 war die Zahl der
+Das Paket trägt Router, Middleware und die Türen. Nach `repository/` (22.365 Zeilen in 151
+Dateien) ist es das zweitgrößte. Seine Dateien, gemessen am 10.10.2026: Die Hälfte hat
+höchstens 124 Zeilen, neun von zehn höchstens 296, sechs haben über 400. Die drei größten,
+`lmf_plan.go` (691), `bescheid_handler.go` (662) und `bestellbericht_handler.go` (566), sind
+zugleich die drei mit den meisten Zeilen in Funktionen ohne einen Typ aus `net/http`
+([OFFEN.md](OFFEN.md) 5.62).
+
+Gemessen am 09.10.2026, bevor der Abbau begann: In drei Monaten war das Paket von 10.463 auf
+30.785 Zeilen gewachsen und trug neben den Türen Teile der Fachlogik: den Aufbau der PDFs und
+Teile des Bestellwesens; `internal/service` wuchs in derselben Zeit von 2.491 auf 4.440. 48
+Dateien formulierten 177 SQL-Anweisungen; seit dem 08.08.2026 war die Zahl der
 Dateien von 53 gesunken, die Zahl der Anweisungen in den 48 von 143 gestiegen, weil die Prüfung
 nur neue Dateien abwies. 44 Dateien mit 7.503 Zeilen banden `net/http` nicht ein, waren also
 keine Tür.
