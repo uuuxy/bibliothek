@@ -15,9 +15,9 @@ import (
 
 // expectSettings bedient die system_einstellungen-Abfrage aus querySettings.
 func expectSettings(mock pgxmock.PgxPoolIface, maxAusleihen string) {
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-			AddRow("max_ausleihen_schueler", maxAusleihen))
+			AddRow("max_ausleihen_schueler", strPtr(maxAusleihen)))
 }
 
 func schuelerCtx(id string) *checkoutContext {

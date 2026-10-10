@@ -769,6 +769,13 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   die Kulanz). Den Hinweis auf das Abholfach beim Scan eines Ausweises liest
   `AbholbereiteBuecher`; lässt er sich nicht laden, bleibt er leer und der Scan geht weiter
   (`omnibox_service.go`).
+- Fristen und Sperr-Schwellen liest die Ausleihe über `repository.EinstellungenUeber`
+  (`ladeSystemEinstellungen`, `internal/service/loan_rules.go`) und nimmt daraus neun Felder
+  (`ausleihEinstellungenAus`). Die Zeilen der Einstellungen liest und bildet damit eine Stelle
+  ab: Ein fehlender oder unlesbarer Wert hat an der Theke dieselbe Vorgabe wie in der Maske
+  der Einstellungen. Bis zum 10.10.2026 las der Dienst die Tabelle selbst und bildete neun
+  Schlüssel ein zweites Mal ab; die zwei Fassungen unterschieden sich bei einem leeren
+  Stichtag, den die Rechnung des Stichtags danach auf dieselbe Vorgabe zurückführte.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf
@@ -2431,11 +2438,14 @@ wenn man ihn einmal gebraucht hat.
   die Prozessnummer im Namen der Wegwerf-Datenbanken ersetzen (`pg_dump` nennt Objekte mit
   ihrer Nummer), und beide Aufnahmen als Menge mit Anzahl vergleichen. Die Aufnahme vom alten
   Stand zeigt zugleich, ob ein Test jede Anweisung ausführt, die umzieht. So belegt für die
-  Nachtläufe: 4.329 Anweisungen vorher wie nachher, bei einer gewollten Abweichung. Mehrere
-  Pakete in einem Lauf mit `-p 1` nacheinander fahren. Ohne den Schalter wich am 10.10.2026
-  zwischen zwei Ständen die Zahl der Läufe von vier Anweisungen um eins ab (Erfassen in der
-  Inventur, sein Protokolleintrag, `commit`, `rollback`), und zwar in jedem von zwei Läufen je
-  Stand; mit `-p 1` schickten beide Stände dieselben 2.089 Anweisungen in 23.197 Läufen.
+  Nachtläufe: 4.329 Anweisungen vorher wie nachher, bei einer gewollten Abweichung. Die Zahl
+  der Läufe einzelner Anweisungen schwankt von Lauf zu Lauf, auch am selben Stand und mit den
+  Paketen nacheinander (`-p 1`): vier Anweisungen um den Abschluss einer Inventur (Erfassen,
+  sein Protokolleintrag, `commit`, `rollback`) um eins, eine Abfrage der Leserakte im Test des
+  LUSD-Imports um bis zu drei, die Warteschleife eines Tests (`-- ping`) um eins. Am
+  10.10.2026 lief das Erfassen bei drei Aufnahmen desselben Standes 20-, 20- und 21-mal. Eine
+  Abweichung in diesen Zahlen sagt über einen Umzug nichts; im Zweifel denselben Stand ein
+  zweites Mal aufnehmen.
 - **Ein Name zieht in ein anderes Paket,** etwa ein Vokabular aus `repository/` nach `pkg/`.
   `gofmt -r 'repository.Alt -> paket.Neu' -w <Datei>` stellt jede Nennung im Code um,
   `goimports -w` richtet die Einbindungen. Danach dreierlei prüfen. Kommentare schreibt

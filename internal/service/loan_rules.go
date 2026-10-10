@@ -67,87 +67,35 @@ type SystemEinstellungen struct {
 	Sommerferien string
 }
 
-// querySettings liest die aktuellen Einstellungen aus der Datenbank aus und liefert
-// bei Fehlern oder fehlenden Werten vordefinierte, sichere Standardwerte zurück.
+// querySettings liest über den Pool, was die Ausleihe aus den Einstellungen braucht.
 func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstellungen, error) {
 	return ladeSystemEinstellungen(ctx, s.pool)
 }
 
-// ladeSystemEinstellungen liest die Systemeinstellungen über q — den Pool oder eine
-// Transaktion. Geteilt zwischen den Fristen (querySettings) und der Überfällig-Automatik
-// (pruefeAusleihSperren), damit Fristen und Sperr-Schwellen aus EINER Quelle kommen.
-func ladeSystemEinstellungen(ctx context.Context, pool repository.DBQueryer) (*SystemEinstellungen, error) {
-	// coalesce: eine einzige NULL-wert-Zeile (z. B. nie gesetztes
-	// ferien_leseclub_zieldatum) ließe sonst den Scan in string scheitern —
-	// pgx bricht dann die Iteration ab und rows.Err() macht JEDEN Checkout zum 500.
-	rows, err := pool.Query(ctx, "SELECT schluessel, coalesce(wert, '') FROM system_einstellungen")
+// ladeSystemEinstellungen liest über q, den Pool oder eine Transaktion, was die Ausleihe aus
+// den Einstellungen braucht: Fristen und Sperr-Schwellen. Gelesen und abgebildet werden die
+// Zeilen an einer Stelle (repository.EinstellungenUeber); ein fehlender oder unlesbarer Wert
+// hat so an der Theke dieselbe Vorgabe wie in der Maske der Einstellungen.
+func ladeSystemEinstellungen(ctx context.Context, q repository.DBQueryer) (*SystemEinstellungen, error) {
+	einstellungen, err := repository.EinstellungenUeber(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	// Initialisierung mit Standardwerten für den Fall, dass die Tabelle leer ist
-	settings := &SystemEinstellungen{
-		FristBuchTage:        21,
-		FristMedienTage:      7,
-		MaxAusleihenSchueler: 5,
-		LmfStichtag:          repository.StandardLmfStichtag,
-		FerienLeseclubAktiv:  false,
-		MaxOverdueDays:       14,
-		MaxOverdueItems:      1,
-	}
-
-	for rows.Next() {
-		var key, value string
-		if err := rows.Scan(&key, &value); err != nil {
-			continue
-		}
-		applyEinstellung(settings, key, value)
-	}
-	// Ein mittendrin abgebrochener Query würde sonst stillschweigend die Defaults
-	// liefern, statt den Fehler sichtbar zu machen — heikel, weil die Werte direkt
-	// die Leihfristen und Sperr-Schwellen bestimmen.
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return settings, nil
+	return ausleihEinstellungenAus(einstellungen), nil
 }
 
-// applyEinstellung überträgt einen einzelnen Schlüssel/Wert aus system_einstellungen
-// in die Settings-Struktur; unbekannte Schlüssel und ungültige Zahlen werden ignoriert.
-func applyEinstellung(settings *SystemEinstellungen, key, value string) {
-	switch key {
-	case "frist_buch_tage":
-		if v, err := strconv.Atoi(value); err == nil {
-			settings.FristBuchTage = v
-		}
-	case "frist_medien_tage":
-		if v, err := strconv.Atoi(value); err == nil {
-			settings.FristMedienTage = v
-		}
-	case "max_ausleihen_schueler":
-		if v, err := strconv.Atoi(value); err == nil {
-			settings.MaxAusleihenSchueler = v
-		}
-	case "lmf_stichtag":
-		settings.LmfStichtag = value
-	case "ferien_leseclub_aktiv":
-		settings.FerienLeseclubAktiv = (value == "true")
-	case "ferien_leseclub_zieldatum":
-		if value != "" {
-			val := value
-			settings.FerienLeseclubZieldatum = &val
-		}
-	case "max_overdue_days":
-		if v, err := strconv.Atoi(value); err == nil {
-			settings.MaxOverdueDays = v
-		}
-	case "max_overdue_items":
-		if v, err := strconv.Atoi(value); err == nil {
-			settings.MaxOverdueItems = v
-		}
-	case lmfplan.SommerferienSchluessel:
-		settings.Sommerferien = value
+// ausleihEinstellungenAus wählt aus den Einstellungen die der Ausleihe.
+func ausleihEinstellungenAus(e *repository.SystemEinstellungen) *SystemEinstellungen {
+	return &SystemEinstellungen{
+		FristBuchTage:           e.FristBuchTage,
+		FristMedienTage:         e.FristMedienTage,
+		MaxAusleihenSchueler:    e.MaxAusleihenSchueler,
+		LmfStichtag:             e.LmfStichtag,
+		FerienLeseclubAktiv:     e.FerienLeseclubAktiv,
+		FerienLeseclubZieldatum: e.FerienLeseclubZieldatum,
+		MaxOverdueDays:          e.MaxOverdueDays,
+		MaxOverdueItems:         e.MaxOverdueItems,
+		Sommerferien:            e.Sommerferien,
 	}
 }
 

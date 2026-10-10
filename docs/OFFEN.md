@@ -419,20 +419,18 @@ Lesen, führt aber zu keinem zweiten Weg.
 Zur Datenbankschicht zählen `repository/`, `inventur/` mit eigener Schicht
 ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.3), `db/`, der Schreiber der Littera-Übernahme und die
 Einmal-Werkzeuge unter `cmd/`; die Liste mit dem Grund je Paket steht in
-`schichtung_ratsche_test.go`. Außerhalb davon tragen am 10.10.2026 noch 8 Dateien Anweisungen
-(am Anfang 28): `internal/service` 5 Dateien, `mailservice/` 1 und zwei Dateien der
+`schichtung_ratsche_test.go`. Außerhalb davon tragen am 10.10.2026 noch 7 Dateien Anweisungen
+(am Anfang 28): `internal/service` 4 Dateien, `mailservice/` 1 und zwei Dateien der
 Restore-Probe in `jobs/`. Die zwei bleiben: Sie legen eine Wegwerf-Datenbank an, entfernen sie
 und zählen darin die Tabellen, und keine der Anweisungen trifft eine Tabelle der Anwendung. Die
 Ratsche zählt je Datei die Texte von Anweisungen und die Aufrufe, die eine abschicken (zusammen
-12 und 15). Die Anweisungen der Nachtläufe, die von `auth/` und aus `internal/service` die zu
+11 und 14). Die Anweisungen der Nachtläufe, die von `auth/` und aus `internal/service` die zu
 Passbild, Cover-Abgleich, Bestands-Import, Wareneingang, Bestellsuche, Geräte-Ausleihe,
-Überfällig-Zählung und Abholfach-Hinweis stehen in `repository/` (ARCHITEKTUR 5.2.2). Offene
-Stufen, je ein Commit und in dieser Reihenfolge: aus `internal/service` das Lesen der
-Einstellungen für Fristen und Sperr-Schwellen (`loan_rules.go`; es steht neben
-`repository.EinstellungenUeber` und bildet dieselben Zeilen ein zweites Mal ab), dann
-Ausleihe, Rückgabe und Nachbuchen an der Theke (`loan_checkout.go`,
-`loan_checkout_cases.go`, `loan_return.go`, `nachbuchen.go`); zuletzt die eine Abfrage in
-`mailservice/`. Der Handgriff steht in
+Überfällig-Zählung und Abholfach-Hinweis stehen in `repository/`, und die Ausleihe liest ihre
+Einstellungen über die eine Lesefunktion dort (ARCHITEKTUR 5.2.2). Offene Stufen, je ein
+Commit und in dieser Reihenfolge: aus `internal/service` Ausleihe, Rückgabe und Nachbuchen an
+der Theke (`loan_checkout.go`, `loan_checkout_cases.go`, `loan_return.go`, `nachbuchen.go`);
+zuletzt die eine Abfrage in `mailservice/`. Der Handgriff steht in
 ARCHITEKTUR 8.14. Die Stufe der Theke öffnet Transaktionen mit Zeilensperren (ARCHITEKTUR A7):
 Dort die Aufnahme an der Datenbank je Test auch in ihrer Reihenfolge vergleichen, der
 Vergleich als Menge sagt über die Reihenfolge der Sperren nichts.

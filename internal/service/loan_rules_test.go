@@ -171,14 +171,14 @@ func TestQuerySettings_ParsesValuesAndIgnoresInvalid(t *testing.T) {
 	defer mock.Close()
 
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
-		AddRow("frist_buch_tage", "30").
-		AddRow("frist_medien_tage", "kaputt"). // ungültig → Default 7 bleibt
-		AddRow("max_ausleihen_schueler", "8").
-		AddRow("lmf_stichtag", "06-30").
-		AddRow("ferien_leseclub_aktiv", "true").
-		AddRow("max_overdue_items", "3")
+		AddRow("frist_buch_tage", strPtr("30")).
+		AddRow("frist_medien_tage", strPtr("kaputt")). // ungültig → Default 7 bleibt
+		AddRow("max_ausleihen_schueler", strPtr("8")).
+		AddRow("lmf_stichtag", strPtr("06-30")).
+		AddRow("ferien_leseclub_aktiv", strPtr("true")).
+		AddRow("max_overdue_items", strPtr("3"))
 
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
 	got, err := svc.querySettings(context.Background())
@@ -214,7 +214,7 @@ func TestQuerySettings_EmptyTableKeepsDefaults(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 
 	got, err := svc.querySettings(context.Background())
@@ -230,7 +230,7 @@ func TestQuerySettings_DBErrorPropagates(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnError(errors.New("connection refused"))
 
 	if _, err := svc.querySettings(context.Background()); err == nil {
@@ -246,10 +246,10 @@ func TestResolveCheckoutDueDate_LeseclubOverride(t *testing.T) {
 
 	ziel := "2030-09-15"
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
-		AddRow("ferien_leseclub_aktiv", "true").
-		AddRow("ferien_leseclub_zieldatum", ziel)
+		AddRow("ferien_leseclub_aktiv", strPtr("true")).
+		AddRow("ferien_leseclub_zieldatum", strPtr(ziel))
 
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
 	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
@@ -271,9 +271,9 @@ func TestResolveCheckoutDueDate_LeseclubVergangenGiltNicht(t *testing.T) {
 	defer mock.Close()
 
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
-		AddRow("ferien_leseclub_aktiv", "true").
-		AddRow("ferien_leseclub_zieldatum", "2020-09-15")
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+		AddRow("ferien_leseclub_aktiv", strPtr("true")).
+		AddRow("ferien_leseclub_zieldatum", strPtr("2020-09-15"))
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
 	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
@@ -293,9 +293,9 @@ func TestResolveCheckoutDueDate_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
 	defer mock.Close()
 
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
-		AddRow("ferien_leseclub_aktiv", "false").
-		AddRow("ferien_leseclub_zieldatum", "2030-09-15")
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+		AddRow("ferien_leseclub_aktiv", strPtr("false")).
+		AddRow("ferien_leseclub_zieldatum", strPtr("2030-09-15"))
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
 	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
@@ -316,10 +316,10 @@ func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 	defer mock.Close()
 
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
-		AddRow("ferien_leseclub_aktiv", "true").
-		AddRow("ferien_leseclub_zieldatum", "2030-09-15")
+		AddRow("ferien_leseclub_aktiv", strPtr("true")).
+		AddRow("ferien_leseclub_zieldatum", strPtr("2030-09-15"))
 
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 	// Kein Klassen-Termin im LMF-Plan → der Stichtag bleibt.
 	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
@@ -343,7 +343,7 @@ func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
 	defer mock.Close()
 
 	termin := time.Date(2027, time.June, 28, 0, 0, 0, 0, time.UTC)
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(&termin, false))
@@ -361,7 +361,7 @@ func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
 	}
 
 	// Mehrjahresband (Spanne bis über den aktuellen Jahrgang): kein Lookup, Stichtag im Zieljahr.
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 	mehrjahr := &repository.BookCopy{Titel: "Atlas", IstLernmittel: true, Medientyp: "Buch", Mehrjahresband: true, JahrgangBis: 10}
 	got, err = svc.resolveCheckoutDueDate(context.Background(), mehrjahr, "9H1")
@@ -380,7 +380,7 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnError(errors.New("db down"))
 
 	// Feste Uhr: 01.09.2026 plus 21 Tage ist ein Schultag (TestCalculateDueDate_RegularBook).
@@ -398,19 +398,18 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 	}
 }
 
-// Regressionstest: Eine NULL-wert-Zeile (z. B. nie gesetztes
-// ferien_leseclub_zieldatum) machte vor dem coalesce-Fix JEDEN Checkout zum 500 —
-// der Scan in string brach die pgx-Iteration ab und rows.Err() schlug durch.
-// Mit coalesce kommt sie als leerer String an und fällt auf Defaults zurück.
+// Eine Zeile ohne Wert (etwa ein nie gesetztes ferien_leseclub_zieldatum) und eine mit leerem
+// Wert lassen die Vorgabe stehen und sind kein Fehler: Sonst scheiterte jede Ausleihe am Lesen
+// der Einstellungen. An der Datenbank hält das TestLadeSystemEinstellungen_AnDerDatenbank.
 func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 
 	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
-		AddRow("ferien_leseclub_zieldatum", ""). // war in der DB: NULL
-		AddRow("frist_buch_tage", "")
+		AddRow("ferien_leseclub_zieldatum", (*string)(nil)).
+		AddRow("frist_buch_tage", strPtr(""))
 
-	mock.ExpectQuery(`SELECT schluessel, coalesce\(wert, ''\) FROM system_einstellungen`).
+	mock.ExpectQuery(`SELECT schluessel, wert FROM system_einstellungen`).
 		WillReturnRows(rows)
 
 	got, err := svc.querySettings(context.Background())
@@ -462,8 +461,8 @@ func TestResolveCheckoutDueDate_AmOderNachDemTerminGiltDerStichtagDesFolgendenSc
 			svc, mock := newServiceWithMock(t)
 			defer mock.Close()
 			svc.jetzt = func() time.Time { return fall.heute }
-			mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
-				WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("lmf_stichtag", fall.stichtag))
+			mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+				WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("lmf_stichtag", strPtr(fall.stichtag)))
 			mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 				WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(fall.bevorstehend, fall.vergangen))
 

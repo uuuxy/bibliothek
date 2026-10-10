@@ -47,7 +47,6 @@ func schluesselAusUebernahme(t *testing.T) map[string]bool {
 
 	menge := map[string]bool{}
 	for _, q := range []string{
-		filepath.Join("..", "internal", "service", "loan_rules.go"),
 		filepath.Join("..", "repository", "system_settings_datenschutz.go"),
 		filepath.Join("..", "repository", "system_settings_bescheid.go"),
 		filepath.Join("..", "repository", "system_settings.go"),
@@ -69,18 +68,17 @@ func schluesselAusUebernahme(t *testing.T) map[string]bool {
 // TestKeineNeuenRohenEinstellungsLeser friert die Stellen ein, die an den Einstellungen
 // VORBEI direkt in system_einstellungen greifen.
 //
-// Warum als Ratsche und nicht als Verbot: Die fünf bekannten Stellen sind berechtigt —
+// Warum als Ratsche und nicht als Verbot: Die drei bekannten Stellen sind berechtigt —
 // zwei davon lesen einen Wert, den das Programm selbst geschrieben hat (Restore-Probe,
-// Ausweis-Layout), die anderen sind die Einstellungs-Schicht selbst. Aber genau auf
+// Ausweis-Layout), die dritte ist die Einstellungs-Schicht selbst. Aber genau auf
 // diesem Weg entsteht die tote Einstellung: Wer künftig roh liest, umgeht das Gate
 // darüber, weil sein Schlüssel in keinem `case` auftaucht. Die Liste darf schrumpfen,
 // nicht wachsen.
 func TestKeineNeuenRohenEinstellungsLeser(t *testing.T) {
 	erlaubt := map[string]string{
-		"repository/betriebszustand.go":  "LadeEinstellungswert — generisch, liest das Ergebnis der Restore-Probe für die Selbstprüfung und für den Start",
-		"repository/system_settings.go":  "die Einstellungs-Schicht selbst",
-		"internal/service/loan_rules.go": "liest ALLE Zeilen und bildet sie über applyEinstellung ab (vom Gate oben erfasst)",
-		"repository/ausweis_layout.go":   "eigene Tür (api/ausweis_layout.go), schreibt und liest dieselbe Zeile",
+		"repository/betriebszustand.go": "LadeEinstellungswert — generisch, liest das Ergebnis der Restore-Probe für die Selbstprüfung und für den Start",
+		"repository/system_settings.go": "die Einstellungs-Schicht selbst",
+		"repository/ausweis_layout.go":  "eigene Tür (api/ausweis_layout.go), schreibt und liest dieselbe Zeile",
 	}
 
 	gefunden := map[string]bool{}

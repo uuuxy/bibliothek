@@ -86,10 +86,10 @@ func expectSettingsAndOverdue(mock pgxmock.PgxPoolIface, overdueCount int) {
 	mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\)::float8 FROM schadensfaelle").
 		WithArgs("s1").
 		WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(0, 0.0))
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-			AddRow("max_overdue_items", "1").
-			AddRow("max_overdue_days", "14"))
+			AddRow("max_overdue_items", strPtr("1")).
+			AddRow("max_overdue_days", strPtr("14")))
 	mock.ExpectQuery("SELECT COUNT").
 		WithArgs("s1", 14).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(overdueCount))
@@ -98,9 +98,9 @@ func expectSettingsAndOverdue(mock pgxmock.PgxPoolIface, overdueCount int) {
 // expectFristSettings: die eine Einstellungsabfrage, mit der resolveCheckoutDueDate die
 // Leihfrist bestimmt.
 func expectFristSettings(mock pgxmock.PgxPoolIface) {
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-			AddRow("standard_ausleihfrist_tage", "14"))
+			AddRow("standard_ausleihfrist_tage", strPtr("14")))
 }
 
 func newValidationService(t *testing.T, student *repository.Student) (*defaultLoanService, *mockAuditRepo, pgxmock.PgxPoolIface) {

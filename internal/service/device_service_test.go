@@ -147,7 +147,7 @@ func TestGeraeteAusleiheKollegeOhneSperre(t *testing.T) {
 	}
 	defer mock.Close()
 	mock.ExpectQuery(`FROM system_einstellungen`).
-		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("sommerferien", ""))
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("sommerferien", strPtr("")))
 	svc := &defaultDeviceService{pool: mock, studentRepo: stubStudentRepoSperre{
 		student: &repository.Student{ID: kid, Art: "lehrkraft", IsManuallyBlocked: true, BlockReason: strPtr("alt")}}}
 

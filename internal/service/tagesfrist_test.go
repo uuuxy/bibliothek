@@ -62,9 +62,9 @@ func TestResolveCheckoutDueDate_SommerferienAusDerEinstellung(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
 	svc.jetzt = func() time.Time { return time.Date(2031, time.June, 23, 10, 0, 0, 0, schoolLocation()) }
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-			AddRow(lmfplan.SommerferienSchluessel, `[{"jahr":2031,"von":"2031-07-14","bis":"2031-08-22"}]`))
+			AddRow(lmfplan.SommerferienSchluessel, strPtr(`[{"jahr":2031,"von":"2031-07-14","bis":"2031-08-22"}]`)))
 
 	got, err := svc.resolveCheckoutDueDate(context.Background(), &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}, "5a")
 	if err != nil {

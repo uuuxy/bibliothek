@@ -160,9 +160,9 @@ func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 	t.Run("beide übergangen", func(t *testing.T) {
 		lage, err := pruefeMitMock(t, schueler(nil), false, true, func(mock pgxmock.PgxPoolIface) {
 			forderung(mock)
-			mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+			mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 				WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-					AddRow("max_overdue_items", "1").AddRow("max_overdue_days", "14"))
+					AddRow("max_overdue_items", strPtr("1")).AddRow("max_overdue_days", strPtr("14")))
 			mock.ExpectQuery("SELECT COUNT").
 				WithArgs("s1", 14).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(3))
 		})
