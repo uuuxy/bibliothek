@@ -3,16 +3,19 @@ package api
 import (
 	"go/parser"
 	"go/token"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
 	"testing"
 )
 
-// Schichtung des Backends: Was in api/ liegt, ist eine Tür. Der Bestand dateienOhneTuer nennt,
-// was ohne Tür in api/ liegt, und kann nur kleiner werden. Dass kein Paket außerhalb der
-// Datenbankschicht SQL formuliert, hält schichtung_ratsche_test.go im Wurzelpaket.
+// Schichtung des Backends: Was in api/ liegt, ist eine Tür, auch in einem Unterordner. Der
+// Bestand dateienOhneTuer nennt, was ohne Tür in api/ liegt, und kann nur kleiner werden. Dass
+// kein Paket außerhalb der Datenbankschicht SQL formuliert, hält schichtung_ratsche_test.go im
+// Wurzelpaket.
 //
 // Blindheit: Regeln in einer Datei, die auch eine Tür trägt; eine Datei, die net/http nur für
 // eine Konstante einbindet.
@@ -31,31 +34,53 @@ func ohneKommentare(quelle string) string {
 	return b.String()
 }
 
-// produktivDateien nennt die Go-Dateien dieses Ordners ohne Tests. Die Untergrenze hält einen
-// umbenannten Ordner davon ab, beide Tests still grün zu stellen.
-func produktivDateien(t *testing.T) []string {
+// produktivDateien nennt die Go-Dateien unter der Wurzel ohne Tests, mit ihrem Pfad ab der
+// Wurzel. Sie steigt in jeden Unterordner: Eine Datei in einem Themenordner zählt wie eine
+// daneben. Abgelegte Bilder und Testdaten tragen keinen Quelltext.
+func produktivDateien(t *testing.T, wurzel string) []string {
 	t.Helper()
-	eintraege, err := os.ReadDir(".")
-	if err != nil {
-		t.Fatalf("api/ nicht lesbar: %v", err)
-	}
-	var namen []string
-	for _, e := range eintraege {
-		name := e.Name()
-		if e.IsDir() || !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
-			continue
+	var pfade []string
+	err := filepath.WalkDir(wurzel, func(pfad string, eintrag fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
-		namen = append(namen, name)
+		name := eintrag.Name()
+		if eintrag.IsDir() {
+			if pfad != wurzel && (strings.HasPrefix(name, ".") || name == "testdata" || name == "uploads") {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			return nil
+		}
+		rel, err := filepath.Rel(wurzel, pfad)
+		if err != nil {
+			return err
+		}
+		pfade = append(pfade, filepath.ToSlash(rel))
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("%s nicht lesbar: %v", wurzel, err)
 	}
-	if len(namen) < 50 {
-		t.Fatalf("nur %d Go-Dateien in api/ gefunden — der Test misst offenbar nichts mehr", len(namen))
-	}
-	return namen
+	return pfade
 }
 
-// dateienOhneTuer: Dateien in api/, die net/http nicht einbinden. Sie nehmen keine Anfrage an
-// und geben keine Antwort; was davon Regel oder Erzeuger ist, zieht in ein eigenes Paket und
-// fällt hier weg.
+// apiDateien nennt die Go-Dateien von api/ samt Unterordnern. Die Untergrenze hält einen
+// umbenannten Ordner davon ab, die Prüfungen still grün zu stellen, die hier lesen.
+func apiDateien(t *testing.T) []string {
+	t.Helper()
+	pfade := produktivDateien(t, ".")
+	if len(pfade) < 50 {
+		t.Fatalf("nur %d Go-Dateien in api/ gefunden — der Test misst offenbar nichts mehr", len(pfade))
+	}
+	return pfade
+}
+
+// dateienOhneTuer: Dateien in api/, die net/http nicht einbinden, mit ihrem Pfad ab api/. Sie
+// nehmen keine Anfrage an und geben keine Antwort; was davon Regel oder Erzeuger ist, zieht in
+// ein eigenes Paket und fällt hier weg.
 var dateienOhneTuer = []string{
 	"abgaenger_fenster.go",
 	"action_types.go",
@@ -88,7 +113,7 @@ func bindetHTTPEin(t *testing.T, name string, quelle any) bool {
 
 func TestNeueDateiInApiTraegtEineTuer(t *testing.T) {
 	var gefunden []string
-	for _, name := range produktivDateien(t) {
+	for _, name := range apiDateien(t) {
 		if !bindetHTTPEin(t, name, nil) {
 			gefunden = append(gefunden, name)
 		}
@@ -134,5 +159,36 @@ func TestBindetHTTPEin_ErkenntJedeForm(t *testing.T) {
 		if bindetHTTPEin(t, name+".go", quelle) {
 			t.Errorf("%s: gilt als Tür, obwohl net/http nicht eingebunden ist", name)
 		}
+	}
+}
+
+// Eine Datei in einem Unterordner zählt mit: Sonst verließe sie mit dem Umzug in einen
+// Themenordner die Prüfungen, die api/ lesen.
+func TestProduktivDateien_SteigtInUnterordner(t *testing.T) {
+	wurzel := t.TempDir()
+	for pfad, inhalt := range map[string]string{
+		"tuer.go":                   "package x\n",
+		"tuer_test.go":              "package x\n",
+		"notiz.md":                  "kein Quelltext\n",
+		"thema/regel.go":            "package thema\n",
+		"thema/regel_test.go":       "package thema\n",
+		"thema/tiefer/helfer.go":    "package tiefer\n",
+		"thema/testdata/muster.go":  "package muster\n",
+		"uploads/abgelegt.go":       "package uploads\n",
+		".arbeitskopie/api/tuer.go": "package x\n",
+	} {
+		ziel := filepath.Join(wurzel, filepath.FromSlash(pfad))
+		if err := os.MkdirAll(filepath.Dir(ziel), 0o750); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(ziel, []byte(inhalt), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	gefunden := produktivDateien(t, wurzel)
+	slices.Sort(gefunden)
+	erwartet := []string{"thema/regel.go", "thema/tiefer/helfer.go", "tuer.go"}
+	if !slices.Equal(gefunden, erwartet) {
+		t.Errorf("gefunden %v, erwartet %v", gefunden, erwartet)
 	}
 }

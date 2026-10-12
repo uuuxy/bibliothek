@@ -25,12 +25,12 @@ import (
 // Mahnlisten gehen doppelt hinaus, eine Bestellung meldet „war bereits erfasst", obwohl ihre
 // Mail nie ankam.
 //
-// Gemessen wird am Merkmal: jede Funktion in api/, die SendEmail oder den Versand aus
-// mailservice erreicht, und jede Route, deren Anmeldung eine solche Funktion nennt. Blind für
-// einen Versand über ein anderes Paket, für Routen außerhalb von mux.Handle in routes*.go
-// und router.go, für eine Adresse, die die Oberfläche aus Teilen zusammensetzt, und dafür, ob
-// die genannte Frist lang genug ist (das hält TestMailFristen_DeckenDenVersandAb für die zwei
-// Konstanten).
+// Gemessen wird am Merkmal: jede Funktion in api/ und seinen Unterordnern, die SendEmail oder
+// den Versand aus mailservice erreicht, und jede Route, deren Anmeldung eine solche Funktion
+// nennt. Blind für einen Versand über ein Paket außerhalb von api/, für Routen außerhalb von
+// mux.Handle in routes*.go und router.go, für eine Adresse, die die Oberfläche aus Teilen
+// zusammensetzt, und dafür, ob die genannte Frist lang genug ist (das hält
+// TestMailFristen_DeckenDenVersandAb für die zwei Konstanten).
 func TestMailRouten_AufruferTragenEigeneFrist(t *testing.T) {
 	routen := mailRouten(t, funktionenDieMailVerschicken(t))
 	if len(routen) < 5 {
@@ -112,26 +112,75 @@ func TestMailRouten_Selbstprobe(t *testing.T) {
 	}
 }
 
+// Der Sammler der sendenden Funktionen sieht einen Themenordner und verliert nichts, wenn zwei
+// Funktionen gleich heißen.
+func TestVersandFunktionen_Selbstprobe(t *testing.T) {
+	sendet, unmittelbar := versandFunktionen(t, map[string]string{
+		"tuer.go": "package api\nfunc (s *Server) Mahnen() { thema.Verschicke() }\n" +
+			"func (s *Server) Lesen() { thema.Zaehle() }\n" +
+			"func (s *Server) Melden() { s.benachrichtige() }\n" +
+			"func (s *Server) benachrichtige() { SendEmail(nil) }\n",
+		"thema/versand.go": "package thema\nfunc Verschicke() { _ = mailservice.VersendeUeberSMTP }\n" +
+			"func Zaehle() int { return 1 }\n",
+		// Drei Funktionen namens Starte: Nur die mittlere erreicht den Versand.
+		"thema/starte.go":  "package thema\nfunc Starte() { Verschicke() }\n",
+		"anders/starte.go": "package anders\nfunc Starte() {}\nfunc Pruefe() { mailservice.SendTestMail() }\n",
+		"weiter/starte.go": "package weiter\nfunc Starte() {}\n",
+	})
+	for _, name := range []string{"Mahnen", "Melden", "benachrichtige", "Verschicke", "Starte", "Pruefe"} {
+		if !sendet[name] {
+			t.Errorf("%s erreicht den Versand, der Sammler nennt die Funktion nicht", name)
+		}
+	}
+	for _, name := range []string{"Lesen", "Zaehle"} {
+		if sendet[name] {
+			t.Errorf("%s verschickt nichts, der Sammler nennt die Funktion trotzdem", name)
+		}
+	}
+	if unmittelbar != 3 {
+		t.Errorf("%d Funktionen mit unmittelbarem Versand gezählt, erwartet 3 (benachrichtige, Verschicke, Pruefe)", unmittelbar)
+	}
+}
+
 type mailRoute struct{ methode, pfad string }
 
 type routenAufruf struct{ datei, text string }
 
-// funktionenDieMailVerschicken nennt die Funktionen des Pakets, die den Versand erreichen:
-// unmittelbar oder über eine Funktion, die es tut.
+// funktionenDieMailVerschicken nennt die Funktionen in api/ und seinen Unterordnern, die den
+// Versand erreichen: unmittelbar oder über eine Funktion, die es tut.
 func funktionenDieMailVerschicken(t *testing.T) map[string]bool {
 	t.Helper()
-	pfade, err := filepath.Glob("*.go")
-	if err != nil {
-		t.Fatalf("api/ nicht lesbar: %v", err)
-	}
-	nennt := map[string]map[string]bool{}
-	sendet := map[string]bool{}
-	dateisatz := token.NewFileSet()
-	for _, pfad := range pfade {
-		if strings.HasSuffix(pfad, "_test.go") {
-			continue
+	quellen := map[string]string{}
+	for _, pfad := range apiDateien(t) {
+		roh, err := os.ReadFile(pfad)
+		if err != nil {
+			t.Fatalf("%s: %v", pfad, err)
 		}
-		datei, err := parser.ParseFile(dateisatz, pfad, nil, 0)
+		quellen[pfad] = string(roh)
+	}
+	sendet, unmittelbar := versandFunktionen(t, quellen)
+	if unmittelbar < 4 {
+		t.Fatalf("nur %d Funktionen mit unmittelbarem Versand gefunden: SendEmail oder mailservice heißen anders", unmittelbar)
+	}
+	return sendet
+}
+
+// versandFunktionen liest Quellen (Pfad und Text) und nennt die Funktionen, die den Versand
+// erreichen, dazu die Zahl derer, die ihn unmittelbar rufen. Der Detektor kennt eine Funktion
+// nur am Namen: Tragen zwei denselben, zählt zusammen, was beide rufen. Das kann eine Route
+// zu viel melden, aber keine verschweigen.
+func versandFunktionen(t *testing.T, quellen map[string]string) (sendet map[string]bool, unmittelbar int) {
+	t.Helper()
+	nennt := map[string]map[string]bool{}
+	sendet = map[string]bool{}
+	dateisatz := token.NewFileSet()
+	pfade := make([]string, 0, len(quellen))
+	for pfad := range quellen {
+		pfade = append(pfade, pfad)
+	}
+	sort.Strings(pfade)
+	for _, pfad := range pfade {
+		datei, err := parser.ParseFile(dateisatz, pfad, quellen[pfad], 0)
 		if err != nil {
 			t.Fatalf("%s: %v", pfad, err)
 		}
@@ -141,7 +190,9 @@ func funktionenDieMailVerschicken(t *testing.T) map[string]bool {
 				continue
 			}
 			name := funktion.Name.Name
-			nennt[name] = map[string]bool{}
+			if nennt[name] == nil {
+				nennt[name] = map[string]bool{}
+			}
 			ast.Inspect(funktion.Body, func(knoten ast.Node) bool {
 				switch k := knoten.(type) {
 				case *ast.SelectorExpr:
@@ -160,9 +211,7 @@ func funktionenDieMailVerschicken(t *testing.T) map[string]bool {
 			})
 		}
 	}
-	if len(sendet) < 4 {
-		t.Fatalf("nur %d Funktionen mit unmittelbarem Versand gefunden: SendEmail oder mailservice heißen anders", len(sendet))
-	}
+	unmittelbar = len(sendet)
 	for geaendert := true; geaendert; {
 		geaendert = false
 		for name, genannte := range nennt {
@@ -177,7 +226,7 @@ func funktionenDieMailVerschicken(t *testing.T) map[string]bool {
 			}
 		}
 	}
-	return sendet
+	return sendet, unmittelbar
 }
 
 var (
