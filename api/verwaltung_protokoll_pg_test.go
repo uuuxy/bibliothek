@@ -27,15 +27,7 @@ func protokollWelt(t *testing.T, pool *pgxpool.Pool) (adminID string, rufe func(
 	t.Helper()
 	adminID, sitzung, router := routerMitSitzung(t, pool,
 		"verwaltung-protokoll@example.org", "Vera", "Verwaltung")
-	return adminID, func(t *testing.T, methode, pfad, rumpf string) *httptest.ResponseRecorder {
-		t.Helper()
-		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
-		req.Header.Set("Content-Type", "application/json")
-		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
-		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, tuertest.MitCSRF(req))
-		return rec
-	}
+	return adminID, tuertest.RouterAufruf(router, sitzung)
 }
 
 func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {

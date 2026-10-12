@@ -10,6 +10,7 @@ package tuertest
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -55,6 +56,35 @@ func RufeAlsAdmin(t *testing.T, admin string, h http.HandlerFunc, methode, pfad,
 		&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
 	h(rec, req)
+	return rec
+}
+
+// RouterAufruf liefert einen Aufruf über einen ganzen Router mit der Sitzung eines Kontos: der
+// Rumpf als JSON, die Sitzung als Cookie, dazu der CSRF-Nachweis.
+func RouterAufruf(router http.Handler, sitzung string) func(t *testing.T, methode, pfad, rumpf string) *httptest.ResponseRecorder {
+	return func(t *testing.T, methode, pfad, rumpf string) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(methode, pfad, strings.NewReader(rumpf))
+		req.Header.Set("Content-Type", "application/json")
+		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, MitCSRF(req))
+		return rec
+	}
+}
+
+// Bestelle schickt der Tür der Bestellung einen Warenkorb mit zwei Exemplaren eines Titels aus
+// Mitteln des Landes, mit Nummern vorab, und liefert die Antwort.
+func Bestelle(t *testing.T, tuer http.HandlerFunc, lieferantID, titelID string) *httptest.ResponseRecorder {
+	t.Helper()
+	rumpf := fmt.Sprintf(
+		`{"supplier_id":%q,"mittel":"land","items":[{"titel_id":%q,"menge":2,"preis":9.5,"generate_barcodes":true}]}`,
+		lieferantID, titelID)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	tuer(rec, req)
 	return rec
 }
 

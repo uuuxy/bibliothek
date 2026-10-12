@@ -15,8 +15,6 @@ import (
 	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Eine Bestellung kennt ihren Topf (Migration 109) — belegt am echten Handler und an der
@@ -44,16 +42,6 @@ func bestelleMitTopf(t *testing.T, srv *Server, lieferantID, titelID, mittel str
 	return rec
 }
 
-func zaehleBestellungen(t *testing.T, pool *pgxpool.Pool, lieferantID string) int {
-	t.Helper()
-	var n int
-	if err := pool.QueryRow(context.Background(),
-		`SELECT count(*) FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferantID).Scan(&n); err != nil {
-		t.Fatal(err)
-	}
-	return n
-}
-
 func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -67,7 +55,7 @@ func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
 			t.Errorf("mittel=%q: Status %d, want 400: %s", mittel, rec.Code, rec.Body.String())
 		}
 	}
-	if n := zaehleBestellungen(t, pool, lieferant); n != 0 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant); n != 0 {
 		t.Errorf("%d Bestellung(en) trotz fehlendem Topf angelegt", n)
 	}
 	// Keine Exemplare reserviert — die Prüfung sitzt VOR dem ersten Datenbankzugriff.

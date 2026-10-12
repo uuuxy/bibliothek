@@ -187,7 +187,7 @@ func TestBestellungTopfKorrektur_OrdnetAltBestellungOhneZuordnungZu(t *testing.T
 		t.Fatal(err)
 	}
 
-	id := altBestellung(t, pool, "alt-ohne-zuordnung", nil)
+	id := testdaten.AltBestellung(t, pool, "alt-ohne-zuordnung", nil)
 	rec := korrigiereTopfUeberHandler(t, srv, pool, id, `{"mittel":"land","grund":"Rechnung liegt vor, war Lernmittel"}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"von":""`) {
 		t.Fatalf("Alt-Bestellung zuordnen: %d %s", rec.Code, rec.Body.String())

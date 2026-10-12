@@ -110,3 +110,25 @@ func SetzeOeffentlicheAdresse(t *testing.T, pool *pgxpool.Pool, adresse string) 
 		t.Fatalf("öffentliche Adresse setzen: %v", err)
 	}
 }
+
+// AltBestellung legt eine Bestellung an, wie sie vor der Zuordnung zu einem Topf entstand: ohne
+// Mittel, mit je einer Position für die genannten Titel. Ein leerer Eintrag steht für eine
+// Position, deren Titel gelöscht ist.
+func AltBestellung(t *testing.T, pool *pgxpool.Pool, name string, titelIDs []string) string {
+	t.Helper()
+	ctx := context.Background()
+	var id string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email) VALUES ($1, 'alt@example.invalid')
+		RETURNING id`, name).Scan(&id); err != nil {
+		t.Fatalf("Alt-Bestellung anlegen: %v", err)
+	}
+	for _, titelID := range titelIDs {
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO bestellungen_positionen (bestellung_id, titel_id, titel_name, menge)
+			VALUES ($1, NULLIF($2, '')::uuid, 'Titel', 1)`, id, titelID); err != nil {
+			t.Fatalf("Position anlegen: %v", err)
+		}
+	}
+	return id
+}

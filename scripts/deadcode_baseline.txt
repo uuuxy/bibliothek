@@ -39,6 +39,7 @@ internal/pdftest/spalte.go: unreachable func: InSpalte
 # (vorher Helfer in Testdateien von api/).
 internal/pdftest/suchtext.go: unreachable func: Suchtext
 internal/pdftest/suchtext.go: unreachable func: ErsteBytes
+internal/pdftest/suchtext.go: unreachable func: Aufdruck
 
 # Testinfrastruktur per Paket-Design: eigener SMTP-Server für Tests, weil die
 # lokale .env auf den echten Schulserver zeigt (siehe Paketkommentar).
@@ -125,6 +126,8 @@ internal/testdaten/bestellung.go: unreachable func: TopfBestellung
 internal/testdaten/bestellung.go: unreachable func: BarcodesDerBestellung
 internal/testdaten/bestellung.go: unreachable func: ExemplarIDsDerBestellung
 internal/testdaten/bestellung.go: unreachable func: SetzeOeffentlicheAdresse
+internal/testdaten/bestellung.go: unreachable func: AltBestellung
+internal/testdaten/etikett.go: unreachable func: SetzeVermerkSchuelerbuecherei
 internal/testdaten/schaden.go: unreachable func: BescheidReset
 internal/testdaten/schaden.go: unreachable func: BescheidAngabenSetzen
 internal/testdaten/schaden.go: unreachable func: BescheidLernmittel
@@ -143,6 +146,8 @@ internal/tuertest/tuertest.go: unreachable func: AlsBenutzer
 internal/tuertest/tuertest.go: unreachable func: RufeAlsAdmin
 internal/tuertest/tuertest.go: unreachable func: Fehlermeldung
 internal/tuertest/tuertest.go: unreachable func: AntwortOhneDB
+internal/tuertest/tuertest.go: unreachable func: RouterAufruf
+internal/tuertest/tuertest.go: unreachable func: Bestelle
 internal/tuertest/felder.go: unreachable func: LeereFelder
 internal/tuertest/dnb.go: unreachable func: DNBAttrappe.RoundTrip
 internal/tuertest/dnb.go: unreachable func: ZaehlendeDNB.RoundTrip
@@ -155,6 +160,8 @@ internal/tuertest/sitzung.go: unreachable func: AdminSitzung
 # (docs/OFFEN.md 5.65). Das Paket bindet api/ ein und wird ausschließlich von *_test.go
 # importiert.
 internal/routertest/routertest.go: unreachable func: MitSitzung
+internal/routertest/routertest.go: unreachable func: MitSitzungUeber
+internal/routertest/routertest.go: unreachable func: MitAufruf
 
 # Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Funktion): Womit verschickt wird,
 # steht in einem Wert des Pakets, den der Start an die Datenbank bindet. Die Tests der Türen,

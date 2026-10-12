@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 )
@@ -21,25 +19,6 @@ import (
 // → schultraeger, gemischt → NULL, gelöschter Titel → NULL (raten wäre schlimmer als
 // „ohne Zuordnung").
 
-func altBestellung(t *testing.T, pool *pgxpool.Pool, name string, titelIDs []string) string {
-	t.Helper()
-	ctx := context.Background()
-	var id string
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email) VALUES ($1, 'alt@example.invalid')
-		RETURNING id`, name).Scan(&id); err != nil {
-		t.Fatalf("Alt-Bestellung anlegen: %v", err)
-	}
-	for _, titelID := range titelIDs {
-		if _, err := pool.Exec(ctx, `
-			INSERT INTO bestellungen_positionen (bestellung_id, titel_id, titel_name, menge)
-			VALUES ($1, NULLIF($2, '')::uuid, 'Titel', 1)`, id, titelID); err != nil {
-			t.Fatalf("Position anlegen: %v", err)
-		}
-	}
-	return id
-}
-
 func TestBackfillMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -52,11 +31,11 @@ func TestBackfillMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 	lernmittel2 := testdaten.TitelMitMeldebestand(t, pool, "LMF-Deutsch 7", 0)
 	buecherei := testdaten.TitelMitMeldebestand(t, pool, "Tribute von Panem", 0)
 
-	nurLernmittel := altBestellung(t, pool, "nur-lernmittel", []string{lernmittel, lernmittel2})
-	nurBuecherei := altBestellung(t, pool, "nur-buecherei", []string{buecherei})
-	gemischt := altBestellung(t, pool, "gemischt", []string{lernmittel, buecherei})
-	titelWeg := altBestellung(t, pool, "titel-geloescht", []string{lernmittel, ""})
-	ohnePositionen := altBestellung(t, pool, "leer", nil)
+	nurLernmittel := testdaten.AltBestellung(t, pool, "nur-lernmittel", []string{lernmittel, lernmittel2})
+	nurBuecherei := testdaten.AltBestellung(t, pool, "nur-buecherei", []string{buecherei})
+	gemischt := testdaten.AltBestellung(t, pool, "gemischt", []string{lernmittel, buecherei})
+	titelWeg := testdaten.AltBestellung(t, pool, "titel-geloescht", []string{lernmittel, ""})
+	ohnePositionen := testdaten.AltBestellung(t, pool, "leer", nil)
 
 	migration, err := os.ReadFile(filepath.Join("..", "migrations", "109_bestellung_mittel.sql"))
 	if err != nil {

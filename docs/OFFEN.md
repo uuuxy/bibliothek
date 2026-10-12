@@ -584,7 +584,12 @@ von Stufe 4 sieben der elf Themen.
   (`tuertest.AntwortOhneDB`: eine Tür ohne Datenbank rufen), mit dem Mahnwesen fünf: einen
   Anhang aus einer abgefangenen Mail lesen (`smtptest.DateiAusMail`, `smtptest.PDFAusMail`)
   und Zeilen für einen Test anlegen (`testdaten.AusleihbaresExemplar`,
-  `testdaten.SchuelerMitBuch`, `testdaten.AusleiheUeberDenDienst`). In das Innere eines anderen Pakets
+  `testdaten.SchuelerMitBuch`, `testdaten.AusleiheUeberDenDienst`), vor Druck und Bestellung
+  fünf: der Aufruf über einen ganzen Router mit Sitzung und CSRF-Nachweis
+  (`tuertest.RouterAufruf`), eine Bestellung über die Tür (`tuertest.Bestelle`), eine
+  Bestellung aus der Zeit vor den Töpfen (`testdaten.AltBestellung`), der Eigentumsvermerk der
+  Schülerbücherei als Einstellung mit seinen Werten (`testdaten.SetzeVermerkSchuelerbuecherei`)
+  und die Prüfung eines gedruckten Texts (`pdftest.Aufdruck`). In das Innere eines anderen Pakets
   greift kein Test mehr: Was eine Rolle
   darf, legt `tuer.MerkeRechtFuerTest` in den Zwischenspeicher, die Mail-Konfiguration tauscht
   `mailservice.TauscheKonfigLaderFuerTest`.
@@ -683,9 +688,10 @@ von Stufe 4 sieben der elf Themen.
   Katalog eine), 19 bauen den Router noch in `api/`. Die Prüfungen
   über alle Routen (Personendaten in den Antworten, Grenzen der Listen, Rechte der
   Schreibwege) bleiben in `api/`. Für die Helfer, die den Router bauen, gibt es seit dem
-  12.10.2026 das Paket `internal/routertest`, das `api/` einbindet; bisher trägt es
-  `MitSitzung`, `routerMitSitzungUeber` und `protokollWelt` folgen mit dem Thema, das sie
-  braucht. Ein Test im Paket `api` kann es nicht nutzen und behält seinen Helfer in
+  12.10.2026 das Paket `internal/routertest`, das `api/` einbindet; es trägt `MitSitzung`,
+  `MitSitzungUeber` (der Server bekommt einen eigenen Pool) und `MitAufruf` (ein Admin-Konto
+  mit fertigem Aufruf über den Router, in `api/` heißt er `protokollWelt`). Ein Test im Paket
+  `api` kann es nicht nutzen und behält seinen Helfer in
   `api/pgtest_support_test.go`: Beide rufen `tuertest.AdminSitzung` und bauen den Server. Ob
   die Tests, die in `api/` bleiben, am Ende als Testpaket stehen und der Helfer dort
   entfällt, entscheidet Stufe 5.

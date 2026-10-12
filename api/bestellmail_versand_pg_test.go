@@ -36,17 +36,7 @@ import (
 // die Antwort.
 func bestelleUeberHandler(t *testing.T, srv *Server, lieferantID, titelID string) *httptest.ResponseRecorder {
 	t.Helper()
-	rumpf := fmt.Sprintf(
-		`{"supplier_id":%q,"mittel":"land","items":[{"titel_id":%q,"menge":2,"preis":9.5,"generate_barcodes":true}]}`,
-		lieferantID, titelID)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/bestellungen", strings.NewReader(rumpf))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-
-	handler := srv.SubmitOrderHandler(service.NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool)))
-	handler(rec, req)
-	return rec
+	return tuertest.Bestelle(t, srv.SubmitOrderHandler(service.NewOrderService(srv.DB, repository.NewBookRepository(srv.DB.Pool))), lieferantID, titelID)
 }
 
 func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *testing.T) {

@@ -91,7 +91,7 @@ func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 		}
-		if n := zaehleBestellungen(t, pool, lieferant); n != 1 {
+		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant); n != 1 {
 			t.Errorf("%d Bestellungen beim Lieferanten, erwartet 1", n)
 		}
 		if _, e := gebucht(t); e != exemplareVorher+2 {
