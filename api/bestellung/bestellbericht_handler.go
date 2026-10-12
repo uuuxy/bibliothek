@@ -1,0 +1,567 @@
+package bestellung
+
+import (
+	"bytes"
+	"cmp"
+	"fmt"
+	"net/http"
+	"slices"
+	"strings"
+	"time"
+
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
+	"bibliothek/pdf"
+	"bibliothek/pkg/betrag"
+	"bibliothek/pkg/mitteltopf"
+	"bibliothek/pkg/pdfzeichen"
+	"bibliothek/pkg/schulzeit"
+	"bibliothek/repository"
+
+	"github.com/jung-kurt/gofpdf"
+)
+
+// parseBerichtZeitraum validiert und parst die Zeitraum-Parameter (YYYY-MM-DD).
+func parseBerichtZeitraum(vonStr, bisStr string) (time.Time, time.Time, error) {
+	if vonStr == "" || bisStr == "" {
+		return time.Time{}, time.Time{}, fmt.Errorf("parameter 'von' und 'bis' erforderlich (YYYY-MM-DD)")
+	}
+	von, err := time.Parse(tuer.DateFormatISO, vonStr)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'von': %w", err)
+	}
+	bis, err := time.Parse(tuer.DateFormatISO, bisStr)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'bis': %w", err)
+	}
+	return von, bis, nil
+}
+
+// berichtTitelAbleiten liefert den Berichtstitel: expliziter Titel hat Vorrang,
+// sonst wird er aus dem Kontext (Lieferant / Jahresansicht) abgeleitet.
+func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool, mittel string) string {
+	if titel == "" {
+		switch {
+		case lieferantID != "":
+			titel = "Lieferantenabrechnung"
+		case jahresansicht:
+			titel = "Jahresbericht"
+		default:
+			titel = "Bestellbericht"
+		}
+	}
+	// Ist der Bericht auf einen Topf gefiltert, gehört das in die Überschrift: Ein Blatt
+	// ohne diesen Zusatz sieht aus wie der Gesamtbericht und wird auch so abgelegt.
+	if beschriftung := mitteltopf.Beschriftung(repository.MittelDatenwert(mittel)); mittel != "" && beschriftung != "" {
+		titel += " — " + beschriftung
+	}
+	return titel
+}
+
+// GetBestellBerichtPDFHandler generates a printable PDF report for a date range.
+//
+// Query parameters:
+//
+//	von           YYYY-MM-DD — start date (inclusive)
+//	bis           YYYY-MM-DD — end date (inclusive)
+//	lieferant_id  UUID       — optional: restrict to one supplier
+//	titel         string     — optional: custom title in PDF header
+//	jahresansicht true       — optional: add monthly + per-supplier breakdown
+func (s *Tueren) GetBestellBerichtPDFHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		q := r.URL.Query()
+
+		vonStr := q.Get("von")
+		bisStr := q.Get("bis")
+		von, bis, err := parseBerichtZeitraum(vonStr, bisStr)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+		bisExklusiv := bis.AddDate(0, 0, 1)
+
+		// Geprüft wie jede Kennung aus der Query (tuer.UUIDAusQuery): Bis zum 22.09.2026 ging
+		// der Rohtext in `AND lieferant_id = $n`, und `x` kam als 500 zurück (22P02).
+		lieferantID, err := tuer.UUIDAusQuery(r, "lieferant_id")
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+		// Der Topf-Filter macht aus dem Bericht das Blatt, gegen das EINE Rechnung geprüft
+		// wird (Konzept 7.3 Schritt 4). Ein unbekannter Wert ist ein Fehler und kein
+		// stiller Gesamtbericht: Sonst prüfte das Sekretariat die Landes-Rechnung gegen
+		// eine Liste, in der auch die Schülerbücherei steht.
+		mittel := q.Get("mittel")
+		if !repository.MittelFilterGueltig(mittel) {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, repository.MittelFilterFehler(mittel))
+			return
+		}
+		jahresansicht := q.Get("jahresansicht") == "true"
+		berichtTitel := berichtTitelAbleiten(q.Get("titel"), lieferantID, jahresansicht, mittel)
+
+		orders, orderIndex, err := repository.LadeBerichtBestellungen(ctx, s.DB.Pool, von, bisExklusiv, lieferantID, mittel)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		if err := repository.LadeBerichtPositionen(ctx, s.DB.Pool, orders, orderIndex); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
+		settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
+		schule := pdf.SchuleInfo{
+			Name:    settings.SchuleName,
+			Strasse: settings.SchuleStrasse,
+			PLZ:     settings.SchulePLZ,
+			Ort:     settings.SchuleOrt,
+		}
+
+		opts := bestellBerichtOpts{
+			Titel:         berichtTitel,
+			Von:           von,
+			Bis:           bis,
+			Jahresansicht: jahresansicht,
+			MitPreisen:    settings.PreiseErfassen,
+		}
+		pdfBytes, err := generateBestellBerichtPDF(orders, schule, opts)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		dateiname := fmt.Sprintf("bestellbericht_%s_%s.pdf", vonStr, bisStr)
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(pdfBytes) //nolint:errcheck
+	}
+}
+
+// --- PDF generation ---
+
+var monthNames = [...]string{"Januar", "Februar", "März", "April", "Mai", "Juni",
+	"Juli", "August", "September", "Oktober", "November", "Dezember"}
+
+type berichtMonthStat struct {
+	count, exemplare int
+	betrag           float64
+}
+
+type berichtSupplierStat struct {
+	count     int
+	exemplare int
+	betrag    float64
+}
+
+// zeichneMonatsuebersicht rendert die Tabelle "Übersicht nach Monat".
+//
+// Ohne Preiserfassung entfaellt die Betragsspalte, und die verbleibenden Spalten werden
+// auf dieselbe Gesamtbreite verteilt — sonst endete die Tabelle mitten auf der Seite.
+func zeichneMonatsuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []repository.BerichtBestellung, gesamtExemplare int, gesamtBetrag float64, mitPreisen bool) {
+	monthly := map[time.Month]*berichtMonthStat{}
+	for _, o := range orders {
+		m := o.Bestelldatum.Month()
+		if monthly[m] == nil {
+			monthly[m] = &berichtMonthStat{}
+		}
+		monthly[m].count++
+		monthly[m].exemplare += o.AnzahlExemplare
+		monthly[m].betrag += o.Gesamtbetrag
+	}
+
+	p.SetFont("Arial", "B", 11)
+	p.Cell(0, 8, tr("Übersicht nach Monat"))
+	p.Ln(8)
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(220, 220, 220)
+	bMonat, bAnzahl, bExemplare := 55.0, 40.0, 40.0
+	if !mitPreisen {
+		bMonat, bAnzahl, bExemplare = 70.0, 50.0, 50.0 // Summe bleibt 170
+	}
+	p.CellFormat(bMonat, 7, tr("Monat"), "1", 0, "L", true, 0, "")
+	p.CellFormat(bAnzahl, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
+	if mitPreisen {
+		p.CellFormat(bExemplare, 7, tr("Exemplare"), "1", 0, "C", true, 0, "")
+		p.CellFormat(35, 7, tr("Betrag"), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(bExemplare, 7, tr("Exemplare"), "1", 1, "C", true, 0, "")
+	}
+	p.SetFont("Arial", "", 9)
+	p.SetFillColor(255, 255, 255)
+	for m := time.January; m <= time.December; m++ {
+		if stat, ok := monthly[m]; ok {
+			p.CellFormat(bMonat, 6, tr(monthNames[m-1]), "1", 0, "L", false, 0, "")
+			p.CellFormat(bAnzahl, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
+			if mitPreisen {
+				p.CellFormat(bExemplare, 6, fmt.Sprintf("%d", stat.exemplare), "1", 0, "C", false, 0, "")
+				p.CellFormat(35, 6, tr(betrag.Euro(stat.betrag)), "1", 1, "R", false, 0, "")
+			} else {
+				p.CellFormat(bExemplare, 6, fmt.Sprintf("%d", stat.exemplare), "1", 1, "C", false, 0, "")
+			}
+		}
+	}
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(240, 240, 240)
+	p.CellFormat(bMonat, 7, tr("Gesamt"), "1", 0, "L", true, 0, "")
+	p.CellFormat(bAnzahl, 7, fmt.Sprintf("%d", len(orders)), "1", 0, "C", true, 0, "")
+	if mitPreisen {
+		p.CellFormat(bExemplare, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 0, "C", true, 0, "")
+		p.CellFormat(35, 7, tr(betrag.Euro(gesamtBetrag)), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(bExemplare, 7, fmt.Sprintf("%d", gesamtExemplare), "1", 1, "C", true, 0, "")
+	}
+	p.SetFillColor(255, 255, 255)
+	p.Ln(10)
+}
+
+// zeichneLieferantenuebersicht rendert die Aufteilung nach Lieferant.
+//
+// Ohne Preiserfassung heisst sie nicht mehr "Ausgaben" — es sind dann keine. Statt des
+// Betrags stehen die Exemplare, denn die Frage "wie viel haben wir wo bezogen" bleibt
+// auch ohne Geld sinnvoll.
+func zeichneLieferantenuebersicht(p *gofpdf.Fpdf, tr func(string) string, orders []repository.BerichtBestellung, mitPreisen bool) {
+	bySupplier := map[string]*berichtSupplierStat{}
+	for _, o := range orders {
+		if bySupplier[o.LieferantName] == nil {
+			bySupplier[o.LieferantName] = &berichtSupplierStat{}
+		}
+		bySupplier[o.LieferantName].count++
+		bySupplier[o.LieferantName].exemplare += o.AnzahlExemplare
+		bySupplier[o.LieferantName].betrag += o.Gesamtbetrag
+	}
+	ueberschrift := "Ausgaben nach Lieferant"
+	if !mitPreisen {
+		ueberschrift = "Bestellungen nach Lieferant"
+	}
+	p.SetFont("Arial", "B", 11)
+	p.Cell(0, 8, tr(ueberschrift))
+	p.Ln(8)
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(220, 220, 220)
+	p.CellFormat(85, 7, tr("Lieferant"), "1", 0, "L", true, 0, "")
+	p.CellFormat(40, 7, tr("Bestellungen"), "1", 0, "C", true, 0, "")
+	if mitPreisen {
+		p.CellFormat(45, 7, tr("Betrag"), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(45, 7, tr("Exemplare"), "1", 1, "C", true, 0, "")
+	}
+	p.SetFont("Arial", "", 9)
+	p.SetFillColor(255, 255, 255)
+	// Eine Map hat keine Reihenfolge: Ohne die sortierten Namen stünden die Lieferanten bei
+	// jedem Druck anders untereinander.
+	namen := make([]string, 0, len(bySupplier))
+	for name := range bySupplier {
+		namen = append(namen, name)
+	}
+	slices.SortFunc(namen, func(a, b string) int {
+		if c := cmp.Compare(strings.ToLower(a), strings.ToLower(b)); c != 0 {
+			return c
+		}
+		return cmp.Compare(a, b)
+	})
+	for _, name := range namen {
+		stat := bySupplier[name]
+		p.CellFormat(85, 6, tr(name), "1", 0, "L", false, 0, "")
+		p.CellFormat(40, 6, fmt.Sprintf("%d", stat.count), "1", 0, "C", false, 0, "")
+		if mitPreisen {
+			p.CellFormat(45, 6, tr(betrag.Euro(stat.betrag)), "1", 1, "R", false, 0, "")
+		} else {
+			p.CellFormat(45, 6, fmt.Sprintf("%d", stat.exemplare), "1", 1, "C", false, 0, "")
+		}
+	}
+	p.Ln(10)
+}
+
+// berichtSpalten sind die Spaltenbreiten der Positionstabelle. Sie hängen davon ab, ob
+// der Bericht Preise ausweist: Ohne Preisspalten verteilen sich Titel/ISBN/Menge auf
+// dieselben 170 mm.
+type berichtSpalten struct {
+	Titel, ISBN, Menge float64
+}
+
+func spaltenFuerBericht(mitPreisen bool) berichtSpalten {
+	if mitPreisen {
+		return berichtSpalten{Titel: 83, ISBN: 33, Menge: 14}
+	}
+	// Breitere Titelspalte trägt mehr Text.
+	return berichtSpalten{Titel: 103, ISBN: 43, Menge: 24}
+}
+
+// berichtRahmen bündelt die Angaben, die für den GANZEN Bericht gelten. Vorher standen
+// sie als fünf Einzelparameter in der Signatur (S107: 8 Parameter) — und dieselbe Liste
+// hätte jeder ausgelagerte Helfer erneut durchreichen müssen.
+type berichtRahmen struct {
+	Von, Bis        time.Time
+	GesamtBetrag    float64
+	GesamtExemplare int
+	MitPreisen      bool
+}
+
+// zeichneBestellKopf setzt die Kopfzeile einer einzelnen Bestellung (Datum, Lieferant,
+// Kundennummer).
+func zeichneBestellKopf(p *gofpdf.Fpdf, tr func(string) string, o repository.BerichtBestellung) {
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(235, 235, 245)
+	header := fmt.Sprintf("%s  ·  %s  ·  Kd.-Nr. %s",
+		o.Bestelldatum.Format(tuer.DateFormatDE), o.LieferantName, o.Kundennummer)
+	p.CellFormat(0, 7, tr(header), "LTR", 1, "L", true, 0, "")
+	p.SetFillColor(255, 255, 255)
+}
+
+// zeichneSpaltenkoepfe setzt die Überschriftenzeile der Positionstabelle.
+func zeichneSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string, s berichtSpalten, mitPreisen bool) {
+	p.SetFont("Arial", "B", 8)
+	p.SetFillColor(245, 245, 245)
+	p.CellFormat(s.Titel, 6, tr("Titel"), "1", 0, "L", true, 0, "")
+	p.CellFormat(s.ISBN, 6, tr("ISBN"), "1", 0, "C", true, 0, "")
+	if mitPreisen {
+		p.CellFormat(s.Menge, 6, tr("Menge"), "1", 0, "C", true, 0, "")
+		p.CellFormat(20, 6, tr("Einzelpr."), "1", 0, "R", true, 0, "")
+		p.CellFormat(20, 6, tr("Gesamt"), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(s.Menge, 6, tr("Menge"), "1", 1, "C", true, 0, "")
+	}
+	p.SetFillColor(255, 255, 255)
+}
+
+// zeichnePositionen setzt die Titelzeilen einer Bestellung, mit Seitenumbruch am Fuß.
+func zeichnePositionen(p *gofpdf.Fpdf, tr func(string) string, positionen []repository.BerichtPosition, s berichtSpalten, mitPreisen bool) {
+	p.SetFont("Arial", "", 8)
+	for _, pos := range positionen {
+		if p.GetY() > 265 {
+			p.AddPage()
+		}
+		isbn := pos.ISBN
+		if isbn == "" {
+			isbn = "—"
+		}
+		// Gekürzt wird auf die gedruckte Breite der Zelle; gofpdf druckt Überlanges über die ISBN.
+		titel := pdfzeichen.KuerzeAufZelle(p, tr, pos.TitelName, s.Titel)
+		p.CellFormat(s.Titel, 5, tr(titel), "1", 0, "L", false, 0, "")
+		p.CellFormat(s.ISBN, 5, tr(isbn), "1", 0, "C", false, 0, "")
+		if mitPreisen {
+			p.CellFormat(s.Menge, 5, fmt.Sprintf("%d", pos.Menge), "1", 0, "C", false, 0, "")
+			p.CellFormat(20, 5, tr(betrag.Euro(pos.Einzelpreis)), "1", 0, "R", false, 0, "")
+			p.CellFormat(20, 5, tr(betrag.Euro(float64(pos.Menge)*pos.Einzelpreis)), "1", 1, "R", false, 0, "")
+		} else {
+			p.CellFormat(s.Menge, 5, fmt.Sprintf("%d", pos.Menge), "1", 1, "C", false, 0, "")
+		}
+	}
+}
+
+// zeichneBestellSumme setzt die Abschlusszeile einer einzelnen Bestellung.
+func zeichneBestellSumme(p *gofpdf.Fpdf, tr func(string) string, o repository.BerichtBestellung, mitPreisen bool) {
+	p.SetFont("Arial", "B", 8)
+	p.SetFillColor(235, 235, 245)
+	if mitPreisen {
+		p.CellFormat(150, 6, tr(fmt.Sprintf("Summe (%d Exemplare)", o.AnzahlExemplare)), "LBR", 0, "R", true, 0, "")
+		p.CellFormat(20, 6, tr(betrag.Euro(o.Gesamtbetrag)), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(170, 6, tr(fmt.Sprintf("Summe: %d Exemplare", o.AnzahlExemplare)), "LBR", 1, "R", true, 0, "")
+	}
+	p.SetFillColor(255, 255, 255)
+	p.Ln(5)
+}
+
+// zeichneGesamtsumme setzt die Schlusszeile über alle Bestellungen des Zeitraums.
+func zeichneGesamtsumme(p *gofpdf.Fpdf, tr func(string) string, r berichtRahmen) {
+	p.Ln(4)
+	p.SetFont("Arial", "B", 11)
+	p.SetFillColor(220, 230, 255)
+	zeitraum := fmt.Sprintf("%s – %s", r.Von.Format(tuer.DateFormatDE), r.Bis.Format(tuer.DateFormatDE))
+	if r.MitPreisen {
+		p.CellFormat(150, 9, tr("Gesamtbetrag "+zeitraum), "1", 0, "R", true, 0, "")
+		p.CellFormat(20, 9, tr(betrag.Euro(r.GesamtBetrag)), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(150, 9, tr("Gesamt "+zeitraum), "1", 0, "R", true, 0, "")
+		p.CellFormat(20, 9, fmt.Sprintf("%d", r.GesamtExemplare), "1", 1, "R", true, 0, "")
+	}
+	p.SetFillColor(255, 255, 255)
+}
+
+// zeichneDetailliste rendert die Bestellungen mit ihren Positionen und den
+// Gesamtbetrag.
+//
+// Die vier Abschnitte (Kopf, Spaltenköpfe, Positionen, Summe) liegen bewusst als
+// EIGENSTÄNDIGE Funktionen daneben und nicht als Closures darin: In Go zählt eine
+// Closure als zusätzliche Verschachtelungsebene, ein Auslagern nach innen hätte die
+// kognitive Komplexität also nicht gesenkt (Projekt-Erfahrung aus früheren
+// S3776-Refactorings).
+func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []repository.BerichtBestellung, r berichtRahmen) {
+	if len(orders) == 0 {
+		p.SetFont("Arial", "I", 10)
+		p.SetTextColor(120, 120, 120)
+		p.Cell(0, 8, tr("Keine Bestellungen im gewählten Zeitraum."))
+		p.SetTextColor(0, 0, 0)
+		return
+	}
+
+	p.SetFont("Arial", "B", 11)
+	p.Cell(0, 8, tr("Bestellungen im Detail"))
+	p.Ln(8)
+
+	// Ein Block je Topf statt einer gemischten Liste (Konzept 7.3, Schritt 4): Für das
+	// Schulamt zählt der Landes-Anteil, für den Schulträger seiner. Wer die Summen von
+	// Hand aus einer gemischten Liste zieht, rechnet sie jeden Monat neu — und anders.
+	spalten := spaltenFuerBericht(r.MitPreisen)
+	for _, topf := range mitteltopf.Reihenfolge() {
+		block := bestellungenMitMittel(orders, topf)
+		if len(block) == 0 {
+			continue
+		}
+		zeichneTopfKopf(p, tr, topf)
+		for _, o := range block {
+			if p.GetY() > 240 {
+				p.AddPage()
+			}
+			zeichneBestellKopf(p, tr, o)
+			zeichneSpaltenkoepfe(p, tr, spalten, r.MitPreisen)
+			zeichnePositionen(p, tr, o.Positionen, spalten, r.MitPreisen)
+			zeichneBestellSumme(p, tr, o, r.MitPreisen)
+		}
+		zeichneTopfSumme(p, tr, topf, block, r.MitPreisen)
+	}
+
+	zeichneGesamtsumme(p, tr, r)
+}
+
+// bestellungenMitMittel filtert die Bestellungen eines Topfs; "" sind die
+// Alt-Bestellungen ohne eindeutige Zuordnung.
+func bestellungenMitMittel(orders []repository.BerichtBestellung, mittel string) []repository.BerichtBestellung {
+	aus := make([]repository.BerichtBestellung, 0, len(orders))
+	for _, o := range orders {
+		if o.Mittel == mittel {
+			aus = append(aus, o)
+		}
+	}
+	return aus
+}
+
+// summiereBestellungen liefert Betrag und Exemplarzahl einer Gruppe.
+func summiereBestellungen(orders []repository.BerichtBestellung) (betrag float64, exemplare int) {
+	for _, o := range orders {
+		betrag += o.Gesamtbetrag
+		exemplare += o.AnzahlExemplare
+	}
+	return betrag, exemplare
+}
+
+// zeichneTopfKopf setzt die Überschrift eines Topf-Blocks.
+func zeichneTopfKopf(p *gofpdf.Fpdf, tr func(string) string, mittel string) {
+	if p.GetY() > 235 {
+		p.AddPage()
+	}
+	p.SetFont("Arial", "B", 10)
+	p.SetFillColor(235, 240, 250)
+	p.CellFormat(170, 7, tr(" "+mitteltopf.Beschriftung(mittel)), "1", 1, "L", true, 0, "")
+	p.SetFillColor(255, 255, 255)
+	p.Ln(2)
+}
+
+// zeichneTopfSumme setzt die Abschlusszeile eines Topf-Blocks — die Zahl, die in die
+// Abrechnung dieses Topfs geht.
+func zeichneTopfSumme(p *gofpdf.Fpdf, tr func(string) string, mittel string, block []repository.BerichtBestellung, mitPreisen bool) {
+	summe, exemplare := summiereBestellungen(block)
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(225, 232, 245)
+	beschriftung := fmt.Sprintf("Summe %s (%d Bestellungen, %d Exemplare)",
+		mitteltopf.Beschriftung(mittel), len(block), exemplare)
+	if mitPreisen {
+		p.CellFormat(150, 7, tr(beschriftung), "1", 0, "R", true, 0, "")
+		p.CellFormat(20, 7, tr(betrag.Euro(summe)), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(170, 7, tr(beschriftung), "1", 1, "R", true, 0, "")
+	}
+	p.SetFillColor(255, 255, 255)
+	p.Ln(6)
+}
+
+type bestellBerichtOpts struct {
+	Titel         string
+	Von           time.Time
+	Bis           time.Time
+	Jahresansicht bool
+	MitPreisen    bool
+}
+
+// generateBestellBerichtPDF baut den Bericht.
+//
+// mitPreisen entscheidet, ob er ein Geld- oder ein Mengenbericht ist. Das ist keine
+// Formatierungsfrage: Ohne gepflegte Preise summierte der Bericht durchweg Nullen und sah
+// dabei aus wie ein Ausgabennachweis. Ein Nachweis, der Null behauptet, ist schlimmer als
+// keiner — er wird geglaubt.
+func generateBestellBerichtPDF(orders []repository.BerichtBestellung, schule pdf.SchuleInfo, opts bestellBerichtOpts) ([]byte, error) {
+	p := gofpdf.New("P", "mm", "A4", "")
+	p.SetMargins(20, 20, 20)
+	p.SetAutoPageBreak(true, 20)
+	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))
+	p.AddPage()
+
+	// Briefkopf
+	p.SetFont("Arial", "B", 12)
+	p.Cell(0, 8, tr(schule.Name))
+	p.Ln(5)
+	p.SetFont("Arial", "", 8)
+	p.SetTextColor(100, 100, 100)
+	p.Cell(0, 4, tr(schule.Absenderzeile()))
+	p.SetTextColor(0, 0, 0)
+	p.Ln(12)
+
+	p.SetFont("Arial", "", 10)
+	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(tuer.DateFormatDE))), "", 1, "R", false, 0, "")
+	p.Ln(6)
+
+	// Berichtstitel
+	p.SetFont("Arial", "B", 14)
+	p.Cell(0, 10, tr(opts.Titel))
+	p.Ln(7)
+	p.SetFont("Arial", "", 10)
+	p.SetTextColor(80, 80, 80)
+	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", opts.Von.Format(tuer.DateFormatDE), opts.Bis.Format(tuer.DateFormatDE))))
+	p.SetTextColor(0, 0, 0)
+	p.Ln(12)
+
+	// Zusammenfassung
+	var gesamtBetrag float64
+	var gesamtExemplare int
+	for _, o := range orders {
+		gesamtBetrag += o.Gesamtbetrag
+		gesamtExemplare += o.AnzahlExemplare
+	}
+
+	p.SetFillColor(240, 245, 255)
+	p.SetFont("Arial", "B", 9)
+	if opts.MitPreisen {
+		p.CellFormat(60, 10, tr(fmt.Sprintf("Bestellungen: %d", len(orders))), "1", 0, "C", true, 0, "")
+		p.CellFormat(60, 10, tr(fmt.Sprintf("Exemplare: %d", gesamtExemplare)), "1", 0, "C", true, 0, "")
+		p.CellFormat(50, 10, tr("Gesamtbetrag: "+betrag.Euro(gesamtBetrag)), "1", 1, "C", true, 0, "")
+	} else {
+		p.CellFormat(85, 10, tr(fmt.Sprintf("Bestellungen: %d", len(orders))), "1", 0, "C", true, 0, "")
+		p.CellFormat(85, 10, tr(fmt.Sprintf("Exemplare: %d", gesamtExemplare)), "1", 1, "C", true, 0, "")
+	}
+	p.SetFillColor(255, 255, 255)
+	p.Ln(10)
+
+	// Jahresübersicht-Tabellen
+	if opts.Jahresansicht {
+		zeichneMonatsuebersicht(p, tr, orders, gesamtExemplare, gesamtBetrag, opts.MitPreisen)
+		zeichneLieferantenuebersicht(p, tr, orders, opts.MitPreisen)
+	}
+
+	// Detailliste
+	zeichneDetailliste(p, tr, orders, berichtRahmen{
+		Von: opts.Von, Bis: opts.Bis,
+		GesamtBetrag: gesamtBetrag, GesamtExemplare: gesamtExemplare,
+		MitPreisen: opts.MitPreisen,
+	})
+
+	var buf bytes.Buffer
+	if err := p.Output(&buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}

@@ -378,10 +378,10 @@ Berichtsarten, Filter und Aufteilung der Kennzahlen in der Historie). Schritt 6 
 die zweite Kundennummer geschrumpft — eine eigene Rechnungsanschrift je Topf gibt es
 nicht, beide Rechnungen gehen an die Schule. Der Vermerk nennt weder Träger noch
 Behörde, nur den Topf (Vorgabe: kein Rechts- oder Regionalbezug außerhalb der
-Formulare an Schüler). Gates: `api/bestellung_mittel_pg_test.go`,
-`api/bestellung_mittel_backfill_pg_test.go`, `api/bestellanschreiben_test.go`,
+Formulare an Schüler). Gates: `api/bestellung/bestellung_mittel_pg_test.go`,
+`api/bestellung_mittel_backfill_pg_test.go`, `api/bestellung/bestellanschreiben_test.go`,
 `internal/service/bestellmail_mittel_test.go`, `api/katalog/titel_lernmittel_pg_test.go`,
-`api/bestellung_mittel_korrektur_pg_test.go`, `api/lieferant_zweitnummer_pg_test.go`,
+`api/bestellung/bestellung_mittel_korrektur_pg_test.go`, `api/bestellung/lieferant_zweitnummer_pg_test.go`,
 `pkg/mitteltopf/paritaet_test.go`, `frontend/src/lib/stores/orderStore.test.js`.
 
 1. **Datenmodell:** `bestellungen_verlauf.mittel TEXT CHECK (mittel IN ('land','schultraeger'))`,
@@ -410,9 +410,9 @@ Formulare an Schüler). Gates: `api/bestellung_mittel_pg_test.go`,
    nennt ihn. Die Bestellhistorie filtert serverseitig — sie ist gedeckelt, im Browser
    gefiltert zeigte sie nur den Rest der neuesten 200 —, und die Kennzahlen im Kopf
    stehen zusätzlich je Topf. Der Filterwert `ohne` ist der Weg zu den Alt-Bestellungen,
-   die der Rückweg (Nr. 6) noch braucht. Gates: `api/bestellbericht_mittel_test.go`
-   (PDF-Inhaltsstrom, Summen je Topf = Gesamt), `api/bestellbericht_mittel_pg_test.go`,
-   `api/bestellhistorie_mittel_pg_test.go` (Aufteilung = Gesamtzahlen),
+   die der Rückweg (Nr. 6) noch braucht. Gates: `api/bestellung/bestellbericht_mittel_test.go`
+   (PDF-Inhaltsstrom, Summen je Topf = Gesamt), `api/bestellung/bestellbericht_mittel_pg_test.go`,
+   `api/bestellung/bestellhistorie_mittel_pg_test.go` (Aufteilung = Gesamtzahlen),
    `bestellberichte.test.js`, `BestellHistorieKopf.test.js`,
    `OrderStaging.test.js` (der DNB-Titel mit Haken).
 5. **Neuer Titel aus der DNB-Suche:** Das Staging-Fenster fragt „Lernmittel?" und setzt

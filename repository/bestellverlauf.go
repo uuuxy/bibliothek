@@ -26,7 +26,7 @@ type BestellVerlaufPosition struct {
 	// Hier stand bis zum 08.08.2026 als Begründung, welches Exemplar aus welcher
 	// Lieferung stammt, stehe nirgends. Das stimmte, als der Satz geschrieben wurde, und
 	// war seit Migration 063 falsch: buecher_exemplare.bestellung_id ist gesetzt, und die
-	// Detailansicht (bestelldetail_handler.go) zeigt genau diese Exemplare. Die
+	// Detailansicht (api/bestellung/bestelldetail_handler.go) zeigt genau diese Exemplare. Die
 	// Titel-Zählung hier bleibt trotzdem richtig — sie gehört zum Verweis auf die
 	// Nachdruck-Liste, und die filtert nach Titel, nicht nach Lieferung.
 	//
@@ -60,7 +60,8 @@ type BestellVerlaufEintrag struct {
 	// Lieferanten, verlören alle offenen Bestellungen des bisherigen Hauptlieferanten in
 	// dem Moment ihren Bestätigen-Schritt, in dem jemand anderes den Link bekommt —
 	// obwohl sie mit Link rausgegangen sind und weiter auf Bestätigung warten. Der Token
-	// bleibt, was er ist. Dieselbe Regel nutzt die Übersicht (bestellhistorie_uebersicht.go).
+	// bleibt, was er ist. Dieselbe Regel nutzt die Übersicht
+	// (api/bestellung/bestellhistorie_uebersicht.go).
 	MitBestaetigung bool `json:"mit_bestaetigung"`
 	// BestaetigtAm: Zeitpunkt der externen Bestätigung, NULL solange unbestätigt.
 	BestaetigtAm *time.Time `json:"bestaetigt_am,omitempty"`

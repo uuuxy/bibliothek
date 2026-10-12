@@ -39,7 +39,7 @@ COMMENT ON COLUMN bestellungen_verlauf.bestaetigt_durch IS
 	'''lieferant'' = über den Link bestätigt, ''bibliothek'' = manuell nachgetragen. NULL solange unbestätigt.';
 
 -- Welches Exemplar aus welcher Lieferung stammt, stand bisher nirgends (siehe Kommentar
--- zu EtikettenOffen in api/bestellhistorie_handler.go). Für den Link ist genau das nötig:
+-- zu EtikettenOffen in api/bestellung/bestellhistorie_handler.go). Für den Link ist genau das nötig:
 -- Die Seite muss GENAU die Etiketten dieser einen Bestellung drucken können — nicht alle
 -- Exemplare des Titels, von denen die meisten längst im Regal stehen.
 ALTER TABLE buecher_exemplare

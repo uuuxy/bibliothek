@@ -19,7 +19,7 @@ type Supplier struct {
 	// Deshalb hängen drei Dinge an diesem einen Merkmal:
 	//
 	//   - der Bestätigungs-Token und das große Lernmittel-Etikett im Mailanhang
-	//     (internal/service/bestellung_anlegen.go, api/bestellmail_anhaenge.go),
+	//     (internal/service/bestellung_anlegen.go, api/bestellung/bestellmail_anhaenge.go),
 	//   - die Exemplare entstehen als „Etikett vorhanden" und stehen nicht auf der
 	//     Nachdruck-Liste (internal/service/bestellung_anlegen.go),
 	//   - die Vorauswahl im Bestellformular.

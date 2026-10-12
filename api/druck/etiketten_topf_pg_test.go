@@ -18,7 +18,7 @@ import (
 // Der Eigentumsvermerk folgt dem Topf des Exemplars — an allen vier Wegen, die
 // Etikettendaten bauen, geprüft am fertigen PDF (OFFEN.md 4.21, entschieden am 21.09.2026).
 // Hier stehen die zwei Wege des Hauses, Buchformular und Druck-Center; die zwei Wege zum
-// Händler prüft api/bestellung_etiketten_topf_pg_test.go.
+// Händler prüft api/bestellung/bestellung_etiketten_topf_pg_test.go.
 //
 // Die Regel (repository.ExemplarTopfSQL): zuerst die Zuordnung der Bestellung, und wo es
 // keine gibt, ist_lernmittel am Titel. Bis zum 21.09.2026 trug jedes Etikett ab 30 mm den

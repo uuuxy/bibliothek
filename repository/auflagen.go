@@ -35,7 +35,7 @@ const auflagenLockKey int64 = 750_2026
 // SQLNeuesteAuflageZuerst ordnet die Auflagen eines Buchs: die jüngste zuerst, nach dem
 // Erscheinungsjahr, bei gleichem oder fehlendem Jahr die zuletzt angelegte. Die eine
 // Stelle für „die neueste Auflage" — die Liste der Titelmaske zeigt sie oben, und die
-// Nachbestell-Liste bestellt sie (api/reorders.go). titelAlias ist der Alias, unter dem
+// Nachbestell-Liste bestellt sie (api/bestellung/reorders.go). titelAlias ist der Alias, unter dem
 // die Zeile in der umgebenden Abfrage steht; sie braucht erscheinungsjahr, erstellt_am und id.
 func SQLNeuesteAuflageZuerst(titelAlias string) string {
 	return titelAlias + ".erscheinungsjahr DESC NULLS LAST, " + titelAlias + ".erstellt_am DESC, " + titelAlias + ".id"

@@ -6,7 +6,7 @@ import { uiLogin, gehZu } from './helpers.js';
 // sähe sonst aus wie eines, das sie nicht kennt.
 //
 // Die Antwort der Tür ist hier nachgestellt; der Stack fragte sonst die echte DNB. Dass die
-// Tür den Kopf setzt, prüft api/bestellsuche_pg_test.go.
+// Tür den Kopf setzt, prüft api/bestellung/bestellsuche_pg_test.go.
 
 const HINWEIS = 'Die DNB ist nicht erreichbar — bitte später erneut versuchen.';
 

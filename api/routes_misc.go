@@ -15,10 +15,10 @@ func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
 	// Bestätigungs-Link an den Lieferanten (Migration 063). Kein Login: Der Token aus dem
 	// Link ist der Ausweis, und er öffnet ausschließlich diese eine Bestellung. Das
 	// Bestätigen ist bewusst die einzige schreibende Route ohne Anmeldung im System —
-	// Zuschnitt und Schadensobergrenze stehen in bestellbestaetigung_public.go.
-	mux.HandleFunc("GET /api/public/bestellung/{token}", s.OeffentlicheBestellungHandler())
-	mux.HandleFunc("GET /api/public/bestellung/{token}/etiketten/{groesse}", s.OeffentlicheEtikettenHandler())
-	mux.HandleFunc("POST /api/public/bestellung/{token}/bestaetigen", s.OeffentlichBestaetigenHandler())
+	// Zuschnitt und Schadensobergrenze stehen in api/bestellung/bestellbestaetigung_public.go.
+	mux.HandleFunc("GET /api/public/bestellung/{token}", s.bestellung().OeffentlicheBestellungHandler())
+	mux.HandleFunc("GET /api/public/bestellung/{token}/etiketten/{groesse}", s.bestellung().OeffentlicheEtikettenHandler())
+	mux.HandleFunc("POST /api/public/bestellung/{token}/bestaetigen", s.bestellung().OeffentlichBestaetigenHandler())
 }
 
 func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, omniboxSvc service.OmniboxService, nachbuchSvc service.NachbuchService) {

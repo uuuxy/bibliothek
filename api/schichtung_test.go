@@ -84,8 +84,9 @@ func apiDateien(t *testing.T) []string {
 var dateienOhneTuer = []string{
 	"action_types.go",
 	"benutzer/benutzer.go",
-	"bestellmail_anhaenge.go",
-	"bestellmail_versand.go",
+	"bestellung/bestellmail_anhaenge.go",
+	"bestellung/bestellmail_versand.go",
+	"bestellung/bestellung.go",
 	"druck/druck.go",
 	"inventurlauf/inventurlauf.go",
 	"katalog/katalog.go",

@@ -57,7 +57,7 @@ type Texte struct {
 }
 
 // Auf dem Anschreiben steht das Wort „Schulträger" nur im Vermerk dieses einen Topfs; daran
-// unterscheidet ein Test die zwei fertigen Briefe (api/bestellanschreiben_test.go).
+// unterscheidet ein Test die zwei fertigen Briefe (api/bestellung/bestellanschreiben_test.go).
 var texte = map[string]Texte{
 	Land: {
 		Kurz:    "Lernmittelfreiheit",

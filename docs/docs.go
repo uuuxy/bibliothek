@@ -666,7 +666,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.BestellKonfiguration"
+                            "$ref": "#/definitions/bestellung.BestellKonfiguration"
                         }
                     }
                 }
@@ -817,7 +817,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.MittelKorrekturRequest"
+                            "$ref": "#/definitions/bestellung.MittelKorrekturRequest"
                         }
                     }
                 ],
@@ -3799,18 +3799,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.BestellKonfiguration": {
-            "type": "object",
-            "properties": {
-                "bestelllink_ohne_adresse": {
-                    "description": "BestelllinkOhneAdresse: Es gibt einen Hauptlieferanten, aber keine öffentliche\nAdresse — seine Bestellmails gehen also ohne Bestätigungs-Link raus.\n\nBeides zusammen ergibt erst die Aussage: Ohne Hauptlieferant verschickt das System\ngar keine Links, dann fehlt auch nichts. Die Oberfläche soll das VOR dem Bestellen\nsagen können, nicht erst als Warnung hinterher (siehe bestellVersandMeldung).",
-                    "type": "boolean"
-                },
-                "preise_erfassen": {
-                    "type": "boolean"
-                }
-            }
-        },
         "api.BuchbarcodesResponse": {
             "type": "object",
             "properties": {
@@ -3860,17 +3848,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "vorname": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.MittelKorrekturRequest": {
-            "type": "object",
-            "properties": {
-                "grund": {
-                    "type": "string"
-                },
-                "mittel": {
                     "type": "string"
                 }
             }
@@ -4627,6 +4604,29 @@ const docTemplate = `{
                 },
                 "zugang_beantragt_am": {
                     "description": "ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);\nnull = keiner. Die Oberfläche unterscheidet daran „wartet\" von „deaktiviert\".",
+                    "type": "string"
+                }
+            }
+        },
+        "bestellung.BestellKonfiguration": {
+            "type": "object",
+            "properties": {
+                "bestelllink_ohne_adresse": {
+                    "description": "BestelllinkOhneAdresse: Es gibt einen Hauptlieferanten, aber keine öffentliche\nAdresse — seine Bestellmails gehen also ohne Bestätigungs-Link raus.\n\nBeides zusammen ergibt erst die Aussage: Ohne Hauptlieferant verschickt das System\ngar keine Links, dann fehlt auch nichts. Die Oberfläche soll das VOR dem Bestellen\nsagen können, nicht erst als Warnung hinterher (siehe bestellVersandMeldung).",
+                    "type": "boolean"
+                },
+                "preise_erfassen": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "bestellung.MittelKorrekturRequest": {
+            "type": "object",
+            "properties": {
+                "grund": {
+                    "type": "string"
+                },
+                "mittel": {
                     "type": "string"
                 }
             }

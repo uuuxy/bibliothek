@@ -19,6 +19,7 @@ func TestJederZugangReichtDieBasisDesServersWeiter(t *testing.T) {
 	s := &Server{}
 	zugaenge := map[string]*tuer.Basis{
 		"benutzer":     s.benutzer().Basis,
+		"bestellung":   s.bestellung().Basis,
 		"druck":        s.druck().Basis,
 		"inventurlauf": s.inventurlauf().Basis,
 		"katalog":      s.katalog().Basis,

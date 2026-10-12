@@ -14,7 +14,7 @@ import (
 // den bisherigen Topf mit — ohne zweiten Roundtrip und ohne Fenster, in dem ein zweiter
 // Bearbeiter dazwischenschreibt. Geändert wird NUR der Topf: Kundennummer, Name und
 // Adresse auf dem Beleg sind die Abschrift dessen, was der Händler bekommen hat, und
-// bleiben (api/bestellung_mittel_handler.go).
+// bleiben (api/bestellung/bestellung_mittel_handler.go).
 func KorrigiereBestellungMittel(ctx context.Context, pool db.PgxPoolIface, bestellungID, mittel string) (*string, error) {
 	var vorher *string
 	err := pool.QueryRow(ctx, `

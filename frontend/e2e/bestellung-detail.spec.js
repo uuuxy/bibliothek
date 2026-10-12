@@ -6,7 +6,8 @@
 // waren bis Migration 063 gar nicht zuzuordnen (buecher_exemplare.bestellung_id).
 //
 // Warum E2E: Der Zugewinn hängt an einer Kette aus vier Gliedern — bestellen → Exemplare
-// mit bestellung_id → Endpunkt → Ansicht. bestelldetail_pg_test.go beweist Glied 3, aber
+// mit bestellung_id → Endpunkt → Ansicht. api/bestellung/bestelldetail_pg_test.go beweist
+// Glied 3, aber
 // nicht, dass die Nummer beim Benutzer ankommt, und schon gar nicht, dass der ECHTE
 // Bestellweg die Verknüpfung überhaupt schreibt. Genau diese Lücke hat dieses Projekt
 // zweimal getroffen: eine Funktion, isoliert grün, über den Live-Pfad nie erreicht.

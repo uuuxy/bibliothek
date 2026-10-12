@@ -2,7 +2,7 @@ package pdf
 
 // Das Anschreiben an den Lieferanten, geprüft am gedruckten Blatt. Der Erzeuger kennt weder
 // Töpfe noch die Anlagen der Mail: Er druckt Betreff und Vermerk seiner Eingabe und den Satz
-// zum Weg der Etiketten. Dass die Tür sie richtig füllt, prüft api/bestellanschreiben_test.go.
+// zum Weg der Etiketten. Dass die Tür sie richtig füllt, prüft api/bestellung/bestellanschreiben_test.go.
 
 import (
 	"fmt"

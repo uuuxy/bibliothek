@@ -144,10 +144,10 @@ var fkAktionenBestand = []string{
 	"SET NULL  vormerkungen.bereitgestellt_exemplar_id -> buecher_exemplare",
 	// Befragt am 07.09.2026: Die harmlose Hälfte — die Bestellung hält Name und E-Mail
 	// des Händlers als eigene Abschrift, die Historie überlebt das Löschen unbeschadet
-	// (bestellbestaetigung_handler.go COALESCEt ausdrücklich dagegen). Der LÖSCHWEG
+	// (api/bestellung/bestellbestaetigung_handler.go COALESCEt ausdrücklich dagegen). Der LÖSCHWEG
 	// daneben war der Fund: Er nahm auch den Hauptlieferanten, an dem Bestellmail,
 	// Bestätigungs-Link und Etiketten-Verhalten hängen — ohne Rückfrage und ohne Meldung.
-	// Seit 07.09. weist der Handler das ab (api/supplier_handler.go).
+	// Seit 07.09. weist der Handler das ab (api/bestellung/supplier_handler.go).
 	"SET NULL  bestellungen_verlauf.lieferant_id -> lieferanten",
 	// Befragt am 07.09.2026: Elternteil ohne Löschweg (siehe CASCADE oben) — ruht.
 	"SET NULL  buecher_exemplare.bestellung_id -> bestellungen_verlauf",
@@ -201,7 +201,7 @@ var checkBedingungenBestand = []string{
 	"audit_log_akteur_check", "bestellungen_verlauf_bestaetigt_durch_check",
 	"bestellungen_verlauf_etiketten_groesse_check",
 	// Befragt am 10.09.2026: dieselbe Menge wie mitteltopf.Gueltig — der Code prüft
-	// sie an der Tür (400), die Datenbank hält die zweite Tür (api/bestellung_mittel_pg_test.go).
+	// sie an der Tür (400), die Datenbank hält die zweite Tür (api/bestellung/bestellung_mittel_pg_test.go).
 	"bestellungen_verlauf_mittel_check", "check_damage_item",
 	"check_loan_item",
 	"check_positive_amount", "check_return_date", "chk_anliegen_art",

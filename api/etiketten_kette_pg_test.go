@@ -108,7 +108,7 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	lieferant := testdaten.Haendler(t, pool, "Cornelsen-Kette", false)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Etikettenkette", 0)
 
-	bestellTuer := srv.SubmitOrderHandler(service.NewOrderService(srv.DB, repository.NewBookRepository(pool)))
+	bestellTuer := srv.bestellung().SubmitOrderHandler(service.NewOrderService(srv.DB, repository.NewBookRepository(pool)))
 	if rec := tuertest.Bestelle(t, bestellTuer, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung: Status %d — %s", rec.Code, rec.Body.String())
 	}
@@ -182,7 +182,7 @@ func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testin
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Etikettenkette", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
 
-	bestellTuer := srv.SubmitOrderHandler(service.NewOrderService(srv.DB, repository.NewBookRepository(pool)))
+	bestellTuer := srv.bestellung().SubmitOrderHandler(service.NewOrderService(srv.DB, repository.NewBookRepository(pool)))
 	if rec := tuertest.Bestelle(t, bestellTuer, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung: Status %d — %s", rec.Code, rec.Body.String())
 	}

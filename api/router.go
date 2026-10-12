@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"bibliothek/api/benutzer"
+	"bibliothek/api/bestellung"
 	"bibliothek/api/druck"
 	"bibliothek/api/inventurlauf"
 	"bibliothek/api/katalog"
@@ -126,6 +127,11 @@ func (s *Server) katalog() *katalog.Tueren {
 // druck ist der Zugang zu den Türen des Druck-Centers.
 func (s *Server) druck() *druck.Tueren {
 	return &druck.Tueren{Basis: &s.Basis}
+}
+
+// bestellung ist der Zugang zu den Türen des Bestellwesens.
+func (s *Server) bestellung() *bestellung.Tueren {
+	return &bestellung.Tueren{Basis: &s.Basis}
 }
 
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.

@@ -731,21 +731,21 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   Abfrage (`mahnbriefEmpfaenger`, `api/mahnwesen/mahnwesen_bulk.go`); Betreff, Text und Absenderzeile
   lädt die Tür aus Vorlage und Einstellungen. Das Bestellanschreiben bekommt Betreff und Vermerk
   als fertige Texte zum Topf der Bestellung und den Weg der Etiketten als Wert
-  (`bestellanschreiben`, `api/bestellmail_anhaenge.go`); den Satz dazu wählt der Brief.
+  (`bestellanschreiben`, `api/bestellung/bestellmail_anhaenge.go`); den Satz dazu wählt der Brief.
 - Das Anlegen einer Bestellung steht in `internal/service` (`bestellung_anlegen.go`,
   `ProcessOrder`) und kennt weder die Anfrage noch den Druckauftrag der Tür. Die Tür füllt den
-  Auftrag aus der Anfrage (`bestellAuftrag`, `api/orders_handler.go`) und die Angaben der
-  Bestellmail aus dem Ergebnis (`bestellmailDatenAus`, `api/bestellmail_versand.go`).
+  Auftrag aus der Anfrage (`bestellAuftrag`, `api/bestellung/orders_handler.go`) und die Angaben der
+  Bestellmail aus dem Ergebnis (`bestellmailDatenAus`, `api/bestellung/bestellmail_versand.go`).
   Position, bestellter Titel und Etikett haben in beiden Paketen dieselben Felder, die Tür
   wandelt per Typumwandlung; ein Feld, das nur eine Seite bekommt, übersetzt nicht mehr. Den
   Topf jedes Etiketts setzt das Anlegen aus dem Topf der Bestellung, er kommt nicht aus einer
   Anfrage. Ein Test hält jedes Feld beider Füll-Funktionen gegen seine Quelle
-  (`api/bestellung_fuellen_test.go`).
+  (`api/bestellung/bestellung_fuellen_test.go`).
 - Den Text der Bestellmail formuliert `internal/service` (`bestellmail_text.go`): die Vorlage
   mit ihrem Rückfall auf den Vorgabetext, die Platzhalter und die zwei Absätze zu Topf und
   Bestätigungs-Link, die `LoeseBestellMailAuf` anhängt, wenn die Vorlage sie nicht selbst
   setzt. Die Tür reicht Kundennummer, Zahlen, Link, Ablauf und Topf (`sendeBestellmail`,
-  `api/bestellmail_versand.go`) und entscheidet die Rückmeldung an die Oberfläche
+  `api/bestellung/bestellmail_versand.go`) und entscheidet die Rückmeldung an die Oberfläche
   (`bestellVersandMeldung`). Das Gate der Platzhalter liest den Renderer beim Dateinamen
   (`api/mail_vorlagen_platzhalter_test.go`); zieht er um, zieht der Pfad dort mit.
 - Fachlogik, die in der Transaktion einer Tür läuft, bekommt diese Transaktion und keinen
@@ -2186,7 +2186,7 @@ gegen die Tür klopft.
 | Etiketten und Ausweise                    | `pdf/etikett_*.go`, `pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
 | Zugangs-/Abgangsbuch                      | `pdf/abgangsbuch.go`, `pdf/zugangsbuch.go`; Gliederung nach Topf in `api/katalog/bestandsbuch.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |
 | DSGVO-Auskunft                            | `internal/auskunft/blatt*.go`          | Auskunftsrecht als Dokument, gedruckt aus derselben Antwort wie die abgerufene Auskunft               |
-| Barcodebogen für den Händler              | `api/bestellbestaetigung_etiketten.go` | Für Händler, die selbst etikettieren                                                                  |
+| Barcodebogen für den Händler              | `api/bestellung/bestellbestaetigung_etiketten.go` | Für Händler, die selbst etikettieren                                                                  |
 
 **Barcode-Symbologie:** Gedruckt wird **Code 128 ohne Prüfzeichen**. Vorher war es Code 39
 **mit** Prüfzeichen — das Zeichen steht in den Strichcode-Daten, und ein Lesegerät gibt es

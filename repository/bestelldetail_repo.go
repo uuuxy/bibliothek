@@ -14,7 +14,8 @@ import (
 // um eine Lieferung wiederzuerkennen. Diese Schicht liefert deshalb zusätzlich Autor,
 // Verlag, Cover und vor allem die tatsächlich angelegten Exemplare mit ihren Barcodes.
 //
-// Dass das geht, ist neuer als der Kommentar in bestellhistorie_handler.go behauptet:
+// Dass das geht, ist neuer als der Kommentar in api/bestellung/bestellhistorie_handler.go
+// behauptet:
 // Seit Migration 063 trägt jedes beim Bestellen angelegte Exemplar seine bestellung_id
 // (service.ProcessOrder schreibt den Kopf vor den Exemplaren, damit die ID existiert).
 // Für Altbestand aus dem Littera-Import ist die Spalte leer — die Ansicht sagt das dann

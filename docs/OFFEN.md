@@ -165,7 +165,8 @@ lässt sich dort anhalten.
 - [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt. Umgezogen: Inventur
   (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`), System
   (`api/system`), Mahnwesen (`api/mahnwesen`), Schaden (`api/schaden`), Katalog
-  (`api/katalog`), Druck (`api/druck`). Offen: Bestellung, Leser, zuletzt die Theke.
+  (`api/katalog`), Druck (`api/druck`), Bestellung (`api/bestellung`). Offen: Leser, zuletzt
+  die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
   die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
   Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
@@ -245,7 +246,7 @@ Etiketten, Bestätigung) und für das Uptime-Signal `/health`, das nur `healthy`
 meldet. Mehr nicht: Das CSRF-Cookie für die Bestätigung setzt schon der erste Abruf
 (`refreshCSRFCookie` in `api/csrf.go`), der Aufruf von `/api/auth/me` beim Laden
 (`restoreSession`) darf scheitern, und die Seite zeigt keine Personendaten — Titel, ISBN, Menge,
-Schule, Lieferant, Topf, Kundennummer (`api/bestellbestaetigung_public.go`).
+Schule, Lieferant, Topf, Kundennummer (`api/bestellung/bestellbestaetigung_public.go`).
 
 **Zu bauen, vor dem Echtstart:** Der Eingang (Caddy) lässt von außen nur diese Pfade durch; was
 nicht ausdrücklich freigegeben ist, bleibt zu. In den Einstellungen die öffentliche Adresse
@@ -430,7 +431,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   liest, bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2; dort
   steht auch, warum die Auskunft ein eigenes Paket hat). Je Thema ein Commit; die
   Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Die Anlagen der Bestellmail
-  (`bestellmail_anhaenge.go`, bisher `pdf_service.go`) sind kein Erzeuger: Die Datei stellt sie
+  (`bestellung/bestellmail_anhaenge.go`, bisher `pdf_service.go`) sind kein Erzeuger: Die Datei stellt sie
   zusammen und verschickt die Mail; sie bleibt als Helfer bei ihren Türen.
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
   umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
@@ -454,7 +455,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   trägt keine Tür: `nachbuchen_schluessel.go` (148 Zeilen); der Mailversand, die zweite, steht
   seit dem 12.10.2026 in `mailservice/mail_sender.go`. Und
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
-  Typ aus `net/http` tragen `bestellbericht_handler.go` (367),
+  Typ aus `net/http` tragen `bestellung/bestellbericht_handler.go` (367),
   `lernmittel/lmf_plan.go` (260), `schaden/bescheid_handler.go` (211; die Rechnung des
   Ersatzwerts steht seit dem 12.10.2026 in `internal/service`), `dsgvo_auskunft.go` (193),
   `system/betriebsbereitschaft_handler.go` (175) und `mahnwesen/graduates_mail.go` (157). Die Messung und ihre
@@ -533,7 +534,7 @@ von Stufe 4 sieben der elf Themen.
   | ---------- | ------- | ------ | ------ | ----------- | ----------------------- |
   | Katalog    | 21      | 3.035  | 43     | 35          | `copy_admin*.go`, `auflagen_handler.go`, `book_systematik_handler.go`, `isbn_handler.go`, `schlagwort*.go`, `signaturen_handler.go`, `systematik_handler.go`, `lookups.go`, `exemplar_*.go`, `cover.go`, `cover_quelle_bindung.go`, `image_caching.go`, `geraete.go`, `abgangsbuch_handler.go`, `zugangsbuch_handler.go`, `bestandsbuch.go`, seit dem 12.10.2026 in `api/katalog` |
   | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go` |
-  | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go` |
+  | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go`, seit dem 12.10.2026 in `api/bestellung` |
   | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system` |
   | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go` |
   | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go`, seit dem 12.10.2026 in `api/mahnwesen` |
