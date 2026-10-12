@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 // lmf_plan.go — der LMF-Plan als Reihenfolge (Absprache vom 05.09.2026 abends, nach dem
 // echten Plan der Schule): Rahmen plus eine Reihenfolge von Zeilen (Klassen, Vermerk);
@@ -114,13 +114,13 @@ func lmfPlanArt(r *http.Request) (string, error) {
 // @Produce      json
 // @Success      200  {object}  LmfPlanStandAntwort
 // @Router       /lmf-plan/{art} [get]
-func (s *Server) GetLmfPlanHandler() http.HandlerFunc {
+func (s *Tueren) GetLmfPlanHandler() http.HandlerFunc {
 	return apierrors.Wrap(s.handleGetLmfPlan)
 }
 
 // handleGetLmfPlan stellt den Stand für den Planer zusammen: Plan, Klassen, Sommerferien und,
 // wenn kein Plan läuft, den Vorschlag.
-func (s *Server) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error {
+func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error {
 	art, err := lmfPlanArt(r)
 	if err != nil {
 		return apierrors.BadRequest(err.Error(), err)
@@ -445,7 +445,7 @@ func pruefeLmfAnker(p *repository.LmfPlan, req lmfPlanRequest) error {
 // @Produce      json
 // @Success      200  {object}  LmfPlanSpeicherAntwort
 // @Router       /lmf-plan/{art} [put]
-func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
+func (s *Tueren) PutLmfPlanHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		antwort, ok, err := s.rechneOderSpeichereLmfPlan(w, r)
 		if err != nil || !ok {
@@ -463,7 +463,7 @@ func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
 
 // rechneOderSpeichereLmfPlan prüft die Anfrage, rechnet die Verteilung und speichert den
 // Plan, wenn es keine Vorschau ist. ok ist false, wenn die Anfrage schon beantwortet ist.
-func (s *Server) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Request) (LmfPlanSpeicherAntwort, bool, error) {
+func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Request) (LmfPlanSpeicherAntwort, bool, error) {
 	var keine LmfPlanSpeicherAntwort
 	art, err := lmfPlanArt(r)
 	if err != nil {
@@ -537,7 +537,7 @@ func lmfPlanVorschauAntwort(e lmfPlanEntwurf, plaetze []lmfplan.Platz, ausfaelle
 // Plans und die gesetzlichen Feiertage aus pkg/lmfplan, und nennt die Ausfälle vom ersten
 // Tag bis zum letzten Platz. Der Rückgabe-Plan fließt vom Ende her rückwärts; sein Beginn
 // (e.Plan.ErsterTag/Startstunde) ist danach der früheste Platz.
-func (s *Server) verteileLmfPlan(e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanAusfall, error) {
+func (s *Tueren) verteileLmfPlan(e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanAusfall, error) {
 	rueckwaerts := e.Plan.Art == repository.LmfTerminRueckgabe
 	ankerTag := e.Plan.ErsterTag
 	if rueckwaerts {
@@ -613,7 +613,7 @@ func spaetesterPlatz(ab time.Time, plaetze []lmfplan.Platz) time.Time {
 // lmfPlanZeilenVorher liest die Zeilen des Plans, den das Speichern gleich ersetzt —
 // der Plan derselben Art im Schuljahr des ersten Tages. Leer, wenn es keinen gibt oder
 // er noch Entwurf ist (dann hat er keine Frist gesetzt, die zurückkehren müsste).
-func (s *Server) lmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTerminRepository, art, ersterTag string) ([]repository.LmfPlanZeile, error) {
+func (s *Tueren) lmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTerminRepository, art, ersterTag string) ([]repository.LmfPlanZeile, error) {
 	st, err := repo.NeuesterLmfPlan(ctx, art)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
@@ -639,7 +639,7 @@ func (s *Server) lmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTe
 // @Produce      json
 // @Success      200  {object}  map[string]int64
 // @Router       /lmf-plan/{art} [delete]
-func (s *Server) DeleteLmfPlanHandler() http.HandlerFunc {
+func (s *Tueren) DeleteLmfPlanHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		angepasst, err := s.verwerfeLmfPlan(r)
 		if err != nil {
@@ -653,7 +653,7 @@ func (s *Server) DeleteLmfPlanHandler() http.HandlerFunc {
 
 // verwerfeLmfPlan löscht den neuesten Plan der Art, bringt die Fristen seiner Klassen
 // zurück und nennt, wie viele Ausleihen das traf.
-func (s *Server) verwerfeLmfPlan(r *http.Request) (int64, error) {
+func (s *Tueren) verwerfeLmfPlan(r *http.Request) (int64, error) {
 	art, err := lmfPlanArt(r)
 	if err != nil {
 		return 0, apierrors.BadRequest(err.Error(), err)

@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 import (
 	"go/ast"
@@ -29,7 +29,7 @@ func TestJederLmfPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
 	handler := lmfPlanSchreibHandler(t)
 	if len(handler) < 3 {
 		t.Fatalf("nur %d schreibende LMF-Plan-Routen gefunden (%v) — erwartet mindestens 3 "+
-			"(speichern, verwerfen, veröffentlichen). Ist routes_books.go umformuliert? "+
+			"(speichern, verwerfen, veröffentlichen). Ist api/routes_books.go umformuliert? "+
 			"Dann greift dieses Gate nicht mehr.", len(handler), handler)
 	}
 
@@ -38,7 +38,7 @@ func TestJederLmfPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
 	// ebenfalls einzelne Dateien.
 	pfade, err := filepath.Glob("*.go")
 	if err != nil {
-		t.Fatalf("api-Dateien auflisten: %v", err)
+		t.Fatalf("Dateien des Pakets auflisten: %v", err)
 	}
 	fset := token.NewFileSet()
 	meldet := map[string]bool{}
@@ -67,27 +67,29 @@ func TestJederLmfPlanSchreibwegMeldetSeineAenderung(t *testing.T) {
 	}
 }
 
-// lmfPlanSchreibHandler liest aus routes_books.go die Handler-Namen hinter schreibenden
-// /api/lmf-plan-Routen (PUT, POST, DELETE, PATCH).
+// lmfPlanSchreibHandler liest aus der Routenliste api/routes_books.go die Namen der Türen
+// hinter schreibenden /api/lmf-plan-Routen (PUT, POST, DELETE, PATCH).
 func lmfPlanSchreibHandler(t *testing.T) []string {
 	t.Helper()
-	inhalt, err := os.ReadFile("routes_books.go")
+	inhalt, err := os.ReadFile(filepath.Join("..", "routes_books.go"))
 	if err != nil {
-		t.Fatalf("routes_books.go lesen: %v", err)
+		t.Fatalf("api/routes_books.go lesen: %v", err)
 	}
-	// Zwei Schritte statt eines Musters: Die Zeile trägt zwei Aufrufe auf `s` — erst
-	// RequirePermission, dann den Handler. Ein einziger Ausdruck fände nur den ersten.
+	// Die Tür steht hinter dem Zugang des Servers zu diesem Thema. Eine schreibende Route
+	// ohne ihn wird gemeldet: Ihre Tür läge sonst außerhalb dieser Prüfung.
 	istSchreibroute := regexp.MustCompile(`mux\.Handle\("(?:PUT|POST|DELETE|PATCH) /api/lmf-plan`)
-	aufrufe := regexp.MustCompile(`s\.([A-Za-z0-9_]+)\(`)
+	aufrufe := regexp.MustCompile(`s\.lernmittel\(\)\.([A-Za-z0-9_]+)\(`)
 	gefunden := map[string]bool{}
 	for _, zeile := range strings.Split(string(inhalt), "\n") {
 		if !istSchreibroute.MatchString(zeile) {
 			continue
 		}
-		for _, treffer := range aufrufe.FindAllStringSubmatch(zeile, -1) {
-			if treffer[1] != "RequirePermission" {
-				gefunden[treffer[1]] = true
-			}
+		treffer := aufrufe.FindAllStringSubmatch(zeile, -1)
+		if len(treffer) == 0 {
+			t.Errorf("schreibende LMF-Plan-Route ohne Tür aus diesem Paket: %s", strings.TrimSpace(zeile))
+		}
+		for _, name := range treffer {
+			gefunden[name[1]] = true
 		}
 	}
 	namen := make([]string, 0, len(gefunden))

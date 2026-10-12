@@ -2419,7 +2419,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.LmfPlanStandAntwort"
+                            "$ref": "#/definitions/lernmittel.LmfPlanStandAntwort"
                         }
                     }
                 }
@@ -2439,7 +2439,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.LmfPlanSpeicherAntwort"
+                            "$ref": "#/definitions/lernmittel.LmfPlanSpeicherAntwort"
                         }
                     }
                 }
@@ -2479,7 +2479,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.LmfPlanSpeicherAntwort"
+                            "$ref": "#/definitions/lernmittel.LmfPlanSpeicherAntwort"
                         }
                     }
                 }
@@ -2499,7 +2499,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.LmfPlanAntwort"
+                            "$ref": "#/definitions/lernmittel.LmfPlanAntwort"
                         }
                     }
                 }
@@ -4391,205 +4391,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.LmfPlanAntwort": {
-            "type": "object",
-            "properties": {
-                "ab": {
-                    "description": "Ab ist das Datum, ab dem gelistet wird (Beginn des laufenden Schuljahres), leer bei ?alle=1.",
-                    "type": "string"
-                },
-                "eingangsjahrgaenge": {
-                    "description": "Eingangsjahrgaenge (Einstellung): die Jahrgänge, die nach den Ferien Bücher\nbekommen — für den erklärenden Satz über der Tabelle.",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "termine": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.LmfTermin"
-                    }
-                }
-            }
-        },
-        "api.LmfPlanAusfall": {
-            "type": "object",
-            "properties": {
-                "datum": {
-                    "type": "string"
-                },
-                "grund": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.LmfPlanRahmenVorgabe": {
-            "type": "object",
-            "properties": {
-                "erster_tag": {
-                    "type": "string"
-                },
-                "letzte_stunde": {
-                    "type": "integer"
-                },
-                "letzter_tag": {
-                    "type": "string"
-                },
-                "startstunde": {
-                    "type": "integer"
-                },
-                "stunden_je_tag": {
-                    "type": "integer"
-                }
-            }
-        },
-        "api.LmfPlanSommerferien": {
-            "type": "object",
-            "properties": {
-                "bekannt": {
-                    "description": "Bekannt: false, wenn das Jahr weder im Programm noch in der Einstellung\n„Sommerferien\" steht — der Planer nennt dann das Jahr und bittet um den letzten\nbzw. ersten Tag von Hand.",
-                    "type": "boolean"
-                },
-                "bis": {
-                    "type": "string"
-                },
-                "jahr": {
-                    "type": "integer"
-                },
-                "von": {
-                    "description": "YYYY-MM-DD, leer wenn nicht bekannt",
-                    "type": "string"
-                }
-            }
-        },
-        "api.LmfPlanSpeicherAntwort": {
-            "type": "object",
-            "properties": {
-                "ausfaelle": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.LmfPlanAusfall"
-                    }
-                },
-                "ausgelassen": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "fristen_angepasst": {
-                    "type": "integer"
-                },
-                "plan": {
-                    "$ref": "#/definitions/repository.LmfPlan"
-                },
-                "vorschau": {
-                    "type": "boolean"
-                },
-                "zeilen": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.LmfPlanZeile"
-                    }
-                }
-            }
-        },
-        "api.LmfPlanStandAntwort": {
-            "type": "object",
-            "properties": {
-                "ausgelassen": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "ausgelassen_regel": {
-                    "description": "AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt\n(Büchertausch: Oberstufe; Ausgabe: alles außer den Eingangsjahrgängen). Der Planer\nklappt sie unter „bleiben draußen\" ein — auch bei einem laufenden Plan, der sie\nnie kannte (06.09.2026: ein Plan mit alten Klassennamen bot 60 Chips offen an).",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "eingangsjahrgaenge": {
-                    "description": "Eingangsjahrgaenge: die Jahrgänge, die nach den Ferien Bücher bekommen (Einstellung).",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "klassen": {
-                    "description": "Klassen: die Klassen mit aktiven Schülern, für die Auswahl im Planer. Eine Klasse\nim Plan, die hier fehlt, hat (noch) keine Schüler — der Planer markiert sie.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "plan": {
-                    "description": "Plan ist der neueste Plan der Art; nil, wenn es noch keinen gibt.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/repository.LmfPlan"
-                        }
-                    ]
-                },
-                "sommerferien": {
-                    "description": "Sommerferien: die Ferien Hessen, an denen sich der Plan ausrichtet — der Planer\nzeigt sie neben dem Rahmen, oder den Hinweis, dass das Jahr nicht hinterlegt ist.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/api.LmfPlanSommerferien"
-                        }
-                    ]
-                },
-                "vorbei": {
-                    "description": "Vorbei: der letzte Termin des Plans liegt hinter heute — der Planer bietet dann\nden nächsten Plan an, mit derselben Reihenfolge als Vorschlag.",
-                    "type": "boolean"
-                },
-                "vorschlag": {
-                    "description": "Vorschlag ist gesetzt, wenn es keinen laufenden Plan gibt (kein Plan oder vorbei).",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/api.LmfPlanVorschlag"
-                        }
-                    ]
-                },
-                "zeilen": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.LmfPlanZeile"
-                    }
-                }
-            }
-        },
-        "api.LmfPlanVorschlag": {
-            "type": "object",
-            "properties": {
-                "ausgelassen": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "quelle": {
-                    "description": "Quelle: \"vorjahr\" (der letzte Plan der Art) oder \"regel\" (Abschluss zuerst).",
-                    "type": "string"
-                },
-                "rahmen": {
-                    "description": "Rahmen: womit der neue Plan beginnt — aus den Sommerferien (service.LmfPlanRahmenVorgabe).",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/api.LmfPlanRahmenVorgabe"
-                        }
-                    ]
-                },
-                "zeilen": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.LmfPlanZeile"
-                    }
-                }
-            }
-        },
         "api.MittelKorrekturRequest": {
             "type": "object",
             "properties": {
@@ -5561,6 +5362,205 @@ const docTemplate = `{
                 },
                 "titel": {
                     "type": "string"
+                }
+            }
+        },
+        "lernmittel.LmfPlanAntwort": {
+            "type": "object",
+            "properties": {
+                "ab": {
+                    "description": "Ab ist das Datum, ab dem gelistet wird (Beginn des laufenden Schuljahres), leer bei ?alle=1.",
+                    "type": "string"
+                },
+                "eingangsjahrgaenge": {
+                    "description": "Eingangsjahrgaenge (Einstellung): die Jahrgänge, die nach den Ferien Bücher\nbekommen — für den erklärenden Satz über der Tabelle.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "termine": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.LmfTermin"
+                    }
+                }
+            }
+        },
+        "lernmittel.LmfPlanAusfall": {
+            "type": "object",
+            "properties": {
+                "datum": {
+                    "type": "string"
+                },
+                "grund": {
+                    "type": "string"
+                }
+            }
+        },
+        "lernmittel.LmfPlanRahmenVorgabe": {
+            "type": "object",
+            "properties": {
+                "erster_tag": {
+                    "type": "string"
+                },
+                "letzte_stunde": {
+                    "type": "integer"
+                },
+                "letzter_tag": {
+                    "type": "string"
+                },
+                "startstunde": {
+                    "type": "integer"
+                },
+                "stunden_je_tag": {
+                    "type": "integer"
+                }
+            }
+        },
+        "lernmittel.LmfPlanSommerferien": {
+            "type": "object",
+            "properties": {
+                "bekannt": {
+                    "description": "Bekannt: false, wenn das Jahr weder im Programm noch in der Einstellung\n„Sommerferien\" steht — der Planer nennt dann das Jahr und bittet um den letzten\nbzw. ersten Tag von Hand.",
+                    "type": "boolean"
+                },
+                "bis": {
+                    "type": "string"
+                },
+                "jahr": {
+                    "type": "integer"
+                },
+                "von": {
+                    "description": "YYYY-MM-DD, leer wenn nicht bekannt",
+                    "type": "string"
+                }
+            }
+        },
+        "lernmittel.LmfPlanSpeicherAntwort": {
+            "type": "object",
+            "properties": {
+                "ausfaelle": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/lernmittel.LmfPlanAusfall"
+                    }
+                },
+                "ausgelassen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fristen_angepasst": {
+                    "type": "integer"
+                },
+                "plan": {
+                    "$ref": "#/definitions/repository.LmfPlan"
+                },
+                "vorschau": {
+                    "type": "boolean"
+                },
+                "zeilen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.LmfPlanZeile"
+                    }
+                }
+            }
+        },
+        "lernmittel.LmfPlanStandAntwort": {
+            "type": "object",
+            "properties": {
+                "ausgelassen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ausgelassen_regel": {
+                    "description": "AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt\n(Büchertausch: Oberstufe; Ausgabe: alles außer den Eingangsjahrgängen). Der Planer\nklappt sie unter „bleiben draußen\" ein — auch bei einem laufenden Plan, der sie\nnie kannte (06.09.2026: ein Plan mit alten Klassennamen bot 60 Chips offen an).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "eingangsjahrgaenge": {
+                    "description": "Eingangsjahrgaenge: die Jahrgänge, die nach den Ferien Bücher bekommen (Einstellung).",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "klassen": {
+                    "description": "Klassen: die Klassen mit aktiven Schülern, für die Auswahl im Planer. Eine Klasse\nim Plan, die hier fehlt, hat (noch) keine Schüler — der Planer markiert sie.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "plan": {
+                    "description": "Plan ist der neueste Plan der Art; nil, wenn es noch keinen gibt.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.LmfPlan"
+                        }
+                    ]
+                },
+                "sommerferien": {
+                    "description": "Sommerferien: die Ferien Hessen, an denen sich der Plan ausrichtet — der Planer\nzeigt sie neben dem Rahmen, oder den Hinweis, dass das Jahr nicht hinterlegt ist.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/lernmittel.LmfPlanSommerferien"
+                        }
+                    ]
+                },
+                "vorbei": {
+                    "description": "Vorbei: der letzte Termin des Plans liegt hinter heute — der Planer bietet dann\nden nächsten Plan an, mit derselben Reihenfolge als Vorschlag.",
+                    "type": "boolean"
+                },
+                "vorschlag": {
+                    "description": "Vorschlag ist gesetzt, wenn es keinen laufenden Plan gibt (kein Plan oder vorbei).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/lernmittel.LmfPlanVorschlag"
+                        }
+                    ]
+                },
+                "zeilen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.LmfPlanZeile"
+                    }
+                }
+            }
+        },
+        "lernmittel.LmfPlanVorschlag": {
+            "type": "object",
+            "properties": {
+                "ausgelassen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "quelle": {
+                    "description": "Quelle: \"vorjahr\" (der letzte Plan der Art) oder \"regel\" (Abschluss zuerst).",
+                    "type": "string"
+                },
+                "rahmen": {
+                    "description": "Rahmen: womit der neue Plan beginnt — aus den Sommerferien (service.LmfPlanRahmenVorgabe).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/lernmittel.LmfPlanRahmenVorgabe"
+                        }
+                    ]
+                },
+                "zeilen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.LmfPlanZeile"
+                    }
                 }
             }
         },

@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 import (
 	"bufio"
@@ -93,7 +93,7 @@ func TestLmfPlan_SignalNurNachDemSchreiben(t *testing.T) {
 		}
 	}
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Broker: broker}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Broker: broker}}
 	testdaten.SeedSchueler(t, pool, "SIG-1", "Anna", "9H1")
 	rahmen := `"letzte_stunde":4,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]`
 	plan := `{"letzter_tag":"2027-06-28",` + rahmen + `}`

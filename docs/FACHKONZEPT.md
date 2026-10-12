@@ -131,7 +131,7 @@ freie Tage des Plans ausgespart, feste Plätze umflossen) —
 die EINE Stelle; die Vorschau im Planer ist derselbe Aufruf mit
 `"vorschau": true`, kein JavaScript-Zwilling.
 
-Routen (`api/lmf_plan.go`, alle `edit_books`): `GET /api/lmf-plan/{art}` liefert den
+Routen (`api/lernmittel/lmf_plan.go`, alle `edit_books`): `GET /api/lmf-plan/{art}` liefert den
 neuesten Plan der Art, ob er vorbei ist, und dann den **Vorschlag** für den nächsten —
 die Reihenfolge des Vorjahres plus neue Klassen (Klassennamen bleiben Jahr für Jahr gleich,
 die Versetzung verschiebt Schüler, nicht Namen), ohne Vorjahr die Regel
@@ -143,7 +143,7 @@ Termin-Routen gibt es nicht mehr — eine zweite Tür je Zeile gäbe zwei Wahrhe
 Seite: Menü _System → Schuljahreswechsel_ (`LmfPlan.svelte`; 05.09.: der Plan
 wird ein- bis zweimal im Jahr gebraucht — Abgänger bleiben unter Verwaltung, LUSD und
 Versetzung in den Einstellungen). Tests: `pkg/lmfplan/layout_test.go`, `repository/lmf_termine_pg_test.go`,
-`api/lmf_termine_frist_pg_test.go`, `frontend/e2e/lmf-plan.spec.js`.
+`api/lernmittel/lmf_termine_frist_pg_test.go`, `frontend/e2e/lmf-plan.spec.js`.
 
 **Kopplung an die Fristen** (`internal/service/lmf_frist_kopplung.go`, 05.09.2026: „das wäre doch
 logisch"): Der Rückgabe-Termin einer Klasse ist die Frist ihrer Lernmittel. Beim Ausleihen

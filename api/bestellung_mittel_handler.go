@@ -106,7 +106,7 @@ func (s *Server) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 }
 
 // auditiereMittelKorrektur protokolliert die Korrektur — dasselbe Muster wie der LMF-Plan
-// (lmf_plan_audit.go): ohne Anmeldung oder ohne Datenbank gibt es nichts zu schreiben.
+// (api/lernmittel/lmf_plan_audit.go): ohne Anmeldung oder ohne Datenbank gibt es nichts zu schreiben.
 func (s *Server) auditiereMittelKorrektur(r *http.Request, bestellungID, von, nach, grund string) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {

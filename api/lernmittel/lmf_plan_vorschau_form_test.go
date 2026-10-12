@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 import (
 	"encoding/json"

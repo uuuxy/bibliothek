@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 // lmf_plan_live.go — der LMF-Plan meldet seine Änderungen über die SSE-Leitung.
 //
@@ -22,7 +22,7 @@ package api
 // meldeLmfPlanGeaendert sagt allen offenen Ansichten, dass sie den Plan neu holen
 // sollen. Aufrufen NACH dem erfolgreichen Schreiben — ein Signal auf einen Schreibweg,
 // der noch scheitern kann, schickte alle Ansichten auf den alten Stand zurück.
-func (s *Server) meldeLmfPlanGeaendert() {
+func (s *Tueren) meldeLmfPlanGeaendert() {
 	if s.Broker != nil {
 		s.Broker.Broadcast("lmf-plan", "{}")
 	}

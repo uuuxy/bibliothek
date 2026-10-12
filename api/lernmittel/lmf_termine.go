@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 // lmf_termine.go — der LMF-Plan lesend: Rückgabe- und Ausgabetermine je Klasse
 // (Register, Entscheidung 3, 05.09.2026). Das Kollegium liest sie im Portal (für alle
@@ -36,7 +36,7 @@ type LmfPlanAntwort struct {
 // lmfPlanAb bestimmt, ab wann gelistet wird: der 1. August des laufenden Schuljahres,
 // damit im Juni die neue Rückgabe und die August-Ausgabe zusammen stehen und im
 // Herbst die alte Rückgabe verschwunden ist; ?alle=1 hebt die Grenze auf.
-func (s *Server) lmfPlanAb(r *http.Request) time.Time {
+func (s *Tueren) lmfPlanAb(r *http.Request) time.Time {
 	if r.URL.Query().Get("alle") == "1" {
 		return time.Time{}
 	}
@@ -50,7 +50,7 @@ func (s *Server) lmfPlanAb(r *http.Request) time.Time {
 // @Produce      json
 // @Success      200  {object}  LmfPlanAntwort
 // @Router       /lmf-termine [get]
-func (s *Server) GetLmfTermineHandler() http.HandlerFunc {
+func (s *Tueren) GetLmfTermineHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		repo := repository.NewLmfTerminRepository(s.DB.Pool)
 		ab := s.lmfPlanAb(r)
@@ -148,7 +148,7 @@ func lmfPlanAbschnitte(termine []repository.LmfTermin, eingang []int) ([]pdf.Lmf
 // @Tags         lernmittel
 // @Produce      application/pdf
 // @Router       /lmf-termine/pdf [get]
-func (s *Server) GetLmfPlanPDFHandler(mitEntwuerfen bool) http.HandlerFunc {
+func (s *Tueren) GetLmfPlanPDFHandler(mitEntwuerfen bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		repo := repository.NewLmfTerminRepository(s.DB.Pool)
 		eingang, err := s.lmfEingangsjahrgaenge(r.Context())

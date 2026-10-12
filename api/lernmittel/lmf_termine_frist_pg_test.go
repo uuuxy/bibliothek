@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 import (
 	"context"
@@ -29,7 +29,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
@@ -206,7 +206,7 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
@@ -258,7 +258,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
@@ -414,7 +414,7 @@ func TestLmfPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	setzeStichtag := func(wert string) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, `
@@ -459,7 +459,7 @@ func TestLmfPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 }
 
 // lmfPlanAufruf ruft die Plan-Handler wie der Router: {art} im Pfad.
-func lmfPlanAufruf(t *testing.T, srv *Server, methode, art, body string) *httptest.ResponseRecorder {
+func lmfPlanAufruf(t *testing.T, srv *Tueren, methode, art, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(methode, "/api/lmf-plan/"+art, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")

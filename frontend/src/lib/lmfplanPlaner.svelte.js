@@ -75,7 +75,7 @@ export function erzeugePlaner() {
 	}
 
 	/**
-	 * Der Plan wurde anderswo geändert (SSE, siehe api/lmf_plan_live.go).
+	 * Der Plan wurde anderswo geändert (SSE, siehe api/lernmittel/lmf_plan_live.go).
 	 *
 	 * Stilles Nachladen ist hier NICHT immer richtig: `lade()` setzt den Entwurf auf den
 	 * Server-Stand zurück, und wer gerade eine Reihenfolge zusammengezogen hat, verlöre

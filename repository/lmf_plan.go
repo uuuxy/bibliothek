@@ -188,7 +188,7 @@ func (r *LmfTerminRepository) lmfPlanAusgelassen(ctx context.Context, planID str
 // veröffentlicht (Migration 100).
 //
 // Geschrieben wird in eine Transaktion, die der AUFRUFER hält — damit
-// Plan und Frist-Kopplung in einer Klammer stehen (api/lmf_plan.go). Bis 07.09.2026
+// Plan und Frist-Kopplung in einer Klammer stehen (api/lernmittel/lmf_plan.go). Bis 07.09.2026
 // hieß das SaveLmfPlan und committete selbst, und die Kopplung lief danach am Pool:
 // Scheiterte sie, war der Plan geschrieben und die Fristen halb — ein Zustand, den ein
 // zweiter Anlauf nicht mehr reparieren konnte, weil der alte Plan nicht mehr lesbar war.

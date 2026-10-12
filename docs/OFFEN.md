@@ -430,25 +430,27 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
   umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
-- **Was ohne Tür bleibt.** Die 13 Dateien des Bestands sind Typen einer Anfrage oder
-  Antwort, Füll-Funktionen und Helfer mehrerer Türen (1.008 Zeilen, gezählt am 12.10.2026).
-  Zehn stehen in `api/`: `abgaenger_fenster.go` (die Grenzen der Abgänger-Saison),
+- **Was ohne Tür bleibt.** Die 14 Dateien des Bestands sind Typen einer Anfrage oder
+  Antwort, Füll-Funktionen und Helfer mehrerer Türen (1.020 Zeilen, gezählt am 12.10.2026).
+  Neun stehen in `api/`: `abgaenger_fenster.go` (die Grenzen der Abgänger-Saison),
   `action_types.go`, `bescheid_absender.go`, `bestellmail_anhaenge.go` (stellt die Anlagen der
   Bestellmail zusammen und verschickt sie), `bestellmail_versand.go` (trägt auch die
-  Rückmeldung nach dem Versand), `betriebsbereitschaft_alarm.go`, `lmf_plan_live.go`,
+  Rückmeldung nach dem Versand), `betriebsbereitschaft_alarm.go`,
   `mahnwesen_mail.go`, `schueler_kiosk.go` und `student_klasse_regel.go` (prüft eine Eingabe
   der zwei Türen zum Anlegen und Ändern und trägt deren Meldung; keine andere Schicht ruft
   sie). Drei stehen seit dem 12.10.2026 in `api/tuer`, dem Paket mit dem, was jede Tür
   braucht: `constants.go`, `verwaltung_protokoll.go` und `tuer.go` (der Typ `Basis` und die
-  Uhr; als dreizehnte dazugekommen). Der Bestand fällt damit nicht auf null. Die sechs
-  Dateien mit Regeln sind am 09.10.2026 ausgezogen; wohin, steht oben und in ARCHITEKTUR
-  5.2.2.
+  Uhr; als dreizehnte dazugekommen). Zwei stehen seit dem 12.10.2026 in `api/lernmittel`:
+  `lmf_plan_live.go`, mit seinem Thema umgezogen, und `lernmittel.go` mit dem Typ des Themas
+  (als vierzehnte dazugekommen); mit jedem weiteren Thema kommt eine solche Datei dazu. Der
+  Bestand fällt damit nicht auf null. Die sechs Dateien mit Regeln sind am 09.10.2026
+  ausgezogen; wohin, steht oben und in ARCHITEKTUR 5.2.2.
 - **Was der Bestand nicht sieht.** Eine Datei bindet `net/http` nur für Statuswerte ein und
   trägt keine Tür: `nachbuchen_schluessel.go` (148 Zeilen); der Mailversand, die zweite, steht
   seit dem 12.10.2026 in `mailservice/mail_sender.go`. Und
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
   Typ aus `net/http` tragen `bestellbericht_handler.go` (367),
-  `lmf_plan.go` (260), `bescheid_handler.go` (246), `dsgvo_auskunft.go` (193),
+  `lernmittel/lmf_plan.go` (260), `bescheid_handler.go` (246), `dsgvo_auskunft.go` (193),
   `betriebsbereitschaft_handler.go` (175) und `graduates_mail.go` (157). Die Messung und ihre
   Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt: diese Dateien der Reihe nach
   lesen und trennen, was Regel und was Füll-Funktion ist.
@@ -527,7 +529,7 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 2 si
   | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go` |
   | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print.go` |
   | Schaden    | 7       | 1.154  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go` |
-  | Lernmittel | 5       | 1.098  | 7      | 8           | `lmf_*.go` |
+  | Lernmittel | 5       | 1.098  | 7      | 8           | `lmf_*.go`, seit dem 12.10.2026 in `api/lernmittel` |
   | Benutzer   | 6       | 838    | 6      | 9           | `user_admin*.go` |
   | Inventur   | 5       | 777    | 9      | 5           | `inventur_*.go` |
   | Portal     | 5       | 681    | 15     | 11          | `anliegen.go`, `reservation.go`, `katalog_kollegium.go`, `opac.go`, `monitor.go` |
@@ -539,13 +541,15 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 2 si
   Konstanten, die Rechteprüfung mit ihrem Zwischenspeicher (`BesitztRecht`,
   `RequireAuthenticated`, `PruefeBerechtigung`), das Protokoll der Verwaltung und die Uhr. Der
   Typ `tuer.Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn
-  ein, und der Typ eines Themas tut es beim Umzug ebenso, damit jede Tür `s.DB` und
-  `s.BesitztRecht` unter demselben Namen erreicht. Der Mailversand steht in `mailservice/`,
+  ein, und der Typ eines Themas bettet einen Zeiger auf die Basis des Servers ein, damit jede
+  Tür `s.DB` und `s.BesitztRecht` unter demselben Namen erreicht. Der Mailversand steht in
+  `mailservice/`,
   die Adresse des Aufrufers fragen die Türen bei `pkg/clientip`. `RequirePermission` bleibt
   beim Router: Es setzt die Prüfung der Pfadparameter vor die Rechteprüfung, und deren Liste
   gehört zu den Routen. Aus `api/` selbst brauchen die Themen noch zweierlei: den Typ
-  `Server`, an dem ihre Türen als Methoden hängen (108 Dateien, 340 Methoden; mit dem Umzug
-  bekommt jedes Thema seinen eigenen Typ), und die Bremse je Adresse (`newIPRateLimiter`),
+  `Server`, an dem ihre Türen als Methoden hängen (108 Dateien, 340 Methoden; nach Stufe 3
+  noch 103 Dateien und 324 Methoden; mit dem Umzug bekommt jedes Thema seinen eigenen Typ),
+  und die Bremse je Adresse (`newIPRateLimiter`),
   die nur der Abruf der Cover im Katalog braucht und die mit dessen Stufe in ein eigenes
   Paket zieht. Das Feld `IdempotenzWartezeit` braucht nur die Theke.
 - **Die Kosten liegen bei den Tests.** 221 Testdateien brauchen Namen aus genau einem Thema und
@@ -565,6 +569,17 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 2 si
   `protokollWelt`). In das Innere eines anderen Pakets greift kein Test mehr: Was eine Rolle
   darf, legt `tuer.MerkeRechtFuerTest` in den Zwischenspeicher, die Mail-Konfiguration tauscht
   `mailservice.TauscheKonfigLaderFuerTest`.
+- **Das erste Thema ist umgezogen (Stufe 3, 12.10.2026).** Die fünf Dateien des LMF-Plans
+  stehen in `api/lernmittel`, mit neun Testdateien: den acht, die nur dieses Thema brauchen,
+  und `lmf_plan_live_test.go`, das die Schreibwege des Plans in der Routenliste prüft. Der
+  Typ `Tueren` trägt die 17 Methoden und hält die Basis des Servers als eingebetteten Zeiger:
+  Als Kopie gäbe es Datenbank, Live-Leitung und Uhr je Thema noch einmal, und eine Uhr, die
+  ein Test nach dem Bau des Routers stellt, erreichte die umgezogenen Türen nicht. Die
+  Routenliste meldet die sieben Routen über den Zugang `s.lernmittel()` an. Wie ein Thema
+  gebaut ist, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff mit dem Nachweis
+  in 8.14. Aus `api/` brauchte das Thema nur den Typ `Server`; der Probelauf des Werkzeugs
+  meldete kein Hindernis. Die Kommentare der umgezogenen Dateien sind unverändert, bis auf
+  zwei, die den Typ `Server` nannten.
 - **Offen für Stufe 3: ein Test über den ganzen Router.** `api/` bindet das Paket eines Themas
   ein. Eine Testdatei im Paket des Themas kann `api/` deshalb nicht einbinden, auch nicht über
   eine Prüfhilfe, die es tut: Go weist den Kreis ab (`import cycle not allowed in test`,
@@ -576,10 +591,11 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 2 si
 - **Prüfungen, die Dateien lesen.** Jede der 43 Prüfungen, die Go-Dateien des Baums
   durchlaufen, sieht eine Datei in einem Unterordner von `api/` (belegt am 12.10.2026, je mit
   einer Probe). Beim Umzug eines Themas werden von selbst rot und ziehen mit: jede
-  Ausnahmeliste, die eine Datei beim Pfad nennt (`"api/csrf.go:CSRFMiddleware"`), und zwei
-  Prüfungen in `api/`, die ihr Thema in festen Dateien suchen (`lmf_plan_live_test.go` die
-  Schreibwege des LMF-Plans, `mail_vorlagen_platzhalter_test.go` den Standardtext in
-  `mahnwesen_bulk.go`). Die Routenlisten (`router.go`, `routes_*.go`) bleiben in `api/`; neun
+  Ausnahmeliste, die eine Datei beim Pfad nennt (`"api/csrf.go:CSRFMiddleware"`), und
+  Prüfungen, die ihr Thema in festen Dateien suchen: `mail_vorlagen_platzhalter_test.go` den
+  Standardtext in `mahnwesen_bulk.go`; `lmf_plan_live_test.go` ist mit den Lernmitteln
+  umgezogen und liest die Schreibwege des LMF-Plans in der Routenliste einen Ordner höher.
+  Die Routenlisten (`router.go`, `routes_*.go`) bleiben in `api/`; neun
   Prüfungen lesen sie dort beim Namen. Eine Prüfung, die den Aufruf einer Funktion am Namen
   ohne Paket erkennt, sieht ihn aus einem anderen Paket nicht mehr: `uuid_eingaben_test.go`
   fand nach Stufe 2 keine Eingabe und wurde an seiner Untergrenze rot; es kennt jetzt beide

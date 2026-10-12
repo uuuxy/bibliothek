@@ -293,7 +293,7 @@ var checkBedingungenBestand = []string{
 	"chk_ksr_anzahl_positiv", "chk_lmf_plaene_anker", "chk_lmf_plaene_art",
 	"chk_lmf_plaene_letzte_stunde",
 	// Migration 115, befragt am 12.09.2026: Die letzte Stunde des Rückgabe-Plans liegt im
-	// Schultag, den derselbe Plan beschreibt. Der Code prüft es an der Tür (api/lmf_plan.go,
+	// Schultag, den derselbe Plan beschreibt. Der Code prüft es an der Tür (api/lernmittel/lmf_plan.go,
 	// pruefeLmfAnker → 400), die Datenbank hält die zweite. Umgekehrt verlässt sich kein
 	// Lesepfad darauf, dass sie es NICHT verbietet: Der Ausgabe-Plan hat keine letzte
 	// Stunde, und NULL lässt der Check ausdrücklich zu.

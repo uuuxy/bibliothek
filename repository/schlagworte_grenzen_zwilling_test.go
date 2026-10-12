@@ -14,7 +14,7 @@ import (
 // (Littera führt bis zu 282), und das Feld hätte weiter bei 30 gesperrt: Ein Titel aus
 // Littera hätte im Buchformular kein Wort mehr dazubekommen.
 //
-// Gelesen wird die Svelte-Datei als Text, wie in api/lmf_texte_paritaet_test.go. Findet der
+// Gelesen wird die Svelte-Datei als Text, wie in api/lernmittel/lmf_texte_paritaet_test.go. Findet der
 // Test die Stelle nicht mehr, ist er rot und nicht still grün.
 //
 // Blind für einen Aufrufer, der dem Feld eigene Grenzen mitgibt: Er sähe nur die Vorgaben.

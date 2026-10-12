@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { erzeugePlaner } from './lmfplanPlaner.svelte.js';
 import { apiFetch } from './apiFetch.js';
 
-// Der LMF-Plan meldet seine Änderungen über die SSE-Leitung (api/lmf_plan_live.go), damit
+// Der LMF-Plan meldet seine Änderungen über die SSE-Leitung (api/lernmittel/lmf_plan_live.go), damit
 // das Kollegium im Portal und die zweite Bibliothekskraft am anderen PC den neuen Stand
 // sehen, ohne neu zu laden (07.09.2026).
 //

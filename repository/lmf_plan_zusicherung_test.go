@@ -8,7 +8,7 @@ import (
 )
 
 // SaveLmfPlanIn indiziert plaetze[i] über die Zeilen. Dass beide Scheiben gleich lang
-// sind, sicherte bis zum 12.09.2026 nur der eine Aufrufer zu (api/lmf_plan.go, nach
+// sind, sicherte bis zum 12.09.2026 nur der eine Aufrufer zu (api/lernmittel/lmf_plan.go, nach
 // pruefeLmfPlan). Diese Zusicherung gehört an die Tür, die sie braucht: Ein zweiter
 // Aufrufer — oder ein Umbau der Prüfung — bekommt sonst keinen Fehler, sondern einen
 // Indexfehler mitten in einer offenen Transaktion.

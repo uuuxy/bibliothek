@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 import (
 	"os"
@@ -27,7 +27,7 @@ import (
 // Werkzeugkette für eine Zeichenkette. Findet der Test die Stelle nicht mehr, ist er rot
 // und nicht still grün.
 func TestLmfTexte_GoUndJavaScriptSagenDasselbe(t *testing.T) {
-	quelle, err := os.ReadFile("../frontend/src/lib/lmfplanDienst.js")
+	quelle, err := os.ReadFile("../../frontend/src/lib/lmfplanDienst.js")
 	if err != nil {
 		t.Fatalf("lmfplanDienst.js lesen: %v", err)
 	}

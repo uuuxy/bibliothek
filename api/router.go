@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/lernmittel"
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -64,6 +65,12 @@ func NewServer(database *db.Database, authenticator *auth.Authenticator, broker 
 		Basis:        tuer.Basis{DB: database, Auth: authenticator, Broker: broker},
 		CookieSecure: cookieSecure,
 	}
+}
+
+// lernmittel ist der Zugang zu den Türen des LMF-Plans. Ein Thema bekommt die Basis des Servers
+// als Zeiger, keine Kopie: Was am Server gesetzt wird, gilt auch für seine Türen.
+func (s *Server) lernmittel() *lernmittel.Tueren {
+	return &lernmittel.Tueren{Basis: &s.Basis}
 }
 
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.

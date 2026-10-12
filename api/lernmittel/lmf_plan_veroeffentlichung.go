@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 // lmf_plan_veroeffentlichung.go — Entwurf und Veröffentlichung des LMF-Plans (Migration
 // 100). Absprache vom 06.09.2026: „Stille Vorbereitung — der Plan nimmt die Schulleitung immer
@@ -28,7 +28,7 @@ import (
 )
 
 // lmfEingangsjahrgaenge liest die Einstellung; ohne lesbaren Wert gilt die Vorgabe.
-func (s *Server) lmfEingangsjahrgaenge(ctx context.Context) ([]int, error) {
+func (s *Tueren) lmfEingangsjahrgaenge(ctx context.Context) ([]int, error) {
 	einstellungen, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func enthaeltJahrgang(eingang []int, j int) bool {
 // lmfPlanNurRueckgabe nennt aus allen Klassen, die der Planer zeigt (Vokabular, Zeilen,
 // Vorschlag, Auslassungen), die, die vor den Ferien nur abgeben — leer beim Ausgabe-Plan.
 // Seit 06.09.2026 nur noch die Quelle der VORBELEGUNG des Vermerks (vermerkNurRueckgabe).
-func (s *Server) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LmfTerminRepository, art string, a LmfPlanStandAntwort, eingang []int) ([]string, error) {
+func (s *Tueren) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LmfTerminRepository, art string, a LmfPlanStandAntwort, eingang []int) ([]string, error) {
 	if art != repository.LmfTerminRueckgabe {
 		return []string{}, nil
 	}
@@ -86,7 +86,7 @@ func (s *Server) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LmfTe
 // @Produce      json
 // @Success      200  {object}  LmfPlanSpeicherAntwort
 // @Router       /lmf-plan/{art}/veroeffentlichen [post]
-func (s *Server) PostLmfPlanVeroeffentlichenHandler() http.HandlerFunc {
+func (s *Tueren) PostLmfPlanVeroeffentlichenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		antwort, gestempelt, err := s.veroeffentlicheLmfPlan(r)
 		if err != nil {
@@ -103,7 +103,7 @@ func (s *Server) PostLmfPlanVeroeffentlichenHandler() http.HandlerFunc {
 
 // veroeffentlicheLmfPlan stempelt den neuesten Plan der Art und lässt die Fristen folgen.
 // gestempelt ist false, wenn der Plan schon veröffentlicht war.
-func (s *Server) veroeffentlicheLmfPlan(r *http.Request) (LmfPlanSpeicherAntwort, bool, error) {
+func (s *Tueren) veroeffentlicheLmfPlan(r *http.Request) (LmfPlanSpeicherAntwort, bool, error) {
 	var keine LmfPlanSpeicherAntwort
 	art, err := lmfPlanArt(r)
 	if err != nil {

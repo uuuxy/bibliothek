@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 // lmf_plan_audit.go — die Spur der Massenänderungen am Plan.
 //
@@ -34,12 +34,12 @@ const (
 
 // auditiereLmfPlan protokolliert einen Eingriff am Plan samt der Zahl der Ausleihen,
 // deren Frist er bewegt hat.
-func (s *Server) auditiereLmfPlan(r *http.Request, aktion, art string, planID string, fristen int64) {
+func (s *Tueren) auditiereLmfPlan(r *http.Request, aktion, art string, planID string, fristen int64) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		return
 	}
-	// Server ohne Datenbank (nackte Testkonstruktion &Server{}): nichts zu schreiben.
+	// Türen ohne Datenbank (Testkonstruktion mit leerer Basis): nichts zu schreiben.
 	if s.DB == nil || s.DB.Pool == nil {
 		return
 	}

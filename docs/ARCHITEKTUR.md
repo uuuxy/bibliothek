@@ -531,7 +531,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -620,8 +620,9 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 20.746 Zeilen, 131 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `api/`                  | 19.655 Zeilen, 126 Dateien | HTTP-Schicht: Router mit den Routenlisten, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten. Die Türen ziehen je Thema in ein eigenes Paket darunter (Themen unter `api/`) |
 | `api/tuer/`             | 520 Zeilen, 5 Dateien      | Was jede Tür braucht: Eingabe lesen und Antwort schreiben, die Rechteprüfung mit ihrem Zwischenspeicher, das Protokoll der Verwaltung, die Uhr. Der Typ `Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn ein |
+| `api/lernmittel/`       | 1.110 Zeilen, 6 Dateien    | Die Türen des LMF-Plans, das erste Thema mit eigenem Paket: den Plan als Reihenfolge lesen, rechnen, speichern, veröffentlichen und verwerfen, die Termine für das Kollegium als Liste und als PDF, das Signal an offene Ansichten. Der Typ `Tueren` hält die `tuer.Basis` des Servers als eingebetteten Zeiger |
 | `repository/`           | 22.365 Zeilen, 151 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke                                        |
 | `internal/service/`     | 4.851 Zeilen, 28 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan und womit ein neuer Plan beginnt, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
@@ -641,6 +642,29 @@ HTTP-Anfrage
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
 
+##### Themen unter `api/`
+
+Seit dem 12.10.2026 ziehen die Türen je Thema in ein eigenes Paket unter `api/`, in Stufen
+([OFFEN.md](OFFEN.md) 5.65). Das erste Thema ist `api/lernmittel`.
+
+- Ein Thema trägt seine Türen als Methoden an einem eigenen Typ `Tueren`. Er bettet einen
+  Zeiger auf die `tuer.Basis` des Servers ein: Datenbank, Anmeldung, Live-Leitung und Uhr
+  erreicht eine Tür unter denselben Namen wie am Server (`s.DB`, `s.Jetzt()`), und es gibt
+  sie einmal. Der Typ steht mit dem Kommentar zum Paket in der Datei, die wie das Paket
+  heißt (`api/lernmittel/lernmittel.go`).
+- Die Routenlisten bleiben in `api/` (`routes_*.go`): Dort steht jede Tür mit Adresse und
+  Recht. Sie erreichen ein Thema über den Zugang des Servers, eine Methode mit dem Namen des
+  Themas (`s.lernmittel().PutLmfPlanHandler()`, erklärt in `api/router.go`). Der Zugang
+  reicht dem Thema die Basis des Servers als Zeiger, keine Kopie: Was am Server gestellt
+  wird, etwa die Uhr in einem Test, gilt für die Türen jedes Themas, auch nach dem Bau des
+  Routers.
+- Ein Thema bindet `api/tuer` und die Schichten darunter ein. `api/` kann es nicht
+  einbinden: `api/` bindet das Thema ein, und Go weist den Kreis ab. Dass kein Thema ein
+  anderes einbindet, hält ab Stufe 5 eine Ratsche.
+- Die Tests eines Themas stehen in seinem Ordner und bauen die Türen selbst
+  (`&Tueren{Basis: &tuer.Basis{DB: …}}`). Türen ohne Basis (`&Tueren{}`) taugen nur für
+  Funktionen, die nichts aus ihr lesen: Der Zugriff auf `s.DB` bricht dort ab.
+
 ##### Tür und Abfrage
 
 Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.62):
@@ -655,7 +679,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   selbst weiter: Die Typen der Auskunft stehen mit ihrem Blatt in `internal/auskunft`. Dasselbe
   gilt gegenüber `internal/service`: Ferien und Rahmen eines neuen LMF-Plans rechnet
   `service.LmfPlanSommerferien` und `service.LmfPlanRahmenVorgabe` in eigenen Typen, die Tür
-  wandelt sie in die Typen ihrer Antwort (`api/lmf_plan.go`).
+  wandelt sie in die Typen ihrer Antwort (`api/lernmittel/lmf_plan.go`).
 - `repository/` und `pdf/` kennen einander nicht. Die Tür füllt die Typen der PDF-Erzeuger
   aus den Zeilen. Hängt ein gedruckter Text an einer Regel, die `pdf/` nicht kennt, wählt die
   Tür ihn und reicht den fertigen Text: Den Eigentumsvermerk eines Etiketts bestimmt der Topf
@@ -694,7 +718,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   (`repository.EinstellungenUeber`) und schreibt die Fristen über denselben Zugang. Mit Pool
   und Transaktion als Nachbar-Argumenten ließe sich die Kopplung am Pool rufen, und kein
   Compiler merkte es. Ein Test der Tür lässt die Kopplung nach ihrer ersten Änderung scheitern
-  und verlangt, dass keine Frist umgeschrieben bleibt (`api/lmf_plan_transaktion_pg_test.go`).
+  und verlangt, dass keine Frist umgeschrieben bleibt (`api/lernmittel/lmf_plan_transaktion_pg_test.go`).
 - Die Auskunft nach Art. 15 DSGVO steht in `internal/auskunft` und nicht in `pdf/`. Antwort und
   Blatt entstehen aus einem Objekt (`DsgvoAuskunftResponse`), damit das Blatt nichts auslässt,
   was die abgerufene Auskunft nennt; eigene Eingabetypen in `pdf/` hießen, 16 Typen zu doppeln.
@@ -1752,7 +1776,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen und von Code in ein Paket, das die Türen einbinden, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2577,6 +2601,38 @@ wenn man ihn einmal gebraucht hat.
   Erklärungen gleich (417.897 Token), 26 gewollt verschieden; `uuid_eingaben_test.go` fand
   nach dem Umzug keine Eingabe mehr, wurde an seiner Untergrenze rot und kennt jetzt beide
   Formen.
+- **Die Türen eines Themas ziehen in ein eigenes Paket unter `api/`** (5.2.2, Themen unter
+  `api/`). Es ziehen die Dateien des Themas und die Testdateien, die nur dieses Thema
+  brauchen. Das Werkzeug mit Typprüfung schreibt dreierlei um: die Paketzeile; den Typ
+  `Server` zum Typ des Themas in jedem Empfänger und jedem Literal der umziehenden Dateien,
+  wobei die Basis im Literal ihr `&` bekommt, weil das Thema sie als Zeiger hält; und den
+  Zugang hinter dem Empfänger in jeder Datei, die bleibt und eine umziehende Tür ruft
+  (`s.PutLmfPlanHandler()` wird `s.lernmittel().PutLmfPlanHandler()`). Es meldet, was eine
+  umziehende Datei aus `api/` noch bräuchte und was eine bleibende klein geschrieben aus dem
+  Thema bräuchte. Von Hand kommen die Datei mit dem Typ und der Zugang in `api/router.go`
+  dazu. Vier Prüfungen werden von selbst rot und ziehen nach: der Bestand `dateienOhneTuer`
+  (die Datei mit dem Typ kommt dazu, eine umgezogene Datei ohne Tür bekommt ihren neuen
+  Pfad); jeder Test, der eine Datei relativ zu seinem Ordner liest (er liegt einen Ordner
+  tiefer); jede Prüfung, die ihr Thema in der Routenliste an der Form der Anmeldung sucht
+  (`api/lernmittel/lmf_plan_live_test.go` las die Türen hinter `s.`, liest sie jetzt hinter
+  dem Zugang und meldet eine schreibende Route ohne ihn); und `docs/dateiverweise_test.go`
+  für jeden Pfad in Dokumenten, Kommentaren und Oberfläche. Die Pfade schreibt ein Skript
+  um. Dreierlei wird nicht rot: ein Dateiname ohne Ordner in einem Kommentar oder Dokument,
+  ein Kommentar, der den alten Typ nennt, und die Schnittstellenbeschreibung.
+  `docs/swagger_drift_test.go` vergleicht nur die Adressen; die Typen der Antworten heißen
+  nach dem Umzug `lernmittel.…` statt `api.…`. Also `swag init -g main.go -o docs` fahren
+  und die erzeugte `swagger.json` beider Stände als Datenstruktur vergleichen, nachdem der
+  neue Paketname zurückgeführt ist. Belegt wird wie beim Umzug nach `api/tuer`: dieselbe
+  Liste der Tests mit demselben Ausgang, die Anmeldungen der Routen, der Vergleich je
+  Erklärung (die Rückführung nimmt auch den Zugang und das `&` vor der Basis heraus), dazu
+  je angepasster Prüfung eine Probe am Rückbau und der Nachweis, dass sie vorher und nachher
+  dasselbe sieht. So belegt am 12.10.2026 für Stufe 3 ([OFFEN.md](OFFEN.md) 5.65): 2.267
+  Testfunktionen vorher wie nachher, 17 davon jetzt in `api/lernmittel`; 229 Anmeldungen,
+  sieben mit dem Zugang; 2.080 Erklärungen gleich (398.562 Token), vier gewollt verschieden,
+  zwei neu; 75 Adressen und 107 Typen der Schnittstellenbeschreibung gleich, sieben Typen
+  unter neuem Paketnamen. Die 40 Proben aus Stufe 0 liefen ein zweites Mal, mit dem Verstoß
+  im Ordner des Themas: 39 Prüfungen melden ihn dort, die vierzigste Probe ist die
+  Gegenprobe und bleibt grün.
 
 ---
 
@@ -3296,7 +3352,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen und nach Stufe 2 Überschrift und Zahl der Methoden neu gezählt, in 11.5 die vier Symbolknöpfe mit dem Hinweis des Browsers ergänzt
+Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen und nach Stufe 2 Überschrift und Zahl der Methoden neu gezählt, nach Stufe 3 Überschrift, Dateigrößen und Zahl der Methoden erneut, in 11.5 die vier Symbolknöpfe mit dem Hinweis des Browsers ergänzt
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3355,19 +3411,22 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` trägt die Türen in einem Paket: 20.746 Zeilen in 131 Dateien
+#### R4 — `api/` trägt die Türen von elf der zwölf Themen in einem Paket: 19.655 Zeilen in 126 Dateien
 
 | | |
 | --- | --- |
 | **Auswirkung** | mittel (Änderungsaufwand, Kollisionen) |
 | **Sichtbarkeit** | hoch |
 
-Das Paket trägt Router, Middleware und die Türen. Nach `repository/` (22.365 Zeilen in 151
-Dateien) ist es das zweitgrößte. Seine Dateien, gemessen am 10.10.2026: Die Hälfte hat
-höchstens 124 Zeilen, neun von zehn höchstens 296, sechs haben über 400. Die drei größten,
-`lmf_plan.go` (691), `bescheid_handler.go` (662) und `bestellbericht_handler.go` (566), sind
-zugleich die drei mit den meisten Zeilen in Funktionen ohne einen Typ aus `net/http`
-([OFFEN.md](OFFEN.md) 5.62).
+Das Paket trägt Router, Middleware und die Türen von elf Themen; die des zwölften, des
+LMF-Plans, stehen seit dem 12.10.2026 in `api/lernmittel` (1.110 Zeilen in sechs Dateien).
+Nach `repository/` (22.365 Zeilen in 151 Dateien) ist `api/` das zweitgrößte Paket. Seine
+Dateien, gemessen am 12.10.2026: Die Hälfte hat höchstens 125 Zeilen, neun von zehn
+höchstens 297, fünf haben über 400. Die größte Datei der Türen, `lmf_plan.go` (692), ist mit
+ihrem Thema umgezogen; in `api/` sind die größten `bescheid_handler.go` (664),
+`bestellbericht_handler.go` (567) und `student_update.go` (555). Die meisten Zeilen in
+Funktionen ohne einen Typ aus `net/http` tragen `bestellbericht_handler.go`, `lmf_plan.go`
+und `bescheid_handler.go` ([OFFEN.md](OFFEN.md) 5.62).
 
 Gemessen am 09.10.2026, bevor der Abbau begann: In drei Monaten war das Paket von 10.463 auf
 30.785 Zeilen gewachsen und trug neben den Türen Teile der Fachlogik: den Aufbau der PDFs und
@@ -3389,12 +3448,14 @@ die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung in `pkg/mi
 Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `schichtung_ratsche_test.go` weist jede
 SQL-Anweisung außerhalb der Datenbankschicht ab, `api/schichtung_test.go` führt die Dateien
 ohne Tür als Bestand, der nur kleiner werden kann. Was
-bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst stehen in einem Paket, der Typ
-`Server` trägt 340 Methoden. Entschieden am 12.10.2026: Sie ziehen in Stufen in Themenordner
+bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst standen in einem Paket, der Typ
+`Server` trug 340 Methoden. Entschieden am 12.10.2026: Sie ziehen in Stufen in Themenordner
 um; Messung und Plan stehen in [OFFEN.md](OFFEN.md) 5.65. Seit Stufe 2 (12.10.2026) steht,
 was jede Tür braucht, in `api/tuer` (520 Zeilen in fünf Dateien, neun Methoden am Typ
 `Basis`) und der Mailversand in `mailservice/`; `api/` hatte davor 21.319 Zeilen in 136
-Dateien.
+Dateien. Seit Stufe 3 (12.10.2026) stehen die Türen des LMF-Plans in `api/lernmittel`, 17
+Methoden am Typ `Tueren`; der Typ `Server` trägt noch 324, und `api/` hatte davor 20.746
+Zeilen in 131 Dateien.
 
 Der Bestand führt nur ganze Dateien. Woraus `api/` besteht, gemessen am 09.10.2026 am
 Syntaxbaum (`go/parser`), nachdem die sechs Dateien mit Regeln ausgezogen waren: 9.227 Zeilen
