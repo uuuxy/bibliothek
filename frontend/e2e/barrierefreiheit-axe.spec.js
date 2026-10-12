@@ -126,6 +126,9 @@ test.describe('axe: keine WCAG-A/AA-Verstöße', () => {
 	});
 	for (const [name, pfad] of INTERN) {
 		test(`intern · ${name}`, async ({ page }) => {
+			// Der Scan liest die ganze Seite. Das Mahnwesen listet jede überfällige Ausleihe; an einer
+			// gewachsenen Entwicklungsdatenbank braucht er dort mehr als die 30 s der Vorgabe.
+			test.setTimeout(90_000);
 			await uiLogin(page);
 			await gehZu(page, pfad);
 			await zurRuhe(page);
