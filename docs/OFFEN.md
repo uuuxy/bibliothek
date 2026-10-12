@@ -56,12 +56,19 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Sprechblase des Hauses; die Lücke ist seit dem 12.10.2026 auf `main` geschlossen, und eine
   Ratsche hält Namen und Hinweis an jedem Symbolknopf. Vorschlag: alle vier schließen. Soll
   es den Knopf zum Leeren geben, entsteht er neu nach der Seite von Material 3.
-- [ ] Zwei Paket-Updates von Dependabot übernehmen (beide vom 12.10.2026, in der CI grün)?
-  732 hebt drei Go-Pakete (sentry-go 0.50, maroto 2.4.3, gocognit 1.3). 731 hebt
-  vite-plugin-pwa auf 2.0; die Hauptversion erweitert laut ihren Hinweisen nur eine
-  Peer-Abhängigkeit (`@vite-pwa/assets-generator`), die das Projekt nicht einbindet.
-  Vorschlag: beide übernehmen. Das dritte (730, zehn Pakete der Oberfläche) ist rot und steht
-  unter 5.10.
+- [ ] Drei Updates von Dependabot übernehmen? Alle drei sind vom 12.10.2026, in der CI grün
+  und am selben Tag am Stand von `main` nachgestellt. 732 hebt drei Go-Pakete. sentry-go 0.50
+  ändert nach seinen Hinweisen das Verhalten ohne eingerichtetes Sentry: Eine Panik in einer
+  Tür antwortet mit alter und neuer Fassung gleich, und mit eingerichtetem Sentry kommt die
+  Meldung an; das hält seit dem 12.10.2026 ein Test. maroto 2.4.3 ändert nur das Zusammenfügen
+  von PDFs, das das Programm nicht benutzt. gocognit 1.3 zählt 5 von 2.576 Funktionen um 1
+  anders, keine davon an der Grenze von 15. Die ganze Go-Suite hat mit dem Update dieselben
+  Tests mit demselben Ausgang. 731 hebt vite-plugin-pwa auf 2.0: Der Bau liefert dieselben 15
+  Dateien mit denselben Prüfsummen. 733 hebt in den Prüfläufen zwei Actions (setup-node 7.1.0,
+  upload-artifact 7.0.2): Die angehefteten Commits sind die der genannten Versionen, und die
+  Eingaben der vier Schritte gibt es dort weiter. Der Schritt mit upload-artifact läuft nur
+  nach einem roten Browser-Test und lief im Pull Request nicht. Vorschlag: alle drei
+  übernehmen. Das vierte (730, zehn Pakete der Oberfläche) ist rot und steht unter 5.10.
 - [x] gosec vor dem Push: Der Hook fährt gosec seit dem 09.10.2026 mit, über dasselbe Skript
   wie der Sicherheits-Lauf (`scripts/gosec-gate.sh`). Gebaut nach dem Vorschlag; zurücknehmen
   lässt es sich mit dem Rückbau dieses einen Commits.
@@ -187,7 +194,7 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Gates und Werkzeuge (5.10):** die Bestände zweier Ratschen sind nicht befragt (Schema:
   was die Datenbank ablehnt; Listen: was sie begrenzt), die Form-Ratsche sieht umrandete
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
-  Excel-Bibliothek und gosec auf einem unveröffentlichten Stand, vier neue Warnungen des
+  Excel-Bibliothek und gosec auf einem unveröffentlichten Stand, drei falsche Warnungen des
   Linters im Sammel-Update der Oberfläche.
 - [ ] **Schichtung des Backends (5.62):** die Regeln in Dateien, die auch eine Tür tragen, je
   Datei lesen und trennen; die Zuordnung der zwei Importe zusammenlegen.
@@ -363,17 +370,20 @@ Vermerk.
   `#nosec`). Offen: auf die nächste veröffentlichte Fassung heben, sobald sie erscheint; sie
   kann neue Regeln mitbringen, deshalb mit eigenem Commit. Kategorie B.
 - **Das Sammel-Update der Oberfläche vom 12.10.2026 ist rot** (Pull Request 730, zehn Pakete).
-  Tests und Bau laufen durch; der Linter meldet nach dem Update vier Variablen als „assigned a
-  value but only used as a type" (`@typescript-eslint/no-unused-vars`), und er läuft mit
-  `--max-warnings 0`. Alle vier sind gebundene Eigenschaften eines Bauteils (`$bindable()`):
-  `queryVal` in `CameraScanner.svelte`, `element` in `ui/Suchpille.svelte` und `showWebcam` in
-  `StudentProfileCard.svelte` setzt das Bauteil nur, und der Wert geht an den Aufrufer;
-  `showDeleteConfirm` nennt `StudentProfileCard.svelte` nur in der Liste seiner Eigenschaften.
-  Nächster Schritt: in einem eigenen Arbeitsverzeichnis mit `npm ci` nachstellen, welches der
-  drei angehobenen Linter-Pakete die Meldung bringt (eslint 10.12, eslint-plugin-svelte
-  3.23.1, typescript-eslint 8.71.1), dann entweder die Regel für gebundene Eigenschaften
-  einstellen oder die vier Stellen ändern; `showDeleteConfirm` dabei am Aufrufer prüfen.
-  Kategorie B.
+  Der Linter meldet nach dem Update drei gebundene Eigenschaften (`$bindable()`) als „assigned
+  a value but only used as a type" (`@typescript-eslint/no-unused-vars`), und er läuft mit
+  `--max-warnings 0`: `queryVal` in `CameraScanner.svelte`, `element` in `ui/Suchpille.svelte`
+  und `showWebcam` in `StudentProfileCard.svelte`. Jedes der drei Bauteile setzt den Wert nur,
+  und er geht über `bind:` an den Aufrufer; die Meldung ist falsch. Nachgestellt am 12.10.2026
+  in einem eigenen Arbeitsverzeichnis mit `npm ci`: Sie kommt mit typescript-eslint 8.71.1 und
+  bleibt mit 8.71.0 aus; eslint, eslint-plugin-svelte und svelte ändern daran nichts. Bei den
+  Herstellern ist es als Fehler dieser Fassung gemeldet (typescript-eslint, Meldung 12980,
+  Korrektur für die nächste Fassung zugesagt; eslint-plugin-svelte, Meldung 1607, offen).
+  Prettier, svelte-check, Vitest und der Bau sind mit dem Update grün, die Browser-Tests liefen
+  im Pull Request durch. Nächster Schritt: das Sammel-Update der folgenden Woche ansehen
+  (Dependabot prüft montags). Meldet der Linter dann weiter, typescript-eslint in
+  `.github/dependabot.yml` zurückhalten, bis die Korrektur erschienen ist; die drei Stellen
+  bleiben, wie sie sind. Kategorie B.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 

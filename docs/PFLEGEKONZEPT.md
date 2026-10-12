@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 09.10.2026 (Entwurf)
+Stand: 12.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -68,7 +68,11 @@ Kopie; bei Stillstand zusätzlich ein Anruf. Nie über die Issues auf GitHub, we
 **Eine Änderung von außen** — ein Pull Request, auch von Dependabot oder von einem Werkzeug,
 das Vorschläge selbst erzeugt — wird vor dem Übernehmen so geprüft:
 
-- Grün in der CI genügt nicht; rot ist ein Befund und kein Rauschen.
+- Grün in der CI genügt nicht; rot ist ein Befund und kein Rauschen. Ein Job endet am ersten
+  roten Schritt: Was dahinter steht, lief in dem Pull Request nicht.
+- Die Versionshinweise jeder angehobenen Fassung lesen. Was dort als Änderung am Verhalten
+  steht, wird am eigenen Code nachgestellt, mit alter und neuer Fassung, bevor es übernommen
+  wird.
 - Welche Dateien ändert er (`gh pr view <Nummer> --json files`)? Beifang fällt hier auf: eine
   fremde Sperrdatei, Notizdateien, eine zurückgestufte Go-Version.
 - Was er ändert, zeigt `git diff --stat origin/main...origin/<Zweig>` mit drei Punkten. Titel
@@ -83,6 +87,13 @@ das Vorschläge selbst erzeugt — wird vor dem Übernehmen so geprüft:
   ersten Fehler.
 - Ein Sammel-Update der Pakete wird in einem eigenen Arbeitsverzeichnis mit `npm ci` geprüft,
   bevor es übernommen wird.
+- Hebt er eine Action der Prüfläufe: `actionlint` prüft die Eingaben (`with:`) nur bei
+  Actions, die es unter ihrem Tag kennt. Hier ist jede Action an einen Commit geheftet; ein
+  falscher Name einer Eingabe bleibt dort grün (gemessen am 12.10.2026 mit dem Abbild aus
+  `ci.yml`). Deshalb `action.yml` zwischen alter und neuer Version lesen
+  (`gh api repos/<Action>/compare/<alt>...<neu>`) und den angehefteten Commit gegen das Tag
+  halten, das der Kommentar daneben nennt (`gh api repos/<Action>/git/ref/tags/<Tag>`). Ein
+  Schritt mit `if: failure()` läuft in einem grünen Lauf nicht mit.
 - Ein Zweig auf GitHub ist kein offener Vorschlag: `gh pr list --state all --head <Zweig>`
   zeigt, ob er schon übernommen oder abgelehnt ist.
 - Ändert der Vorschlag eine Funktion ohne Test, gehört der Test zur Übernahme.
@@ -308,6 +319,16 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   Seit dem 07.10.2026 beendet der Schritt vor jedem neuen Versuch ein übrig gebliebenes
   `apt-get` (`.github/workflows/ci.yml`, `beende_apt`). Am Code liegt ein solcher Lauf nicht;
   die gescheiterten Jobs starten mit `gh run rerun <Nummer des Laufs> --failed` neu.
+- **Der Linter der Oberfläche ist rot nach einem Sammel-Update, am Code hat sich nichts
+  geändert (12.10.2026).** ESLint meldete vier Eigenschaften von Bauteilen als unbenutzt. Drei
+  davon setzt ihr Bauteil nur, und der Wert geht über `bind:` an den Aufrufer (`$bindable()`);
+  die vierte war wirklich unbenutzt und ist entfernt. Welches Paket eine Meldung bringt, zeigt
+  ein eigenes Arbeitsverzeichnis mit dem Stand des Pull Requests: nach `npm ci` je ein
+  angehobenes Paket auf die alte Fassung zurücksetzen
+  (`npm install --no-save --ignore-scripts <Paket>@<Fassung>`) und den Linter fahren. Hier war
+  es typescript-eslint 8.71.1, bei den Herstellern als Fehler dieser Fassung gemeldet. Die
+  drei Stellen blieben unverändert, das Update wartet auf die korrigierte Fassung
+  ([OFFEN.md](OFFEN.md) 5.10).
 - **`actionlint` ist rot nach dem Wechsel des Runner-Abbilds (08.10.2026).** actionlint führt
   die Namen der Abbilder von GitHub als feste Liste je Fassung; die jüngste kannte
   `ubuntu-26.04` nicht und meldete jede Zeile `runs-on` damit („label … is unknown"). Der
