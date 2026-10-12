@@ -3,11 +3,11 @@ package api
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"bibliothek/api/tuer"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -17,7 +17,7 @@ import (
 //
 // Der Server hat hier keine Datenbank (s.DB == nil) und die Repositories sind Attrappen,
 // die sich merken, ob sie gerufen wurden. Erreicht ein Handler die Datenbank doch, fängt
-// antwortOhneDB den Absturz und meldet ihn als „erreichte die Datenbank" — genau das war
+// tuertest.AntwortOhneDB den Absturz und meldet ihn als „erreichte die Datenbank" — genau das war
 // vor der Prüfung der Fall.
 
 type vormerkungRepoZaehler struct {
@@ -33,26 +33,6 @@ func (v *vormerkungRepoZaehler) List(context.Context, string, string) ([]reposit
 func (v *vormerkungRepoZaehler) Create(context.Context, string, string, string) (string, error) {
 	v.gerufen = true
 	return "neu", nil
-}
-
-func antwortOhneDB(t *testing.T, h http.HandlerFunc, methode, pfad, rumpf string) (status int) {
-	t.Helper()
-	defer func() {
-		if r := recover(); r != nil {
-			t.Fatalf("%s %s erreichte die Datenbank statt die Kennung zu prüfen (%v)", methode, pfad, r)
-		}
-	}()
-	var body *strings.Reader
-	if rumpf != "" {
-		body = strings.NewReader(rumpf)
-	} else {
-		body = strings.NewReader("")
-	}
-	req := httptest.NewRequest(methode, pfad, body)
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	h(rec, req)
-	return rec.Code
 }
 
 // urnForm besteht uuid.Validate und uuid.Parse (google/uuid kennt das Präfix), Postgres
@@ -85,7 +65,7 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			if status := antwortOhneDB(t, f.h, f.methode, f.pfad, f.rumpf); status != http.StatusBadRequest {
+			if status := tuertest.AntwortOhneDB(t, f.h, f.methode, f.pfad, f.rumpf); status != http.StatusBadRequest {
 				t.Fatalf("Status %d, erwartet 400", status)
 			}
 		})
@@ -109,7 +89,7 @@ func TestVormerkungen_UngueltigeKennungErreichtRepositoryNicht(t *testing.T) {
 			if f.liste {
 				h = s.ListVormerkungHandler(repo)
 			}
-			if status := antwortOhneDB(t, h, f.methode, f.pfad, f.rumpf); status != http.StatusBadRequest {
+			if status := tuertest.AntwortOhneDB(t, h, f.methode, f.pfad, f.rumpf); status != http.StatusBadRequest {
 				t.Fatalf("Status %d, erwartet 400", status)
 			}
 			if repo.gerufen {
@@ -142,7 +122,7 @@ func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 
 	s := &Server{}
 	repo := &vormerkungRepoZaehler{}
-	status := antwortOhneDB(t, s.CreateVormerkungHandler(repo), http.MethodPost, "/api/vormerkungen",
+	status := tuertest.AntwortOhneDB(t, s.CreateVormerkungHandler(repo), http.MethodPost, "/api/vormerkungen",
 		`{"titel_id":"`+gut+`","schueler_id":""}`)
 	if status != http.StatusCreated || !repo.gerufen {
 		t.Fatalf("gültige Vormerkung mit leerer schueler_id: Status %d, Repository gerufen=%v", status, repo.gerufen)

@@ -69,3 +69,26 @@ func Fehlermeldung(t *testing.T, rec *httptest.ResponseRecorder) string {
 	}
 	return body.Error
 }
+
+// AntwortOhneDB ruft eine Tür, deren Server keine Datenbank hat, und liefert den Status der
+// Antwort. Greift die Tür doch nach der Datenbank, bricht sie ab; der Helfer fängt das und
+// meldet es als Fehler des Tests.
+func AntwortOhneDB(t *testing.T, h http.HandlerFunc, methode, pfad, rumpf string) (status int) {
+	t.Helper()
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("%s %s erreichte die Datenbank statt die Kennung zu prüfen (%v)", methode, pfad, r)
+		}
+	}()
+	var body *strings.Reader
+	if rumpf != "" {
+		body = strings.NewReader(rumpf)
+	} else {
+		body = strings.NewReader("")
+	}
+	req := httptest.NewRequest(methode, pfad, body)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	h(rec, req)
+	return rec.Code
+}
