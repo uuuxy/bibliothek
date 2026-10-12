@@ -394,7 +394,7 @@ var triggerBestand = []string{
 	// Abgangsdatum (ausgesondert_am) bzw. löscht es beim Zurückholen. Frage 12: Kein
 	// Lesepfad rechnete vorher mit dem Wert — die Spalte entsteht mit dem Trigger. Die
 	// Folge, die man kennen muss: Ein Schreiber, der das Datum SELBST setzt, wird
-	// überschrieben; deshalb hält api/abgangsdatum_pg_test.go eine Quelltext-Ratsche
+	// überschrieben; deshalb hält api/abgangsdatum_ratsche_test.go eine Quelltext-Ratsche
 	// dagegen. Zweck ist das Abgangsbuch (Protokoll 1 des Medienzentrums) über alle sechs
 	// Aussonder-Türen, auch die, die es noch nicht gibt.
 	"trg_exemplar_abgangsdatum @ buecher_exemplare",

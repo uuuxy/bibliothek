@@ -708,7 +708,14 @@ von Stufe 4 sechs der elf Themen.
   Prüfungen lesen sie dort beim Namen. Eine Prüfung, die den Aufruf einer Funktion am Namen
   ohne Paket erkennt, sieht ihn aus einem anderen Paket nicht mehr: `uuid_eingaben_test.go`
   fand nach Stufe 2 keine Eingabe und wurde an seiner Untergrenze rot; es kennt jetzt beide
-  Formen. Der Handgriff steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
+  Formen. Umgekehrt sieht eine Prüfung, die mit ihrem Thema umzieht und den Baum ab `..`
+  durchläuft, einen Ordner tiefer nur noch `api/` und bleibt grün. In Stufe 4 betrifft es eine
+  Prüfung: Die Ratsche zum Abgangsdatum stand bei den Tests an den Türen des Katalogs und
+  steht seit dem 12.10.2026 in `api/abgangsdatum_ratsche_test.go`, wo sie bleibt; in den
+  Listen der übrigen vier Themen steht kein Baumlauf (gemessen am 12.10.2026). Sechs
+  Testdateien in `api/` durchlaufen den Baum ab `..`. Zieht eine in Stufe 5 zu ihrem Paket,
+  braucht sie die Wurzel von dort und eine Probe mit einem Verstoß außerhalb ihres Ordners.
+  Der Handgriff steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
 - **Verweise beim Pfad.** Die Dokumente nennen Dateien aus `api/` an 307 Stellen beim Pfad, der
   Go-Code außerhalb von `api/` an 147 Stellen in 90 Dateien, die Oberfläche an 67 (gezählt am
   12.10.2026). `docs/dateiverweise_test.go` hält die Verweise der Dokumente, der Kommentare im

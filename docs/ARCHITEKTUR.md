@@ -1805,7 +1805,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, dazu wo ein Test über den ganzen Router steht, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand, in 8.14 das Paket für Tests über den Router aus einem Testpaket und was der Umzug der nächsten vier Themen am Handgriff ergänzt hat, danach die Vorarbeit bei Mahnwesen und Schaden
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, dazu wo ein Test über den ganzen Router steht, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand, in 8.14 das Paket für Tests über den Router aus einem Testpaket und was der Umzug der nächsten vier Themen am Handgriff ergänzt hat, danach die Vorarbeit bei Mahnwesen und Schaden und was beim Umzug einer Prüfung über den Quellbaum still bleibt
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2712,6 +2712,17 @@ wenn man ihn einmal gebraucht hat.
   Türen aus den Namen in der Routenliste her; was sie sieht, lässt sich an zwei Ständen über
   eine Probe-Datei per Overlay ausgeben und vergleichen (19 Funktionen, sieben Routen, vor
   und nach beiden Umzügen gleich).
+  Still bleibt eine Prüfung, die mit ihrem Thema umzieht und den Quellbaum ab einem relativen
+  Ordner durchläuft (`".."`): Einen Ordner tiefer liest sie nur noch `api/` und findet nichts
+  zu melden. Ein gezielt gelesener Pfad wird dagegen von selbst rot, weil die Datei fehlt.
+  Vor dem Umzug deshalb in den umziehenden Testdateien nach Baumläufen suchen
+  (`filepath.Walk`, `filepath.WalkDir`, `os.ReadDir`, Pfade über `..`). Eine Prüfung über den
+  Baum, die keine Tür prüft, wird vorher in eine eigene Datei geschnitten und bleibt in
+  `api/`. Sie hält selbst, dass ihr Lauf die Stelle erreicht, an der ihr Gegenstand steht:
+  `api/abgangsdatum_ratsche_test.go` zählt die Zeilen, die die Spalte nennen, und scheitert
+  bei null. Belegt am 12.10.2026 am Katalog: Am umgezogenen Stand blieb ein Schreiber des
+  Abgangsdatums in `repository/` unbemerkt, am Stand davor wird der Test rot; mit der Zählung
+  wird er auch rot, wenn der Lauf nur `api/` liest oder seine Wurzel fehlt.
 
 ---
 
