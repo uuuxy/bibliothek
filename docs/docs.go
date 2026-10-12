@@ -230,7 +230,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.PermissionSetting"
+                                "$ref": "#/definitions/benutzer.PermissionSetting"
                             }
                         }
                     },
@@ -264,7 +264,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.UpdatePermissionsRequest"
+                            "$ref": "#/definitions/benutzer.UpdatePermissionsRequest"
                         }
                     }
                 ],
@@ -353,7 +353,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.UserResponse"
+                                "$ref": "#/definitions/benutzer.UserResponse"
                             }
                         }
                     },
@@ -387,7 +387,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.CreateUserRequest"
+                            "$ref": "#/definitions/benutzer.CreateUserRequest"
                         }
                     }
                 ],
@@ -449,7 +449,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.UpdateUserRequest"
+                            "$ref": "#/definitions/benutzer.UpdateUserRequest"
                         }
                     }
                 ],
@@ -4108,32 +4108,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.CreateUserRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "nachname",
-                "rolle",
-                "vorname"
-            ],
-            "properties": {
-                "barcode_id": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "rolle": {
-                    "type": "string"
-                },
-                "vorname": {
-                    "type": "string"
-                }
-            }
-        },
         "api.DnbSchlagwortVorschlag": {
             "type": "object",
             "properties": {
@@ -4364,20 +4338,6 @@ const docTemplate = `{
                 },
                 "summe": {
                     "type": "number"
-                }
-            }
-        },
-        "api.PermissionSetting": {
-            "type": "object",
-            "properties": {
-                "allowed": {
-                    "type": "boolean"
-                },
-                "permission": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
                 }
             }
         },
@@ -4711,20 +4671,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.UpdatePermissionsRequest": {
-            "type": "object",
-            "properties": {
-                "allowed": {
-                    "type": "boolean"
-                },
-                "permission": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                }
-            }
-        },
         "api.UpdateStatusRequest": {
             "type": "object",
             "properties": {
@@ -4757,72 +4703,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "signatur": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.UpdateUserRequest": {
-            "type": "object",
-            "properties": {
-                "aktiv": {
-                    "type": "boolean"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "rolle": {
-                    "type": "string"
-                },
-                "vorname": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.UserResponse": {
-            "type": "object",
-            "properties": {
-                "aktiv": {
-                    "type": "boolean"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "erstellt_am": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "leser_id": {
-                    "description": "LeserID ist die Leserzeile dieses Kontos (Migration 125). Die Freischaltungs-Zeile\nbraucht sie, um von einem offenen Antrag aus nach der gleichnamigen Leserzeile zu\nsuchen, die noch KEIN Konto hat — der Altbestand, bei dem die Selbstanmeldung sonst\neinen zweiten Eintrag erzeugt (UserManagementZugangsanfragen.svelte).",
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "rolle": {
-                    "type": "string"
-                },
-                "vorname": {
-                    "type": "string"
-                },
-                "zugang_beantragt_am": {
-                    "description": "ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);\nnull = keiner. Die Oberfläche unterscheidet daran „wartet\" von „deaktiviert\".",
                     "type": "string"
                 }
             }
@@ -5212,6 +5092,126 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "benutzer.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "nachname",
+                "rolle",
+                "vorname"
+            ],
+            "properties": {
+                "barcode_id": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "rolle": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
+                }
+            }
+        },
+        "benutzer.PermissionSetting": {
+            "type": "object",
+            "properties": {
+                "allowed": {
+                    "type": "boolean"
+                },
+                "permission": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "benutzer.UpdatePermissionsRequest": {
+            "type": "object",
+            "properties": {
+                "allowed": {
+                    "type": "boolean"
+                },
+                "permission": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "benutzer.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "aktiv": {
+                    "type": "boolean"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "rolle": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
+                }
+            }
+        },
+        "benutzer.UserResponse": {
+            "type": "object",
+            "properties": {
+                "aktiv": {
+                    "type": "boolean"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "erstellt_am": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "leser_id": {
+                    "description": "LeserID ist die Leserzeile dieses Kontos (Migration 125). Die Freischaltungs-Zeile\nbraucht sie, um von einem offenen Antrag aus nach der gleichnamigen Leserzeile zu\nsuchen, die noch KEIN Konto hat — der Altbestand, bei dem die Selbstanmeldung sonst\neinen zweiten Eintrag erzeugt (UserManagementZugangsanfragen.svelte).",
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rolle": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
+                },
+                "zugang_beantragt_am": {
+                    "description": "ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);\nnull = keiner. Die Oberfläche unterscheidet daran „wartet\" von „deaktiviert\".",
                     "type": "string"
                 }
             }

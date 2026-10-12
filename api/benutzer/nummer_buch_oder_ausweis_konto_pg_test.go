@@ -1,4 +1,4 @@
-package api
+package benutzer
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewUserRepository(pool)
 	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RoleAdmin}
 

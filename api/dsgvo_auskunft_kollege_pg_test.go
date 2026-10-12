@@ -192,7 +192,7 @@ func TestKontoAnlage_ProtokollTraegtZielID(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.CreateUserHandler(repository.NewUserRepository(pool)).ServeHTTP(rec, req)
+	srv.benutzer().CreateUserHandler(repository.NewUserRepository(pool)).ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Konto anlegen: %d %s", rec.Code, rec.Body.String())
 	}

@@ -44,7 +44,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	kontoMitEintraegen := func(t *testing.T, vorname, nachname, ausweis string) (kontoID, leserID, adresse string) {
 		t.Helper()
 		adresse = vorname + "@konto-eintraege.invalid"
-		if rec := tuertest.RufeAlsAdmin(t, admin, srv.CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer",
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer",
 			`{"barcode_id":"`+ausweis+`","vorname":"`+vorname+`","nachname":"`+nachname+`","email":"`+adresse+`","rolle":"mitarbeiter"}`,
 			nil); rec.Code != http.StatusOK {
 			t.Fatalf("Konto anlegen: Status %d — %s", rec.Code, rec.Body.String())
@@ -53,7 +53,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 			Scan(&kontoID, &leserID); err != nil {
 			t.Fatalf("Konto lesen: %v", err)
 		}
-		if rec := tuertest.RufeAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
 			`{"rolle":"helfer"}`, map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto ändern: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -61,7 +61,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	}
 	loescheKonto := func(t *testing.T, kontoID string) {
 		t.Helper()
-		if rec := tuertest.RufeAlsAdmin(t, admin, srv.DeleteUserHandler(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().DeleteUserHandler(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
 			map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto löschen: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -153,7 +153,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 			VALUES ('Hanna', 'Helferkonto', $1, 'helfer', true, $2) RETURNING id::text`, adresse, leserID).Scan(&kontoID); err != nil {
 			t.Fatalf("Konto anlegen: %v", err)
 		}
-		if rec := tuertest.RufeAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.benutzer().UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
 			`{"aktiv":false}`, map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto ändern: Status %d — %s", rec.Code, rec.Body.String())
 		}

@@ -1,10 +1,11 @@
-package api
+package benutzer
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 )
 
@@ -36,7 +37,7 @@ func TestNormalisiereBenutzerRolleKenntLeitung(t *testing.T) {
 // nicht beim nächsten Umbau an eine Rollenliste gerät, die „leitung" mitzählt.
 func TestLeitungDarfKeinenAdminVergeben(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{"leitung-1": "LEITUNG"}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	req := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "leitung-1", auth.RoleLeitung)
 	w := httptest.NewRecorder()
@@ -60,7 +61,7 @@ func TestLeitungDarfAdminKontoNichtBearbeiten(t *testing.T) {
 		"leitung-1": "LEITUNG",
 		"admin-1":   "ADMIN",
 	}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	const rumpf = `{"vorname":"Eva","nachname":"Neu","email":"eva@schule.de","rolle":"admin","aktiv":true}`
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "leitung-1", auth.RoleLeitung)

@@ -21,7 +21,7 @@
 -- erkennt eine Person allein an ihrer E-Mail (auth/handlers.go). Die
 -- Rechtevergabe ist damit der Weg in JEDES Konto der Anlage. Der Admin kann das
 -- Recht der Leitung erteilen; ein Admin-KONTO bleibt ihr auch dann verschlossen
--- (api/user_admin_eskalation.go).
+-- (api/benutzer/user_admin_eskalation.go).
 --
 -- ADMIN ist in der Rechte-Matrix nicht abwählbar („Administrator hat immer alle
 -- Rechte", PermissionsEditor.svelte), seine Zeilen stehen deshalb verlässlich

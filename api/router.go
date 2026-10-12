@@ -13,10 +13,9 @@
 
 package api
 
-// router.go — HTTP route registration.
-// All middleware functions live in middleware.go.
-// Handler functions live in their respective domain files (copy_admin.go,
-// user_admin.go, graduates.go, audit_handler.go, inventory.go, etc.).
+// router.go: der Server, sein Router und die Zugänge zu den Themen. Die Middleware steht in
+// middleware.go, jede Route mit ihrem Recht in routes_*.go. Die Türen stehen je Thema in einem
+// Paket unter api/ (docs/ARCHITEKTUR.md 5.2.2); die noch nicht umgezogenen in diesem Paket.
 
 import (
 	"errors"
@@ -27,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/benutzer"
 	"bibliothek/api/inventurlauf"
 	"bibliothek/api/lernmittel"
 	"bibliothek/api/tuer"
@@ -77,6 +77,11 @@ func (s *Server) lernmittel() *lernmittel.Tueren {
 // inventurlauf ist der Zugang zu den Türen der Inventur.
 func (s *Server) inventurlauf() *inventurlauf.Tueren {
 	return &inventurlauf.Tueren{Basis: &s.Basis}
+}
+
+// benutzer ist der Zugang zu den Türen zu Benutzer & Rechte.
+func (s *Server) benutzer() *benutzer.Tueren {
+	return &benutzer.Tueren{Basis: &s.Basis}
 }
 
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.

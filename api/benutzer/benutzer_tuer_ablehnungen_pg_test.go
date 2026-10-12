@@ -1,4 +1,4 @@
-package api
+package benutzer
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func TestBenutzerLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewAuditRepository(pool)
 	userRepo := repository.NewUserRepository(pool)
 
@@ -101,7 +101,7 @@ func TestBenutzerAendern_UnbekannteKennungOhneProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var admin string
 	if err := pool.QueryRow(ctx, `

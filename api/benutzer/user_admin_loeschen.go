@@ -1,4 +1,4 @@
-package api
+package benutzer
 
 import (
 	"errors"
@@ -27,7 +27,7 @@ import (
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /benutzer/{id} [delete]
-func (s *Server) DeleteUserHandler(auditRepo repository.AuditRepository, userRepo repository.UserRepository) http.HandlerFunc {
+func (s *Tueren) DeleteUserHandler(auditRepo repository.AuditRepository, userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleDeleteUser(w, r, auditRepo, userRepo)
 	}
@@ -35,7 +35,7 @@ func (s *Server) DeleteUserHandler(auditRepo repository.AuditRepository, userRep
 
 // handleDeleteUser prüft, ob das Konto gelöscht werden darf, und ordnet die Ablehnungen des
 // Löschens ein.
-func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository, userRepo repository.UserRepository) {
+func (s *Tueren) handleDeleteUser(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository, userRepo repository.UserRepository) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))

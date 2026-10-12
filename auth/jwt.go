@@ -34,7 +34,8 @@ const (
 	// RoleLeitung ist die Bibliotheksleitung (Migration 121): alles außer den zwei Türen
 	// der Systempflege — manage_users (Benutzer & Rechte) und manage_settings
 	// (Einstellungen). Eine Erhebung, die der Admin an der E-Mail-Adresse vornimmt, und
-	// KEIN Administrator: Ein Admin-Konto bleibt ihr verschlossen (user_admin_eskalation.go).
+	// KEIN Administrator: Ein Admin-Konto bleibt ihr verschlossen
+	// (api/benutzer/user_admin_eskalation.go).
 	RoleLeitung Role = "LEITUNG"
 	// RoleMitarbeiter repräsentiert Bibliotheksmitarbeiter, die das tägliche Ausleihgeschäft durchführen.
 	RoleMitarbeiter Role = "MITARBEITER"

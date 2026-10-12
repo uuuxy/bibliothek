@@ -593,7 +593,7 @@ ablesen lässt, dass er es getan hat. Der Durchgang über den Bestand fand am 07
 Änderung an der Rechte-Matrix (`PUT /api/admin/permissions`) schrieb keinen Eintrag, während
 Konten und Einstellungen ihren schreiben. Die Matrix entscheidet an jeder Route, wer welche
 Daten sieht; wer einer Rolle wann ein Recht gab, ließ sich nicht nachsehen (behoben,
-`api/rechte_matrix_protokoll_pg_test.go`). Dieselbe Form früher: Anlage und Rollenwechsel von
+`api/benutzer/rechte_matrix_protokoll_pg_test.go`). Dieselbe Form früher: Anlage und Rollenwechsel von
 Konten ohne Eintrag (bis 16.08.2026, aufgefallen an vier Admin-Konten, deren Herkunft niemand
 mehr feststellen konnte), die Anlage eines Kontos aus der Leserdatei ohne Eintrag (29.09.2026).
 

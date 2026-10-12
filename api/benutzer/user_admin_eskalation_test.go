@@ -1,4 +1,4 @@
-package api
+package benutzer
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/repository"
 )
@@ -64,7 +65,7 @@ const rumpfAdmin = `{"vorname":"Eva","nachname":"Neu","email":"eva@schule.de","r
 // Datensatz und trägt sich als Admin ein.
 func TestSelbstbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{"mitarbeiter-1": "MITARBEITER"}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/mitarbeiter-1", rumpfAdmin, "mitarbeiter-1", auth.RoleMitarbeiter)
 	req.SetPathValue("id", "mitarbeiter-1")
@@ -85,7 +86,7 @@ func TestSelbstbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 // („eigene Admin-Rolle kann nicht herabgestuft werden") und ließ nur die Beförderung zu.
 func TestEigenerDatensatzMitGleicherRolleBleibtSpeicherbar(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{"mitarbeiter-1": "MITARBEITER"}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Max","nachname":"Neuername","email":"max@schule.de","rolle":"mitarbeiter","aktiv":true}`
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/mitarbeiter-1", rumpf, "mitarbeiter-1", auth.RoleMitarbeiter)
@@ -105,7 +106,7 @@ func TestEigenerDatensatzMitGleicherRolleBleibtSpeicherbar(t *testing.T) {
 // Weg 2: Fremdbeförderung — einen zweiten Benutzer zum Admin machen.
 func TestFremdbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{"kollege-1": "HELFER"}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/kollege-1", rumpfAdmin, "mitarbeiter-1", auth.RoleMitarbeiter)
 	req.SetPathValue("id", "kollege-1")
@@ -124,7 +125,7 @@ func TestFremdbefoerderungZumAdminWirdAbgelehnt(t *testing.T) {
 // Weg 2b: Denselben Weg über die Neuanlage.
 func TestAdminNeuanlageOhneAdminrechteWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	req := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "mitarbeiter-1", auth.RoleMitarbeiter)
 	w := httptest.NewRecorder()
@@ -147,7 +148,7 @@ func TestAdminNeuanlageOhneAdminrechteWirdAbgelehnt(t *testing.T) {
 // Admin-Sitzung. Die Rolle im Rumpf bleibt dabei unverdächtig "admin".
 func TestEmailUebernahmeEinesAdminKontosWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{"admin-1": "ADMIN"}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"angreifer@schule.de","rolle":"admin","aktiv":true}`
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "mitarbeiter-1", auth.RoleMitarbeiter)
@@ -173,7 +174,7 @@ func TestEmailUebernahmeEinesAdminKontosWirdAbgelehnt(t *testing.T) {
 // „Admin herabstufen, E-Mail übernehmen, danach in Ruhe wieder hochstufen".
 func TestAdminHerabstufenDurchNichtAdminWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{"admin-1": "ADMIN"}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"angreifer@schule.de","rolle":"mitarbeiter","aktiv":true}`
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "mitarbeiter-1", auth.RoleMitarbeiter)
@@ -193,7 +194,7 @@ func TestAdminHerabstufenDurchNichtAdminWirdAbgelehnt(t *testing.T) {
 // Ein Administrator muss all das weiterhin dürfen — sonst ist die Kontoverwaltung kaputt.
 func TestAdminDarfWeiterhinAdminsAnlegenUndBearbeiten(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{"admin-2": "ADMIN"}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	neu := anfrageAls(t, http.MethodPost, "/api/benutzer", rumpfAdmin, "admin-1", auth.RoleAdmin)
 	wNeu := httptest.NewRecorder()
@@ -215,7 +216,7 @@ func TestAdminDarfWeiterhinAdminsAnlegenUndBearbeiten(t *testing.T) {
 // Administratorebene weiterhin ohne Einschränkung.
 func TestManageUsersDarfNichtAdminKontenWeiterhinBearbeiten(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{"helfer-1": "HELFER"}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Hilde","nachname":"Helfer","email":"hilde@schule.de","rolle":"helfer","aktiv":true}`
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/helfer-1", rumpf, "mitarbeiter-1", auth.RoleMitarbeiter)
@@ -240,7 +241,7 @@ func TestManageUsersDarfNichtAdminKontenWeiterhinBearbeiten(t *testing.T) {
 // pruefeAdminZiel).
 func TestAdminKannSichNichtSelbstHerabstufen(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{"admin-1": "ADMIN"}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"chef@schule.de","rolle":"mitarbeiter","aktiv":true}`
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "admin-1", auth.RoleAdmin)
@@ -260,7 +261,7 @@ func TestAdminKannSichNichtSelbstHerabstufen(t *testing.T) {
 // Die eigene Abmeldung aus dem System bleibt ebenfalls gesperrt.
 func TestEigeneDeaktivierungWirdAbgelehnt(t *testing.T) {
 	repo := &eskalationsRepo{rollen: map[string]string{"admin-1": "ADMIN"}}
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	rumpf := `{"vorname":"Chef","nachname":"Chefin","email":"chef@schule.de","rolle":"admin","aktiv":false}`
 	req := anfrageAls(t, http.MethodPut, "/api/benutzer/admin-1", rumpf, "admin-1", auth.RoleAdmin)
@@ -312,7 +313,7 @@ func TestSchutzregelnBeiEinzelnenFeldern(t *testing.T) {
 			req.SetPathValue("id", f.ziel)
 			w := httptest.NewRecorder()
 
-			(&Server{}).UpdateUserHandler(repo).ServeHTTP(w, req)
+			(&Tueren{Basis: &tuer.Basis{}}).UpdateUserHandler(repo).ServeHTTP(w, req)
 
 			if w.Code != f.status {
 				t.Errorf("Status %d, erwartet %d (%s)", w.Code, f.status, w.Body.String())

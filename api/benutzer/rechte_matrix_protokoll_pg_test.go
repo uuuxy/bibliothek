@@ -1,4 +1,4 @@
-package api
+package benutzer_test
 
 import (
 	"net/http"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -41,7 +42,7 @@ func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO role_permissions (role, permission, allowed) VALUES ('HELFER', 'view_students', false)

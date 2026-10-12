@@ -93,7 +93,7 @@ var RechteVorgabe = []RechteEintrag{
 	//
 	// Die Liste ist ADMIN minus zwei Türen — bewusst in derselben Reihenfolge wie der
 	// Admin-Block darüber, damit ein neues Recht beim Nachtragen nicht nur bei einer der
-	// beiden Rollen landet. Das Gate dafür steht in rolle_leitung_test.go: Es leitet das
+	// beiden Rollen landet. Das Gate dafür steht in api/benutzer/rolle_leitung_test.go: Es leitet das
 	// Soll aus den ADMIN-Zeilen ab und meldet jede fehlende oder überzählige Zeile.
 	//
 	// Warum die Leitung kein manage_users bekommt, obwohl sie die Bibliothek führt: Mit
@@ -254,7 +254,7 @@ var RechteOptional = mitLeitungAlsStartwert(map[string]bool{
 // Abgeleitet aus RechteVorgabe statt 24 Zeichenketten daneben: Eine zweite Liste liefe
 // beim nächsten neuen Recht auseinander, und die Abweichung wäre eine Dauerwarnung —
 // also genau das, was hier verhindert werden soll. Das Gate steht in
-// rolle_leitung_test.go. Die EXISTENZ jeder Zeile prüft die Selbstprüfung weiter.
+// api/benutzer/rolle_leitung_test.go. Die EXISTENZ jeder Zeile prüft die Selbstprüfung weiter.
 func mitLeitungAlsStartwert(m map[string]bool) map[string]bool {
 	for _, e := range RechteVorgabe {
 		if e.Role == "LEITUNG" {

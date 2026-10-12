@@ -1,4 +1,4 @@
-package api
+package benutzer
 
 import (
 	"errors"
@@ -28,7 +28,7 @@ type PermissionSetting struct {
 // @Success      200  {array}   PermissionSetting
 // @Failure      500  {object}  map[string]string
 // @Router       /admin/permissions [get]
-func (s *Server) GetPermissionsHandler() http.HandlerFunc {
+func (s *Tueren) GetPermissionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -66,7 +66,7 @@ type UpdatePermissionsRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /admin/permissions [put]
-func (s *Server) UpdatePermissionsHandler() http.HandlerFunc {
+func (s *Tueren) UpdatePermissionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req UpdatePermissionsRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {

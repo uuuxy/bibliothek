@@ -163,8 +163,8 @@ lässt sich dort anhalten.
   9 Testdateien), umgezogen mit einem Werkzeug. Ein Test über den ganzen Router steht im
   Ordner seines Themas, als eigenes Testpaket. Der Aufwand je Thema ist gemessen (5.65).
 - [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt. Umgezogen: Inventur
-  (`api/inventurlauf`). Offen: Benutzer, Portal, System, Mahnwesen, Schaden, Druck mit
-  Bestellung, Katalog, Leser, zuletzt die Theke.
+  (`api/inventurlauf`), Benutzer (`api/benutzer`). Offen: Portal, System, Mahnwesen, Schaden,
+  Druck mit Bestellung, Katalog, Leser, zuletzt die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
   die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
   Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
@@ -534,7 +534,7 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 3 si
   | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print.go` |
   | Schaden    | 7       | 1.154  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go` |
   | Lernmittel | 5       | 1.098  | 7      | 8           | `lmf_*.go`, seit dem 12.10.2026 in `api/lernmittel` |
-  | Benutzer   | 6       | 838    | 6      | 9           | `user_admin*.go` |
+  | Benutzer   | 6       | 838    | 6      | 9           | `user_admin*.go`, seit dem 12.10.2026 in `api/benutzer` |
   | Inventur   | 5       | 777    | 9      | 5           | `inventur_*.go`, seit dem 12.10.2026 in `api/inventurlauf` |
   | Portal     | 5       | 681    | 15     | 11          | `anliegen.go`, `reservation.go`, `katalog_kollegium.go`, `opac.go`, `monitor.go` |
 

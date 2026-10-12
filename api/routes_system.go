@@ -8,10 +8,10 @@ import (
 
 func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository, userRepo repository.UserRepository, dbPool db.PgxPoolIface) {
 	// ── BENUTZER (Users) ──
-	mux.Handle("GET /api/benutzer", s.RequirePermission("manage_users")(s.ListUsersHandler(userRepo)))
-	mux.Handle("POST /api/benutzer", s.RequirePermission("manage_users")(s.CreateUserHandler(userRepo)))
-	mux.Handle("PUT /api/benutzer/{id}", s.RequirePermission("manage_users")(s.UpdateUserHandler(userRepo)))
-	mux.Handle("DELETE /api/benutzer/{id}", s.RequirePermission("manage_users")(s.DeleteUserHandler(auditRepo, userRepo)))
+	mux.Handle("GET /api/benutzer", s.RequirePermission("manage_users")(s.benutzer().ListUsersHandler(userRepo)))
+	mux.Handle("POST /api/benutzer", s.RequirePermission("manage_users")(s.benutzer().CreateUserHandler(userRepo)))
+	mux.Handle("PUT /api/benutzer/{id}", s.RequirePermission("manage_users")(s.benutzer().UpdateUserHandler(userRepo)))
+	mux.Handle("DELETE /api/benutzer/{id}", s.RequirePermission("manage_users")(s.benutzer().DeleteUserHandler(auditRepo, userRepo)))
 
 	// ── EINSTELLUNGEN (Settings) ──
 	settingsRepo := repository.NewSystemSettingsRepository(dbPool)
@@ -33,7 +33,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("POST /api/admin/settings/mail/test", s.RequirePermission("manage_settings")(s.PostTestMailSettingsHandler()))
 
 	// Permissions
-	mux.Handle("GET /api/admin/permissions", s.RequirePermission("manage_users")(s.GetPermissionsHandler()))
+	mux.Handle("GET /api/admin/permissions", s.RequirePermission("manage_users")(s.benutzer().GetPermissionsHandler()))
 	mux.Handle("GET /api/admin/system/backup-status", s.RequirePermission("manage_settings")(s.BackupStatusHandler()))
 	// Die Verallgemeinerung des Backup-Waechters: Was ist eingerichtet, aber nicht in
 	// Betrieb? Siehe internal/bereitschaft/bereitschaft.go.
@@ -43,7 +43,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// obwohl RequirePermission dranhing. Lieber eine lange Zeile als ein Gate, das man
 	// entschaerfen muss.
 	mux.Handle("GET /api/admin/system/betriebsbereitschaft", s.RequirePermission("manage_settings")(s.BetriebsbereitschaftHandler(settingsRepo, mailRepo, repository.NewBetriebszustandRepository(dbPool))))
-	mux.Handle("PUT /api/admin/permissions", s.RequirePermission("manage_users")(s.UpdatePermissionsHandler()))
+	mux.Handle("PUT /api/admin/permissions", s.RequirePermission("manage_users")(s.benutzer().UpdatePermissionsHandler()))
 
 	// Audit & Transactions
 	mux.Handle("GET /api/audit", s.RequirePermission("audit_logs")(s.GetAuditLogsHandler()))

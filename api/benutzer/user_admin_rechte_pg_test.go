@@ -1,4 +1,4 @@
-package api
+package benutzer
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 func TestListUsersLiefertEchteRechte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	email := "rechte-" + suffix + "@example.org"

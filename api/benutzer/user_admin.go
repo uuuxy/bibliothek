@@ -1,4 +1,4 @@
-package api
+package benutzer
 
 // user_admin.go — Handlers for system user and role-permission management.
 // Covers: listing/creating/updating/deleting staff accounts and reading/writing
@@ -46,7 +46,7 @@ type UserResponse struct {
 // @Success      200  {array}   UserResponse
 // @Failure      500  {object}  map[string]string
 // @Router       /benutzer [get]
-func (s *Server) ListUsersHandler(userRepo repository.UserRepository) http.HandlerFunc {
+func (s *Tueren) ListUsersHandler(userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -106,7 +106,7 @@ func (s *Server) ListUsersHandler(userRepo repository.UserRepository) http.Handl
 // Rechte, unabhaengig davon, was in der Tabelle steht.
 //
 // Die Rollen kommen kleingeschrieben zurueck, passend zu UserResponse.Rolle.
-func (s *Server) rechteAllerRollen(ctx context.Context) (map[string][]string, error) {
+func (s *Tueren) rechteAllerRollen(ctx context.Context) (map[string][]string, error) {
 	rechte, err := repository.ErlaubteRechteJeRolle(ctx, s.DB.Pool)
 	if err != nil {
 		return nil, err

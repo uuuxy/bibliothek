@@ -1,4 +1,4 @@
-package api
+package benutzer
 
 import (
 	"context"
@@ -18,13 +18,13 @@ import (
 // Prod vier aktive Admin-Konten auftauchten, war nicht mehr feststellbar, wer sie wann
 // angelegt hatte (der Alarm-Mail-Vorfall). Best effort: Ein Audit-Fehler bricht die
 // Mutation nicht ab, aber er steht im Log.
-func (s *Server) auditiereBenutzerMutation(r *http.Request, aktion string, details map[string]any) {
+func (s *Tueren) auditiereBenutzerMutation(r *http.Request, aktion string, details map[string]any) {
 	s.auditiereKonto(r.Context(), aktion, details)
 }
 
 // auditiereKonto schreibt einen Eintrag über ein Konto mit der angemeldeten Person als
 // Handelnder — für Türen, die nur den Kontext in der Hand haben.
-func (s *Server) auditiereKonto(ctx context.Context, aktion string, details map[string]any) {
+func (s *Tueren) auditiereKonto(ctx context.Context, aktion string, details map[string]any) {
 	s.ProtokolliereVerwaltung(ctx, aktion, details)
 }
 
@@ -49,14 +49,14 @@ type CreateUserRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /benutzer [post]
-func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
+func (s *Tueren) CreateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleCreateUser(w, r, userRepo)
 	}
 }
 
 // handleCreateUser prüft Rolle, Adresse und Ausweis, legt das Konto an und protokolliert es.
-func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, userRepo repository.UserRepository) {
+func (s *Tueren) handleCreateUser(w http.ResponseWriter, r *http.Request, userRepo repository.UserRepository) {
 	var req CreateUserRequest
 	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
@@ -135,7 +135,7 @@ type UpdateUserRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /benutzer/{id} [put]
-func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
+func (s *Tueren) UpdateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleUpdateUser(w, r, userRepo)
 	}
@@ -143,7 +143,7 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 
 // handleUpdateUser prüft die Schutzregeln vor jedem Schreibzugriff, ändert das Konto und
 // protokolliert es.
-func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRepo repository.UserRepository) {
+func (s *Tueren) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRepo repository.UserRepository) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
