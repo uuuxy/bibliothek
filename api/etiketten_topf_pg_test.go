@@ -54,7 +54,8 @@ func setzeVermerkSchuelerbuecherei(t *testing.T, pool *pgxpool.Pool, wert string
 	})
 }
 
-// etikettenUeberBuchformular druckt über GET /api/buecher/titel/{id}/etiketten (queryLabelItems).
+// etikettenUeberBuchformular druckt über GET /api/buecher/titel/{id}/etiketten
+// (buchetikett.DesTitels).
 func etikettenUeberBuchformular(t *testing.T, srv *Server, titelID string) string {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/x/etiketten?format="+topfTestFormat+"&start=1", nil)
@@ -67,7 +68,8 @@ func etikettenUeberBuchformular(t *testing.T, srv *Server, titelID string) strin
 	return pdftest.Suchtext(t, rec.Body.Bytes())
 }
 
-// etikettenUeberDruckCenter druckt über POST /api/print/labels (ergaenzeServerfelder). Die
+// etikettenUeberDruckCenter druckt über POST /api/print/labels
+// (buchetikett.ErgaenzeServerfelder). Die
 // Nutzlast trägt zusätzlich ein Feld „Topf" mit dem FALSCHEN Wert: Der Topf kommt vom
 // Server, und ein Druckauftrag aus dem Browser darf ihn nicht mitbringen können.
 func etikettenUeberDruckCenter(t *testing.T, srv *Server, barcode, untergeschobenerTopf string) string {
@@ -163,7 +165,7 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 	}
 }
 
-// Die beiden Wege zum Händler: der Lieferanten-Link (ladeBestellEtiketten) und der
+// Die beiden Wege zum Händler: der Lieferanten-Link (buchetikett.DerBestellung) und der
 // Mailanhang (Etiketten aus ProcessOrder). Bestellt wird ein LERNMITTEL-Titel für die
 // Schülerbücherei — der Fall, in dem Titel und Bestellung einander widersprechen.
 func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T) {
@@ -210,7 +212,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 }
 
 // Der Topf kommt vom Server (json:"-" an BarcodeLabelDetail.Topf). Bei einem Barcode, den
-// die Datenbank nicht kennt — Vorab-Druck —, trägt ergaenzeServerfelder nichts nach; ein
+// die Datenbank nicht kennt — Vorab-Druck —, trägt buchetikett.ErgaenzeServerfelder nichts nach; ein
 // vom Browser mitgeschicktes „Topf" bliebe dann stehen und wählte den Vermerk.
 func TestEigentumsvermerk_TopfLaesstSichNichtUnterschieben(t *testing.T) {
 	pool := pgtest.Pool(t)

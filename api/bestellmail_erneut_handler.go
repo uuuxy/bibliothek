@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/internal/buchetikett"
 	"bibliothek/mailservice"
 	"bibliothek/repository"
 
@@ -160,7 +161,7 @@ func (s *Server) baueBestellmailErneut(ctx context.Context, bestellungID string,
 		daten.Exemplare += p.Menge
 	}
 
-	etiketten, err := s.ladeBestellEtiketten(ctx, bestellungID)
+	etiketten, err := buchetikett.DerBestellung(ctx, s.DB.Pool, bestellungID)
 	if err != nil {
 		return bestellmailDaten{}, err
 	}

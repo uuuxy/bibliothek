@@ -1,12 +1,10 @@
-package api
+package buchetikett
 
 import (
 	"context"
 	"strconv"
 	"testing"
 
-	"bibliothek/api/tuer"
-	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
@@ -20,7 +18,6 @@ func TestEtikett_AnschaffungsjahrIstDasZugangsjahr(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var titelID string
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, autor, medientyp)
@@ -57,9 +54,9 @@ func TestEtikett_AnschaffungsjahrIstDasZugangsjahr(t *testing.T) {
 		t.Fatalf("Altbestand anlegen: %v", err)
 	}
 
-	zeilen, err := srv.queryLabelItems(ctx, titelID)
+	zeilen, err := DesTitels(ctx, pool, titelID)
 	if err != nil {
-		t.Fatalf("queryLabelItems: %v", err)
+		t.Fatalf("DesTitels: %v", err)
 	}
 	jahr := map[string]string{}
 	for _, z := range zeilen {

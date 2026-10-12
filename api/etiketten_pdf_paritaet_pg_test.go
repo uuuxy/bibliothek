@@ -19,7 +19,7 @@ import (
 // Es gibt zwei Wege zum selben Etikett, und sie holen ihre Daten verschieden:
 //
 //   - GET /api/buecher/titel/{id}/etiketten — „Barcodes drucken" im Buchformular,
-//     liest alles selbst aus der DB (queryLabelItems).
+//     liest alles selbst aus der DB (buchetikett.DesTitels).
 //   - POST /api/print/labels — die Etiketten-Verwaltung im Druck-Center. Sie schickt nur
 //     Barcode, Titel und Autor; alles Weitere muss der Server nachtragen.
 //
@@ -62,7 +62,7 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 
 	// Weg 2: Druck-Center — genau die Nutzlast aus labels.svelte.js (triggerPrint):
 	// nur BarcodeID, Titel und Autor. Wird hier ein Feld ergänzt, gehört es NICHT hierher,
-	// sondern in ergaenzeServerfelder.
+	// sondern in buchetikett.ErgaenzeServerfelder.
 	payload := `{
 		"formatId": "` + format + `",
 		"startPosition": 1,
@@ -105,7 +105,7 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 		if buchformular[i] != druckzentrum[i] {
 			t.Errorf("Aufkleber unterscheiden sich: Buchformular %q, Druck-Center %q.\n"+
 				"→ Dasselbe Buch bekäme je nach gedrücktem Knopf ein anderes Etikett. Ein Feld, "+
-				"das der Server kennt, gehört in ergaenzeServerfelder — nicht in die Nutzlast "+
+				"das der Server kennt, gehört in buchetikett.ErgaenzeServerfelder — nicht in die Nutzlast "+
 				"der Oberfläche.", buchformular[i], druckzentrum[i])
 		}
 	}

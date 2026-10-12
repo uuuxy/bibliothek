@@ -1,8 +1,6 @@
 package api
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,7 +10,6 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/internal/buchetikett"
 	"bibliothek/pdf"
-	"bibliothek/repository"
 )
 
 // parseLabelParams liest Format, Startposition und QR-Flag aus den Query-Parametern
@@ -34,15 +31,6 @@ func parseLabelParams(r *http.Request) (formatId string, startPos int, isQR bool
 	return formatId, startPos, isQR
 }
 
-// queryLabelItems lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr, Signatur) eines Titels.
-func (s *Server) queryLabelItems(ctx context.Context, id string) ([]buchetikett.BarcodeLabelDetail, error) {
-	zeilen, err := repository.EtikettDatenDesTitels(ctx, s.DB.Pool, id)
-	if err != nil {
-		return nil, err
-	}
-	return buchetikett.EtikettenAus(zeilen), nil
-}
-
 // LabelsHandler returns a handler that generates an A4 PDF containing 3x8 Avery labels
 // for all copies of a given book title.
 func (s *Server) LabelsHandler() http.HandlerFunc {
@@ -56,7 +44,7 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		formatId, startPos, isQR := parseLabelParams(r)
 
-		items, err := s.queryLabelItems(ctx, id)
+		items, err := buchetikett.DesTitels(ctx, s.DB.Pool, id)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -77,54 +65,6 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 
 		if err := bogen.Output(w); err != nil {
 			log.Printf("Fehler beim Senden des PDFs: %v", err)
-		}
-	}
-}
-
-// ergaenzeServerfelder füllt die Etikettenfelder nach, die NICHT aus der Anfrage
-// stammen: Anschaffungsjahr und Signatur.
-//
-// Der Nachdruck-Dialog schickt nur Barcode, Titel und Autor — beides stünde sonst nie
-// auf einem nachgedruckten Etikett. Es dem Client mitzugeben wäre der falsche Weg: Es
-// ist Serverwissen, und ein Feld, das die Oberfläche mitschicken MUSS, wird irgendwann
-// vergessen (dieselbe Klasse Fehler hat hier schon Buchdaten still verschluckt).
-//
-// Genau das ist der Signatur passiert: Diese Nachfüllung gab es zuerst nur fürs Jahr,
-// also trug dasselbe Buch je nach Druckweg einen anderen Aufkleber — über
-// GET /api/buecher/titel/{id}/etiketten mit Signatur, über POST /api/print/labels ohne.
-// Wer hier ein Feld ergänzt, ergänzt es auch in queryLabelItems und
-// ladeBestellEtiketten; TestEtikettenWegeDruckenDasselbe hält die Wege am fertigen PDF
-// zusammen.
-//
-// Eine Abfrage für alle Barcodes, kein N+1. Unbekannte Barcodes bleiben unangetastet —
-// beim Vorab-Druck für eine Bestellung existieren die Exemplare noch gar nicht, dort
-// ist das der richtige Zustand und kein Fehler.
-func (s *Server) ergaenzeServerfelder(ctx context.Context, items []buchetikett.BarcodeLabelDetail) {
-	barcodes := make([]string, 0, len(items))
-	for i := range items {
-		if items[i].BarcodeID != "" {
-			barcodes = append(barcodes, items[i].BarcodeID)
-		}
-	}
-	if len(barcodes) == 0 {
-		return
-	}
-
-	bekannt, err := repository.EtikettServerfelderZuBarcodes(ctx, s.DB.Pool, barcodes)
-	if err != nil {
-		if errors.Is(err, repository.ErrZeileUnlesbar) {
-			log.Printf("Etiketten: Serverfelder unvollständig gelesen: %v", err)
-			return
-		}
-		log.Printf("Etiketten: Serverfelder nicht ermittelbar, drucke ohne: %v", err)
-		return
-	}
-
-	for i := range items {
-		if felder, ok := bekannt[items[i].BarcodeID]; ok {
-			items[i].AnschaffungsJahr = felder.Jahr
-			items[i].Signatur = felder.Signatur
-			items[i].Topf = felder.Topf
 		}
 	}
 }
@@ -151,7 +91,7 @@ func (s *Server) PrintLabelsHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		s.ergaenzeServerfelder(ctx, req.Items)
+		buchetikett.ErgaenzeServerfelder(ctx, s.DB.Pool, req.Items)
 
 		bogen, err := pdf.GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, buchetikett.BuchEtiketten(req.Items, buchetikett.LadeEtikettKopf(ctx, s.DB.Pool)))
 		if err != nil {

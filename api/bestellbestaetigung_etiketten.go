@@ -21,20 +21,6 @@ import (
 // (klein = Bogen wie im Druck-Center, groß = Lernmittel-Etikett). Zwei Wege zum selben
 // Buch dürfen nicht zwei verschiedene Aufkleber ergeben.
 
-// ladeBestellEtiketten holt die Exemplare EINER Bestellung, beschränkt auf die
-// Positionen, die auch auf dem Barcodebogen der Bestellmail standen.
-//
-// Ohne die Einschränkung über mit_vorab_barcode bekäme der Lieferant Etiketten für
-// Exemplare, die bewusst ohne Vorab-Barcode bestellt wurden — die beklebt dann die
-// Bibliothek selbst, und beide würden dasselbe Buch bekleben.
-func (s *Server) ladeBestellEtiketten(ctx context.Context, bestellungID string) ([]buchetikett.BarcodeLabelDetail, error) {
-	zeilen, err := repository.EtikettDatenDerBestellung(ctx, s.DB.Pool, bestellungID)
-	if err != nil {
-		return nil, err
-	}
-	return buchetikett.EtikettenAus(zeilen), nil
-}
-
 // OeffentlicheEtikettenHandler liefert den Etikettenbogen als PDF (ohne Login, per Token).
 func (s *Server) OeffentlicheEtikettenHandler() http.HandlerFunc {
 	return s.handleOeffentlicheEtiketten
@@ -89,7 +75,7 @@ func (s *Server) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	etiketten, err := s.ladeBestellEtiketten(ctx, bestellungID)
+	etiketten, err := buchetikett.DerBestellung(ctx, s.DB.Pool, bestellungID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return

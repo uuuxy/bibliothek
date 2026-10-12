@@ -1,12 +1,10 @@
-package api
+package buchetikett
 
 import (
 	"context"
 	"testing"
 
-	"bibliothek/api/tuer"
 	"bibliothek/db"
-	"bibliothek/internal/buchetikett"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
@@ -24,8 +22,8 @@ import (
 //   - Das Anschaffungsjahr stand im Selbstdruck, fehlte aber auf der Lieferantenseite
 //     (05.08.2026, gefunden erst beim Vergleich mit dem Foto der physischen Vorlage).
 //
-// Es gibt zwei getrennte Abfragen für dieselbe Frage — queryLabelItems (Druck-Center)
-// und ladeBestellEtiketten (Lieferanten-Link). Wer eine erweitert und die andere
+// Es gibt zwei getrennte Abfragen für dieselbe Frage — DesTitels (Druck-Center)
+// und DerBestellung (Lieferanten-Link). Wer eine erweitert und die andere
 // vergisst, bekommt kein rotes Gate, sondern zwei verschiedene Aufkleber für dasselbe
 // Buch. Dieser Test vergleicht sie Feld für Feld.
 //
@@ -36,11 +34,15 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
-	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Paritaet", true)
-	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Paritaet", 0)
+	// Signatur und Autor sind gesetzt: Zwei leere Felder wären auf beiden Wegen gleich, auch
+	// wenn eine der Abfragen das Feld nicht läse.
+	titel := testdaten.TitelMitSignatur(t, pool, "LMF-Paritaet", "LMF-Deutsch 5", 0)
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET autor = 'Autorin der Probe' WHERE id = $1`, titel); err != nil {
+		t.Fatalf("Autor setzen: %v", err)
+	}
 
 	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,
@@ -52,12 +54,12 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	}
 
 	// Weg 1: Druck-Center (Selbstdruck aus dem Bestand)
-	selbstdruck, err := srv.queryLabelItems(ctx, titel)
+	selbstdruck, err := DesTitels(ctx, pool, titel)
 	if err != nil {
 		t.Fatalf("Selbstdruck-Etiketten laden: %v", err)
 	}
 	// Weg 2: Lieferantenseite hinter dem Bestätigungs-Link
-	lieferantenweg, err := srv.ladeBestellEtiketten(ctx, res.BestellungID)
+	lieferantenweg, err := DerBestellung(ctx, pool, res.BestellungID)
 	if err != nil {
 		t.Fatalf("Lieferanten-Etiketten laden: %v", err)
 	}
@@ -67,7 +69,7 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 			len(selbstdruck), len(lieferantenweg))
 	}
 
-	nachBarcode := map[string]buchetikett.BarcodeLabelDetail{}
+	nachBarcode := map[string]BarcodeLabelDetail{}
 	for _, e := range lieferantenweg {
 		nachBarcode[e.BarcodeID] = e
 	}
@@ -84,6 +86,10 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 			{"Signatur", eigen.Signatur, fremd.Signatur},
 		}
 		for _, f := range felder {
+			if f.a == "" {
+				t.Errorf("Exemplar %s: %s ist im Selbstdruck leer, der Vergleich prüft an diesem Feld nichts",
+					eigen.BarcodeID, f.name)
+			}
 			if f.a != f.b {
 				t.Errorf("Exemplar %s: %s unterscheidet sich — Selbstdruck %q, Lieferantenweg %q.\n"+
 					"→ Beide Abfragen müssen dieselben Felder liefern, sonst trägt dasselbe Buch "+

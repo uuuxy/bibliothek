@@ -1,6 +1,8 @@
 // Package buchetikett füllt die Eingabe der Etiketten-Erzeuger für Bücher: aus den Etiketten
 // eines Druckauftrags oder den Zeilen einer Abfrage und aus dem Kopf der Schule. Den
-// Eigentumsvermerk wählt es je Exemplar nach dem Topf.
+// Eigentumsvermerk wählt es je Exemplar nach dem Topf. Die Daten eines Etiketts lädt es auf
+// drei Wegen: für die Exemplare eines Titels, für die einer Bestellung und als Nachtrag an
+// einem Druckauftrag aus dem Browser.
 //
 // Das Paket steht unter den Türen, weil zwei Themen Buchetiketten drucken, das Druck-Center
 // und die Bestellung, und kein Thema ein anderes einbindet.
@@ -111,9 +113,9 @@ func BuchEtiketten(items []BarcodeLabelDetail, kopf EtikettKopf) []pdf.BuchEtike
 	return etiketten
 }
 
-// EtikettenAus übernimmt die Zeilen einer Abfrage in die Form eines Druckauftrags; aus ihr
+// etikettenAus übernimmt die Zeilen einer Abfrage in die Form eines Druckauftrags; aus ihr
 // füllt BuchEtiketten die Eingabe der Erzeuger.
-func EtikettenAus(zeilen []repository.EtikettDaten) []BarcodeLabelDetail {
+func etikettenAus(zeilen []repository.EtikettDaten) []BarcodeLabelDetail {
 	if zeilen == nil {
 		return nil
 	}

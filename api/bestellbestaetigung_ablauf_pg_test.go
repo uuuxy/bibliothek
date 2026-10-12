@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/internal/buchetikett"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
@@ -65,7 +66,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	}
 
 	// Nur die drei Exemplare der Position MIT Vorab-Barcode gehören auf den Bogen.
-	etiketten, err := srv.ladeBestellEtiketten(ctx, res.BestellungID)
+	etiketten, err := buchetikett.DerBestellung(ctx, pool, res.BestellungID)
 	if err != nil {
 		t.Fatalf("Etiketten laden: %v", err)
 	}
