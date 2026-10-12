@@ -562,9 +562,9 @@ von Stufe 4 sechs der elf Themen.
   noch 103 Dateien und 324 Methoden, nach den ersten vier Themen von Stufe 4 noch 77 Dateien
   und 262 Methoden, nach sechs noch 66 Dateien und 231 Methoden; mit dem Umzug bekommt jedes
   Thema seinen eigenen Typ),
-  und die Bremse je Adresse (`newIPRateLimiter`),
-  die nur der Abruf der Cover im Katalog braucht und die mit dessen Stufe in ein eigenes
-  Paket zieht. Das Feld `IdempotenzWartezeit` braucht nur die Theke.
+  und die Bremse je Adresse, die neben der Middleware nur der Abruf der Cover im Katalog
+  braucht; sie steht seit dem 12.10.2026 in `pkg/ratelimit`. Das Feld `IdempotenzWartezeit`
+  braucht nur die Theke.
 - **Die Kosten liegen bei den Tests.** 221 Testdateien brauchen Namen aus genau einem Thema und
   ziehen mit ihm um, 43 brauchen aus `api/` nur, was dort bleibt (Router, Middleware, den Typ
   `Server`), 18 mehrere Themen. 40 brauchen

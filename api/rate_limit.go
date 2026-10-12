@@ -7,85 +7,17 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/clientip"
+	"bibliothek/pkg/ratelimit"
 )
-
-type visitor struct {
-	tokens     float64
-	lastRefill time.Time
-}
-
-type ipRateLimiter struct {
-	mu       sync.Mutex
-	visitors map[string]*visitor
-	limit    int // max requests per second
-}
-
-func newIPRateLimiter(limit int) *ipRateLimiter {
-	return &ipRateLimiter{
-		visitors: make(map[string]*visitor),
-		limit:    limit,
-	}
-}
-
-func (l *ipRateLimiter) cleanupStaleVisitors(now time.Time) {
-	if len(l.visitors) <= 5000 {
-		return
-	}
-	for k, vis := range l.visitors {
-		if now.Sub(vis.lastRefill) > 5*time.Minute {
-			delete(l.visitors, k)
-		}
-	}
-}
-
-// allow checks if the IP is allowed to perform a request under token bucket rules.
-func (l *ipRateLimiter) allow(ip string) bool {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	now := time.Now()
-	v, exists := l.visitors[ip]
-	if !exists {
-		v = &visitor{
-			tokens:     float64(l.limit),
-			lastRefill: now,
-		}
-		l.visitors[ip] = v
-
-		// Clean up stale visitor entries to prevent memory leaks
-		l.cleanupStaleVisitors(now)
-
-		v.tokens -= 1.0
-		return true
-	}
-
-	elapsed := now.Sub(v.lastRefill)
-	v.lastRefill = now
-
-	// Refill tokens proportional to elapsed time
-	v.tokens += elapsed.Seconds() * float64(l.limit)
-	if v.tokens > float64(l.limit) {
-		v.tokens = float64(l.limit)
-	}
-
-	if v.tokens >= 1.0 {
-		v.tokens -= 1.0
-		return true
-	}
-
-	return false
-}
 
 // RateLimitMiddleware begrenzt Anfragen je Client-IP auf limit pro Zeitfenster.
 // Ausgenommen sind Pfade, bei denen ein einzelner Seitenaufruf dutzende Anfragen
 // erzeugt — die Begründung dafür steht unten an der Ausnahmeliste.
 func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
-	limiter := newIPRateLimiter(limit)
+	limiter := ratelimit.New(limit)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Bilder und Uploads vom Rate-Limiter ausschließen, da ein Seitenaufruf oft dutzende Bilder gleichzeitig lädt.
@@ -103,7 +35,7 @@ func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 			}
 
 			ip := clientip.FromRequest(r)
-			if !limiter.allow(ip) {
+			if !limiter.Allow(ip) {
 				apierrors.SendHTTPError(w, http.StatusTooManyRequests, errors.New("rate limit exceeded"))
 				return
 			}

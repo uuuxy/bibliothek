@@ -638,7 +638,7 @@ HTTP-Anfrage
 | `auth/`                 | 1.793 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
 | `jobs/`                 | 1.607 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
-| `pkg/` (25 Pakete)      | 2.922 Zeilen, 34 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
+| `pkg/` (26 Pakete)      | 3.001 Zeilen, 35 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
 | `pdf/`                  | 3.356 Zeilen, 21 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
 | `mailservice/`          | 686 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`MailRequest`, `SendEmail`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
@@ -906,6 +906,7 @@ bis zum 09.10.2026, ohne dass der Zähler es sah; sie schreibt jetzt
 | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | `clientip`         | Echte Client-IP hinter dem Proxy — `X-Forwarded-For` wird **nur** von konfigurierten Proxies geglaubt (sonst wäre Rate-Limiting ein globaler DoS) |
 | `safehttp`         | HTTP-Clients für **fremde** Ziele; Verbindungen zu nicht-öffentlichen IP-Adressen werden abgelehnt (SSRF)                          |
+| `ratelimit`        | Die Bremse je Adresse: ein Vorrat von Anfragen je Sekunde, der sich wieder füllt. Die Middleware nimmt sie für jede Anfrage, der Abruf der Cover für seine Fehltreffer |
 | `coverquelle`      | Host-Allowlists für Cover und Metadaten; baut die URL aus geprüften Teilen **neu** auf (Parsing-Differential)                     |
 | `coverdatei`       | Lokal gespeicherte WebP-Cover in einer Form, die `gofpdf`/`maroto` einbetten können; dazu die eine Stelle, die ein Cover im Seitenverhältnis in ein gofpdf-Dokument setzt (`BindeEin`) |
 | `coverablage`      | Der Ort der lokal gespeicherten Cover: Pfad einer Cover-URL prüfen, Verzeichnis öffnen, Datei entfernen — ohne Bildbibliothek, damit auch die ohne CGO gebauten Werkzeuge es einbinden können |

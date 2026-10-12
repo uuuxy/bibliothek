@@ -23,6 +23,7 @@ import (
 	"bibliothek/pkg/coverquelle"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/pkg/imageutil"
+	"bibliothek/pkg/ratelimit"
 	"bibliothek/pkg/safehttp"
 
 	"github.com/chai2010/webp"
@@ -47,7 +48,7 @@ const maxCoverBytes = 10 << 20
 const coverDownloadsProSekunde = 30
 
 // coverDownloadLimiter bremst die Fehltreffer pro Client-IP.
-var coverDownloadLimiter = newIPRateLimiter(coverDownloadsProSekunde)
+var coverDownloadLimiter = ratelimit.New(coverDownloadsProSekunde)
 
 // coverCacheVerzeichnis ist eine Variable, damit Tests den Cache in ein Wegwerf-
 // Verzeichnis legen können, ohne das Arbeitsverzeichnis zu wechseln.
@@ -290,7 +291,7 @@ func (s *Server) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 	// Zweig ist gebremst — und er antwortet im Grenzfall mit dem Fallback-GIF statt mit
 	// 429, weil am anderen Ende ein <img> hängt: Ein Fehlercode erzeugt dort nur einen
 	// roten Konsoleneintrag, das Bild fehlt so oder so. Der nächste Aufruf holt es nach.
-	if !coverDownloadLimiter.allow(clientip.FromRequest(r)) {
+	if !coverDownloadLimiter.Allow(clientip.FromRequest(r)) {
 		serveCoverFallback(w)
 		return
 	}
