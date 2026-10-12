@@ -167,7 +167,7 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 		if !strings.Contains(nachricht, "leitung-nora@schule.invalid") {
 			t.Fatalf("die Mail ging nicht an die Klassenleitung der 08H3:\n%s", smtptest.Kopf(nachricht))
 		}
-		liste := strings.Join(pdftest.Texte(t, pdfAusMail(t, nachricht)), "\n")
+		liste := strings.Join(pdftest.Texte(t, smtptest.PDFAusMail(t, nachricht)), "\n")
 		if !strings.Contains(liste, "Nora") {
 			t.Fatalf("Nora fehlt in der Liste an ihre Klassenleitung:\n%s", liste)
 		}

@@ -143,9 +143,9 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 		t.Error("die Mail nennt die Klassenleitung einer nicht gewählten Klasse")
 	}
 
-	annaPDF := pdftest.Texte(t, []byte(dateiAusMail(t, nachricht, "Anna")))
+	annaPDF := pdftest.Texte(t, []byte(smtptest.DateiAusMail(t, nachricht, "Anna")))
 	pruefeKontoauszug(t, annaPDF, "Anna", "Annas Buch", []string{"Bens Buch", "Cems Buch"})
-	benPDF := pdftest.Texte(t, []byte(dateiAusMail(t, nachricht, "Ben")))
+	benPDF := pdftest.Texte(t, []byte(smtptest.DateiAusMail(t, nachricht, "Ben")))
 	pruefeKontoauszug(t, benPDF, "Ben", "Bens Buch", []string{"Annas Buch", "Cems Buch"})
 
 	// 4. Anna gibt ihr Buch zurück — und verschwindet aus BEIDEN Ansichten.

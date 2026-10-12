@@ -52,6 +52,11 @@ internal/smtptest/server.go: unreachable func: adresseAus
 # (vorher Helfer in Testdateien von api/).
 internal/smtptest/warten.go: unreachable func: WarteAufMail
 internal/smtptest/warten.go: unreachable func: Kopf
+# Dazu ein Anhang aus der abgefangenen Nachricht (vorher Helfer in Testdateien von api/, die
+# Tests mehrerer Themen brauchen).
+internal/smtptest/anhang.go: unreachable func: DateiAusMail
+internal/smtptest/anhang.go: unreachable func: PDFAusMail
+internal/smtptest/anhang.go: unreachable func: mimeGrenze
 
 # Episodischer Littera-Werkzeugkasten: Prüfwerkzeug für die noch ausstehende
 # Littera-Migration (nächster Lauf nach frischem Littera-Backup). BarcodeInhalt
@@ -96,6 +101,7 @@ internal/testdaten/bestand.go: unreachable func: SeedMonitorTitel
 internal/testdaten/bestand.go: unreachable func: SeedSignaturMitExemplar
 internal/testdaten/bestand.go: unreachable func: Exemplar
 internal/testdaten/bestand.go: unreachable func: ZulaufExemplar
+internal/testdaten/bestand.go: unreachable func: AusleihbaresExemplar
 internal/testdaten/leser.go: unreachable func: SeedSchueler
 internal/testdaten/leser.go: unreachable func: SchuelerAnlegen
 internal/testdaten/leser.go: unreachable func: SeedAbgaengerRet
@@ -112,6 +118,8 @@ internal/testdaten/ausleihe.go: unreachable func: SeedOffeneAusleihe
 internal/testdaten/ausleihe.go: unreachable func: FristVon
 internal/testdaten/ausleihe.go: unreachable func: FristEnde
 internal/testdaten/ausleihe.go: unreachable func: MahnState
+internal/testdaten/ausleihe.go: unreachable func: SchuelerMitBuch
+internal/testdaten/dienst.go: unreachable func: AusleiheUeberDenDienst
 internal/testdaten/bestellung.go: unreachable func: Haendler
 internal/testdaten/bestellung.go: unreachable func: TopfBestellung
 internal/testdaten/bestellung.go: unreachable func: BarcodesDerBestellung

@@ -79,3 +79,11 @@ func MahnState(t *testing.T, pool *pgxpool.Pool, ausleiheID string) (int, *time.
 	}
 	return stufe, datum
 }
+
+// SchuelerMitBuch legt einen aktiven Schüler mit genau einem offenen Buch an.
+func SchuelerMitBuch(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
+	t.Helper()
+	id := SeedSchueler(t, pool, barcode, vorname, klasse)
+	SeedAusleihe(t, pool, id, "Buch "+vorname, time.Now().AddDate(0, 0, -3))
+	return id
+}

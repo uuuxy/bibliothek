@@ -42,34 +42,6 @@ import (
 //   - Die Mail erhöht die Mahnstufe NICHT (Invariante §1, docs/invarianten.md): Das ist ein
 //     freundlicher Hinweis vor der Eskalation, nicht die Eskalation selbst.
 
-// ausleiheUeberDenDienst leiht ein Exemplar an einen Schüler aus — über denselben Dienst,
-// den auch der Scanner benutzt, damit die Frist wirklich aus den Einstellungen kommt und
-// nicht aus dem Test.
-func ausleiheUeberDenDienst(t *testing.T, pool *pgxpool.Pool, barcode, schuelerID, bearbeiterID string) time.Time {
-	t.Helper()
-	ctx := context.Background()
-
-	bookRepo := repository.NewBookRepository(pool)
-	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
-		repository.NewLoanRepository(pool), repository.NewAuditRepository(pool))
-
-	exemplar, err := bookRepo.GetCopyByBarcode(ctx, barcode)
-	if err != nil {
-		t.Fatalf("Exemplar %s laden: %v", barcode, err)
-	}
-	if _, err := loanSvc.HandleUnifiedCheckout(ctx, exemplar, &schuelerID, bearbeiterID, false); err != nil {
-		t.Fatalf("Ausleihe von %s: %v", barcode, err)
-	}
-
-	var frist time.Time
-	if err := pool.QueryRow(ctx,
-		`SELECT rueckgabe_frist FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL`,
-		exemplar.ID).Scan(&frist); err != nil {
-		t.Fatalf("Frist lesen: %v", err)
-	}
-	return frist
-}
-
 // inDieVergangenheit macht eine laufende Ausleihe überfällig. Der einzige Weg, "sechs
 // Wochen später" zu prüfen, ohne sechs Wochen zu warten.
 func inDieVergangenheit(t *testing.T, pool *pgxpool.Pool, schuelerID string, tage int) {
@@ -80,13 +52,6 @@ func inDieVergangenheit(t *testing.T, pool *pgxpool.Pool, schuelerID string, tag
 	if err != nil {
 		t.Fatalf("Ausleihe überfällig machen: %v", err)
 	}
-}
-
-// ausleihbaresExemplar legt Titel und Exemplar an, das sofort ausgeliehen werden kann.
-func ausleihbaresExemplar(t *testing.T, pool *pgxpool.Pool, titel, barcode string) {
-	t.Helper()
-	titelID := testdaten.TitelMitMeldebestand(t, pool, titel, 0)
-	testdaten.Exemplar(t, pool, titelID, barcode, true, "")
 }
 
 func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testing.T) {
@@ -110,8 +75,8 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	}
 
 	// Kein LMF im Titel: Schulbücher laufen bis zum Stichtag im Sommer, nicht nach Tagen.
-	ausleihbaresExemplar(t, pool, "Roman ohne Kennzeichen", "B-MAHN-1")
-	ausleihbaresExemplar(t, pool, "Zweiter Roman", "B-MAHN-2")
+	testdaten.AusleihbaresExemplar(t, pool, "Roman ohne Kennzeichen", "B-MAHN-1")
+	testdaten.AusleihbaresExemplar(t, pool, "Zweiter Roman", "B-MAHN-2")
 
 	// Schreibweise absichtlich verschieden: Schülerdaten "5A", Mapping "5a " mit
 	// Leerzeichen — genau die Kombination, die aus dem LUSD-Import und einem Formular
@@ -131,7 +96,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 
 	// 2. Ausleihe über den echten Dienst → die Frist muss aus der Einstellung stammen.
 	bearbeiter := testdaten.AdminFuerAudit(t, pool)
-	frist := ausleiheUeberDenDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
+	frist := testdaten.AusleiheUeberDenDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
 	// Beide Seiten durch DIESELBE Produktionsdefinition schicken (seit dem 24.09.2026
 	// lmfplan.Ferientabelle.Tagesfrist, davor TagesEndeInSchulzeitzone), statt Kalendertage in der Zeitzone des Testrechners zu vergleichen: Die Frist entsteht
 	// in der Schul-Zeitzone (Europe/Berlin), der Test lief mit time.Now() in der Zeitzone des
@@ -149,7 +114,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 		t.Fatalf("Rückgabefrist = %s, erwartet den %s (%d Tage aus der Einstellung)",
 			frist.Format("02.01.2006"), erwartet.Format("02.01.2006"), tage)
 	}
-	ausleiheUeberDenDienst(t, pool, "B-MAHN-2", ben, bearbeiter)
+	testdaten.AusleiheUeberDenDienst(t, pool, "B-MAHN-2", ben, bearbeiter)
 
 	// 3. Überfällig werden lassen — und prüfen, wen die Abfrage findet.
 	inDieVergangenheit(t, pool, anna, 9)
@@ -207,7 +172,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// Datenminimierung: In der Mail an die 5A hat der Name aus der 6B nichts zu suchen.
 	// Der Anhang ist das Mahn-PDF; die Namen stehen dort komprimiert, deshalb wird der
 	// PDF-Inhalt gelesen und nicht der Rohtext.
-	texte := strings.Join(pdftest.Texte(t, pdfAusMail(t, nachricht)), "\n")
+	texte := strings.Join(pdftest.Texte(t, smtptest.PDFAusMail(t, nachricht)), "\n")
 	if !strings.Contains(texte, "Anna") {
 		t.Errorf("die gemahnte Schülerin steht nicht im PDF:\n%s", texte)
 	}
@@ -235,10 +200,4 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	if eintraege != 2 {
 		t.Errorf("Audit-Einträge = %d, erwartet 2 (Absicht vor dem Versand, Ergebnis danach)", eintraege)
 	}
-}
-
-// pdfAusMail holt den ersten PDF-Anhang aus der Nachricht.
-func pdfAusMail(t *testing.T, nachricht string) []byte {
-	t.Helper()
-	return []byte(dateiAusMail(t, nachricht, "application/pdf"))
 }

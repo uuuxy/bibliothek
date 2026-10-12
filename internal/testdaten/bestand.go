@@ -92,3 +92,10 @@ func ZulaufExemplar(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) s
 	}
 	return id
 }
+
+// AusleihbaresExemplar legt Titel und Exemplar an, das sofort ausgeliehen werden kann.
+func AusleihbaresExemplar(t *testing.T, pool *pgxpool.Pool, titel, barcode string) {
+	t.Helper()
+	titelID := TitelMitMeldebestand(t, pool, titel, 0)
+	Exemplar(t, pool, titelID, barcode, true, "")
+}

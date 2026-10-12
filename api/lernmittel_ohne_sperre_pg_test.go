@@ -28,7 +28,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	// Die Forderung hängt an einem verlorenen Buch der Schülerbücherei.
 	buecherei := testdaten.TitelMitMeldebestand(t, pool, "Roman ohne Kennung", 1)
 	verloren := testdaten.Exemplar(t, pool, buecherei, "B-LMF-SPERRE-0", true, "")
-	ausleiheUeberDenDienst(t, pool, "B-LMF-SPERRE-0", kind, bearbeiter)
+	testdaten.AusleiheUeberDenDienst(t, pool, "B-LMF-SPERRE-0", kind, bearbeiter)
 	if _, err := pool.Exec(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)
 		VALUES ($1, $2, 'Verloren', 12.00, 'nicht_zurueckgegeben')`, verloren, kind); err != nil {
 		t.Fatalf("Forderung anlegen: %v", err)

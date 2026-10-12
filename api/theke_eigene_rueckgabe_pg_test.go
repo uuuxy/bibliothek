@@ -24,7 +24,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	bearbeiter := testdaten.AdminFuerAudit(t, pool)
 	kind := testdaten.SchuelerAnlegen(t, pool, "Gesperrt", "9H1", "S-SPERRE-1")
 	testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Titel Sperre", 1), "B-SPERRE-1", true, "")
-	ausleiheUeberDenDienst(t, pool, "B-SPERRE-1", kind, bearbeiter)
+	testdaten.AusleiheUeberDenDienst(t, pool, "B-SPERRE-1", kind, bearbeiter)
 
 	if _, err := pool.Exec(ctx,
 		`UPDATE schueler SET ist_gesperrt = true, block_reason = 'Test: Sperre' WHERE id = $1`, kind); err != nil {
@@ -161,7 +161,7 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 
 	// 1. Das Kind an der Theke ist gesperrt — das Buch gehört einem anderen.
 	eigentuemer1 := testdaten.SchuelerAnlegen(t, pool, "Eigentuemer", "9H2", "S-FREMD-EIG1")
-	ausleiheUeberDenDienst(t, pool, "B-FREMD-1", eigentuemer1, bearbeiter)
+	testdaten.AusleiheUeberDenDienst(t, pool, "B-FREMD-1", eigentuemer1, bearbeiter)
 	gesperrt := testdaten.SchuelerAnlegen(t, pool, "Gesperrt", "9H2", "S-FREMD-SPERRE")
 	if _, err := pool.Exec(ctx,
 		`UPDATE schueler SET ist_gesperrt = true, block_reason = 'Test: Sperre' WHERE id = $1`, gesperrt); err != nil {
@@ -171,8 +171,8 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 
 	// 2. Das Kind an der Theke ist am Ausleihlimit — das Buch gehört einem anderen.
 	eigentuemer2 := testdaten.SchuelerAnlegen(t, pool, "Eigentuemer2", "9H2", "S-FREMD-EIG2")
-	ausleiheUeberDenDienst(t, pool, "B-FREMD-2", eigentuemer2, bearbeiter)
+	testdaten.AusleiheUeberDenDienst(t, pool, "B-FREMD-2", eigentuemer2, bearbeiter)
 	amLimit := testdaten.SchuelerAnlegen(t, pool, "AmLimit", "9H2", "S-FREMD-LIMIT")
-	ausleiheUeberDenDienst(t, pool, "B-FREMD-3", amLimit, bearbeiter)
+	testdaten.AusleiheUeberDenDienst(t, pool, "B-FREMD-3", amLimit, bearbeiter)
 	fremdrueckgabe(t, "B-FREMD-2", amLimit, eigentuemer2)
 }

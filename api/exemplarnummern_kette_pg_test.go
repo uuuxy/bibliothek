@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -32,40 +31,6 @@ import (
 // Deshalb hier kein Einzelglied, sondern der Durchlauf: bestellen → Nummern aus dem
 // CSV-Anhang der echten Mail → dieselben Nummern in der Datenbank → dieselben Nummern
 // gedruckt auf dem Bogen hinter dem Bestätigungs-Link → Wareneingang → Scan findet das Buch.
-
-// dateiAusMail schält einen Anhang aus der MIME-Nachricht und dekodiert ihn.
-func dateiAusMail(t *testing.T, nachricht, namensteil string) string {
-	t.Helper()
-	teile := strings.Split(nachricht, "--"+mimeGrenze(t, nachricht))
-	for _, teil := range teile {
-		if !strings.Contains(teil, namensteil) {
-			continue
-		}
-		leer := strings.Index(teil, "\r\n\r\n")
-		if leer < 0 {
-			t.Fatalf("Anhang %q hat keinen Rumpf", namensteil)
-		}
-		roh := strings.NewReplacer("\r", "", "\n", "").Replace(teil[leer:])
-		daten, err := base64.StdEncoding.DecodeString(strings.TrimSpace(roh))
-		if err != nil {
-			t.Fatalf("Anhang %q nicht dekodierbar: %v", namensteil, err)
-		}
-		return string(daten)
-	}
-	t.Fatalf("Anhang %q nicht in der Mail", namensteil)
-	return ""
-}
-
-var grenzeMuster = regexp.MustCompile(`boundary=([^\s;"]+)`)
-
-func mimeGrenze(t *testing.T, nachricht string) string {
-	t.Helper()
-	treffer := grenzeMuster.FindStringSubmatch(nachricht)
-	if treffer == nil {
-		t.Fatal("keine MIME-Grenze in der Nachricht — die Mail ist kaputt")
-	}
-	return treffer[1]
-}
 
 var barcodeMuster = regexp.MustCompile(`B-\d{5,}`)
 
@@ -104,7 +69,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	nachricht := smtptest.WarteAufMail(t, sitzungen)
 
 	// 1. Die Nummern, die der Händler bekommt.
-	ausMail := barcodesAus(dateiAusMail(t, nachricht, "barcode_mapping"))
+	ausMail := barcodesAus(smtptest.DateiAusMail(t, nachricht, "barcode_mapping"))
 	if len(ausMail) != 2 {
 		t.Fatalf("Barcodes im CSV-Anhang = %v, erwartet 2 (Bestellmenge)", ausMail)
 	}

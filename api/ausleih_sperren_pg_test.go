@@ -270,7 +270,7 @@ func TestTheke_ForderungIstUebergehbarAmBuchUndAmGeraet(t *testing.T) {
 	kind := testdaten.SchuelerAnlegen(t, th.pool, "Forderung", "08B", "S-SPERRWEG-4")
 
 	// Die Forderung hängt an einem verlorenen Schulbuch — Topf des Landes.
-	ausleiheUeberDenDienst(t, th.pool, schulbuch, kind, th.bearbeiter)
+	testdaten.AusleiheUeberDenDienst(t, th.pool, schulbuch, kind, th.bearbeiter)
 	var ex string
 	if err := th.pool.QueryRow(ctx, `SELECT id FROM buecher_exemplare WHERE barcode_id = $1`, schulbuch).Scan(&ex); err != nil {
 		t.Fatal(err)
@@ -350,7 +350,7 @@ func TestTheke_UebergehenOhneAusleiheStehtNichtImProtokoll(t *testing.T) {
 	kind := testdaten.SchuelerAnlegen(t, th.pool, "Limit", "08B", "S-SPERRWEG-5")
 	erstes := testdaten.TitelMitMeldebestand(t, th.pool, "Erstes Buch LIM", 1)
 	testdaten.Exemplar(t, th.pool, erstes, "B-LIM-1", true, "")
-	ausleiheUeberDenDienst(t, th.pool, "B-LIM-1", kind, th.bearbeiter) // das Limit ist erreicht
+	testdaten.AusleiheUeberDenDienst(t, th.pool, "B-LIM-1", kind, th.bearbeiter) // das Limit ist erreicht
 	altes := testdaten.TitelMitMeldebestand(t, th.pool, "Verlorenes Buch LIM", 1)
 	verloren := testdaten.Exemplar(t, th.pool, altes, "B-LIM-ALT", false, "")
 	if _, err := th.pool.Exec(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)

@@ -30,7 +30,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	ausleihbaresExemplar(t, pool, "Atlas mit Wasserrand", "B-ABW-1")
+	testdaten.AusleihbaresExemplar(t, pool, "Atlas mit Wasserrand", "B-ABW-1")
 	var exID, titelID string
 	if err := pool.QueryRow(ctx,
 		`SELECT id, titel_id FROM buecher_exemplare WHERE barcode_id = 'B-ABW-1'`,
@@ -159,7 +159,7 @@ func TestExemplarliste_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	ausleihbaresExemplar(t, pool, "Mathematik 8", "B-EW-1")
+	testdaten.AusleihbaresExemplar(t, pool, "Mathematik 8", "B-EW-1")
 	var exID, titelID string
 	if err := pool.QueryRow(ctx,
 		`SELECT id, titel_id FROM buecher_exemplare WHERE barcode_id = 'B-EW-1'`,
@@ -228,7 +228,7 @@ func TestExemplarliste_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	ausleihbaresExemplar(t, pool, "Geschichte 9", "B-GRD-1")
+	testdaten.AusleihbaresExemplar(t, pool, "Geschichte 9", "B-GRD-1")
 	var exID, titelID string
 	if err := pool.QueryRow(ctx,
 		`SELECT id, titel_id FROM buecher_exemplare WHERE barcode_id = 'B-GRD-1'`,

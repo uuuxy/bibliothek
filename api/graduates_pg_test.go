@@ -14,8 +14,6 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/internal/tuertest"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Die Abgängerliste in ihrer ursprünglichen Bedeutung (Register, Entscheidung 2 vom
@@ -40,28 +38,20 @@ func abgaengerAntwort(t *testing.T, srv *Server) AbgaengerAntwort {
 	return antwort
 }
 
-// schuelerMitBuch legt einen aktiven Schüler mit genau einem offenen Buch an.
-func schuelerMitBuch(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
-	t.Helper()
-	id := testdaten.SeedSchueler(t, pool, barcode, vorname, klasse)
-	testdaten.SeedAusleihe(t, pool, id, "Buch "+vorname, time.Now().AddDate(0, 0, -3))
-	return id
-}
-
 func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 
 	// Drin: Abschlussklassen mit Buch, in jeder Schreibweise, die das Vokabular zulässt.
-	schuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
-	schuelerMitBuch(t, pool, "S-2", "Bea", "09h2")
-	schuelerMitBuch(t, pool, "S-3", "Cem", "10R1")
-	schuelerMitBuch(t, pool, "S-4", "Dana", "13")
-	schuelerMitBuch(t, pool, "S-5", "Emil", "10H1")
+	testdaten.SchuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
+	testdaten.SchuelerMitBuch(t, pool, "S-2", "Bea", "09h2")
+	testdaten.SchuelerMitBuch(t, pool, "S-3", "Cem", "10R1")
+	testdaten.SchuelerMitBuch(t, pool, "S-4", "Dana", "13")
+	testdaten.SchuelerMitBuch(t, pool, "S-5", "Emil", "10H1")
 	// Draußen: kein Abschlussjahrgang, obwohl mit Buch.
-	schuelerMitBuch(t, pool, "S-6", "Finn", "10G1")
-	schuelerMitBuch(t, pool, "S-7", "Gül", "8H1")
-	schuelerMitBuch(t, pool, "S-8", "Hans", "9R1")
+	testdaten.SchuelerMitBuch(t, pool, "S-6", "Finn", "10G1")
+	testdaten.SchuelerMitBuch(t, pool, "S-7", "Gül", "8H1")
+	testdaten.SchuelerMitBuch(t, pool, "S-8", "Hans", "9R1")
 	// Draußen: Abschlussklasse, aber nichts mehr offen — nichts einzusammeln.
 	testdaten.SeedSchueler(t, pool, "S-9", "Ida", "9H1")
 	// Draußen: laut LUSD schon weg (ist_abgaenger, Klasse ABG) — mit Buch, aber das ist
@@ -102,7 +92,7 @@ func TestAbgaengerliste_AusserhalbDerSaison(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	tuertest.MailAbfangen(t) // SMTP konfiguriert, damit der Versand bis zur Saisonprüfung kommt
 
-	schuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
+	testdaten.SchuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}}
 
 	antwort := abgaengerAntwort(t, srv)
@@ -143,7 +133,7 @@ func TestAbgaengerliste_UndVersetzungSehenDieselbeMenge(t *testing.T) {
 	ctx := context.Background()
 
 	for i, k := range []string{"9H1", "09h2", "10H1", "10R1", "10R2", "13", "10G1", "8H1", "9R1", "5F1", "12"} {
-		schuelerMitBuch(t, pool, "P-"+string(rune('A'+i)), "Kind"+k, k)
+		testdaten.SchuelerMitBuch(t, pool, "P-"+string(rune('A'+i)), "Kind"+k, k)
 	}
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}

@@ -25,7 +25,7 @@ func TestCopyStatusVerloren_ZaehltAlsVerlust(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	ausleihbaresExemplar(t, pool, "Verlust-Roman", "B-VL-1")
+	testdaten.AusleihbaresExemplar(t, pool, "Verlust-Roman", "B-VL-1")
 	var exID string
 	if err := pool.QueryRow(ctx,
 		`SELECT id FROM buecher_exemplare WHERE barcode_id = 'B-VL-1'`).Scan(&exID); err != nil {
