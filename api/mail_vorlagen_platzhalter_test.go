@@ -40,7 +40,7 @@ var rendererQuellen = map[string]string{
 // standardtextQuellen: je Typ die Go-Datei mit dem Text, der gilt, wenn die gespeicherte
 // Vorlage fehlt oder leer ist, sofern er nicht beim Renderer steht.
 var standardtextQuellen = map[string]string{
-	"MAHNUNG_ELTERN": "mahnwesen_bulk.go",
+	"MAHNUNG_ELTERN": filepath.Join("mahnwesen", "mahnwesen_bulk.go"),
 }
 
 // ohneRenderer: Seed-Typen, die BEWUSST keinen Renderer haben — mit Begründung.

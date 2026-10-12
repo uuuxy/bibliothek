@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/mahnwesen"
 	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -28,11 +29,11 @@ func TestAbgaengerliste_UndVersetzungSehenDieselbeMenge(t *testing.T) {
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 	rec := httptest.NewRecorder()
-	srv.GetGraduatesHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger", nil))
+	srv.mahnwesen().GetGraduatesHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Abgängerliste: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	var liste AbgaengerAntwort
+	var liste mahnwesen.AbgaengerAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {
 		t.Fatalf("Abgängerliste unlesbar: %v", err)
 	}

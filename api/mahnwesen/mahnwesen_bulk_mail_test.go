@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 import (
 	"bibliothek/mailservice"
@@ -47,7 +47,7 @@ func TestSendBulkOverdueHandler_SmtpFehlt(t *testing.T) {
 	}
 	defer mock.Close()
 
-	server := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
+	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	mahnRepo := repository.NewMahnwesenRepository(mock)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
@@ -342,7 +342,7 @@ func TestSendBulkOverdueHandler_LeereAuswahlOhneDBZugriff(t *testing.T) {
 			t.Fatalf("pgxmock: %v", err)
 		}
 
-		server := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
+		server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 		req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", strings.NewReader(body))
 		rec := httptest.NewRecorder()
 		server.SendBulkOverdueHandler(repository.NewMahnwesenRepository(mock))(rec, req)
@@ -373,7 +373,7 @@ func TestLogKlassenVersandAudit_SchreibtGueltigesJSONMitEmpfaenger(t *testing.T)
 		WithArgs("admin-1", "BULK_OVERDUE_MAIL", &argFaenger{ziel: &details}, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-	server := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
+	server := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{UserID: "admin-1"}))
 

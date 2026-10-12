@@ -1168,7 +1168,7 @@ CREATE TABLE ausleihen (
     ist_handapparat BOOLEAN NOT NULL DEFAULT false,    -- True if borrowed by a teacher (handapparat)
 
     -- Mahnwesen: Mahnstufe (0 = noch nie gemahnt) und Zeitpunkt der letzten Mahnung.
-    -- Der Bulk-Mahnlauf (api/mahnwesen_bulk.go) zählt mahnstufe pro Mahnung hoch.
+    -- Der Bulk-Mahnlauf (api/mahnwesen/mahnwesen_bulk.go) zählt mahnstufe pro Mahnung hoch.
     mahnstufe INTEGER NOT NULL DEFAULT 0,
     letztes_mahndatum TIMESTAMP WITH TIME ZONE,
 

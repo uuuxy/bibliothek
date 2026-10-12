@@ -164,8 +164,8 @@ lässt sich dort anhalten.
   Ordner seines Themas, als eigenes Testpaket. Der Aufwand je Thema ist gemessen (5.65).
 - [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt. Umgezogen: Inventur
   (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`), System
-  (`api/system`). Offen: Mahnwesen, Schaden, Druck mit Bestellung, Katalog, Leser, zuletzt
-  die Theke.
+  (`api/system`), Mahnwesen (`api/mahnwesen`). Offen: Schaden, Druck mit Bestellung, Katalog,
+  Leser, zuletzt die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
   die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
   Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
@@ -457,7 +457,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
   Typ aus `net/http` tragen `bestellbericht_handler.go` (367),
   `lernmittel/lmf_plan.go` (260), `bescheid_handler.go` (246), `dsgvo_auskunft.go` (193),
-  `system/betriebsbereitschaft_handler.go` (175) und `graduates_mail.go` (157). Die Messung und ihre
+  `system/betriebsbereitschaft_handler.go` (175) und `mahnwesen/graduates_mail.go` (157). Die Messung und ihre
   Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt: diese Dateien der Reihe nach
   lesen und trennen, was Regel und was Füll-Funktion ist.
 - **Die Zuordnung der Importe steht zweimal.** Katalog-Import und Bestands-Import laden den
@@ -534,7 +534,7 @@ von Stufe 4 die ersten vier Themen.
   | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go` |
   | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system` |
   | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go` |
-  | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go` |
+  | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go`, seit dem 12.10.2026 in `api/mahnwesen` |
   | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print.go` |
   | Schaden    | 7       | 1.154  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go` |
   | Lernmittel | 5       | 1.098  | 7      | 8           | `lmf_*.go`, seit dem 12.10.2026 in `api/lernmittel` |
@@ -675,7 +675,7 @@ von Stufe 4 die ersten vier Themen.
   Typ mit seinem Paket nennt (die Ausnahmen in `uuid_eingaben_test.go`:
   `benutzer.CreateUserRequest.BarcodeID`), und
   Prüfungen, die ihr Thema in festen Dateien suchen: `mail_vorlagen_platzhalter_test.go` den
-  Standardtext in `mahnwesen_bulk.go`; `lmf_plan_live_test.go` ist mit den Lernmitteln
+  Standardtext in `mahnwesen/mahnwesen_bulk.go`; `lmf_plan_live_test.go` ist mit den Lernmitteln
   umgezogen und liest die Schreibwege des LMF-Plans in der Routenliste einen Ordner höher.
   Die Routenlisten (`router.go`, `routes_*.go`) bleiben in `api/`; neun
   Prüfungen lesen sie dort beim Namen. Eine Prüfung, die den Aufruf einer Funktion am Namen

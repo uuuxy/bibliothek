@@ -1,9 +1,10 @@
-package api
+package mahnwesen
 
 import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -41,7 +42,7 @@ func TestAbgaengerFenster_Raender(t *testing.T) {
 // Ohne gesetzte Uhr läuft der Server nach der Schulzeit — kein Test darf still eine
 // Nulluhr (Jahr 1) bekommen, die immer „außerhalb" wäre.
 func TestServerJetzt_OhneUhrIstSchulzeit(t *testing.T) {
-	s := &Server{}
+	s := &Tueren{Basis: &tuer.Basis{}}
 	if d := time.Since(s.Jetzt()); d < 0 || d > time.Minute {
 		t.Errorf("Server.jetzt() ohne Uhr weicht um %v von jetzt ab", d)
 	}

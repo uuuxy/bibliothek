@@ -404,7 +404,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/mail-templates":                    {URL: "/api/mail-templates"},
 		// Anschrift als Positiv-Kontrolle: Der Brief geht ins Fensterkuvert; verliert er
 		// die Anschrift, ist er für den Postversand unbrauchbar. Für den Mahnbrief prüft
-		// das der Test am Druck aus der Auswahl (mahnwesen_bulk_frist_pg_test.go), die
+		// das der Test am Druck aus der Auswahl (api/mahnwesen/mahnwesen_bulk_frist_pg_test.go), die
 		// Tür ist ein POST.
 		"GET /api/print/rechnung/{schueler_id}":    {URL: "/api/print/rechnung/" + w.schuelerID, Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
 		"GET /api/print/kontoauszug/{schueler_id}": {URL: "/api/print/kontoauszug/" + w.schuelerID, Positiv: []string{"Vogelbeere"}},

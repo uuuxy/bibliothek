@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 import (
 	"log"
@@ -11,7 +11,7 @@ import (
 
 // GetMahnwesenHandler returns overdue loans grouped by class and student.
 // GET /api/mahnwesen
-func (s *Server) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
+func (s *Tueren) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 

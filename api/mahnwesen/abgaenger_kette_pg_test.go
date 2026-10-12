@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 import (
 	"context"
@@ -55,7 +55,7 @@ func abgaengerMitBuch(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse
 }
 
 // abgaengerListe ruft GET /api/abgaenger — die Ansicht, aus der heraus versendet wird.
-func abgaengerListe(t *testing.T, srv *Server) []AbgaengerZeile {
+func abgaengerListe(t *testing.T, srv *Tueren) []AbgaengerZeile {
 	t.Helper()
 	return abgaengerAntwort(t, srv).Abgaenger
 }
@@ -68,7 +68,7 @@ func namenAus(liste []AbgaengerZeile) map[string]bool {
 	return namen
 }
 
-func kontoauszugNamen(t *testing.T, srv *Server) map[string]bool {
+func kontoauszugNamen(t *testing.T, srv *Tueren) map[string]bool {
 	t.Helper()
 	eintraege, err := srv.queryAbgaengerKontoauszug(context.Background(), "", nil)
 	if err != nil {
@@ -87,7 +87,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	ctx := context.Background()
 
 	sitzungen := tuertest.MailAbfangen(t)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 
 	// Zwei Abgänger derselben Abschlussklasse und einer aus einer anderen — plus die
 	// Schreibweise, an der sich schon zweimal etwas aufgehängt hat: Schülerdaten "9H",

@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 import (
 	"context"
@@ -73,7 +73,7 @@ type bulkOverdueResponse struct {
 // verhält sich bewusst identisch zum Einzelversand (system-konsistent, keine
 // Button-abhängige Sonderlogik). Siehe docs/invarianten.md §1.
 // POST /api/mail/send-bulk-overdue
-func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
+func (s *Tueren) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -403,7 +403,7 @@ type klassenVersandAudit struct {
 // Override-Adresse mit im Detail steht, würde ein handgebautes JSON-Literal bei
 // einem Anführungszeichen in der Eingabe kaputtes JSON in eine jsonb-Spalte
 // schreiben — der INSERT scheitert, und der Lauf verlöre still seinen Log-Eintrag.
-func (s *Server) logKlassenVersandAudit(r *http.Request, aktion string, details klassenVersandAudit) {
+func (s *Tueren) logKlassenVersandAudit(r *http.Request, aktion string, details klassenVersandAudit) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		return

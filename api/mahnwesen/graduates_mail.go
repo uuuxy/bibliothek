@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 import (
 	"context"
@@ -41,7 +41,7 @@ type abgaengerKlasse struct {
 // sondern die Abschluss-Übersicht eines beendeten Ausleihkontos.
 //
 // POST /api/abgaenger/mail
-func (s *Server) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
+func (s *Tueren) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -115,7 +115,7 @@ func (s *Server) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 // Ohne Mapping wäre JEDE Klasse „ohne Adresse" und der Lauf meldete fröhlich
 // „0 versendet, 12 übersprungen" — ein stiller Totalausfall, der wie ein Ergebnis
 // aussieht.
-func (s *Server) klassenlehrerAdressen(ctx context.Context) (map[string]string, error) {
+func (s *Tueren) klassenlehrerAdressen(ctx context.Context) (map[string]string, error) {
 	return repository.KlassenleitungsAdressen(ctx, s.DB.Pool)
 }
 

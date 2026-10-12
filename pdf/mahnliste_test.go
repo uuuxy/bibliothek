@@ -18,7 +18,7 @@ import (
 
 // Die Mahnliste, geprüft am gedruckten Blatt. Der Erzeuger kennt weder Klassen noch Abfragen:
 // Er druckt je Schüler eine Seite aus dem, was seine Eingabe trägt. Dass die Tür sie richtig
-// füllt, prüft api/mahnwesen_mail_test.go.
+// füllt, prüft api/mahnwesen/mahnwesen_mail_test.go.
 
 // mahnlisteUmgebung legt ein Arbeitsverzeichnis mit dem Ordner der Cover an. Der Erzeuger sucht
 // ein Cover vom Arbeitsverzeichnis des Servers aus.

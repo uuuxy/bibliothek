@@ -3,7 +3,7 @@
 // WICHTIG: Der POST wird abgefangen und NIE an das Backend durchgelassen. Der lokale
 // Stack trägt in der .env einen echten SMTP_HOST; ein durchgereichter Versand würde
 // hier tatsächlich Mahnungen verschicken. Geprüft wird deshalb genau das, was der
-// Dialog dem Server sagen WÜRDE — die Serverseite deckt api/mahnwesen_bulk_mail_test.go ab.
+// Dialog dem Server sagen WÜRDE — die Serverseite deckt api/mahnwesen/mahnwesen_bulk_mail_test.go ab.
 import { test, expect } from '@playwright/test';
 import { uiLogin } from './helpers.js';
 

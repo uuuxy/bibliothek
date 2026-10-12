@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 // Leere Vorlage ⇒ leerer Brief (Sweep 01.09.2026, Fund F7): loadMahnungTemplate
 // fiel nur bei DB-FEHLER auf den Standardtext zurück — eine versehentlich leer
@@ -21,7 +21,7 @@ import (
 func TestLeereMahnvorlageFaelltAufStandardtextZurueck(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Bestehenden Seed-Text sichern und die Vorlage leer speichern — genau der
 	// Zustand, den der Editor heute zulässt.

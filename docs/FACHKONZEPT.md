@@ -396,7 +396,7 @@ H-Zweig ab Jahrgang 9 (9H, auch das freiwillige 10H), R-Zweig ab 10, sonst ab 13
 ihre Klassenleitungs-Zuordnung entfernt (Paar-Gate `TestAbgaengerliste_UndVersetzungSehenDieselbeMenge`,
 Regel-Tabelle `TestAbschlussklasseSQL_Regel`). Sie sind noch an der Schule (`ist_abgaenger = false`)
 und leihen weiter aus. Sichtbar ist die Liste in der **Saison 01.05.–31.07.** (fester Wert,
-`api/abgaenger_fenster.go`; `Server.Uhr` nur für Tests): außerhalb antwortet `GET /api/abgaenger`
+`api/mahnwesen/abgaenger_fenster.go`; `Server.Uhr` nur für Tests): außerhalb antwortet `GET /api/abgaenger`
 mit `fenster.offen = false` und leerer Liste, der Druck mit `404`, der Versand mit `409`. Je Klasse
 lässt sich ein **Kontoauszug** drucken (`queryAbgaengerKontoauszug`) oder per Mail an die
 Klassenleitung schicken (`POST /api/abgaenger/mail`); die Empfängeradresse kommt aus dem

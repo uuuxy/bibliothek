@@ -4,7 +4,7 @@
 // lokale Stack trägt einen echten SMTP_HOST — ein durchgereichter Lauf würde hier
 // tatsächlich Kontoauszüge an die hinterlegten Klassenleitungen schicken. Geprüft
 // wird der Payload, den das Frontend schicken WÜRDE; die Serverseite deckt
-// api/graduates_mail_test.go ab.
+// api/mahnwesen/graduates_mail_test.go ab.
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, csrfToken, seedSQL, uniqueSuffix } from './helpers.js';
 

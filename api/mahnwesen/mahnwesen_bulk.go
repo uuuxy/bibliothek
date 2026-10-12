@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 import (
 	"bytes"
@@ -19,7 +19,7 @@ import (
 // loadMahnungTemplate lädt die Vorlage des Mahnbriefs. Fehlt sie oder ist ein Teil leer, gilt
 // der Standardtext: Der Editor lässt eine leere Vorlage zu, und der Brief hätte dann weder
 // Betreff noch Anschreiben.
-func (s *Server) loadMahnungTemplate(ctx context.Context) (betreff, textBody string) {
+func (s *Tueren) loadMahnungTemplate(ctx context.Context) (betreff, textBody string) {
 	betreff, textBody, err := repository.LadeMahnVorlage(ctx, s.DB.Pool)
 	if err != nil || strings.TrimSpace(betreff) == "" || strings.TrimSpace(textBody) == "" {
 		betreff = "Mahnung: Überfällige Bücher"
@@ -30,7 +30,7 @@ func (s *Server) loadMahnungTemplate(ctx context.Context) (betreff, textBody str
 
 // ladeMahnbriefVorlage liest Betreff und Text aus der Vorlage und die Absenderzeile aus den
 // Angaben zur Schule.
-func (s *Server) ladeMahnbriefVorlage(ctx context.Context) pdf.MahnbriefVorlage {
+func (s *Tueren) ladeMahnbriefVorlage(ctx context.Context) pdf.MahnbriefVorlage {
 	betreff, text := s.loadMahnungTemplate(ctx)
 	settings, _ := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx) //nolint:errcheck
 	schule := pdf.SchuleInfo{
@@ -74,7 +74,7 @@ func mahnbriefEmpfaenger(briefe []repository.MahnbriefEmpfaenger) []pdf.Mahnbrie
 // und schreibt erst fest, wenn das PDF steht. Läge das Lesen vor dem Zählen, könnte ein
 // inzwischen zurückgegebenes Buch auf dem Brief stehen, ohne gezählt zu sein. ok=false: Die
 // Fehlerantwort ist geschrieben, das Zählen nimmt der Rollback zurück.
-func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.ResponseWriter, ausleihIDs []string) ([]byte, bool) {
+func (s *Tueren) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.ResponseWriter, ausleihIDs []string) ([]byte, bool) {
 	// Vorlage und Absender vor der Transaktion: Sie hält eine Verbindung und Zeilensperren.
 	vorlage := s.ladeMahnbriefVorlage(ctx)
 
@@ -136,7 +136,7 @@ type BulkPrintRequest struct {
 // BulkPrintMahnungenHandler druckt die Mahnbriefe zu den gewählten Ausleihen und zählt die
 // Mahnung, beides in einer Transaktion.
 // POST /api/admin/mahnungen/bulk-print
-func (s *Server) BulkPrintMahnungenHandler() http.HandlerFunc {
+func (s *Tueren) BulkPrintMahnungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req BulkPrintRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {

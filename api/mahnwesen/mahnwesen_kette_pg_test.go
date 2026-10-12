@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 import (
 	"context"
@@ -138,7 +138,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// 4. Der Lauf selbst: NUR Annas Klasse auswählen (in der Schreibweise, die die
 	// Kanonisierung gespeichert hat — die UI bietet exakt diese Liste an).
 	sitzungen := tuertest.MailAbfangen(t)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue",
 		strings.NewReader(fmt.Sprintf(`{"klassen":[%q]}`, annaKlasse)))

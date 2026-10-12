@@ -1,4 +1,4 @@
-package api
+package mahnwesen_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api"
 	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
@@ -39,7 +40,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	var kontoID string
 	if err := pool.QueryRow(ctx, `

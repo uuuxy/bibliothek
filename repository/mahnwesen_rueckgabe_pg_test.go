@@ -8,7 +8,7 @@ import (
 // TestMahnbriefe_ZurueckgegebeneRausfiltern: Gibt ein Schüler sein Buch zwischen dem Laden
 // der Mahnliste und dem Druck zurück, steht die Ausleihe nicht mehr auf dem Mahnbrief (und
 // ihre Mahnstufe steigt nicht). Geprüft wird die Abfrage, die der Druck aus der Auswahl in
-// seiner Transaktion ruft (api/mahnwesen_bulk.go).
+// seiner Transaktion ruft (api/mahnwesen/mahnwesen_bulk.go).
 func TestMahnbriefe_ZurueckgegebeneRausfiltern(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

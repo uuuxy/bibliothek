@@ -30,6 +30,7 @@ import (
 	"bibliothek/api/benutzer"
 	"bibliothek/api/inventurlauf"
 	"bibliothek/api/lernmittel"
+	"bibliothek/api/mahnwesen"
 	"bibliothek/api/portal"
 	"bibliothek/api/system"
 	"bibliothek/api/tuer"
@@ -102,6 +103,11 @@ func (s *Server) system() *system.Tueren {
 // weil die Seite „Betriebsbereitschaft" dieselbe Lage sammelt.
 func (s *Server) BereitschaftsAlarm(ctx context.Context) {
 	s.system().BereitschaftsAlarm(ctx)
+}
+
+// mahnwesen ist der Zugang zu den Türen des Mahnwesens und der Abgänger.
+func (s *Server) mahnwesen() *mahnwesen.Tueren {
+	return &mahnwesen.Tueren{Basis: &s.Basis}
 }
 
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.

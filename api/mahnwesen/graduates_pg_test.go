@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 import (
 	"encoding/json"
@@ -23,7 +23,7 @@ import (
 
 // abgaengerAntwort ruft GET /api/abgaenger — die Ansicht, aus der heraus gedruckt und
 // versendet wird — und liefert die ganze Antwort samt Saisonfenster.
-func abgaengerAntwort(t *testing.T, srv *Server) AbgaengerAntwort {
+func abgaengerAntwort(t *testing.T, srv *Tueren) AbgaengerAntwort {
 	t.Helper()
 	rec := httptest.NewRecorder()
 	srv.GetGraduatesHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger", nil))
@@ -58,7 +58,7 @@ func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 	weg := testdaten.SeedAbgaengerRet(t, pool, "S-10", "Jo", "ABG")
 	testdaten.SeedAusleihe(t, pool, weg, "Buch Jo", time.Now().AddDate(0, 0, -3))
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 	antwort := abgaengerAntwort(t, srv)
 	if !antwort.Fenster.Offen {
 		t.Fatalf("Mitte Juni muss die Saison offen sein: %+v", antwort.Fenster)
@@ -92,7 +92,7 @@ func TestAbgaengerliste_AusserhalbDerSaison(t *testing.T) {
 	tuertest.MailAbfangen(t) // SMTP konfiguriert, damit der Versand bis zur Saisonprüfung kommt
 
 	testdaten.SchuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}}
 
 	antwort := abgaengerAntwort(t, srv)
 	if antwort.Fenster.Offen || len(antwort.Abgaenger) != 0 {

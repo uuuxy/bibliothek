@@ -82,7 +82,6 @@ func apiDateien(t *testing.T) []string {
 // nehmen keine Anfrage an und geben keine Antwort; was davon Regel oder Erzeuger ist, zieht in
 // ein eigenes Paket und fällt hier weg.
 var dateienOhneTuer = []string{
-	"abgaenger_fenster.go",
 	"action_types.go",
 	"benutzer/benutzer.go",
 	"bescheid_absender.go",
@@ -91,7 +90,9 @@ var dateienOhneTuer = []string{
 	"inventurlauf/inventurlauf.go",
 	"lernmittel/lernmittel.go",
 	"lernmittel/lmf_plan_live.go",
-	"mahnwesen_mail.go",
+	"mahnwesen/abgaenger_fenster.go",
+	"mahnwesen/mahnwesen.go",
+	"mahnwesen/mahnwesen_mail.go",
 	"portal/portal.go",
 	"schueler_kiosk.go",
 	"student_klasse_regel.go",

@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 // graduates.go — die Abgängerliste: Abschlussklassen mit offenen Büchern, noch an der
 // Schule, sichtbar in der Saison (Mai bis Juli). Daraus entstehen die Kontoauszüge zum
@@ -51,7 +51,7 @@ type AbgaengerAntwort struct {
 }
 
 // queryGraduatesBasic liefert eine Zeile je Abgänger mit offenen Ausleihen.
-func (s *Server) queryGraduatesBasic(ctx context.Context) ([]AbgaengerZeile, error) {
+func (s *Tueren) queryGraduatesBasic(ctx context.Context) ([]AbgaengerZeile, error) {
 	liste, err := repository.ListeAbgaengerMitOffenenBuechern(ctx, s.DB.Pool)
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func (s *Server) queryGraduatesBasic(ctx context.Context) ([]AbgaengerZeile, err
 // @Success      200  {object}  AbgaengerAntwort
 // @Failure      500  {object}  map[string]string
 // @Router       /abgaenger [get]
-func (s *Server) GetGraduatesHandler() http.HandlerFunc {
+func (s *Tueren) GetGraduatesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		antwort := AbgaengerAntwort{
 			Fenster:   abgaengerFensterFuer(s.Jetzt()),
@@ -103,7 +103,7 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 // SCHNITT mit dieser Abfrage, keine zweite Auswahl: Wer nicht Abgänger mit offenem Buch
 // ist, bekommt auch mit seiner Kennung keine Seite. So folgt der Druck der Suche der
 // Oberfläche, ohne dass der Server die Suche ein zweites Mal formuliert.
-func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string, nurIDs []string) ([]pdf.KontoauszugEintrag, error) {
+func (s *Tueren) queryAbgaengerKontoauszug(ctx context.Context, klasse string, nurIDs []string) ([]pdf.KontoauszugEintrag, error) {
 	ausleihen, err := repository.ListeAbgaengerAusleihen(ctx, s.DB.Pool, klasse, nurIDs)
 	if err != nil {
 		return nil, err
@@ -145,7 +145,7 @@ func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string, n
 // @Param        klasse  query  string  false  "nur diese Klasse"
 // @Param        ids     query  string  false  "nur diese Schüler (Kennungen, mit Komma getrennt) — der Schnitt mit der Abgängerliste"
 // @Router       /abgaenger/pdf [get]
-func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
+func (s *Tueren) GetGraduatesPDFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 

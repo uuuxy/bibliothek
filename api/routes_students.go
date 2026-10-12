@@ -81,11 +81,11 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("POST /api/students/promote", s.RequirePermission("manage_students_admin")(s.PromoteStudentsHandler()))
 
 	// Abgänger (Graduates)
-	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.GetGraduatesHandler()))
-	mux.Handle("GET /api/abgaenger/pdf", s.RequirePermission("view_graduates")(s.GetGraduatesPDFHandler()))
+	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.mahnwesen().GetGraduatesHandler()))
+	mux.Handle("GET /api/abgaenger/pdf", s.RequirePermission("view_graduates")(s.mahnwesen().GetGraduatesPDFHandler()))
 	// Versand ist mehr als Lesen: dasselbe Recht wie der Mahnlauf (create_orders),
 	// nicht das reine view_graduates der Liste.
-	mux.Handle("POST /api/abgaenger/mail", s.RequirePermission("create_orders")(s.SendAbgaengerKontoauszuegeHandler()))
+	mux.Handle("POST /api/abgaenger/mail", s.RequirePermission("create_orders")(s.mahnwesen().SendAbgaengerKontoauszuegeHandler()))
 
 	// Kiosk / Damage
 	damageRepo := repository.NewDamageRepository(s.DB.Pool)
@@ -118,8 +118,8 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("POST /api/schadensfaelle/{id}/storno", s.RequirePermission("edit_students")(s.StornoGebuehrHandler(auditRepoGebuehren)))
 
 	// Mahnwesen
-	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.GetMahnwesenHandler(mahnRepo)))
+	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.mahnwesen().GetMahnwesenHandler(mahnRepo)))
 	// Massenversand: je überfällige Klasse eine Mahnliste an die Klassenleitung
-	// (privacy-by-design — nie direkt an Schüler; siehe mahnwesen_bulk_mail.go).
-	mux.Handle("POST /api/mail/send-bulk-overdue", s.RequirePermission("create_orders")(s.SendBulkOverdueHandler(mahnRepo)))
+	// (privacy-by-design — nie direkt an Schüler; siehe api/mahnwesen/mahnwesen_bulk_mail.go).
+	mux.Handle("POST /api/mail/send-bulk-overdue", s.RequirePermission("create_orders")(s.mahnwesen().SendBulkOverdueHandler(mahnRepo)))
 }

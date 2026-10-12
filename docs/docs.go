@@ -29,7 +29,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.AbgaengerAntwort"
+                            "$ref": "#/definitions/mahnwesen.AbgaengerAntwort"
                         }
                     },
                     "500": {
@@ -3689,71 +3689,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.AbgaengerAntwort": {
-            "type": "object",
-            "properties": {
-                "abgaenger": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.AbgaengerZeile"
-                    }
-                },
-                "fenster": {
-                    "$ref": "#/definitions/api.AbgaengerFenster"
-                }
-            }
-        },
-        "api.AbgaengerFenster": {
-            "type": "object",
-            "properties": {
-                "bis": {
-                    "description": "„31.07.\"",
-                    "type": "string"
-                },
-                "offen": {
-                    "type": "boolean"
-                },
-                "von": {
-                    "description": "„01.05.\"",
-                    "type": "string"
-                }
-            }
-        },
-        "api.AbgaengerZeile": {
-            "type": "object",
-            "properties": {
-                "abgaenger_jahr": {
-                    "type": "integer"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ist_gesperrt": {
-                    "type": "boolean"
-                },
-                "klasse": {
-                    "type": "string"
-                },
-                "lehrer_email": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "offene_buecher": {
-                    "type": "integer"
-                },
-                "ueberfaellig": {
-                    "type": "integer"
-                },
-                "vorname": {
-                    "type": "string"
-                }
-            }
-        },
         "api.AbholbereitInfo": {
             "type": "object",
             "properties": {
@@ -5541,6 +5476,71 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "von": {
+                    "type": "string"
+                }
+            }
+        },
+        "mahnwesen.AbgaengerAntwort": {
+            "type": "object",
+            "properties": {
+                "abgaenger": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mahnwesen.AbgaengerZeile"
+                    }
+                },
+                "fenster": {
+                    "$ref": "#/definitions/mahnwesen.AbgaengerFenster"
+                }
+            }
+        },
+        "mahnwesen.AbgaengerFenster": {
+            "type": "object",
+            "properties": {
+                "bis": {
+                    "description": "„31.07.\"",
+                    "type": "string"
+                },
+                "offen": {
+                    "type": "boolean"
+                },
+                "von": {
+                    "description": "„01.05.\"",
+                    "type": "string"
+                }
+            }
+        },
+        "mahnwesen.AbgaengerZeile": {
+            "type": "object",
+            "properties": {
+                "abgaenger_jahr": {
+                    "type": "integer"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ist_gesperrt": {
+                    "type": "boolean"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "lehrer_email": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "offene_buecher": {
+                    "type": "integer"
+                },
+                "ueberfaellig": {
+                    "type": "integer"
+                },
+                "vorname": {
                     "type": "string"
                 }
             }

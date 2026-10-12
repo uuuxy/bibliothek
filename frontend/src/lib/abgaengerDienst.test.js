@@ -61,7 +61,7 @@ describe('abgaengerDienst.sendeKontoauszuege', () => {
 
 // Der Druck folgt der Suche (seit 21.09.2026). Auch das sieht im Browser nur die Saison:
 // Außerhalb von Mai bis Juli ist die Liste leer und der Druck 404. Die Adresse wird deshalb
-// hier festgehalten — was der Server aus ihr macht, hält api/abgaenger_druck_auswahl_pg_test.go.
+// hier festgehalten — was der Server aus ihr macht, hält api/mahnwesen/abgaenger_druck_auswahl_pg_test.go.
 describe('abgaengerDienst.kontoauszugAdresse', () => {
 	const SICHTBAR = [{ id: 'a-1' }, { id: 'b-2' }];
 

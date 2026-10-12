@@ -1,4 +1,4 @@
-package api
+package mahnwesen
 
 import (
 	"context"
@@ -29,7 +29,7 @@ func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	kein := testdaten.SeedSchueler(t, pool, "AB-3", "Cleo", "8a")
 	testdaten.SeedAusleihe(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	students, err := srv.queryAbgaengerKontoauszug(ctx, "", nil)
 	if err != nil {
 		t.Fatalf("queryAbgaengerKontoauszug: %v", err)
