@@ -531,7 +531,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -620,7 +620,7 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 13.315 Zeilen, 84 Dateien  | HTTP-Schicht: Router mit den Routenlisten und den Zugängen zu den Themen, Middleware, CSRF, Rate-Limit und die Türen der fünf Themen, die noch nicht umgezogen sind (Katalog, Leser, Bestellung, Theke, Druck). Die Türen ziehen je Thema in ein eigenes Paket darunter (Themen unter `api/`) |
+| `api/`                  | 10.216 Zeilen, 63 Dateien  | HTTP-Schicht: Router mit den Routenlisten und den Zugängen zu den Themen, Middleware, CSRF, Rate-Limit und die Türen der vier Themen, die noch nicht umgezogen sind (Leser, Bestellung, Theke, Druck). Die Türen ziehen je Thema in ein eigenes Paket darunter (Themen unter `api/`) |
 | `api/tuer/`             | 530 Zeilen, 5 Dateien      | Was jede Tür braucht: Eingabe lesen und Antwort schreiben, die Rechteprüfung mit ihrem Zwischenspeicher, das Protokoll der Verwaltung mit dem Eintrag zur Konto-Anlage, die Uhr. Der Typ `Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn ein |
 | `api/lernmittel/`       | 1.110 Zeilen, 6 Dateien    | Die Türen des LMF-Plans, das erste Thema mit eigenem Paket: den Plan als Reihenfolge lesen, rechnen, speichern, veröffentlichen und verwerfen, die Termine für das Kollegium als Liste und als PDF, das Signal an offene Ansichten. Der Typ `Tueren` hält die `tuer.Basis` des Servers als eingebetteten Zeiger |
 | `api/inventurlauf/`     | 791 Zeilen, 6 Dateien      | Die Türen der Inventur: einen Lauf über die ganze Bibliothek, eine Signatur oder Fach und Klasse beginnen, Exemplare scannen, den Lauf abschließen oder verwerfen, den Fehlbestand lesen, ein als Verlust gebuchtes Exemplar wieder aufnehmen oder endgültig löschen. Der Name weicht dem Medienkatalog `inventur/` aus (5.2.3) |
@@ -629,6 +629,7 @@ HTTP-Anfrage
 | `api/system/`           | 1.550 Zeilen, 13 Dateien   | Die Türen der Systempflege: Einstellungen, Mail-Einrichtung und Vorlagen, die Selbstprüfung der Betriebsbereitschaft mit ihrer täglichen Warnmail, der Stand der Sicherung, das Protokoll, Statistik und Übersicht, die zwei Importe |
 | `api/mahnwesen/`        | 1.315 Zeilen, 8 Dateien    | Die Türen des Mahnwesens und der Abgänger: die überfälligen Ausleihen je Klasse, Mahnlisten und Mahnbriefe als PDF und als Mail an die Klassenleitungen, die Liste der Abschlussklassen mit offenen Büchern in der Saison und ihre Kontoauszüge |
 | `api/schaden/`          | 1.126 Zeilen, 9 Dateien    | Die Türen zu Schaden und Ersatz: einen Verlust oder Schaden melden, Forderungen lesen und erledigen, der Vorschlag zum Betrag, der Bescheid über den Schadensersatz, die Rechnung an die Eltern und der Brief zu einem Schadensfall |
+| `api/katalog/`          | 3.053 Zeilen, 22 Dateien   | Die Türen des Medienkatalogs zu einem Titel und seinen Exemplaren: Exemplare, Ausleiher und Historie eines Titels, Nummer, Zustand, Eigentum und Standort eines Exemplars, Auflagen, Signaturen, Systematik, Schlagworte, die Abfrage über die ISBN, die Cover, die Geräte, Zugangs- und Abgangsbuch. Titelliste, Buchmaske und Import stehen in `inventur/` (5.2.3) |
 | `repository/`           | 22.365 Zeilen, 151 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke                                        |
 | `internal/service/`     | 5.020 Zeilen, 29 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, die Rechnung des Ersatzwerts eines Buchs (`ersatzwert_vorschlag.go`), Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan und womit ein neuer Plan beginnt, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
@@ -643,7 +644,7 @@ HTTP-Anfrage
 | `mailservice/`          | 686 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`MailRequest`, `SendEmail`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
-| `internal/*` (übrige)   | 6.690 Zeilen, 53 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest`/`routertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
+| `internal/*` (übrige)   | 6.705 Zeilen, 53 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest`/`routertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
 | `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
@@ -651,9 +652,9 @@ HTTP-Anfrage
 ##### Themen unter `api/`
 
 Seit dem 12.10.2026 ziehen die Türen je Thema in ein eigenes Paket unter `api/`, in Stufen
-([OFFEN.md](OFFEN.md) 5.65). Umgezogen sind sieben der zwölf Themen: `api/lernmittel`,
-`api/inventurlauf`, `api/benutzer`, `api/portal`, `api/system`, `api/mahnwesen` und
-`api/schaden`. Die Türen der übrigen fünf stehen noch in `api/`.
+([OFFEN.md](OFFEN.md) 5.65). Umgezogen sind acht der zwölf Themen: `api/lernmittel`,
+`api/inventurlauf`, `api/benutzer`, `api/portal`, `api/system`, `api/mahnwesen`,
+`api/schaden` und `api/katalog`. Die Türen der übrigen vier stehen noch in `api/`.
 
 - Ein Thema trägt seine Türen als Methoden an einem eigenen Typ `Tueren`. Er bettet einen
   Zeiger auf die `tuer.Basis` des Servers ein: Datenbank, Anmeldung, Live-Leitung und Uhr
@@ -3448,7 +3449,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen und nach Stufe 2 Überschrift und Zahl der Methoden neu gezählt, nach Stufe 3 Überschrift, Dateigrößen und Zahl der Methoden erneut, nach den ersten vier Themen von Stufe 4 ein weiteres Mal und nach Mahnwesen und Schaden erneut, in 11.5 die vier Symbolknöpfe mit dem Hinweis des Browsers ergänzt
+Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen und nach Stufe 2 Überschrift und Zahl der Methoden neu gezählt, nach Stufe 3 Überschrift, Dateigrößen und Zahl der Methoden erneut, nach den ersten vier Themen von Stufe 4 ein weiteres Mal, nach Mahnwesen und Schaden und nach dem Katalog erneut, in 11.5 die vier Symbolknöpfe mit dem Hinweis des Browsers ergänzt
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3507,21 +3508,21 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` trägt die Türen von fünf der zwölf Themen in einem Paket: 13.315 Zeilen in 84 Dateien
+#### R4 — `api/` trägt die Türen von vier der zwölf Themen in einem Paket: 10.216 Zeilen in 63 Dateien
 
 | | |
 | --- | --- |
 | **Auswirkung** | mittel (Änderungsaufwand, Kollisionen) |
 | **Sichtbarkeit** | hoch |
 
-Das Paket trägt Router, Middleware und die Türen von fünf Themen. Die der sieben übrigen
+Das Paket trägt Router, Middleware und die Türen von vier Themen. Die der acht übrigen
 stehen seit dem 12.10.2026 in eigenen Paketen darunter: `api/lernmittel` (1.110 Zeilen in
 sechs Dateien), `api/inventurlauf` (791 in sechs), `api/benutzer` (839 in sieben),
-`api/portal` (694 in sechs), `api/system` (1.550 in 13), `api/mahnwesen` (1.315 in acht)
-und `api/schaden` (1.126 in neun).
+`api/portal` (694 in sechs), `api/system` (1.550 in 13), `api/mahnwesen` (1.315 in acht),
+`api/schaden` (1.126 in neun) und `api/katalog` (3.053 in 22).
 Nach `repository/` (22.365 Zeilen in 151 Dateien) ist `api/` das zweitgrößte Paket. Seine
-Dateien, gemessen am 12.10.2026 nach dem Umzug der sieben Themen: Die Hälfte hat höchstens
-125 Zeilen, neun von zehn höchstens 304, drei haben über 400. Die zwei größten Dateien der
+Dateien, gemessen am 12.10.2026 nach dem Umzug der acht Themen: Die Hälfte hat höchstens
+125 Zeilen, neun von zehn höchstens 297, drei haben über 400. Die zwei größten Dateien der
 Türen sind mit ihren Themen umgezogen (`lernmittel/lmf_plan.go` mit 692 Zeilen,
 `schaden/bescheid_handler.go` mit 623); in `api/` sind die größten
 `bestellbericht_handler.go` (567), `student_update.go` (555) und `student_create.go` (420).
@@ -3559,9 +3560,10 @@ Methoden am Typ `Tueren`; der Typ `Server` trug danach noch 324, und `api/` hatt
 Zeilen in 131 Dateien. Seit den ersten vier Themen von Stufe 4 (12.10.2026) stehen auch die
 Türen der Inventur, der Benutzer, des Portals und der Systempflege in eigenen Paketen, 66
 Methoden an ihren vier Typen `Tueren`; der Typ `Server` trug danach noch 262, und `api/`
-hatte davor 19.655 Zeilen in 126 Dateien. Seit Mahnwesen und Schaden (12.10.2026) trägt der
-Typ `Server` noch 231 Methoden, darunter die sieben Zugänge zu den Themen; `api/` hatte
-davor 15.853 Zeilen in 98 Dateien.
+hatte davor 19.655 Zeilen in 126 Dateien. Seit Mahnwesen und Schaden (12.10.2026) trug der
+Typ `Server` noch 231 Methoden; `api/` hatte davor 15.853 Zeilen in 98 Dateien. Seit dem
+Katalog (12.10.2026) trägt er noch 177, darunter die acht Zugänge zu den Themen; `api/` hatte
+davor 13.248 Zeilen in 84 Dateien.
 
 Der Bestand führt nur ganze Dateien. Woraus `api/` besteht, gemessen am 09.10.2026 am
 Syntaxbaum (`go/parser`), nachdem die sechs Dateien mit Regeln ausgezogen waren: 9.227 Zeilen
