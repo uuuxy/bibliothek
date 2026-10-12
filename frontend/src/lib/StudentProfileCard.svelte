@@ -7,13 +7,12 @@
 	import { initialen } from './avatarKachel.js';
 	import { leserArtText, istKollegium } from './leserArt.js';
 
-	/** @type {{ profile: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
+	/** @type {{ profile: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
 	let {
 		profile = $bindable(),
 		rechte = { bearbeiten: false, foto: false },
 		timestamp,
 		showWebcam = $bindable(),
-		showDeleteConfirm = $bindable(),
 		onDeselect,
 		leftActions,
 		onLock,

@@ -98,7 +98,6 @@
 				{rechte}
 				timestamp={st.timestamp}
 				bind:showWebcam={st.showWebcam}
-				bind:showDeleteConfirm={st.showDeleteConfirm}
 				{onDeselect}
 				{leftActions}
 				{offen}

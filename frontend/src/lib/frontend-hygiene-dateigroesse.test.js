@@ -27,7 +27,7 @@ const BESTAND = {
 	'src/lib/BestellWorkspace.svelte': 232,
 	'src/lib/Omnibox.svelte': 217,
 	'src/lib/StatsDashboard.svelte': 351,
-	'src/lib/StudentProfile.svelte': 231,
+	'src/lib/StudentProfile.svelte': 230,
 	'src/lib/UnifiedInventory.svelte': 237,
 	'src/lib/UserManagement.svelte': 208,
 	'src/lib/components/labels/EtikettenNachdruck.svelte': 364,
