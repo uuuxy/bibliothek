@@ -1,9 +1,10 @@
 // Package katalog trägt die Türen des Medienkatalogs zu einem Titel und seinen Exemplaren: die
 // Exemplare, die Ausleiher und die Historie eines Titels lesen, Nummer, Zustand, Eigentum und
-// Standort eines Exemplars ändern, aussondern und löschen, dazu Auflagen, Signaturen,
-// Systematik und Schlagworte, die Abfrage eines Titels über die ISBN, die Cover, die Geräte
-// und die Bestandsbücher (Zugangs- und Abgangsbuch). Die Titelliste, die Buchmaske mit Anlegen
-// und Ändern und der Import stehen im Untermodul inventur/.
+// Standort eines Exemplars ändern, die nächste freie Nummer nennen, aussondern und löschen,
+// dazu Auflagen, Signaturen, Systematik und Schlagworte, die Abfrage eines Titels über die
+// ISBN, die Cover, die Geräte und die Bestandsbücher (Zugangs- und Abgangsbuch). Die
+// Titelliste, die Buchmaske mit Anlegen und Ändern und der Import stehen im Untermodul
+// inventur/.
 package katalog
 
 import "bibliothek/api/tuer"

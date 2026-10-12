@@ -91,7 +91,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// edit_books statt view_books: Der Endpunkt zeigt keine Nummer mehr an, er VERGIBT
 	// eine aus barcode_seq — die gezogene Nummer ist danach verbraucht. Wer sie nicht
 	// speichern darf (das Barcode-PUT verlangt edit_books), soll sie auch nicht ziehen.
-	mux.Handle("GET /api/barcode/next", s.RequirePermission("edit_books")(s.NextBarcodeHandler()))
+	mux.Handle("GET /api/barcode/next", s.RequirePermission("edit_books")(s.katalog().NextBarcodeHandler()))
 	mux.Handle("GET /api/barcode", s.RequirePermission("view_books")(s.BarcodeHandler()))
 
 	// Signaturen — abgeleitet aus buecher_titel.signatur, nicht aus einer Stammtabelle.

@@ -1,4 +1,4 @@
-package api
+package katalog
 
 import (
 	"context"
@@ -29,7 +29,7 @@ import (
 // naechsteInterneNummer ruft den Live-Pfad des Knopfes „Interne ID generieren" auf
 // (GET /api/barcode/next in der Exemplarkarte) statt den Generator direkt — genau
 // dieser Weg vergab die Nummern früher aus einer zweiten, eigenen Quelle.
-func naechsteInterneNummer(t *testing.T, srv *Server) string {
+func naechsteInterneNummer(t *testing.T, srv *Tueren) string {
 	t.Helper()
 	rec := httptest.NewRecorder()
 	srv.NextBarcodeHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/barcode/next", nil))
@@ -111,7 +111,7 @@ func barcodeBestand(t *testing.T, pool *pgxpool.Pool) map[string]bool {
 func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	bookRepo := repository.NewBookRepository(pool)
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Vergabe", 0)
@@ -141,7 +141,7 @@ func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 func TestBarcodeVergabe_GeloeschteNummerWirdNichtRecycelt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Recycling", 0)
 

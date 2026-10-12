@@ -1,4 +1,4 @@
-package api
+package katalog
 
 import (
 	"net/http"
@@ -20,7 +20,7 @@ import (
 // und nach einem harten Löschen — Titel löschen, Massenlöschung, „endgültig löschen" im
 // Fehlbestand — kam die freigewordene Nummer zurück, obwohl ihr Etikett noch irgendwo
 // klebte.
-func (s *Server) NextBarcodeHandler() http.HandlerFunc {
+func (s *Tueren) NextBarcodeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		nextBarcode, err := repository.NaechsterFreierExemplarBarcode(r.Context(), s.DB.Pool)
 		if err != nil {
