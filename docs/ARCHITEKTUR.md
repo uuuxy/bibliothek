@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 10.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
+Stand: 12.10.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch) · am
 07.10.2026 aus dreizehn Dateien zu dieser einen zusammengeführt; jedes Kapitel nennt seinen
 eigenen Stand
 
@@ -3212,7 +3212,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`)
+Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3305,8 +3305,9 @@ die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung in `pkg/mi
 Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `schichtung_ratsche_test.go` weist jede
 SQL-Anweisung außerhalb der Datenbankschicht ab, `api/schichtung_test.go` führt die Dateien
 ohne Tür als Bestand, der nur kleiner werden kann. Was
-bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst bleiben in einem Paket: Der Typ
-`Server` trägt 349 Methoden.
+bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst stehen in einem Paket, der Typ
+`Server` trägt 349 Methoden. Entschieden am 12.10.2026: Sie ziehen in Stufen in Themenordner
+um; Messung und Plan stehen in [OFFEN.md](OFFEN.md) 5.65.
 
 Der Bestand führt nur ganze Dateien. Woraus `api/` besteht, gemessen am 09.10.2026 am
 Syntaxbaum (`go/parser`), nachdem die sechs Dateien mit Regeln ausgezogen waren: 9.227 Zeilen
