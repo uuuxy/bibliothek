@@ -12,6 +12,7 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
 	"bibliothek/mailservice"
+	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -255,7 +256,7 @@ func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 		receivedItems, err := service.BulkReceiveOrder(ctx, s.DB.Pool, auditRepo, service.BulkReceiveParams{
 			ExemplarIDs: req.ExemplarIDs,
 			AdminID:     adminID,
-			IPAddr:      getIP(r),
+			IPAddr:      clientip.FromRequest(r),
 		})
 		if err != nil {
 			if errors.Is(err, service.ErrNichtsEinzubuchen) {

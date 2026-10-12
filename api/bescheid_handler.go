@@ -13,6 +13,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/pdf"
 	"bibliothek/pkg/betrag"
+	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/ersatzwert"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
@@ -344,7 +345,7 @@ func (s *Server) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 		"mittel":         bescheid.Mittel,
 		"gesamtbetrag":   bescheid.Gesamtbetrag,
 		"positionen":     bescheid.AnzahlPositionen,
-	}, getIP(r))
+	}, clientip.FromRequest(r))
 
 	RespondJSON(w, http.StatusCreated, bescheid)
 	return nil
@@ -655,7 +656,7 @@ func (s *Server) BescheidUebergebenHandler(bescheidRepo repository.BescheidRepos
 			return apierrors.Internal("Übergabe konnte nicht gebucht werden", err)
 		}
 
-		bescheidAudit(ctx, s, auditRepo, auditBescheidUebergeben, map[string]any{"bescheid_id": id}, getIP(r))
+		bescheidAudit(ctx, s, auditRepo, auditBescheidUebergeben, map[string]any{"bescheid_id": id}, clientip.FromRequest(r))
 		RespondJSON(w, http.StatusOK, map[string]any{"id": id, "status": "uebergeben"})
 		return nil
 	})

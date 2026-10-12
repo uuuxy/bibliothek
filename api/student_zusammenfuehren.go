@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
 )
@@ -66,7 +67,7 @@ func (s *Server) ZusammenfuehrenSchuelerHandler(auditRepo repository.AuditReposi
 		// Ziel, geschrieben in der Transaktion (repository.schreibeRueckwegEintrag).
 		// Schlüssel `schueler_id` für den verbliebenen (Vokabular der Auskunft/Tilgung).
 		if claims, ok := auth.GetClaims(r.Context()); ok {
-			if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "SCHUELER_ZUSAMMENGEFUEHRT", getIP(r), map[string]any{
+			if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "SCHUELER_ZUSAMMENGEFUEHRT", clientip.FromRequest(r), map[string]any{
 				"schueler_id":        erg.ZielID,
 				"barcode":            erg.BarcodeID,
 				"aufgeloest_id":      rumpf.QuelleID,

@@ -81,13 +81,6 @@ func (l *ipRateLimiter) allow(ip string) bool {
 	return false
 }
 
-// getIP extracts the client IP address from the request via the shared,
-// trusted-proxy-aware resolver (see pkg/clientip). Used for both rate limiting
-// and audit-log attribution.
-func getIP(r *http.Request) string {
-	return clientip.FromRequest(r)
-}
-
 // RateLimitMiddleware begrenzt Anfragen je Client-IP auf limit pro Zeitfenster.
 // Ausgenommen sind Pfade, bei denen ein einzelner Seitenaufruf dutzende Anfragen
 // erzeugt — die Begründung dafür steht unten an der Ausnahmeliste.
@@ -109,7 +102,7 @@ func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 				return
 			}
 
-			ip := getIP(r)
+			ip := clientip.FromRequest(r)
 			if !limiter.allow(ip) {
 				apierrors.SendHTTPError(w, http.StatusTooManyRequests, errors.New("rate limit exceeded"))
 				return

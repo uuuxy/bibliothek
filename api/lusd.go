@@ -13,6 +13,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/lusd"
+	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/closeutil"
 	"bibliothek/repository"
 )
@@ -152,7 +153,7 @@ func (s *Server) protokolliereLusdImport(r *http.Request, res *lusd.PreviewResul
 		"massenabgang_bestaetigt":  massenabgangBestaetigt,
 	}
 	if err := repository.NewAuditRepository(s.DB.Pool).
-		LogAdminAktion(r.Context(), claims.UserID, "LUSD_IMPORT", getIP(r), details); err != nil {
+		LogAdminAktion(r.Context(), claims.UserID, "LUSD_IMPORT", clientip.FromRequest(r), details); err != nil {
 		log.Printf("LUSD-Import: Audit-Eintrag fehlgeschlagen: %v", err)
 	}
 }

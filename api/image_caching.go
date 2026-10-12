@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/closeutil"
 	"bibliothek/pkg/coverquelle"
 	"bibliothek/pkg/httpresp"
@@ -288,7 +289,7 @@ func (s *Server) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 	// Zweig ist gebremst — und er antwortet im Grenzfall mit dem Fallback-GIF statt mit
 	// 429, weil am anderen Ende ein <img> hängt: Ein Fehlercode erzeugt dort nur einen
 	// roten Konsoleneintrag, das Bild fehlt so oder so. Der nächste Aufruf holt es nach.
-	if !coverDownloadLimiter.allow(getIP(r)) {
+	if !coverDownloadLimiter.allow(clientip.FromRequest(r)) {
 		serveCoverFallback(w)
 		return
 	}

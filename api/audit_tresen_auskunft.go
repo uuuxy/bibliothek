@@ -27,6 +27,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 )
@@ -135,7 +136,7 @@ func (s *Server) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, au
 		return
 	}
 	if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "TRESEN_AUSKUNFT",
-		getIP(r), map[string]any{
+		clientip.FromRequest(r), map[string]any{
 			"barcode":            barcode,
 			"treffer_exemplare":  len(exemplare),
 			"treffer_ereignisse": len(ereignisse),

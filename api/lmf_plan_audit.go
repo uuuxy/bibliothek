@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"bibliothek/auth"
+	"bibliothek/pkg/clientip"
 	"bibliothek/repository"
 )
 
@@ -44,7 +45,7 @@ func (s *Server) auditiereLmfPlan(r *http.Request, aktion, art string, planID st
 	}
 	details := map[string]any{"art": art, "plan_id": planID, "fristen_angepasst": fristen}
 	if err := repository.NewAuditRepository(s.DB.Pool).
-		LogAdminAktion(r.Context(), claims.UserID, aktion, getIP(r), details); err != nil {
+		LogAdminAktion(r.Context(), claims.UserID, aktion, clientip.FromRequest(r), details); err != nil {
 		log.Printf("LMF-Plan-Audit (%s) fehlgeschlagen: %v", aktion, err)
 	}
 }

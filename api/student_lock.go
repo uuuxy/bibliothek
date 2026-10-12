@@ -9,6 +9,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
@@ -138,7 +139,7 @@ func protokolliereSperre(r *http.Request, auditRepo repository.AuditRepository, 
 			"vom_programm": alt.VomProgramm,
 		}
 	}
-	if err := auditRepo.LogAdminAktion(r.Context(), adminID, aktion, getIP(r), details); err != nil {
+	if err := auditRepo.LogAdminAktion(r.Context(), adminID, aktion, clientip.FromRequest(r), details); err != nil {
 		log.Printf("Audit für %s fehlgeschlagen: %v", aktion, err)
 	}
 }

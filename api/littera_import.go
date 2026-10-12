@@ -13,6 +13,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/service"
+	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/closeutil"
 	"bibliothek/repository"
 
@@ -110,7 +111,7 @@ func (s *Server) logImportAudit(r *http.Request, aktion, details string) {
 	if !ok {
 		return
 	}
-	s.schreibeAdminProtokoll(r.Context(), claims.UserID, aktion, getIP(r), details)
+	s.schreibeAdminProtokoll(r.Context(), claims.UserID, aktion, clientip.FromRequest(r), details)
 }
 
 // verarbeiteLitteraXML importiert ein MAB2-XML-Katalogisat und antwortet.
@@ -258,7 +259,7 @@ func (s *Server) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 
 	if claims, ok := auth.GetClaims(r.Context()); ok {
 		details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitles, importedCopies)
-		s.schreibeAdminProtokoll(r.Context(), claims.UserID, "BESTAND_IMPORT", getIP(r), details)
+		s.schreibeAdminProtokoll(r.Context(), claims.UserID, "BESTAND_IMPORT", clientip.FromRequest(r), details)
 	}
 
 	RespondJSON(w, http.StatusOK, map[string]interface{}{

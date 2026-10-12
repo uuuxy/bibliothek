@@ -6,6 +6,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/clientip"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -95,7 +96,7 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 
 		// Optional: Audit-Log für Restore anlegen
 		if claims, ok := auth.GetClaims(ctx); ok {
-			s.schreibeAdminProtokoll(ctx, claims.UserID, "RESTORE_STUDENT", getIP(r), `{"schueler_id":"`+id+`"}`)
+			s.schreibeAdminProtokoll(ctx, claims.UserID, "RESTORE_STUDENT", clientip.FromRequest(r), `{"schueler_id":"`+id+`"}`)
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]any{
@@ -172,7 +173,7 @@ func (s *Server) PurgeStudentHandler(auditRepo repository.AuditRepository) http.
 			return
 		}
 
-		s.schreibeAdminProtokoll(ctx, claims.UserID, "PURGE_STUDENT", getIP(r), `{"schueler_id":"`+id+`"}`)
+		s.schreibeAdminProtokoll(ctx, claims.UserID, "PURGE_STUDENT", clientip.FromRequest(r), `{"schueler_id":"`+id+`"}`)
 
 		RespondJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",

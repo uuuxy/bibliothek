@@ -15,6 +15,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/mailservice"
+	"bibliothek/pkg/clientip"
 	"bibliothek/repository"
 )
 
@@ -417,5 +418,5 @@ func (s *Server) logKlassenVersandAudit(r *http.Request, aktion string, details 
 	// (Prüfung 22.08.2026, A8). Claims bleiben erhalten (WithoutCancel behält Werte).
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(r.Context()), 5*time.Second)
 	defer abbruch()
-	s.schreibeAdminProtokoll(ctx, claims.UserID, aktion, getIP(r), string(payload))
+	s.schreibeAdminProtokoll(ctx, claims.UserID, aktion, clientip.FromRequest(r), string(payload))
 }
