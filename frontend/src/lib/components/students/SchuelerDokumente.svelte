@@ -3,7 +3,8 @@
   SchuelerDokumente — Kontoauszug, Ersatzforderung und DSGVO-Auskunft.
 
   Die ersten beiden gehören einem KOLLEGEN nicht: Sie lesen die Sicht `schueler`
-  (api/print.go) und beantworten seine ID mit „nicht gefunden"; die Ersatzforderung ist
+  (api/print_kontoauszug.go, api/print_rechnung.go) und beantworten seine ID mit „nicht
+  gefunden"; die Ersatzforderung ist
   ohnehin ein Schreiben an die Eltern. Die DSGVO-Auskunft gibt es seit dem 24.09.2026 für
   jeden Leser (docs/OFFEN.md 5.19). Beieinander statt dreimal dieselbe Bedingung — und
   StudentProfileActions bleibt unter der 200-Zeilen-Grenze.
