@@ -17,19 +17,6 @@ import (
 	"bibliothek/inventur"
 )
 
-// zaehlendeDNB zählt, wie oft die Tür die DNB fragt, und antwortet wie tuertest.DNBAttrappe.
-type zaehlendeDNB struct {
-	tuertest.DNBAttrappe
-	anfragen *atomic.Int32
-}
-
-func (z zaehlendeDNB) RoundTrip(r *http.Request) (*http.Response, error) {
-	if r.URL.Host == "services.dnb.de" {
-		z.anfragen.Add(1)
-	}
-	return z.DNBAttrappe.RoundTrip(r)
-}
-
 // Die zehn- und die dreizehnstellige Form einer ISBN sind dieselbe Nummer (Migration 157):
 // Steht das Buch im Katalog, findet die Bestelltür es über die zehnstellige vom
 // Titelblatt wie über die dreizehnstellige vom Strichcode, legt nichts an und fragt die DNB
@@ -55,7 +42,7 @@ func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 
 	var anfragen atomic.Int32
 	client := inventur.NeuerMetadatenClient()
-	client.SetzeHTTPClientFuerTest(&http.Client{Transport: zaehlendeDNB{anfragen: &anfragen, DNBAttrappe: tuertest.DNBAttrappe{Satz: `
+	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.ZaehlendeDNB{Anfragen: &anfragen, DNBAttrappe: tuertest.DNBAttrappe{Satz: `
 		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><records><record><recordData>
 		  <record xmlns="http://www.loc.gov/MARC21/slim">
 			<datafield tag="245" ind1="1" ind2="0"><subfield code="a">Aus der DNB</subfield></datafield>

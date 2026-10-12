@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync/atomic"
 )
 
 // DNBAttrappe beantwortet die Anfrage an die DNB mit einem festen Satz und dem Status (ohne
@@ -23,4 +24,18 @@ func (d DNBAttrappe) RoundTrip(r *http.Request) (*http.Response, error) {
 		return &http.Response{StatusCode: status, Body: io.NopCloser(strings.NewReader(d.Satz)), Header: http.Header{}, Request: r}, nil
 	}
 	return &http.Response{StatusCode: http.StatusNotFound, Body: http.NoBody, Header: http.Header{}, Request: r}, nil
+}
+
+// ZaehlendeDNB zählt, wie oft die Tür die DNB fragt, und antwortet wie DNBAttrappe.
+type ZaehlendeDNB struct {
+	DNBAttrappe
+	Anfragen *atomic.Int32
+}
+
+// RoundTrip macht die Attrappe zum Transport eines http.Client.
+func (z ZaehlendeDNB) RoundTrip(r *http.Request) (*http.Response, error) {
+	if r.URL.Host == "services.dnb.de" {
+		z.Anfragen.Add(1)
+	}
+	return z.DNBAttrappe.RoundTrip(r)
 }

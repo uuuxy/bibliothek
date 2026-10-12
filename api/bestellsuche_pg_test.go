@@ -172,7 +172,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 
 	t.Run("leere Suche: leere Liste, die DNB wird nicht gefragt", func(t *testing.T) {
 		var anfragen atomic.Int32
-		code, _, rumpf := suche(t, zaehlendeDNB{tuertest.DNBAttrappe{Satz: dnbAntwort}, &anfragen}, `{"query":"   "}`)
+		code, _, rumpf := suche(t, tuertest.ZaehlendeDNB{DNBAttrappe: tuertest.DNBAttrappe{Satz: dnbAntwort}, Anfragen: &anfragen}, `{"query":"   "}`)
 		if code != http.StatusOK || strings.TrimSpace(rumpf) != "[]" {
 			t.Errorf("Status %d, Antwort %s — erwartet 200 und []", code, rumpf)
 		}
@@ -180,7 +180,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 			t.Errorf("%d Anfragen an die DNB für eine leere Suche", n)
 		}
 		// Gegenprobe: Eine Suche mit Text fragt sie.
-		suche(t, zaehlendeDNB{tuertest.DNBAttrappe{Satz: dnbAntwort}, &anfragen}, `{"query":"Probeband"}`)
+		suche(t, tuertest.ZaehlendeDNB{DNBAttrappe: tuertest.DNBAttrappe{Satz: dnbAntwort}, Anfragen: &anfragen}, `{"query":"Probeband"}`)
 		if n := anfragen.Load(); n == 0 {
 			t.Error("Gegenprobe: Auch die Suche mit Text hat die DNB nicht gefragt — die Zählung misst nichts")
 		}

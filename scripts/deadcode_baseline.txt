@@ -145,6 +145,7 @@ internal/tuertest/tuertest.go: unreachable func: Fehlermeldung
 internal/tuertest/tuertest.go: unreachable func: AntwortOhneDB
 internal/tuertest/felder.go: unreachable func: LeereFelder
 internal/tuertest/dnb.go: unreachable func: DNBAttrappe.RoundTrip
+internal/tuertest/dnb.go: unreachable func: ZaehlendeDNB.RoundTrip
 internal/tuertest/mail.go: unreachable func: MailAbfangen
 internal/tuertest/rechte.go: unreachable func: SetzeGenauEinRecht
 internal/tuertest/sitzung.go: unreachable func: AdminSitzung
