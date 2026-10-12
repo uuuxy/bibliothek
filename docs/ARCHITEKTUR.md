@@ -3245,7 +3245,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen
+Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen, in 11.5 die vier Symbolknöpfe mit dem Hinweis des Browsers ergänzt
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3973,6 +3973,11 @@ Fenstern bekannt ist:
   eine eigene Zeile; eine Layoutfrage, nicht einzeln. „Barcode scannen" ist 24 px hoch, und
   „Interne ID generieren" bricht bei 1280 px im Knopf in zwei Zeilen um (gemessen am
   06.10.2026).
+- Vier Symbolknöpfe erklären sich mit dem Hinweis des Browsers (`title`) statt mit der
+  Sprechblase des Hauses (`data-tip`): im LMF-Planer „Nach oben", „Nach unten" und „Festen
+  Platz lösen", in den Einstellungen „Sommerferien … entfernen". Einen Namen für den
+  Screenreader tragen alle acht Symbolknöpfe (gezählt am 12.10.2026);
+  `frontend-hygiene-knoepfe.test.js` verlangt Namen und Hinweis und lässt beide Formen zu.
 - Vorschläge an einem Textfeld zeichnet der Browser (`datalist`): am Feld „Signatur", im
   Dialog „Standort ändern", in der Schlagwort-Pflege und in `ui/ChipFeld` (sechs Stellen,
   gezählt am 06.10.2026). Die Liste sieht je Browser anders aus und folgt nicht Material 3;

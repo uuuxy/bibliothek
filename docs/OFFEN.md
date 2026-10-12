@@ -45,11 +45,23 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
   einstellt, braucht es dann nicht. (7.3, R8)
-- [ ] Zwei zugelieferte Pull Requests schließen? 727 ersetzt beim Schuljahreswechsel eine
+- [ ] Vier zugelieferte Pull Requests schließen? 727 ersetzt beim Schuljahreswechsel eine
   Zählung durch eine Existenzabfrage; sie läuft einmal je Versetzung über wenige Zeilen,
   gemessen ist nichts. 726 setzt in `Suchfeld` und `Suchpille` einen Knopf zum Leeren; im
-  `Suchfeld` hätte er 28 px Trefferfläche statt 48. Vorschlag: beide schließen. Soll es den
-  Knopf geben, entsteht er neu nach der Seite von Material 3.
+  `Suchfeld` hätte er 28 px Trefferfläche statt 48. 728 schreibt in der Bestellhistorie die
+  Zählung der offenen Etiketten um. Das Ergebnis ist dasselbe; gemessen am 12.10.2026 an
+  60.000 Exemplaren und 1.000 Positionen ist die neue Fassung im laufenden Betrieb (200
+  offene Etiketten) 0,3 ms langsamer und mit 60.000 offenen Etiketten knapp 2 ms schneller.
+  729 gibt dem Knopf „✕" am Abgangsjahr einen Namen, mit dem Hinweis des Browsers statt der
+  Sprechblase des Hauses; die Lücke ist seit dem 12.10.2026 auf `main` geschlossen, und eine
+  Ratsche hält Namen und Hinweis an jedem Symbolknopf. Vorschlag: alle vier schließen. Soll
+  es den Knopf zum Leeren geben, entsteht er neu nach der Seite von Material 3.
+- [ ] Zwei Paket-Updates von Dependabot übernehmen (beide vom 12.10.2026, in der CI grün)?
+  732 hebt drei Go-Pakete (sentry-go 0.50, maroto 2.4.3, gocognit 1.3). 731 hebt
+  vite-plugin-pwa auf 2.0; die Hauptversion erweitert laut ihren Hinweisen nur eine
+  Peer-Abhängigkeit (`@vite-pwa/assets-generator`), die das Projekt nicht einbindet.
+  Vorschlag: beide übernehmen. Das dritte (730, zehn Pakete der Oberfläche) ist rot und steht
+  unter 5.10.
 - [x] gosec vor dem Push: Der Hook fährt gosec seit dem 09.10.2026 mit, über dasselbe Skript
   wie der Sicherheits-Lauf (`scripts/gosec-gate.sh`). Gebaut nach dem Vorschlag; zurücknehmen
   lässt es sich mit dem Rückbau dieses einen Commits.
@@ -175,7 +187,8 @@ der Nummer nichts mehr dazu offen ist.
 - [ ] **Gates und Werkzeuge (5.10):** die Bestände zweier Ratschen sind nicht befragt (Schema:
   was die Datenbank ablehnt; Listen: was sie begrenzt), die Form-Ratsche sieht umrandete
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
-  Excel-Bibliothek und gosec auf einem unveröffentlichten Stand.
+  Excel-Bibliothek und gosec auf einem unveröffentlichten Stand, vier neue Warnungen des
+  Linters im Sammel-Update der Oberfläche.
 - [ ] **Schichtung des Backends (5.62):** die Regeln in Dateien, die auch eine Tür tragen, je
   Datei lesen und trennen; die Zuordnung der zwei Importe zusammenlegen.
 - [ ] **Etiketten kürzen nach Zeichenzahl (5.63):** an neun Stellen messen, ob ein Text über
@@ -349,6 +362,18 @@ Vermerk.
   Tages meldet der neue Stand mit denselben Ausnahmen nichts (489 Dateien, 61 Vermerke
   `#nosec`). Offen: auf die nächste veröffentlichte Fassung heben, sobald sie erscheint; sie
   kann neue Regeln mitbringen, deshalb mit eigenem Commit. Kategorie B.
+- **Das Sammel-Update der Oberfläche vom 12.10.2026 ist rot** (Pull Request 730, zehn Pakete).
+  Tests und Bau laufen durch; der Linter meldet nach dem Update vier Variablen als „assigned a
+  value but only used as a type" (`@typescript-eslint/no-unused-vars`), und er läuft mit
+  `--max-warnings 0`. Alle vier sind gebundene Eigenschaften eines Bauteils (`$bindable()`):
+  `queryVal` in `CameraScanner.svelte`, `element` in `ui/Suchpille.svelte` und `showWebcam` in
+  `StudentProfileCard.svelte` setzt das Bauteil nur, und der Wert geht an den Aufrufer;
+  `showDeleteConfirm` nennt `StudentProfileCard.svelte` nur in der Liste seiner Eigenschaften.
+  Nächster Schritt: in einem eigenen Arbeitsverzeichnis mit `npm ci` nachstellen, welches der
+  drei angehobenen Linter-Pakete die Meldung bringt (eslint 10.12, eslint-plugin-svelte
+  3.23.1, typescript-eslint 8.71.1), dann entweder die Regel für gebundene Eigenschaften
+  einstellen oder die vier Stellen ändern; `showDeleteConfirm` dabei am Aufrufer prüfen.
+  Kategorie B.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 
