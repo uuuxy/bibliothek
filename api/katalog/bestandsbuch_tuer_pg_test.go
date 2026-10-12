@@ -1,4 +1,4 @@
-package api
+package katalog_test
 
 import (
 	"net/http"
@@ -9,6 +9,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/routertest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
@@ -22,7 +23,7 @@ import (
 func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	_, rufe := protokollWelt(t, pool)
+	_, rufe := routertest.MitAufruf(t, pool)
 	ctx := t.Context()
 	tag := func(m time.Month, d int) time.Time {
 		return time.Date(2026, m, d, 12, 0, 0, 0, schulzeit.Zone())
