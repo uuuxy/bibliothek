@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/repository"
 )
@@ -50,7 +51,7 @@ func gebuehrRequest(t *testing.T, methode, ziel, body string, mitClaims bool) *h
 }
 
 func TestStornoGebuehrHandler(t *testing.T) {
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	faelle := []struct {
 		name       string
@@ -82,7 +83,7 @@ func TestStornoGebuehrHandler(t *testing.T) {
 }
 
 func TestBezahltGebuehrHandler(t *testing.T) {
-	srv := &Server{}
+	srv := &Tueren{Basis: &tuer.Basis{}}
 
 	t.Run("bereits erledigt -> 409 mit lesbarer Meldung", func(t *testing.T) {
 		repo := &stubGebuehrAuditRepo{bezahltErr: repository.ErrSchadensfallErledigt}

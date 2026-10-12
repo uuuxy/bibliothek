@@ -278,7 +278,7 @@ const sqlSchulHeute = schulzeit.SQLHeute
 
 // bescheidFristAbgelaufen: offen, Frist vorbei, und es ist noch etwas zu zahlen.
 //
-// Die Frist ist ein Kalendertag in der Schulzeitzone (api/bescheid_handler.go), also wird
+// Die Frist ist ein Kalendertag in der Schulzeitzone (api/schaden/bescheid_handler.go), also wird
 // sie gegen sqlSchulHeute verglichen. Bis zum 16.09.2026 stand hier CURRENT_DATE: Zwischen
 // Mitternacht in Berlin und Mitternacht UTC galt eine Frist von gestern als nicht
 // abgelaufen, die Übergabe an die Schulaufsicht fand keine Zeile

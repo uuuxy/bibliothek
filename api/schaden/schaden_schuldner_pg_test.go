@@ -1,4 +1,4 @@
-package api
+package schaden_test
 
 import (
 	"net/http"
@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -39,7 +40,7 @@ func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	ausleiher := testdaten.SeedSchueler(t, pool, "S-SCHULD-A", "Anna", "07A")
 	unbeteiligt := testdaten.SeedSchueler(t, pool, "S-SCHULD-B", "Ben", "07B")
@@ -94,7 +95,7 @@ func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	kind := testdaten.SeedSchueler(t, pool, "S-ZURUECK-A", "Zoe", "07A")
 	ex := testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Zurücktitel", 1), "EX-ZURUECK-1", true, "")

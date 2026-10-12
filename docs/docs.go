@@ -3235,7 +3235,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.BescheidVorschlag"
+                            "$ref": "#/definitions/schaden.BescheidVorschlag"
                         }
                     }
                 }
@@ -3296,7 +3296,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.BescheidErstellenRequest"
+                            "$ref": "#/definitions/schaden.BescheidErstellenRequest"
                         }
                     }
                 ],
@@ -3806,141 +3806,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "titel_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.BescheidErstellenRequest": {
-            "type": "object",
-            "properties": {
-                "ausleihen": {
-                    "description": "Ausleihen: überfällige Bücher, die mit dem Brief als Verlust gebucht werden.",
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "ausleihe_id": {
-                                "type": "string"
-                            },
-                            "betrag": {
-                                "type": "number"
-                            }
-                        }
-                    }
-                },
-                "frist_bis": {
-                    "type": "string"
-                },
-                "mittel": {
-                    "type": "string"
-                },
-                "positionen": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "betrag": {
-                                "type": "number"
-                            },
-                            "schadensfall_id": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "api.BescheidVorschlag": {
-            "type": "object",
-            "properties": {
-                "ausleihen": {
-                    "description": "Ausleihen: überfällige Bücher, die noch keine Forderung tragen. Seit dem\n15.09.2026 (Stufe 2) braucht es keine Verlustmeldung je Buch mehr vor dem Brief.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.BescheidVorschlagAusleihe"
-                    }
-                },
-                "fehlende_angaben": {
-                    "description": "FehlendeAngaben nennt die Einstellungen, ohne die kein Bescheid entstehen kann.\nDer Dialog zeigt sie, statt den Knopf stumm zu sperren.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "frist_bis": {
-                    "type": "string"
-                },
-                "klasse": {
-                    "type": "string"
-                },
-                "positionen": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.BescheidVorschlagPosition"
-                    }
-                },
-                "schueler_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.BescheidVorschlagAusleihe": {
-            "type": "object",
-            "properties": {
-                "ausleihe_id": {
-                    "type": "string"
-                },
-                "betrag": {
-                    "type": "number"
-                },
-                "faellig_seit": {
-                    "type": "string"
-                },
-                "herleitung": {
-                    "type": "string"
-                },
-                "isbn": {
-                    "type": "string"
-                },
-                "letztes_mahndatum": {
-                    "type": "string"
-                },
-                "mahnstufe": {
-                    "description": "Mahnstufe und LetztesMahndatum (JJJJ-MM-TT, leer ohne Datum): wie oft und wann\nzuletzt ein Mahnbrief zu diesem Buch gedruckt wurde.",
-                    "type": "integer"
-                },
-                "titel": {
-                    "type": "string"
-                },
-                "topf": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.BescheidVorschlagPosition": {
-            "type": "object",
-            "properties": {
-                "art": {
-                    "type": "string"
-                },
-                "betrag": {
-                    "type": "number"
-                },
-                "herleitung": {
-                    "description": "Herleitung: „3. Verleihjahr → 60 % von 41,50 €\" bzw. der Hinweis, dass kein Preis\nhinterlegt ist.",
-                    "type": "string"
-                },
-                "isbn": {
-                    "type": "string"
-                },
-                "schadensfall_id": {
-                    "type": "string"
-                },
-                "titel": {
-                    "type": "string"
-                },
-                "topf": {
-                    "description": "Topf ist das Eigentum des Exemplars (repository.ExemplarTopfSQL): Bücher des Landes\ngehen an das Land, alles andere an den Schulträger; leer bei einem Geräteschaden. Ein\nBrief trägt genau einen Topf. Bis zum 29.09.2026 stand hier ist_lernmittel des Titels.",
                     "type": "string"
                 }
             }
@@ -6661,6 +6526,141 @@ const docTemplate = `{
                 },
                 "theke_leeren_minuten": {
                     "type": "integer"
+                }
+            }
+        },
+        "schaden.BescheidErstellenRequest": {
+            "type": "object",
+            "properties": {
+                "ausleihen": {
+                    "description": "Ausleihen: überfällige Bücher, die mit dem Brief als Verlust gebucht werden.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "ausleihe_id": {
+                                "type": "string"
+                            },
+                            "betrag": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                },
+                "frist_bis": {
+                    "type": "string"
+                },
+                "mittel": {
+                    "type": "string"
+                },
+                "positionen": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "betrag": {
+                                "type": "number"
+                            },
+                            "schadensfall_id": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "schaden.BescheidVorschlag": {
+            "type": "object",
+            "properties": {
+                "ausleihen": {
+                    "description": "Ausleihen: überfällige Bücher, die noch keine Forderung tragen. Seit dem\n15.09.2026 (Stufe 2) braucht es keine Verlustmeldung je Buch mehr vor dem Brief.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schaden.BescheidVorschlagAusleihe"
+                    }
+                },
+                "fehlende_angaben": {
+                    "description": "FehlendeAngaben nennt die Einstellungen, ohne die kein Bescheid entstehen kann.\nDer Dialog zeigt sie, statt den Knopf stumm zu sperren.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "frist_bis": {
+                    "type": "string"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "positionen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schaden.BescheidVorschlagPosition"
+                    }
+                },
+                "schueler_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "schaden.BescheidVorschlagAusleihe": {
+            "type": "object",
+            "properties": {
+                "ausleihe_id": {
+                    "type": "string"
+                },
+                "betrag": {
+                    "type": "number"
+                },
+                "faellig_seit": {
+                    "type": "string"
+                },
+                "herleitung": {
+                    "type": "string"
+                },
+                "isbn": {
+                    "type": "string"
+                },
+                "letztes_mahndatum": {
+                    "type": "string"
+                },
+                "mahnstufe": {
+                    "description": "Mahnstufe und LetztesMahndatum (JJJJ-MM-TT, leer ohne Datum): wie oft und wann\nzuletzt ein Mahnbrief zu diesem Buch gedruckt wurde.",
+                    "type": "integer"
+                },
+                "titel": {
+                    "type": "string"
+                },
+                "topf": {
+                    "type": "string"
+                }
+            }
+        },
+        "schaden.BescheidVorschlagPosition": {
+            "type": "object",
+            "properties": {
+                "art": {
+                    "type": "string"
+                },
+                "betrag": {
+                    "type": "number"
+                },
+                "herleitung": {
+                    "description": "Herleitung: „3. Verleihjahr → 60 % von 41,50 €\" bzw. der Hinweis, dass kein Preis\nhinterlegt ist.",
+                    "type": "string"
+                },
+                "isbn": {
+                    "type": "string"
+                },
+                "schadensfall_id": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                },
+                "topf": {
+                    "description": "Topf ist das Eigentum des Exemplars (repository.ExemplarTopfSQL): Bücher des Landes\ngehen an das Land, alles andere an den Schulträger; leer bei einem Geräteschaden. Ein\nBrief trägt genau einen Topf. Bis zum 29.09.2026 stand hier ist_lernmittel des Titels.",
+                    "type": "string"
                 }
             }
         },

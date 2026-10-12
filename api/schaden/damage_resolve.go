@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"errors"
@@ -22,7 +22,7 @@ import (
 
 // ListStudentSchadensfaelleHandler liefert alle Schadensfälle eines Schülers für
 // die Gebühren-Sektion der Schülerakte (GET /api/schueler/{id}/schadensfaelle).
-func (s *Server) ListStudentSchadensfaelleHandler(damageRepo repository.DamageRepository) http.HandlerFunc {
+func (s *Tueren) ListStudentSchadensfaelleHandler(damageRepo repository.DamageRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -53,7 +53,7 @@ func erledigungsFehler(err error, aktion string) error {
 
 // BezahltGebuehrHandler verbucht die Zahlung (POST /api/schadensfaelle/{id}/bezahlt).
 // Kein Request-Body: Der Betrag kommt IMMER aus der Datenbank, nie vom Client.
-func (s *Server) BezahltGebuehrHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) BezahltGebuehrHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -69,7 +69,7 @@ func (s *Server) BezahltGebuehrHandler(auditRepo repository.AuditRepository) htt
 
 // StornoGebuehrHandler storniert eine Gebühr mit zwingender Begründung
 // (POST /api/schadensfaelle/{id}/storno).
-func (s *Server) StornoGebuehrHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) StornoGebuehrHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {

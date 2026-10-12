@@ -745,7 +745,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   in die Typen der Antwort und reicht die eingestellten Fristen (`DsgvoFristWerte`); die
   Pflichtangaben formuliert das Paket (`DsgvoPflichtangaben`). Den Namen eines Vorgangs im
   Protokoll, den eine Tür schreibt, nennt das Paket als Text; ein Test der Tür hält ihn gegen
-  das Blatt (`api/bescheid_auskunft_test.go`).
+  das Blatt (`api/schaden/bescheid_auskunft_test.go`).
 - Unterscheidet eine Tür in ihrer Meldung, ob die Abfrage scheiterte oder das Lesen ihrer
   Zeilen, trägt der Fehler des Lesens `repository.ErrZeileUnlesbar`.
 - Für die Nachtläufe gilt dieselbe Teilung. `jobs/` bestimmt, wann ein Lauf fährt, liest die

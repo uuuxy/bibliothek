@@ -161,7 +161,7 @@ func returnLoan(t *testing.T, pool *pgxpool.Pool, loanID string) {
 // TestReportDamageSchuldnerAusAusleihe belegt die Objektbindung: Der Schadensfall wird dem
 // Schuldner der Ausleihe zugeschrieben. Eine Kennung des Schuldners nimmt ReportDamage nicht
 // entgegen; dass die mitgeschickte schueler_id der Anfrage folgenlos bleibt, prüft
-// api/schaden_schuldner_pg_test.go an der Route.
+// api/schaden/schaden_schuldner_pg_test.go an der Route.
 func TestReportDamageSchuldnerAusAusleihe(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

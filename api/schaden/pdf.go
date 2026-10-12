@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 
 // GenerateDamagePDFHandler generates a formal PDF notification letter ("Elternbrief")
 // for a student responsible for library book damage, marking the record in the DB.
-func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
+func (s *Tueren) GenerateDamagePDFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -82,7 +82,7 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 
 // fetchDamageCaseInfo lädt den Fall für den Elternbrief und sagt dazu, ob die Forderung
 // schon auf einem Schadensersatz-Bescheid steht (dann gibt es keinen Brief).
-func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.SchadensfallInfo, bool, error) {
+func (s *Tueren) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.SchadensfallInfo, bool, error) {
 	fall, aufBescheid, err := repository.LadeSchadensfallBrief(ctx, s.DB.Pool, id)
 	if err != nil {
 		return pdf.SchadensfallInfo{}, false, err
@@ -105,7 +105,7 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 	}, aufBescheid, nil
 }
 
-func (s *Server) markElternbriefGenerated(ctx context.Context, id string) {
+func (s *Tueren) markElternbriefGenerated(ctx context.Context, id string) {
 	if dbErr := repository.MerkeElternbriefErzeugt(ctx, s.DB.Pool, id); dbErr != nil {
 		log.Printf("PDF Generator: Database status update failed for case %s: %v", id, dbErr)
 	}

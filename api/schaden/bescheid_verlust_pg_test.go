@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"context"
@@ -48,7 +48,7 @@ func bescheidRumpfMitAusleihen(frist string, betraege map[string]float64) string
 }
 
 // bescheidVorschlagUeberHandler ruft GET /api/schueler/{id}/bescheid-vorschlag.
-func bescheidVorschlagUeberHandler(t *testing.T, srv *Server, pool *pgxpool.Pool, schuelerID string) BescheidVorschlag {
+func bescheidVorschlagUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool, schuelerID string) BescheidVorschlag {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+schuelerID+"/bescheid-vorschlag", nil)
 	req.SetPathValue("id", schuelerID)
@@ -85,7 +85,7 @@ func TestBescheidVorschlag_NenntUeberfaelligeBuecherOhneForderung(t *testing.T) 
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-VORSCHLAG-1", "Vorschlagkind", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Physik 8")
@@ -132,7 +132,7 @@ func TestBescheidErstellen_AusUeberfaelligenBuechern(t *testing.T) {
 	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-VERLUST-1", "Verlustkind", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Chemie 8")
@@ -204,7 +204,7 @@ func TestBescheidErstellen_VeralteterDialogWirdAbgewiesen(t *testing.T) {
 	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-VERALTET-1", "Dialogkind", "08G2")
 	anderes := testdaten.SeedSchueler(t, pool, "S-VERALTET-2", "Anderes", "08G2")
@@ -257,7 +257,7 @@ func TestBescheidErstellen_BuechereiBuchNichtAlsVerlust(t *testing.T) {
 	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BUECHEREI-1", "Leseratte", "08G2")
 	titelID := testdaten.SeedMonitorTitel(t, pool, "Roman", "Autor", true, 0)

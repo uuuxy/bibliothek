@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func TestSchadenMelden_ArtKommtAusDerMeldung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	melde := func(barcode, rumpfZusatz string) (*httptest.ResponseRecorder, string) {

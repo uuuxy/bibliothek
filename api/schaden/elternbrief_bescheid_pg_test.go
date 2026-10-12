@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"context"
@@ -16,15 +16,15 @@ import (
 // Der Elternbrief je Schadensfall (GET /api/schadensfaelle/{id}/pdf) prüfte nicht, ob die
 // Forderung schon auf einem Schadensersatz-Bescheid steht (docs/OFFEN.md 5.2). Dann stünde
 // dieselbe Forderung auf zwei Briefen mit zwei Fristen und zwei Zahlungswegen. Die
-// Ersatzforderung hält diese Regel seit dem 13.09.2026 (api/print_rechnung.go, bescheid_id IS
-// NULL);
-// die Oberfläche öffnet den Elternbrief nicht mehr, über die Adresse blieb er erreichbar.
+// Ersatzforderung hält diese Regel seit dem 13.09.2026 (api/schaden/print_rechnung.go,
+// bescheid_id IS NULL); die Oberfläche öffnet den Elternbrief nicht mehr, über die Adresse
+// blieb er erreichbar.
 func TestElternbrief_ForderungAufEinemBescheidBekommtKeinenBrief(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()
 
 	sid := testdaten.SeedSchueler(t, pool, "S-EBRIEF", "Briefkind", "08G2")

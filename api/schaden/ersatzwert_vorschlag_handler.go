@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ import (
 // @Success      200 {object} service.ErsatzwertVorschlag
 // @Failure      404 {object} apierrors.APIError
 // @Router       /buecher/exemplare/{id}/ersatzwert-vorschlag [get]
-func (s *Server) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {

@@ -30,7 +30,7 @@ import (
 // (Regelfall — Parallel-Türen driften), oder sie hier mit Begründung eintragen.
 var bewussteTueren = map[string]string{
 	// (derzeit leer — StornierungGebuehr hat seit 16.08.2026 seine Tür:
-	// POST /api/schadensfaelle/{id}/storno, siehe api/damage_resolve.go)
+	// POST /api/schadensfaelle/{id}/storno, siehe api/schaden/damage_resolve.go)
 }
 
 func TestInterfaceOhneProduktivenAufrufer(t *testing.T) {

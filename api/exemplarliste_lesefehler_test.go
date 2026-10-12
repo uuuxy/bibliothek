@@ -15,9 +15,8 @@ import (
 // Eine Zeile der Exemplarliste, die sich nicht lesen lässt, ist ein Fehler (500) — kein
 // Exemplar, das still von der Buchakte verschwindet. Bis zum 29.09.2026 stand dort
 // `if err := rows.Scan(...); err == nil { append }`: Die Liste kam mit 200 und ohne dieses
-// Exemplar, und niemand erfuhr davon. Dieselbe Regel wie bei der Rechnung (print_rechnung.go):
-// lieber
-// gar keine Liste als eine, der still eine Zeile fehlt.
+// Exemplar, und niemand erfuhr davon. Dieselbe Regel wie bei der Rechnung
+// (api/schaden/print_rechnung.go): lieber gar keine Liste als eine, der still eine Zeile fehlt.
 func TestExemplarliste_UnlesbareZeileIstEinFehler(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {

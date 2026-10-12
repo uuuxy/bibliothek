@@ -164,8 +164,8 @@ lässt sich dort anhalten.
   Ordner seines Themas, als eigenes Testpaket. Der Aufwand je Thema ist gemessen (5.65).
 - [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt. Umgezogen: Inventur
   (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`), System
-  (`api/system`), Mahnwesen (`api/mahnwesen`). Offen: Schaden, Druck mit Bestellung, Katalog,
-  Leser, zuletzt die Theke.
+  (`api/system`), Mahnwesen (`api/mahnwesen`), Schaden (`api/schaden`). Offen: Druck mit
+  Bestellung, Katalog, Leser, zuletzt die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
   die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
   Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
@@ -536,8 +536,8 @@ von Stufe 4 die ersten vier Themen.
   | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system` |
   | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go` |
   | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go`, seit dem 12.10.2026 in `api/mahnwesen` |
-  | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print.go` |
-  | Schaden    | 7       | 1.154  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go` |
+  | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print_kontoauszug.go` (der Kontoauszug aus `print.go`) |
+  | Schaden    | 7       | 1.154  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go`, dazu die Rechnung an die Eltern aus `print.go`; seit dem 12.10.2026 in `api/schaden` |
   | Lernmittel | 5       | 1.098  | 7      | 8           | `lmf_*.go`, seit dem 12.10.2026 in `api/lernmittel` |
   | Benutzer   | 6       | 838    | 6      | 9           | `user_admin*.go`, seit dem 12.10.2026 in `api/benutzer` |
   | Inventur   | 5       | 777    | 9      | 5           | `inventur_*.go`, seit dem 12.10.2026 in `api/inventurlauf` |

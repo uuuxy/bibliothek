@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 
 // ReportDamageHandler handles POST /api/damage/report
 // Sets ist_ausgesondert = true, inserts into schadensfaelle, and ends the loan.
-func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) http.HandlerFunc {
+func (s *Tueren) ReportDamageHandler(damageRepo repository.DamageRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {

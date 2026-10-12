@@ -1,4 +1,4 @@
-package api
+package schaden_test
 
 import (
 	"net/http"
@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -44,7 +45,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	// storniere legt dem Leser eine offene Forderung an und storniert sie über die Tür.
 	storniere := func(t *testing.T, leserID, kennung, grund string) (forderungID, titelID string) {

@@ -32,6 +32,7 @@ import (
 	"bibliothek/api/lernmittel"
 	"bibliothek/api/mahnwesen"
 	"bibliothek/api/portal"
+	"bibliothek/api/schaden"
 	"bibliothek/api/system"
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -108,6 +109,11 @@ func (s *Server) BereitschaftsAlarm(ctx context.Context) {
 // mahnwesen ist der Zugang zu den Türen des Mahnwesens und der Abgänger.
 func (s *Server) mahnwesen() *mahnwesen.Tueren {
 	return &mahnwesen.Tueren{Basis: &s.Basis}
+}
+
+// schaden ist der Zugang zu den Türen zu Schaden und Ersatz.
+func (s *Server) schaden() *schaden.Tueren {
+	return &schaden.Tueren{Basis: &s.Basis}
 }
 
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.

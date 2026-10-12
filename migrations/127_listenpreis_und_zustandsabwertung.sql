@@ -13,7 +13,7 @@
 --
 -- Nr. 3 ist keine Komfortfrage: Die Arbeitshilfe zum Erlass vom 17.12.2014 rechnet ab dem
 -- ZWEITEN Verleihjahr mit „80 % des Neupreises des Lehrwerks zum Zeitpunkt des Verlusts".
--- Diesen Preis führt das System bis heute nicht; api/bescheid_handler.go übergibt hart 0,
+-- Diesen Preis führt das System bis heute nicht; api/schaden/bescheid_handler.go übergibt hart 0,
 -- und die Staffel weicht ersatzweise auf den Kaufpreis aus. Der Listenpreis IST der
 -- Neupreis der Arbeitshilfe — ein Wort für eine Sache, und zwar das des Medienzentrums.
 

@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"net/http"
@@ -23,7 +23,7 @@ func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-FRIST", "Fristprobe", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Chemie 8")
@@ -71,7 +71,7 @@ func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-ABL", "Ablehnung", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Physik 8")

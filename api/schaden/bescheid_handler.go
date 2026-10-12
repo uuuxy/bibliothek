@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"context"
@@ -109,7 +109,7 @@ type BescheidErstellenRequest struct {
 // @Param        id path string true "Student ID"
 // @Success      200 {object} BescheidVorschlag
 // @Router       /schueler/{id}/bescheid-vorschlag [get]
-func (s *Server) BescheidVorschlagHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) BescheidVorschlagHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		return s.handleBescheidVorschlag(w, r, bescheidRepo)
 	})
@@ -117,7 +117,7 @@ func (s *Server) BescheidVorschlagHandler(bescheidRepo repository.BescheidReposi
 
 // handleBescheidVorschlag sammelt, was auf einen Bescheid kann: offene Forderungen und
 // überfällige Bücher, je mit Betragsvorschlag.
-func (s *Server) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository) error {
+func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
@@ -167,7 +167,7 @@ func (s *Server) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request,
 }
 
 // bescheidAngaben liest Einstellungen und Schul-Identität in einem Zug.
-func (s *Server) bescheidAngaben(ctx context.Context) (repository.BescheidAngaben, repository.SchuleAngaben, error) {
+func (s *Tueren) bescheidAngaben(ctx context.Context) (repository.BescheidAngaben, repository.SchuleAngaben, error) {
 	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
 	if err != nil {
 		return repository.BescheidAngaben{}, repository.SchuleAngaben{}, err
@@ -232,7 +232,7 @@ func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ers
 // @Param        body body BescheidErstellenRequest true "Pot, deadline and positions"
 // @Success      201 {object} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [post]
-func (s *Server) BescheidErstellenHandler(bescheidRepo repository.BescheidRepository, auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) BescheidErstellenHandler(bescheidRepo repository.BescheidRepository, auditRepo repository.AuditRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		return s.handleBescheidErstellen(w, r, bescheidRepo, auditRepo)
 	})
@@ -240,7 +240,7 @@ func (s *Server) BescheidErstellenHandler(bescheidRepo repository.BescheidReposi
 
 // handleBescheidErstellen prüft die Anfrage und die Pflichtangaben, schreibt den Bescheid und
 // protokolliert ihn.
-func (s *Server) handleBescheidErstellen(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository, auditRepo repository.AuditRepository) error {
+func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository, auditRepo repository.AuditRepository) error {
 	id := r.PathValue("id")
 	var req BescheidErstellenRequest
 	if id == "" {
@@ -416,7 +416,7 @@ func bescheidAkteur(ctx context.Context) string {
 
 // bescheidAudit protokolliert einen Eingriff. Dasselbe Muster wie der LMF-Plan: ohne
 // Anmeldung oder ohne Datenbank gibt es nichts zu schreiben.
-func bescheidAudit(ctx context.Context, s *Server, auditRepo repository.AuditRepository, aktion string, details map[string]any, ip string) {
+func bescheidAudit(ctx context.Context, s *Tueren, auditRepo repository.AuditRepository, aktion string, details map[string]any, ip string) {
 	claims, ok := auth.GetClaims(ctx)
 	if !ok || s.DB == nil || s.DB.Pool == nil || auditRepo == nil {
 		return
@@ -434,7 +434,7 @@ func bescheidAudit(ctx context.Context, s *Server, auditRepo repository.AuditRep
 // @Param        status query string false "offen = nur nicht übergebene"
 // @Success      200 {array} repository.Bescheid
 // @Router       /bescheide [get]
-func (s *Server) BescheidListeHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) BescheidListeHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		liste, err := bescheidRepo.Liste(r.Context(), r.URL.Query().Get("status") == "offen")
 		if err != nil {
@@ -453,7 +453,7 @@ func (s *Server) BescheidListeHandler(bescheidRepo repository.BescheidRepository
 // @Param        id path string true "Student ID"
 // @Success      200 {array} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [get]
-func (s *Server) BescheidSchuelerListeHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) BescheidSchuelerListeHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -477,7 +477,7 @@ func (s *Server) BescheidSchuelerListeHandler(bescheidRepo repository.BescheidRe
 // @Param        id path string true "Notice ID"
 // @Success      200 {file} file
 // @Router       /bescheide/{id}/pdf [get]
-func (s *Server) BescheidPDFHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) BescheidPDFHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -511,7 +511,7 @@ func (s *Server) BescheidPDFHandler(bescheidRepo repository.BescheidRepository) 
 }
 
 // bescheidBrief baut das Blatt aus Bescheid, Snapshot, Positionen und Einstellungen.
-func (s *Server) bescheidBrief(ctx context.Context, bescheidRepo repository.BescheidRepository, id string) (pdf.BescheidBrief, *repository.Bescheid, error) {
+func (s *Tueren) bescheidBrief(ctx context.Context, bescheidRepo repository.BescheidRepository, id string) (pdf.BescheidBrief, *repository.Bescheid, error) {
 	bescheid, err := bescheidRepo.Lies(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -598,7 +598,7 @@ func bescheidEmpfaengerAus(snapshot map[string]string) pdf.BescheidEmpfaenger {
 // @Param        id path string true "Notice ID"
 // @Success      200 {object} map[string]any
 // @Router       /bescheide/{id}/uebergeben [post]
-func (s *Server) BescheidUebergebenHandler(bescheidRepo repository.BescheidRepository, auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) BescheidUebergebenHandler(bescheidRepo repository.BescheidRepository, auditRepo repository.AuditRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {

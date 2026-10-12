@@ -1,4 +1,4 @@
-package api
+package schaden
 
 import (
 	"net/http"
@@ -17,7 +17,7 @@ import (
 // @Produce      json
 // @Success      200 {array} repository.ForderungOhneBescheid
 // @Router       /bescheide/ausstehend [get]
-func (s *Server) BescheidAusstehendHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) BescheidAusstehendHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		liste, err := bescheidRepo.Ausstehend(r.Context())
 		if err != nil {

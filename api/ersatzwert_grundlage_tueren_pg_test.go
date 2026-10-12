@@ -85,7 +85,7 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 			Betrag     float64 `json:"betrag"`
 			Herleitung string  `json:"herleitung"`
 		}
-		rufe(t, srv.ErsatzwertVorschlagHandler(bescheidRepo), http.MethodGet,
+		rufe(t, srv.schaden().ErsatzwertVorschlagHandler(bescheidRepo), http.MethodGet,
 			"/api/buecher/exemplare/"+exID+"/ersatzwert-vorschlag", "", exID, &dialog)
 
 		var liste []struct {
@@ -115,7 +115,7 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 				Herleitung string  `json:"herleitung"`
 			} `json:"ausleihen"`
 		}
-		rufe(t, srv.BescheidVorschlagHandler(bescheidRepo), http.MethodGet,
+		rufe(t, srv.schaden().BescheidVorschlagHandler(bescheidRepo), http.MethodGet,
 			"/api/schueler/"+schuelerID+"/bescheid-vorschlag", "", schuelerID, &vorschlag)
 		if len(vorschlag.Ausleihen) != 1 {
 			t.Fatalf("Vorschlag zum Bescheid: %d überfällige Bücher, erwartet 1", len(vorschlag.Ausleihen))
