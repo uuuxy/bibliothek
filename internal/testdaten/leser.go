@@ -121,3 +121,19 @@ func Klassenleitung(t *testing.T, pool *pgxpool.Pool, klasse, email string) {
 func ZusammenfuehrenAuftrag(ziel, quelle string) repository.ZusammenfuehrenAuftrag {
 	return repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}
 }
+
+// AdminKonto legt ein aktives Admin-Konto mit dieser Adresse an und nennt seine Kennung. Die
+// Adresse gehört dem Test: Zwei Tests teilen sich so kein Konto und zählen nicht die
+// Protokolleinträge des anderen.
+func AdminKonto(t *testing.T, pool *pgxpool.Pool, email, vorname, nachname string) string {
+	t.Helper()
+	var id string
+	if err := pool.QueryRow(context.Background(), `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ($1, $2, $3, 'admin', true)
+		ON CONFLICT (lower(email)) DO UPDATE SET aktiv = true
+		RETURNING id`, vorname, nachname, email).Scan(&id); err != nil {
+		t.Fatalf("Konto %s anlegen: %v", email, err)
+	}
+	return id
+}

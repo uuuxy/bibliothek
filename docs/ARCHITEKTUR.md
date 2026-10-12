@@ -531,7 +531,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -637,7 +637,7 @@ HTTP-Anfrage
 | `mailservice/`          | 686 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`MailRequest`, `SendEmail`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
-| `internal/*` (übrige)   | 6.492 Zeilen, 49 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
+| `internal/*` (übrige)   | 6.536 Zeilen, 50 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
 | `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
@@ -663,7 +663,9 @@ Seit dem 12.10.2026 ziehen die Türen je Thema in ein eigenes Paket unter `api/`
   anderes einbindet, hält ab Stufe 5 eine Ratsche.
 - Die Tests eines Themas stehen in seinem Ordner und bauen die Türen selbst
   (`&Tueren{Basis: &tuer.Basis{DB: …}}`). Türen ohne Basis (`&Tueren{}`) taugen nur für
-  Funktionen, die nichts aus ihr lesen: Der Zugriff auf `s.DB` bricht dort ab.
+  Funktionen, die nichts aus ihr lesen: Der Zugriff auf `s.DB` bricht dort ab. Ein Test, der
+  eine Tür über den ganzen Router prüft, steht im selben Ordner in einem eigenen Testpaket
+  (`package lernmittel_test`), weil das Paket des Themas `api/` nicht einbinden kann (8.14).
 
 ##### Tür und Abfrage
 
@@ -1776,7 +1778,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, dazu wo ein Test über den ganzen Router steht, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2372,7 +2374,16 @@ wenn man ihn einmal gebraucht hat.
 - **Eine Tür wird über den Router geprüft,** mit Sitzung und CSRF, nicht am Handler allein: Was
   die Registrierung davorhängt (Recht, `ValidateUUIDParamsMiddleware`), gehört zum Verhalten.
   Muster: `baueKanarienWelt` in `api/pii_antwort_gate_pg_test.go`, `tuertest.SetzeGenauEinRecht`,
-  `tuertest.MitCSRF`, `registrierteRouten` in `api/pii_matrix_test.go`.
+  `tuertest.MitCSRF`, `registrierteRouten` in `api/pii_matrix_test.go`. Prüft der Test die
+  Türen eines Themas mit eigenem Paket, steht er in dessen Ordner als eigenes Testpaket
+  (`package lernmittel_test`): `api/` bindet das Thema ein, und im Paket des Themas wiese Go
+  die Einbindung von `api/` als Kreis ab (`import cycle not allowed in test`, nachgestellt
+  am 12.10.2026 mit demselben Test im Paket `lernmittel`). So hält es auch Googles Regelwerk
+  für Go, Abschnitt [Test package](https://google.github.io/styleguide/go/decisions#test-package):
+  ein Paket mit der Endung `_test`, wenn Tests im selben Paket einen Kreis ergäben. Der Test
+  baut den Server mit `api.NewServer`; Konto, Sitzung und Anmeldung liefert
+  `tuertest.AdminSitzung`. Muster: `api/lernmittel/lmf_plan_tuer_pg_test.go`. Prüfungen über
+  alle Routen bleiben in `api/`.
 - **Gegenprobe am Rückbau.** Ein neuer Test zählt, wenn er am alten Code rot war. Als Beweis
   gilt die erwartete Meldung des Tests, nicht der Exit-Code: Ein Rückbau, der nicht übersetzt,
   endet auch mit 1. Ohne den Arbeitsstand anzufassen geht es in Go mit
@@ -2548,7 +2559,7 @@ wenn man ihn einmal gebraucht hat.
   nichts ändern. Vorher und nachher die Liste der Tests mit ihrem Ausgang festhalten:
   `go test -json -count=1 ./...` mit `TEST_DATABASE_URL`, je Paket und Test die letzte Meldung
   `pass`, `fail` oder `skip`. Ziehen Testdateien mit um, zählt der Name des Tests, nicht sein
-  Paket. Am 12.10.2026 sind es 2.267 Testfunktionen, sieben davon übersprungen; das Paket, das
+  Paket. Am 12.10.2026 sind es 2.268 Testfunktionen, sieben davon übersprungen; das Paket, das
   npm unter `frontend/node_modules` ablegt, erscheint nur in einer Arbeitskopie mit
   installierter Oberfläche. Methode, Pfad und Recht jeder Route hält `api/pii_matrix_test.go`
   gegen [PII_MATRIX.de.md](PII_MATRIX.de.md); die Anmeldungen selbst (`mux.Handle(…)` als ein

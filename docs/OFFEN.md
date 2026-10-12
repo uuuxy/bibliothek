@@ -37,6 +37,11 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [x] Türen in Themenordner: Der Plan ist seit dem 12.10.2026 freigegeben. Geteilt wird nur
   `api/`, je Menüpunkt der Oberfläche ein Ordner; die Abfragen bleiben in der einen
   Datenbankschicht. (5.65)
+- [ ] Türen in Themenordner, dritte Freigabe: Stufe 3 ist gebaut, die Türen des LMF-Plans
+  stehen in `api/lernmittel`. Gemessen ist, was bei den übrigen elf Themen im Weg steht: bei
+  Benutzer, Inventur, System und Portal je ein oder zwei Namen, bei den anderen sieben fünf
+  bis 26, am meisten bei der Bestellung. Vorschlag: Stufe 4 beginnt, je Thema ein Schritt,
+  zuerst die vier Themen mit dem wenigsten im Weg. (5.65)
 - [ ] Sicherung außer Haus: Alte Sicherungen löscht das Programm nur auf dem Server, am
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
@@ -156,9 +161,9 @@ lässt sich dort anhalten.
 - [x] Stufe 2, Kern: Was jede Tür braucht (Antwort schreiben, Rechte, Protokoll, Uhr), steht
   im Paket `api/tuer`, der Mailversand in `mailservice/`. Es war die erste Änderung am
   Programm; das Verhalten ist dasselbe.
-- [ ] Stufe 3, das erste Thema: Lernmittel (5 Dateien, 8 Testdateien), mit einem Werkzeug für
-  den Umzug und mit der Antwort, wo ein Test steht, der über den ganzen Router prüft (5.65).
-  Danach steht der Aufwand je Thema als Messwert fest; dritte Freigabe.
+- [x] Stufe 3, das erste Thema: Die Türen des LMF-Plans stehen in `api/lernmittel` (5 Dateien,
+  9 Testdateien), umgezogen mit einem Werkzeug. Ein Test über den ganzen Router steht im
+  Ordner seines Themas, als eigenes Testpaket. Der Aufwand je Thema ist gemessen (5.65).
 - [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt: Inventur, System, Portal,
   Benutzer, Mahnwesen, Schaden, Druck mit Bestellung, Katalog, Leser, zuletzt die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
@@ -498,7 +503,7 @@ Schicht der Türen, je Menüpunkt der Oberfläche ein Paket unter `api/`. `repos
 Der Maßstab steht in Googles Regeln für Go, Abschnitt
 [Package size](https://google.github.io/styleguide/go/best-practices#package-size): In einem
 Paket bleibt, was eng aneinander hängt; was für sich steht, bekommt ein eigenes. Der Plan ist
-seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 2 sind gebaut.
+seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 3 sind gebaut.
 
 - **Gemessen am 12.10.2026** nach Stufe 2 (Stand b3440e46), mit Typprüfung (`go/types`) über
   die 131 Produktiv- und 322 Testdateien von `api/`: Jede Datei ist einem Thema zugeordnet,
@@ -580,14 +585,55 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 2 si
   in 8.14. Aus `api/` brauchte das Thema nur den Typ `Server`; der Probelauf des Werkzeugs
   meldete kein Hindernis. Die Kommentare der umgezogenen Dateien sind unverändert, bis auf
   zwei, die den Typ `Server` nannten.
-- **Offen für Stufe 3: ein Test über den ganzen Router.** `api/` bindet das Paket eines Themas
-  ein. Eine Testdatei im Paket des Themas kann `api/` deshalb nicht einbinden, auch nicht über
-  eine Prüfhilfe, die es tut: Go weist den Kreis ab (`import cycle not allowed in test`,
-  nachgestellt am 12.10.2026 an einem Wegwerf-Modul). Die drei Helfer, die den Router bauen,
-  und jeder Test eines Themas, der über die Routen prüft, brauchen einen Platz. Zwei Wege:
-  ein Testpaket neben dem Thema (`package thema_test`), das `api/` einbinden darf und vom
-  Thema nur groß geschriebene Namen sieht, oder der Test bleibt in `api/`. Entschieden wird
-  es am ersten Thema, an dessen acht Testdateien gezählt.
+- **Ein Test über den ganzen Router steht im Ordner seines Themas, als eigenes Testpaket**
+  (entschieden mit Stufe 3, 12.10.2026). `api/` bindet das Paket eines Themas ein. Eine
+  Testdatei im Paket des Themas kann `api/` deshalb nicht einbinden, auch nicht über eine
+  Prüfhilfe, die es tut: Go weist den Kreis ab (`import cycle not allowed in test`). Ein
+  Testpaket im selben Ordner (`package lernmittel_test`) darf es. Vom Thema sieht es nur groß
+  geschriebene Namen; ein Test, der eine Tür über ihre Adresse ruft, braucht keinen. So hält
+  es auch Googles Regelwerk für Go, Abschnitt
+  [Test package](https://google.github.io/styleguide/go/decisions#test-package): ein Paket mit
+  der Endung `_test`, wenn Tests im selben Paket einen Kreis ergäben. Blieben solche Tests in
+  `api/`, stünden die Tests eines Themas an zwei Orten. Gebaut ist es am ersten Thema:
+  `api/lernmittel/lmf_plan_tuer_pg_test.go` baut den Server mit `api.NewServer`, speichert
+  einen Plan über die Route und prüft, dass die Türen in die Datenbank des Servers schreiben
+  und mit seiner Uhr rechnen, auch wenn sie nach dem Bau des Routers gestellt wird. Konto,
+  Sitzung und Anmeldung liefert `tuertest.AdminSitzung`; denselben Helfer ruft
+  `routerMitSitzungUeber` in `api/`. Gezählt am 12.10.2026: Von den acht Testdateien der
+  Lernmittel brauchte keine den Router. In `api/` bauen ihn 29 Testdateien; sieben brauchen
+  dazu Namen eines Themas, 22 rufen die Türen nur über ihre Adresse. An den Adressen gemessen
+  rufen 20 der 29 Türen genau eines Themas und ziehen in Stufe 4 mit ihm um. Die Prüfungen
+  über alle Routen (Personendaten in den Antworten, Grenzen der Listen, Rechte der
+  Schreibwege) bleiben in `api/`. Die drei Helfer, die den Router bauen (`routerMitSitzung`,
+  `routerMitSitzungUeber`, `protokollWelt`), brauchen dann ein Paket für Prüfhilfen, das
+  `api/` einbindet; ein Test in `api/` selbst kann ein solches Paket nicht nutzen.
+- **Was bei den übrigen elf Themen im Weg steht, gemessen am 12.10.2026.** Bei den Lernmitteln
+  meldete das Werkzeug kein Hindernis. Sein Probelauf über jedes der übrigen Themen, mit den
+  Testdateien, die nur dieses Thema brauchen, nennt zweierlei: einen Namen, den eine
+  umziehende Datei aus `api/` braucht, und einen klein geschriebenen Namen des Themas, den
+  eine Datei braucht, die bleibt.
+
+  | Thema      | Dateien mit Tests | Namen im Weg | darunter |
+  | ---------- | ----------------- | ------------ | -------- |
+  | Benutzer   | 15                | 1            | `protokolliereKontoAnlage`, das eine Tür der Leser ruft |
+  | Inventur   | 10                | 1            | ein Helfer der Tests (`antwortOhneDB`) |
+  | System     | 32                | 1            | `routerMitSitzung`: ein Test über den Router |
+  | Portal     | 16                | 2            | `NewServer` und `Routes`: Tests über den Router |
+  | Schaden    | 17                | 5            | zwei Namen, die der Katalog ruft; drei aus Tests zweier Themen |
+  | Theke      | 33                | 5            | das Feld `IdempotenzWartezeit`, zwei Fristen der Middleware, ein Test, der den Server baut |
+  | Leser      | 73                | 8            | `protokolliereKontoAnlage` aus den Benutzern, die Liste `dsgvoSchuelerQuellen` |
+  | Druck      | 16                | 9            | der Kreis um das Etikett mit der Bestellung, die drei Helfer für den Router |
+  | Mahnwesen  | 18                | 10           | fünf Helfer, die Tests anderer Themen brauchen |
+  | Katalog    | 56                | 11           | die Bremse je Adresse, der Vorschlag des Ersatzwerts aus dem Schaden |
+  | Bestellung | 41                | 26           | der Kreis um das Etikett, 13 klein geschriebene Namen, die Dateien außerhalb des Themas brauchen |
+
+  Zusammen 79 Namen; ein Name zwischen zwei Themen zählt bei beiden. Jeder ist eine
+  Entscheidung von Hand: groß schreiben, den Helfer zu den Prüfhilfen legen, den Test in das
+  Testpaket des Themas stellen oder eine geteilte Regel an einen dritten Ort ziehen. Der Rest
+  eines Umzugs ist der Lauf des Werkzeugs und der Skripte, wie bei den Lernmitteln. Ein Teil
+  der Namen kommt aus den 18 Testdateien, die Namen aus mehreren Themen brauchen; sie bleiben
+  im Probelauf in `api/`. Nicht in der Zahl stehen die Tests über den Router, die ein Thema
+  nur an der Adresse nennen.
 - **Prüfungen, die Dateien lesen.** Jede der 43 Prüfungen, die Go-Dateien des Baums
   durchlaufen, sieht eine Datei in einem Unterordner von `api/` (belegt am 12.10.2026, je mit
   einer Probe). Beim Umzug eines Themas werden von selbst rot und ziehen mit: jede
@@ -608,15 +654,17 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 2 si
   hat. Zeichenketten im Go-Code liest sie nicht: Die Meldungen und Listen der Ratschen, die
   eine Datei nennen, schreibt das Skript mit um.
 - **Nachweis je Stufe.** Die Tests und ihr Ausgang sind vor und nach der Stufe dieselben; neue
-  kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 12.10.2026, nach Stufe 2: 2.267
-  Testfunktionen, davon 743 in `api/`, 30 in `mailservice/` und zwei in `api/tuer`, sieben
-  übersprungen; verglichen wird am Namen des Tests, weil ein Test mit seiner Datei das Paket
-  wechselt. Methode, Pfad und Recht jeder Route sind dieselben (211 in `api/`, 18 in
+  kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 12.10.2026, nach Stufe 3: 2.268
+  Testfunktionen, davon 726 in `api/`, 18 in `api/lernmittel`, 30 in `mailservice/` und zwei
+  in `api/tuer`, sieben übersprungen; verglichen wird am Namen des Tests, weil ein Test mit
+  seiner Datei das Paket wechselt. Methode, Pfad und Recht jeder Route sind dieselben (211 in
+  `api/`, 18 in
   `inventur/`); das hält `api/pii_matrix_test.go` gegen die PII-Matrix, belegt mit acht Proben.
   Jede Erklärung ist vor und nach der Stufe Token für Token gleich, gleich in welcher Datei
   und in welchem Paket sie steht, nachdem die neuen Namen zurückgeführt sind; jede Abweichung
   steht in der Commit-Nachricht (Stufe 2 gegen den Stand davor: 2.321 Erklärungen gleich, 26
-  gewollt verschieden, acht neu, eine entfallen).
+  gewollt verschieden, acht neu, eine entfallen; Stufe 3: beim Umzug 2.080 gleich, vier
+  gewollt verschieden, zwei neu, beim Test über den Router eine verschieden und drei neu).
   Dazu die ganze Go-Suite an der Datenbank, golangci-lint, deadcode, gosec und die
   Browser-Suite. Wie der Vergleichsstand erhoben wird, steht in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.

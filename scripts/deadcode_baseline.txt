@@ -104,6 +104,7 @@ internal/testdaten/leser.go: unreachable func: SeedPortalLehrkraft
 internal/testdaten/leser.go: unreachable func: AdminFuerAudit
 internal/testdaten/leser.go: unreachable func: Klassenleitung
 internal/testdaten/leser.go: unreachable func: ZusammenfuehrenAuftrag
+internal/testdaten/leser.go: unreachable func: AdminKonto
 internal/testdaten/rechte.go: unreachable func: GenauEinRecht
 internal/testdaten/ausleihe.go: unreachable func: SeedAusleihe
 internal/testdaten/ausleihe.go: unreachable func: SeedLeserAusleihe
@@ -126,7 +127,8 @@ internal/testdaten/schaden.go: unreachable func: SeedOffenerSchaden
 
 # Testinfrastruktur per Paket-Design: eine Anfrage an eine Tür stellen und ihre Antwort lesen,
 # dazu die Attrappe der DNB (vorher Helfer in Testdateien von api/, die Tests mehrerer Themen
-# brauchen). Wird ausschließlich von *_test.go importiert.
+# brauchen) und Konto mit Sitzung für Tests über den ganzen Router, die im Ordner eines Themas
+# stehen (docs/OFFEN.md 5.65). Wird ausschließlich von *_test.go importiert.
 internal/tuertest/tuertest.go: unreachable func: MitCSRF
 internal/tuertest/tuertest.go: unreachable func: JSONPost
 internal/tuertest/tuertest.go: unreachable func: AlsBenutzer
@@ -136,6 +138,7 @@ internal/tuertest/felder.go: unreachable func: LeereFelder
 internal/tuertest/dnb.go: unreachable func: DNBAttrappe.RoundTrip
 internal/tuertest/mail.go: unreachable func: MailAbfangen
 internal/tuertest/rechte.go: unreachable func: SetzeGenauEinRecht
+internal/tuertest/sitzung.go: unreachable func: AdminSitzung
 
 # Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Funktion): Womit verschickt wird,
 # steht in einem Wert des Pakets, den der Start an die Datenbank bindet. Die Tests der Türen,
