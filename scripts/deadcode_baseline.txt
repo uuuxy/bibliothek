@@ -141,6 +141,12 @@ internal/tuertest/mail.go: unreachable func: MailAbfangen
 internal/tuertest/rechte.go: unreachable func: SetzeGenauEinRecht
 internal/tuertest/sitzung.go: unreachable func: AdminSitzung
 
+# Testinfrastruktur per Paket-Design: der ganze Router mit einem angemeldeten Admin-Konto, für
+# Tests über den Router, die als eigenes Testpaket im Ordner eines Themas stehen
+# (docs/OFFEN.md 5.65). Das Paket bindet api/ ein und wird ausschließlich von *_test.go
+# importiert.
+internal/routertest/routertest.go: unreachable func: MitSitzung
+
 # Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Funktion): Womit verschickt wird,
 # steht in einem Wert des Pakets, den der Start an die Datenbank bindet. Die Tests der Türen,
 # die Mail verschicken, stellen darüber einen Mailserver ein, einen fehlenden oder eine

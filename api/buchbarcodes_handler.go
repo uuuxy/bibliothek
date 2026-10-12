@@ -30,7 +30,7 @@ import (
 // gilt sie als unklar und sperrt die Zuordnung, bis ein eindeutiger Ausweis kommt. KEINE
 // Personendaten: nur Buchnummern.
 //
-// Bewusst OHNE LIMIT — anders als jede andere Listen-Route (vgl. api/audit_limit_pg_test.go).
+// Bewusst OHNE LIMIT — anders als jede andere Listen-Route (vgl. api/system/audit_limit_pg_test.go).
 // Eine halbe Liste wäre schlimmer als keine: Die fehlenden Bücher gälten offline als
 // „unklar", und niemand sähe, dass es an der Kappung liegt. Der Umfang ist durch den
 // Bestand begrenzt und wächst nicht von selbst weiter (rund 35.000 Exemplare erwartet,

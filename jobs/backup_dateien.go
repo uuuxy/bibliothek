@@ -12,7 +12,7 @@ import (
 )
 
 // Die Sicherungen im Backup-Verzeichnis: EINE Liste, zwei Verbraucher — die Rotation
-// (rotateBackups) und der Status-Wächter (api/backup_status.go, newestBackupTime).
+// (rotateBackups) und der Status-Wächter (api/system/backup_status.go, newestBackupTime).
 //
 // Gelesen wird über os.OpenRoot, wie überall im Projekt bei Verzeichnissen mit Dateinamen
 // von außen (inventur/uploads_pfad.go): Die Wurzel bindet jeden Zugriff OS-seitig an das

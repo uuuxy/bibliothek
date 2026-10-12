@@ -5,8 +5,8 @@ package lmfplan
 // kommt, trägt die Schule selbst ein: Einstellungen → LUSD & Versetzung → Sommerferien,
 // gespeichert als JSON-Liste unter dem Schlüssel „sommerferien". Hier steht, wie der
 // Text gelesen, geprüft und in Normalform gebracht wird — an EINER Stelle, damit
-// Speichern (api/settings.go), Planer (api/lernmittel/lmf_plan.go) und Selbstprüfung
-// (api/betriebsbereitschaft_handler.go) dieselbe Lesart haben.
+// Speichern (api/system/settings.go), Planer (api/lernmittel/lmf_plan.go) und Selbstprüfung
+// (api/system/betriebsbereitschaft_handler.go) dieselbe Lesart haben.
 
 import (
 	"encoding/json"

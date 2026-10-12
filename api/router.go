@@ -18,6 +18,7 @@ package api
 // Paket unter api/ (docs/ARCHITEKTUR.md 5.2.2); die noch nicht umgezogenen in diesem Paket.
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -30,6 +31,7 @@ import (
 	"bibliothek/api/inventurlauf"
 	"bibliothek/api/lernmittel"
 	"bibliothek/api/portal"
+	"bibliothek/api/system"
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -88,6 +90,18 @@ func (s *Server) benutzer() *benutzer.Tueren {
 // portal ist der Zugang zu den Türen des Portals.
 func (s *Server) portal() *portal.Tueren {
 	return &portal.Tueren{Basis: &s.Basis}
+}
+
+// system ist der Zugang zu den Türen der Systempflege.
+func (s *Server) system() *system.Tueren {
+	return &system.Tueren{Basis: &s.Basis}
+}
+
+// BereitschaftsAlarm prüft die Betriebsbereitschaft und mailt kritische Befunde an die Admins.
+// Der Start ruft ihn einmal am Tag (main.go). Die Prüfung steht bei den Türen der Systempflege,
+// weil die Seite „Betriebsbereitschaft" dieselbe Lage sammelt.
+func (s *Server) BereitschaftsAlarm(ctx context.Context) {
+	s.system().BereitschaftsAlarm(ctx)
 }
 
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.
@@ -187,8 +201,8 @@ func (s *Server) registerAuthRoutes(mux *http.ServeMux) {
 
 func (s *Server) registerImportRoutes(mux *http.ServeMux) {
 	// LITTERA CSV Import (Accessible by Admin)
-	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.LitteraImportHandler()))
-	mux.Handle("POST /api/admin/import-bestand", s.RequirePermission("manage_inventory")(http.HandlerFunc(s.BestandImportHandler)))
+	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.system().LitteraImportHandler()))
+	mux.Handle("POST /api/admin/import-bestand", s.RequirePermission("manage_inventory")(http.HandlerFunc(s.system().BestandImportHandler)))
 	mux.Handle("POST /api/admin/sync-covers", s.RequirePermission("manage_inventory")(SyncCoversHandler(s.DB.Pool)))
 }
 

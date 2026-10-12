@@ -89,7 +89,7 @@ func startServer(port string, server *api.Server) *http.Server {
 
 // startBereitschaftsWaechter meldet kritische Befunde der Selbstprüfung täglich per
 // Mail an die Admins — der Wächter, der sich meldet, statt gelesen werden zu müssen
-// (api/betriebsbereitschaft_alarm.go; auf Spielwiesen schweigt er von selbst).
+// (api/system/betriebsbereitschaft_alarm.go; auf Spielwiesen schweigt er von selbst).
 // Erster Lauf 3 Minuten nach dem Start: ein Deploy mit kaputter Umgebung meldet sich
 // so noch am selben Vormittag, nicht erst am nächsten Tag.
 func startBereitschaftsWaechter(ctx context.Context, server *api.Server) {

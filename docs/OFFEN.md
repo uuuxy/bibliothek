@@ -163,8 +163,9 @@ lässt sich dort anhalten.
   9 Testdateien), umgezogen mit einem Werkzeug. Ein Test über den ganzen Router steht im
   Ordner seines Themas, als eigenes Testpaket. Der Aufwand je Thema ist gemessen (5.65).
 - [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt. Umgezogen: Inventur
-  (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`). Offen: System,
-  Mahnwesen, Schaden, Druck mit Bestellung, Katalog, Leser, zuletzt die Theke.
+  (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`), System
+  (`api/system`). Offen: Mahnwesen, Schaden, Druck mit Bestellung, Katalog, Leser, zuletzt
+  die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
   die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
   Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
@@ -339,7 +340,7 @@ Vermerk.
   `GetRows` jede fehlende Zeile abzählen, nach der Meldung bis zu elf Tage lang
   (CVE-2026-107212; `pkg/xlsxgrenze/zeilennummer_test.go`, am Stand davor rot). Das Programm
   liest mit der Bibliothek nur, an drei Stellen hinter Anmeldung und Fachrecht
-  (`inventur/excel_import.go`, `internal/lusd/quelle.go`, `api/littera_import.go`), alle
+  (`inventur/excel_import.go`, `internal/lusd/quelle.go`, `api/system/littera_import.go`), alle
   durch `xlsxgrenze.MitMappe`; die Schranke dort bleibt als zweite Lage. Offen: auf die
   veröffentlichte Fassung heben, sobald sie erscheint (Dependabot schlägt sie vor). Kommt
   vorher eine weitere Meldung, wird der Sicherheits-Scan rot; der Handgriff steht in
@@ -528,7 +529,7 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 3 si
   | Katalog    | 21      | 3.035  | 43     | 35          | `copy_admin*.go`, `auflagen_handler.go`, `book_systematik_handler.go`, `isbn_handler.go`, `schlagwort*.go`, `signaturen_handler.go`, `systematik_handler.go`, `lookups.go`, `exemplar_*.go`, `cover.go`, `cover_quelle_bindung.go`, `image_caching.go`, `geraete.go`, `abgangsbuch_handler.go`, `zugangsbuch_handler.go`, `bestandsbuch.go` |
   | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go` |
   | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go` |
-  | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go` |
+  | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system` |
   | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go` |
   | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go` |
   | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print.go` |

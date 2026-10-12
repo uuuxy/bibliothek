@@ -42,7 +42,7 @@ func LiesBuchbarcodeStand(ctx context.Context, q DBQueryer) (BuchbarcodeStand, e
 
 // ListeBuchbarcodes liest die Barcodes aller Exemplare, aufsteigend.
 //
-// Bewusst OHNE LIMIT — anders als jede andere Listen-Abfrage (vgl. api/audit_limit_pg_test.go).
+// Bewusst OHNE LIMIT — anders als jede andere Listen-Abfrage (vgl. api/system/audit_limit_pg_test.go).
 // Eine gekappte Liste wäre schlimmer als keine: Die fehlenden Bücher gälten offline als
 // „unklar", und niemand sähe, dass es an der Kappung liegt. Der Umfang ist durch den
 // Bestand begrenzt und wächst nicht von selbst weiter; der Aufrufer misst die ausgelieferte

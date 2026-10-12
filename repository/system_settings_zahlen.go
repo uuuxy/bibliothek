@@ -13,7 +13,7 @@ package repository
 //     ist die Sperr-Automatik — eine Invariante des Katalogs — aus der Oberfläche
 //     abschaltbar, ohne dass irgendwo „aus" steht.
 //
-// Dazu protokollierte api/settings.go den Request, also die EINGABE, nicht das
+// Dazu protokollierte api/system/settings.go den Request, also die EINGABE, nicht das
 // Gespeicherte: Stand 0 im Rumpf, stand 0 im Protokoll, gespeichert war 5.
 //
 // Die Antwort ist dieselbe, die dieselbe Datei für Sommerferien, Eingangsjahrgänge und

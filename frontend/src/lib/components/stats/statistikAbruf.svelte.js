@@ -7,7 +7,7 @@ import { apiFetch } from '../../apiFetch.js';
  * Bis zum 21.09.2026 holte jede der beiden Seiten selbst (OFFEN.md 5.8), und beiden
  * fehlte dasselbe: Eine langsame Antwort konnte eine schnellere überholen — Zeitraum
  * gewechselt, und unter der neuen Überschrift standen die Zahlen des alten. Und ein
- * Fehler ergab eine leere Seite: protokolliert im Server (api/stats.go), im Browser
+ * Fehler ergab eine leere Seite: protokolliert im Server (api/system/stats.go), im Browser
  * nur eine Konsolenzeile, für den Menschen „keine Daten". `laufNr` verwirft, was
  * überholt wurde (wie useStudentProfile); `fehler` gibt der Seite den Zustand, den sie
  * mit LadeFehler zeigt.

@@ -105,7 +105,7 @@ var ErrSMTPVersand = errors.New("SMTP-Versand fehlgeschlagen")
 // und nicht auf den gewohnten smtp.<domain>-Alias.
 //
 // Exportiert für den Test der Tür, die aus dem Marker den Status der Antwort macht
-// (api/mail_settings_test.go).
+// (api/system/mail_settings_test.go).
 func BeschreibeSMTPFehler(addr string, err error) error {
 	var hostErr x509.HostnameError
 	if errors.As(err, &hostErr) {

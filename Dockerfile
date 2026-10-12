@@ -103,7 +103,7 @@ WORKDIR /app
 # Paket schlug JEDER nächtliche Backup-Lauf bereits beim Start des Prozesses fehl
 # ("executable file not found in $PATH") — auch mit korrekt gesetztem
 # BACKUP_ENCRYPTION_KEY. Das Backup war damit im Container-Betrieb nie möglich,
-# und der Wächter in api/backup_status.go stand dauerhaft auf "critical", ohne dass
+# und der Wächter in api/system/backup_status.go stand dauerhaft auf "critical", ohne dass
 # das Setzen des Schlüssels daran etwas geändert hätte.
 #
 # VERSIONIERT auf die Major-Version des Servers (docker-compose.yml), nicht "neuester

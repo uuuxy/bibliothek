@@ -1,6 +1,6 @@
 package repository
 
-// audit_tresen.go — die Abfragen der Tresen-Auskunft (api/audit_tresen_auskunft.go):
+// audit_tresen.go — die Abfragen der Tresen-Auskunft (api/system/audit_tresen_auskunft.go):
 // der eine zweckgebundene Leseweg in audit_log.details (Betreiber-Entscheidung
 // 01.09.2026, Befund-Register). Paketfunktionen über DBQueryer statt Methoden auf
 // AuditRepository — dieselbe Bauart wie TilgeSchuelerSpuren: Das Interface trägt

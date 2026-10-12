@@ -318,7 +318,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.AuditLogEntry"
+                                "$ref": "#/definitions/system.AuditLogEntry"
                             }
                         }
                     },
@@ -3864,39 +3864,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.AuditLogEntry": {
-            "type": "object",
-            "properties": {
-                "akteur": {
-                    "description": "Akteur unterscheidet 'USER' von 'SYSTEM'. Ohne dieses Feld stünde eine\nSystemaktion in der Anzeige als Eintrag ganz ohne Urheber da — nicht\nunterscheidbar von einem Datenfehler.",
-                    "type": "string"
-                },
-                "aktion": {
-                    "type": "string"
-                },
-                "bearbeiter_id": {
-                    "type": "string"
-                },
-                "bearbeiter_nachname": {
-                    "type": "string"
-                },
-                "bearbeiter_vorname": {
-                    "type": "string"
-                },
-                "datensatz_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "tabelle": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
         "api.AuflageZuordnenRequest": {
             "type": "object",
             "required": [
@@ -6715,6 +6682,39 @@ const docTemplate = `{
                 },
                 "theke_leeren_minuten": {
                     "type": "integer"
+                }
+            }
+        },
+        "system.AuditLogEntry": {
+            "type": "object",
+            "properties": {
+                "akteur": {
+                    "description": "Akteur unterscheidet 'USER' von 'SYSTEM'. Ohne dieses Feld stünde eine\nSystemaktion in der Anzeige als Eintrag ganz ohne Urheber da — nicht\nunterscheidbar von einem Datenfehler.",
+                    "type": "string"
+                },
+                "aktion": {
+                    "type": "string"
+                },
+                "bearbeiter_id": {
+                    "type": "string"
+                },
+                "bearbeiter_nachname": {
+                    "type": "string"
+                },
+                "bearbeiter_vorname": {
+                    "type": "string"
+                },
+                "datensatz_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "tabelle": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
                 }
             }
         }
