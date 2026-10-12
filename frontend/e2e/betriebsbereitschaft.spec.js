@@ -1,7 +1,7 @@
 // Die Selbstprüfung zeigt, was eingerichtet, aber nicht in Betrieb ist.
 //
 // Warum ein eigener Test und nicht nur die Go-Tests: Die Regeln sind dort vollständig
-// geprüft (api/betriebsbereitschaft_test.go, reine Funktion). Was dort NICHT geprüft
+// geprüft (internal/bereitschaft/bereitschaft_test.go, reine Funktion). Was dort NICHT geprüft
 // werden kann, ist der Weg dazwischen — Route, Recht, Abruf, Darstellung. Genau daran
 // ist auf diesem Projekt schon einmal eine fertige Funktion gescheitert: Der Code war da
 // und getestet, erreichbar war er nicht.

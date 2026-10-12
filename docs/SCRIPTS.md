@@ -589,7 +589,7 @@ Fremdschlüssel stehen auf `SET NULL`.
 | `import_isbns.go`  | Nachträglicher ISBN-Import in bestehende Titel.                            |
 | `monitor_stats.sh` | Protokolliert Systemkennzahlen über ~6 Stunden (Begleitung von Lasttests). |
 
-> `scripts/migrate_photos.go` stand hier bis zum 11.08.2026. Es war ein Doppel von
+> Ein zweites Skript zum Umzug der Fotos stand hier bis zum 11.08.2026. Es war ein Doppel von
 > `cmd/migrate-fotos` (Abschnitt 2) und wurde entfernt — zwei Wege in dieselbe
 > verschlüsselte Ablage, von denen nur einer gepflegt wurde.
 

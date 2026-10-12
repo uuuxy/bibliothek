@@ -34,10 +34,9 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 **Entscheiden:**
 
-- [ ] Türen in Themenordner: den Plan freigeben? Geteilt wird nur `api/`, je Menüpunkt der
-  Oberfläche ein Ordner; die Abfragen bleiben in der einen Datenbankschicht. Die ersten zwei
-  Stufen ändern Prüfungen und Tests, keine Zeile des Programms; vor der ersten Änderung am
-  Programm steht eine zweite Freigabe. Vorschlag: ja. (5.65)
+- [x] Türen in Themenordner: Der Plan ist seit dem 12.10.2026 freigegeben. Geteilt wird nur
+  `api/`, je Menüpunkt der Oberfläche ein Ordner; die Abfragen bleiben in der einen
+  Datenbankschicht. (5.65)
 - [ ] Sicherung außer Haus: Alte Sicherungen löscht das Programm nur auf dem Server, am
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
@@ -145,11 +144,11 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 ### Umbau: die Türen in Themenordner
 
 Entschieden am 12.10.2026, in Stufen (5.65). Nach jeder Stufe ist `main` grün, und der Umbau
-lässt sich dort anhalten. Begonnen wird mit der Freigabe des Plans (oben, „Entscheiden").
+lässt sich dort anhalten.
 
-- [ ] Stufe 0, Schutz: Die drei Prüfungen, die `api/` ohne Unterordner lesen, lesen sie mit.
-  Eine neue Prüfung hält die Dateiverweise der Dokumente gegen den Baum. Die Zahl der Tests
-  und die Routen stehen als Vergleichsstand fest.
+- [x] Stufe 0, Schutz: Die drei Prüfungen, die `api/` ohne Unterordner lasen, lesen sie mit.
+  Eine neue Prüfung hält die Dateiverweise gegen die Dateien des Repositorys. Die Zahl der
+  Tests und die Routen stehen als Vergleichsstand fest.
 - [ ] Stufe 1, Tests: Die Helfer, die Tests mehrerer Themen brauchen, ziehen in ein Paket für
   Prüfhilfen.
 - [ ] Stufe 2, Kern: Was jede Tür braucht (Antwort schreiben, Rechte, Protokoll, Uhr), steht
@@ -473,8 +472,8 @@ Schicht der Türen, je Menüpunkt der Oberfläche ein Paket unter `api/`. `repos
 `internal/service` und `pdf/` bleiben, was sie sind ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2).
 Der Maßstab steht in Googles Regeln für Go, Abschnitt
 [Package size](https://google.github.io/styleguide/go/best-practices#package-size): In einem
-Paket bleibt, was eng aneinander hängt; was für sich steht, bekommt ein eigenes. Offen ist die
-Freigabe des Plans (Fahrplan, „Bei dir"); die Stufen stehen im Fahrplan.
+Paket bleibt, was eng aneinander hängt; was für sich steht, bekommt ein eigenes. Der Plan ist
+seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan.
 
 - **Gemessen am 12.10.2026** am Stand 6ad693cb, mit Typprüfung (`go/types`) über die 136
   Produktiv- und 324 Testdateien von `api/`: Jede Datei ist einem Thema zugeordnet, gezählt ist
@@ -533,24 +532,29 @@ Freigabe des Plans (Fahrplan, „Bei dir"); die Stufen stehen im Fahrplan.
   An 15 Stellen in neun Testdateien greift ein Test in das Innere des Kerns: Drei Dateien füllen
   den Zwischenspeicher der Rechte von Hand, sechs tauschen den Lader der Mail-Konfiguration.
   Beide bekommen eine benannte Naht für Tests.
-- **Prüfungen, die den Ordner lesen.** Die 17 Ratschen im Wurzelpaket gehen den Baum mit
-  `filepath.WalkDir` ab. Drei Prüfungen lesen `api/` ohne Unterordner und übersähen eine
-  umgezogene Datei still: `api/schichtung_test.go`, `api/mail_routen_frist_test.go` und
-  `inventur/kein_ddl_im_schreibpfad_test.go`. Stufe 0 stellt die drei um und belegt je Prüfung,
-  die Go-Dateien des Baums liest, mit einer Probe, dass sie eine Datei im Unterordner sieht.
-  Eine Ausnahmeliste, die eine Datei beim Pfad nennt (`"api/csrf.go:CSRFMiddleware"`), wird
-  beim Umzug der Datei von selbst rot.
-- **Verweise beim Pfad.** Die Dokumente nennen Dateien aus `api/` an 316 Stellen beim Pfad, der
-  Go-Code außerhalb von `api/` an 134 Stellen in 88 Dateien, die Oberfläche an 68. Keine
-  Prüfung hält sie gegen den Baum: 15 Pfade in den Dokumenten zeigen auf Go-Dateien, die es
-  nicht gibt, zwölf davon in `api/` (etwa `api/bescheid_pdf.go`, `api/mittel_vermerk.go`).
-  Stufe 0 baut die Prüfung und klärt die 15 je Stelle; der Umzug schreibt die Pfade je Thema
-  mit einem Skript um.
-- **Nachweis je Stufe.** Die Zahl der Testfunktionen (747 in `api/`) und der übersprungenen
-  Tests ist vor und nach der Stufe gleich. Methode, Pfad und Recht jeder Route sind dieselben
-  (211 in `api/`, 18 in `inventur/`). Die Rümpfe umgezogener Funktionen sind bis auf die
-  umbenannten Namen Token für Token gleich. Dazu die ganze Go-Suite an der Datenbank,
-  golangci-lint, deadcode, gosec und die Browser-Suite.
+- **Prüfungen, die Dateien lesen.** Jede der 43 Prüfungen, die Go-Dateien des Baums
+  durchlaufen, sieht eine Datei in einem Unterordner von `api/` (belegt am 12.10.2026, je mit
+  einer Probe). Beim Umzug eines Themas werden von selbst rot und ziehen mit: jede
+  Ausnahmeliste, die eine Datei beim Pfad nennt (`"api/csrf.go:CSRFMiddleware"`), und zwei
+  Prüfungen in `api/`, die ihr Thema in festen Dateien suchen (`lmf_plan_live_test.go` die
+  Schreibwege des LMF-Plans, `mail_vorlagen_platzhalter_test.go` den Standardtext in
+  `mahnwesen_bulk.go`). Die Routenlisten (`router.go`, `routes_*.go`) bleiben in `api/`; neun
+  Prüfungen lesen sie dort beim Namen.
+- **Verweise beim Pfad.** Die Dokumente nennen Dateien aus `api/` an 307 Stellen beim Pfad, der
+  Go-Code außerhalb von `api/` an 147 Stellen in 90 Dateien, die Oberfläche an 67 (gezählt am
+  12.10.2026). `docs/dateiverweise_test.go` hält die Verweise der Dokumente, der Kommentare im
+  Go-Code, der Oberfläche und der Skripte gegen die Dateien des Repositorys. Der Umzug schreibt
+  die Pfade je Thema mit einem Skript um, und die Prüfung nennt, was das Skript ausgelassen
+  hat. Zeichenketten im Go-Code liest sie nicht: Die Meldungen und Listen der Ratschen, die
+  eine Datei nennen, schreibt das Skript mit um.
+- **Nachweis je Stufe.** Die Tests und ihr Ausgang sind vor und nach der Stufe dieselben; neue
+  kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 12.10.2026 nach Stufe 0: 2.263
+  Testfunktionen, davon 749 in `api/`, sieben übersprungen. Methode, Pfad und Recht jeder
+  Route sind dieselben (211 in `api/`, 18 in `inventur/`); das hält `api/pii_matrix_test.go`
+  gegen die PII-Matrix, belegt mit acht Proben. Die Rümpfe umgezogener Funktionen sind bis auf
+  die umbenannten Namen Token für Token gleich. Dazu die ganze Go-Suite an der Datenbank,
+  golangci-lint, deadcode, gosec und die Browser-Suite. Wie der Vergleichsstand erhoben wird,
+  steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
 - **Reihenfolge der Themen:** nach dem, was ein Thema von anderen braucht. Zuerst, was nur den
   Kern braucht (Lernmittel, Inventur, System, Portal), dann Benutzer, Mahnwesen und Schaden,
   Druck und Bestellung zusammen, sobald der Kreis um das Etikett gelöst ist, Katalog und

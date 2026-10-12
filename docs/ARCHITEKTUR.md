@@ -82,7 +82,8 @@ Dokumenten unter [`docs/`](../README.md#dokumentation):
    Paket-, Constraint- und Indexnamen halten, Zeilennummern wandern. Das ist dieselbe Regel,
    die [invarianten.md](invarianten.md) seit dem 06.08.2026 anwendet — dort waren nach
    dem Wachstum von `schema.sql` alle 21 Zeilenverweise falsch, ohne dass es beim Lesen
-   auffiel.
+   auffiel. Eine Datei, die beim Pfad genannt ist, hält `docs/dateiverweise_test.go` gegen die
+   Dateien des Repositorys: Zieht sie um, wird der Test rot und nennt die Stelle.
 4. **Das Warum steht im Commit.** Wo eine Entscheidung eine längere Geschichte hat, nennt
    Kapitel 9 sie knapp und verlässt sich im Übrigen auf `git log` — die Historie ist
    ausführlicher als jede gepflegte Liste und kann nicht veralten.
@@ -1730,7 +1731,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 der Handgriff zum Umzug von Dateien in einen Unterordner
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2298,7 +2299,7 @@ und liefe beim nächsten neuen Recht auseinander, ohne dass es jemand merkt.
 | `svelte-check`            | Typfehler ohne TypeScript (JSDoc + `checkJs`)                                | Nur so gut wie die JSDoc-Abdeckung                                    |
 | Playwright e2e            | Den **gebauten Container**: was ausgeliefert wird                            | Langsam; braucht den ganzen Stack                                     |
 | Ratschen/Gates            | Dass ein behobener Fehler behoben **bleibt**                                 | Müssen einmal rot gesehen worden sein, sonst prüfen sie nichts        |
-| Drift-Gates               | Dass zwei Wahrheiten nicht auseinanderlaufen (Swagger, Migrationen, Compose-Variablen, Dokumentzahlen, Fundstellen, Stand-Angaben) | Erkennen nur die Drift, die sie kennen |
+| Drift-Gates               | Dass zwei Wahrheiten nicht auseinanderlaufen (Swagger, Migrationen, Compose-Variablen, Dokumentzahlen, Fundstellen, Dateiverweise, Stand-Angaben) | Erkennen nur die Drift, die sie kennen |
 
 **Die Skip-Bilanz ist Teil der Strategie.** Am 10.08.2026 stand acht Stunden ein Test auf
 `main`, der das Gegenteil der geltenden Entscheidung behauptete: Lokal übersprang er sich,
@@ -2494,6 +2495,22 @@ wenn man ihn einmal gebraucht hat.
   zurückgebauter Stelle gegen die Tests der Türen: Bei den sechs Umzügen dieses Tages blieben
   acht solcher Proben grün; hinter jeder fehlte ein Test, oder der vorhandene traf den Fall
   nicht.
+- **Dateien ziehen in einen Unterordner oder ein anderes Paket,** und am Verhalten soll sich
+  nichts ändern. Vorher und nachher die Liste der Tests mit ihrem Ausgang festhalten:
+  `go test -json -count=1 ./...` mit `TEST_DATABASE_URL`, je Paket und Test die letzte Meldung
+  `pass`, `fail` oder `skip`. Ziehen Testdateien mit um, zählt der Name des Tests, nicht sein
+  Paket. Am 12.10.2026 sind es 2.263 Testfunktionen, sieben davon übersprungen; das Paket, das
+  npm unter `frontend/node_modules` ablegt, erscheint nur in einer Arbeitskopie mit
+  installierter Oberfläche. Methode, Pfad und Recht jeder Route hält `api/pii_matrix_test.go`
+  gegen [PII_MATRIX.de.md](PII_MATRIX.de.md); die Anmeldungen selbst (`mux.Handle(…)` als ein
+  Ausdruck über Zeilengrenzen) vorher und nachher als Liste vergleichen, Unterschiede stehen
+  dann nur am Namen der Tür. Eine Prüfung, die Quelltext von der Platte liest, sieht eine Datei
+  am neuen Ort nur, wenn sie den Baum durchläuft: mit einer Datei, die gegen ihre Regel
+  verstößt, im neuen Ordner einer Wegwerf-Arbeitskopie belegen (`git worktree add`); das
+  Overlay von `go test` sehen solche Prüfungen nicht. So belegt am 12.10.2026 für die 43
+  Prüfungen, die Go-Dateien durchlaufen; drei lasen `api/` bis dahin ohne Unterordner, und ihre
+  Proben blieben am Stand davor grün. Wer danach noch den alten Ort nennt, steht in der
+  Ausgabe von `docs/dateiverweise_test.go`.
 
 ---
 
@@ -3076,7 +3093,7 @@ eigene Offen-Liste**; Kapitel 11 benennt Risiken und verweist für den Stand auf
 
 ## 10. Qualitätsanforderungen
 
-Stand: 08.10.2026
+Stand: 08.10.2026 · am 12.10.2026 in S8 und S9 die Fundstellen nachgezogen
 
 ---
 
@@ -3134,8 +3151,8 @@ vermerkt.
 | --- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
 | S6  | Jemand ruft ohne Anmeldung `/katalog`, `/monitor`, `/uploads/…` auf                                     | Titeldaten, Cover, Verfügbarkeit — **nie** Ausleiher, Namen, Klassen                                    | `api/pii_matrix_test.go` + `api/pii_antwort_gate_pg_test.go` (Kanarienwerte je Stufe) |
 | S7  | Eine Rolle ohne Fachrecht ruft eine Schreibroute direkt per HTTP auf (Menü umgangen)                     | **403** mit der Begründung des Rechte-Wächters                                                          | `api/rechte_schreibwege_pg_test.go` (jede Schreibroute mit Fachrecht), `api/routes_authz_coverage_test.go` |
-| S8  | Ein Abgänger hat keine offenen Vorgänge mehr                                                             | Sperre + Karenz (Vorgabe 90 Tage) → Anonymisierung → Hard-Delete ab 30. Januar des Folgejahres, **in dieser Folge** | `jobs/cron_dsgvo_karenz_pg_test.go`, `jobs/cron_dsgvo_abgaenger_pg_test.go`, `jobs/loeschpraedikat_ratsche_test.go` |
-| S9  | Der Server startet mit einem Beispiel-Geheimnis aus dem Repository                                       | **Start verweigert** (außerhalb local/development/test); nur ein ausdrückliches `ENFORCE_PROD_SECRETS=false` lässt ihn los, mit Warnung | `api/prod_geheimnisse.go` + Selbstprüfung (**eine** gemeinsame Liste), `scripts/pruefe_secrets.sh` |
+| S8  | Ein Abgänger hat keine offenen Vorgänge mehr                                                             | Sperre + Karenz (Vorgabe 90 Tage) → Anonymisierung → Hard-Delete ab 30. Januar des Folgejahres, **in dieser Folge** | `jobs/cron_dsgvo_karenz_pg_test.go`, `jobs/cron_dsgvo_abgaenger_pg_test.go`, `repository/nachtlauf_ratsche_test.go` |
+| S9  | Der Server startet mit einem Beispiel-Geheimnis aus dem Repository                                       | **Start verweigert** (außerhalb local/development/test); nur ein ausdrückliches `ENFORCE_PROD_SECRETS=false` lässt ihn los, mit Warnung | `internal/bereitschaft/geheimnisse.go` + Selbstprüfung (**eine** gemeinsame Liste), `scripts/pruefe_secrets.sh` |
 | S19 | Ein Mailserver bietet kein STARTTLS an (oder ein Angreifer streicht es aus der EHLO-Antwort)              | **Versand abgebrochen** — Mahntexte mit Schülernamen gehen nicht im Klartext über das Netz               | `mailservice/versand_test.go`, `internal/smtptest`                             |
 | S20 | Ein Wert aus einer Anfrage enthält einen Zeilenumbruch und landet im Log                                  | Ein einziger JSON-Eintrag mit `\n` **innerhalb** des Strings — kein zweiter, gefälschter Eintrag         | am laufenden Server nachgemessen (11.08.2026); `slog`-JSON-Handler als Standard |
 
@@ -3974,7 +3991,7 @@ Frage).
 
 ## 12. Glossar
 
-Stand: 08.10.2026
+Stand: 08.10.2026 · am 12.10.2026 in 12.1 bei Abgangsbuch und Bescheid die Fundstellen nachgezogen
 
 Die Fachsprache des Hauses, mit dem Code-Bezug daneben. Wo ein Begriff im Code **anders**
 heißt als in der Oberfläche, steht beides — das ist die häufigste Stolperstelle beim
@@ -3987,14 +4004,14 @@ Einstieg.
 | Begriff                     | Bedeutung                                                                                                                                                              | Im Code / in der DB                                        |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | **Abgänger**                | Schüler, der bestätigt in der LUSD war und im neuen Export fehlt. Löst Sperre, Karenz und später Löschung aus                                                          | `abgaenger_seit`, `jobs/cron_dsgvo_abgaenger.go`           |
-| **Abgangsbuch**             | Nachweis der aus dem Bestand ausgegangenen Bücher je Halbjahr, mit Grund, getrennt nach Land und Träger                                                                 | `api/abgangsbuch_handler.go`, `api/abgangsbuch_pdf.go`     |
+| **Abgangsbuch**             | Nachweis der aus dem Bestand ausgegangenen Bücher je Halbjahr, mit Grund, getrennt nach Land und Träger                                                                 | `api/abgangsbuch_handler.go`, `pdf/abgangsbuch.go`         |
 | **Abholfach**               | Ort, an dem ein für eine Vormerkung reserviertes Exemplar auf Abholung wartet; Hinweis an der Theke trägt Titel und Frist, bewusst ohne IDs                             | `repository/vormerkung_abholfach_pg_test.go`               |
 | **Abwertung**               | Minderung des Ersatzwerts nach Alter und Zustand des Exemplars                                                                                                          | `pkg/ersatzwert`, `repository/ersatzwert_groessen.go`       |
 | **Auflage**                 | Eine Ausgabe eines Buchs mit eigener ISBN und eigenen Seitenzahlen — im Katalog ein eigener Titel. Auflagen desselben Buchs lassen sich zu einem **Werk** zusammenfassen | `buecher_titel.auflage` (Migration 126), `repository/auflagen.go` |
 | **Art** (des Lesers)        | `schueler`, `lehrkraft`, `liv`, `praktikum`, `sekretariat`, `uplus` oder `fachbereich` (Migration 153). Sagt, **wer an der Theke Bücher bekommt** — entscheidet **keine** Rechte | `leser.art`                                                |
 | **Aussonderung**            | Ausbuchen eines Exemplars aus dem Bestand mit Grund (Verlust, Beschädigung, Aussortiert, Bestandskorrektur)                                                                                     | `repository/aussonderung_paritaet_test.go`                  |
 | **Ausweis**                 | Karte des Lesers. Alle neuen Nummern tragen die Vorsilbe `A-`; die Aufschrift richtet sich nach der **Art**                                                             | `internal/ausweis`, `api/ausweis_layout.go`                 |
-| **Bescheid**                | Schadensersatz-Bescheid für Landes-Lernmittel; nennt das Konto (Barzahlung ist laut Erlass nicht der Weg), hat eine eigene Nummernfolge                                  | `schadensersatz_bescheide`, `api/bescheid_pdf.go`           |
+| **Bescheid**                | Schadensersatz-Bescheid für Landes-Lernmittel; nennt das Konto (Barzahlung ist laut Erlass nicht der Weg), hat eine eigene Nummernfolge                                  | `schadensersatz_bescheide`, `pdf/bescheid.go`               |
 | **Bestand**                 | Die physischen Stücke — im Unterschied zum **Katalog** (den Titeln)                                                                                                     | `buecher_exemplare`                                        |
 | **Dauerleihe**              | Ausleihe an das Kollegium: Sie wird nie überfällig und nie gemahnt, die Akte zeigt „ohne Frist"; gespeichert wird eine Frist von einem Jahr | `resolveBorrowerAndDueTime` (`internal/service/loan_checkout_validation.go`) |
 | **Bestandsbuch / Zugangsbuch** | Nachweis der in den Bestand gekommenen Bücher je Halbjahr, mit Lieferant                                                                                             | `api/bestandsbuch.go`                                      |

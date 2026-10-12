@@ -68,7 +68,7 @@ jobs:
     runs-on: ${{ inputs.runner || 'ubuntu-26.04' }}
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-      # Aktiviert die DB-Integrationstests (db/constraints_pg_test.go). Ohne diese
+      # Aktiviert die DB-Integrationstests (alle *_pg_test.go). Ohne diese
       # Variable überspringen sie sich selbst — dann prüfte CI die DB-Invarianten nicht.
       # Der Name MUSS "test" enthalten: die Tests verwerfen das Schema (Notbremse in
       # pruefeTestDatenbank).

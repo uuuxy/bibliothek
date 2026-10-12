@@ -1,5 +1,4 @@
 import { toastStore } from '../../lib/stores/toastStore.svelte.js';
-// src/lib/store.svelte.js
 
 /** @type {{ searchQuery: string, bestandsAnsicht: 'mit' | 'ohne', selectedBook: any, activeBookId: string | null, adminAuthenticated: boolean, guestAuthenticated: boolean, triggerStudentScan: string, bookToEdit: any, requestAdminView: boolean }} */
 export const appState = $state({

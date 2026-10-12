@@ -215,7 +215,7 @@ auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_gate_pg_test.
 | Zusammenführen                                                       | `repository/schueler_zusammenfuehren.go`, `api/student_zusammenfuehren.go`                                                                             |
 | Karenz-Prädikat, Job, Wächter                                        | `repository/loeschfristen.go`, `jobs/cron_dsgvo.go`, `repository/loeschrueckstand.go`; Uhr: `migrations/137_letzter_vorgang_am_leser.sql`              |
 | Oberfläche                                                           | `frontend/src/lib/components/students/LusdImportView.svelte`, `LusdUmbenennungen.svelte`, `lusdVorschauRubriken.js`, `SchuelerZusammenfuehren*.svelte` |
-| Tests, die den Jahreszyklus spielen                                  | `api/lusd_namensmodus_pg_test.go`, `api/lusd_umbenennung_pg_test.go`, `api/student_zusammenfuehren_pg_test.go`, `api/lusd_paarung_test.go`             |
+| Tests, die den Jahreszyklus spielen                                  | `api/lusd_namensmodus_pg_test.go`, `api/lusd_umbenennung_pg_test.go`, `api/student_zusammenfuehren_pg_test.go`, `internal/lusd/paarung_test.go`             |
 
 Zwei Tests halten fest, was ein Umbau des Schreibens nicht verlieren darf.
 `api/lusd_klassenwechsel_pg_test.go` prüft die Paarung: Jeder Schüler bekommt die Klasse, die
