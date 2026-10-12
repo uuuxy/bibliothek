@@ -306,7 +306,7 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	// Dieselbe Spur wie über Benutzer & Rechte (docs/OFFEN.md 5.19): Bis zum 29.09.2026
 	// hinterließ ein Konto, das über die Leserdatei entstand, keinen Eintrag.
 	if kontoID != "" {
-		s.protokolliereKontoAnlage(ctx, kontoID, strings.ToLower(strings.TrimSpace(req.Email)), "kollegium", req.Vorname, req.Nachname)
+		s.ProtokolliereKontoAnlage(ctx, kontoID, strings.ToLower(strings.TrimSpace(req.Email)), "kollegium", req.Vorname, req.Nachname)
 	}
 	return studentID, barcodeID, true
 }

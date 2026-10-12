@@ -28,18 +28,6 @@ func (s *Server) auditiereKonto(ctx context.Context, aktion string, details map[
 	s.ProtokolliereVerwaltung(ctx, aktion, details)
 }
 
-// protokolliereKontoAnlage schreibt USER_CREATE — für jede Tür im Handler-Paket, über die ein
-// Konto mit einer Person als Handelnder entsteht: Benutzer & Rechte (CreateUserHandler) und die
-// Neuanlage einer Lehrkraft in der Leserdatei (legeSchuelerAn). Bis zum 29.09.2026 schrieb nur
-// die erste; die Rechenschaft hing an der Tür (docs/OFFEN.md 5.19). ziel_id ist die Kennung des
-// Kontos: Daran findet die Auskunft nach Art. 15 den Eintrag, auch nachdem das Konto gelöscht
-// ist (repository/dsgvo_konto.go). Bis zum 24.09.2026 trug die Anlage nur die Adresse.
-func (s *Server) protokolliereKontoAnlage(ctx context.Context, kontoID, email, rolle, vorname, nachname string) {
-	s.auditiereKonto(ctx, "USER_CREATE", map[string]any{
-		"ziel_id": kontoID, "email": email, "rolle": rolle, "vorname": vorname, "nachname": nachname,
-	})
-}
-
 // CreateUserRequest holds payload data for user creation.
 type CreateUserRequest struct {
 	BarcodeID string `json:"barcode_id"`
@@ -116,7 +104,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, userRe
 		return
 	}
 
-	s.protokolliereKontoAnlage(r.Context(), kontoID, req.Email, dbEnumRole, req.Vorname, req.Nachname)
+	s.ProtokolliereKontoAnlage(r.Context(), kontoID, req.Email, dbEnumRole, req.Vorname, req.Nachname)
 
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	httpresp.Write(w, []byte(`{"status":"success"}`))

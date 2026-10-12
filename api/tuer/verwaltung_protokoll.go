@@ -44,6 +44,16 @@ func (s *Basis) ProtokolliereVerwaltung(ctx context.Context, aktion string, deta
 	}
 }
 
+// ProtokolliereKontoAnlage schreibt USER_CREATE mit der angemeldeten Person als Bearbeiter. Zwei
+// Themen legen ein Konto an, Benutzer & Rechte und die Leserdatei beim Anlegen einer Lehrkraft;
+// der Eintrag steht deshalb hier. ziel_id ist die Kennung des Kontos: Daran findet die Auskunft
+// den Eintrag, auch nachdem das Konto gelöscht ist (repository/dsgvo_konto.go).
+func (s *Basis) ProtokolliereKontoAnlage(ctx context.Context, kontoID, email, rolle, vorname, nachname string) {
+	s.ProtokolliereVerwaltung(ctx, "USER_CREATE", map[string]any{
+		"ziel_id": kontoID, "email": email, "rolle": rolle, "vorname": vorname, "nachname": nachname,
+	})
+}
+
 // SchreibeAdminProtokoll schreibt einen Eintrag, dessen Details als JSON-Text vorliegen, mit
 // der Adresse des Aufrufers oder ohne. Der Vorgang gilt auch, wenn das Protokoll klemmt; der
 // Fehlversuch steht im Server-Log.
