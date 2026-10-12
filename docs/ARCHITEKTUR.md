@@ -202,7 +202,7 @@ Testzeilen um 47 % daneben, weil sie gepflegt statt gemessen war.
 
 ## 2. Randbedingungen
 
-Stand: 08.10.2026
+Stand: 08.10.2026 · am 12.10.2026 in 2.1 die Fundstelle der Rechteprüfung nachgezogen
 
 Randbedingungen sind das, was **nicht zur Diskussion stand**. Sie erklären mehr von dieser
 Architektur als jede Entwurfsvorliebe: Der Grund für die Omnibox, für IMAP als
@@ -531,7 +531,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu)
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -620,7 +620,8 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 21.319 Zeilen, 136 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `api/`                  | 20.746 Zeilen, 131 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Tür und Alarm der Selbstprüfung, Mail-Routen, öffentliche Seiten     |
+| `api/tuer/`             | 520 Zeilen, 5 Dateien      | Was jede Tür braucht: Eingabe lesen und Antwort schreiben, die Rechteprüfung mit ihrem Zwischenspeicher, das Protokoll der Verwaltung, die Uhr. Der Typ `Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn ein |
 | `repository/`           | 22.365 Zeilen, 151 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke                                        |
 | `internal/service/`     | 4.851 Zeilen, 28 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan und womit ein neuer Plan beginnt, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
@@ -632,10 +633,10 @@ HTTP-Anfrage
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
 | `pkg/` (25 Pakete)      | 2.922 Zeilen, 34 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
 | `pdf/`                  | 3.356 Zeilen, 21 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
-| `mailservice/`          | 477 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung)                                                                   |
+| `mailservice/`          | 686 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`MailRequest`, `SendEmail`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
-| `internal/*` (übrige)   | 6.423 Zeilen, 46 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
+| `internal/*` (übrige)   | 6.492 Zeilen, 49 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
 | `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
@@ -795,7 +796,21 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   solange dort kein Server steht, die Umgebung. Die Zeile liest es über
   `repository.MailSettingsRepository.GetConfig`, dieselbe Funktion wie die Maske der
   Mail-Einstellungen; das Paket behält den Rückfall auf die Umgebung, das Entschlüsseln des
-  Passworts und die Vorgaben für Port und Absender.
+  Passworts und die Vorgaben für Port und Absender. Auch der Aufbau einer Mail mit Anlagen
+  und ihr Versand stehen dort (`mail_sender.go`: `MailRequest`, `SendEmail`). Die Tür
+  bestimmt, an wen was geht und was ihre Antwort über den Versand sagt: den Status zu einem
+  Versandfehler (`mailFehlerStatus`, `api/mail_settings.go`) und die Werte des Felds `mail`
+  (`api/anliegen.go`). Ein Test stellt die Konfiguration über
+  `mailservice.TauscheKonfigLaderFuerTest` ein.
+- Was jede Tür braucht, steht in `api/tuer`: `RespondJSON` und `DecodeAndValidate`, die
+  Rechteprüfung mit ihrem Zwischenspeicher (5.4.3), das Protokoll der Verwaltung, die Uhr. Das
+  Paket steht unter den Türen, damit das Paket eines Themas es einbinden kann; `api/` selbst
+  ließe sich von dort nicht einbinden ([OFFEN.md](OFFEN.md) 5.65). Der Typ `tuer.Basis` trägt
+  Datenbank, Anmeldung, Live-Leitung und Uhr mit den Methoden dazu. `api.Server` bettet ihn
+  ein: Eine Tür schreibt weiter `s.DB` und `s.BesitztRecht(…)`, und die Routenlisten rufen
+  `s.RequirePermission(…)` wie bisher. Ein Literal nennt die vier Felder über die Basis
+  (`&Server{Basis: tuer.Basis{DB: …}}`). Router, Routenlisten und die Kette der Middleware
+  bleiben in `api/`.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
   `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf
@@ -1051,6 +1066,12 @@ InvalidatePermissionCache()  ──►  Cache leeren UND Epoche erhöhen
 Ohne die Epoche konnte ein Leser, der **vor** einer Rechteänderung startete, den alten
 Stand **nach** der Invalidierung zurückschreiben — und er wirkte bis zu 60 s weiter
 (Nebenläufigkeits-Audit vom 19.08.2026).
+
+Die Datei trägt die Prüfung für eine Route (`PruefeBerechtigung`, `RequireAuthenticated`)
+und die in einer Tür (`BesitztRecht`); beide lesen denselben Zwischenspeicher.
+`RequirePermission` steht beim Router (`api/middleware.go`): Es setzt die Prüfung der
+Pfadparameter davor, und deren Liste gehört zu den Routen. Ein Test legt eine Entscheidung
+über `tuer.MerkeRechtFuerTest` in den Zwischenspeicher.
 
 #### 5.4.4 `sse/sse.go` — Broker ohne Event-Loop
 
@@ -1731,7 +1752,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner und von Helfern der Tests in ein Paket für Prüfhilfen, in 8.6 der Test zur Panik in einer Tür genannt
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen und von Code in ein Paket, das die Türen einbinden, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2194,6 +2215,10 @@ vierzig Terminen von selbst um.
   Umgebung **nur**, solange in der Datenbank noch die Schema-Vorgabe steht — ohne diese
   Übernahme gingen die Mahnungen nach dem Umstieg an `localhost:1025`. Gemeldet wird nur,
   wenn wirklich übernommen wurde.
+- **Aufbau und Versand stehen in `mailservice/`** (`mail_sender.go`, `versand.go`); eine Tür
+  ruft `mailservice.SendEmail`. Ein Test fängt ab, was eine Tür verschickt
+  (`tuertest.MailAbfangen`, ein Mailserver am Arbeitsplatz), oder ersetzt den Versand:
+  `SendEmail` ist ein Wert des Pakets.
 - **STARTTLS erzwungen**, mit Zertifikatsprüfung. Bietet der Server es nicht an, bricht der
   Versand ab (`ErrSMTPKlartext`) — vorher galt „dann eben ohne", und ein Angreifer, der die
   EHLO-Antwort streicht („STARTTLS stripping"), bekam Mahntexte mit Schülernamen.
@@ -2322,7 +2347,7 @@ wenn man ihn einmal gebraucht hat.
   über alle Pakete und weigert sich bei einem Datenbanknamen ohne „test".
 - **Eine Tür wird über den Router geprüft,** mit Sitzung und CSRF, nicht am Handler allein: Was
   die Registrierung davorhängt (Recht, `ValidateUUIDParamsMiddleware`), gehört zum Verhalten.
-  Muster: `baueKanarienWelt` und `setzeGenauEinRecht` in `api/pii_antwort_gate_pg_test.go`,
+  Muster: `baueKanarienWelt` in `api/pii_antwort_gate_pg_test.go`, `tuertest.SetzeGenauEinRecht`,
   `tuertest.MitCSRF`, `registrierteRouten` in `api/pii_matrix_test.go`.
 - **Gegenprobe am Rückbau.** Ein neuer Test zählt, wenn er am alten Code rot war. Als Beweis
   gilt die erwartete Meldung des Tests, nicht der Exit-Code: Ein Rückbau, der nicht übersetzt,
@@ -2499,7 +2524,7 @@ wenn man ihn einmal gebraucht hat.
   nichts ändern. Vorher und nachher die Liste der Tests mit ihrem Ausgang festhalten:
   `go test -json -count=1 ./...` mit `TEST_DATABASE_URL`, je Paket und Test die letzte Meldung
   `pass`, `fail` oder `skip`. Ziehen Testdateien mit um, zählt der Name des Tests, nicht sein
-  Paket. Am 12.10.2026 sind es 2.265 Testfunktionen, sieben davon übersprungen; das Paket, das
+  Paket. Am 12.10.2026 sind es 2.267 Testfunktionen, sieben davon übersprungen; das Paket, das
   npm unter `frontend/node_modules` ablegt, erscheint nur in einer Arbeitskopie mit
   installierter Oberfläche. Methode, Pfad und Recht jeder Route hält `api/pii_matrix_test.go`
   gegen [PII_MATRIX.de.md](PII_MATRIX.de.md); die Anmeldungen selbst (`mux.Handle(…)` als ein
@@ -2527,6 +2552,31 @@ wenn man ihn einmal gebraucht hat.
   belegt am 12.10.2026 für 54 Helfer aus den Testdateien von `api/`: 232 Testdateien mit
   236.604 Token gleich, 52 von 53 umgezogenen Erklärungen gleich; die eine Abweichung setzt den
   Sperrgrund der Abgänger aus der Konstante statt als Text ein.
+- **Code zieht in ein Paket, das die Türen einbinden,** etwa das, was jede Tür braucht, nach
+  `api/tuer`. Es ziehen ganze Dateien; was aus einer Datei bleiben soll, zieht vorher
+  innerhalb des Pakets um. Ein Werkzeug mit Typprüfung schreibt die Nennungen um: den
+  Paketnamen vor jeden Namen, der umzieht, den groß geschriebenen Namen, wo ein anderes Paket
+  ihn braucht, und den eingebetteten Typ in jedes Literal (`Server{Basis: tuer.Basis{DB: …}}`).
+  Es meldet, was eine umziehende Datei aus dem alten Paket noch bräuchte. Eine Methode bleibt
+  unter ihrem Namen erreichbar, wenn der alte Typ den neuen einbettet. Verglichen wird danach
+  je Erklärung, Token für Token und unabhängig von Datei und Paket; die Rückführung (neuer
+  Name, Paketname vor dem Punkt, Schachtelung eines Literals) läuft über beide Stände. Ob der
+  Vergleich misst, zeigt ein absichtlich geändertes Token. Dreierlei fällt dabei an. Ein Test,
+  der in einen Wert des Pakets schrieb, kommt von außen nicht mehr heran: Er bekommt eine
+  Funktion, deren Name auf `FuerTest` endet, mit eigenem Test und einem Eintrag in
+  `scripts/deadcode_baseline.txt` (`tuer.MerkeRechtFuerTest`,
+  `mailservice.TauscheKonfigLaderFuerTest`). Eine Prüfung, die den Aufruf einer Funktion am
+  Namen ohne Paket erkennt (`*ast.Ident`), sieht den Aufruf mit Paketnamen nicht
+  (`*ast.SelectorExpr`): jede Prüfung suchen, die einen umziehenden Namen als Text nennt, ihren
+  Detektor um die neue Form ergänzen und belegen, dass er vor und nach dem Umzug dasselbe
+  findet und einen Verstoß in der neuen Form meldet. Und ein Literal ohne Feldnamen weist
+  `go vet` ab, sobald der Typ aus einem anderen Paket kommt: Die Felder werden vorher benannt.
+  Ein Test im Paket eines Themas kann `api/` nicht einbinden, wenn `api/` das Thema einbindet
+  (`import cycle not allowed in test`); ein Testpaket daneben (`package thema_test`) kann es.
+  So belegt am 12.10.2026 für Stufe 2 des Umzugs der Türen ([OFFEN.md](OFFEN.md) 5.65): 2.321
+  Erklärungen gleich (417.897 Token), 26 gewollt verschieden; `uuid_eingaben_test.go` fand
+  nach dem Umzug keine Eingabe mehr, wurde an seiner Untergrenze rot und kennt jetzt beide
+  Formen.
 
 ---
 
@@ -2556,7 +2606,7 @@ wenn man ihn einmal gebraucht hat.
 
 ## 9. Architekturentscheidungen
 
-Stand: 07.10.2026 · am 10.10.2026 in A7 die Fundstellen nachgezogen
+Stand: 07.10.2026 · am 10.10.2026 in A7 die Fundstellen nachgezogen, am 12.10.2026 in A3 und A9
 
 Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -3246,7 +3296,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen, in 11.5 die vier Symbolknöpfe mit dem Hinweis des Browsers ergänzt
+Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen und nach Stufe 2 Überschrift und Zahl der Methoden neu gezählt, in 11.5 die vier Symbolknöpfe mit dem Hinweis des Browsers ergänzt
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3305,7 +3355,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-#### R4 — `api/` trägt die Türen in einem Paket: 21.319 Zeilen in 136 Dateien
+#### R4 — `api/` trägt die Türen in einem Paket: 20.746 Zeilen in 131 Dateien
 
 | | |
 | --- | --- |
@@ -3340,8 +3390,11 @@ Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `schichtung_rats
 SQL-Anweisung außerhalb der Datenbankschicht ab, `api/schichtung_test.go` führt die Dateien
 ohne Tür als Bestand, der nur kleiner werden kann. Was
 bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst stehen in einem Paket, der Typ
-`Server` trägt 349 Methoden. Entschieden am 12.10.2026: Sie ziehen in Stufen in Themenordner
-um; Messung und Plan stehen in [OFFEN.md](OFFEN.md) 5.65.
+`Server` trägt 340 Methoden. Entschieden am 12.10.2026: Sie ziehen in Stufen in Themenordner
+um; Messung und Plan stehen in [OFFEN.md](OFFEN.md) 5.65. Seit Stufe 2 (12.10.2026) steht,
+was jede Tür braucht, in `api/tuer` (520 Zeilen in fünf Dateien, neun Methoden am Typ
+`Basis`) und der Mailversand in `mailservice/`; `api/` hatte davor 21.319 Zeilen in 136
+Dateien.
 
 Der Bestand führt nur ganze Dateien. Woraus `api/` besteht, gemessen am 09.10.2026 am
 Syntaxbaum (`go/parser`), nachdem die sechs Dateien mit Regeln ausgezogen waren: 9.227 Zeilen

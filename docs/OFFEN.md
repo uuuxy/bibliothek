@@ -34,9 +34,6 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 **Entscheiden:**
 
-- [x] Türen in Themenordner, Stufe 2: freigegeben am 12.10.2026. Es ist die erste Änderung am
-  Programm: Was jede Tür braucht (Antwort schreiben, Rechte, Protokoll, Uhr), zieht in ein
-  eigenes Paket, der Mailversand nach `mailservice/`; das Verhalten bleibt gleich. (5.65)
 - [x] Türen in Themenordner: Der Plan ist seit dem 12.10.2026 freigegeben. Geteilt wird nur
   `api/`, je Menüpunkt der Oberfläche ein Ordner; die Abfragen bleiben in der einen
   Datenbankschicht. (5.65)
@@ -156,11 +153,12 @@ lässt sich dort anhalten.
   Tests und die Routen stehen als Vergleichsstand fest.
 - [x] Stufe 1, Tests: Die Helfer, die Tests mehrerer Themen brauchen und selbst nichts aus
   `api/`, stehen in Paketen für Prüfhilfen.
-- [ ] Stufe 2, Kern: Was jede Tür braucht (Antwort schreiben, Rechte, Protokoll, Uhr), steht
-  in einem eigenen Paket, der Mailversand in `mailservice/`. Das ist die erste Änderung am
-  Programm; davor steht die zweite Freigabe.
+- [x] Stufe 2, Kern: Was jede Tür braucht (Antwort schreiben, Rechte, Protokoll, Uhr), steht
+  im Paket `api/tuer`, der Mailversand in `mailservice/`. Es war die erste Änderung am
+  Programm; das Verhalten ist dasselbe.
 - [ ] Stufe 3, das erste Thema: Lernmittel (5 Dateien, 8 Testdateien), mit einem Werkzeug für
-  den Umzug. Danach steht der Aufwand je Thema als Messwert fest; dritte Freigabe.
+  den Umzug und mit der Antwort, wo ein Test steht, der über den ganzen Router prüft (5.65).
+  Danach steht der Aufwand je Thema als Messwert fest; dritte Freigabe.
 - [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt: Inventur, System, Portal,
   Benutzer, Mahnwesen, Schaden, Druck mit Bestellung, Katalog, Leser, zuletzt die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
@@ -432,16 +430,19 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
   umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
-- **Was ohne Tür bleibt.** Die zwölf Dateien des Bestands sind Typen einer Anfrage oder
-  Antwort, Füll-Funktionen und Helfer mehrerer Türen (980 Zeilen): `abgaenger_fenster.go`
-  (trägt daneben die Grenzen der Abgänger-Saison), `action_types.go`, `bescheid_absender.go`,
-  `bestellmail_anhaenge.go` (stellt die Anlagen der Bestellmail zusammen und verschickt sie),
-  `bestellmail_versand.go` (trägt auch die Rückmeldung nach dem Versand),
-  `betriebsbereitschaft_alarm.go`, `constants.go`, `lmf_plan_live.go`, `mahnwesen_mail.go`,
-  `schueler_kiosk.go`, `verwaltung_protokoll.go` und `student_klasse_regel.go` (prüft eine
-  Eingabe der zwei Türen zum Anlegen und Ändern und trägt deren Meldung; keine andere Schicht
-  ruft sie). Der Bestand fällt damit nicht auf null. Die sechs Dateien mit Regeln sind am
-  09.10.2026 ausgezogen; wohin, steht oben und in ARCHITEKTUR 5.2.2.
+- **Was ohne Tür bleibt.** Die 13 Dateien des Bestands sind Typen einer Anfrage oder
+  Antwort, Füll-Funktionen und Helfer mehrerer Türen (1.008 Zeilen, gezählt am 12.10.2026).
+  Zehn stehen in `api/`: `abgaenger_fenster.go` (die Grenzen der Abgänger-Saison),
+  `action_types.go`, `bescheid_absender.go`, `bestellmail_anhaenge.go` (stellt die Anlagen der
+  Bestellmail zusammen und verschickt sie), `bestellmail_versand.go` (trägt auch die
+  Rückmeldung nach dem Versand), `betriebsbereitschaft_alarm.go`, `lmf_plan_live.go`,
+  `mahnwesen_mail.go`, `schueler_kiosk.go` und `student_klasse_regel.go` (prüft eine Eingabe
+  der zwei Türen zum Anlegen und Ändern und trägt deren Meldung; keine andere Schicht ruft
+  sie). Drei stehen seit dem 12.10.2026 in `api/tuer`, dem Paket mit dem, was jede Tür
+  braucht: `constants.go`, `verwaltung_protokoll.go` und `tuer.go` (der Typ `Basis` und die
+  Uhr; als dreizehnte dazugekommen). Der Bestand fällt damit nicht auf null. Die sechs
+  Dateien mit Regeln sind am 09.10.2026 ausgezogen; wohin, steht oben und in ARCHITEKTUR
+  5.2.2.
 - **Was der Bestand nicht sieht.** Eine Datei bindet `net/http` nur für Statuswerte ein und
   trägt keine Tür: `nachbuchen_schluessel.go` (148 Zeilen); der Mailversand, die zweite, steht
   seit dem 12.10.2026 in `mailservice/mail_sender.go`. Und
@@ -495,69 +496,83 @@ Schicht der Türen, je Menüpunkt der Oberfläche ein Paket unter `api/`. `repos
 Der Maßstab steht in Googles Regeln für Go, Abschnitt
 [Package size](https://google.github.io/styleguide/go/best-practices#package-size): In einem
 Paket bleibt, was eng aneinander hängt; was für sich steht, bekommt ein eigenes. Der Plan ist
-seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan.
+seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 2 sind gebaut.
 
-- **Gemessen am 12.10.2026** am Stand 6ad693cb, mit Typprüfung (`go/types`) über die 136
-  Produktiv- und 324 Testdateien von `api/`: Jede Datei ist einem Thema zugeordnet, gezählt ist
-  jeder Name, den eine Datei aus einer anderen braucht, bei Tests auch über ihre Helfer.
+- **Gemessen am 12.10.2026** nach Stufe 2 (Stand b3440e46), mit Typprüfung (`go/types`) über
+  die 131 Produktiv- und 322 Testdateien von `api/`: Jede Datei ist einem Thema zugeordnet,
+  gezählt ist jeder Name, den eine Datei aus einer anderen braucht, bei Tests auch über ihre
+  Helfer.
 - **Die Themen stehen für sich.** Zwischen zwölf Themen hängen neun Namen an drei Stellen. Die
   Bestellung braucht fünf Namen rund um das Buchetikett aus dem Druck (`BarcodeLabelDetail`,
   `EtikettKopf`, `etikettKopf`, `buchEtiketten`, `etikettKopfAus`), der Druck einen aus der
   Bestellung (`etikettenAus`): ein Kreis. Der Katalog braucht zwei aus dem Schaden
   (`preisquelle`, `ersatzwertVorschlagAus`), der Leser einen aus den Benutzern
-  (`protokolliereKontoAnlage`). Dazu kommen die Uhr (`jetzt`, erklärt bei den Abgängern,
-  gebraucht von Lernmitteln und Theke) und der Mailversand (`mail_sender.go`, gebraucht von vier
-  Themen); beide gehören unter die Themen. Aus den Schichten darunter brauchen die Themen 470
-  Namen aus `repository/`, 444 davon je genau ein Thema, und 53 aus `internal/service`, jeden
-  genau ein Thema.
-- **Zielbild.** In kein Thema ziehen 16 Dateien mit 2.326 Zeilen. Router, Routenlisten,
+  (`protokolliereKontoAnlage`). Aus den Schichten darunter brauchen die Themen 470 Namen aus
+  `repository/`, 444 davon je genau ein Thema, 53 aus `internal/service`, jeden genau ein
+  Thema, 34 aus `api/tuer` und acht aus `mailservice/`.
+- **Zielbild.** In kein Thema ziehen zwölf Dateien mit 1.834 Zeilen: Router, Routenlisten,
   Middleware, CSRF, Rate-Limit und Abmeldung bleiben in `api/`, mit 23 Routen ohne Tür aus
-  einem Thema, darunter Anmeldung, Sitzung und die acht Einhängepunkte von `inventur/`; die
-  Helfer aller Türen ziehen in den Kern (unten). Die Routenlisten bleiben an einer Stelle:
-  Dort steht jede Tür mit ihrem Recht, und neun Prüfungen lesen sie dort. Die Themen, mit den
-  Testdateien, die nur dieses eine Thema brauchen:
+  einem Thema, darunter Anmeldung, Sitzung und die acht Einhängepunkte von `inventur/`. Die
+  Routenlisten bleiben an einer Stelle: Dort steht jede Tür mit ihrem Recht, und neun
+  Prüfungen lesen sie dort. Die Themen, mit den Testdateien, die nur dieses eine Thema
+  brauchen:
 
   | Thema      | Dateien | Zeilen | Routen | Testdateien | Dateien heute in `api/` |
   | ---------- | ------- | ------ | ------ | ----------- | ----------------------- |
-  | Katalog    | 21      | 3.015  | 43     | 35          | `copy_admin*.go`, `auflagen_handler.go`, `book_systematik_handler.go`, `isbn_handler.go`, `schlagwort*.go`, `signaturen_handler.go`, `systematik_handler.go`, `lookups.go`, `exemplar_*.go`, `cover.go`, `cover_quelle_bindung.go`, `image_caching.go`, `geraete.go`, `abgangsbuch_handler.go`, `zugangsbuch_handler.go`, `bestandsbuch.go` |
-  | Leser      | 17      | 3.002  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go` |
-  | Bestellung | 17      | 2.803  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go` |
-  | System     | 12      | 1.503  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go` |
-  | Theke      | 9       | 1.466  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go` |
+  | Katalog    | 21      | 3.035  | 43     | 35          | `copy_admin*.go`, `auflagen_handler.go`, `book_systematik_handler.go`, `isbn_handler.go`, `schlagwort*.go`, `signaturen_handler.go`, `systematik_handler.go`, `lookups.go`, `exemplar_*.go`, `cover.go`, `cover_quelle_bindung.go`, `image_caching.go`, `geraete.go`, `abgangsbuch_handler.go`, `zugangsbuch_handler.go`, `bestandsbuch.go` |
+  | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go` |
+  | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go` |
+  | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go` |
+  | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go` |
   | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go` |
-  | Druck      | 8       | 1.164  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print.go` |
-  | Schaden    | 7       | 1.148  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go` |
-  | Lernmittel | 5       | 1.094  | 7      | 8           | `lmf_*.go` |
-  | Benutzer   | 6       | 834    | 6      | 9           | `user_admin*.go` |
-  | Inventur   | 5       | 772    | 9      | 5           | `inventur_*.go` |
-  | Portal     | 5       | 663    | 15     | 11          | `anliegen.go`, `reservation.go`, `katalog_kollegium.go`, `opac.go`, `monitor.go` |
+  | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print.go` |
+  | Schaden    | 7       | 1.154  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go` |
+  | Lernmittel | 5       | 1.098  | 7      | 8           | `lmf_*.go` |
+  | Benutzer   | 6       | 838    | 6      | 9           | `user_admin*.go` |
+  | Inventur   | 5       | 777    | 9      | 5           | `inventur_*.go` |
+  | Portal     | 5       | 681    | 15     | 11          | `anliegen.go`, `reservation.go`, `katalog_kollegium.go`, `opac.go`, `monitor.go` |
 
   Zwei Namen sind als Paket vergeben (`pkg/lmf`, `inventur/`): Der Ordner der Lernmittel-Türen
   heißt deshalb nicht `lmf`, der Name für die Türen der Inventur steht mit ihrer Stufe fest.
-- **Was die Themen aus `api/` brauchen (der Kern).** 38 Namen, 22 davon mehr als ein Thema:
-  Antwort schreiben und Eingabe lesen (`RespondJSON` in 85 Dateien, `DecodeAndValidate` in 43),
-  die elf Konstanten aus `constants.go`, die Adresse des Aufrufers (`getIP`, eine Zeile über
-  `pkg/clientip`), die Rechteprüfung in der Tür (`BesitztRecht`, 8 Dateien) und das Protokoll
-  der Verwaltung (`protokolliereVerwaltung`, `schreibeAdminProtokoll`). Von den Feldern des
-  Typs `Server` brauchen alle Themen `DB`, drei `Broker`, je eines `Auth` und
-  `IdempotenzWartezeit`. Der Kern zieht in Stufe 2 in ein eigenes Paket unter den Themen; sein
-  Name sagt, was er hergibt (dieselbe Seite bei Google, „Util packages").
+- **Was jede Tür braucht, steht in `api/tuer`** (seit dem 12.10.2026, fünf Dateien mit 520
+  Zeilen): Eingabe lesen und Antwort schreiben (`RespondJSON`, `DecodeAndValidate`), zehn
+  Konstanten, die Rechteprüfung mit ihrem Zwischenspeicher (`BesitztRecht`,
+  `RequireAuthenticated`, `PruefeBerechtigung`), das Protokoll der Verwaltung und die Uhr. Der
+  Typ `tuer.Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn
+  ein, und der Typ eines Themas tut es beim Umzug ebenso, damit jede Tür `s.DB` und
+  `s.BesitztRecht` unter demselben Namen erreicht. Der Mailversand steht in `mailservice/`,
+  die Adresse des Aufrufers fragen die Türen bei `pkg/clientip`. `RequirePermission` bleibt
+  beim Router: Es setzt die Prüfung der Pfadparameter vor die Rechteprüfung, und deren Liste
+  gehört zu den Routen. Aus `api/` selbst brauchen die Themen noch zweierlei: den Typ
+  `Server`, an dem ihre Türen als Methoden hängen (108 Dateien, 340 Methoden; mit dem Umzug
+  bekommt jedes Thema seinen eigenen Typ), und die Bremse je Adresse (`newIPRateLimiter`),
+  die nur der Abruf der Cover im Katalog braucht und die mit dessen Stufe in ein eigenes
+  Paket zieht. Das Feld `IdempotenzWartezeit` braucht nur die Theke.
 - **Die Kosten liegen bei den Tests.** 221 Testdateien brauchen Namen aus genau einem Thema und
-  ziehen mit ihm um, 45 brauchen nur Kern oder Mailversand, 18 mehrere Themen. 40 brauchen
+  ziehen mit ihm um, 43 brauchen aus `api/` nur, was dort bleibt (Router, Middleware, den Typ
+  `Server`), 18 mehrere Themen. 40 brauchen
   keinen Namen aus `api/`: Ratschen, die Quelltext lesen, und Tests an der Datenbank, die
   `repository/`, `internal/service` oder das Schema prüfen und hier liegen, weil ihre Helfer
   hier liegen. Ein Test eines anderen Pakets kann einen Helfer aus einer Testdatei nicht
-  einbinden. Seit dem 12.10.2026 stehen deshalb 52 Helfer in Paketen für Prüfhilfen: Zeilen der
-  Testdatenbank in `internal/testdaten`, Anfragen an Türen in `internal/tuertest`, je zwei bis
-  drei in `internal/pgtest`, `internal/pdftest` und `internal/smtptest`; zwei weitere reichten
-  nur an eine Funktion dort weiter und sind entfallen. In `api/` teilen sich Testdateien noch
-  93 Helfer aus 51 Dateien. 13 davon brauchen Tests aus mehr als einem Thema und ziehen mit
-  ihrer Stufe: Vier hängen am Kern (`mailAbfangen`, `protokollWelt`, `setzeGenauEinRecht`,
-  `routerMitSitzung`), acht an einem oder zwei Themen, und die Liste `dsgvoSchuelerQuellen`
-  gehört zu den Tests der Auskunft.
-  An 15 Stellen in neun Testdateien greift ein Test in das Innere des Kerns: Drei Dateien füllen
-  den Zwischenspeicher der Rechte von Hand, sechs tauschen den Lader der Mail-Konfiguration.
-  Beide bekommen eine benannte Naht für Tests.
+  einbinden. Seit dem 12.10.2026 stehen deshalb 54 Helfer in Paketen für Prüfhilfen: Zeilen der
+  Testdatenbank in `internal/testdaten`, Anfragen an Türen in `internal/tuertest` (dort auch
+  `MailAbfangen` und `SetzeGenauEinRecht`), je zwei bis drei in `internal/pgtest`,
+  `internal/pdftest` und `internal/smtptest`; zwei weitere reichten nur an eine Funktion dort
+  weiter und sind entfallen. In `api/` teilen sich Testdateien noch 91 Helfer aus 51 Dateien.
+  Zwölf davon brauchen Tests aus mehr als einem Thema und ziehen mit ihrer Stufe: acht hängen
+  an einem oder zwei Themen, die Liste `dsgvoSchuelerQuellen` gehört zu den Tests der
+  Auskunft, und drei bauen den ganzen Router (`routerMitSitzung`, `routerMitSitzungUeber`,
+  `protokollWelt`). In das Innere eines anderen Pakets greift kein Test mehr: Was eine Rolle
+  darf, legt `tuer.MerkeRechtFuerTest` in den Zwischenspeicher, die Mail-Konfiguration tauscht
+  `mailservice.TauscheKonfigLaderFuerTest`.
+- **Offen für Stufe 3: ein Test über den ganzen Router.** `api/` bindet das Paket eines Themas
+  ein. Eine Testdatei im Paket des Themas kann `api/` deshalb nicht einbinden, auch nicht über
+  eine Prüfhilfe, die es tut: Go weist den Kreis ab (`import cycle not allowed in test`,
+  nachgestellt am 12.10.2026 an einem Wegwerf-Modul). Die drei Helfer, die den Router bauen,
+  und jeder Test eines Themas, der über die Routen prüft, brauchen einen Platz. Zwei Wege:
+  ein Testpaket neben dem Thema (`package thema_test`), das `api/` einbinden darf und vom
+  Thema nur groß geschriebene Namen sieht, oder der Test bleibt in `api/`. Entschieden wird
+  es am ersten Thema, an dessen acht Testdateien gezählt.
 - **Prüfungen, die Dateien lesen.** Jede der 43 Prüfungen, die Go-Dateien des Baums
   durchlaufen, sieht eine Datei in einem Unterordner von `api/` (belegt am 12.10.2026, je mit
   einer Probe). Beim Umzug eines Themas werden von selbst rot und ziehen mit: jede
@@ -565,7 +580,10 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan.
   Prüfungen in `api/`, die ihr Thema in festen Dateien suchen (`lmf_plan_live_test.go` die
   Schreibwege des LMF-Plans, `mail_vorlagen_platzhalter_test.go` den Standardtext in
   `mahnwesen_bulk.go`). Die Routenlisten (`router.go`, `routes_*.go`) bleiben in `api/`; neun
-  Prüfungen lesen sie dort beim Namen.
+  Prüfungen lesen sie dort beim Namen. Eine Prüfung, die den Aufruf einer Funktion am Namen
+  ohne Paket erkennt, sieht ihn aus einem anderen Paket nicht mehr: `uuid_eingaben_test.go`
+  fand nach Stufe 2 keine Eingabe und wurde an seiner Untergrenze rot; es kennt jetzt beide
+  Formen. Der Handgriff steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
 - **Verweise beim Pfad.** Die Dokumente nennen Dateien aus `api/` an 307 Stellen beim Pfad, der
   Go-Code außerhalb von `api/` an 147 Stellen in 90 Dateien, die Oberfläche an 67 (gezählt am
   12.10.2026). `docs/dateiverweise_test.go` hält die Verweise der Dokumente, der Kommentare im
@@ -574,11 +592,15 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan.
   hat. Zeichenketten im Go-Code liest sie nicht: Die Meldungen und Listen der Ratschen, die
   eine Datei nennen, schreibt das Skript mit um.
 - **Nachweis je Stufe.** Die Tests und ihr Ausgang sind vor und nach der Stufe dieselben; neue
-  kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 12.10.2026, nach Stufe 1 und
-  zwei weiteren Tests zur Panik in einer Tür: 2.265 Testfunktionen, davon 751 in `api/`, sieben
-  übersprungen. Methode, Pfad und Recht jeder Route sind dieselben (211 in `api/`, 18 in
+  kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 12.10.2026, nach Stufe 2: 2.267
+  Testfunktionen, davon 743 in `api/`, 30 in `mailservice/` und zwei in `api/tuer`, sieben
+  übersprungen; verglichen wird am Namen des Tests, weil ein Test mit seiner Datei das Paket
+  wechselt. Methode, Pfad und Recht jeder Route sind dieselben (211 in `api/`, 18 in
   `inventur/`); das hält `api/pii_matrix_test.go` gegen die PII-Matrix, belegt mit acht Proben.
-  Die Rümpfe umgezogener Funktionen sind bis auf die umbenannten Namen Token für Token gleich.
+  Jede Erklärung ist vor und nach der Stufe Token für Token gleich, gleich in welcher Datei
+  und in welchem Paket sie steht, nachdem die neuen Namen zurückgeführt sind; jede Abweichung
+  steht in der Commit-Nachricht (Stufe 2 gegen den Stand davor: 2.321 Erklärungen gleich, 26
+  gewollt verschieden, acht neu, eine entfallen).
   Dazu die ganze Go-Suite an der Datenbank, golangci-lint, deadcode, gosec und die
   Browser-Suite. Wie der Vergleichsstand erhoben wird, steht in
   [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
@@ -595,7 +617,7 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan.
   nach dem Umzug der Türen, an einer Messung von `repository/` wie dieser.
 - **Was der Umzug nicht bringt:** weniger Code und kürzere Bauzeiten. Die Zeilen bleiben, und
   das Testprogramm von `api/` baut nach einer geänderten Zeile in 4,4 Sekunden (gemessen am
-  12.10.2026). Er bringt einen Ordner je Menüpunkt statt 460 Dateien in einem, und der
+  12.10.2026). Er bringt einen Ordner je Menüpunkt statt 453 Dateien in einem, und der
   Compiler weist ab, wenn ein Thema in ein anderes greift.
 
 ---
