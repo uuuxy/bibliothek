@@ -6,13 +6,13 @@ require (
 	github.com/boombuler/barcode v1.1.0
 	github.com/chai2010/webp v1.4.0
 	github.com/emersion/go-imap v1.2.1
-	github.com/getsentry/sentry-go v0.49.0
+	github.com/getsentry/sentry-go v0.50.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.11.0
-	github.com/johnfercher/maroto/v2 v2.4.2
+	github.com/johnfercher/maroto/v2 v2.4.3
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/klauspost/compress v1.20.1
 	github.com/minio/minio-go/v7 v7.3.0
@@ -22,7 +22,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
-	github.com/uudashr/gocognit v1.2.1
+	github.com/uudashr/gocognit v1.3.0
 	github.com/xuri/excelize/v2 v2.11.1-0.20261003002531-6258dcebc4e2
 	golang.org/x/crypto v0.57.0
 	golang.org/x/image v0.46.0
