@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -120,57 +119,5 @@ func TestAbgaengerliste_AusserhalbDerSaison(t *testing.T) {
 	srv.Uhr = testdaten.SaisonUhr
 	if antwort = abgaengerAntwort(t, srv); len(antwort.Abgaenger) != 1 || antwort.Abgaenger[0].Vorname != "Anna" {
 		t.Errorf("Gegenprobe im Juni: Anna fehlt — %+v", antwort)
-	}
-}
-
-// Paar-Gate: Die Abgängerliste und die Versetzung müssen dieselbe Menge sehen. Die Liste
-// zeigt im Juni, wen man einsammelt; die Versetzung markiert im Sommer, wer geht. Weichen
-// sie ab, bekommt eine Klasse Kontoauszüge und bleibt — oder geht ohne Kontoauszug.
-// Beide lesen repository.AbschlussklasseSQL; dieser Test hält fest, dass das so bleibt.
-func TestAbgaengerliste_UndVersetzungSehenDieselbeMenge(t *testing.T) {
-	pool := pgtest.Pool(t)
-	testdaten.ResetBestandsdaten(t, pool)
-	ctx := context.Background()
-
-	for i, k := range []string{"9H1", "09h2", "10H1", "10R1", "10R2", "13", "10G1", "8H1", "9R1", "5F1", "12"} {
-		testdaten.SchuelerMitBuch(t, pool, "P-"+string(rune('A'+i)), "Kind"+k, k)
-	}
-
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
-	ausListe := map[string]bool{}
-	for _, z := range abgaengerAntwort(t, srv).Abgaenger {
-		ausListe[z.Vorname] = true
-	}
-
-	versetzungAusfuehren(t, pool, false)
-	rows, err := pool.Query(ctx, `SELECT vorname FROM schueler WHERE ist_abgaenger = true`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer rows.Close()
-	ausVersetzung := map[string]bool{}
-	for rows.Next() {
-		var v string
-		if err := rows.Scan(&v); err != nil {
-			t.Fatal(err)
-		}
-		ausVersetzung[v] = true
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatal(err)
-	}
-
-	if len(ausListe) == 0 {
-		t.Fatal("die Liste ist leer — das Gate vergliche zwei Nullmengen")
-	}
-	for name := range ausListe {
-		if !ausVersetzung[name] {
-			t.Errorf("%s steht in der Abgängerliste, die Versetzung lässt ihn aber bleiben", name)
-		}
-	}
-	for name := range ausVersetzung {
-		if !ausListe[name] {
-			t.Errorf("die Versetzung schickt %s von der Schule, die Abgängerliste hat ihn nie gezeigt", name)
-		}
 	}
 }

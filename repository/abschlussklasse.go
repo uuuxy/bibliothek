@@ -43,7 +43,7 @@ func klassenZahlSQL(spalte string) string {
 //
 // Verbraucher: die Versetzung (markiert sie als Abgänger, entfernt ihre Klassenleitungs-
 // Zuordnung) und die Abgängerliste (zeigt sie in der Saison mit offenen Büchern). Beide
-// MÜSSEN dieselbe Menge sehen — api/graduates_pg_test.go (Paar-Gate) hält das fest.
+// MÜSSEN dieselbe Menge sehen — api/abgaenger_versetzung_paar_pg_test.go (Paar-Gate) hält das fest.
 func AbschlussklasseSQL(spalte string) string {
 	jahrgang := klassenZahlSQL(spalte)
 	// COALESCE ist Pflicht: Ohne Zweigbuchstaben („12", „13") wäre substring NULL, das
