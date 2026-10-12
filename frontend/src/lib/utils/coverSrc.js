@@ -4,7 +4,7 @@
 //
 // Der Cover-Proxy (/api/images/cover) ist NICHT für jede Cover-URL zuständig. Er lädt
 // ein Bild von einem fremden Server, wandelt es in WebP und legt es unter uploads/covers
-// ab. Seine Host-Allowlist (api/image_caching.go) kennt nur DNB, OpenLibrary und Google
+// ab. Seine Host-Allowlist (api/katalog/image_caching.go) kennt nur DNB, OpenLibrary und Google
 // Books — bei allem anderen, insbesondere bei einem lokalen "/uploads/…"-Pfad, liefert er
 // ein transparentes 1×1-GIF aus (bewusst 200 statt 404, gegen Konsolen-Spam).
 //
@@ -48,7 +48,7 @@ export function coverSrc(coverUrl, isbn) {
  * gab dabei preis, welche ISBNs die Schule gerade ansieht. Jede Adresse läuft jetzt
  * über coverSrc und damit über den eigenen Proxy.
  *
- * Die beiden Adress-Muster kennt auch der Server (api/cover_quelle_bindung.go,
+ * Die beiden Adress-Muster kennt auch der Server (api/katalog/cover_quelle_bindung.go,
  * coverKandidatenFuerISBN): Der Proxy lädt nur Adressen, die er für die ISBN selbst
  * herleiten kann — ein abweichendes Muster hier bliebe still leer.
  * Gate: TestCoverKandidaten_MusterGleichWieImFrontend liest diese Datei.

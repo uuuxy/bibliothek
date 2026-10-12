@@ -944,7 +944,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.UpdateBarcodeRequest"
+                            "$ref": "#/definitions/katalog.UpdateBarcodeRequest"
                         }
                     }
                 ],
@@ -1054,7 +1054,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.UpdateStatusRequest"
+                            "$ref": "#/definitions/katalog.UpdateStatusRequest"
                         }
                     }
                 ],
@@ -1173,7 +1173,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.TitelAuflagen"
+                            "$ref": "#/definitions/katalog.TitelAuflagen"
                         }
                     },
                     "400": {
@@ -1221,7 +1221,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.AuflageZuordnenRequest"
+                            "$ref": "#/definitions/katalog.AuflageZuordnenRequest"
                         }
                     }
                 ],
@@ -1229,7 +1229,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.TitelAuflagen"
+                            "$ref": "#/definitions/katalog.TitelAuflagen"
                         }
                     },
                     "400": {
@@ -1273,7 +1273,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.TitelAuflagen"
+                            "$ref": "#/definitions/katalog.TitelAuflagen"
                         }
                     },
                     "400": {
@@ -1386,7 +1386,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.UpdateTitelLernmittelRequest"
+                            "$ref": "#/definitions/katalog.UpdateTitelLernmittelRequest"
                         }
                     }
                 ],
@@ -1445,7 +1445,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.AuflageZuordnenRequest"
+                            "$ref": "#/definitions/katalog.AuflageZuordnenRequest"
                         }
                     }
                 ],
@@ -1453,7 +1453,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.TitelAuflagen"
+                            "$ref": "#/definitions/katalog.TitelAuflagen"
                         }
                     },
                     "400": {
@@ -1499,7 +1499,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.TitelSchlagworte"
+                            "$ref": "#/definitions/katalog.TitelSchlagworte"
                         }
                     },
                     "400": {
@@ -1547,7 +1547,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.TitelSchlagworteRequest"
+                            "$ref": "#/definitions/katalog.TitelSchlagworteRequest"
                         }
                     }
                 ],
@@ -1555,7 +1555,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.TitelSchlagworte"
+                            "$ref": "#/definitions/katalog.TitelSchlagworte"
                         }
                     },
                     "400": {
@@ -1605,7 +1605,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.UpdateTitelSignaturRequest"
+                            "$ref": "#/definitions/katalog.UpdateTitelSignaturRequest"
                         }
                     }
                 ],
@@ -1746,7 +1746,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.ExemplarEigentumRequest"
+                            "$ref": "#/definitions/katalog.ExemplarEigentumRequest"
                         }
                     }
                 ],
@@ -1944,7 +1944,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.ExemplarStandortRequest"
+                            "$ref": "#/definitions/katalog.ExemplarStandortRequest"
                         }
                     }
                 ],
@@ -2580,7 +2580,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.DnbSchlagwortVorschlag"
+                            "$ref": "#/definitions/katalog.DnbSchlagwortVorschlag"
                         }
                     },
                     "400": {
@@ -2623,7 +2623,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SchlagworteLoeschenRequest"
+                            "$ref": "#/definitions/katalog.SchlagworteLoeschenRequest"
                         }
                     }
                 ],
@@ -2631,7 +2631,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.SchlagwortAenderung"
+                            "$ref": "#/definitions/katalog.SchlagwortAenderung"
                         }
                     },
                     "400": {
@@ -2710,7 +2710,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SchlagwortVerweisRequest"
+                            "$ref": "#/definitions/katalog.SchlagwortVerweisRequest"
                         }
                     }
                 ],
@@ -2774,7 +2774,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SchlagwortFilterRequest"
+                            "$ref": "#/definitions/katalog.SchlagwortFilterRequest"
                         }
                     }
                 ],
@@ -2838,7 +2838,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SchlagwortWortRequest"
+                            "$ref": "#/definitions/katalog.SchlagwortWortRequest"
                         }
                     }
                 ],
@@ -2846,7 +2846,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.SchlagwortAenderung"
+                            "$ref": "#/definitions/katalog.SchlagwortAenderung"
                         }
                     },
                     "400": {
@@ -2905,7 +2905,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.SchlagwortZielRequest"
+                            "$ref": "#/definitions/katalog.SchlagwortZielRequest"
                         }
                     }
                 ],
@@ -2913,7 +2913,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.SchlagwortAenderung"
+                            "$ref": "#/definitions/katalog.SchlagwortAenderung"
                         }
                     },
                     "400": {
@@ -3391,7 +3391,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.SignaturGruppe"
+                                "$ref": "#/definitions/katalog.SignaturGruppe"
                             }
                         }
                     },
@@ -3430,7 +3430,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.SignaturBuecherResponse"
+                            "$ref": "#/definitions/katalog.SignaturBuecherResponse"
                         }
                     },
                     "400": {
@@ -3543,7 +3543,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.systematikRequest"
+                            "$ref": "#/definitions/katalog.systematikRequest"
                         }
                     }
                 ],
@@ -3604,7 +3604,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.systematikRequest"
+                            "$ref": "#/definitions/katalog.systematikRequest"
                         }
                     }
                 ],
@@ -3799,17 +3799,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.AuflageZuordnenRequest": {
-            "type": "object",
-            "required": [
-                "titel_id"
-            ],
-            "properties": {
-                "titel_id": {
-                    "type": "string"
-                }
-            }
-        },
         "api.BestellKonfiguration": {
             "type": "object",
             "properties": {
@@ -3875,51 +3864,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.DnbSchlagwortVorschlag": {
-            "type": "object",
-            "properties": {
-                "dnb_satz": {
-                    "description": "DNBSatz: false = die DNB kennt die ISBN nicht; beide Listen sind dann leer.",
-                    "type": "boolean"
-                },
-                "schlagwort_vorschlaege": {
-                    "description": "SchlagwortVorschlaege: die Wörter der eigenen Liste, die der Satz als Gattung, Verlagswort\noder Normdatei-Schlagwort nennt, aufgelöst über Verweise; alphabetisch.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "schlagwort_vorschlaege_neu": {
-                    "description": "SchlagwortVorschlaegeNeu: Normdatei-Schlagwörter, die die Liste noch nicht kennt. Wer eines\nanklickt, legt es mit dem Speichern in der Liste an.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "api.ExemplarEigentumRequest": {
-            "type": "object",
-            "required": [
-                "exemplar_ids"
-            ],
-            "properties": {
-                "eigentum": {
-                    "description": "Eigentum: \"land\", \"schultraeger\" oder \"\" — leer nimmt die Angabe am Exemplar weg, dann\ngilt wieder der Topf der Bestellung oder die Faustregel aus dem Titel.",
-                    "type": "string"
-                },
-                "exemplar_ids": {
-                    "description": "Jede Kennung wird an der Tür geprüft (400 statt 22P02/500), leer ist keine Auswahl.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "grund": {
-                    "type": "string"
-                }
-            }
-        },
         "api.ExemplarOhneEtikett": {
             "type": "object",
             "properties": {
@@ -3938,26 +3882,6 @@ const docTemplate = `{
                 },
                 "zugang_am": {
                     "description": "ZugangAm ist der Tag, an dem das Exemplar in den Bestand kam (zugang_am, Migration 129;\nRückfall erworben_am für Zeilen ohne Zugangsdatum). Bis zum 22.09.2026 hieß das Feld\nerworben_am und trug im Bestellweg den Bestelltag.",
-                    "type": "string"
-                }
-            }
-        },
-        "api.ExemplarStandortRequest": {
-            "type": "object",
-            "required": [
-                "exemplar_ids",
-                "standort"
-            ],
-            "properties": {
-                "exemplar_ids": {
-                    "description": "Jede Kennung wird an der Tür geprüft (400 statt 22P02/500), leer ist keine Auswahl.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "standort": {
-                    "description": "Standort: Freitext bis 255 Zeichen. Leer nimmt die Angabe weg, das Exemplar steht dann\nwieder nach der Signatur. Zeiger, weil ein fehlendes Feld kein Auftrag zum Entfernen ist.",
                     "type": "string"
                 }
             }
@@ -4115,84 +4039,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.SchlagwortAenderung": {
-            "type": "object",
-            "properties": {
-                "titel": {
-                    "type": "integer"
-                },
-                "verweise": {
-                    "type": "integer"
-                },
-                "woerter": {
-                    "type": "integer"
-                },
-                "wort": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.SchlagwortFilterRequest": {
-            "type": "object",
-            "properties": {
-                "ist_filter": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "api.SchlagwortVerweisRequest": {
-            "type": "object",
-            "required": [
-                "ziel_id"
-            ],
-            "properties": {
-                "wort": {
-                    "type": "string"
-                },
-                "ziel_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.SchlagwortWortRequest": {
-            "type": "object",
-            "properties": {
-                "alte_als_verweis": {
-                    "type": "boolean"
-                },
-                "wort": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.SchlagwortZielRequest": {
-            "type": "object",
-            "required": [
-                "ziel_id"
-            ],
-            "properties": {
-                "alte_als_verweis": {
-                    "type": "boolean"
-                },
-                "ziel_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.SchlagworteLoeschenRequest": {
-            "type": "object",
-            "required": [
-                "ids"
-            ],
-            "properties": {
-                "ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "api.SchuelerKiosk": {
             "type": "object",
             "properties": {
@@ -4221,66 +4067,6 @@ const docTemplate = `{
                 },
                 "vorname": {
                     "type": "string"
-                }
-            }
-        },
-        "api.SignaturBuch": {
-            "type": "object",
-            "properties": {
-                "autor": {
-                    "type": "string"
-                },
-                "exemplare": {
-                    "type": "integer"
-                },
-                "isbn": {
-                    "type": "string"
-                },
-                "signatur": {
-                    "type": "string"
-                },
-                "titel": {
-                    "type": "string"
-                },
-                "titel_id": {
-                    "type": "string"
-                },
-                "verliehen": {
-                    "type": "integer"
-                }
-            }
-        },
-        "api.SignaturBuecherResponse": {
-            "type": "object",
-            "properties": {
-                "buecher": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.SignaturBuch"
-                    }
-                },
-                "gekappt": {
-                    "type": "boolean"
-                },
-                "gesamt": {
-                    "type": "integer"
-                },
-                "signatur": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.SignaturGruppe": {
-            "type": "object",
-            "properties": {
-                "exemplare": {
-                    "type": "integer"
-                },
-                "signatur": {
-                    "type": "string"
-                },
-                "titel": {
-                    "type": "integer"
                 }
             }
         },
@@ -4369,90 +4155,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TitelAuflagen": {
-            "type": "object",
-            "properties": {
-                "auflagen": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.Auflage"
-                    }
-                },
-                "id": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.TitelSchlagworte": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "schlagworte": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "api.TitelSchlagworteRequest": {
-            "type": "object",
-            "properties": {
-                "schlagworte": {
-                    "description": "Zeiger: Ein Körper ohne das Feld ist ein Fehler, keine leere Liste. Diese Tür hat\nkeinen anderen Zweck, als die Schlagworte zu setzen — ein vergessenes Feld darf\nnicht still alle entfernen.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "api.UpdateBarcodeRequest": {
-            "type": "object",
-            "properties": {
-                "barcode": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.UpdateStatusRequest": {
-            "type": "object",
-            "properties": {
-                "ist_ausgesondert": {
-                    "type": "boolean"
-                },
-                "ist_ausleihbar": {
-                    "type": "boolean"
-                },
-                "zustand_abwertung_prozent": {
-                    "description": "ZustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars (Migration 127,\nAnforderungsliste Nr. 2). Ein ZEIGER, weil das Feld drei Zustände hat: ein Wert\nsetzt, 0 setzt auf null zurück, und FEHLT heißt „unangetastet\". Ohne diese\nUnterscheidung löschte jeder andere Aufruf dieser Tür einen erfassten Wasserschaden.\n\n0–100, weil die Spalte es auch tut (chk_zustand_abwertung_bereich): Ohne Prüfung\nhier käme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.",
-                    "type": "integer",
-                    "maximum": 100,
-                    "minimum": 0
-                },
-                "zustand_notiz": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.UpdateTitelLernmittelRequest": {
-            "type": "object",
-            "properties": {
-                "ist_lernmittel": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "api.UpdateTitelSignaturRequest": {
-            "type": "object",
-            "properties": {
-                "signatur": {
-                    "type": "string"
-                }
-            }
-        },
         "api.promoteStudentsRequest": {
             "type": "object",
             "properties": {
@@ -4461,17 +4163,6 @@ const docTemplate = `{
                 },
                 "dry_run": {
                     "type": "boolean"
-                }
-            }
-        },
-        "api.systematikRequest": {
-            "type": "object",
-            "properties": {
-                "bezeichnung": {
-                    "type": "string"
-                },
-                "kuerzel": {
-                    "type": "string"
                 }
             }
         },
@@ -5107,6 +4798,315 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "session_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.AuflageZuordnenRequest": {
+            "type": "object",
+            "required": [
+                "titel_id"
+            ],
+            "properties": {
+                "titel_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.DnbSchlagwortVorschlag": {
+            "type": "object",
+            "properties": {
+                "dnb_satz": {
+                    "description": "DNBSatz: false = die DNB kennt die ISBN nicht; beide Listen sind dann leer.",
+                    "type": "boolean"
+                },
+                "schlagwort_vorschlaege": {
+                    "description": "SchlagwortVorschlaege: die Wörter der eigenen Liste, die der Satz als Gattung, Verlagswort\noder Normdatei-Schlagwort nennt, aufgelöst über Verweise; alphabetisch.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "schlagwort_vorschlaege_neu": {
+                    "description": "SchlagwortVorschlaegeNeu: Normdatei-Schlagwörter, die die Liste noch nicht kennt. Wer eines\nanklickt, legt es mit dem Speichern in der Liste an.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "katalog.ExemplarEigentumRequest": {
+            "type": "object",
+            "required": [
+                "exemplar_ids"
+            ],
+            "properties": {
+                "eigentum": {
+                    "description": "Eigentum: \"land\", \"schultraeger\" oder \"\" — leer nimmt die Angabe am Exemplar weg, dann\ngilt wieder der Topf der Bestellung oder die Faustregel aus dem Titel.",
+                    "type": "string"
+                },
+                "exemplar_ids": {
+                    "description": "Jede Kennung wird an der Tür geprüft (400 statt 22P02/500), leer ist keine Auswahl.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "grund": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.ExemplarStandortRequest": {
+            "type": "object",
+            "required": [
+                "exemplar_ids",
+                "standort"
+            ],
+            "properties": {
+                "exemplar_ids": {
+                    "description": "Jede Kennung wird an der Tür geprüft (400 statt 22P02/500), leer ist keine Auswahl.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "standort": {
+                    "description": "Standort: Freitext bis 255 Zeichen. Leer nimmt die Angabe weg, das Exemplar steht dann\nwieder nach der Signatur. Zeiger, weil ein fehlendes Feld kein Auftrag zum Entfernen ist.",
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.SchlagwortAenderung": {
+            "type": "object",
+            "properties": {
+                "titel": {
+                    "type": "integer"
+                },
+                "verweise": {
+                    "type": "integer"
+                },
+                "woerter": {
+                    "type": "integer"
+                },
+                "wort": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.SchlagwortFilterRequest": {
+            "type": "object",
+            "properties": {
+                "ist_filter": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "katalog.SchlagwortVerweisRequest": {
+            "type": "object",
+            "required": [
+                "ziel_id"
+            ],
+            "properties": {
+                "wort": {
+                    "type": "string"
+                },
+                "ziel_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.SchlagwortWortRequest": {
+            "type": "object",
+            "properties": {
+                "alte_als_verweis": {
+                    "type": "boolean"
+                },
+                "wort": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.SchlagwortZielRequest": {
+            "type": "object",
+            "required": [
+                "ziel_id"
+            ],
+            "properties": {
+                "alte_als_verweis": {
+                    "type": "boolean"
+                },
+                "ziel_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.SchlagworteLoeschenRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "katalog.SignaturBuch": {
+            "type": "object",
+            "properties": {
+                "autor": {
+                    "type": "string"
+                },
+                "exemplare": {
+                    "type": "integer"
+                },
+                "isbn": {
+                    "type": "string"
+                },
+                "signatur": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                },
+                "titel_id": {
+                    "type": "string"
+                },
+                "verliehen": {
+                    "type": "integer"
+                }
+            }
+        },
+        "katalog.SignaturBuecherResponse": {
+            "type": "object",
+            "properties": {
+                "buecher": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/katalog.SignaturBuch"
+                    }
+                },
+                "gekappt": {
+                    "type": "boolean"
+                },
+                "gesamt": {
+                    "type": "integer"
+                },
+                "signatur": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.SignaturGruppe": {
+            "type": "object",
+            "properties": {
+                "exemplare": {
+                    "type": "integer"
+                },
+                "signatur": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "integer"
+                }
+            }
+        },
+        "katalog.TitelAuflagen": {
+            "type": "object",
+            "properties": {
+                "auflagen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.Auflage"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.TitelSchlagworte": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "schlagworte": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "katalog.TitelSchlagworteRequest": {
+            "type": "object",
+            "properties": {
+                "schlagworte": {
+                    "description": "Zeiger: Ein Körper ohne das Feld ist ein Fehler, keine leere Liste. Diese Tür hat\nkeinen anderen Zweck, als die Schlagworte zu setzen — ein vergessenes Feld darf\nnicht still alle entfernen.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "katalog.UpdateBarcodeRequest": {
+            "type": "object",
+            "properties": {
+                "barcode": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.UpdateStatusRequest": {
+            "type": "object",
+            "properties": {
+                "ist_ausgesondert": {
+                    "type": "boolean"
+                },
+                "ist_ausleihbar": {
+                    "type": "boolean"
+                },
+                "zustand_abwertung_prozent": {
+                    "description": "ZustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars (Migration 127,\nAnforderungsliste Nr. 2). Ein ZEIGER, weil das Feld drei Zustände hat: ein Wert\nsetzt, 0 setzt auf null zurück, und FEHLT heißt „unangetastet\". Ohne diese\nUnterscheidung löschte jeder andere Aufruf dieser Tür einen erfassten Wasserschaden.\n\n0–100, weil die Spalte es auch tut (chk_zustand_abwertung_bereich): Ohne Prüfung\nhier käme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.",
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
+                "zustand_notiz": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.UpdateTitelLernmittelRequest": {
+            "type": "object",
+            "properties": {
+                "ist_lernmittel": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "katalog.UpdateTitelSignaturRequest": {
+            "type": "object",
+            "properties": {
+                "signatur": {
+                    "type": "string"
+                }
+            }
+        },
+        "katalog.systematikRequest": {
+            "type": "object",
+            "properties": {
+                "bezeichnung": {
+                    "type": "string"
+                },
+                "kuerzel": {
                     "type": "string"
                 }
             }

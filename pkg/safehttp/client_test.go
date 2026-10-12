@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// Diese Tabelle stand bis zum Audit in api/image_caching_test.go. Sie ist mit der
+// Diese Tabelle stand bis zum Audit in api/katalog/image_caching_test.go. Sie ist mit der
 // Prüffunktion nach pkg/safehttp gewandert, weil dieselbe Schranke jetzt auch die
 // Cover- und Metadaten-Abrufe des Inventur-Moduls schützt.
 func TestVerbieteInterneZieladressen(t *testing.T) {

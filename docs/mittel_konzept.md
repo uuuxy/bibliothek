@@ -380,7 +380,7 @@ nicht, beide Rechnungen gehen an die Schule. Der Vermerk nennt weder Träger noc
 Behörde, nur den Topf (Vorgabe: kein Rechts- oder Regionalbezug außerhalb der
 Formulare an Schüler). Gates: `api/bestellung_mittel_pg_test.go`,
 `api/bestellung_mittel_backfill_pg_test.go`, `api/bestellanschreiben_test.go`,
-`internal/service/bestellmail_mittel_test.go`, `api/titel_lernmittel_pg_test.go`,
+`internal/service/bestellmail_mittel_test.go`, `api/katalog/titel_lernmittel_pg_test.go`,
 `api/bestellung_mittel_korrektur_pg_test.go`, `api/lieferant_zweitnummer_pg_test.go`,
 `pkg/mitteltopf/paritaet_test.go`, `frontend/src/lib/stores/orderStore.test.js`.
 

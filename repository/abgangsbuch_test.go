@@ -4,7 +4,7 @@ import "testing"
 
 // TestAbgangsgrundText: Die Wörter stehen auf dem gedruckten Abgangsbuch. Geprüft werden
 // alle Gründe, die chk_aussonderung_grund zulässt, und der leere Grund der Altdaten aus der
-// Zeit vor Migration 043. api/abgangsbuch_pg_test.go prüft über die Datenbank nur „Verlust".
+// Zeit vor Migration 043. api/katalog/abgangsbuch_pg_test.go prüft über die Datenbank nur „Verlust".
 func TestAbgangsgrundText(t *testing.T) {
 	faelle := []struct {
 		grund, erwartet string

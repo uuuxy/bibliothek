@@ -1,0 +1,77 @@
+package katalog
+
+import (
+	"errors"
+	"net/http"
+
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
+	"bibliothek/repository"
+)
+
+// UpdateBarcodeRequest holds the payload for updating a copy's barcode.
+type UpdateBarcodeRequest struct {
+	Barcode string `json:"barcode"`
+}
+
+// UpdateCopyBarcodeHandler updates the barcode of a physical book copy.
+// @Summary      Update copy barcode
+// @Description  Updates the barcode of a physical book copy, replacing placeholders like AUTO-.
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string                true  "Book copy ID (UUID)"
+// @Param        body  body      UpdateBarcodeRequest  true  "New barcode payload"
+// @Success      200   {object}  map[string]string
+// @Failure      400   {object}  map[string]string
+// @Failure      409   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Router       /buecher/exemplare/{id}/barcode [put]
+func (s *Tueren) UpdateCopyBarcodeHandler(bookRepo repository.BookRepository) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		s.handleUpdateCopyBarcode(w, r, bookRepo)
+	}
+}
+
+// handleUpdateCopyBarcode setzt den Barcode eines Exemplars und ordnet die Ablehnungen ein.
+func (s *Tueren) handleUpdateCopyBarcode(w http.ResponseWriter, r *http.Request, bookRepo repository.BookRepository) {
+	id := r.PathValue("id")
+	if id == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
+		return
+	}
+
+	var req UpdateBarcodeRequest
+	if !tuer.DecodeAndValidate(w, r, &req) {
+		return
+	}
+
+	if req.Barcode == "" {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("barcode cannot be empty"))
+		return
+	}
+
+	ctx := r.Context()
+
+	if err := bookRepo.UpdateCopyBarcode(ctx, id, req.Barcode); err != nil {
+		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			return
+		}
+		// Eine Nummer ist entweder Buch oder Ausweis (Migration 131): Die Theke löst
+		// einen Scan zuerst als Buch auf — trüge ein Buch die Nummer eines Ausweises,
+		// lüde dieser Ausweis das Buch.
+		if repository.IstNummerBuchOderAusweisKollision(err) {
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("diese Nummer ist der Ausweis eines Lesers und kann kein Buch-Barcode sein"))
+			return
+		}
+		if repository.IstExemplarBarcodeVergeben(err) {
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New("dieser Barcode wird bereits von einem anderen Exemplar verwendet"))
+			return
+		}
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	tuer.RespondSuccess(w)
+}

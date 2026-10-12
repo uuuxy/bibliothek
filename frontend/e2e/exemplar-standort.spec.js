@@ -4,7 +4,7 @@ import { uiLogin, seedSQL, querySQL, gehZu, uniqueSuffix, scanneWieScanner } fro
 // Der Standort am Exemplar (docs/OFFEN.md 5.53): Die Karte nennt ihn, markierte Exemplare
 // bekommen ihn über „Standort ändern", und Kopf der Akte und Titel-Verwaltung nennen die
 // Standorte der Exemplare mit ihrer Zahl. Regeln und Grenzen prüfen die Go-Tests
-// (api/exemplar_standort_pg_test.go); hier steht der Weg durch den Browser bis in die Tabelle.
+// (api/katalog/exemplar_standort_pg_test.go); hier steht der Weg durch den Browser bis in die Tabelle.
 
 // Was ein Test anlegt, räumt er über die Kennung des Titels wieder ab: Ein Rest stünde sonst
 // als Vorschlag im Dialog des nächsten Laufs.

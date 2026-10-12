@@ -15,7 +15,8 @@ import (
 )
 
 // GET /api/bestand/abgangsbuch/pdf und /api/bestand/zugangsbuch/pdf liefern das Blatt zum
-// Abheften. Die Erzeuger prüft pdf/bestandsbuch_test.go, ihre Eingabe bestandsbuch_test.go;
+// Abheften. Die Erzeuger prüft pdf/bestandsbuch_test.go, ihre Eingabe
+// api/katalog/bestandsbuch_test.go;
 // hier steht die Tür davor, über den Router und mit Sitzung: Das Blatt trägt die Zeilen der
 // Datenbank im Zeitraum, je Topf unter seiner Überschrift, und keine Zeile von außerhalb.
 func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {

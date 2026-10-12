@@ -57,7 +57,8 @@ var fkAktionenBestand = []string{
 	"CASCADE  titel_schlagworte.schlagwort_id -> schlagworte",
 	// Migration 143, befragt am 23.09.2026: Fällt ein Wort, fallen die Verweise darauf mit —
 	// ein Verweis ohne Ziel hat keine Bedeutung. Wer löscht, ist LoescheSchlagworte; die
-	// Antwort nennt die Zahl der Verweise, die mitgingen (schlagworte_pflege_pg_test.go).
+	// Antwort nennt die Zahl der Verweise, die mitgingen
+	// (api/katalog/schlagworte_pflege_pg_test.go).
 	"CASCADE  schlagworte.verweis_auf -> schlagworte",
 	// Befragt (Register 06.09.2026): „Plan verwerfen" löscht den ganzen Plan samt
 	// Zeilen, freien Tagen und Auslassungen — bekannt und als Produktfrage notiert.
@@ -130,7 +131,7 @@ var fkAktionenBestand = []string{
 	"SET NULL  bestellungen_positionen.titel_id -> buecher_titel",
 	// Befragt am 25.09.2026 (Migration 148): Ein Werk löscht nur repository/auflagen.go, und
 	// erst, nachdem es den letzten Titel daran gelöst hat (raeumeWerkAuf, vereineWerke) —
-	// auflagen_pg_test.go zählt danach die Werke. Der SET NULL fängt einen Titel auf, der
+	// api/katalog/auflagen_pg_test.go zählt danach die Werke. Der SET NULL fängt einen Titel auf, der
 	// dabei übersehen würde: Er steht danach allein, wie vor dem Zusammenfassen, und nichts
 	// anderes hängt an werk_id. Im Protokoll steht das Zusammenfassen nicht, so wenig wie
 	// jede andere Änderung an Titeldaten.
@@ -244,7 +245,7 @@ var checkBedingungenBestand = []string{
 	// (SetzeExemplarEigentum, setzt beide in einer Anweisung, prüft das Eigentum vorher gegen
 	// mitteltopf.Gueltig → 400). Keiner läuft gegen die Regel; ein dritter Schreiber, der nur
 	// eigentum setzt, bekommt einen Abbruch (23514), keinen Satz
-	// (api/exemplar_eigentum_pg_test.go, Schritt 6). Gegenfrage: NULL/NULL ist der Normalfall —
+	// (api/katalog/exemplar_eigentum_pg_test.go, Schritt 6). Gegenfrage: NULL/NULL ist der Normalfall —
 	// ExemplarTopfHerkunftSQL liest die Quelle nur, wenn Eigentum steht.
 	"chk_exemplar_eigentum_mit_quelle", "chk_exemplar_eigentum_quelle",
 	// Migration 158, befragt am 06.10.2026: Ein gesetzter Standort ist nicht leer und höchstens
@@ -253,7 +254,7 @@ var checkBedingungenBestand = []string{
 	// im Protokoll (internal/littera, TestStandortKommtMit und
 	// TestUeberlangerStandortWirdGekuerzt). Die Buchakte (SetzeExemplarStandort) kürzt den Rand,
 	// schreibt für „entfernen" NULL und weist einen längeren Wert mit 400 ab
-	// (api/exemplar_standort_pg_test.go). Migration 159 kürzt Rand und Länge selbst
+	// (api/katalog/exemplar_standort_pg_test.go). Migration 159 kürzt Rand und Länge selbst
 	// (standort_am_titel_entfaellt_pg_test.go). Gegenfrage: Die Regel lässt Leerraum am Rand
 	// eines nicht leeren Werts zu; jeder Schreiber trimmt selbst. NULL heißt „steht nach der
 	// Signatur" und ist der Normalfall.

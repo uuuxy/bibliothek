@@ -10,7 +10,7 @@ import (
 
 // Netzausfall ist kein Nicht-Treffer.
 //
-// Bis zum 31.08.2026 antworteten alle drei Lookup-Wege (api/isbn_handler.go,
+// Bis zum 31.08.2026 antworteten alle drei Lookup-Wege (api/katalog/isbn_handler.go,
 // inventur/isbn_suche.go, inventur/cover_aktualisierung.go) bei ausgefallenem Netz mit
 // 404 „nicht gefunden" — für die Theke derselbe Bildschirm wie ein Buch, das die DNB
 // wirklich nicht kennt. Bei einer WLAN-Störung katalogisiert dann jemand Bücher von

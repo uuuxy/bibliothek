@@ -29,6 +29,7 @@ import (
 
 	"bibliothek/api/benutzer"
 	"bibliothek/api/inventurlauf"
+	"bibliothek/api/katalog"
 	"bibliothek/api/lernmittel"
 	"bibliothek/api/mahnwesen"
 	"bibliothek/api/portal"
@@ -116,6 +117,11 @@ func (s *Server) schaden() *schaden.Tueren {
 	return &schaden.Tueren{Basis: &s.Basis}
 }
 
+// katalog ist der Zugang zu den Türen des Medienkatalogs zu einem Titel und seinen Exemplaren.
+func (s *Server) katalog() *katalog.Tueren {
+	return &katalog.Tueren{Basis: &s.Basis}
+}
+
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.
 // Maps endpoints to their handlers and wraps protected endpoints in RBAC middleware.
 func (s *Server) Routes() http.Handler {
@@ -189,7 +195,7 @@ func (s *Server) registerAuthRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /login", AuthRateLimitMiddleware(http.HandlerFunc(auth.LoginHandler(s.DB.Pool, s.Auth, s.CookieSecure))))
 
 	// Image Caching (Public)
-	mux.HandleFunc("GET /api/images/cover", s.ServeCoverImageHandler())
+	mux.HandleFunc("GET /api/images/cover", s.katalog().ServeCoverImageHandler())
 
 	// CSRF token bootstrap (public): lets API clients obtain a token + cookie before any mutation
 	mux.HandleFunc("GET /api/csrf-token", s.CSRFTokenHandler())
@@ -215,7 +221,7 @@ func (s *Server) registerImportRoutes(mux *http.ServeMux) {
 	// LITTERA CSV Import (Accessible by Admin)
 	mux.Handle("POST /api/import/littera", s.RequirePermission("manage_inventory")(s.system().LitteraImportHandler()))
 	mux.Handle("POST /api/admin/import-bestand", s.RequirePermission("manage_inventory")(http.HandlerFunc(s.system().BestandImportHandler)))
-	mux.Handle("POST /api/admin/sync-covers", s.RequirePermission("manage_inventory")(SyncCoversHandler(s.DB.Pool)))
+	mux.Handle("POST /api/admin/sync-covers", s.RequirePermission("manage_inventory")(katalog.SyncCoversHandler(s.DB.Pool)))
 }
 
 func (s *Server) registerSwaggerRoutes(mux *http.ServeMux) {

@@ -76,13 +76,13 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/statistiken", s.RequirePermission("view_stats")(s.system().GetStatisticsHandler()))
 
 	// Lookups
-	mux.Handle("GET /api/systematics", s.RequirePermission("view_books")(s.GetSystematicsHandler()))
+	mux.Handle("GET /api/systematics", s.RequirePermission("view_books")(s.katalog().GetSystematicsHandler()))
 	// Das Vokabular, aus dem das Buchformular die Signatur vorschlägt. War bisher nur
 	// lesbar — es gab keinen Weg, es zu füllen, obwohl der Vorschlag davon abhängt.
-	mux.Handle("POST /api/systematics", s.RequirePermission("edit_books")(s.CreateSystematikHandler()))
-	mux.Handle("PUT /api/systematics/{id}", s.RequirePermission("edit_books")(s.UpdateSystematikHandler()))
-	mux.Handle("DELETE /api/systematics/{id}", s.RequirePermission("edit_books")(s.DeleteSystematikHandler()))
-	mux.Handle("GET /api/faecher", s.RequirePermission("view_books")(s.GetFaecherHandler()))
+	mux.Handle("POST /api/systematics", s.RequirePermission("edit_books")(s.katalog().CreateSystematikHandler()))
+	mux.Handle("PUT /api/systematics/{id}", s.RequirePermission("edit_books")(s.katalog().UpdateSystematikHandler()))
+	mux.Handle("DELETE /api/systematics/{id}", s.RequirePermission("edit_books")(s.katalog().DeleteSystematikHandler()))
+	mux.Handle("GET /api/faecher", s.RequirePermission("view_books")(s.katalog().GetFaecherHandler()))
 
 	// Audit Logs
 	mux.Handle("GET /api/admin/auditlog", s.RequirePermission("manage_users")(s.system().GetAdminAuditLogsHandler()))
@@ -97,22 +97,22 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// Signaturen — abgeleitet aus buecher_titel.signatur, nicht aus einer Stammtabelle.
 	// Die frühere Tabelle `signatures` (samt GET/POST /api/signatures) ist mit
 	// Migration 060 entfallen: Sie kannte Namen, die an keinem Buch hingen.
-	mux.Handle("GET /api/signaturen", s.RequirePermission("view_books")(s.GetSignaturenHandler()))
-	mux.Handle("GET /api/signaturen/buecher", s.RequirePermission("view_books")(s.GetSignaturBuecherHandler()))
+	mux.Handle("GET /api/signaturen", s.RequirePermission("view_books")(s.katalog().GetSignaturenHandler()))
+	mux.Handle("GET /api/signaturen/buecher", s.RequirePermission("view_books")(s.katalog().GetSignaturBuecherHandler()))
 	// Schlagworte (Migration 138): die Vorschlagsliste der Eingabefelder, aus dem Bestand.
-	mux.Handle("GET /api/schlagworte", s.RequirePermission("view_books")(s.GetSchlagwortVorschlaegeHandler()))
+	mux.Handle("GET /api/schlagworte", s.RequirePermission("view_books")(s.katalog().GetSchlagwortVorschlaegeHandler()))
 	// Der Vorschlag aus der DNB zu einer ISBN (entschieden am 30.09.2026): für das Buchformular
 	// und das Nachbestellen. Recht wie die Liste darüber und wie GET /api/lookup/{isbn}, das
 	// dieselbe DNB fragt — der Vorschlag liest nur, eingetragen wird über die Türen des Titels.
-	mux.Handle("GET /api/schlagworte/dnb-vorschlag", s.RequirePermission("view_books")(s.DnbSchlagwortVorschlagHandler()))
+	mux.Handle("GET /api/schlagworte/dnb-vorschlag", s.RequirePermission("view_books")(s.katalog().DnbSchlagwortVorschlagHandler()))
 	// Pflege der Schlagworte (Migration 143, OFFEN.md 4.20 Stufe 1): wie die Systematik mit
 	// edit_books — die Pflege ändert den Katalog, nicht den Bestand an Exemplaren.
-	mux.Handle("GET /api/schlagworte/pflege", s.RequirePermission("edit_books")(s.GetSchlagwortPflegeHandler()))
-	mux.Handle("PUT /api/schlagworte/{id}/wort", s.RequirePermission("edit_books")(s.PutSchlagwortWortHandler()))
-	mux.Handle("PUT /api/schlagworte/{id}/filter", s.RequirePermission("edit_books")(s.PutSchlagwortFilterHandler()))
-	mux.Handle("POST /api/schlagworte/{id}/zusammenfuehren", s.RequirePermission("edit_books")(s.PostSchlagwortZusammenfuehrenHandler()))
-	mux.Handle("POST /api/schlagworte/verweise", s.RequirePermission("edit_books")(s.PostSchlagwortVerweisHandler()))
-	mux.Handle("POST /api/schlagworte/loeschen", s.RequirePermission("edit_books")(s.PostSchlagworteLoeschenHandler()))
+	mux.Handle("GET /api/schlagworte/pflege", s.RequirePermission("edit_books")(s.katalog().GetSchlagwortPflegeHandler()))
+	mux.Handle("PUT /api/schlagworte/{id}/wort", s.RequirePermission("edit_books")(s.katalog().PutSchlagwortWortHandler()))
+	mux.Handle("PUT /api/schlagworte/{id}/filter", s.RequirePermission("edit_books")(s.katalog().PutSchlagwortFilterHandler()))
+	mux.Handle("POST /api/schlagworte/{id}/zusammenfuehren", s.RequirePermission("edit_books")(s.katalog().PostSchlagwortZusammenfuehrenHandler()))
+	mux.Handle("POST /api/schlagworte/verweise", s.RequirePermission("edit_books")(s.katalog().PostSchlagwortVerweisHandler()))
+	mux.Handle("POST /api/schlagworte/loeschen", s.RequirePermission("edit_books")(s.katalog().PostSchlagworteLoeschenHandler()))
 
 	// Real-time Events. Nur Sitzung, kein Fachrecht: den SSE-Stream öffnet jeder
 	// eingeloggte Client (authStore + Kiosk-Omnibox), und an ihm hängt der Herzschlag für

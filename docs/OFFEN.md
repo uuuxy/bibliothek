@@ -164,8 +164,8 @@ lässt sich dort anhalten.
   Ordner seines Themas, als eigenes Testpaket. Der Aufwand je Thema ist gemessen (5.65).
 - [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt. Umgezogen: Inventur
   (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`), System
-  (`api/system`), Mahnwesen (`api/mahnwesen`), Schaden (`api/schaden`). Offen: Druck mit
-  Bestellung, Katalog, Leser, zuletzt die Theke.
+  (`api/system`), Mahnwesen (`api/mahnwesen`), Schaden (`api/schaden`), Katalog
+  (`api/katalog`). Offen: Druck mit Bestellung, Leser, zuletzt die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
   die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
   Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
@@ -530,7 +530,7 @@ von Stufe 4 sechs der elf Themen.
 
   | Thema      | Dateien | Zeilen | Routen | Testdateien | Dateien heute in `api/` |
   | ---------- | ------- | ------ | ------ | ----------- | ----------------------- |
-  | Katalog    | 21      | 3.035  | 43     | 35          | `copy_admin*.go`, `auflagen_handler.go`, `book_systematik_handler.go`, `isbn_handler.go`, `schlagwort*.go`, `signaturen_handler.go`, `systematik_handler.go`, `lookups.go`, `exemplar_*.go`, `cover.go`, `cover_quelle_bindung.go`, `image_caching.go`, `geraete.go`, `abgangsbuch_handler.go`, `zugangsbuch_handler.go`, `bestandsbuch.go` |
+  | Katalog    | 21      | 3.035  | 43     | 35          | `copy_admin*.go`, `auflagen_handler.go`, `book_systematik_handler.go`, `isbn_handler.go`, `schlagwort*.go`, `signaturen_handler.go`, `systematik_handler.go`, `lookups.go`, `exemplar_*.go`, `cover.go`, `cover_quelle_bindung.go`, `image_caching.go`, `geraete.go`, `abgangsbuch_handler.go`, `zugangsbuch_handler.go`, `bestandsbuch.go`, seit dem 12.10.2026 in `api/katalog` |
   | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go` |
   | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go` |
   | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system` |

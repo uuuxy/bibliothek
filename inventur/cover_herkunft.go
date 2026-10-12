@@ -3,7 +3,7 @@ package inventur
 import "bibliothek/pkg/coverquelle"
 
 // Die Host-Allowlist stand bis zum 04.08.2026 hier als eigene Kopie, mit einem
-// Kommentar, der zur Pflege der Zwillingsliste in api/image_caching.go aufrief. Genau
+// Kommentar, der zur Pflege der Zwillingsliste in api/katalog/image_caching.go aufrief. Genau
 // diese Konstruktion — Gleichheit, die nur ein Kommentar behauptet — war bereits
 // auseinandergelaufen: Die dritte Kopie in metadaten_client.go kannte books.google.*
 // nicht. Alle drei fragen jetzt pkg/coverquelle.

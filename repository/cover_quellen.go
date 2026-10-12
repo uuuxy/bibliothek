@@ -10,7 +10,7 @@ import (
 // ISBN und ob es überhaupt einen solchen Titel gibt. Die ISBN steht in buecher_titel mit
 // oder ohne Trennstriche — verglichen wird die bereinigte Form (isbnutil.CleanISBN).
 //
-// Für den Cover-Proxy (api/cover_quelle_bindung.go): Er lädt nur Adressen, die der Katalog
+// Für den Cover-Proxy (api/katalog/cover_quelle_bindung.go): Er lädt nur Adressen, die der Katalog
 // für diese ISBN kennt oder die sich aus ihr herleiten lassen — sonst bestimmte der
 // erste unangemeldete Aufrufer, welches Bild unter einer Schulbuch-ISBN liegt.
 func CoverQuellenFuerISBN(ctx context.Context, pool db.PgxPoolIface, isbnSauber string) (quellen []string, imKatalog bool, err error) {

@@ -91,7 +91,7 @@ func GenerateAbgangsbuchPDF(buch Abgangsbuch, schule SchuleInfo) ([]byte, error)
 //
 // Leere Abschnitte überspringt das Blatt: Eine Überschrift ohne Inhalt hilft niemandem, der
 // den Nachweis abheftet. Auf dem Bildschirm steht der leere Topf als Feld mit einer Null,
-// siehe abschnitteAus in api/bestandsbuch.go.
+// siehe abschnitteAus in api/katalog/bestandsbuch.go.
 func abgangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt AbgangsAbschnitt) int {
 	zeilen := abschnitt.Zeilen
 	if len(zeilen) == 0 {

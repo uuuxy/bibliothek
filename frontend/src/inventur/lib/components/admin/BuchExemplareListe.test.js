@@ -27,7 +27,7 @@ const exemplar = (nummer, zusatz = {}) => ({
 beforeEach(() => vi.clearAllMocks());
 
 // GET /api/buecher/titel/{id}/exemplare antwortet mit dem nackten Array (RespondJSON,
-// api/copy_admin.go) — so lesen es die Buchakte (useBookAkte) und das Druck-Center
+// api/katalog/copy_admin.go) — so lesen es die Buchakte (useBookAkte) und das Druck-Center
 // (labels.svelte.js). Die Maske las einmal `json.data`, bekam undefined und zeigte bei jedem
 // Titel „Exemplare (0)".
 describe('BuchExemplareListe', () => {

@@ -14,7 +14,7 @@
 // weder Host noch Schema noch Port beeinflussen. Ein "https://covers.openlibrary.org
 // :2222/x.jpg" verliert damit auch seinen Port, ein "http://…" wird zu HTTPS.
 //
-// Die Listen standen bis zum 04.08.2026 dreifach im Code (api/image_caching.go,
+// Die Listen standen bis zum 04.08.2026 dreifach im Code (api/katalog/image_caching.go,
 // inventur/cover_downloader.go, inventur/metadaten_client.go), zusammengehalten von
 // einem Kommentar, der zur Pflege aufrief. Eine Sicherheitsliste, deren Gleichheit nur
 // ein Kommentar behauptet, driftet — sie tat es bereits: Die Metadaten-Liste kannte

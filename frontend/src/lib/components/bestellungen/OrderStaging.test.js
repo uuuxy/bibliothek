@@ -24,7 +24,7 @@ import OrderStaging from './OrderStaging.svelte';
 // oder Schulträger. Bleibt sie liegen, bestellt die Schule ein Schulbuch aus dem falschen
 // Haushalt, und auf dem Anschreiben steht der falsche Vermerk.
 //
-// Der Server-Teil ist in api/titel_lernmittel_pg_test.go belegt; hier fehlte die
+// Der Server-Teil ist in api/katalog/titel_lernmittel_pg_test.go belegt; hier fehlte die
 // Oberfläche.
 
 const titel = { id: 't-1', titel: 'Mathematik 7', autor: 'Autor', isbn: '978', signatur: 'MA 7' };

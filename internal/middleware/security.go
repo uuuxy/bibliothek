@@ -50,7 +50,7 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 		// und OpenLibrary holten. Das war ohnehin die falsche Bauweise: Es meldete den
 		// Browser jeder Lehrkraft bei einem Dritten an und gab preis, welche ISBNs die
 		// Schule gerade ansieht. Alle sieben laufen jetzt über den eigenen Cover-Proxy
-		// (frontend/src/lib/utils/coverSrc.js, Allowlist in api/image_caching.go) — die
+		// (frontend/src/lib/utils/coverSrc.js, Allowlist in api/katalog/image_caching.go) — die
 		// Bilder kommen unverändert an, nur eben vom eigenen Server.
 		//
 		// data: und blob: bleiben: erzeugte Barcodes/QR-Codes und Datei-Vorschauen vor
@@ -80,7 +80,7 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 		//
 		// Nur /api/: Die Programmdateien der Oberfläche tragen keine Personendaten. Die
 		// Vorgabe steht VOR dem Handler, ein eigener Kopf überschreibt sie — heute die Cover
-		// (api/image_caching.go) und die Buchnummern der Theke (api/buchbarcodes_handler.go),
+		// (api/katalog/image_caching.go) und die Buchnummern der Theke (api/buchbarcodes_handler.go),
 		// beide ohne Personendaten. Dass keine Antwort mit Personendaten sie aufweicht, prüft
 		// api/pii_antwort_gate_pg_test.go an jeder Route ab Stufe 1.
 		if strings.HasPrefix(r.URL.Path, "/api/") {

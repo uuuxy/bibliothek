@@ -11,7 +11,7 @@ import (
 
 // Die Blätter von Zugangs- und Abgangsbuch, geprüft am gedruckten Text. Die Erzeuger kennen
 // weder Töpfe noch Abfragen: Sie drucken die Abschnitte, Überschriften und Zahlen, die ihre
-// Eingabe trägt. Dass die Tür sie richtig füllt, prüft api/bestandsbuch_test.go.
+// Eingabe trägt. Dass die Tür sie richtig füllt, prüft api/katalog/bestandsbuch_test.go.
 
 var (
 	buchVon = time.Date(2026, time.March, 16, 0, 0, 0, 0, time.UTC)

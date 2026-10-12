@@ -40,7 +40,7 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	// die Erwartung an der Zone, in der der Test zufällig lief — lokal (MESZ) und in der
 	// CI (UTC) wichen die beiden zwischen Mitternacht und 2 Uhr um einen Tag ab, und der
 	// Lauf vom 18.09.2026 war in der CI genau deshalb rot. Gleiche Lesart wie im
-	// Nachbartest (zugangsbuch_pg_test.go).
+	// Nachbartest (api/katalog/zugangsbuch_pg_test.go).
 	heute := time.Now().In(schulzeit.Zone())
 	titelID := testdaten.TitelMitSignatur(t, pool, "Zugangsdatum-Titel", "Zdt 1", 0)
 

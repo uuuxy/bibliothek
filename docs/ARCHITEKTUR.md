@@ -718,7 +718,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   Anfrage nichts an. Ein Test hält jedes Feld der Eingabe gegen seine Quelle
   (`api/buch_etiketten_test.go`). Das Blatt eines Bestandsbuchs entsteht aus der Antwort für
   den Bildschirm (`abgangsbuchBlatt`, `zugangsbuchBlatt`): Es trägt dieselben Abschnitte,
-  Überschriften und Zahlen wie die Liste (`api/bestandsbuch_test.go`). Die Mahnliste bekommt
+  Überschriften und Zahlen wie die Liste (`api/katalog/bestandsbuch_test.go`). Die Mahnliste bekommt
   je Schüler eine Seite aus den Gruppen der Abfrage (`mahnlisteSeiten`,
   `api/mahnwesen/mahnwesen_mail.go`), der Mahnbrief je Schüler Anschrift und Bücher aus den Zeilen der
   Abfrage (`mahnbriefEmpfaenger`, `api/mahnwesen/mahnwesen_bulk.go`); Betreff, Text und Absenderzeile
@@ -2177,7 +2177,7 @@ gegen die Tür klopft.
 | Kontoauszug, Rechnung, Schadensfall, LMF-Plan | `pdf/` (gofpdf/maroto)             | Rechnung und Schadensfall nennen den Zahlungsweg je Topf (`pdf/zahlungsweg.go`)                       |
 | Bescheid (Landes-Lernmittel)              | `pdf/bescheid.go`                      | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
 | Etiketten und Ausweise                    | `pdf/etikett_*.go`, `pkg/strichcode`   | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
-| Zugangs-/Abgangsbuch                      | `pdf/abgangsbuch.go`, `pdf/zugangsbuch.go`; Gliederung nach Topf in `api/bestandsbuch.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |
+| Zugangs-/Abgangsbuch                      | `pdf/abgangsbuch.go`, `pdf/zugangsbuch.go`; Gliederung nach Topf in `api/katalog/bestandsbuch.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |
 | DSGVO-Auskunft                            | `internal/auskunft/blatt*.go`          | Auskunftsrecht als Dokument, gedruckt aus derselben Antwort wie die abgerufene Auskunft               |
 | Barcodebogen für den Händler              | `api/bestellbestaetigung_etiketten.go` | Für Händler, die selbst etikettieren                                                                  |
 
@@ -4240,7 +4240,7 @@ Einstieg.
 | Begriff                     | Bedeutung                                                                                                                                                              | Im Code / in der DB                                        |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | **Abgänger**                | Schüler, der bestätigt in der LUSD war und im neuen Export fehlt. Löst Sperre, Karenz und später Löschung aus                                                          | `abgaenger_seit`, `jobs/cron_dsgvo_abgaenger.go`           |
-| **Abgangsbuch**             | Nachweis der aus dem Bestand ausgegangenen Bücher je Halbjahr, mit Grund, getrennt nach Land und Träger                                                                 | `api/abgangsbuch_handler.go`, `pdf/abgangsbuch.go`         |
+| **Abgangsbuch**             | Nachweis der aus dem Bestand ausgegangenen Bücher je Halbjahr, mit Grund, getrennt nach Land und Träger                                                                 | `api/katalog/abgangsbuch_handler.go`, `pdf/abgangsbuch.go`         |
 | **Abholfach**               | Ort, an dem ein für eine Vormerkung reserviertes Exemplar auf Abholung wartet; Hinweis an der Theke trägt Titel und Frist, bewusst ohne IDs                             | `repository/vormerkung_abholfach_pg_test.go`               |
 | **Abwertung**               | Minderung des Ersatzwerts nach Alter und Zustand des Exemplars                                                                                                          | `pkg/ersatzwert`, `repository/ersatzwert_groessen.go`       |
 | **Auflage**                 | Eine Ausgabe eines Buchs mit eigener ISBN und eigenen Seitenzahlen — im Katalog ein eigener Titel. Auflagen desselben Buchs lassen sich zu einem **Werk** zusammenfassen | `buecher_titel.auflage` (Migration 126), `repository/auflagen.go` |
@@ -4250,7 +4250,7 @@ Einstieg.
 | **Bescheid**                | Schadensersatz-Bescheid für Landes-Lernmittel; nennt das Konto (Barzahlung ist laut Erlass nicht der Weg), hat eine eigene Nummernfolge                                  | `schadensersatz_bescheide`, `pdf/bescheid.go`               |
 | **Bestand**                 | Die physischen Stücke — im Unterschied zum **Katalog** (den Titeln)                                                                                                     | `buecher_exemplare`                                        |
 | **Dauerleihe**              | Ausleihe an das Kollegium: Sie wird nie überfällig und nie gemahnt, die Akte zeigt „ohne Frist"; gespeichert wird eine Frist von einem Jahr | `resolveBorrowerAndDueTime` (`internal/service/loan_checkout_validation.go`) |
-| **Bestandsbuch / Zugangsbuch** | Nachweis der in den Bestand gekommenen Bücher je Halbjahr, mit Lieferant                                                                                             | `api/bestandsbuch.go`                                      |
+| **Bestandsbuch / Zugangsbuch** | Nachweis der in den Bestand gekommenen Bücher je Halbjahr, mit Lieferant                                                                                             | `api/katalog/bestandsbuch.go`                                      |
 | **Betriebsbereitschaft**    | Die Selbstprüfung: „Was ist eingerichtet, aber nicht in Betrieb?"                                                                                                       | `api/betriebsbereitschaft*.go`                              |
 | **Exemplar**                | Ein einzelnes physisches Buch mit eigenem Barcode                                                                                                                       | `buecher_exemplare`                                        |
 | **Ersatzwert**              | Was ein Buch **heute noch wert** ist — als Vorschlag **mit Herleitung**, weil der Betrag im Ermessen der Schule liegt                                                    | `pkg/ersatzwert`                                            |

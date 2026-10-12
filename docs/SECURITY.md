@@ -321,7 +321,7 @@ dutzende Bilder gleichzeitig lädt. Jetzt gilt:
 | Bildgröße             | 50 MP (`GuardImageDimensions`, nur Header)    | Decompression-Bomb: 30000×30000 px ≈ 3,6 GB im Speicher, wenige hundert KB auf der Leitung |
 | Downloads/IP          | 30/s — **nur der Cache-Fehltreffer**          | Verstärkung: eine Anfrage von außen = eine ausgehende Anfrage von uns                      |
 
-**Gebunden an den Katalog (seit 05.09.2026, `api/cover_quelle_bindung.go`).** Cache-Schlüssel
+**Gebunden an den Katalog (seit 05.09.2026, `api/katalog/cover_quelle_bindung.go`).** Cache-Schlüssel
 (`isbn`) und Inhalt (`url`) waren bis dahin zwei unabhängige Angaben: Wer zuerst kam,
 bestimmte dauerhaft, welches Bild unter dieser ISBN lag — ohne Anmeldung. Am Handler
 nachgestellt: ein Aufruf mit der ISBN eines Schulbuchs und der Adresse eines beliebigen
@@ -334,7 +334,7 @@ herleiten** könnte (die zwei Kandidaten-Muster aus `coverSrc.js`, ohne Anmeldun
 Katalog-ISBNs; angemeldet auch für die ISBN-Suche beim Anlegen). Dateiname ist ISBN plus
 Hash der geprüften Adresse — zwei Adressen teilen sich nie eine Datei. Alte
 `<isbn>.webp`-Dateien im Cache werden nicht mehr gelesen; sie sind tot, nicht gefährlich.
-Gates: `api/cover_quelle_bindung_test.go` (Handler mit gestubbtem Download; der Aufbau
+Gates: `api/katalog/cover_quelle_bindung_test.go` (Handler mit gestubbtem Download; der Aufbau
 zeigte mit dem alten Code das Vergiften und die sechs Dateien) und
 `TestCoverKandidaten_MusterGleichWieImFrontend` (Server- und Frontend-Muster identisch).
 
@@ -800,7 +800,7 @@ OpenLibrary holten. Das war ohnehin die falsche Bauweise — es meldete den Brow
 Lehrkraft bei einem Dritten an und gab dabei preis, welche ISBNs die Schule gerade
 ansieht. Alle acht laufen jetzt über den eigenen Cover-Proxy
 (`frontend/src/lib/utils/coverSrc.js` → `/api/images/cover`, Host-Allowlist in
-`api/image_caching.go`). Die Bilder kommen unverändert an, nur eben vom eigenen Server.
+`api/katalog/image_caching.go`). Die Bilder kommen unverändert an, nur eben vom eigenen Server.
 
 `data:` und `blob:` bleiben erlaubt: erzeugte Barcodes/QR-Codes und Datei-Vorschauen
 vor dem Hochladen.
