@@ -1,16 +1,13 @@
-package api
+package mailservice
 
 import (
 	"bibliothek/db"
-	"bibliothek/mailservice"
 	"bytes"
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"log/slog"
 	"mime/multipart"
-	"net/http"
 	"net/mail"
 	"net/textproto"
 	"strings"
@@ -37,45 +34,48 @@ type MailRequest struct {
 // SMTP-Fehler die Bestell-Transaktion zurückrollt (keine Ghost-Orders).
 var SendEmail = sendEmailSMTP
 
-// Mail-Status in Erledigt-Antworten (Ausfallmatrix 20.08.2026): Handler, die nach dem
-// Commit best effort eine Benachrichtigung verschicken (Klassensatz bereit, Anliegen
-// erledigt), melden dem Aufrufer, ob die Mail wirklich raus ist — vorher war ein
-// Versand-Ausfall nur eine Server-Logzeile, und die Theke glaubte, die Lehrkraft sei
-// informiert. Die Oberfläche zeigt bei "fehlgeschlagen" eine Warnung.
-const (
-	mailStatusVersendet      = "versendet"
-	mailStatusFehlgeschlagen = "fehlgeschlagen"
-	mailStatusKeineAdresse   = "keine_adresse"
-)
-
 // smtpKonfigLader liefert die Konfiguration für den nächsten Versand.
 //
 // Als Variable, damit NewServer sie an die Datenbank binden kann: Der Versand ist über
 // die injizierbare Funktion SendEmail(MailRequest) erreichbar und hat weder Kontext
 // noch Pool zur Hand. Vorgabe bleibt die Umgebung, damit Tests und Werkzeuge ohne
 // Datenbank weiter versenden können.
-var smtpKonfigLader = func() (mailservice.SMTPKonfig, error) {
-	return mailservice.KonfigAusUmgebung(), nil
+var smtpKonfigLader = func() (SMTPKonfig, error) {
+	return KonfigAusUmgebung(), nil
 }
 
 // BindeSMTPKonfigAnDatenbank lässt jeden Versand die in der Oberfläche gespeicherte
 // Konfiguration benutzen. Wird beim Start einmal aufgerufen (NewServer), bevor der
 // erste Request läuft.
 func BindeSMTPKonfigAnDatenbank(pool db.PgxPoolIface) {
-	smtpKonfigLader = func() (mailservice.SMTPKonfig, error) {
+	smtpKonfigLader = func() (SMTPKonfig, error) {
 		// Eigener Kontext mit kurzer Frist: Der Aufrufer hat keinen, und ein hängender
 		// Konfigurationszugriff darf einen Massenversand nicht blockieren.
 		ctx, abbruch := context.WithTimeout(context.Background(), 5*time.Second)
 		defer abbruch()
-		return mailservice.LadeSMTPKonfig(ctx, pool)
+		return LadeSMTPKonfig(ctx, pool)
 	}
 }
 
-// smtpKonfiguriert meldet, ob ein Versand versucht werden kann. Die Handler fragen
+// VersandKonfig liefert die Konfiguration, mit der der nächste Versand ginge.
+func VersandKonfig() (SMTPKonfig, error) {
+	return smtpKonfigLader()
+}
+
+// TauscheKonfigLaderFuerTest lässt jeden Versand die Konfiguration aus lader nehmen: Ein Test
+// stellt so einen Mailserver ein, einen fehlenden oder eine unlesbare Konfiguration. Der
+// Rückgabewert setzt den vorigen Lader wieder ein.
+func TauscheKonfigLaderFuerTest(lader func() (SMTPKonfig, error)) (zurueck func()) {
+	alt := smtpKonfigLader
+	smtpKonfigLader = lader
+	return func() { smtpKonfigLader = alt }
+}
+
+// SMTPKonfiguriert meldet, ob ein Versand versucht werden kann. Die Handler fragen
 // damit die tatsächlich benutzte Konfiguration ab statt os.Getenv("SMTP_HOST") —
 // sonst melden sie "SMTP nicht konfiguriert", während in der Oberfläche ein Server
 // steht (und umgekehrt).
-func smtpKonfiguriert() bool {
+func SMTPKonfiguriert() bool {
 	konfig, err := smtpKonfigLader()
 	if err != nil {
 		// Den Fehler NICHT verschlucken (31.08.2026): LadeSMTPKonfig erzeugt ihn
@@ -100,7 +100,7 @@ func sendEmailSMTP(req MailRequest) error {
 		return err
 	}
 	if !konfig.IstKonfiguriert() {
-		return fmt.Errorf("%w: kein SMTP-Server hinterlegt", mailservice.ErrMailNichtKonfiguriert)
+		return fmt.Errorf("%w: kein SMTP-Server hinterlegt", ErrMailNichtKonfiguriert)
 	}
 
 	from := konfig.Absender
@@ -126,24 +126,7 @@ func sendEmailSMTP(req MailRequest) error {
 		return err
 	}
 
-	return mailservice.VersendeUeberSMTP(konfig, from, []string{req.To}, msg)
-}
-
-// mailFehlerStatus ordnet einem Versandfehler den HTTP-Status zu. Versagt der
-// Zielserver, ist das keine Störung dieser Anwendung — und nur unterhalb von 500
-// reicht apierrors die Meldung durch: Als 500 bekäme der Admin für jede
-// SMTP-Fehlkonfiguration "Ein interner Datenbankfehler ist aufgetreten" zu lesen.
-func mailFehlerStatus(err error) int {
-	switch {
-	case errors.Is(err, mailservice.ErrSMTPVersand):
-		return http.StatusBadGateway
-	case errors.Is(err, mailservice.ErrMailNichtKonfiguriert):
-		// Offene Einstellung, keine Störung — dieselbe Antwort, die die Massenversände
-		// schon vorher gegeben haben.
-		return http.StatusServiceUnavailable
-	default:
-		return http.StatusInternalServerError
-	}
+	return VersendeUeberSMTP(konfig, from, []string{req.To}, msg)
 }
 
 // baueMailNachricht erstellt die vollständige MIME-Multipart-Nachricht (Header, Textteil,
@@ -157,7 +140,7 @@ func mailFehlerStatus(err error) int {
 // beliebige weitere Kopfzeilen anhängen. Jetzt entscheidet dieselbe Funktion wie für die
 // Testmail — an EINER Stelle, hier, wo die Zeilen tatsächlich entstehen.
 func baueMailNachricht(req MailRequest, from string) ([]byte, error) {
-	from, an, betreff, err := mailservice.PruefeKopfzeilen(from, req.To, req.Subject)
+	from, an, betreff, err := PruefeKopfzeilen(from, req.To, req.Subject)
 	if err != nil {
 		return nil, err
 	}

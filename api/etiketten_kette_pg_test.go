@@ -15,6 +15,7 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -99,7 +100,7 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	testdaten.ResetBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	lieferant := testdaten.Haendler(t, pool, "Cornelsen-Kette", false)
@@ -172,7 +173,7 @@ func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testin
 	testdaten.ResetBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Etikettenkette", true)

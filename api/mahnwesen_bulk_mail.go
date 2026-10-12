@@ -86,7 +86,7 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 		// 2. Ohne konfigurierten Mailserver kein Massenversand.
 		//    (Die Ferien-/Schließzeit-Sperre stand hier bis Migration 102 — ohne
 		//    Schreiber der Tabelle griff sie nie.)
-		if !smtpKonfiguriert() {
+		if !mailservice.SMTPKonfiguriert() {
 			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Massenversand nicht möglich"))
 			return
 		}
@@ -120,7 +120,7 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 		// 7. Je Klasse eine eigene Mahnliste versenden.
 		//    erzeugeMahnliste/SendEmail werden injiziert, damit die Skip- und
 		//    Adressierungslogik ohne echten PDF-/Mailversand testbar bleibt.
-		erg := versendeKlassenMahnungen(gewaehlt, erzeugeMahnliste, SendEmail)
+		erg := versendeKlassenMahnungen(gewaehlt, erzeugeMahnliste, mailservice.SendEmail)
 
 		// 8. Ergebnis protokollieren.
 		s.logKlassenVersandAudit(r, "BULK_OVERDUE_MAIL", klassenVersandAudit{
@@ -157,7 +157,7 @@ func parseKlassenVersandRequest(r *http.Request) (klassenVersandRequest, error) 
 
 	// Die Adresse kommt von Hand aus einem Eingabefeld. Ein Tippfehler darf hier
 	// nicht in einen „erfolgreichen" Lauf ins Leere münden, deshalb dieselbe
-	// Prüfung, die auch der Versand selbst anlegt (mail_sender.go).
+	// Prüfung, die auch der Versand selbst anlegt (mailservice/mail_sender.go).
 	req.OverrideEmail = ergaenzeSchulDomain(strings.TrimSpace(req.OverrideEmail))
 	if req.OverrideEmail != "" {
 		if _, err := mail.ParseAddress(req.OverrideEmail); err != nil {
@@ -203,7 +203,7 @@ func ergaenzeSchulDomain(eingabe string) string {
 		return eingabe
 	}
 
-	konfig, err := smtpKonfigLader()
+	konfig, err := mailservice.VersandKonfig()
 	if err != nil {
 		return eingabe
 	}
@@ -331,7 +331,7 @@ type versandErgebnis struct {
 func versendeKlassenMahnungen(
 	klassen []repository.MahnwesenKlasse,
 	generatePDF func([]repository.MahnwesenKlasse) ([]byte, error),
-	sendMail func(MailRequest) error,
+	sendMail func(mailservice.MailRequest) error,
 ) versandErgebnis {
 	var erg versandErgebnis
 	for _, kl := range klassen {

@@ -1,11 +1,9 @@
-package api
+package mailservice
 
 import (
 	"errors"
 	"strings"
 	"testing"
-
-	"bibliothek/mailservice"
 )
 
 // Kopfzeilen-Gate für den Weg, über den JEDE echte Mail geht.
@@ -43,7 +41,7 @@ func TestBaueMailNachricht_WeistUmbruecheInAdressenAb(t *testing.T) {
 			if err == nil {
 				t.Fatal("die Nachricht wurde gebaut — eine Adresse mit Zeilenumbruch muss abgewiesen werden")
 			}
-			if !errors.Is(err, mailservice.ErrHeaderUmbruch) {
+			if !errors.Is(err, ErrHeaderUmbruch) {
 				t.Errorf("unerwarteter Fehler: %v", err)
 			}
 		})

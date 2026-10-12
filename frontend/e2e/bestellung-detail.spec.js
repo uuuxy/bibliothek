@@ -13,7 +13,7 @@
 //
 // Der Bestellweg verschickt nach dem Speichern die Bestellmail, und der lokale Stack trägt
 // den Mailserver aus der .env. Der Lieferant hat hier deshalb eine Adresse, die keine ist:
-// Der Versand scheitert an ihr, bevor eine Verbindung entsteht (api/mail_sender.go,
+// Der Versand scheitert an ihr, bevor eine Verbindung entsteht (mailservice/mail_sender.go,
 // TestSendEmail_InvalidRecipient), und der Handler antwortet trotzdem mit 200.
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, csrfToken, seedSQL, querySQL, uniqueSuffix } from './helpers.js';

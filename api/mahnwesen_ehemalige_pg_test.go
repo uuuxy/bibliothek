@@ -144,7 +144,7 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 	})
 
 	t.Run("die Mail an die Klassenleitung nennt den Ehemaligen nicht", func(t *testing.T) {
-		sitzungen := mailAbfangen(t)
+		sitzungen := tuertest.MailAbfangen(t)
 		rec := rufe(tuertest.JSONPost("/api/mail/send-bulk-overdue", ""))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Mahnlauf: Status %d — %s", rec.Code, rec.Body.String())
@@ -177,7 +177,7 @@ func TestMahnwesen_EhemaligerGehtAnKeineKlassenleitung(t *testing.T) {
 	})
 
 	t.Run("auch ausdrücklich gewählt geht die Gruppe der Ehemaligen an niemanden", func(t *testing.T) {
-		sitzungen := mailAbfangen(t)
+		sitzungen := tuertest.MailAbfangen(t)
 		rec := rufe(tuertest.JSONPost("/api/mail/send-bulk-overdue",
 			`{"klassen":["Ehemalige"],"override_email":"vertretung@schule.invalid"}`))
 		if rec.Code != http.StatusOK {

@@ -442,8 +442,9 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Eingabe der zwei Türen zum Anlegen und Ändern und trägt deren Meldung; keine andere Schicht
   ruft sie). Der Bestand fällt damit nicht auf null. Die sechs Dateien mit Regeln sind am
   09.10.2026 ausgezogen; wohin, steht oben und in ARCHITEKTUR 5.2.2.
-- **Was der Bestand nicht sieht.** Zwei Dateien binden `net/http` nur für Statuswerte ein und
-  tragen keine Tür: `mail_sender.go` (227 Zeilen) und `nachbuchen_schluessel.go` (148). Und
+- **Was der Bestand nicht sieht.** Eine Datei bindet `net/http` nur für Statuswerte ein und
+  trägt keine Tür: `nachbuchen_schluessel.go` (148 Zeilen); der Mailversand, die zweite, steht
+  seit dem 12.10.2026 in `mailservice/mail_sender.go`. Und
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
   Typ aus `net/http` tragen `bestellbericht_handler.go` (367),
   `lmf_plan.go` (260), `bescheid_handler.go` (246), `dsgvo_auskunft.go` (193),

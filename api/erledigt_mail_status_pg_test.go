@@ -13,6 +13,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/mailservice"
 )
 
 // Ausfallmatrix 20.08.2026: Die Erledigt-Handler (Klassensatz bereit, Anliegen
@@ -28,9 +29,9 @@ import (
 // stubSendEmail ersetzt den Versand für einen Test und stellt ihn danach wieder her.
 func stubSendEmail(t *testing.T, fehler error) {
 	t.Helper()
-	alt := SendEmail
-	SendEmail = func(MailRequest) error { return fehler }
-	t.Cleanup(func() { SendEmail = alt })
+	alt := mailservice.SendEmail
+	mailservice.SendEmail = func(mailservice.MailRequest) error { return fehler }
+	t.Cleanup(func() { mailservice.SendEmail = alt })
 }
 
 // mailStatusAusAntwort erwartet 200 und liest das "mail"-Feld.
@@ -110,10 +111,10 @@ func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	})
 
 	t.Run("die Mail nennt Art, Klasse und Notiz, ein zweites Abhaken schickt keine", func(t *testing.T) {
-		var mails []MailRequest
-		alt := SendEmail
-		SendEmail = func(m MailRequest) error { mails = append(mails, m); return nil }
-		t.Cleanup(func() { SendEmail = alt })
+		var mails []mailservice.MailRequest
+		alt := mailservice.SendEmail
+		mailservice.SendEmail = func(m mailservice.MailRequest) error { mails = append(mails, m); return nil }
+		t.Cleanup(func() { mailservice.SendEmail = alt })
 
 		var meldung string
 		if err := pool.QueryRow(ctx, `
@@ -213,10 +214,10 @@ func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
 	// die Notiz der Lehrkraft steht in der Mail, damit die Antwort einen Bezug hat.
 	// Ohne Body (Altclient) geht die Mail ohne Bibliotheks-Notiz, aber sie geht.
 	t.Run("Notiz der Bibliothek steht in Mail und Zeile", func(t *testing.T) {
-		var gesendet MailRequest
-		alt := SendEmail
-		SendEmail = func(m MailRequest) error { gesendet = m; return nil }
-		t.Cleanup(func() { SendEmail = alt })
+		var gesendet mailservice.MailRequest
+		alt := mailservice.SendEmail
+		mailservice.SendEmail = func(m mailservice.MailRequest) error { gesendet = m; return nil }
+		t.Cleanup(func() { mailservice.SendEmail = alt })
 
 		body := `{"notiz":"24 von 30, der Rest ist bei der 8a"}`
 		rec, resID := erledigeMit(t, &body)
@@ -236,7 +237,7 @@ func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
 			t.Fatalf("erledigt_notiz=%q", gespeichert)
 		}
 
-		gesendet = MailRequest{}
+		gesendet = mailservice.MailRequest{}
 		rec, _ = erledigeMit(t, nil)
 		if got := mailStatusAusAntwort(t, rec); got != "versendet" {
 			t.Fatalf("ohne Body: mail=%q, erwartet versendet", got)

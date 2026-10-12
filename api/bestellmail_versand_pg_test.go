@@ -14,7 +14,7 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
-	"bibliothek/mailservice"
+	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -30,24 +30,6 @@ import (
 // Deshalb steht dieses Gate am Ende der Kette, an der fertigen Nachricht auf dem Draht:
 // echter Handler, echte Transaktion, echter SMTP-Versand — nur der Mailserver ist ein
 // Testserver, damit niemals eine Mail an den Schulserver rausgeht (siehe internal/smtptest).
-
-// mailAbfangen biegt den Versand auf einen Testserver um und liefert die abgefangene
-// Nachricht. Der Kanal nimmt genau eine Sitzung an.
-func mailAbfangen(t *testing.T) <-chan smtptest.Sitzung {
-	t.Helper()
-	// Der Testserver kündigt kein STARTTLS an; sichereVerbindung bräche den Versand
-	// sonst ab. Dass die Erzwingung wirkt, prüft mailservice.
-	t.Setenv("SMTP_ALLOW_PLAINTEXT", "true")
-	host, port, sitzungen := smtptest.Starte(t, smtptest.Normal)
-
-	alterLader := smtpKonfigLader
-	smtpKonfigLader = func() (mailservice.SMTPKonfig, error) {
-		return mailservice.SMTPKonfig{Host: host, Port: port, Absender: "bibliothek@schule.invalid"}, nil
-	}
-	t.Cleanup(func() { smtpKonfigLader = alterLader })
-
-	return sitzungen
-}
 
 // bestelleUeberHandler löst eine Bestellung über den echten HTTP-Handler aus und liefert
 // die Antwort.
@@ -71,7 +53,7 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 	testdaten.ResetBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Link", true)
@@ -115,7 +97,7 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-OhneAdresse", true)
@@ -148,7 +130,7 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Zahlen", false)
@@ -174,7 +156,7 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Topf", true)
@@ -208,7 +190,7 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-OhneBarcode", false)
@@ -257,7 +239,7 @@ func TestBestellungIdempotenz(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	lieferant := testdaten.Haendler(t, pool, "IdemLieferant", false)

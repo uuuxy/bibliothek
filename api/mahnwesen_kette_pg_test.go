@@ -16,6 +16,7 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/repository"
 
@@ -170,7 +171,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 
 	// 4. Der Lauf selbst: NUR Annas Klasse auswählen (in der Schreibweise, die die
 	// Kanonisierung gespeichert hat — die UI bietet exakt diese Liste an).
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue",

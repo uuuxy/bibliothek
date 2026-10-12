@@ -16,6 +16,7 @@ import (
 	"bibliothek/internal/service"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -89,7 +90,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	ctx := context.Background()
 
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Kette", true)

@@ -1,29 +1,14 @@
-package api
+package mailservice
 
 import (
 	"bytes"
 	"errors"
 	"log/slog"
-	"net/http"
 	"strings"
 	"testing"
 
-	"bibliothek/mailservice"
-
 	"github.com/stretchr/testify/assert"
 )
-
-// mailFehlerStatus ist die Weiche, an der die SMTP-Diagnose überlebt oder stirbt:
-// apierrors ersetzt bei 500 jede Meldung durch "Ein interner Datenbankfehler ist
-// aufgetreten" und reicht sie erst unterhalb von 500 durch.
-func TestMailFehlerStatus(t *testing.T) {
-	smtpFehler := mailservice.BeschreibeSMTPFehler("smtp.schule.de:587", errors.New("535 5.7.8 Zugangsdaten abgelehnt"))
-	assert.Equal(t, http.StatusBadGateway, mailFehlerStatus(smtpFehler),
-		"Zielserver versagt → 502, damit die Meldung beim Admin ankommt")
-
-	assert.Equal(t, http.StatusInternalServerError, mailFehlerStatus(errors.New("vorlage nicht gefunden")),
-		"eigene Störung bleibt 500 und wird bewusst neutralisiert")
-}
 
 func TestSendEmail_InvalidRecipient(t *testing.T) {
 	// Setup required env variables to pass the first validation step.
@@ -68,12 +53,12 @@ func TestSendEmail_InvalidRecipient(t *testing.T) {
 				assert.Error(t, err)
 				if tt.name != "Valid Email" {
 					assert.Contains(t, err.Error(), "invalid recipient email address")
-					assert.False(t, errors.Is(err, mailservice.ErrSMTPVersand),
+					assert.False(t, errors.Is(err, ErrSMTPVersand),
 						"eine unbrauchbare Adresse ist kein Fehler des Zielservers — sonst antwortet der Handler mit 502 statt 400")
 				} else {
 					// Marker statt Meldungstext: Daran entscheidet der Handler zwischen
 					// 502 (Zielserver versagt, Meldung wird durchgereicht) und 500.
-					assert.ErrorIs(t, err, mailservice.ErrSMTPVersand)
+					assert.ErrorIs(t, err, ErrSMTPVersand)
 				}
 			} else {
 				assert.NoError(t, err)
@@ -98,13 +83,38 @@ func TestSmtpKonfiguriert_LoggtUnlesbareKonfiguration(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewTextHandler(&protokoll, nil)))
 	t.Cleanup(func() { slog.SetDefault(vorher) })
 
-	smtpKonfigLader = func() (mailservice.SMTPKonfig, error) {
-		return mailservice.SMTPKonfig{}, errors.New("fehler beim Entschlüsseln des SMTP-Passworts")
+	smtpKonfigLader = func() (SMTPKonfig, error) {
+		return SMTPKonfig{}, errors.New("fehler beim Entschlüsseln des SMTP-Passworts")
 	}
-	if smtpKonfiguriert() {
+	if SMTPKonfiguriert() {
 		t.Error("unlesbare Konfiguration gilt als konfiguriert")
 	}
 	if !strings.Contains(protokoll.String(), "nicht lesbar") {
 		t.Errorf("kein Hinweis im Protokoll — der Grund bleibt unsichtbar: %q", protokoll.String())
+	}
+}
+
+// Die Naht für Tests setzt den vorigen Lader wieder ein: Sonst läse der nächste Test die
+// Konfiguration eines fremden.
+func TestTauscheKonfigLaderFuerTest_SetztDenVorigenWiederEin(t *testing.T) {
+	lader := func(host string) func() (SMTPKonfig, error) {
+		return func() (SMTPKonfig, error) { return SMTPKonfig{Host: host}, nil }
+	}
+	host := func() string {
+		t.Helper()
+		konfig, err := VersandKonfig()
+		if err != nil {
+			t.Fatalf("VersandKonfig: %v", err)
+		}
+		return konfig.Host
+	}
+	t.Cleanup(TauscheKonfigLaderFuerTest(lader("erster.invalid")))
+	zurueck := TauscheKonfigLaderFuerTest(lader("zweiter.invalid"))
+	if got := host(); got != "zweiter.invalid" {
+		t.Fatalf("nach dem Tausch gilt %q, erwartet der zweite Lader", got)
+	}
+	zurueck()
+	if got := host(); got != "erster.invalid" {
+		t.Errorf("nach dem Zurücksetzen gilt %q, erwartet der vorige Lader", got)
 	}
 }

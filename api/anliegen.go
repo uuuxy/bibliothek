@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/mailservice"
 	"bibliothek/repository"
 )
 
@@ -19,6 +20,17 @@ import (
 // Die Tabelle führt daneben Wünsche (art 'wunsch'), die das Portal nicht mehr anlegt: Wer
 // ein Buch für eine Klasse möchte, reserviert es dort. Vorhandene Wünsche werden wie
 // Meldungen gelistet und abgehakt.
+
+// Mail-Status in Erledigt-Antworten (Ausfallmatrix 20.08.2026): Handler, die nach dem
+// Commit best effort eine Benachrichtigung verschicken (Klassensatz bereit, Anliegen
+// erledigt), melden dem Aufrufer, ob die Mail wirklich raus ist — vorher war ein
+// Versand-Ausfall nur eine Server-Logzeile, und die Theke glaubte, die Lehrkraft sei
+// informiert. Die Oberfläche zeigt bei "fehlgeschlagen" eine Warnung.
+const (
+	mailStatusVersendet      = "versendet"
+	mailStatusFehlgeschlagen = "fehlgeschlagen"
+	mailStatusKeineAdresse   = "keine_adresse"
+)
 
 // AnliegenRequest ist die Eingabe der Lehrkraft im Kollegiums-Portal.
 //
@@ -187,7 +199,7 @@ func sendeAnliegenErledigtMail(erledigt *repository.AnliegenErledigt) string {
 		text += fmt.Sprintf("  Notiz:   %s\n", erledigt.ErledigtNotiz)
 	}
 	text += "\nDiese Mail wurde automatisch beim Abhaken verschickt."
-	if err := SendEmail(MailRequest{To: *erledigt.AnfragendeMail, Subject: betreff, Body: text}); err != nil {
+	if err := mailservice.SendEmail(mailservice.MailRequest{To: *erledigt.AnfragendeMail, Subject: betreff, Body: text}); err != nil {
 		log.Printf("Anliegen-Mail an %s fehlgeschlagen: %v", *erledigt.AnfragendeMail, err)
 		return mailStatusFehlgeschlagen
 	}

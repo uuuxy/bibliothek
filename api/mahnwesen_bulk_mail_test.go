@@ -19,8 +19,8 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// smtpKonfigAusUmgebung pinnt den paketglobalen smtpKonfigLader für die Testdauer
-// auf die Umgebung und stellt ihn danach zurück (Muster wie mail_sender_test.go).
+// smtpKonfigAusUmgebung pinnt den Lader der Mail-Konfiguration (mailservice) für die
+// Testdauer auf die Umgebung und stellt ihn danach zurück.
 //
 // Nötig seit dem 01.09.2026: Jeder Test, der NewServer aufruft, bindet den Lader
 // per BindeSMTPKonfigAnDatenbank an SEINEN Pool — und die Bindung überlebt ihn.
@@ -31,9 +31,7 @@ import (
 // (Bugklasse „Grün aus Umgebungsgunst" — Reihenfolge als unsichtbare Annahme).
 func smtpKonfigAusUmgebung(t *testing.T) {
 	t.Helper()
-	alt := smtpKonfigLader
-	smtpKonfigLader = func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil }
-	t.Cleanup(func() { smtpKonfigLader = alt })
+	t.Cleanup(mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil }))
 }
 
 // Ohne konfigurierten Mailserver (SMTP_HOST leer) → 503, kein Versand. Der Check
@@ -68,7 +66,7 @@ func TestSendBulkOverdueHandler_SmtpFehlt(t *testing.T) {
 // Mail an genau die hinterlegte Lehrer-Adresse (keine klassenübergreifenden Empfänger).
 func TestVersendeKlassenMahnungen_SkipLogik(t *testing.T) {
 	var empfaenger []string
-	fakeSend := func(m MailRequest) error {
+	fakeSend := func(m mailservice.MailRequest) error {
 		empfaenger = append(empfaenger, m.To)
 		return nil
 	}
@@ -116,7 +114,7 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) {
 		return []byte("%PDF-fake"), nil
 	}
-	fakeSend := func(m MailRequest) error {
+	fakeSend := func(m mailservice.MailRequest) error {
 		if m.To == "kaputt@schule.de" {
 			return http.ErrHandlerTimeout // beliebiger Versandfehler
 		}
@@ -144,7 +142,7 @@ func TestVersendeKlassenMahnungen_VersandfehlerZaehltAlsFehlgeschlagen(t *testin
 func TestVersendeKlassenMahnungen_MailserverFehlerBrichtAbUndMeldet(t *testing.T) {
 	fakePDF := func(_ []repository.MahnwesenKlasse) ([]byte, error) { return []byte("%PDF-fake"), nil }
 	var versuche []string
-	fakeSend := func(m MailRequest) error {
+	fakeSend := func(m mailservice.MailRequest) error {
 		versuche = append(versuche, m.To)
 		if m.To == "zweite@schule.de" {
 			return fmt.Errorf("%w (Server relay:587): connection refused", mailservice.ErrSMTPVersand)
@@ -317,7 +315,7 @@ func TestZieleAufOverride_LenktAlleKlassenUm(t *testing.T) {
 	erg := versendeKlassenMahnungen(
 		umgelenkt,
 		func(_ []repository.MahnwesenKlasse) ([]byte, error) { return []byte("%PDF-fake"), nil },
-		func(m MailRequest) error { empfaenger = append(empfaenger, m.To); return nil },
+		func(m mailservice.MailRequest) error { empfaenger = append(empfaenger, m.To); return nil },
 	)
 
 	if erg.Sent != 2 || erg.Skipped != 1 {

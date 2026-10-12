@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/mailservice"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -207,7 +208,7 @@ func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 		mailStatus := mailStatusKeineAdresse
 		if erledigt.AnfragendeMail != nil && *erledigt.AnfragendeMail != "" {
 			mailStatus = mailStatusVersendet
-			if err := SendEmail(MailRequest{
+			if err := mailservice.SendEmail(mailservice.MailRequest{
 				To:      *erledigt.AnfragendeMail,
 				Subject: fmt.Sprintf("Ihr Klassensatz liegt bereit: %s", erledigt.TitelName),
 				Body:    klassensatzBereitText(erledigt),

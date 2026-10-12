@@ -10,6 +10,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/mailservice"
 )
 
@@ -62,7 +63,7 @@ func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 	}
 
 	// Ab hier ist ein Mailserver erreichbar: Ginge eine Mail raus, käme sie hier an.
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 	rec := l.rufe(t, http.MethodDelete, "/api/bestellungen/"+bestellung+"/mail", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Vermerk entfernen: Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
@@ -115,9 +116,7 @@ func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 // ihn nicht nehmen. Die neue Tür nimmt ihn.
 func TestBestellmailAndersBestellt_OhneMailserver(t *testing.T) {
 	l := andersBestelltLage(t, "ohneserver")
-	alterLader := smtpKonfigLader
-	smtpKonfigLader = func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }
-	t.Cleanup(func() { smtpKonfigLader = alterLader })
+	t.Cleanup(mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }))
 
 	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-OhneServer", false)
 	bestellung, _ := l.bestelle(t, lieferant, testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-OhneServer", 0))
@@ -173,7 +172,7 @@ func TestBestellmailAndersBestellt_NichtMitBestaetigungsLink(t *testing.T) {
 // Wo kein Vermerk steht, gibt es nichts zu entfernen; eine unbekannte Bestellung ist 404.
 func TestBestellmailAndersBestellt_Abweisungen(t *testing.T) {
 	l := andersBestelltLage(t, "abweisung")
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-Abweisung", false)
 	bestellung, _ := l.bestelle(t, lieferant, testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Abweisung", 0))
 	smtptest.WarteAufMail(t, sitzungen)

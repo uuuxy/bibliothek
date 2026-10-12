@@ -14,6 +14,7 @@ import (
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -84,7 +85,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	sitzungen := mailAbfangen(t)
+	sitzungen := tuertest.MailAbfangen(t)
 	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}
 
 	// Zwei Abgänger derselben Abschlussklasse und einer aus einer anderen — plus die

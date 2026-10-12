@@ -11,6 +11,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
+	"bibliothek/mailservice"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -100,7 +101,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		return
 	}
 
-	if !smtpKonfiguriert() {
+	if !mailservice.SMTPKonfiguriert() {
 		log.Println("WARNUNG: Kein (echter) SMTP-Server hinterlegt. E-Mail-Versand übersprungen, die Bestellung ist gespeichert.")
 		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
 		RespondJSON(w, http.StatusOK, map[string]any{

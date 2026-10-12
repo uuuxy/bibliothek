@@ -154,7 +154,7 @@ func schreibeGezaehlt(w http.ResponseWriter, daten any) (int, error) {
 // Log nennt die Größe der Liste, wie der Theken-Rechner sie hält.
 //
 // CodeQL meldet hier go/reflected-xss (Alarm 30, 15.09.2026) und liegt falsch. Der
-// gemeldete Weg führt vom Anfragekörper des Mahnwesens über api/mail_sender.go zu
+// gemeldete Weg führt vom Anfragekörper des Mahnwesens über mailservice/mail_sender.go zu
 // `part.Write([]byte(req.Body))` — und von dort hierher: `part` ist ein io.Writer, und
 // CodeQL löst den Aufruf gegen JEDE Write([]byte)-Methode des Programms auf, auch gegen
 // diese. In Wirklichkeit schreibt die Mail nie in diesen Schreiber, und die Antwort

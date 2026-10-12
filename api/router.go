@@ -34,6 +34,7 @@ import (
 	"bibliothek/internal/middleware"
 	"bibliothek/internal/service"
 	"bibliothek/inventur"
+	"bibliothek/mailservice"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
 	"bibliothek/sse"
@@ -62,7 +63,7 @@ func NewServer(database *db.Database, authenticator *auth.Authenticator, broker 
 	// Ab hier liest jeder Mailversand die in der Oberfläche gespeicherte
 	// SMTP-Konfiguration statt der Umgebungsvariablen des Containers. Vorher benutzte
 	// der Test-Knopf die eine und jeder echte Versand die andere Quelle.
-	BindeSMTPKonfigAnDatenbank(database.Pool)
+	mailservice.BindeSMTPKonfigAnDatenbank(database.Pool)
 
 	return &Server{
 		DB:           database,

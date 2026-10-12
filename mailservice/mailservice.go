@@ -37,7 +37,7 @@ func HeaderWert(feld, wert string) (string, error) {
 }
 
 // PruefeKopfzeilen prüft die drei Kopfzeilen JEDER ausgehenden Mail — der einfachen
-// Textmail hier wie der MIME-Mail mit Anhängen in api/mail_sender.go.
+// Textmail hier wie der MIME-Mail mit Anhängen in mail_sender.go.
 //
 // Dass es diese Funktion gibt, ist der zweite Anlauf. Die Prüfung stand bis zum
 // 23.08.2026 nur in baueTextNachricht (Testmail), während der Weg, über den JEDE echte
@@ -104,9 +104,8 @@ var ErrSMTPVersand = errors.New("SMTP-Versand fehlgeschlagen")
 // Zertifikat, das nur auf ihren echten Namen ausgestellt ist (z.B. srv1.<domain>)
 // und nicht auf den gewohnten smtp.<domain>-Alias.
 //
-// Exportiert, weil der Aufbau der Nachricht und ihr Transport in verschiedenen
-// Päckchen liegen (api/mail_sender.go baut die Mahnung mit PDF-Anhang, versendet wird
-// sie über versand.go) — die Übersetzung muss für beide dieselbe sein.
+// Exportiert für den Test der Tür, die aus dem Marker den Status der Antwort macht
+// (api/mail_settings_test.go).
 func BeschreibeSMTPFehler(addr string, err error) error {
 	var hostErr x509.HostnameError
 	if errors.As(err, &hostErr) {

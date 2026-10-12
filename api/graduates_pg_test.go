@@ -12,6 +12,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -98,7 +99,7 @@ func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 func TestAbgaengerliste_AusserhalbDerSaison(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	mailAbfangen(t) // SMTP konfiguriert, damit der Versand bis zur Saisonprüfung kommt
+	tuertest.MailAbfangen(t) // SMTP konfiguriert, damit der Versand bis zur Saisonprüfung kommt
 
 	schuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
 	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}

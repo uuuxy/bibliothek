@@ -79,7 +79,7 @@ func TestWaehleAbgaengerKlassen(t *testing.T) {
 
 // Eine Mail je Klasse, darin EIN PDF JE SCHÜLER — das ist die fachliche Zusage.
 func TestVersendeAbgaengerKontoauszuege_EinPdfJeSchueler(t *testing.T) {
-	var mails []MailRequest
+	var mails []mailservice.MailRequest
 	klassen := []abgaengerKlasse{{
 		Klasse:     "5a",
 		Empfaenger: "lehrer5a@schule.de",
@@ -87,7 +87,7 @@ func TestVersendeAbgaengerKontoauszuege_EinPdfJeSchueler(t *testing.T) {
 	}}
 
 	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(m MailRequest) error { mails = append(mails, m); return nil })
+		func(m mailservice.MailRequest) error { mails = append(mails, m); return nil })
 
 	if erg.Sent != 1 || erg.Skipped != 0 || erg.Failed != 0 {
 		t.Fatalf("%+v, want sent=1", erg)
@@ -116,7 +116,7 @@ func TestVersendeAbgaengerKontoauszuege_SkipLogik(t *testing.T) {
 	}
 
 	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(m MailRequest) error { empfaenger = append(empfaenger, m.To); return nil })
+		func(m mailservice.MailRequest) error { empfaenger = append(empfaenger, m.To); return nil })
 
 	if erg.Sent != 1 || erg.Skipped != 2 || erg.Failed != 0 {
 		t.Fatalf("sent=%d skipped=%d failed=%d, want 1/2/0", erg.Sent, erg.Skipped, erg.Failed)
@@ -137,8 +137,8 @@ func TestVersendeAbgaengerKontoauszuege_EinzelnesPdfScheitert(t *testing.T) {
 		return []byte("%PDF-fake"), nil
 	}
 
-	var mails []MailRequest
-	sammeln := func(m MailRequest) error { mails = append(mails, m); return nil }
+	var mails []mailservice.MailRequest
+	sammeln := func(m mailservice.MailRequest) error { mails = append(mails, m); return nil }
 
 	erg := versendeAbgaengerKontoauszuege([]abgaengerKlasse{{
 		Klasse:     "5a",
@@ -236,7 +236,7 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 
 	// Einzelfehler (abgelehnte Adresse): failed, kein Abbruch.
 	erg := versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(m MailRequest) error {
+		func(m mailservice.MailRequest) error {
 			if m.To == "kl10a@schule.de" {
 				return errors.New("550 mailbox unavailable")
 			}
@@ -248,7 +248,9 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 
 	// Totes Relay (ErrSMTPVersand): Abbruch, die restlichen zählen als fehlgeschlagen.
 	erg = versendeAbgaengerKontoauszuege(klassen, fakeKontoauszugPDF,
-		func(MailRequest) error { return fmt.Errorf("%w: dial tcp: timeout", mailservice.ErrSMTPVersand) })
+		func(mailservice.MailRequest) error {
+			return fmt.Errorf("%w: dial tcp: timeout", mailservice.ErrSMTPVersand)
+		})
 	if !erg.Abgebrochen || erg.Failed != 2 || erg.Sent != 0 {
 		t.Fatalf("%+v, want Abbruch mit failed=2", erg)
 	}

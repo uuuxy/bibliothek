@@ -24,6 +24,7 @@ import (
 	"bibliothek/repository"
 
 	"github.com/pashagolub/pgxmock/v5"
+	"github.com/stretchr/testify/assert"
 )
 
 func mailTestServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
@@ -122,12 +123,12 @@ func TestSendEmail_BenutztDieGespeicherteKonfiguration(t *testing.T) {
 
 	_, mock := mailTestServer(t)
 	erwarteMailKonfig(mock, host, port, "gespeichert@schule.de")
-	BindeSMTPKonfigAnDatenbank(mock)
+	mailservice.BindeSMTPKonfigAnDatenbank(mock)
 	t.Cleanup(func() {
-		smtpKonfigLader = func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil }
+		mailservice.TauscheKonfigLaderFuerTest(func() (mailservice.SMTPKonfig, error) { return mailservice.KonfigAusUmgebung(), nil })
 	})
 
-	err := SendEmail(MailRequest{To: "lehrerin@schule.de", Subject: "Mahnliste 5b", Body: "Anbei die Liste."})
+	err := mailservice.SendEmail(mailservice.MailRequest{To: "lehrerin@schule.de", Subject: "Mahnliste 5b", Body: "Anbei die Liste."})
 	if err != nil {
 		t.Fatalf("Versand fehlgeschlagen: %v", err)
 	}
@@ -152,7 +153,7 @@ func TestSendEmail_OhneKonfigurationMeldetOffeneEinstellung(t *testing.T) {
 	t.Setenv("SMTP_FROM", "")
 	t.Setenv("SMTP_USER", "")
 
-	err := SendEmail(MailRequest{To: "lehrerin@schule.de", Subject: "x", Body: "y"})
+	err := mailservice.SendEmail(mailservice.MailRequest{To: "lehrerin@schule.de", Subject: "x", Body: "y"})
 	if !errors.Is(err, mailservice.ErrMailNichtKonfiguriert) {
 		t.Fatalf("Fehler = %v, want ErrMailNichtKonfiguriert", err)
 	}
@@ -234,4 +235,16 @@ func TestPostTestMail_UnbrauchbareAdresseIstEinEingabefehler(t *testing.T) {
 			}
 		})
 	}
+}
+
+// mailFehlerStatus ist die Weiche, an der die SMTP-Diagnose überlebt oder stirbt:
+// apierrors ersetzt bei 500 jede Meldung durch "Ein interner Datenbankfehler ist
+// aufgetreten" und reicht sie erst unterhalb von 500 durch.
+func TestMailFehlerStatus(t *testing.T) {
+	smtpFehler := mailservice.BeschreibeSMTPFehler("smtp.schule.de:587", errors.New("535 5.7.8 Zugangsdaten abgelehnt"))
+	assert.Equal(t, http.StatusBadGateway, mailFehlerStatus(smtpFehler),
+		"Zielserver versagt → 502, damit die Meldung beim Admin ankommt")
+
+	assert.Equal(t, http.StatusInternalServerError, mailFehlerStatus(errors.New("vorlage nicht gefunden")),
+		"eigene Störung bleibt 500 und wird bewusst neutralisiert")
 }

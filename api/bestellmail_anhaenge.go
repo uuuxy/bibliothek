@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"bibliothek/mailservice"
 	"bibliothek/pdf"
 	"bibliothek/pkg/csvutil"
 	"bibliothek/pkg/mitteltopf"
@@ -63,14 +64,14 @@ func verschickeBestellmail(m BestellMail) error {
 		return err
 	}
 
-	mailReq := MailRequest{
+	mailReq := mailservice.MailRequest{
 		To:          m.Empfaenger,
 		Subject:     m.Betreff,
 		Body:        m.Text,
 		Attachments: anhaenge,
 	}
 
-	if err := SendEmail(mailReq); err != nil {
+	if err := mailservice.SendEmail(mailReq); err != nil {
 		log.Printf("Failed to send order email to %s: %v", m.Empfaenger, err)
 		return err
 	}
@@ -87,7 +88,7 @@ func verschickeBestellmail(m BestellMail) error {
 //
 // Ohne Link bleibt es beim alten Weg (Rückfallebene): Der Bogen MUSS dann beiliegen,
 // sonst kann der Händler gar nicht bekleben.
-func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
+func bestellAnhaenge(m BestellMail) ([]mailservice.MailAttachment, error) {
 	mitBarcodebogen := m.MitVorabBarcodes && len(m.Etiketten) > 0
 
 	// Eine Entscheidung, an der ALLES hängt: die Bögen, die CSV und der Satz im
@@ -109,7 +110,7 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 	if err != nil {
 		return nil, err
 	}
-	anhaenge := []MailAttachment{
+	anhaenge := []mailservice.MailAttachment{
 		{Name: datiertName("bestellanschreiben", "pdf"), ContentType: contentTypePDF, Data: summaryPDF},
 	}
 	if !mitBarcodebogen {
@@ -123,7 +124,7 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 		return nil, err
 	}
 	anhaenge = append(anhaenge,
-		MailAttachment{Name: datiertName("barcode_mapping", "csv"), ContentType: "text/csv", Data: barcodeCSV})
+		mailservice.MailAttachment{Name: datiertName("barcode_mapping", "csv"), ContentType: "text/csv", Data: barcodeCSV})
 
 	if weg == pdf.BogenHinterLink {
 		return anhaenge, nil
@@ -180,7 +181,7 @@ func GenerateBarcodeCSV(labels []BarcodeLabelDetail) ([]byte, error) {
 //
 // Der Kopf kommt fertig herein (etikettKopfAus) — derselbe wie im Selbstdruck und hinter
 // dem Lieferanten-Link, damit alle drei Wege zum selben Buch denselben Aufkleber ergeben.
-func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlieferant bool, mittel string) ([]MailAttachment, error) {
+func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlieferant bool, mittel string) ([]mailservice.MailAttachment, error) {
 	// Derselbe Etiketten-Generator wie im Selbstdruck (Druck-Center) — voller Inhalt
 	// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
 	// diese Angaben.
@@ -193,7 +194,7 @@ func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlief
 	if err := labelDoc.Output(&labelBuf); err != nil {
 		return nil, err
 	}
-	boegen := []MailAttachment{
+	boegen := []mailservice.MailAttachment{
 		{Name: datiertName("etiketten_klein", "pdf"), ContentType: contentTypePDF, Data: labelBuf.Bytes()},
 	}
 
@@ -206,7 +207,7 @@ func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlief
 		return nil, err
 	}
 	return append(boegen,
-		MailAttachment{Name: datiertName("etiketten_gross", "pdf"), ContentType: contentTypePDF, Data: lernmittelPDF}), nil
+		mailservice.MailAttachment{Name: datiertName("etiketten_gross", "pdf"), ContentType: contentTypePDF, Data: lernmittelPDF}), nil
 }
 
 // datiertName baut den Dateinamen einer Anlage mit dem Kalendertag der Schule: Das Datum steht

@@ -1,5 +1,6 @@
 // Package tuertest hält, was Tests von Türen brauchen, um eine Anfrage zu stellen und die
-// Antwort zu lesen: den CSRF-Nachweis, eine Sitzung an der Anfrage, Attrappen fremder Dienste.
+// Antwort zu lesen: den CSRF-Nachweis, eine Sitzung an der Anfrage, Attrappen fremder Dienste,
+// einen Mailserver, der abfängt, was eine Tür verschickt.
 //
 // Wie internal/pgtest ist es ein gewöhnliches Paket, das nur Tests einbinden: Eine Testdatei
 // lässt sich nicht aus einem anderen Paket einbinden, und die Tests der Türen stehen in mehr

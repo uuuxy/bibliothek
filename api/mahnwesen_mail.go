@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 
+	"bibliothek/mailservice"
 	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -57,7 +58,7 @@ func zaehleMahnStatistik(klassen []repository.MahnwesenKlasse) (totalSchueler, t
 }
 
 // baueMahnMailRequest baut die E-Mail (Text + PDF-Anhang) für eine Klassen-Mahnliste.
-func baueMahnMailRequest(req mahnwesenSendenRequest, pdfBytes []byte, totalSchueler, totalMedien int) MailRequest {
+func baueMahnMailRequest(req mahnwesenSendenRequest, pdfBytes []byte, totalSchueler, totalMedien int) mailservice.MailRequest {
 	emailBody := fmt.Sprintf(
 		"Sehr geehrte Damen und Herren,\n\n"+
 			"anbei erhalten Sie die aktuelle Mahnliste der Schulbibliothek für die Klasse %s (Stand: %s).\n\n"+
@@ -71,11 +72,11 @@ func baueMahnMailRequest(req mahnwesenSendenRequest, pdfBytes []byte, totalSchue
 		totalMedien,
 	)
 
-	return MailRequest{
+	return mailservice.MailRequest{
 		To:      req.Email,
 		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", req.Klasse, schulzeit.Jetzt().Format(dateFormatDE)),
 		Body:    emailBody,
-		Attachments: []MailAttachment{
+		Attachments: []mailservice.MailAttachment{
 			{
 				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", req.Klasse, schulzeit.Jetzt().Format(dateFormatISO)),
 				ContentType: contentTypePDF,
