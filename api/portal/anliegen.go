@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"errors"
@@ -47,7 +47,7 @@ type AnliegenRequest struct {
 }
 
 // CreateAnliegenHandler nimmt eine Meldung entgegen. POST /api/anliegen
-func (s *Server) CreateAnliegenHandler() http.HandlerFunc {
+func (s *Tueren) CreateAnliegenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -107,7 +107,7 @@ func kuerze(s string, n int) string {
 
 // ListEigeneAnliegenHandler zeigt der Lehrkraft ihre Anliegen samt Status.
 // GET /api/anliegen/eigene
-func (s *Server) ListEigeneAnliegenHandler() http.HandlerFunc {
+func (s *Tueren) ListEigeneAnliegenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -124,7 +124,7 @@ func (s *Server) ListEigeneAnliegenHandler() http.HandlerFunc {
 }
 
 // ListOffeneAnliegenHandler ist die Arbeitsliste der LMF. GET /api/anliegen/offen
-func (s *Server) ListOffeneAnliegenHandler() http.HandlerFunc {
+func (s *Tueren) ListOffeneAnliegenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		anliegen, err := repository.NewAnliegenRepository(s.DB.Pool).ListOffene(r.Context())
 		if err != nil {
@@ -138,7 +138,7 @@ func (s *Server) ListOffeneAnliegenHandler() http.HandlerFunc {
 // CountOffeneAnliegenHandler speist das Badge an „Bestellungen“ — bis 24.08.2026 zählte
 // niemand offene Anliegen, und wer nicht ohnehin bestellen wollte, sah sie nie.
 // GET /api/anliegen/anzahl → { "anzahl": 3 }
-func (s *Server) CountOffeneAnliegenHandler() http.HandlerFunc {
+func (s *Tueren) CountOffeneAnliegenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		n, err := repository.NewAnliegenRepository(s.DB.Pool).CountOffene(r.Context())
 		if err != nil {
@@ -151,12 +151,12 @@ func (s *Server) CountOffeneAnliegenHandler() http.HandlerFunc {
 
 // ErledigeAnliegenHandler hakt ab und benachrichtigt die Lehrkraft.
 // PUT /api/anliegen/{id}/erledigen  { "notiz": "bestellt, kommt Anfang September" }
-func (s *Server) ErledigeAnliegenHandler() http.HandlerFunc {
+func (s *Tueren) ErledigeAnliegenHandler() http.HandlerFunc {
 	return s.handleErledigeAnliegen
 }
 
 // handleErledigeAnliegen hakt das Anliegen ab und benachrichtigt, wer es gestellt hat.
-func (s *Server) handleErledigeAnliegen(w http.ResponseWriter, r *http.Request) {
+func (s *Tueren) handleErledigeAnliegen(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	var body struct {
 		Notiz string `json:"notiz"`

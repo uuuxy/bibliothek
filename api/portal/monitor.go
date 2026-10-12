@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"errors"
@@ -14,9 +14,9 @@ import (
 // Flur-Monitors: öffentlich, nur Titeldaten (docs/PII_MATRIX.de.md, Stufe 0).
 //
 // Was der Monitor zeigen darf, entscheidet repository.OeffentlichSichtbar — dieselbe
-// Regel wie im Katalog (api/opac.go). Die Folien selbst baut repository.MonitorRepository;
+// Regel wie im Katalog (api/portal/opac.go). Die Folien selbst baut repository.MonitorRepository;
 // die Abfragen standen bis zum 30.08.2026 hier im Handler, ohne diese Regel.
-func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
+func (s *Tueren) GetMonitorSlidesHandler() http.HandlerFunc {
 	repo := repository.NewMonitorRepository(s.DB.Pool)
 	return func(w http.ResponseWriter, r *http.Request) {
 		slides, err := repo.LadeSlides(r.Context())

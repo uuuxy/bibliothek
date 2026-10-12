@@ -10,8 +10,8 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
 	const s = uniqueSuffix();
 
 	// Der Titel braucht mindestens so viele physische Exemplare wie reserviert werden (25),
-	// sonst greift die Bestandsdeckelung im Handler (reservation.go) und antwortet mit 400 —
-	// die Reservierung käme nie in klassensatz_reservierungen an.
+	// sonst greift die Bestandsdeckelung im Handler (api/portal/reservation.go) und antwortet
+	// mit 400 — die Reservierung käme nie in klassensatz_reservierungen an.
 	seedSQL(`
         INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
         VALUES ('E2E', 'Lehrer', '${LEHRER_EMAIL}', 'kollegium', true)

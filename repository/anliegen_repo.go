@@ -54,7 +54,7 @@ func NewAnliegenRepository(pool db.PgxPoolIface) *AnliegenRepository {
 // LMF-Liste.
 //
 // Die Spalten titel_id und isbn der Tabelle schreibt seit dem 21.09.2026 niemand mehr
-// (api/anliegen.go): Sie bleiben auf ihrer Vorgabe, NULL und leerer Text.
+// (api/portal/anliegen.go): Sie bleiben auf ihrer Vorgabe, NULL und leerer Text.
 type NeuesAnliegen struct {
 	Art            string
 	TitelText      string

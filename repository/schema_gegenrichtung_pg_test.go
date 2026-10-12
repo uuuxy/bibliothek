@@ -260,7 +260,7 @@ var checkBedingungenBestand = []string{
 	"chk_exemplar_standort",
 	// Migration 111, befragt am 10.09.2026: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
-	// (api/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.
+	// (api/portal/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.
 	"chk_exemplar_bestellstatus_nur_im_zulauf",
 	"chk_inv_session_scope",
 	// Migration 162, befragt am 08.10.2026: Die Spanne ist ganz gesetzt oder gar nicht, 1 bis
@@ -430,7 +430,7 @@ var triggerBestand = []string{
 	"trg_titel_isbn_normalform @ buecher_titel",
 	// Migration 154, befragt am 30.09.2026: Titel, Untertitel, Autor, Verlag und Beschreibung
 	// werden zusammengesetzt gespeichert (NFC) — die DNB liefert Umlaute zerlegt, und zerlegt
-	// fand keine eingetippte Suche den Titel (api/opac_nfc_pg_test.go, am Rückbau rot). Frage 12:
+	// fand keine eingetippte Suche den Titel (api/portal/opac_nfc_pg_test.go, am Rückbau rot). Frage 12:
 	// Wer einen gespeicherten Titeltext mit einem Wert aus Go vergleicht, muss ihn ebenfalls
 	// zusammensetzen; die DNB-Antwort tut das in inventur.dekodiereMARC, die Schlagworte in
 	// repository.schlagwortNormalform, die Titelschlüssel beider Importe (Katalogisat und

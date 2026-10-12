@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"context"
@@ -95,7 +95,7 @@ func TestBestellstatusSpalteStattNotizMagie(t *testing.T) {
 // nicht über eine nachgebaute Abfrage, die eine Regression im Handler nie sähe.
 func opacGesamt(t *testing.T, pool *pgxpool.Pool, titel string) int {
 	t.Helper()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest("GET", "/api/opac/suche?q="+url.QueryEscape(titel), nil)
 	w := httptest.NewRecorder()
 	srv.PublicCatalogSearchHandler()(w, req)

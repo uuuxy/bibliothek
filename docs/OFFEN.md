@@ -163,8 +163,8 @@ lässt sich dort anhalten.
   9 Testdateien), umgezogen mit einem Werkzeug. Ein Test über den ganzen Router steht im
   Ordner seines Themas, als eigenes Testpaket. Der Aufwand je Thema ist gemessen (5.65).
 - [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt. Umgezogen: Inventur
-  (`api/inventurlauf`), Benutzer (`api/benutzer`). Offen: Portal, System, Mahnwesen, Schaden,
-  Druck mit Bestellung, Katalog, Leser, zuletzt die Theke.
+  (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`). Offen: System,
+  Mahnwesen, Schaden, Druck mit Bestellung, Katalog, Leser, zuletzt die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
   die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
   Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
@@ -536,7 +536,7 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 3 si
   | Lernmittel | 5       | 1.098  | 7      | 8           | `lmf_*.go`, seit dem 12.10.2026 in `api/lernmittel` |
   | Benutzer   | 6       | 838    | 6      | 9           | `user_admin*.go`, seit dem 12.10.2026 in `api/benutzer` |
   | Inventur   | 5       | 777    | 9      | 5           | `inventur_*.go`, seit dem 12.10.2026 in `api/inventurlauf` |
-  | Portal     | 5       | 681    | 15     | 11          | `anliegen.go`, `reservation.go`, `katalog_kollegium.go`, `opac.go`, `monitor.go` |
+  | Portal     | 5       | 681    | 15     | 11          | `anliegen.go`, `reservation.go`, `katalog_kollegium.go`, `opac.go`, `monitor.go`, seit dem 12.10.2026 in `api/portal` |
 
   Zwei Namen sind als Paket vergeben (`pkg/lmf`, `inventur/`): Der Ordner der Lernmittel-Türen
   heißt deshalb nicht `lmf`, der Ordner der Inventur-Türen `inventurlauf`. `inventur/` ist

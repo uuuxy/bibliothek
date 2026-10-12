@@ -3,8 +3,8 @@ package repository
 // oeffentlich.go — was eine Seite OHNE Anmeldung von einem Titel zeigen darf, genau einmal
 // aufgeschrieben.
 //
-// Zwei Seiten lesen den Bestand ohne Sitzung: der Katalog (/katalog, api/opac.go) und der
-// Flur-Monitor (/monitor, api/monitor.go). Bis zum 30.08.2026 hatte jede ihre eigene
+// Zwei Seiten lesen den Bestand ohne Sitzung: der Katalog (/katalog, api/portal/opac.go) und der
+// Flur-Monitor (/monitor, api/portal/monitor.go). Bis zum 30.08.2026 hatte jede ihre eigene
 // Regel: Der Katalog ließ Lernmittel weg und zeigte nur Titel mit einem Exemplar im Haus;
 // der Monitor kannte beides nicht — ein Paar, das nur zufällig einig war (docs/sweeps.md,
 // Geschwister-Asymmetrie). Auf einem Schulserver, dessen Bestand zum größten Teil aus
@@ -12,7 +12,7 @@ package repository
 // Demo-Seed musste genau darum herumtricksen („sonst gewinnen Lernmittel").
 //
 // Deshalb: Beide Seiten setzen DENSELBEN String ein. Wer die Regel ändert, ändert sie für
-// beide — und api/monitor_pg_test.go hält das Paar zusammen.
+// beide — und api/portal/monitor_pg_test.go hält das Paar zusammen.
 
 import (
 	"context"

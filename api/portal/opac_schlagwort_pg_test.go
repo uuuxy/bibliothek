@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"context"
@@ -45,7 +45,7 @@ func TestOpacSuche_FindetUeberSchlagwortUndVerweis(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	suche := func(q string) []string {
 		t.Helper()
 		rec := httptest.NewRecorder()

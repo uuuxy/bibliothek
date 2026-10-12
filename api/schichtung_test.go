@@ -93,6 +93,7 @@ var dateienOhneTuer = []string{
 	"lernmittel/lernmittel.go",
 	"lernmittel/lmf_plan_live.go",
 	"mahnwesen_mail.go",
+	"portal/portal.go",
 	"schueler_kiosk.go",
 	"student_klasse_regel.go",
 	"tuer/constants.go",

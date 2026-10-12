@@ -1,4 +1,4 @@
-package api
+package portal_test
 
 import (
 	"context"
@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api"
+	"bibliothek/api/portal"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -40,7 +42,7 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
 	}
-	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
+	router := api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
 	var kontoID string
 	if err := pool.QueryRow(ctx, `
@@ -99,7 +101,7 @@ func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
 
 	// Das Kollegium: Bücherei, Lernmittel und der bestellte Titel, alphabetisch.
 	rec := katalogAnfrage(router, token, "/api/reservierungen/klassensatz/katalog?q=Probe")
-	var treffer []KollegiumTitel
+	var treffer []portal.KollegiumTitel
 	if err := json.Unmarshal(rec.Body.Bytes(), &treffer); err != nil || rec.Code != http.StatusOK {
 		t.Fatalf("Katalog des Kollegiums: %d %s (%v)", rec.Code, rec.Body.String(), err)
 	}
@@ -122,7 +124,7 @@ func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
 
 	// Ohne Anmeldung bleibt es bei der Bücherei.
 	rec = katalogAnfrage(router, "", "/api/public/opac/suche?q=Probe")
-	var oeffentlich []OpacTitel
+	var oeffentlich []portal.OpacTitel
 	if err := json.Unmarshal(rec.Body.Bytes(), &oeffentlich); err != nil || rec.Code != http.StatusOK {
 		t.Fatalf("öffentlicher Katalog: %d %s (%v)", rec.Code, rec.Body.String(), err)
 	}
@@ -202,7 +204,7 @@ func TestKollegiumKatalog_FilterlisteUndGefilterteSuche(t *testing.T) {
 	suche := func(query string) (int, []string, string) {
 		t.Helper()
 		rec := katalogAnfrage(router, token, "/api/reservierungen/klassensatz/katalog?"+query)
-		var treffer []KollegiumTitel
+		var treffer []portal.KollegiumTitel
 		if rec.Code == http.StatusOK {
 			if err := json.Unmarshal(rec.Body.Bytes(), &treffer); err != nil {
 				t.Fatal(err)

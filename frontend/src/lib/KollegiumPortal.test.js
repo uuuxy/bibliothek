@@ -18,7 +18,7 @@ vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
 const TITEL = 'Seydlitz Geographie';
 
 /**
- * Antwort des Katalogs des Kollegiums (api/katalog_kollegium.go) — ein nacktes Array, kein
+ * Antwort des Katalogs des Kollegiums (api/portal/katalog_kollegium.go) — ein nacktes Array, kein
  * `{books: …}`-Umschlag, mit den Bestandszahlen und dem Kopf X-Treffer-Gesamt.
  */
 function suchtreffer(verfuegbar = 12, gesamt = 30, im_zulauf = 0) {

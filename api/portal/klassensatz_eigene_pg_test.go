@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"context"
@@ -30,7 +30,7 @@ func TestMeineKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T) 
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lehrerA := testdaten.SeedPortalLehrkraft(t, pool, "eigene-a@test.invalid")
 	lehrerB := testdaten.SeedPortalLehrkraft(t, pool, "eigene-b@test.invalid")
@@ -98,7 +98,7 @@ func TestMeineKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T) 
 }
 
 // eigeneReservierungen ruft den echten Handler mit der Sitzung der Lehrkraft auf.
-func eigeneReservierungen(t *testing.T, srv *Server, benutzerID string) []map[string]any {
+func eigeneReservierungen(t *testing.T, srv *Tueren, benutzerID string) []map[string]any {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/reservierungen/klassensatz/eigene", nil)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,

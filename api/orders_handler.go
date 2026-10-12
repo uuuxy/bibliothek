@@ -189,7 +189,7 @@ type OrderSearchRequest struct {
 
 // dnbAusfallKopf sagt der Bestellsuche, dass die DNB nicht geantwortet hat und die Liste nur
 // den eigenen Katalog trägt. Ein Kopf statt eines Felds, weil die Antwort eine Liste ist, wie
-// X-Treffer-Gesamt an der Katalogsuche (opac.go).
+// X-Treffer-Gesamt an der Katalogsuche (api/portal/opac.go).
 const dnbAusfallKopf = "X-DNB-Ausfall"
 
 // SearchOrdersHandler sucht einen Titel zum Bestellen, zuerst im eigenen Katalog und

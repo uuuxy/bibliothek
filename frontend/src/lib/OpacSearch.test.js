@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import OpacSearch from './OpacSearch.svelte';
 
-// Der öffentliche Katalog zeigt höchstens 50 Titel (api/opac.go). Bis zum 23.09.2026 stand
+// Der öffentliche Katalog zeigt höchstens 50 Titel (api/portal/opac.go). Bis zum 23.09.2026 stand
 // über der Liste dann „50 Treffer" — die Kappung des Servers, nicht die Zahl der Bücher.
 // Seitdem nennt der Server alle im Kopf X-Treffer-Gesamt.
 

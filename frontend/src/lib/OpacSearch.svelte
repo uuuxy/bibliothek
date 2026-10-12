@@ -11,7 +11,7 @@
 	let results = $state.raw([]);
 	let loading = $state(false);
 	let searched = $state(false);
-	/** Alle Treffer der Suche — der Katalog zeigt höchstens 50 (Kopf X-Treffer-Gesamt, api/opac.go). */
+	/** Alle Treffer der Suche — der Katalog zeigt höchstens 50 (Kopf X-Treffer-Gesamt, api/portal/opac.go). */
 	let gesamt = $state(0);
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let debounce;

@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"net/http"
@@ -53,7 +53,7 @@ func schreibeLeereTrefferliste(w http.ResponseWriter) {
 // genau einmal in repository.OeffentlichSichtbar — dieselbe Regel wie im Flur-Monitor. Das
 // Kollegium sucht über eine eigene Tür hinter der Anmeldung (katalog_kollegium.go), die
 // auch Lernmittel und bestellte Titel zeigt; die Abfrage ist dieselbe.
-func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
+func (s *Tueren) PublicCatalogSearchHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
 		if q == "" {

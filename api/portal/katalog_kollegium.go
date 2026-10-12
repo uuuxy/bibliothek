@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"net/http"
@@ -28,7 +28,7 @@ type KollegiumTitel struct {
 //
 // schlagwort_id beschränkt auf die Titel eines Worts, den Filter unter der Suche. Ohne
 // Suchtext liefert er alle Titel des Worts, mit Suchtext die, die beides treffen.
-func (s *Server) KollegiumKatalogSucheHandler() http.HandlerFunc {
+func (s *Tueren) KollegiumKatalogSucheHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
 		schlagwortID, err := tuer.UUIDAusQuery(r, "schlagwort_id")
@@ -64,7 +64,7 @@ func (s *Server) KollegiumKatalogSucheHandler() http.HandlerFunc {
 // KollegiumKatalogFilterHandler handles GET /api/reservierungen/klassensatz/katalog/filter —
 // die Schlagworte, die unter der Suche als Filter stehen (Pflegeseite, ist_filter), mit
 // ihrer Kennung für ?schlagwort_id=. Nur Wörter, zu denen dieser Katalog einen Titel zeigt.
-func (s *Server) KollegiumKatalogFilterHandler() http.HandlerFunc {
+func (s *Tueren) KollegiumKatalogFilterHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		filter, err := repository.SchlagwortFilterImKatalog(r.Context(), s.DB.Pool, repository.KollegiumSichtbar("bt"))
 		if err != nil {

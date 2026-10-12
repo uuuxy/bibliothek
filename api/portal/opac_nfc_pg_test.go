@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func TestOpacSuche_FindetTitelMitZerlegtenUmlauten(t *testing.T) {
 		t.Errorf("gespeichert %+q, erwartet %+q", gespeichert, zusammengesetzt)
 	}
 
-	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	suche := func(q string) []string {
 		t.Helper()
 		rec := httptest.NewRecorder()

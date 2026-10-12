@@ -8,7 +8,7 @@
 -- nicht erst als Kurs durch. Jetzt bleibt der Text, wie die Lehrkraft ihn schreibt, wie schon bei
 -- lehrer_anliegen.klasse (Migration 079: „bleibt Freitext, dort stehen auch Oberstufenkurse").
 --
--- Das Kürzen und Trimmen übernimmt der Server (api/reservation.go), wie beim Anliegen.
+-- Das Kürzen und Trimmen übernimmt der Server (api/portal/reservation.go), wie beim Anliegen.
 --
 -- Ohne Messung: Die Migration ändert keine Zeile. Vorhandene Reservierungen behalten ihren Text;
 -- Klassen, die nur eine Reservierung angelegt hatte, bleiben im Vokabular stehen. Sichtbar sind

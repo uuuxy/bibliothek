@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"encoding/json"
@@ -28,7 +28,7 @@ func TestOpacSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	s := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	suche := func(q string) []OpacTitel {
 		t.Helper()
 		rec := httptest.NewRecorder()

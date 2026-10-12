@@ -29,6 +29,7 @@ import (
 	"bibliothek/api/benutzer"
 	"bibliothek/api/inventurlauf"
 	"bibliothek/api/lernmittel"
+	"bibliothek/api/portal"
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -82,6 +83,11 @@ func (s *Server) inventurlauf() *inventurlauf.Tueren {
 // benutzer ist der Zugang zu den Türen zu Benutzer & Rechte.
 func (s *Server) benutzer() *benutzer.Tueren {
 	return &benutzer.Tueren{Basis: &s.Basis}
+}
+
+// portal ist der Zugang zu den Türen des Portals.
+func (s *Server) portal() *portal.Tueren {
+	return &portal.Tueren{Basis: &s.Basis}
 }
 
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.

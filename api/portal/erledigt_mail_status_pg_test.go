@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"context"
@@ -52,7 +52,7 @@ func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var lehrerID string
 	if err := pool.QueryRow(ctx, `
@@ -158,7 +158,7 @@ func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var lehrerID, titelID string
 	if err := pool.QueryRow(ctx, `

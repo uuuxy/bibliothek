@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"context"

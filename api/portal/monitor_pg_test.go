@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 // Öffentliche Sichtbarkeit: Katalog und Flur-Monitor urteilen über denselben Titel gleich.
 //
 // Bis zum 30.08.2026 hatte jede der beiden Seiten ohne Anmeldung ihre eigene Regel: Der
-// Katalog (api/opac.go) ließ Lernmittel weg und zeigte nur Titel mit einem Exemplar im
+// Katalog (api/portal/opac.go) ließ Lernmittel weg und zeigte nur Titel mit einem Exemplar im
 // Haus; der Monitor kannte beides nicht. Auf einem Schulserver, dessen Bestand zum
 // größten Teil aus Schulbüchern besteht, wäre das Mathebuch der 7 „Buch des Monats"
 // gewesen — das Demo-Seed musste genau darum herumtricksen („sonst gewinnen
@@ -212,7 +212,7 @@ func (a monitorAntwort) alleTitel() map[string]bool {
 // monitorAntwortLesen fragt den ÖFFENTLICHEN Monitor-Endpunkt über den echten Handler ab.
 func monitorAntwortLesen(t *testing.T, pool *pgxpool.Pool) monitorAntwort {
 	t.Helper()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/monitor/slides", nil)
 	rec := httptest.NewRecorder()
 	srv.GetMonitorSlidesHandler()(rec, req)

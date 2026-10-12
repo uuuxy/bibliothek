@@ -1,4 +1,4 @@
-package api
+package portal_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/portal"
 	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
@@ -24,7 +25,7 @@ import (
 func TestCreateAnliegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &portal.Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var lehrkraftID, titelID string
 	if err := pool.QueryRow(ctx, `

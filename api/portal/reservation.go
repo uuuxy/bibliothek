@@ -1,4 +1,4 @@
-package api
+package portal
 
 import (
 	"errors"
@@ -30,12 +30,12 @@ type KlassensatzReservierungRequest struct {
 
 // CreateKlassensatzReservierungHandler lets a LEHRER submit a class-set reservation.
 // POST /api/reservierungen/klassensatz
-func (s *Server) CreateKlassensatzReservierungHandler() http.HandlerFunc {
+func (s *Tueren) CreateKlassensatzReservierungHandler() http.HandlerFunc {
 	return s.handleCreateKlassensatzReservierung
 }
 
 // handleCreateKlassensatzReservierung prüft Titel und Bestand und legt die Reservierung an.
-func (s *Server) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *http.Request) {
+func (s *Tueren) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *http.Request) {
 	var req KlassensatzReservierungRequest
 	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
@@ -97,7 +97,7 @@ func (s *Server) handleCreateKlassensatzReservierung(w http.ResponseWriter, r *h
 
 // GetKlassensatzReservierungenHandler lists all pending class-set reservations for admins.
 // GET /api/reservierungen/klassensatz
-func (s *Server) GetKlassensatzReservierungenHandler() http.HandlerFunc {
+func (s *Tueren) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		repo := repository.NewReservationRepository(s.DB.Pool)
 		result, err := repo.GetKlassensatzReservierungen(r.Context())
@@ -117,7 +117,7 @@ func (s *Server) GetKlassensatzReservierungenHandler() http.HandlerFunc {
 
 // GetKlassensatzReservierungenAnzahlHandler returns the count of open reservations (for red badge).
 // GET /api/reservierungen/klassensatz/anzahl
-func (s *Server) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
+func (s *Tueren) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		repo := repository.NewReservationRepository(s.DB.Pool)
 		count, err := repo.GetKlassensatzReservierungenAnzahl(r.Context())
@@ -136,7 +136,7 @@ func (s *Server) GetKlassensatzReservierungenAnzahlHandler() http.HandlerFunc {
 // Liste (GET /api/reservierungen/klassensatz) hinter view_orders liegt und dem
 // Kollegium verschlossen bleibt.
 // GET /api/reservierungen/klassensatz/offen
-func (s *Server) OffeneKlassensatzReservierungenHandler() http.HandlerFunc {
+func (s *Tueren) OffeneKlassensatzReservierungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		repo := repository.NewReservationRepository(s.DB.Pool)
 		offene, err := repo.OffeneKlassensatzReservierungen(r.Context())
@@ -152,7 +152,7 @@ func (s *Server) OffeneKlassensatzReservierungenHandler() http.HandlerFunc {
 // angemeldeten Lehrkraft fuers Portal — offene und kuerzlich abgeschlossene samt
 // Bibliotheks-Notiz. GET /api/reservierungen/klassensatz/eigene
 // (Muster und Recht wie GET /api/anliegen/eigene.)
-func (s *Server) MeineKlassensatzReservierungenHandler() http.HandlerFunc {
+func (s *Tueren) MeineKlassensatzReservierungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -174,7 +174,7 @@ func (s *Server) MeineKlassensatzReservierungenHandler() http.HandlerFunc {
 //
 // Der Body ist optional (leer = ohne Notiz): Der Weg bestand vor Migration 088 ohne
 // Body, und ein Client mit altem Bundle soll weiter abschliessen koennen.
-func (s *Server) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
+func (s *Tueren) ErledigeKlassensatzReservierungHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
