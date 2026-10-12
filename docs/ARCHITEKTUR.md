@@ -2416,7 +2416,7 @@ wenn man ihn einmal gebraucht hat.
   08.10.2026 führt sie 86,5 % der Anweisungen aus (28.016 von 32.405); ohne `cmd/`, `main.go`
   und Dateien mit weniger als 20 Anweisungen liegt keine Datei unter 50 %. Eine Datei darunter
   bekommt einen Test über ihre Tür, mit Datenbank und einer Gegenprobe je Zusicherung (Muster:
-  `api/inventur_verlust_aktionen_pg_test.go`). Das Nachziehen solcher Tests fand am 03.10. und
+  `api/inventurlauf/inventur_verlust_aktionen_pg_test.go`). Das Nachziehen solcher Tests fand am 03.10. und
   am 08.10.2026 je mehrere Fehler, die bis dahin kein Test zeigte. Ob Browser-Tests den übrigen
   Code erreichen, ist nicht gemessen.
 - **Messende Browser-Tests warten auf die Daten der Seite.** `networkidle` tritt nie ein, weil

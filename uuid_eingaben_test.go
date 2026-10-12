@@ -45,17 +45,17 @@ import (
 // „paket:Funktion:ohne Validierung" → warum es so richtig ist. Belegt am 13.09.2026 an
 // information_schema.columns: alle Barcode-Spalten und schueler.lusd_id sind VARCHAR.
 var uuidEingabenAusnahmen = map[string]string{
-	"api.CreateStudentRequest.BarcodeID":      "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
-	"api.patchStudentRequest.BarcodeID":       "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
-	"api.patchStudentRequest.LusdID":          "schueler.lusd_id ist VARCHAR (LUSD-Schlüssel)",
-	"api.CreateUserRequest.BarcodeID":         "benutzer.barcode_id ist VARCHAR",
-	"api.UpdateUserRequest.BarcodeID":         "benutzer.barcode_id ist VARCHAR",
-	"api.GeraetRequest.BarcodeID":             "geraete.barcode_id ist VARCHAR",
-	"api.GeraetAenderungRequest.BarcodeID":    "geraete.barcode_id ist VARCHAR; beim Ändern angenommen und nicht gelesen",
-	"api.InventurScanRequest.BarcodeID":       "gescannter Exemplar-Barcode, buecher_exemplare.barcode_id ist VARCHAR",
-	"api.PrintLabelsRequest.FormatID":         "Formatschlüssel aus pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
-	"api.SchuelerEtikettenRequest.FormatID":   "Formatschlüssel aus pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
-	"api.EtikettenGedrucktRequest.BarcodeIDs": "Exemplar-Barcodes, gehen in buecher_exemplare.barcode_id (VARCHAR)",
+	"api.CreateStudentRequest.BarcodeID":         "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
+	"api.patchStudentRequest.BarcodeID":          "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
+	"api.patchStudentRequest.LusdID":             "schueler.lusd_id ist VARCHAR (LUSD-Schlüssel)",
+	"api.CreateUserRequest.BarcodeID":            "benutzer.barcode_id ist VARCHAR",
+	"api.UpdateUserRequest.BarcodeID":            "benutzer.barcode_id ist VARCHAR",
+	"api.GeraetRequest.BarcodeID":                "geraete.barcode_id ist VARCHAR",
+	"api.GeraetAenderungRequest.BarcodeID":       "geraete.barcode_id ist VARCHAR; beim Ändern angenommen und nicht gelesen",
+	"inventurlauf.InventurScanRequest.BarcodeID": "gescannter Exemplar-Barcode, buecher_exemplare.barcode_id ist VARCHAR",
+	"api.PrintLabelsRequest.FormatID":            "Formatschlüssel aus pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
+	"api.SchuelerEtikettenRequest.FormatID":      "Formatschlüssel aus pdf/etikett_formate.go (zweckform_l4760), keine Spalte",
+	"api.EtikettenGedrucktRequest.BarcodeIDs":    "Exemplar-Barcodes, gehen in buecher_exemplare.barcode_id (VARCHAR)",
 }
 
 type uuidPaket struct {

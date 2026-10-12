@@ -1,4 +1,4 @@
-package api
+package inventurlauf
 
 import (
 	"errors"
@@ -42,11 +42,11 @@ type InventurFinishResponse struct {
 // @Failure      404   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/finish [post]
-func (s *Server) InventurFinishHandler() http.HandlerFunc {
+func (s *Tueren) InventurFinishHandler() http.HandlerFunc {
 	return s.handleInventurFinish
 }
 
-func (s *Server) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
+func (s *Tueren) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 	var req InventurFinishRequest
 	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
@@ -128,7 +128,7 @@ func (s *Server) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 // @Param        session_id  query  string  true  "Session"
 // @Success      200  {array}  repository.InventurVerlust
 // @Router       /inventur/fehlbestand [get]
-func (s *Server) InventurFehlbestandHandler() http.HandlerFunc {
+func (s *Tueren) InventurFehlbestandHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		sessionID, err := tuer.UUIDAusQuery(r, "session_id")
 		if err != nil {

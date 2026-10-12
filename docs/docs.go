@@ -2025,7 +2025,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.AbgeschlosseneInventurDTO"
+                                "$ref": "#/definitions/inventurlauf.AbgeschlosseneInventurDTO"
                             }
                         }
                     },
@@ -2060,7 +2060,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.InventurAbortRequest"
+                            "$ref": "#/definitions/inventurlauf.InventurAbortRequest"
                         }
                     }
                 ],
@@ -2146,7 +2146,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.InventurFinishRequest"
+                            "$ref": "#/definitions/inventurlauf.InventurFinishRequest"
                         }
                     }
                 ],
@@ -2154,7 +2154,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.InventurFinishResponse"
+                            "$ref": "#/definitions/inventurlauf.InventurFinishResponse"
                         }
                     },
                     "400": {
@@ -2207,7 +2207,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.InventurScanRequest"
+                            "$ref": "#/definitions/inventurlauf.InventurScanRequest"
                         }
                     }
                 ],
@@ -2215,7 +2215,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.InventurScanResponse"
+                            "$ref": "#/definitions/inventurlauf.InventurScanResponse"
                         }
                     },
                     "400": {
@@ -2272,7 +2272,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.InventurSessionDTO"
+                                "$ref": "#/definitions/inventurlauf.InventurSessionDTO"
                             }
                         }
                     },
@@ -2308,7 +2308,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.InventurStartRequest"
+                            "$ref": "#/definitions/inventurlauf.InventurStartRequest"
                         }
                     }
                 ],
@@ -2316,7 +2316,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.InventurStartResponse"
+                            "$ref": "#/definitions/inventurlauf.InventurStartResponse"
                         }
                     },
                     "400": {
@@ -3754,29 +3754,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.AbgeschlosseneInventurDTO": {
-            "type": "object",
-            "properties": {
-                "abgeschlossen_am": {
-                    "type": "string"
-                },
-                "erfasst": {
-                    "type": "integer"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "session_id": {
-                    "type": "string"
-                },
-                "verluste": {
-                    "type": "integer"
-                },
-                "verworfen": {
-                    "type": "boolean"
-                }
-            }
-        },
         "api.AbholbereitInfo": {
             "type": "object",
             "properties": {
@@ -4261,132 +4238,6 @@ const docTemplate = `{
                 },
                 "standort": {
                     "description": "Standort: Freitext bis 255 Zeichen. Leer nimmt die Angabe weg, das Exemplar steht dann\nwieder nach der Signatur. Zeiger, weil ein fehlendes Feld kein Auftrag zum Entfernen ist.",
-                    "type": "string"
-                }
-            }
-        },
-        "api.InventurAbortRequest": {
-            "type": "object",
-            "properties": {
-                "session_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.InventurFinishRequest": {
-            "type": "object",
-            "properties": {
-                "session_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.InventurFinishResponse": {
-            "type": "object",
-            "properties": {
-                "fehlbestand": {
-                    "description": "Fehlbestand nennt die betroffenen Exemplare, nicht nur ihre Anzahl. Vorher stand\nhier allein die Zahl — mit „47 Verluste\" kann niemand ins Regal gehen und nachsehen.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.InventurVerlust"
-                    }
-                },
-                "verloren_gemeldet": {
-                    "type": "integer"
-                }
-            }
-        },
-        "api.InventurScanRequest": {
-            "type": "object",
-            "properties": {
-                "barcode_id": {
-                    "type": "string"
-                },
-                "session_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.InventurScanResponse": {
-            "type": "object",
-            "properties": {
-                "barcode_id": {
-                    "type": "string"
-                },
-                "cover_url": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string"
-                },
-                "titel": {
-                    "type": "string"
-                },
-                "warnungen": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "api.InventurSessionDTO": {
-            "type": "object",
-            "properties": {
-                "erfasst": {
-                    "type": "integer"
-                },
-                "erwartet": {
-                    "type": "integer"
-                },
-                "gestartet_am": {
-                    "type": "string"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "scope": {
-                    "type": "string"
-                },
-                "session_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.InventurStartRequest": {
-            "type": "object",
-            "properties": {
-                "grade": {
-                    "description": "bei \"filter\": Klasse (Jahrgangsbereich enthält)",
-                    "type": "integer"
-                },
-                "signatur": {
-                    "description": "Signatur ist bei \"signature\" ein Präfix von buecher_titel.signatur, also eine\nRegaladresse: \"BIB Deu\" erfasst auch \"BIB Deu 5 KRÜ\" (Migration 060). Früher\nstand hier eine signature_id auf eine Tabelle, die niemand pflegte.",
-                    "type": "string"
-                },
-                "subject": {
-                    "description": "bei \"filter\": Fach (buecher_titel.subject)",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "\"global\" | \"signature\" | \"filter\"",
-                    "type": "string"
-                }
-            }
-        },
-        "api.InventurStartResponse": {
-            "type": "object",
-            "properties": {
-                "erwartet": {
-                    "type": "integer"
-                },
-                "label": {
-                    "type": "string"
-                },
-                "scope": {
-                    "type": "string"
-                },
-                "session_id": {
                     "type": "string"
                 }
             }
@@ -5361,6 +5212,155 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventurlauf.AbgeschlosseneInventurDTO": {
+            "type": "object",
+            "properties": {
+                "abgeschlossen_am": {
+                    "type": "string"
+                },
+                "erfasst": {
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                },
+                "verluste": {
+                    "type": "integer"
+                },
+                "verworfen": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "inventurlauf.InventurAbortRequest": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventurlauf.InventurFinishRequest": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventurlauf.InventurFinishResponse": {
+            "type": "object",
+            "properties": {
+                "fehlbestand": {
+                    "description": "Fehlbestand nennt die betroffenen Exemplare, nicht nur ihre Anzahl. Vorher stand\nhier allein die Zahl — mit „47 Verluste\" kann niemand ins Regal gehen und nachsehen.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.InventurVerlust"
+                    }
+                },
+                "verloren_gemeldet": {
+                    "type": "integer"
+                }
+            }
+        },
+        "inventurlauf.InventurScanRequest": {
+            "type": "object",
+            "properties": {
+                "barcode_id": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventurlauf.InventurScanResponse": {
+            "type": "object",
+            "properties": {
+                "barcode_id": {
+                    "type": "string"
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                },
+                "warnungen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "inventurlauf.InventurSessionDTO": {
+            "type": "object",
+            "properties": {
+                "erfasst": {
+                    "type": "integer"
+                },
+                "erwartet": {
+                    "type": "integer"
+                },
+                "gestartet_am": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "inventurlauf.InventurStartRequest": {
+            "type": "object",
+            "properties": {
+                "grade": {
+                    "description": "bei \"filter\": Klasse (Jahrgangsbereich enthält)",
+                    "type": "integer"
+                },
+                "signatur": {
+                    "description": "Signatur ist bei \"signature\" ein Präfix von buecher_titel.signatur, also eine\nRegaladresse: \"BIB Deu\" erfasst auch \"BIB Deu 5 KRÜ\" (Migration 060). Früher\nstand hier eine signature_id auf eine Tabelle, die niemand pflegte.",
+                    "type": "string"
+                },
+                "subject": {
+                    "description": "bei \"filter\": Fach (buecher_titel.subject)",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "\"global\" | \"signature\" | \"filter\"",
+                    "type": "string"
+                }
+            }
+        },
+        "inventurlauf.InventurStartResponse": {
+            "type": "object",
+            "properties": {
+                "erwartet": {
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "session_id": {
                     "type": "string"
                 }
             }

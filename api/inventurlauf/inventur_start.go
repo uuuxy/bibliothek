@@ -1,4 +1,4 @@
-package api
+package inventurlauf
 
 import (
 	"errors"
@@ -125,7 +125,7 @@ func filterLabel(req InventurStartRequest) string {
 // @Failure      409   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/start [post]
-func (s *Server) InventurStartHandler() http.HandlerFunc {
+func (s *Tueren) InventurStartHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req InventurStartRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {

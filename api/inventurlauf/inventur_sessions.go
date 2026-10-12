@@ -1,4 +1,4 @@
-package api
+package inventurlauf
 
 import (
 	"errors"
@@ -46,7 +46,7 @@ type AbgeschlosseneInventurDTO struct {
 // @Success      200   {array}   AbgeschlosseneInventurDTO
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/abgeschlossen [get]
-func (s *Server) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
+func (s *Tueren) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		invRepo := repository.NewInventoryRepository(s.DB.Pool)
 
@@ -85,7 +85,7 @@ func (s *Server) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
 // @Success      200   {array}   InventurSessionDTO
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/sessions [get]
-func (s *Server) ListInventurSessionsHandler() http.HandlerFunc {
+func (s *Tueren) ListInventurSessionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		invRepo := repository.NewInventoryRepository(s.DB.Pool)
@@ -133,7 +133,7 @@ type InventurAbortRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/abort [post]
-func (s *Server) InventurAbortHandler() http.HandlerFunc {
+func (s *Tueren) InventurAbortHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req InventurAbortRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {

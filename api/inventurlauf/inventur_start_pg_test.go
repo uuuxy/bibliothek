@@ -1,4 +1,4 @@
-package api
+package inventurlauf
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 // belegten Bereich mit 409. Die Oberfläche zeigt Bezeichnung und Zahl aus dieser Antwort.
 
 // inventurStarten ruft POST /api/inventur/start.
-func inventurStarten(t *testing.T, srv *Server, benutzerID, rumpf string) *httptest.ResponseRecorder {
+func inventurStarten(t *testing.T, srv *Tueren, benutzerID, rumpf string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/api/inventur/start", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
@@ -88,7 +88,7 @@ func offeneInventuren(t *testing.T, pool *pgxpool.Pool) int {
 func TestInventurStart_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 	ctx := context.Background()
 
@@ -119,7 +119,7 @@ func TestInventurStart_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 func TestInventurStart_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-D1", "IS-D2")
@@ -141,7 +141,7 @@ func TestInventurStart_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 func TestInventurStart_FilterNachFachUndKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	inventurFach(t, pool, "Inventurfach Mathe")
@@ -169,7 +169,7 @@ func TestInventurStart_FilterNachFachUndKlasse(t *testing.T) {
 func TestInventurStart_BelegterBereichIst409(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-B1")
 

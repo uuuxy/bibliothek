@@ -88,6 +88,7 @@ var dateienOhneTuer = []string{
 	"bestellmail_anhaenge.go",
 	"bestellmail_versand.go",
 	"betriebsbereitschaft_alarm.go",
+	"inventurlauf/inventurlauf.go",
 	"lernmittel/lernmittel.go",
 	"lernmittel/lmf_plan_live.go",
 	"mahnwesen_mail.go",

@@ -1,4 +1,4 @@
-package api
+package inventurlauf
 
 // inventur_verlust_aktionen.go — Handlungsspielraum für den Fehlbestandsbericht:
 // ein als Verlust gebuchtes Exemplar kann wiedergefunden (zurück in Umlauf) oder
@@ -18,7 +18,7 @@ import (
 // InventurVerlustGefundenHandler markiert ein Exemplar der aktuellen Session als beim
 // Nachsuchen wiedergefunden und bringt es zurück in Umlauf.
 // @Router /buecher/exemplare/{id}/gefunden [post]
-func (s *Server) InventurVerlustGefundenHandler() http.HandlerFunc {
+func (s *Tueren) InventurVerlustGefundenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
@@ -83,12 +83,12 @@ type verlustLoeschenRequest struct {
 // Bewusst NICHT der allgemeine Lösch-Weg (der soft löscht, siehe DeleteCopyHandler) —
 // diese Route rührt ausschliesslich Exemplare an, die schon als VERLUST gelten.
 // @Router /buecher/exemplare/verlust-endgueltig-loeschen [post]
-func (s *Server) InventurVerlusteLoeschenHandler() http.HandlerFunc {
+func (s *Tueren) InventurVerlusteLoeschenHandler() http.HandlerFunc {
 	return apierrors.Wrap(s.handleInventurVerlusteLoeschen)
 }
 
 // handleInventurVerlusteLoeschen löscht die genannten Verlust-Exemplare in einer Transaktion.
-func (s *Server) handleInventurVerlusteLoeschen(w http.ResponseWriter, r *http.Request) error {
+func (s *Tueren) handleInventurVerlusteLoeschen(w http.ResponseWriter, r *http.Request) error {
 	var req verlustLoeschenRequest
 	if !tuer.DecodeAndValidate(w, r, &req) {
 		return nil

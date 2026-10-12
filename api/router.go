@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/inventurlauf"
 	"bibliothek/api/lernmittel"
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
@@ -71,6 +72,11 @@ func NewServer(database *db.Database, authenticator *auth.Authenticator, broker 
 // als Zeiger, keine Kopie: Was am Server gesetzt wird, gilt auch für seine Türen.
 func (s *Server) lernmittel() *lernmittel.Tueren {
 	return &lernmittel.Tueren{Basis: &s.Basis}
+}
+
+// inventurlauf ist der Zugang zu den Türen der Inventur.
+func (s *Server) inventurlauf() *inventurlauf.Tueren {
+	return &inventurlauf.Tueren{Basis: &s.Basis}
 }
 
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.

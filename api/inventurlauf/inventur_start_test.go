@@ -1,4 +1,4 @@
-package api
+package inventurlauf
 
 import (
 	"net/http"
@@ -8,14 +8,14 @@ import (
 )
 
 // Ein Inventurstart ohne brauchbaren Bereich wird abgewiesen, bevor eine Inventur
-// entsteht. Der Server hat hier keine Datenbank; erreicht der Ablauf sie doch, meldet
+// entsteht. Die Türen haben hier keine Datenbank; erreicht der Ablauf sie doch, meldet
 // tuertest.AntwortOhneDB das als Fehler.
 //
 // Die leere Signatur ist der Fall, um den es geht: Sie ist der Anfang jeder Signatur, und
 // aus der Inventur eines Regals würde eine über den ganzen Bestand, deren Abschluss alles
 // nicht Gescannte als Verlust bucht.
 func TestInventurStart_UnbrauchbarerBereichIst400VorDerDatenbank(t *testing.T) {
-	s := &Server{}
+	s := &Tueren{}
 	faelle := map[string]string{
 		"Art fehlt":                   `{}`,
 		"unbekannte Art":              `{"type":"regal"}`,

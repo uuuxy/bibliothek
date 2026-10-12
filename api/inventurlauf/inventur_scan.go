@@ -1,4 +1,4 @@
-package api
+package inventurlauf
 
 import (
 	"context"
@@ -70,14 +70,14 @@ type InventurScanResponse struct {
 // @Failure      409   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /inventur/scan [post]
-func (s *Server) InventurScanHandler() http.HandlerFunc {
+func (s *Tueren) InventurScanHandler() http.HandlerFunc {
 	return s.handleInventurScan
 }
 
 // handleInventurScan verbucht einen einzelnen Inventur-Scan. Bewusst als Top-Level-Methode
 // statt Inline-Closure, damit die vielen Frühabbrüche nicht zusätzlich als Verschachtelung
 // zählen (SonarQube S3776).
-func (s *Server) handleInventurScan(w http.ResponseWriter, r *http.Request) {
+func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 	var req InventurScanRequest
 	if !tuer.DecodeAndValidate(w, r, &req) {
 		return

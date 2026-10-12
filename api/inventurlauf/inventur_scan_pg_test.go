@@ -1,4 +1,4 @@
-package api
+package inventurlauf
 
 import (
 	"context"
@@ -45,7 +45,7 @@ func TestInventurScan_FremderScopeNichtErfasst(t *testing.T) {
 		t.Fatalf("Deutsch-Session anlegen: %v", err)
 	}
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Mathe-Buch in Deutsch-Session -> 409, NICHT erfasst.
 	rec := inventurScan(t, srv, session.ID, barcodeMathe)
@@ -80,7 +80,7 @@ func TestInventurScan_FremderScopeNichtErfasst(t *testing.T) {
 	}
 }
 
-func inventurScan(t *testing.T, srv *Server, sessionID, barcode string) *httptest.ResponseRecorder {
+func inventurScan(t *testing.T, srv *Tueren, sessionID, barcode string) *httptest.ResponseRecorder {
 	t.Helper()
 	body := fmt.Sprintf(`{"session_id":%q,"barcode_id":%q}`, sessionID, barcode)
 	req := httptest.NewRequest(http.MethodPost, "/api/inventur/scan", strings.NewReader(body))
@@ -116,7 +116,7 @@ func TestInventurScan_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T)
 		t.Fatalf("Inventur anlegen: %v", err)
 	}
 
-	rec := inventurScan(t, &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}, session.ID, "GIBT-ES-NICHT")
+	rec := inventurScan(t, &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}, session.ID, "GIBT-ES-NICHT")
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("Status %d, erwartet 404: %s", rec.Code, rec.Body.String())
 	}
@@ -172,7 +172,7 @@ func TestInventurScan_Fehlerfaelle(t *testing.T) {
 		t.Fatalf("Deutsch-Session anlegen: %v", err)
 	}
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	tests := []struct {
 		name       string

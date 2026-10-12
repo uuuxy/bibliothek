@@ -37,11 +37,9 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 - [x] Türen in Themenordner: Der Plan ist seit dem 12.10.2026 freigegeben. Geteilt wird nur
   `api/`, je Menüpunkt der Oberfläche ein Ordner; die Abfragen bleiben in der einen
   Datenbankschicht. (5.65)
-- [ ] Türen in Themenordner, dritte Freigabe: Stufe 3 ist gebaut, die Türen des LMF-Plans
-  stehen in `api/lernmittel`. Gemessen ist, was bei den übrigen elf Themen im Weg steht: bei
-  Benutzer, Inventur, System und Portal je ein oder zwei Namen, bei den anderen sieben fünf
-  bis 26, am meisten bei der Bestellung. Vorschlag: Stufe 4 beginnt, je Thema ein Schritt,
-  zuerst die vier Themen mit dem wenigsten im Weg. (5.65)
+- [x] Türen in Themenordner, dritte Freigabe: Stufe 4 ist seit dem 12.10.2026 freigegeben,
+  je Thema ein Schritt, zuerst die vier Themen mit dem wenigsten im Weg (Inventur, Benutzer,
+  Portal, System). (5.65)
 - [ ] Sicherung außer Haus: Alte Sicherungen löscht das Programm nur auf dem Server, am
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
@@ -164,8 +162,9 @@ lässt sich dort anhalten.
 - [x] Stufe 3, das erste Thema: Die Türen des LMF-Plans stehen in `api/lernmittel` (5 Dateien,
   9 Testdateien), umgezogen mit einem Werkzeug. Ein Test über den ganzen Router steht im
   Ordner seines Themas, als eigenes Testpaket. Der Aufwand je Thema ist gemessen (5.65).
-- [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt: Inventur, System, Portal,
-  Benutzer, Mahnwesen, Schaden, Druck mit Bestellung, Katalog, Leser, zuletzt die Theke.
+- [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt. Umgezogen: Inventur
+  (`api/inventurlauf`). Offen: Benutzer, Portal, System, Mahnwesen, Schaden, Druck mit
+  Bestellung, Katalog, Leser, zuletzt die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
   die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
   Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
@@ -536,11 +535,12 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 3 si
   | Schaden    | 7       | 1.154  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go` |
   | Lernmittel | 5       | 1.098  | 7      | 8           | `lmf_*.go`, seit dem 12.10.2026 in `api/lernmittel` |
   | Benutzer   | 6       | 838    | 6      | 9           | `user_admin*.go` |
-  | Inventur   | 5       | 777    | 9      | 5           | `inventur_*.go` |
+  | Inventur   | 5       | 777    | 9      | 5           | `inventur_*.go`, seit dem 12.10.2026 in `api/inventurlauf` |
   | Portal     | 5       | 681    | 15     | 11          | `anliegen.go`, `reservation.go`, `katalog_kollegium.go`, `opac.go`, `monitor.go` |
 
   Zwei Namen sind als Paket vergeben (`pkg/lmf`, `inventur/`): Der Ordner der Lernmittel-Türen
-  heißt deshalb nicht `lmf`, der Name für die Türen der Inventur steht mit ihrer Stufe fest.
+  heißt deshalb nicht `lmf`, der Ordner der Inventur-Türen `inventurlauf`. `inventur/` ist
+  der Medienkatalog, und die Routenliste bindet beide Pakete ein.
 - **Was jede Tür braucht, steht in `api/tuer`** (seit dem 12.10.2026, fünf Dateien mit 520
   Zeilen): Eingabe lesen und Antwort schreiben (`RespondJSON`, `DecodeAndValidate`), zehn
   Konstanten, die Rechteprüfung mit ihrem Zwischenspeicher (`BesitztRecht`,

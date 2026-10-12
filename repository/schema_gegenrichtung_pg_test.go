@@ -136,7 +136,7 @@ var fkAktionenBestand = []string{
 	// jede andere Änderung an Titeldaten.
 	"SET NULL  buecher_titel.werk_id -> werke",
 	// Befragt: Der Fehlbestandsbericht hält eine Abschrift, gerade damit er das Löschen
-	// des Exemplars überlebt (inventur_verlust_aktionen.go).
+	// des Exemplars überlebt (api/inventurlauf/inventur_verlust_aktionen.go).
 	"SET NULL  inventur_verluste.exemplar_id -> buecher_exemplare",
 	// Befragt: Die Vormerkung fällt zurück auf „wartend", wenn ihr bereitgestelltes
 	// Exemplar verschwindet (repository/damage.go).
@@ -278,7 +278,7 @@ var checkBedingungenBestand = []string{
 	// FinishInventurSession setzt nur abgeschlossen_am, AbortInventurSession setzt beide in
 	// einer Anweisung — keiner läuft gegen die Regel. Keiner setzt abgeschlossen_am zurück;
 	// wer je „Inventur wieder öffnen" baut und verworfen stehen lässt, bekommt einen Abbruch
-	// (23514), keinen Satz (api/inventur_verworfen_pg_test.go).
+	// (23514), keinen Satz (api/inventurlauf/inventur_verworfen_pg_test.go).
 	"chk_inv_session_verworfen_beendet",
 	// Migration 127, befragt am 17.09.2026: Beide Werte gehen in einen Ersatzbetrag ein,
 	// der in einem Bescheid an Erziehungsberechtigte steht. Der Code prüft sie an der Tür

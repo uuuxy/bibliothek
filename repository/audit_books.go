@@ -251,7 +251,7 @@ const (
 	// AuditAktionTitelGeloescht: Das Exemplar ging mit seinem Titel (beide Lösch-Türen).
 	AuditAktionTitelGeloescht = "titel_geloescht"
 	// AuditAktionVerlustEndgueltigGeloescht: Ein als Verlust gebuchtes Exemplar wurde in
-	// der Inventur endgültig entfernt (inventur_verlust_aktionen.go).
+	// der Inventur endgültig entfernt (api/inventurlauf/inventur_verlust_aktionen.go).
 	AuditAktionVerlustEndgueltigGeloescht = "verlust_endgueltig_geloescht"
 	// AuditDetailWarImBestand steht an jeder dieser Spuren: ob das Exemplar ein Zugangsdatum
 	// trug. Ein bestelltes, nie eingetroffenes Exemplar zählt das Abgangsbuch damit nicht.

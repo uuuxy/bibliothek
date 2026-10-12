@@ -1,4 +1,4 @@
-package api
+package inventurlauf
 
 import (
 	"context"
@@ -56,7 +56,7 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 		t.Fatalf("Session anlegen: %v", err)
 	}
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	for _, scan := range []struct{ session, barcode string }{
 		{geprueft.ID, barcodeGeprueft}, {verworfen.ID, barcodeGescannt},
 	} {
@@ -159,7 +159,7 @@ func inventurPost(t *testing.T, h http.Handler, pfad, sessionID, benutzerID stri
 	return rec
 }
 
-func abgeschlosseneInventuren(t *testing.T, srv *Server) []map[string]any {
+func abgeschlosseneInventuren(t *testing.T, srv *Tueren) []map[string]any {
 	t.Helper()
 	rec := httptest.NewRecorder()
 	srv.ListAbgeschlosseneInventurenHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/inventur/abgeschlossen", nil))
