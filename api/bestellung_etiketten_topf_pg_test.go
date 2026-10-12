@@ -17,7 +17,7 @@ import (
 )
 
 // Der Eigentumsvermerk folgt dem Topf des Exemplars, auch auf den zwei Wegen zum Händler. Die
-// zwei Wege des Hauses prüft api/etiketten_topf_pg_test.go.
+// zwei Wege des Hauses prüft api/druck/etiketten_topf_pg_test.go.
 
 // Die beiden Wege zum Händler: der Lieferanten-Link (buchetikett.DerBestellung) und der
 // Mailanhang (Etiketten aus ProcessOrder). Bestellt wird ein LERNMITTEL-Titel für die

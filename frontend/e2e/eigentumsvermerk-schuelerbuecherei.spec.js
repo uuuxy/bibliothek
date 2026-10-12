@@ -3,7 +3,7 @@ import { uiLogin, seedSQL, querySQL, gehZu, einstellungsKategorie } from './help
 
 // Die zweite Einstellung „Eigentumsvermerk Schülerbücherei" (OFFEN.md 4.21, entschieden am
 // 21.09.2026) — der Weg vom Feld bis in die Tabelle. Was der Wert auf dem Etikett bewirkt,
-// prüfen die Go-Tests am fertigen PDF (api/etiketten_topf_pg_test.go); hier steht, was nur
+// prüfen die Go-Tests am fertigen PDF (api/druck/etiketten_topf_pg_test.go); hier steht, was nur
 // der Browser zeigen kann: Das Feld ist da, es speichert unter SEINEM Schlüssel, und es
 // lässt den allgemeinen Vermerk daneben unangetastet.
 const SCHLUESSEL = 'etikett_eigentumsvermerk_schuelerbuecherei';

@@ -1,4 +1,4 @@
-package api
+package druck
 
 import (
 	"context"
@@ -35,7 +35,7 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	const (
 		signatur  = "LMF-Deutsch 5"

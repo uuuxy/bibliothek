@@ -1,4 +1,4 @@
-package api
+package druck_test
 
 import (
 	"context"
@@ -8,8 +8,10 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/druck"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/routertest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
@@ -18,7 +20,7 @@ import (
 
 // GET und PUT /api/ausweis-layout: Das Design der Ausweise liegt am Server, damit alle
 // Arbeitsplätze dasselbe drucken. Gemessen am 08.10.2026 führte kein Go-Test das Speichern
-// aus (api/ausweis_layout.go 33,3 %, OFFEN.md 5.10).
+// aus (api/druck/ausweis_layout.go 33,3 %, OFFEN.md 5.10).
 //
 // Über den ganzen Router mit Sitzung. Die Zusagen: Was gespeichert ist, kommt Byte für Byte
 // zurück. Was die Tür abweist, lässt das gespeicherte Design stehen. Und „noch kein Design"
@@ -46,7 +48,7 @@ func (p poolMitLesefehlerBei) QueryRow(ctx context.Context, sql string, args ...
 func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	_, rufe := protokollWelt(t, pool)
+	_, rufe := routertest.MitAufruf(t, pool)
 	ohneDesign := func() {
 		pgtest.Aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
 	}
@@ -144,7 +146,7 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 		}
 	})
 	t.Run("über der Grenze: 413, das Design bleibt", func(t *testing.T) {
-		abgewiesen(t, logo(maxAusweisLayoutBytes), http.StatusRequestEntityTooLarge)
+		abgewiesen(t, logo(druck.MaxAusweisLayoutBytes), http.StatusRequestEntityTooLarge)
 	})
 }
 
@@ -165,7 +167,7 @@ func TestAusweisLayout_LesefehlerIstKeinLeeresDesign(t *testing.T) {
 	})
 
 	gestoert := poolMitLesefehlerBei{PgxPoolIface: pool, muster: "FROM system_einstellungen", schluessel: repository.AusweisLayoutSchluessel}
-	_, sitzung, router := routerMitSitzungUeber(t, pool, gestoert,
+	_, sitzung, router := routertest.MitSitzungUeber(t, pool, gestoert,
 		"ausweis-layout-lesefehler@example.org", "Lea", "Lesefehler")
 	req := httptest.NewRequest(http.MethodGet, "/api/ausweis-layout", nil)
 	req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
@@ -181,7 +183,7 @@ func TestAusweisLayout_LesefehlerIstKeinLeeresDesign(t *testing.T) {
 
 	// Gegenprobe: Derselbe Aufruf am ungestörten Pool liefert das Design. Ohne sie bestünde
 	// der Test auch an einer Tür, die immer 500 antwortet.
-	_, sitzung, router = routerMitSitzung(t, pool,
+	_, sitzung, router = routertest.MitSitzung(t, pool,
 		"ausweis-layout-lesefehler@example.org", "Lea", "Lesefehler")
 	req = httptest.NewRequest(http.MethodGet, "/api/ausweis-layout", nil)
 	req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})

@@ -1,7 +1,7 @@
 // Package code39 kennt das Prüfzeichen, das bis zum 17.09.2026 auf jedem Ausweis und
 // jedem Buchetikett dieser Anwendung stand — und rechnet es wieder heraus.
 //
-// Die Geschichte: `api/barcode_generate.go` druckte mit
+// Die Geschichte: `api/druck/barcode_generate.go` druckte mit
 // `code39.Encode(strings.ToUpper(inhalt), true, true)`. Das mittlere `true` heißt
 // „Prüfzeichen anhängen", und dieses Zeichen steht IN den Strichcode-Daten. Ein Leser
 // gibt es als Teil der Nummer zurück, solange er es nicht selbst prüft und entfernt —

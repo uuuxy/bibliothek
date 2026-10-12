@@ -1,4 +1,4 @@
-package api
+package druck
 
 import (
 	"errors"
@@ -37,7 +37,7 @@ type SchuelerEtikettenRequest struct {
 
 // PrintSchuelerEtikettenHandler liefert den Klebebogen als PDF.
 // POST /api/print/schueler-etiketten
-func (s *Server) PrintSchuelerEtikettenHandler(studentRepo repository.StudentRepository) http.HandlerFunc {
+func (s *Tueren) PrintSchuelerEtikettenHandler(studentRepo repository.StudentRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SchuelerEtikettenRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {
@@ -94,7 +94,7 @@ func pruefeBogenParameter(req *SchuelerEtikettenRequest) error {
 // etikettenDesBogens liefert den Inhalt: ein Muster oder die markierten Schüler.
 // Zweiter Rückgabewert ist der HTTP-Status zum Fehler — ein Datenbankausfall ist kein
 // Eingabefehler und darf nicht als 400 bei der Theke ankommen.
-func (s *Server) etikettenDesBogens(r *http.Request, studentRepo repository.StudentRepository, req SchuelerEtikettenRequest) ([]pdf.SchuelerEtikett, int, error) {
+func (s *Tueren) etikettenDesBogens(r *http.Request, studentRepo repository.StudentRepository, req SchuelerEtikettenRequest) ([]pdf.SchuelerEtikett, int, error) {
 	if req.Muster {
 		return []pdf.SchuelerEtikett{pdf.MusterSchuelerEtikett}, 0, nil
 	}

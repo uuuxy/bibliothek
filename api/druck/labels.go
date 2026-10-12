@@ -1,4 +1,4 @@
-package api
+package druck
 
 import (
 	"fmt"
@@ -33,7 +33,7 @@ func parseLabelParams(r *http.Request) (formatId string, startPos int, isQR bool
 
 // LabelsHandler returns a handler that generates an A4 PDF containing 3x8 Avery labels
 // for all copies of a given book title.
-func (s *Server) LabelsHandler() http.HandlerFunc {
+func (s *Tueren) LabelsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -78,7 +78,7 @@ type PrintLabelsRequest struct {
 }
 
 // PrintLabelsHandler generates an A4 PDF containing labels dynamically.
-func (s *Server) PrintLabelsHandler() http.HandlerFunc {
+func (s *Tueren) PrintLabelsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req PrintLabelsRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {

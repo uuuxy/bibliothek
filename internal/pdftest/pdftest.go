@@ -7,7 +7,7 @@
 //
 // Wie internal/pgtest und internal/smtptest ist das ein normales Paket, das nur von Tests
 // importiert wird: Testdateien (_test.go) lassen sich nicht paketübergreifend importieren.
-// Es lag bis zum 03.09.2026 als Helfer in api/etiketten_pdf_paritaet_pg_test.go; der
+// Es lag bis zum 03.09.2026 als Helfer in api/druck/etiketten_pdf_paritaet_pg_test.go; der
 // Schulbuch-Export (Paket inventur) braucht denselben Leser, und eine zweite Fassung wäre
 // die Gelegenheit gewesen, die Fallen unten erneut hineinzubauen.
 package pdftest

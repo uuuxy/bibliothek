@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/druck"
 	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -56,18 +57,18 @@ func jsonHolen(t *testing.T, handler http.HandlerFunc, pfad string, ziel any) {
 // haendler_beklebt_pg_test.go schreibt die Bedingung noch einmal selbst hin ("bewusst
 // dieselbe wie EtikettOffenBedingung") und kann eine Abweichung im Produktivcode
 // deshalb gar nicht sehen — er würde mitwandern, nur eben nur im Test.
-func offeneEtikettenUeberHandler(t *testing.T, srv *Server) (liste []ExemplarOhneEtikett, anzahl int) {
+func offeneEtikettenUeberHandler(t *testing.T, srv *Server) (liste []druck.ExemplarOhneEtikett, anzahl int) {
 	t.Helper()
-	jsonHolen(t, srv.EtikettenOffenHandler(), "/api/exemplare/etiketten-offen", &liste)
+	jsonHolen(t, srv.druck().EtikettenOffenHandler(), "/api/exemplare/etiketten-offen", &liste)
 
 	var zaehler struct {
 		Anzahl int `json:"anzahl"`
 	}
-	jsonHolen(t, srv.EtikettenOffenAnzahlHandler(), "/api/exemplare/etiketten-offen/anzahl", &zaehler)
+	jsonHolen(t, srv.druck().EtikettenOffenAnzahlHandler(), "/api/exemplare/etiketten-offen/anzahl", &zaehler)
 	return liste, zaehler.Anzahl
 }
 
-func enthaeltBarcode(liste []ExemplarOhneEtikett, barcode string) bool {
+func enthaeltBarcode(liste []druck.ExemplarOhneEtikett, barcode string) bool {
 	for _, e := range liste {
 		if e.BarcodeID == barcode {
 			return true
@@ -139,7 +140,7 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	}
 
 	// Druck gegenbuchen — der Weg, über den die Liste überhaupt leer werden kann.
-	gedruckt := postJSON(t, srv.EtikettenGedrucktHandler(), "/api/exemplare/etiketten-gedruckt",
+	gedruckt := postJSON(t, srv.druck().EtikettenGedrucktHandler(), "/api/exemplare/etiketten-gedruckt",
 		map[string]any{"barcode_ids": barcodes})
 	if gedruckt["markiert"] != float64(len(barcodes)) {
 		t.Errorf("vermerkt wurden %v Etiketten, erwartet %d", gedruckt["markiert"], len(barcodes))
@@ -156,7 +157,7 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	}
 
 	// Und der Weg zurück (Papierstau): Zurücksetzen bringt sie wieder.
-	postJSON(t, srv.EtikettenZuruecksetzenHandler(), "/api/exemplare/etiketten-zuruecksetzen",
+	postJSON(t, srv.druck().EtikettenZuruecksetzenHandler(), "/api/exemplare/etiketten-zuruecksetzen",
 		map[string]any{"barcode_ids": barcodes})
 	liste, _ = offeneEtikettenUeberHandler(t, srv)
 	for _, barcode := range barcodes {
@@ -279,13 +280,13 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			var liste []ExemplarOhneEtikett
-			jsonHolen(t, srv.EtikettenOffenHandler(), "/api/exemplare/etiketten-offen"+f.query, &liste)
+			var liste []druck.ExemplarOhneEtikett
+			jsonHolen(t, srv.druck().EtikettenOffenHandler(), "/api/exemplare/etiketten-offen"+f.query, &liste)
 
 			var zaehler struct {
 				Anzahl int `json:"anzahl"`
 			}
-			jsonHolen(t, srv.EtikettenOffenAnzahlHandler(),
+			jsonHolen(t, srv.druck().EtikettenOffenAnzahlHandler(),
 				"/api/exemplare/etiketten-offen/anzahl"+f.query, &zaehler)
 
 			if len(liste) != f.erwarte {
@@ -304,7 +305,7 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 	var mitStichtag struct {
 		Anzahl int `json:"anzahl"`
 	}
-	jsonHolen(t, srv.EtikettenOffenAnzahlHandler(),
+	jsonHolen(t, srv.druck().EtikettenOffenAnzahlHandler(),
 		"/api/exemplare/etiketten-offen/anzahl?bis="+time.Now().Format(tuer.DateFormatISO), &mitStichtag)
 	if mitStichtag.Anzahl != 4 {
 		t.Errorf("Stichtag-Zaehler nennt %d, erwartet 4 (drei markierte + ein fremdes offenes)",
@@ -343,12 +344,12 @@ func TestEtikettenkette_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T)
 
 	for _, suchtext := range []string{"La Peste", "La  Peste", "la" + geschuetzt + "pes"} {
 		query := "?q=" + url.QueryEscape(suchtext)
-		var liste []ExemplarOhneEtikett
-		jsonHolen(t, srv.EtikettenOffenHandler(), "/api/exemplare/etiketten-offen"+query, &liste)
+		var liste []druck.ExemplarOhneEtikett
+		jsonHolen(t, srv.druck().EtikettenOffenHandler(), "/api/exemplare/etiketten-offen"+query, &liste)
 		var zaehler struct {
 			Anzahl int `json:"anzahl"`
 		}
-		jsonHolen(t, srv.EtikettenOffenAnzahlHandler(), "/api/exemplare/etiketten-offen/anzahl"+query, &zaehler)
+		jsonHolen(t, srv.druck().EtikettenOffenAnzahlHandler(), "/api/exemplare/etiketten-offen/anzahl"+query, &zaehler)
 		if len(liste) != 2 || zaehler.Anzahl != 2 {
 			t.Errorf("Suche %+q: Liste %d Zeilen, Zähler %d — erwartet je 2", suchtext, len(liste), zaehler.Anzahl)
 		}

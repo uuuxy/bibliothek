@@ -1,4 +1,4 @@
-package api
+package druck
 
 import (
 	"context"
@@ -27,7 +27,7 @@ import (
 
 // etikettenUeberBuchformular druckt über GET /api/buecher/titel/{id}/etiketten
 // (buchetikett.DesTitels).
-func etikettenUeberBuchformular(t *testing.T, srv *Server, titelID string) string {
+func etikettenUeberBuchformular(t *testing.T, srv *Tueren, titelID string) string {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/x/etiketten?format="+testdaten.EtikettFormatMitVermerk+"&start=1", nil)
 	req.SetPathValue("id", titelID)
@@ -43,7 +43,7 @@ func etikettenUeberBuchformular(t *testing.T, srv *Server, titelID string) strin
 // (buchetikett.ErgaenzeServerfelder). Die
 // Nutzlast trägt zusätzlich ein Feld „Topf" mit dem FALSCHEN Wert: Der Topf kommt vom
 // Server, und ein Druckauftrag aus dem Browser darf ihn nicht mitbringen können.
-func etikettenUeberDruckCenter(t *testing.T, srv *Server, barcode, untergeschobenerTopf string) string {
+func etikettenUeberDruckCenter(t *testing.T, srv *Tueren, barcode, untergeschobenerTopf string) string {
 	t.Helper()
 	payload := `{"formatId": "` + testdaten.EtikettFormatMitVermerk + `", "startPosition": 1, "isQR": false,
 		"items": [{"BarcodeID": "` + barcode + `", "Titel": "Probe", "Autor": "", "Topf": "` + untergeschobenerTopf + `"}]}`
@@ -59,7 +59,7 @@ func etikettenUeberDruckCenter(t *testing.T, srv *Server, barcode, untergeschobe
 func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	faelle := []struct {
 		name string
@@ -133,7 +133,7 @@ func TestEigentumsvermerk_TopfLaesstSichNichtUnterschieben(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.SetzeVermerkSchuelerbuecherei(t, pool, testdaten.VermerkStadt)
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	text := etikettenUeberDruckCenter(t, srv, "B-GIBT-ES-NICHT", mitteltopf.Schultraeger)
 	pdftest.Aufdruck(t, "Druck-Center, unbekannter Barcode", text, testdaten.VermerkLand, testdaten.VermerkStadt)

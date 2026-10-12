@@ -46,17 +46,17 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// leere Liste ab (jsonOrEmpty); Exemplare/Verfügbarkeit bleiben view_books.
 	mux.Handle("GET /api/buecher/titel/{id}/ausleiher", s.RequirePermission("view_students")(s.katalog().GetTitleBorrowersHandler()))
 	mux.Handle("GET /api/buecher/titel/{id}/historie", s.RequirePermission("view_students")(s.katalog().GetTitleHistoryHandler()))
-	mux.Handle("GET /api/buecher/titel/{id}/etiketten", s.RequirePermission("view_books")(s.LabelsHandler()))
-	mux.Handle("POST /api/print/labels", s.RequirePermission("view_books")(s.PrintLabelsHandler()))
+	mux.Handle("GET /api/buecher/titel/{id}/etiketten", s.RequirePermission("view_books")(s.druck().LabelsHandler()))
+	mux.Handle("POST /api/print/labels", s.RequirePermission("view_books")(s.druck().PrintLabelsHandler()))
 
 	// Nachdruck: Welche Exemplare haben noch kein Etikett, und Gegenbuchung nach dem Druck.
 	// edit_books statt view_books — die Gegenbuchung ändert Bestandsdaten.
-	mux.Handle("GET /api/exemplare/etiketten-offen", s.RequirePermission("edit_books")(s.EtikettenOffenHandler()))
-	mux.Handle("GET /api/exemplare/etiketten-offen/anzahl", s.RequirePermission("edit_books")(s.EtikettenOffenAnzahlHandler()))
-	mux.Handle("POST /api/exemplare/etiketten-gedruckt", s.RequirePermission("edit_books")(s.EtikettenGedrucktHandler()))
+	mux.Handle("GET /api/exemplare/etiketten-offen", s.RequirePermission("edit_books")(s.druck().EtikettenOffenHandler()))
+	mux.Handle("GET /api/exemplare/etiketten-offen/anzahl", s.RequirePermission("edit_books")(s.druck().EtikettenOffenAnzahlHandler()))
+	mux.Handle("POST /api/exemplare/etiketten-gedruckt", s.RequirePermission("edit_books")(s.druck().EtikettenGedrucktHandler()))
 	// Der Weg zurück nach Papierstau oder zu weitem Altbestands-Stichtag.
-	mux.Handle("POST /api/exemplare/etiketten-zuruecksetzen", s.RequirePermission("edit_books")(s.EtikettenZuruecksetzenHandler()))
-	mux.Handle("POST /api/exemplare/etiketten-altbestand", s.RequirePermission("edit_books")(s.EtikettenAltbestandHandler()))
+	mux.Handle("POST /api/exemplare/etiketten-zuruecksetzen", s.RequirePermission("edit_books")(s.druck().EtikettenZuruecksetzenHandler()))
+	mux.Handle("POST /api/exemplare/etiketten-altbestand", s.RequirePermission("edit_books")(s.druck().EtikettenAltbestandHandler()))
 	// Eigentum markierter Exemplare (4.24, Stufe 3): edit_books wie Barcode und Status, Grund
 	// Pflicht, jede Änderung im Protokoll.
 	mux.Handle("PUT /api/exemplare/eigentum", s.RequirePermission("edit_books")(s.katalog().ExemplarEigentumHandler()))

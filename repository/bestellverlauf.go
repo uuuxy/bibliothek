@@ -141,7 +141,7 @@ func LadeBestellVerlauf(ctx context.Context, db DBQueryer, limit int, mittel str
 // Bestellungen über orderIndex zu (Gesamtpreis wird pro Position berechnet).
 func LadeBestellVerlaufPositionen(ctx context.Context, db DBQueryer, orders []BestellVerlaufEintrag, orderIndex map[string]int) error {
 	// EtikettOffenBedingung ist dieselbe Definition, die auch die Nachdruck-Liste und
-	// ihr Zähler verwenden (api/etiketten_offen.go). Wäre sie hier abgeschrieben, zeigte der
+	// ihr Zähler verwenden (api/druck/etiketten_offen.go). Wäre sie hier abgeschrieben, zeigte der
 	// Verweis irgendwann eine andere Zahl als die Liste, die er öffnet.
 	posRows, err := db.Query(ctx, `
 		SELECT p.bestellung_id, p.titel_name, p.isbn, p.menge, p.einzelpreis,

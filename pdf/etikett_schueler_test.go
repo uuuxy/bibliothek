@@ -11,7 +11,7 @@ import (
 // Ein Test, der nur „die Funktion bekam Max Mustermann" behauptet, sagt nichts darüber,
 // ob der Name auf dem Papier landet — genau daran ist beim Lernmittel-Etikett schon
 // einmal ein Weg vorbeigelaufen, der nur drei von sechs Feldern mitgeschickt hat.
-// Dieselbe Technik wie in api/etiketten_pdf_paritaet_pg_test.go.
+// Dieselbe Technik wie in api/druck/etiketten_pdf_paritaet_pg_test.go.
 
 func erzeugeBogen(t *testing.T, format string, start int, etiketten []SchuelerEtikett) string {
 	t.Helper()

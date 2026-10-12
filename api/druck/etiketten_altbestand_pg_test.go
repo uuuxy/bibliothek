@@ -1,4 +1,4 @@
-package api
+package druck_test
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/routertest"
 	"bibliothek/internal/testdaten"
 )
 
@@ -18,7 +19,7 @@ func TestEtikettenAltbestand_StichtagTrifftNurDenAltbestand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
-	_, rufe := protokollWelt(t, pool)
+	_, rufe := routertest.MitAufruf(t, pool)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Altbestand Etiketten", 0)
 
 	type zeile struct {

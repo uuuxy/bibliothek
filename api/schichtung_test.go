@@ -86,6 +86,7 @@ var dateienOhneTuer = []string{
 	"benutzer/benutzer.go",
 	"bestellmail_anhaenge.go",
 	"bestellmail_versand.go",
+	"druck/druck.go",
 	"inventurlauf/inventurlauf.go",
 	"katalog/katalog.go",
 	"lernmittel/lernmittel.go",

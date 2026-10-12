@@ -14,7 +14,7 @@ import (
 
 // Gate: Ein gescheitertes Lesen gilt nicht als „nichts gespeichert".
 //
-// Anlass (08.10.2026, api/ausweis_layout.go): `case errors.Is(err, pgx.ErrNoRows) ||
+// Anlass (08.10.2026, api/druck/ausweis_layout.go): `case errors.Is(err, pgx.ErrNoRows) ||
 // strings.TrimSpace(wert) == ""` stand vor `case err != nil`. Nach einem gescheiterten Scan
 // ist der Wert leer; der erste Zweig traf deshalb jeden Fehler, und die Tür beantwortete
 // einen Lesefehler mit dem leeren Design. Der Ausweis-Designer speichert nach dieser

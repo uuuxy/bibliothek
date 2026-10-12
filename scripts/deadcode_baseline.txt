@@ -17,7 +17,7 @@ internal/pgtest/anweisungen.go: unreachable func: ZaehleZeilen
 internal/pgtest/anweisungen.go: unreachable func: Aufraeumen
 
 # Testinfrastruktur per Paket-Design: der Leser für gedruckte PDF-Textstücke
-# (vorher Helfer in api/etiketten_pdf_paritaet_pg_test.go, seit 03.09.2026 auch vom
+# (vorher Helfer in api/druck/etiketten_pdf_paritaet_pg_test.go, seit 03.09.2026 auch vom
 # Schulbuch-Export gebraucht). Wird ausschließlich von *_test.go importiert.
 internal/pdftest/pdftest.go: unreachable func: IstPDF
 internal/pdftest/pdftest.go: unreachable func: Texte

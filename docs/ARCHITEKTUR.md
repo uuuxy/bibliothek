@@ -2235,7 +2235,7 @@ Bild ließ weiße Streifen am Kartenrand, und seine Farbe war nicht zu ändern.
 deshalb dasselbe; im Browser gespeichert, hätte jeder Rechner sein eigenes Design. Die
 Antwort `{}` heißt „noch keines gespeichert": Der Designer zeigt danach seine Vorgabewerte
 und speichert sie. Ein gescheitertes Lesen beantwortet der Server deshalb mit einem Fehler,
-nie mit `{}` (`api/ausweis_layout_tuer_pg_test.go`).
+nie mit `{}` (`api/druck/ausweis_layout_tuer_pg_test.go`).
 
 **Gedruckt wird nur mit geladenem Design.** Die Druckwege — Stapeldruck und Druckfläche der
 Leserdatei, Einzeldruck der Akte — laden es über einen Lader (`designer/ausweisDesignLaden.js`):
@@ -2256,7 +2256,7 @@ drucken" am Titel (`GET /api/buecher/titel/{id}/etiketten`), über das Druck-Cen
 weiß — Anschaffungsjahr, Signatur, Eigentum —, trägt `ErgaenzeServerfelder` nach. Ein neues
 Feld auf dem Etikett gehört an alle drei Wege und in `pdf.BuchEtikett`, die Eingabe der
 Erzeuger, die `buchetikett.BuchEtiketten` für alle Wege füllt. Das Gate liest den gedruckten Text:
-`api/etiketten_pdf_paritaet_pg_test.go` fährt die Handler, entpackt die Inhaltsströme des PDF
+`api/druck/etiketten_pdf_paritaet_pg_test.go` fährt die Handler, entpackt die Inhaltsströme des PDF
 und vergleicht die Textstücke; Statuscode und Dateigröße sind bei einem fehlenden Feld
 dieselben. Einen eigenen Endpunkt für ein einzelnes Etikett gibt es seit dem 24.09.2026 nicht
 mehr; der Knopf an der Exemplarkarte übergibt an das Druck-Center.
@@ -4260,7 +4260,7 @@ Einstieg.
 | **Auflage**                 | Eine Ausgabe eines Buchs mit eigener ISBN und eigenen Seitenzahlen — im Katalog ein eigener Titel. Auflagen desselben Buchs lassen sich zu einem **Werk** zusammenfassen | `buecher_titel.auflage` (Migration 126), `repository/auflagen.go` |
 | **Art** (des Lesers)        | `schueler`, `lehrkraft`, `liv`, `praktikum`, `sekretariat`, `uplus` oder `fachbereich` (Migration 153). Sagt, **wer an der Theke Bücher bekommt** — entscheidet **keine** Rechte | `leser.art`                                                |
 | **Aussonderung**            | Ausbuchen eines Exemplars aus dem Bestand mit Grund (Verlust, Beschädigung, Aussortiert, Bestandskorrektur)                                                                                     | `repository/aussonderung_paritaet_test.go`                  |
-| **Ausweis**                 | Karte des Lesers. Alle neuen Nummern tragen die Vorsilbe `A-`; die Aufschrift richtet sich nach der **Art**                                                             | `internal/ausweis`, `api/ausweis_layout.go`                 |
+| **Ausweis**                 | Karte des Lesers. Alle neuen Nummern tragen die Vorsilbe `A-`; die Aufschrift richtet sich nach der **Art**                                                             | `internal/ausweis`, `api/druck/ausweis_layout.go`                 |
 | **Bescheid**                | Schadensersatz-Bescheid für Landes-Lernmittel; nennt das Konto (Barzahlung ist laut Erlass nicht der Weg), hat eine eigene Nummernfolge                                  | `schadensersatz_bescheide`, `pdf/bescheid.go`               |
 | **Bestand**                 | Die physischen Stücke — im Unterschied zum **Katalog** (den Titeln)                                                                                                     | `buecher_exemplare`                                        |
 | **Dauerleihe**              | Ausleihe an das Kollegium: Sie wird nie überfällig und nie gemahnt, die Akte zeigt „ohne Frist"; gespeichert wird eine Frist von einem Jahr | `resolveBorrowerAndDueTime` (`internal/service/loan_checkout_validation.go`) |

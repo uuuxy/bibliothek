@@ -1514,7 +1514,7 @@ CREATE INDEX idx_buecher_exemplare_bestellung
     WHERE bestellung_id IS NOT NULL;
 
 -- Exemplare ohne gedrucktes Etikett je Titel (Migration 064). Die Bedingung muss
--- wortgleich zu etikettenOffenBedingung (api/etiketten_offen.go) bleiben — sonst kann
+-- wortgleich zu etikettenOffenBedingung (api/druck/etiketten_offen.go) bleiben — sonst kann
 -- Postgres den Teil-Index nicht mehr verwenden, und er wird still nutzlos.
 CREATE INDEX idx_buecher_exemplare_etikett_offen
     ON buecher_exemplare (titel_id)

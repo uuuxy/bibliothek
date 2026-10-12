@@ -16,7 +16,7 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// Klebeetiketten der markierten Schüler (Name, Klasse, Barcode). view_students wie
 	// der Ausweis-Stapeldruck: Es ist derselbe Vorgang mit anderem Papier, und die
 	// Angaben darauf stehen ohnehin schon in der Liste, aus der markiert wurde.
-	mux.Handle("POST /api/print/schueler-etiketten", s.RequirePermission("view_students")(s.PrintSchuelerEtikettenHandler(studentRepo)))
+	mux.Handle("POST /api/print/schueler-etiketten", s.RequirePermission("view_students")(s.druck().PrintSchuelerEtikettenHandler(studentRepo)))
 	// Ändern und Sperren hängen an edit_students, nicht mehr an create_students:
 	// Stammdaten pflegen ist nicht dasselbe wie jemanden neu anlegen, und
 	// edit_students war zwar geseedet und an /api/damage/report gebunden, in der

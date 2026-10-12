@@ -1,4 +1,4 @@
-package api
+package druck
 
 import (
 	"errors"
@@ -62,7 +62,7 @@ func etikettenSuchtext(r *http.Request) string {
 // @Param        status  query   string  false  "offen (Vorgabe) | erledigt | alle"
 // @Success      200  {array}  ExemplarOhneEtikett
 // @Router       /exemplare/etiketten-offen [get]
-func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
+func (s *Tueren) EtikettenOffenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		zeilen, err := repository.ListeEtikettenExemplare(r.Context(), s.DB.Pool,
 			r.URL.Query().Get("status"), etikettenSuchtext(r), etikettenOffenLimit)
@@ -105,7 +105,7 @@ func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 // @Param        bis     query   string  false  "Stichtag JJJJ-MM-TT (nur mit status=offen sinnvoll)"
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-offen/anzahl [get]
-func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
+func (s *Tueren) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		// Optionaler Stichtag: Damit beantwortet dieselbe Route auch "wie viele Exemplare
 		// wuerde das Aufraeumen des Altbestands treffen?" — die Zahl, die der Betreiber vor
@@ -157,7 +157,7 @@ type EtikettenAltbestandRequest struct {
 // @Accept       json
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-altbestand [post]
-func (s *Server) EtikettenAltbestandHandler() http.HandlerFunc {
+func (s *Tueren) EtikettenAltbestandHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req EtikettenAltbestandRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {
@@ -195,7 +195,7 @@ type EtikettenGedrucktRequest struct {
 // @Accept       json
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-gedruckt [post]
-func (s *Server) EtikettenGedrucktHandler() http.HandlerFunc {
+func (s *Tueren) EtikettenGedrucktHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req EtikettenGedrucktRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {
@@ -240,7 +240,7 @@ func (s *Server) EtikettenGedrucktHandler() http.HandlerFunc {
 // @Accept       json
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-zuruecksetzen [post]
-func (s *Server) EtikettenZuruecksetzenHandler() http.HandlerFunc {
+func (s *Tueren) EtikettenZuruecksetzenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req EtikettenGedrucktRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {

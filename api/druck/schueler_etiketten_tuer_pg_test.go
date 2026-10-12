@@ -1,4 +1,4 @@
-package api
+package druck_test
 
 import (
 	"encoding/json"
@@ -8,8 +8,10 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/druck"
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/routertest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/pdf"
 
@@ -28,7 +30,7 @@ import (
 func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	_, rufe := protokollWelt(t, pool)
+	_, rufe := routertest.MitAufruf(t, pool)
 
 	bogen := func(t *testing.T, rumpf any) *httptest.ResponseRecorder {
 		t.Helper()
@@ -104,12 +106,12 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 	})
 
 	t.Run("mehr als die Grenze je Auftrag: 400", func(t *testing.T) {
-		ids := make([]string, MaxSchuelerEtiketten+1)
+		ids := make([]string, druck.MaxSchuelerEtiketten+1)
 		for i := range ids {
 			ids[i] = uuid.NewString()
 		}
 		erwarte400(t, bogen(t, map[string]any{"schuelerIds": ids}),
-			fmt.Sprintf("höchstens %d", MaxSchuelerEtiketten))
+			fmt.Sprintf("höchstens %d", druck.MaxSchuelerEtiketten))
 	})
 
 	t.Run("gelöschte Schüler: 400 mit Hinweis", func(t *testing.T) {

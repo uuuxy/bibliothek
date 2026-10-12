@@ -24,7 +24,7 @@ import (
 // Der Zähler im Bestellwesen, die Nachdruck-Liste im Druck-Center und die Positionen
 // dieser Detailansicht teilen sie sich — sonst nennt der Verweis irgendwann eine andere
 // Zahl, als die Liste hat, die er öffnet, und keiner der beiden Werte ist mehr zu trauen.
-// api/etiketten_offen.go übernimmt den Wert von hier.
+// api/druck/etiketten_offen.go übernimmt den Wert von hier.
 //
 // Ausgesonderte Exemplare stehen nicht mehr im Regal; für sie ein Etikett zu drucken
 // wäre immer falsch.

@@ -1854,7 +1854,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/api.ExemplarOhneEtikett"
+                                "$ref": "#/definitions/druck.ExemplarOhneEtikett"
                             }
                         }
                     }
@@ -3864,28 +3864,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.ExemplarOhneEtikett": {
-            "type": "object",
-            "properties": {
-                "autor": {
-                    "type": "string"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "etikett_gedruckt": {
-                    "description": "EtikettGedruckt gehört dazu, seit die Liste auch bereits erledigte Exemplare zeigen\nkann (status=erledigt|alle). Ohne das Feld liesse sich in der gemischten Ansicht\nnicht unterscheiden, welche Zeile noch ein Etikett braucht.",
-                    "type": "boolean"
-                },
-                "titel": {
-                    "type": "string"
-                },
-                "zugang_am": {
-                    "description": "ZugangAm ist der Tag, an dem das Exemplar in den Bestand kam (zugang_am, Migration 129;\nRückfall erworben_am für Zeilen ohne Zugangsdatum). Bis zum 22.09.2026 hieß das Feld\nerworben_am und trug im Bestellweg den Bestelltag.",
-                    "type": "string"
-                }
-            }
-        },
         "api.MittelKorrekturRequest": {
             "type": "object",
             "properties": {
@@ -4649,6 +4627,28 @@ const docTemplate = `{
                 },
                 "zugang_beantragt_am": {
                     "description": "ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);\nnull = keiner. Die Oberfläche unterscheidet daran „wartet\" von „deaktiviert\".",
+                    "type": "string"
+                }
+            }
+        },
+        "druck.ExemplarOhneEtikett": {
+            "type": "object",
+            "properties": {
+                "autor": {
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "etikett_gedruckt": {
+                    "description": "EtikettGedruckt gehört dazu, seit die Liste auch bereits erledigte Exemplare zeigen\nkann (status=erledigt|alle). Ohne das Feld liesse sich in der gemischten Ansicht\nnicht unterscheiden, welche Zeile noch ein Etikett braucht.",
+                    "type": "boolean"
+                },
+                "titel": {
+                    "type": "string"
+                },
+                "zugang_am": {
+                    "description": "ZugangAm ist der Tag, an dem das Exemplar in den Bestand kam (zugang_am, Migration 129;\nRückfall erworben_am für Zeilen ohne Zugangsdatum). Bis zum 22.09.2026 hieß das Feld\nerworben_am und trug im Bestellweg den Bestelltag.",
                     "type": "string"
                 }
             }

@@ -1,4 +1,4 @@
-package api
+package druck
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 )
 
 // BarcodeHandler handles on-demand PNG barcode and QR code generation.
-func (s *Server) BarcodeHandler() http.HandlerFunc {
+func (s *Tueren) BarcodeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		content := r.URL.Query().Get("content")
 		if content == "" {

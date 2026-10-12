@@ -30,7 +30,7 @@ COMMENT ON INDEX idx_bestellungen_verlauf_datum IS
 -- Das sind wenige, der Index bleibt klein, und die Suche endet sofort statt beim letzten
 -- Exemplar eines Klassensatzes.
 --
--- Die Bedingung ist wortgleich mit etikettenOffenBedingung (api/etiketten_offen.go) —
+-- Die Bedingung ist wortgleich mit etikettenOffenBedingung (api/druck/etiketten_offen.go) —
 -- nur dann kann Postgres den Teil-Index überhaupt verwenden. Wer dort etwas ändert, muss
 -- diesen Index mitziehen, sonst wird er still nutzlos.
 --

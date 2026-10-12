@@ -11,7 +11,7 @@ import (
 
 // Die Anordnung auf dem Blatt, geprüft am fertigen PDF.
 //
-// Der Umweg über die erzeugte Datei ist derselbe wie in api/etiketten_pdf_paritaet_pg_test.go
+// Der Umweg über die erzeugte Datei ist derselbe wie in api/druck/etiketten_pdf_paritaet_pg_test.go
 // und aus demselben Grund: Ob vier Etiketten auf einem Blatt liegen, steht in keinem
 // Struct und in keiner Abfrage. Es steht in der Seitengröße und in der Anzahl der Seiten.
 // Ein Test, der die Generatorfunktion nur aufruft und auf "kein Fehler" prüft, wäre bei

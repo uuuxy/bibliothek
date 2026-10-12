@@ -35,7 +35,7 @@ func TestPruefzeichenStimmtMitDemEchtenDrucker(t *testing.T) {
 			}
 			gedruckt := inhalt + string(zeichen)
 
-			// Genau der Aufruf von früher (api/barcode_generate.go bis 17.09.2026):
+			// Genau der Aufruf von früher (api/druck/barcode_generate.go bis 17.09.2026):
 			// includeChecksum=true, fullASCIIMode=true.
 			mitAutomatik, err := code39.Encode(inhalt, true, true)
 			if err != nil {
