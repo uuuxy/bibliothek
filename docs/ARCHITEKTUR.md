@@ -1731,7 +1731,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner und von Helfern der Tests in ein Paket für Prüfhilfen
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner und von Helfern der Tests in ein Paket für Prüfhilfen, in 8.6 der Test zur Panik in einer Tür genannt
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2035,7 +2035,7 @@ höchstens Serverzeit).
 | **Ein Fehler wird an seinem Namen erkannt**                     | `errors.Is`, ein eigener Fehlertyp mit `errors.As` oder bei Datenbankfehlern der SQLSTATE mit dem Namen der Bedingung (`pgconn.PgError`). Ein Vergleich am Text bricht still, sobald jemand die Meldung umformuliert (`fehler_am_wortlaut_test.go`) |
 | **Fehlerantworten einheitlich**                                 | `apierrors.SendHTTPError`; Fehlermeldungen sind deutsch und nennen die nächste Handlung                                                          |
 | **Ein 500 trägt nie den Text des Fehlers**                     | Bei jedem 500 ersetzt `apierrors` die Meldung durch einen neutralen Satz (`sanitizeInternalError`); nur unterhalb von 500 geht der Fehlertext hinaus. Eine Diagnose, die jemand lesen soll, braucht deshalb 400 (Eingabe), 409 (Fachfall) oder 502 (ein fremder Dienst versagt, etwa der Mailserver: `mailFehlerStatus`). Soll die Ursache nur ins Log, trennt `SendHTTPErrorMitMeldung` Meldung und Ursache |
-| **Ein Panic beendet nicht den Prozess**                         | `PanicRecoveryMiddleware` für Handler, `pkg/safego` für Goroutinen                                                                              |
+| **Ein Panic beendet nicht den Prozess**                         | `PanicRecoveryMiddleware` für Handler, `pkg/safego` für Goroutinen. Ein Test schickt eine Panik über den ganzen Router: Die Antwort ist ein neutrales 500, und mit eingerichtetem Sentry kommt die Meldung dort an (`api/panik_ueber_den_router_pg_test.go`) |
 
 Die Testklasse dazu heißt `phantom_erfolg_test.go` und `fehler_kollaps_test.go`: „Hat es
 geklappt?" muss beantwortbar sein, und mehrere verschiedene Fehler dürfen nicht zu einer
@@ -2499,7 +2499,7 @@ wenn man ihn einmal gebraucht hat.
   nichts ändern. Vorher und nachher die Liste der Tests mit ihrem Ausgang festhalten:
   `go test -json -count=1 ./...` mit `TEST_DATABASE_URL`, je Paket und Test die letzte Meldung
   `pass`, `fail` oder `skip`. Ziehen Testdateien mit um, zählt der Name des Tests, nicht sein
-  Paket. Am 12.10.2026 sind es 2.263 Testfunktionen, sieben davon übersprungen; das Paket, das
+  Paket. Am 12.10.2026 sind es 2.265 Testfunktionen, sieben davon übersprungen; das Paket, das
   npm unter `frontend/node_modules` ablegt, erscheint nur in einer Arbeitskopie mit
   installierter Oberfläche. Methode, Pfad und Recht jeder Route hält `api/pii_matrix_test.go`
   gegen [PII_MATRIX.de.md](PII_MATRIX.de.md); die Anmeldungen selbst (`mux.Handle(…)` als ein

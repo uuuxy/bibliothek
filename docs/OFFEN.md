@@ -581,13 +581,14 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan.
   hat. Zeichenketten im Go-Code liest sie nicht: Die Meldungen und Listen der Ratschen, die
   eine Datei nennen, schreibt das Skript mit um.
 - **Nachweis je Stufe.** Die Tests und ihr Ausgang sind vor und nach der Stufe dieselben; neue
-  kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 12.10.2026 nach Stufe 1: 2.263
-  Testfunktionen, davon 749 in `api/`, sieben übersprungen. Methode, Pfad und Recht jeder
-  Route sind dieselben (211 in `api/`, 18 in `inventur/`); das hält `api/pii_matrix_test.go`
-  gegen die PII-Matrix, belegt mit acht Proben. Die Rümpfe umgezogener Funktionen sind bis auf
-  die umbenannten Namen Token für Token gleich. Dazu die ganze Go-Suite an der Datenbank,
-  golangci-lint, deadcode, gosec und die Browser-Suite. Wie der Vergleichsstand erhoben wird,
-  steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
+  kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 12.10.2026, nach Stufe 1 und
+  zwei weiteren Tests zur Panik in einer Tür: 2.265 Testfunktionen, davon 751 in `api/`, sieben
+  übersprungen. Methode, Pfad und Recht jeder Route sind dieselben (211 in `api/`, 18 in
+  `inventur/`); das hält `api/pii_matrix_test.go` gegen die PII-Matrix, belegt mit acht Proben.
+  Die Rümpfe umgezogener Funktionen sind bis auf die umbenannten Namen Token für Token gleich.
+  Dazu die ganze Go-Suite an der Datenbank, golangci-lint, deadcode, gosec und die
+  Browser-Suite. Wie der Vergleichsstand erhoben wird, steht in
+  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
 - **Reihenfolge der Themen:** nach dem, was ein Thema von anderen braucht. Zuerst, was nur den
   Kern braucht (Lernmittel, Inventur, System, Portal), dann Benutzer, Mahnwesen und Schaden,
   Druck und Bestellung zusammen, sobald der Kreis um das Etikett gelöst ist, Katalog und
