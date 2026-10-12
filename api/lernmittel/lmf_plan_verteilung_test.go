@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/repository"
 )
@@ -18,7 +19,7 @@ import (
 // wie beim Speichern. Ein Indexfehler mitten im Speichern ist kein Fehler, den jemand
 // lesen kann; er ist ein Absturz der Anfrage.
 func TestVerteileLmfPlan_PlatzJeZeile(t *testing.T) {
-	s := &Tueren{}
+	s := &Tueren{Basis: &tuer.Basis{}}
 	entwurf := func(stundenJeTag int) lmfPlanEntwurf {
 		return lmfPlanEntwurf{
 			Plan: repository.LmfPlan{
@@ -59,7 +60,7 @@ func TestVerteileLmfPlan_PlatzJeZeile(t *testing.T) {
 // Grund heißt er „freier Tag". Der 10.09.2026 ist ein Donnerstag, bei einer Stunde je Tag
 // liegt jede Zeile auf einem eigenen Schultag.
 func TestVerteileLmfPlan_FreieTageWerdenUebersprungenUndGenannt(t *testing.T) {
-	s := &Tueren{}
+	s := &Tueren{Basis: &tuer.Basis{}}
 	entwurf := func(frei []repository.LmfFreierTag) lmfPlanEntwurf {
 		return lmfPlanEntwurf{
 			Plan: repository.LmfPlan{

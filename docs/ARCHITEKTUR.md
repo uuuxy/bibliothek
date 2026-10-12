@@ -662,9 +662,11 @@ Seit dem 12.10.2026 ziehen die Türen je Thema in ein eigenes Paket unter `api/`
   einbinden: `api/` bindet das Thema ein, und Go weist den Kreis ab. Dass kein Thema ein
   anderes einbindet, hält ab Stufe 5 eine Ratsche.
 - Die Tests eines Themas stehen in seinem Ordner und bauen die Türen selbst
-  (`&Tueren{Basis: &tuer.Basis{DB: …}}`). Türen ohne Basis (`&Tueren{}`) taugen nur für
-  Funktionen, die nichts aus ihr lesen: Der Zugriff auf `s.DB` bricht dort ab. Ein Test, der
-  eine Tür über den ganzen Router prüft, steht im selben Ordner in einem eigenen Testpaket
+  (`&Tueren{Basis: &tuer.Basis{DB: …}}`). Ein Test ohne Datenbank gibt ihnen eine leere
+  Basis (`&Tueren{Basis: &tuer.Basis{}}`): `s.DB` ist dann nil wie an einem Server ohne
+  Datenbank, und das Protokoll der Verwaltung schreibt nichts. Ohne Basis (`&Tueren{}`)
+  bricht jeder Zugriff auf sie ab, auch der des Protokolls. Ein Test, der eine Tür über den
+  ganzen Router prüft, steht im selben Ordner in einem eigenen Testpaket
   (`package lernmittel_test`), weil das Paket des Themas `api/` nicht einbinden kann (8.14).
 
 ##### Tür und Abfrage

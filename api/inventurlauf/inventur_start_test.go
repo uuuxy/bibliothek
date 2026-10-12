@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/internal/tuertest"
 )
 
@@ -15,7 +16,7 @@ import (
 // aus der Inventur eines Regals würde eine über den ganzen Bestand, deren Abschluss alles
 // nicht Gescannte als Verlust bucht.
 func TestInventurStart_UnbrauchbarerBereichIst400VorDerDatenbank(t *testing.T) {
-	s := &Tueren{}
+	s := &Tueren{Basis: &tuer.Basis{}}
 	faelle := map[string]string{
 		"Art fehlt":                   `{}`,
 		"unbekannte Art":              `{"type":"regal"}`,
