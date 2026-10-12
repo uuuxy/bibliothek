@@ -320,7 +320,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		// deshalb 0 mit „kein Preis hinterlegt". Das beweist, dass die Route wirklich
 		// geantwortet hat (ohne Positiv-Kontrolle misst dieses Gate nichts). Dass die
 		// RECHNUNG stimmt, steht woanders: repository/ersatzwert_groessen_pg_test.go und
-		// api/ersatzwert_vorschlag_test.go.
+		// internal/service/ersatzwert_vorschlag_test.go.
 		"GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag": {URL: "/api/buecher/exemplare/" + w.exemplarID + "/ersatzwert-vorschlag", Positiv: []string{"kein Preis hinterlegt"}},
 		"GET /api/bescheide": {URL: "/api/bescheide"},
 		// Nachbuch-Meldungen (Migration 117): Stufe 1 hinter view_students — die Liste

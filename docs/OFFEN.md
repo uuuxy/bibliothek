@@ -515,7 +515,8 @@ von Stufe 4 die ersten vier Themen.
   Bestellung braucht fünf Namen rund um das Buchetikett aus dem Druck (`BarcodeLabelDetail`,
   `EtikettKopf`, `etikettKopf`, `buchEtiketten`, `etikettKopfAus`), der Druck einen aus der
   Bestellung (`etikettenAus`): ein Kreis. Der Katalog braucht zwei aus dem Schaden
-  (`preisquelle`, `ersatzwertVorschlagAus`), der Leser einen aus den Benutzern
+  (`preisquelle`, `ersatzwertVorschlagAus`; seit dem 12.10.2026 steht die Rechnung des
+  Betragsvorschlags in `internal/service/ersatzwert_vorschlag.go`), der Leser einen aus den Benutzern
   (`protokolliereKontoAnlage`; seit dem 12.10.2026 steht er als `ProtokolliereKontoAnlage` in
   `api/tuer`, weil zwei Themen ein Konto anlegen). Aus den Schichten darunter brauchen die Themen 470 Namen aus
   `repository/`, 444 davon je genau ein Thema, 53 aus `internal/service`, jeden genau ein

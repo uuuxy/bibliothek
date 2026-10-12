@@ -1010,7 +1010,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.ErsatzwertVorschlag"
+                            "$ref": "#/definitions/service.ErsatzwertVorschlag"
                         }
                     },
                     "404": {
@@ -4033,27 +4033,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.ErsatzwertVorschlag": {
-            "type": "object",
-            "properties": {
-                "bekannt": {
-                    "description": "Bekannt sagt, ob dem Betrag ein Preis zugrunde liegt — die Unterscheidung, die 0,00 €\nerst lesbar macht: Ergebnis eines Totalschadens oder fehlende Angabe?\n\nSie steht als eigenes Feld hier, weil die Oberfläche sie sonst aus dem deutschen\nHerleitungssatz lesen müsste, und das tat sie bis zum 17.09.2026 auch\n(` + "`" + `startsWith(\"kein Preis hinterlegt\")` + "`" + `). Ein Satz als Schnittstelle hält bis zur\nersten Umformulierung; danach zeigt die Karte still „Ersatzwert heute: 0,00 €\" über\neinem Buch, dessen Preis bloß niemand erfasst hat.",
-                    "type": "boolean"
-                },
-                "betrag": {
-                    "description": "Betrag ist der Vorschlag in Euro; 0 heißt „kein Preis hinterlegt\".",
-                    "type": "number"
-                },
-                "herleitung": {
-                    "description": "Herleitung sagt dem Personal, WARUM dieser Betrag vorgeschlagen wird — damit im\nDialog nachvollziehbar steht, woher die Zahl kommt, bevor sie in einer Forderung\nlandet.",
-                    "type": "string"
-                },
-                "topf": {
-                    "description": "Topf ist das Eigentum des Exemplars und unterscheidet die beiden Regeln (Staffel des\nLandes oder Neuwert); die Herleitung benennt sie.",
-                    "type": "string"
-                }
-            }
-        },
         "api.ExemplarEigentumRequest": {
             "type": "object",
             "required": [
@@ -6682,6 +6661,27 @@ const docTemplate = `{
                 },
                 "theke_leeren_minuten": {
                     "type": "integer"
+                }
+            }
+        },
+        "service.ErsatzwertVorschlag": {
+            "type": "object",
+            "properties": {
+                "bekannt": {
+                    "description": "Bekannt sagt, ob dem Betrag ein Preis zugrunde liegt — die Unterscheidung, die 0,00 €\nerst lesbar macht: Ergebnis eines Totalschadens oder fehlende Angabe?\n\nSie steht als eigenes Feld hier, weil die Oberfläche sie sonst aus dem deutschen\nHerleitungssatz lesen müsste, und das tat sie bis zum 17.09.2026 auch\n(` + "`" + `startsWith(\"kein Preis hinterlegt\")` + "`" + `). Ein Satz als Schnittstelle hält bis zur\nersten Umformulierung; danach zeigt die Karte still „Ersatzwert heute: 0,00 €\" über\neinem Buch, dessen Preis bloß niemand erfasst hat.",
+                    "type": "boolean"
+                },
+                "betrag": {
+                    "description": "Betrag ist der Vorschlag in Euro; 0 heißt „kein Preis hinterlegt\".",
+                    "type": "number"
+                },
+                "herleitung": {
+                    "description": "Herleitung sagt dem Personal, WARUM dieser Betrag vorgeschlagen wird — damit im\nDialog nachvollziehbar steht, woher die Zahl kommt, bevor sie in einer Forderung\nlandet.",
+                    "type": "string"
+                },
+                "topf": {
+                    "description": "Topf ist das Eigentum des Exemplars und unterscheidet die beiden Regeln (Staffel des\nLandes oder Neuwert); die Herleitung benennt sie.",
+                    "type": "string"
                 }
             }
         },

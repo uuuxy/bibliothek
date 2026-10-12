@@ -12,6 +12,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/internal/service"
 	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
 )
@@ -157,7 +158,7 @@ func (s *Server) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 		ImBestand     bool `json:"im_bestand"`
 		IstVerfuegbar bool `json:"ist_verfuegbar"`
 		// Ersatzwert und Herleitung: was ein Ersatz für DIESES Exemplar heute kostet
-		// (OFFEN.md 9.8, Stufe 2b). Gerechnet wird mit ersatzwertVorschlagAus —
+		// (OFFEN.md 9.8, Stufe 2b). Gerechnet wird mit service.ErsatzwertVorschlagAus —
 		// derselben Funktion wie im Melde-Dialog, damit die Buchakte und die
 		// Forderung nie zwei Zahlen für dasselbe Buch zeigen.
 		Ersatzwert           float64 `json:"ersatzwert"`
@@ -203,13 +204,13 @@ func (s *Server) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 	// Scheitert das, bleibt die Liste stehen und die Werte fehlen: Der Ersatzwert
 	// ist eine Auskunft, kein Grund, die Exemplar-Liste zu verweigern.
 	if groessen, err := bescheidRepo.GroessenFuerTitel(ctx, id); err == nil {
-		quelle := s.preisquelle(ctx)
+		quelle := service.ErsatzwertPreisquelle(ctx, s.DB.Pool)
 		for i := range copies {
 			g, da := groessen[copies[i].ID]
 			if !da {
 				continue
 			}
-			v := ersatzwertVorschlagAus(g, quelle)
+			v := service.ErsatzwertVorschlagAus(g, quelle)
 			copies[i].Ersatzwert = v.Betrag
 			copies[i].ErsatzwertHerleitung = v.Herleitung
 			copies[i].ErsatzwertBekannt = v.Bekannt

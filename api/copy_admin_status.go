@@ -7,6 +7,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/internal/service"
 	"bibliothek/repository"
 )
 
@@ -100,7 +101,7 @@ func (s *Server) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 	// gespeichert, und eine fehlende Auskunft darf daraus keinen Fehler machen.
 	antwort := map[string]any{"status": "success"}
 	if g, groessenErr := bescheidRepo.GroessenFuerExemplar(ctx, id); groessenErr == nil {
-		v := ersatzwertVorschlagAus(g, s.preisquelle(ctx))
+		v := service.ErsatzwertVorschlagAus(g, service.ErsatzwertPreisquelle(ctx, s.DB.Pool))
 		antwort["ersatzwert"] = v.Betrag
 		antwort["ersatzwert_herleitung"] = v.Herleitung
 		antwort["ersatzwert_bekannt"] = v.Bekannt

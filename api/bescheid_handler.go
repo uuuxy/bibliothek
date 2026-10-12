@@ -12,8 +12,8 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/internal/service"
 	"bibliothek/pdf"
-	"bibliothek/pkg/betrag"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/ersatzwert"
 	"bibliothek/pkg/mitteltopf"
@@ -129,7 +129,7 @@ func (s *Server) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request,
 		return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 	}
 	// Welcher Preis die Grundlage ist, steht in denselben Einstellungen (Stufe 4).
-	quelle := s.preisquelle(ctx)
+	quelle := service.ErsatzwertPreisquelle(ctx, s.DB.Pool)
 
 	vorschlag := BescheidVorschlag{
 		FristBis:        schulzeit.Jetzt().AddDate(0, 0, angaben.FristTage).Format(tuer.DateFormatISO),
@@ -182,18 +182,18 @@ func (s *Server) bescheidAngaben(ctx context.Context) (repository.BescheidAngabe
 // Verlusts. Bis zum 17.09.2026 stand hier eine harte 0, und die Staffel wich immer auf
 // den Kaufpreis aus. Ist kein Listenpreis erfasst, tut sie das weiterhin — und sagt es.
 func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisquelle) BescheidVorschlagPosition {
-	v := ersatzwertEingabe{
+	v := service.ErsatzwertEingabe{
 		Kaufpreis: f.Kaufpreis, Listenpreis: f.Listenpreis, ZustandAbschlag: f.ZustandAbschlag,
 		SchuljahreMitAusleihe: f.SchuljahreMitAusleihe, SchuljahreImBestand: f.SchuljahreImBestand,
 		Topf: f.Topf,
-	}.rechne(quelle)
+	}.Rechne(quelle)
 	return BescheidVorschlagPosition{
 		SchadensfallID: f.SchadensfallID,
 		Art:            f.Art,
 		Titel:          f.Titel,
 		ISBN:           f.ISBN,
 		Betrag:         v.Betrag,
-		Herleitung:     bescheidHerleitung(v),
+		Herleitung:     service.ErsatzwertHerleitung(v),
 		Topf:           f.Topf,
 	}
 }
@@ -201,17 +201,17 @@ func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisq
 // bescheidVorschlagAusAusleihe rechnet den Staffel-Vorschlag für ein überfälliges Buch —
 // dieselbe Rechnung wie für eine Forderung, das Buch trägt nur noch keine.
 func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ersatzwert.Preisquelle) BescheidVorschlagAusleihe {
-	v := ersatzwertEingabe{
+	v := service.ErsatzwertEingabe{
 		Kaufpreis: a.Kaufpreis, Listenpreis: a.Listenpreis, ZustandAbschlag: a.ZustandAbschlag,
 		SchuljahreMitAusleihe: a.SchuljahreMitAusleihe, SchuljahreImBestand: a.SchuljahreImBestand,
 		Topf: a.Topf,
-	}.rechne(quelle)
+	}.Rechne(quelle)
 	antwort := BescheidVorschlagAusleihe{
 		AusleiheID:  a.AusleiheID,
 		Titel:       a.Titel,
 		ISBN:        a.ISBN,
 		Betrag:      v.Betrag,
-		Herleitung:  bescheidHerleitung(v),
+		Herleitung:  service.ErsatzwertHerleitung(v),
 		Topf:        a.Topf,
 		FaelligSeit: a.FaelligSeit.In(schulzeit.Zone()).Format(tuer.DateFormatISO),
 		Mahnstufe:   a.Mahnstufe,
@@ -220,47 +220,6 @@ func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ers
 		antwort.LetztesMahndatum = a.LetztesMahndatum.In(schulzeit.Zone()).Format(tuer.DateFormatISO)
 	}
 	return antwort
-}
-
-// bescheidHerleitung formuliert, wie der Vorschlag zustande kommt.
-//
-// Der Satz ist kein Beiwerk: Er ist das, was eine Bibliothekskraft im Bescheid nachrechnen
-// kann. Eine Zahl ohne ihn ist für sie dasselbe wie die feste 15,00 €, die bis zum
-// 17.09.2026 im Melde-Dialog stand.
-func bescheidHerleitung(v ersatzwert.Vorschlag) string {
-	// Dieselbe Regel wie das Feld `bekannt` der Antwort — eine Funktion, nicht zwei
-	// Bedingungen, die zufällig dasselbe sagen.
-	if !v.PreisBekannt() {
-		return "kein Preis hinterlegt — Betrag bitte eintragen"
-	}
-	basis := "Kaufpreis"
-	switch v.Basis {
-	case ersatzwert.BasisNeupreis:
-		basis = "Listenpreis"
-	case ersatzwert.BasisKaufpreisErsatzweise:
-		// Ohne Klammer in der Klammer: Der Satz steht in einem Brief.
-		basis = "Kaufpreis, kein Listenpreis hinterlegt"
-	case ersatzwert.BasisKaufpreisGewaehlt:
-		// „so eingestellt" statt „kein Listenpreis hinterlegt": Der Satz sagt, dass die
-		// Schule die Grundlage gewählt hat, und behauptet nichts über die Datenlage.
-		basis = "Kaufpreis (so eingestellt)"
-	case ersatzwert.BasisKaufpreis:
-		basis = "Kaufpreis"
-	}
-	// Verleihjahr 0 heißt: die Neuwert-Regel der Benutzungsordnung (Bestand des
-	// Schulträgers). Dort gibt es keinen Staffelsatz zu nennen — und der Satz muss
-	// ausdrücklich „ohne ALTERSabschlag" sagen, weil ein Zustandsabschlag gleich
-	// dahinter stehen kann.
-	satz := fmt.Sprintf("Bücherei-Bestand: Neuwert ohne Altersabschlag, %s (%s)",
-		betrag.Euro(v.BasisPreis), basis)
-	if v.Verleihjahr > 0 {
-		satz = fmt.Sprintf("%d. Verleihjahr → %d %% von %s (%s)",
-			v.Verleihjahr, v.Prozent, betrag.Euro(v.BasisPreis), basis)
-	}
-	if v.ZustandAbschlag > 0 {
-		satz += fmt.Sprintf(", abzüglich %d %% für den Zustand", v.ZustandAbschlag)
-	}
-	return satz
 }
 
 // BescheidErstellenHandler schreibt den Bescheid und liefert ihn zurück.

@@ -150,7 +150,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 // Stufe 2b: Der heutige Ersatzwert steht an jedem Exemplar der Buchakte.
 //
 // Die Zahl kommt aus derselben Funktion wie der Vorschlag im Melde-Dialog
-// (ersatzwertVorschlagAus) — deshalb prüft dieser Test nicht die Staffel noch einmal,
+// (service.ErsatzwertVorschlagAus) — deshalb prüft dieser Test nicht die Staffel noch einmal,
 // sondern nur, dass die Buchakte sie überhaupt ANZEIGT und dabei die Größen dieses
 // Exemplars benutzt: den Listenpreis des Titels, das Verleihjahr und den erfassten
 // Beschädigungsgrad.

@@ -40,7 +40,7 @@
 
 	// Der Vorschlag kommt vom Server, weil dort die Regeln liegen: die Staffel der
 	// Arbeitshilfe für Lernmittel, der Neuwert ohne Abschlag für den Bücherei-Bestand
-	// (api/ersatzwert_vorschlag_handler.go). Zwei Rechnungen an zwei Orten wären dieselbe
+	// (internal/service/ersatzwert_vorschlag.go). Zwei Rechnungen an zwei Orten wären dieselbe
 	// Geschichte wie bei den Fristen — und die Zahl landet in einer Forderung.
 	//
 	// Ohne Forderung (Kollege) wird nicht gefragt: Dann gibt es kein Betragsfeld.

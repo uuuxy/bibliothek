@@ -1,66 +1,16 @@
 package api
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
-	"bibliothek/pkg/ersatzwert"
-	"bibliothek/pkg/mitteltopf"
+	"bibliothek/internal/service"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
-
-// Der Betragsvorschlag für den Dialog „Verlust/Schaden melden" (OFFEN.md 9.3 a).
-//
-// Bis zum 17.09.2026 stand dort eine feste 15,00 € — eine Zahl ohne jeden Bezug zum Buch.
-// Das Protokoll des Medienzentrums vom 16.09.2026 nennt genau das: „weder Einkaufs- bzw.
-// Listenpreise noch Beschädigungsgrade hinterlegt, fehlende Restwertberechnung z.Zt.
-// Handeingabe."
-//
-// ZWEI Regeln, nicht eine — das ist der Grund, warum dieser Handler mehr tut als
-// bescheidVorschlagAus:
-//
-//   - Lernmittel (Landesmittel): die Staffel der Arbeitshilfe zum Erlass vom 17.12.2014.
-//     1. Verleihjahr voller Kaufpreis, dann 80/60/40/20 %, ab dem 6. Jahr 10 %.
-//   - Schülerbücherei (Mittel des Schulträgers): „zuerst Ersatzbeschaffung, sonst Geld in
-//     Höhe des NEUWERTS" (Benutzungsordnung, mittel_konzept.md 1.2). Kein Abschlag für
-//     das Alter — ein fünf Jahre alter Roman kostet in der Ersatzbeschaffung so viel wie
-//     ein neuer.
-//
-// Die Staffel auf ein Büchereibuch anzuwenden wäre bequem und falsch: Sie steht in einer
-// Arbeitshilfe für Schulbücher der Lernmittelfreiheit und gilt dort, weil das Land die
-// Bücher bezahlt hat.
-//
-// In BEIDEN Fällen ist es ein Vorschlag, kein Automat: Der Betrag liegt im Ermessen der
-// Schule, der Mensch kann ihn überschreiben, und wenn kein Preis hinterlegt ist, bleibt
-// das Feld bei 0 mit einem Satz, der es sagt. Ein geratener Betrag wäre in einer
-// Forderung gegen Eltern schlimmer als ein leeres Feld.
-
-// ErsatzwertVorschlag ist die Antwort für den Melde-Dialog.
-type ErsatzwertVorschlag struct {
-	// Betrag ist der Vorschlag in Euro; 0 heißt „kein Preis hinterlegt".
-	Betrag float64 `json:"betrag"`
-	// Herleitung sagt dem Personal, WARUM dieser Betrag vorgeschlagen wird — damit im
-	// Dialog nachvollziehbar steht, woher die Zahl kommt, bevor sie in einer Forderung
-	// landet.
-	Herleitung string `json:"herleitung"`
-	// Topf ist das Eigentum des Exemplars und unterscheidet die beiden Regeln (Staffel des
-	// Landes oder Neuwert); die Herleitung benennt sie.
-	Topf string `json:"topf"`
-	// Bekannt sagt, ob dem Betrag ein Preis zugrunde liegt — die Unterscheidung, die 0,00 €
-	// erst lesbar macht: Ergebnis eines Totalschadens oder fehlende Angabe?
-	//
-	// Sie steht als eigenes Feld hier, weil die Oberfläche sie sonst aus dem deutschen
-	// Herleitungssatz lesen müsste, und das tat sie bis zum 17.09.2026 auch
-	// (`startsWith("kein Preis hinterlegt")`). Ein Satz als Schnittstelle hält bis zur
-	// ersten Umformulierung; danach zeigt die Karte still „Ersatzwert heute: 0,00 €" über
-	// einem Buch, dessen Preis bloß niemand erfasst hat.
-	Bekannt bool `json:"bekannt"`
-}
 
 // ErsatzwertVorschlagHandler liefert den Betragsvorschlag für ein Exemplar.
 //
@@ -68,7 +18,7 @@ type ErsatzwertVorschlag struct {
 // @Tags         schadensersatz
 // @Produce      json
 // @Param        id path string true "Copy ID"
-// @Success      200 {object} ErsatzwertVorschlag
+// @Success      200 {object} service.ErsatzwertVorschlag
 // @Failure      404 {object} apierrors.APIError
 // @Router       /buecher/exemplare/{id}/ersatzwert-vorschlag [get]
 func (s *Server) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
@@ -86,73 +36,7 @@ func (s *Server) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidRepo
 			return apierrors.Internal("Ersatzwert konnte nicht berechnet werden", err)
 		}
 
-		tuer.RespondJSON(w, http.StatusOK, ersatzwertVorschlagAus(groessen, s.preisquelle(r.Context())))
+		tuer.RespondJSON(w, http.StatusOK, service.ErsatzwertVorschlagAus(groessen, service.ErsatzwertPreisquelle(r.Context(), s.DB.Pool)))
 		return nil
 	})
-}
-
-// ersatzwertEingabe sind die Größen, aus denen JEDER Betragsvorschlag entsteht — egal ob
-// er aus einem Exemplar (Melde-Dialog), einer offenen Forderung oder einer überfälligen
-// Ausleihe kommt (Bescheid-Vorschlag).
-//
-// Bis zum 17.09.2026 waren es drei Wege mit ZWEI Rechnungen: Der Melde-Dialog wählte die
-// Regel nach IstLernmittel, die beiden Bescheid-Wege wendeten die Staffel der
-// Arbeitshilfe auf ALLES an — auch auf Büchereibücher, für die sie nicht gilt. Für
-// dasselbe Buch nannten Dialog und Brief damit verschiedene Beträge, und der Brief war
-// der falsche. Ein Typ, eine Rechnung, eine Herleitung.
-type ersatzwertEingabe struct {
-	Kaufpreis       float64
-	Listenpreis     float64
-	ZustandAbschlag int
-	// Die beiden Größen des Verleihjahrs — nur die Staffel benutzt sie.
-	SchuljahreMitAusleihe int
-	SchuljahreImBestand   int
-	// Topf entscheidet über die REGEL, nicht über einen Faktor: Staffel des Landes für ein
-	// Buch des Landes, sonst Neuwert der Benutzungsordnung. Der Topf ist das Eigentum nach
-	// repository.ExemplarTopfSQL — bis zum 29.09.2026 entschied ist_lernmittel des Titels,
-	// und eine Lektüre aus LMF-Mitteln bekam den Neuwert, obwohl sie dem Land gehört
-	// (entschieden am 29.09.2026, docs/OFFEN.md 4.24).
-	Topf string
-}
-
-func (e ersatzwertEingabe) rechne(quelle ersatzwert.Preisquelle) ersatzwert.Vorschlag {
-	if e.Topf != mitteltopf.Land {
-		return ersatzwert.RechneNeuwert(e.Kaufpreis, e.Listenpreis, e.ZustandAbschlag, quelle)
-	}
-	return ersatzwert.Rechne(ersatzwert.Verleihjahr(e.SchuljahreMitAusleihe, e.SchuljahreImBestand),
-		e.Kaufpreis, e.Listenpreis, e.ZustandAbschlag, quelle)
-}
-
-// eingabeAusGroessen: der Weg des Melde-Dialogs.
-func eingabeAusGroessen(g repository.ErsatzwertGroessen) ersatzwertEingabe {
-	return ersatzwertEingabe{
-		Kaufpreis: g.Kaufpreis, Listenpreis: g.Listenpreis, ZustandAbschlag: g.ZustandAbschlag,
-		SchuljahreMitAusleihe: g.SchuljahreMitAusleihe, SchuljahreImBestand: g.SchuljahreImBestand,
-		Topf: g.Topf,
-	}
-}
-
-// ersatzwertVorschlagAus rechnet und formuliert die Herleitung.
-func ersatzwertVorschlagAus(g repository.ErsatzwertGroessen, quelle ersatzwert.Preisquelle) ErsatzwertVorschlag {
-	v := eingabeAusGroessen(g).rechne(quelle)
-	return ErsatzwertVorschlag{
-		Betrag:     v.Betrag,
-		Herleitung: bescheidHerleitung(v),
-		Topf:       g.Topf,
-		Bekannt:    v.PreisBekannt(),
-	}
-}
-
-// preisquelle liest aus den Einstellungen, welcher Preis ab dem zweiten Verleihjahr die
-// Grundlage ist (Anforderungsliste Nr. 3, OFFEN.md 9.8 Stufe 4).
-//
-// Scheitert das Lesen, gilt die Regel der Arbeitshilfe. Das ist die einzige Richtung, die
-// hier zu vertreten ist: Ein Fehler beim Lesen einer Einstellung darf nicht dazu führen,
-// dass eine Forderung nach einer anderen Grundlage entsteht als die davor.
-func (s *Server) preisquelle(ctx context.Context) ersatzwert.Preisquelle {
-	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
-	if err != nil || einst == nil || !einst.ErsatzwertImmerKaufpreis {
-		return ersatzwert.PreisquelleListenpreis
-	}
-	return ersatzwert.PreisquelleKaufpreis
 }
