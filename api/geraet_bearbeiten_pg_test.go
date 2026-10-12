@@ -10,6 +10,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 	"bibliothek/sse"
 )
@@ -25,7 +27,7 @@ import (
 // markierten Gerät einen Tippfehler im Zubehör korrigierte, gab es damit still wieder
 // zur Ausleihe frei. Auf dem Bildschirm stand "Gerät gespeichert".
 func TestGeraetBearbeiten_HebtDefektNichtAuf(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	repo := repository.NewGeraeteRepository(pool)
@@ -78,7 +80,7 @@ func TestGeraetBearbeiten_HebtDefektNichtAuf(t *testing.T) {
 // Und der Defekt-Knopf schaltet weiterhin, ohne die Stammdaten anzufassen: Er schickt
 // die Seriennummer nicht mit, und nil heisst dort "nicht angefasst" — nicht "leeren".
 func TestGeraetDefektKnopf_LaesstStammdatenStehen(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	repo := repository.NewGeraeteRepository(pool)
@@ -122,9 +124,9 @@ func TestGeraetDefektKnopf_LaesstStammdatenStehen(t *testing.T) {
 // Anlegen stand dafür „Barcode ist bereits an ein anderes Gerät vergeben", beim Bearbeiten
 // eine Störung. Der doppelte Barcode behält seine Meldung.
 func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := t.Context()
-	aufraeumenGeraete := func() { aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-SNR-%'`) }
+	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-SNR-%'`) }
 	aufraeumenGeraete()
 	t.Cleanup(aufraeumenGeraete)
 
@@ -140,7 +142,9 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 		RETURNING id`).Scan(&kontoID); err != nil {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
-	t.Cleanup(func() { aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = 'geraet-seriennummer@example.org'`) })
+	t.Cleanup(func() {
+		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = 'geraet-seriennummer@example.org'`)
+	})
 	sitzung, err := authenticator.GenerateToken(kontoID, "GERAET-1", auth.RoleAdmin, "")
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
@@ -152,7 +156,7 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, mitCSRF(req))
+		router.ServeHTTP(rec, tuertest.MitCSRF(req))
 		return rec
 	}
 	// abgelehnt prüft den Konflikt und welches Feld die Meldung nennt.
@@ -187,7 +191,7 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 	abgelehnt("Seriennummer eines anderen Geräts beim Bearbeiten", rufe(http.MethodPut, "/api/geraete/"+idD,
 		`{"modellname":"Tablet D","barcode_id":"G-SNR-D","seriennummer":"SN-DOPPELT","zubehoer":"","zustand_notiz":""}`),
 		"Seriennummer", "Barcode")
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-SNR-D' AND seriennummer = 'SN-FREI'`); n != 1 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-SNR-D' AND seriennummer = 'SN-FREI'`); n != 1 {
 		t.Error("das abgelehnte Bearbeiten hat die Seriennummer trotzdem geändert")
 	}
 }
@@ -196,11 +200,11 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 // Feld mit; als leerer Text gespeichert, stieße das zweite Gerät an die Eindeutigkeit der
 // Seriennummer.
 func TestGeraetBearbeiten_LeereSeriennummerBleibtLeer(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := t.Context()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	repo := repository.NewGeraeteRepository(pool)
-	aufraeumenGeraete := func() { aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-OSN-%'`) }
+	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-OSN-%'`) }
 	aufraeumenGeraete()
 	t.Cleanup(aufraeumenGeraete)
 
@@ -225,7 +229,7 @@ func TestGeraetBearbeiten_LeereSeriennummerBleibtLeer(t *testing.T) {
 	if rec := bearbeite("G-OSN-2"); rec.Code != http.StatusOK {
 		t.Errorf("zweites Gerät ohne Seriennummer bearbeiten: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id LIKE 'G-OSN-%' AND seriennummer IS NULL`); n != 2 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id LIKE 'G-OSN-%' AND seriennummer IS NULL`); n != 2 {
 		t.Errorf("%d der zwei Geräte tragen nach dem Bearbeiten keine Seriennummer (NULL), erwartet 2", n)
 	}
 }
@@ -236,11 +240,11 @@ func TestGeraetBearbeiten_LeereSeriennummerBleibtLeer(t *testing.T) {
 // Seite lädt. Schickten sie Modell, Zubehör und Notiz von dort zurück, schrieben sie den alten
 // Stand über das, was ein anderer Platz inzwischen gespeichert hat.
 func TestGeraetAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := t.Context()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	repo := repository.NewGeraeteRepository(pool)
-	aufraeumenGeraete := func() { aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NGF-%'`) }
+	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NGF-%'`) }
 	aufraeumenGeraete()
 	t.Cleanup(aufraeumenGeraete)
 
@@ -362,7 +366,7 @@ func TestGeraetAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		if code := aendere(t, id, `{"modellname":"Tablet 13","barcode_id":"G-NGF-ANDERS","seriennummer":"SN-NGF","zubehoer":"Hülle","zustand_notiz":""}`); code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200", code)
 		}
-		if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE id = $1 AND barcode_id = 'G-NGF-1' AND modellname = 'Tablet 13'`, id); n != 1 {
+		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE id = $1 AND barcode_id = 'G-NGF-1' AND modellname = 'Tablet 13'`, id); n != 1 {
 			t.Errorf("der Barcode ist gewandert oder das Modell nicht gespeichert")
 		}
 	})
@@ -371,10 +375,10 @@ func TestGeraetAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 // Die Maske „Gerät anlegen" bietet die Zustandsnotiz an; sie steht danach am Gerät. Das
 // Anlegen nahm das Feld an und speicherte es nicht, mit „Gerät angelegt" daneben.
 func TestGeraetAnlegen_SpeichertDieZustandsnotiz(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	repo := repository.NewGeraeteRepository(pool)
-	aufraeumenGeraete := func() { aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NOTIZ-%'`) }
+	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NOTIZ-%'`) }
 	aufraeumenGeraete()
 	t.Cleanup(aufraeumenGeraete)
 
@@ -389,7 +393,7 @@ func TestGeraetAnlegen_SpeichertDieZustandsnotiz(t *testing.T) {
 	}
 	// Der Rumpf der Maske: fünf Felder.
 	lege(t, `{"modellname":"Tablet 14","barcode_id":"G-NOTIZ-1","seriennummer":"","zubehoer":"Hülle","zustand_notiz":" Akku schwach "}`)
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-NOTIZ-1' AND zustand_notiz = 'Akku schwach'`); n != 1 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-NOTIZ-1' AND zustand_notiz = 'Akku schwach'`); n != 1 {
 		t.Errorf("die Zustandsnotiz aus der Maske steht nicht am Gerät")
 	}
 	// Das Defekt-Kennzeichen kennt das Anlegen nicht; ein Rumpf damit wird abgelehnt und nicht
@@ -401,12 +405,12 @@ func TestGeraetAnlegen_SpeichertDieZustandsnotiz(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("anlegen mit Defekt-Kennzeichen: Status %d, erwartet 400 — %s", rec.Code, rec.Body.String())
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-NOTIZ-3'`); n != 0 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-NOTIZ-3'`); n != 0 {
 		t.Errorf("das abgelehnte Anlegen hat ein Gerät angelegt")
 	}
 	// Ohne Notiz bleibt sie leer (NULL), nicht ein leerer Text.
 	lege(t, `{"modellname":"Tablet 15","barcode_id":"G-NOTIZ-2","seriennummer":"","zubehoer":"","zustand_notiz":""}`)
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-NOTIZ-2' AND zustand_notiz IS NULL`); n != 1 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM geraete WHERE barcode_id = 'G-NOTIZ-2' AND zustand_notiz IS NULL`); n != 1 {
 		t.Errorf("ein Gerät ohne Notiz trägt keine leere Notiz (NULL)")
 	}
 }

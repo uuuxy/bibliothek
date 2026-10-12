@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -53,14 +55,14 @@ func holeUebersicht(t *testing.T, srv *Server) BestellhistorieUebersicht {
 }
 
 func TestBestellhistorie_UebersichtZaehltAlleTrotzLimit(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	vorher := holeUebersicht(t, srv)
 
-	mitBestaetigung := haendler(t, pool, "Naacher-Uebersicht", true)
-	ohneBestaetigung := haendler(t, pool, "Normalo-Uebersicht", false)
+	mitBestaetigung := testdaten.Haendler(t, pool, "Naacher-Uebersicht", true)
+	ohneBestaetigung := testdaten.Haendler(t, pool, "Normalo-Uebersicht", false)
 
 	// Drei wartende, eine bestätigte, zwei ohne den externen Schritt.
 	for i := 0; i < 3; i++ {
@@ -98,11 +100,11 @@ func TestBestellhistorie_UebersichtZaehltAlleTrotzLimit(t *testing.T) {
 // Die Obergrenze muss auch dann halten, wenn jemand ?limit=99999 anhängt — sonst wäre
 // der Deckel eine Bitte und keine Grenze.
 func TestBestellhistorie_MaxLimitIstNichtVerhandelbar(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Naacher-Masse", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher-Masse", true)
 	// In einer Anweisung, damit der Test schnell bleibt: mehr Zeilen als die Obergrenze.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO bestellungen_verlauf (lieferant_id, lieferant_name, lieferant_email, kundennummer, anzahl_exemplare)
@@ -123,12 +125,12 @@ func TestBestellhistorie_MaxLimitIstNichtVerhandelbar(t *testing.T) {
 // die Positionen ALLER Bestellungen und warf die überzähligen beim Zuordnen weg — mit
 // dem Limit wäre das der teuerste Teil der Anfrage geblieben.
 func TestBestellhistorie_PositionenNurFuerGeladeneBestellungen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Naacher-Positionen", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher-Positionen", true)
 	for i := 0; i < 3; i++ {
 		id := bestellungFuerLieferant(t, pool, lieferant)
 		if _, err := pool.Exec(ctx, `

@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -16,8 +18,8 @@ import (
 // dem Papierkorb darf die beim Löschen gesetzte Sperre nicht bestehen bleiben (Zombie-
 // Sperre) — sonst kann der Schüler nichts ausleihen.
 func TestRestoreStudent_HebtLoeschSperreAuf(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var id string
@@ -61,8 +63,8 @@ func TestRestoreStudent_HebtLoeschSperreAuf(t *testing.T) {
 // TestRestoreStudent_FremdeSperreBleibt: Eine Sperre aus ANDEREM Grund (nicht das
 // Löschen) muss ein Restore überstehen.
 func TestRestoreStudent_FremdeSperreBleibt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var id string
@@ -93,8 +95,8 @@ func TestRestoreStudent_FremdeSperreBleibt(t *testing.T) {
 // anonymisierter Abgänger im LUSD-Export zurück, muss sein echter Name übernommen und
 // der Abgänger-/Anonymisierungs-Status aufgehoben werden.
 func TestLusdRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var id string
@@ -148,8 +150,8 @@ func TestLusdRueckkehrer_NameUndStatusZurueckgesetzt(t *testing.T) {
 // Papierkorb entfernt den Schüler-Datensatz UND anonymisiert die Ausleihhistorie
 // (schueler_id = NULL) — die PII verschwindet wirklich, nicht nur der Papierkorb-Eintrag.
 func TestPurgeStudent_AnonymisiertUndLoescht(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Schüler im Papierkorb + ein Titel/Exemplar + eine ZURÜCKGEGEBENE (historische) Ausleihe.
@@ -212,8 +214,8 @@ func TestPurgeStudent_AnonymisiertUndLoescht(t *testing.T) {
 // Prüfung 22.08.2026: Eine anonymisierte Papierkorb-Zeile (Name weg, ANON-Barcode) war
 // wiederherstellbar und landete als gesperrter „Anonym" in der aktiven Liste. Jetzt 409.
 func TestRestoreStudent_AnonymisierteZeileBleibtImPapierkorb(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var id string
@@ -242,8 +244,8 @@ func TestRestoreStudent_AnonymisierteZeileBleibtImPapierkorb(t *testing.T) {
 // TestPurgeStudent_OffeneAusleiheBlockiert: Ein Schüler mit offener Ausleihe darf nicht
 // endgültig gelöscht werden (das Buch ist noch draußen).
 func TestPurgeStudent_OffeneAusleiheBlockiert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var sid, tid, eid string
@@ -284,8 +286,8 @@ func TestPurgeStudent_OffeneAusleiheBlockiert(t *testing.T) {
 // abgaenger_jahr aufs Abgangsjahr — nur so erfasst ihn der Cronjob später. Nach der
 // Buchrückgabe entfernt PurgeAbgaenger ihn endgültig (PII weg).
 func TestAbgaengerRetentionKette(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Schüler mit lusd_id + abgaenger_jahr in der ZUKUNFT (Default vom Anlegen),
@@ -367,8 +369,8 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 // — der Knopf stand überall, und ein Klick lief in den 409 von
 // TestRestoreStudent_AnonymisierteZeileBleibtImPapierkorb (dort: die eine Hälfte).
 func TestGetDeletedStudents_NenntDieAnonymisiertenZeilen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	if _, err := pool.Exec(ctx,

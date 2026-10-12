@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -25,8 +27,8 @@ import (
 // wäre nicht bloss falsch, sondern unrettbar — Zusammenführen löscht die Quelle. Deshalb
 // steht die Grenze jetzt ausdrücklich im Code, und dieser Test hält sie fest.
 func TestZusammenfuehrenKollegium(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	legeLeser := func(t *testing.T, vorname, nachname, art, barcode string) string {
@@ -63,7 +65,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 		ziel := legeLeser(t, "Katrin", "Wendlandt", "liv", "ZF-K-1")
 		quelle := legeLeser(t, "Katrin", "Wendlandt", "lehrkraft", "")
 
-		erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle))
+		erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
 		if err != nil {
 			t.Fatalf("Zusammenführen: %v", err)
 		}
@@ -97,7 +99,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 			{"Kollege als Ziel", kollege, schueler},
 		} {
 			t.Run(f.name, func(t *testing.T) {
-				_, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(f.ziel, f.quelle))
+				_, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(f.ziel, f.quelle))
 				if !errors.Is(err, repository.ErrZusammenfuehrenVerschiedeneArten) {
 					t.Fatalf("Fehler war %v, erwartet ErrZusammenfuehrenVerschiedeneArten", err)
 				}
@@ -158,7 +160,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 			RETURNING leser_id`).Scan(&quelle); err != nil {
 			t.Fatalf("Konto anlegen: %v", err)
 		}
-		if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
+		if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 			t.Fatalf("Zusammenführen: %v", err)
 		}
 		var nummer *string

@@ -10,6 +10,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/inventur"
 	"bibliothek/repository"
 )
@@ -19,13 +22,13 @@ import (
 // aus-isbn — Wörter der Liste auch über Gattung und Verlagswort, Werbewörter nur, wenn die Liste
 // sie kennt, Normdatei-Wörter außerhalb der Liste getrennt als neu. Geschrieben wird nichts.
 func TestDnbSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := titelMitSignatur(t, pool, "Die Welle", "", 0)
+	vorhanden := testdaten.TitelMitSignatur(t, pool, "Die Welle", "", 0)
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Krieg", "Fantasy"}); err != nil {
 		t.Fatal(err)
 	}
@@ -53,17 +56,17 @@ func TestDnbSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 	faelle := []struct {
 		name   string
 		isbn   string
-		dnb    dnbAttrappe
+		dnb    tuertest.DNBAttrappe
 		status int
 		rumpf  string // wörtlich in der Antwort
 	}{
-		{"Satz mit Wörtern", "978-3-7512-0053-0", dnbAttrappe{satz: satz}, http.StatusOK,
+		{"Satz mit Wörtern", "978-3-7512-0053-0", tuertest.DNBAttrappe{Satz: satz}, http.StatusOK,
 			`{"dnb_satz":true,"schlagwort_vorschlaege":["Fantasy","Krieg"],"schlagwort_vorschlaege_neu":["Schulstress"]}`},
-		{"DNB kennt die ISBN nicht", "9783751200530", dnbAttrappe{satz: leer}, http.StatusOK,
+		{"DNB kennt die ISBN nicht", "9783751200530", tuertest.DNBAttrappe{Satz: leer}, http.StatusOK,
 			`{"dnb_satz":false,"schlagwort_vorschlaege":[],"schlagwort_vorschlaege_neu":[]}`},
-		{"DNB nicht erreichbar", "9783751200530", dnbAttrappe{status: http.StatusServiceUnavailable}, http.StatusBadGateway,
+		{"DNB nicht erreichbar", "9783751200530", tuertest.DNBAttrappe{Status: http.StatusServiceUnavailable}, http.StatusBadGateway,
 			`DNB nicht erreichbar`},
-		{"keine ISBN", "Dunkelnacht", dnbAttrappe{satz: satz}, http.StatusBadRequest,
+		{"keine ISBN", "Dunkelnacht", tuertest.DNBAttrappe{Satz: satz}, http.StatusBadRequest,
 			`keine gültige ISBN`},
 	}
 	for _, f := range faelle {
@@ -91,7 +94,7 @@ func TestDnbSchlagwortVorschlag_VorschlagOhneEintrag(t *testing.T) {
 	// Wörter vor. Hier über titelAusNachschlagen, das einen neuen Titel anlegt — deshalb zuletzt.
 	var antwort DnbSchlagwortVorschlag
 	client := inventur.NeuerMetadatenClient()
-	client.SetzeHTTPClientFuerTest(&http.Client{Transport: dnbAttrappe{satz: satz}})
+	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.DNBAttrappe{Satz: satz}})
 	rec := httptest.NewRecorder()
 	(&Server{DB: &db.Database{Pool: pool}}).dnbSchlagwortVorschlag(client)(rec,
 		httptest.NewRequest(http.MethodGet, "/api/schlagworte/dnb-vorschlag?isbn=9783751200530", nil))

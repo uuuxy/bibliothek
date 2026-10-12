@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Der Katalog für Leser — und über dieselbe Tür „Mein Portal" — vergleicht eine getippte ISBN
@@ -15,12 +17,12 @@ import (
 // Datenbank den Titel führt (Migration 157), enden auf verschiedene Prüfzeichen: Ohne den
 // Vergleich mit der Normalform des Suchtexts fände die getippte zehnstellige das Buch nicht.
 func TestOpacSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	const titel = "Advanced Organic Chemistry"
-	id := titelMitSignatur(t, pool, titel, "", 0)
-	exemplar(t, pool, id, "B-ISBN-OPAC-1", true, "")
+	id := testdaten.TitelMitSignatur(t, pool, titel, "", 0)
+	testdaten.Exemplar(t, pool, id, "B-ISBN-OPAC-1", true, "")
 	if _, err := pool.Exec(t.Context(), `UPDATE buecher_titel SET isbn = '0306406152' WHERE id = $1`, id); err != nil {
 		t.Fatal(err)
 	}

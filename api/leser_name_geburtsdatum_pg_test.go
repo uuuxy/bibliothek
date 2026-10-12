@@ -9,6 +9,9 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/sse"
 )
 
@@ -18,8 +21,8 @@ import (
 // als Serverfehler (500) mit dem allgemeinen Satz „Ein Eintrag mit diesen eindeutigen
 // Eigenschaften existiert bereits.", ohne Name und Geburtsdatum zu nennen.
 func TestLeserAendern_NameUndGeburtsdatumSchonVergeben(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(
@@ -56,7 +59,7 @@ func TestLeserAendern_NameUndGeburtsdatumSchonVergeben(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, mitCSRF(req))
+		router.ServeHTTP(rec, tuertest.MitCSRF(req))
 		return rec
 	}
 	vorname := func() string {

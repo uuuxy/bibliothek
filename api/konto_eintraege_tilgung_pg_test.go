@@ -8,6 +8,9 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -21,10 +24,10 @@ import (
 // die Kennung des Kontos weiter ein Weg zu seinem Namen. Geprüft über die Türen der
 // Benutzerverwaltung und der Leserdatei, mit endgültigem Löschen und mit Anonymisierung.
 func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	userRepo := repository.NewUserRepository(pool)
 	auditRepo := repository.NewAuditRepository(pool)
@@ -40,7 +43,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	kontoMitEintraegen := func(t *testing.T, vorname, nachname, ausweis string) (kontoID, leserID, adresse string) {
 		t.Helper()
 		adresse = vorname + "@konto-eintraege.invalid"
-		if rec := fkAlsAdmin(t, admin, srv.CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer",
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer",
 			`{"barcode_id":"`+ausweis+`","vorname":"`+vorname+`","nachname":"`+nachname+`","email":"`+adresse+`","rolle":"mitarbeiter"}`,
 			nil); rec.Code != http.StatusOK {
 			t.Fatalf("Konto anlegen: Status %d — %s", rec.Code, rec.Body.String())
@@ -49,7 +52,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 			Scan(&kontoID, &leserID); err != nil {
 			t.Fatalf("Konto lesen: %v", err)
 		}
-		if rec := fkAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
 			`{"rolle":"helfer"}`, map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto ändern: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -57,7 +60,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	}
 	loescheKonto := func(t *testing.T, kontoID string) {
 		t.Helper()
-		if rec := fkAlsAdmin(t, admin, srv.DeleteUserHandler(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.DeleteUserHandler(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
 			map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto löschen: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -65,7 +68,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	// imProtokoll zählt die Einträge beider Protokolle, die den Text irgendwo tragen.
 	imProtokoll := func(t *testing.T, text string) int {
 		t.Helper()
-		return zaehleZeilen(t, pool, `
+		return pgtest.ZaehleZeilen(t, pool, `
 			SELECT (SELECT count(*) FROM audit_logs WHERE details::text LIKE '%' || $1 || '%')
 			     + (SELECT count(*) FROM audit_log WHERE details::text LIKE '%' || $1 || '%')`, text)
 	}
@@ -81,7 +84,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	// Die Einträge selbst bleiben: Aktion, Zeit, Bearbeiter, Kennung des Kontos, Rolle.
 	eintraegeBleiben := func(t *testing.T, kontoID string) {
 		t.Helper()
-		if n := zaehleZeilen(t, pool, `
+		if n := pgtest.ZaehleZeilen(t, pool, `
 			SELECT count(*) FROM audit_logs
 			WHERE aktion IN ('USER_CREATE', 'USER_UPDATE') AND details->>'ziel_id' = $1 AND details ? 'rolle'`, kontoID); n != 2 {
 			t.Errorf("%d Einträge über das Konto mit Kennung und Rolle, erwartet 2 (Anlage und Änderung)", n)
@@ -124,7 +127,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Leserzeile in den Papierkorb: Status %d — %s", rec.Code, rec.Body.String())
 		}
-		if n := zaehleZeilen(t, pool, `SELECT count(*) FROM benutzer WHERE id = $1`, kontoID); n != 0 {
+		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM benutzer WHERE id = $1`, kontoID); n != 0 {
 			t.Fatalf("das Konto steht noch, obwohl die Leserzeile im Papierkorb liegt")
 		}
 		stehtImProtokoll(t, adresse, "Korbkonto", 3)
@@ -141,7 +144,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	// der Nachtlauf. Das Konto hängt an der Leserzeile des Schülers; die Benutzerverwaltung
 	// ändert und löscht es.
 	t.Run("Konto gelöscht, Leser anonymisiert", func(t *testing.T) {
-		leserID := seedSchueler(t, pool, "S-KE-HELFER", "Hanna", "09A")
+		leserID := testdaten.SeedSchueler(t, pool, "S-KE-HELFER", "Hanna", "09A")
 		const adresse = "hanna@konto-eintraege.invalid"
 		var kontoID string
 		if err := pool.QueryRow(ctx, `
@@ -149,7 +152,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 			VALUES ('Hanna', 'Helferkonto', $1, 'helfer', true, $2) RETURNING id::text`, adresse, leserID).Scan(&kontoID); err != nil {
 			t.Fatalf("Konto anlegen: %v", err)
 		}
-		if rec := fkAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
 			`{"aktiv":false}`, map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto ändern: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -174,7 +177,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 		if a := imProtokoll(t, adresse); a != 0 {
 			t.Errorf("nach der Anonymisierung steht die Adresse in %d Einträgen", a)
 		}
-		if n := zaehleZeilen(t, pool, `
+		if n := pgtest.ZaehleZeilen(t, pool, `
 			SELECT count(*) FROM audit_logs WHERE aktion = 'USER_UPDATE' AND details->>'ziel_id' = $1`, kontoID); n != 1 {
 			t.Errorf("%d Einträge USER_UPDATE über das Konto, erwartet 1", n)
 		}

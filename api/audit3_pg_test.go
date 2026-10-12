@@ -11,6 +11,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -43,19 +45,19 @@ func markiereGemahntUndUeberfaellig(t *testing.T, pool *pgxpool.Pool, ausleiheID
 // eskalierte sofort zur Rechnung. Bleibt die Frist trotz "Verlängerung" in der Vergangenheit,
 // bleibt die Mahnstufe erhalten (Eskalation berechtigt).
 func TestGlobalExtendLMF_ResetMahnstufe(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	vergangenheit := time.Now().AddDate(0, 0, -60)
 
 	// Klasse 9z: wird in die Zukunft verlängert -> Reset erwartet.
-	sidZ := seedSchueler(t, pool, "S-MST-Z", "Mona", "9z")
-	loanReset := seedAusleihe(t, pool, sidZ, "LMF-Mathe 9", vergangenheit)
+	sidZ := testdaten.SeedSchueler(t, pool, "S-MST-Z", "Mona", "9z")
+	loanReset := testdaten.SeedAusleihe(t, pool, sidZ, "LMF-Mathe 9", vergangenheit)
 	markiereGemahntUndUeberfaellig(t, pool, loanReset, 2, vergangenheit)
 
 	// Klasse 9y: "Verlängerung" auf ein vergangenes Datum -> Mahnstufe bleibt.
-	sidY := seedSchueler(t, pool, "S-MST-Y", "Bodo", "9y")
-	loanKeep := seedAusleihe(t, pool, sidY, "LMF-Deutsch 9", vergangenheit)
+	sidY := testdaten.SeedSchueler(t, pool, "S-MST-Y", "Bodo", "9y")
+	loanKeep := testdaten.SeedAusleihe(t, pool, sidY, "LMF-Deutsch 9", vergangenheit)
 	markiereGemahntUndUeberfaellig(t, pool, loanKeep, 2, vergangenheit)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
@@ -94,18 +96,18 @@ func globalExtend(t *testing.T, srv *Server, klasse, datum string) *httptest.Res
 // Abgänger — 150 Abgänger, davon 140 ohne Buch, ergaben 140 leere Laufzettel.
 // Abgänger heißt hier seit dem 05.09.2026 wieder: Abschlussklasse, noch an der Schule.
 func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Abschlussklasse MIT offenem Buch.
-	mitBuch := seedSchueler(t, pool, "AB-1", "Anna", "10R1")
-	seedAusleihe(t, pool, mitBuch, "Physikbuch 10", time.Now().AddDate(0, 0, -3))
+	mitBuch := testdaten.SeedSchueler(t, pool, "AB-1", "Anna", "10R1")
+	testdaten.SeedAusleihe(t, pool, mitBuch, "Physikbuch 10", time.Now().AddDate(0, 0, -3))
 	// Abschlussklasse OHNE Buch — darf keinen (leeren) Laufzettel bekommen.
-	seedSchueler(t, pool, "AB-2", "Bodo", "10R1")
+	testdaten.SeedSchueler(t, pool, "AB-2", "Bodo", "10R1")
 	// Kein Abschlussjahrgang, mit Buch — darf nicht auftauchen.
-	kein := seedSchueler(t, pool, "AB-3", "Cleo", "8a")
-	seedAusleihe(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
+	kein := testdaten.SeedSchueler(t, pool, "AB-3", "Cleo", "8a")
+	testdaten.SeedAusleihe(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	students, err := srv.queryAbgaengerKontoauszug(ctx, "", nil)
@@ -121,29 +123,17 @@ func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	}
 }
 
-func seedAbgaengerRet(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse string) string {
-	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger)
-		 VALUES ($1, $2, 'Test', $3, 2030, true) RETURNING id`,
-		barcode, vorname, klasse).Scan(&id); err != nil {
-		t.Fatalf("Abgänger %q anlegen: %v", vorname, err)
-	}
-	return id
-}
-
 // TestKlassensatzReservierung_Bestandsdeckelung sichert Audit-Bug #3 ab: Es dürfen nicht mehr
 // Exemplare reserviert werden, als die Bibliothek physisch besitzt — sonst bleibt die
 // Reservierung als unlösbare Aufgabe im Dashboard hängen.
 func TestKlassensatzReservierung_Bestandsdeckelung(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	tid := titelMitMeldebestand(t, pool, "Klassenlektuere", 0)
+	tid := testdaten.TitelMitMeldebestand(t, pool, "Klassenlektuere", 0)
 	for i := 0; i < 5; i++ {
-		exemplar(t, pool, tid, fmt.Sprintf("BC-KL-%d", i), true, "")
+		testdaten.Exemplar(t, pool, tid, fmt.Sprintf("BC-KL-%d", i), true, "")
 	}
 	var uid string
 	if err := pool.QueryRow(ctx,
@@ -180,17 +170,17 @@ func reservierung(t *testing.T, srv *Server, userID, titelID string, anzahl int)
 // noch nie ausgeliehener Titel darf NICHT sofort als Ladenhüter/Aussonderungskandidat gelten.
 // Nur ein alter (>2 Jahre im Bestand), nie ausgeliehener Titel ist ein echter Ladenhüter.
 func TestShelfWarmers_NeuzugangKeinLadenhueter(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	altTid := titelMitMeldebestand(t, pool, "Uralt nie ausgeliehen", 0)
+	altTid := testdaten.TitelMitMeldebestand(t, pool, "Uralt nie ausgeliehen", 0)
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, erstellt_am)
 		 VALUES ($1, 'BC-OLD', true, now() - INTERVAL '3 years')`, altTid); err != nil {
 		t.Fatalf("altes Exemplar: %v", err)
 	}
-	neuTid := titelMitMeldebestand(t, pool, "Frischer Neuzugang", 0)
+	neuTid := testdaten.TitelMitMeldebestand(t, pool, "Frischer Neuzugang", 0)
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, erstellt_am)
 		 VALUES ($1, 'BC-NEW', true, now())`, neuTid); err != nil {
@@ -216,15 +206,15 @@ func TestShelfWarmers_NeuzugangKeinLadenhueter(t *testing.T) {
 // (Papierkorb) gelöschten Schüler dürfen keine Mahn-Daten mehr verarbeitet werden — sonst
 // gingen "Zombie-Mahnungen" an den ehemaligen Klassenlehrer (DSGVO-Verstoß).
 func TestMahnwesen_KeineZombieMahnungFuerGeloeschte(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	pastFrist := time.Now().AddDate(0, 0, -10)
-	aktiv := seedSchueler(t, pool, "MZ-1", "Nils", "7a")
-	seedAusleihe(t, pool, aktiv, "Mahnbuch A", pastFrist)
-	geloescht := seedSchueler(t, pool, "MZ-2", "Greta", "7a")
-	seedAusleihe(t, pool, geloescht, "Mahnbuch B", pastFrist)
+	aktiv := testdaten.SeedSchueler(t, pool, "MZ-1", "Nils", "7a")
+	testdaten.SeedAusleihe(t, pool, aktiv, "Mahnbuch A", pastFrist)
+	geloescht := testdaten.SeedSchueler(t, pool, "MZ-2", "Greta", "7a")
+	testdaten.SeedAusleihe(t, pool, geloescht, "Mahnbuch B", pastFrist)
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET deleted_at = now() WHERE id = $1`, geloescht); err != nil {
 		t.Fatalf("Schüler löschen: %v", err)
 	}

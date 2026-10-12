@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Die Türen der Titelmaske für Auflagen (Migration 148, docs/OFFEN.md 4.18). Die Regeln
@@ -16,8 +18,8 @@ import (
 // entstehen kann — eine falsche Kennung im Pfad oder im Körper, ein fehlendes Feld, die
 // Übersetzung der fachlichen Fehler in 400 mit Text und 404.
 func TestTitelAuflagen_TuerDerTitelmaske(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE werke CASCADE`); err != nil {
 		t.Fatal(err)

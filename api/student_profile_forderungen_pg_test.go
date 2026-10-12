@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -16,8 +18,8 @@ import (
 // Profil und aus derselben Abfrage, nach der die Theke beim Ausleihen warnt
 // (repository.OffeneSchaeden). Bezahlte und stornierte Forderungen zählen nicht.
 func TestProfilNenntOffeneForderungen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 

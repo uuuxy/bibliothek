@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -33,8 +35,8 @@ import (
 // Satz sagt niemandem, was zu tun ist, und derselbe Fehler kostete am 22.08.2026 schon
 // einmal die Diagnose (siehe api/student_update.go, Kommentar an den Sperrfeldern).
 func TestLeserArtAendern(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 

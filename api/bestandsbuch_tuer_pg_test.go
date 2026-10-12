@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 )
@@ -16,23 +18,23 @@ import (
 // hier steht die Tür davor, über den Router und mit Sitzung: Das Blatt trägt die Zeilen der
 // Datenbank im Zeitraum, je Topf unter seiner Überschrift, und keine Zeile von außerhalb.
 func TestBestandsbuecher_BlattUeberDieTuer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	_, rufe := protokollWelt(t, pool)
 	ctx := t.Context()
 	tag := func(m time.Month, d int) time.Time {
 		return time.Date(2026, m, d, 12, 0, 0, 0, schulzeit.Zone())
 	}
 
-	lernmittel := titelMitSignatur(t, pool, "Mathebuch 7", "Mat 7", 0)
+	lernmittel := testdaten.TitelMitSignatur(t, pool, "Mathebuch 7", "Mat 7", 0)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET ist_lernmittel = true WHERE id = $1`, lernmittel); err != nil {
 		t.Fatalf("Lernmittel setzen: %v", err)
 	}
-	buecherei := titelMitSignatur(t, pool, "Gregs Tagebuch", "Jug Gre", 0)
+	buecherei := testdaten.TitelMitSignatur(t, pool, "Gregs Tagebuch", "Jug Gre", 0)
 
 	abgang := func(titelID, barcode string, wann time.Time) {
 		t.Helper()
-		id := exemplar(t, pool, titelID, barcode, true, "")
+		id := testdaten.Exemplar(t, pool, titelID, barcode, true, "")
 		if _, err := pool.Exec(ctx, `
 			UPDATE buecher_exemplare
 			SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'VERLUST'

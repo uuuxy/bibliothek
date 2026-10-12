@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -19,8 +21,8 @@ import (
 // Bibliothek sah „interner Fehler“ statt „das ist die Nummer eines Buchs“
 // (Rasterdurchgang 22.09.2026, Frage 5: stille Fehler).
 func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	userRepo := repository.NewUserRepository(pool)

@@ -11,7 +11,11 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/smtptest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/repository"
 
@@ -35,29 +39,6 @@ import (
 //   - Jede Lehrkraft darf NUR die eigene Klasse sehen (Datenminimierung).
 //   - Die Mail erhöht die Mahnstufe NICHT (Invariante §1, docs/invarianten.md): Das ist ein
 //     freundlicher Hinweis vor der Eskalation, nicht die Eskalation selbst.
-
-func schuelerAnlegen(t *testing.T, pool *pgxpool.Pool, vorname, klasse, barcode string) string {
-	t.Helper()
-	var id string
-	err := pool.QueryRow(context.Background(), `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
-		VALUES ($1, $2, 'Testschueler', $3, 2030) RETURNING id`,
-		barcode, vorname, klasse).Scan(&id)
-	if err != nil {
-		t.Fatalf("Schüler %s anlegen: %v", vorname, err)
-	}
-	return id
-}
-
-func klassenleitung(t *testing.T, pool *pgxpool.Pool, klasse, email string) {
-	t.Helper()
-	_, err := pool.Exec(context.Background(), `
-		INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email) VALUES ($1, $2)
-		ON CONFLICT (klasse) DO UPDATE SET lehrer_email = EXCLUDED.lehrer_email`, klasse, email)
-	if err != nil {
-		t.Fatalf("Klassenleitung für %s eintragen: %v", klasse, err)
-	}
-}
 
 // ausleiheUeberDenDienst leiht ein Exemplar an einen Schüler aus — über denselben Dienst,
 // den auch der Scanner benutzt, damit die Frist wirklich aus den Einstellungen kommt und
@@ -102,13 +83,13 @@ func inDieVergangenheit(t *testing.T, pool *pgxpool.Pool, schuelerID string, tag
 // ausleihbaresExemplar legt Titel und Exemplar an, das sofort ausgeliehen werden kann.
 func ausleihbaresExemplar(t *testing.T, pool *pgxpool.Pool, titel, barcode string) {
 	t.Helper()
-	titelID := titelMitMeldebestand(t, pool, titel, 0)
-	exemplar(t, pool, titelID, barcode, true, "")
+	titelID := testdaten.TitelMitMeldebestand(t, pool, titel, 0)
+	testdaten.Exemplar(t, pool, titelID, barcode, true, "")
 }
 
 func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// 1. Die Einstellung, aus der die Frist entsteht. Bewusst kein Vielfaches von 7 und
@@ -136,10 +117,10 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// Schreiben auf DIESELBE registrierte Schreibweise; die Mail muss trotzdem (bzw.
 	// gerade deshalb) ankommen. Welche Schreibweise gewinnt, entscheidet der
 	// Erstschreiber — der Test liest sie unten aus der DB, wie es auch die UI tut.
-	anna := schuelerAnlegen(t, pool, "Anna", "5A", "S-MAHN-1")
-	ben := schuelerAnlegen(t, pool, "Ben", "6B", "S-MAHN-2")
-	klassenleitung(t, pool, "5a ", "leitung5a@schule.invalid")
-	klassenleitung(t, pool, "6B", "leitung6b@schule.invalid")
+	anna := testdaten.SchuelerAnlegen(t, pool, "Anna", "5A", "S-MAHN-1")
+	ben := testdaten.SchuelerAnlegen(t, pool, "Ben", "6B", "S-MAHN-2")
+	testdaten.Klassenleitung(t, pool, "5a ", "leitung5a@schule.invalid")
+	testdaten.Klassenleitung(t, pool, "6B", "leitung6b@schule.invalid")
 
 	var annaKlasse string
 	if err := pool.QueryRow(ctx, `SELECT klasse FROM schueler WHERE id = $1::uuid`, anna).Scan(&annaKlasse); err != nil {
@@ -147,7 +128,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	}
 
 	// 2. Ausleihe über den echten Dienst → die Frist muss aus der Einstellung stammen.
-	bearbeiter := adminFuerAudit(t, pool)
+	bearbeiter := testdaten.AdminFuerAudit(t, pool)
 	frist := ausleiheUeberDenDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
 	// Beide Seiten durch DIESELBE Produktionsdefinition schicken (seit dem 24.09.2026
 	// lmfplan.Ferientabelle.Tagesfrist, davor TagesEndeInSchulzeitzone), statt Kalendertage in der Zeitzone des Testrechners zu vergleichen: Die Frist entsteht
@@ -214,9 +195,9 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	}
 
 	// 5. Was wirklich rausging.
-	nachricht := warteAufMail(t, sitzungen)
+	nachricht := smtptest.WarteAufMail(t, sitzungen)
 	if !strings.Contains(nachricht, "leitung5a@schule.invalid") {
-		t.Errorf("die Mail ging nicht an die Klassenleitung der 5A:\n%s", kopf(nachricht))
+		t.Errorf("die Mail ging nicht an die Klassenleitung der 5A:\n%s", smtptest.Kopf(nachricht))
 	}
 	if strings.Contains(nachricht, "leitung6b@schule.invalid") {
 		t.Error("die Mail nennt die Klassenleitung einer NICHT gewählten Klasse")
@@ -224,7 +205,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// Datenminimierung: In der Mail an die 5A hat der Name aus der 6B nichts zu suchen.
 	// Der Anhang ist das Mahn-PDF; die Namen stehen dort komprimiert, deshalb wird der
 	// PDF-Inhalt gelesen und nicht der Rohtext.
-	texte := strings.Join(pdfTexte(t, pdfAusMail(t, nachricht)), "\n")
+	texte := strings.Join(pdftest.Texte(t, pdfAusMail(t, nachricht)), "\n")
 	if !strings.Contains(texte, "Anna") {
 		t.Errorf("die gemahnte Schülerin steht nicht im PDF:\n%s", texte)
 	}
@@ -258,19 +239,4 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 func pdfAusMail(t *testing.T, nachricht string) []byte {
 	t.Helper()
 	return []byte(dateiAusMail(t, nachricht, "application/pdf"))
-}
-
-// adminFuerAudit legt den Benutzer an, auf den der Audit-Eintrag zeigt.
-func adminFuerAudit(t *testing.T, pool *pgxpool.Pool) string {
-	t.Helper()
-	var id string
-	err := pool.QueryRow(context.Background(), `
-		INSERT INTO benutzer (email, vorname, nachname, rolle, aktiv)
-		VALUES ('mahnlauf@schule.invalid', 'Mahn', 'Lauf', 'admin', true)
-		ON CONFLICT (email) DO UPDATE SET aktiv = true
-		RETURNING id`).Scan(&id)
-	if err != nil {
-		t.Fatalf("Admin anlegen: %v", err)
-	}
-	return id
 }

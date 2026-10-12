@@ -12,6 +12,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/internal/xlsxtest"
 )
 
@@ -19,8 +21,8 @@ import (
 // Vorschau-Handler und kommt als Namensmodus-Vorschau zurück. Beweist die Verdrahtung
 // Upload → Formaterkennung → Parser → Klassifizierung, nicht nur die Einzelteile.
 func TestLusdPreviewHandler_XlsxOhneIDDurchDieVordertuer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 

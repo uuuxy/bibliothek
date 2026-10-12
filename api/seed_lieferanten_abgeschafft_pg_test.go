@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 )
 
@@ -13,7 +14,7 @@ import (
 // bleibt, die Bestellung an den gelöschten Eintrag bleibt als Beleg erhalten, und ein
 // umbenannter Rest mit der Beispiel-Adresse wird gefunden.
 func TestSeedLieferantenAbgeschafft107(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE bestellungen_verlauf, lieferanten CASCADE`); err != nil {
 		t.Fatalf("Reset: %v", err)

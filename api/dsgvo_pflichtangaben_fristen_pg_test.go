@@ -10,6 +10,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/auskunft"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -23,8 +25,8 @@ import (
 // und zwei vertauschte Fristen stünden beide im Text. Die Frist erledigter Anliegen nennt nur
 // die Auskunft eines Kollegen, deshalb steht eine Kollegin daneben.
 func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Krumme Werte: Die Vorgaben (1 und 730 Tage Lesehistorie, 90 Tage Karenz, 24 Monate
@@ -52,7 +54,7 @@ func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 		}
 	})
 
-	sid := seedSchueler(t, pool, "S-FRISTEN-PROBE", "Fristenkind", "5F1")
+	sid := testdaten.SeedSchueler(t, pool, "S-FRISTEN-PROBE", "Fristenkind", "5F1")
 	var kollege string
 	if err := pool.QueryRow(ctx, `INSERT INTO leser (vorname, nachname, art)
 		VALUES ('Frieda', 'Fristenkollegin', 'lehrkraft') RETURNING id`).Scan(&kollege); err != nil {

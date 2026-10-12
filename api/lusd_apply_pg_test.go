@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,8 +16,8 @@ import (
 // erst beim späteren Hard-Purge. Sonst überlebt das personenbezogenste Datum die
 // Namens-/Adress-Löschung.
 func TestAnonymisiereAbgaenger_LoeschtFoto(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var id string
@@ -75,30 +77,6 @@ func insertGesperrterAbgaenger(t *testing.T, pool *pgxpool.Pool, barcode, vornam
 	return id
 }
 
-// seedOffeneAusleihe hängt dem Schüler eine noch nicht zurückgegebene Ausleihe an.
-func seedOffeneAusleihe(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePraefix string) {
-	t.Helper()
-	titelID := titelMitMeldebestand(t, pool, "Titel-"+barcodePraefix, 1)
-	exID := exemplar(t, pool, titelID, "EX-"+barcodePraefix, true, "")
-	if _, err := pool.Exec(context.Background(),
-		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
-		 VALUES ($1, $2, now() + interval '14 days')`, exID, schuelerID); err != nil {
-		t.Fatalf("offene Ausleihe anlegen: %v", err)
-	}
-}
-
-// seedOffenerSchaden hängt dem Schüler einen unbezahlten Schadensfall an.
-func seedOffenerSchaden(t *testing.T, pool *pgxpool.Pool, schuelerID, barcodePraefix string) {
-	t.Helper()
-	titelID := titelMitMeldebestand(t, pool, "SchadenTitel-"+barcodePraefix, 1)
-	exID := exemplar(t, pool, titelID, "SEX-"+barcodePraefix, true, "")
-	if _, err := pool.Exec(context.Background(),
-		`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, ist_bezahlt)
-		 VALUES ($1, $2, 'Wasserschaden', 12.50, false)`, exID, schuelerID); err != nil {
-		t.Fatalf("offenen Schaden anlegen: %v", err)
-	}
-}
-
 // runAktualisiere führt repository.AktualisiereLusdBestand für einen Schüler in einer
 // echten Transaktion aus.
 //
@@ -135,10 +113,10 @@ func leseSchuelerStatus(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, 
 }
 
 func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 
 	t.Run("gesperrter Abgänger ohne offene Vorgänge wird entsperrt", func(t *testing.T) {
-		resetBestandsdaten(t, pool)
+		testdaten.ResetBestandsdaten(t, pool)
 		id := insertGesperrterAbgaenger(t, pool, "R-A", "Max", "Muster", "ABG",
 			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
 
@@ -157,10 +135,10 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	})
 
 	t.Run("gesperrter Abgänger mit offener Ausleihe bleibt gesperrt, Grund umbenannt", func(t *testing.T) {
-		resetBestandsdaten(t, pool)
+		testdaten.ResetBestandsdaten(t, pool)
 		id := insertGesperrterAbgaenger(t, pool, "R-B", "Lea", "Klein", "ABG",
 			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
-		seedOffeneAusleihe(t, pool, id, "B")
+		testdaten.SeedOffeneAusleihe(t, pool, id, "B")
 
 		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Lea", Nachname: "Klein", Klasse: "9a"}, id)
 
@@ -177,10 +155,10 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	})
 
 	t.Run("gesperrter Abgänger mit unbezahltem Schaden bleibt gesperrt", func(t *testing.T) {
-		resetBestandsdaten(t, pool)
+		testdaten.ResetBestandsdaten(t, pool)
 		id := insertGesperrterAbgaenger(t, pool, "R-C", "Tom", "Groß", "ABG",
 			"Automatisierte Abgänger-Sperre (offene Vorgänge)")
-		seedOffenerSchaden(t, pool, id, "C")
+		testdaten.SeedOffenerSchaden(t, pool, id, "C")
 
 		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Tom", Nachname: "Groß", Klasse: "9a"}, id)
 
@@ -194,7 +172,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	})
 
 	t.Run("manuelle Sperre bleibt unangetastet", func(t *testing.T) {
-		resetBestandsdaten(t, pool)
+		testdaten.ResetBestandsdaten(t, pool)
 		const manuell = "Manuell gesperrt: wiederholter Vandalismus"
 		id := insertGesperrterAbgaenger(t, pool, "R-D", "Nia", "Wolf", "ABG", manuell)
 
@@ -213,7 +191,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	})
 
 	t.Run("anonymisierter Abgänger wird entsperrt und umbenannt", func(t *testing.T) {
-		resetBestandsdaten(t, pool)
+		testdaten.ResetBestandsdaten(t, pool)
 		// Anonymisierte tragen 'Abgänger' / 'Anonymisiert-…' und den festen Grund.
 		id := insertGesperrterAbgaenger(t, pool, "R-E", "Abgänger", "Anonymisiert-xyz", "ABG",
 			"Abgänger anonymisiert")
@@ -242,8 +220,8 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 // räumte audit_logs nicht. Folge: Die staatliche LUSD-ID (LUSD_ID_NACHGETRAGEN) überlebte
 // 24 Monate im Audit. Jetzt: Marker gesetzt, Barcode anonym, Spuren in derselben Tx weg.
 func TestAnonymisiereAbgaenger_SetztMarkerUndTilgtSpuren(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var id, titelID string

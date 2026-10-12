@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/tuertest"
 	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -15,7 +16,7 @@ import (
 // Die Mahnliste entsteht aus den Gruppen der Abfrage. Jedes Feld ihrer Eingabe kommt aus
 // seiner Quelle, die Werte sind je Feld verschieden, auch die Klasse des Schülers und der Name
 // seiner Gruppe; ein Feld, das die Eingabe später dazubekommt und das niemand füllt, fällt an
-// leereFelder auf.
+// tuertest.LeereFelder auf.
 func TestMahnlisteSeiten_FuelltJedesFeldDerEingabe(t *testing.T) {
 	klassen := []repository.MahnwesenKlasse{
 		{Klasse: "05F", LehrerEmail: "leitung5f@schule.invalid", Schueler: []repository.UeberfaelligerSchueler{
@@ -48,7 +49,7 @@ func TestMahnlisteSeiten_FuelltJedesFeldDerEingabe(t *testing.T) {
 	if !reflect.DeepEqual(seiten, want) {
 		t.Errorf("Eingabe der Mahnliste =\n%+v\nerwartet\n%+v", seiten, want)
 	}
-	if leer := leereFelder(reflect.ValueOf(seiten), "[]pdf.MahnlisteSchueler"); len(leer) > 0 {
+	if leer := tuertest.LeereFelder(reflect.ValueOf(seiten), "[]pdf.MahnlisteSchueler"); len(leer) > 0 {
 		t.Errorf("mahnlisteSeiten füllt diese Felder nicht: %v", leer)
 	}
 }

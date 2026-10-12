@@ -11,6 +11,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -24,14 +26,14 @@ import (
 // (Geschwister-Asymmetrie). Entscheidung 31.08.2026: Portal + Theke lesen sie; dazu
 // erledigt_am (Migration 089), damit „erledigt am …" überhaupt anzeigbar ist.
 func TestMeineKlassensatzReservierungen_NotizUndZeitpunktKommenAn(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lehrerA := seedPortalLehrkraft(t, pool, "eigene-a@test.invalid")
-	lehrerB := seedPortalLehrkraft(t, pool, "eigene-b@test.invalid")
-	titelID := seedMonitorTitel(t, pool, "Die Physiker", "Jug Due", false, 0)
+	lehrerA := testdaten.SeedPortalLehrkraft(t, pool, "eigene-a@test.invalid")
+	lehrerB := testdaten.SeedPortalLehrkraft(t, pool, "eigene-b@test.invalid")
+	titelID := testdaten.SeedMonitorTitel(t, pool, "Die Physiker", "Jug Due", false, 0)
 
 	offenA := seedKlassensatzReservierung(t, pool, titelID, lehrerA, "07B")
 	fertigA := seedKlassensatzReservierung(t, pool, titelID, lehrerA, "09C")
@@ -110,19 +112,6 @@ func eigeneReservierungen(t *testing.T, srv *Server, benutzerID string) []map[st
 		t.Fatalf("Antwort unlesbar: %v / %s", err, rec.Body.String())
 	}
 	return meine
-}
-
-func seedPortalLehrkraft(t *testing.T, pool *pgxpool.Pool, email string) string {
-	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(), `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Portal', 'Lehrkraft', $1, 'kollegium', true)
-		ON CONFLICT (email) DO UPDATE SET vorname = EXCLUDED.vorname
-		RETURNING id`, email).Scan(&id); err != nil {
-		t.Fatalf("Lehrkraft %s anlegen: %v", email, err)
-	}
-	return id
 }
 
 func seedKlassensatzReservierung(t *testing.T, pool *pgxpool.Pool, titelID, benutzerID, klasse string) string {

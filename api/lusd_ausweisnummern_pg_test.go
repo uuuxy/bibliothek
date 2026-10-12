@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -24,8 +26,8 @@ import (
 // Problem. Deshalb steht diese Zusage jetzt an der echten Datenbank, über zwei Läufe und
 // gegen die zweite Vergabestelle.
 func TestLusdAusweisnummern_ZweiLaeufeUndDieHandanlage(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	lauf := func(t *testing.T, namen ...string) {

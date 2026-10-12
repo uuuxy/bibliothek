@@ -4,13 +4,14 @@ package api
 // Bis dahin nagelte der Mailweg den Vermerk auf die Werksvorgabe „Eigentum des
 // Landes Hessen" fest, während Selbstdruck (s.etikettKopf) und Lieferanten-Link
 // die Einstellung etikett_eigentumsvermerk lasen — zwei Wege zum selben Buch,
-// zwei verschiedene Aufkleber. Geprüft am fertigen PDF-Inhaltsstrom (pdfText),
+// zwei verschiedene Aufkleber. Geprüft am fertigen PDF-Inhaltsstrom (pdftest.Suchtext),
 // wie alle Etiketten-Gates.
 
 import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pdftest"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -32,7 +33,7 @@ func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 		t.Fatal("kein Bogen erzeugt")
 	}
 	for _, b := range boegen {
-		text := pdfText(t, b.Data)
+		text := pdftest.Suchtext(t, b.Data)
 		if !strings.Contains(text, "Eigentum des Kreises Wetterau") {
 			t.Errorf("%s: konfigurierter Eigentumsvermerk fehlt auf dem Bogen", b.Name)
 		}
@@ -52,7 +53,7 @@ func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T
 		t.Fatalf("etikettenboegen: %v", err)
 	}
 	for _, b := range boegen {
-		if !strings.Contains(pdfText(t, b.Data), repository.StandardEigentumsvermerk) {
+		if !strings.Contains(pdftest.Suchtext(t, b.Data), repository.StandardEigentumsvermerk) {
 			t.Errorf("%s: ohne Konfiguration muss die Werksvorgabe drucken", b.Name)
 		}
 	}
@@ -128,7 +129,7 @@ func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
 				t.Fatalf("erwartet kleinen und großen Bogen, bekam %d", len(boegen))
 			}
 			for _, b := range boegen {
-				text := pdfText(t, b.Data)
+				text := pdftest.Suchtext(t, b.Data)
 				if f.want != "" && !strings.Contains(text, f.want) {
 					t.Errorf("%s: Vermerk %q fehlt", b.Name, f.want)
 				}

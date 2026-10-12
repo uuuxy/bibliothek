@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -24,8 +26,8 @@ import (
 // aufgeteilt müssen sie zusammen wieder die Gesamtzahl ergeben — sonst steht auf dem
 // Bildschirm eine Aufteilung, die eine andere Summe hat als die Summe darüber.
 func TestBestellhistorieNachTopf(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())

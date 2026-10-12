@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -14,15 +16,15 @@ import (
 // sammleLage. Die Oberstufe (ET, 12T, 13T) hat keine Klassenleitung, ihre Klassen sind aber
 // Klassen: Eine Buchliste oder Zuordnung dafür ist nicht verwaist.
 func TestKlassenZuordnungKenntDieOberstufe(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	for i, klasse := range []string{"07G1", "10R2", "ET1", "12T1", "13T2"} {
-		seedSchueler(t, pool, fmt.Sprintf("KL-%d", i), "Kind", klasse)
+		testdaten.SeedSchueler(t, pool, fmt.Sprintf("KL-%d", i), "Kind", klasse)
 	}
-	titel := titelMitMeldebestand(t, pool, "Buch einer Klassenliste", 1)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "Buch einer Klassenliste", 1)
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO class_books (class_name, book_id) VALUES ('ET1', $1), ('09H9', $1)`, titel); err != nil {
 		t.Fatalf("Buchlisten anlegen: %v", err)

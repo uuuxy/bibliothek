@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 )
 
@@ -24,7 +25,7 @@ import (
 // Der Test prueft beides: dass die erfundenen Namen verschwunden sind UND dass ein
 // tatsaechlich vergebenes Recht ankommt.
 func TestListUsersLiefertEchteRechte(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -32,7 +33,7 @@ func TestListUsersLiefertEchteRechte(t *testing.T) {
 	email := "rechte-" + suffix + "@example.org"
 
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = $1`, email)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = $1`, email)
 	})
 
 	if _, err := pool.Exec(ctx, `

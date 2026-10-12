@@ -7,6 +7,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Ein aus Littera übernommener Schüler trägt als Herkunftsmarke lusd_id = 'littera:<ID>'
@@ -17,8 +19,8 @@ import (
 // wird Neuzugang, und der Unique-Index unique_schueler_name_gebdatum greift nicht, weil
 // er Zeilen mit gesetzter lusd_id ausnimmt (Migration 074).
 func TestLusdAutoMatching_LitteraSchuelerWirdAdoptiert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 

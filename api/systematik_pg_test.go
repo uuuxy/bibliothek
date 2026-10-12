@@ -11,8 +11,7 @@ import (
 	"time"
 
 	"bibliothek/db"
-
-	"github.com/jackc/pgx/v5/pgxpool"
+	"bibliothek/internal/pgtest"
 )
 
 // systematikAnlegen ruft den Anlege-Endpunkt auf und liefert Recorder + neue ID.
@@ -34,19 +33,11 @@ func systematikAnlegen(t *testing.T, srv *Server, kuerzel, bezeichnung string) (
 	return rec, antwort["id"]
 }
 
-// aufraeumen fuehrt eine Cleanup-Anweisung aus und meldet Fehler, statt sie zu schlucken.
-func aufraeumen(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) {
-	t.Helper()
-	if _, err := pool.Exec(context.Background(), sql, args...); err != nil {
-		t.Logf("Aufraeumen fehlgeschlagen (%s): %v", sql, err)
-	}
-}
-
 // TestSystematikAnlegen belegt die Luecke, die diese Aenderung schliesst: Das Vokabular,
 // aus dem das Buchformular die Signatur vorschlaegt, war bisher nur lesbar — es gab
 // keinen Weg, es zu fuellen, obwohl der Vorschlag davon abhaengt.
 func TestSystematikAnlegen(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -56,7 +47,7 @@ func TestSystematikAnlegen(t *testing.T) {
 	kuerzel := "Deu" + suffix
 	bezeichnung := "Deutsch" + suffix
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE kuerzel LIKE 'Deu%'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE kuerzel LIKE 'Deu%'`)
 	})
 
 	rec, id := systematikAnlegen(t, srv, "  "+kuerzel+"  ", "  "+bezeichnung+"  ")
@@ -98,7 +89,7 @@ func TestSystematikAnlegen(t *testing.T) {
 // RESTRICT) — der Handler bleibt fuer die fachliche Meldung zustaendig, der FK ist
 // die Rueckfallebene fuer jeden Weg am Handler vorbei.
 func TestSystematikLoeschenGeschuetzt(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -109,8 +100,8 @@ func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 		t.Fatal("Sachgruppe konnte nicht angelegt werden")
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
-		aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE subject = $1`, bezeichnung)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE subject = $1`, bezeichnung)
 	})
 
 	loeschen := func() int {
@@ -159,7 +150,7 @@ func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 // sonst blieben sie lautlos auf dem alten Fachnamen und fielen aus der Fach-Auswahl.
 // Die Signatur (Kürzel am Buchrücken) bleibt bewusst unberührt.
 func TestSystematikRenameZiehtTitelMit(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -171,8 +162,8 @@ func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 		t.Fatal("Sachgruppe konnte nicht angelegt werden")
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
-		aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE subject IN ($1,$2)`, alt, neu)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE subject IN ($1,$2)`, alt, neu)
 	})
 
 	// Zwei Titel auf dem alten Fach, einer auf einem Fremdfach (darf NICHT mitgezogen
@@ -184,7 +175,7 @@ func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 		t.Fatalf("Fremdfach registrieren: %v", err)
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung = $1`, fremd)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung = $1`, fremd)
 	})
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO buecher_titel (titel, subject, signatur) VALUES
@@ -248,13 +239,13 @@ func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 // Eine unbekannte Sachgruppe zu ändern ist ein 404; eine Bezeichnung, die eine andere schon
 // trägt, ein 409, und die Sachgruppe behält ihre.
 func TestSystematikAendern_UnbekanntUndDoppelt(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE kuerzel LIKE 'Dop%'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE kuerzel LIKE 'Dop%'`)
 	})
 	if rec, _ := systematikAnlegen(t, srv, "DopA"+suffix, "Doppelt A "+suffix); rec.Code != http.StatusCreated {
 		t.Fatalf("erste Sachgruppe: Status %d, %s", rec.Code, rec.Body.String())

@@ -10,7 +10,9 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pdf"
 	"bibliothek/pkg/bestelllink"
 	"bibliothek/pkg/mitteltopf"
@@ -57,8 +59,8 @@ func bestellungMitEtikettenAus(t *testing.T, srv *Server, pool *pgxpool.Pool, me
 	ctx := context.Background()
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	lieferant := haendler(t, pool, "Naacher", true)
-	titel := titelMitMeldebestand(t, pool, "LMF-Formatprobe", 0)
+	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Formatprobe", 0)
 
 	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mittel,
@@ -80,8 +82,8 @@ func bestellungMitEtikettenAus(t *testing.T, srv *Server, pool *pgxpool.Pool, me
 // 25 Exemplare: 3×7 = 21 je Bogen → 2 Blätter, 4×13 = 52 je Bogen → 1 Blatt.
 // Bliebe das Format irgendwo auf dem Weg liegen, wären beide Antworten gleich.
 func TestLieferantenEtiketten_FormatWirktBisInsPDF(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	token := bestellungMitEtiketten(t, srv, pool, 25)
@@ -122,8 +124,8 @@ func TestLieferantenEtiketten_FormatWirktBisInsPDF(t *testing.T) {
 // Ohne Angabe gilt die Vorgabe. Der Lieferant, der nichts auswählt, bekommt weiterhin
 // einen brauchbaren Bogen — die Formatwahl darf keine neue Pflicht sein.
 func TestLieferantenEtiketten_OhneFormatGiltDieVorgabe(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	token := bestellungMitEtiketten(t, srv, pool, 25)
@@ -148,8 +150,8 @@ func TestLieferantenEtiketten_OhneFormatGiltDieVorgabe(t *testing.T) {
 // der Handler das übernehmen, druckte der Lieferant nach einem Tippfehler im falschen
 // Raster — und merkte es erst am verschnittenen Bogen.
 func TestLieferantenEtiketten_UnbekanntesFormatWirdAbgewiesen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	token := bestellungMitEtiketten(t, srv, pool, 3)
@@ -167,8 +169,8 @@ func TestLieferantenEtiketten_UnbekanntesFormatWirdAbgewiesen(t *testing.T) {
 // Die große Größe hat ein festes Raster — ein mitgeschicktes Format darf daran nichts
 // ändern, sonst behauptete die Oberfläche eine Wahl, die es nicht gibt.
 func TestLieferantenEtiketten_GrossIgnoriertDasRaster(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	token := bestellungMitEtiketten(t, srv, pool, 5)
@@ -196,8 +198,8 @@ func TestLieferantenEtiketten_GrossIgnoriertDasRaster(t *testing.T) {
 // Das gewählte Raster landet in der Historie der Schule. Ohne diese Notiz weiß die
 // Bibliothek nicht, wie die Aufkleber aussehen, die gleich ankommen.
 func TestLieferantenBestaetigung_MerktSichDasRaster(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
@@ -240,8 +242,8 @@ func TestLieferantenBestaetigung_MerktSichDasRaster(t *testing.T) {
 // Die Formatliste muss auch beim Lieferanten ankommen — sonst zeigt seine Seite keine
 // Auswahl und er druckt weiter im Zweckform-Raster.
 func TestOeffentlicheBestellung_LiefertDieFormatauswahl(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}

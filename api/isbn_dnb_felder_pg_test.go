@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/inventur"
 )
 
@@ -15,8 +17,8 @@ import (
 // (inventur.ListenpreisAusNachschlagen): Ein Preis von 0 füllt nichts, und was schon
 // erfasst ist, gewinnt.
 func TestUpsertTitelAusMetadaten_UntertitelUndLadenpreis(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 

@@ -6,6 +6,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // TestLusdImport_DubletteInDerselbenDatei prüft, was passiert, wenn EIN LUSD-Export
@@ -19,8 +21,8 @@ import (
 // partiellen Unique-Index uniq_schueler_lusd_id_active — SQLSTATE 23505 reißt den GESAMTEN
 // Import mit, nicht nur die doppelte Zeile.
 func TestLusdImport_DubletteInDerselbenDatei(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	s := &Server{DB: &db.Database{Pool: pool}}

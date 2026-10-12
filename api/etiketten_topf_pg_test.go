@@ -8,7 +8,10 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -59,7 +62,7 @@ func etikettenUeberBuchformular(t *testing.T, srv *Server, titelID string) strin
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Buchformular-Weg: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	return pdfText(t, rec.Body.Bytes())
+	return pdftest.Suchtext(t, rec.Body.Bytes())
 }
 
 // etikettenUeberDruckCenter druckt über POST /api/print/labels (ergaenzeServerfelder). Die
@@ -74,7 +77,7 @@ func etikettenUeberDruckCenter(t *testing.T, srv *Server, barcode, untergeschobe
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Druck-Center-Weg: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	return pdfText(t, rec.Body.Bytes())
+	return pdftest.Suchtext(t, rec.Body.Bytes())
 }
 
 func pruefeVermerk(t *testing.T, weg, text, want, nicht string) {
@@ -89,7 +92,7 @@ func pruefeVermerk(t *testing.T, weg, text, want, nicht string) {
 
 // Die Regel an den beiden Wegen des Hauses — alle sieben Formen, die ein Exemplar haben kann.
 func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -117,7 +120,7 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			resetBestandsdaten(t, pool)
+			testdaten.ResetBestandsdaten(t, pool)
 			setzeVermerkSchuelerbuecherei(t, pool, vermerkStadt)
 
 			var titelID string
@@ -128,7 +131,7 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 			}
 			var bestellungID *string
 			if f.bestellt {
-				lieferant := haendler(t, pool, "Topf-Händler", false)
+				lieferant := testdaten.Haendler(t, pool, "Topf-Händler", false)
 				var id string
 				if err := pool.QueryRow(ctx, `
 					INSERT INTO bestellungen_verlauf
@@ -162,8 +165,8 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 // Mailanhang (Etiketten aus ProcessOrder). Bestellt wird ein LERNMITTEL-Titel für die
 // Schülerbücherei — der Fall, in dem Titel und Bestellung einander widersprechen.
 func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	setzeVermerkSchuelerbuecherei(t, pool, vermerkStadt)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
@@ -171,9 +174,9 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Schultraeger,
-		SupplierID: haendler(t, pool, "Naacher", true),
+		SupplierID: testdaten.Haendler(t, pool, "Naacher", true),
 		Items: []service.BestellAuftragPosition{{
-			TitelID: titelMitMeldebestand(t, pool, "LMF-Topfprobe", 0), Menge: 2, Preis: 10, GenerateBarcodes: true}},
+			TitelID: testdaten.TitelMitMeldebestand(t, pool, "LMF-Topfprobe", 0), Menge: 2, Preis: 10, GenerateBarcodes: true}},
 	})
 	if err != nil {
 		t.Fatalf("Bestellung: %v", err)
@@ -184,7 +187,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Lieferanten-Link: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	pruefeVermerk(t, "Lieferanten-Link", pdfText(t, rec.Body.Bytes()), vermerkStadt, vermerkLand)
+	pruefeVermerk(t, "Lieferanten-Link", pdftest.Suchtext(t, rec.Body.Bytes()), vermerkStadt, vermerkLand)
 
 	// Weg 4: der Mailanhang, mit dem Kopf, den der Bestell-Handler baut.
 	einstellungen, err := repository.NewSystemSettingsRepository(pool).GetSettings(ctx)
@@ -200,7 +203,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 		t.Fatal("kein Bogen im Anhang")
 	}
 	for _, b := range boegen {
-		pruefeVermerk(t, "Mailanhang "+b.Name, pdfText(t, b.Data), vermerkStadt, vermerkLand)
+		pruefeVermerk(t, "Mailanhang "+b.Name, pdftest.Suchtext(t, b.Data), vermerkStadt, vermerkLand)
 	}
 }
 
@@ -208,8 +211,8 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 // die Datenbank nicht kennt — Vorab-Druck —, trägt ergaenzeServerfelder nichts nach; ein
 // vom Browser mitgeschicktes „Topf" bliebe dann stehen und wählte den Vermerk.
 func TestEigentumsvermerk_TopfLaesstSichNichtUnterschieben(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	setzeVermerkSchuelerbuecherei(t, pool, vermerkStadt)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 

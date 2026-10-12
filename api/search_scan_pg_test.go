@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -15,11 +17,11 @@ import (
 // die Theke (resolveOhnePraefix), nur als Auskunft. Grundlage der globalen Suchleiste
 // (03.09.2026): Buch → Buchakte, Ausweis → Schülerakte.
 func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	titelID := titelMitMeldebestand(t, pool, "Sprungbuch", 1)
-	exID := exemplar(t, pool, titelID, "B-SPRUNG-1", true, "")
+	titelID := testdaten.TitelMitMeldebestand(t, pool, "Sprungbuch", 1)
+	exID := testdaten.Exemplar(t, pool, titelID, "B-SPRUNG-1", true, "")
 	var schuelerID string
 	if err := pool.QueryRow(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('S-SPRUNG-1', 'Greta', 'Sprung', '07A', 2031) RETURNING id`).Scan(&schuelerID); err != nil {

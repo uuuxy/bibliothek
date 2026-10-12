@@ -5,7 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -15,13 +17,13 @@ import (
 // diesen Büchern und wurde abgewiesen. Weiter ging es nur mit „Sperre übergehen", und das
 // Protokoll hielt eine übergangene Sperre fest statt einer Rückgabe.
 func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	bearbeiter := adminFuerAudit(t, pool)
-	kind := schuelerAnlegen(t, pool, "Gesperrt", "9H1", "S-SPERRE-1")
-	exemplar(t, pool, titelMitMeldebestand(t, pool, "Titel Sperre", 1), "B-SPERRE-1", true, "")
+	bearbeiter := testdaten.AdminFuerAudit(t, pool)
+	kind := testdaten.SchuelerAnlegen(t, pool, "Gesperrt", "9H1", "S-SPERRE-1")
+	testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Titel Sperre", 1), "B-SPERRE-1", true, "")
 	ausleiheUeberDenDienst(t, pool, "B-SPERRE-1", kind, bearbeiter)
 
 	if _, err := pool.Exec(ctx,
@@ -81,18 +83,18 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 // Wer gesperrt oder am Limit war, konnte das Buch eines Mitschülers nicht abgeben,
 // während dieselbe Rückgabe ohne offene Sitzung (HandleSimpleReturn) durchging.
 func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	bearbeiter := adminFuerAudit(t, pool)
+	bearbeiter := testdaten.AdminFuerAudit(t, pool)
 	bookRepo := repository.NewBookRepository(pool)
 	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
 		repository.NewLoanRepository(pool), repository.NewAuditRepository(pool))
 
-	titel := titelMitMeldebestand(t, pool, "Titel Fremdrueckgabe", 3)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "Titel Fremdrueckgabe", 3)
 	for _, bc := range []string{"B-FREMD-1", "B-FREMD-2", "B-FREMD-3"} {
-		exemplar(t, pool, titel, bc, true, "")
+		testdaten.Exemplar(t, pool, titel, bc, true, "")
 	}
 
 	// Das Ausleihlimit auf 1 — sonst bräuchte der zweite Fall fünf Exemplare.
@@ -158,9 +160,9 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 	}
 
 	// 1. Das Kind an der Theke ist gesperrt — das Buch gehört einem anderen.
-	eigentuemer1 := schuelerAnlegen(t, pool, "Eigentuemer", "9H2", "S-FREMD-EIG1")
+	eigentuemer1 := testdaten.SchuelerAnlegen(t, pool, "Eigentuemer", "9H2", "S-FREMD-EIG1")
 	ausleiheUeberDenDienst(t, pool, "B-FREMD-1", eigentuemer1, bearbeiter)
-	gesperrt := schuelerAnlegen(t, pool, "Gesperrt", "9H2", "S-FREMD-SPERRE")
+	gesperrt := testdaten.SchuelerAnlegen(t, pool, "Gesperrt", "9H2", "S-FREMD-SPERRE")
 	if _, err := pool.Exec(ctx,
 		`UPDATE schueler SET ist_gesperrt = true, block_reason = 'Test: Sperre' WHERE id = $1`, gesperrt); err != nil {
 		t.Fatalf("Sperre setzen: %v", err)
@@ -168,9 +170,9 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 	fremdrueckgabe(t, "B-FREMD-1", gesperrt, eigentuemer1)
 
 	// 2. Das Kind an der Theke ist am Ausleihlimit — das Buch gehört einem anderen.
-	eigentuemer2 := schuelerAnlegen(t, pool, "Eigentuemer2", "9H2", "S-FREMD-EIG2")
+	eigentuemer2 := testdaten.SchuelerAnlegen(t, pool, "Eigentuemer2", "9H2", "S-FREMD-EIG2")
 	ausleiheUeberDenDienst(t, pool, "B-FREMD-2", eigentuemer2, bearbeiter)
-	amLimit := schuelerAnlegen(t, pool, "AmLimit", "9H2", "S-FREMD-LIMIT")
+	amLimit := testdaten.SchuelerAnlegen(t, pool, "AmLimit", "9H2", "S-FREMD-LIMIT")
 	ausleiheUeberDenDienst(t, pool, "B-FREMD-3", amLimit, bearbeiter)
 	fremdrueckgabe(t, "B-FREMD-2", amLimit, eigentuemer2)
 }

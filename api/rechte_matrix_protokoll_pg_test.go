@@ -9,6 +9,9 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/sse"
 )
 
@@ -18,8 +21,8 @@ import (
 // nachsehen, wer einer Rolle wann ein Recht gegeben hat. Eine abgelehnte Änderung schreibt
 // keinen Eintrag.
 func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(
@@ -46,8 +49,8 @@ func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
 		t.Fatalf("Ausgangszustand setzen: %v", err)
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `UPDATE role_permissions SET allowed = false WHERE role = 'HELFER' AND permission = 'view_students'`)
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'RECHT_GEAENDERT'`)
+		pgtest.Aufraeumen(t, pool, `UPDATE role_permissions SET allowed = false WHERE role = 'HELFER' AND permission = 'view_students'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'RECHT_GEAENDERT'`)
 	})
 
 	aendere := func(rumpf string) int {
@@ -55,11 +58,11 @@ func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, mitCSRF(req))
+		router.ServeHTTP(rec, tuertest.MitCSRF(req))
 		return rec.Code
 	}
 	eintraege := func() int {
-		return zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'RECHT_GEAENDERT'`)
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'RECHT_GEAENDERT'`)
 	}
 
 	if code := aendere(`{"role":"helfer","permission":"view_studentz","allowed":true}`); code != http.StatusBadRequest {

@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Ausfallmatrix 20.08.2026: Die Erledigt-Handler (Klassensatz bereit, Anliegen
@@ -45,8 +47,8 @@ func mailStatusAusAntwort(t *testing.T, rec *httptest.ResponseRecorder) string {
 }
 
 func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -151,8 +153,8 @@ func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
 }
 
 func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 

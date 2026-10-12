@@ -10,6 +10,10 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/sse"
 )
 
@@ -21,8 +25,8 @@ import (
 // Gegenprobe mit derselben Sitzung und derselben Anfrage: Mit create_orders kommt der Brief,
 // und die Mahnung ist gezählt. Ohne sie bewiese das 403 nur, dass die Anfrage scheitert.
 func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	t.Setenv("RATE_LIMIT", "100000")
 	ctx := context.Background()
 
@@ -49,22 +53,22 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		// Die Rechte der Rolle stehen danach wieder auf der Vorgabe.
-		aufraeumen(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
 		for _, e := range db.RechteVorgabe {
 			if e.Role == "MITARBEITER" {
-				aufraeumen(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
+				pgtest.Aufraeumen(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
 					VALUES ($1, $2, $3) ON CONFLICT (role, permission) DO NOTHING`, e.Role, e.Permission, e.Allowed)
 			}
 		}
-		aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, kontoID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, kontoID)
 		InvalidatePermissionCache()
 	})
 
-	leser := seedSchueler(t, pool, "MR-1", "Mona", "7a")
-	ausleihe := seedAusleihe(t, pool, leser, "Buch zum Mahnrecht", time.Now().AddDate(0, 0, -30))
+	leser := testdaten.SeedSchueler(t, pool, "MR-1", "Mona", "7a")
+	ausleihe := testdaten.SeedAusleihe(t, pool, leser, "Buch zum Mahnrecht", time.Now().AddDate(0, 0, -30))
 
 	drucke := func() *httptest.ResponseRecorder {
-		req := jsonPost("/api/admin/mahnungen/bulk-print", `{"ausleih_ids":["`+ausleihe+`"]}`)
+		req := tuertest.JSONPost("/api/admin/mahnungen/bulk-print", `{"ausleih_ids":["`+ausleihe+`"]}`)
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: token})
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
@@ -74,12 +78,12 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	setzeGenauEinRecht(t, pool, "view_students")
 	rec := drucke()
 	if rec.Code != http.StatusForbidden {
-		t.Fatalf("mit view_students allein: HTTP %d statt 403 — %q", rec.Code, firstBytes(rec.Body.Bytes(), 120))
+		t.Fatalf("mit view_students allein: HTTP %d statt 403 — %q", rec.Code, pdftest.ErsteBytes(rec.Body.Bytes(), 120))
 	}
 	if rumpf := rec.Body.String(); !strings.Contains(rumpf, "keine Berechtigung") {
 		t.Fatalf("das 403 kam nicht vom Rechte-Wächter: %s", rumpf)
 	}
-	if stufe, datum := mahnState(t, pool, ausleihe); stufe != 0 || datum != nil {
+	if stufe, datum := testdaten.MahnState(t, pool, ausleihe); stufe != 0 || datum != nil {
 		t.Errorf("abgewiesener Druck hat gezählt: Mahnstufe %d, Mahndatum %v", stufe, datum)
 	}
 
@@ -89,9 +93,9 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 		t.Fatalf("mit create_orders: HTTP %d statt 200 — %s", rec.Code, rec.Body.String())
 	}
 	if kopf := rec.Body.Bytes(); len(kopf) < 4 || string(kopf[:4]) != "%PDF" {
-		t.Fatalf("Antwort ist kein PDF (Kopf: %q)", firstBytes(rec.Body.Bytes(), 8))
+		t.Fatalf("Antwort ist kein PDF (Kopf: %q)", pdftest.ErsteBytes(rec.Body.Bytes(), 8))
 	}
-	if stufe, datum := mahnState(t, pool, ausleihe); stufe != 1 || datum == nil {
+	if stufe, datum := testdaten.MahnState(t, pool, ausleihe); stufe != 1 || datum == nil {
 		t.Errorf("gedruckter Brief: Mahnstufe %d (erwartet 1), Mahndatum %v", stufe, datum)
 	}
 }

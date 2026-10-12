@@ -10,6 +10,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -26,8 +28,8 @@ import (
 // entsteht an DERSELBEN Leserzeile, und die Grenzen drumherum (Schüler, belegte Adresse,
 // vorhandenes Konto, Freischaltungsrecht).
 func TestSchulEmailNachtragen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -215,8 +217,8 @@ func TestSchulEmailNachtragen(t *testing.T) {
 // ließ das leere Feld weg und meldete Erfolg, der Server hätte es mit 400 abgewiesen. Ein
 // Tippfehler in der Nummer war damit endgültig.
 func TestAusweisnummerLeeren(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -322,8 +324,8 @@ func TestAusweisnummerLeeren(t *testing.T) {
 // dem Leser, den sie betreffen: die Schul-E-Mail eines Kollegen und die LUSD-ID eines Schülers.
 // Ein zweites Speichern derselben Werte schreibt keinen zweiten Eintrag.
 func TestNachtraegeUeberDieAkteStehenImProtokoll(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -349,7 +351,7 @@ func TestNachtraegeUeberDieAkteStehenImProtokoll(t *testing.T) {
 	// muss der Eintrag auch diese Nummer tragen.
 	eintraege := func(t *testing.T, aktion, leserID, lusdID string) int {
 		t.Helper()
-		return zaehleZeilen(t, pool, `
+		return pgtest.ZaehleZeilen(t, pool, `
 			SELECT count(*) FROM audit_logs
 			WHERE aktion = $1 AND admin_id = $2 AND details->>'schueler_id' = $3
 			  AND ($4 = '' OR details->>'lusd_id' = $4)`, aktion, adminID, leserID, lusdID)
@@ -376,7 +378,7 @@ func TestNachtraegeUeberDieAkteStehenImProtokoll(t *testing.T) {
 	if n := eintraege(t, "LUSD_ID_NACHGETRAGEN", schuelerID, "L-4711"); n != 1 {
 		t.Errorf("%d Einträge zur nachgetragenen LUSD-ID, erwartet 1", n)
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion IN ('KOLLEGIUMSKONTO_NACHGETRAGEN', 'LUSD_ID_NACHGETRAGEN')`); n != 2 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion IN ('KOLLEGIUMSKONTO_NACHGETRAGEN', 'LUSD_ID_NACHGETRAGEN')`); n != 2 {
 		t.Errorf("%d Einträge zu Nachträgen insgesamt, erwartet 2", n)
 	}
 }

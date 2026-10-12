@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -28,15 +30,15 @@ import (
 // Verglichen wird, was auf dem Etikett LANDET: Barcode, Titel, Autor, Anschaffungsjahr,
 // Signatur. Die ISBN bleibt außen vor — sie wird von keinem der Generatoren gezeichnet.
 func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	lieferant := haendler(t, pool, "Naacher-Paritaet", true)
-	titel := titelMitMeldebestand(t, pool, "LMF-Paritaet", 0)
+	lieferant := testdaten.Haendler(t, pool, "Naacher-Paritaet", true)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Paritaet", 0)
 
 	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,

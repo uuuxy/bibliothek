@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/pashagolub/pgxmock/v5"
@@ -47,7 +48,7 @@ func sendeStatusUpdate(t *testing.T, handler http.HandlerFunc, body string) *htt
 	req.Header.Set("Content-Type", "application/json")
 
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, alsBenutzer(req, statusBearbeiter))
+	handler.ServeHTTP(rec, tuertest.AlsBenutzer(req, statusBearbeiter))
 	return rec
 }
 

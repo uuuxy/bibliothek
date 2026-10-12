@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -22,10 +24,10 @@ import (
 // „audit_logs (LUSD-ID, Barcodes, Sperrgrund)" in repository.spurTilgungen entfernt — drei
 // Einträge der Tür und der alte OVERRIDE_BLOCK behalten den Grund.
 func TestAnonymisierung_TilgtDenSperrgrundImProtokoll(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	akteur := adminFuerAudit(t, pool)
+	akteur := testdaten.AdminFuerAudit(t, pool)
 	const grund = "SPERRGRUND-PROBE Mutter von Max Muster zahlt nicht"
 
 	var id string

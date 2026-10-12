@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -25,7 +27,7 @@ import (
 // leserZeile legt eine Leserzeile ohne Konto an und gibt ihre ID zurück.
 func leserZeile(t *testing.T, art, vorname, nachname string) string {
 	t.Helper()
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	var id string
 	// In die TABELLE, nicht durch die Sicht: `schueler` zeigt seit Migration 124 nur
 	// Schüler und weist einen Kollegen mit WITH CHECK OPTION ab. Genau das ist der Zweck
@@ -49,7 +51,7 @@ func leserZeile(t *testing.T, art, vorname, nachname string) string {
 // leserZeileSchueler legt einen Schüler an — mit allem, was für ihn Pflicht ist.
 func leserZeileSchueler(t *testing.T, barcode, vorname, nachname, klasse string) string {
 	t.Helper()
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	var id string
 	if err := pool.QueryRow(context.Background(),
 		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, art)
@@ -68,8 +70,8 @@ func leserZeileSchueler(t *testing.T, barcode, vorname, nachname, klasse string)
 // TestLusdBestandKenntNurSchueler: Die Abfrage, aus der die Abgänger-Erkennung ihren
 // Bestand zieht, liefert Kollegen nicht mit. Was sie nicht sieht, kann sie nicht sperren.
 func TestLusdBestandKenntNurSchueler(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	schuelerID := leserZeileSchueler(t, "S-LUSD-1", "Mia", "Muster", "7a")
@@ -115,7 +117,7 @@ func TestLusdBestandKenntNurSchueler(t *testing.T) {
 // wird deshalb am ZUSTAND der Zeile, nicht an einem Fehler — ein Test, der hier einen
 // Fehler erwartet, würde die Sicht für einen Defekt halten.
 func TestKollegeIstFuerDenAbgleichUnsichtbar(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
 	kollegeID := leserZeile(t, "lehrkraft", "Ulf", "Unberuehrt")
@@ -154,7 +156,7 @@ func TestKollegeIstFuerDenAbgleichUnsichtbar(t *testing.T) {
 // Beide Schranken, weil die eine die andere nicht ersetzt: Die Sicht macht den Kollegen
 // unerreichbar, der CHECK macht den Zustand unmöglich.
 func TestKollegeKannAuchDirektKeinAbgaengerWerden(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
 	kollegeID := leserZeile(t, "liv", "Lea", "Liv")
@@ -192,7 +194,7 @@ func TestKollegeKannAuchDirektKeinAbgaengerWerden(t *testing.T) {
 // Geprüft wird an der EINEN Quelle der Frist (repository.PredikatAnonymisierung) — der
 // Bedingung, die auch der Wächter der Selbstprüfung stellt.
 func TestNachtJobFasstKollegenNichtAn(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
 	kollegeID := leserZeile(t, "lehrkraft", "Paul", "Papierkorb")

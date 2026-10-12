@@ -76,9 +76,11 @@ func schluesselAusUebernahme(t *testing.T) map[string]bool {
 // nicht wachsen.
 func TestKeineNeuenRohenEinstellungsLeser(t *testing.T) {
 	erlaubt := map[string]string{
-		"repository/betriebszustand.go": "LadeEinstellungswert — generisch, liest das Ergebnis der Restore-Probe für die Selbstprüfung und für den Start",
-		"repository/system_settings.go": "die Einstellungs-Schicht selbst",
-		"repository/ausweis_layout.go":  "eigene Tür (api/ausweis_layout.go), schreibt und liest dieselbe Zeile",
+		"repository/betriebszustand.go":    "LadeEinstellungswert — generisch, liest das Ergebnis der Restore-Probe für die Selbstprüfung und für den Start",
+		"repository/system_settings.go":    "die Einstellungs-Schicht selbst",
+		"repository/ausweis_layout.go":     "eigene Tür (api/ausweis_layout.go), schreibt und liest dieselbe Zeile",
+		"internal/testdaten/bestellung.go": "Prüfhilfe der Tests: setzt und entfernt die öffentliche Adresse",
+		"internal/testdaten/schaden.go":    "Prüfhilfe der Tests: setzt und entfernt die Pflichtangaben des Bescheids",
 	}
 
 	gefunden := map[string]bool{}

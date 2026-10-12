@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -17,8 +19,8 @@ import (
 // die Türen, an denen ein Mensch eine Nummer tippt: Die Bibliothek bekommt eine Auskunft
 // mit dem Grund (409), keinen 500 — und beim Wiederherstellen einen Satz mit dem Ausweg.
 func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RoleAdmin}

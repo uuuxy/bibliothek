@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,8 +38,8 @@ func naechsteAusweisnummer(t *testing.T, pool *pgxpool.Pool) int {
 // schlägt die '1'); eine Sortierung als Text lieferte dauerhaft 99999 als Maximum und
 // danach endlos 'A-100000' in den eindeutigen Index.
 func TestAusweisnummer_NumerischNichtLexikografisch(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	schueler(t, pool, "A-99999")
 	schueler(t, pool, "A-100000")
 	if got := naechsteAusweisnummer(t, pool); got != 100001 {
@@ -48,8 +50,8 @@ func TestAusweisnummer_NumerischNichtLexikografisch(t *testing.T) {
 // Ohne A-Nummer im Bestand beginnt der Kreis bei 10001 — auch bei leerer Tabelle. Nummern
 // anderer Vorsilben (die alten S-Ausweise) zählen nicht mit.
 func TestAusweisnummer_LeererBestandFallback(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	if got := naechsteAusweisnummer(t, pool); got != 10001 {
 		t.Errorf("leere Tabelle: %d, erwartet 10001", got)
 	}
@@ -63,8 +65,8 @@ func TestAusweisnummer_LeererBestandFallback(t *testing.T) {
 // JEDE automatische Vergabe mit "value out of range for type bigint" scheitern. Zu lange
 // Nummern werden übergangen.
 func TestAusweisnummer_UeberlangeNummerBlockiertNicht(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	schueler(t, pool, "A-10005")
 	schueler(t, pool, "A-999999999999999999999") // 21 Ziffern, sprengt bigint
 	if got := naechsteAusweisnummer(t, pool); got != 10006 {
@@ -75,7 +77,7 @@ func TestAusweisnummer_UeberlangeNummerBlockiertNicht(t *testing.T) {
 // Go und Datenbank setzen dieselbe gedruckte Form: Der Trigger schreibt mit
 // ausweisnummer(n), die Handanlage und der LUSD-Import mit repository.AusweisNummer(n).
 func TestAusweisnummer_FormGleichInGoUndSQL(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	for _, n := range []int{7, 10001, 99999, 100000, 1234567} {
 		var sql string
 		if err := pool.QueryRow(context.Background(), `SELECT ausweisnummer($1)`, n).Scan(&sql); err != nil {
@@ -91,8 +93,8 @@ func TestAusweisnummer_FormGleichInGoUndSQL(t *testing.T) {
 // (docs/OFFEN.md 5.16). Bis Migration 136 legte konto_hat_leserzeile die Leserzeile ohne
 // Nummer an, und der Ausweisdruck lieferte eine leere Zeile.
 func TestAusweisnummer_KontoBekommtEineBeimAnlegen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	schueler(t, pool, "A-10041")
 
@@ -118,8 +120,8 @@ func TestAusweisnummer_KontoBekommtEineBeimAnlegen(t *testing.T) {
 // Freischaltung vergibt sie, auch wenn derselbe Vorgang danach die Leserzeile mit leerem
 // Ausweisfeld schreibt (repository.UpdateUser): Der Trigger wartet bis zum Commit.
 func TestAusweisnummer_AnfrageKeineFreischaltungEine(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var kontoID, leserID string
@@ -167,8 +169,8 @@ func TestAusweisnummer_AnfrageKeineFreischaltungEine(t *testing.T) {
 // geleerte kommt dabei nicht zurück. Ein inaktives Konto bleibt leer, wie eine offene
 // Zugangsanfrage (Waisen-Regel, Migration 136).
 func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	users := repository.NewUserRepository(pool)
 
@@ -257,8 +259,8 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 // aktives_konto_hat_ausweis in ihrer Form von 136, und Migration 145 hat beide neu gefasst.
 // Liefe sie festgeschrieben, prüften alle späteren Tests des Pakets gegen den alten Trigger.
 func TestAusweisnummer_MigrationTraegtFehlendeNach(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	schueler(t, pool, "A-10100")
 	for _, sql := range []string{
@@ -274,15 +276,15 @@ func TestAusweisnummer_MigrationTraegtFehlendeNach(t *testing.T) {
 		}
 	}
 	pruefeMigrationslauf(t, pool, "136_ausweisnummer_beim_konto.sql",
-		map[string]*string{"Erste": ptr("A-10101"), "Zweite": ptr("A-10102"), "Geloescht": nil, "Offen": nil})
+		map[string]*string{"Erste": testdaten.Ptr("A-10101"), "Zweite": testdaten.Ptr("A-10102"), "Geloescht": nil, "Offen": nil})
 }
 
 // Der Nachtrag von Migration 145: Ein aktives Konto, dessen Leserzeile vor 145 ohne Nummer
 // dastand, bekommt eine. Ein inaktives Konto und ein Leser ohne Konto bleiben ohne, und ein
 // zweiter Lauf ändert nichts.
 func TestAusweisnummer_Migration145TraegtNach(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	schueler(t, pool, "A-10200")
 	for _, sql := range []string{
@@ -316,7 +318,7 @@ func TestAusweisnummer_Migration145TraegtNach(t *testing.T) {
 		t.Fatal(err)
 	}
 	pruefeMigrationslauf(t, pool, "145_geleerte_ausweisnummer_zieht_neue.sql",
-		map[string]*string{"Aktiv": ptr("A-10201"), "Inaktiv": nil, "Kontolos": nil})
+		map[string]*string{"Aktiv": testdaten.Ptr("A-10201"), "Inaktiv": nil, "Kontolos": nil})
 }
 
 // pruefeMigrationslauf führt eine Migrationsdatei zweimal aus und liest nach jedem Lauf die
@@ -355,8 +357,8 @@ func pruefeMigrationslauf(t *testing.T, pool *pgxpool.Pool, datei string, soll m
 // dann die Leserzeile, in einer Transaktion. Der Trigger an leser lässt das liegen; die Nummer
 // kommt wie seit Migration 136 beim Commit, und mit ihr erst der Lock des Generators.
 func TestAusweisnummer_NullUeberNullZiehtErstBeimCommit(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var kontoID, leserID string

@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 )
 
@@ -22,7 +23,7 @@ import (
 // Konto an einer vorhandenen Leserzeile ist die Schul-E-Mail in der Akte
 // (LegeKollegiumskonto) — dorthin verweist die Antwort.
 func TestBenutzerAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	userRepo := repository.NewUserRepository(pool)

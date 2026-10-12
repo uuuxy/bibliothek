@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/bestelllink"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -57,12 +59,12 @@ func postOeffentlichBestaetigen(srv *Server, token, body string) *httptest.Respo
 // Der Regelweg: Lieferant öffnet den Link, sieht seine Bestellung, bestätigt einmal —
 // und die Bibliothek sieht in der Historie, dass ER es war und nicht jemand im Haus.
 func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	bestellungID, token := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
 
 	rec := getOeffentlicheBestellung(srv, token)
@@ -98,11 +100,11 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 // Zweimal bestätigen darf nicht zweimal gelten: Der Lieferant klickt doppelt, oder er
 // bestätigt, während jemand im Haus dasselbe nachträgt. Genau einer gewinnt.
 func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	_, token := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
 
 	if rec := postOeffentlichBestaetigen(srv, token, `{}`); rec.Code != http.StatusOK {
@@ -117,11 +119,11 @@ func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
 // Abgelaufen und erfunden sehen von außen gleich aus — sonst verriete die Antwort,
 // dass ein geratener Token einmal echt war.
 func TestOeffentlicheBestaetigung_AbgelaufenUndUnbekannt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	_, abgelaufen := bestellungMitToken(t, pool, lieferant, -1)
 
 	faelle := map[string]string{
@@ -143,12 +145,12 @@ func TestOeffentlicheBestaetigung_AbgelaufenUndUnbekannt(t *testing.T) {
 // Ein neuer Link tötet den alten. Das ist der Zweck des Knopfes in der Historie: Ging
 // die Mail an die falsche Adresse, darf der verschickte Link nicht weiterleben.
 func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
 
 	if _, err := pool.Exec(ctx,
@@ -188,13 +190,13 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 // ab, und der alte Link gilt weiter. Ein neuer Token ohne Adresse entwertete den Link, den der
 // Lieferant hat, und die Antwort trüge einen leeren.
 func TestNeuerLink_AdresseAusLeerzeichenLaesstDenAltenLinkGelten(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
-	setzeOeffentlicheAdresse(t, pool, "   ")
-	t.Cleanup(func() { setzeOeffentlicheAdresse(t, pool, "") })
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "   ")
+	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, "") })
 
 	req := httptest.NewRequest(http.MethodPut, "/api/bestellungen/"+bestellungID+"/bestaetigungs-link", nil)
 	req.SetPathValue("id", bestellungID)

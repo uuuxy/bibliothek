@@ -13,6 +13,9 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/auskunft"
 	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -25,25 +28,11 @@ import (
 // Papierkorb —, und beide schreiben seither denselben Löscheintrag mit der Leserkennung.
 // Geprüft über die echten Handler und Repository-Wege; dazu, dass das endgültige Löschen des
 // Lesers Name und Adresse aus dem Löscheintrag tilgt.
-// fkAlsAdmin ruft einen Handler mit der Sitzung des Admin-Kontos.
-func fkAlsAdmin(t *testing.T, admin string, h http.HandlerFunc, methode, pfad, body string, pfadwerte map[string]string) *httptest.ResponseRecorder {
-	t.Helper()
-	req := httptest.NewRequest(methode, pfad, strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	for k, v := range pfadwerte {
-		req.SetPathValue(k, v)
-	}
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
-	rec := httptest.NewRecorder()
-	h(rec, req)
-	return rec
-}
 
 // fkAuskunft ruft die Auskunft eines Lesers über ihren Handler ab.
 func fkAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.DsgvoAuskunftResponse {
 	t.Helper()
-	rec := fkAlsAdmin(t, admin, srv.DsgvoAuskunftHandler(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", "",
+	rec := tuertest.RufeAlsAdmin(t, admin, srv.DsgvoAuskunftHandler(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", "",
 		map[string]string{"id": leserID})
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Auskunft: Status %d — %s", rec.Code, rec.Body.String())
@@ -56,10 +45,10 @@ func fkAuskunft(t *testing.T, srv *Server, admin, leserID string) auskunft.Dsgvo
 }
 
 func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	userRepo := repository.NewUserRepository(pool)
 	auditRepo := repository.NewAuditRepository(pool)
@@ -72,7 +61,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 
 	alsAdmin := func(h http.HandlerFunc, methode, pfad, body string, pfadwerte map[string]string) *httptest.ResponseRecorder {
 		t.Helper()
-		return fkAlsAdmin(t, admin, h, methode, pfad, body, pfadwerte)
+		return tuertest.RufeAlsAdmin(t, admin, h, methode, pfad, body, pfadwerte)
 	}
 	auskunftZu := func(leserID string) auskunft.DsgvoAuskunftResponse {
 		t.Helper()
@@ -196,10 +185,10 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	t.Setenv("APP_ENV", "test")
 	t.Setenv("IMAP_HOST", "mock")
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "konto-eintraege.invalid")
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	userRepo := repository.NewUserRepository(pool)
 	auditRepo := repository.NewAuditRepository(pool)
@@ -228,7 +217,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	// blatt liest den Text der gedruckten Auskunft.
 	blatt := func(t *testing.T, leserID string) string {
 		t.Helper()
-		rec := fkAlsAdmin(t, admin, srv.DsgvoAuskunftPDFHandler(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft/pdf", "",
+		rec := tuertest.RufeAlsAdmin(t, admin, srv.DsgvoAuskunftPDFHandler(), http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft/pdf", "",
 			map[string]string{"id": leserID})
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Auskunft als PDF: Status %d — %s", rec.Code, rec.Body.String())
@@ -237,7 +226,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	}
 	loescheKonto := func(t *testing.T, kontoID string) {
 		t.Helper()
-		if rec := fkAlsAdmin(t, admin, srv.DeleteUserHandler(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.DeleteUserHandler(auditRepo, userRepo), http.MethodDelete, "/api/benutzer/"+kontoID, "",
 			map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto löschen: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -258,7 +247,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 		}
 		kontoID, leserID := konto(t, email)
 		// Freischalten gibt dem Konto eine Ausweisnummer; sie hält die Leserzeile, wenn das Konto fällt.
-		if rec := fkAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID,
 			`{"barcode_id":"","vorname":"Selma","nachname":"Selbst","email":"`+email+`","rolle":"kollegium","aktiv":true}`,
 			map[string]string{"id": kontoID}); rec.Code != http.StatusOK {
 			t.Fatalf("Konto freischalten: Status %d — %s", rec.Code, rec.Body.String())
@@ -289,7 +278,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 			VALUES ('lehrkraft', 'Nora', 'Nachtrag', 'KE-AUSWEIS-1') RETURNING id::text`).Scan(&leserID); err != nil {
 			t.Fatalf("Leser anlegen: %v", err)
 		}
-		if rec := fkAlsAdmin(t, admin, srv.PatchStudentHandler(auditRepo), http.MethodPatch, "/api/schueler/"+leserID,
+		if rec := tuertest.RufeAlsAdmin(t, admin, srv.PatchStudentHandler(auditRepo), http.MethodPatch, "/api/schueler/"+leserID,
 			`{"vorname":"Nora","nachname":"Nachtrag","email":"`+email+`"}`, map[string]string{"id": leserID}); rec.Code != http.StatusOK {
 			t.Fatalf("Schul-E-Mail nachtragen: Status %d — %s", rec.Code, rec.Body.String())
 		}
@@ -323,7 +312,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 		if err := auditRepo.PurgeStudent(ctx, leserID, admin); err != nil {
 			t.Fatalf("endgültig löschen: %v", err)
 		}
-		if n := zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs
+		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs
 			WHERE aktion = 'KOLLEGIUMSKONTO_NACHGETRAGEN' AND details->>'schueler_id' = $1 AND NOT details ? 'ziel_id'`, leserID); n != 1 {
 			t.Errorf("%d Einträge des Nachtrags ohne die Kennung des Kontos nach dem endgültigen Löschen, erwartet 1", n)
 		}

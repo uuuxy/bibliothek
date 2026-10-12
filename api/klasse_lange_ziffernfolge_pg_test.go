@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/sse"
 )
 
@@ -17,8 +19,8 @@ import (
 // Klasse lesen, müssen trotzdem für alle anderen Klassen antworten: Jahrgangs-Auswahl und
 // Jahrgangsfilter der Leserdatei, der LMF-Planer und die Abgängerliste.
 func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(
@@ -39,14 +41,14 @@ func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) 
 	}
 	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
 	// Die Abgängerliste liest ihre Abfrage nur in der Saison.
-	srv.Uhr = saisonUhr
+	srv.Uhr = testdaten.SaisonUhr
 	router := srv.Routes()
 
-	fuenfte := schuelerAnlegen(t, pool, "Fuenfte", "05F1", "KLZ-S-1")
-	neunte := schuelerAnlegen(t, pool, "Neunte", "09H1", "KLZ-S-2")
+	fuenfte := testdaten.SchuelerAnlegen(t, pool, "Fuenfte", "05F1", "KLZ-S-1")
+	neunte := testdaten.SchuelerAnlegen(t, pool, "Neunte", "09H1", "KLZ-S-2")
 	// Die Abgängerliste nennt nur, wer noch ein Buch hat.
-	titelID := titelMitMeldebestand(t, pool, "Ziffernfolge Testband", 0)
-	exemplarID := exemplar(t, pool, titelID, "KLZ-B-1", false, "")
+	titelID := testdaten.TitelMitMeldebestand(t, pool, "Ziffernfolge Testband", 0)
+	exemplarID := testdaten.Exemplar(t, pool, titelID, "KLZ-B-1", false, "")
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, bearbeiter_id)
 		VALUES ($1, $2, now() - interval '30 days', now() + interval '30 days', $3)`,
@@ -87,8 +89,8 @@ func TestKlasseAusLangerZiffernfolge_LesendeTuerenAntwortenWeiter(t *testing.T) 
 
 	// Die zweite Klasse beginnt mit Nullen: Ihre ersten neun Ziffern ergeben 0, die ganze
 	// Folge ist trotzdem zu lang.
-	schuelerAnlegen(t, pool, "Buchnummer", "9783123456789", "KLZ-S-3")
-	schuelerAnlegen(t, pool, "Nullen", "0000000009999999999", "KLZ-S-4")
+	testdaten.SchuelerAnlegen(t, pool, "Buchnummer", "9783123456789", "KLZ-S-3")
+	testdaten.SchuelerAnlegen(t, pool, "Nullen", "0000000009999999999", "KLZ-S-4")
 
 	t.Run("mit Klassen aus langen Ziffernfolgen", pruefe)
 }

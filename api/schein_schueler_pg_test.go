@@ -5,6 +5,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Befund F4: Lehrkräfte lagen als Schein-Schüler (klasse='lehrer') in der
@@ -57,9 +60,9 @@ func TestKlasseLehrerIstGesperrt(t *testing.T) {
 // und Geburtstag existieren nebeneinander, wenn beide aus der LUSD kommen —
 // während die Handeingabe eines Namens-Datums-Doppels hart abgewiesen bleibt.
 func TestZwillingeAusDerLusd(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	for i, lusd := range []string{"LUSD-F8-1", "LUSD-F8-2"} {
 		if _, err := pool.Exec(ctx, `

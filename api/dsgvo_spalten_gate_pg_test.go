@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"testing"
 
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 )
 
@@ -18,7 +19,7 @@ import (
 // Seit dem 24.09.2026 gegen die Tabelle leser statt gegen die Sicht schueler: Die Auskunft
 // liest die Tabelle, weil es sie für jeden Leser gibt (OFFEN.md 5.19).
 func TestDsgvoAuskunft_KenntJedeLeserSpalte(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	// Ausnahmen: Spalte → Begründung. Heute leer — jede Spalte von leser ist eine
 	// gespeicherte Angabe über die Person.
 	ausnahmen := map[string]string{}

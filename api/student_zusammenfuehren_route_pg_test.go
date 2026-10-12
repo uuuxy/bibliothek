@@ -10,6 +10,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,7 +30,7 @@ func zusammenfuehrenUeberRoute(t *testing.T, srv *Server, pool *pgxpool.Pool, be
 	req.SetPathValue("id", zielID)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.ZusammenfuehrenSchuelerHandler(repository.NewAuditRepository(pool))(rec, alsBenutzer(req, benutzerID))
+	srv.ZusammenfuehrenSchuelerHandler(repository.NewAuditRepository(pool))(rec, tuertest.AlsBenutzer(req, benutzerID))
 	return rec
 }
 
@@ -45,14 +48,14 @@ func zrKonto(t *testing.T, pool *pgxpool.Pool, leserID string) {
 }
 
 func TestZusammenfuehrenRoute_AntwortUndProtokolle(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Alt", nachname: "Route", klasse: "07A", barcode: "ZR-1", geb: datum(2012, 3, 3), abgaenger: true})
-	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Neu", nachname: "Route", klasse: "08A", barcode: "ZR-2", geb: datum(2012, 3, 3)})
-	seedOffeneAusleihe(t, pool, quelle, "ZRQ")
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Alt", Nachname: "Route", Klasse: "07A", Barcode: "ZR-1", Geb: testdaten.Datum(2012, 3, 3), Abgaenger: true})
+	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Neu", Nachname: "Route", Klasse: "08A", Barcode: "ZR-2", Geb: testdaten.Datum(2012, 3, 3)})
+	testdaten.SeedOffeneAusleihe(t, pool, quelle, "ZRQ")
 
 	rec := zusammenfuehrenUeberRoute(t, srv, pool, admin, ziel, zrRumpf(quelle))
 	if rec.Code != http.StatusOK {
@@ -65,12 +68,12 @@ func TestZusammenfuehrenRoute_AntwortUndProtokolle(t *testing.T) {
 	if erg.ZielID != ziel || erg.BarcodeID != "ZR-1" || erg.QuelleBarcode != "ZR-2" || erg.Ausleihen != 1 {
 		t.Errorf("Antwort %+v, erwartet das Ziel mit ZR-1, die Quelle ZR-2 und eine Ausleihe", erg)
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM leser WHERE id = $1`, quelle); n != 0 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM leser WHERE id = $1`, quelle); n != 0 {
 		t.Error("die Quelle steht nach der Antwort noch in der Datenbank")
 	}
 
 	// Das Admin-Protokoll nennt, welcher Datensatz in welchem aufging und wer es tat.
-	if n := zaehleZeilen(t, pool, `
+	if n := pgtest.ZaehleZeilen(t, pool, `
 		SELECT count(*) FROM audit_logs
 		WHERE aktion = 'SCHUELER_ZUSAMMENGEFUEHRT' AND admin_id = $1
 		  AND details->>'schueler_id' = $2 AND details->>'aufgeloest_id' = $3
@@ -79,7 +82,7 @@ func TestZusammenfuehrenRoute_AntwortUndProtokolle(t *testing.T) {
 		t.Errorf("%d passende Einträge im Admin-Protokoll, erwartet 1", n)
 	}
 	// Der Rückweg-Eintrag am Ziel trägt den Benutzer aus der Sitzung.
-	if n := zaehleZeilen(t, pool, `
+	if n := pgtest.ZaehleZeilen(t, pool, `
 		SELECT count(*) FROM audit_log
 		WHERE tabelle = 'schueler' AND aktion = 'ZUSAMMENGEFUEHRT' AND datensatz_id = $1
 		  AND bearbeiter_id = $2 AND akteur = 'USER'`, ziel, admin); n != 1 {
@@ -90,12 +93,12 @@ func TestZusammenfuehrenRoute_AntwortUndProtokolle(t *testing.T) {
 // Jede Abweisung der Regeln kommt mit ihrem Grund an und ändert nichts. Eine 500 trüge
 // nur „Zusammenführen fehlgeschlagen" nach außen, und wer davorsitzt, wüsste nicht weiter.
 func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	ctx := context.Background()
 
 	schueler := func(t *testing.T, nachname, barcode string) string {
-		return legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Zr", nachname: nachname, klasse: "07A", barcode: barcode, geb: datum(2012, 5, 5)})
+		return testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Zr", Nachname: nachname, Klasse: "07A", Barcode: barcode, Geb: testdaten.Datum(2012, 5, 5)})
 	}
 	faelle := []struct {
 		name   string
@@ -141,22 +144,22 @@ func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			resetBestandsdaten(t, pool)
-			admin := adminFuerAudit(t, pool)
+			testdaten.ResetBestandsdaten(t, pool)
+			admin := testdaten.AdminFuerAudit(t, pool)
 			ziel, quelle := f.lage(t)
-			vorher := zaehleZeilen(t, pool, `SELECT count(*) FROM leser`)
+			vorher := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM leser`)
 
 			rec := zusammenfuehrenUeberRoute(t, srv, pool, admin, ziel, zrRumpf(quelle))
 			if rec.Code != f.status {
 				t.Errorf("Status %d, erwartet %d: %s", rec.Code, f.status, rec.Body.String())
 			}
-			if meldung := fehlermeldung(t, rec); !strings.Contains(meldung, f.grund) {
+			if meldung := tuertest.Fehlermeldung(t, rec); !strings.Contains(meldung, f.grund) {
 				t.Errorf("Meldung %q nennt den Grund nicht (erwartet %q darin)", meldung, f.grund)
 			}
-			if nachher := zaehleZeilen(t, pool, `SELECT count(*) FROM leser`); nachher != vorher {
+			if nachher := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM leser`); nachher != vorher {
 				t.Errorf("Leserzeilen vorher %d, nachher %d: die Abweisung hat etwas gelöscht", vorher, nachher)
 			}
-			if n := zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'SCHUELER_ZUSAMMENGEFUEHRT'`); n != 0 {
+			if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'SCHUELER_ZUSAMMENGEFUEHRT'`); n != 0 {
 				t.Errorf("das Admin-Protokoll meldet %d Zusammenführungen, erwartet keine", n)
 			}
 		})
@@ -165,11 +168,11 @@ func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 
 // Eine Anfrage ohne brauchbare Quelle erreicht die Datenbank nicht.
 func TestZusammenfuehrenRoute_UnbrauchbareAnfrage(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	admin := adminFuerAudit(t, pool)
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Zr", nachname: "Ziel", klasse: "07A", barcode: "ZR-U1", geb: datum(2012, 6, 6)})
+	admin := testdaten.AdminFuerAudit(t, pool)
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Zr", Nachname: "Ziel", Klasse: "07A", Barcode: "ZR-U1", Geb: testdaten.Datum(2012, 6, 6)})
 
 	for name, rumpf := range map[string]string{
 		"Quelle fehlt":      `{}`,
@@ -185,7 +188,7 @@ func TestZusammenfuehrenRoute_UnbrauchbareAnfrage(t *testing.T) {
 			}
 		})
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM leser WHERE id = $1 AND deleted_at IS NULL`, ziel); n != 1 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM leser WHERE id = $1 AND deleted_at IS NULL`, ziel); n != 1 {
 		t.Error("das Ziel steht nach den abgewiesenen Anfragen nicht mehr da")
 	}
 }

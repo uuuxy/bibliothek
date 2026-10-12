@@ -11,7 +11,10 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/smtptest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -76,7 +79,7 @@ func enthaeltBarcode(liste []ExemplarOhneEtikett, barcode string) bool {
 func wareneingang(t *testing.T, pool *pgxpool.Pool) []service.ReceivedItem {
 	t.Helper()
 	ctx := context.Background()
-	ids := exemplarIDsDerBestellung(t, pool)
+	ids := testdaten.ExemplarIDsDerBestellung(t, pool)
 	if len(ids) == 0 {
 		t.Fatal("nichts einzubuchen — der Testaufbau hat keine Exemplare erzeugt")
 	}
@@ -92,22 +95,22 @@ func wareneingang(t *testing.T, pool *pgxpool.Pool) []service.ReceivedItem {
 }
 
 func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
-	setzeOeffentlicheAdresse(t, pool, "")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := mailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "Cornelsen-Kette", false)
-	titel := titelMitMeldebestand(t, pool, "LMF-Etikettenkette", 0)
+	lieferant := testdaten.Haendler(t, pool, "Cornelsen-Kette", false)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Etikettenkette", 0)
 
 	if rec := bestelleUeberHandler(t, srv, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	warteAufMail(t, sitzungen)
+	smtptest.WarteAufMail(t, sitzungen)
 
-	barcodes := barcodesDerBestellung(t, pool)
+	barcodes := testdaten.BarcodesDerBestellung(t, pool)
 	if len(barcodes) != 2 {
 		t.Fatalf("Exemplare = %v, erwartet 2", barcodes)
 	}
@@ -165,22 +168,22 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 // Nachdruck-Liste zu keinem Zeitpunkt sehen — auch nicht nach dem Wareneingang, der die
 // Zeilen erneut anfasst.
 func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
-	setzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := mailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "Naacher-Etikettenkette", true)
-	titel := titelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
+	lieferant := testdaten.Haendler(t, pool, "Naacher-Etikettenkette", true)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
 
 	if rec := bestelleUeberHandler(t, srv, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	warteAufMail(t, sitzungen)
+	smtptest.WarteAufMail(t, sitzungen)
 
-	barcodes := barcodesDerBestellung(t, pool)
+	barcodes := testdaten.BarcodesDerBestellung(t, pool)
 	liste, anzahl := offeneEtikettenUeberHandler(t, srv)
 	if anzahl != 0 || len(liste) != 0 {
 		t.Fatalf("vor dem Wareneingang stehen %d Zeilen (Zähler %d) auf der Nachdruck-Liste — "+
@@ -232,8 +235,8 @@ func postJSON(t *testing.T, handler http.HandlerFunc, pfad string, body map[stri
 // einer gefilterten Liste die Zahl des ungefilterten Bestands — eine Angabe, die
 // schlimmer ist als gar keine, weil sie glaubwuerdig aussieht.
 func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	ctx := context.Background()
@@ -310,8 +313,8 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 // lesen den Suchtext in derselben Form (etikettenSuchtext): Wer den Titel tippt, wie er in
 // Littera stand, findet seine Etiketten trotzdem.
 func TestEtikettenkette_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	ctx := context.Background()

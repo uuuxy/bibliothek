@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Ein ausgesondertes Exemplar bekommt kein Etikett mehr.
@@ -17,12 +19,12 @@ import (
 //
 // Die Gegenprobe steht daneben: Die übrigen Exemplare desselben Titels bleiben.
 func TestEtiketten_OhneAusgesonderteExemplare(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	titel := titelMitMeldebestand(t, pool, "Etikett-Aussonderung", 0)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "Etikett-Aussonderung", 0)
 	for _, b := range []struct {
 		barcode      string
 		ausgesondert bool

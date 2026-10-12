@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -21,16 +23,16 @@ import (
 // Eltern, das Kind habe ein verlorenes Buch „so stark beschädigt zurückgegeben"
 // (Bestands-Durchgang, Bugklasse „Zustand ohne Eingang").
 func TestSchadenMelden_ArtKommtAusDerMeldung(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 
 	melde := func(barcode, rumpfZusatz string) (*httptest.ResponseRecorder, string) {
 		t.Helper()
-		sid := seedSchueler(t, pool, "S-ART-"+barcode, "Artkind"+barcode, "07A")
-		ex := exemplar(t, pool, titelMitMeldebestand(t, pool, "Arttitel-"+barcode, 1), "EX-ART-"+barcode, true, "")
+		sid := testdaten.SeedSchueler(t, pool, "S-ART-"+barcode, "Artkind"+barcode, "07A")
+		ex := testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Arttitel-"+barcode, 1), "EX-ART-"+barcode, true, "")
 		var loan string
 		if err := pool.QueryRow(ctx, `INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 			VALUES ($1, $2, now() + interval '14 days') RETURNING id`, ex, sid).Scan(&loan); err != nil {

@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -16,8 +18,8 @@ import (
 // abgelehnt und schreiben weder Wert noch Protokoll. Was gespeichert wird, steht in Normalform
 // in der Datenbank und mit demselben Wortlaut im Protokoll.
 func TestEinstellungenSpeichern_NormalformUndProtokoll(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -84,7 +86,7 @@ func TestEinstellungenSpeichern_NormalformUndProtokoll(t *testing.T) {
 			t.Fatalf("eine Ablehnung hat %s geschrieben: %q", schluessel, got)
 		}
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'UPDATE_SETTINGS'`); n != 0 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'UPDATE_SETTINGS'`); n != 0 {
 		t.Fatalf("%d Protokolleinträge nach drei Ablehnungen", n)
 	}
 
@@ -99,7 +101,7 @@ func TestEinstellungenSpeichern_NormalformUndProtokoll(t *testing.T) {
 	if got := wert("lmf_eingangsjahrgaenge"); got != "5, 7" {
 		t.Errorf("Eingangsjahrgänge gespeichert als %q, erwartet %q", got, "5, 7")
 	}
-	if n := zaehleZeilen(t, pool, `
+	if n := pgtest.ZaehleZeilen(t, pool, `
 		SELECT count(*) FROM audit_logs
 		WHERE aktion = 'UPDATE_SETTINGS' AND admin_id = $1 AND ip_adresse IS NULL
 		  AND details->>'sommerferien' = $2 AND details->>'lmf_eingangsjahrgaenge' = '5, 7'`, admin, ferien); n != 1 {

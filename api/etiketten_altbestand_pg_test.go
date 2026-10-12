@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Der Stichtag räumt den Altbestand auf: Jedes Exemplar ohne Vermerk, das bis zu diesem Tag in
@@ -12,11 +15,11 @@ import (
 // unberührt. Für ein bestelltes Exemplar, das noch nicht eingetroffen ist, zählt der Tag der
 // Bestellung. Die Antwort nennt die Zahl der Exemplare, die vorher keinen Vermerk hatten.
 func TestEtikettenAltbestand_StichtagTrifftNurDenAltbestand(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 	_, rufe := protokollWelt(t, pool)
-	titel := titelMitMeldebestand(t, pool, "Altbestand Etiketten", 0)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "Altbestand Etiketten", 0)
 
 	type zeile struct {
 		barcode, erworben, bestellstatus, grund string
@@ -44,7 +47,7 @@ func TestEtikettenAltbestand_StichtagTrifftNurDenAltbestand(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("Stichtag in falscher Form: Status %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM buecher_exemplare WHERE titel_id = $1 AND etikett_gedruckt`, titel); n != 1 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_exemplare WHERE titel_id = $1 AND etikett_gedruckt`, titel); n != 1 {
 		t.Fatalf("%d Exemplare mit Vermerk nach der abgelehnten Anfrage, erwartet 1", n)
 	}
 

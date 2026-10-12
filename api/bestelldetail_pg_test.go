@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -59,12 +61,12 @@ func exemplarAusBestellung(t *testing.T, pool *pgxpool.Pool, titelID, bestellung
 }
 
 func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Naacher-Detail", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher-Detail", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
 	// Ein vollständig gepflegter Titel …
@@ -76,7 +78,7 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 		t.Fatalf("Titel mit Angaben: %v", err)
 	}
 	// … und einer, bei dem autor/verlag/cover_url NULL sind.
-	ohneAngaben := titelMitMeldebestand(t, pool, "Titel ohne Angaben", 5)
+	ohneAngaben := testdaten.TitelMitMeldebestand(t, pool, "Titel ohne Angaben", 5)
 
 	for _, p := range []struct {
 		titelID string
@@ -158,7 +160,7 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 // ersetzt der Sanitizer die Meldung durch "interner Datenbankfehler" und der Benutzer
 // erfährt nie, dass die Bestellung schlicht nicht mehr existiert.
 func TestBestelldetail_UnbekannteBestellungIst404(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	const unbekannt = "00000000-0000-0000-0000-0000000000ff"

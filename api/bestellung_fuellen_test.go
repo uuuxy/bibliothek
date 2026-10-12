@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"bibliothek/internal/service"
+	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/mitteltopf"
 )
 
 // Die Tür füllt den Auftrag an das Anlegen der Bestellung aus der Anfrage und die Angaben der
 // Bestellmail aus dem Ergebnis. Jedes Feld kommt aus seiner Quelle, die Werte sind je Feld
 // verschieden; ein Feld, das einer der Typen später dazubekommt und das niemand füllt, fällt an
-// leereFelder auf.
+// tuertest.LeereFelder auf.
 
 func TestBestellAuftrag_FuelltJedesFeldAusDerAnfrage(t *testing.T) {
 	anfrage := SubmitOrderRequest{
@@ -37,7 +38,7 @@ func TestBestellAuftrag_FuelltJedesFeldAusDerAnfrage(t *testing.T) {
 	if !reflect.DeepEqual(ist, will) {
 		t.Errorf("Auftrag =\n%+v\nerwartet\n%+v", ist, will)
 	}
-	if leer := leereFelder(reflect.ValueOf(ist), "service.BestellAuftrag"); len(leer) > 0 {
+	if leer := tuertest.LeereFelder(reflect.ValueOf(ist), "service.BestellAuftrag"); len(leer) > 0 {
 		t.Errorf("bestellAuftrag füllt diese Felder nicht: %v", leer)
 	}
 	// Eine Position ohne Vorab-Barcode bleibt ohne: Der Händler bekäme sonst Etiketten für
@@ -90,7 +91,7 @@ func TestBestellmailDatenAus_FuelltJedesFeldAusDerBestellung(t *testing.T) {
 	if !reflect.DeepEqual(ist, will) {
 		t.Errorf("Angaben der Mail =\n%+v\nerwartet\n%+v", ist, will)
 	}
-	if leer := leereFelder(reflect.ValueOf(ist), "bestellmailDaten"); len(leer) > 0 {
+	if leer := tuertest.LeereFelder(reflect.ValueOf(ist), "bestellmailDaten"); len(leer) > 0 {
 		t.Errorf("bestellmailDatenAus füllt diese Felder nicht: %v", leer)
 	}
 }

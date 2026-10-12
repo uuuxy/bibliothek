@@ -13,7 +13,10 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/smtptest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/mailservice"
 	"bibliothek/sse"
 
@@ -72,8 +75,8 @@ type bestellmailLage struct {
 
 func bestellmailLageAnlegen(t *testing.T, kennung string) *bestellmailLage {
 	t.Helper()
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	authenticator, err := auth.NewAuthenticator("bestellmail-erneut-testgeheimnis-32-by!!", pool, time.Hour)
 	if err != nil {
 		t.Fatalf("Authenticator: %v", err)
@@ -90,7 +93,7 @@ func bestellmailLageAnlegen(t *testing.T, kennung string) *bestellmailLage {
 	}
 	l.router = NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTELLMAIL_ERNEUT_GESENDET'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTELLMAIL_ERNEUT_GESENDET'`)
 	})
 	return l
 }
@@ -101,7 +104,7 @@ func (l *bestellmailLage) rufe(t *testing.T, methode, pfad, rumpf string) *httpt
 	req.Header.Set("Content-Type", "application/json")
 	req.AddCookie(&http.Cookie{Name: "session_token", Value: l.sitzung})
 	rec := httptest.NewRecorder()
-	l.router.ServeHTTP(rec, mitCSRF(req))
+	l.router.ServeHTTP(rec, tuertest.MitCSRF(req))
 	return rec
 }
 
@@ -164,9 +167,9 @@ func (l *bestellmailLage) inListeGescheitert(t *testing.T, bestellungID string) 
 
 func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "erneut")
-	setzeOeffentlicheAdresse(t, l.pool, "https://bib.example.invalid")
-	lieferant := haendler(t, l.pool, "Naacher-Erneut", true)
-	titel := titelMitMeldebestand(t, l.pool, "LMF-Mathe-Erneut", 0)
+	testdaten.SetzeOeffentlicheAdresse(t, l.pool, "https://bib.example.invalid")
+	lieferant := testdaten.Haendler(t, l.pool, "Naacher-Erneut", true)
+	titel := testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Erneut", 0)
 
 	// 1. Der Mailserver ist nicht erreichbar: Die Bestellung ist gespeichert und trägt den Vermerk.
 	mailserverNichtErreichbar(t, nil)
@@ -217,7 +220,7 @@ func TestBestellmail_GescheitertStehtAnDerBestellungUndGehtErneutRaus(t *testing
 		"Kundennummer: K-Naacher-Erneut", "Bestellte Titel: 1", "Gesamtanzahl Exemplare: 2",
 	} {
 		if !strings.Contains(mail.Nachricht, teil) {
-			t.Errorf("%q fehlt in der erneut gesendeten Mail:\n%s", teil, kopf(mail.Nachricht))
+			t.Errorf("%q fehlt in der erneut gesendeten Mail:\n%s", teil, smtptest.Kopf(mail.Nachricht))
 		}
 	}
 	// Die Etiketten liegen hinter dem Link, wie bei der ersten Mail.
@@ -275,8 +278,8 @@ func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 	smtpKonfigLader = func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }
 	t.Cleanup(func() { smtpKonfigLader = alterLader })
 
-	lieferant := haendler(t, l.pool, "Buchhandlung-Ohne", false)
-	bestellung, _ := l.bestelle(t, lieferant, titelMitMeldebestand(t, l.pool, "LMF-Mathe-Ohne", 0))
+	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-Ohne", false)
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Ohne", 0))
 	if !l.gescheitert(t, bestellung) {
 		t.Fatal("Die Bestellung trägt keinen Vermerk, obwohl kein Mailserver eingerichtet ist")
 	}
@@ -293,9 +296,9 @@ func TestBestellmail_OhneMailserverStehtEsAnDerBestellung(t *testing.T) {
 func TestBestellmail_ErneutNurNachGescheitertemVersand(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "nur")
 	sitzungen := mailAbfangen(t)
-	lieferant := haendler(t, l.pool, "Buchhandlung-Nur", false)
-	bestellung, _ := l.bestelle(t, lieferant, titelMitMeldebestand(t, l.pool, "LMF-Mathe-Nur", 0))
-	warteAufMail(t, sitzungen)
+	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-Nur", false)
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Nur", 0))
+	smtptest.WarteAufMail(t, sitzungen)
 	if l.gescheitert(t, bestellung) {
 		t.Fatal("Die Bestellung trägt einen Vermerk, obwohl die Mail rausging")
 	}
@@ -319,8 +322,8 @@ func TestBestellmail_ErneutNurNachGescheitertemVersand(t *testing.T) {
 // Bestellung: Der Vermerk gilt dann nicht mehr, und die Mail geht nicht noch einmal raus.
 func TestBestellmail_BestaetigteBestellungTraegtKeinenVermerk(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "bestaetigt")
-	lieferant := haendler(t, l.pool, "Naacher-Bestaetigt", true)
-	titel := titelMitMeldebestand(t, l.pool, "LMF-Mathe-Bestaetigt", 0)
+	lieferant := testdaten.Haendler(t, l.pool, "Naacher-Bestaetigt", true)
+	titel := testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Bestaetigt", 0)
 
 	mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)
@@ -356,8 +359,8 @@ func TestBestellmail_BestaetigteBestellungTraegtKeinenVermerk(t *testing.T) {
 // erneuten Senden, das der Bestellung den Vermerk für die Dauer des Versuchs nimmt.
 func TestBestellmail_VermerkAuchWennDieAnfrageAbgebrochenIst(t *testing.T) {
 	l := bestellmailLageAnlegen(t, "abbruch")
-	lieferant := haendler(t, l.pool, "Buchhandlung-Abbruch", false)
-	titel := titelMitMeldebestand(t, l.pool, "LMF-Mathe-Abbruch", 0)
+	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-Abbruch", false)
+	titel := testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Abbruch", 0)
 
 	// abgebrochen schickt die Anfrage und bricht sie ab, sobald der Versand begonnen hat.
 	abgebrochen := func(pfad, rumpf string) {
@@ -368,7 +371,7 @@ func TestBestellmail_VermerkAuchWennDieAnfrageAbgebrochenIst(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, pfad, strings.NewReader(rumpf)).WithContext(ctx)
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: l.sitzung})
-		l.router.ServeHTTP(httptest.NewRecorder(), mitCSRF(req))
+		l.router.ServeHTTP(httptest.NewRecorder(), tuertest.MitCSRF(req))
 		if ctx.Err() == nil {
 			t.Fatal("Die Anfrage ist nicht abgebrochen worden; der Versand hat nicht begonnen")
 		}

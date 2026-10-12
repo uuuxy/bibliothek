@@ -10,7 +10,9 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 	"bibliothek/sse"
 )
@@ -21,8 +23,8 @@ import (
 // Ausleih-Dienst —, denn nur so ist belegt, dass der Hinweis von der Buchung bis in die JSON-
 // Antwort reist. Die Regeln der Zählung prüft repository/auflagen_klasse_pg_test.go.
 func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE werke CASCADE`); err != nil {
 		t.Fatal(err)
@@ -56,7 +58,7 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, t2 := range []string{alt, alt, alt, neu, neu} {
-		exemplar(t, pool, t2, fmt.Sprintf("B-518T-%d", i), true, "")
+		testdaten.Exemplar(t, pool, t2, fmt.Sprintf("B-518T-%d", i), true, "")
 	}
 
 	studentRepo := repository.NewStudentRepository(pool)

@@ -14,10 +14,11 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 )
 
 func TestLeereMahnvorlageFaelltAufStandardtextZurueck(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -30,7 +31,7 @@ func TestLeereMahnvorlageFaelltAufStandardtextZurueck(t *testing.T) {
 		t.Fatalf("Seed-Vorlage lesen: %v", err)
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE typ = 'MAHNUNG_ELTERN'`, altBetreff, altText)
+		pgtest.Aufraeumen(t, pool, `UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE typ = 'MAHNUNG_ELTERN'`, altBetreff, altText)
 	})
 	if _, err := pool.Exec(ctx,
 		`UPDATE mail_vorlagen SET betreff = '', text_body = '   ' WHERE typ = 'MAHNUNG_ELTERN'`); err != nil {

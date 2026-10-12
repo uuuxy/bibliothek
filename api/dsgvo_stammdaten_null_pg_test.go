@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Regression: Die DSGVO-Auskunft (Art. 15) scannte die in der DB NULLBAREN Adress-/
@@ -16,8 +18,8 @@ import (
 // pgxmock kann das nicht prüfen (es führt kein SQL aus, COALESCE würde umgangen) —
 // daher ein echter PG-Integrationstest, gated auf TEST_DATABASE_URL.
 func TestDsgvoStammdaten_OhneAdresseKein500(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var id string

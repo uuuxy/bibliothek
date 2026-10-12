@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -17,30 +19,18 @@ import (
 // Die Fälle sind die, in denen die alten Regeln danebenlagen: ein Lernmittel-Titel, den der
 // Schulträger bezahlt hat, und ein Büchereibuch, das Littera dem Land zuschreibt.
 
-// topfBestellung legt eine Bestellung mit Topf an.
-func topfBestellung(t *testing.T, mittel string) string {
-	t.Helper()
-	var id string
-	if err := pgTestPool(t).QueryRow(context.Background(), `
-		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, mittel)
-		VALUES ('Buchhandlung', 'haendler@example.org', $1) RETURNING id`, mittel).Scan(&id); err != nil {
-		t.Fatalf("Bestellung: %v", err)
-	}
-	return id
-}
-
 func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 
-	lernmittel := titelMitSignatur(t, pool, "Mathebuch 7", "Mat 7", 0)
+	lernmittel := testdaten.TitelMitSignatur(t, pool, "Mathebuch 7", "Mat 7", 0)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET ist_lernmittel = true WHERE id = $1`, lernmittel); err != nil {
 		t.Fatalf("Lernmittel setzen: %v", err)
 	}
-	lektuere := titelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
-	traeger := topfBestellung(t, mitteltopf.Schultraeger)
+	lektuere := testdaten.TitelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
+	traeger := testdaten.TopfBestellung(t, mitteltopf.Schultraeger)
 
 	abgang := func(titelID, barcode string, bestellung *string, eigentum string) {
 		t.Helper()
@@ -88,13 +78,13 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 }
 
 func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 
-	titelID := titelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
-	land := topfBestellung(t, mitteltopf.Land)
+	titelID := testdaten.TitelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
+	land := testdaten.TopfBestellung(t, mitteltopf.Land)
 
 	zugang := func(barcode string, bestellung *string, eigentum string) {
 		t.Helper()

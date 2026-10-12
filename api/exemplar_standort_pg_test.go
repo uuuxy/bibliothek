@@ -10,6 +10,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/inventur"
 	"bibliothek/repository"
 
@@ -37,7 +39,7 @@ func standortRumpf(t *testing.T, srv *Server, pool *pgxpool.Pool, rumpf string) 
 	req := httptest.NewRequest(http.MethodPut, "/api/exemplare/standort", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: adminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
+		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.ExemplarStandortHandler()(rec, req)
 	return rec
@@ -81,14 +83,14 @@ func pruefeStandortKarte(t *testing.T, karten map[string]map[string]any, barcode
 }
 
 func TestExemplarStandort_AnzeigenUndAendern(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	schulbuch := titelMitSignatur(t, pool, "Natura 2", "LMF Bio 7", 0)
-	ohne := exemplar(t, pool, schulbuch, "ST-OHNE", true, "")
-	schrank := exemplar(t, pool, schulbuch, "ST-SCHRANK", true, "")
+	schulbuch := testdaten.TitelMitSignatur(t, pool, "Natura 2", "LMF Bio 7", 0)
+	ohne := testdaten.Exemplar(t, pool, schulbuch, "ST-OHNE", true, "")
+	schrank := testdaten.Exemplar(t, pool, schulbuch, "ST-SCHRANK", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET standort = 'Lehrerschrank' WHERE id = $1`, schrank); err != nil {
 		t.Fatalf("Standort aus der Übernahme: %v", err)
 	}
@@ -100,7 +102,7 @@ func TestExemplarStandort_AnzeigenUndAendern(t *testing.T) {
 
 	// 2. Ändern: zwei markiert, Leerraum am Rand fällt weg.
 	protokoll := func() int {
-		return zaehleZeilen(t, pool, `SELECT count(*) FROM audit_log WHERE tabelle = 'buecher_exemplare'
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_log WHERE tabelle = 'buecher_exemplare'
 			AND kontext = 'Standort geändert'`)
 	}
 	rec := standortSetzen(t, srv, pool, []string{ohne, strings.ToUpper(schrank)}, "  Bibliothek, Regal 3B ")
@@ -185,17 +187,17 @@ func TestExemplarStandort_AnzeigenUndAendern(t *testing.T) {
 // Exemplare wie die Karten der Akte: die im Bestand. Ein ausgesondertes Exemplar trägt seinen
 // Standort weiter an der Karte und zählt nirgends mit.
 func TestExemplarStandort_ListeUndVorschlaegeZaehlenDenBestand(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	schulbuch := titelMitSignatur(t, pool, "Natura 2", "LMF Bio 7", 0)
-	roman := titelMitSignatur(t, pool, "Tschick", "Ju Her", 0)
-	ohneStandort := titelMitSignatur(t, pool, "Momo", "Ju End", 0)
-	exemplar(t, pool, ohneStandort, "SL-MOMO", true, "")
+	schulbuch := testdaten.TitelMitSignatur(t, pool, "Natura 2", "LMF Bio 7", 0)
+	roman := testdaten.TitelMitSignatur(t, pool, "Tschick", "Ju Her", 0)
+	ohneStandort := testdaten.TitelMitSignatur(t, pool, "Momo", "Ju End", 0)
+	testdaten.Exemplar(t, pool, ohneStandort, "SL-MOMO", true, "")
 	setze := func(titelID, barcode, standort string) string {
-		id := exemplar(t, pool, titelID, barcode, true, "")
+		id := testdaten.Exemplar(t, pool, titelID, barcode, true, "")
 		if rec := standortSetzen(t, srv, pool, []string{id}, standort); rec.Code != http.StatusOK {
 			t.Fatalf("%s: Status %d: %s", barcode, rec.Code, rec.Body.String())
 		}
@@ -204,7 +206,7 @@ func TestExemplarStandort_ListeUndVorschlaegeZaehlenDenBestand(t *testing.T) {
 	setze(schulbuch, "SL-1", "Bibliothek, Regal 3B")
 	setze(schulbuch, "SL-2", "Bibliothek, Regal 3B")
 	setze(schulbuch, "SL-3", "Lehrerschrank")
-	exemplar(t, pool, schulbuch, "SL-4", true, "")
+	testdaten.Exemplar(t, pool, schulbuch, "SL-4", true, "")
 	weg := setze(schulbuch, "SL-5", "Keller")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT' WHERE id = $1`, weg); err != nil {

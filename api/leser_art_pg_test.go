@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/internal/pgtest"
 	"bibliothek/pkg/leserart"
 	"context"
 	"encoding/json"
@@ -46,7 +47,7 @@ func TestLeserArten_WieInDerDatenbankUndImBrowser(t *testing.T) {
 	}
 
 	// Die Datenbank: die Werte aus der CHECK-Bedingung, so wie Postgres sie ausgibt.
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	var def string
 	if err := pool.QueryRow(context.Background(), `
 		SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = 'chk_leser_art'`).Scan(&def); err != nil {

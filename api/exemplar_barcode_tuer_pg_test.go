@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -15,13 +17,13 @@ import (
 // und ein unbekanntes Exemplar werden abgelehnt und ändern nichts; danach ersetzt die Nummer
 // vom Etikett den Platzhalter.
 func TestExemplarBarcodeAendern_UeberDieTuer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	titel := titelMitMeldebestand(t, pool, "Barcode-Tuer", 0)
-	platzhalter := exemplar(t, pool, titel, "AUTO-TUER-1", true, "")
-	exemplar(t, pool, titel, "TUER-BELEGT", true, "")
+	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Tuer", 0)
+	platzhalter := testdaten.Exemplar(t, pool, titel, "AUTO-TUER-1", true, "")
+	testdaten.Exemplar(t, pool, titel, "TUER-BELEGT", true, "")
 	barcodeVon := func(id string) string {
 		t.Helper()
 		var barcode string

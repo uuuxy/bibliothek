@@ -11,24 +11,12 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-// seedSignaturMitExemplar legt einen Titel unter der Signatur samt einem ausleihbaren
-// Exemplar an und liefert die exemplar_id. Die Signatur ist seit Migration 060 der Text
-// auf dem Buchrücken (buecher_titel.signatur), kein Fremdschlüssel mehr.
-func seedSignaturMitExemplar(t *testing.T, pool *pgxpool.Pool, signatur, barcode string) string {
-	t.Helper()
-	var titelID string
-	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO buecher_titel (titel, signatur) VALUES ($1, $2) RETURNING id`,
-		signatur+"-Buch", signatur).Scan(&titelID); err != nil {
-		t.Fatalf("Titel anlegen: %v", err)
-	}
-	return exemplar(t, pool, titelID, barcode, true, "")
-}
 
 // TestInventurScan_FremderScopeNichtErfasst sichert #3 (Cross-Contamination) ab: Ein Buch
 // außerhalb des Session-Scopes (Mathe-Buch, während eine Deutsch-Inventur läuft) wird mit
@@ -36,19 +24,19 @@ func seedSignaturMitExemplar(t *testing.T, pool *pgxpool.Pool, signatur, barcode
 // den Scan trotz Scope-Warnung ab — beim Abschluss der Mathe-Inventur fehlte das Exemplar
 // dann in deren Erfassungen und wurde als VERLUST gebucht, obwohl es physisch vorlag.
 func TestInventurScan_FremderScopeNichtErfasst(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("Sessions leeren: %v", err)
 	}
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	barcodeMathe := "B-M-" + suffix
 	barcodeDeutsch := "B-D-" + suffix
 	sigDeutsch := "INV-Deutsch-" + suffix
-	seedSignaturMitExemplar(t, pool, sigDeutsch, barcodeDeutsch)
-	exMathe := seedSignaturMitExemplar(t, pool, "INV-Mathe-"+suffix, barcodeMathe)
+	testdaten.SeedSignaturMitExemplar(t, pool, sigDeutsch, barcodeDeutsch)
+	exMathe := testdaten.SeedSignaturMitExemplar(t, pool, "INV-Mathe-"+suffix, barcodeMathe)
 
 	invRepo := repository.NewInventoryRepository(pool)
 	session, err := invRepo.CreateInventurSession(ctx, "signature", repository.InventurScope{Signatur: &sigDeutsch}, "Deutsch", "")
@@ -115,12 +103,12 @@ func erfasstFuer(t *testing.T, pool *pgxpool.Pool, sessionID, exemplarID string)
 // Ein unbekannter Barcode bekommt am Scanner einen Satz, den das Personal lesen kann. Der
 // Fehlertext der Datenbank gehört ins Log, nicht auf den Bildschirm.
 func TestInventurScan_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("Sessions leeren: %v", err)
 	}
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 	session, err := repository.NewInventoryRepository(pool).
 		CreateInventurSession(ctx, "global", repository.InventurScope{}, "Komplette Bibliothek", "")
 	if err != nil {
@@ -146,28 +134,28 @@ func TestInventurScan_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T)
 // wie eine fehlende/unbekannte Session, unbekannte oder ausgesonderte Exemplare
 // sowie Warnungen bei ausgeliehenen Büchern.
 func TestInventurScan_Fehlerfaelle(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("Sessions leeren: %v", err)
 	}
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	sigDeutsch := "INV-Deutsch-" + suffix
 	barcodeDeutsch := "B-D-" + suffix
-	seedSignaturMitExemplar(t, pool, sigDeutsch, barcodeDeutsch)
+	testdaten.SeedSignaturMitExemplar(t, pool, sigDeutsch, barcodeDeutsch)
 
 	// Ausgesondertes Exemplar (durch Setzen des zustand_notiz und eines Triggers / manuelles Update)
 	barcodeAusgesondert := "B-A-" + suffix
-	exAusgesondert := seedSignaturMitExemplar(t, pool, sigDeutsch, barcodeAusgesondert)
+	exAusgesondert := testdaten.SeedSignaturMitExemplar(t, pool, sigDeutsch, barcodeAusgesondert)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausgesondert = true, aussonderung_grund = 'AUSSORTIERT' WHERE id = $1`, exAusgesondert); err != nil {
 		t.Fatalf("Exemplar aussondern: %v", err)
 	}
 
 	// Ausgeliehenes Exemplar
 	barcodeLent := "B-L-" + suffix
-	exLent := seedSignaturMitExemplar(t, pool, sigDeutsch, barcodeLent)
+	exLent := testdaten.SeedSignaturMitExemplar(t, pool, sigDeutsch, barcodeLent)
 	var userID string
 	// Die Ausleihe hängt an der LESERZEILE des Kontos (Migration 125).
 	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv) VALUES ('Test', 'User', 'test@example.com', 'admin', true) RETURNING leser_id`).Scan(&userID); err != nil {

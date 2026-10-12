@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Der Ausleiher-Reiter der Buch-Akte beantwortet die Frage „wer hat den Titel gerade?".
@@ -22,8 +24,8 @@ import (
 // Seit dem 30.09.2026 steht beim Kollegen das Wort seiner Art statt „Lehrer" — ein
 // Fachbereich ist keine Lehrkraft (Migration 153).
 func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var titelID, ex1, ex2, ex3, schuelerID, lehrerID, fachbereichID string

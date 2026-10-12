@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -16,10 +19,10 @@ import (
 // Platz inzwischen geändert hat: die Rolle, „aktiv", die Ausweisnummer aus der Leserakte.
 // Geprüft über die Handler der Benutzerverwaltung am echten Postgres.
 func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	userRepo := repository.NewUserRepository(pool)
 	t.Cleanup(func() {
@@ -29,7 +32,7 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		}
 	})
 
-	if rec := fkAlsAdmin(t, admin, srv.CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer",
+	if rec := tuertest.RufeAlsAdmin(t, admin, srv.CreateUserHandler(userRepo), http.MethodPost, "/api/benutzer",
 		`{"barcode_id":"GF-AUSWEIS-1","vorname":"Gerda","nachname":"Genannt","email":"gerda@genannte-felder.invalid","rolle":"mitarbeiter"}`,
 		nil); rec.Code != http.StatusOK {
 		t.Fatalf("Konto anlegen: Status %d — %s", rec.Code, rec.Body.String())
@@ -41,7 +44,7 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	}
 	aendere := func(t *testing.T, rumpf string) int {
 		t.Helper()
-		rec := fkAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID, rumpf,
+		rec := tuertest.RufeAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+kontoID, rumpf,
 			map[string]string{"id": kontoID})
 		if rec.Code != http.StatusOK {
 			t.Logf("Antwort auf %s: %s", rumpf, rec.Body.String())
@@ -67,7 +70,7 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	}
 	eintraege := func(t *testing.T) int {
 		t.Helper()
-		return zaehleZeilen(t, pool,
+		return pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM audit_logs WHERE aktion = 'USER_UPDATE' AND details->>'ziel_id' = $1`, kontoID)
 	}
 
@@ -98,7 +101,7 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 		t.Errorf("nicht genannte Felder haben sich geändert: nachname=%q email=%q", s.nachname, s.email)
 	}
 	// Der Eintrag nennt den Stand nach der Änderung, auch für Felder, die der Rumpf nicht nannte.
-	if n := zaehleZeilen(t, pool, `
+	if n := pgtest.ZaehleZeilen(t, pool, `
 		SELECT count(*) FROM audit_logs
 		WHERE id = (SELECT id FROM audit_logs WHERE aktion = 'USER_UPDATE' AND details->>'ziel_id' = $1
 		            ORDER BY zeitstempel DESC LIMIT 1)
@@ -123,7 +126,7 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	// Ohne Feld schreibt die Tür nichts; ob es das Konto gibt, sagt sie trotzdem.
 	t.Run("ein Rumpf ohne Feld an einem unbekannten Konto ist eine 404", func(t *testing.T) {
 		const unbekannt = "00000000-0000-0000-0000-000000000000"
-		rec := fkAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+unbekannt, `{}`,
+		rec := tuertest.RufeAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+unbekannt, `{}`,
 			map[string]string{"id": unbekannt})
 		if rec.Code != http.StatusNotFound {
 			t.Errorf("Status %d, erwartet 404 — %s", rec.Code, rec.Body.String())
@@ -201,15 +204,15 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 			RETURNING id::text, leser_id::text`).Scan(&antrag, &antragLeser); err != nil {
 			t.Fatalf("Zugangsanfrage anlegen: %v", err)
 		}
-		if n := zaehleZeilen(t, pool, `SELECT count(*) FROM leser WHERE id = $1 AND barcode_id IS NULL`, antragLeser); n != 1 {
+		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM leser WHERE id = $1 AND barcode_id IS NULL`, antragLeser); n != 1 {
 			t.Fatalf("die Leserzeile der Anfrage trägt schon eine Ausweisnummer")
 		}
-		rec := fkAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+antrag,
+		rec := tuertest.RufeAlsAdmin(t, admin, srv.UpdateUserHandler(userRepo), http.MethodPut, "/api/benutzer/"+antrag,
 			`{"aktiv":true}`, map[string]string{"id": antrag})
 		if rec.Code != http.StatusOK {
 			t.Fatalf("freischalten: Status %d — %s", rec.Code, rec.Body.String())
 		}
-		if n := zaehleZeilen(t, pool, `SELECT count(*) FROM leser WHERE id = $1 AND barcode_id LIKE 'A-%'`, antragLeser); n != 1 {
+		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM leser WHERE id = $1 AND barcode_id LIKE 'A-%'`, antragLeser); n != 1 {
 			t.Errorf("das freigeschaltete Konto hat keine Ausweisnummer bekommen")
 		}
 	})

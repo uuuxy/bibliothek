@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -23,8 +25,8 @@ import (
 // Ausgabe-Pläne. Die Sperre der Ehemaligen hält den Plan nicht an
 // (TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_LmfPlan).
 func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	t.Cleanup(func() {
@@ -42,19 +44,19 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	}
 	stichtag := tag("2027-07-31")
 
-	anna := seedSchueler(t, pool, "F-1", "Anna", "9H1")
-	annaLmf := seedAusleihe(t, pool, anna, "LMF Mathe 9 Anna", stichtag)
-	annaRoman := seedAusleihe(t, pool, anna, "Roman Anna", tag("2026-10-01"))
-	annaMehrjahr := seedAusleihe(t, pool, anna, "LMF Atlas Anna", tag("2028-07-31"))
-	ben := seedSchueler(t, pool, "F-2", "Ben", "09h1") // andere Schreibweise, dieselbe Klasse
-	benLmf := seedAusleihe(t, pool, ben, "LMF Mathe 9 Ben", stichtag)
+	anna := testdaten.SeedSchueler(t, pool, "F-1", "Anna", "9H1")
+	annaLmf := testdaten.SeedAusleihe(t, pool, anna, "LMF Mathe 9 Anna", stichtag)
+	annaRoman := testdaten.SeedAusleihe(t, pool, anna, "Roman Anna", tag("2026-10-01"))
+	annaMehrjahr := testdaten.SeedAusleihe(t, pool, anna, "LMF Atlas Anna", tag("2028-07-31"))
+	ben := testdaten.SeedSchueler(t, pool, "F-2", "Ben", "09h1") // andere Schreibweise, dieselbe Klasse
+	benLmf := testdaten.SeedAusleihe(t, pool, ben, "LMF Mathe 9 Ben", stichtag)
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET is_manually_blocked = true, block_reason = 'Test' WHERE id = $1`, ben); err != nil {
 		t.Fatal(err)
 	}
-	emil := seedSchueler(t, pool, "F-3", "Emil", "8G1")
-	emilLmf := seedAusleihe(t, pool, emil, "LMF Bio 8 Emil", stichtag)
+	emil := testdaten.SeedSchueler(t, pool, "F-3", "Emil", "8G1")
+	emilLmf := testdaten.SeedAusleihe(t, pool, emil, "LMF Bio 8 Emil", stichtag)
 
-	frist := func(id string) time.Time { return fristVon(t, pool, id) }
+	frist := func(id string) time.Time { return testdaten.FristVon(t, pool, id) }
 	erwarte := func(was, id string, soll time.Time) {
 		t.Helper()
 		if ist := frist(id); !ist.Equal(soll) {
@@ -200,8 +202,8 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 // die LETZTE Zeile — das schon draußen liegende Buch bekam den späteren Termin, das am
 // selben Tag ausgeliehene den früheren. Zwei Regeln für dieselbe Frage.
 func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	t.Cleanup(func() {
@@ -216,8 +218,8 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 		}
 		return service.TagesEndeInSchulzeitzone(x)
 	}
-	anna := seedSchueler(t, pool, "Z-1", "Anna", "9H1")
-	annaLmf := seedAusleihe(t, pool, anna, "LMF Mathe 9 Zwei", tag("2027-07-31"))
+	anna := testdaten.SeedSchueler(t, pool, "Z-1", "Anna", "9H1")
+	annaLmf := testdaten.SeedAusleihe(t, pool, anna, "LMF Mathe 9 Zwei", tag("2027-07-31"))
 
 	// Zeile 1 (Mo 28.06., 1. Std.) und Zeile 7 (Di 29.06., 1. Std. — das Ende) nennen dieselbe Klasse.
 	rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
@@ -238,7 +240,7 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 		t.Fatalf("Termin für 9H1: bevorstehend=%v err=%v", lage.Bevorstehend, err)
 	}
 	// … muss dasselbe sein wie das, was am schon ausgeliehenen Buch steht.
-	ist := fristVon(t, pool, annaLmf)
+	ist := testdaten.FristVon(t, pool, annaLmf)
 	soll := service.TagesEndeInSchulzeitzone(lage.Naechster)
 	if !ist.Equal(soll) {
 		t.Errorf("Frist des offenen Buchs %v, der Ausleihdienst nennt %v — zwei Regeln für dieselbe Klasse",
@@ -252,8 +254,8 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 // Der Vorschlag für einen neuen Plan: ohne Vorjahr aus der Regel (Abschluss zuerst,
 // Oberstufe ausgelassen); mit vorbeigegangenem Vorjahr dessen Reihenfolge plus neue Klassen.
 func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	t.Cleanup(func() {
@@ -261,10 +263,10 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 			t.Logf("Aufräumen: %v", err)
 		}
 	})
-	seedSchueler(t, pool, "V-1", "A", "8G1")
-	seedSchueler(t, pool, "V-2", "B", "9H1")
-	seedSchueler(t, pool, "V-3", "C", "Q1")
-	seedSchueler(t, pool, "V-4", "D", "12T1")
+	testdaten.SeedSchueler(t, pool, "V-1", "A", "8G1")
+	testdaten.SeedSchueler(t, pool, "V-2", "B", "9H1")
+	testdaten.SeedSchueler(t, pool, "V-3", "C", "Q1")
+	testdaten.SeedSchueler(t, pool, "V-4", "D", "12T1")
 
 	// Die Uhr steht auf dem 06.09.2026: Die nächsten Sommerferien sind 2027 (28.06.–06.08.).
 	srv.Uhr = func() time.Time { return time.Date(2026, 9, 6, 10, 0, 0, 0, schulzeit.Zone()) }
@@ -310,7 +312,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Vorjahresplan: %d %s", rec.Code, rec.Body.String())
 	}
-	seedSchueler(t, pool, "V-5", "E", "7R1")
+	testdaten.SeedSchueler(t, pool, "V-5", "E", "7R1")
 	a = lies()
 	if a.Plan == nil || !a.Vorbei || a.Vorschlag == nil || a.Vorschlag.Quelle != "vorjahr" {
 		t.Fatalf("mit vergangenem Plan: plan=%v vorbei=%v vorschlag=%+v", a.Plan != nil, a.Vorbei, a.Vorschlag)
@@ -332,8 +334,8 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 		len(a.Eingangsjahrgaenge) != 2 || a.Eingangsjahrgaenge[0] != 5 || a.Eingangsjahrgaenge[1] != 7 {
 		t.Errorf("Vermerke %q/%q/%q, Eingangsjahrgänge %v", z[0].Vermerk, z[1].Vermerk, z[2].Vermerk, a.Eingangsjahrgaenge)
 	}
-	seedSchueler(t, pool, "V-6", "F", "6F1")
-	seedSchueler(t, pool, "V-7", "G", "5F2")
+	testdaten.SeedSchueler(t, pool, "V-6", "F", "6F1")
+	testdaten.SeedSchueler(t, pool, "V-7", "G", "5F2")
 	a = lies()
 	vermerke := map[string]string{}
 	for _, zeile := range a.Vorschlag.Zeilen {
@@ -408,8 +410,8 @@ func klassenFolge(zeilen []repository.LmfPlanZeile) string {
 // Verliert eine Klasse ihren Termin, kehrt die Frist zum eingestellten Stichtag zurück, nicht zur
 // Vorgabe des Programms. Die Kopplung liest die Einstellung in der Transaktion der Tür.
 func TestLmfPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	setzeStichtag := func(wert string) {
@@ -431,8 +433,8 @@ func TestLmfPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 	}
 
 	setzeStichtag("06-30")
-	anna := seedSchueler(t, pool, "ST-1", "Anna", "9H1")
-	annaLmf := seedAusleihe(t, pool, anna, "LMF Mathe 9 Anna", tagesEnde(2027, time.June, 30))
+	anna := testdaten.SeedSchueler(t, pool, "ST-1", "Anna", "9H1")
+	annaLmf := testdaten.SeedAusleihe(t, pool, anna, "LMF Mathe 9 Anna", tagesEnde(2027, time.June, 30))
 
 	if rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
 		`{"letzter_tag":"2027-06-21","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`); rec.Code != http.StatusOK {
@@ -441,7 +443,7 @@ func TestLmfPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 	if rec := lmfPlanAufruf(t, srv, http.MethodPost, "rueckgabe", ""); rec.Code != http.StatusOK {
 		t.Fatalf("veröffentlichen: %d %s", rec.Code, rec.Body.String())
 	}
-	if ist := fristVon(t, pool, annaLmf); !ist.Equal(tagesEnde(2027, time.June, 21)) {
+	if ist := testdaten.FristVon(t, pool, annaLmf); !ist.Equal(tagesEnde(2027, time.June, 21)) {
 		t.Fatalf("Aufbau: Annas Frist %v folgt dem Termin am 21.06.2027 nicht", ist.In(schulzeit.Zone()))
 	}
 
@@ -450,7 +452,7 @@ func TestLmfPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 		`{"letzter_tag":"2027-06-21","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"vermerk":"Bücher setzen"}]}`); rec.Code != http.StatusOK {
 		t.Fatalf("Klasse aus dem Plan nehmen: %d %s", rec.Code, rec.Body.String())
 	}
-	if ist, will := fristVon(t, pool, annaLmf), tagesEnde(2027, time.June, 30); !ist.Equal(will) {
+	if ist, will := testdaten.FristVon(t, pool, annaLmf), tagesEnde(2027, time.June, 30); !ist.Equal(will) {
 		t.Errorf("Annas Frist ohne Termin: %v, erwartet den eingestellten Stichtag %v", ist.In(schulzeit.Zone()), will)
 	}
 }

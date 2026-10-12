@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -25,7 +26,7 @@ import (
 // Index passt. Erzwungen wird nur die Präferenz — ist der Index nicht ANWENDBAR, kann
 // auch enable_seqscan=off ihn nicht in den Plan holen, und genau das ist der Befund.
 func TestEtikettenOffenNutztDenTeilindex(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
 	conn, err := pool.Acquire(ctx)
@@ -50,7 +51,7 @@ func TestEtikettenOffenNutztDenTeilindex(t *testing.T) {
 
 // Die Bestellhistorie darf für ihre 200 neuesten Zeilen nicht die ganze Tabelle lesen.
 func TestBestellhistorieNutztDenDatumsindex(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
 	conn, err := pool.Acquire(ctx)

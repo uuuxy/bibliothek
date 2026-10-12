@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -27,12 +29,12 @@ import (
 // Gemahnt wurde er nie: Der Mahnlauf joint die Sicht `schueler`
 // (repository/mahnwesen_queries.go). Das bleibt so.
 func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	// Das Exemplar wird ANGELEGT und nicht im Bestand gesucht: resetBestandsdaten räumt ihn
+	// Das Exemplar wird ANGELEGT und nicht im Bestand gesucht: testdaten.ResetBestandsdaten räumt ihn
 	// weg. Ein `LIMIT 1` auf eine leere Tabelle führte hier erst zu einem Skip — und ein
 	// übersprungener Test ist grün, ohne etwas zu belegen (gesehen an der Rot-Probe: Der
 	// Rückbau der Regel liess den Test unverändert „ok" melden).

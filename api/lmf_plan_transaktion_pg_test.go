@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
@@ -81,8 +83,8 @@ func (t txMitFehlerBei) Exec(ctx context.Context, sql string, args ...any) (pgco
 }
 
 func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
@@ -93,8 +95,8 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 	repo := repository.NewLmfTerminRepository(pool)
 
 	stichtag := time.Date(2027, time.July, 31, 23, 59, 0, 0, schulzeit.Zone())
-	anna := seedSchueler(t, pool, "TX-1", "Anna", "9H1")
-	annaLmf := seedAusleihe(t, pool, anna, "LMF Mathe 9 Anna", stichtag)
+	anna := testdaten.SeedSchueler(t, pool, "TX-1", "Anna", "9H1")
+	annaLmf := testdaten.SeedAusleihe(t, pool, anna, "LMF Mathe 9 Anna", stichtag)
 
 	// Ein veröffentlichter Plan mit 9H1 — Annas Frist folgt seinem Termin.
 	if rec := lmfPlanAufruf(t, echt, http.MethodPut, "rueckgabe",
@@ -104,7 +106,7 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 	if rec := lmfPlanAufruf(t, echt, http.MethodPost, "rueckgabe", ""); rec.Code != http.StatusOK {
 		t.Fatalf("veröffentlichen: %d %s", rec.Code, rec.Body.String())
 	}
-	fristVorher := fristVon(t, pool, annaLmf)
+	fristVorher := testdaten.FristVon(t, pool, annaLmf)
 	if fristVorher.Equal(stichtag) {
 		t.Fatal("Aufbau: Annas Frist folgt dem Plan nicht — der Test prüfte dann ins Leere")
 	}
@@ -135,7 +137,7 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 	if planNachher.Plan.LetzteStunde != planVorher.Plan.LetzteStunde {
 		t.Errorf("der Rahmen wurde verändert: letzte Stunde %d, vorher %d", planNachher.Plan.LetzteStunde, planVorher.Plan.LetzteStunde)
 	}
-	if ist := fristVon(t, pool, annaLmf); !ist.Equal(fristVorher) {
+	if ist := testdaten.FristVon(t, pool, annaLmf); !ist.Equal(fristVorher) {
 		t.Errorf("Annas Frist hat sich bewegt: %v, vorher %v", ist.In(schulzeit.Zone()), fristVorher.In(schulzeit.Zone()))
 	}
 
@@ -154,8 +156,8 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 // Änderung der Kopplung läuft in der Transaktion des Plans. Liefe sie am Pool, stünde die erste
 // Frist schon um, wenn die zweite scheitert, und die Tür meldete trotzdem einen Fehler.
 func TestLmfPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmgeschrieben(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
@@ -165,10 +167,10 @@ func TestLmfPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 	echt := &Server{DB: &db.Database{Pool: pool}}
 
 	stichtag := service.TagesEndeInSchulzeitzone(time.Date(2027, time.July, 31, 0, 0, 0, 0, schulzeit.Zone()))
-	anna := seedSchueler(t, pool, "TX-2", "Anna", "9H1")
-	annaLmf := seedAusleihe(t, pool, anna, "LMF Mathe 9 Anna", stichtag)
-	emil := seedSchueler(t, pool, "TX-3", "Emil", "8G1")
-	emilLmf := seedAusleihe(t, pool, emil, "LMF Bio 8 Emil", stichtag)
+	anna := testdaten.SeedSchueler(t, pool, "TX-2", "Anna", "9H1")
+	annaLmf := testdaten.SeedAusleihe(t, pool, anna, "LMF Mathe 9 Anna", stichtag)
+	emil := testdaten.SeedSchueler(t, pool, "TX-3", "Emil", "8G1")
+	emilLmf := testdaten.SeedAusleihe(t, pool, emil, "LMF Bio 8 Emil", stichtag)
 
 	if rec := lmfPlanAufruf(t, echt, http.MethodPut, "rueckgabe",
 		`{"letzter_tag":"2027-06-28","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`); rec.Code != http.StatusOK {
@@ -177,7 +179,7 @@ func TestLmfPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 	if rec := lmfPlanAufruf(t, echt, http.MethodPost, "rueckgabe", ""); rec.Code != http.StatusOK {
 		t.Fatalf("veröffentlichen: %d %s", rec.Code, rec.Body.String())
 	}
-	annaVorher := fristVon(t, pool, annaLmf)
+	annaVorher := testdaten.FristVon(t, pool, annaLmf)
 	if annaVorher.Equal(stichtag) {
 		t.Fatal("Aufbau: Annas Frist folgt dem Plan nicht — der Test prüfte dann ins Leere")
 	}
@@ -194,11 +196,11 @@ func TestLmfPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 		t.Fatal("die Kopplung kam nicht bis zu ihrer ersten Änderung — der Test prüfte dann ins Leere")
 	}
 
-	if ist := fristVon(t, pool, annaLmf); !ist.Equal(annaVorher) {
+	if ist := testdaten.FristVon(t, pool, annaLmf); !ist.Equal(annaVorher) {
 		t.Errorf("Annas Frist steht auf %v, vorher %v: Die erste Änderung der Kopplung blieb stehen, "+
 			"obwohl die zweite scheiterte", ist.In(schulzeit.Zone()), annaVorher.In(schulzeit.Zone()))
 	}
-	if ist := fristVon(t, pool, emilLmf); !ist.Equal(stichtag) {
+	if ist := testdaten.FristVon(t, pool, emilLmf); !ist.Equal(stichtag) {
 		t.Errorf("Emils Frist hat sich bewegt: %v, vorher %v", ist.In(schulzeit.Zone()), stichtag)
 	}
 
@@ -206,10 +208,10 @@ func TestLmfPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 	if rec := lmfPlanAufruf(t, echt, http.MethodPut, "rueckgabe", wechsel); rec.Code != http.StatusOK {
 		t.Fatalf("Gegenprobe: derselbe Wechsel ohne Fehler: %d %s", rec.Code, rec.Body.String())
 	}
-	if ist := fristVon(t, pool, annaLmf); !ist.Equal(stichtag) {
+	if ist := testdaten.FristVon(t, pool, annaLmf); !ist.Equal(stichtag) {
 		t.Errorf("Gegenprobe: Annas Frist steht auf %v, erwartet den Stichtag %v", ist.In(schulzeit.Zone()), stichtag)
 	}
-	if ist := fristVon(t, pool, emilLmf); ist.Equal(stichtag) {
+	if ist := testdaten.FristVon(t, pool, emilLmf); ist.Equal(stichtag) {
 		t.Error("Gegenprobe: Emils Frist folgt dem Plan nicht")
 	}
 }

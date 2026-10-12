@@ -18,6 +18,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/sse"
 )
 
@@ -29,8 +31,8 @@ const kompressionHerkunft = "https://bibliothek.example"
 // gepackt hinaus, alles andere unverändert. Gemessen wird an den echten Routen, damit
 // kein Mount und kein Glied der Kette daran vorbeiführt.
 func TestKompression_AmRouterDesBetriebs(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	t.Chdir(t.TempDir())
 	t.Setenv("ALLOWED_ORIGIN", kompressionHerkunft)
 
@@ -56,8 +58,8 @@ func TestKompression_AmRouterDesBetriebs(t *testing.T) {
 	// Der Katalog führt nur Titel mit Exemplar; 150 Barcodes bringen die Barcode-Liste
 	// über die Mindestgröße.
 	for i := range 150 {
-		titelID := seedMonitorTitel(t, pool, fmt.Sprintf("Kompression Titel %03d", i), fmt.Sprintf("KOM %03d", i), false, 0)
-		exemplar(t, pool, titelID, fmt.Sprintf("B-KOMP-%04d", i), true, "")
+		titelID := testdaten.SeedMonitorTitel(t, pool, fmt.Sprintf("Kompression Titel %03d", i), fmt.Sprintf("KOM %03d", i), false, 0)
+		testdaten.Exemplar(t, pool, titelID, fmt.Sprintf("B-KOMP-%04d", i), true, "")
 	}
 
 	authenticator, err := auth.NewAuthenticator(

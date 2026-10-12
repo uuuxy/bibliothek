@@ -9,20 +9,9 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
-
-// pdfTexte delegiert an internal/pdftest — der Leser lag bis zum 03.09.2026 hier und
-// wird seither auch vom Schulbuch-Export (Paket inventur) gebraucht.
-func pdfTexte(t *testing.T, roh []byte) []string {
-	return pdftest.Texte(t, roh)
-}
-
-// pdfText liefert das PDF als durchsuchbaren Text: die rohen Bytes und dahinter die Texte
-// der entpackten Ströme (kleine Ströme lässt gofpdf offen).
-func pdfText(t *testing.T, roh []byte) string {
-	t.Helper()
-	return string(roh) + "\n" + strings.Join(pdftest.Texte(t, roh), "\n")
-}
 
 // Beide Druckwege müssen denselben Aufkleber erzeugen.
 //
@@ -42,8 +31,8 @@ func pdfText(t *testing.T, roh []byte) string {
 // Deshalb: beide Handler über echtes HTTP fahren, das POST mit exakt der Nutzlast aus
 // labels.svelte.js, und die gedruckten Texte vergleichen.
 func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -54,12 +43,12 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 		format    = "avery_3475"
 	)
 
-	titelID := titelMitSignatur(t, pool, buchtitel, signatur, 0)
+	titelID := testdaten.TitelMitSignatur(t, pool, buchtitel, signatur, 0)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET autor = $1 WHERE id = $2`, autor, titelID); err != nil {
 		t.Fatalf("Autor setzen: %v", err)
 	}
-	exemplar(t, pool, titelID, "B-ETI-1", true, "")
-	exemplar(t, pool, titelID, "B-ETI-2", true, "")
+	testdaten.Exemplar(t, pool, titelID, "B-ETI-1", true, "")
+	testdaten.Exemplar(t, pool, titelID, "B-ETI-2", true, "")
 
 	// Weg 1: Buchformular — der Server liest alles selbst.
 	reqGet := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/x/etiketten?format="+format+"&start=1", nil)
@@ -89,8 +78,8 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 		t.Fatalf("Druck-Center-Weg: Status %d — %s", recPost.Code, recPost.Body.String())
 	}
 
-	buchformular := pdfTexte(t, recGet.Body.Bytes())
-	druckzentrum := pdfTexte(t, recPost.Body.Bytes())
+	buchformular := pdftest.Texte(t, recGet.Body.Bytes())
+	druckzentrum := pdftest.Texte(t, recPost.Body.Bytes())
 
 	// Erst die Gegenprobe gegen den stillen Durchmarsch: Stünde die Signatur auf KEINEM
 	// der beiden Bögen, wären sie immer noch gleich — und der Vergleich unten grün,

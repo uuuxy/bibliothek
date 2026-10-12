@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -44,8 +45,8 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	// 2. querySettings inside resolveCheckoutDueDate
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-			AddRow("max_ausleihen_schueler", ptr("5")).
-			AddRow("standard_ausleihfrist_tage", ptr("14")))
+			AddRow("max_ausleihen_schueler", testdaten.Ptr("5")).
+			AddRow("standard_ausleihfrist_tage", testdaten.Ptr("14")))
 
 	// 3. Mock tx begin
 	mock.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})
@@ -72,10 +73,10 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(0, 0.0))
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-			AddRow("max_ausleihen_schueler", ptr("5")).
-			AddRow("standard_ausleihfrist_tage", ptr("14")).
-			AddRow("max_overdue_days", ptr("14")).
-			AddRow("max_overdue_items", ptr("1")))
+			AddRow("max_ausleihen_schueler", testdaten.Ptr("5")).
+			AddRow("standard_ausleihfrist_tage", testdaten.Ptr("14")).
+			AddRow("max_overdue_days", testdaten.Ptr("14")).
+			AddRow("max_overdue_items", testdaten.Ptr("1")))
 	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM ausleihen WHERE schueler_id = \\$1 AND rueckgabe_am IS NULL AND rueckgabe_frist < CURRENT_TIMESTAMP - \\(INTERVAL '1 day' \\* \\$2\\) AND ist_handapparat = false AND geraet_id IS NULL").
 		WithArgs(studentID, 14).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
@@ -83,8 +84,8 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	// 7. querySettings inside early limit check
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-			AddRow("max_ausleihen_schueler", ptr("5")).
-			AddRow("standard_ausleihfrist_tage", ptr("14")))
+			AddRow("max_ausleihen_schueler", testdaten.Ptr("5")).
+			AddRow("standard_ausleihfrist_tage", testdaten.Ptr("14")))
 	// Check reservation
 	mock.ExpectQuery("SELECT v.schueler_id, s.vorname, s.nachname FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id WHERE v.bereitgestellt_exemplar_id = \\$1 AND v.status = 'abholbereit' AND v.bereitgestellt_bis > CURRENT_TIMESTAMP").
 		WithArgs(copy.ID).

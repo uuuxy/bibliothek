@@ -8,6 +8,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // POST /api/bestellungen weist einen Warenkorb ab, den es nicht buchen kann. Gemessen am
@@ -17,15 +20,15 @@ import (
 // dem sich der Warenkorb berichtigen lässt, und sie hat nichts gebucht: keine Bestellung
 // und kein Exemplar, auch nicht für die Positionen vor der abgelehnten.
 func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	_, rufe := protokollWelt(t, pool)
-	lieferant := haendler(t, pool, "Abgelehnt", false)
+	lieferant := testdaten.Haendler(t, pool, "Abgelehnt", false)
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant)
-		aufraeumen(t, pool, `DELETE FROM lieferanten WHERE id = $1`, lieferant)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM lieferanten WHERE id = $1`, lieferant)
 	})
-	titel := titelMitMeldebestand(t, pool, "Titel im Warenkorb", 0)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "Titel im Warenkorb", 0)
 
 	position := func(titelID string, menge int) string {
 		return fmt.Sprintf(`{"titel_id":%q,"menge":%d,"preis":9.5,"generate_barcodes":true}`, titelID, menge)
@@ -37,8 +40,8 @@ func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
 	}
 	gebucht := func(t *testing.T) (bestellungen, exemplare int) {
 		t.Helper()
-		return zaehleZeilen(t, pool, `SELECT count(*) FROM bestellungen_verlauf`),
-			zaehleZeilen(t, pool, `SELECT count(*) FROM buecher_exemplare`)
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM bestellungen_verlauf`),
+			pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_exemplare`)
 	}
 	// abgelehnt schickt den Warenkorb und prüft Status, Meldung und dass nichts gebucht ist.
 	abgelehnt := func(t *testing.T, status int, steckt, lieferantID string, positionen ...string) {

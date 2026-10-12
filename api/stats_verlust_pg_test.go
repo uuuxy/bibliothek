@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -15,20 +17,20 @@ import (
 // Die Statistik zählt in der Grenze des Abgangsbuchs; ein Exemplar aus dem Bestand ist die
 // Gegenprobe.
 func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	titelID := titelMitSignatur(t, pool, "Statistik Zulauf", "Sta 1", 0)
-	nie := zulaufExemplar(t, pool, titelID, "ST-ZULAUF")
-	imBestand := exemplar(t, pool, titelID, "ST-BESTAND", true, "")
+	titelID := testdaten.TitelMitSignatur(t, pool, "Statistik Zulauf", "Sta 1", 0)
+	nie := testdaten.ZulaufExemplar(t, pool, titelID, "ST-ZULAUF")
+	imBestand := testdaten.Exemplar(t, pool, titelID, "ST-BESTAND", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET einkaufspreis = 20 WHERE id = ANY($1)`,
 		[]string{nie, imBestand}); err != nil {
 		t.Fatalf("Preis setzen: %v", err)
 	}
 	buecher := repository.NewBookRepository(pool)
 	for _, id := range []string{nie, imBestand} {
-		if err := buecher.UpdateCopyStatus(ctx, id, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
+		if err := buecher.UpdateCopyStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 			t.Fatalf("als verloren ausbuchen: %v", err)
 		}
 	}
@@ -58,13 +60,13 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 // Ein bestelltes Exemplar zählt erst zum Bestand, wenn es eingetroffen ist. Sonst stünde es im
 // Gesamtbestand und unter den aktiven Exemplaren, und die Zirkulationsquote teilte durch es mit.
 func TestStatistik_BestelltesZaehltNichtZumBestand(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	titelID := titelMitSignatur(t, pool, "Statistik Bestand", "Sta 2", 0)
-	zulaufExemplar(t, pool, titelID, "SB-ZULAUF")
-	imBestand := exemplar(t, pool, titelID, "SB-BESTAND", true, "")
-	seedLeserAusleihe(t, pool, imBestand, seedSchueler(t, pool, "SB-LESER", "Statistik", "07A"))
+	titelID := testdaten.TitelMitSignatur(t, pool, "Statistik Bestand", "Sta 2", 0)
+	testdaten.ZulaufExemplar(t, pool, titelID, "SB-ZULAUF")
+	imBestand := testdaten.Exemplar(t, pool, titelID, "SB-BESTAND", true, "")
+	testdaten.SeedLeserAusleihe(t, pool, imBestand, testdaten.SeedSchueler(t, pool, "SB-LESER", "Statistik", "07A"))
 
 	rec := httptest.NewRecorder()
 	srv.GetStatisticsHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/statistiken", nil))

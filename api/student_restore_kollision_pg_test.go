@@ -10,6 +10,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -25,12 +27,12 @@ import (
 // Meldung nennt weder den Zwilling noch den Weg heraus (zusammenführen, umbenennen,
 // Barcode neu vergeben).
 func TestRestore_KollisionMitAktivemZwillingIstKonflikt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	auditRepo := repository.NewAuditRepository(pool)
-	bearbeiter := seedPortalLehrkraft(t, pool, "restore-kollision@test.invalid")
+	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "restore-kollision@test.invalid")
 
 	// Eine Zeile in den Papierkorb legen und danach ihren Platz besetzen.
 	vorbereiten := func(t *testing.T, anlegen, zwilling string) string {

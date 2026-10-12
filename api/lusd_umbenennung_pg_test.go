@@ -7,36 +7,14 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Umbenennung ohne Schüler-ID — der ganze Weg an der Datenbank: Vorschau schlägt das
 // Paar vor, der Admin bestätigt, derselbe Datensatz trägt den neuen Namen; unbestätigt
 // bleibt es Abgänger + Neuanlage (jetzt mit Karenz-Sperre statt Anonymisierung).
-
-type umbSchueler struct {
-	vorname, nachname, klasse, barcode string
-	geb, eintritt                      *time.Time
-	abgaenger                          bool
-}
-
-func legeUmbSchuelerAn(t *testing.T, pool *pgxpool.Pool, s umbSchueler) string {
-	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(), `
-		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum,
-		                      schul_eintritt_am, ist_abgaenger, lusd_bestaetigt_am, ist_gesperrt, block_reason, abgaenger_seit)
-		VALUES ($1,$2,$3,$4,2031,$5,$6,$7,NOW() - interval '1 year',$7,
-		        CASE WHEN $7 THEN 'Automatisierte Abgänger-Sperre (Karenzzeit vor Anonymisierung)' END,
-		        CASE WHEN $7 THEN NOW() - interval '10 days' END)
-		RETURNING id`,
-		s.vorname, s.nachname, s.klasse, s.barcode, s.geb, s.eintritt, s.abgaenger).Scan(&id); err != nil {
-		t.Fatalf("Schüler %s %s anlegen: %v", s.vorname, s.nachname, err)
-	}
-	return id
-}
 
 func umbZeile(line int, vorname, nachname, klasse string, geb, eintritt *time.Time) lusd.Zeile {
 	return lusd.Zeile{Vorname: vorname, Nachname: nachname, Klasse: klasse, GebDatum: geb, EintrittAm: eintritt, LineNum: line}
@@ -46,21 +24,21 @@ func umbZeile(line int, vorname, nachname, klasse string, geb, eintritt *time.Ti
 // Datensatz (ID, Barcode, offene Ausleihe) trägt den neuen Namen, keine zweite Zeile,
 // und der nächste Lauf mit derselben Datei ist leer.
 func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
-	geb, eintritt := datum(2013, 5, 4), datum(2024, 8, 19)
+	geb, eintritt := testdaten.Datum(2013, 5, 4), testdaten.Datum(2024, 8, 19)
 
-	annaID := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Anna", nachname: "Müller", klasse: "05F1", barcode: "UMB-1", geb: geb, eintritt: eintritt})
-	seedOffeneAusleihe(t, pool, annaID, "UMB1")
+	annaID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Anna", Nachname: "Müller", Klasse: "05F1", Barcode: "UMB-1", Geb: geb, Eintritt: eintritt})
+	testdaten.SeedOffeneAusleihe(t, pool, annaID, "UMB1")
 	// Unbeteiligte, damit die Massenabgang-Bremse nicht die Sicht verstellt.
 	for i := 0; i < 12; i++ {
-		legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ruhig", nachname: "Kind" + string(rune('A'+i)), klasse: "07A", barcode: "UMB-R" + string(rune('A'+i)), geb: datum(2012, 1, 1+i)})
+		testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Ruhig", Nachname: "Kind" + string(rune('A'+i)), Klasse: "07A", Barcode: "UMB-R" + string(rune('A'+i)), Geb: testdaten.Datum(2012, 1, 1+i)})
 	}
 	zeilen := []lusd.Zeile{umbZeile(2, "Anna", "Mueller-Schmidt", "06F1", geb, eintritt)}
 	for i := 0; i < 12; i++ {
-		zeilen = append(zeilen, umbZeile(3+i, "Ruhig", "Kind"+string(rune('A'+i)), "08A", datum(2012, 1, 1+i), nil))
+		zeilen = append(zeilen, umbZeile(3+i, "Ruhig", "Kind"+string(rune('A'+i)), "08A", testdaten.Datum(2012, 1, 1+i), nil))
 	}
 	datei := lusd.Datei{Zeilen: zeilen, Modus: lusd.ModusName}
 
@@ -128,13 +106,13 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 // Ohne Bestätigung bleibt es Abgänger + Neuanlage — mit Karenz-Sperre, nicht mit
 // Anonymisierung. Und eine Wahl, die die Vorschau nie gemacht hat, wird abgewiesen.
 func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
-	geb := datum(2013, 5, 4)
+	geb := testdaten.Datum(2013, 5, 4)
 
-	annaID := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Anna", nachname: "Müller", klasse: "05F1", barcode: "UMB-2", geb: geb})
+	annaID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Anna", Nachname: "Müller", Klasse: "05F1", Barcode: "UMB-2", Geb: geb})
 	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Anna", "Schulz", "06F1", geb, nil)}}
 
 	err := func() error {
@@ -170,13 +148,13 @@ func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 // Paar; bestätigt übernimmt der Datensatz das neue Geburtsdatum — sonst fände ihn der
 // nächste Lauf wieder nicht.
 func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 
-	benID := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ben", nachname: "Meier", klasse: "06B", barcode: "UMB-3", geb: datum(2012, 1, 1)})
-	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Ben", "Meier", "07B", datum(2012, 1, 10), nil)}}
+	benID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Ben", Nachname: "Meier", Klasse: "06B", Barcode: "UMB-3", Geb: testdaten.Datum(2012, 1, 1)})
+	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Ben", "Meier", "07B", testdaten.Datum(2012, 1, 10), nil)}}
 
 	prev, err := s.computeLusd(ctx, datei, false, false)
 	if err != nil {
@@ -202,13 +180,13 @@ func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
 // wieder auf: Paar mit war_abgaenger; bestätigt wird er reaktiviert — entsperrt, ohne
 // Abgänger-Stempel, mit neuem Namen.
 func TestUmbenennung_FruehererAbgaengerWirdReaktiviert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
-	geb, eintritt := datum(2011, 3, 3), datum(2022, 8, 22)
+	geb, eintritt := testdaten.Datum(2011, 3, 3), testdaten.Datum(2022, 8, 22)
 
-	altID := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Cem", nachname: "Yilmaz", klasse: "08C", barcode: "UMB-4", geb: geb, eintritt: eintritt, abgaenger: true})
+	altID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Cem", Nachname: "Yilmaz", Klasse: "08C", Barcode: "UMB-4", Geb: geb, Eintritt: eintritt, Abgaenger: true})
 	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Cem", "Yılmaz-Kaya", "09C", geb, eintritt)}}
 
 	prev, err := s.computeLusd(ctx, datei, false, false)

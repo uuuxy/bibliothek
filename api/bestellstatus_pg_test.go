@@ -10,7 +10,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,9 +25,9 @@ import (
 // Spalte bestellstatus. Dieser Test spielt genau das Befund-Szenario an der
 // echten Datenbank durch.
 func TestBestellstatusSpalteStattNotizMagie(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	var titelID string
 	if err := pool.QueryRow(ctx, `

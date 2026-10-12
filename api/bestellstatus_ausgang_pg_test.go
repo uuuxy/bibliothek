@@ -4,7 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -21,9 +23,9 @@ import (
 //     blieb für immer im Wareneingang, und „alle einbuchen" machte das AUSGESONDERTE
 //     Exemplar wieder ausleihbar.
 func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 	books := repository.NewBookRepository(pool)
 
 	zulauf := func(titel, barcode string) string {
@@ -62,7 +64,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 
 	// 2. Aussondern: kein Zulauf mehr, nicht im Wareneingang, und einbuchen belebt es nicht.
 	weg := zulauf("Zulauf-Storno-Titel", "ZL-STORNO")
-	if err := books.UpdateCopyStatus(ctx, weg, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
+	if err := books.UpdateCopyStatus(ctx, weg, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("DecommissionCopy: %v", err)
 	}
 	if s := bestellstatus(weg); s != nil {
@@ -82,7 +84,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 		}
 	}
 	if _, err := service.BulkReceiveOrder(ctx, pool, repository.NewAuditRepository(pool), service.BulkReceiveParams{
-		ExemplarIDs: []string{weg}, AdminID: adminFuerAudit(t, pool), IPAddr: "",
+		ExemplarIDs: []string{weg}, AdminID: testdaten.AdminFuerAudit(t, pool), IPAddr: "",
 	}); err != nil {
 		t.Logf("Wareneingang meldet: %v", err)
 	}

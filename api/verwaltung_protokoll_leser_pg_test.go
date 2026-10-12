@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Vier Türen hinterlassen einen Eintrag im Protokoll der Verwaltung: Leser in den Papierkorb,
@@ -13,12 +16,12 @@ import (
 // (docs/resilience_and_recovery.md, Schritt 5b) ihn finden, und dazu die Adresse des
 // Aufrufers; die Mail-Einstellungen speichern keine Adresse und kein Passwort.
 func TestVerwaltung_LeserUndMailEinstellungenStehenImProtokoll(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 	adminID, rufe := protokollWelt(t, pool)
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion IN
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion IN
 			('DELETE_STUDENT', 'RESTORE_STUDENT', 'PURGE_STUDENT', 'UPDATE_MAIL_SETTINGS')`)
 	})
 
@@ -49,7 +52,7 @@ func TestVerwaltung_LeserUndMailEinstellungenStehenImProtokoll(t *testing.T) {
 	}
 
 	t.Run("Leserdatei", func(t *testing.T) {
-		id := seedSchueler(t, pool, "A-91001", "Protokoll", "07A")
+		id := testdaten.SeedSchueler(t, pool, "A-91001", "Protokoll", "07A")
 		// leserEintrag prüft, dass der jüngste Eintrag der Aktion diesen Leser und eine Adresse nennt.
 		leserEintrag := func(t *testing.T, aktion string) {
 			t.Helper()
@@ -86,7 +89,7 @@ func TestVerwaltung_LeserUndMailEinstellungenStehenImProtokoll(t *testing.T) {
 			t.Fatalf("Mail-Konfiguration lesen: %v", err)
 		}
 		t.Cleanup(func() {
-			aufraeumen(t, pool, `UPDATE mail_settings_config
+			pgtest.Aufraeumen(t, pool, `UPDATE mail_settings_config
 				SET smtp_host = $1, smtp_port = $2, smtp_user = $3, sender_email = $4 WHERE id = 1`,
 				vorHost, vorPort, vorUser, vorAbsender)
 		})

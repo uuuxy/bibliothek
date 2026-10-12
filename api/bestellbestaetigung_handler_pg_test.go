@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -49,12 +51,12 @@ func putBestaetigen(srv *Server, bestellungID, body string) *httptest.ResponseRe
 // Der externe Bestätigungsschritt (Naacher-Link) lässt sich in Bibliosys nachtragen,
 // wenn der Lieferant dafür freigeschaltet ist.
 func TestBestaetigenBestellung_Erfolg(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
 	rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"gross"}`)
@@ -80,11 +82,11 @@ func TestBestaetigenBestellung_Erfolg(t *testing.T) {
 // Ein Lieferant ohne das Flag bietet den Schritt nicht an — Bestätigen muss abgelehnt
 // werden, sonst könnte jede Bestellung fälschlich als "extern bestätigt" markiert werden.
 func TestBestaetigenBestellung_LieferantOhneFlag(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Normalhaendler", false)
+	lieferant := testdaten.Haendler(t, pool, "Normalhaendler", false)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
 	rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"klein"}`)
@@ -96,11 +98,11 @@ func TestBestaetigenBestellung_LieferantOhneFlag(t *testing.T) {
 // Ein zweites Bestätigen derselben Bestellung darf die erste Angabe nicht stillschweigend
 // überschreiben — das wäre ein falsches Bild vom tatsächlichen externen Vorgang.
 func TestBestaetigenBestellung_DoppeltBestaetigenGibt409(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Naacher2", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher2", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
 	if rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"klein"}`); rec.Code != http.StatusOK {
@@ -115,11 +117,11 @@ func TestBestaetigenBestellung_DoppeltBestaetigenGibt409(t *testing.T) {
 
 // Ein ungültiger Wert für etiketten_groesse muss vor jeder DB-Abfrage abgelehnt werden.
 func TestBestaetigenBestellung_UngueltigeGroesse(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lieferant := haendler(t, pool, "Naacher3", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher3", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
 
 	rec := putBestaetigen(srv, bestellung, `{"etiketten_groesse":"mittel"}`)

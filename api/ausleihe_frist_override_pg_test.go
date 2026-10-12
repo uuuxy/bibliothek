@@ -11,6 +11,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -21,8 +23,8 @@ import (
 // erlaubt, weil es die Sperre nicht aufhebt. Und jeder Override wird auditiert.
 // Live gefunden 18.08.2026 (Rollen×Aktionen-Prüfung); vorher ging beides ungeprüft.
 func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Echter Benutzer für den Audit-FK (audit_logs.admin_id).
@@ -35,15 +37,15 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 		t.Fatalf("Test-Admin: %v", err)
 	}
 
-	sidNormal := seedSchueler(t, pool, "S-FO-1", "Normal", "5a")
-	sidGesperrt := seedSchueler(t, pool, "S-FO-2", "Gesperrt", "5b")
+	sidNormal := testdaten.SeedSchueler(t, pool, "S-FO-1", "Normal", "5a")
+	sidGesperrt := testdaten.SeedSchueler(t, pool, "S-FO-2", "Gesperrt", "5b")
 	if _, err := pool.Exec(ctx, "UPDATE schueler SET is_manually_blocked = true, block_reason = 'Buchverlust' WHERE id = $1", sidGesperrt); err != nil {
 		t.Fatalf("Sperre setzen: %v", err)
 	}
 
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
-	ausleiheNormal := seedAusleihe(t, pool, sidNormal, "Buch Normal", alteFrist)
-	ausleiheGesperrt := seedAusleihe(t, pool, sidGesperrt, "Buch Gesperrt", alteFrist)
+	ausleiheNormal := testdaten.SeedAusleihe(t, pool, sidNormal, "Buch Normal", alteFrist)
+	ausleiheGesperrt := testdaten.SeedAusleihe(t, pool, sidGesperrt, "Buch Gesperrt", alteFrist)
 
 	zukunft := time.Now().AddDate(1, 0, 0).Format("2006-01-02")
 	vergangenheit := "2022-06-01"
@@ -98,7 +100,7 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 			VALUES ('Frist', 'Kollege', 'lehrkraft', true, 'alt') RETURNING id`).Scan(&kollege); err != nil {
 			t.Fatalf("Kollegen anlegen: %v", err)
 		}
-		ausleiheKollege := seedAusleihe(t, pool, kollege, "Buch Kollege", alteFrist)
+		ausleiheKollege := testdaten.SeedAusleihe(t, pool, kollege, "Buch Kollege", alteFrist)
 		if w := call(ausleiheKollege, zukunft); w.Code != http.StatusOK {
 			t.Fatalf("erwartet 200, war %d: %s", w.Code, w.Body.String())
 		}
@@ -128,8 +130,8 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 // nicht roh in UTC. Sonst wäre eine überschriebene Frist zum selben Datum 1–2 h später
 // fällig als eine regulär berechnete — zwei Antworten auf dieselbe fachliche Frage.
 func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var adminID string
@@ -140,8 +142,8 @@ func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
 		RETURNING id`).Scan(&adminID); err != nil {
 		t.Fatalf("Test-Admin: %v", err)
 	}
-	sid := seedSchueler(t, pool, "S-TZ-1", "Zone", "5a")
-	ausleihe := seedAusleihe(t, pool, sid, "Buch TZ", time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
+	sid := testdaten.SeedSchueler(t, pool, "S-TZ-1", "Zone", "5a")
+	ausleihe := testdaten.SeedAusleihe(t, pool, sid, "Buch TZ", time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	auditRepo := repository.NewAuditRepository(pool)
@@ -175,8 +177,8 @@ func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
 // Zeitstempel gilt wörtlich, ein Datum als Tagesende, und nur eine Frist in der Zukunft setzt
 // die Mahnstufe zurück — ein vorgezogenes Datum lässt sie stehen.
 func TestOverrideDueDate_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var adminID string
@@ -185,10 +187,10 @@ func TestOverrideDueDate_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 		VALUES ('Tür', 'Admin', 'frist-tuer@test.invalid', 'admin', true) RETURNING id`).Scan(&adminID); err != nil {
 		t.Fatalf("Test-Admin: %v", err)
 	}
-	sid := seedSchueler(t, pool, "S-FT-1", "Tuer", "5a")
+	sid := testdaten.SeedSchueler(t, pool, "S-FT-1", "Tuer", "5a")
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
-	ausleihe := seedAusleihe(t, pool, sid, "Buch Tuer", alteFrist)
-	zurueck := seedAusleihe(t, pool, sid, "Buch zurueck", alteFrist)
+	ausleihe := testdaten.SeedAusleihe(t, pool, sid, "Buch Tuer", alteFrist)
+	zurueck := testdaten.SeedAusleihe(t, pool, sid, "Buch zurueck", alteFrist)
 	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP WHERE id = $1`, zurueck); err != nil {
 		t.Fatalf("Rückgabe buchen: %v", err)
 	}
@@ -248,7 +250,7 @@ func TestOverrideDueDate_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 			t.Fatalf("eine Ablehnung hat die Frist geschrieben: %s", frist.UTC().Format(time.RFC3339))
 		}
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'FRIST_OVERRIDE'`); n != 0 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'FRIST_OVERRIDE'`); n != 0 {
 		t.Fatalf("%d Protokolleinträge nach sieben Ablehnungen", n)
 	}
 

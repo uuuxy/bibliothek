@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/inventur"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
@@ -60,7 +62,7 @@ func erbWege() []erbWeg {
 			svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
 			if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 				Mittel:     mitteltopf.Land,
-				SupplierID: haendler(t, pool, "Händler "+titel.isbn, false),
+				SupplierID: testdaten.Haendler(t, pool, "Händler "+titel.isbn, false),
 				Items:      []service.BestellAuftragPosition{{TitelID: titel.id, Menge: 2, Preis: 10, GenerateBarcodes: true}},
 			}); err != nil {
 				t.Fatalf("Bestellung: %v", err)
@@ -79,14 +81,14 @@ type erbLage struct {
 }
 
 func TestExemplarStandort_NeuesExemplarErbt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Ein Nachbar mit eigenem Standort: Die Regel liest nur die Exemplare des eigenen Titels.
-	nachbar := titelMitSignatur(t, pool, "Nachbar im Keller", "Ju Nac", 0)
+	nachbar := testdaten.TitelMitSignatur(t, pool, "Nachbar im Keller", "Ju Nac", 0)
 	for i := range 2 {
-		id := exemplar(t, pool, nachbar, fmt.Sprintf("ERB-NACHBAR-%d", i), true, "")
+		id := testdaten.Exemplar(t, pool, nachbar, fmt.Sprintf("ERB-NACHBAR-%d", i), true, "")
 		if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET standort = 'Keller' WHERE id = $1`, id); err != nil {
 			t.Fatalf("Nachbar: %v", err)
 		}
@@ -153,7 +155,7 @@ func stelleErbLageHer(t *testing.T, pool *pgxpool.Pool, titel erbTitel, lage erb
 		}
 	}
 	for i, standort := range lage.imBestand {
-		id := exemplar(t, pool, titel.id, fmt.Sprintf("ERB-ALT-%s-%d", titel.isbn, i), true, "")
+		id := testdaten.Exemplar(t, pool, titel.id, fmt.Sprintf("ERB-ALT-%s-%d", titel.isbn, i), true, "")
 		if standort != "" {
 			setze(id, `standort = $2`, standort)
 		}
@@ -161,8 +163,8 @@ func stelleErbLageHer(t *testing.T, pool *pgxpool.Pool, titel erbTitel, lage erb
 	if !lage.mitRand {
 		return
 	}
-	weg := exemplar(t, pool, titel.id, "ERB-ALT-"+titel.isbn+"-WEG", true, "")
+	weg := testdaten.Exemplar(t, pool, titel.id, "ERB-ALT-"+titel.isbn+"-WEG", true, "")
 	setze(weg, `standort = 'Keller', ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT'`)
-	bestellt := exemplar(t, pool, titel.id, "ERB-ALT-"+titel.isbn+"-BESTELLT", false, "")
+	bestellt := testdaten.Exemplar(t, pool, titel.id, "ERB-ALT-"+titel.isbn+"-BESTELLT", false, "")
 	setze(bestellt, `bestellstatus = 'bestellt'`)
 }

@@ -10,6 +10,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -31,7 +33,7 @@ func korrigiereTopfUeberHandler(t *testing.T, srv *Server, pool *pgxpool.Pool, b
 	req.SetPathValue("id", bestellungID)
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: adminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
+		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.UpdateBestellungMittelHandler()(rec, req)
 	return rec
@@ -47,16 +49,16 @@ func topfInDb(t *testing.T, pool *pgxpool.Pool, id string) *string {
 }
 
 func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	if _, err := pool.Exec(ctx, `TRUNCATE audit_logs`); err != nil {
 		t.Fatal(err)
 	}
 
-	lieferant := haendler(t, pool, "Korrektur-Haendler", false)
-	titel := titelMitMeldebestand(t, pool, "LMF-Korrektur", 0)
+	lieferant := testdaten.Haendler(t, pool, "Korrektur-Haendler", false)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Korrektur", 0)
 	rec := bestelleMitTopf(t, srv, lieferant, titel, mitteltopf.Land)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung anlegen: %d %s", rec.Code, rec.Body.String())
@@ -128,16 +130,16 @@ func TestBestellungTopfKorrektur_SchreibtTopfUndAudit(t *testing.T) {
 }
 
 func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	if _, err := pool.Exec(ctx, `TRUNCATE audit_logs`); err != nil {
 		t.Fatal(err)
 	}
 
-	lieferant := haendler(t, pool, "Korrektur-Haendler-2", false)
-	titel := titelMitMeldebestand(t, pool, "LMF-Korrektur-2", 0)
+	lieferant := testdaten.Haendler(t, pool, "Korrektur-Haendler-2", false)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Korrektur-2", 0)
 	if rec := bestelleMitTopf(t, srv, lieferant, titel, mitteltopf.Land); rec.Code != http.StatusOK {
 		t.Fatalf("Bestellung anlegen: %d", rec.Code)
 	}
@@ -176,8 +178,8 @@ func TestBestellungTopfKorrektur_OhneGrundOderMitUnbekanntemTopfPassiertNichts(t
 // Alt-Bestellung „ohne Zuordnung" (NULL): Der Rückweg ordnet sie zu, das Audit nennt
 // von="" — so ist im Protokoll sichtbar, dass hier erstmals zugeordnet wurde.
 func TestBestellungTopfKorrektur_OrdnetAltBestellungOhneZuordnungZu(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	if _, err := pool.Exec(ctx, `TRUNCATE audit_logs`); err != nil {

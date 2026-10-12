@@ -7,6 +7,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -27,8 +29,8 @@ import (
 // bekommen absichtlich unterscheidbare Klassen — bei gleichen Werten wäre eine
 // Verwechslung unsichtbar.
 func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Bestand: sechs aktive Schüler, jeder in einer anderen Klasse.
@@ -101,8 +103,8 @@ func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 // Regel wuerde eine luckenhafte Exportspalte die Klassenzuordnung der ganzen Schule leeren —
 // und die Klasse ist die Angabe, an der Ausleihlimits, Mahnwege und Abgaengerlisten haengen.
 func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	if _, err := pool.Exec(ctx,
@@ -140,8 +142,8 @@ func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 // Zum Schuljahresende gehen ganze Jahrgaenge gleichzeitig — mehrere Abgaenger in einem Lauf
 // sind der Normalfall, nicht die Ausnahme.
 func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Drei Abgaenger: einer sauber, einer mit offener Ausleihe, einer mit offenem Schaden.
@@ -160,8 +162,8 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 	// Die vorhandenen Helfer benutzen, nicht das SQL nachbauen: schadensfaelle traegt
 	// check_damage_item (entweder exemplar_id ODER geraet_id), ein direkter INSERT ohne
 	// Exemplar scheitert daran.
-	seedOffeneAusleihe(t, pool, ids["ausleihe"], "ABGA")
-	seedOffenerSchaden(t, pool, ids["schaden"], "ABGS")
+	testdaten.SeedOffeneAusleihe(t, pool, ids["ausleihe"], "ABGA")
+	testdaten.SeedOffenerSchaden(t, pool, ids["schaden"], "ABGS")
 
 	// Der neue Export nennt KEINEN der drei mehr — alle sind Abgänger.
 	s := &Server{DB: &db.Database{Pool: pool}}

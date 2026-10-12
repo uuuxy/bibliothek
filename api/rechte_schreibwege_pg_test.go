@@ -11,6 +11,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/tuertest"
 	"bibliothek/sse"
 )
 
@@ -84,7 +86,7 @@ func schreibURL(route string) (methode, url string) {
 }
 
 func TestSchreibwegeWeisenOhneDasRechtAb(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	t.Setenv("RATE_LIMIT", "100000")
 
 	if err := (&db.Database{Pool: pool}).InitPermissions(context.Background()); err != nil {
@@ -144,7 +146,7 @@ func TestSchreibwegeWeisenOhneDasRechtAb(t *testing.T) {
 		}
 		setzeGenauEinRecht(t, pool, anderes)
 
-		req := mitCSRF(httptest.NewRequest(methode, url, strings.NewReader("{}")))
+		req := tuertest.MitCSRF(httptest.NewRequest(methode, url, strings.NewReader("{}")))
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.sessionToken})
 		rec := httptest.NewRecorder()

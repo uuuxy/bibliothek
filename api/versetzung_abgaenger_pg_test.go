@@ -7,6 +7,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -17,8 +19,8 @@ import (
 // weiterhin GESPERRTER Schüler zurück (Ghost-Block), und seine Karenz läuft über den
 // Rückfall aktualisiert_am, den jeder Klick neu stellt.
 func TestVersetzung_AbgaengerTraegtKarenzUhrUndKehrtEntsperrtZurueck(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var id string

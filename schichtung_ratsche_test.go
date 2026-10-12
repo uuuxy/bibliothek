@@ -29,13 +29,14 @@ import (
 // datenbankschicht nennt die Pakete, die Anweisungen formulieren, und warum. Ein Eintrag mit
 // Schrägstrich am Ende gilt für alle Pakete darunter.
 var datenbankschicht = map[string]string{
-	"repository":       "Abfragen und Schreibpfade der Anwendung",
-	"inventur":         "eigene Datenbankschicht des Medienkatalogs (ARCHITEKTUR 5.2.3)",
-	"db":               "Pool, Migrationen, Rechte-Seed und Übernahmen beim Start; repository/ bindet db/ ein",
-	"internal/littera": "Schreiber der einmaligen Übernahme aus Littera",
-	"internal/pgtest":  "Prüfhilfe, legt das Schema der Testdatenbank an",
-	"scripts":          "Einmal-Skripte außerhalb des Programms",
-	"cmd/":             "Einmal-Werkzeuge mit eigener Verbindung",
+	"repository":         "Abfragen und Schreibpfade der Anwendung",
+	"inventur":           "eigene Datenbankschicht des Medienkatalogs (ARCHITEKTUR 5.2.3)",
+	"db":                 "Pool, Migrationen, Rechte-Seed und Übernahmen beim Start; repository/ bindet db/ ein",
+	"internal/littera":   "Schreiber der einmaligen Übernahme aus Littera",
+	"internal/pgtest":    "Prüfhilfe, legt das Schema der Testdatenbank an",
+	"internal/testdaten": "Prüfhilfe, legt Zeilen in der Testdatenbank an und leert sie",
+	"scripts":            "Einmal-Skripte außerhalb des Programms",
+	"cmd/":               "Einmal-Werkzeuge mit eigener Verbindung",
 }
 
 // sqlFunde zählt je Datei die Texte von Anweisungen und die Aufrufe, die eine abschicken.

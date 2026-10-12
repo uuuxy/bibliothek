@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -14,13 +16,13 @@ import (
 // bekäme: Es gibt einen Hauptlieferanten, aber keine öffentliche Adresse. Ein Feld aus lauter
 // Leerzeichen ist keine Adresse, daraus entstünde kein Link.
 func TestBestellKonfiguration_WarntWennDerLinkNichtEntstehenKann(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	// Ein Hauptlieferant aus einem früheren Test dieses Laufs zählte sonst mit.
 	if _, err := pool.Exec(t.Context(), `UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant`); err != nil {
 		t.Fatalf("bisherigen Hauptlieferanten räumen: %v", err)
 	}
-	t.Cleanup(func() { setzeOeffentlicheAdresse(t, pool, "") })
+	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, "") })
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	ohneAdresse := func() bool {
 		t.Helper()
@@ -37,19 +39,19 @@ func TestBestellKonfiguration_WarntWennDerLinkNichtEntstehenKann(t *testing.T) {
 		return antwort.BestelllinkOhneAdresse
 	}
 
-	setzeOeffentlicheAdresse(t, pool, "")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	if ohneAdresse() {
 		t.Error("ohne Hauptlieferant warnt die Konfiguration, obwohl kein Link verschickt würde")
 	}
-	haendler(t, pool, "Naacher", true)
+	testdaten.Haendler(t, pool, "Naacher", true)
 	if !ohneAdresse() {
 		t.Error("Hauptlieferant ohne öffentliche Adresse: keine Warnung")
 	}
-	setzeOeffentlicheAdresse(t, pool, "   ")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "   ")
 	if !ohneAdresse() {
 		t.Error("eine Adresse aus lauter Leerzeichen gilt als hinterlegt: keine Warnung")
 	}
-	setzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	if ohneAdresse() {
 		t.Error("mit öffentlicher Adresse warnt die Konfiguration weiter")
 	}

@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/pkg/schulzeit"
@@ -17,12 +19,12 @@ import (
 // Das Zugangsbuch ist wie das Abgangsbuch ein Nachweis zum Abheften. Gemessen wird an den
 // Rändern des Zeitraums, am Topf und am fertigen Blatt.
 func TestZugangsbuch_ZeitraumToepfeUndBestellung(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 
-	titelID := titelMitSignatur(t, pool, "Zugangs-Titel", "Zug 1", 0)
+	titelID := testdaten.TitelMitSignatur(t, pool, "Zugangs-Titel", "Zug 1", 0)
 
 	// Zwei Bestellungen, je ein Topf — der Topf des ZUGANGS steht an der Bestellung, nicht
 	// am Titel: Ein Titel darf im Warenkorb in den anderen Topf geschoben werden.
@@ -166,13 +168,13 @@ func TestZugangsbuchPDF_LeererZeitraum(t *testing.T) {
 // Bestellen. Ein im Dezember bestelltes, im Februar geliefertes Buch stand damit im
 // Dezember, und Bücher, die noch beim Händler lagen, standen mit im Nachweis.
 func TestZugangsbuch_ZulaufIstKeinZugang(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	loc := schulzeit.Zone()
 	heute := time.Now().In(loc)
 
-	titelID := titelMitSignatur(t, pool, "Zulauf-Titel", "Zul 1", 0)
+	titelID := testdaten.TitelMitSignatur(t, pool, "Zulauf-Titel", "Zul 1", 0)
 
 	var bestellID string
 	if err := pool.QueryRow(ctx, `

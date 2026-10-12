@@ -11,6 +11,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -50,7 +52,7 @@ func bescheidVorschlagUeberHandler(t *testing.T, srv *Server, pool *pgxpool.Pool
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+schuelerID+"/bescheid-vorschlag", nil)
 	req.SetPathValue("id", schuelerID)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: adminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
+		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.BescheidVorschlagHandler(repository.NewBescheidRepository(pool))(rec, req)
 	if rec.Code != http.StatusOK {
@@ -78,17 +80,17 @@ func nummernkreisStand(t *testing.T, pool *pgxpool.Pool) int {
 // nicht fälliges Buch gehört nicht auf den Brief, ein Buch mit Forderung steht schon bei
 // den Positionen (sonst stünde es zweimal im Dialog).
 func TestBescheidVorschlag_NenntUeberfaelligeBuecherOhneForderung(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
-	bescheidReset(t, pool)
-	bescheidAngabenSetzen(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.BescheidReset(t, pool)
+	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	sid := seedSchueler(t, pool, "S-VORSCHLAG-1", "Vorschlagkind", "08G2")
-	titelID := bescheidLernmittel(t, pool, "Physik 8")
-	ueberfaellig := exemplar(t, pool, titelID, "VOR-EX-1", true, "")
-	nochNichtFaellig := exemplar(t, pool, titelID, "VOR-EX-2", true, "")
-	mitForderung := exemplar(t, pool, titelID, "VOR-EX-3", true, "")
+	sid := testdaten.SeedSchueler(t, pool, "S-VORSCHLAG-1", "Vorschlagkind", "08G2")
+	titelID := testdaten.BescheidLernmittel(t, pool, "Physik 8")
+	ueberfaellig := testdaten.Exemplar(t, pool, titelID, "VOR-EX-1", true, "")
+	nochNichtFaellig := testdaten.Exemplar(t, pool, titelID, "VOR-EX-2", true, "")
+	mitForderung := testdaten.Exemplar(t, pool, titelID, "VOR-EX-3", true, "")
 	aUeberfaellig := bescheidAusleihe(t, pool, ueberfaellig, sid, 30)
 	bescheidAusleihe(t, pool, nochNichtFaellig, sid, -10)
 	aMitForderung := bescheidAusleihe(t, pool, mitForderung, sid, 40)
@@ -124,22 +126,22 @@ func TestBescheidVorschlag_NenntUeberfaelligeBuecherOhneForderung(t *testing.T) 
 
 // Der Kern von Stufe 2: Ein Brief aus zwei überfälligen Büchern, in einer Transaktion.
 func TestBescheidErstellen_AusUeberfaelligenBuechern(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
-	bescheidReset(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
-	bescheidAngabenSetzen(t, pool)
+	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	sid := seedSchueler(t, pool, "S-VERLUST-1", "Verlustkind", "08G2")
-	titelID := bescheidLernmittel(t, pool, "Chemie 8")
-	ex1 := exemplar(t, pool, titelID, "VERL-EX-1", true, "")
-	ex2 := exemplar(t, pool, titelID, "VERL-EX-2", true, "")
+	sid := testdaten.SeedSchueler(t, pool, "S-VERLUST-1", "Verlustkind", "08G2")
+	titelID := testdaten.BescheidLernmittel(t, pool, "Chemie 8")
+	ex1 := testdaten.Exemplar(t, pool, titelID, "VERL-EX-1", true, "")
+	ex2 := testdaten.Exemplar(t, pool, titelID, "VERL-EX-2", true, "")
 	a1 := bescheidAusleihe(t, pool, ex1, sid, 30)
 	a2 := bescheidAusleihe(t, pool, ex2, sid, 45)
 
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
-		bescheidRumpfMitAusleihen(in28Tagen(), map[string]float64{a1: 24.90, a2: 12.00}))
+		bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{a1: 24.90, a2: 12.00}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
@@ -196,35 +198,35 @@ func TestBescheidErstellen_AusUeberfaelligenBuechern(t *testing.T) {
 // hat den Verlust in der Akte gemeldet, das Buch gehört einem anderen Kind. Rot am alten
 // Code gesehen (Prüfung ausgehängt): Brief über ein Buch, das im Regal steht.
 func TestBescheidErstellen_VeralteterDialogWirdAbgewiesen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
-	bescheidReset(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
-	bescheidAngabenSetzen(t, pool)
+	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	sid := seedSchueler(t, pool, "S-VERALTET-1", "Dialogkind", "08G2")
-	anderes := seedSchueler(t, pool, "S-VERALTET-2", "Anderes", "08G2")
-	titelID := bescheidLernmittel(t, pool, "Biologie 8")
+	sid := testdaten.SeedSchueler(t, pool, "S-VERALTET-1", "Dialogkind", "08G2")
+	anderes := testdaten.SeedSchueler(t, pool, "S-VERALTET-2", "Anderes", "08G2")
+	titelID := testdaten.BescheidLernmittel(t, pool, "Biologie 8")
 
-	zurueckEx := exemplar(t, pool, titelID, "ALT-EX-1", true, "")
+	zurueckEx := testdaten.Exemplar(t, pool, titelID, "ALT-EX-1", true, "")
 	zurueck := bescheidAusleihe(t, pool, zurueckEx, sid, 30)
 	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = now() WHERE id = $1`, zurueck); err != nil {
 		t.Fatal(err)
 	}
-	gemeldetEx := exemplar(t, pool, titelID, "ALT-EX-2", true, "")
+	gemeldetEx := testdaten.Exemplar(t, pool, titelID, "ALT-EX-2", true, "")
 	gemeldet := bescheidAusleihe(t, pool, gemeldetEx, sid, 30)
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO schadensfaelle (exemplar_id, schueler_id, ausleihe_id, beschreibung, betrag, art)
 		VALUES ($1, $2, $3, 'in der Akte gemeldet', 0, 'nicht_zurueckgegeben')`, gemeldetEx, sid, gemeldet); err != nil {
 		t.Fatal(err)
 	}
-	fremdEx := exemplar(t, pool, titelID, "ALT-EX-3", true, "")
+	fremdEx := testdaten.Exemplar(t, pool, titelID, "ALT-EX-3", true, "")
 	fremd := bescheidAusleihe(t, pool, fremdEx, anderes, 30)
 
 	for name, ausleihe := range map[string]string{"zurückgegeben": zurueck, "schon gemeldet": gemeldet, "fremdes Kind": fremd} {
 		rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
-			bescheidRumpfMitAusleihen(in28Tagen(), map[string]float64{ausleihe: 10}))
+			bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{ausleihe: 10}))
 		if rec.Code != http.StatusConflict {
 			t.Errorf("%s: Status %d, want 409: %s", name, rec.Code, rec.Body.String())
 		}
@@ -249,20 +251,20 @@ func TestBescheidErstellen_VeralteterDialogWirdAbgewiesen(t *testing.T) {
 // über den Umweg der Ausleihe. Die Abweisung nimmt den Verlust mit zurück: Das Buch
 // bleibt ausgeliehen, das Exemplar im Umlauf.
 func TestBescheidErstellen_BuechereiBuchNichtAlsVerlust(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
-	bescheidReset(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
-	bescheidAngabenSetzen(t, pool)
+	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	sid := seedSchueler(t, pool, "S-BUECHEREI-1", "Leseratte", "08G2")
-	titelID := seedMonitorTitel(t, pool, "Roman", "Autor", true, 0)
-	ex := exemplar(t, pool, titelID, "BUE-EX-1", true, "")
+	sid := testdaten.SeedSchueler(t, pool, "S-BUECHEREI-1", "Leseratte", "08G2")
+	titelID := testdaten.SeedMonitorTitel(t, pool, "Roman", "Autor", true, 0)
+	ex := testdaten.Exemplar(t, pool, titelID, "BUE-EX-1", true, "")
 	a := bescheidAusleihe(t, pool, ex, sid, 30)
 
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
-		bescheidRumpfMitAusleihen(in28Tagen(), map[string]float64{a: 9.90}))
+		bescheidRumpfMitAusleihen(testdaten.In28Tagen(), map[string]float64{a: 9.90}))
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("Status %d, want 409: %s", rec.Code, rec.Body.String())
 	}

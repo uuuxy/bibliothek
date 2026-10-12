@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -24,8 +26,8 @@ import (
 // Das betrifft ausgerechnet die Felder, deren Löschung jemand verlangen kann:
 // eltern_email und die Postanschrift.
 func TestSchuelerFeldLeeren_WirktInDerDatenbank(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -88,8 +90,8 @@ func TestSchuelerFeldLeeren_WirktInDerDatenbank(t *testing.T) {
 // 200 durch. Bei der Klasse kam ein zweiter Schaden dazu: repository.AbgaengerJahr
 // leitete aus dem leeren Namen noch ein Abgängerjahr ab.
 func TestSchuelerPflichtfeldLeeren_WirdAbgelehnt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 

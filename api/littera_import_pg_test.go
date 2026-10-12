@@ -8,6 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/internal/xlsxtest"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -55,23 +58,23 @@ func importAntwort(t *testing.T, rec *httptest.ResponseRecorder) LitteraImportRe
 }
 
 func TestLitteraImport_UeberDieTuer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	adminID, _, rufeRoh := importWelt(t, pool)
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion IN ('LITTERA_IMPORT', 'BESTAND_IMPORT')`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion IN ('LITTERA_IMPORT', 'BESTAND_IMPORT')`)
 	})
 
 	// zaehle liefert Titel und Exemplare, die dieser Test angelegt haben könnte.
 	zaehle := func(t *testing.T) (titel, exemplare int) {
 		t.Helper()
-		return zaehleZeilen(t, pool, `SELECT count(*) FROM buecher_titel WHERE titel LIKE 'E2E-Imp-%'`),
-			zaehleZeilen(t, pool, `SELECT count(*) FROM buecher_exemplare WHERE barcode_id LIKE 'IMP-%'`)
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_titel WHERE titel LIKE 'E2E-Imp-%'`),
+			pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_exemplare WHERE barcode_id LIKE 'IMP-%'`)
 	}
 	// spuren zählt die Protokolleinträge der Importe.
 	spuren := func(t *testing.T, aktion string) int {
 		t.Helper()
-		return zaehleZeilen(t, pool,
+		return pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM audit_logs WHERE aktion = $1 AND admin_id = $2`, aktion, adminID)
 	}
 
@@ -129,7 +132,7 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 		if a := importAntwort(t, rec); a.Type != "xlsx" || a.NewTitles != 1 {
 			t.Errorf("Art %q, %d neue Titel — erwartet xlsx und 1", a.Type, a.NewTitles)
 		}
-		if n := zaehleZeilen(t, pool,
+		if n := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM buecher_exemplare WHERE barcode_id = 'IMP-B1'`); n != 1 {
 			t.Errorf("das Exemplar aus der Arbeitsmappe steht %d mal in der Datenbank, erwartet 1", n)
 		}
@@ -186,11 +189,11 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 }
 
 func TestBestandImport_UeberDieTuer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	adminID, _, rufeRoh := importWelt(t, pool)
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTAND_IMPORT'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTAND_IMPORT'`)
 	})
 
 	t.Run("CSV mit Komma: Titel und Exemplar stehen in der Datenbank", func(t *testing.T) {
@@ -200,11 +203,11 @@ func TestBestandImport_UeberDieTuer(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 		}
-		if n := zaehleZeilen(t, pool,
+		if n := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM buecher_exemplare WHERE barcode_id = 'IMP-C1'`); n != 1 {
 			t.Errorf("das Exemplar steht %d mal in der Datenbank, erwartet 1", n)
 		}
-		if n := zaehleZeilen(t, pool,
+		if n := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM audit_logs WHERE aktion = 'BESTAND_IMPORT' AND admin_id = $1`,
 			adminID); n != 1 {
 			t.Errorf("%d Protokolleinträge, erwartet 1", n)
@@ -226,7 +229,7 @@ func TestBestandImport_UeberDieTuer(t *testing.T) {
 		if !strings.Contains(rec.Body.String(), "nur CSV-Dateien") {
 			t.Errorf("die Meldung ist nicht die der Endungs-Prüfung: %s", rec.Body.String())
 		}
-		if n := zaehleZeilen(t, pool,
+		if n := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM buecher_exemplare WHERE barcode_id = 'IMP-D1'`); n != 0 {
 			t.Errorf("die abgewiesene Arbeitsmappe hat %d Exemplare geschrieben", n)
 		}
@@ -268,7 +271,7 @@ func importWelt(t *testing.T, pool *pgxpool.Pool) (adminID string, sitzung strin
 		req.Header.Set("Content-Type", typ)
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, mitCSRF(req))
+		router.ServeHTTP(rec, tuertest.MitCSRF(req))
 		return rec
 	}
 }

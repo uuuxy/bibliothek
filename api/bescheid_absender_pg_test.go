@@ -9,6 +9,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -20,20 +23,20 @@ import (
 // hielt der Bescheid schon fest (TestBescheidNachdruck_BleibtDerselbeBrief); die Absenderseite
 // jetzt auch (Migration 141).
 func TestBescheidNachdruck_AbsenderBleibtWieZumBriefdatum(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
-	bescheidReset(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
-	bescheidAngabenSetzen(t, pool)
+	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	repo := repository.NewBescheidRepository(pool)
 
-	sid := seedSchueler(t, pool, "S-ABSENDER", "Absenderkind", "08G2")
-	titelID := bescheidLernmittel(t, pool, "Biologie 8")
-	f := bescheidForderung(t, pool, sid, exemplar(t, pool, titelID, "ABSENDER-1", true, ""),
+	sid := testdaten.SeedSchueler(t, pool, "S-ABSENDER", "Absenderkind", "08G2")
+	titelID := testdaten.BescheidLernmittel(t, pool, "Biologie 8")
+	f := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, titelID, "ABSENDER-1", true, ""),
 		"nicht_zurueckgegeben", "Biologie 8 nicht zurück")
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
-		bescheidRumpf(in28Tagen(), map[string]float64{f: 21.50}))
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 21.50}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
 	}
@@ -69,7 +72,7 @@ func TestBescheidNachdruck_AbsenderBleibtWieZumBriefdatum(t *testing.T) {
 	if pdfRec.Code != http.StatusOK {
 		t.Fatalf("PDF: %d %s", pdfRec.Code, pdfRec.Body.String())
 	}
-	text := pdfText(t, pdfRec.Body.Bytes())
+	text := pdftest.Suchtext(t, pdfRec.Body.Bytes())
 
 	for _, alt := range []string{"Dr. Beispiel", "Testschule", "Staatliches Schulamt", "DE86500500000001002401"} {
 		if !strings.Contains(text, alt) {

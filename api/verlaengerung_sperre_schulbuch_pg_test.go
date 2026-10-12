@@ -11,6 +11,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
@@ -46,13 +48,13 @@ type sperrFristFall struct {
 
 func sperrFristLageAnlegen(t *testing.T) *sperrFristLage {
 	t.Helper()
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	l := &sperrFristLage{
 		pool:      pool,
 		srv:       &Server{DB: &db.Database{Pool: pool}},
-		alteFrist: fristEnde(2027, time.July, 31),
+		alteFrist: testdaten.FristEnde(2027, time.July, 31),
 	}
 	l.srv.Uhr = func() time.Time { return time.Date(2026, time.September, 29, 10, 0, 0, 0, schulzeit.Zone()) }
 
@@ -62,23 +64,23 @@ func sperrFristLageAnlegen(t *testing.T) *sperrFristLage {
 			t.Fatalf("%s sperren: %v", was, err)
 		}
 	}
-	ehemalig := seedSchueler(t, pool, "S-VSP-1", "Ehemalig", "10R1")
+	ehemalig := testdaten.SeedSchueler(t, pool, "S-VSP-1", "Ehemalig", "10R1")
 	sperre(ehemalig, "Ehemaligen", `UPDATE leser SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Automatisierte Abgänger-Sperre (Schuljahreswechsel)' WHERE id = $1`)
-	vonHand := seedSchueler(t, pool, "S-VSP-2", "VonHand", "10R1")
+	vonHand := testdaten.SeedSchueler(t, pool, "S-VSP-2", "VonHand", "10R1")
 	sperre(vonHand, "von Hand", `UPDATE leser SET is_manually_blocked = true, block_reason = 'Buchverlust' WHERE id = $1`)
-	anonym := seedSchueler(t, pool, "S-VSP-3", "Anonym", "10R1")
+	anonym := testdaten.SeedSchueler(t, pool, "S-VSP-3", "Anonym", "10R1")
 	sperre(anonym, "anonymisiert", `UPDATE leser SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Abgänger anonymisiert', anonymized_at = NOW() WHERE id = $1`)
-	papierkorb := seedSchueler(t, pool, "S-VSP-4", "Papierkorb", "10R1")
+	papierkorb := testdaten.SeedSchueler(t, pool, "S-VSP-4", "Papierkorb", "10R1")
 	sperre(papierkorb, "Papierkorb", `UPDATE leser SET deleted_at = NOW(), ist_gesperrt = true,
 		block_reason = 'Systematisch gelöscht' WHERE id = $1`)
 
-	l.ehemaligSchulbuch = seedAusleihe(t, pool, ehemalig, "LMF Mathe 10 Ehemalig", l.alteFrist)
-	l.ehemaligBuecherei = seedAusleihe(t, pool, ehemalig, "Roman Ehemalig", l.alteFrist)
-	l.vonHandSchulbuch = seedAusleihe(t, pool, vonHand, "LMF Mathe 10 VonHand", l.alteFrist)
-	l.anonymSchulbuch = seedAusleihe(t, pool, anonym, "LMF Mathe 10 Anonym", l.alteFrist)
-	l.papierkorbSchulbuch = seedAusleihe(t, pool, papierkorb, "LMF Mathe 10 Papierkorb", l.alteFrist)
+	l.ehemaligSchulbuch = testdaten.SeedAusleihe(t, pool, ehemalig, "LMF Mathe 10 Ehemalig", l.alteFrist)
+	l.ehemaligBuecherei = testdaten.SeedAusleihe(t, pool, ehemalig, "Roman Ehemalig", l.alteFrist)
+	l.vonHandSchulbuch = testdaten.SeedAusleihe(t, pool, vonHand, "LMF Mathe 10 VonHand", l.alteFrist)
+	l.anonymSchulbuch = testdaten.SeedAusleihe(t, pool, anonym, "LMF Mathe 10 Anonym", l.alteFrist)
+	l.papierkorbSchulbuch = testdaten.SeedAusleihe(t, pool, papierkorb, "LMF Mathe 10 Papierkorb", l.alteFrist)
 	return l
 }
 
@@ -96,7 +98,7 @@ func (l *sperrFristLage) faelle() []sperrFristFall {
 // pruefeFrist: Bewegt hat sich genau, was gehen darf.
 func (l *sperrFristLage) pruefeFrist(t *testing.T, f sperrFristFall) {
 	t.Helper()
-	bewegt := !fristVon(t, l.pool, f.id).Equal(l.alteFrist)
+	bewegt := !testdaten.FristVon(t, l.pool, f.id).Equal(l.alteFrist)
 	if bewegt != f.geht {
 		t.Errorf("%s: Frist bewegt=%v, erwartet %v", f.was, bewegt, f.geht)
 	}
@@ -181,7 +183,7 @@ func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_LmfPlan(t *testing.T) {
 	von := repository.SchuljahrBeginn(time.Date(2027, time.June, 28, 0, 0, 0, 0, schulzeit.Zone()))
 	bis := von.AddDate(1, 0, 0)
 	n, err := repository.NewLmfTerminRepository(l.pool).SetzeLernmittelFristFuerKlassenIn(context.Background(),
-		l.pool, []string{"10r1"}, fristEnde(2027, time.June, 28), von, bis, nil)
+		l.pool, []string{"10r1"}, testdaten.FristEnde(2027, time.June, 28), von, bis, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

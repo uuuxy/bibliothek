@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Die Barcode-Liste der Theke am echten Postgres (Stufe 2, Commit 12).
@@ -17,16 +19,16 @@ import (
 // Bestand ändert, und bei unverändertem Stand antwortet sie 304 statt die Liste erneut zu
 // schicken. Rot am alten Code: Die Route gab es nicht.
 func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 
-	titelID := seedMonitorTitel(t, pool, "Barcode-Titel", "Aut Or", false, 0)
+	titelID := testdaten.SeedMonitorTitel(t, pool, "Barcode-Titel", "Aut Or", false, 0)
 	da := []string{"B-BC-0001", "1234567890123", "LMF-BC-0003"}
 	for _, b := range da {
-		exemplar(t, pool, titelID, b, true, "")
+		testdaten.Exemplar(t, pool, titelID, b, true, "")
 	}
-	weg := exemplar(t, pool, titelID, "B-BC-WEG", true, "")
+	weg := testdaten.Exemplar(t, pool, titelID, "B-BC-WEG", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT' WHERE id = $1`, weg); err != nil {
 		t.Fatalf("aussondern: %v", err)
@@ -94,7 +96,7 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	}
 
 	// Ein neues Exemplar ändert den Stand — sonst holte der Rechner es nie.
-	exemplar(t, pool, titelID, "B-BC-NEU", true, "")
+	testdaten.Exemplar(t, pool, titelID, "B-BC-NEU", true, "")
 	rec = hole(`"` + antwort.Stand + `"`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("nach einem neuen Exemplar: Status %d, erwartet 200 mit neuer Liste", rec.Code)

@@ -12,6 +12,8 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Der LUSD-Import DURCH DIE VORDERTÜR — und zwar der schreibende Lauf, mit Kollegium im
@@ -44,8 +46,8 @@ import (
 // Nachweis — Bestandsabfrage, Bestätigungsstempel, die Sicht beim Schreiben und der CHECK
 // in der Datenbank.
 func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a130", Rolle: auth.RoleAdmin}

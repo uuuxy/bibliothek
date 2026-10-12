@@ -2,12 +2,12 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"slices"
 	"testing"
 	"time"
 
+	"bibliothek/internal/tuertest"
 	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
@@ -87,38 +87,9 @@ func TestBestandsbuch_OhneZuordnungNurMitZeilenUndZuletzt(t *testing.T) {
 	}
 }
 
-// leereFelder nennt jedes Feld eines Werts, das seinen Nullwert trägt, auch in den Elementen
-// einer Liste. Eine leere Liste zählt als leer.
-func leereFelder(wert reflect.Value, pfad string) []string {
-	switch wert.Kind() {
-	case reflect.Struct:
-		if _, zeit := wert.Interface().(time.Time); zeit {
-			break
-		}
-		var leer []string
-		for i := 0; i < wert.NumField(); i++ {
-			leer = append(leer, leereFelder(wert.Field(i), pfad+"."+wert.Type().Field(i).Name)...)
-		}
-		return leer
-	case reflect.Slice:
-		if wert.Len() == 0 {
-			return []string{pfad}
-		}
-		var leer []string
-		for i := 0; i < wert.Len(); i++ {
-			leer = append(leer, leereFelder(wert.Index(i), fmt.Sprintf("%s[%d]", pfad, i))...)
-		}
-		return leer
-	}
-	if wert.IsZero() {
-		return []string{pfad}
-	}
-	return nil
-}
-
 // Das Blatt entsteht aus der Antwort für den Bildschirm. Jedes Feld seiner Eingabe kommt aus
 // seiner Quelle, die Werte sind je Feld verschieden; ein Feld, das die Eingabe später
-// dazubekommt und das niemand füllt, fällt an leereFelder auf.
+// dazubekommt und das niemand füllt, fällt an tuertest.LeereFelder auf.
 func TestAbgangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 	von := time.Date(2026, time.March, 16, 0, 0, 0, 0, time.UTC)
 	bis := time.Date(2026, time.September, 15, 0, 0, 0, 0, time.UTC)
@@ -146,7 +117,7 @@ func TestAbgangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 	if !reflect.DeepEqual(blatt, want) {
 		t.Errorf("Eingabe des Blatts =\n%+v\nerwartet\n%+v", blatt, want)
 	}
-	if leer := leereFelder(reflect.ValueOf(blatt), "pdf.Abgangsbuch"); len(leer) > 0 {
+	if leer := tuertest.LeereFelder(reflect.ValueOf(blatt), "pdf.Abgangsbuch"); len(leer) > 0 {
 		t.Errorf("abgangsbuchBlatt füllt diese Felder nicht: %v", leer)
 	}
 }
@@ -180,7 +151,7 @@ func TestZugangsbuchBlatt_FuelltJedesFeldDerEingabe(t *testing.T) {
 	if !reflect.DeepEqual(blatt, want) {
 		t.Errorf("Eingabe des Blatts =\n%+v\nerwartet\n%+v", blatt, want)
 	}
-	if leer := leereFelder(reflect.ValueOf(blatt), "pdf.Zugangsbuch"); len(leer) > 0 {
+	if leer := tuertest.LeereFelder(reflect.ValueOf(blatt), "pdf.Zugangsbuch"); len(leer) > 0 {
 		t.Errorf("zugangsbuchBlatt füllt diese Felder nicht: %v", leer)
 	}
 }

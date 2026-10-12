@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -25,8 +27,8 @@ import (
 // (benutzer_email_unique), und wer die Person danach neu anlegt, bekäme „steht bereits ein
 // Zugang" — über einen Eintrag, der im Papierkorb liegt und nirgends zu sehen ist.
 func TestKollegeLoeschen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	auditRepo := repository.NewAuditRepository(pool)
@@ -191,7 +193,7 @@ func TestKollegeLoeschen(t *testing.T) {
 
 	t.Run("mit offenen Büchern wird nicht gelöscht", func(t *testing.T) {
 		leserID, _ := kollegeMitKonto(t, "Bert", "Buchoffen", "bert.buchoffen@schule.invalid")
-		// Selbst angelegt statt im Bestand gesucht: resetBestandsdaten räumt ihn weg, und ein
+		// Selbst angelegt statt im Bestand gesucht: testdaten.ResetBestandsdaten räumt ihn weg, und ein
 		// Skip auf leerer Tabelle wäre ein grüner Test ohne Aussage.
 		var titelID, exemplarID string
 		if err := pool.QueryRow(ctx,

@@ -5,13 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/tuertest"
 	"bibliothek/pdf"
 	"bibliothek/repository"
 )
 
 // Der Mahnbrief entsteht aus den Zeilen der Abfrage. Jedes Feld seiner Eingabe kommt aus seiner
 // Quelle, die Werte sind je Feld verschieden; ein Feld, das die Eingabe später dazubekommt und
-// das niemand füllt, fällt an leereFelder auf.
+// das niemand füllt, fällt an tuertest.LeereFelder auf.
 func TestMahnbriefEmpfaenger_FuelltJedesFeldDerEingabe(t *testing.T) {
 	ausgeliehen := time.Date(2026, time.March, 3, 9, 0, 0, 0, time.UTC)
 	frist := time.Date(2026, time.May, 4, 21, 59, 59, 0, time.UTC)
@@ -42,7 +43,7 @@ func TestMahnbriefEmpfaenger_FuelltJedesFeldDerEingabe(t *testing.T) {
 	if !reflect.DeepEqual(eingabe, want) {
 		t.Errorf("Eingabe des Mahnbriefs =\n%+v\nerwartet\n%+v", eingabe, want)
 	}
-	if leer := leereFelder(reflect.ValueOf(eingabe), "[]pdf.MahnbriefEmpfaenger"); len(leer) > 0 {
+	if leer := tuertest.LeereFelder(reflect.ValueOf(eingabe), "[]pdf.MahnbriefEmpfaenger"); len(leer) > 0 {
 		t.Errorf("mahnbriefEmpfaenger füllt diese Felder nicht: %v", leer)
 	}
 }

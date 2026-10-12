@@ -9,6 +9,9 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/sse"
 )
 
@@ -16,8 +19,8 @@ import (
 // melden" schickt eine schueler_id mit; die Tür nimmt das Feld an und liest es nicht. Eine
 // vertippte oder verfälschte Kennung hängt die Forderung deshalb keinem Unbeteiligten an.
 func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(
@@ -38,16 +41,16 @@ func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
 	}
 	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
-	ausleiher := seedSchueler(t, pool, "S-SCHULD-A", "Anna", "07A")
-	unbeteiligt := seedSchueler(t, pool, "S-SCHULD-B", "Ben", "07B")
-	ex := exemplar(t, pool, titelMitMeldebestand(t, pool, "Schuldnertitel", 1), "EX-SCHULD-1", true, "")
+	ausleiher := testdaten.SeedSchueler(t, pool, "S-SCHULD-A", "Anna", "07A")
+	unbeteiligt := testdaten.SeedSchueler(t, pool, "S-SCHULD-B", "Ben", "07B")
+	ex := testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Schuldnertitel", 1), "EX-SCHULD-1", true, "")
 	var ausleihe string
 	if err := pool.QueryRow(ctx, `INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 		VALUES ($1, $2, now() + interval '14 days') RETURNING id`, ex, ausleiher).Scan(&ausleihe); err != nil {
 		t.Fatalf("Ausleihe anlegen: %v", err)
 	}
 
-	req := jsonPost("/api/damage/report", `{"loan_id":"`+ausleihe+`","schueler_id":"`+unbeteiligt+
+	req := tuertest.JSONPost("/api/damage/report", `{"loan_id":"`+ausleihe+`","schueler_id":"`+unbeteiligt+
 		`","copy_id":"`+ex+`","beschreibung":"Riss","art":"beschaedigt","betrag":4}`)
 	req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 	rec := httptest.NewRecorder()
@@ -71,8 +74,8 @@ func TestSchadenMelden_SchuldnerKommtAusDerAusleihe(t *testing.T) {
 // zeigt die Ausleihe noch, die Tür lehnt mit einem Satz ab (409), sondert das Buch nicht aus
 // und legt keine Forderung an.
 func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(
@@ -93,15 +96,15 @@ func TestSchadenMelden_VerlustFuerZurueckgegebenesBuch(t *testing.T) {
 	}
 	router := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 
-	kind := seedSchueler(t, pool, "S-ZURUECK-A", "Zoe", "07A")
-	ex := exemplar(t, pool, titelMitMeldebestand(t, pool, "Zurücktitel", 1), "EX-ZURUECK-1", true, "")
+	kind := testdaten.SeedSchueler(t, pool, "S-ZURUECK-A", "Zoe", "07A")
+	ex := testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Zurücktitel", 1), "EX-ZURUECK-1", true, "")
 	var ausleihe string
 	if err := pool.QueryRow(ctx, `INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, rueckgabe_am)
 		VALUES ($1, $2, now() + interval '14 days', now()) RETURNING id`, ex, kind).Scan(&ausleihe); err != nil {
 		t.Fatalf("Ausleihe anlegen: %v", err)
 	}
 
-	req := jsonPost("/api/damage/report", `{"loan_id":"`+ausleihe+`","copy_id":"`+ex+
+	req := tuertest.JSONPost("/api/damage/report", `{"loan_id":"`+ausleihe+`","copy_id":"`+ex+
 		`","beschreibung":"Verloren","art":"nicht_zurueckgegeben","betrag":12}`)
 	req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 	rec := httptest.NewRecorder()

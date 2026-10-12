@@ -16,6 +16,9 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/crypto"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -73,17 +76,17 @@ func fotoAntwort(t *testing.T, rec *httptest.ResponseRecorder) (status, adresse 
 
 func fotoZeilen(t *testing.T, pool *pgxpool.Pool, schuelerID string) int {
 	t.Helper()
-	return zaehleZeilen(t, pool, `SELECT count(*) FROM schueler_fotos WHERE schueler_id = $1`, schuelerID)
+	return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM schueler_fotos WHERE schueler_id = $1`, schuelerID)
 }
 
 // Das Bild liegt danach verschlüsselt in der Datenbank, die Antwort nennt seine Adresse,
 // und ein zweites Bild ersetzt das erste.
 func TestFotoUpload_SpeichertVerschluesseltUndNenntDieAdresse(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	schuelerID := seedSchueler(t, pool, "FOTO-1", "Fotokind", "07A")
+	schuelerID := testdaten.SeedSchueler(t, pool, "FOTO-1", "Fotokind", "07A")
 
 	rec := fotoHochladen(t, srv, schuelerID, fotoRumpf(t, fotoJPEG(t)))
 	if rec.Code != http.StatusOK {
@@ -121,11 +124,11 @@ func TestFotoUpload_SpeichertVerschluesseltUndNenntDieAdresse(t *testing.T) {
 // muss auch dann JSON sein: Das Bild ist gespeichert, und die Maske meldete sonst einen
 // Fehler.
 func TestFotoUpload_AntwortLesbarBeiSonderzeichenInDerAusweisnummer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	schuelerID := seedSchueler(t, pool, `FO"TO\2`, "Sonderkind", "07A")
+	schuelerID := testdaten.SeedSchueler(t, pool, `FO"TO\2`, "Sonderkind", "07A")
 
 	rec := fotoHochladen(t, srv, schuelerID, fotoRumpf(t, fotoJPEG(t)))
 	if rec.Code != http.StatusOK {
@@ -139,11 +142,11 @@ func TestFotoUpload_AntwortLesbarBeiSonderzeichenInDerAusweisnummer(t *testing.T
 // Was kein Bild der Kamera-Maske ist, wird als Eingabefehler abgewiesen und nicht
 // gespeichert. Eine 500 meldete eine Störung des Servers, die es nicht gibt.
 func TestFotoUpload_Abweisungen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	schuelerID := seedSchueler(t, pool, "FOTO-3", "Abweiskind", "07A")
+	schuelerID := testdaten.SeedSchueler(t, pool, "FOTO-3", "Abweiskind", "07A")
 	keinBild := base64.StdEncoding.EncodeToString([]byte("das ist kein Bild"))
 
 	// meldung: der Teil, den die Maske dem Menschen zeigt; leer heißt, nur der Status zählt.
@@ -168,12 +171,12 @@ func TestFotoUpload_Abweisungen(t *testing.T) {
 			if rec.Code != f.status {
 				t.Errorf("Status %d, erwartet %d: %s", rec.Code, f.status, rec.Body.String())
 			}
-			if meldung := fehlermeldung(t, rec); !strings.Contains(meldung, f.meldung) {
+			if meldung := tuertest.Fehlermeldung(t, rec); !strings.Contains(meldung, f.meldung) {
 				t.Errorf("Meldung %q, erwartet %q darin", meldung, f.meldung)
 			}
 		})
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM schueler_fotos`); n != 0 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM schueler_fotos`); n != 0 {
 		t.Errorf("%d Bilder nach den Abweisungen gespeichert, erwartet keines", n)
 	}
 }

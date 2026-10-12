@@ -11,6 +11,9 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -32,8 +35,8 @@ func abgangsdatum(t *testing.T, pool *pgxpool.Pool, id string) *time.Time {
 }
 
 func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	bookRepo := repository.NewBookRepository(pool)
 	auditRepo := repository.NewAuditRepository(pool)
@@ -50,17 +53,17 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 
-	titelID := titelMitSignatur(t, pool, "Abgangs-Titel", "Abg 1", 0)
+	titelID := testdaten.TitelMitSignatur(t, pool, "Abgangs-Titel", "Abg 1", 0)
 
 	// Tür 1: die Repository-Methode des Status-Editors, direkt (POST /aussondern ist am
 	// 22.09.2026 gestrichen, OFFEN.md 4.16)
-	eins := exemplar(t, pool, titelID, "ABG-1", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, eins, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
+	eins := testdaten.Exemplar(t, pool, titelID, "ABG-1", true, "")
+	if err := bookRepo.UpdateCopyStatus(ctx, eins, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
 	}
 
 	// Tür 2: dieselbe Methode über den Handler, PUT /status mit ist_ausgesondert=true
-	zwei := exemplar(t, pool, titelID, "ABG-2", true, "")
+	zwei := testdaten.Exemplar(t, pool, titelID, "ABG-2", true, "")
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/exemplare/"+zwei+"/status",
 		strings.NewReader(`{"ist_ausleihbar":false,"ist_ausgesondert":true,"zustand_notiz":"verloren"}`))
 	req.Header.Set("Content-Type", "application/json")
@@ -70,21 +73,21 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	// Einstellungen — ohne Pool stürzt er dort ab (dieselbe Falle wie bei der Leserdatei
 	// am 17.09.2026).
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, alsBenutzer(req, adminFuerAudit(t, pool)))
+	srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status-Tür: HTTP %d: %s", rec.Code, rec.Body.String())
 	}
 
 	// Tür 3: Ausbuchen (DeleteCopy) — sondert aus, statt zu löschen.
-	drei := exemplar(t, pool, titelID, "ABG-3", true, "")
+	drei := testdaten.Exemplar(t, pool, titelID, "ABG-3", true, "")
 	if err := auditRepo.DeleteCopy(ctx, drei, bearbeiterID); err != nil {
 		t.Fatalf("Ausbuchen: %v", err)
 	}
 
 	// Tür 4: Schaden melden. Der Schuldner steht an der Ausleihe, also braucht dieser Weg
 	// eine offene: Es ist der Weg aus der Schülerakte.
-	vier := exemplar(t, pool, titelID, "ABG-4", true, "")
-	schuelerID := seedSchueler(t, pool, "ABG-S-1", "Ada", "6b")
+	vier := testdaten.Exemplar(t, pool, titelID, "ABG-4", true, "")
+	schuelerID := testdaten.SeedSchueler(t, pool, "ABG-S-1", "Ada", "6b")
 	var ausleiheID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
@@ -112,14 +115,14 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 // Ein zweites UPDATE auf ein bereits ausgesondertes Exemplar darf den Abgang nicht auf
 // heute schieben: Das Datum ist ein Nachweis, kein „zuletzt angefasst".
 func TestAbgangsdatum_ZweitesUpdateVerschiebtNichts(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	bookRepo := repository.NewBookRepository(pool)
 
-	titelID := titelMitSignatur(t, pool, "Abgangs-Titel 2", "Abg 2", 0)
-	id := exemplar(t, pool, titelID, "ABG-STABIL", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
+	titelID := testdaten.TitelMitSignatur(t, pool, "Abgangs-Titel 2", "Abg 2", 0)
+	id := testdaten.Exemplar(t, pool, titelID, "ABG-STABIL", true, "")
+	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
 	}
 	erst := abgangsdatum(t, pool, id)
@@ -136,7 +139,7 @@ func TestAbgangsdatum_ZweitesUpdateVerschiebtNichts(t *testing.T) {
 	alt := abgangsdatum(t, pool, id)
 
 	// Nochmal dieselbe Tür, und ein UPDATE, das die Spalte gar nicht nennt.
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, adminFuerAudit(t, pool)); err == nil {
+	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err == nil {
 		// UpdateCopyStatus meldet bei einem bereits ausgesonderten Exemplar keinen Fehler;
 		// entscheidend ist der Stempel darunter.
 		_ = err
@@ -154,14 +157,14 @@ func TestAbgangsdatum_ZweitesUpdateVerschiebtNichts(t *testing.T) {
 // Zurückgeholt heißt: Der Abgang war ein Irrtum. Bliebe das Datum stehen, führte das
 // Abgangsbuch Bücher, die im Regal stehen.
 func TestAbgangsdatum_RueckholenLoeschtDenStempel(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	bookRepo := repository.NewBookRepository(pool)
 
-	titelID := titelMitSignatur(t, pool, "Abgangs-Titel 3", "Abg 3", 0)
-	id := exemplar(t, pool, titelID, "ABG-ZURUECK", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
+	titelID := testdaten.TitelMitSignatur(t, pool, "Abgangs-Titel 3", "Abg 3", 0)
+	id := testdaten.Exemplar(t, pool, titelID, "ABG-ZURUECK", true, "")
+	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
 	}
 	if abgangsdatum(t, pool, id) == nil {
@@ -181,11 +184,11 @@ func TestAbgangsdatum_RueckholenLoeschtDenStempel(t *testing.T) {
 // Bestandsnachweis. Dasselbe gilt für eine Zeile, die AUSGESONDERT eingefügt wird: Ein
 // Import historischer Abgänge trüge sonst das Datum seines Imports.
 func TestAbgangsdatum_KeinErfundenesDatumBeimEinfuegen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	titelID := titelMitSignatur(t, pool, "Abgangs-Titel 4", "Abg 4", 0)
+	titelID := testdaten.TitelMitSignatur(t, pool, "Abgangs-Titel 4", "Abg 4", 0)
 	var id string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, ist_ausgesondert, aussonderung_grund)

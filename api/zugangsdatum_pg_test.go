@@ -5,7 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
@@ -29,22 +31,9 @@ func zugangsdatum(t *testing.T, pool *pgxpool.Pool, id string) *time.Time {
 	return tag
 }
 
-// zulaufExemplar legt ein Exemplar an, wie es das Bestellwesen anlegt: nicht ausleihbar,
-// mit Bestellstatus, mit dem heutigen Tag als erworben_am (Vorgabewert der Spalte).
-func zulaufExemplar(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) string {
-	t.Helper()
-	var id string
-	if err := pool.QueryRow(context.Background(), `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)
-		VALUES ($1, $2, false, 'im_zulauf') RETURNING id`, titelID, barcode).Scan(&id); err != nil {
-		t.Fatalf("Zulauf-Exemplar %q: %v", barcode, err)
-	}
-	return id
-}
-
 func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	// Der Kalendertag der SCHULE, nicht der des Testprozesses: zugang_am ist ein DATE,
 	// und der Trigger bildet es seit Migration 130 in Europe/Berlin. Mit time.Now() hing
@@ -53,16 +42,16 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	// Lauf vom 18.09.2026 war in der CI genau deshalb rot. Gleiche Lesart wie im
 	// Nachbartest (zugangsbuch_pg_test.go).
 	heute := time.Now().In(schulzeit.Zone())
-	titelID := titelMitSignatur(t, pool, "Zugangsdatum-Titel", "Zdt 1", 0)
+	titelID := testdaten.TitelMitSignatur(t, pool, "Zugangsdatum-Titel", "Zdt 1", 0)
 
 	// 1. Ein Exemplar im Zulauf hat KEIN Zugangsdatum. Es ist bestellt, nicht da.
-	imZulauf := zulaufExemplar(t, pool, titelID, "ZDT-ZULAUF")
+	imZulauf := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-ZULAUF")
 	if tag := zugangsdatum(t, pool, imZulauf); tag != nil {
 		t.Fatalf("Exemplar im Zulauf trägt ein Zugangsdatum (%s) — bestellt ist nicht zugegangen", tag)
 	}
 
 	// 2. Tür „Wareneingang": Der Zugang ist der Tag der Lieferung.
-	geliefert := zulaufExemplar(t, pool, titelID, "ZDT-WARENEINGANG")
+	geliefert := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-WARENEINGANG")
 	if _, err := service.BulkReceiveOrder(ctx, pool, repository.NewAuditRepository(pool), service.BulkReceiveParams{
 		ExemplarIDs: []string{geliefert}, AdminID: "", IPAddr: "",
 	}); err != nil {
@@ -77,7 +66,7 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	}
 
 	// 3. Tür „Freigeben" im Status-Editor — dieselbe Wirkung, anderer Schreiber.
-	freigegeben := zulaufExemplar(t, pool, titelID, "ZDT-FREIGABE")
+	freigegeben := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-FREIGABE")
 	bookRepo := repository.NewBookRepository(pool)
 	if err := bookRepo.UpdateCopyStatus(ctx, freigegeben, true, false, "", nil, ""); err != nil {
 		t.Fatalf("Freigeben: %v", err)
@@ -87,8 +76,8 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	}
 
 	// 4. Ein bestelltes Exemplar, das nie ankommt und ausgebucht wird, ist KEIN Zugang.
-	nieGekommen := zulaufExemplar(t, pool, titelID, "ZDT-NIE")
-	if err := bookRepo.UpdateCopyStatus(ctx, nieGekommen, false, true, "", nil, adminFuerAudit(t, pool)); err != nil {
+	nieGekommen := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-NIE")
+	if err := bookRepo.UpdateCopyStatus(ctx, nieGekommen, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern aus dem Zulauf: %v", err)
 	}
 	if tag := zugangsdatum(t, pool, nieGekommen); tag != nil {
@@ -101,10 +90,10 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 // aus einem 2019 übernommenen Buch einen Zugang von heute — und das Zugangsbuch eines alten
 // Halbjahres wäre leer.
 func TestZugangsdatum_AnlageAusserhalbDerBestellung(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	titelID := titelMitSignatur(t, pool, "Altbestands-Titel", "Zdt 2", 0)
+	titelID := testdaten.TitelMitSignatur(t, pool, "Altbestands-Titel", "Zdt 2", 0)
 
 	var alt string
 	if err := pool.QueryRow(ctx, `

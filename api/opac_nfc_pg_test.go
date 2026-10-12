@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Die DNB liefert Umlaute zerlegt, als Grundbuchstabe mit Pünktchen dahinter (Migration 154).
@@ -18,15 +20,15 @@ import (
 // über den Volltext; mit „Register" schon. Die Titel entstehen hier zerlegt, wie die
 // Bestellung sie aus der DNB schrieb; gesucht wird, wie man tippt: zusammengesetzt.
 func TestOpacSuche_FindetTitelMitZerlegtenUmlauten(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	const zusammengesetzt = "Der Herr der Ringe - Anhänge und Register"
-	ringe := titelMitSignatur(t, pool, "Der Herr der Ringe - Anha\u0308nge und Register", "", 0)
-	exemplar(t, pool, ringe, "B-NFC-1", true, "")
-	vogel := titelMitSignatur(t, pool, "Vogelwelt", "", 0)
-	exemplar(t, pool, vogel, "B-NFC-2", true, "")
+	ringe := testdaten.TitelMitSignatur(t, pool, "Der Herr der Ringe - Anha\u0308nge und Register", "", 0)
+	testdaten.Exemplar(t, pool, ringe, "B-NFC-1", true, "")
+	vogel := testdaten.TitelMitSignatur(t, pool, "Vogelwelt", "", 0)
+	testdaten.Exemplar(t, pool, vogel, "B-NFC-2", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET autor = $2 WHERE id = $1`, vogel, "Mu\u0308ller, Gu\u0308nter"); err != nil {
 		t.Fatal(err)
 	}

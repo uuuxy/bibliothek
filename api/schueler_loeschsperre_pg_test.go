@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,7 +32,7 @@ import (
 // Der Preis eines Fehlers ist hier asymmetrisch: Ein zu früh gelöschter Schüler nimmt
 // die Forderung und die Spur zum Buch mit — beides unwiederbringlich.
 func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	auditRepo := repository.NewAuditRepository(pool)
@@ -39,7 +41,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 	// vorgang: "ausleihe" = Buch noch draußen, "schaden" = Gebühr unbezahlt.
 	baueFall := func(t *testing.T, marke, vorgang string, imPapierkorb bool) string {
 		t.Helper()
-		resetBestandsdaten(t, pool)
+		testdaten.ResetBestandsdaten(t, pool)
 
 		papierkorb := "NULL"
 		if imPapierkorb {
@@ -146,8 +148,8 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 // nie ablaufen kann, und zwar lautlos. Bisher stand sie nur als Kommentar in
 // repository/lusd_import.go.
 func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var sid, tid, eid, aid, fallID string

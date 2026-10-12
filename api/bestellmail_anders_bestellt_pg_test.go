@@ -7,6 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/smtptest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/mailservice"
 )
 
@@ -22,7 +25,7 @@ func andersBestelltLage(t *testing.T, kennung string) *bestellmailLage {
 	t.Helper()
 	l := bestellmailLageAnlegen(t, kennung)
 	t.Cleanup(func() {
-		aufraeumen(t, l.pool, `DELETE FROM audit_logs WHERE aktion = $1`, auditBestellmailVermerkEntferntTest)
+		pgtest.Aufraeumen(t, l.pool, `DELETE FROM audit_logs WHERE aktion = $1`, auditBestellmailVermerkEntferntTest)
 	})
 	return l
 }
@@ -46,8 +49,8 @@ func (l *bestellmailLage) mitBestaetigung(t *testing.T, bestellungID string) boo
 
 func TestBestellmailAndersBestellt_NimmtDenVermerkOhneZuSenden(t *testing.T) {
 	l := andersBestelltLage(t, "anders")
-	lieferant := haendler(t, l.pool, "Buchhandlung-Anders", false)
-	titel := titelMitMeldebestand(t, l.pool, "LMF-Mathe-Anders", 0)
+	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-Anders", false)
+	titel := testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Anders", 0)
 
 	mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)
@@ -116,8 +119,8 @@ func TestBestellmailAndersBestellt_OhneMailserver(t *testing.T) {
 	smtpKonfigLader = func() (mailservice.SMTPKonfig, error) { return mailservice.SMTPKonfig{}, nil }
 	t.Cleanup(func() { smtpKonfigLader = alterLader })
 
-	lieferant := haendler(t, l.pool, "Buchhandlung-OhneServer", false)
-	bestellung, _ := l.bestelle(t, lieferant, titelMitMeldebestand(t, l.pool, "LMF-Mathe-OhneServer", 0))
+	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-OhneServer", false)
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-OhneServer", 0))
 	if rec := l.rufe(t, http.MethodPost, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusBadRequest {
 		t.Fatalf("Erneut senden ohne Mailserver: Status %d, erwartet 400", rec.Code)
 	}
@@ -137,8 +140,8 @@ func TestBestellmailAndersBestellt_OhneMailserver(t *testing.T) {
 // Ihren Vermerk nimmt die nachgetragene Zusage.
 func TestBestellmailAndersBestellt_NichtMitBestaetigungsLink(t *testing.T) {
 	l := andersBestelltLage(t, "mitlink")
-	lieferant := haendler(t, l.pool, "Naacher-MitLink", true)
-	titel := titelMitMeldebestand(t, l.pool, "LMF-Mathe-MitLink", 0)
+	lieferant := testdaten.Haendler(t, l.pool, "Naacher-MitLink", true)
+	titel := testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-MitLink", 0)
 
 	mailserverNichtErreichbar(t, nil)
 	bestellung, _ := l.bestelle(t, lieferant, titel)
@@ -171,9 +174,9 @@ func TestBestellmailAndersBestellt_NichtMitBestaetigungsLink(t *testing.T) {
 func TestBestellmailAndersBestellt_Abweisungen(t *testing.T) {
 	l := andersBestelltLage(t, "abweisung")
 	sitzungen := mailAbfangen(t)
-	lieferant := haendler(t, l.pool, "Buchhandlung-Abweisung", false)
-	bestellung, _ := l.bestelle(t, lieferant, titelMitMeldebestand(t, l.pool, "LMF-Mathe-Abweisung", 0))
-	warteAufMail(t, sitzungen)
+	lieferant := testdaten.Haendler(t, l.pool, "Buchhandlung-Abweisung", false)
+	bestellung, _ := l.bestelle(t, lieferant, testdaten.TitelMitMeldebestand(t, l.pool, "LMF-Mathe-Abweisung", 0))
+	smtptest.WarteAufMail(t, sitzungen)
 
 	if rec := l.rufe(t, http.MethodDelete, "/api/bestellungen/"+bestellung+"/mail", ""); rec.Code != http.StatusConflict {
 		t.Errorf("Entfernen nach gelungenem Versand: Status %d, erwartet 409: %s", rec.Code, rec.Body.String())

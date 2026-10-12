@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -24,36 +26,6 @@ import (
 // ein Test, der dort Bestellmails auslöst, ist das Risiko nicht wert. ProcessOrder ist
 // ohnehin die Stelle, an der entschieden wird; hier wird sie direkt geprüft.
 
-// haendler legt einen Lieferanten an und gibt seine ID zurück.
-//
-// istHaupt macht ihn zum Hauptlieferanten: bekommt den Bestelllink, beklebt die Bücher
-// selbst, ist beim Bestellen vorausgewählt. Vor Migration 066 waren das drei einzelne
-// Spalten und entsprechend zwei Testhelfer.
-//
-// Erst räumen, dann setzen — genau wie setzeHauptlieferant im Handler. Hauptlieferant darf
-// höchstens EINER sein (idx_lieferanten_ein_hauptlieferant), und resetBestandsdaten leert
-// die Lieferanten bewusst nicht. Ohne das Räumen kollidierte der zweite Test im selben
-// Paketlauf: einzeln grün, in der Suite rot.
-func haendler(t *testing.T, pool *pgxpool.Pool, name string, istHaupt bool) string {
-	t.Helper()
-	ctx := context.Background()
-	if istHaupt {
-		if _, err := pool.Exec(ctx,
-			`UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant`); err != nil {
-			t.Fatalf("bisherigen Hauptlieferanten räumen: %v", err)
-		}
-	}
-	var id string
-	err := pool.QueryRow(ctx, `
-		INSERT INTO lieferanten (name, email, kundennummer, ist_hauptlieferant)
-		VALUES ($1, $2, $3, $4) RETURNING id
-	`, name, name+"@example.invalid", "K-"+name, istHaupt).Scan(&id)
-	if err != nil {
-		t.Fatalf("Lieferant %s anlegen: %v", name, err)
-	}
-	return id
-}
-
 // offeneEtiketten zählt, wie viele Exemplare des Titels auf der Nachdruck-Liste stünden.
 // Bewusst dieselbe Bedingung wie repository.EtikettOffenBedingung.
 func offeneEtiketten(t *testing.T, pool *pgxpool.Pool, titelID string) int {
@@ -70,18 +42,18 @@ func offeneEtiketten(t *testing.T, pool *pgxpool.Pool, titelID string) int {
 }
 
 func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	beklebtID := haendler(t, pool, "Beklebt", true)
-	selbstID := haendler(t, pool, "Selbst", false)
+	beklebtID := testdaten.Haendler(t, pool, "Beklebt", true)
+	selbstID := testdaten.Haendler(t, pool, "Selbst", false)
 
-	titelBeklebt := titelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
-	titelSelbst := titelMitMeldebestand(t, pool, "LMF-Selbst", 0)
+	titelBeklebt := testdaten.TitelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
+	titelSelbst := testdaten.TitelMitMeldebestand(t, pool, "LMF-Selbst", 0)
 
 	if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,
@@ -127,15 +99,15 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 // die echte Kette GetTitleByIDTx → BarcodeLabelDetail. Ein Unit-Test, der Signatur
 // direkt ans Struct schreibt, beweist das nicht: Genau so blieb sie im Mailanhang leer.
 func TestProcessOrder_LabelsTragenSignatur(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	lieferant := haendler(t, pool, "MitSignatur", false)
-	titel := titelMitSignatur(t, pool, "Deutschbuch 5", "LMF-Deutsch 5", 0)
+	lieferant := testdaten.Haendler(t, pool, "MitSignatur", false)
+	titel := testdaten.TitelMitSignatur(t, pool, "Deutschbuch 5", "LMF-Deutsch 5", 0)
 
 	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,
@@ -157,15 +129,15 @@ func TestProcessOrder_LabelsTragenSignatur(t *testing.T) {
 // Ohne erzeugten Barcode steht für die Position nichts auf dem Bogen — der Händler kann
 // nichts aufkleben, also bleibt das Etikett unsere Aufgabe, auch wenn er sonst beklebt.
 func TestProcessOrder_BeklebenderHaendlerOhneBarcodebogen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	lieferant := haendler(t, pool, "BeklebtOhneBogen", true)
-	titel := titelMitMeldebestand(t, pool, "LMF-OhneBogen", 0)
+	lieferant := testdaten.Haendler(t, pool, "BeklebtOhneBogen", true)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-OhneBogen", 0)
 
 	if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,

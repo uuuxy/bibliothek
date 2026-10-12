@@ -34,6 +34,10 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 **Entscheiden:**
 
+- [ ] Türen in Themenordner, Stufe 2 freigeben? Es ist die erste Änderung am Programm: Was
+  jede Tür braucht (Antwort schreiben, Rechte, Protokoll, Uhr), zieht in ein eigenes Paket,
+  der Mailversand nach `mailservice/`; das Verhalten bleibt gleich. Stufe 0 und 1 sind fertig
+  und hochgeladen, sie haben nur Prüfungen und Tests geändert. Vorschlag: ja. (5.65)
 - [x] Türen in Themenordner: Der Plan ist seit dem 12.10.2026 freigegeben. Geteilt wird nur
   `api/`, je Menüpunkt der Oberfläche ein Ordner; die Abfragen bleiben in der einen
   Datenbankschicht. (5.65)
@@ -149,8 +153,8 @@ lässt sich dort anhalten.
 - [x] Stufe 0, Schutz: Die drei Prüfungen, die `api/` ohne Unterordner lasen, lesen sie mit.
   Eine neue Prüfung hält die Dateiverweise gegen die Dateien des Repositorys. Die Zahl der
   Tests und die Routen stehen als Vergleichsstand fest.
-- [ ] Stufe 1, Tests: Die Helfer, die Tests mehrerer Themen brauchen, ziehen in ein Paket für
-  Prüfhilfen.
+- [x] Stufe 1, Tests: Die Helfer, die Tests mehrerer Themen brauchen und selbst nichts aus
+  `api/`, stehen in Paketen für Prüfhilfen.
 - [ ] Stufe 2, Kern: Was jede Tür braucht (Antwort schreiben, Rechte, Protokoll, Uhr), steht
   in einem eigenen Paket, der Mailversand in `mailservice/`. Das ist die erste Änderung am
   Programm; davor steht die zweite Freigabe.
@@ -524,11 +528,15 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan.
   ziehen mit ihm um, 45 brauchen nur Kern oder Mailversand, 18 mehrere Themen. 40 brauchen
   keinen Namen aus `api/`: Ratschen, die Quelltext lesen, und Tests an der Datenbank, die
   `repository/`, `internal/service` oder das Schema prüfen und hier liegen, weil ihre Helfer
-  hier liegen. 148 Helfer aus 66 Testdateien braucht eine andere Testdatei. 104 davon brauchen
-  selbst keinen Namen aus `api/`, und 55 von diesen brauchen Tests aus mehr als einem Thema,
-  allen voran `pgTestPool` in 219 und `resetBestandsdaten` in 191 Dateien. Ein Test eines
-  anderen Pakets kann einen Helfer aus einer Testdatei nicht einbinden; die 55 ziehen deshalb in
-  ein Paket für Prüfhilfen, wie `internal/pgtest` es für den Zugang zur Datenbank ist (Stufe 1).
+  hier liegen. Ein Test eines anderen Pakets kann einen Helfer aus einer Testdatei nicht
+  einbinden. Seit dem 12.10.2026 stehen deshalb 52 Helfer in Paketen für Prüfhilfen: Zeilen der
+  Testdatenbank in `internal/testdaten`, Anfragen an Türen in `internal/tuertest`, je zwei bis
+  drei in `internal/pgtest`, `internal/pdftest` und `internal/smtptest`; zwei weitere reichten
+  nur an eine Funktion dort weiter und sind entfallen. In `api/` teilen sich Testdateien noch
+  93 Helfer aus 51 Dateien. 13 davon brauchen Tests aus mehr als einem Thema und ziehen mit
+  ihrer Stufe: Vier hängen am Kern (`mailAbfangen`, `protokollWelt`, `setzeGenauEinRecht`,
+  `routerMitSitzung`), acht an einem oder zwei Themen, und die Liste `dsgvoSchuelerQuellen`
+  gehört zu den Tests der Auskunft.
   An 15 Stellen in neun Testdateien greift ein Test in das Innere des Kerns: Drei Dateien füllen
   den Zwischenspeicher der Rechte von Hand, sechs tauschen den Lader der Mail-Konfiguration.
   Beide bekommen eine benannte Naht für Tests.
@@ -548,7 +556,7 @@ seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan.
   hat. Zeichenketten im Go-Code liest sie nicht: Die Meldungen und Listen der Ratschen, die
   eine Datei nennen, schreibt das Skript mit um.
 - **Nachweis je Stufe.** Die Tests und ihr Ausgang sind vor und nach der Stufe dieselben; neue
-  kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 12.10.2026 nach Stufe 0: 2.263
+  kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 12.10.2026 nach Stufe 1: 2.263
   Testfunktionen, davon 749 in `api/`, sieben übersprungen. Methode, Pfad und Recht jeder
   Route sind dieselben (211 in `api/`, 18 in `inventur/`); das hält `api/pii_matrix_test.go`
   gegen die PII-Matrix, belegt mit acht Proben. Die Rümpfe umgezogener Funktionen sind bis auf

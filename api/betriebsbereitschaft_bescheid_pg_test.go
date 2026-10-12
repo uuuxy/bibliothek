@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/bereitschaft"
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 )
 
@@ -14,7 +15,7 @@ import (
 // Verdrahtung in sammleLage stünde der Bereich auf „nicht erhoben", und der Unit-Test mit
 // fertiger Lage bliebe trotzdem grün.
 func TestBescheidAngabenErreichenDieSelbstpruefung(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 

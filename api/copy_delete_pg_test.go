@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,16 +29,16 @@ import (
 //     eine Löschung, die nie stattfand. Ein Doppelklick beschrieb zudem zustand_notiz
 //     erneut mit „Systematisch gelöscht".
 func TestDeleteCopy_VerliehenIst400_PhantomIst404(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	titelID := seedMonitorTitel(t, pool, "Ausbuch-Titel", "Jug Aus", false, 0)
-	verliehen := exemplar(t, pool, titelID, "DEL-VERLIEHEN", true, "")
-	frei := exemplar(t, pool, titelID, "DEL-FREI", true, "Eselsohr S. 12")
-	sid := seedSchueler(t, pool, "S-DEL-1", "Mia", "5a")
-	seedLeserAusleihe(t, pool, verliehen, sid)
-	bearbeiter := seedPortalLehrkraft(t, pool, "ausbucher@test.invalid")
+	titelID := testdaten.SeedMonitorTitel(t, pool, "Ausbuch-Titel", "Jug Aus", false, 0)
+	verliehen := testdaten.Exemplar(t, pool, titelID, "DEL-VERLIEHEN", true, "")
+	frei := testdaten.Exemplar(t, pool, titelID, "DEL-FREI", true, "Eselsohr S. 12")
+	sid := testdaten.SeedSchueler(t, pool, "S-DEL-1", "Mia", "5a")
+	testdaten.SeedLeserAusleihe(t, pool, verliehen, sid)
+	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "ausbucher@test.invalid")
 
 	loesche := func(id string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodDelete, "/api/buecher/exemplare/"+id, nil)

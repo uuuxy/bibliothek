@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -19,8 +21,8 @@ import (
 // geleert. Betreiber-Entscheidung 18.08.2026; der automatische Gegenpart ist das
 // Import-Auto-Matching über Name+Geburtsdatum.
 func TestLusdIDKontrolliertNachtragbar(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var adminID string

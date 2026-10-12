@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,8 +16,8 @@ import (
 // Zombie-Zustand „gesperrt ohne Grund" (chk_schueler_block_reason). Ein gesperrter
 // Schüler ohne block_reason darf gar nicht erst entstehen.
 func TestBlockReason_ConstraintLehntGesperrtOhneGrundAb(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	_, err := pool.Exec(ctx,
@@ -40,11 +42,11 @@ func TestBlockReason_ConstraintLehntGesperrtOhneGrundAb(t *testing.T) {
 // TestSperreAbgaenger_SetztGrund: Ein Abgänger mit offenem Buch wird gesperrt — und trägt
 // dabei einen aussagekräftigen Grund, damit das Personal im Profil sieht, WARUM.
 func TestSperreAbgaenger_SetztGrund(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	sid := seedSchueler(t, pool, "BR-3", "Abgang", "10a")
+	sid := testdaten.SeedSchueler(t, pool, "BR-3", "Abgang", "10a")
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -69,11 +71,11 @@ func TestSperreAbgaenger_SetztGrund(t *testing.T) {
 // TestAnonymisiereAbgaenger_SetztFestenGrund: Der anonymisierte Abgänger bekommt einen
 // festen, PII-freien Grund (kein evtl. altbelasteter Grund bleibt stehen).
 func TestAnonymisiereAbgaenger_SetztFestenGrund(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	sid := seedSchueler(t, pool, "BR-4", "Anon", "10a")
+	sid := testdaten.SeedSchueler(t, pool, "BR-4", "Anon", "10a")
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {

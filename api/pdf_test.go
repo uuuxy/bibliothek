@@ -71,13 +71,6 @@ func TestGenerateDamagePDFHandler_Success(t *testing.T) {
 	}
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func TestGenerateDamagePDFHandler_NotFound(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {

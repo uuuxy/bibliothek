@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -39,7 +41,7 @@ var dsgvoKontoQuellen = []string{
 }
 
 func TestDsgvoKontoQuellen_DeckenSichMitDemSchema(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	rows, err := pool.Query(context.Background(), `
 		SELECT c.conrelid::regclass::text || '.' || a.attname
 		FROM pg_constraint c
@@ -78,8 +80,8 @@ func TestDsgvoKontoQuellen_DeckenSichMitDemSchema(t *testing.T) {
 }
 
 func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	exec := func(sql string, args ...any) {
 		t.Helper()
@@ -97,10 +99,10 @@ func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 	}
 	// Die Betroffene der bearbeiteten Vorgänge — nichts von ihr darf in Beas Auskunft stehen.
 	const schuelerBarcode = "S-QUELLEN-KANARI"
-	schuelerin := seedSchueler(t, pool, schuelerBarcode, "Kanarina", "5a")
-	titelID := seedMonitorTitel(t, pool, "Kanari-Titel", "Aut Or", false, 0)
-	ex1 := exemplar(t, pool, titelID, "EX-KANARI-1", true, "")
-	ex2 := exemplar(t, pool, titelID, "EX-KANARI-2", true, "")
+	schuelerin := testdaten.SeedSchueler(t, pool, schuelerBarcode, "Kanarina", "5a")
+	titelID := testdaten.SeedMonitorTitel(t, pool, "Kanari-Titel", "Aut Or", false, 0)
+	ex1 := testdaten.Exemplar(t, pool, titelID, "EX-KANARI-1", true, "")
+	ex2 := testdaten.Exemplar(t, pool, titelID, "EX-KANARI-2", true, "")
 
 	// Je Quelle: Eintrag anlegen und sagen, woran die Auskunft ihn zeigt.
 	erwartet := map[string]func(k *repository.DsgvoZugangskonto) bool{}
@@ -166,7 +168,7 @@ func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 		case "klassensatz_reservierungen.angefordert_von":
 			// Ein eigener Titel: Der Titel der eigenen Reservierung gehört in Beas Auskunft,
 			// der Titel, den die Schülerin ausgeliehen hat, nicht.
-			eigenerTitel := seedMonitorTitel(t, pool, "Beas Klassensatz-Titel", "Aut Or", false, 0)
+			eigenerTitel := testdaten.SeedMonitorTitel(t, pool, "Beas Klassensatz-Titel", "Aut Or", false, 0)
 			exec(`INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, angefordert_von)
 				VALUES ($1, '5a', 25, $2)`, eigenerTitel, konto)
 			erwartet[quelle] = anfrage("klassensatz")

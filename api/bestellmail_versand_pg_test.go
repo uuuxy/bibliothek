@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
 	"bibliothek/internal/smtptest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/mailservice"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Was kommt beim Händler WIRKLICH an?
@@ -49,24 +49,6 @@ func mailAbfangen(t *testing.T) <-chan smtptest.Sitzung {
 	return sitzungen
 }
 
-// setzeOeffentlicheAdresse hinterlegt (oder entfernt) die Adresse, aus der der
-// Bestätigungs-Link entsteht.
-func setzeOeffentlicheAdresse(t *testing.T, pool *pgxpool.Pool, adresse string) {
-	t.Helper()
-	ctx := context.Background()
-	var err error
-	if adresse == "" {
-		_, err = pool.Exec(ctx, `DELETE FROM system_einstellungen WHERE schluessel = 'oeffentliche_adresse'`)
-	} else {
-		_, err = pool.Exec(ctx, `
-			INSERT INTO system_einstellungen (schluessel, wert) VALUES ('oeffentliche_adresse', $1)
-			ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`, adresse)
-	}
-	if err != nil {
-		t.Fatalf("öffentliche Adresse setzen: %v", err)
-	}
-}
-
 // bestelleUeberHandler löst eine Bestellung über den echten HTTP-Handler aus und liefert
 // die Antwort.
 func bestelleUeberHandler(t *testing.T, srv *Server, lieferantID, titelID string) *httptest.ResponseRecorder {
@@ -84,29 +66,16 @@ func bestelleUeberHandler(t *testing.T, srv *Server, lieferantID, titelID string
 	return rec
 }
 
-// warteAufMail holt die abgefangene Nachricht — mit Frist, damit ein ausbleibender
-// Versand als klarer Fehlschlag endet und nicht als hängender Test.
-func warteAufMail(t *testing.T, sitzungen <-chan smtptest.Sitzung) string {
-	t.Helper()
-	select {
-	case s := <-sitzungen:
-		return s.Nachricht
-	case <-time.After(10 * time.Second):
-		t.Fatal("es wurde gar keine Mail verschickt")
-		return ""
-	}
-}
-
 func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
-	setzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := mailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "Naacher-Link", true)
-	titel := titelMitMeldebestand(t, pool, "LMF-Mathe-Link", 0)
+	lieferant := testdaten.Haendler(t, pool, "Naacher-Link", true)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-Link", 0)
 
 	rec := bestelleUeberHandler(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
@@ -116,12 +85,12 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 		t.Errorf("Antwort meldet keinen Erfolg, obwohl der Link mitging: %s", antwort)
 	}
 
-	nachricht := warteAufMail(t, sitzungen)
+	nachricht := smtptest.WarteAufMail(t, sitzungen)
 
 	// Der Link IST der Ablauf: Ohne ihn kann der Händler nicht bestätigen, und genau das
 	// war der gemeldete Fehler.
 	if !strings.Contains(nachricht, "https://bib.example.invalid/bestellung/") {
-		t.Errorf("kein Bestätigungs-Link in der Mail:\n%s", kopf(nachricht))
+		t.Errorf("kein Bestätigungs-Link in der Mail:\n%s", smtptest.Kopf(nachricht))
 	}
 	// Und die Etiketten liegen NICHT daneben im Postfach: Wer sie von dort druckt,
 	// klickt den Link nie — die Schule wartete dann auf eine Bestätigung, die nie kommt.
@@ -142,15 +111,15 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 // zu melden. Und der Etikettenbogen MUSS dann beiliegen: Der Händler beklebt trotzdem
 // selbst, seine Exemplare gelten bereits als etikettiert.
 func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
-	setzeOeffentlicheAdresse(t, pool, "")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := mailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "Naacher-OhneAdresse", true)
-	titel := titelMitMeldebestand(t, pool, "LMF-Mathe-OhneAdresse", 0)
+	lieferant := testdaten.Haendler(t, pool, "Naacher-OhneAdresse", true)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-OhneAdresse", 0)
 
 	rec := bestelleUeberHandler(t, srv, lieferant, titel)
 	if rec.Code != http.StatusOK {
@@ -161,7 +130,7 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 		t.Errorf("die Antwort verschweigt den fehlenden Link:\n%s", antwort)
 	}
 
-	nachricht := warteAufMail(t, sitzungen)
+	nachricht := smtptest.WarteAufMail(t, sitzungen)
 	if strings.Contains(nachricht, "/bestellung/") {
 		t.Error("Link in der Mail, obwohl keine öffentliche Adresse hinterlegt ist")
 	}
@@ -175,24 +144,24 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 // Die Mail nennt die Kundennummer und zählt Titel und Exemplare: Ein Titel in zwei Exemplaren
 // kommt beim Händler nicht als zwei Titel in einem Exemplar an.
 func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
-	setzeOeffentlicheAdresse(t, pool, "")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := mailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "Naacher-Zahlen", false)
-	titel := titelMitMeldebestand(t, pool, "LMF-Mathe-Zahlen", 0)
+	lieferant := testdaten.Haendler(t, pool, "Naacher-Zahlen", false)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-Zahlen", 0)
 
 	if rec := bestelleUeberHandler(t, srv, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
 
-	nachricht := warteAufMail(t, sitzungen)
+	nachricht := smtptest.WarteAufMail(t, sitzungen)
 	for _, zeile := range []string{"Kundennummer: K-Naacher-Zahlen", "Bestellte Titel: 1", "Gesamtanzahl Exemplare: 2"} {
 		if !strings.Contains(nachricht, zeile) {
-			t.Errorf("%q fehlt in der Mail:\n%s", zeile, kopf(nachricht))
+			t.Errorf("%q fehlt in der Mail:\n%s", zeile, smtptest.Kopf(nachricht))
 		}
 	}
 }
@@ -201,15 +170,15 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 // Kalendertag der Schule. Beides reicht die Tür an den Mailtext; fehlt eines, sieht die Mail
 // trotzdem vollständig aus.
 func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
-	setzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := mailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "Naacher-Topf", true)
-	titel := titelMitMeldebestand(t, pool, "LMF-Mathe-Topf", 0)
+	lieferant := testdaten.Haendler(t, pool, "Naacher-Topf", true)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-Topf", 0)
 
 	if rec := bestelleUeberHandler(t, srv, lieferant, titel); rec.Code != http.StatusOK {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
@@ -220,14 +189,14 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 		t.Fatalf("Ablauf des Links lesen: %v", err)
 	}
 
-	nachricht := warteAufMail(t, sitzungen)
+	nachricht := smtptest.WarteAufMail(t, sitzungen)
 	for _, zeile := range []string{
 		"Subject: Buchbestellung Lernmittelfreiheit - ",
 		"Diese Bestellung: Lernmittelfreiheit",
 		"bis zum " + gueltigBis.In(schulzeit.Zone()).Format(dateFormatDE),
 	} {
 		if !strings.Contains(nachricht, zeile) {
-			t.Errorf("%q fehlt in der Mail:\n%s", zeile, kopf(nachricht))
+			t.Errorf("%q fehlt in der Mail:\n%s", zeile, smtptest.Kopf(nachricht))
 		}
 	}
 }
@@ -235,16 +204,16 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 // Bestellt ohne Vorab-Barcode zählt die Mail die Exemplare trotzdem: Die Zahl kam aus den
 // Etiketten des Barcodebogens, und eine Position ohne Vorab-Barcode hat keine.
 func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
-	setzeOeffentlicheAdresse(t, pool, "")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := mailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "Naacher-OhneBarcode", false)
-	mitBarcode := titelMitMeldebestand(t, pool, "LMF-Mathe-MitBarcode", 0)
-	ohneBarcode := titelMitMeldebestand(t, pool, "LMF-Mathe-OhneBarcode", 0)
+	lieferant := testdaten.Haendler(t, pool, "Naacher-OhneBarcode", false)
+	mitBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-MitBarcode", 0)
+	ohneBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-OhneBarcode", 0)
 
 	rumpf := fmt.Sprintf(`{"supplier_id":%q,"mittel":"land","items":[
 		{"titel_id":%q,"menge":2,"preis":9.5,"generate_barcodes":true},
@@ -257,21 +226,12 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 		t.Fatalf("Status = %d, want 200: %s", rec.Code, rec.Body.String())
 	}
 
-	nachricht := warteAufMail(t, sitzungen)
+	nachricht := smtptest.WarteAufMail(t, sitzungen)
 	for _, zeile := range []string{"Bestellte Titel: 2", "Gesamtanzahl Exemplare: 5"} {
 		if !strings.Contains(nachricht, zeile) {
-			t.Errorf("%q fehlt in der Mail:\n%s", zeile, kopf(nachricht))
+			t.Errorf("%q fehlt in der Mail:\n%s", zeile, smtptest.Kopf(nachricht))
 		}
 	}
-}
-
-// kopf kürzt die Nachricht auf den Textteil; die base64-kodierten Anhänge machen jede
-// Fehlermeldung sonst unlesbar.
-func kopf(nachricht string) string {
-	if len(nachricht) > 1200 {
-		return nachricht[:1200] + "\n… (gekürzt)"
-	}
-	return nachricht
 }
 
 // bestelleMitSchluessel löst eine Bestellung über den echten Handler MIT Idempotenz-
@@ -293,15 +253,15 @@ func bestelleMitSchluessel(t *testing.T, srv *Server, lieferantID, titelID, key 
 // Bestellungen mit DEMSELBEN Idempotenz-Schlüssel erzeugen nur EINE Bestellung und
 // GENAU EINE Lieferanten-Mail; die zweite meldet „bereits erfasst".
 func TestBestellungIdempotenz(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	setzeOeffentlicheAdresse(t, pool, "")
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := mailAbfangen(t)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "IdemLieferant", false)
-	titel := titelMitMeldebestand(t, pool, "LMF-Idem", 0)
+	lieferant := testdaten.Haendler(t, pool, "IdemLieferant", false)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Idem", 0)
 	key := "33333333-3333-3333-3333-333333333333"
 
 	rec1 := bestelleMitSchluessel(t, srv, lieferant, titel, key)
@@ -309,7 +269,7 @@ func TestBestellungIdempotenz(t *testing.T) {
 		t.Fatalf("erste Bestellung Status %d: %s", rec1.Code, rec1.Body.String())
 	}
 	// Erste Bestellung löst genau eine Mail aus.
-	_ = warteAufMail(t, sitzungen)
+	_ = smtptest.WarteAufMail(t, sitzungen)
 
 	// Doppelklick: gleicher Schlüssel → keine zweite Bestellung, keine zweite Mail.
 	rec2 := bestelleMitSchluessel(t, srv, lieferant, titel, key)
@@ -333,7 +293,7 @@ func TestBestellungIdempotenz(t *testing.T) {
 	// KEINE zweite Mail: Der Kanal darf jetzt leer sein.
 	select {
 	case s := <-sitzungen:
-		t.Fatalf("es ging eine ZWEITE Mail raus (Doppelklick nicht abgefangen): %s", kopf(s.Nachricht))
+		t.Fatalf("es ging eine ZWEITE Mail raus (Doppelklick nicht abgefangen): %s", smtptest.Kopf(s.Nachricht))
 	case <-time.After(1 * time.Second):
 		// gut — keine zweite Mail
 	}

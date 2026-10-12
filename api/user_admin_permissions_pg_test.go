@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 )
 
 // Die Rechte-Matrix ist Systemkonfiguration, nicht Tagesgeschäft der Kontoverwaltung.
@@ -17,7 +18,7 @@ import (
 // Der Test läuft gegen echtes Postgres, weil genau die Trefferzahl der UPDATE-Anweisung
 // geprüft wird; ein Mock würde die zurückgeben, die man ihm vorgibt.
 func TestRechteMatrixNurDurchAdmin(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -38,7 +39,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 		t.Fatalf("Ausgangszustand setzen: %v", err)
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER' AND permission = 'audit_logs'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER' AND permission = 'audit_logs'`)
 	})
 
 	istErlaubt := func() bool {

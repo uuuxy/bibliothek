@@ -531,7 +531,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu)
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -635,7 +635,7 @@ HTTP-Anfrage
 | `mailservice/`          | 477 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung)                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
-| `internal/*` (übrige)   | 5.634 Zeilen, 34 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest` (Prüfhilfen) |
+| `internal/*` (übrige)   | 6.423 Zeilen, 46 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
 | `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
@@ -1731,7 +1731,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 der Handgriff zum Umzug von Dateien in einen Unterordner
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner und von Helfern der Tests in ein Paket für Prüfhilfen
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2322,8 +2322,8 @@ wenn man ihn einmal gebraucht hat.
   über alle Pakete und weigert sich bei einem Datenbanknamen ohne „test".
 - **Eine Tür wird über den Router geprüft,** mit Sitzung und CSRF, nicht am Handler allein: Was
   die Registrierung davorhängt (Recht, `ValidateUUIDParamsMiddleware`), gehört zum Verhalten.
-  Muster: `baueKanarienWelt`, `mitCSRF` und `setzeGenauEinRecht` in
-  `api/pii_antwort_gate_pg_test.go`, `registrierteRouten` in `api/pii_matrix_test.go`.
+  Muster: `baueKanarienWelt` und `setzeGenauEinRecht` in `api/pii_antwort_gate_pg_test.go`,
+  `tuertest.MitCSRF`, `registrierteRouten` in `api/pii_matrix_test.go`.
 - **Gegenprobe am Rückbau.** Ein neuer Test zählt, wenn er am alten Code rot war. Als Beweis
   gilt die erwartete Meldung des Tests, nicht der Exit-Code: Ein Rückbau, der nicht übersetzt,
   endet auch mit 1. Ohne den Arbeitsstand anzufassen geht es in Go mit
@@ -2511,6 +2511,22 @@ wenn man ihn einmal gebraucht hat.
   Prüfungen, die Go-Dateien durchlaufen; drei lasen `api/` bis dahin ohne Unterordner, und ihre
   Proben blieben am Stand davor grün. Wer danach noch den alten Ort nennt, steht in der
   Ausgabe von `docs/dateiverweise_test.go`.
+- **Ein Helfer der Tests zieht in ein Paket für Prüfhilfen,** weil Tests aus mehr als einem
+  Paket ihn brauchen und eine Testdatei sich nicht einbinden lässt. Die Nennungen schreibt ein
+  Werkzeug mit Typprüfung um (`go/types`, `Info.Uses`): `gofmt -r` träfe jeden Bezeichner
+  gleichen Namens, auch eine Variable `exemplar` oder ein Feld `datum`. Das Paket ist danach
+  gewöhnlicher Code, und die Ratschen über den Go-Baum lesen es. Es braucht je einen Eintrag
+  mit Grund: als Paket in `schichtung_ratsche_test.go`, je Funktion mit verworfenem Ergebnis in
+  `phantom_erfolg_test.go`, je Datei in `docs/schreibpfade_gegen_sicht_test.go` und
+  `api/einstellungen_gelesene_schluessel_test.go`, dazu jede Funktion in
+  `scripts/deadcode_baseline.txt`. Der Linter verlangt über jedem exportierten Namen einen
+  Kommentar, der mit ihm beginnt. `goimports` rät für `pgx` den Pfad ohne `/v5` und setzt eine
+  Einbindung aus dem eigenen Modul in die Gruppe der Standardbibliothek; neue Dateien bekommen
+  ihre Einbindungen deshalb mit. Beleg: dieselbe Liste der Tests mit demselben Ausgang, und
+  der Vergleich Token für Token, in dem jeder neue Name auf den alten zurückgeführt ist. So
+  belegt am 12.10.2026 für 54 Helfer aus den Testdateien von `api/`: 232 Testdateien mit
+  236.604 Token gleich, 52 von 53 umgezogenen Erklärungen gleich; die eine Abweichung setzt den
+  Sperrgrund der Abgänger aus der Konstante statt als Text ein.
 
 ---
 

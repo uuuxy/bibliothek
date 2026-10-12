@@ -11,7 +11,9 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -26,8 +28,8 @@ import (
 // bewegt, und wie viele Fristen hingen daran. Ein ENTWURF fasst keine Frist an und
 // schreibt deshalb auch nichts — sonst stünde im Protokoll jeder Zwischenstand.
 func TestLmfPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -56,8 +58,8 @@ func TestLmfPlan_MassenaenderungDerFristenWirdProtokolliert(t *testing.T) {
 		}
 		return service.TagesEndeInSchulzeitzone(x)
 	}
-	anna := seedSchueler(t, pool, "AUD-1", "Anna", "9H1")
-	seedAusleihe(t, pool, anna, "LMF Mathe 9 Audit", tag("2027-07-31"))
+	anna := testdaten.SeedSchueler(t, pool, "AUD-1", "Anna", "9H1")
+	testdaten.SeedAusleihe(t, pool, anna, "LMF Mathe 9 Audit", tag("2027-07-31"))
 
 	// Wie lmfPlanAufruf, aber mit angemeldetem Benutzer im Kontext — ohne ihn schreibt
 	// kein Audit, und der Test wäre grün, ohne etwas zu belegen.

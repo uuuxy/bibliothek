@@ -6,6 +6,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Handanlage „Anna Müller", Export „Anna Mueller" (LANIS-Klassenliste, nur Name): derselbe
@@ -19,8 +21,8 @@ import (
 // Normalform zusammenfallen („Bauer" und „Baur"), werden NICHT zugeordnet, sondern als
 // mehrdeutig gemeldet und nicht angefasst — weder neu angelegt noch zu Abgängern gemacht.
 func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 

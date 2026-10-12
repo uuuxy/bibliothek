@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -16,8 +18,8 @@ import (
 // repository/schlagworte_pflege_pg_test.go; hier geht es darum, was an der Tür ankommt —
 // Statuscode und Satz für jeden fachlichen Fehler, UUID-Prüfung vor der Datenbank.
 func TestSchlagwortPflege_Tueren(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)

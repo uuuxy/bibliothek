@@ -21,7 +21,9 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 	"bibliothek/sse"
 )
@@ -50,8 +52,8 @@ func (z *zwischenzeitlich) ProcessQuery(ctx context.Context, q service.OmniboxQu
 }
 
 func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 

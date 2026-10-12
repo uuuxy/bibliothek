@@ -6,6 +6,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Nur-Name-Modus: Der Export hat weder ID noch Geburtsdatum (LANIS-Klassenliste).
@@ -19,12 +21,12 @@ func nnDatei(zeilen ...lusd.Zeile) lusd.Datei {
 // Handanlage (mit oder ohne Geburtsdatum) wird über den Namen zugeordnet, Klasse
 // übernommen, bestätigt, kein Duplikat. Neuzugang entsteht ohne ID und ohne Datum.
 func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 
-	mitDatum := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Mia", nachname: "Hand", klasse: "5a", barcode: "NN-1", geb: datum(2013, 5, 4)})
+	mitDatum := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Mia", nachname: "Hand", klasse: "5a", barcode: "NN-1", geb: testdaten.Datum(2013, 5, 4)})
 	ohneDatum := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Ben", nachname: "Ohne", klasse: "5b", barcode: "NN-2"})
 
 	datei := nnDatei(
@@ -60,15 +62,15 @@ func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
 // Gleicher Name zweimal in der DATEI: beide Zeilen gemeldet, keine angefasst, kein
 // Neuzugang. Gleicher Name zweimal im BESTAND: die CSV-Zeile gemeldet, beide bleiben.
 func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 
 	// Bestand: zwei verschiedene "Max Mustermann" (verschiedene Geburtstage = zwei Menschen).
-	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Mustermann", klasse: "5a", barcode: "NN-3", geb: datum(2013, 1, 1), bestaetigt: true})
-	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Mustermann", klasse: "9c", barcode: "NN-4", geb: datum(2009, 2, 2), bestaetigt: true})
-	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Lea", nachname: "Einzig", klasse: "7a", barcode: "NN-5", geb: datum(2011, 3, 3), bestaetigt: true})
+	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Mustermann", klasse: "5a", barcode: "NN-3", geb: testdaten.Datum(2013, 1, 1), bestaetigt: true})
+	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Mustermann", klasse: "9c", barcode: "NN-4", geb: testdaten.Datum(2009, 2, 2), bestaetigt: true})
+	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Lea", nachname: "Einzig", klasse: "7a", barcode: "NN-5", geb: testdaten.Datum(2011, 3, 3), bestaetigt: true})
 
 	datei := nnDatei(
 		nmZeile(2, "Max", "Mustermann", "6a", nil),
@@ -108,15 +110,15 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 // machte ihn zum Abgänger: Vorschau zeigte ihn unter „wird nicht angefasst" UND unter
 // „Abgänger", Apply anonymisierte ihn.
 func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 
-	tom := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Tom", nachname: "Doppelt", klasse: "5a", barcode: "NN-6", geb: datum(2014, 1, 1), bestaetigt: true})
+	tom := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Tom", nachname: "Doppelt", klasse: "5a", barcode: "NN-6", geb: testdaten.Datum(2014, 1, 1), bestaetigt: true})
 	// Genug unbeteiligte Bestätigte, damit die Massenabgangs-Bremse nicht greift.
 	for i := 0; i < 12; i++ {
-		legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Ruhig", nachname: "Kind" + string(rune('A'+i)), klasse: "7a", barcode: "NN-R" + string(rune('A'+i)), geb: datum(2012, 1, 1+i), bestaetigt: true})
+		legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Ruhig", nachname: "Kind" + string(rune('A'+i)), klasse: "7a", barcode: "NN-R" + string(rune('A'+i)), geb: testdaten.Datum(2012, 1, 1+i), bestaetigt: true})
 	}
 	zeilen := []lusd.Zeile{nmZeile(2, "Tom", "Doppelt", "6a", nil), nmZeile(3, "Tom", "Doppelt", "6b", nil)}
 	for i := 0; i < 12; i++ {
@@ -151,12 +153,12 @@ func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 // Datensatz (Sperre, Schulden, Lesehistorie) des abgegangenen Zehntklässlers. Jetzt:
 // gemeldet als mehrdeutig, nichts angefasst, kein Neuzugang.
 func TestNurName_AbgaengerNamensvetterWirdNichtReaktiviert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 
-	alt := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Alt", klasse: "10a", barcode: "NN-7", geb: datum(2008, 3, 3), abgaenger: true, bestaetigt: true})
+	alt := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Alt", klasse: "10a", barcode: "NN-7", geb: testdaten.Datum(2008, 3, 3), abgaenger: true, bestaetigt: true})
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Abgänger-Sperre (offene Vorgänge)' WHERE id=$1`, alt); err != nil {
 		t.Fatal(err)
 	}

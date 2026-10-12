@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // TestAuditLogIstBegrenzt belegt, dass /api/audit nicht die gesamte Tabelle ausliefert.
@@ -21,8 +23,8 @@ import (
 // Geprüft wird an einer echten Datenbank mit MEHR Zeilen, als die Grenze zulässt. Ein
 // Test gegen eine kleine Tabelle wäre wertlos — er wäre auch ohne LIMIT grün.
 func TestAuditLogIstBegrenzt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Ein Bearbeiter, an dem der JOIN hängt. Ohne ihn liefert die Abfrage gar nichts,

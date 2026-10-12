@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 )
 
 // TestAuditLogZeigtSystemEintraege sichert einen Befund aus dem Audit vom 01.08.2026 ab:
@@ -23,7 +24,7 @@ import (
 // Ausgerechnet dieser Teil fehlte in der Anzeige — und zwar lautlos, weil eine kuerzere
 // Liste nach nichts aussieht.
 func TestAuditLogZeigtSystemEintraege(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -32,8 +33,8 @@ func TestAuditLogZeigtSystemEintraege(t *testing.T) {
 	nutzerTabelle := "e2e_nutzer_" + suffix
 
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_log WHERE tabelle IN ($1, $2)`, systemTabelle, nutzerTabelle)
-		aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = $1`, "audit-"+suffix+"@example.org")
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE tabelle IN ($1, $2)`, systemTabelle, nutzerTabelle)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = $1`, "audit-"+suffix+"@example.org")
 	})
 
 	// Ein Eintrag MIT Bearbeiter ...

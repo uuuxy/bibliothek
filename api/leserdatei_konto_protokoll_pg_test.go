@@ -11,6 +11,8 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/auskunft"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Ein Konto, das über die Leserdatei entsteht, hinterlässt dieselbe Spur wie über Benutzer &
@@ -19,11 +21,11 @@ import (
 // Eintrag; zwei Türen zum selben Zustand, die Rechenschaft hing an der Tür. Über die ziel_id
 // findet die Auskunft den Eintrag beim Konto.
 func TestLeserdatei_KontoAnlageSchreibtUserCreate(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	t.Setenv("SELBSTANMELDUNG_DOMAIN", "")
 	ctx := context.Background()
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	t.Cleanup(func() {
 		for _, sql := range []string{

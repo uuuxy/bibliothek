@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pdftest"
 	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
@@ -52,7 +53,7 @@ func TestBestellberichtTrenntDieToepfeUndIhreSummen(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Bericht erzeugen: %v", err)
 	}
-	text := pdfText(t, roh)
+	text := pdftest.Suchtext(t, roh)
 
 	// Jeder Topf steht mit seiner eigenen Summe da — und die Alt-Bestellungen ohne
 	// Zuordnung als das, was sie sind: nicht dem einen oder anderen zugeschlagen.
@@ -93,7 +94,7 @@ func TestBestellberichtUeberEinenTopfNenntDenAnderenNicht(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Bericht erzeugen: %v", err)
 	}
-	text := pdfText(t, roh)
+	text := pdftest.Suchtext(t, roh)
 
 	if !strings.Contains(text, "Lernmittelfreiheit") {
 		t.Error("der Topf des Berichts fehlt")

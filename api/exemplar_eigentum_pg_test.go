@@ -11,6 +11,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -31,7 +33,7 @@ func eigentumSetzen(t *testing.T, srv *Server, pool *pgxpool.Pool, ids []string,
 	req := httptest.NewRequest(http.MethodPut, "/api/exemplare/eigentum", strings.NewReader(string(rumpf)))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
-		&auth.Claims{UserID: adminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
+		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.ExemplarEigentumHandler()(rec, req)
 	return rec
@@ -71,28 +73,28 @@ func pruefeKarte(t *testing.T, karten map[string]map[string]any, barcode, eigent
 }
 
 func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	lektuere := titelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
-	einfach := exemplar(t, pool, lektuere, "EE-VORGABE", true, "")
-	ausLittera := exemplar(t, pool, lektuere, "EE-LITTERA", true, "")
+	lektuere := testdaten.TitelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
+	einfach := testdaten.Exemplar(t, pool, lektuere, "EE-VORGABE", true, "")
+	ausLittera := testdaten.Exemplar(t, pool, lektuere, "EE-LITTERA", true, "")
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_exemplare SET eigentum = 'land', eigentum_quelle = 'littera',
 		       erweiterte_eigenschaften = '{"littera_eigentumsvermerk": "Land Hessen"}'
 		WHERE id = $1`, ausLittera); err != nil {
 		t.Fatalf("Littera-Stand: %v", err)
 	}
-	foerderverein := exemplar(t, pool, lektuere, "EE-FOERDERVEREIN", true, "")
+	foerderverein := testdaten.Exemplar(t, pool, lektuere, "EE-FOERDERVEREIN", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare
 		SET erweiterte_eigenschaften = '{"littera_eigentumsvermerk": "Förderverein"}' WHERE id = $1`, foerderverein); err != nil {
 		t.Fatalf("Vermerk ohne Zuordnung: %v", err)
 	}
-	bestellt := exemplar(t, pool, lektuere, "EE-BESTELLT", true, "")
+	bestellt := testdaten.Exemplar(t, pool, lektuere, "EE-BESTELLT", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET bestellung_id = $2 WHERE id = $1`,
-		bestellt, topfBestellung(t, mitteltopf.Land)); err != nil {
+		bestellt, testdaten.TopfBestellung(t, mitteltopf.Land)); err != nil {
 		t.Fatalf("Bestellung: %v", err)
 	}
 
@@ -105,7 +107,7 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 
 	// 2. Ändern: zwei markiert, beide werden „von Hand" — auch das aus Littera, das schon Land war.
 	protokoll := func() int {
-		return zaehleZeilen(t, pool, `SELECT count(*) FROM audit_log WHERE tabelle = 'buecher_exemplare'
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_log WHERE tabelle = 'buecher_exemplare'
 			AND kontext = 'Eigentum von Hand geändert'`)
 	}
 	rec := eigentumSetzen(t, srv, pool, []string{einfach, strings.ToUpper(ausLittera)}, mitteltopf.Land, " Klassensatz aus LMF-Mitteln ")
@@ -167,14 +169,4 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET eigentum = 'land' WHERE id = $1`, foerderverein); err == nil {
 		t.Error("Eigentum ohne Quelle wurde angenommen — chk_exemplar_eigentum_mit_quelle fehlt")
 	}
-}
-
-// zaehleZeilen liest eine Zählung.
-func zaehleZeilen(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) int {
-	t.Helper()
-	var n int
-	if err := pool.QueryRow(context.Background(), sql, args...).Scan(&n); err != nil {
-		t.Fatalf("Zählung: %v", err)
-	}
-	return n
 }

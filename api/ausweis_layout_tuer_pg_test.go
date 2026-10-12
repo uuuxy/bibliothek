@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -42,11 +44,11 @@ func (p poolMitLesefehlerBei) QueryRow(ctx context.Context, sql string, args ...
 }
 
 func TestAusweisLayout_UeberDieTuer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	_, rufe := protokollWelt(t, pool)
 	ohneDesign := func() {
-		aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
 	}
 	ohneDesign()
 	t.Cleanup(ohneDesign)
@@ -114,7 +116,7 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 		if rumpf := lade(t); rumpf != zweites {
 			t.Errorf("geladen %q, gespeichert %q", rumpf, zweites)
 		}
-		if n := zaehleZeilen(t, pool,
+		if n := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel); n != 1 {
 			t.Errorf("%d Zeilen für das Design, erwartet 1", n)
 		}
@@ -150,8 +152,8 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 // Designer hielte den Ausfall für den ersten Start und speicherte seine Vorgabewerte über
 // das Design der Schule.
 func TestAusweisLayout_LesefehlerIstKeinLeeresDesign(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	const design = `{"printMode":"karte","front":[{"id":"e1"}],"back":[]}`
 	if _, err := pool.Exec(t.Context(), `
 		INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)
@@ -159,7 +161,7 @@ func TestAusweisLayout_LesefehlerIstKeinLeeresDesign(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
 	})
 
 	gestoert := poolMitLesefehlerBei{PgxPoolIface: pool, muster: "FROM system_einstellungen", schluessel: repository.AusweisLayoutSchluessel}

@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 )
 
@@ -17,7 +19,7 @@ import (
 // an. Die Seite nennt jetzt den Topf, und die TÜR verweigert das große Etikett — ein
 // versteckter Knopf allein ließe die Adresse offen.
 func TestLieferantenSeite_TopfUndGrossesEtikett(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
 	faelle := []struct {
@@ -35,7 +37,7 @@ func TestLieferantenSeite_TopfUndGrossesEtikett(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			resetBestandsdaten(t, pool)
+			testdaten.ResetBestandsdaten(t, pool)
 			srv := &Server{DB: &db.Database{Pool: pool}}
 
 			anlegenMit := f.mittel

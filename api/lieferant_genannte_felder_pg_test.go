@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Die Tür „Lieferant ändern" schreibt nur, was der Rumpf nennt.
@@ -17,13 +19,13 @@ import (
 // Korrigieren einer E-Mail ihm das Merkmal wieder. Merkmal und Stammdaten schrieb die Tür in
 // zwei Schritten. Geprüft über die Handler am echten Postgres.
 func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	// Andere Tests im selben Paketlauf lassen Lieferanten stehen, auch einen Hauptlieferanten.
-	aufraeumen(t, pool, `UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant`)
-	t.Cleanup(func() { aufraeumen(t, pool, `DELETE FROM lieferanten WHERE name LIKE 'NGF-%'`) })
+	pgtest.Aufraeumen(t, pool, `UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant`)
+	t.Cleanup(func() { pgtest.Aufraeumen(t, pool, `DELETE FROM lieferanten WHERE name LIKE 'NGF-%'`) })
 
 	// Anlegen und Ändern über die Helfer des Pakets (lieferant_zweitnummer_pg_test.go); beide
 	// brechen bei einer Ablehnung ab.
@@ -131,7 +133,7 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 
 	t.Run("das Merkmal lässt sich abwählen, ohne es jemand anderem zu geben", func(t *testing.T) {
 		lieferantAendernUeberHandler(t, srv, neu, `{"ist_hauptlieferant":false}`)
-		if n := zaehleZeilen(t, pool, `SELECT count(*) FROM lieferanten WHERE ist_hauptlieferant`); n != 0 {
+		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM lieferanten WHERE ist_hauptlieferant`); n != 0 {
 			t.Errorf("%d Hauptlieferanten nach dem Abwählen, erwartet 0", n)
 		}
 	})

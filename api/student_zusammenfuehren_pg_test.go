@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,10 +17,6 @@ import (
 // am echten Postgres: Vorgänge wandern, die Quelle verschwindet, das Ziel trägt die
 // LUSD-frischen Stammdaten, Sperre und Abgänger-Stempel werden bereinigt, und die
 // Protokollspuren zeigen auf den verbliebenen Datensatz.
-
-func zfAuftrag(ziel, quelle string) repository.ZusammenfuehrenAuftrag {
-	return repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}
-}
 
 func zfZaehle(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) int {
 	t.Helper()
@@ -30,27 +28,27 @@ func zfZaehle(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) int {
 }
 
 func TestZusammenfuehren_QuelleGehtImZielAuf(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Ziel: der alte Datensatz mit Ausweis — vom letzten Jahr bestätigt, jetzt Abgänger in
 	// der Karenz (der Export hat ihn unter neuem Namen nicht wiedererkannt).
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Alt", nachname: "Name", klasse: "07A", barcode: "ZF-1", geb: datum(2012, 3, 3), abgaenger: true})
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Alt", Nachname: "Name", Klasse: "07A", Barcode: "ZF-1", Geb: testdaten.Datum(2012, 3, 3), Abgaenger: true})
 	// Quelle: der frisch importierte Datensatz — von der LUSD soeben bestätigt, mit
 	// Anschrift und Klasse, und mit einer offenen Ausleihe, die schon an ihm hängt.
-	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Neu", nachname: "Name", klasse: "08A", barcode: "ZF-2", geb: datum(2012, 3, 3)})
+	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Neu", Nachname: "Name", Klasse: "08A", Barcode: "ZF-2", Geb: testdaten.Datum(2012, 3, 3)})
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET lusd_bestaetigt_am = NOW(), strasse = 'Neuweg', plz = '61381', ort = 'Friedrichsdorf' WHERE id = $1`, quelle); err != nil {
 		t.Fatal(err)
 	}
-	seedOffeneAusleihe(t, pool, quelle, "ZFQ")
+	testdaten.SeedOffeneAusleihe(t, pool, quelle, "ZFQ")
 	// Protokollspur der Quelle (Lesehistorie) — muss danach auf das Ziel zeigen.
 	if _, err := pool.Exec(ctx, `INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
 		VALUES ('ausleihen', 'CREATE', gen_random_uuid(), 'USER', jsonb_build_object('schueler_id', $1::text, 'entleiher', 'Neu Name'))`, quelle); err != nil {
 		t.Fatal(err)
 	}
 
-	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle))
+	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
 	if err != nil {
 		t.Fatalf("Zusammenführen: %v", err)
 	}
@@ -86,13 +84,13 @@ func TestZusammenfuehren_QuelleGehtImZielAuf(t *testing.T) {
 // Ohne offene Vorgänge fällt die automatische Abgänger-Sperre des Ziels; eine manuelle
 // Sperre bliebe (anderer Grund) — hier der automatische Fall.
 func TestZusammenfuehren_HebtAbgaengerSperreOhneVorgaengeAuf(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Alt", nachname: "Frei", klasse: "07A", barcode: "ZF-3", geb: datum(2012, 4, 4), abgaenger: true})
-	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Alt", nachname: "Frei-Neu", klasse: "08A", barcode: "ZF-4", geb: datum(2012, 4, 4)})
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Alt", Nachname: "Frei", Klasse: "07A", Barcode: "ZF-3", Geb: testdaten.Datum(2012, 4, 4), Abgaenger: true})
+	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Alt", Nachname: "Frei-Neu", Klasse: "08A", Barcode: "ZF-4", Geb: testdaten.Datum(2012, 4, 4)})
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 		t.Fatal(err)
 	}
 	var gesperrt bool
@@ -106,22 +104,22 @@ func TestZusammenfuehren_HebtAbgaengerSperreOhneVorgaengeAuf(t *testing.T) {
 }
 
 func TestZusammenfuehren_Abweisungen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	a := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "A", nachname: "Eins", klasse: "07A", barcode: "ZF-5", geb: datum(2012, 5, 5)})
-	anon := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Abgänger", nachname: "Anonymisiert-x", klasse: "ABG", barcode: "ANON-x"})
+	a := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "A", Nachname: "Eins", Klasse: "07A", Barcode: "ZF-5", Geb: testdaten.Datum(2012, 5, 5)})
+	anon := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Abgänger", Nachname: "Anonymisiert-x", Klasse: "ABG", Barcode: "ANON-x"})
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET anonymized_at = NOW() WHERE id = $1`, anon); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(a, a)); !errors.Is(err, repository.ErrZusammenfuehrenGleich) {
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(a, a)); !errors.Is(err, repository.ErrZusammenfuehrenGleich) {
 		t.Errorf("gleicher Datensatz: %v", err)
 	}
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(a, anon)); !errors.Is(err, repository.ErrZusammenfuehrenAnonymisiert) {
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(a, anon)); !errors.Is(err, repository.ErrZusammenfuehrenAnonymisiert) {
 		t.Errorf("anonymisierte Quelle: %v", err)
 	}
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(a, "00000000-0000-0000-0000-000000000000")); !errors.Is(err, repository.ErrZusammenfuehrenNichtGefunden) {
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(a, "00000000-0000-0000-0000-000000000000")); !errors.Is(err, repository.ErrZusammenfuehrenNichtGefunden) {
 		t.Errorf("unbekannte Quelle: %v", err)
 	}
 	if n := zfZaehle(t, pool, `SELECT count(*) FROM schueler WHERE deleted_at IS NULL`); n != 2 {
@@ -132,12 +130,12 @@ func TestZusammenfuehren_Abweisungen(t *testing.T) {
 // Die Kandidatensuche findet Abgänger und Gesperrte, nie den Ausgangsdatensatz selbst
 // und nie Anonymisierte.
 func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	ich := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Mira", nachname: "Suchwort", klasse: "07A", barcode: "ZF-6", geb: datum(2012, 6, 6)})
-	legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Mira", nachname: "Suchwort-Alt", klasse: "06A", barcode: "ZF-7", geb: datum(2012, 6, 6), abgaenger: true})
-	anon := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Mira", nachname: "Suchwort-Anon", klasse: "ABG", barcode: "ZF-8"})
+	ich := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Mira", Nachname: "Suchwort", Klasse: "07A", Barcode: "ZF-6", Geb: testdaten.Datum(2012, 6, 6)})
+	testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Mira", Nachname: "Suchwort-Alt", Klasse: "06A", Barcode: "ZF-7", Geb: testdaten.Datum(2012, 6, 6), Abgaenger: true})
+	anon := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Mira", Nachname: "Suchwort-Anon", Klasse: "ABG", Barcode: "ZF-8"})
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET anonymized_at = NOW() WHERE id = $1`, anon); err != nil {
 		t.Fatal(err)
 	}
@@ -164,11 +162,11 @@ func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
 // über schueler_id) hätte Name und Anschrift im Snapshot nie mehr gefunden. Eine neue
 // Quelle ohne Fall im switch macht diesen Test rot.
 func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Tabelle", klasse: "07A", barcode: "ZF-T1", geb: datum(2012, 7, 7)})
-	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Tabelle", klasse: "07A", barcode: "ZF-T2", geb: datum(2012, 7, 7)})
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Ziel", Nachname: "Tabelle", Klasse: "07A", Barcode: "ZF-T1", Geb: testdaten.Datum(2012, 7, 7)})
+	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Quelle", Nachname: "Tabelle", Klasse: "07A", Barcode: "ZF-T2", Geb: testdaten.Datum(2012, 7, 7)})
 
 	exec := func(sql string, args ...any) {
 		t.Helper()
@@ -183,13 +181,13 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 		case "leser":
 			// Die Zeile selbst wandert nicht — sie geht im Ziel auf.
 		case "ausleihen":
-			seedOffeneAusleihe(t, pool, quelle, "ZFT")
+			testdaten.SeedOffeneAusleihe(t, pool, quelle, "ZFT")
 			zaehlungen = append(zaehlungen, zaehlung{"ausleihen", `SELECT count(*) FROM ausleihen WHERE schueler_id = $1`})
 		case "schadensfaelle":
-			seedOffenerSchaden(t, pool, quelle, "ZFT")
+			testdaten.SeedOffenerSchaden(t, pool, quelle, "ZFT")
 			zaehlungen = append(zaehlungen, zaehlung{"schadensfaelle", `SELECT count(*) FROM schadensfaelle WHERE schueler_id = $1`})
 		case "vormerkungen":
-			titelID := titelMitMeldebestand(t, pool, "Vormerktitel-ZFT", 1)
+			titelID := testdaten.TitelMitMeldebestand(t, pool, "Vormerktitel-ZFT", 1)
 			exec(`INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titelID, quelle)
 			zaehlungen = append(zaehlungen, zaehlung{"vormerkungen", `SELECT count(*) FROM vormerkungen WHERE schueler_id = $1`})
 		case "schueler_fotos":
@@ -244,7 +242,7 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 		}
 	}
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 		t.Fatalf("Zusammenführen: %v", err)
 	}
 
@@ -267,15 +265,15 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 // gewanderten Zeilen — dieser Test geht den Rückweg am ERGEBNIS: Quelle aus dem Eintrag
 // neu anlegen, Ausleihe zurückschlüsseln, Ziel auf den alten Stand setzen.
 func TestZusammenfuehren_RueckwegAusDemProtokoll(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Alt", nachname: "Rueckweg", klasse: "07A", barcode: "ZF-R1", geb: datum(2012, 8, 8), abgaenger: true})
-	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Falsch", nachname: "Rueckweg", klasse: "08B", barcode: "ZF-R2", geb: datum(2012, 8, 8)})
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Alt", Nachname: "Rueckweg", Klasse: "07A", Barcode: "ZF-R1", Geb: testdaten.Datum(2012, 8, 8), Abgaenger: true})
+	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Falsch", Nachname: "Rueckweg", Klasse: "08B", Barcode: "ZF-R2", Geb: testdaten.Datum(2012, 8, 8)})
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET lusd_bestaetigt_am = NOW(), strasse = 'Irrweg', plz = '61381', ort = 'Friedrichsdorf' WHERE id = $1`, quelle); err != nil {
 		t.Fatal(err)
 	}
-	seedOffeneAusleihe(t, pool, quelle, "ZFR")
+	testdaten.SeedOffeneAusleihe(t, pool, quelle, "ZFR")
 
 	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
 		t.Fatal(err)
@@ -335,15 +333,15 @@ func TestZusammenfuehren_RueckwegAusDemProtokoll(t *testing.T) {
 // führen nicht still verschwinden — sie gehört zur Person, nicht zum Datensatz
 // (Rasterdurchgang 02.09.2026). Das Ziel trägt sie danach mit demselben Grund.
 func TestZusammenfuehren_ManuelleSperreDerQuelleBleibt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Sperre", klasse: "07A", barcode: "ZF-M1", geb: datum(2012, 9, 9)})
-	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Sperre", klasse: "07A", barcode: "ZF-M2", geb: datum(2012, 9, 9)})
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Ziel", Nachname: "Sperre", Klasse: "07A", Barcode: "ZF-M1", Geb: testdaten.Datum(2012, 9, 9)})
+	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Quelle", Nachname: "Sperre", Klasse: "07A", Barcode: "ZF-M2", Geb: testdaten.Datum(2012, 9, 9)})
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt = true, is_manually_blocked = true, block_reason = 'Manuell: Ausweis als gestohlen gemeldet' WHERE id = $1`, quelle); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 		t.Fatal(err)
 	}
 	var gesperrt, manuell bool
@@ -363,16 +361,16 @@ func TestZusammenfuehren_ManuelleSperreDerQuelleBleibt(t *testing.T) {
 // dann Name und Klasse des ABGÄNGERS — und der nächste Namensmodus-Import spaltete das
 // Kind erneut (Rasterdurchgang, Frage 8).
 func TestZusammenfuehren_AktiveHandanlageSchlaegtAbgaenger(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Alt", nachname: "Fuehrend", klasse: "07A", barcode: "ZF-F1", geb: datum(2012, 10, 10), abgaenger: true})
-	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Neu", nachname: "Fuehrend-Neu", klasse: "08A", barcode: "ZF-F2", geb: datum(2012, 10, 10)})
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Alt", Nachname: "Fuehrend", Klasse: "07A", Barcode: "ZF-F1", Geb: testdaten.Datum(2012, 10, 10), Abgaenger: true})
+	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Neu", Nachname: "Fuehrend-Neu", Klasse: "08A", Barcode: "ZF-F2", Geb: testdaten.Datum(2012, 10, 10)})
 	// Die Handanlage wurde nie von der LUSD bestätigt.
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET lusd_bestaetigt_am = NULL WHERE id = $1`, quelle); err != nil {
 		t.Fatal(err)
 	}
-	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle))
+	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -387,13 +385,13 @@ func TestZusammenfuehren_AktiveHandanlageSchlaegtAbgaenger(t *testing.T) {
 // stand frei, niemand wurde bedient. Es bleibt die weiter fortgeschrittene Vormerkung,
 // egal auf welcher Seite sie steht (Rasterdurchgang, Frage 5/8).
 func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Vormerk", klasse: "07A", barcode: "ZF-V1", geb: datum(2012, 11, 11)})
-	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Vormerk", klasse: "07A", barcode: "ZF-V2", geb: datum(2012, 11, 11)})
-	titelID := titelMitMeldebestand(t, pool, "Vormerktitel-ZFV", 1)
-	exID := exemplar(t, pool, titelID, "EX-ZFV", true, "")
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Ziel", Nachname: "Vormerk", Klasse: "07A", Barcode: "ZF-V1", Geb: testdaten.Datum(2012, 11, 11)})
+	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Quelle", Nachname: "Vormerk", Klasse: "07A", Barcode: "ZF-V2", Geb: testdaten.Datum(2012, 11, 11)})
+	titelID := testdaten.TitelMitMeldebestand(t, pool, "Vormerktitel-ZFV", 1)
+	exID := testdaten.Exemplar(t, pool, titelID, "EX-ZFV", true, "")
 	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, status) VALUES ($1, $2, 'wartend')`, titelID, ziel); err != nil {
 		t.Fatal(err)
 	}
@@ -401,7 +399,7 @@ func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
 		VALUES ($1, $2, 'abholbereit', $3, CURRENT_TIMESTAMP + INTERVAL '2 days')`, titelID, quelle, exID); err != nil {
 		t.Fatal(err)
 	}
-	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle))
+	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -421,11 +419,11 @@ func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
 // Foto: kommt nie aus der LUSD — das JÜNGERE gewinnt, egal auf welcher Seite. Bis
 // 03.09.2026 blieb immer das Foto des Ziels, das jüngere der Quelle starb im CASCADE.
 func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Foto", klasse: "07A", barcode: "ZF-P1", geb: datum(2012, 12, 12)})
-	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Foto", klasse: "07A", barcode: "ZF-P2", geb: datum(2012, 12, 12)})
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Ziel", Nachname: "Foto", Klasse: "07A", Barcode: "ZF-P1", Geb: testdaten.Datum(2012, 12, 12)})
+	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Quelle", Nachname: "Foto", Klasse: "07A", Barcode: "ZF-P2", Geb: testdaten.Datum(2012, 12, 12)})
 	for _, f := range []struct {
 		id, bytes, alter string
 	}{{ziel, `\x01`, "2 years"}, {quelle, `\x02`, "1 day"}} {
@@ -433,7 +431,7 @@ func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 		t.Fatal(err)
 	}
 	var foto []byte
@@ -457,12 +455,12 @@ func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {
 // Vor allem aber: Welche der beiden Anmeldungen bleiben soll, ist eine Entscheidung über
 // zwei Menschen — die trifft kein UPDATE.
 func TestZusammenfuehren_ZweiKontenBrichtAb(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Konto", klasse: "07A", barcode: "ZK-1", geb: datum(2012, 5, 5)})
-	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Konto", klasse: "08A", barcode: "ZK-2", geb: datum(2012, 5, 5)})
+	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Ziel", Nachname: "Konto", Klasse: "07A", Barcode: "ZK-1", Geb: testdaten.Datum(2012, 5, 5)})
+	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Quelle", Nachname: "Konto", Klasse: "08A", Barcode: "ZK-2", Geb: testdaten.Datum(2012, 5, 5)})
 
 	for i, leser := range []string{ziel, quelle} {
 		if _, err := pool.Exec(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id)
@@ -472,7 +470,7 @@ func TestZusammenfuehren_ZweiKontenBrichtAb(t *testing.T) {
 		}
 	}
 
-	_, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle))
+	_, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
 	if err == nil {
 		t.Fatal("das Zusammenführen ging durch — eine der beiden Anmeldungen wäre verloren")
 	}

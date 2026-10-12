@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 
 	"github.com/google/uuid"
@@ -19,7 +20,7 @@ import (
 // Die Theken-Tür weist ab, bevor gebucht wird: ohne Sitzung, ohne Suchtext, und solange eine
 // Anfrage mit demselben Schlüssel noch arbeitet. In keinem der Fälle wird der Dienst gerufen.
 func TestActionHandler_AblehnungenVorDerBuchung(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}, IdempotenzWartezeit: 150 * time.Millisecond}
 	// Ein Aufruf des Dienstes endete als 500 — keiner der erwarteten Status käme zustande.
@@ -58,7 +59,7 @@ func TestActionHandler_AblehnungenVorDerBuchung(t *testing.T) {
 	if w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "in_arbeit") {
 		t.Errorf("Schlüssel in Arbeit: Status %d, erwartet 409 mit „in_arbeit“: %s", w.Code, w.Body.String())
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM idempotency_keys WHERE idempotency_key = $1 AND status_code = 0`, schluessel); n != 1 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM idempotency_keys WHERE idempotency_key = $1 AND status_code = 0`, schluessel); n != 1 {
 		t.Errorf("%d Reservierungen unter dem Schlüssel, erwartet 1 — die abgewiesene Anfrage darf sie weder übernehmen noch freigeben", n)
 	}
 }

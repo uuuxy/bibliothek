@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -22,17 +24,17 @@ import (
 // Lernmittel-Titel, Littera sagt „Land Hessen") und ein Schulbuch, das der Schulträger
 // bezahlt hat (Lernmittel-Titel, Bestellung aus seinen Mitteln).
 func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
-	bescheidReset(t, pool)
-	bescheidAngabenSetzen(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.BescheidReset(t, pool)
+	testdaten.BescheidAngabenSetzen(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	// Gleiche Preise, gleiches Alter: Der Unterschied im Betrag kommt allein aus der Regel.
 	vorbereiten := func(titelID, barcode string) string {
 		t.Helper()
-		id := exemplar(t, pool, titelID, barcode, true, "")
+		id := testdaten.Exemplar(t, pool, titelID, barcode, true, "")
 		if _, err := pool.Exec(ctx, `
 			UPDATE buecher_exemplare SET einkaufspreis = 8.00,
 			       zugang_am = CURRENT_DATE - INTERVAL '10 years', erworben_am = CURRENT_DATE - INTERVAL '10 years'
@@ -45,22 +47,22 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 		return id
 	}
 
-	lektuere := seedMonitorTitel(t, pool, "Nathan der Weise", "Ga Les", true, 0)
+	lektuere := testdaten.SeedMonitorTitel(t, pool, "Nathan der Weise", "Ga Les", true, 0)
 	exLektuere := vorbereiten(lektuere, "EB-LEKTUERE")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET eigentum = 'land', eigentum_quelle = 'littera' WHERE id = $1`, exLektuere); err != nil {
 		t.Fatalf("Eigentum setzen: %v", err)
 	}
-	schulbuch := bescheidLernmittel(t, pool, "Mathematik 7")
+	schulbuch := testdaten.BescheidLernmittel(t, pool, "Mathematik 7")
 	exSchulbuch := vorbereiten(schulbuch, "EB-SCHULBUCH")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET bestellung_id = $2 WHERE id = $1`,
-		exSchulbuch, topfBestellung(t, mitteltopf.Schultraeger)); err != nil {
+		exSchulbuch, testdaten.TopfBestellung(t, mitteltopf.Schultraeger)); err != nil {
 		t.Fatalf("Bestellung zuordnen: %v", err)
 	}
 
-	sidLand := seedSchueler(t, pool, "S-EB-LAND", "Landkind", "08G2")
-	sidTraeger := seedSchueler(t, pool, "S-EB-TRAEGER", "Traegerkind", "08G2")
-	fLand := bescheidForderung(t, pool, sidLand, exLektuere, "beschaedigt", "Lektüre beschädigt")
-	fTraeger := bescheidForderung(t, pool, sidTraeger, exSchulbuch, "beschaedigt", "Schulbuch beschädigt")
+	sidLand := testdaten.SeedSchueler(t, pool, "S-EB-LAND", "Landkind", "08G2")
+	sidTraeger := testdaten.SeedSchueler(t, pool, "S-EB-TRAEGER", "Traegerkind", "08G2")
+	fLand := testdaten.BescheidForderung(t, pool, sidLand, exLektuere, "beschaedigt", "Lektüre beschädigt")
+	fTraeger := testdaten.BescheidForderung(t, pool, sidTraeger, exSchulbuch, "beschaedigt", "Schulbuch beschädigt")
 
 	// 1. Der Vorschlag: Topf und Regel.
 	vLand := bescheidVorschlagUeberHandler(t, srv, pool, sidLand)
@@ -104,11 +106,11 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 
 	// 4. Der Brief: Die Lektüre darf auf den Landes-Bescheid, das Schulbuch des Trägers nicht.
 	if rec := bescheidErstellenUeberHandler(t, srv, pool, sidLand,
-		bescheidRumpf(in28Tagen(), map[string]float64{fLand: 1.40})); rec.Code != http.StatusCreated {
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fLand: 1.40})); rec.Code != http.StatusCreated {
 		t.Errorf("Landes-Bescheid für die Lektüre: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
 	if rec := bescheidErstellenUeberHandler(t, srv, pool, sidTraeger,
-		bescheidRumpf(in28Tagen(), map[string]float64{fTraeger: 14.00})); rec.Code != http.StatusConflict {
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fTraeger: 14.00})); rec.Code != http.StatusConflict {
 		t.Errorf("Landes-Bescheid für ein Buch des Schulträgers: Status %d, want 409: %s", rec.Code, rec.Body.String())
 	}
 }

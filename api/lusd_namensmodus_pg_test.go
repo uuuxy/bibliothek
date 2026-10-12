@@ -7,6 +7,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -23,17 +25,12 @@ type nmSchueler struct {
 	abgaenger, bestaetigt              bool
 }
 
-func datum(j int, m time.Month, t int) *time.Time {
-	d := time.Date(j, m, t, 0, 0, 0, 0, time.UTC)
-	return &d
-}
-
 func legeNmSchuelerAn(t *testing.T, ctx context.Context, pool *pgxpool.Pool, s nmSchueler) string {
 	t.Helper()
 	var id string
 	var bestaetigt *time.Time
 	if s.bestaetigt {
-		bestaetigt = datum(2025, 8, 1)
+		bestaetigt = testdaten.Datum(2025, 8, 1)
 	}
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum,
@@ -66,19 +63,19 @@ func zaehle(t *testing.T, pool *pgxpool.Pool, where string, args ...any) int {
 // kommt der LUSD-Export ohne ID — derselbe Mensch, neue Klasse. Erwartung: zugeordnet,
 // Klasse übernommen, bestätigt, KEIN Duplikat. Der zweite Jahreslauf ändert nichts.
 func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 	litteraID := "littera:77"
 
-	handID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Mia", nachname: "Hand", klasse: "5a", barcode: "NM-1", geb: datum(2013, 5, 4)})
-	littID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Leo", nachname: "Littera", klasse: "6b", barcode: "NM-2", geb: datum(2012, 1, 2), lusdID: &litteraID})
+	handID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Mia", nachname: "Hand", klasse: "5a", barcode: "NM-1", geb: testdaten.Datum(2013, 5, 4)})
+	littID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Leo", nachname: "Littera", klasse: "6b", barcode: "NM-2", geb: testdaten.Datum(2012, 1, 2), lusdID: &litteraID})
 
 	datei := nmDatei(
-		nmZeile(2, "mia", "HAND", "06A", datum(2013, 5, 4)), // Schreibweise + führende Null: trotzdem dieselbe Person
-		nmZeile(3, "Leo", "Littera", "7b", datum(2012, 1, 2)),
-		nmZeile(4, "Neu", "Kind", "5c", datum(2014, 9, 9)),
+		nmZeile(2, "mia", "HAND", "06A", testdaten.Datum(2013, 5, 4)), // Schreibweise + führende Null: trotzdem dieselbe Person
+		nmZeile(3, "Leo", "Littera", "7b", testdaten.Datum(2012, 1, 2)),
+		nmZeile(4, "Neu", "Kind", "5c", testdaten.Datum(2014, 9, 9)),
 	)
 	prev, err := s.computeLusd(ctx, datei, false, false)
 	if err != nil {
@@ -130,16 +127,16 @@ func TestNamensmodus_HandanlageWirdZugeordnetNichtDupliziert(t *testing.T) {
 // Eine nie bestätigte Handanlage, die fehlt, bleibt stehen und wird gemeldet. Ein
 // Schüler ohne Geburtsdatum ist nicht abgleichbar und bleibt ebenfalls stehen.
 func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 
-	abID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Alt", nachname: "Bestaetigt", klasse: "10a", barcode: "NM-3", geb: datum(2009, 2, 2), bestaetigt: true})
-	handID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Gast", nachname: "Schueler", klasse: "8a", barcode: "NM-4", geb: datum(2011, 3, 3)})
+	abID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Alt", nachname: "Bestaetigt", klasse: "10a", barcode: "NM-3", geb: testdaten.Datum(2009, 2, 2), bestaetigt: true})
+	handID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Gast", nachname: "Schueler", klasse: "8a", barcode: "NM-4", geb: testdaten.Datum(2011, 3, 3)})
 	ohneID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Ohne", nachname: "Datum", klasse: "8b", barcode: "NM-5"})
 
-	datei := nmDatei(nmZeile(2, "Anders", "Jemand", "5a", datum(2014, 4, 4)))
+	datei := nmDatei(nmZeile(2, "Anders", "Jemand", "5a", testdaten.Datum(2014, 4, 4)))
 	prev, err := s.computeLusd(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
@@ -176,17 +173,17 @@ func TestNamensmodus_AbgaengerNurWennBestaetigt(t *testing.T) {
 // im Export — derselbe Datensatz wird reaktiviert, kein Duplikat, keine 23505 am
 // Unique-Index unique_schueler_name_gebdatum.
 func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 
-	id := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Rück", nachname: "Kehrer", klasse: "9a", barcode: "NM-6", geb: datum(2010, 6, 6), abgaenger: true, bestaetigt: true})
+	id := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Rück", nachname: "Kehrer", klasse: "9a", barcode: "NM-6", geb: testdaten.Datum(2010, 6, 6), abgaenger: true, bestaetigt: true})
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Abgänger-Sperre (offene Vorgänge)' WHERE id=$1`, id); err != nil {
 		t.Fatal(err)
 	}
 
-	datei := nmDatei(nmZeile(2, "Rück", "Kehrer", "10a", datum(2010, 6, 6)))
+	datei := nmDatei(nmZeile(2, "Rück", "Kehrer", "10a", testdaten.Datum(2010, 6, 6)))
 	prev, err := s.computeLusd(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
@@ -215,16 +212,16 @@ func TestNamensmodus_RueckkehrerWirdReaktiviert(t *testing.T) {
 // Zeile wird NICHT zugeordnet und NICHT neu angelegt; beide bleiben unverändert und
 // werden gemeldet.
 func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 	marke := "littera:5"
 
-	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Anna", nachname: "Müller", klasse: "7a", barcode: "NM-7", geb: datum(2012, 7, 7)})
-	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "anna", nachname: "müller", klasse: "7b", barcode: "NM-8", geb: datum(2012, 7, 7), lusdID: &marke})
+	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Anna", nachname: "Müller", klasse: "7a", barcode: "NM-7", geb: testdaten.Datum(2012, 7, 7)})
+	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "anna", nachname: "müller", klasse: "7b", barcode: "NM-8", geb: testdaten.Datum(2012, 7, 7), lusdID: &marke})
 
-	datei := nmDatei(nmZeile(2, "Anna", "Müller", "8a", datum(2012, 7, 7)))
+	datei := nmDatei(nmZeile(2, "Anna", "Müller", "8a", testdaten.Datum(2012, 7, 7)))
 	prev, err := s.computeLusd(ctx, datei, false, false)
 	if err != nil {
 		t.Fatal(err)
@@ -249,8 +246,8 @@ func TestNamensmodus_MehrdeutigWirdNichtAngefasst(t *testing.T) {
 // 1.000 Schüler → 1.000 Duplikate, ein Klick. Jetzt: eindeutiger Namenstreffer wird
 // zugeordnet, das Datum nachgetragen, die Klasse übernommen; mehrdeutig → gemeldet.
 func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 
@@ -260,8 +257,8 @@ func TestNamensmodus_BestandOhneDatumWirdUeberNamenZugeordnet(t *testing.T) {
 	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Paul", nachname: "Doppel", klasse: "6b", barcode: "NM-P2", bestaetigt: true})
 
 	datei := nmDatei(
-		nmZeile(2, "Lisa", "Lanis", "6a", datum(2013, 3, 3)),
-		nmZeile(3, "Paul", "Doppel", "7a", datum(2012, 4, 4)),
+		nmZeile(2, "Lisa", "Lanis", "6a", testdaten.Datum(2013, 3, 3)),
+		nmZeile(3, "Paul", "Doppel", "7a", testdaten.Datum(2012, 4, 4)),
 	)
 	prev, err := s.computeLusd(ctx, datei, false, false)
 	if err != nil {

@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,14 +33,14 @@ func protokollWelt(t *testing.T, pool *pgxpool.Pool) (adminID string, rufe func(
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, mitCSRF(req))
+		router.ServeHTTP(rec, tuertest.MitCSRF(req))
 		return rec
 	}
 }
 
 func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 	adminID, rufe := protokollWelt(t, pool)
 
@@ -49,15 +52,15 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 	aktionen := `('KLASSENLEITUNG_GEAENDERT', 'KLASSENLEITUNG_ENTFERNT', 'MAILVORLAGE_GEAENDERT',
 		'LIEFERANT_ANGELEGT', 'LIEFERANT_GEAENDERT', 'LIEFERANT_GELOESCHT', 'FRIST_KLASSE_GEAENDERT')`
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion IN `+aktionen)
-		aufraeumen(t, pool, `DELETE FROM klassen_lehrer_mapping WHERE klasse = 'VP7'`)
-		aufraeumen(t, pool, `DELETE FROM mail_vorlagen WHERE typ = 'protokoll_probe'`)
-		aufraeumen(t, pool, `DELETE FROM lieferanten WHERE name LIKE 'Buchhandlung Protokoll%'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion IN `+aktionen)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM klassen_lehrer_mapping WHERE klasse = 'VP7'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM mail_vorlagen WHERE typ = 'protokoll_probe'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM lieferanten WHERE name LIKE 'Buchhandlung Protokoll%'`)
 	})
 
 	eintraege := func(t *testing.T, aktion string) int {
 		t.Helper()
-		return zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = $1`, aktion)
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = $1`, aktion)
 	}
 	// letzter liest den jüngsten Eintrag der Aktion und prüft den Bearbeiter.
 	letzter := func(t *testing.T, aktion string) map[string]any {
@@ -211,8 +214,8 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 	})
 
 	t.Run("Lernmittel einer Klasse verlängern", func(t *testing.T) {
-		kind := seedSchueler(t, pool, "S-VPR-1", "Protokoll", "5a")
-		seedAusleihe(t, pool, kind, "LMF Protokoll 5", fristEnde(2027, time.March, 31))
+		kind := testdaten.SeedSchueler(t, pool, "S-VPR-1", "Protokoll", "5a")
+		testdaten.SeedAusleihe(t, pool, kind, "LMF Protokoll 5", testdaten.FristEnde(2027, time.March, 31))
 
 		rec := rufe(t, http.MethodPost, "/api/ausleihen/global-extend-lmf",
 			`{"klasse":"5a","neues_rueckgabe_datum":"2027-06-30"}`)
@@ -232,12 +235,12 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 
 	// Keine der Adressen steht in einem der Einträge.
 	for _, adresse := range []string{adresseLeitung, adresseLeitung2, adresseHaendler} {
-		if n := zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs
+		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs
 			WHERE aktion IN `+aktionen+` AND position($1 in details::text) > 0`, adresse); n != 0 {
 			t.Errorf("Die Adresse %s steht in %d Einträgen des Protokolls", adresse, n)
 		}
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion IN `+aktionen); n != 11 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion IN `+aktionen); n != 11 {
 		t.Errorf("%d Einträge insgesamt, erwartet 11", n)
 	}
 }
@@ -261,13 +264,13 @@ func fmtFelder(wert any) string {
 // Titel hängen danach an einem anderen Wort oder an keinem. Wer es getan hat, steht im
 // Protokoll, mit den Wörtern und der Zahl der Titel. Eine abgelehnte Anfrage schreibt nichts.
 func TestSchlagwortPflege_UnumkehrbaresStehtImProtokoll(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 	adminID, rufe := protokollWelt(t, pool)
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
-		aufraeumen(t, pool, `DELETE FROM schlagworte WHERE wort LIKE 'Protokollprobe%'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM schlagworte WHERE wort LIKE 'Protokollprobe%'`)
 	})
 
 	var titelID string
@@ -308,7 +311,7 @@ func TestSchlagwortPflege_UnumkehrbaresStehtImProtokoll(t *testing.T) {
 	}
 	eintraege := func(t *testing.T) int {
 		t.Helper()
-		return zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
 	}
 	tierfantasy, fantasy, weg := kennung("Protokollprobe Tierfantasy"), kennung("Protokollprobe Fantasy"), kennung("Protokollprobe Weg")
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -26,8 +28,8 @@ import (
 // den Weg der Selbstanmeldung wirklich trägt — die anderen Zusammenführungs-Tests legen
 // ihre Leserzeilen von Hand an und gehen am Wächter vorbei.
 func TestZugangsanfrageZuordnen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// legeAltbestandAn ist der Kollege, der schon dasteht: Ausweis, ein Buch, KEIN Konto.
@@ -39,7 +41,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 			vorname, nachname, barcode).Scan(&id); err != nil {
 			t.Fatalf("Altbestand anlegen: %v", err)
 		}
-		seedOffeneAusleihe(t, pool, id, praefix)
+		testdaten.SeedOffeneAusleihe(t, pool, id, praefix)
 		return id
 	}
 
@@ -69,7 +71,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 		ziel := legeAltbestandAn(t, "Anna", "Bergér", "ZO-ALT-1", "ZO1")
 		konto, waise := legeZugangsanfrageAn(t, "Anna", "Berger", "anna.berger@schule.invalid")
 
-		erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, waise))
+		erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, waise))
 		if err != nil {
 			t.Fatalf("zuordnen: %v", err)
 		}
@@ -132,7 +134,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 		_, waise := legeZugangsanfrageAn(t, "Jan", "Kuepper", "jan.kuepper@schule.invalid")
 
 		// Verkehrt herum: die Zeile des Wächters als Ziel.
-		if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(waise, alt)); err != nil {
+		if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(waise, alt)); err != nil {
 			t.Fatalf("verkehrte Richtung: %v", err)
 		}
 		if n := zfZaehle(t, pool, `SELECT count(*) FROM leser WHERE id = $1`, alt); n != 0 {
@@ -162,8 +164,8 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 // unter .invalid meldet sich niemand an — die Anmeldung läuft über IMAP gegen den
 // Schul-Mailserver. Es standen zwei Konten da, aber nur ein Zugang.
 func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Der übernommene Eintrag: Ausweis, Buch und ein Konto mit Ersatzadresse.
@@ -178,7 +180,7 @@ func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
 		`UPDATE leser SET barcode_id = 'ZO-LIT-1' WHERE id = $1`, ziel); err != nil {
 		t.Fatalf("Ausweis nachtragen: %v", err)
 	}
-	seedOffeneAusleihe(t, pool, ziel, "ZOL")
+	testdaten.SeedOffeneAusleihe(t, pool, ziel, "ZOL")
 
 	// Dieselbe Person meldet sich selbst an — zweites Konto, zweite Leserzeile.
 	var echtesKonto, waise string
@@ -189,7 +191,7 @@ func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
 		t.Fatalf("Zugangsanfrage anlegen: %v", err)
 	}
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, waise)); err != nil {
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, waise)); err != nil {
 		t.Fatalf("zuordnen: %v", err)
 	}
 
@@ -231,8 +233,8 @@ func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
 // Menschen. Ohne diese Probe wäre nicht belegt, dass die Räumung eng bleibt — sie könnte
 // still jedes zweite Konto abräumen.
 func TestZugangsanfrageZuordnen_ZweiEchteKontenBrechenWeiterAb(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var ziel, quelle string
@@ -249,7 +251,7 @@ func TestZugangsanfrageZuordnen_ZweiEchteKontenBrechenWeiterAb(t *testing.T) {
 		t.Fatalf("zweites Konto: %v", err)
 	}
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err == nil {
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err == nil {
 		t.Fatal("zwei echte Konten wurden zusammengeführt — eine der beiden Anmeldungen ist verloren")
 	}
 	// Nichts darf angetastet sein.

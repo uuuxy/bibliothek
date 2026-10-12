@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -14,15 +16,15 @@ import (
 // Ein Warenkorb mit zwei Positionen: Betrag und Menge der Bestellung sind die Summe über
 // beide, und Zusammenfassung, Etiketten und Positionen nennen jede von ihnen.
 func TestProcessOrder_ZweiPositionenZaehlenZusammen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	lieferant := haendler(t, pool, "Summen", false)
-	erster := titelMitMeldebestand(t, pool, "LMF-Summe Eins", 0)
-	zweiter := titelMitMeldebestand(t, pool, "LMF-Summe Zwei", 0)
+	lieferant := testdaten.Haendler(t, pool, "Summen", false)
+	erster := testdaten.TitelMitMeldebestand(t, pool, "LMF-Summe Eins", 0)
+	zweiter := testdaten.TitelMitMeldebestand(t, pool, "LMF-Summe Zwei", 0)
 
 	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel: mitteltopf.Land, SupplierID: lieferant,
@@ -49,10 +51,10 @@ func TestProcessOrder_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	if betrag != 39 || anzahl != 5 {
 		t.Errorf("Bestellkopf: %.2f Euro und %d Exemplare, erwartet 39,00 Euro und 5", betrag, anzahl)
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM bestellungen_positionen WHERE bestellung_id = $1`, res.BestellungID); n != 2 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM bestellungen_positionen WHERE bestellung_id = $1`, res.BestellungID); n != 2 {
 		t.Errorf("%d Positionen geschrieben, erwartet 2", n)
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM buecher_exemplare WHERE bestellung_id = $1`, res.BestellungID); n != 5 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM buecher_exemplare WHERE bestellung_id = $1`, res.BestellungID); n != 5 {
 		t.Errorf("%d Exemplare an der Bestellung, erwartet 5", n)
 	}
 }
@@ -61,12 +63,12 @@ func TestProcessOrder_ZweiPositionenZaehlenZusammen(t *testing.T) {
 // Tür prüft den Topf selbst, das Anlegen ist die zweite Stelle. Abgelehnt wird mit dem Fehler
 // des Vokabulars, bevor ein Barcode reserviert ist.
 func TestProcessOrder_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
-	lieferant := haendler(t, pool, "Ohne Topf", true)
-	titel := titelMitMeldebestand(t, pool, "LMF-Ohne-Topf", 0)
+	lieferant := testdaten.Haendler(t, pool, "Ohne Topf", true)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Ohne-Topf", 0)
 
 	for _, mittel := range []string{"", "kreis"} {
 		res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
@@ -92,13 +94,13 @@ func TestProcessOrder_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
 // und die Angabe zum Vorab-Barcode. Die Anweisung reiht die Werte nach ihrer Stelle auf;
 // deshalb sind sie je Feld und je Position verschieden.
 func TestProcessOrder_JedePositionStehtInIhrenSpalten(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
-	lieferant := haendler(t, pool, "Spalten", false)
-	erster := titelMitMeldebestand(t, pool, "LMF-Spalte Eins", 0)
-	zweiter := titelMitMeldebestand(t, pool, "LMF-Spalte Zwei", 0)
+	lieferant := testdaten.Haendler(t, pool, "Spalten", false)
+	erster := testdaten.TitelMitMeldebestand(t, pool, "LMF-Spalte Eins", 0)
+	zweiter := testdaten.TitelMitMeldebestand(t, pool, "LMF-Spalte Zwei", 0)
 	for titel, isbn := range map[string]string{erster: "9783161484100", zweiter: "9780306406157"} {
 		if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET isbn = $2 WHERE id = $1`, titel, isbn); err != nil {
 			t.Fatalf("ISBN setzen: %v", err)

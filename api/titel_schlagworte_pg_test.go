@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -19,8 +21,8 @@ import (
 // geht es um das, was nur an der Tür entstehen kann — ein fehlendes Feld, eine falsche
 // Kennung, die Übersetzung der fachlichen Fehler in 400 und 404.
 func TestTitelSchlagworte_TuerDesBestellkorbs(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
@@ -106,8 +108,8 @@ func TestTitelSchlagworte_TuerDesBestellkorbs(t *testing.T) {
 }
 
 func TestSchlagwortVorschlaege_AusDemBestand(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)

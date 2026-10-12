@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 )
 
 // „Neuen Leser anlegen" fragt zuerst nach der Art. Ein Schüler entsteht wie bisher; eine
@@ -28,7 +29,7 @@ import (
 //     ohne dass es jemand merkt. Er hat kein Geburtsdatum, an dem die Doppelprüfung
 //     der Schüler greift — also prüft der Name.
 func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a128", Rolle: auth.RoleAdmin}

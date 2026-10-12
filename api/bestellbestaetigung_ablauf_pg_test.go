@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -24,16 +26,16 @@ import (
 // Positionen MIT Vorab-Barcode enthalten — sonst bekleben Lieferant und Bibliothek
 // dasselbe Buch doppelt.
 func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	lieferant := haendler(t, pool, "Naacher", true)
-	mitBarcode := titelMitMeldebestand(t, pool, "LMF-Mit-Barcode", 0)
-	ohneBarcode := titelMitMeldebestand(t, pool, "LMF-Ohne-Barcode", 0)
+	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
+	mitBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mit-Barcode", 0)
+	ohneBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Ohne-Barcode", 0)
 
 	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,
@@ -111,15 +113,15 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 // Lieferanten ohne den externen Schritt bekommen KEINEN Token. Sonst läge zu jeder
 // Bestellung ein gültiger Link ohne Empfänger herum — mehr Angriffsfläche ohne Nutzen.
 func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
-	lieferant := haendler(t, pool, "Normalo", false)
-	titel := titelMitMeldebestand(t, pool, "LMF-Normal", 0)
+	lieferant := testdaten.Haendler(t, pool, "Normalo", false)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Normal", 0)
 
 	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Land,

@@ -21,6 +21,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -64,12 +65,12 @@ func baueTresenWelt(t *testing.T, pool *pgxpool.Pool) tresenTestWelt {
 	}
 
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id IN ($1, $2)`, w.exemplarID, w.schuelerID)
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE details->>'barcode' = $1`, w.barcode)
-		aufraeumen(t, pool, `DELETE FROM buecher_exemplare WHERE id = $1`, w.exemplarID)
-		aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.titelID)
-		aufraeumen(t, pool, `DELETE FROM schueler WHERE id = $1`, w.schuelerID)
-		aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.adminID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id IN ($1, $2)`, w.exemplarID, w.schuelerID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE details->>'barcode' = $1`, w.barcode)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_exemplare WHERE id = $1`, w.exemplarID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.titelID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM schueler WHERE id = $1`, w.schuelerID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.adminID)
 	})
 	return w
 }
@@ -97,13 +98,13 @@ func rufeTresenAuskunft(t *testing.T, srv *Server, adminID, barcode string) Tres
 // und ENDGÜLTIG gelöscht — die Zeile in buecher_exemplare existiert nicht mehr.
 // Die Auskunft muss den Weg über den Audit-Snapshot finden und den Entleiher nennen.
 func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	w := baueTresenWelt(t, pool)
 
 	auditRepo := repository.NewAuditRepository(pool)
-	inTx(t, pool, func(tx pgx.Tx) error {
+	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
 		if err := auditRepo.LogAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID); err != nil {
 			return err
 		}
@@ -163,13 +164,13 @@ func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 // Vorgang bleibt sichtbar (das Exemplar war unterwegs), aber ausdrücklich als
 // „Personenbezug getilgt", nicht als leere Zelle.
 func TestTresenAuskunftZeigtGetilgtenBezug(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	w := baueTresenWelt(t, pool)
 
 	auditRepo := repository.NewAuditRepository(pool)
-	inTx(t, pool, func(tx pgx.Tx) error {
+	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
 		return auditRepo.LogAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID)
 	})
 	// Die echte Tilgung (dieselbe Liste wie Purge und Cron), nicht ein nachgebautes UPDATE.
@@ -193,7 +194,7 @@ func TestTresenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 // Ein nie vergebener Barcode ist eine leere, aber gültige Antwort (200) — und auch
 // der ergebnislose Abruf hinterlässt seine Protokollspur.
 func TestTresenAuskunftOhneTreffer(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	w := baueTresenWelt(t, pool)
@@ -214,7 +215,7 @@ func TestTresenAuskunftOhneTreffer(t *testing.T) {
 		t.Errorf("auch der Abruf ohne Treffer muss protokolliert sein (waren %d)", protokolle)
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE details->>'barcode' = 'NIE-VERGEBEN-4711'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE details->>'barcode' = 'NIE-VERGEBEN-4711'`)
 	})
 }
 
@@ -235,7 +236,7 @@ func TestTresenAuskunftOhneBarcode(t *testing.T) {
 // bis zum 22.09.2026 über die SICHT `schueler` auf — für einen Kollegen fand sie nichts und
 // meldete „Personenbezug getilgt", obwohl Person und Bezug da sind (OFFEN.md 5.19).
 func TestTresenAuskunftNenntDenKollegen(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	w := baueTresenWelt(t, pool)
@@ -248,12 +249,12 @@ func TestTresenAuskunftNenntDenKollegen(t *testing.T) {
 		t.Fatalf("Kollege anlegen: %v", err)
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, kollegeID)
-		aufraeumen(t, pool, `DELETE FROM leser WHERE id = $1`, kollegeID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, kollegeID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM leser WHERE id = $1`, kollegeID)
 	})
 
 	auditRepo := repository.NewAuditRepository(pool)
-	inTx(t, pool, func(tx pgx.Tx) error {
+	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
 		return auditRepo.LogAusleihe(ctx, tx, w.exemplarID, kollegeID, "", w.adminID)
 	})
 

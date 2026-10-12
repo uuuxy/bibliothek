@@ -10,6 +10,10 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/smtptest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -43,8 +47,8 @@ import (
 // an — noch an der Schule (ist_abgaenger = false), so wie die Liste ihn im Juni sieht.
 func abgaengerMitBuch(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse, titel string) (schuelerID, ausleiheID string) {
 	t.Helper()
-	schuelerID = seedSchueler(t, pool, barcode, vorname, klasse)
-	ausleiheID = seedAusleihe(t, pool, schuelerID, titel, time.Now().AddDate(0, 0, -3))
+	schuelerID = testdaten.SeedSchueler(t, pool, barcode, vorname, klasse)
+	ausleiheID = testdaten.SeedAusleihe(t, pool, schuelerID, titel, time.Now().AddDate(0, 0, -3))
 	return schuelerID, ausleiheID
 }
 
@@ -76,12 +80,12 @@ func kontoauszugNamen(t *testing.T, srv *Server) map[string]bool {
 }
 
 func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	sitzungen := mailAbfangen(t)
-	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: saisonUhr}
+	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}
 
 	// Zwei Abgänger derselben Abschlussklasse und einer aus einer anderen — plus die
 	// Schreibweise, an der sich schon zweimal etwas aufgehängt hat: Schülerdaten "9H",
@@ -89,8 +93,8 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	anna, annaAusleihe := abgaengerMitBuch(t, pool, "S-ABG-1", "Anna", "9H", "Annas Buch")
 	ben, benAusleihe := abgaengerMitBuch(t, pool, "S-ABG-2", "Ben", "9H", "Bens Buch")
 	abgaengerMitBuch(t, pool, "S-ABG-3", "Cem", "10R1", "Cems Buch")
-	klassenleitung(t, pool, "9h ", "leitung9h@schule.invalid")
-	klassenleitung(t, pool, "10R1", "leitung10r1@schule.invalid")
+	testdaten.Klassenleitung(t, pool, "9h ", "leitung9h@schule.invalid")
+	testdaten.Klassenleitung(t, pool, "10R1", "leitung10r1@schule.invalid")
 
 	// 1. Beide Ansichten müssen dieselben Personen kennen.
 	liste := abgaengerListe(t, srv)
@@ -114,7 +118,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail", strings.NewReader(`{"klassen":["09H"]}`))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(context.WithValue(ctx, auth.ClaimsContextKey,
-		&auth.Claims{UserID: adminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
+		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
 	srv.SendAbgaengerKontoauszuegeHandler()(rec, req)
 
@@ -129,17 +133,17 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	}
 
 	// 3. Was wirklich rausging: eine Mail, zwei PDFs, jedes mit den Büchern SEINES Schülers.
-	nachricht := warteAufMail(t, sitzungen)
+	nachricht := smtptest.WarteAufMail(t, sitzungen)
 	if !strings.Contains(nachricht, "leitung9h@schule.invalid") {
-		t.Errorf("Mail ging nicht an die Klassenleitung der 9H:\n%s", kopf(nachricht))
+		t.Errorf("Mail ging nicht an die Klassenleitung der 9H:\n%s", smtptest.Kopf(nachricht))
 	}
 	if strings.Contains(nachricht, "leitung10r1@schule.invalid") {
 		t.Error("die Mail nennt die Klassenleitung einer nicht gewählten Klasse")
 	}
 
-	annaPDF := pdfTexte(t, []byte(dateiAusMail(t, nachricht, "Anna")))
+	annaPDF := pdftest.Texte(t, []byte(dateiAusMail(t, nachricht, "Anna")))
 	pruefeKontoauszug(t, annaPDF, "Anna", "Annas Buch", []string{"Bens Buch", "Cems Buch"})
-	benPDF := pdfTexte(t, []byte(dateiAusMail(t, nachricht, "Ben")))
+	benPDF := pdftest.Texte(t, []byte(dateiAusMail(t, nachricht, "Ben")))
 	pruefeKontoauszug(t, benPDF, "Ben", "Bens Buch", []string{"Annas Buch", "Cems Buch"})
 
 	// 4. Anna gibt ihr Buch zurück — und verschwindet aus BEIDEN Ansichten.

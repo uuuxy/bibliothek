@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
 )
 
 // Parität Go ↔ SQL: lusd.KlassenNormkey (Klassenvergleich im LUSD-Import) muss dasselbe
@@ -12,7 +13,7 @@ import (
 // anschließend wegkanonisiert — oder übersieht echte. Zwei Implementierungen derselben
 // Regel brauchen ein Gate, das sie gegeneinander hält.
 func TestKlassenNormkey_ParitaetZurSQLFunktion(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := t.Context()
 
 	eingaben := []string{

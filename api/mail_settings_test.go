@@ -11,7 +11,6 @@ package api
 // befragen, was tatsächlich über die Leitung ging.
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +19,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/smtptest"
+	"bibliothek/internal/tuertest"
 	"bibliothek/mailservice"
 	"bibliothek/repository"
 
@@ -49,17 +49,6 @@ func postTestmail(t *testing.T, s *Server, body string) *httptest.ResponseRecord
 	rec := httptest.NewRecorder()
 	s.PostTestMailSettingsHandler()(rec, req)
 	return rec
-}
-
-func fehlermeldung(t *testing.T, rec *httptest.ResponseRecorder) string {
-	t.Helper()
-	var body struct {
-		Error string `json:"error"`
-	}
-	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
-		t.Fatalf("Antwort ist kein JSON-Fehler (%s): %v", rec.Body.String(), err)
-	}
-	return body.Error
 }
 
 // Der eigentliche Beweis: 200 bedeutet, dass eine Nachricht wirklich über SMTP
@@ -104,7 +93,7 @@ func TestPostTestMail_SMTPFehlerKommtLesbarBeimAdminAn(t *testing.T) {
 	if rec.Code != http.StatusBadGateway {
 		t.Fatalf("erwartet 502 (Zielserver versagt), bekam %d: %s", rec.Code, rec.Body.String())
 	}
-	meldung := fehlermeldung(t, rec)
+	meldung := tuertest.Fehlermeldung(t, rec)
 	if !strings.Contains(meldung, host+":"+port) {
 		t.Errorf("Meldung nennt den Server nicht: %q", meldung)
 	}
@@ -188,8 +177,8 @@ func TestUpdateMailSettings_UnbrauchbarerAbsenderKommtNichtInDieDatenbank(t *tes
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
 	}
-	if !strings.Contains(fehlermeldung(t, rec), "Absender") {
-		t.Errorf("Meldung benennt das Feld nicht: %q", fehlermeldung(t, rec))
+	if !strings.Contains(tuertest.Fehlermeldung(t, rec), "Absender") {
+		t.Errorf("Meldung benennt das Feld nicht: %q", tuertest.Fehlermeldung(t, rec))
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("unbrauchbarer Absender wurde trotzdem geschrieben: %v", err)
@@ -237,8 +226,8 @@ func TestPostTestMail_UnbrauchbareAdresseIstEinEingabefehler(t *testing.T) {
 			if rec.Code != http.StatusBadRequest {
 				t.Fatalf("erwartet 400, bekam %d: %s", rec.Code, rec.Body.String())
 			}
-			if !strings.Contains(fehlermeldung(t, rec), "Empfänger") {
-				t.Errorf("Meldung benennt das Feld nicht: %q", fehlermeldung(t, rec))
+			if !strings.Contains(tuertest.Fehlermeldung(t, rec), "Empfänger") {
+				t.Errorf("Meldung benennt das Feld nicht: %q", tuertest.Fehlermeldung(t, rec))
 			}
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("DB darf für eine unbrauchbare Adresse nicht berührt werden: %v", err)

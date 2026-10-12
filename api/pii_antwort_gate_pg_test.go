@@ -17,7 +17,7 @@ package api
 //     öffnet" (Matrix-Kopf), und Zusatzinhalte hinter view_students (Sperrgrund,
 //     Geräte-Ausleihername) dürfen hier gerade NICHT auftauchen.
 //  3. Es prüft: Kein Kanarienwert einer Stufe oberhalb der dokumentierten darf
-//     in der Antwort stehen (PDF-Ströme werden dafür entpackt, pdfText).
+//     in der Antwort stehen (PDF-Ströme werden dafür entpackt, pdftest.Suchtext).
 //  4. Gegen das Leere-Antwort-Loch („nichts drin → trivial grün") tragen
 //     Schlüsselrouten eine POSITIV-Kontrolle: Dort MUSS der erlaubte Kanarienwert
 //     erscheinen, sonst misst das Gate nichts.
@@ -58,6 +58,10 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/internal/xlsxtest"
 	"bibliothek/repository"
 	"bibliothek/sse"
@@ -221,32 +225,32 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 
 	// Audit-Spur über den ECHTEN Schreiber: /api/audit darf sie nicht ausbreiten,
 	// die Tresen-Auskunft muss sie (Stufe 2) zeigen.
-	inTx(t, pool, func(tx pgx.Tx) error {
+	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
 		return repository.NewAuditRepository(pool).
 			LogAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.mitarbeiterID)
 	})
 
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'TRESEN_AUSKUNFT' AND details->>'barcode' = $1`, w.buchBarcode)
-		aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, w.exemplarID)
-		aufraeumen(t, pool, `DELETE FROM lmf_plaene WHERE erster_tag = DATE '2099-06-28'`)
-		aufraeumen(t, pool, `DELETE FROM vormerkungen WHERE titel_id = $1`, w.titelID)
-		aufraeumen(t, pool, `DELETE FROM schadensfaelle WHERE id = $1`, w.schadensfallID)
-		aufraeumen(t, pool, `DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)`, w.titelID)
-		aufraeumen(t, pool, `DELETE FROM buecher_exemplare WHERE titel_id = $1`, w.titelID)
-		aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.titelID)
-		aufraeumen(t, pool, `DELETE FROM schueler WHERE id IN ($1, $2)`, w.schuelerID, w.abgaengerID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'TRESEN_AUSKUNFT' AND details->>'barcode' = $1`, w.buchBarcode)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, w.exemplarID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM lmf_plaene WHERE erster_tag = DATE '2099-06-28'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM vormerkungen WHERE titel_id = $1`, w.titelID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM schadensfaelle WHERE id = $1`, w.schadensfallID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)`, w.titelID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_exemplare WHERE titel_id = $1`, w.titelID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.titelID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM schueler WHERE id IN ($1, $2)`, w.schuelerID, w.abgaengerID)
 		// Die MITARBEITER-Rechte auf die Seed-Vorgabe zurückstellen — das Gate
 		// hat sie je Route auf genau ein Recht verengt, spätere Tests im selben
 		// Binary sollen wieder den Normalzustand sehen.
-		aufraeumen(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
 		for _, e := range db.RechteVorgabe {
 			if e.Role == "MITARBEITER" {
-				aufraeumen(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
+				pgtest.Aufraeumen(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
 					VALUES ($1, $2, $3) ON CONFLICT (role, permission) DO NOTHING`, e.Role, e.Permission, e.Allowed)
 			}
 		}
-		aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.mitarbeiterID)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.mitarbeiterID)
 		InvalidatePermissionCache()
 	})
 	return w
@@ -500,7 +504,7 @@ func rechtFuerZeile(recht string) (permission string, mitSitzung bool) {
 	}
 }
 
-// antwortText liest den Rumpf; PDF-Ströme werden entpackt (pdfText, dieselbe
+// antwortText liest den Rumpf; PDF-Ströme werden entpackt (pdftest.Suchtext, dieselbe
 // Technik wie die Etiketten-Gates), damit „im PDF steht die Adresse" nicht
 // hinter FlateDecode unsichtbar bleibt.
 func antwortText(t *testing.T, resp *httptest.ResponseRecorder) string {
@@ -510,7 +514,7 @@ func antwortText(t *testing.T, resp *httptest.ResponseRecorder) string {
 		t.Fatalf("Antwort lesen: %v", err)
 	}
 	if bytesIndex := strings.Index(string(roh), "%PDF"); bytesIndex >= 0 {
-		return pdfText(t, roh)
+		return pdftest.Suchtext(t, roh)
 	}
 	return string(roh)
 }
@@ -559,7 +563,7 @@ func traegtNoStore(werte []string) bool {
 }
 
 func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 
 	// Rate-Limit hochdrehen: ~80 Requests fallen hier in dieselbe Sekunde, das
 	// Produktionsbudget (50/s je IP) wäre ein falsches Rot.
@@ -579,7 +583,7 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
 	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
 	// das Gate misste dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
-	srv.Uhr = saisonUhr
+	srv.Uhr = testdaten.SaisonUhr
 	router := srv.Routes()
 
 	welt := baueKanarienWelt(t, pool, authenticator)
@@ -692,20 +696,6 @@ type piiPostFall struct {
 	Positiv []string
 }
 
-// mitCSRF rüstet den Double-Submit nach, den der echte Router auf mutierenden
-// Methoden verlangt — Cookie und Header mit demselben Wert.
-func mitCSRF(req *http.Request) *http.Request {
-	req.AddCookie(&http.Cookie{Name: "csrf_token", Value: "pii-gate-csrf"})
-	req.Header.Set("X-CSRF-Token", "pii-gate-csrf")
-	return req
-}
-
-func jsonPost(url, body string) *http.Request {
-	req := httptest.NewRequest(http.MethodPost, url, strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	return mitCSRF(req)
-}
-
 // bauePIIPostAufrufe: Schlüssel ist die Route EXAKT wie in der Matrix. Nur
 // nebenwirkungsarme, lesende Aufrufe — die Begründung je Route steht am Fall.
 func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
@@ -734,7 +724,7 @@ func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
 		}
 		req := httptest.NewRequest(http.MethodPost, "/api/lusd/preview", strings.NewReader(body.String()))
 		req.Header.Set("Content-Type", mw.FormDataContentType())
-		return mitCSRF(req)
+		return tuertest.MitCSRF(req)
 	}
 
 	return map[string][]piiPostFall{
@@ -743,10 +733,10 @@ func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
 		// (Stufe 2) darf mit perform_actions ALLEIN nirgends in der Antwort stehen.
 		"POST /api/action": {
 			{Name: "Scan freier Schüler", Anfrage: func(t *testing.T) *http.Request {
-				return jsonPost("/api/action", `{"query":"SBK-KANARI-2"}`)
+				return tuertest.JSONPost("/api/action", `{"query":"SBK-KANARI-2"}`)
 			}, Positiv: []string{"Zugvogel"}},
 			{Name: "Scan gesperrter Schüler", Anfrage: func(t *testing.T) *http.Request {
-				return jsonPost("/api/action", `{"query":"SBK-KANARI-1"}`)
+				return tuertest.JSONPost("/api/action", `{"query":"SBK-KANARI-1"}`)
 			}, Positiv: []string{"Pruefkanari"}},
 		},
 		"POST /api/lusd/preview": {
@@ -758,7 +748,7 @@ func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
 // TestPIIAntwortenHaltenIhreStufe_LesendePosts ist derselbe Apparat wie das
 // GET-Gate für die nebenwirkungsarmen POST-Routen (Begründung im Dateikopf).
 func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	t.Setenv("RATE_LIMIT", "100000")
 
 	if err := (&db.Database{Pool: pool}).InitPermissions(context.Background()); err != nil {
@@ -772,7 +762,7 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
 	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
 	// das Gate misste dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
-	srv.Uhr = saisonUhr
+	srv.Uhr = testdaten.SaisonUhr
 	router := srv.Routes()
 
 	welt := baueKanarienWelt(t, pool, authenticator)

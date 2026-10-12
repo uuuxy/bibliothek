@@ -173,6 +173,19 @@ var phantomBestand = map[string]int{
 	"repository/inventur_verlust_aktionen.go:schreibeAuditLog":                  1,
 	"repository/mail_settings.go:UpdateConfig":                                  2,
 	"repository/system_settings.go:SaveSettings":                                1,
+	// Prüfhilfen der Tests: Sie legen Zeilen an, leeren Tabellen oder räumen auf. Eine Anweisung,
+	// die dort keine Zeile trifft, meldet niemandem einen Erfolg.
+	"internal/pgtest/anweisungen.go:Aufraeumen":                 1,
+	"internal/testdaten/ausleihe.go:SeedLeserAusleihe":          1,
+	"internal/testdaten/ausleihe.go:SeedOffeneAusleihe":         1,
+	"internal/testdaten/bestellung.go:Haendler":                 1,
+	"internal/testdaten/bestellung.go:SetzeOeffentlicheAdresse": 2,
+	"internal/testdaten/leser.go:Klassenleitung":                1,
+	"internal/testdaten/schaden.go:BescheidAngabenSetzen":       2,
+	"internal/testdaten/schaden.go:BescheidLernmittel":          1,
+	"internal/testdaten/schaden.go:BescheidReset":               1,
+	"internal/testdaten/schaden.go:SeedOffenerSchaden":          1,
+	"internal/testdaten/testdaten.go:ResetBestandsdaten":        1,
 }
 
 func TestPhantomErfolg_KeineNeuenVerworfenenCommandTags(t *testing.T) {

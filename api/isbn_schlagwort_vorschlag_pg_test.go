@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -12,6 +11,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/inventur"
 	"bibliothek/repository"
 )
@@ -21,13 +23,13 @@ import (
 // Eintrag — am neuen Titel darf danach KEIN Schlagwort stehen, bis im Bestellkorb jemand
 // eines übernimmt.
 func TestTitelAusNachschlagen_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := titelMitSignatur(t, pool, "Die Welle", "", 0)
+	vorhanden := testdaten.TitelMitSignatur(t, pool, "Die Welle", "", 0)
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Krieg", "Erste Liebe"}); err != nil {
 		t.Fatal(err)
 	}
@@ -62,41 +64,23 @@ func TestTitelAusNachschlagen_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T
 	}
 }
 
-// dnbAttrappe beantwortet die Anfrage an die DNB mit einem festen Satz, mit status (ohne
-// Angabe 200); alles andere (Cover-Quellen) gibt es nicht.
-type dnbAttrappe struct {
-	satz   string
-	status int
-}
-
-func (d dnbAttrappe) RoundTrip(r *http.Request) (*http.Response, error) {
-	if r.URL.Host == "services.dnb.de" {
-		status := d.status
-		if status == 0 {
-			status = http.StatusOK
-		}
-		return &http.Response{StatusCode: status, Body: io.NopCloser(strings.NewReader(d.satz)), Header: http.Header{}, Request: r}, nil
-	}
-	return &http.Response{StatusCode: http.StatusNotFound, Body: http.NoBody, Header: http.Header{}, Request: r}, nil
-}
-
 // Über die Tür: POST /api/buecher/aus-isbn gibt den Vorschlag weiter — beim ersten Mal, wenn
 // der Titel aus der DNB entsteht. Beim zweiten Mal steht der Titel schon da; dann fragt die
 // Tür die DNB nicht, und einen Vorschlag gibt es nicht.
 func TestISBNZuTitel_TuerGibtDenVorschlagWeiter(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := titelMitSignatur(t, pool, "Die Welle", "", 0)
+	vorhanden := testdaten.TitelMitSignatur(t, pool, "Die Welle", "", 0)
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Krieg"}); err != nil {
 		t.Fatal(err)
 	}
 
 	client := inventur.NeuerMetadatenClient()
-	client.SetzeHTTPClientFuerTest(&http.Client{Transport: dnbAttrappe{satz: `
+	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.DNBAttrappe{Satz: `
 		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><records><record><recordData>
 		  <record xmlns="http://www.loc.gov/MARC21/slim">
 			<datafield tag="245" ind1="1" ind2="0"><subfield code="a">Dunkelnacht</subfield></datafield>
@@ -136,19 +120,19 @@ func TestISBNZuTitel_TuerGibtDenVorschlagWeiter(t *testing.T) {
 // Littera-Schreibweise „Kafka <Franz>". Was sie nicht kennt, steht getrennt in
 // schlagwort_vorschlaege_neu. Angelegt wird davon nichts, am Titel steht nichts.
 func TestISBNZuTitel_NormdatenVorhandenUndNeu(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	vorhanden := titelMitSignatur(t, pool, "Der Process", "", 0)
+	vorhanden := testdaten.TitelMitSignatur(t, pool, "Der Process", "", 0)
 	if _, err := repository.SetzeSchlagworte(ctx, pool, vorhanden, []string{"Kafka <Franz>", "Krieg"}); err != nil {
 		t.Fatal(err)
 	}
 
 	client := inventur.NeuerMetadatenClient()
-	client.SetzeHTTPClientFuerTest(&http.Client{Transport: dnbAttrappe{satz: `
+	client.SetzeHTTPClientFuerTest(&http.Client{Transport: tuertest.DNBAttrappe{Satz: `
 		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><records><record><recordData>
 		  <record xmlns="http://www.loc.gov/MARC21/slim">
 			<datafield tag="245" ind1="1" ind2="0"><subfield code="a">Franz Kafka</subfield></datafield>

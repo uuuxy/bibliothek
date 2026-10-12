@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 )
 
 // Der Lieferanten-Filter des Bestellberichts wird an der Tür geprüft (OFFEN.md 5.12).
@@ -17,7 +18,7 @@ import (
 // als `invalid input syntax for type uuid` (22P02) und damit als 500 — ein Bedienfehler,
 // der aussah wie ein Serverausfall. Am echten Postgres, weil nur der die 22P02 wirft.
 func TestBestellbericht_LieferantIDWirdAnDerTuerGeprueft(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	rufe := func(lieferantID string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, "/api/bestellungen/bericht.pdf?von=2026-09-01&bis=2026-09-30&lieferant_id="+lieferantID, nil)

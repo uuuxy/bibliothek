@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -16,17 +18,17 @@ import (
 // listet nur diese Exemplare; ausgesonderte und bestellte führte sie sonst als „Gesperrt" mit,
 // und über der Liste stand eine andere Zahl als im Feld.
 func TestExemplarliste_SagtWasZumBestandZaehlt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	ctx := context.Background()
 
-	titel := titelMitMeldebestand(t, pool, "Im Bestand", 1)
-	exemplar(t, pool, titel, "BC-REGAL", true, "")
-	gesperrt := exemplar(t, pool, titel, "BC-GESPERRT", true, "")
-	ausgesondert := exemplar(t, pool, titel, "BC-AUSGESONDERT", true, "")
-	bestellt := exemplar(t, pool, titel, "BC-BESTELLT", true, "")
-	zulauf := exemplar(t, pool, titel, "BC-ZULAUF", true, "")
+	titel := testdaten.TitelMitMeldebestand(t, pool, "Im Bestand", 1)
+	testdaten.Exemplar(t, pool, titel, "BC-REGAL", true, "")
+	gesperrt := testdaten.Exemplar(t, pool, titel, "BC-GESPERRT", true, "")
+	ausgesondert := testdaten.Exemplar(t, pool, titel, "BC-AUSGESONDERT", true, "")
+	bestellt := testdaten.Exemplar(t, pool, titel, "BC-BESTELLT", true, "")
+	zulauf := testdaten.Exemplar(t, pool, titel, "BC-ZULAUF", true, "")
 	for anweisung, id := range map[string]string{
 		`UPDATE buecher_exemplare SET ist_ausleihbar = false WHERE id = $1`:                                                              gesperrt,
 		`UPDATE buecher_exemplare SET ist_ausgesondert = true, aussonderung_grund = 'AUSSORTIERT', ist_ausleihbar = false WHERE id = $1`: ausgesondert,

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
@@ -20,8 +22,8 @@ import (
 //
 // Am echten Postgres, weil die Einengung im SQL steht.
 func TestBestellberichtFiltertNachTopf(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())

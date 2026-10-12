@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -51,9 +53,9 @@ func versetzungAusfuehren(t *testing.T, pool *pgxpool.Pool, dryRun bool) Promote
 }
 
 func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 	if _, err := pool.Exec(ctx, `DELETE FROM klassen_lehrer_mapping`); err != nil {
 		t.Fatalf("Mapping leeren: %v", err)
 	}
@@ -116,9 +118,9 @@ func TestVersetzungNimmtKlassenlehrerMit(t *testing.T) {
 // Dublette ab. Der Konflikt-Zweig in versetzeKlassenlehrerZuordnung bleibt als
 // Rückfallebene bestehen; der Lauf selbst ist konfliktfrei.
 func TestVersetzungNamenskonflikteStrukturellEliminiert(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 	if _, err := pool.Exec(ctx, `DELETE FROM klassen_lehrer_mapping`); err != nil {
 		t.Fatalf("Mapping leeren: %v", err)
 	}
@@ -150,9 +152,9 @@ func TestVersetzungNamenskonflikteStrukturellEliminiert(t *testing.T) {
 // serialisiert hart — genau einer gewinnt (200), der andere sieht danach den
 // Audit-Eintrag und bekommt 409. Netto: jede Klasse steigt um GENAU eine Stufe.
 func TestVersetzungDoppellaufSerialisiert(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	var adminID string
 	if err := pool.QueryRow(ctx, `

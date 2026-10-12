@@ -5,7 +5,9 @@ import (
 	"errors"
 	"testing"
 
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -16,16 +18,16 @@ import (
 // (HandleUnifiedCheckout), nicht über die Prüffunktion allein: Nur so ist belegt, dass das
 // Exemplar an der Weiche ankommt. Rot gesehen am Rückbau der Weiche (22.09.2026).
 func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	bearbeiter := adminFuerAudit(t, pool)
-	kind := schuelerAnlegen(t, pool, "Forderung", "9H1", "S-LMF-SPERRE-1")
+	bearbeiter := testdaten.AdminFuerAudit(t, pool)
+	kind := testdaten.SchuelerAnlegen(t, pool, "Forderung", "9H1", "S-LMF-SPERRE-1")
 
 	// Die Forderung hängt an einem verlorenen Buch der Schülerbücherei.
-	buecherei := titelMitMeldebestand(t, pool, "Roman ohne Kennung", 1)
-	verloren := exemplar(t, pool, buecherei, "B-LMF-SPERRE-0", true, "")
+	buecherei := testdaten.TitelMitMeldebestand(t, pool, "Roman ohne Kennung", 1)
+	verloren := testdaten.Exemplar(t, pool, buecherei, "B-LMF-SPERRE-0", true, "")
 	ausleiheUeberDenDienst(t, pool, "B-LMF-SPERRE-0", kind, bearbeiter)
 	if _, err := pool.Exec(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)
 		VALUES ($1, $2, 'Verloren', 12.00, 'nicht_zurueckgegeben')`, verloren, kind); err != nil {
@@ -37,8 +39,8 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 		`INSERT INTO buecher_titel (titel, ist_lernmittel) VALUES ('Mathe 9', true) RETURNING id`).Scan(&lernmittel); err != nil {
 		t.Fatalf("Lernmittel-Titel anlegen: %v", err)
 	}
-	exemplar(t, pool, lernmittel, "B-LMF-SPERRE-1", true, "")
-	exemplar(t, pool, buecherei, "B-LMF-SPERRE-2", true, "")
+	testdaten.Exemplar(t, pool, lernmittel, "B-LMF-SPERRE-1", true, "")
+	testdaten.Exemplar(t, pool, buecherei, "B-LMF-SPERRE-2", true, "")
 
 	bookRepo := repository.NewBookRepository(pool)
 	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,

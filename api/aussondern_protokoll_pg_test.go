@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -76,17 +78,17 @@ func pruefeAussonderungsEintrag(t *testing.T, pool *pgxpool.Pool, exemplarID, be
 }
 
 func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 	adminID, rufe := protokollWelt(t, pool)
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_log WHERE details->>'action' = $1`, repository.AuditAktionAusgesondert)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE details->>'action' = $1`, repository.AuditAktionAusgesondert)
 	})
 
 	t.Run("Status in der Buchakte", func(t *testing.T) {
-		titelID := titelMitSignatur(t, pool, "Spur Status", "Spu 1", 0)
-		ex := exemplar(t, pool, titelID, "SPUR-STATUS-1", true, "")
+		titelID := testdaten.TitelMitSignatur(t, pool, "Spur Status", "Spu 1", 0)
+		ex := testdaten.Exemplar(t, pool, titelID, "SPUR-STATUS-1", true, "")
 		status := func(rumpf string) int {
 			return rufe(t, http.MethodPut, "/api/buecher/exemplare/"+ex+"/status", rumpf).Code
 		}
@@ -114,8 +116,8 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 		pruefeAussonderungsEintrag(t, pool, ex, adminID, repository.AussonderungsWegStatus, "VERLUST")
 
 		// Ein verliehenes Exemplar lehnt die Tür ab; die Ablehnung schreibt nichts.
-		verliehen := exemplar(t, pool, titelID, "SPUR-STATUS-2", true, "")
-		seedLeserAusleihe(t, pool, verliehen, seedSchueler(t, pool, "S-SPUR-1", "Mia", "5a"))
+		verliehen := testdaten.Exemplar(t, pool, titelID, "SPUR-STATUS-2", true, "")
+		testdaten.SeedLeserAusleihe(t, pool, verliehen, testdaten.SeedSchueler(t, pool, "S-SPUR-1", "Mia", "5a"))
 		rec := rufe(t, http.MethodPut, "/api/buecher/exemplare/"+verliehen+"/status",
 			`{"ist_ausleihbar":false,"ist_ausgesondert":true,"zustand_notiz":""}`)
 		if rec.Code != http.StatusBadRequest {
@@ -127,9 +129,9 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	})
 
 	t.Run("kleinerer Bestand in Buch bearbeiten", func(t *testing.T) {
-		titelID := titelMitSignatur(t, pool, "Spur Bestand", "Spu 2", 0)
+		titelID := testdaten.TitelMitSignatur(t, pool, "Spur Bestand", "Spu 2", 0)
 		for i := 1; i <= 3; i++ {
-			exemplar(t, pool, titelID, fmt.Sprintf("SPUR-BESTAND-%d", i), true, "")
+			testdaten.Exemplar(t, pool, titelID, fmt.Sprintf("SPUR-BESTAND-%d", i), true, "")
 		}
 		bestand := func(rumpf string) {
 			t.Helper()
@@ -184,9 +186,9 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	})
 
 	t.Run("Abschluss einer Inventur", func(t *testing.T) {
-		titelID := titelMitSignatur(t, pool, "Spur Inventur", "SpuInv 1", 0)
-		gezaehlt := exemplar(t, pool, titelID, "SPUR-INV-1", true, "")
-		fehlt := exemplar(t, pool, titelID, "SPUR-INV-2", true, "")
+		titelID := testdaten.TitelMitSignatur(t, pool, "Spur Inventur", "SpuInv 1", 0)
+		gezaehlt := testdaten.Exemplar(t, pool, titelID, "SPUR-INV-1", true, "")
+		fehlt := testdaten.Exemplar(t, pool, titelID, "SPUR-INV-2", true, "")
 		signatur := "SpuInv"
 		invRepo := repository.NewInventoryRepository(pool)
 		session, err := invRepo.CreateInventurSession(ctx, "signature",

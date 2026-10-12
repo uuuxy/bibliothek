@@ -9,6 +9,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -24,7 +27,7 @@ func inventurStarten(t *testing.T, srv *Server, benutzerID, rumpf string) *httpt
 	req := httptest.NewRequest(http.MethodPost, "/api/inventur/start", strings.NewReader(rumpf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.InventurStartHandler()(rec, alsBenutzer(req, benutzerID))
+	srv.InventurStartHandler()(rec, tuertest.AlsBenutzer(req, benutzerID))
 	return rec
 }
 
@@ -53,8 +56,8 @@ func inventurFach(t *testing.T, pool *pgxpool.Pool, fach string) {
 		t.Fatalf("Fach %q eintragen: %v", fach, err)
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `UPDATE buecher_titel SET subject = NULL WHERE subject = $1`, fach)
-		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung = $1`, fach)
+		pgtest.Aufraeumen(t, pool, `UPDATE buecher_titel SET subject = NULL WHERE subject = $1`, fach)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung = $1`, fach)
 	})
 }
 
@@ -70,39 +73,39 @@ func inventurTitel(t *testing.T, pool *pgxpool.Pool, signatur, fach string, von,
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 	for _, b := range barcodes {
-		exemplar(t, pool, titelID, b, true, "")
+		testdaten.Exemplar(t, pool, titelID, b, true, "")
 	}
 }
 
 func offeneInventuren(t *testing.T, pool *pgxpool.Pool) int {
 	t.Helper()
-	return zaehleZeilen(t, pool, `SELECT count(*) FROM inventur_sessions WHERE abgeschlossen_am IS NULL`)
+	return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM inventur_sessions WHERE abgeschlossen_am IS NULL`)
 }
 
 // Erwartet wird, was im Regal stehen kann: nicht das verliehene, das ausgesonderte und
 // das gesperrte Exemplar. Die Inventur trägt den Benutzer, der sie gestartet hat.
 func TestInventurStart_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 	ctx := context.Background()
 
-	titelID := titelMitSignatur(t, pool, "Lesebuch 5", "BIB Deu 5 KRÜ", 0)
-	exemplar(t, pool, titelID, "IS-1", true, "")
-	exemplar(t, pool, titelID, "IS-2", true, "")
-	exemplar(t, pool, titelID, "IS-GESPERRT", false, "")
-	ausgesondert := exemplar(t, pool, titelID, "IS-WEG", true, "")
+	titelID := testdaten.TitelMitSignatur(t, pool, "Lesebuch 5", "BIB Deu 5 KRÜ", 0)
+	testdaten.Exemplar(t, pool, titelID, "IS-1", true, "")
+	testdaten.Exemplar(t, pool, titelID, "IS-2", true, "")
+	testdaten.Exemplar(t, pool, titelID, "IS-GESPERRT", false, "")
+	ausgesondert := testdaten.Exemplar(t, pool, titelID, "IS-WEG", true, "")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausgesondert = true, aussonderung_grund = 'AUSSORTIERT' WHERE id = $1`, ausgesondert); err != nil {
 		t.Fatalf("Exemplar aussondern: %v", err)
 	}
-	seedOffeneAusleihe(t, pool, seedSchueler(t, pool, "IS-S1", "Leihkind", "07A"), "IS-VERLIEHEN")
+	testdaten.SeedOffeneAusleihe(t, pool, testdaten.SeedSchueler(t, pool, "IS-S1", "Leihkind", "07A"), "IS-VERLIEHEN")
 
 	antwort := inventurGestartet(t, inventurStarten(t, srv, admin, `{"type":"global"}`))
 	if antwort.Scope != "global" || antwort.Label != "Gesamtbestand" || antwort.Erwartet != 2 {
 		t.Errorf("Antwort %+v, erwartet global, „Gesamtbestand“ und 2 Exemplare", antwort)
 	}
-	if n := zaehleZeilen(t, pool, `
+	if n := pgtest.ZaehleZeilen(t, pool, `
 		SELECT count(*) FROM inventur_sessions
 		WHERE id = $1 AND scope_type = 'global' AND gestartet_von = $2 AND abgeschlossen_am IS NULL`,
 		antwort.SessionID, admin); n != 1 {
@@ -113,10 +116,10 @@ func TestInventurStart_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 // Die Signatur gilt ohne Leerzeichen am Rand, in der Bezeichnung wie im Bereich: Die
 // Bezeichnung darf keinen anderen Bereich nennen, als die Inventur erfasst.
 func TestInventurStart_SignaturOhneLeerzeichenAmRand(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-D1", "IS-D2")
 	inventurTitel(t, pool, "BIB Mat 5", "", 5, 6, "IS-M1")
@@ -125,7 +128,7 @@ func TestInventurStart_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 	if antwort.Scope != "signature" || antwort.Label != "Signatur BIB Deu" || antwort.Erwartet != 2 {
 		t.Errorf("Antwort %+v, erwartet signature, „Signatur BIB Deu“ und 2 Exemplare", antwort)
 	}
-	if n := zaehleZeilen(t, pool,
+	if n := pgtest.ZaehleZeilen(t, pool,
 		`SELECT count(*) FROM inventur_sessions WHERE id = $1 AND scope_signatur = 'BIB Deu' AND scope_label = 'Signatur BIB Deu'`,
 		antwort.SessionID); n != 1 {
 		t.Error("Bereich und Bezeichnung stehen nicht ohne die Leerzeichen in der Datenbank")
@@ -135,10 +138,10 @@ func TestInventurStart_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 // Fach und Klasse grenzen den Bereich ein und stehen beide in der Bezeichnung; ein Fach
 // allein gilt für alle Klassen.
 func TestInventurStart_FilterNachFachUndKlasse(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 
 	inventurFach(t, pool, "Inventurfach Mathe")
 	inventurFach(t, pool, "Inventurfach Deutsch")
@@ -163,10 +166,10 @@ func TestInventurStart_FilterNachFachUndKlasse(t *testing.T) {
 // Ein belegter Bereich ist eine Lage und keine Störung: 409, mit dem Satz, der sagt,
 // welche Inventur im Weg steht. Eine zweite Inventur entsteht dabei nicht.
 func TestInventurStart_BelegterBereichIst409(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	admin := adminFuerAudit(t, pool)
+	admin := testdaten.AdminFuerAudit(t, pool)
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-B1")
 
 	inventurGestartet(t, inventurStarten(t, srv, admin, `{"type":"global"}`))
@@ -181,7 +184,7 @@ func TestInventurStart_BelegterBereichIst409(t *testing.T) {
 			if rec.Code != http.StatusConflict {
 				t.Errorf("Status %d, erwartet 409: %s", rec.Code, rec.Body.String())
 			}
-			if meldung := fehlermeldung(t, rec); !strings.Contains(meldung, f.meldung) {
+			if meldung := tuertest.Fehlermeldung(t, rec); !strings.Contains(meldung, f.meldung) {
 				t.Errorf("Meldung %q, erwartet %q darin", meldung, f.meldung)
 			}
 		})

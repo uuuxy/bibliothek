@@ -8,6 +8,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -17,8 +20,8 @@ import (
 // AUSSORTIERT, das repository/statistik.go ausdrücklich NICHT als Verlust wertet — "Verloren"
 // verschwand still aus der Statistik. Jetzt ist der Default VERLUST.
 func TestCopyStatusVerloren_ZaehltAlsVerlust(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	ausleihbaresExemplar(t, pool, "Verlust-Roman", "B-VL-1")
@@ -35,7 +38,7 @@ func TestCopyStatusVerloren_ZaehltAlsVerlust(t *testing.T) {
 	req.SetPathValue("id", exID)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, alsBenutzer(req, adminFuerAudit(t, pool)))
+	handler.ServeHTTP(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status setzen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}

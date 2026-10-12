@@ -6,6 +6,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -34,10 +36,10 @@ func seedGesperrterAbgaenger(t *testing.T, pool *pgxpool.Pool, barcode, lusdID s
 // Rückkehrer so als Neuzugang am partiellen Unique-Index (lusd_id) kollidierte — der GESAMTE
 // Import scheiterte. Dieser Test sichert die korrekte Weiterleitung end-to-end ab.
 func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 
 	t.Run("beglichener Rückkehrer wird reaktiviert und entsperrt", func(t *testing.T) {
-		resetBestandsdaten(t, pool)
+		testdaten.ResetBestandsdaten(t, pool)
 		ctx := context.Background()
 		id := seedGesperrterAbgaenger(t, pool, "OLD-1", "L-RETURN")
 
@@ -78,13 +80,13 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 	})
 
 	t.Run("Rückkehrer mit offener Ausleihe bleibt gesperrt, Grund umbenannt", func(t *testing.T) {
-		resetBestandsdaten(t, pool)
+		testdaten.ResetBestandsdaten(t, pool)
 		ctx := context.Background()
 		id := seedGesperrterAbgaenger(t, pool, "OLD-2", "L-DEBT")
 
 		// Noch offene Ausleihe des Rückkehrers.
-		titelID := titelMitMeldebestand(t, pool, "Schuldbuch", 1)
-		exID := exemplar(t, pool, titelID, "EX-DEBT", true, "")
+		titelID := testdaten.TitelMitMeldebestand(t, pool, "Schuldbuch", 1)
+		exID := testdaten.Exemplar(t, pool, titelID, "EX-DEBT", true, "")
 		if _, err := pool.Exec(ctx,
 			`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 			 VALUES ($1, $2, now() + interval '14 days')`, exID, id); err != nil {
@@ -118,11 +120,11 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 	// sie für eine manuelle und ließ sie stehen. Ein aktiver Schüler blieb dauerhaft
 	// gesperrt, und die Oberfläche kann ist_gesperrt ohne manuelle Sperre nicht aufheben.
 	t.Run("Rückkehrer: nach der Rückgabe hebt der nächste Import die Sperre auf", func(t *testing.T) {
-		resetBestandsdaten(t, pool)
+		testdaten.ResetBestandsdaten(t, pool)
 		ctx := context.Background()
 		id := seedGesperrterAbgaenger(t, pool, "OLD-3", "L-DEBT3")
-		titelID := titelMitMeldebestand(t, pool, "Schuldbuch-3", 1)
-		exID := exemplar(t, pool, titelID, "EX-DEBT3", true, "")
+		titelID := testdaten.TitelMitMeldebestand(t, pool, "Schuldbuch-3", 1)
+		exID := testdaten.Exemplar(t, pool, titelID, "EX-DEBT3", true, "")
 		if _, err := pool.Exec(ctx,
 			`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 			 VALUES ($1, $2, now() + interval '14 days')`, exID, id); err != nil {

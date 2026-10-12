@@ -8,6 +8,8 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Der Druck der Kontoauszüge folgt der Suche der Oberfläche (entschieden am 21.09.2026).
@@ -33,8 +35,8 @@ func kontoauszugPDF(t *testing.T, srv *Server, query string) (*httptest.Response
 }
 
 func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	anna := schuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
 	schuelerMitBuch(t, pool, "S-2", "Bea", "9H1")
@@ -43,7 +45,7 @@ func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
 	// Liste — und darf auch über seine Kennung keine Seite bekommen.
 	finn := schuelerMitBuch(t, pool, "S-6", "Finn", "10G1")
 
-	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: saisonUhr}
+	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}
 
 	t.Run("ohne ids wie bisher: alle Abgänger", func(t *testing.T) {
 		rec, text := kontoauszugPDF(t, srv, "")
@@ -122,11 +124,11 @@ func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
 
 // Außerhalb der Saison bleibt es beim 404 — auch mit einer Auswahl.
 func TestAbgaengerDruck_AuswahlAendertDieSaisonNicht(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	anna := schuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
 
-	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: winterUhr}
+	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}
 	rec, _ := kontoauszugPDF(t, srv, "?ids="+anna)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("im Oktober mit Auswahl: Status = %d, want 404", rec.Code)

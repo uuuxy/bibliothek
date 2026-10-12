@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -21,14 +23,14 @@ import (
 // Lesehistorie-Cron sie Monate später zufällig noch einholte; nach dem Löschen der
 // Schülerzeile gab es dafür keine Garantie mehr.
 func TestTilgeSchuelerSpuren_TilgtAuchDieLesehistorie(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	sid := seedSchueler(t, pool, "S-TILG-1", "Mia", "5a")
-	fremd := seedSchueler(t, pool, "S-TILG-2", "Ben", "5a")
-	titelID := seedMonitorTitel(t, pool, "Tilgungs-Titel", "Jug Til", false, 0)
-	exID := exemplar(t, pool, titelID, "TILG-1", true, "")
+	sid := testdaten.SeedSchueler(t, pool, "S-TILG-1", "Mia", "5a")
+	fremd := testdaten.SeedSchueler(t, pool, "S-TILG-2", "Ben", "5a")
+	titelID := testdaten.SeedMonitorTitel(t, pool, "Tilgungs-Titel", "Jug Til", false, 0)
+	exID := testdaten.Exemplar(t, pool, titelID, "TILG-1", true, "")
 
 	// Zwei Protokollzeilen wie sie die Ausleihe/Rückgabe schreibt (audit_books.go):
 	// die des Schülers und die eines anderen — die fremde muss stehen bleiben.

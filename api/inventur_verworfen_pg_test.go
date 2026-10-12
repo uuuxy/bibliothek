@@ -12,6 +12,9 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -25,12 +28,12 @@ import (
 // Liste lieferte für beide dasselbe (verluste 0), und der Bildschirm schrieb bei beiden
 // „vollständig". Geprüft über die Routen, die der Bildschirm ruft.
 func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("Sessions leeren: %v", err)
 	}
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	sigGeprueft := "INV-Geprueft-" + suffix
@@ -38,9 +41,9 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 	barcodeGeprueft := "B-G-" + suffix
 	barcodeGescannt := "B-V1-" + suffix
 	barcodeLiegtNoch := "B-V2-" + suffix
-	seedSignaturMitExemplar(t, pool, sigGeprueft, barcodeGeprueft)
-	seedSignaturMitExemplar(t, pool, sigVerworfen, barcodeGescannt)
-	seedSignaturMitExemplar(t, pool, sigVerworfen, barcodeLiegtNoch)
+	testdaten.SeedSignaturMitExemplar(t, pool, sigGeprueft, barcodeGeprueft)
+	testdaten.SeedSignaturMitExemplar(t, pool, sigVerworfen, barcodeGescannt)
+	testdaten.SeedSignaturMitExemplar(t, pool, sigVerworfen, barcodeLiegtNoch)
 
 	invRepo := repository.NewInventoryRepository(pool)
 	geprueft, err := invRepo.CreateInventurSession(ctx, "signature", repository.InventurScope{Signatur: &sigGeprueft}, "Geprüft", "")
@@ -60,7 +63,7 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 			t.Fatalf("Scan %s: erwartet 200, war %d: %s", scan.barcode, rec.Code, rec.Body.String())
 		}
 	}
-	if rec := inventurPost(t, srv.InventurFinishHandler(), "/api/inventur/finish", geprueft.ID, adminFuerAudit(t, pool)); rec.Code != http.StatusOK {
+	if rec := inventurPost(t, srv.InventurFinishHandler(), "/api/inventur/finish", geprueft.ID, testdaten.AdminFuerAudit(t, pool)); rec.Code != http.StatusOK {
 		t.Fatalf("Abschluss: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
 	if rec := inventurPost(t, srv.InventurAbortHandler(), "/api/inventur/abort", verworfen.ID, ""); rec.Code != http.StatusOK {
@@ -125,12 +128,12 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 // Eine laufende Inventur ist nie verworfen — die Datenbank hält die Regel für jeden
 // Schreiber neben AbortInventurSession (chk_inv_session_verworfen_beendet, Migration 149).
 func TestInventurVerworfen_DatenbankHaeltDieRegel(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE inventur_sessions RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("Sessions leeren: %v", err)
 	}
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	sig := fmt.Sprintf("INV-Regel-%d", time.Now().UnixNano())
 	session, err := repository.NewInventoryRepository(pool).CreateInventurSession(ctx, "signature",
@@ -151,7 +154,7 @@ func inventurPost(t *testing.T, h http.Handler, pfad, sessionID, benutzerID stri
 	req := httptest.NewRequest(http.MethodPost, pfad, strings.NewReader(fmt.Sprintf(`{"session_id":%q}`, sessionID)))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, alsBenutzer(req, benutzerID))
+	h.ServeHTTP(rec, tuertest.AlsBenutzer(req, benutzerID))
 	return rec
 }
 

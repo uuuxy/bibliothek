@@ -10,12 +10,15 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/inventur"
 )
 
-// zaehlendeDNB zählt, wie oft die Tür die DNB fragt, und antwortet wie dnbAttrappe.
+// zaehlendeDNB zählt, wie oft die Tür die DNB fragt, und antwortet wie tuertest.DNBAttrappe.
 type zaehlendeDNB struct {
-	dnbAttrappe
+	tuertest.DNBAttrappe
 	anfragen *atomic.Int32
 }
 
@@ -23,7 +26,7 @@ func (z zaehlendeDNB) RoundTrip(r *http.Request) (*http.Response, error) {
 	if r.URL.Host == "services.dnb.de" {
 		z.anfragen.Add(1)
 	}
-	return z.dnbAttrappe.RoundTrip(r)
+	return z.DNBAttrappe.RoundTrip(r)
 }
 
 // Die zehn- und die dreizehnstellige Form einer ISBN sind dieselbe Nummer (Migration 157):
@@ -35,8 +38,8 @@ func (z zaehlendeDNB) RoundTrip(r *http.Request) (*http.Response, error) {
 // Eine zehnstellige Nummer mit falschem Prüfzeichen ist eine andere Nummer: Am Testserver
 // steht unter 3499500252 ein anderes Buch als unter 9783499500251.
 func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	lege := func(titel, isbn string) (id string) {
 		t.Helper()
@@ -51,7 +54,7 @@ func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 
 	var anfragen atomic.Int32
 	client := inventur.NeuerMetadatenClient()
-	client.SetzeHTTPClientFuerTest(&http.Client{Transport: zaehlendeDNB{anfragen: &anfragen, dnbAttrappe: dnbAttrappe{satz: `
+	client.SetzeHTTPClientFuerTest(&http.Client{Transport: zaehlendeDNB{anfragen: &anfragen, DNBAttrappe: tuertest.DNBAttrappe{Satz: `
 		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><records><record><recordData>
 		  <record xmlns="http://www.loc.gov/MARC21/slim">
 			<datafield tag="245" ind1="1" ind2="0"><subfield code="a">Aus der DNB</subfield></datafield>

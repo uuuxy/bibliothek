@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/inventur"
 )
 
@@ -13,8 +15,8 @@ import (
 // („Sk", „JF", „MANGA"); bis zum 22.09.2026 stand hier „BIB Jugendbuch", ein Wort, das in
 // keinem Regal vorkommt (gemessen am Testserver am 22.09.2026: 0 Titel mit „BIB").
 func TestUpsertTitelAusMetadaten_SchreibtFachUndKeineErfundeneSignatur(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -50,8 +52,8 @@ func TestUpsertTitelAusMetadaten_SchreibtFachUndKeineErfundeneSignatur(t *testin
 // ohne DNB-Genre-Treffer kein sinnloser "BIB "-Wert entsteht — das Feld bleibt leer,
 // genau wie beim manuellen Anlegen über das Buchformular.
 func TestUpsertTitelAusMetadaten_OhneKategorieBleibtSignaturLeer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -70,12 +72,12 @@ func TestUpsertTitelAusMetadaten_OhneKategorieBleibtSignaturLeer(t *testing.T) {
 // aus dem Gespräch ab: Existiert der Titel schon, wird die vorhandene Systematik
 // unverändert übernommen (angezeigt), nicht durch einen frischen Vorschlag ersetzt.
 func TestFindeLokalenTitel_LiefertVorhandeneSignaturUnveraendert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	titelMitSignatur(t, pool, "Effi Briest", "Pg", 5)
+	testdaten.TitelMitSignatur(t, pool, "Effi Briest", "Pg", 5)
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET isbn = $1 WHERE titel = $2`, "9783150001", "Effi Briest"); err != nil {
 		t.Fatalf("ISBN nachtragen: %v", err)
 	}

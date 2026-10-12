@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -27,8 +29,8 @@ import (
 // Wächst dsgvoSchuelerQuellen (FK-Ratsche unten), zwingt der default-Zweig der
 // Seed-Schleife diesen Test zum Mitwachsen.
 func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	const (
@@ -40,10 +42,10 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 		fremdEnt = "Fremdkind Bleibt"
 	)
 
-	sid := seedSchueler(t, pool, barcode, vorname, "5a")
-	fremd := seedSchueler(t, pool, "S-RUND-FREMD", "Fremdkind", "5a")
-	titelID := seedMonitorTitel(t, pool, "Rundreise-Titel", "Aut Or", false, 0)
-	exID := exemplar(t, pool, titelID, "RUND-EX-1", true, "")
+	sid := testdaten.SeedSchueler(t, pool, barcode, vorname, "5a")
+	fremd := testdaten.SeedSchueler(t, pool, "S-RUND-FREMD", "Fremdkind", "5a")
+	titelID := testdaten.SeedMonitorTitel(t, pool, "Rundreise-Titel", "Aut Or", false, 0)
+	exID := testdaten.Exemplar(t, pool, titelID, "RUND-EX-1", true, "")
 
 	if _, err := pool.Exec(ctx, `
 		UPDATE schueler SET lusd_id = $2, eltern_email = $3, strasse = 'Rundreiseweg'
@@ -244,7 +246,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 // dafür stehen die wertbasierte Sonde oben und das Schlüssel-Vokabular-Gate
 // (dsgvo_paar_vollstaendigkeit_test.go).
 func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
 	rows, err := pool.Query(ctx, `

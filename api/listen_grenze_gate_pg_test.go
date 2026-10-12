@@ -34,6 +34,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/sse"
 )
 
@@ -193,11 +195,11 @@ func TestListenPfade_ErkenntDieFormen(t *testing.T) {
 }
 
 func TestListenNennenIhreGrenze(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	t.Setenv("RATE_LIMIT", "100000")
 	// Ein definierter Anfang: Was ein früherer Test liegen ließ, änderte sonst, welche Felder
 	// einer Antwort gefüllt sind.
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 	if err := (&db.Database{Pool: pool}).InitPermissions(context.Background()); err != nil {
 		t.Fatalf("InitPermissions: %v", err)
 	}
@@ -207,7 +209,7 @@ func TestListenNennenIhreGrenze(t *testing.T) {
 		t.Fatalf("Authenticator: %v", err)
 	}
 	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
-	srv.Uhr = saisonUhr
+	srv.Uhr = testdaten.SaisonUhr
 	router := srv.Routes()
 
 	welt := baueKanarienWelt(t, pool, authenticator)

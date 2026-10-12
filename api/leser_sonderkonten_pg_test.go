@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -21,8 +23,8 @@ import (
 //
 // Geprüft über die echten Handler, Anlegen wie Akte.
 func TestSonderkonten_AnlegenUndAkte(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-0000000000aa", Rolle: auth.RoleAdmin}

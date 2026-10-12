@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bibliothek/pkg/lmf"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,6 +9,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -31,31 +32,31 @@ import (
 // Titel bekommt dabei jeden Weg auf den Monitor, den es gibt (Leser in den letzten
 // Tagen, Cover, jüngstes Anlagedatum) — alle müssen zu sein.
 func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	leser := []string{
-		seedSchueler(t, pool, "S-MON-1", "Mia", "5a"),
-		seedSchueler(t, pool, "S-MON-2", "Ben", "5a"),
+		testdaten.SeedSchueler(t, pool, "S-MON-1", "Mia", "5a"),
+		testdaten.SeedSchueler(t, pool, "S-MON-2", "Ben", "5a"),
 	}
 
 	// Schulbuch, dessen Kennzeichen NUR in der Signatur steht — die manuelle Neuanlage
 	// schreibt es dorthin, der Sammelimport in den Titel (pkg/lmf kennt beide Wege).
-	lmf := seedMonitorTitel(t, pool, "Mathematik Neue Wege 7", "LMF Mathe 7", true, 0)
+	lmf := testdaten.SeedMonitorTitel(t, pool, "Mathematik Neue Wege 7", "LMF Mathe 7", true, 0)
 	for i, sid := range leser {
-		seedLeserAusleihe(t, pool, exemplar(t, pool, lmf, fmt.Sprintf("MON-LMF-%d", i), true, ""), sid)
+		testdaten.SeedLeserAusleihe(t, pool, testdaten.Exemplar(t, pool, lmf, fmt.Sprintf("MON-LMF-%d", i), true, ""), sid)
 	}
 
 	// Freihand-Roman: das Einzige, was beide Seiten zeigen dürfen.
-	tschick := seedMonitorTitel(t, pool, "Tschick", "Jug Her", true, 10)
-	seedLeserAusleihe(t, pool, exemplar(t, pool, tschick, "MON-TSCHICK-1", true, ""), leser[0])
+	tschick := testdaten.SeedMonitorTitel(t, pool, "Tschick", "Jug Her", true, 10)
+	testdaten.SeedLeserAusleihe(t, pool, testdaten.Exemplar(t, pool, tschick, "MON-TSCHICK-1", true, ""), leser[0])
 
 	// Komplett ausgesondert — mit Leser, Cover und jüngstem Datum.
-	ausgesondert := seedMonitorTitel(t, pool, "Ausgesonderter Roman", "Jug Aus", true, 0)
-	seedLeserAusleihe(t, pool, seedAusgesondertesExemplar(t, pool, ausgesondert, "MON-AUS-1"), leser[1])
+	ausgesondert := testdaten.SeedMonitorTitel(t, pool, "Ausgesonderter Roman", "Jug Aus", true, 0)
+	testdaten.SeedLeserAusleihe(t, pool, seedAusgesondertesExemplar(t, pool, ausgesondert, "MON-AUS-1"), leser[1])
 
 	// Nur bestellt, noch nicht im Haus — als jüngster Titel wäre er „Neu eingetroffen".
-	bestellt := seedMonitorTitel(t, pool, "Bestellter Roman", "Jug Bes", true, 0)
+	bestellt := testdaten.SeedMonitorTitel(t, pool, "Bestellter Roman", "Jug Bes", true, 0)
 	if _, err := pool.Exec(context.Background(), `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)
 		VALUES ($1, 'MON-BES-1', false, 'bestellt')`, bestellt); err != nil {
@@ -89,23 +90,23 @@ func TestOeffentlicheSichtbarkeit_KatalogUndMonitorUrteilenGleich(t *testing.T) 
 // Leser, nicht zwei. Gezählt werden deshalb Schüler-Ausleihen, je Schüler einmal
 // (Entscheidung 30.08.2026, Frage-Runde 2c).
 func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 
 	leser := []string{
-		seedSchueler(t, pool, "S-LES-1", "Mia", "5a"),
-		seedSchueler(t, pool, "S-LES-2", "Ben", "5a"),
-		seedSchueler(t, pool, "S-LES-3", "Lea", "5a"),
+		testdaten.SeedSchueler(t, pool, "S-LES-1", "Mia", "5a"),
+		testdaten.SeedSchueler(t, pool, "S-LES-2", "Ben", "5a"),
+		testdaten.SeedSchueler(t, pool, "S-LES-3", "Lea", "5a"),
 	}
 	lehrkraft := seedLehrkraft(t, pool)
 
 	// Klassensatz: 30 Exemplare an die Lehrkraft, dazu EIN Schüler und eine anonymisierte
 	// Ausleihe (kein Ausleiher mehr) — 32 Zeilen, ein Leser.
-	welle := seedMonitorTitel(t, pool, "Die Welle", "Jug Rho", true, 20)
+	welle := testdaten.SeedMonitorTitel(t, pool, "Die Welle", "Jug Rho", true, 20)
 	for i := range 30 {
-		seedLehrerAusleihe(t, pool, exemplar(t, pool, welle, fmt.Sprintf("LES-WELLE-%d", i), true, ""), lehrkraft)
+		seedLehrerAusleihe(t, pool, testdaten.Exemplar(t, pool, welle, fmt.Sprintf("LES-WELLE-%d", i), true, ""), lehrkraft)
 	}
-	seedLeserAusleihe(t, pool, exemplar(t, pool, welle, "LES-WELLE-S", true, ""), leser[2])
+	testdaten.SeedLeserAusleihe(t, pool, testdaten.Exemplar(t, pool, welle, "LES-WELLE-S", true, ""), leser[2])
 	if _, err := pool.Exec(context.Background(), `
 		INSERT INTO ausleihen (exemplar_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
 		SELECT id, NOW() - interval '2 days', NOW() + interval '21 days', NOW() - interval '1 day'
@@ -115,19 +116,19 @@ func TestMonitor_ZaehltLeserNichtExemplare(t *testing.T) {
 
 	// Drei Ausleihen, zwei Leser: Mia leiht Tschick zweimal (erst zurückgeben, dann noch
 	// einmal — zwei offene Ausleihen auf einem Exemplar verbietet die Datenbank), Ben einmal.
-	tschick := seedMonitorTitel(t, pool, "Tschick", "Jug Her", true, 10)
-	tschick1 := exemplar(t, pool, tschick, "LES-TSCHICK-1", true, "")
+	tschick := testdaten.SeedMonitorTitel(t, pool, "Tschick", "Jug Her", true, 10)
+	tschick1 := testdaten.Exemplar(t, pool, tschick, "LES-TSCHICK-1", true, "")
 	seedZurueckgegebeneAusleihe(t, pool, tschick1, leser[0])
-	seedLeserAusleihe(t, pool, tschick1, leser[0])
-	seedLeserAusleihe(t, pool, exemplar(t, pool, tschick, "LES-TSCHICK-2", true, ""), leser[1])
+	testdaten.SeedLeserAusleihe(t, pool, tschick1, leser[0])
+	testdaten.SeedLeserAusleihe(t, pool, testdaten.Exemplar(t, pool, tschick, "LES-TSCHICK-2", true, ""), leser[1])
 
 	// Drei Leser nacheinander, aber kein Cover: führt „Beliebt" an, ist aber kein
 	// „Buch des Monats".
-	ohneCover := seedMonitorTitel(t, pool, "Roman ohne Cover", "Jug Ohn", false, 5)
-	ohneCover1 := exemplar(t, pool, ohneCover, "LES-OHNE-1", true, "")
+	ohneCover := testdaten.SeedMonitorTitel(t, pool, "Roman ohne Cover", "Jug Ohn", false, 5)
+	ohneCover1 := testdaten.Exemplar(t, pool, ohneCover, "LES-OHNE-1", true, "")
 	seedZurueckgegebeneAusleihe(t, pool, ohneCover1, leser[0])
 	seedZurueckgegebeneAusleihe(t, pool, ohneCover1, leser[1])
-	seedLeserAusleihe(t, pool, ohneCover1, leser[2])
+	testdaten.SeedLeserAusleihe(t, pool, ohneCover1, leser[2])
 
 	antwort := monitorAntwortLesen(t, pool)
 	if antwort.BuchDesMonats == nil || antwort.BuchDesMonats.Titel != "Tschick" {
@@ -224,26 +225,6 @@ func monitorAntwortLesen(t *testing.T, pool *pgxpool.Pool) monitorAntwort {
 	return antwort
 }
 
-// seedMonitorTitel legt einen Titel mit Signatur, wahlweise Cover und einem Anlagedatum
-// vor alterTage Tagen an — das Datum steuert „Neu eingetroffen", das Cover die
-// Cover-Pflicht von „Buch des Monats" und „Neu eingetroffen".
-func seedMonitorTitel(t *testing.T, pool *pgxpool.Pool, titel, signatur string, mitCover bool, alterTage int) string {
-	t.Helper()
-	var cover *string
-	if mitCover {
-		url := "https://cover.invalid/" + titel
-		cover = &url
-	}
-	var id string
-	if err := pool.QueryRow(context.Background(), `
-		INSERT INTO buecher_titel (titel, signatur, cover_url, erstellt_am, ist_lernmittel)
-		VALUES ($1, $2, $3, NOW() - make_interval(days => $4), $5)
-		RETURNING id`, titel, signatur, cover, alterTage, lmf.HatKennung(signatur)).Scan(&id); err != nil {
-		t.Fatalf("Titel %q anlegen: %v", titel, err)
-	}
-	return id
-}
-
 // seedAusgesondertesExemplar legt ein ausgesondertes Exemplar an (Grund ist Pflicht,
 // chk_aussonderung_grund).
 func seedAusgesondertesExemplar(t *testing.T, pool *pgxpool.Pool, titelID, barcode string) string {
@@ -255,17 +236,4 @@ func seedAusgesondertesExemplar(t *testing.T, pool *pgxpool.Pool, titelID, barco
 		t.Fatalf("ausgesondertes Exemplar %q anlegen: %v", barcode, err)
 	}
 	return id
-}
-
-// seedLeserAusleihe bucht eine Schüler-Ausleihe von vor zwei Tagen — innerhalb JEDES
-// Zeitfensters des Monitors (7 und 30 Tage). Zeit aus der Datenbank, nicht aus Go: Die
-// Fenster werden dort gerechnet.
-func seedLeserAusleihe(t *testing.T, pool *pgxpool.Pool, exemplarID, schuelerID string) {
-	t.Helper()
-	if _, err := pool.Exec(context.Background(), `
-		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
-		VALUES ($1, $2, NOW() - interval '2 days', NOW() + interval '21 days')`,
-		exemplarID, schuelerID); err != nil {
-		t.Fatalf("Ausleihe anlegen: %v", err)
-	}
 }

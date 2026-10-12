@@ -10,6 +10,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -29,8 +31,8 @@ func aendereLeser(t *testing.T, srv *Server, id, rumpf string) *httptest.Respons
 // Zwei vertauschte Spalten gleichen Typs (Ort und Straße, Vor- und Nachname) fielen mit
 // gleichen Werten nicht auf.
 func TestLeserAendern_JedesFeldLandetInSeinerSpalte(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -95,8 +97,8 @@ func TestLeserAendern_JedesFeldLandetInSeinerSpalte(t *testing.T) {
 // Text: Der DSGVO-Lauf und die LUSD-Ausleitung schreiben „gelöscht" ebenso, und eine Abfrage
 // auf IS NULL fände einen leeren Text nicht.
 func TestLeserAendern_LeererWertWirdNull(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -137,8 +139,8 @@ func TestLeserAendern_LeererWertWirdNull(t *testing.T) {
 // Eine Kennung, die es nicht gibt, ist „nicht gefunden" und kein Erfolg: Die Anweisung trifft
 // keine Zeile, und ohne diese Auskunft meldete die Akte „gespeichert".
 func TestLeserAendern_UnbekannteKennungIstNichtGefunden(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	rec := aendereLeser(t, srv, "00000000-0000-4000-8000-000000000000", `{"vorname":"Niemand"}`)

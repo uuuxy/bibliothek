@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/inventur"
 )
 
@@ -16,8 +18,8 @@ import (
 // und schreibt die Antwort über PUT /api/buecher/titel/{id}/lernmittel. Vorher gab es
 // diese Rückfrage nicht: Jedes neue Schulbuch war für immer ein Bücherei-Titel.
 func TestNeuerDnbTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -58,7 +60,7 @@ func TestNeuerDnbTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
 }
 
 func TestLernmittelKennzeichenUnbekannterTitelIst404(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	id := "00000000-0000-0000-0000-000000000000"
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/titel/"+id+"/lernmittel", strings.NewReader(`{"ist_lernmittel":true}`))
@@ -77,7 +79,7 @@ func TestLernmittelKennzeichenUnbekannterTitelIst404(t *testing.T) {
 // ist_lernmittel, lehnte chk_mehrjahresband_spanne ab (am alten Code: Status 500, „violates
 // check constraint"), und das Fenster meldete nur „konnte nicht gespeichert werden".
 func TestLernmittelKennzeichenNimmtDenMehrjahresbandMit(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	const isbnBand, isbnNormal = "9780000134031", "9780000134048"

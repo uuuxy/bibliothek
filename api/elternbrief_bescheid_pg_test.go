@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Der Elternbrief je Schadensfall (GET /api/schadensfaelle/{id}/pdf) prüfte nicht, ob die
@@ -16,21 +18,21 @@ import (
 // Ersatzforderung hält diese Regel seit dem 13.09.2026 (api/print.go, bescheid_id IS NULL);
 // die Oberfläche öffnet den Elternbrief nicht mehr, über die Adresse blieb er erreichbar.
 func TestElternbrief_ForderungAufEinemBescheidBekommtKeinenBrief(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
-	bescheidReset(t, pool)
-	bescheidAngabenSetzen(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.BescheidReset(t, pool)
+	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	ctx := context.Background()
 
-	sid := seedSchueler(t, pool, "S-EBRIEF", "Briefkind", "08G2")
-	titelID := bescheidLernmittel(t, pool, "Mathematik 8")
-	fAuf := bescheidForderung(t, pool, sid, exemplar(t, pool, titelID, "EBRIEF-1", true, ""),
+	sid := testdaten.SeedSchueler(t, pool, "S-EBRIEF", "Briefkind", "08G2")
+	titelID := testdaten.BescheidLernmittel(t, pool, "Mathematik 8")
+	fAuf := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, titelID, "EBRIEF-1", true, ""),
 		"nicht_zurueckgegeben", "Mathematik 8 nicht zurück")
-	fOhne := bescheidForderung(t, pool, sid, exemplar(t, pool, titelID, "EBRIEF-2", true, ""),
+	fOhne := testdaten.BescheidForderung(t, pool, sid, testdaten.Exemplar(t, pool, titelID, "EBRIEF-2", true, ""),
 		"beschaedigt", "Mathematik 8 beschädigt")
 	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
-		bescheidRumpf(in28Tagen(), map[string]float64{fAuf: 24.90})); rec.Code != http.StatusCreated {
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fAuf: 24.90})); rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
 

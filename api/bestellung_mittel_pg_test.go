@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 
@@ -52,11 +54,11 @@ func zaehleBestellungen(t *testing.T, pool *pgxpool.Pool, lieferantID string) in
 }
 
 func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "OhneTopf", false)
-	titel := titelMitMeldebestand(t, pool, "LMF-OhneTopf", 0)
+	lieferant := testdaten.Haendler(t, pool, "OhneTopf", false)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-OhneTopf", 0)
 
 	for _, mittel := range []string{"", "kreis"} {
 		rec := bestelleMitTopf(t, srv, lieferant, titel, mittel)
@@ -78,19 +80,19 @@ func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
 }
 
 func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	titel := titelMitMeldebestand(t, pool, "LMF-Topf", 0)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Topf", 0)
 
 	// Händler MIT zweiter Kundennummer für den Schulträger …
-	mitZweiter := haendler(t, pool, "ZweiKonten", false)
+	mitZweiter := testdaten.Haendler(t, pool, "ZweiKonten", false)
 	if _, err := pool.Exec(ctx, `UPDATE lieferanten SET kundennummer_schultraeger = 'BIB-77' WHERE id = $1`, mitZweiter); err != nil {
 		t.Fatal(err)
 	}
 	// … und einer ohne.
-	ohneZweite := haendler(t, pool, "EinKonto", false)
+	ohneZweite := testdaten.Haendler(t, pool, "EinKonto", false)
 
 	faelle := []struct {
 		name, lieferant, mittel, kundennummer string
@@ -125,7 +127,7 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 // Der CHECK in der Datenbank ist die zweite Tür: Auch wer an Handler und Service vorbei
 // schreibt, bekommt keinen dritten Topf hinein.
 func TestBestellungMittelCheckInDerDatenbank(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	_, err := pool.Exec(context.Background(), `
 		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, mittel)
 		VALUES ('x', 'x@example.invalid', 'kreis')`)

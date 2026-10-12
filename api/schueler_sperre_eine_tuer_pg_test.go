@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -27,8 +29,8 @@ import (
 // 500-Meldung — auf dem Bildschirm stand also nichts, was weiterhilft. Zwei Türen zu
 // demselben Zustand, von denen nur eine die Regeln kennt: Die falsche geht irgendwann auf.
 func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 

@@ -10,6 +10,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,10 +36,10 @@ func sperrTuerAufruf(t *testing.T, pool *pgxpool.Pool, akteur, id, body string) 
 // block_reason, Entsperren räumt beides wieder. Vorher konnte der Toggle eine grundlose
 // "Zombie-Sperre" anlegen.
 func TestLockStudentHandler_RequiresReasonAndSetsBlockReason(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	akteur := adminFuerAudit(t, pool)
+	akteur := testdaten.AdminFuerAudit(t, pool)
 
 	var id string
 	if err := pool.QueryRow(ctx,
@@ -91,12 +93,12 @@ func TestLockStudentHandler_RequiresReasonAndSetsBlockReason(t *testing.T) {
 // umschalten) bleibt die Sperre der Ehemaligen stehen; ohne protokolliereSperre fehlen beide
 // Einträge.
 func TestSperrTuer_HebtBeideSperrenAufUndProtokolliert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	akteur := adminFuerAudit(t, pool)
+	akteur := testdaten.AdminFuerAudit(t, pool)
 
-	id := schuelerAnlegen(t, pool, "Ehemalig", "10R1", "S-SPERRTUER-1")
+	id := testdaten.SchuelerAnlegen(t, pool, "Ehemalig", "10R1", "S-SPERRTUER-1")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Automatisierte Abgänger-Sperre (offene Vorgänge)' WHERE id = $1`, id); err != nil {
 		t.Fatalf("Ehemaligen sperren: %v", err)
@@ -180,17 +182,17 @@ func TestSperrTuer_HebtBeideSperrenAufUndProtokolliert(t *testing.T) {
 // Papierkorb (zurück über Wiederherstellen) und die Anonymisierung (keine Person mehr).
 // Rot gesehen am Rückbau: ohne die zwei Fälle antwortet die Tür 200 und schaltet um.
 func TestSperrTuer_PapierkorbUndAnonymisiertBleiben(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	akteur := adminFuerAudit(t, pool)
+	akteur := testdaten.AdminFuerAudit(t, pool)
 
-	anonym := schuelerAnlegen(t, pool, "Anonym", "10R1", "S-SPERRTUER-A")
+	anonym := testdaten.SchuelerAnlegen(t, pool, "Anonym", "10R1", "S-SPERRTUER-A")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		block_reason = 'Abgänger anonymisiert', anonymized_at = NOW() WHERE id = $1`, anonym); err != nil {
 		t.Fatalf("anonymisieren: %v", err)
 	}
-	geloescht := schuelerAnlegen(t, pool, "Papierkorb", "07A", "S-SPERRTUER-P")
+	geloescht := testdaten.SchuelerAnlegen(t, pool, "Papierkorb", "07A", "S-SPERRTUER-P")
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET deleted_at = NOW(), ist_gesperrt = true,
 		block_reason = 'Systematisch gelöscht' WHERE id = $1`, geloescht); err != nil {
 		t.Fatalf("löschen: %v", err)

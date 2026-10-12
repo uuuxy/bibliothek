@@ -7,6 +7,9 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Der Backfill aus Migration 109 ordnet Alt-Bestellungen ihren Topf NUR zu, wo er aus den
@@ -38,16 +41,16 @@ func altBestellung(t *testing.T, pool *pgxpool.Pool, name string, titelIDs []str
 }
 
 func TestBackfillMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	if _, err := pool.Exec(ctx, `TRUNCATE bestellungen_verlauf CASCADE`); err != nil {
 		t.Fatal(err)
 	}
 
-	lernmittel := titelMitMeldebestand(t, pool, "LMF-Mathe 7", 0)
-	lernmittel2 := titelMitMeldebestand(t, pool, "LMF-Deutsch 7", 0)
-	buecherei := titelMitMeldebestand(t, pool, "Tribute von Panem", 0)
+	lernmittel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe 7", 0)
+	lernmittel2 := testdaten.TitelMitMeldebestand(t, pool, "LMF-Deutsch 7", 0)
+	buecherei := testdaten.TitelMitMeldebestand(t, pool, "Tribute von Panem", 0)
 
 	nurLernmittel := altBestellung(t, pool, "nur-lernmittel", []string{lernmittel, lernmittel2})
 	nurBuecherei := altBestellung(t, pool, "nur-buecherei", []string{buecherei})
@@ -64,8 +67,8 @@ func TestBackfillMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 	}
 
 	erwartet := map[string]*string{
-		nurLernmittel:  ptr("land"),
-		nurBuecherei:   ptr("schultraeger"),
+		nurLernmittel:  testdaten.Ptr("land"),
+		nurBuecherei:   testdaten.Ptr("schultraeger"),
 		gemischt:       nil,
 		titelWeg:       nil,
 		ohnePositionen: nil,
@@ -99,5 +102,3 @@ func TestBackfillMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 		t.Errorf("zweiter Lauf hat eine bereits zugeordnete Bestellung umgeschrieben: %q", danach)
 	}
 }
-
-func ptr(s string) *string { return &s }

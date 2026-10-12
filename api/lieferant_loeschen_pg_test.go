@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Der Hauptlieferant lässt sich nicht nebenbei wegklicken.
@@ -29,8 +31,8 @@ import (
 // Die Regel sitzt im Handler, nicht im Formular: Die Verwaltung ist nicht die einzige
 // Tür, und ein Hinweis, den nur ein Bildschirm kennt, ist keine Regel.
 func TestHauptlieferantLoeschenWirdAbgewiesen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	anlegen := func(name string, haupt bool) string {

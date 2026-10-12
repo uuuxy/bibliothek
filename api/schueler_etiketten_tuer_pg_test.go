@@ -8,6 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pdf"
 
 	"github.com/google/uuid"
@@ -23,8 +26,8 @@ import (
 // leere Auswahl, zu große Auswahl und gelöschte Schüler sind Auskünfte, kein Serverfehler.
 
 func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	_, rufe := protokollWelt(t, pool)
 
 	bogen := func(t *testing.T, rumpf any) *httptest.ResponseRecorder {
@@ -45,7 +48,7 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 		}
 	}
 
-	schueler := seedSchueler(t, pool, "S-ETI-001", "Lea", "7b")
+	schueler := testdaten.SeedSchueler(t, pool, "S-ETI-001", "Lea", "7b")
 
 	t.Run("der Bogen trägt Name, Klasse und Barcode aus der Datenbank", func(t *testing.T) {
 		rec := bogen(t, map[string]any{"schuelerIds": []string{schueler}})
@@ -55,7 +58,7 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 		if typ := rec.Header().Get("Content-Type"); !strings.Contains(typ, "application/pdf") {
 			t.Errorf("Content-Type %q, erwartet ein PDF", typ)
 		}
-		text := pdfText(t, rec.Body.Bytes())
+		text := pdftest.Suchtext(t, rec.Body.Bytes())
 		// Erwartet wird, was in der Zeile STEHT, nicht was der Test angelegt hat: Die Klasse
 		// „7b" speichert der Trigger trg_schueler_klasse_vokabular in der Form der Schule.
 		var nachname, vorname, klasse string
@@ -77,7 +80,7 @@ func TestSchuelerEtiketten_UeberDieTuer(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
 		}
-		text := pdfText(t, rec.Body.Bytes())
+		text := pdftest.Suchtext(t, rec.Body.Bytes())
 		if !strings.Contains(text, pdf.MusterSchuelerEtikett.BarcodeID) {
 			t.Errorf("das Muster-Etikett fehlt auf dem Bogen")
 		}

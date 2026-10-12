@@ -21,7 +21,9 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 	"bibliothek/sse"
 
@@ -40,8 +42,8 @@ type nbTuer struct {
 
 func nbTuerAufbau(t *testing.T) *nbTuer {
 	t.Helper()
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	w := &nbTuer{pool: pool}
@@ -59,9 +61,9 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 	w.ben = eins("Ben", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ($1, 'Ben', 'Zweiter', '07B', 2031) RETURNING id`, "S-TB-"+suffix)
 	w.carla = eins("Carla", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, block_reason)
 		VALUES ($1, 'Carla', 'Gesperrt', '07B', 2031, true, 'Testsperre') RETURNING id`, "S-TC-"+suffix)
-	titelID := seedMonitorTitel(t, pool, "Nachbuch-Tür-Band", "NBT", false, 0)
+	titelID := testdaten.SeedMonitorTitel(t, pool, "Nachbuch-Tür-Band", "NBT", false, 0)
 	w.code = "B-NBT-" + suffix
-	w.exemplarID = exemplar(t, pool, titelID, w.code, true, "")
+	w.exemplarID = testdaten.Exemplar(t, pool, titelID, w.code, true, "")
 
 	studentRepo := repository.NewStudentRepository(pool)
 	bookRepo := repository.NewBookRepository(pool)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -20,14 +22,14 @@ import (
 // Zeile im falschen Format sähe im SELECT count(*) gut aus und bliebe für die
 // Auskunft trotzdem unsichtbar (Lehre LUSD-Paarungs-Gates).
 func TestDeleteTitle_TresenAuskunftFindetGeloeschteExemplare(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	titelID := seedMonitorTitel(t, pool, "Snapshot-Titel", "Sig Snap", false, 0)
-	exemplar(t, pool, titelID, "SNAP-TITELDEL-1", true, "")
-	exemplar(t, pool, titelID, "SNAP-TITELDEL-2", true, "")
-	bearbeiter := seedPortalLehrkraft(t, pool, "titelloescher@test.invalid")
+	titelID := testdaten.SeedMonitorTitel(t, pool, "Snapshot-Titel", "Sig Snap", false, 0)
+	testdaten.Exemplar(t, pool, titelID, "SNAP-TITELDEL-1", true, "")
+	testdaten.Exemplar(t, pool, titelID, "SNAP-TITELDEL-2", true, "")
+	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "titelloescher@test.invalid")
 
 	if err := repository.NewAuditRepository(pool).DeleteTitle(ctx, titelID, bearbeiter); err != nil {
 		t.Fatalf("DeleteTitle: %v", err)
@@ -52,14 +54,14 @@ func TestDeleteTitle_TresenAuskunftFindetGeloeschteExemplare(t *testing.T) {
 	}
 
 	// Der Eintrag zum Titel selbst hängt an der Kennung des Titels und nennt, wer gelöscht hat.
-	if n := zaehleZeilen(t, pool, `
+	if n := pgtest.ZaehleZeilen(t, pool, `
 		SELECT count(*) FROM audit_log
 		WHERE tabelle = 'buecher_titel' AND aktion = 'DELETE' AND datensatz_id = $1::uuid
 		  AND bearbeiter_id = $2::uuid AND details->>'titel' = 'Snapshot-Titel'`, titelID, bearbeiter); n != 1 {
 		t.Errorf("%d Einträge zum gelöschten Titel mit seiner Kennung und dem Bearbeiter, erwartet 1", n)
 	}
 	// Je Exemplar derselbe Bearbeiter und der Bezug zum Titel.
-	if n := zaehleZeilen(t, pool, `
+	if n := pgtest.ZaehleZeilen(t, pool, `
 		SELECT count(*) FROM audit_log
 		WHERE tabelle = 'buecher_exemplare' AND aktion = 'DELETE' AND bearbeiter_id = $2::uuid
 		  AND details->>'titel_id' = $1`, titelID, bearbeiter); n != 2 {

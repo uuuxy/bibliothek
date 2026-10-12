@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 )
 
@@ -16,7 +17,7 @@ import (
 // Vollprobe (sweeps.md) — der Suchnorm-Zwilling lag bei einer Stichprobe 110 Zeichen
 // daneben, ohne dass es jemand sah.
 func TestAbgaengerJahr_GoUndSQLSindEineRegel(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
 	var formen []string

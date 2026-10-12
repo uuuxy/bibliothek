@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // TestCreateStudent_OhneGeburtsdatumAbgewiesen: Das Geburtsdatum ist bei der Handanlage
@@ -15,8 +17,8 @@ import (
 // entstünde beim nächsten Import ein Duplikat. Die Meldung muss den Grund nennen,
 // sonst wird die Pflicht als Schikane gelesen.
 func TestCreateStudent_OhneGeburtsdatumAbgewiesen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	for _, body := range []string{
@@ -45,8 +47,8 @@ func TestCreateStudent_OhneGeburtsdatumAbgewiesen(t *testing.T) {
 // Regel (#5): Namensgleiche Schüler mit VERSCHIEDENEM Geburtsdatum sind verschiedene
 // Personen und müssen beide anlegbar sein.
 func TestCreateStudent_NamensvetternMitVerschiedenemGeburtsdatum(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	if code, body := createStudent(t, srv, `{"vorname":"Leon","nachname":"Müller","klasse":"5a","geburtsdatum":"2012-01-02"}`); code != http.StatusCreated {
@@ -61,8 +63,8 @@ func TestCreateStudent_NamensvetternMitVerschiedenemGeburtsdatum(t *testing.T) {
 // bekanntem Geburtsdatum bleibt die Duplikatssperre aktiv (409) — der Fix schwächt die
 // echte Duplikaterkennung nicht ab.
 func TestCreateStudent_EchtesDuplikatMitGeburtsdatum(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	if code, body := createStudent(t, srv, `{"vorname":"Anna","nachname":"Schmidt","klasse":"6a","geburtsdatum":"2012-03-04"}`); code != http.StatusCreated {
@@ -87,8 +89,8 @@ func createStudent(t *testing.T, srv *Server, jsonBody string) (int, string) {
 // Geburtsdatum ist ein Duplikat (409 mit Hinweis auf die Schreibweise), am alten Stand
 // (lower() in der Prüfung, roher Index) eine zweite Zeile.
 func TestCreateStudent_SchreibvarianteIstDuplikat(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	if code, body := createStudent(t, srv, `{"vorname":"Anna","nachname":"Müller","klasse":"06G1","geburtsdatum":"2012-03-04"}`); code != http.StatusCreated {

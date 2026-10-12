@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -26,20 +28,20 @@ import (
 // (gesperrt ⇒ Grund nicht leer) → 23514 → 500 „interner Datenbankfehler". Ein manuell
 // gesperrter Schüler ließ sich nach dem Löschen NIE wiederherstellen.
 func TestPapierkorb_ManuelleSperreUeberlebtLoeschenUndRestore(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	auditRepo := repository.NewAuditRepository(pool)
-	bearbeiter := seedPortalLehrkraft(t, pool, "papierkorb@test.invalid")
+	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "papierkorb@test.invalid")
 
-	gesperrt := seedSchueler(t, pool, "S-SPERRE-1", "Mia", "5a")
+	gesperrt := testdaten.SeedSchueler(t, pool, "S-SPERRE-1", "Mia", "5a")
 	if _, err := pool.Exec(ctx, `
 		UPDATE schueler SET is_manually_blocked = true, ist_gesperrt = true,
 		       block_reason = 'Ausweismissbrauch, Eltern informiert' WHERE id = $1`, gesperrt); err != nil {
 		t.Fatalf("manuelle Sperre setzen: %v", err)
 	}
-	frei := seedSchueler(t, pool, "S-SPERRE-2", "Ben", "5a")
+	frei := testdaten.SeedSchueler(t, pool, "S-SPERRE-2", "Ben", "5a")
 
 	loeschen := func(id string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodDelete, "/api/schueler/"+id, nil)
@@ -116,13 +118,13 @@ func sperrZustand(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, manuel
 // Zeit nach hinten. Still: Die Antwort war beide Male „success", und im Papierkorb sieht
 // man das Datum nur als „gelöscht am".
 func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	auditRepo := repository.NewAuditRepository(pool)
-	bearbeiter := seedPortalLehrkraft(t, pool, "papierkorb-uhr@test.invalid")
-	schueler := seedSchueler(t, pool, "S-UHR-1", "Uri", "5a")
+	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "papierkorb-uhr@test.invalid")
+	schueler := testdaten.SeedSchueler(t, pool, "S-UHR-1", "Uri", "5a")
 
 	loeschen := func() *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodDelete, "/api/schueler/"+schueler, nil)

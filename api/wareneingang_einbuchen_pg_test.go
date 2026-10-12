@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // POST /api/bestellungen/bulk-receive bucht markierte Exemplare aus dem Zulauf in den
@@ -46,13 +49,13 @@ func leseExemplarStand(t *testing.T, pool *pgxpool.Pool, id string) exemplarStan
 }
 
 func TestWareneingang_EinbuchenUeberDieTuer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	adminID, rufe := protokollWelt(t, pool)
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BULK_RECEIVE_ITEMS'`)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BULK_RECEIVE_ITEMS'`)
 	})
-	titelID := titelMitSignatur(t, pool, "Einbuch-Titel", "Ein 1", 0)
+	titelID := testdaten.TitelMitSignatur(t, pool, "Einbuch-Titel", "Ein 1", 0)
 
 	// einbuchen liefert Status, die gemeldete Zahl und den Rumpf für die Fehlermeldung.
 	einbuchen := func(t *testing.T, rumpf string) (int, int, string) {
@@ -85,7 +88,7 @@ func TestWareneingang_EinbuchenUeberDieTuer(t *testing.T) {
 				t.Errorf("Exemplar %s nach dem Einbuchen: %+v — erwartet ausleihbar, ohne Bestellstatus und Notiz", id, s)
 			}
 		}
-		if n := zaehleZeilen(t, pool,
+		if n := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM audit_logs WHERE aktion = 'BULK_RECEIVE_ITEMS' AND admin_id = $1
 			   AND details->>'received_count' = '2'`,
 			adminID); n != 1 {
@@ -126,13 +129,13 @@ func TestWareneingang_EinbuchenUeberDieTuer(t *testing.T) {
 		if code, _, _ := einbuchen(t, `{"exemplar_ids":["`+a+`"]}`); code != http.StatusOK {
 			t.Fatalf("erstes Einbuchen: Status %d", code)
 		}
-		vorher := zaehleZeilen(t, pool,
+		vorher := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM audit_logs WHERE aktion = 'BULK_RECEIVE_ITEMS'`)
 		code, _, rumpf := einbuchen(t, `{"exemplar_ids":["`+a+`"]}`)
 		if code != http.StatusNotFound {
 			t.Fatalf("zweites Einbuchen: Status %d, erwartet 404: %s", code, rumpf)
 		}
-		if nachher := zaehleZeilen(t, pool,
+		if nachher := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM audit_logs WHERE aktion = 'BULK_RECEIVE_ITEMS'`); nachher != vorher {
 			t.Errorf("ein Einbuchen ohne Wirkung schrieb einen Protokolleintrag (%d → %d)", vorher, nachher)
 		}

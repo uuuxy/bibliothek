@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/google/uuid"
 )
@@ -19,8 +21,8 @@ import (
 // Brief: Der Betrag war zu klein, oder es hieß „keine offenen Schadensfälle", während
 // die Akte offene Beträge zeigte und der Schüler gesperrt blieb.
 func TestQueryRechnungItems_ForderungOhneExemplarUndAusleihe(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var schuelerID uuid.UUID
@@ -72,22 +74,22 @@ func TestQueryRechnungItems_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 // verschiedenen Zahlungswegen. Der Bescheid entsteht hier über den echten Handler, damit der Test
 // genau die Form trifft, die der Betrieb schreibt.
 func TestQueryRechnungItems_ForderungAufEinemBescheidBleibtDraussen(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
-	bescheidReset(t, pool)
-	bescheidAngabenSetzen(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.BescheidReset(t, pool)
+	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	ctx := context.Background()
 
-	sid := seedSchueler(t, pool, "S-RECH-BESCH", "Rechnungskind", "08G2")
-	titelID := bescheidLernmittel(t, pool, "Deutsch 8")
-	exAufBescheid := exemplar(t, pool, titelID, "RECH-BESCH-1", true, "")
-	exOhneBescheid := exemplar(t, pool, titelID, "RECH-BESCH-2", true, "")
-	fAufBescheid := bescheidForderung(t, pool, sid, exAufBescheid, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
-	bescheidForderung(t, pool, sid, exOhneBescheid, "beschaedigt", "Deutsch 8 beschädigt")
+	sid := testdaten.SeedSchueler(t, pool, "S-RECH-BESCH", "Rechnungskind", "08G2")
+	titelID := testdaten.BescheidLernmittel(t, pool, "Deutsch 8")
+	exAufBescheid := testdaten.Exemplar(t, pool, titelID, "RECH-BESCH-1", true, "")
+	exOhneBescheid := testdaten.Exemplar(t, pool, titelID, "RECH-BESCH-2", true, "")
+	fAufBescheid := testdaten.BescheidForderung(t, pool, sid, exAufBescheid, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
+	testdaten.BescheidForderung(t, pool, sid, exOhneBescheid, "beschaedigt", "Deutsch 8 beschädigt")
 
 	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
-		bescheidRumpf(in28Tagen(), map[string]float64{fAufBescheid: 24.90}))
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{fAufBescheid: 24.90}))
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
@@ -109,18 +111,18 @@ func TestQueryRechnungItems_ForderungAufEinemBescheidBleibtDraussen(t *testing.T
 // Knopf in der Schülerakte sagt, warum, statt „keine offenen Schadensfälle" zu melden, während
 // die Akte offene Beträge zeigt.
 func TestPrintRechnung_AlleForderungenAufBescheid(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
-	bescheidReset(t, pool)
-	bescheidAngabenSetzen(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
+	testdaten.BescheidReset(t, pool)
+	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	sid := seedSchueler(t, pool, "S-RECH-ALLE", "Bescheidkind", "08G2")
-	titelID := bescheidLernmittel(t, pool, "Englisch 8")
-	ex := exemplar(t, pool, titelID, "RECH-ALLE-1", true, "")
-	f := bescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 8 nicht zurück")
+	sid := testdaten.SeedSchueler(t, pool, "S-RECH-ALLE", "Bescheidkind", "08G2")
+	titelID := testdaten.BescheidLernmittel(t, pool, "Englisch 8")
+	ex := testdaten.Exemplar(t, pool, titelID, "RECH-ALLE-1", true, "")
+	f := testdaten.BescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 8 nicht zurück")
 	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
-		bescheidRumpf(in28Tagen(), map[string]float64{f: 19.50})); rec.Code != http.StatusCreated {
+		testdaten.BescheidRumpf(testdaten.In28Tagen(), map[string]float64{f: 19.50})); rec.Code != http.StatusCreated {
 		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
 	}
 

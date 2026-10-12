@@ -10,7 +10,10 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/inventur"
 )
 
@@ -30,8 +33,8 @@ func dnbSatz(isbn, titel string) string {
 }
 
 func TestBestellsuche_UeberDieTuer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	// Der Katalog führt die ISBN dreizehnstellig; die zehnstellige Form desselben Buchs endet
@@ -43,8 +46,8 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 		VALUES ('Bestellsuche Probeband', 'Muster, Erika', $1, true) RETURNING id`, isbn13).Scan(&imHaus); err != nil {
 		t.Fatal(err)
 	}
-	exemplar(t, pool, imHaus, "BSU-1", true, "")
-	exemplar(t, pool, imHaus, "BSU-2", true, "")
+	testdaten.Exemplar(t, pool, imHaus, "BSU-1", true, "")
+	testdaten.Exemplar(t, pool, imHaus, "BSU-2", true, "")
 	if _, err := pool.Exec(t.Context(), `
 		UPDATE buecher_exemplare SET ist_ausgesondert = true, aussonderung_grund = 'AUSSORTIERT', ist_ausleihbar = false
 		WHERE barcode_id = 'BSU-2'`); err != nil {
@@ -83,7 +86,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 	}
 
 	t.Run("Treffer im Katalog: mit Bestand ohne Ausgesondertes und als Lernmittel", func(t *testing.T) {
-		code, treffer, rumpf := suche(t, dnbAttrappe{satz: dnbAntwort}, `{"query":"Probeband"}`)
+		code, treffer, rumpf := suche(t, tuertest.DNBAttrappe{Satz: dnbAntwort}, `{"query":"Probeband"}`)
 		if code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200: %s", code, rumpf)
 		}
@@ -105,7 +108,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 	// Die DNB nennt ältere Bücher zehnstellig und mit Bindestrichen. Fehlt die Markierung,
 	// legt die Person einen Titel an, den es schon gibt.
 	t.Run("Treffer der DNB zu einem Titel im Haus ist als vorhanden markiert", func(t *testing.T) {
-		_, treffer, rumpf := suche(t, dnbAttrappe{satz: dnbAntwort}, `{"query":"Probeband"}`)
+		_, treffer, rumpf := suche(t, tuertest.DNBAttrappe{Satz: dnbAntwort}, `{"query":"Probeband"}`)
 		dnb := aus(treffer, "dnb")
 		if len(dnb) != 2 {
 			t.Fatalf("%d Treffer der DNB, erwartet 2: %s", len(dnb), rumpf)
@@ -119,7 +122,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 	})
 
 	t.Run("die zehnstellige ISBN findet den Titel im Katalog", func(t *testing.T) {
-		_, treffer, rumpf := suche(t, dnbAttrappe{satz: dnbAntwort}, `{"query":"`+isbn10+`"}`)
+		_, treffer, rumpf := suche(t, tuertest.DNBAttrappe{Satz: dnbAntwort}, `{"query":"`+isbn10+`"}`)
 		if lokal := aus(treffer, "local"); len(lokal) != 1 || lokal[0].ID != imHaus {
 			t.Errorf("Treffer aus dem Katalog: %+v — erwartet den Probeband: %s", lokal, rumpf)
 		}
@@ -129,7 +132,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 	// Antwort nennt ihn: Ein Buch, das die DNB kennt, sähe sonst aus wie eines, das sie nicht
 	// kennt.
 	t.Run("DNB nicht erreichbar: die Treffer aus dem Katalog kommen trotzdem, die Antwort nennt den Ausfall", func(t *testing.T) {
-		code, treffer, rumpf := suche(t, dnbAttrappe{status: http.StatusServiceUnavailable}, `{"query":"Probeband"}`)
+		code, treffer, rumpf := suche(t, tuertest.DNBAttrappe{Status: http.StatusServiceUnavailable}, `{"query":"Probeband"}`)
 		if code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200: %s", code, rumpf)
 		}
@@ -146,7 +149,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 
 	// Ohne Treffer im Katalog bliebe von einem Ausfall sonst nur eine leere Liste.
 	t.Run("DNB nicht erreichbar, kein Treffer im Katalog: leere Liste mit dem Ausfall im Kopf", func(t *testing.T) {
-		code, treffer, rumpf := suche(t, dnbAttrappe{status: http.StatusBadGateway}, `{"query":"gibtesnichtimkatalog"}`)
+		code, treffer, rumpf := suche(t, tuertest.DNBAttrappe{Status: http.StatusBadGateway}, `{"query":"gibtesnichtimkatalog"}`)
 		if code != http.StatusOK || len(treffer) != 0 {
 			t.Fatalf("Status %d mit %d Treffern, erwartet 200 und keinen: %s", code, len(treffer), rumpf)
 		}
@@ -157,7 +160,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 
 	t.Run("die DNB antwortet ohne Treffer: kein Ausfall", func(t *testing.T) {
 		leer := `<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/"><numberOfRecords>0</numberOfRecords></searchRetrieveResponse>`
-		code, treffer, rumpf := suche(t, dnbAttrappe{satz: leer}, `{"query":"gibtesnichtimkatalog"}`)
+		code, treffer, rumpf := suche(t, tuertest.DNBAttrappe{Satz: leer}, `{"query":"gibtesnichtimkatalog"}`)
 		if code != http.StatusOK || len(treffer) != 0 {
 			t.Fatalf("Status %d mit %d Treffern, erwartet 200 und keinen: %s", code, len(treffer), rumpf)
 		}
@@ -168,7 +171,7 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 
 	t.Run("leere Suche: leere Liste, die DNB wird nicht gefragt", func(t *testing.T) {
 		var anfragen atomic.Int32
-		code, _, rumpf := suche(t, zaehlendeDNB{dnbAttrappe{satz: dnbAntwort}, &anfragen}, `{"query":"   "}`)
+		code, _, rumpf := suche(t, zaehlendeDNB{tuertest.DNBAttrappe{Satz: dnbAntwort}, &anfragen}, `{"query":"   "}`)
 		if code != http.StatusOK || strings.TrimSpace(rumpf) != "[]" {
 			t.Errorf("Status %d, Antwort %s — erwartet 200 und []", code, rumpf)
 		}
@@ -176,14 +179,14 @@ func TestBestellsuche_UeberDieTuer(t *testing.T) {
 			t.Errorf("%d Anfragen an die DNB für eine leere Suche", n)
 		}
 		// Gegenprobe: Eine Suche mit Text fragt sie.
-		suche(t, zaehlendeDNB{dnbAttrappe{satz: dnbAntwort}, &anfragen}, `{"query":"Probeband"}`)
+		suche(t, zaehlendeDNB{tuertest.DNBAttrappe{Satz: dnbAntwort}, &anfragen}, `{"query":"Probeband"}`)
 		if n := anfragen.Load(); n == 0 {
 			t.Error("Gegenprobe: Auch die Suche mit Text hat die DNB nicht gefragt — die Zählung misst nichts")
 		}
 	})
 
 	t.Run("kein JSON: 400", func(t *testing.T) {
-		if code, _, rumpf := suche(t, dnbAttrappe{satz: dnbAntwort}, `{"query":`); code != http.StatusBadRequest {
+		if code, _, rumpf := suche(t, tuertest.DNBAttrappe{Satz: dnbAntwort}, `{"query":`); code != http.StatusBadRequest {
 			t.Errorf("Status %d, erwartet 400: %s", code, rumpf)
 		}
 	})

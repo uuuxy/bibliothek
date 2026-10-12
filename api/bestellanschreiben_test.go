@@ -5,6 +5,8 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pdftest"
+	"bibliothek/internal/tuertest"
 	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
 )
@@ -19,7 +21,7 @@ func anschreibenBlatt(positionen []OrderedItem, schule pdf.SchuleInfo, weg pdf.E
 }
 
 // Jedes Feld der Eingabe kommt aus seiner Quelle, die Werte sind je Feld verschieden; ein Feld,
-// das die Eingabe später dazubekommt und das niemand füllt, fällt an leereFelder auf. Den Verlag
+// das die Eingabe später dazubekommt und das niemand füllt, fällt an tuertest.LeereFelder auf. Den Verlag
 // druckt das Anschreiben nicht.
 func TestBestellanschreiben_FuelltJedesFeldDerEingabe(t *testing.T) {
 	positionen := []OrderedItem{
@@ -47,7 +49,7 @@ func TestBestellanschreiben_FuelltJedesFeldDerEingabe(t *testing.T) {
 		if !reflect.DeepEqual(eingabe, want) {
 			t.Errorf("%s: Eingabe des Anschreibens =\n%+v\nerwartet\n%+v", mittel, eingabe, want)
 		}
-		if leer := leereFelder(reflect.ValueOf(eingabe), "pdf.Bestellanschreiben"); len(leer) > 0 {
+		if leer := tuertest.LeereFelder(reflect.ValueOf(eingabe), "pdf.Bestellanschreiben"); len(leer) > 0 {
 			t.Errorf("%s: bestellanschreiben füllt diese Felder nicht: %v", mittel, leer)
 		}
 	}
@@ -81,7 +83,7 @@ func TestBestellanschreibenTraegtDenVermerkDesTopfsUndNieDenAnderen(t *testing.T
 			if err != nil {
 				t.Fatalf("Anschreiben erzeugen: %v", err)
 			}
-			text := pdfText(t, roh)
+			text := pdftest.Suchtext(t, roh)
 			for _, wort := range erwartet {
 				if !strings.Contains(text, wort) {
 					t.Errorf("%q fehlt auf dem Anschreiben für %s", wort, mittel)

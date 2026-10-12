@@ -9,6 +9,9 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -22,8 +25,8 @@ import (
 //     stille Verwechslungen, hier zwischen „beschädigt" und „verfügbar".
 //  3. Ein Statuswechsel ohne das Feld lässt den erfassten Schaden stehen.
 func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	ausleihbaresExemplar(t, pool, "Atlas mit Wasserrand", "B-ABW-1")
@@ -44,7 +47,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 		req.SetPathValue("id", exID)
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
-		statusTuer.ServeHTTP(rec, alsBenutzer(req, adminFuerAudit(t, pool)))
+		statusTuer.ServeHTTP(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status setzen (%s): erwartet 200, war %d: %s", koerper, rec.Code, rec.Body.String())
 		}
@@ -151,8 +154,8 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 // Exemplars benutzt: den Listenpreis des Titels, das Verleihjahr und den erfassten
 // Beschädigungsgrad.
 func TestExemplarliste_ZeigtDenHeutigenErsatzwert(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	ausleihbaresExemplar(t, pool, "Mathematik 8", "B-EW-1")
@@ -220,8 +223,8 @@ func TestExemplarliste_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 // vorher. Deshalb steht hier der ganze Weg — Schlüssel in der Tabelle, Aufruf der
 // Exemplar-Liste, Betrag und Begründung in der Antwort.
 func TestExemplarliste_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	ausleihbaresExemplar(t, pool, "Geschichte 9", "B-GRD-1")

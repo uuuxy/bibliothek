@@ -12,6 +12,8 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/auskunft"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -33,8 +35,8 @@ import (
 // am Konto, nicht an der Leserart). Der Administrator bekommt die mit Konto. Erteilt der Admin
 // der Leitung manage_users, bekommt auch sie sie (geprüft wird das Recht, nicht die Rolle).
 func TestDsgvoAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	// Die Rechtezeile der Leitung steht je nach Lauf schon da (Seed anderer Tests). Sie wird

@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 )
 
@@ -21,7 +22,7 @@ import (
 // SQL: Der Trigger allein beweist nur, dass die Datenbank es täte; dieser Test beweist,
 // dass die Verwaltung auch dort ankommt, wo die Theke nachsieht.
 func TestBenutzerBekommtLeserzeile(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	userRepo := repository.NewUserRepository(pool)

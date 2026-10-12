@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/inventur"
 )
 
@@ -22,15 +23,15 @@ import (
 // mit neuem Fach darf nicht scheitern, eine Schreibvariante ("deutsch") muss auf die
 // kanonische Registrierung ("Deutsch") laufen statt eine Dublette anzulegen.
 func TestFachAutoRegistrierung(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	repo := inventur.NewBookRepository(pool)
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%1000000)
 	fach := "Astronomie" + suffix
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE titel LIKE $1`, "%"+suffix)
-		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung ILIKE $1`, "%"+suffix)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE titel LIKE $1`, "%"+suffix)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung ILIKE $1`, "%"+suffix)
 	})
 
 	// 1) Unbekanntes Fach: CreateBook registriert es und der Titel trägt es.
@@ -107,7 +108,7 @@ func TestFachAutoRegistrierung(t *testing.T) {
 // alten Namen, zählte die Session null Exemplare und jeder Scan liefe auf 409.
 // Abgeschlossene Sessions sind Historie und behalten den alten Namen.
 func TestSystematikRenameZiehtOffeneInventurMit(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -118,8 +119,8 @@ func TestSystematikRenameZiehtOffeneInventurMit(t *testing.T) {
 		t.Fatal("Sachgruppe konnte nicht angelegt werden")
 	}
 	t.Cleanup(func() {
-		aufraeumen(t, pool, `DELETE FROM inventur_sessions WHERE scope_label LIKE $1`, "%"+suffix)
-		aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM inventur_sessions WHERE scope_label LIKE $1`, "%"+suffix)
+		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
 	})
 
 	var offenID, zuID string

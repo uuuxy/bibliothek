@@ -8,18 +8,20 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // TestUpdateTitelSignaturHandler_SpeichertNeueSignatur belegt den Bearbeitungspfad
 // im Bestellkorb: Ein Vorschlag ("BIB Jugendbuch") lässt sich vor dem Bestellen
 // korrigieren, ohne über das große Buchformular zu gehen.
 func TestUpdateTitelSignaturHandler_SpeichertNeueSignatur(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
-	titelID := titelMitSignatur(t, pool, "Die Tribute von Panem", "BIB Jugendbuch", 0)
+	titelID := testdaten.TitelMitSignatur(t, pool, "Die Tribute von Panem", "BIB Jugendbuch", 0)
 
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/titel/"+titelID+"/signatur",
 		strings.NewReader(`{"signatur":"JF Panem"}`))
@@ -45,8 +47,8 @@ func TestUpdateTitelSignaturHandler_SpeichertNeueSignatur(t *testing.T) {
 // TestUpdateTitelSignaturHandler_UnbekannteIDGibt404 belegt, dass eine nicht
 // existierende Titel-ID sauber als 404 gemeldet wird statt als 500.
 func TestUpdateTitelSignaturHandler_UnbekannteIDGibt404(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	unbekannteID := "00000000-0000-0000-0000-000000000000"

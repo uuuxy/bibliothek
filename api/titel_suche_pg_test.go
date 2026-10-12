@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 )
 
@@ -21,12 +23,12 @@ import (
 // bleiben (SearchTitlesFuzzy: Signatur, ISBN, Umlaut-Normalisierung) — die Inventur-Liste
 // GET /api/books kann das nicht, deshalb ist das eine eigene Tür und kein Umzug dorthin.
 func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	titelID := titelMitSignatur(t, pool, "Türsuche Testband", "TUER 7", 1)
-	exemplar(t, pool, titelID, "B-TUER-1", true, "") // ohne Exemplar zeigt die Tür keinen Titel (OFFEN.md 9.4)
+	titelID := testdaten.TitelMitSignatur(t, pool, "Türsuche Testband", "TUER 7", 1)
+	testdaten.Exemplar(t, pool, titelID, "B-TUER-1", true, "") // ohne Exemplar zeigt die Tür keinen Titel (OFFEN.md 9.4)
 	// Ein Schüler mit demselben Suchwort — er darf in der Antwort nicht auftauchen.
 	if _, err := pool.Exec(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('S-TUER-1', 'Tilda', 'Türsuche', '07A', 2031)`); err != nil {

@@ -12,14 +12,16 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Was der LUSD-Upload ablehnt, kommt über die Route mit dem Status an, an dem die Oberfläche
 // die Rückfrage zum Massenabgang (409) von einer Fehleingabe (400) unterscheidet. Eine
 // Ablehnung schreibt nichts, auch keinen Protokolleintrag; erst der bestätigte Lauf tut beides.
 func TestLusdUpload_AblehnungenUeberDieRoute(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -37,7 +39,7 @@ func TestLusdUpload_AblehnungenUeberDieRoute(t *testing.T) {
 	for i := 1; i <= 10; i++ {
 		legeNmSchuelerAn(t, ctx, pool, nmSchueler{
 			vorname: "Kind", nachname: fmt.Sprintf("Nummer%02d", i), klasse: "7a",
-			barcode: fmt.Sprintf("UPA-%02d", i), geb: datum(2012, 1, i), bestaetigt: true,
+			barcode: fmt.Sprintf("UPA-%02d", i), geb: testdaten.Datum(2012, 1, i), bestaetigt: true,
 		})
 		if i <= 6 {
 			export += fmt.Sprintf("Kind,Nummer%02d,7a,2012-01-%02d\n", i, i)
@@ -108,7 +110,7 @@ func TestLusdUpload_AblehnungenUeberDieRoute(t *testing.T) {
 	if n := zaehle(t, pool, "ist_abgaenger"); n != 0 {
 		t.Fatalf("eine Ablehnung hat geschrieben: %d Abgänger", n)
 	}
-	if n := zaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'LUSD_IMPORT'`); n != 0 {
+	if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs WHERE aktion = 'LUSD_IMPORT'`); n != 0 {
 		t.Fatalf("vor dem bestätigten Lauf stehen %d Einträge im Protokoll", n)
 	}
 
@@ -118,7 +120,7 @@ func TestLusdUpload_AblehnungenUeberDieRoute(t *testing.T) {
 		if n := zaehle(t, pool, "ist_abgaenger"); n != 4 {
 			t.Errorf("%d Abgänger nach dem bestätigten Lauf, erwartet 4", n)
 		}
-		if n := zaehleZeilen(t, pool, `
+		if n := pgtest.ZaehleZeilen(t, pool, `
 			SELECT count(*) FROM audit_logs
 			WHERE aktion = 'LUSD_IMPORT' AND admin_id = $1
 			  AND details->>'abgaenger' = '4' AND details->>'massenabgang_bestaetigt' = 'true'`, adminID); n != 1 {

@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Die Titel-Historie ist der sichtbarste Konsument der Lesehistorie-Befristung
@@ -18,8 +20,8 @@ import (
 // Lehrer-Ausleihe → das Wort ihrer Art, "Lehrkraft" (bis zum 30.09.2026 "Lehrer");
 // zugeordnete Schüler-Ausleihe → Name und Klasse.
 func TestTitleHistory_GetrennteAusleiheIstAnonymNichtLehrer(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
 	var titelID, exemplarID, schuelerID, lehrerID string

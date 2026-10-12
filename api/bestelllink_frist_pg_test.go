@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/bestelllink"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
@@ -51,12 +53,12 @@ func linkTageAbJetzt(t *testing.T, pool *pgxpool.Pool, bestellungID string) int 
 }
 
 func TestBestelllinkFrist_BeimBestellenGiltDieEinstellung(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
-	lieferant := haendler(t, pool, "Naacher", true)
-	titel := titelMitMeldebestand(t, pool, "LMF-Frist", 0)
+	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
+	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Frist", 0)
 	bestelle := func() *service.OrderResult {
 		t.Helper()
 		res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
@@ -90,14 +92,14 @@ func TestBestelllinkFrist_BeimBestellenGiltDieEinstellung(t *testing.T) {
 }
 
 func TestBestelllinkFrist_NeuerLinkBekommtDieEingestellteFrist(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	lieferant := haendler(t, pool, "Naacher", true)
+	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	// Der alte Link läuft in drei Tagen ab; der neue bekommt die eingestellte Frist ab heute.
 	bestellungID, _ := bestellungMitToken(t, pool, lieferant, 3)
-	setzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
-	t.Cleanup(func() { setzeOeffentlicheAdresse(t, pool, "") })
+	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
+	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, "") })
 	setzeLinkFrist(t, pool, "45")
 
 	req := httptest.NewRequest(http.MethodPut, "/api/bestellungen/"+bestellungID+"/bestaetigungs-link", nil)

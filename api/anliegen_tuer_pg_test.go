@@ -10,6 +10,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/tuertest"
 )
 
 // Die Annahme-Tür für Meldungen nimmt, was das Formular im Kollegiums-Portal schickt — Art,
@@ -19,7 +21,7 @@ import (
 // diesen Feldern annähme: eine echte Titel-Kennung (der Fremdschlüssel hielte) und eine ISBN.
 // Landen beide in der Zeile, ist er rot.
 func TestCreateAnliegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
@@ -93,7 +95,7 @@ func TestCreateAnliegen_NimmtNurMeldungenMitBeschreibung(t *testing.T) {
 	ctx := context.Background()
 
 	sende := func(rumpf string) *httptest.ResponseRecorder {
-		req := mitCSRF(httptest.NewRequest(http.MethodPost, "/api/anliegen", strings.NewReader(rumpf)))
+		req := tuertest.MitCSRF(httptest.NewRequest(http.MethodPost, "/api/anliegen", strings.NewReader(rumpf)))
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: token})
 		rec := httptest.NewRecorder()

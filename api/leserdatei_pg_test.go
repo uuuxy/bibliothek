@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 )
 
@@ -20,7 +21,7 @@ import (
 // verlangt. An derselben Tür hängen der Reiter „Ehemalige" und die Schülersuche des
 // Vormerkungs-Reiters; für die wäre ein Kollege in der Liste falsch.
 func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	studentRepo := repository.NewStudentRepository(pool)
@@ -109,7 +110,7 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 // niemand sieht, welche Bücher er hat. Genau deshalb zeigte die Theke ihm nur eine
 // schmale Karte statt seiner Akte.
 func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	studentRepo := repository.NewStudentRepository(pool)
@@ -192,7 +193,7 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 // seinem Konto lässt sie aufheben — über `leser`, sonst wäre auch das „nicht gefunden".
 // Rot gesehen am Rückbau: ohne den Fall für Kollegen sperrt die Tür ihn (200).
 func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a129", Rolle: auth.RoleAdmin}

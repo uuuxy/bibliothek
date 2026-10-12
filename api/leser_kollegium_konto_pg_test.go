@@ -9,6 +9,8 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -32,8 +34,8 @@ import (
 // auth/selbstanmeldung_pg_test.go am echten Anmeldeweg. Hier wird die andere Hälfte
 // geprüft: dass die Handanlage überhaupt ein Konto erzeugt, an genau EINER Leserzeile.
 func TestKollegiumAnlegen_KontoUndKeinDoppel(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 

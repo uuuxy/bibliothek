@@ -8,6 +8,9 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 	"bibliothek/sse"
 )
@@ -21,8 +24,8 @@ import (
 // der Stornierung und vier Wege: Anonymisierung, endgültiges Löschen, Forderung vorher mit
 // ihrem Titel gelöscht, Leserzeile vorher zusammengeführt.
 func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 
 	authenticator, err := auth.NewAuthenticator(
@@ -46,14 +49,14 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 	// storniere legt dem Leser eine offene Forderung an und storniert sie über die Tür.
 	storniere := func(t *testing.T, leserID, kennung, grund string) (forderungID, titelID string) {
 		t.Helper()
-		titelID = titelMitMeldebestand(t, pool, "Stornotitel "+kennung, 1)
-		exemplarID := exemplar(t, pool, titelID, "EX-STORNO-"+kennung, true, "")
+		titelID = testdaten.TitelMitMeldebestand(t, pool, "Stornotitel "+kennung, 1)
+		exemplarID := testdaten.Exemplar(t, pool, titelID, "EX-STORNO-"+kennung, true, "")
 		if err := pool.QueryRow(ctx,
 			`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
 			 VALUES ($1, $2, 'Wasserschaden', 12.50) RETURNING id`, exemplarID, leserID).Scan(&forderungID); err != nil {
 			t.Fatalf("Forderung anlegen: %v", err)
 		}
-		req := jsonPost("/api/schadensfaelle/"+forderungID+"/storno", `{"grund":"`+grund+`"}`)
+		req := tuertest.JSONPost("/api/schadensfaelle/"+forderungID+"/storno", `{"grund":"`+grund+`"}`)
 		req.AddCookie(&http.Cookie{Name: "session_token", Value: sitzung})
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
@@ -64,11 +67,11 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 	}
 	anForderung := func(t *testing.T, grund string) int {
 		t.Helper()
-		return zaehleZeilen(t, pool, `SELECT count(*) FROM schadensfaelle WHERE stornierungsgrund = $1`, grund)
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM schadensfaelle WHERE stornierungsgrund = $1`, grund)
 	}
 	imProtokoll := func(t *testing.T, grund string) int {
 		t.Helper()
-		return zaehleZeilen(t, pool, `SELECT count(*) FROM audit_log WHERE details::text LIKE '%' || $1 || '%'`, grund)
+		return pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_log WHERE details::text LIKE '%' || $1 || '%'`, grund)
 	}
 	// Positivkontrolle: Ohne den Grund an beiden Stellen wäre die Prüfung danach grün, ohne
 	// etwas zu prüfen.
@@ -95,7 +98,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 
 	t.Run("Anonymisierung", func(t *testing.T) {
 		const grund = "STORNO-PROBE-A Mutter von Max Muster hat angerufen"
-		leser := seedSchueler(t, pool, "S-STORNO-A", "Anna", "07A")
+		leser := testdaten.SeedSchueler(t, pool, "S-STORNO-A", "Anna", "07A")
 		forderung, _ := storniere(t, leser, "A", grund)
 		stehtAnBeidenStellen(t, grund)
 
@@ -108,11 +111,11 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 			t.Errorf("der getippte Grund steht nach der Anonymisierung noch in %d Einträgen der Datensatz-Historie", n)
 		}
 		// Forderung und Eintrag bleiben als Beleg: storniert, wann, welcher Betrag.
-		if n := zaehleZeilen(t, pool,
+		if n := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM schadensfaelle WHERE id = $1 AND storniert_am IS NOT NULL AND betrag = 12.50`, forderung); n != 1 {
 			t.Errorf("die stornierte Forderung steht nach der Anonymisierung nicht mehr als Beleg da")
 		}
-		if n := zaehleZeilen(t, pool,
+		if n := pgtest.ZaehleZeilen(t, pool,
 			`SELECT count(*) FROM audit_log WHERE tabelle = 'schadensfaelle' AND aktion = 'STORNIERUNG'
 			   AND datensatz_id = $1::uuid AND details->>'betrag' = '12.5' AND details->>'schueler_id' = $2`,
 			forderung, leser); n != 1 {
@@ -122,7 +125,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 
 	t.Run("endgültiges Löschen", func(t *testing.T) {
 		const grund = "STORNO-PROBE-B Vater von Ben Beispiel war am Telefon"
-		leser := seedSchueler(t, pool, "S-STORNO-B", "Ben", "07B")
+		leser := testdaten.SeedSchueler(t, pool, "S-STORNO-B", "Ben", "07B")
 		storniere(t, leser, "B", grund)
 		stehtAnBeidenStellen(t, grund)
 
@@ -140,7 +143,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 
 	t.Run("Forderung vorher mit ihrem Titel gelöscht", func(t *testing.T) {
 		const grund = "STORNO-PROBE-C Oma von Cem Probe bringt das Buch"
-		leser := seedSchueler(t, pool, "S-STORNO-C", "Cem", "07C")
+		leser := testdaten.SeedSchueler(t, pool, "S-STORNO-C", "Cem", "07C")
 		_, titelID := storniere(t, leser, "C", grund)
 		stehtAnBeidenStellen(t, grund)
 
@@ -160,12 +163,12 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 
 	t.Run("Leserzeile vorher zusammengeführt", func(t *testing.T) {
 		const grund = "STORNO-PROBE-D Schwester von Dana Doppelt hat bezahlt"
-		ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Dana", nachname: "Doppelt", klasse: "07A", barcode: "S-STORNO-D1", geb: datum(2012, 6, 6)})
-		quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Dana", nachname: "Doppelt-Alt", klasse: "07A", barcode: "S-STORNO-D2", geb: datum(2012, 6, 6)})
+		ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Dana", Nachname: "Doppelt", Klasse: "07A", Barcode: "S-STORNO-D1", Geb: testdaten.Datum(2012, 6, 6)})
+		quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Dana", Nachname: "Doppelt-Alt", Klasse: "07A", Barcode: "S-STORNO-D2", Geb: testdaten.Datum(2012, 6, 6)})
 		storniere(t, quelle, "D", grund)
 		stehtAnBeidenStellen(t, grund)
 
-		if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
+		if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 			t.Fatalf("Zusammenführen: %v", err)
 		}
 		anonymisiere(t, ziel)

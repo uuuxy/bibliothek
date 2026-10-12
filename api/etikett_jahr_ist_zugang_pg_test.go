@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -14,8 +16,8 @@ import (
 // Ein im Dezember bestelltes, im Januar geliefertes Buch trug auf dem Etikett das alte Jahr
 // und stand im Zugangsbuch im neuen (Rasterdurchgang 22.09.2026, Frage 13).
 func TestEtikett_AnschaffungsjahrIstDasZugangsjahr(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+	pool := pgtest.Pool(t)
+	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 

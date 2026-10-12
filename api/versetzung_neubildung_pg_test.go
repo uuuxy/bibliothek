@@ -4,6 +4,9 @@ import (
 	"context"
 	"reflect"
 	"testing"
+
+	"bibliothek/internal/pgtest"
+	"bibliothek/internal/testdaten"
 )
 
 // Vorgabe vom 30.09.2026: Die Klassenleitung rückt mit der Versetzung eine Stufe hoch —
@@ -12,9 +15,9 @@ import (
 // diese Zuordnungen hoch: „06F1" → „07F1", „06G1" → „07G1", „10G1" → „11G1", jeweils mit
 // der alten Lehrkraft.
 func TestVersetzungKlassenleitungEntfaelltBeiNeubildung(t *testing.T) {
-	pool := pgTestPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	resetBestandsdaten(t, pool)
+	testdaten.ResetBestandsdaten(t, pool)
 	if _, err := pool.Exec(ctx, `DELETE FROM klassen_lehrer_mapping`); err != nil {
 		t.Fatalf("Mapping leeren: %v", err)
 	}
