@@ -6,6 +6,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/internal/buchetikett"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
 	"bibliothek/internal/testdaten"
@@ -66,7 +67,7 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 			len(selbstdruck), len(lieferantenweg))
 	}
 
-	nachBarcode := map[string]BarcodeLabelDetail{}
+	nachBarcode := map[string]buchetikett.BarcodeLabelDetail{}
 	for _, e := range lieferantenweg {
 		nachBarcode[e.BarcodeID] = e
 	}

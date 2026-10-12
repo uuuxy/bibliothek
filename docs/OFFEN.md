@@ -514,7 +514,8 @@ von Stufe 4 sieben der elf Themen.
 - **Die Themen stehen für sich.** Zwischen zwölf Themen hängen neun Namen an drei Stellen. Die
   Bestellung braucht fünf Namen rund um das Buchetikett aus dem Druck (`BarcodeLabelDetail`,
   `EtikettKopf`, `etikettKopf`, `buchEtiketten`, `etikettKopfAus`), der Druck einen aus der
-  Bestellung (`etikettenAus`): ein Kreis. Der Katalog braucht zwei aus dem Schaden
+  Bestellung (`etikettenAus`): ein Kreis (seit dem 12.10.2026 stehen die sechs in
+  `internal/buchetikett`). Der Katalog braucht zwei aus dem Schaden
   (`preisquelle`, `ersatzwertVorschlagAus`; seit dem 12.10.2026 steht die Rechnung des
   Betragsvorschlags in `internal/service/ersatzwert_vorschlag.go`), der Leser einen aus den Benutzern
   (`protokolliereKontoAnlage`; seit dem 12.10.2026 steht er als `ProtokolliereKontoAnlage` in

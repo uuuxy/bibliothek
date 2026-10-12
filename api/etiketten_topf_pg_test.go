@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/db"
+	"bibliothek/internal/buchetikett"
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
@@ -196,7 +197,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 		t.Fatalf("Einstellungen lesen: %v", err)
 	}
 	// Die Etiketten gehen durch dieselbe Füll-Funktion wie an der Tür der Bestellung.
-	boegen, err := etikettenboegen(bestellmailDatenAus(res).Etiketten, etikettKopfAus(einstellungen), true, res.Mittel)
+	boegen, err := etikettenboegen(bestellmailDatenAus(res).Etiketten, buchetikett.EtikettKopfAus(einstellungen), true, res.Mittel)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}

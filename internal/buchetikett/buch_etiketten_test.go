@@ -1,4 +1,4 @@
-package api
+package buchetikett
 
 import (
 	"reflect"
@@ -8,7 +8,7 @@ import (
 	"bibliothek/pkg/mitteltopf"
 )
 
-// Die Erzeuger in pdf/ drucken, was buchEtiketten ihnen reicht. Ein Feld, das hier fehlt,
+// Die Erzeuger in pdf/ drucken, was BuchEtiketten ihnen reicht. Ein Feld, das hier fehlt,
 // fehlt auf dem Etikett aller Druckwege, und weder Status noch Dateigröße zeigen es.
 
 // Jedes Feld der Eingabe kommt aus seiner Quelle; die Werte sind je Feld verschieden, damit
@@ -24,7 +24,7 @@ func TestBuchEtiketten_FuelltJedesFeldDerEingabe(t *testing.T) {
 		AnschaffungsJahr: "2016", Signatur: "Signatur", Topf: mitteltopf.Land,
 	}
 
-	etiketten := buchEtiketten([]BarcodeLabelDetail{item}, kopf)
+	etiketten := BuchEtiketten([]BarcodeLabelDetail{item}, kopf)
 	if len(etiketten) != 1 {
 		t.Fatalf("%d Etiketten aus einem Auftrag, erwartet 1", len(etiketten))
 	}
@@ -41,7 +41,7 @@ func TestBuchEtiketten_FuelltJedesFeldDerEingabe(t *testing.T) {
 	wert := reflect.ValueOf(etiketten[0])
 	for i := 0; i < wert.NumField(); i++ {
 		if wert.Field(i).IsZero() {
-			t.Errorf("pdf.BuchEtikett.%s bleibt leer: buchEtiketten füllt das Feld nicht",
+			t.Errorf("pdf.BuchEtikett.%s bleibt leer: BuchEtiketten füllt das Feld nicht",
 				wert.Type().Field(i).Name)
 		}
 	}
@@ -57,7 +57,7 @@ func TestBuchEtiketten_VermerkFolgtDemTopf(t *testing.T) {
 		{BarcodeID: "B-3"},
 	}
 
-	etiketten := buchEtiketten(items, kopf)
+	etiketten := BuchEtiketten(items, kopf)
 	if len(etiketten) != len(items) {
 		t.Fatalf("%d Etiketten aus %d Aufträgen", len(etiketten), len(items))
 	}
@@ -71,7 +71,7 @@ func TestBuchEtiketten_VermerkFolgtDemTopf(t *testing.T) {
 		}
 	}
 
-	ohne := buchEtiketten(items, EtikettKopf{Eigentumsvermerk: "Vermerk Land"})
+	ohne := BuchEtiketten(items, EtikettKopf{Eigentumsvermerk: "Vermerk Land"})
 	if ohne[1].Eigentumsvermerk != "" {
 		t.Errorf("Schülerbücherei ohne hinterlegten Vermerk: %q gedruckt, erwartet keinen", ohne[1].Eigentumsvermerk)
 	}

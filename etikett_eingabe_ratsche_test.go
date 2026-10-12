@@ -1,14 +1,14 @@
 package main
 
 // Ratsche: Die Eingabe der Buchetiketten (pdf.BuchEtikett) füllt im Produktivcode nur die
-// Funktion buchEtiketten in api/labels.go.
+// Funktion BuchEtiketten in internal/buchetikett/buchetikett.go.
 //
 // Die Erzeuger in pdf/ kennen den Topf eines Exemplars nicht und drucken den
-// Eigentumsvermerk, den sie bekommen. Welcher gilt, entscheidet buchEtiketten für alle
+// Eigentumsvermerk, den sie bekommen. Welcher gilt, entscheidet BuchEtiketten für alle
 // Druckwege. Ein zweiter Füller wählte den Vermerk nach eigener Regel oder gar nicht, und
 // dasselbe Buch trüge je nach Druckweg einen anderen Aufdruck.
 //
-// Regel: Außerhalb von pdf/ nennt keine Produktivdatei den Typ, außer in buchEtiketten. Wer
+// Regel: Außerhalb von pdf/ nennt keine Produktivdatei den Typ, außer in BuchEtiketten. Wer
 // nur das Ergebnis der Funktion weiterreicht, braucht den Namen nicht.
 //
 // Blindheit: ein Füller, der den Typ nie nennt (Reflection, eine Funktion in pdf/ selbst).
@@ -82,7 +82,7 @@ func etikettEingabeNennungen(t *testing.T, pfad string, quelle any) []string {
 }
 
 func TestEtikettEingabe_NurBuchEtikettenFuelltSie(t *testing.T) {
-	const erlaubt = "api/labels.go:buchEtiketten"
+	const erlaubt = "internal/buchetikett/buchetikett.go:BuchEtiketten"
 	var fremd []string
 	inErlaubter := 0
 	err := filepath.WalkDir(".", func(pfad string, d fs.DirEntry, err error) error {
@@ -119,8 +119,8 @@ func TestEtikettEingabe_NurBuchEtikettenFuelltSie(t *testing.T) {
 	}
 	if len(fremd) > 0 {
 		slices.Sort(fremd)
-		t.Errorf("pdf.%s wird außerhalb von buchEtiketten genannt: %v. Die Eingabe der Etiketten-"+
-			"Erzeuger füllt nur buchEtiketten (api/labels.go); dort wird der Eigentumsvermerk je "+
+		t.Errorf("pdf.%s wird außerhalb von BuchEtiketten genannt: %v. Die Eingabe der Etiketten-"+
+			"Erzeuger füllt nur BuchEtiketten (internal/buchetikett); dort wird der Eigentumsvermerk je "+
 			"Exemplar gewählt. Einen weiteren Druckweg über diese Funktion führen.",
 			etikettEingabeTyp, slices.Compact(fremd))
 	}

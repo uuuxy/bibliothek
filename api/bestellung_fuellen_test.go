@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/internal/buchetikett"
 	"bibliothek/internal/service"
 	"bibliothek/internal/tuertest"
 	"bibliothek/pkg/mitteltopf"
@@ -82,7 +83,7 @@ func TestBestellmailDatenAus_FuelltJedesFeldAusDerBestellung(t *testing.T) {
 			{Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", Verlag: "Verlag 1", Menge: 3},
 			{Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", Verlag: "Verlag 2", Menge: 2},
 		},
-		Etiketten: []BarcodeLabelDetail{
+		Etiketten: []buchetikett.BarcodeLabelDetail{
 			{BarcodeID: "B-1", Titel: "Titel 1", Autor: "Autor 1", ISBN: "isbn-1", AnschaffungsJahr: "2027", Signatur: "Sig 1", Topf: mitteltopf.Schultraeger},
 			{BarcodeID: "B-2", Titel: "Titel 2", Autor: "Autor 2", ISBN: "isbn-2", AnschaffungsJahr: "2026", Signatur: "Sig 2", Topf: mitteltopf.Land},
 		},

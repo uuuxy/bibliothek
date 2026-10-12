@@ -10,53 +10,10 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/internal/buchetikett"
 	"bibliothek/pdf"
-	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
 )
-
-// BarcodeLabelDetail ist ein Buchetikett auf der Seite der Tür: der Eintrag eines Druckauftrags
-// aus dem Browser und die Zeile eines Exemplars aus der Datenbank. Die Erzeuger in pdf/
-// bekommen daraus pdf.BuchEtikett (buchEtiketten).
-type BarcodeLabelDetail struct {
-	BarcodeID string
-	Titel     string
-	Autor     string
-	ISBN      string
-	// AnschaffungsJahr ist das Jahr aus buecher_exemplare.erworben_am und steht als
-	// "Ansch.J. 2016" auf dem Etikett. Leer = Zeile entfällt (etwa bei Vorab-Etiketten
-	// für eine Bestellung, deren Exemplare es noch gar nicht gibt).
-	AnschaffungsJahr string
-	// Signatur ist buecher_titel.signatur (z. B. "LMF-Deutsch 5"). Leer = Zeile entfällt,
-	// genau wie bei AnschaffungsJahr.
-	Signatur string
-	// Topf ist der Topf des Exemplars (repository.ExemplarTopfSQL) und entscheidet, welcher
-	// Eigentumsvermerk auf dem Etikett steht (EtikettKopf.vermerkFuer). Er kommt immer vom
-	// Server: json:"-", damit ihn kein Druckauftrag aus dem Browser mitbringen kann. Leer =
-	// Exemplar unbekannt (Vorab-Druck), dann gilt der allgemeine Vermerk.
-	Topf string `json:"-"`
-}
-
-// EtikettKopf trägt die schulweiten Angaben, die auf jedem Etikett stehen. Sie kommen aus den
-// Systemeinstellungen und nicht aus dem einzelnen Exemplar: Das Etikett nennt die Schule, der
-// das Buch gehört, und zeigt im Verlustfall den Weg zurück.
-type EtikettKopf struct {
-	Schulname        string // z. B. "Philipp-Reis-Schule, Friedrichsdorf"
-	Eigentumsvermerk string // z. B. "Eigentum des Landes Hessen"
-	// EigentumsvermerkSchuelerbuecherei gilt für Exemplare aus Mitteln des Schulträgers.
-	// Leer heißt kein Vermerk; eine Werksvorgabe gibt es hier nicht.
-	EigentumsvermerkSchuelerbuecherei string
-}
-
-// vermerkFuer wählt den Eigentumsvermerk nach dem Topf des Exemplars: Das Eigentum folgt dem
-// Geld. Eine Stelle für beide Erzeuger (kleines Etikett ab 30 mm, großes Lernmittel-Etikett);
-// buchEtiketten ruft sie je Exemplar und reicht den gewählten Vermerk weiter.
-func (k EtikettKopf) vermerkFuer(topf string) string {
-	if topf == mitteltopf.Schultraeger {
-		return k.EigentumsvermerkSchuelerbuecherei
-	}
-	return k.Eigentumsvermerk
-}
 
 // parseLabelParams liest Format, Startposition und QR-Flag aus den Query-Parametern
 // (mit denselben Defaults wie bisher).
@@ -78,64 +35,12 @@ func parseLabelParams(r *http.Request) (formatId string, startPos int, isQR bool
 }
 
 // queryLabelItems lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr, Signatur) eines Titels.
-func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabelDetail, error) {
+func (s *Server) queryLabelItems(ctx context.Context, id string) ([]buchetikett.BarcodeLabelDetail, error) {
 	zeilen, err := repository.EtikettDatenDesTitels(ctx, s.DB.Pool, id)
 	if err != nil {
 		return nil, err
 	}
-	return etikettenAus(zeilen), nil
-}
-
-// etikettKopf lädt Schulname und Eigentumsvermerk aus den Systemeinstellungen.
-//
-// Fehlt der Schulname, bleibt die Zeile LEER statt auf einen erfundenen Wert
-// zurückzufallen: Ein Etikett, das die falsche Schule nennt, führt ein gefundenes Buch
-// in die Irre. Der Eigentumsvermerk hat dagegen eine sinnvolle Vorgabe, weil er für
-// alle Bücher desselben Trägers gleich lautet.
-func (s *Server) etikettKopf(ctx context.Context) EtikettKopf {
-	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
-	if err != nil {
-		log.Printf("Etiketten: Einstellungen nicht lesbar, drucke ohne Schulnamen: %v", err)
-		return EtikettKopf{Eigentumsvermerk: repository.StandardEigentumsvermerk}
-	}
-	return etikettKopfAus(settings)
-}
-
-// etikettKopfAus baut den Kopf aus den Einstellungen: eine Stelle für Selbstdruck,
-// Lieferanten-Link und Mailanhang, damit die Regel „leer = Werksvorgabe" nur einmal steht.
-//
-// Die Werksvorgabe gilt nur für den allgemeinen Vermerk. Der Vermerk der Schülerbücherei
-// bleibt leer, wenn nichts hinterlegt ist — leer heißt dort kein Vermerk.
-func etikettKopfAus(settings *repository.SystemEinstellungen) EtikettKopf {
-	kopf := EtikettKopf{
-		Schulname:                         settings.SchuleName,
-		Eigentumsvermerk:                  repository.StandardEigentumsvermerk,
-		EigentumsvermerkSchuelerbuecherei: settings.EtikettEigentumsvermerkSchuelerbuecherei,
-	}
-	if settings.EtikettEigentumsvermerk != "" {
-		kopf.Eigentumsvermerk = settings.EtikettEigentumsvermerk
-	}
-	return kopf
-}
-
-// buchEtiketten füllt die Eingabe der Etiketten-Erzeuger aus den Etiketten eines Auftrags
-// und dem Kopf aus den Einstellungen. Der Eigentumsvermerk wird hier je Exemplar gewählt,
-// für alle Druckwege an dieser einen Stelle: Der Erzeuger kennt den Topf nicht und druckt
-// den Vermerk, den er bekommt.
-func buchEtiketten(items []BarcodeLabelDetail, kopf EtikettKopf) []pdf.BuchEtikett {
-	etiketten := make([]pdf.BuchEtikett, 0, len(items))
-	for _, item := range items {
-		etiketten = append(etiketten, pdf.BuchEtikett{
-			Schulname:        kopf.Schulname,
-			BarcodeID:        item.BarcodeID,
-			Titel:            item.Titel,
-			Autor:            item.Autor,
-			AnschaffungsJahr: item.AnschaffungsJahr,
-			Signatur:         item.Signatur,
-			Eigentumsvermerk: kopf.vermerkFuer(item.Topf),
-		})
-	}
-	return etiketten
+	return buchetikett.EtikettenAus(zeilen), nil
 }
 
 // LabelsHandler returns a handler that generates an A4 PDF containing 3x8 Avery labels
@@ -161,7 +66,7 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 			return
 		}
 
-		bogen, err := pdf.GenerateLabelsPDF(formatId, startPos, isQR, buchEtiketten(items, s.etikettKopf(ctx)))
+		bogen, err := pdf.GenerateLabelsPDF(formatId, startPos, isQR, buchetikett.BuchEtiketten(items, buchetikett.LadeEtikettKopf(ctx, s.DB.Pool)))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return
@@ -194,7 +99,7 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 // Eine Abfrage für alle Barcodes, kein N+1. Unbekannte Barcodes bleiben unangetastet —
 // beim Vorab-Druck für eine Bestellung existieren die Exemplare noch gar nicht, dort
 // ist das der richtige Zustand und kein Fehler.
-func (s *Server) ergaenzeServerfelder(ctx context.Context, items []BarcodeLabelDetail) {
+func (s *Server) ergaenzeServerfelder(ctx context.Context, items []buchetikett.BarcodeLabelDetail) {
 	barcodes := make([]string, 0, len(items))
 	for i := range items {
 		if items[i].BarcodeID != "" {
@@ -226,10 +131,10 @@ func (s *Server) ergaenzeServerfelder(ctx context.Context, items []BarcodeLabelD
 
 // PrintLabelsRequest represents a request to generate a PDF label sheet.
 type PrintLabelsRequest struct {
-	FormatID      string               `json:"formatId"`
-	StartPosition int                  `json:"startPosition"`
-	IsQR          bool                 `json:"isQR"`
-	Items         []BarcodeLabelDetail `json:"items"`
+	FormatID      string                           `json:"formatId"`
+	StartPosition int                              `json:"startPosition"`
+	IsQR          bool                             `json:"isQR"`
+	Items         []buchetikett.BarcodeLabelDetail `json:"items"`
 }
 
 // PrintLabelsHandler generates an A4 PDF containing labels dynamically.
@@ -248,7 +153,7 @@ func (s *Server) PrintLabelsHandler() http.HandlerFunc {
 		ctx := r.Context()
 		s.ergaenzeServerfelder(ctx, req.Items)
 
-		bogen, err := pdf.GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, buchEtiketten(req.Items, s.etikettKopf(ctx)))
+		bogen, err := pdf.GenerateLabelsPDF(req.FormatID, req.StartPosition, req.IsQR, buchetikett.BuchEtiketten(req.Items, buchetikett.LadeEtikettKopf(ctx, s.DB.Pool)))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler bei der pdf generierung: %w", err))
 			return

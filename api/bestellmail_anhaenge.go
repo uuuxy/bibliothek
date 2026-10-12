@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"bibliothek/api/tuer"
+	"bibliothek/internal/buchetikett"
 	"bibliothek/mailservice"
 	"bibliothek/pdf"
 	"bibliothek/pkg/csvutil"
@@ -36,7 +37,7 @@ type BestellMail struct {
 	Betreff    string
 	Text       string
 	Positionen []OrderedItem
-	Etiketten  []BarcodeLabelDetail
+	Etiketten  []buchetikett.BarcodeLabelDetail
 	// MitVorabBarcodes: Für mindestens eine Position wurden Barcodes reserviert.
 	MitVorabBarcodes bool
 	// IstHauptlieferant: Der Händler beklebt die Bücher selbst und wählt dafür die
@@ -46,11 +47,11 @@ type BestellMail struct {
 	// die Etikettenbögen DORT und nicht an der Mail — siehe bestellAnhaenge.
 	MitBestaetigungsLink bool
 	// EtikettKopf: Schulname und Eigentumsvermerke für die Etikettenbögen, fertig gebaut
-	// von etikettKopfAus. Bis zum 01.09.2026 nagelte dieser Mailweg den Vermerk auf die
+	// von buchetikett.EtikettKopfAus. Bis zum 01.09.2026 nagelte dieser Mailweg den Vermerk auf die
 	// Werksvorgabe fest, während Selbstdruck und Lieferanten-Link die Einstellung lasen —
 	// zwei Wege zum selben Buch, zwei verschiedene Aufkleber. Seit dem 21.09.2026 baut
 	// er den Kopf gar nicht mehr selbst.
-	EtikettKopf EtikettKopf
+	EtikettKopf buchetikett.EtikettKopf
 	Schule      pdf.SchuleInfo
 	// Mittel: der Topf der Bestellung (mitteltopf.Land / mitteltopf.Schultraeger) —
 	// bestimmt Betreff und Vermerk des Anschreibens. Pflicht: Ohne gültigen Topf gibt es
@@ -155,7 +156,7 @@ func bestellanschreiben(positionen []OrderedItem, weg pdf.EtikettenWeg, mittel s
 
 // GenerateBarcodeCSV schreibt die Zuordnung von Barcode und ISBN für die Warenwirtschaft des
 // Lieferanten.
-func GenerateBarcodeCSV(labels []BarcodeLabelDetail) ([]byte, error) {
+func GenerateBarcodeCSV(labels []buchetikett.BarcodeLabelDetail) ([]byte, error) {
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
 	writer.Comma = ';' // European CSV format
@@ -180,13 +181,13 @@ func GenerateBarcodeCSV(labels []BarcodeLabelDetail) ([]byte, error) {
 // wählt die Größe, Bibliosys entscheidet sie nicht vorab. Gilt die Bestellung der
 // Schülerbücherei, entfällt das große Etikett (mitteltopf.GrossesLernmittelEtikettFuer).
 //
-// Der Kopf kommt fertig herein (etikettKopfAus) — derselbe wie im Selbstdruck und hinter
+// Der Kopf kommt fertig herein (buchetikett.EtikettKopfAus) — derselbe wie im Selbstdruck und hinter
 // dem Lieferanten-Link, damit alle drei Wege zum selben Buch denselben Aufkleber ergeben.
-func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlieferant bool, mittel string) ([]mailservice.MailAttachment, error) {
+func etikettenboegen(labels []buchetikett.BarcodeLabelDetail, kopf buchetikett.EtikettKopf, istHauptlieferant bool, mittel string) ([]mailservice.MailAttachment, error) {
 	// Derselbe Etiketten-Generator wie im Selbstdruck (Druck-Center) — voller Inhalt
 	// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
 	// diese Angaben.
-	etiketten := buchEtiketten(labels, kopf)
+	etiketten := buchetikett.BuchEtiketten(labels, kopf)
 	labelDoc, err := pdf.GenerateLabelsPDF("zweckform_l4760", 1, false, etiketten)
 	if err != nil {
 		return nil, err

@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
+	"bibliothek/internal/buchetikett"
 	"bibliothek/pdf"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/pkg/mitteltopf"
@@ -26,25 +27,12 @@ import (
 // Ohne die Einschränkung über mit_vorab_barcode bekäme der Lieferant Etiketten für
 // Exemplare, die bewusst ohne Vorab-Barcode bestellt wurden — die beklebt dann die
 // Bibliothek selbst, und beide würden dasselbe Buch bekleben.
-func (s *Server) ladeBestellEtiketten(ctx context.Context, bestellungID string) ([]BarcodeLabelDetail, error) {
+func (s *Server) ladeBestellEtiketten(ctx context.Context, bestellungID string) ([]buchetikett.BarcodeLabelDetail, error) {
 	zeilen, err := repository.EtikettDatenDerBestellung(ctx, s.DB.Pool, bestellungID)
 	if err != nil {
 		return nil, err
 	}
-	return etikettenAus(zeilen), nil
-}
-
-// etikettenAus übernimmt die Zeilen einer Abfrage in die Form eines Druckauftrags; aus ihr
-// füllt buchEtiketten die Eingabe der Erzeuger.
-func etikettenAus(zeilen []repository.EtikettDaten) []BarcodeLabelDetail {
-	if zeilen == nil {
-		return nil
-	}
-	etiketten := make([]BarcodeLabelDetail, 0, len(zeilen))
-	for _, z := range zeilen {
-		etiketten = append(etiketten, BarcodeLabelDetail(z))
-	}
-	return etiketten
+	return buchetikett.EtikettenAus(zeilen), nil
 }
 
 // OeffentlicheEtikettenHandler liefert den Etikettenbogen als PDF (ohne Login, per Token).
@@ -127,8 +115,8 @@ func (s *Server) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 //
 // format gilt nur für "klein" — das große Lernmittel-Etikett hat ein festes Raster
 // (2×2 auf A4) und wird ausgeschnitten, nicht auf vorgestanzte Bögen gedruckt.
-func (s *Server) baueEtikettenPDF(ctx context.Context, groesse, format string, etiketten []BarcodeLabelDetail) ([]byte, error) {
-	eingabe := buchEtiketten(etiketten, s.etikettKopf(ctx))
+func (s *Server) baueEtikettenPDF(ctx context.Context, groesse, format string, etiketten []buchetikett.BarcodeLabelDetail) ([]byte, error) {
+	eingabe := buchetikett.BuchEtiketten(etiketten, buchetikett.LadeEtikettKopf(ctx, s.DB.Pool))
 
 	if groesse == "gross" {
 		return pdf.GenerateLernmittelEtikettenPDF(eingabe)
