@@ -73,6 +73,6 @@ func (s *Server) istAngemeldet(r *http.Request) bool {
 	if s.Auth == nil {
 		return false
 	}
-	_, _, err := s.claimsAusRequest(r)
+	_, _, err := s.ClaimsAusRequest(r)
 	return err == nil
 }

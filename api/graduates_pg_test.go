@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -68,7 +69,7 @@ func TestAbgaengerliste_AbschlussklassenMitOffenenBuechern(t *testing.T) {
 	weg := testdaten.SeedAbgaengerRet(t, pool, "S-10", "Jo", "ABG")
 	testdaten.SeedAusleihe(t, pool, weg, "Buch Jo", time.Now().AddDate(0, 0, -3))
 
-	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 	antwort := abgaengerAntwort(t, srv)
 	if !antwort.Fenster.Offen {
 		t.Fatalf("Mitte Juni muss die Saison offen sein: %+v", antwort.Fenster)
@@ -102,7 +103,7 @@ func TestAbgaengerliste_AusserhalbDerSaison(t *testing.T) {
 	tuertest.MailAbfangen(t) // SMTP konfiguriert, damit der Versand bis zur Saisonprüfung kommt
 
 	schuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
-	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}}
 
 	antwort := abgaengerAntwort(t, srv)
 	if antwort.Fenster.Offen || len(antwort.Abgaenger) != 0 {
@@ -145,7 +146,7 @@ func TestAbgaengerliste_UndVersetzungSehenDieselbeMenge(t *testing.T) {
 		schuelerMitBuch(t, pool, "P-"+string(rune('A'+i)), "Kind"+k, k)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 	ausListe := map[string]bool{}
 	for _, z := range abgaengerAntwort(t, srv).Abgaenger {
 		ausListe[z.Vorname] = true

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -34,7 +35,7 @@ func TestTitelAusNachschlagen_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T
 		t.Fatal(err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	resp, err := srv.titelAusNachschlagen(ctx, "9783751200530", &inventur.MetadatenErgebnis{
 		Titel: "Dunkelnacht", Autor: "Boie, Kirsten",
 		Stichwoerter: []string{"Jugendbuch", "Krieg", "Erste Liebe", "TikTok"},
@@ -89,7 +90,7 @@ func TestISBNZuTitel_TuerGibtDenVorschlagWeiter(t *testing.T) {
 			<datafield tag="653" ind1=" " ind2=" "><subfield code="a">TikTok</subfield></datafield>
 		  </record>
 		</recordData></record></records></searchRetrieveResponse>`}})
-	tuer := (&Server{DB: &db.Database{Pool: pool}}).isbnZuTitel(client)
+	tuer := (&Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}).isbnZuTitel(client)
 
 	frage := func() map[string]any {
 		t.Helper()
@@ -141,7 +142,7 @@ func TestISBNZuTitel_NormdatenVorhandenUndNeu(t *testing.T) {
 			<datafield tag="650" ind1=" " ind2="7"><subfield code="a">Schulstress</subfield><subfield code="2">gnd</subfield></datafield>
 		  </record>
 		</recordData></record></records></searchRetrieveResponse>`}})
-	tuer := (&Server{DB: &db.Database{Pool: pool}}).isbnZuTitel(client)
+	tuer := (&Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}).isbnZuTitel(client)
 
 	rec := httptest.NewRecorder()
 	tuer(rec, httptest.NewRequest(http.MethodPost, "/api/buecher/aus-isbn", strings.NewReader(`{"isbn":"978-3-499-50091-6"}`)))

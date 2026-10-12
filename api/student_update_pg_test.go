@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -34,7 +35,7 @@ func TestLeserAendern_JedesFeldLandetInSeinerSpalte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var id string
 	if err := pool.QueryRow(ctx, `
@@ -100,7 +101,7 @@ func TestLeserAendern_LeererWertWirdNull(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var id string
 	if err := pool.QueryRow(ctx, `
@@ -141,7 +142,7 @@ func TestLeserAendern_LeererWertWirdNull(t *testing.T) {
 func TestLeserAendern_UnbekannteKennungIstNichtGefunden(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	rec := aendereLeser(t, srv, "00000000-0000-4000-8000-000000000000", `{"vorname":"Niemand"}`)
 	if rec.Code != http.StatusNotFound {

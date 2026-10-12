@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pdf"
@@ -119,19 +120,19 @@ func (s *Server) BescheidVorschlagHandler(bescheidRepo repository.BescheidReposi
 func (s *Server) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository) error {
 	id := r.PathValue("id")
 	if id == "" {
-		return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
+		return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 	}
 	ctx := r.Context()
 
 	angaben, schule, err := s.bescheidAngaben(ctx)
 	if err != nil {
-		return apierrors.Internal(meldungEinstellungenUnlesbar, err)
+		return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 	}
 	// Welcher Preis die Grundlage ist, steht in denselben Einstellungen (Stufe 4).
 	quelle := s.preisquelle(ctx)
 
 	vorschlag := BescheidVorschlag{
-		FristBis:        schulzeit.Jetzt().AddDate(0, 0, angaben.FristTage).Format(dateFormatISO),
+		FristBis:        schulzeit.Jetzt().AddDate(0, 0, angaben.FristTage).Format(tuer.DateFormatISO),
 		FehlendeAngaben: angaben.FehlendeAngaben(schule),
 		Positionen:      []BescheidVorschlagPosition{},
 		Ausleihen:       []BescheidVorschlagAusleihe{},
@@ -161,7 +162,7 @@ func (s *Server) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request,
 		vorschlag.Ausleihen = append(vorschlag.Ausleihen, bescheidVorschlagAusAusleihe(a, quelle))
 	}
 
-	RespondJSON(w, http.StatusOK, vorschlag)
+	tuer.RespondJSON(w, http.StatusOK, vorschlag)
 	return nil
 }
 
@@ -212,11 +213,11 @@ func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ers
 		Betrag:      v.Betrag,
 		Herleitung:  bescheidHerleitung(v),
 		Topf:        a.Topf,
-		FaelligSeit: a.FaelligSeit.In(schulzeit.Zone()).Format(dateFormatISO),
+		FaelligSeit: a.FaelligSeit.In(schulzeit.Zone()).Format(tuer.DateFormatISO),
 		Mahnstufe:   a.Mahnstufe,
 	}
 	if a.LetztesMahndatum != nil {
-		antwort.LetztesMahndatum = a.LetztesMahndatum.In(schulzeit.Zone()).Format(dateFormatISO)
+		antwort.LetztesMahndatum = a.LetztesMahndatum.In(schulzeit.Zone()).Format(tuer.DateFormatISO)
 	}
 	return antwort
 }
@@ -284,9 +285,9 @@ func (s *Server) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 	id := r.PathValue("id")
 	var req BescheidErstellenRequest
 	if id == "" {
-		return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
+		return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 	}
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return nil
 	}
 	frist, err := pruefeBescheidAnfrage(req)
@@ -297,7 +298,7 @@ func (s *Server) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 	ctx := r.Context()
 	angaben, schule, err := s.bescheidAngaben(ctx)
 	if err != nil {
-		return apierrors.Internal(meldungEinstellungenUnlesbar, err)
+		return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 	}
 	// Ohne die Pflichtangaben entsteht kein Bescheid: Ein Brief ohne Referenznummer
 	// oder ohne Aufsichtsbehörde ist keiner, und die Nummer wäre verbraucht.
@@ -347,7 +348,7 @@ func (s *Server) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 		"positionen":     bescheid.AnzahlPositionen,
 	}, clientip.FromRequest(r))
 
-	RespondJSON(w, http.StatusCreated, bescheid)
+	tuer.RespondJSON(w, http.StatusCreated, bescheid)
 	return nil
 }
 
@@ -480,7 +481,7 @@ func (s *Server) BescheidListeHandler(bescheidRepo repository.BescheidRepository
 		if err != nil {
 			return apierrors.Internal("Bescheide konnten nicht gelesen werden", err)
 		}
-		RespondJSON(w, http.StatusOK, liste)
+		tuer.RespondJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }
@@ -497,13 +498,13 @@ func (s *Server) BescheidSchuelerListeHandler(bescheidRepo repository.BescheidRe
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
+			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
 		liste, err := bescheidRepo.ZuSchueler(r.Context(), id)
 		if err != nil {
 			return apierrors.Internal("Bescheide konnten nicht gelesen werden", err)
 		}
-		RespondJSON(w, http.StatusOK, liste)
+		tuer.RespondJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }
@@ -521,7 +522,7 @@ func (s *Server) BescheidPDFHandler(bescheidRepo repository.BescheidRepository) 
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
+			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
 		ctx := r.Context()
 
@@ -538,7 +539,7 @@ func (s *Server) BescheidPDFHandler(bescheidRepo repository.BescheidRepository) 
 			log.Printf("Druckvermerk für Bescheid %s fehlgeschlagen: %v", id, err)
 		}
 
-		w.Header().Set("Content-Type", contentTypePDF)
+		w.Header().Set("Content-Type", tuer.ContentTypePDF)
 		w.Header().Set("Content-Disposition",
 			fmt.Sprintf(`attachment; filename="bescheid_%s.pdf"`,
 				strings.ReplaceAll(bescheid.Referenznummer, " ", "-")))
@@ -576,7 +577,7 @@ func (s *Server) bescheidBrief(ctx context.Context, bescheidRepo repository.Besc
 	if len(absender) == 0 {
 		angaben, schule, err := s.bescheidAngaben(ctx)
 		if err != nil {
-			return pdf.BescheidBrief{}, nil, apierrors.Internal(meldungEinstellungenUnlesbar, err)
+			return pdf.BescheidBrief{}, nil, apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 		}
 		absender = bescheidAbsenderAus(angaben, schule)
 	}
@@ -642,7 +643,7 @@ func (s *Server) BescheidUebergebenHandler(bescheidRepo repository.BescheidRepos
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
+			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
 		ctx := r.Context()
 		if err := bescheidRepo.Uebergebe(ctx, id); err != nil {
@@ -657,7 +658,7 @@ func (s *Server) BescheidUebergebenHandler(bescheidRepo repository.BescheidRepos
 		}
 
 		bescheidAudit(ctx, s, auditRepo, auditBescheidUebergeben, map[string]any{"bescheid_id": id}, clientip.FromRequest(r))
-		RespondJSON(w, http.StatusOK, map[string]any{"id": id, "status": "uebergeben"})
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{"id": id, "status": "uebergeben"})
 		return nil
 	})
 }

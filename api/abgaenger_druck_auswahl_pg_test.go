@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
@@ -45,7 +46,7 @@ func TestAbgaengerDruck_FolgtDerAuswahl(t *testing.T) {
 	// Liste — und darf auch über seine Kennung keine Seite bekommen.
 	finn := schuelerMitBuch(t, pool, "S-6", "Finn", "10G1")
 
-	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 
 	t.Run("ohne ids wie bisher: alle Abgänger", func(t *testing.T) {
 		rec, text := kontoauszugPDF(t, srv, "")
@@ -128,7 +129,7 @@ func TestAbgaengerDruck_AuswahlAendertDieSaisonNicht(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	anna := schuelerMitBuch(t, pool, "S-1", "Anna", "9H1")
 
-	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.WinterUhr}}
 	rec, _ := kontoauszugPDF(t, srv, "?ids="+anna)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("im Oktober mit Auswahl: Status = %d, want 404", rec.Code)

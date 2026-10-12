@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
 	"bibliothek/internal/pgtest"
@@ -21,7 +22,7 @@ func TestLusdAutoMatching_AdoptiertWaiseStattDuplikat(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	geb := time.Date(2010, 5, 4, 0, 0, 0, 0, time.UTC)
 	gebStr := "2010-05-04"
@@ -88,7 +89,7 @@ func TestLusdAutoMatching_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	geb := time.Date(2011, 3, 3, 0, 0, 0, 0, time.UTC)
 	if _, err := pool.Exec(ctx, `
@@ -120,7 +121,7 @@ func TestLusdAutoMatching_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T)
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	geb := time.Date(2012, 6, 6, 0, 0, 0, 0, time.UTC)
 	if _, err := pool.Exec(ctx, `

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -37,7 +38,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 		t.Fatalf("Exemplar lesen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	statusTuer := srv.UpdateCopyStatusHandler(repository.NewBookRepository(pool), repository.NewBescheidRepository(pool))
 
 	setze := func(t *testing.T, koerper string) *httptest.ResponseRecorder {
@@ -183,7 +184,7 @@ func TestExemplarliste_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 		t.Fatalf("Exemplar vorbereiten: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/exemplare", nil)
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()
@@ -254,7 +255,7 @@ func TestExemplarliste_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
 		}
 	})
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lies := func(t *testing.T) (float64, string) {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/exemplare", nil)

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -22,7 +23,7 @@ import (
 func TestActionHandler_AblehnungenVorDerBuchung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}, IdempotenzWartezeit: 150 * time.Millisecond}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}, IdempotenzWartezeit: 150 * time.Millisecond}
 	// Ein Aufruf des Dienstes endete als 500 — keiner der erwarteten Status käme zustande.
 	dienst := &sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")}
 	rufe := func(rumpf string, angemeldet bool) *httptest.ResponseRecorder {

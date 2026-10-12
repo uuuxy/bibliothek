@@ -15,6 +15,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 	"bibliothek/sse"
 
@@ -52,7 +53,7 @@ func portalWelt(t *testing.T) (*pgxpool.Pool, http.Handler, string) {
 	if err != nil {
 		t.Fatalf("Sitzung: %v", err)
 	}
-	setzeGenauEinRecht(t, pool, "create_reservations")
+	tuertest.SetzeGenauEinRecht(t, pool, "create_reservations")
 	return pool, router, token
 }
 
@@ -133,7 +134,7 @@ func TestKollegiumKatalog_ZeigtLernmittelUndBestellteTitel(t *testing.T) {
 	if rec := katalogAnfrage(router, "", "/api/reservierungen/klassensatz/katalog?q=Probe"); rec.Code != http.StatusUnauthorized {
 		t.Errorf("ohne Sitzung: HTTP %d statt 401", rec.Code)
 	}
-	setzeGenauEinRecht(t, pool, "view_books")
+	tuertest.SetzeGenauEinRecht(t, pool, "view_books")
 	for _, pfad := range []string{"/api/reservierungen/klassensatz/katalog?q=Probe", "/api/reservierungen/klassensatz/katalog/filter"} {
 		if rec := katalogAnfrage(router, token, pfad); rec.Code != http.StatusForbidden {
 			t.Errorf("%s ohne create_reservations: HTTP %d statt 403", pfad, rec.Code)

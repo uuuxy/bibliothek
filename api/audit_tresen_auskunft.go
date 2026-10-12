@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pkg/clientip"
@@ -145,7 +146,7 @@ func (s *Server) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, au
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, TresenAuskunft{
+	tuer.RespondJSON(w, http.StatusOK, TresenAuskunft{
 		Barcode: barcode, Exemplare: exemplare, Ereignisse: ereignisse,
 	})
 }

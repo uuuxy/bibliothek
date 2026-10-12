@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
 	"bibliothek/internal/pgtest"
@@ -24,7 +25,7 @@ func TestNurName_HandanlageWirdZugeordnet(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	mitDatum := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Mia", nachname: "Hand", klasse: "5a", barcode: "NN-1", geb: testdaten.Datum(2013, 5, 4)})
 	ohneDatum := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Ben", nachname: "Ohne", klasse: "5b", barcode: "NN-2"})
@@ -65,7 +66,7 @@ func TestNurName_GleicheNamenWerdenNieZugeordnet(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Bestand: zwei verschiedene "Max Mustermann" (verschiedene Geburtstage = zwei Menschen).
 	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Mustermann", klasse: "5a", barcode: "NN-3", geb: testdaten.Datum(2013, 1, 1), bestaetigt: true})
@@ -113,7 +114,7 @@ func TestNurName_DoppelnameInDateiMachtBestandNichtZumAbgaenger(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	tom := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Tom", nachname: "Doppelt", klasse: "5a", barcode: "NN-6", geb: testdaten.Datum(2014, 1, 1), bestaetigt: true})
 	// Genug unbeteiligte Bestätigte, damit die Massenabgangs-Bremse nicht greift.
@@ -156,7 +157,7 @@ func TestNurName_AbgaengerNamensvetterWirdNichtReaktiviert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	alt := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Alt", klasse: "10a", barcode: "NN-7", geb: testdaten.Datum(2008, 3, 3), abgaenger: true, bestaetigt: true})
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt=true, block_reason='Automatisierte Abgänger-Sperre (offene Vorgänge)' WHERE id=$1`, alt); err != nil {

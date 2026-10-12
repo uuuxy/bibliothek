@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/db"
 	"bibliothek/repository"
@@ -84,7 +85,7 @@ func uniqueMeldung(err error) string {
 func (s *Server) CreateSystematikHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req systematikRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		req.normalisiert()
@@ -100,7 +101,7 @@ func (s *Server) CreateSystematikHandler() http.HandlerFunc {
 			return apierrors.Internal("Sachgruppe konnte nicht angelegt werden", err)
 		}
 
-		RespondJSON(w, http.StatusCreated, map[string]string{
+		tuer.RespondJSON(w, http.StatusCreated, map[string]string{
 			"id":          id,
 			"kuerzel":     req.Kuerzel,
 			"bezeichnung": req.Bezeichnung,
@@ -134,7 +135,7 @@ func (s *Server) UpdateSystematikHandler() http.HandlerFunc {
 func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	var req systematikRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return nil
 	}
 	req.normalisiert()
@@ -190,7 +191,7 @@ func (s *Server) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 		return apierrors.Internal(fehlerSachgruppeAendern, err)
 	}
 
-	RespondJSON(w, http.StatusOK, map[string]any{
+	tuer.RespondJSON(w, http.StatusOK, map[string]any{
 		"id":               id,
 		"kuerzel":          req.Kuerzel,
 		"bezeichnung":      req.Bezeichnung,

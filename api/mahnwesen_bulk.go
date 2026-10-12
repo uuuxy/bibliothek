@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/db"
 	"bibliothek/pdf"
@@ -138,7 +139,7 @@ type BulkPrintRequest struct {
 func (s *Server) BulkPrintMahnungenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req BulkPrintRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -152,11 +153,11 @@ func (s *Server) BulkPrintMahnungenHandler() http.HandlerFunc {
 			return
 		}
 
-		filename := fmt.Sprintf("mahnbriefe_%s.pdf", schulzeit.Jetzt().Format(dateFormatISO))
+		filename := fmt.Sprintf("mahnbriefe_%s.pdf", schulzeit.Jetzt().Format(tuer.DateFormatISO))
 
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))
-		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))
+		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfBytes)))
 
 		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
 	}

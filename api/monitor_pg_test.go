@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -211,7 +212,7 @@ func (a monitorAntwort) alleTitel() map[string]bool {
 // monitorAntwortLesen fragt den ÖFFENTLICHEN Monitor-Endpunkt über den echten Handler ab.
 func monitorAntwortLesen(t *testing.T, pool *pgxpool.Pool) monitorAntwort {
 	t.Helper()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/monitor/slides", nil)
 	rec := httptest.NewRecorder()
 	srv.GetMonitorSlidesHandler()(rec, req)

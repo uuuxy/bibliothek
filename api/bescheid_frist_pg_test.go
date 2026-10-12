@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -22,7 +23,7 @@ func TestBescheid_FristMussNachHeuteUndHoechstensEinJahrVorausLiegen(t *testing.
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-FRIST", "Fristprobe", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Chemie 8")
@@ -70,7 +71,7 @@ func TestBescheid_AblehnungenVorDemSchreibenInIhrerReihenfolge(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-ABL", "Ablehnung", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Physik 8")

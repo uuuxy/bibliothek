@@ -13,18 +13,18 @@ package main
 // ein Bedienfehler. Die Prüfung gehört an die Stelle, die weiß, dass hier eine Eingabe
 // ankommt.
 //
-// Regel: In jedem Struct, das ein Handler aus dem Request-Body liest (DecodeAndValidate
+// Regel: In jedem Struct, das ein Handler aus dem Request-Body liest (tuer.DecodeAndValidate
 // oder json.NewDecoder(...).Decode), trägt jedes Feld mit JSON-Namen auf „id"/„ids" vom
 // Typ string, *string oder []string einen validate-Tag mit „uuid" — oder steht mit Grund
 // in uuidEingabenAusnahmen. Liest ein Handler direkt per json.NewDecoder, muss er außerdem
 // selbst prüfen: kennung.IstUUID, alleUUIDs, ein uuid.Parse, dessen Wert weitergeht, oder
-// Validate.Struct. Dasselbe für `Query().Get("…id")` mit festem Namen.
+// tuer.Validate.Struct. Dasselbe für `Query().Get("…id")` mit festem Namen.
 //
 // uuid.Validate und ein uuid.Parse, dessen Ergebnis verworfen wird, zählen NICHT als
 // Prüfung und werden gemeldet (prueftLocker): Beide nehmen `urn:uuid:…` an, Postgres nicht.
 //
-// Reparatur bei Rot: `validate:"omitempty,uuid_oder_leer"` am Feld (api/http_utils.go),
-// für Query-Parameter uuidAusQuery, sonst kennung.IstUUID (pkg/kennung); ist die Kennung
+// Reparatur bei Rot: `validate:"omitempty,uuid_oder_leer"` am Feld (api/tuer/http_utils.go),
+// für Query-Parameter tuer.UUIDAusQuery, sonst kennung.IstUUID (pkg/kennung); ist die Kennung
 // keine UUID (Barcode, LUSD-ID), Eintrag in uuidEingabenAusnahmen mit der Spalte, die das
 // belegt.
 
@@ -146,7 +146,7 @@ func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, melde func
 	}
 	uuidSichtbar := ruftAuf(fn.Body, "kennung", "IstUUID") || ruftAuf(fn.Body, "uuid", "Parse") ||
 		ruftHelferAuf(fn.Body, "alleUUIDs")
-	validateSichtbar := ruftAuf(fn.Body, "Validate", "Struct", "Var")
+	validateSichtbar := ruftAuf(fn.Body, "Validate", "Struct", "Var") || ruftValidatorDerTuerenAuf(fn.Body)
 	queryVars := queryVariablen(fn.Body)
 	ast.Inspect(fn.Body, func(n ast.Node) bool {
 		call, ok := n.(*ast.CallExpr)
@@ -263,6 +263,23 @@ func ruftAuf(body *ast.BlockStmt, paket string, namen ...string) bool {
 	return gefunden
 }
 
+// ruftValidatorDerTuerenAuf: irgendwo im Rumpf steht tuer.Validate.Struct(…) oder
+// tuer.Validate.Var(…), der Validator der Türen aus einem anderen Paket gerufen.
+func ruftValidatorDerTuerenAuf(body *ast.BlockStmt) bool {
+	gefunden := false
+	ast.Inspect(body, func(n ast.Node) bool {
+		if sel, ok := n.(*ast.SelectorExpr); ok && (sel.Sel.Name == "Struct" || sel.Sel.Name == "Var") {
+			if validator, ok := sel.X.(*ast.SelectorExpr); ok && validator.Sel.Name == "Validate" {
+				if paket, ok := validator.X.(*ast.Ident); ok && paket.Name == "tuer" {
+					gefunden = true
+				}
+			}
+		}
+		return !gefunden
+	})
+	return gefunden
+}
+
 // ruftHelferAuf: irgendwo im Rumpf steht name(…) — ein Prüf-Helfer im selben Paket
 // (inventur.alleUUIDs).
 func ruftHelferAuf(body *ast.BlockStmt, name string) bool {
@@ -278,17 +295,26 @@ func ruftHelferAuf(body *ast.BlockStmt, name string) bool {
 	return gefunden
 }
 
-// dekodierZiel: Name der Variablen hinter &x in DecodeAndValidate(w, r, &x) oder
-// json.NewDecoder(...).Decode(&x); direkt=true für den zweiten Weg.
+// dekodierZiel: Name der Variablen hinter &x in tuer.DecodeAndValidate(w, r, &x) oder
+// json.NewDecoder(...).Decode(&x); direkt=true für den zweiten Weg. Der Dekodierer der
+// Türen zählt mit und ohne Paketnamen: Die Türen rufen ihn aus api/tuer, das Paket selbst
+// ohne Namen davor.
 func dekodierZiel(call *ast.CallExpr) (string, bool) {
 	var arg ast.Expr
 	direkt := false
+	istDekodierer := func(name string) bool {
+		return name == "DecodeAndValidate" || name == "DecodeStrictAndValidate"
+	}
 	switch f := call.Fun.(type) {
 	case *ast.Ident:
-		if (f.Name == "DecodeAndValidate" || f.Name == "DecodeStrictAndValidate") && len(call.Args) == 3 {
+		if istDekodierer(f.Name) && len(call.Args) == 3 {
 			arg = call.Args[2]
 		}
 	case *ast.SelectorExpr:
+		if _, paket := f.X.(*ast.Ident); paket && istDekodierer(f.Sel.Name) && len(call.Args) == 3 {
+			arg = call.Args[2]
+			break
+		}
 		if inner, ok := f.X.(*ast.CallExpr); ok && f.Sel.Name == "Decode" && len(call.Args) == 1 {
 			if sel, ok := inner.Fun.(*ast.SelectorExpr); ok && sel.Sel.Name == "NewDecoder" {
 				arg, direkt = call.Args[0], true
@@ -457,7 +483,7 @@ func TestUUIDEingabenWerdenAnDerTuerGeprueft(t *testing.T) {
 	}
 	if len(maengel) > 0 {
 		t.Errorf("Kennung kommt ungeprüft herein und endet bei einem Nicht-UUID-Wert als 500 (22P02):\n  %s\n"+
-			"Fix: validate-Tag mit uuid_oder_leer bzw. uuidAusQuery — oder Eintrag in uuidEingabenAusnahmen mit Grund.",
+			"Fix: validate-Tag mit uuid_oder_leer bzw. tuer.UUIDAusQuery — oder Eintrag in uuidEingabenAusnahmen mit Grund.",
 			strings.Join(maengel, "\n  "))
 	}
 	for schluessel := range uuidEingabenAusnahmen {
@@ -569,6 +595,12 @@ func sListeOhneDive(w, r any) { var req listeOhneDive; DecodeAndValidate(w, r, &
 func tFremd(w, r any) { var req fremd.Anfrage; DecodeAndValidate(w, r, &req) }
 func uListeLeer(w, r any) { var req listeLeeresElement; DecodeAndValidate(w, r, &req) }
 func vListeSauber(w, r any) { var req listeSauber; DecodeAndValidate(w, r, &req) }
+type ohneTag3 struct { SessionID string ` + "`json:\"session_id\"`" + ` }
+type ohneTag4 struct { SessionID string ` + "`json:\"session_id\"`" + ` }
+func wTuer(w, r any) { var req ohneTag3; tuer.DecodeAndValidate(w, r, &req) }
+func xTuerStreng(w, r any) { var req ohneTag4; tuer.DecodeStrictAndValidate(w, r, &req) }
+func yTuerSauber(w, r any) { var req mitTag; tuer.DecodeAndValidate(w, r, &req) }
+func zDirektTuerValidator(r any) { var req mitTag; json.NewDecoder(r.Body).Decode(&req); tuer.Validate.Struct(req) }
 `
 	fremdQuelle := `package fremd
 type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
@@ -590,7 +622,9 @@ type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 	// Liste von Structs ohne `dive` (qStapel), Kennungsliste ohne `dive` (sListeOhneDive),
 	// Typ aus fremdem Paket (tFremd). rStapelDive ist die saubere Gegenprobe. Seit dem
 	// 08.10.2026 auch: Kennungsliste mit `dive`, aber ohne `required` je Element
-	// (uListeLeer); vListeSauber ist ihre Gegenprobe.
+	// (uListeLeer); vListeSauber ist ihre Gegenprobe. Der Dekodierer hinter dem Paketnamen
+	// (wTuer, xTuerStreng) zählt wie ohne; yTuerSauber und zDirektTuerValidator sind die
+	// Gegenproben, die zweite für den Validator der Türen nach einem eigenen Dekodieren.
 	erwartet := []string{
 		"fremd.Anfrage.ID (tFremd)",
 		"p.liste.IDs (fListe)",
@@ -598,6 +632,8 @@ type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 		"p.listeOhneDive.IDs:ohne dive (sListeOhneDive)",
 		"p.ohneTag.SessionID (aTag)",
 		"p.ohneTag2.SessionID (oKurz)",
+		"p.ohneTag3.SessionID (wTuer)",
+		"p.ohneTag4.SessionID (xTuerStreng)",
 		"p.stapel.Eintraege:ohne dive (qStapel)",
 		"p:cQuery:query:titel_id (cQuery)",
 		"p:dDirekt:ohne Validierung (dDirekt)",

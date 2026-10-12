@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 
@@ -37,7 +38,7 @@ func (s *Server) GetMailTemplatesHandler() http.HandlerFunc {
 			})
 		}
 
-		RespondJSON(w, http.StatusOK, templates)
+		tuer.RespondJSON(w, http.StatusOK, templates)
 	}
 }
 
@@ -54,7 +55,7 @@ func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
 			Betreff  string `json:"betreff"`
 			TextBody string `json:"text_body"`
 		}
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -71,9 +72,9 @@ func (s *Server) UpdateMailTemplateHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Aktualisieren der Vorlage"))
 			return
 		}
-		s.protokolliereGeaenderteFelder(ctx, auditMailvorlageGeaendert, map[string]any{"vorlage": typ},
-			geaenderteFelder(feldWechsel{"betreff", betreffNeu}, feldWechsel{"text", textNeu}))
+		s.ProtokolliereGeaenderteFelder(ctx, tuer.AuditMailvorlageGeaendert, map[string]any{"vorlage": typ},
+			tuer.GeaenderteFelder(tuer.FeldWechsel{Name: "betreff", Geaendert: betreffNeu}, tuer.FeldWechsel{Name: "text", Geaendert: textNeu}))
 
-		RespondJSON(w, http.StatusOK, map[string]string{"message": "Erfolgreich gespeichert"})
+		tuer.RespondJSON(w, http.StatusOK, map[string]string{"message": "Erfolgreich gespeichert"})
 	}
 }

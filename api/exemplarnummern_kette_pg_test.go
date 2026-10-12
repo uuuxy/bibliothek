@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
@@ -92,7 +93,7 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := tuertest.MailAbfangen(t)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Kette", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Kette", 0)
 

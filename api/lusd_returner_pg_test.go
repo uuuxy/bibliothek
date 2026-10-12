@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
 	"bibliothek/internal/pgtest"
@@ -43,7 +44,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 		ctx := context.Background()
 		id := seedGesperrterAbgaenger(t, pool, "OLD-1", "L-RETURN")
 
-		s := &Server{DB: &db.Database{Pool: pool}}
+		s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 		if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 			{LusdID: "L-RETURN", Vorname: "Max", Nachname: "Muster", Klasse: "E1"},
 		}, true, true); err != nil {
@@ -93,7 +94,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 			t.Fatalf("offene Ausleihe anlegen: %v", err)
 		}
 
-		s := &Server{DB: &db.Database{Pool: pool}}
+		s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 		if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 			{LusdID: "L-DEBT", Vorname: "Max", Nachname: "Muster", Klasse: "E1"},
 		}, true, true); err != nil {
@@ -130,7 +131,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 			 VALUES ($1, $2, now() + interval '14 days')`, exID, id); err != nil {
 			t.Fatalf("offene Ausleihe anlegen: %v", err)
 		}
-		s := &Server{DB: &db.Database{Pool: pool}}
+		s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 		zeile := []lusd.Zeile{{LusdID: "L-DEBT3", Vorname: "Max", Nachname: "Muster", Klasse: "E1"}}
 		if _, err := s.computeLusdChanges(ctx, zeile, true, true); err != nil {
 			t.Fatalf("erster Import: %v", err)

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -125,7 +126,7 @@ func verlustGefunden(t *testing.T, srv *Server, benutzerID, exemplarID string) *
 func TestVerlusteLoeschen_LoeschtNurVerlusteUndNenntSie(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	lage := verlustLage(t, pool, "VLH-1", "VLH-2")
@@ -171,7 +172,7 @@ func TestVerlusteLoeschen_LoeschtNurVerlusteUndNenntSie(t *testing.T) {
 func TestVerlusteLoeschen_OhneVerlustBleibtAllesStehen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 	imRegal := testdaten.Exemplar(t, pool, testdaten.TitelMitMeldebestand(t, pool, "Im Regal", 0), "VLH-REGAL-2", true, "")
 
@@ -195,7 +196,7 @@ func TestVerlusteLoeschen_OhneVerlustBleibtAllesStehen(t *testing.T) {
 func TestVerlusteLoeschen_OffeneForderungIst409MitBarcode(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	lage := verlustLage(t, pool, "VLH-FREI", "VLH-GEB")
@@ -225,7 +226,7 @@ func TestVerlusteLoeschen_OffeneForderungIst409MitBarcode(t *testing.T) {
 func TestVerlusteLoeschen_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 	lage := verlustLage(t, pool, "VLH-BLEIBT")
 
@@ -257,7 +258,7 @@ func TestVerlusteLoeschen_Abweisungen(t *testing.T) {
 func TestVerlustGefunden_ZurueckInUmlaufUndForderungStorniert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	exemplarID := verlustLage(t, pool, "VGH-1")["VGH-1"]
@@ -306,7 +307,7 @@ func TestVerlustGefunden_UebergebenerBescheidKommtAlsHinweis(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
 	testdaten.BescheidReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 	ctx := context.Background()
 
@@ -351,7 +352,7 @@ func TestVerlustGefunden_UebergebenerBescheidKommtAlsHinweis(t *testing.T) {
 func TestVerlustGefunden_OhneOffenenVerlustIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	exemplarID := verlustLage(t, pool, "VGH-2")["VGH-2"]
@@ -383,7 +384,7 @@ func TestVerlustGefunden_OhneOffenenVerlustIst404(t *testing.T) {
 func TestVerlustGefunden_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 	exemplarID := verlustLage(t, pool, "VGH-3")["VGH-3"]
 

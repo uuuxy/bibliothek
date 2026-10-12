@@ -16,6 +16,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/pkg/coverquelle"
 
@@ -109,7 +110,7 @@ func erwarteKatalog(mock pgxmock.PgxPoolIface, coverURLs ...string) {
 func TestCoverProxy_FremdeAdresseFuerKatalogISBNWirdNichtGeladen(t *testing.T) {
 	downloads := coverStub(t)
 	mock := neuerMockPool(t)
-	s := &Server{DB: &db.Database{Pool: mock}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	echt := "https://covers.openlibrary.org/b/isbn/" + testISBN + "-L.jpg"
 	erwarteKatalog(mock, echt)
@@ -129,7 +130,7 @@ func TestCoverProxy_FremdeAdresseFuerKatalogISBNWirdNichtGeladen(t *testing.T) {
 func TestCoverProxy_GespeicherteAdresseWirdGeladenUndGecacht(t *testing.T) {
 	downloads := coverStub(t)
 	mock := neuerMockPool(t)
-	s := &Server{DB: &db.Database{Pool: mock}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	// Gespeichert ist die http-Form mit Trennstrich-ISBN — der Vergleich läuft über die
 	// geprüfte Form, nicht den rohen Text.
@@ -153,7 +154,7 @@ func TestCoverProxy_GespeicherteAdresseWirdGeladenUndGecacht(t *testing.T) {
 func TestCoverProxy_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
 	coverStub(t)
 	mock := neuerMockPool(t)
-	s := &Server{DB: &db.Database{Pool: mock}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	kandidaten := coverKandidatenFuerISBN(testISBN)
 	erwarteKatalog(mock, "") // ISBN im Katalog, aber ohne gespeichertes Cover
@@ -175,7 +176,7 @@ func TestCoverProxy_JedeAdresseHatIhreEigeneDatei(t *testing.T) {
 func TestCoverProxy_UnbekannteISBNOhneAnmeldungWirdNichtGeladen(t *testing.T) {
 	downloads := coverStub(t)
 	mock := neuerMockPool(t)
-	s := &Server{DB: &db.Database{Pool: mock}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	mock.ExpectQuery("FROM buecher_titel WHERE regexp_replace").WithArgs("9780000000001").
 		WillReturnRows(pgxmock.NewRows([]string{"cover_url"}))
@@ -224,7 +225,7 @@ func TestCoverKandidaten_MusterGleichWieImFrontend(t *testing.T) {
 func TestCoverProxy_ErsatzbildWirdNichtAlsCoverAbgelegt(t *testing.T) {
 	downloads := coverStub(t)
 	mock := neuerMockPool(t)
-	s := &Server{DB: &db.Database{Pool: mock}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 	// Der Stub antwortet auf jede Adresse mit demselben blauen Bild.
 	t.Cleanup(coverquelle.MerkeErsatzbildFuerTest(pngEinfarbig(t, color.RGBA{0, 0, 255, 255})))
 

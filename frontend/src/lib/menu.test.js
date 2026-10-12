@@ -47,7 +47,7 @@ function geseedeteRechte(rolle) {
  * Oberfläche und Rechtelage.
  *
  * Das Backend hat den Admin-Vorrang fest eingebaut („Admins dürfen immer",
- * api/permission_middleware.go). Im Menü stand die Portal-Ausnahme aber ÜBER dem
+ * api/tuer/permission_middleware.go). Im Menü stand die Portal-Ausnahme aber ÜBER dem
  * Admin-Vorrang. Ergebnis: Ein Admin durfte die Klassensatz-Reservierung aufrufen, sah
  * den Menüpunkt aber nicht — und fand die Funktion deshalb schlicht nicht. Genau so ist
  * es passiert (Absprache vom 09.08.2026: „Klassensatz reservieren wo und wie?").

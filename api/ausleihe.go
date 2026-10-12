@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/internal/service"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/repository"
@@ -92,7 +93,7 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
 	}
-	basis := s.jetzt()
+	basis := s.Jetzt()
 	if alteFrist.After(basis) {
 		basis = alteFrist
 	}
@@ -110,7 +111,7 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, map[string]interface{}{
+	tuer.RespondJSON(w, http.StatusOK, map[string]interface{}{
 		"success":               true,
 		"neues_rueckgabe_datum": newFrist,
 	})
@@ -138,7 +139,7 @@ func (s *Server) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, a
 	}
 
 	var req OverrideDueDateRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -188,7 +189,7 @@ func (s *Server) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, a
 		log.Printf("Audit für Frist-Überschreibung fehlgeschlagen: %v", logErr)
 	}
 
-	RespondJSON(w, http.StatusOK, map[string]interface{}{
+	tuer.RespondJSON(w, http.StatusOK, map[string]interface{}{
 		"success":    true,
 		"faellig_am": newFrist,
 	})
@@ -245,7 +246,7 @@ func (s *Server) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, a
 func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req GlobalExtendLMFRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -288,14 +289,14 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 		// Wie bei der Frist einer einzelnen Ausleihe (FRIST_OVERRIDE): Wer die Fristen einer
 		// ganzen Klasse verschiebt, steht im Protokoll. Bewegt sich keine Frist, steht nichts.
 		if angepasst > 0 {
-			s.protokolliereVerwaltung(ctx, auditFristKlasseGeaendert, map[string]any{
+			s.ProtokolliereVerwaltung(ctx, tuer.AuditFristKlasseGeaendert, map[string]any{
 				"klasse":            req.Klasse,
 				"neue_frist":        newDate.Format(time.RFC3339),
 				"fristen_angepasst": angepasst,
 			})
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]interface{}{
+		tuer.RespondJSON(w, http.StatusOK, map[string]interface{}{
 			"success":       true,
 			"updated_count": angepasst,
 		})

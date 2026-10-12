@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -23,7 +24,7 @@ import (
 func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	studentRepo := repository.NewStudentRepository(pool)
 	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a126", Rolle: auth.RoleAdmin}
 
@@ -112,7 +113,7 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	studentRepo := repository.NewStudentRepository(pool)
 	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a127", Rolle: auth.RoleAdmin}
 
@@ -195,7 +196,7 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a129", Rolle: auth.RoleAdmin}
 
 	t.Cleanup(func() {

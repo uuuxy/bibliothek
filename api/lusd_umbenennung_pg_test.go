@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
 	"bibliothek/internal/pgtest"
@@ -27,7 +28,7 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	geb, eintritt := testdaten.Datum(2013, 5, 4), testdaten.Datum(2024, 8, 19)
 
 	annaID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Anna", Nachname: "Müller", Klasse: "05F1", Barcode: "UMB-1", Geb: geb, Eintritt: eintritt})
@@ -109,7 +110,7 @@ func TestUmbenennung_UnbestaetigtBleibtAbgaengerMitKarenz(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	geb := testdaten.Datum(2013, 5, 4)
 
 	annaID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Anna", Nachname: "Müller", Klasse: "05F1", Barcode: "UMB-2", Geb: geb})
@@ -151,7 +152,7 @@ func TestUmbenennung_DatumskorrekturUebernimmtGeburtsdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	benID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Ben", Nachname: "Meier", Klasse: "06B", Barcode: "UMB-3", Geb: testdaten.Datum(2012, 1, 1)})
 	datei := lusd.Datei{Modus: lusd.ModusName, Zeilen: []lusd.Zeile{umbZeile(2, "Ben", "Meier", "07B", testdaten.Datum(2012, 1, 10), nil)}}
@@ -183,7 +184,7 @@ func TestUmbenennung_FruehererAbgaengerWirdReaktiviert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	geb, eintritt := testdaten.Datum(2011, 3, 3), testdaten.Datum(2022, 8, 22)
 
 	altID := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Cem", Nachname: "Yilmaz", Klasse: "08C", Barcode: "UMB-4", Geb: geb, Eintritt: eintritt, Abgaenger: true})

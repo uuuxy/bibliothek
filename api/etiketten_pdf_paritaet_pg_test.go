@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
@@ -34,7 +35,7 @@ func TestEtikettenWegeDruckenDasselbe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	const (
 		signatur  = "LMF-Deutsch 5"

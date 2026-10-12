@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/pkg/kennung"
@@ -73,7 +74,7 @@ func (s *Server) queryGraduatesBasic(ctx context.Context) ([]AbgaengerZeile, err
 func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		antwort := AbgaengerAntwort{
-			Fenster:   abgaengerFensterFuer(s.jetzt()),
+			Fenster:   abgaengerFensterFuer(s.Jetzt()),
 			Abgaenger: []AbgaengerZeile{},
 		}
 		if antwort.Fenster.Offen {
@@ -84,7 +85,7 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 			}
 			antwort.Abgaenger = zeilen
 		}
-		RespondJSON(w, http.StatusOK, antwort)
+		tuer.RespondJSON(w, http.StatusOK, antwort)
 	}
 }
 
@@ -150,7 +151,7 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 
 		// Außerhalb der Saison gibt es keinen Ausdruck — dieselbe Regel wie die Liste,
 		// sonst druckte ein direkter Aufruf im Oktober, was der Bildschirm nicht zeigt.
-		if fenster := abgaengerFensterFuer(s.jetzt()); !fenster.Offen {
+		if fenster := abgaengerFensterFuer(s.Jetzt()); !fenster.Offen {
 			apierrors.SendHTTPError(w, http.StatusNotFound, abgaengerAusserhalbDerSaison(fenster))
 			return
 		}
@@ -192,9 +193,9 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 			filename = fmt.Sprintf("Kontoauszuege_Klasse_%s.pdf", klasse)
 		}
 
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))
-		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))
+		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfBytes)))
 		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
 	}
 }

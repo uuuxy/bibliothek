@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
 	"bibliothek/internal/pgtest"
@@ -63,7 +64,7 @@ func TestLusdImport_KlassenwechselMehrererSchueler(t *testing.T) {
 		})
 	}
 
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.computeLusdChanges(ctx, records, true, true); err != nil {
 		t.Fatalf("Import mit Klassenwechseln scheiterte: %v", err)
 	}
@@ -113,7 +114,7 @@ func TestLusdImport_LeereKlasseUeberschreibtNicht(t *testing.T) {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
 
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 		{LusdID: "L-LEER", Vorname: "Greta", Nachname: "Gruen", Klasse: "", LineNum: 1},
 	}, true, true); err != nil {
@@ -166,7 +167,7 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 	testdaten.SeedOffenerSchaden(t, pool, ids["schaden"], "ABGS")
 
 	// Der neue Export nennt KEINEN der drei mehr — alle sind Abgänger.
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 		{LusdID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", LineNum: 1},
 	}, true, true); err != nil {

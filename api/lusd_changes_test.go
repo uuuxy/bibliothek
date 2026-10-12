@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
 	"bibliothek/repository"
@@ -74,7 +75,7 @@ func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	s := &Server{DB: &db.Database{Pool: mock}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	// 10 aktive Schüler in der DB, CSV enthält nur 2 davon → 8 Abgänger (80%).
 	erwarteEinstellungen(mock)
@@ -111,7 +112,7 @@ func TestComputeLusdChanges_PreviewNeverWrites(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	s := &Server{DB: &db.Database{Pool: mock}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	erwarteEinstellungen(mock)
 	mock.ExpectBegin()

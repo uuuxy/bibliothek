@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 
+	"bibliothek/api/tuer"
 	"bibliothek/mailservice"
 	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
@@ -67,19 +68,19 @@ func baueMahnMailRequest(req mahnwesenSendenRequest, pdfBytes []byte, totalSchue
 			"Bitte informieren Sie die betroffenen Schüler/innen über die ausstehenden Rückgaben.\n\n"+
 			"Mit freundlichen Grüßen,\nSchulbibliothek",
 		req.Klasse,
-		schulzeit.Jetzt().Format(dateFormatDE),
+		schulzeit.Jetzt().Format(tuer.DateFormatDE),
 		totalSchueler,
 		totalMedien,
 	)
 
 	return mailservice.MailRequest{
 		To:      req.Email,
-		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", req.Klasse, schulzeit.Jetzt().Format(dateFormatDE)),
+		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", req.Klasse, schulzeit.Jetzt().Format(tuer.DateFormatDE)),
 		Body:    emailBody,
 		Attachments: []mailservice.MailAttachment{
 			{
-				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", req.Klasse, schulzeit.Jetzt().Format(dateFormatISO)),
-				ContentType: contentTypePDF,
+				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", req.Klasse, schulzeit.Jetzt().Format(tuer.DateFormatISO)),
+				ContentType: tuer.ContentTypePDF,
 				Data:        pdfBytes,
 			},
 		},

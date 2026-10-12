@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 
@@ -32,7 +33,7 @@ func TestLogoutCookieFolgtDerKonfiguration(t *testing.T) {
 				t.Fatalf("authenticator init: %v", err)
 			}
 			t.Cleanup(a.Blacklist.Stop)
-			s := &Server{DB: &db.Database{Pool: mock}, Auth: a, CookieSecure: secure}
+			s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}, Auth: a}, CookieSecure: secure}
 
 			// Unbrauchbares Token: Die Sperrliste antwortet, VerifyToken scheitert
 			// danach an der Signatur — es gibt nichts zu widerrufen, der Handler

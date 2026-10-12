@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 )
@@ -39,7 +40,7 @@ func systematikAnlegen(t *testing.T, srv *Server, kuerzel, bezeichnung string) (
 func TestSystematikAnlegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Bezeichnung mit Suffix: Sie ist seit Migration 078 (case-insensitiv) eindeutig,
 	// und andere Testpakete registrieren im selben Test-Postgres bereits "Deutsch".
@@ -91,7 +92,7 @@ func TestSystematikAnlegen(t *testing.T) {
 func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
 	bezeichnung := "Erdkunde" + suffix
@@ -152,7 +153,7 @@ func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
 	alt := "Biologie" + suffix
@@ -241,7 +242,7 @@ func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 func TestSystematikAendern_UnbekanntUndDoppelt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
 	t.Cleanup(func() {

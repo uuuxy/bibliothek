@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -30,7 +31,7 @@ func TestRestore_KollisionMitAktivemZwillingIstKonflikt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewAuditRepository(pool)
 	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "restore-kollision@test.invalid")
 

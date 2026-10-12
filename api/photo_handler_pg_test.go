@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/crypto"
 	"bibliothek/internal/pgtest"
@@ -85,7 +86,7 @@ func TestFotoUpload_SpeichertVerschluesseltUndNenntDieAdresse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	schuelerID := testdaten.SeedSchueler(t, pool, "FOTO-1", "Fotokind", "07A")
 
 	rec := fotoHochladen(t, srv, schuelerID, fotoRumpf(t, fotoJPEG(t)))
@@ -127,7 +128,7 @@ func TestFotoUpload_AntwortLesbarBeiSonderzeichenInDerAusweisnummer(t *testing.T
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	schuelerID := testdaten.SeedSchueler(t, pool, `FO"TO\2`, "Sonderkind", "07A")
 
 	rec := fotoHochladen(t, srv, schuelerID, fotoRumpf(t, fotoJPEG(t)))
@@ -145,7 +146,7 @@ func TestFotoUpload_Abweisungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	t.Setenv(crypto.SchluesselVariable, "12345678901234567890123456789012")
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	schuelerID := testdaten.SeedSchueler(t, pool, "FOTO-3", "Abweiskind", "07A")
 	keinBild := base64.StdEncoding.EncodeToString([]byte("das ist kein Bild"))
 

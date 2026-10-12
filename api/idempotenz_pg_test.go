@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -91,7 +92,7 @@ func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 	deviceSvc := service.NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
 	echt := service.NewOmniboxService(pool, studentRepo, bookRepo, repository.NewUserRepository(pool), loanRepo, loanSvc, deviceSvc)
 
-	srv := &Server{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}}
 	schluessel := "3f2504e0-4f89-11d3-9a0c-0305e82c" + suffix[len(suffix)-4:]
 	anfrage := func() *http.Request {
 		body := fmt.Sprintf(`{"query":%q,"active_leser_id":%q,"idempotency_key":%q}`, barcode, schuelerID, schluessel)

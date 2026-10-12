@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
@@ -52,7 +53,7 @@ func (s *Server) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 	}
 
 	var req UpdateStatusRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -109,5 +110,5 @@ func (s *Server) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 	if imBestand, bestandErr := bookRepo.ExemplarImBestand(ctx, id); bestandErr == nil {
 		antwort["im_bestand"] = imBestand
 	}
-	RespondJSON(w, http.StatusOK, antwort)
+	tuer.RespondJSON(w, http.StatusOK, antwort)
 }

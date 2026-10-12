@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -52,6 +53,6 @@ func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 			},
 		}
 
-		RespondJSON(w, http.StatusOK, summary)
+		tuer.RespondJSON(w, http.StatusOK, summary)
 	}
 }

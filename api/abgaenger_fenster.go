@@ -48,11 +48,3 @@ func abgaengerFensterFuer(jetzt time.Time) AbgaengerFenster {
 func abgaengerAusserhalbDerSaison(f AbgaengerFenster) error {
 	return fmt.Errorf("die Abgängerliste zeigt die Abschlussklassen vom %s bis %s — außerhalb dieser Zeit gibt es keine Kontoauszüge", f.Von, f.Bis)
 }
-
-// jetzt ist die Uhr des Servers: in Tests setzbar (Server.Uhr), sonst die Schulzeit.
-func (s *Server) jetzt() time.Time {
-	if s.Uhr != nil {
-		return s.Uhr()
-	}
-	return schulzeit.Jetzt()
-}

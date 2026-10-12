@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 
@@ -40,6 +41,6 @@ func (s *Server) GetBestelldetailHandler(repo repository.BestelldetailRepository
 			return
 		}
 
-		RespondJSON(w, http.StatusOK, detail)
+		tuer.RespondJSON(w, http.StatusOK, detail)
 	}
 }

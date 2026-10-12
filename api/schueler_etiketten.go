@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/repository"
@@ -39,7 +40,7 @@ type SchuelerEtikettenRequest struct {
 func (s *Server) PrintSchuelerEtikettenHandler(studentRepo repository.StudentRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req SchuelerEtikettenRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -60,8 +61,8 @@ func (s *Server) PrintSchuelerEtikettenHandler(studentRepo repository.StudentRep
 			return
 		}
 
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, "inline; filename=\"schueler_etiketten.pdf\"")
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, "inline; filename=\"schueler_etiketten.pdf\"")
 		if err := bogen.Output(w); err != nil {
 			log.Printf("Fehler beim Senden des Etikettenbogens: %v", err)
 		}

@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -22,7 +23,7 @@ func (s *Server) BescheidAusstehendHandler(bescheidRepo repository.BescheidRepos
 		if err != nil {
 			return apierrors.Internal("Offene Forderungen konnten nicht gelesen werden", err)
 		}
-		RespondJSON(w, http.StatusOK, liste)
+		tuer.RespondJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }

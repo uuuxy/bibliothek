@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -20,7 +21,7 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	titelID := testdaten.TitelMitSignatur(t, pool, "Statistik Zulauf", "Sta 1", 0)
 	nie := testdaten.ZulaufExemplar(t, pool, titelID, "ST-ZULAUF")
 	imBestand := testdaten.Exemplar(t, pool, titelID, "ST-BESTAND", true, "")
@@ -62,7 +63,7 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 func TestStatistik_BestelltesZaehltNichtZumBestand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	titelID := testdaten.TitelMitSignatur(t, pool, "Statistik Bestand", "Sta 2", 0)
 	testdaten.ZulaufExemplar(t, pool, titelID, "SB-ZULAUF")
 	imBestand := testdaten.Exemplar(t, pool, titelID, "SB-BESTAND", true, "")

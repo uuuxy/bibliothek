@@ -8,8 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/service"
+
 	"github.com/pashagolub/pgxmock/v5"
 	"github.com/stretchr/testify/assert"
 )
@@ -118,7 +120,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 			}
 			defer mock.Close()
 
-			srv := &Server{DB: &db.Database{Pool: mock}}
+			srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 			handler := srv.GlobalExtendLMFHandler()
 
 			tt.setupMock(mock)

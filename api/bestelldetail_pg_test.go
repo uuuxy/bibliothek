@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -64,7 +65,7 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Detail", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
@@ -161,7 +162,7 @@ func TestBestelldetail_ZeigtTitelangabenUndGelieferteExemplare(t *testing.T) {
 // erfährt nie, dass die Bestellung schlicht nicht mehr existiert.
 func TestBestelldetail_UnbekannteBestellungIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	const unbekannt = "00000000-0000-0000-0000-0000000000ff"
 	req := httptest.NewRequest(http.MethodGet, "/api/bestellhistorie/"+unbekannt, nil)

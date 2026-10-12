@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -78,7 +79,7 @@ func TestQueryRechnungItems_ForderungAufEinemBescheidBleibtDraussen(t *testing.T
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()
 
 	sid := testdaten.SeedSchueler(t, pool, "S-RECH-BESCH", "Rechnungskind", "08G2")
@@ -115,7 +116,7 @@ func TestPrintRechnung_AlleForderungenAufBescheid(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-RECH-ALLE", "Bescheidkind", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Englisch 8")

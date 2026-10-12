@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/internal/service"
 	"bibliothek/repository"
@@ -82,7 +83,7 @@ func TestActionHandler_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{Rolle: auth.RoleAdmin, UserID: "u1"}))
 		w := httptest.NewRecorder()
-		(&Server{Broker: broker}).ActionHandler(&festeOmnibox{ergebnis})(w, req)
+		(&Server{Basis: tuer.Basis{Broker: broker}}).ActionHandler(&festeOmnibox{ergebnis})(w, req)
 		if w.Code != http.StatusOK {
 			t.Fatalf("Scan mit Ergebnis %q: Status %d: %s", ergebnis.Type, w.Code, w.Body.String())
 		}

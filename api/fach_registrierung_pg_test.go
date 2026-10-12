@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/inventur"
@@ -110,7 +111,7 @@ func TestFachAutoRegistrierung(t *testing.T) {
 func TestSystematikRenameZiehtOffeneInventurMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%1000000)
 	alt, neu := "Physik"+suffix, "Astrophysik"+suffix

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
@@ -94,7 +95,7 @@ func TestBestelllinkFrist_BeimBestellenGiltDieEinstellung(t *testing.T) {
 func TestBestelllinkFrist_NeuerLinkBekommtDieEingestellteFrist(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	// Der alte Link läuft in drei Tagen ab; der neue bekommt die eingestellte Frist ab heute.
 	bestellungID, _ := bestellungMitToken(t, pool, lieferant, 3)

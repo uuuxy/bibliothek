@@ -181,6 +181,7 @@ var phantomBestand = map[string]int{
 	"internal/testdaten/bestellung.go:Haendler":                 1,
 	"internal/testdaten/bestellung.go:SetzeOeffentlicheAdresse": 2,
 	"internal/testdaten/leser.go:Klassenleitung":                1,
+	"internal/testdaten/rechte.go:GenauEinRecht":                2,
 	"internal/testdaten/schaden.go:BescheidAngabenSetzen":       2,
 	"internal/testdaten/schaden.go:BescheidLernmittel":          1,
 	"internal/testdaten/schaden.go:BescheidReset":               1,

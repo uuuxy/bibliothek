@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -86,7 +87,7 @@ func TestExemplarStandort_AnzeigenUndAendern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	schulbuch := testdaten.TitelMitSignatur(t, pool, "Natura 2", "LMF Bio 7", 0)
 	ohne := testdaten.Exemplar(t, pool, schulbuch, "ST-OHNE", true, "")
@@ -190,7 +191,7 @@ func TestExemplarStandort_ListeUndVorschlaegeZaehlenDenBestand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	schulbuch := testdaten.TitelMitSignatur(t, pool, "Natura 2", "LMF Bio 7", 0)
 	roman := testdaten.TitelMitSignatur(t, pool, "Tschick", "Ju Her", 0)

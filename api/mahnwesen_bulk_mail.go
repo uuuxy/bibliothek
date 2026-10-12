@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/mailservice"
@@ -136,7 +137,7 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 			Abgebrochen:   erg.Abgebrochen,
 		})
 
-		RespondJSON(w, http.StatusOK, bulkOverdueResponse{
+		tuer.RespondJSON(w, http.StatusOK, bulkOverdueResponse{
 			SentCount:    erg.Sent,
 			SkippedCount: erg.Skipped,
 			FailedCount:  erg.Failed,
@@ -418,5 +419,5 @@ func (s *Server) logKlassenVersandAudit(r *http.Request, aktion string, details 
 	// (Prüfung 22.08.2026, A8). Claims bleiben erhalten (WithoutCancel behält Werte).
 	ctx, abbruch := context.WithTimeout(context.WithoutCancel(r.Context()), 5*time.Second)
 	defer abbruch()
-	s.schreibeAdminProtokoll(ctx, claims.UserID, aktion, clientip.FromRequest(r), string(payload))
+	s.SchreibeAdminProtokoll(ctx, claims.UserID, aktion, clientip.FromRequest(r), string(payload))
 }

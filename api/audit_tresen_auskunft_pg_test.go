@@ -19,6 +19,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -100,7 +101,7 @@ func rufeTresenAuskunft(t *testing.T, srv *Server, adminID, barcode string) Tres
 func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	w := baueTresenWelt(t, pool)
 
 	auditRepo := repository.NewAuditRepository(pool)
@@ -166,7 +167,7 @@ func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 func TestTresenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	w := baueTresenWelt(t, pool)
 
 	auditRepo := repository.NewAuditRepository(pool)
@@ -196,7 +197,7 @@ func TestTresenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 func TestTresenAuskunftOhneTreffer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	w := baueTresenWelt(t, pool)
 
 	auskunft := rufeTresenAuskunft(t, srv, w.adminID, "NIE-VERGEBEN-4711")
@@ -238,7 +239,7 @@ func TestTresenAuskunftOhneBarcode(t *testing.T) {
 func TestTresenAuskunftNenntDenKollegen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	w := baueTresenWelt(t, pool)
 
 	var kollegeID string

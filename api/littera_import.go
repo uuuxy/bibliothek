@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/service"
@@ -19,6 +20,9 @@ import (
 
 	"github.com/xuri/excelize/v2"
 )
+
+// Audit-/Log-Quellen.
+const litteraImportSource = "littera import file"
 
 // LitteraImportResponse meldet zurück, was ein Littera-Import bewegt hat. Die Zähler
 // tragen omitempty, weil je nach Dateiart nur ein Teil davon gefüllt wird: Das
@@ -111,7 +115,7 @@ func (s *Server) logImportAudit(r *http.Request, aktion, details string) {
 	if !ok {
 		return
 	}
-	s.schreibeAdminProtokoll(r.Context(), claims.UserID, aktion, clientip.FromRequest(r), details)
+	s.SchreibeAdminProtokoll(r.Context(), claims.UserID, aktion, clientip.FromRequest(r), details)
 }
 
 // verarbeiteLitteraXML importiert ein MAB2-XML-Katalogisat und antwortet.
@@ -137,7 +141,7 @@ func (s *Server) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, co
 	// den Zähler still verschluckt (omitempty auf int 0 entfernt den Schlüssel,
 	// das Widget zeigte "undefined bestehende Titel"). Die Zusatzschlüssel der
 	// Map (imported_count, message) las kein Konsument (gegengeprüft).
-	RespondJSON(w, http.StatusOK, LitteraImportResponse{
+	tuer.RespondJSON(w, http.StatusOK, LitteraImportResponse{
 		UpdatedTitles: importedCount,
 		Type:          "xml",
 	})
@@ -185,7 +189,7 @@ func (s *Server) LitteraImportHandler() http.HandlerFunc {
 			importType = "xlsx"
 		}
 
-		RespondJSON(w, http.StatusOK, LitteraImportResponse{
+		tuer.RespondJSON(w, http.StatusOK, LitteraImportResponse{
 			NewTitles:      newTitlesCount,
 			ImportedCopies: importedCopiesCount,
 			Type:           importType,
@@ -259,10 +263,10 @@ func (s *Server) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 
 	if claims, ok := auth.GetClaims(r.Context()); ok {
 		details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitles, importedCopies)
-		s.schreibeAdminProtokoll(r.Context(), claims.UserID, "BESTAND_IMPORT", clientip.FromRequest(r), details)
+		s.SchreibeAdminProtokoll(r.Context(), claims.UserID, "BESTAND_IMPORT", clientip.FromRequest(r), details)
 	}
 
-	RespondJSON(w, http.StatusOK, map[string]interface{}{
+	tuer.RespondJSON(w, http.StatusOK, map[string]interface{}{
 		"new_titles_count":      newTitles,
 		"imported_copies_count": importedCopies,
 		"message":               "Bestands-CSV erfolgreich importiert",

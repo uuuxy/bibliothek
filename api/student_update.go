@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pkg/clientip"
@@ -112,9 +113,9 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 		// Schlüssel `schueler_id` wie überall: Auskunft und Tilgung fragen genau diesen
 		// Schlüssel ab (Migration 091 hat die alte `student_id`-Form umgeschlüsselt).
 		details := fmt.Sprintf(`{"schueler_id":"%s"}`, id)
-		s.schreibeAdminProtokoll(ctx, claims.UserID, "DELETE_STUDENT", clientip.FromRequest(r), details)
+		s.SchreibeAdminProtokoll(ctx, claims.UserID, "DELETE_STUDENT", clientip.FromRequest(r), details)
 
-		RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status": "success",
 		})
 	}
@@ -126,7 +127,7 @@ func parseGeburtsdatum(raw string) (*time.Time, error) {
 	if raw == "" {
 		return nil, nil
 	}
-	t, err := time.Parse(dateFormatISO, raw)
+	t, err := time.Parse(tuer.DateFormatISO, raw)
 	if err != nil {
 		return nil, fmt.Errorf("ungültiges Datumsformat für Geburtsdatum: %q — erwartet YYYY-MM-DD", raw)
 	}
@@ -157,7 +158,7 @@ func (s *Server) handlePatchStudent(w http.ResponseWriter, r *http.Request, audi
 	}
 
 	var req patchStudentRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -173,7 +174,7 @@ func (s *Server) handlePatchStudent(w http.ResponseWriter, r *http.Request, audi
 		return
 	}
 
-	w.Header().Set(headerContentType, contentTypeJSON)
+	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	response := map[string]any{"status": "success"}
 	if req.AbgaengerJahr != nil {
 		response["abgaenger_jahr"] = *req.AbgaengerJahr

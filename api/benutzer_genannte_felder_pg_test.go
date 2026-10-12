@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -23,7 +24,7 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 	admin := testdaten.AdminFuerAudit(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewUserRepository(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),

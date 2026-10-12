@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
@@ -27,7 +28,7 @@ import (
 func TestListUsersLiefertEchteRechte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	email := "rechte-" + suffix + "@example.org"

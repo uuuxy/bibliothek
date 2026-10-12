@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -25,7 +26,7 @@ func (s *Server) GetReordersHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		RespondJSON(w, http.StatusOK, reorders)
+		tuer.RespondJSON(w, http.StatusOK, reorders)
 	}
 }
 

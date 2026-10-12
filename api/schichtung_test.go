@@ -88,12 +88,13 @@ var dateienOhneTuer = []string{
 	"bestellmail_anhaenge.go",
 	"bestellmail_versand.go",
 	"betriebsbereitschaft_alarm.go",
-	"constants.go",
 	"lmf_plan_live.go",
 	"mahnwesen_mail.go",
 	"schueler_kiosk.go",
 	"student_klasse_regel.go",
-	"verwaltung_protokoll.go",
+	"tuer/constants.go",
+	"tuer/tuer.go",
+	"tuer/verwaltung_protokoll.go",
 }
 
 // bindetHTTPEin sagt, ob die Quelle net/http einbindet, unter welchem Namen auch immer.

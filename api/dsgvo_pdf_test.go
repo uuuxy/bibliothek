@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/auskunft"
 	"bibliothek/pdf"
@@ -54,7 +55,7 @@ func TestGenerateDsgvoAuskunftPDF(t *testing.T) {
 
 func dsgvoPDFRequest(t *testing.T, mock pgxmock.PgxPoolIface, pathID string) *httptest.ResponseRecorder {
 	t.Helper()
-	s := &Server{DB: &db.Database{Pool: mock}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+pathID+"/dsgvo-auskunft/pdf", nil)
 	req.SetPathValue("id", pathID)
 	rec := httptest.NewRecorder()

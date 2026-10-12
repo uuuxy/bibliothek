@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
@@ -94,7 +95,7 @@ func (s *Server) ListUsersHandler(userRepo repository.UserRepository) http.Handl
 			responseUsers = append(responseUsers, ur)
 		}
 
-		RespondJSON(w, http.StatusOK, responseUsers)
+		tuer.RespondJSON(w, http.StatusOK, responseUsers)
 	}
 }
 

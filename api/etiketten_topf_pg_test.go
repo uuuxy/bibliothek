@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
@@ -94,7 +95,7 @@ func pruefeVermerk(t *testing.T, weg, text, want, nicht string) {
 func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	faelle := []struct {
 		name string
@@ -169,7 +170,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	testdaten.ResetBestandsdaten(t, pool)
 	setzeVermerkSchuelerbuecherei(t, pool, vermerkStadt)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
@@ -214,7 +215,7 @@ func TestEigentumsvermerk_TopfLaesstSichNichtUnterschieben(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	setzeVermerkSchuelerbuecherei(t, pool, vermerkStadt)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	text := etikettenUeberDruckCenter(t, srv, "B-GIBT-ES-NICHT", mitteltopf.Schultraeger)
 	pruefeVermerk(t, "Druck-Center, unbekannter Barcode", text, vermerkLand, vermerkStadt)

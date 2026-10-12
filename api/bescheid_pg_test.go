@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
@@ -54,7 +55,7 @@ func TestBescheidErstellen_NurLernmittelAufDemLandesBescheid(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-TOPF", "Topfkind", "08G2")
 	roman := testdaten.SeedMonitorTitel(t, pool, "Roman der Buecherei", "Autor", true, 0)
@@ -84,7 +85,7 @@ func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-1", "Bescheidkind", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Mathematik 7")
@@ -159,7 +160,7 @@ func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-2", "Zweitkind", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Deutsch 8")
@@ -205,7 +206,7 @@ func TestBescheidErstellen_OhneAngabenKeinBriefUndKeineNummer(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-3", "Ohneangaben", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Englisch 9")
@@ -249,7 +250,7 @@ func TestBescheidNummernkreis_ParallelKeineDoppelte(t *testing.T) {
 	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	const anzahl = 8
 	titelID := testdaten.BescheidLernmittel(t, pool, "Parallelbuch")
@@ -314,7 +315,7 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewBescheidRepository(pool)
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-4", "Fristkind", "08G2")
@@ -382,7 +383,7 @@ func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewBescheidRepository(pool)
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-BEZ", "Zahlkind", "08G2")
@@ -433,7 +434,7 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewBescheidRepository(pool)
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-5", "Umzugskind", "08G2")

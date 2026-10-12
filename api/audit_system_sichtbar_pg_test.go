@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 )
@@ -26,7 +27,7 @@ import (
 func TestAuditLogZeigtSystemEintraege(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	systemTabelle := "e2e_system_" + suffix

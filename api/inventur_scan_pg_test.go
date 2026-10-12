@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -44,7 +45,7 @@ func TestInventurScan_FremderScopeNichtErfasst(t *testing.T) {
 		t.Fatalf("Deutsch-Session anlegen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Mathe-Buch in Deutsch-Session -> 409, NICHT erfasst.
 	rec := inventurScan(t, srv, session.ID, barcodeMathe)
@@ -115,7 +116,7 @@ func TestInventurScan_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T)
 		t.Fatalf("Inventur anlegen: %v", err)
 	}
 
-	rec := inventurScan(t, &Server{DB: &db.Database{Pool: pool}}, session.ID, "GIBT-ES-NICHT")
+	rec := inventurScan(t, &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}, session.ID, "GIBT-ES-NICHT")
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("Status %d, erwartet 404: %s", rec.Code, rec.Body.String())
 	}
@@ -171,7 +172,7 @@ func TestInventurScan_Fehlerfaelle(t *testing.T) {
 		t.Fatalf("Deutsch-Session anlegen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	tests := []struct {
 		name       string

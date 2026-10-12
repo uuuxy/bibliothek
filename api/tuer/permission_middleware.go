@@ -1,4 +1,4 @@
-package api
+package tuer
 
 import (
 	"context"
@@ -40,6 +40,15 @@ func InvalidatePermissionCache() {
 	permCacheMu.Unlock()
 }
 
+// MerkeRechtFuerTest legt die Entscheidung für eine Rolle und ein Recht eine Minute lang in den
+// Zwischenspeicher, als hätte die Datenbank sie geliefert: Ein Test ohne Tabelle der Rechte
+// stellt so ein, was eine Rolle darf. InvalidatePermissionCache nimmt sie zurück.
+func MerkeRechtFuerTest(rolle, recht string, erlaubt bool) {
+	permCacheMu.Lock()
+	permCache[rolle+":"+recht] = cacheEntry{Allowed: erlaubt, ExpiresAt: time.Now().Add(time.Minute)}
+	permCacheMu.Unlock()
+}
+
 // leseCacheEpoche liefert den aktuellen Invalidierungs-Stand — VOR dem DB-Lesen
 // abfragen, damit der Cache-Schreiber erkennt, ob seine Entscheidung überholt wurde.
 func leseCacheEpoche() uint64 {
@@ -48,9 +57,9 @@ func leseCacheEpoche() uint64 {
 	return permCacheEpoche
 }
 
-// claimsAusRequest liest das Session-Cookie und verifiziert das Token. Bei Fehler
+// ClaimsAusRequest liest das Session-Cookie und verifiziert das Token. Bei Fehler
 // werden der passende HTTP-Status und der Fehler zurückgegeben.
-func (s *Server) claimsAusRequest(r *http.Request) (*auth.Claims, int, error) {
+func (s *Basis) ClaimsAusRequest(r *http.Request) (*auth.Claims, int, error) {
 	cookie, err := r.Cookie("session_token")
 	if err != nil {
 		if errors.Is(err, http.ErrNoCookie) {
@@ -81,7 +90,7 @@ func (s *Server) claimsAusRequest(r *http.Request) (*auth.Claims, int, error) {
 	return claims, 0, nil
 }
 
-// sendeSitzungsfehler schickt den Fehler aus claimsAusRequest an den Client. Beim 503
+// sendeSitzungsfehler schickt den Fehler aus ClaimsAusRequest an den Client. Beim 503
 // (Datenbank-Aussetzer) sieht der Client nur den Sentinel-Satz: Die Ursache, die
 // VerifyToken mitwrappt, ist Betriebsinnenleben und gehört ins Log, nicht in die Meldung
 // für die Theke (Register 12.09.2026, siehe apierrors.SendHTTPErrorMitMeldung).
@@ -117,7 +126,7 @@ func leseBerechtigungCache(cacheKey string) (allowed bool, found bool) {
 // zementierte ein kurzer Aussetzer 60 s lang ein 403 für berechtigte Nutzer — und
 // sind ein Server- (500), kein Berechtigungsproblem. pgx.ErrNoRows dagegen heißt
 // "Recht nicht gewährt" und ist stabil cachebar.
-func (s *Server) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permission, cacheKey string) (bool, error) {
+func (s *Basis) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permission, cacheKey string) (bool, error) {
 	// Epoche VOR dem DB-Lesen festhalten: Nur wenn bis zum Cache-Schreiben keine
 	// Invalidierung dazwischenkam, ist die Entscheidung noch aktuell. Kam eine, sah
 	// dieses Lesen womöglich den Stand VOR der Rechteänderung — der Request selbst
@@ -167,10 +176,10 @@ func (s *Server) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permis
 // routes_system.go) — mit der Portal-Rolle KOLLEGIUM wäre derselbe Fehler ein zweites Mal
 // aufgetreten. Der Stream trägt nur operative Aktions-Events (Typ, IDs, Buchtitel,
 // Zeitstempel) und keine Schüler-PII, deshalb ist die Sitzung hier die richtige Schwelle.
-func (s *Server) RequireAuthenticated() func(http.Handler) http.Handler {
+func (s *Basis) RequireAuthenticated() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			claims, status, err := s.claimsAusRequest(r)
+			claims, status, err := s.ClaimsAusRequest(r)
 			if err != nil {
 				sendeSitzungsfehler(w, status, err)
 				return
@@ -180,27 +189,11 @@ func (s *Server) RequireAuthenticated() func(http.Handler) http.Handler {
 	}
 }
 
-// RequirePermission returns a middleware that validates if the authenticated user
-// has the required permission dynamically defined in the database.
-func (s *Server) RequirePermission(permission string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		// Die UUID-Prüfung sitzt hier und NICHT mehr global um den Mux herum.
-		//
-		// Global gelegt las sie r.PathValue("id"), bevor der ServeMux die Route
-		// aufgelöst hatte — der Wert war dort immer leer, die Prüfung lief also nie
-		// (Audit-Befund vom 01.08.2026, belegt in middleware_frist_test.go). An dieser
-		// Stelle ist die Route bereits getroffen und PathValue gefüllt.
-		return ValidateUUIDParamsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			s.pruefeBerechtigung(w, r, next, permission)
-		}))
-	}
-}
-
-// pruefeBerechtigung setzt die RBAC-Prüfung für einen Request um: Admins dürfen immer,
+// PruefeBerechtigung setzt die RBAC-Prüfung für einen Request um: Admins dürfen immer,
 // sonst wird die konfigurierte Rolle→Permission-Zuordnung (mit Cache) geprüft. Bei
 // Erlaubnis wird an next delegiert, andernfalls 403 bzw. 500 gesendet.
-func (s *Server) pruefeBerechtigung(w http.ResponseWriter, r *http.Request, next http.Handler, permission string) {
-	claims, status, err := s.claimsAusRequest(r)
+func (s *Basis) PruefeBerechtigung(w http.ResponseWriter, r *http.Request, next http.Handler, permission string) {
+	claims, status, err := s.ClaimsAusRequest(r)
 	if err != nil {
 		sendeSitzungsfehler(w, status, err)
 		return
@@ -245,7 +238,7 @@ func (s *Server) pruefeBerechtigung(w http.ResponseWriter, r *http.Request, next
 // mit view_books, der Name des Ausleihers nur mit view_students; siehe
 // bewertung/sicherheitsbefund-kiosk-suche.md). Fehler werten als "nein":
 // Im Zweifel wird weniger gezeigt, nie mehr.
-func (s *Server) BesitztRecht(r *http.Request, permission string) bool {
+func (s *Basis) BesitztRecht(r *http.Request, permission string) bool {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		return false

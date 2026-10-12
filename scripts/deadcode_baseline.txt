@@ -104,6 +104,7 @@ internal/testdaten/leser.go: unreachable func: SeedPortalLehrkraft
 internal/testdaten/leser.go: unreachable func: AdminFuerAudit
 internal/testdaten/leser.go: unreachable func: Klassenleitung
 internal/testdaten/leser.go: unreachable func: ZusammenfuehrenAuftrag
+internal/testdaten/rechte.go: unreachable func: GenauEinRecht
 internal/testdaten/ausleihe.go: unreachable func: SeedAusleihe
 internal/testdaten/ausleihe.go: unreachable func: SeedLeserAusleihe
 internal/testdaten/ausleihe.go: unreachable func: SeedOffeneAusleihe
@@ -134,9 +135,16 @@ internal/tuertest/tuertest.go: unreachable func: Fehlermeldung
 internal/tuertest/felder.go: unreachable func: LeereFelder
 internal/tuertest/dnb.go: unreachable func: DNBAttrappe.RoundTrip
 internal/tuertest/mail.go: unreachable func: MailAbfangen
+internal/tuertest/rechte.go: unreachable func: SetzeGenauEinRecht
 
 # Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Funktion): Womit verschickt wird,
 # steht in einem Wert des Pakets, den der Start an die Datenbank bindet. Die Tests der Türen,
 # die Mail verschicken, stellen darüber einen Mailserver ein, einen fehlenden oder eine
 # unlesbare Konfiguration; vorher setzten sie den Wert selbst, als er noch in api/ stand.
 mailservice/mail_sender.go: unreachable func: TauscheKonfigLaderFuerTest
+
+# Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Funktion): Die Entscheidung, was eine
+# Rolle darf, liegt eine Minute im Zwischenspeicher des Pakets. Tests ohne Tabelle der Rechte
+# legen sie dort ab; vorher schrieben sie selbst in den Zwischenspeicher, als er noch in api/
+# stand.
+api/tuer/permission_middleware.go: unreachable func: MerkeRechtFuerTest

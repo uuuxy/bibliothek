@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/auskunft"
@@ -265,7 +266,7 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 		// Rechenschaftspflicht: Die Auskunftserteilung selbst wird protokolliert.
 		s.protokolliereDsgvoAuskunft(ctx, id)
 
-		RespondJSON(w, http.StatusOK, dsgvoAntwort(daten, time.Now()))
+		tuer.RespondJSON(w, http.StatusOK, dsgvoAntwort(daten, time.Now()))
 		return nil
 	})
 }

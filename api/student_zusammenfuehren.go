@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pkg/clientip"
@@ -79,7 +80,7 @@ func (s *Server) ZusammenfuehrenSchuelerHandler(auditRepo repository.AuditReposi
 				log.Printf("Zusammenführen: Audit-Eintrag fehlgeschlagen: %v", err)
 			}
 		}
-		RespondJSON(w, http.StatusOK, erg)
+		tuer.RespondJSON(w, http.StatusOK, erg)
 		return nil
 	})
 }
@@ -93,7 +94,7 @@ func (s *Server) ZusammenfuehrenKandidatenHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Kandidatensuche fehlgeschlagen", err)
 		}
-		RespondJSON(w, http.StatusOK, treffer)
+		tuer.RespondJSON(w, http.StatusOK, treffer)
 		return nil
 	})
 }

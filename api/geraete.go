@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 
@@ -61,7 +62,7 @@ func (s *Server) ListGeraeteHandler(repo repository.GeraeteRepository) http.Hand
 				}
 			}
 		}
-		RespondJSON(w, http.StatusOK, map[string]any{"data": geraete})
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{"data": geraete})
 		return nil
 	})
 }
@@ -71,7 +72,7 @@ func (s *Server) CreateGeraetHandler(repo repository.GeraeteRepository) http.Han
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req GeraetRequest
 		// Streng: Ein Feld, das die Tür nicht liest, ist ein Fehler und kein stiller Verlust.
-		if !DecodeStrictAndValidate(w, r, &req) {
+		if !tuer.DecodeStrictAndValidate(w, r, &req) {
 			return nil
 		}
 		req.Modellname = strings.TrimSpace(req.Modellname)
@@ -96,7 +97,7 @@ func (s *Server) CreateGeraetHandler(repo repository.GeraeteRepository) http.Han
 			}
 			return apierrors.Internal("Fehler beim Anlegen des Geräts", err)
 		}
-		RespondJSON(w, http.StatusCreated, map[string]string{"id": id})
+		tuer.RespondJSON(w, http.StatusCreated, map[string]string{"id": id})
 		return nil
 	})
 }
@@ -107,7 +108,7 @@ func (s *Server) UpdateGeraetHandler(repo repository.GeraeteRepository) http.Han
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req GeraetAenderungRequest
 		// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
-		if !DecodeStrictAndValidate(w, r, &req) {
+		if !tuer.DecodeStrictAndValidate(w, r, &req) {
 			return nil
 		}
 		aenderung := repository.GeraetAenderung{
@@ -132,7 +133,7 @@ func (s *Server) UpdateGeraetHandler(repo repository.GeraeteRepository) http.Han
 			}
 			return apierrors.Internal("Fehler beim Speichern des Geräts", err)
 		}
-		RespondSuccess(w)
+		tuer.RespondSuccess(w)
 		return nil
 	})
 }

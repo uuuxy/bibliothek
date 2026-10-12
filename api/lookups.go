@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -28,7 +29,7 @@ func (s *Server) GetSystematicsHandler() http.HandlerFunc {
 			results = append(results, Systematik{ID: k.ID, Kuerzel: k.Kuerzel, Bezeichnung: k.Bezeichnung})
 		}
 
-		RespondJSON(w, http.StatusOK, results)
+		tuer.RespondJSON(w, http.StatusOK, results)
 	}
 }
 
@@ -42,6 +43,6 @@ func (s *Server) GetFaecherHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
 			return
 		}
-		RespondJSON(w, http.StatusOK, faecher)
+		tuer.RespondJSON(w, http.StatusOK, faecher)
 	}
 }

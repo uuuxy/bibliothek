@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/mailservice"
 	"bibliothek/pdf"
@@ -57,7 +58,7 @@ func (s *Server) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 
 		// Dieselbe Saison wie Liste und Druck: Außerhalb gäbe es nichts zu versenden —
 		// und ein Lauf im Oktober schickte den Klassenleitungen die laufende Ausleihe.
-		if fenster := abgaengerFensterFuer(s.jetzt()); !fenster.Offen {
+		if fenster := abgaengerFensterFuer(s.Jetzt()); !fenster.Offen {
 			apierrors.SendHTTPError(w, http.StatusConflict, abgaengerAusserhalbDerSaison(fenster))
 			return
 		}
@@ -98,7 +99,7 @@ func (s *Server) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 		audit.Sent, audit.Skipped, audit.Failed, audit.Abgebrochen = erg.Sent, erg.Skipped, erg.Failed, erg.Abgebrochen
 		s.logKlassenVersandAudit(r, "ABGAENGER_KONTOAUSZUG_MAIL", audit)
 
-		RespondJSON(w, http.StatusOK, bulkOverdueResponse{
+		tuer.RespondJSON(w, http.StatusOK, bulkOverdueResponse{
 			SentCount:    erg.Sent,
 			SkippedCount: erg.Skipped,
 			FailedCount:  erg.Failed,
@@ -258,7 +259,7 @@ func baueKontoauszugAnhaenge(
 		}
 		anhaenge = append(anhaenge, mailservice.MailAttachment{
 			Name:        sauber.Replace(fmt.Sprintf("Kontoauszug_%s_%s.pdf", e.Schueler.Vorname, e.Schueler.Nachname)),
-			ContentType: contentTypePDF,
+			ContentType: tuer.ContentTypePDF,
 			Data:        pdfBytes,
 		})
 	}
@@ -275,13 +276,13 @@ func baueAbgaengerMailRequest(kl abgaengerKlasse, anhaenge []mailservice.MailAtt
 			"in der Bibliothek abgezeichnet.\n\n"+
 			"Mit freundlichen Grüßen,\nSchulbibliothek",
 		kl.Klasse,
-		schulzeit.Jetzt().Format(dateFormatDE),
+		schulzeit.Jetzt().Format(tuer.DateFormatDE),
 		len(anhaenge),
 	)
 
 	return mailservice.MailRequest{
 		To:          kl.Empfaenger,
-		Subject:     fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, schulzeit.Jetzt().Format(dateFormatDE)),
+		Subject:     fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, schulzeit.Jetzt().Format(tuer.DateFormatDE)),
 		Body:        body,
 		Attachments: anhaenge,
 	}

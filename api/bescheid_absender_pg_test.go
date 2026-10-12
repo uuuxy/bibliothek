@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
@@ -28,7 +29,7 @@ func TestBescheidNachdruck_AbsenderBleibtWieZumBriefdatum(t *testing.T) {
 	testdaten.BescheidReset(t, pool)
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewBescheidRepository(pool)
 
 	sid := testdaten.SeedSchueler(t, pool, "S-ABSENDER", "Absenderkind", "08G2")

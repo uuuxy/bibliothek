@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -68,7 +69,7 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 	loanSvc := service.NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := service.NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
 	omnibox := service.NewOmniboxService(pool, studentRepo, bookRepo, repository.NewUserRepository(pool), loanRepo, loanSvc, deviceSvc)
-	srv := &Server{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}}
 
 	scan := func(barcode, leser string) ActionResponse {
 		t.Helper()

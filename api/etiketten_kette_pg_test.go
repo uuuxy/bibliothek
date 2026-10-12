@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
@@ -102,7 +103,7 @@ func TestEtikettenkette_NormalerLieferantBleibtAufDerListeBisGedruckt(t *testing
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.MailAbfangen(t)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Cornelsen-Kette", false)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Etikettenkette", 0)
 
@@ -175,7 +176,7 @@ func TestEtikettenkette_HauptlieferantErscheintNieAufDerNachdruckListe(t *testin
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := tuertest.MailAbfangen(t)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Etikettenkette", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Beklebt", 0)
 
@@ -239,7 +240,7 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()
 
 	// Drei offene und zwei erledigte Exemplare unter einer eigenen Marke, dazu ein
@@ -302,7 +303,7 @@ func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
 		Anzahl int `json:"anzahl"`
 	}
 	jsonHolen(t, srv.EtikettenOffenAnzahlHandler(),
-		"/api/exemplare/etiketten-offen/anzahl?bis="+time.Now().Format(dateFormatISO), &mitStichtag)
+		"/api/exemplare/etiketten-offen/anzahl?bis="+time.Now().Format(tuer.DateFormatISO), &mitStichtag)
 	if mitStichtag.Anzahl != 4 {
 		t.Errorf("Stichtag-Zaehler nennt %d, erwartet 4 (drei markierte + ein fremdes offenes)",
 			mitStichtag.Anzahl)
@@ -317,7 +318,7 @@ func TestEtikettenkette_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T)
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()
 	geschuetzt := string(rune(0x00A0))
 

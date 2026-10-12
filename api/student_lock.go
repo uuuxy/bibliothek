@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
@@ -57,7 +58,7 @@ func (s *Server) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 		IsLocked bool   `json:"is_locked"`
 		Reason   string `json:"reason"`
 	}
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		// DecodeAndValidate handles writing its own response for now
 		return nil
 	}

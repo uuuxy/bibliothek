@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -74,7 +75,7 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 	deviceSvc := service.NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
 	w.online = service.NewOmniboxService(pool, studentRepo, bookRepo, userRepo, loanRepo, loanSvc, deviceSvc)
 	w.nachbuch = service.NewNachbuchService(pool, studentRepo, bookRepo, userRepo, loanRepo, auditRepo)
-	w.srv = &Server{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}
+	w.srv = &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}}
 	return w
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
@@ -34,7 +35,7 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Paritaet", true)

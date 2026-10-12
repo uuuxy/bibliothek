@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
 	"bibliothek/internal/pgtest"
@@ -24,7 +25,7 @@ func TestLusdPreviewHandler_XlsxOhneIDDurchDieVordertuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	geb := time.Date(2012, 3, 4, 0, 0, 0, 0, time.UTC)
 	legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Max", nachname: "Mustermann", klasse: "5a", barcode: "UP-1", geb: &geb})

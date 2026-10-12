@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -54,7 +55,7 @@ func TestBestaetigenBestellung_Erfolg(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
@@ -84,7 +85,7 @@ func TestBestaetigenBestellung_Erfolg(t *testing.T) {
 func TestBestaetigenBestellung_LieferantOhneFlag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Normalhaendler", false)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
@@ -100,7 +101,7 @@ func TestBestaetigenBestellung_LieferantOhneFlag(t *testing.T) {
 func TestBestaetigenBestellung_DoppeltBestaetigenGibt409(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher2", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)
@@ -119,7 +120,7 @@ func TestBestaetigenBestellung_DoppeltBestaetigenGibt409(t *testing.T) {
 func TestBestaetigenBestellung_UngueltigeGroesse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher3", true)
 	bestellung := bestellungFuerLieferant(t, pool, lieferant)

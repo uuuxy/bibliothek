@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/pkg/clientip"
 	"bibliothek/pkg/closeutil"
 	"bibliothek/pkg/coverquelle"
@@ -99,15 +100,15 @@ var coverFallbackGIF = []byte{
 }
 
 func serveCoverFallback(w http.ResponseWriter) {
-	w.Header().Set(headerContentType, "image/gif")
-	w.Header().Set(headerCacheControl, "public, max-age=86400")
+	w.Header().Set(tuer.HeaderContentType, "image/gif")
+	w.Header().Set(tuer.HeaderCacheControl, "public, max-age=86400")
 	w.WriteHeader(http.StatusOK)
 	httpresp.Write(w, coverFallbackGIF)
 }
 
 func serveCachedCover(w http.ResponseWriter, r *http.Request, root *os.Root, fileName string) {
-	w.Header().Set(headerCacheControl, "public, max-age=31536000")
-	w.Header().Set(headerContentType, "image/webp")
+	w.Header().Set(tuer.HeaderCacheControl, "public, max-age=31536000")
+	w.Header().Set(tuer.HeaderContentType, "image/webp")
 	http.ServeFileFS(w, r, root.FS(), fileName)
 }
 
@@ -163,7 +164,7 @@ func ladeCoverBytes(ctx context.Context, urlStr string) ([]byte, error) {
 	// Nicht-Bild-Antworten sofort verwerfen: Bot-Schranken (DNB/Anubis) liefern bei
 	// unerwartetem User-Agent HTTP 200 mit einer HTML-Challenge. Gleiche Prüfung wie im
 	// Cover-Downloader des Inventur-Moduls.
-	if ct := resp.Header.Get(headerContentType); strings.Contains(ct, "html") || strings.Contains(ct, "text/") || strings.Contains(ct, "json") {
+	if ct := resp.Header.Get(tuer.HeaderContentType); strings.Contains(ct, "html") || strings.Contains(ct, "text/") || strings.Contains(ct, "json") {
 		return nil, fmt.Errorf("cover download: Nicht-Bild-Antwort (%s)", ct)
 	}
 

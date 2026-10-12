@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/leserart"
 	"bibliothek/repository"
@@ -168,7 +169,7 @@ func (s *Server) handleGetStudentProfile(w http.ResponseWriter, r *http.Request,
 		EntlieheneBuecher: borrowedBooks,
 	}
 
-	RespondJSON(w, http.StatusOK, resp)
+	tuer.RespondJSON(w, http.StatusOK, resp)
 	return nil
 }
 
@@ -188,7 +189,7 @@ func (s *Server) GetClassesHandler(studentRepo repository.StudentRepository) htt
 			return apierrors.Internal("Fehler beim Laden der Klassen", err)
 		}
 
-		RespondJSON(w, http.StatusOK, classes)
+		tuer.RespondJSON(w, http.StatusOK, classes)
 		return nil
 	})
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/ersatzwert"
 	"bibliothek/pkg/mitteltopf"
@@ -74,7 +75,7 @@ func (s *Server) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidRepo
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
+			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
 
 		groessen, err := bescheidRepo.GroessenFuerExemplar(r.Context(), id)
@@ -85,7 +86,7 @@ func (s *Server) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidRepo
 			return apierrors.Internal("Ersatzwert konnte nicht berechnet werden", err)
 		}
 
-		RespondJSON(w, http.StatusOK, ersatzwertVorschlagAus(groessen, s.preisquelle(r.Context())))
+		tuer.RespondJSON(w, http.StatusOK, ersatzwertVorschlagAus(groessen, s.preisquelle(r.Context())))
 		return nil
 	})
 }

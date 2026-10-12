@@ -15,6 +15,7 @@ import (
 	"os"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/internal/ausweis"
 	"bibliothek/jobs"
 	"bibliothek/pkg/lmfplan"
@@ -201,7 +202,7 @@ func (s *Server) BetriebsbereitschaftHandler(
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		befunde := bereitschaft.Pruefe(s.sammleLage(r.Context(), settingsRepo, mailRepo, zustandRepo))
-		RespondJSON(w, http.StatusOK, BetriebsbereitschaftResponse{
+		tuer.RespondJSON(w, http.StatusOK, BetriebsbereitschaftResponse{
 			Gesamt:  schaerfste(befunde),
 			Befunde: befunde,
 		})

@@ -42,12 +42,12 @@ func TestAbgaengerFenster_Raender(t *testing.T) {
 // Nulluhr (Jahr 1) bekommen, die immer „außerhalb" wäre.
 func TestServerJetzt_OhneUhrIstSchulzeit(t *testing.T) {
 	s := &Server{}
-	if d := time.Since(s.jetzt()); d < 0 || d > time.Minute {
+	if d := time.Since(s.Jetzt()); d < 0 || d > time.Minute {
 		t.Errorf("Server.jetzt() ohne Uhr weicht um %v von jetzt ab", d)
 	}
 	fest := time.Date(2026, time.June, 1, 8, 0, 0, 0, time.UTC)
 	s.Uhr = func() time.Time { return fest }
-	if !s.jetzt().Equal(fest) {
+	if !s.Jetzt().Equal(fest) {
 		t.Error("gesetzte Uhr wird nicht benutzt")
 	}
 }

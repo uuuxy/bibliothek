@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/littera"
 	"bibliothek/internal/pgtest"
@@ -82,7 +83,7 @@ func TestSignaturenEndpunkte(t *testing.T) {
 	testdaten.SeedSignaturMitExemplar(t, pool, basis+" 7", "SIGE-B-"+suffix)
 	testdaten.SeedSignaturMitExemplar(t, pool, basis+"X", "SIGE-C-"+suffix)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// 1) Liste: die drei angelegten Signaturen tauchen als eigene Gruppen auf.
 	rec := httptest.NewRecorder()
@@ -160,7 +161,7 @@ func TestSignaturenListe_FasstNachRegaladresseZusammen(t *testing.T) {
 		testdaten.SeedSignaturMitExemplar(t, pool, aufschrift, fmt.Sprintf("SIGR-%d-%s", i, suffix))
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	rec := httptest.NewRecorder()
 	srv.GetSignaturenHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/signaturen", nil))
 	if rec.Code != http.StatusOK {

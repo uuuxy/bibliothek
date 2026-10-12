@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -110,7 +111,7 @@ func barcodeBestand(t *testing.T, pool *pgxpool.Pool) map[string]bool {
 func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	bookRepo := repository.NewBookRepository(pool)
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Vergabe", 0)
@@ -140,7 +141,7 @@ func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 func TestBarcodeVergabe_GeloeschteNummerWirdNichtRecycelt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Recycling", 0)
 

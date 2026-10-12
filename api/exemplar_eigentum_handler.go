@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
@@ -37,7 +38,7 @@ type ExemplarEigentumRequest struct {
 func (s *Server) ExemplarEigentumHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req ExemplarEigentumRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		claims, ok := auth.GetClaims(r.Context())
@@ -57,7 +58,7 @@ func (s *Server) ExemplarEigentumHandler() http.HandlerFunc {
 		case err != nil:
 			return apierrors.Internal("Das Eigentum konnte nicht gespeichert werden", err)
 		}
-		RespondJSON(w, http.StatusOK, map[string]int{"geaendert": geaendert})
+		tuer.RespondJSON(w, http.StatusOK, map[string]int{"geaendert": geaendert})
 		return nil
 	})
 }

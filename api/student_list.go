@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -42,7 +43,7 @@ func (s *Server) ListStudentsHandler(studentRepo repository.StudentRepository, l
 		if ohneTreffer {
 			// Zu diesem Jahrgang gibt es keine Klasse. Eine leere Liste ist die richtige
 			// Antwort; ohne diesen Zweig stünde hier die ganze Kartei.
-			RespondJSON(w, http.StatusOK, []repository.StudentListStat{})
+			tuer.RespondJSON(w, http.StatusOK, []repository.StudentListStat{})
 			return nil
 		}
 		// q sucht auf dem Server. Ohne das filterte die Schülerdatei im Browser über die
@@ -77,7 +78,7 @@ func (s *Server) ListStudentsHandler(studentRepo repository.StudentRepository, l
 			return apierrors.Internal("Fehler beim Abrufen der Leserliste", err)
 		}
 
-		RespondJSON(w, http.StatusOK, students)
+		tuer.RespondJSON(w, http.StatusOK, students)
 		return nil
 	})
 }

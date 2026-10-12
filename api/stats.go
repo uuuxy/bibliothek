@@ -3,6 +3,7 @@ package api
 // Die Tür der Statistik. Die Abfragen und ihre Filter stehen in repository/statistik.go.
 
 import (
+	"bibliothek/api/tuer"
 	"bibliothek/repository"
 	"log"
 	"net/http"
@@ -55,7 +56,7 @@ func (s *Server) GetStatisticsHandler() http.HandlerFunc {
 		//    eigenes 12-Monats-Fenster; der Bestand-Filter (LMF/Freihand) gilt aber.
 		monatsTrend := repository.LadeMonatsTrend(ctx, s.DB.Pool, typeFilter)
 
-		RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"filter_type":    typeName,
 			"popular_titles": popularTitles,
 			"shelf_warmers":  shelfWarmers,

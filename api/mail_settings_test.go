@@ -17,6 +17,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/smtptest"
 	"bibliothek/internal/tuertest"
@@ -34,7 +35,7 @@ func mailTestServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	t.Cleanup(mock.Close)
-	return &Server{DB: &db.Database{Pool: mock}}, mock
+	return &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}, mock
 }
 
 // erwarteMailKonfig legt die gespeicherte SMTP-Konfiguration für einen Aufruf fest.

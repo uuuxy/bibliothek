@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -26,7 +27,7 @@ func TestSonderkonten_AnlegenUndAkte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-0000000000aa", Rolle: auth.RoleAdmin}
 
 	anlegen := func(t *testing.T, rumpf string) *httptest.ResponseRecorder {

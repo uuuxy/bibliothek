@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/mailservice"
@@ -54,7 +55,7 @@ func (s *Server) CreateAnliegenHandler() http.HandlerFunc {
 			return
 		}
 		var req AnliegenRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 		req.Art = strings.ToLower(strings.TrimSpace(req.Art))
@@ -91,7 +92,7 @@ func (s *Server) CreateAnliegenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		RespondJSON(w, http.StatusCreated, map[string]string{"id": id})
+		tuer.RespondJSON(w, http.StatusCreated, map[string]string{"id": id})
 	}
 }
 
@@ -118,7 +119,7 @@ func (s *Server) ListEigeneAnliegenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		RespondJSON(w, http.StatusOK, anliegen)
+		tuer.RespondJSON(w, http.StatusOK, anliegen)
 	}
 }
 
@@ -130,7 +131,7 @@ func (s *Server) ListOffeneAnliegenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		RespondJSON(w, http.StatusOK, anliegen)
+		tuer.RespondJSON(w, http.StatusOK, anliegen)
 	}
 }
 
@@ -144,7 +145,7 @@ func (s *Server) CountOffeneAnliegenHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		RespondJSON(w, http.StatusOK, map[string]int{"anzahl": n})
+		tuer.RespondJSON(w, http.StatusOK, map[string]int{"anzahl": n})
 	}
 }
 
@@ -160,7 +161,7 @@ func (s *Server) handleErledigeAnliegen(w http.ResponseWriter, r *http.Request) 
 	var body struct {
 		Notiz string `json:"notiz"`
 	}
-	if !DecodeAndValidate(w, r, &body) {
+	if !tuer.DecodeAndValidate(w, r, &body) {
 		return
 	}
 
@@ -178,7 +179,7 @@ func (s *Server) handleErledigeAnliegen(w http.ResponseWriter, r *http.Request) 
 
 	// Das Abhaken gilt, auch wenn der Mailversand klemmt. Die Antwort trägt den
 	// Mail-Status, damit die Theke weiß, ob die Lehrkraft wirklich benachrichtigt wurde.
-	RespondJSON(w, http.StatusOK, map[string]string{"mail": sendeAnliegenErledigtMail(erledigt)})
+	tuer.RespondJSON(w, http.StatusOK, map[string]string{"mail": sendeAnliegenErledigtMail(erledigt)})
 }
 
 // sendeAnliegenErledigtMail benachrichtigt, wer das Anliegen gestellt hat, und nennt, was aus

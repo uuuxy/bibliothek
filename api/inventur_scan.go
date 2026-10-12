@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 
@@ -78,7 +79,7 @@ func (s *Server) InventurScanHandler() http.HandlerFunc {
 // zählen (SonarQube S3776).
 func (s *Server) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 	var req InventurScanRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 	if req.SessionID == "" {
@@ -127,7 +128,7 @@ func (s *Server) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 	// ohne ihn mitzuzählen. Der Status "ausser_scope" macht den Fall clientseitig
 	// unterscheidbar.
 	if !imScope {
-		RespondJSON(w, http.StatusConflict, InventurScanResponse{
+		tuer.RespondJSON(w, http.StatusConflict, InventurScanResponse{
 			BarcodeID: req.BarcodeID,
 			Titel:     res.Title,
 			CoverURL:  res.CoverURL,
@@ -149,7 +150,7 @@ func (s *Server) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, InventurScanResponse{
+	tuer.RespondJSON(w, http.StatusOK, InventurScanResponse{
 		BarcodeID: req.BarcodeID,
 		Titel:     res.Title,
 		CoverURL:  res.CoverURL,

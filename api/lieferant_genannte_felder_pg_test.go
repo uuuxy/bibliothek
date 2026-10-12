@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -22,7 +23,7 @@ func TestLieferantAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	// Andere Tests im selben Paketlauf lassen Lieferanten stehen, auch einen Hauptlieferanten.
 	pgtest.Aufraeumen(t, pool, `UPDATE lieferanten SET ist_hauptlieferant = false WHERE ist_hauptlieferant`)
 	t.Cleanup(func() { pgtest.Aufraeumen(t, pool, `DELETE FROM lieferanten WHERE name LIKE 'NGF-%'`) })

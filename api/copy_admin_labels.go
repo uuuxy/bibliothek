@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -41,7 +42,7 @@ func (s *Server) handleUpdateCopyBarcode(w http.ResponseWriter, r *http.Request,
 	}
 
 	var req UpdateBarcodeRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -72,5 +73,5 @@ func (s *Server) handleUpdateCopyBarcode(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	RespondSuccess(w)
+	tuer.RespondSuccess(w)
 }

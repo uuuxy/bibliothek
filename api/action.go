@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/service"
@@ -172,7 +173,7 @@ func (s *Server) serveCachedActionResponse(w http.ResponseWriter, antwort *repos
 		log.Printf("idempotenz: beschädigte Antwort im Cache, wird neu berechnet: %v", uerr)
 		return false
 	}
-	RespondJSON(w, cachedStatus, cachedResp)
+	tuer.RespondJSON(w, cachedStatus, cachedResp)
 	return true
 }
 
@@ -192,7 +193,7 @@ func (s *Server) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc
 	}
 
 	var req ActionRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -255,7 +256,7 @@ func (s *Server) handleAction(w http.ResponseWriter, r *http.Request, omniboxSvc
 		s.broadcastActionEvent(*resp)
 	}
 
-	RespondJSON(w, http.StatusOK, resp)
+	tuer.RespondJSON(w, http.StatusOK, resp)
 }
 
 func mapOmniboxResultToActionResponse(res *service.OmniboxResult) *ActionResponse {

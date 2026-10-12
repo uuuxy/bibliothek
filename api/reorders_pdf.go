@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
@@ -32,7 +33,7 @@ func (s *Server) ExportReordersPDFHandler() http.HandlerFunc {
 
 		pdf := baueBestelllistePDF(reorders, settings.BestellbedarfSchwelle)
 
-		w.Header().Set(headerContentType, contentTypePDF)
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set("Content-Disposition", "attachment; filename=bestellliste.pdf")
 		if err := pdf.Output(w); err != nil {
 			log.Printf("Bestellliste: PDF stream output failed: %v", err)

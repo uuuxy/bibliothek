@@ -18,6 +18,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/db"
 	"bibliothek/internal/service"
@@ -95,7 +96,7 @@ func (s *Server) PostLmfPlanVeroeffentlichenHandler() http.HandlerFunc {
 		if gestempelt {
 			s.meldeLmfPlanGeaendert()
 		}
-		RespondJSON(w, http.StatusOK, antwort)
+		tuer.RespondJSON(w, http.StatusOK, antwort)
 		return nil
 	})
 }
@@ -126,7 +127,7 @@ func (s *Server) veroeffentlicheLmfPlan(r *http.Request) (LmfPlanSpeicherAntwort
 		return keine, false, apierrors.Internal("Transaktion", err)
 	}
 	defer db.SafeRollback(r.Context(), tx)
-	if antwort.LmfPlanStand, err = repo.VeroeffentlicheLmfPlanIn(r.Context(), tx, st.Plan.ID, s.jetzt()); err != nil {
+	if antwort.LmfPlanStand, err = repo.VeroeffentlicheLmfPlanIn(r.Context(), tx, st.Plan.ID, s.Jetzt()); err != nil {
 		return keine, false, apierrors.Internal("LMF-Plan veröffentlichen", err)
 	}
 	if antwort.FristenAngepasst, err = service.KoppleLmfPlanFristen(r.Context(), repo, tx, art, nil, antwort.Zeilen); err != nil {

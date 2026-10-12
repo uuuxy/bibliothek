@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
@@ -39,7 +40,7 @@ func (s *Server) lmfPlanAb(r *http.Request) time.Time {
 	if r.URL.Query().Get("alle") == "1" {
 		return time.Time{}
 	}
-	return repository.SchuljahrBeginn(s.jetzt())
+	return repository.SchuljahrBeginn(s.Jetzt())
 }
 
 // GetLmfTermineHandler listet den Plan.
@@ -65,7 +66,7 @@ func (s *Server) GetLmfTermineHandler() http.HandlerFunc {
 		if !ab.IsZero() {
 			antwort.Ab = ab.Format("2006-01-02")
 		}
-		RespondJSON(w, http.StatusOK, antwort)
+		tuer.RespondJSON(w, http.StatusOK, antwort)
 		return nil
 	})
 }
@@ -170,15 +171,15 @@ func (s *Server) GetLmfPlanPDFHandler(mitEntwuerfen bool) http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		pdfBytes, err := pdf.GenerateLmfPlan(abschnitte, s.jetzt())
+		pdfBytes, err := pdf.GenerateLmfPlan(abschnitte, s.Jetzt())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 		filename := "LMF-Plan.pdf"
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))
-		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, filename))
+		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfBytes)))
 		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
 	}
 }

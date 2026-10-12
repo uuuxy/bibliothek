@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
@@ -47,7 +48,7 @@ func (s *Server) GetTitelAuflagenHandler() http.HandlerFunc {
 		if err != nil {
 			return auflagenFehler(err, "gelesen")
 		}
-		RespondJSON(w, http.StatusOK, TitelAuflagen{ID: id, Auflagen: auflagen})
+		tuer.RespondJSON(w, http.StatusOK, TitelAuflagen{ID: id, Auflagen: auflagen})
 		return nil
 	})
 }
@@ -76,14 +77,14 @@ func (s *Server) PostTitelAuflagenHandler() http.HandlerFunc {
 			return err
 		}
 		var req AuflageZuordnenRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		auflagen, err := repository.FasseAuflagenZusammen(r.Context(), s.DB.Pool, id, req.TitelID)
 		if err != nil {
 			return auflagenFehler(err, "gespeichert")
 		}
-		RespondJSON(w, http.StatusOK, TitelAuflagen{ID: id, Auflagen: auflagen})
+		tuer.RespondJSON(w, http.StatusOK, TitelAuflagen{ID: id, Auflagen: auflagen})
 		return nil
 	})
 }
@@ -109,7 +110,7 @@ func (s *Server) DeleteTitelAuflagenHandler() http.HandlerFunc {
 		if err != nil {
 			return auflagenFehler(err, "gespeichert")
 		}
-		RespondJSON(w, http.StatusOK, TitelAuflagen{ID: id, Auflagen: auflagen})
+		tuer.RespondJSON(w, http.StatusOK, TitelAuflagen{ID: id, Auflagen: auflagen})
 		return nil
 	})
 }

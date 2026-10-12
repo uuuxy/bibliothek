@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -79,7 +80,7 @@ func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 			liste = append(liste, ExemplarOhneEtikett(z))
 		}
 
-		RespondJSON(w, http.StatusOK, liste)
+		tuer.RespondJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }
@@ -112,7 +113,7 @@ func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 		bisStr := strings.TrimSpace(r.URL.Query().Get("bis"))
 		var bis *time.Time
 		if bisStr != "" {
-			geparst, err := time.Parse(dateFormatISO, bisStr)
+			geparst, err := time.Parse(tuer.DateFormatISO, bisStr)
 			if err != nil {
 				return apierrors.BadRequest("Stichtag muss im Format JJJJ-MM-TT angegeben werden", err)
 			}
@@ -125,7 +126,7 @@ func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 			return apierrors.Internal("Fehler beim Zählen der offenen Etiketten", err)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]int{"anzahl": anzahl})
+		tuer.RespondJSON(w, http.StatusOK, map[string]int{"anzahl": anzahl})
 		return nil
 	})
 }
@@ -159,10 +160,10 @@ type EtikettenAltbestandRequest struct {
 func (s *Server) EtikettenAltbestandHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req EtikettenAltbestandRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
-		bis, err := time.Parse(dateFormatISO, req.Bis)
+		bis, err := time.Parse(tuer.DateFormatISO, req.Bis)
 		if err != nil {
 			return apierrors.BadRequest("Stichtag muss im Format JJJJ-MM-TT angegeben werden", err)
 		}
@@ -172,7 +173,7 @@ func (s *Server) EtikettenAltbestandHandler() http.HandlerFunc {
 			return apierrors.Internal("Fehler beim Vermerken des Altbestands", err)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]int64{"markiert": markiert})
+		tuer.RespondJSON(w, http.StatusOK, map[string]int64{"markiert": markiert})
 		return nil
 	})
 }
@@ -197,7 +198,7 @@ type EtikettenGedrucktRequest struct {
 func (s *Server) EtikettenGedrucktHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req EtikettenGedrucktRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		if len(req.BarcodeIDs) == 0 {
@@ -209,7 +210,7 @@ func (s *Server) EtikettenGedrucktHandler() http.HandlerFunc {
 			return apierrors.Internal("Fehler beim Vermerken der gedruckten Etiketten", err)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]int64{"markiert": markiert})
+		tuer.RespondJSON(w, http.StatusOK, map[string]int64{"markiert": markiert})
 		return nil
 	})
 }
@@ -242,7 +243,7 @@ func (s *Server) EtikettenGedrucktHandler() http.HandlerFunc {
 func (s *Server) EtikettenZuruecksetzenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req EtikettenGedrucktRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		if len(req.BarcodeIDs) == 0 {
@@ -254,7 +255,7 @@ func (s *Server) EtikettenZuruecksetzenHandler() http.HandlerFunc {
 			return apierrors.Internal("Fehler beim Zurücksetzen der Etiketten", err)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]int64{"zurueckgesetzt": zurueckgesetzt})
+		tuer.RespondJSON(w, http.StatusOK, map[string]int64{"zurueckgesetzt": zurueckgesetzt})
 		return nil
 	})
 }

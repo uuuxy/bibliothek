@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -34,7 +35,7 @@ import (
 func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewAuditRepository(pool)
 
 	// baueFall legt einen Schüler mit genau EINEM offenen Vorgang an.

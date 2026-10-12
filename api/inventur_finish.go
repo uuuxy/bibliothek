@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
@@ -47,7 +48,7 @@ func (s *Server) InventurFinishHandler() http.HandlerFunc {
 
 func (s *Server) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 	var req InventurFinishRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 	if req.SessionID == "" {
@@ -107,7 +108,7 @@ func (s *Server) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, InventurFinishResponse{
+	tuer.RespondJSON(w, http.StatusOK, InventurFinishResponse{
 		VerlorenGemeldet: count,
 		Fehlbestand:      fehlbestand,
 	})
@@ -129,7 +130,7 @@ func (s *Server) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 // @Router       /inventur/fehlbestand [get]
 func (s *Server) InventurFehlbestandHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		sessionID, err := uuidAusQuery(r, "session_id")
+		sessionID, err := tuer.UUIDAusQuery(r, "session_id")
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), nil)
 		}
@@ -143,7 +144,7 @@ func (s *Server) InventurFehlbestandHandler() http.HandlerFunc {
 			return apierrors.Internal("Fehlbestand konnte nicht geladen werden", err)
 		}
 
-		RespondJSON(w, http.StatusOK, liste)
+		tuer.RespondJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/auskunft"
 	"bibliothek/pdf"
@@ -53,9 +54,9 @@ func (s *Server) DsgvoAuskunftPDFHandler() http.HandlerFunc {
 			return apierrors.Internal("PDF-Erzeugung fehlgeschlagen", err)
 		}
 
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, `attachment; filename="DSGVO-Auskunft.pdf"`)
-		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, `attachment; filename="DSGVO-Auskunft.pdf"`)
+		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfBytes)))
 		http.ServeContent(w, r, "DSGVO-Auskunft.pdf", schulzeit.Jetzt(), bytes.NewReader(pdfBytes))
 		return nil
 	})

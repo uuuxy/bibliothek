@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pkg/httpresp"
@@ -77,6 +78,6 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request, auditR
 		return
 	}
 
-	w.Header().Set(headerContentType, contentTypeJSON)
+	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	httpresp.Write(w, []byte(`{"status":"success"}`))
 }

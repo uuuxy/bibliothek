@@ -19,8 +19,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/service"
@@ -38,12 +38,10 @@ func (o *sperrOmnibox) ProcessQuery(context.Context, service.OmniboxQuery) (*ser
 
 func helferOhneRechte(t *testing.T) {
 	t.Helper()
-	InvalidatePermissionCache()
-	t.Cleanup(InvalidatePermissionCache)
-	permCacheMu.Lock()
-	permCache["helfer:view_students"] = cacheEntry{Allowed: false, ExpiresAt: time.Now().Add(time.Minute)}
-	permCache["helfer:edit_students"] = cacheEntry{Allowed: false, ExpiresAt: time.Now().Add(time.Minute)}
-	permCacheMu.Unlock()
+	tuer.InvalidatePermissionCache()
+	t.Cleanup(tuer.InvalidatePermissionCache)
+	tuer.MerkeRechtFuerTest("helfer", "view_students", false)
+	tuer.MerkeRechtFuerTest("helfer", "edit_students", false)
 }
 
 func aktionAnfrage(schluessel string) *http.Request {
@@ -125,7 +123,7 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		w := httptest.NewRecorder()
-		s := &Server{DB: &db.Database{Pool: mock}}
+		s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 		fehler := service.UebergehbareSperre(fmt.Errorf("%w: 1 unbezahlte(r) Schadensfall/-fälle offen", service.ErrBlocked))
 		s.ActionHandler(&sperrOmnibox{fehler: fehler})(w, aktionAnfrage(schluessel))
 
@@ -151,7 +149,7 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 				AddRow([]byte(`{"error":"ausleihe gesperrt: 1 unbezahlte(r) Schadensfall/-fälle offen","sperre":"uebergehbar"}`), http.StatusForbidden))
 
 		w := httptest.NewRecorder()
-		s := &Server{DB: &db.Database{Pool: mock}}
+		s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 		s.ActionHandler(&sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")})(w, aktionAnfrage(schluessel))
 
 		if w.Code != http.StatusForbidden || w.Header().Get("X-Sperre") != "uebergehbar" {
@@ -174,7 +172,7 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		w := httptest.NewRecorder()
-		s := &Server{DB: &db.Database{Pool: mock}}
+		s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 		fehler := &service.SperrGrundFehler{Kern: service.SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", service.ErrBlocked)), Grund: "x"}
 		s.ActionHandler(&sperrOmnibox{fehler: fehler})(w, aktionAnfrage(schluesselLeser))
 		if got := w.Header().Get("X-Sperre"); got != "leser" {
@@ -196,7 +194,7 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"response_data", "status_code"}).
 				AddRow([]byte(`{"error":"die ausleihe ist gesperrt: Manuelle Sperre — bitte an die Bibliotheksleitung wenden","sperre":"leser"}`), http.StatusForbidden))
 		w = httptest.NewRecorder()
-		(&Server{DB: &db.Database{Pool: wieder}}).ActionHandler(&sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")})(w, aktionAnfrage(schluesselLeser))
+		(&Server{Basis: tuer.Basis{DB: &db.Database{Pool: wieder}}}).ActionHandler(&sperrOmnibox{fehler: errors.New("darf nicht gerufen werden")})(w, aktionAnfrage(schluesselLeser))
 		if w.Code != http.StatusForbidden || w.Header().Get("X-Sperre") != "leser" {
 			t.Errorf("Wiederholung: Status %d, X-Sperre %q", w.Code, w.Header().Get("X-Sperre"))
 		}

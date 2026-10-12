@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -32,7 +33,7 @@ func versetzungAusfuehren(t *testing.T, pool *pgxpool.Pool, dryRun bool) Promote
 		RETURNING id`).Scan(&adminID); err != nil {
 		t.Fatalf("Test-Admin: %v", err)
 	}
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	body := `{"confirm": true}`
 	if dryRun {
 		body = `{"dry_run": true}`
@@ -180,7 +181,7 @@ func TestVersetzungDoppellaufSerialisiert(t *testing.T) {
 	})
 
 	lauf := func() int {
-		srv := &Server{DB: &db.Database{Pool: pool}}
+		srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 		req := httptest.NewRequest("POST", "/api/students/promote", strings.NewReader(`{"confirm": true}`))
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))

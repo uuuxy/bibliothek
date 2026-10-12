@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -62,7 +63,7 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	bestellungID, token := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
@@ -102,7 +103,7 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	_, token := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
@@ -121,7 +122,7 @@ func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
 func TestOeffentlicheBestaetigung_AbgelaufenUndUnbekannt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	_, abgelaufen := bestellungMitToken(t, pool, lieferant, -1)
@@ -148,7 +149,7 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
@@ -192,7 +193,7 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 func TestNeuerLink_AdresseAusLeerzeichenLaesstDenAltenLinkGelten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "   ")

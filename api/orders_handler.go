@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/service"
@@ -66,7 +67,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *service.OrderService) http.Handler
 // die Bestellung gilt auch, wenn der Versand ausbleibt.
 func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, orderSvc *service.OrderService) {
 	var req SubmitOrderRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -94,7 +95,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	// Doppelklick: dieselbe Bestellung lief schon durch — KEINE zweite Mail, keine
 	// zweite Bestellung. Die erste Anfrage hat Mail und Etiketten bereits erledigt.
 	if res.BereitsVorhanden {
-		RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
 			"message":     fmt.Sprintf("Bestellung an %s war bereits erfasst (Doppelklick) — es wurde keine zweite Bestellung ausgelöst.", res.SupplierName),
 			"ordered_qty": res.TotalAllocated,
@@ -105,7 +106,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	if !mailservice.SMTPKonfiguriert() {
 		log.Println("WARNUNG: Kein (echter) SMTP-Server hinterlegt. E-Mail-Versand übersprungen, die Bestellung ist gespeichert.")
 		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
-		RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "success",
 			"message":     fmt.Sprintf("Bestellung erfasst (E-Mail-Versand an %s übersprungen - SMTP nicht konfiguriert).", res.SupplierName),
 			"ordered_qty": res.TotalAllocated,
@@ -118,7 +119,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 		// Die Bestellung ist gespeichert, die Mail nicht raus: Der Vermerk an der Bestellung
 		// bleibt, wenn diese Meldung vom Bildschirm verschwunden ist.
 		s.merkeBestellmailGescheitert(ctx, res.BestellungID)
-		RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":      "warning",
 			"message":     fmt.Sprintf("Bestellung gespeichert, aber E-Mail-Versand an %s fehlgeschlagen.", res.SupplierEmail),
 			"ordered_qty": res.TotalAllocated,
@@ -127,7 +128,7 @@ func (s *Server) handleSubmitOrder(w http.ResponseWriter, r *http.Request, order
 	}
 
 	status, meldung := bestellVersandMeldung(res.SupplierName, res.IstHauptlieferant && !mitLink)
-	RespondJSON(w, http.StatusOK, map[string]any{
+	tuer.RespondJSON(w, http.StatusOK, map[string]any{
 		"status":      status,
 		"message":     meldung,
 		"ordered_qty": res.TotalAllocated,
@@ -161,7 +162,7 @@ func (s *Server) GetIncomingShipmentsHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		RespondJSON(w, http.StatusOK, groups)
+		tuer.RespondJSON(w, http.StatusOK, groups)
 	}
 }
 
@@ -203,13 +204,13 @@ func (s *Server) SearchOrdersHandler() http.HandlerFunc {
 func (s *Server) sucheBestellung(metaClient *inventur.MetadatenClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req OrderSearchRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
 		query := strings.TrimSpace(req.Query)
 		if query == "" {
-			RespondJSON(w, http.StatusOK, []service.OrderSearchItem{})
+			tuer.RespondJSON(w, http.StatusOK, []service.OrderSearchItem{})
 			return
 		}
 
@@ -223,7 +224,7 @@ func (s *Server) sucheBestellung(metaClient *inventur.MetadatenClient) http.Hand
 			w.Header().Set(dnbAusfallKopf, "1")
 		}
 
-		RespondJSON(w, http.StatusOK, results)
+		tuer.RespondJSON(w, http.StatusOK, results)
 	}
 }
 
@@ -236,7 +237,7 @@ type BulkReceiveRequest struct {
 func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req BulkReceiveRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -267,7 +268,7 @@ func (s *Server) BulkReceiveOrderHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":         "success",
 			"received_count": len(receivedItems),
 			"received_items": receivedItems,

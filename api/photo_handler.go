@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/service"
 )
@@ -24,7 +25,7 @@ func (s *Server) UploadStudentPhotoHandler() http.HandlerFunc {
 		}
 
 		var req UploadPhotoRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -52,6 +53,6 @@ func (s *Server) UploadStudentPhotoHandler() http.HandlerFunc {
 
 		// Über den JSON-Schreiber, nicht von Hand zusammengesetzt: Die Ausweisnummer steht in
 		// der Adresse und darf Zeichen tragen, die in JSON maskiert werden müssen.
-		RespondJSON(w, http.StatusOK, map[string]string{"status": "success", "url": photoURL})
+		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "success", "url": photoURL})
 	}
 }

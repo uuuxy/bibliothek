@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -27,7 +28,7 @@ func TestOpacSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	suche := func(q string) []OpacTitel {
 		t.Helper()
 		rec := httptest.NewRecorder()

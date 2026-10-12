@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
@@ -48,7 +49,7 @@ func (s *Server) GetSchlagwortVorschlaegeHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Schlagworte konnten nicht geladen werden", err)
 		}
-		RespondJSON(w, http.StatusOK, vorschlaege)
+		tuer.RespondJSON(w, http.StatusOK, vorschlaege)
 		return nil
 	})
 }
@@ -75,7 +76,7 @@ func (s *Server) GetTitelSchlagworteHandler() http.HandlerFunc {
 		if err != nil {
 			return schlagwortFehler(err)
 		}
-		RespondJSON(w, http.StatusOK, TitelSchlagworte{ID: id, Schlagworte: woerter})
+		tuer.RespondJSON(w, http.StatusOK, TitelSchlagworte{ID: id, Schlagworte: woerter})
 		return nil
 	})
 }
@@ -101,7 +102,7 @@ func (s *Server) PutTitelSchlagworteHandler() http.HandlerFunc {
 			return apierrors.BadRequest("ungültige Titel-ID", errors.New("keine UUID"))
 		}
 		var req TitelSchlagworteRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		if req.Schlagworte == nil {
@@ -112,7 +113,7 @@ func (s *Server) PutTitelSchlagworteHandler() http.HandlerFunc {
 		if err != nil {
 			return schlagwortFehler(err)
 		}
-		RespondJSON(w, http.StatusOK, TitelSchlagworte{ID: id, Schlagworte: woerter})
+		tuer.RespondJSON(w, http.StatusOK, TitelSchlagworte{ID: id, Schlagworte: woerter})
 		return nil
 	})
 }

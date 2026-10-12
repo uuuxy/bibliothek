@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/sse"
 )
 
@@ -73,7 +74,7 @@ func TestUpdateSettings_SitzungsfristenSendenSSESignal(t *testing.T) {
 		t.Fatalf("Handshake fehlt: erwartet connected, war %q", e)
 	}
 
-	s := &Server{Broker: broker}
+	s := &Server{Basis: tuer.Basis{Broker: broker}}
 	speichere := func(rumpf string) {
 		t.Helper()
 		w := httptest.NewRecorder()

@@ -56,6 +56,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
@@ -251,7 +252,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 			}
 		}
 		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.mitarbeiterID)
-		InvalidatePermissionCache()
+		tuer.InvalidatePermissionCache()
 	})
 	return w
 }
@@ -470,24 +471,6 @@ var bewusstAusgelassen = map[string]string{
 
 // ── Der Aufruf-Apparat ───────────────────────────────────────────────────────
 
-// setzeGenauEinRecht stellt die MITARBEITER-Rolle auf exakt ein erlaubtes Recht.
-// So zeigt jede Antwort, was das Recht ihrer Matrix-Zeile ALLEIN öffnet.
-func setzeGenauEinRecht(t *testing.T, pool *pgxpool.Pool, recht string) {
-	t.Helper()
-	ctx := context.Background()
-	if _, err := pool.Exec(ctx, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`); err != nil {
-		t.Fatalf("Rechte leeren: %v", err)
-	}
-	if recht != "" {
-		if _, err := pool.Exec(ctx, `
-			INSERT INTO role_permissions (role, permission, allowed) VALUES ('MITARBEITER', $1, true)`,
-			recht); err != nil {
-			t.Fatalf("Recht %q setzen: %v", recht, err)
-		}
-	}
-	InvalidatePermissionCache()
-}
-
 // rechtFuerZeile übersetzt die Rechte-Spalte der Matrix in (Fachrecht, Cookie?).
 func rechtFuerZeile(recht string) (permission string, mitSitzung bool) {
 	switch recht {
@@ -644,7 +627,7 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 
 		stufe := int(zeile.Stufe[0] - '0')
 		permission, mitSitzung := rechtFuerZeile(zeile.Recht)
-		setzeGenauEinRecht(t, pool, permission)
+		tuertest.SetzeGenauEinRecht(t, pool, permission)
 
 		req := httptest.NewRequest(http.MethodGet, aufruf.URL, nil)
 		if mitSitzung {
@@ -783,7 +766,7 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 		}
 		stufe := int(zeile.Stufe[0] - '0')
 		permission, mitSitzung := rechtFuerZeile(zeile.Recht)
-		setzeGenauEinRecht(t, pool, permission)
+		tuertest.SetzeGenauEinRecht(t, pool, permission)
 
 		for _, fall := range aufrufe[route] {
 			req := fall.Anfrage(t)

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -87,7 +88,7 @@ func offeneInventuren(t *testing.T, pool *pgxpool.Pool) int {
 func TestInventurStart_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 	ctx := context.Background()
 
@@ -118,7 +119,7 @@ func TestInventurStart_GesamtbestandZaehltWasImRegalStehenKann(t *testing.T) {
 func TestInventurStart_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-D1", "IS-D2")
@@ -140,7 +141,7 @@ func TestInventurStart_SignaturOhneLeerzeichenAmRand(t *testing.T) {
 func TestInventurStart_FilterNachFachUndKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	inventurFach(t, pool, "Inventurfach Mathe")
@@ -168,7 +169,7 @@ func TestInventurStart_FilterNachFachUndKlasse(t *testing.T) {
 func TestInventurStart_BelegterBereichIst409(t *testing.T) {
 	pool := pgtest.Pool(t)
 	inventurReset(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 	inventurTitel(t, pool, "BIB Deu 5 KRÜ", "", 5, 6, "IS-B1")
 

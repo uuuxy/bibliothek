@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
@@ -56,7 +57,7 @@ func zaehleBestellungen(t *testing.T, pool *pgxpool.Pool, lieferantID string) in
 func TestBestellungOhneTopfWirdAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "OhneTopf", false)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-OhneTopf", 0)
 
@@ -83,7 +84,7 @@ func TestBestellungTraegtTopfUndKundennummerDesTopfs(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Topf", 0)
 
 	// Händler MIT zweiter Kundennummer für den Schulträger …

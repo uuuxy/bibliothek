@@ -216,7 +216,7 @@ Anmeldequelle und für die Nachsicht gegenüber alten Barcodes steht hier, nicht
 | #  | Randbedingung                                                                 | Hintergrund und Konsequenz                                                                                                                                                                               |
 | -- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | T1 | **Go 1.27.2**, Version identisch in `go.mod` und `Dockerfile`                 | Zwei Versionen wären zwei Verhalten. Genutzt werden ausdrücklich neuere Fähigkeiten: Methoden-Routing im `net/http`-Mux (`GET /api/...`), `os.OpenRoot` gegen Path-Traversal, `slog` als Standard-Logger. |
-| T2 | **Kein Web-Framework** — `net/http` mit `http.ServeMux`                       | Routing, Middleware-Kette und RBAC sind Eigenbau (`api/router.go`, `api/middleware.go`, `api/permission_middleware.go`). Preis: Die Kettenreihenfolge ist Handarbeit und braucht ein Gate (`routes_authz_coverage_test.go`). |
+| T2 | **Kein Web-Framework** — `net/http` mit `http.ServeMux`                       | Routing, Middleware-Kette und RBAC sind Eigenbau (`api/router.go`, `api/middleware.go`, `api/tuer/permission_middleware.go`). Preis: Die Kettenreihenfolge ist Handarbeit und braucht ein Gate (`routes_authz_coverage_test.go`). |
 | T3 | **PostgreSQL 18** über `pgx/v5` (Pool), keine ORM-Schicht                     | SQL steht im Repository-Paket sichtbar da. Constraints sind ein Entwurfsmittel, nicht eine Absicherung „unten" — siehe [invarianten.md](invarianten.md).                                                |
 | T4 | **CGO_ENABLED=1** für das Hauptbinary                                         | `chai2010/webp` (Cover-Dekodierung) braucht CGO. Folge: Der Build braucht `build-base` im Builder-Image; die CLI-Werkzeuge werden dagegen mit `CGO_ENABLED=0` gebaut.                                      |
 | T5 | **Svelte 5 (Runes), Tailwind 4, Vite — kein TypeScript**                       | Typsicherheit kommt über JSDoc + `svelte-check --fail-on-warnings`, nicht über `.ts`. Eine Umstellung wäre ein Umbau von rund 300 Komponenten und ist bewusst nicht erfolgt.                                    |
@@ -1038,7 +1038,7 @@ Ein Fehler, der **kein** `ErrNotFound` ist (Datenbank weg, Sperre, Gerät ohne C
 gilt ausdrücklich nicht als „ohne Treffer": Ihn ein zweites Mal auszulösen hieße, eine
 Sperrmeldung doppelt zu schreiben oder eine echte Störung zu verschleiern.
 
-#### 5.4.3 `api/permission_middleware.go` — Rechteprüfung mit Epoche
+#### 5.4.3 `api/tuer/permission_middleware.go` — Rechteprüfung mit Epoche
 
 Der Rechte-Cache (60 s) hat einen Zähler, nicht nur einen Inhalt:
 
@@ -1928,7 +1928,7 @@ nicht mehr zustellen.
 - **Einträge der Verwaltung nennen den Gegenstand, keine Adresse.** Die Zuordnung der
   Klassenleitungen, die Mail-Vorlagen, die Lieferanten und die Verlängerung der Lernmittel
   einer Klasse schreiben Bearbeiter, Zeit, Gegenstand und die Namen der geänderten Felder
-  (`api/verwaltung_protokoll.go`). Die Mailadresse steht nicht im Eintrag: Sie bliebe bis zur
+  (`api/tuer/verwaltung_protokoll.go`). Die Mailadresse steht nicht im Eintrag: Sie bliebe bis zur
   Aufbewahrungsfrist des Protokolls, und die Tilgung findet nur Einträge mit der Kennung eines
   Lesers. Ein Speichern, das nichts ändert, schreibt keinen Eintrag.
 - **Keine IP-Adressen in der Anfrage-Logzeile.**
@@ -2662,7 +2662,8 @@ konnte im PermissionManager gewährte Rechte nicht nutzen.
 Vollständigkeitspflicht — deshalb das Coverage-Gate mit Allowlist für die bewusst
 öffentlichen Routen.
 
-**Fundstelle.** `api/permission_middleware.go`, `api/routes_authz_coverage_test.go`.
+**Fundstelle.** `api/tuer/permission_middleware.go`, `api/middleware.go` (`RequirePermission`),
+`api/routes_authz_coverage_test.go`.
 
 ---
 
@@ -2782,7 +2783,7 @@ startete, schrieb den alten Stand **nach** der Invalidierung zurück — und er 
 Schreiber vergleicht. 60 s Cache bleiben als Obergrenze für die Wirksamkeit einer
 Rechteänderung.
 
-**Fundstelle.** `api/permission_middleware.go`.
+**Fundstelle.** `api/tuer/permission_middleware.go`.
 
 ---
 

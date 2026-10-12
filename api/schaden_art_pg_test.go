@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -26,7 +27,7 @@ func TestSchadenMelden_ArtKommtAusDerMeldung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	melde := func(barcode, rumpfZusatz string) (*httptest.ResponseRecorder, string) {

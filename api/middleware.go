@@ -273,6 +273,22 @@ func ValidateUUIDParamsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// RequirePermission returns a middleware that validates if the authenticated user
+// has the required permission dynamically defined in the database.
+func (s *Server) RequirePermission(permission string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		// Die UUID-Prüfung sitzt hier und NICHT mehr global um den Mux herum.
+		//
+		// Global gelegt las sie r.PathValue("id"), bevor der ServeMux die Route
+		// aufgelöst hatte — der Wert war dort immer leer, die Prüfung lief also nie
+		// (Audit-Befund vom 01.08.2026, belegt in middleware_frist_test.go). An dieser
+		// Stelle ist die Route bereits getroffen und PathValue gefüllt.
+		return ValidateUUIDParamsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			s.PruefeBerechtigung(w, r, next, permission)
+		}))
+	}
+}
+
 // statusRecorder is a custom ResponseWriter that tracks the HTTP status code
 type statusRecorder struct {
 	http.ResponseWriter

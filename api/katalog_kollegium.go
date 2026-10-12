@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -30,7 +31,7 @@ type KollegiumTitel struct {
 func (s *Server) KollegiumKatalogSucheHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
-		schlagwortID, err := uuidAusQuery(r, "schlagwort_id")
+		schlagwortID, err := tuer.UUIDAusQuery(r, "schlagwort_id")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -56,7 +57,7 @@ func (s *Server) KollegiumKatalogSucheHandler() http.HandlerFunc {
 			result = append(result, KollegiumTitel{OpacTitel: opacTitelAus(t), ImZulauf: t.ImZulauf})
 		}
 		w.Header().Set(opacTrefferKopf, strconv.Itoa(gesamt))
-		RespondJSON(w, http.StatusOK, result)
+		tuer.RespondJSON(w, http.StatusOK, result)
 	}
 }
 
@@ -70,6 +71,6 @@ func (s *Server) KollegiumKatalogFilterHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		RespondJSON(w, http.StatusOK, filter)
+		tuer.RespondJSON(w, http.StatusOK, filter)
 	}
 }

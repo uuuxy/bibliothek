@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/pdf"
 	"bibliothek/repository"
@@ -195,7 +196,7 @@ func TestSendAbgaengerKontoauszuege_LeereAuswahlOhneDBZugriff(t *testing.T) {
 	}
 	defer mock.Close()
 
-	server := &Server{DB: &db.Database{Pool: mock}}
+	server := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/abgaenger/mail", strings.NewReader(`{"klassen":[]}`))
 	rec := httptest.NewRecorder()
 	server.SendAbgaengerKontoauszuegeHandler()(rec, req)

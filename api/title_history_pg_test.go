@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -57,7 +58,7 @@ func TestTitleHistory_GetrennteAusleiheIstAnonymNichtLehrer(t *testing.T) {
 		}
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/historie", nil)
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()

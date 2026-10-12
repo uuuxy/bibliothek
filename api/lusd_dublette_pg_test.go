@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
 	"bibliothek/internal/pgtest"
@@ -25,7 +26,7 @@ func TestLusdImport_DubletteInDerselbenDatei(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 		{LusdID: "L-DUP", Vorname: "Anna", Nachname: "Doppelt", Klasse: "5a", LineNum: 1},
 		{LusdID: "L-DUP", Vorname: "Anna", Nachname: "Doppelt", Klasse: "5b", LineNum: 2},

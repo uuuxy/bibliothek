@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pkg/clientip"
@@ -46,7 +47,7 @@ func (s *Server) GetDeletedStudentsHandler() http.HandlerFunc {
 			})
 		}
 
-		RespondJSON(w, http.StatusOK, students)
+		tuer.RespondJSON(w, http.StatusOK, students)
 	}
 }
 
@@ -96,10 +97,10 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 
 		// Optional: Audit-Log für Restore anlegen
 		if claims, ok := auth.GetClaims(ctx); ok {
-			s.schreibeAdminProtokoll(ctx, claims.UserID, "RESTORE_STUDENT", clientip.FromRequest(r), `{"schueler_id":"`+id+`"}`)
+			s.SchreibeAdminProtokoll(ctx, claims.UserID, "RESTORE_STUDENT", clientip.FromRequest(r), `{"schueler_id":"`+id+`"}`)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
 			"message": "Schüler erfolgreich wiederhergestellt",
 		})
@@ -173,9 +174,9 @@ func (s *Server) PurgeStudentHandler(auditRepo repository.AuditRepository) http.
 			return
 		}
 
-		s.schreibeAdminProtokoll(ctx, claims.UserID, "PURGE_STUDENT", clientip.FromRequest(r), `{"schueler_id":"`+id+`"}`)
+		s.SchreibeAdminProtokoll(ctx, claims.UserID, "PURGE_STUDENT", clientip.FromRequest(r), `{"schueler_id":"`+id+`"}`)
 
-		RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
 			"message": "Schüler endgültig und DSGVO-konform gelöscht",
 		})

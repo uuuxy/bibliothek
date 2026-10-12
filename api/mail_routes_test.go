@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bytes"
 	"encoding/json"
@@ -19,7 +20,7 @@ func TestUpdateMailTemplateHandler_Success(t *testing.T) {
 	defer mock.Close()
 
 	server := &Server{
-		DB: &db.Database{Pool: mock},
+		Basis: tuer.Basis{DB: &db.Database{Pool: mock}},
 	}
 
 	reqBody := map[string]string{
@@ -58,7 +59,7 @@ func TestUpdateMailTemplateHandler_MissingID(t *testing.T) {
 	defer mock.Close()
 
 	server := &Server{
-		DB: &db.Database{Pool: mock},
+		Basis: tuer.Basis{DB: &db.Database{Pool: mock}},
 	}
 
 	reqBody := map[string]string{
@@ -87,7 +88,7 @@ func TestUpdateMailTemplateHandler_InvalidJSON(t *testing.T) {
 	defer mock.Close()
 
 	server := &Server{
-		DB: &db.Database{Pool: mock},
+		Basis: tuer.Basis{DB: &db.Database{Pool: mock}},
 	}
 
 	req := httptest.NewRequest(http.MethodPut, "/api/mail-templates/mahnung_1", bytes.NewReader([]byte("{invalid-json}")))
@@ -107,7 +108,7 @@ func TestUpdateMailTemplateHandler_DBError(t *testing.T) {
 	defer mock.Close()
 
 	server := &Server{
-		DB: &db.Database{Pool: mock},
+		Basis: tuer.Basis{DB: &db.Database{Pool: mock}},
 	}
 
 	reqBody := map[string]string{

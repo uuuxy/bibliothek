@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
@@ -127,7 +128,7 @@ func filterLabel(req InventurStartRequest) string {
 func (s *Server) InventurStartHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req InventurStartRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 		if !validateInventurStart(w, req) {
@@ -160,7 +161,7 @@ func (s *Server) InventurStartHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, http.StatusOK, InventurStartResponse{
+		tuer.RespondJSON(w, http.StatusOK, InventurStartResponse{
 			SessionID: session.ID,
 			Scope:     session.ScopeType,
 			Label:     session.ScopeLabel,

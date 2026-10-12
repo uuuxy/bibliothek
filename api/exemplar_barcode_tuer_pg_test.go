@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -19,7 +20,7 @@ import (
 func TestExemplarBarcodeAendern_UeberDieTuer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Tuer", 0)
 	platzhalter := testdaten.Exemplar(t, pool, titel, "AUTO-TUER-1", true, "")

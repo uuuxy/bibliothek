@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -55,7 +56,7 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 		t.Fatalf("Session anlegen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	for _, scan := range []struct{ session, barcode string }{
 		{geprueft.ID, barcodeGeprueft}, {verworfen.ID, barcodeGescannt},
 	} {

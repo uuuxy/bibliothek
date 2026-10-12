@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -21,7 +22,7 @@ func TestNeuerDnbTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	resp, err := srv.upsertTitelAusMetadaten(ctx, "9783060000001", &inventur.MetadatenErgebnis{Titel: "Mathematik 7 Hessen"})
 	if err != nil {
@@ -61,7 +62,7 @@ func TestNeuerDnbTitelWirdAufRueckfrageZumLernmittel(t *testing.T) {
 
 func TestLernmittelKennzeichenUnbekannterTitelIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	id := "00000000-0000-0000-0000-000000000000"
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/titel/"+id+"/lernmittel", strings.NewReader(`{"ist_lernmittel":true}`))
 	req.SetPathValue("id", id)
@@ -81,7 +82,7 @@ func TestLernmittelKennzeichenUnbekannterTitelIst404(t *testing.T) {
 func TestLernmittelKennzeichenNimmtDenMehrjahresbandMit(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	const isbnBand, isbnNormal = "9780000134031", "9780000134048"
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn IN ($1, $2)`, isbnBand, isbnNormal); err != nil {

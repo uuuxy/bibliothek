@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/auskunft"
@@ -85,7 +86,7 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 		konto, fremdKonto)
 	exec(`INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, 'SELBSTANMELDUNG', '{"rolle":"kollegium"}')`, konto)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	// Abgerufen vom Administrator: Die Auskunft über einen Leser mit Konto verlangt seit dem
 	// 28.09.2026 manage_users (TestDsgvoAuskunft_KontoVerlangtKontenrecht).
 	adminKonto, _ := legeKontoAn("Ada", "ada@auskunft-kollege.invalid")
@@ -184,7 +185,7 @@ func TestKontoAnlage_ProtokollTraegtZielID(t *testing.T) {
 		VALUES ('Ada', 'Admin', 'ada@zielid.invalid', 'admin', true) RETURNING id`).Scan(&adminID); err != nil {
 		t.Fatalf("Admin anlegen: %v", err)
 	}
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/benutzer", strings.NewReader(
 		`{"vorname":"Neu","nachname":"Konto","email":"neu@zielid.invalid","rolle":"kollegium"}`))
 	req.Header.Set("Content-Type", "application/json")

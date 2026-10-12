@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/inventur"
 	"bibliothek/repository"
@@ -62,7 +63,7 @@ func (s *Server) dnbSchlagwortVorschlag(client *inventur.MetadatenClient) http.H
 		case errors.Is(err, inventur.ErrDNBNichtErreichbar):
 			return apierrors.New(http.StatusBadGateway, "DNB nicht erreichbar — bitte später erneut versuchen", err)
 		case errors.Is(err, inventur.ErrNichtInDerDNB):
-			RespondJSON(w, http.StatusOK, antwort)
+			tuer.RespondJSON(w, http.StatusOK, antwort)
 			return nil
 		case err != nil:
 			return apierrors.Internal("DNB-Abfrage fehlgeschlagen", err)
@@ -72,7 +73,7 @@ func (s *Server) dnbSchlagwortVorschlag(client *inventur.MetadatenClient) http.H
 			return apierrors.Internal("Schlagwort-Vorschlag konnte nicht gelesen werden", err)
 		}
 		antwort.DNBSatz, antwort.SchlagwortVorschlaege, antwort.SchlagwortVorschlaegeNeu = true, liste, neu
-		RespondJSON(w, http.StatusOK, antwort)
+		tuer.RespondJSON(w, http.StatusOK, antwort)
 		return nil
 	})
 }

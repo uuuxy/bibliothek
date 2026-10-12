@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
 	"bibliothek/internal/pgtest"
@@ -24,7 +25,7 @@ func TestNurNameModus_UmlautSchreibweisenSindDerselbeMensch(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	muellerID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Anna", nachname: "Müller", klasse: "5a", barcode: "UM-1"})
 	bauerID := legeNmSchuelerAn(t, ctx, pool, nmSchueler{vorname: "Tom", nachname: "Bauer", klasse: "7b", barcode: "UM-2", bestaetigt: true})

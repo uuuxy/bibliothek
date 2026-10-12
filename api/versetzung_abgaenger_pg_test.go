@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/lusd"
 	"bibliothek/internal/pgtest"
@@ -47,7 +48,7 @@ func TestVersetzung_AbgaengerTraegtKarenzUhrUndKehrtEntsperrtZurueck(t *testing.
 	}
 
 	// Rückkehr per LUSD-Import: aktiv UND entsperrt, wie beim Import-Abgänger.
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	if _, err := s.computeLusdChanges(ctx, []lusd.Zeile{
 		{LusdID: "L-VERS", Vorname: "Vera", Nachname: "Versetzt", Klasse: "13"},
 	}, true, true); err != nil {

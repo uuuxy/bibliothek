@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -29,7 +30,7 @@ import (
 func TestGeraetBearbeiten_HebtDefektNichtAuf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewGeraeteRepository(pool)
 
 	if _, err := pool.Exec(ctx, `DELETE FROM geraete WHERE barcode_id = 'G-DEFEKT'`); err != nil {
@@ -82,7 +83,7 @@ func TestGeraetBearbeiten_HebtDefektNichtAuf(t *testing.T) {
 func TestGeraetDefektKnopf_LaesstStammdatenStehen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewGeraeteRepository(pool)
 
 	if _, err := pool.Exec(ctx, `DELETE FROM geraete WHERE barcode_id = 'G-KNOPF'`); err != nil {
@@ -202,7 +203,7 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 func TestGeraetBearbeiten_LeereSeriennummerBleibtLeer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := t.Context()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewGeraeteRepository(pool)
 	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-OSN-%'`) }
 	aufraeumenGeraete()
@@ -242,7 +243,7 @@ func TestGeraetBearbeiten_LeereSeriennummerBleibtLeer(t *testing.T) {
 func TestGeraetAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := t.Context()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewGeraeteRepository(pool)
 	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NGF-%'`) }
 	aufraeumenGeraete()
@@ -376,7 +377,7 @@ func TestGeraetAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 // Anlegen nahm das Feld an und speicherte es nicht, mit „Gerät angelegt" daneben.
 func TestGeraetAnlegen_SpeichertDieZustandsnotiz(t *testing.T) {
 	pool := pgtest.Pool(t)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewGeraeteRepository(pool)
 	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NOTIZ-%'`) }
 	aufraeumenGeraete()

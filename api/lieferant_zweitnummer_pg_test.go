@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 )
@@ -86,7 +87,7 @@ func zweitnummerAusListe(t *testing.T, srv *Server, id string) string {
 func TestLieferantZweitnummer_RoundTripUeberDieEchtenTueren(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	angelegt := lieferantAnlegenUeberHandler(t, srv, `{"name":"Zweitnummer-Haendler","email":"zwei@example.invalid",
 		"customerNumber":"K-EINS","kundennummer_schultraeger":" BIB-ZWEI "}`)
@@ -150,7 +151,7 @@ func TestLieferantZweitnummer_RoundTripUeberDieEchtenTueren(t *testing.T) {
 // Ein unbekannter Lieferant bleibt 404 — das RETURNING darf den Fall nicht zum 500 machen.
 func TestLieferantZweitnummer_UnbekannterLieferantIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	id := "00000000-0000-0000-0000-000000000000"
 	req := httptest.NewRequest(http.MethodPut, "/api/lieferanten/"+id, strings.NewReader(
 		`{"name":"x","email":"x@example.invalid","customerNumber":"K","kundennummer_schultraeger":"B"}`))

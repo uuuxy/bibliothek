@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -29,7 +30,7 @@ func TestNurEinHauptlieferant(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	nutzlast := func(name string, haupt bool) string {
 		return `{"name":"` + name + `","email":"` + name + `@test.invalid","customerNumber":"K-` + name +
@@ -124,7 +125,7 @@ func TestHauptlieferantStehtInDerListeOben(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Absichtlich so benannt, dass der Hauptlieferant alphabetisch HINTEN stünde.
 	testdaten.Haendler(t, pool, "Aaa-Cornelsen", false)

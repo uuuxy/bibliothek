@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/db"
 	"bibliothek/pdf"
@@ -9,9 +10,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/google/uuid"
 )
@@ -106,9 +108,9 @@ func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPo
 		return
 	}
 
-	w.Header().Set(headerContentType, contentTypePDF)
-	w.Header().Set(headerContentDisposition, `inline; filename="Rechnung.pdf"`)
-	w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
+	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+	w.Header().Set(tuer.HeaderContentDisposition, `inline; filename="Rechnung.pdf"`)
+	w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfBytes)))
 
 	http.ServeContent(w, r, "Rechnung.pdf", time.Now(), bytes.NewReader(pdfBytes))
 }
@@ -169,9 +171,9 @@ func PrintKontoauszugHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 
 		filename := fmt.Sprintf("Kontoauszug_%s_%s.pdf", s.Vorname, s.Nachname)
 
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, fmt.Sprintf(`inline; filename="%s"`, filename))
-		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`inline; filename="%s"`, filename))
+		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(pdfBytes)))
 
 		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
 	}

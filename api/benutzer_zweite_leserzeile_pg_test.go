@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -25,7 +26,7 @@ import (
 func TestBenutzerAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewUserRepository(pool)
 	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a517", Rolle: auth.RoleAdmin}
 	t.Cleanup(func() {

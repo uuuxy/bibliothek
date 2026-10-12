@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pkg/lmfplan"
@@ -28,7 +29,7 @@ func (s *Server) GetSettingsHandler(settingsRepo repository.SystemSettingsReposi
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Einstellungen", err)
 		}
-		RespondJSON(w, http.StatusOK, settings)
+		tuer.RespondJSON(w, http.StatusOK, settings)
 		return nil
 	})
 }
@@ -61,7 +62,7 @@ func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request, se
 	// immer ein Fehler — und zwar der teuerste, weil er sonst still verschwindet
 	// und die Oberfläche trotzdem "gespeichert" meldet.
 	var req repository.EinstellungenPatch
-	if !DecodeStrictAndValidate(w, r, &req) {
+	if !tuer.DecodeStrictAndValidate(w, r, &req) {
 		return nil // Error is already sent by DecodeAndValidate
 	}
 
@@ -93,7 +94,7 @@ func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request, se
 		s.Broker.Broadcast("sitzungsfristen", "{}")
 	}
 
-	RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	return nil
 }
 
@@ -137,7 +138,7 @@ func (s *Server) protokolliereEinstellungen(r *http.Request, req repository.Eins
 		log.Printf("audit: Settings-Details konnten nicht serialisiert werden: %v", merr)
 		return
 	}
-	s.schreibeAdminProtokoll(r.Context(), claims.UserID, "UPDATE_SETTINGS", "", string(detailsBytes))
+	s.SchreibeAdminProtokoll(r.Context(), claims.UserID, "UPDATE_SETTINGS", "", string(detailsBytes))
 }
 
 // SitzungsEinstellungen sind die zwei Inaktivitäts-Fristen des Clients: Minuten bis die
@@ -155,7 +156,7 @@ func (s *Server) GetSitzungsEinstellungenHandler(settingsRepo repository.SystemS
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Einstellungen", err)
 		}
-		RespondJSON(w, http.StatusOK, SitzungsEinstellungen{
+		tuer.RespondJSON(w, http.StatusOK, SitzungsEinstellungen{
 			ThekeLeerenMinuten: repository.TageOderStandard(settings.ThekeLeerenMinuten, repository.StandardThekeLeerenMinuten),
 			SperreMinuten:      repository.TageOderStandard(settings.SperreMinuten, repository.StandardSperreMinuten),
 		})

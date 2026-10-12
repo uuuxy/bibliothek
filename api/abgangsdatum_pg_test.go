@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -72,7 +73,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	// Server MIT Pool: Der Handler fragt nach dem Speichern die Preisquelle aus den
 	// Einstellungen — ohne Pool stürzt er dort ab (dieselbe Falle wie bei der Leserdatei
 	// am 17.09.2026).
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status-Tür: HTTP %d: %s", rec.Code, rec.Body.String())

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -26,6 +27,6 @@ func (s *Server) GetMonitorSlidesHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("internal server error"))
 			return
 		}
-		RespondJSON(w, http.StatusOK, slides)
+		tuer.RespondJSON(w, http.StatusOK, slides)
 	}
 }

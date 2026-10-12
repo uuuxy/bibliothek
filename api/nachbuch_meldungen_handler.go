@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
@@ -28,7 +29,7 @@ func (s *Server) NachbuchMeldungenListeHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Nachbuch-Meldungen konnten nicht gelesen werden", err)
 		}
-		RespondJSON(w, http.StatusOK, liste)
+		tuer.RespondJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }
@@ -45,7 +46,7 @@ func (s *Server) NachbuchMeldungenAnzahlHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Nachbuch-Meldungen konnten nicht gezählt werden", err)
 		}
-		RespondJSON(w, http.StatusOK, map[string]int{"offen": n})
+		tuer.RespondJSON(w, http.StatusOK, map[string]int{"offen": n})
 		return nil
 	})
 }
@@ -67,7 +68,7 @@ func (s *Server) NachbuchMeldungQuittierenHandler() http.HandlerFunc {
 		// {id} ist durch ValidateUUIDParamsMiddleware schon als UUID geprüft.
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
+			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
 		err := repository.QuittiereNachbuchMeldung(r.Context(), s.DB.Pool, id, claims.UserID)
 		if errors.Is(err, repository.ErrNachbuchMeldungNichtOffen) {
@@ -79,7 +80,7 @@ func (s *Server) NachbuchMeldungQuittierenHandler() http.HandlerFunc {
 		// Eine Meldung weniger: Das Band der anderen Arbeitsplätze zeigt sonst weiter die
 		// alte Zahl, bis dort jemand neu anmeldet.
 		s.meldeMeldungsstand()
-		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		return nil
 	})
 }

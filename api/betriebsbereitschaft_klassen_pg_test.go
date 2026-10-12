@@ -6,6 +6,7 @@ import (
 	"slices"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -19,7 +20,7 @@ func TestKlassenZuordnungKenntDieOberstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	for i, klasse := range []string{"07G1", "10R2", "ET1", "12T1", "13T2"} {
 		testdaten.SeedSchueler(t, pool, fmt.Sprintf("KL-%d", i), "Kind", klasse)

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -76,7 +77,7 @@ func TestExemplarEigentum_AnzeigenUndAendern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lektuere := testdaten.TitelMitSignatur(t, pool, "Nathan der Weise", "Ga Les", 0)
 	einfach := testdaten.Exemplar(t, pool, lektuere, "EE-VORGABE", true, "")

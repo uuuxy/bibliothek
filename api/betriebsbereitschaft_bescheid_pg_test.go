@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/bereitschaft"
 	"bibliothek/internal/pgtest"
@@ -17,7 +18,7 @@ import (
 func TestBescheidAngabenErreichenDieSelbstpruefung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	settingsRepo := repository.NewSystemSettingsRepository(pool)
 	mailRepo := repository.NewMailSettingsRepository(pool)

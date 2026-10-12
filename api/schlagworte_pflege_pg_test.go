@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -24,7 +25,7 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE schlagworte CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var titelID string
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Tür-Probe') RETURNING id`).Scan(&titelID); err != nil {

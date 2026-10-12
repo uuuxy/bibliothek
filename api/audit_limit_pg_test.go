@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -50,7 +51,7 @@ func TestAuditLogIstBegrenzt(t *testing.T) {
 		t.Fatalf("Logzeilen anlegen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	rec := httptest.NewRecorder()
 	srv.GetAuditLogsHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/audit", nil))
 

@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -23,7 +24,7 @@ func TestBestellKonfiguration_WarntWennDerLinkNichtEntstehenKann(t *testing.T) {
 		t.Fatalf("bisherigen Hauptlieferanten räumen: %v", err)
 	}
 	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, "") })
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ohneAdresse := func() bool {
 		t.Helper()
 		rec := httptest.NewRecorder()

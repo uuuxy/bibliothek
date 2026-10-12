@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -49,7 +50,7 @@ func (s *Server) GetBestellhistorieHandler() http.HandlerFunc {
 		}
 
 		if len(orders) == 0 {
-			RespondJSON(w, http.StatusOK, orders)
+			tuer.RespondJSON(w, http.StatusOK, orders)
 			return
 		}
 
@@ -58,6 +59,6 @@ func (s *Server) GetBestellhistorieHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, http.StatusOK, orders)
+		tuer.RespondJSON(w, http.StatusOK, orders)
 	}
 }

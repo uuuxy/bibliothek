@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/repository"
@@ -54,7 +55,7 @@ func (s *Server) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req BestaetigenRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 	if req.EtikettenGroesse != "klein" && req.EtikettenGroesse != "gross" {
@@ -96,7 +97,7 @@ func (s *Server) bestaetigenBestellung(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, map[string]any{
+	tuer.RespondJSON(w, http.StatusOK, map[string]any{
 		"status":            "success",
 		"etiketten_groesse": req.EtikettenGroesse,
 	})

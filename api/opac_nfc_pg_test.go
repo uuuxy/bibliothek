@@ -9,6 +9,7 @@ import (
 	"slices"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -41,7 +42,7 @@ func TestOpacSuche_FindetTitelMitZerlegtenUmlauten(t *testing.T) {
 		t.Errorf("gespeichert %+q, erwartet %+q", gespeichert, zusammengesetzt)
 	}
 
-	s := &Server{DB: &db.Database{Pool: pool}}
+	s := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	suche := func(q string) []string {
 		t.Helper()
 		rec := httptest.NewRecorder()

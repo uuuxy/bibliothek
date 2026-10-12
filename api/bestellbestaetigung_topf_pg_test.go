@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -38,7 +39,7 @@ func TestLieferantenSeite_TopfUndGrossesEtikett(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			testdaten.ResetBestandsdaten(t, pool)
-			srv := &Server{DB: &db.Database{Pool: pool}}
+			srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 			anlegenMit := f.mittel
 			if anlegenMit == "" {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pkg/clientip"
@@ -63,7 +64,7 @@ func (s *Server) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 	}
 
 	var req MittelKorrekturRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 	if !mitteltopf.Gueltig(req.Mittel) {
@@ -96,7 +97,7 @@ func (s *Server) korrigiereBestellungMittel(w http.ResponseWriter, r *http.Reque
 		s.auditiereMittelKorrektur(r, id, von, req.Mittel, grund)
 	}
 
-	RespondJSON(w, http.StatusOK, map[string]any{
+	tuer.RespondJSON(w, http.StatusOK, map[string]any{
 		"id":        id,
 		"mittel":    req.Mittel,
 		"von":       von,

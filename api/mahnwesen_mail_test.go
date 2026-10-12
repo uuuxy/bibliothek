@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/internal/tuertest"
 	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
@@ -103,7 +104,7 @@ func TestBaueMahnMailRequest_NenntKlasseTagUndZahlenUndTraegtDieListe(t *testing
 	if !einerDerTage(anhang.Name, "mahnliste_07B_%s.pdf", "2006-01-02") {
 		t.Errorf("Name des Anhangs = %q, erwartet Klasse und heutigen Tag in der Form JJJJ-MM-TT", anhang.Name)
 	}
-	if anhang.ContentType != contentTypePDF || !bytes.Equal(anhang.Data, liste) {
+	if anhang.ContentType != tuer.ContentTypePDF || !bytes.Equal(anhang.Data, liste) {
 		t.Errorf("Anhang: Typ %q mit %d Bytes, erwartet die übergebene Liste als PDF", anhang.ContentType, len(anhang.Data))
 	}
 }

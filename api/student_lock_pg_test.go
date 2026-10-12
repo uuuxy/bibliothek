@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -21,7 +22,7 @@ import (
 // seit dem 24.09.2026, und audit_logs.admin_id zeigt auf einen echten Benutzer.
 func sperrTuerAufruf(t *testing.T, pool *pgxpool.Pool, akteur, id, body string) *httptest.ResponseRecorder {
 	t.Helper()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodPatch, "/api/admin/students/"+id+"/lock", strings.NewReader(body))
 	req.SetPathValue("id", id)
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,

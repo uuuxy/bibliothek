@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
@@ -86,7 +87,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	ctx := context.Background()
 
 	sitzungen := tuertest.MailAbfangen(t)
-	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: testdaten.SaisonUhr}}
 
 	// Zwei Abgänger derselben Abschlussklasse und einer aus einer anderen — plus die
 	// Schreibweise, an der sich schon zweimal etwas aufgehängt hat: Schülerdaten "9H",

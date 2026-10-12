@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -29,7 +30,7 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 	testdaten.BescheidReset(t, pool)
 	testdaten.BescheidAngabenSetzen(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Gleiche Preise, gleiches Alter: Der Unterschied im Betrag kommt allein aus der Regel.
 	vorbereiten := func(titelID, barcode string) string {

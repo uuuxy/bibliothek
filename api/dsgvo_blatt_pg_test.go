@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/auskunft"
 	"bibliothek/internal/pdftest"
@@ -96,7 +97,7 @@ func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 		t.Fatalf("DeleteStudent: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	daten, err := srv.sammleDsgvoDaten(ctx, sid, true)
 	if err != nil {
 		t.Fatalf("sammleDsgvoDaten: %v", err)

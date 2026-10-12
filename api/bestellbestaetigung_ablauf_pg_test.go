@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
@@ -30,7 +31,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
@@ -117,7 +118,7 @@ func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Normalo", false)

@@ -9,6 +9,7 @@ import (
 	"net/mail"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/mailservice"
@@ -60,7 +61,7 @@ func (s *Server) GetMailSettingsHandler(mailRepo *repository.MailSettingsReposit
 			HasPassword: len(config.SMTPPasswordEncrypted) > 0,
 		}
 
-		RespondJSON(w, http.StatusOK, resp)
+		tuer.RespondJSON(w, http.StatusOK, resp)
 	}
 }
 
@@ -68,7 +69,7 @@ func (s *Server) GetMailSettingsHandler(mailRepo *repository.MailSettingsReposit
 func (s *Server) UpdateMailSettingsHandler(mailRepo *repository.MailSettingsRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req MailSettingsRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -104,11 +105,11 @@ func (s *Server) UpdateMailSettingsHandler(mailRepo *repository.MailSettingsRepo
 			if merr != nil {
 				log.Printf("audit: Mail-Settings-Details konnten nicht serialisiert werden: %v", merr)
 			} else {
-				s.schreibeAdminProtokoll(ctx, claims.UserID, "UPDATE_MAIL_SETTINGS", "", string(detailsBytes))
+				s.SchreibeAdminProtokoll(ctx, claims.UserID, "UPDATE_MAIL_SETTINGS", "", string(detailsBytes))
 			}
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }
 
@@ -118,7 +119,7 @@ func (s *Server) PostTestMailSettingsHandler() http.HandlerFunc {
 		var req struct {
 			To string `json:"to"`
 		}
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -148,7 +149,7 @@ func (s *Server) PostTestMailSettingsHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	}
 }
 

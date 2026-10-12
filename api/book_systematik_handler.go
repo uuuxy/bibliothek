@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 
@@ -40,11 +41,11 @@ func (s *Server) UpdateTitelSignaturHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
+			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
 
 		var req UpdateTitelSignaturRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		signatur := strings.TrimSpace(req.Signatur)
@@ -57,7 +58,7 @@ func (s *Server) UpdateTitelSignaturHandler() http.HandlerFunc {
 			return apierrors.Internal("Signatur konnte nicht gespeichert werden", err)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]string{
+		tuer.RespondJSON(w, http.StatusOK, map[string]string{
 			"id":       id,
 			"signatur": neueSignatur,
 		})
@@ -99,11 +100,11 @@ func (s *Server) UpdateTitelLernmittelHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
-			return apierrors.BadRequest(meldungIDLeer, errors.New("missing id"))
+			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
 
 		var req UpdateTitelLernmittelRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 
@@ -115,7 +116,7 @@ func (s *Server) UpdateTitelLernmittelHandler() http.HandlerFunc {
 			return apierrors.Internal("Lernmittel-Kennzeichen konnte nicht gespeichert werden", err)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"id":             id,
 			"ist_lernmittel": istLernmittel,
 		})

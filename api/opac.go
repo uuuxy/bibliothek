@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
@@ -41,7 +42,7 @@ func opacTitelAus(t repository.KatalogTreffer) OpacTitel {
 
 // schreibeLeereTrefferliste antwortet auf eine Suche ohne Suchtext und ohne Filter.
 func schreibeLeereTrefferliste(w http.ResponseWriter) {
-	w.Header().Set(headerContentType, contentTypeJSON)
+	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	httpresp.Write(w, []byte("[]"))
 }
 
@@ -75,6 +76,6 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			result = append(result, opacTitelAus(t))
 		}
 		w.Header().Set(opacTrefferKopf, strconv.Itoa(gesamt))
-		RespondJSON(w, http.StatusOK, result)
+		tuer.RespondJSON(w, http.StatusOK, result)
 	}
 }

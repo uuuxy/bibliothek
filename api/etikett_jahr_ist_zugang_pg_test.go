@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -19,7 +20,7 @@ func TestEtikett_AnschaffungsjahrIstDasZugangsjahr(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var titelID string
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, autor, medientyp)

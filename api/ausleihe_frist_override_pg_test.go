@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -51,7 +52,7 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 	vergangenheit := "2022-06-01"
 
 	call := func(ausleiheID, datum string) *httptest.ResponseRecorder {
-		srv := &Server{DB: &db.Database{Pool: pool}}
+		srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 		auditRepo := repository.NewAuditRepository(pool)
 		mux := http.NewServeMux()
 		mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(auditRepo))
@@ -145,7 +146,7 @@ func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
 	sid := testdaten.SeedSchueler(t, pool, "S-TZ-1", "Zone", "5a")
 	ausleihe := testdaten.SeedAusleihe(t, pool, sid, "Buch TZ", time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewAuditRepository(pool)
 	mux := http.NewServeMux()
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(auditRepo))
@@ -198,7 +199,7 @@ func TestOverrideDueDate_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 		t.Fatalf("Mahnstufe setzen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	mux := http.NewServeMux()
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(repository.NewAuditRepository(pool)))
 	rufe := func(ausleiheID, rumpf string, angemeldet bool) *httptest.ResponseRecorder {

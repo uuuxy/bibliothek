@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/repository"
 
@@ -22,9 +23,7 @@ import (
 func TestNachbuchen_SperrgrundNurMitViewStudents(t *testing.T) {
 	helferOhneRechte(t)
 	// Der Helfer darf an die Tür (perform_actions), aber keine Schülerdaten ansehen.
-	permCacheMu.Lock()
-	permCache["helfer:perform_actions"] = cacheEntry{Allowed: true, ExpiresAt: time.Now().Add(time.Minute)}
-	permCacheMu.Unlock()
+	tuer.MerkeRechtFuerTest("helfer", "perform_actions", true)
 	w := nbTuerAufbau(t)
 	ctx := context.Background()
 	const grund = "Eltern zahlen Schadensrechnung nicht - Fall Jugendamt"
@@ -90,9 +89,7 @@ func TestNachbuchen_SperrgrundNurMitViewStudents(t *testing.T) {
 // Absender lesen durfte, und gibt es der Wiederholung unverändert zurück.
 func TestNachbuchen_WiederholtePortionTraegtKeinenSperrgrund(t *testing.T) {
 	helferOhneRechte(t)
-	permCacheMu.Lock()
-	permCache["helfer:perform_actions"] = cacheEntry{Allowed: true, ExpiresAt: time.Now().Add(time.Minute)}
-	permCacheMu.Unlock()
+	tuer.MerkeRechtFuerTest("helfer", "perform_actions", true)
 	w := nbTuerAufbau(t)
 	ctx := context.Background()
 	const grund = "Eltern zahlen Schadensrechnung nicht - Fall Jugendamt"

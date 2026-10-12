@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/jobs"
 )
 
@@ -56,7 +57,7 @@ func (s *Server) BackupStatusHandler() http.HandlerFunc {
 		}
 		last := newestBackupTime(dir)
 
-		RespondJSON(w, http.StatusOK, BackupStatusResponse{
+		tuer.RespondJSON(w, http.StatusOK, BackupStatusResponse{
 			LastBackupAt:      last,
 			EncryptionKeySet:  keySet,
 			EncryptionKeyWeak: keyWeak,

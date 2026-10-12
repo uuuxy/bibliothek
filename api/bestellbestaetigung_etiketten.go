@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/pkg/httpresp"
@@ -116,7 +117,7 @@ func (s *Server) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	w.Header().Set(headerContentType, contentTypePDF)
+	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 	// inline: Der Lieferant soll den Bogen im Browser sehen und direkt drucken können.
 	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"etiketten_%s.pdf\"", groesse))
 	httpresp.Write(w, daten)

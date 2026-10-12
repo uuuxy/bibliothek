@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/mailservice"
 	"bibliothek/repository"
@@ -87,10 +88,10 @@ func (s *Server) sendeBestellmailErneut(w http.ResponseWriter, r *http.Request) 
 	}
 
 	s.merkeBestellmailVersendet(ctx, id, auftrag.Empfaenger)
-	s.protokolliereVerwaltung(ctx, auditBestellmailErneutGesendet, map[string]any{"bestellung_id": id})
+	s.ProtokolliereVerwaltung(ctx, auditBestellmailErneutGesendet, map[string]any{"bestellung_id": id})
 
 	status, meldung := bestellVersandMeldung(auftrag.LieferantName, daten.IstHauptlieferant && !mitLink)
-	RespondJSON(w, http.StatusOK, map[string]any{"status": status, "message": meldung})
+	tuer.RespondJSON(w, http.StatusOK, map[string]any{"status": status, "message": meldung})
 }
 
 // auditBestellmailVermerkEntfernt ist die Aktion im Protokoll.
@@ -134,8 +135,8 @@ func (s *Server) NimmBestellmailVermerkHandler() http.HandlerFunc {
 			return
 		}
 
-		s.protokolliereVerwaltung(ctx, auditBestellmailVermerkEntfernt, map[string]any{"bestellung_id": id})
-		RespondJSON(w, http.StatusOK, map[string]any{
+		s.ProtokolliereVerwaltung(ctx, auditBestellmailVermerkEntfernt, map[string]any{"bestellung_id": id})
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",
 			"message": "Der Hinweis ist entfernt. Die Bestellung wurde nicht noch einmal gesendet.",
 		})

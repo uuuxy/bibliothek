@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/pkg/bestelllink"
@@ -105,7 +106,7 @@ func (s *Server) OeffentlicheBestellungHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		RespondJSON(w, http.StatusOK, ansicht)
+		tuer.RespondJSON(w, http.StatusOK, ansicht)
 	}
 }
 
@@ -171,7 +172,7 @@ func (s *Server) OeffentlichBestaetigenHandler() http.HandlerFunc {
 		}
 
 		var req OeffentlichBestaetigenRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 		if req.EtikettenGroesse != "" && req.EtikettenGroesse != "klein" && req.EtikettenGroesse != "gross" {
@@ -193,7 +194,7 @@ func (s *Server) OeffentlichBestaetigenHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]any{"status": "success"})
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{"status": "success"})
 	}
 }
 

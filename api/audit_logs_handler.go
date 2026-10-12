@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -37,6 +38,6 @@ func (s *Server) GetAdminAuditLogsHandler() http.HandlerFunc {
 			logs = append(logs, AdminAuditLogEntry(z))
 		}
 
-		RespondJSON(w, http.StatusOK, logs)
+		tuer.RespondJSON(w, http.StatusOK, logs)
 	}
 }

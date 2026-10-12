@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -25,7 +26,7 @@ func TestBestellberichtFiltertNachTopf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	anlegen := func(t *testing.T, name, mittel string, betrag float64) {

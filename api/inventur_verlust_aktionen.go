@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
@@ -53,7 +54,7 @@ func (s *Server) InventurVerlustGefundenHandler() http.HandlerFunc {
 		// Die Folge für die Forderung steht in der Antwort: Der Bericht sagt, dass die
 		// Forderung storniert ist — oder dass die Aufsicht zu informieren ist, weil der
 		// Bescheid dort schon liegt (dann bleibt sie offen).
-		RespondJSON(w, http.StatusOK, VerlustGefundenResponse{
+		tuer.RespondJSON(w, http.StatusOK, VerlustGefundenResponse{
 			Status:                "ok",
 			StornierteForderungen: befund.StornierteForderungen,
 			StornierterBetrag:     befund.StornierterBetrag,
@@ -89,7 +90,7 @@ func (s *Server) InventurVerlusteLoeschenHandler() http.HandlerFunc {
 // handleInventurVerlusteLoeschen löscht die genannten Verlust-Exemplare in einer Transaktion.
 func (s *Server) handleInventurVerlusteLoeschen(w http.ResponseWriter, r *http.Request) error {
 	var req verlustLoeschenRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return nil
 	}
 	if len(req.ExemplarIDs) == 0 {
@@ -128,7 +129,7 @@ func (s *Server) handleInventurVerlusteLoeschen(w http.ResponseWriter, r *http.R
 	if geloeschteIDs == nil {
 		geloeschteIDs = []string{}
 	}
-	RespondJSON(w, http.StatusOK, map[string]any{
+	tuer.RespondJSON(w, http.StatusOK, map[string]any{
 		"geloescht":      len(geloeschteIDs),
 		"geloeschte_ids": geloeschteIDs,
 	})

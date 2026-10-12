@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/pkg/leserart"
@@ -60,7 +61,7 @@ func (s *Server) DeleteCopyHandler(auditRepo repository.AuditRepository) http.Ha
 			return
 		}
 
-		RespondSuccess(w)
+		tuer.RespondSuccess(w)
 	}
 }
 
@@ -103,7 +104,7 @@ func (s *Server) DeleteTitleHandler(auditRepo repository.AuditRepository) http.H
 			return
 		}
 
-		RespondSuccess(w)
+		tuer.RespondSuccess(w)
 	}
 }
 
@@ -215,7 +216,7 @@ func (s *Server) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 		}
 	}
 
-	RespondJSON(w, http.StatusOK, copies)
+	tuer.RespondJSON(w, http.StatusOK, copies)
 }
 
 // TitleBorrower represents a student who is currently borrowing a copy of a title.
@@ -267,7 +268,7 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 			})
 		}
 
-		RespondJSON(w, http.StatusOK, borrowers)
+		tuer.RespondJSON(w, http.StatusOK, borrowers)
 	}
 }
 
@@ -322,7 +323,7 @@ func (s *Server) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	RespondJSON(w, http.StatusOK, history)
+	tuer.RespondJSON(w, http.StatusOK, history)
 }
 
 // stringOrDefault liefert den Wert von s, oder fallback wenn s nil ist.

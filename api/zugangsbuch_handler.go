@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/repository"
@@ -66,7 +67,7 @@ func (s *Server) ZugangsbuchHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Zugangsbuch konnte nicht gelesen werden", err)
 		}
-		RespondJSON(w, http.StatusOK, zugangsbuchAntwort(buch))
+		tuer.RespondJSON(w, http.StatusOK, zugangsbuchAntwort(buch))
 		return nil
 	})
 }
@@ -87,7 +88,7 @@ func (s *Server) ZugangsbuchPDFHandler() http.HandlerFunc {
 
 		einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
 		if err != nil {
-			return apierrors.Internal(meldungEinstellungenUnlesbar, err)
+			return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 		}
 		schule := pdf.SchuleInfo{
 			Name: einst.SchuleName, Strasse: einst.SchuleStrasse,
@@ -98,10 +99,10 @@ func (s *Server) ZugangsbuchPDFHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Zugangsbuch konnte nicht gedruckt werden", err)
 		}
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, fmt.Sprintf(`inline; filename="Zugangsbuch_%s_bis_%s.pdf"`,
-			buch.Von.Format(dateFormatISO), buch.Bis.Format(dateFormatISO)))
-		w.Header().Set(headerContentLength, fmt.Sprint(len(blatt)))
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`inline; filename="Zugangsbuch_%s_bis_%s.pdf"`,
+			buch.Von.Format(tuer.DateFormatISO), buch.Bis.Format(tuer.DateFormatISO)))
+		w.Header().Set(tuer.HeaderContentLength, fmt.Sprint(len(blatt)))
 		if _, err := w.Write(blatt); err != nil {
 			return nil // Verbindung weg — der Client hat abgebrochen.
 		}

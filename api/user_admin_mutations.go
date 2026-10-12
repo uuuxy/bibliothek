@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
 	"bibliothek/repository"
@@ -24,7 +25,7 @@ func (s *Server) auditiereBenutzerMutation(r *http.Request, aktion string, detai
 // auditiereKonto schreibt einen Eintrag über ein Konto mit der angemeldeten Person als
 // Handelnder — für Türen, die nur den Kontext in der Hand haben.
 func (s *Server) auditiereKonto(ctx context.Context, aktion string, details map[string]any) {
-	s.protokolliereVerwaltung(ctx, aktion, details)
+	s.ProtokolliereVerwaltung(ctx, aktion, details)
 }
 
 // protokolliereKontoAnlage schreibt USER_CREATE — für jede Tür im Handler-Paket, über die ein
@@ -69,7 +70,7 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 // handleCreateUser prüft Rolle, Adresse und Ausweis, legt das Konto an und protokolliert es.
 func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, userRepo repository.UserRepository) {
 	var req CreateUserRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
 	}
 
@@ -117,7 +118,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request, userRe
 
 	s.protokolliereKontoAnlage(r.Context(), kontoID, req.Email, dbEnumRole, req.Vorname, req.Nachname)
 
-	w.Header().Set(headerContentType, contentTypeJSON)
+	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	httpresp.Write(w, []byte(`{"status":"success"}`))
 }
 
@@ -164,7 +165,7 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRe
 	var req UpdateUserRequest
 	// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg, ohne zu
 	// schreiben („aktive" statt „aktiv" ließe ein Konto freigeschaltet).
-	if !DecodeStrictAndValidate(w, r, &req) {
+	if !tuer.DecodeStrictAndValidate(w, r, &req) {
 		return
 	}
 	if !pruefeGenanntePflichtfelder(w, req) {
@@ -207,9 +208,9 @@ func (s *Server) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRe
 		"ziel_id": id, "email": stand.Email, "rolle": stand.Rolle, "aktiv": stand.Aktiv,
 	})
 
-	InvalidatePermissionCache()
+	tuer.InvalidatePermissionCache()
 
-	w.Header().Set(headerContentType, contentTypeJSON)
+	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	httpresp.Write(w, []byte(`{"status":"success"}`))
 }
 
@@ -244,7 +245,7 @@ func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, user
 		apierrors.SendHTTPError(w, http.StatusNotFound, repository.ErrBenutzerNichtGefunden)
 		return
 	}
-	w.Header().Set(headerContentType, contentTypeJSON)
+	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 	httpresp.Write(w, []byte(`{"status":"success"}`))
 }
 

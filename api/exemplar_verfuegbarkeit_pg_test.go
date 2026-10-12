@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -74,7 +75,7 @@ func verfuegbarkeitNach(t *testing.T, srv *Server, titelID, barcode string) bool
 func TestExemplarliste_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Verfuegbarkeit", 1)
@@ -134,7 +135,7 @@ func TestExemplarliste_VerfuegbarkeitFolgtDerOffenenAusleihe(t *testing.T) {
 func TestExemplarliste_TitelOhneExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Ohne Exemplare", 0)
 

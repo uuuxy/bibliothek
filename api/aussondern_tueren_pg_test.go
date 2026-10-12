@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -46,7 +47,7 @@ func TestAussondern_StatusTuerPrueftAusleihe(t *testing.T) {
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
 		// Server MIT Datenbank: Der Erfolgsfall fragt den Ersatzwert nach (9.8, Stufe 2b).
-		(&Server{DB: &db.Database{Pool: pool}}).UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
+		(&Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}).UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
 		return rec
 	}
 	istAusgesondert := func(id string) bool {

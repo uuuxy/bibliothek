@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -31,7 +32,7 @@ func TestRestoreStudent_HebtLoeschSperreAuf(t *testing.T) {
 		t.Fatalf("gelöschten Schüler anlegen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/schueler/"+id+"/restore", nil)
 	req.SetPathValue("id", id)
 	rec := httptest.NewRecorder()
@@ -76,7 +77,7 @@ func TestRestoreStudent_FremdeSperreBleibt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodPost, "/x", nil)
 	req.SetPathValue("id", id)
 	rec := httptest.NewRecorder()
@@ -224,7 +225,7 @@ func TestRestoreStudent_AnonymisierteZeileBleibtImPapierkorb(t *testing.T) {
 		 VALUES ('ANON-R', 'a1b2', 'Anonym', '', 2030, now() - interval '200 days', now(), true, 'Anonymisiert (DSGVO)') RETURNING id`).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/schueler/"+id+"/restore", nil)
 	req.SetPathValue("id", id)
 	rec := httptest.NewRecorder()
@@ -381,7 +382,7 @@ func TestGetDeletedStudents_NenntDieAnonymisiertenZeilen(t *testing.T) {
 		t.Fatalf("Papierkorb-Zeilen anlegen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodGet, "/api/schueler/deleted", nil)
 	rec := httptest.NewRecorder()
 	srv.GetDeletedStudentsHandler().ServeHTTP(rec, req)

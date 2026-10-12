@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -32,7 +33,7 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Das Exemplar wird ANGELEGT und nicht im Bestand gesucht: testdaten.ResetBestandsdaten räumt ihn
 	// weg. Ein `LIMIT 1` auf eine leere Tabelle führte hier erst zu einem Skip — und ein

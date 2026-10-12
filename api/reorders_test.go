@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/repository"
 
@@ -26,7 +27,7 @@ func TestQueryReorders(t *testing.T) {
 	}
 	defer mock.Close()
 
-	server := &Server{DB: &db.Database{Pool: mock}}
+	server := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	// Echter Fehlbestand: gesamt 3 < Meldebestand 5 (ein Titel hat Exemplare verloren).
 	// Ein verliehener Klassensatz (gesamt 30 >= 5) taucht dagegen gar nicht auf — das
@@ -108,7 +109,7 @@ func TestGetReordersLeereListeIstArray(t *testing.T) {
 		WithArgs(3). // Default-Schwelle (leere Settings ⇒ Default 3)
 		WillReturnRows(pgxmock.NewRows(reorderSpalten()))
 
-	server := &Server{DB: &db.Database{Pool: mock}}
+	server := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 	rec := httptest.NewRecorder()
 	server.GetReordersHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellungen", nil))
 

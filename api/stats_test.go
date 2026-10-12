@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 
 	"github.com/pashagolub/pgxmock/v5"
@@ -20,7 +21,7 @@ func TestGetStatistics_TypeFilterReachesAllQueries(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	server := &Server{DB: &db.Database{Pool: mock}}
+	server := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	mock.ExpectQuery(`COUNT\(a\.id\) AS count[\s\S]*AND t\.ist_lernmittel`).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "cover_url", "subject", "signatur", "erscheinungsjahr", "count"}).

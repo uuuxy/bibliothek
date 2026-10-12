@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -49,7 +50,7 @@ func (s *Server) BestellKonfigurationHandler(settingsRepo repository.SystemSetti
 			return apierrors.Internal("Fehler beim Laden der Bestell-Konfiguration", err)
 		}
 
-		RespondJSON(w, http.StatusOK, BestellKonfiguration{
+		tuer.RespondJSON(w, http.StatusOK, BestellKonfiguration{
 			PreiseErfassen:         settings.PreiseErfassen,
 			BestelllinkOhneAdresse: hauptlieferant && settings.AdresseFuerLinks() == "",
 		})

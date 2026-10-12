@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5"
@@ -22,7 +23,7 @@ func TestGenerateDamagePDFHandler_Success(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Server{DB: &db.Database{Pool: mock}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
@@ -78,7 +79,7 @@ func TestGenerateDamagePDFHandler_NotFound(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Server{DB: &db.Database{Pool: mock}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 	caseID := "00000000-0000-0000-0000-000000000000"
 
 	mock.ExpectQuery("SELECT sf.beschreibung").
@@ -120,7 +121,7 @@ func TestGenerateDamagePDFHandler_DBError(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Server{DB: &db.Database{Pool: mock}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 	caseID := "11111111-1111-1111-1111-111111111111"
 
 	mock.ExpectQuery("SELECT sf.beschreibung").
@@ -149,7 +150,7 @@ func TestGenerateDamagePDFHandler_WriterError(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Server{DB: &db.Database{Pool: mock}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
 	// Mock fetchDamageCaseInfo query
@@ -195,7 +196,7 @@ func TestGenerateDamagePDFHandler_UpdateError(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Server{DB: &db.Database{Pool: mock}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
 	// Mock fetchDamageCaseInfo query
@@ -237,7 +238,7 @@ func TestGenerateDamagePDFHandler_InfoScanError(t *testing.T) {
 	}
 	defer mock.Close()
 
-	srv := &Server{DB: &db.Database{Pool: mock}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
 	// Return wrong type to trigger scan error

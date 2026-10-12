@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -28,7 +29,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
 	admin := testdaten.AdminFuerAudit(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewUserRepository(pool)
 	auditRepo := repository.NewAuditRepository(pool)
 	t.Cleanup(func() {

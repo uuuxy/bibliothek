@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/service"
 	"bibliothek/repository"
@@ -71,7 +72,7 @@ func (s *Server) SearchHandler(studentRepo repository.StudentRepository, bookRep
 			Treffer:       treffer,
 		}
 
-		RespondJSON(w, http.StatusOK, result)
+		tuer.RespondJSON(w, http.StatusOK, result)
 	}
 }
 
@@ -105,6 +106,6 @@ func (s *Server) TitelSucheHandler(bookRepo repository.BookRepository) http.Hand
 		if books == nil {
 			books = []repository.BookTitle{}
 		}
-		RespondJSON(w, http.StatusOK, TitelSucheResult{Books: books, BooksTotal: total})
+		tuer.RespondJSON(w, http.StatusOK, TitelSucheResult{Books: books, BooksTotal: total})
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/db"
 	"bibliothek/repository"
@@ -116,7 +117,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 			suppliers = append(suppliers, SupplierResponse(z))
 		}
 
-		RespondJSON(w, http.StatusOK, suppliers)
+		tuer.RespondJSON(w, http.StatusOK, suppliers)
 	}
 }
 
@@ -124,7 +125,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateSupplierRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -141,7 +142,7 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 			return
 		}
 		// An diese Adresse gehen Bestellungen. Der Eintrag nennt den Händler, nicht die Adresse.
-		s.protokolliereVerwaltung(ctx, auditLieferantAngelegt,
+		s.ProtokolliereVerwaltung(ctx, tuer.AuditLieferantAngelegt,
 			map[string]any{"lieferant_id": newID, "name": req.Name})
 
 		// Bewusst NICHT im INSERT: Gibt es schon einen Hauptlieferanten, bräche der
@@ -155,7 +156,7 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 			}
 		}
 
-		RespondJSON(w, http.StatusCreated, SupplierResponse{
+		tuer.RespondJSON(w, http.StatusCreated, SupplierResponse{
 			ID:                       newID,
 			Name:                     req.Name,
 			Email:                    req.Email,
@@ -181,7 +182,7 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 
 	var req UpdateSupplierRequest
 	// Streng: Ein vertippter Feldname nennte sonst nichts, und die Tür meldete Erfolg.
-	if !DecodeStrictAndValidate(w, r, &req) {
+	if !tuer.DecodeStrictAndValidate(w, r, &req) {
 		return
 	}
 	for _, wert := range []*string{req.Name, req.Email, req.CustomerNumber} {
@@ -206,18 +207,18 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.protokolliereGeaenderteFelder(ctx, auditLieferantGeaendert,
+	s.ProtokolliereGeaenderteFelder(ctx, tuer.AuditLieferantGeaendert,
 		map[string]any{"lieferant_id": id, "name": neu.Name},
-		geaenderteFelder(
-			feldWechsel{"name", alt.Name != neu.Name},
-			feldWechsel{"email", alt.Email != neu.Email},
-			feldWechsel{"kundennummer", alt.Kundennummer != neu.Kundennummer},
-			feldWechsel{"kundennummer_schultraeger", alt.Zweitnummer != neu.Zweitnummer},
-			feldWechsel{"hauptlieferant", alt.Haupt != neu.Haupt},
+		tuer.GeaenderteFelder(
+			tuer.FeldWechsel{Name: "name", Geaendert: alt.Name != neu.Name},
+			tuer.FeldWechsel{Name: "email", Geaendert: alt.Email != neu.Email},
+			tuer.FeldWechsel{Name: "kundennummer", Geaendert: alt.Kundennummer != neu.Kundennummer},
+			tuer.FeldWechsel{Name: "kundennummer_schultraeger", Geaendert: alt.Zweitnummer != neu.Zweitnummer},
+			tuer.FeldWechsel{Name: "hauptlieferant", Geaendert: alt.Haupt != neu.Haupt},
 		))
 
 	// Die Antwort nennt den gespeicherten Stand, nicht die Eingabe.
-	RespondJSON(w, http.StatusOK, SupplierResponse{
+	tuer.RespondJSON(w, http.StatusOK, SupplierResponse{
 		ID:                       id,
 		Name:                     neu.Name,
 		Email:                    neu.Email,
@@ -317,7 +318,7 @@ func (s *Server) DeleteSupplierHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
 			return
 		}
-		s.protokolliereVerwaltung(ctx, auditLieferantGeloescht,
+		s.ProtokolliereVerwaltung(ctx, tuer.AuditLieferantGeloescht,
 			map[string]any{"lieferant_id": id, "name": name})
 
 		w.WriteHeader(http.StatusNoContent)

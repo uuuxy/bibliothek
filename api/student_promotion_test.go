@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 
@@ -20,7 +21,7 @@ func promotionTestServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	t.Cleanup(mock.Close)
-	return &Server{DB: &db.Database{Pool: mock}}, mock
+	return &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}, mock
 }
 
 func doPromote(t *testing.T, s *Server, body string) *httptest.ResponseRecorder {

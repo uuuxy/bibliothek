@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 
@@ -36,7 +37,7 @@ func logoutServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 		t.Fatalf("authenticator init: %v", err)
 	}
 	t.Cleanup(a.Blacklist.Stop)
-	return &Server{DB: &db.Database{Pool: mock}, Auth: a, CookieSecure: true}, mock
+	return &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}, Auth: a}, CookieSecure: true}, mock
 }
 
 func logoutMitToken(t *testing.T, s *Server) *httptest.ResponseRecorder {

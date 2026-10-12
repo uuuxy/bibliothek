@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 )
@@ -20,7 +21,7 @@ import (
 func TestLeereMahnvorlageFaelltAufStandardtextZurueck(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// Bestehenden Seed-Text sichern und die Vorlage leer speichern — genau der
 	// Zustand, den der Editor heute zulässt.

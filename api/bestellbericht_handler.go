@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/pkg/betrag"
@@ -25,11 +26,11 @@ func parseBerichtZeitraum(vonStr, bisStr string) (time.Time, time.Time, error) {
 	if vonStr == "" || bisStr == "" {
 		return time.Time{}, time.Time{}, fmt.Errorf("parameter 'von' und 'bis' erforderlich (YYYY-MM-DD)")
 	}
-	von, err := time.Parse(dateFormatISO, vonStr)
+	von, err := time.Parse(tuer.DateFormatISO, vonStr)
 	if err != nil {
 		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'von': %w", err)
 	}
-	bis, err := time.Parse(dateFormatISO, bisStr)
+	bis, err := time.Parse(tuer.DateFormatISO, bisStr)
 	if err != nil {
 		return time.Time{}, time.Time{}, fmt.Errorf("ungültiges Datum 'bis': %w", err)
 	}
@@ -80,9 +81,9 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 		}
 		bisExklusiv := bis.AddDate(0, 0, 1)
 
-		// Geprüft wie jede Kennung aus der Query (uuidAusQuery): Bis zum 22.09.2026 ging
+		// Geprüft wie jede Kennung aus der Query (tuer.UUIDAusQuery): Bis zum 22.09.2026 ging
 		// der Rohtext in `AND lieferant_id = $n`, und `x` kam als 500 zurück (22P02).
-		lieferantID, err := uuidAusQuery(r, "lieferant_id")
+		lieferantID, err := tuer.UUIDAusQuery(r, "lieferant_id")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
@@ -133,8 +134,8 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 		}
 
 		dateiname := fmt.Sprintf("bestellbericht_%s_%s.pdf", vonStr, bisStr)
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(pdfBytes) //nolint:errcheck
 	}
@@ -306,7 +307,7 @@ func zeichneBestellKopf(p *gofpdf.Fpdf, tr func(string) string, o repository.Ber
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(235, 235, 245)
 	header := fmt.Sprintf("%s  ·  %s  ·  Kd.-Nr. %s",
-		o.Bestelldatum.Format(dateFormatDE), o.LieferantName, o.Kundennummer)
+		o.Bestelldatum.Format(tuer.DateFormatDE), o.LieferantName, o.Kundennummer)
 	p.CellFormat(0, 7, tr(header), "LTR", 1, "L", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 }
@@ -371,7 +372,7 @@ func zeichneGesamtsumme(p *gofpdf.Fpdf, tr func(string) string, r berichtRahmen)
 	p.Ln(4)
 	p.SetFont("Arial", "B", 11)
 	p.SetFillColor(220, 230, 255)
-	zeitraum := fmt.Sprintf("%s – %s", r.Von.Format(dateFormatDE), r.Bis.Format(dateFormatDE))
+	zeitraum := fmt.Sprintf("%s – %s", r.Von.Format(tuer.DateFormatDE), r.Bis.Format(tuer.DateFormatDE))
 	if r.MitPreisen {
 		p.CellFormat(150, 9, tr("Gesamtbetrag "+zeitraum), "1", 0, "R", true, 0, "")
 		p.CellFormat(20, 9, tr(betrag.Euro(r.GesamtBetrag)), "1", 1, "R", true, 0, "")
@@ -511,7 +512,7 @@ func generateBestellBerichtPDF(orders []repository.BerichtBestellung, schule pdf
 	p.Ln(12)
 
 	p.SetFont("Arial", "", 10)
-	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(dateFormatDE))), "", 1, "R", false, 0, "")
+	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(tuer.DateFormatDE))), "", 1, "R", false, 0, "")
 	p.Ln(6)
 
 	// Berichtstitel
@@ -520,7 +521,7 @@ func generateBestellBerichtPDF(orders []repository.BerichtBestellung, schule pdf
 	p.Ln(7)
 	p.SetFont("Arial", "", 10)
 	p.SetTextColor(80, 80, 80)
-	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", opts.Von.Format(dateFormatDE), opts.Bis.Format(dateFormatDE))))
+	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", opts.Von.Format(tuer.DateFormatDE), opts.Bis.Format(tuer.DateFormatDE))))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(12)
 

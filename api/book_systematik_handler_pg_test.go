@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -19,7 +20,7 @@ func TestUpdateTitelSignaturHandler_SpeichertNeueSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	titelID := testdaten.TitelMitSignatur(t, pool, "Die Tribute von Panem", "BIB Jugendbuch", 0)
 
@@ -49,7 +50,7 @@ func TestUpdateTitelSignaturHandler_SpeichertNeueSignatur(t *testing.T) {
 func TestUpdateTitelSignaturHandler_UnbekannteIDGibt404(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	unbekannteID := "00000000-0000-0000-0000-000000000000"
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/titel/"+unbekannteID+"/signatur",

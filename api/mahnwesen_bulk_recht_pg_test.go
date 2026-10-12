@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pdftest"
@@ -61,7 +62,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 			}
 		}
 		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, kontoID)
-		InvalidatePermissionCache()
+		tuer.InvalidatePermissionCache()
 	})
 
 	leser := testdaten.SeedSchueler(t, pool, "MR-1", "Mona", "7a")
@@ -75,7 +76,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 		return rec
 	}
 
-	setzeGenauEinRecht(t, pool, "view_students")
+	tuertest.SetzeGenauEinRecht(t, pool, "view_students")
 	rec := drucke()
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("mit view_students allein: HTTP %d statt 403 — %q", rec.Code, pdftest.ErsteBytes(rec.Body.Bytes(), 120))
@@ -87,7 +88,7 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 		t.Errorf("abgewiesener Druck hat gezählt: Mahnstufe %d, Mahndatum %v", stufe, datum)
 	}
 
-	setzeGenauEinRecht(t, pool, "create_orders")
+	tuertest.SetzeGenauEinRecht(t, pool, "create_orders")
 	rec = drucke()
 	if rec.Code != http.StatusOK {
 		t.Fatalf("mit create_orders: HTTP %d statt 200 — %s", rec.Code, rec.Body.String())

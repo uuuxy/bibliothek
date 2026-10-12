@@ -1,4 +1,4 @@
-package api
+package tuer
 
 import (
 	"encoding/json"
@@ -36,9 +36,9 @@ func neuerValidator() *validator.Validate {
 	return v
 }
 
-// meldeValidierung übersetzt eine ungültige Kennung in einen Satz; alle anderen
+// MeldeValidierung übersetzt eine ungültige Kennung in einen Satz; alle anderen
 // Validierungsfehler bleiben, wie sie sind.
-func meldeValidierung(err error) error {
+func MeldeValidierung(err error) error {
 	var fehler validator.ValidationErrors
 	if errors.As(err, &fehler) {
 		for _, f := range fehler {
@@ -50,9 +50,9 @@ func meldeValidierung(err error) error {
 	return err
 }
 
-// uuidAusQuery liest einen Query-Parameter, der eine UUID sein muss. Leer bleibt leer;
+// UUIDAusQuery liest einen Query-Parameter, der eine UUID sein muss. Leer bleibt leer;
 // alles andere, das keine UUID ist, ist ein Bedienfehler statt eines 500 aus Postgres.
-func uuidAusQuery(r *http.Request, name string) (string, error) {
+func UUIDAusQuery(r *http.Request, name string) (string, error) {
 	wert := r.URL.Query().Get(name)
 	if wert != "" && !kennung.IstUUID(wert) {
 		return "", fmt.Errorf("%s ist keine gültige Kennung", name)
@@ -82,7 +82,7 @@ func DecodeStrictAndValidate[T any](w http.ResponseWriter, r *http.Request, targ
 		return false
 	}
 	if err := Validate.Struct(target); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, meldeValidierung(err))
+		apierrors.SendHTTPError(w, http.StatusBadRequest, MeldeValidierung(err))
 		return false
 	}
 	return true
@@ -97,7 +97,7 @@ func DecodeAndValidate[T any](w http.ResponseWriter, r *http.Request, target *T)
 		return false
 	}
 	if err := Validate.Struct(target); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, meldeValidierung(err))
+		apierrors.SendHTTPError(w, http.StatusBadRequest, MeldeValidierung(err))
 		return false
 	}
 	return true

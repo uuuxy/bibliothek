@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -169,7 +170,7 @@ func TestExtendLoanHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			srv := &Server{DB: &db.Database{Pool: pool}}
+			srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 			if !tt.jetzt.IsZero() {
 				srv.Uhr = func() time.Time { return tt.jetzt }
 			}
@@ -225,11 +226,9 @@ func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	InvalidatePermissionCache()
-	t.Cleanup(InvalidatePermissionCache)
-	permCacheMu.Lock()
-	permCache["helfer:view_students"] = cacheEntry{Allowed: false, ExpiresAt: time.Now().Add(time.Minute)}
-	permCacheMu.Unlock()
+	tuer.InvalidatePermissionCache()
+	t.Cleanup(tuer.InvalidatePermissionCache)
+	tuer.MerkeRechtFuerTest("helfer", "view_students", false)
 
 	const grund = "Schadensrechnung offen - Familie"
 	gesperrt := testdaten.SeedSchueler(t, pool, "S-VG-1", "Gesperrt", "5a")
@@ -244,7 +243,7 @@ func TestExtendLoan_SperrgrundNurMitViewStudentsUndMahnstufe(t *testing.T) {
 		t.Fatalf("Mahnstufe setzen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	mux := http.NewServeMux()
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.ExtendLoanHandler(&mockSystemSettingsRepo{
 		settings: &repository.SystemEinstellungen{FristBuchTage: 21},
@@ -300,7 +299,7 @@ func TestExtendLoan_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t *testing
 
 	verlaengere := func(ausleiheID string, jetzt time.Time, einstellungen repository.SystemSettingsRepository) {
 		t.Helper()
-		srv := &Server{DB: &db.Database{Pool: pool}, Uhr: func() time.Time { return jetzt }}
+		srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: func() time.Time { return jetzt }}}
 		mux := http.NewServeMux()
 		mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", srv.ExtendLoanHandler(einstellungen))
 		rec := httptest.NewRecorder()

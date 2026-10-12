@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -19,7 +20,7 @@ import (
 func TestCreateStudent_OhneGeburtsdatumAbgewiesen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	for _, body := range []string{
 		`{"vorname":"Leon","nachname":"Müller","klasse":"5a"}`,
@@ -49,7 +50,7 @@ func TestCreateStudent_OhneGeburtsdatumAbgewiesen(t *testing.T) {
 func TestCreateStudent_NamensvetternMitVerschiedenemGeburtsdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	if code, body := createStudent(t, srv, `{"vorname":"Leon","nachname":"Müller","klasse":"5a","geburtsdatum":"2012-01-02"}`); code != http.StatusCreated {
 		t.Fatalf("erster Leon Müller: erwartet 201, war %d: %s", code, body)
@@ -65,7 +66,7 @@ func TestCreateStudent_NamensvetternMitVerschiedenemGeburtsdatum(t *testing.T) {
 func TestCreateStudent_EchtesDuplikatMitGeburtsdatum(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	if code, body := createStudent(t, srv, `{"vorname":"Anna","nachname":"Schmidt","klasse":"6a","geburtsdatum":"2012-03-04"}`); code != http.StatusCreated {
 		t.Fatalf("erste Anna Schmidt: erwartet 201, war %d: %s", code, body)
@@ -91,7 +92,7 @@ func createStudent(t *testing.T, srv *Server, jsonBody string) (int, string) {
 func TestCreateStudent_SchreibvarianteIstDuplikat(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	if code, body := createStudent(t, srv, `{"vorname":"Anna","nachname":"Müller","klasse":"06G1","geburtsdatum":"2012-03-04"}`); code != http.StatusCreated {
 		t.Fatalf("erste Anna Müller: erwartet 201, war %d: %s", code, body)

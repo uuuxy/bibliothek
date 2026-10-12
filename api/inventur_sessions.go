@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -70,7 +71,7 @@ func (s *Server) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
 				Verworfen:       sessions[i].Verworfen,
 			})
 		}
-		RespondJSON(w, http.StatusOK, out)
+		tuer.RespondJSON(w, http.StatusOK, out)
 	}
 }
 
@@ -111,7 +112,7 @@ func (s *Server) ListInventurSessionsHandler() http.HandlerFunc {
 				Erwartet:    erwartet,
 			})
 		}
-		RespondJSON(w, http.StatusOK, out)
+		tuer.RespondJSON(w, http.StatusOK, out)
 	}
 }
 
@@ -135,7 +136,7 @@ type InventurAbortRequest struct {
 func (s *Server) InventurAbortHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req InventurAbortRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 		if req.SessionID == "" {
@@ -153,6 +154,6 @@ func (s *Server) InventurAbortHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		RespondSuccess(w)
+		tuer.RespondSuccess(w)
 	}
 }

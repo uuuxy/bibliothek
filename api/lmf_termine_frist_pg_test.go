@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
@@ -28,7 +29,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
@@ -205,7 +206,7 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
@@ -257,7 +258,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
 			t.Logf("Aufräumen: %v", err)
@@ -413,7 +414,7 @@ func TestLmfPlan_OhneTerminGiltDerEingestellteStichtag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	setzeStichtag := func(wert string) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, `

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
@@ -73,7 +74,7 @@ func (s *Server) GetSchlagwortPflegeHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Schlagworte konnten nicht geladen werden", err)
 		}
-		RespondJSON(w, http.StatusOK, liste)
+		tuer.RespondJSON(w, http.StatusOK, liste)
 		return nil
 	})
 }
@@ -98,7 +99,7 @@ func (s *Server) PutSchlagwortWortHandler() http.HandlerFunc {
 			return err
 		}
 		var req SchlagwortWortRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		if req.AlteAlsVerweis == nil {
@@ -112,7 +113,7 @@ func (s *Server) PutSchlagwortWortHandler() http.HandlerFunc {
 		if verweis {
 			antwort.Verweise = 1
 		}
-		RespondJSON(w, http.StatusOK, antwort)
+		tuer.RespondJSON(w, http.StatusOK, antwort)
 		return nil
 	})
 }
@@ -137,7 +138,7 @@ func (s *Server) PutSchlagwortFilterHandler() http.HandlerFunc {
 			return err
 		}
 		var req SchlagwortFilterRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		if req.IstFilter == nil {
@@ -172,7 +173,7 @@ func (s *Server) PostSchlagwortZusammenfuehrenHandler() http.HandlerFunc {
 			return err
 		}
 		var req SchlagwortZielRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		if req.AlteAlsVerweis == nil {
@@ -182,10 +183,10 @@ func (s *Server) PostSchlagwortZusammenfuehrenHandler() http.HandlerFunc {
 		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}
-		s.protokolliereVerwaltung(r.Context(), auditSchlagwortZusammengefuehrt, map[string]any{
+		s.ProtokolliereVerwaltung(r.Context(), tuer.AuditSchlagwortZusammengefuehrt, map[string]any{
 			"von": ergebnis.Von, "in": ergebnis.In, "titel": ergebnis.Titel, "alte_als_verweis": *req.AlteAlsVerweis,
 		})
-		RespondJSON(w, http.StatusOK, SchlagwortAenderung{Titel: ergebnis.Titel})
+		tuer.RespondJSON(w, http.StatusOK, SchlagwortAenderung{Titel: ergebnis.Titel})
 		return nil
 	})
 }
@@ -205,7 +206,7 @@ func (s *Server) PostSchlagwortZusammenfuehrenHandler() http.HandlerFunc {
 func (s *Server) PostSchlagwortVerweisHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req SchlagwortVerweisRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		ergebnis, err := repository.SetzeSchlagwortVerweis(r.Context(), s.DB.Pool, req.Wort, req.ZielID)
@@ -213,7 +214,7 @@ func (s *Server) PostSchlagwortVerweisHandler() http.HandlerFunc {
 			return schlagwortPflegeFehler(err)
 		}
 		// Trug die Schreibweise schon Titel, hängen sie jetzt am Ziel; „titel" nennt, wie viele.
-		s.protokolliereVerwaltung(r.Context(), auditSchlagwortVerweis, map[string]any{
+		s.ProtokolliereVerwaltung(r.Context(), tuer.AuditSchlagwortVerweis, map[string]any{
 			"wort": ergebnis.Von, "in": ergebnis.In, "titel": ergebnis.Titel,
 		})
 		w.WriteHeader(http.StatusNoContent)
@@ -238,7 +239,7 @@ func (s *Server) PostSchlagwortVerweisHandler() http.HandlerFunc {
 func (s *Server) PostSchlagworteLoeschenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req SchlagworteLoeschenRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		geloescht, err := repository.LoescheSchlagworte(r.Context(), s.DB.Pool, req.IDs)
@@ -249,11 +250,11 @@ func (s *Server) PostSchlagworteLoeschenHandler() http.HandlerFunc {
 		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}
-		s.protokolliereVerwaltung(r.Context(), auditSchlagwortGeloescht, map[string]any{
+		s.ProtokolliereVerwaltung(r.Context(), tuer.AuditSchlagwortGeloescht, map[string]any{
 			"woerter": geloeschteWoerter(geloescht.Namen), "anzahl": geloescht.Woerter,
 			"titel": geloescht.Titel, "verweise": geloescht.Verweise,
 		})
-		RespondJSON(w, http.StatusOK, SchlagwortAenderung{
+		tuer.RespondJSON(w, http.StatusOK, SchlagwortAenderung{
 			Woerter: geloescht.Woerter, Titel: geloescht.Titel, Verweise: geloescht.Verweise,
 		})
 		return nil

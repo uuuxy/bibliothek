@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/inventur"
 	"bibliothek/repository"
@@ -168,7 +169,7 @@ func (s *Server) isbnZuTitel(metaClient *inventur.MetadatenClient) http.HandlerF
 		var req struct {
 			ISBN string `json:"isbn"`
 		}
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 		// Normalise: strip dashes and spaces
@@ -187,7 +188,7 @@ func (s *Server) isbnZuTitel(metaClient *inventur.MetadatenClient) http.HandlerF
 			return
 		}
 		if lokal != nil {
-			RespondJSON(w, http.StatusOK, *lokal)
+			tuer.RespondJSON(w, http.StatusOK, *lokal)
 			return
 		}
 
@@ -211,6 +212,6 @@ func (s *Server) isbnZuTitel(metaClient *inventur.MetadatenClient) http.HandlerF
 			return
 		}
 
-		RespondJSON(w, http.StatusOK, resp)
+		tuer.RespondJSON(w, http.StatusOK, resp)
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -50,7 +51,7 @@ func zrKonto(t *testing.T, pool *pgxpool.Pool, leserID string) {
 func TestZusammenfuehrenRoute_AntwortUndProtokolle(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 
 	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Alt", Nachname: "Route", Klasse: "07A", Barcode: "ZR-1", Geb: testdaten.Datum(2012, 3, 3), Abgaenger: true})
@@ -94,7 +95,7 @@ func TestZusammenfuehrenRoute_AntwortUndProtokolle(t *testing.T) {
 // nur „Zusammenführen fehlgeschlagen" nach außen, und wer davorsitzt, wüsste nicht weiter.
 func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 	pool := pgtest.Pool(t)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	ctx := context.Background()
 
 	schueler := func(t *testing.T, nachname, barcode string) string {
@@ -170,7 +171,7 @@ func TestZusammenfuehrenRoute_AbweisungenNennenDenGrund(t *testing.T) {
 func TestZusammenfuehrenRoute_UnbrauchbareAnfrage(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	admin := testdaten.AdminFuerAudit(t, pool)
 	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Zr", Nachname: "Ziel", Klasse: "07A", Barcode: "ZR-U1", Geb: testdaten.Datum(2012, 6, 6)})
 

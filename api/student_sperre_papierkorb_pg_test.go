@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -31,7 +32,7 @@ func TestPapierkorb_ManuelleSperreUeberlebtLoeschenUndRestore(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewAuditRepository(pool)
 	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "papierkorb@test.invalid")
 
@@ -121,7 +122,7 @@ func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewAuditRepository(pool)
 	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "papierkorb-uhr@test.invalid")
 	schueler := testdaten.SeedSchueler(t, pool, "S-UHR-1", "Uri", "5a")

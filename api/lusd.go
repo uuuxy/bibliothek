@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/lusd"
@@ -81,7 +82,7 @@ func (s *Server) handleLusdUpload(w http.ResponseWriter, r *http.Request, apply 
 		// Protokoll gehen Akteur, Modus und Zähler, keine Namen.
 		s.protokolliereLusdImport(r, res, lauf.MassenabgangBestaetigt)
 	}
-	RespondJSON(w, http.StatusOK, res)
+	tuer.RespondJSON(w, http.StatusOK, res)
 }
 
 // lusdFehlerStatus ordnet den Fehler eines Laufs ein: Der Massenabgang wartet auf eine

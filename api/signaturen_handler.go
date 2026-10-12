@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -55,7 +56,7 @@ func (s *Server) GetSignaturenHandler() http.HandlerFunc {
 			gruppen = append(gruppen, SignaturGruppe(z))
 		}
 
-		RespondJSON(w, http.StatusOK, gruppen)
+		tuer.RespondJSON(w, http.StatusOK, gruppen)
 		return nil
 	})
 }
@@ -123,7 +124,7 @@ func (s *Server) GetSignaturBuecherHandler() http.HandlerFunc {
 			buecher = buecher[:signaturBuecherLimit]
 		}
 
-		RespondJSON(w, http.StatusOK, SignaturBuecherResponse{
+		tuer.RespondJSON(w, http.StatusOK, SignaturBuecherResponse{
 			Signatur: signatur,
 			Buecher:  buecher,
 			Gesamt:   len(buecher),

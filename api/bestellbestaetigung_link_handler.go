@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/service"
 	"bibliothek/pkg/bestelllink"
@@ -64,7 +65,7 @@ func (s *Server) NeuerBestaetigungsLinkHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]any{
+		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"link":        bestelllink.Adresse(basis, token),
 			"gueltig_bis": gueltigBis,
 		})

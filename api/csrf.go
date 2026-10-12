@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 )
 
@@ -72,7 +73,7 @@ func (s *Server) CSRFTokenHandler() http.HandlerFunc {
 			token = generated
 			http.SetCookie(w, newCSRFCookie(token, s.CookieSecure))
 		}
-		RespondJSON(w, http.StatusOK, map[string]string{"csrf_token": token})
+		tuer.RespondJSON(w, http.StatusOK, map[string]string{"csrf_token": token})
 	}
 }
 

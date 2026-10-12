@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
 	"bibliothek/pkg/mitteltopf"
@@ -166,8 +167,8 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, fmt.Sprintf("inline; filename=\"etiketten_%s.pdf\"", id))
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf("inline; filename=\"etiketten_%s.pdf\"", id))
 
 		if err := bogen.Output(w); err != nil {
 			log.Printf("Fehler beim Senden des PDFs: %v", err)
@@ -235,7 +236,7 @@ type PrintLabelsRequest struct {
 func (s *Server) PrintLabelsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req PrintLabelsRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -253,8 +254,8 @@ func (s *Server) PrintLabelsHandler() http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(headerContentType, contentTypePDF)
-		w.Header().Set(headerContentDisposition, "inline; filename=\"etiketten_custom.pdf\"")
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
+		w.Header().Set(tuer.HeaderContentDisposition, "inline; filename=\"etiketten_custom.pdf\"")
 
 		if err := bogen.Output(w); err != nil {
 			log.Printf("Fehler beim Senden des PDFs: %v", err)

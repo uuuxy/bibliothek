@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/service"
@@ -122,7 +123,7 @@ func (s *Server) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbu
 		return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
 	}
 	var req NachbuchenRequest
-	if !DecodeAndValidate(w, r, &req) {
+	if !tuer.DecodeAndValidate(w, r, &req) {
 		return nil
 	}
 	if len(req.Eintraege) > nachbuchenHoechstens {
@@ -154,7 +155,7 @@ func (s *Server) handleNachbuchen(w http.ResponseWriter, r *http.Request, nachbu
 			s.meldeMeldungsstand()
 		}
 	}
-	RespondJSON(w, http.StatusOK, antwort)
+	tuer.RespondJSON(w, http.StatusOK, antwort)
 	return nil
 }
 

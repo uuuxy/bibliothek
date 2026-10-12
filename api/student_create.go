@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
@@ -165,7 +166,7 @@ var errGeburtsdatumPflicht = errors.New("Geburtsdatum fehlt. Es ist der einzige 
 func (s *Server) CreateStudentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req CreateStudentRequest
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return
 		}
 
@@ -215,7 +216,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, http.StatusCreated, map[string]any{
+		tuer.RespondJSON(w, http.StatusCreated, map[string]any{
 			"status":     "success",
 			"id":         studentID,
 			"barcode_id": barcodeID,
@@ -369,7 +370,7 @@ func parseCreateGeburtsdatum(w http.ResponseWriter, raw *string) (*time.Time, bo
 	if raw == nil || *raw == "" {
 		return nil, true
 	}
-	t, err := time.Parse(dateFormatISO, *raw)
+	t, err := time.Parse(tuer.DateFormatISO, *raw)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Format für Geburtsdatum, erwartet YYYY-MM-DD"))
 		return nil, false

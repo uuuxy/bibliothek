@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 )
@@ -27,7 +28,7 @@ func (s *Server) NextBarcodeHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]string{
+		tuer.RespondJSON(w, http.StatusOK, map[string]string{
 			"next_barcode": nextBarcode,
 		})
 	}

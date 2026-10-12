@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -46,7 +47,7 @@ func TestLusdIDKontrolliertNachtragbar(t *testing.T) {
 
 	auditRepo := repository.NewAuditRepository(pool)
 	patch := func(id, body string) *httptest.ResponseRecorder {
-		srv := &Server{DB: &db.Database{Pool: pool}}
+		srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 		req := httptest.NewRequest(http.MethodPatch, "/x", strings.NewReader(body))
 		req.SetPathValue("id", id)
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,

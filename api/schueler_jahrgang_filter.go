@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/internal/ausweis"
 	"bibliothek/repository"
@@ -108,7 +109,7 @@ func (s *Server) JahrgaengeHandler(lmfRepo *repository.LmfTerminRepository) http
 		if err != nil {
 			return apierrors.Internal("Jahrgänge konnten nicht gelesen werden", err)
 		}
-		RespondJSON(w, http.StatusOK, jahrgaenge)
+		tuer.RespondJSON(w, http.StatusOK, jahrgaenge)
 		return nil
 	})
 }

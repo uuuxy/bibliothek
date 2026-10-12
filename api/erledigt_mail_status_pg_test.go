@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -51,7 +52,7 @@ func TestErledigeAnliegen_MailAusfallStehtInDerAntwort(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var lehrerID string
 	if err := pool.QueryRow(ctx, `
@@ -157,7 +158,7 @@ func TestErledigeKlassensatz_MailAusfallStehtInDerAntwort(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	var lehrerID, titelID string
 	if err := pool.QueryRow(ctx, `

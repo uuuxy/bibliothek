@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/repository"
 
@@ -36,7 +37,7 @@ func (s *Server) GetAusweisLayoutHandler() http.HandlerFunc {
 		case strings.TrimSpace(wert) == "":
 			wert = "{}"
 		}
-		w.Header().Set(headerContentType, "application/json; charset=utf-8")
+		w.Header().Set(tuer.HeaderContentType, "application/json; charset=utf-8")
 		_, _ = w.Write([]byte(wert)) //nolint:errcheck // Antwort bereits committet
 	}
 }
@@ -63,6 +64,6 @@ func (s *Server) SaveAusweisLayoutHandler() http.HandlerFunc {
 			return
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]string{"status": "gespeichert"})
+		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "gespeichert"})
 	}
 }

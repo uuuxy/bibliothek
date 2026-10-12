@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -60,7 +61,7 @@ func TestGlobalExtendLMF_ResetMahnstufe(t *testing.T) {
 	loanKeep := testdaten.SeedAusleihe(t, pool, sidY, "LMF-Deutsch 9", vergangenheit)
 	markiereGemahntUndUeberfaellig(t, pool, loanKeep, 2, vergangenheit)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// (a) Zukunft -> Reset.
 	zukunft := time.Now().AddDate(0, 0, 30).Format("2006-01-02")
@@ -109,7 +110,7 @@ func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	kein := testdaten.SeedSchueler(t, pool, "AB-3", "Cleo", "8a")
 	testdaten.SeedAusleihe(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	students, err := srv.queryAbgaengerKontoauszug(ctx, "", nil)
 	if err != nil {
 		t.Fatalf("queryAbgaengerKontoauszug: %v", err)
@@ -142,7 +143,7 @@ func TestKlassensatzReservierung_Bestandsdeckelung(t *testing.T) {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// 150 Exemplare bei 5 im Bestand -> 400 (Überbuchung abgewiesen).
 	if rec := reservierung(t, srv, uid, tid, 150); rec.Code != http.StatusBadRequest {
@@ -187,7 +188,7 @@ func TestShelfWarmers_NeuzugangKeinLadenhueter(t *testing.T) {
 		t.Fatalf("neues Exemplar: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	warmers := repository.ListeLadenhueter(ctx, srv.DB.Pool, "", 100)
 
 	titel := map[string]bool{}

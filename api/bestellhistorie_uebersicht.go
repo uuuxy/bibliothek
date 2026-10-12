@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/pkg/mitteltopf"
 	"bibliothek/repository"
@@ -55,7 +56,7 @@ func (s *Server) GetBestellhistorieUebersichtHandler() http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		RespondJSON(w, http.StatusOK, u)
+		tuer.RespondJSON(w, http.StatusOK, u)
 	}
 }
 

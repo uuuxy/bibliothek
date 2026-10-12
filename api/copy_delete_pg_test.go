@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
@@ -31,7 +32,7 @@ import (
 func TestDeleteCopy_VerliehenIst400_PhantomIst404(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	titelID := testdaten.SeedMonitorTitel(t, pool, "Ausbuch-Titel", "Jug Aus", false, 0)
 	verliehen := testdaten.Exemplar(t, pool, titelID, "DEL-VERLIEHEN", true, "")

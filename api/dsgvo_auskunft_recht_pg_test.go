@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/auskunft"
@@ -53,7 +54,7 @@ func TestDsgvoAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 			ON CONFLICT (role, permission) DO UPDATE SET allowed = EXCLUDED.allowed`, erlaubt); err != nil {
 			t.Fatalf("Rechtezeile setzen: %v", err)
 		}
-		InvalidatePermissionCache()
+		tuer.InvalidatePermissionCache()
 	}
 	setzeKontenrecht(false)
 	t.Cleanup(func() {
@@ -76,7 +77,7 @@ func TestDsgvoAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 				t.Errorf("aufräumen: %v", err)
 			}
 		}
-		InvalidatePermissionCache()
+		tuer.InvalidatePermissionCache()
 	})
 
 	// Konten: Der Trigger trg_benutzer_hat_leserzeile hängt jedem die Leserzeile an.
@@ -103,7 +104,7 @@ func TestDsgvoAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 		t.Fatalf("Kollege ohne Konto anlegen: %v", err)
 	}
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	rufe := func(h http.HandlerFunc, leserID, kontoID string, rolle auth.Role) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+leserID+"/dsgvo-auskunft", nil)
 		req.SetPathValue("id", leserID)

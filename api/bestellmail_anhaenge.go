@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"bibliothek/api/tuer"
 	"bibliothek/mailservice"
 	"bibliothek/pdf"
 	"bibliothek/pkg/csvutil"
@@ -111,7 +112,7 @@ func bestellAnhaenge(m BestellMail) ([]mailservice.MailAttachment, error) {
 		return nil, err
 	}
 	anhaenge := []mailservice.MailAttachment{
-		{Name: datiertName("bestellanschreiben", "pdf"), ContentType: contentTypePDF, Data: summaryPDF},
+		{Name: datiertName("bestellanschreiben", "pdf"), ContentType: tuer.ContentTypePDF, Data: summaryPDF},
 	}
 	if !mitBarcodebogen {
 		return anhaenge, nil
@@ -195,7 +196,7 @@ func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlief
 		return nil, err
 	}
 	boegen := []mailservice.MailAttachment{
-		{Name: datiertName("etiketten_klein", "pdf"), ContentType: contentTypePDF, Data: labelBuf.Bytes()},
+		{Name: datiertName("etiketten_klein", "pdf"), ContentType: tuer.ContentTypePDF, Data: labelBuf.Bytes()},
 	}
 
 	if !istHauptlieferant || !mitteltopf.GrossesLernmittelEtikettFuer(mittel) {
@@ -207,12 +208,12 @@ func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlief
 		return nil, err
 	}
 	return append(boegen,
-		mailservice.MailAttachment{Name: datiertName("etiketten_gross", "pdf"), ContentType: contentTypePDF, Data: lernmittelPDF}), nil
+		mailservice.MailAttachment{Name: datiertName("etiketten_gross", "pdf"), ContentType: tuer.ContentTypePDF, Data: lernmittelPDF}), nil
 }
 
 // datiertName baut den Dateinamen einer Anlage mit dem Kalendertag der Schule: Das Datum steht
 // im Postfach des Händlers zwischen allen anderen Bestellungen und ist dort die einzige
 // Unterscheidung.
 func datiertName(basis, endung string) string {
-	return fmt.Sprintf("%s_%s.%s", basis, schulzeit.Jetzt().Format(dateFormatISO), endung)
+	return fmt.Sprintf("%s_%s.%s", basis, schulzeit.Jetzt().Format(tuer.DateFormatISO), endung)
 }

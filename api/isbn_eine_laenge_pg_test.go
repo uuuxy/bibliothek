@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -60,7 +61,7 @@ func TestISBNZuTitel_BeideLaengenSindDieselbeISBN(t *testing.T) {
 			<datafield tag="245" ind1="1" ind2="0"><subfield code="a">Aus der DNB</subfield></datafield>
 		  </record>
 		</recordData></record></records></searchRetrieveResponse>`}}})
-	tuer := (&Server{DB: &db.Database{Pool: pool}}).isbnZuTitel(client)
+	tuer := (&Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}).isbnZuTitel(client)
 
 	frage := func(isbn string) ISBNLookupResponse {
 		t.Helper()

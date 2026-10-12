@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -23,7 +24,7 @@ func TestCopyStatus_AntwortNenntDenBestand(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	bookRepo := repository.NewBookRepository(pool)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	handler := srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))
 	titelID := testdaten.TitelMitSignatur(t, pool, "Status-Titel", "Sta 1", 0)
 

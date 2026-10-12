@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
@@ -81,7 +82,7 @@ func (s *Server) PromoteStudentsHandler() http.HandlerFunc {
 			return
 		}
 		resp.DryRun = req.DryRun
-		RespondJSON(w, http.StatusOK, resp)
+		tuer.RespondJSON(w, http.StatusOK, resp)
 	}
 }
 

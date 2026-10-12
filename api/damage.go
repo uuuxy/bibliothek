@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
@@ -31,7 +32,7 @@ func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) htt
 			Art    string  `json:"art"`
 			Betrag float64 `json:"betrag"`
 		}
-		if !DecodeAndValidate(w, r, &req) {
+		if !tuer.DecodeAndValidate(w, r, &req) {
 			return nil
 		}
 		art := repository.SchadensArt(req.Art)
@@ -52,7 +53,7 @@ func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) htt
 			return apierrors.Internal("Fehler beim Melden des Schadens", err)
 		}
 
-		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok", "schadens_id": schadensID})
+		tuer.RespondJSON(w, http.StatusOK, map[string]string{"status": "ok", "schadens_id": schadensID})
 		return nil
 	})
 }

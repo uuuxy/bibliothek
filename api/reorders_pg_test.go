@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
@@ -23,7 +24,7 @@ func TestQueryReorders_GesamtNichtVerfuegbar(t *testing.T) {
 	ctx := context.Background()
 
 	schueler := testdaten.SeedSchueler(t, pool, "R-1", "Ida", "5a")
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// A) Voll verliehener Klassensatz: 30 Exemplare, alle ausgeliehen (verfügbar 0,
 	//    gesamt 30), Meldebestand 5 → KEIN Bestellgrund.
@@ -81,7 +82,7 @@ func TestQueryReorders_SchwelleSteuert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	tKnapp := testdaten.TitelMitMeldebestand(t, pool, "LMF-Physik 8", 5) // meldebestand pauschal 5
 	for i := 0; i < 3; i++ {
@@ -116,7 +117,7 @@ func TestQueryReorders_LMFNurInSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	tID := testdaten.TitelMitSignatur(t, pool, "Mathematik Neue Wege 9", "LMF Ma", 5)
 	for i := 0; i < 3; i++ {
@@ -169,7 +170,7 @@ func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE werke CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	alt := testdaten.TitelMitMeldebestand(t, pool, "LMF-Lambacher Schweizer 7", 5)
 	neu := testdaten.TitelMitMeldebestand(t, pool, "LMF-Lambacher Schweizer 7 (Neubearbeitung)", 5)

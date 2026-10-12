@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
@@ -91,7 +92,7 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 			t.Logf("Aufräumen: %v", err)
 		}
 	})
-	echt := &Server{DB: &db.Database{Pool: pool}}
+	echt := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewLmfTerminRepository(pool)
 
 	stichtag := time.Date(2027, time.July, 31, 23, 59, 0, 0, schulzeit.Zone())
@@ -116,7 +117,7 @@ func TestLmfPlan_ScheitertDieFristKopplung_BleibtAuchDerPlanUnangetastet(t *test
 	}
 
 	// Jetzt derselbe Server, nur dass seine Transaktion beim Fristen-UPDATE scheitert.
-	kaputt := &Server{DB: &db.Database{Pool: poolMitFehlerBei{PgxPoolIface: pool, muster: "UPDATE ausleihen"}}}
+	kaputt := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: poolMitFehlerBei{PgxPoolIface: pool, muster: "UPDATE ausleihen"}}}}
 	rec := lmfPlanAufruf(t, kaputt, http.MethodPut, "rueckgabe",
 		`{"letzter_tag":"2027-06-28","letzte_stunde":4,"stunden_je_tag":6,"zeilen":[{"klassen":["8G1"]},{"klassen":["9H1"]}]}`)
 	if rec.Code != http.StatusInternalServerError {
@@ -164,7 +165,7 @@ func TestLmfPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 			t.Logf("Aufräumen: %v", err)
 		}
 	})
-	echt := &Server{DB: &db.Database{Pool: pool}}
+	echt := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	stichtag := service.TagesEndeInSchulzeitzone(time.Date(2027, time.July, 31, 0, 0, 0, 0, schulzeit.Zone()))
 	anna := testdaten.SeedSchueler(t, pool, "TX-2", "Anna", "9H1")
@@ -188,7 +189,7 @@ func TestLmfPlan_ScheitertDieKopplungNachDerErstenAenderung_BleibtKeineFristUmge
 	// Stichtag zurück und setzt dann Emils Frist. Die erste Änderung gelingt, die zweite nicht.
 	const wechsel = `{"letzter_tag":"2027-06-28","letzte_stunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["8G1"]}]}`
 	durchgelassen := 1
-	kaputt := &Server{DB: &db.Database{Pool: poolMitFehlerBei{PgxPoolIface: pool, muster: "UPDATE ausleihen", durchgelassen: &durchgelassen}}}
+	kaputt := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: poolMitFehlerBei{PgxPoolIface: pool, muster: "UPDATE ausleihen", durchgelassen: &durchgelassen}}}}
 	if rec := lmfPlanAufruf(t, kaputt, http.MethodPut, "rueckgabe", wechsel); rec.Code != http.StatusInternalServerError {
 		t.Fatalf("der eingebaute Fehler kam nicht an: Status %d %s", rec.Code, rec.Body.String())
 	}

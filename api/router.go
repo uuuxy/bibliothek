@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
@@ -45,14 +46,8 @@ import (
 
 // Server wraps the core application dependencies: database, auth, and real-time streaming.
 type Server struct {
-	DB           *db.Database
-	Auth         *auth.Authenticator
-	Broker       *sse.Broker
+	tuer.Basis
 	CookieSecure bool
-	// Uhr liefert „jetzt" aus Sicht der Schule; nil = pkg/schulzeit. Nur Tests setzen
-	// sie — für das, was am Kalender hängt (Saison der Abgängerliste): Sonst bewiese
-	// derselbe Test im Oktober das Gegenteil von dem im Juni.
-	Uhr func() time.Time
 	// IdempotenzWartezeit: wie lange eine Anfrage auf die Antwort einer laufenden mit
 	// demselben Schlüssel wartet (erlangeIdempotenz); 0 = 3 s. Nur Tests setzen es.
 	IdempotenzWartezeit time.Duration
@@ -66,9 +61,7 @@ func NewServer(database *db.Database, authenticator *auth.Authenticator, broker 
 	mailservice.BindeSMTPKonfigAnDatenbank(database.Pool)
 
 	return &Server{
-		DB:           database,
-		Auth:         authenticator,
-		Broker:       broker,
+		Basis:        tuer.Basis{DB: database, Auth: authenticator, Broker: broker},
 		CookieSecure: cookieSecure,
 	}
 }
@@ -258,7 +251,7 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 // healthHandler antwortet mit dem DB-Verbindungsstatus (Liveness-/Readiness-Probe).
 func (s *Server) healthHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set(headerContentType, contentTypeJSON)
+		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 		if err := s.DB.Pool.Ping(r.Context()); err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			httpresp.Write(w, []byte(`{"status":"unhealthy","error":"database unreachable"}`))

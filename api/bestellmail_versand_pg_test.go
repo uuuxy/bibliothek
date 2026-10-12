@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
@@ -55,7 +56,7 @@ func TestBestellversand_MitAdresseGehtDerLinkRausUndKeineEtikettenboegen(t *test
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := tuertest.MailAbfangen(t)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Link", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-Link", 0)
 
@@ -99,7 +100,7 @@ func TestBestellversand_OhneAdresseWarntUndLegtDieBoegenBei(t *testing.T) {
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.MailAbfangen(t)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-OhneAdresse", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-OhneAdresse", 0)
 
@@ -132,7 +133,7 @@ func TestBestellversand_MailNenntKundennummerTitelUndExemplare(t *testing.T) {
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.MailAbfangen(t)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Zahlen", false)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-Zahlen", 0)
 
@@ -158,7 +159,7 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "https://bib.example.invalid")
 	sitzungen := tuertest.MailAbfangen(t)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Topf", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-Topf", 0)
 
@@ -175,7 +176,7 @@ func TestBestellversand_MailNenntTopfUndAblaufDesLinks(t *testing.T) {
 	for _, zeile := range []string{
 		"Subject: Buchbestellung Lernmittelfreiheit - ",
 		"Diese Bestellung: Lernmittelfreiheit",
-		"bis zum " + gueltigBis.In(schulzeit.Zone()).Format(dateFormatDE),
+		"bis zum " + gueltigBis.In(schulzeit.Zone()).Format(tuer.DateFormatDE),
 	} {
 		if !strings.Contains(nachricht, zeile) {
 			t.Errorf("%q fehlt in der Mail:\n%s", zeile, smtptest.Kopf(nachricht))
@@ -192,7 +193,7 @@ func TestBestellversand_MailZaehltExemplareOhneVorabBarcode(t *testing.T) {
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.MailAbfangen(t)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher-OhneBarcode", false)
 	mitBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-MitBarcode", 0)
 	ohneBarcode := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe-OhneBarcode", 0)
@@ -241,7 +242,7 @@ func TestBestellungIdempotenz(t *testing.T) {
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "")
 	sitzungen := tuertest.MailAbfangen(t)
 
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "IdemLieferant", false)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Idem", 0)
 	key := "33333333-3333-3333-3333-333333333333"

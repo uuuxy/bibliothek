@@ -36,6 +36,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/sse"
 )
 
@@ -225,7 +226,7 @@ func TestListenNennenIhreGrenze(t *testing.T) {
 	gefunden := map[string]bool{}
 	for _, route := range routen {
 		permission, mitSitzung := rechtFuerZeile(matrix[route].Recht)
-		setzeGenauEinRecht(t, pool, permission)
+		tuertest.SetzeGenauEinRecht(t, pool, permission)
 		req := httptest.NewRequest(http.MethodGet, aufrufe[route].URL, nil)
 		if mitSitzung {
 			req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.sessionToken})
