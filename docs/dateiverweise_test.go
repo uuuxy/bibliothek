@@ -178,30 +178,52 @@ func gitListe(t *testing.T, argumente ...string) []string {
 }
 
 // vonGitAusgenommen fragt für die fehlenden Ziele, welche .gitignore ausnimmt: eine gebaute
-// oder am Arbeitsplatz abgelegte Datei, die das Repository mit Absicht nicht führt.
+// oder am Arbeitsplatz abgelegte Datei, die das Repository mit Absicht nicht führt. Einen Pfad
+// hinter einer Verknüpfung nimmt git nicht an; gefragt wird dann nach der Verknüpfung selbst.
 func vonGitAusgenommen(t *testing.T, fehlend []dateiverweis) map[string]bool {
 	t.Helper()
-	ausgenommen := map[string]bool{}
-	var ziele []string
+	zieleJeFrage := map[string][]string{}
 	for _, v := range fehlend {
-		ziele = append(ziele, v.ziele...)
+		for _, ziel := range v.ziele {
+			frage := bisZurVerknuepfung(ziel, istVerknuepfung)
+			zieleJeFrage[frage] = append(zieleJeFrage[frage], ziel)
+		}
 	}
-	if len(ziele) == 0 {
+	ausgenommen := map[string]bool{}
+	if len(zieleJeFrage) == 0 {
 		return ausgenommen
 	}
 	befehl := exec.Command("git", "check-ignore", "-z", "--stdin")
 	befehl.Dir = ".."
 	befehl.Env = umgebungOhneGit()
-	befehl.Stdin = strings.NewReader(strings.Join(ziele, "\x00"))
+	befehl.Stdin = strings.NewReader(strings.Join(slices.Sorted(maps.Keys(zieleJeFrage)), "\x00"))
 	ausgabe, err := befehl.Output()
 	// Ende 1 heißt: keines der Ziele ist ausgenommen.
 	if exit, ok := err.(*exec.ExitError); err != nil && (!ok || exit.ExitCode() != 1) {
 		t.Fatalf("git check-ignore: %v", err)
 	}
-	for _, ziel := range strings.FieldsFunc(string(ausgabe), func(r rune) bool { return r == 0 }) {
-		ausgenommen[ziel] = true
+	for _, frage := range strings.FieldsFunc(string(ausgabe), func(r rune) bool { return r == 0 }) {
+		for _, ziel := range zieleJeFrage[frage] {
+			ausgenommen[ziel] = true
+		}
 	}
 	return ausgenommen
+}
+
+// bisZurVerknuepfung kürzt einen Pfad auf seinen ersten Ordner, der eine Verknüpfung ist.
+func bisZurVerknuepfung(pfad string, verknuepft func(string) bool) string {
+	teile := strings.Split(pfad, "/")
+	for i := 1; i < len(teile); i++ {
+		if anfang := strings.Join(teile[:i], "/"); verknuepft(anfang) {
+			return anfang
+		}
+	}
+	return pfad
+}
+
+func istVerknuepfung(pfad string) bool {
+	info, err := os.Lstat(filepath.Join("..", filepath.FromSlash(pfad)))
+	return err == nil && info.Mode()&os.ModeSymlink != 0
 }
 
 // repoBaum sind die Dateien des Repositorys mit ihren Ordnern.
@@ -360,6 +382,18 @@ func TestDateiverweise_Selbstprobe(t *testing.T) {
 	v := pfadVerweise(textstueck{1, "lib/stores/meldung.svelte.js und scripts/gate.mjs"}, baum, []string{"", "frontend/", "frontend/src/"})
 	if len(v) != 2 || !baum.gibtEines(v[0].ziele) || !baum.gibtEines(v[1].ziele) {
 		t.Errorf("Pfade der Oberfläche: %v", v)
+	}
+
+	// Hinter einer Verknüpfung wird nach der Verknüpfung gefragt, sonst nach dem Pfad selbst.
+	verknuepft := func(pfad string) bool { return pfad == "frontend/node_modules" }
+	for pfad, frage := range map[string]string{
+		"frontend/node_modules/paket/datei.go": "frontend/node_modules",
+		"frontend/dist/assets/app.js":          "frontend/dist/assets/app.js",
+		"frontend/node_modules":                "frontend/node_modules",
+	} {
+		if ist := bisZurVerknuepfung(pfad, verknuepft); ist != frage {
+			t.Errorf("%s: gefragt wird nach %s, erwartet %s", pfad, ist, frage)
+		}
 	}
 
 	// Im Go-Code zählen die Kommentare, nicht die Zeichenketten.
