@@ -34,10 +34,9 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 **Entscheiden:**
 
-- [ ] Türen in Themenordner, Stufe 2 freigeben? Es ist die erste Änderung am Programm: Was
-  jede Tür braucht (Antwort schreiben, Rechte, Protokoll, Uhr), zieht in ein eigenes Paket,
-  der Mailversand nach `mailservice/`; das Verhalten bleibt gleich. Stufe 0 und 1 sind fertig
-  und hochgeladen, sie haben nur Prüfungen und Tests geändert. Vorschlag: ja. (5.65)
+- [x] Türen in Themenordner, Stufe 2: freigegeben am 12.10.2026. Es ist die erste Änderung am
+  Programm: Was jede Tür braucht (Antwort schreiben, Rechte, Protokoll, Uhr), zieht in ein
+  eigenes Paket, der Mailversand nach `mailservice/`; das Verhalten bleibt gleich. (5.65)
 - [x] Türen in Themenordner: Der Plan ist seit dem 12.10.2026 freigegeben. Geteilt wird nur
   `api/`, je Menüpunkt der Oberfläche ein Ordner; die Abfragen bleiben in der einen
   Datenbankschicht. (5.65)
@@ -45,30 +44,13 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
   einstellt, braucht es dann nicht. (7.3, R8)
-- [ ] Vier zugelieferte Pull Requests schließen? 727 ersetzt beim Schuljahreswechsel eine
-  Zählung durch eine Existenzabfrage; sie läuft einmal je Versetzung über wenige Zeilen,
-  gemessen ist nichts. 726 setzt in `Suchfeld` und `Suchpille` einen Knopf zum Leeren; im
-  `Suchfeld` hätte er 28 px Trefferfläche statt 48. 728 schreibt in der Bestellhistorie die
-  Zählung der offenen Etiketten um. Das Ergebnis ist dasselbe; gemessen am 12.10.2026 an
-  60.000 Exemplaren und 1.000 Positionen ist die neue Fassung im laufenden Betrieb (200
-  offene Etiketten) 0,3 ms langsamer und mit 60.000 offenen Etiketten knapp 2 ms schneller.
-  729 gibt dem Knopf „✕" am Abgangsjahr einen Namen, mit dem Hinweis des Browsers statt der
-  Sprechblase des Hauses; die Lücke ist seit dem 12.10.2026 auf `main` geschlossen, und eine
-  Ratsche hält Namen und Hinweis an jedem Symbolknopf. Vorschlag: alle vier schließen. Soll
-  es den Knopf zum Leeren geben, entsteht er neu nach der Seite von Material 3.
-- [ ] Drei Updates von Dependabot übernehmen? Alle drei sind vom 12.10.2026, in der CI grün
-  und am selben Tag am Stand von `main` nachgestellt. 732 hebt drei Go-Pakete. sentry-go 0.50
-  ändert nach seinen Hinweisen das Verhalten ohne eingerichtetes Sentry: Eine Panik in einer
-  Tür antwortet mit alter und neuer Fassung gleich, und mit eingerichtetem Sentry kommt die
-  Meldung an; das hält seit dem 12.10.2026 ein Test. maroto 2.4.3 ändert nur das Zusammenfügen
-  von PDFs, das das Programm nicht benutzt. gocognit 1.3 zählt 5 von 2.576 Funktionen um 1
-  anders, keine davon an der Grenze von 15. Die ganze Go-Suite hat mit dem Update dieselben
-  Tests mit demselben Ausgang. 731 hebt vite-plugin-pwa auf 2.0: Der Bau liefert dieselben 15
-  Dateien mit denselben Prüfsummen. 733 hebt in den Prüfläufen zwei Actions (setup-node 7.1.0,
-  upload-artifact 7.0.2): Die angehefteten Commits sind die der genannten Versionen, und die
-  Eingaben der vier Schritte gibt es dort weiter. Der Schritt mit upload-artifact läuft nur
-  nach einem roten Browser-Test und lief im Pull Request nicht. Vorschlag: alle drei
-  übernehmen. Das vierte (730, zehn Pakete der Oberfläche) ist rot und steht unter 5.10.
+- [x] Vier zugelieferte Pull Requests (726 bis 729): geschlossen am 12.10.2026, nach dem
+  Vorschlag. Die Begründung steht je am Pull Request. Soll es den Knopf zum Leeren der Suche
+  geben, entsteht er neu nach der Seite von Material 3.
+- [x] Drei Updates von Dependabot (731, 732, 733): übernommen am 12.10.2026, nach dem
+  Vorschlag; was am zusammengeführten Stand geprüft ist, steht in den drei Merge-Commits. Der
+  Schritt mit upload-artifact läuft nur nach einem roten Browser-Test und ist ungeprüft. Das
+  vierte Update (730, zehn Pakete der Oberfläche) ist rot und steht unter 5.10.
 - [x] gosec vor dem Push: Der Hook fährt gosec seit dem 09.10.2026 mit, über dasselbe Skript
   wie der Sicherheits-Lauf (`scripts/gosec-gate.sh`). Gebaut nach dem Vorschlag; zurücknehmen
   lässt es sich mit dem Rückbau dieses einen Commits.
