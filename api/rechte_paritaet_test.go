@@ -104,16 +104,14 @@ func rechteAnRouten(t *testing.T) map[string]bool {
 	if err != nil {
 		t.Fatalf("glob routes_*.go: %v", err)
 	}
-	dateien = append(dateien, "router.go", "mail_routes.go")
+	dateien = append(dateien, "router.go")
 
 	muster := regexp.MustCompile(`RequirePermission\("([a-z_]+)"\)`)
 	menge := map[string]bool{}
 	for _, d := range dateien {
+		// Eine Routenliste, die fehlt, ist ein Fehler: Übergangen, fehlten ihre Rechte still.
 		roh, err := os.ReadFile(d)
 		if err != nil {
-			if strings.Contains(err.Error(), "no such file") {
-				continue
-			}
 			t.Fatalf("%s lesen: %v", d, err)
 		}
 		for _, m := range muster.FindAllStringSubmatch(string(roh), -1) {
