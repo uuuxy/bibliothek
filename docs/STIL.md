@@ -88,7 +88,8 @@ wie das Gelieferte (`FristEnde`), ohne `Get` davor (Decisions, „Getters").
 | `Verarbeite`            | führt einen Schritt einer Tür oder eines Laufs aus           | `Handle`, `Process`                   |
 | `Fuehre…Aus`            | führt einen Lauf aus                                         | `Run`, `Execute`                      |
 
-Ein Verb, das hier fehlt, kommt zuerst in diese Tabelle.
+Die Tabelle legt fest, wo zwei Wörter für dieselbe Tätigkeit standen. Jede andere Tätigkeit
+trägt ihr deutsches Verb (`Kuerze`, `Zerlege`, `Schliesse`, `Entschaerfe`).
 
 ## 4. Schreibweise
 
@@ -102,6 +103,8 @@ Ein Verb, das hier fehlt, kommt zuerst in diese Tabelle.
   `n`, eine Variable der Paketebene sagt in Worten, was sie hält.
 - Der Empfänger einer Methode ist ein Kürzel seines Typs, in jeder Methode dasselbe
   (Decisions, „Receiver names"): `t` für `Tueren`.
+- Die üblichen Kurznamen von Go bleiben: `err`, `ok`, `ctx`, `tx`, `w`, `r`, `t`, in Tests `got`
+  und `want`.
 
 ## 5. Türen
 

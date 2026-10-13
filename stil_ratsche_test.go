@@ -31,14 +31,15 @@ var stilFachwoerter = wortmenge("student students borrower borrowers borrowed bo
 	"overdue user users account accounts permission permissions role roles setting settings " +
 	"config configs label labels photo photos lock locked unlock deleted graduate graduates " +
 	"teacher teachers inventory session sessions search login logout audit handler handlers " +
-	"request response")
+	"request response bulk")
 
 // stilVerben sind die englischen Verben am Anfang eines Funktionsnamens, für die STIL.md ein
 // deutsches festlegt.
 var stilVerben = wortmenge("get list create update delete save insert upsert add remove find " +
 	"fetch load lookup check validate verify generate build make send handle process resolve " +
 	"parse print serve sync run execute set is has can register write read count mark extend " +
-	"apply ensure calculate compute format render draw store edit start stop")
+	"apply ensure calculate compute format render draw store edit start stop sanitize clean " +
+	"convert encode decode guard close require post put patch seed query")
 
 // stilFremdeNamen gibt eine Schnittstelle von Go oder einer Bibliothek vor; sie bleiben.
 var stilFremdeNamen = wortmenge("ServeHTTP RoundTrip MarshalJSON UnmarshalJSON WriteHeader " +

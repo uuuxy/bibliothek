@@ -434,8 +434,8 @@ Zeilen kürzen. Kategorie B.
 
 ### 5.66 Lesbarkeit nach Googles Regelwerk für Go
 
-Gemessen am 13.10.2026 am Go-Code ohne Tests (566 Dateien, 79 Pakete), gezählt von
-`stil_ratsche_test.go`: 783 Namen tragen ein englisches Fachwort, für das es ein deutsches
+Gemessen am 13.10.2026 vor dem ersten Paket am Go-Code ohne Tests (566 Dateien, 79 Pakete),
+gezählt von `stil_ratsche_test.go`; den Bestand von heute führt `stil_bestand_test.go`: 783 Namen tragen ein englisches Fachwort, für das es ein deutsches
 gibt (`Student` neben `Leser` und `Schueler`), 389 Funktionen beginnen mit einem englischen
 Verb (`Get`, `Handle`, `Create` neben `Lade`, `Pruefe`, `Schreibe`), 180 Namen schreiben ein
 Kürzel gemischt (`LmfPlan`), 121 Dateinamen tragen ein englisches Fachwort, 563 Kommentarzeilen
