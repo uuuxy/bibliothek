@@ -60,6 +60,7 @@ Consistency).
 | was die Verwaltung nachlesen kann (Tabelle `audit_log`) | `Protokoll`                      | `Audit`                           |
 | nimmt eine Anfrage der Oberfläche an                | Tür, am Typ `Tueren` ihres Themas    | `Handler`                         |
 | was eine Tür liest und zurückgibt                   | `…Anfrage`, `…Antwort`               | `Request`, `Response`             |
+| liest und schreibt eine Sache in der Datenbank      | `…Abfragen`, an Postgres `pg…Abfragen` | `…Repository`, `…Repo`          |
 
 „Buch" steht nur in festen Wörtern (Buchakte, Zugangsbuch); sonst ist es der Titel oder das
 Exemplar. Das technische Log des Servers heißt weiter `Log`.
@@ -103,7 +104,8 @@ Wer eine übergebene Funktion in einem Rahmen ausführt, heißt nach dem Rahmen:
   für `ID`, `URL`, `ISBN`, `PDF`, `CSV`, `JSON`, `SQL`, `HTTP`, `SMTP`, `IMAP`, `UUID`, `SSE`,
   `CSRF`, `JWT`, `DNB`, `EAN`, `LMF`, `DSGVO`, `LUSD` und `OPAC`.
 - Ein Name wiederholt weder sein Paket noch seinen Empfänger (Decisions, „Repetition"): nicht
-  `leser.LeserListe`, sondern `leser.Liste`.
+  `leser.LeserListe`, sondern `leser.Liste`; nicht `LieferantenAbfragen.GetSupplierByID`,
+  sondern `LieferantenAbfragen.Lade`.
 - Die Länge eines Namens richtet sich nach seiner Reichweite: Ein Zähler in drei Zeilen heißt
   `n`, eine Variable der Paketebene sagt in Worten, was sie hält.
 - Der Empfänger einer Methode ist ein Kürzel seines Typs, in jeder Methode dasselbe

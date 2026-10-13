@@ -38,7 +38,7 @@ type BestellKonfiguration struct {
 // @Produce      json
 // @Success      200  {object}  BestellKonfiguration
 // @Router       /bestellungen/konfiguration [get]
-func (s *Tueren) BestellKonfigurationHandler(settingsRepo repository.SystemSettingsRepository, supplierRepo repository.SupplierRepository) http.HandlerFunc {
+func (s *Tueren) BestellKonfigurationHandler(settingsRepo repository.SystemSettingsRepository, supplierRepo repository.LieferantenAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		settings, err := settingsRepo.GetSettings(r.Context())
 		if err != nil {

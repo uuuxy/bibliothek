@@ -23,7 +23,7 @@ import (
 type OrderService struct {
 	db           *db.Database
 	bookRepo     repository.BookRepository
-	supplierRepo repository.SupplierRepository
+	supplierRepo repository.LieferantenAbfragen
 }
 
 // NewOrderService erstellt eine neue OrderService-Instanz.
@@ -31,7 +31,7 @@ func NewOrderService(database *db.Database, bookRepo repository.BookRepository) 
 	return &OrderService{
 		db:           database,
 		bookRepo:     bookRepo,
-		supplierRepo: repository.NewSupplierRepository(database.Pool),
+		supplierRepo: repository.NewLieferantenAbfragen(database.Pool),
 	}
 }
 
@@ -90,7 +90,7 @@ type OrderResult struct {
 	SummaryItems   []BestellterTitel
 	TotalAllocated int
 	// IstHauptlieferant steuert, ob die Bestellmail zusätzlich das große Lernmittel-Etikett
-	// anhängt (repository.Supplier).
+	// anhängt (repository.Lieferant).
 	IstHauptlieferant bool
 	// BestellungID der soeben geschriebenen Bestellung.
 	BestellungID string
@@ -105,7 +105,7 @@ type OrderResult struct {
 	BereitsVorhanden bool
 	// Mittel ist der Topf dieser Bestellung (mitteltopf.Land / mitteltopf.Schultraeger). Er
 	// steuert den Vermerk in Anschreiben und Mail; CustomerNumber ist schon die Nummer dieses
-	// Topfs (Supplier.KundennummerFuer).
+	// Topfs (Lieferant.KundennummerFuer).
 	Mittel string
 }
 
@@ -135,7 +135,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req BestellAuftrag) (*O
 		return nil, mitteltopf.ErrUngueltig
 	}
 
-	supplier, err := s.supplierRepo.GetSupplierByID(ctx, req.SupplierID)
+	supplier, err := s.supplierRepo.Lade(ctx, req.SupplierID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrLieferantUnbekannt
@@ -216,7 +216,7 @@ type bestellPosten struct {
 
 // verarbeiteBestellItems prüft jede Position, reserviert ihre Barcodes und sammelt Exemplare,
 // Etiketten und Summen der Bestellung.
-func (s *OrderService) verarbeiteBestellItems(ctx context.Context, tx pgx.Tx, req BestellAuftrag, supplier *repository.Supplier) (bestellPosten, error) {
+func (s *OrderService) verarbeiteBestellItems(ctx context.Context, tx pgx.Tx, req BestellAuftrag, supplier *repository.Lieferant) (bestellPosten, error) {
 	posten := bestellPosten{labels: make([]BestellEtikett, 0), summary: make([]BestellterTitel, 0)}
 	for i, item := range req.Items {
 		res, err := s.verarbeiteBestellItem(ctx, tx, item, supplier)
@@ -259,7 +259,7 @@ func (s *OrderService) schreibeExemplareUndPositionen(ctx context.Context, tx pg
 
 // verarbeiteBestellItem prüft eine Bestellposition, lädt den Titel, reserviert die Barcodes und
 // erzeugt die Exemplare samt ihren Etiketten.
-func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, item BestellAuftragPosition, supplier *repository.Supplier) (*bestellItemResult, error) {
+func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, item BestellAuftragPosition, supplier *repository.Lieferant) (*bestellItemResult, error) {
 	supplierName := supplier.Name
 
 	if item.Menge <= 0 || item.Menge > 200 {
@@ -349,8 +349,8 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 // insertBestellverlauf schreibt den Bestellkopf und liefert die erzeugte Bestell-ID. Vom
 // Warenkorb stehen dort nur die Summen: Gesamtbetrag und Zahl der Exemplare. tokenHash ist
 // leer, wenn dieser Lieferant keinen Bestätigungs-Link bekommt.
-func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req BestellAuftrag, supplier *repository.Supplier, posten bestellPosten, tokenHash string, linkTage int) (string, *time.Time, error) {
-	// Die Kundennummer ist die des Topfs (Supplier.KundennummerFuer): Händler führen Lernmittel
+func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req BestellAuftrag, supplier *repository.Lieferant, posten bestellPosten, tokenHash string, linkTage int) (string, *time.Time, error) {
+	// Die Kundennummer ist die des Topfs (Lieferant.KundennummerFuer): Händler führen Lernmittel
 	// und Bibliothek oft als getrennte Kundenkonten. Sie steht als Abschrift auf der
 	// Bestellung, wie Name und Adresse, damit der Beleg auch nach einer Änderung am Lieferanten
 	// stimmt.

@@ -8,9 +8,9 @@ import (
 
 // Die zweite Kundennummer gilt nur für den Topf des Schulträgers und nur, wenn sie hinterlegt
 // ist: Leer heißt „dieselbe Nummer", nicht „keine Nummer".
-func TestSupplierKundennummerFuer(t *testing.T) {
-	ohne := Supplier{Kundennummer: "K-1"}
-	mit := Supplier{Kundennummer: "K-1", KundennummerSchultraeger: "B-2"}
+func TestLieferant_KundennummerFuer(t *testing.T) {
+	ohne := Lieferant{Kundennummer: "K-1"}
+	mit := Lieferant{Kundennummer: "K-1", KundennummerSchultraeger: "B-2"}
 
 	if got := ohne.KundennummerFuer(mitteltopf.Schultraeger); got != "K-1" {
 		t.Errorf("ohne zweite Nummer: %q, want K-1", got)

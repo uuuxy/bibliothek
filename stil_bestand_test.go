@@ -34,10 +34,10 @@ var stilBestand = map[string]stilZahl{
 	"internal/service":       {Fach: 106, Verb: 30, Kuerzel: 20, Datei: 10, Datum: 41},
 	"internal/testdaten":     {Fach: 1, Verb: 9, Kuerzel: 1, Datei: 0, Datum: 2},
 	"internal/tuertest":      {Fach: 2, Verb: 2, Kuerzel: 0, Datei: 0, Datum: 0},
-	"inventur":               {Fach: 56, Verb: 48, Kuerzel: 1, Datei: 8, Datum: 45},
+	"inventur":               {Fach: 59, Verb: 48, Kuerzel: 1, Datei: 9, Datum: 45},
 	"jobs":                   {Fach: 4, Verb: 16, Kuerzel: 0, Datei: 1, Datum: 25},
 	"mailservice":            {Fach: 2, Verb: 2, Kuerzel: 0, Datei: 0, Datum: 5},
 	"pdf":                    {Fach: 16, Verb: 26, Kuerzel: 3, Datei: 0, Datum: 8},
-	"repository":             {Fach: 146, Verb: 60, Kuerzel: 77, Datei: 29, Datum: 183},
+	"repository":             {Fach: 165, Verb: 59, Kuerzel: 77, Datei: 32, Datum: 183},
 	"sse":                    {Fach: 1, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 0},
 }

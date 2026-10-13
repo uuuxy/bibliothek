@@ -24,7 +24,7 @@ type SupplierResponse struct {
 	ErstelltAm     time.Time `json:"erstellt_am"`
 
 	// IstHauptlieferant: Der EINE Händler, über den die Schule bestellt. Siehe
-	// repository.Supplier — an diesem einen Merkmal hängen Vorauswahl, Bestelllink und
+	// repository.Lieferant — an diesem einen Merkmal hängen Vorauswahl, Bestelllink und
 	// Nachdruck-Liste gemeinsam.
 	IstHauptlieferant bool `json:"ist_hauptlieferant"`
 
