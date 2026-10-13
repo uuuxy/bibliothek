@@ -19,7 +19,7 @@ import (
 //
 // Der Aufrufer benennt seinen Lauf mit X-Idempotency-Key (eine UUID je Dateiauswahl,
 // ListenImportWidget.svelte). Der Server merkt sich den Schlüssel in idempotency_keys —
-// derselben Tabelle wie die Theken-Aktionen (api/action.go, Migration 028, Aufräumen nach
+// derselben Tabelle wie die Theken-Aktionen (api/theke/action.go, Migration 028, Aufräumen nach
 // 24 h in jobs/cron.go). Drei Zustände:
 //
 //   - Schlüssel neu: reservieren (Marker 409 „läuft"), importieren, Ergebnis eintragen.

@@ -5,7 +5,7 @@ package repository
 // danach in die Reservierung geschrieben. Vorher wurde nur nach der Arbeit eingefügt: Eine
 // zweite Anfrage mit demselben Schlüssel, die nach dem Commit der ersten und vor dem
 // Speichern ihrer Antwort eintraf, fand nichts und buchte neu — das Buch lag schon beim Kind,
-// also wurde es zurückgenommen (api/idempotenz_pg_test.go).
+// also wurde es zurückgenommen (api/theke/idempotenz_pg_test.go).
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 // Server ist zwischen Reservierung und Antwort gestorben — nicht: er arbeitet noch. Das stimmt
 // nur, solange jede Arbeit unter dem Schlüssel VOR Ablauf dieser Frist abgebrochen und ihre
 // Antwort gespeichert ist: Die TimeoutMiddleware (api.StandardBearbeitungsfrist) beendet die
-// Arbeit, saveToCache (api, idempotenzSpeicherfrist) schreibt danach noch.
+// Arbeit, saveToCache (api/theke, IdempotenzSpeicherfrist) schreibt danach noch.
 // api/idempotenz_fristen_test.go hält die drei Werte aneinander; bis zum 15.09.2026 standen sie
 // als 60, 15 und 5 Sekunden in drei Dateien, ohne dass etwas sie verband.
 const IdempotenzReservierungsfrist = 60 * time.Second

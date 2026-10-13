@@ -3,6 +3,7 @@ package api
 import (
 	"testing"
 
+	"bibliothek/api/theke"
 	"bibliothek/repository"
 )
 
@@ -12,12 +13,13 @@ import (
 // IdempotenzReservierungsfrist ist, mit der Begründung „der Server ist gestorben". Das ist nur
 // dann die einzige Erklärung, wenn kein Besitzer so lange leben KANN: Die TimeoutMiddleware
 // bricht seine Arbeit nach RequestFrist ab, und saveToCache darf danach noch
-// idempotenzSpeicherfrist lang schreiben — mit WithoutCancel, also über die Bearbeitungsfrist
+// theke.IdempotenzSpeicherfrist lang schreiben — mit WithoutCancel, also über die
+// Bearbeitungsfrist
 // hinaus. Erst wenn beides zusammen unter der Übernahmefrist liegt, ist die Reservierung beim
 // Übernehmen wirklich verwaist.
 //
 // Bis zum 15.09.2026 standen die drei Werte als 60, 15 und 5 Sekunden in drei Dateien
-// (repository/idempotenz.go, api/router.go, api/action.go), und nichts hielt sie zusammen
+// (repository/idempotenz.go, api/router.go, api/theke/action.go), und nichts hielt sie zusammen
 // (Rasterdurchgang 15.09.2026, OFFEN.md 5.14). Wer die Theke in die lang laufenden Pfade
 // aufnimmt (5 Minuten) oder die Übernahme kürzt, bekäme zwei Besitzer desselben Schlüssels:
 // Beide buchen, und der Verlierer meldet das nur im Log.
@@ -29,13 +31,13 @@ import (
 func TestIdempotenz_UebernahmeFristLaengerAlsBearbeitungUndSpeichern(t *testing.T) {
 	for _, pfad := range []string{"/api/action", "/api/action/nachbuchen"} {
 		arbeit := RequestFrist(pfad, StandardBearbeitungsfrist)
-		spaetestensFertig := arbeit + idempotenzSpeicherfrist
+		spaetestensFertig := arbeit + theke.IdempotenzSpeicherfrist
 		if spaetestensFertig >= repository.IdempotenzReservierungsfrist {
 			t.Errorf("%s: Arbeit (%s) + Speichern (%s) = %s erreicht die Übernahmefrist (%s) — eine "+
 				"laufende Anfrage könnte ihren Schlüssel an die Wiederholung verlieren, und beide "+
 				"buchen. Entweder die Frist der Middleware für diesen Pfad senken oder "+
 				"repository.IdempotenzReservierungsfrist anheben.",
-				pfad, arbeit, idempotenzSpeicherfrist, spaetestensFertig, repository.IdempotenzReservierungsfrist)
+				pfad, arbeit, theke.IdempotenzSpeicherfrist, spaetestensFertig, repository.IdempotenzReservierungsfrist)
 		}
 	}
 }

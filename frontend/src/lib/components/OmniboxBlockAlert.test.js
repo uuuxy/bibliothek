@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 
 // „Einmalig ignorieren" und „Sperre aufheben" folgen dem Recht ihrer Route (OFFEN.md 3.3,
-// 15.09.2026): Der Server lässt override_block nur mit edit_students wirken (api/action.go),
+// 15.09.2026): Der Server lässt override_block nur mit edit_students wirken (api/theke/action.go),
 // und PATCH …/lock verlangt dasselbe Recht. Sichtbarkeit = hatRecht
 // (frontend-hygiene-rechte.test.js), nicht Rolle.
 //

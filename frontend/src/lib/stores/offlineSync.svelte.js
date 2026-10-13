@@ -326,7 +326,7 @@ function createOfflineSyncStore() {
 	 * schiebt sie danach zum Server.
 	 *
 	 * item.id MUSS mitwandern: Diese ID ist der Idempotenz-Schlüssel, den der Server
-	 * kennt (siehe baueNachbuchPayload und api/nachbuchen_schluessel.go). Ohne sie
+	 * kennt (siehe baueNachbuchPayload und api/theke/nachbuchen_schluessel.go). Ohne sie
 	 * vergibt normalisiereEintrag eine frische UUID — und dieselbe Datei zweimal
 	 * eingespielt würde jede Aktion ZWEIMAL ausführen. Bei zehn Kiosk-Rechnern mit
 	 * einem gemeinsamen Sicherungsordner ist doppeltes Einspielen der Normalfall,

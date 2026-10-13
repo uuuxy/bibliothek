@@ -80,7 +80,7 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 		//
 		// Nur /api/: Die Programmdateien der Oberfläche tragen keine Personendaten. Die
 		// Vorgabe steht VOR dem Handler, ein eigener Kopf überschreibt sie — heute die Cover
-		// (api/katalog/image_caching.go) und die Buchnummern der Theke (api/buchbarcodes_handler.go),
+		// (api/katalog/image_caching.go) und die Buchnummern der Theke (api/theke/buchbarcodes_handler.go),
 		// beide ohne Personendaten. Dass keine Antwort mit Personendaten sie aufweicht, prüft
 		// api/pii_antwort_gate_pg_test.go an jeder Route ab Stufe 1.
 		if strings.HasPrefix(r.URL.Path, "/api/") {

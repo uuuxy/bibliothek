@@ -1,0 +1,99 @@
+package theke
+
+import (
+	"encoding/json"
+	"time"
+
+	"bibliothek/repository"
+)
+
+// ActionRequest holds the parameters for the Omnibox dispatcher.
+type ActionRequest struct {
+	Query string `json:"query" validate:"required"`
+	// ActiveLeserID ist die Person, die gerade an der Theke steht. Bis Migration 125
+	// gab es active_student_id UND active_teacher_id; welche gefüllt war, entschied,
+	// in welche Spalte die Ausleihe ging.
+	ActiveLeserID      *string `json:"active_leser_id,omitempty" validate:"omitempty,uuid_oder_leer"`
+	ConfirmedChecklist bool    `json:"confirmed_checklist,omitempty"`
+	OverrideBlock      bool    `json:"override_block,omitempty"`
+	IdempotencyKey     string  `json:"idempotency_key,omitempty"`
+}
+
+// ActionResponse is the polymorphic output payload returned by the Omnibox.
+type ActionResponse struct {
+	Type            string                 `json:"type"`                       // "student", "ausleihe", "rueckgabe", "search_results", "info"
+	Message         string                 `json:"message,omitempty"`          // Informational message for the frontend
+	Student         *SchuelerKiosk         `json:"student,omitempty"`          // Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe SchuelerKiosk)
+	Book            *repository.BookCopy   `json:"book,omitempty"`             // Book copy details if applicable
+	Geraet          *repository.Geraet     `json:"geraet,omitempty"`           // Hardware details if applicable
+	DueDate         *time.Time             `json:"due_date,omitempty"`         // Return deadline for check-outs
+	LoanID          *string                `json:"loan_id,omitempty"`          // Loan UUID (for Undo support on returns)
+	Fremdrueckgabe  bool                   `json:"fremdrueckgabe,omitempty"`   // Flag for returns from another reader
+	Vorbesitzer     *SchuelerKiosk         `json:"vorbesitzer,omitempty"`      // Original borrower if foreign return (Theken-Sicht)
+	SearchResults   []repository.BookTitle `json:"search_results,omitempty"`   // Full-text search list
+	HasVormerkung   bool                   `json:"has_vormerkung,omitempty"`   // True if returned book has a pending reservation
+	VormerkungTitel string                 `json:"vormerkung_titel,omitempty"` // Title name of the reserved book
+	VormerkungUser  string                 `json:"vormerkung_user,omitempty"`  // Reserved for: student name & class
+	// RegalfreigabeBarcode: reserved copy in the hold shelf to be returned to the
+	// regular shelf because the student took a different copy of the same title.
+	RegalfreigabeBarcode string `json:"regalfreigabe_barcode,omitempty"`
+	// AufsichtInformieren: Das zurückgebrachte Buch steht auf einem bereits übergebenen
+	// Schadensersatz-Bescheid — die Schulaufsicht ist unverzüglich zu informieren (#597).
+	// Getrennt von Message, weil es eine Aufgabe ist und keine Erfolgsmeldung.
+	AufsichtInformieren string `json:"aufsicht_informieren,omitempty"`
+	// Abholbereit: Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung
+	// 01.09.2026) — die Mitarbeiterin sieht sofort, dass für den gescannten
+	// Schüler ein vorgemerktes Buch im Abholfach liegt. Titel + Frist, keine IDs;
+	// PII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu Name).
+	Abholbereit []AbholbereitInfo `json:"abholbereit,omitempty"`
+	// AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die
+	// Kinder derselben Klasse schon haben (docs/OFFEN.md 4.18, Stufe 5) — Klasse, diese
+	// Auflage und die anderen mit der Zahl der Kinder, keine Namen. PII-Matrix: Stufe 1 wie
+	// die übrige Theken-Antwort (die Klasse des Kindes steht dort ohnehin).
+	AuflagenHinweis *repository.AuflagenMischung `json:"auflagen_hinweis,omitempty"`
+}
+
+// AbholbereitInfo ist ein Eintrag des Abholfach-Hinweises.
+type AbholbereitInfo struct {
+	Titel             string     `json:"titel"`
+	BereitgestelltBis *time.Time `json:"bereitgestellt_bis,omitempty"`
+}
+
+// ActionEvent represents the data broadcasted to SSE clients on updates.
+type ActionEvent struct {
+	Event     string `json:"event"` // "ausleihe", "rueckgabe", "fremdrueckgabe"
+	StudentID string `json:"student_id,omitempty"`
+	TeacherID string `json:"teacher_id,omitempty"`
+	CopyID    string `json:"copy_id,omitempty"`
+	GeraetID  string `json:"geraet_id,omitempty"`
+	BarcodeID string `json:"barcode_id"`
+	Titel     string `json:"titel"`
+	Timestamp int64  `json:"timestamp"`
+}
+
+// broadcastActionEvent broadcasts the action event as JSON via SSE stream.
+func (s *Tueren) broadcastActionEvent(resp ActionResponse) {
+	if resp.Book == nil {
+		return
+	}
+	var studentID string
+	if resp.Student != nil {
+		studentID = resp.Student.ID
+	}
+	event := ActionEvent{
+		Event:     resp.Type,
+		StudentID: studentID,
+		CopyID:    resp.Book.ID,
+		BarcodeID: resp.Book.BarcodeID,
+		Titel:     resp.Book.Titel,
+		Timestamp: time.Now().Unix(),
+	}
+	if resp.Fremdrueckgabe {
+		event.Event = "fremdrueckgabe"
+	}
+
+	data, err := json.Marshal(event)
+	if err == nil {
+		s.Broker.Broadcast("action", string(data))
+	}
+}

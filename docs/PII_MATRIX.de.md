@@ -60,9 +60,9 @@ Session-Cookie selbst), `Sitzung` (`RequireAuthenticated`), `inventur-Mux`
 **Leitplanken (aus den Sicherheitsbefunden, `bewertung/sicherheitsbefund-*.md`):**
 `view_books` und `perform_actions` besitzt die Helfer-Rolle ab Werk — Routen mit
 Stufe ≥2 dürfen NIE allein dahinter liegen. Stufe 1 hinter Helfer-Rechten ist die
-bewusste Theken-Ausnahme (SchuelerKiosk-Sicht, `api/schueler_kiosk.go`). Der
+bewusste Theken-Ausnahme (SchuelerKiosk-Sicht, `api/theke/schueler_kiosk.go`). Der
 Sperrgrund-Freitext (`block_reason`) ist Stufe 2 und hängt überall an
-`view_students` (`ohneSperrgrund` in `api/action.go`, auch für die Antwort des
+`view_students` (`ohneSperrgrund` in `api/theke/action.go`, auch für die Antwort des
 Nachbuchens). Stufe 3 gehört
 ausschließlich hinter `view_students`/`manage_students_admin`.
 

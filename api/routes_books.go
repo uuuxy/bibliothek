@@ -81,7 +81,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 
 	// ── AUSLEIHEN (Loans) ──
 	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", s.RequirePermission("edit_books")(s.ExtendLoanHandler(settingsRepo)))
+	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", s.RequirePermission("edit_books")(s.theke().ExtendLoanHandler(settingsRepo)))
 	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.RequirePermission("edit_books")(s.lernmittel().GlobalExtendLMFHandler()))
 
 	// ── LMF-PLAN (Rückgabe-/Ausgabetermine je Klasse, Migration 096) ──
@@ -101,7 +101,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Veröffentlichen: Speichern legt einen Entwurf an, erst dieser Aufruf macht ihn für
 	// Portal und PDF sichtbar und setzt bei einem Rückgabe-Plan die Fristen.
 	mux.Handle("POST /api/lmf-plan/{art}/veroeffentlichen", s.RequirePermission("edit_books")(s.lernmittel().PostLmfPlanVeroeffentlichenHandler()))
-	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.RequirePermission("edit_books")(s.OverrideDueDateHandler(auditRepo)))
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.RequirePermission("edit_books")(s.theke().OverrideDueDateHandler(auditRepo)))
 
 	// Live ISBN Lookup
 	mux.Handle("POST /api/buecher/aus-isbn", s.RequirePermission("create_orders")(s.katalog().ISBNZuTitelHandler()))
@@ -117,9 +117,9 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Recht ab Werk, HELFER optional per Rechte-Matrix (Standard AUS, db/seed.go).
 	// Der Einzelfall am Rückgabe-Scan ("reserviert für X") bleibt bewusst: den
 	// Namen braucht die Theke, um das Buch für die richtige Person beiseitezulegen.
-	mux.Handle("GET /api/vormerkungen", s.RequirePermission("manage_vormerkungen")(s.ListVormerkungHandler(vormerkungRepo)))
-	mux.Handle("POST /api/vormerkungen", s.RequirePermission("manage_vormerkungen")(s.CreateVormerkungHandler(vormerkungRepo)))
-	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("manage_vormerkungen")(s.DeleteVormerkungHandler(vormerkungRepo)))
+	mux.Handle("GET /api/vormerkungen", s.RequirePermission("manage_vormerkungen")(s.theke().ListVormerkungHandler(vormerkungRepo)))
+	mux.Handle("POST /api/vormerkungen", s.RequirePermission("manage_vormerkungen")(s.theke().CreateVormerkungHandler(vormerkungRepo)))
+	mux.Handle("DELETE /api/vormerkungen/{id}", s.RequirePermission("manage_vormerkungen")(s.theke().DeleteVormerkungHandler(vormerkungRepo)))
 
 	// Klassensatz Reservierungen
 	//

@@ -163,7 +163,7 @@ func (r *LmfTerminRepository) RueckgabeTerminLage(ctx context.Context, klasse st
 const SchulbuchFristGehtMitSQL = `s.deleted_at IS NULL AND s.anonymized_at IS NULL AND COALESCE(s.is_manually_blocked, false) = false`
 
 // SetzeLernmittelFristFuerKlassenIn schreibt die Frist offener Lernmittel-Ausleihen der
-// genannten Klassen um — dieselbe Regel wie die Massenverlängerung (api/ausleihe.go):
+// genannten Klassen um — dieselbe Regel wie die Massenverlängerung (api/theke/ausleihe.go):
 // nur Schüler nach SchulbuchFristGehtMitSQL, nur Lernmittel, Mahnstufe zurück, wenn die neue
 // Frist in der Zukunft liegt. Zusätzlich: nur Fristen im Schuljahr [von, bis) — eine
 // mehrjährige Ausleihe (Frist im übernächsten Sommer) folgt dem Plan nicht. Ist

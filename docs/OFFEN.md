@@ -162,11 +162,11 @@ lässt sich dort anhalten.
 - [x] Stufe 3, das erste Thema: Die Türen des LMF-Plans stehen in `api/lernmittel` (5 Dateien,
   9 Testdateien), umgezogen mit einem Werkzeug. Ein Test über den ganzen Router steht im
   Ordner seines Themas, als eigenes Testpaket. Der Aufwand je Thema ist gemessen (5.65).
-- [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt. Umgezogen: Inventur
+- [x] Stufe 4, die übrigen elf Themen, je Thema ein Schritt: Inventur
   (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`), System
   (`api/system`), Mahnwesen (`api/mahnwesen`), Schaden (`api/schaden`), Katalog
-  (`api/katalog`), Druck (`api/druck`), Bestellung (`api/bestellung`), Leser (`api/leser`).
-  Offen: die Theke.
+  (`api/katalog`), Druck (`api/druck`), Bestellung (`api/bestellung`), Leser (`api/leser`)
+  und Theke (`api/theke`). Alle zwölf Themen stehen in eigenen Paketen.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
   die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
   Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
@@ -454,7 +454,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Bestand fällt damit nicht auf null. Die sechs Dateien mit Regeln sind am 09.10.2026
   ausgezogen; wohin, steht oben und in ARCHITEKTUR 5.2.2.
 - **Was der Bestand nicht sieht.** Eine Datei bindet `net/http` nur für Statuswerte ein und
-  trägt keine Tür: `nachbuchen_schluessel.go` (148 Zeilen); der Mailversand, die zweite, steht
+  trägt keine Tür: `theke/nachbuchen_schluessel.go` (148 Zeilen); der Mailversand, die zweite, steht
   seit dem 12.10.2026 in `mailservice/mail_sender.go`. Und
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
   Typ aus `net/http` tragen `bestellung/bestellbericht_handler.go` (367),
@@ -538,7 +538,7 @@ von Stufe 4 zehn der elf Themen.
   | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go`, dazu der Kontoauszug (`print_kontoauszug.go`); seit dem 13.10.2026 in `api/leser`, ohne `klassen_mapping.go`: Die Adressen der Klassenleitungen pflegt die Kategorie „Mahnwesen-Routing" der Einstellungen, sie stehen beim Mahnwesen |
   | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go`, seit dem 12.10.2026 in `api/bestellung` |
   | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system` |
-  | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go` |
+  | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go`, dazu die Barcode-Liste (`buchbarcodes_handler.go`); seit dem 13.10.2026 in `api/theke`, ohne die Titelsuche des Druck-Centers und die Verlängerung der Lernmittel einer Klasse |
   | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go`, seit dem 12.10.2026 in `api/mahnwesen`; seit dem 13.10.2026 dazu `klassen_mapping.go` (die Adressen der Klassenleitungen) |
   | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print_kontoauszug.go` (der Kontoauszug aus `print.go`); seit dem 12.10.2026 in `api/druck`, ohne drei Dateien, die nach der rufenden Seite zogen oder ziehen: `barcode_sequence.go` zum Katalog, `buchbarcodes_handler.go` zur Theke, der Kontoauszug zu den Lesern; seit dem 13.10.2026 dazu die Titelsuche des Druck-Centers (`titel_suche.go`, bis dahin in `search.go` bei der Theke) |
   | Schaden    | 7       | 1.154  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go`, dazu die Rechnung an die Eltern aus `print.go`; seit dem 12.10.2026 in `api/schaden` |

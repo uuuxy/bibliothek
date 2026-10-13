@@ -11,7 +11,7 @@
 	let { onReload } = $props();
 
 	// Beide Knöpfe folgen dem Recht ihrer Route (edit_students): override_block wirkt am
-	// Server nur damit (api/action.go) und PATCH …/lock verlangt es. Ohne das Recht verwürfe
+	// Server nur damit (api/theke/action.go) und PATCH …/lock verlangt es. Ohne das Recht verwürfe
 	// der Server den Klick, und der Dialog käme wieder. Sichtbarkeit = Recht, nicht Rolle
 	// (frontend-hygiene-rechte.test.js).
 	const darf = $derived(schuelerRechte(authStore.currentUser).bearbeiten);

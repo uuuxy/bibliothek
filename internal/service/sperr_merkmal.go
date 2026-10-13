@@ -3,7 +3,7 @@ package service
 import "errors"
 
 // Die zwei Merkmale einer Ausleihsperre. Die API setzt dafür den Header X-Sperre
-// (api/action.go), und daran wählt der Dialog der Theke, was er anbietet
+// (api/theke/action.go), und daran wählt der Dialog der Theke, was er anbietet
 // (OmniboxBlockAlert.svelte):
 //
 //   - uebergehbar: ein Hinweis des Programms — offene Forderung, Überfällig-Automatik. Wer
@@ -17,7 +17,7 @@ import "errors"
 // Bis zum 13.09.2026 entschied das Frontend am Wortlaut der Meldung („Sperre",
 // „Sperr-Automatik", „überfällig"). Die Schadens-Sperre traf keins der Wörter, bei der
 // System-Sperre hing es am Sperrgrund, den eine Helferin gar nicht sieht
-// (loan_checkout_validation_test.go, api/sperr_merkmal_test.go).
+// (loan_checkout_validation_test.go, api/theke/sperr_merkmal_test.go).
 //
 // Bei SperrGrundFehler gehört das Merkmal in Kern: api.ohneSperrgrund baut den Fehler für
 // Aufrufer ohne view_students aus Kern neu, ein Merkmal außen herum ginge dabei verloren.

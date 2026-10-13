@@ -23,7 +23,7 @@ import (
 //     werden!"
 //   - Eine offene Forderung und die Überfällig-Automatik sind Hinweise des Programms. Wer
 //     Schülerdaten ändern darf, übergeht sie (override_block wirkt nur mit edit_students,
-//     api/action.go); das Protokoll hält es fest. Gezählt wird jede offene Forderung, gleich
+//     api/theke/action.go); das Protokoll hält es fest. Gezählt wird jede offene Forderung, gleich
 //     aus welchem Topf — ein Konto je Leser wie in Littera.
 //   - Beim Lernmittel gilt nur die Sperre von Hand, die Entscheidung eines Menschen. Die
 //     Schule am 22.09.2026: „Für die Lernmittel darf es keinerlei automatische ‚Sperrung'
@@ -57,7 +57,7 @@ func pruefeAusleihSperren(ctx context.Context, q repository.DBQueryer, leser *re
 }
 
 // SperreAmLeserHaeltAn ist der Teil der Regel, den auch die Verlängerung fragt (Einzel-
-// verlängerung und Frist von Hand, api/ausleihe.go): Hält eine Sperre am Leser diese Ausleihe
+// verlängerung und Frist von Hand, api/theke/ausleihe.go): Hält eine Sperre am Leser diese Ausleihe
 // an? Beim Schulbuch nur die von Hand, beim Kollegen keine; der anonymisierte Datensatz bekommt
 // nichts. Entschieden am 28.09.2026: Der Satz der Schule gilt auch für die Ehemaligen und auch
 // bei der Verlängerung. Die Hinweise (Forderung, überfällig) halten eine Verlängerung nicht an.

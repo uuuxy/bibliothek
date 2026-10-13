@@ -14,7 +14,7 @@ import (
 // opacTrefferKopf nennt, wie viele Titel eine Katalogsuche trifft. Die Antwort zeigt
 // höchstens opacGrenze davon; ohne die Zahl sähen 50 gezeigte Treffer aus wie alle. Ein
 // Kopf statt eines Felds, weil die Antwort eine Liste ist, die OPAC-Seite und „Mein Portal"
-// so lesen — dasselbe Muster wie X-Sperre an der Theke (api/action.go).
+// so lesen — dasselbe Muster wie X-Sperre an der Theke (api/theke/action.go).
 const (
 	opacTrefferKopf = "X-Treffer-Gesamt"
 	opacGrenze      = 50

@@ -103,7 +103,7 @@ func actionSiehtOverride(rolle string) bool {
 	req := httptest.NewRequest("POST", "/api/action", strings.NewReader(body))
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: auth.Role(rolle), UserID: "u1"}))
 	w := httptest.NewRecorder()
-	s.ActionHandler(spy)(w, req)
+	s.theke().ActionHandler(spy)(w, req)
 	return spy.gesehenerOverride
 }
 

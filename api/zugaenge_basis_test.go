@@ -29,6 +29,7 @@ func TestJederZugangReichtDieBasisDesServersWeiter(t *testing.T) {
 		"portal":       s.portal().Basis,
 		"schaden":      s.schaden().Basis,
 		"system":       s.system().Basis,
+		"theke":        s.theke().Basis,
 	}
 	for name, basis := range zugaenge {
 		if basis != &s.Basis {

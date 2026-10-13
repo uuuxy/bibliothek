@@ -15,7 +15,7 @@ package api
 
 // router.go: der Server, sein Router und die Zugänge zu den Themen. Die Middleware steht in
 // middleware.go, jede Route mit ihrem Recht in routes_*.go. Die Türen stehen je Thema in einem
-// Paket unter api/ (docs/ARCHITEKTUR.md 5.2.2); die noch nicht umgezogenen in diesem Paket.
+// Paket unter api/ (docs/ARCHITEKTUR.md 5.2.2).
 
 import (
 	"context"
@@ -25,7 +25,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"bibliothek/api/benutzer"
 	"bibliothek/api/bestellung"
@@ -38,6 +37,7 @@ import (
 	"bibliothek/api/portal"
 	"bibliothek/api/schaden"
 	"bibliothek/api/system"
+	"bibliothek/api/theke"
 	"bibliothek/api/tuer"
 	"bibliothek/apierrors"
 	"bibliothek/auth"
@@ -59,9 +59,6 @@ import (
 type Server struct {
 	tuer.Basis
 	CookieSecure bool
-	// IdempotenzWartezeit: wie lange eine Anfrage auf die Antwort einer laufenden mit
-	// demselben Schlüssel wartet (erlangeIdempotenz); 0 = 3 s. Nur Tests setzen es.
-	IdempotenzWartezeit time.Duration
 }
 
 // NewServer constructs and returns a new Server instance.
@@ -138,6 +135,11 @@ func (s *Server) bestellung() *bestellung.Tueren {
 // leser ist der Zugang zu den Türen der Leserdatei.
 func (s *Server) leser() *leser.Tueren {
 	return &leser.Tueren{Basis: &s.Basis}
+}
+
+// theke ist der Zugang zu den Türen der Theke.
+func (s *Server) theke() *theke.Tueren {
+	return &theke.Tueren{Basis: &s.Basis}
 }
 
 // Routes configures the HTTP multiplexer using modern Go (1.22+) enhanced routing patterns.

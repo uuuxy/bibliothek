@@ -30,7 +30,7 @@ var (
 
 // meldung liefert einen Fehler der Art art (ErrNotFound, ErrConflict, ErrInvalidState), dessen
 // Text allein die Meldung für die Theke ist. Die Texte dieser drei Arten sind interne
-// Bezeichnungen: api/action.go zeigt err.Error(), und mit fmt.Errorf("%w: …") stand bis zum
+// Bezeichnungen: api/theke/action.go zeigt err.Error(), und mit fmt.Errorf("%w: …") stand bis zum
 // 28.09.2026 davor „ungültiger Transaktionszustand:", „conflict:" oder „eintrag nicht gefunden:"
 // (Generalprobe, OFFEN 5.33). errors.Is erkennt die Art weiter; an ihr hängt der HTTP-Status.
 //

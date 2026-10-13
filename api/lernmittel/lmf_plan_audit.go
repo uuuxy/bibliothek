@@ -10,7 +10,7 @@ package lernmittel
 // siebzig Klassen in einem Klick.
 //
 // Für die Frist EINER Ausleihe hat dieses Projekt die Antwort längst gegeben
-// (api/ausleihe.go, „FRIST_OVERRIDE"): „Ein manuell überschriebenes Fälligkeitsdatum ist
+// (api/theke/ausleihe.go, „FRIST_OVERRIDE"): „Ein manuell überschriebenes Fälligkeitsdatum ist
 // ein Eingriff in eine Sanktion — er gehört revisionssicher protokolliert." Für die
 // tausendfache Fassung desselben Eingriffs stand bis heute nichts im Protokoll.
 //

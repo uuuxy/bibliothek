@@ -85,7 +85,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.BuchbarcodesResponse"
+                            "$ref": "#/definitions/theke.BuchbarcodesResponse"
                         }
                     },
                     "304": {
@@ -197,7 +197,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.NachbuchenRequest"
+                            "$ref": "#/definitions/theke.NachbuchenRequest"
                         }
                     }
                 ],
@@ -205,7 +205,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.NachbuchenResponse"
+                            "$ref": "#/definitions/theke.NachbuchenResponse"
                         }
                     }
                 }
@@ -3689,270 +3689,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.AbholbereitInfo": {
-            "type": "object",
-            "properties": {
-                "bereitgestellt_bis": {
-                    "type": "string"
-                },
-                "titel": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.ActionResponse": {
-            "type": "object",
-            "properties": {
-                "abholbereit": {
-                    "description": "Abholbereit: Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung\n01.09.2026) — die Mitarbeiterin sieht sofort, dass für den gescannten\nSchüler ein vorgemerktes Buch im Abholfach liegt. Titel + Frist, keine IDs;\nPII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu Name).",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.AbholbereitInfo"
-                    }
-                },
-                "auflagen_hinweis": {
-                    "description": "AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die\nKinder derselben Klasse schon haben (docs/OFFEN.md 4.18, Stufe 5) — Klasse, diese\nAuflage und die anderen mit der Zahl der Kinder, keine Namen. PII-Matrix: Stufe 1 wie\ndie übrige Theken-Antwort (die Klasse des Kindes steht dort ohnehin).",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/repository.AuflagenMischung"
-                        }
-                    ]
-                },
-                "aufsicht_informieren": {
-                    "description": "AufsichtInformieren: Das zurückgebrachte Buch steht auf einem bereits übergebenen\nSchadensersatz-Bescheid — die Schulaufsicht ist unverzüglich zu informieren (#597).\nGetrennt von Message, weil es eine Aufgabe ist und keine Erfolgsmeldung.",
-                    "type": "string"
-                },
-                "book": {
-                    "description": "Book copy details if applicable",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/repository.BookCopy"
-                        }
-                    ]
-                },
-                "due_date": {
-                    "description": "Return deadline for check-outs",
-                    "type": "string"
-                },
-                "fremdrueckgabe": {
-                    "description": "Flag for returns from another reader",
-                    "type": "boolean"
-                },
-                "geraet": {
-                    "description": "Hardware details if applicable",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/repository.Geraet"
-                        }
-                    ]
-                },
-                "has_vormerkung": {
-                    "description": "True if returned book has a pending reservation",
-                    "type": "boolean"
-                },
-                "loan_id": {
-                    "description": "Loan UUID (for Undo support on returns)",
-                    "type": "string"
-                },
-                "message": {
-                    "description": "Informational message for the frontend",
-                    "type": "string"
-                },
-                "regalfreigabe_barcode": {
-                    "description": "RegalfreigabeBarcode: reserved copy in the hold shelf to be returned to the\nregular shelf because the student took a different copy of the same title.",
-                    "type": "string"
-                },
-                "search_results": {
-                    "description": "Full-text search list",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.BookTitle"
-                    }
-                },
-                "student": {
-                    "description": "Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe SchuelerKiosk)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/api.SchuelerKiosk"
-                        }
-                    ]
-                },
-                "type": {
-                    "description": "\"student\", \"ausleihe\", \"rueckgabe\", \"search_results\", \"info\"",
-                    "type": "string"
-                },
-                "vorbesitzer": {
-                    "description": "Original borrower if foreign return (Theken-Sicht)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/api.SchuelerKiosk"
-                        }
-                    ]
-                },
-                "vormerkung_titel": {
-                    "description": "Title name of the reserved book",
-                    "type": "string"
-                },
-                "vormerkung_user": {
-                    "description": "Reserved for: student name \u0026 class",
-                    "type": "string"
-                }
-            }
-        },
-        "api.BuchbarcodesResponse": {
-            "type": "object",
-            "properties": {
-                "anzahl": {
-                    "description": "Anzahl spart dem Rechner das Zählen und macht die Antwort im Log lesbar.",
-                    "type": "integer"
-                },
-                "barcodes": {
-                    "description": "Barcodes: alle Buchnummern, aufsteigend — nur Nummern, keine Personendaten.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "stand": {
-                    "description": "Stand ist der Merker dieser Fassung — derselbe Wert wie im ETag. Der Rechner legt\nihn neben die Liste und schickt ihn beim nächsten Holen mit.",
-                    "type": "string"
-                }
-            }
-        },
-        "api.NachbuchenEintrag": {
-            "type": "object",
-            "required": [
-                "absicht",
-                "barcode",
-                "gescannt_am",
-                "schluessel"
-            ],
-            "properties": {
-                "absicht": {
-                    "description": "Absicht: was der Bediener beim Scan meinte (\"ausleihe\" | \"rueckgabe\").",
-                    "type": "string",
-                    "enum": [
-                        "ausleihe",
-                        "rueckgabe"
-                    ]
-                },
-                "ausweis_barcode": {
-                    "description": "… sonst der offline gescannte Ausweis, den der Server auflöst.",
-                    "type": "string"
-                },
-                "barcode": {
-                    "description": "Barcode des Buchs, wie gescannt (B-…, nackte Ziffern, LMF-…).",
-                    "type": "string"
-                },
-                "gescannt_am": {
-                    "description": "GescanntAm ist der Zeitpunkt am Theken-Rechner, nach seiner Uhr. Der Server rechnet den\nVersatz der Uhr heraus (gesendet_am) und nimmt höchstens seine eigene Zeit.",
-                    "type": "string"
-                },
-                "leser_id": {
-                    "description": "Person: was der Rechner beim Scan schon auflösen konnte …",
-                    "type": "string"
-                },
-                "schluessel": {
-                    "description": "Schluessel ist der Idempotenz-Schlüssel des Eintrags — derselbe, den der\nOnline-Versand benutzt hätte. Daran erkennt der Server einen abgebrochenen Versand.",
-                    "type": "string"
-                }
-            }
-        },
-        "api.NachbuchenErgebnis": {
-            "type": "object",
-            "properties": {
-                "aufsicht_informieren": {
-                    "description": "AufsichtInformieren: Das Buch stand auf einem Bescheid, der schon bei der\nSchulaufsicht liegt — eigenes Feld, weil das eine Aufgabe ist, keine Meldung.",
-                    "type": "string"
-                },
-                "daten": {
-                    "description": "Daten ist die gebuchte Wirkung in der Form des Theken-Scans (bei Erfolg und bei\nbereits_gebucht die Wirkung des Online-Versands).",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/api.ActionResponse"
-                        }
-                    ]
-                },
-                "ergebnis": {
-                    "description": "Ergebnis: ausgeliehen · umgebucht · bereits_ausgeliehen · zurueckgegeben ·\nnur_reaktiviert · nicht_gebucht · veraltet · bereits_gebucht · wiederholen.",
-                    "type": "string"
-                },
-                "grund": {
-                    "description": "Grund steht bei nicht_gebucht, veraltet und wiederholen — der Satz, den die Meldung trägt.",
-                    "type": "string"
-                },
-                "schluessel": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.NachbuchenRequest": {
-            "type": "object",
-            "required": [
-                "eintraege",
-                "gesendet_am"
-            ],
-            "properties": {
-                "eintraege": {
-                    "type": "array",
-                    "maxItems": 50,
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/api.NachbuchenEintrag"
-                    }
-                },
-                "gesendet_am": {
-                    "description": "GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von DERSELBEN\nUhr wie gescannt_am. Der Server misst daran den Versatz der Rechner-Uhr und rechnet die\nScan-Zeitpunkte der Portion auf seine Uhr um. Pflicht: Ohne sie ließe sich eine falsch\ngehende Uhr nicht erkennen.",
-                    "type": "string"
-                }
-            }
-        },
-        "api.NachbuchenResponse": {
-            "type": "object",
-            "properties": {
-                "ergebnisse": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.NachbuchenErgebnis"
-                    }
-                },
-                "uhr_versatz_sekunden": {
-                    "description": "UhrVersatzSekunden ist der gemessene Versatz der Rechner-Uhr (Serverzeit minus Rechnerzeit):\nnegativ = die Uhr des Rechners geht vor. Die Theke kann eine falsch gehende Uhr damit melden.",
-                    "type": "integer"
-                }
-            }
-        },
-        "api.SchuelerKiosk": {
-            "type": "object",
-            "properties": {
-                "art": {
-                    "description": "Art: eine aus pkg/leserart (Migration 125 und 153). Die Theke zeigt sie am\nTreffer an — sonst stünde ein Kollege ohne Klasse da wie ein Schüler mit fehlender\nAngabe. Keine Personendaten: Sie sagt nichts, was der Ausweis nicht schon sagt.",
-                    "type": "string"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_manually_blocked": {
-                    "type": "boolean"
-                },
-                "ist_gesperrt": {
-                    "description": "Operative Flags, keine Personendaten: Die Theke muss sehen, dass eine\nAusleihe blockiert ist. Der Grund (block_reason) bleibt draußen — er\nkann sensiblen Freitext tragen und kommt bei Bedarf als Fehlermeldung\nder jeweiligen Aktion an.",
-                    "type": "boolean"
-                },
-                "klasse": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "vorname": {
-                    "type": "string"
-                }
-            }
-        },
         "apierrors.APIError": {
             "type": "object",
             "properties": {
@@ -6714,6 +6450,270 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "theke.AbholbereitInfo": {
+            "type": "object",
+            "properties": {
+                "bereitgestellt_bis": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "theke.ActionResponse": {
+            "type": "object",
+            "properties": {
+                "abholbereit": {
+                    "description": "Abholbereit: Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung\n01.09.2026) — die Mitarbeiterin sieht sofort, dass für den gescannten\nSchüler ein vorgemerktes Buch im Abholfach liegt. Titel + Frist, keine IDs;\nPII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu Name).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/theke.AbholbereitInfo"
+                    }
+                },
+                "auflagen_hinweis": {
+                    "description": "AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die\nKinder derselben Klasse schon haben (docs/OFFEN.md 4.18, Stufe 5) — Klasse, diese\nAuflage und die anderen mit der Zahl der Kinder, keine Namen. PII-Matrix: Stufe 1 wie\ndie übrige Theken-Antwort (die Klasse des Kindes steht dort ohnehin).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.AuflagenMischung"
+                        }
+                    ]
+                },
+                "aufsicht_informieren": {
+                    "description": "AufsichtInformieren: Das zurückgebrachte Buch steht auf einem bereits übergebenen\nSchadensersatz-Bescheid — die Schulaufsicht ist unverzüglich zu informieren (#597).\nGetrennt von Message, weil es eine Aufgabe ist und keine Erfolgsmeldung.",
+                    "type": "string"
+                },
+                "book": {
+                    "description": "Book copy details if applicable",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.BookCopy"
+                        }
+                    ]
+                },
+                "due_date": {
+                    "description": "Return deadline for check-outs",
+                    "type": "string"
+                },
+                "fremdrueckgabe": {
+                    "description": "Flag for returns from another reader",
+                    "type": "boolean"
+                },
+                "geraet": {
+                    "description": "Hardware details if applicable",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.Geraet"
+                        }
+                    ]
+                },
+                "has_vormerkung": {
+                    "description": "True if returned book has a pending reservation",
+                    "type": "boolean"
+                },
+                "loan_id": {
+                    "description": "Loan UUID (for Undo support on returns)",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Informational message for the frontend",
+                    "type": "string"
+                },
+                "regalfreigabe_barcode": {
+                    "description": "RegalfreigabeBarcode: reserved copy in the hold shelf to be returned to the\nregular shelf because the student took a different copy of the same title.",
+                    "type": "string"
+                },
+                "search_results": {
+                    "description": "Full-text search list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.BookTitle"
+                    }
+                },
+                "student": {
+                    "description": "Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe SchuelerKiosk)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/theke.SchuelerKiosk"
+                        }
+                    ]
+                },
+                "type": {
+                    "description": "\"student\", \"ausleihe\", \"rueckgabe\", \"search_results\", \"info\"",
+                    "type": "string"
+                },
+                "vorbesitzer": {
+                    "description": "Original borrower if foreign return (Theken-Sicht)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/theke.SchuelerKiosk"
+                        }
+                    ]
+                },
+                "vormerkung_titel": {
+                    "description": "Title name of the reserved book",
+                    "type": "string"
+                },
+                "vormerkung_user": {
+                    "description": "Reserved for: student name \u0026 class",
+                    "type": "string"
+                }
+            }
+        },
+        "theke.BuchbarcodesResponse": {
+            "type": "object",
+            "properties": {
+                "anzahl": {
+                    "description": "Anzahl spart dem Rechner das Zählen und macht die Antwort im Log lesbar.",
+                    "type": "integer"
+                },
+                "barcodes": {
+                    "description": "Barcodes: alle Buchnummern, aufsteigend — nur Nummern, keine Personendaten.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "stand": {
+                    "description": "Stand ist der Merker dieser Fassung — derselbe Wert wie im ETag. Der Rechner legt\nihn neben die Liste und schickt ihn beim nächsten Holen mit.",
+                    "type": "string"
+                }
+            }
+        },
+        "theke.NachbuchenEintrag": {
+            "type": "object",
+            "required": [
+                "absicht",
+                "barcode",
+                "gescannt_am",
+                "schluessel"
+            ],
+            "properties": {
+                "absicht": {
+                    "description": "Absicht: was der Bediener beim Scan meinte (\"ausleihe\" | \"rueckgabe\").",
+                    "type": "string",
+                    "enum": [
+                        "ausleihe",
+                        "rueckgabe"
+                    ]
+                },
+                "ausweis_barcode": {
+                    "description": "… sonst der offline gescannte Ausweis, den der Server auflöst.",
+                    "type": "string"
+                },
+                "barcode": {
+                    "description": "Barcode des Buchs, wie gescannt (B-…, nackte Ziffern, LMF-…).",
+                    "type": "string"
+                },
+                "gescannt_am": {
+                    "description": "GescanntAm ist der Zeitpunkt am Theken-Rechner, nach seiner Uhr. Der Server rechnet den\nVersatz der Uhr heraus (gesendet_am) und nimmt höchstens seine eigene Zeit.",
+                    "type": "string"
+                },
+                "leser_id": {
+                    "description": "Person: was der Rechner beim Scan schon auflösen konnte …",
+                    "type": "string"
+                },
+                "schluessel": {
+                    "description": "Schluessel ist der Idempotenz-Schlüssel des Eintrags — derselbe, den der\nOnline-Versand benutzt hätte. Daran erkennt der Server einen abgebrochenen Versand.",
+                    "type": "string"
+                }
+            }
+        },
+        "theke.NachbuchenErgebnis": {
+            "type": "object",
+            "properties": {
+                "aufsicht_informieren": {
+                    "description": "AufsichtInformieren: Das Buch stand auf einem Bescheid, der schon bei der\nSchulaufsicht liegt — eigenes Feld, weil das eine Aufgabe ist, keine Meldung.",
+                    "type": "string"
+                },
+                "daten": {
+                    "description": "Daten ist die gebuchte Wirkung in der Form des Theken-Scans (bei Erfolg und bei\nbereits_gebucht die Wirkung des Online-Versands).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/theke.ActionResponse"
+                        }
+                    ]
+                },
+                "ergebnis": {
+                    "description": "Ergebnis: ausgeliehen · umgebucht · bereits_ausgeliehen · zurueckgegeben ·\nnur_reaktiviert · nicht_gebucht · veraltet · bereits_gebucht · wiederholen.",
+                    "type": "string"
+                },
+                "grund": {
+                    "description": "Grund steht bei nicht_gebucht, veraltet und wiederholen — der Satz, den die Meldung trägt.",
+                    "type": "string"
+                },
+                "schluessel": {
+                    "type": "string"
+                }
+            }
+        },
+        "theke.NachbuchenRequest": {
+            "type": "object",
+            "required": [
+                "eintraege",
+                "gesendet_am"
+            ],
+            "properties": {
+                "eintraege": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/theke.NachbuchenEintrag"
+                    }
+                },
+                "gesendet_am": {
+                    "description": "GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von DERSELBEN\nUhr wie gescannt_am. Der Server misst daran den Versatz der Rechner-Uhr und rechnet die\nScan-Zeitpunkte der Portion auf seine Uhr um. Pflicht: Ohne sie ließe sich eine falsch\ngehende Uhr nicht erkennen.",
+                    "type": "string"
+                }
+            }
+        },
+        "theke.NachbuchenResponse": {
+            "type": "object",
+            "properties": {
+                "ergebnisse": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/theke.NachbuchenErgebnis"
+                    }
+                },
+                "uhr_versatz_sekunden": {
+                    "description": "UhrVersatzSekunden ist der gemessene Versatz der Rechner-Uhr (Serverzeit minus Rechnerzeit):\nnegativ = die Uhr des Rechners geht vor. Die Theke kann eine falsch gehende Uhr damit melden.",
+                    "type": "integer"
+                }
+            }
+        },
+        "theke.SchuelerKiosk": {
+            "type": "object",
+            "properties": {
+                "art": {
+                    "description": "Art: eine aus pkg/leserart (Migration 125 und 153). Die Theke zeigt sie am\nTreffer an — sonst stünde ein Kollege ohne Klasse da wie ein Schüler mit fehlender\nAngabe. Keine Personendaten: Sie sagt nichts, was der Ausweis nicht schon sagt.",
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_manually_blocked": {
+                    "type": "boolean"
+                },
+                "ist_gesperrt": {
+                    "description": "Operative Flags, keine Personendaten: Die Theke muss sehen, dass eine\nAusleihe blockiert ist. Der Grund (block_reason) bleibt draußen — er\nkann sensiblen Freitext tragen und kommt bei Bedarf als Fehlermeldung\nder jeweiligen Aktion an.",
+                    "type": "boolean"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "vorname": {
                     "type": "string"
                 }
             }

@@ -22,7 +22,7 @@ import (
 // Rückgabefristen ALLER Klassen des Plans um und löschen dabei Mahnstufe und Mahndatum
 // der betroffenen Ausleihen (repository.LmfTerminRepository.SetzeLernmittelFristFuerKlassenIn). Für die Frist
 // EINER Ausleihe verlangt dieses Projekt seit dem 18.08.2026 einen Protokolleintrag
-// („FRIST_OVERRIDE", api/ausleihe.go); die tausendfache Fassung desselben Eingriffs
+// („FRIST_OVERRIDE", api/theke/ausleihe.go); die tausendfache Fassung desselben Eingriffs
 // hinterließ bis zum Rasterdurchgang am 06.09.2026 keine Spur.
 //
 // Geprüft wird am ERGEBNIS in audit_logs, nicht am Aufruf: Wer hat wann welchen Plan

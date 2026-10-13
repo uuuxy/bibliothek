@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/theke"
 	"bibliothek/api/tuer"
 	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
@@ -85,9 +86,9 @@ func TestVormerkungen_UngueltigeKennungErreichtRepositoryNicht(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			repo := &vormerkungRepoZaehler{}
-			h := s.CreateVormerkungHandler(repo)
+			h := s.theke().CreateVormerkungHandler(repo)
 			if f.liste {
-				h = s.ListVormerkungHandler(repo)
+				h = s.theke().ListVormerkungHandler(repo)
 			}
 			if status := tuertest.AntwortOhneDB(t, h, f.methode, f.pfad, f.rumpf); status != http.StatusBadRequest {
 				t.Fatalf("Status %d, erwartet 400", status)
@@ -105,16 +106,16 @@ func TestVormerkungen_UngueltigeKennungErreichtRepositoryNicht(t *testing.T) {
 func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 	leer := ""
 	gut := "11111111-1111-1111-1111-111111111111"
-	if err := tuer.Validate.Struct(ActionRequest{Query: "B-1", ActiveLeserID: &leer}); err != nil {
+	if err := tuer.Validate.Struct(theke.ActionRequest{Query: "B-1", ActiveLeserID: &leer}); err != nil {
 		t.Fatalf("leerer Zeiger abgewiesen: %v", err)
 	}
-	if err := tuer.Validate.Struct(ActionRequest{Query: "B-1", ActiveLeserID: &gut}); err != nil {
+	if err := tuer.Validate.Struct(theke.ActionRequest{Query: "B-1", ActiveLeserID: &gut}); err != nil {
 		t.Fatalf("gültige UUID abgewiesen: %v", err)
 	}
-	if err := tuer.Validate.Struct(ActionRequest{Query: "B-1"}); err != nil {
+	if err := tuer.Validate.Struct(theke.ActionRequest{Query: "B-1"}); err != nil {
 		t.Fatalf("nil-Zeiger abgewiesen: %v", err)
 	}
-	if err := tuer.Validate.Struct(ActionRequest{Query: "B-1", ActiveLeserID: &[]string{"x"}[0]}); err == nil {
+	if err := tuer.Validate.Struct(theke.ActionRequest{Query: "B-1", ActiveLeserID: &[]string{"x"}[0]}); err == nil {
 		t.Fatal("„x“ als active_leser_id durchgelassen")
 	} else if msg := tuer.MeldeValidierung(err).Error(); !strings.Contains(msg, "ungültige Kennung") {
 		t.Fatalf("Meldung %q nennt die Kennung nicht", msg)
@@ -122,7 +123,7 @@ func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 
 	s := &Server{}
 	repo := &vormerkungRepoZaehler{}
-	status := tuertest.AntwortOhneDB(t, s.CreateVormerkungHandler(repo), http.MethodPost, "/api/vormerkungen",
+	status := tuertest.AntwortOhneDB(t, s.theke().CreateVormerkungHandler(repo), http.MethodPost, "/api/vormerkungen",
 		`{"titel_id":"`+gut+`","schueler_id":""}`)
 	if status != http.StatusCreated || !repo.gerufen {
 		t.Fatalf("gültige Vormerkung mit leerer schueler_id: Status %d, Repository gerufen=%v", status, repo.gerufen)

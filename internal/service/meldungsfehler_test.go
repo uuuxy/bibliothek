@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-// TestMeldungZeigtNurDieMeldung: Die Theke zeigt err.Error() (api/action.go). Bis zum 28.09.2026
+// TestMeldungZeigtNurDieMeldung: Die Theke zeigt err.Error() (api/theke/action.go). Bis zum 28.09.2026
 // las sie dort etwa „Fehler: ungültiger Transaktionszustand: Bitte scannen Sie zuerst einen
 // Ausweis" oder „Fehler: conflict: dieses Exemplar wurde soeben bereits ausgeliehen" — die
 // Bezeichnung der Fehlerart ist kein Satz für den Bildschirm (M3, Word choice: „UI text should be
