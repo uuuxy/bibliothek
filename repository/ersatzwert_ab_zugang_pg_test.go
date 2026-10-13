@@ -10,15 +10,13 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Migration 129: Der Zugang eines Exemplars ist der Tag der Lieferung (zugang_am), nicht der
-// Tag, an dem die Zeile beim Bestellen entstand (erworben_am). Das Zugangsbuch liest seither
-// zugang_am — die Staffel des Schadensersatzes las weiter erworben_am (Rasterdurchgang
-// 22.09.2026, Frage 13: Bedeutungswechsel unter gleichem Namen).
+// Der Zugang eines Exemplars ist der Tag der Lieferung (zugang_am), nicht der Tag, an dem die
+// Zeile beim Bestellen entstand (erworben_am). Die Staffel des Schadensersatzes rechnet deshalb
+// wie das Zugangsbuch ab zugang_am.
 //
-// Der Regelfall der Lernmittel ist genau die Lücke: bestellt im Juni für das kommende
-// Schuljahr, geliefert im August. Am Bestelltag gerechnet ist das Buch am Tag seiner
-// Ausgabe schon ein Schuljahr alt, und jede Forderung liegt eine Stufe der Staffel zu
-// niedrig — vom ersten Tag an, für jedes so bestellte Buch.
+// Der Regelfall der Lernmittel ist die Lücke: bestellt im Juni für das kommende Schuljahr,
+// geliefert im August. Am Bestelltag gerechnet wäre das Buch am Tag seiner Ausgabe schon ein
+// Schuljahr alt, und jede Forderung läge eine Stufe der Staffel zu niedrig.
 func TestErsatzwert_ZaehltAbZugangNichtAbBestelltag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -65,9 +63,9 @@ func TestErsatzwert_ZaehltAbZugangNichtAbBestelltag(t *testing.T) {
 		}
 	})
 
-	// bestelltUndGeliefert legt ein Exemplar so an, wie es der Bestellweg tut: die Zeile
-	// entsteht am Bestelltag im Zulauf, der Wareneingang räumt den Bestellstatus — und
-	// der Trigger aus Migration 129 stempelt dabei den heutigen Tag als Zugang.
+	// bestelltUndGeliefert legt ein Exemplar so an, wie es der Bestellweg tut: Die Zeile
+	// entsteht am Bestelltag im Zulauf, der Wareneingang räumt den Bestellstatus, und der
+	// Trigger stempelt dabei den heutigen Tag als Zugang.
 	bestelltUndGeliefert := func(t *testing.T, barcode string) string {
 		t.Helper()
 		var id string

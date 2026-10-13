@@ -5,36 +5,29 @@ import (
 	"time"
 )
 
-// Die Stufe zwischen Mahnliste und Bescheid (15.09.2026).
-//
-// „Verlust melden" beendet die Ausleihe (SchadensAbfragen.Melde). Damit fällt das Kind aus der
-// Mahnliste, die nur offene Ausleihen kennt — und der Bescheid, der genau diese
-// Forderung braucht, war nur erreichbar, solange die Liste noch nicht neu geladen war.
-// Diese Abfrage macht die Stufe sichtbar: je Kind eine Zeile über seine offenen
-// Forderungen, die noch auf keinem Brief stehen.
-
-// ForderungOhneBescheid ist eine Zeile des Reiters „Schadensersatz": ein Kind mit
-// offenen Forderungen ohne Brief.
+// ForderungOhneBescheid ist eine Zeile des Reiters „Schadensersatz": ein Kind mit offenen
+// Forderungen ohne Brief.
 type ForderungOhneBescheid struct {
 	SchuelerID   string  `json:"schueler_id"`
 	SchuelerName string  `json:"schueler_name"`
 	Klasse       string  `json:"klasse"`
 	Anzahl       int     `json:"anzahl"`
 	Summe        float64 `json:"summe"`
-	// Seit: die älteste dieser Forderungen — so lange wartet der Fall schon.
+	// Seit ist das Datum der ältesten dieser Forderungen: So lange wartet der Fall schon.
 	Seit time.Time `json:"seit"`
-	// Land: mindestens eine der Forderungen betrifft ein Buch des Landes (Eigentum nach
-	// ExemplarTopfSQL) und kann damit auf den Bescheid des Landes. Die Rechnung der
-	// Schülerbücherei ist noch nicht gebaut (mittel_konzept.md 4.7, Etappe 3). Bis zum
-	// 29.09.2026 hieß das Feld lernmittel und las ist_lernmittel des Titels.
+	// Land heißt: Mindestens eine der Forderungen betrifft ein Buch des Landes (Eigentum nach
+	// ExemplarTopfSQL) und kann auf den Bescheid des Landes. Für die Schülerbücherei gibt es
+	// noch keinen Brief (mittel_konzept.md 4.7).
 	Land bool `json:"land"`
 }
 
-// LadeForderungenOhneBescheid liefert je Kind die offenen Forderungen ohne Bescheid, älteste zuerst.
+// LadeForderungenOhneBescheid liefert je Kind die offenen Forderungen ohne Bescheid, die
+// ältesten zuerst. „Verlust melden" beendet die Ausleihe, und das Kind fällt aus der Mahnliste,
+// die nur offene Ausleihen kennt; ohne diese Liste wäre der Fall bis zum Bescheid nirgends zu
+// sehen.
 //
-// Dieselbe Bedingung wie LadeOffeneForderungen und ordnePositionenZu: offen, nicht
-// storniert, noch auf keinem Brief. Gelöschte Schüler bleiben draußen (Papierkorb,
-// DSGVO) — wie in der Mahnliste.
+// Dieselbe Bedingung wie LadeOffeneForderungen und ordnePositionenZu: offen, nicht storniert,
+// auf keinem Brief. Leser im Papierkorb bleiben draußen, wie in der Mahnliste.
 func (a *pgBescheidAbfragen) LadeForderungenOhneBescheid(ctx context.Context) ([]ForderungOhneBescheid, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT s.id, s.vorname || ' ' || s.nachname, coalesce(s.klasse, ''),

@@ -14,20 +14,18 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Gate für die Größen des Betragsvorschlags im Melde-Dialog (OFFEN.md 9.3 a).
-//
-// Warum am echten Postgres und nicht mit einem Mock: Geprüft wird genau das, was ein Mock
-// nicht kann — dass der JOIN auf buecher_titel trägt, dass ein nullbares Feld den Scan
-// nicht sprengt, und vor allem, dass die Schuljahr-Zählung DIESELBE ist wie die des
-// Bescheids. Zwei Auslegungen der Grenze zum 1. August verschöben den Betrag um eine
-// ganze Stufe der Staffel, und die Zahl steht am Ende in einer Forderung.
+// Die Größen des Betragsvorschlags im Dialog „Verlust/Schaden melden", am echten Postgres:
+// Geprüft wird, dass der JOIN auf buecher_titel trägt, dass ein leeres Feld das Lesen nicht
+// abbricht und dass die Zählung der Schuljahre dieselbe ist wie die des Bescheids. Zwei
+// Auslegungen der Grenze zum 1. August verschöben den Betrag um eine Stufe der Staffel, und die
+// Zahl steht am Ende in einer Forderung.
 func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	// Der konkrete Typ, weil ein Untertest gegen zaehleSchuljahreMitAusleihe vergleicht — die
-	// private Methode, die der Bescheid-Weg benutzt. Zweiwertig geprüft, damit ein
-	// Umbau der Konstruktorsignatur hier einen Satz erzeugt und keine Panik.
+	// Der konkrete Typ, weil ein Untertest gegen zaehleSchuljahreMitAusleihe vergleicht, die
+	// nicht öffentliche Methode, die der Bescheid benutzt. Zweiwertig geprüft, damit ein Umbau
+	// des Erzeugers hier einen Satz ergibt und keinen Absturz.
 	repo, ok := NewBescheidAbfragen(pool).(*pgBescheidAbfragen)
 	if !ok {
 		t.Fatalf("NewBescheidAbfragen liefert %T, erwartet *pgBescheidAbfragen",
@@ -65,9 +63,9 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 		}
 	})
 
-	// erworbenVorJahren legt ein Exemplar an, das vor n Schuljahren in den Bestand kam.
-	// Die laufende Nummer hält die Barcodes auseinander: Zwei Fälle beschaffen im
-	// SELBEN Schuljahr, und barcode_id ist über den ganzen Bestand eindeutig.
+	// erworbenVorJahren legt ein Exemplar an, das vor n Schuljahren in den Bestand kam. Die
+	// laufende Nummer hält die Barcodes auseinander: Zwei Fälle beschaffen im selben Schuljahr,
+	// und barcode_id ist über den ganzen Bestand eindeutig.
 	lfd := 0
 	erworbenVorJahren := func(t *testing.T, n int, preis float64) string {
 		t.Helper()
@@ -132,9 +130,9 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 	})
 
 	t.Run("mehrfach im SELBEN Schuljahr ausgeliehen zählt EIN Jahr", func(t *testing.T) {
-		// Der Fehler, den es bis zum 12.09.2026 gab: Gezählt wurden die AUSLEIHEN. Ein
-		// Buch, das in einem Schuljahr sechsmal hinausging, stand damit im 6. Verleihjahr
-		// — 10 % statt 100 %. Hier sind es drei Ausleihen in einem Schuljahr.
+		// Gezählt werden Schuljahre, nicht Ausleihen: Mit der Zahl der Ausleihen stünde ein
+		// Buch, das in einem Schuljahr sechsmal hinausging, im sechsten Verleihjahr (10 % statt
+		// 100 %). Hier sind es drei Ausleihen in einem Schuljahr.
 		id := erworbenVorJahren(t, 0, 40.00)
 		for _, tage := range []int{10, 40, 70} {
 			ausgeliehenAm(t, id, schuljahrBeginn.AddDate(0, 0, tage))
@@ -156,9 +154,9 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 	})
 
 	t.Run("dieselbe Zählung wie der Bescheid-Weg", func(t *testing.T) {
-		// Die eigentliche Zusicherung dieses Gates: Melde-Dialog und Bescheid dürfen für
-		// dasselbe Exemplar nie verschiedene Verleihjahre nennen. Verglichen wird gegen
-		// zaehleSchuljahreMitAusleihe — den Zähler, den LadeOffeneForderungen benutzt.
+		// Der Dialog der Schadensmeldung und der Bescheid nennen für dasselbe Exemplar nie
+		// verschiedene Verleihjahre. Verglichen wird gegen zaehleSchuljahreMitAusleihe, den
+		// Zähler, den LadeOffeneForderungen benutzt.
 		id := erworbenVorJahren(t, 2, 25.00)
 		ausgeliehenAm(t, id, schuljahrBeginn.AddDate(-2, 0, 5))
 		ausgeliehenAm(t, id, schuljahrBeginn.AddDate(-1, 0, 5))
@@ -180,8 +178,8 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 
 	t.Run("unbekanntes Exemplar meldet ErrNoRows, nicht 500", func(t *testing.T) {
 		// Der Dialog fragt beim Öffnen; zwischen Anzeige und Klick kann ein Exemplar
-		// verschwunden sein. Der Handler macht daraus ein 404 — dafür muss hier ein
-		// erkennbares ErrNoRows ankommen und kein irgendwie gearteter Scan-Fehler.
+		// verschwunden sein. Die Tür macht daraus ein 404. Dafür muss hier ErrNoRows ankommen
+		// und kein anderer Fehler des Lesens.
 		_, err := repo.LadeGroessenFuerExemplar(ctx, "00000000-0000-0000-0000-000000000000")
 		if err == nil {
 			t.Fatal("kein Fehler für ein Exemplar, das es nicht gibt")

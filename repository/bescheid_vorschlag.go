@@ -8,7 +8,7 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// BescheidEmpfaengerDaten sind die Angaben, aus denen der Snapshot entsteht.
+// BescheidEmpfaengerDaten sind die Angaben, aus denen der Snapshot des Empfängers entsteht.
 type BescheidEmpfaengerDaten struct {
 	Vorname     string
 	Nachname    string
@@ -20,40 +20,37 @@ type BescheidEmpfaengerDaten struct {
 	Volljaehrig bool
 }
 
-// OffeneForderung ist eine Forderung, die auf einen Brief könnte — mit den Größen, aus
-// denen der Betragsvorschlag entsteht.
+// OffeneForderung ist eine Forderung, die auf einen Brief kann, mit den Größen, aus denen der
+// Vorschlag für den Betrag entsteht.
 type OffeneForderung struct {
 	SchadensfallID string
 	Art            string
 	Titel          string
 	ISBN           string
 	Kaufpreis      float64
-	// Listenpreis und ZustandAbschlag seit Migration 127: Die Arbeitshilfe rechnet ab
-	// dem zweiten Verleihjahr auf den Neupreis, und der Zustand dieses Exemplars zieht
-	// davon ab. 0 beim Listenpreis heißt „nicht erfasst".
+	// Listenpreis und ZustandAbschlag: Die Arbeitshilfe rechnet ab dem zweiten Verleihjahr auf
+	// den Neupreis, und der Zustand dieses Exemplars zieht davon ab. Ein Listenpreis von 0
+	// heißt „nicht erfasst".
 	Listenpreis     float64
 	ZustandAbschlag int
-	// Topf: das Eigentum des Exemplars (ExemplarTopfSQL) — wem die Forderung zusteht und
-	// nach welcher Regel ihr Betrag vorgeschlagen wird. Leer bei einer Forderung ohne
-	// Exemplar (Geräteschaden): Sie gehört auf keinen der beiden Briefe.
+	// Topf ist das Eigentum des Exemplars (ExemplarTopfSQL): wem die Forderung zusteht und nach
+	// welcher Regel ihr Betrag vorgeschlagen wird. Leer bei einer Forderung ohne Exemplar
+	// (Geräteschaden); sie gehört auf keinen der beiden Briefe.
 	Topf string
-	// Die beiden Größen für das Verleihjahr, und beide zählen SCHULJAHRE: in wie vielen
-	// war das Exemplar ausgeliehen, und wie viele liegen seit seiner Beschaffung. Beide
-	// sind unvollständig (der Altbestand kam ohne Ausleihhistorie), deshalb rechnet
-	// ersatzwert.Verleihjahr mit dem Maximum.
-	//
-	// Bis zum 12.09.2026 standen hier die Zahl der AUSLEIHEN und die Differenz der
-	// KALENDERJAHRE. Sechs Ausleihen in einem Schuljahr ergaben das 6. Verleihjahr (10 %
-	// statt 100 %), und ein im Februar gekauftes Buch blieb bis Silvester im ersten.
+	// SchuljahreMitAusleihe und SchuljahreImBestand sind die beiden Größen für das Verleihjahr,
+	// beide in Schuljahren: in wie vielen das Exemplar ausgeliehen war und wie viele seit
+	// seiner Beschaffung liegen. Beide sind unvollständig (der Altbestand kam ohne
+	// Ausleihhistorie); ersatzwert.Verleihjahr rechnet deshalb mit dem Maximum. Mit der Zahl
+	// der Ausleihen statt der Schuljahre ergäben sechs Ausleihen in einem Schuljahr das sechste
+	// Verleihjahr.
 	SchuljahreMitAusleihe int
 	SchuljahreImBestand   int
 }
 
-// LadeEmpfaenger liest die Angaben des Schülers für Anrede und Anschriftfeld.
-//
-// Volljährig entscheidet über die Anrede: Bei minderjährigen Schülern geht der Brief an
-// die Erziehungsberechtigten. Ohne Geburtsdatum (Altdaten) gilt minderjährig — das ist
-// an einer Schule der Regelfall und der schonendere Fehler.
+// LadeEmpfaenger liest die Angaben des Schülers für Anrede und Anschriftfeld. Volljaehrig
+// entscheidet über die Anrede: Bei Minderjährigen geht der Brief an die Erziehungsberechtigten.
+// Ohne Geburtsdatum gilt minderjährig; das ist an einer Schule der Regelfall und der
+// schonendere Fehler.
 func (a *pgBescheidAbfragen) LadeEmpfaenger(ctx context.Context, schuelerID string) (BescheidEmpfaengerDaten, error) {
 	var d BescheidEmpfaengerDaten
 	err := a.db.QueryRow(ctx, `
@@ -69,11 +66,11 @@ func (a *pgBescheidAbfragen) LadeEmpfaenger(ctx context.Context, schuelerID stri
 	return d, err
 }
 
-// LadeOffeneForderungen liest die Forderungen, die noch auf keinem Brief stehen.
+// LadeOffeneForderungen liest die Forderungen eines Schülers, die auf keinem Brief stehen.
 func (a *pgBescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schuelerID string) ([]OffeneForderung, error) {
-	// Das SQL liefert Datumswerte, keine Schuljahre: Wann das Schuljahr wechselt, steht
-	// in SchuljahrBeginn und soll nicht ein zweites Mal in einer Abfrage stehen — eine
-	// abweichende Auslegung verschöbe hier jeden Betrag um eine Stufe der Staffel.
+	// Die Abfrage liefert Datumswerte, keine Schuljahre: Wann das Schuljahr wechselt, steht in
+	// SchuljahrBeginn und nicht ein zweites Mal in einer Abfrage; eine abweichende Auslegung
+	// verschöbe jeden Betrag um eine Stufe der Staffel.
 	rows, err := a.db.Query(ctx, `
 		SELECT f.id, f.art, coalesce(t.titel, f.beschreibung), coalesce(t.isbn, ''),
 		       coalesce(e.einkaufspreis, 0)::float8,
@@ -98,8 +95,8 @@ func (a *pgBescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schueler
 
 	heute := schuljahrVon(schulzeit.Jetzt())
 	out := []OffeneForderung{}
-	// exemplarJeForderung ist indexgleich zu out: Geräteschäden haben kein Exemplar und
-	// stehen deshalb mit leerem String drin.
+	// exemplarJeForderung läuft im Gleichschritt mit out: Ein Geräteschaden hat kein Exemplar
+	// und steht mit leerem Text darin.
 	exemplarJeForderung := []string{}
 	for rows.Next() {
 		var f OffeneForderung
@@ -129,12 +126,10 @@ func (a *pgBescheidAbfragen) LadeOffeneForderungen(ctx context.Context, schueler
 	return out, nil
 }
 
-// zaehleSchuljahreMitAusleihe zählt je Exemplar, in wie vielen SCHULJAHREN es ausgeliehen war.
-//
-// Die Zeitpunkte kommen roh aus der Datenbank, gezählt wird in Go — mit SchuljahrBeginn,
-// derselben Grenze wie überall sonst. Ein „count(DISTINCT …)" im SQL müsste den 1. August
-// ein zweites Mal kennen, und zwei Auslegungen derselben Grenze verschöben den Betrag im
-// Bescheid um eine ganze Stufe der Staffel.
+// zaehleSchuljahreMitAusleihe zählt je Exemplar, in wie vielen Schuljahren es ausgeliehen war.
+// Die Zeitpunkte kommen roh aus der Datenbank, gezählt wird in Go mit schuljahrVon, derselben
+// Grenze wie überall: Ein count(DISTINCT …) in der Abfrage müsste den 1. August ein zweites Mal
+// kennen.
 func (a *pgBescheidAbfragen) zaehleSchuljahreMitAusleihe(ctx context.Context, exemplarIDs []string) (map[string]int, error) {
 	je := map[string]int{}
 	gefragt := []string{}
@@ -178,7 +173,7 @@ func (a *pgBescheidAbfragen) zaehleSchuljahreMitAusleihe(ctx context.Context, ex
 	return je, nil
 }
 
-// zeigerText macht aus einem nullbaren Textfeld einen String; NULL wird zu "".
+// zeigerText macht aus einem Textfeld, das NULL sein kann, einen Text; NULL wird zu "".
 func zeigerText(s *string) string {
 	if s == nil {
 		return ""

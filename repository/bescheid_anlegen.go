@@ -11,15 +11,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Der Schadensersatz-Bescheid: Nummer ziehen, Brief schreiben, Positionen zuordnen —
-// alles in EINER Transaktion (Migration 110).
-//
-// Die Reihenfolge ist der Schutz: Erst wird die laufende Nummer gezogen (UPDATE …
-// RETURNING sperrt die Zeile des Generators), dann der Bescheid geschrieben, dann die
-// Forderungen zugeordnet. Bricht irgendetwas ab, ist auch die Nummer nicht verbraucht.
-// Zwei gleichzeitige Briefe warten am Generator aufeinander, statt dieselbe Nummer zu
-// bekommen — eine doppelte Referenznummer macht eine Zahlung unzuordenbar.
-
 // BescheidPositionEingabe ist eine Forderung, die auf den Brief soll, mit dem Betrag,
 // den die Schule festgesetzt hat.
 type BescheidPositionEingabe struct {
@@ -27,25 +18,26 @@ type BescheidPositionEingabe struct {
 	Betrag         float64
 }
 
-// BescheidEingabe ist alles, was der Aufrufer für einen neuen Bescheid mitbringt.
+// BescheidEingabe ist alles, was der Rufer für einen neuen Bescheid mitbringt.
 type BescheidEingabe struct {
 	SchuelerID string
 	Mittel     string
 	Kassenjahr int
 	FristBis   time.Time
 	Positionen []BescheidPositionEingabe
-	// Verluste: überfällige Bücher, die mit dem Brief als Verlust gebucht werden (Stufe 2,
-	// bescheid_verlust.go). Ihre Forderungen entstehen in derselben Transaktion und
-	// kommen zu den Positionen dazu.
-	Verluste   []BescheidVerlustEingabe
+	// Verluste sind überfällige Bücher, die mit dem Brief als Verlust gebucht werden
+	// (bescheid_verlust.go). Ihre Forderungen entstehen in derselben Transaktion und kommen zu
+	// den Positionen dazu.
+	Verluste []BescheidVerlustEingabe
+	// Empfaenger sind Anrede, Name und Anschrift zum Datum des Briefs. Der Nachdruck liest sie,
+	// damit er dasselbe Blatt ergibt.
 	Empfaenger map[string]string
-	// Absender: die Angaben der Schule zum Briefdatum (Migration 141) — Grundlage des
-	// Nachdrucks wie Snapshot für den Empfänger.
+	// Absender sind die Angaben der Schule zum Datum des Briefs, für den Nachdruck wie
+	// Empfaenger.
 	Absender    map[string]string
 	ErstelltVon string
-	// Referenznummer baut der Aufrufer aus der laufenden Nummer, die diese Schicht zieht
-	// (BescheidAngaben.Referenznummer) — das Format ist eine Sache der Einstellungen,
-	// nicht der Datenbank.
+	// Referenznummer baut der Rufer aus der laufenden Nummer, die LegeAn zieht: Das Format ist
+	// eine Sache der Einstellungen, nicht der Datenbank.
 	Referenznummer func(laufendeNr int) string
 }
 
@@ -61,12 +53,18 @@ func (e *ForderungenNichtZugeordnet) Error() string {
 		e.Fehlend, e.Verlangt)
 }
 
-// LegeAn schreibt den Bescheid und ordnet ihm seine Positionen zu.
+// LegeAn schreibt den Bescheid und ordnet ihm seine Positionen zu, alles in einer Transaktion.
 //
-// Geprüft wird IN der Transaktion, dass jede Position dem Schüler gehört, offen ist und
-// noch auf keinem Bescheid steht — sonst stünde dieselbe Forderung auf zwei Briefen mit
-// zwei Nummern. Verluste (Stufe 2) werden nach dem Brief gebucht, damit ihre Forderung
-// die Referenznummer trägt, und vor den Positionen, damit dieselbe Prüfung sie einordnet.
+// Die Reihenfolge schützt die Nummer: Zuerst wird die laufende Nummer gezogen (ihre Zeile
+// bleibt gesperrt), dann der Bescheid geschrieben, dann werden die Forderungen zugeordnet.
+// Bricht etwas ab, ist auch die Nummer nicht verbraucht, und zwei gleichzeitige Briefe warten
+// am Zähler aufeinander: Mit einer doppelten Referenznummer ließe sich eine Zahlung nicht
+// zuordnen.
+//
+// Die Zuordnung prüft in der Transaktion, dass jede Position dem Schüler gehört, offen ist und
+// auf keinem Bescheid steht; sonst stünde dieselbe Forderung auf zwei Briefen mit zwei Nummern.
+// Verluste werden nach dem Brief gebucht, damit ihre Forderung die Referenznummer trägt, und
+// vor den Positionen, damit dieselbe Prüfung sie einordnet.
 func (a *pgBescheidAbfragen) LegeAn(ctx context.Context, e BescheidEingabe) (*Bescheid, error) {
 	if len(e.Positionen) == 0 && len(e.Verluste) == 0 {
 		return nil, fmt.Errorf("ein Bescheid ohne Positionen ist kein Bescheid")
@@ -86,8 +84,7 @@ func (a *pgBescheidAbfragen) LegeAn(ctx context.Context, e BescheidEingabe) (*Be
 	if err != nil {
 		return nil, fmt.Errorf("empfänger-snapshot: %w", err)
 	}
-	// Ohne Absender bleibt die Spalte NULL (wie bei Bescheiden vor Migration 141), nicht
-	// das JSON-Wort null.
+	// Ohne Absender bleibt die Spalte NULL und trägt nicht das JSON-Wort null.
 	var absender *string
 	if len(e.Absender) > 0 {
 		roh, err := json.Marshal(e.Absender)
@@ -145,11 +142,9 @@ func (a *pgBescheidAbfragen) LegeAn(ctx context.Context, e BescheidEingabe) (*Be
 	return &b, nil
 }
 
-// zieheLaufendeNummer holt die nächste Nummer für Topf und Kassenjahr.
-//
-// Das INSERT … ON CONFLICT DO UPDATE ist beides in einem Schritt: die erste Nummer eines
-// Jahres anlegen und jede weitere hochzählen. Die Zeile bleibt bis zum Ende der
-// Transaktion gesperrt.
+// zieheLaufendeNummer holt die nächste Nummer für Topf und Kassenjahr. Die eine Anweisung legt
+// die erste Nummer eines Jahres an und zählt jede weitere hoch; die Zeile bleibt bis zum Ende
+// der Transaktion gesperrt.
 func zieheLaufendeNummer(ctx context.Context, tx pgx.Tx, mittel string, kassenjahr int) (int, error) {
 	var nr int
 	err := tx.QueryRow(ctx, `
@@ -165,12 +160,10 @@ func zieheLaufendeNummer(ctx context.Context, tx pgx.Tx, mittel string, kassenja
 }
 
 // ordnePositionenZu hängt die Forderungen an den Brief und setzt ihren Betrag auf den
-// festgesetzten Wert. Die WHERE-Bedingung ist die Prüfung: Sie lässt nur offene,
-// unzugeordnete Forderungen DIESES Schülers durch — und nur solche aus dem Topf des
-// Briefs: Bücher des Landes auf den Brief des Landes, alles andere nicht (ein Brief = ein
-// Topf, Konzept 4.6). Der Topf ist das Eigentum des Exemplars nach ExemplarTopfSQL, dieselbe
-// Regel wie am Etikett (seit dem 29.09.2026; vorher ist_lernmittel des Titels). Eine
-// Forderung ohne Exemplar (Geräteschaden) gehört in keinen der beiden.
+// festgesetzten Wert. Die Bedingung ist die Prüfung: Sie lässt nur offene Forderungen dieses
+// Schülers durch, die auf keinem Brief stehen und aus dem Topf des Briefs kommen (ein Brief,
+// ein Topf). Der Topf ist das Eigentum des Exemplars nach ExemplarTopfSQL, dieselbe Regel wie
+// am Etikett; eine Forderung ohne Exemplar (Geräteschaden) gehört in keinen der beiden.
 func ordnePositionenZu(ctx context.Context, tx pgx.Tx, bescheidID string, e BescheidEingabe) (int, error) {
 	var zugeordnet int
 	for _, p := range e.Positionen {

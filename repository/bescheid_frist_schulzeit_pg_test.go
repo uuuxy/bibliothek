@@ -8,18 +8,16 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Die Frist eines Bescheids entsteht als Kalendertag in der Schulzeitzone
-// (api/schaden/bescheid_vorschlag.go, schulzeit.Jetzt). Bis zum 16.09.2026 prüfte die Bedingung
-// „Frist abgelaufen" gegen CURRENT_DATE, also gegen den Kalendertag der Datenbank-Sitzung
-// (im Image UTC). Zwischen Mitternacht in Berlin und Mitternacht UTC galt eine Frist von
-// gestern damit als nicht abgelaufen: Die Übergabe an die Schulaufsicht fand keine Zeile,
-// und die Liste zeigte den Bescheid nicht als überfällig. Aufgefallen am 16.09.2026 um
-// 00:01 Uhr an TestRueckkehrEinesAbgerechnetenBuches.
+// Die Frist eines Bescheids entsteht als Kalendertag in der Zeitzone der Schule
+// (api/schaden/bescheid_vorschlag.go, schulzeit.Jetzt). Gegen CURRENT_DATE geprüft, also gegen
+// den Kalendertag der Sitzung (im Image UTC), gälte eine Frist von gestern zwischen Mitternacht
+// in Berlin und Mitternacht UTC als nicht abgelaufen: Die Übergabe fände keine Zeile, und die
+// Liste zeigte den Bescheid nicht als überfällig.
 //
-// Der Test hängt nicht an der Uhrzeit: Er wertet die Bedingung in zwei Sitzungszonen aus,
-// die 26 Stunden auseinanderliegen (UTC−12 und UTC+14). Zu jeder Stunde weicht darum
-// mindestens eine von beiden vom Berliner Kalendertag ab. Geprüft wird in beiden Zonen:
-// Frist gestern → abgelaufen, Frist heute → nicht abgelaufen (Tage in Berlin gerechnet).
+// Der Test hängt nicht an der Uhrzeit: Er wertet die Bedingung in zwei Sitzungszonen aus, die
+// 26 Stunden auseinanderliegen (UTC−12 und UTC+14). Zu jeder Stunde weicht mindestens eine von
+// beiden vom Berliner Kalendertag ab. Geprüft wird in beiden Zonen: Frist gestern ist
+// abgelaufen, Frist heute nicht (Tage in Berlin gerechnet).
 func TestBescheidFristAbgelaufen_RechnetInDerSchulzeitzone(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

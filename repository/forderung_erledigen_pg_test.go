@@ -8,10 +8,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Gebühren-Erledigung (Bezahlt/Storno) am echten Postgres: Die 404/409-Sentinels
-// und die FOR-UPDATE-Betragslesung sind SQL-Verhalten — pgxmock würde sie nur
-// nachspielen. Der Betrag im Audit-Protokoll MUSS aus der Datenbank stammen; genau
-// das belegt dieser Test, indem er ihn nirgends übergibt und trotzdem im Log findet.
+// Zahlung und Storno einer Forderung am echten Postgres: Die Fehlerwerte für „nicht gefunden"
+// und „schon erledigt" und das Lesen des Betrags unter FOR UPDATE sind Verhalten der Datenbank.
+// Der Betrag im Protokoll stammt aus der Datenbank; der Test übergibt ihn nirgends und findet
+// ihn trotzdem im Eintrag.
 
 func seedOffenerSchadensfall(t *testing.T, pool *pgxpool.Pool, schuelerID, exemplarID string, betrag float64) string {
 	t.Helper()
@@ -33,8 +33,9 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 	schueler := seedSchueler(t, pool, "S-GEB-1", "Mia", "8b")
 	exemplare := seedSignaturMitExemplaren(t, pool, "GebErl", 2)
 
-	// Eigener Bearbeiter statt seedBearbeiter: dessen fester Barcode gehört dem
-	// Race-Test — ein geteilter Testnutzer macht die Reihenfolge zum Schicksal.
+	// Eigener Bearbeiter statt seedBearbeiter: Dessen fester Barcode gehört den Tests in
+	// schaden_melden_ausleihe_pg_test.go, und mit einem geteilten Konto hinge das Ergebnis an
+	// der Reihenfolge der Tests.
 	var bearbeiter string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
@@ -42,7 +43,8 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 
-	// (1) Storno: setzt ist_bezahlt UND die Storno-Spalten, Audit trägt den DB-Betrag.
+	// (1) Storno: setzt ist_bezahlt und die Spalten des Stornos, der Eintrag trägt den Betrag
+	// aus der Datenbank.
 	storno := seedOffenerSchadensfall(t, pool, schueler, exemplare[0], 12.50)
 	if err := repo.StorniereForderung(ctx, storno, bearbeiter, "Buch wiedergefunden"); err != nil {
 		t.Fatalf("Storno: %v", err)
@@ -68,7 +70,8 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 		t.Errorf("Audit-Betrag = %q, erwartet 12.5 (aus der DB, nicht vom Aufrufer)", auditBetrag)
 	}
 
-	// (2) Doppel-Storno und Bezahlen eines erledigten Falls → Konflikt-Sentinel.
+	// (2) Ein zweites Storno und das Bezahlen eines erledigten Falls liefern
+	// ErrSchadensfallErledigt.
 	if err := repo.StorniereForderung(ctx, storno, bearbeiter, "nochmal"); !errors.Is(err, ErrSchadensfallErledigt) {
 		t.Errorf("Doppel-Storno: erwartet ErrSchadensfallErledigt, bekam %v", err)
 	}
@@ -76,8 +79,8 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 		t.Errorf("Bezahlen nach Storno: erwartet ErrSchadensfallErledigt, bekam %v", err)
 	}
 
-	// (3) Bezahlt: setzt ist_bezahlt, lässt die Storno-Spalten unberührt —
-	// bezahlt und storniert bleiben unterscheidbar (DSGVO-PDF, Kontoauszug).
+	// (3) Bezahlt: setzt ist_bezahlt und lässt die Spalten des Stornos unberührt. Bezahlt und
+	// storniert bleiben unterscheidbar (Auskunft, Kontoauszug).
 	bezahlt := seedOffenerSchadensfall(t, pool, schueler, exemplare[1], 7.00)
 	if err := repo.VerbucheZahlung(ctx, bezahlt, bearbeiter); err != nil {
 		t.Fatalf("Bezahlen: %v", err)
@@ -93,7 +96,7 @@ func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 		t.Errorf("Zahlung: ist_bezahlt=%v storniert_am=%v (muss NULL bleiben)", bezahltFlag, storniertAm)
 	}
 
-	// (4) Unbekannte ID → 404-Sentinel, nicht der Konflikt.
+	// (4) Eine unbekannte ID liefert ErrSchadensfallNichtGefunden und nicht den Konflikt.
 	err := repo.VerbucheZahlung(ctx, "00000000-0000-0000-0000-000000000000", bearbeiter)
 	if !errors.Is(err, ErrSchadensfallNichtGefunden) {
 		t.Errorf("unbekannte ID: erwartet ErrSchadensfallNichtGefunden, bekam %v", err)

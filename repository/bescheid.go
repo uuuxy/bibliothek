@@ -28,15 +28,18 @@ type Bescheid struct {
 	Status         string     `json:"status"`
 	UebergebenAm   *time.Time `json:"uebergeben_am,omitempty"`
 	LetzterDruckAm *time.Time `json:"letzter_druck_am,omitempty"`
-	// FristAbgelaufen: offen und die Frist ist vorbei — das ist die Arbeitsliste.
+	// FristAbgelaufen heißt: offen, und die Frist ist vorbei. Diese Bescheide sind die
+	// Arbeitsliste.
 	FristAbgelaufen bool `json:"frist_abgelaufen"`
-	// RueckgabeNachUebergabe: Merker für „die Aufsicht ist zu informieren".
+	// RueckgabeNachUebergabe merkt, dass ein Buch zurückkam, nachdem der Bescheid übergeben
+	// war: Die Schulaufsicht ist dann zu informieren.
 	RueckgabeNachUebergabe bool `json:"rueckgabe_nach_uebergabe"`
-	// AnzahlPositionen: wie viele Forderungen auf dem Brief stehen.
+	// AnzahlPositionen zählt die Forderungen auf dem Brief.
 	AnzahlPositionen int `json:"anzahl_positionen"`
 }
 
-// BescheidAbfragen sind die Datenbankzugriffe des Bescheids.
+// BescheidAbfragen liest und schreibt die Schadensersatz-Bescheide und liefert, was der Dialog
+// für einen neuen Bescheid vorschlägt.
 type BescheidAbfragen interface {
 	LegeAn(ctx context.Context, e BescheidEingabe) (*Bescheid, error)
 	LadeListe(ctx context.Context, nurOffen bool) ([]Bescheid, error)
@@ -49,17 +52,18 @@ type BescheidAbfragen interface {
 	Uebergebe(ctx context.Context, id string) error
 	LadeEmpfaenger(ctx context.Context, schuelerID string) (BescheidEmpfaengerDaten, error)
 	LadeOffeneForderungen(ctx context.Context, schuelerID string) ([]OffeneForderung, error)
-	// LadeForderungenOhneBescheid: je Kind die offenen Forderungen, die noch auf keinem Brief stehen.
+	// LadeForderungenOhneBescheid liefert je Kind die offenen Forderungen, die auf keinem Brief
+	// stehen.
 	LadeForderungenOhneBescheid(ctx context.Context) ([]ForderungOhneBescheid, error)
-	// LadeUeberfaelligeAusleihen: die überfälligen Bücher eines Kindes ohne Forderung —
-	// die Kandidaten für den Brief (Stufe 2).
+	// LadeUeberfaelligeAusleihen liefert die überfälligen Bücher eines Kindes ohne Forderung,
+	// die Kandidaten für den Brief.
 	LadeUeberfaelligeAusleihen(ctx context.Context, schuelerID string) ([]UeberfaelligeAusleihe, error)
-	// LadeGroessenFuerExemplar: die Zahlen des Staffel-Vorschlags für EIN Exemplar, für den
-	// Dialog „Verlust/Schaden melden" — dort gibt es noch keine Forderung zu lesen.
+	// LadeGroessenFuerExemplar liefert die Zahlen des Staffel-Vorschlags für ein Exemplar, für
+	// den Dialog „Verlust/Schaden melden": Dort gibt es noch keine Forderung zu lesen.
 	LadeGroessenFuerExemplar(ctx context.Context, exemplarID string) (ErsatzwertGroessen, error)
 
-	// LadeGroessenFuerTitel: dieselben Zahlen für ALLE Exemplare eines Titels, in einer
-	// Abfrage — die Buchakte zeigt den heutigen Buchwert an jeder Exemplar-Karte.
+	// LadeGroessenFuerTitel liefert dieselben Zahlen für alle Exemplare eines Titels in einer
+	// Abfrage: Die Buchakte zeigt den heutigen Buchwert an jedem Exemplar.
 	LadeGroessenFuerTitel(ctx context.Context, titelID string) (map[string]ErsatzwertGroessen, error)
 }
 
@@ -74,36 +78,31 @@ type BescheidBriefPosition struct {
 
 type pgBescheidAbfragen struct{ db db.PgxPoolIface }
 
-// NewBescheidAbfragen erstellt das Repository.
+// NewBescheidAbfragen liefert die Abfragen der Bescheide an Postgres.
 func NewBescheidAbfragen(pool db.PgxPoolIface) BescheidAbfragen {
 	return &pgBescheidAbfragen{db: pool}
 }
 
-// bescheidHatOffenePosition: Steht auf dem Brief b noch eine unbezahlte Forderung?
-// Bezahlt UND Storno setzen ist_bezahlt (forderung_erledigen.go) — beide erledigen die Position.
-//
-// Daraus leitet sich „erledigt" ab (Konzept 4.3): Die Spalte status kennt den Wert, aber
-// kein Schreibpfad setzt ihn — Bezahlen und Storno laufen über die Forderung, nicht über
-// den Brief. Bis zum 10.09.2026 fehlte die Ableitung ganz: Ein bezahlter Bescheid galt
-// nach Fristablauf als überfällig und ließ sich an die Schulaufsicht übergeben.
+// bescheidHatOffenePosition prüft, ob auf dem Brief b noch eine unbezahlte Forderung steht.
+// Zahlung und Storno setzen beide ist_bezahlt (forderung_erledigen.go). Daraus ergibt sich
+// „erledigt": Die Spalte status kennt den Wert, aber kein Schreibpfad setzt ihn, weil Zahlung
+// und Storno über die Forderung laufen und nicht über den Brief.
 const bescheidHatOffenePosition = `EXISTS (SELECT 1 FROM schadensfaelle fo WHERE fo.bescheid_id = b.id AND fo.ist_bezahlt = false)`
 
-// sqlSchulHeute ist der heutige Kalendertag in der Schulzeitzone, in SQL gebildet.
-// CURRENT_DATE rechnet in der Zeitzone der Sitzung (im Image UTC) und nennt bis 2 Uhr
-// Berliner Zeit noch den Vortag.
+// sqlSchulHeute ist der heutige Kalendertag in der Zeitzone der Schule, in SQL gebildet.
+// CURRENT_DATE rechnet in der Zeitzone der Sitzung (im Image UTC) und nennt bis 2 Uhr Berliner
+// Zeit noch den Vortag.
 const sqlSchulHeute = schulzeit.SQLHeute
 
-// bescheidFristAbgelaufen: offen, Frist vorbei, und es ist noch etwas zu zahlen.
-//
-// Die Frist ist ein Kalendertag in der Schulzeitzone (api/schaden/bescheid_erstellen.go), also wird
-// sie gegen sqlSchulHeute verglichen. Bis zum 16.09.2026 stand hier CURRENT_DATE: Zwischen
-// Mitternacht in Berlin und Mitternacht UTC galt eine Frist von gestern als nicht
-// abgelaufen, die Übergabe an die Schulaufsicht fand keine Zeile
+// bescheidFristAbgelaufen heißt: offen, Frist vorbei, und es ist noch etwas zu zahlen. Die
+// Frist ist ein Kalendertag in der Zeitzone der Schule (api/schaden/bescheid_erstellen.go) und
+// wird deshalb gegen sqlSchulHeute verglichen: Mit CURRENT_DATE gälte eine Frist von gestern
+// zwischen Mitternacht in Berlin und Mitternacht UTC als nicht abgelaufen
 // (bescheid_frist_schulzeit_pg_test.go).
 const bescheidFristAbgelaufen = `(b.status = 'offen' AND b.frist_bis < ` + sqlSchulHeute + ` AND ` + bescheidHatOffenePosition + `)`
 
-// bescheidSpalten ist die gemeinsame Auswahl der Leser — EIN Ort, damit Liste, Akte und
-// Einzelabruf dieselben Felder in derselben Reihenfolge liefern.
+// bescheidSpalten ist die gemeinsame Auswahl der Lesewege, damit Liste, Akte und Einzelabruf
+// dieselben Felder in derselben Reihenfolge liefern.
 const bescheidSpalten = `
 	b.id, b.schueler_id, coalesce(s.vorname || ' ' || s.nachname, ''), coalesce(s.klasse, ''),
 	b.mittel, b.referenznummer, b.kassenjahr, b.laufende_nr, b.brief_datum, b.frist_bis,
@@ -123,15 +122,15 @@ func leseBescheid(rows pgx.Rows) (Bescheid, error) {
 	return b, err
 }
 
-// LadeListe liefert die Bescheide, die neuesten zuerst; nurOffen beschränkt auf die, die
-// noch nicht übergeben oder erledigt sind.
+// LadeListe liefert die Bescheide, die mit abgelaufener Frist zuerst, danach die neuesten;
+// nurOffen beschränkt auf die, die weder übergeben noch erledigt sind.
 func (a *pgBescheidAbfragen) LadeListe(ctx context.Context, nurOffen bool) ([]Bescheid, error) {
 	bedingung := ""
 	if nurOffen {
 		bedingung = "WHERE b.status = 'offen' AND " + bescheidHatOffenePosition
 	}
-	// LIMIT, weil auch diese Liste über Jahre wächst (Register „Unbegrenzte
-	// Listen-Endpunkte"): die abgelaufenen Fristen stehen dank ORDER BY oben.
+	// LIMIT, weil die Liste über Jahre wächst; die abgelaufenen Fristen stehen durch die
+	// Sortierung oben.
 	rows, err := a.db.Query(ctx, `
 		SELECT `+bescheidSpalten+`
 		FROM schadensersatz_bescheide b
@@ -172,7 +171,7 @@ func sammleBescheide(rows pgx.Rows) ([]Bescheid, error) {
 	return out, rows.Err()
 }
 
-// Lade holt einen Bescheid; pgx.ErrNoRows, wenn es ihn nicht gibt.
+// Lade lädt einen Bescheid; pgx.ErrNoRows, wenn es ihn nicht gibt.
 func (a *pgBescheidAbfragen) Lade(ctx context.Context, id string) (*Bescheid, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT `+bescheidSpalten+`
@@ -192,9 +191,9 @@ func (a *pgBescheidAbfragen) Lade(ctx context.Context, id string) (*Bescheid, er
 	return &alle[0], nil
 }
 
-// LadeEmpfaengerSnapshot liest die Empfänger-Angaben zum Briefdatum — die Grundlage des Nachdrucks.
-// Nach der Anonymisierung ist er leer; der Nachdruck sagt dann, dass die Anschrift
-// getilgt ist, statt eine falsche zu drucken.
+// LadeEmpfaengerSnapshot liest die Angaben des Empfängers zum Datum des Briefs, die Grundlage
+// des Nachdrucks. Nach der Anonymisierung sind sie leer; der Nachdruck sagt dann, dass die
+// Anschrift getilgt ist, statt eine falsche zu drucken.
 func (a *pgBescheidAbfragen) LadeEmpfaengerSnapshot(ctx context.Context, id string) (map[string]string, error) {
 	var roh []byte
 	if err := a.db.QueryRow(ctx,
@@ -208,9 +207,8 @@ func (a *pgBescheidAbfragen) LadeEmpfaengerSnapshot(ctx context.Context, id stri
 	return out, nil
 }
 
-// LadeAbsenderSnapshot liest die Angaben der Schule zum Briefdatum (Migration 141). Bescheide
-// von vorher haben keinen; dann ist die Karte leer, und der Nachdruck nimmt die
-// Einstellungen von heute.
+// LadeAbsenderSnapshot liest die Angaben der Schule zum Datum des Briefs. Ältere Bescheide
+// haben keine; das Ergebnis ist dann leer, und der Nachdruck nimmt die Einstellungen von heute.
 func (a *pgBescheidAbfragen) LadeAbsenderSnapshot(ctx context.Context, id string) (map[string]string, error) {
 	var roh []byte
 	if err := a.db.QueryRow(ctx,
@@ -227,8 +225,8 @@ func (a *pgBescheidAbfragen) LadeAbsenderSnapshot(ctx context.Context, id string
 	return out, nil
 }
 
-// LadePositionen liest die Zeilen des Briefs. Der Name kommt aus dem Titelsatz bzw. dem
-// Snapshot des Schülers — nicht aus dem lebenden Schülerdatensatz, damit der Nachdruck
+// LadePositionen liest die Zeilen des Briefs. Den Namen des Schülers trägt der Rufer aus dem
+// Snapshot des Empfängers ein und nicht aus dem heutigen Datensatz, damit der Nachdruck
 // dasselbe Blatt ergibt.
 func (a *pgBescheidAbfragen) LadePositionen(ctx context.Context, id string) ([]BescheidBriefPosition, error) {
 	rows, err := a.db.Query(ctx, `
@@ -254,13 +252,10 @@ func (a *pgBescheidAbfragen) LadePositionen(ctx context.Context, id string) ([]B
 	return out, rows.Err()
 }
 
-// VermerkeDruck hält fest, wann der Brief zuletzt gedruckt wurde. Die Nummer und der
-// Betrag bleiben unberührt — ein Nachdruck ist derselbe Bescheid, kein neuer.
-//
-// Trifft das UPDATE keine Zeile, ist das ein Fehler und kein Erfolg: pgx.ErrNoRows. Der
-// Aufrufer schickt den Brief trotzdem (der Vermerk ist Buchführung, nicht der Zweck),
-// protokolliert es aber — ein stiller Erfolg auf einer ID, die es nicht gibt, wäre die
-// Bugklasse „Phantom-Erfolg".
+// VermerkeDruck hält fest, wann der Brief zuletzt gedruckt wurde. Nummer und Betrag bleiben:
+// Ein Nachdruck ist derselbe Bescheid. Trifft die Anweisung keine Zeile, liefert sie
+// pgx.ErrNoRows; der Rufer schickt den Brief trotzdem und protokolliert den Fehler, statt einen
+// Erfolg auf einer ID zu melden, die es nicht gibt.
 func (a *pgBescheidAbfragen) VermerkeDruck(ctx context.Context, id string) error {
 	tag, err := a.db.Exec(ctx,
 		`UPDATE schadensersatz_bescheide SET letzter_druck_am = NOW() WHERE id = $1`, id)
@@ -273,11 +268,10 @@ func (a *pgBescheidAbfragen) VermerkeDruck(ctx context.Context, id string) error
 	return nil
 }
 
-// Uebergebe setzt den Bescheid auf „übergeben" — nur aus dem Zustand „offen" und nur,
-// wenn die Frist vorbei ist. Die WHERE-Bedingung ist die Regel: Sie verhindert, dass ein
-// Brief vor Fristablauf weitergegeben wird, und dass eine zweite Übergabe den Zeitpunkt
-// überschreibt — und nur, solange noch etwas zu zahlen ist: Ein bezahlter Fall geht
-// nicht zur Vollstreckung. pgx.ErrNoRows heißt: Der Zustand passt nicht.
+// Uebergebe setzt den Bescheid auf „übergeben": nur aus dem Zustand „offen", nur nach Ablauf
+// der Frist und nur, solange noch etwas zu zahlen ist. Die Bedingung ist die Regel: Kein Brief
+// geht vor Fristablauf weiter, eine zweite Übergabe überschreibt den Zeitpunkt nicht, und ein
+// bezahlter Fall geht nicht zur Vollstreckung. pgx.ErrNoRows heißt, der Zustand passt nicht.
 func (a *pgBescheidAbfragen) Uebergebe(ctx context.Context, id string) error {
 	var gesetzt string
 	err := a.db.QueryRow(ctx, `
@@ -287,10 +281,3 @@ func (a *pgBescheidAbfragen) Uebergebe(ctx context.Context, id string) error {
 		RETURNING b.id`, id).Scan(&gesetzt)
 	return err
 }
-
-// ── Der Vorschlag für einen neuen Bescheid ───────────────────────────────────
-//
-// Die drei Lesepfade des Dialogs liegen HIER und nicht im Handler: Das Schichtungs-Gate
-// verlangt es, und die Regel dahinter ist die richtige — die Bedingung „offen, nicht
-// storniert, noch auf keinem Brief" steht damit an EINER Stelle, dieselbe, die beim
-// Erstellen zuordnet (ordnePositionenZu).

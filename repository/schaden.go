@@ -8,37 +8,38 @@ import (
 	"bibliothek/db"
 )
 
-// SchadensArt ist die Fallgruppe einer Forderung — genau die beiden Kästchen des
-// Bescheid-Formulars (chk_schaden_art, Migration 110): Sie entscheidet, welches Kästchen
-// der Brief ankreuzt und ob er die Rückgabe verlangt. Ein eigener Typ, damit sie in der
-// Parameterliste von SchadensAbfragen.Melde nicht stumm mit der Beschreibung vertauscht wird.
+// SchadensArt ist die Fallgruppe einer Forderung, eines der beiden Kästchen im Formular des
+// Bescheids (chk_schaden_art): Sie entscheidet, welches Kästchen der Brief ankreuzt und ob er
+// die Rückgabe verlangt. Ein eigener Typ, damit sie in der Parameterliste von Melde nicht mit
+// der Beschreibung vertauscht wird.
 type SchadensArt string
 
 const (
-	// SchadensArtNichtZurueck heißt: verloren bzw. nicht ordnungsgemäß zurückgegeben.
+	// SchadensArtNichtZurueck heißt: verloren oder nicht ordnungsgemäß zurückgegeben.
 	SchadensArtNichtZurueck SchadensArt = "nicht_zurueckgegeben"
 	// SchadensArtBeschaedigt heißt: so stark beschädigt zurückgegeben, dass es unbrauchbar ist.
 	SchadensArtBeschaedigt SchadensArt = "beschaedigt"
 )
 
-// IstGueltig sagt, ob a einer der beiden Werte ist.
+// IstGueltig meldet, ob a einer der beiden Werte ist.
 func (a SchadensArt) IstGueltig() bool {
 	return a == SchadensArtNichtZurueck || a == SchadensArtBeschaedigt
 }
 
-// SchadensAbfragen defines operations for managing book damages and related loan actions.
+// SchadensAbfragen bucht einen Verlust oder Schaden an einer Ausleihe und liest die
+// Schadensfälle eines Lesers.
 type SchadensAbfragen interface {
 	// Melde bucht einen Verlust oder Schaden an einer Ausleihe. Einen Schuldner nimmt
 	// die Tür nicht entgegen: Er steht an der Ausleihe.
 	Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, betrag float64) (string, error)
-	// LadeZuLeser liefert alle Schadensfälle eines Schülers,
-	// neueste zuerst — die Gebühren-Sektion der Schülerakte.
+	// LadeZuLeser liefert alle Schadensfälle eines Lesers, die neuesten zuerst, für die Liste
+	// der Forderungen in der Akte.
 	LadeZuLeser(ctx context.Context, leserID string) ([]Schadensfall, error)
 }
 
-// Schadensfall ist eine Zeile der Gebühren-/Schadensliste eines Schülers.
-// Titel/Barcode sind Zeiger: exemplar_id ist nullbar (Geräteschäden, anonymisierte
-// Fälle) — ein nicht-nullbarer String würde beim Scan mit 500 abstürzen.
+// Schadensfall ist eine Zeile der Liste der Forderungen in der Akte eines Lesers. Titel und
+// BarcodeID sind Zeiger, weil exemplar_id bei einem Geräteschaden leer ist und sich NULL nicht
+// in einen Text lesen lässt.
 type Schadensfall struct {
 	ID                string     `json:"id"`
 	Beschreibung      string     `json:"beschreibung"`
@@ -49,9 +50,8 @@ type Schadensfall struct {
 	Stornierungsgrund *string    `json:"stornierungsgrund"`
 	Titel             *string    `json:"titel"`
 	BarcodeID         *string    `json:"barcode_id"`
-	// BescheidID: steht die Forderung schon auf einem Schadensersatz-Bescheid? Die
-	// Akte bietet „Bescheid erstellen" nur an, solange eine offene Forderung ohne
-	// Brief da ist.
+	// BescheidID nennt den Schadensersatz-Bescheid, auf dem die Forderung steht. Die Akte
+	// bietet „Bescheid erstellen" nur an, solange eine offene Forderung ohne Brief da ist.
 	BescheidID *string `json:"bescheid_id"`
 }
 
@@ -59,13 +59,13 @@ type pgSchadensAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewSchadensAbfragen returns a new PostgreSQL implementation of SchadensAbfragen.
+// NewSchadensAbfragen liefert die Abfragen der Schadensfälle an Postgres.
 func NewSchadensAbfragen(db db.PgxPoolIface) SchadensAbfragen {
 	return &pgSchadensAbfragen{db: db}
 }
 
-// LadeZuLeser liefert alle Schadensfälle eines Schülers, neueste zuerst.
-// LEFT JOIN: exemplar_id kann NULL sein (Geräteschäden), dann bleiben Titel/Barcode leer.
+// LadeZuLeser liefert alle Schadensfälle eines Lesers, die neuesten zuerst. Mit LEFT JOIN, weil
+// exemplar_id bei einem Geräteschaden leer ist; Titel und Barcode bleiben dann leer.
 func (a *pgSchadensAbfragen) LadeZuLeser(ctx context.Context, leserID string) ([]Schadensfall, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT sf.id, sf.beschreibung, sf.betrag, sf.ist_bezahlt, sf.erstellt_am,
@@ -93,16 +93,15 @@ func (a *pgSchadensAbfragen) LadeZuLeser(ctx context.Context, leserID string) ([
 	return faelle, rows.Err()
 }
 
-// ErrExemplarNeuVerliehen signalisiert, dass das zu meldende Exemplar zwischenzeitlich
-// (nach dem Öffnen des Schadensformulars) an jemand anderen ausgeliehen wurde. Der Text
-// ist nutzer-sichtbar (wird als 409-Meldung ausgeliefert), daher deutsche Großschreibung.
+// ErrExemplarNeuVerliehen meldet, dass das Exemplar an jemand anderen ausgeliehen wurde,
+// während das Formular der Schadensmeldung offen stand. Der Text steht so vor dem Menschen
+// (409).
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrExemplarNeuVerliehen = errors.New("Exemplar wurde zwischenzeitlich neu ausgeliehen — bitte den Vorgang neu laden")
 
-// Melde bucht einen Verlust oder Schaden in eigener Transaktion — der Weg aus der
-// Schülerakte („Verlust/Schaden melden"). Der Rumpf ist meldeSchaden; der Bescheid ruft
-// ihn in seiner eigenen Transaktion (Stufe 2 des Mahnverfahrens).
+// Melde bucht einen Verlust oder Schaden in eigener Transaktion, für „Verlust/Schaden melden"
+// in der Akte. Den Rumpf (meldeSchaden) ruft auch der Bescheid, in seiner Transaktion.
 func (a *pgSchadensAbfragen) Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, betrag float64) (string, error) {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {

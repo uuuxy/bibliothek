@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-// TestSchadenMelden_SetztAbholbereiteVormerkungZurueck sichert #3 ab: Wird ein Exemplar, das bei der
-// Rückgabe gerade einem wartenden Schüler zugewiesen wurde (Vormerkung 'abholbereit'), als
-// beschädigt ausgesondert, darf keine Geister-Zuteilung auf ein defektes Buch zurückbleiben.
-// Die Vormerkung muss auf 'wartend' zurückfallen und die Exemplar-Bindung gelöst werden.
+// Wird ein Exemplar, das bei der Rückgabe gerade einem wartenden Schüler zugewiesen wurde
+// (Vormerkung abholbereit), als beschädigt ausgesondert, bleibt keine Zuteilung auf ein Buch
+// zurück, das es nicht mehr gibt: Die Vormerkung fällt auf wartend zurück und verliert das
+// Exemplar.
 func TestSchadenMelden_SetztAbholbereiteVormerkungZurueck(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

@@ -8,9 +8,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestSchadenMelden_InzwischenNeuVerliehen sichert den Race-Schutz ab: Bleibt das Schadensformular offen,
-// während das Buch zurückgegeben und neu ausgeliehen wird, darf der "Melden"-Klick das
-// jetzt aktiv verliehene Exemplar nicht aussondern.
+// Bleibt das Formular der Schadensmeldung offen, während das Buch zurückgegeben und neu
+// ausgeliehen wird, sondert „Melden" das jetzt verliehene Exemplar nicht aus.
 func TestSchadenMelden_InzwischenNeuVerliehen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -29,13 +28,13 @@ func TestSchadenMelden_InzwischenNeuVerliehen(t *testing.T) {
 	returnLoan(t, pool, alteLoan)
 	seedAusleihe(t, pool, copyID, schuelerB, bearbeiter)
 
-	// Jetzt kommt der verspätete "Schaden melden"-Klick mit der ALTEN loanID.
+	// Der verspätete Klick auf „Schaden melden" nennt die alte Ausleihe.
 	_, err := repo.Melde(ctx, copyID, alteLoan, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 5.0)
 	if !errors.Is(err, ErrExemplarNeuVerliehen) {
 		t.Fatalf("erwartet ErrExemplarNeuVerliehen, war: %v", err)
 	}
 
-	// Das Exemplar darf NICHT ausgesondert sein — B's Ausleihe bleibt intakt.
+	// Das Exemplar bleibt im Bestand, und die Ausleihe von B läuft weiter.
 	if ausgesondert := ausgesonderteZahl(t, pool, []string{copyID}); ausgesondert != 0 {
 		t.Error("Exemplar wurde trotz neuer Ausleihe ausgesondert")
 	}
@@ -49,8 +48,8 @@ func TestSchadenMelden_InzwischenNeuVerliehen(t *testing.T) {
 	}
 }
 
-// TestSchadenMelden_Normalfall stellt sicher, dass der Guard den regulären Fall nicht
-// blockiert: Ein Schaden an der eigenen, noch aktiven Ausleihe geht durch.
+// Die Prüfung auf eine neue Ausleihe hält den gewöhnlichen Fall nicht auf: Ein Schaden an der
+// eigenen, noch laufenden Ausleihe geht durch.
 func TestSchadenMelden_Normalfall(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -78,11 +77,10 @@ func TestSchadenMelden_Normalfall(t *testing.T) {
 	}
 }
 
-// TestSchadenMelden_Idempotent sichert #4 (Doppelte Rechnungen) ab: Ein doppelt abgeschickter
-// "Schaden melden"-Klick mit derselben ausleihe_id darf den Schüler nicht zweimal belasten.
-// Der zweite Aufruf muss den bereits angelegten Schadensfall idempotent zurückgeben; es darf
-// genau EIN Schadensfall entstehen. Der FOR-UPDATE-Lock auf der Ausleihe-Zeile serialisiert
-// dabei auch die echt parallele Variante (zwei Transaktionen gleichzeitig).
+// Ein doppelt abgeschickter Klick auf „Schaden melden" mit derselben Ausleihe belastet den
+// Schüler nicht zweimal: Der zweite Aufruf liefert den vorhandenen Schadensfall, und es
+// entsteht genau einer. Die Sperre auf der Zeile der Ausleihe (FOR UPDATE) reiht auch zwei
+// gleichzeitige Transaktionen hintereinander.
 func TestSchadenMelden_Idempotent(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -158,10 +156,9 @@ func returnLoan(t *testing.T, pool *pgxpool.Pool, loanID string) {
 	}
 }
 
-// TestSchadenMelden_SchuldnerAusAusleihe belegt die Objektbindung: Der Schadensfall wird dem
-// Schuldner der Ausleihe zugeschrieben. Eine Kennung des Schuldners nimmt SchadensAbfragen.Melde nicht
-// entgegen; dass die mitgeschickte schueler_id der Anfrage folgenlos bleibt, prüft
-// api/schaden/schaden_schuldner_pg_test.go an der Route.
+// Der Schadensfall wird dem Schuldner der Ausleihe zugeschrieben. Eine Kennung des Schuldners
+// nimmt SchadensAbfragen.Melde nicht entgegen; dass die mitgeschickte schueler_id der Anfrage
+// folgenlos bleibt, prüft api/schaden/schaden_schuldner_pg_test.go an der Route.
 func TestSchadenMelden_SchuldnerAusAusleihe(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

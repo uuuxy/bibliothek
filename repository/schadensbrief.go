@@ -32,8 +32,8 @@ func LadeSchadensfallBrief(ctx context.Context, db Datenbank, id string) (Schade
 	var f SchadensfallBrief
 	var aufBescheid bool
 
-	// COALESCE auf den Adressspalten: nullbar in der DB, nicht-nullbar in Go
-	// (NULL-Scan-Bugklasse). Anschrift fürs Fensterkuvert.
+	// Die Spalten der Anschrift können leer sein; COALESCE, weil sich NULL nicht in einen Text
+	// lesen lässt.
 	query := `
 		SELECT
 			sf.beschreibung, sf.betrag, sf.erstellt_am,
@@ -88,32 +88,23 @@ type RechnungsPosition struct {
 	Land         bool
 }
 
-// LadeOffeneForderungenOhneBescheid lädt die offenen (unbezahlten) Schadensfälle eines
-// Schülers als Rechnungspositionen.
+// LadeOffeneForderungenOhneBescheid lädt die unbezahlten Schadensfälle eines Schülers als
+// Positionen der Ersatzforderung.
 //
-// LEFT JOIN, nicht INNER (Bestands-Durchgang 06.09.2026, Frage 3): `exemplar_id` und
-// `ausleihe_id` sind beide nullbar, `ausleihe_id` steht sogar auf ON DELETE SET NULL, und
-// `geraet_id` wartet als dritte Bezugsspalte in derselben Tabelle. Mit INNER JOINs fiele
-// eine Forderung ohne diese Bezüge lautlos aus dem Brief — und wären ALLE betroffen,
-// antwortete der Weg mit „keine offenen Schadensfälle", während die Akte offene Beträge
-// zeigt und der Schüler gesperrt bleibt. Heute ist der Fall nicht erreichbar (die drei
-// Löschpfade räumen die Forderungen VOR den Ausleihen), aber das ist eine Zusicherung,
-// die nur zufällig hält: Geld darf nicht davon abhängen, ob ein Buch noch existiert.
+// Mit LEFT JOIN, weil exemplar_id und ausleihe_id leer sein können (ausleihe_id steht auf ON
+// DELETE SET NULL): Mit INNER JOIN fiele eine Forderung ohne diese Bezüge aus dem Brief,
+// während die Akte den Betrag weiter zeigt und der Schüler gesperrt bleibt. Den Geräteschaden
+// sieht das Schema vor (check_damage_item verlangt genau eines von Exemplar und Gerät), auch
+// wenn ihn noch nichts schreibt; er steht mit Modellname und Barcode des Geräts da. Bleibt
+// beides leer, trägt die Beschreibung des Schadensfalls die Zeile, und als Ausleihdatum gilt
+// das Datum der Forderung.
 //
-// Die Datenbank verlangt sogar GENAU EINES von beidem (CHECK check_damage_item:
-// exemplar_id XOR geraet_id) — der Geräteschaden ist im Schema also vorgesehen, ihm fehlt
-// nur der Schreiber. Deshalb steht das Gerät hier schon als Position: Modellname statt
-// Titel, Geräte-Barcode statt Exemplar-Barcode. Bleibt beides leer, trägt die Beschreibung
-// des Schadensfalls die Zeile; Ausleihdatum ersatzweise das Datum der Forderung.
+// Eine Forderung, die schon auf einem Schadensersatz-Bescheid steht, gehört nicht hierher:
+// Dieselbe Forderung auf beiden Briefen wäre zweimal dieselbe Zahlungsaufforderung, mit zwei
+// Fristen und zwei Nummern.
 //
-// Nicht hierher gehört eine Forderung, die schon auf einem Schadensersatz-Bescheid steht
-// (`bescheid_id`, 14.09.2026): Dieselbe Forderung auf beiden Briefen wäre zweimal dieselbe
-// Zahlungsaufforderung, mit zwei Fristen und zwei Nummern. Seit dem 17.09.2026 nennen beide
-// Briefe für ein Lernmittel dasselbe Konto (pdf/zahlungsweg.go) — bis dahin verlangte dieser
-// hier „bar in der Bibliothek", was die Arbeitshilfe untersagt.
-//
-// Eine unlesbare Zeile bricht ab: Eine Rechnung, der still eine Position fehlt, nennt einen zu
-// kleinen Betrag. Lieber gar kein Brief als ein falscher.
+// Eine unlesbare Zeile bricht ab: Eine Rechnung, der eine Position fehlt, nennt einen zu
+// kleinen Betrag.
 func LadeOffeneForderungenOhneBescheid(ctx context.Context, db Datenbank, schuelerID uuid.UUID) ([]RechnungsPosition, error) {
 	query := `
 		SELECT COALESCE(t.titel, g.modellname, sf.beschreibung),

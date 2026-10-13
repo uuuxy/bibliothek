@@ -1,17 +1,13 @@
 package repository
 
-// Das Verleihjahr entscheidet, wie viel im Bescheid steht (#597).
+// Das Verleihjahr entscheidet, wie viel im Bescheid steht. Die Staffel der Arbeitshilfe geht
+// über Verleihjahre: im ersten Jahr der volle Preis, dann 80 %, 60 %, 40 %, 20 %, ab dem
+// sechsten Jahr 10 %. Ein Verleihjahr ist ein Schuljahr (Hessen: 1. August bis 31. Juli),
+// dieselbe Grenze, die Versetzung, Ausweis und die Übernahme aus Littera benutzen.
 //
-// Die Staffel der Arbeitshilfe geht über VERLEIHJAHRE: 1. Jahr voller Preis, dann 80 %,
-// 60 %, 40 %, 20 %, ab dem 6. Jahr 10 %. Ein Verleihjahr ist ein SCHULJAHR (Hessen:
-// 1. August bis 31. Juli) — dieselbe Grenze, die Versetzung, Ausweis und Littera-Import
-// benutzen.
-//
-// Bis zum 12.09.2026 lieferte die Abfrage zwei andere Größen: die Zahl der AUSLEIHEN
-// (ein Buch, das in einem Schuljahr sechsmal hinausging, stand damit im 6. Verleihjahr
-// → 10 % statt 100 %) und die Differenz der KALENDERJAHRE (ein im Februar gekauftes
-// Buch blieb bis zum Dezember im 1. Verleihjahr, obwohl das zweite Schuljahr längst
-// lief). Beide Zahlen stehen am Ende in einem Bescheid an Eltern.
+// Mit der Zahl der Ausleihen stünde ein Buch, das in einem Schuljahr sechsmal hinausging, im
+// sechsten Verleihjahr (10 % statt 100 %); mit der Differenz der Kalenderjahre bliebe ein im
+// Februar gekauftes Buch bis Dezember im ersten, obwohl das zweite Schuljahr längst läuft.
 
 import (
 	"context"
@@ -78,7 +74,7 @@ func TestVerleihjahrZaehltSchuljahre(t *testing.T) {
 			t.Fatalf("Exemplar anlegen: %v", err)
 		}
 		for i := 0; i < ausleihen; i++ {
-			// Alle im laufenden Schuljahr, wenige Stunden auseinander: EIN Verleihjahr.
+			// Alle im laufenden Schuljahr, wenige Stunden auseinander: ein Verleihjahr.
 			zeitpunkt := schuljahrBeginn.Add(time.Duration(i+1) * time.Hour)
 			if _, err := pool.Exec(ctx, `
 				INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
@@ -97,11 +93,11 @@ func TestVerleihjahrZaehltSchuljahre(t *testing.T) {
 		return schadensID
 	}
 
-	// Zwei Exemplare, einen Tag auseinander gekauft — und ein Schuljahr auseinander.
-	// Dieses Paar ist der Kern: In JEDEM Monat des Jahres ist genau eine der beiden
-	// Erwartungen mit Kalenderjahren nicht zu erreichen (im Aug–Dez die zweite, im
-	// Jan–Jul die erste). Ein Gate, das nur eine davon prüfte, wäre ein halbes Jahr lang
-	// grün, ohne etwas zu sehen.
+	// Zwei Exemplare, einen Tag auseinander gekauft und ein Schuljahr auseinander. Dieses Paar
+	// ist der Kern: In jedem Monat des Jahres ist genau eine der beiden Erwartungen mit
+	// Kalenderjahren nicht zu erreichen (von August bis Dezember die zweite, von Januar bis
+	// Juli die erste). Eine Prüfung mit nur einer davon wäre ein halbes Jahr lang grün, ohne
+	// etwas zu sehen.
 	imNeuenJahr := forderung(t, "neu", schuljahrBeginn.AddDate(0, 0, 1), 0)
 	imAltenJahr := forderung(t, "alt", schuljahrBeginn.AddDate(0, 0, -1), 0)
 	// Vielfach verliehen, alles im selben Schuljahr: bleibt das 1. Verleihjahr.

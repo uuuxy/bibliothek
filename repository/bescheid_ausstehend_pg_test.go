@@ -9,9 +9,9 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Der Reiter „Schadensersatz" zeigt die Stufe zwischen Mahnliste und Bescheid: Kinder,
-// deren Forderung noch auf keinem Brief steht. Vier Fälle grenzen die Zeile ab —
-// bezahlt, storniert, schon auf einem Bescheid und im Papierkorb bleiben draußen.
+// Der Reiter „Schadensersatz" zeigt die Stufe zwischen Mahnliste und Bescheid: Kinder, deren
+// Forderung noch auf keinem Brief steht. Bezahlt, storniert, schon auf einem Bescheid und im
+// Papierkorb bleiben draußen.
 func TestAusstehend_NurOffeneForderungenOhneBescheid(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -77,14 +77,14 @@ func TestAusstehend_NurOffeneForderungenOhneBescheid(t *testing.T) {
 		}
 	})
 
-	// Das eine Kind, das in der Liste stehen muss: zwei offene Forderungen, eine
-	// bezahlte daneben — gezählt und summiert werden nur die offenen.
+	// Das eine Kind, das in der Liste stehen muss: zwei offene Forderungen und eine bezahlte
+	// daneben. Gezählt und summiert werden nur die offenen.
 	offen := kind(t, "Offen", false)
 	forderung(t, offen, 12, false, false)
 	forderung(t, offen, 8, false, false)
 	forderung(t, offen, 99, true, false)
 
-	// Die drei, die NICHT erscheinen dürfen.
+	// Die drei, die nicht erscheinen dürfen.
 	storniert := kind(t, "Storno", false)
 	forderung(t, storniert, 5, false, true)
 	geloescht := kind(t, "Papierkorb", true)

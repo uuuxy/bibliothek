@@ -11,22 +11,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Das abgeschriebene Buch kommt zurück (#597, Etappe 2).
-//
-// Eine Forderung „nicht zurückgegeben" ist eine Wette darauf, dass das Buch weg bleibt.
-// Legt das Kind es später doch auf die Theke, endet die Wette — und zwar verschieden, je
-// nachdem, wo der Bescheid gerade liegt:
-//
-//   - Noch bei der Schule (offen): Die Schule storniert die Forderung selbst. Damit
-//     fallen Sperre und Löschblockade, die an der offenen Forderung hängen.
-//   - Schon bei der Schulaufsicht (übergeben): Die Schule storniert NICHTS. Der Anspruch
-//     wird dort durchgesetzt; sie ist „unverzüglich zu informieren" (Leitfaden LMF
-//     Nr. 12.7). Dafür trägt der Bescheid `rueckgabe_nach_uebergabe` — das Sekretariat
-//     sieht ihn in der Liste, die Theke bekommt den Satz sofort.
-//
-// Bezahlte Forderungen bleiben unberührt: Wer bezahlt hat und das Buch später bringt,
-// ist ein Erstattungsfall und keine Stornierung — den entscheidet ein Mensch.
-
 // rueckkehrForderung ist eine offene Forderung des Exemplars samt ihrem Brief.
 type rueckkehrForderung struct {
 	id             string
@@ -38,18 +22,17 @@ type rueckkehrForderung struct {
 
 // RueckkehrBefund sagt, was das Wiederauftauchen eines Exemplars ausgelöst hat.
 type RueckkehrBefund struct {
-	// StornierteForderungen: Anzahl der Forderungen, die die Schule selbst beendet hat.
+	// StornierteForderungen zählt die Forderungen, die die Schule selbst beendet hat.
 	StornierteForderungen int
-	// StornierterBetrag: ihre Summe, für die Meldung an der Theke.
+	// StornierterBetrag ist ihre Summe, für die Meldung an der Theke.
 	StornierterBetrag float64
-	// AufsichtInformieren: Referenznummern der Bescheide, die schon übergeben waren.
+	// AufsichtInformieren nennt die Referenznummern der Bescheide, die schon übergeben waren.
 	AufsichtInformieren []string
 }
 
-// AufsichtHinweis ist der Satz für den Fall, den die Anwendung NICHT erledigen kann: Der
-// Bescheid liegt bei der Schulaufsicht, die Forderung bleibt offen, und jemand muss zum
-// Telefon greifen. Leer, wenn nichts zu tun ist. Theke und Fehlbestandsbericht sagen
-// denselben Satz.
+// AufsichtHinweis ist der Satz für den Fall, den das Programm nicht erledigen kann: Der
+// Bescheid liegt bei der Schulaufsicht, die Forderung bleibt offen, und jemand muss dort
+// anrufen. Leer, wenn nichts zu tun ist. Theke und Fehlbestandsbericht sagen denselben Satz.
 func (b RueckkehrBefund) AufsichtHinweis() string {
 	if len(b.AufsichtInformieren) == 0 {
 		return ""
@@ -58,17 +41,26 @@ func (b RueckkehrBefund) AufsichtHinweis() string {
 		strings.Join(b.AufsichtInformieren, ", "))
 }
 
-// verbucheRueckkehr behandelt die offenen „nicht zurückgegeben"-Forderungen eines
-// Exemplars, das wieder aufgetaucht ist.
+// verbucheRueckkehr behandelt die offenen Forderungen „nicht zurückgegeben" eines Exemplars,
+// das wieder aufgetaucht ist. Was geschieht, hängt daran, wo der Bescheid liegt:
 //
-// Die Transaktionsgrenze liegt beim Aufrufer (wie MarkiereVerlustAlsGefunden): Das
-// Zurückholen des Exemplars und das Ende der Forderung gehören in EINE Transaktion —
-// sonst steht das Buch wieder im Regal und die Forderung bleibt, oder umgekehrt.
+//   - Noch bei der Schule: Die Schule storniert die Forderung selbst. Damit fallen Sperre und
+//     Löschsperre, die an der offenen Forderung hängen.
+//   - Schon bei der Schulaufsicht (übergeben): Die Schule storniert nichts. Der Anspruch wird
+//     dort durchgesetzt, und sie ist „unverzüglich zu informieren" (Leitfaden LMF Nr. 12.7).
+//     Der Bescheid bekommt dafür den Merker rueckgabe_nach_uebergabe.
+//
+// Bezahlte Forderungen bleiben unberührt: Wer bezahlt hat und das Buch später bringt, ist ein
+// Fall für eine Erstattung, und den entscheidet ein Mensch.
+//
+// Die Transaktion gehört dem Rufer, wie bei MarkiereVerlustAlsGefunden: Das Zurückholen des
+// Exemplars und das Ende der Forderung gehören zusammen, sonst steht das Buch wieder im Regal
+// und die Forderung bleibt.
 func verbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterID string) (RueckkehrBefund, error) {
 	var befund RueckkehrBefund
 
-	// FOR UPDATE OF f: Zwei Arbeitsplätze, die denselben Barcode gleichzeitig scannen,
-	// stornieren sonst beide — der zweite sieht die Forderung noch offen.
+	// FOR UPDATE OF f: Scannen zwei Arbeitsplätze denselben Barcode gleichzeitig, sähe der
+	// zweite die Forderung sonst noch offen, und beide stornierten.
 	rows, err := q.Query(ctx, `
 		SELECT f.id, f.betrag, coalesce(b.status, ''), coalesce(b.id::text, ''), coalesce(b.referenznummer, '')
 		FROM schadensfaelle f
@@ -97,11 +89,9 @@ func verbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterI
 		return befund, fmt.Errorf("offene Forderungen des Exemplars lesen: %w", err)
 	}
 
-	// Das Datum steht im Stornierungsgrund und damit in der Akte des Kindes und im
-	// Prüfprotokoll. `time.Now()` ist im Container UTC: Eine Rückgabe zwischen 0 und 2 Uhr
-	// Berliner Zeit trug das Datum von GESTERN — dieselbe Zeile, die erklären soll, wann
-	// das Buch wieder da war. schulzeit.Jetzt() wie überall sonst, wo ein Datum vor einem
-	// Menschen landet (pdf/schadensfall.go, pdf/kontoauszug.go).
+	// Das Datum steht im Stornierungsgrund und damit in der Akte des Kindes und im Protokoll.
+	// Deshalb schulzeit.Jetzt(): time.Now() ist im Container UTC, und eine Rückgabe zwischen 0
+	// und 2 Uhr Berliner Zeit trüge das Datum des Vortags.
 	grund := "Rückgabe am " + schulzeit.Jetzt().Format(dateFormatDE)
 	for _, f := range offene {
 		if f.bescheidStatus == "uebergeben" {
@@ -120,9 +110,10 @@ func verbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterI
 	return befund, nil
 }
 
-// storniereWeilZurueck beendet die Forderung wie StorniereForderung: ist_bezahlt mit
-// gesetzt (alle Offen-Filter hängen daran), storniert_am unterscheidet sie von einer
-// echten Zahlung. Dieselbe Audit-Aktion STORNIERUNG, damit die Revision EINE Form kennt.
+// storniereWeilZurueck beendet die Forderung wie StorniereForderung: ist_bezahlt wird mit
+// gesetzt, weil alle Filter auf „offen" daran hängen, und storniert_am unterscheidet sie von
+// einer Zahlung. Der Eintrag trägt dieselbe Aktion STORNIERUNG, damit das Protokoll eine Form
+// kennt.
 func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID string, betrag float64, bearbeiterID, grund string) error {
 	var leserID *string
 	err := q.QueryRow(ctx, `
@@ -154,8 +145,8 @@ func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID strin
 	})
 }
 
-// merkeRueckgabeNachUebergabe setzt den Merker am übergebenen Bescheid. Die Forderung
-// bleibt, wie sie ist — über sie entscheidet nicht mehr die Schule.
+// merkeRueckgabeNachUebergabe setzt den Merker am übergebenen Bescheid. Die Forderung bleibt,
+// wie sie ist: Über sie entscheidet nicht mehr die Schule.
 func merkeRueckgabeNachUebergabe(ctx context.Context, q Datenbank, f rueckkehrForderung, bearbeiterID string) error {
 	tag, err := q.Exec(ctx,
 		`UPDATE schadensersatz_bescheide SET rueckgabe_nach_uebergabe = true WHERE id = $1`,

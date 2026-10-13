@@ -7,10 +7,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// schadensMeldung trägt die Angaben einer Schadensmeldung. Als Struktur, weil vier
-// Kennungen und Texte (Exemplar, Ausleihe, Bearbeiter, Beschreibung) nebeneinander
-// string sind: Positionsweise vertauscht, liefe die Meldung ohne Fehler auf das falsche
-// Exemplar oder die falsche Ausleihe.
+// schadensMeldung trägt die Angaben einer Schadensmeldung. Eine Struktur, weil Exemplar,
+// Ausleihe, Bearbeiter und Beschreibung nebeneinander Texte sind: In der Reihenfolge
+// vertauscht, liefe die Meldung ohne Fehler auf das falsche Exemplar oder die falsche Ausleihe.
 type schadensMeldung struct {
 	exemplarID   string
 	ausleiheID   string
@@ -21,19 +20,14 @@ type schadensMeldung struct {
 }
 
 // meldeSchaden bucht einen Verlust oder Schaden an einer Ausleihe: Exemplar aussondern,
-// Forderung anlegen, Ausleihe beenden, Abholfach lösen — alles innerhalb der
-// Transaktion des Aufrufers.
+// Forderung anlegen, Ausleihe beenden, Abholfach lösen. Die Transaktion gehört dem Rufer, weil
+// der Schadensersatz-Bescheid Verluste zusammen mit Nummer und Brief bucht: Sonst gäbe es einen
+// Brief über ein Buch, dessen Ausleihe weiterläuft, oder eine beendete Ausleihe ohne Brief.
 //
-// Bis zum 15.09.2026 war das der Rumpf von SchadensAbfragen.Melde mit eigener Transaktion. Seit
-// Stufe 2 des Mahnverfahrens bucht auch der Schadensersatz-Bescheid Verluste, und zwar
-// in DERSELBEN Transaktion wie Nummer und Brief: Papier und Datenbank dürfen nicht
-// auseinanderlaufen (ein Brief über ein Buch, dessen Ausleihe weiterläuft, oder ein
-// beendetes Buch ohne Brief). Deshalb liegt die Transaktionsgrenze beim Aufrufer.
-//
-// Der Aussonderungsgrund folgt der Fallgruppe: „nicht zurückgegeben" ist VERLUST,
-// „beschädigt" BESCHAEDIGUNG. Bis zum 15.09.2026 stand bei beiden BESCHAEDIGUNG; das
-// endgültige Löschen und die Fund-Meldung des Fehlbestandsberichts kennen aber nur
-// VERLUST (OFFEN.md 5.3), und die Verlustquote (statistik.go) zählt beide.
+// Der Grund der Aussonderung folgt der Fallgruppe: „nicht zurückgegeben" ist VERLUST,
+// „beschädigt" BESCHAEDIGUNG. Der Fund im Fehlbestandsbericht und das endgültige Löschen dort
+// kennen nur VERLUST (inventur_verlust_aktionen.go); die Verlustquote (statistik.go) zählt
+// beide.
 func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (string, error) {
 	ausleihe, err := ladeSchadensAusleihe(ctx, tx, meldung)
 	if err != nil {
@@ -59,11 +53,10 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (stri
 		return "", err
 	}
 
-	// Geister-Zuteilung verhindern: Wurde dieses Exemplar bei der Rückgabe gerade einem
-	// wartenden Schüler als 'abholbereit' zugewiesen und wird nun als beschädigt ausgesondert,
-	// zeigt dessen Profil ein abholbereites, aber physisch defektes Buch. Die Vormerkung
-	// zurück auf 'wartend' setzen und die Exemplar-Bindung lösen — der Schüler rückt damit für
-	// das nächste verfügbare Exemplar wieder in die Warteschlange.
+	// Wurde das Exemplar bei der Rückgabe gerade einem Wartenden als abholbereit zugewiesen,
+	// zeigte dessen Profil nach der Aussonderung ein Buch zum Abholen, das es nicht mehr gibt.
+	// Die Vormerkung geht zurück auf wartend und verliert das Exemplar; der Leser rückt für das
+	// nächste freie Exemplar wieder in die Warteschlange.
 	if _, err := tx.Exec(ctx, `
 		UPDATE vormerkungen
 		SET status = 'wartend', bereitgestellt_exemplar_id = NULL, bereitgestellt_bis = NULL
@@ -83,10 +76,9 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (stri
 		}
 	}
 
-	// `AND rueckgabe_am IS NULL`: Ohne Forderung gibt es keine Zeile, an der die Idempotenz
-	// oben hängt — ein zweiter Klick verschöbe sonst das Rückgabedatum auf JETZT. Für den
-	// Weg mit Forderung ändert die Bedingung nichts; dort ist schon der Schadensfall die
-	// Bremse.
+	// Die Bedingung rueckgabe_am IS NULL: Ohne Forderung gibt es keine Zeile, an der ein
+	// zweiter Klick zu erkennen wäre, und er verschöbe das Rückgabedatum auf jetzt. Mit
+	// Forderung ändert die Bedingung nichts; dort bremst schon der Schadensfall.
 	if _, err := tx.Exec(ctx, `
 		UPDATE ausleihen
 		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = NULLIF($1, '')::uuid
@@ -94,9 +86,9 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (stri
 	`, meldung.bearbeiterID, meldung.ausleiheID); err != nil {
 		return "", err
 	}
-	// Ohne Forderung ist die Kennung leer — es gibt keinen Schadensfall, auf den sie zeigen
-	// könnte. Der Bescheid-Weg (bescheid_verlust.go) kommt hier nie mit einem Kollegen an:
-	// Seine Liste liest die Sicht `schueler`.
+	// Ohne Forderung ist die Kennung leer: Es gibt keinen Schadensfall, auf den sie zeigen
+	// könnte. Der Bescheid (bescheid_verlust.go) kommt hier nie mit einem Kollegen an, seine
+	// Liste liest die Sicht schueler.
 	return schadensID, nil
 }
 

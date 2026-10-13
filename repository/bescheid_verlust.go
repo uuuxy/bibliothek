@@ -11,34 +11,27 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Stufe 2 des Mahnverfahrens (15.09.2026, OFFEN.md 4.18 und 5.13): Der Bescheid entsteht
-// direkt aus den überfälligen Büchern. Der Dialog zeigt sie vorgewählt, und beim
-// Erstellen bucht der Server je gewähltem Buch den Verlust — Ausleihe endet, Exemplar
-// VERLUST, Forderung „nicht zurückgegeben" — und dann Nummer und Brief, alles in EINER
-// Transaktion. Papier == Datenbank: Es gibt keinen Brief über ein Buch, dessen Ausleihe
-// weiterläuft, und keine beendete Ausleihe ohne Brief. Kommt das Buch zurück, storniert
-// der Theke-Scan die Forderung (verbucheRueckkehr).
-
-// UeberfaelligeAusleihe ist ein überfälliges Buch eines Kindes, das noch keine Forderung
-// trägt — ein Kandidat für den Brief.
+// UeberfaelligeAusleihe ist ein überfälliges Buch eines Kindes, das noch keine Forderung trägt:
+// ein Kandidat für den Brief.
 type UeberfaelligeAusleihe struct {
 	AusleiheID string
 	ExemplarID string
 	Titel      string
 	ISBN       string
 	Kaufpreis  float64
-	// Listenpreis und ZustandAbschlag seit Migration 127 — dieselben Größen wie in
-	// OffeneForderung, damit beide Wege denselben Betrag vorschlagen.
+	// Listenpreis und ZustandAbschlag sind dieselben Größen wie in OffeneForderung, damit beide
+	// Wege denselben Betrag vorschlagen.
 	Listenpreis     float64
 	ZustandAbschlag int
-	// Topf: das Eigentum des Exemplars (ExemplarTopfSQL), wie bei OffeneForderung.
+	// Topf ist das Eigentum des Exemplars (ExemplarTopfSQL), wie bei OffeneForderung.
 	Topf        string
 	FaelligSeit time.Time
-	// Mahnstufe und LetztesMahndatum: wie oft und wann zuletzt ein Mahnbrief zu diesem
-	// Buch gedruckt wurde. Ohne Datum bei einer aus Littera übernommenen Mahnstufe.
+	// Mahnstufe und LetztesMahndatum sagen, wie oft und wann zuletzt ein Mahnbrief zu diesem
+	// Buch gedruckt wurde. Eine aus Littera übernommene Mahnstufe hat kein Datum.
 	Mahnstufe        int
 	LetztesMahndatum *time.Time
-	// Dieselben beiden Größen wie bei OffeneForderung, für die Staffel.
+	// SchuljahreMitAusleihe und SchuljahreImBestand sind dieselben beiden Größen wie bei
+	// OffeneForderung, für die Staffel.
 	SchuljahreMitAusleihe int
 	SchuljahreImBestand   int
 }
@@ -49,8 +42,8 @@ type BescheidVerlustEingabe struct {
 	Betrag     float64
 }
 
-// Die Abweisungen sind Bedienfälle (409), keine Serverfehler: Der Dialog stand offen,
-// während sich die Lage änderte — neu öffnen genügt. Nutzer-sichtbar, daher ganze Sätze.
+// Die Abweisungen sind Bedienfälle (409), keine Serverfehler: Der Dialog stand offen, während
+// sich die Lage änderte, und neu öffnen genügt. Die Sätze stehen so vor dem Menschen.
 var (
 	//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
 	ErrAusleiheInzwischenZurueck = errors.New("Ein gewähltes Buch ist inzwischen zurückgegeben — bitte den Dialog neu öffnen.")
@@ -60,16 +53,14 @@ var (
 	ErrAusleiheFremd = errors.New("Ein gewähltes Buch ist nicht an dieses Kind ausgeliehen.")
 )
 
-// LadeUeberfaelligeAusleihen liest die überfälligen Bücher eines Kindes ohne offene
-// Forderung. Dasselbe Prädikat wie die Mahnliste (rueckgabe_frist < jetzt); was schon
-// eine Forderung trägt, steht bei LadeOffeneForderungen.
+// LadeUeberfaelligeAusleihen liest die überfälligen Bücher eines Kindes ohne offene Forderung.
+// Dieselbe Bedingung wie die Mahnliste (rueckgabe_frist < jetzt); was schon eine Forderung
+// trägt, steht bei LadeOffeneForderungen.
 func (a *pgBescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, schuelerID string) ([]UeberfaelligeAusleihe, error) {
-	// EIN Zeitpunkt für beide Rechnungen dieser Funktion: Bis zum 17.09.2026 filterte das
-	// SQL mit CURRENT_TIMESTAMP (Uhr der Datenbank), während die Staffel das Schuljahr aus
-	// schulzeit.Jetzt() (Uhr des Servers) bestimmte. Zwei Uhren, eine Antwort — und am
-	// Schuljahreswechsel konnte die eine schon im neuen Jahr sein, während die andere noch
-	// im alten zählte: Das Buch stand in der Liste, die Staffel nannte eine Stufe daneben.
-	// Der Unterschied ist heute klein (dieselbe Maschine), aber er ist nicht zugesichert.
+	// Ein Zeitpunkt für beide Rechnungen dieser Funktion: Filterte die Abfrage mit der Uhr der
+	// Datenbank, während die Staffel das Schuljahr aus schulzeit.Jetzt() bestimmt, könnte am
+	// Schuljahreswechsel die eine schon im neuen Jahr sein und die andere noch im alten. Das
+	// Buch stünde in der Liste, und die Staffel nennte eine Stufe daneben.
 	jetzt := schulzeit.Jetzt()
 	rows, err := a.db.Query(ctx, `
 		SELECT a.id, e.id, t.titel, coalesce(t.isbn, ''), coalesce(e.einkaufspreis, 0)::float8,
@@ -127,14 +118,17 @@ func (a *pgBescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, sch
 	return out, nil
 }
 
-// bucheVerluste bucht je gewähltem Buch den Verlust in der Transaktion des Briefs und
-// liefert die entstandenen Forderungen als Positionen.
+// bucheVerluste bucht je gewähltem Buch den Verlust in der Transaktion des Briefs (die Ausleihe
+// endet, das Exemplar wird als VERLUST ausgesondert, die Forderung „nicht zurückgegeben"
+// entsteht) und liefert die Forderungen als Positionen. So gibt es keinen Brief über ein Buch,
+// dessen Ausleihe weiterläuft, und keine beendete Ausleihe ohne Brief. Kommt das Buch zurück,
+// storniert der Scan an der Theke die Forderung (verbucheRueckkehr).
 //
-// Geprüft wird IN der Transaktion, an der gesperrten Ausleihe-Zeile: Sie gehört diesem
-// Kind, läuft noch und trägt noch keine Forderung. Der Dialog kann minutenlang offen
-// stehen, während das Buch an der Theke zurückkommt oder jemand in der Akte den Verlust
-// meldet — dann entstünde ohne diese Prüfung ein Brief über ein Buch, das im Regal
-// steht, oder eine zweite Forderung für dasselbe Buch.
+// Geprüft wird in der Transaktion, an der gesperrten Zeile der Ausleihe: Sie gehört diesem
+// Kind, läuft noch und trägt keine Forderung. Der Dialog kann minutenlang offen stehen, während
+// das Buch an der Theke zurückkommt oder jemand in der Akte den Verlust meldet; ohne die
+// Prüfung entstünde ein Brief über ein Buch, das im Regal steht, oder eine zweite Forderung für
+// dasselbe Buch.
 func bucheVerluste(ctx context.Context, tx pgx.Tx, e BescheidEingabe, referenznummer string) ([]BescheidPositionEingabe, error) {
 	beschreibung := "Nicht zurückgegeben, Schadensersatz-Bescheid " + referenznummer
 	positionen := make([]BescheidPositionEingabe, 0, len(e.Verluste))

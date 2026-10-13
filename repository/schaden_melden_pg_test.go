@@ -8,10 +8,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Der Aussonderungsgrund folgt der Fallgruppe. Bis zum 15.09.2026 stand bei jedem
-// gemeldeten Schaden BESCHAEDIGUNG, auch bei „nicht zurückgegeben" — die Fund-Meldung
-// und das endgültige Löschen des Fehlbestandsberichts fanden diese Exemplare nie
-// (beide kennen nur VERLUST, OFFEN.md 5.3). Rot am alten Code: grund = BESCHAEDIGUNG.
+// Der Grund der Aussonderung folgt der Fallgruppe: „Nicht zurückgegeben" ist VERLUST und nicht
+// BESCHAEDIGUNG, weil der Fund und das endgültige Löschen im Fehlbestandsbericht nur VERLUST
+// kennen.
 func TestSchadenMelden_NichtZurueckgegebenIstVerlust(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -38,9 +37,9 @@ func TestSchadenMelden_NichtZurueckgegebenIstVerlust(t *testing.T) {
 	}
 }
 
-// Das Buch taucht beim Nachsuchen wieder auf: Der Fund im Fehlbestandsbericht beendet
-// auch die Forderung, die das Buch abgerechnet hatte — dieselbe Regel wie an der Theke.
-// Rot am alten Code: Das Exemplar kam zurück in den Umlauf, die Forderung blieb offen.
+// Das Buch taucht beim Nachsuchen wieder auf: Der Fund im Fehlbestandsbericht beendet auch die
+// Forderung, die das Buch abgerechnet hatte, dieselbe Regel wie an der Theke. Sonst käme das
+// Exemplar zurück in den Umlauf, und die Forderung bliebe offen.
 func TestMarkiereVerlustAlsGefunden_BeendetForderung(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -92,13 +91,11 @@ func aussonderungsGrund(t *testing.T, pool *pgxpool.Pool, copyID string) string 
 	return grund
 }
 
-// Ein Kollege bekommt KEINE Forderung (entschieden am 16.09.2026): Der Bescheid ist ein
-// Schreiben an Erziehungsberechtigte und braucht Klasse und Anschrift, die von einer
-// Lehrkraft nirgends stehen; gehaftet wird gegenüber dem Dienstherrn und nur bei Vorsatz
-// oder grober Fahrlässigkeit. Gebucht wird trotzdem, was den Bestand angeht.
-//
-// Rot am alten Code: Die Forderung entstand — und stand in keiner Übersicht, weil beide
-// Listen die Sicht `schueler` lesen (OFFEN.md 5.17, Fund 1).
+// Ein Kollege bekommt keine Forderung: Der Bescheid ist ein Schreiben an Erziehungsberechtigte
+// und braucht Klasse und Anschrift, die von einer Lehrkraft nirgends stehen; gehaftet wird
+// gegenüber dem Dienstherrn und nur bei Vorsatz oder grober Fahrlässigkeit. Gebucht wird
+// trotzdem, was den Bestand angeht. Eine Forderung stünde zudem in keiner Übersicht, weil beide
+// Listen die Sicht schueler lesen.
 func TestSchadenMelden_KollegeOhneForderung(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

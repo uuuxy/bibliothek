@@ -5,20 +5,17 @@ import (
 	"testing"
 )
 
-// Der Freitext eines erledigten Schadensfalls fällt mit der Anonymisierung.
+// Der Freitext eines erledigten Schadensfalls fällt mit der Anonymisierung. Der Fall bleibt als
+// Beleg stehen (Betrag, Datum, bezahlt oder storniert); daran hängen Kassenbuch und Bescheid.
+// Die Geschichte dazu bleibt nicht: „Buch im Bus liegen gelassen, Mutter angerufen" ist
+// Personenbezug, der die Anonymisierung sonst überlebte, und die Löschfrist des Schadensfalls
+// ist die des Belegs, nicht die der Erzählung.
 //
-// Entschieden am 16.09.2026 (OFFEN.md 4.15): Der FALL bleibt als Beleg stehen — Betrag,
-// Datum, bezahlt oder storniert; daran hängen Kassenbuch und Bescheid. Die Geschichte
-// dazu bleibt nicht: „Buch im Bus liegen gelassen, Mutter angerufen" ist Personenbezug,
-// der die Anonymisierung sonst überlebt, und zwar unbegrenzt — die Löschfrist des
-// Schadensfalls ist die des Belegs, nicht die der Erzählung.
+// Die Gegenprobe: Eine offene Forderung behält ihren Text. Sie wird noch gebraucht, weil jemand
+// sie einziehen, erklären oder stornieren können muss.
 //
-// Die Gegenprobe steht gleichberechtigt daneben: Eine OFFENE Forderung behält ihren
-// Text. Sie wird noch gebraucht — jemand muss sie einziehen, erklären oder stornieren
-// können, und ohne Begründung steht ein Betrag ohne Grund vor einer Familie.
-//
-// Am echten Postgres, über TilgeSchuelerSpuren — den Weg, den Purge, LUSD-Abgang und der
-// nächtliche Cron gemeinsam fahren.
+// Am echten Postgres, über TilgeSchuelerSpuren, den Weg, den das endgültige Löschen, der Abgang
+// aus der LUSD und der nächtliche Lauf gemeinsam fahren.
 func TestTilgeSchuelerSpuren_FreitextNurBeiErledigtenFaellen(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -70,8 +67,8 @@ func TestTilgeSchuelerSpuren_FreitextNurBeiErledigtenFaellen(t *testing.T) {
 			"Betrag ohne Grund vor einer Familie", textOffen)
 	}
 
-	// Zweimal tilgen ist erlaubt und ändert nichts: Purge und Cron können denselben
-	// Schüler nacheinander in die Hand nehmen.
+	// Zweimal tilgen ist erlaubt und ändert nichts: Das endgültige Löschen und der nächtliche
+	// Lauf können denselben Schüler nacheinander treffen.
 	if err := TilgeSchuelerSpuren(ctx, pool, schueler, "Test"); err != nil {
 		t.Fatalf("zweite Tilgung: %v", err)
 	}
