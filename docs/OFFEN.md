@@ -167,9 +167,10 @@ lässt sich dort anhalten.
   (`api/system`), Mahnwesen (`api/mahnwesen`), Schaden (`api/schaden`), Katalog
   (`api/katalog`), Druck (`api/druck`), Bestellung (`api/bestellung`), Leser (`api/leser`)
   und Theke (`api/theke`). Alle zwölf Themen stehen in eigenen Paketen.
-- [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
-  die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
-  Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
+- [ ] Stufe 5, Abschluss: Tests, die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die
+  Dokumente nennen die neue Gliederung. Eine Messung an `repository/` entscheidet, ob die
+  Datenbankschicht folgt. Gebaut ist seit dem 13.10.2026 die Ratsche, dass kein Thema ein
+  anderes einbindet (`api/themen_ratsche_test.go`).
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -808,7 +809,8 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   Ordner der Werkzeuge (`.claude/`, `.jules/`).
 - **Nachweis je Stufe.** Die Tests und ihr Ausgang sind vor und nach der Stufe dieselben; neue
   kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 13.10.2026, nach Stufe 4:
-  2.276 Testfunktionen, davon 211 in `api/`, 112 in `api/leser`, 91 in `api/katalog`, 87 in
+  2.276 Testfunktionen (mit den zwei der Ratsche zwischen den Themen danach 2.278, 213 in
+  `api/`), davon 211 in `api/`, 112 in `api/leser`, 91 in `api/katalog`, 87 in
   `api/bestellung`, 44 in `api/system`, 39 in `api/mahnwesen`, 38 in `api/theke`, 35 in
   `api/schaden`, 23 in `api/benutzer`, 20 in `api/lernmittel`, 18 in `api/inventurlauf`, 15
   in `api/portal`, acht in `api/druck`, fünf in `internal/buchetikett`, 30 in `mailservice/`
@@ -842,8 +844,9 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   nach dem Umzug der Türen, an einer Messung von `repository/` wie dieser.
 - **Was der Umzug nicht bringt:** weniger Code und kürzere Bauzeiten. Die Zeilen bleiben, und
   das Testprogramm von `api/` baut nach einer geänderten Zeile in 4,4 Sekunden (gemessen am
-  12.10.2026). Er bringt einen Ordner je Menüpunkt statt 453 Dateien in einem, und der
-  Compiler weist ab, wenn ein Thema in ein anderes greift.
+  12.10.2026). Er bringt einen Ordner je Menüpunkt statt 453 Dateien in einem, und eine
+  Prüfung weist ab, wenn ein Thema ein anderes einbindet (`api/themen_ratsche_test.go`; der
+  Compiler allein wiese nur einen Kreis ab).
 
 ---
 

@@ -531,7 +531,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt, nach Druck und Bestellung `api/`, `api/katalog`, `repository/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/druck`, `api/bestellung` und `internal/buchetikett` ergänzt, am 13.10.2026 nach den Lesern `api/`, `api/mahnwesen` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/leser` und in 5.2.2 die Regel ergänzt, zu welchem Thema eine Tür gehört, nach der Theke `api/`, `api/druck`, `api/lernmittel` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/theke` ergänzt
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt, nach Druck und Bestellung `api/`, `api/katalog`, `repository/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/druck`, `api/bestellung` und `internal/buchetikett` ergänzt, am 13.10.2026 nach den Lesern `api/`, `api/mahnwesen` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/leser` und in 5.2.2 die Regel ergänzt, zu welchem Thema eine Tür gehört, nach der Theke `api/`, `api/druck`, `api/lernmittel` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/theke` ergänzt, in 5.2.2 die Ratsche genannt, die die Themen auseinanderhält
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -697,7 +697,9 @@ Rate-Limit und die Abmeldung.
   (`api/router.go`, `api/bereitschafts_alarm_weiterleitung_test.go`).
 - Ein Thema bindet `api/tuer` und die Schichten darunter ein. `api/` kann es nicht
   einbinden: `api/` bindet das Thema ein, und Go weist den Kreis ab. Dass kein Thema ein
-  anderes einbindet, hält ab Stufe 5 eine Ratsche. Was zwei Themen brauchen, steht deshalb
+  anderes einbindet, hält `api/themen_ratsche_test.go`: Sie liest die Einbindungen jeder
+  Datei in den Ordnern der Themen, auch der Tests, und lässt aus `api/` nur `api/tuer` zu;
+  ein Testpaket darf für den Router `api/` einbinden. Was zwei Themen brauchen, steht deshalb
   in `api/tuer` oder einer Schicht darunter: Den Eintrag zur Konto-Anlage schreiben Benutzer
   & Rechte und die Leserdatei über `tuer.Basis.ProtokolliereKontoAnlage`. Den Ersatzwert
   eines Buchs nennen zwei Türen des Schadens und zwei des Katalogs; die Rechnung steht in
@@ -3581,10 +3583,10 @@ Zeilen in Funktionen ohne einen Typ aus `net/http` tragen
 `bestellung/bestellbericht_handler.go`, `lernmittel/lmf_plan.go` und
 `schaden/bescheid_handler.go` ([OFFEN.md](OFFEN.md) 5.62).
 
-Offen aus diesem Risiko ([OFFEN.md](OFFEN.md) 5.65, Stufe 5): Dass kein Thema ein anderes
-einbindet, hält noch keine Ratsche; am 13.10.2026 bindet jedes Thema aus `api/` nur
-`api/tuer` ein (`go list`). 40 Testdateien in `api/` prüfen nichts aus `api/` und ziehen zu
-ihrem Paket. Ob `repository/` nach Themen geteilt wird, entscheidet eine Messung.
+Dass kein Thema ein anderes einbindet, hält seit dem 13.10.2026
+`api/themen_ratsche_test.go`. Offen aus diesem Risiko ([OFFEN.md](OFFEN.md) 5.65, Stufe 5):
+40 Testdateien in `api/` prüfen nichts aus `api/` und ziehen zu ihrem Paket. Ob
+`repository/` nach Themen geteilt wird, entscheidet eine Messung.
 
 Gemessen am 09.10.2026, bevor der Abbau begann: In drei Monaten war das Paket von 10.463 auf
 30.785 Zeilen gewachsen und trug neben den Türen Teile der Fachlogik: den Aufbau der PDFs und
