@@ -5,7 +5,8 @@ import (
 	"time"
 )
 
-// LaufendeAusleihe represents a currently checked out book copy detail for the student.
+// LaufendeAusleihe ist eine Zeile der Ausleihliste in der Akte: das Exemplar, das der Leser
+// gerade hat, mit Titel und Frist. ID ist die Kennung des Exemplars.
 type LaufendeAusleihe struct {
 	ID         string `json:"id"`
 	AusleiheID string `json:"ausleihe_id"`
@@ -17,23 +18,22 @@ type LaufendeAusleihe struct {
 	// Cover-Proxy) — und das ist bei importierten Beständen der Normalfall.
 	ISBN     string `json:"isbn,omitempty"`
 	CoverURL string `json:"cover_url,omitempty"`
-	// IstLernmittel steuert die Marke „Lernmittel" an der Ausleihzeile — aus der
-	// Spalte (Migration 093), nicht mehr aus einem LMF-Präfix in Titel oder Signatur.
+	// IstLernmittel steuert die Marke „Lernmittel" an der Zeile; der Wert kommt aus der Spalte
+	// ist_lernmittel des Titels.
 	IstLernmittel  bool      `json:"ist_lernmittel"`
 	AusgeliehenAm  time.Time `json:"ausgeliehen_am"`
 	RueckgabeFrist time.Time `json:"rueckgabe_frist"`
 	// IstDauerleihe ist die Ausleihe an jemanden, der kein Schüler ist
 	// (`ausleihen.ist_handapparat`, gesetzt in erzeugeAusleihe und im Geräte-Pfad).
 	//
-	// Sie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die
-	// es nicht gibt: Entschieden am 16.09.2026 — „kollegen haben keine frist bzw werden einfach
-	// nie gesperrt!" Die Sperr-Automatik hält das seit jeher (sie zählt nur Ausleihen mit
-	// ist_handapparat = false); die Akte rechnete daneben ihr eigenes „überfällig" aus
-	// dem Datum und färbte die Zeile nach einem Jahr rot.
+	// Sie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die es
+	// nicht gibt: Kollegen haben keine Frist und werden nie gesperrt. Die Sperr-Automatik zählt
+	// nur Ausleihen mit ist_handapparat = false; ohne das Feld rechnete die Akte ihr eigenes
+	// „überfällig" aus dem Datum und färbte die Zeile nach einem Jahr rot.
 	IstDauerleihe bool `json:"ist_dauerleihe"`
 }
 
-// HatFoto checks if an encrypted photo exists for the student.
+// HatFoto sagt, ob zu dem Leser ein verschlüsseltes Foto gespeichert ist.
 func (a *pgLeserAbfragen) HatFoto(ctx context.Context, leserID string) (bool, error) {
 	var hatFoto bool
 	err := a.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler_fotos WHERE schueler_id = $1)", leserID).Scan(&hatFoto)
@@ -50,12 +50,13 @@ func ZaehleOffeneSchaeden(ctx context.Context, q Datenbank, leserID string) (anz
 	return anzahl, summe, err
 }
 
-// ZaehleOffeneSchaeden: Anzahl und Summe der unbezahlten Forderungen des Lesers.
+// ZaehleOffeneSchaeden zählt die unbezahlten Forderungen des Lesers und nennt ihre Summe.
 func (a *pgLeserAbfragen) ZaehleOffeneSchaeden(ctx context.Context, leserID string) (int, float64, error) {
 	return ZaehleOffeneSchaeden(ctx, a.db, leserID)
 }
 
-// LadeLaufendeAusleihen retrieves all books currently borrowed by the student.
+// LadeLaufendeAusleihen liest die offenen Ausleihen des Lesers mit Exemplar und Titel, die
+// jüngste zuerst.
 func (a *pgLeserAbfragen) LadeLaufendeAusleihen(ctx context.Context, leserID string) ([]LaufendeAusleihe, error) {
 	query := `
 		SELECT 

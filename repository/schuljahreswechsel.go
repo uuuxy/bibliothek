@@ -35,18 +35,15 @@ func ZaehleJuengsteSchuljahreswechsel(ctx context.Context, db Datenbank) (int, e
 }
 
 // sqlVersetzeSchueler zählt Klassenbezeichnungen um eine Stufe hoch und markiert
-// Abschlussklassen als Abgänger. WER Abschlussklasse ist, sagt allein
-// AbschlussklasseSQL — dieselbe Regel, nach der die Abgängerliste
-// (api/mahnwesen/graduates.go) diese Klassen von Mai bis Juli zum Einsammeln zeigt. Bis zum
-// 05.09.2026 stand die Regel hier zweimal als eigener CASE-Block und in der Liste gar
-// nicht (dort galt ist_abgaenger — ein anderer Begriff unter demselben Namen).
+// Abschlussklassen als Abgänger. Wer Abschlussklasse ist, sagt allein AbschlussklasseSQL,
+// dieselbe Regel, nach der die Abgängerliste (api/mahnwesen/graduates.go) diese Klassen von Mai
+// bis Juli zum Einsammeln zeigt.
 //
-// Wichtige Invarianten:
-//   - klasse ist NOT NULL (schema.sql) — Abgänger bekommen 'ABG', exakt wie der
-//     LUSD-Import-Pfad (computeLusdChanges), damit beide Wege dieselbe Konvention
-//     schreiben.
-//   - lpad erhält führende Nullen ('05a' → '06a'), ohne beim Stellenwechsel zu
-//     kürzen ('09' → '10', greatest() verhindert lpad-Truncation).
+// Zwei Regeln hält die Anweisung:
+//   - klasse ist NOT NULL (schema.sql): Abgänger bekommen 'ABG' wie beim LUSD-Import
+//     (computeLusdChanges), damit beide Wege dieselbe Konvention schreiben.
+//   - lpad erhält führende Nullen ('05a' → '06a'), ohne beim Stellenwechsel zu kürzen
+//     ('09' → '10'; greatest() verhindert, dass lpad abschneidet).
 var sqlVersetzeSchueler = `
 	WITH parsed AS (
 		SELECT id,

@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// abgaengerBedingung ist die EINE Definition, wer in der Abgängerliste steht: nicht
+// abgaengerBedingung ist die eine Definition, wer in der Abgängerliste steht: nicht
 // gelöscht, noch an der Schule und in einer Abschlussklasse nach der Regel der Versetzung.
 // Liste, Kontoauszug-Druck und Versand lesen alle dieses Prädikat.
 var abgaengerBedingung = "s.deleted_at IS NULL AND s.ist_abgaenger = false AND " +

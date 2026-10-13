@@ -6,12 +6,12 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// ConstraintAusweisUeberPersonen ist der Name, unter dem der Trigger aus Migration 118 eine
+// ConstraintAusweisUeberPersonen ist der Name, unter dem der Trigger eine
 // Ausweisnummer ablehnt, die schon eine Person der anderen Tabelle trägt (Schüler ↔ Kollegium).
 const ConstraintAusweisUeberPersonen = "uniq_ausweis_ueber_personen"
 
 // IstAusweisKollision sagt, ob err eine vergebene Ausweisnummer meldet — unter den aktiven
-// Schülern (Migration 049) oder über Schüler und Kollegium hinweg (Migration 118). Die
+// Schülern oder über Schüler und Kollegium hinweg. Die
 // Schreibwege prüfen vorher selbst; greift trotzdem die Datenbank, haben zwei Arbeitsplätze
 // gleichzeitig dieselbe Nummer vergeben, und das ist eine Auskunft, kein Serverfehler.
 func IstAusweisKollision(err error) bool {
@@ -23,7 +23,7 @@ func IstAusweisKollision(err error) bool {
 		pgErr.ConstraintName == "uniq_schueler_barcode_active"
 }
 
-// ConstraintNummerUeberBuchUndAusweis ist der Name, unter dem der Wächter aus Migration 131
+// ConstraintNummerUeberBuchUndAusweis ist der Name, unter dem der Wächter
 // eine Nummer ablehnt, die auf der anderen Seite schon vergeben ist: ein Ausweis, der der
 // Barcode eines Buchs wäre, oder ein Buch-Barcode, der der Ausweis eines Lesers wäre.
 const ConstraintNummerUeberBuchUndAusweis = "uniq_nummer_ueber_buch_und_ausweis"

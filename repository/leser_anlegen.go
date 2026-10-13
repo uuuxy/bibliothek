@@ -33,22 +33,18 @@ func LegeLeserAn(ctx context.Context, db Datenbank, l LeserNeu) (string, error) 
 	return id, err
 }
 
-// IstSchuelerDubletteVorhanden erkennt einen bereits existierenden Schüler anhand von
-// Vor-/Nachname und Geburtsdatum (case-insensitive, ohne soft-gelöschte Datensätze).
+// IstSchuelerDubletteVorhanden erkennt einen vorhandenen Schüler an Vorname, Nachname und
+// Geburtsdatum, ohne Rücksicht auf Groß- und Kleinschreibung und ohne die Zeilen im Papierkorb.
 //
-// Ein fehlendes Geburtsdatum ist bewusst KEIN Duplikat-Kriterium: Zwei namensgleiche
-// Schüler ohne (noch nicht aus der LUSD übernommenes) Geburtsdatum sind nicht
-// automatisch dieselbe Person. Nur bei beidseitig bekanntem, identischem Geburtsdatum
-// liegt ein echtes Duplikat vor. `geburtsdatum = $3` liefert genau das: Ist eine der
-// beiden Seiten NULL, ist der Vergleich SQL-NULL ("nicht gleich"), die Zeile zählt nicht
-// als Treffer. Vorher stülpte coalesce beiden Seiten '1900-01-01' über und machte damit
-// namensgleiche Schüler OHNE Geburtsdatum fälschlich zu Duplikaten (Zwillings-Blockade):
-// der zweite "Leon Müller" ohne Geburtsdatum konnte gar nicht angelegt werden.
+// Ein fehlendes Geburtsdatum ist kein Merkmal einer Dublette: Zwei namensgleiche Schüler ohne
+// Geburtsdatum (noch nicht aus der LUSD übernommen) sind nicht dieselbe Person. `geburtsdatum =
+// $3` liefert genau das: Ist eine der beiden Seiten NULL, ist der Vergleich NULL, und die Zeile
+// zählt nicht als Treffer. Ein coalesce auf ein festes Datum machte namensgleiche Schüler ohne
+// Geburtsdatum zu Dubletten; der zweite "Leon Müller" ließe sich dann nicht anlegen.
 //
-// Seit Migration 108 vergleicht die Prüfung in der Normalform suchnorm — derselben, in
-// der der Unique-Index und der LUSD-Schlüssel rechnen: „Müller" und „Mueller" sind ein
-// Mensch. Vorher nur lower(): Die Schreibvariante rutschte an der Prüfung vorbei und
-// stand als zweite Zeile in der Datenbank.
+// Verglichen wird in der Normalform suchnorm, derselben, in der der eindeutige Index und der
+// LUSD-Schlüssel rechnen: „Müller" und „Mueller" sind ein Mensch. Mit lower() allein rutschte
+// die Schreibvariante an der Prüfung vorbei und stünde als zweite Zeile in der Datenbank.
 func IstSchuelerDubletteVorhanden(ctx context.Context, db Datenbank, vorname, nachname string, gebdatum *time.Time) (bool, error) {
 	var isDuplicate bool
 	q := `SELECT EXISTS(SELECT 1 FROM schueler WHERE suchnorm(vorname) = suchnorm($1) AND suchnorm(nachname) = suchnorm($2) AND geburtsdatum = $3::DATE AND deleted_at IS NULL)`
@@ -59,7 +55,7 @@ func IstSchuelerDubletteVorhanden(ctx context.Context, db Datenbank, vorname, na
 // IstLeserNamensdubletteVorhanden sucht einen aktiven Leser mit demselben Namen — in der
 // Normalform suchnorm, also „Müller" wie „Mueller".
 //
-// Gefragt wird die TABELLE `leser` und über ALLE Arten: Ein Kollege, der schon als
+// Gefragt wird die Tabelle `leser` und über alle Arten: Ein Kollege, der schon als
 // Schülerzeile aus dem Altbestand steht, ist derselbe Mensch. Die Prüfung ist bewusst
 // grob — sie weist auch zwei echte Namensvettern ab. Das ist der seltenere Fall, und er
 // meldet sich sofort; ein stiller zweiter Eintrag meldet sich nie.

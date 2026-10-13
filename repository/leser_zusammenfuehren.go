@@ -21,9 +21,9 @@ import (
 // diese Funktion beide Zeilen zu einer zusammen. Sie ist das Sicherheitsnetz hinter der
 // Vorschau-Paarung und gilt genauso für Dubletten aus Handanlage + Import.
 //
-// Regeln (entschieden am 02.09.2026):
-//   - Das ZIEL bleibt: dieselbe UUID, derselbe Barcode — Ausweis und Historie gelten weiter.
-//   - Die QUELLE geht auf: Ausleihen, Schäden, Vormerkungen, Foto und Protokollspuren
+// Regeln:
+//   - Das Ziel bleibt: dieselbe UUID, derselbe Barcode — Ausweis und Historie gelten weiter.
+//   - Die Quelle geht auf: Ausleihen, Schäden, Vormerkungen, Foto und Protokollspuren
 //     wandern zum Ziel, danach wird die Zeile endgültig gelöscht (kein Papierkorb — eine
 //     wiederherstellbare Hülle wäre die dritte Wahrheit über dieselbe Person).
 //   - LUSD bleibt führend: Die Stammdaten kommen von dem Datensatz, den ein LUSD-Export
@@ -40,19 +40,15 @@ var (
 	// ErrZusammenfuehrenAnonymisiert meldet: ein anonymisierter Datensatz trägt keine Person mehr.
 	ErrZusammenfuehrenAnonymisiert = errors.New("anonymisierte datensätze lassen sich nicht zusammenführen")
 
-	// ErrZusammenfuehrenVerschiedeneArten hält die Grenze, die bis zum 16.09.2026 die
-	// Sicht `schueler` unbeabsichtigt gestellt hat: Sie zeigt nur Schüler, also konnte
-	// gar nichts anderes zusammengeführt werden.
-	//
-	// Seit die Schreibwege auf der Tabelle `leser` arbeiten (damit ein doppelt stehender
-	// Kollege überhaupt reparierbar ist), fällt dieser zufällige Schutz weg — und ohne
-	// Ersatz ließe sich ein Kollege mit einem Schüler verschmelzen. Das Ergebnis wäre
-	// nicht falsch, sondern unrettbar: Zusammenführen löscht die Quelle, und welche
-	// Angaben zu wem gehörten, steht danach nur noch im Rückweg-Eintrag.
+	// ErrZusammenfuehrenVerschiedeneArten hält die Grenze zwischen Schüler und Kollegium: Die
+	// Schreibwege arbeiten auf der Tabelle `leser` (damit ein doppelt stehender Kollege
+	// reparierbar ist), und ohne die Grenze ließe sich ein Kollege mit einem Schüler
+	// verschmelzen. Das Ergebnis wäre nicht falsch, sondern unrettbar: Zusammenführen löscht
+	// die Quelle, und welche Angaben zu wem gehörten, steht danach nur noch im Rückweg-Eintrag.
 	//
 	// Die Grenze verläuft am Schüler, nicht an der Art: Lehrkraft und LiV sind zwei
-	// Schreibweisen für denselben Personenkreis und dürfen sich treffen (die
-	// Selbstanmeldung legt jeden als „lehrkraft" an, auch eine LiV).
+	// Schreibweisen für denselben Personenkreis und dürfen sich treffen (die Selbstanmeldung
+	// legt jeden als „lehrkraft" an, auch eine LiV).
 	ErrZusammenfuehrenVerschiedeneArten = errors.New("ein schüler lässt sich nicht mit einem kollegen zusammenführen")
 	// ErrZusammenfuehrenZweiKonten meldet: Beide Datensätze haben ein Zugangskonto. Über den
 	// Namen erkennt die Route die Abweisung und nennt den Grund statt einer Störung.
@@ -90,7 +86,7 @@ type ZusammenfuehrenErgebnis struct {
 	// DoppelteVormerkungen: Titel, die beide vorgemerkt hatten — die weniger
 	// fortgeschrittene Vormerkung fällt weg (UNIQUE titel_id, schueler_id).
 	DoppelteVormerkungen int64 `json:"doppelte_vormerkungen"`
-	// NachbuchMeldungen: Meldungen der Theke (Migration 117), in denen die Quelle stand.
+	// NachbuchMeldungen: Meldungen der Theke, in denen die Quelle stand.
 	NachbuchMeldungen int64 `json:"nachbuch_meldungen"`
 }
 
@@ -113,16 +109,15 @@ func (z *zusammenfuehrenZeile) istKollege() bool { return !leserart.IstSchueler(
 
 func ladeZusammenfuehrenZeile(ctx context.Context, tx pgx.Tx, id string) (*zusammenfuehrenZeile, error) {
 	z := &zusammenfuehrenZeile{}
-	// COALESCE auf barcode_id, klasse und abgaenger_jahr: Seit diese Abfrage auf `leser`
-	// läuft, kommt sie auch an einem Kollegen vorbei — und der hat keines der drei
-	// (Migration 123 hat die NOT-NULL-Pflicht an die Art gepaart). Die Felder der Struktur
-	// sind einfache Typen; ohne COALESCE endet das Zusammenführen an der ersten
-	// Kollegenzeile mit "cannot scan NULL into *string".
+	// COALESCE auf barcode_id, klasse und abgaenger_jahr: Die Abfrage läuft auf `leser` und
+	// kommt auch an einem Kollegen vorbei, und der hat keines der drei (die NOT-NULL-Pflicht
+	// hängt an der Art). Die Felder der Struktur sind einfache Typen; ohne COALESCE endet das
+	// Zusammenführen an der ersten Kollegenzeile mit "cannot scan NULL into *string".
 	//
-	// Der Rückweg steht im UPDATE (schreibeZusammengefuehrtesZiel): Dort werden dieselben
-	// drei Spalten an der Art wieder auf NULL gesetzt. Ein leerer String in `klasse` wäre
-	// nicht bloss unschön, sondern ein Fehler — die Spalte hat einen Fremdschlüssel auf
-	// klassen(name), und eine Klasse "" gibt es nicht.
+	// Der Rückweg steht im UPDATE (schreibeZusammengefuehrtesZiel): Dort werden dieselben drei
+	// Spalten an der Art wieder auf NULL gesetzt. Ein leerer String in `klasse` wäre ein
+	// Fehler: Die Spalte hat einen Fremdschlüssel auf klassen(name), und eine Klasse "" gibt es
+	// nicht.
 	err := tx.QueryRow(ctx, `
 		SELECT id, COALESCE(barcode_id, ''), vorname, nachname, COALESCE(klasse, ''),
 		       geburtsdatum, schul_eintritt_am,
@@ -147,7 +142,7 @@ func ladeZusammenfuehrenZeile(ctx context.Context, tx pgx.Tx, id string) (*zusam
 	return z, nil
 }
 
-// fuehrend sagt, wessen Stammdaten gelten. Erst der Status: Ein AKTIVER Datensatz
+// fuehrend sagt, wessen Stammdaten gelten. Erst der Status: Ein aktiver Datensatz
 // schlägt einen Abgänger — der Abgänger ist per Definition der Stand, den die LUSD
 // nicht mehr kennt (typisch: Kind umbenannt, an der Theke von Hand neu angelegt, alter
 // Datensatz wegen des Ausweises behalten). Sind beide aktiv oder beide Abgänger, gilt
@@ -185,7 +180,7 @@ func ersteZeit(a, b *time.Time) *time.Time {
 
 // FuehreLeserZusammen führt quelle in ziel auf — in einer Transaktion, mit beiden
 // Zeilen gesperrt. Reihenfolge ist Schutz: Erst wandern die Fremdschlüssel, dann fällt
-// die Quelle, ERST DANN bekommt das Ziel die Stammdaten — sonst kollidierten Name +
+// die Quelle, erst dann bekommt das Ziel die Stammdaten — sonst kollidierten Name +
 // Geburtsdatum bzw. lusd_id am partiellen Unique-Index, solange die Quelle noch lebt.
 func FuehreLeserZusammen(ctx context.Context, pool db.PgxPoolIface, a ZusammenfuehrenAuftrag) (*ZusammenfuehrenErgebnis, error) {
 	if a.ZielID == a.QuelleID {
@@ -260,15 +255,15 @@ func FuehreLeserZusammen(ctx context.Context, pool db.PgxPoolIface, a Zusammenfu
 type gewanderteVorgaenge struct {
 	Ausleihen, Schadensfaelle, Vormerkungen, VormerkungenDoppelt []string
 	Bescheide                                                    []string
-	// NachbuchMeldungen (Migration 117): Meldungen, in denen die Quelle als Ausleiher
+	// NachbuchMeldungen: Meldungen, in denen die Quelle als Ausleiher
 	// oder Vorbesitzer stand.
 	NachbuchMeldungen []string
-	// Konten (Migration 123): Zugangskonten, deren Verknüpfung von der Quelle auf das
+	// Konten: Zugangskonten, deren Verknüpfung von der Quelle auf das
 	// Ziel gezogen ist. Normalerweise leer — ein Schüler hat kein Konto.
 	Konten []string
 	// PlatzhalterKonten: Konten unter der Platzhalter-Domäne, die beim Zusammenführen
 	// entfallen sind. Sie stehen im Rückweg-Eintrag, weil hier als einziger Stelle des
-	// Vorgangs ein Konto GELÖSCHT wird — ohne den Eintrag wäre nicht mehr zu sehen, dass
+	// Vorgangs ein Konto gelöscht wird — ohne den Eintrag wäre nicht mehr zu sehen, dass
 	// es eines gab.
 	PlatzhalterKonten []string
 	Foto              bool
@@ -313,13 +308,13 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		return nil, fmt.Errorf("vormerkungen verschieben: %w", err)
 	}
 	// Der Bescheid hängt per SET NULL: Bliebe er stehen, machte der DELETE der Quelle ihn
-	// STILL personenlos — weg aus der Akte und der Auskunft des Ziels, und die Tilgung
+	// still personenlos — weg aus der Akte und der Auskunft des Ziels, und die Tilgung
 	// (sie sucht über schueler_id) fände Name und Anschrift im Snapshot nie mehr. Der
 	// Snapshot selbst bleibt, wie er ist: Er zeigt, an wen der Brief damals ging.
 	if g.Bescheide, err = ladeIDs(ctx, tx, `UPDATE schadensersatz_bescheide SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("bescheide verschieben: %w", err)
 	}
-	// Nachbuch-Meldungen (Migration 117) hängen per SET NULL: Blieben sie stehen, machte der
+	// Nachbuch-Meldungen hängen per SET NULL: Blieben sie stehen, machte der
 	// DELETE der Quelle sie still personenlos — die Meldung zeigte kein Kind mehr.
 	if g.NachbuchMeldungen, err = ladeIDs(ctx, tx, `UPDATE nachbuch_meldungen SET ausleiher_schueler_id = CASE WHEN ausleiher_schueler_id = $2 THEN $1 ELSE ausleiher_schueler_id END, vorbesitzer_schueler_id = CASE WHEN vorbesitzer_schueler_id = $2 THEN $1 ELSE vorbesitzer_schueler_id END WHERE ausleiher_schueler_id = $2 OR vorbesitzer_schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("nachbuch-meldungen verschieben: %w", err)
@@ -329,9 +324,9 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		return nil, err
 	}
 	erg.Ausleihen, erg.Schaeden, erg.Vormerkungen = int64(len(g.Ausleihen)), int64(len(g.Schadensfaelle)), int64(len(g.Vormerkungen))
-	// Foto: Es kommt nie aus der LUSD, also gibt es keinen „führenden" Datensatz dafür —
-	// das JÜNGERE Foto gewinnt, egal auf welcher Seite (03.09.2026). Hat das Ziel
-	// ein älteres, weicht es; der Rückweg-Eintrag hält fest, ob das Quell-Foto gewandert ist.
+	// Foto: Es kommt nie aus der LUSD, also gibt es keinen „führenden" Datensatz dafür; das
+	// jüngere Foto gewinnt, egal auf welcher Seite. Hat das Ziel ein älteres, weicht es; der
+	// Rückweg-Eintrag hält fest, ob das Quell-Foto gewandert ist.
 	gewichen, err := tx.Exec(ctx, `DELETE FROM schueler_fotos z WHERE z.schueler_id = $1
 		AND EXISTS (SELECT 1 FROM schueler_fotos q WHERE q.schueler_id = $2 AND q.aktualisiert_am > z.aktualisiert_am)`, ziel, quelle)
 	if err != nil {
@@ -360,7 +355,7 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 	return g, nil
 }
 
-// verschiebeZugangskonto hängt das Konto der Quelle an das Ziel (Migration 123). Zeigt eine
+// verschiebeZugangskonto hängt das Konto der Quelle an das Ziel. Zeigt eine
 // Anmeldung auf die Quelle, muss sie nach dem Zusammenführen auf das Ziel zeigen — sonst macht
 // der DELETE der Quelle sie still leserlos, und die Person könnte sich anmelden, ohne ihre
 // Bücher zu sehen.
@@ -462,7 +457,7 @@ func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, p rueckwegEintrag) 
 			"vormerkungen": p.Gewandert.Vormerkungen, "vormerkungen_doppelt_geloescht": p.Gewandert.VormerkungenDoppelt,
 			"bescheide": p.Gewandert.Bescheide,
 			"foto":      p.Gewandert.Foto, "ziel_foto_gewichen": p.Gewandert.ZielFotoGewichen,
-			// Das einzige, was der Vorgang LÖSCHT statt umzuhängen — steht deshalb im
+			// Das einzige, was der Vorgang löscht statt umzuhängen — steht deshalb im
 			// Rückweg, auch wenn es kein Zugang war.
 			"platzhalter_konten": p.Gewandert.PlatzhalterKonten,
 		},
@@ -519,10 +514,10 @@ type zusammengefuehrtesZiel struct {
 
 // schreibeZusammengefuehrtesZiel setzt die Stammdaten des führenden Datensatzes (f) auf
 // das Ziel, füllt Lücken aus dem anderen (o) und macht das Ziel wieder aktiv. Die CASE-
-// Ausdrücke für die Sperre lesen die ALTEN Werte (Postgres wertet die rechte Seite vor
+// Ausdrücke für die Sperre lesen die alten Werte (Postgres wertet die rechte Seite vor
 // der Zuweisung aus) — dieselbe Bauart wie der Rückkehrer-Pfad in AktualisiereLusdBestand.
 //
-// Eine MANUELLE Sperre der Quelle (Ausweis gestohlen, Hausverbot …) gehört zur Person,
+// Eine manuelle Sperre der Quelle (Ausweis gestohlen, Hausverbot …) gehört zur Person,
 // nicht zum Datensatz: Sie geht auf das Ziel über — mit ihrem Grund, sofern das Ziel
 // nicht selbst schon manuell gesperrt ist (dann bleibt dessen Grund).
 func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p zusammengefuehrtesZiel) error {
@@ -590,22 +585,22 @@ type ZusammenfuehrenKandidat struct {
 }
 
 // FindeZusammenfuehrenKandidaten sucht mit denselben Bausteinen wie Theke und
-// Schülerdatei (suchnorm, Tokens) über ALLE nicht gelöschten, nicht anonymisierten
+// Schülerdatei (suchnorm, Tokens) über alle nicht gelöschten, nicht anonymisierten
 // Schüler — außer dem Datensatz, von dem aus gesucht wird.
 func FindeZusammenfuehrenKandidaten(ctx context.Context, pool db.PgxPoolIface, ausserID, suche string, limit int) ([]ZusammenfuehrenKandidat, error) {
 	tokens := suchTokens(suche)
 	if len(tokens) == 0 {
 		return []ZusammenfuehrenKandidat{}, nil
 	}
-	// COALESCE auf barcode_id und klasse ist PFLICHT, seit diese Suche auf `leser` statt
-	// auf der Sicht `schueler` läuft: Ein Kollege hat beides nicht (Migration 123 hat die
-	// NOT-NULL-Pflicht an die Art gepaart), und die Felder im Kandidaten sind `string`,
-	// nicht `*string`. Ohne COALESCE scheitert der Scan an der ersten Kollegenzeile — und
-	// zwar als 500 „interner Datenbankfehler", den nur ein PG-Test findet.
+	// COALESCE auf barcode_id und klasse ist Pflicht, weil diese Suche auf `leser` statt auf
+	// der Sicht `schueler` läuft: Ein Kollege hat beides nicht (die NOT-NULL-Pflicht hängt an
+	// der Art), und die Felder im Kandidaten sind `string`, nicht `*string`. Ohne COALESCE
+	// scheitert der Scan an der ersten Kollegenzeile, als 500 „interner Datenbankfehler", den
+	// nur ein Test an der Datenbank findet.
 	//
-	// Der Seitenvergleich unten hält dieselbe Grenze wie FuehreLeserZusammen: Wer von
-	// einem Schüler aus sucht, bekommt Schüler; wer von einem Kollegen aus sucht,
-	// Kollegen. Sonst böte die Liste an, was das Zusammenführen danach ablehnt.
+	// Der Seitenvergleich unten hält dieselbe Grenze wie FuehreLeserZusammen: Wer von einem
+	// Schüler aus sucht, bekommt Schüler; wer von einem Kollegen aus sucht, Kollegen. Sonst
+	// böte die Liste an, was das Zusammenführen danach ablehnt.
 	rows, err := pool.Query(ctx, leserSuchCTE+`
 		SELECT s.id, COALESCE(s.barcode_id, ''), s.vorname, s.nachname, COALESCE(s.klasse, ''),
 		       TO_CHAR(s.geburtsdatum, 'YYYY-MM-DD'),

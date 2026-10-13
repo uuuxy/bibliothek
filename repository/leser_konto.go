@@ -13,18 +13,18 @@ import (
 
 // Die Leserzeile und ihr Anmeldekonto — die Abfragen, die beide zusammen betreffen.
 //
-// Eine Person steht seit Migration 125 in EINER Leserzeile (`leser`); wer sich anmelden
+// Eine Person steht in einer Leserzeile (`leser`); wer sich anmelden
 // können soll, hat zusätzlich ein Konto (`benutzer.leser_id`). Die Adresse am Konto ist
 // dabei keine Kontaktangabe, sondern der Schlüssel: An ihr erkennt die Anmeldung (IMAP)
 // die Person, und `benutzer_email_unique` verhindert darüber den Doppeleintrag.
 //
 // Warum die Abfragen hier und nicht im Handler stehen: Eine Tür formuliert kein SQL
 // (schichtung_ratsche_test.go). Die Regeln — welche Zeile bei mehreren Konten gilt, dass ein
-// fehlendes Konto kein Fehler ist, dass die Namen aus der LESERZEILE kommen — gehören an
+// fehlendes Konto kein Fehler ist, dass die Namen aus der Leserzeile kommen — gehören an
 // eine Stelle.
 
-// KontoSchreiber ist der kleinste gemeinsame Nenner von pgx.Tx und Pool: Beim ANLEGEN
-// entsteht das Konto in derselben Transaktion wie die Leserzeile, beim NACHTRAGEN steht
+// KontoSchreiber ist der kleinste gemeinsame Nenner von pgx.Tx und Pool: Beim Anlegen
+// entsteht das Konto in derselben Transaktion wie die Leserzeile, beim Nachtragen steht
 // die Zeile längst.
 type KontoSchreiber interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
@@ -35,7 +35,7 @@ type KontoSchreiber interface {
 // macht daraus eine 404 statt einer 500 — „nicht gefunden" ist keine Störung.
 var ErrLeserNichtGefunden = errors.New("leser nicht gefunden")
 
-// LadeLeserArt liefert die Art einer Leserzeile (chk_leser_art, Migration 153).
+// LadeLeserArt liefert die Art einer Leserzeile (chk_leser_art).
 func LadeLeserArt(ctx context.Context, pool db.PgxPoolIface, leserID string) (string, error) {
 	var art string
 	err := pool.QueryRow(ctx, `SELECT art FROM leser WHERE id = $1`, leserID).Scan(&art)
@@ -46,7 +46,7 @@ func LadeLeserArt(ctx context.Context, pool db.PgxPoolIface, leserID string) (st
 }
 
 // LadeLeserArtUndKontoEmail liefert die Art der Leserzeile und die Adresse an ihrem Konto
-// ("" = kein Konto) in EINER Abfrage — der Handler entscheidet an genau diesem Paar.
+// ("" = kein Konto) in einer Abfrage — der Handler entscheidet an genau diesem Paar.
 //
 // Bei mehreren Konten an derselben Zeile gilt das älteste. Das ist der Normalfall-Fall
 // von einem Konto (trg_benutzer_hat_leserzeile), aber die Reihenfolge macht die Antwort
@@ -107,7 +107,7 @@ type KollegiumskontoNeu struct {
 // LegeKollegiumskontoAn hängt an eine Leserzeile das Anmeldekonto.
 //
 // `LeserID` wird ausdrücklich mitgegeben, damit der Wächter trg_benutzer_hat_leserzeile
-// NICHT anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
+// nicht anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
 // die zweite — genau der Doppeleintrag, um den es geht.
 //
 // Aktiv=false hinterlässt einen Antrag (zugang_beantragt_am), den die Freischaltungs-Zeile

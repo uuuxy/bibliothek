@@ -1,4 +1,3 @@
-// Package repository stellt den Datenzugriff und die Tabellenmodelle der PostgreSQL-Datenbank bereit.
 package repository
 
 import (
@@ -8,153 +7,133 @@ import (
 	"time"
 )
 
-// Leser repräsentiert einen LESER in der Datenbank (Tabelle `leser`).
-//
-// Der Typ heißt weiter Leser, weil die allermeisten Leser Schüler sind und die Listen,
-// Mahnungen und Klassenansichten genau die meinen; sie lesen die Sicht `schueler`. Die
-// Theke dagegen fragt nach einem LESER (FindeZuBarcode, Finde) und bekommt auch
-// Kollegen — unterscheidbar an `Art`.
+// Leser ist jeder, der ausleiht: Schüler, Lehrkraft oder LiV (Tabelle leser), unterscheidbar an
+// Art. Listen, Mahnungen und Klassenansichten meinen nur Schüler und lesen die Sicht schueler;
+// die Theke fragt nach einem Leser (FindeZuBarcode, Finde) und bekommt auch Kollegen.
 type Leser struct {
-	// ID ist der eindeutige Primärschlüssel (UUID) des Lesers.
+	// ID ist die UUID des Lesers.
 	ID string `json:"id"`
-	// Art: chk_leser_art (Migration 123 und 153). Sie entscheidet keine Rechte,
-	// sondern nur, wen der LUSD-Abgleich und der Löschjob erfassen — und was die Theke
-	// am Treffer anzeigt. Leer, wo die Abfrage die Sicht `schueler` liest: dort ist
-	// jede Zeile ein Schüler.
+	// Art ist Schüler, Lehrkraft oder LiV (chk_leser_art). Sie entscheidet keine Rechte, nur,
+	// wen der LUSD-Abgleich und der Löschjob erfassen und was die Theke am Treffer anzeigt.
+	// Leer, wo die Abfrage die Sicht schueler liest: Dort ist jede Zeile ein Schüler.
 	Art string `json:"art,omitempty"`
-	// BarcodeID ist der eindeutige Barcode des Ausweises.
+	// BarcodeID ist die Ausweisnummer.
 	BarcodeID string `json:"barcode_id"`
-	// Vorname ist der Vorname des Schülers.
-	Vorname string `json:"vorname"`
-	// Nachname ist der Nachname des Schülers.
-	Nachname string `json:"nachname"`
-	// Klasse ist die aktuelle Klasse bzw. Kursstufe des Schülers (z. B. "07B").
+	Vorname   string `json:"vorname"`
+	Nachname  string `json:"nachname"`
+	// Klasse ist die Klasse oder Kursstufe (etwa "07B"); leer bei Lehrkraft und LiV.
 	Klasse string `json:"klasse"`
-	// AbgaengerJahr ist das Jahr, in dem der Schüler voraussichtlich die Schule verlässt.
-	// Steuert die DSGVO-Löschung und die Stapel-Archivierung — NICHT die Gültigkeit des
-	// Ausweises. Beide Zahlen fallen auseinander: Ein Gymnasialschüler bleibt bis
-	// Jahrgang 13, sein Ausweis gilt aber nur bis zum Ende der Mittelstufe.
+	// AbgaengerJahr ist das Jahr, in dem der Schüler die Schule voraussichtlich verlässt. Es
+	// steuert die Löschung nach der DSGVO und die Archivierung im Stapel, nicht die Gültigkeit
+	// des Ausweises: Ein Gymnasialschüler bleibt bis Jahrgang 13, sein Ausweis gilt aber nur
+	// bis zum Ende der Mittelstufe.
 	AbgaengerJahr int `json:"abgaenger_jahr"`
-	// AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt (31.07.), aus
-	// dem Bildungsgang der Klasse gerechnet (internal/ausweis). Kein Datenbankfeld,
-	// sondern beim Lesen gesetzt. nil heißt: aus dieser Klassenbezeichnung nicht
-	// ableitbar — dann fragt der Druckdialog nach, statt ein Datum zu erfinden.
+	// AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt (31.07.), aus dem
+	// Bildungsgang der Klasse gerechnet (internal/ausweis). Kein Feld der Datenbank, sondern
+	// beim Lesen gesetzt. nil heißt: aus dieser Klassenbezeichnung nicht ableitbar; dann fragt
+	// der Druckdialog nach, statt ein Datum zu erfinden.
 	AusweisGueltigBis *int `json:"ausweis_gueltig_bis,omitempty"`
 	// IstGesperrt ist die Sperre, die das Programm setzt: Ehemalige (Versetzung, LUSD-Import),
 	// Papierkorb, Anonymisierung. Die Theke lässt dann nur die Rückgabe zu, außer beim
 	// Lernmittel (service.pruefeAusleihSperren). Offene Forderungen und überfällige Medien
-	// setzen sie NICHT — die zählt die Theke bei jeder Ausleihe selbst.
+	// setzen sie nicht; die zählt die Theke bei jeder Ausleihe selbst.
 	IstGesperrt bool `json:"ist_gesperrt"`
-	// LusdID ist die Schüler-ID aus dem hessischen LUSD-System für automatisierte Abgleiche.
+	// LusdID ist die Schülernummer aus der LUSD; an ihr erkennt der Abgleich den Schüler
+	// wieder.
 	LusdID *string `json:"lusd_id,omitempty"`
-	// IstAbgaenger markiert Schüler, die die Schule bereits verlassen haben.
+	// IstAbgaenger kennzeichnet Schüler, die die Schule verlassen haben.
 	IstAbgaenger bool `json:"ist_abgaenger"`
-	// Geburtsdatum speichert das Geburtsdatum (Format: DATE in PostgreSQL, als String im Code).
-	Geburtsdatum *string `json:"geburtsdatum,omitempty"`
-	// ErstelltAm ist der Erstellungszeitpunkt des Schülerdatensatzes.
-	ErstelltAm time.Time `json:"erstellt_am"`
-	// AktualisiertAm ist der Zeitpunkt der letzten Aktualisierung.
+	// Geburtsdatum ist der Tag als Text (DATE in Postgres); nil ohne Eintrag.
+	Geburtsdatum   *string   `json:"geburtsdatum,omitempty"`
+	ErstelltAm     time.Time `json:"erstellt_am"`
 	AktualisiertAm time.Time `json:"aktualisiert_am"`
 	// IstVonHandGesperrt ist die Sperre von Hand (PATCH /api/admin/students/{id}/lock). Sie gilt
 	// auch beim Lernmittel; aufgehoben wird sie in der Akte.
 	IstVonHandGesperrt bool `json:"is_manually_blocked"`
-	// Sperrgrund ist der Grund der Sperre — von Hand oder vom Programm, eine Spalte für beide.
+	// Sperrgrund ist der Grund der Sperre, von Hand oder vom Programm: eine Spalte für beide.
 	Sperrgrund *string `json:"block_reason,omitempty"`
-	// Strasse ist der Straßenname der Postanschrift (optionale Stammdaten).
-	Strasse string `json:"strasse"`
-	// Hausnummer ergänzt die Straße der Postanschrift.
+	// Strasse, Hausnummer, Plz und Ort sind die Postanschrift; alle vier können leer sein.
+	Strasse    string `json:"strasse"`
 	Hausnummer string `json:"hausnummer"`
-	// Plz ist die Postleitzahl der Postanschrift.
-	Plz string `json:"plz"`
-	// Ort ist der Wohnort der Postanschrift.
-	Ort string `json:"ort"`
-	// ElternEmail ist die Kontakt-E-Mail der Erziehungsberechtigten.
+	Plz        string `json:"plz"`
+	Ort        string `json:"ort"`
+	// ElternEmail ist die Adresse der Erziehungsberechtigten.
 	ElternEmail string `json:"eltern_email"`
-	// IstAnonymisiert: anonymized_at ist gesetzt, die Zeile ist keine Person mehr. Die Theke
-	// gibt ihr nichts aus, auch kein Lernmittel (service.pruefeAusleihSperren) — die Namenssuche
-	// findet sie noch („Abgänger Anonymisiert-…"). Gefüllt nur über die Spaltenliste der
-	// Leser-Abfragen (repository.spaltenLeser); nicht in der API.
+	// IstAnonymisiert sagt, dass anonymized_at gesetzt ist: Die Zeile ist keine Person mehr.
+	// Die Theke gibt ihr nichts aus, auch kein Lernmittel (service.pruefeAusleihSperren); die
+	// Namenssuche findet sie noch („Abgänger Anonymisiert-…"). Gefüllt nur über die
+	// Spaltenliste der Leser-Abfragen (spaltenLeser), nicht in der API.
 	IstAnonymisiert bool `json:"-"`
 }
 
-// scanner kapselt die Scan-Schnittstelle von pgx.Row und pgx.Rows,
-// um gemeinsame Helferfunktionen zum Einlesen von Zeilen zu ermöglichen.
+// scanner ist eine Zeile, die sich lesen lässt: pgx.Row und pgx.Rows erfüllen die Schnittstelle
+// beide, und die Helfer, die eine Zeile lesen, nehmen damit beides.
 type scanner interface {
 	Scan(dest ...any) error
 }
 
-// LeserAbfragen definiert die Operationen zur Abfrage und zum Abgleich von Schülern in der Datenbank.
+// LeserAbfragen liest die Leser: einzeln für Theke und Akte, als Suche und als Liste der
+// Leserdatei.
 type LeserAbfragen interface {
-	// FindeZuBarcode sucht einen LESER anhand seiner Ausweisnummer — Schüler UND
-	// Kollegium. Das ist die Abfrage der Theke: Dort steht ein Mensch mit einer Karte,
-	// und welcher Art er ist, entscheidet nichts über das Ausleihen (Migration 125).
-	// Liefert nil, wenn die Nummer zu niemandem gehört.
-	//
-	// Eine Schwester über die Sicht `schueler` (GetByBarcode) gab es bis zum 21.09.2026;
-	// ihr letzter Aufrufer war die Scan-Erkennung der Suchleiste, und die meint den Leser.
+	// FindeZuBarcode liefert den Leser zu einer Ausweisnummer, Schüler wie Kollegium; nil, wenn
+	// die Nummer zu niemandem gehört. Das ist die Abfrage der Theke: Dort steht ein Mensch mit
+	// einer Karte, und welcher Art er ist, entscheidet nichts über das Ausleihen.
 	FindeZuBarcode(ctx context.Context, barcode string) (*Leser, error)
 
-	// Finde sucht einen LESER anhand seiner UUID — wie FindeZuBarcode, aber
-	// für den bereits an der Theke stehenden Leser und für die Akte in der Leserdatei.
-	//
-	// Ein GetByID über die Sicht `schueler` gab es daneben bis zum 16.09.2026; es hatte
-	// nach der Umstellung der Akte keinen Aufrufer mehr und ist zurückgebaut. Wer
-	// wirklich nur Schüler meint, grenzt an der Art ein, statt eine zweite Tür zu bauen.
+	// Finde liefert den Leser zu seiner Kennung, für den Leser, der schon an der Theke steht,
+	// und für die Akte; nil, wenn es ihn nicht gibt. Wer nur Schüler meint, grenzt an der Art
+	// ein, statt eine zweite Tür zu bauen.
 	Finde(ctx context.Context, id string) (*Leser, error)
 
-	// FindeUnscharf sucht tokenweise und diakritikfrei über Vorname, Nachname
-	// und Barcode-ID. Zweiter Rückgabewert ist die Gesamtzahl der Treffer vor dem
-	// Limit — ohne sie kann die Oberfläche eine abgeschnittene Liste nicht als solche
-	// kennzeichnen und zeigt stillschweigend nur die ersten Namen.
+	// FindeUnscharf sucht Wort für Wort und ohne Rücksicht auf Akzente über Vorname, Nachname
+	// und Ausweisnummer. Der zweite Wert ist die Zahl aller Treffer vor dem Limit: Ohne sie
+	// kann die Oberfläche eine abgeschnittene Liste nicht als solche kennzeichnen.
 	FindeUnscharf(ctx context.Context, suchtext string, limit int) ([]Leser, int, error)
 
-	// Hinweis: Der LUSD-Abgleich läuft ausschließlich über die Tür in api/leser/lusd.go und den
-	// Lauf in internal/lusd (Fuehre → WendeAenderungenAn). Eine frühere
-	// Massen-Pipeline (BulkSyncLUSD/GetAllLUSDStudents) wurde entfernt: ungenutzt und
-	// mit latenten Fehlern (u. a. Ghost-Block bei Rückkehrern).
-
-	// HatFoto checks if an encrypted photo exists for the student.
+	// HatFoto sagt, ob zu dem Leser ein verschlüsseltes Foto gespeichert ist.
 	HatFoto(ctx context.Context, leserID string) (bool, error)
 
-	// ZaehleOffeneSchaeden: Anzahl und Summe der unbezahlten Forderungen des Lesers.
+	// ZaehleOffeneSchaeden liefert Anzahl und Summe der unbezahlten Forderungen des Lesers.
 	ZaehleOffeneSchaeden(ctx context.Context, leserID string) (anzahl int, summe float64, err error)
 
-	// LadeLaufendeAusleihen retrieves all books currently borrowed by the student.
+	// LadeLaufendeAusleihen liefert, was der Leser gerade ausgeliehen hat, die jüngste Ausleihe
+	// zuerst.
 	LadeLaufendeAusleihen(ctx context.Context, leserID string) ([]LaufendeAusleihe, error)
 
-	// LadeKlassen returns a list of all active classes.
+	// LadeKlassen liefert die Klassen aller Schüler außerhalb des Papierkorbs, Abgänger
+	// eingeschlossen, nach Namen geordnet.
 	LadeKlassen(ctx context.Context) ([]string, error)
 
-	// LadeEtikettZeilen liefert Barcode, Name und Klasse zu den angegebenen IDs — die vier
-	// Angaben, die auf einem Klebeetikett stehen. Sortiert nach Nachname, Vorname.
+	// LadeEtikettZeilen liefert zu den genannten Lesern die Angaben eines Klebeetiketts:
+	// Ausweisnummer, Name und Klasse. Das Kollegium steht vorn, danach ordnen Klasse, Nachname
+	// und Vorname.
 	LadeEtikettZeilen(ctx context.Context, ids []string) ([]LeserEtikettZeile, error)
 
-	// LadeSchuelerListe liefert Schüler samt Ausleihzahlen, optional nach Klasse
-	// und/oder Suchbegriff eingegrenzt. Die Suche läuft über dieselben SQL-Bausteine
-	// wie FindeUnscharf und kennt keine 500er-Grenze.
+	// LadeSchuelerListe liefert die aktiven Schüler mit ihren Ausleihzahlen, auf Wunsch auf
+	// Klassen oder einen Suchtext eingegrenzt. Die Suche nutzt dieselben Bausteine wie
+	// FindeUnscharf und ist nicht gekappt.
 	LadeSchuelerListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error)
-	// LadeLeserListe liefert ALLE Leser — Schüler und Kollegium — für die Leserdatei.
-	// Dieselben Zeilen, dieselbe Suche; gelesen wird die Tabelle `leser` statt der Sicht.
+	// LadeLeserListe liefert alle Leser, Schüler und Kollegium, für die Leserdatei: dieselben
+	// Zeilen und dieselbe Suche, gelesen aus der Tabelle `leser` statt aus der Sicht.
 	LadeLeserListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error)
-	// LadeEhemaligenListe liefert die Weggegangenen (ist_abgaenger = true) für den
-	// Reiter „Ehemalige / Archiv" — dieselben Zeilen und dieselbe Suche wie die Aktiven.
+	// LadeEhemaligenListe liefert die Weggegangenen (ist_abgaenger = true) für den Reiter
+	// „Ehemalige / Archiv", mit denselben Zeilen und derselben Suche wie die Aktiven.
 	LadeEhemaligenListe(ctx context.Context, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error)
 }
 
-// pgLeserAbfragen implementiert das LeserAbfragen für PostgreSQL.
 type pgLeserAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewLeserAbfragen erzeugt eine neue Instanz des PostgreSQL-basierten StudentRepositorys.
+// NewLeserAbfragen liefert die Abfragen der Leser an Postgres.
 func NewLeserAbfragen(db db.PgxPoolIface) LeserAbfragen {
 	return &pgLeserAbfragen{db: db}
 }
 
-// leseLeserMitZusatz scannt die Standard-Spaltenliste und danach beliebige
-// Zusatzspalten (z. B. count(*) OVER () für die Gesamttrefferzahl). So bleibt die
-// Feldreihenfolge an genau einer Stelle — eine zweite Kopie würde beim nächsten
-// Spaltenzuwachs still auseinanderlaufen.
+// leseLeserMitZusatz liest die feste Spaltenliste eines Lesers (spaltenLeser) und danach
+// beliebige Zusatzspalten, etwa count(*) OVER () für die Gesamtzahl der Treffer. So steht die
+// Reihenfolge der Felder an einer Stelle; eine zweite Kopie liefe beim nächsten neuen Feld
+// still auseinander.
 func leseLeserMitZusatz(row scanner, zusatz ...any) (*Leser, error) {
 	var s Leser
 	ziele := []any{

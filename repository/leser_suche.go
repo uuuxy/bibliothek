@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// FindeZuBarcode liest einen Leser — Schüler ODER Kollegium — über seine
-// Ausweisnummer. Die Abfrage geht an die TABELLE `leser` und nicht an die Sicht
+// FindeZuBarcode liest einen Leser — Schüler oder Kollegium — über seine
+// Ausweisnummer. Die Abfrage geht an die Tabelle `leser` und nicht an die Sicht
 // `schueler`; nur so finden Theke und Suchleiste einen Kollegen.
 func (a *pgLeserAbfragen) FindeZuBarcode(ctx context.Context, barcode string) (*Leser, error) {
 	return a.findeMit(ctx, `WHERE barcode_id = $1 AND deleted_at IS NULL`, barcode)
@@ -49,15 +49,13 @@ func suchTokens(suchtext string) []string {
 	return tokens
 }
 
-// Die drei folgenden SQL-Bausteine sind die EINE Schülersuche der Anwendung. Sie stehen
-// hier als Konstanten, weil zwei Ansichten dieselbe Suche brauchen, aber verschiedene
-// Spalten zurückgeben: die Omnibox an der Theke (FindeUnscharf, Ausleihe) und die
-// Schülerdatei mit ihren Ausleihzahlen (LadeSchuelerListe). Vorher hatte die
-// Schülerdatei gar keine Serversuche und filterte im Browser über die ersten 500 Zeilen —
-// wer dahinter lag, war schlicht nicht auffindbar.
+// Die drei folgenden SQL-Bausteine sind die eine Lesersuche der Anwendung. Sie stehen hier als
+// Konstanten, weil zwei Ansichten dieselbe Suche brauchen, aber verschiedene Spalten
+// zurückgeben: die Omnibox an der Theke (FindeUnscharf) und die Leserdatei mit ihren
+// Ausleihzahlen (LadeSchuelerListe, LadeLeserListe).
 //
-// Belegung der Platzhalter in beiden Abfragen gleich: $1 = Tokens (text[]), $2 = erstes
-// Token. Der Tabellen-Alias muss s sein.
+// Belegung der Platzhalter in beiden Abfragen gleich: $1 = Tokens (text[]), $2 = erstes Token.
+// Der Tabellen-Alias muss s sein.
 
 // leserSuchCTE zerlegt die Tokens in Normalform (diakritikfrei) und Rohform.
 const leserSuchCTE = `
@@ -72,16 +70,16 @@ const leserSuchCTE = `
 // das (ihr Filter konnte es immer schon, "10a" listet die Klasse), die Omnibox an der
 // Theke nicht — dort sucht man einen Menschen, keine Klasse, und 30 Namen im Vorschlag
 // wären dort im Weg. Weil jedes Token einzeln geprüft wird, bedeutet "10a Müller"
-// übrigens genau das Richtige: Klasse 10a UND Name Müller.
+// übrigens genau das Richtige: Klasse 10a und Name Müller.
 //
 // Die vorangestellte Ankerbedingung auf $2 ist Absicht und kein Duplikat: Als direkte
-// LIKE-Bedingung kann der Planer dafür die Trigramm-Indizes aus Migration 054 ziehen
-// (BitmapOr über alle drei). Sie muss BUCHSTÄBLICH dem Index entsprechen — lower(barcode_id),
+// LIKE-Bedingung kann der Planer dafür die Trigramm-Indizes ziehen
+// (BitmapOr über alle drei). Sie muss buchstäblich dem Index entsprechen — lower(barcode_id),
 // nicht lower(coalesce(barcode_id, ”)). Mit dem coalesce ist dieser eine OR-Zweig nicht
 // indexierbar, und ein einziger nicht-indexierbarer Zweig kippt die gesamte Abfrage in den
 // Seq Scan (gemessen: 30 ms statt 0,1 ms bei 20.000 Schülern). Ein NULL-Barcode ergibt hier
 // NULL statt false, was in der OR-Verknüpfung dasselbe Ergebnis liefert. Die Klasse steht
-// bewusst NICHT im Anker: Sie hat keinen Trigramm-Index, sie erweitert nur die Nachprüfung.
+// bewusst nicht im Anker: Sie hat keinen Trigramm-Index, sie erweitert nur die Nachprüfung.
 func leserSuchBedingung(mitKlasse bool) string {
 	klasse := ""
 	if mitKlasse {
@@ -102,7 +100,7 @@ func leserSuchBedingung(mitKlasse bool) string {
 }
 
 // klasseImAnker erweitert die Ankerbedingung um die Klasse. Ohne das könnte die Suche
-// nach "10a" gar nichts finden: Der Anker filtert VOR der Nachprüfung, und ein
+// nach "10a" gar nichts finden: Der Anker filtert vor der Nachprüfung, und ein
 // Klassenname steht in keinem der drei Namensfelder.
 func klasseImAnker(mitKlasse bool) string {
 	if !mitKlasse {
@@ -118,32 +116,29 @@ const leserSuchRang = `
 		  (SELECT count(*) FROM tokens WHERE suchnorm(coalesce(s.nachname, '')) LIKE tokens.norm || '%') * 2
 		+ (SELECT count(*) FROM tokens WHERE suchnorm(coalesce(s.vorname, ''))  LIKE tokens.norm || '%') DESC`
 
-// FindeUnscharf durchsucht die LESERSCHAFT nach Namen oder Ausweisnummern und
-// liefert zusätzlich die Gesamtzahl der Treffer (nicht nur die des Limits).
+// FindeUnscharf durchsucht die Leserschaft nach Namen oder Ausweisnummern und liefert
+// zusätzlich die Gesamtzahl der Treffer, nicht nur die des Limits.
 //
-// Gelesen wird die TABELLE `leser`, nicht die Sicht `schueler`: Ein Kollege ließ sich
-// seit Migration 125 über seinen Ausweis laden, über seinen Namen aber nicht — wer die
-// Karte gerade nicht zur Hand hatte, fand ihn an der Theke nicht. Die Art wandert als
-// eigene Spalte mit; ohne sie stünde ein Kollege ohne Klasse in der Trefferliste wie
-// ein Schüler mit fehlender Angabe.
+// Gelesen wird die Tabelle `leser`, nicht die Sicht `schueler`: Über die Sicht fände niemand
+// einen Kollegen an seinem Namen, und wer die Karte gerade nicht zur Hand hat, fände ihn an der
+// Theke gar nicht. Die Art wandert als eigene Spalte mit; ohne sie stünde ein Kollege ohne
+// Klasse in der Trefferliste wie ein Schüler mit fehlender Angabe. Wer nur Schüler meint
+// (Klassenlisten, Mahnlauf, LUSD), fragt die Sicht.
 //
-// Der Name der Funktion bleibt: Sie bedient GET /api/search, und das ist die Theke.
-// Wer wirklich nur Schüler meint (Klassenlisten, Mahnlauf, LUSD), fragt die Sicht.
-//
-// Zwei Eigenschaften, die der frühere Ganzstring-Vergleich nicht hatte:
+// Zwei Eigenschaften der Suche:
 //
 //  1. Jedes Token muss irgendeine Spalte treffen (UND-Verknüpfung), nicht die
 //     komplette Eingabe eine einzelne. Damit ist die Reihenfolge von Vor- und
 //     Nachname bedeutungslos — "Lena Hoffmann" und "Hoffmann Lena" finden dieselbe
 //     Person, und mehrteilige Namen ("Anna Maria", "García Rodríguez") ebenso.
 //  2. Verglichen wird über die Normalform suchnorm() statt über den Rohtext. Sie
-//     faltet Diakritika weg ("Garcia" findet García, "Ozturk" findet Öztürk) UND
+//     faltet Diakritika weg ("Garcia" findet García, "Ozturk" findet Öztürk) und
 //     zieht die deutsche Ersatzschreibung auf denselben Nenner ("Mueller" findet
 //     Müller, "Oeztuerk" findet Öztürk, "Strasse" findet Straße) — in beide
 //     Richtungen, denn mal steht der Umlaut in der Datenbank und wird ohne getippt,
 //     mal ist es umgekehrt.
 //
-// Die SQL-Bausteine stehen oben als Konstanten — dieselbe Suche bedient die Schülerdatei.
+// Die SQL-Bausteine stehen oben als Konstanten; dieselbe Suche bedient die Leserdatei.
 func (a *pgLeserAbfragen) FindeUnscharf(ctx context.Context, suchtext string, limit int) ([]Leser, int, error) {
 	tokens := suchTokens(suchtext)
 	if len(tokens) == 0 {

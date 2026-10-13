@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// LeserListenZeile represents a student along with their current loan statistics.
+// LeserListenZeile ist ein Leser in der Liste der Leserdatei, mit den Zahlen seiner Ausleihen.
 type LeserListenZeile struct {
 	ID            string `json:"id"`
 	BarcodeID     string `json:"barcode_id"`
@@ -25,13 +25,14 @@ type LeserListenZeile struct {
 	AnzahlAusgeliehen  int    `json:"ausgeliehen_count"`
 	AnzahlUeberfaellig int    `json:"ueberfaellig_count"`
 	// AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt — aus dem
-	// Bildungsgang der Klasse gerechnet, NICHT aus AbgaengerJahr (siehe
+	// Bildungsgang der Klasse gerechnet, nicht aus AbgaengerJahr (siehe
 	// internal/ausweis). nil heißt: aus dieser Klassenbezeichnung nicht ableitbar,
 	// dann fragt der Druckdialog nach.
 	AusweisGueltigBis *int `json:"ausweis_gueltig_bis,omitempty"`
 }
 
-// LadeKlassen returns a list of all active classes.
+// LadeKlassen liest die Klassen der Sicht schueler außerhalb des Papierkorbs, nach Namen
+// geordnet.
 func (a *pgLeserAbfragen) LadeKlassen(ctx context.Context) ([]string, error) {
 	rows, err := a.db.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL ORDER BY klasse")
 	if err != nil {
@@ -55,44 +56,42 @@ func (a *pgLeserAbfragen) LadeKlassen(ctx context.Context) ([]string, error) {
 // über suche — die Suche läuft auf dem Server und kennt keine Grenze bei 500.
 const leserListeMax = 500
 
-// LadeSchuelerListe liefert Schüler samt Ausleihzahlen, optional auf eine Klasse
-// eingegrenzt und/oder auf einen Suchbegriff (Name oder Barcode).
+// LadeSchuelerListe liefert Schüler samt Ausleihzahlen, auf Wunsch auf Klassen eingegrenzt oder
+// auf einen Suchtext (Name oder Ausweisnummer).
 //
-// Gesucht wird über dieselben SQL-Bausteine wie in der Omnibox an der Theke
-// (leserSuchCTE/-Bedingung/-Rang, siehe leser_suche.go): Tokens in beliebiger
-// Reihenfolge, diakritikfrei, deutsche Ersatzschreibung in beide Richtungen. Vorher
-// filterte die Schülerdatei im Browser über die ersten 500 gelieferten Zeilen — wer
-// alphabetisch dahinter lag, war über die Suche nicht erreichbar, und zwar abhängig vom
-// Klassennamen, also für den Benutzer ohne erkennbares Muster.
-// klassen grenzt auf eine ODER MEHRERE Klassen ein (leer = alle). Mehrere, weil ein
-// JAHRGANG genau das ist: die Klassen, die zu ihm gehören. Die Zuordnung steht nicht
-// hier, sondern an einer Stelle in der API — sie braucht das Klassenschema der Schule
-// („ET" ist Jahrgang 11), und das kann SQL nicht.
+// Gesucht wird über dieselben SQL-Bausteine wie in der Omnibox an der Theke (leserSuchCTE,
+// leserSuchBedingung und leserSuchRang in leser_suche.go): Tokens in beliebiger Reihenfolge,
+// ohne Akzente, deutsche Ersatzschreibung in beide Richtungen. Die Suche läuft am Server über
+// alle Zeilen: Ein Filter im Browser über die ersten 500 fände nicht, wer alphabetisch dahinter
+// liegt.
+//
+// klassen grenzt auf eine oder mehrere Klassen ein (leer heißt alle). Mehrere, weil ein
+// Jahrgang genau das ist: die Klassen, die zu ihm gehören. Die Zuordnung steht an einer Stelle
+// in der API; sie braucht das Klassenschema der Schule („ET" ist Jahrgang 11), und das kann SQL
+// nicht.
 func (a *pgLeserAbfragen) LadeSchuelerListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
 	return a.ladeListe(ctx, klassen, suche, listeAktiveSchueler, sortierung)
 }
 
-// LadeEhemaligenListe liefert die Schüler, die die Schule verlassen haben
-// (ist_abgaenger = true, nicht gelöscht) — der Reiter „Ehemalige / Archiv" der
-// Schülerdatei. Bis zum 05.09.2026 bettete der Reiter die Abgängerliste ein; seit die
-// wieder die Abschlussklassen meint (noch an der Schule), brauchen die Weggegangenen
-// eine eigene Liste. Jüngster Abgang zuerst, dann Name.
+// LadeEhemaligenListe liefert die Schüler, die die Schule verlassen haben (ist_abgaenger =
+// true, nicht gelöscht), für den Reiter „Ehemalige / Archiv" der Schülerdatei. Die
+// Abgängerliste meint die Abschlussklassen, die noch an der Schule sind; die Weggegangenen
+// haben deshalb ihre eigene Liste. Jüngster Abgang zuerst, dann Name.
 func (a *pgLeserAbfragen) LadeEhemaligenListe(ctx context.Context, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
 	return a.ladeListe(ctx, nil, suche, listeEhemalige, sortierung)
 }
 
-// LadeLeserListe liefert ALLE Leser — Schüler und Kollegium — für die Leserdatei.
-//
-// Dieselben Zeilen und dieselbe Suche wie die Schülerliste, nur über die Tabelle `leser`
-// statt über die Sicht `schueler`. Bis zum 16.09.2026 stand ein Kollege in keiner Liste;
-// man sah an der Theke, dass er ein Buch bekommen hatte, aber nirgends, welche er hat.
+// LadeLeserListe liefert alle Leser, Schüler und Kollegium, für die Leserdatei: dieselben
+// Zeilen und dieselbe Suche wie die Schülerliste, nur über die Tabelle `leser` statt über die
+// Sicht `schueler`. Ohne sie stünde ein Kollege in keiner Liste; man sähe an der Theke, dass er
+// ein Buch bekommen hat, aber nirgends, welche er hat.
 func (a *pgLeserAbfragen) LadeLeserListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
 	return a.ladeListe(ctx, klassen, suche, listeAlleLeser, sortierung)
 }
 
-// listenArt sagt, WELCHE Zeilen eine Liste zeigt. Die drei Fälle sind die drei Reiter
+// listenArt sagt, welche Zeilen eine Liste zeigt. Die drei Fälle sind die drei Reiter
 // bzw. Ansichten und schließen einander aus; als zwei bool-Schalter nebeneinander wäre
-// die vierte, sinnlose Kombination („ehemalige UND alle Leser") jederzeit tippbar.
+// die vierte, sinnlose Kombination („ehemalige und alle Leser") jederzeit tippbar.
 type listenArt int
 
 const (
@@ -106,20 +105,19 @@ const (
 )
 
 func (a *pgLeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche string, art listenArt, sortierung LeserSortierung) ([]LeserListenZeile, error) {
-	// Die Bedingungen werden zusammengesetzt, weil jede für sich optional ist. Die
-	// Platzhalternummern stehen fest ($1/$2 Suche, $3 Klasse) und die zugehörigen
-	// Argumente werden nur dann angehängt, wenn ihre Bedingung auch im SQL landet —
-	// Postgres lehnt sonst überzählige Bind-Parameter ab.
-	// Weggegangene (ist_abgaenger) gehören nicht in „Aktive Schüler" (Fund 31.08.2026:
-	// sie standen als „Gesperrt" ohne erkennbaren Grund zwischen den Aktiven; nach
-	// einem Schuljahreswechsel wäre das ein ganzer Jahrgang Karteileichen) — sie haben
-	// den Reiter „Ehemalige / Archiv", der über dieselbe Abfrage mit umgekehrtem
-	// Vorzeichen läuft.
+	// Die Bedingungen werden zusammengesetzt, weil jede für sich optional ist. Die Nummern der
+	// Platzhalter stehen fest ($1/$2 Suche, $3 Klasse), und die Argumente dazu werden nur
+	// angehängt, wenn ihre Bedingung im SQL steht: Postgres lehnt überzählige Parameter ab.
+	//
+	// Weggegangene (ist_abgaenger) gehören nicht in „Aktive Schüler": Sie stünden als
+	// „Gesperrt" ohne erkennbaren Grund zwischen den Aktiven, nach einem Schuljahreswechsel ein
+	// ganzer Jahrgang. Sie haben den Reiter „Ehemalige / Archiv", der über dieselbe Abfrage mit
+	// umgekehrtem Vorzeichen läuft.
 	statusBedingung := "COALESCE(s.ist_abgaenger, false) = false"
 	if art == listeEhemalige {
 		statusBedingung = "s.ist_abgaenger = true"
 	}
-	// Die Leserdatei liest die TABELLE, die beiden Schüler-Listen die Sicht. Das ist der
+	// Die Leserdatei liest die Tabelle, die beiden Schüler-Listen die Sicht. Das ist der
 	// einzige Unterschied im Rumpf — alles andere (Suche, Ausleihzahlen, Foto) gilt für
 	// einen Kollegen genauso.
 	quelle := "schueler"
@@ -138,16 +136,14 @@ func (a *pgLeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche
 		bedingungen = append(bedingungen, leserSuchBedingung(true))
 		args = append(args, tokens, tokens[0])
 	} else {
-		// Nur die reine Liste wird gekappt. Eine Suche darf das nicht — genau daran
-		// ist sie vorher gescheitert.
+		// Nur die reine Liste wird gekappt. Eine Suche muss jede Zeile erreichen.
 		limit = fmt.Sprintf(" LIMIT %d", leserListeMax)
 	}
 
-	// = ANY statt =, seit der Filter auch einen ganzen Jahrgang meinen kann (17.09.2026,
-	// OFFEN.md 9.5). Eine Klasse ist der Sonderfall mit einem Element; die leere Liste
-	// filtert nicht — sonst zeigte ein Jahrgang ohne Klassen versehentlich ALLE Leser
-	// statt keinem. Genau umgekehrt wäre es aber richtig, deshalb die Trennung in der
-	// API: Ein Jahrgang, den es nicht gibt, kommt dort gar nicht erst hierher.
+	// = ANY statt =, weil der Filter auch einen ganzen Jahrgang meinen kann. Eine Klasse ist
+	// der Sonderfall mit einem Element; die leere Liste filtert nicht. Ein Jahrgang ohne
+	// Klassen zeigte damit alle Leser statt keinem, deshalb fängt die API ihn ab: Ein Jahrgang,
+	// den es nicht gibt, kommt gar nicht erst hierher.
 	if len(klassen) > 0 {
 		args = append(args, klassen)
 		bedingungen = append(bedingungen, fmt.Sprintf("s.klasse = ANY($%d)", len(args)))
@@ -162,10 +158,9 @@ func (a *pgLeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche
 	}
 	orderBy := sortierung.sqlSortierung(art, suchRang)
 
-	// coalesce auf Ausweis, Klasse und Abgängerjahr: Seit Migration 123 sind die drei
-	// nullbar (ein Kollege hat keine Klasse und oft keinen gedruckten Ausweis). Ohne das
-	// zerbricht der Scan an der ersten Lehrkraft — dort, wo eben noch eine Liste stand,
-	// stünde ein 500.
+	// coalesce auf Ausweis, Klasse und Abgängerjahr: Die drei sind nullbar (ein Kollege hat
+	// keine Klasse und oft keinen gedruckten Ausweis). Ohne das zerbricht der Scan an der
+	// ersten Lehrkraft; wo eben noch eine Liste stand, stünde ein 500.
 	rows, err := a.db.Query(ctx, praefix+`
 		SELECT s.id, COALESCE(s.barcode_id, ''), s.vorname, s.nachname, COALESCE(s.klasse, ''),
 			COALESCE(s.abgaenger_jahr, 0), s.ist_gesperrt, s.art,

@@ -1,13 +1,10 @@
 package repository
 
-// Die Sortierung der Leserliste (Protokoll des Medienzentrums vom 16.09.2026, Punkt 5:
-// „Sortier- ODER Filteroption"; der Filter steht seit dem 17.09.2026, das hier ist die
-// andere Hälfte).
+// Die Sortierung der Leserliste.
 //
-// Eine geschlossene Menge und KEIN Text aus der Anfrage: Der Wert landet in einem
-// ORDER BY. Ein durchgereichter String wäre eine SQL-Injektion mit Anlauf, und eine
-// Prüfung „enthält keine Anführungszeichen" wäre die Art Schutz, die man einmal
-// vergisst.
+// Eine geschlossene Menge und kein Text aus der Anfrage: Der Wert landet in einem ORDER BY. Ein
+// durchgereichter String wäre eine SQL-Injektion mit Anlauf, und eine Prüfung „enthält keine
+// Anführungszeichen" wäre die Art Schutz, die man einmal vergisst.
 
 // LeserSortierspalte ist die Spalte, nach der der Benutzer sortiert hat.
 type LeserSortierspalte string
@@ -52,16 +49,15 @@ func (s LeserSortierung) IstErlaubt() bool {
 	return false
 }
 
-// sqlSortierung baut die ORDER-BY-Liste.
+// sqlSortierung baut die Liste für ORDER BY.
 //
-// Die GRUPPE steht in der Leserdatei immer vorn, auch wenn der Benutzer sortiert: Die
-// ungefilterte Liste ist bei 500 Zeilen gekappt, und ohne diesen Schlüssel fiele ein
-// Kollege bei 875 Schülern lautlos hinten heraus — dieselbe Falle, gegen die die
-// Reihenfolge ursprünglich gebaut wurde. Sortiert wird also INNERHALB der Gruppen.
+// Die Gruppe steht in der Leserdatei immer vorn, auch wenn der Benutzer sortiert: Die
+// ungefilterte Liste ist bei 500 Zeilen gekappt, und ohne diesen Schlüssel fiele ein Kollege
+// bei 875 Schülern lautlos hinten heraus. Sortiert wird also innerhalb der Gruppen.
 //
-// Der zweite Schlüssel ist immer der Name: Ohne ihn stünden bei gleicher Klasse (oder
-// gleicher Ausleihzahl) die Zeilen in der Reihenfolge, die Postgres gerade liefert, und
-// die Liste sähe bei jedem Laden anders aus.
+// Der zweite Schlüssel ist immer der Name: Ohne ihn stünden bei gleicher Klasse (oder gleicher
+// Ausleihzahl) die Zeilen in der Reihenfolge, die Postgres gerade liefert, und die Liste sähe
+// bei jedem Laden anders aus.
 func (s LeserSortierung) sqlSortierung(art listenArt, suchRang string) string {
 	gruppe := ""
 	if art == listeAlleLeser {
@@ -82,13 +78,13 @@ func (s LeserSortierung) sqlSortierung(art listenArt, suchRang string) string {
 		return gruppe + "ausgeliehen_anzahl" + richtung + ", s.nachname, s.vorname"
 	}
 
-	// Vorgabe. Bei einer Suche zuerst die besten Treffer — aber nur, solange der
-	// Benutzer nicht selbst eine Spalte gewählt hat: Wer auf „Name" klickt, will nach
-	// Namen sortiert werden und nicht nach Trefferqualität.
+	// Vorgabe. Bei einer Suche zuerst die besten Treffer, aber nur, solange der Benutzer nicht
+	// selbst eine Spalte gewählt hat: Wer auf „Name" klickt, will nach Namen sortiert werden
+	// und nicht nach Trefferqualität.
 	//
-	// Die Gruppe steht auch hier vorn. Bis zum 17.09.2026 fiel sie bei einer Suche weg,
-	// weil die Kappung dort nicht greift — aber „Kollegium oben" ist eine Regel, die der
-	// Benutzer SIEHT, und eine Regel, die je nach Suchfeld gilt oder nicht, ist keine.
+	// Die Gruppe steht auch hier vorn, obwohl die Kappung bei einer Suche nicht greift:
+	// „Kollegium oben" ist eine Regel, die der Benutzer sieht, und eine Regel, die je nach
+	// Suchfeld gilt oder nicht, ist keine.
 	if suchRang != "" {
 		return gruppe + suchRang + ", s.nachname ASC, s.vorname ASC"
 	}

@@ -15,30 +15,28 @@ type LeserEtikettZeile struct {
 	Klasse    string
 }
 
-// LadeEtikettZeilen liest die Etikettenangaben zu den angegebenen LESER-IDs.
+// LadeEtikettZeilen liest die Angaben für die Etiketten der genannten Leser.
 //
-// Sortiert nach Klasse, Nachname, Vorname — nicht in der Reihenfolge der übergebenen
-// IDs: Die Markierungsreihenfolge in der Schülerdatei ist zufällig (mal von oben
-// durchgeklickt, mal per Kopf-Häkchen), und ein Bogen Klebeetiketten wird in der
-// Reihenfolge abgezogen, in der man die Namen sucht.
+// Sortiert nach Klasse, Nachname, Vorname, nicht in der Reihenfolge der übergebenen Kennungen:
+// Die Reihenfolge des Markierens in der Leserdatei ist zufällig (mal von oben durchgeklickt,
+// mal per Häkchen im Kopf), und ein Bogen Klebeetiketten wird in der Reihenfolge abgezogen, in
+// der man die Namen sucht.
 //
-// Die Klasse steht ZUERST, und das ist der Punkt: Ohne sie laufen zwei gemeinsam
-// markierte Klassen auf dem Bogen ineinander (gemessen: 7A, 7A, 7A, 7B, 7B, 7B, 7B,
-// 7B, 7A, …), und wer die Etiketten klassenweise austeilt, klaubt sie einzeln
-// heraus. Es ist außerdem dieselbe Reihenfolge, die die Leserdatei selbst führt
-// (Kollegium zuerst, dann die gewohnte Kartei-Reihenfolge — ladeListe) und
-// der der Ausweis-Stapeldruck folgt: Zwei Ausgaben derselben Auswahl sollen nicht
-// verschieden sortiert aus dem Drucker kommen.
+// Die Klasse steht zuerst: Ohne sie laufen zwei gemeinsam markierte Klassen auf dem Bogen
+// ineinander (gemessen: 7A, 7A, 7A, 7B, 7B, 7B, 7B, 7B, 7A, …), und wer die Etiketten
+// klassenweise austeilt, klaubt sie einzeln heraus. Es ist außerdem dieselbe Reihenfolge, die
+// die Leserdatei selbst führt (Kollegium zuerst, dann die gewohnte Reihenfolge der Kartei,
+// ladeListe) und der der Stapeldruck der Ausweise folgt: Zwei Ausgaben derselben Auswahl sollen
+// nicht verschieden sortiert aus dem Drucker kommen.
 //
-// Gelesen wird die TABELLE `leser`, nicht die Sicht `schueler`. Seit dem 16.09.2026
-// stehen Schüler und Kollegium in derselben Liste, mit demselben Häkchen davor; über die
-// Sicht fiel ein markierter Kollege LAUTLOS vom Bogen — der Druck gelang, der Bogen war
-// nur kürzer, und gemerkt hätte man es beim Verteilen.
+// Gelesen wird die Tabelle `leser`, nicht die Sicht `schueler`: Schüler und Kollegium stehen in
+// derselben Liste, mit demselben Häkchen davor. Über die Sicht fiele ein markierter Kollege
+// lautlos vom Bogen; der Druck gelänge, der Bogen wäre nur kürzer, und gemerkt würde es beim
+// Verteilen.
 //
-// Gelöschte Leser bleiben außen vor, und ihre IDs fallen dabei weg. Das ist hier kein
-// Fehler: Ein gleichzeitig gelöschter Mensch soll den ganzen Bogen nicht verhindern.
-// Seit die Abfrage die Tabelle liest, ist das auch der einzige Grund, aus dem eine Zeile
-// fehlen kann.
+// Gelöschte Leser bleiben außen vor, und ihre Kennungen fallen dabei weg. Das ist hier kein
+// Fehler: Ein gleichzeitig gelöschter Mensch soll den ganzen Bogen nicht verhindern. Es ist der
+// einzige Grund, aus dem eine Zeile fehlen kann.
 func (a *pgLeserAbfragen) LadeEtikettZeilen(ctx context.Context, ids []string) ([]LeserEtikettZeile, error) {
 	if len(ids) == 0 {
 		return nil, nil
