@@ -55,14 +55,9 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Bogen (48,3 mm) druckt ein langer Titel heute rund 5 mm auf jedes Nachbaretikett, mit
   QR-Code rund 13 mm auf das rechte; er endete dann nach rund 33 statt 40 Zeichen. Am
   Lernmittel-Etikett endete der Titel nach rund 39 statt 42 Zeichen. (5.63)
-- [ ] Zwei zugelieferte Pull Requests vom 13.10.2026 (734 und 735), beide am selben Tag am
-  Code geprüft. Vorschlag: 734 übernehmen, 735 schließen. 734 gibt dem aufklappbaren Bereich
-  im Vorrat des LMF-Plans (`LmfPlanVorrat.svelte`) eine Kennung und nennt sie am Knopf
-  (`aria-controls`), wie es sieben andere Bauteile schon tun; alle Prüfläufe am Pull Request
-  sind grün. 735 schreibt die Abfrage der Schlagwort-Pflege um, weil sie die Titel je Zeile
-  der ganzen Tabelle zähle. Gemessen an 5.003 Schlagworten zählt die vorhandene Abfrage
-  200-mal, einmal je gezeigter Zeile, genau wie die neue (0,73 gegen 0,70 ms); dazu käme ein
-  Kommentar mit Vorgeschichte in der Anweisung.
+- [x] Zwei zugelieferte Pull Requests vom 13.10.2026 (734 und 735): entschieden am
+  13.10.2026, nach dem Vorschlag. 734 ist übernommen; was am zusammengeführten Stand geprüft
+  ist, steht im Merge-Commit. 735 ist geschlossen; die Messung steht am Pull Request.
 - [x] Vier zugelieferte Pull Requests (726 bis 729): geschlossen am 12.10.2026, nach dem
   Vorschlag. Die Begründung steht je am Pull Request. Soll es den Knopf zum Leeren der Suche
   geben, entsteht er neu nach der Seite von Material 3.
