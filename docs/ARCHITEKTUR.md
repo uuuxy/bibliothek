@@ -800,7 +800,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
 
 - Die Tür prüft Eingabe und Recht, öffnet die Transaktion, bestimmt die Reihenfolge der
   Schritte, entscheidet Status und Meldung und schreibt ins Protokoll. Die Anweisung und das
-  Lesen ihrer Zeilen stehen in `repository/`, als Funktion über `DBQueryer`; den erfüllen der
+  Lesen ihrer Zeilen stehen in `repository/`, als Funktion über `repository.Datenbank`; den erfüllen der
   Pool und eine Transaktion.
 - Eine Abfrage liefert ihren eigenen Zeilentyp. Typen, die die Schnittstellenbeschreibung
   nennt, ziehen nicht mit nach `repository/`; bei gleichen Feldern genügt die Typumwandlung
@@ -948,7 +948,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   `repository/geraete_ausleihe.go`. `SperreOffeneGeraeteAusleihe` sperrt die Zeile der offenen
   Ausleihe bis zum Ende der Transaktion; `BucheGeraeteRueckgabe` meldet eine Ausleihe, die es
   nicht gibt, statt null Zeilen als gebucht zu nehmen. Die Funktionen nehmen Pool oder
-  Transaktion (`DBQueryer`); dass der Dienst ihnen die Transaktion reicht, halten drei Tests an
+  Transaktion (`repository.Datenbank`); dass der Dienst ihnen die Transaktion reicht, halten drei Tests an
   der Datenbank (`internal/service/geraet_ausleihe_pg_test.go`): zwei Plätze zugleich an
   derselben Ausleihe und an derselben Rückgabe, und ein Protokoll, das sich nicht schreiben
   lässt.

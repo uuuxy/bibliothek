@@ -37,7 +37,7 @@ func TestKlassenZuordnungKenntDieOberstufe(t *testing.T) {
 	}
 
 	lage := srv.sammleLage(ctx, repository.NewSystemSettingsRepository(pool),
-		repository.NewMailSettingsRepository(pool), repository.NewBetriebszustandRepository(pool))
+		repository.NewMailSettingsRepository(pool), repository.NewBetriebszustandAbfragen(pool))
 
 	for _, fall := range []struct {
 		name      string

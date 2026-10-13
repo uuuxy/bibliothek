@@ -76,7 +76,7 @@ func TestSeedLieferantenAbgeschafft107(t *testing.T) {
 	}
 
 	// Die Selbstprüfung: nach der Migration sauber …
-	repo := repository.NewBetriebszustandRepository(pool)
+	repo := repository.NewBetriebszustandAbfragen(pool)
 	namen, err := repo.BeispielLieferanten(ctx)
 	if err != nil {
 		t.Fatalf("BeispielLieferanten: %v", err)

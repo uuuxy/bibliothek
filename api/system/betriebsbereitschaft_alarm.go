@@ -31,7 +31,7 @@ import (
 func (s *Tueren) BereitschaftsAlarm(ctx context.Context) {
 	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
 	mailRepo := repository.NewMailSettingsRepository(s.DB.Pool)
-	zustandRepo := repository.NewBetriebszustandRepository(s.DB.Pool)
+	zustandRepo := repository.NewBetriebszustandAbfragen(s.DB.Pool)
 
 	lage := s.sammleLage(ctx, settingsRepo, mailRepo, zustandRepo)
 	if !bereitschaft.IstEchterBetrieb(lage.AppEnv) {

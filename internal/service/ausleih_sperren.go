@@ -46,7 +46,7 @@ type sperrLage struct {
 // pruefeAusleihSperren prüft die Sperren für eine NEUE Ausleihe an leser. Eine Rückgabe
 // prüft sie nie: Wer gesperrt ist, muss zurückgeben können. q trägt die Abfragen — am Scan
 // der Pool, beim Nachbuchen die Transaktion des Eintrags. uebergehen ist override_block.
-func pruefeAusleihSperren(ctx context.Context, q repository.DBQueryer, leser *repository.Student, lernmittel, uebergehen bool) (sperrLage, error) {
+func pruefeAusleihSperren(ctx context.Context, q repository.Datenbank, leser *repository.Student, lernmittel, uebergehen bool) (sperrLage, error) {
 	if err := SperreAmLeserHaeltAn(leser, lernmittel); err != nil {
 		return sperrLage{}, err
 	}
@@ -109,7 +109,7 @@ func sperrGrund(leser *repository.Student, ersatz string) string {
 // pruefeHinweise prüft die zwei Hinweise des Programms: unbezahlte Forderungen und die
 // Überfällig-Automatik (ab MaxOverdueItems Medien, die länger als MaxOverdueDays überfällig
 // sind). Mit uebergehen gehen sie durch und stehen in sperrLage.uebergangen.
-func pruefeHinweise(ctx context.Context, q repository.DBQueryer, leserID string, uebergehen bool) (sperrLage, error) {
+func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string, uebergehen bool) (sperrLage, error) {
 	var lage sperrLage
 
 	offen, _, err := repository.OffeneSchaeden(ctx, q, leserID)

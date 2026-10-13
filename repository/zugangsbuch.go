@@ -53,7 +53,7 @@ type Zugangsbuch struct {
 // Ausgesonderte Exemplare bleiben drin: Ein Buch, das im Mai kam und im Juli verloren ging,
 // ist im Mai trotzdem zugegangen. Ein Zugangsbuch, das solche Zeilen weglässt, ändert
 // rückwirkend eine Zahl, die jemand unterschrieben hat — der Abgang steht im Abgangsbuch.
-func LadeZugangsbuch(ctx context.Context, q DBQueryer, von, bis time.Time) (Zugangsbuch, error) {
+func LadeZugangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Zugangsbuch, error) {
 	loc := schulzeit.Zone()
 	abVon := time.Date(von.Year(), von.Month(), von.Day(), 0, 0, 0, 0, loc)
 	bisTag := time.Date(bis.Year(), bis.Month(), bis.Day(), 0, 0, 0, 0, loc)

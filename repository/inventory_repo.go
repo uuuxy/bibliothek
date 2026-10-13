@@ -11,11 +11,11 @@ import (
 // Lebenszyklus-Methoden dazu stehen in inventur_session_repo.go und
 // inventur_session_finish.go.
 type InventoryRepository struct {
-	db DBQueryer
+	db Datenbank
 }
 
 // NewInventoryRepository initializes a new InventoryRepository.
-func NewInventoryRepository(db DBQueryer) *InventoryRepository {
+func NewInventoryRepository(db Datenbank) *InventoryRepository {
 	return &InventoryRepository{db: db}
 }
 

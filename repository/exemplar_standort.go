@@ -68,7 +68,7 @@ func SQLGeerbterStandort(titel string) string {
 // geerbteStandorte liest SQLGeerbterStandort je Titel für den Weg, der seine Zeilen ohne
 // SQL-Ausdruck schreibt (CopyFrom der Bestellung). Der Schlüssel ist die Kennung, wie der
 // Aufrufer sie schreibt; ein Titel ohne Erbe fehlt in der Antwort.
-func geerbteStandorte(ctx context.Context, q DBQueryer, titelIDs []string) (map[string]string, error) {
+func geerbteStandorte(ctx context.Context, q Datenbank, titelIDs []string) (map[string]string, error) {
 	rows, err := q.Query(ctx, `
 		SELECT roh, standort
 		FROM (SELECT u.roh, `+SQLGeerbterStandort("u.roh::uuid")+` AS standort
@@ -96,7 +96,7 @@ func geerbteStandorte(ctx context.Context, q DBQueryer, titelIDs []string) (map[
 // geändert haben. Alle oder keins: Fehlt eine Kennung, ändert sich nichts
 // (ErrExemplarNichtGefunden). Ein Exemplar, das schon so steht, wird nicht noch einmal
 // geschrieben und nicht protokolliert.
-func SetzeExemplarStandort(ctx context.Context, q DBQueryer, a StandortAenderung) (int, error) {
+func SetzeExemplarStandort(ctx context.Context, q Datenbank, a StandortAenderung) (int, error) {
 	// Die Datenbank lässt Leerraum am Rand eines Werts zu; ohne das Kürzen stünde derselbe
 	// Standort zweimal in der Vorschlagsliste.
 	a.Standort = strings.TrimSpace(a.Standort)
@@ -211,7 +211,7 @@ func pruefeStandortAenderung(a StandortAenderung) error {
 // ExemplarStandorte nennt die Standorte, die an Exemplaren im Bestand vorkommen, den
 // häufigsten zuerst — die Vorschläge des Dialogs „Standort ändern". Ein Wert, den nur noch
 // ausgesonderte Exemplare tragen, wird nicht mehr vorgeschlagen.
-func ExemplarStandorte(ctx context.Context, q DBQueryer) ([]StandortZahl, error) {
+func ExemplarStandorte(ctx context.Context, q Datenbank) ([]StandortZahl, error) {
 	rows, err := q.Query(ctx, `
 		SELECT e.standort, count(*)::int
 		FROM buecher_exemplare e
@@ -241,7 +241,7 @@ func ExemplarStandorte(ctx context.Context, q DBQueryer) ([]StandortZahl, error)
 // „Standort" der Titel-Verwaltung. Dieselbe Grenze wie die Zahl „Bestand" daneben
 // (SQLExemplarImBestand): Die Zahlen einer Zeile sind höchstens so groß wie ihr Bestand. Ein
 // Titel ohne Standort steht nicht in der Antwort.
-func StandorteDerTitel(ctx context.Context, q DBQueryer, titelIDs []string) (map[string][]StandortZahl, error) {
+func StandorteDerTitel(ctx context.Context, q Datenbank, titelIDs []string) (map[string][]StandortZahl, error) {
 	jeTitel := make(map[string][]StandortZahl)
 	if len(titelIDs) == 0 {
 		return jeTitel, nil

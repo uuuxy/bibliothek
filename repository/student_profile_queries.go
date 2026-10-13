@@ -16,7 +16,7 @@ func (r *pgStudentRepository) HasPhoto(ctx context.Context, studentID string) (b
 // OffeneSchaeden zählt die unbezahlten Forderungen eines Lesers aus jedem Topf und nennt ihre
 // Summe. Ein Storno setzt ist_bezahlt mit, die eine Bedingung deckt beides. Die Akte und der
 // Hinweis an der Theke (service.pruefeHinweise) fragen beide hier, damit sie dieselbe Zahl nennen.
-func OffeneSchaeden(ctx context.Context, q DBQueryer, leserID string) (anzahl int, summe float64, err error) {
+func OffeneSchaeden(ctx context.Context, q Datenbank, leserID string) (anzahl int, summe float64, err error) {
 	err = q.QueryRow(ctx,
 		`SELECT COUNT(*), COALESCE(SUM(betrag), 0)::float8 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
 		leserID).Scan(&anzahl, &summe)

@@ -103,7 +103,7 @@ const SQLIstAbgang = `e.ist_ausgesondert = true AND ` + SQLWarImBestand
 // Grenzen entstehen deshalb hier, in der Zeitzone der Schule — die Datenbanksitzung läuft
 // in UTC, und zwischen Mitternacht in Berlin und Mitternacht UTC läge ein Abgang sonst im
 // falschen Halbjahr.
-func LadeAbgangsbuch(ctx context.Context, q DBQueryer, von, bis time.Time) (Abgangsbuch, error) {
+func LadeAbgangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Abgangsbuch, error) {
 	loc := schulzeit.Zone()
 	abVon := time.Date(von.Year(), von.Month(), von.Day(), 0, 0, 0, 0, loc)
 	bisAusschliesslich := time.Date(bis.Year(), bis.Month(), bis.Day(), 0, 0, 0, 0, loc).AddDate(0, 0, 1)

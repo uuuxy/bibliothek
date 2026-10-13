@@ -23,7 +23,7 @@ type AnmeldeKonto struct {
 // LiesAnmeldeKonto liest das Konto zu einer Adresse, ohne Rücksicht auf Groß- und
 // Kleinschreibung. Die Ausweisnummer steht an der Leserzeile des Kontos; ein Konto ohne
 // Leserzeile wird trotzdem gefunden und trägt dann keine.
-func LiesAnmeldeKonto(ctx context.Context, db DBQueryer, email string) (AnmeldeKonto, error) {
+func LiesAnmeldeKonto(ctx context.Context, db Datenbank, email string) (AnmeldeKonto, error) {
 	var k AnmeldeKonto
 	query := `
 		SELECT b.id, coalesce(l.barcode_id, ''), b.rolle, b.vorname, b.nachname, b.aktiv, b.email,
@@ -40,7 +40,7 @@ func LiesAnmeldeKonto(ctx context.Context, db DBQueryer, email string) (AnmeldeK
 // LegeZugangsanfrageAn legt ein inaktives Konto der Rolle Kollegium an und sagt, ob dabei eine
 // Zeile entstand. Gibt es die Adresse schon, entsteht keine, und das ist kein Fehler: Zwei
 // gleichzeitige Versuche derselben Person scheitern so nicht an der eindeutigen Adresse.
-func LegeZugangsanfrageAn(ctx context.Context, db DBQueryer, vorname, nachname, email string) (bool, error) {
+func LegeZugangsanfrageAn(ctx context.Context, db Datenbank, vorname, nachname, email string) (bool, error) {
 	tag, err := db.Exec(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, zugang_beantragt_am)
 		VALUES ($1, $2, LOWER($3), 'kollegium', false, CURRENT_TIMESTAMP)
@@ -64,7 +64,7 @@ type SitzungsKonto struct {
 // LiesSitzungsKonto liest Rolle, Namen, Adresse und Aktiv-Status eines Kontos. Eine Sitzung
 // fragt die Datenbank und nicht ihr Token: Rolle und Status können sich seit der Anmeldung
 // geändert haben.
-func LiesSitzungsKonto(ctx context.Context, db DBQueryer, kontoID string) (SitzungsKonto, error) {
+func LiesSitzungsKonto(ctx context.Context, db Datenbank, kontoID string) (SitzungsKonto, error) {
 	var k SitzungsKonto
 	err := db.QueryRow(ctx, `
 			SELECT rolle, vorname, nachname, aktiv, email
@@ -77,7 +77,7 @@ func LiesSitzungsKonto(ctx context.Context, db DBQueryer, kontoID string) (Sitzu
 
 // KontoAktivUndRolle liest, ob das Konto aktiv ist, und seine gespeicherte Rolle: die Prüfung
 // bei jeder Anfrage.
-func KontoAktivUndRolle(ctx context.Context, db DBQueryer, kontoID string) (aktiv bool, rolle string, err error) {
+func KontoAktivUndRolle(ctx context.Context, db Datenbank, kontoID string) (aktiv bool, rolle string, err error) {
 	err = db.QueryRow(ctx, `SELECT aktiv, rolle FROM benutzer WHERE id = $1`, kontoID).Scan(&aktiv, &rolle)
 	return aktiv, rolle, err
 }

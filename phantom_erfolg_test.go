@@ -120,7 +120,7 @@ var phantomBestand = map[string]int{
 	"jobs/restore_probe.go:fuehreRestoreProbeAus":                3,
 	// Legt das Ergebnis der Restore-Probe an oder ersetzt es: Die Anweisung trifft immer
 	// genau eine Zeile.
-	"repository/betriebszustand.go:SpeichereEinstellungswert": 1,
+	"repository/betriebszustand.go:SchreibeEinstellungswert": 1,
 	// Ersetzt Zeilen und Auslassungen eines Plans vollständig: DELETE + INSERT. Null
 	// gelöschte Zeilen sind der Normalfall beim Anlegen — RowsAffected sagt hier nichts.
 	// Seit 07.09.2026 heißt der Rumpf SaveLmfPlanIn (Transaktion des Aufrufers);

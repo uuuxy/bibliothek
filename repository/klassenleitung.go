@@ -14,7 +14,7 @@ type Klassenleitung struct {
 
 // ListeKlassenleitungen liefert alle Zuordnungen nach Klasse geordnet. Eine Zeile, die sich
 // nicht lesen lässt, wird ausgelassen.
-func ListeKlassenleitungen(ctx context.Context, db DBQueryer) ([]Klassenleitung, error) {
+func ListeKlassenleitungen(ctx context.Context, db Datenbank) ([]Klassenleitung, error) {
 	rows, err := db.Query(ctx,
 		`SELECT klasse, lehrer_email, erstellt_am FROM klassen_lehrer_mapping ORDER BY klasse`)
 	if err != nil {
@@ -37,7 +37,7 @@ func ListeKlassenleitungen(ctx context.Context, db DBQueryer) ([]Klassenleitung,
 // von KlassenSchluessel: „5A" in der Zuordnung trifft die Klasse „5a". Jeder Fehler bricht ab.
 // Ein Versand, der mit einer halben Tabelle weiterliefe, hielte jede fehlende Klasse für eine
 // ohne Adresse und meldete das wie ein Ergebnis.
-func KlassenleitungsAdressen(ctx context.Context, db DBQueryer) (map[string]string, error) {
+func KlassenleitungsAdressen(ctx context.Context, db Datenbank) (map[string]string, error) {
 	rows, err := db.Query(ctx, `SELECT klasse, lehrer_email FROM klassen_lehrer_mapping`)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func KlassenleitungsAdressen(ctx context.Context, db DBQueryer) (map[string]stri
 // SetzeKlassenleitung trägt die Adresse für die Klasse ein oder ersetzt sie. neu sagt, dass es
 // für die Klasse noch keine Zuordnung gab, unveraendert, dass dieselbe Adresse schon dastand:
 // Daran entscheidet der Aufrufer über den Eintrag im Protokoll.
-func SetzeKlassenleitung(ctx context.Context, db DBQueryer, klasse, lehrerEmail string) (neu, unveraendert bool, err error) {
+func SetzeKlassenleitung(ctx context.Context, db Datenbank, klasse, lehrerEmail string) (neu, unveraendert bool, err error) {
 	err = db.QueryRow(ctx, `
 			WITH alt AS (SELECT lehrer_email FROM klassen_lehrer_mapping WHERE klasse = $1)
 			INSERT INTO klassen_lehrer_mapping (klasse, lehrer_email)
@@ -72,7 +72,7 @@ func SetzeKlassenleitung(ctx context.Context, db DBQueryer, klasse, lehrerEmail 
 
 // LoescheKlassenleitung entfernt die Zuordnung der Klasse und nennt die Zahl der getroffenen
 // Zeilen; null heißt, es gab keine.
-func LoescheKlassenleitung(ctx context.Context, db DBQueryer, klasse string) (int64, error) {
+func LoescheKlassenleitung(ctx context.Context, db Datenbank, klasse string) (int64, error) {
 	tag, err := db.Exec(ctx,
 		`DELETE FROM klassen_lehrer_mapping WHERE klasse = $1`, klasse)
 	if err != nil {
@@ -91,7 +91,7 @@ type KlassenleitungVersetzung struct {
 
 // LeseKlassenleitungVersetzungen liest die Zuordnungen absteigend nach Stufe und liest sie ganz,
 // bevor die Transaktion wieder schreibt.
-func LeseKlassenleitungVersetzungen(ctx context.Context, db DBQueryer) ([]KlassenleitungVersetzung, error) {
+func LeseKlassenleitungVersetzungen(ctx context.Context, db Datenbank) ([]KlassenleitungVersetzung, error) {
 	rows, err := db.Query(ctx, `
 		SELECT klasse,
 		       lpad((substring(klasse from '^\d+')::int + 1)::text,
@@ -122,14 +122,14 @@ func LeseKlassenleitungVersetzungen(ctx context.Context, db DBQueryer) ([]Klasse
 }
 
 // KlassenleitungVorhanden sagt, ob es für die Klasse eine Zuordnung gibt.
-func KlassenleitungVorhanden(ctx context.Context, db DBQueryer, klasse string) (bool, error) {
+func KlassenleitungVorhanden(ctx context.Context, db Datenbank, klasse string) (bool, error) {
 	var vorhanden bool
 	err := db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM klassen_lehrer_mapping WHERE klasse = $1)`, klasse).Scan(&vorhanden)
 	return vorhanden, err
 }
 
 // BenenneKlassenleitungUm hängt die Zuordnung einer Klasse an deren neuen Namen.
-func BenenneKlassenleitungUm(ctx context.Context, db DBQueryer, neu, alt string) error {
+func BenenneKlassenleitungUm(ctx context.Context, db Datenbank, neu, alt string) error {
 	_, err := db.Exec(ctx, `UPDATE klassen_lehrer_mapping SET klasse = $1 WHERE klasse = $2`, neu, alt)
 	return err
 }

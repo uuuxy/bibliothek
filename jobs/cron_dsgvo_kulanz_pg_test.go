@@ -133,7 +133,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 		VALUES ('EINSTELLUNG_GEAENDERT', '{}'::jsonb, NOW() - make_interval(months => $1, hours => 12)) RETURNING id`, auditMonate)
 
 	// Vor dem Lauf: Der Wächter mahnt nichts davon an.
-	for routine, zeilen := range rueckstandAlsMap(ctx, t, repository.NewBetriebszustandRepository(pool)) {
+	for routine, zeilen := range rueckstandAlsMap(ctx, t, repository.NewBetriebszustandAbfragen(pool)) {
 		if zeilen != 0 {
 			t.Errorf("Wächter vor dem Lauf: %q meldet %d Zeilen, obwohl die Frist erst seit zwölf Stunden abgelaufen ist", routine, zeilen)
 		}

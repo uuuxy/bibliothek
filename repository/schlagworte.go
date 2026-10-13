@@ -134,7 +134,7 @@ func SchlagworteAusFremddaten(roh []string) ([]string, SchlagwortAufbereitung) {
 // q ist der Pool oder eine laufende Transaktion; die Funktion öffnet ihre eigene (auf
 // einer Transaktion ist das ein Savepoint). Der Titel wird gesperrt, damit zwei
 // gleichzeitige Speichervorgänge nacheinander ersetzen statt sich zu vermischen.
-func SetzeSchlagworte(ctx context.Context, q DBQueryer, titelID string, roh []string) ([]string, error) {
+func SetzeSchlagworte(ctx context.Context, q Datenbank, titelID string, roh []string) ([]string, error) {
 	woerter, err := NormalisiereSchlagworte(roh)
 	if err != nil {
 		return nil, err
@@ -208,7 +208,7 @@ func SetzeSchlagworte(ctx context.Context, q DBQueryer, titelID string, roh []st
 // Ein unbekannter Titel ist ErrTitelNichtGefunden, keine leere Liste: Die Abfrage geht
 // vom Titel aus, und ohne Titel gibt es keine Zeile. Sonst bekäme ein Aufrufer mit einer
 // falschen Kennung „keine Schlagworte" als Erfolg gemeldet.
-func SchlagworteDesTitels(ctx context.Context, q DBQueryer, titelID string) ([]string, error) {
+func SchlagworteDesTitels(ctx context.Context, q Datenbank, titelID string) ([]string, error) {
 	var woerter []string
 	err := q.QueryRow(ctx, `
 		SELECT coalesce(array_agg(s.wort ORDER BY lower(s.wort)) FILTER (WHERE s.id IS NOT NULL), '{}')
@@ -242,7 +242,7 @@ type SchlagwortZahl struct {
 // wieder entfernt — meist ein Tippfehler, der nicht als Vorschlag weiterleben soll.
 // Verweise tragen keine Titel und fehlen deshalb ebenso; wer einen tippt, bekommt beim
 // Speichern sein Ziel (SetzeSchlagworte).
-func SchlagwortVorschlaege(ctx context.Context, q DBQueryer, suche string) ([]SchlagwortZahl, error) {
+func SchlagwortVorschlaege(ctx context.Context, q Datenbank, suche string) ([]SchlagwortZahl, error) {
 	suche = schlagwortNormalform(suche)
 	grenze := schlagwortVorschlaegeMax
 	if suche != "" {

@@ -26,7 +26,7 @@ type AuditLogZeile struct {
 // LEFT JOIN, weil Vorgänge des Programms selbst (Bereinigung, Sicherung, automatische Sperre)
 // keinen Bearbeiter tragen und trotzdem im Protokoll stehen müssen. COALESCE, weil Bearbeiter
 // und Name damit leer sein können und die Felder der Zeile es nicht sind.
-func ListeAuditLog(ctx context.Context, db DBQueryer, limit int) ([]AuditLogZeile, error) {
+func ListeAuditLog(ctx context.Context, db Datenbank, limit int) ([]AuditLogZeile, error) {
 	query := `
 			SELECT l.id, l.tabelle, l.aktion, l.datensatz_id, l.timestamp,
 			       COALESCE(l.bearbeiter_id::text, ''),
@@ -69,7 +69,7 @@ type AdminProtokollZeile struct {
 
 // ListeAdminProtokoll liefert die jüngsten 1000 Einträge des Protokolls der Verwaltung. Eine
 // Zeile, die sich nicht lesen lässt, wird ausgelassen.
-func ListeAdminProtokoll(ctx context.Context, db DBQueryer) ([]AdminProtokollZeile, error) {
+func ListeAdminProtokoll(ctx context.Context, db Datenbank) ([]AdminProtokollZeile, error) {
 	query := `
 			SELECT 
 				a.id, a.admin_id, coalesce(b.vorname || ' ' || b.nachname, 'System/Unbekannt'),

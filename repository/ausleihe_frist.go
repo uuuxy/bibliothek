@@ -20,7 +20,7 @@ func SperreOffeneAusleiheMitFrist(ctx context.Context, tx pgx.Tx, ausleiheID str
 // VerlaengereAusleihe setzt die neue Frist einer offenen Ausleihe und beginnt die Mahnfolge
 // neu: Sonst überspränge dasselbe Buch beim nächsten Überziehen die erste Mahnstufe. Liefert
 // Kennung und gespeicherte Frist; pgx.ErrNoRows, wenn die Ausleihe nicht mehr offen ist.
-func VerlaengereAusleihe(ctx context.Context, db DBQueryer, ausleiheID string, neueFrist time.Time) (id string, frist time.Time, err error) {
+func VerlaengereAusleihe(ctx context.Context, db Datenbank, ausleiheID string, neueFrist time.Time) (id string, frist time.Time, err error) {
 	q := `
 			UPDATE ausleihen
 			SET rueckgabe_frist = $2,
@@ -39,7 +39,7 @@ func VerlaengereAusleihe(ctx context.Context, db DBQueryer, ausleiheID string, n
 // Wie bei der regulären Verlängerung: Eine neue Frist in der Zukunft macht die
 // Ausleihe wieder "nicht überfällig" und setzt die Mahn-Eskalation zurück. Ein
 // vorgezogenes Datum (Rückruf) lässt die Mahnstufe unberührt.
-func SetzeAusleihFrist(ctx context.Context, db DBQueryer, ausleiheID string, neueFrist time.Time) (id string, frist time.Time, err error) {
+func SetzeAusleihFrist(ctx context.Context, db Datenbank, ausleiheID string, neueFrist time.Time) (id string, frist time.Time, err error) {
 	q := `
 			UPDATE ausleihen
 			SET rueckgabe_frist = $1,
@@ -59,7 +59,7 @@ func SetzeAusleihFrist(ctx context.Context, db DBQueryer, ausleiheID string, neu
 // Mass-Verlängerung setzt zugleich die Mahn-Eskalation der betroffenen Ausleihen
 // zurück (sofern die neue Frist in der Zukunft liegt) — sonst würde ein ganzer
 // Klassensatz nach der Verlängerung fälschlich auf der alten Mahnstufe weiterlaufen.
-func VerlaengereLernmittelDerKlasse(ctx context.Context, db DBQueryer, klasse string, neueFrist time.Time) (int64, error) {
+func VerlaengereLernmittelDerKlasse(ctx context.Context, db Datenbank, klasse string, neueFrist time.Time) (int64, error) {
 	q := `
 			UPDATE ausleihen a
 			SET rueckgabe_frist = $1,
@@ -89,7 +89,7 @@ func VerlaengereLernmittelDerKlasse(ctx context.Context, db DBQueryer, klasse st
 // LeserUndLernmittelDerAusleihe liest zu einer offenen Ausleihe ihren Leser (nil, wenn sie von
 // ihm getrennt ist) und ob ihr Titel ein Lernmittel ist. pgx.ErrNoRows, wenn es die Ausleihe
 // nicht gibt oder sie zurückgegeben ist.
-func LeserUndLernmittelDerAusleihe(ctx context.Context, db DBQueryer, ausleiheID string) (leserID *string, lernmittel bool, err error) {
+func LeserUndLernmittelDerAusleihe(ctx context.Context, db Datenbank, ausleiheID string) (leserID *string, lernmittel bool, err error) {
 	err = db.QueryRow(ctx, `
 		SELECT a.schueler_id, COALESCE(t.ist_lernmittel, false)
 		FROM ausleihen a

@@ -66,7 +66,7 @@ type SchlagwortFilter struct {
 //
 // Das ist ein Suchindex, keine Anzeige: Ein Verweis ist kein Schlagwort des Titels. Was am
 // Titel steht, liefert SchlagworteDesTitels.
-func SuchwoerterDerTitel(ctx context.Context, q DBQueryer, titelIDs []string) (map[string][]string, error) {
+func SuchwoerterDerTitel(ctx context.Context, q Datenbank, titelIDs []string) (map[string][]string, error) {
 	woerter := make(map[string][]string)
 	if len(titelIDs) == 0 {
 		return woerter, nil

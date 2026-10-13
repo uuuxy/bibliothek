@@ -28,13 +28,13 @@ type LoeschRueckstand struct {
 
 // zaehle beantwortet eine Löschbedingung als Anzahl. Sie nimmt die Bedingung als
 // GANZES entgegen — Text und Zahlen sind daran nicht mehr getrennt einsetzbar.
-func (r *BetriebszustandRepository) zaehle(ctx context.Context, tabelle, alias string, b Loeschbedingung) (int, error) {
+func (a *BetriebszustandAbfragen) zaehle(ctx context.Context, tabelle, alias string, b Loeschbedingung) (int, error) {
 	von := tabelle
 	if alias != "" {
 		von += " " + alias
 	}
 	var n int
-	err := r.pool.QueryRow(ctx, `SELECT count(*) FROM `+von+` WHERE `+b.Where, b.Args...).Scan(&n)
+	err := a.pool.QueryRow(ctx, `SELECT count(*) FROM `+von+` WHERE `+b.Where, b.Args...).Scan(&n)
 	return n, err
 }
 
@@ -43,19 +43,19 @@ func (r *BetriebszustandRepository) zaehle(ctx context.Context, tabelle, alias s
 // Fehlerverhalten: Der erste Fehler bricht ab und liefert nil — der Aufrufer meldet dann
 // „nicht erhoben" (Warnung) statt eines falschen „alles gut". Eine halbe Liste wäre die
 // schlechteste Antwort: Sie sähe aus wie eine ganze.
-func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) ([]LoeschRueckstand, error) {
+func (a *BetriebszustandAbfragen) ZaehleLoeschRueckstand(ctx context.Context) ([]LoeschRueckstand, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 10*time.Second)
 	defer abbrechen()
 
-	einst, err := NewSystemSettingsRepository(r.pool).GetSettings(ctx)
+	einst, err := NewSystemSettingsRepository(a.pool).GetSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
-	stand, err := r.rueckstandLeserUndLesehistorie(ctx, einst)
+	stand, err := a.rueckstandLeserUndLesehistorie(ctx, einst)
 	if err != nil {
 		return nil, err
 	}
-	vorgaenge, err := r.rueckstandVorgaengeUndProtokoll(ctx, einst)
+	vorgaenge, err := a.rueckstandVorgaengeUndProtokoll(ctx, einst)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 
 // rueckstandLeserUndLesehistorie zählt die Routinen, die Leser, ihre Lesehistorie und die
 // Bearbeiter ihrer Ausleihen betreffen (1 bis 4a).
-func (r *BetriebszustandRepository) rueckstandLeserUndLesehistorie(ctx context.Context, einst *SystemEinstellungen) ([]LoeschRueckstand, error) {
+func (a *BetriebszustandAbfragen) rueckstandLeserUndLesehistorie(ctx context.Context, einst *SystemEinstellungen) ([]LoeschRueckstand, error) {
 	freihandTage := TageOderStandard(einst.LesehistorieTage, StandardLesehistorieTage)
 	lernmittelTage := TageOderStandard(einst.LesehistorieLernmittelTage, StandardLesehistorieLernmittelTage)
 	karenzTage := AbgaengerKarenzTageOderStandard(einst)
@@ -73,7 +73,7 @@ func (r *BetriebszustandRepository) rueckstandLeserUndLesehistorie(ctx context.C
 	fehler := func(e error) ([]LoeschRueckstand, error) { return nil, e }
 
 	// 1. Schüler-Anonymisierung (180 Tage nach Soft-Delete / Karenzzeit nach Abgang).
-	n, err := r.zaehle(ctx, "schueler", "", PredikatAnonymisierung(karenzTage, KulanzWaechter))
+	n, err := a.zaehle(ctx, "schueler", "", PredikatAnonymisierung(karenzTage, KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
@@ -81,14 +81,14 @@ func (r *BetriebszustandRepository) rueckstandLeserUndLesehistorie(ctx context.C
 
 	// 2. Abgänger endgültig löschen. Die Kulanz steckt in AbgaengerStichjahr (30 Tage
 	//    nach Jahreswechsel) — ein zusätzlicher Tag wäre hier ohne Bedeutung.
-	n, err = r.zaehle(ctx, "schueler", "", PredikatAbgaengerLoeschung(time.Now()))
+	n, err = a.zaehle(ctx, "schueler", "", PredikatAbgaengerLoeschung(time.Now()))
 	if err != nil {
 		return fehler(err)
 	}
 	stand = append(stand, LoeschRueckstand{Routine: "Abgänger endgültig löschen", Frist: "nach der Karenz (anonymisiert), ab 30. Januar des Folgejahres", Zeilen: n})
 
 	// 2a. Gelöschte Kollegen endgültig löschen (180 Tage im Papierkorb).
-	n, err = r.zaehle(ctx, "leser", "", PredikatKollegenPapierkorb(KulanzWaechter))
+	n, err = a.zaehle(ctx, "leser", "", PredikatKollegenPapierkorb(KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
@@ -107,7 +107,7 @@ func (r *BetriebszustandRepository) rueckstandLeserUndLesehistorie(ctx context.C
 	} {
 		zeile := LoeschRueckstand{Routine: k.routine, Frist: tageText(k.tage), Aus: k.tage <= 0}
 		if !zeile.Aus {
-			zeilen, err := r.zaehleLesehistorie(ctx, k.tage, k.lernmittel)
+			zeilen, err := a.zaehleLesehistorie(ctx, k.tage, k.lernmittel)
 			if err != nil {
 				return fehler(err)
 			}
@@ -117,7 +117,7 @@ func (r *BetriebszustandRepository) rueckstandLeserUndLesehistorie(ctx context.C
 	}
 
 	// 4a. Bearbeiter an zurückgegebenen Ausleihen (feste Frist).
-	n, err = r.zaehle(ctx, "ausleihen", "", PredikatBearbeiterKennung(KulanzWaechter))
+	n, err = a.zaehle(ctx, "ausleihen", "", PredikatBearbeiterKennung(KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
@@ -129,7 +129,7 @@ func (r *BetriebszustandRepository) rueckstandLeserUndLesehistorie(ctx context.C
 // Ausleihen und ihre Protokollzeilen, bei der Schülerbücherei dazu die Spuren von
 // Vormerkungen, die mit ihrem Titel gelöscht wurden. Sie folgen der Frist der Schülerbücherei,
 // der Lauf nimmt ihnen den Leser im selben Durchgang.
-func (r *BetriebszustandRepository) zaehleLesehistorie(ctx context.Context, tage int, lernmittel bool) (int, error) {
+func (a *BetriebszustandAbfragen) zaehleLesehistorie(ctx context.Context, tage int, lernmittel bool) (int, error) {
 	type frage struct {
 		tabelle, alias string
 		bedingung      Loeschbedingung
@@ -143,7 +143,7 @@ func (r *BetriebszustandRepository) zaehleLesehistorie(ctx context.Context, tage
 	}
 	summe := 0
 	for _, f := range fragen {
-		n, err := r.zaehle(ctx, f.tabelle, f.alias, f.bedingung)
+		n, err := a.zaehle(ctx, f.tabelle, f.alias, f.bedingung)
 		if err != nil {
 			return 0, err
 		}
@@ -154,7 +154,7 @@ func (r *BetriebszustandRepository) zaehleLesehistorie(ctx context.Context, tage
 
 // rueckstandVorgaengeUndProtokoll zählt die Routinen für erledigte Vorgänge und die
 // Aufbewahrung der Protokolle (5 und 6).
-func (r *BetriebszustandRepository) rueckstandVorgaengeUndProtokoll(ctx context.Context, einst *SystemEinstellungen) ([]LoeschRueckstand, error) {
+func (a *BetriebszustandAbfragen) rueckstandVorgaengeUndProtokoll(ctx context.Context, einst *SystemEinstellungen) ([]LoeschRueckstand, error) {
 	anliegenTage := TageOderStandard(einst.AnliegenTage, StandardAnliegenTage)
 	auditMonate := AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate)
 
@@ -165,7 +165,7 @@ func (r *BetriebszustandRepository) rueckstandVorgaengeUndProtokoll(ctx context.
 	// 5. Erledigte Anliegen.
 	anliegen := LoeschRueckstand{Routine: "Erledigte Anliegen", Frist: tageText(anliegenTage), Aus: anliegenTage <= 0}
 	if !anliegen.Aus {
-		if anliegen.Zeilen, err = r.zaehle(ctx, "lehrer_anliegen", "", PredikatAnliegen(anliegenTage, KulanzWaechter)); err != nil {
+		if anliegen.Zeilen, err = a.zaehle(ctx, "lehrer_anliegen", "", PredikatAnliegen(anliegenTage, KulanzWaechter)); err != nil {
 			return fehler(err)
 		}
 	}
@@ -174,7 +174,7 @@ func (r *BetriebszustandRepository) rueckstandVorgaengeUndProtokoll(ctx context.
 	// 5a. Erledigte Klassensatz-Reservierungen: dieselbe Einstellung wie die Anliegen.
 	reservierungen := LoeschRueckstand{Routine: "Erledigte Klassensatz-Reservierungen", Frist: tageText(anliegenTage), Aus: anliegenTage <= 0}
 	if !reservierungen.Aus {
-		if reservierungen.Zeilen, err = r.zaehle(ctx, "klassensatz_reservierungen", "", PredikatKlassensatzReservierungen(anliegenTage, KulanzWaechter)); err != nil {
+		if reservierungen.Zeilen, err = a.zaehle(ctx, "klassensatz_reservierungen", "", PredikatKlassensatzReservierungen(anliegenTage, KulanzWaechter)); err != nil {
 			return fehler(err)
 		}
 	}
@@ -183,17 +183,17 @@ func (r *BetriebszustandRepository) rueckstandVorgaengeUndProtokoll(ctx context.
 	// 5b. Quittierte Nachbuch-Meldungen (Migration 117): Lesehistorie-Frist, höchstens 30 Tage.
 	nachbuchTage := NachbuchMeldungenTage(einst)
 	nachbuch := LoeschRueckstand{Routine: "Quittierte Nachbuch-Meldungen", Frist: tageText(nachbuchTage)}
-	if nachbuch.Zeilen, err = r.zaehle(ctx, "nachbuch_meldungen", "", PredikatNachbuchMeldungen(nachbuchTage, KulanzWaechter)); err != nil {
+	if nachbuch.Zeilen, err = a.zaehle(ctx, "nachbuch_meldungen", "", PredikatNachbuchMeldungen(nachbuchTage, KulanzWaechter)); err != nil {
 		return fehler(err)
 	}
 	stand = append(stand, nachbuch)
 
 	// 6. Audit-Aufbewahrung, beide Protokolltabellen.
-	datensatz, err := r.zaehle(ctx, "audit_log", "", PredikatAuditLog(auditMonate, KulanzWaechter))
+	datensatz, err := a.zaehle(ctx, "audit_log", "", PredikatAuditLog(auditMonate, KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
-	admin, err := r.zaehle(ctx, "audit_logs", "", PredikatAuditLogs(auditMonate, KulanzWaechter))
+	admin, err := a.zaehle(ctx, "audit_logs", "", PredikatAuditLogs(auditMonate, KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}

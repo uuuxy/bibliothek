@@ -41,7 +41,7 @@ type EigentumAenderung struct {
 // geändert haben. Alle oder keins: Fehlt eine Kennung, ändert sich nichts
 // (ErrExemplarNichtGefunden). Ein Exemplar, das schon so steht, wird nicht noch einmal
 // geschrieben und nicht protokolliert.
-func SetzeExemplarEigentum(ctx context.Context, q DBQueryer, a EigentumAenderung) (int, error) {
+func SetzeExemplarEigentum(ctx context.Context, q Datenbank, a EigentumAenderung) (int, error) {
 	if err := pruefeEigentumAenderung(a); err != nil {
 		return 0, err
 	}

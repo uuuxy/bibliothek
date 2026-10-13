@@ -22,7 +22,7 @@ func TestBescheidAngabenErreichenDieSelbstpruefung(t *testing.T) {
 
 	settingsRepo := repository.NewSystemSettingsRepository(pool)
 	mailRepo := repository.NewMailSettingsRepository(pool)
-	zustandRepo := repository.NewBetriebszustandRepository(pool)
+	zustandRepo := repository.NewBetriebszustandAbfragen(pool)
 
 	einst, err := settingsRepo.GetSettings(ctx)
 	if err != nil || einst == nil {

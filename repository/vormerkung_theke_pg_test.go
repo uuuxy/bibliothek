@@ -15,7 +15,7 @@ import (
 // warteschlange legt über q einen Titel mit einem freien Exemplar und je Namen einen Schüler
 // mit wartender Vormerkung an, den zuerst genannten mit der ältesten. Die Namen halten Nummern
 // und Namen auseinander.
-func warteschlange(t *testing.T, q DBQueryer, kuerzel string, namen ...string) (titelID, exemplarID string, leser map[string]string) {
+func warteschlange(t *testing.T, q Datenbank, kuerzel string, namen ...string) (titelID, exemplarID string, leser map[string]string) {
 	t.Helper()
 	ctx := context.Background()
 	if err := q.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ($1) RETURNING id::text`, "Warteschlange "+kuerzel).Scan(&titelID); err != nil {
@@ -43,7 +43,7 @@ func warteschlange(t *testing.T, q DBQueryer, kuerzel string, namen ...string) (
 
 // nimmtAbholrecht macht aus drei Schülern der Warteschlange solche, die nicht abholen dürfen:
 // gelöscht, gesperrt, von Hand gesperrt.
-func nimmtAbholrecht(t *testing.T, q DBQueryer, geloescht, gesperrt, vonHand string) {
+func nimmtAbholrecht(t *testing.T, q Datenbank, geloescht, gesperrt, vonHand string) {
 	t.Helper()
 	ctx := context.Background()
 	for _, a := range []struct{ sql, id string }{

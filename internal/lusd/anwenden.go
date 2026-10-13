@@ -17,11 +17,11 @@ import (
 func WendeAenderungenAn(ctx context.Context, tx pgx.Tx, datei Datei, z Zuordnung) error {
 	// Die Ausweisnummern der Neuzugänge kommen aus derselben Quelle wie die der Anlage von
 	// Hand, einmal je Lauf gezogen und dann fortlaufend weitergezählt. Einmal und nicht je
-	// Zeile: NaechsteAusweisnummer hält eine Sperre in dieser Transaktion, bis sie endet. Der
+	// Zeile: AusweisnummernAbfragen.Naechste hält eine Sperre in dieser Transaktion, bis sie endet. Der
 	// Lauf hat den Nummernkreis damit für sich, und die Nummern sind lückenlos. Der Zähler
 	// rechnet über die Tabelle `leser`, nicht über die Sicht `schueler`: Die höchste Nummer
 	// kann an einem Kollegen hängen.
-	startNum, err := repository.NewSequenceRepository(tx).NaechsteAusweisnummer(ctx)
+	startNum, err := repository.NewAusweisnummernAbfragen(tx).Naechste(ctx)
 	if err != nil {
 		return fmt.Errorf("ausweisnummern für die Neuzugänge: %w", err)
 	}

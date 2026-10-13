@@ -29,7 +29,7 @@ type BuchbarcodeStand struct {
 
 // LiesBuchbarcodeStand liest die Kennzahl über den Index, ohne die Liste zu lesen — ein
 // unveränderter Bestand spart damit die ganze Auslieferung.
-func LiesBuchbarcodeStand(ctx context.Context, q DBQueryer) (BuchbarcodeStand, error) {
+func LiesBuchbarcodeStand(ctx context.Context, q Datenbank) (BuchbarcodeStand, error) {
 	var s BuchbarcodeStand
 	err := q.QueryRow(ctx, `
 		SELECT count(*), max(aktualisiert_am) FROM buecher_exemplare
@@ -47,7 +47,7 @@ func LiesBuchbarcodeStand(ctx context.Context, q DBQueryer) (BuchbarcodeStand, e
 // „unklar", und niemand sähe, dass es an der Kappung liegt. Der Umfang ist durch den
 // Bestand begrenzt und wächst nicht von selbst weiter; der Aufrufer misst die ausgelieferte
 // Größe und warnt, wenn die Annahme kippt.
-func ListeBuchbarcodes(ctx context.Context, q DBQueryer, erwartet int) ([]string, error) {
+func ListeBuchbarcodes(ctx context.Context, q Datenbank, erwartet int) ([]string, error) {
 	rows, err := q.Query(ctx, `
 		SELECT barcode_id FROM buecher_exemplare
 		WHERE barcode_id IS NOT NULL AND barcode_id <> ''

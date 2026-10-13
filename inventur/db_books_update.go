@@ -162,7 +162,7 @@ func (repo *BookRepository) titelWerte(ctx context.Context, id string, book Book
 // Feld geleert. Die ISBN wird nur geprüft, wenn sie eine andere ist als die gespeicherte: Ein
 // Titel ohne ISBN oder mit einer Nummer, die keine ISBN ist, bleibt speicherbar, wenn ein
 // anderes Feld geändert wird. Die Sperre hält die Zeile bis zum UPDATE derselben Transaktion.
-func pruefeAenderung(ctx context.Context, tx repository.DBQueryer, id string, book Book, felder []string) error {
+func pruefeAenderung(ctx context.Context, tx repository.Datenbank, id string, book Book, felder []string) error {
 	nennt := func(name string) bool { return slices.Contains(felder, name) }
 	var isbn, autor string
 	var lernmittel, mehrjahresband bool
@@ -265,7 +265,7 @@ func (e *BestandVeraltet) Meldung() string {
 //
 // Ein Aufrufer ohne gesehene Zahl darf den Stand bestätigen (Soll gleich Stand, nichts
 // geschieht), aber nicht ändern.
-func (repo *BookRepository) setzeBestand(ctx context.Context, q repository.DBQueryer, titelID string, angabe Bestandsangabe) error {
+func (repo *BookRepository) setzeBestand(ctx context.Context, q repository.Datenbank, titelID string, angabe Bestandsangabe) error {
 	aktuell, err := zaehleBestand(ctx, q, titelID)
 	if err != nil {
 		return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)
@@ -284,7 +284,7 @@ func (repo *BookRepository) setzeBestand(ctx context.Context, q repository.DBQue
 
 // zaehleBestand zählt die Exemplare im Bestand (repository.SQLExemplarImBestand), die Zahl,
 // die die Maske zeigt. Bestellte Exemplare gehören dem Wareneingang und zählen nicht mit.
-func zaehleBestand(ctx context.Context, q repository.DBQueryer, titelID string) (int, error) {
+func zaehleBestand(ctx context.Context, q repository.Datenbank, titelID string) (int, error) {
 	var bestand int
 	err := q.QueryRow(ctx, `SELECT COUNT(*) FROM buecher_exemplare e WHERE e.titel_id = $1 AND `+repository.SQLExemplarImBestand, titelID).Scan(&bestand)
 	if err != nil {
@@ -295,10 +295,10 @@ func zaehleBestand(ctx context.Context, q repository.DBQueryer, titelID string) 
 
 // syncBookStock synchronizes the physical buecher_exemplare records to match the expected stock.
 //
-// q ist repository.DBQueryer statt dbSchreiber, weil die Nummernvergabe (barcode_seq gegen
+// q ist repository.Datenbank statt dbSchreiber, weil die Nummernvergabe (barcode_seq gegen
 // Bestandsabgleich) Query braucht — pgx.Tx und der Pool erfüllen beides. bearbeiterID darf
 // leer sein, solange der Bestand nicht sinkt: Das Anlegen eines Titels sondert nichts aus.
-func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQueryer, titelID string, expectedStock int, bearbeiterID string) error {
+func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.Datenbank, titelID string, expectedStock int, bearbeiterID string) error {
 	currentStock, err := zaehleBestand(ctx, q, titelID)
 	if err != nil {
 		return err
@@ -311,7 +311,7 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQu
 // sich über die Zahl nicht aussondern. Ein neues Exemplar erbt den Standort der vorhandenen
 // (repository.SQLGeerbterStandort). Jedes ausgesonderte Exemplar steht mit bearbeiterID im
 // Protokoll (repository.ProtokolliereAussonderung); ohne sie sondert der Abgleich nichts aus.
-func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository.DBQueryer, titelID string, currentStock, expectedStock int, bearbeiterID string) error {
+func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository.Datenbank, titelID string, currentStock, expectedStock int, bearbeiterID string) error {
 	if expectedStock > currentStock {
 		// Nummern aus barcode_seq — dieselbe Quelle wie Bestellwesen, Handvergabe und
 		// Littera-Import (Migration 068: eine Quelle für alle Wege).
@@ -385,7 +385,7 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 
 // sondereAus führt eine der beiden Anweisungen von gleicheExemplareAn aus und nennt die
 // Exemplare, die sie ausgesondert hat.
-func sondereAus(ctx context.Context, q repository.DBQueryer, anweisung, titelID string, anzahl int) ([]string, error) {
+func sondereAus(ctx context.Context, q repository.Datenbank, anweisung, titelID string, anzahl int) ([]string, error) {
 	rows, err := q.Query(ctx, anweisung, titelID, anzahl)
 	if err != nil {
 		return nil, err

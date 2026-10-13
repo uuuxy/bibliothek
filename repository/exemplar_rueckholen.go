@@ -22,7 +22,7 @@ import (
 // 0 Zeilen heißt: Das Exemplar ist zwischen Lookup und Update verschwunden — dann darf
 // niemand „reaktiviert" melden (Phantom-Erfolg-Sweep 31.08.2026).
 // bewegtAm ist der Zeitpunkt der Rückkehr (nil = jetzt); das Nachbuchen gibt den Scan-Zeitpunkt mit.
-func HoleExemplarZurueck(ctx context.Context, q DBQueryer, exemplarID, bearbeiterID string, bewegtAm *time.Time) (RueckkehrBefund, error) {
+func HoleExemplarZurueck(ctx context.Context, q Datenbank, exemplarID, bearbeiterID string, bewegtAm *time.Time) (RueckkehrBefund, error) {
 	tag, err := q.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET ist_ausleihbar = true, ist_ausgesondert = false, aussonderung_grund = NULL,

@@ -33,7 +33,7 @@ var ErrAussonderungOhneBearbeiter = errors.New("aussondern ohne bearbeiter")
 // Der Aufrufer ruft sie nach dem Aussondern in derselben Transaktion; ein Exemplar, das nicht
 // ausgesondert ist, bekommt keinen Eintrag, und der Aufruf scheitert. zusatz ergänzt die
 // Einzelheiten, etwa um die Inventur.
-func ProtokolliereAussonderung(ctx context.Context, q DBQueryer, exemplarIDs []string, bearbeiterID, weg string, zusatz map[string]any) error {
+func ProtokolliereAussonderung(ctx context.Context, q Datenbank, exemplarIDs []string, bearbeiterID, weg string, zusatz map[string]any) error {
 	if bearbeiterID == "" {
 		return ErrAussonderungOhneBearbeiter
 	}

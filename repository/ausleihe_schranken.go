@@ -9,7 +9,7 @@ import (
 
 // ZaehleOffeneBuechereiAusleihen zählt die offenen Ausleihen eines Lesers, die gegen das
 // Ausleihlimit zählen: Bücher, die kein Lernmittel sind.
-func ZaehleOffeneBuechereiAusleihen(ctx context.Context, q DBQueryer, leserID string) (int, error) {
+func ZaehleOffeneBuechereiAusleihen(ctx context.Context, q Datenbank, leserID string) (int, error) {
 	var count int
 	err := q.QueryRow(ctx, `
 		SELECT COUNT(*)
@@ -32,7 +32,7 @@ type AbholfachReservierung struct {
 
 // ReservierungAmExemplar liefert, für wen das Exemplar im Abholfach liegt, solange die
 // Abholfrist läuft. bereit ist false, wenn es für niemanden bereitliegt.
-func ReservierungAmExemplar(ctx context.Context, q DBQueryer, exemplarID string) (reservierung AbholfachReservierung, bereit bool, err error) {
+func ReservierungAmExemplar(ctx context.Context, q Datenbank, exemplarID string) (reservierung AbholfachReservierung, bereit bool, err error) {
 	err = q.QueryRow(ctx, `
 		SELECT v.schueler_id, s.vorname, s.nachname
 		FROM vormerkungen v

@@ -16,7 +16,7 @@ import (
 
 // geraeteAufbau legt über q ein Gerät, einen Leser und einen Bearbeiter an; kuerzel hält ihre
 // Nummer, ihren Namen und ihre Adresse auseinander.
-func geraeteAufbau(t *testing.T, q DBQueryer, kuerzel string) (geraetID, leserID, bearbeiterID string) {
+func geraeteAufbau(t *testing.T, q Datenbank, kuerzel string) (geraetID, leserID, bearbeiterID string) {
 	t.Helper()
 	ctx := context.Background()
 	if err := q.QueryRow(ctx, `INSERT INTO geraete (modellname, barcode_id) VALUES ('Sperrprobe Tablet', $1) RETURNING id::text`,

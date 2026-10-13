@@ -66,7 +66,7 @@ var ErrNachbuchMeldungNichtOffen = errors.New("nachbuch-meldung nicht offen")
 // sie mit der Buchung steht oder fällt. Ein zweiter Eintrag mit demselben Schlüssel wird
 // still übergangen (ON CONFLICT DO NOTHING): Die Wiederholung eines Theken-Rechners ist
 // kein zweiter Vorgang.
-func SchreibeNachbuchMeldung(ctx context.Context, q DBQueryer, m NachbuchMeldungEingabe) error {
+func SchreibeNachbuchMeldung(ctx context.Context, q Datenbank, m NachbuchMeldungEingabe) error {
 	if _, err := q.Exec(ctx, `
 		INSERT INTO nachbuch_meldungen
 			(idempotency_key, exemplar_id, barcode, ergebnis, grund,
@@ -102,7 +102,7 @@ const nachbuchMeldungSQL = `
 
 // ListeNachbuchMeldungen liest die offenen Meldungen (nurOffen) oder alle, jüngste zuerst.
 // Gekappt auf 500 Zeilen: Die Liste ist eine Arbeitsliste, kein Archiv (siehe Löschfrist).
-func ListeNachbuchMeldungen(ctx context.Context, q DBQueryer, nurOffen bool) ([]NachbuchMeldung, error) {
+func ListeNachbuchMeldungen(ctx context.Context, q Datenbank, nurOffen bool) ([]NachbuchMeldung, error) {
 	where := ""
 	if nurOffen {
 		where = " WHERE m.quittiert_am IS NULL"
@@ -125,7 +125,7 @@ func ListeNachbuchMeldungen(ctx context.Context, q DBQueryer, nurOffen bool) ([]
 }
 
 // QuittiereNachbuchMeldung setzt quittiert_von/am — nur auf einer offenen Meldung.
-func QuittiereNachbuchMeldung(ctx context.Context, q DBQueryer, id, benutzerID string) error {
+func QuittiereNachbuchMeldung(ctx context.Context, q Datenbank, id, benutzerID string) error {
 	tag, err := q.Exec(ctx, `
 		UPDATE nachbuch_meldungen SET quittiert_von = $2, quittiert_am = CURRENT_TIMESTAMP
 		WHERE id = $1 AND quittiert_am IS NULL`, id, benutzerID)
@@ -139,7 +139,7 @@ func QuittiereNachbuchMeldung(ctx context.Context, q DBQueryer, id, benutzerID s
 }
 
 // ZaehleOffeneNachbuchMeldungen ist der Zähler fürs Band an der Theke.
-func ZaehleOffeneNachbuchMeldungen(ctx context.Context, q DBQueryer) (int, error) {
+func ZaehleOffeneNachbuchMeldungen(ctx context.Context, q Datenbank) (int, error) {
 	var n int
 	err := q.QueryRow(ctx, `SELECT count(*) FROM nachbuch_meldungen WHERE quittiert_am IS NULL`).Scan(&n)
 	if errors.Is(err, pgx.ErrNoRows) {

@@ -39,7 +39,7 @@ const barcodeNummerMuster = `^B-[0-9]{1,15}$`
 //
 // Die Nummer ist danach verbraucht, auch wenn der Vorschlag nicht gespeichert wird.
 // Eine Lücke im Nummernkreis ist harmlos — eine doppelt vergebene Nummer nicht.
-func NaechsterFreierExemplarBarcode(ctx context.Context, db DBQueryer) (string, error) {
+func NaechsterFreierExemplarBarcode(ctx context.Context, db Datenbank) (string, error) {
 	barcodes, err := ZieheFreieExemplarBarcodes(ctx, db, 1)
 	if err != nil {
 		return "", err
@@ -53,7 +53,7 @@ func NaechsterFreierExemplarBarcode(ctx context.Context, db DBQueryer) (string, 
 // erzeugten Nummern kennt: Ein in der Exemplarkarte von Hand eingetipptes "B-12345"
 // steht in der Tabelle, aber nicht in der Sequenz. Kollidiert ein gezogener Wert, wird
 // die Sequenz über den belegten Bereich gehoben und nachgezogen.
-func ZieheFreieExemplarBarcodes(ctx context.Context, db DBQueryer, anzahl int) ([]string, error) {
+func ZieheFreieExemplarBarcodes(ctx context.Context, db Datenbank, anzahl int) ([]string, error) {
 	if anzahl <= 0 {
 		return nil, nil
 	}
@@ -85,7 +85,7 @@ func ZieheFreieExemplarBarcodes(ctx context.Context, db DBQueryer, anzahl int) (
 
 // zieheAusSequenz holt anzahl Nummern aus barcode_seq. LPAD auf fünf Stellen hält das
 // gewohnte Format B-10001; jenseits von 99999 wächst die Nummer einfach mit.
-func zieheAusSequenz(ctx context.Context, db DBQueryer, anzahl int) ([]string, error) {
+func zieheAusSequenz(ctx context.Context, db Datenbank, anzahl int) ([]string, error) {
 	rows, err := db.Query(ctx,
 		`SELECT 'B-' || LPAD(nextval('barcode_seq')::TEXT, 5, '0') FROM generate_series(1, $1)`,
 		anzahl)
@@ -112,7 +112,7 @@ func zieheAusSequenz(ctx context.Context, db DBQueryer, anzahl int) ([]string, e
 }
 
 // belegteBarcodes meldet, welche der Kandidaten bereits an einem Exemplar hängen.
-func belegteBarcodes(ctx context.Context, db DBQueryer, kandidaten []string) (map[string]bool, error) {
+func belegteBarcodes(ctx context.Context, db Datenbank, kandidaten []string) (map[string]bool, error) {
 	rows, err := db.Query(ctx,
 		`SELECT barcode_id FROM buecher_exemplare WHERE barcode_id = ANY($1)`, kandidaten)
 	if err != nil {
@@ -140,7 +140,7 @@ func belegteBarcodes(ctx context.Context, db DBQueryer, kandidaten []string) (ma
 // GREATEST mit dem aktuellen Stand: Die Sequenz darf nur steigen. Ein Senken würde
 // Nummern erneut ausgeben, die eine parallel laufende Bestellung bereits gezogen, aber
 // noch nicht eingefügt hat.
-func hebeSequenzUeberBestand(ctx context.Context, db DBQueryer) error {
+func hebeSequenzUeberBestand(ctx context.Context, db Datenbank) error {
 	_, err := db.Exec(ctx, `
 		SELECT setval('barcode_seq', GREATEST(
 			(SELECT last_value FROM barcode_seq),

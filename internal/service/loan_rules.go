@@ -76,7 +76,7 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 // den Einstellungen braucht: Fristen und Sperr-Schwellen. Gelesen und abgebildet werden die
 // Zeilen an einer Stelle (repository.EinstellungenUeber); ein fehlender oder unlesbarer Wert
 // hat so an der Theke dieselbe Vorgabe wie in der Maske der Einstellungen.
-func ladeSystemEinstellungen(ctx context.Context, q repository.DBQueryer) (*SystemEinstellungen, error) {
+func ladeSystemEinstellungen(ctx context.Context, q repository.Datenbank) (*SystemEinstellungen, error) {
 	einstellungen, err := repository.EinstellungenUeber(ctx, q)
 	if err != nil {
 		return nil, err

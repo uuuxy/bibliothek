@@ -35,7 +35,7 @@ import (
 //
 // Zuerst kehren die Klassen, die im neuen Plan nicht mehr stehen, zum Stichtag zurück, dann
 // bekommt jede Klasse des neuen Plans ihren frühesten Termin.
-func KoppleLmfPlanFristen(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.DBQueryer, art string, alt, neu []repository.LmfPlanZeile) (int64, error) {
+func KoppleLmfPlanFristen(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.Datenbank, art string, alt, neu []repository.LmfPlanZeile) (int64, error) {
 	if art != repository.LmfTerminRueckgabe {
 		return 0, nil
 	}
@@ -83,7 +83,7 @@ func LmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTerminReposito
 
 // loeseLmfFristenVomTermin bringt die Fristen der Klassen, die ihren Rückgabe-Termin an diesem
 // Tag verlieren, zurück zum Stichtag.
-func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.DBQueryer, datum string, verlierer []string) (int64, error) {
+func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.Datenbank, datum string, verlierer []string) (int64, error) {
 	if len(verlierer) == 0 {
 		return 0, nil
 	}
@@ -105,7 +105,7 @@ func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LmfTerminRep
 }
 
 // setzeLmfFristenAufTermin setzt die Fristen der Klassen eines Rückgabe-Termins auf dessen Tag.
-func setzeLmfFristenAufTermin(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.DBQueryer, datum string, klassen []string) (int64, error) {
+func setzeLmfFristenAufTermin(ctx context.Context, repo *repository.LmfTerminRepository, ex repository.Datenbank, datum string, klassen []string) (int64, error) {
 	if len(klassen) == 0 {
 		return 0, nil
 	}

@@ -14,7 +14,7 @@ type SignaturGruppe struct {
 
 // ListeSignaturGruppen liefert die Regaladressen, die an Titeln vorkommen, mit ihrem Umfang.
 // Ausgesonderte Exemplare zählen nicht mit.
-func ListeSignaturGruppen(ctx context.Context, db DBQueryer) ([]SignaturGruppe, error) {
+func ListeSignaturGruppen(ctx context.Context, db Datenbank) ([]SignaturGruppe, error) {
 	regal := SQLSignaturRegaladresse("t.signatur")
 	rows, err := db.Query(ctx, `
 			SELECT `+regal+` AS signatur,
@@ -57,7 +57,7 @@ type SignaturBuch struct {
 // ListeBuecherUnterSignatur liefert die Titel, deren Signatur mit dem Präfix beginnt, in der
 // Reihenfolge des Regals und höchstens limit Zeilen. Das Prädikat ist SignaturPraefixBedingung,
 // dasselbe wie beim Bereich einer Inventur.
-func ListeBuecherUnterSignatur(ctx context.Context, db DBQueryer, signatur string, limit int) ([]SignaturBuch, error) {
+func ListeBuecherUnterSignatur(ctx context.Context, db Datenbank, signatur string, limit int) ([]SignaturBuch, error) {
 	rows, err := db.Query(ctx, fmt.Sprintf(`
 			SELECT t.id::text,
 			       btrim(t.signatur),

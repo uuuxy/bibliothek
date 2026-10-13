@@ -38,7 +38,7 @@ func TestBestand_ZweiterSpeichervorgangZaehltNachDemErsten(t *testing.T) {
 			}
 		}
 	})
-	exemplar := func(q repository.DBQueryer, nr int) {
+	exemplar := func(q repository.Datenbank, nr int) {
 		t.Helper()
 		if _, err := q.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar) VALUES ($1, $2, true)`,
 			titelID, fmt.Sprintf("B-GL-%d-%s", nr, marke)); err != nil {

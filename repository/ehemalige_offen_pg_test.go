@@ -25,7 +25,7 @@ import (
 func TestWaechterSiehtAuchAbgaengerOhneStempel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBetriebszustandRepository(pool)
+	repo := NewBetriebszustandAbfragen(pool)
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
 	vorher, err := repo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, 365)
@@ -117,7 +117,7 @@ func TestWaechterSiehtAuchAbgaengerOhneStempel(t *testing.T) {
 func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewBetriebszustandRepository(pool)
+	repo := NewBetriebszustandAbfragen(pool)
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	vorher, err := repo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, 365)
 	if err != nil {

@@ -137,8 +137,8 @@ func (s *Scheduler) speichereRestoreProbe(e RestoreProbeErgebnis) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	zustand := repository.NewBetriebszustandRepository(s.db)
-	if err := zustand.SpeichereEinstellungswert(ctx, RestoreProbeSchluessel, string(wert)); err != nil {
+	zustand := repository.NewBetriebszustandAbfragen(s.db)
+	if err := zustand.SchreibeEinstellungswert(ctx, RestoreProbeSchluessel, string(wert)); err != nil {
 		log.Printf("Restore-Probe: Ergebnis konnte nicht gespeichert werden: %v", err)
 	}
 }
@@ -148,7 +148,7 @@ func (s *Scheduler) speichereRestoreProbe(e RestoreProbeErgebnis) {
 func (s *Scheduler) probeBeimStartNachFehlschlag() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	wert, err := repository.NewBetriebszustandRepository(s.db).LadeEinstellungswert(ctx, RestoreProbeSchluessel)
+	wert, err := repository.NewBetriebszustandAbfragen(s.db).LadeEinstellungswert(ctx, RestoreProbeSchluessel)
 	if err != nil || wert == "" {
 		return // noch nie geprobt oder nicht lesbar — der Sonntagslauf übernimmt
 	}

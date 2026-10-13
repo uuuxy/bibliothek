@@ -1,10 +1,7 @@
 package repository
 
-// betriebszustand.go — Abfragen, die die Selbstprüfung (internal/bereitschaft/bereitschaft.go)
-// braucht, um den Zustand der Anlage zu beurteilen.
-//
-// Eigene Datei statt einer Zeile im Handler: Handler lesen und schreiben über repository/,
-// dort steht jede Regel genau einmal (schichtung_ratsche_test.go).
+// Abfragen, mit denen die Selbstprüfung (internal/bereitschaft) den Zustand der Anlage
+// beurteilt.
 
 import (
 	"context"
@@ -13,69 +10,67 @@ import (
 	"bibliothek/db"
 )
 
-// demoBarcodePraefix ist das Präfix, das scripts/seed_demo.sql jedem angelegten Schüler
-// gibt. Es ist zugleich der Schlüssel, an dem der CLEANUP-Block desselben Skripts die
-// Demo-Daten wieder entfernt — beide Seiten müssen dasselbe meinen.
+// demoBarcodePraefix ist die Vorsilbe, die scripts/seed_demo.sql jedem angelegten Schüler gibt.
+// An ihr entfernt der Aufräum-Block desselben Skripts die Demo-Daten wieder; beide Seiten
+// meinen dasselbe.
 const demoBarcodePraefix = "DEMO-S-%"
 
-// demoExemplarPraefix ist das Gegenstück für die Exemplare desselben Skripts: Wer dessen
-// Lösch-Block nur halb ausführt, hat sonst Demo-Exemplare im Bestandsbericht und eine grüne
-// Selbstprüfung.
+// demoExemplarPraefix ist dasselbe für die Exemplare des Skripts: Wer dessen Aufräum-Block nur
+// halb ausführt, hätte sonst Demo-Exemplare im Bestandsbericht und eine grüne Selbstprüfung.
 const demoExemplarPraefix = "DEMO-B-%"
 
-// Kennungen der drei Beispiel-Lieferanten aus den früheren Startdaten (Migration 107 löscht
-// das exakte Tripel). Adresse und Kundennummer einzeln, nicht das Tripel: Ein umbenannter
-// Eintrag mit der Beispiel-Adresse schickt Bestellungen genauso ins Leere wie das Original.
+// Die Kennungen der drei Beispiel-Lieferanten aus früheren Startdaten. Adresse und
+// Kundennummer zählen einzeln: Ein umbenannter Eintrag mit der Beispiel-Adresse schickt
+// Bestellungen genauso ins Leere wie das Original.
 var (
 	beispielLieferantenEmails = []string{"bestellung@klett.de", "service@cornelsen.de", "order@westermann.de"}
 	beispielKundennummern     = []string{"K-99281", "C-88123", "W-77441"}
 )
 
-// BetriebszustandRepository beantwortet Fragen über den Zustand des Bestandes.
-type BetriebszustandRepository struct {
+// BetriebszustandAbfragen beantwortet Fragen über den Zustand der Anlage.
+type BetriebszustandAbfragen struct {
 	pool db.PgxPoolIface
 }
 
-// NewBetriebszustandRepository bindet das Repository an einen Pool.
-func NewBetriebszustandRepository(pool db.PgxPoolIface) *BetriebszustandRepository {
-	return &BetriebszustandRepository{pool: pool}
+// NewBetriebszustandAbfragen liefert die Abfragen zum Betriebszustand am übergebenen Pool.
+func NewBetriebszustandAbfragen(pool db.PgxPoolIface) *BetriebszustandAbfragen {
+	return &BetriebszustandAbfragen{pool: pool}
 }
 
-// ZaehleDemoSchueler liefert die Anzahl der Datensätze aus scripts/seed_demo.sql.
+// ZaehleDemoSchueler zählt die Schüler aus scripts/seed_demo.sql.
 //
-// Eigenes kurzes Zeitlimit: Die Selbstprüfung ist eine Auskunft, kein Arbeitsschritt — sie
-// darf keine Seite blockieren. Bleibt die Antwort aus, meldet der Aufrufer lieber „keine
-// Demo-Daten gefunden" als gar nichts; der Bereich ist ohnehin nur eine Warnung.
-func (r *BetriebszustandRepository) ZaehleDemoSchueler(ctx context.Context) (int, error) {
+// Die Abfrage hat eine eigene kurze Frist: Die Selbstprüfung ist eine Auskunft und hält
+// keine Seite auf. Bleibt die Antwort aus, meldet der Rufer „keine Demo-Daten gefunden";
+// der Bereich ist nur eine Warnung.
+func (a *BetriebszustandAbfragen) ZaehleDemoSchueler(ctx context.Context) (int, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
 
 	var anzahl int
-	err := r.pool.QueryRow(ctx,
+	err := a.pool.QueryRow(ctx,
 		`SELECT count(*) FROM schueler WHERE barcode_id LIKE $1`, demoBarcodePraefix).Scan(&anzahl)
 	return anzahl, err
 }
 
-// ZaehleDemoExemplare liefert die Anzahl der Exemplare aus scripts/seed_demo.sql.
-func (r *BetriebszustandRepository) ZaehleDemoExemplare(ctx context.Context) (int, error) {
+// ZaehleDemoExemplare zählt die Exemplare aus scripts/seed_demo.sql.
+func (a *BetriebszustandAbfragen) ZaehleDemoExemplare(ctx context.Context) (int, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
 
 	var anzahl int
-	err := r.pool.QueryRow(ctx,
+	err := a.pool.QueryRow(ctx,
 		`SELECT count(*) FROM buecher_exemplare WHERE barcode_id LIKE $1`, demoExemplarPraefix).Scan(&anzahl)
 	return anzahl, err
 }
 
-// BeispielLieferanten nennt die Lieferanten, die noch eine Kennung der alten
-// Startdaten tragen. Leer = keiner; ein Fehler heißt „nicht erhoben" — der
-// Aufrufer unterscheidet das von der leeren Liste, damit ein Datenbankfehler nicht als
-// „alles gut" durchgeht.
-func (r *BetriebszustandRepository) BeispielLieferanten(ctx context.Context) ([]string, error) {
+// BeispielLieferanten nennt die Lieferanten, die noch eine Kennung der früheren Startdaten
+// tragen. Leer heißt keiner, ein Fehler heißt „nicht erhoben"; der Rufer unterscheidet
+// beides, damit ein Fehler der Datenbank nicht als „alles gut" gilt.
+func (a *BetriebszustandAbfragen) BeispielLieferanten(ctx context.Context) ([]string, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
 
-	rows, err := r.pool.Query(ctx,
+	rows, err := a.pool.Query(ctx,
 		`SELECT name FROM lieferanten
 		  WHERE lower(email) = ANY($1) OR kundennummer = ANY($2)
 		  ORDER BY name`, beispielLieferantenEmails, beispielKundennummern)
@@ -95,21 +90,20 @@ func (r *BetriebszustandRepository) BeispielLieferanten(ctx context.Context) ([]
 	return namen, rows.Err()
 }
 
-// AdminKonto ist ein aktives Konto mit Vollzugriff — Empfänger der Alarm-Mails
-// und Gegenstand des Sichtbarkeits-Befunds der Selbstprüfung.
+// AdminKonto ist ein aktives Konto mit vollem Zugriff: Es bekommt die Alarm-Mails, und die
+// Selbstprüfung zeigt es.
 type AdminKonto struct {
 	Name  string
 	Email string
 }
 
-// AktiveAdmins liefert alle aktiven Admin-Konten (Name + Adresse) — eine Quelle für den
-// Alarm-Versand und den Befund der Selbstprüfung: Wer die Alarm-Mails bekommt, soll dort
-// auch zu sehen sein.
-func (r *BetriebszustandRepository) AktiveAdmins(ctx context.Context) ([]AdminKonto, error) {
+// AktiveAdmins liefert alle aktiven Admin-Konten mit Name und Adresse, für den Versand der
+// Alarme und für die Selbstprüfung: Wer die Alarm-Mails bekommt, ist dort auch zu sehen.
+func (a *BetriebszustandAbfragen) AktiveAdmins(ctx context.Context) ([]AdminKonto, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
 
-	rows, err := r.pool.Query(ctx, `
+	rows, err := a.pool.Query(ctx, `
 		SELECT btrim(vorname || ' ' || nachname), email
 		FROM benutzer WHERE rolle = 'admin' AND aktiv = true AND email <> ''
 		ORDER BY erstellt_am`)
@@ -129,13 +123,13 @@ func (r *BetriebszustandRepository) AktiveAdmins(ctx context.Context) ([]AdminKo
 	return konten, rows.Err()
 }
 
-// LadeRollenRechte liefert die Live-Rechte (role_permissions) als Rolle→Recht→erlaubt.
-// Für den Vorgabe-Abgleich der Selbstprüfung; gleiche Zeitlimit-Begründung wie oben.
-func (r *BetriebszustandRepository) LadeRollenRechte(ctx context.Context) (map[string]map[string]bool, error) {
+// LadeRollenRechte liefert die geltenden Rechte (role_permissions) je Rolle und Recht, für
+// den Abgleich der Selbstprüfung mit der Vorgabe.
+func (a *BetriebszustandAbfragen) LadeRollenRechte(ctx context.Context) (map[string]map[string]bool, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
 
-	rows, err := r.pool.Query(ctx, `SELECT role, permission, allowed FROM role_permissions`)
+	rows, err := a.pool.Query(ctx, `SELECT role, permission, allowed FROM role_permissions`)
 	if err != nil {
 		return nil, err
 	}
@@ -156,16 +150,16 @@ func (r *BetriebszustandRepository) LadeRollenRechte(ctx context.Context) (map[s
 	return live, rows.Err()
 }
 
-// KlassenBestand liefert die drei Mengen von Klassennamen, die nur über Text-Gleichheit
-// zusammenhängen (Befund F3): die Klassen der aktiven Schüler, die Zeilen der
-// Klassenlehrer-Zuordnung und die Klassen der Bücherlisten. Welche Klasse eine Klassenleitung
-// braucht, entscheidet die Selbstprüfung — hier wird nur erhoben.
-func (r *BetriebszustandRepository) KlassenBestand(ctx context.Context) (schueler, zuordnungen, buecherlisten []string, err error) {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
+// KlassenBestand liefert die drei Mengen von Klassennamen, die nur über gleichen Text
+// zusammenhängen: die Klassen der aktiven Schüler, die Zeilen der Zuordnung der Klassenlehrer
+// und die Klassen der Bücherlisten. Welche Klasse eine Klassenleitung braucht, entscheidet
+// die Selbstprüfung; hier wird nur erhoben.
+func (a *BetriebszustandAbfragen) KlassenBestand(ctx context.Context) (schueler, zuordnungen, buecherlisten []string, err error) {
+	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
+	defer abbrechen()
 
 	lies := func(query string) ([]string, error) {
-		rows, err := r.pool.Query(ctx, query)
+		rows, err := a.pool.Query(ctx, query)
 		if err != nil {
 			return nil, err
 		}
@@ -196,20 +190,20 @@ func (r *BetriebszustandRepository) KlassenBestand(ctx context.Context) (schuele
 	return schueler, zuordnungen, buecherlisten, nil
 }
 
-// LadeEinstellungswert liest einen rohen Wert aus system_einstellungen — z. B. das
-// JSON-Ergebnis der wöchentlichen Restore-Probe (jobs.RestoreProbeSchluessel).
-// pgx.ErrNoRows wird durchgereicht; der Aufrufer entscheidet, was „nie geschrieben" heißt.
-func (r *BetriebszustandRepository) LadeEinstellungswert(ctx context.Context, schluessel string) (string, error) {
+// LadeEinstellungswert liest einen rohen Wert aus system_einstellungen, etwa das Ergebnis der
+// wöchentlichen Restore-Probe als JSON (jobs.RestoreProbeSchluessel). pgx.ErrNoRows kommt
+// unverändert zurück; der Rufer entscheidet, was „nie geschrieben" heißt.
+func (a *BetriebszustandAbfragen) LadeEinstellungswert(ctx context.Context, schluessel string) (string, error) {
 	var wert string
-	err := r.pool.QueryRow(ctx,
+	err := a.pool.QueryRow(ctx,
 		`SELECT wert FROM system_einstellungen WHERE schluessel = $1`, schluessel).Scan(&wert)
 	return wert, err
 }
 
-// SpeichereEinstellungswert legt einen rohen Wert unter seinem Schlüssel ab oder ersetzt ihn:
+// SchreibeEinstellungswert legt einen rohen Wert unter seinem Schlüssel ab oder ersetzt ihn:
 // das Gegenstück zu LadeEinstellungswert, für Ergebnisse, die das Programm selbst schreibt.
-func (r *BetriebszustandRepository) SpeichereEinstellungswert(ctx context.Context, schluessel, wert string) error {
-	_, err := r.pool.Exec(ctx, `
+func (a *BetriebszustandAbfragen) SchreibeEinstellungswert(ctx context.Context, schluessel, wert string) error {
+	_, err := a.pool.Exec(ctx, `
 		INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)
 		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert, aktualisiert_am = CURRENT_TIMESTAMP`,
 		schluessel, wert)
@@ -220,13 +214,13 @@ func (r *BetriebszustandRepository) SpeichereEinstellungswert(ctx context.Contex
 // seit mehr als `tage` Tagen weg sind und noch ein offenes Buch oder eine unbezahlte Forderung
 // haben. Der offene Vorgang schützt den Datensatz vor Anonymisierung und Löschung; schließt
 // ihn niemand, bleiben Name und Anschrift auf Dauer stehen, ohne dass eine Routine es meldet.
-func (r *BetriebszustandRepository) ZaehleEhemaligeMitOffenenVorgaengen(ctx context.Context, tage int) (int, error) {
+func (a *BetriebszustandAbfragen) ZaehleEhemaligeMitOffenenVorgaengen(ctx context.Context, tage int) (int, error) {
 	var n int
-	// Dieselbe Uhr wie die Löschuhr (KarenzUhr: Abgang, letzte Rückgabe, letzter
-	// Schadensabschluss). Ein Abgänger ohne Stempel war hier unsichtbar — und blieb es, weil
-	// der offene Vorgang ihn zugleich vor dem Löschen schützt. Genau diese Zeilen soll der
-	// Wächter zeigen; und wer vor zehn Tagen an der Theke war, ist noch kein Fall.
-	err := r.pool.QueryRow(ctx, `
+	// Dieselbe Uhr wie beim Löschen (KarenzUhr: Abgang, letzte Rückgabe, letzter Abschluss
+	// eines Schadens). Ein Abgänger ohne Stempel bliebe sonst unsichtbar, weil der offene
+	// Vorgang ihn zugleich vor dem Löschen schützt; und wer vor zehn Tagen an der Theke war,
+	// ist noch kein Fall.
+	err := a.pool.QueryRow(ctx, `
 		SELECT count(*)
 		FROM schueler s
 		WHERE s.ist_abgaenger = true AND s.deleted_at IS NULL
@@ -236,14 +230,14 @@ func (r *BetriebszustandRepository) ZaehleEhemaligeMitOffenenVorgaengen(ctx cont
 	return n, err
 }
 
-// ZaehleNachbuchMeldungenOffenSeit zählt Nachbuch-Meldungen (Migration 117), die seit
-// mehr als `tage` Tagen niemand quittiert hat. Eine offene Meldung ist eine Abweichung
-// zwischen Offline-Scan und Wirklichkeit, die jemand ansehen muss — ein umgebuchtes Buch,
-// eine abgewiesene Ausleihe. Bleibt sie liegen, hat es niemand angesehen, und die
-// Beteiligten stehen mit Namen darin, ohne Frist (nur quittierte haben eine).
-func (r *BetriebszustandRepository) ZaehleNachbuchMeldungenOffenSeit(ctx context.Context, tage int) (int, error) {
+// ZaehleNachbuchMeldungenOffenSeit zählt die Meldungen aus dem Nachbuchen, die seit mehr als
+// `tage` Tagen niemand quittiert hat. Eine offene Meldung ist eine Abweichung zwischen dem
+// Scan ohne Netz und der Wirklichkeit, die jemand ansehen muss: ein umgebuchtes Buch, eine
+// abgewiesene Ausleihe. Bleibt sie liegen, stehen die Beteiligten mit Namen darin, ohne
+// Frist; nur quittierte Meldungen haben eine.
+func (a *BetriebszustandAbfragen) ZaehleNachbuchMeldungenOffenSeit(ctx context.Context, tage int) (int, error) {
 	var n int
-	err := r.pool.QueryRow(ctx, `
+	err := a.pool.QueryRow(ctx, `
 		SELECT count(*) FROM nachbuch_meldungen
 		WHERE quittiert_am IS NULL AND erstellt_am < now() - make_interval(days => $1)`, tage).Scan(&n)
 	return n, err

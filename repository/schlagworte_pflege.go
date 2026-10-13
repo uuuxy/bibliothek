@@ -82,7 +82,7 @@ const sqlPflegeSuchePasst = `($1 = ''
 // SchlagworteZurPflege liefert die Schlagworte, die zur Suche passen (leer = alle), mit
 // Titelzahl, Verweisziel und den Verweisen darauf, alphabetisch und höchstens
 // schlagwortPflegeTrefferMax Zeilen, dazu die Zahlen der ganzen Tabelle.
-func SchlagworteZurPflege(ctx context.Context, q DBQueryer, suche string) (SchlagwortPflegeListe, error) {
+func SchlagworteZurPflege(ctx context.Context, q Datenbank, suche string) (SchlagwortPflegeListe, error) {
 	liste := SchlagwortPflegeListe{Zeilen: []SchlagwortPflegeZeile{}}
 	suche = schlagwortNormalform(suche)
 	if err := q.QueryRow(ctx, `
@@ -184,7 +184,7 @@ func regelFehler(err error, was string) error {
 // die Tür nach dem Verweis noch das Ziel — die umgekehrte Reihenfolge des Zusammenführens,
 // das erst das Ziel sperrt und dann seine Verweise umhängt. Eine weitere Schreibweise legt
 // „Verweis anlegen" am Ziel an.
-func BenenneSchlagwortUm(ctx context.Context, q DBQueryer, id, neu string, alteAlsVerweis bool) (string, bool, error) {
+func BenenneSchlagwortUm(ctx context.Context, q Datenbank, id, neu string, alteAlsVerweis bool) (string, bool, error) {
 	wort, err := einWort(neu)
 	if err != nil {
 		return "", false, err
@@ -265,7 +265,7 @@ func macheSchreibweiseFrei(ctx context.Context, tx pgx.Tx, id, wort string) erro
 // zum Verweis auf „in" — wer das alte Wort gewohnt ist, landet weiter richtig —, sonst fällt
 // es weg, wie in Littera. Verweise auf „von" zeigen danach auf „in", eine Filter-Markierung
 // geht auf „in" über. Ist „in" selbst ein Verweis, gilt sein Ziel.
-func FuehreSchlagworteZusammen(ctx context.Context, q DBQueryer, vonID, inID string, alteAlsVerweis bool) (SchlagwortZusammenfuehrung, error) {
+func FuehreSchlagworteZusammen(ctx context.Context, q Datenbank, vonID, inID string, alteAlsVerweis bool) (SchlagwortZusammenfuehrung, error) {
 	tx, err := q.Begin(ctx)
 	if err != nil {
 		return SchlagwortZusammenfuehrung{}, fmt.Errorf("zusammenführen: transaktion öffnen: %w", err)
@@ -383,7 +383,7 @@ type SchlagwortLoeschung struct {
 // Einlesen der Littera-Schlagworte (docs/OFFEN.md 4.20). Ein einzelnes Wort ist eine Liste mit
 // einem Eintrag: eine Tür, eine Regel. Gibt es eine Kennung nicht (mehr), löscht die Tür
 // nichts (ErrSchlagwortNichtGefunden) — die Pflegeseite lädt dann den neuen Stand.
-func LoescheSchlagworte(ctx context.Context, q DBQueryer, ids []string) (SchlagwortLoeschung, error) {
+func LoescheSchlagworte(ctx context.Context, q Datenbank, ids []string) (SchlagwortLoeschung, error) {
 	var ergebnis SchlagwortLoeschung
 	if len(ids) == 0 {
 		return ergebnis, fmt.Errorf("%w: kein Schlagwort gewählt", ErrSchlagwortUngueltig)
@@ -444,7 +444,7 @@ func LoescheSchlagworte(ctx context.Context, q DBQueryer, ids []string) (Schlagw
 // Gibt es die Schreibweise noch nicht, entsteht sie als Verweis. Gibt es sie und trägt sie
 // Titel oder Verweise, wird sie mit dem Ziel zusammengeführt — das ist, was ein Verweis
 // bedeutet. Ist das Ziel selbst ein Verweis, gilt dessen Ziel.
-func SetzeSchlagwortVerweis(ctx context.Context, q DBQueryer, roh, zielID string) (SchlagwortZusammenfuehrung, error) {
+func SetzeSchlagwortVerweis(ctx context.Context, q Datenbank, roh, zielID string) (SchlagwortZusammenfuehrung, error) {
 	var ergebnis SchlagwortZusammenfuehrung
 	wort, err := einWort(roh)
 	if err != nil {
@@ -500,7 +500,7 @@ func legeVerweisAn(ctx context.Context, tx pgx.Tx, wort, zielID string) (Schlagw
 
 // SetzeSchlagwortFilter markiert ein Wort als Filter im Portal (oder nimmt die Markierung
 // weg). Ein Verweis ist nie Filter — markiert wird sein Ziel.
-func SetzeSchlagwortFilter(ctx context.Context, q DBQueryer, id string, an bool) error {
+func SetzeSchlagwortFilter(ctx context.Context, q Datenbank, id string, an bool) error {
 	tx, err := q.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("filter: transaktion öffnen: %w", err)

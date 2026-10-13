@@ -93,7 +93,7 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 	}
 
 	const routine = "Lesehistorie Schülerbücherei"
-	zustand := repository.NewBetriebszustandRepository(pool)
+	zustand := repository.NewBetriebszustandAbfragen(pool)
 	if n := rueckstandAlsMap(ctx, t, zustand)[routine]; n != 1 {
 		t.Errorf("Wächter vor dem Lauf: %d fällige Zeilen, erwartet 1 (die Zeile der alten Vormerkung)", n)
 	}

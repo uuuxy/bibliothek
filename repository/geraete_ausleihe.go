@@ -10,7 +10,7 @@ import (
 
 // LiesGeraetNachNummer liefert das Gerät mit dieser Nummer. Trägt keines sie, kommt
 // pgx.ErrNoRows: Was das an der Theke heißt, sagt der Aufrufer.
-func LiesGeraetNachNummer(ctx context.Context, db DBQueryer, nummer string) (Geraet, error) {
+func LiesGeraetNachNummer(ctx context.Context, db Datenbank, nummer string) (Geraet, error) {
 	var g Geraet
 	err := db.QueryRow(ctx, `
 		SELECT id, modellname, seriennummer, barcode_id, zubehoer, ist_ausleihbar, ist_ausgesondert, zustand_notiz
@@ -57,7 +57,7 @@ type GeraeteAusleihe struct {
 // LeiheGeraetAus schreibt die Ausleihe eines Geräts und liefert ihre Kennung. Ist das Gerät
 // schon verliehen, scheitert sie an uniq_ausleihen_aktiv_geraet; die Meldung dazu formuliert
 // der Aufrufer.
-func LeiheGeraetAus(ctx context.Context, tx DBQueryer, a GeraeteAusleihe) (string, error) {
+func LeiheGeraetAus(ctx context.Context, tx Datenbank, a GeraeteAusleihe) (string, error) {
 	var id string
 	err := tx.QueryRow(ctx, `
 		INSERT INTO ausleihen (geraet_id, schueler_id, rueckgabe_frist, bearbeiter_id, ist_handapparat)
@@ -73,7 +73,7 @@ var ErrGeraeteAusleiheFehlt = errors.New("ausleihe des geräts nicht gefunden")
 
 // BucheGeraeteRueckgabe trägt an der Ausleihe eines Geräts die Rückgabe ein: jetzt, durch
 // diesen Bearbeiter, und ob ein anderer als der Ausleiher das Gerät brachte.
-func BucheGeraeteRueckgabe(ctx context.Context, tx DBQueryer, ausleiheID, bearbeiterID string, fremdrueckgabe bool) error {
+func BucheGeraeteRueckgabe(ctx context.Context, tx Datenbank, ausleiheID, bearbeiterID string, fremdrueckgabe bool) error {
 	tag, err := tx.Exec(ctx, `
 		UPDATE ausleihen
 		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = $1, ist_fremdrueckgabe = $2
@@ -91,7 +91,7 @@ func BucheGeraeteRueckgabe(ctx context.Context, tx DBQueryer, ausleiheID, bearbe
 // LeserNameUndKlasse liefert einen Leser, der nicht gelöscht ist, mit Vorname, Nachname und
 // Klasse und sonst nichts; fehlt er, kommt pgx.ErrNoRows. Gelesen wird leser und nicht die
 // Sicht schueler: Der Gesuchte kann ein Kollege sein.
-func LeserNameUndKlasse(ctx context.Context, db DBQueryer, leserID string) (Student, error) {
+func LeserNameUndKlasse(ctx context.Context, db Datenbank, leserID string) (Student, error) {
 	var l Student
 	err := db.QueryRow(ctx,
 		"SELECT vorname, nachname, coalesce(klasse, '') FROM leser WHERE id = $1 AND deleted_at IS NULL",

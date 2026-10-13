@@ -71,7 +71,7 @@ const dsgvoEigeneVorgaengeSQL = `
 // leseDsgvoEigeneVorgaenge liest die selbst bearbeiteten Vorgänge eines Kontos. Die Liste
 // ist nicht begrenzt: Eine Auskunft ist vollständig oder falsch. Bei einer Bibliothekskraft
 // sind es über die Aufbewahrung der Protokolle hinweg Tausende Zeilen.
-func leseDsgvoEigeneVorgaenge(ctx context.Context, q DBQueryer, kontoID string) ([]DsgvoEigenerVorgang, error) {
+func leseDsgvoEigeneVorgaenge(ctx context.Context, q Datenbank, kontoID string) ([]DsgvoEigenerVorgang, error) {
 	vorgaenge, err := sammle(ctx, q, dsgvoEigeneVorgaengeSQL, func(r pgx.Rows) (DsgvoEigenerVorgang, error) {
 		var v DsgvoEigenerVorgang
 		return v, r.Scan(&v.Zeitpunkt, &v.Handlung, &v.IPAdresse)

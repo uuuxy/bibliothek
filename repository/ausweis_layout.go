@@ -10,7 +10,7 @@ const AusweisLayoutSchluessel = "ausweis_layout"
 // LadeAusweisLayout liest das gespeicherte Ausweis-Design, oder pgx.ErrNoRows, wenn noch
 // keines gespeichert ist. Der Aufrufer muss einen Lesefehler von „noch keines" unterscheiden:
 // Nach einem leeren Wert speichert der Designer seine Vorgaben für alle.
-func LadeAusweisLayout(ctx context.Context, db DBQueryer) (string, error) {
+func LadeAusweisLayout(ctx context.Context, db Datenbank) (string, error) {
 	var wert string
 	err := db.QueryRow(ctx,
 		`SELECT wert FROM system_einstellungen WHERE schluessel = $1`, AusweisLayoutSchluessel).Scan(&wert)
@@ -18,7 +18,7 @@ func LadeAusweisLayout(ctx context.Context, db DBQueryer) (string, error) {
 }
 
 // SpeichereAusweisLayout legt das Ausweis-Design an oder ersetzt es.
-func SpeichereAusweisLayout(ctx context.Context, db DBQueryer, wert string) error {
+func SpeichereAusweisLayout(ctx context.Context, db Datenbank, wert string) error {
 	_, err := db.Exec(ctx,
 		`INSERT INTO system_einstellungen (schluessel, wert, aktualisiert_am)
 			 VALUES ($1, $2, CURRENT_TIMESTAMP)

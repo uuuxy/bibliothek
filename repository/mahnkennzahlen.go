@@ -12,7 +12,7 @@ type MahnKennzahlen struct {
 // LadeMahnKennzahlen liest alle Zahlen in einem Durchgang über die Ausleihen, ohne Verbindung
 // zu Lesern oder Titeln: Die Statistik soll kein personenbezogenes Feld erreichen. Dauerleihen
 // zählen nicht, sie werden nicht überfällig.
-func LadeMahnKennzahlen(ctx context.Context, db DBQueryer) (MahnKennzahlen, error) {
+func LadeMahnKennzahlen(ctx context.Context, db Datenbank) (MahnKennzahlen, error) {
 	var k MahnKennzahlen
 	err := db.QueryRow(ctx, `
 			WITH offen AS (

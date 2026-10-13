@@ -8,7 +8,7 @@ type SystematikKategorie struct {
 }
 
 // ListeSystematikKategorien liefert alle Sachgruppen nach ihrer Bezeichnung geordnet.
-func ListeSystematikKategorien(ctx context.Context, db DBQueryer) ([]SystematikKategorie, error) {
+func ListeSystematikKategorien(ctx context.Context, db Datenbank) ([]SystematikKategorie, error) {
 	rows, err := db.Query(ctx, "SELECT id, kuerzel, bezeichnung FROM systematik_kategorien ORDER BY bezeichnung ASC")
 	if err != nil {
 		return nil, err
@@ -27,7 +27,7 @@ func ListeSystematikKategorien(ctx context.Context, db DBQueryer) ([]SystematikK
 
 // ListeFaecher liefert die Fächer, die an Titeln eingetragen sind, je einmal und ohne Leerraum
 // am Rand: die Auswahl für eine Inventur nach Fach.
-func ListeFaecher(ctx context.Context, db DBQueryer) ([]string, error) {
+func ListeFaecher(ctx context.Context, db Datenbank) ([]string, error) {
 	rows, err := db.Query(ctx, `
 			SELECT DISTINCT btrim(subject)
 			FROM buecher_titel

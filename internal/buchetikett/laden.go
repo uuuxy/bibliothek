@@ -9,7 +9,7 @@ import (
 )
 
 // DesTitels lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr, Signatur) eines Titels.
-func DesTitels(ctx context.Context, datenbank repository.DBQueryer, id string) ([]BarcodeLabelDetail, error) {
+func DesTitels(ctx context.Context, datenbank repository.Datenbank, id string) ([]BarcodeLabelDetail, error) {
 	zeilen, err := repository.EtikettDatenDesTitels(ctx, datenbank, id)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func DesTitels(ctx context.Context, datenbank repository.DBQueryer, id string) (
 // Ohne die Einschränkung über mit_vorab_barcode bekäme der Lieferant Etiketten für
 // Exemplare, die bewusst ohne Vorab-Barcode bestellt wurden — die beklebt dann die
 // Bibliothek selbst, und beide würden dasselbe Buch bekleben.
-func DerBestellung(ctx context.Context, datenbank repository.DBQueryer, bestellungID string) ([]BarcodeLabelDetail, error) {
+func DerBestellung(ctx context.Context, datenbank repository.Datenbank, bestellungID string) ([]BarcodeLabelDetail, error) {
 	zeilen, err := repository.EtikettDatenDerBestellung(ctx, datenbank, bestellungID)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func DerBestellung(ctx context.Context, datenbank repository.DBQueryer, bestellu
 // Eine Abfrage für alle Barcodes, kein N+1. Unbekannte Barcodes bleiben unangetastet —
 // beim Vorab-Druck für eine Bestellung existieren die Exemplare noch gar nicht, dort
 // ist das der richtige Zustand und kein Fehler.
-func ErgaenzeServerfelder(ctx context.Context, datenbank repository.DBQueryer, items []BarcodeLabelDetail) {
+func ErgaenzeServerfelder(ctx context.Context, datenbank repository.Datenbank, items []BarcodeLabelDetail) {
 	barcodes := make([]string, 0, len(items))
 	for i := range items {
 		if items[i].BarcodeID != "" {

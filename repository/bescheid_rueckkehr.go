@@ -64,7 +64,7 @@ func (b RueckkehrBefund) AufsichtHinweis() string {
 // Die Transaktionsgrenze liegt beim Aufrufer (wie MarkiereVerlustAlsGefunden): Das
 // Zurückholen des Exemplars und das Ende der Forderung gehören in EINE Transaktion —
 // sonst steht das Buch wieder im Regal und die Forderung bleibt, oder umgekehrt.
-func VerbucheRueckkehr(ctx context.Context, q DBQueryer, exemplarID, bearbeiterID string) (RueckkehrBefund, error) {
+func VerbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterID string) (RueckkehrBefund, error) {
 	var befund RueckkehrBefund
 
 	// FOR UPDATE OF f: Zwei Arbeitsplätze, die denselben Barcode gleichzeitig scannen,
@@ -123,7 +123,7 @@ func VerbucheRueckkehr(ctx context.Context, q DBQueryer, exemplarID, bearbeiterI
 // storniereWeilZurueck beendet die Forderung wie StornierungGebuehr: ist_bezahlt mit
 // gesetzt (alle Offen-Filter hängen daran), storniert_am unterscheidet sie von einer
 // echten Zahlung. Dieselbe Audit-Aktion STORNIERUNG, damit die Revision EINE Form kennt.
-func storniereWeilZurueck(ctx context.Context, q DBQueryer, schadensfallID string, betrag float64, bearbeiterID, grund string) error {
+func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID string, betrag float64, bearbeiterID, grund string) error {
 	var leserID *string
 	err := q.QueryRow(ctx, `
 		UPDATE schadensfaelle
@@ -156,7 +156,7 @@ func storniereWeilZurueck(ctx context.Context, q DBQueryer, schadensfallID strin
 
 // merkeRueckgabeNachUebergabe setzt den Merker am übergebenen Bescheid. Die Forderung
 // bleibt, wie sie ist — über sie entscheidet nicht mehr die Schule.
-func merkeRueckgabeNachUebergabe(ctx context.Context, q DBQueryer, f rueckkehrForderung, bearbeiterID string) error {
+func merkeRueckgabeNachUebergabe(ctx context.Context, q Datenbank, f rueckkehrForderung, bearbeiterID string) error {
 	tag, err := q.Exec(ctx,
 		`UPDATE schadensersatz_bescheide SET rueckgabe_nach_uebergabe = true WHERE id = $1`,
 		f.bescheidID)

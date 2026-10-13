@@ -183,7 +183,7 @@ func TestSchichtung_SQLNurInDerDatenbankschicht(t *testing.T) {
 		switch {
 		case !imBestand:
 			meldungen = append(meldungen, fmt.Sprintf("%s formuliert oder schickt SQL (%d Texte, %d Aufrufe). "+
-				"Die Anweisung gehört nach repository/, als Funktion über DBQueryer; das Paket ruft sie "+
+				"Die Anweisung gehört nach repository/, als Funktion über repository.Datenbank; das Paket ruft sie "+
 				"auf (ARCHITEKTUR 5.2.2).", pfad, ist.texte, ist.aufrufe))
 		case ist.texte > soll.texte || ist.aufrufe > soll.aufrufe:
 			meldungen = append(meldungen, fmt.Sprintf("%s trägt mehr SQL als im Bestand: %d Texte und %d Aufrufe "+

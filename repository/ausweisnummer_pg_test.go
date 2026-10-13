@@ -13,10 +13,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Der Ausweis-Generator steht seit Migration 136 in der Datenbank (ausweis_nummer_start),
-// weil der Trigger konto_hat_leserzeile ihn braucht und ein Nummernkreis EINEN Zähler hat.
-// Die Regeln sind die, die bis dahin GetNextSequence in Go absicherte — hier an der
-// Funktion, die jetzt alle rufen.
+// Der Zähler der Ausweisnummern steht in der Datenbank (ausweis_nummer_start), weil auch ein
+// Trigger ihn braucht und ein Nummernkreis einen Zähler hat. Die Tests prüfen seine Regeln
+// an der Funktion, die alle rufen.
 
 // naechsteAusweisnummer zieht die nächste Nummer in einer eigenen, zurückgerollten Transaktion.
 func naechsteAusweisnummer(t *testing.T, pool *pgxpool.Pool) int {
@@ -27,9 +26,9 @@ func naechsteAusweisnummer(t *testing.T, pool *pgxpool.Pool) int {
 		t.Fatal(err)
 	}
 	defer db.SafeRollback(ctx, tx)
-	n, err := repository.NewSequenceRepository(tx).NaechsteAusweisnummer(ctx)
+	n, err := repository.NewAusweisnummernAbfragen(tx).Naechste(ctx)
 	if err != nil {
-		t.Fatalf("NaechsteAusweisnummer: %v", err)
+		t.Fatalf("Naechste: %v", err)
 	}
 	return n
 }

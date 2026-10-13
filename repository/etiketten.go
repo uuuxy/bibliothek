@@ -33,7 +33,7 @@ type EtikettExemplar struct {
 // ListeEtikettenExemplare liefert die Exemplare eines Status (offen, erledigt, alle), die
 // neuesten zuerst und höchstens limit Zeilen; suche filtert über Titel und Barcode. Scheitert
 // das Lesen der Zeilen, trägt der Fehler ErrZeileUnlesbar.
-func ListeEtikettenExemplare(ctx context.Context, db DBQueryer, status, suche string, limit int) ([]EtikettExemplar, error) {
+func ListeEtikettenExemplare(ctx context.Context, db Datenbank, status, suche string, limit int) ([]EtikettExemplar, error) {
 	statusBedingung := etikettenStatusBedingung(status)
 	rows, err := db.Query(ctx, `
 			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY-MM-DD'),
@@ -67,7 +67,7 @@ func ListeEtikettenExemplare(ctx context.Context, db DBQueryer, status, suche st
 // ZaehleEtikettenExemplare zählt die Exemplare eines Status mit denselben Filtern wie die
 // Liste; mit bis nur die, die bis zu diesem Tag in den Bestand kamen. Derselbe JOIN wie in der
 // Liste, er ist verlustfrei: titel_id ist NOT NULL.
-func ZaehleEtikettenExemplare(ctx context.Context, db DBQueryer, status string, bis *time.Time, suche string) (int, error) {
+func ZaehleEtikettenExemplare(ctx context.Context, db Datenbank, status string, bis *time.Time, suche string) (int, error) {
 	var anzahl int
 	err := db.QueryRow(ctx, `
 			SELECT count(*)
@@ -84,7 +84,7 @@ func ZaehleEtikettenExemplare(ctx context.Context, db DBQueryer, status string, 
 // VermerkeAltbestandEtiketten vermerkt jedes Exemplar ohne Vermerk, das bis zum Stichtag in
 // den Bestand kam, als beklebt und liefert die Zahl der Zeilen. Ausgesonderte bleiben außen
 // vor.
-func VermerkeAltbestandEtiketten(ctx context.Context, db DBQueryer, bis time.Time) (int64, error) {
+func VermerkeAltbestandEtiketten(ctx context.Context, db Datenbank, bis time.Time) (int64, error) {
 	tag, err := db.Exec(ctx, `
 			UPDATE buecher_exemplare e SET etikett_gedruckt = true, aktualisiert_am = CURRENT_TIMESTAMP
 			WHERE `+EtikettOffenBedingung+` AND COALESCE(e.zugang_am, e.erworben_am) <= $1
@@ -97,7 +97,7 @@ func VermerkeAltbestandEtiketten(ctx context.Context, db DBQueryer, bis time.Tim
 
 // VermerkeEtikettenGedruckt vermerkt die genannten Exemplare als beklebt und liefert die Zahl
 // der Zeilen, die vorher keinen Vermerk trugen.
-func VermerkeEtikettenGedruckt(ctx context.Context, db DBQueryer, barcodes []string) (int64, error) {
+func VermerkeEtikettenGedruckt(ctx context.Context, db Datenbank, barcodes []string) (int64, error) {
 	tag, err := db.Exec(ctx, `
 			UPDATE buecher_exemplare SET etikett_gedruckt = true, aktualisiert_am = CURRENT_TIMESTAMP
 			WHERE barcode_id = ANY($1) AND etikett_gedruckt = false
@@ -111,7 +111,7 @@ func VermerkeEtikettenGedruckt(ctx context.Context, db DBQueryer, barcodes []str
 // NimmEtikettenVermerk nimmt den Vermerk der genannten Exemplare zurück und liefert die Zahl
 // der Zeilen. Ausgesonderte bleiben außen vor: Für ein Buch, das nicht mehr im Regal steht,
 // wäre ein Etikett immer falsch.
-func NimmEtikettenVermerk(ctx context.Context, db DBQueryer, barcodes []string) (int64, error) {
+func NimmEtikettenVermerk(ctx context.Context, db Datenbank, barcodes []string) (int64, error) {
 	tag, err := db.Exec(ctx, `
 			UPDATE buecher_exemplare SET etikett_gedruckt = false, aktualisiert_am = CURRENT_TIMESTAMP
 			WHERE barcode_id = ANY($1) AND etikett_gedruckt = true AND ist_ausgesondert = false

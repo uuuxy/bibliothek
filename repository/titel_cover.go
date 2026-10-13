@@ -73,7 +73,7 @@ type TitelMitISBN struct {
 
 // TitelFuerCoverAbgleich liest die Titel aus CoverAbgleichAuswahl. Die Zeilen sind gelesen und
 // geschlossen, bevor der Abgleich je Titel schreibt.
-func TitelFuerCoverAbgleich(ctx context.Context, db DBQueryer) ([]TitelMitISBN, error) {
+func TitelFuerCoverAbgleich(ctx context.Context, db Datenbank) ([]TitelMitISBN, error) {
 	rows, err := db.Query(ctx, CoverAbgleichAuswahl)
 	if err != nil {
 		return nil, err
@@ -91,14 +91,14 @@ func TitelFuerCoverAbgleich(ctx context.Context, db DBQueryer) ([]TitelMitISBN, 
 
 // SetzeGefundenesCover trägt die Adresse des gefundenen Covers ein, solange der Titel kein
 // lokales trägt.
-func SetzeGefundenesCover(ctx context.Context, db DBQueryer, titelID, coverURL string) error {
+func SetzeGefundenesCover(ctx context.Context, db Datenbank, titelID, coverURL string) error {
 	_, err := db.Exec(ctx, `UPDATE buecher_titel SET cover_url = $1, cover_status = 'FOUND' WHERE id = $2 AND `+coverNichtLokal, coverURL, titelID)
 	return err
 }
 
 // SetzeCoverStatus merkt das Ergebnis des Abgleichs am Titel, solange er kein lokales Cover
 // trägt.
-func SetzeCoverStatus(ctx context.Context, db DBQueryer, titelID, status string) error {
+func SetzeCoverStatus(ctx context.Context, db Datenbank, titelID, status string) error {
 	_, err := db.Exec(ctx, `UPDATE buecher_titel SET cover_status = $1 WHERE id = $2 AND `+coverNichtLokal, status, titelID)
 	return err
 }

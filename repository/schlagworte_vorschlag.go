@@ -27,7 +27,7 @@ const schlagwortStichwoerterMax = 300
 // Umlaute zusammengesetzt) — kein Teilstring: „Krieg" soll nicht „Kriegsende" vorschlagen.
 // Die Antwort ist alphabetisch und ohne Doppelte; leer, wenn nichts passt. Geschrieben wird
 // nichts: Das Ja gibt ein Mensch.
-func SchlagworteAusStichwoertern(ctx context.Context, q DBQueryer, stichwoerter []string) ([]string, error) {
+func SchlagworteAusStichwoertern(ctx context.Context, q Datenbank, stichwoerter []string) ([]string, error) {
 	treffer, err := listenZiele(ctx, q, stichwoerter)
 	if err != nil {
 		return nil, fmt.Errorf("schlagwort-vorschlag aus stichwörtern: %w", err)
@@ -59,7 +59,7 @@ type Normdatenbegriff struct {
 // 56 davon schon in der Liste, die übrigen wie „Judo", „Oslo", „Schulstress"). Ein Wort, das zu
 // lang für die Liste wäre, wird nicht angeboten. Beide Antworten sind alphabetisch, ohne
 // Doppelte und nie nil; eingetragen wird nur, was jemand anklickt.
-func SchlagworteAusNormdaten(ctx context.Context, q DBQueryer, begriffe []Normdatenbegriff) (vorhanden, neu []string, err error) {
+func SchlagworteAusNormdaten(ctx context.Context, q Datenbank, begriffe []Normdatenbegriff) (vorhanden, neu []string, err error) {
 	var formen []string
 	for _, b := range begriffe {
 		formen = append(formen, b.Formen...)
@@ -114,7 +114,7 @@ func neueOhneVorhandene(neuRoh, vorhanden []string) []string {
 // eines Verweises darauf. Das ganze Wort, ohne Rücksicht auf Groß- und Kleinschreibung — der
 // Vergleich geschieht in der Datenbank mit lower(), wie der eindeutige Index, damit Go und SQL
 // nicht verschieden kleinschreiben.
-func listenZiele(ctx context.Context, q DBQueryer, roh []string) (map[string]string, error) {
+func listenZiele(ctx context.Context, q Datenbank, roh []string) (map[string]string, error) {
 	kandidaten := make([]string, 0, len(roh))
 	for _, r := range roh {
 		if wort := schlagwortNormalform(r); wort != "" {
@@ -154,7 +154,7 @@ func listenZiele(ctx context.Context, q DBQueryer, roh []string) (map[string]str
 // noch nicht kennt. Die eine Regel für beide Türen: das Anlegen beim Bestellen (POST
 // /api/buecher/aus-isbn) und den Vorschlag im Buchformular und beim Nachbestellen (GET
 // /api/schlagworte/dnb-vorschlag, entschieden am 30.09.2026). Beide Listen nie nil.
-func SchlagwortVorschlagAusDNB(ctx context.Context, q DBQueryer, stichwoerter []string, normdaten []Normdatenbegriff) (liste, neu []string, err error) {
+func SchlagwortVorschlagAusDNB(ctx context.Context, q Datenbank, stichwoerter []string, normdaten []Normdatenbegriff) (liste, neu []string, err error) {
 	ausStichwoertern, err := SchlagworteAusStichwoertern(ctx, q, stichwoerter)
 	if err != nil {
 		return nil, nil, err

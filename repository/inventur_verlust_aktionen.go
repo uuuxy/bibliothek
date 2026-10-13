@@ -180,14 +180,14 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 
 func strPtr(s string) *string { return &s }
 
-// schreibeAuditLog schreibt EINEN audit_log-Eintrag über die generische DBQueryer-
-// Schnittstelle. Eigene, kleine Kopie statt pgAuditRepository.insertAuditLog: Jene
-// verlangt konkret pgx.Tx, hier liegt aber nur r.db (DBQueryer) vor — dieselbe
+// schreibeAuditLog schreibt EINEN audit_log-Eintrag über die Schnittstelle Datenbank.
+// Eigene, kleine Kopie statt pgAuditRepository.insertAuditLog: Jene
+// verlangt konkret pgx.Tx, hier liegt aber nur r.db (Datenbank) vor — dieselbe
 // Verengung, die schon FinishInventurSession umgeht, indem es Pool und Tx über
 // dasselbe Interface anspricht. Direktes Schreiben in audit_log ist an mehreren
 // Stellen im Projekt so üblich (z. B. api/leser/student_update.go), nicht nur über die
 // Kapselung in audit.go.
-func schreibeAuditLog(ctx context.Context, db DBQueryer, e auditEntry) error {
+func schreibeAuditLog(ctx context.Context, db Datenbank, e auditEntry) error {
 	var detailsJSON []byte
 	if e.Details != nil {
 		var err error

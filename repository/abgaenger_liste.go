@@ -29,7 +29,7 @@ type AbgaengerMitBuechern struct {
 
 // ListeAbgaengerMitOffenenBuechern liefert eine Zeile je Abgänger mit offenen Ausleihen, nach
 // Klasse und Nachname geordnet.
-func ListeAbgaengerMitOffenenBuechern(ctx context.Context, db DBQueryer) ([]AbgaengerMitBuechern, error) {
+func ListeAbgaengerMitOffenenBuechern(ctx context.Context, db Datenbank) ([]AbgaengerMitBuechern, error) {
 	query := `
 		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
 		       COUNT(a.id)                                        AS offene_buecher,
@@ -81,7 +81,7 @@ type AbgaengerAusleihe struct {
 // ListeAbgaengerAusleihen liefert die offenen Ausleihen der Abgänger nach Klasse, Nachname und
 // Titel geordnet. Eine leere Klasse heißt alle; nurIDs engt auf die genannten Schüler ein
 // (nil = keine Einengung) und ist ein Schnitt mit der Abgängerliste, keine zweite Auswahl.
-func ListeAbgaengerAusleihen(ctx context.Context, db DBQueryer, klasse string, nurIDs []string) ([]AbgaengerAusleihe, error) {
+func ListeAbgaengerAusleihen(ctx context.Context, db Datenbank, klasse string, nurIDs []string) ([]AbgaengerAusleihe, error) {
 	detailQuery := `
 		SELECT s.id, s.vorname, s.nachname, s.klasse,
 		       t.titel,

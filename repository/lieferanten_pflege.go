@@ -26,7 +26,7 @@ func SetzeHauptlieferant(ctx context.Context, tx pgx.Tx, id string) (geaendert b
 }
 
 // NimmHauptlieferant nimmt einem Lieferanten das Merkmal; geaendert sagt, ob er es trug.
-func NimmHauptlieferant(ctx context.Context, db DBQueryer, id string) (geaendert bool, err error) {
+func NimmHauptlieferant(ctx context.Context, db Datenbank, id string) (geaendert bool, err error) {
 	tag, err := db.Exec(ctx,
 		`UPDATE lieferanten SET ist_hauptlieferant = false WHERE id = $1 AND ist_hauptlieferant`, id)
 	return err == nil && tag.RowsAffected() == 1, err
@@ -45,7 +45,7 @@ type LieferantenZeile struct {
 
 // ListeLieferanten liefert alle Lieferanten, den Hauptlieferanten zuerst: Das Bestellformular
 // wählt den ersten der Liste vor.
-func ListeLieferanten(ctx context.Context, db DBQueryer) ([]LieferantenZeile, error) {
+func ListeLieferanten(ctx context.Context, db Datenbank) ([]LieferantenZeile, error) {
 	rows, err := db.Query(ctx, `
 			SELECT id, name, email, kundennummer, erstellt_am, ist_hauptlieferant, kundennummer_schultraeger
 			FROM lieferanten
@@ -69,7 +69,7 @@ func ListeLieferanten(ctx context.Context, db DBQueryer) ([]LieferantenZeile, er
 
 // LegeLieferantAn legt einen Lieferanten ohne das Merkmal Hauptlieferant an und liefert
 // Kennung und Zeitpunkt der Anlage.
-func LegeLieferantAn(ctx context.Context, db DBQueryer, name, email, kundennummer, kundennummerSchultraeger string) (id string, erstelltAm time.Time, err error) {
+func LegeLieferantAn(ctx context.Context, db Datenbank, name, email, kundennummer, kundennummerSchultraeger string) (id string, erstelltAm time.Time, err error) {
 	err = db.QueryRow(ctx, `
 			INSERT INTO lieferanten (name, email, kundennummer, kundennummer_schultraeger)
 			VALUES ($1, $2, $3, $4)
@@ -88,7 +88,7 @@ type LieferantStand struct {
 // danach; ein Feld, das nil ist, behält seinen Wert. Den alten Stand liest die Anweisung aus
 // der gesperrten Zeile. alt.Haupt füllt sie nicht: Ob das Merkmal sich geändert hat, weiß der
 // Aufrufer. Ein unbekannter Lieferant ist pgx.ErrNoRows.
-func AendereLieferantStammdaten(ctx context.Context, db DBQueryer, id string, name, email, kundennummer, zweitnummer *string) (alt, neu LieferantStand, err error) {
+func AendereLieferantStammdaten(ctx context.Context, db Datenbank, id string, name, email, kundennummer, zweitnummer *string) (alt, neu LieferantStand, err error) {
 	err = db.QueryRow(ctx, `
 		WITH alt AS (
 			SELECT name, email, kundennummer, kundennummer_schultraeger
@@ -110,14 +110,14 @@ func AendereLieferantStammdaten(ctx context.Context, db DBQueryer, id string, na
 
 // LieferantHauptUndName liest, ob ein Lieferant Hauptlieferant ist, und seinen Namen;
 // pgx.ErrNoRows, wenn es ihn nicht gibt.
-func LieferantHauptUndName(ctx context.Context, db DBQueryer, id string) (istHaupt bool, name string, err error) {
+func LieferantHauptUndName(ctx context.Context, db Datenbank, id string) (istHaupt bool, name string, err error) {
 	err = db.QueryRow(ctx,
 		"SELECT ist_hauptlieferant, name FROM lieferanten WHERE id = $1", id).Scan(&istHaupt, &name)
 	return istHaupt, name, err
 }
 
 // LoescheLieferant löscht einen Lieferanten und liefert die Zahl der gelöschten Zeilen.
-func LoescheLieferant(ctx context.Context, db DBQueryer, id string) (int64, error) {
+func LoescheLieferant(ctx context.Context, db Datenbank, id string) (int64, error) {
 	tag, err := db.Exec(ctx, "DELETE FROM lieferanten WHERE id = $1", id)
 	if err != nil {
 		return 0, err

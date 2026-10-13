@@ -25,7 +25,7 @@ type ZulaufExemplar struct {
 
 // ExemplareImZulauf liefert die bestellten, noch nicht eingetroffenen Exemplare, das jüngste
 // zuerst. Eine fehlende Notiz kommt als leerer Text, aus demselben Grund wie die Zeiger.
-func ExemplareImZulauf(ctx context.Context, db DBQueryer) ([]ZulaufExemplar, error) {
+func ExemplareImZulauf(ctx context.Context, db Datenbank) ([]ZulaufExemplar, error) {
 	rows, err := db.Query(ctx, `
 		SELECT e.id, e.titel_id, e.erstellt_am, COALESCE(e.zustand_notiz, ''), t.titel, COALESCE(t.isbn, ''),
 		       `+sqlCoverOderDNB("t")+`,
@@ -70,7 +70,7 @@ type EingebuchtesExemplar struct {
 // traf. Es trifft nur ein Exemplar, das bestellt und nicht ausgesondert ist: Eines, das der
 // Händler nicht liefert und das deshalb ausgesondert wurde, kommt so nicht in den Bestand
 // zurück und behält seine Notiz.
-func BucheZulaufEin(ctx context.Context, db DBQueryer, exemplarIDs []string) ([]EingebuchtesExemplar, error) {
+func BucheZulaufEin(ctx context.Context, db Datenbank, exemplarIDs []string) ([]EingebuchtesExemplar, error) {
 	rows, err := db.Query(ctx, `
 		UPDATE buecher_exemplare e
 		SET ist_ausleihbar = true, zustand_notiz = '', bestellstatus = NULL

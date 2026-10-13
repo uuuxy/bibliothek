@@ -16,7 +16,7 @@ import (
 // die Fremdrückgabe gebucht hat: Sie legt den Scan auf diesen Zeitpunkt, und der Wächter
 // entscheidet, ob sich das Exemplar seitdem bewegt hat (internal/service/nachbuchen.go). Ohne
 // ist_fremdrueckgabe genügte der Verweis auf irgendeine beendete Ausleihe desselben Exemplars.
-func LiesFremdrueckgabeZeitpunkt(ctx context.Context, q DBQueryer, ausleiheID, exemplarID string) (*time.Time, error) {
+func LiesFremdrueckgabeZeitpunkt(ctx context.Context, q Datenbank, ausleiheID, exemplarID string) (*time.Time, error) {
 	var rueckgabe *time.Time
 	err := q.QueryRow(ctx, `
 		SELECT rueckgabe_am FROM ausleihen

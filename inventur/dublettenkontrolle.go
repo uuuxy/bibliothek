@@ -77,7 +77,7 @@ func (d *DubletteTitel) alsAntwort() map[string]any { return (*DubletteISBN)(d).
 // Der zweite Vergleich gilt Nummern, die keine ISBN sind, etwa dem Strichcode einer DVD: Die
 // Datenbank lässt sie, wie sie geschrieben wurden, und ihr UNIQUE-Index hält dieselbe Nummer
 // mit und ohne Leerzeichen für zwei.
-func titelMitISBN(ctx context.Context, q repository.DBQueryer, isbn, eigeneID string) (*DubletteISBN, error) {
+func titelMitISBN(ctx context.Context, q repository.Datenbank, isbn, eigeneID string) (*DubletteISBN, error) {
 	vorhanden := DubletteISBN{}
 	err := q.QueryRow(ctx, `
 		SELECT bt.id::text, bt.titel, `+repository.SQLTitelHatExemplar("bt")+`
@@ -105,7 +105,7 @@ func (repo *BookRepository) TitelMitISBN(ctx context.Context, isbn string) (*Dub
 // Titel hätte ein Buch zwei Bestände und zwei Zeilen in der Nachbestellung. Die Prüfung läuft
 // vor dem Schreiben in derselben Transaktion; zwei gleichzeitige Anfragen fängt der
 // UNIQUE-Index, weil die Datenbank jede ISBN in eine Schreibweise bringt (isbn_normalform).
-func isbnVergeben(ctx context.Context, q repository.DBQueryer, isbn, eigeneID string) error {
+func isbnVergeben(ctx context.Context, q repository.Datenbank, isbn, eigeneID string) error {
 	vorhanden, err := titelMitISBN(ctx, q, isbn, eigeneID)
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func isbnVergeben(ctx context.Context, q repository.DBQueryer, isbn, eigeneID st
 // Titel und Autor der Eingabe gehen in die Form, in der die Datenbank sie speichert
 // (titeltext_normalform): Mit zwei Leerzeichen getippt ist es derselbe Titel. Die Auflage
 // speichert die Datenbank, wie sie kommt; verglichen werden beide Seiten in dieser Form.
-func gleichnamigOhneISBN(ctx context.Context, q repository.DBQueryer, b Book) error {
+func gleichnamigOhneISBN(ctx context.Context, q repository.Datenbank, b Book) error {
 	vorhanden := DubletteTitel{}
 	hatExemplar := repository.SQLTitelHatExemplar("bt")
 	err := q.QueryRow(ctx, `
@@ -153,7 +153,7 @@ func gleichnamigOhneISBN(ctx context.Context, q repository.DBQueryer, b Book) er
 // pruefeNeuenTitel ist die Dublettenkontrolle der Aufnahme: mit ISBN der Titel, der die
 // Nummer trägt, ohne ISBN der gleichnamige. anderesMedium ist die Antwort der Maske auf die
 // Frage nach dem gleichnamigen und übergeht nur diese.
-func pruefeNeuenTitel(ctx context.Context, q repository.DBQueryer, b Book, anderesMedium bool) error {
+func pruefeNeuenTitel(ctx context.Context, q repository.Datenbank, b Book, anderesMedium bool) error {
 	if b.ISBN != "" {
 		return isbnVergeben(ctx, q, b.ISBN, "")
 	}

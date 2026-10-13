@@ -197,7 +197,7 @@ const sqlStempelJetzt = `GREATEST(letzte_bewegung_am, CURRENT_TIMESTAMP)`
 //
 // Der Stempel läuft nie rückwärts (sqlStempelVor): Ein früherer Zeitpunkt ließe jeden Scan
 // zwischen ihm und der echten letzten Bewegung wieder durch den Wächter.
-func StempleBewegungZum(ctx context.Context, q DBQueryer, exemplarID string, zeitpunkt *time.Time) error {
+func StempleBewegungZum(ctx context.Context, q Datenbank, exemplarID string, zeitpunkt *time.Time) error {
 	tag, err := q.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = `+sqlStempelVor(`$2`)+` WHERE id = $1`, exemplarID, zeitpunkt)
 	if err != nil {
 		return fmt.Errorf("bewegung stempeln: %w", err)

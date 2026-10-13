@@ -384,13 +384,13 @@ func parseCreateGeburtsdatum(w http.ResponseWriter, raw *string) (*time.Time, bo
 func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, requested string) (string, bool) {
 	if requested == "" {
 		// Use central repository for sequence generation
-		seqRepo := repository.NewSequenceRepository(tx)
+		seqRepo := repository.NewAusweisnummernAbfragen(tx)
 		// `leser`, nicht die Sicht `schueler`: Die Sicht zeigt nur Schüler, und die
 		// höchste Nummer kann seit Migration 125 an einem KOLLEGEN hängen. Über die Sicht
 		// gerechnet gäbe der Generator sie ein zweites Mal aus — und der eindeutige Index
 		// quittierte das als 500 statt mit einer Auskunft. Ein Nummernkreis, zwei
 		// Generatoren: genau der Fehler aus Migration 068, nur eine Tabelle weiter.
-		startNum, err := seqRepo.NaechsteAusweisnummer(ctx)
+		startNum, err := seqRepo.Naechste(ctx)
 		if err != nil {
 			db.SafeRollback(ctx, tx)
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

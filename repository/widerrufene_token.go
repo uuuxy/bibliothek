@@ -10,7 +10,7 @@ import (
 
 // WiderrufeToken trägt die Signatur mit der Ablaufzeit des Tokens ein. Steht sie schon in der
 // Liste, ändert sich nichts: Das Ziel ist dann erreicht.
-func WiderrufeToken(ctx context.Context, db DBQueryer, signatur string, laeuftAb time.Time) error {
+func WiderrufeToken(ctx context.Context, db Datenbank, signatur string, laeuftAb time.Time) error {
 	_, err := db.Exec(ctx, `
 		INSERT INTO revoked_tokens (token_signature, expires_at)
 		VALUES ($1, $2)
@@ -20,7 +20,7 @@ func WiderrufeToken(ctx context.Context, db DBQueryer, signatur string, laeuftAb
 }
 
 // TokenWiderrufen sagt, ob die Signatur in der Sperrliste steht.
-func TokenWiderrufen(ctx context.Context, db DBQueryer, signatur string) (bool, error) {
+func TokenWiderrufen(ctx context.Context, db Datenbank, signatur string) (bool, error) {
 	var widerrufen bool
 	err := db.QueryRow(ctx, `
 		SELECT EXISTS(SELECT 1 FROM revoked_tokens WHERE token_signature = $1)
@@ -29,7 +29,7 @@ func TokenWiderrufen(ctx context.Context, db DBQueryer, signatur string) (bool, 
 }
 
 // LoescheAbgelaufeneWiderrufe entfernt die Einträge, deren Token ohnehin abgelaufen ist.
-func LoescheAbgelaufeneWiderrufe(ctx context.Context, db DBQueryer) error {
+func LoescheAbgelaufeneWiderrufe(ctx context.Context, db Datenbank) error {
 	_, err := db.Exec(ctx, `DELETE FROM revoked_tokens WHERE expires_at < NOW()`)
 	return err
 }

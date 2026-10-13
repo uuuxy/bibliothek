@@ -21,7 +21,7 @@ type PapierkorbZeile struct {
 
 // ListePapierkorb liefert die Leser im Papierkorb, die jüngsten Löschungen zuerst und
 // höchstens limit Zeilen.
-func ListePapierkorb(ctx context.Context, db DBQueryer, limit int) ([]PapierkorbZeile, error) {
+func ListePapierkorb(ctx context.Context, db Datenbank, limit int) ([]PapierkorbZeile, error) {
 	rows, err := db.Query(ctx, `
 			SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''),
 			       coalesce(klasse, ''), abgaenger_jahr, coalesce(ist_gesperrt, false), deleted_at,
@@ -49,7 +49,7 @@ func ListePapierkorb(ctx context.Context, db DBQueryer, limit int) ([]Papierkorb
 
 // PapierkorbLeserAnonymisiert sagt, ob ein Leser im Papierkorb schon anonymisiert ist;
 // pgx.ErrNoRows, wenn er nicht im Papierkorb liegt.
-func PapierkorbLeserAnonymisiert(ctx context.Context, db DBQueryer, id string) (bool, error) {
+func PapierkorbLeserAnonymisiert(ctx context.Context, db Datenbank, id string) (bool, error) {
 	var anonymisiert bool
 	err := db.QueryRow(ctx,
 		`SELECT anonymized_at IS NOT NULL FROM leser WHERE id = $1 AND deleted_at IS NOT NULL`, id,
@@ -61,7 +61,7 @@ func PapierkorbLeserAnonymisiert(ctx context.Context, db DBQueryer, id string) (
 // Löschen gesetzt hat; eine Sperre aus anderem Grund bleibt. Liefert die Zahl der Zeilen: null
 // heißt, er lag nicht im Papierkorb. Ein Zwilling, der inzwischen seinen Platz besetzt, kommt
 // als Verletzung eines der Teilindizes der aktiven Leser zurück.
-func StelleLeserWiederHer(ctx context.Context, db DBQueryer, id string) (int64, error) {
+func StelleLeserWiederHer(ctx context.Context, db Datenbank, id string) (int64, error) {
 	tag, err := db.Exec(ctx, `
 			UPDATE leser SET
 				deleted_at = NULL,

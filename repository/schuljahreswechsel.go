@@ -8,8 +8,7 @@ import (
 
 // schuljahreswechselLockKey ist der feste Advisory-Lock-Schlüssel, der gleichzeitige
 // Versetzungsläufe hart serialisiert (siehe SperreSchuljahreswechsel). Ein beliebiger,
-// aber im Projekt eindeutiger Wert — er teilt keinen Namensraum mit den tabellenbasierten
-// Sequenz-Locks (advisoryLockKey in sequence_repo.go).
+// aber im Projekt eindeutiger Wert.
 const schuljahreswechselLockKey int64 = 748_2026
 
 // AktionSchuljahreswechsel ist die Aktion, unter der ein Lauf in audit_logs steht. An ihr
@@ -25,7 +24,7 @@ func SperreSchuljahreswechsel(ctx context.Context, tx pgx.Tx) error {
 
 // ZaehleJuengsteSchuljahreswechsel zählt die Läufe der letzten zwölf Stunden. Der Eintrag
 // eines Laufs entsteht in dessen Transaktion; ein abgebrochener Lauf hinterlässt keinen.
-func ZaehleJuengsteSchuljahreswechsel(ctx context.Context, db DBQueryer) (int, error) {
+func ZaehleJuengsteSchuljahreswechsel(ctx context.Context, db Datenbank) (int, error) {
 	var laeufe int
 	err := db.QueryRow(ctx, `
 		SELECT COUNT(*) FROM audit_logs
@@ -99,7 +98,7 @@ var versetzeSchuelerQuery = `
 // VersetzeSchueler zählt die Klasse jedes aktiven Schülers, deren Name mit einer Zahl beginnt,
 // um eine Stufe hoch, macht die Abschlussklassen zu Abgängern und liefert beide Zahlen. zone
 // ist die Zeitzone der Schule; in ihr wird das Abgangsjahr bestimmt.
-func VersetzeSchueler(ctx context.Context, db DBQueryer, zone string) (versetzt, abgaenger int, err error) {
+func VersetzeSchueler(ctx context.Context, db Datenbank, zone string) (versetzt, abgaenger int, err error) {
 	err = db.QueryRow(ctx, versetzeSchuelerQuery, zone).Scan(&versetzt, &abgaenger)
 	return versetzt, abgaenger, err
 }

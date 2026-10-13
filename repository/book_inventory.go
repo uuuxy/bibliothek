@@ -138,7 +138,7 @@ func (r *pgBookRepository) ExemplarImBestand(ctx context.Context, id string) (bo
 
 // deuteAussonderungsHindernis unterscheidet, WARUM der Aussonderungs-Guard nichts traf:
 // verliehen (400 mit Auskunft) oder unbekannt (404) — statt eines stillen „Erfolgs".
-func deuteAussonderungsHindernis(ctx context.Context, q DBQueryer, id string) error {
+func deuteAussonderungsHindernis(ctx context.Context, q Datenbank, id string) error {
 	var verliehen bool
 	if err := q.QueryRow(ctx,
 		`SELECT EXISTS (SELECT 1 FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL)`,

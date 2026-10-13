@@ -17,7 +17,7 @@ type TitelZuISBN struct {
 
 // FindeTitelZuISBN sucht den Titel, der die ISBN trägt, in jeder Schreibweise und in beiden
 // Längen; pgx.ErrNoRows, wenn keiner sie trägt.
-func FindeTitelZuISBN(ctx context.Context, db DBQueryer, isbn string) (TitelZuISBN, error) {
+func FindeTitelZuISBN(ctx context.Context, db Datenbank, isbn string) (TitelZuISBN, error) {
 	var t TitelZuISBN
 	err := db.QueryRow(ctx, `
 		SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel, isbn
@@ -45,7 +45,7 @@ type TitelMetadaten struct {
 // Verlag und Jahr den neuen Angaben, das Cover nur, wenn ein neues mitkommt; Untertitel und
 // Listenpreis behalten, was erfasst ist. Fach, Signatur und Lernmittel-Kennzeichen bleiben
 // unberührt.
-func LegeTitelAusMetadatenAn(ctx context.Context, db DBQueryer, m TitelMetadaten) (TitelZuISBN, error) {
+func LegeTitelAusMetadatenAn(ctx context.Context, db Datenbank, m TitelMetadaten) (TitelZuISBN, error) {
 	var t TitelZuISBN
 	err := db.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url, subject, untertitel, listenpreis)

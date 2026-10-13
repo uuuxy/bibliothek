@@ -105,7 +105,7 @@ const dsgvoKontoEreignisseSQL = `
 
 // LeseDsgvoZugangskonto liest das Konto, das auf diesen Leser zeigt, samt allem, was daran
 // hängt. Ohne Konto: nil, kein Fehler.
-func LeseDsgvoZugangskonto(ctx context.Context, q DBQueryer, leserID string) (*DsgvoZugangskonto, error) {
+func LeseDsgvoZugangskonto(ctx context.Context, q Datenbank, leserID string) (*DsgvoZugangskonto, error) {
 	var k DsgvoZugangskonto
 	err := q.QueryRow(ctx, DsgvoKontoSQL, leserID).Scan(
 		&k.ID, &k.Email, &k.Vorname, &k.Nachname, &k.Rolle, &k.Aktiv, &k.ZugangBeantragtAm,
@@ -147,7 +147,7 @@ func LeseDsgvoZugangskonto(ctx context.Context, q DBQueryer, leserID string) (*D
 
 // sammle liest alle Zeilen einer Abfrage in eine Liste — leer statt nil, damit die
 // abgerufene Auskunft „keine" sagt und nicht „unbekannt".
-func sammle[T any](ctx context.Context, q DBQueryer, sql string, lies func(pgx.Rows) (T, error), args ...any) ([]T, error) {
+func sammle[T any](ctx context.Context, q Datenbank, sql string, lies func(pgx.Rows) (T, error), args ...any) ([]T, error) {
 	rows, err := q.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
@@ -194,7 +194,7 @@ const dsgvoFruehereKontoEreignisseSQL = `
 
 // LeseDsgvoFruehereZugangskonten liest die gelöschten Konten dieses Lesers. Leer statt nil,
 // damit die abgerufene Auskunft „keine" sagt und nicht „unbekannt".
-func LeseDsgvoFruehereZugangskonten(ctx context.Context, q DBQueryer, leserID string) ([]DsgvoFrueheresZugangskonto, error) {
+func LeseDsgvoFruehereZugangskonten(ctx context.Context, q Datenbank, leserID string) ([]DsgvoFrueheresZugangskonto, error) {
 	konten, err := sammle(ctx, q, dsgvoFruehereKontenSQL, func(r pgx.Rows) (DsgvoFrueheresZugangskonto, error) {
 		var k DsgvoFrueheresZugangskonto
 		return k, r.Scan(&k.ID, &k.GeloeschtAm, &k.Email, &k.Rolle)

@@ -24,7 +24,7 @@ func TestRechteVorgabe_DriftKetteAmEchtenPostgres(t *testing.T) {
 		t.Fatalf("Seed: %v", err)
 	}
 
-	zustand := repository.NewBetriebszustandRepository(pool)
+	zustand := repository.NewBetriebszustandAbfragen(pool)
 	lage := lageEingerichtet()
 
 	// (1) Frisch geseedet: Live deckt sich mit der Vorgabe.

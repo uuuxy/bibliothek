@@ -73,7 +73,7 @@ const DsgvoStammdatenSQL = `
 		WHERE id = $1`
 
 // LeseDsgvoStammdaten liest die Leserzeile. Ohne Zeile: nil, kein Fehler.
-func LeseDsgvoStammdaten(ctx context.Context, q DBQueryer, id string) (*DsgvoStammdatenZeile, error) {
+func LeseDsgvoStammdaten(ctx context.Context, q Datenbank, id string) (*DsgvoStammdatenZeile, error) {
 	var st DsgvoStammdatenZeile
 	err := q.QueryRow(ctx, DsgvoStammdatenSQL, id).Scan(
 		&st.ID, &st.BarcodeID, &st.Vorname, &st.Nachname, &st.Klasse, &st.Geburtsdatum,
@@ -96,7 +96,7 @@ func LeseDsgvoStammdaten(ctx context.Context, q DBQueryer, id string) (*DsgvoSta
 
 // LeseDsgvoFotoStand nennt, wann das Ausweisfoto zuletzt gespeichert wurde. Ohne Foto: nil,
 // kein Fehler.
-func LeseDsgvoFotoStand(ctx context.Context, q DBQueryer, id string) (*time.Time, error) {
+func LeseDsgvoFotoStand(ctx context.Context, q Datenbank, id string) (*time.Time, error) {
 	var aktualisiert time.Time
 	err := q.QueryRow(ctx,
 		`SELECT aktualisiert_am FROM schueler_fotos WHERE schueler_id = $1`, id,
@@ -121,7 +121,7 @@ type DsgvoAusleiheZeile struct {
 }
 
 // LeseDsgvoAusleihen liest die Ausleihen des Lesers, die jüngste zuerst.
-func LeseDsgvoAusleihen(ctx context.Context, q DBQueryer, id string) ([]DsgvoAusleiheZeile, error) {
+func LeseDsgvoAusleihen(ctx context.Context, q Datenbank, id string) ([]DsgvoAusleiheZeile, error) {
 	return sammle(ctx, q, `
 		SELECT COALESCE(t.titel, g.modellname, 'Unbekannt') AS gegenstand,
 		       COALESCE(e.barcode_id, g.barcode_id, '') AS barcode,
@@ -148,7 +148,7 @@ type DsgvoSchadensfallZeile struct {
 }
 
 // LeseDsgvoSchadensfaelle liest die Schadens- und Verlustfälle des Lesers.
-func LeseDsgvoSchadensfaelle(ctx context.Context, q DBQueryer, id string) ([]DsgvoSchadensfallZeile, error) {
+func LeseDsgvoSchadensfaelle(ctx context.Context, q Datenbank, id string) ([]DsgvoSchadensfallZeile, error) {
 	return sammle(ctx, q, `
 		SELECT beschreibung, betrag::text, ist_bezahlt, erstellt_am, storniert_am, stornierungsgrund
 		FROM schadensfaelle
@@ -168,7 +168,7 @@ type DsgvoVormerkungZeile struct {
 }
 
 // LeseDsgvoVormerkungen liest die Vormerkungen des Lesers.
-func LeseDsgvoVormerkungen(ctx context.Context, q DBQueryer, id string) ([]DsgvoVormerkungZeile, error) {
+func LeseDsgvoVormerkungen(ctx context.Context, q Datenbank, id string) ([]DsgvoVormerkungZeile, error) {
 	return sammle(ctx, q, `
 		SELECT t.titel, v.status, v.notiz, v.erstellt_am
 		FROM vormerkungen v
@@ -193,7 +193,7 @@ type DsgvoNachbuchZeile struct {
 // LeseDsgvoNachbuchMeldungen liest die Nachbuch-Meldungen, in denen die Person als Ausleiher
 // oder Vorbesitzer steht. Nach der Tilgung findet die Abfrage nichts mehr: Beide
 // Personenspalten sind dann NULL.
-func LeseDsgvoNachbuchMeldungen(ctx context.Context, q DBQueryer, id string) ([]DsgvoNachbuchZeile, error) {
+func LeseDsgvoNachbuchMeldungen(ctx context.Context, q Datenbank, id string) ([]DsgvoNachbuchZeile, error) {
 	return sammle(ctx, q, `
 		SELECT CASE WHEN ausleiher_schueler_id = $1 THEN 'ausleiher' ELSE 'vorbesitzer' END,
 		       barcode, ergebnis, grund, gescannt_am, quittiert_am
@@ -217,7 +217,7 @@ type DsgvoBescheidZeile struct {
 // LeseDsgvoBescheide liest die Schadensersatz-Bescheide des Lesers. Nach der Anonymisierung
 // findet die Abfrage nichts mehr: schueler_id ist dann NULL, der Brief bleibt als Beleg ohne
 // Person.
-func LeseDsgvoBescheide(ctx context.Context, q DBQueryer, id string) ([]DsgvoBescheidZeile, error) {
+func LeseDsgvoBescheide(ctx context.Context, q Datenbank, id string) ([]DsgvoBescheidZeile, error) {
 	return sammle(ctx, q, `
 		SELECT referenznummer, brief_datum, frist_bis, gesamtbetrag::text, status
 		FROM schadensersatz_bescheide
@@ -245,7 +245,7 @@ type DsgvoAuditZeile struct {
 // in details tragen — Ausleihe und Rückgabe (datensatz_id ist dort das Exemplar oder Gerät), die
 // Stornierung einer Forderung, die Spur einer Ausleihe, Forderung oder Vormerkung, deren Titel
 // gelöscht wurde. Den Löscheintrag eines Zugangskontos liest LeseDsgvoFruehereZugangskonten.
-func LeseDsgvoAuditEintraege(ctx context.Context, q DBQueryer, id string) ([]DsgvoAuditZeile, error) {
+func LeseDsgvoAuditEintraege(ctx context.Context, q Datenbank, id string) ([]DsgvoAuditZeile, error) {
 	return sammle(ctx, q, `
 		SELECT al.tabelle, al.aktion, al.akteur, al.timestamp, al.kontext, COALESCE(al.details, 'null'::jsonb),
 		       COALESCE(t.titel, g.modellname, ''), COALESCE(e.barcode_id, g.barcode_id, '')
@@ -270,7 +270,7 @@ type DsgvoVerwaltungZeile struct {
 
 // LeseDsgvoVerwaltungsEintraege liest die Einträge des Verwaltungsprotokolls (audit_logs), die
 // den Leser über details->>'schueler_id' nennen.
-func LeseDsgvoVerwaltungsEintraege(ctx context.Context, q DBQueryer, id string) ([]DsgvoVerwaltungZeile, error) {
+func LeseDsgvoVerwaltungsEintraege(ctx context.Context, q Datenbank, id string) ([]DsgvoVerwaltungZeile, error) {
 	return sammle(ctx, q, `
 		SELECT aktion, zeitstempel, COALESCE(details, '{}'::jsonb)
 		FROM audit_logs
@@ -283,7 +283,7 @@ func LeseDsgvoVerwaltungsEintraege(ctx context.Context, q DBQueryer, id string) 
 
 // SchreibeDsgvoAuskunftProtokoll hält fest, dass die Auskunft erteilt wurde (Rechenschaft).
 // bearbeiterID ist nil, wenn kein angemeldetes Konto sie abgerufen hat.
-func SchreibeDsgvoAuskunftProtokoll(ctx context.Context, q DBQueryer, id string, bearbeiterID *string, akteur string) error {
+func SchreibeDsgvoAuskunftProtokoll(ctx context.Context, q Datenbank, id string, bearbeiterID *string, akteur string) error {
 	_, err := q.Exec(ctx,
 		`INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur)
 		 VALUES ('schueler', 'dsgvo_auskunft', $1::uuid, $2, $3)`,

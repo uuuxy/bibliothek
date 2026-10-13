@@ -378,7 +378,7 @@ var triggerBestand = []string{
 	// Migration 145, befragt am 24.09.2026: Schreibt leser.barcode_id neu, wenn die Nummer
 	// eines AKTIVEN Kontos verschwindet (Akte, Benutzerverwaltung leeren sie). Frage 12: Wer
 	// NULL schreibt, findet danach eine Nummer in der Zeile; „Kollege ohne Nummer" gibt es
-	// nur noch ohne Konto oder mit inaktivem (repository/sequence_pg_test.go,
+	// nur noch ohne Konto oder mit inaktivem (repository/ausweisnummer_pg_test.go,
 	// TestAusweisnummerLeeren).
 	"trg_leser_aktives_konto_behaelt_ausweis @ leser",
 	// Migration 146, befragt am 24.09.2026: Schreibt jede A-Nummer, die eine Leserzeile

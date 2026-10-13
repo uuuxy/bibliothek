@@ -322,7 +322,7 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 // Gezogen wird die Summe aller Stückzahlen, zugeordnet über die Zeilennummer. Eine ISBN,
 // die keinen Titel findet, lässt ihre Nummern ungenutzt: Eine Lücke im Nummernkreis ist
 // harmlos, eine doppelt vergebene Nummer nicht (repository/barcode_vergabe.go).
-func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, q repository.DBQueryer, isbns []string, stueck []int32) error {
+func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, q repository.Datenbank, isbns []string, stueck []int32) error {
 	gesamt := 0
 	for _, n := range stueck {
 		if n > 0 {

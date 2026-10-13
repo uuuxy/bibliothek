@@ -11,7 +11,7 @@ import (
 // LoescheErfuellteVormerkung löscht die Vormerkung des Lesers für den Titel, den er gerade
 // ausgeliehen hat, und liefert das Exemplar, das für ihn bereitlag. Das Ergebnis ist nil, wenn
 // er keine Vormerkung hatte oder noch nichts bereitlag.
-func LoescheErfuellteVormerkung(ctx context.Context, q DBQueryer, titelID, leserID string) (*string, error) {
+func LoescheErfuellteVormerkung(ctx context.Context, q Datenbank, titelID, leserID string) (*string, error) {
 	var bereitgestellt *string
 	err := q.QueryRow(ctx,
 		`DELETE FROM vormerkungen WHERE titel_id = $1 AND schueler_id = $2
@@ -24,7 +24,7 @@ func LoescheErfuellteVormerkung(ctx context.Context, q DBQueryer, titelID, leser
 }
 
 // ExemplarNummer liefert die Nummer auf dem Etikett eines Exemplars.
-func ExemplarNummer(ctx context.Context, q DBQueryer, exemplarID string) (string, error) {
+func ExemplarNummer(ctx context.Context, q Datenbank, exemplarID string) (string, error) {
 	var nummer string
 	err := q.QueryRow(ctx,
 		`SELECT barcode_id FROM buecher_exemplare WHERE id = $1`, exemplarID).Scan(&nummer)
@@ -70,7 +70,7 @@ func SperreNaechsteWartendeVormerkung(ctx context.Context, tx pgx.Tx, titelID st
 // StelleVormerkungBereit teilt der Vormerkung das Exemplar zu: Es liegt bis zum Ende der
 // Abholfrist für den Wartenden im Abholfach. Gibt es die Vormerkung nicht, ist das
 // ErrVormerkungNichtGefunden.
-func StelleVormerkungBereit(ctx context.Context, q DBQueryer, vormerkungID, exemplarID string, abholfrist time.Time) error {
+func StelleVormerkungBereit(ctx context.Context, q Datenbank, vormerkungID, exemplarID string, abholfrist time.Time) error {
 	tag, err := q.Exec(ctx, "UPDATE vormerkungen SET status = 'abholbereit', bereitgestellt_exemplar_id = $1, bereitgestellt_bis = $3 WHERE id = $2", exemplarID, vormerkungID, abholfrist)
 	if err != nil {
 		return err

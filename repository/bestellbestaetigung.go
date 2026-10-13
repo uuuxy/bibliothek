@@ -13,7 +13,7 @@ import (
 //
 // COALESCE, weil die Bestellung ihren gelöschten Lieferanten als Beleg überlebt
 // (lieferant_id NULL): Ohne es scheiterte das Lesen des Wahrheitswerts.
-func BestellungImBestaetigungsweg(ctx context.Context, db DBQueryer, id string) (bool, error) {
+func BestellungImBestaetigungsweg(ctx context.Context, db Datenbank, id string) (bool, error) {
 	var ok bool
 	err := db.QueryRow(ctx, `
 		SELECT b.bestaetigungs_token_hash IS NOT NULL OR coalesce(l.ist_hauptlieferant, false)
@@ -31,7 +31,7 @@ func BestellungImBestaetigungsweg(ctx context.Context, db DBQueryer, id string) 
 // davor ließe zwischen Lesen und Schreiben ein Fenster. Bestellungen werden nie gelöscht;
 // null getroffene Zeilen nach der Prüfung des Aufrufers heißen deshalb immer: schon bestätigt.
 // Eine leere Etikettengröße bleibt NULL, wie die Bedingung der Spalte es verlangt.
-func BestaetigeBestellung(ctx context.Context, db DBQueryer, bestellungID, groesse, format, durch string) (bereits bool, err error) {
+func BestaetigeBestellung(ctx context.Context, db Datenbank, bestellungID, groesse, format, durch string) (bereits bool, err error) {
 	tag, err := db.Exec(ctx, `
 		UPDATE bestellungen_verlauf
 		SET bestaetigt_am = now(), etiketten_groesse = NULLIF($1, ''),
@@ -47,7 +47,7 @@ func BestaetigeBestellung(ctx context.Context, db DBQueryer, bestellungID, groes
 // ErneuereBestaetigungsToken speichert den Hash eines neuen Bestätigungs-Links mit neuer Frist
 // und nennt ihr Ende. Gespeichert ist immer nur der Hash des einen gültigen Links; ein
 // früherer ist damit ungültig.
-func ErneuereBestaetigungsToken(ctx context.Context, db DBQueryer, bestellungID, hash string, tage int) (time.Time, error) {
+func ErneuereBestaetigungsToken(ctx context.Context, db Datenbank, bestellungID, hash string, tage int) (time.Time, error) {
 	var gueltigBis time.Time
 	err := db.QueryRow(ctx, `
 		UPDATE bestellungen_verlauf
@@ -60,7 +60,7 @@ func ErneuereBestaetigungsToken(ctx context.Context, db DBQueryer, bestellungID,
 
 // BestellungZuTokenHash liefert die Bestellung, zu der der Hash eines gültigen
 // Bestätigungs-Links gehört. Unbekannt und abgelaufen sind derselbe Fall: pgx.ErrNoRows.
-func BestellungZuTokenHash(ctx context.Context, db DBQueryer, tokenHash string) (string, error) {
+func BestellungZuTokenHash(ctx context.Context, db Datenbank, tokenHash string) (string, error) {
 	var id string
 	err := db.QueryRow(ctx, `
 		SELECT id FROM bestellungen_verlauf
@@ -86,7 +86,7 @@ type OeffentlicherBestellkopf struct {
 
 // LadeOeffentlichenBestellkopf liest den Kopf einer Bestellung für die Seite hinter dem Link;
 // pgx.ErrNoRows, wenn es die Bestellung nicht gibt.
-func LadeOeffentlichenBestellkopf(ctx context.Context, db DBQueryer, bestellungID string) (OeffentlicherBestellkopf, error) {
+func LadeOeffentlichenBestellkopf(ctx context.Context, db Datenbank, bestellungID string) (OeffentlicherBestellkopf, error) {
 	var k OeffentlicherBestellkopf
 	err := db.QueryRow(ctx, `
 		SELECT b.lieferant_name, b.kundennummer, b.bestelldatum, b.anzahl_exemplare, b.bestaetigt_am,
@@ -108,7 +108,7 @@ type OeffentlichePosition struct {
 }
 
 // ListeOeffentlichePositionen liefert die Positionen einer Bestellung nach Titel geordnet.
-func ListeOeffentlichePositionen(ctx context.Context, db DBQueryer, bestellungID string) ([]OeffentlichePosition, error) {
+func ListeOeffentlichePositionen(ctx context.Context, db Datenbank, bestellungID string) ([]OeffentlichePosition, error) {
 	rows, err := db.Query(ctx, `
 		SELECT titel_name, isbn, menge FROM bestellungen_positionen
 		WHERE bestellung_id = $1 ORDER BY titel_name

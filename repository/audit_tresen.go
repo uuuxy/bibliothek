@@ -2,7 +2,7 @@ package repository
 
 // audit_tresen.go — die Abfragen der Tresen-Auskunft (api/system/audit_tresen_auskunft.go):
 // der eine zweckgebundene Leseweg in audit_log.details (Betreiber-Entscheidung
-// 01.09.2026, Befund-Register). Paketfunktionen über DBQueryer statt Methoden auf
+// 01.09.2026, Befund-Register). Paketfunktionen über Datenbank statt Methoden auf
 // AuditRepository — dieselbe Bauart wie TilgeSchuelerSpuren: Das Interface trägt
 // die Schreibpfade, dieser Leseweg braucht keinen Mock-Zwang für alle Fakes.
 
@@ -42,7 +42,7 @@ type TresenEreignisZeile struct {
 // des Protokolls für Exemplare, deren Zeile es nicht mehr gibt (DISTINCT ON: der
 // jüngste Snapshot benennt den Titel). Ein Barcode kann mehrfach treffen — nach
 // endgültigem Löschen wird die Nummer frei und kann an einem neuen Exemplar kleben.
-func SucheTresenExemplare(ctx context.Context, db DBQueryer, barcode string) ([]TresenExemplarZeile, error) {
+func SucheTresenExemplare(ctx context.Context, db Datenbank, barcode string) ([]TresenExemplarZeile, error) {
 	const q = `
 		SELECT e.id::text, t.titel,
 		       CASE WHEN e.ist_ausgesondert THEN 'ausgesondert' ELSE 'im_bestand' END
@@ -81,7 +81,7 @@ func SucheTresenExemplare(ctx context.Context, db DBQueryer, barcode string) ([]
 // die Personen zu Klarnamen auf. LEFT JOIN, nicht JOIN: Ein getilgter Bezug oder
 // eine gelöschte Person darf den Vorgang nicht verschlucken. limit kappt die Liste
 // (unbegrenzte Listen-Endpunkte sind eine bekannte Bugklasse dieses Projekts).
-func SucheTresenEreignisse(ctx context.Context, db DBQueryer, exemplarIDs []string, limit int) ([]TresenEreignisZeile, error) {
+func SucheTresenEreignisse(ctx context.Context, db Datenbank, exemplarIDs []string, limit int) ([]TresenEreignisZeile, error) {
 	const q = `
 		SELECT l.timestamp, l.aktion,
 		       COALESCE(TRIM(sch.vorname || ' ' || sch.nachname), ''),

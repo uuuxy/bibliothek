@@ -86,7 +86,7 @@ type BestellVerlaufEintrag struct {
 
 // LadeBestellVerlauf lädt alle Bestellköpfe (neueste zuerst) und einen Index
 // Bestell-ID → Position im Slice für das spätere Zuordnen der Positionen.
-func LadeBestellVerlauf(ctx context.Context, db DBQueryer, limit int, mittel string) ([]BestellVerlaufEintrag, map[string]int, error) {
+func LadeBestellVerlauf(ctx context.Context, db Datenbank, limit int, mittel string) ([]BestellVerlaufEintrag, map[string]int, error) {
 	// Kein JOIN auf lieferanten mehr nötig: Beide Bestätigungs-Angaben stehen an der
 	// Bestellung selbst. Das ist auch der Grund, warum eine Bestellung ihren gelöschten
 	// Lieferanten als vollständiger Beleg überlebt (lieferant_id ON DELETE SET NULL).
@@ -140,7 +140,7 @@ func LadeBestellVerlauf(ctx context.Context, db DBQueryer, limit int, mittel str
 
 // LadeBestellVerlaufPositionen lädt alle Positionen in einer Query und ordnet sie den
 // Bestellungen über orderIndex zu (Gesamtpreis wird pro Position berechnet).
-func LadeBestellVerlaufPositionen(ctx context.Context, db DBQueryer, orders []BestellVerlaufEintrag, orderIndex map[string]int) error {
+func LadeBestellVerlaufPositionen(ctx context.Context, db Datenbank, orders []BestellVerlaufEintrag, orderIndex map[string]int) error {
 	// EtikettOffenBedingung ist dieselbe Definition, die auch die Nachdruck-Liste und
 	// ihr Zähler verwenden (api/druck/etiketten_offen.go). Wäre sie hier abgeschrieben, zeigte der
 	// Verweis irgendwann eine andere Zahl als die Liste, die er öffnet.

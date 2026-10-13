@@ -31,7 +31,7 @@ import (
 // AbgangSeit ist der Ausdruck für „seit wann ist der weg": der Abgangsstempel, und für
 // Altzeilen ohne Stempel ersatzweise die letzte Änderung. EINE Formulierung für die
 // Löschuhr (PredikatAnonymisierung) und den Wächter „Ehemalige mit offenen Vorgängen"
-// (BetriebszustandRepository) — bis zum 12.09.2026 verlangte der Wächter
+// (BetriebszustandAbfragen) — bis zum 12.09.2026 verlangte der Wächter
 // `abgaenger_seit IS NOT NULL` und sah die Altzeilen deshalb nie, obwohl gerade ihr Name
 // auf Dauer stehen bleibt (#593).
 //

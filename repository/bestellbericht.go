@@ -31,7 +31,7 @@ type BerichtPosition struct {
 
 // LadeBerichtBestellungen liest die Bestellungen im Zeitraum (optional je Lieferant) und
 // liefert zusätzlich einen Index ID→Position für das Nachladen der Positionen.
-func LadeBerichtBestellungen(ctx context.Context, db DBQueryer, von, bisExklusiv time.Time, lieferantID, mittel string) ([]BerichtBestellung, map[string]int, error) {
+func LadeBerichtBestellungen(ctx context.Context, db Datenbank, von, bisExklusiv time.Time, lieferantID, mittel string) ([]BerichtBestellung, map[string]int, error) {
 	orderQuery := `
 		SELECT id, lieferant_name, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare,
 		       coalesce(mittel, '')
@@ -75,7 +75,7 @@ func LadeBerichtBestellungen(ctx context.Context, db DBQueryer, von, bisExklusiv
 
 // LadeBerichtPositionen lädt die Positionen aller Bestellungen nach und hängt sie
 // den passenden Orders an.
-func LadeBerichtPositionen(ctx context.Context, db DBQueryer, orders []BerichtBestellung, orderIndex map[string]int) error {
+func LadeBerichtPositionen(ctx context.Context, db Datenbank, orders []BerichtBestellung, orderIndex map[string]int) error {
 	if len(orders) == 0 {
 		return nil
 	}

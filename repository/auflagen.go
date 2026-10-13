@@ -70,7 +70,7 @@ type auflagenKopf struct {
 
 // AuflagenDesTitels liefert alle Auflagen des Buchs, zu dem titelID gehört, die neueste
 // zuerst — ohne Werk nur den Titel selbst. Unbekannte Titel melden ErrTitelNichtGefunden.
-func AuflagenDesTitels(ctx context.Context, q DBQueryer, titelID string) ([]Auflage, error) {
+func AuflagenDesTitels(ctx context.Context, q Datenbank, titelID string) ([]Auflage, error) {
 	rows, err := q.Query(ctx, `
 		SELECT b.id, b.titel, coalesce(b.auflage, ''), coalesce(b.isbn, ''), coalesce(b.verlag, ''),
 		       coalesce(b.erscheinungsjahr, 0), b.ist_lernmittel,
@@ -110,7 +110,7 @@ func AuflagenDesTitels(ctx context.Context, q DBQueryer, titelID string) ([]Aufl
 //
 // q ist der Pool oder eine laufende Transaktion; die Funktion öffnet ihre eigene (auf einer
 // Transaktion ist das ein Savepoint).
-func FasseAuflagenZusammen(ctx context.Context, q DBQueryer, titelID, andereID string) ([]Auflage, error) {
+func FasseAuflagenZusammen(ctx context.Context, q Datenbank, titelID, andereID string) ([]Auflage, error) {
 	// Eine Kennung kann in Großbuchstaben ankommen (kennung.IstUUID nimmt A-F an); Postgres
 	// sieht darin denselben Titel, der Vergleich hier und die Schlüssel unten müssen es auch.
 	titelID, andereID = strings.ToLower(titelID), strings.ToLower(andereID)
@@ -175,7 +175,7 @@ func verbindeWerke(ctx context.Context, tx pgx.Tx, ziel, quelle auflagenKopf) er
 // nur ihn selbst. Bleibt am Werk höchstens ein Titel übrig, wird auch der gelöst und das
 // Werk gelöscht: Ein Buch mit einer Auflage ist keine Gruppe. Ein Titel ohne Werk bleibt,
 // wie er ist; lösen lässt sich auch ein Titel, der inzwischen kein Lernmittel mehr ist.
-func LoeseAuflage(ctx context.Context, q DBQueryer, titelID string) ([]Auflage, error) {
+func LoeseAuflage(ctx context.Context, q Datenbank, titelID string) ([]Auflage, error) {
 	titelID = strings.ToLower(titelID)
 	tx, err := q.Begin(ctx)
 	if err != nil {

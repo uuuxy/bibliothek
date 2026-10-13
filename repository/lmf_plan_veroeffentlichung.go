@@ -142,7 +142,7 @@ func (r *LmfTerminRepository) KlassenNurRueckgabe(ctx context.Context, namen []s
 // Handlers, im Test der Pool). Die Teile (Zeilen, freie Tage, Auslassungen) liest sie
 // weiter am Pool: Sie wurden in dieser Transaktion nicht geschrieben, es gibt nichts
 // zurückzulesen.
-func (r *LmfTerminRepository) VeroeffentlicheLmfPlanIn(ctx context.Context, ex DBQueryer, id string, jetzt time.Time) (LmfPlanStand, error) {
+func (r *LmfTerminRepository) VeroeffentlicheLmfPlanIn(ctx context.Context, ex Datenbank, id string, jetzt time.Time) (LmfPlanStand, error) {
 	var st LmfPlanStand
 	err := scanLmfPlan(ex.QueryRow(ctx, `
 		UPDATE lmf_plaene SET veroeffentlicht_am = COALESCE(veroeffentlicht_am, $2)

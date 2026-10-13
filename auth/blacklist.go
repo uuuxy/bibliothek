@@ -11,7 +11,7 @@ import (
 )
 
 // DatabasePool ist der Zugang zur Datenbank, den auth/ an die Abfragen in repository/ reicht.
-type DatabasePool = repository.DBQueryer
+type DatabasePool = repository.Datenbank
 
 // TokenBlacklist is a database-backed store for invalidated JWTs.
 // It stores the SHA-256 hash of the token mapped to its expiration time.

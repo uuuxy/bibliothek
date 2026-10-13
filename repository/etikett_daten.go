@@ -22,7 +22,7 @@ type EtikettDaten struct {
 // EtikettDatenDerBestellung liefert die Exemplare einer Bestellung, beschränkt auf die
 // Positionen mit Vorab-Barcode: Die übrigen beklebt die Bibliothek selbst. Das Jahr steht auf
 // der Vorlage der Schule als „Ansch.J." unter dem Titel.
-func EtikettDatenDerBestellung(ctx context.Context, db DBQueryer, bestellungID string) ([]EtikettDaten, error) {
+func EtikettDatenDerBestellung(ctx context.Context, db Datenbank, bestellungID string) ([]EtikettDaten, error) {
 	rows, err := db.Query(ctx, `
 		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.signatur, ''),
 		       to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'),
@@ -54,7 +54,7 @@ func EtikettDatenDerBestellung(ctx context.Context, db DBQueryer, bestellungID s
 }
 
 // EtikettDatenDesTitels liefert die Exemplare eines Titels, die nicht ausgesondert sind.
-func EtikettDatenDesTitels(ctx context.Context, db DBQueryer, titelID string) ([]EtikettDaten, error) {
+func EtikettDatenDesTitels(ctx context.Context, db Datenbank, titelID string) ([]EtikettDaten, error) {
 	// Das Jahr ist das des Zugangs (zugang_am, Migration 129) — im Bestellweg ist erworben_am
 	// der Bestelltag, und ein im Dezember bestelltes Buch käme sonst mit dem alten Jahr aufs
 	// Etikett und mit dem neuen ins Zugangsbuch. Der Rückfall auf erworben_am (NOT NULL,
@@ -105,7 +105,7 @@ type EtikettServerfelder struct {
 // EtikettServerfelderZuBarcodes liefert Jahr, Signatur und Topf je bekanntem Barcode in einer
 // Abfrage. Ein unbekannter Barcode fehlt in der Karte: Beim Vorab-Druck gibt es das Exemplar
 // noch nicht. Bricht das Lesen der Zeilen ab, trägt der Fehler ErrZeileUnlesbar.
-func EtikettServerfelderZuBarcodes(ctx context.Context, db DBQueryer, barcodes []string) (map[string]EtikettServerfelder, error) {
+func EtikettServerfelderZuBarcodes(ctx context.Context, db Datenbank, barcodes []string) (map[string]EtikettServerfelder, error) {
 	rows, err := db.Query(ctx, `
 		SELECT e.barcode_id, to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'), coalesce(t.signatur, ''),
 		       `+ExemplarTopfSQL+`

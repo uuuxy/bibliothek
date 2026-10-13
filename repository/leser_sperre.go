@@ -42,7 +42,7 @@ type LeserNachSperre struct {
 // SetzeSperreVonHand setzt die Sperre von Hand samt Grund oder nimmt beide Sperren und den
 // Grund weg; chk_schueler_block_reason verlangt den Grund nur, solange eine Sperre besteht.
 // Die Klasse kommt als leerer Text, wenn der Leser keine hat (ein Kollege).
-func SetzeSperreVonHand(ctx context.Context, db DBQueryer, id string, sperren bool, grund string) (LeserNachSperre, error) {
+func SetzeSperreVonHand(ctx context.Context, db Datenbank, id string, sperren bool, grund string) (LeserNachSperre, error) {
 	var l LeserNachSperre
 	err := db.QueryRow(ctx, `
 		UPDATE leser

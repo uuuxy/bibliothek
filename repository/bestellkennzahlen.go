@@ -16,7 +16,7 @@ type BestellKennzahlen struct {
 // Der Token entsteht beim Bestellen, wenn der Lieferant den Bestelllink trägt, und bleibt.
 // Am Merkmal gezählt, fielen die offenen Bestellungen aus der Zahl, sobald der Bestelllink an
 // einen anderen Händler geht, obwohl weiter auf ihre Bestätigung gewartet wird.
-func LadeBestellKennzahlen(ctx context.Context, db DBQueryer) (BestellKennzahlen, error) {
+func LadeBestellKennzahlen(ctx context.Context, db Datenbank) (BestellKennzahlen, error) {
 	var k BestellKennzahlen
 	err := db.QueryRow(ctx, `
 			SELECT count(*), coalesce(sum(b.gesamtbetrag), 0), coalesce(sum(b.anzahl_exemplare), 0),
@@ -40,7 +40,7 @@ type BestellTopfKennzahlen struct {
 // LadeBestellKennzahlenJeTopf liefert die Summen je Topf, nach dem Wert der Spalte mittel. Eine
 // eigene Abfrage neben LadeBestellKennzahlen: Die Summen über alles sollen nicht davon
 // abhängen, dass die Gruppierung gelingt.
-func LadeBestellKennzahlenJeTopf(ctx context.Context, db DBQueryer) (map[string]BestellTopfKennzahlen, error) {
+func LadeBestellKennzahlenJeTopf(ctx context.Context, db Datenbank) (map[string]BestellTopfKennzahlen, error) {
 	rows, err := db.Query(ctx, `
 		SELECT coalesce(mittel, ''), count(*), coalesce(sum(gesamtbetrag), 0),
 		       coalesce(sum(anzahl_exemplare), 0)

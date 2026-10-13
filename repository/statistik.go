@@ -71,7 +71,7 @@ func BestandsFilterBedingung(typ string) (fragment string, normalized string) {
 
 // LadeBestandKennzahlen liefert Verlust-, Finanz- und Zirkulationszahlen in
 // einem einzigen aggregierten Statement.
-func LadeBestandKennzahlen(ctx context.Context, db DBQueryer, typeFilter string) (*BestandKennzahlen, error) {
+func LadeBestandKennzahlen(ctx context.Context, db Datenbank, typeFilter string) (*BestandKennzahlen, error) {
 	// Als "Verlust" zählen ausschliesslich unfreiwillige Abgänge: VERLUST (nicht
 	// auffindbar) und BESCHAEDIGUNG (Schadensfall). Bewusst NICHT enthalten sind
 	// AUSSORTIERT (veraltet/verschlissen, kuratierte Entfernung) und BESTANDSKORREKTUR
@@ -151,7 +151,7 @@ func schuljahresBeginn(t time.Time) time.Time {
 
 // ListeRenner liefert die meistausgeliehenen Titel (best-effort: bei einem
 // Query- oder Iterationsfehler wird eine leere Liste statt eines Fehlers geliefert).
-func ListeRenner(ctx context.Context, db DBQueryer, ausleihenFilter, typeFilter string, limit int) []PopularTitle {
+func ListeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typeFilter string, limit int) []PopularTitle {
 	popularTitles := []PopularTitle{}
 	q := fmt.Sprintf(`
 		SELECT t.id, t.titel, coalesce(t.autor, ''), coalesce(t.cover_url, ''),
@@ -194,7 +194,7 @@ func ListeRenner(ctx context.Context, db DBQueryer, ausleihenFilter, typeFilter 
 // Bestandsalter-Filter (MIN(e.erstellt_am)) verhindert, dass frisch gekaufte Neuzugänge
 // — nie ausgeliehen, weil brandneu — sofort auf der Aussonderungsliste landen und
 // versehentlich entsorgt werden. Best-effort mit leerer Liste bei Fehlern.
-func ListeLadenhueter(ctx context.Context, db DBQueryer, typeFilter string, limit int) []ShelfWarmer {
+func ListeLadenhueter(ctx context.Context, db Datenbank, typeFilter string, limit int) []ShelfWarmer {
 	shelfWarmers := []ShelfWarmer{}
 	// t.id mitliefern: Es wird ohnehin danach gruppiert (eine Zeile je Titel), war aber
 	// nicht Teil der Projektion — dem Client fehlte damit der eindeutige Schlüssel.
@@ -252,7 +252,7 @@ type MonatsTrendPunkt struct {
 // nach rueckgabe_am — dieselbe Ausleihe kann also in unterschiedlichen Monaten in beide
 // Serien fallen. Best-effort mit leerer Liste bei Fehlern (wie die übrigen Sektionen);
 // der typeFilter (LMF/Freihand) bindet an t.titel. Bewusst anonym: keine Schülerdaten.
-func LadeMonatsTrend(ctx context.Context, db DBQueryer, typeFilter string) []MonatsTrendPunkt {
+func LadeMonatsTrend(ctx context.Context, db Datenbank, typeFilter string) []MonatsTrendPunkt {
 	trend := []MonatsTrendPunkt{}
 	q := fmt.Sprintf(`
 		WITH monate AS (

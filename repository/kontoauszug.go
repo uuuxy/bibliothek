@@ -17,7 +17,7 @@ type KontoauszugBuch struct {
 
 // ListeKontoauszugBuecher lädt die offenen Ausleihen eines Schülers, die früheste Frist
 // zuerst. Eine unlesbare Zeile wird übersprungen.
-func ListeKontoauszugBuecher(ctx context.Context, db DBQueryer, schuelerID uuid.UUID) ([]KontoauszugBuch, error) {
+func ListeKontoauszugBuecher(ctx context.Context, db Datenbank, schuelerID uuid.UUID) ([]KontoauszugBuch, error) {
 	query := `
 		SELECT t.titel, e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist
 		FROM ausleihen a
@@ -55,7 +55,7 @@ type KontoauszugKopf struct {
 
 // LadeKontoauszugKopf liest Name und Klasse eines Schülers, der nicht im Papierkorb liegt;
 // pgx.ErrNoRows sonst.
-func LadeKontoauszugKopf(ctx context.Context, db DBQueryer, schuelerID uuid.UUID) (KontoauszugKopf, error) {
+func LadeKontoauszugKopf(ctx context.Context, db Datenbank, schuelerID uuid.UUID) (KontoauszugKopf, error) {
 	var k KontoauszugKopf
 	err := db.QueryRow(ctx, `
 			SELECT vorname, nachname, klasse

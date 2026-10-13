@@ -27,7 +27,7 @@ func TestAktiveAdminMails_NurAktiveAdmins(t *testing.T) {
 		}
 	}
 
-	admins, err := NewBetriebszustandRepository(pool).AktiveAdmins(ctx)
+	admins, err := NewBetriebszustandAbfragen(pool).AktiveAdmins(ctx)
 	if err != nil {
 		t.Fatalf("AktiveAdmins: %v", err)
 	}

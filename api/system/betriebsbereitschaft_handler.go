@@ -35,7 +35,7 @@ func (s *Tueren) sammleLage(
 	ctx context.Context,
 	settingsRepo repository.SystemSettingsRepository,
 	mailRepo *repository.MailSettingsRepository,
-	zustandRepo *repository.BetriebszustandRepository,
+	zustandRepo *repository.BetriebszustandAbfragen,
 ) bereitschaft.Lage {
 	lage := bereitschaft.Lage{
 		AppEnv:             strings.ToLower(os.Getenv("APP_ENV")),
@@ -120,7 +120,7 @@ func einstellungenInDieLage(lage *bereitschaft.Lage, settings *repository.System
 // rechteKlassenUndAdminsInDieLage liest Rechte, Klassen-Zuordnungen und Admin-Konten. Bei
 // einem Lesefehler bleibt die jeweilige Liste nil: Die Prüfung meldet dann „nicht lesbar"
 // oder „nicht erhoben" statt eines falschen „alles gut".
-func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandRepository, lage *bereitschaft.Lage) {
+func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandAbfragen, lage *bereitschaft.Lage) {
 	if rechte, err := zustandRepo.LadeRollenRechte(ctx); err == nil {
 		lage.RechteLive = rechte
 	}
@@ -139,7 +139,7 @@ func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandRepo *repositor
 
 // sicherungUndFerienInDieLage trägt den Stand der Backups, die Reichweite der Ferientabelle
 // und das Ergebnis der Restore-Probe ein.
-func sicherungUndFerienInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandRepository, lage *bereitschaft.Lage) {
+func sicherungUndFerienInDieLage(ctx context.Context, zustandRepo *repository.BetriebszustandAbfragen, lage *bereitschaft.Lage) {
 	// Backup-Zustand aus derselben Quelle wie das Dashboard-Badge (backup_status.go).
 	encKey := os.Getenv("BACKUP_ENCRYPTION_KEY")
 	lage.BackupKeySet = encKey != ""
@@ -178,7 +178,7 @@ func sicherungUndFerienInDieLage(ctx context.Context, zustandRepo *repository.Be
 func (s *Tueren) BetriebsbereitschaftHandler(
 	settingsRepo repository.SystemSettingsRepository,
 	mailRepo *repository.MailSettingsRepository,
-	zustandRepo *repository.BetriebszustandRepository,
+	zustandRepo *repository.BetriebszustandAbfragen,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		befunde := bereitschaft.Pruefe(s.sammleLage(r.Context(), settingsRepo, mailRepo, zustandRepo))

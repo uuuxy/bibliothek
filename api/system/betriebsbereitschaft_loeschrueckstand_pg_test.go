@@ -26,7 +26,7 @@ func TestLoeschRueckstandErreichtDieSelbstpruefung(t *testing.T) {
 
 	settingsRepo := repository.NewSystemSettingsRepository(pool)
 	mailRepo := repository.NewMailSettingsRepository(pool)
-	zustandRepo := repository.NewBetriebszustandRepository(pool)
+	zustandRepo := repository.NewBetriebszustandAbfragen(pool)
 
 	dsgvoBefund := func() bereitschaft.Befund {
 		t.Helper()

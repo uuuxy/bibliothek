@@ -292,7 +292,7 @@ func schreibeKlassen(ctx context.Context, tx pgx.Tx, sql, elternID string, klass
 
 // DeleteLmfPlanIn entfernt einen Plan samt Zeilen und Auslassungen (CASCADE) — auf einem
 // Executor des Aufrufers (Transaktion des Handlers, im Test der Pool).
-func (r *LmfTerminRepository) DeleteLmfPlanIn(ctx context.Context, ex DBQueryer, id string) (bool, error) {
+func (r *LmfTerminRepository) DeleteLmfPlanIn(ctx context.Context, ex Datenbank, id string) (bool, error) {
 	tag, err := ex.Exec(ctx, `DELETE FROM lmf_plaene WHERE id = $1`, id)
 	if err != nil {
 		return false, err

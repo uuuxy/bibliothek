@@ -42,7 +42,7 @@ type AuflagenMischung struct {
 // an schuelerID — oder nil, wenn es keinen gibt: Der Titel gehört zu keinem Werk, der Leser
 // ist kein Schüler oder hat keine Klasse, oder in der Klasse hat niemand eine andere Auflage.
 // Die Ausleihe selbst zählt nicht mit (sie ist diese Auflage).
-func AuflagenMischungInKlasse(ctx context.Context, q DBQueryer, titelID, schuelerID string) (*AuflagenMischung, error) {
+func AuflagenMischungInKlasse(ctx context.Context, q Datenbank, titelID, schuelerID string) (*AuflagenMischung, error) {
 	var m AuflagenMischung
 	var werkID *string
 	err := q.QueryRow(ctx, `

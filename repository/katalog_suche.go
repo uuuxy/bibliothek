@@ -45,7 +45,7 @@ func KollegiumSichtbar(titelAlias string) string {
 // LIKE-Jokern für die Teilstring-Vergleiche. Ein nacktes „%" träfe sonst den ganzen Bestand.
 // Beide Male in der Form, in der Titeltexte und Schlagworte gespeichert sind
 // (TiteltextNormalform).
-func SucheImKatalog(ctx context.Context, q DBQueryer, s KatalogSuche) ([]KatalogTreffer, int, error) {
+func SucheImKatalog(ctx context.Context, q Datenbank, s KatalogSuche) ([]KatalogTreffer, int, error) {
 	s.Suchtext = TiteltextNormalform(s.Suchtext)
 	if s.Suchtext == "" && s.SchlagwortID == "" {
 		return []KatalogTreffer{}, 0, nil
@@ -116,7 +116,7 @@ func maskiereLikeJoker(s string) string {
 //
 // Die Abfrage geht vom Wort zu seinen Titeln, nicht umgekehrt: Eine Bedingung je Wort über
 // alle Titel lief an 13.000 Titeln und 20 Filterwörtern 353 ms, diese Form 4 ms.
-func SchlagwortFilterImKatalog(ctx context.Context, q DBQueryer, sichtbar string) ([]SchlagwortFilter, error) {
+func SchlagwortFilterImKatalog(ctx context.Context, q Datenbank, sichtbar string) ([]SchlagwortFilter, error) {
 	rows, err := q.Query(ctx, `
 		SELECT f.id::text, f.wort
 		FROM schlagworte f

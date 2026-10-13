@@ -114,7 +114,7 @@ func (a LeserAenderung) anweisung(id string) (string, []any) {
 // gibt. Geschrieben wird die Tabelle leser, nicht die Sicht schueler: In der Sicht steht ein
 // Kollege nicht, die Änderung träfe ihn nie. Nennt die Änderung kein Feld, setzt die
 // Anweisung nur den Zeitpunkt der Änderung.
-func AendereLeser(ctx context.Context, db DBQueryer, id string, a LeserAenderung) (bool, error) {
+func AendereLeser(ctx context.Context, db Datenbank, id string, a LeserAenderung) (bool, error) {
 	query, args := a.anweisung(id)
 	tag, err := db.Exec(ctx, query, args...)
 	if err != nil {

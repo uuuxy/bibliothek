@@ -173,7 +173,7 @@ const SchulbuchFristGehtMitSQL = `s.deleted_at IS NULL AND s.anonymized_at IS NU
 //
 // Arbeitet auf einem Executor des Aufrufers — die Plan-Handler koppeln die Fristen in
 // DERSELBEN Transaktion wie den Plan.
-func (r *LmfTerminRepository) SetzeLernmittelFristFuerKlassenIn(ctx context.Context, ex DBQueryer, klassen []string, frist time.Time, von, bis time.Time, nurWennFristAm *time.Time) (int64, error) {
+func (r *LmfTerminRepository) SetzeLernmittelFristFuerKlassenIn(ctx context.Context, ex Datenbank, klassen []string, frist time.Time, von, bis time.Time, nurWennFristAm *time.Time) (int64, error) {
 	if len(klassen) == 0 {
 		return 0, nil
 	}

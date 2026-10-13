@@ -28,7 +28,7 @@ type SchadensfallBrief struct {
 
 // LadeSchadensfallBrief lädt den Fall für den Elternbrief und sagt dazu, ob die Forderung
 // schon auf einem Schadensersatz-Bescheid steht. pgx.ErrNoRows, wenn es den Fall nicht gibt.
-func LadeSchadensfallBrief(ctx context.Context, db DBQueryer, id string) (SchadensfallBrief, bool, error) {
+func LadeSchadensfallBrief(ctx context.Context, db Datenbank, id string) (SchadensfallBrief, bool, error) {
 	var f SchadensfallBrief
 	var aufBescheid bool
 
@@ -66,7 +66,7 @@ func LadeSchadensfallBrief(ctx context.Context, db DBQueryer, id string) (Schade
 }
 
 // MerkeElternbriefErzeugt vermerkt am Schadensfall, dass der Elternbrief erzeugt wurde.
-func MerkeElternbriefErzeugt(ctx context.Context, db DBQueryer, id string) error {
+func MerkeElternbriefErzeugt(ctx context.Context, db Datenbank, id string) error {
 	updateQuery := `
 		UPDATE schadensfaelle
 		SET elternbrief_generiert = true,
@@ -114,7 +114,7 @@ type RechnungsPosition struct {
 //
 // Eine unlesbare Zeile bricht ab: Eine Rechnung, der still eine Position fehlt, nennt einen zu
 // kleinen Betrag. Lieber gar kein Brief als ein falscher.
-func ListeOffeneForderungenOhneBescheid(ctx context.Context, db DBQueryer, schuelerID uuid.UUID) ([]RechnungsPosition, error) {
+func ListeOffeneForderungenOhneBescheid(ctx context.Context, db Datenbank, schuelerID uuid.UUID) ([]RechnungsPosition, error) {
 	query := `
 		SELECT COALESCE(t.titel, g.modellname, sf.beschreibung),
 		       COALESCE(e.barcode_id, g.barcode_id, ''),
@@ -156,7 +156,7 @@ func ListeOffeneForderungenOhneBescheid(ctx context.Context, db DBQueryer, schue
 
 // HatOffeneForderungAufBescheid sagt, ob eine unbezahlte Forderung des Lesers auf einem
 // Schadensersatz-Bescheid steht.
-func HatOffeneForderungAufBescheid(ctx context.Context, db DBQueryer, schuelerID uuid.UUID) (bool, error) {
+func HatOffeneForderungAufBescheid(ctx context.Context, db Datenbank, schuelerID uuid.UUID) (bool, error) {
 	var aufBescheid bool
 	err := db.QueryRow(ctx, `
 			SELECT EXISTS (SELECT 1 FROM schadensfaelle
@@ -177,7 +177,7 @@ type BriefAnschrift struct {
 
 // LadeBriefAnschrift liest Name und Anschrift eines Schülers, der nicht im Papierkorb liegt;
 // pgx.ErrNoRows sonst. Leere Anschriftfelder kommen als leerer Text.
-func LadeBriefAnschrift(ctx context.Context, db DBQueryer, schuelerID uuid.UUID) (BriefAnschrift, error) {
+func LadeBriefAnschrift(ctx context.Context, db Datenbank, schuelerID uuid.UUID) (BriefAnschrift, error) {
 	var a BriefAnschrift
 	err := db.QueryRow(ctx, `
 		SELECT vorname, nachname,

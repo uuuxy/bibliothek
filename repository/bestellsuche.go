@@ -24,7 +24,7 @@ type BestellsucheTreffer struct {
 // Titel, Autor oder ISBN und liefert höchstens 50 Treffer, den besten zuerst. Anders als die
 // Suche der Theke nennt sie auch einen Titel ohne Exemplar: Der lässt sich bestellen. Der
 // Suchtext geht in die Form, in der Titeltexte gespeichert sind (TiteltextNormalform).
-func SucheTitelZumBestellen(ctx context.Context, db DBQueryer, suchtext string) ([]BestellsucheTreffer, error) {
+func SucheTitelZumBestellen(ctx context.Context, db Datenbank, suchtext string) ([]BestellsucheTreffer, error) {
 	rows, err := db.Query(ctx, `
 		WITH matched_titels AS (
 			SELECT t.id, t.titel, t.autor, t.isbn, t.verlag, t.cover_url, t.signatur, t.ist_lernmittel, t.search_vector
@@ -73,7 +73,7 @@ func SucheTitelZumBestellen(ctx context.Context, db DBQueryer, suchtext string) 
 // ISBNsImKatalog liefert von den genannten ISBNs die, die ein Titel trägt. Beide Seiten stehen
 // in der Normalform: Der Aufrufer reicht sie so (isbnutil.Normalform), die Spalte geht durch
 // isbn_normalform, weil eine Altzeile ihre ISBN noch in anderer Schreibweise tragen kann.
-func ISBNsImKatalog(ctx context.Context, db DBQueryer, isbns []string) (map[string]struct{}, error) {
+func ISBNsImKatalog(ctx context.Context, db Datenbank, isbns []string) (map[string]struct{}, error) {
 	vorhanden := make(map[string]struct{})
 	if len(isbns) == 0 {
 		return vorhanden, nil

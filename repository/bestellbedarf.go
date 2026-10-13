@@ -66,7 +66,7 @@ type ReorderAuflage struct {
 // und gezeigt wird die neueste Auflage (SQLNeuesteAuflageZuerst) — die wird
 // bestellt. Ein Titel ohne Werk ist über COALESCE(werk_id, id) sein eigenes Buch; für ihn
 // ändert sich nichts. Der Filter nach Topf (typeFilter) gilt je Auflage, bevor gezählt wird.
-func ListeBestellbedarf(ctx context.Context, db DBQueryer, typeFilter string, schwelle int) ([]ReorderTitle, error) {
+func ListeBestellbedarf(ctx context.Context, db Datenbank, typeFilter string, schwelle int) ([]ReorderTitle, error) {
 	neueste := SQLNeuesteAuflageZuerst("t")
 	// Ein LATERAL je Titel liefert beide Bestandszahlen in einem Durchgang; danach wird je
 	// Buch summiert, und DISTINCT ON wählt die neueste Auflage je Buch in einem Durchgang.

@@ -10,7 +10,7 @@ import (
 // zeigt sie so an.
 func TestZaehleLoeschRueckstand_EineZeileJeRoutineInFesterReihenfolge(t *testing.T) {
 	pool := pgTestPool(t)
-	stand, err := NewBetriebszustandRepository(pool).ZaehleLoeschRueckstand(context.Background())
+	stand, err := NewBetriebszustandAbfragen(pool).ZaehleLoeschRueckstand(context.Background())
 	if err != nil {
 		t.Fatalf("ZaehleLoeschRueckstand: %v", err)
 	}

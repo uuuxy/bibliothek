@@ -13,7 +13,7 @@ type AbholbereitesBuch struct {
 
 // AbholbereiteBuecher liefert die Bücher, die für den Leser im Abholfach liegen, höchstens fünf
 // und das mit der kürzesten Abholfrist zuerst: Der Hinweis an der Theke nennt sie einzeln.
-func AbholbereiteBuecher(ctx context.Context, q DBQueryer, leserID string) ([]AbholbereitesBuch, error) {
+func AbholbereiteBuecher(ctx context.Context, q Datenbank, leserID string) ([]AbholbereitesBuch, error) {
 	rows, err := q.Query(ctx, `
 		SELECT t.titel, v.bereitgestellt_bis
 		FROM vormerkungen v

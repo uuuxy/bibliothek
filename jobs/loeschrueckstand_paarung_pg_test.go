@@ -46,7 +46,7 @@ func TestLoeschRueckstand_WaechterUndJobStellenDieselbeFrage(t *testing.T) {
 
 	legeUeberfaelligeDatenAn(ctx, t, pool)
 
-	zustand := repository.NewBetriebszustandRepository(pool)
+	zustand := repository.NewBetriebszustandAbfragen(pool)
 	vorher := rueckstandAlsMap(ctx, t, zustand)
 
 	// Richtung 1: Sieht der Wächter überhaupt etwas? Ein Wächter, der nie ausschlägt,
@@ -106,14 +106,14 @@ func TestLoeschRueckstand_KulanzDecktDieLetzteNacht(t *testing.T) {
 		t.Fatalf("Anliegen: %v", err)
 	}
 
-	if n := rueckstandAlsMap(ctx, t, repository.NewBetriebszustandRepository(pool))["Erledigte Anliegen"]; n != 0 {
+	if n := rueckstandAlsMap(ctx, t, repository.NewBetriebszustandAbfragen(pool))["Erledigte Anliegen"]; n != 0 {
 		t.Errorf("gerade fällig gewordenes Anliegen wird schon angemahnt (%d) — die Kulanz greift nicht", n)
 	}
 }
 
 // rueckstandAlsMap liest den Wächter und wirft abgeschaltete Fristen heraus (die sind
 // eine Entscheidung der Schule, kein Rückstand).
-func rueckstandAlsMap(ctx context.Context, t *testing.T, r *repository.BetriebszustandRepository) map[string]int {
+func rueckstandAlsMap(ctx context.Context, t *testing.T, r *repository.BetriebszustandAbfragen) map[string]int {
 	t.Helper()
 	stand, err := r.ZaehleLoeschRueckstand(ctx)
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 // RechtDerRolle sagt, ob role_permissions der Rolle das Recht erteilt. Ohne Zeile gilt es als
 // nicht erteilt. Ein Fehler der Datenbank kommt als Fehler zurück: Der Aufrufer muss ihn von
 // einem fehlenden Recht unterscheiden können, sonst würde aus einem Aussetzer ein Verbot.
-func RechtDerRolle(ctx context.Context, db DBQueryer, rolle, recht string) (bool, error) {
+func RechtDerRolle(ctx context.Context, db Datenbank, rolle, recht string) (bool, error) {
 	var allowed bool
 	query := `
 		SELECT allowed
@@ -29,7 +29,7 @@ func RechtDerRolle(ctx context.Context, db DBQueryer, rolle, recht string) (bool
 
 // ErlaubteRechteJeRolle liefert je Rolle, klein geschrieben, die Rechte, die role_permissions
 // erteilt: dieselbe Tabelle, aus der Anmeldung und Rechteprüfung lesen.
-func ErlaubteRechteJeRolle(ctx context.Context, db DBQueryer) (map[string][]string, error) {
+func ErlaubteRechteJeRolle(ctx context.Context, db Datenbank) (map[string][]string, error) {
 	rows, err := db.Query(ctx, `
 		SELECT lower(role), permission
 		FROM role_permissions
@@ -57,7 +57,7 @@ func ErlaubteRechteJeRolle(ctx context.Context, db DBQueryer) (map[string][]stri
 // ErlaubteRechteDerRolle liefert die Rechte, die role_permissions einer Rolle erteilt; die
 // Schreibweise der Rolle spielt keine Rolle. Ohne erteiltes Recht ist die Liste leer, nicht nil:
 // Die Anmeldung schickt sie so an den Browser.
-func ErlaubteRechteDerRolle(ctx context.Context, db DBQueryer, rolle string) ([]string, error) {
+func ErlaubteRechteDerRolle(ctx context.Context, db Datenbank, rolle string) ([]string, error) {
 	rechte := []string{}
 	rows, err := db.Query(ctx, `
 		SELECT permission
@@ -88,7 +88,7 @@ type RollenRecht struct {
 }
 
 // ListeRollenRechte liefert die ganze Rechte-Matrix, nach Rolle und Recht geordnet.
-func ListeRollenRechte(ctx context.Context, db DBQueryer) ([]RollenRecht, error) {
+func ListeRollenRechte(ctx context.Context, db Datenbank) ([]RollenRecht, error) {
 	query := `
 			SELECT role::text, permission, allowed 
 			FROM role_permissions 
@@ -113,7 +113,7 @@ func ListeRollenRechte(ctx context.Context, db DBQueryer) ([]RollenRecht, error)
 // SetzeRollenRecht erteilt oder entzieht der Rolle das Recht und nennt die Zahl der getroffenen
 // Zeilen. Null heißt: Diese Paarung aus Rolle und Recht gibt es nicht; der Aufrufer darf das
 // nicht als Erfolg melden.
-func SetzeRollenRecht(ctx context.Context, db DBQueryer, rolle, recht string, erlaubt bool) (int64, error) {
+func SetzeRollenRecht(ctx context.Context, db Datenbank, rolle, recht string, erlaubt bool) (int64, error) {
 	query := `
 			UPDATE role_permissions
 			SET allowed = $1
