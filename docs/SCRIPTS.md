@@ -528,7 +528,8 @@ Drei Messfehler, kein Codefehler:
    `node_modules` nicht als Sonderfall. 115 ungedeckte Zeilen im Profil.
    `sonar_scan.sh` filtert sie seit dem 06.08.2026 über `go list | grep -v node_modules`.
 3. **Ohne `-coverpkg` rechnet Go einem Paket nur die Tests an, die in ihm selbst liegen.** Die
-   Tests der Türen liegen in `api/` und führen den Code in `repository/` über den Router aus;
+   Tests der Türen liegen in `api/` und den Ordnern der Themen darunter und führen den Code
+   in `repository/` über den Router aus;
    eine neue Abfrage zählte so als ungetestet, obwohl ihr Test sie ausführt. `sonar_scan.sh`
    misst seit dem 04.10.2026 mit `-coverpkg` über alle Pakete. Im Profil steht ein Block
    dann je Testprogramm einmal; gedeckt ist er, sobald ein Eintrag ihn zählt.

@@ -36,10 +36,16 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 - [x] Türen in Themenordner: Der Plan ist seit dem 12.10.2026 freigegeben. Geteilt wird nur
   `api/`, je Menüpunkt der Oberfläche ein Ordner; die Abfragen bleiben in der einen
-  Datenbankschicht. (5.65)
+  Datenbankschicht. ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2)
 - [x] Türen in Themenordner, dritte Freigabe: Stufe 4 ist seit dem 12.10.2026 freigegeben,
   je Thema ein Schritt, zuerst die vier Themen mit dem wenigsten im Weg (Inventur, Benutzer,
-  Portal, System). (5.65)
+  Portal, System).
+- [x] `repository/` nach Themen teilen: nein, entschieden am 13.10.2026 nach der Messung.
+  Ohne Umbau ließen sich 48 der 151 Dateien einem Thema zuordnen; was mehrere Themen
+  brauchen (Protokoll, Einstellungen, Titel, Leser), bliebe ein gemeinsames Paket mit 72 %
+  der Zeilen, und 21 Tabellen bekämen Schreiber in zwei Paketen. Die Zahlen stehen in
+  [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2. Gebaut ist dafür nichts; die Entscheidung lässt
+  sich ändern, ohne etwas zurückzunehmen.
 - [ ] Sicherung außer Haus: Alte Sicherungen löscht das Programm nur auf dem Server, am
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
@@ -148,8 +154,8 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
 
 ### Umbau: die Türen in Themenordner
 
-Entschieden am 12.10.2026, in Stufen (5.65). Nach jeder Stufe ist `main` grün, und der Umbau
-lässt sich dort anhalten.
+Entschieden am 12.10.2026, in Stufen; abgeschlossen am 13.10.2026. Wie die Türen jetzt
+stehen, nennt [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, die Handgriffe des Umzugs 8.14.
 
 - [x] Stufe 0, Schutz: Die drei Prüfungen, die `api/` ohne Unterordner lasen, lesen sie mit.
   Eine neue Prüfung hält die Dateiverweise gegen die Dateien des Repositorys. Die Zahl der
@@ -161,20 +167,18 @@ lässt sich dort anhalten.
   Programm; das Verhalten ist dasselbe.
 - [x] Stufe 3, das erste Thema: Die Türen des LMF-Plans stehen in `api/lernmittel` (5 Dateien,
   9 Testdateien), umgezogen mit einem Werkzeug. Ein Test über den ganzen Router steht im
-  Ordner seines Themas, als eigenes Testpaket. Der Aufwand je Thema ist gemessen (5.65).
+  Ordner seines Themas, als eigenes Testpaket.
 - [x] Stufe 4, die übrigen elf Themen, je Thema ein Schritt: Inventur
   (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`), System
   (`api/system`), Mahnwesen (`api/mahnwesen`), Schaden (`api/schaden`), Katalog
   (`api/katalog`), Druck (`api/druck`), Bestellung (`api/bestellung`), Leser (`api/leser`)
   und Theke (`api/theke`). Alle zwölf Themen stehen in eigenen Paketen.
-- [ ] Stufe 5, Abschluss: Tests, die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die
-  Dokumente nennen die neue Gliederung. Eine Messung an `repository/` entscheidet, ob die
-  Datenbankschicht folgt. Gebaut sind seit dem 13.10.2026 die Ratsche, dass kein Thema ein
-  anderes einbindet (`api/themen_ratsche_test.go`), und der Umzug der Tests: 35 Testdateien
-  stehen bei dem Paket, dessen Regel sie prüfen (24 in `repository/`, drei in
-  `internal/service`, je eine in `db/`, `internal/lusd` und `pkg/leserart`, fünf im
-  Wurzelpaket); sechs prüfen `api/` und bleiben dort. Offen sind die Dokumente und die
-  Messung.
+- [x] Stufe 5, Abschluss: 38 Testdateien, die nichts aus `api/` prüfen, stehen bei dem Paket,
+  dessen Regel sie prüfen (25 in `repository/`, fünf in `internal/service`, je eine in `db/`,
+  `internal/lusd` und `pkg/leserart`, fünf im Wurzelpaket); vier Tests über den Router stehen
+  als Testpaket in `api/`. Eine Ratsche hält, dass kein Thema ein anderes einbindet
+  (`api/themen_ratsche_test.go`). Die Dokumente nennen die Gliederung und wo ein Test steht.
+  Die Messung an `repository/` ist gelaufen: Die Datenbankschicht bleibt ein Paket.
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -474,8 +478,6 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   zuerst die ISBN, sonst der Titeltext (`queueTitelUpsert` in `repository/book_inventory.go`,
   `matchTitelID` in `internal/service/import_dynamic.go`). Beide Fassungen antworten gleich.
   Nächster Schritt: ein Typ für den Titelbestand mit der Frage als Methode, den beide rufen.
-- **Die Türen selbst in Themenordner zu teilen:** entschieden am 12.10.2026, in Stufen. Messung
-  und Plan stehen in 5.65.
 
 **Die Abfragen außerhalb der Datenbankschicht sind umgezogen** (seit dem 10.10.2026). Zur
 Datenbankschicht zählen `repository/`, `inventur/` mit eigener Schicht
@@ -504,356 +506,6 @@ auf die Breite kürzen. Die Etiketten sind im Aussehen abgenommen; mit der Umste
 wo ein langer Titel endet. Die Zeile mit den Auflagen im Schulbuch-Export
 (`inventur/lernmittel_pdf.go`) kürzt ebenfalls nach Zeichen; sie bricht über drei Zeilen um und
 braucht eine andere Messung.
-
-### 5.65 Die Türen in Themenordner
-
-**Entschieden am 12.10.2026: `api/` wird nach Themen geteilt, in Stufen.** Geteilt wird die
-Schicht der Türen, je Menüpunkt der Oberfläche ein Paket unter `api/`. `repository/`,
-`internal/service` und `pdf/` bleiben, was sie sind ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2).
-Der Maßstab steht in Googles Regeln für Go, Abschnitt
-[Package size](https://google.github.io/styleguide/go/best-practices#package-size): In einem
-Paket bleibt, was eng aneinander hängt; was für sich steht, bekommt ein eigenes. Der Plan ist
-seit dem 12.10.2026 freigegeben; die Stufen stehen im Fahrplan, Stufe 0 bis 4 sind gebaut:
-Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stufe 5.
-
-- **Gemessen am 12.10.2026** nach Stufe 2 (Stand b3440e46), mit Typprüfung (`go/types`) über
-  die 131 Produktiv- und 322 Testdateien von `api/`: Jede Datei ist einem Thema zugeordnet,
-  gezählt ist jeder Name, den eine Datei aus einer anderen braucht, bei Tests auch über ihre
-  Helfer.
-- **Die Themen stehen für sich.** Zwischen zwölf Themen hängen neun Namen an drei Stellen. Die
-  Bestellung braucht fünf Namen rund um das Buchetikett aus dem Druck (`BarcodeLabelDetail`,
-  `EtikettKopf`, `etikettKopf`, `buchEtiketten`, `etikettKopfAus`), der Druck einen aus der
-  Bestellung (`etikettenAus`): ein Kreis (seit dem 12.10.2026 stehen die sechs in
-  `internal/buchetikett`). Der Katalog braucht zwei aus dem Schaden
-  (`preisquelle`, `ersatzwertVorschlagAus`; seit dem 12.10.2026 steht die Rechnung des
-  Betragsvorschlags in `internal/service/ersatzwert_vorschlag.go`), der Leser einen aus den Benutzern
-  (`protokolliereKontoAnlage`; seit dem 12.10.2026 steht er als `ProtokolliereKontoAnlage` in
-  `api/tuer`, weil zwei Themen ein Konto anlegen). Aus den Schichten darunter brauchen die Themen 470 Namen aus
-  `repository/`, 444 davon je genau ein Thema, 53 aus `internal/service`, jeden genau ein
-  Thema, 34 aus `api/tuer` und acht aus `mailservice/`.
-- **Zielbild.** In kein Thema ziehen zwölf Dateien mit 1.834 Zeilen (nach dem Umzug aller
-  Themen am 13.10.2026: 1.844): Router, Routenlisten,
-  Middleware, CSRF, Rate-Limit und Abmeldung bleiben in `api/`, mit 23 Routen ohne Tür aus
-  einem Thema, darunter Anmeldung, Sitzung und die acht Einhängepunkte von `inventur/`. Die
-  Routenlisten bleiben an einer Stelle: Dort steht jede Tür mit ihrem Recht, und neun
-  Prüfungen lesen sie dort. Die Themen, mit den Testdateien, die nur dieses eine Thema
-  brauchen:
-
-  | Thema      | Dateien | Zeilen | Routen | Testdateien | Dateien heute in `api/` |
-  | ---------- | ------- | ------ | ------ | ----------- | ----------------------- |
-  | Katalog    | 21      | 3.035  | 43     | 35          | `copy_admin*.go`, `auflagen_handler.go`, `book_systematik_handler.go`, `isbn_handler.go`, `schlagwort*.go`, `signaturen_handler.go`, `systematik_handler.go`, `lookups.go`, `exemplar_*.go`, `cover.go`, `cover_quelle_bindung.go`, `image_caching.go`, `geraete.go`, `abgangsbuch_handler.go`, `zugangsbuch_handler.go`, `bestandsbuch.go`, seit dem 12.10.2026 in `api/katalog` |
-  | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go`, dazu der Kontoauszug (`print_kontoauszug.go`); seit dem 13.10.2026 in `api/leser`, ohne `klassen_mapping.go`: Die Adressen der Klassenleitungen pflegt die Kategorie „Mahnwesen-Routing" der Einstellungen, sie stehen beim Mahnwesen |
-  | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go`, seit dem 12.10.2026 in `api/bestellung` |
-  | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system` |
-  | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go`, dazu die Barcode-Liste (`buchbarcodes_handler.go`); seit dem 13.10.2026 in `api/theke`, ohne die Titelsuche des Druck-Centers und die Verlängerung der Lernmittel einer Klasse |
-  | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go`, seit dem 12.10.2026 in `api/mahnwesen`; seit dem 13.10.2026 dazu `klassen_mapping.go` (die Adressen der Klassenleitungen) |
-  | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print_kontoauszug.go` (der Kontoauszug aus `print.go`); seit dem 12.10.2026 in `api/druck`, ohne drei Dateien, die nach der rufenden Seite zogen oder ziehen: `barcode_sequence.go` zum Katalog, `buchbarcodes_handler.go` zur Theke, der Kontoauszug zu den Lesern; seit dem 13.10.2026 dazu die Titelsuche des Druck-Centers (`titel_suche.go`, bis dahin in `search.go` bei der Theke) |
-  | Schaden    | 7       | 1.154  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go`, dazu die Rechnung an die Eltern aus `print.go`; seit dem 12.10.2026 in `api/schaden` |
-  | Lernmittel | 5       | 1.098  | 7      | 8           | `lmf_*.go`, seit dem 12.10.2026 in `api/lernmittel`; seit dem 13.10.2026 dazu die Verlängerung der Lernmittel einer Klasse (`lmf_verlaengerung.go`, bis dahin in `ausleihe.go` bei der Theke) |
-  | Benutzer   | 6       | 838    | 6      | 9           | `user_admin*.go`, seit dem 12.10.2026 in `api/benutzer` |
-  | Inventur   | 5       | 777    | 9      | 5           | `inventur_*.go`, seit dem 12.10.2026 in `api/inventurlauf` |
-  | Portal     | 5       | 681    | 15     | 11          | `anliegen.go`, `reservation.go`, `katalog_kollegium.go`, `opac.go`, `monitor.go`, seit dem 12.10.2026 in `api/portal` |
-
-  Zwei Namen sind als Paket vergeben (`pkg/lmf`, `inventur/`): Der Ordner der Lernmittel-Türen
-  heißt deshalb nicht `lmf`, der Ordner der Inventur-Türen `inventurlauf`. `inventur/` ist
-  der Medienkatalog, und die Routenliste bindet beide Pakete ein.
-- **Was jede Tür braucht, steht in `api/tuer`** (seit dem 12.10.2026, fünf Dateien mit 530
-  Zeilen): Eingabe lesen und Antwort schreiben (`RespondJSON`, `DecodeAndValidate`), zehn
-  Konstanten, die Rechteprüfung mit ihrem Zwischenspeicher (`BesitztRecht`,
-  `RequireAuthenticated`, `PruefeBerechtigung`), das Protokoll der Verwaltung mit dem Eintrag
-  zur Konto-Anlage und die Uhr. Der
-  Typ `tuer.Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn
-  ein, und der Typ eines Themas bettet einen Zeiger auf die Basis des Servers ein, damit jede
-  Tür `s.DB` und `s.BesitztRecht` unter demselben Namen erreicht. Der Mailversand steht in
-  `mailservice/`,
-  die Adresse des Aufrufers fragen die Türen bei `pkg/clientip`. `RequirePermission` bleibt
-  beim Router: Es setzt die Prüfung der Pfadparameter vor die Rechteprüfung, und deren Liste
-  gehört zu den Routen. Aus `api/` selbst brauchten die Themen zweierlei: den Typ
-  `Server`, an dem ihre Türen als Methoden hingen (108 Dateien, 340 Methoden; nach Stufe 3
-  noch 103 Dateien und 324 Methoden, nach den ersten vier Themen von Stufe 4 noch 77 Dateien
-  und 262 Methoden, nach sechs noch 66 Dateien und 231 Methoden, nach sieben noch 47 Dateien
-  und 177 Methoden, nach neun noch 25 Dateien und 116 Methoden, nach zehn noch neun Dateien
-  und 62 Methoden; seit dem 13.10.2026 hängt keine Tür mehr an ihm, er trägt noch 32
-  Methoden: Router, Middleware und die zwölf Zugänge),
-  und die Bremse je Adresse, die neben der Middleware nur der Abruf der Cover im Katalog
-  braucht; sie steht seit dem 12.10.2026 in `pkg/ratelimit`. Das Feld `IdempotenzWartezeit`
-  las nur die Theke; es steht seit dem 13.10.2026 an ihrem Typ.
-- **Die Kosten liegen bei den Tests.** 221 Testdateien brauchen Namen aus genau einem Thema und
-  ziehen mit ihm um, 43 brauchen aus `api/` nur, was dort bleibt (Router, Middleware, den Typ
-  `Server`), 18 mehrere Themen. 40 brauchen
-  keinen Namen aus `api/`: Ratschen, die Quelltext lesen, und Tests an der Datenbank, die
-  `repository/`, `internal/service` oder das Schema prüfen und hier liegen, weil ihre Helfer
-  hier liegen. Ein Test eines anderen Pakets kann einen Helfer aus einer Testdatei nicht
-  einbinden. Seit dem 12.10.2026 stehen deshalb 54 Helfer in Paketen für Prüfhilfen: Zeilen der
-  Testdatenbank in `internal/testdaten`, Anfragen an Türen in `internal/tuertest` (dort auch
-  `MailAbfangen` und `SetzeGenauEinRecht`), je zwei bis drei in `internal/pgtest`,
-  `internal/pdftest` und `internal/smtptest`; zwei weitere reichten nur an eine Funktion dort
-  weiter und sind entfallen. In `api/` teilen sich Testdateien noch 91 Helfer aus 51 Dateien.
-  Zwölf davon brauchen Tests aus mehr als einem Thema und ziehen mit ihrer Stufe: acht hängen
-  an einem oder zwei Themen, die Liste der Tabellen mit Bezug auf einen Leser gehört zu den
-  Tests der Auskunft (seit dem 13.10.2026 `testdaten.DsgvoSchuelerQuellen`), und drei bauen
-  den ganzen Router (seit dem 12.10.2026 `routertest.MitSitzung`, `MitSitzungUeber` und
-  `MitAufruf`). Mit der Inventur zog am 12.10.2026 ein weiterer nach
-  (`tuertest.AntwortOhneDB`: eine Tür ohne Datenbank rufen), mit dem Mahnwesen fünf: einen
-  Anhang aus einer abgefangenen Mail lesen (`smtptest.DateiAusMail`, `smtptest.PDFAusMail`)
-  und Zeilen für einen Test anlegen (`testdaten.AusleihbaresExemplar`,
-  `testdaten.SchuelerMitBuch`, `testdaten.AusleiheUeberDenDienst`), vor Druck und Bestellung
-  fünf: der Aufruf über einen ganzen Router mit Sitzung und CSRF-Nachweis
-  (`tuertest.RouterAufruf`), eine Bestellung über die Tür (`tuertest.Bestelle`), eine
-  Bestellung aus der Zeit vor den Töpfen (`testdaten.AltBestellung`), der Eigentumsvermerk der
-  Schülerbücherei als Einstellung mit seinen Werten (`testdaten.SetzeVermerkSchuelerbuecherei`)
-  und die Prüfung eines gedruckten Texts (`pdftest.Aufdruck`), vor den Lesern einer: den Stand
-  eines Schülers lesen (`testdaten.LeseSchuelerStatus`). In das Innere eines anderen Pakets
-  greift kein Test mehr: Was eine Rolle
-  darf, legt `tuer.MerkeRechtFuerTest` in den Zwischenspeicher, die Mail-Konfiguration tauscht
-  `mailservice.TauscheKonfigLaderFuerTest`.
-- **Das erste Thema ist umgezogen (Stufe 3, 12.10.2026).** Die fünf Dateien des LMF-Plans
-  stehen in `api/lernmittel`, mit neun Testdateien: den acht, die nur dieses Thema brauchen,
-  und `lmf_plan_live_test.go`, das die Schreibwege des Plans in der Routenliste prüft. Der
-  Typ `Tueren` trägt die 17 Methoden und hält die Basis des Servers als eingebetteten Zeiger:
-  Als Kopie gäbe es Datenbank, Live-Leitung und Uhr je Thema noch einmal, und eine Uhr, die
-  ein Test nach dem Bau des Routers stellt, erreichte die umgezogenen Türen nicht. Die
-  Routenliste meldet die sieben Routen über den Zugang `s.lernmittel()` an. Wie ein Thema
-  gebaut ist, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff mit dem Nachweis
-  in 8.14. Aus `api/` brauchte das Thema nur den Typ `Server`; der Probelauf des Werkzeugs
-  meldete kein Hindernis. Die Kommentare der umgezogenen Dateien sind unverändert, bis auf
-  zwei, die den Typ `Server` nannten.
-- **Vier weitere Themen sind umgezogen (Stufe 4, 12.10.2026),** je Thema ein Commit, gebaut
-  wie das erste:
-
-  | Thema    | Paket              | Dateien | Testdateien | Methoden | Routen |
-  | -------- | ------------------ | ------- | ----------- | -------- | ------ |
-  | Inventur | `api/inventurlauf` | 5       | 5           | 12       | 9      |
-  | Benutzer | `api/benutzer`     | 6       | 10          | 12       | 6      |
-  | Portal   | `api/portal`       | 5       | 11          | 17       | 15     |
-  | System   | `api/system`       | 12      | 20          | 25       | 17     |
-
-  Dazu kommt je Paket die Datei mit seinem Typ. Fünf Namen standen im Weg, jeder führte zu
-  einer Entscheidung. Der Helfer der Tests, der eine Tür ohne Datenbank ruft, steht bei den
-  Prüfhilfen (`tuertest.AntwortOhneDB`). Den Eintrag zur Konto-Anlage schreiben zwei Themen,
-  Benutzer & Rechte und die Leserdatei; er steht deshalb in `api/tuer`
-  (`ProtokolliereKontoAnlage`), und kein Thema bindet dafür ein anderes ein. Vier Testdateien,
-  die über den ganzen Router prüfen, stehen als Testpaket im Ordner ihres Themas. Für die
-  eine, die den Router über einen Helfer aus `api/` baute, gibt es das Paket
-  `internal/routertest`. Den Bereitschafts-Alarm ruft der Start am Server (`main.go`); er
-  steht bei den Türen der Systempflege, und der Server reicht den Aufruf weiter
-  (`Server.BereitschaftsAlarm`). Das Werkzeug liest nur `api/`: Diesen Aufruf zeigte erst der
-  Bau. Ein leeres Literal des Servers in einem Test (`&Server{}`) schreibt das Werkzeug als
-  `&Tueren{Basis: &tuer.Basis{}}`: Am Server war die Basis eingebettet und leer, am Typ des
-  Themas wäre sie sonst nil, und das Protokoll der Verwaltung bräche ab.
-- **Mahnwesen und Schaden sind umgezogen (Stufe 4, 12.10.2026),** je mit Vorarbeit in eigenen
-  Commits:
-
-  | Thema     | Paket           | Dateien | Testdateien | Methoden | Routen |
-  | --------- | --------------- | ------- | ----------- | -------- | ------ |
-  | Mahnwesen | `api/mahnwesen` | 7       | 15          | 13       | 6      |
-  | Schaden   | `api/schaden`   | 8       | 14          | 19       | 14     |
-
-  Beim Mahnwesen standen Helfer und Tests im Weg. Fünf Helfer, die Tests mehrerer Themen
-  brauchen, stehen bei den Prüfhilfen. Zwei Testdateien trugen Tests zu Türen zweier Themen
-  und sind getrennt: Das Paar-Gate Abgängerliste gegen Versetzung braucht beide Themen,
-  bleibt in `api/` (`abgaenger_versetzung_paar_pg_test.go`) und liest die Liste selbst von
-  der Tür; der Test zum Laufzettel zog mit dem Mahnwesen um. Die Datei mit der Tür der Liste
-  hieß `mahnwesen.go` wie das Paket und heißt jetzt `mahnwesen_liste.go`.
-  Beim Schaden stand eine Regel im Weg: Den Ersatzwert eines Buchs nennen vier Türen, zwei
-  des Schadens und zwei des Katalogs, und gerechnet wurde beim Schaden. Die Rechnung steht
-  jetzt in `internal/service/ersatzwert_vorschlag.go`. Proben je Aufrufstelle zeigten, dass
-  nur eine der vier Türen daraufhin geprüft war, ob sie die Einstellung „immer der
-  Kaufpreis" beachtet; `api/ersatzwert_grundlage_tueren_pg_test.go` vergleicht jetzt alle
-  vier. Die frühere Datei `print.go` trug die Rechnung an die Eltern und den Kontoauszug; die Rechnung
-  gehört zum Schaden (`print_rechnung.go`), der Kontoauszug steht in
-  `api/leser/print_kontoauszug.go`. Die Tür der Rechnung ist eine Funktion ohne Server und steht
-  in der Routenliste mit dem Paketnamen (`schaden.PrintRechnungHandler`).
-- **Der Katalog ist umgezogen (Stufe 4, 12.10.2026),** mit Vorarbeit in drei Commits:
-
-  | Thema   | Paket         | Dateien | Testdateien | Methoden | Routen |
-  | ------- | ------------- | ------- | ----------- | -------- | ------ |
-  | Katalog | `api/katalog` | 21      | 35          | 55       | 43     |
-
-  Im Weg standen die Bremse je Adresse, die neben der Middleware der Abruf der Cover braucht
-  (jetzt `pkg/ratelimit`), eine DNB-Attrappe, die ihre Anfragen zählt und die Tests zweier
-  Themen nutzen (jetzt `tuertest.ZaehlendeDNB`), und eine Quelltext-Ratsche in einer
-  Testdatei der Türen (jetzt `abgangsdatum_ratsche_test.go`; siehe unten, Prüfungen, die
-  Dateien lesen). Der Abgleich der Cover ist eine Funktion ohne Server und steht mit dem
-  Paketnamen in der Routenliste (`katalog.SyncCoversHandler`). Titelliste, Buchmaske und
-  Import bleiben im Untermodul `inventur/`. Die Probe am Zugang lief hier auch mit einer
-  Kopie der Basis statt des Zeigers: Bei sieben von acht Zugängen blieb die Suite grün.
-  `api/zugaenge_basis_test.go` vergleicht seither je Zugang den Zeiger mit der Basis des
-  Servers.
-- **Druck und Bestellung sind umgezogen (Stufe 4, 12.10.2026),** mit Vorarbeit in vier
-  Commits:
-
-  | Thema      | Paket            | Dateien | Testdateien | Methoden | Routen |
-  | ---------- | ---------------- | ------- | ----------- | -------- | ------ |
-  | Druck      | `api/druck`      | 5       | 5           | 12       | 11     |
-  | Bestellung | `api/bestellung` | 17      | 33          | 46       | 23     |
-
-  Zwischen beiden lag der Kreis um das Buchetikett. Der Typ des Etiketts, der Kopf der
-  Schule, die drei Wege zu den Daten eines Etiketts und die Funktion, die die Eingabe der
-  Erzeuger füllt, stehen jetzt in `internal/buchetikett`, unter den Türen. Die Proben dazu
-  zeigten eine Lücke im Vergleich der Wege: Der Test lief an einem Titel ohne Signatur und
-  ohne Autor, und zwei leere Felder sind gleich; nahm die Abfrage der Bestellung eines der
-  beiden nicht mehr mit, blieb die Suite grün. Der Titel des Tests trägt jetzt beide. Fünf
-  Helfer der Tests zogen zu den Prüfhilfen; der Test „Eigentumsvermerk folgt dem Topf" ist
-  nach Thema getrennt, der Test der Etikettenkette prüft Türen beider Themen und bleibt in
-  `api/`. Zwei Dateien, die die Zuordnung beim Druck führte, ziehen nach der Seite, die sie
-  ruft: die nächste freie Exemplarnummer zum Katalog (`katalog/barcode_sequence.go`), die
-  Barcode-Liste der Theke mit der Theke (`buchbarcodes_handler.go`). Zum Katalog kam außerdem
-  der Test der Bestandsbücher über den Router, der beim Umzug in `api/` geblieben war; das
-  Paket trägt damit 22 Dateien, 37 Testdateien, 56 Methoden und 44 Routen. Die Grenze für die
-  Größe des Ausweis-Designs braucht ein Test im Testpaket und ist groß geschrieben
-  (`druck.MaxAusweisLayoutBytes`).
-- **Die Leser sind umgezogen (Stufe 4, 13.10.2026),** mit Vorarbeit in vier Commits:
-
-  | Thema | Paket       | Dateien | Testdateien | Methoden | Routen |
-  | ----- | ----------- | ------- | ----------- | -------- | ------ |
-  | Leser | `api/leser` | 17      | 57          | 52       | 21     |
-
-  Die Türen zu den Adressen der Klassenleitungen ruft die Kategorie „Mahnwesen-Routing" der
-  Einstellungen; sie stehen beim Mahnwesen (`api/mahnwesen/klassen_mapping.go`), nicht bei
-  den Lesern. Zu welchem Thema eine Tür gehört, sagt die Stelle der Oberfläche, die sie ruft:
-  der Menüpunkt, in den Einstellungen die Kategorie
-  ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2). Im Weg standen ein Helfer und eine
-  Liste aus Testdateien, die in `api/` bleiben: Den Stand eines Schülers liest jetzt
-  `testdaten.LeseSchuelerStatus`, die Liste der Tabellen mit Bezug auf einen Leser steht als
-  `testdaten.DsgvoSchuelerQuellen` bei den Prüfhilfen. Vier Prüfungen lesen sie: Der Scan am
-  Quelltext der Auskunft und der Test zum Zusammenführen bleiben in `api/`, die Rundreise und
-  die Ratsche der Fremdschlüssel zogen mit den Lesern. Die Proben dazu zeigten eine Lücke:
-  Fiel eine Quelle ohne Fremdschlüssel aus der Liste (`leser`, `audit_log`, `audit_logs`),
-  blieb die Suite grün; ein Test in `repository/dsgvo_paar_vollstaendigkeit_test.go` hält die drei
-  jetzt. Sechs Tests prüfen neben Türen der Leser die eines umgezogenen Themas und bleiben in
-  `api/`. Drei davon riefen einen Helfer aus einer Testdatei der Leser und rufen die Tür
-  jetzt selbst, über `tuertest.RufeAlsAdmin` und `tuertest.JSONPost`. Der Test zur Dublette
-  aus Name und Geburtsdatum prüft über den Router und steht als Testpaket im Ordner. Die Tür
-  des Kontoauszugs ist eine Funktion ohne Server und steht mit dem Paketnamen in der
-  Routenliste (`leser.PrintKontoauszugHandler`).
-- **Die Theke ist umgezogen (Stufe 4, 13.10.2026),** mit Vorarbeit in vier Commits:
-
-  | Thema | Paket       | Dateien | Testdateien | Methoden | Routen |
-  | ----- | ----------- | ------- | ----------- | -------- | ------ |
-  | Theke | `api/theke` | 10      | 21          | 29       | 12     |
-
-  Zwei Türen, die die Zuordnung bei der Theke führte, stehen bei dem Thema, das sie ruft: die
-  Titelsuche des Druck-Centers beim Druck (`api/druck/titel_suche.go`, bis dahin in
-  `search.go`) und die Verlängerung der Lernmittel einer Klasse bei den Lernmitteln
-  (`api/lernmittel/lmf_verlaengerung.go`, bis dahin in `ausleihe.go`; die „LMF-Aktionen" der
-  Einstellungen rufen sie). Verlängern und Frist von Hand an einer einzelnen Ausleihe ruft
-  die Leserakte, auch an der Theke, und die Vormerkungen rufen Buchakte und Leserakte; sie
-  stehen bei der Theke. Die Wartezeit der Idempotenz ist ein Feld von `theke.Tueren`; am
-  Server entfiel sie. Vier Testdateien bleiben in `api/`: die Fristen der Idempotenz gegen
-  die Fristen der Middleware (dafür ist `theke.IdempotenzSpeicherfrist` groß geschrieben),
-  die Personendaten-Grenze, die UUID-Eingaben und die vier Wege einer Verlängerung. Zwei
-  davon brauchten klein geschriebene Namen, die mit der Theke umzogen: Die Attrappe der
-  Einstellungen aus einer ihrer Testdateien steht bei
-  den Prüfhilfen (`tuertest.EinstellungenAttrappe`), der Test zum Sperrgrund prüft nur eine
-  Funktion der Theke und zog in einer eigenen Datei mit ihr um. Der Test der Suche mit
-  Doppelpunkt baute den Server über `NewServer` und baut ihn jetzt als Literal. Zwei der
-  zwölf Routen reichen die Tür über eine Variable an die Anmeldung.
-- **Ein Test über den ganzen Router steht im Ordner seines Themas, als eigenes Testpaket**
-  (entschieden mit Stufe 3, 12.10.2026). `api/` bindet das Paket eines Themas ein. Eine
-  Testdatei im Paket des Themas kann `api/` deshalb nicht einbinden, auch nicht über eine
-  Prüfhilfe, die es tut: Go weist den Kreis ab (`import cycle not allowed in test`). Ein
-  Testpaket im selben Ordner (`package lernmittel_test`) darf es. Vom Thema sieht es nur groß
-  geschriebene Namen; ein Test, der eine Tür über ihre Adresse ruft, braucht keinen. So hält
-  es auch Googles Regelwerk für Go, Abschnitt
-  [Test package](https://google.github.io/styleguide/go/decisions#test-package): ein Paket mit
-  der Endung `_test`, wenn Tests im selben Paket einen Kreis ergäben. Blieben solche Tests in
-  `api/`, stünden die Tests eines Themas an zwei Orten. Gebaut ist es am ersten Thema:
-  `api/lernmittel/lmf_plan_tuer_pg_test.go` baut den Server mit `api.NewServer`, speichert
-  einen Plan über die Route und prüft, dass die Türen in die Datenbank des Servers schreiben
-  und mit seiner Uhr rechnen, auch wenn sie nach dem Bau des Routers gestellt wird. Konto,
-  Sitzung und Anmeldung liefert `tuertest.AdminSitzung`; denselben Helfer ruft
-  `routertest.MitSitzungUeber`. Gezählt am 12.10.2026: Von den acht Testdateien der
-  Lernmittel brauchte keine den Router. In `api/` bauen ihn 29 Testdateien; sieben brauchen
-  dazu Namen eines Themas, 22 rufen die Türen nur über ihre Adresse. An den Adressen gemessen
-  rufen 20 der 29 Türen genau eines Themas und ziehen in Stufe 4 mit ihm um; 19 sind es
-  nach Stufe 4 (Benutzer eine, Portal zwei, System eine, Mahnwesen drei, Schaden zwei,
-  Katalog zwei, Druck drei, Bestellung vier, Leser eine, Theke keine), zehn bauen den Router
-  in `api/`. Einer der
-  20 bleibt dort: Der Test zur Panik in einer Tür ruft eine Adresse des Drucks und prüft die
-  Schichten des Routers. Die Prüfungen
-  über alle Routen (Personendaten in den Antworten, Grenzen der Listen, Rechte der
-  Schreibwege) bleiben in `api/`. Für die Helfer, die den Router bauen, gibt es seit dem
-  12.10.2026 das Paket `internal/routertest`, das `api/` einbindet; es trägt `MitSitzung`,
-  `MitSitzungUeber` (der Server bekommt einen eigenen Pool) und `MitAufruf` (ein Admin-Konto
-  mit fertigem Aufruf über den Router). Ein Test im Paket `api` kann es nicht nutzen. Vier
-  Tests in `api/` bauten den Router über Zwillinge dieser drei Helfer; sie stehen seit dem
-  13.10.2026 als Testpaket (`package api_test`) und nehmen `internal/routertest`, die
-  Zwillinge sind entfallen. Die übrigen Tests in `api/` brauchen keinen Helfer, der `api/`
-  einbindet, und bleiben im Paket.
-- **Prüfungen, die Dateien lesen.** Jede der 43 Prüfungen, die Go-Dateien des Baums
-  durchlaufen, sieht eine Datei in einem Unterordner von `api/` (belegt am 12.10.2026, je mit
-  einer Probe). Beim Umzug eines Themas werden von selbst rot und ziehen mit: jede
-  Ausnahmeliste, die eine Datei beim Pfad nennt (`"api/csrf.go:CSRFMiddleware"`; so der
-  Bestand der XLSX-Lesestellen in `docs/xlsx_leser_grenzen_test.go`), jede Liste, die einen
-  Typ mit seinem Paket nennt (die Ausnahmen in `uuid_eingaben_test.go`:
-  `benutzer.CreateUserRequest.BarcodeID`), und
-  Prüfungen, die ihr Thema in festen Dateien suchen: `mail_vorlagen_platzhalter_test.go` den
-  Standardtext in `api/mahnwesen/mahnwesen_bulk.go`; `lmf_plan_live_test.go` ist mit den Lernmitteln
-  umgezogen und liest die Schreibwege des LMF-Plans in der Routenliste einen Ordner höher.
-  Die Routenlisten (`router.go`, `routes_*.go`) bleiben in `api/`; neun
-  Prüfungen lesen sie dort beim Namen. Eine Prüfung, die den Aufruf einer Funktion am Namen
-  ohne Paket erkennt, sieht ihn aus einem anderen Paket nicht mehr: `uuid_eingaben_test.go`
-  fand nach Stufe 2 keine Eingabe und wurde an seiner Untergrenze rot; es kennt jetzt beide
-  Formen. Umgekehrt sieht eine Prüfung, die mit ihrem Thema umzieht und den Baum ab `..`
-  durchläuft, einen Ordner tiefer nur noch `api/` und bleibt grün. In Stufe 4 betrifft es eine
-  Prüfung: Die Ratsche zum Abgangsdatum stand bei den Tests an den Türen des Katalogs und
-  stand vom 12.10.2026 an in einer eigenen Datei in `api/`; in den Listen der übrigen vier
-  Themen steht kein Baumlauf (gemessen am 12.10.2026). Seit dem 13.10.2026 stehen die fünf
-  Prüfungen über den ganzen Baum, die keine Tür prüfen, im Wurzelpaket und lesen ihn ab `.`
-  (`abgangsdatum_ratsche_test.go`, `bestellstatus_ratsche_test.go`,
-  `privilegierte_felder_test.go`, `wegweiser_test.go`, `mail_vorlagen_platzhalter_test.go`),
-  je belegt mit einem Verstoß außerhalb von `api/`. Der Handgriff steht in
-  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
-- **Verweise beim Pfad.** Die Dokumente nennen Dateien aus `api/` an 307 Stellen beim Pfad, der
-  Go-Code außerhalb von `api/` an 147 Stellen in 90 Dateien, die Oberfläche an 67 (gezählt am
-  12.10.2026). `docs/dateiverweise_test.go` hält die Verweise der Dokumente, der Kommentare im
-  Go-Code, der Oberfläche und der Skripte gegen die Dateien des Repositorys. Der Umzug schreibt
-  die Pfade je Thema mit einem Skript um, und die Prüfung nennt, was das Skript ausgelassen
-  hat. Zeichenketten im Go-Code liest sie nicht: Die Meldungen und Listen der Ratschen, die
-  eine Datei nennen, schreibt das Skript mit um. Es lässt aus, was eine Datei nennt, wie sie
-  einmal war: den datierten Prüfbericht unter `bewertung/` mit seinen Zeilennummern und die
-  Ordner der Werkzeuge (`.claude/`, `.jules/`).
-- **Nachweis je Stufe.** Die Tests und ihr Ausgang sind vor und nach der Stufe dieselben; neue
-  kommen nur dazu, wo die Stufe sie baut. Vergleichsstand vom 13.10.2026, nach Stufe 4:
-  2.276 Testfunktionen (mit den zwei der Ratsche zwischen den Themen danach 2.278, 213 in
-  `api/`), davon 211 in `api/`, 112 in `api/leser`, 91 in `api/katalog`, 87 in
-  `api/bestellung`, 44 in `api/system`, 39 in `api/mahnwesen`, 38 in `api/theke`, 35 in
-  `api/schaden`, 23 in `api/benutzer`, 20 in `api/lernmittel`, 18 in `api/inventurlauf`, 15
-  in `api/portal`, acht in `api/druck`, fünf in `internal/buchetikett`, 30 in `mailservice/`
-  und drei in `api/tuer`, sieben übersprungen; verglichen wird am Namen des Tests, weil ein
-  Test mit
-  seiner Datei das Paket wechselt. Methode, Pfad und Recht jeder Route sind dieselben (211 in
-  `api/`, 18 in
-  `inventur/`); das hält `api/pii_matrix_test.go` gegen die PII-Matrix, belegt mit acht Proben.
-  Jede Erklärung ist vor und nach der Stufe Token für Token gleich, gleich in welcher Datei
-  und in welchem Paket sie steht, nachdem die neuen Namen zurückgeführt sind; jede Abweichung
-  steht in der Commit-Nachricht (Stufe 2 gegen den Stand davor: 2.321 Erklärungen gleich, 26
-  gewollt verschieden, acht neu, eine entfallen; Stufe 3: beim Umzug 2.080 gleich, vier
-  gewollt verschieden, zwei neu, beim Test über den Router eine verschieden und drei neu;
-  Stufe 4, je Thema gegen den Commit davor: Inventur 2.085 gleich, eine gewollt verschieden,
-  zwei neu, Benutzer 2.088, eine, zwei, Portal 2.090, eine, zwei, System 2.091, zwei, sechs,
-  Mahnwesen 2.089, drei, zwei, Schaden 2.085, eine, zwei, Katalog 2.077, vier, zwei, Druck
-  2.060, drei, zwei, Bestellung 2.063, zwei, zwei, Leser 2.063, drei, zwei, Theke 2.060,
-  fünf, zwei).
-  Dazu die ganze Go-Suite an der Datenbank, golangci-lint, deadcode, gosec und die
-  Browser-Suite. Wie der Vergleichsstand erhoben wird, steht in
-  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
-- **Reihenfolge der Themen:** nach dem, was ein Thema von anderen braucht. Umgezogen sind
-  Lernmittel, Inventur, Benutzer, Portal, System, Mahnwesen, Schaden, Katalog, Druck,
-  Bestellung, Leser und Theke.
-- **Was nicht dazugehört:** die Abfragen je Thema zu teilen. Aus Sicht der Türen ginge es (444
-  von 470 Namen gehören zu einem Thema). `repository/` brauchen aber auch `internal/service`,
-  `jobs/` und `auth/`, und dort stehen die Regeln, die es einmal geben soll (die Bedingungen der
-  Löschfristen, der Topf eines Exemplars, wer als Wartender ein Buch bekommt). `inventur/` zeigt
-  den Preis einer eigenen Datenbankschicht je Thema: Schreibende Anweisungen an `buecher_titel`
-  stehen in sechs Dateien von `repository/` und in drei von `inventur/`. Entschieden wird das
-  nach dem Umzug der Türen, an einer Messung von `repository/` wie dieser.
-- **Was der Umzug nicht bringt:** weniger Code und kürzere Bauzeiten. Die Zeilen bleiben, und
-  das Testprogramm von `api/` baut nach einer geänderten Zeile in 4,4 Sekunden (gemessen am
-  12.10.2026). Er bringt einen Ordner je Menüpunkt statt 453 Dateien in einem, und eine
-  Prüfung weist ab, wenn ein Thema ein anderes einbindet (`api/themen_ratsche_test.go`; der
-  Compiler allein wiese nur einen Kreis ab).
 
 ---
 
