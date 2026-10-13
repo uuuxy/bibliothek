@@ -10,7 +10,7 @@
 // hiess: Der Händler klebt, die Bibliothek druckt trotzdem noch einmal. Migration 066 hat
 // sie zusammengelegt, dieser Test entsprechend die drei alten aus haendler-beklebt.spec.js.
 //
-// Die WIRKUNG auf die Nachdruck-Liste ist in api/haendler_beklebt_pg_test.go am Verhalten
+// Die WIRKUNG auf die Nachdruck-Liste ist in internal/service/haendler_beklebt_pg_test.go am Verhalten
 // belegt; der Weg über POST /api/bestellungen verschickt Mail und gehört deshalb nicht in
 // einen E2E-Lauf. Hier geht es um die andere Fehlerklasse: ein Formularfeld, das die
 // Oberfläche anbietet, das Backend aber still verwirft — Antwort 200, Einstellung weg,

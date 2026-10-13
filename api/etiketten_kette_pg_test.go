@@ -54,8 +54,8 @@ func jsonHolen(t *testing.T, handler http.HandlerFunc, pfad string, ziel any) {
 // offeneEtikettenUeberHandler liefert Liste und Zähler — die beiden Wege zur selben Frage.
 //
 // Bewusst über die HTTP-Handler und nicht über eigenes SQL: Der Helfer in
-// haendler_beklebt_pg_test.go schreibt die Bedingung noch einmal selbst hin ("bewusst
-// dieselbe wie EtikettOffenBedingung") und kann eine Abweichung im Produktivcode
+// internal/service/haendler_beklebt_pg_test.go schreibt die Bedingung noch einmal selbst hin
+// ("bewusst dieselbe wie EtikettOffenBedingung") und kann eine Abweichung im Produktivcode
 // deshalb gar nicht sehen — er würde mitwandern, nur eben nur im Test.
 func offeneEtikettenUeberHandler(t *testing.T, srv *Server) (liste []druck.ExemplarOhneEtikett, anzahl int) {
 	t.Helper()

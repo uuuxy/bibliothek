@@ -1,11 +1,10 @@
-package api
+package service_test
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/service"
@@ -20,8 +19,7 @@ func TestProcessOrder_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
-	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Summen", false)
 	erster := testdaten.TitelMitMeldebestand(t, pool, "LMF-Summe Eins", 0)

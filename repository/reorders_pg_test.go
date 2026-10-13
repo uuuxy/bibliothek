@@ -1,11 +1,9 @@
-package api
+package repository_test
 
 import (
 	"context"
 	"testing"
 
-	"bibliothek/api/tuer"
-	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
@@ -24,7 +22,6 @@ func TestQueryReorders_GesamtNichtVerfuegbar(t *testing.T) {
 	ctx := context.Background()
 
 	schueler := testdaten.SeedSchueler(t, pool, "R-1", "Ida", "5a")
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	// A) Voll verliehener Klassensatz: 30 Exemplare, alle ausgeliehen (verfügbar 0,
 	//    gesamt 30), Meldebestand 5 → KEIN Bestellgrund.
@@ -50,7 +47,7 @@ func TestQueryReorders_GesamtNichtVerfuegbar(t *testing.T) {
 	}
 
 	// Schwelle 5 = früherer Meldebestand-Default; die Auswahllogik bleibt so unverändert.
-	reorders, err := repository.ListeBestellbedarf(ctx, srv.DB.Pool, reorderFilterFragmentLMF(), 5)
+	reorders, err := repository.ListeBestellbedarf(ctx, pool, reorderFilterFragmentLMF(), 5)
 	if err != nil {
 		t.Fatalf("ListeBestellbedarf: %v", err)
 	}
@@ -82,7 +79,6 @@ func TestQueryReorders_SchwelleSteuert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	tKnapp := testdaten.TitelMitMeldebestand(t, pool, "LMF-Physik 8", 5) // meldebestand pauschal 5
 	for i := 0; i < 3; i++ {
@@ -90,7 +86,7 @@ func TestQueryReorders_SchwelleSteuert(t *testing.T) {
 	}
 
 	filter := reorderFilterFragmentLMF()
-	r, err := repository.ListeBestellbedarf(ctx, srv.DB.Pool, filter, 5)
+	r, err := repository.ListeBestellbedarf(ctx, pool, filter, 5)
 	if err != nil {
 		t.Fatalf("ListeBestellbedarf error: %v", err)
 	}
@@ -98,7 +94,7 @@ func TestQueryReorders_SchwelleSteuert(t *testing.T) {
 		t.Errorf("Schwelle 5: erwartet 1 Treffer (gesamt 3 < 5), waren %d", len(r))
 	}
 
-	r2, err := repository.ListeBestellbedarf(ctx, srv.DB.Pool, filter, 2)
+	r2, err := repository.ListeBestellbedarf(ctx, pool, filter, 2)
 	if err != nil {
 		t.Fatalf("ListeBestellbedarf error: %v", err)
 	}
@@ -117,14 +113,13 @@ func TestQueryReorders_LMFNurInSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	tID := testdaten.TitelMitSignatur(t, pool, "Mathematik Neue Wege 9", "LMF Ma", 5)
 	for i := 0; i < 3; i++ {
 		testdaten.Exemplar(t, pool, tID, barcodeN("S", i), true, "")
 	}
 
-	reorders, err := repository.ListeBestellbedarf(ctx, srv.DB.Pool, reorderFilterFragmentLMF(), 5)
+	reorders, err := repository.ListeBestellbedarf(ctx, pool, reorderFilterFragmentLMF(), 5)
 	if err != nil {
 		t.Fatalf("ListeBestellbedarf: %v", err)
 	}
@@ -170,7 +165,6 @@ func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
 	if _, err := pool.Exec(ctx, `TRUNCATE werke CASCADE`); err != nil {
 		t.Fatal(err)
 	}
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	alt := testdaten.TitelMitMeldebestand(t, pool, "LMF-Lambacher Schweizer 7", 5)
 	neu := testdaten.TitelMitMeldebestand(t, pool, "LMF-Lambacher Schweizer 7 (Neubearbeitung)", 5)
@@ -200,7 +194,7 @@ func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
 	}
 
 	// Schwelle 3: Zusammen sind es 3 — kein Bedarf. Getrennt stünden beide da (2 und 1).
-	r, err := repository.ListeBestellbedarf(ctx, srv.DB.Pool, filter, 3)
+	r, err := repository.ListeBestellbedarf(ctx, pool, filter, 3)
 	if err != nil {
 		t.Fatalf("ListeBestellbedarf: %v", err)
 	}
@@ -216,7 +210,7 @@ func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
 	}
 
 	// Schwelle 5: eine Zeile für das Buch — die neueste Auflage, die Summe, die Aufschlüsselung.
-	r, err = repository.ListeBestellbedarf(ctx, srv.DB.Pool, filter, 5)
+	r, err = repository.ListeBestellbedarf(ctx, pool, filter, 5)
 	if err != nil {
 		t.Fatalf("ListeBestellbedarf: %v", err)
 	}
