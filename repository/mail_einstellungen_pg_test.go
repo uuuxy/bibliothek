@@ -9,17 +9,16 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Die Mail-Konfiguration (mail_settings_config, eine Zeile) trägt jeden Versand: Mahnungen,
-// Bestellungen, Anmeldung. Gemessen am 07.10.2026 führte kein Go-Test mehr als 38,1 % dieser
-// Datei aus (OFFEN.md 5.10). Geprüft wird der Rundweg, an dem ein Fehler still wäre: Das
-// Passwort steht verschlüsselt in der Zeile und kommt beim Lesen unverändert heraus, und ein
-// leeres Passwortfeld beim Speichern lässt das gespeicherte stehen, statt es zu löschen.
+// Die Mail-Einstellungen (mail_settings_config, eine Zeile) tragen jeden Versand: Mahnungen,
+// Bestellungen, Anmeldung. Geprüft wird der Rundweg, an dem ein Fehler still wäre: Das Passwort
+// steht verschlüsselt in der Zeile und kommt beim Lesen unverändert heraus, und ein leeres
+// Passwortfeld beim Speichern lässt das gespeicherte stehen, statt es zu löschen.
 
 // testSchluessel ist ein Schlüssel nur für diesen Test (32 Zeichen, AES-256).
 const testSchluessel = "mail-test-schluessel-32-zeichen!"
 
 // setzeMailZeileZurueck stellt die eine Zeile auf ihre Vorgaben und nimmt das Passwort weg.
-func setzeMailZeileZurueck(t *testing.T, ctx context.Context, repo *MailSettingsRepository) {
+func setzeMailZeileZurueck(t *testing.T, ctx context.Context, repo *MailEinstellungsAbfragen) {
 	t.Helper()
 	if _, err := repo.pool.Exec(ctx, `
 		UPDATE mail_settings_config
@@ -34,28 +33,28 @@ func TestMailEinstellungen_PasswortImRundweg(t *testing.T) {
 	t.Setenv(crypto.SchluesselVariable, testSchluessel)
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewMailSettingsRepository(pool)
+	repo := NewMailEinstellungsAbfragen(pool)
 	setzeMailZeileZurueck(t, ctx, repo)
 	t.Cleanup(func() { setzeMailZeileZurueck(t, context.Background(), repo) })
 
 	const passwort = "Geheim-SMTP-1!"
-	if err := repo.UpdateConfig(ctx, "smtp.schule.example", "587", "bibliothek", passwort, "bibliothek@schule.example"); err != nil {
+	if err := repo.Schreibe(ctx, "smtp.schule.example", "587", "bibliothek", passwort, "bibliothek@schule.example"); err != nil {
 		t.Fatalf("speichern: %v", err)
 	}
 
-	stand, err := repo.GetConfig(ctx)
+	stand, err := repo.Lade(ctx)
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}
 	if stand.SMTPHost != "smtp.schule.example" || stand.SMTPPort != "587" ||
-		stand.SMTPUser != "bibliothek" || stand.SenderEmail != "bibliothek@schule.example" {
-		t.Errorf("gelesen: %+v — nicht, was gespeichert wurde", stand)
+		stand.SMTPBenutzer != "bibliothek" || stand.AbsenderEmail != "bibliothek@schule.example" {
+		t.Errorf("gelesen: %+v, gespeichert war etwas anderes", stand)
 	}
 	// Verschlüsselt, nicht im Klartext: Die Zeile wandert in jede Sicherung.
-	if bytes.Contains(stand.SMTPPasswordEncrypted, []byte(passwort)) {
+	if bytes.Contains(stand.SMTPPasswortVerschluesselt, []byte(passwort)) {
 		t.Fatal("das Passwort steht im Klartext in der Zeile")
 	}
-	klar, err := crypto.Entschluessele(stand.SMTPPasswordEncrypted)
+	klar, err := crypto.Entschluessele(stand.SMTPPasswortVerschluesselt)
 	if err != nil {
 		t.Fatalf("entschlüsseln: %v", err)
 	}
@@ -71,58 +70,58 @@ func TestMailEinstellungen_LeeresPasswortLaesstDasGespeicherteStehen(t *testing.
 	t.Setenv(crypto.SchluesselVariable, testSchluessel)
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewMailSettingsRepository(pool)
+	repo := NewMailEinstellungsAbfragen(pool)
 	setzeMailZeileZurueck(t, ctx, repo)
 	t.Cleanup(func() { setzeMailZeileZurueck(t, context.Background(), repo) })
 
-	if err := repo.UpdateConfig(ctx, "smtp.schule.example", "587", "bibliothek", "Erstes-Passwort", "a@schule.example"); err != nil {
+	if err := repo.Schreibe(ctx, "smtp.schule.example", "587", "bibliothek", "Erstes-Passwort", "a@schule.example"); err != nil {
 		t.Fatalf("erstes Speichern: %v", err)
 	}
-	vorher, err := repo.GetConfig(ctx)
+	vorher, err := repo.Lade(ctx)
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}
 
 	// Nur der Absender ändert sich, das Passwortfeld bleibt leer.
-	if err := repo.UpdateConfig(ctx, "smtp.schule.example", "587", "bibliothek", "", "b@schule.example"); err != nil {
+	if err := repo.Schreibe(ctx, "smtp.schule.example", "587", "bibliothek", "", "b@schule.example"); err != nil {
 		t.Fatalf("zweites Speichern: %v", err)
 	}
-	nachher, err := repo.GetConfig(ctx)
+	nachher, err := repo.Lade(ctx)
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}
-	if nachher.SenderEmail != "b@schule.example" {
-		t.Errorf("Absender %q, erwartet b@schule.example", nachher.SenderEmail)
+	if nachher.AbsenderEmail != "b@schule.example" {
+		t.Errorf("Absender %q, erwartet b@schule.example", nachher.AbsenderEmail)
 	}
-	if !bytes.Equal(nachher.SMTPPasswordEncrypted, vorher.SMTPPasswordEncrypted) {
+	if !bytes.Equal(nachher.SMTPPasswortVerschluesselt, vorher.SMTPPasswortVerschluesselt) {
 		t.Fatal("ein Speichern ohne Passwort hat das gespeicherte verändert")
 	}
-	klar, err := crypto.Entschluessele(nachher.SMTPPasswordEncrypted)
+	klar, err := crypto.Entschluessele(nachher.SMTPPasswortVerschluesselt)
 	if err != nil || string(klar) != "Erstes-Passwort" {
 		t.Errorf("nach dem zweiten Speichern entschlüsselt %q (Fehler %v), erwartet das erste Passwort", klar, err)
 	}
 }
 
-// Ohne Schlüssel lässt sich nichts verschlüsseln. Das Speichern muss dann scheitern und darf
-// die Zeile nicht anfassen — weder mit Klartext noch mit einem halben Stand.
+// Ohne Schlüssel lässt sich nichts verschlüsseln. Das Speichern scheitert dann und fasst die
+// Zeile nicht an, weder mit Klartext noch mit einem halben Stand.
 func TestMailEinstellungen_OhneSchluesselWirdNichtsGespeichert(t *testing.T) {
 	t.Setenv(crypto.SchluesselVariable, testSchluessel)
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewMailSettingsRepository(pool)
+	repo := NewMailEinstellungsAbfragen(pool)
 	setzeMailZeileZurueck(t, ctx, repo)
 	t.Cleanup(func() { setzeMailZeileZurueck(t, context.Background(), repo) })
 
 	t.Setenv(crypto.SchluesselVariable, "")
-	if err := repo.UpdateConfig(ctx, "smtp.anders.example", "25", "x", "Passwort", "x@anders.example"); err == nil {
+	if err := repo.Schreibe(ctx, "smtp.anders.example", "25", "x", "Passwort", "x@anders.example"); err == nil {
 		t.Fatal("ohne Schlüssel gespeichert")
 	}
-	stand, err := repo.GetConfig(ctx)
+	stand, err := repo.Lade(ctx)
 	if err != nil {
 		t.Fatalf("lesen: %v", err)
 	}
-	if stand.SMTPHost != "localhost" || stand.SMTPPasswordEncrypted != nil {
+	if stand.SMTPHost != "localhost" || stand.SMTPPasswortVerschluesselt != nil {
 		t.Errorf("die Zeile wurde trotz Fehler angefasst: Host %q, Passwort gesetzt=%v",
-			stand.SMTPHost, stand.SMTPPasswordEncrypted != nil)
+			stand.SMTPHost, stand.SMTPPasswortVerschluesselt != nil)
 	}
 }

@@ -33,8 +33,8 @@ type BetriebsbereitschaftResponse struct {
 // auseinanderlaufen: Der Alarm meldete dann „alles gut", während die Seite rot zeigt.
 func (s *Tueren) sammleLage(
 	ctx context.Context,
-	settingsRepo repository.SystemSettingsRepository,
-	mailRepo *repository.MailSettingsRepository,
+	settingsRepo repository.EinstellungsAbfragen,
+	mailRepo *repository.MailEinstellungsAbfragen,
 	zustandRepo *repository.BetriebszustandAbfragen,
 ) bereitschaft.Lage {
 	lage := bereitschaft.Lage{
@@ -57,7 +57,7 @@ func (s *Tueren) sammleLage(
 	// Beides ist über die Oberfläche einstellbar, die .env füllt nur beim ersten Start
 	// vor. Wer hier die Umgebung befragte, meldete „eingerichtet", während die
 	// Anwendung längst mit einem anderen Wert arbeitet.
-	if settings, err := settingsRepo.GetSettings(ctx); err == nil && settings != nil {
+	if settings, err := settingsRepo.Lade(ctx); err == nil && settings != nil {
 		einstellungenInDieLage(&lage, settings)
 	}
 
@@ -75,7 +75,7 @@ func (s *Tueren) sammleLage(
 	if n, err := zustandRepo.ZaehleNachbuchMeldungenOffenSeit(ctx, bereitschaft.NachbuchOffenSeitTagen); err == nil {
 		lage.NachbuchMeldungenOffen = &n
 	}
-	if mail, err := mailRepo.GetConfig(ctx); err == nil && mail != nil {
+	if mail, err := mailRepo.Lade(ctx); err == nil && mail != nil {
 		lage.SmtpHost = strings.TrimSpace(mail.SMTPHost)
 	}
 
@@ -176,8 +176,8 @@ func sicherungUndFerienInDieLage(ctx context.Context, zustandRepo *repository.Be
 // BetriebsbereitschaftHandler beantwortet: Was ist eingerichtet, aber nicht in Betrieb?
 // GET /api/admin/system/betriebsbereitschaft
 func (s *Tueren) BetriebsbereitschaftHandler(
-	settingsRepo repository.SystemSettingsRepository,
-	mailRepo *repository.MailSettingsRepository,
+	settingsRepo repository.EinstellungsAbfragen,
+	mailRepo *repository.MailEinstellungsAbfragen,
 	zustandRepo *repository.BetriebszustandAbfragen,
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -22,8 +22,8 @@ func TestBetriebsbereitschaft_GesamtIstDieSchaerfsteStufeDerBefunde(t *testing.T
 	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	rec := httptest.NewRecorder()
-	srv.BetriebsbereitschaftHandler(repository.NewSystemSettingsRepository(pool),
-		repository.NewMailSettingsRepository(pool), repository.NewBetriebszustandAbfragen(pool)).
+	srv.BetriebsbereitschaftHandler(repository.NewEinstellungsAbfragen(pool),
+		repository.NewMailEinstellungsAbfragen(pool), repository.NewBetriebszustandAbfragen(pool)).
 		ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/admin/system/betriebsbereitschaft", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())

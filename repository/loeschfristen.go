@@ -320,7 +320,7 @@ const HoechstNachbuchMeldungenTage = 30
 
 // NachbuchMeldungenTage liefert die Frist: Lesehistorie-Frist, höchstens 30 Tage.
 func NachbuchMeldungenTage(einst *SystemEinstellungen) int {
-	tage := TageOderStandard(einst.LesehistorieTage, StandardLesehistorieTage)
+	tage := TageOderVorgabe(einst.LesehistorieTage, LesehistorieTageVorgabe)
 	if tage <= 0 || tage > HoechstNachbuchMeldungenTage {
 		return HoechstNachbuchMeldungenTage
 	}

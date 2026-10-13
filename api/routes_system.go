@@ -16,7 +16,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("DELETE /api/benutzer/{id}", s.RequirePermission("manage_users")(s.benutzer().DeleteUserHandler(auditRepo, userRepo)))
 
 	// ── EINSTELLUNGEN (Settings) ──
-	settingsRepo := repository.NewSystemSettingsRepository(dbPool)
+	settingsRepo := repository.NewEinstellungsAbfragen(dbPool)
 	mux.Handle("GET /api/einstellungen", s.RequirePermission("manage_settings")(s.system().GetSettingsHandler(settingsRepo)))
 	mux.Handle("PUT /api/einstellungen", s.RequirePermission("manage_settings")(s.system().UpdateSettingsHandler(settingsRepo)))
 	// Sitzungs-Fristen (Theke leeren, Sperrbildschirm) braucht JEDER angemeldete Client —
@@ -29,7 +29,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/ausweis-layout", s.RequirePermission("view_students")(s.druck().GetAusweisLayoutHandler()))
 	mux.Handle("PUT /api/ausweis-layout", s.RequirePermission("manage_settings")(s.druck().SaveAusweisLayoutHandler()))
 
-	mailRepo := repository.NewMailSettingsRepository(dbPool)
+	mailRepo := repository.NewMailEinstellungsAbfragen(dbPool)
 	mux.Handle("GET /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.system().GetMailSettingsHandler(mailRepo)))
 	mux.Handle("PUT /api/admin/settings/mail", s.RequirePermission("manage_settings")(s.system().UpdateMailSettingsHandler(mailRepo)))
 	mux.Handle("POST /api/admin/settings/mail/test", s.RequirePermission("manage_settings")(s.system().PostTestMailSettingsHandler()))

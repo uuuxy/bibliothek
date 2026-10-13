@@ -169,7 +169,7 @@ func TestSendEmail_OhneKonfigurationMeldetOffeneEinstellung(t *testing.T) {
 // die Ursache war. Leer bleibt erlaubt (der Versand setzt seinen Standardabsender).
 func TestUpdateMailSettings_UnbrauchbarerAbsenderKommtNichtInDieDatenbank(t *testing.T) {
 	s, mock := mailTestServer(t)
-	repo := repository.NewMailSettingsRepository(mock)
+	repo := repository.NewMailEinstellungsAbfragen(mock)
 
 	req := httptest.NewRequest(http.MethodPut, "/api/admin/settings/mail",
 		strings.NewReader(`{"smtp_host":"smtp.schule.de","smtp_port":"587","sender_email":"bibliothek(at)schule.de"}`))

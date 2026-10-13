@@ -48,14 +48,14 @@ func TestLadeSystemEinstellungen_AnDerDatenbank(t *testing.T) {
 		t.Fatalf("ladeSystemEinstellungen: %v", err)
 	}
 	soll := SystemEinstellungen{
-		FristBuchTage:        30,
-		FristMedienTage:      7,
-		MaxAusleihenSchueler: 8,
-		LmfStichtag:          repository.StandardLmfStichtag,
-		FerienLeseclubAktiv:  true,
-		MaxOverdueDays:       10,
-		MaxOverdueItems:      3,
-		Sommerferien:         *gesetzt[lmfplan.SommerferienSchluessel],
+		FristBuchTage:              30,
+		FristMedienTage:            7,
+		MaxAusleihenSchueler:       8,
+		LMFStichtag:                repository.LMFStichtagVorgabe,
+		FerienLeseclubAktiv:        true,
+		UeberfaelligKarenzTage:     10,
+		UeberfaelligSperreAbMedien: 3,
+		Sommerferien:               *gesetzt[lmfplan.SommerferienSchluessel],
 	}
 	if *ist != soll {
 		t.Errorf("Einstellungen der Ausleihe:\n  ist  %+v\n  soll %+v", *ist, soll)

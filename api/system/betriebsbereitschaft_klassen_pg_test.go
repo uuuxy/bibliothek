@@ -36,8 +36,8 @@ func TestKlassenZuordnungKenntDieOberstufe(t *testing.T) {
 		t.Fatalf("Zuordnungen anlegen: %v", err)
 	}
 
-	lage := srv.sammleLage(ctx, repository.NewSystemSettingsRepository(pool),
-		repository.NewMailSettingsRepository(pool), repository.NewBetriebszustandAbfragen(pool))
+	lage := srv.sammleLage(ctx, repository.NewEinstellungsAbfragen(pool),
+		repository.NewMailEinstellungsAbfragen(pool), repository.NewBetriebszustandAbfragen(pool))
 
 	for _, fall := range []struct {
 		name      string

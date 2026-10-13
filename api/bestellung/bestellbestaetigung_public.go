@@ -202,7 +202,7 @@ func (s *Tueren) OeffentlichBestaetigenHandler() http.HandlerFunc {
 // schulAnschrift baut die einzeilige Anschrift aus den Systemeinstellungen. Leere Felder
 // fallen samt Trenner weg — eine Zeile wie „, 61381" wäre schlechter als keine.
 func (s *Tueren) schulAnschrift(ctx context.Context) string {
-	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil {
 		return ""
 	}

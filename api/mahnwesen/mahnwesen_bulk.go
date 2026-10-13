@@ -33,7 +33,7 @@ func (s *Tueren) loadMahnungTemplate(ctx context.Context) (betreff, textBody str
 // Vorgaben hätte der Brief keinen Absender.
 func (s *Tueren) ladeMahnbriefVorlage(ctx context.Context) (pdf.MahnbriefVorlage, error) {
 	betreff, text := s.loadMahnungTemplate(ctx)
-	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil {
 		return pdf.MahnbriefVorlage{}, fmt.Errorf("einstellungen lesen: %w", err)
 	}

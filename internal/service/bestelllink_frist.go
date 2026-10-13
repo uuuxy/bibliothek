@@ -12,9 +12,9 @@ import (
 // Einstellung nicht lesen, gilt die Vorgabe: Die Bestellung scheitert daran nicht, und ein Link
 // ohne Frist entsteht nicht.
 func BestelllinkTage(ctx context.Context, pool db.PgxPoolIface) int {
-	einstellungen, err := repository.NewSystemSettingsRepository(pool).GetSettings(ctx)
+	einstellungen, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil || einstellungen == nil {
-		return bestelllink.VorgabeTage
+		return bestelllink.TageVorgabe
 	}
 	return bestelllink.Tage(einstellungen.BestelllinkGueltigkeitTage)
 }

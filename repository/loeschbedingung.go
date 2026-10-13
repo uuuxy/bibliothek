@@ -18,7 +18,7 @@ const (
 	// StandardAnonymisierungSoftDeleteTage sind die Tage nach dem Soft-Delete
 	// (Papierkorb), nach denen ein Schüler-Datensatz anonymisiert wird.
 	StandardAnonymisierungSoftDeleteTage = 180
-	// StandardAbgaengerKarenzTage ist die Vorgabe der Karenzzeit nach dem Abgang: So
+	// AbgaengerKarenzTageVorgabe ist die Vorgabe der Karenzzeit nach dem Abgang: So
 	// lange bleibt ein Abgänger ohne offene Vorgänge nur gesperrt, bevor der nächtliche
 	// Job ihn anonymisiert. Bis zum 02.09.2026 anonymisierte der LUSD-Import sofort — und
 	// nahm damit jede Reparatur einer falschen Zuordnung (Namensänderung ohne Schüler-ID
@@ -27,7 +27,7 @@ const (
 	// (AbgaengerKarenzSchluessel); 0 heißt „sofort" wie früher. Die endgültige Löschung
 	// (AbgaengerStichjahr, 30. Januar) trifft seit 05.09.2026 nur anonymisierte Zeilen —
 	// sie wartet die Karenz ab, statt sie abzuschneiden (PredikatAbgaengerLoeschung).
-	StandardAbgaengerKarenzTage = 90
+	AbgaengerKarenzTageVorgabe = 90
 	// AbgaengerKarenzSchluessel ist die Zeile in system_einstellungen, aus der Import,
 	// Job und Wächter die Karenz lesen — EIN Schlüssel für drei Leser.
 	AbgaengerKarenzSchluessel = "abgaenger_karenz_tage"
@@ -36,16 +36,16 @@ const (
 	// mehr nennt, wer sie an der Theke gebucht hat. Die Frist ist fest und nicht einstellbar.
 	BearbeiterKennungTage = 14
 
-	// StandardAuditAufbewahrungMonate ist die Vorgabe-Aufbewahrung der beiden
+	// ProtokollAufbewahrungMonateVorgabe ist die Vorgabe-Aufbewahrung der beiden
 	// Protokolltabellen.
-	StandardAuditAufbewahrungMonate = 24
-	// MindestAuditAufbewahrungMonate ist die Untergrenze: Eine versehentliche 0 in den
+	ProtokollAufbewahrungMonateVorgabe = 24
+	// ProtokollAufbewahrungMonateMinimum ist die Untergrenze: Eine versehentliche 0 in den
 	// Einstellungen darf nicht das komplette Protokoll wegräumen — Revisionsfähigkeit
 	// (wer hat die Gebühr storniert?) ist der Zweck der Tabellen.
-	MindestAuditAufbewahrungMonate = 6
-	// AuditAufbewahrungSchluessel ist die Zeile in system_einstellungen, aus der Job
+	ProtokollAufbewahrungMonateMinimum = 6
+	// ProtokollAufbewahrungSchluessel ist die Zeile in system_einstellungen, aus der Job
 	// UND Wächter die Frist lesen.
-	AuditAufbewahrungSchluessel = "audit_aufbewahrung_monate"
+	ProtokollAufbewahrungSchluessel = "audit_aufbewahrung_monate"
 )
 
 // Loeschbedingung ist eine WHERE-Bedingung MIT ihren Parametern.

@@ -25,7 +25,7 @@ type OverrideDueDateRequest struct {
 }
 
 // ExtendLoanHandler extends the due date of a single loan by the standard book interval (e.g. 28 days).
-func (s *Tueren) ExtendLoanHandler(settingsRepo repository.SystemSettingsRepository) http.HandlerFunc {
+func (s *Tueren) ExtendLoanHandler(settingsRepo repository.EinstellungsAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleExtendLoan(w, r, settingsRepo)
 	}
@@ -33,7 +33,7 @@ func (s *Tueren) ExtendLoanHandler(settingsRepo repository.SystemSettingsReposit
 
 // handleExtendLoan verlängert eine einzelne Ausleihe. Als Top-Level-Methode ausgelagert,
 // damit die Frühabbrüche nicht zusätzlich als Closure-Verschachtelung zählen (S3776).
-func (s *Tueren) handleExtendLoan(w http.ResponseWriter, r *http.Request, settingsRepo repository.SystemSettingsRepository) {
+func (s *Tueren) handleExtendLoan(w http.ResponseWriter, r *http.Request, settingsRepo repository.EinstellungsAbfragen) {
 	ausleiheID := r.PathValue("ausleihe_id")
 	if ausleiheID == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("fehlende ausleihe_id"))
@@ -206,8 +206,8 @@ func leseFaelligAm(text string) (time.Time, error) {
 
 // verlaengerungsRegel liefert die Tage einer Verlängerung und die Sommerferien aus den
 // Einstellungen. Sind sie nicht lesbar, gelten 28 Tage und die Ferientabelle des Programms.
-func verlaengerungsRegel(ctx context.Context, settingsRepo repository.SystemSettingsRepository) (tage int, sommerferien string) {
-	settings, err := settingsRepo.GetSettings(ctx)
+func verlaengerungsRegel(ctx context.Context, settingsRepo repository.EinstellungsAbfragen) (tage int, sommerferien string) {
+	settings, err := settingsRepo.Lade(ctx)
 	if err != nil {
 		return 28, ""
 	}

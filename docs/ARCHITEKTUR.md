@@ -858,7 +858,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   (`mail_vorlagen_platzhalter_test.go`); zieht er um, zieht der Pfad dort mit.
 - Fachlogik, die in der Transaktion einer Tür läuft, bekommt diese Transaktion und keinen
   Pool daneben: `service.KoppleLmfPlanFristen` liest die Einstellungen
-  (`repository.EinstellungenUeber`) und schreibt die Fristen über denselben Zugang. Mit Pool
+  (`repository.LadeEinstellungen`) und schreibt die Fristen über denselben Zugang. Mit Pool
   und Transaktion als Nachbar-Argumenten ließe sich die Kopplung am Pool rufen, und kein
   Compiler merkte es. Ein Test der Tür lässt die Kopplung nach ihrer ersten Änderung scheitern
   und verlangt, dass keine Frist umgeschrieben bleibt (`api/lernmittel/lmf_plan_transaktion_pg_test.go`).
@@ -959,7 +959,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   die Kulanz). Den Hinweis auf das Abholfach beim Scan eines Ausweises liest
   `AbholbereiteBuecher`; lässt er sich nicht laden, bleibt er leer und der Scan geht weiter
   (`omnibox_service.go`).
-- Fristen und Sperr-Schwellen liest die Ausleihe über `repository.EinstellungenUeber`
+- Fristen und Sperr-Schwellen liest die Ausleihe über `repository.LadeEinstellungen`
   (`ladeSystemEinstellungen`, `internal/service/loan_rules.go`) und nimmt daraus neun Felder
   (`ausleihEinstellungenAus`). Die Zeilen der Einstellungen liest und bildet damit eine Stelle
   ab: Ein fehlender oder unlesbarer Wert hat an der Theke dieselbe Vorgabe wie in der Maske
@@ -982,7 +982,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   mehr.
 - Womit verschickt wird, bestimmt `mailservice.LadeSMTPKonfig`: die gespeicherte Zeile, und
   solange dort kein Server steht, die Umgebung. Die Zeile liest es über
-  `repository.MailSettingsRepository.GetConfig`, dieselbe Funktion wie die Maske der
+  `repository.MailEinstellungsAbfragen.Lade`, dieselbe Funktion wie die Maske der
   Mail-Einstellungen; das Paket behält den Rückfall auf die Umgebung, das Entschlüsseln des
   Passworts und die Vorgaben für Port und Absender. Auch der Aufbau einer Mail mit Anlagen
   und ihr Versand stehen dort (`mail_sender.go`: `MailRequest`, `SendEmail`). Die Tür
@@ -1710,7 +1710,7 @@ Allowlist von `routes_authz_coverage_test.go`. Wie Token, Hash, Adresse und Fris
 entstehen, steht in `pkg/bestelllink`; die eingestellte Frist liest
 `service.BestelllinkTage`, beim Bestellen wie bei „Neuen Link erzeugen". Ob eine öffentliche
 Adresse hinterlegt ist, fragt jede Stelle über `SystemEinstellungen.AdresseFuerLinks`
-(`repository/system_settings.go`): die Warnung im Warenkorb, „Neuen Link erzeugen", der
+(`repository/einstellungen.go`): die Warnung im Warenkorb, „Neuen Link erzeugen", der
 erneute Versand, die Bestellmail und die Selbstprüfung. Ein Feld aus lauter Leerzeichen ist
 keine Adresse. Bis zum 09.10.2026 prüften vier Stellen je für sich, zwei davon ohne den
 Leerraum zu kürzen: „Neuen Link erzeugen" entwertete dann den alten Link und lieferte einen

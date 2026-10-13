@@ -107,8 +107,9 @@ func sperrGrund(leser *repository.Student, ersatz string) string {
 }
 
 // pruefeHinweise prüft die zwei Hinweise des Programms: unbezahlte Forderungen und die
-// Überfällig-Automatik (ab MaxOverdueItems Medien, die länger als MaxOverdueDays überfällig
-// sind). Mit uebergehen gehen sie durch und stehen in sperrLage.uebergangen.
+// Überfällig-Automatik (ab UeberfaelligSperreAbMedien Medien, die länger als
+// UeberfaelligKarenzTage überfällig sind). Mit uebergehen gehen sie durch und stehen in
+// sperrLage.uebergangen.
 func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string, uebergehen bool) (sperrLage, error) {
 	var lage sperrLage
 
@@ -128,11 +129,11 @@ func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string,
 		return sperrLage{}, err
 	}
 	lage.einst = einst
-	ueberfaellig, err := repository.ZaehleUeberfaelligeBuecher(ctx, q, leserID, einst.MaxOverdueDays)
+	ueberfaellig, err := repository.ZaehleUeberfaelligeBuecher(ctx, q, leserID, einst.UeberfaelligKarenzTage)
 	if err != nil {
 		return sperrLage{}, err
 	}
-	if ueberfaellig >= einst.MaxOverdueItems {
+	if ueberfaellig >= einst.UeberfaelligSperreAbMedien {
 		if !uebergehen {
 			return sperrLage{}, UebergehbareSperre(fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, ueberfaellig))
 		}

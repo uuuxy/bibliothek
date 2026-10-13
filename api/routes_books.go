@@ -80,7 +80,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.katalog().UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(s.DB.Pool))))
 
 	// ── AUSLEIHEN (Loans) ──
-	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
+	settingsRepo := repository.NewEinstellungsAbfragen(s.DB.Pool)
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", s.RequirePermission("edit_books")(s.theke().ExtendLoanHandler(settingsRepo)))
 	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.RequirePermission("edit_books")(s.lernmittel().GlobalExtendLMFHandler()))
 

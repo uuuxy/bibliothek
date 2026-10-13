@@ -28,12 +28,12 @@ func (s *Scheduler) RunAnliegenBefristung() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	einst, err := repository.NewSystemSettingsRepository(s.db).GetSettings(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(s.db).Lade(ctx)
 	if err != nil {
 		log.Printf("Scheduler Anliegen: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
 		return
 	}
-	tage := repository.TageOderStandard(einst.AnliegenTage, repository.StandardAnliegenTage)
+	tage := repository.TageOderVorgabe(einst.AnliegenTage, repository.AnliegenTageVorgabe)
 
 	// Anweisung und Bedingung stehen in repository/: dieselbe Bedingung, die der Wächter des
 	// Rückstands zählt. Eine Frist von 0 schaltet die Befristung ab; dann löscht die Abfrage
@@ -67,12 +67,12 @@ func (s *Scheduler) RunKlassensatzBefristung() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	einst, err := repository.NewSystemSettingsRepository(s.db).GetSettings(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(s.db).Lade(ctx)
 	if err != nil {
 		log.Printf("Scheduler Klassensatz: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
 		return
 	}
-	tage := repository.TageOderStandard(einst.AnliegenTage, repository.StandardAnliegenTage)
+	tage := repository.TageOderVorgabe(einst.AnliegenTage, repository.AnliegenTageVorgabe)
 
 	// Dieselbe Einstellung wie bei den Anliegen; eine Frist von 0 schaltet auch hier ab.
 	geloescht, err := repository.LoescheErledigteKlassensatzReservierungen(ctx, s.db, tage)

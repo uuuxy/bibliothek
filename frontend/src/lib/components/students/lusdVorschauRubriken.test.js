@@ -3,7 +3,7 @@ import { rubriken, abgaengerHinweis, dublettenHinweis } from './lusdVorschauRubr
 
 // Raster-Fund 02.09.2026 (Frontend-Prüfer): Fehlte `karenz_tage` in der Antwort, fiel die
 // Ansicht auf 0 zurück und versprach „sofort anonymisiert (Karenzzeit 0)" — das Backend
-// arbeitet in diesem Fall aber mit seiner Vorgabe von 90 Tagen (StandardAbgaengerKarenzTage).
+// arbeitet in diesem Fall aber mit seiner Vorgabe von 90 Tagen (AbgaengerKarenzTageVorgabe).
 // Ein Rückfall, der etwas anderes sagt als der Server, ist keine Vorgabe, sondern eine
 // falsche Auskunft an genau der Stelle, an der der Admin die Folgen abschätzt.
 

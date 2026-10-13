@@ -1,7 +1,7 @@
 // Das Speichern EINER Einstellungs-Kategorie.
 //
 // Der Rumpf trägt ausschließlich die Felder dieser Kategorie; alles andere lässt der
-// Server unangetastet (repository/system_settings_patch.go). Genau darauf beruht die
+// Server unangetastet (repository/einstellungen_patch.go). Genau darauf beruht die
 // Zusage der Oberfläche: Wer in „Bestellwesen" speichert, ändert nichts an den
 // Löschfristen — vorher tat er das, weil ein einziger Knopf am Seitenende immer das
 // ganze Formular schickte.

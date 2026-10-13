@@ -24,8 +24,8 @@ func TestLoeschRueckstandErreichtDieSelbstpruefung(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	settingsRepo := repository.NewSystemSettingsRepository(pool)
-	mailRepo := repository.NewMailSettingsRepository(pool)
+	settingsRepo := repository.NewEinstellungsAbfragen(pool)
+	mailRepo := repository.NewMailEinstellungsAbfragen(pool)
 	zustandRepo := repository.NewBetriebszustandAbfragen(pool)
 
 	dsgvoBefund := func() bereitschaft.Befund {
@@ -54,7 +54,7 @@ func TestLoeschRueckstandErreichtDieSelbstpruefung(t *testing.T) {
 		INSERT INTO lehrer_anliegen (art, titel_text, kommentar, erstellt_am, erledigt_am)
 		VALUES ('wunsch', 'RUECKSTAND-LIVE', 'x',
 		        NOW() - make_interval(days => $1 + 60), NOW() - make_interval(days => $1 + 30))`,
-		repository.StandardAnliegenTage); err != nil {
+		repository.AnliegenTageVorgabe); err != nil {
 		t.Fatalf("überfälliges Anliegen anlegen: %v", err)
 	}
 

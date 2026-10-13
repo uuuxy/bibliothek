@@ -465,7 +465,7 @@ Paketen darüber ziehen mit. Acht Pakete unter `internal/` binden `repository` o
 darüber ein und kommen deshalb nach ihm an die Reihe: `auskunft`, `bereitschaft`,
 `buchetikett`, `littera` und `lusd` nach `repository`, `testdaten` nach `internal/service`,
 `tuertest` und `routertest` nach `api/`. Ihre Attrappen erfüllen Schnittstellen von dort
-(`tuertest.EinstellungenAttrappe.GetSettings`) und bekommen ihre Namen mit diesen.
+(`tuertest.EinstellungenAttrappe.Lade`) und bekommen ihre Namen mit diesen.
 
 **`repository/` in Ausschnitten:** Das Paket hat 152 Dateien mit 22.400 Zeilen und wird je
 Sache umgestellt (Lieferant, Leser, Titel und Exemplar, Ausleihe …), jeder Ausschnitt mit
@@ -473,13 +473,19 @@ seinen Rufern als eigener Commit; sein Bestand in `stil_bestand_test.go` sinkt d
 Muster steht am ersten Ausschnitt (`repository/lieferant.go`): Das Modell heißt wie die Sache
 (`Lieferant`), was sie liest und schreibt `LieferantenAbfragen`, die Fassung an Postgres
 `pgLieferantenAbfragen`, der Erzeuger `NewLieferantenAbfragen`, und eine Methode wiederholt
-die Sache nicht (`Lade` statt `GetSupplierByID`).
+die Sache nicht (`Lade` statt `GetSupplierByID`). Offen sind dort noch die Ausschnitte Konto,
+Protokoll, Schaden und Bescheid, Inventur, Bestellung, Vormerkung und Reservierung, Ausleihe,
+Titel und Exemplar, Leser und der Rest (Auskunft, Löschfristen, Statistik, Mahnwesen,
+Lernmittel).
 
 **Beleg je Paket:** Umbenannt wird mit dem Werkzeug der Sprache (`gopls rename`), das jede
 Nennung über die Typprüfung findet. Danach laufen die ganze Go-Suite an der Datenbank, der
 Linter, die Prüfung auf toten Code und gosec. Adressen, die Texte der Datenbankabfragen und die
 Feldnamen in JSON sind vor und nach dem Schritt dieselben (Vergleich aller Zeichenketten des
 Programmcodes). Ein Commit, der nur Kommentare ändert, wird am Code ohne Kommentare verglichen.
+Eine Attrappe, die eine Schnittstelle nur in den Testdateien eines anderen Pakets erfüllt,
+zieht das Werkzeug nicht mit (`tuertest.EinstellungenAttrappe`); `go vet ./...` baut auch die
+Tests und meldet die Stelle.
 
 **Namen als Text:** Dokumente nennen 405 Namen des Programmcodes, Testdateien 524 in
 Zeichenketten (Listen, an denen Prüfungen hängen, und Fehlermeldungen), die Liste des toten
@@ -487,8 +493,10 @@ Codes 86, die Kommentare für die Schnittstellenbeschreibung rund 50 Typen. Dort
 Compiler nichts. Jeder umbenannte Name wird im ganzen Repository gesucht und im selben Commit
 nachgezogen; eine Prüfung, die ihn als Text führt, wird danach einmal rot gesehen. Die Suche
 nimmt auch den Go-Code mit: Kommentare anderer Pakete nennen den Namen, und das Werkzeug zieht
-nur das erste Wort über der Erklärung nach. Einen umbenannten Dateinamen in Dokumenten und
-Kommentaren meldet `go test ./docs/`. Steht der Kommentar über dem Feld eines Anfrage- oder
+nur das erste Wort über der Erklärung nach. Eine Prüfung, die einen Aufruf an seinem Namen
+erkennt, bekommt vor dem Umbenennen ein Merkmal, das den Namen überlebt
+(`repository/einstellungen_lesefehler_ratsche_test.go` nimmt den Typ des Ergebnisses). Einen
+umbenannten Dateinamen in Dokumenten und Kommentaren meldet `go test ./docs/`. Steht der Kommentar über dem Feld eines Anfrage- oder
 Antworttyps, steht er auch in `docs/docs.go`: danach `swag init -g main.go -o docs`.
 
 **Was seinen Namen behält:** Adressen, Feldnamen in JSON, Tabellen und Spalten

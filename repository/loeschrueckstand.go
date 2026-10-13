@@ -47,7 +47,7 @@ func (a *BetriebszustandAbfragen) ZaehleLoeschRueckstand(ctx context.Context) ([
 	ctx, abbrechen := context.WithTimeout(ctx, 10*time.Second)
 	defer abbrechen()
 
-	einst, err := NewSystemSettingsRepository(a.pool).GetSettings(ctx)
+	einst, err := NewEinstellungsAbfragen(a.pool).Lade(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -65,9 +65,9 @@ func (a *BetriebszustandAbfragen) ZaehleLoeschRueckstand(ctx context.Context) ([
 // rueckstandLeserUndLesehistorie zählt die Routinen, die Leser, ihre Lesehistorie und die
 // Bearbeiter ihrer Ausleihen betreffen (1 bis 4a).
 func (a *BetriebszustandAbfragen) rueckstandLeserUndLesehistorie(ctx context.Context, einst *SystemEinstellungen) ([]LoeschRueckstand, error) {
-	freihandTage := TageOderStandard(einst.LesehistorieTage, StandardLesehistorieTage)
-	lernmittelTage := TageOderStandard(einst.LesehistorieLernmittelTage, StandardLesehistorieLernmittelTage)
-	karenzTage := AbgaengerKarenzTageOderStandard(einst)
+	freihandTage := TageOderVorgabe(einst.LesehistorieTage, LesehistorieTageVorgabe)
+	lernmittelTage := TageOderVorgabe(einst.LesehistorieLernmittelTage, LesehistorieLernmittelTageVorgabe)
+	karenzTage := AbgaengerKarenzTageOderVorgabe(einst)
 
 	stand := []LoeschRueckstand{}
 	fehler := func(e error) ([]LoeschRueckstand, error) { return nil, e }
@@ -155,8 +155,8 @@ func (a *BetriebszustandAbfragen) zaehleLesehistorie(ctx context.Context, tage i
 // rueckstandVorgaengeUndProtokoll zählt die Routinen für erledigte Vorgänge und die
 // Aufbewahrung der Protokolle (5 und 6).
 func (a *BetriebszustandAbfragen) rueckstandVorgaengeUndProtokoll(ctx context.Context, einst *SystemEinstellungen) ([]LoeschRueckstand, error) {
-	anliegenTage := TageOderStandard(einst.AnliegenTage, StandardAnliegenTage)
-	auditMonate := AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate)
+	anliegenTage := TageOderVorgabe(einst.AnliegenTage, AnliegenTageVorgabe)
+	auditMonate := ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate)
 
 	stand := []LoeschRueckstand{}
 	fehler := func(e error) ([]LoeschRueckstand, error) { return nil, e }
@@ -202,16 +202,16 @@ func (a *BetriebszustandAbfragen) rueckstandVorgaengeUndProtokoll(ctx context.Co
 	return stand, nil
 }
 
-// AufbewahrungMonateOderStandard liest die Aufbewahrungsfrist aus den Einstellungen und
+// ProtokollAufbewahrungMonateOderVorgabe liest die Aufbewahrungsfrist aus den Einstellungen und
 // setzt die Untergrenze durch — die EINE Quelle für den Job (jobs.RunAuditAufbewahrung)
 // und den Wächter.
 //
 // Vorher las eine eigene Methode die Zeile per rohem SQL an den Einstellungen vorbei.
 // Das war eine zweite Wahrheitsquelle für denselben Wert; seit die Frist über die
 // Oberfläche einstellbar ist, wäre sie auch eine falsche geworden.
-func AufbewahrungMonateOderStandard(v *int) int {
-	if v == nil || *v < MindestAuditAufbewahrungMonate {
-		return StandardAuditAufbewahrungMonate
+func ProtokollAufbewahrungMonateOderVorgabe(v *int) int {
+	if v == nil || *v < ProtokollAufbewahrungMonateMinimum {
+		return ProtokollAufbewahrungMonateVorgabe
 	}
 	return *v
 }

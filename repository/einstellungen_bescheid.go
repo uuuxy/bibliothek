@@ -4,49 +4,47 @@ import "strings"
 
 // Die Angaben, die der Schadensersatz-Bescheid braucht und die nur die Schule kennt.
 //
-// Warum einzelne Schlüssel und kein JSON-Block: Der Patch-Mechanismus unterscheidet je
-// Feld zwischen „nicht mitgeschickt" (bleibt) und „geleert" (leer). Ein Block wäre ein
-// Feld, das man ganz oder nicht schreibt — und dann löscht das Speichern einer Zeile
-// still die anderen acht.
+// Es sind einzelne Schlüssel und kein JSON-Block, weil der Patch je Feld zwischen „nicht
+// mitgeschickt" (bleibt) und „geleert" unterscheidet. Ein Block wäre ein Feld, das man ganz
+// oder gar nicht schreibt: Das Speichern einer Zeile löschte die anderen.
 //
-// Vorgaben, wo es welche gibt: Die Schule muss nur die beiden Nummern und die
-// Aufsichtsbehörde eintragen; Frist, Zahlstelle und Bankverbindung stehen vorbelegt
-// aus dem Musterschreiben. Was leer bleiben darf, bleibt im Brief einfach weg.
+// Welche Angaben Pflicht sind, nennt FehlendeAngaben. Frist, Zahlstelle und Bankverbindung
+// sind aus dem Musterschreiben vorbelegt; was leer bleiben darf, fehlt im Brief.
 const (
-	// BescheidFristTageVorgabe: Die Vierwochenfrist des Verfahrens, als Tage ab Briefdatum.
-	// Sie MUSS im Brief ein Datum sein, keine Zeitspanne („bis zum 15.05.", nicht „bis
-	// Mitte Mai") — gerechnet wird sie beim Erstellen.
+	// BescheidFristTageVorgabe ist die Vierwochenfrist des Verfahrens in Tagen ab dem Datum
+	// des Briefs. Im Brief steht sie als Datum („bis zum 15.05."), gerechnet beim Erstellen.
 	BescheidFristTageVorgabe = 28
 	// BescheidZahlstelleVorgabe ist der Empfänger, den das Musterschreiben nennt.
 	BescheidZahlstelleVorgabe = "HCC-Schulbereich bei der Landesbank Hessen-Thüringen"
-	// BescheidBankverbindungVorgabe sind die vier Zeilen des Musterschreibens. Mehrzeilig,
-	// weil sie im Brief als Block untereinander stehen.
+	// BescheidBankverbindungVorgabe sind die vier Zeilen des Musterschreibens; im Brief stehen
+	// sie als Block untereinander.
 	BescheidBankverbindungVorgabe = "Konto-Nr. 1002401\nBankleitzahl 500 500 00\nIBAN DE86500500000001002401\nBIC HELADEFFXXX"
 )
 
-// anwendenBescheidEinstellung meldet true, wenn der Schlüssel hierher gehört.
-func anwendenBescheidEinstellung(s *SystemEinstellungen, key string, val *string) bool {
-	switch key {
+// setzeBescheidEinstellung überträgt eine Zeile in ihr Feld und meldet, ob der Schlüssel zum
+// Bescheid gehört.
+func setzeBescheidEinstellung(e *SystemEinstellungen, schluessel string, wert *string) bool {
+	switch schluessel {
 	case "bescheid_bereich_nr":
-		setzeStringRoh(val, &s.BescheidBereichNr)
+		setzeStringRoh(wert, &e.BescheidBereichNr)
 	case "bescheid_schulnummer":
-		setzeStringRoh(val, &s.BescheidSchulnummer)
+		setzeStringRoh(wert, &e.BescheidSchulnummer)
 	case "bescheid_aufsicht":
-		setzeStringRoh(val, &s.BescheidAufsicht)
+		setzeStringRoh(wert, &e.BescheidAufsicht)
 	case "bescheid_schulleitung":
-		setzeStringRoh(val, &s.BescheidSchulleitung)
+		setzeStringRoh(wert, &e.BescheidSchulleitung)
 	case "bescheid_geschaeftszeichen":
-		setzeStringRoh(val, &s.BescheidGeschaeftszeichen)
+		setzeStringRoh(wert, &e.BescheidGeschaeftszeichen)
 	case "bescheid_bearbeiter":
-		setzeStringRoh(val, &s.BescheidBearbeiter)
+		setzeStringRoh(wert, &e.BescheidBearbeiter)
 	case "bescheid_durchwahl":
-		setzeStringRoh(val, &s.BescheidDurchwahl)
+		setzeStringRoh(wert, &e.BescheidDurchwahl)
 	case "bescheid_zahlstelle":
-		setzeStringRoh(val, &s.BescheidZahlstelle)
+		setzeStringRoh(wert, &e.BescheidZahlstelle)
 	case "bescheid_bankverbindung":
-		setzeStringRoh(val, &s.BescheidBankverbindung)
+		setzeStringRoh(wert, &e.BescheidBankverbindung)
 	case "bescheid_frist_tage":
-		setzeIntZeiger(val, &s.BescheidFristTage)
+		setzeIntZeiger(wert, &e.BescheidFristTage)
 	default:
 		return false
 	}
@@ -56,23 +54,23 @@ func anwendenBescheidEinstellung(s *SystemEinstellungen, key string, val *string
 // BescheidAngaben bündelt die Einstellungen des Bescheids für Brief und Prüfung.
 type BescheidAngaben struct {
 	// BereichNr und Schulnummer bilden mit Kassenjahr und laufender Nummer die
-	// Referenznummer. Beide vierstellig; ohne sie gibt es keinen Bescheid, weil sich
-	// eine Zahlung ohne Referenz nicht zuordnen lässt.
+	// Referenznummer. Beide sind vierstellig; ohne sie gibt es keinen Bescheid, weil sich eine
+	// Zahlung ohne Referenz nicht zuordnen lässt.
 	BereichNr   string
 	Schulnummer string
-	// Aufsicht: Name und Anschrift der Stelle, an die der Fall nach Fristablauf geht.
-	// Sie steht an zwei Stellen im Brief und ist deshalb Pflicht.
+	// Aufsicht nennt Name und Anschrift der Stelle, an die der Fall nach Ablauf der Frist
+	// geht. Sie steht an zwei Stellen im Brief und ist deshalb Pflicht.
 	Aufsicht string
-	// Schulleitung: die Unterschriftszeile.
+	// Schulleitung ist die Zeile unter der Unterschrift.
 	Schulleitung string
-	// Freiwillig, dürfen leer bleiben — im Muster sind es graue Felder.
+	// Geschäftszeichen, Bearbeiter und Durchwahl sind freiwillig und dürfen leer bleiben.
 	Geschaeftszeichen string
 	Bearbeiter        string
 	Durchwahl         string
-	// Zahlstelle und Bankverbindung: wohin gezahlt wird.
+	// Zahlstelle und Bankverbindung sagen, wohin gezahlt wird.
 	Zahlstelle     string
 	Bankverbindung string
-	// FristTage: Vorgabe BescheidFristTageVorgabe.
+	// FristTage hat die Vorgabe BescheidFristTageVorgabe.
 	FristTage int
 }
 
@@ -109,12 +107,10 @@ func BescheidAngabenAus(e *SystemEinstellungen) BescheidAngaben {
 	return a
 }
 
-// FehlendeAngaben nennt die Pflichtangaben, die noch fehlen — in der Sprache der
-// Oberfläche, damit die Meldung sagt, was einzutragen ist.
-//
-// EINE Quelle für beide Verbraucher: die Tür, die den Bescheid erstellt (sie weist ab),
-// und die Selbstprüfung der Betriebsbereitschaft (sie warnt vorher). Zwei getrennte
-// Listen wären zwei Wahrheiten, und eine davon wäre irgendwann falsch.
+// FehlendeAngaben nennt die Pflichtangaben, die noch fehlen, in den Worten der Oberfläche:
+// Die Meldung sagt, was einzutragen ist. Die Tür, die den Bescheid erstellt, und die
+// Selbstprüfung fragen beide hier; mit zwei Listen wiese die eine ab, wovor die andere nicht
+// gewarnt hat.
 func (a BescheidAngaben) FehlendeAngaben(schule SchuleAngaben) []string {
 	var fehlt []string
 	if a.BereichNr == "" {
@@ -135,8 +131,8 @@ func (a BescheidAngaben) FehlendeAngaben(schule SchuleAngaben) []string {
 	return fehlt
 }
 
-// SchuleAngaben ist der Ausschnitt der Schul-Identität, den die Prüfung braucht — als
-// eigener Typ, damit repository nicht auf das pdf-Paket zeigen muss.
+// SchuleAngaben sind Name und Anschrift der Schule, soweit die Prüfung sie braucht. Ein
+// eigener Typ, damit repository nicht auf das Paket pdf zeigt.
 type SchuleAngaben struct {
 	Name    string
 	Strasse string
@@ -144,7 +140,7 @@ type SchuleAngaben struct {
 	Ort     string
 }
 
-// SchuleAngabenAus zieht sie aus den Einstellungen.
+// SchuleAngabenAus liest Name und Anschrift der Schule aus den Einstellungen.
 func SchuleAngabenAus(e *SystemEinstellungen) SchuleAngaben {
 	if e == nil {
 		return SchuleAngaben{}
@@ -152,20 +148,20 @@ func SchuleAngabenAus(e *SystemEinstellungen) SchuleAngaben {
 	return SchuleAngaben{Name: e.SchuleName, Strasse: e.SchuleStrasse, PLZ: e.SchulePLZ, Ort: e.SchuleOrt}
 }
 
-// Referenznummer baut die Nummer des Briefs: Schulamtsbereich, Kassenjahr, Schulnummer,
-// laufende Nummer — je vierstellig, durch Leerzeichen getrennt, wie im Musterschreiben
+// Referenznummer baut die Nummer des Briefs aus Schulamtsbereich, Kassenjahr, Schulnummer und
+// laufender Nummer, je vierstellig und durch Leerzeichen getrennt wie im Musterschreiben
 // („5830 2015 1234 0001").
 func (a BescheidAngaben) Referenznummer(kassenjahr, laufendeNr int) string {
 	return strings.Join([]string{
 		vierstellig(a.BereichNr),
-		itoa4(kassenjahr),
+		zahlVierstellig(kassenjahr),
 		vierstellig(a.Schulnummer),
-		itoa4(laufendeNr),
+		zahlVierstellig(laufendeNr),
 	}, " ")
 }
 
-// vierstellig füllt eine eingetippte Nummer links mit Nullen auf. Wer „583" einträgt,
-// meint 0583 — abschneiden würde die Zuordnung der Zahlung zerstören.
+// vierstellig füllt eine eingetippte Nummer links mit Nullen auf. Wer „583" einträgt, meint
+// 0583; abschneiden zerstörte die Zuordnung der Zahlung.
 func vierstellig(s string) string {
 	s = strings.TrimSpace(s)
 	for len(s) < 4 {
@@ -174,8 +170,8 @@ func vierstellig(s string) string {
 	return s
 }
 
-// itoa4 formatiert eine Zahl vierstellig mit führenden Nullen.
-func itoa4(n int) string {
+// zahlVierstellig schreibt eine Zahl vierstellig mit führenden Nullen.
+func zahlVierstellig(n int) string {
 	if n < 0 {
 		n = 0
 	}

@@ -68,10 +68,10 @@ func (k EtikettKopf) vermerkFuer(topf string) string {
 // in die Irre. Der Eigentumsvermerk hat dagegen eine sinnvolle Vorgabe, weil er für
 // alle Bücher desselben Trägers gleich lautet.
 func LadeEtikettKopf(ctx context.Context, pool db.PgxPoolIface) EtikettKopf {
-	settings, err := repository.NewSystemSettingsRepository(pool).GetSettings(ctx)
+	settings, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil {
 		log.Printf("Etiketten: Einstellungen nicht lesbar, drucke ohne Schulnamen: %v", err)
-		return EtikettKopf{Eigentumsvermerk: repository.StandardEigentumsvermerk}
+		return EtikettKopf{Eigentumsvermerk: repository.EigentumsvermerkVorgabe}
 	}
 	return EtikettKopfAus(settings)
 }
@@ -84,7 +84,7 @@ func LadeEtikettKopf(ctx context.Context, pool db.PgxPoolIface) EtikettKopf {
 func EtikettKopfAus(settings *repository.SystemEinstellungen) EtikettKopf {
 	kopf := EtikettKopf{
 		Schulname:                         settings.SchuleName,
-		Eigentumsvermerk:                  repository.StandardEigentumsvermerk,
+		Eigentumsvermerk:                  repository.EigentumsvermerkVorgabe,
 		EigentumsvermerkSchuelerbuecherei: settings.EtikettEigentumsvermerkSchuelerbuecherei,
 	}
 	if settings.EtikettEigentumsvermerk != "" {

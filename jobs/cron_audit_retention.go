@@ -29,12 +29,12 @@ func (s *Scheduler) RunAuditAufbewahrung() {
 	// Frist und Bedingung kommen aus repository/ — derselbe Weg, dieselbe Untergrenze,
 	// die auch der Wächter der Selbstprüfung nimmt. Über die Einstellungen und nicht per
 	// rohem SQL, seit die Frist in der Oberfläche steht.
-	einst, err := repository.NewSystemSettingsRepository(s.db).GetSettings(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(s.db).Lade(ctx)
 	if err != nil {
 		log.Printf("Audit-Aufbewahrung: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
 		return
 	}
-	monate := repository.AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate)
+	monate := repository.ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate)
 
 	geloeschtDatensatz, err := repository.LoescheAuditLog(ctx, s.db, monate)
 	if err != nil {

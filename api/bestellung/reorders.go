@@ -34,7 +34,7 @@ func (s *Tueren) GetReordersHandler() http.HandlerFunc {
 // leere Liste; sonst gefiltert auf gesamt < Schwelle. Eine Quelle für Ansicht UND
 // PDF-Export, damit beide nie auseinanderlaufen.
 func (s *Tueren) reordersMitSettings(ctx context.Context, r *http.Request) ([]repository.ReorderTitle, error) {
-	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil {
 		return nil, err
 	}

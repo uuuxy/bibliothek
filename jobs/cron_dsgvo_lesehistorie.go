@@ -37,13 +37,13 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	einst, err := repository.NewSystemSettingsRepository(s.db).GetSettings(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(s.db).Lade(ctx)
 	if err != nil {
 		log.Printf("Scheduler Lesehistorie: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
 		return
 	}
-	freihandTage := repository.TageOderStandard(einst.LesehistorieTage, repository.StandardLesehistorieTage)
-	lernmittelTage := repository.TageOderStandard(einst.LesehistorieLernmittelTage, repository.StandardLesehistorieLernmittelTage)
+	freihandTage := repository.TageOderVorgabe(einst.LesehistorieTage, repository.LesehistorieTageVorgabe)
+	lernmittelTage := repository.TageOderVorgabe(einst.LesehistorieLernmittelTage, repository.LesehistorieLernmittelTageVorgabe)
 
 	getrenntFreihand := s.trenneAusleihen(ctx, freihandTage, false)
 	getrenntLernmittel := s.trenneAusleihen(ctx, lernmittelTage, true)

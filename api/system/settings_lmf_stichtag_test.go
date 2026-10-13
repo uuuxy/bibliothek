@@ -22,7 +22,7 @@ func TestUpdateSettings_LmfStichtagIstEinKalendertag(t *testing.T) {
 	}{
 		{"07-31", http.StatusOK},
 		{"08-15", http.StatusOK},
-		{"", http.StatusOK}, // leer = Vorgabe (system_settings_patch.go)
+		{"", http.StatusOK}, // leer = Vorgabe (repository/einstellungen_patch.go)
 		{"06-31", http.StatusBadRequest},
 		{"02-30", http.StatusBadRequest},
 		{"13-01", http.StatusBadRequest},

@@ -91,7 +91,7 @@ func (s *Tueren) erneuereBestaetigungsToken(ctx context.Context, bestellungID st
 // oeffentlicheAdresse liest die Adresse, unter der Dritte das System erreichen. Leer =
 // nicht hinterlegt; dann verschickt das System keine Links, statt kaputte zu erzeugen.
 func (s *Tueren) oeffentlicheAdresse(ctx context.Context) string {
-	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil {
 		return ""
 	}

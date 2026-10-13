@@ -147,7 +147,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req BestellAuftrag) (*O
 	// bestätigt. Alle anderen bekämen eine Seite, auf der es nichts zu tun gibt; für sie bleibt
 	// es bei der Bestellmail.
 	var token, tokenHash string
-	linkTage := bestelllink.VorgabeTage
+	linkTage := bestelllink.TageVorgabe
 	if supplier.IstHauptlieferant {
 		token, tokenHash, err = bestelllink.ErzeugeToken()
 		if err != nil {

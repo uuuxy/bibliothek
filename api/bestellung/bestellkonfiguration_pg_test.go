@@ -28,7 +28,7 @@ func TestBestellKonfiguration_WarntWennDerLinkNichtEntstehenKann(t *testing.T) {
 	ohneAdresse := func() bool {
 		t.Helper()
 		rec := httptest.NewRecorder()
-		srv.BestellKonfigurationHandler(repository.NewSystemSettingsRepository(pool), repository.NewLieferantenAbfragen(pool)).
+		srv.BestellKonfigurationHandler(repository.NewEinstellungsAbfragen(pool), repository.NewLieferantenAbfragen(pool)).
 			ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/bestellungen/konfiguration", nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Status %d: %s", rec.Code, rec.Body.String())

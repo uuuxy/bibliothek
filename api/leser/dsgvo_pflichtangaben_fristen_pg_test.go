@@ -33,11 +33,11 @@ func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 	// Krumme Werte: Die Vorgaben (1 und 730 Tage Lesehistorie, 90 Tage Karenz, 24 Monate
 	// Protokolle, 365 Tage Anliegen) stünden auch ohne gelesene Einstellung im Text.
 	einstellungen := map[string]string{
-		repository.AuditAufbewahrungSchluessel: "7",
-		"lesehistorie_tage":                    "111",
-		"lesehistorie_lernmittel_tage":         "222",
-		"abgaenger_karenz_tage":                "33",
-		"anliegen_tage":                        "44",
+		repository.ProtokollAufbewahrungSchluessel: "7",
+		"lesehistorie_tage":                        "111",
+		"lesehistorie_lernmittel_tage":             "222",
+		"abgaenger_karenz_tage":                    "33",
+		"anliegen_tage":                            "44",
 	}
 	for schluessel, wert := range einstellungen {
 		if _, err := pool.Exec(ctx, `
@@ -107,13 +107,13 @@ func TestDsgvoAuskunft_FristenKommenAusDenEinstellungen(t *testing.T) {
 
 // Gegenprobe zur Untergrenze: Eine unplausible 0 in den Einstellungen darf der
 // betroffenen Person nicht als „0 Monate" gemeldet werden — dieselbe Untergrenze wie beim
-// Löschjob (repository.AufbewahrungMonateOderStandard).
+// Löschjob (repository.ProtokollAufbewahrungMonateOderVorgabe).
 func TestDsgvoAuskunft_ProtokollfristUnterUntergrenzeMeldetVorgabe(t *testing.T) {
-	if got := repository.AufbewahrungMonateOderStandard(nil); got != repository.StandardAuditAufbewahrungMonate {
-		t.Errorf("ohne Einstellung: %d, want %d", got, repository.StandardAuditAufbewahrungMonate)
+	if got := repository.ProtokollAufbewahrungMonateOderVorgabe(nil); got != repository.ProtokollAufbewahrungMonateVorgabe {
+		t.Errorf("ohne Einstellung: %d, want %d", got, repository.ProtokollAufbewahrungMonateVorgabe)
 	}
 	null := 0
-	if got := repository.AufbewahrungMonateOderStandard(&null); got != repository.StandardAuditAufbewahrungMonate {
-		t.Errorf("0 Monate: %d, want %d (Untergrenze)", got, repository.StandardAuditAufbewahrungMonate)
+	if got := repository.ProtokollAufbewahrungMonateOderVorgabe(&null); got != repository.ProtokollAufbewahrungMonateVorgabe {
+		t.Errorf("0 Monate: %d, want %d (Untergrenze)", got, repository.ProtokollAufbewahrungMonateVorgabe)
 	}
 }

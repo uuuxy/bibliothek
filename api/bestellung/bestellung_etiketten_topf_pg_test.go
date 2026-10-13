@@ -48,7 +48,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	pdftest.Aufdruck(t, "Lieferanten-Link", pdftest.Suchtext(t, rec.Body.Bytes()), testdaten.VermerkStadt, testdaten.VermerkLand)
 
 	// Weg 4: der Mailanhang, mit dem Kopf, den der Bestell-Handler baut.
-	einstellungen, err := repository.NewSystemSettingsRepository(pool).GetSettings(ctx)
+	einstellungen, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil {
 		t.Fatalf("Einstellungen lesen: %v", err)
 	}

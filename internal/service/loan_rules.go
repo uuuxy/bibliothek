@@ -52,16 +52,16 @@ type SystemEinstellungen struct {
 	FristMedienTage int
 	// MaxAusleihenSchueler begrenzt die Anzahl der gleichzeitig ausgeliehenen regulären Bücher pro Schüler.
 	MaxAusleihenSchueler int
-	// LmfStichtag bestimmt den jährlichen Rückgabetermin für Schulbücher der Lernmittelfreiheit (z. B. "07-31").
-	LmfStichtag string
+	// LMFStichtag bestimmt den jährlichen Rückgabetermin für Schulbücher der Lernmittelfreiheit (z. B. "07-31").
+	LMFStichtag string
 	// FerienLeseclubAktiv ist wahr, wenn die verlängerte Ausleihe für den Ferien-Leseclub aktiv ist.
 	FerienLeseclubAktiv bool
 	// FerienLeseclubZieldatum definiert das feste Rückgabedatum für alle Leseclub-Ausleihen.
 	FerienLeseclubZieldatum *string
-	// MaxOverdueDays: Anzahl der Toleranztage bevor ein Schüler blockiert wird.
-	MaxOverdueDays int
-	// MaxOverdueItems: Anzahl der überfälligen Medien ab denen blockiert wird.
-	MaxOverdueItems int
+	// UeberfaelligKarenzTage: Anzahl der Toleranztage bevor ein Schüler blockiert wird.
+	UeberfaelligKarenzTage int
+	// UeberfaelligSperreAbMedien: Anzahl der überfälligen Medien ab denen blockiert wird.
+	UeberfaelligSperreAbMedien int
 	// Sommerferien ist der Text der Einstellung „sommerferien" — die Jahre, die die Schule
 	// neben der Programmtabelle eingetragen hat. Leer heißt: nur die Programmtabelle.
 	Sommerferien string
@@ -74,10 +74,10 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 
 // ladeSystemEinstellungen liest über q, den Pool oder eine Transaktion, was die Ausleihe aus
 // den Einstellungen braucht: Fristen und Sperr-Schwellen. Gelesen und abgebildet werden die
-// Zeilen an einer Stelle (repository.EinstellungenUeber); ein fehlender oder unlesbarer Wert
+// Zeilen an einer Stelle (repository.LadeEinstellungen); ein fehlender oder unlesbarer Wert
 // hat so an der Theke dieselbe Vorgabe wie in der Maske der Einstellungen.
 func ladeSystemEinstellungen(ctx context.Context, q repository.Datenbank) (*SystemEinstellungen, error) {
-	einstellungen, err := repository.EinstellungenUeber(ctx, q)
+	einstellungen, err := repository.LadeEinstellungen(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -87,15 +87,15 @@ func ladeSystemEinstellungen(ctx context.Context, q repository.Datenbank) (*Syst
 // ausleihEinstellungenAus wählt aus den Einstellungen die der Ausleihe.
 func ausleihEinstellungenAus(e *repository.SystemEinstellungen) *SystemEinstellungen {
 	return &SystemEinstellungen{
-		FristBuchTage:           e.FristBuchTage,
-		FristMedienTage:         e.FristMedienTage,
-		MaxAusleihenSchueler:    e.MaxAusleihenSchueler,
-		LmfStichtag:             e.LmfStichtag,
-		FerienLeseclubAktiv:     e.FerienLeseclubAktiv,
-		FerienLeseclubZieldatum: e.FerienLeseclubZieldatum,
-		MaxOverdueDays:          e.MaxOverdueDays,
-		MaxOverdueItems:         e.MaxOverdueItems,
-		Sommerferien:            e.Sommerferien,
+		FristBuchTage:              e.FristBuchTage,
+		FristMedienTage:            e.FristMedienTage,
+		MaxAusleihenSchueler:       e.MaxAusleihenSchueler,
+		LMFStichtag:                e.LMFStichtag,
+		FerienLeseclubAktiv:        e.FerienLeseclubAktiv,
+		FerienLeseclubZieldatum:    e.FerienLeseclubZieldatum,
+		UeberfaelligKarenzTage:     e.UeberfaelligKarenzTage,
+		UeberfaelligSperreAbMedien: e.UeberfaelligSperreAbMedien,
+		Sommerferien:               e.Sommerferien,
 	}
 }
 
@@ -197,7 +197,7 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 		return calculateDueDate(heute, DueDateOptions{
 			IstLernmittel:   copy.IstLernmittel,
 			Medientyp:       copy.Medientyp,
-			LmfStichtag:     repository.StandardLmfStichtag,
+			LmfStichtag:     repository.LMFStichtagVorgabe,
 			FristBuchTage:   21,
 			FristMedienTage: 7,
 			AdditionalYears: additionalYears,
@@ -216,7 +216,7 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 	return calculateDueDate(heute, DueDateOptions{
 		IstLernmittel:   copy.IstLernmittel,
 		Medientyp:       copy.Medientyp,
-		LmfStichtag:     settings.LmfStichtag,
+		LmfStichtag:     settings.LMFStichtag,
 		FristBuchTage:   settings.FristBuchTage,
 		FristMedienTage: settings.FristMedienTage,
 		AdditionalYears: additionalYears,
@@ -256,7 +256,7 @@ func (s *defaultLoanService) fristNachLmfPlan(ctx context.Context, copy *reposit
 		lage, lageErr := repository.NewLmfTerminRepository(s.pool).RueckgabeTerminLage(ctx, borrowerKlasse, heute)
 		if lageErr == nil && lage.Vergangen {
 			folgendes := repository.SchuljahrBeginn(heute).AddDate(1, 0, 0)
-			stichtag := repository.LmfStichtagImSchuljahr(folgendes, settings.LmfStichtag)
+			stichtag := repository.LmfStichtagImSchuljahr(folgendes, settings.LMFStichtag)
 			return TagesEndeInSchulzeitzone(stichtag.AddDate(max(additionalYears-1, 0), 0, 0)), true
 		}
 		if lageErr == nil && lage.Bevorstehend && additionalYears == 0 {

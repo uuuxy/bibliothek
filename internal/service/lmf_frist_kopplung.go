@@ -91,14 +91,14 @@ func loeseLmfFristenVomTermin(ctx context.Context, repo *repository.LmfTerminRep
 	if err != nil {
 		return 0, err
 	}
-	einstellungen, err := repository.EinstellungenUeber(ctx, ex)
+	einstellungen, err := repository.LadeEinstellungen(ctx, ex)
 	if err != nil {
 		return 0, err
 	}
 	// Der Stichtag des Schuljahres, in dem der Termin lag, nicht der nächste ab heute: Angefasst
 	// werden nur Fristen dieses Schuljahres, und sie gehen dorthin zurück, wo sie ohne Plan
 	// gestanden hätten. Und nur Fristen, die auf dem Termin lagen: Eine Frist von Hand bleibt.
-	stichtag := repository.LmfStichtagImSchuljahr(altTag, einstellungen.LmfStichtag)
+	stichtag := repository.LmfStichtagImSchuljahr(altTag, einstellungen.LMFStichtag)
 	von, bis := schuljahrGrenzen(altTag)
 	return repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, verlierer,
 		TagesEndeInSchulzeitzone(stichtag), von, bis, &altTag)

@@ -119,11 +119,11 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 		return apierrors.BadRequest(err.Error(), err)
 	}
 	repo := repository.NewLmfTerminRepository(s.DB.Pool)
-	einstellungen, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(r.Context())
+	einstellungen, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(r.Context())
 	if err != nil {
 		return apierrors.Internal("Einstellungen laden", err)
 	}
-	eingang := repository.EingangsjahrgaengeAus(einstellungen.LmfEingangsjahrgaenge)
+	eingang := repository.EingangsjahrgaengeAus(einstellungen.LMFEingangsjahrgaenge)
 	// Programmtabelle plus die Jahre, die die Schule selbst eingetragen hat.
 	ferientabelle := lmfplan.FerientabelleAus(einstellungen.Sommerferien)
 	antwort := LmfPlanStandAntwort{Zeilen: []repository.LmfPlanZeile{}, Ausgelassen: []string{}, Eingangsjahrgaenge: eingang}

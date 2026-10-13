@@ -58,12 +58,12 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	// Bei unlesbaren Einstellungen wird nicht anonymisiert. Die Vorgabe von 90 Tagen wäre
 	// kein sicherer Rückfall: Eine kleinere Karenz wählt mehr Zeilen, und hat die Schule 365
 	// Tage eingestellt, träfe ein einziger Lesefehler die Abgänger zwischen Tag 91 und 365.
-	einst, err := repository.NewSystemSettingsRepository(s.db).GetSettings(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(s.db).Lade(ctx)
 	if err != nil {
 		log.Printf("Scheduler GDPR Anonymize: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
 		return
 	}
-	karenzTage := repository.AbgaengerKarenzTageOderStandard(einst)
+	karenzTage := repository.AbgaengerKarenzTageOderVorgabe(einst)
 	// Anweisung und Bedingung stehen in repository/: dieselbe Bedingung, die die Selbstprüfung
 	// als Rückstand zählt.
 	count, err := repository.AnonymisiereSchueler(ctx, s.db, karenzTage)

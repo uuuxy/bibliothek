@@ -69,11 +69,11 @@ type attrappeSettingsRepo struct {
 	gespeichert bool
 }
 
-func (a *attrappeSettingsRepo) GetSettings(ctx context.Context) (*repository.SystemEinstellungen, error) {
+func (a *attrappeSettingsRepo) Lade(ctx context.Context) (*repository.SystemEinstellungen, error) {
 	return &repository.SystemEinstellungen{}, nil
 }
 
-func (a *attrappeSettingsRepo) SaveSettings(ctx context.Context, p *repository.EinstellungenPatch) error {
+func (a *attrappeSettingsRepo) Schreibe(ctx context.Context, p *repository.EinstellungenPatch) error {
 	a.gespeichert = true
 	return nil
 }

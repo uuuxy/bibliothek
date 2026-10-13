@@ -25,7 +25,7 @@ func (s *Tueren) ExportReordersPDFHandler() http.HandlerFunc {
 			return
 		}
 
-		settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(r.Context())
+		settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(r.Context())
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

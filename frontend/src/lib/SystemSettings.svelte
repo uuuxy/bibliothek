@@ -12,7 +12,7 @@
 	 * Der Knopf war nicht nur unordentlich, er war die Ursache der drei Leer-Regeln:
 	 * Weil immer alles auf einmal ging, brauchte jede Sektion eine eigene Notbremse
 	 * gegen das Überschreiben der anderen. Mit dem Speichern je Kategorie schickt jede
-	 * nur ihre eigenen Felder (repository/system_settings_patch.go), und es gilt
+	 * nur ihre eigenen Felder (repository/einstellungen_patch.go), und es gilt
 	 * überall dieselbe Regel.
 	 *
 	 * Die Betriebsbereitschaft bleibt hier drin und bekommt bewusst KEINE eigene

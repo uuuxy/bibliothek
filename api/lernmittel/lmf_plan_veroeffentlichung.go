@@ -29,11 +29,11 @@ import (
 
 // lmfEingangsjahrgaenge liest die Einstellung; ohne lesbaren Wert gilt die Vorgabe.
 func (s *Tueren) lmfEingangsjahrgaenge(ctx context.Context) ([]int, error) {
-	einstellungen, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	einstellungen, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return repository.EingangsjahrgaengeAus(einstellungen.LmfEingangsjahrgaenge), nil
+	return repository.EingangsjahrgaengeAus(einstellungen.LMFEingangsjahrgaenge), nil
 }
 
 // lmfPlanNurRueckgabe nennt aus allen Klassen, die der Planer zeigt (Vokabular, Zeilen,

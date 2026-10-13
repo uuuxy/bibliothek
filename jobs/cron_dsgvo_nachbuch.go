@@ -22,7 +22,7 @@ func (s *Scheduler) RunNachbuchMeldungenBefristung() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	einst, err := repository.NewSystemSettingsRepository(s.db).GetSettings(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(s.db).Lade(ctx)
 	if err != nil {
 		log.Printf("Scheduler Nachbuch-Meldungen: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
 		return

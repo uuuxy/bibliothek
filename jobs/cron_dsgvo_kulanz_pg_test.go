@@ -53,9 +53,9 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 	}
 
 	const (
-		freihandTage   = repository.StandardLesehistorieTage
-		lernmittelTage = repository.StandardLesehistorieLernmittelTage
-		anliegenTage   = repository.StandardAnliegenTage
+		freihandTage   = repository.LesehistorieTageVorgabe
+		lernmittelTage = repository.LesehistorieLernmittelTageVorgabe
+		anliegenTage   = repository.AnliegenTageVorgabe
 		papierkorbTage = repository.StandardAnonymisierungSoftDeleteTage
 		// Länger als die Vorgabe von 24 Monaten: Mit ihr fiele die Protokollzeile der
 		// Lernmittel-Ausleihe (730 Tage) in derselben Nacht unter beide Fristen, und ihr Fall
@@ -63,7 +63,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 		auditMonate = 36
 	)
 	must("Aufbewahrung der Protokolle", `INSERT INTO system_einstellungen (schluessel, wert) VALUES ($1, $2)`,
-		repository.AuditAufbewahrungSchluessel, "36")
+		repository.ProtokollAufbewahrungSchluessel, "36")
 	// Ohne gespeicherte Einstellungen folgt die Frist der Nachbuch-Meldungen der Vorgabe der
 	// Lesehistorie.
 	nachbuchTage := repository.NachbuchMeldungenTage(&repository.SystemEinstellungen{})

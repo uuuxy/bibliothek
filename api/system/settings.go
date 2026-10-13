@@ -22,10 +22,10 @@ import (
 // @Success      200  {object}  repository.SystemEinstellungen
 // @Failure      500  {object}  map[string]string
 // @Router       /einstellungen [post]
-func (s *Tueren) GetSettingsHandler(settingsRepo repository.SystemSettingsRepository) http.HandlerFunc {
+func (s *Tueren) GetSettingsHandler(settingsRepo repository.EinstellungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
-		settings, err := settingsRepo.GetSettings(ctx)
+		settings, err := settingsRepo.Lade(ctx)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Einstellungen", err)
 		}
@@ -45,7 +45,7 @@ func (s *Tueren) GetSettingsHandler(settingsRepo repository.SystemSettingsReposi
 // @Failure      400       {object}  map[string]string
 // @Failure      500       {object}  map[string]string
 // @Router       /einstellungen/speichern [post]
-func (s *Tueren) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRepository) http.HandlerFunc {
+func (s *Tueren) UpdateSettingsHandler(settingsRepo repository.EinstellungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		return s.handleUpdateSettings(w, r, settingsRepo)
 	})
@@ -53,9 +53,9 @@ func (s *Tueren) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRep
 
 // handleUpdateSettings prüft den Patch, speichert ihn, protokolliert die Änderung und meldet neue
 // Sitzungsfristen an die offenen Arbeitsplätze.
-func (s *Tueren) handleUpdateSettings(w http.ResponseWriter, r *http.Request, settingsRepo repository.SystemSettingsRepository) error {
+func (s *Tueren) handleUpdateSettings(w http.ResponseWriter, r *http.Request, settingsRepo repository.EinstellungsAbfragen) error {
 	// Patch statt vollem Objekt: Der Rumpf trägt nur die Felder einer Kategorie
-	// (system_settings_patch.go). Ein volles Objekt dekodierte hier zu lauter Nullwerten
+	// (repository/einstellungen_patch.go). Ein volles Objekt dekodierte hier zu lauter Nullwerten
 	// und setzte beim Speichern die übrigen Kategorien zurück.
 	// Streng dekodiert (DecodeStrictAndValidate): Der Rumpf entsteht aus einer
 	// geschlossenen Liste benannter Schlüssel, ein unbekanntes Feld ist hier also
@@ -71,7 +71,7 @@ func (s *Tueren) handleUpdateSettings(w http.ResponseWriter, r *http.Request, se
 			errors.New("leerer Einstellungs-Patch"))
 	}
 	// Zahlen: innerhalb ihrer Spanne oder gar nicht gespeichert
-	// (repository/system_settings_zahlen.go). Beide Prüfungen stehen vor dem
+	// (repository/einstellungen_zahlen.go). Beide Prüfungen stehen vor dem
 	// Protokoll-Eintrag, damit dort nicht die Eingabe steht, während in der Datenbank
 	// etwas anderes liegt.
 	if err := req.PruefeZahlen(); err != nil {
@@ -81,7 +81,7 @@ func (s *Tueren) handleUpdateSettings(w http.ResponseWriter, r *http.Request, se
 		return apierrors.BadRequest(err.Error(), err)
 	}
 
-	if err := settingsRepo.SaveSettings(r.Context(), &req); err != nil {
+	if err := settingsRepo.Schreibe(r.Context(), &req); err != nil {
 		return apierrors.Internal("Fehler beim Speichern der Einstellungen", err)
 	}
 	s.protokolliereEinstellungen(r, req)
@@ -109,19 +109,19 @@ func normalisiereLernmittelAngaben(req *repository.EinstellungenPatch) error {
 		}
 		req.Sommerferien = &norm
 	}
-	if req.LmfEingangsjahrgaenge != nil {
-		norm, err := repository.NormalisiereEingangsjahrgaenge(*req.LmfEingangsjahrgaenge)
+	if req.LMFEingangsjahrgaenge != nil {
+		norm, err := repository.NormalisiereEingangsjahrgaenge(*req.LMFEingangsjahrgaenge)
 		if err != nil {
 			return err
 		}
-		req.LmfEingangsjahrgaenge = &norm
+		req.LMFEingangsjahrgaenge = &norm
 	}
-	if req.LmfStichtag != nil {
-		norm, err := repository.NormalisiereLmfStichtag(*req.LmfStichtag)
+	if req.LMFStichtag != nil {
+		norm, err := repository.NormalisiereLmfStichtag(*req.LMFStichtag)
 		if err != nil {
 			return err
 		}
-		req.LmfStichtag = &norm
+		req.LMFStichtag = &norm
 	}
 	return nil
 }
@@ -150,15 +150,15 @@ type SitzungsEinstellungen struct {
 }
 
 // GetSitzungsEinstellungenHandler liefert die Sitzungs-Fristen an jeden angemeldeten Client.
-func (s *Tueren) GetSitzungsEinstellungenHandler(settingsRepo repository.SystemSettingsRepository) http.HandlerFunc {
+func (s *Tueren) GetSitzungsEinstellungenHandler(settingsRepo repository.EinstellungsAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		settings, err := settingsRepo.GetSettings(r.Context())
+		settings, err := settingsRepo.Lade(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Einstellungen", err)
 		}
 		tuer.RespondJSON(w, http.StatusOK, SitzungsEinstellungen{
-			ThekeLeerenMinuten: repository.TageOderStandard(settings.ThekeLeerenMinuten, repository.StandardThekeLeerenMinuten),
-			SperreMinuten:      repository.TageOderStandard(settings.SperreMinuten, repository.StandardSperreMinuten),
+			ThekeLeerenMinuten: repository.TageOderVorgabe(settings.ThekeLeerenMinuten, repository.ThekeLeerenMinutenVorgabe),
+			SperreMinuten:      repository.TageOderVorgabe(settings.SperreMinuten, repository.SperreMinutenVorgabe),
 		})
 		return nil
 	})

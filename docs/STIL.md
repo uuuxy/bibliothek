@@ -53,6 +53,7 @@ Consistency).
 | Zugang einer Person zum Programm (Tabelle `benutzer`) | `Konto`                            | `User`, `Account`                 |
 | Recht, Rolle                                        | `Recht`, `Rolle`                     | `Permission`, `Role`              |
 | was die Verwaltung einstellt; was der Start liest   | `Einstellung`; `Konfig`              | `Setting`, `Config`               |
+| der Wert, der gilt, solange nichts eingestellt ist  | `…Vorgabe`                           | `Standard…`, `Default…`           |
 | Etikett, Foto, Sperre, Papierkorb                   | `Etikett`, `Foto`, `Sperre`, `Papierkorb` | `Label`, `Photo`, `Lock`, `Deleted` |
 | Abgänger, Lehrkraft                                 | `Abgaenger`, `Lehrkraft`             | `Graduate`, `Teacher`             |
 | Inventur und ihr einzelner Lauf                     | `Inventur`, `Inventurlauf`           | `Inventory`, `Session`            |

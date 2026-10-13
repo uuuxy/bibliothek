@@ -29,8 +29,8 @@ import (
 // Läuft NUR im echten Betrieb: Die lokale .env zeigt auf den echten Schul-SMTP —
 // ein Entwicklungsrechner darf niemals Alarm-Mails auslösen.
 func (s *Tueren) BereitschaftsAlarm(ctx context.Context) {
-	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-	mailRepo := repository.NewMailSettingsRepository(s.DB.Pool)
+	settingsRepo := repository.NewEinstellungsAbfragen(s.DB.Pool)
+	mailRepo := repository.NewMailEinstellungsAbfragen(s.DB.Pool)
 	zustandRepo := repository.NewBetriebszustandAbfragen(s.DB.Pool)
 
 	lage := s.sammleLage(ctx, settingsRepo, mailRepo, zustandRepo)

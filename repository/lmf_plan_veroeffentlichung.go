@@ -20,8 +20,8 @@ import (
 //     Eingangsjahrgänge, Einstellung lmf_eingangsjahrgaenge (Vorgabe „5, 7"; „manchmal
 //     kann ja auch mal was dazwischenkommen").
 
-// LmfEingangsjahrgaengeVorgabe ist die Vorgabe der Einstellung: neue 5er und 7er.
-const LmfEingangsjahrgaengeVorgabe = "5, 7"
+// LMFEingangsjahrgaengeVorgabe ist die Vorgabe der Einstellung: neue 5er und 7er.
+const LMFEingangsjahrgaengeVorgabe = "5, 7"
 
 // EingangsjahrgaengeAus liest die Einstellung („5, 7", „5;7", „5 7") als sortierte,
 // duplikatfreie Jahrgänge 1–13. Unlesbares fällt weg; ganz ohne lesbaren Wert gilt die
@@ -38,7 +38,7 @@ func EingangsjahrgaengeAus(einstellung string) []int {
 		jahrgaenge = append(jahrgaenge, n)
 	}
 	if len(jahrgaenge) == 0 {
-		return EingangsjahrgaengeAus(LmfEingangsjahrgaengeVorgabe)
+		return EingangsjahrgaengeAus(LMFEingangsjahrgaengeVorgabe)
 	}
 	sort.Ints(jahrgaenge)
 	return jahrgaenge

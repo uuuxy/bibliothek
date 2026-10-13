@@ -5637,7 +5637,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "bescheid_bereich_nr": {
-                    "description": "Kategorie „Schadensersatz\" (Migration 110).",
+                    "description": "Kategorie „Schadensersatz\".",
                     "type": "string"
                 },
                 "bescheid_durchwahl": {
@@ -5668,14 +5668,14 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "ersatzwert_immer_kaufpreis": {
-                    "description": "ErsatzwertImmerKaufpreis: siehe SystemEinstellungen — nicht mitgeschickt heißt\n„unangetastet\", false heißt ausdrücklich „Listenpreis bevorzugen\".",
+                    "description": "ErsatzwertImmerKaufpreis: Nicht mitgeschickt heißt unangetastet, false heißt\nausdrücklich „Listenpreis\" (siehe SystemEinstellungen).",
                     "type": "boolean"
                 },
                 "etikett_eigentumsvermerk": {
                     "type": "string"
                 },
                 "etikett_eigentumsvermerk_schuelerbuecherei": {
-                    "description": "Der Vermerk für Bücher der Schülerbücherei; leer heißt kein Vermerk.",
+                    "description": "EtikettEigentumsvermerkSchuelerbuecherei ist der Vermerk für Bücher der Schülerbücherei;\nleer heißt kein Vermerk.",
                     "type": "string"
                 },
                 "ferien_leseclub_aktiv": {
@@ -5718,7 +5718,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "schule_name": {
-                    "description": "Schul-Identität. Bis zum 23.08.2026 hieß ein leeres Feld hier „nicht anfassen\" —\neine Notbremse gegen das Blanking oben, die aber zugleich das Löschen unmöglich\nmachte (ein falscher Eigentumsvermerk ließ sich nicht mehr entfernen). Mit dem\nSpeichern je Kategorie schickt nur noch die Kategorie „Schule\" diese Felder,\nund dann heißt leer wieder schlicht leer.",
+                    "description": "Name, Anschrift und Eigentumsvermerk schickt nur die Kategorie „Schule\". Leer heißt dort\nleer, damit sich ein falscher Vermerk entfernen lässt.",
                     "type": "string"
                 },
                 "schule_ort": {
@@ -5731,7 +5731,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "sommerferien": {
-                    "description": "Sommerferien: JSON-Liste eigener Jahre; der Handler bringt sie vor dem Speichern in\nNormalform (lmfplan.NormalisiereSommerferien) und lehnt Unlesbares mit 400 ab.",
+                    "description": "Sommerferien ist die JSON-Liste eigener Jahre. Die Tür bringt sie vor dem Speichern in\nNormalform (lmfplan.NormalisiereSommerferien) und lehnt Unlesbares ab.",
                     "type": "string"
                 },
                 "sperre_minuten": {
@@ -6122,11 +6122,11 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "abgaenger_karenz_tage": {
-                    "description": "AbgaengerKarenzTage: Tage nach dem Abgang, die ein Abgänger ohne offene Vorgänge\nnur gesperrt bleibt, bevor er anonymisiert wird. 0 = sofort. Migration 094.",
+                    "description": "AbgaengerKarenzTage sind die Tage nach dem Abgang, die ein Abgänger ohne offene Vorgänge\nnur gesperrt bleibt, bevor er anonymisiert wird. 0 heißt sofort.",
                     "type": "integer"
                 },
                 "alarm_empfaenger": {
-                    "description": "AlarmEmpfaenger: kommaseparierte Adressen fuer die Kritisch-Alarme der\nSelbstpruefung. Leer = alle aktiven Admin-Konten (sicherer Rueckfall — ein\nAlarm, der niemanden erreicht, ist keiner). Betreiber-Wunsch 17.08.2026.",
+                    "description": "AlarmEmpfaenger nennt, durch Komma getrennt, die Adressen für die Alarme der\nSelbstprüfung. Leer heißt alle aktiven Admin-Konten: Ein Alarm, der niemanden erreicht,\nist keiner.",
                     "type": "string"
                 },
                 "anliegen_tage": {
@@ -6145,7 +6145,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "bescheid_bereich_nr": {
-                    "description": "Angaben für den Schadensersatz-Bescheid (Migration 110). Vorgaben, Prüfung der\nPflichtangaben und der Aufbau der Referenznummer stehen in\nsystem_settings_bescheid.go — dort ist auch begründet, warum das neun einzelne\nSchlüssel sind und kein Block.",
+                    "description": "Angaben für den Schadensersatz-Bescheid. Vorgaben, die Prüfung der Pflichtangaben und der\nAufbau der Referenznummer stehen in einstellungen_bescheid.go, dort auch, warum es\neinzelne Schlüssel sind und kein Block.",
                     "type": "string"
                 },
                 "bescheid_durchwahl": {
@@ -6170,30 +6170,30 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "bestellbedarf_warnung_aktiv": {
-                    "description": "Bestellbedarf: ob überhaupt gewarnt wird und ab welcher Exemplarzahl ein\n(LMF-)Titel als Bestellbedarf gilt (gesamt \u003c Schwelle). Löst den früheren\npauschalen Meldebestand-Default 5 ab, der fast jeden Titel fälschlich meldete.",
+                    "description": "BestellbedarfWarnungAktiv schaltet die Warnung; BestellbedarfSchwelle nennt die Zahl der\nExemplare, unter der ein Titel als Bestellbedarf gilt.",
                     "type": "boolean"
                 },
                 "bestelllink_gueltigkeit_tage": {
-                    "description": "BestelllinkGueltigkeitTage: Lebensdauer des Bestätigungs-Links in Tagen, den der\nHauptlieferant mit der Bestellmail bekommt (Vorgabe und Begründung in pkg/bestelllink).\nGilt für neu erzeugte Links; laufende behalten ihr Ablaufdatum.",
+                    "description": "BestelllinkGueltigkeitTage ist die Lebensdauer des Links zur Bestätigung, den der\nHauptlieferant mit der Bestellmail bekommt (Vorgabe und Begründung in pkg/bestelllink).\nSie gilt für neu erzeugte Links; laufende behalten ihr Ablaufdatum.",
                     "type": "integer"
                 },
                 "ersatzwert_immer_kaufpreis": {
-                    "description": "ErsatzwertImmerKaufpreis: Gilt ab dem zweiten Verleihjahr immer der Einkaufspreis\nder Schule statt des heutigen Listenpreises? (Anforderungsliste Nr. 3, OFFEN.md 9.8\nStufe 4.)\n\nDie Frage ist bewusst so gestellt, dass NEIN die Vorgabe ist: Ein nicht gesetzter\nSchlüssel liest sich als false, und false ist die Regel der Arbeitshilfe („80 % des\nNeupreises zum Zeitpunkt des Verlusts\"). Hieße das Feld umgekehrt\n„ListenpreisBevorzugen\", rechnete jede bestehende Anlage nach dem Update plötzlich\nmit dem alten Einkaufspreis, ohne dass jemand etwas geändert hätte.",
+                    "description": "ErsatzwertImmerKaufpreis legt fest, dass ab dem zweiten Verleihjahr der Einkaufspreis\nder Schule gilt statt des heutigen Listenpreises. Die Frage ist so gestellt, dass Nein\ndie Vorgabe ist: Ein nicht gesetzter Schlüssel liest sich als false, und false ist die\nRegel der Arbeitshilfe („80 % des Neupreises zum Zeitpunkt des Verlusts\").",
                     "type": "boolean"
                 },
                 "etikett_eigentumsvermerk": {
-                    "description": "EtikettEigentumsvermerk steht als letzte Zeile auf jedem Buchetikett\n(\"Eigentum des Landes Hessen\"). Konfigurierbar und nicht fest verdrahtet, weil\nder Träger je nach Bundesland und Schulform ein anderer ist — und weil ein\nEigentumsvermerk, der nicht stimmt, schlechter ist als keiner.",
+                    "description": "EtikettEigentumsvermerk steht als letzte Zeile auf jedem Buchetikett. Er ist einstellbar,\nweil der Träger je nach Bundesland und Schulform ein anderer ist und ein Vermerk, der\nnicht stimmt, schlechter ist als keiner.",
                     "type": "string"
                 },
                 "etikett_eigentumsvermerk_schuelerbuecherei": {
-                    "description": "EtikettEigentumsvermerkSchuelerbuecherei steht an derselben Stelle auf Büchern, die\naus Mitteln des Schulträgers angeschafft sind (ExemplarTopfSQL). Ein Buch der\nSchülerbücherei trug bis zum 21.09.2026 denselben Aufdruck wie ein Lernmittel.\nAnders als oben gibt es KEINE Werksvorgabe: leer heißt kein Vermerk — wem diese\nBücher gehören, weiß nur die Schule.",
+                    "description": "EtikettEigentumsvermerkSchuelerbuecherei steht an derselben Stelle auf Büchern aus\nMitteln des Schulträgers (ExemplarTopfSQL). Hier gibt es keine Vorgabe des Programms:\nWem diese Bücher gehören, weiß nur die Schule, und leer heißt kein Vermerk.",
                     "type": "string"
                 },
                 "ferien_leseclub_aktiv": {
                     "type": "boolean"
                 },
                 "ferien_leseclub_zieldatum": {
-                    "description": "ISO date string \"YYYY-MM-DD\" or null",
+                    "description": "Kalendertag „JJJJ-MM-TT\" oder nil",
                     "type": "string"
                 },
                 "frist_buch_tage": {
@@ -6206,36 +6206,37 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "lesehistorie_tage": {
-                    "description": "Datenschutz (A1): Tage nach der Rückgabe, nach denen die Ausleihe vom Schüler getrennt\nwird (schueler_id = NULL) — getrennt für Schülerbücherei und Lernmittel. 0 = nie.\nSitzung (A4): Minuten Inaktivität bis Theke leeren bzw. Sperrbildschirm. 0 = aus.\nZeiger, Vorgaben und Begründung: system_settings_datenschutz.go.",
+                    "description": "Fristen des Datenschutzes und der Sitzung, je als Zeiger; Vorgaben und Begründung stehen\nin einstellungen_datenschutz.go. Die Lesehistorie zählt die Tage nach der Rückgabe, nach\ndenen eine Ausleihe vom Leser getrennt wird, je für Schülerbücherei und Lernmittel; Theke\nund Sperre zählen Minuten ohne Eingabe. 0 schaltet eine Frist ab, nur die Aufbewahrung des\nProtokolls hat eine Untergrenze (ProtokollAufbewahrungMonateMinimum).",
                     "type": "integer"
                 },
                 "lmf_eingangsjahrgaenge": {
-                    "description": "LmfEingangsjahrgaenge: die Jahrgänge, die nach den Sommerferien ihre Bücher\nbekommen, weil ihre Klassen neu gebildet werden („5, 7\"; EingangsjahrgaengeAus).",
+                    "description": "LMFEingangsjahrgaenge nennt die Jahrgänge, die ihre Bücher erst nach den Sommerferien\nbekommen, weil ihre Klassen neu gebildet werden („5, 7\"; EingangsjahrgaengeAus).",
                     "type": "string"
                 },
                 "lmf_stichtag": {
-                    "description": "\"MM-DD\" format, e.g. \"07-31\"",
+                    "description": "„MM-TT\", etwa „07-31\"",
                     "type": "string"
                 },
                 "max_ausleihen_schueler": {
                     "type": "integer"
                 },
                 "max_overdue_days": {
+                    "description": "UeberfaelligKarenzTage und UeberfaelligSperreAbMedien steuern die Sperre wegen\nÜberfälligkeit: Gesperrt ist, wer mindestens so viele Medien länger als die Karenz\nüberfällig hat.",
                     "type": "integer"
                 },
                 "max_overdue_items": {
                     "type": "integer"
                 },
                 "oeffentliche_adresse": {
-                    "description": "OeffentlicheAdresse ist die Adresse, unter der DRITTE dieses System erreichen —\nz. B. \"https://bibliothek.schule.de\". Aus ihr entsteht der Bestätigungs-Link, den\nder Lieferant mit der Bestellmail bekommt.\n\nDer Server kennt sie nicht von selbst: Hinter einem Reverse-Proxy sieht er nur\nseinen internen Namen, und ein Link auf \"localhost:8080\" wäre beim Lieferanten\nwertlos. Zeiger statt String, damit die Unterscheidung \"nicht mitgeschickt\"\n(nil, Wert bleibt) und \"geleert\" (\"\") erhalten bleibt — sonst löscht jedes\nSpeichern einer anderen Einstellungs-Sektion still den Link-Versand.",
+                    "description": "OeffentlicheAdresse ist die Adresse, unter der Dritte das Programm erreichen, etwa\n„https://bibliothek.schule.de\". Aus ihr entsteht der Link zur Bestätigung in der\nBestellmail. Der Server kennt sie nicht von selbst: Hinter einem Reverse-Proxy sieht er\nnur seinen internen Namen. Ein Zeiger, damit „nicht mitgeschickt\" (nil, der Wert bleibt)\nund „geleert\" (\"\") verschieden bleiben.",
                     "type": "string"
                 },
                 "preise_erfassen": {
-                    "description": "PreiseErfassen entscheidet, ob das Bestellwesen mit Geld arbeitet.\n\nAus heisst: kein Preisfeld im Warenkorb, keine Betragsspalten in der Historie, und\ndie Berichte zaehlen Exemplare statt Euro zu summieren. Der Schalter steuert\nERFASSUNG UND ANZEIGE, nicht die Daten — bereits erfasste Betraege bleiben in der\nDatenbank und tauchen wieder auf, sobald er zurueckgelegt wird.\n\nAnlass: Ohne gepflegte Preise summieren Bestellhistorie und alle drei Berichte\nNullen. Spalten voller 0,00 EUR sind schlimmer als keine Spalten — sie sehen aus\nwie ein Nachweis und sind keiner.",
+                    "description": "PreiseErfassen entscheidet, ob das Bestellwesen mit Geld arbeitet. Aus heißt: kein\nPreisfeld im Warenkorb, keine Spalten mit Beträgen, und die Berichte zählen Exemplare.\nDer Schalter steuert Erfassung und Anzeige, nicht die Daten: Erfasste Beträge bleiben\ngespeichert und erscheinen wieder, sobald er zurückgelegt wird. Ohne gepflegte Preise\nsummierten Historie und Berichte Nullen, und eine Spalte voller 0,00 EUR sieht aus wie\nein Nachweis.",
                     "type": "boolean"
                 },
                 "schule_name": {
-                    "description": "School identity — used in PDF letter headers (set once via settings UI).",
+                    "description": "Name und Anschrift der Schule stehen im Kopf der Briefe.",
                     "type": "string"
                 },
                 "schule_ort": {
@@ -6248,7 +6249,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "sommerferien": {
-                    "description": "Sommerferien: eigene Jahre der Schule als JSON-Liste (pkg/lmfplan/ferien_einstellung.go),\nVerlängerung der Programmtabelle; leer = nur die Programmtabelle. SommerferienProgramm\nist die Programmtabelle selbst (nur gelesen, damit die Oberfläche zeigt, was schon da ist).",
+                    "description": "Sommerferien hält die eigenen Jahre der Schule als JSON-Liste und verlängert die Tabelle\ndes Programms (pkg/lmfplan/ferien_einstellung.go); leer heißt, nur die Tabelle gilt.\nSommerferienProgramm ist diese Tabelle selbst. Sie wird nur gelesen, damit die Oberfläche\nzeigt, was schon da ist.",
                     "type": "string"
                 },
                 "sommerferien_programm": {

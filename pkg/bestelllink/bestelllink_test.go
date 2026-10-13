@@ -7,14 +7,14 @@ import (
 
 // Unter einem Tag gilt die Vorgabe, jeder andere Wert gilt, wie er eingestellt ist.
 func TestTage(t *testing.T) {
-	faelle := map[int]int{-5: VorgabeTage, 0: VorgabeTage, 1: 1, 20: 20, 45: 45, 365: 365}
+	faelle := map[int]int{-5: TageVorgabe, 0: TageVorgabe, 1: 1, 20: 20, 45: 45, 365: 365}
 	for eingestellt, will := range faelle {
 		if ist := Tage(eingestellt); ist != will {
 			t.Errorf("Tage(%d) = %d, erwartet %d", eingestellt, ist, will)
 		}
 	}
-	if VorgabeTage < 1 {
-		t.Errorf("die Vorgabe ist %d Tage, ein Link ohne Frist darf nicht entstehen", VorgabeTage)
+	if TageVorgabe < 1 {
+		t.Errorf("die Vorgabe ist %d Tage, ein Link ohne Frist darf nicht entstehen", TageVorgabe)
 	}
 }
 

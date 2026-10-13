@@ -38,7 +38,7 @@ func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 		if !strings.Contains(text, "Eigentum des Kreises Wetterau") {
 			t.Errorf("%s: konfigurierter Eigentumsvermerk fehlt auf dem Bogen", b.Name)
 		}
-		if strings.Contains(text, repository.StandardEigentumsvermerk) {
+		if strings.Contains(text, repository.EigentumsvermerkVorgabe) {
 			t.Errorf("%s: Werksvorgabe steht trotz konfiguriertem Vermerk auf dem Bogen", b.Name)
 		}
 		if !strings.Contains(text, "Testschule") {
@@ -54,7 +54,7 @@ func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T
 		t.Fatalf("etikettenboegen: %v", err)
 	}
 	for _, b := range boegen {
-		if !strings.Contains(pdftest.Suchtext(t, b.Data), repository.StandardEigentumsvermerk) {
+		if !strings.Contains(pdftest.Suchtext(t, b.Data), repository.EigentumsvermerkVorgabe) {
 			t.Errorf("%s: ohne Konfiguration muss die Werksvorgabe drucken", b.Name)
 		}
 	}

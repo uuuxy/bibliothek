@@ -12,48 +12,42 @@ import (
 	"bibliothek/repository"
 )
 
-// Einstellungs-Schlüssel: Oberfläche gegen Struct.
+// Die Schlüssel der Einstellungen: Oberfläche gegen Patch.
 //
-// Die Einstellungsseite baut ihren Patch aus benannten Schlüsseln — jede Kategorie
-// nennt in `speichereKategorie({...})` die Felder, die sie schickt. Auf der anderen
-// Seite steht `repository.EinstellungenPatch` mit seinen json-Tags. Zwischen beiden gab
-// es bis zum 23.08.2026 keine Verbindung außer der Aufmerksamkeit dessen, der ein Feld
-// hinzufügt.
-//
-// Was das kostet, ist an diesem Tag zweimal passiert: Die Mail-Kategorie schickte ihre
-// Felder in Unterstrich-Schreibweise, das Struct kannte sie nicht, der Decoder verwarf
-// sie still — und die Oberfläche meldete "gespeichert" (Commit 488f51d9). Seit heute
-// dekodiert der Endpunkt streng (400 statt stiller Verlust); dieses Gate zieht die
-// Grenze eine Stufe früher, nämlich beim Bauen.
+// Die Seite der Einstellungen baut ihren Patch aus benannten Schlüsseln: Jede Kategorie nennt
+// in `speichereKategorie({...})` die Felder, die sie schickt. Auf der anderen Seite steht
+// `repository.EinstellungenPatch` mit seinen JSON-Namen. Ohne diese Prüfung verbindet beide
+// nur die Aufmerksamkeit dessen, der ein Feld hinzufügt: Die Kategorie Mail schickte ihre
+// Felder in einer Schreibweise, die der Typ nicht kannte, der Decoder verwarf sie, und die
+// Oberfläche meldete „gespeichert". Die Tür dekodiert inzwischen streng und lehnt ab; diese
+// Prüfung meldet den Fehler schon beim Bauen.
 //
 // Beide Richtungen zählen:
 //
-//   - Schlüssel in der Oberfläche, den das Struct nicht kennt → der Wert kommt nie an.
-//   - Feld im Struct, das keine Kategorie schickt → eine Einstellung, die niemand
-//     einstellen kann (das Gegenstück zum toten Recht `view_stats`).
+//   - Ein Schlüssel der Oberfläche, den der Typ nicht kennt: Der Wert kommt nie an.
+//   - Ein Feld im Typ, das keine Kategorie schickt: eine Einstellung, die niemand einstellen
+//     kann.
 func TestEinstellungsSchluesselDeckenSichMitDemPatchStruct(t *testing.T) {
 	inOberflaeche := schluesselAusKategorien(t)
 	imStruct := jsonTags(repository.EinstellungenPatch{})
 
 	for _, k := range sortiereMenge(inOberflaeche) {
 		if !imStruct[k] {
-			t.Errorf("die Einstellungsseite schickt %q — repository.EinstellungenPatch kennt "+
-				"dieses Feld nicht. Der Wert käme nie an (bzw. seit heute als 400 zurück).", k)
+			t.Errorf("die Seite der Einstellungen schickt %q, repository.EinstellungenPatch kennt "+
+				"dieses Feld nicht. Die Tür lehnte das Speichern ab.", k)
 		}
 	}
 	for _, k := range sortiereMenge(imStruct) {
 		if !inOberflaeche[k] {
-			t.Errorf("EinstellungenPatch trägt %q, aber keine Kategorie schickt es — "+
+			t.Errorf("EinstellungenPatch trägt %q, aber keine Kategorie schickt es: "+
 				"eine Einstellung, die niemand einstellen kann.", k)
 		}
 	}
 }
 
-// schluesselAusKategorien liest NUR die speichereKategorie-Aufrufe. Die Kategorien
-// LESEN ihre Felder auch (`start.theke_leeren_minuten`); ein Detektor, der beides in
-// einen Topf wirft, meldet ein Feld weiterhin als versorgt, nachdem der Schreibweg
-// entfernt wurde — genau daran ist der erste Entwurf des Schwester-Gates im Frontend
-// gescheitert.
+// schluesselAusKategorien liest nur die Aufrufe von speichereKategorie. Die Kategorien lesen
+// ihre Felder auch (`start.theke_leeren_minuten`); ein Detektor, der beides zusammenwirft,
+// meldet ein Feld weiter als versorgt, nachdem der Schreibweg entfernt wurde.
 func schluesselAusKategorien(t *testing.T) map[string]bool {
 	t.Helper()
 	dir := filepath.Join("..", "frontend", "src", "lib", "components", "settings", "kategorien")
@@ -62,10 +56,9 @@ func schluesselAusKategorien(t *testing.T) map[string]bool {
 		t.Fatalf("Kategorien-Verzeichnis lesen: %v", err)
 	}
 
-	// Zwei Schreibweisen, beide echt: `zahlen: [{ schluessel: 'x', … }]` für Zahlen mit
-	// Untergrenze und `felder: { x: wert }` für Texte und Schalter. Ein Detektor, der nur
-	// eine davon kennt, meldet die halbe Oberfläche als tot — beim ersten Entwurf dieses
-	// Tests genau so passiert (acht Fehlalarme).
+	// Zwei Schreibweisen kommen vor: `zahlen: [{ schluessel: 'x', … }]` für Zahlen mit
+	// Untergrenze und `felder: { x: wert }` für Texte und Schalter. Ein Detektor, der nur eine
+	// davon kennt, meldet die halbe Oberfläche als tot.
 	ausZahlen := regexp.MustCompile(`schluessel:\s*'([a-z_]+)'`)
 	ausFeldern := regexp.MustCompile(`felder:\s*\{([^}]*)\}`)
 	feldName := regexp.MustCompile(`([a-z_]+)\s*:`)
@@ -97,16 +90,15 @@ func schluesselAusKategorien(t *testing.T) map[string]bool {
 		}
 	}
 	if dateien < 5 || len(menge) == 0 {
-		t.Fatalf("nur %d Kategorien mit %d Schlüsseln gefunden — der Detektor greift ins Leere",
+		t.Fatalf("nur %d Kategorien mit %d Schlüsseln gefunden: Der Detektor greift ins Leere",
 			dateien, len(menge))
 	}
 	return menge
 }
 
-// speicherAufrufText schneidet den Aufruf `speichereKategorie( … )` klammergenau aus.
-// Die ganze Datei zu durchsuchen wäre falsch: Jede Kategorie LIEST ihre Felder auch
-// (`start.theke_leeren_minuten`), und ein Detektor, der beides in einen Topf wirft,
-// meldet ein Feld weiterhin als versorgt, nachdem der Schreibweg entfernt wurde.
+// speicherAufrufText schneidet den Aufruf `speichereKategorie( … )` bis zur schließenden
+// Klammer aus. Die ganze Datei zu durchsuchen wäre falsch, aus dem Grund, der über
+// schluesselAusKategorien steht.
 func speicherAufrufText(ab string) string {
 	tiefe := 0
 	for i, c := range ab {

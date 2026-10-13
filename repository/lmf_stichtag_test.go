@@ -114,7 +114,7 @@ func stichtagsVerstoesse(t *testing.T, name, quelle string) []string {
 	ast.Inspect(baum, func(n ast.Node) bool {
 		switch k := n.(type) {
 		case *ast.BasicLit:
-			if k.Kind == token.STRING && k.Value == `"`+StandardLmfStichtag+`"` {
+			if k.Kind == token.STRING && k.Value == `"`+LMFStichtagVorgabe+`"` {
 				funde = append(funde, "Vorgabe-Literal "+k.Value)
 			}
 		case *ast.CallExpr:
@@ -208,7 +208,7 @@ func f(einst struct{ LmfStichtag string }) {
 		t.Errorf("Zweite Fassung der Stichtags-Rechnung:\n  %s\n\n"+
 			"Der Stichtag wird an EINER Stelle gerechnet (repository/lmf_stichtag.go): "+
 			"LmfStichtagImSchuljahr für den Rückweg des Plans, LmfStichtagAbTag für eine neue "+
-			"Ausleihe, StandardLmfStichtag für die Vorgabe. Zwei Fassungen waren sich zuletzt "+
+			"Ausleihe, LMFStichtagVorgabe für die Vorgabe. Zwei Fassungen waren sich zuletzt "+
 			"nur bei der Vorgabe einig.", strings.Join(verstoesse, "\n  "))
 	}
 }

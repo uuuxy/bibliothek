@@ -61,7 +61,7 @@ func bestellmailDatenAus(res *service.OrderResult) bestellmailDaten {
 func (s *Tueren) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitLink bool, err error) {
 	// Ein Lesefehler ist ein Fehler: Mit den Vorgaben ginge die Mail ohne die Angaben der Schule
 	// und ohne Link hinaus. Der Aufrufer vermerkt den Versand dann als gescheitert.
-	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil {
 		return false, fmt.Errorf("einstellungen lesen: %w", err)
 	}

@@ -170,8 +170,8 @@ var phantomBestand = map[string]int{
 	"repository/inventur_verlust_aktionen.go:EndgueltigLoescheVerlustExemplare": 3,
 	"repository/inventur_verlust_aktionen.go:MarkiereVerlustAlsGefunden":        1,
 	"repository/inventur_verlust_aktionen.go:schreibeAuditLog":                  1,
-	"repository/mail_settings.go:UpdateConfig":                                  2,
-	"repository/system_settings.go:SaveSettings":                                1,
+	"repository/mail_einstellungen.go:Schreibe":                                 2,
+	"repository/einstellungen.go:Schreibe":                                      1,
 	// Prüfhilfen der Tests: Sie legen Zeilen an, leeren Tabellen oder räumen auf. Eine Anweisung,
 	// die dort keine Zeile trifft, meldet niemandem einen Erfolg.
 	"internal/pgtest/anweisungen.go:RaeumeAuf":                    1,

@@ -90,7 +90,7 @@ func handlePrintRechnung(w http.ResponseWriter, r *http.Request, dbPool db.PgxPo
 
 	// Ein Lesefehler ist ein Fehler: Mit den Vorgaben nennte das Blatt keine Schule und die
 	// Bankverbindung der Vorgabe statt der eingetragenen.
-	settings, err := repository.NewSystemSettingsRepository(dbPool).GetSettings(ctx)
+	settings, err := repository.NewEinstellungsAbfragen(dbPool).Lade(ctx)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
 		return

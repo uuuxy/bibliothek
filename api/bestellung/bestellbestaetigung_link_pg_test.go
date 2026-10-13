@@ -66,7 +66,7 @@ func TestOeffentlicheBestaetigung_Regelweg(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
-	bestellungID, token := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
+	bestellungID, token := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 
 	rec := getOeffentlicheBestellung(srv, token)
 	if rec.Code != http.StatusOK {
@@ -106,7 +106,7 @@ func TestOeffentlicheBestaetigung_ZweiterKlickIstKonflikt(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
-	_, token := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
+	_, token := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 
 	if rec := postOeffentlichBestaetigen(srv, token, `{}`); rec.Code != http.StatusOK {
 		t.Fatalf("erster POST = %d, want 200", rec.Code)
@@ -152,7 +152,7 @@ func TestNeuerLinkEntwertetDenAlten(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
-	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
+	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO system_einstellungen (schluessel, wert) VALUES ('oeffentliche_adresse', 'https://bib.example.invalid')
@@ -195,7 +195,7 @@ func TestNeuerLink_AdresseAusLeerzeichenLaesstDenAltenLinkGelten(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
-	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.VorgabeTage)
+	bestellungID, alterToken := bestellungMitToken(t, pool, lieferant, bestelllink.TageVorgabe)
 	testdaten.SetzeOeffentlicheAdresse(t, pool, "   ")
 	t.Cleanup(func() { testdaten.SetzeOeffentlicheAdresse(t, pool, "") })
 

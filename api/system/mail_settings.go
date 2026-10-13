@@ -39,26 +39,26 @@ type MailSettingsRequest struct {
 }
 
 // GetMailSettingsHandler gibt die Mail-Konfiguration zurück
-func (s *Tueren) GetMailSettingsHandler(mailRepo *repository.MailSettingsRepository) http.HandlerFunc {
+func (s *Tueren) GetMailSettingsHandler(mailRepo *repository.MailEinstellungsAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		config, err := mailRepo.GetConfig(ctx)
+		config, err := mailRepo.Lade(ctx)
 		if err != nil {
 			// Falls noch keine Konfiguration existiert, geben wir leere Werte zurück (bzw. Defaults)
-			config = &repository.MailSettings{
-				SMTPHost:    "localhost",
-				SMTPPort:    "1025",
-				SMTPUser:    "",
-				SenderEmail: "noreply@bibliothek-schule.de",
+			config = &repository.MailEinstellungen{
+				SMTPHost:      "localhost",
+				SMTPPort:      "1025",
+				SMTPBenutzer:  "",
+				AbsenderEmail: "noreply@bibliothek-schule.de",
 			}
 		}
 
 		resp := MailSettingsResponse{
 			SMTPHost:    config.SMTPHost,
 			SMTPPort:    config.SMTPPort,
-			SMTPUser:    config.SMTPUser,
-			SenderEmail: config.SenderEmail,
-			HasPassword: len(config.SMTPPasswordEncrypted) > 0,
+			SMTPUser:    config.SMTPBenutzer,
+			SenderEmail: config.AbsenderEmail,
+			HasPassword: len(config.SMTPPasswortVerschluesselt) > 0,
 		}
 
 		tuer.RespondJSON(w, http.StatusOK, resp)
@@ -66,7 +66,7 @@ func (s *Tueren) GetMailSettingsHandler(mailRepo *repository.MailSettingsReposit
 }
 
 // UpdateMailSettingsHandler speichert die Mail-Konfiguration
-func (s *Tueren) UpdateMailSettingsHandler(mailRepo *repository.MailSettingsRepository) http.HandlerFunc {
+func (s *Tueren) UpdateMailSettingsHandler(mailRepo *repository.MailEinstellungsAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req MailSettingsRequest
 		if !tuer.DecodeAndValidate(w, r, &req) {
@@ -87,7 +87,7 @@ func (s *Tueren) UpdateMailSettingsHandler(mailRepo *repository.MailSettingsRepo
 		}
 
 		ctx := r.Context()
-		err := mailRepo.UpdateConfig(ctx, req.SMTPHost, req.SMTPPort, req.SMTPUser, req.SMTPPassword, req.SenderEmail)
+		err := mailRepo.Schreibe(ctx, req.SMTPHost, req.SMTPPort, req.SMTPUser, req.SMTPPassword, req.SenderEmail)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

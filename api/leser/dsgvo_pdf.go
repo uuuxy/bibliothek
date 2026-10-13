@@ -37,7 +37,7 @@ func (s *Tueren) DsgvoAuskunftPDFHandler() http.HandlerFunc {
 			return err
 		}
 
-		settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+		settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 		if err != nil {
 			return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 		}

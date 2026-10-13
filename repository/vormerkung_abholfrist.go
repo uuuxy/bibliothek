@@ -21,7 +21,7 @@ const AbholfristTage = 3
 // (lmfplan.Ferientabelle.Tagesfrist) mit den Sommerferien aus den Einstellungen, dieselbe
 // Rechnung wie bei der Leihfrist. ex ist der Executor der Zuteilung (Transaktion oder Pool).
 func Abholfrist(ctx context.Context, ex SpurenExecutor, jetzt time.Time) (time.Time, error) {
-	einstellungen, err := EinstellungenUeber(ctx, ex)
+	einstellungen, err := LadeEinstellungen(ctx, ex)
 	if err != nil {
 		return time.Time{}, err
 	}

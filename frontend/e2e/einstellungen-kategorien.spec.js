@@ -18,7 +18,7 @@ import {
 // Wer EINE Kategorie speichert, ändert nichts in den anderen.
 //
 // Warum das ein eigenes Gate braucht, obwohl das Repository dieselbe Aussage schon
-// beweist (system_settings_roundtrip_pg_test.go): Der Beweis dort beginnt beim
+// beweist (einstellungen_roundtrip_pg_test.go): Der Beweis dort beginnt beim
 // Patch-Objekt. Ob die OBERFLÄCHE wirklich nur ihre eigenen Felder hineinlegt, sieht
 // er nicht — und genau dort saß der Fehler bis gestern. Eine Sektion schickte das
 // ganze Formular, und das Backend schrieb elf Schlüssel aus lauter Nullwerten.

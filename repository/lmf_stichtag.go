@@ -35,10 +35,10 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// StandardLmfStichtag ist die Vorgabe: 31. Juli, das Ende des hessischen Schuljahres.
+// LMFStichtagVorgabe ist die Vorgabe: 31. Juli, das Ende des hessischen Schuljahres.
 // Sie steht hier und wird von den Einstellungen, ihrem Zurücksetzen und den
 // Notfallwerten der Ausleihe gelesen — vorher stand das Literal an fünf Stellen.
-const StandardLmfStichtag = "07-31"
+const LMFStichtagVorgabe = "07-31"
 
 // lmfStichtagMonatTag zerlegt „MM-TT". Unlesbares fällt auf die Vorgabe zurück: Der
 // Wert kommt aus einer Einstellung, und eine kaputte Einstellung darf keine Ausleihe

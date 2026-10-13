@@ -86,7 +86,7 @@ func (s *Tueren) ZugangsbuchPDFHandler() http.HandlerFunc {
 			return apierrors.Internal("Zugangsbuch konnte nicht gelesen werden", err)
 		}
 
-		einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+		einst, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 		if err != nil {
 			return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
 		}

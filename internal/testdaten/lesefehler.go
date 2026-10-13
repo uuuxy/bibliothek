@@ -11,7 +11,7 @@ import (
 )
 
 // EinstellungenLesen ist das Muster der Abfrage, mit der jede Tür die Einstellungen als Ganzes
-// liest (repository.EinstellungenUeber).
+// liest (repository.LadeEinstellungen).
 const EinstellungenLesen = "SELECT schluessel, wert FROM system_einstellungen"
 
 // ErrLesefehler ist der Fehler, den PoolMitLesefehler für die gestörte Abfrage liefert.

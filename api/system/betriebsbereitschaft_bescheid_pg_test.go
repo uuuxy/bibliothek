@@ -20,24 +20,24 @@ func TestBescheidAngabenErreichenDieSelbstpruefung(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	settingsRepo := repository.NewSystemSettingsRepository(pool)
-	mailRepo := repository.NewMailSettingsRepository(pool)
+	settingsRepo := repository.NewEinstellungsAbfragen(pool)
+	mailRepo := repository.NewMailEinstellungsAbfragen(pool)
 	zustandRepo := repository.NewBetriebszustandAbfragen(pool)
 
-	einst, err := settingsRepo.GetSettings(ctx)
+	einst, err := settingsRepo.Lade(ctx)
 	if err != nil || einst == nil {
 		t.Fatalf("Einstellungen lesen: %v", err)
 	}
 	vorher := einst.BescheidSchulnummer
 	t.Cleanup(func() {
 		patch := &repository.EinstellungenPatch{BescheidSchulnummer: &vorher}
-		if err := settingsRepo.SaveSettings(context.Background(), patch); err != nil {
+		if err := settingsRepo.Schreibe(context.Background(), patch); err != nil {
 			t.Logf("Schulnummer zurücksetzen: %v", err)
 		}
 	})
 	setze := func(wert string) {
 		t.Helper()
-		if err := settingsRepo.SaveSettings(ctx, &repository.EinstellungenPatch{BescheidSchulnummer: &wert}); err != nil {
+		if err := settingsRepo.Schreibe(ctx, &repository.EinstellungenPatch{BescheidSchulnummer: &wert}); err != nil {
 			t.Fatalf("Schulnummer setzen: %v", err)
 		}
 	}

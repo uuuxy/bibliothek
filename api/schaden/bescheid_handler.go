@@ -34,7 +34,7 @@ const (
 
 // bescheidAngaben liest Einstellungen und Schul-Identität in einem Zug.
 func (s *Tueren) bescheidAngaben(ctx context.Context) (repository.BescheidAngaben, repository.SchuleAngaben, error) {
-	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil {
 		return repository.BescheidAngaben{}, repository.SchuleAngaben{}, err
 	}

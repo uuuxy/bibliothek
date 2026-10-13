@@ -11,45 +11,42 @@ import (
 	"bibliothek/repository"
 )
 
-// Die dritte Richtung: Was der Server LIEST, muss auch einstellbar sein.
+// Was der Server liest, ist auch einstellbar.
 //
-// Das Schwester-Gate (einstellungen_schluessel_paritaet_test.go) hält Oberfläche und
-// Patch-Struct zusammen. Für einen Schlüssel, den nur der Server liest, ist es blind —
-// und genau dort saß der Fund vom 23.08.2026: `audit_aufbewahrung_monate` wurde vom
-// Aufbewahrungs-Job gelesen und im Dateikopf als einstellbar beschrieben ("Untergrenze
-// 6"), stand aber in keiner Kategorie, keinem Struct, keinem Seed und keiner Migration.
-// Kein Weg konnte ihn schreiben; die Frist war faktisch fest verdrahtet, und die
-// Selbstprüfung meldete "Frist 24 Monate", als wäre sie konfiguriert.
+// Die Schwesterprüfung (einstellungen_schluessel_paritaet_test.go) hält Oberfläche und Patch
+// zusammen. Für einen Schlüssel, den nur der Server liest, ist sie blind: Der nächtliche Lauf
+// las `audit_aufbewahrung_monate`, der Schlüssel stand aber in keiner Kategorie, keinem Typ
+// und keiner Migration. Kein Weg konnte ihn schreiben, die Frist stand fest, und die
+// Selbstprüfung meldete „Frist 24 Monate", als wäre sie eingestellt.
 func TestGeleseneEinstellungenSindEinstellbar(t *testing.T) {
 	gelesen := schluesselAusUebernahme(t)
-	// Gegenprobe am Detektor: Findet er überhaupt etwas? Ein Regex, der ins Leere
-	// greift, meldet fröhlich "alles einstellbar".
+	// Gegenprobe am Detektor: Ein Muster, das ins Leere greift, meldete „alles einstellbar".
 	if len(gelesen) < 12 {
-		t.Fatalf("nur %d gelesene Schlüssel gefunden — der Detektor greift ins Leere", len(gelesen))
+		t.Fatalf("nur %d gelesene Schlüssel gefunden: Der Detektor greift ins Leere", len(gelesen))
 	}
 	imStruct := jsonTags(repository.EinstellungenPatch{})
 
 	for _, k := range sortiereMenge(gelesen) {
 		if !imStruct[k] {
 			t.Errorf("der Server liest die Einstellung %q, aber repository.EinstellungenPatch "+
-				"kennt sie nicht — niemand kann sie setzen, der Wert ist faktisch fest "+
-				"verdrahtet. Entweder anbieten oder die Behauptung aus dem Code nehmen.", k)
+				"kennt sie nicht: Niemand kann sie setzen, der Wert steht fest. "+
+				"Entweder anbieten oder die Behauptung aus dem Code nehmen.", k)
 		}
 	}
 }
 
-// schluesselAusUebernahme sammelt die `case "..."`-Schlüssel der Funktionen, die einen
-// gespeicherten Wert in ein Feld übernehmen. Bewusst NUR diese: Ein Detektor, der jedes
-// Vorkommen einer Zeichenkette zählt, fände auch Kommentare und Testdaten.
+// schluesselAusUebernahme sammelt die Schlüssel aus den Zweigen `case "..."` der Funktionen,
+// die einen gespeicherten Wert in ein Feld übernehmen, und nur diese: Ein Detektor, der jede
+// Zeichenkette zählt, fände auch Kommentare und Testdaten.
 func schluesselAusUebernahme(t *testing.T) map[string]bool {
 	t.Helper()
 	caseSchluessel := regexp.MustCompile(`case\s+"([a-z_]+)"`)
 
 	menge := map[string]bool{}
 	for _, q := range []string{
-		filepath.Join("..", "repository", "system_settings_datenschutz.go"),
-		filepath.Join("..", "repository", "system_settings_bescheid.go"),
-		filepath.Join("..", "repository", "system_settings.go"),
+		filepath.Join("..", "repository", "einstellungen_datenschutz.go"),
+		filepath.Join("..", "repository", "einstellungen_bescheid.go"),
+		filepath.Join("..", "repository", "einstellungen.go"),
 	} {
 		roh, err := os.ReadFile(q)
 		if err != nil {
@@ -59,25 +56,24 @@ func schluesselAusUebernahme(t *testing.T) map[string]bool {
 			menge[m[1]] = true
 		}
 	}
-	// Der Audit-Schlüssel steht als Konstante im case, nicht als Literal — über den Wert
-	// dazu, sonst rutschte genau der Fall durch, der diesen Test veranlasst hat.
-	menge[repository.AuditAufbewahrungSchluessel] = true
+	// Der Schlüssel für die Aufbewahrung des Protokolls steht als Konstante im case und kommt
+	// deshalb über ihren Wert dazu; sonst fehlte der Fall, für den es diesen Test gibt.
+	menge[repository.ProtokollAufbewahrungSchluessel] = true
 	return menge
 }
 
-// TestKeineNeuenRohenEinstellungsLeser friert die Stellen ein, die an den Einstellungen
-// VORBEI direkt in system_einstellungen greifen.
+// TestKeineNeuenRohenEinstellungsLeser hält die Stellen fest, die an den Einstellungen vorbei
+// in system_einstellungen greifen.
 //
-// Warum als Ratsche und nicht als Verbot: Die drei bekannten Stellen sind berechtigt —
-// zwei davon lesen einen Wert, den das Programm selbst geschrieben hat (Restore-Probe,
-// Ausweis-Layout), die dritte ist die Einstellungs-Schicht selbst. Aber genau auf
-// diesem Weg entsteht die tote Einstellung: Wer künftig roh liest, umgeht das Gate
-// darüber, weil sein Schlüssel in keinem `case` auftaucht. Die Liste darf schrumpfen,
-// nicht wachsen.
+// Eine Liste statt eines Verbots, weil die bekannten Stellen berechtigt sind: Zwei lesen einen
+// Wert, den das Programm selbst geschrieben hat (Restore-Probe, Ausweis-Layout), eine ist das
+// Lesen der Einstellungen selbst. Auf diesem Weg entsteht aber die Einstellung, die niemand
+// einstellen kann: Wer roh liest, umgeht die Prüfung darüber, weil sein Schlüssel in keinem
+// `case` steht. Die Liste schrumpft nur.
 func TestKeineNeuenRohenEinstellungsLeser(t *testing.T) {
 	erlaubt := map[string]string{
-		"repository/betriebszustand.go":    "LadeEinstellungswert — generisch, liest das Ergebnis der Restore-Probe für die Selbstprüfung und für den Start",
-		"repository/system_settings.go":    "die Einstellungs-Schicht selbst",
+		"repository/betriebszustand.go":    "LadeEinstellungswert: liest das Ergebnis der Restore-Probe für die Selbstprüfung und für den Start",
+		"repository/einstellungen.go":      "das Lesen der Einstellungen selbst",
 		"repository/ausweis_layout.go":     "eigene Tür (api/druck/ausweis_layout.go), schreibt und liest dieselbe Zeile",
 		"internal/testdaten/bestellung.go": "Prüfhilfe der Tests: setzt und entfernt die öffentliche Adresse",
 		"internal/testdaten/etikett.go":    "Prüfhilfe der Tests: setzt und entfernt den Eigentumsvermerk der Schülerbücherei",
@@ -109,7 +105,7 @@ func TestKeineNeuenRohenEinstellungsLeser(t *testing.T) {
 		t.Fatalf("Baum durchlaufen: %v", err)
 	}
 	if len(gefunden) == 0 {
-		t.Fatal("keine einzige Lesestelle gefunden — der Detektor greift ins Leere")
+		t.Fatal("keine einzige Lesestelle gefunden: Der Detektor greift ins Leere")
 	}
 
 	var neue []string
@@ -120,16 +116,16 @@ func TestKeineNeuenRohenEinstellungsLeser(t *testing.T) {
 	}
 	sort.Strings(neue)
 	for _, datei := range neue {
-		t.Errorf("%s liest roh aus system_einstellungen. Damit umgeht der Schlüssel das "+
-			"Gate darüber und kann eine Einstellung werden, die niemand einstellen kann. "+
-			"Über repository.SystemSettingsRepository lesen — oder hier mit Begründung "+
+		t.Errorf("%s liest roh aus system_einstellungen. Damit umgeht der Schlüssel die "+
+			"Prüfung darüber und kann eine Einstellung werden, die niemand einstellen kann. "+
+			"Über repository.EinstellungsAbfragen lesen oder hier mit Begründung "+
 			"eintragen.", datei)
 	}
-	// Die Gegenrichtung: Ein Eintrag, der nicht mehr zutrifft, ist eine Ausnahme für
-	// etwas, das es nicht gibt — und verdeckt beim nächsten Mal einen echten Fall.
+	// Die Gegenrichtung: Ein Eintrag, der nicht mehr zutrifft, ist eine Ausnahme für etwas,
+	// das es nicht gibt, und verdeckt beim nächsten Mal einen echten Fall.
 	for datei, grund := range erlaubt {
 		if !gefunden[datei] {
-			t.Errorf("%s steht als Ausnahme (%q), liest aber gar nicht mehr roh — "+
+			t.Errorf("%s steht als Ausnahme (%q), liest aber nicht mehr roh: "+
 				"Eintrag entfernen.", datei, grund)
 		}
 	}

@@ -74,8 +74,8 @@ func TestBestelllinkFrist_BeimBestellenGiltDieEinstellung(t *testing.T) {
 	}
 
 	ohne := bestelle()
-	if tage := linkTageAbJetzt(t, pool, ohne.BestellungID); tage != bestelllink.VorgabeTage {
-		t.Errorf("ohne Einstellung läuft der Link in %d Tagen ab, erwartet die Vorgabe %d", tage, bestelllink.VorgabeTage)
+	if tage := linkTageAbJetzt(t, pool, ohne.BestellungID); tage != bestelllink.TageVorgabe {
+		t.Errorf("ohne Einstellung läuft der Link in %d Tagen ab, erwartet die Vorgabe %d", tage, bestelllink.TageVorgabe)
 	}
 
 	setzeLinkFrist(t, pool, "45")

@@ -20,7 +20,7 @@ const KATEGORIE_DIR = join(srcRoot, 'lib/components/settings/kategorien');
 // Die Zuordnung Kategorie → Bauteil steht seit dem 23.09.2026 in KategorieDetail.svelte.
 const SHELL = join(srcRoot, 'lib/components/settings/KategorieDetail.svelte');
 
-// Das Vokabular der Einstellungs-Schlüssel — GELESEN aus repository/system_settings_patch.go,
+// Das Vokabular der Einstellungs-Schlüssel — GELESEN aus repository/einstellungen_patch.go,
 // nicht danebengeschrieben.
 //
 // Bis zum 23.08.2026 stand hier eine handgepflegte Kopie der 23 Schlüssel. Sie war
@@ -29,7 +29,7 @@ const SHELL = join(srcRoot, 'lib/components/settings/KategorieDetail.svelte');
 // Kategorie zugeordnet ist. Ein Feld, das keine Kategorie schickt, wäre also unsichtbar
 // entstanden, und der Server hätte es (seit dem strengen Decoder) beim ersten Versuch mit 400
 // abgelehnt. Genau die Bauform, gegen die dieses Gate antritt: zwei Wahrheitsquellen.
-const PATCH_GO = join(srcRoot, '../../repository/system_settings_patch.go');
+const PATCH_GO = join(srcRoot, '../../repository/einstellungen_patch.go');
 const ALLE_SCHLUESSEL = [
 	...readFileSync(PATCH_GO, 'utf8').matchAll(/json:"([a-z_0-9]+)(?:,[^"]*)?"/g)
 ].map((m) => m[1]);

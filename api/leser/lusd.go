@@ -22,11 +22,11 @@ import (
 // abgaengerKarenzTage liest die Karenzzeit aus den Einstellungen; ohne lesbare
 // Einstellungen gilt die Vorgabe — derselbe Rückfall wie im nächtlichen Job.
 func (s *Tueren) abgaengerKarenzTage(ctx context.Context) int {
-	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil {
-		return repository.StandardAbgaengerKarenzTage
+		return repository.AbgaengerKarenzTageVorgabe
 	}
-	return repository.AbgaengerKarenzTageOderStandard(einst)
+	return repository.AbgaengerKarenzTageOderVorgabe(einst)
 }
 
 // readLusdUpload liest die hochgeladene Datei und übergibt sie dem Parser des Pakets lusd.

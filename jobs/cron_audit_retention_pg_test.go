@@ -92,12 +92,12 @@ func TestAuditAufbewahrung_LoeschtAltesUndProtokolliert(t *testing.T) {
 		ON CONFLICT (schluessel) DO UPDATE SET wert = excluded.wert`); err != nil {
 		t.Fatalf("Einstellung setzen: %v", err)
 	}
-	einst, err := repository.NewSystemSettingsRepository(pool).GetSettings(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(pool).Lade(ctx)
 	if err != nil {
 		t.Fatalf("Einstellungen lesen: %v", err)
 	}
-	if m := repository.AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate); m != repository.StandardAuditAufbewahrungMonate {
-		t.Errorf("Frist bei Fehlkonfiguration 0 = %d, erwartet Vorgabe %d", m, repository.StandardAuditAufbewahrungMonate)
+	if m := repository.ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate); m != repository.ProtokollAufbewahrungMonateVorgabe {
+		t.Errorf("Frist bei Fehlkonfiguration 0 = %d, erwartet Vorgabe %d", m, repository.ProtokollAufbewahrungMonateVorgabe)
 	}
 	// Und ein GÜLTIGER Wert muss auch wirklich ankommen — sonst bewiese der Test nur,
 	// dass immer die Vorgabe herauskommt, und die neue Einstellung wäre wirkungslos.
@@ -106,10 +106,10 @@ func TestAuditAufbewahrung_LoeschtAltesUndProtokolliert(t *testing.T) {
 		ON CONFLICT (schluessel) DO UPDATE SET wert = excluded.wert`); err != nil {
 		t.Fatalf("Einstellung setzen: %v", err)
 	}
-	if einst, err = repository.NewSystemSettingsRepository(pool).GetSettings(ctx); err != nil {
+	if einst, err = repository.NewEinstellungsAbfragen(pool).Lade(ctx); err != nil {
 		t.Fatalf("Einstellungen lesen: %v", err)
 	}
-	if m := repository.AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate); m != 9 {
+	if m := repository.ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate); m != 9 {
 		t.Errorf("eingestellte Frist 9 kam als %d an — die Einstellung wirkt nicht", m)
 	}
 }

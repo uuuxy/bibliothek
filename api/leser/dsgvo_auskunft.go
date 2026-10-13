@@ -16,22 +16,22 @@ import (
 // die Frist erledigter Anliegen aus den Einstellungen; bei Fehlern gelten die Vorgaben (so
 // arbeiten auch die Jobs).
 func (s *Tueren) dsgvoFristen(ctx context.Context) auskunft.DsgvoFristWerte {
-	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	einst, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil || einst == nil {
 		return auskunft.DsgvoFristWerte{
-			LesehistorieTage: repository.StandardLesehistorieTage,
-			LernmittelTage:   repository.StandardLesehistorieLernmittelTage,
-			KarenzTage:       repository.StandardAbgaengerKarenzTage,
-			AuditMonate:      repository.StandardAuditAufbewahrungMonate,
-			AnliegenTage:     repository.StandardAnliegenTage,
+			LesehistorieTage: repository.LesehistorieTageVorgabe,
+			LernmittelTage:   repository.LesehistorieLernmittelTageVorgabe,
+			KarenzTage:       repository.AbgaengerKarenzTageVorgabe,
+			AuditMonate:      repository.ProtokollAufbewahrungMonateVorgabe,
+			AnliegenTage:     repository.AnliegenTageVorgabe,
 		}
 	}
 	return auskunft.DsgvoFristWerte{
-		LesehistorieTage: repository.TageOderStandard(einst.LesehistorieTage, repository.StandardLesehistorieTage),
-		LernmittelTage:   repository.TageOderStandard(einst.LesehistorieLernmittelTage, repository.StandardLesehistorieLernmittelTage),
-		KarenzTage:       repository.AbgaengerKarenzTageOderStandard(einst),
-		AuditMonate:      repository.AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate),
-		AnliegenTage:     repository.TageOderStandard(einst.AnliegenTage, repository.StandardAnliegenTage),
+		LesehistorieTage: repository.TageOderVorgabe(einst.LesehistorieTage, repository.LesehistorieTageVorgabe),
+		LernmittelTage:   repository.TageOderVorgabe(einst.LesehistorieLernmittelTage, repository.LesehistorieLernmittelTageVorgabe),
+		KarenzTage:       repository.AbgaengerKarenzTageOderVorgabe(einst),
+		AuditMonate:      repository.ProtokollAufbewahrungMonateOderVorgabe(einst.ProtokollAufbewahrungMonate),
+		AnliegenTage:     repository.TageOderVorgabe(einst.AnliegenTage, repository.AnliegenTageVorgabe),
 	}
 }
 

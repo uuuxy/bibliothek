@@ -102,7 +102,7 @@ func TestLoeschRueckstand_KulanzDecktDieLetzteNacht(t *testing.T) {
 		VALUES ('wunsch', 'GERADE-FAELLIG', 'x',
 		        NOW() - make_interval(days => $1 + 30),
 		        NOW() - make_interval(days => $1, hours => 12))`,
-		repository.StandardAnliegenTage); err != nil {
+		repository.AnliegenTageVorgabe); err != nil {
 		t.Fatalf("Anliegen: %v", err)
 	}
 
@@ -194,7 +194,7 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 			VALUES ('ausleihen', 'RETURN', $1, NOW() - make_interval(days => $2),
 			        jsonb_build_object('schueler_id', $3::text))`, exemplarID, tageZurueck, schuelerID)
 	}
-	leihe("Freihand-Ausleihe", freihand, "B-RUECK-F", repository.StandardLesehistorieTage+40)
+	leihe("Freihand-Ausleihe", freihand, "B-RUECK-F", repository.LesehistorieTageVorgabe+40)
 	offenesExemplar := eins("Exemplar des gehaltenen Kollegen",
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-KOLL-OFFEN') RETURNING id`, freihand)
 	must("offene Ausleihe des gehaltenen Kollegen", `
@@ -205,7 +205,7 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 		VALUES ($1, $2, 'Wasserschaden', 12.50)`,
 		eins("Exemplar der Forderung", `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-KOLL-SCHADEN') RETURNING id`, freihand),
 		schuldner)
-	leihe("Lernmittel-Ausleihe", lmf, "B-RUECK-L", repository.StandardLesehistorieLernmittelTage+70)
+	leihe("Lernmittel-Ausleihe", lmf, "B-RUECK-L", repository.LesehistorieLernmittelTageVorgabe+70)
 
 	// 4a. Bearbeiter an einer Ausleihe, die vor 20 Tagen zurückkam (Frist 14). Die Ausleihe
 	//     gehört niemandem mehr und ist für die Lesehistorie kein Fall.
@@ -292,7 +292,7 @@ func TestLesehistorie_ErreichtDieSpurGeloeschterTitel(t *testing.T) {
 			        jsonb_build_object('barcode_id',$3::text,'titel','Der Zauberberg',
 			                           'entleiher','Hans Castorp','schueler_id',$2::text,
 			                           'action','titel_geloescht_mit_offener_ausleihe'))`,
-			repository.StandardLesehistorieTage, schuelerID, barcode); err != nil {
+			repository.LesehistorieTageVorgabe, schuelerID, barcode); err != nil {
 			t.Fatalf("Spur %s: %v", barcode, err)
 		}
 		if !mitSchuelerID {

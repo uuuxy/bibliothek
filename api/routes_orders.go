@@ -13,7 +13,7 @@ func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *service.Order
 	// view_orders statt manage_users: Wer bestellen darf, muss dafuer keine
 	// Benutzerverwaltungsrechte bekommen (siehe api/bestellung/bestellkonfiguration.go).
 	mux.Handle("GET /api/bestellungen/konfiguration", s.RequirePermission("view_orders")(s.bestellung().BestellKonfigurationHandler(
-		repository.NewSystemSettingsRepository(s.DB.Pool), repository.NewLieferantenAbfragen(s.DB.Pool))))
+		repository.NewEinstellungsAbfragen(s.DB.Pool), repository.NewLieferantenAbfragen(s.DB.Pool))))
 	mux.Handle("GET /api/bestellungen", s.RequirePermission("view_orders")(s.bestellung().GetReordersHandler()))
 	mux.Handle("GET /api/bestellungen/pdf", s.RequirePermission("view_orders")(s.bestellung().ExportReordersPDFHandler()))
 	mux.Handle("GET /api/bestellhistorie", s.RequirePermission("view_orders")(s.bestellung().GetBestellhistorieHandler()))

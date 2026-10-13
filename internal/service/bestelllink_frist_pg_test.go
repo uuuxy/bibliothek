@@ -31,8 +31,8 @@ func TestBestelllinkTage(t *testing.T) {
 	entferne()
 	t.Cleanup(entferne)
 
-	if ist := BestelllinkTage(ctx, pool); ist != bestelllink.VorgabeTage {
-		t.Errorf("ohne Einstellung %d Tage, erwartet die Vorgabe %d", ist, bestelllink.VorgabeTage)
+	if ist := BestelllinkTage(ctx, pool); ist != bestelllink.TageVorgabe {
+		t.Errorf("ohne Einstellung %d Tage, erwartet die Vorgabe %d", ist, bestelllink.TageVorgabe)
 	}
 
 	setze("45")
@@ -43,13 +43,13 @@ func TestBestelllinkTage(t *testing.T) {
 	// Lässt sich die Einstellung nicht lesen, gilt die Vorgabe und nicht der Wert in der Tabelle.
 	abgebrochen, abbruch := context.WithCancel(ctx)
 	abbruch()
-	if ist := BestelllinkTage(abgebrochen, pool); ist != bestelllink.VorgabeTage {
-		t.Errorf("bei einem Lesefehler %d Tage, erwartet die Vorgabe %d", ist, bestelllink.VorgabeTage)
+	if ist := BestelllinkTage(abgebrochen, pool); ist != bestelllink.TageVorgabe {
+		t.Errorf("bei einem Lesefehler %d Tage, erwartet die Vorgabe %d", ist, bestelllink.TageVorgabe)
 	}
 
 	// Die Tür nimmt 1 bis 365 an; ein Wert darunter kommt nur an ihr vorbei in die Tabelle.
 	setze("0")
-	if ist := BestelllinkTage(ctx, pool); ist != bestelllink.VorgabeTage {
-		t.Errorf("eingestellt sind 0 Tage, geliefert %d statt der Vorgabe %d", ist, bestelllink.VorgabeTage)
+	if ist := BestelllinkTage(ctx, pool); ist != bestelllink.TageVorgabe {
+		t.Errorf("eingestellt sind 0 Tage, geliefert %d statt der Vorgabe %d", ist, bestelllink.TageVorgabe)
 	}
 }

@@ -70,7 +70,7 @@ func TestExtendLoanHandler(t *testing.T) {
 		ausleiheID     string
 		jetzt          time.Time
 		extensionDays  int
-		setupRoute     func(*http.ServeMux, *Tueren, repository.SystemSettingsRepository)
+		setupRoute     func(*http.ServeMux, *Tueren, repository.EinstellungsAbfragen)
 		expectedStatus int
 		verify         func(t *testing.T, resp map[string]interface{})
 	}{
@@ -133,7 +133,7 @@ func TestExtendLoanHandler(t *testing.T) {
 			ausleiheID:     "",
 			extensionDays:  28,
 			expectedStatus: http.StatusBadRequest, // Mux will match the /extend/ route, handler will return 400
-			setupRoute: func(mux *http.ServeMux, s *Tueren, settingsRepo repository.SystemSettingsRepository) {
+			setupRoute: func(mux *http.ServeMux, s *Tueren, settingsRepo repository.EinstellungsAbfragen) {
 				// We map it directly to test the handler's internal check for ""
 				mux.Handle("POST /extend/", s.ExtendLoanHandler(settingsRepo))
 			},
@@ -284,7 +284,7 @@ func TestExtendLoan_FerienDerEinstellungenUndVorgabeOhneEinstellungen(t *testing
 	sid := testdaten.SeedSchueler(t, pool, "S-VF-1", "Ferien", "5a")
 	alteFrist := time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC)
 
-	verlaengere := func(ausleiheID string, jetzt time.Time, einstellungen repository.SystemSettingsRepository) {
+	verlaengere := func(ausleiheID string, jetzt time.Time, einstellungen repository.EinstellungsAbfragen) {
 		t.Helper()
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Uhr: func() time.Time { return jetzt }}}
 		mux := http.NewServeMux()

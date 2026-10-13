@@ -97,9 +97,9 @@ func KonfigAusUmgebung() SMTPKonfig {
 // LadeSMTPKonfig liefert die Konfiguration, mit der tatsächlich versendet wird.
 // Jeder Versender im System benutzt diese Funktion — nur so kann der Test-Knopf
 // etwas über den Mahnlauf aussagen. Die gespeicherte Zeile liest sie über dieselbe Funktion
-// wie die Maske der Mail-Einstellungen (repository.MailSettingsRepository.GetConfig).
+// wie die Maske der Mail-Einstellungen (repository.MailEinstellungsAbfragen.Lade).
 func LadeSMTPKonfig(ctx context.Context, dbPool db.PgxPoolIface) (SMTPKonfig, error) {
-	gespeichert, err := repository.NewMailSettingsRepository(dbPool).GetConfig(ctx)
+	gespeichert, err := repository.NewMailEinstellungsAbfragen(dbPool).Lade(ctx)
 	if err != nil {
 		// Keine Zeile (frische Datenbank, noch nicht gelaufene Migration): Die Umgebung
 		// trägt weiter, damit ein Mahnlauf nicht an einer Konfigurationslücke scheitert.
@@ -110,12 +110,12 @@ func LadeSMTPKonfig(ctx context.Context, dbPool db.PgxPoolIface) (SMTPKonfig, er
 	k := SMTPKonfig{
 		Host:     gespeichert.SMTPHost,
 		Port:     gespeichert.SMTPPort,
-		Benutzer: gespeichert.SMTPUser,
-		Absender: gespeichert.SenderEmail,
+		Benutzer: gespeichert.SMTPBenutzer,
+		Absender: gespeichert.AbsenderEmail,
 	}
 
-	if len(gespeichert.SMTPPasswordEncrypted) > 0 {
-		entschluesselt, err := crypto.Entschluessele(gespeichert.SMTPPasswordEncrypted)
+	if len(gespeichert.SMTPPasswortVerschluesselt) > 0 {
+		entschluesselt, err := crypto.Entschluessele(gespeichert.SMTPPasswortVerschluesselt)
 		if err != nil {
 			// Nicht auf die Umgebung ausweichen: Ein unlesbares Passwort heißt, dass der
 			// APP_ENCRYPTION_KEY nicht mehr derselbe ist. Das muss auffallen, statt still

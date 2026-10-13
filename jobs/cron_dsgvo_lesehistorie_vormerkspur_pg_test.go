@@ -72,7 +72,7 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 	must(`UPDATE audit_log SET timestamp = NOW() - make_interval(days => $3 + 5)
 		WHERE (tabelle = 'vormerkungen' AND datensatz_id = $1)
 		   OR (tabelle = 'schadensfaelle' AND datensatz_id = $2)`,
-		alt, altExemplar, repository.StandardLesehistorieTage)
+		alt, altExemplar, repository.LesehistorieTageVorgabe)
 
 	// traegt sagt, ob die eine Zeile zu dieser Kennung in dieser Tabelle den Schlüssel trägt.
 	traegt := func(kennung, tabelle, schluessel string) bool {

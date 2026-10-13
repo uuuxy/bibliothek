@@ -124,7 +124,7 @@ func (s *Tueren) GetBestellBerichtPDFHandler() http.HandlerFunc {
 
 		// Ein Lesefehler ist ein Fehler: Mit den Vorgaben stünde das Blatt ohne den Kopf der
 		// Schule da, und die Vorgabe entschiede, ob es Beträge nennt.
-		settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+		settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
 			return

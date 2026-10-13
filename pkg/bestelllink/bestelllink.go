@@ -18,18 +18,18 @@ import (
 	"strings"
 )
 
-// VorgabeTage ist die Frist eines Links, solange die Schule unter „Bestellwesen" nichts anderes
+// TageVorgabe ist die Frist eines Links, solange die Schule unter „Bestellwesen" nichts anderes
 // einstellt. Drei Wochen decken den üblichen Vorgang: Der Händler bekommt die Bestellung, druckt
 // die Etiketten, beklebt und bestätigt. Ohne Ablauf bliebe der Link in einem fremden Postfach
 // gültig, auch nach einer Weiterleitung oder einem Wechsel des Mitarbeiters. Läuft einer ab,
 // erzeugt die Bestellhistorie zur offenen Bestellung einen neuen, und der alte gilt nicht mehr.
-const VorgabeTage = 21
+const TageVorgabe = 21
 
 // Tage liefert die Frist eines neuen Links aus dem eingestellten Wert. Unter einem Tag gilt die
 // Vorgabe: Ein Link ohne Frist darf nicht entstehen.
 func Tage(eingestellt int) int {
 	if eingestellt < 1 {
-		return VorgabeTage
+		return TageVorgabe
 	}
 	return eingestellt
 }

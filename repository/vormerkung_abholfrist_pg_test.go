@@ -183,7 +183,7 @@ func TestAbholfrist_SpurenTilgung(t *testing.T) {
 // sommerferienImTest liest die Einstellung, wie sie in der Testdatenbank steht.
 func sommerferienImTest(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
-	einstellungen, err := EinstellungenUeber(context.Background(), pool)
+	einstellungen, err := LadeEinstellungen(context.Background(), pool)
 	if err != nil {
 		t.Fatalf("Einstellungen lesen: %v", err)
 	}

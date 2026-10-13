@@ -195,14 +195,14 @@ func TestQuerySettings_ParsesValuesAndIgnoresInvalid(t *testing.T) {
 	if got.MaxAusleihenSchueler != 8 {
 		t.Errorf("MaxAusleihenSchueler = %d, want 8", got.MaxAusleihenSchueler)
 	}
-	if got.LmfStichtag != "06-30" {
-		t.Errorf("LmfStichtag = %q, want 06-30", got.LmfStichtag)
+	if got.LMFStichtag != "06-30" {
+		t.Errorf("LMFStichtag = %q, want 06-30", got.LMFStichtag)
 	}
 	if !got.FerienLeseclubAktiv {
 		t.Error("FerienLeseclubAktiv soll true sein")
 	}
-	if got.MaxOverdueItems != 3 {
-		t.Errorf("MaxOverdueItems = %d, want 3", got.MaxOverdueItems)
+	if got.UeberfaelligSperreAbMedien != 3 {
+		t.Errorf("UeberfaelligSperreAbMedien = %d, want 3", got.UeberfaelligSperreAbMedien)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -221,7 +221,7 @@ func TestQuerySettings_EmptyTableKeepsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}
-	if got.FristBuchTage != 21 || got.MaxAusleihenSchueler != 5 || got.LmfStichtag != "07-31" {
+	if got.FristBuchTage != 21 || got.MaxAusleihenSchueler != 5 || got.LMFStichtag != "07-31" {
 		t.Errorf("leere Tabelle soll sichere Defaults liefern, got %+v", got)
 	}
 }
