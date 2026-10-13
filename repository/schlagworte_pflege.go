@@ -93,17 +93,24 @@ func SchlagworteZurPflege(ctx context.Context, q DBQueryer, suche string) (Schla
 		return liste, fmt.Errorf("schlagworte zählen: %w", err)
 	}
 	rows, err := q.Query(ctx, `
+		-- Optimization: Replaced correlated scalar subquery with LEFT JOIN LATERAL on a CTE to prevent N+1 evaluations
+		WITH limited_schlagworte AS (
+			SELECT s.id, s.wort, s.verweis_auf, s.ist_filter
+			FROM schlagworte s
+			WHERE `+sqlPflegeSuchePasst+`
+			ORDER BY lower(s.wort)
+			LIMIT $2
+		)
 		SELECT s.id::text, s.wort,
-		       (SELECT count(*)::int FROM titel_schlagworte ts WHERE ts.schlagwort_id = s.id),
+		       COALESCE(ts.count, 0)::int,
 		       coalesce(z.id::text, ''), coalesce(z.wort, ''),
 		       coalesce((SELECT array_agg(v.wort ORDER BY lower(v.wort))
 		                 FROM schlagworte v WHERE v.verweis_auf = s.id), '{}'),
 		       s.ist_filter
-		FROM schlagworte s
+		FROM limited_schlagworte s
 		LEFT JOIN schlagworte z ON z.id = s.verweis_auf
-		WHERE `+sqlPflegeSuchePasst+`
-		ORDER BY lower(s.wort)
-		LIMIT $2`, suche, schlagwortPflegeTrefferMax)
+		LEFT JOIN LATERAL (SELECT count(*) as count FROM titel_schlagworte ts WHERE ts.schlagwort_id = s.id) ts ON true
+		ORDER BY lower(s.wort)`, suche, schlagwortPflegeTrefferMax)
 	if err != nil {
 		return liste, fmt.Errorf("schlagworte zur pflege lesen: %w", err)
 	}
