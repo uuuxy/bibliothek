@@ -225,12 +225,12 @@ func uebertrage(s schalter, ab *littera.Altbestand) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
 	defer cancel()
 
-	prot, err := uebernahme.NeuesProtokoll(protokollPfad, "littera_id")
+	prot, err := uebernahme.NewProtokoll(protokollPfad, "littera_id")
 	if err != nil {
 		log.Printf("FEHLER: Protokoll konnte nicht geöffnet werden: %v", err)
 		return exitAbgebrochen
 	}
-	defer prot.Schliessen()
+	defer prot.Schliesse()
 
 	pool, err := pgxpool.New(ctx, s.dbURL)
 	if err != nil {

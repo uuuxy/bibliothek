@@ -32,7 +32,7 @@ func TestLeereMahnvorlageFaelltAufStandardtextZurueck(t *testing.T) {
 		t.Fatalf("Seed-Vorlage lesen: %v", err)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE typ = 'MAHNUNG_ELTERN'`, altBetreff, altText)
+		pgtest.RaeumeAuf(t, pool, `UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE typ = 'MAHNUNG_ELTERN'`, altBetreff, altText)
 	})
 	if _, err := pool.Exec(ctx,
 		`UPDATE mail_vorlagen SET betreff = '', text_body = '   ' WHERE typ = 'MAHNUNG_ELTERN'`); err != nil {

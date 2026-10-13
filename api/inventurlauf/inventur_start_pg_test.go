@@ -57,8 +57,8 @@ func inventurFach(t *testing.T, pool *pgxpool.Pool, fach string) {
 		t.Fatalf("Fach %q eintragen: %v", fach, err)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `UPDATE buecher_titel SET subject = NULL WHERE subject = $1`, fach)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung = $1`, fach)
+		pgtest.RaeumeAuf(t, pool, `UPDATE buecher_titel SET subject = NULL WHERE subject = $1`, fach)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung = $1`, fach)
 	})
 }
 

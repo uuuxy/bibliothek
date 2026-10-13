@@ -83,9 +83,9 @@ func TestErworbenAm(t *testing.T) {
 
 func TestFelder(t *testing.T) {
 	pfad := t.TempDir() + "/protokoll.md"
-	prot, err := uebernahme.NeuesProtokoll(pfad, "Littera-ID")
+	prot, err := uebernahme.NewProtokoll(pfad, "Littera-ID")
 	if err != nil {
-		t.Fatalf("NeuesProtokoll: %v", err)
+		t.Fatalf("NewProtokoll: %v", err)
 	}
 
 	s := &Schreiber{prot: prot}
@@ -125,14 +125,14 @@ func TestFelder(t *testing.T) {
 	if f.medientyp != "Zeitschrift" {
 		t.Errorf("medientyp = %v, want Zeitschrift", f.medientyp)
 	}
-	prot.Schliessen()
+	prot.Schliesse()
 }
 
 func TestFelder_LeererHaupttitel(t *testing.T) {
 	pfad := t.TempDir() + "/protokoll.md"
-	prot, err := uebernahme.NeuesProtokoll(pfad, "Littera-ID")
+	prot, err := uebernahme.NewProtokoll(pfad, "Littera-ID")
 	if err != nil {
-		t.Fatalf("NeuesProtokoll: %v", err)
+		t.Fatalf("NewProtokoll: %v", err)
 	}
 
 	s := &Schreiber{prot: prot}
@@ -151,7 +151,7 @@ func TestFelder_LeererHaupttitel(t *testing.T) {
 		t.Errorf("titel = %v, want %v", f.titel, expectedTitel)
 	}
 
-	prot.Schliessen()
+	prot.Schliesse()
 	data, err := os.ReadFile(pfad)
 	if err != nil {
 		t.Fatalf("protokoll lesen: %v", err)

@@ -50,8 +50,8 @@ func TestRechteMatrix_AenderungStehtImProtokoll(t *testing.T) {
 		t.Fatalf("Ausgangszustand setzen: %v", err)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `UPDATE role_permissions SET allowed = false WHERE role = 'HELFER' AND permission = 'view_students'`)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'RECHT_GEAENDERT'`)
+		pgtest.RaeumeAuf(t, pool, `UPDATE role_permissions SET allowed = false WHERE role = 'HELFER' AND permission = 'view_students'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'RECHT_GEAENDERT'`)
 	})
 
 	aendere := func(rumpf string) int {

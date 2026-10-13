@@ -36,9 +36,9 @@ func ZaehleZeilen(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) int
 	return n
 }
 
-// Aufraeumen führt eine Anweisung zum Aufräumen aus und schreibt einen Fehler ins Protokoll des
+// RaeumeAuf führt eine Anweisung zum Aufräumen aus und schreibt einen Fehler ins Protokoll des
 // Tests, statt ihn zu verschlucken.
-func Aufraeumen(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) {
+func RaeumeAuf(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), sql, args...); err != nil {
 		t.Logf("Aufraeumen fehlgeschlagen (%s): %v", sql, err)

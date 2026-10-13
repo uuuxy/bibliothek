@@ -129,7 +129,7 @@ func TestGeraetDefektKnopf_LaesstStammdatenStehen(t *testing.T) {
 func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := t.Context()
-	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-SNR-%'`) }
+	aufraeumenGeraete := func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-SNR-%'`) }
 	aufraeumenGeraete()
 	t.Cleanup(aufraeumenGeraete)
 
@@ -146,7 +146,7 @@ func TestGeraet_DoppelteSeriennummerNenntDieSeriennummer(t *testing.T) {
 		t.Fatalf("Konto anlegen: %v", err)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = 'geraet-seriennummer@example.org'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = 'geraet-seriennummer@example.org'`)
 	})
 	sitzung, err := authenticator.GenerateToken(kontoID, "GERAET-1", auth.RoleAdmin, "")
 	if err != nil {
@@ -207,7 +207,7 @@ func TestGeraetBearbeiten_LeereSeriennummerBleibtLeer(t *testing.T) {
 	ctx := t.Context()
 	srv := &katalog.Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewGeraeteRepository(pool)
-	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-OSN-%'`) }
+	aufraeumenGeraete := func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-OSN-%'`) }
 	aufraeumenGeraete()
 	t.Cleanup(aufraeumenGeraete)
 
@@ -247,7 +247,7 @@ func TestGeraetAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	ctx := t.Context()
 	srv := &katalog.Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewGeraeteRepository(pool)
-	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NGF-%'`) }
+	aufraeumenGeraete := func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NGF-%'`) }
 	aufraeumenGeraete()
 	t.Cleanup(aufraeumenGeraete)
 
@@ -381,7 +381,7 @@ func TestGeraetAnlegen_SpeichertDieZustandsnotiz(t *testing.T) {
 	pool := pgtest.Pool(t)
 	srv := &katalog.Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	repo := repository.NewGeraeteRepository(pool)
-	aufraeumenGeraete := func() { pgtest.Aufraeumen(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NOTIZ-%'`) }
+	aufraeumenGeraete := func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM geraete WHERE barcode_id LIKE 'G-NOTIZ-%'`) }
 	aufraeumenGeraete()
 	t.Cleanup(aufraeumenGeraete)
 

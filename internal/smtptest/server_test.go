@@ -11,11 +11,10 @@ import (
 	"bibliothek/pkg/closeutil"
 )
 
-// lies, schreibe und waehle sprechen den Server auf Protokollebene an — dort, wo
-// net/smtp zu viel abnimmt (unbekannte Befehle, RCPT ohne spitze Klammern, Abbruch
-// mitten in DATA). Sie prüfen ihre Fehler, weil ein stiller Lesefehler den folgenden
-// Vergleich gegen einen leeren String laufen ließe: der Test bliebe grün und der
-// geprüfte Pfad wäre nie gelaufen.
+// lies, schreibe und waehle sprechen den Server auf der Ebene des Protokolls an, wo net/smtp
+// zu viel abnimmt (unbekannte Befehle, RCPT ohne spitze Klammern, Abbruch mitten in DATA). Sie
+// prüfen ihre Fehler: Ein übergangener Lesefehler ließe den folgenden Vergleich gegen eine
+// leere Zeichenkette laufen, der Test bliebe grün, und der geprüfte Weg wäre nie gelaufen.
 func lies(t *testing.T, conn net.Conn, buf []byte) string {
 	t.Helper()
 	n, err := conn.Read(buf)
@@ -79,9 +78,9 @@ func TestStarte_BrichtVorQuitAb(t *testing.T) {
 	host, port, ch := smtptest.Starte(t, smtptest.BrichtVorQuitAb)
 	addr := host + ":" + port
 
-	// BrichtVorQuitAb kappt die Verbindung, bevor QUIT quittiert wird — SendMail MUSS
-	// hier scheitern. Wäre der Fehler nil, hätte der Server den Abbruch nicht ausgeführt
-	// und die Sitzungsprüfung unten liefe gegen ein unbeabsichtigt normales Gespräch.
+	// BrichtVorQuitAb kappt die Verbindung, bevor QUIT beantwortet wird; SendMail scheitert
+	// hier. Wäre der Fehler nil, hätte der Server den Abbruch nicht ausgeführt, und die
+	// Prüfung der Sitzung unten liefe gegen ein gewöhnliches Gespräch.
 	err := smtp.SendMail(addr, nil, "sender@test.de", []string{"empf@test.de"}, []byte("Subject: Test\r\n\r\nHallo")) // lgtm[go/mail-injection]
 	if err == nil {
 		t.Fatal("Erwartete einen Fehler, weil der Server vor QUIT abbricht, bekam nil")
@@ -147,7 +146,7 @@ func TestAdresseAus_OhneKlammern(t *testing.T) {
 	buf := make([]byte, 1024)
 	lies(t, conn, buf) // Begrüßung 220
 
-	// RCPT TO ohne spitze Klammern: der Helfer darf die Adresse dann NICHT schälen.
+	// RCPT TO ohne spitze Klammern: Der Helfer schält die Adresse dann nicht.
 	schreibe(t, conn, "RCPT TO: raw@test.de\r\n")
 	if antwort := lies(t, conn, buf); !strings.HasPrefix(antwort, "250 2.1.5 Ok") {
 		t.Errorf("Erwartete 250 2.1.5 Ok, bekam: %s", antwort)
@@ -201,8 +200,8 @@ func TestLeseNachricht_Abbruch(t *testing.T) {
 	schreibe(t, conn, "DATA\r\n")
 	lies(t, conn, buf) // 354
 
-	// Text ohne abschließendes CRLF.CRLF, dann harter Abbruch: das \n am Ende ist
-	// nötig, damit ReadString die Zeile überhaupt noch ausliefert.
+	// Text ohne das abschließende CRLF.CRLF, dann harter Abbruch. Das \n am Ende braucht es,
+	// damit ReadString die Zeile noch ausliefert.
 	schreibe(t, conn, "Hallo\n")
 	schliesseHart(t, conn)
 

@@ -44,9 +44,9 @@ func TestFelder_Auflage(t *testing.T) {
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
 			pfad := t.TempDir() + "/protokoll.md"
-			prot, err := uebernahme.NeuesProtokoll(pfad, "Littera-ID")
+			prot, err := uebernahme.NewProtokoll(pfad, "Littera-ID")
 			if err != nil {
-				t.Fatalf("NeuesProtokoll: %v", err)
+				t.Fatalf("NewProtokoll: %v", err)
 			}
 			l := &bestandslauf{s: &Schreiber{prot: prot}, ab: &Altbestand{}}
 
@@ -58,7 +58,7 @@ func TestFelder_Auflage(t *testing.T) {
 				t.Errorf("%d Zeichen, die Spalte fasst %d", n, uebernahme.MaxAuflage)
 			}
 
-			prot.Schliessen()
+			prot.Schliesse()
 			log, err := os.ReadFile(pfad) // #nosec G304 - Pfad aus t.TempDir()
 			if err != nil {
 				t.Fatalf("Protokoll lesen: %v", err)
@@ -73,11 +73,11 @@ func TestFelder_Auflage(t *testing.T) {
 
 // Ohne Angabe bleibt die Spalte leer: nil wird NULL, kein leerer Text.
 func TestFelder_OhneAuflage(t *testing.T) {
-	prot, err := uebernahme.NeuesProtokoll(t.TempDir()+"/protokoll.md", "Littera-ID")
+	prot, err := uebernahme.NewProtokoll(t.TempDir()+"/protokoll.md", "Littera-ID")
 	if err != nil {
-		t.Fatalf("NeuesProtokoll: %v", err)
+		t.Fatalf("NewProtokoll: %v", err)
 	}
-	t.Cleanup(prot.Schliessen)
+	t.Cleanup(prot.Schliesse)
 	l := &bestandslauf{s: &Schreiber{prot: prot}, ab: &Altbestand{}}
 
 	if got := l.felder(Titel{ID: "T1", Haupttitel: "Ein Buch"}).auflage; got != nil {

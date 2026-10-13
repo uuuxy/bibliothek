@@ -64,7 +64,7 @@ func TestLitteraImport_UeberDieTuer(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	adminID, _, rufeRoh := importWelt(t, pool)
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion IN ('LITTERA_IMPORT', 'BESTAND_IMPORT')`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion IN ('LITTERA_IMPORT', 'BESTAND_IMPORT')`)
 	})
 
 	// zaehle liefert Titel und Exemplare, die dieser Test angelegt haben könnte.
@@ -195,7 +195,7 @@ func TestBestandImport_UeberDieTuer(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	adminID, _, rufeRoh := importWelt(t, pool)
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTAND_IMPORT'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTAND_IMPORT'`)
 	})
 
 	t.Run("CSV mit Komma: Titel und Exemplar stehen in der Datenbank", func(t *testing.T) {

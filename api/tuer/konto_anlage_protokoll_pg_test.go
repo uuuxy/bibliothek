@@ -19,7 +19,7 @@ func TestProtokolliereKontoAnlage_JedeAngabeUnterIhremNamen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	const zielID = "5f0c2a9e-7d41-4b6e-9c3a-2e8b1d4f6a70"
 	raeume := func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'USER_CREATE' AND details->>'ziel_id' = $1`, zielID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'USER_CREATE' AND details->>'ziel_id' = $1`, zielID)
 	}
 	raeume()
 	t.Cleanup(raeume)

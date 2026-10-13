@@ -52,7 +52,7 @@ func anfrageInPanik(t *testing.T, konto string) *httptest.ResponseRecorder {
 	scharf := false
 	_, sitzung, router := routertest.MitSitzungUeber(t, pool, poolMitPanik{PgxPoolIface: pool, scharf: &scharf},
 		konto, "Paula", "Panik")
-	t.Cleanup(func() { pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = $1`, konto) })
+	t.Cleanup(func() { pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = $1`, konto) })
 	rufe := func() (rec *httptest.ResponseRecorder) {
 		t.Helper()
 		// Ohne PanicRecoveryMiddleware erreichte die Panik den Aufrufer; der Test soll das

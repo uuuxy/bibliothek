@@ -1,15 +1,12 @@
-// Package pdftest liest heraus, was auf einem erzeugten PDF wirklich GEDRUCKT wird.
+// Package pdftest liest aus einem erzeugten PDF heraus, was auf dem Blatt gedruckt wird.
 //
-// Der Umweg über das fertige PDF ist Absicht. Beide Etiketten-Bugs von 2026 waren an den
-// Zwischenschichten grün: Das Feld stand im Struct, die Abfrage lieferte es — nur
-// gezeichnet wurde es nicht. Erst der Inhaltsstrom beantwortet die Frage, die die
-// Bibliothek stellt: Was steht auf dem Blatt?
+// Geprüft wird am fertigen PDF, weil die Schichten davor einen Fehler im Druck nicht zeigen:
+// Ein Feld kann im Struct stehen und von der Abfrage kommen, ohne gezeichnet zu werden. Erst
+// der Inhaltsstrom sagt, was auf dem Blatt steht.
 //
-// Wie internal/pgtest und internal/smtptest ist das ein normales Paket, das nur von Tests
-// importiert wird: Testdateien (_test.go) lassen sich nicht paketübergreifend importieren.
-// Es lag bis zum 03.09.2026 als Helfer in api/druck/etiketten_pdf_paritaet_pg_test.go; der
-// Schulbuch-Export (Paket inventur) braucht denselben Leser, und eine zweite Fassung wäre
-// die Gelegenheit gewesen, die Fallen unten erneut hineinzubauen.
+// Wie internal/pgtest und internal/smtptest ist es ein gewöhnliches Paket, das nur Testdateien
+// einbinden. Die Etiketten und die Lernmittelliste lesen ihr PDF mit demselben Leser, damit
+// die Fallen der Bauform an einer Stelle behandelt sind.
 package pdftest
 
 import (
@@ -26,42 +23,32 @@ import (
 
 // tjText findet die gezeichneten Textstücke im Inhaltsstrom: `(Ansch.J. 2016 · LMF-Deutsch 5)Tj`.
 //
-// `\s*` vor dem Tj, weil nicht jeder Erzeuger gleich schreibt: gofpdf setzt `)Tj`, maroto
-// (Kontoauszug der Abgänger) `) Tj`. Ohne diese drei Zeichen fand der Leser in einem
-// maroto-PDF NICHTS und meldete eine leere Seite — der Test hätte daraus geschlossen, auf
-// dem Blatt stehe nichts, statt zu merken, dass er nur nicht hinsehen kann.
+// `\s*` steht vor dem Tj, weil nicht jeder Erzeuger gleich schreibt: gofpdf setzt `)Tj`, maroto
+// (Kontoauszug der Abgänger) `) Tj`. Ohne es fände der Leser in einem PDF von maroto nichts
+// und meldete eine leere Seite.
 var tjText = regexp.MustCompile(`\(((?:\\.|[^()\\])*)\)\s*Tj`)
 
-// Texte liest heraus, was auf einem erzeugten PDF wirklich GEDRUCKT wird.
+// Texte liefert die gedruckten Textstücke des Dokuments, sortiert.
 //
-// Der Umweg über das fertige PDF ist Absicht. Beide bisherigen Etiketten-Bugs waren an
-// den Zwischenschichten grün: Das Feld stand im Struct, die Abfrage lieferte es — nur
-// gezeichnet wurde es nicht bzw. kam auf dem zweiten Weg nie im Struct an. Erst der
-// Inhaltsstrom beantwortet die Frage, die die Bibliothek stellt: Was klebt am Buch?
+// gofpdf packt die Ströme meist (FlateDecode); im rohen PDF steht der Text dann nicht, nach
+// dem Entpacken liegt er als `(…)Tj` vor. Sonderzeichen bleiben in der Kodierung des Erzeugers
+// (Windows-1252), bis nachUTF8 sie wandelt.
 //
-// gofpdf komprimiert die Ströme meistens (FlateDecode); im Rohbyte-PDF steht der Text
-// dann nicht. Nach dem Inflaten liegt er als `(…)Tj` vor. Sonderzeichen bleiben in der
-// Kodierung des Erzeugers (Windows-1252) — für den Vergleich zweier Bögen und die Suche
-// nach ASCII-Signaturen ist das gleichgültig, beide Seiten werden gleich behandelt.
-//
-// „Meistens" ist der Grund für den Rückfall auf die Rohbytes: Der Kontoauszug der
-// Abgänger kommt UNKOMPRIMIERT aus dem Generator. Ohne diesen Zweig war der Leser für ihn
-// blind und brach mit „kein lesbarer Inhaltsstrom" ab — was nach kaputtem PDF aussieht,
-// aber nur hiess, dass der Leser eine Bauform nicht kannte.
+// Ein Strom, der sich nicht entpacken lässt, wird roh gelesen: Der Kontoauszug der Abgänger
+// kommt ungepackt aus dem Erzeuger, und ohne diesen Weg bräche der Leser bei ihm mit „kein
+// lesbarer Inhaltsstrom" ab.
 func Texte(t *testing.T, roh []byte) []string {
 	t.Helper()
 	_, texte := lies(t, roh)
 	return texte
 }
 
-// TexteJeSeite liefert die Textstücke GETRENNT nach Inhaltsstrom — bei gofpdf ist das
-// je Seite einer.
+// TexteJeSeite liefert die Textstücke getrennt nach Inhaltsstrom; bei gofpdf ist das je Seite
+// einer.
 //
-// Gebraucht für eine Fehlerklasse, die der zusammengefasste Text nicht sieht: einen
-// Seitenumbruch MITTEN in einem Block. Am 10.09.2026 riss der Bescheid seine
-// Tabellenkopfzeile auseinander, „Name des/der" stand unten auf Seite 1 und
-// „Schülers/Schülerin" oben auf Seite 2. Im Gesamttext war beides vorhanden, das Gate
-// blieb grün, und nur das Ansehen des Papiers zeigte es.
+// Damit lässt sich ein Seitenumbruch mitten in einem Block prüfen, den der Text des ganzen
+// Dokuments nicht zeigt: Steht „Name des/der" unten auf Seite 1 und „Schülers/Schülerin" oben
+// auf Seite 2, ist im Gesamttext beides vorhanden.
 func TexteJeSeite(t *testing.T, roh []byte) [][]string {
 	t.Helper()
 	stroeme := stroemeAus(t, roh)
@@ -111,8 +98,7 @@ func lies(t *testing.T, roh []byte) ([]byte, []string) {
 	return inhalt.Bytes(), texteAus(inhalt.Bytes())
 }
 
-// stroemeAus entpackt die Inhaltsströme einzeln. Die Kommentare zur Bauform stehen bei
-// den beiden Zweigen unten; sie sind der Grund, warum dieser Leser nicht drei Zeilen lang ist.
+// stroemeAus entpackt die Inhaltsströme einzeln, gepackte wie ungepackte.
 func stroemeAus(t *testing.T, roh []byte) [][]byte {
 	t.Helper()
 
@@ -123,41 +109,39 @@ func stroemeAus(t *testing.T, roh []byte) [][]byte {
 		if i < 0 {
 			break
 		}
-		body := bytes.TrimLeft(rest[i+len("stream"):], "\r\n")
-		j := bytes.Index(body, []byte("endstream"))
+		rumpf := bytes.TrimLeft(rest[i+len("stream"):], "\r\n")
+		j := bytes.Index(rumpf, []byte("endstream"))
 		if j < 0 {
 			break
 		}
-		// Nicht jeder Strom ist ein komprimierter Inhaltsstrom (Schriften, Bilder) — was
-		// zlib nicht öffnet, wird übersprungen. Was es öffnet, muss aber vollständig
-		// lesbar sein, sonst prüfte der Test nur den Teil, den er zufällig entpacken konnte.
-		zr, err := zlib.NewReader(bytes.NewReader(body[:j]))
+		// Nicht jeder Strom ist ein gepackter Inhaltsstrom (Schriften, Bilder); was zlib nicht
+		// öffnet, gilt als ungepackt. Was zlib öffnet, muss ganz lesbar sein; sonst prüfte der
+		// Test nur den Teil, den er entpacken konnte.
+		entpacker, err := zlib.NewReader(bytes.NewReader(rumpf[:j]))
 		if err == nil {
-			entpackt, leseErr := io.ReadAll(zr)
-			if leseErr != nil {
-				t.Fatalf("Inhaltsstrom nicht vollständig lesbar: %v", leseErr)
+			entpackt, leseFehler := io.ReadAll(entpacker)
+			if leseFehler != nil {
+				t.Fatalf("Inhaltsstrom nicht vollständig lesbar: %v", leseFehler)
 			}
 			stroeme = append(stroeme, entpackt)
-			if closeErr := zr.Close(); closeErr != nil {
-				t.Fatalf("Inhaltsstrom nicht sauber abgeschlossen: %v", closeErr)
+			if schliessFehler := entpacker.Close(); schliessFehler != nil {
+				t.Fatalf("Inhaltsstrom nicht sauber abgeschlossen: %v", schliessFehler)
 			}
 		} else {
-			// Unkomprimiert (oder Schrift/Bild): roh mitnehmen. Der Tj-Ausdruck unten
-			// entscheidet, ob etwas Gedrucktes darin steht — Binärmüll trifft er nicht.
-			stroeme = append(stroeme, body[:j])
+			// Ungepackt, oder Schrift oder Bild: roh mitnehmen. Ob etwas Gedrucktes darin
+			// steht, entscheidet tjText; Binärdaten trifft der Ausdruck nicht.
+			stroeme = append(stroeme, rumpf[:j])
 		}
-		// Hinter das "endstream", nicht davor. Mit rest = body[j:] fand der nächste
-		// Durchlauf das "stream" IN "endstream" wieder, las ab dort Unsinn, den zlib
-		// verwarf — und übersprang dabei den echten nächsten Strom. Gelesen wurde damit
-		// immer nur die ERSTE Seite: Ein Bogen mit einem Etikett und ein Bogen mit
-		// hundert sahen für diesen Test gleich aus.
-		rest = body[j+len("endstream"):]
+		// Weiter hinter dem "endstream" und nicht davor: Sonst fände der nächste Durchlauf
+		// das "stream" in "endstream", läse ab dort Unsinn und überspränge den nächsten
+		// Strom. Gelesen würde dann nur die erste Seite.
+		rest = rumpf[j+len("endstream"):]
 	}
 	return stroeme
 }
 
-// Inhalt liefert den entpackten Inhaltsstrom roh — für Prüfungen, die nicht am Text
-// hängen, etwa an der Position eingebetteter Bilder.
+// Inhalt liefert den entpackten Inhaltsstrom roh: für Prüfungen, die nicht am Text hängen,
+// etwa am Ort eingebetteter Bilder.
 func Inhalt(t *testing.T, roh []byte) []byte {
 	t.Helper()
 	strom, _ := lies(t, roh)
@@ -189,14 +173,12 @@ func TexteInReihenfolge(t *testing.T, roh []byte) []string {
 	return texteInReihenfolge(inhalt)
 }
 
-// nachUTF8 macht aus einem PDF-Textstück lesbares Go: erst die PDF-Escapes auflösen,
-// dann von Windows-1252 nach UTF-8 wandeln.
+// nachUTF8 macht aus einem Textstück des PDF lesbaren Text: Es löst die Escapes des PDF auf
+// und wandelt von Windows-1252 nach UTF-8.
 //
-// Ohne diesen Schritt ist jede Erwartung mit Umlaut STILL FALSCH-GRÜN. Genau das passierte
-// am 03.09.2026: Eine Gegenprobe verlangte, dass die Spalte „Gezählt" NICHT gedruckt wird —
-// sie hätte auch dann nicht angeschlagen, wenn die Spalte da gewesen wäre, denn im
-// Inhaltsstrom steht „Gez\xe4hlt", und das trifft kein UTF-8-Literal. Der Test sah aus wie
-// ein Gate und war eine Zusicherung, die nie zuschlagen konnte.
+// Ohne diesen Schritt träfe keine Erwartung mit Umlaut: Im Inhaltsstrom steht „Gez\xe4hlt",
+// und ein Test, der verlangt, dass „Gezählt" nicht gedruckt wird, bliebe auch dann grün, wenn
+// es dasteht.
 func nachUTF8(roh []byte) string {
 	var b []byte
 	for i := 0; i < len(roh); i++ {
@@ -216,7 +198,7 @@ func nachUTF8(roh []byte) string {
 		case '(', ')', '\\':
 			b = append(b, n)
 		default:
-			// Oktal-Escape (\344 = ä in Windows-1252) — bis zu drei Ziffern.
+			// Ein Escape in Oktal (\344 ist ä in Windows-1252) hat bis zu drei Ziffern.
 			if n < '0' || n > '7' {
 				b = append(b, n)
 				break
@@ -229,15 +211,16 @@ func nachUTF8(roh []byte) string {
 			b = append(b, byte(wert))
 		}
 	}
-	// Fehler wären nur bei defekten Eingaben möglich; dann zählt der Rohtext mehr als nichts.
-	if utf8Text, err := charmap.Windows1252.NewDecoder().Bytes(b); err == nil {
-		return string(utf8Text)
+	// Ein Fehler ist nur bei kaputter Eingabe möglich; dann ist der rohe Text besser als
+	// keiner.
+	if text, err := charmap.Windows1252.NewDecoder().Bytes(b); err == nil {
+		return string(text)
 	}
 	return string(b)
 }
 
-// IstPDF prüft Signatur und Abschluss-Marker. Ein abgeschnittenes Dokument beginnt zwar
-// mit %PDF, hat aber kein %%EOF — genau so sähe ein Ausgabefehler aus.
+// IstPDF prüft Signatur und Abschluss. Ein abgeschnittenes Dokument beginnt mit %PDF, hat
+// aber kein %%EOF; so sähe ein Fehler bei der Ausgabe aus.
 func IstPDF(t *testing.T, b []byte, was string) {
 	t.Helper()
 	if len(b) == 0 {

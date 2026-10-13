@@ -2,10 +2,10 @@ package uebernahme
 
 import "fmt"
 
-// Spaltenbreiten aus schema.sql. Läuft ein Freitextfeld darüber, lehnt Postgres den
-// ganzen Datensatz mit SQLSTATE 22001 ab — und nennt dabei nicht einmal die Spalte, weil
-// der Fehler bei der Typumwandlung entsteht. Bei einer Altbestandsübernahme aus Littera
-// sind überlange Titel- und Verlagsangaben Alltag.
+// Die Spaltenbreiten aus schema.sql. Ist ein Freitextfeld länger, lehnt Postgres den ganzen
+// Datensatz mit SQLSTATE 22001 ab und nennt die Spalte nicht, weil der Fehler bei der
+// Umwandlung des Typs entsteht. Im Altbestand aus Littera sind überlange Titel und Angaben zum
+// Verlag häufig.
 const (
 	MaxFreitext  = 255 // titel, untertitel, autor, verlag, signatur, ort
 	MaxMedientyp = 100 // medientyp, vorname, nachname
@@ -14,7 +14,8 @@ const (
 	MaxAuflage   = 50  // auflage
 )
 
-// Kuerzung enthält die Parameter für die Kuerze-Funktionen.
+// Kuerzung nennt, was Kuerze braucht: das Feld mit seinem Wert, die Breite der Spalte und
+// womit die Zeile im Protokoll steht.
 type Kuerzung struct {
 	Protokoll *Protokoll
 	QuellID   string
@@ -26,26 +27,25 @@ type Kuerzung struct {
 
 // Kuerze bringt ein Freitextfeld auf die Spaltenbreite und meldet jede Kürzung.
 //
-// Gekürzt statt abgelehnt, im selben Geist wie die ISBN-Behandlung: der Datensatz kommt
-// an, die Kürzung steht mit vollem Originalwert als WARNUNG im Protokoll und lässt sich
-// gezielt nacharbeiten. Ein Buch wegen zwölf überzähliger Zeichen im Untertitel gar
-// nicht zu übernehmen wäre der schlechtere Tausch.
+// Gekürzt wird und nicht abgelehnt: Der Datensatz kommt an, und die Kürzung steht mit dem
+// ganzen Wert als Warnung im Protokoll und lässt sich nacharbeiten. Ein Buch wegen zwölf
+// Zeichen zu viel im Untertitel nicht zu übernehmen, wäre der schlechtere Tausch.
 //
-// Gekürzt wird auf max ZEICHEN, nicht auf max Bytes: Postgres zählt bei VARCHAR Zeichen,
-// und ein byteweiser Schnitt zerlegte deutsche Umlaute in ungültiges UTF-8.
+// Gezählt wird in Zeichen und nicht in Bytes: Postgres zählt bei VARCHAR Zeichen, und ein
+// Schnitt nach Bytes zerlegte einen Umlaut in ungültiges UTF-8.
 func Kuerze(k Kuerzung) string {
-	r := []rune(k.Wert)
-	if len(r) <= k.Max {
+	runen := []rune(k.Wert)
+	if len(runen) <= k.Max {
 		return k.Wert
 	}
 	k.Protokoll.Warnung(k.QuellID, k.Kennung, fmt.Sprintf(
 		"%s war %d Zeichen lang (Spaltenbreite %d) und wurde gekürzt; Original: %q",
-		k.Feld, len(r), k.Max, k.Wert))
-	return string(r[:k.Max])
+		k.Feld, len(runen), k.Max, k.Wert))
+	return string(runen[:k.Max])
 }
 
-// KuerzeNullbar arbeitet wie Kuerze, liefert aber nil statt einer leeren Zeichenkette —
-// die Form, die pgx für eine nullbare Spalte braucht.
+// KuerzeNullbar arbeitet wie Kuerze und liefert nil statt einer leeren Zeichenkette, wie pgx
+// es für eine Spalte braucht, die NULL sein darf.
 func KuerzeNullbar(k Kuerzung) *string {
 	if k.Wert == "" {
 		return nil
@@ -54,7 +54,7 @@ func KuerzeNullbar(k Kuerzung) *string {
 	return &gekuerzt
 }
 
-// Nullbar wandelt eine leere Zeichenkette in ein typisiertes nil.
+// Nullbar liefert nil für eine leere Zeichenkette, sonst einen Zeiger auf sie.
 func Nullbar(s string) *string {
 	if s == "" {
 		return nil

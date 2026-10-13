@@ -174,8 +174,9 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
 - [x] Die Regeln stehen auf einer Seite ([STIL.md](STIL.md)); eine Prüfung hält je Paket fest,
   was ihnen noch nicht folgt, und lässt den Bestand nur sinken (`stil_ratsche_test.go`).
 - [x] Die Pakete unter `pkg/`.
-- [ ] Die Pakete unter `internal/` ohne `internal/service`.
+- [x] Unter `internal/` die neun Pakete, die `repository` nicht einbinden.
 - [ ] `repository/`.
+- [ ] Die übrigen acht Pakete unter `internal/` ohne `internal/service` (Reihenfolge in 5.66).
 - [ ] `internal/service`.
 - [ ] `api/tuer`, die zwölf Themen unter `api/`, `api/`.
 - [ ] `inventur/`, `auth/`, `jobs/`, `pdf/`, `mailservice/`, `db/`, `sse/`, `apierrors/`, `cmd/`
@@ -443,9 +444,10 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 30 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
-gelesen und ohne Änderung), dazu `internal/ausweis`, `internal/backupkrypto`, `internal/crypto`
-und `internal/middleware`.
+**Fertig sind 35 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+gelesen und ohne Änderung), dazu unter `internal/` die neun Pakete, die kein anderes des
+Projekts einbinden oder nur eines unter `pkg/`: `ausweis`, `backupkrypto`, `crypto`,
+`middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`.
 
 **Ein Paket ist fertig, wenn:**
 
@@ -459,7 +461,11 @@ und `internal/middleware`.
 
 **Reihenfolge:** von unten nach oben, zuerst die Pakete, die kein anderes des Projekts
 einbinden. So bekommt jeder Name seinen endgültigen in einem Schritt, und die Rufer in den
-Paketen darüber ziehen mit.
+Paketen darüber ziehen mit. Acht Pakete unter `internal/` binden `repository` oder ein Paket
+darüber ein und kommen deshalb nach ihm an die Reihe: `auskunft`, `bereitschaft`,
+`buchetikett`, `littera` und `lusd` nach `repository`, `testdaten` nach `internal/service`,
+`tuertest` und `routertest` nach `api/`. Ihre Attrappen erfüllen Schnittstellen von dort
+(`tuertest.EinstellungenAttrappe.GetSettings`) und bekommen ihre Namen mit diesen.
 
 **Beleg je Paket:** Umbenannt wird mit dem Werkzeug der Sprache (`gopls rename`), das jede
 Nennung über die Typprüfung findet. Danach laufen die ganze Go-Suite an der Datenbank, der

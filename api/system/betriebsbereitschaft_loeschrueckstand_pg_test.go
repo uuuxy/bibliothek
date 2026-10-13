@@ -48,7 +48,7 @@ func TestLoeschRueckstandErreichtDieSelbstpruefung(t *testing.T) {
 
 	// Jetzt ein überfälliger Datensatz — deutlich jenseits von Frist plus Kulanz.
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM lehrer_anliegen WHERE titel_text = $1`, "RUECKSTAND-LIVE")
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM lehrer_anliegen WHERE titel_text = $1`, "RUECKSTAND-LIVE")
 	})
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO lehrer_anliegen (art, titel_text, kommentar, erstellt_am, erledigt_am)

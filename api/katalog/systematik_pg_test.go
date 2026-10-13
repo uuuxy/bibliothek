@@ -48,7 +48,7 @@ func TestSystematikAnlegen(t *testing.T) {
 	kuerzel := "Deu" + suffix
 	bezeichnung := "Deutsch" + suffix
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE kuerzel LIKE 'Deu%'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM systematik_kategorien WHERE kuerzel LIKE 'Deu%'`)
 	})
 
 	rec, id := systematikAnlegen(t, srv, "  "+kuerzel+"  ", "  "+bezeichnung+"  ")
@@ -101,8 +101,8 @@ func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 		t.Fatal("Sachgruppe konnte nicht angelegt werden")
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE subject = $1`, bezeichnung)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE subject = $1`, bezeichnung)
 	})
 
 	loeschen := func() int {
@@ -163,8 +163,8 @@ func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 		t.Fatal("Sachgruppe konnte nicht angelegt werden")
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE subject IN ($1,$2)`, alt, neu)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE subject IN ($1,$2)`, alt, neu)
 	})
 
 	// Zwei Titel auf dem alten Fach, einer auf einem Fremdfach (darf NICHT mitgezogen
@@ -176,7 +176,7 @@ func TestSystematikRenameZiehtTitelMit(t *testing.T) {
 		t.Fatalf("Fremdfach registrieren: %v", err)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung = $1`, fremd)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung = $1`, fremd)
 	})
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO buecher_titel (titel, subject, signatur) VALUES
@@ -246,7 +246,7 @@ func TestSystematikAendern_UnbekanntUndDoppelt(t *testing.T) {
 
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%100000)
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE kuerzel LIKE 'Dop%'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM systematik_kategorien WHERE kuerzel LIKE 'Dop%'`)
 	})
 	if rec, _ := systematikAnlegen(t, srv, "DopA"+suffix, "Doppelt A "+suffix); rec.Code != http.StatusCreated {
 		t.Fatalf("erste Sachgruppe: Status %d, %s", rec.Code, rec.Body.String())

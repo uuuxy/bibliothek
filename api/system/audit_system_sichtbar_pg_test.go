@@ -34,8 +34,8 @@ func TestAuditLogZeigtSystemEintraege(t *testing.T) {
 	nutzerTabelle := "e2e_nutzer_" + suffix
 
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE tabelle IN ($1, $2)`, systemTabelle, nutzerTabelle)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = $1`, "audit-"+suffix+"@example.org")
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE tabelle IN ($1, $2)`, systemTabelle, nutzerTabelle)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = $1`, "audit-"+suffix+"@example.org")
 	})
 
 	// Ein Eintrag MIT Bearbeiter ...

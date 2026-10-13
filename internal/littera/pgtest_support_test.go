@@ -43,11 +43,11 @@ func leereAlles(t *testing.T, pool *pgxpool.Pool) {
 func testSchreiber(t *testing.T, pool *pgxpool.Pool, anpassen func(*Optionen)) (*Schreiber, func() string) {
 	t.Helper()
 	pfad := filepath.Join(t.TempDir(), "littera_import.log")
-	prot, err := uebernahme.NeuesProtokoll(pfad, "littera_id")
+	prot, err := uebernahme.NewProtokoll(pfad, "littera_id")
 	if err != nil {
 		t.Fatalf("Protokoll: %v", err)
 	}
-	t.Cleanup(prot.Schliessen)
+	t.Cleanup(prot.Schliesse)
 
 	opt := StandardOptionen(time.Date(2026, 8, 4, 12, 0, 0, 0, time.UTC))
 	opt.BatchGroesse = 3 // klein, damit die Tests mehrere Transaktionen durchlaufen
@@ -56,7 +56,7 @@ func testSchreiber(t *testing.T, pool *pgxpool.Pool, anpassen func(*Optionen)) (
 	}
 
 	lies := func() string {
-		if err := prot.Leeren(); err != nil {
+		if err := prot.Leere(); err != nil {
 			t.Fatalf("Protokoll schreiben: %v", err)
 		}
 		b, err := os.ReadFile(pfad) // #nosec G304 - Pfad aus t.TempDir()

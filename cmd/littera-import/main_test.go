@@ -79,7 +79,7 @@ func TestRun_ImportiertEinKatalogisat(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	if err := run([]string{"-file", pfad, "-db", os.Getenv(pgtest.EnvVar)}, keineUmgebung, &out); err != nil {
+	if err := run([]string{"-file", pfad, "-db", os.Getenv(pgtest.Variable)}, keineUmgebung, &out); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 	if !strings.Contains(out.String(), `"verarbeitete_titel":1`) {

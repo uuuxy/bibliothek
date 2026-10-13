@@ -80,7 +80,7 @@ func run() int {
 		log.Printf("FEHLER: Fehlerprotokoll konnte nicht geöffnet werden: %v", err)
 		return exitAbgebrochen
 	}
-	defer el.Schliessen()
+	defer el.Schliesse()
 
 	mysqlDB, err := connectMySQL(ctx, mysqlDSN)
 	if err != nil {

@@ -53,7 +53,7 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 		t.Fatalf("Ausleihe anlegen: %v", err)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = 'ersatzwert_immer_kaufpreis'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = 'ersatzwert_immer_kaufpreis'`)
 	})
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}

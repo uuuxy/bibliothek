@@ -22,7 +22,7 @@ func TestVerwaltung_LeserUndMailEinstellungenStehenImProtokoll(t *testing.T) {
 	ctx := t.Context()
 	adminID, rufe := routertest.MitAufruf(t, pool)
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion IN
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion IN
 			('DELETE_STUDENT', 'RESTORE_STUDENT', 'PURGE_STUDENT', 'UPDATE_MAIL_SETTINGS')`)
 	})
 
@@ -90,7 +90,7 @@ func TestVerwaltung_LeserUndMailEinstellungenStehenImProtokoll(t *testing.T) {
 			t.Fatalf("Mail-Konfiguration lesen: %v", err)
 		}
 		t.Cleanup(func() {
-			pgtest.Aufraeumen(t, pool, `UPDATE mail_settings_config
+			pgtest.RaeumeAuf(t, pool, `UPDATE mail_settings_config
 				SET smtp_host = $1, smtp_port = $2, smtp_user = $3, sender_email = $4 WHERE id = 1`,
 				vorHost, vorPort, vorUser, vorAbsender)
 		})

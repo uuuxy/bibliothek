@@ -92,7 +92,7 @@ func bestellmailLageAnlegen(t *testing.T, kennung string) *bestellmailLage {
 	}
 	l.router = api.NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false).Routes()
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTELLMAIL_ERNEUT_GESENDET'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BESTELLMAIL_ERNEUT_GESENDET'`)
 	})
 	return l
 }

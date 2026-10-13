@@ -11,9 +11,9 @@ import (
 
 // In diesen Tests testen wir die barcodeWunsch-Logik und reine Go-Methoden ohne Datenbank.
 func TestSchreiber_barcodeWunsch(t *testing.T) {
-	prot, err := uebernahme.NeuesProtokoll(filepath.Join(t.TempDir(), "prot.log"), "littera_id")
+	prot, err := uebernahme.NewProtokoll(filepath.Join(t.TempDir(), "prot.log"), "littera_id")
 	if err != nil {
-		t.Fatalf("NeuesProtokoll: %v", err)
+		t.Fatalf("NewProtokoll: %v", err)
 	}
 	s := NeuerSchreiber(nil, prot, StandardOptionen(time.Now()))
 

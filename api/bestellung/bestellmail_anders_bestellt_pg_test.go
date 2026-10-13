@@ -26,7 +26,7 @@ func andersBestelltLage(t *testing.T, kennung string) *bestellmailLage {
 	t.Helper()
 	l := bestellmailLageAnlegen(t, kennung)
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, l.pool, `DELETE FROM audit_logs WHERE aktion = $1`, auditBestellmailVermerkEntferntTest)
+		pgtest.RaeumeAuf(t, l.pool, `DELETE FROM audit_logs WHERE aktion = $1`, auditBestellmailVermerkEntferntTest)
 	})
 	return l
 }

@@ -232,26 +232,26 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 	})
 
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'TRESEN_AUSKUNFT' AND details->>'barcode' = $1`, w.buchBarcode)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, w.exemplarID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM lmf_plaene WHERE erster_tag = DATE '2099-06-28'`)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM vormerkungen WHERE titel_id = $1`, w.titelID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM schadensfaelle WHERE id = $1`, w.schadensfallID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)`, w.titelID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_exemplare WHERE titel_id = $1`, w.titelID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.titelID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM schueler WHERE id IN ($1, $2)`, w.schuelerID, w.abgaengerID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'TRESEN_AUSKUNFT' AND details->>'barcode' = $1`, w.buchBarcode)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, w.exemplarID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM lmf_plaene WHERE erster_tag = DATE '2099-06-28'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM vormerkungen WHERE titel_id = $1`, w.titelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM schadensfaelle WHERE id = $1`, w.schadensfallID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)`, w.titelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_exemplare WHERE titel_id = $1`, w.titelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.titelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM schueler WHERE id IN ($1, $2)`, w.schuelerID, w.abgaengerID)
 		// Die MITARBEITER-Rechte auf die Seed-Vorgabe zurückstellen — das Gate
 		// hat sie je Route auf genau ein Recht verengt, spätere Tests im selben
 		// Binary sollen wieder den Normalzustand sehen.
-		pgtest.Aufraeumen(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
 		for _, e := range db.RechteVorgabe {
 			if e.Role == "MITARBEITER" {
-				pgtest.Aufraeumen(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
+				pgtest.RaeumeAuf(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
 					VALUES ($1, $2, $3) ON CONFLICT (role, permission) DO NOTHING`, e.Role, e.Permission, e.Allowed)
 			}
 		}
-		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.mitarbeiterID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.mitarbeiterID)
 		tuer.InvalidatePermissionCache()
 	})
 	return w

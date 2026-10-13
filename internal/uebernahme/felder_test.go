@@ -8,11 +8,11 @@ import (
 func TestKuerzeNullbar(t *testing.T) {
 	tmpDir := t.TempDir()
 	protokollPfad := filepath.Join(tmpDir, "protokoll.log")
-	p, err := NeuesProtokoll(protokollPfad, "id")
+	p, err := NewProtokoll(protokollPfad, "id")
 	if err != nil {
-		t.Fatalf("NeuesProtokoll schlug fehl: %v", err)
+		t.Fatalf("NewProtokoll schlug fehl: %v", err)
 	}
-	defer p.Schliessen()
+	defer p.Schliesse()
 
 	t.Run("leer ergibt nil", func(t *testing.T) {
 		if got := KuerzeNullbar(Kuerzung{Protokoll: p, QuellID: "1", Kennung: "kennung", Feld: "feld", Wert: "", Max: 5}); got != nil {

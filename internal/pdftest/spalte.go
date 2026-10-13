@@ -29,8 +29,8 @@ func inSpalte(t *testing.T, gedruckt, quelle, schnitt string, groesse, platz flo
 	t.Helper()
 	messen := gofpdf.New("P", "mm", "A4", "")
 	messen.SetFont("Arial", schnitt, groesse)
-	tr := pdfzeichen.Uebersetzer(messen.UnicodeTranslatorFromDescriptor(""))
-	if breite := messen.GetStringWidth(tr(gedruckt)); breite > platz {
+	uebersetze := pdfzeichen.Uebersetzer(messen.UnicodeTranslatorFromDescriptor(""))
+	if breite := messen.GetStringWidth(uebersetze(gedruckt)); breite > platz {
 		t.Errorf("%q ist gedruckt %.1f mm breit, die Zelle lässt %.1f mm", gedruckt, breite, platz)
 	}
 	if gedruckt == quelle {
@@ -50,7 +50,7 @@ func inSpalte(t *testing.T, gedruckt, quelle, schnitt string, groesse, platz flo
 	}
 	_, laenge := utf8.DecodeRuneInString(rest[naechstes:])
 	laenger := anfang + rest[:naechstes+laenge] + "…"
-	if breite := messen.GetStringWidth(tr(laenger)); breite <= platz {
+	if breite := messen.GetStringWidth(uebersetze(laenger)); breite <= platz {
 		t.Errorf("gedruckt %q, dabei passte auch %q (%.1f mm von %.1f mm)", gedruckt, laenger, breite, platz)
 	}
 }

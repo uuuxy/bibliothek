@@ -32,7 +32,7 @@ func TestDsgvoAuskunftPDF_EinstellungenUnlesbar_KeinBlattKeinEintrag(t *testing.
 			`SELECT count(*) FROM audit_log WHERE aktion = 'dsgvo_auskunft' AND datensatz_id = $1::uuid`, leserID)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE aktion = 'dsgvo_auskunft' AND datensatz_id = $1::uuid`, leserID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE aktion = 'dsgvo_auskunft' AND datensatz_id = $1::uuid`, leserID)
 	})
 
 	rec := rufe(testdaten.PoolMitLesefehler{PgxPoolIface: pool, Muster: testdaten.EinstellungenLesen})

@@ -34,7 +34,7 @@ func TestListUsersLiefertEchteRechte(t *testing.T) {
 	email := "rechte-" + suffix + "@example.org"
 
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = $1`, email)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE email = $1`, email)
 	})
 
 	if _, err := pool.Exec(ctx, `

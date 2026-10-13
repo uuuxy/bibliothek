@@ -14,7 +14,7 @@ internal/pgtest/pgtest.go: unreachable func: schemaPfad
 # Türen stehen in mehr als einem Paket, docs/OFFEN.md 5.65).
 internal/pgtest/anweisungen.go: unreachable func: InTx
 internal/pgtest/anweisungen.go: unreachable func: ZaehleZeilen
-internal/pgtest/anweisungen.go: unreachable func: Aufraeumen
+internal/pgtest/anweisungen.go: unreachable func: RaeumeAuf
 
 # Testinfrastruktur per Paket-Design: der Leser für gedruckte PDF-Textstücke
 # (vorher Helfer in api/druck/etiketten_pdf_paritaet_pg_test.go, seit 03.09.2026 auch vom
@@ -76,7 +76,7 @@ internal/littera/leser.go: unreachable func: NurArt
 
 # Selbstdeklarierter Test-/Langlauf-Helfer (siehe Doc-Kommentar der Methode);
 # wird von den pgtest-Support-Dateien mehrerer Pakete benutzt.
-internal/uebernahme/protokoll.go: unreachable func: Protokoll.Leeren
+internal/uebernahme/protokoll.go: unreachable func: Protokoll.Leere
 
 # Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Funktion): Die Ersatzbilder
 # der Cover-Quellen stehen als Prüfsumme im Programm, nicht als Datei im Repository.

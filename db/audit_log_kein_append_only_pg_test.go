@@ -20,9 +20,9 @@ import (
 )
 
 func TestMigration083_AuditLogTilgungGehtDurch(t *testing.T) {
-	dsn := os.Getenv(pgtest.EnvVar)
+	dsn := os.Getenv(pgtest.Variable)
 	if dsn == "" {
-		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", pgtest.EnvVar)
+		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", pgtest.Variable)
 	}
 	ctx := context.Background()
 

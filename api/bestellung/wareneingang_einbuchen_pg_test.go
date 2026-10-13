@@ -54,7 +54,7 @@ func TestWareneingang_EinbuchenUeberDieTuer(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	adminID, rufe := routertest.MitAufruf(t, pool)
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BULK_RECEIVE_ITEMS'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion = 'BULK_RECEIVE_ITEMS'`)
 	})
 	titelID := testdaten.TitelMitSignatur(t, pool, "Einbuch-Titel", "Ein 1", 0)
 

@@ -20,8 +20,8 @@ func TestNormalisiereISBN(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			if got := NormalisiereISBN(f.eingabe); got != f.erwartet {
-				t.Errorf("NormalisiereISBN(%q) = %q, erwartet %q", f.eingabe, got, f.erwartet)
+			if got := normalisiereISBN(f.eingabe); got != f.erwartet {
+				t.Errorf("normalisiereISBN(%q) = %q, erwartet %q", f.eingabe, got, f.erwartet)
 			}
 		})
 	}

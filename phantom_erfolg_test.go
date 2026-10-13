@@ -174,7 +174,7 @@ var phantomBestand = map[string]int{
 	"repository/system_settings.go:SaveSettings":                                1,
 	// Prüfhilfen der Tests: Sie legen Zeilen an, leeren Tabellen oder räumen auf. Eine Anweisung,
 	// die dort keine Zeile trifft, meldet niemandem einen Erfolg.
-	"internal/pgtest/anweisungen.go:Aufraeumen":                   1,
+	"internal/pgtest/anweisungen.go:RaeumeAuf":                    1,
 	"internal/testdaten/ausleihe.go:SeedLeserAusleihe":            1,
 	"internal/testdaten/ausleihe.go:SeedOffeneAusleihe":           1,
 	"internal/testdaten/bestellung.go:AltBestellung":              1,

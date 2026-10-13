@@ -31,8 +31,8 @@ func TestFachAutoRegistrierung(t *testing.T) {
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano()%1000000)
 	fach := "Astronomie" + suffix
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE titel LIKE $1`, "%"+suffix)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung ILIKE $1`, "%"+suffix)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE titel LIKE $1`, "%"+suffix)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM systematik_kategorien WHERE bezeichnung ILIKE $1`, "%"+suffix)
 	})
 
 	// 1) Unbekanntes Fach: CreateBook registriert es und der Titel trägt es.
@@ -120,8 +120,8 @@ func TestSystematikRenameZiehtOffeneInventurMit(t *testing.T) {
 		t.Fatal("Sachgruppe konnte nicht angelegt werden")
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM inventur_sessions WHERE scope_label LIKE $1`, "%"+suffix)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM inventur_sessions WHERE scope_label LIKE $1`, "%"+suffix)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM systematik_kategorien WHERE id = $1::uuid`, id)
 	})
 
 	var offenID, zuID string

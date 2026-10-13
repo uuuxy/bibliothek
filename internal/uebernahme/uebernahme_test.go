@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// TestKuerzeZaehltZeichen: Postgres begrenzt varchar in ZEICHEN. Ein byteweiser Schnitt
-// zerlegte deutsche Umlaute und schriebe ungültiges UTF-8 in die Datenbank.
+// Postgres begrenzt varchar in Zeichen. Ein Schnitt nach Bytes zerlegte einen Umlaut und
+// schriebe ungültiges UTF-8 in die Datenbank.
 func TestKuerzeZaehltZeichen(t *testing.T) {
 	p := testProtokoll(t)
 
@@ -48,8 +48,7 @@ func TestKuerzeKurzerString(t *testing.T) {
 	}
 }
 
-// TestKlaereISBNWertetAbStattZuVerwerfen hält die Grundhaltung fest: eine kaputte oder
-// doppelte ISBN kostet die ISBN, nicht das Buch.
+// Eine kaputte oder doppelte ISBN kostet die ISBN und nicht das Buch.
 func TestKlaereISBNWertetAbStattZuVerwerfen(t *testing.T) {
 	t.Run("ungültige Prüfziffer", func(t *testing.T) {
 		p := testProtokoll(t)
@@ -110,10 +109,10 @@ func TestKlaereISBNWertetAbStattZuVerwerfen(t *testing.T) {
 
 func testProtokoll(t *testing.T) *Protokoll {
 	t.Helper()
-	p, err := NeuesProtokoll(t.TempDir()+"/err.log", "quell_id")
+	p, err := NewProtokoll(t.TempDir()+"/err.log", "quell_id")
 	if err != nil {
 		t.Fatalf("Protokoll: %v", err)
 	}
-	t.Cleanup(p.Schliessen)
+	t.Cleanup(p.Schliesse)
 	return p
 }

@@ -93,6 +93,9 @@ wie das Gelieferte (`FristEnde`), ohne `Get` davor (Decisions, „Getters").
 Die Tabelle legt fest, wo zwei Wörter für dieselbe Tätigkeit standen. Jede andere Tätigkeit
 trägt ihr deutsches Verb (`Kuerze`, `Zerlege`, `Schliesse`, `Entschaerfe`).
 
+Wer eine übergebene Funktion in einem Rahmen ausführt, heißt nach dem Rahmen: `InTx`,
+`ImSavepoint`.
+
 ## 4. Schreibweise
 
 - Kürzel stehen durchgehend groß oder, am Anfang eines nicht öffentlichen Namens, durchgehend

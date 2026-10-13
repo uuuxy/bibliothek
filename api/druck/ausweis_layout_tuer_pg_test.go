@@ -50,7 +50,7 @@ func TestAusweisLayout_UeberDieTuer(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	_, rufe := routertest.MitAufruf(t, pool)
 	ohneDesign := func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
 	}
 	ohneDesign()
 	t.Cleanup(ohneDesign)
@@ -163,7 +163,7 @@ func TestAusweisLayout_LesefehlerIstKeinLeeresDesign(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, repository.AusweisLayoutSchluessel)
 	})
 
 	gestoert := poolMitLesefehlerBei{PgxPoolIface: pool, muster: "FROM system_einstellungen", schluessel: repository.AusweisLayoutSchluessel}

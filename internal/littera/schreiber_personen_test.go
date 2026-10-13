@@ -31,11 +31,11 @@ func TestLowerTrim(t *testing.T) {
 }
 
 func TestPersonenlaufAusweis(t *testing.T) {
-	prot, err := uebernahme.NeuesProtokoll(t.TempDir()+"/prot.log", "id")
+	prot, err := uebernahme.NewProtokoll(t.TempDir()+"/prot.log", "id")
 	if err != nil {
-		t.Fatalf("NeuesProtokoll: %v", err)
+		t.Fatalf("NewProtokoll: %v", err)
 	}
-	t.Cleanup(func() { prot.Schliessen() })
+	t.Cleanup(func() { prot.Schliesse() })
 
 	p := &personenlauf{
 		s:                   &Schreiber{prot: prot},
@@ -72,11 +72,11 @@ func TestPersonenlaufAusweis(t *testing.T) {
 }
 
 func TestPersonenlaufMailadresse(t *testing.T) {
-	prot, err := uebernahme.NeuesProtokoll(t.TempDir()+"/prot.log", "id")
+	prot, err := uebernahme.NewProtokoll(t.TempDir()+"/prot.log", "id")
 	if err != nil {
-		t.Fatalf("NeuesProtokoll: %v", err)
+		t.Fatalf("NewProtokoll: %v", err)
 	}
-	t.Cleanup(func() { prot.Schliessen() })
+	t.Cleanup(func() { prot.Schliesse() })
 
 	p := &personenlauf{
 		s:            &Schreiber{prot: prot},
@@ -143,11 +143,11 @@ func TestPersonenlaufAbgangsjahr(t *testing.T) {
 }
 
 func TestPersonenlaufKuerze(t *testing.T) {
-	prot, err := uebernahme.NeuesProtokoll(t.TempDir()+"/prot.log", "id")
+	prot, err := uebernahme.NewProtokoll(t.TempDir()+"/prot.log", "id")
 	if err != nil {
-		t.Fatalf("NeuesProtokoll: %v", err)
+		t.Fatalf("NewProtokoll: %v", err)
 	}
-	t.Cleanup(func() { prot.Schliessen() })
+	t.Cleanup(func() { prot.Schliesse() })
 
 	p := &personenlauf{
 		s: &Schreiber{prot: prot},
@@ -176,9 +176,9 @@ func TestPersonenlaufKuerze(t *testing.T) {
 // Frist. Die Lesernummer reicht, um die Zeile in der Quelldatei wiederzufinden.
 func TestPersonenlaufMailadresse_ProtokollOhneEchteAdresse(t *testing.T) {
 	pfad := t.TempDir() + "/prot.log"
-	prot, err := uebernahme.NeuesProtokoll(pfad, "littera_id")
+	prot, err := uebernahme.NewProtokoll(pfad, "littera_id")
 	if err != nil {
-		t.Fatalf("NeuesProtokoll: %v", err)
+		t.Fatalf("NewProtokoll: %v", err)
 	}
 
 	p := &personenlauf{s: &Schreiber{prot: prot}, belegteMails: make(map[string]bool)}
@@ -187,7 +187,7 @@ func TestPersonenlaufMailadresse_ProtokollOhneEchteAdresse(t *testing.T) {
 	// Erste Person belegt die Adresse, die zweite kollidiert damit.
 	p.mailadresse(Leser{ID: "1", Lesernummer: "A-4711", EMail: adresse})
 	p.mailadresse(Leser{ID: "2", Lesernummer: "A-4712", EMail: adresse})
-	prot.Schliessen()
+	prot.Schliesse()
 
 	roh, err := os.ReadFile(pfad)
 	if err != nil {

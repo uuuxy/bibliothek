@@ -11,9 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// TestIstZeilenfehler sichert die Weiche ab, an der sich entscheidet, ob „übersprungen"
-// die Wahrheit sagt. Fällt ein Verbindungsabbruch versehentlich auf die
-// Zeilenfehler-Seite, protokolliert das Werkzeug wieder Tausende Ausfälle, die es nie
+// An dieser Unterscheidung hängt, ob „übersprungen" im Protokoll stimmt. Gälte ein Abbruch der
+// Verbindung als Fehler der Zeile, protokollierte das Werkzeug Tausende Ausfälle, die es nie
 // versucht hat.
 func TestIstZeilenfehler(t *testing.T) {
 	pgFehler := func(code string) error { return &pgconn.PgError{Code: code, Message: code} }
@@ -45,8 +44,8 @@ func TestIstZeilenfehler(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			if got := IstZeilenfehler(f.err); got != f.erwartet {
-				t.Errorf("IstZeilenfehler(%v) = %v, erwartet %v", f.err, got, f.erwartet)
+			if got := istZeilenfehler(f.err); got != f.erwartet {
+				t.Errorf("istZeilenfehler(%v) = %v, erwartet %v", f.err, got, f.erwartet)
 			}
 		})
 	}
@@ -80,17 +79,16 @@ func TestBeschreibeFehlerOhnePostgres(t *testing.T) {
 	}
 }
 
-// TestBeschreibeFehlerTraegtKeineDatenwerte ist ein Datenschutz-Gate, kein Formattest.
+// Die Zeile trägt keine Datenwerte; es geht um den Datenschutz, nicht um die Form.
 //
-// Das Ziel dieser Zeilen ist `littera_import.log`: eine unverschlüsselte Datei im
-// Arbeitsverzeichnis, ohne Frist und ohne Löschregel. Postgres schreibt in DETAIL den
-// Inhalt der kollidierenden Zeile — bei der Leser-Übernahme also echte E-Mail-Adressen
-// und Ausweisnummern. Am laufenden Postgres nachgestellt (23.08.2026):
+// Die Zeilen gehen in `littera_import.log`: eine unverschlüsselte Datei im Arbeitsverzeichnis
+// ohne Löschfrist. Postgres schreibt in DETAIL den Inhalt der Zeile, die kollidiert, bei der
+// Übernahme der Leser also E-Mail-Adressen und Ausweisnummern:
 //
 //	DETAIL: Key (email)=(erika.mustermann@philipp-reis-schule.de) already exists.
 //
-// Spalte und Constraint müssen bleiben — ohne sie ist die Zeile für die Reparatur der
-// Quelldatei wertlos.
+// Spalte und Constraint bleiben; ohne sie ließe sich die Quelldatei mit der Zeile nicht
+// berichtigen.
 func TestBeschreibeFehlerTraegtKeineDatenwerte(t *testing.T) {
 	adresse := "erika.mustermann@philipp-reis-schule.de"
 	pgErr := &pgconn.PgError{

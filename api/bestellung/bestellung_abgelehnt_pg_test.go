@@ -26,8 +26,8 @@ func TestBestellung_AbgelehnterWarenkorbBuchtNichts(t *testing.T) {
 	_, rufe := routertest.MitAufruf(t, pool)
 	lieferant := testdaten.Haendler(t, pool, "Abgelehnt", false)
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM lieferanten WHERE id = $1`, lieferant)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM bestellungen_verlauf WHERE lieferant_id = $1`, lieferant)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM lieferanten WHERE id = $1`, lieferant)
 	})
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Titel im Warenkorb", 0)
 

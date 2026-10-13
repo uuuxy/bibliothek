@@ -25,7 +25,7 @@ func newErrLogger() (*uebernahme.Protokoll, error) { return newErrLoggerAt(error
 // newErrLoggerAt trennt den Pfad vom Aufruf, damit Tests in ein temporäres Verzeichnis
 // schreiben können, statt das Arbeitsverzeichnis zu verschmutzen.
 func newErrLoggerAt(pfad string) (*uebernahme.Protokoll, error) {
-	return uebernahme.NeuesProtokoll(pfad, "mysql_id")
+	return uebernahme.NewProtokoll(pfad, "mysql_id")
 }
 
 // buildErweiterteEigenschaften serialises free-text fields into the JSONB column.

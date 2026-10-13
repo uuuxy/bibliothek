@@ -15,8 +15,8 @@ func TestDBTestsLaufenInCI(t *testing.T) {
 	if os.Getenv("CI") == "" {
 		t.Skip("nur in CI relevant")
 	}
-	if os.Getenv(pgtest.EnvVar) == "" {
+	if os.Getenv(pgtest.Variable) == "" {
 		t.Fatalf("%s ist in CI nicht gesetzt — die DB-Invarianten würden ungeprüft "+
-			"durchgewinkt (siehe Service-Container in .github/workflows/ci.yml)", pgtest.EnvVar)
+			"durchgewinkt (siehe Service-Container in .github/workflows/ci.yml)", pgtest.Variable)
 	}
 }

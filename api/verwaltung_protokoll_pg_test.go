@@ -33,10 +33,10 @@ func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 	aktionen := `('KLASSENLEITUNG_GEAENDERT', 'KLASSENLEITUNG_ENTFERNT', 'MAILVORLAGE_GEAENDERT',
 		'LIEFERANT_ANGELEGT', 'LIEFERANT_GEAENDERT', 'LIEFERANT_GELOESCHT', 'FRIST_KLASSE_GEAENDERT')`
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion IN `+aktionen)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM klassen_lehrer_mapping WHERE klasse = 'VP7'`)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM mail_vorlagen WHERE typ = 'protokoll_probe'`)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM lieferanten WHERE name LIKE 'Buchhandlung Protokoll%'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion IN `+aktionen)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM klassen_lehrer_mapping WHERE klasse = 'VP7'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM mail_vorlagen WHERE typ = 'protokoll_probe'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM lieferanten WHERE name LIKE 'Buchhandlung Protokoll%'`)
 	})
 
 	eintraege := func(t *testing.T, aktion string) int {
@@ -250,8 +250,8 @@ func TestSchlagwortPflege_UnumkehrbaresStehtImProtokoll(t *testing.T) {
 	ctx := t.Context()
 	adminID, rufe := routertest.MitAufruf(t, pool)
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM schlagworte WHERE wort LIKE 'Protokollprobe%'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM schlagworte WHERE wort LIKE 'Protokollprobe%'`)
 	})
 
 	var titelID string

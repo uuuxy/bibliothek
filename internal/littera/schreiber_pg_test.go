@@ -385,7 +385,7 @@ func TestWiederholterLaufWirdAbgelehnt(t *testing.T) {
 // die man sonst zum Provozieren nähme — sie kommen gar nicht erst bis zum INSERT. Was hier
 // geprüft werden soll, liegt aber dahinter: dass ein Fehler MITTEN in der Transaktion nur
 // diesen einen Datensatz kostet. SQLSTATE 23514 ist bewusst gewählt: Es ist ein
-// Zeilenfehler im Sinne von uebernahme.IstZeilenfehler, wie ihn jeder CHECK und jeder
+// Zeilenfehler im Sinne des Pakets uebernahme (istZeilenfehler), wie ihn jeder CHECK und jeder
 // UNIQUE-Index liefert, den eine spätere Migration hinzufügen mag.
 func erzwingeZeilenfehler(t *testing.T, pool *pgxpool.Pool, tabelle, spalte, wert string) {
 	t.Helper()

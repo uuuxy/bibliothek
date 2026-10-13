@@ -55,14 +55,14 @@ func TestMahnbriefeDrucken_VerlangtDasRechtDesMahnversands(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		// Die Rechte der Rolle stehen danach wieder auf der Vorgabe.
-		pgtest.Aufraeumen(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER'`)
 		for _, e := range db.RechteVorgabe {
 			if e.Role == "MITARBEITER" {
-				pgtest.Aufraeumen(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
+				pgtest.RaeumeAuf(t, pool, `INSERT INTO role_permissions (role, permission, allowed)
 					VALUES ($1, $2, $3) ON CONFLICT (role, permission) DO NOTHING`, e.Role, e.Permission, e.Allowed)
 			}
 		}
-		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, kontoID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, kontoID)
 		tuer.InvalidatePermissionCache()
 	})
 

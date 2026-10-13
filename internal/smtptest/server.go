@@ -1,16 +1,14 @@
-// Package smtptest stellt einen Mailserver für Tests bereit, der Nachrichten
-// annimmt, ohne sie irgendwohin zuzustellen — und sich danach befragen lässt.
+// Package smtptest stellt einen Mailserver für Tests bereit, der Nachrichten annimmt, ohne
+// sie zuzustellen, und sich danach befragen lässt.
 //
-// Warum ein eigenes Päckchen: Der Versandweg lässt sich sonst nur in der E2E-Suite
-// prüfen, und die läuft gegen einen Stack, dessen SMTP-Konfiguration auf den
-// Schulserver zeigt. Ein Test des echten Versands würde dort echte Mails
-// verschicken. Hier bekommt jeder Test seinen eigenen Server auf einem freien Port.
+// Der Versandweg ließe sich sonst nur in der Browser-Suite prüfen, und die läuft gegen einen
+// Stack, dessen Mailserver der der Schule ist: Ein Test des Versands verschickte dort echte
+// Mails. Hier bekommt jeder Test seinen eigenen Server auf einem freien Port.
 //
-// Das Verhalten ist wählbar, weil die interessanten Fälle nicht der Normalfall sind:
-// Ein Server, der die Nachricht annimmt und die Verbindung dann kappt, ohne sich zu
-// verabschieden, ist im Schulnetz keine Seltenheit — und die Frage, ob das als
-// „versendet" oder als „fehlgeschlagen" gilt, entscheidet darüber, ob eine bereits
-// zugestellte Mahnung beim nächsten Lauf ein zweites Mal rausgeht.
+// Das Verhalten ist wählbar, weil die schwierigen Fälle nicht der gewöhnliche sind: Ein
+// Server, der die Nachricht annimmt und die Verbindung dann kappt, ohne sich zu
+// verabschieden, kommt im Schulnetz vor. Ob das als versendet oder als fehlgeschlagen gilt,
+// entscheidet, ob eine schon zugestellte Mahnung beim nächsten Lauf ein zweites Mal hinausgeht.
 package smtptest
 
 import (
@@ -20,95 +18,91 @@ import (
 	"testing"
 )
 
-// Verhalten steuert, wie sich der Testserver verhält.
+// Verhalten wählt, wie sich der Server des Tests verhält.
 type Verhalten int
 
 const (
 	// Normal nimmt die Nachricht an und verabschiedet sich ordentlich.
 	Normal Verhalten = iota
-	// BrichtVorQuitAb nimmt die Nachricht an (250 nach dem Punkt) und kappt die
-	// Verbindung, bevor der Client sein QUIT beantwortet bekommt.
+	// BrichtVorQuitAb nimmt die Nachricht an (250 nach dem Punkt) und kappt die Verbindung,
+	// bevor der Client die Antwort auf sein QUIT bekommt.
 	BrichtVorQuitAb
-	// LehntNachrichtAb weist die Nachricht nach der Übertragung ab (z.B. Größenlimit).
+	// LehntNachrichtAb weist die Nachricht nach der Übertragung ab, etwa wegen ihrer Größe.
 	LehntNachrichtAb
 )
 
-// Sitzung hält fest, was der Server tatsächlich zu sehen bekam.
+// Sitzung hält fest, was der Server zu sehen bekam.
 type Sitzung struct {
 	Empfaenger []string
 	Nachricht  string
 }
 
-// Starte nimmt Sitzungen an und spricht das Minimum an SMTP, das ein Client ohne
-// Authentifizierung braucht. Bewusst ohne STARTTLS/AUTH in der EHLO-Antwort: Damit
-// bleibt der Ablauf der schlichte Klartext-Versand, den ein Relay im Schulnetz auch
-// fährt, und der Test hängt nicht an einem Testzertifikat.
+// Starte nimmt Sitzungen an und spricht so viel SMTP, wie ein Client ohne Anmeldung braucht.
+// Die Antwort auf EHLO nennt weder STARTTLS noch AUTH: So bleibt es der Versand im Klartext,
+// den ein Relay im Schulnetz auch fährt, und der Test hängt nicht an einem Zertifikat.
 //
-// Der Kanal liefert jede Sitzung, sobald ihr Client fertig ist.
-//
-// JEDE Verbindung wird bedient, nicht nur die erste. Vorher nahm der Server genau eine
-// an — ein Test, der prüft "es geht GENAU EINE Mail raus", blieb dann beim zweiten
-// Versuch stehen statt fehlzuschlagen: Der Client wartete ewig auf ein 220, das niemand
-// mehr schickte. Ein hängender Test ist kein rotes Gate, sondern ein abgelaufenes.
+// Der Kanal liefert jede Sitzung, sobald ihr Client fertig ist. Der Server bedient jede
+// Verbindung und nicht nur die erste: Sonst bliebe ein Test, der prüft, dass genau eine Mail
+// hinausgeht, bei der zweiten stehen, statt fehlzuschlagen.
 func Starte(t *testing.T, verhalten Verhalten) (host, port string, sitzungen <-chan Sitzung) {
 	t.Helper()
 
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	lauscher, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("Test-SMTP konnte nicht lauschen: %v", err)
 	}
-	t.Cleanup(func() { _ = ln.Close() }) //nolint:errcheck // Test-Listener
+	t.Cleanup(func() { _ = lauscher.Close() }) //nolint:errcheck // Test-Listener
 
-	// Gepuffert: Der Server soll weiterarbeiten können, auch wenn der Test die
-	// Nachrichten erst später (oder gar nicht) abholt.
-	ch := make(chan Sitzung, 8)
-	go lausche(ln, verhalten, ch)
+	// Der Kanal ist gepuffert, damit der Server weiterarbeitet, auch wenn der Test die
+	// Nachrichten später oder gar nicht abholt.
+	kanal := make(chan Sitzung, 8)
+	go lausche(lauscher, verhalten, kanal)
 
-	_, p, err := net.SplitHostPort(ln.Addr().String())
+	_, p, err := net.SplitHostPort(lauscher.Addr().String())
 	if err != nil {
 		t.Fatalf("Port des Test-SMTP unlesbar: %v", err)
 	}
-	return "127.0.0.1", p, ch
+	return "127.0.0.1", p, kanal
 }
 
-// GeschlossenerPort liefert Adresse und Port, auf dem sicher niemand lauscht —
-// für den häufigsten Konfigurationsfehler: falscher Port, falscher Host.
+// GeschlossenerPort liefert Adresse und Port, auf dem niemand lauscht: für den häufigsten
+// Fehler der Einstellung, den falschen Port oder Host.
 func GeschlossenerPort(t *testing.T) (host, port string) {
 	t.Helper()
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	lauscher, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("Port konnte nicht belegt werden: %v", err)
 	}
-	_, p, err := net.SplitHostPort(ln.Addr().String())
+	_, p, err := net.SplitHostPort(lauscher.Addr().String())
 	if err != nil {
 		t.Fatalf("Port unlesbar: %v", err)
 	}
-	if err := ln.Close(); err != nil {
+	if err := lauscher.Close(); err != nil {
 		t.Fatalf("Port konnte nicht freigegeben werden: %v", err)
 	}
 	return "127.0.0.1", p
 }
 
-// lausche bedient jede eingehende Verbindung, bis der Listener geschlossen wird
-// (t.Cleanup am Ende des Tests).
-func lausche(ln net.Listener, verhalten Verhalten, ch chan<- Sitzung) {
+// lausche bedient jede eingehende Verbindung, bis der Lauscher am Ende des Tests geschlossen
+// wird.
+func lausche(lauscher net.Listener, verhalten Verhalten, kanal chan<- Sitzung) {
 	for {
-		conn, err := ln.Accept()
+		verbindung, err := lauscher.Accept()
 		if err != nil {
 			return
 		}
-		go bediene(conn, verhalten, ch)
+		go bediene(verbindung, verhalten, kanal)
 	}
 }
 
-func bediene(conn net.Conn, verhalten Verhalten, ch chan<- Sitzung) {
-	defer func() { _ = conn.Close() }() //nolint:errcheck // Testverbindung
+func bediene(verbindung net.Conn, verhalten Verhalten, kanal chan<- Sitzung) {
+	defer func() { _ = verbindung.Close() }() //nolint:errcheck // Testverbindung
 
-	leser := bufio.NewReader(conn)
-	// Schreibfehler brauchen keine Behandlung: Bricht die Verbindung weg, scheitert
-	// der Versand — und genau darüber urteilt der Test ohnehin anhand des Ergebnisses.
+	leser := bufio.NewReader(verbindung)
+	// Ein Fehler beim Schreiben braucht keine Behandlung: Bricht die Verbindung weg, scheitert
+	// der Versand, und darüber urteilt der Test am Ergebnis.
 	schreibe := func(zeile string) {
-		_, _ = conn.Write([]byte(zeile + "\r\n")) //nolint:errcheck
+		_, _ = verbindung.Write([]byte(zeile + "\r\n")) //nolint:errcheck
 	}
 
 	var sitzung Sitzung
@@ -137,23 +131,23 @@ func bediene(conn net.Conn, verhalten Verhalten, ch chan<- Sitzung) {
 			}
 			schreibe("250 2.0.0 Ok: queued")
 			if verhalten == BrichtVorQuitAb {
-				// Angenommen — und jetzt weg, ohne Verabschiedung.
-				ch <- sitzung
+				// Angenommen, und dann ohne Verabschiedung weg.
+				kanal <- sitzung
 				return
 			}
 		case befehl == "QUIT":
 			schreibe("221 2.0.0 Bye")
-			ch <- sitzung
+			kanal <- sitzung
 			return
 		default:
 			schreibe("250 Ok")
 		}
 	}
-	ch <- sitzung
+	kanal <- sitzung
 }
 
 func leseNachricht(leser *bufio.Reader) string {
-	var body strings.Builder
+	var rumpf strings.Builder
 	for {
 		zeile, err := leser.ReadString('\n')
 		if err != nil {
@@ -162,9 +156,9 @@ func leseNachricht(leser *bufio.Reader) string {
 		if strings.TrimRight(zeile, "\r\n") == "." {
 			break
 		}
-		body.WriteString(zeile)
+		rumpf.WriteString(zeile)
 	}
-	return body.String()
+	return rumpf.String()
 }
 
 // adresseAus schält die Adresse aus "RCPT TO:<a@b.de>".

@@ -14,44 +14,44 @@ import (
 // wird als echte Datumszelle geschrieben (Excel-Serienzahl).
 func Baue(t *testing.T, blaetter map[string][][]any) []byte {
 	t.Helper()
-	f := excelize.NewFile()
+	mappe := excelize.NewFile()
 	erstes := true
-	for name, rows := range blaetter {
-		legeBlattAn(t, f, name, erstes)
+	for name, zeilen := range blaetter {
+		legeBlattAn(t, mappe, name, erstes)
 		erstes = false
-		fuelleBlatt(t, f, name, rows)
+		fuelleBlatt(t, mappe, name, zeilen)
 	}
-	var buf bytes.Buffer
-	if err := f.Write(&buf); err != nil {
+	var puffer bytes.Buffer
+	if err := mappe.Write(&puffer); err != nil {
 		t.Fatal(err)
 	}
-	return buf.Bytes()
+	return puffer.Bytes()
 }
 
 // legeBlattAn gibt dem ersten Blatt den Namen des Blatts, das jede neue Mappe mitbringt, und
 // legt jedes weitere an.
-func legeBlattAn(t *testing.T, f *excelize.File, name string, erstes bool) {
+func legeBlattAn(t *testing.T, mappe *excelize.File, name string, erstes bool) {
 	t.Helper()
 	if erstes {
-		if err := f.SetSheetName("Sheet1", name); err != nil {
+		if err := mappe.SetSheetName("Sheet1", name); err != nil {
 			t.Fatal(err)
 		}
 		return
 	}
-	if _, err := f.NewSheet(name); err != nil {
+	if _, err := mappe.NewSheet(name); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func fuelleBlatt(t *testing.T, f *excelize.File, name string, rows [][]any) {
+func fuelleBlatt(t *testing.T, mappe *excelize.File, name string, zeilen [][]any) {
 	t.Helper()
-	for r, row := range rows {
-		for c, wert := range row {
-			zelle, err := excelize.CoordinatesToCellName(c+1, r+1)
+	for z, zeile := range zeilen {
+		for s, wert := range zeile {
+			zelle, err := excelize.CoordinatesToCellName(s+1, z+1)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := f.SetCellValue(name, zelle, wert); err != nil {
+			if err := mappe.SetCellValue(name, zelle, wert); err != nil {
 				t.Fatal(err)
 			}
 		}

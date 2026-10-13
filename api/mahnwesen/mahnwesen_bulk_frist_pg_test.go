@@ -307,9 +307,9 @@ func TestMahnbriefDruck_NurMitAbgelaufenerFrist(t *testing.T) {
 		}
 		angaben := map[string]string{"schule_name": "Schule am Park", "schule_strasse": "Parkweg 2", "schule_plz": "61381", "schule_ort": "Friedrichsdorf"}
 		t.Cleanup(func() {
-			pgtest.Aufraeumen(t, pool, `UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE typ = 'MAHNUNG_ELTERN'`, altBetreff, altText)
+			pgtest.RaeumeAuf(t, pool, `UPDATE mail_vorlagen SET betreff = $1, text_body = $2 WHERE typ = 'MAHNUNG_ELTERN'`, altBetreff, altText)
 			for schluessel := range angaben {
-				pgtest.Aufraeumen(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, schluessel)
+				pgtest.RaeumeAuf(t, pool, `DELETE FROM system_einstellungen WHERE schluessel = $1`, schluessel)
 			}
 		})
 		if _, err := pool.Exec(ctx, `

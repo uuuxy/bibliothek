@@ -1,12 +1,10 @@
-// Package uebernahme trägt die Teile einer Altbestands-Übernahme, die nicht von der
-// Quelle abhängen: das Protokoll mit seiner Trennung von Abwertung und Ausfall, die
-// Einordnung von Postgres-Fehlern, die ISBN-Prüfung, die Spaltenbreiten und der
-// Savepoint je Datensatz.
+// Package uebernahme trägt die Teile einer Übernahme des Altbestands, die nicht von der Quelle
+// abhängen: das Protokoll, das Abwertung und Ausfall trennt, die Einordnung der Fehler von
+// Postgres, die Prüfung der ISBN, die Spaltenbreiten und den Savepoint je Datensatz.
 //
-// Sie stammen aus cmd/migrate/pg_writer.go, wo sie gegen echtes PostgreSQL gehärtet
-// wurden. Herausgelöst wurden sie, als der Littera-Schreibpfad dazukam: Zwei Kopien
-// dieser Logik hätten bedeutet, dass die zweite die Fehler der ersten noch einmal macht
-// — und der Savepoint ist genau der Teil, dessen Fehlen jahrelang unbemerkt blieb.
+// Sie stehen in einem eigenen Paket, weil cmd/migrate und der Schreiber für Littera dieselben
+// brauchen. In zwei Fassungen fehlte der zweiten leicht, was die erste gelernt hat, und ein
+// fehlender Savepoint fällt lange nicht auf.
 package uebernahme
 
 import (
@@ -16,81 +14,78 @@ import (
 	"time"
 )
 
-// Schweregrad einer Protokollzeile.
+// schweregrad einer Zeile im Protokoll.
 //
-// Die Trennung ist der Kern der ehrlichen Meldung: eine WARNUNG heißt „der Datensatz
-// steht in der neuen Datenbank, aber abgewertet" (ISBN verworfen, Freitext gekürzt),
-// ein FEHLER heißt „dieser Datensatz steht NICHT drin". Liefen beide in denselben
-// Zähler, könnte niemand unterscheiden, ob 3.000 Meldungen 3.000 verlorene Titel oder
-// 3.000 kosmetische Abwertungen bedeuten.
-type Schweregrad string
+// Eine WARNUNG heißt: Der Datensatz steht in der neuen Datenbank, aber abgewertet (ISBN
+// verworfen, Freitext gekürzt). Ein FEHLER heißt: Der Datensatz steht nicht darin. Liefen
+// beide in denselben Zähler, ließe sich nicht sagen, ob 3.000 Meldungen 3.000 verlorene Titel
+// oder 3.000 gekürzte Felder bedeuten.
+type schweregrad string
 
-// Die beiden Stufen, in denen ein Übernahmelauf meldet — die Bedeutung steht oben am
-// Typ: WARNUNG heißt „übernommen, aber abgewertet", FEHLER heißt „nicht übernommen".
+// Die zwei Stufen, in denen ein Lauf meldet; ihre Bedeutung steht am Typ.
 const (
-	SchweregradWarnung Schweregrad = "WARNUNG"
-	SchweregradFehler  Schweregrad = "FEHLER"
+	schweregradWarnung schweregrad = "WARNUNG"
+	schweregradFehler  schweregrad = "FEHLER"
 )
 
-// Protokoll schreibt die Anmerkungen eines Laufs in eine Datei und zählt sie getrennt
-// nach Schweregrad.
+// Protokoll schreibt die Anmerkungen eines Laufs in eine Datei und zählt sie getrennt nach
+// Schweregrad.
 //
-// idFeld benennt den Schlüssel der Quelle („mysql_id", „littera_id"). Er steht in jeder
-// Zeile, weil das Protokoll nur dann etwas wert ist, wenn man den Datensatz in der
-// Quelldatei wiederfindet.
+// idFeld benennt den Schlüssel der Quelle („mysql_id", „littera_id"). Er steht in jeder Zeile,
+// damit sich der Datensatz in der Quelldatei wiederfinden lässt.
 type Protokoll struct {
-	f         *os.File
-	w         *bufio.Writer
+	datei     *os.File
+	schreiber *bufio.Writer
 	idFeld    string
 	warnungen int // Datensatz übernommen, aber abgewertet
-	fehler    int // Datensatz NICHT übernommen
+	fehler    int // Datensatz nicht übernommen
 }
 
-// NeuesProtokoll legt die Protokolldatei an (vorhandene Inhalte werden verworfen).
-func NeuesProtokoll(pfad, idFeld string) (*Protokoll, error) {
+// NewProtokoll legt die Protokolldatei an; was schon darin steht, wird verworfen.
+func NewProtokoll(pfad, idFeld string) (*Protokoll, error) {
 	// #nosec G304 - der Pfad stammt aus dem Aufruf des Werkzeugs bzw. aus dem Test
-	f, err := os.OpenFile(pfad, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	datei, err := os.OpenFile(pfad, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("konnte die Protokolldatei %s nicht öffnen: %w", pfad, err)
 	}
-	return &Protokoll{f: f, w: bufio.NewWriterSize(f, 64*1024), idFeld: idFeld}, nil
+	return &Protokoll{datei: datei, schreiber: bufio.NewWriterSize(datei, 64*1024), idFeld: idFeld}, nil
 }
 
-// Warnung protokolliert eine Abwertung: der Datensatz kommt an, aber nicht unverändert.
+// Warnung protokolliert eine Abwertung: Der Datensatz kommt an, aber nicht unverändert.
 func (p *Protokoll) Warnung(quellID, kennung, grund string) {
-	p.schreibe(SchweregradWarnung, quellID, kennung, grund)
+	p.schreibe(schweregradWarnung, quellID, kennung, grund)
 }
 
-// Fehler protokolliert einen Ausfall: dieser Datensatz fehlt in der neuen Datenbank.
+// Fehler protokolliert einen Ausfall: Dieser Datensatz fehlt in der neuen Datenbank.
 func (p *Protokoll) Fehler(quellID, kennung, grund string) {
-	p.schreibe(SchweregradFehler, quellID, kennung, grund)
+	p.schreibe(schweregradFehler, quellID, kennung, grund)
 }
 
-func (p *Protokoll) schreibe(sev Schweregrad, quellID, kennung, grund string) {
-	switch sev {
-	case SchweregradWarnung:
+func (p *Protokoll) schreibe(grad schweregrad, quellID, kennung, grund string) {
+	switch grad {
+	case schweregradWarnung:
 		p.warnungen++
-	case SchweregradFehler:
+	case schweregradFehler:
 		p.fehler++
 	}
-	ts := time.Now().Format("2006-01-02 15:04:05")
+	zeit := time.Now().Format("2006-01-02 15:04:05")
 	//nolint:errcheck // ein fehlgeschlagener Protokollschreib darf die Übernahme nicht abbrechen
-	_, _ = fmt.Fprintf(p.w, "[%s] %s %s=%s kennung=%q grund=%s\n", ts, sev, p.idFeld, quellID, kennung, grund)
+	_, _ = fmt.Fprintf(p.schreiber, "[%s] %s %s=%s kennung=%q grund=%s\n", zeit, grad, p.idFeld, quellID, kennung, grund)
 }
 
 // Warnungen zählt die abgewertet übernommenen Datensätze.
 func (p *Protokoll) Warnungen() int { return p.warnungen }
 
-// FehlerAnzahl zählt die NICHT übernommenen Datensätze.
+// FehlerAnzahl zählt die nicht übernommenen Datensätze.
 func (p *Protokoll) FehlerAnzahl() int { return p.fehler }
 
-// Leeren schreibt den Puffer heraus, ohne die Datei zu schließen — für Tests und für
+// Leere schreibt den Puffer heraus, ohne die Datei zu schließen: für Tests und für
 // Zwischenstände bei langen Läufen.
-func (p *Protokoll) Leeren() error { return p.w.Flush() }
+func (p *Protokoll) Leere() error { return p.schreiber.Flush() }
 
-// Schliessen leert den Puffer und schließt die Datei. Ohne diesen Aufruf steht in einem
-// per os.Exit beendeten Lauf nichts im Protokoll: es wird über 64 KB gepuffert.
-func (p *Protokoll) Schliessen() {
-	_ = p.w.Flush() //nolint:errcheck
-	_ = p.f.Close() //nolint:errcheck
+// Schliesse leert den Puffer und schließt die Datei. Ohne diesen Aufruf steht nach einem Lauf,
+// der mit os.Exit endet, nichts im Protokoll, weil 64 KB gepuffert werden.
+func (p *Protokoll) Schliesse() {
+	_ = p.schreiber.Flush() //nolint:errcheck
+	_ = p.datei.Close()     //nolint:errcheck
 }

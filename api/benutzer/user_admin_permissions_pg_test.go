@@ -40,7 +40,7 @@ func TestRechteMatrixNurDurchAdmin(t *testing.T) {
 		t.Fatalf("Ausgangszustand setzen: %v", err)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER' AND permission = 'audit_logs'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM role_permissions WHERE role = 'MITARBEITER' AND permission = 'audit_logs'`)
 	})
 
 	istErlaubt := func() bool {

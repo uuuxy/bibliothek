@@ -6,14 +6,14 @@ import (
 	"testing"
 )
 
-// mediaBox findet die Seitengröße in Punkt. gofpdf schreibt sie je Seite als
+// mediaBox findet die Größe der Seite in Punkt. gofpdf schreibt sie je Seite als
 // `/MediaBox [0 0 595.28 841.89]`.
 var mediaBox = regexp.MustCompile(`/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]`)
 
-// seitenzahl liest den /Count-Eintrag des Seitenbaums.
+// seitenzahl liest den Eintrag /Count des Seitenbaums.
 var seitenzahl = regexp.MustCompile(`/Count\s+(\d+)`)
 
-// Seiten liefert Seitenzahl und Seitenmaß (Breite, Höhe in mm, gerundet).
+// Seiten liefert die Zahl der Seiten und ihr Maß (Breite und Höhe in mm, gerundet).
 func Seiten(t *testing.T, roh []byte) (seiten int, breiteMM, hoeheMM int) {
 	t.Helper()
 
@@ -38,7 +38,7 @@ func Seiten(t *testing.T, roh []byte) (seiten int, breiteMM, hoeheMM int) {
 	if err != nil {
 		t.Fatalf("/MediaBox-Höhe ist keine Zahl: %v", err)
 	}
-	// PDF rechnet in Punkt (1 pt = 1/72 Zoll), gofpdf hat mm bekommen.
+	// Das PDF rechnet in Punkt (1 pt = 1/72 Zoll), gofpdf hat Millimeter bekommen.
 	const mmProPunkt = 25.4 / 72.0
 	return seiten, int(breite*mmProPunkt + 0.5), int(hoehe*mmProPunkt + 0.5)
 }

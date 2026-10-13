@@ -66,12 +66,12 @@ func baueTresenWelt(t *testing.T, pool *pgxpool.Pool) tresenTestWelt {
 	}
 
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id IN ($1, $2)`, w.exemplarID, w.schuelerID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE details->>'barcode' = $1`, w.barcode)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_exemplare WHERE id = $1`, w.exemplarID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.titelID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM schueler WHERE id = $1`, w.schuelerID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.adminID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE datensatz_id IN ($1, $2)`, w.exemplarID, w.schuelerID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE details->>'barcode' = $1`, w.barcode)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_exemplare WHERE id = $1`, w.exemplarID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM buecher_titel WHERE id = $1`, w.titelID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM schueler WHERE id = $1`, w.schuelerID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM benutzer WHERE id = $1`, w.adminID)
 	})
 	return w
 }
@@ -216,7 +216,7 @@ func TestTresenAuskunftOhneTreffer(t *testing.T) {
 		t.Errorf("auch der Abruf ohne Treffer muss protokolliert sein (waren %d)", protokolle)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE details->>'barcode' = 'NIE-VERGEBEN-4711'`)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_logs WHERE details->>'barcode' = 'NIE-VERGEBEN-4711'`)
 	})
 }
 
@@ -250,8 +250,8 @@ func TestTresenAuskunftNenntDenKollegen(t *testing.T) {
 		t.Fatalf("Kollege anlegen: %v", err)
 	}
 	t.Cleanup(func() {
-		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, kollegeID)
-		pgtest.Aufraeumen(t, pool, `DELETE FROM leser WHERE id = $1`, kollegeID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, kollegeID)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM leser WHERE id = $1`, kollegeID)
 	})
 
 	auditRepo := repository.NewAuditRepository(pool)

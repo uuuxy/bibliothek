@@ -10,19 +10,18 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// ErrZeile markiert einen Fehler, der eindeutig nur diesen einen Datensatz betrifft und
-// nicht von Postgres stammt (etwa ein nicht serialisierbares Freitextfeld). Postgres-
-// Fehler werden stattdessen über ihren SQLSTATE eingeordnet, siehe IstZeilenfehler.
+// ErrZeile markiert einen Fehler, der nur diesen einen Datensatz betrifft und nicht von
+// Postgres stammt, etwa ein Freitextfeld, das sich nicht schreiben lässt. Die Fehler von
+// Postgres ordnet istZeilenfehler über ihren SQLSTATE ein.
 var ErrZeile = errors.New("Datensatzfehler")
 
-// IstZeilenfehler entscheidet, ob ein Fehler nur diesen einen Datensatz betrifft — dann
-// wird auf den Savepoint zurückgerollt und mit dem nächsten weitergemacht — oder die
-// gesamte Übernahme, dann wird sofort abgebrochen.
+// istZeilenfehler sagt, ob ein Fehler nur diesen einen Datensatz betrifft. Dann wird auf den
+// Savepoint zurückgerollt und mit dem nächsten weitergemacht; betrifft er die ganze Übernahme,
+// bricht sie ab.
 //
-// Diese Unterscheidung ist die Voraussetzung dafür, dass „übersprungen" überhaupt wahr
-// sein kann. Ohne sie erschiene ein Verbindungsabbruch bei Titel 300 als 79.700 einzelne
-// Übersprungen-Zeilen im Protokoll: formal vollständig, inhaltlich eine Lüge.
-func IstZeilenfehler(err error) bool {
+// An dieser Unterscheidung hängt, ob „übersprungen" im Protokoll stimmt: Ohne sie erschiene ein
+// Abbruch der Verbindung bei Titel 300 als 79.700 einzeln übersprungene Zeilen.
+func istZeilenfehler(err error) bool {
 	if err == nil {
 		return false
 	}
@@ -34,23 +33,23 @@ func IstZeilenfehler(err error) bool {
 	}
 	var pgErr *pgconn.PgError
 	if !errors.As(err, &pgErr) || len(pgErr.Code) < 2 {
-		return false // Netzwerk- oder Treiberfehler: nicht zeilenbezogen
+		return false // Fehler des Netzes oder des Treibers betreffen nicht die Zeile
 	}
 	switch pgErr.Code[:2] {
-	case "22", // Datenausnahme – z. B. 22001 Wert zu lang, 22003 Zahl außerhalb des Bereichs
-		"23": // Integritätsverletzung – 23505 doppelte ISBN/Barcode, 23502 NOT NULL, 23514 CHECK
+	case "22", // Datenausnahme, etwa 22001 Wert zu lang oder 22003 Zahl außerhalb des Bereichs
+		"23": // Integritätsverletzung: 23505 doppelte ISBN oder Barcode, 23502 NOT NULL, 23514 CHECK
 		return true
 	default:
-		// 08 Verbindung, 25P02 vergiftete Transaktion, 40 Deadlock, 53 Ressourcen,
-		// 57 Administrator-Eingriff, XX intern — nichts davon repariert der nächste Datensatz.
+		// 08 Verbindung, 25P02 abgebrochene Transaktion, 40 Deadlock, 53 Ressourcen, 57 Eingriff
+		// des Administrators, XX intern: Nichts davon behebt der nächste Datensatz.
 		return false
 	}
 }
 
-// werteMuster trifft den Wertteil einer Postgres-DETAIL-Angabe: alles zwischen ")=(" und
-// der schließenden Klammer. Bewusst gierig bis zur LETZTEN Klammer: Ein Wert, der selbst
-// Klammern enthält, wird damit vollständig ersetzt statt halb stehen zu lassen — im
-// Zweifel lieber eine Angabe zu viel geschwärzt als ein Datenwert zu wenig.
+// werteMuster trifft den Wert in einer DETAIL-Angabe von Postgres: alles zwischen ")=(" und
+// der letzten schließenden Klammer. Gierig bis zur letzten Klammer, damit ein Wert, der selbst
+// Klammern enthält, ganz ersetzt wird; lieber eine Angabe zu viel geschwärzt als ein Datenwert
+// zu wenig.
 var werteMuster = regexp.MustCompile(`\)=\(.*\)`)
 
 // ohneDatenwerte schwärzt den Wert in einer DETAIL-Angabe und behält ihre Form:
@@ -59,21 +58,13 @@ func ohneDatenwerte(detail string) string {
 	return werteMuster.ReplaceAllString(detail, `)=(…)`)
 }
 
-// BeschreibeFehler übersetzt einen Postgres-Fehler in eine Zeile, mit der jemand die
-// Quelldatei reparieren kann: SQLSTATE, Constraint und betroffene Spalte statt nur der
-// nackten Meldung. Bei einer Übernahme von 60.000 Zeilen ist genau das die Arbeit —
-// nicht die Laufzeit.
+// BeschreibeFehler übersetzt einen Fehler von Postgres in eine Zeile, mit der sich die
+// Quelldatei berichtigen lässt: SQLSTATE, Constraint und Spalte statt nur der Meldung.
 //
-// Der WERT aus der DETAIL-Angabe bleibt dabei draußen (ohneDatenwerte). Bis zum
-// 23.08.2026 stand er wörtlich drin, und Postgres schreibt dort den Inhalt der Zeile:
-//
-//	DETAIL: Key (email)=(erika.mustermann@philipp-reis-schule.de) already exists.
-//
-// Das Ziel dieser Zeile ist `littera_import.log` — eine unverschlüsselte Datei im
-// Arbeitsverzeichnis, ohne Frist, ohne Löschregel. Bei der Leser-Übernahme kollidieren
-// E-Mail-Adressen und Ausweisnummern regelmäßig; jede Kollision hätte eine echte Adresse
-// dort abgelegt. Spalte und Constraint bleiben — sie sagen, WO es klemmt; welcher Wert es
-// war, steht in der Quelldatei neben der mitprotokollierten ID.
+// Der Wert aus der DETAIL-Angabe bleibt draußen (ohneDatenwerte). Postgres schreibt dort den
+// Inhalt der Zeile, etwa eine E-Mail-Adresse, und die Zeile geht in littera_import.log: eine
+// unverschlüsselte Datei im Arbeitsverzeichnis ohne Löschfrist. Spalte und Constraint sagen,
+// wo es klemmt; welcher Wert es war, steht in der Quelldatei neben der protokollierten ID.
 func BeschreibeFehler(err error) string {
 	var pgErr *pgconn.PgError
 	if !errors.As(err, &pgErr) {
@@ -89,7 +80,7 @@ func BeschreibeFehler(err error) string {
 	if pgErr.Detail != "" {
 		teile = append(teile, ohneDatenwerte(pgErr.Detail))
 	}
-	// Der umschließende Kontext (z. B. der Barcode) geht sonst verloren, weil errors.As
+	// Der umschließende Zusammenhang, etwa der Barcode, ginge sonst verloren, weil errors.As
 	// bis zum PgError durchgreift.
 	return err.Error() + " [" + strings.Join(teile, " | ") + "]"
 }

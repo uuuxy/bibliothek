@@ -47,9 +47,9 @@ func testLogger(t *testing.T) (*uebernahme.Protokoll, func() string) {
 	if err != nil {
 		t.Fatalf("Fehlerprotokoll konnte nicht angelegt werden: %v", err)
 	}
-	t.Cleanup(el.Schliessen)
+	t.Cleanup(el.Schliesse)
 	return el, func() string {
-		if err := el.Leeren(); err != nil {
+		if err := el.Leere(); err != nil {
 			t.Fatalf("Fehlerprotokoll konnte nicht geschrieben werden: %v", err)
 		}
 		b, err := os.ReadFile(pfad) // #nosec G304 - Pfad aus t.TempDir()
