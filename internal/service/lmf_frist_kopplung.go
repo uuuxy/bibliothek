@@ -2,11 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"time"
 
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Die Kopplung des LMF-Plans an die Fristen: Der Rückgabe-Termin einer Klasse ist die Frist
@@ -53,6 +56,29 @@ func KoppleLmfPlanFristen(ctx context.Context, repo *repository.LmfTerminReposit
 		gesamt += n
 	}
 	return gesamt, nil
+}
+
+// LmfPlanZeilenVorher liest die Zeilen des Plans, den das Speichern gleich ersetzt: der Plan
+// derselben Art im Schuljahr des ersten Tages. Sie sind das „alt" der Kopplung. Leer, wenn es
+// keinen gibt oder er noch Entwurf ist; ein Entwurf hat keine Frist gesetzt, die zurückkehren
+// müsste.
+func LmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTerminRepository, art, ersterTag string) ([]repository.LmfPlanZeile, error) {
+	st, err := repo.NeuesterLmfPlan(ctx, art)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	tag, err := schulzeit.Kalendertag(ersterTag)
+	if err != nil {
+		return nil, err
+	}
+	if st.Plan.SchuljahrBeginn != repository.SchuljahrBeginn(tag).Format(time.DateOnly) || st.Plan.VeroeffentlichtAm == nil {
+		// Anderes Schuljahr: das Speichern legt einen neuen Plan an, der alte bleibt.
+		return nil, nil
+	}
+	return st.Zeilen, nil
 }
 
 // loeseLmfFristenVomTermin bringt die Fristen der Klassen, die ihren Rückgabe-Termin an diesem

@@ -1,0 +1,173 @@
+package service
+
+import (
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
+	"bibliothek/pkg/schulzeit"
+	"bibliothek/repository"
+)
+
+// Die eine Regel, welche Klasse nicht in den Plan einer Art gehört. Der Vorschlag und die Liste
+// „bleiben draußen" des Planers (ausgelassen_regel) fragen dieselbe.
+func TestLmfPlanLaesstAus(t *testing.T) {
+	eingang := []int{5, 7}
+	f := func(name string, jg int, ober bool) repository.KlasseImPlan {
+		return repository.KlasseImPlan{Name: name, Jahrgang: jg, Oberstufe: ober}
+	}
+	faelle := []struct {
+		art  string
+		k    repository.KlasseImPlan
+		soll bool
+	}{
+		{repository.LmfTerminRueckgabe, f("05F1", 5, false), false},
+		{repository.LmfTerminRueckgabe, f("10R1", 10, false), false},
+		{repository.LmfTerminRueckgabe, f("12T1", 12, true), true},
+		{repository.LmfTerminAusgabe, f("05F1", 5, false), false},
+		{repository.LmfTerminAusgabe, f("07G1", 7, false), false},
+		{repository.LmfTerminAusgabe, f("06F1", 6, false), true},
+		{repository.LmfTerminAusgabe, f("12T1", 12, true), true},
+	}
+	for _, c := range faelle {
+		if ist := LmfPlanLaesstAus(c.art, eingang, c.k); ist != c.soll {
+			t.Errorf("%s %s: ausgelassen=%v, erwartet %v", c.art, c.k.Name, ist, c.soll)
+		}
+	}
+}
+
+// Die Reihenfolge aus der Regel endet wie der Plan der Schule: nach den Klassen „Nachzügler" und
+// „Aufräumen" (Zeilen ohne Klasse); beim Ausgabe-Plan stehen davor nur die Eingangsjahrgänge.
+// Das Vorjahr bringt seine eigenen Zeilen mit, ohne Zusatz.
+func TestLmfPlanReihenfolgeVorgabe_RegelEndetMitNachzueglerUndAufraeumen(t *testing.T) {
+	klassen := []repository.KlasseImPlan{
+		{Name: "10R1", Jahrgang: 10, Abschluss: true},
+		{Name: "07G1", Jahrgang: 7},
+		{Name: "05F1", Jahrgang: 5},
+		{Name: "12T1", Jahrgang: 12, Oberstufe: true},
+	}
+	v := LmfPlanReihenfolgeVorgabe(repository.LmfTerminAusgabe, []int{5, 7}, false, repository.LmfPlanStand{}, klassen)
+	vermerke := make([]string, 0, len(v.Zeilen))
+	for _, z := range v.Zeilen {
+		if len(z.Klassen) > 0 {
+			vermerke = append(vermerke, z.Klassen[0])
+		} else {
+			vermerke = append(vermerke, z.Vermerk)
+		}
+	}
+	if got := strings.Join(vermerke, ","); got != "07G1,05F1,Nachzügler,Aufräumen" {
+		t.Errorf("Ausgabe-Vorschlag: %s", got)
+	}
+	if got := strings.Join(v.Ausgelassen, ","); got != "10R1,12T1" {
+		t.Errorf("Ausgabe ausgelassen: %s", got)
+	}
+	// Vorjahr: nur die eigenen Zeilen.
+	st := repository.LmfPlanStand{Zeilen: []repository.LmfPlanZeile{{Klassen: []string{"07G1"}}}}
+	if v := LmfPlanReihenfolgeVorgabe(repository.LmfTerminAusgabe, []int{5, 7}, true, st, klassen); len(v.Zeilen) != 2 {
+		t.Errorf("Vorjahr-Vorschlag: %d Zeilen, erwartet 2 (07G1 + neue 05F1)", len(v.Zeilen))
+	}
+}
+
+// Aus dem Vorjahr kommen Klassen und Vermerk einer Zeile, nicht ihr Platz: Datum, Stunde und
+// das Merkmal „fest" gehören dem alten Plan. Klassen, die der alte Plan schon nennt, in einer
+// Zeile oder unter den ausgelassenen, kommen nicht ein zweites Mal dazu, auch nicht in anderer
+// Schreibweise; neue Klassen stehen hinten oder nach der Regel draußen.
+func TestLmfPlanReihenfolgeVorgabe_VorjahrBringtKlassenUndVermerkOhnePlatz(t *testing.T) {
+	st := repository.LmfPlanStand{
+		Zeilen: []repository.LmfPlanZeile{
+			{Position: 1, Datum: "2026-06-24", Stunde: 3, Fest: true, Klassen: []string{"10R1", "09H1"}, Vermerk: "nur Rückgabe"},
+			{Position: 2, Datum: "2026-06-25", Stunde: 4, Klassen: []string{}, Vermerk: "Aufräumen"},
+		},
+		Ausgelassen: []string{"08R1"},
+	}
+	klassen := []repository.KlasseImPlan{
+		{Name: "10r1 ", Jahrgang: 10}, // steht im Vorjahr als 10R1
+		{Name: "08R1", Jahrgang: 8},   // stand im Vorjahr draußen
+		{Name: "07G1", Jahrgang: 7},   // neu
+		{Name: "12T1", Jahrgang: 12, Oberstufe: true},
+	}
+	ist := LmfPlanReihenfolgeVorgabe(repository.LmfTerminRueckgabe, []int{5, 7}, true, st, klassen)
+	will := LmfPlanReihenfolge{
+		Quelle: LmfPlanQuelleVorjahr,
+		Zeilen: []repository.LmfPlanZeile{
+			{Klassen: []string{"10R1", "09H1"}, Vermerk: "nur Rückgabe"},
+			{Klassen: []string{}, Vermerk: "Aufräumen"},
+			{Klassen: []string{"07G1"}},
+		},
+		Ausgelassen: []string{"08R1", "12T1"},
+	}
+	if !reflect.DeepEqual(ist, will) {
+		t.Errorf("Reihenfolge aus dem Vorjahr =\n%+v\nerwartet\n%+v", ist, will)
+	}
+	// Ohne Vorjahr gilt die Regel, und was im Stand steht, zählt nicht.
+	regel := LmfPlanReihenfolgeVorgabe(repository.LmfTerminRueckgabe, []int{5, 7}, false, st, klassen)
+	if regel.Quelle != LmfPlanQuelleRegel || len(regel.Zeilen) != 5 || !reflect.DeepEqual(regel.Ausgelassen, []string{"12T1"}) {
+		t.Errorf("Reihenfolge aus der Regel: %+v, erwartet drei Klassen, Nachzügler und Aufräumen und die Oberstufe draußen", regel)
+	}
+	// Leere Listen statt nil: Der Planer bekommt `[]`.
+	leer := LmfPlanReihenfolgeVorgabe(repository.LmfTerminAusgabe, nil, true, repository.LmfPlanStand{}, nil)
+	if leer.Zeilen == nil || leer.Ausgelassen == nil {
+		t.Errorf("leere Reihenfolge trägt nil: %+v", leer)
+	}
+}
+
+// Ein Plan ist vorbei, wenn sein letzter Platz vor dem heutigen Kalendertag der Schule liegt.
+// Am Tag des letzten Platzes läuft er noch, bis Mitternacht in der Zone der Schule.
+func TestLmfPlanVorbei(t *testing.T) {
+	in := func(j int, m time.Month, d, h, min int) time.Time {
+		return time.Date(j, m, d, h, min, 0, 0, schulzeit.Zone())
+	}
+	plan := repository.LmfPlanStand{
+		Plan: repository.LmfPlan{ErsterTag: "2026-06-22"},
+		// Der späteste Tag steht nicht in der letzten Zeile.
+		Zeilen: []repository.LmfPlanZeile{{Datum: "2026-06-23"}, {Datum: "2026-06-25"}, {Datum: "2026-06-24"}},
+	}
+	ohneZeilen := repository.LmfPlanStand{Plan: repository.LmfPlan{ErsterTag: "2026-06-22"}}
+	for _, f := range []struct {
+		name  string
+		st    repository.LmfPlanStand
+		jetzt time.Time
+		want  bool
+	}{
+		{"am letzten Tag kurz vor Mitternacht", plan, in(2026, time.June, 25, 23, 59), false},
+		{"am Tag danach kurz nach Mitternacht", plan, in(2026, time.June, 26, 0, 1), true},
+		// 22:01 UTC am 25. ist in der Schule schon der 26.
+		{"Tag danach, als UTC gereicht", plan, time.Date(2026, time.June, 25, 22, 1, 0, 0, time.UTC), true},
+		{"letzter Tag, als UTC gereicht", plan, time.Date(2026, time.June, 25, 21, 59, 0, 0, time.UTC), false},
+		{"vor dem Plan", plan, in(2026, time.June, 1, 12, 0), false},
+		{"ohne Zeilen zählt der erste Tag", ohneZeilen, in(2026, time.June, 22, 12, 0), false},
+		{"ohne Zeilen, am Tag nach dem ersten", ohneZeilen, in(2026, time.June, 23, 0, 1), true},
+	} {
+		if ist := LmfPlanVorbei(f.st, f.jetzt); ist != f.want {
+			t.Errorf("%s: vorbei=%v, erwartet %v", f.name, ist, f.want)
+		}
+	}
+}
+
+// Der Vermerk „nur Rückgabe" wird vorbelegt, wenn jede Klasse der Zeile nur abgibt. Ein
+// vorhandener Vermerk bleibt dahinter stehen; sagt er es schon, bleibt die Zeile, wie sie ist.
+func TestBelegeLmfPlanVermerkNurRueckgabe(t *testing.T) {
+	zeilen := []repository.LmfPlanZeile{
+		{Klassen: []string{"10R1", "09H1"}},                                // alle geben nur ab
+		{Klassen: []string{"10R1", "07G1"}},                                // eine tauscht
+		{Klassen: []string{"09H1"}, Vermerk: "Ausflug"},                    // Vermerk bleibt dahinter
+		{Klassen: []string{"09H1"}, Vermerk: "NUR RÜCKGABE, dann Zeugnis"}, // sagt es schon
+		{Klassen: []string{}, Vermerk: "Aufräumen"},                        // ohne Klasse
+		{Klassen: []string{" 10r1"}},                                       // andere Schreibweise
+		{Klassen: []string{"07G1"}},                                        // tauscht
+	}
+	BelegeLmfPlanVermerkNurRueckgabe(zeilen, []string{"10R1", "09h1 "})
+	will := []string{"nur Rückgabe", "", "nur Rückgabe · Ausflug", "NUR RÜCKGABE, dann Zeugnis", "Aufräumen", "nur Rückgabe", ""}
+	for i, z := range zeilen {
+		if z.Vermerk != will[i] {
+			t.Errorf("Zeile %d (%v): Vermerk %q, erwartet %q", i+1, z.Klassen, z.Vermerk, will[i])
+		}
+	}
+	// Ohne Klassen, die nur abgeben, bleibt jede Zeile leer.
+	ohne := []repository.LmfPlanZeile{{Klassen: []string{"10R1"}}}
+	BelegeLmfPlanVermerkNurRueckgabe(ohne, nil)
+	if ohne[0].Vermerk != "" {
+		t.Errorf("ohne Klassen, die nur abgeben: Vermerk %q", ohne[0].Vermerk)
+	}
+}

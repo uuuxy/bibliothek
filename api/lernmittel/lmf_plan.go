@@ -1,29 +1,21 @@
 package lernmittel
 
-// lmf_plan.go — der LMF-Plan als Reihenfolge (Absprache vom 05.09.2026 abends, nach dem
-// echten Plan der Schule): Rahmen plus eine Reihenfolge von Zeilen (Klassen, Vermerk);
-// Datum und Stunde jeder Zeile rechnet der Server (pkg/lmfplan) über die Schultage —
-// Wochenende, gesetzliche Feiertage (Hessen), Ferien und die freien Tage des Plans
-// fallen aus; eine Zeile kann ihren Platz fest vorgeben (die Klasse mit dem Ausflug,
-// Migration 099), die anderen fließen um sie herum. Der Rahmen hängt an der Art
-// (Migration 101): Der Büchertausch vor den Sommerferien ENDET am Donnerstag vor den
-// Ferien in der 4. Stunde (letzter_tag, letzte_stunde — Absprache vom 06.09.2026: „es endet
-// immer am gleichen Tag") und fließt rückwärts, sein Beginn ist gerechnet; die
-// Bücherausgabe nach den Ferien BEGINNT (erster_tag, startstunde) und fließt vorwärts.
-// Die Vorschau im Planer ist DERSELBE Aufruf mit "vorschau": true, damit es keinen
-// JavaScript-Zwilling der Verteilung gibt. Ein Plan je Art und Schuljahr; GET liefert
-// den neuesten der Art und, wenn er vorbei ist, dieselbe Reihenfolge als Vorschlag für
-// den nächsten (Klassennamen bleiben Jahr für Jahr gleich — die Versetzung verschiebt
-// Schüler, nicht Namen). Ohne Vorjahr kommt der Vorschlag aus der Regel: Abschluss-
-// klassen zuerst, dann Jahrgang absteigend; die Oberstufe steht unten („ausgelassen",
-// sie organisiert sich an dieser Schule selbst). Der Ausgabe-Plan nach den Ferien
-// schlägt nur die Eingangsjahrgänge vor (Absprache vom 06.09.2026: „nach den Sommerferien
-// bekommen nur die neuen 5er und 7er Klassen ihre Bücher"). Gespeichert wird ein
-// ENTWURF; erst das Veröffentlichen macht ihn sichtbar und fristsetzend
+// lmf_plan.go — die Türen des LMF-Plans: lesen, rechnen und speichern, verwerfen.
+//
+// Der Plan ist ein Rahmen und eine Reihenfolge von Zeilen (Klassen, Vermerk). Datum und Stunde
+// jeder Zeile rechnet der Server über die Schultage (service.VerteileLmfPlan, pkg/lmfplan); eine
+// Zeile kann ihren Platz fest vorgeben, die anderen fließen um sie herum. Der Rahmen hängt an
+// der Art: Der Büchertausch vor den Sommerferien endet (letzter_tag, letzte_stunde) und fließt
+// rückwärts, sein Beginn ist gerechnet; die Ausgabe nach den Ferien beginnt (erster_tag,
+// startstunde) und fließt vorwärts. Die Vorschau im Planer ist derselbe Aufruf mit
+// "vorschau": true, damit es keinen JavaScript-Zwilling der Verteilung gibt.
+//
+// Je Art und Schuljahr gibt es einen Plan. GET liefert den neuesten der Art und, wenn keiner
+// läuft, die Reihenfolge für den nächsten (service.LmfPlanReihenfolgeVorgabe). Gespeichert wird
+// ein Entwurf; erst das Veröffentlichen macht ihn sichtbar und setzt Fristen
 // (lmf_plan_veroeffentlichung.go).
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -41,7 +33,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// LmfPlanVorschlag ist die Reihenfolge, mit der ein neuer Plan beginnt.
+// LmfPlanVorschlag ist die Reihenfolge, mit der ein neuer Plan beginnt
+// (service.LmfPlanReihenfolgeVorgabe), mit seinem Rahmen.
 type LmfPlanVorschlag struct {
 	// Quelle: "vorjahr" (der letzte Plan der Art) oder "regel" (Abschluss zuerst).
 	Quelle      string                    `json:"quelle"`
@@ -88,9 +81,9 @@ type LmfPlanStandAntwort struct {
 	// im Plan, die hier fehlt, hat (noch) keine Schüler — der Planer markiert sie.
 	Klassen []string `json:"klassen"`
 	// AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt
-	// (Büchertausch: Oberstufe; Ausgabe: alles außer den Eingangsjahrgängen). Der Planer
-	// klappt sie unter „bleiben draußen" ein — auch bei einem laufenden Plan, der sie
-	// nie kannte (06.09.2026: ein Plan mit alten Klassennamen bot 60 Chips offen an).
+	// (service.LmfPlanLaesstAus). Der Planer klappt sie unter „bleiben draußen" ein, auch bei
+	// einem laufenden Plan, der sie nie kannte; ein Plan mit alten Klassennamen böte sonst
+	// jede Klasse der Schule offen an.
 	AusgelassenRegel []string `json:"ausgelassen_regel"`
 	// Eingangsjahrgaenge: die Jahrgänge, die nach den Ferien Bücher bekommen (Einstellung).
 	Eingangsjahrgaenge []int `json:"eingangsjahrgaenge"`
@@ -143,7 +136,7 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 	default:
 		plan := stand.Plan
 		antwort.Plan, antwort.Zeilen, antwort.Ausgelassen = &plan, stand.Zeilen, stand.Ausgelassen
-		antwort.Vorbei = lmfPlanVorbei(stand, s.Jetzt())
+		antwort.Vorbei = service.LmfPlanVorbei(stand, s.Jetzt())
 	}
 	// Klassen mit aktiven Schülern. GetDistinctClasses zählt Abgänger mit; die Klasse eines
 	// Abgängers ohne aktive Schüler stünde im Planer sonst als „mit Schülern".
@@ -155,7 +148,7 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 	antwort.AusgelassenRegel = []string{}
 	for _, k := range klassen {
 		antwort.Klassen = append(antwort.Klassen, k.Name)
-		if lmfPlanRegelLaesstAus(art, eingang, k) {
+		if service.LmfPlanLaesstAus(art, eingang, k) {
 			antwort.AusgelassenRegel = append(antwort.AusgelassenRegel, k.Name)
 		}
 	}
@@ -163,8 +156,13 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 	sommerferien, ferien := service.LmfPlanSommerferien(art, antwort.Plan, laufend, s.Jetzt(), ferientabelle)
 	antwort.Sommerferien = LmfPlanSommerferien(sommerferien)
 	if !laufend {
-		antwort.Vorschlag = lmfPlanVorschlag(art, eingang, antwort.Plan != nil, stand, klassen)
-		antwort.Vorschlag.Rahmen = LmfPlanRahmenVorgabe(service.LmfPlanRahmenVorgabe(art, sommerferien, ferien))
+		reihenfolge := service.LmfPlanReihenfolgeVorgabe(art, eingang, antwort.Plan != nil, stand, klassen)
+		antwort.Vorschlag = &LmfPlanVorschlag{
+			Quelle:      reihenfolge.Quelle,
+			Zeilen:      reihenfolge.Zeilen,
+			Ausgelassen: reihenfolge.Ausgelassen,
+			Rahmen:      LmfPlanRahmenVorgabe(service.LmfPlanRahmenVorgabe(art, sommerferien, ferien)),
+		}
 	}
 	if antwort.Vorschlag != nil {
 		// „nur Rückgabe" belegt den Vermerk vor und ist keine gerechnete Marke: Der Text
@@ -173,113 +171,10 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 		if err != nil {
 			return apierrors.Internal("Klassen einordnen", err)
 		}
-		vermerkNurRueckgabe(antwort.Vorschlag.Zeilen, nurRueckgabe)
+		service.BelegeLmfPlanVermerkNurRueckgabe(antwort.Vorschlag.Zeilen, nurRueckgabe)
 	}
 	tuer.RespondJSON(w, http.StatusOK, antwort)
 	return nil
-}
-
-// vermerkNurRueckgabeText ist der Text, den der Vorschlag Zeilen voranstellt, deren Klassen
-// vor den Ferien nur abgeben — Abschlussklassen und Klassen, die neu gebildet werden.
-const vermerkNurRueckgabeText = "nur Rückgabe"
-
-// vermerkNurRueckgabe belegt den Vermerk der Vorschlags-Zeilen vor, in denen ALLE Klassen
-// nur abgeben — außer der Vermerk (aus dem Vorjahr) sagt es schon. Danach gehört der
-// Text der Bibliothek: Sie kann ihn ändern oder löschen, nichts rechnet ihn nach.
-func vermerkNurRueckgabe(zeilen []repository.LmfPlanZeile, nurRueckgabe []string) {
-	ist := map[string]bool{}
-	for _, k := range nurRueckgabe {
-		ist[repository.KlassenSchluessel(k)] = true
-	}
-	for i := range zeilen {
-		z := &zeilen[i]
-		if len(z.Klassen) == 0 || strings.Contains(strings.ToLower(z.Vermerk), strings.ToLower(vermerkNurRueckgabeText)) {
-			continue
-		}
-		alle := true
-		for _, k := range z.Klassen {
-			if !ist[repository.KlassenSchluessel(k)] {
-				alle = false
-				break
-			}
-		}
-		if !alle {
-			continue
-		}
-		if z.Vermerk == "" {
-			z.Vermerk = vermerkNurRueckgabeText
-		} else {
-			z.Vermerk = vermerkNurRueckgabeText + " · " + z.Vermerk
-		}
-	}
-}
-
-// lmfPlanVorbei: Der letzte Platz des Plans (oder der erste Tag, wenn er leer ist) liegt
-// vor dem heutigen Kalendertag der Schule.
-func lmfPlanVorbei(st repository.LmfPlanStand, jetzt time.Time) bool {
-	letzter := st.Plan.ErsterTag
-	for _, z := range st.Zeilen {
-		if z.Datum > letzter {
-			letzter = z.Datum
-		}
-	}
-	heute := jetzt.In(schulzeit.Zone()).Format(tuer.DateFormatISO)
-	return letzter < heute
-}
-
-// lmfPlanVorschlag baut die Start-Reihenfolge: das Vorjahr, wenn es eines gibt, ergänzt
-// um Klassen, die inzwischen neu sind; sonst die Regel. Klassen ohne Schüler bleiben aus
-// dem Vorjahr erhalten (ein „7G6" kann wiederkommen) — der Planer markiert sie und
-// entfernt sie mit einem Klick. Beim Ausgabe-Plan kommen nur die Eingangsjahrgänge in
-// die Reihenfolge; alle anderen Klassen liegen unter „Nicht im Plan".
-func lmfPlanVorschlag(art string, eingang []int, vorjahr bool, st repository.LmfPlanStand, klassen []repository.KlasseImPlan) *LmfPlanVorschlag {
-	v := &LmfPlanVorschlag{Quelle: "regel", Zeilen: []repository.LmfPlanZeile{}, Ausgelassen: []string{}}
-	bekannt := map[string]bool{}
-	if vorjahr {
-		v.Quelle = "vorjahr"
-		for _, z := range st.Zeilen {
-			v.Zeilen = append(v.Zeilen, repository.LmfPlanZeile{Klassen: z.Klassen, Vermerk: z.Vermerk})
-			for _, k := range z.Klassen {
-				bekannt[repository.KlassenSchluessel(k)] = true
-			}
-		}
-		v.Ausgelassen = append(v.Ausgelassen, st.Ausgelassen...)
-		for _, k := range st.Ausgelassen {
-			bekannt[repository.KlassenSchluessel(k)] = true
-		}
-	}
-	for _, k := range klassen {
-		if bekannt[repository.KlassenSchluessel(k.Name)] {
-			continue
-		}
-		if lmfPlanRegelLaesstAus(art, eingang, k) {
-			v.Ausgelassen = append(v.Ausgelassen, k.Name)
-			continue
-		}
-		v.Zeilen = append(v.Zeilen, repository.LmfPlanZeile{Klassen: []string{k.Name}})
-	}
-	if v.Quelle == "regel" {
-		// Die zwei Zeilen ohne Klasse, mit denen die Pläne der Schule enden (Excel „Bücherausgabe"
-		// und „Bücherrückgabe", 06.09.2026): wer nicht dran war, und dann das Aufräumen.
-		// Das Vorjahr bringt sie von selbst mit; die Regel setzt sie, damit der erste Plan
-		// aussieht wie der der Schule.
-		v.Zeilen = append(v.Zeilen,
-			repository.LmfPlanZeile{Klassen: []string{}, Vermerk: "Nachzügler"},
-			repository.LmfPlanZeile{Klassen: []string{}, Vermerk: "Aufräumen"})
-	}
-	return v
-}
-
-// lmfPlanRegelLaesstAus: die EINE Regel, welche Klasse nicht in den Plan einer Art
-// gehört — Büchertausch: die Oberstufe (organisiert sich selbst); Ausgabe nach den
-// Ferien: alles außer den Eingangsjahrgängen (Absprache vom 06.09.2026: „nach den Sommerferien
-// bekommen nur die neuen 5er und 7er Klassen ihre Bücher"). Vorschlag und die Liste
-// „bleiben draußen" des Planers lesen sie hier.
-func lmfPlanRegelLaesstAus(art string, eingang []int, k repository.KlasseImPlan) bool {
-	if art == repository.LmfTerminAusgabe {
-		return !enthaeltJahrgang(eingang, k.Jahrgang)
-	}
-	return k.Oberstufe
 }
 
 // lmfPlanRequest ist der Körper von PUT /api/lmf-plan/{art}.
@@ -333,18 +228,9 @@ type LmfPlanSpeicherAntwort struct {
 
 const lmfPlanMaxZeilen = 400
 
-// lmfPlanEntwurf ist das geprüfte Ergebnis einer Anfrage: Rahmen, Zeilen, je Zeile der
-// feste Platz (nil = fließt) und die ausgelassenen Klassen.
-type lmfPlanEntwurf struct {
-	Plan        repository.LmfPlan
-	Zeilen      []repository.LmfPlanZeile
-	Fest        []*lmfplan.Platz
-	Ausgelassen []string
-}
-
-// pruefeLmfPlan validiert fachlich und liefert den Entwurf.
-func pruefeLmfPlan(art string, req lmfPlanRequest) (lmfPlanEntwurf, error) {
-	e := lmfPlanEntwurf{Plan: repository.LmfPlan{Art: art, StundenJeTag: req.StundenJeTag, FreieTage: []repository.LmfFreierTag{}}}
+// pruefeLmfPlan prüft die Anfrage und füllt daraus den Entwurf, den der Dienst verteilt.
+func pruefeLmfPlan(art string, req lmfPlanRequest) (service.LmfPlanEntwurf, error) {
+	e := service.LmfPlanEntwurf{Plan: repository.LmfPlan{Art: art, StundenJeTag: req.StundenJeTag, FreieTage: []repository.LmfFreierTag{}}}
 	if e.Plan.StundenJeTag < 1 || e.Plan.StundenJeTag > 12 {
 		return e, errors.New("stunden_je_tag muss zwischen 1 und 12 liegen")
 	}
@@ -383,9 +269,9 @@ func pruefeLmfPlan(art string, req lmfPlanRequest) (lmfPlanEntwurf, error) {
 // Platz; ohne festen Platz (nil) fließt sie.
 func pruefeLmfPlanZeile(nr int, z lmfPlanRequestZeile) (repository.LmfPlanZeile, *lmfplan.Platz, error) {
 	// Klassen als leere Liste anlegen, nicht als nil: Die Vorschau lieferte sonst
-	// `klassen: null`, wo der gespeicherte Plan `[]` liefert (schreibeKlassen) — zwei
-	// Formen derselben Zeile, und die Oberfläche müsste beide kennen. Betroffen sind
-	// die Zeilen ohne Klasse, die es im echten Plan gibt („Nachzügler", „Aufräumen").
+	// `klassen: null`, wo der gespeicherte Plan `[]` liefert (schreibeKlassen); die Oberfläche
+	// müsste zwei Formen derselben Zeile kennen. Betroffen sind die Zeilen ohne Klasse, die es
+	// im Plan der Schule gibt („Nachzügler", „Aufräumen").
 	zeile := repository.LmfPlanZeile{
 		Vermerk: strings.TrimSpace(z.Vermerk),
 		Fest:    z.Fest != nil,
@@ -412,10 +298,10 @@ func pruefeLmfPlanZeile(nr int, z lmfPlanRequestZeile) (repository.LmfPlanZeile,
 	return zeile, &lmfplan.Platz{Datum: tag, Stunde: z.Fest.Stunde}, nil
 }
 
-// pruefeLmfAnker prüft den Anker je Art (Migration 101): Der Rückgabe-Plan ENDET
-// (letzter_tag, letzte_stunde) — Beginn-Angaben der Anfrage werden verworfen, der Server
-// rechnet den Beginn; bis dahin steht das Ende auch als Beginn, damit ein Plan ohne
-// Zeilen nicht ohne Tag ist. Der Ausgabe-Plan BEGINNT (erster_tag, startstunde).
+// pruefeLmfAnker prüft den Anker je Art. Der Rückgabe-Plan endet (letzter_tag,
+// letzte_stunde): Beginn-Angaben der Anfrage werden verworfen, der Server rechnet den Beginn;
+// bis dahin steht das Ende auch als Beginn, damit ein Plan ohne Zeilen nicht ohne Tag ist. Der
+// Ausgabe-Plan beginnt (erster_tag, startstunde).
 func pruefeLmfAnker(p *repository.LmfPlan, req lmfPlanRequest) error {
 	if p.Art == repository.LmfTerminRueckgabe {
 		p.LetzterTag, p.LetzteStunde = strings.TrimSpace(req.LetzterTag), req.LetzteStunde
@@ -478,16 +364,17 @@ func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 		return keine, false, apierrors.BadRequest(err.Error(), err)
 	}
 	repo := repository.NewLmfTerminRepository(s.DB.Pool)
-	plaetze, ausfaelle, err := s.verteileLmfPlan(&e)
+	plaetze, ausgefallen, err := service.VerteileLmfPlan(&e)
 	if err != nil {
 		return keine, false, apierrors.Internal("Verteilung rechnen", err)
 	}
+	ausfaelle := lmfPlanAusfaelle(ausgefallen)
 	if req.Vorschau {
 		return lmfPlanVorschauAntwort(e, plaetze, ausfaelle), true, nil
 	}
 	// Den alten Stand dieses Schuljahres lesen: Klassen, die ihren Termin verlieren,
 	// kehren zum Stichtag zurück (service.KoppleLmfPlanFristen).
-	alt, err := s.lmfPlanZeilenVorher(r.Context(), repo, art, e.Plan.ErsterTag)
+	alt, err := service.LmfPlanZeilenVorher(r.Context(), repo, art, e.Plan.ErsterTag)
 	if err != nil {
 		return keine, false, apierrors.Internal("alten Plan lesen", err)
 	}
@@ -522,8 +409,18 @@ func (s *Tueren) rechneOderSpeichereLmfPlan(w http.ResponseWriter, r *http.Reque
 	return LmfPlanSpeicherAntwort{LmfPlanStand: stand, Ausfaelle: ausfaelle, FristenAngepasst: angepasst}, true, nil
 }
 
+// lmfPlanAusfaelle wandelt die Ausfälle der Verteilung in die Form der Antwort. Die Liste ist
+// nie nil: Der Planer bekommt `[]` und nicht `null`.
+func lmfPlanAusfaelle(ausfaelle []lmfplan.Ausfall) []LmfPlanAusfall {
+	aus := make([]LmfPlanAusfall, 0, len(ausfaelle))
+	for _, a := range ausfaelle {
+		aus = append(aus, LmfPlanAusfall{Datum: a.Datum.Format(tuer.DateFormatISO), Grund: a.Grund})
+	}
+	return aus
+}
+
 // lmfPlanVorschauAntwort trägt die gerechneten Plätze in die Zeilen des Entwurfs ein.
-func lmfPlanVorschauAntwort(e lmfPlanEntwurf, plaetze []lmfplan.Platz, ausfaelle []LmfPlanAusfall) LmfPlanSpeicherAntwort {
+func lmfPlanVorschauAntwort(e service.LmfPlanEntwurf, plaetze []lmfplan.Platz, ausfaelle []LmfPlanAusfall) LmfPlanSpeicherAntwort {
 	for i := range e.Zeilen {
 		e.Zeilen[i].Position = i + 1
 		e.Zeilen[i].Datum = plaetze[i].Datum.Format(tuer.DateFormatISO)
@@ -531,105 +428,6 @@ func lmfPlanVorschauAntwort(e lmfPlanEntwurf, plaetze []lmfplan.Platz, ausfaelle
 	}
 	return LmfPlanSpeicherAntwort{Vorschau: true, Ausfaelle: ausfaelle,
 		LmfPlanStand: repository.LmfPlanStand{Plan: e.Plan, Zeilen: e.Zeilen, Ausgelassen: e.Ausgelassen}}
-}
-
-// verteileLmfPlan rechnet die Plätze über die Schultage, also ohne die freien Tage des
-// Plans und die gesetzlichen Feiertage aus pkg/lmfplan, und nennt die Ausfälle vom ersten
-// Tag bis zum letzten Platz. Der Rückgabe-Plan fließt vom Ende her rückwärts; sein Beginn
-// (e.Plan.ErsterTag/Startstunde) ist danach der früheste Platz.
-func (s *Tueren) verteileLmfPlan(e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanAusfall, error) {
-	rueckwaerts := e.Plan.Art == repository.LmfTerminRueckgabe
-	ankerTag := e.Plan.ErsterTag
-	if rueckwaerts {
-		ankerTag = e.Plan.LetzterTag
-	}
-	anker, err := schulzeit.Kalendertag(ankerTag)
-	if err != nil {
-		return nil, nil, err
-	}
-	frei, err := lmfPlanFreieZeitraeume(e.Plan.FreieTage)
-	if err != nil {
-		return nil, nil, err
-	}
-	var plaetze []lmfplan.Platz
-	if rueckwaerts {
-		ende := lmfplan.Ende{LetzterTag: anker, LetzteStunde: e.Plan.LetzteStunde, StundenJeTag: e.Plan.StundenJeTag}
-		plaetze = lmfplan.VerteileRueckwaerts(ende, e.Fest, lmfplan.Schultage(frei))
-		if b, ok := lmfplan.Beginn(plaetze); ok {
-			e.Plan.ErsterTag, e.Plan.Startstunde = b.Datum.Format(tuer.DateFormatISO), b.Stunde
-		}
-	} else {
-		r := lmfplan.Rahmen{ErsterTag: anker, Startstunde: e.Plan.Startstunde, StundenJeTag: e.Plan.StundenJeTag}
-		plaetze = lmfplan.VerteileMit(r, e.Fest, lmfplan.Schultage(frei))
-	}
-	ersterTag, err := schulzeit.Kalendertag(e.Plan.ErsterTag)
-	if err != nil {
-		return nil, nil, err
-	}
-	ausfaelle := []LmfPlanAusfall{}
-	for _, a := range lmfplan.Ausfaelle(ersterTag, spaetesterPlatz(ersterTag, plaetze), frei) {
-		ausfaelle = append(ausfaelle, LmfPlanAusfall{Datum: a.Datum.Format(tuer.DateFormatISO), Grund: a.Grund})
-	}
-	// Je Zeile ein Platz: Beide Verteiler liefern einen Platz je Eintrag in e.Fest, und
-	// e.Fest hat einen je Zeile — außer bei stunden_je_tag < 1, wo beide eine leere Liste
-	// zurückgeben. pruefeLmfPlan verlangt 1 bis 12; die Zusicherung steht trotzdem hier,
-	// weil Vorschau und Speichern gleich darauf mit plaetze[i] zugreifen und ein
-	// Indexfehler keine Meldung ist, die jemand lesen kann.
-	if len(plaetze) != len(e.Zeilen) {
-		return nil, nil, fmt.Errorf("verteilung: %d Plätze für %d Zeilen", len(plaetze), len(e.Zeilen))
-	}
-	return plaetze, ausfaelle, nil
-}
-
-// lmfPlanFreieZeitraeume macht aus den freien Tagen des Plans eintägige Zeiträume; ohne
-// Grund heißt der Tag „freier Tag".
-func lmfPlanFreieZeitraeume(tage []repository.LmfFreierTag) ([]lmfplan.Zeitraum, error) {
-	frei := []lmfplan.Zeitraum{}
-	for _, f := range tage {
-		tag, err := schulzeit.Kalendertag(f.Datum)
-		if err != nil {
-			return nil, err
-		}
-		grund := f.Grund
-		if grund == "" {
-			grund = "freier Tag"
-		}
-		frei = append(frei, lmfplan.Zeitraum{Von: tag, Bis: tag, Name: grund})
-	}
-	return frei, nil
-}
-
-// spaetesterPlatz nennt den spätesten Tag der Plätze, mindestens ab.
-func spaetesterPlatz(ab time.Time, plaetze []lmfplan.Platz) time.Time {
-	letzter := ab
-	for _, p := range plaetze {
-		if p.Datum.After(letzter) {
-			letzter = p.Datum
-		}
-	}
-	return letzter
-}
-
-// lmfPlanZeilenVorher liest die Zeilen des Plans, den das Speichern gleich ersetzt —
-// der Plan derselben Art im Schuljahr des ersten Tages. Leer, wenn es keinen gibt oder
-// er noch Entwurf ist (dann hat er keine Frist gesetzt, die zurückkehren müsste).
-func (s *Tueren) lmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTerminRepository, art, ersterTag string) ([]repository.LmfPlanZeile, error) {
-	st, err := repo.NeuesterLmfPlan(ctx, art)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	tag, err := schulzeit.Kalendertag(ersterTag)
-	if err != nil {
-		return nil, err
-	}
-	if st.Plan.SchuljahrBeginn != repository.SchuljahrBeginn(tag).Format(tuer.DateFormatISO) || st.Plan.VeroeffentlichtAm == nil {
-		// Anderes Schuljahr: das Speichern legt einen neuen Plan an, der alte bleibt.
-		return nil, nil
-	}
-	return st.Zeilen, nil
 }
 
 // DeleteLmfPlanHandler verwirft den neuesten Plan der Art; die Fristen seiner Klassen

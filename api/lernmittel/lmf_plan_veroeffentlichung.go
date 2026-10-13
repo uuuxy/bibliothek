@@ -36,19 +36,9 @@ func (s *Tueren) lmfEingangsjahrgaenge(ctx context.Context) ([]int, error) {
 	return repository.EingangsjahrgaengeAus(einstellungen.LmfEingangsjahrgaenge), nil
 }
 
-// enthaeltJahrgang: ist j einer der Eingangsjahrgänge?
-func enthaeltJahrgang(eingang []int, j int) bool {
-	for _, e := range eingang {
-		if e == j {
-			return true
-		}
-	}
-	return false
-}
-
 // lmfPlanNurRueckgabe nennt aus allen Klassen, die der Planer zeigt (Vokabular, Zeilen,
-// Vorschlag, Auslassungen), die, die vor den Ferien nur abgeben — leer beim Ausgabe-Plan.
-// Seit 06.09.2026 nur noch die Quelle der VORBELEGUNG des Vermerks (vermerkNurRueckgabe).
+// Vorschlag, Auslassungen), die, die vor den Ferien nur abgeben; leer beim Ausgabe-Plan. Aus
+// ihnen belegt service.BelegeLmfPlanVermerkNurRueckgabe den Vermerk des Vorschlags vor.
 func (s *Tueren) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LmfTerminRepository, art string, a LmfPlanStandAntwort, eingang []int) ([]string, error) {
 	if art != repository.LmfTerminRueckgabe {
 		return []string{}, nil

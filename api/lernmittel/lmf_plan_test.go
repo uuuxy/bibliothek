@@ -1,10 +1,12 @@
 package lernmittel
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 
-	"bibliothek/repository"
+	"bibliothek/pkg/lmfplan"
 )
 
 // pruefeLmfPlan: fester Platz und freie Tage (Migration 099) werden geprüft, bevor
@@ -102,61 +104,21 @@ func TestPruefeLmfPlan_AnkerJeArt(t *testing.T) {
 	}
 }
 
-// Die eine Regel, welche Klasse nicht in den Plan einer Art gehört — gelesen vom
-// Vorschlag UND von der Liste „bleiben draußen" des Planers (ausgelassen_regel).
-func TestLmfPlanRegelLaesstAus(t *testing.T) {
-	eingang := []int{5, 7}
-	f := func(name string, jg int, ober bool) repository.KlasseImPlan {
-		return repository.KlasseImPlan{Name: name, Jahrgang: jg, Oberstufe: ober}
+// Die Ausfälle der Verteilung stehen in der Antwort mit dem Tag als JJJJ-MM-TT und ihrem Grund,
+// in der Folge der Verteilung. Ohne Ausfall bekommt der Planer eine leere Liste und nicht null.
+func TestLmfPlanAusfaelle_FormDerAntwort(t *testing.T) {
+	ist := lmfPlanAusfaelle([]lmfplan.Ausfall{
+		{Datum: time.Date(2026, time.June, 4, 0, 0, 0, 0, time.UTC), Grund: "Fronleichnam"},
+		{Datum: time.Date(2026, time.June, 5, 0, 0, 0, 0, time.UTC), Grund: "Brückentag"},
+	})
+	roh, err := json.Marshal(ist)
+	if err != nil {
+		t.Fatal(err)
 	}
-	faelle := []struct {
-		art  string
-		k    repository.KlasseImPlan
-		soll bool
-	}{
-		{repository.LmfTerminRueckgabe, f("05F1", 5, false), false},
-		{repository.LmfTerminRueckgabe, f("10R1", 10, false), false},
-		{repository.LmfTerminRueckgabe, f("12T1", 12, true), true},
-		{repository.LmfTerminAusgabe, f("05F1", 5, false), false},
-		{repository.LmfTerminAusgabe, f("07G1", 7, false), false},
-		{repository.LmfTerminAusgabe, f("06F1", 6, false), true},
-		{repository.LmfTerminAusgabe, f("12T1", 12, true), true},
+	if got, want := string(roh), `[{"datum":"2026-06-04","grund":"Fronleichnam"},{"datum":"2026-06-05","grund":"Brückentag"}]`; got != want {
+		t.Errorf("Ausfälle in der Antwort: %s, erwartet %s", got, want)
 	}
-	for _, c := range faelle {
-		if ist := lmfPlanRegelLaesstAus(c.art, eingang, c.k); ist != c.soll {
-			t.Errorf("%s %s: ausgelassen=%v, erwartet %v", c.art, c.k.Name, ist, c.soll)
-		}
-	}
-}
-
-// Der Regel-Vorschlag endet wie dem Excel der Schule: nach den Klassen „Nachzügler" und
-// „Aufräumen" (Zeilen ohne Klasse); beim Ausgabe-Plan stehen davor nur die
-// Eingangsjahrgänge. Das Vorjahr bringt seine eigenen Zeilen mit — ohne Zusatz.
-func TestLmfPlanVorschlag_RegelEndetMitNachzueglerUndAufraeumen(t *testing.T) {
-	klassen := []repository.KlasseImPlan{
-		{Name: "10R1", Jahrgang: 10, Abschluss: true},
-		{Name: "07G1", Jahrgang: 7},
-		{Name: "05F1", Jahrgang: 5},
-		{Name: "12T1", Jahrgang: 12, Oberstufe: true},
-	}
-	v := lmfPlanVorschlag(repository.LmfTerminAusgabe, []int{5, 7}, false, repository.LmfPlanStand{}, klassen)
-	vermerke := make([]string, 0, len(v.Zeilen))
-	for _, z := range v.Zeilen {
-		if len(z.Klassen) > 0 {
-			vermerke = append(vermerke, z.Klassen[0])
-		} else {
-			vermerke = append(vermerke, z.Vermerk)
-		}
-	}
-	if got := strings.Join(vermerke, ","); got != "07G1,05F1,Nachzügler,Aufräumen" {
-		t.Errorf("Ausgabe-Vorschlag: %s", got)
-	}
-	if got := strings.Join(v.Ausgelassen, ","); got != "10R1,12T1" {
-		t.Errorf("Ausgabe ausgelassen: %s", got)
-	}
-	// Vorjahr: nur die eigenen Zeilen.
-	st := repository.LmfPlanStand{Zeilen: []repository.LmfPlanZeile{{Klassen: []string{"07G1"}}}}
-	if v := lmfPlanVorschlag(repository.LmfTerminAusgabe, []int{5, 7}, true, st, klassen); len(v.Zeilen) != 2 {
-		t.Errorf("Vorjahr-Vorschlag: %d Zeilen, erwartet 2 (07G1 + neue 05F1)", len(v.Zeilen))
+	if roh, err = json.Marshal(lmfPlanAusfaelle(nil)); err != nil || string(roh) != "[]" {
+		t.Errorf("ohne Ausfall: %s (%v), erwartet []", roh, err)
 	}
 }

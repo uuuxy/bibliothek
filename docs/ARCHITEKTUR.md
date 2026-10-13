@@ -803,7 +803,14 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   selbst weiter: Die Typen der Auskunft stehen mit ihrem Blatt in `internal/auskunft`. Dasselbe
   gilt gegenüber `internal/service`: Ferien und Rahmen eines neuen LMF-Plans rechnet
   `service.LmfPlanSommerferien` und `service.LmfPlanRahmenVorgabe` in eigenen Typen, die Tür
-  wandelt sie in die Typen ihrer Antwort (`api/lernmittel/lmf_plan.go`).
+  wandelt sie in die Typen ihrer Antwort (`api/lernmittel/lmf_plan.go`). Ebenso die
+  Reihenfolge, mit der ein neuer Plan beginnt (`service.LmfPlanReihenfolgeVorgabe`), und die
+  Ausfälle der Verteilung (`lmfPlanAusfaelle`). In der anderen Richtung prüft die Tür die
+  Anfrage und füllt daraus den Entwurf (`pruefeLmfPlan`, `service.LmfPlanEntwurf`); die
+  Verteilung über die Schultage rechnet der Dienst (`service.VerteileLmfPlan`). Dort stehen
+  auch die Regeln, die die Tür nur fragt: welche Klassen eine Art auslässt, wann ein Plan
+  vorbei ist, welcher Vermerk vorbelegt wird (`lmf_plan_reihenfolge.go`) und welcher Plan
+  beim Speichern als vorher zählt (`LmfPlanZeilenVorher`, `lmf_frist_kopplung.go`).
 - `repository/` und `pdf/` kennen einander nicht. Die Tür füllt die Typen der PDF-Erzeuger
   aus den Zeilen. Hängt ein gedruckter Text an einer Regel, die `pdf/` nicht kennt, wählt die
   Tür ihn und reicht den fertigen Text: Den Eigentumsvermerk eines Etiketts bestimmt der Topf
