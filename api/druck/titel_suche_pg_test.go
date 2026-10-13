@@ -1,4 +1,4 @@
-package api
+package druck
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
@@ -35,7 +36,7 @@ func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{}
+	s := &Tueren{Basis: &tuer.Basis{}}
 	h := s.TitelSucheHandler(repository.NewBookRepository(pool))
 	rufe := func(q string) (int, string, TitelSucheResult) {
 		t.Helper()

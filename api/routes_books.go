@@ -33,7 +33,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Titel-Tür für Bildschirme außerhalb der Theke (Etiketten-Titelsuche im Druck-Center):
 	// dieselbe Suche wie GET /api/search, aber nur Titel und hinter view_books statt
 	// perform_actions (05.09.2026, Befund-Register Entscheidung 3).
-	mux.Handle("GET /api/buecher/titel/suche", s.RequirePermission("view_books")(s.TitelSucheHandler(bookRepo)))
+	mux.Handle("GET /api/buecher/titel/suche", s.RequirePermission("view_books")(s.druck().TitelSucheHandler(bookRepo)))
 	// Die Exemplar-Liste trägt seit dem 17.09.2026 den heutigen Ersatzwert je Exemplar
 	// (OFFEN.md 9.8, Stufe 2b). Recht bleibt view_books: Was ein Ersatz kostet, ist eine
 	// Angabe über das BUCH — kein Schülerdatum. Gerechnet wird mit derselben Funktion wie
