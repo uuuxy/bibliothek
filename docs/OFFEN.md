@@ -669,7 +669,7 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   Im Weg standen die Bremse je Adresse, die neben der Middleware der Abruf der Cover braucht
   (jetzt `pkg/ratelimit`), eine DNB-Attrappe, die ihre Anfragen zählt und die Tests zweier
   Themen nutzen (jetzt `tuertest.ZaehlendeDNB`), und eine Quelltext-Ratsche in einer
-  Testdatei der Türen (jetzt `api/abgangsdatum_ratsche_test.go`; siehe unten, Prüfungen, die
+  Testdatei der Türen (jetzt `abgangsdatum_ratsche_test.go`; siehe unten, Prüfungen, die
   Dateien lesen). Der Abgleich der Cover ist eine Funktion ohne Server und steht mit dem
   Paketnamen in der Routenliste (`katalog.SyncCoversHandler`). Titelliste, Buchmaske und
   Import bleiben im Untermodul `inventur/`. Die Probe am Zugang lief hier auch mit einer
@@ -716,7 +716,7 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   Quelltext der Auskunft und der Test zum Zusammenführen bleiben in `api/`, die Rundreise und
   die Ratsche der Fremdschlüssel zogen mit den Lesern. Die Proben dazu zeigten eine Lücke:
   Fiel eine Quelle ohne Fremdschlüssel aus der Liste (`leser`, `audit_log`, `audit_logs`),
-  blieb die Suite grün; ein Test in `api/dsgvo_paar_vollstaendigkeit_test.go` hält die drei
+  blieb die Suite grün; ein Test in `repository/dsgvo_paar_vollstaendigkeit_test.go` hält die drei
   jetzt. Sechs Tests prüfen neben Türen der Leser die eines umgezogenen Themas und bleiben in
   `api/`. Drei davon riefen einen Helfer aus einer Testdatei der Leser und rufen die Tür
   jetzt selbst, über `tuertest.RufeAlsAdmin` und `tuertest.JSONPost`. Der Test zur Dublette
@@ -794,7 +794,7 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   Formen. Umgekehrt sieht eine Prüfung, die mit ihrem Thema umzieht und den Baum ab `..`
   durchläuft, einen Ordner tiefer nur noch `api/` und bleibt grün. In Stufe 4 betrifft es eine
   Prüfung: Die Ratsche zum Abgangsdatum stand bei den Tests an den Türen des Katalogs und
-  steht seit dem 12.10.2026 in `api/abgangsdatum_ratsche_test.go`, wo sie bleibt; in den
+  steht seit dem 12.10.2026 in `abgangsdatum_ratsche_test.go`, wo sie bleibt; in den
   Listen der übrigen vier Themen steht kein Baumlauf (gemessen am 12.10.2026). Sechs
   Testdateien in `api/` durchlaufen den Baum ab `..`. Zieht eine in Stufe 5 zu ihrem Paket,
   braucht sie die Wurzel von dort und eine Probe mit einem Verstoß außerhalb ihres Ordners.

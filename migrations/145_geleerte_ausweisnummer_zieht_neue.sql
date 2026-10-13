@@ -8,8 +8,8 @@
 -- Nummer aus demselben Generator (ausweis_nummer_start, Migration 136).
 --
 -- Drei Wege führten zu einem aktiven Konto ohne Nummer, alle drei am Verhalten nachgestellt
--- (api/sequence_pg_test.go, api/leser/leser_schul_email_nachtragen_pg_test.go,
--- api/leser_zusammenfuehren_kollegium_pg_test.go):
+-- (repository/sequence_pg_test.go, api/leser/leser_schul_email_nachtragen_pg_test.go,
+-- repository/leser_zusammenfuehren_kollegium_pg_test.go):
 --
 --   1. Der PATCH der Akte leert die Spalte (api/leser/student_update.go).
 --   2. Die Benutzerverwaltung schreibt ein leeres Feld als NULL (repository.UpdateUser).

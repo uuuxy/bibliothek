@@ -10,7 +10,7 @@ package repository
 // betroffen war, welches Buch, welcher Betrag, welche Protokoll-Details: nichts davon.
 //
 // Jede Spalte, die auf benutzer zeigt, steht hier oder bei den Anfragen (dsgvo_konto.go);
-// die Ratsche api/dsgvo_konto_quellen_pg_test.go hält die Liste gegen das Schema.
+// die Ratsche repository/dsgvo_konto_quellen_pg_test.go hält die Liste gegen das Schema.
 //
 // Der Zeitpunkt ist ein Zeiger: Bearbeiter und Zeitpunkt setzen die Schreiber zusammen, die
 // Datenbank verlangt es aber nicht. Eine Zeile mit Bearbeiter und ohne Zeitpunkt soll in der

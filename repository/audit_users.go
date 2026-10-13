@@ -576,7 +576,7 @@ var spurTilgungen = []SpurTilgung{
 		// (schuldner, beschreibung, betrifft). Die Einträge bleiben als Beleg, die Kennung ist
 		// danach ein Pseudonym. Bis zum 29.09.2026 fehlte diese Anweisung; die
 		// Lesehistorie-Befristung erreicht diese Zeilen nicht (sie arbeitet nur auf
-		// tabelle = 'ausleihen'). api/titel_loeschspur_tilgung_pg_test.go.
+		// tabelle = 'ausleihen'). repository/titel_loeschspur_tilgung_pg_test.go.
 		Beschreibung: "audit_log (Personenbezug neben der Leserkennung)",
 		sql:          tilgePersonenbezugImProtokoll("audit_log"),
 	},

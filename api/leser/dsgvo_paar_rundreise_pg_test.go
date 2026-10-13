@@ -245,7 +245,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 //
 // Spalten, die Schüler-IDs OHNE FK halten (audit-Details), fängt die Ratsche nicht —
 // dafür stehen die wertbasierte Sonde oben und das Schlüssel-Vokabular-Gate
-// (api/dsgvo_paar_vollstaendigkeit_test.go).
+// (repository/dsgvo_paar_vollstaendigkeit_test.go).
 func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

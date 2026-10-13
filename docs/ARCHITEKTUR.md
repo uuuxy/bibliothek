@@ -769,7 +769,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   setzt. Die Tür reicht Kundennummer, Zahlen, Link, Ablauf und Topf (`sendeBestellmail`,
   `api/bestellung/bestellmail_versand.go`) und entscheidet die Rückmeldung an die Oberfläche
   (`bestellVersandMeldung`). Das Gate der Platzhalter liest den Renderer beim Dateinamen
-  (`api/mail_vorlagen_platzhalter_test.go`); zieht er um, zieht der Pfad dort mit.
+  (`mail_vorlagen_platzhalter_test.go`); zieht er um, zieht der Pfad dort mit.
 - Fachlogik, die in der Transaktion einer Tür läuft, bekommt diese Transaktion und keinen
   Pool daneben: `service.KoppleLmfPlanFristen` liest die Einstellungen
   (`repository.EinstellungenUeber`) und schreibt die Fristen über denselben Zugang. Mit Pool
@@ -2555,7 +2555,7 @@ wenn man ihn einmal gebraucht hat.
   `phantom_erfolg_test.go`, für `FROM schueler` `docs/lesepfade_gegen_sicht_test.go`, für
   `CURRENT_DATE` `docs/kalendertag_bestand_test.go`, für ein UPDATE oder DELETE an einem der
   Protokolle `audit_schreibtueren_test.go`, für `FROM system_einstellungen`
-  `api/einstellungen_gelesene_schluessel_test.go`, dazu der Bestand in
+  `repository/einstellungen_gelesene_schluessel_test.go`, dazu der Bestand in
   `schichtung_ratsche_test.go`; die ganze Suite nennt jeden Eintrag, der
   fehlt. Eine Ratsche, die die Dateien des alten Pakets liest, verliert mit dem Umzug ihren
   Gegenstand: Ihre Aussage zieht mit und prüft die Funktionen am neuen Ort (so
@@ -2638,7 +2638,7 @@ wenn man ihn einmal gebraucht hat.
   gewöhnlicher Code, und die Ratschen über den Go-Baum lesen es. Es braucht je einen Eintrag
   mit Grund: als Paket in `schichtung_ratsche_test.go`, je Funktion mit verworfenem Ergebnis in
   `phantom_erfolg_test.go`, je Datei in `docs/schreibpfade_gegen_sicht_test.go` und
-  `api/einstellungen_gelesene_schluessel_test.go`, dazu jede Funktion in
+  `repository/einstellungen_gelesene_schluessel_test.go`, dazu jede Funktion in
   `scripts/deadcode_baseline.txt`. Der Linter verlangt über jedem exportierten Namen einen
   Kommentar, der mit ihm beginnt. `goimports` rät für `pgx` den Pfad ohne `/v5` und setzt eine
   Einbindung aus dem eigenen Modul in die Gruppe der Standardbibliothek; neue Dateien bekommen
@@ -2736,9 +2736,9 @@ wenn man ihn einmal gebraucht hat.
   Eine Datei, die Türen zweier Themen trägt, wird vorher geteilt (die frühere `print.go` in
   Rechnung und Kontoauszug). Am Werkzeug kam dazu: Zieht ein Typ mit seiner Methode um, braucht ein
   Aufrufer, der bleibt, keinen Zugang. Zwei weitere Prüfungen werden von selbst rot: der
-  Bestand der Felder, die eine Regel aufheben (`api/privilegierte_felder_test.go`, Datei beim
+  Bestand der Felder, die eine Regel aufheben (`privilegierte_felder_test.go`, Datei beim
   Pfad), und eine Prüfung, die eine Datei neben sich liest
-  (`api/mail_vorlagen_platzhalter_test.go`). Die Prüfung der Mail-Routen leitet die sendenden
+  (`mail_vorlagen_platzhalter_test.go`). Die Prüfung der Mail-Routen leitet die sendenden
   Türen aus den Namen in der Routenliste her; was sie sieht, lässt sich an zwei Ständen über
   eine Probe-Datei per Overlay ausgeben und vergleichen (19 Funktionen, sieben Routen, vor
   und nach beiden Umzügen gleich).
@@ -2749,7 +2749,7 @@ wenn man ihn einmal gebraucht hat.
   (`filepath.Walk`, `filepath.WalkDir`, `os.ReadDir`, Pfade über `..`). Eine Prüfung über den
   Baum, die keine Tür prüft, wird vorher in eine eigene Datei geschnitten und bleibt in
   `api/`. Sie hält selbst, dass ihr Lauf die Stelle erreicht, an der ihr Gegenstand steht:
-  `api/abgangsdatum_ratsche_test.go` zählt die Zeilen, die die Spalte nennen, und scheitert
+  `abgangsdatum_ratsche_test.go` zählt die Zeilen, die die Spalte nennen, und scheitert
   bei null. Belegt am 12.10.2026 am Katalog: Am umgezogenen Stand blieb ein Schreiber des
   Abgangsdatums in `repository/` unbemerkt, am Stand davor wird der Test rot; mit der Zählung
   wird er auch rot, wenn der Lauf nur `api/` liest oder seine Wurzel fehlt.
@@ -2767,7 +2767,7 @@ wenn man ihn einmal gebraucht hat.
   Probe mit einem Eintrag zu viel, dass jede Prüfung sie am neuen Ort liest, und je Art von
   Eintrag eine Probe, dass sein Fehlen auffällt. Bei der Liste der Tabellen mit Bezug auf
   einen Leser blieb eine davon grün: Eine Quelle ohne Fremdschlüssel fiel unbemerkt weg;
-  `api/dsgvo_paar_vollstaendigkeit_test.go` hält die drei seither in der Liste.
+  `repository/dsgvo_paar_vollstaendigkeit_test.go` hält die drei seither in der Liste.
   Mit der Theke (13.10.2026) kam dazu: Trägt eine Datei Türen zweier Themen, wird die fremde
   Tür vorher in eine eigene Datei geschnitten und mit dem Werkzeug in ihr Thema gezogen (die
   Titelsuche des Druck-Centers aus `search.go`, die Verlängerung der Lernmittel einer Klasse

@@ -59,7 +59,7 @@ func AbschlussklasseSQL(spalte string) string {
 // AbschlussJahrgang liest aus einer Klasse ihren Jahrgang und den Jahrgang, mit dem ihr
 // Bildungsgang endet: H endet mit 9, R mit 10, alles andere mit 13. „E" ohne Ziffer ist die
 // Einführungsphase, Jahrgang 11. Es ist der Go-Zwilling von AbschlussklasseSQL; das Paar-Gate
-// api/abgaenger_jahr_paar_pg_test.go vergleicht beide über den ganzen Formenraum.
+// repository/abgaenger_jahr_paar_pg_test.go vergleicht beide über den ganzen Formenraum.
 //
 // ok=false heißt: keine lesbare Jahrgangszahl (ABG, Q4, leer). Der Aufrufer nimmt dann einen
 // Rückfallwert.

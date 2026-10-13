@@ -20,7 +20,7 @@ import (
 )
 
 // Das Zusammenführen über seine Route. Die Regeln prüft
-// api/student_zusammenfuehren_pg_test.go
+// repository/student_zusammenfuehren_pg_test.go
 // an der Funktion; hier steht, was die Route dazutut: die Antwort, die beiden
 // Protokolleinträge mit dem angemeldeten Benutzer und zu jeder Abweisung eine Meldung,
 // die den Grund nennt. Beide Dialoge der Oberfläche zeigen diese Meldung unverändert.

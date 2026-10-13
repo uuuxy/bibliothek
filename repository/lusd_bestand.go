@@ -84,7 +84,7 @@ type LusdBestandsSchueler struct {
 // und Geburtsdatum geleert. Gemerkt hätte es niemand, bis jemand einen Namen sucht.
 //
 // Der Scan in *string unten wäre dabei schon vorher gestolpert: Ein Kollege hat keine
-// Klasse, und die Spalte ist bei ihm NULL (api/leser_lusd_schutz_pg_test.go zeigt beides).
+// Klasse, und die Spalte ist bei ihm NULL (repository/leser_lusd_schutz_pg_test.go zeigt beides).
 // Das ist ein Glücksfall, kein Schutz — ein Absturz wäre die harmlose Hälfte des Fehlers.
 // Die zweite Schranke steht deshalb in der Datenbank: chk_leser_nur_schueler_werden_abgaenger.
 func LadeLusdBestand(ctx context.Context, tx pgx.Tx) ([]LusdBestandsSchueler, error) {

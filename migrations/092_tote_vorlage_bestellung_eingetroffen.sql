@@ -10,7 +10,7 @@
 -- Solange die Zeile existierte, ließ sie sich im Vorlagen-Editor bearbeiten und
 -- speichern („Erfolgreich gespeichert") — ohne jede Wirkung.
 --
--- Das Platzhalter-Paritäts-Gate (api/mail_vorlagen_platzhalter_test.go) verlangt
+-- Das Platzhalter-Paritäts-Gate (mail_vorlagen_platzhalter_test.go) verlangt
 -- seither für jeden Seed-Typ einen Renderer; die Ausnahme für diesen Typ ist mit
 -- dieser Migration ausgetragen.
 DELETE FROM mail_vorlagen WHERE typ = 'BESTELLUNG_EINGETROFFEN';

@@ -3,7 +3,7 @@ package service
 // Der eine Prüfweg für Buch und Gerät (pruefeAusleihSperren, entschieden am 24.09.2026).
 // Die Mocks erwarten jede Abfrage einzeln: Läuft eine Regel, die nicht laufen dürfte, meldet
 // pgxmock die unerwartete Query als Fehler; fehlt eine, meldet es ExpectationsWereMet.
-// Den Live-Pfad der Theke gegen echtes Postgres hält api/ausleih_sperren_pg_test.go; die
+// Den Live-Pfad der Theke gegen echtes Postgres hält internal/service/ausleih_sperren_pg_test.go; die
 // Rückbau-Proben stehen dort je Test.
 
 import (

@@ -7,7 +7,7 @@
 -- für denselben Wert, zwei Wahrheitsquellen (Fund 31.08.2026).
 --
 -- Diese Migration schlüsselt die Altzeilen um; die drei Schreibstellen schreiben seit
--- demselben Commit `schueler_id`, und api/dsgvo_paar_vollstaendigkeit_test.go friert
+-- demselben Commit `schueler_id`, und repository/dsgvo_paar_vollstaendigkeit_test.go friert
 -- das Vokabular ein. Inhalt und Zeitstempel der Einträge bleiben unangetastet —
 -- umbenannt wird nur der Schlüssel, nicht die Aussage (Rechenschaftspflicht).
 UPDATE audit_logs

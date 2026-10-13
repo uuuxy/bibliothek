@@ -30,7 +30,7 @@
 	 * ohne Konto, ohne Ausweis, mit dem aus der Adresse geratenen Namen. Also genau den
 	 * Doppeleintrag, vor dem die Zeile warnt. Der Knopf macht daraus einen Schritt: Das
 	 * Konto zieht auf den vorhandenen Eintrag um, die Zeile des Wächters geht darin auf
-	 * (api/zugangsanfrage_zuordnen_pg_test.go).
+	 * (repository/zugangsanfrage_zuordnen_pg_test.go).
 	 *
 	 * @prop {any[]} users - die geladene Benutzerliste (/api/benutzer)
 	 * @prop {() => any} onZugeordnet - Liste neu laden, nachdem zwei Einträge einer wurden

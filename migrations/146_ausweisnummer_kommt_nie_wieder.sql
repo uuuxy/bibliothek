@@ -5,7 +5,7 @@
 -- rechnete „höchste A-Nummer in leser + 1". Verschwand die höchste Nummer aus der Tabelle,
 -- gab der Generator sie an die nächste Person, und eine noch vorhandene Karte buchte an der
 -- Theke auf sie. Verschwinden kann eine Nummer auf fünf Wegen, alle am Verhalten
--- nachgestellt (api/ausweisnummer_kommt_nie_wieder_pg_test.go): endgültiges Löschen
+-- nachgestellt (repository/ausweisnummer_kommt_nie_wieder_pg_test.go): endgültiges Löschen
 -- (PurgeStudent, DSGVO-Löschung), Anonymisieren (ANON-…), Zusammenführen (die Quelle fällt),
 -- Leeren an einem Leser ohne aktives Konto und Umschreiben von Hand.
 --

@@ -101,7 +101,7 @@ func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 // anonymized_at bei einem Kollegen verbietet, hätte das UPDATE abgebrochen und den GANZEN
 // Nachtlauf mitgenommen. Eine einzige Zeile hätte die Anonymisierung aller echten
 // Abgänger stillgelegt, Nacht für Nacht, mit einer Zeile im Protokoll (nachgestellt in
-// api/leser_lusd_schutz_pg_test.go).
+// repository/leser_lusd_schutz_pg_test.go).
 //
 // Hier und nicht in den Jobs, weil diese Bedingungen die EINE Quelle sind: Der Wächter der
 // Selbstprüfung stellt dieselbe Frage als count(*). Stünde die Einschränkung nur im Job,

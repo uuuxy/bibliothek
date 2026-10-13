@@ -24,7 +24,7 @@
 -- getrennte Kundenkonten (anderer Nachlass, andere Rechnungsstelle). Leer = dieselbe
 -- Nummer wie kundennummer.
 --
--- IF NOT EXISTS mit Absicht: api/bestellung_mittel_backfill_pg_test.go führt diese Datei
+-- IF NOT EXISTS mit Absicht: db/bestellung_mittel_backfill_pg_test.go führt diese Datei
 -- gegen eine Datenbank aus, die die Spalten aus schema.sql bereits hat, und prüft nur den
 -- Backfill. Die Parität beider Wege prüft db/migrations_schema_paritaet_pg_test.go.
 

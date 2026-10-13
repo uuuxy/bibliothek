@@ -3,7 +3,7 @@
 //
 // Die Werte sind dieselben wie in chk_leser_art in der Datenbank und in
 // frontend/src/lib/leserArt.js. Server und Browser lesen dieselben Prüffälle
-// (frontend/src/lib/leserArt.faelle.json); api/leser_art_pg_test.go hält sie zusätzlich gegen
+// (frontend/src/lib/leserArt.faelle.json); pkg/leserart/leser_art_pg_test.go hält sie zusätzlich gegen
 // die Datenbank.
 //
 // Entschieden wird an der Art zweierlei: Schüler oder nicht (IstSchueler, IstKollegium) und,

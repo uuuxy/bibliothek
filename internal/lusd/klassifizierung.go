@@ -31,7 +31,7 @@ var fuehrendeNullen = regexp.MustCompile(`^0+(\d)`)
 // jede geschriebene Klasse auf die registrierte Schreibweise — "05A" aus der LUSD wird
 // zu "5a", wenn die Schule so schreibt. Vergliche der Import roh, stünde in jeder
 // Vorschau ein Klassenwechsel "5a → 05A", der keiner ist. Die Parität zur SQL-Fassung
-// hält api/lusd_klassen_normkey_pg_test.go.
+// hält internal/lusd/lusd_klassen_normkey_pg_test.go.
 func KlassenNormkey(klasse string) string {
 	s := strings.ToLower(strings.ReplaceAll(strings.Trim(klasse, " "), " ", ""))
 	return fuehrendeNullen.ReplaceAllString(s, "$1")

@@ -3,7 +3,7 @@ package repository
 // dsgvo_auskunft.go — die Abfragen der Auskunft nach Art. 15 DSGVO, die am Leser hängen:
 // Stammdaten, Foto, Ausleihen, Schadensfälle, Vormerkungen, Bescheide, Nachbuch-Meldungen und
 // die Einträge beider Protokolle. Den Teil am Zugangskonto liest dsgvo_konto.go.
-// api/dsgvo_paar_vollstaendigkeit_test.go liest diese Datei und verlangt jede Tabelle mit
+// repository/dsgvo_paar_vollstaendigkeit_test.go liest diese Datei und verlangt jede Tabelle mit
 // Leserbezug in einer ihrer Abfragen.
 
 import (
@@ -49,7 +49,7 @@ type DsgvoStammdatenZeile struct {
 
 // DsgvoStammdatenSQL ist die eine Spaltenliste der Auskunft. Sie ist sichtbar, damit das
 // Spalten-Gate sie gegen information_schema.columns halten kann
-// (api/dsgvo_spalten_gate_pg_test.go).
+// (repository/dsgvo_spalten_gate_pg_test.go).
 //
 // Anschrift und Kontakt sind in der Datenbank nullbar und werden in Texte gelesen; ohne
 // COALESCE scheiterte das Lesen bei jedem Leser ohne Adresse. Gelesen wird die Tabelle leser,

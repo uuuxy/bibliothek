@@ -20,20 +20,6 @@ import (
 // Blindheit: Regeln in einer Datei, die auch eine Tür trägt; eine Datei, die net/http nur für
 // eine Konstante einbindet.
 
-// Kommentare zählen nicht: Ein Satz, der ein Wort erklärt, ist kein Vorkommen. Auch die Gates
-// der Mail-Platzhalter und der Einstellungs-Schlüssel lesen ihre Quellen so.
-func ohneKommentare(quelle string) string {
-	var b strings.Builder
-	for line := range strings.Lines(quelle) {
-		if i := strings.Index(line, "//"); i >= 0 {
-			line = line[:i]
-		}
-		b.WriteString(line)
-		b.WriteString("\n")
-	}
-	return b.String()
-}
-
 // produktivDateien nennt die Go-Dateien unter der Wurzel ohne Tests, mit ihrem Pfad ab der
 // Wurzel. Sie steigt in jeden Unterordner: Eine Datei in einem Themenordner zählt wie eine
 // daneben. Abgelegte Bilder und Testdaten tragen keinen Quelltext.

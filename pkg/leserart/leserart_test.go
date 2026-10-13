@@ -10,7 +10,7 @@ import (
 
 // Server und Browser lesen dieselben Prüffälle. Ohne Datenbank prüft dieser Test Wort, Grenze
 // zum Kollegium, Zugang und Reihenfolge je Art; die Werte der Datenbank hält
-// api/leser_art_pg_test.go dagegen.
+// pkg/leserart/leser_art_pg_test.go dagegen.
 func TestArten_WieInDenPrueffaellen(t *testing.T) {
 	const faelleDatei = "../../frontend/src/lib/leserArt.faelle.json"
 	roh, err := os.ReadFile(faelleDatei)

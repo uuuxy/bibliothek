@@ -312,7 +312,7 @@ var checkBedingungenBestand = []string{
 	// chk_leser_art: die sieben Arten aus pkg/leserart (seit Migration 153 auch
 	// Praktikum, Sekretariat, U-plus, Fachbereich). Der Code schreibt nur diese (api/...,
 	// internal/littera, db/seed.go; gegen die Datenbank gehalten in
-	// api/leser_art_pg_test.go); die Datenbank haelt die zweite Tuer fuer Reparaturskripte.
+	// pkg/leserart/leser_art_pg_test.go); die Datenbank haelt die zweite Tuer fuer Reparaturskripte.
 	//
 	// chk_leser_schueler_pflichtfelder: Klasse, Abgaengerjahr und Ausweis waren fuer ALLE
 	// Pflicht, solange jede Zeile ein Schueler war. Die Pflicht ist nicht aufgegeben,
@@ -320,7 +320,7 @@ var checkBedingungenBestand = []string{
 	// Check NICHT verbietet? Ja, und zwar bewusst: Jeder Lesepfad, der klasse in einen
 	// nicht-nullbaren Go-string scannt, darf das nur mit art='schueler' im WHERE oder mit
 	// COALESCE. Genau daran ist der LUSD-Bestand aufgefallen, bevor er eingeschraenkt war
-	// (api/leser_lusd_schutz_pg_test.go).
+	// (repository/leser_lusd_schutz_pg_test.go).
 	//
 	// chk_leser_nur_schueler_werden_abgaenger: Nur ein Schueler kann Abgaenger sein,
 	// anonymisiert sein oder eine LUSD-ID tragen. Das ist der Schutz des Kollegiums vor
@@ -344,7 +344,7 @@ var checkBedingungenBestand = []string{
 	// Migration 146, befragt am 24.09.2026: Eine ausgeschiedene Ausweisnummer ist größer als 0.
 	// Frage 12: Einziger Schreiber ist der Trigger trg_leser_ausweisnummer_ausgeschieden, und
 	// er lässt „A-0" aus, statt an der Bedingung zu scheitern — sonst bräche das Löschen eines
-	// Lesers mit dieser Nummer ab (api/ausweisnummer_kommt_nie_wieder_pg_test.go).
+	// Lesers mit dieser Nummer ab (repository/ausweisnummer_kommt_nie_wieder_pg_test.go).
 	"chk_ausweisnummer_ausgeschieden_positiv",
 }
 
@@ -378,7 +378,7 @@ var triggerBestand = []string{
 	// Migration 145, befragt am 24.09.2026: Schreibt leser.barcode_id neu, wenn die Nummer
 	// eines AKTIVEN Kontos verschwindet (Akte, Benutzerverwaltung leeren sie). Frage 12: Wer
 	// NULL schreibt, findet danach eine Nummer in der Zeile; „Kollege ohne Nummer" gibt es
-	// nur noch ohne Konto oder mit inaktivem (api/sequence_pg_test.go,
+	// nur noch ohne Konto oder mit inaktivem (repository/sequence_pg_test.go,
 	// TestAusweisnummerLeeren).
 	"trg_leser_aktives_konto_behaelt_ausweis @ leser",
 	// Migration 146, befragt am 24.09.2026: Schreibt jede A-Nummer, die eine Leserzeile
@@ -386,7 +386,7 @@ var triggerBestand = []string{
 	// Frage 12: Gelesen wird die Tabelle vom Generator (ausweis_nummer_start) und von der
 	// Ersatzvergabe der Littera-Übernahme (internal/littera, ersatzFrei); eine Nummer, die dort
 	// steht, gibt keiner der beiden mehr aus. Von Hand bleibt sie eintragbar
-	// (api/ausweisnummer_kommt_nie_wieder_pg_test.go).
+	// (repository/ausweisnummer_kommt_nie_wieder_pg_test.go).
 	"trg_leser_ausweisnummer_ausgeschieden @ leser",
 	"trg_buecher_exemplare_aktualisiert_am @ buecher_exemplare",
 	"trg_buecher_titel_aktualisiert_am @ buecher_titel",
@@ -395,7 +395,7 @@ var triggerBestand = []string{
 	// Abgangsdatum (ausgesondert_am) bzw. löscht es beim Zurückholen. Frage 12: Kein
 	// Lesepfad rechnete vorher mit dem Wert — die Spalte entsteht mit dem Trigger. Die
 	// Folge, die man kennen muss: Ein Schreiber, der das Datum SELBST setzt, wird
-	// überschrieben; deshalb hält api/abgangsdatum_ratsche_test.go eine Quelltext-Ratsche
+	// überschrieben; deshalb hält abgangsdatum_ratsche_test.go eine Quelltext-Ratsche
 	// dagegen. Zweck ist das Abgangsbuch (Protokoll 1 des Medienzentrums) über alle sechs
 	// Aussonder-Türen, auch die, die es noch nicht gibt.
 	"trg_exemplar_abgangsdatum @ buecher_exemplare",

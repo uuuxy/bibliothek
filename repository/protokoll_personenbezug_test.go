@@ -31,7 +31,7 @@ import (
 // „getilgt" heißt: der Schlüssel steht in protokollSchluesselMitPersonenbezug
 // (protokoll_personenbezug.go), aus der die Tilgung ihre Anweisungen für audit_logs und
 // audit_log baut. Dass die Anweisungen die Schlüssel wirklich nehmen, zeigen die PG-Tests
-// (api/titel_loeschspur_tilgung_pg_test.go, api/leser/sperrgrund_tilgung_pg_test.go).
+// (repository/titel_loeschspur_tilgung_pg_test.go, api/leser/sperrgrund_tilgung_pg_test.go).
 //
 // Dieselbe Einordnung gilt neben der Kennung eines Zugangskontos (ziel_id): Einträge über ein
 // Konto tragen Name und Adresse, und die Tilgung nimmt sie aus den Einträgen der früheren
