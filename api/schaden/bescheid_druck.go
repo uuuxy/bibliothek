@@ -1,0 +1,119 @@
+package schaden
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"strings"
+
+	"bibliothek/api/tuer"
+	"bibliothek/apierrors"
+	"bibliothek/pdf"
+	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// Der Brief zu einem Bescheid, beim ersten Druck und bei jedem Nachdruck aus dem Schnappschuss.
+
+// BescheidPDFHandler liefert den Brief — beim ersten Mal und bei jedem Nachdruck
+// derselbe, aus dem Snapshot.
+//
+// @Summary      Print (or reprint) a compensation notice
+// @Tags         schadensersatz
+// @Produce      application/pdf
+// @Param        id path string true "Notice ID"
+// @Success      200 {file} file
+// @Router       /bescheide/{id}/pdf [get]
+func (s *Tueren) BescheidPDFHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		id := r.PathValue("id")
+		if id == "" {
+			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
+		}
+		ctx := r.Context()
+
+		brief, bescheid, err := s.bescheidBrief(ctx, bescheidRepo, id)
+		if err != nil {
+			return err
+		}
+		roh, err := pdf.GenerateBescheidPDF(brief)
+		if err != nil {
+			return apierrors.Internal("Bescheid konnte nicht erzeugt werden", err)
+		}
+		if err := bescheidRepo.DruckVermerken(ctx, id); err != nil {
+			// Der Vermerk ist Buchführung, nicht der Zweck: Der Brief geht trotzdem raus.
+			log.Printf("Druckvermerk für Bescheid %s fehlgeschlagen: %v", id, err)
+		}
+
+		w.Header().Set("Content-Type", tuer.ContentTypePDF)
+		w.Header().Set("Content-Disposition",
+			fmt.Sprintf(`attachment; filename="bescheid_%s.pdf"`,
+				strings.ReplaceAll(bescheid.Referenznummer, " ", "-")))
+		// #nosec G705 - der Körper ist das erzeugte PDF (application/pdf, als Anhang, nosniff); aus der Anfrage stammt nur die Kennung des Bescheids
+		if _, err := w.Write(roh); err != nil {
+			log.Printf("Bescheid-PDF senden: %v", err)
+		}
+		return nil
+	})
+}
+
+// bescheidBrief baut das Blatt aus Bescheid, Snapshot, Positionen und Einstellungen.
+func (s *Tueren) bescheidBrief(ctx context.Context, bescheidRepo repository.BescheidRepository, id string) (pdf.BescheidBrief, *repository.Bescheid, error) {
+	bescheid, err := bescheidRepo.Lies(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return pdf.BescheidBrief{}, nil, apierrors.NotFound("Bescheid nicht gefunden", err)
+		}
+		return pdf.BescheidBrief{}, nil, apierrors.Internal("Bescheid konnte nicht gelesen werden", err)
+	}
+	snapshot, err := bescheidRepo.Snapshot(ctx, id)
+	if err != nil {
+		return pdf.BescheidBrief{}, nil, apierrors.Internal("Empfänger konnte nicht gelesen werden", err)
+	}
+	positionen, err := bescheidRepo.Positionen(ctx, id)
+	if err != nil {
+		return pdf.BescheidBrief{}, nil, apierrors.Internal("Positionen konnten nicht gelesen werden", err)
+	}
+	// Die Angaben der Schule, wie sie im Brief standen (Migration 141). Ein Bescheid von
+	// vorher hat keinen Schnappschuss; für ihn gelten die Einstellungen von heute.
+	absender, err := bescheidRepo.AbsenderSnapshot(ctx, id)
+	if err != nil {
+		return pdf.BescheidBrief{}, nil, apierrors.Internal("Angaben der Schule konnten nicht gelesen werden", err)
+	}
+	if len(absender) == 0 {
+		angaben, schule, err := s.bescheidAngaben(ctx)
+		if err != nil {
+			return pdf.BescheidBrief{}, nil, apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
+		}
+		absender = bescheidAbsenderAus(angaben, schule)
+	}
+
+	brief := pdf.BescheidBrief{
+		Schule:            bescheidSchuleAus(absender),
+		Empfaenger:        bescheidEmpfaengerAus(snapshot),
+		Geschaeftszeichen: absender["geschaeftszeichen"],
+		Bearbeiter:        absender["bearbeiter"],
+		Durchwahl:         absender["durchwahl"],
+		BriefDatum:        bescheid.BriefDatum,
+		FristBis:          bescheid.FristBis,
+		Gesamtbetrag:      bescheid.Gesamtbetrag,
+		Zahlstelle:        absender["zahlstelle"],
+		Bankverbindung:    absender["bankverbindung"],
+		Referenznummer:    bescheid.Referenznummer,
+		Aufsicht:          absender["aufsicht"],
+		Schulleitung:      absender["schulleitung"],
+	}
+	name := brief.Empfaenger.Name
+	for _, p := range positionen {
+		zeile := pdf.BescheidPosition{SchuelerName: name, Titel: p.Titel, ISBN: p.ISBN, Betrag: p.Betrag}
+		if p.Art == "nicht_zurueckgegeben" {
+			brief.NichtZurueckgegeben = append(brief.NichtZurueckgegeben, zeile)
+			continue
+		}
+		brief.Beschaedigt = append(brief.Beschaedigt, zeile)
+	}
+	return brief, bescheid, nil
+}

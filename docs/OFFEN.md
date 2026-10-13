@@ -460,7 +460,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   und die Uhr). 22 stehen in den Paketen der Themen: Mit ihrem Thema
   umgezogen sind `lernmittel/lmf_plan_live.go`, `system/betriebsbereitschaft_alarm.go`,
   `mahnwesen/abgaenger_fenster.go` (die Grenzen der Abgänger-Saison),
-  `mahnwesen/mahnwesen_mail.go`, `schaden/bescheid_absender.go`,
+  `mahnwesen/mahnwesen_mail.go`, `schaden/bescheid_schnappschuss.go`,
   `bestellung/bestellmail_anhaenge.go` (stellt die Anlagen der Bestellmail zusammen und
   verschickt sie), `bestellung/bestellmail_versand.go` (trägt auch die Rückmeldung nach
   dem Versand), `leser/student_klasse_regel.go` (prüft eine Eingabe der zwei Türen zum
@@ -474,8 +474,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   trägt keine Tür: `theke/nachbuchen_schluessel.go` (148 Zeilen); der Mailversand, die zweite, steht
   seit dem 12.10.2026 in `mailservice/mail_sender.go`. Und
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
-  Typ aus `net/http` tragen `schaden/bescheid_handler.go` (211; die Rechnung des
-  Ersatzwerts steht seit dem 12.10.2026 in `internal/service`), `leser/dsgvo_auskunft.go` (193)
+  Typ aus `net/http` tragen `leser/dsgvo_auskunft.go` (193)
   und `mahnwesen/graduates_mail.go` (157). Die Messung und ihre
   Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt: diese Dateien der Reihe nach
   lesen und trennen, was Regel und was Füll-Funktion ist.

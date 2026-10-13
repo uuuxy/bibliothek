@@ -83,7 +83,7 @@ var dateienOhneTuer = []string{
 	"mahnwesen/mahnwesen.go",
 	"mahnwesen/mahnwesen_mail.go",
 	"portal/portal.go",
-	"schaden/bescheid_absender.go",
+	"schaden/bescheid_schnappschuss.go",
 	"schaden/schaden.go",
 	"system/betriebsbereitschaft_alarm.go",
 	"system/system.go",

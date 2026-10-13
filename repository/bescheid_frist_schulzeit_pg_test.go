@@ -9,7 +9,7 @@ import (
 )
 
 // Die Frist eines Bescheids entsteht als Kalendertag in der Schulzeitzone
-// (api/schaden/bescheid_handler.go, schulzeit.Jetzt). Bis zum 16.09.2026 prüfte die Bedingung
+// (api/schaden/bescheid_vorschlag.go, schulzeit.Jetzt). Bis zum 16.09.2026 prüfte die Bedingung
 // „Frist abgelaufen" gegen CURRENT_DATE, also gegen den Kalendertag der Datenbank-Sitzung
 // (im Image UTC). Zwischen Mitternacht in Berlin und Mitternacht UTC galt eine Frist von
 // gestern damit als nicht abgelaufen: Die Übergabe an die Schulaufsicht fand keine Zeile,

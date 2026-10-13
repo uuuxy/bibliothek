@@ -4793,7 +4793,7 @@ const docTemplate = `{
                     }
                 },
                 "ausgelassen_regel": {
-                    "description": "AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt\n(Büchertausch: Oberstufe; Ausgabe: alles außer den Eingangsjahrgängen). Der Planer\nklappt sie unter „bleiben draußen\" ein — auch bei einem laufenden Plan, der sie\nnie kannte (06.09.2026: ein Plan mit alten Klassennamen bot 60 Chips offen an).",
+                    "description": "AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt\n(service.LmfPlanLaesstAus). Der Planer klappt sie unter „bleiben draußen\" ein, auch bei\neinem laufenden Plan, der sie nie kannte; ein Plan mit alten Klassennamen böte sonst\njede Klasse der Schule offen an.",
                     "type": "array",
                     "items": {
                         "type": "string"
