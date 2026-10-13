@@ -256,3 +256,38 @@ func TestVersendeAbgaengerKontoauszuege_MailausfallIstFehlgeschlagen(t *testing.
 		t.Fatalf("%+v, want Abbruch mit failed=2", erg)
 	}
 }
+
+// Nach dem Abbruch zählt der Lauf wie der Mahnlauf weiter: Eine Klasse ohne Adresse oder ohne
+// Auszüge ist übersprungen, jede andere fehlgeschlagen, und für keine entsteht noch ein PDF.
+// Zählten alle restlichen als fehlgeschlagen, stünde in der Rückmeldung eine Klasse zum
+// Nachsenden, für die es nichts zu senden gibt.
+func TestVersendeAbgaengerKontoauszuege_NachAbbruchBleibtUebersprungenUebersprungen(t *testing.T) {
+	klassen := []abgaengerKlasse{
+		{Klasse: "10a", Empfaenger: "kl10a@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Max", "M", "10a")}},
+		{Klasse: "10b", Empfaenger: "kl10b@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Mia", "K", "10b")}},
+		{Klasse: "10c", Empfaenger: "", Eintraege: []pdf.KontoauszugEintrag{eintrag("Ole", "P", "10c")}},
+		{Klasse: "10d", Empfaenger: "kl10d@schule.de", Eintraege: nil},
+		{Klasse: "10e", Empfaenger: "kl10e@schule.de", Eintraege: []pdf.KontoauszugEintrag{eintrag("Ida", "S", "10e")}},
+	}
+	pdfs := 0
+	erg := versendeAbgaengerKontoauszuege(klassen,
+		func(e pdf.KontoauszugEintrag) ([]byte, error) {
+			pdfs++
+			return fakeKontoauszugPDF(e)
+		},
+		func(m mailservice.MailRequest) error {
+			if m.To == "kl10b@schule.de" {
+				return fmt.Errorf("%w: dial tcp: timeout", mailservice.ErrSMTPVersand)
+			}
+			return nil
+		})
+	if erg.Sent != 1 || erg.Failed != 2 || erg.Skipped != 2 || !erg.Abgebrochen {
+		t.Errorf("%+v, erwartet sent=1 failed=2 (10b und die nicht versuchte 10e) skipped=2 (10c, 10d) abgebrochen", erg)
+	}
+	if pdfs != 2 {
+		t.Errorf("%d PDFs erzeugt, erwartet 2: nach dem Abbruch entsteht keins mehr", pdfs)
+	}
+	if msg := abgaengerVersandMeldung(erg, ""); !strings.Contains(msg, "2 übersprungen") || !strings.Contains(msg, "2 FEHLGESCHLAGEN") {
+		t.Errorf("die Rückmeldung nennt die Zahlen nicht: %s", msg)
+	}
+}

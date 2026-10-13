@@ -203,18 +203,23 @@ func generateKontoauszugPDF(e pdf.KontoauszugEintrag) ([]byte, error) {
 // erklärte ihn als „keine E-Mail hinterlegt oder keine offenen Ausleihen" — am
 // Zeugnistag mit totem Relay stand da „0 versendet, 12 übersprungen", niemand
 // sendete nach. Ein Mailserver-Fehler (ErrSMTPVersand) bricht ab wie beim
-// Mahnlauf: Jede weitere Klasse hinge sonst bis zu 70 s am toten Relay; die
-// restlichen zählen als fehlgeschlagen. Kontoauszüge doppelt zu senden ist
-// unschädlich — der Lauf darf einfach wiederholt werden.
+// Mahnlauf: Jede weitere Klasse hinge sonst bis zu 70 s am toten Relay. Gezählt wird
+// danach wie dort (versendeKlassenMahnungen): Eine Klasse ohne Adresse oder ohne
+// Auszüge bleibt übersprungen, jede andere zählt als fehlgeschlagen. Kontoauszüge
+// doppelt zu senden ist unschädlich — der Lauf darf einfach wiederholt werden.
 func versendeAbgaengerKontoauszuege(
 	klassen []abgaengerKlasse,
 	generatePDF func(pdf.KontoauszugEintrag) ([]byte, error),
 	sendMail func(mailservice.MailRequest) error,
 ) versandErgebnis {
 	var erg versandErgebnis
-	for i, kl := range klassen {
+	for _, kl := range klassen {
 		if kl.Empfaenger == "" || len(kl.Eintraege) == 0 {
 			erg.Skipped++
+			continue
+		}
+		if erg.Abgebrochen {
+			erg.Failed++
 			continue
 		}
 
@@ -231,8 +236,6 @@ func versendeAbgaengerKontoauszuege(
 			erg.Failed++
 			if errors.Is(err, mailservice.ErrSMTPVersand) {
 				erg.Abgebrochen = true
-				erg.Failed += len(klassen) - i - 1
-				break
 			}
 			continue
 		}
