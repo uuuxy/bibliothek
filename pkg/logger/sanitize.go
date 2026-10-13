@@ -1,3 +1,5 @@
+// Package logger nimmt einer Eingabe die Zeilenumbrüche, bevor sie ins Protokoll geht: Eine
+// Eingabe kann so keine eigene Protokollzeile vortäuschen.
 package logger
 
 import "strings"

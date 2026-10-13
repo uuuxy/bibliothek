@@ -1,3 +1,6 @@
+// Package inventur ist der Medienkatalog mit eigenen Türen und eigener Datenbankschicht: Titel
+// lesen, anlegen, ändern und löschen, der Import aus Excel, die Abfrage über die ISBN, die
+// Cover und die hochgeladenen Dateien (docs/ARCHITEKTUR.md 5.2.3).
 package inventur
 
 import (

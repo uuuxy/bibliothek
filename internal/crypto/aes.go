@@ -1,3 +1,6 @@
+// Package crypto verschlüsselt und entschlüsselt mit AES-256-GCM unter dem Schlüssel aus
+// APP_ENCRYPTION_KEY: die Fotos der Schüler und das Passwort des Mailservers. Ein Wechsel des
+// Schlüssels arbeitet mit zwei ausdrücklich übergebenen Schlüsseln.
 package crypto
 
 import (

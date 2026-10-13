@@ -1,3 +1,5 @@
+// Package middleware setzt die Sicherheits-Kopfzeilen jeder Antwort und für alles unter /api/
+// die Vorgabe, dass nichts zwischengespeichert wird.
 package middleware
 
 import (

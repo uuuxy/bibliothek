@@ -1,3 +1,6 @@
+// Package jobs fährt die zeitgesteuerten Läufe des Servers: die Löschläufe nach den
+// eingestellten Fristen, die Sicherung der Datenbank mit ihrer Wiederherstellungs-Probe, den
+// Verfall von Vormerkungen und den Abgleich der Cover. Der Zeitplan rechnet in UTC.
 package jobs
 
 import (

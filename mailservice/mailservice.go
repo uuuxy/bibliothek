@@ -1,3 +1,6 @@
+// Package mailservice baut eine Mail mit ihren Anlagen und verschickt sie über den Mailserver
+// der Schule, mit erzwungenem STARTTLS. Die Konfiguration kommt aus der Datenbank, ohne
+// gespeicherte Zeile aus der Umgebung.
 package mailservice
 
 import (

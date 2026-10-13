@@ -1,3 +1,6 @@
+// Command migrate-fotos zieht unverschlüsselte Schülerfotos aus uploads/fotos in die Datenbank:
+// Es verschlüsselt jedes Bild, speichert es in schueler_fotos, liest es zur Gegenprobe zurück
+// und löscht erst dann die Datei (docs/SCRIPTS.md, Abschnitt 2).
 package main
 
 import (

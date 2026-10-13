@@ -1,3 +1,5 @@
+// Package imageutil wandelt Bilder in JPEG und WebP und weist ein Bild ab, dessen Pixelzahl die
+// Grenze überschreitet, bevor es dekodiert wird.
 package imageutil
 
 import (

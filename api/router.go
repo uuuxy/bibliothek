@@ -11,6 +11,9 @@
  * verfügbar sein. Andernfalls siehe: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  */
 
+// Package api ist die HTTP-Schicht des Servers: der Router mit den Routenlisten und den Zugängen
+// zu den Themen, die Middleware, CSRF, die Bremse je Adresse und die Abmeldung. Die Türen stehen
+// je Thema in einem Paket darunter (docs/ARCHITEKTUR.md 5.2.2).
 package api
 
 // router.go: der Server, sein Router und die Zugänge zu den Themen. Die Middleware steht in

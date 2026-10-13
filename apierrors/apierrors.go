@@ -1,3 +1,6 @@
+// Package apierrors schreibt die Fehlerantworten der API in einer Form und ordnet einem Fehler
+// seinen HTTP-Status zu. Ein 500 trägt nie den Text des Fehlers; der steht im Protokoll des
+// Servers.
 package apierrors
 
 import (

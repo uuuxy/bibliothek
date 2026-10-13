@@ -1,3 +1,5 @@
+// Package isbnutil bringt eine ISBN in ihre Normalform: ohne Trenner und, wo das Prüfzeichen
+// stimmt, dreizehnstellig. Die Datenbank rechnet dieselbe Form (isbn_normalform).
 package isbnutil
 
 import (

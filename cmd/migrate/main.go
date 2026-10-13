@@ -1,6 +1,4 @@
-// cmd/migrate/main.go
-//
-// One-shot MySQL → PostgreSQL migration tool for the Bibliothek system.
+// Command migrate überträgt einmalig einen Bestand aus MySQL nach PostgreSQL.
 //
 // Usage:
 //

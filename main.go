@@ -11,6 +11,9 @@
  * verfügbar sein. Andernfalls siehe: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  */
 
+// Command bibliothek ist der Server der Schulbibliothek. Es liest und prüft die Konfiguration,
+// öffnet die Datenbank, fährt die Migrationen, startet die zeitgesteuerten Läufe und bedient die
+// Anfragen, bis es geordnet herunterfährt.
 package main
 
 import (

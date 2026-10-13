@@ -1,3 +1,6 @@
+// Package auth meldet eine Person am Postfach der Schule an (IMAP), stellt ihre Sitzung als
+// JWT aus und prüft sie bei jeder Anfrage. Dazu gehören die Sperrliste widerrufener Token, die
+// Sperre nach Inaktivität und die Selbstanmeldung des Kollegiums.
 package auth
 
 import (

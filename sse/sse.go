@@ -1,3 +1,5 @@
+// Package sse verteilt Ereignisse des Servers an offene Browser-Fenster (Server-Sent Events):
+// ein Broker, bei dem sich die Fenster anmelden, und die Tür dazu.
 package sse
 
 import (

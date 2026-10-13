@@ -1,3 +1,5 @@
+// Command stresstest schickt gleichzeitige Scans an die Theke eines lokalen Servers und zählt
+// die Antworten nach ihrem Status (docs/SCRIPTS.md, Abschnitt 5).
 package main
 
 import (

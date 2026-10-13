@@ -1,3 +1,6 @@
+// Package db öffnet den Verbindungspool, fährt die Migrationen und legt beim Start an, was das
+// Programm braucht: die Rechte je Rolle, das erste Admin-Konto und die Mail-Konfiguration aus
+// der Umgebung.
 package db
 
 import (
