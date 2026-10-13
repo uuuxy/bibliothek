@@ -467,15 +467,15 @@ darüber ein und kommen deshalb nach ihm an die Reihe: `auskunft`, `bereitschaft
 `tuertest` und `routertest` nach `api/`. Ihre Attrappen erfüllen Schnittstellen von dort
 (`tuertest.EinstellungenAttrappe.Lade`) und bekommen ihre Namen mit diesen.
 
-**`repository/` in Ausschnitten:** Das Paket hat 159 Dateien mit 22.200 Zeilen und wird je
+**`repository/` in Ausschnitten:** Das Paket hat 159 Dateien mit 22.100 Zeilen und wird je
 Sache umgestellt (Lieferant, Leser, Titel und Exemplar, Ausleihe …), jeder Ausschnitt mit
 seinen Rufern als eigener Commit; sein Bestand in `stil_bestand_test.go` sinkt dabei. Das
 Muster steht am ersten Ausschnitt (`repository/lieferant.go`): Das Modell heißt wie die Sache
 (`Lieferant`), was sie liest und schreibt `LieferantenAbfragen`, die Fassung an Postgres
 `pgLieferantenAbfragen`, der Erzeuger `NewLieferantenAbfragen`, und eine Methode wiederholt
 die Sache nicht (`Lade` statt `GetSupplierByID`). Offen sind dort noch die Ausschnitte
-Inventur, Bestellung, Vormerkung und Reservierung, Ausleihe, Titel und Exemplar, Leser und der
-Rest (Auskunft, Löschfristen, Statistik, Mahnwesen, Lernmittel).
+Bestellung, Vormerkung und Reservierung, Ausleihe, Titel und Exemplar, Leser und der Rest
+(Auskunft, Löschfristen, Statistik, Mahnwesen, Lernmittel).
 
 **Beleg je Paket:** Umbenannt wird mit dem Werkzeug der Sprache (`gopls rename`), das jede
 Nennung über die Typprüfung findet. Danach laufen die ganze Go-Suite an der Datenbank, der

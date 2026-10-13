@@ -10,48 +10,46 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// ErrInventurLaeuftBereits signalisiert, dass für denselben Scope bereits eine
-// offene Inventur-Session existiert (durchgesetzt per partiellem Unique-Index).
+// ErrInventurLaeuftBereits meldet, dass für denselben Bereich schon ein offener Lauf besteht
+// (durchgesetzt von einem partiellen Unique-Index).
 var ErrInventurLaeuftBereits = errors.New("für diesen Bereich läuft bereits eine Inventur")
 
-// ErrInventurUeberlappt signalisiert, dass der gewünschte Scope sich mit einer bereits
-// offenen Inventur ÜBERSCHNEIDET (nicht identisch — das fängt der Unique-Index). Der
-// Abschluss der einen würde sonst die gerade gezählten Bücher der anderen als Verlust
-// buchen. Wird als 409 ausgeliefert, mit dem Label der kollidierenden Session im Text.
+// ErrInventurUeberlappt meldet, dass sich der gewünschte Bereich mit dem eines offenen Laufs
+// überschneidet, ohne derselbe zu sein (den Fall fängt der Unique-Index): Der Abschluss des
+// einen buchte sonst die gerade gezählten Bücher des anderen als Verlust. Die Tür antwortet mit
+// 409 und nennt die Bezeichnung des anderen Laufs.
 var ErrInventurUeberlappt = errors.New("bereich überschneidet sich mit einer laufenden Inventur")
 
-// inventurStartSperre serialisiert alle Inventur-Starts (Advisory-Lock), damit die
-// Überlappungsprüfung race-sicher ist — zwei gleichzeitige, sich überlappende Starts
-// könnten sonst beide die Prüfung passieren. Starts sind selten; Serialisieren ist billig.
+// inventurStartSperre reiht alle Starts hintereinander (Advisory-Lock): Zwei gleichzeitige
+// Starts mit überlappendem Bereich bestünden sonst beide die Prüfung. Starts sind selten.
 const inventurStartSperre int64 = 749_2026
 
-// Inventurlauf beschreibt eine laufende oder abgeschlossene Inventur.
+// Inventurlauf ist ein laufender oder abgeschlossener Durchgang einer Inventur.
 type Inventurlauf struct {
 	ID           string
 	BereichArt   string  // "global" | "signature" | "filter"
-	Signatur     *string // 'signature'-Scope: Präfix von buecher_titel.signatur
-	Fach         *string // 'filter'-Scope: Fach
-	Jahrgang     *int    // 'filter'-Scope: Klasse
+	Signatur     *string // Art "signature": Präfix von buecher_titel.signatur
+	Fach         *string // Art "filter": Fach
+	Jahrgang     *int    // Art "filter": Jahrgang
 	Bezeichnung  string
 	GestartetVon *string
 	GestartetAm  string
-	Erwartet     int // physisch erwartbare Exemplare im Scope (dynamisch)
-	Erfasst      int // in dieser Session gescannte Exemplare
-	// Nur bei abgeschlossenen Sessions gefüllt (LadeAbgeschlosseneLaeufe):
+	Erwartet     int // Exemplare im Bereich, die im Regal stehen müssten; bei jedem Lesen neu gezählt
+	Erfasst      int // in diesem Lauf gescannte Exemplare
+	// Nur bei abgeschlossenen Läufen gefüllt (LadeAbgeschlosseneLaeufe):
 	AbgeschlossenAm *string
 	Verluste        int  // beim Abschluss gebuchte Fehlbestände (inventur_verluste)
-	Verworfen       bool // mit „Verwerfen" beendet, ohne Verlustbuchung (Migration 149)
+	Verworfen       bool // mit „Verwerfen" beendet, ohne Verlustbuchung
 }
 
-// Bereich leitet aus den gespeicherten Feldern den auswertbaren InventurBereich ab —
-// die eine Quelle für Zählung, Scan-Warnung und Verlustbuchung (siehe inventur_bereich.go).
+// Bereich leitet aus den gespeicherten Feldern den InventurBereich ab, die eine Quelle für
+// Zählung, Scan-Warnung und Verlustbuchung (inventur_bereich.go).
 func (s Inventurlauf) Bereich() InventurBereich {
 	return InventurBereich{Signatur: s.Signatur, Fach: s.Fach, Jahrgang: s.Jahrgang}
 }
 
-// LegeLaufAn legt eine neue Session an. Der partielle Unique-Index aus
-// Migration 045 verhindert eine zweite offene Session im selben Scope; dieser Fall
-// wird als ErrInventurLaeuftBereits zurückgegeben (nicht als roher DB-Fehler).
+// LegeLaufAn legt einen neuen Lauf an. Ein partieller Unique-Index verhindert einen zweiten
+// offenen Lauf im selben Bereich; der Fall kommt als ErrInventurLaeuftBereits zurück.
 func (a *InventurAbfragen) LegeLaufAn(ctx context.Context, bereichArt string, bereich InventurBereich, bezeichnung, benutzerID string) (*Inventurlauf, error) {
 	var benutzerPtr *string
 	if benutzerID != "" {
@@ -64,13 +62,14 @@ func (a *InventurAbfragen) LegeLaufAn(ctx context.Context, bereichArt string, be
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Alle Starts serialisieren, damit die Überlappungsprüfung nicht selbst ein Race hat.
+	// Alle Starts hintereinander, damit die Prüfung auf Überlappung nicht selbst von der
+	// Reihenfolge abhängt.
 	if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, inventurStartSperre); err != nil {
 		return nil, fmt.Errorf("inventur-start sperren fehlgeschlagen: %w", err)
 	}
 
-	// Gegen alle offenen Sessions auf Überlappung prüfen (identische Scopes fängt
-	// zusätzlich der partielle Unique-Index beim INSERT ab).
+	// Gegen alle offenen Läufe prüfen; gleiche Bereiche fängt zusätzlich der Unique-Index beim
+	// INSERT.
 	if kollision, err := a.findeUeberlappendenLauf(ctx, tx, bereichArt, bereich); err != nil {
 		return nil, err
 	} else if kollision != "" {
@@ -97,7 +96,7 @@ func (a *InventurAbfragen) LegeLaufAn(ctx context.Context, bereichArt string, be
 	return &s, nil
 }
 
-// ZaehleBereich liefert die Anzahl physisch erwartbarer Exemplare im Scope.
+// ZaehleBereich zählt die Exemplare im Bereich, die im Regal stehen müssten.
 func (a *InventurAbfragen) ZaehleBereich(ctx context.Context, bereich InventurBereich) (int, error) {
 	bedingung, args := bereich.bedingung(1)
 	var anzahl int
@@ -112,10 +111,9 @@ func (a *InventurAbfragen) ZaehleBereich(ctx context.Context, bereich InventurBe
 	return anzahl, nil
 }
 
-// LadeLauf lädt die Stammdaten einer offenen Session plus die Zahl der in
-// ihr erfassten Exemplare (eine schlanke Query, ohne die teurere Scope-Zählung —
-// gedacht für den Scan-Pfad). Erwartet bleibt hier 0; wer es braucht (Start/Status),
-// ruft zusätzlich ZaehleBereich. Liefert pgx.ErrNoRows, wenn keine offene Session.
+// LadeLauf lädt einen offenen Lauf mit der Zahl seiner Erfassungen, ohne die teurere Zählung
+// des Bereichs: für den Scan. Erwartet bleibt 0; wer es braucht, ruft LadeLaufMitErwartung.
+// pgx.ErrNoRows, wenn kein offener Lauf diese ID trägt.
 func (a *InventurAbfragen) LadeLauf(ctx context.Context, id string) (*Inventurlauf, error) {
 	var s Inventurlauf
 	err := a.db.QueryRow(ctx, `
@@ -132,7 +130,7 @@ func (a *InventurAbfragen) LadeLauf(ctx context.Context, id string) (*Inventurla
 	return &s, nil
 }
 
-// LadeLaufMitErwartung lädt eine offene Session inklusive erwartet UND erfasst.
+// LadeLaufMitErwartung lädt einen offenen Lauf mit erwartet und erfasst.
 func (a *InventurAbfragen) LadeLaufMitErwartung(ctx context.Context, id string) (*Inventurlauf, error) {
 	s, err := a.LadeLauf(ctx, id)
 	if err != nil {
@@ -146,26 +144,18 @@ func (a *InventurAbfragen) LadeLaufMitErwartung(ctx context.Context, id string) 
 	return s, nil
 }
 
-// LadeAbgeschlosseneLaeufe liefert die zuletzt abgeschlossenen Inventuren
-// samt Anzahl gebuchter Verluste — die Auswahlliste, über die man den Fehlbestand
-// einer früheren Inventur wieder aufrufen kann. Verworfene stehen mit darin und tragen
-// Verworfen: Sie sind beendet, aber nicht geprüft (Migration 149).
-//
-// Ohne sie war GET /api/inventur/fehlbestand unerreichbar: Der Endpunkt braucht eine
-// session_id, und die einzige Session-Liste filterte auf abgeschlossen_am IS NULL —
-// eine fertige Inventur tauchte dort also nie auf. Der Bericht existierte damit nur im
-// Arbeitsspeicher des Browsers, der "Abschließen" gedrückt hatte, und war nach einem
-// Neuladen oder an einem anderen Arbeitsplatz weg.
+// LadeAbgeschlosseneLaeufe liefert die zuletzt abgeschlossenen Läufe mit der Zahl ihrer
+// Verluste: die Liste, über die sich der Fehlbestand einer früheren Inventur wieder aufrufen
+// lässt, auch nach einem Neuladen oder an einem anderen Arbeitsplatz. Verworfene stehen mit
+// darin und tragen Verworfen: Sie sind beendet, aber nicht geprüft.
 func (a *InventurAbfragen) LadeAbgeschlosseneLaeufe(ctx context.Context, limit int) ([]Inventurlauf, error) {
 	if limit <= 0 || limit > 50 {
 		limit = 10
 	}
-	// Erst kappen, dann zählen. Standen die beiden count-Unterabfragen wie früher in der
-	// SELECT-Liste, HING es am Planer, ob er sie hinter das LIMIT schiebt: gemessen am
-	// 09.08.2026 zog er die Erfassungs-Zählung auf zehn Durchläufe zusammen, die
-	// Verlust-Zählung aber nicht — die lief 400-mal, einmal je abgeschlossener Inventur.
-	// Die CTE macht aus dieser Planer-Laune eine Struktur: gezählt wird nur für die
-	// Zeilen, die auch herauskommen.
+	// Erst kappen, dann zählen: Stünden die beiden Zählungen in der SELECT-Liste, hinge es am
+	// Planer, ob er sie hinter das LIMIT schiebt; gemessen zählte er die Verluste einmal je
+	// abgeschlossenem Lauf statt zehnmal. Mit der CTE wird nur für die Zeilen gezählt, die
+	// herauskommen.
 	rows, err := a.db.Query(ctx, `
 		WITH limited_sessions AS (
 			SELECT id, scope_type, scope_signatur, scope_subject, scope_grade, scope_label,
@@ -205,14 +195,12 @@ func (a *InventurAbfragen) LadeAbgeschlosseneLaeufe(ctx context.Context, limit i
 	return laeufe, rows.Err()
 }
 
-// LadeOffeneLaeufe liefert alle laufenden Sessions (für die Anzeige, damit
-// niemand versehentlich in einen fremden, bereits laufenden Scope startet).
+// LadeOffeneLaeufe liefert alle laufenden Läufe, für die Anzeige: damit niemand in einem
+// Bereich startet, in dem schon gezählt wird.
 func (a *InventurAbfragen) LadeOffeneLaeufe(ctx context.Context) ([]Inventurlauf, error) {
-	// Hier bewusst OHNE die CTE-/LATERAL-Konstruktion der Schwesterfunktion oben: Die
-	// lohnt sich nur, weil dort ein LIMIT die Zählung auf zehn Zeilen eindampft. Diese
-	// Abfrage hat kein LIMIT — jede offene Session wird ohnehin gezählt, die Umbauten
-	// ergäben denselben Plan und nur mehr SQL. Offene Sessions sind zudem per
-	// idx_inv_session_offen_* auf eine Handvoll begrenzt.
+	// Ohne CTE und LATERAL wie in LadeAbgeschlosseneLaeufe: Die lohnen sich nur, weil dort ein
+	// LIMIT die Zählung auf zehn Zeilen begrenzt. Hier wird jeder offene Lauf ohnehin gezählt,
+	// und es sind wenige (idx_inv_session_offen_*).
 	rows, err := a.db.Query(ctx, `
 		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
 		       s.gestartet_von::text, s.gestartet_am::text,

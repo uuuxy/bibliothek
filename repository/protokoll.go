@@ -197,13 +197,9 @@ func (a *pgProtokollAbfragen) protokolliereLeihvorgang(ctx context.Context, tx p
 	})
 }
 
-// schreibeProtokollEintrag schreibt EINEN audit_log-Eintrag über die Schnittstelle Datenbank.
-// Eigene, kleine Kopie statt pgProtokollAbfragen.schreibeEintrag: Jene
-// verlangt konkret pgx.Tx, hier liegt aber nur r.db (Datenbank) vor — dieselbe
-// Verengung, die schon SchliesseLaufAb umgeht, indem es Pool und Tx über
-// dasselbe Interface anspricht. Direktes Schreiben in audit_log ist an mehreren
-// Stellen im Projekt so üblich (z. B. api/leser/student_update.go), nicht nur über die
-// Kapselung in protokoll.go.
+// schreibeProtokollEintrag fügt einen Eintrag an audit_log an, über die Schnittstelle
+// Datenbank: für Rufer, die den Pool oder eine Transaktion als Datenbank in der Hand haben.
+// pgProtokollAbfragen.schreibeEintrag verlangt eine pgx.Tx.
 func schreibeProtokollEintrag(ctx context.Context, db Datenbank, e protokollEintrag) error {
 	var detailsJSON []byte
 	if e.Details != nil {

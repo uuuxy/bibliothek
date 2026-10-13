@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// TestNewInventurAbfragen prüft die Initialisierung des Repositories.
+// NewInventurAbfragen liefert die Abfragen der Inventur.
 func TestNewInventurAbfragen(t *testing.T) {
 	pool := pgTestPool(t)
 	repo := NewInventurAbfragen(pool)
@@ -17,7 +17,7 @@ func TestNewInventurAbfragen(t *testing.T) {
 	}
 }
 
-// TestInventurLadeExemplar prüft das Laden von Exemplaren für den Inventur-Scan.
+// LadeExemplar lädt, was der Scan der Inventur vom Exemplar braucht.
 func TestInventurLadeExemplar(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -62,9 +62,8 @@ func TestInventurLadeExemplar(t *testing.T) {
 		t.Fatalf("Exemplar ohne Cover anlegen: %v", err)
 	}
 
-	// Fall 3: Ausgesondert. chk_aussonderung_grund (Migration 043) verlangt bei
-	// ist_ausgesondert = true zwingend einen Grund — ohne ihn scheitert schon das
-	// Anlegen mit SQLSTATE 23514, und der Scan-Fall waere nie geprueft worden.
+	// Fall 3: Ausgesondert. chk_aussonderung_grund verlangt bei ist_ausgesondert = true einen
+	// Grund; ohne ihn scheitert schon das Anlegen mit SQLSTATE 23514.
 	var ausgesondertExID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausgesondert, aussonderung_grund, ist_ausleihbar)
@@ -82,8 +81,8 @@ func TestInventurLadeExemplar(t *testing.T) {
 		t.Fatalf("Verliehenes Exemplar anlegen: %v", err)
 	}
 
-	// Für das verliehene Exemplar eine aktive Ausleihe anlegen — dafür braucht es
-	// einen Schüler. klasse und abgaenger_jahr sind NOT NULL ohne Vorgabewert.
+	// Für das verliehene Exemplar eine laufende Ausleihe anlegen; dafür braucht es einen
+	// Schüler. klasse und abgaenger_jahr sind NOT NULL ohne Vorgabe.
 	var schuelerID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO schueler (vorname, nachname, barcode_id, klasse, abgaenger_jahr)
@@ -92,8 +91,8 @@ func TestInventurLadeExemplar(t *testing.T) {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
 
-	// Die Ausleihe haengt an schueler_id (nicht an einer benutzer_id) und braucht
-	// eine Rueckgabefrist; ausgeliehen_am setzt die Tabelle selbst.
+	// Die Ausleihe hängt an schueler_id (nicht an einer benutzer_id) und braucht eine
+	// Rückgabefrist; ausgeliehen_am setzt die Tabelle selbst.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 		VALUES ($1, $2, CURRENT_DATE + 14)

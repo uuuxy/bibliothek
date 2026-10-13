@@ -9,14 +9,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Das endgültige Löschen eines abgeschriebenen Verlust-Exemplars — an dem Zustand, den
-// es in einer Schulbibliothek WIRKLICH vorfindet.
-//
-// Der bestehende Test legt frische Exemplare an und leiht sie nie aus. Er war grün,
-// während der Knopf an jedem Exemplar scheiterte, das je unterwegs war: ON DELETE
-// RESTRICT auf ausleihen.exemplar_id, gemeldet als 500 → „interner Datenbankfehler".
-// Ein Buch verschwindet aber typischerweise, NACHDEM es ausgeliehen war — der grüne
-// Test prüfte den einen Fall, den es kaum gibt.
+// Das endgültige Löschen eines abgeschriebenen Exemplars an dem Zustand, den es in einer
+// Schulbibliothek vorfindet: Ein Buch verschwindet gewöhnlich, nachdem es ausgeliehen war, und
+// ausleihen.exemplar_id steht auf ON DELETE RESTRICT. Ein Test mit frischen, nie verliehenen
+// Exemplaren prüfte den Fall, den es kaum gibt.
 func TestLoescheVerlusteEndgueltig_MitAusleihhistorie(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -28,8 +24,8 @@ func TestLoescheVerlusteEndgueltig_MitAusleihhistorie(t *testing.T) {
 	schuelerID := seedSchuelerFuerVerlust(t, ctx, pool, "VL-S1")
 	ausleiheID := seedZurueckgegebeneAusleihe(t, ctx, pool, exemplarID, schuelerID)
 
-	// Eine BEZAHLTE Gebühr an derselben Ausleihe: erledigte Geschichte, darf nicht
-	// blockieren — und muss mit verschwinden, sonst hält ihr RESTRICT das Exemplar fest.
+	// Eine bezahlte Forderung an derselben Ausleihe ist erledigt: Sie sperrt nicht und geht
+	// mit, sonst hielte ihr RESTRICT das Exemplar fest.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, ist_bezahlt)
 		VALUES ($1, $2, $3, 'Eselsohr', 2.00, true)`, exemplarID, ausleiheID, schuelerID); err != nil {
@@ -44,9 +40,8 @@ func TestLoescheVerlusteEndgueltig_MitAusleihhistorie(t *testing.T) {
 		t.Fatalf("zurückgemeldet %v, erwartet genau %s", geloescht, exemplarID)
 	}
 
-	// Der Barcode muss wieder frei sein — buecher_exemplare.barcode_id ist UNIQUE ohne
-	// Teilindex. Bliebe die Zeile stehen, wäre der Aufkleber für immer verbraucht und das
-	// Buch könnte nie mit derselben Nummer neu eingepflegt werden.
+	// Der Barcode ist wieder frei: buecher_exemplare.barcode_id ist ohne Teilindex eindeutig.
+	// Bliebe die Zeile stehen, wäre der Aufkleber für immer verbraucht.
 	var titelID string
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Erdkundebuch 7 (neu)') RETURNING id`).Scan(&titelID); err != nil {
 		t.Fatalf("Titel: %v", err)
@@ -56,8 +51,8 @@ func TestLoescheVerlusteEndgueltig_MitAusleihhistorie(t *testing.T) {
 		t.Errorf("Barcode wurde nicht freigegeben, Wiedereinpflegen unmöglich: %v", err)
 	}
 
-	// Der Fehlbestandsbericht muss die Abschrift behalten (ON DELETE SET NULL) — sonst
-	// wäre nach dem Aufräumen nicht mehr nachvollziehbar, WAS abgeschrieben wurde.
+	// Der Fehlbestandsbericht behält die Abschrift (ON DELETE SET NULL); sonst wäre nach dem
+	// Aufräumen nicht mehr zu sehen, was abgeschrieben wurde.
 	var abschrift int
 	if err := pool.QueryRow(ctx,
 		`SELECT count(*) FROM inventur_verluste WHERE barcode_id = 'VL-HIST'`).Scan(&abschrift); err != nil {
@@ -68,9 +63,8 @@ func TestLoescheVerlusteEndgueltig_MitAusleihhistorie(t *testing.T) {
 	}
 }
 
-// TestLoescheVerlusteEndgueltig_OffeneForderungSperrt: Eine unbezahlte Gebühr ist eine
-// Forderung der Schule. Sie mitzulöschen hieße, sie unwiederbringlich aufzugeben —
-// und zwar lautlos, als Nebenwirkung eines Aufräumknopfs.
+// Eine unbezahlte Forderung gehört der Schule. Sie mitzulöschen hieße, sie aufzugeben, als
+// Nebenwirkung eines Knopfs zum Aufräumen.
 func TestLoescheVerlusteEndgueltig_OffeneForderungSperrt(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -92,18 +86,18 @@ func TestLoescheVerlusteEndgueltig_OffeneForderungSperrt(t *testing.T) {
 	if err == nil {
 		t.Fatal("Stapel mit offener Gebühr durchgelaufen — die Forderung wäre weg")
 	}
-	// Der Handler macht daraus eine 409 mit Klartext; ohne den Sentinel würde daraus
-	// ein 500 und der Sanitizer ersetzte die Begründung.
+	// Die Tür macht daraus 409 mit dem Grund im Text; ohne den Fehlerwert würde daraus 500, und
+	// der Sanitizer ersetzte die Begründung.
 	if !errors.Is(err, ErrVerlustNochGebunden) {
 		t.Fatalf("falscher Fehlertyp, wird zur 500 sanitisiert: %v", err)
 	}
-	// Der Barcode muss in der Meldung stehen — sonst weiß niemand, welches Exemplar
-	// den Stapel aufhält.
+	// Der Barcode steht in der Meldung; sonst weiß niemand, welches Exemplar den Stapel
+	// aufhält.
 	if !strings.Contains(err.Error(), "VL-GEBUEHR") {
 		t.Errorf("Meldung nennt das blockierende Exemplar nicht: %v", err)
 	}
 
-	// Alles-oder-nichts: Auch das unbelastete Exemplar bleibt stehen.
+	// Alles oder nichts: Auch das unbelastete Exemplar bleibt stehen.
 	for _, fall := range []struct{ id, name string }{{frei, "VL-FREI"}, {gesperrt, "VL-GEBUEHR"}} {
 		var da bool
 		if err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM buecher_exemplare WHERE id = $1)`, fall.id).Scan(&da); err != nil {
@@ -134,8 +128,8 @@ func seedSchuelerFuerVerlust(t *testing.T, ctx context.Context, pool *pgxpool.Po
 	return id
 }
 
-// seedZurueckgegebeneAusleihe: eine abgeschlossene Ausleihe — genau die Historie, an der
-// das endgültige Löschen bisher scheiterte.
+// seedZurueckgegebeneAusleihe legt eine abgeschlossene Ausleihe an: die Historie, an der ON
+// DELETE RESTRICT hängt.
 func seedZurueckgegebeneAusleihe(t *testing.T, ctx context.Context, pool *pgxpool.Pool, exemplarID, schuelerID string) string {
 	t.Helper()
 	var id string

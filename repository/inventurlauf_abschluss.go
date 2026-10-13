@@ -6,10 +6,10 @@ import (
 	"fmt"
 )
 
-// SperreLaufFuerAbschluss lädt die offene Session und sperrt ihre Zeile
-// EXKLUSIV (FOR UPDATE) — die Gegenseite zum FOR SHARE des Scans. Der Abschluss wartet
-// damit auf alle noch schreibenden Scans und zieht seinen Verlust-Snapshot erst danach.
-// Muss innerhalb der Abschluss-Transaktion laufen (der Handler übergibt die Tx als db).
+// SperreLaufFuerAbschluss lädt den offenen Lauf und sperrt seine Zeile mit FOR UPDATE, das
+// Gegenstück zum FOR SHARE des Scans: Der Abschluss wartet damit auf alle Scans, die noch
+// schreiben, und bestimmt die Verluste erst danach. Läuft in der Transaktion des Abschlusses;
+// die Tür reicht sie als db herein.
 func (a *InventurAbfragen) SperreLaufFuerAbschluss(ctx context.Context, id string) (*Inventurlauf, error) {
 	var s Inventurlauf
 	err := a.db.QueryRow(ctx, `
@@ -27,51 +27,33 @@ func (a *InventurAbfragen) SperreLaufFuerAbschluss(ctx context.Context, id strin
 	return &s, nil
 }
 
-// SchliesseLaufAb schließt eine Session ab: Alle physisch erwartbaren Exemplare
-// im Scope, die in DIESER Session nicht erfasst wurden, werden als Verlust markiert.
-// Weil "im Scope" verliehene Bücher ausschliesst (InventurBereich.bedingung), wird ein
-// beim Schüler befindliches Buch nie fälschlich als verloren gebucht.
+// SchliesseLaufAb schließt einen Lauf ab: Jedes Exemplar im Bereich, das in diesem Lauf nicht
+// erfasst wurde, wird als Verlust ausgesondert. Verliehene Exemplare liegen nicht im Bereich
+// (InventurBereich.bedingung); ein Buch beim Schüler wird nie als verloren gebucht. Was ein
+// anderer Lauf erfasst hat, bleibt unberührt, weil jede Erfassung an ihrem Lauf hängt.
 //
-// Entscheidend gegenüber dem alten Modell: Nur die NICHT in dieser Session erfassten
-// Exemplare gelten als vermisst — der Fortschritt einer parallelen Session bleibt
-// unberührt, weil er session-gebunden in inventur_erfassungen liegt.
-//
-// bearbeiterID nennt, wer abschließt: Die Inventur trägt nur, wer sie begonnen hat, und jedes
-// als Verlust gebuchte Exemplar steht mit dieser Person im Protokoll
-// (ProtokolliereAussonderung).
+// bearbeiterID nennt, wer abschließt: Der Lauf trägt nur, wer ihn begonnen hat, und jedes als
+// Verlust gebuchte Exemplar steht mit dieser Person im Protokoll (ProtokolliereAussonderung).
 func (a *InventurAbfragen) SchliesseLaufAb(ctx context.Context, laufID string, bereich InventurBereich, bearbeiterID string) (int, error) {
 	if bearbeiterID == "" {
 		return 0, ErrAussonderungOhneBearbeiter
 	}
-	// Scope-Prädikat (physisch + Dimensionen) aus der einen Quelle; die Session-ID hängt
-	// als letzter Platzhalter hinten dran.
+	// Die Bedingung des Bereichs kommt aus der einen Quelle; die ID des Laufs hängt als letzter
+	// Platzhalter an.
 	bedingung, args := bereich.bedingung(1)
 	laufPlatz := len(args) + 1
 	args = append(args, laufID)
-	// Die gebuchten Verluste werden zugleich MITGESCHRIEBEN, nicht nur gezählt.
+	// Die Verluste werden mitgeschrieben und nicht nur gezählt: Nach der Aussonderung fallen
+	// die Exemplare aus der Bedingung des Bereichs, und ohne die Mitschrift ließe sich weder
+	// nachsehen, welche fehlen, noch eine Liste zum Nachsuchen drucken. Titel, Autor und
+	// Signatur stehen dort als Abschrift, damit der Bericht lesbar bleibt, wenn Exemplar oder
+	// Titel später endgültig gelöscht werden; die Signatur ist t.signatur, der Text vom
+	// Buchrücken.
 	//
-	// Vorher gab dieser Aufruf allein eine Zahl zurück: „47 Verluste". Welche 47, erfuhr
-	// niemand — und danach war es auch nicht mehr herleitbar, weil die Exemplare durch die
-	// Aussonderung aus der Scope-Bedingung fallen. Damit liess sich weder nachsehen, ob ein
-	// Buch wirklich fehlt oder nur im falschen Regal stand, noch eine Liste zum Nachsuchen
-	// ausdrucken.
-	//
-	// Titel, Autor und Signatur werden als ABSCHRIFT übernommen (siehe Migration 059):
-	// Der Bericht muss auch dann noch lesbar sein, wenn Exemplar oder Titel später
-	// endgültig gelöscht werden — und genau dann braucht man ihn, wenn jemand nachfragt.
-	// Gezaehlt wird die AUSSONDERUNG, nicht die Mitschrift.
-	//
-	// Die Signatur kam zunaechst per Join auf die Tabelle `signatures` ueber
-	// t.signature_id — eine Spalte, die ausser Migration 021 nie jemand geschrieben hat.
-	// Die Abschrift war damit IMMER leer, und ausgerechnet die Sortierung "nach Signatur",
-	// mit der man mit dem Zettel durchs Regal laeuft, sortierte nach nichts. Quelle ist
-	// jetzt t.signatur, der Text vom Buchruecken (Migration 060).
-	//
-	// Der erste Entwurf las tag.RowsAffected() des Gesamt-Statements — das ist bei einem
-	// abschliessenden INSERT dessen Zeilenzahl, nicht die des UPDATE. Solange beide gleich
-	// sind, faellt das nicht auf; ueberspringt ON CONFLICT je eine Zeile, meldete die
-	// Inventur weniger Verluste, als sie tatsaechlich gebucht hat. Deshalb liefert das
-	// abschliessende SELECT die Kennungen aus dem UPDATE-CTE; ihre Zahl ist die der Verluste.
+	// Gezählt wird die Aussonderung, nicht die Mitschrift: Die Zeilenzahl der ganzen Anweisung
+	// wäre die des abschließenden INSERT, und überspringt ON CONFLICT eine Zeile, meldete der
+	// Lauf weniger Verluste, als er gebucht hat. Deshalb liefert das SELECT am Ende die IDs aus
+	// dem UPDATE.
 	query := fmt.Sprintf(`
 		WITH verloren AS (
 			UPDATE buecher_exemplare e
@@ -108,10 +90,9 @@ func (a *InventurAbfragen) SchliesseLaufAb(ctx context.Context, laufID string, b
 		return 0, err
 	}
 
-	// erfasst_gemeldet mit einfrieren (Migration 103): inventur_erfassungen fällt per
-	// ON DELETE CASCADE mit dem Exemplar. Live gezählt sank die Zahl eines längst
-	// abgeschlossenen Durchgangs, sobald später ein Buch aus dem Bestand fiel — neben
-	// einem verloren_gemeldet, das feststand. Was gezählt wurde, wurde gezählt.
+	// erfasst_gemeldet wird mit eingefroren: inventur_erfassungen fällt per ON DELETE CASCADE
+	// mit dem Exemplar, und live gezählt sänke die Zahl eines abgeschlossenen Laufs, sobald
+	// später ein Buch aus dem Bestand fällt.
 	if _, err := a.db.Exec(ctx, `
 		UPDATE inventur_sessions
 		SET abgeschlossen_am = now(), verloren_gemeldet = $2,
@@ -123,21 +104,17 @@ func (a *InventurAbfragen) SchliesseLaufAb(ctx context.Context, laufID string, b
 	return verloren, nil
 }
 
-// ErrInventurlaufNichtGefunden meldet eine unbekannte Session-ID beim Abbrechen.
+// ErrInventurlaufNichtGefunden meldet eine unbekannte ID beim Verwerfen.
 var ErrInventurlaufNichtGefunden = errors.New("inventur-session nicht gefunden")
 
-// VerwerfeLauf verwirft eine Session ohne Verlustbuchung — für abgebrochene
-// oder hängengebliebene Inventuren. Die Erfassungen bleiben (CASCADE räumt sie erst
-// beim echten Löschen); der Scope wird dadurch wieder frei für einen Neustart.
+// VerwerfeLauf beendet einen Lauf ohne Verlustbuchung, für abgebrochene oder liegengebliebene
+// Inventuren. Die Erfassungen bleiben; der Bereich wird wieder frei für einen neuen Lauf.
+// verworfen = true unterscheidet das Verwerfen vom Abschluss ohne Verlust: Die Liste früherer
+// Inventuren nennte den Lauf sonst „vollständig".
 //
-// verworfen = true (Migration 149): abgeschlossen_am allein machte aus dem Verwerfen einen
-// Abschluss ohne Verlust, und die Liste früherer Inventuren schrieb „vollständig".
-//
-// 0 Zeilen hatte hier ZWEI Bedeutungen und beide wurden als „abgebrochen" quittiert
-// (Phantom-Erfolg-Sweep 31.08.2026): Session existiert nicht (→ Fehler, der Aufrufer
-// redet über die falsche ID) oder war schon abgeschlossen (→ idempotent in Ordnung,
-// das Ziel „Scope frei" ist erreicht). Ein Abschluss wird dabei nicht nachträglich zum
-// Verwerfen: Die Bedingung abgeschlossen_am IS NULL lässt die Zeile stehen.
+// Trifft die Anweisung keine Zeile, gibt es den Lauf nicht (Fehler), oder er war schon
+// abgeschlossen (in Ordnung, der Bereich ist frei). Ein Abschluss wird dabei nicht nachträglich
+// zum Verwerfen: Die Bedingung abgeschlossen_am IS NULL lässt die Zeile stehen.
 func (a *InventurAbfragen) VerwerfeLauf(ctx context.Context, laufID string) error {
 	tag, err := a.db.Exec(ctx, `
 		UPDATE inventur_sessions

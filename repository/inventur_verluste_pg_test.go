@@ -5,11 +5,10 @@ import (
 	"testing"
 )
 
-// seedVerlorenesExemplar legt einen Titel mit einem Exemplar an, schliesst eine
-// eigene Inventur-Session ohne diesen Scan ab und liefert die entstandene
-// Exemplar-ID — also genau den Zustand, den MarkiereVerlustAlsGefunden und
-// LoescheVerlusteEndgueltig in der Praxis vorfinden (ist_ausgesondert=true,
-// aussonderung_grund='VERLUST', eine Zeile in inventur_verluste).
+// seedVerlorenesExemplar legt einen Titel mit einem Exemplar an, schließt einen eigenen Lauf
+// ohne diesen Scan ab und liefert die ID des Exemplars: den Zustand, den
+// MarkiereVerlustAlsGefunden und LoescheVerlusteEndgueltig vorfinden (ist_ausgesondert = true,
+// aussonderung_grund = 'VERLUST', eine Zeile in inventur_verluste).
 func seedVerlorenesExemplar(t *testing.T, ctx context.Context, repo *InventurAbfragen, titel, barcode, bearbeiterID string) string {
 	t.Helper()
 	var titelID string
@@ -37,10 +36,9 @@ func seedVerlorenesExemplar(t *testing.T, ctx context.Context, repo *InventurAbf
 	return exemplarID
 }
 
-// TestMarkiereVerlustAlsGefunden belegt den Regelfall des "Gefunden"-Knopfs: Das
-// Exemplar kommt zurück in Umlauf, UND der Fehlbestandsbericht merkt sich, DASS es
-// gefunden wurde (nicht nur das Endergebnis) — sonst könnte man aus dem Bericht nicht
-// mehr nachvollziehen, dass ein Buch zwischenzeitlich als verloren galt.
+// Der Knopf „Gefunden": Das Exemplar kommt zurück in den Umlauf, und der Fehlbestandsbericht
+// hält fest, dass es gefunden wurde; sonst ließe sich aus dem Bericht nicht mehr ablesen, dass
+// ein Buch zeitweise als verloren galt.
 func TestMarkiereVerlustAlsGefunden(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -81,8 +79,8 @@ func TestMarkiereVerlustAlsGefunden(t *testing.T) {
 		t.Error("gefunden_am wurde nicht gesetzt — der Bericht zeigt den Fund nicht an")
 	}
 
-	// Zweiter Aufruf auf dasselbe (jetzt wieder normale) Exemplar: kein Verlust mehr
-	// offen, also nichts zu tun — kein Fehler, aber auch keine Wirkung.
+	// Zweiter Aufruf auf dasselbe Exemplar: Kein Verlust ist mehr offen, also kein Fehler und
+	// keine Wirkung.
 	nochmal, _, err := repo.MarkiereVerlustAlsGefunden(ctx, exemplarID, bearbeiterID)
 	if err != nil {
 		t.Fatalf("zweiter Aufruf: %v", err)
@@ -92,9 +90,8 @@ func TestMarkiereVerlustAlsGefunden(t *testing.T) {
 	}
 }
 
-// TestMarkiereVerlustAlsGefunden_UnbekannteID belegt den Fall einer falschen oder
-// fremden ID: kein Fehler, sondern schlicht false — der Handler macht daraus ein
-// sauberes 404 statt eines 500.
+// Eine falsche oder fremde ID liefert false und keinen Fehler; die Tür macht daraus 404 statt
+// 500.
 func TestMarkiereVerlustAlsGefunden_UnbekannteID(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -109,11 +106,9 @@ func TestMarkiereVerlustAlsGefunden_UnbekannteID(t *testing.T) {
 	}
 }
 
-// TestLoescheVerlusteEndgueltig belegt den Lösch-Knopf: Nur tatsächlich als
-// VERLUST gebuchte Exemplare verschwinden, ein normales (nicht ausgesondertes)
-// Exemplar in derselben Anfrage bleibt unangetastet — die Route darf nicht zum
-// allgemeinen Lösch-Weg werden. Und der Fehlbestandsbericht bleibt lesbar (Migration
-// 059: ON DELETE SET NULL, die Textspalten sind eine Abschrift).
+// Nur als VERLUST gebuchte Exemplare verschwinden; ein gewöhnliches Exemplar in derselben
+// Anfrage bleibt, damit die Route nicht zum allgemeinen Weg wird, ein Exemplar zu löschen. Der
+// Fehlbestandsbericht bleibt lesbar (ON DELETE SET NULL, die Textspalten sind eine Abschrift).
 func TestLoescheVerlusteEndgueltig(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -124,8 +119,8 @@ func TestLoescheVerlusteEndgueltig(t *testing.T) {
 	verloren1 := seedVerlorenesExemplar(t, ctx, repo, "Chemiebuch 9", "LOE-1", bearbeiterID)
 	verloren2 := seedVerlorenesExemplar(t, ctx, repo, "Biobuch 9", "LOE-2", bearbeiterID)
 
-	// Ein ganz normales, nicht ausgesondertes Exemplar dazwischen — darf nicht
-	// gelöscht werden, selbst wenn seine ID mitgeschickt wird.
+	// Ein gewöhnliches, nicht ausgesondertes Exemplar dazwischen: Es wird nicht gelöscht, auch
+	// wenn seine ID mitgeschickt wird.
 	var titelID, normalID string
 	if err := pool.QueryRow(ctx,
 		`INSERT INTO buecher_titel (titel) VALUES ('Reguläres Buch') RETURNING id`,
@@ -147,10 +142,9 @@ func TestLoescheVerlusteEndgueltig(t *testing.T) {
 	if len(geloescht) != 2 {
 		t.Fatalf("%d gelöscht, erwartet 2 (nur die beiden Verlust-Exemplare)", len(geloescht))
 	}
-	// Es genügt nicht, dass die ANZAHL stimmt: Die Oberfläche entfernt genau die
-	// zurückgemeldeten Zeilen aus ihrer Liste. Kämen hier die angefragten IDs statt der
-	// gelöschten, verschwänden das normale Exemplar und die Fantasie-UUID nur auf dem
-	// Bildschirm — genau der stille Fehler, gegen den die Rückgabe umgestellt wurde.
+	// Die Zahl allein genügt nicht: Die Oberfläche nimmt genau die zurückgemeldeten Zeilen aus
+	// ihrer Liste. Kämen hier die angefragten IDs statt der gelöschten, verschwänden das
+	// gewöhnliche Exemplar und die erfundene UUID nur auf dem Bildschirm.
 	zurueck := map[string]bool{geloescht[0]: true, geloescht[1]: true}
 	if !zurueck[verloren1] || !zurueck[verloren2] {
 		t.Fatalf("zurückgemeldet %v, erwartet genau die beiden Verlust-Exemplare", geloescht)

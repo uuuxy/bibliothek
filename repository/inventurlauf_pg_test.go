@@ -6,10 +6,8 @@ import (
 	"testing"
 )
 
-// TestInventurParallelbetrieb ist der Kern-Regressionstest: Zwei Sessions in
-// verschiedenen Scopes dürfen sich weder im Fortschritt noch beim Abschluss
-// gegenseitig beeinflussen. Genau das war im alten globalen Modell die Ursache für
-// stillen Datenverlust bei parallelem Scannen.
+// Zwei Läufe in verschiedenen Bereichen beeinflussen sich weder im Fortschritt noch beim
+// Abschluss: Jede Erfassung hängt an ihrem Lauf.
 func TestInventurParallelbetrieb(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -21,7 +19,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 	matheEx := seedSignaturMitExemplaren(t, pool, mathe, 5)
 	deutschEx := seedSignaturMitExemplaren(t, pool, deutsch, 4)
 
-	// Kollege A: Mathe-Session, scannt 3 von 5.
+	// Kollege A: Lauf für Mathematik, scannt 3 von 5.
 	sessA, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &mathe}, "Mathematik", "")
 	if err != nil {
 		t.Fatalf("Session A anlegen: %v", err)
@@ -32,8 +30,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 		}
 	}
 
-	// Kollege B startet PARALLEL eine Deutsch-Session — im alten Modell hätte das A's
-	// Fortschritt global gelöscht.
+	// Kollege B startet daneben einen Lauf für Deutsch; der Fortschritt von A bleibt.
 	sessB, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &deutsch}, "Deutsch", "")
 	if err != nil {
 		t.Fatalf("Session B anlegen: %v", err)
@@ -53,16 +50,15 @@ func TestInventurParallelbetrieb(t *testing.T) {
 		t.Errorf("Mathe-Verluste: erwartet 2, war %d", verloren)
 	}
 
-	// Deutsch-Bestand (B's Scope) muss völlig unberührt sein.
+	// Der Bestand für Deutsch (der Bereich von B) bleibt unberührt.
 	if ausgesondert := ausgesonderteZahl(t, pool, deutschEx); ausgesondert != 0 {
 		t.Errorf("Deutsch-Exemplare fälschlich ausgesondert: %d (Session B lief parallel)", ausgesondert)
 	}
 	_ = sessB
 }
 
-// TestInventurAusgelieheneNichtVerloren sichert den Zusatzfund ab: Ein aktuell
-// verliehenes Buch ist beim Schüler, nicht verschwunden — es darf beim Abschluss
-// niemals als Verlust markiert werden, obwohl es niemand scannen konnte.
+// Ein verliehenes Buch ist beim Schüler und nicht verschwunden: Beim Abschluss wird es nicht
+// als Verlust gebucht, obwohl es niemand scannen konnte.
 func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -74,7 +70,7 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	ex := seedSignaturMitExemplaren(t, pool, physik, 3)
 	leiheAus(t, pool, ex[0]) // ein Exemplar verliehen
 
-	// Scope zählt nur die 2 physisch anwesenden.
+	// Der Bereich zählt nur die 2, die im Regal stehen.
 	scope, err := repo.ZaehleBereich(ctx, InventurBereich{Signatur: &physik})
 	if err != nil {
 		t.Fatalf("ZaehleBereich: %v", err)
@@ -83,8 +79,8 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 		t.Errorf("Scope mit 1 verliehenen: erwartet 2, war %d", scope)
 	}
 
-	// Session starten, NICHTS scannen, abschließen: nur die 2 anwesenden fehlen.
-	// Das verliehene Buch darf nicht darunter sein.
+	// Lauf starten, nichts scannen, abschließen: Nur die 2 im Regal fehlen. Das verliehene Buch
+	// ist nicht darunter.
 	sess, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &physik}, "Physik", "")
 	if err != nil {
 		t.Fatalf("Session anlegen: %v", err)
@@ -101,9 +97,8 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	}
 }
 
-// TestInventurEinOffenerLaufJeBereich prüft den partiellen Unique-Index: Ein zweiter
-// Start im selben Scope wird als ErrInventurLaeuftBereits abgewiesen (statt still den
-// Fortschritt zu übernehmen/überschreiben).
+// Der partielle Unique-Index: Ein zweiter Start im selben Bereich wird als
+// ErrInventurLaeuftBereits abgewiesen und übernimmt nicht den Fortschritt des ersten.
 func TestInventurEinOffenerLaufJeBereich(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -122,7 +117,7 @@ func TestInventurEinOffenerLaufJeBereich(t *testing.T) {
 		t.Errorf("zweite Session im selben Scope: erwartet ErrInventurLaeuftBereits, war %v", err)
 	}
 
-	// Nach Abbruch ist der Scope wieder frei.
+	// Nach dem Verwerfen ist der Bereich wieder frei.
 	offen, err := repo.LadeOffeneLaeufe(ctx)
 	if err != nil {
 		t.Fatalf("ListOffene: %v", err)
@@ -138,9 +133,8 @@ func TestInventurEinOffenerLaufJeBereich(t *testing.T) {
 	}
 }
 
-// TestInventurBereichFachUndJahrgang sichert den gezielten Teil-Scope ab: eine Inventur
-// nach Fach + Klasse erfasst genau die Titel mit passendem Fach UND Jahrgangsbereich —
-// nicht die mit falschem Fach oder außerhalb der Klasse.
+// Eine Inventur nach Fach und Jahrgang erfasst genau die Titel mit passendem Fach und passendem
+// Jahrgangsbereich, nicht die mit anderem Fach oder außerhalb des Jahrgangs.
 func TestInventurBereichFachUndJahrgang(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -151,9 +145,8 @@ func TestInventurBereichFachUndJahrgang(t *testing.T) {
 	matheKl5 := seedFachExemplar(t, pool, "Mathematik", 5, 6, "BC-MA5")  // im Scope
 	matheKl9 := seedFachExemplar(t, pool, "Mathematik", 9, 10, "BC-MA9") // falsche Klasse
 	deutschKl5 := seedFachExemplar(t, pool, "Deutsch", 5, 6, "BC-DE5")   // falsches Fach
-	// Ein Titel ohne Jahrgangsangabe gehört zu keiner Klasse (Migration 162). Mit der früheren
-	// Vorgabe 5 bis 10 lag er in jeder Inventur dieser Klassen und stand beim Abschluss als
-	// Verlust im Bericht.
+	// Ein Titel ohne Jahrgangsangabe gehört zu keinem Jahrgang. Läge er in jeder Inventur der
+	// Jahrgänge 5 bis 10, stünde er beim Abschluss als Verlust im Bericht.
 	matheOhne := seedFachExemplar(t, pool, "Mathematik", 5, 6, "BC-MA0")
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = NULL, jahrgang_bis = NULL
 		WHERE id = (SELECT titel_id FROM buecher_exemplare WHERE id = $1)`, matheOhne); err != nil {
@@ -169,7 +162,7 @@ func TestInventurBereichFachUndJahrgang(t *testing.T) {
 		t.Errorf("Scope 'Mathe Kl.5': erwartet 1, war %d", n)
 	}
 
-	// Dimensions-Prüfung (Scan-Warnung): nur das passende Fach+Klasse gehört dazu.
+	// Die Warnung beim Scan: Nur das Exemplar mit passendem Fach und Jahrgang gehört dazu.
 	if in, err := repo.IstExemplarImBereich(ctx, matheKl5, scope); err != nil {
 		t.Fatalf("IstExemplarImBereich matheKl5: %v", err)
 	} else if !in {
@@ -192,7 +185,7 @@ func TestInventurBereichFachUndJahrgang(t *testing.T) {
 		t.Fatalf("Filter-Session anlegen: %v", err)
 	}
 
-	// Nichts scannen, abschließen: genau das eine In-Scope-Exemplar fehlt.
+	// Nichts scannen, abschließen: Genau das eine Exemplar im Bereich fehlt.
 	verloren, err := repo.SchliesseLaufAb(ctx, sess.ID, scope, bearbeiter)
 	if err != nil {
 		t.Fatalf("Finish: %v", err)

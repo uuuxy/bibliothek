@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// InventurExemplar contains the book data retrieved during a barcode scan.
+// InventurExemplar ist, was ein Scan der Inventur vom Exemplar braucht.
 type InventurExemplar struct {
 	ExemplarID      string
 	Titel           string
@@ -18,8 +18,7 @@ type InventurExemplar struct {
 	IstVerliehen    bool
 }
 
-// LadeExemplar retrieves the details of a copy by its barcode
-// to determine if it is eligible for inventory check-in.
+// LadeExemplar lädt das Exemplar zu einem Barcode für den Scan der Inventur.
 func (a *InventurAbfragen) LadeExemplar(ctx context.Context, barcodeID string) (*InventurExemplar, error) {
 	var exemplar InventurExemplar
 	query := `
@@ -39,28 +38,24 @@ func (a *InventurAbfragen) LadeExemplar(ctx context.Context, barcodeID string) (
 	return &exemplar, nil
 }
 
-// ErrInventurAbgeschlossen meldet, dass der Scan ankam, als die Session bereits
-// abgeschlossen war. Der Handler übersetzt das in eine 409 — der Scan ist
-// gegenstandslos, aber kein Fehler.
+// ErrInventurAbgeschlossen meldet, dass der Scan ankam, als der Lauf schon abgeschlossen war.
+// Die Tür macht daraus 409: Der Scan ist gegenstandslos, aber kein Fehler.
 var ErrInventurAbgeschlossen = errors.New("inventur bereits abgeschlossen")
 
-// VerbucheScan verbucht ein Exemplar als in dieser Session erfasst. Ein erneuter
-// Scan desselben Exemplars in derselben Session ist ein No-op (Primärschlüssel).
+// VerbucheScan verbucht ein Exemplar als in diesem Lauf erfasst. Ein zweiter Scan desselben
+// Exemplars im selben Lauf ändert nichts (Primärschlüssel).
 //
-// Nebenläufigkeit (Multi-Scanner-Betrieb): Der Scan koordiniert über die Session-Zeile
-// gegen einen gleichzeitigen Abschluss. Er hält sie mit FOR SHARE, solange er die
-// Erfassung schreibt; SchliesseLaufAb nimmt sie mit FOR UPDATE (siehe dort) und
-// kann daher nicht committen, bevor dieser Scan fertig ist — der Verlust-Snapshot des
-// Abschlusses sieht die Erfassung also garantiert. Ist die Session bereits abgeschlossen,
-// findet der FOR-SHARE-Read keine offene Zeile und der Scan wird abgewiesen
-// (ErrInventurAbgeschlossen), statt ins Leere zu laufen und ein physisch vorliegendes
-// Buch als Verlust zurückzulassen.
+// Scannen mehrere Geräte, stimmt sich der Scan über die Zeile des Laufs mit einem
+// gleichzeitigen Abschluss ab: Er hält sie mit FOR SHARE, solange er die Erfassung schreibt.
+// Der Abschluss nimmt sie mit FOR UPDATE (SperreLaufFuerAbschluss), wartet also auf den Scan
+// und sieht dessen Erfassung sicher. Ist der Lauf schon abgeschlossen, findet der Scan keine
+// offene Zeile und wird abgewiesen, statt ein Buch, das vorliegt, als Verlust zurückzulassen.
 func (a *InventurAbfragen) VerbucheScan(ctx context.Context, laufID, exemplarID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("scan-transaktion konnte nicht gestartet werden: %w", err)
 	}
-	defer db.SafeRollback(ctx, tx) // No-op nach Commit
+	defer db.SafeRollback(ctx, tx) // nach dem Commit ohne Wirkung
 
 	var id string
 	if err := tx.QueryRow(ctx,
@@ -82,10 +77,10 @@ func (a *InventurAbfragen) VerbucheScan(ctx context.Context, laufID, exemplarID 
 	return tx.Commit(ctx)
 }
 
-// IstExemplarImBereich prüft, ob ein Exemplar zu den Scope-Dimensionen einer Session gehört
-// (Signatur/Fach/Klasse). Für globale Sessions ist immer true. Dient nur der
-// nicht-blockierenden Scan-Warnung ("gehört nicht zum Scope") — physische Bedingungen
-// (verliehen etc.) spielen hier keine Rolle, das Buch liegt ja gescannt in der Hand.
+// IstExemplarImBereich prüft, ob ein Exemplar zu Signatur, Fach und Jahrgang eines Laufs
+// gehört; ohne Einschränkung gehört jedes dazu. Es dient nur der Warnung beim Scan („gehört
+// nicht zum Bereich"), die den Scan nicht aufhält. Ob das Buch verliehen ist, spielt hier keine
+// Rolle: Es liegt gescannt in der Hand.
 func (a *InventurAbfragen) IstExemplarImBereich(ctx context.Context, exemplarID string, bereich InventurBereich) (bool, error) {
 	dimBedingung, dimArgs := bereich.dimensionBedingung(2)
 	if dimBedingung == "TRUE" {

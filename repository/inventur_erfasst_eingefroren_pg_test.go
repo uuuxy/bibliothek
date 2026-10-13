@@ -7,16 +7,11 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Frage 12 „Gegenrichtung Schema" (06.09.2026), zweiter Fund derselben Runde:
-// `inventur_erfassungen.exemplar_id` steht auf ON DELETE CASCADE. Die Zahl der erfassten
-// Exemplare wurde bei jedem Blick LIVE gezählt — ein später gelöschtes Buch (Verlust
-// endgültig, Titel gelöscht, ausgesondert) senkte damit rückwirkend das Ergebnis eines
-// längst abgeschlossenen Durchgangs.
-//
-// In derselben Zeile stand `verloren_gemeldet` fest. „312 erfasst, 4 verloren" wurde
-// über die Monate zu „298 erfasst, 4 verloren": zwei Zahlen desselben Berichts, von
-// denen nur eine altert. Ein Inventur-Durchgang ist die Abschrift einer körperlichen
-// Zählung; was gezählt wurde, wurde gezählt.
+// inventur_erfassungen.exemplar_id steht auf ON DELETE CASCADE. Live gezählt senkte ein später
+// gelöschtes Buch (Verlust endgültig, Titel gelöscht) rückwirkend das Ergebnis eines
+// abgeschlossenen Laufs, während verloren_gemeldet in derselben Zeile feststand: Aus „312
+// erfasst, 4 verloren" würde über die Monate „298 erfasst, 4 verloren". Ein Lauf ist die
+// Abschrift einer Zählung am Regal; was gezählt wurde, bleibt gezählt.
 func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -76,7 +71,7 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 		t.Fatalf("nach dem Abschluss erwartet 2 erfasste Exemplare, waren %d", vorher)
 	}
 
-	// Ein Exemplar fällt später aus dem Bestand — der CASCADE nimmt seine Erfassung mit.
+	// Ein Exemplar fällt später aus dem Bestand; der CASCADE nimmt seine Erfassung mit.
 	if _, err := pool.Exec(ctx, `DELETE FROM buecher_exemplare WHERE id = $1`, ex2); err != nil {
 		t.Fatalf("Exemplar löschen: %v", err)
 	}
@@ -89,8 +84,8 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 	}
 }
 
-// erfassteLautBericht liest die Zahl so, wie die Oberfläche sie zeigt: über die Liste
-// der abgeschlossenen Durchgänge.
+// erfassteLautBericht liest die Zahl so, wie die Oberfläche sie zeigt: über die Liste der
+// abgeschlossenen Läufe.
 func erfassteLautBericht(t *testing.T, pool interface{}, repo *InventurAbfragen, sessionID string) int {
 	t.Helper()
 	_ = pool

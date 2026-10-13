@@ -5,25 +5,21 @@ import (
 	"strings"
 )
 
-// InventurBereich beschreibt, welche Exemplare eine Inventur-Session erfasst: optional
-// eingeschränkt nach Signatur, Fach (buecher_titel.subject) und/oder Klasse
-// (jahrgang_von..jahrgang_bis enthält den Wert). Alle gesetzten Dimensionen sind
-// UND-verknüpft; nil bedeutet "keine Einschränkung in dieser Dimension".
+// InventurBereich beschreibt, welche Exemplare ein Lauf erfasst: wahlweise eingeschränkt nach
+// Signatur, Fach (buecher_titel.subject) und Jahrgang (jahrgang_von bis jahrgang_bis enthält
+// den Wert). Gesetzte Einschränkungen gelten zusammen; nil heißt keine Einschränkung.
 //
-// Diese Struct + ihre Prädikat-Builder sind die EINZIGE Quelle für "was ist im Scope".
-// Zählung, Scan-Warnung und Verlustbuchung leiten sich alle hieraus ab, damit die drei
-// nie auseinanderlaufen (früher lag das Prädikat 3× dupliziert im Repo).
+// Der Typ und seine Bedingungen sind die eine Quelle für „im Bereich": Zählung, Scan-Warnung
+// und Verlustbuchung leiten sich daraus ab, damit die drei nicht auseinanderlaufen.
 type InventurBereich struct {
-	// Signatur ist ein PRÄFIX von buecher_titel.signatur, kein Fremdschlüssel
-	// (Migration 060). Die frühere signature_id zeigte auf eine Tabelle, die
-	// niemand pflegte — der Scope traf damit null Exemplare.
+	// Signatur ist ein Präfix von buecher_titel.signatur, kein Fremdschlüssel.
 	Signatur *string
 	Fach     *string
 	Jahrgang *int
 }
 
-// dimensionen liefert die gesetzten Scope-Dimensionen als Einzelbedingungen (Aliasse
-// e = buecher_exemplare, t = buecher_titel) plus ihre Argumente ab Platzhalter $start.
+// dimensionen liefert die gesetzten Einschränkungen als einzelne Bedingungen (Aliasse e =
+// buecher_exemplare, t = buecher_titel) und ihre Argumente ab Platzhalter $start.
 func (s InventurBereich) dimensionen(start int) ([]string, []any) {
 	var bedingungen []string
 	var args []any
@@ -39,17 +35,16 @@ func (s InventurBereich) dimensionen(start int) ([]string, []any) {
 		platz++
 	}
 	if s.Jahrgang != nil {
-		// Klasse liegt im Jahrgangsbereich des Titels (z. B. Kl. 5 in "5–10").
+		// Der Jahrgang liegt im Bereich des Titels (etwa 5 in „5–10").
 		bedingungen = append(bedingungen, fmt.Sprintf("(t.jahrgang_von <= $%d AND t.jahrgang_bis >= $%d)", platz, platz))
 		args = append(args, *s.Jahrgang)
 	}
 	return bedingungen, args
 }
 
-// bedingung liefert die volle "im Scope"-bedingung (ohne "WHERE"): physische Basis
-// (vorhanden, ausleihbar, NICHT verliehen — ein beim Schüler befindliches Buch kann
-// niemand scannen und darf beim Abschluss nicht als Verlust gelten) UND die Dimensionen.
-// Argumente beginnen bei $start.
+// bedingung liefert die ganze Bedingung „im Bereich" (ohne WHERE): vorhanden, ausleihbar und
+// nicht verliehen, dazu die Einschränkungen. Ein Buch beim Schüler kann niemand scannen, und es
+// darf beim Abschluss nicht als Verlust gelten. Die Argumente beginnen bei $start.
 func (s InventurBereich) bedingung(start int) (string, []any) {
 	teile, args := s.dimensionen(start)
 	bedingungen := append([]string{
@@ -60,9 +55,8 @@ func (s InventurBereich) bedingung(start int) (string, []any) {
 	return strings.Join(bedingungen, "\n  AND "), args
 }
 
-// dimensionBedingung liefert NUR die Dimensionen (Signatur/Fach/Klasse) — für die
-// nicht-blockierende Scan-Warnung "gehört nicht zum Scope". Ohne Dimensionen (globaler
-// Scope) ist alles im Scope → "TRUE".
+// dimensionBedingung liefert nur die Einschränkungen (Signatur, Fach, Jahrgang), für die
+// Warnung beim Scan. Ohne Einschränkung ist alles im Bereich: "TRUE".
 func (s InventurBereich) dimensionBedingung(start int) (string, []any) {
 	teile, args := s.dimensionen(start)
 	if len(teile) == 0 {

@@ -10,26 +10,22 @@ import (
 
 // InventurVerlust ist eine Zeile des Fehlbestandsberichts.
 type InventurVerlust struct {
-	// ExemplarID kann fehlen (leerer String): Das FK-Feld geht bei einer endgültigen
-	// Löschung des Exemplars auf NULL (Migration 059, ON DELETE SET NULL) — die
-	// Textspalten bleiben trotzdem lesbar. Ohne ExemplarID sind "Gefunden" und
-	// "endgültig löschen" nicht mehr möglich, das Exemplar ist ja schon weg.
+	// ExemplarID ist leer, wenn das Exemplar endgültig gelöscht wurde (ON DELETE SET NULL); die
+	// Textspalten bleiben lesbar. „Gefunden" und „endgültig löschen" sind dann nicht mehr
+	// möglich.
 	ExemplarID string `json:"exemplar_id,omitempty"`
 	BarcodeID  string `json:"barcode_id"`
 	Titel      string `json:"titel"`
 	Autor      string `json:"autor"`
 	Signatur   string `json:"signatur"`
 	GebuchtAm  string `json:"gebucht_am"`
-	// GefundenAm ist gesetzt, sobald das Exemplar beim Nachsuchen wiedergefunden und
-	// über den "Gefunden"-Knopf zurück in Umlauf gebracht wurde (Migration 061).
+	// GefundenAm ist gesetzt, sobald das Exemplar beim Nachsuchen gefunden und über „Gefunden"
+	// zurück in den Umlauf gebracht wurde.
 	GefundenAm string `json:"gefunden_am,omitempty"`
 }
 
-// LadeVerluste liefert den Fehlbestand einer abgeschlossenen Session.
-//
-// Sortiert nach Signatur und Titel — das ist die Reihenfolge, in der man mit der Liste
-// durchs Regal geht. Nach Barcode oder Buchungszeit sortiert wäre sie zum Nachsuchen
-// unbrauchbar, weil man dann kreuz und quer laufen müsste.
+// LadeVerluste liefert den Fehlbestand eines abgeschlossenen Laufs, sortiert nach Signatur und
+// Titel: in der Reihenfolge, in der man mit der Liste durchs Regal geht.
 func (a *InventurAbfragen) LadeVerluste(ctx context.Context, laufID string) ([]InventurVerlust, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT coalesce(exemplar_id::text, ''), barcode_id, titel, autor, signatur,
@@ -44,7 +40,7 @@ func (a *InventurAbfragen) LadeVerluste(ctx context.Context, laufID string) ([]I
 	}
 	defer rows.Close()
 
-	// Nie nil: Eine leere Liste muss beim Client als [] ankommen.
+	// Nie nil: Eine leere Liste kommt bei der Oberfläche als [] an.
 	liste := make([]InventurVerlust, 0)
 	for rows.Next() {
 		var v InventurVerlust
@@ -56,25 +52,15 @@ func (a *InventurAbfragen) LadeVerluste(ctx context.Context, laufID string) ([]I
 	return liste, rows.Err()
 }
 
-// Zwei Handlungen für den Fehlbestandsbericht (Migration 061). Vorher war er reine
-// Anzeige — Rückmeldung aus der Bibliothek (05.08.2026): „was mache ich [dann]? ich kann nicht weiter damit
-// machen!" Beim Regal-Absuchen gibt es genau zwei Ausgänge je Zeile: das Buch taucht
-// doch wieder auf, oder es bleibt endgültig weg. Beide brauchen einen Knopf.
+// MarkiereVerlustAlsGefunden bringt ein als Verlust gebuchtes Exemplar zurück in den Umlauf und
+// trägt den Fund im Fehlbestandsbericht ein. false ohne Fehler heißt: kein offener Verlust mit
+// dieser ID (falsche ID oder schon endgültig gelöscht).
 //
-// Transaktionsgrenze liegt bewusst NICHT hier: Wie SchliesseLaufAb erwarten
-// diese Methoden ein bereits eröffnetes db (Pool oder Tx) — der Aufrufer (Handler)
-// eröffnet die Transaktion, damit Snapshot, Update und Audit-Log atomar bleiben.
-
-// MarkiereVerlustAlsGefunden bringt ein als Verlust gebuchtes Exemplar zurück in
-// Umlauf und trägt den Fund im Fehlbestandsbericht ein. false ohne Fehler heisst: kein
-// offener Verlust mit dieser ID (falsche ID oder schon endgültig gelöscht) — dann gibt
-// es nichts zu tun.
-//
-// Seit dem 15.09.2026 endet mit dem Fund auch die Forderung „nicht zurückgegeben", die
-// das Buch abgerechnet hat (verbucheRueckkehr, dieselbe Regel wie an der Theke): Vorher
-// stand das Buch wieder im Regal, das Kind blieb gesperrt und die Forderung offen —
-// beendet wurde sie nur, wenn das Buch über die Theke zurückkam (OFFEN.md 5.3). Der
-// Befund sagt, was storniert wurde und ob ein Bescheid schon bei der Aufsicht liegt.
+// Mit dem Fund endet auch die Forderung „nicht zurückgegeben", die das Buch abgerechnet hat
+// (verbucheRueckkehr, dieselbe Regel wie an der Theke); sonst stünde das Buch wieder im Regal,
+// und das Kind bliebe gesperrt. Der Befund sagt, was storniert wurde und ob ein Bescheid schon
+// bei der Schulaufsicht liegt. Die Transaktion gehört dem Rufer, damit Umlauf, Bericht und
+// Eintrag zusammen gelten.
 func (a *InventurAbfragen) MarkiereVerlustAlsGefunden(ctx context.Context, exemplarID, bearbeiterID string) (bool, RueckkehrBefund, error) {
 	var barcode, titel string
 	err := a.db.QueryRow(ctx,
@@ -90,17 +76,16 @@ func (a *InventurAbfragen) MarkiereVerlustAlsGefunden(ctx context.Context, exemp
 		return false, RueckkehrBefund{}, fmt.Errorf("exemplar für Fund-Meldung lesen fehlgeschlagen: %w", err)
 	}
 
-	// Derselbe Baustein wie an der Theke (seit 15.09.2026, Stufe 2, Commit 8): Umlauf und
-	// Forderung in der Transaktion des Handlers. Bis dahin stand das UPDATE hier ein zweites
-	// Mal — zwei Schreibweisen für eine Rückkehr, die nur zufällig einig waren.
+	// Derselbe Weg wie an der Theke (HoleExemplarZurueck): Umlauf und Forderung in der
+	// Transaktion der Tür.
 	befund, err := HoleExemplarZurueck(ctx, a.db, exemplarID, bearbeiterID, nil)
 	if err != nil {
 		return false, RueckkehrBefund{}, err
 	}
 
-	// Alle noch offenen Verlust-Zeilen dieses Exemplars schliessen, nicht nur die einer
-	// bestimmten Session — ein Exemplar kann rein rechnerisch mehrfach als Verlust
-	// gebucht worden sein, wenn ein Fund vor dem Klick hier nie eingetragen wurde.
+	// Alle offenen Verlust-Zeilen des Exemplars schließen, nicht nur die eines Laufs: Ein
+	// Exemplar kann mehrfach als Verlust gebucht sein, wenn ein früherer Fund nie eingetragen
+	// wurde.
 	if _, err := a.db.Exec(ctx, `
 		UPDATE inventur_verluste SET gefunden_am = CURRENT_TIMESTAMP
 		WHERE exemplar_id = $1 AND gefunden_am IS NULL
@@ -119,16 +104,14 @@ func (a *InventurAbfragen) MarkiereVerlustAlsGefunden(ctx context.Context, exemp
 	return true, befund, nil
 }
 
-// LoescheVerlusteEndgueltig entfernt bereits als Verlust gebuchte Exemplare
-// unwiderruflich aus dem Katalog. Der Fehlbestandsbericht bleibt lesbar (Migration
-// 059: ON DELETE SET NULL, die Textspalten sind eine Abschrift) — nur das Löschen
-// beendet den offenen Zustand endgültig.
+// LoescheVerlusteEndgueltig entfernt als Verlust gebuchte Exemplare aus dem Katalog. Der
+// Fehlbestandsbericht bleibt lesbar (ON DELETE SET NULL, die Textspalten sind eine Abschrift).
+// Die Transaktion gehört dem Rufer.
 //
-// Bewusst eingeschränkt auf ist_ausgesondert=true (VERLUST): Diese Funktion ist NICHT
-// der allgemeine Lösch-Weg für Exemplare (dafür DeleteCopyHandler, der soft löscht) —
-// sie darf nur aufräumen, was der Fehlbestandsbericht selbst schon als verloren
-// gebucht hat. Liefert die Zahl der tatsächlich gelöschten Exemplare (IDs, die schon
-// vorher weg waren oder nicht VERLUST sind, werden still übersprungen).
+// Nur für ausgesonderte Exemplare mit dem Grund VERLUST: Das ist nicht der allgemeine Weg, ein
+// Exemplar aus dem Bestand zu nehmen (dafür SondereExemplarAus), sondern räumt auf, was der
+// Bericht schon als verloren führt. Geliefert werden die IDs der gelöschten Exemplare; was
+// schon weg war oder nicht VERLUST ist, bleibt aus.
 func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exemplarIDs []string, bearbeiterID string) ([]string, error) {
 	if len(exemplarIDs) == 0 {
 		return nil, nil
@@ -175,20 +158,13 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 		return nil, err
 	}
 
-	// Die abhängigen Zeilen zuerst — `ausleihen.exemplar_id` und
-	// `schadensfaelle.exemplar_id` stehen auf ON DELETE RESTRICT, die Datenbank hält
-	// sonst dagegen. Bis zum 23.08.2026 fehlten diese beiden Schritte hier, während das
-	// Geschwister-Verfahren (inventur/db_books_delete.go, „Titel löschen") sie längst
-	// hatte: Das endgültige Löschen scheiterte an JEDEM Exemplar, das je ausgeliehen war
-	// — in einer Schulbibliothek also an fast jedem. Der Fehler kam als 500 zurück und
-	// wurde zu „interner Datenbankfehler" sanitisiert; niemand konnte sehen, woran es lag.
-	//
-	// Reihenfolge wie beim Titel-Löschen: Schadensfälle, dann Ausleihen, dann das
-	// Exemplar. Was hier verschwindet, ist erledigte Geschichte — offene Vorgänge hat
-	// pruefeVerlusteLoeschbar bereits abgewiesen. Der Fehlbestandsbericht überlebt es
-	// (inventur_verluste hält eine Abschrift, ON DELETE SET NULL), und der Barcode wird
-	// wieder frei: `buecher_exemplare.barcode_id` ist UNIQUE ohne Teilindex, eine
-	// stehengebliebene Zeile blockierte den Aufkleber für immer.
+	// Die abhängigen Zeilen zuerst: ausleihen.exemplar_id und schadensfaelle.exemplar_id stehen
+	// auf ON DELETE RESTRICT. Reihenfolge wie beim Löschen eines Titels
+	// (inventur/db_books_delete.go): Schadensfälle, Ausleihen, dann das Exemplar. Was hier
+	// fällt, ist erledigt; offene Vorgänge hat pruefeVerlusteLoeschbar abgewiesen. Der
+	// Fehlbestandsbericht behält seine Abschrift, und der Barcode wird wieder frei:
+	// buecher_exemplare.barcode_id ist ohne Teilindex eindeutig, eine stehengebliebene Zeile
+	// hielte den Aufkleber für immer besetzt.
 	if _, err := a.db.Exec(ctx,
 		`DELETE FROM schadensfaelle WHERE exemplar_id = ANY($1)`, ids,
 	); err != nil {
@@ -218,10 +194,8 @@ func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exempl
 			return nil, err
 		}
 	}
-	// Die IDs, nicht nur ihre Anzahl: Die Oberfläche entfernte bisher ALLE angefragten
-	// Zeilen aus ihrer Liste, gleich wie viele der Server wirklich gelöscht hat. Wer fünf
-	// auswählte, von denen zwei inzwischen als „gefunden" markiert waren, sah alle fünf
-	// verschwinden — zwei davon nur auf seinem Bildschirm.
+	// Die IDs und nicht nur ihre Zahl: Die Oberfläche nimmt genau diese Zeilen aus ihrer Liste.
+	// Waren von fünf gewählten zwei inzwischen als gefunden markiert, bleiben sie dort stehen.
 	return ids, nil
 }
 

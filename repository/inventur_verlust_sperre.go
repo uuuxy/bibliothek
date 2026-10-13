@@ -1,18 +1,5 @@
 package repository
 
-// inventur_verlust_sperre.go — was dem endgültigen Löschen eines Verlust-Exemplars
-// entgegensteht.
-//
-// Das endgültige Löschen entfernt die Ausleihhistorie des Exemplars mit. Das ist beim
-// abgeschriebenen Buch richtig — die Zeilen zeigen auf ein Exemplar, das es nicht mehr
-// gibt, und der Fehlbestandsbericht behält seine Abschrift. Für einen NOCH LAUFENDEN
-// Vorgang wäre es falsch: Eine unbezahlte Gebühr ist eine Forderung der Schule, und die
-// verschwände hier still und unwiederbringlich.
-//
-// Deshalb dieselbe Regel wie überall sonst, wo dieses System Daten endgültig entfernt
-// (siehe pruefeKeineOffenenVorgaenge für Schüler): Solange etwas offen ist, wird
-// nicht gelöscht — und der Grund wird benannt, nicht verschluckt.
-
 import (
 	"context"
 	"errors"
@@ -21,22 +8,23 @@ import (
 	"strings"
 )
 
-// ErrVerlustNochGebunden meldet, dass mindestens ein ausgewähltes Exemplar noch an einem
-// laufenden Vorgang hängt. Der Handler macht daraus eine 409 mit Klartext — als 500
-// ersetzte der Sanitizer die Begründung durch „interner Datenbankfehler".
+// ErrVerlustNochGebunden meldet, dass mindestens ein gewähltes Exemplar noch an einem laufenden
+// Vorgang hängt. Die Tür macht daraus 409 mit dem Grund im Text; bei 500 ersetzte der Sanitizer
+// ihn durch „interner Datenbankfehler".
 var ErrVerlustNochGebunden = errors.New("exemplar hängt noch an einem laufenden Vorgang")
 
-// pruefeVerlusteLoeschbar weist den GANZEN Stapel ab, sobald ein Exemplar gebunden ist,
-// und nennt die betroffenen Barcodes.
+// pruefeVerlusteLoeschbar weist den ganzen Stapel ab, sobald ein Exemplar noch an einem
+// laufenden Vorgang hängt, und nennt die betroffenen Barcodes. Das endgültige Löschen nimmt die
+// Ausleihhistorie des Exemplars mit, und eine unbezahlte Forderung der Schule verschwände
+// dabei. Dieselbe Regel wie beim Leser (pruefeKeineOffenenVorgaenge): Solange etwas offen ist,
+// wird nicht gelöscht, und der Grund wird genannt.
 //
-// Bewusst alles-oder-nichts: Ein Teilerfolg („28 von 30 gelöscht") lässt die Bedienung
-// mit der Frage zurück, welche zwei übrig sind und warum. Mit den Barcodes im Text kann
-// man sie in der Liste abwählen und den Rest durchlaufen lassen.
+// Alles oder nichts: Ein Teilerfolg („28 von 30 gelöscht") ließe die Frage, welche zwei übrig
+// sind und warum. Mit den Barcodes im Text lassen sie sich in der Liste abwählen.
 func (a *InventurAbfragen) pruefeVerlusteLoeschbar(ctx context.Context, ids []string, barcodeVon map[string]string) error {
-	// Die offene Ausleihe ist ein Sicherheitsnetz, kein erwarteter Fall: Der
-	// Inventurabschluss bucht ein verliehenes Exemplar gar nicht erst als Verlust
-	// (InventurBereich.bedingung schließt es aus). Sie kostet eine Abfrage und deckt den
-	// Weg ab, den heute niemand kennt.
+	// Die offene Ausleihe ist ein Netz für einen Fall, den es nicht geben sollte: Der Abschluss
+	// bucht ein verliehenes Exemplar nicht als Verlust (InventurBereich.bedingung schließt es
+	// aus).
 	for _, sperre := range []struct {
 		grund string
 		query string
@@ -47,8 +35,8 @@ func (a *InventurAbfragen) pruefeVerlusteLoeschbar(ctx context.Context, ids []st
 			 WHERE exemplar_id = ANY($1) AND rueckgabe_am IS NULL`,
 		},
 		{
-			// ist_bezahlt = false genügt: Der Storno setzt ist_bezahlt = true
-			// (StorniereForderung), eine stornierte Gebühr ist also keine offene.
+			// ist_bezahlt = false genügt: Das Storno setzt ist_bezahlt = true
+			// (StorniereForderung); eine stornierte Forderung ist keine offene.
 			"unbezahlte Gebühr",
 			`SELECT DISTINCT exemplar_id FROM schadensfaelle
 			 WHERE exemplar_id = ANY($1) AND ist_bezahlt = false`,
@@ -66,8 +54,8 @@ func (a *InventurAbfragen) pruefeVerlusteLoeschbar(ctx context.Context, ids []st
 	return nil
 }
 
-// ladeBarcodesZu liefert die Barcodes der Exemplare, die die Abfrage zurückgibt — sortiert,
-// damit die Meldung bei gleicher Lage gleich lautet.
+// ladeBarcodesZu liefert die Barcodes der Exemplare, die die Abfrage nennt, sortiert, damit die
+// Meldung bei gleicher Lage gleich lautet.
 func (a *InventurAbfragen) ladeBarcodesZu(ctx context.Context, query string, ids []string, barcodeVon map[string]string) ([]string, error) {
 	rows, err := a.db.Query(ctx, query, ids)
 	if err != nil {

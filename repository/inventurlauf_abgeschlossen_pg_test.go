@@ -5,11 +5,10 @@ import (
 	"testing"
 )
 
-// LadeAbgeschlosseneLaeufe speist die Liste, über die ein Fehlbestandsbericht
-// einer FERTIGEN Inventur wieder aufrufbar wird. Sie hatte bis hierher keinen Test —
-// ausgerechnet die Funktion, deren SQL am 09.08.2026 auf CTE + LATERAL umgebaut wurde.
-// Ein vertauschtes Zählpaar oder eine gedrehte Sortierung wäre niemandem aufgefallen:
-// Beide Spalten sind Zahlen, beide Sortierrichtungen liefern Zeilen.
+// LadeAbgeschlosseneLaeufe speist die Liste, über die der Fehlbestandsbericht einer
+// abgeschlossenen Inventur wieder aufrufbar wird. Ihre Abfrage zählt über CTE und LATERAL; ein
+// vertauschtes Paar von Zählungen oder eine gedrehte Sortierung fiele sonst nicht auf: Beide
+// Spalten sind Zahlen, beide Sortierrichtungen liefern Zeilen.
 func TestLadeAbgeschlosseneLaeufe(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -17,9 +16,9 @@ func TestLadeAbgeschlosseneLaeufe(t *testing.T) {
 	repo := NewInventurAbfragen(pool)
 	bearbeiter := seedBearbeiter(t, pool)
 
-	// Drei Inventuren mit UNTERSCHIEDLICHEN Erfassungs- und Verlustzahlen — sonst
-	// belegt der Test nicht, dass die beiden Zählungen an der richtigen Spalte hängen.
-	// Je Scope: n Exemplare, davon k gescannt; der Rest wird beim Abschluss Verlust.
+	// Drei Inventuren mit verschiedenen Zahlen für Erfassung und Verlust; sonst belegte der
+	// Test nicht, dass die beiden Zählungen an der richtigen Spalte hängen. Je Bereich: n
+	// Exemplare, davon k gescannt; der Rest wird beim Abschluss Verlust.
 	faelle := []struct {
 		signatur          string
 		exemplare, gescan int
@@ -79,9 +78,8 @@ func TestLadeAbgeschlosseneLaeufe(t *testing.T) {
 	}
 }
 
-// TestLadeAbgeschlosseneLaeufe_Kappung sichert, dass das LIMIT die NEUESTEN
-// Sessions behält. Seit dem CTE-Umbau kappt die Abfrage VOR dem Zählen — nimmt die CTE
-// die falschen Zeilen, fällt es ohne diesen Test nicht auf.
+// Das LIMIT behält die neuesten Läufe. Die Abfrage kappt vor dem Zählen; nähme die CTE die
+// falschen Zeilen, fiele es ohne diesen Test nicht auf.
 func TestLadeAbgeschlosseneLaeufe_Kappung(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

@@ -9,10 +9,10 @@ import (
 func sp(s string) *string { return &s }
 func ip(i int) *int       { return &i }
 
-// TestInventurBereicheUeberlappen deckt die Regeln ab: global ist exklusiv, Signatur-
-// Präfixe enthalten sich, kompatible Filter überlappen — disjunkte Bereiche NICHT
-// (sonst würde legitime Parallel-Inventur blockiert). Alles syntaktisch nicht
-// Entscheidbare (Signatur vs. Filter, unbekannte Typen) geht an den Bestandsabgleich.
+// Die Regeln: „global" schließt jeden anderen Lauf aus, Signaturen mit gemeinsamem Präfix
+// enthalten einander, vereinbare Filter überlappen, getrennte Bereiche nicht (sonst wären Läufe
+// nebeneinander gesperrt). Was sich an den Feldern nicht entscheiden lässt (Signatur gegen
+// Filter, eine unbekannte Art), geht an den Abgleich mit dem Bestand.
 func TestInventurBereicheUeberlappen(t *testing.T) {
 	faelle := []struct {
 		name     string
@@ -45,16 +45,15 @@ func TestInventurBereicheUeberlappen(t *testing.T) {
 	}
 }
 
-// TestInventurlaufUeberlappungWirdAbgewiesen belegt die Wirkung am echten
-// Postgres: Eine offene GLOBALE Inventur blockiert jeden weiteren Start (ErrInventur-
-// Ueberlappt); zwei DISJUNKTE Signatur-Scopes dürfen dagegen parallel laufen.
+// Am echten Postgres: Ein offener Lauf über den ganzen Bestand sperrt jeden weiteren Start
+// (ErrInventurUeberlappt); zwei getrennte Signaturen laufen nebeneinander.
 func TestInventurlaufUeberlappungWirdAbgewiesen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
 
-	// Offene globale Session.
+	// Ein offener Lauf über den ganzen Bestand.
 	if _, err := repo.LegeLaufAn(ctx, "global", InventurBereich{}, "Gesamtbestand", ""); err != nil {
 		t.Fatalf("globale Session anlegen: %v", err)
 	}
@@ -66,12 +65,12 @@ func TestInventurlaufUeberlappungWirdAbgewiesen(t *testing.T) {
 		t.Fatalf("erwartet ErrInventurUeberlappt neben globaler Session, war: %v", err)
 	}
 
-	// Globale Session abschließen (Zeile freimachen).
+	// Den Lauf über den ganzen Bestand abschließen; die Zeile wird frei.
 	if _, err := pool.Exec(ctx, `UPDATE inventur_sessions SET abgeschlossen_am = now() WHERE abgeschlossen_am IS NULL`); err != nil {
 		t.Fatalf("globale Session schließen: %v", err)
 	}
 
-	// Zwei DISJUNKTE Signatur-Scopes dürfen parallel offen sein.
+	// Zwei getrennte Signaturen sind nebeneinander offen.
 	sigDeu, sigMat := "BIB Deu", "BIB Mat"
 	if _, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &sigDeu}, "Signatur BIB Deu", ""); err != nil {
 		t.Fatalf("Signatur Deu: %v", err)
@@ -88,18 +87,17 @@ func TestInventurlaufUeberlappungWirdAbgewiesen(t *testing.T) {
 	}
 }
 
-// TestInventurSignaturGegenFilterUeberlappungAmBestand belegt am echten Postgres, dass die
-// Kreuz-Kombination Signatur-Scope vs. Filter-Scope am BESTAND geprüft wird: Trägt ein
-// Titel Signatur UND Fach, umfassen beide Scopes dieselben Exemplare — ein Scan landet
-// aber nur in EINER Session, und der Abschluss der anderen würde das Buch als Verlust
-// aussondern. Disjunkte Kreuz-Kombinationen (kein gemeinsamer Bestand) bleiben erlaubt.
+// Am echten Postgres: Signatur gegen Filter wird am Bestand geprüft. Trägt ein Titel Signatur
+// und Fach, umfassen beide Bereiche dieselben Exemplare; ein Scan landet aber nur in einem
+// Lauf, und der Abschluss des anderen sonderte das Buch als Verlust aus. Ohne gemeinsamen
+// Bestand bleiben beide Läufe nebeneinander erlaubt.
 func TestInventurSignaturGegenFilterUeberlappungAmBestand(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewInventurAbfragen(pool)
 
-	// Ein Titel, der in beiden Welten liegt: Regalbereich "BIB Deu" UND Fach Deutsch.
+	// Ein Titel, der in beiden Bereichen liegt: Signatur „BIB Deu" und Fach Deutsch.
 	seedSignaturFachExemplar(t, pool, "BIB Deu 5 KRÜ", "Deutsch", 5, 6, "BC-KREUZ-1")
 
 	sigDeu := "BIB Deu"
@@ -107,27 +105,27 @@ func TestInventurSignaturGegenFilterUeberlappungAmBestand(t *testing.T) {
 		t.Fatalf("Signatur-Session anlegen: %v", err)
 	}
 
-	// Filter "Deutsch" trifft denselben Titel → muss als Überlappung abgewiesen werden.
+	// Der Filter „Deutsch" trifft denselben Titel und wird als Überlappung abgewiesen.
 	deutsch := "Deutsch"
 	_, err := repo.LegeLaufAn(ctx, "filter", InventurBereich{Fach: &deutsch}, "Fach Deutsch", "")
 	if !errors.Is(err, ErrInventurUeberlappt) {
 		t.Fatalf("Filter Deutsch trifft den Signatur-Bestand, erwartet ErrInventurUeberlappt, war: %v", err)
 	}
 
-	// Auch die Klassen-Dimension allein reicht: Kl. 5 liegt im Jahrgangsbereich 5–6.
+	// Auch der Jahrgang allein reicht: 5 liegt im Jahrgangsbereich 5–6.
 	kl5 := 5
 	_, err = repo.LegeLaufAn(ctx, "filter", InventurBereich{Jahrgang: &kl5}, "Klasse 5", "")
 	if !errors.Is(err, ErrInventurUeberlappt) {
 		t.Fatalf("Filter Klasse 5 trifft den Signatur-Bestand, erwartet ErrInventurUeberlappt, war: %v", err)
 	}
 
-	// Disjunkt: kein Titel trägt Mathematik → parallel erlaubt.
+	// Getrennt: Kein Titel trägt Mathematik, beide Läufe sind erlaubt.
 	mathe := "Mathematik"
 	if _, err := repo.LegeLaufAn(ctx, "filter", InventurBereich{Fach: &mathe}, "Fach Mathematik", ""); err != nil {
 		t.Fatalf("Filter Mathematik hat keinen gemeinsamen Bestand und darf NICHT blockiert werden, war: %v", err)
 	}
 
-	// Umgekehrte Richtung: Filter-Session offen, Signatur-Start muss scheitern.
+	// Umgekehrte Richtung: Der Lauf mit Filter ist offen, der Start mit Signatur scheitert.
 	resetInventurDaten(t, pool)
 	seedSignaturFachExemplar(t, pool, "BIB Deu 5 KRÜ", "Deutsch", 5, 6, "BC-KREUZ-2")
 	if _, err := repo.LegeLaufAn(ctx, "filter", InventurBereich{Fach: &deutsch}, "Fach Deutsch", ""); err != nil {
