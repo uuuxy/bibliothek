@@ -474,7 +474,7 @@ Muster steht am ersten Ausschnitt (`repository/lieferant.go`): Das Modell heißt
 (`Lieferant`), was sie liest und schreibt `LieferantenAbfragen`, die Fassung an Postgres
 `pgLieferantenAbfragen`, der Erzeuger `NewLieferantenAbfragen`, und eine Methode wiederholt
 die Sache nicht (`Lade` statt `GetSupplierByID`). Offen sind dort noch die Ausschnitte
-Ausleihe, Titel und Exemplar, Leser und der Rest (Auskunft, Löschfristen, Statistik, Mahnwesen,
+Titel und Exemplar, Leser und der Rest (Auskunft, Löschfristen, Statistik, Mahnwesen,
 Lernmittel).
 
 **Beleg je Paket:** Umbenannt wird mit dem Werkzeug der Sprache (`gopls rename`), das jede

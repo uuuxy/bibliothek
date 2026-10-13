@@ -5,11 +5,10 @@ import (
 	"testing"
 )
 
-// Regression: bearbeiter_id ist in der DB NULLBAR (ON DELETE SET NULL + der GDPR-
-// Anonymisierungs-Job setzt sie auf NULL). Als nicht-nullbarer string im Loan-Modell
-// scheiterte leseAusleihe mit "cannot scan NULL into *string" → HTTP 500 im Kiosk beim
-// Scannen/Rückgeben einer Ausleihe ohne Bearbeiter (genau der Prod-500 auf /api/action).
-// BearbeiterID ist jetzt *string.
+// bearbeiter_id kann NULL sein (ON DELETE SET NULL, und die Anonymisierung leert die Spalte).
+// Als Text im Modell scheiterte leseAusleihe mit „cannot scan NULL into *string", und das
+// Scannen oder Zurückgeben einer Ausleihe ohne Bearbeiter endete mit 500. BearbeiterID ist
+// deshalb ein Zeiger.
 func TestFindeOffene_NullBearbeiterKein500(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -33,7 +32,7 @@ func TestFindeOffene_NullBearbeiterKein500(t *testing.T) {
 		t.Fatalf("Exemplar: %v", err)
 	}
 
-	// Ausleihe OHNE bearbeiter_id (NULL) — exakt der Fall aus dem Prod-Log.
+	// Eine Ausleihe ohne bearbeiter_id (NULL).
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist) VALUES ($1, $2, CURRENT_DATE + 14)`,
 		copyID, schuelerID); err != nil {

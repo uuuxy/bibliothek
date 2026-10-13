@@ -1,11 +1,11 @@
 package repository
 
-// Idempotenz-Schlüssel der Theke (Tabelle idempotency_keys). Seit dem 15.09.2026 wird der
-// Schlüssel VOR der Arbeit reserviert (Status 0, Platzhalter als Antwort) und die Antwort
-// danach in die Reservierung geschrieben. Vorher wurde nur nach der Arbeit eingefügt: Eine
-// zweite Anfrage mit demselben Schlüssel, die nach dem Commit der ersten und vor dem
-// Speichern ihrer Antwort eintraf, fand nichts und buchte neu — das Buch lag schon beim Kind,
-// also wurde es zurückgenommen (api/theke/idempotenz_pg_test.go).
+// Die Idempotenz-Schlüssel der Theke (Tabelle idempotency_keys). Der Schlüssel wird vor der
+// Arbeit reserviert (Status 0, Platzhalter als Antwort), und die Antwort wird danach in die
+// Reservierung geschrieben. Würde erst nach der Arbeit eingefügt, fände eine zweite Anfrage mit
+// demselben Schlüssel, die zwischen dem Festschreiben der ersten und dem Ablegen ihrer Antwort
+// eintrifft, nichts und buchte neu: Das Buch liegt schon beim Kind, also nähme sie es zurück
+// (api/theke/idempotenz_pg_test.go).
 
 import (
 	"context"
@@ -17,14 +17,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// IdempotenzReservierungsfrist ist die Frist, nach der eine Reservierung (Status 0) als verwaist gilt
-// und wird von der nächsten Anfrage mit demselben Schlüssel übernommen. „Verwaist" heißt: Der
-// Server ist zwischen Reservierung und Antwort gestorben — nicht: er arbeitet noch. Das stimmt
-// nur, solange jede Arbeit unter dem Schlüssel VOR Ablauf dieser Frist abgebrochen und ihre
-// Antwort gespeichert ist: Die TimeoutMiddleware (api.StandardBearbeitungsfrist) beendet die
+// IdempotenzReservierungsfrist ist die Frist, nach der eine Reservierung (Status 0) als
+// verwaist gilt; die nächste Anfrage mit demselben Schlüssel übernimmt sie. Verwaist heißt: Der
+// Server ist zwischen Reservierung und Antwort gestorben, nicht: Er arbeitet noch. Das stimmt
+// nur, solange jede Arbeit unter dem Schlüssel vor Ablauf dieser Frist abgebrochen und ihre
+// Antwort abgelegt ist: Die TimeoutMiddleware (api.StandardBearbeitungsfrist) beendet die
 // Arbeit, saveToCache (api/theke, IdempotenzSpeicherfrist) schreibt danach noch.
-// api/idempotenz_fristen_test.go hält die drei Werte aneinander; bis zum 15.09.2026 standen sie
-// als 60, 15 und 5 Sekunden in drei Dateien, ohne dass etwas sie verband.
+// api/idempotenz_fristen_test.go hält die drei Werte aneinander.
 const IdempotenzReservierungsfrist = 60 * time.Second
 
 // IdempotenzAntwort ist, was unter einem Schlüssel steht: die gespeicherte Antwort, oder bei
@@ -34,19 +33,19 @@ type IdempotenzAntwort struct {
 	Status int
 }
 
-// IstInArbeit sagt, ob der Schlüssel reserviert, aber noch ohne Antwort ist.
+// IstInArbeit meldet, ob der Schlüssel reserviert, aber noch ohne Antwort ist.
 func (a IdempotenzAntwort) IstInArbeit() bool { return a.Status == 0 }
 
-// errIdempotenzNichtReserviert heißt: Die Antwort ließ sich nicht ablegen, weil der Schlüssel
-// nicht (mehr) dieser Anfrage gehört — keine Reservierung, oder schon beantwortet.
+// errIdempotenzNichtReserviert meldet, dass sich die Antwort nicht ablegen ließ, weil der
+// Schlüssel dieser Anfrage nicht oder nicht mehr gehört: keine Reservierung, oder schon
+// beantwortet.
 var errIdempotenzNichtReserviert = errors.New("idempotenz: schlüssel nicht reserviert")
 
-// ReserviereIdempotenzSchluessel versucht, den Schlüssel zu reservieren. reserviert=true: der
-// Aufrufer darf arbeiten und speichert danach die Antwort. Sonst gehört der Schlüssel schon
-// jemandem, und antwort sagt, ob dessen Antwort da ist (Status ≥ 200) oder noch kommt
-// (Status 0). Eine Reservierung, die älter als IdempotenzReservierungsfrist ist, gilt als
-// verwaist (der Server ist zwischen Reservierung und Antwort gestorben) und wird übernommen —
-// unter dem Zeilen-Lock von ON CONFLICT nimmt sie genau einer.
+// ReserviereIdempotenzSchluessel versucht, den Schlüssel zu reservieren. Mit reserviert = true
+// darf der Rufer arbeiten und legt danach die Antwort ab. Sonst gehört der Schlüssel schon
+// jemandem, und antwort sagt, ob dessen Antwort da ist (Status ab 200) oder noch kommt (Status
+// 0). Eine Reservierung, die älter ist als IdempotenzReservierungsfrist, gilt als verwaist und
+// wird übernommen; unter der Zeilensperre von ON CONFLICT nimmt sie genau einer.
 func ReserviereIdempotenzSchluessel(ctx context.Context, pool db.PgxPoolIface, schluessel string) (reserviert bool, antwort *IdempotenzAntwort, err error) {
 	var k string
 	err = pool.QueryRow(ctx, `
@@ -81,8 +80,8 @@ func LadeIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel
 	return &a, nil
 }
 
-// SchreibeIdempotenzAntwort schreibt die Antwort in die eigene Reservierung. Eine fremde
-// oder schon beantwortete Zeile (Status ≠ 0) bleibt unberührt.
+// SchreibeIdempotenzAntwort schreibt die Antwort in die eigene Reservierung. Eine fremde oder
+// schon beantwortete Zeile (Status ungleich 0) bleibt unberührt.
 func SchreibeIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel string, daten []byte, status int) error {
 	tag, err := pool.Exec(ctx,
 		`UPDATE idempotency_keys SET response_data = $2, status_code = $3 WHERE idempotency_key = $1 AND status_code = 0`,
@@ -96,12 +95,12 @@ func SchreibeIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schlue
 	return nil
 }
 
-// UebernimmIdempotenzAntwort macht eine gespeicherte Antwort wieder zur Reservierung. Die
-// Nachbuch-Tür braucht das, wenn unter dem Schlüssel eine Antwort des Online-Versands steht und
-// trotzdem noch gebucht werden muss (Fehlerantwort, oder nur die Fremdrückgabe gebucht). Nur wer
-// genau die gelesene Antwort vorfindet, übernimmt — Status UND Inhalt; ein zweiter Aufruf mit
-// derselben Portion findet danach die Reservierung und bucht nicht daneben. created_at rückt vor,
-// damit die Waisenübernahme ab jetzt zählt.
+// UebernimmIdempotenzAntwort macht eine abgelegte Antwort wieder zur Reservierung. Das
+// Nachbuchen braucht das, wenn unter dem Schlüssel eine Antwort des Scans an der Theke steht
+// und trotzdem noch gebucht werden muss (Fehlerantwort, oder nur die Fremdrückgabe gebucht).
+// Nur wer genau die gelesene Antwort vorfindet, Status und Inhalt, übernimmt; ein zweiter
+// Aufruf mit derselben Portion findet danach die Reservierung und bucht nicht daneben.
+// created_at rückt vor, damit die Übernahme als verwaist ab jetzt zählt.
 func UebernimmIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel string, alt IdempotenzAntwort) (bool, error) {
 	tag, err := pool.Exec(ctx, `
 		UPDATE idempotency_keys
@@ -115,8 +114,8 @@ func UebernimmIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schlu
 }
 
 // StelleIdempotenzAntwortWiederHer legt eine übernommene Antwort zurück in die eigene
-// Reservierung — nach einem Serverfehler der Nachbuch-Tür, damit die nächste Runde die
-// Online-Antwort wieder vorfindet.
+// Reservierung, nach einem Serverfehler des Nachbuchens: Die nächste Runde findet die Antwort
+// des Scans wieder vor.
 func StelleIdempotenzAntwortWiederHer(ctx context.Context, pool db.PgxPoolIface, schluessel string, alt IdempotenzAntwort) error {
 	tag, err := pool.Exec(ctx,
 		`UPDATE idempotency_keys SET response_data = $2, status_code = $3 WHERE idempotency_key = $1 AND status_code = 0`,
@@ -130,9 +129,9 @@ func StelleIdempotenzAntwortWiederHer(ctx context.Context, pool db.PgxPoolIface,
 	return nil
 }
 
-// GibIdempotenzSchluesselFrei löscht die eigene Reservierung — nach einem Serverfehler, damit
-// die Wiederholung neu bucht statt den Fehler zurückzubekommen. freigegeben=false ohne
-// Fehler: Es gab keine Reservierung (mehr) zu löschen.
+// GibIdempotenzSchluesselFrei löscht die eigene Reservierung nach einem Serverfehler, damit die
+// Wiederholung neu bucht und nicht den Fehler zurückbekommt. freigegeben = false ohne Fehler
+// heißt: Es gab keine Reservierung mehr zu löschen.
 func GibIdempotenzSchluesselFrei(ctx context.Context, pool db.PgxPoolIface, schluessel string) (freigegeben bool, err error) {
 	tag, err := pool.Exec(ctx,
 		`DELETE FROM idempotency_keys WHERE idempotency_key = $1 AND status_code = 0`, schluessel)

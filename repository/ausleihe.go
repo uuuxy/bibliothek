@@ -11,83 +11,77 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Ausleihe repräsentiert einen aktiven oder historischen Ausleiheintrag in der Datenbank (Tabelle `ausleihen`).
+// Ausleihe ist eine laufende oder beendete Ausleihe (Tabelle ausleihen).
 type Ausleihe struct {
-	// ID ist die eindeutige ID (UUID) des Ausleihvorgangs.
+	// ID ist die UUID der Ausleihe.
 	ID string `json:"id"`
-	// ExemplarID verweist auf das ausgeliehene Buch (null bei Geräteausleihe).
+	// ExemplarID ist das ausgeliehene Exemplar; nil bei einem Gerät.
 	ExemplarID *string `json:"exemplar_id,omitempty"`
-	// GeraetID verweist auf das ausgeliehene Hardware-Gerät (null bei Buchausleihe).
+	// GeraetID ist das ausgeliehene Gerät; nil bei einem Buch.
 	GeraetID *string `json:"geraet_id,omitempty"`
-	// SchuelerID verweist auf den ausleihenden Schüler (null bei Ausleihe an Lehrkraft).
+	// SchuelerID ist der Leser, der ausleiht, Schüler oder Lehrkraft: Die Spalte heißt
+	// schueler_id und zeigt auf die Tabelle leser. nil, wenn die Ausleihe von ihrem Leser
+	// getrennt ist.
 	SchuelerID *string `json:"schueler_id,omitempty"`
-	// AusleiherBenutzerID verweist auf die ausleihende Lehrkraft (null bei Ausleihe an Schüler).
-	// AusgeliehenAm ist der genaue Zeitpunkt der Ausleihe.
+	// AusgeliehenAm ist der Zeitpunkt der Ausleihe.
 	AusgeliehenAm time.Time `json:"ausgeliehen_am"`
-	// RueckgabeFrist definiert den spätesten Abgabetermin.
+	// RueckgabeFrist ist der späteste Tag der Rückgabe.
 	RueckgabeFrist time.Time `json:"rueckgabe_frist"`
-	// RueckgabeAm ist der tatsächliche Rückgabezeitpunkt (null bei laufenden Ausleihen).
+	// RueckgabeAm ist der Zeitpunkt der Rückgabe; nil, solange die Ausleihe läuft.
 	RueckgabeAm *time.Time `json:"rueckgabe_am,omitempty"`
-	// BearbeiterID verweist auf den Bibliotheksmitarbeiter, der die Ausleihe erfasst hat.
-	// Nullbar: die DB-Spalte ist ON DELETE SET NULL, und der GDPR-Anonymisierungs-Job
-	// setzt sie auf NULL. Als nicht-nullbarer string scheiterte der Scan mit
-	// "cannot scan NULL into *string" → HTTP 500 im Kiosk (Scan/Rückgabe).
+	// BearbeiterID ist das Konto, das die Ausleihe erfasst hat. Ein Zeiger, weil die Spalte auf
+	// ON DELETE SET NULL steht und die Anonymisierung sie leert: NULL ließe sich nicht in einen
+	// Text lesen.
 	BearbeiterID *string `json:"bearbeiter_id"`
-	// RueckgabeBearbeiterID verweist auf den Mitarbeiter, der die Rückgabe erfasst hat (null bei laufenden Ausleihen).
+	// RueckgabeBearbeiterID ist das Konto, das die Rückgabe erfasst hat; nil, solange die
+	// Ausleihe läuft.
 	RueckgabeBearbeiterID *string `json:"rueckgabe_bearbeiter_id,omitempty"`
-	// IstFremdrueckgabe zeigt an, ob das Buch von einer anderen Person zurückgebracht wurde.
+	// IstFremdrueckgabe sagt, ob jemand anderes als der Leser das Buch zurückgebracht hat.
 	IstFremdrueckgabe bool `json:"ist_fremdrueckgabe"`
-	// IstHandapparat markiert Dauerleihen (meist an Lehrer) zur Präsenznutzung im Unterricht.
+	// IstHandapparat kennzeichnet die Dauerleihe für das Schuljahr; sie wird nicht überfällig.
 	IstHandapparat bool `json:"ist_handapparat"`
 }
 
-// ErrAusleiheKonflikt meldet, dass der INSERT am eindeutigen Index
-// (exemplar_id, rueckgabe_am IS NULL) abgeprallt ist: Zwischen der Prüfung
-// "Exemplar ist frei" und dem Schreiben hat ein anderer Vorgang es verbucht.
-//
-// Vorher gaben die Create*-Funktionen in diesem Fall (nil, nil) zurück — kein Fehler,
-// keine Zeile. Der Aufrufer prüfte nur err, hielt das für Erfolg, committete und
-// meldete dem Arbeitsplatz eine Ausleihe, die nie geschrieben wurde. Genau diese
-// Bugklasse: HTTP 200 trotz Datenverlust.
+// ErrAusleiheKonflikt meldet, dass das INSERT am eindeutigen Index (exemplar_id, rueckgabe_am
+// IS NULL) abgeprallt ist: Zwischen der Prüfung „Exemplar ist frei" und dem Schreiben hat ein
+// anderer Vorgang es verbucht. Ohne den Fehlerwert bekäme der Rufer keine Zeile und keinen
+// Fehler und meldete dem Arbeitsplatz eine Ausleihe, die nie geschrieben wurde.
 var ErrAusleiheKonflikt = errors.New("exemplar wurde zwischenzeitlich anderweitig verbucht")
 
-// AusleihAbfragen verwaltet alle Datenbank-Interaktionen für Ausleihen und Rückgaben (Bücher und Geräte).
+// AusleihAbfragen liest und schreibt die Ausleihen und Rückgaben der Exemplare.
 type AusleihAbfragen interface {
-	// FindeOffene sucht die aktuell aktive (nicht zurückgegebene) Ausleihe für ein Buchexemplar.
-	// Gibt nil zurück, wenn das Exemplar aktuell nicht verliehen ist.
+	// FindeOffene liefert die offene Ausleihe eines Exemplars; nil, wenn es nicht verliehen
+	// ist.
 	FindeOffene(ctx context.Context, exemplarID string) (*Ausleihe, error)
 
-	// SperreOffene sucht die aktive Ausleihe innerhalb einer Transaktion und setzt
-	// einen Row-Level-Lock (SELECT ... FOR UPDATE). Dies verhindert Race Conditions bei zeitgleichen Scans.
+	// SperreOffene liefert die offene Ausleihe eines Exemplars und sperrt ihre Zeile bis zum
+	// Ende der Transaktion (FOR UPDATE): Zwei Scans desselben Exemplars zur selben Zeit laufen
+	// nacheinander.
 	SperreOffene(ctx context.Context, tx pgx.Tx, exemplarID string) (*Ausleihe, error)
 
-	// BeginneTx startet eine neue Datenbanktransaktion mit dem Isolationslevel 'Read Committed'.
-	// Aufrufer müssen defer tx.Rollback(ctx) aufrufen und bei Erfolg tx.Commit(ctx) ausführen.
+	// BeginneTx beginnt eine Transaktion (Read Committed). Der Rufer rollt sie mit defer zurück
+	// und schreibt sie bei Erfolg fest.
 	BeginneTx(ctx context.Context) (pgx.Tx, error)
 
-	// LegeAn legt einen neuen Ausleihdatensatz für einen LESER innerhalb einer
-	// laufenden Transaktion an. istDauerleihe kennzeichnet die Ausleihe fürs Schuljahr
-	// (ist_handapparat) — sie zählt nicht in die Überfällig-Automatik.
-	//
-	// Bis Migration 125 gab es hier zwei Funktionen mit zwei SQL-Anweisungen, weil ein
-	// Schüler in einer anderen Spalte stand als eine Lehrkraft.
+	// LegeAn legt die Ausleihe eines Lesers in der Transaktion an, zum jetzigen Zeitpunkt.
+	// istDauerleihe kennzeichnet die Ausleihe für das Schuljahr (ist_handapparat); sie wird
+	// nicht überfällig.
 	LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*Ausleihe, error)
 
-	// BucheRueckgabe markiert eine aktive Ausleihe als zurückgegeben innerhalb einer Transaktion.
+	// BucheRueckgabe beendet eine offene Ausleihe in der Transaktion, zum jetzigen Zeitpunkt.
 	BucheRueckgabe(ctx context.Context, tx pgx.Tx, ausleiheID, bearbeiterID string, istFremdrueckgabe bool) error
 }
 
-// pgAusleihAbfragen implementiert das AusleihAbfragen für PostgreSQL.
 type pgAusleihAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewAusleihAbfragen erstellt eine neue Instanz des PostgreSQL-basierten Loan-Repositorys.
+// NewAusleihAbfragen liefert die Abfragen der Ausleihe an Postgres.
 func NewAusleihAbfragen(db db.PgxPoolIface) AusleihAbfragen {
 	return &pgAusleihAbfragen{db: db}
 }
 
-// leseAusleihe liest eine Tabellenzeile in ein Loan-Modellobjekt ein.
+// leseAusleihe liest eine Zeile der Tabelle ausleihen in eine Ausleihe.
 func leseAusleihe(row Scanner) (*Ausleihe, error) {
 	var l Ausleihe
 	err := row.Scan(
@@ -99,9 +93,8 @@ func leseAusleihe(row Scanner) (*Ausleihe, error) {
 	return &l, nil
 }
 
-// BeginneTx startet eine Transaktion mit dem Isolationslevel 'Read Committed'.
-// Dieses Level ist ideal für das Ausleihsystem, da es Schmutzdaten (Dirty Reads) verhindert,
-// gleichzeitig aber hohen Durchsatz bei parallelen Scanner-Anfragen ermöglicht.
+// BeginneTx beginnt eine Transaktion mit Read Committed: Sie sieht keine ungeschriebenen Daten
+// anderer, und Scans an mehreren Arbeitsplätzen halten einander nicht auf.
 func (a *pgAusleihAbfragen) BeginneTx(ctx context.Context) (pgx.Tx, error) {
 	return a.db.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel:   pgx.ReadCommitted,
@@ -109,7 +102,7 @@ func (a *pgAusleihAbfragen) BeginneTx(ctx context.Context) (pgx.Tx, error) {
 	})
 }
 
-// FindeOffene ruft die aktive Ausleihe ohne Sperre (schreibgeschützt) ab.
+// FindeOffene liest die offene Ausleihe ohne Sperre.
 func (a *pgAusleihAbfragen) FindeOffene(ctx context.Context, exemplarID string) (*Ausleihe, error) {
 	query := `
 		SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
@@ -127,9 +120,8 @@ func (a *pgAusleihAbfragen) FindeOffene(ctx context.Context, exemplarID string) 
 	return l, nil
 }
 
-// SperreOffene ruft die aktive Ausleihe innerhalb einer Transaktion mit 'SELECT ... FOR UPDATE' ab.
-// Diese Zeilensperrung (Row-Level-Lock) verhindert, dass parallele Scanner-Anfragen
-// dasselbe Exemplar innerhalb desselben Millisekundenfensters doppelt verarbeiten.
+// SperreOffene liest die offene Ausleihe mit FOR UPDATE: Zwei Scans desselben Exemplars im
+// selben Augenblick verarbeiten es nicht doppelt.
 func (a *pgAusleihAbfragen) SperreOffene(ctx context.Context, tx pgx.Tx, exemplarID string) (*Ausleihe, error) {
 	query := `
 		SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
@@ -148,12 +140,11 @@ func (a *pgAusleihAbfragen) SperreOffene(ctx context.Context, tx pgx.Tx, exempla
 	return l, nil
 }
 
-// Die drei Schreiber der Ausleihe teilen sich je EINE SQL-Formulierung mit dem Online-Scan
-// und dem Nachbuchen (Stufe 2 des Offline-Baus, Commit 11): Der Zeitpunkt ist ein Parameter.
-// nil heißt „jetzt" (Online-Scan, Default der Spalten); das Nachbuchen gibt den Scan-Zeitpunkt
-// vom Theken-Rechner mit — höchstens Serverzeit, das prüft der Aufrufer. Zwei Formulierungen
-// derselben Buchung (eine mit, eine ohne Zeit) wären zwei Türen zum selben Zustand.
-
+// sqlAusleihe schreibt die Ausleihe für den Scan an der Theke und für das Nachbuchen: Der
+// Zeitpunkt ist ein Parameter. nil heißt jetzt (Scan an der Theke, Vorgabe der Spalten); das
+// Nachbuchen gibt den Zeitpunkt des Scans vom Theken-Rechner mit, höchstens die Serverzeit, das
+// prüft der Rufer. Zwei Anweisungen für dieselbe Buchung (eine mit, eine ohne Zeit) wären zwei
+// Wege zum selben Zustand.
 const sqlAusleihe = `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id, ist_handapparat, ausgeliehen_am, erfasst_am)
 		VALUES ($1, $2, $3, $4, $5, COALESCE($6::timestamptz, CURRENT_TIMESTAMP), COALESCE($6::timestamptz, CURRENT_TIMESTAMP))
@@ -161,8 +152,8 @@ const sqlAusleihe = `
 		RETURNING id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 	`
 
-// AusleiheNeu trägt die Angaben einer Ausleihe. Als Struktur, weil Exemplar, Leser
-// und Bearbeiter drei Kennungen vom selben Typ sind — positionsweise vertauscht, liefe die
+// AusleiheNeu trägt die Angaben einer neuen Ausleihe. Eine Struktur, weil Exemplar, Leser und
+// Bearbeiter drei Kennungen vom selben Typ sind: In der Reihenfolge vertauscht, liefe die
 // Buchung ohne Fehler auf die falsche Person. Zeitpunkt nil heißt jetzt.
 type AusleiheNeu struct {
 	ExemplarID     string
@@ -173,7 +164,7 @@ type AusleiheNeu struct {
 	Zeitpunkt      *time.Time
 }
 
-// LegeAn erzeugt einen neuen Ausleiheintrag innerhalb einer Transaktion — jetzt.
+// LegeAn legt die Ausleihe in der Transaktion an, zum jetzigen Zeitpunkt.
 func (a *pgAusleihAbfragen) LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*Ausleihe, error) {
 	return LegeAusleiheAn(ctx, tx, AusleiheNeu{
 		ExemplarID:     exemplarID,
@@ -185,17 +176,18 @@ func (a *pgAusleihAbfragen) LegeAn(ctx context.Context, tx pgx.Tx, exemplarID, l
 	})
 }
 
-// LegeAusleiheAn erzeugt die Ausleihe eines Lesers zum gegebenen Zeitpunkt (nil = jetzt)
+// LegeAusleiheAn legt die Ausleihe eines Lesers zum genannten Zeitpunkt an (nil heißt jetzt)
 // und stempelt die Bewegung des Exemplars mit demselben Zeitpunkt.
 func LegeAusleiheAn(ctx context.Context, tx pgx.Tx, neu AusleiheNeu) (*Ausleihe, error) {
 	return schreibeAusleihe(ctx, tx, neu.ExemplarID, neu.Zeitpunkt, sqlAusleihe, neu.ExemplarID, neu.LeserID, neu.RueckgabeFrist, neu.BearbeiterID, neu.IstDauerleihe, neu.Zeitpunkt)
 }
 
+// schreibeAusleihe führt das INSERT aus und stempelt die Bewegung des Exemplars.
 func schreibeAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, zeitpunkt *time.Time, query string, args ...any) (*Ausleihe, error) {
 	l, err := leseAusleihe(tx.QueryRow(ctx, query, args...))
 	if err != nil {
-		// Keine Zeile heißt hier NICHT "nichts gefunden", sondern "ON CONFLICT hat
-		// den INSERT verworfen" — ein Konflikt, kein Normalfall.
+		// Keine Zeile heißt hier nicht „nichts gefunden": ON CONFLICT hat das INSERT verworfen,
+		// ein Konflikt.
 		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrAusleiheKonflikt
 		}
@@ -207,14 +199,14 @@ func schreibeAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, zeitpun
 	return l, nil
 }
 
-// BucheRueckgabe bucht ein ausgeliehenes Buch innerhalb einer Transaktion zurück — jetzt.
+// BucheRueckgabe beendet die offene Ausleihe in der Transaktion, zum jetzigen Zeitpunkt.
 func (a *pgAusleihAbfragen) BucheRueckgabe(ctx context.Context, tx pgx.Tx, ausleiheID, bearbeiterID string, istFremdrueckgabe bool) error {
 	return BucheRueckgabeZum(ctx, tx, ausleiheID, bearbeiterID, istFremdrueckgabe, nil)
 }
 
-// BucheRueckgabeZum bucht die Rückgabe zum gegebenen Zeitpunkt (nil = jetzt). Liegt der
-// Zeitpunkt vor der Ausleihe, weist check_return_date (23514) die Rückgabe ab — beim
-// Nachbuchen ist das ein veralteter Scan, kein Serverfehler.
+// BucheRueckgabeZum bucht die Rückgabe zum genannten Zeitpunkt (nil heißt jetzt). Liegt der
+// Zeitpunkt vor der Ausleihe, weist check_return_date (23514) die Rückgabe ab; beim Nachbuchen
+// ist das ein veralteter Scan, kein Serverfehler.
 func BucheRueckgabeZum(ctx context.Context, tx pgx.Tx, ausleiheID, bearbeiterID string, istFremdrueckgabe bool, zeitpunkt *time.Time) error {
 	tag, err := tx.Exec(ctx, `
 		UPDATE ausleihen
@@ -227,9 +219,9 @@ func BucheRueckgabeZum(ctx context.Context, tx pgx.Tx, ausleiheID, bearbeiterID 
 	if tag.RowsAffected() == 0 {
 		return errors.New("loan not active or already returned")
 	}
-	// Bewegungsstempel am Exemplar (Migration 116). Diese Funktion bucht Bücher; Geräte gehen
-	// über device_service — die Ausleihe hier trägt also immer ein Exemplar, 0 Zeilen wäre ein
-	// Widerspruch und kein Normalfall.
+	// Der Bewegungsstempel am Exemplar. Diese Funktion bucht Bücher, Geräte gehen über
+	// internal/service/device_service.go; die Ausleihe trägt hier also immer ein Exemplar, und
+	// keine getroffene Zeile ist ein Widerspruch.
 	stempel, err := tx.Exec(ctx, `
 		UPDATE buecher_exemplare e SET letzte_bewegung_am = `+sqlStempelVor(`$2`)+`
 		FROM ausleihen a WHERE a.id = $1 AND e.id = a.exemplar_id`, ausleiheID, zeitpunkt)

@@ -9,14 +9,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Nachbuch-Meldungen (Migration 117, Stufe 2 des Offline-Baus): Jede Abweichung vom
-// Offline-Scan beim Nachbuchen — umgebucht, nur reaktiviert, nicht gebucht, veraltet —
-// bleibt mit Barcode, Grund und Beteiligten stehen, bis jemand aus der Bibliothek sie
-// quittiert. Nichts verschwindet still (entschieden am 13.09.2026, c).
-
-// Die Ergebnisse des Nachbuchens (OFFEN.md 2.2, Commit 11). `wiederholen` ist keines:
-// Es ist die Antwort für einen Eintrag, den der Server nicht beurteilen konnte (503),
-// und der bleibt auf dem Theken-Rechner liegen statt hier zu stehen.
+// Die Ergebnisse des Nachbuchens. „wiederholen" ist keines: Es ist die Antwort für einen
+// Eintrag, den der Server nicht beurteilen konnte (503); der bleibt auf dem Theken-Rechner
+// liegen und steht nicht hier.
 const (
 	NachbuchAusgeliehen        = "ausgeliehen"
 	NachbuchUmgebucht          = "umgebucht"
@@ -27,7 +22,9 @@ const (
 	NachbuchVeraltet           = "veraltet"
 )
 
-// NachbuchMeldungEingabe ist, was die Nachbuch-Tür je Abweichung festhält.
+// NachbuchMeldungEingabe ist, was das Nachbuchen je Abweichung festhält. Jede Abweichung vom
+// Scan ohne Netz (umgebucht, nur reaktiviert, nicht gebucht, veraltet) bleibt mit Barcode,
+// Grund und Beteiligten stehen, bis jemand aus der Bibliothek sie quittiert.
 type NachbuchMeldungEingabe struct {
 	IdempotencyKey        string
 	ExemplarID            *string
@@ -40,8 +37,8 @@ type NachbuchMeldungEingabe struct {
 	GescanntAm            time.Time
 }
 
-// NachbuchMeldung ist eine Zeile der Meldungsliste, mit aufgelösten Namen — die Liste
-// ist nur mit view_students sichtbar, die Namen sind dort erlaubt.
+// NachbuchMeldung ist eine Zeile der Liste der Meldungen, mit den Namen der Beteiligten. Die
+// Liste ist nur mit dem Recht view_students zu sehen; die Namen sind dort erlaubt.
 type NachbuchMeldung struct {
 	ID              string     `json:"id"`
 	Barcode         string     `json:"barcode"`
@@ -58,14 +55,13 @@ type NachbuchMeldung struct {
 	AusleiherKlasse string     `json:"ausleiher_klasse,omitempty"`
 }
 
-// ErrNachbuchMeldungNichtOffen heißt: quittiert wurde nichts — die Meldung gibt es nicht oder
-// sie ist schon quittiert. Kein stiller Erfolg (Phantom-Erfolg-Sweep 31.08.2026).
+// ErrNachbuchMeldungNichtOffen meldet, dass nichts quittiert wurde: Die Meldung gibt es nicht,
+// oder sie ist schon quittiert.
 var ErrNachbuchMeldungNichtOffen = errors.New("nachbuch-meldung nicht offen")
 
-// SchreibeNachbuchMeldung legt eine Meldung ab — in der Transaktion des Aufrufers, damit
-// sie mit der Buchung steht oder fällt. Ein zweiter Eintrag mit demselben Schlüssel wird
-// still übergangen (ON CONFLICT DO NOTHING): Die Wiederholung eines Theken-Rechners ist
-// kein zweiter Vorgang.
+// SchreibeNachbuchMeldung legt eine Meldung ab, in der Transaktion des Rufers, damit sie mit
+// der Buchung gilt oder fällt. Ein zweiter Eintrag mit demselben Schlüssel wird übergangen (ON
+// CONFLICT DO NOTHING): Die Wiederholung eines Theken-Rechners ist kein zweiter Vorgang.
 func SchreibeNachbuchMeldung(ctx context.Context, q Datenbank, m NachbuchMeldungEingabe) error {
 	if _, err := q.Exec(ctx, `
 		INSERT INTO nachbuch_meldungen
@@ -82,8 +78,8 @@ func SchreibeNachbuchMeldung(ctx context.Context, q Datenbank, m NachbuchMeldung
 	return nil
 }
 
-// nachbuchMeldungSQL ist die Zeile der Liste; Namen kommen aus dem Bestand, sind nach der
-// Tilgung also weg (FK → NULL), der Barcode-Text bleibt.
+// nachbuchMeldungSQL ist die Zeile der Liste. Die Namen kommen aus dem Bestand und sind nach
+// der Tilgung weg (der Fremdschlüssel wird NULL); der Barcode als Text bleibt.
 const nachbuchMeldungSQL = `
 	SELECT m.id, m.barcode, coalesce(t.titel, ''), m.ergebnis, coalesce(m.grund, ''),
 	       coalesce(la.vorname || ' ' || la.nachname, ''),
@@ -100,8 +96,8 @@ const nachbuchMeldungSQL = `
 	LEFT JOIN leser lv ON lv.id = m.vorbesitzer_schueler_id
 	LEFT JOIN benutzer bq ON bq.id = m.quittiert_von`
 
-// LadeNachbuchMeldungen liest die offenen Meldungen (nurOffen) oder alle, jüngste zuerst.
-// Gekappt auf 500 Zeilen: Die Liste ist eine Arbeitsliste, kein Archiv (siehe Löschfrist).
+// LadeNachbuchMeldungen liest die offenen Meldungen (nurOffen) oder alle, die jüngsten zuerst,
+// höchstens 500: Die Liste ist eine Arbeitsliste, kein Archiv.
 func LadeNachbuchMeldungen(ctx context.Context, q Datenbank, nurOffen bool) ([]NachbuchMeldung, error) {
 	where := ""
 	if nurOffen {
@@ -124,7 +120,7 @@ func LadeNachbuchMeldungen(ctx context.Context, q Datenbank, nurOffen bool) ([]N
 	return out, rows.Err()
 }
 
-// QuittiereNachbuchMeldung setzt quittiert_von/am — nur auf einer offenen Meldung.
+// QuittiereNachbuchMeldung setzt quittiert_von und quittiert_am, nur auf einer offenen Meldung.
 func QuittiereNachbuchMeldung(ctx context.Context, q Datenbank, id, benutzerID string) error {
 	tag, err := q.Exec(ctx, `
 		UPDATE nachbuch_meldungen SET quittiert_von = $2, quittiert_am = CURRENT_TIMESTAMP
@@ -138,7 +134,7 @@ func QuittiereNachbuchMeldung(ctx context.Context, q Datenbank, id, benutzerID s
 	return nil
 }
 
-// ZaehleOffeneNachbuchMeldungen ist der Zähler fürs Band an der Theke.
+// ZaehleOffeneNachbuchMeldungen zählt die offenen Meldungen für das Band an der Theke.
 func ZaehleOffeneNachbuchMeldungen(ctx context.Context, q Datenbank) (int, error) {
 	var n int
 	err := q.QueryRow(ctx, `SELECT count(*) FROM nachbuch_meldungen WHERE quittiert_am IS NULL`).Scan(&n)

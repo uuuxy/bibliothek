@@ -36,9 +36,9 @@ func VerlaengereAusleihe(ctx context.Context, db Datenbank, ausleiheID string, n
 // SetzeAusleihFrist setzt die Frist einer offenen Ausleihe von Hand und liefert Kennung und
 // gespeicherte Frist; pgx.ErrNoRows, wenn die Ausleihe nicht mehr offen ist.
 //
-// Wie bei der regulären Verlängerung: Eine neue Frist in der Zukunft macht die
-// Ausleihe wieder "nicht überfällig" und setzt die Mahn-Eskalation zurück. Ein
-// vorgezogenes Datum (Rückruf) lässt die Mahnstufe unberührt.
+// Wie bei der Verlängerung: Eine neue Frist in der Zukunft macht die Ausleihe wieder „nicht
+// überfällig" und beginnt die Mahnfolge neu. Ein vorgezogenes Datum (Rückruf) lässt die
+// Mahnstufe unberührt.
 func SetzeAusleihFrist(ctx context.Context, db Datenbank, ausleiheID string, neueFrist time.Time) (id string, frist time.Time, err error) {
 	q := `
 			UPDATE ausleihen
@@ -56,9 +56,8 @@ func SetzeAusleihFrist(ctx context.Context, db Datenbank, ausleiheID string, neu
 // und liefert die Zahl der angepassten Ausleihen. Ausgenommen bleibt, wer die Frist nicht
 // mitnimmt (SchulbuchFristGehtMitSQL), etwa ein Kind mit einer Sperre von Hand.
 //
-// Mass-Verlängerung setzt zugleich die Mahn-Eskalation der betroffenen Ausleihen
-// zurück (sofern die neue Frist in der Zukunft liegt) — sonst würde ein ganzer
-// Klassensatz nach der Verlängerung fälschlich auf der alten Mahnstufe weiterlaufen.
+// Liegt die neue Frist in der Zukunft, beginnt auch hier die Mahnfolge neu; sonst liefe ein
+// ganzer Klassensatz nach der Verlängerung auf der alten Mahnstufe weiter.
 func VerlaengereLernmittelDerKlasse(ctx context.Context, db Datenbank, klasse string, neueFrist time.Time) (int64, error) {
 	q := `
 			UPDATE ausleihen a

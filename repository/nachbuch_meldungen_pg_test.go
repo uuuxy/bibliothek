@@ -12,9 +12,9 @@ import (
 	"github.com/google/uuid"
 )
 
-// Migration 117: Eine Meldung entsteht je Schlüssel genau einmal, steht offen, bis jemand
-// sie quittiert, zählt bis dahin fürs Band, und fällt quittiert nach der Frist — mit
-// DEMSELBEN Prädikat, das der Rückstands-Wächter benutzt.
+// Eine Meldung entsteht je Schlüssel genau einmal, steht offen, bis jemand sie quittiert, zählt
+// bis dahin für das Band an der Theke und fällt quittiert nach der Frist, mit derselben
+// Bedingung, die der Wächter über den Rückstand benutzt.
 func TestNachbuchMeldungen_Lebenslauf(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -39,8 +39,8 @@ func TestNachbuchMeldungen_Lebenslauf(t *testing.T) {
 
 	schluessel := uuid.NewString()
 	barcode := "B-NB-" + suffix
-	// Zweimal derselbe Schlüssel = eine Meldung (die Wiederholung des Theken-Rechners) —
-	// geschrieben, wie die Nachbuch-Tür es tut (Commit 11: SchreibeNachbuchMeldung).
+	// Zweimal derselbe Schlüssel ist eine Meldung (die Wiederholung des Theken-Rechners),
+	// geschrieben, wie das Nachbuchen es tut (SchreibeNachbuchMeldung).
 	for i := 0; i < 2; i++ {
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO nachbuch_meldungen (idempotency_key, barcode, ergebnis, grund, vorbesitzer_schueler_id, gescannt_am)
@@ -74,7 +74,7 @@ func TestNachbuchMeldungen_Lebenslauf(t *testing.T) {
 		t.Errorf("Zeile: Vorbesitzer %q, Ergebnis %q", meine.Vorbesitzer, meine.Ergebnis)
 	}
 
-	// Quittieren: einmal ja, ein zweites Mal ist kein stiller Erfolg.
+	// Quittieren: einmal ja; ein zweites Mal liefert ErrNachbuchMeldungNichtOffen.
 	if err := QuittiereNachbuchMeldung(ctx, pool, meine.ID, bearbeiterID); err != nil {
 		t.Fatalf("quittieren: %v", err)
 	}
@@ -99,8 +99,8 @@ func TestNachbuchMeldungen_Lebenslauf(t *testing.T) {
 	}
 }
 
-// Die Frist: Lesehistorie-Frist, höchstens 30 Tage — nie mehr, auch wenn die Einstellung
-// zwei Jahre sagt, nie 0 (0 hieße „aus", und offene Namen ohne Frist sind nicht gewollt).
+// Die Frist ist die der Lesehistorie, höchstens 30 Tage: nie mehr, auch wenn die Einstellung
+// zwei Jahre sagt, und nie 0 (0 hieße „aus", und offene Namen ohne Frist sind nicht gewollt).
 func TestNachbuchMeldungenTage_HoechstensDreissig(t *testing.T) {
 	zehn, zweiJahre, aus := 10, 730, 0
 	if got := NachbuchMeldungenTage(&SystemEinstellungen{LesehistorieTage: &zehn}); got != 10 {

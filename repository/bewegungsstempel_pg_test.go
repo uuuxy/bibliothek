@@ -13,11 +13,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Migration 116: Jede Bewegung eines Exemplars stempelt letzte_bewegung_am, jede Ausleihe
-// trägt erfasst_am. Der Wächter des Nachbuchens (Stufe 2, Commit 11) verlässt sich darauf:
-// Ein Scan, der älter ist als die letzte Bewegung, wird gemeldet statt gebucht. Fehlt der
-// Stempel an einem Schreiber, hält der Wächter dort still — und bucht einen alten Scan über
-// eine jüngere Wirklichkeit. Geprüft wird darum jeder Schreiber einzeln, am echten SQL.
+// Jede Bewegung eines Exemplars stempelt letzte_bewegung_am, jede Ausleihe trägt erfasst_am.
+// Der Wächter des Nachbuchens verlässt sich darauf: Ein Scan, der älter ist als die letzte
+// Bewegung, wird gemeldet statt gebucht. Fehlt der Stempel an einem Schreiber, hält der Wächter
+// dort still und bucht einen alten Scan über einen jüngeren Stand. Geprüft wird deshalb jeder
+// Schreiber einzeln, an seiner Anweisung.
 func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -67,7 +67,7 @@ func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 		t.Fatalf("Rückgabe rückt den Stempel nicht vor: %v → %v", nachAusleihe, nachRueckgabe)
 	}
 
-	// Aussonderung (Soft-Delete): Stempel rückt vor.
+	// Aussonderung: Der Stempel rückt vor.
 	warte(t, pool)
 	if err := NewBookRepository(pool).UpdateCopyStatus(ctx, f.exemplarID, false, true, "", nil, f.bearbeiterID); err != nil {
 		t.Fatalf("aussondern: %v", err)
@@ -92,12 +92,12 @@ func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 	}
 }
 
-// Der Stempel läuft nie rückwärts. Der Wächter des Nachbuchens weist Scans ab, die älter sind als
-// die letzte Bewegung; setzt ein Schreiber den Stempel auf einen früheren Zeitpunkt zurück, gilt
-// jeder Scan zwischen diesem Zeitpunkt und der echten letzten Bewegung wieder als frisch — und
-// bucht über die jüngere Wirklichkeit (Rasterdurchgang 15.09.2026, OFFEN.md 5.15). Zwei Wege
-// dorthin: ein Schreiber mit übergebenem Zeitpunkt (Nachbuchen), und ein Schreiber mit
-// CURRENT_TIMESTAMP in einer Transaktion, die vor der letzten Bewegung begonnen hat.
+// Der Stempel läuft nie rückwärts. Der Wächter des Nachbuchens weist Scans ab, die älter sind
+// als die letzte Bewegung; setzte ein Schreiber den Stempel auf einen früheren Zeitpunkt
+// zurück, gälte jeder Scan zwischen diesem Zeitpunkt und der letzten Bewegung wieder als frisch
+// und buchte über den jüngeren Stand. Zwei Wege führen dorthin: ein Schreiber mit übergebenem
+// Zeitpunkt (Nachbuchen) und ein Schreiber mit CURRENT_TIMESTAMP in einer Transaktion, die vor
+// der letzten Bewegung begonnen hat.
 func TestBewegungsstempel_LaeuftNieRueckwaerts(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -219,8 +219,8 @@ func stempelLeser(t *testing.T, pool *pgxpool.Pool, exemplarID string) func() ti
 	}
 }
 
-// warte lässt die Datenbank-Uhr sichtbar weiterlaufen; CURRENT_TIMESTAMP hat Mikrosekunden,
-// zwei Statements in Folge können aber innerhalb derselben Auflösung liegen.
+// warte lässt die Uhr der Datenbank sichtbar weiterlaufen: CURRENT_TIMESTAMP hat Mikrosekunden,
+// zwei Anweisungen in Folge können aber in derselben Auflösung liegen.
 func warte(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), `SELECT pg_sleep(0.01)`); err != nil {
@@ -269,13 +269,10 @@ func beginne(t *testing.T, pool *pgxpool.Pool) pgx.Tx {
 	return tx
 }
 
-// Die Regel statt der Auswahl (OFFEN.md 5.15, Migration 132): Bis zum 22.09.2026 stempelten
-// Aussondern, Bestandskorrektur, Schadensmeldung und Soft-Delete — „Verloren" und
-// Reaktivieren im Status-Editor, der Inventur-Abschluss und repository/schaden.go nicht. Der
-// Test oben prüft eine feste Liste; ein neuer Schreiber ohne Stempel bliebe grün. Jetzt
-// stempelt die Datenbank jeden Wechsel von ist_ausgesondert oder ist_ausleihbar, den ein
-// Schreiber nicht selbst stempelt — geprüft an ROHEN Updates, wie sie jeder vergessliche
-// Schreiber schickt.
+// Die Regel statt der Auswahl: Die Datenbank stempelt jeden Wechsel von ist_ausgesondert oder
+// ist_ausleihbar, den ein Schreiber nicht selbst stempelt. Der Test oben prüft eine feste Liste
+// von Schreibern; ein neuer Schreiber ohne Stempel bliebe dort grün. Geprüft wird hier an
+// Anweisungen ohne Stempel, wie sie ein Schreiber schickt, der ihn vergisst.
 func TestBewegungsstempel_ZustandswechselStempeltAuchOhneSchreiber(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -294,14 +291,14 @@ func TestBewegungsstempel_ZustandswechselStempeltAuchOhneSchreiber(t *testing.T)
 		}
 	}
 
-	// „Verloren" (roh, ohne Stempel): der erste Stempel überhaupt.
+	// „Verloren" (ohne Stempel in der Anweisung): der erste Stempel überhaupt.
 	roh("verloren", `UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'VERLUST' WHERE id = $1`)
 	nachVerlust := stempel()
 	if nachVerlust == nil {
 		t.Fatal("Verloren ohne eigenen Stempel: letzte_bewegung_am bleibt NULL, der Wächter des Nachbuchens hält hier still")
 	}
 
-	// Reaktivieren (roh): rückt vor.
+	// Reaktivieren (ohne Stempel in der Anweisung): rückt vor.
 	warte(t, pool)
 	roh("reaktivieren", `UPDATE buecher_exemplare SET ist_ausgesondert = false, ist_ausleihbar = true, aussonderung_grund = NULL WHERE id = $1`)
 	nachReaktivierung := stempel()
@@ -309,16 +306,16 @@ func TestBewegungsstempel_ZustandswechselStempeltAuchOhneSchreiber(t *testing.T)
 		t.Fatalf("Reaktivieren rückt den Stempel nicht vor: %v → %v", nachVerlust, nachReaktivierung)
 	}
 
-	// Ein Update ohne Zustandswechsel stempelt NICHT (Etiketten-Lauf, Notiz, Preis).
+	// Ein Update ohne Zustandswechsel stempelt nicht (Etiketten-Lauf, Notiz, Preis).
 	warte(t, pool)
 	roh("Etikett", `UPDATE buecher_exemplare SET etikett_gedruckt = true, zustand_notiz = 'Notiz' WHERE id = $1`)
 	if s := stempel(); !s.Equal(*nachReaktivierung) {
 		t.Fatalf("ein Update ohne Zustandswechsel hat gestempelt: %v → %v", nachReaktivierung, s)
 	}
 
-	// Ein Schreiber, der selbst mit Scan-Zeit stempelt (Rückholen beim Nachbuchen), behält
-	// seine Zeit: Die Datenbank überschreibt einen gesetzten Stempel nicht mit „jetzt" —
-	// sonst gälte jeder spätere Offline-Scan desselben Bandes als veraltet.
+	// Ein Schreiber, der selbst mit der Zeit des Scans stempelt (Rückholen beim Nachbuchen),
+	// behält seine Zeit: Die Datenbank überschreibt einen gesetzten Stempel nicht mit „jetzt";
+	// sonst gälte jeder spätere Scan ohne Netz desselben Bandes als veraltet.
 	warte(t, pool)
 	roh("aussondern", `UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'VERLUST' WHERE id = $1`)
 	nachAussonderung := stempel()

@@ -14,18 +14,18 @@ func sqlStempelVor(param string) string {
 }
 
 // sqlStempelJetzt ist dasselbe für Schreiber ohne Zeitpunkt. CURRENT_TIMESTAMP ist der Beginn
-// der Transaktion — eine Transaktion, die vor der letzten Bewegung begann, setzte den Stempel
-// sonst zurück (TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck).
+// der Transaktion; GREATEST verhindert, dass eine Transaktion, die vor der letzten Bewegung
+// begann, den Stempel zurücksetzt (TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck).
 const sqlStempelJetzt = `GREATEST(letzte_bewegung_am, CURRENT_TIMESTAMP)`
 
-// stempleBewegungZum setzt buecher_exemplare.letzte_bewegung_am (Migration 116) auf den
-// Zeitpunkt; nil heißt jetzt (Online-Scan), das Nachbuchen gibt den Scan-Zeitpunkt mit.
-// Der Wächter des Nachbuchens weist Scans ab, die älter sind als die letzte Bewegung.
-// Aufgerufen NACH der Zeile in ausleihen — Sperrreihenfolge Schüler → Ausleihe → Exemplar
-// (docs/invarianten.md, Abschnitt 1); das Nachbuchen hält dieselbe Reihenfolge.
+// stempleBewegungZum setzt buecher_exemplare.letzte_bewegung_am auf den Zeitpunkt; nil heißt
+// jetzt (Scan an der Theke), das Nachbuchen gibt den Zeitpunkt des Scans mit. Der Wächter des
+// Nachbuchens weist Scans ab, die älter sind als die letzte Bewegung. Gerufen wird es nach der
+// Zeile in ausleihen: Die Reihenfolge der Sperren ist Leser, Ausleihe, Exemplar
+// (docs/invarianten.md, Abschnitt 1), und das Nachbuchen hält dieselbe.
 //
 // Der Stempel läuft nie rückwärts (sqlStempelVor): Ein früherer Zeitpunkt ließe jeden Scan
-// zwischen ihm und der echten letzten Bewegung wieder durch den Wächter.
+// zwischen ihm und der letzten Bewegung wieder durch den Wächter.
 func stempleBewegungZum(ctx context.Context, q Datenbank, exemplarID string, zeitpunkt *time.Time) error {
 	tag, err := q.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = `+sqlStempelVor(`$2`)+` WHERE id = $1`, exemplarID, zeitpunkt)
 	if err != nil {

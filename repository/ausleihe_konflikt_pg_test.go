@@ -9,13 +9,13 @@ import (
 	"bibliothek/db"
 )
 
-// Der eindeutige Index lässt höchstens eine offene Ausleihe je Exemplar zu. Prallt
-// der INSERT daran ab, gab AusleihAbfragen.LegeAn früher (nil, nil) zurück — kein Fehler, keine
-// Zeile. Der Aufrufer prüfte nur err, hielt das für Erfolg und meldete dem
-// Arbeitsplatz eine Ausleihe, die nie geschrieben wurde.
+// Der eindeutige Index lässt höchstens eine offene Ausleihe je Exemplar zu. Prallt das INSERT
+// daran ab, liefert AusleihAbfragen.LegeAn ErrAusleiheKonflikt. Ohne den Fehlerwert bekäme der
+// Rufer keine Zeile und keinen Fehler, hielte das für Erfolg und meldete dem Arbeitsplatz eine
+// Ausleihe, die nie geschrieben wurde.
 //
-// Nur gegen echtes Postgres prüfbar: Es geht um das Verhalten von
-// "ON CONFLICT DO NOTHING ... RETURNING" am partiellen Unique-Index.
+// Nur am echten Postgres prüfbar: Es geht um das Verhalten von ON CONFLICT DO NOTHING …
+// RETURNING am partiellen Unique-Index.
 func TestAusleiheLegeAn_MeldetKonfliktStattStillemNichts(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
@@ -44,7 +44,7 @@ func TestAusleiheLegeAn_MeldetKonfliktStattStillemNichts(t *testing.T) {
 		t.Fatalf("Commit: %v", err)
 	}
 
-	// Zweiter Vorgang auf dasselbe Exemplar, anderer Schüler — muss abprallen.
+	// Ein zweiter Vorgang auf dasselbe Exemplar für einen anderen Schüler prallt ab.
 	tx2, err := repo.BeginneTx(ctx)
 	if err != nil {
 		t.Fatalf("BeginneTx 2: %v", err)
@@ -64,8 +64,8 @@ func TestAusleiheLegeAn_MeldetKonfliktStattStillemNichts(t *testing.T) {
 	}
 }
 
-// Gegenprobe: Nach einer Rückgabe ist der Index wieder frei, dieselbe Signatur darf
-// erneut ausgeliehen werden. Sonst hätte der Fix den Normalbetrieb kaputtgemacht.
+// Gegenprobe: Nach einer Rückgabe ist der Index wieder frei, und dasselbe Exemplar lässt sich
+// erneut ausleihen.
 func TestAusleiheLegeAn_NachRueckgabeWiederAusleihbar(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
