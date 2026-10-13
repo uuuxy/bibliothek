@@ -360,15 +360,35 @@ Für die Entwicklung und für jeden, der sie übernimmt.
 
 ## 6. Kann jemand anderes das Programm weiterführen?
 
-Gemessen am 24.09.2026. **Der Code:** außerhalb der Tests keine Go-Funktion über 150 Zeilen
-(die längste hat 148),
-23 direkte Go-Abhängigkeiten, übliche Bausteine (Go mit `net/http` und `pgx`, Svelte 5,
-Tailwind, PostgreSQL, Docker Compose), Tests und CI, Betrieb mit einem Befehl. Die
-Architektur ist nach arc42 beschrieben ([ARCHITEKTUR.md](ARCHITEKTUR.md)).
+Gemessen am 13.10.2026 am Go-Code ohne Tests: 566 Dateien, 2.616 Funktionen.
 
-**Was bremst,** liegt um den Code: 2.499 Commits seit dem 29.05.2026, die Zahl der
-Projektregeln (`CLAUDE.md`, [invarianten.md](invarianten.md), [sweeps.md](sweeps.md)) und
-Wissen außerhalb des Repositorys (Abschnitt 7).
+**Was trägt:**
+
+- Die Stelle findet sich über den Menüpunkt. Die Türen stehen in zwölf Ordnern nach den
+  Menüpunkten der Oberfläche, je 6 bis 23 Dateien, und tragen kein SQL. Den Einstieg gibt
+  [WEGWEISER.md](WEGWEISER.md) auf einer Seite.
+- Eine Datei lässt sich in einem Zug lesen: Die Hälfte hat höchstens 117 Zeilen, neun von
+  zehn höchstens 294. 21 haben über 400, vier über 600.
+- Funktionen sind kurz: Die Hälfte hat höchstens 13 Zeilen, 22 haben über 80, die längste 154
+  (eine Liste von Adressen).
+- 25 direkte Go-Abhängigkeiten, übliche Bausteine (Go mit `net/http` und `pgx`, Svelte 5,
+  Tailwind, PostgreSQL, Docker Compose), Tests und CI, Betrieb mit einem Befehl. Die
+  Architektur ist nach arc42 beschrieben ([ARCHITEKTUR.md](ARCHITEKTUR.md)).
+
+**Was bremst:**
+
+- Namen in zwei Sprachen: Ältere Dateien heißen englisch, neuere deutsch. In Go und in der
+  Oberfläche tragen 43 Dateinamen `student`, 33 `schueler` oder `leser`. Die Paare stehen im
+  Wegweiser.
+- Kommentare mit Vorgeschichte: 560 Kommentarzeilen in 244 der 566 Dateien nennen ein Datum.
+  Neu gefasst wird ein Kommentar, wenn seine Datei ohnehin angefasst wird (`CLAUDE.md`,
+  Abschnitt 4).
+- Die Datenbankschicht ist ein Ordner mit 152 Dateien; gefunden wird dort über den Namen der
+  Datei. Warum sie ein Paket bleibt, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2.
+- Die größte Datei hat 907 Zeilen (`internal/bereitschaft/bereitschaft.go`).
+- Um den Code: 3.294 Commits seit dem 29.05.2026, die Zahl der Projektregeln (`CLAUDE.md`,
+  [invarianten.md](invarianten.md), [sweeps.md](sweeps.md)), ein Architektur-Dokument von
+  4.623 Zeilen und Wissen außerhalb des Repositorys (Abschnitt 7).
 
 ---
 
