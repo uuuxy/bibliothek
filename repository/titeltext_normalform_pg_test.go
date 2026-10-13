@@ -22,8 +22,8 @@ var (
 )
 
 // Titeltexte stehen in einer Form in der Tabelle: kein Leerraum am Rand, Leerraum in Folge
-// ist ein Leerzeichen, Umlaute zusammengesetzt (NFC). Ein Trigger setzt sie an jeder Tür
-// (Migration 160). Geprüft wird die echte Migrationsdatei an einer Altzeile, die am Trigger
+// ist ein Leerzeichen, Umlaute zusammengesetzt (NFC). Ein Trigger setzt sie an jeder Tür.
+// Geprüft wird die echte Migrationsdatei an einer Altzeile, die am Trigger
 // vorbei entsteht. Alles in einer Transaktion, die am Ende zurückgerollt wird; das Abschalten
 // des Triggers gilt nur darin.
 func TestTiteltextNormalform_NachMigration160(t *testing.T) {

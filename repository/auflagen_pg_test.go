@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Auflagen eines Schulbuchs (Migration 148, docs/OFFEN.md 4.18) gegen echtes Postgres: Die
+// Auflagen eines Schulbuchs gegen echtes Postgres: Die
 // Regeln — nur Lernmittel, zwei Gruppen werden eine, ein Werk mit weniger als zwei Titeln
 // fällt — stehen in repository/auflagen.go und wirken über mehrere Zeilen und zwei
 // Tabellen. pgxmock sähe davon nichts.

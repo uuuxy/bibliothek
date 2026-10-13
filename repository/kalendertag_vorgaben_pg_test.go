@@ -11,9 +11,9 @@ import (
 // zwischen Mitternacht in Berlin und 2 Uhr der Vortag).
 //
 // docs/kalendertag_bestand_test.go hält CURRENT_DATE in Go-Quellen fest — eine Vorgabe in
-// schema.sql oder in einer Migration sieht er nicht. Genau dort standen am 23.09.2026 die
-// letzten zwei: buecher_exemplare.erworben_am (Migration 139) und
-// schadensersatz_bescheide.brief_datum (Migration 142). Geprüft wird am fertigen Schema,
+// schema.sql oder in einer Migration sieht er nicht. Genau dort standen die
+// letzten zwei: buecher_exemplare.erworben_am und
+// schadensersatz_bescheide.brief_datum. Geprüft wird am fertigen Schema,
 // nicht am Text: Postgres schreibt jede Vorgabe in eine Form, egal wie sie getippt war.
 //
 // Erlaubt ist der Kalendertag der Schule, ((now() AT TIME ZONE 'Europe/Berlin'))::date, und

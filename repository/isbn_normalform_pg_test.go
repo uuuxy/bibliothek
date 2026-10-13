@@ -17,7 +17,7 @@ import (
 // Meldebestände und zwei Zeilen in der Nachbestellung. Dasselbe galt für die zehnstellige
 // ISBN vom Titelblatt neben der dreizehnstelligen vom Strichcode.
 //
-// Die Datenbank bringt jede geschriebene ISBN in die Normalform (Migration 133 und 157), an
+// Die Datenbank bringt jede geschriebene ISBN in die Normalform, an
 // jeder Tür: Maske, Importe, Littera-Übernahme, Skripte. Ohne Bindestriche und Leerzeichen,
 // Prüfzeichen X groß, und eine zehnstellige mit richtigem Prüfzeichen wird dreizehnstellig.
 // Damit greift der vorhandene UNIQUE-Index über alle Schreibweisen und beide Längen.

@@ -15,8 +15,8 @@ import (
 // vollständig im SQL (Scope-Bedingungen, partielle Unique-Indizes, Verlust-UPDATE mit
 // Erfassungs-Join) — pgxmock würde nur nachgespielte Antworten prüfen.
 //
-// Pool-Aufbau, Advisory-Lock und Notbremse liegen seit dem 31.08.2026 in
-// internal/pgtest (vorher fünffach kopiert); hier stehen nur noch die Helfer
+// Pool-Aufbau, Advisory-Lock und Notbremse liegen in
+// internal/pgtest; hier stehen nur die Helfer
 // dieses Pakets.
 func pgTestPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
@@ -79,8 +79,8 @@ func sichereTestSystematik(t *testing.T, pool *pgxpool.Pool, subject string) {
 	}
 }
 
-// seedSignaturFachExemplar legt einen Titel an, der BEIDE Scope-Dimensionen trägt
-// (Signatur UND Fach/Jahrgang) — genau die Konstellation, in der ein Signatur- und ein
+// seedSignaturFachExemplar legt einen Titel an, der beide Scope-Dimensionen trägt
+// (Signatur und Fach/Jahrgang) — genau die Konstellation, in der ein Signatur- und ein
 // Filter-Scope dasselbe Exemplar treffen. Liefert die Exemplar-ID.
 func seedSignaturFachExemplar(t *testing.T, pool *pgxpool.Pool, signatur, subject string, jvon, jbis int, barcode string) string {
 	t.Helper()

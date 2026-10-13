@@ -10,7 +10,7 @@ import (
 )
 
 // Eine Ausweisnummer, die in der Leserdatei stand, gibt der Generator nie ein zweites Mal
-// aus — auch nicht, nachdem sie dort verschwunden ist (docs/OFFEN.md 5.23).
+// aus — auch nicht, nachdem sie dort verschwunden ist.
 //
 // Bis Migration 146 rechnete ausweis_nummer_start() „höchste A-Nummer in leser + 1".
 // Verschwand die höchste, bekam die nächste Person dieselbe Nummer, und eine noch

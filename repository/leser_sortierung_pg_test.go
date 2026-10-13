@@ -5,23 +5,21 @@ import (
 	"testing"
 )
 
-// Die Sortierung der Leserliste am echten Postgres (Protokoll des Medienzentrums vom
-// 16.09.2026, Punkt 5).
+// Die Sortierung der Leserliste am echten Postgres.
 //
 // Zwei Dinge prüft der Test, und das zweite ist das wichtigere:
 //
 //  1. Jede erlaubte Spalte ändert die Reihenfolge wirklich, in beide Richtungen.
-//  2. Das Kollegium bleibt in der Leserdatei OBEN, auch wenn nach Namen sortiert wird.
-//     Das ist keine Höflichkeit, sondern der Schutz gegen die Kappung bei 500 Zeilen:
-//     Ohne diesen Schlüssel stünde ein Kollege bei 875 Schülern unter „Z" und wäre
-//     lautlos nicht mehr in der Liste. Genau dafür gab es die Reihenfolge ursprünglich,
-//     und eine Sortierfunktion, die sie aufhebt, nimmt den Schutz mit.
+//  2. Das Kollegium bleibt in der Leserdatei oben, auch wenn nach Namen sortiert wird.
+//     Das ist der Schutz gegen die Kappung bei 500 Zeilen: Ohne diesen Schlüssel stünde
+//     ein Kollege bei 875 Schülern unter „Z" und wäre lautlos nicht mehr in der Liste.
+//     Eine Sortierfunktion, die die Reihenfolge aufhebt, nimmt den Schutz mit.
 func TestLeserSortierung(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	// Die Namen sind so gewählt, dass Klasse und Name GEGENLÄUFIG sortieren: Wer nach
+	// Die Namen sind so gewählt, dass Klasse und Name gegenläufig sortieren: Wer nach
 	// Klasse sortiert, bekommt eine andere Reihenfolge als wer nach Namen sortiert.
 	// Sonst wäre der Test blind gegen eine Sortierung, die immer dasselbe tut.
 	seedSuchSchueler(t, pool, "SORT-1", "Anna", "Zeidler") // Klasse 05F1
@@ -62,8 +60,8 @@ func TestLeserSortierung(t *testing.T) {
 		}
 	}
 
-	// Kollegium (Bauer) steht in JEDEM Fall vorn — der Schutz gegen die Kappung, und
-	// eine Regel, die der Benutzer sieht. Für die Vorgabe wird NUR das geprüft: Welche
+	// Kollegium (Bauer) steht in jedem Fall vorn — der Schutz gegen die Kappung, und
+	// eine Regel, die der Benutzer sieht. Für die Vorgabe wird nur das geprüft: Welche
 	// Reihenfolge der Suchrang innerhalb der Gruppen wählt, ist nicht Sache dieses
 	// Tests (die Zeilen hier sind über ihren Barcode gefunden, nicht über den Namen).
 	for _, sortierung := range []LeserSortierung{

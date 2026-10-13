@@ -2,7 +2,7 @@ package repository
 
 import "testing"
 
-// Seit die Frist der Schülerbücherei ein Tag ist (29.09.2026), nennen Selbstprüfung und
+// Seit die Frist der Schülerbücherei ein Tag ist, nennen Selbstprüfung und
 // Datenschutz-Auskunft die Eins; „1 Tage nach Rückgabe" stünde sonst in jeder Auskunft.
 func TestTageMitZahl(t *testing.T) {
 	for tage, want := range map[int]string{1: "1 Tag", 2: "2 Tage", 730: "730 Tage"} {

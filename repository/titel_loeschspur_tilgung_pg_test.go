@@ -11,7 +11,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Name und Freitext der Titel-Löschspur fallen mit der Anonymisierung (29.09.2026).
+// Name und Freitext der Titel-Löschspur fallen mit der Anonymisierung.
 //
 // Wer einen Titel löscht, an dem eine offene Forderung oder eine Vormerkung hängt, hinterlässt
 // in der Datensatz-Historie (audit_log) eine Spur mit dem Namen des Lesers (schuldner,

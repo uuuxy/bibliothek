@@ -9,7 +9,7 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Frage 12 „Gegenrichtung Schema" als Ratsche (06.09.2026, docs/invarianten.md).
+// Frage 12 „Gegenrichtung Schema" als Ratsche (docs/invarianten.md).
 //
 // Die anderen elf Fragen sehen vom Code aus auf die Daten. Diese sieht umgekehrt: Was
 // TUT die Datenbank, das im Code nirgends steht? Der Anlass sind zwei Funde desselben
@@ -17,9 +17,9 @@ import (
 //
 //   - `CONSTRAINT check_damage_item` verlangt genau eines von `exemplar_id`/`geraet_id`.
 //     Der Geräteschaden ist also vorgesehen — die Rechnung an die Eltern verband per
-//     INNER JOIN und hätte ihn verloren (ce875654).
+//     INNER JOIN und hätte ihn verloren.
 //   - An `buecher_titel` hängen vier Kinder mit ON DELETE CASCADE; drei davon erwähnte
-//     kein Löschpfad, und dahinter standen wartende Schüler und Lehrkräfte (77bbf931).
+//     kein Löschpfad, und dahinter standen wartende Schüler und Lehrkräfte.
 //
 // Beides war jahrelang lesbar und wurde nie gelesen, weil niemand die DDL befragt hat.
 //
@@ -29,7 +29,7 @@ import (
 // Der Bestand ist damit eine Arbeitsliste; die Einträge, die schon befragt sind, tragen
 // ihre Antwort als Kommentar.
 //
-// Bewusst NICHT eingefroren: die 96 nullbaren Spalten. Ihre Gefahr (nullbare Spalte in
+// Bewusst nicht eingefroren: die 96 nullbaren Spalten. Ihre Gefahr (nullbare Spalte in
 // nicht-nullbaren Go-Typ) ist die Bugklasse „NULL-Scan", und die hat ihre eigene
 // Antwort — echte Postgres-Tests je Lesepfad. Eine Liste von 96 Namen wäre der
 // Dateibaum und würde nichts aussagen (dieselbe Begründung wie bei der Farb-Ratsche).
@@ -37,15 +37,15 @@ import (
 // Fremdschlüssel, die beim Löschen etwas TUN. Jede Zeile ist eine Folge, die jemand
 // behandeln muss — oder eine bewusste Entscheidung, sie nicht zu behandeln.
 var fkAktionenBestand = []string{
-	// Befragt am 06.09.2026: Diese drei fielen lautlos; jetzt protokolliert sie
-	// repository/titel_loeschen_wartende.go, bevor der CASCADE sie nimmt (77bbf931).
+	// Befragt: Diese drei fielen lautlos; jetzt protokolliert sie
+	// repository/titel_loeschen_wartende.go, bevor der CASCADE sie nimmt.
 	"CASCADE  class_books.book_id -> buecher_titel",
 	"CASCADE  klassensatz_reservierungen.titel_id -> buecher_titel",
 	"CASCADE  vormerkungen.titel_id -> buecher_titel",
 	// Befragt: Der Löschpfad räumt die abhängigen Zeilen selbst und in Reihenfolge ab;
 	// der CASCADE auf die Exemplare ist der letzte Schritt.
 	"CASCADE  buecher_exemplare.titel_id -> buecher_titel",
-	// Befragt am 23.09.2026 (Migration 138): Die Schlagworte eines Titels fallen mit ihm —
+	// Befragt: Die Schlagworte eines Titels fallen mit ihm —
 	// Absicht. Sie beschreiben nur diesen Titel, niemand wartet auf sie, und das Wort selbst
 	// bleibt stehen (ohne Titel fällt es aus den Vorschlägen, FindeSchlagwortVorschlaege). Das
 	// Löschen steht im Protokoll (LoescheTitel schreibt vorher einen Schnappschuss des Titels);
@@ -55,43 +55,43 @@ var fkAktionenBestand = []string{
 	// allen Medien)". Gelöscht wird nur über LoescheSchlagworte (Migration 143, Pflege der
 	// Schlagworte); seine Antwort nennt die Zahl der Titel, die Wörter verloren.
 	"CASCADE  titel_schlagworte.schlagwort_id -> schlagworte",
-	// Migration 143, befragt am 23.09.2026: Fällt ein Wort, fallen die Verweise darauf mit —
+	// Migration 143: Fällt ein Wort, fallen die Verweise darauf mit —
 	// ein Verweis ohne Ziel hat keine Bedeutung. Wer löscht, ist LoescheSchlagworte; die
 	// Antwort nennt die Zahl der Verweise, die mitgingen
 	// (api/katalog/schlagworte_pflege_pg_test.go).
 	"CASCADE  schlagworte.verweis_auf -> schlagworte",
-	// Befragt (Register 06.09.2026): „Plan verwerfen" löscht den ganzen Plan samt
+	// Befragt: „Plan verwerfen" löscht den ganzen Plan samt
 	// Zeilen, freien Tagen und Auslassungen — bekannt und als Produktfrage notiert.
 	"CASCADE  lmf_plan_ausgelassen.plan_id -> lmf_plaene",
 	"CASCADE  lmf_plan_freie_tage.plan_id -> lmf_plaene",
 	"CASCADE  lmf_termin_klassen.termin_id -> lmf_termine",
 	"CASCADE  lmf_termine.plan_id -> lmf_plaene",
-	// Befragt am 12.09.2026 (Migration 115): Derselbe Bezug ein zweites Mal, jetzt über
+	// Befragt: Derselbe Bezug ein zweites Mal, jetzt über
 	// (plan_id, art) — er hält die Art der Zeile an die Art ihres Plans. Die Löschwirkung
 	// ist keine zusätzliche: Fällt der Plan, nimmt ihn schon der Fremdschlüssel darüber
 	// mit; beide zeigen auf dieselbe Zeile. Die Abfrage listet ihn zweimal, weil er zwei
 	// Schlüsselspalten hat.
 	"CASCADE  lmf_termine.art -> lmf_plaene",
-	// Befragt am 06.09.2026: Die Erfassungen fielen mit dem Exemplar und senkten damit
+	// Befragt: Die Erfassungen fielen mit dem Exemplar und senkten damit
 	// rückwirkend das Ergebnis abgeschlossener Durchgänge — neben einem
 	// verloren_gemeldet, das feststand. Migration 103 friert die Zahl beim Abschluss ein.
 	"CASCADE  inventur_erfassungen.exemplar_id -> buecher_exemplare",
-	// Befragt am 07.09.2026: Der Elternteil hat KEINEN Löschweg — kein DELETE auf
+	// Befragt: Der Elternteil hat keinen Löschweg — kein DELETE auf
 	// bestellungen_verlauf im ganzen Go-Code, keine Route, kein Cron. Der CASCADE ruht.
 	// Wer je „Bestellung löschen" baut, muss wissen: Die Positionen gehen mit, die
 	// Exemplare verlieren nur ihren Verweis (SET NULL unten).
 	"CASCADE  bestellungen_positionen.bestellung_id -> bestellungen_verlauf",
-	// Befragt am 07.09.2026: Ebenfalls ohne Löschweg — die Anwendung löscht nie eine
+	// Befragt: Ebenfalls ohne Löschweg — die Anwendung löscht nie eine
 	// Inventur-Sitzung, auch keine Aufbewahrungsfrist tut es. Beide CASCADEs ruhen. Wer
-	// je „Durchgang löschen" baut, löscht damit die Erfassungen UND den Fehlbestand
+	// je „Durchgang löschen" baut, löscht damit die Erfassungen und den Fehlbestand
 	// dieses Durchgangs — seit Migration 103 auch die eingefrorene Zahl. Das gehört dann
 	// gesagt, nicht nur getan.
 	"CASCADE  inventur_erfassungen.session_id -> inventur_sessions",
 	"CASCADE  inventur_verluste.session_id -> inventur_sessions",
-	// Befragt am 06.09.2026: Das Foto ist PII und MUSS mit dem Kind fallen; beim
+	// Befragt: Das Foto ist PII und muss mit dem Kind fallen; beim
 	// Zusammenführen wandert es vorher (das jüngere gewinnt, leser_zusammenfuehren.go).
 	"CASCADE  schueler_fotos.schueler_id -> leser",
-	// Befragt am 06.09.2026: Hier ist der CASCADE nur das Netz — die Spuren-Tilgung
+	// Befragt: Hier ist der CASCADE nur das Netz — die Spuren-Tilgung
 	// löscht die Vormerkungen selbst (Freitext-Notiz ist PII). Ihr fehlte das
 	// Nachrücken: Ein bereits abholbereit gelegtes Exemplar blieb liegen, statt an den
 	// nächsten Wartenden zu gehen (vormerkung_nachruecken.go).
@@ -101,7 +101,7 @@ var fkAktionenBestand = []string{
 	// zeigen. An der Löschwirkung selbst hat sich dadurch nichts geändert.
 	// Befragt: Ein gelöschter Benutzer soll seine Spuren behalten, nur ohne Person —
 	// deshalb SET NULL statt RESTRICT. Die Lesepfade zeigen dann „unbekannt".
-	// Migration 123, befragt am 16.09.2026: Verschwindet eine Leserzeile endgueltig,
+	// Migration 123: Verschwindet eine Leserzeile endgueltig,
 	// verliert das Konto nur seine Verknuepfung — die Anmeldung samt Rechten bleibt, denn
 	// sie gehoert der Anlage und nicht dem Leser. Wer die Folge behandelt: niemand muss
 	// es, weil ein Konto ohne Leserzeile ein gueltiger Zustand ist (es leiht dann nichts
@@ -117,7 +117,7 @@ var fkAktionenBestand = []string{
 	"SET NULL  klassensatz_reservierungen.angefordert_von -> benutzer",
 	"SET NULL  lehrer_anliegen.angefordert_von -> benutzer",
 	"SET NULL  schadensfaelle.storniert_von -> benutzer",
-	// Migration 117 (Nachbuch-Meldungen), befragt am 15.09.2026: Fällt eine Person
+	// Migration 117 (Nachbuch-Meldungen): Fällt eine Person
 	// (Benutzer gelöscht, Schüler endgültig gelöscht) oder das Exemplar, bleibt die Meldung
 	// als Vorgang mit Barcode und Ergebnis stehen — personenlos bzw. exemplarlos. Die
 	// Liste zeigt dann „" statt eines Namens (coalesce in nachbuchMeldungSQL); die
@@ -126,10 +126,10 @@ var fkAktionenBestand = []string{
 	"SET NULL  nachbuch_meldungen.exemplar_id -> buecher_exemplare",
 	"SET NULL  nachbuch_meldungen.quittiert_von -> benutzer",
 	"SET NULL  nachbuch_meldungen.vorbesitzer_schueler_id -> leser",
-	// Befragt am 06.09.2026: LEFT JOIN mit ausdrücklicher Begründung im Code
+	// Befragt: LEFT JOIN mit ausdrücklicher Begründung im Code
 	// (bestelldetail.go), beide Geschwister-Pfade halten es genauso.
 	"SET NULL  bestellungen_positionen.titel_id -> buecher_titel",
-	// Befragt am 25.09.2026 (Migration 148): Ein Werk löscht nur repository/auflagen.go, und
+	// Befragt: Ein Werk löscht nur repository/auflagen.go, und
 	// erst, nachdem es den letzten Titel daran gelöst hat (raeumeWerkAuf, vereineWerke) —
 	// api/katalog/auflagen_pg_test.go zählt danach die Werke. Der SET NULL fängt einen Titel auf, der
 	// dabei übersehen würde: Er steht danach allein, wie vor dem Zusammenfassen, und nichts
@@ -142,34 +142,34 @@ var fkAktionenBestand = []string{
 	// Befragt: Die Vormerkung fällt zurück auf „wartend", wenn ihr bereitgestelltes
 	// Exemplar verschwindet (repository/schaden.go).
 	"SET NULL  vormerkungen.bereitgestellt_exemplar_id -> buecher_exemplare",
-	// Befragt am 07.09.2026: Die harmlose Hälfte — die Bestellung hält Name und E-Mail
+	// Befragt: Die harmlose Hälfte — die Bestellung hält Name und E-Mail
 	// des Händlers als eigene Abschrift, die Historie überlebt das Löschen unbeschadet
-	// (api/bestellung/bestellbestaetigung_handler.go COALESCEt ausdrücklich dagegen). Der LÖSCHWEG
+	// (api/bestellung/bestellbestaetigung_handler.go COALESCEt ausdrücklich dagegen). Der Löschweg
 	// daneben war der Fund: Er nahm auch den Hauptlieferanten, an dem Bestellmail,
 	// Bestätigungs-Link und Etiketten-Verhalten hängen — ohne Rückfrage und ohne Meldung.
 	// Seit 07.09. weist der Handler das ab (api/bestellung/supplier_handler.go).
 	"SET NULL  bestellungen_verlauf.lieferant_id -> lieferanten",
-	// Befragt am 07.09.2026: Elternteil ohne Löschweg (siehe CASCADE oben) — ruht.
+	// Befragt: Elternteil ohne Löschweg (siehe CASCADE oben) — ruht.
 	"SET NULL  buecher_exemplare.bestellung_id -> bestellungen_verlauf",
-	// Befragt am 07.09.2026: Sauber. Der Lesepfad nimmt den Titel als *string (kein
+	// Befragt: Sauber. Der Lesepfad nimmt den Titel als *string (kein
 	// NULL-Scan), und das Anliegen hält den Titeltext als eigene Abschrift
 	// (titel_text) — der Wunsch bleibt lesbar, wenn der Titel fällt (anliegen.go).
 	"SET NULL  lehrer_anliegen.titel_id -> buecher_titel",
-	// Befragt am 06.09.2026: Genau dieser SET NULL machte die Forderung in der Rechnung
-	// unsichtbar, solange dort INNER JOIN stand (ce875654).
+	// Befragt: Genau dieser SET NULL machte die Forderung in der Rechnung
+	// unsichtbar, solange dort INNER JOIN stand.
 	"SET NULL  schadensfaelle.ausleihe_id -> ausleihen",
-	// Befragt am 10.09.2026 (Migration 110): Der Bescheid überlebt die DSGVO-Löschung des
+	// Befragt: Der Bescheid überlebt die DSGVO-Löschung des
 	// Schülers als Beleg ohne Person — Referenznummer und Betrag bleiben (Zahlungen werden
 	// über die Nummer zugeordnet), der Klarname im Snapshot wird von der Tilgung geleert
 	// (spurTilgungen, „schadensersatz_bescheide"). Die Liste der Bescheide in der
 	// Art.-15-Auskunft filtert auf schueler_id, findet die anonyme Hülle also nicht mehr.
 	// Ein RESTRICT hätte hier die berechtigte Löschung blockiert.
-	// Nachgetragen am 10.09.2026 (Bestands-Durchgang): Es gibt einen ZWEITEN Löschweg —
+	// Nachgetragen: Es gibt einen zweiten Löschweg —
 	// das Zusammenführen löscht die Quelle. Dort ist SET NULL nicht gewollt, der Bescheid
 	// wandert vorher ans Ziel (verschiebeVorgaenge, Gate TestZusammenfuehren_JedeTabelleWandert).
 	"SET NULL  schadensersatz_bescheide.schueler_id -> leser",
-	// Befragt am 10.09.2026 (Migration 110): Wer den Bescheid erstellt hat, ist eine
-	// Angabe ÜBER den Vorgang, nicht der Vorgang selbst. Verlässt die Bearbeiterin die
+	// Befragt: Wer den Bescheid erstellt hat, ist eine
+	// Angabe über den Vorgang, nicht der Vorgang selbst. Verlässt die Bearbeiterin die
 	// Schule und wird ihr Konto gelöscht, bleibt der Brief samt Referenznummer gültig —
 	// die Zuordnung der Zahlung hängt an der Nummer, nicht an der Person. Wer ihn
 	// erstellt hat, steht zusätzlich im Admin-Audit-Log, das die Löschung überlebt.
@@ -179,10 +179,10 @@ var fkAktionenBestand = []string{
 	// er gehört der Person. Behandeln muss die Folge niemand: VerifyToken lehnt jedes Token
 	// eines gelöschten Kontos ab, und die Zeile endet ohnehin mit Abmelden und Ablauf.
 	"CASCADE  sitzungen.benutzer_id -> benutzer",
-	// Befragt am 10.09.2026 (Migration 110): Die Forderung überlebt ihren Brief. Im
+	// Befragt: Die Forderung überlebt ihren Brief. Im
 	// Betrieb wird kein Bescheid gelöscht — SET NULL ist die Zusicherung für den Fall,
 	// dass es doch einmal geschieht: Die Forderung trägt Sperre und Löschblockade, sie
-	// darf NICHT mit dem Brief verschwinden (CASCADE hätte genau das getan). Sie steht
+	// darf nicht mit dem Brief verschwinden (CASCADE hätte genau das getan). Sie steht
 	// danach wieder als „auf keinem Bescheid" in der Liste und kann neu angeschrieben
 	// werden. Der Lesepfad nimmt bescheid_id als *string.
 	"SET NULL  schadensfaelle.bescheid_id -> schadensersatz_bescheide",
@@ -192,37 +192,37 @@ var fkAktionenBestand = []string{
 // er Daten, die abgewiesen werden, oder er verlässt sich auf eine Form, die die
 // Datenbank ausdrücklich zulässt (check_damage_item war genau das).
 //
-// Die Antwort auf eine NEUE Bedingung zählt jeden Schreiber der beteiligten Spalten auf,
+// Die Antwort auf eine neue Bedingung zählt jeden Schreiber der beteiligten Spalten auf,
 // nicht nur die Tür, die gerade entsteht, und sagt je Schreiber, was er bekommt: einen
-// Satz (400/409) oder einen Abbruch (Raster-Frage 12, zweite Schärfung vom 23.09.2026).
+// Satz (400/409) oder einen Abbruch.
 // „Die Datenbank hält sie für jeden anderen Schreiber" ist wahr, aber keine Antwort — so
 // stand es an chk_mehrjahresband_spanne, und zwei Schreiber liefen dagegen.
 var checkBedingungenBestand = []string{
 	"audit_log_akteur_check", "bestellungen_verlauf_bestaetigt_durch_check",
 	"bestellungen_verlauf_etiketten_groesse_check",
-	// Befragt am 10.09.2026: dieselbe Menge wie mitteltopf.IstGueltig — der Code prüft
+	// Befragt: dieselbe Menge wie mitteltopf.IstGueltig — der Code prüft
 	// sie an der Tür (400), die Datenbank hält die zweite Tür (api/bestellung/bestellung_mittel_pg_test.go).
 	"bestellungen_verlauf_mittel_check", "check_damage_item",
 	"check_loan_item",
 	"check_positive_amount", "check_return_date", "chk_anliegen_art",
 	"chk_aussonderung_grund", "chk_cover_status", "chk_einkaufspreis_nonneg",
 	// Migration 134: Ein Mehrjahresband nur an einem Lernmittel und nur mit einer Spanne über
-	// mehr als einen Jahrgang. Wer gegen die Regel läuft, nachgezählt im Rasterdurchgang
-	// 23.09.2026 — jeder Schreiber der vier Spalten: Die Titel-Verwaltung prüft sie an beiden
+	// mehr als einen Jahrgang. Wer gegen die Regel läuft,
+	// je Schreiber der vier Spalten: Die Titel-Verwaltung prüft sie an beiden
 	// Türen (inventur/mehrjahresband.go, 400). Die Lernmittel-Tür des Bestellfensters nimmt
 	// den Schalter mit, wenn das Kennzeichen fällt (war 500). Der Katalogisat-Import lässt die
 	// Spanne eines Mehrjahresbands stehen (brach vorher mit dem ganzen Import ab). Listen- und
 	// Sammelimport behalten eine vorhandene Spanne und setzen das Kennzeichen nur per OR; die
 	// Littera-Übernahme legt nur neu an.
 	"chk_mehrjahresband_spanne",
-	// Migration 138, befragt am 23.09.2026: Ein Schlagwort ist getrimmt, nicht leer und
+	// Migration 138: Ein Schlagwort ist getrimmt, nicht leer und
 	// höchstens 80 Zeichen lang. Der Code kennt die Regel: repository.NormalisiereSchlagworte
 	// liefert genau diese Form und weist Längeres vorher mit 400 ab (SchlagwortMaxZeichen,
 	// an der Grenze getestet). Gegenfrage: Die Regel verbietet doppelte Leerzeichen im Wort
-	// NICHT — die zieht der Schreibpfad zusammen; ein anderer Schreiber, der das nicht tut,
+	// nicht — die zieht der Schreibpfad zusammen; ein anderer Schreiber, der das nicht tut,
 	// legte „Magische  Tiere" neben „Magische Tiere" an.
 	"chk_schlagwort_form",
-	// Migration 143, befragt am 23.09.2026: Ein Verweis zeigt nie auf sich selbst und ist nie
+	// Migration 143: Ein Verweis zeigt nie auf sich selbst und ist nie
 	// Filter. Der Code kennt beides — fuehreZusammenIn lehnt „mit sich selbst" vorher ab,
 	// SetzeSchlagwortFilter lehnt den Filter an einem Verweis ab, und das Zusammenführen nimmt
 	// die Markierung weg, bevor das Wort zum Verweis wird. Am Rückbau rot bewiesen
@@ -230,7 +230,7 @@ var checkBedingungenBestand = []string{
 	"chk_schlagwort_verweis_kein_filter",
 	"chk_schlagwort_verweis_nicht_selbst",
 	"chk_exemplar_bestellstatus",
-	// Migration 150, befragt am 29.09.2026: Das ausdrückliche Eigentum am Exemplar hat
+	// Migration 150: Das ausdrückliche Eigentum am Exemplar hat
 	// dasselbe Vokabular wie bestellungen_verlauf.mittel. Einziger Schreiber ist die
 	// Littera-Übernahme (internal/littera, sqlExemplarEinfuegen); sie schreibt nur Werte aus
 	// vermerkeLittera, und TestVermerkeLittera_NurGueltigesEigentum hält jede Zuordnung
@@ -239,7 +239,7 @@ var checkBedingungenBestand = []string{
 	// NULL lässt die Regel zu, und NULL heißt „nicht gesetzt" — ExemplarTopfSQL fällt dann auf
 	// die Bestellung und den Titel zurück; kein Lesepfad nimmt NULL als eigenen Topf.
 	"chk_exemplar_eigentum",
-	// Migration 151, befragt am 29.09.2026: Die Quelle des Eigentums ist littera oder hand und
+	// Migration 151: Die Quelle des Eigentums ist littera oder hand und
 	// steht genau dann, wenn Eigentum steht. Die Schreiber beider Spalten: die Littera-Übernahme
 	// (sqlExemplarEinfuegen, setzt beide aus demselben Parameter) und die Buchakte
 	// (SetzeExemplarEigentum, setzt beide in einer Anweisung, prüft das Eigentum vorher gegen
@@ -248,7 +248,7 @@ var checkBedingungenBestand = []string{
 	// (api/katalog/exemplar_eigentum_pg_test.go, Schritt 6). Gegenfrage: NULL/NULL ist der Normalfall —
 	// exemplarTopfHerkunftSQL liest die Quelle nur, wenn Eigentum steht.
 	"chk_exemplar_eigentum_mit_quelle", "chk_exemplar_eigentum_quelle",
-	// Migration 158, befragt am 06.10.2026: Ein gesetzter Standort ist nicht leer und höchstens
+	// Migration 158: Ein gesetzter Standort ist nicht leer und höchstens
 	// 255 Zeichen lang. Drei Schreiber. Die Littera-Übernahme (sqlExemplarEinfuegen) liest
 	// getrimmte Werte, schreibt für „kein Standort" NULL und kürzt auf 255 Zeichen mit Vermerk
 	// im Protokoll (internal/littera, TestStandortKommtMit und
@@ -259,12 +259,12 @@ var checkBedingungenBestand = []string{
 	// eines nicht leeren Werts zu; jeder Schreiber trimmt selbst. NULL heißt „steht nach der
 	// Signatur" und ist der Normalfall.
 	"chk_exemplar_standort",
-	// Migration 111, befragt am 10.09.2026: Wer ein Exemplar freigibt oder aussondert, räumt
+	// Migration 111: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
 	// (api/portal/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.
 	"chk_exemplar_bestellstatus_nur_im_zulauf",
 	"chk_inv_session_scope",
-	// Migration 162, befragt am 08.10.2026: Die Spanne ist ganz gesetzt oder gar nicht, 1 bis
+	// Migration 162: Die Spanne ist ganz gesetzt oder gar nicht, 1 bis
 	// 13, „von" nicht über „bis". Der Code kennt die Regel: inventur.pruefeJahrgangsSpanne weist
 	// beim Anlegen und beim Ändern mit einem Satz ab (400), beim Ändern am Stand nach der
 	// Änderung, weil die Maske nur die geänderten Felder schickt. Die übrigen Schreiber: Listen-
@@ -274,32 +274,32 @@ var checkBedingungenBestand = []string{
 	// (23514), keinen Satz. Gegenfrage: Die Regel verbietet eine Spanne unter 5 nicht, die Maske
 	// bietet sie nicht an (inventur/jahrgang_vorgabe_pg_test.go).
 	"chk_jahrgang_spanne",
-	// Migration 149, befragt am 29.09.2026: Eine laufende Inventur ist nie verworfen. Die
+	// Migration 149: Eine laufende Inventur ist nie verworfen. Die
 	// Schreiber der beiden Spalten: LegeLaufAn legt ohne beide an (false, NULL),
 	// SchliesseLaufAb setzt nur abgeschlossen_am, VerwerfeLauf setzt beide in
 	// einer Anweisung — keiner läuft gegen die Regel. Keiner setzt abgeschlossen_am zurück;
 	// wer je „Inventur wieder öffnen" baut und verworfen stehen lässt, bekommt einen Abbruch
 	// (23514), keinen Satz (api/inventurlauf/inventur_verworfen_pg_test.go).
 	"chk_inv_session_verworfen_beendet",
-	// Migration 127, befragt am 17.09.2026: Beide Werte gehen in einen Ersatzbetrag ein,
+	// Migration 127: Beide Werte gehen in einen Ersatzbetrag ein,
 	// der in einem Bescheid an Erziehungsberechtigte steht. Der Code prüft sie an der Tür
 	// (der Listenpreis kommt aus der Maske oder von der DNB, die Abwertung aus einem Feld
 	// mit min/max), die Datenbank hält die zweite (db/constraints_listenpreis_abwertung_pg_test.go).
 	//
-	// Die Gegenfrage von Frage 12 — verlässt sich der Code auf etwas, das die Regel NICHT
+	// Die Gegenfrage von Frage 12 — verlässt sich der Code auf etwas, das die Regel nicht
 	// verbietet? Ja, an einer Stelle: chk_listenpreis_nonneg erlaubt 0, und 0 bedeutet
-	// „kostet heute nichts", nicht „nicht erfasst". Dafür ist die Spalte NULLBAR; wer sie
+	// „kostet heute nichts", nicht „nicht erfasst". Dafür ist die Spalte nullbar; wer sie
 	// je auf NOT NULL DEFAULT 0 zöge, machte aus jeder Lücke einen Ersatzbetrag von 0,00 €.
 	"chk_listenpreis_nonneg", "chk_zustand_abwertung_bereich",
 	"chk_ksr_anzahl_positiv", "chk_lmf_plaene_anker", "chk_lmf_plaene_art",
 	"chk_lmf_plaene_letzte_stunde",
-	// Migration 115, befragt am 12.09.2026: Die letzte Stunde des Rückgabe-Plans liegt im
+	// Migration 115: Die letzte Stunde des Rückgabe-Plans liegt im
 	// Schultag, den derselbe Plan beschreibt. Der Code prüft es an der Tür (api/lernmittel/lmf_plan.go,
 	// pruefeLmfAnker → 400), die Datenbank hält die zweite. Umgekehrt verlässt sich kein
-	// Lesepfad darauf, dass sie es NICHT verbietet: Der Ausgabe-Plan hat keine letzte
+	// Lesepfad darauf, dass sie es nicht verbietet: Der Ausgabe-Plan hat keine letzte
 	// Stunde, und NULL lässt der Check ausdrücklich zu.
 	"chk_lmf_plaene_letzte_stunde_im_tag",
-	// Migration 117, befragt am 15.09.2026: Das Ergebnis einer Nachbuch-Meldung ist eines
+	// Migration 117: Das Ergebnis einer Nachbuch-Meldung ist eines
 	// von sieben Wörtern (repository/nachbuch_meldungen.go, Nachbuch*-Konstanten). Der Code
 	// schreibt nur diese; die Datenbank hält die zweite Tür — ein Reparaturskript mit
 	// einem Tippfehler bricht laut ab, statt einer Zeile, die keine Liste anzeigt.
@@ -307,17 +307,17 @@ var checkBedingungenBestand = []string{
 	"chk_lmf_plaene_startstunde", "chk_lmf_plaene_stunden",
 	"chk_lmf_termine_art", "chk_lmf_termine_stunde", "chk_meldebestand_nonneg",
 	"chk_pos_einzelpreis_nonneg", "chk_pos_menge_positiv", "chk_schueler_block_reason",
-	// Migration 123, befragt am 16.09.2026 — die drei Regeln der Lesertabelle:
+	// Migration 123 — die drei Regeln der Lesertabelle:
 	//
 	// chk_leser_art: die sieben Arten aus pkg/leserart (seit Migration 153 auch
 	// Praktikum, Sekretariat, U-plus, Fachbereich). Der Code schreibt nur diese (api/...,
 	// internal/littera, db/seed.go; gegen die Datenbank gehalten in
 	// pkg/leserart/leserart_pg_test.go); die Datenbank haelt die zweite Tuer fuer Reparaturskripte.
 	//
-	// chk_leser_schueler_pflichtfelder: Klasse, Abgaengerjahr und Ausweis waren fuer ALLE
+	// chk_leser_schueler_pflichtfelder: Klasse, Abgaengerjahr und Ausweis waren fuer alle
 	// Pflicht, solange jede Zeile ein Schueler war. Die Pflicht ist nicht aufgegeben,
 	// sondern an die Art gepaart. Verlaesst sich der Code umgekehrt auf etwas, das der
-	// Check NICHT verbietet? Ja, und zwar bewusst: Jeder Lesepfad, der klasse in einen
+	// Check nicht verbietet? Ja, und zwar bewusst: Jeder Lesepfad, der klasse in einen
 	// nicht-nullbaren Go-string scannt, darf das nur mit art='schueler' im WHERE oder mit
 	// COALESCE. Genau daran ist der LUSD-Bestand aufgefallen, bevor er eingeschraenkt war
 	// (repository/leser_lusd_schutz_pg_test.go).
@@ -330,7 +330,7 @@ var checkBedingungenBestand = []string{
 	// er bricht laut ab, statt still Namen zu leeren.
 	"chk_leser_art", "chk_leser_nur_schueler_werden_abgaenger",
 	"chk_leser_schueler_pflichtfelder",
-	// Migration 110, befragt am 10.09.2026: Vokabular und Wertebereiche des Bescheids.
+	// Migration 110: Vokabular und Wertebereiche des Bescheids.
 	// chk_bescheid_mittel und chk_nummern_mittel sind dieselbe Menge wie mitteltopf.IstGueltig
 	// (pkg/mitteltopf); chk_schaden_art sind genau die zwei Kästchen des Formulars.
 	// chk_bescheid_laufende_nr >= 1 hält den Generator davon ab, eine 0 auszugeben — die
@@ -341,7 +341,7 @@ var checkBedingungenBestand = []string{
 	"chk_schaden_art",
 	"chk_verlauf_anzahl_nonneg", "chk_verlauf_gesamtbetrag_nonneg", "chk_vormerkung_status",
 	"mail_settings_config_single_row_chk",
-	// Migration 146, befragt am 24.09.2026: Eine ausgeschiedene Ausweisnummer ist größer als 0.
+	// Migration 146: Eine ausgeschiedene Ausweisnummer ist größer als 0.
 	// Frage 12: Einziger Schreiber ist der Trigger trg_leser_ausweisnummer_ausgeschieden, und
 	// er lässt „A-0" aus, statt an der Bedingung zu scheitern — sonst bräche das Löschen eines
 	// Lesers mit dieser Nummer ab (repository/ausweisnummer_kommt_nie_wieder_pg_test.go).
@@ -350,38 +350,38 @@ var checkBedingungenBestand = []string{
 
 // Trigger ändern Daten, ohne dass eine Zeile Go-Code davon weiß. Hier stehen drei Sorten:
 // `aktualisiert_am`-Stempel, die Klassen-Normalisierung (Migration 087, „05F1" statt „5f1")
-// und der Wächter, der jedem Konto seine Leserzeile gibt (Migration 125). Ein NEUER Trigger
+// und der Wächter, der jedem Konto seine Leserzeile gibt. Ein neuer Trigger
 // ist immer eine Frage. (Keine Zahl im Text: Sie veraltet mit jeder Migration, und rot wird
 // die Liste, nicht der Satz darüber.)
 var triggerBestand = []string{
 	"trg_benutzer_aktualisiert_am @ benutzer",
-	// Migration 125, befragt am 16.09.2026: schreibt beim Anlegen eines Kontos dessen
+	// Migration 125: schreibt beim Anlegen eines Kontos dessen
 	// Leserzeile und trägt deren Kennung in NEW.leser_id ein. Das ist der Zweck — ein Konto
 	// ohne Leserzeile fände die Theke nicht, und fünf Einfüge-Pfade einzeln daran zu
 	// erinnern hieße, dass der sechste es vergisst. Wer die Folge merkt: jeder Aufrufer,
 	// der `RETURNING leser_id` liest (KontoAbfragen.LegeAn, internal/littera).
 	//
-	// Die Trigger trg_benutzer_ausweis_eindeutig (Migration 118),
+	// Die Trigger trg_benutzer_ausweis_eindeutig,
 	// trg_benutzer_kollegium_personenart (120) und trg_schueler_ausweis_eindeutig (118)
 	// sind mit derselben Migration gefallen: Ausweisnummern stehen nur noch in leser, wo
 	// uniq_schueler_barcode_active sie ohne Trigger eindeutig hält, und eine Personenart
 	// gibt es am Konto nicht mehr.
 	"trg_benutzer_hat_leserzeile @ benutzer",
-	// Migration 136, befragt am 22.09.2026: Schreibt beim Commit leser.barcode_id eines
-	// AKTIVEN Kontos, das keine Nummer hat (Anlegen, Freischaltung). Lesepfade, die mit
+	// Migration 136: Schreibt beim Commit leser.barcode_id eines
+	// aktiven Kontos, das keine Nummer hat (Anlegen, Freischaltung). Lesepfade, die mit
 	// „Kollege ohne Nummer" rechneten: loescheUnberuehrteLeserzeile (eine Nummer heißt
 	// „bleibt stehen") — deshalb bekommt eine offene Zugangsanfrage keine; der Ausleihpfad
 	// trägt eine Lehrkraft ohne Nummer weiter (lehrkraft_ohne_ausweis_pg_test.go).
 	// Migration 145: feuert auch beim Wechsel von leser_id — das Zusammenführen hängt ein
 	// aktives Konto sonst an eine Zeile ohne Nummer (leser_zusammenfuehren_kollegium_pg_test.go).
 	"trg_aktives_konto_hat_ausweis @ benutzer",
-	// Migration 145, befragt am 24.09.2026: Schreibt leser.barcode_id neu, wenn die Nummer
-	// eines AKTIVEN Kontos verschwindet (Akte, Benutzerverwaltung leeren sie). Frage 12: Wer
+	// Migration 145: Schreibt leser.barcode_id neu, wenn die Nummer
+	// eines aktiven Kontos verschwindet (Akte, Benutzerverwaltung leeren sie). Frage 12: Wer
 	// NULL schreibt, findet danach eine Nummer in der Zeile; „Kollege ohne Nummer" gibt es
 	// nur noch ohne Konto oder mit inaktivem (repository/ausweisnummer_pg_test.go,
 	// TestAusweisnummerLeeren).
 	"trg_leser_aktives_konto_behaelt_ausweis @ leser",
-	// Migration 146, befragt am 24.09.2026: Schreibt jede A-Nummer, die eine Leserzeile
+	// Migration 146: Schreibt jede A-Nummer, die eine Leserzeile
 	// verlässt (Löschen, Anonymisieren, Leeren, Umschreiben), in ausweisnummern_ausgeschieden.
 	// Frage 12: Gelesen wird die Tabelle vom Generator (ausweis_nummer_start) und von der
 	// Ersatzvergabe der Littera-Übernahme (internal/littera, ersatzFrei); eine Nummer, die dort
@@ -391,15 +391,15 @@ var triggerBestand = []string{
 	"trg_buecher_exemplare_aktualisiert_am @ buecher_exemplare",
 	"trg_buecher_titel_aktualisiert_am @ buecher_titel",
 	"trg_class_books_vokabular @ class_books",
-	// Migration 128, befragt am 17.09.2026: Schreibt beim WECHSEL von ist_ausgesondert das
+	// Migration 128: Schreibt beim Wechsel von ist_ausgesondert das
 	// Abgangsdatum (ausgesondert_am) bzw. löscht es beim Zurückholen. Frage 12: Kein
 	// Lesepfad rechnete vorher mit dem Wert — die Spalte entsteht mit dem Trigger. Die
-	// Folge, die man kennen muss: Ein Schreiber, der das Datum SELBST setzt, wird
+	// Folge, die man kennen muss: Ein Schreiber, der das Datum selbst setzt, wird
 	// überschrieben; deshalb hält abgangsdatum_ratsche_test.go eine Quelltext-Ratsche
 	// dagegen. Zweck ist das Abgangsbuch (Protokoll 1 des Medienzentrums) über alle sechs
 	// Aussonder-Türen, auch die, die es noch nicht gibt.
 	"trg_exemplar_abgangsdatum @ buecher_exemplare",
-	// Migration 129, befragt am 17.09.2026: Setzt zugang_am — beim INSERT außerhalb des
+	// Migration 129: Setzt zugang_am — beim INSERT außerhalb des
 	// Bestellwegs auf erworben_am, beim Wechsel in den Bestand (Wareneingang, Freigeben,
 	// Zurückholen) auf CURRENT_DATE. Gestempelt wird nur, solange die Spalte NULL ist.
 	// Frage 12: Kein Lesepfad rechnete vorher mit dem Wert — die Spalte entsteht mit dem
@@ -408,20 +408,20 @@ var triggerBestand = []string{
 	// trägt NULL und steht in keinem Zugangsbuch — das ist der Zweck, nicht eine Lücke.
 	"trg_exemplar_zugangsdatum @ buecher_exemplare",
 	"trg_exemplar_zugangsdatum_neu @ buecher_exemplare",
-	// Migration 131, befragt am 22.09.2026: Eine Nummer ist entweder Buch oder Ausweis. Die
+	// Migration 131: Eine Nummer ist entweder Buch oder Ausweis. Die
 	// Theke löst einen Scan zuerst als Buch auf; bis dahin prüfte das allein die
 	// Littera-Übernahme (db/constraints_nummer_ueber_buch_und_ausweis_pg_test.go).
 	"trg_exemplar_nummer_ist_kein_ausweis @ buecher_exemplare",
 	"trg_leser_nummer_ist_kein_buch @ leser",
-	// Migration 132, befragt am 22.09.2026: Jeder Wechsel von ist_ausgesondert/ist_ausleihbar
+	// Migration 132: Jeder Wechsel von ist_ausgesondert/ist_ausleihbar
 	// stempelt letzte_bewegung_am, wenn der Schreiber es nicht selbst tut — die Regel statt
 	// der Auswahl (bewegungsstempel_pg_test.go). Frage 12: Der Wächter des Nachbuchens liest
 	// den Stempel; ein Schreiber ohne Stempel ließ ihn dort still.
 	"trg_exemplar_bewegung_bei_zustandswechsel @ buecher_exemplare",
-	// Migration 133, befragt am 22.09.2026: Jede geschriebene ISBN bekommt eine Schreibweise
+	// Migration 133: Jede geschriebene ISBN bekommt eine Schreibweise
 	// (ohne Bindestriche und Leerzeichen, X groß) — nur, wenn das Ergebnis eine ISBN ist;
 	// anderes bleibt wie geschrieben (repository/isbn_normalform_pg_test.go). Seit Migration
-	// 157, befragt am 03.10.2026, auch eine Länge: Eine zehnstellige ISBN mit richtigem
+	// 157, auch eine Länge: Eine zehnstellige ISBN mit richtigem
 	// Prüfzeichen wird dreizehnstellig. Frage 12: Wer eine ISBN vergleicht, vergleicht die
 	// Normalform — Go über isbnutil.Normalform, SQL über isbn_normalform()
 	// (SQLTitelTraegtISBN, SQLSuchtextIstISBN); die Parität prüft
@@ -429,16 +429,16 @@ var triggerBestand = []string{
 	// Importe, die Übernahme), führt sie unter der Normalform, sonst trifft der zweite Titel
 	// erst den UNIQUE-Index.
 	"trg_titel_isbn_normalform @ buecher_titel",
-	// Migration 154, befragt am 30.09.2026: Titel, Untertitel, Autor, Verlag und Beschreibung
+	// Migration 154: Titel, Untertitel, Autor, Verlag und Beschreibung
 	// werden zusammengesetzt gespeichert (NFC) — die DNB liefert Umlaute zerlegt, und zerlegt
 	// fand keine eingetippte Suche den Titel (api/portal/opac_nfc_pg_test.go, am Rückbau rot). Frage 12:
 	// Wer einen gespeicherten Titeltext mit einem Wert aus Go vergleicht, muss ihn ebenfalls
 	// zusammensetzen; die DNB-Antwort tut das in inventur.dekodiereMARC, die Schlagworte in
 	// repository.schlagwortNormalform, die Titelschlüssel beider Importe (Katalogisat und
-	// Listenimport) in repository.NormalisiereTitelSchluessel — dort fehlte es bis zum Rasterdurchgang
-	// vom 30.09.2026 (internal/service/import_dynamic_nfc_pg_test.go). Die Signatur ist bewusst
+	// Listenimport) in repository.NormalisiereTitelSchluessel
+	// (internal/service/import_dynamic_nfc_pg_test.go). Die Signatur ist bewusst
 	// nicht dabei.
-	// Migration 160, befragt am 07.10.2026: Derselbe Trigger, jetzt unter dem Namen der Form,
+	// Migration 160: Derselbe Trigger, jetzt unter dem Namen der Form,
 	// nimmt Leerraum am Rand weg und macht aus Leerraum in Folge ein Leerzeichen
 	// (titeltext_normalform) — Littera führt Titel mit zwei Leerzeichen und mit geschütztem
 	// Leerzeichen, und die Titel-Verwaltung fand sie mit dem getippten Wortlaut nicht
@@ -449,20 +449,20 @@ var triggerBestand = []string{
 	// (inventur/dublettenkontrolle_pg_test.go). Dass Go und SQL dieselbe Form bilden, prüft
 	// repository/titeltext_normalform_pg_test.go an jedem Zeichen der ersten Unicode-Ebene.
 	"trg_titel_text_normalform @ buecher_titel",
-	// Migration 143, befragt am 23.09.2026: keine Kette von Verweisen, kein Titel an einem
+	// Migration 143: keine Kette von Verweisen, kein Titel an einem
 	// Verweis. Beide Schreib-Türen halten es selbst ein — SetzeSchlagworte hängt über
 	// coalesce(verweis_auf, id) das Ziel an, fuehreZusammenIn löst erst Titel und Verweise und
 	// macht dann das Wort zum Verweis. Die Trigger sind der Rückhalt; regelFehler übersetzt
 	// ihre Ausnahme in 409 (TestSchlagwortPflege_DatenbankHaeltDieRegeln, am Rückbau rot).
-	// Migration 144, Rasterdurchgang 23.09.2026: Die Türen hielten es nur je für sich —
+	// Migration 144: Die Türen hielten es nur je für sich —
 	// überschnitten sich zwei, kamen beide durch (Titel am Verweis, Kette). Seither sperrt
 	// jeder Trigger die geprüfte Zeile FOR SHARE (TestSchlagwortPflege_Gleichzeitig…, am
 	// Rückbau rot). Wer zu spät kommt, bekommt die Ausnahme; beim Buchformular ist das ein
 	// einmaliges „buch konnte nicht aktualisiert werden", das zweite Speichern löst auf.
 	"trg_schlagwort_verweis_pruefen @ schlagworte",
 	"trg_titel_schlagwort_kein_verweis @ titel_schlagworte",
-	// Migration 112, befragt am 10.09.2026: Die Folge (Vormerkung zurück auf „wartend")
-	// ist genau der Zweck — vorher kannte sie nur SchadensAbfragen.Melde, sechs andere Aussonder- und
+	// Migration 112: Die Folge (Vormerkung zurück auf „wartend")
+	// ist genau der Zweck — ohne den Trigger kennt sie nur SchadensAbfragen.Melde, sechs andere Aussonder- und
 	// Löschwege ließen das Kind im Abholfach stehen (repository/vormerkung_abholfach_pg_test.go).
 	"trg_exemplar_aus_dem_umlauf @ buecher_exemplare",
 	"trg_exemplar_geloescht_abholfach @ buecher_exemplare",
@@ -475,11 +475,11 @@ var triggerBestand = []string{
 	"trg_lmf_termine_aktualisiert_am @ lmf_termine",
 	"trg_mail_vorlagen_updated_at @ mail_vorlagen",
 	"trg_schadensfaelle_aktualisiert_am @ schadensfaelle",
-	// Migration 137, befragt am 22.09.2026: Beide stempeln leser.letzter_vorgang_am — die
+	// Migration 137: Beide stempeln leser.letzter_vorgang_am — die
 	// Uhr der Karenz vor der Anonymisierung (repository.sqlKarenzUhr). Frage 12: Der Wert stand
 	// vorher nirgends, er entsteht mit diesen Triggern; gerechnet wurde er bis dahin zur
 	// Laufzeit über ausleihen.schueler_id, und genau die leert der Lesehistorie-Lauf. Die
-	// Folge, die man kennen muss: Der Stempel geht nur nach VORNE. Eine stornierte Rückgabe
+	// Folge, die man kennen muss: Der Stempel geht nur nach vorne. Eine stornierte Rückgabe
 	// lässt ihn stehen, die Karenz läuft dann länger statt kürzer — unschädlich, weil eine
 	// wieder offene Ausleihe die Zeile ohnehin vor der Anonymisierung schützt. Gestempelt
 	// wird jeder Leser, gelesen wird der Wert nur bei Abgängern.
@@ -490,7 +490,7 @@ var triggerBestand = []string{
 	"trg_leser_stempel_rueckgabe @ ausleihen",
 	"trg_leser_stempel_schaden @ schadensfaelle",
 	// Migration 137: derselbe Trigger wie vorher, aber eine andere Funktion dahinter
-	// (leser_aktualisiert_am statt set_aktualisiert_am) — ändert sich NUR
+	// (leser_aktualisiert_am statt set_aktualisiert_am) — ändert sich nur
 	// letzter_vorgang_am, bleibt aktualisiert_am stehen. Eine Rückgabe ist keine Änderung
 	// am Leser, und aktualisiert_am ist der Rückfall von repository.sqlAbgangSeit.
 	// Diese Ratsche sieht Namen, nicht Funktionskörper; das Verhalten hält
@@ -524,7 +524,7 @@ func leseSchemaFakten(t *testing.T, sql string) []string {
 	return out
 }
 
-// vergleiche meldet in BEIDE Richtungen: Neues, das niemand befragt hat, und Einträge,
+// vergleiche meldet in beide Richtungen: Neues, das niemand befragt hat, und Einträge,
 // die es nicht mehr gibt (eine Liste, die Erledigtes weiterführt, verliert ihre Aussage).
 func vergleiche(t *testing.T, was string, ist, bestand []string, hinweis string) {
 	t.Helper()

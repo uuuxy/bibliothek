@@ -17,7 +17,7 @@ import (
 )
 
 // Ein neues Exemplar erbt den Standort, den alle Exemplare seines Titels im Bestand tragen
-// (repository.SQLGeerbterStandort, docs/OFFEN.md 5.53). Ein Exemplar kommt auf vier Wegen zu
+// (repository.SQLGeerbterStandort). Ein Exemplar kommt auf vier Wegen zu
 // einem vorhandenen Titel; jede Ausgangslage läuft deshalb über jeden Weg.
 
 // erbTitel ist ein Titel der Probe: Die Wege finden ihn über Kennung, Namen oder ISBN.

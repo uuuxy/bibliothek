@@ -10,10 +10,10 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Wo ein TAG gemeint ist, muss der Tag der Schule gelten — nicht der der Sitzung.
+// Wo ein Tag gemeint ist, muss der Tag der Schule gelten — nicht der der Sitzung.
 //
 // Die Datenbank läuft im Image in UTC. Ein Zeitpunkt um 00:30 Berliner Zeit gehört dort
-// noch zum VORTAG, und zwei Prädikate haben genau daran gehangen (OFFEN.md 5.2):
+// noch zum Vortag, und zwei Prädikate haben genau daran gehangen:
 //
 //   - Der Mahnlauf („höchstens einmal am Tag", api/mahnwesen/mahnwesen_bulk.go): Der Tag wechselte
 //     um 2 Uhr Berliner Zeit statt um Mitternacht. Ein Lauf kurz nach Mitternacht galt als
@@ -21,16 +21,16 @@ import (
 //   - „Heute zurückgegeben" (ZaehleRueckgabenHeute): Eine Rückgabe zwischen 0 und 2 Uhr zählte
 //     zum Vortag.
 //
-// Was dieser Test NICHT kann: den Fehler zur Laufzeit auslösen. Er tritt nur zwischen
+// Was dieser Test nicht kann: den Fehler zur Laufzeit auslösen. Er tritt nur zwischen
 // Mitternacht in Berlin und Mitternacht UTC ein, und `now()` lässt sich in Postgres nicht
 // stellen — ein Test, der auf diese zwei Stunden wartet, liefe 22 Stunden am Tag grün und
 // bewiese nichts. Beweisbar und von der Uhrzeit unabhängig ist dagegen die Aussage über
-// die beiden FORMULIERUNGEN, und genau die steht hier:
+// die beiden Formulierungen, und genau die steht hier:
 //
 //  1. Die neue Form bildet für einen Zeitpunkt um 00:30 Berliner Zeit den Berliner
-//     Kalendertag — in JEDER Sitzungszone.
+//     Kalendertag — in jeder Sitzungszone.
 //  2. Die alte Form (`::date` in der Sitzungszone) tut das nicht: Sie liefert in
-//     mindestens einer Zone einen anderen Tag. Sie KANN also nicht gleichwertig sein.
+//     mindestens einer Zone einen anderen Tag. Sie kann also nicht gleichwertig sein.
 //  3. Die lebende Abfrage benutzt die neue Form — geprüft an der Quelle, damit dieser
 //     Test nicht bloß seine eigene Kopie misst.
 

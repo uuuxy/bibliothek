@@ -7,11 +7,11 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Das Zugangsdatum eines neuen Exemplars ist der Kalendertag der Schule (OFFEN.md 5.5,
-// Migration 139). Handanlage, Sammelimport und Bestand-Nachziehen schreiben kein
-// erworben_am und nehmen die Vorgabe der Spalte; bis zum 23.09.2026 war das CURRENT_DATE,
-// also der Tag der Datenbank-Sitzung (im Image UTC) — zwischen Mitternacht in Berlin und
-// 2 Uhr der Vortag. Der INSERT-Trigger aus Migration 129 übernimmt den Wert als Zugang,
+// Das Zugangsdatum eines neuen Exemplars ist der Kalendertag der Schule (Migration 139).
+// Handanlage, Sammelimport und Bestand-Nachziehen schreiben kein
+// erworben_am und nehmen die Vorgabe der Spalte. CURRENT_DATE wäre dort
+// der Tag der Datenbank-Sitzung (im Image UTC) — zwischen Mitternacht in Berlin und
+// 2 Uhr der Vortag. Der INSERT-Trigger übernimmt den Wert als Zugang,
 // und das Zugangsbuch ist der Nachweis zum Stichtag 15.3./15.9. Littera trägt „das
 // aktuelle Tagesdatum" ein — das des Arbeitsplatzes, also der Schule.
 //

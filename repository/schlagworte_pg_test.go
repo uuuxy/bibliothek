@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Schlagworte am Titel (Migration 138) gegen echtes Postgres: Die Regeln — vorhandene
+// Schlagworte am Titel gegen echtes Postgres: Die Regeln — vorhandene
 // Schreibweise gewinnt, die Menge wird ersetzt, leer heißt leer — leben im SQL
 // (lower()-Index, ON CONFLICT, DELETE … USING). pgxmock sähe davon nichts.
 
@@ -138,8 +138,7 @@ func TestSetzeSchlagworte_Grenzen(t *testing.T) {
 	if _, err := SetzeSchlagworte(ctx, pool, id, []string{strings.Repeat("ä", SchlagwortMaxZeichen)}); err != nil {
 		t.Errorf("%d Umlaute (an der Grenze): %v", SchlagwortMaxZeichen, err)
 	}
-	// So viele, wie Littera an einem Titel führt: 282 im Katalogisat vom Juni 2026 (bis zum
-	// 30.09.2026 lag die Grenze bei 30, docs/OFFEN.md 4.20).
+	// So viele, wie Littera an einem Titel führt: 282 im Katalogisat vom Juni 2026.
 	littera := make([]string, 282)
 	for i := range littera {
 		littera[i] = fmt.Sprintf("Pflanze %d", i)
@@ -199,7 +198,7 @@ func TestSchlagwortVorschlaege_HaeufigsteZuerstGekapptOhneWaisen(t *testing.T) {
 	}
 }
 
-// Wer tippt, bekommt Treffer über ALLE Wörter (Rasterdurchgang vom 30.09.2026). Bis dahin
+// Wer tippt, bekommt Treffer über alle Wörter. Bis dahin
 // lud das Feld nur die 500 Häufigsten; mit den Littera-Wörtern (13.224 im Katalogisat vom
 // Juni 2026) blieben 12.724 ungezeigt, und wer „Pilz" tippte, sah das vorhandene „Zwergpilze"
 // nicht. Der Fall hier: ein seltenes Wort jenseits der Kappung, Anfangstreffer zuerst, dann

@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Der LMF-Plan am echten Postgres (Migration 097): Ein Plan wird als Reihenfolge
+// Der LMF-Plan am echten Postgres: Ein Plan wird als Reihenfolge
 // gespeichert, seine Zeilen tragen die gerechneten Plätze; Klassen laufen durch das
 // Vokabular (Trigger); die Liste sortiert nach Zeitpunkt, „alle" hebt die Schuljahres-
 // grenze auf; die Vorschlags-Reihenfolge kennt Schreibvarianten; ein zweites Speichern
@@ -20,10 +20,10 @@ import (
 // neueste gewinnt.
 func TestLMFPlan_SpeichernListenAuslassen(t *testing.T) {
 	pool := pgTestPool(t)
-	// Eigene Ausgangslage: Der Test zählt weiter unten die Klassen MIT SCHÜLERN
-	// (LadeKlassenMitSchuelern) und erwartet genau vier. Bis zum 16.09.2026 stimmte das nur,
+	// Eigene Ausgangslage: Der Test zählt weiter unten die Klassen mit Schülern
+	// (LadeKlassenMitSchuelern) und erwartet genau vier. Ohne die eigene Ausgangslage stimmte das nur,
 	// solange kein vorher laufender Test einen Schüler hinterließ — die Reihenfolge der
-	// Testdateien im Paket entschied also über Grün und Rot. Das ist keine Aussage über
+	// Testdateien im Paket entschiede also über Grün und Rot. Das wäre keine Aussage über
 	// den Plan, sondern über die Sortierung der Dateinamen.
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -59,7 +59,7 @@ func TestLMFPlan_SpeichernListenAuslassen(t *testing.T) {
 		t.Errorf("Auslassungen: %v", st.Ausgelassen)
 	}
 
-	// Gespeichert ist ein ENTWURF (Migration 100): Die Liste des Kollegiums sieht nichts,
+	// Gespeichert ist ein Entwurf: Die Liste des Kollegiums sieht nichts,
 	// der Planer mit MitEntwuerfen alles. Erst das Veröffentlichen öffnet die Liste.
 	ab := time.Date(2025, time.August, 1, 0, 0, 0, 0, schulzeit.Zone())
 	if st.Plan.VeroeffentlichtAm != nil {
@@ -120,7 +120,7 @@ func TestLMFPlan_SpeichernListenAuslassen(t *testing.T) {
 		t.Errorf("Reihenfolge: %+v", reihe)
 	}
 
-	// Zweites Speichern im selben Schuljahr ERSETZT (eine Zeile weniger, andere Startstunde)
+	// Zweites Speichern im selben Schuljahr ersetzt (eine Zeile weniger, andere Startstunde)
 	// — und der Stempel bleibt: ein veröffentlichter Plan wird durch Umschreiben kein Entwurf.
 	st2 := speicherePlan(t, repo, LMFPlan{Art: LMFTerminRueckgabe, ErsterTag: "2026-06-15", Startstunde: 1, StundenJeTag: 6},
 		[]LMFPlanZeile{{Klassen: []string{"9H1"}}}, nil)
@@ -134,7 +134,7 @@ func TestLMFPlan_SpeichernListenAuslassen(t *testing.T) {
 	if err != nil || len(neuester.Zeilen) != 1 || neuester.Plan.Startstunde != 1 || len(neuester.Ausgelassen) != 0 {
 		t.Errorf("umgeschriebener Plan: %+v (%v)", neuester, err)
 	}
-	// Anderes Schuljahr legt einen NEUEN Plan an; der neueste gewinnt.
+	// Anderes Schuljahr legt einen neuen Plan an; der neueste gewinnt.
 	st3 := speicherePlan(t, repo, LMFPlan{Art: LMFTerminRueckgabe, ErsterTag: "2027-06-14", Startstunde: 1, StundenJeTag: 6},
 		[]LMFPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}}, nil)
 	if st3.Plan.ID == st.Plan.ID {
@@ -183,7 +183,7 @@ func klassenNorm(k string) string {
 	return string(b)
 }
 
-// Fester Platz und freie Tage (Migration 099) überleben den Weg durch die Datenbank:
+// Fester Platz und freie Tage überleben den Weg durch die Datenbank:
 // Die Zeile mit dem Ausflug kommt mit fest = true und ihrem Platz zurück, die freien
 // Tage hängen am Plan — und ein zweites Speichern ersetzt beides vollständig.
 func TestLMFPlan_FesterPlatzUndFreieTage(t *testing.T) {

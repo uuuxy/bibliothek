@@ -8,12 +8,8 @@ import (
 	"time"
 )
 
-// Der Bestand in der Trefferliste (Protokoll des Medienzentrums vom 16.09.2026, Punkt 4:
-// „Bücher, zu denen es keine Exemplare gibt, tauchen in der Trefferliste auf").
-//
-// Ein Titel ohne Exemplare ist ein legitimer Zustand — angelegt ohne Bestandsangabe, oder
-// Altbestand aus Littera. Verstecken wäre also falsch. Die Trefferliste muss es SAGEN,
-// und dafür braucht sie die Zahlen.
+// Der Bestand in der Trefferliste: Die Suche nennt je Titel, wie viele Exemplare es gibt, wie
+// viele frei sind und wie viele im Zulauf.
 //
 // Vier Fälle, weil „kein Exemplar da" vier verschiedene Ursachen hat und die Theke sie
 // unterscheiden muss: gar keins, alle ausgesondert, alle verliehen, alles im Zulauf.
@@ -107,11 +103,11 @@ func TestTitelSucheNenntDenBestand(t *testing.T) {
 		}
 	})
 
-	// Seit dem 22.09.2026 (Antwort der Schule, docs/OFFEN.md 9.4) zeigt keine der beiden
-	// Türen einen Titel ohne ein nicht ausgesondertes Exemplar. Der Zulauf zählt als
-	// vorhanden: Die Bücher kommen. Rot gesehen am Rückbau des Prädikats.
-	// {Bestand, verfügbar, im Zulauf}. Die dritte Zahl seit dem 22.09.2026: Ohne sie sagte
-	// die Trefferliste über „Nur im Zulauf" „Keine Exemplare" (docs/OFFEN.md 5.5).
+	// Keine der beiden Türen zeigt einen Titel ohne ein nicht ausgesondertes Exemplar. Der
+	// Zulauf zählt als vorhanden: Die Bücher kommen. Rot gesehen am Rückbau des Prädikats.
+	//
+	// {Bestand, verfügbar, im Zulauf}. Ohne die dritte Zahl sagte die Trefferliste über „Nur im
+	// Zulauf" „Keine Exemplare".
 	erwartet := map[string][3]int{
 		"Nur im Zulauf":         {0, 0, 1}, // bestellt heißt: noch nicht im Regal — der Titel bleibt sichtbar
 		"Eins da zwei bestellt": {1, 1, 2},
@@ -120,7 +116,7 @@ func TestTitelSucheNenntDenBestand(t *testing.T) {
 	}
 	versteckt := []string{"Ohne Exemplar", "Nur ausgesondert"}
 
-	// BEIDE Türen prüfen: Die Theke sucht über FindeTitelUnscharf, der
+	// beide Türen prüfen: Die Theke sucht über FindeTitelUnscharf, der
 	// Katalog/Aktionspfad über FindeTitel. Eine der beiden zu vergessen wäre genau
 	// die Art Lücke, um die es hier geht.
 	pruefe := func(t *testing.T, tuer string, zeilen []Titel) {

@@ -49,7 +49,7 @@ func TestLMFStichtagImSchuljahr(t *testing.T) {
 	}
 }
 
-// Die zweite Frage: die Frist einer NEUEN Ausleihe darf nicht in der Vergangenheit
+// Die zweite Frage: die Frist einer neuen Ausleihe darf nicht in der Vergangenheit
 // liegen — sonst mahnt das System das Buch am Tag der Ausgabe.
 func TestLMFStichtagAbTag(t *testing.T) {
 	faelle := []struct {
@@ -74,10 +74,10 @@ func TestLMFStichtagAbTag(t *testing.T) {
 	}
 }
 
-// Paar-Gate: Solange der Stichtag des Schuljahres noch bevorsteht, MÜSSEN Ausleihe
+// Paar-Gate: Solange der Stichtag des Schuljahres noch bevorsteht, müssen Ausleihe
 // (LMFStichtagAbTag) und Rückweg des Plans (LMFStichtagImSchuljahr) denselben Tag
-// nennen. Genau diese Einigkeit fehlte bis zum 06.09.2026 — dasselbe Buch hätte je
-// nach Weg eine um ein Jahr verschiedene Frist bekommen.
+// nennen. Ohne diese Einigkeit bekäme dasselbe Buch je
+// nach Weg eine um ein Jahr verschiedene Frist.
 func TestLMFStichtag_AusleiheUndRueckwegEinig(t *testing.T) {
 	for _, stichtag := range []string{"07-31", "06-15", "09-30", "12-24", "01-15", "08-01"} {
 		for monat := time.January; monat <= time.December; monat++ {
@@ -101,7 +101,7 @@ func TestLMFStichtag_AusleiheUndRueckwegEinig(t *testing.T) {
 // stichtagsVerstoesse findet in einer Go-Quelle die zwei Formen, in denen eine zweite
 // Fassung der Rechnung entsteht: das Vorgabe-Literal „07-31" und ein eigenes Zerlegen
 // eines Stichtag-Werts an „-". Gearbeitet wird am AST, nicht am Text — ein Kommentar,
-// der das Literal ERKLÄRT, ist kein Verstoß (Bugklasse „Lügende Ratsche durch
+// der das Literal erklärt, ist kein Verstoß (Bugklasse „Lügende Ratsche durch
 // Kommentar"), ein echtes Literal dagegen schon.
 func stichtagsVerstoesse(t *testing.T, name, quelle string) []string {
 	t.Helper()

@@ -40,7 +40,7 @@ func TestSperrgrund_ConstraintLehntGesperrtOhneGrundAb(t *testing.T) {
 }
 
 // TestSperreAbgaenger_SetztGrund: Ein Abgänger mit offenem Buch wird gesperrt — und trägt
-// dabei einen aussagekräftigen Grund, damit das Personal im Profil sieht, WARUM.
+// dabei einen aussagekräftigen Grund, damit das Personal im Profil sieht, warum.
 func TestSperreAbgaenger_SetztGrund(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)

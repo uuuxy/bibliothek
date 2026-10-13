@@ -25,8 +25,8 @@ func TestBestandsFilterBedingung(t *testing.T) {
 	}
 }
 
-// Das Schuljahr beginnt am 1. August — Juli zählt zum vorigen (Rasterdurchgang 02.09.2026:
-// vorher rechnete CURRENT_DATE in der DB-Sitzungszone UTC).
+// Das Schuljahr beginnt am 1. August, Juli zählt zum vorigen. Gerechnet wird in der Zeitzone
+// der Schule, nicht mit CURRENT_DATE in der Zeitzone der Sitzung (UTC).
 func TestSchuljahresBeginn(t *testing.T) {
 	berlin, err := time.LoadLocation("Europe/Berlin")
 	if err != nil {

@@ -13,7 +13,7 @@ import (
 )
 
 // Zugangs- und Abgangsbuch lesen das Eigentum nach derselben Regel wie das Etikett
-// (repository.ExemplarTopfSQL, docs/OFFEN.md 4.24, Stufe 2): Eigentum am Exemplar, sonst Topf
+// (repository.ExemplarTopfSQL): Eigentum am Exemplar, sonst Topf
 // der Bestellung, sonst der Titel. Das Zugangsbuch nimmt davon nur die belegten Teile.
 //
 // Die Fälle sind die, in denen die alten Regeln danebenlagen: ein Lernmittel-Titel, den der

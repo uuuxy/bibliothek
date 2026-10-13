@@ -10,7 +10,7 @@ import (
 
 // „Überfällig" heißt überall dasselbe — und eine Dauerleihe wird es nie.
 //
-// Entschieden am 16.09.2026: „kollegen haben keine frist bzw werden einfach nie gesperrt!"
+// Entschieden: „kollegen haben keine frist bzw werden einfach nie gesperrt!"
 // Eine Ausleihe an jemanden, der kein Schüler ist, ist eine Dauerleihe
 // (`ausleihen.ist_handapparat`, gesetzt in erzeugeAusleihe und im Geräte-Pfad).
 //
@@ -53,7 +53,7 @@ func TestUeberfaelligOhneDauerleihen(t *testing.T) {
 					continue
 				}
 				gepruefte++
-				// Zwei erlaubte Antworten: Dauerleihen ausschliessen ODER nur Schüler sehen.
+				// Zwei erlaubte Antworten: Dauerleihen ausschliessen oder nur Schüler sehen.
 				nurSchueler := strings.Contains(block, "JOIN schueler") || strings.Contains(block, "FROM schueler")
 				if strings.Contains(block, "ist_handapparat") || nurSchueler {
 					continue

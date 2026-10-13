@@ -10,10 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Umbenennen und Zusammenführen mit und ohne Verweis von der alten Schreibweise (entschieden
-// am 23.09.2026, docs/OFFEN.md 4.20; Rasterdurchgang V2). Vorher ließ das Zusammenführen das
-// alte Wort immer als Verweis stehen, das Umbenennen nie; jetzt entscheidet die Pflegeseite
-// je Aktion, vorbelegt mit „behalten".
+// Umbenennen und Zusammenführen mit und ohne Verweis von der alten Schreibweise: Die
+// Pflegeseite entscheidet je Aktion, vorbelegt mit „behalten".
 
 func titelIDVon(t *testing.T, pool *pgxpool.Pool, titel string) string {
 	t.Helper()

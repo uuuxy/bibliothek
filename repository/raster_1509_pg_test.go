@@ -2,7 +2,7 @@
 
 package repository
 
-// Nachstellung Rasterdurchgang 15.09.2026 abends (OFFEN.md 5.15). Build-Tag raster: läuft nur
+// Nachstellung Rasterdurchgang 15.09.2026 abends. Build-Tag raster: läuft nur
 // mit -tags raster. Rot heißt „bestätigt".
 
 import (

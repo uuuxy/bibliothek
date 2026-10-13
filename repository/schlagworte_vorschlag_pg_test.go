@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// Der Schlagwort-Vorschlag beim Bestellen per ISBN (docs/OFFEN.md 4.20): Aus bis zu 98
+// Der Schlagwort-Vorschlag beim Bestellen per ISBN: Aus bis zu 98
 // Verlagswörtern eines DNB-Satzes bleibt nur, was es in der eigenen Liste gibt — als Wort
 // mit Titeln oder als Verweis darauf. Der Vergleich ist das ganze Wort, nicht ein Teil
 // davon, und ein Wort ohne Titel wird nicht vorgeschlagen, auch nicht über einen Verweis.
@@ -66,7 +66,7 @@ func TestSchlagworteAusStichwoertern_NurWasDieEigeneListeKennt(t *testing.T) {
 	}
 }
 
-// Die DNB liefert Umlaute zerlegt („o" + U+0308, gemessen am 30.09.2026). Das zerlegte „Vögel"
+// Die DNB liefert Umlaute zerlegt („o" + U+0308, gemessen). Das zerlegte „Vögel"
 // traf das „Vögel" der Liste nie: Für lower() und den eindeutigen Index sind es zwei Wörter.
 // Beide Wege nehmen dieselbe Normalform (schlagwortNormalform): der Vorschlag und das
 // Speichern — ein zerlegt eingetragenes Wort landet beim vorhandenen, nicht daneben.
@@ -114,7 +114,7 @@ func TestSchlagworte_ZerlegteUmlauteSindDasselbeWort(t *testing.T) {
 	}
 }
 
-// Die Normdatei-Wörter eines DNB-Satzes (docs/OFFEN.md 4.25, entschieden am 30.09.2026): Was die
+// Die Normdatei-Wörter eines DNB-Satzes: Was die
 // Liste kennt — in einer der Formen, als Wort mit Titeln oder als Verweis —, kommt als
 // vorhanden, aufgelöst zum Ziel. Alles andere kommt als neu, in der Anzeige-Form; ein Wort
 // ohne Titel zählt als neu, ein zu langes Wort wird nicht angeboten, Doppelte fallen.

@@ -13,11 +13,11 @@ import (
 	"testing"
 )
 
-// Ratsche zu docs/OFFEN.md 5.10: Jeder Schlüssel neben der Kennung eines Lesers ist
+// Jeder Schlüssel neben der Kennung eines Lesers ist
 // eingeordnet — die Tilgung nimmt ihn, oder er bleibt mit Grund.
 //
-// Viermal derselbe Fehler: LUSD-ID (6d01f27a), Ausweisnummer (131a534a), Sperrgrund
-// (5b50202d), Name und Freitext der Titel-Löschspur (08406df4). Jedes Mal kam ein Wert der
+// Viermal derselbe Fehler: LUSD-ID, Ausweisnummer, Sperrgrund,
+// Name und Freitext der Titel-Löschspur. Jedes Mal kam ein Wert der
 // Leserzeile oder ein Freitext neben schueler_id ins Protokoll, und die Tilgung entfernte ihn
 // nicht. Die Rundreise (api/leser/dsgvo_paar_rundreise_pg_test.go) sieht nur Werte, die sie selbst
 // anlegt.
@@ -85,7 +85,7 @@ var bleibtNebenKontokennung = map[string]string{
 }
 
 // keinProtokoll: Maps mit schueler_id, die kein Protokolleintrag sind (Datei:Funktion → Grund).
-// Am 29.09.2026 leer: Jede solche Map im Code geht ins Protokoll.
+// Leer: Jede solche Map im Code geht ins Protokoll.
 var keinProtokoll = map[string]string{}
 
 type leserkennungStelle struct {
@@ -284,7 +284,7 @@ func TestProtokollPersonenbezug_JederSchluesselNebenDerLeserkennungIstEingeordne
 	getilgt := getilgtSchluessel()
 
 	// Nicht-leer je Form: Fällt ein Zweig des Detektors aus, bliebe das Gate für diese Form
-	// still grün. Am 29.09.2026 gefunden und gegen die Durchsicht von Hand gehalten: 6 Literale,
+	// still grün. Gefunden und gegen die Durchsicht von Hand gehalten: 6 Literale,
 	// 5 Index-Zuweisungen, 3 JSON-Texte. Die Untergrenzen liegen darunter, damit ein Umbau
 	// einer Stelle das Gate nicht rot macht.
 	jeArt := map[string]int{}
@@ -325,7 +325,7 @@ func TestProtokollPersonenbezug_JederSchluesselNebenDerKontokennungIstEingeordne
 		getilgt[k] = true
 	}
 
-	// Am 08.10.2026 gefunden: vier Literale (Anlage und Änderung eines Kontos, die eigene
+	// Gefunden: vier Literale (Anlage und Änderung eines Kontos, die eigene
 	// Anmeldung, der Nachtrag der Schul-E-Mail). Die Untergrenze liegt darunter.
 	if len(stellen) < 3 {
 		t.Errorf("nur %d Maps mit ziel_id gefunden, erwartet mindestens 3 — der Detektor sieht sie nicht mehr", len(stellen))

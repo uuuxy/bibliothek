@@ -13,7 +13,7 @@ import (
 
 // Migration 147 nimmt Einträgen im Admin-Protokoll, deren Leser es nicht mehr gibt, die fünf
 // Schlüssel, die die Tilgung entfernt (repository.spurTilgungen, Anweisung „audit_logs").
-// Gemessen am Testserver am 25.09.2026: 3 solche Einträge mit grund oder reason — Leser,
+// Gemessen am Testserver: 3 solche Einträge mit grund oder reason — Leser,
 // die vor 5b50202d endgültig gelöscht wurden; die nächtliche Nachbereinigung erreicht sie
 // nicht, weil sie über anonymized_at vorhandener Zeilen sucht.
 //

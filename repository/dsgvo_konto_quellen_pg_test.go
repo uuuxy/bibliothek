@@ -12,10 +12,10 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Wachstums-Ratsche des Zugangskontos (24.09.2026) — das Gegenstück zu
+// Die Wachstums-Ratsche des Zugangskontos — das Gegenstück zu
 // TestSchuelerFremdschluessel_WachsenNurMitDemPaar für die Tabelle benutzer. Jede Spalte, die
 // auf ein Konto zeigt, steht in der Auskunft: als Anfrage oder als selbst bearbeiteter
-// Vorgang (entschieden am 24.09.2026, OFFEN.md 5.19).
+// Vorgang.
 //
 // Zwei Prüfungen:
 //  1. dsgvoKontoQuellen deckt sich mit den Fremdschlüsseln auf benutzer im Schema — eine
@@ -23,7 +23,7 @@ import (
 //  2. Je Quelle ein Eintrag mit dem Konto; die Auskunft zeigt aus jeder etwas und nichts
 //     über die betroffene Schülerin. Eine neue Quelle ohne Fall im switch ist rot.
 //
-// BLINDHEIT: Verweise ohne Fremdschlüssel sieht der Scan nicht — die Klassenleitung
+// Blindheit: Verweise ohne Fremdschlüssel sieht der Scan nicht — die Klassenleitung
 // (klassen_lehrer_mapping, über die Adresse) und die Kontoereignisse (audit_logs.details
 // mit ziel_id). Beide prüft TestDsgvoAuskunft_Kollege.
 var dsgvoKontoQuellen = []string{

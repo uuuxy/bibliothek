@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-// Das Katalogisat bringt die Littera-Schlagworte mit (docs/OFFEN.md 4.20, Stufe 3, entschieden am
-// 30.09.2026) — aber nur an Titel, die noch keine tragen: Ein erneuter Import überschreibt keine
+// Das Katalogisat bringt die Littera-Schlagworte mit,
+// aber nur an Titel, die noch keine tragen: Ein erneuter Import überschreibt keine
 // Pflege, wie beim Fach. Über SetzeSchlagworte, aufbereitet wie in der Übernahme aus der Sicherung.
 func TestSchreibeTitel_SchlagworteNurAnTitelOhne(t *testing.T) {
 	pool := pgTestPool(t)
@@ -98,7 +98,7 @@ func TestSchlagworteAusFremddaten_WortFuerWort(t *testing.T) {
 // Im Katalogisat vom Juni 2026 steht mancher Titel zweimal, der erste Eintrag ohne Schlagworte,
 // der zweite mit. Der Upsert übergeht den zweiten als Dublette; die Schlagworte müssen trotzdem
 // schon mit dem ersten Lauf kommen, und ein zweiter Lauf derselben Datei ändert nichts mehr.
-// Gemessen am 30.09.2026: Mit nur den eingereihten Datensätzen brachte erst der zweite Lauf 253
+// Gemessen: Mit nur den eingereihten Datensätzen brachte erst der zweite Lauf 253
 // Zuordnungen.
 func TestSchreibeTitel_SchlagworteAuchAusDerDublette(t *testing.T) {
 	pool := pgTestPool(t)

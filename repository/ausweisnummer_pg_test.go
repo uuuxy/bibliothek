@@ -61,7 +61,7 @@ func TestAusweisnummer_LeererBestandFallback(t *testing.T) {
 }
 
 // Ein verrutschter Scan legte eine Nummer an, die keine bigint mehr ist — und ließ danach
-// JEDE automatische Vergabe mit "value out of range for type bigint" scheitern. Zu lange
+// jede automatische Vergabe mit "value out of range for type bigint" scheitern. Zu lange
 // Nummern werden übergangen.
 func TestAusweisnummer_UeberlangeNummerBlockiertNicht(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -88,8 +88,8 @@ func TestAusweisnummer_FormGleichInGoUndSQL(t *testing.T) {
 	}
 }
 
-// Ein Konto bekommt beim Anlegen eine Ausweisnummer — aus demselben Kreis wie ein Schüler
-// (docs/OFFEN.md 5.16). Bis Migration 136 legte konto_hat_leserzeile die Leserzeile ohne
+// Ein Konto bekommt beim Anlegen eine Ausweisnummer — aus demselben Kreis wie ein Schüler.
+// Bis Migration 136 legte konto_hat_leserzeile die Leserzeile ohne
 // Nummer an, und der Ausweisdruck lieferte eine leere Zeile.
 func TestAusweisnummer_KontoBekommtEineBeimAnlegen(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -162,7 +162,7 @@ func TestAusweisnummer_AnfrageKeineFreischaltungEine(t *testing.T) {
 	}
 }
 
-// Ein aktives Konto ist nie ohne Nummer (Migration 145, docs/OFFEN.md 5.16): Leert die
+// Ein aktives Konto ist nie ohne Nummer: Leert die
 // Verwaltung sie, zieht die Datenbank eine neue — roh und über die Benutzerverwaltung; die
 // Akte prüft TestAusweisnummerLeeren, das Zusammenführen TestZusammenfuehrenKollegium. Die
 // geleerte kommt dabei nicht zurück. Ein inaktives Konto bleibt leer, wie eine offene
@@ -221,9 +221,9 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 	pruefe("deaktiviert und geleert", "NULL")
 
 	// Wieder aktiv: Die Leserzeile bekommt NULL über NULL, das lässt der Trigger an leser
-	// liegen; der aufgeschobene aus 136 zieht beim Commit. WELCHE Nummer, prüft der Test
+	// liegen; der aufgeschobene aus 136 zieht beim Commit. welche Nummer, prüft der Test
 	// nicht: Der Generator rechnet über die höchste Nummer in der Tabelle, und die beim
-	// Deaktivieren geleerte A-10003 steht dort nicht mehr (docs/OFFEN.md 5.23).
+	// Deaktivieren geleerte A-10003 steht dort nicht mehr.
 	if err := aendere(true); err != nil {
 		t.Fatalf("wieder freischalten: %v", err)
 	}
@@ -322,7 +322,7 @@ func TestAusweisnummer_Migration145TraegtNach(t *testing.T) {
 }
 
 // pruefeMigrationslauf führt eine Migrationsdatei zweimal aus und liest nach jedem Lauf die
-// Ausweisnummern nach Vorname — in EINER Transaktion, die danach zurückgerollt wird, damit
+// Ausweisnummern nach Vorname — in einer Transaktion, die danach zurückgerollt wird, damit
 // die Funktionen und Trigger der Datei nicht die des Endstands (schema.sql) ersetzen.
 func pruefeMigrationslauf(t *testing.T, pool *pgxpool.Pool, datei string, soll map[string]*string) {
 	t.Helper()

@@ -10,9 +10,9 @@ import (
 // Die Grenzen der Schlagworte stehen zweimal: im Schreibpfad des Servers
 // (SchlagworteJeTitelMax, SchlagwortMaxZeichen) und als Vorgaben des Eingabefelds im Browser
 // (frontend/src/lib/components/ui/ChipFeld.svelte, max und maxZeichen). Das Feld sperrt,
-// bevor der Server gefragt wird. Am 30.09.2026 bekam der Server 300 statt 30 Wörter je Titel
-// (Littera führt bis zu 282), und das Feld hätte weiter bei 30 gesperrt: Ein Titel aus
-// Littera hätte im Buchformular kein Wort mehr dazubekommen.
+// bevor der Server gefragt wird. Nimmt der Server 300 Wörter je Titel
+// (Littera führt bis zu 282) und sperrt das Feld bei 30, bekäme ein Titel aus
+// Littera im Buchformular kein Wort mehr dazu.
 //
 // Gelesen wird die Svelte-Datei als Text, wie in api/lernmittel/lmf_texte_paritaet_test.go. Findet der
 // Test die Stelle nicht mehr, ist er rot und nicht still grün.

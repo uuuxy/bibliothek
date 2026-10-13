@@ -6,7 +6,7 @@ import (
 )
 
 // Die Suchen vergleichen eine getippte ISBN als Teilstring. Die zehnstellige vom Titelblatt
-// und die dreizehnstellige, unter der die Datenbank den Titel führt (Migration 157), enden
+// und die dreizehnstellige, unter der die Datenbank den Titel führt, enden
 // auf verschiedene Prüfzeichen: Ohne den Vergleich mit der Normalform des Suchtexts
 // (SQLSuchtextIstISBN) fände die getippte zehnstellige den Titel nicht.
 func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {

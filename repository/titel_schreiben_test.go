@@ -17,8 +17,8 @@ func neuerUpsertContext() *titelSchreibLauf {
 }
 
 // Regressionstest für den Dubletten-Bug beim Katalogisat-Import: Die Bestands-CSV
-// legt Titel OHNE ISBN an. Kommt danach das MAB2-XML mit ISBN, muss der Datensatz
-// über den TITEL gematcht werden (UPDATE mit ISBN-Nachtrag) — vor dem Fix wurde
+// legt Titel ohne ISBN an. Kommt danach das MAB2-XML mit ISBN, muss der Datensatz
+// über den Titel gematcht werden (UPDATE mit ISBN-Nachtrag) — vor dem Fix wurde
 // nur über die ISBN gematcht und für jeden CSV-Titel eine Dublette angelegt.
 func TestReiheTitelEin_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
 	c := neuerUpsertContext()
@@ -45,7 +45,7 @@ func TestReiheTitelEin_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
 }
 
 // Eine Datei mit ISBN-Variante und ISBN-loser Variante desselben Titels darf nur
-// EINEN Insert erzeugen.
+// einen Insert erzeugen.
 func TestReiheTitelEin_InBatchDedupUeberVarianten(t *testing.T) {
 	c := neuerUpsertContext()
 	batch := &pgx.Batch{}

@@ -1,11 +1,11 @@
 package repository
 
-// Die Theke findet JEDEN aktiven Leser über seinen Ausweis — Schüler wie Kollegium
-// (Migration 125, 16.09.2026). Vorher entschied das eine eigene Abfrage über die
-// Kontentabelle und die Personenart; eine Lehrkraft ohne dieses Feld fand die Theke nicht.
+// Die Theke findet jeden aktiven Leser über seinen Ausweis — Schüler wie Kollegium
+// (Migration 125). Eine eigene Abfrage über die
+// Kontentabelle und die Personenart fände eine Lehrkraft ohne dieses Feld nicht.
 //
 // Die Gegenprobe steht mit im selben Test und ist der eigentliche Punkt: Dieselbe Person
-// darf über die SICHT `schueler` NICHT auffindbar sein. Zeigte die Sicht auch Kollegen,
+// darf über die Sicht `schueler` nicht auffindbar sein. Zeigte die Sicht auch Kollegen,
 // stünde einer in Klassenlisten, Mahnläufen und der Abgänger-Versetzung.
 
 import (

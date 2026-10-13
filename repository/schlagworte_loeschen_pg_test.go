@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// Mehrere Schlagworte auf einmal löschen (docs/OFFEN.md 4.20, wie Littera „Datenbearbeitung"):
+// Mehrere Schlagworte auf einmal löschen (wie Littera „Datenbearbeitung"):
 // alle oder keins, jeder Titel einmal gezählt, ein gewählter Verweis samt Ziel ist kein
 // Fehler.
 func TestSchlagwortPflege_MehrereLoeschen(t *testing.T) {

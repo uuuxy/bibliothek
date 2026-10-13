@@ -71,8 +71,8 @@ func pruefeISBNs(t *testing.T, ist map[string]*string, soll map[string]string) {
 	}
 }
 
-// Migration 140 bringt ISBNs, die vor Migration 133 geschrieben wurden, in die Normalform
-// (docs/OFFEN.md 5.5). Gemessen am Testserver am 23.09.2026: 10.061 Titel mit ISBN, einer
+// Migration 140 bringt ISBNs, die vor Migration 133 geschrieben wurden, in die Normalform.
+// Gemessen am Testserver: 10.061 Titel mit ISBN, einer
 // weicht ab, keine zwei werden nach dem Normalisieren gleich.
 func TestIsbnAltbestand_Migration140(t *testing.T) {
 	danach := fahreMigrationUeberAltzeilen(t, "140_isbn_altbestand_normalform.sql", map[string]string{

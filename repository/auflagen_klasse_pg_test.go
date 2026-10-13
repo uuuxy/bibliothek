@@ -5,9 +5,9 @@ import (
 	"testing"
 )
 
-// Gemischte Auflagen in einer Klasse (docs/OFFEN.md 4.18, Stufe 5) gegen echtes Postgres: Wer
+// Gemischte Auflagen in einer Klasse gegen echtes Postgres: Wer
 // zählt zur Klasse (klassen_normkey, nur aktive Kinder), welche Ausleihe zählt (nur offene,
-// nur ANDERE Auflagen desselben Werks) — das steht im SQL und an der Sicht schueler.
+// nur andere Auflagen desselben Werks) — das steht im SQL und an der Sicht schueler.
 func TestAuflagenMischungInKlasse(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
@@ -76,7 +76,7 @@ func TestAuflagenMischungInKlasse(t *testing.T) {
 	if m == nil {
 		t.Fatal("kein Hinweis — in der 7b haben drei Kinder die 3. Auflage")
 	}
-	// Die Klasse in der Schreibweise des Vokabulars (Migration 087): aus „7b" wird „07B".
+	// Die Klasse in der Schreibweise des Vokabulars: aus „7b" wird „07B".
 	if m.Klasse != "07B" || m.Auflage != "4. Aufl." || m.Erscheinungsjahr != 2023 {
 		t.Errorf("Kopf %+v — erwartet 07B, 4. Aufl., 2023", m)
 	}

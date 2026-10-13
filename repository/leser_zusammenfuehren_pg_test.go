@@ -149,17 +149,17 @@ func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
 	}
 }
 
-// Gate über ALLE Tabellen, die an einem Schüler hängen: Der erste Test säte nur die
+// Gate über alle Tabellen, die an einem Schüler hängen: Der erste Test säte nur die
 // Ausleihe (FK RESTRICT — ein ausgelassener Schritt bräche laut). Vormerkungen und Foto
 // hängen per CASCADE, der Bescheid per SET NULL: Fällt ihr UPDATE weg, nimmt der DELETE
-// der Quelle sie STILL mit bzw. lässt sie personenlos zurück (Rasterdurchgang 02.09.2026).
+// der Quelle sie still mit bzw. lässt sie personenlos zurück.
 //
-// Die Tabellen kommen aus testdaten.DsgvoSchuelerQuellen, nicht aus einer Abschrift. Bis zum
-// 10.09.2026 stand hier eine eigene Liste, deren Kommentar „dieselbe Liste" behauptete —
-// sie blieb bei sieben Tabellen stehen, als Migration 110 die Bescheide in die echte
-// Liste brachte. Das Zusammenführen ließ den Bescheid der Quelle danach ohne Schüler
+// Die Tabellen kommen aus testdaten.DsgvoSchuelerQuellen, nicht aus einer Abschrift: Eine
+// eigene Liste bleibt stehen, wenn eine Migration eine neue Tabelle in die echte Liste
+// bringt, wie Migration 110 die Bescheide.
+// Das Zusammenführen ließe den Bescheid der Quelle dann ohne Schüler
 // zurück: weg aus der Akte, weg aus der Art.-15-Auskunft, und die Tilgung (sie sucht
-// über schueler_id) hätte Name und Anschrift im Snapshot nie mehr gefunden. Eine neue
+// über schueler_id) fände Name und Anschrift im Snapshot nie mehr. Eine neue
 // Quelle ohne Fall im switch macht diesen Test rot.
 func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -262,7 +262,7 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 // Rückweg (Rasterfrage 10): Ein falsch bestätigtes Paar muss sich wieder trennen lassen.
 // Der Eintrag in audit_log (tabelle='schueler', datensatz_id=Ziel, in der Transaktion)
 // trägt die Stammdaten der Quelle, den Stand des Ziels davor und die Kennungen der
-// gewanderten Zeilen — dieser Test geht den Rückweg am ERGEBNIS: Quelle aus dem Eintrag
+// gewanderten Zeilen — dieser Test geht den Rückweg am Ergebnis: Quelle aus dem Eintrag
 // neu anlegen, Ausleihe zurückschlüsseln, Ziel auf den alten Stand setzen.
 func TestZusammenfuehren_RueckwegAusDemProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -329,9 +329,9 @@ func TestZusammenfuehren_RueckwegAusDemProtokoll(t *testing.T) {
 	}
 }
 
-// Eine manuelle Sperre der QUELLE (Ausweis verloren, Hausverbot …) darf beim Zusammen-
-// führen nicht still verschwinden — sie gehört zur Person, nicht zum Datensatz
-// (Rasterdurchgang 02.09.2026). Das Ziel trägt sie danach mit demselben Grund.
+// Eine manuelle Sperre der Quelle (Ausweis verloren, Hausverbot …) darf beim Zusammen-
+// führen nicht still verschwinden — sie gehört zur Person, nicht zum Datensatz.
+// Das Ziel trägt sie danach mit demselben Grund.
 func TestZusammenfuehren_ManuelleSperreDerQuelleBleibt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -354,12 +354,12 @@ func TestZusammenfuehren_ManuelleSperreDerQuelleBleibt(t *testing.T) {
 	}
 }
 
-// Führend ist der Datensatz, den die LUSD zuletzt bestätigt hat — aber ein AKTIVER
+// Führend ist der Datensatz, den die LUSD zuletzt bestätigt hat — aber ein aktiver
 // Datensatz schlägt einen Abgänger, auch wenn er nie bestätigt wurde: Das Kind kam nach
 // der Umbenennung an die Theke, wurde von Hand neu angelegt (Handanlage, aktuelle Klasse),
-// und der Admin behält den alten Datensatz wegen des Ausweises. Bis 02.09.2026 gewannen
-// dann Name und Klasse des ABGÄNGERS — und der nächste Namensmodus-Import spaltete das
-// Kind erneut (Rasterdurchgang, Frage 8).
+// und der Admin behält den alten Datensatz wegen des Ausweises. Gewännen
+// dann Name und Klasse des Abgängers, spaltete der nächste Namensmodus-Import das
+// Kind erneut.
 func TestZusammenfuehren_AktiveHandanlageSchlaegtAbgaenger(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -380,10 +380,10 @@ func TestZusammenfuehren_AktiveHandanlageSchlaegtAbgaenger(t *testing.T) {
 }
 
 // Vormerkungs-Dublette: Beide haben denselben Titel vorgemerkt, die Quelle ist schon
-// „abholbereit" (Exemplar liegt bereit), das Ziel noch „wartend". Bis 02.09.2026 fiel
-// die Vormerkung der QUELLE — das Kind verlor den bereitgestellten Platz, das Exemplar
-// stand frei, niemand wurde bedient. Es bleibt die weiter fortgeschrittene Vormerkung,
-// egal auf welcher Seite sie steht (Rasterdurchgang, Frage 5/8).
+// „abholbereit" (Exemplar liegt bereit), das Ziel noch „wartend". Fiele
+// die Vormerkung der Quelle, verlöre das Kind den bereitgestellten Platz, das Exemplar
+// stünde frei, und niemand würde bedient. Es bleibt die weiter fortgeschrittene Vormerkung,
+// egal auf welcher Seite sie steht.
 func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -416,8 +416,8 @@ func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
 	}
 }
 
-// Foto: kommt nie aus der LUSD — das JÜNGERE gewinnt, egal auf welcher Seite. Bis
-// 03.09.2026 blieb immer das Foto des Ziels, das jüngere der Quelle starb im CASCADE.
+// Foto: kommt nie aus der LUSD — das jüngere gewinnt, egal auf welcher Seite. Bliebe
+// immer das Foto des Ziels, stürbe das jüngere der Quelle im CASCADE.
 func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -449,7 +449,7 @@ func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {
 // TestZusammenfuehren_ZweiKontenBrichtAb: Haben beide Datensätze ein eigenes
 // Zugangskonto, wird nicht geraten.
 //
-// uniq_benutzer_leser (Migration 123) verbietet zwei Anmeldungen auf einer Leserzeile.
+// uniq_benutzer_leser verbietet zwei Anmeldungen auf einer Leserzeile.
 // Ohne die Vorprüfung liefe das Zusammenführen in eine Constraint-Meldung, die an der
 // Oberfläche als „Fehler beim Zusammenführen" ankäme; mit ihr steht dort, was zu tun ist.
 // Vor allem aber: Welche der beiden Anmeldungen bleiben soll, ist eine Entscheidung über

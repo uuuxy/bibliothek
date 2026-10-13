@@ -13,7 +13,7 @@ import (
 
 // Der Lookup, den der Ausleihdienst beim Ausleihen eines Schulbuchs macht: Wo steht die
 // Klasse im Rückgabe-Plan, vom Tag aus gesehen? Schreibvariante egal, Ausgabe-Zeilen zählen
-// nicht, Entwürfe nicht. Die Termine kommen aus Plänen (Migration 097): ein vergangener
+// nicht, Entwürfe nicht. Die Termine kommen aus Plänen: ein vergangener
 // Rückgabe-Plan, ein künftiger mit 9H1 an zwei Tagen, ein Ausgabe-Plan.
 func TestRueckgabeTerminLage(t *testing.T) {
 	pool := pgTestPool(t)
@@ -40,7 +40,7 @@ func TestRueckgabeTerminLage(t *testing.T) {
 		return lage
 	}
 
-	// Solange der Plan 2027 Entwurf ist (Migration 100), kennt der Ausleihdienst nur den
+	// Solange der Plan 2027 Entwurf ist, kennt der Ausleihdienst nur den
 	// vergangenen Termin — also keinen: Ein Entwurf setzt still keine Frist. Und der
 	// Termin vom Juni 2026 liegt im vorigen Schuljahr, zählt am 05.09.2026 also nicht als
 	// „vergangen".
@@ -100,7 +100,7 @@ func speicherePlan(t *testing.T, repo *LMFAbfragen, plan LMFPlan, zeilen []LMFPl
 	}
 	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag, Startstunde: plan.Startstunde, StundenJeTag: plan.StundenJeTag},
 		make([]*lmfplan.Platz, len(zeilen)), lmfplan.Schultage(nil))
-	// Der Rückgabe-Plan trägt sein Ende (Migration 101): hier der Platz der letzten Zeile
+	// Der Rückgabe-Plan trägt sein Ende: hier der Platz der letzten Zeile
 	// — vom Ende her gerechnet ergäbe das dieselben Plätze.
 	if plan.Art == LMFTerminRueckgabe {
 		plan.LetzterTag, plan.LetzteStunde = plan.ErsterTag, plan.Startstunde
@@ -115,7 +115,7 @@ func speicherePlan(t *testing.T, repo *LMFAbfragen, plan LMFPlan, zeilen []LMFPl
 	return st
 }
 
-// veroeffentliche stempelt einen gespeicherten Plan (Migration 100) — wie POST
+// veroeffentliche stempelt einen gespeicherten Plan — wie POST
 // …/veroeffentlichen, ohne Frist-Kopplung (die liegt in api/).
 func veroeffentliche(t *testing.T, repo *LMFAbfragen, st LMFPlanStand) LMFPlanStand {
 	t.Helper()

@@ -11,12 +11,12 @@ import (
 
 // Volljährig wird man am Geburtstag — in Berlin, nicht in der Zeitzone der Sitzung.
 //
-// Der Bescheid-Vorschlag entscheidet daran, WER den Brief bekommt: die Eltern oder die
-// Person selbst. Bis zum 17.09.2026 rechnete er mit CURRENT_DATE, also mit dem
-// Kalendertag der Datenbank-Sitzung (im Image UTC). Am 18. Geburtstag galt das Kind
-// damit bis 2 Uhr Berliner Zeit noch als minderjährig; ein in dieser Zeit erzeugter
-// Bescheid ging an die Eltern eines Erwachsenen. Das ist kein Schönheitsfehler, sondern
-// ein Brief an den falschen Empfänger — und niemandem wäre es aufgefallen.
+// Der Bescheid-Vorschlag entscheidet daran, wer den Brief bekommt: die Eltern oder die
+// Person selbst. Rechnete er mit CURRENT_DATE, also mit dem
+// Kalendertag der Datenbank-Sitzung (im Image UTC), gälte das Kind am 18. Geburtstag
+// bis 2 Uhr Berliner Zeit noch als minderjährig; ein in dieser Zeit erzeugter
+// Bescheid ginge an die Eltern eines Erwachsenen. Das ist kein Schönheitsfehler, sondern
+// ein Brief an den falschen Empfänger — und niemandem fiele es auf.
 //
 // Der Test hängt nicht an der Uhrzeit: Er wertet die Bedingung in zwei Sitzungszonen aus,
 // die 26 Stunden auseinanderliegen (UTC−12 und UTC+14). Zu jeder Stunde weicht mindestens

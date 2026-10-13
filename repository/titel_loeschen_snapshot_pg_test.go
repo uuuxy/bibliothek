@@ -9,18 +9,16 @@ import (
 	"bibliothek/repository"
 )
 
-// TestLoescheTitel_TresenAuskunftFindetGeloeschteExemplare ist das Paar-Gate zum
-// B-Posten „LoescheTitel löscht Exemplare ohne Barcode-Snapshot" (Befund-Register,
-// 01.09.2026): Die Tresen-Auskunft findet gelöschte Exemplare AUSSCHLIESSLICH über
-// audit_log-Zeilen mit tabelle='buecher_exemplare' und details->>'barcode_id'
-// (repository.FindeTresenExemplare). SondereExemplarAus und das Verlust-Löschen schreiben
-// diese Spur längst — beim Löschen eines ganzen TITELS fiel jedes Exemplar ohne
-// sie: Wer so ein Buch später am Tresen scannte, bekam „nie gesehen" statt
-// „gelöscht am …".
+// TestLoescheTitel_TresenAuskunftFindetGeloeschteExemplare ist das Paar-Gate zum Löschen eines
+// Titels: Die Tresen-Auskunft findet gelöschte Exemplare ausschließlich über audit_log-Zeilen
+// mit tabelle='buecher_exemplare' und details->>'barcode_id' (repository.FindeTresenExemplare).
+// SondereExemplarAus und das Verlust-Löschen schreiben diese Spur; fiele beim Löschen eines
+// ganzen Titels jedes Exemplar ohne sie, bekäme, wer so ein Buch später am Tresen scannt, „nie
+// gesehen" statt „gelöscht am …".
 //
-// Geprüft wird das PAAR (Schreiber ↔ Leseweg), nicht die Audit-Zeile allein: Eine
-// Zeile im falschen Format sähe im SELECT count(*) gut aus und bliebe für die
-// Auskunft trotzdem unsichtbar (Lehre LUSD-Paarungs-Gates).
+// Geprüft wird das Paar (Schreiber ↔ Leseweg), nicht die Zeile im Protokoll allein: Eine Zeile
+// im falschen Format sähe im SELECT count(*) gut aus und bliebe für die Auskunft trotzdem
+// unsichtbar.
 func TestLoescheTitel_TresenAuskunftFindetGeloeschteExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)

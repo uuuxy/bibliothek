@@ -5,16 +5,16 @@ import (
 	"testing"
 )
 
-// TestLadeLeserListe_ZeigtKollegium ist der Rot-Test der Leserdatei: Bis zum
-// 16.09.2026 gab es nur die Schülerdatei, und sie las die Sicht `schueler`. Ein Kollege
-// stand in keiner Liste — man sah nicht, welche Bücher er hat.
+// TestLadeLeserListe_ZeigtKollegium ist der Rot-Test der Leserdatei: Eine Liste über die
+// Sicht `schueler` zeigt nur Schüler. Ein Kollege
+// stünde in keiner Liste — man sähe nicht, welche Bücher er hat.
 //
 // Zwei Eigenschaften prüft dieser Test, und keine ist selbstverständlich:
 //
 //  1. Die Spalten klasse, abgaenger_jahr und barcode_id sind seit Migration 123 nullbar.
 //     Ohne coalesce zerbricht der Scan an der ersten Lehrkraft — ein 500 an der Stelle,
-//     wo vorher eine Liste stand (Bugklasse „nullbare Spalte → 500").
-//  2. Kollegium steht VORN. Die ungefilterte Liste ist bei 500 Zeilen gekappt; stünde
+//     wo eben noch eine Liste stand (Bugklasse „nullbare Spalte → 500").
+//  2. Kollegium steht vorn. Die ungefilterte Liste ist bei 500 Zeilen gekappt; stünde
 //     das Kollegium hinter den Schülern, wäre es bei 875 Schülern nie zu sehen — und
 //     zwar lautlos.
 func TestLadeLeserListe_ZeigtKollegium(t *testing.T) {

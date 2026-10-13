@@ -6,11 +6,11 @@ import (
 	"testing"
 )
 
-// Die Sicht `schueler` zeigt die Schüler aus `leser` (Migration 124). Zwei Eigenschaften
+// Die Sicht `schueler` zeigt die Schüler aus `leser`. Zwei Eigenschaften
 // muss sie haben, und keine davon ist selbstverständlich.
 
 // TestLeserSichtZeigtJedeSpalte: `CREATE VIEW ... SELECT *` friert die Spaltenliste beim
-// Anlegen ein. Eine Spalte, die später zu `leser` kommt, erscheint in der Sicht NICHT von
+// Anlegen ein. Eine Spalte, die später zu `leser` kommt, erscheint in der Sicht nicht von
 // selbst — und weil 51 Abfragen über die Sicht lesen, wäre die neue Spalte für fast das
 // ganze Programm nicht vorhanden.
 //

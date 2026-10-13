@@ -12,7 +12,7 @@ import (
 )
 
 // Die Zählung des Wächters am echten Postgres: Es zählt, wer weg ist, seit über einem
-// Jahr, und noch ein offenes Buch ODER eine unbezahlte Forderung hat. Nicht: der frisch
+// Jahr, und noch ein offenes Buch oder eine unbezahlte Forderung hat. Nicht: der frisch
 // Weggegangene, der mit bezahlter Forderung, der Aktive, der Gelöschte.
 func TestZaehleEhemaligeMitOffenenVorgaengen(t *testing.T) {
 	pool := pgtest.Pool(t)

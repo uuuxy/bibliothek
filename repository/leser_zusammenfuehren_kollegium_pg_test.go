@@ -12,18 +12,18 @@ import (
 
 // Zwei Akten desselben Kollegen zusammenführen — und die Grenze, die dabei zu halten ist.
 //
-// Der Anlass (16.09.2026): Ein Kollege, der von Hand in die Leserdatei eingetragen
+// Der Anlass: Ein Kollege, der von Hand in die Leserdatei eingetragen
 // wurde und sich danach über "Mein Portal" selbst anmeldet, steht zweimal da. Der Wächter
 // trg_benutzer_hat_leserzeile legt zu jedem neuen Konto eine frische Leserzeile an, ohne
 // zu prüfen, ob die Person schon dasteht. Ausweis und Ausleihen hängen dann am ersten
 // Eintrag, die Anmeldung am zweiten.
 //
-// Repariert werden konnte das bis heute von NIEMANDEM, auch nicht vom Administrator:
+// Repariert werden konnte das bis heute von niemandem, auch nicht vom Administrator:
 // Das Zusammenführen las und schrieb gegen die Sicht `schueler` (WHERE art='schueler'),
 // ein Kollege stand nicht darin, und der Vorgang endete in "nicht gefunden".
 //
 // Mit dem Umhängen auf die Tabelle fällt ein Schutz weg, den vorher die Sicht zufällig
-// gestellt hat: dass sich ein Kollege nicht mit einem SCHÜLER verschmelzen lässt. Das
+// gestellt hat: dass sich ein Kollege nicht mit einem Schüler verschmelzen lässt. Das
 // wäre nicht bloss falsch, sondern unrettbar — Zusammenführen löscht die Quelle. Deshalb
 // steht die Grenze jetzt ausdrücklich im Code, und dieser Test hält sie fest.
 func TestZusammenfuehrenKollegium(t *testing.T) {
@@ -59,7 +59,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 	}
 
 	// Der Fall, um den es geht: die Handanlage (mit Ausweis) und die Zeile aus der
-	// Selbstanmeldung (ohne alles). Die Selbstanmeldung legt JEDEN als 'lehrkraft' an —
+	// Selbstanmeldung (ohne alles). Die Selbstanmeldung legt jeden als 'lehrkraft' an —
 	// auch eine LiV. Genau deshalb müssen sich Lehrkraft und LiV treffen dürfen.
 	t.Run("Handanlage und Selbstanmeldung werden eine Akte", func(t *testing.T) {
 		ziel := legeLeser(t, "Katrin", "Wendlandt", "liv", "ZF-K-1")
@@ -147,7 +147,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 		}
 	})
 
-	// Ein aktives Konto ist nie ohne Nummer (Migration 145, docs/OFFEN.md 5.16) — auch nicht,
+	// Ein aktives Konto ist nie ohne Nummer — auch nicht,
 	// wenn es beim Zusammenführen auf eine Zeile ohne Nummer wandert. Das Ziel behält seine
 	// Nummer (siehe Kopf von repository/leser_zusammenfuehren.go); hat es keine, kommt
 	// eine aus dem Generator.

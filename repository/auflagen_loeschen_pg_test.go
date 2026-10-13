@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// Ein Werk mit weniger als zwei Titeln fällt — auch, wenn Titel gelöscht werden
-// (Rasterdurchgang 25.09.2026, docs/OFFEN.md 4.18, Frage 1 und 12). Bis dahin stand die Regel
+// Ein Werk mit weniger als zwei Titeln fällt — auch, wenn Titel gelöscht werden.
+// Bis dahin stand die Regel
 // nur im Lösen: Ein gelöschter Titel ließ den anderen allein an seinem Werk zurück.
 func TestLoescheTitel_HaeltDieRegelDerAuflagen(t *testing.T) {
 	pool := pgTestPool(t)

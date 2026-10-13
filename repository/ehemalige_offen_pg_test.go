@@ -9,7 +9,7 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// „Wie lange ist der weg?" — eine Frage, eine Formulierung (#593, Paket 5).
+// „Wie lange ist der weg?" — eine Frage, eine Formulierung.
 //
 // Der Wächter „Ehemalige mit offenen Vorgängen" meldet Weggegangene, deren Name und
 // Anschrift auf Dauer stehen bleiben, weil ein offener Vorgang die Anonymisierung
@@ -91,7 +91,7 @@ func TestWaechterSiehtAuchAbgaengerOhneStempel(t *testing.T) {
 
 	// 1. Mit Stempel, lange weg, offenes Buch — der Regelfall, den der Wächter meldet.
 	offeneAusleihe(t, abgaenger(t, "MitStempel", vorZweiJahren, 700), "B-W1")
-	// 2. OHNE Stempel (Altzeile), lange nicht angefasst, offenes Buch — der Fund.
+	// 2. ohne Stempel (Altzeile), lange nicht angefasst, offenes Buch — der Fund.
 	offeneAusleihe(t, abgaenger(t, "OhneStempel", nil, 700), "B-W2")
 	// 3. Mit Stempel, aber erst seit zehn Tagen weg — noch kein Fall für den Wächter.
 	offeneAusleihe(t, abgaenger(t, "Frisch", time.Now().AddDate(0, 0, -10), 10), "B-W3")
@@ -108,11 +108,11 @@ func TestWaechterSiehtAuchAbgaengerOhneStempel(t *testing.T) {
 	}
 }
 
-// Der Wächter und die Löschuhr rechnen mit DERSELBEN Uhr (sqlKarenzUhr): dem spätesten von
-// Abgang, letzter Rückgabe und letztem Schadensabschluss. Bis zum 22.09.2026 nahm der
-// Wächter allein den Abgang (OFFEN.md 5.12, „dritte Formulierung derselben Frage"): Wer vor
+// Der Wächter und die Löschuhr rechnen mit derselben Uhr (sqlKarenzUhr): dem spätesten von
+// Abgang, letzter Rückgabe und letztem Schadensabschluss. Nähme der
+// Wächter allein den Abgang, wäre das eine dritte Formulierung derselben Frage: Wer vor
 // zwei Jahren wegging, vor zehn Tagen an der Theke ein Buch zurückgab und ein zweites noch
-// hat, stand als „Karenz abgelaufen, offener Vorgang" auf der Liste — während die Löschuhr
+// hat, stünde als „Karenz abgelaufen, offener Vorgang" auf der Liste — während die Löschuhr
 // für ihn erst seit zehn Tagen läuft. Zwei Antworten auf „ist die Karenz vorbei?".
 func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -169,7 +169,7 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 			t.Fatalf("Ausleihe: %v", err)
 		}
 	}
-	// KURZ: vor zehn Tagen ein Buch zurückgegeben (die Uhr der Löschfrist läuft ab hier) …
+	// kurz: vor zehn Tagen ein Buch zurückgegeben (die Uhr der Löschfrist läuft ab hier) …
 	kurz := abgaenger(t, "Kurz")
 	ausleihe(t, kurz, "B-U1", time.Now().AddDate(0, 0, -10))
 	// … und ein zweites noch offen (der Vorgang, der die Löschung blockiert).
@@ -186,10 +186,10 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 	// Gegenprobe: Ist die letzte Rückgabe älter als die Karenz, meldet der Wächter — wie die
 	// Löschuhr, die ihn dann nur wegen des offenen Buchs stehen lässt.
 	//
-	// LANG bekommt seine alte Rückgabe beim Anlegen. Bis zum 23.09.2026 datierte diese
-	// Gegenprobe stattdessen die Rückgabe von KURZ per UPDATE um 390 Tage zurück. Seit
+	// lang bekommt seine alte Rückgabe beim Anlegen, nicht durch ein UPDATE, das die
+	// Rückgabe von kurz zurückdatiert: Seit
 	// Migration 137 steht die Uhr als Stempel am Leser und folgt einer Rückdatierung nicht
-	// mehr — sie geht nur nach vorne. Nachgesehen am 23.09.2026: Kein Schreibpfad der
+	// mehr — sie geht nur nach vorne. Nachgesehen: Kein Schreibpfad der
 	// Anwendung stellt den Zustand her, den das UPDATE herstellte. Alle drei Rückgabewege
 	// fassen nur offene Ausleihen an (repository/ausleihe.go BucheRueckgabeZum,
 	// repository/schaden_melden.go, internal/service/device_service.go über activeLoan), und
@@ -200,7 +200,7 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 	// repository/leser_stempel_pg_test.go fest.
 	// 390 Tage, nicht 400: Die Ausleihe entsteht mit `now() - interval '400 days'` in der
 	// Datenbank, die Rückgabe kommt als Go-Zeit von vorher — bei gleichem Abstand liegt sie
-	// um Sekundenbruchteile VOR der Ausleihe, und check_return_date weist sie ab. Auf macOS
+	// um Sekundenbruchteile vor der Ausleihe, und check_return_date weist sie ab. Auf macOS
 	// fiel das nicht auf, in der CI (Linux) sofort. 390 Tage liegen sicher nach der Ausleihe
 	// und sicher außerhalb der 365 Tage, nach denen der Wächter fragt.
 	lang := abgaenger(t, "Lang")

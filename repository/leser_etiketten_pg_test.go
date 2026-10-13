@@ -68,7 +68,7 @@ func TestLadeEtikettZeilen_SortiertUndNurLebende(t *testing.T) {
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	// Bewusst in einer Reihenfolge angelegt, die NICHT der erwarteten entspricht:
+	// Bewusst in einer Reihenfolge angelegt, die nicht der erwarteten entspricht:
 	// Käme die Sortierung aus der Eingabe statt aus dem SQL, fiele es nicht auf.
 	zimmer := seedSuchSchueler(t, pool, "ETI-1", "Tim", "Zimmermann")
 	anders := seedSuchSchueler(t, pool, "ETI-2", "Bea", "Anders")
@@ -146,14 +146,12 @@ func TestLadeEtikettZeilen_LeereListeFragtDieDatenbankNichtAn(t *testing.T) {
 	}
 }
 
-// TestLadeEtikettZeilen_LaesstKeinenKollegenWeg: Seit dem 16.09.2026 stehen Schüler und
-// Kollegium in derselben Liste, mit demselben Häkchen davor. Wer „alle markieren" drückt
-// und einen Etikettenbogen anfordert, meint auch die Kollegen.
+// TestLadeEtikettZeilen_LaesstKeinenKollegenWeg: Schüler und Kollegium stehen in derselben
+// Liste, mit demselben Häkchen davor. Wer „alle markieren" drückt und einen Etikettenbogen
+// anfordert, meint auch die Kollegen.
 //
-// Die Abfrage las die Sicht `schueler`. Ein markierter Kollege fiel damit LAUTLOS vom
-// Bogen — der Druck gelang, der Bogen war nur kürzer, und gemerkt hätte man es beim
-// Verteilen. Solange die Kollegen in keiner Liste standen, war die Sicht richtig; mit der
-// Leserdatei wurde sie zum stillen Verlust.
+// Läse die Abfrage die Sicht `schueler`, fiele ein markierter Kollege lautlos vom Bogen: Der
+// Druck gelänge, der Bogen wäre nur kürzer, und gemerkt würde es beim Verteilen.
 func TestLadeEtikettZeilen_LaesstKeinenKollegenWeg(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

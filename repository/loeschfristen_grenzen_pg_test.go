@@ -9,8 +9,8 @@ import (
 
 // Die Löschbedingungen an echtem Postgres ausgerechnet: Wo genau liegt die Grenze?
 //
-// Der Compiler verhindert seit dem 23.08.2026, dass Zahlen und Bedingung getrennt
-// voneinander falsch gesetzt werden (Loeschbedingung trägt beides). Was er NICHT
+// Der Compiler verhindert, dass Zahlen und Bedingung getrennt
+// voneinander falsch gesetzt werden (Loeschbedingung trägt beides). Was er nicht
 // verhindert, ist eine falsche Einheit IN der Bedingung — `days` statt `months`. Genau
 // dort ist der Schaden am größten: Aus 24 Monaten Aufbewahrung würden 24 Tage, und der
 // nächtliche Lauf räumte das Protokoll bis auf den letzten Monat ab. Unumkehrbar.
@@ -45,7 +45,7 @@ func TestLoeschbedingungen_GrenzenStimmenMitDemKalender(t *testing.T) {
 			t.Fatalf("Grenze %s, erwartet ~%s — die Einheit stimmt nicht (Tage statt Monate?)",
 				g.Format("2006-01-02"), erwartet.Format("2006-01-02"))
 		}
-		// Gegenprobe: 24 TAGE lägen mehr als ein Jahr daneben. Ohne sie könnte der Test
+		// Gegenprobe: 24 Tage lägen mehr als ein Jahr daneben. Ohne sie könnte der Test
 		// auch bei einer viel zu kurzen Frist grün bleiben.
 		if abstandTage(g, jetzt.AddDate(0, 0, -ProtokollAufbewahrungMonateVorgabe)) < 300 {
 			t.Fatal("Grenze liegt bei ~24 Tagen statt 24 Monaten")
@@ -80,7 +80,7 @@ func abstandTage(a, b time.Time) float64 {
 }
 
 // zeitAusdruck schneidet aus einer Bedingung den Zeitvergleich der genannten Spalte
-// heraus — also alles hinter „spalte < ". Bewusst am ECHTEN Bedingungstext, nicht an
+// heraus — also alles hinter „spalte < ". Bewusst am echten Bedingungstext, nicht an
 // einer Kopie: Ein Test, der die Rechnung nachbaut, prüft seine eigene Annahme.
 func zeitAusdruck(where, spalte string) string {
 	marke := spalte + " < "

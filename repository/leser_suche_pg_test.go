@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// seedSuchSchueler legt einen Schüler mit frei wählbarem Vor- UND Nachnamen an.
+// seedSuchSchueler legt einen Schüler mit frei wählbarem Vor- und Nachnamen an.
 // Der vorhandene seedSchueler nagelt den Nachnamen auf "Test" fest und taugt für
 // Namenssuchtests deshalb nicht.
 func seedSuchSchueler(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname string) string {
@@ -87,7 +87,7 @@ func TestFindeUnscharf_ReihenfolgeUndDiakritika(t *testing.T) {
 		{"Akzent im Vornamen weggelassen", "Jose Garcia", "José García Rodríguez"},
 		{"mit Sonderzeichen getippt", "Öztürk", "Mehmet Öztürk"},
 
-		// Deutsche Ersatzschreibung — in BEIDE Richtungen, denn mal steht der Umlaut
+		// Deutsche Ersatzschreibung — in beide Richtungen, denn mal steht der Umlaut
 		// in der Datenbank und wird ohne getippt, mal ist es genau andersherum.
 		{"ue statt ü", "Mueller-Schmidt", "Anna Maria Müller-Schmidt"},
 		{"oe und ue statt ö/ü", "Oeztuerk", "Mehmet Öztürk"},
@@ -118,8 +118,8 @@ func TestFindeUnscharf_ReihenfolgeUndDiakritika(t *testing.T) {
 }
 
 // TestFindeUnscharf_TrenntNamensgleiche sichert die Kernaussage des Umbaus ab:
-// Vor- plus Nachname engt auf eine Person ein. Vorher lieferte "Lena Hoffmann" gar
-// nichts, weil keine Spalte den kompletten String enthielt.
+// Vor- plus Nachname engt auf eine Person ein. Ein Vergleich mit dem ganzen Text lieferte
+// für "Lena Hoffmann" nichts, weil keine Spalte den kompletten String enthält.
 func TestFindeUnscharf_TrenntNamensgleiche(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)

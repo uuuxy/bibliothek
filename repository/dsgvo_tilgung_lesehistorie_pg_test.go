@@ -11,17 +11,14 @@ import (
 
 // Die Löschung muss tilgen, was die Auskunft zurechnet.
 //
-// Fund des Komplett-Durchgangs 31.08.2026: Zwei Prädikate beantworten dieselbe Frage
-// „welche audit_log-Zeilen gehören diesem Schüler?" und waren sich nicht einig. Die
-// Art.-15-Auskunft (repository/dsgvo_auskunft.go) zählt ausdrücklich auch die Ausleih-Zeilen
-// dazu („Ohne diesen Zweig fehlte die Lesehistorie"): tabelle='ausleihen' AND
-// details->>'schueler_id' = id. TilgeSchuelerSpuren tilgte nur tabelle='schueler'.
-//
-// Folge: Nach Purge oder LUSD-Abgang blieb die vollständige Lesehistorie
-// (CHECKOUT/RETURN mit schueler_id im details-Blob) stehen — auffindbar mit exakt der
-// Abfrage, die der eigene Auskunftshandler benutzt. Sie fiel erst, wenn der
-// Lesehistorie-Cron sie Monate später zufällig noch einholte; nach dem Löschen der
-// Schülerzeile gab es dafür keine Garantie mehr.
+// Zwei Prädikate beantworten dieselbe Frage „welche audit_log-Zeilen gehören diesem Schüler?"
+// und müssen sich einig sein. Die Art.-15-Auskunft (repository/dsgvo_auskunft.go) zählt
+// ausdrücklich auch die Ausleih-Zeilen dazu: tabelle='ausleihen' AND details->>'schueler_id' =
+// id. Tilgte TilgeSchuelerSpuren nur tabelle='schueler', bliebe nach Purge oder LUSD-Abgang die
+// vollständige Lesehistorie (CHECKOUT/RETURN mit schueler_id im details-Blob) stehen,
+// auffindbar mit genau der Abfrage, die die Auskunft benutzt. Sie fiele erst, wenn der
+// Lesehistorie-Cron sie Monate später einholt; nach dem Löschen der Schülerzeile gibt es dafür
+// keine Garantie.
 func TestTilgeSchuelerSpuren_TilgtAuchDieLesehistorie(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)

@@ -175,7 +175,7 @@ je Paket alles in einem Zug. Was „fertig" heißt und wie belegt wird, steht un
   was ihnen noch nicht folgt, und lässt den Bestand nur sinken (`stil_ratsche_test.go`).
 - [x] Die Pakete unter `pkg/`.
 - [x] Unter `internal/` die neun Pakete, die `repository` nicht einbinden.
-- [ ] `repository/`.
+- [x] `repository/`.
 - [ ] Die übrigen acht Pakete unter `internal/` ohne `internal/service` (Reihenfolge in 5.66).
 - [ ] `internal/service`.
 - [ ] `api/tuer`, die zwölf Themen unter `api/`, `api/`.
@@ -444,10 +444,10 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 35 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
-gelesen und ohne Änderung), dazu unter `internal/` die neun Pakete, die kein anderes des
-Projekts einbinden oder nur eines unter `pkg/`: `ausweis`, `backupkrypto`, `crypto`,
-`middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`.
+**Fertig sind 36 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+gelesen und ohne Änderung), unter `internal/` die neun Pakete, die kein anderes des
+Projekts einbinden oder nur eines unter `pkg/` (`ausweis`, `backupkrypto`, `crypto`,
+`middleware`, `pdftest`, `pgtest`, `smtptest`, `uebernahme`, `xlsxtest`), und `repository`.
 
 **Ein Paket ist fertig, wenn:**
 
@@ -466,15 +466,6 @@ darüber ein und kommen deshalb nach ihm an die Reihe: `auskunft`, `bereitschaft
 `buchetikett`, `littera` und `lusd` nach `repository`, `testdaten` nach `internal/service`,
 `tuertest` und `routertest` nach `api/`. Ihre Attrappen erfüllen Schnittstellen von dort
 (`tuertest.EinstellungenAttrappe.Lade`) und bekommen ihre Namen mit diesen.
-
-**`repository/` in Ausschnitten:** Das Paket hat 167 Dateien mit 21.800 Zeilen und wird je
-Sache umgestellt (Lieferant, Leser, Titel und Exemplar, Ausleihe …), jeder Ausschnitt mit
-seinen Rufern als eigener Commit; sein Bestand in `stil_bestand_test.go` sinkt dabei. Das
-Muster steht am ersten Ausschnitt (`repository/lieferant.go`): Das Modell heißt wie die Sache
-(`Lieferant`), was sie liest und schreibt `LieferantenAbfragen`, die Fassung an Postgres
-`pgLieferantenAbfragen`, der Erzeuger `NewLieferantenAbfragen`, und eine Methode wiederholt
-die Sache nicht (`Lade` statt `GetSupplierByID`). Der Programmcode ist umgestellt und seine
-Zeile in `stil_bestand_test.go` entfernt; offen sind dort noch die Kommentare der Tests.
 
 **Beleg je Paket:** Umbenannt wird mit dem Werkzeug der Sprache (`gopls rename`), das jede
 Nennung über die Typprüfung findet. Danach laufen die ganze Go-Suite an der Datenbank, der
@@ -502,8 +493,12 @@ Antworttyps, steht er auch in `docs/docs.go`: danach `swag init -g main.go -o do
 
 **Danach, je als eigener Schritt:**
 
-- Testdateien: 816 Kommentarzeilen mit Datum in 415 Dateien; 29 von 901 vergleichen mit
-  testify, das Regelwerk lässt nur das Paket `testing` zu (Decisions, „Use package testing").
+- Testdateien: 612 Kommentarzeilen mit Datum in 324 von 905 Dateien (gezählt am 14.10.2026 an
+  Zeilen, die ganz Kommentar sind); 29 Dateien vergleichen mit testify, das Regelwerk lässt
+  nur das Paket `testing` zu (Decisions, „Use package testing"). In `repository/` sind die
+  Tests umgestellt; dort bleiben acht Zeilen mit Datum, fünf nennen Testdaten (ein Termin, ein
+  Ferientag) und drei stehen im Kopf der datierten Nachstellungen hinter dem Build-Tag
+  `raster`.
 - Fehlertexte: 59 Stellen tragen `//nolint:staticcheck` (ST1005), weil der Text des Fehlers
   die Meldung an der Oberfläche ist. Das Regelwerk schreibt Fehlertexte klein und ohne
   Satzzeichen (Decisions, „Error strings"). Den Satz vom Fehler trennt schon
@@ -522,13 +517,28 @@ Antworttyps, steht er auch in `docs/docs.go`: danach `swag init -g main.go -o do
   dieser Vorgänge mit seinem Eintrag in einer Transaktion steht. Wer „Titel löschen" sucht,
   sucht beim Titel. Die Dateien heißen schon nach ihrer Sache (`titel_loeschen.go`,
   `leser_loeschen.go`, `konto_loeschen.go`, `exemplar_aussondern.go`, `forderung_erledigen.go`);
-  die Methoden ziehen an die Abfragen ihrer Sache, sobald deren Ausschnitt umgestellt ist.
+  die Methoden ziehen an die Abfragen ihrer Sache (`KatalogAbfragen`, `LeserAbfragen`,
+  `KontoAbfragen`, `SchadensAbfragen`). Die Rufer halten dann die Abfragen der Sache statt
+  `ProtokollAbfragen`, ihre Attrappen ziehen mit.
 - Derselbe Ort hat zwei Wörter: „Theke" (669 Go-Namen, 549 Nennungen in der Oberfläche, das
   Paket `api/theke`) und „Tresen" (124 Go-Namen, 16 Nennungen in der Oberfläche, darunter die
   Beschriftung „Tresen-Auskunft"; gezählt am 13.10.2026). Ein Wort festlegen und in
   [STIL.md](STIL.md), Abschnitt 2, eintragen.
 - Die Oberfläche: 459 Dateien ohne Tests, `Student` in 30 Dateinamen gegen 15 mit `schueler`
   oder `leser`.
+- Sechzehn Abfragen in `repository/` lassen eine Zeile aus, die sich nicht lesen lässt, statt
+  den Fehler zu melden (`repository/zeile_unlesbar.go` nennt die Regel): mit `continue` in
+  `klassenleitung.go`, `kontoauszug.go`, `protokoll_lesen.go` und dreimal in `statistik.go`;
+  mit „nur anhängen, wenn kein Fehler" in `etikett_daten.go` (zweimal), `leser_liste.go`,
+  `mahnwesen_ueberfaellige.go`, `mail_vorlagen.go`, `nachschlagelisten.go` (zweimal),
+  `rechte.go`, `titel_cover.go` und `titel_loeschen.go`. Die Liste kommt dann kürzer an, und
+  niemand erfährt es. Nächster Schritt: je Stelle den Fehler mit `zeileUnlesbar` zurückgeben
+  und die Prüfung aus `einstellungen_lesefehler_ratsche_test.go` auf das Paket ausdehnen; ein
+  Test je Stelle stellt die unlesbare Zeile nach.
+- `repository.BescheidBriefPosition.SchuelerName` füllt keine Abfrage: `LadePositionen` liest
+  Art, Titel, ISBN und Betrag. Das Feld steht als leerer Text `schueler_name` in der Antwort.
+  Nächster Schritt: nachsehen, ob die Oberfläche das Feld liest, und es dann füllen oder
+  streichen.
 
 ---
 

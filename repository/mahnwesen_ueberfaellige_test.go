@@ -41,7 +41,7 @@ func TestLadeUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 		"titel", "autor", "isbn", "cover_url", "barcode",
 		"rueckgabe_frist", "tage_ueberfaellig", "mahnstufe", "letztes_mahndatum",
 	}).
-		// Klasse 7A: zwei VERSCHIEDENE Schülerinnen mit identischem Namen,
+		// Klasse 7A: zwei verschiedene Schülerinnen mit identischem Namen,
 		// deren Ausleihen nach Frist verzahnt sortiert sind.
 		AddRow("a1", "s1", "Anna Müller", "7A", false, "Faust", "Goethe", "978-1", "", "B-1", frist, 17, 2, &gemahnt).
 		AddRow("a2", "s2", "Anna Müller", "7A", false, "Die Räuber", "Schiller", "978-2", "", "B-2", frist.AddDate(0, 0, 1), 16, 0, ohneDatum).
@@ -74,7 +74,7 @@ func TestLadeUeberfaelligeNachKlasse_GruppiertKorrekt(t *testing.T) {
 		t.Errorf("LehrerEmail nicht zugeordnet: %q", k7a.LehrerEmail)
 	}
 
-	// s1 hat ZWEI Medien — das zweite kam nach dem Einschub von s2.
+	// s1 hat zwei Medien — das zweite kam nach dem Einschub von s2.
 	// Verliert die Gruppierung es, wird das Buch nie angemahnt.
 	if n := medienAnzahl(k7a.Schueler, "s1"); n != 2 {
 		t.Errorf("s1: erwartet 2 Medien, bekam %d (Medium bei Slice-Reallokation verloren?)", n)

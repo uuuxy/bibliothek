@@ -8,7 +8,7 @@ import (
 // Regressionstest gegen den echten Juni-2026-MAB-Export (siehe
 // verify_katalogisat_test.go in internal/service): 4.747 von 13.708 Titeln haben
 // dort ein leeres Autor-Feld, 779 ein Jahr von 0. Ein erneuter Import über einen
-// bereits vorhandenen Bestand darf solche fehlenden Felder NICHT nachträglich
+// bereits vorhandenen Bestand darf solche fehlenden Felder nicht nachträglich
 // leeren — genau das tat SchreibeTitel vor dieser Korrektur: qUpdate schrieb
 // autor/verlag/erscheinungsjahr ungeschützt, während signatur/isbn längst per
 // COALESCE(NULLIF(...)) geschützt waren. Ein Reimport mit einer schlechteren
@@ -53,13 +53,13 @@ func TestSchreibeTitel_LeereFelderUeberschreibenBestandNicht(t *testing.T) {
 	if jahr == nil || *jahr != 2001 {
 		t.Errorf("erscheinungsjahr = %v, will von jahr=0 im Reimport nicht auf NULL gesetzt werden — want 2001", jahr)
 	}
-	// Die Signatur DARF sich ändern — Reimport bringt hier bewusst einen neuen Wert.
+	// Die Signatur darf sich ändern — Reimport bringt hier bewusst einen neuen Wert.
 	if signatur != "Pg" {
 		t.Errorf("signatur = %q, want %q (neuer Wert aus dem Reimport)", signatur, "Pg")
 	}
 }
 
-// Ein Reimport MIT neuen Werten darf die alten weiterhin ersetzen (Enrichment) —
+// Ein Reimport mit neuen Werten darf die alten weiterhin ersetzen (Enrichment) —
 // der Fix darf kein Deadlock in Richtung "nie mehr ändern" werden.
 func TestSchreibeTitel_NichtLeereFelderUeberschreibenBestand(t *testing.T) {
 	pool := pgTestPool(t)
@@ -95,12 +95,12 @@ func TestSchreibeTitel_NichtLeereFelderUeberschreibenBestand(t *testing.T) {
 	}
 }
 
-// Ein Mehrjahresband behält seine Spanne (Migration 134, Rasterdurchgang 23.09.2026, K1).
+// Ein Mehrjahresband behält seine Spanne (Migration 134).
 //
 // Der Katalogisat-Import übernimmt die Jahrgangsspanne aus Litteras Signatur, und die nennt
 // oft nur einen Jahrgang („LMF Bio 7"). Bei einem Mehrjahresband verletzte das
 // chk_mehrjahresband_spanne — und weil der Import alles oder nichts schreibt, fiel mit dem
-// einen Titel der ganze Import (am alten Code: „violates check constraint
+// einen Titel der ganze Import („violates check constraint
 // chk_mehrjahresband_spanne"). Den Schalter gibt es nur in der Titel-Verwaltung; wer ihn
 // setzt, setzt die Spanne mit, und an ihrem „bis" hängt die Frist.
 func TestSchreibeTitel_MehrjahresbandBehaeltSeineSpanne(t *testing.T) {
@@ -151,7 +151,7 @@ func TestSchreibeTitel_MehrjahresbandBehaeltSeineSpanne(t *testing.T) {
 }
 
 // Der Katalog-Import ordnet einen Datensatz über die ISBN zu und vergleicht dabei Zeichen für
-// Zeichen. Die Datenbank speichert eine zehnstellige ISBN dreizehnstellig (Migration 157);
+// Zeichen. Die Datenbank speichert eine zehnstellige ISBN dreizehnstellig;
 // die Zuordnung muss dieselbe Form führen. Sonst findet der Import den vorhandenen Titel nicht,
 // legt ihn neu an und scheitert am UNIQUE-Index — der ganze Import, er läuft in einer
 // Transaktion.

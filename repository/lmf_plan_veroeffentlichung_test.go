@@ -6,7 +6,7 @@ import (
 )
 
 // Die Einstellung der Eingangsjahrgänge wird von Hand getippt („5, 7"); der Leser muss
-// Trennzeichen, führende Nullen und Unsinn wegstecken — und darf NIE leer werden, sonst
+// Trennzeichen, führende Nullen und Unsinn wegstecken — und darf nie leer werden, sonst
 // bekäme nach den Ferien niemand Bücher und vor den Ferien gäbe niemand „nur zurück".
 func TestEingangsjahrgaengeAus(t *testing.T) {
 	faelle := []struct {
@@ -28,10 +28,10 @@ func TestEingangsjahrgaengeAus(t *testing.T) {
 	}
 }
 
-// Rasterdurchgang 06.09.2026 (Frage 5, stille Fehler): „8/9" mit Schrägstrich — so wie
-// Klassen geschrieben werden — wurde gespeichert, angezeigt und beim Lesen still auf die
-// Vorgabe „5, 7" zurückgeworfen. Der Ausgabe-Plan schlug weiter 5er und 7er vor, und
-// „nur Rückgabe" traf die falschen Klassen. Jetzt lehnt der Schreibpfad ab.
+// „8/9" mit Schrägstrich, so wie Klassen geschrieben werden, darf nicht gespeichert, angezeigt
+// und beim Lesen still auf die Vorgabe „5, 7" zurückgeworfen werden: Der Ausgabe-Plan schlüge
+// weiter 5er und 7er vor, und „nur Rückgabe" träfe die falschen Klassen. Der Schreibpfad lehnt
+// ab.
 func TestNormalisiereEingangsjahrgaenge(t *testing.T) {
 	gut := map[string]string{
 		"5, 7":    "5, 7",

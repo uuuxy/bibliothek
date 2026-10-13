@@ -7,7 +7,7 @@ import (
 
 // Die Suche der Theke und die Kataloge (ohne Anmeldung und „Mein Portal") vergleichen den
 // Suchtext neben dem Volltext als Teilstring. Die Datenbank speichert Titeltexte mit einem
-// Leerzeichen zwischen den Wörtern (Migration 160); der Suchtext geht in dieselbe Form
+// Leerzeichen zwischen den Wörtern; der Suchtext geht in dieselbe Form
 // (TiteltextNormalform). Die Suchtexte enden mitten im Wort, damit der Volltext nicht
 // aushilft: Er trifft nur ganze Wörter.
 func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {

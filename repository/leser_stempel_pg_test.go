@@ -9,12 +9,12 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// leser.letzter_vorgang_am — die Uhr der Karenz, von Triggern gestempelt (Migration 137).
+// leser.letzter_vorgang_am — die Uhr der Karenz, von Triggern gestempelt.
 //
 // Der Wert entsteht ausschließlich in der Datenbank: Eine Rückgabe kommt an der Theke, beim
 // Nachbuchen eines Offline-Scans und über die Sammelrückgabe zustande, und jeder dieser
 // Wege einzeln um „und dann noch den Stempel" zu ergänzen hieße, dass der nächste es
-// vergisst. Geprüft wird deshalb das VERHALTEN der Trigger, nicht ihre Anwesenheit —
+// vergisst. Geprüft wird deshalb das Verhalten der Trigger, nicht ihre Anwesenheit —
 // repository/schema_gegenrichtung_pg_test.go zählt die Namen, dieser Test misst, was sie tun.
 func TestLeserStempel_VorgangSetztUhrOhneAenderungsstempel(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -116,7 +116,7 @@ func TestLeserStempel_VorgangSetztUhrOhneAenderungsstempel(t *testing.T) {
 
 	t.Run("eine echte Änderung am Leser stempelt aktualisiert_am weiter", func(t *testing.T) {
 		// Die Gegenprobe zum Fall darüber: Die Sperre gegen den Änderungsstempel darf nur
-		// greifen, wenn sich NICHTS außer der Vorgangsuhr geändert hat.
+		// greifen, wenn sich nichts außer der Vorgangsuhr geändert hat.
 		id := leser("Aendern")
 		_, vorher := stand(id)
 		if _, err := pool.Exec(ctx, `UPDATE leser SET klasse = '10B' WHERE id = $1`, id); err != nil {
@@ -147,17 +147,17 @@ func TestLeserStempel_VorgangSetztUhrOhneAenderungsstempel(t *testing.T) {
 	})
 
 	t.Run("die Uhr geht nicht zurück", func(t *testing.T) {
-		// Ein nachgebuchter Offline-Scan trägt eine ÄLTERE Rückgabe nach. Sie darf die Uhr
+		// Ein nachgebuchter Offline-Scan trägt eine ältere Rückgabe nach. Sie darf die Uhr
 		// nicht zurückdrehen — sonst verkürzte ein Nachtrag die Karenz eines Abgängers.
 		//
-		// Hier stehen ZWEI Ausleihen desselben Lesers; die Uhr nennt die spätere. Dass
-		// derselbe Stempel auch einer Rückdatierung DERSELBEN Ausleihe nicht folgt, ist die
+		// Hier stehen zwei Ausleihen desselben Lesers; die Uhr nennt die spätere. Dass
+		// derselbe Stempel auch einer Rückdatierung derselben Ausleihe nicht folgt, ist die
 		// eine Abweichung vom früheren max(rueckgabe_am) — und ein Zustand, den keine Tür
 		// der Anwendung herstellt: Alle drei Rückgabewege fassen nur offene Ausleihen an
 		// (repository/ausleihe.go BucheRueckgabeZum, repository/schaden_melden.go,
 		// internal/service/device_service.go über activeLoan), die Littera-Übernahme fügt
 		// nur ein. rueckgabe_am geht von NULL auf einen Wert und nie von einem Wert auf
-		// einen anderen (nachgesehen am 23.09.2026).
+		// einen anderen (nachgesehen).
 		id := leser("Rueckwaerts")
 		neu := dbZeit(time.Now().Add(-1 * time.Hour))
 		alt := dbZeit(time.Now().AddDate(0, 0, -30))

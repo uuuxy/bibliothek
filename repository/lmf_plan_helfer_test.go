@@ -7,11 +7,9 @@ import (
 	"bibliothek/pkg/lmfplan"
 )
 
-// speichereLmfPlanImTest schreibt einen Plan so, wie es der Handler tut: in einer
-// Transaktion, die der Aufrufer hält (SchreibePlan). Bis 07.09.2026 gab es dafür eine
-// Hülle SaveLmfPlan in der Produktion — die rief nach der Transaktionsklammer
-// (api/lernmittel/lmf_plan.go) niemand mehr, und das deadcode-Gate wies sie als tote Tür aus. Die
-// Tests laufen jetzt durch denselben Einstieg wie der Betrieb.
+// speichereLmfPlanImTest schreibt einen Plan so, wie es die Tür tut: in einer Transaktion, die
+// der Rufer hält (SchreibePlan). Die Tests laufen damit durch denselben Einstieg wie der
+// Betrieb.
 func speichereLmfPlanImTest(ctx context.Context, repo *LMFAbfragen, plan LMFPlan, zeilen []LMFPlanZeile, plaetze []lmfplan.Platz, ausgelassen []string) (LMFPlanStand, error) {
 	tx, err := repo.db.Begin(ctx)
 	if err != nil {

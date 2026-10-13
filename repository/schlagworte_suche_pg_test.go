@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// Suche über Schlagworte (docs/OFFEN.md 4.20). Zwei Formen derselben Regel: die Bedingung
+// Suche über Schlagworte. Zwei Formen derselben Regel: die Bedingung
 // am Server (SQLTitelUeberSchlagwort — Titel-Verwaltung, öffentlicher Katalog, Portal) und
 // die Wörter je Titel für die Suche im Browser (LadeSuchwoerterDerTitel — Medienkatalog „Suche
 // & Filter"). Beide müssen dieselben Titel finden, sonst fände der eine Reiter des

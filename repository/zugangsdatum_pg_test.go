@@ -14,9 +14,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Das Zugangsdatum (Migration 129) ist der Tag, an dem ein Exemplar in den Bestand kommt —
+// Das Zugangsdatum ist der Tag, an dem ein Exemplar in den Bestand kommt —
 // nicht der Tag, an dem seine Zeile entsteht. Im Bestellweg entsteht die Zeile beim
-// BESTELLEN; ein Zugangsbuch, das daraus rechnet, führt Bücher, die beim Händler liegen,
+// Bestellen; ein Zugangsbuch, das daraus rechnet, führt Bücher, die beim Händler liegen,
 // und datiert gelieferte auf den Bestelltag.
 //
 // Gemessen wird an den echten Türen, nicht am Trigger allein.
@@ -35,16 +35,16 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	// Der Kalendertag der SCHULE, nicht der des Testprozesses: zugang_am ist ein DATE,
-	// und der Trigger bildet es seit Migration 130 in Europe/Berlin. Mit time.Now() hing
-	// die Erwartung an der Zone, in der der Test zufällig lief — lokal (MESZ) und in der
-	// CI (UTC) wichen die beiden zwischen Mitternacht und 2 Uhr um einen Tag ab, und der
-	// Lauf vom 18.09.2026 war in der CI genau deshalb rot. Gleiche Lesart wie im
+	// Der Kalendertag der Schule, nicht der des Testprozesses: zugang_am ist ein DATE,
+	// und der Trigger bildet es seit Migration 130 in Europe/Berlin. Mit time.Now() hinge
+	// die Erwartung an der Zone, in der der Test zufällig läuft — lokal (MESZ) und in der
+	// CI (UTC) weichen die beiden zwischen Mitternacht und 2 Uhr um einen Tag ab, und der
+	// Lauf in der CI wäre genau dann rot. Gleiche Lesart wie im
 	// Nachbartest (api/katalog/zugangsbuch_pg_test.go).
 	heute := time.Now().In(schulzeit.Zone())
 	titelID := testdaten.TitelMitSignatur(t, pool, "Zugangsdatum-Titel", "Zdt 1", 0)
 
-	// 1. Ein Exemplar im Zulauf hat KEIN Zugangsdatum. Es ist bestellt, nicht da.
+	// 1. Ein Exemplar im Zulauf hat kein Zugangsdatum. Es ist bestellt, nicht da.
 	imZulauf := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-ZULAUF")
 	if tag := zugangsdatum(t, pool, imZulauf); tag != nil {
 		t.Fatalf("Exemplar im Zulauf trägt ein Zugangsdatum (%s) — bestellt ist nicht zugegangen", tag)
@@ -75,7 +75,7 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 		t.Fatalf("Zugang nach Freigabe: %v", tag)
 	}
 
-	// 4. Ein bestelltes Exemplar, das nie ankommt und ausgebucht wird, ist KEIN Zugang.
+	// 4. Ein bestelltes Exemplar, das nie ankommt und ausgebucht wird, ist kein Zugang.
 	nieGekommen := testdaten.ZulaufExemplar(t, pool, titelID, "ZDT-NIE")
 	if err := bookRepo.AendereExemplarStatus(ctx, nieGekommen, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern aus dem Zulauf: %v", err)

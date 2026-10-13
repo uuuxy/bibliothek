@@ -11,7 +11,7 @@ import (
 
 // Nicht jeder Fehler beim endgültigen Löschen ist ein Konflikt.
 //
-// Fund (OFFEN.md 5.6): Der Handler beantwortete JEDEN Fehler des Purge mit 409. Ein
+// Fund: Der Handler beantwortete jeden Fehler des Purge mit 409. Ein
 // Verbindungsabbruch, ein kaputter Constraint, ein Tippfehler in einer Abfrage — alles las
 // sich wie „da ist noch etwas offen". Die Bibliothek sucht dann einen offenen Vorgang, den
 // es nicht gibt, und der echte Fehler bleibt unsichtbar. Das ist die Bugklasse
@@ -53,7 +53,7 @@ func TestPurge_UnterscheidetKonfliktVonServerfehler(t *testing.T) {
 		t.Error("eine unbekannte Kennung wird als Blockade gemeldet — dann sucht jemand einen offenen Vorgang, den es nicht gibt")
 	}
 
-	// (3) Offene Ausleihe → Blockade. Die Gegenprobe zu (2): Hier IST etwas offen.
+	// (3) Offene Ausleihe → Blockade. Die Gegenprobe zu (2): Hier ist etwas offen.
 	if _, err := pool.Exec(ctx, `UPDATE leser SET deleted_at = NOW() WHERE id = $1`, schueler); err != nil {
 		t.Fatalf("in den Papierkorb legen: %v", err)
 	}

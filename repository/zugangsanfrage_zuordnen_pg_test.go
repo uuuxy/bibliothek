@@ -11,10 +11,10 @@ import (
 
 // „Das ist dieselbe Person" — der Weg, der aus zwei Einträgen einen macht.
 //
-// Der Anlass (16.09.2026): Ein Kollege, der vor der Schul-E-Mail-Pflicht von Hand in die
+// Der Anlass: Ein Kollege, der vor der Schul-E-Mail-Pflicht von Hand in die
 // Leserdatei eingetragen wurde, meldet sich über „Mein Portal" selbst an. Sein Konto
-// entsteht OHNE leser_id (auth/selbstanmeldung.go), der Wächter trg_benutzer_hat_leserzeile
-// hängt eine frische Leserzeile daran — mit dem aus der Adresse GERATENEN Namen. Ausweis
+// entsteht ohne leser_id (auth/selbstanmeldung.go), der Wächter trg_benutzer_hat_leserzeile
+// hängt eine frische Leserzeile daran — mit dem aus der Adresse geratenen Namen. Ausweis
 // und Bücher hängen am ersten Eintrag, die Anmeldung am zweiten.
 //
 // Der Rat der Oberfläche lautete bis heute „Anfrage löschen und die Adresse am
@@ -32,7 +32,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	// legeAltbestandAn ist der Kollege, der schon dasteht: Ausweis, ein Buch, KEIN Konto.
+	// legeAltbestandAn ist der Kollege, der schon dasteht: Ausweis, ein Buch, kein Konto.
 	legeAltbestandAn := func(t *testing.T, vorname, nachname, barcode, praefix string) string {
 		t.Helper()
 		var id string
@@ -45,10 +45,10 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 		return id
 	}
 
-	// legeZugangsanfrageAn geht den Weg der Selbstanmeldung: INSERT OHNE leser_id, damit
+	// legeZugangsanfrageAn geht den Weg der Selbstanmeldung: INSERT ohne leser_id, damit
 	// der Wächter die zweite Zeile anlegt. Der Name ist der geratene — „anna.berger@"
 	// wird zu „Anna Berger", auch wenn die Person in der Leserdatei anders geschrieben
-	// steht. Genau dieser Name darf den richtigen nachher NICHT überschreiben.
+	// steht. Genau dieser Name darf den richtigen nachher nicht überschreiben.
 	legeZugangsanfrageAn := func(t *testing.T, vorname, nachname, email string) (kontoID, waiseID string) {
 		t.Helper()
 		if err := pool.QueryRow(ctx, `
@@ -124,9 +124,9 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 		}
 	})
 
-	// Die Gegenprobe zur Richtung. Sie sagt NICHT, dass die verkehrte Richtung verboten
+	// Die Gegenprobe zur Richtung. Sie sagt nicht, dass die verkehrte Richtung verboten
 	// wäre — sie belegt, dass die Prüfungen oben etwas messen: Zusammenführen löscht die
-	// QUELLE. Zeigt der Knopf in die falsche Richtung, verschwindet der Eintrag mit
+	// Quelle. Zeigt der Knopf in die falsche Richtung, verschwindet der Eintrag mit
 	// Ausweis und Büchern, und der aus der Adresse geratene Name bleibt übrig. Still und
 	// nur über den Rückweg-Eintrag im Protokoll zu reparieren.
 	t.Run("die Richtung entscheidet, wer überlebt", func(t *testing.T) {
@@ -159,10 +159,10 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 // dort bereits ein Konto — mit einer Ersatzadresse unter der Platzhalter-Domäne, weil die
 // Übernahme für jedes Konto eine Adresse braucht und die Littera-Leserdatei keine führt.
 //
-// Bis zum 16.09.2026 brach das Zusammenführen hier ab („beide Datensätze haben ein
-// eigenes Zugangskonto"), und der Abbruch war an dieser Stelle falsch: Über eine Adresse
+// Ein Abbruch des Zusammenführens („beide Datensätze haben ein
+// eigenes Zugangskonto") wäre an dieser Stelle falsch: Über eine Adresse
 // unter .invalid meldet sich niemand an — die Anmeldung läuft über IMAP gegen den
-// Schul-Mailserver. Es standen zwei Konten da, aber nur ein Zugang.
+// Schul-Mailserver. Es stehen zwei Konten da, aber nur ein Zugang.
 func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -229,7 +229,7 @@ func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
 	}
 }
 
-// Die Grenze der Ausnahme: ZWEI echte Konten bleiben eine Entscheidung über zwei
+// Die Grenze der Ausnahme: zwei echte Konten bleiben eine Entscheidung über zwei
 // Menschen. Ohne diese Probe wäre nicht belegt, dass die Räumung eng bleibt — sie könnte
 // still jedes zweite Konto abräumen.
 func TestZugangsanfrageZuordnen_ZweiEchteKontenBrechenWeiterAb(t *testing.T) {

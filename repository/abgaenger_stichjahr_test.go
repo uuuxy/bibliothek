@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-// Das Stichjahr der Abgänger-Löschung ist eine Aussage über den SCHULKALENDER, nicht
+// Das Stichjahr der Abgänger-Löschung ist eine Aussage über den Schulkalender, nicht
 // über die Uhr des Containers. Dieselbe Sekunde muss deshalb dasselbe Jahr ergeben,
 // gleich in welcher Zeitzone das Programm läuft.
 //
-// Vorher tat sie das nicht: Die Funktion nahm das Jahr aus der lokalen Zeit und verglich
-// es mit einem fest in UTC gebauten 30. Januar. Solange der Container auf UTC lief,
-// stimmten beide zufällig überein — genau die Bauform, gegen die dieses Raster antritt.
+// Das Jahr aus der lokalen Zeit, verglichen
+// mit einem fest in UTC gebauten 30. Januar, stimmte nur, solange der Container auf UTC
+// läuft — genau die Bauform, gegen die dieses Raster antritt.
 //
 // Der gewählte Zeitpunkt ist die Nahtstelle: 29.01. 23:30 UTC ist in Berlin bereits der
 // 30.01. um 00:30. Für die Schule ist der Stichtag also erreicht.

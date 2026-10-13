@@ -13,9 +13,9 @@ import (
 )
 
 // Der Baustein hält beide Hälften in der Transaktion des Aufrufers: Rollt der Aufrufer
-// zurück, ist das Buch weiter ausgesondert UND die Forderung weiter offen; committet er,
-// ist beides erledigt. Vor dem 15.09.2026 committete der Rumpf selbst — ein Aufrufer, der
-// danach scheiterte, ließ das Buch zurück im Regal und den Rest seiner Buchung ungetan.
+// zurück, ist das Buch weiter ausgesondert und die Forderung weiter offen; committet er,
+// ist beides erledigt. Schriebe der Rumpf selbst fest, ließe ein Aufrufer, der
+// danach scheitert, das Buch zurück im Regal und den Rest seiner Buchung ungetan.
 func TestHoleExemplarZurueck_HaeltBeideHaelftenInDerTransaktionDesAufrufers(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

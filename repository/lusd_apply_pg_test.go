@@ -56,7 +56,7 @@ func TestAnonymisiereAbgaenger_LoeschtFoto(t *testing.T) {
 	}
 }
 
-// Bug 5 (Permanent Ghost-Block): Ein Abgänger, der wegen offener Vorgänge nur GESPERRT (nicht
+// Bug 5 (Permanent Ghost-Block): Ein Abgänger, der wegen offener Vorgänge nur gesperrt (nicht
 // anonymisiert) wurde, behielt seine "Automatisierte Abgänger-Sperre" beim LUSD-Wiedereintritt
 // dauerhaft. repository.AendereLUSDBestand muss beim Rückkehrer prüfen, ob noch Vorgänge offen
 // sind, und andernfalls automatisch entsperren. Der Kern ist SQL-CASE-Logik mit Sub-Selects —
@@ -77,13 +77,9 @@ func insertGesperrterAbgaenger(t *testing.T, pool *pgxpool.Pool, barcode, vornam
 	return id
 }
 
-// runAktualisiere führt repository.AendereLUSDBestand für einen Schüler in einer
-// echten Transaktion aus.
-//
-// Bis zum 10.08.2026 stand dafür eine Einzelfassung im Produktivcode, die nur noch an
-// die Batch-Fassung durchreichte und außer von Tests von niemandem gerufen wurde. Das
-// Verpacken in Ein-Element-Slices ist Test-Gerüst und gehört hierher — im Produktivcode
-// war es ein zweiter Einstiegspunkt, an dem obendrein die ganze Erklärung hing.
+// runAktualisiere führt repository.AendereLUSDBestand für einen Schüler in einer echten
+// Transaktion aus. Das Verpacken in Scheiben mit einem Element ist Gerüst des Tests und steht
+// deshalb hier und nicht als zweiter Einstieg im Programmcode.
 func runAktualisiere(t *testing.T, pool *pgxpool.Pool, zeile repository.LUSDAktualisierung, id string) {
 	t.Helper()
 	ctx := context.Background()
@@ -203,11 +199,11 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	})
 }
 
-// Prüfung 22.08.2026, Fund A3: Der LUSD-Pfad anonymisierte den Schülerdatensatz, setzte
-// aber kein anonymized_at — die nächtliche Tilgung der Neben-Tabellen (Kriterium
-// anonymized_at IS NOT NULL) sah ihn nie, und der Purge am 30. Januar kam ihr zuvor und
-// räumte audit_logs nicht. Folge: Die staatliche LUSD-ID (LUSD_ID_NACHGETRAGEN) überlebte
-// 24 Monate im Audit. Jetzt: Marker gesetzt, Barcode anonym, Spuren in derselben Tx weg.
+// Anonymisiert der LUSD-Pfad einen Schüler, ohne anonymized_at zu setzen, sieht die nächtliche
+// Tilgung der Neben-Tabellen (Kriterium anonymized_at IS NOT NULL) ihn nie, und der Purge am
+// 30. Januar kommt ihr zuvor und räumt audit_logs nicht: Die staatliche LUSD-ID
+// (LUSD_ID_NACHGETRAGEN) überlebte 24 Monate im Protokoll. Deshalb: Marker gesetzt, Barcode
+// anonym, Spuren in derselben Transaktion weg.
 func TestAnonymisiereAbgaenger_SetztMarkerUndTilgtSpuren(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)

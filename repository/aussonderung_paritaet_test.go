@@ -8,20 +8,17 @@ import (
 	"testing"
 )
 
-// Aussonderungs-Paritäts-Gate: Wer ein Exemplar aussondert, muss es auch unausleihbar
-// machen.
+// Aussonderungs-Paritäts-Gate: Wer ein Exemplar aussondert, muss es auch unausleihbar machen.
 //
-// `ist_ausgesondert` und `ist_ausleihbar` sind zwei Spalten für einen Zustand. Drei der
-// vier Aussonderungswege setzten immer beide; `syncBookStock` (inventur) setzte bis zum
-// 23.08.2026 nur `ist_ausgesondert = true` und ließ das Exemplar "ausleihbar" zurück.
-// Schaden richtete das nicht an — aber nur, weil jeder heutige Leser BEIDE Spalten
-// prüft. Genau diese Art Übereinstimmung hält nichts: Der erste Leser, der nur
-// `ist_ausleihbar` abfragt, verleiht ein ausgesondertes Exemplar, und niemand sieht es
-// kommen.
+// `ist_ausgesondert` und `ist_ausleihbar` sind zwei Spalten für einen Zustand. Setzt ein Weg
+// nur `ist_ausgesondert = true`, bleibt das Exemplar "ausleihbar" zurück. Schaden richtet das
+// nur deshalb nicht an, weil jeder heutige Leser beide Spalten prüft. Diese Art Übereinstimmung
+// hält nichts: Der erste Leser, der nur `ist_ausleihbar` abfragt, verleiht ein ausgesondertes
+// Exemplar, und niemand sieht es kommen.
 //
-// Das Gate liest die SQL-Anweisungen lexikalisch. Die Gegenrichtung
-// (`ist_ausgesondert = false` beim Zurückholen eines Fundes) ist ausdrücklich nicht
-// gemeint — dort gehört `ist_ausleihbar = true` dazu, und das prüft der zweite Fall.
+// Das Gate liest die SQL-Anweisungen lexikalisch. Die Gegenrichtung (`ist_ausgesondert = false`
+// beim Zurückholen eines Fundes) ist ausdrücklich nicht gemeint — dort gehört `ist_ausleihbar =
+// true` dazu, und das prüft der zweite Fall.
 func TestAussonderungSetztBeideSpalten(t *testing.T) {
 	// Anweisungen, die buecher_exemplare anfassen — grob am UPDATE-Schlüsselwort
 	// aufgetrennt, damit jede Anweisung für sich beurteilt wird.

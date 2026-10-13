@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// Spalten-Gate des Zugangskontos in der Auskunft (24.09.2026) — das Gegenstück zu
+// Spalten-Gate des Zugangskontos in der Auskunft — das Gegenstück zu
 // TestDSGVOAuskunft_KenntJedeLeserSpalte für die Tabelle benutzer. Bekommt das Konto eine
 // neue Spalte, steht sie in der Auskunft oder hier mit Begründung.
 //

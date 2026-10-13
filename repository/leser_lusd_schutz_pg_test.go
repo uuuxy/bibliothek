@@ -13,15 +13,15 @@ import (
 
 // Der LUSD-Abgleich darf einen Kollegen nicht anfassen.
 //
-// Durch die LUSD kommen ausschließlich Schüler (Absprache vom 16.09.2026: „durch die LUSD kommen
+// Durch die LUSD kommen ausschließlich Schüler (Absprache mit der Schule: „durch die LUSD kommen
 // keine Lehrer!!!!"). Genau deshalb ist ein Kollege in derselben Tabelle in Gefahr: Der
-// Abgleich lädt den Bestand und behandelt JEDE Zeile, die der Export nicht kennt, als
+// Abgleich lädt den Bestand und behandelt jede Zeile, die der Export nicht kennt, als
 // Abgänger — sperren, Grund setzen, nach der Karenz Name, Adresse und Geburtsdatum
 // anonymisieren. Ein Kollegium in dieser Tabelle wäre beim ersten Import Freiwild, und
 // gemerkt hätte es niemand, bis jemand einen Namen sucht.
 //
 // Zwei Schranken, zwei Tests. Die erste ist die Abfrage (art = 'schueler'), die zweite der
-// CHECK in der Datenbank. Beide, weil eine Einschränkung in EINER Abfrage nur für diese
+// CHECK in der Datenbank. Beide, weil eine Einschränkung in einer Abfrage nur für diese
 // gilt: Der nächste Schreibweg, der den Bestand anders liest, kennt das Versprechen nicht.
 
 // leserZeile legt eine Leserzeile ohne Konto an und gibt ihre ID zurück.
@@ -29,7 +29,7 @@ func leserZeile(t *testing.T, art, vorname, nachname string) string {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	var id string
-	// In die TABELLE, nicht durch die Sicht: `schueler` zeigt seit Migration 124 nur
+	// In die Tabelle, nicht durch die Sicht: `schueler` zeigt seit Migration 124 nur
 	// Schüler und weist einen Kollegen mit WITH CHECK OPTION ab. Genau das ist der Zweck
 	// der Sicht — dieser Test legt die Zeile deshalb dort an, wo sie hingehört.
 	//
@@ -107,14 +107,14 @@ func TestLUSDBestandKenntNurSchueler(t *testing.T) {
 	}
 }
 
-// TestKollegeIstFuerDenAbgleichUnsichtbar: Die ECHTEN Schreibwege des Abgleichs laufen
+// TestKollegeIstFuerDenAbgleichUnsichtbar: Die echten Schreibwege des Abgleichs laufen
 // über die Sicht `schueler` (UPDATE schueler SET ... WHERE id = ...). Seit Migration 124
 // zeigt die Sicht nur Schüler — eine Lehrkraft ist für sie also nicht verboten, sondern
 // nicht vorhanden. Die Anweisung trifft null Zeilen und lässt die Zeile unverändert.
 //
 // Das ist stärker als ein Abbruch: Der Abgleich kann einen Kollegen nicht einmal
 // versehentlich adressieren, und der Import läuft für die echten Abgänger weiter. Geprüft
-// wird deshalb am ZUSTAND der Zeile, nicht an einem Fehler — ein Test, der hier einen
+// wird deshalb am Zustand der Zeile, nicht an einem Fehler — ein Test, der hier einen
 // Fehler erwartet, würde die Sicht für einen Defekt halten.
 func TestKollegeIstFuerDenAbgleichUnsichtbar(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -149,7 +149,7 @@ func TestKollegeIstFuerDenAbgleichUnsichtbar(t *testing.T) {
 	}
 }
 
-// TestKollegeKannAuchDirektKeinAbgaengerWerden: die Schranke DAHINTER. Die Sicht schützt
+// TestKollegeKannAuchDirektKeinAbgaengerWerden: die Schranke dahinter. Die Sicht schützt
 // jeden Weg, der über sie läuft — ein Reparaturskript oder eine künftige Abfrage auf
 // `leser` läuft nicht über sie. Dann greift der CHECK.
 //
@@ -171,7 +171,7 @@ func TestKollegeKannAuchDirektKeinAbgaengerWerden(t *testing.T) {
 		t.Errorf("Abbruch kam, aber von anderer Stelle: %v", err)
 	}
 
-	// Und die Gegenprobe: Bei einem SCHÜLER geht genau dasselbe UPDATE durch. Ohne sie
+	// Und die Gegenprobe: Bei einem Schüler geht genau dasselbe UPDATE durch. Ohne sie
 	// könnte der CHECK auch aus einem anderen Grund gegriffen haben.
 	schuelerID := leserZeileSchueler(t, "S-CHK-1", "Sven", "Schueler", "9b")
 	if _, err := pool.Exec(ctx,
@@ -184,14 +184,14 @@ func TestKollegeKannAuchDirektKeinAbgaengerWerden(t *testing.T) {
 
 // TestNachtJobFasstKollegenNichtAn: Die nächtliche Anonymisierung hat zwei Zweige. Der
 // eine hängt an „ist Abgänger" — den kann ein Kollege nach dem CHECK nie erreichen. Der
-// andere hängt allein am PAPIERKORB (deleted_at) und fragt nicht nach der Art.
+// andere hängt allein am Papierkorb (deleted_at) und fragt nicht nach der Art.
 //
 // Das ist die gefährlichere Hälfte, und zwar doppelt: Der Job würde den Kollegen
 // anonymisieren wollen, der CHECK verbietet es, das UPDATE bricht ab — und damit fällt
-// der GANZE Lauf aus. Eine einzige gelöschte Kollegenzeile hätte die Anonymisierung für
+// der ganze Lauf aus. Eine einzige gelöschte Kollegenzeile hätte die Anonymisierung für
 // alle echten Abgänger stillgelegt, Nacht für Nacht, mit einer Zeile im Protokoll.
 //
-// Geprüft wird an der EINEN Quelle der Frist (repository.PraedikatAnonymisierung) — der
+// Geprüft wird an der einen Quelle der Frist (repository.PraedikatAnonymisierung) — der
 // Bedingung, die auch der Wächter der Selbstprüfung stellt.
 func TestNachtJobFasstKollegenNichtAn(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -214,7 +214,7 @@ func TestNachtJobFasstKollegenNichtAn(t *testing.T) {
 		var anzahl int
 		// `FROM leser AS schueler` — zwei Gründe. Die Bedingung ist gegen eine Relation
 		// namens schueler geschrieben (sie qualifiziert Unterabfragen mit
-		// `schueler.id`), und geprüft werden soll ihr EIGENER Filter: Auf der Sicht
+		// `schueler.id`), und geprüft werden soll ihr eigener Filter: Auf der Sicht
 		// `schueler` wäre die Lehrkraft ohnehin unsichtbar, und der Test wäre auch dann
 		// grün, wenn die Bedingung selbst nichts einschränkt.
 		abfrage := `SELECT count(*) FROM leser AS schueler WHERE id = $` +

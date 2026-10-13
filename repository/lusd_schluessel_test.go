@@ -5,9 +5,9 @@ import (
 	"time"
 )
 
-// Der LUSD-Namensschlüssel ist die Normalform suchnorm (Migration 054), nicht lower+trim
-// (Befund-Register, Entscheidung 1 vom 05.09.2026): „Anna Müller" von Hand angelegt und
-// „Anna Mueller" im Export sind derselbe Mensch — bis dahin wurden daraus Neuanlage plus
+// Der LUSD-Namensschlüssel ist die Normalform suchnorm, nicht lower+trim:
+// „Anna Müller" von Hand angelegt und
+// „Anna Mueller" im Export sind derselbe Mensch — sonst würden daraus Neuanlage plus
 // „nicht im Export". Sicher ist das, weil der Import einen doppelt belegten Schlüssel als
 // mehrdeutig markiert und dann niemanden anfasst: Ein zu weiter Schlüssel fällt auf das
 // alte Verhalten zurück, nie in eine falsche Zuordnung.
@@ -39,7 +39,7 @@ func TestLUSDNamensSchluessel_IstDieSuchnormDerNamen(t *testing.T) {
 	}
 }
 
-// Dieselbe Normalform für den Name+Geburtsdatum-Schlüssel — zwei Stufen, EINE Regel.
+// Dieselbe Normalform für den Name+Geburtsdatum-Schlüssel — zwei Stufen, eine Regel.
 func TestLUSDSchluessel_NormalisiertWieDerNamensschluessel(t *testing.T) {
 	geb := time.Date(2012, 3, 4, 0, 0, 0, 0, time.UTC)
 	if a, b := LUSDSchluessel("Anna", "Müller", &geb), LUSDSchluessel("anna", "MUELLER", &geb); a != b {

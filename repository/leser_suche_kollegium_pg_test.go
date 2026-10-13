@@ -8,7 +8,7 @@ import (
 )
 
 // seedSuchLeser legt einen Leser beliebiger Art an — ohne Klasse, ohne Abgängerjahr,
-// wie ein Kollege in der Leserdatei steht. Geschrieben wird in die TABELLE `leser`:
+// wie ein Kollege in der Leserdatei steht. Geschrieben wird in die Tabelle `leser`:
 // Durch die Sicht `schueler` ließe WITH CHECK OPTION diese Zeile gar nicht entstehen.
 func seedSuchLeser(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname, art string) string {
 	t.Helper()
@@ -27,7 +27,7 @@ func seedSuchLeser(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname,
 
 // TestFindeUnscharf_FindetKollegium ist der Rot-Test für die Namenssuche an der
 // Theke: Ein Kollege lässt sich seit Migration 125 über seinen Ausweis laden, über
-// seinen NAMEN aber nicht — die Suche las die Sicht `schueler`, und die zeigt ihn nicht.
+// seinen Namen aber nicht — die Suche las die Sicht `schueler`, und die zeigt ihn nicht.
 // Wer den Ausweis gerade nicht zur Hand hat, findet ihn damit an der Theke nicht.
 //
 // Geprüft wird zugleich die Art am Treffer: Ohne sie stünde ein Kollege ohne Klasse in

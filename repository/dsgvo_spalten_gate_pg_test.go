@@ -9,15 +9,15 @@ import (
 	"bibliothek/repository"
 )
 
-// Spalten-Gate der Art.-15-Auskunft (Rasterdurchgang 02.09.2026): Der Struct-Kommentar
+// Spalten-Gate der Art.-15-Auskunft: Der Struct-Kommentar
 // versprach „sämtliche gespeicherten Stammdaten", aber seit Migration 084 fehlten
 // lusd_bestaetigt_am und anonymized_at, seit 094 schul_eintritt_am und abgaenger_seit —
-// das bestehende Gate (dsgvo_paar_vollstaendigkeit_test.go) prüft nur TABELLEN, nicht
+// das bestehende Gate (dsgvo_paar_vollstaendigkeit_test.go) prüft nur Tabellen, nicht
 // Spalten. Hier: jede Spalte von leser steht in repository.DSGVOStammdatenSQL, oder sie steht
 // mit Begründung in der Ausnahmeliste.
 //
-// Seit dem 24.09.2026 gegen die Tabelle leser statt gegen die Sicht schueler: Die Auskunft
-// liest die Tabelle, weil es sie für jeden Leser gibt (OFFEN.md 5.19).
+// Geprüft wird die Tabelle leser, nicht die Sicht schueler: Die Auskunft
+// liest die Tabelle, weil es sie für jeden Leser gibt.
 func TestDSGVOAuskunft_KenntJedeLeserSpalte(t *testing.T) {
 	pool := pgtest.Pool(t)
 	// Ausnahmen: Spalte → Begründung. Heute leer — jede Spalte von leser ist eine

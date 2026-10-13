@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Pflege der Schlagworte (Migration 143, docs/OFFEN.md 4.20 Stufe 1) gegen echtes Postgres:
+// Pflege der Schlagworte (Migration 143) gegen echtes Postgres:
 // Die Regeln der Verweise stehen doppelt — in repository/schlagworte_pflege.go und als
 // Trigger —, und beides sieht nur ein echter Lauf.
 
@@ -297,7 +297,7 @@ func ueberschneidung(t *testing.T, pool *pgxpool.Pool, sperrer pgx.Tx, fertig ch
 	t.Fatal("der nebenläufige Schreiber ist weder fertig, noch wartet er auf die Transaktion des Tests")
 }
 
-// Rasterdurchgang 23.09.2026, V1: Das Zusammenführen hat „Detektiv" gesperrt, aber noch nicht
+// Das Zusammenführen hat „Detektiv" gesperrt, aber noch nicht
 // zum Verweis gemacht, als das Buchformular einen Titel daran hängt. Vor Migration 144 kamen
 // beide Trigger durch — jeder sah die offene Änderung des anderen nicht —, und der Titel hing
 // danach an einem Verweis. Seit 144 wartet der Trigger am Titel, bis das Zusammenführen fertig
@@ -346,7 +346,7 @@ func TestSchlagwortPflege_GleichzeitigKeinTitelAmVerweis(t *testing.T) {
 	}
 }
 
-// Rasterdurchgang 23.09.2026, V3: Ein Verweis „Tierfantasy" → „Fantasy" entsteht, während
+// Ein Verweis „Tierfantasy" → „Fantasy" entsteht, während
 // „Fantasy" selbst zum Verweis wird. Vor Migration 144 kamen beide durch — eine Kette. Rohes
 // SQL, weil die Go-Tür ihr Ziel ohnehin sperrt: geprüft wird die Zusage der Datenbank.
 func TestSchlagwortPflege_GleichzeitigKeineKette(t *testing.T) {
@@ -388,10 +388,10 @@ func TestSchlagwortPflege_GleichzeitigKeineKette(t *testing.T) {
 	}
 }
 
-// Die Pflegeseite sucht am Server über alle Wörter (30.09.2026, docs/OFFEN.md 4.20). Bis dahin
-// lieferte die Tür die ersten 5.000 in alphabetischer Folge, und die Seite suchte im Browser
-// nur darunter: Mit den 13.207 Wörtern des Littera-Katalogisats wäre ein Wort wie
-// „Zwergpinguin" auf der Pflegeseite weder zu finden noch als Filter zu markieren gewesen.
+// Die Pflegeseite sucht am Server über alle Wörter. Lieferte
+// die Tür nur die ersten 5.000 in alphabetischer Folge und suchte die Seite im Browser
+// nur darunter, wäre mit den 13.207 Wörtern des Littera-Katalogisats ein Wort wie
+// „Zwergpinguin" auf der Pflegeseite weder zu finden noch als Filter zu markieren.
 func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
 	pool := pgTestPool(t)
 	resetSchlagworte(t, pool)

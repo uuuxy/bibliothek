@@ -18,7 +18,7 @@ import (
 )
 
 // Verdacht K5 (Fragen 6 und 12, Migration 137): trg_leser_stempel_rueckgabe sperrt bei jeder
-// Rückgabe die Leserzeile des Ausleihers — NACH der Ausleihe. Die Fremdrückgabe an der Theke
+// Rückgabe die Leserzeile des Ausleihers — nach der Ausleihe. Die Fremdrückgabe an der Theke
 // (HandleUnifiedCheckout → handleForeignReturn) sperrt vorher das Kind der offenen Sitzung
 // (zaehleAktiveSchuelerAusleihen). Geben zwei Kinder an zwei Theken zugleich je das Buch des
 // anderen ab, sperrt jede Transaktion ihr eigenes Kind und wartet im Trigger auf das andere.
