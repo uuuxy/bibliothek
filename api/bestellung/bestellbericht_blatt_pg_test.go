@@ -32,8 +32,12 @@ func TestBestellbericht_TuerDrucktDieBestellungenJeTopf(t *testing.T) {
 		for _, sql := range []string{
 			`DELETE FROM bestellungen_verlauf WHERE lieferant_name LIKE 'Bericht-Probe %'`,
 			`DELETE FROM lieferanten WHERE name = 'Bericht-Probe Händler'`,
-			`DELETE FROM system_einstellungen
-			  WHERE schluessel IN ('preise_erfassen', 'schule_name', 'schule_strasse', 'schule_plz', 'schule_ort')`,
+			`DELETE FROM system_einstellungen WHERE schluessel = 'preise_erfassen'`,
+			// Die vier Zeilen der Schule legt das Schema mit leerem Wert an: zurück auf diesen
+			// Stand, nicht löschen.
+			`INSERT INTO system_einstellungen (schluessel, wert)
+			 VALUES ('schule_name', ''), ('schule_strasse', ''), ('schule_plz', ''), ('schule_ort', '')
+			 ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`,
 		} {
 			if _, err := pool.Exec(context.Background(), sql); err != nil {
 				t.Errorf("Aufräumen: %v", err)
