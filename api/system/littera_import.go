@@ -115,7 +115,7 @@ func (s *Tueren) logImportAudit(r *http.Request, aktion, details string) {
 	if !ok {
 		return
 	}
-	s.SchreibeAdminProtokoll(r.Context(), claims.UserID, aktion, clientip.FromRequest(r), details)
+	s.SchreibeAdminProtokoll(r.Context(), claims.UserID, aktion, clientip.AusAnfrage(r), details)
 }
 
 // verarbeiteLitteraXML importiert ein MAB2-XML-Katalogisat und antwortet.
@@ -263,7 +263,7 @@ func (s *Tueren) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 
 	if claims, ok := auth.GetClaims(r.Context()); ok {
 		details := fmt.Sprintf(`{"new_titles":%d,"imported_copies":%d}`, newTitles, importedCopies)
-		s.SchreibeAdminProtokoll(r.Context(), claims.UserID, "BESTAND_IMPORT", clientip.FromRequest(r), details)
+		s.SchreibeAdminProtokoll(r.Context(), claims.UserID, "BESTAND_IMPORT", clientip.AusAnfrage(r), details)
 	}
 
 	tuer.RespondJSON(w, http.StatusOK, map[string]interface{}{

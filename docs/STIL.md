@@ -113,13 +113,13 @@ Ein Verb, das hier fehlt, kommt zuerst in diese Tabelle.
 
 ## 6. Sichtbarkeit
 
-Groß geschrieben ist, was ein anderes Paket beim Namen nennt, und der Typ, den eine solche
-Funktion annimmt oder zurückgibt: Wer das Ergebnis in der Hand hält, muss seinen Typ
-nachschlagen können. Alles andere ist klein. In einem Thema unter `api/` sind öffentlich der
+Groß geschrieben ist, was ein anderes Paket beim Namen nennt, auch in seinen Tests, und der
+Typ, den eine solche Funktion annimmt oder zurückgibt: Wer das Ergebnis in der Hand hält, muss
+seinen Typ nachschlagen können. Alles andere ist klein. In einem Thema unter `api/` sind öffentlich der
 Typ `Tueren` und seine Türen. Der Grund steht in Best Practices: „Every exported type increases
 the cognitive load for the reader."
 
-Braucht nur ein Test eines anderen Pakets einen Namen, endet er auf `FuerTest`.
+Eine Naht, die es nur gibt, damit ein Test etwas austauschen kann, endet auf `FuerTest`.
 
 ## 7. Dateien
 
@@ -129,6 +129,7 @@ Tests heißen `…_test.go`, Tests an der Datenbank `…_pg_test.go`, Prüfungen
 
 ## 8. Kommentare
 
+- Kommentare sind deutsch.
 - Jeder öffentliche Name trägt einen Kommentar, der als ganzer Satz mit dem Namen beginnt
   (Decisions, „Doc comments"); der Linter hält es (`.golangci.yml`, revive `exported`).
 - Ein Kommentar sagt in ein bis zwei Sätzen, warum der Code so ist. Was der Code tut, sagen

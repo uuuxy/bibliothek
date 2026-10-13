@@ -97,7 +97,7 @@ func (s *Tueren) RestoreStudentHandler() http.HandlerFunc {
 
 		// Optional: Audit-Log für Restore anlegen
 		if claims, ok := auth.GetClaims(ctx); ok {
-			s.SchreibeAdminProtokoll(ctx, claims.UserID, "RESTORE_STUDENT", clientip.FromRequest(r), `{"schueler_id":"`+id+`"}`)
+			s.SchreibeAdminProtokoll(ctx, claims.UserID, "RESTORE_STUDENT", clientip.AusAnfrage(r), `{"schueler_id":"`+id+`"}`)
 		}
 
 		tuer.RespondJSON(w, http.StatusOK, map[string]any{
@@ -174,7 +174,7 @@ func (s *Tueren) PurgeStudentHandler(auditRepo repository.AuditRepository) http.
 			return
 		}
 
-		s.SchreibeAdminProtokoll(ctx, claims.UserID, "PURGE_STUDENT", clientip.FromRequest(r), `{"schueler_id":"`+id+`"}`)
+		s.SchreibeAdminProtokoll(ctx, claims.UserID, "PURGE_STUDENT", clientip.AusAnfrage(r), `{"schueler_id":"`+id+`"}`)
 
 		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status":  "success",

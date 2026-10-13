@@ -226,7 +226,7 @@ func pruefeDoppellaufSchutz(ctx context.Context, tx pgx.Tx, w http.ResponseWrite
 // trägt zugleich den Doppellauf-Schutz) und committet die Transaktion. ok=false: die
 // Fehlerantwort wurde bereits geschrieben.
 func (s *Tueren) finalisiereSchuljahreswechsel(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, r *http.Request, userID string, promoted, archived int) bool {
-	if err := repository.SchreibeAdminProtokoll(ctx, tx, userID, repository.AktionSchuljahreswechsel, clientip.FromRequest(r),
+	if err := repository.SchreibeAdminProtokoll(ctx, tx, userID, repository.AktionSchuljahreswechsel, clientip.AusAnfrage(r),
 		fmt.Sprintf(`{"versetzt": %d, "abgaenger": %d}`, promoted, archived)); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false

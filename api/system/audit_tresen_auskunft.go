@@ -137,7 +137,7 @@ func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, au
 		return
 	}
 	if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "TRESEN_AUSKUNFT",
-		clientip.FromRequest(r), map[string]any{
+		clientip.AusAnfrage(r), map[string]any{
 			"barcode":            barcode,
 			"treffer_exemplare":  len(exemplare),
 			"treffer_ereignisse": len(ereignisse),

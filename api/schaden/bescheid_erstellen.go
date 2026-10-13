@@ -117,7 +117,7 @@ func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 		"mittel":         bescheid.Mittel,
 		"gesamtbetrag":   bescheid.Gesamtbetrag,
 		"positionen":     bescheid.AnzahlPositionen,
-	}, clientip.FromRequest(r))
+	}, clientip.AusAnfrage(r))
 
 	tuer.RespondJSON(w, http.StatusCreated, bescheid)
 	return nil

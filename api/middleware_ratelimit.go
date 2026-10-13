@@ -132,7 +132,7 @@ func verzeichneLoginErgebnis(attempt *failedAttempt, status int, now time.Time) 
 // would let a handful of failed logins lock out every user (global denial of service).
 func AuthRateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := clientip.FromRequest(r)
+		ip := clientip.AusAnfrage(r)
 
 		now := time.Now()
 		attempt, blocked := reserviereLoginVersuch(ip, now)

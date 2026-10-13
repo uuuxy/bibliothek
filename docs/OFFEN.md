@@ -450,7 +450,8 @@ bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 2. öffentlich nur ist, was ein anderes Paket beim Namen nennt oder was in der Signatur eines
    solchen Namens steht;
 3. seine Kommentare in ein bis zwei Sätzen das Warum nennen, ohne Datum und Vorgeschichte;
-4. seine Zeile in `stil_bestand_test.go` entfernt ist.
+4. die Tests in seinem Ordner dieselben Namen und denselben Stil der Kommentare tragen;
+5. seine Zeile in `stil_bestand_test.go` entfernt ist.
 
 **Reihenfolge:** von unten nach oben, zuerst die Pakete, die kein anderes des Projekts
 einbinden. So bekommt jeder Name seinen endgültigen in einem Schritt, und die Rufer in den

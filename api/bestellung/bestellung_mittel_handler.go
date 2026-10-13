@@ -117,7 +117,7 @@ func (s *Tueren) auditiereMittelKorrektur(r *http.Request, bestellungID, von, na
 	}
 	details := map[string]any{"bestellung_id": bestellungID, "von": von, "nach": nach, "grund": grund}
 	if err := repository.NewAuditRepository(s.DB.Pool).
-		LogAdminAktion(r.Context(), claims.UserID, auditBestellungMittelKorrigiert, clientip.FromRequest(r), details); err != nil {
+		LogAdminAktion(r.Context(), claims.UserID, auditBestellungMittelKorrigiert, clientip.AusAnfrage(r), details); err != nil {
 		log.Printf("Audit %s fehlgeschlagen: %v", auditBestellungMittelKorrigiert, err)
 	}
 }

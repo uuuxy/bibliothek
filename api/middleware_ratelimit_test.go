@@ -59,8 +59,8 @@ func burstN(t *testing.T, path string, n int) (blocked int) {
 // /api/images/cover — vom Bucket ausgenommen sein, sonst blockiert ein einziger
 // Seitenaufruf einen Teil seiner eigenen Barcodes.
 func TestRateLimit_BarcodeBurstIsExempt(t *testing.T) {
-	clientip.Configure(nil) // nur Loopback
-	t.Cleanup(func() { clientip.Configure(nil) })
+	clientip.SetzeProxys(nil) // nur Loopback
+	t.Cleanup(func() { clientip.SetzeProxys(nil) })
 
 	// 40 Barcodes in einem Rutsch, Bucket=5 → ohne Ausnahme wären 35 geblockt.
 	if got := burstN(t, "/api/barcode?content=112622&width=150&height=50", 40); got != 0 {
@@ -84,8 +84,8 @@ func TestRateLimit_BarcodeBurstIsExempt(t *testing.T) {
 // Vor dem Fix wurde auf r.RemoteAddr (= Proxy) gekeyt, sodass fünf Fehlversuche
 // IRGENDEINES Nutzers alle aussperrten.
 func TestAuthRateLimit_ProxyClientsAreCountedIndependently(t *testing.T) {
-	clientip.Configure([]string{"172.16.0.0/12"})
-	t.Cleanup(func() { clientip.Configure(nil) })
+	clientip.SetzeProxys([]string{"172.16.0.0/12"})
+	t.Cleanup(func() { clientip.SetzeProxys(nil) })
 	resetLoginState()
 
 	const proxy = "172.18.0.5:40000"
@@ -108,8 +108,8 @@ func TestAuthRateLimit_ProxyClientsAreCountedIndependently(t *testing.T) {
 // Ein direkt (nicht über einen vertrauten Proxy) verbundener Angreifer darf sich
 // nicht durch gefälschte X-Forwarded-For-Header eine frische Identität erschummeln.
 func TestAuthRateLimit_UntrustedPeerCannotSpoofXFF(t *testing.T) {
-	clientip.Configure([]string{"172.16.0.0/12"})
-	t.Cleanup(func() { clientip.Configure(nil) })
+	clientip.SetzeProxys([]string{"172.16.0.0/12"})
+	t.Cleanup(func() { clientip.SetzeProxys(nil) })
 	resetLoginState()
 
 	const attacker = "203.0.113.50:40000"
@@ -131,8 +131,8 @@ func TestAuthRateLimit_UntrustedPeerCannotSpoofXFF(t *testing.T) {
 // Der Test hält die Grenze fest, ab der Aussperrung eintritt: deutlich oberhalb
 // dessen, was ein Standort an ehrlichen Vertippern produziert.
 func TestAuthRateLimit_NATStandortWirdNichtVonWenigenVertippernGesperrt(t *testing.T) {
-	clientip.Configure([]string{"172.16.0.0/12"})
-	t.Cleanup(func() { clientip.Configure(nil) })
+	clientip.SetzeProxys([]string{"172.16.0.0/12"})
+	t.Cleanup(func() { clientip.SetzeProxys(nil) })
 	resetLoginState()
 
 	const proxy = "172.18.0.5:40000"
@@ -153,8 +153,8 @@ func TestAuthRateLimit_NATStandortWirdNichtVonWenigenVertippernGesperrt(t *testi
 }
 
 func TestAuthRateLimit_SuccessResetsCounter(t *testing.T) {
-	clientip.Configure(nil) // nur Loopback
-	t.Cleanup(func() { clientip.Configure(nil) })
+	clientip.SetzeProxys(nil) // nur Loopback
+	t.Cleanup(func() { clientip.SetzeProxys(nil) })
 	resetLoginState()
 
 	handler := AuthRateLimitMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -113,7 +113,7 @@ func (s *Tueren) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 		// Schlüssel `schueler_id` wie überall: Auskunft und Tilgung fragen genau diesen
 		// Schlüssel ab (Migration 091 hat die alte `student_id`-Form umgeschlüsselt).
 		details := fmt.Sprintf(`{"schueler_id":"%s"}`, id)
-		s.SchreibeAdminProtokoll(ctx, claims.UserID, "DELETE_STUDENT", clientip.FromRequest(r), details)
+		s.SchreibeAdminProtokoll(ctx, claims.UserID, "DELETE_STUDENT", clientip.AusAnfrage(r), details)
 
 		tuer.RespondJSON(w, http.StatusOK, map[string]any{
 			"status": "success",
@@ -244,7 +244,7 @@ func (s *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 		}
 		// ziel_id ist die Kennung des Kontos: Daran findet die Auskunft den Eintrag beim Konto,
 		// auch nachdem es gelöscht ist. Mit dem Leser fällt sie wieder (Tilgung).
-		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "KOLLEGIUMSKONTO_NACHGETRAGEN", clientip.FromRequest(r), map[string]any{
+		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "KOLLEGIUMSKONTO_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
 			"schueler_id": id,
 			"ziel_id":     kontoID,
 		}); logErr != nil {
@@ -253,7 +253,7 @@ func (s *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 	}
 
 	if a.lusdNachgetragen != "" {
-		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "LUSD_ID_NACHGETRAGEN", clientip.FromRequest(r), map[string]any{
+		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "LUSD_ID_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
 			"schueler_id": id,
 			"lusd_id":     a.lusdNachgetragen,
 		}); logErr != nil {

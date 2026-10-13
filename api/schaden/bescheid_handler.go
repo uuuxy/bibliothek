@@ -132,7 +132,7 @@ func (s *Tueren) BescheidUebergebenHandler(bescheidRepo repository.BescheidRepos
 			return apierrors.Internal("Übergabe konnte nicht gebucht werden", err)
 		}
 
-		bescheidAudit(ctx, s, auditRepo, auditBescheidUebergeben, map[string]any{"bescheid_id": id}, clientip.FromRequest(r))
+		bescheidAudit(ctx, s, auditRepo, auditBescheidUebergeben, map[string]any{"bescheid_id": id}, clientip.AusAnfrage(r))
 		tuer.RespondJSON(w, http.StatusOK, map[string]any{"id": id, "status": "uebergeben"})
 		return nil
 	})

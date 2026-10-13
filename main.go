@@ -301,7 +301,7 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	// Login-Brute-Force, Audit-Logs). Ohne TRUSTED_PROXIES wird nur Loopback
 	// vertraut — hinter Caddy im Docker-Netz muss das Netz dort gesetzt werden,
 	// sonst kollabieren alle Clients auf die Proxy-IP.
-	clientip.ConfigureFromEnv()
+	clientip.SetzeProxysAusUmgebung()
 
 	return
 }

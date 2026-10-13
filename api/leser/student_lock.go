@@ -140,7 +140,7 @@ func protokolliereSperre(r *http.Request, auditRepo repository.AuditRepository, 
 			"vom_programm": alt.VomProgramm,
 		}
 	}
-	if err := auditRepo.LogAdminAktion(r.Context(), adminID, aktion, clientip.FromRequest(r), details); err != nil {
+	if err := auditRepo.LogAdminAktion(r.Context(), adminID, aktion, clientip.AusAnfrage(r), details); err != nil {
 		log.Printf("Audit für %s fehlgeschlagen: %v", aktion, err)
 	}
 }

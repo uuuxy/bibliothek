@@ -241,7 +241,7 @@ func (s *Tueren) BulkReceiveOrderHandler() http.HandlerFunc {
 		receivedItems, err := service.BulkReceiveOrder(ctx, s.DB.Pool, auditRepo, service.BulkReceiveParams{
 			ExemplarIDs: req.ExemplarIDs,
 			AdminID:     adminID,
-			IPAddr:      clientip.FromRequest(r),
+			IPAddr:      clientip.AusAnfrage(r),
 		})
 		if err != nil {
 			if errors.Is(err, service.ErrNichtsEinzubuchen) {

@@ -291,7 +291,7 @@ func (s *Tueren) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 	// Zweig ist gebremst — und er antwortet im Grenzfall mit dem Fallback-GIF statt mit
 	// 429, weil am anderen Ende ein <img> hängt: Ein Fehlercode erzeugt dort nur einen
 	// roten Konsoleneintrag, das Bild fehlt so oder so. Der nächste Aufruf holt es nach.
-	if !coverDownloadLimiter.Allow(clientip.FromRequest(r)) {
+	if !coverDownloadLimiter.Allow(clientip.AusAnfrage(r)) {
 		serveCoverFallback(w)
 		return
 	}

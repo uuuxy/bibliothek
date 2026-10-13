@@ -106,11 +106,11 @@ Anmeldung prüft allein der Mailserver; ist er nicht erreichbar, kann sich niema
 ### Welche IP zählt — genau ein Proxy-Hop (`pkg/clientip`, seit 05.09.2026)
 
 Alle IP-gebundenen Schutzmechanismen (beide Login-Limiter, der globale Rate-Limiter, die
-Cover-Bremse, das Audit-Log) fragen `clientip.FromRequest`. Die Regel: `X-Forwarded-For`
+Cover-Bremse, das Audit-Log) fragen `clientip.AusAnfrage`. Die Regel: `X-Forwarded-For`
 wird nur geglaubt, wenn die Verbindung von einem Netz aus `TRUSTED_PROXIES` kommt, und
 dann zählt der **rechteste** Eintrag — der, den Caddy selbst angehängt hat.
 
-Bis zum 05.09.2026 lief der Resolver **rekursiv**: Er übersprang jeden Eintrag, der in
+Bis zum 05.09.2026 lief das Paket **rekursiv**: Er übersprang jeden Eintrag, der in
 einem vertrauten Netz lag. Der Compose-Default vertraut allen RFC-1918-Netzen (das
 Docker-Subnetz ist je Host anders), und die Schul-Clients liegen selbst in 192.168.x/10.x.
 Gemessen: Client 192.168.1.50 und Client 192.168.1.77 wurden beide zu Caddys Adresse
@@ -119,9 +119,9 @@ Gemessen: Client 192.168.1.50 und Client 192.168.1.77 wurden beide zu Caddys Adr
 50-req/s-Budget galt für das Gebäude, und das Audit-Log notierte den Proxy. Reicht ein
 Proxy den eingehenden Header durch, kehrte sich das um: `X-Forwarded-For: 8.8.8.8` vom
 Client kam als Client-IP durch, die Limiter waren frei wählbar. Beides ist mit „ein Hop,
-rechtester Eintrag" weg; eine Proxy-**Kette** löst der Resolver bewusst nicht mehr bis zum
+rechtester Eintrag" weg; eine Proxy-**Kette** löst das Paket bewusst nicht mehr bis zum
 Ursprung auf (der zweite Hop wäre sichtbar, nicht still falsch). Gates:
-`TestResolver_LanClientHinterProxy`, `TestResolver_DurchgereichterHeaderIstNichtWaehlbar`
+`TestErmittler_LanClientHinterProxy`, `TestErmittler_DurchgereichterHeaderIstNichtWaehlbar`
 (beide mit dem alten Code rot gesehen).
 
 ---

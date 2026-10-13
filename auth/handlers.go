@@ -84,7 +84,7 @@ var globalLoginLimiter = newLoginFailureLimiter(5, 15*time.Minute)
 // resolver (see pkg/clientip), so the per-(email+IP) brute-force key is keyed on
 // the real client rather than the Caddy proxy address.
 func realIP(r *http.Request) string {
-	return clientip.FromRequest(r)
+	return clientip.AusAnfrage(r)
 }
 
 // LoginRequest represents the payload for login.

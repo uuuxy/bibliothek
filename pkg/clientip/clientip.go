@@ -1,27 +1,16 @@
-// Package clientip resolves the real client IP address of an HTTP request in a
-// way that is safe behind a reverse proxy (e.g. Caddy in Docker).
+// Package clientip ermittelt zu einer Anfrage die Adresse des Clients, auch hinter einem
+// Reverse-Proxy wie Caddy.
 //
-// The rule: X-Forwarded-For and X-Real-IP are only believed when the request
-// actually arrived from a configured trusted proxy. For requests that reach the
-// backend directly, these headers are attacker-controlled and are ignored.
+// X-Forwarded-For und X-Real-IP gelten nur, wenn die Anfrage von einem vertrauten Proxy kommt.
+// Erreicht sie den Server direkt, hat der Client diese Köpfe selbst gesetzt, und sie zählen
+// nicht.
 //
-// Exactly ONE proxy hop is trusted. The client is the RIGHTMOST X-Forwarded-For
-// entry — the one our proxy appended itself. Until 05.09.2026 the resolver walked
-// further left and skipped every entry that lay inside a trusted network. That is the
-// textbook "recursive" mode, and it breaks the moment clients and proxies share an
-// address space: the Compose default trusts all RFC-1918 networks because the Docker
-// subnet differs per host, and the school's own clients live in 192.168.x/10.x. The
-// resolver skipped them as "proxies" and fell back to Caddy's container address — every
-// device in the school became ONE client for the login limiter (50 failures / 15 min
-// for the whole building) and the 50-req/s bucket, and the audit log recorded the
-// proxy. With a proxy that passes the incoming header through, the same walk let a
-// client choose its own IP by prepending one. Gates: TestResolver_LanClientHinterProxy
-// and TestResolver_DurchgereichterHeaderIstNichtWaehlbar.
-//
-// Chained proxies (edge proxy in front of Caddy) are therefore NOT resolved to the
-// original client — this deployment has one proxy, and the second hop would need a
-// separate, explicit hop count rather than a network match that doubles as a client
-// filter.
+// Geglaubt wird genau ein Proxy: Der Client ist der rechte Eintrag in X-Forwarded-For, den der
+// eigene Proxy angehängt hat. Weiter links wird nicht gelesen. Die Clients der Schule liegen in
+// denselben privaten Netzen wie die Proxys; wer vertraute Einträge von rechts überspringt, hält
+// jedes Gerät der Schule für den Proxy und lässt einen Client mit einem vorangestellten Eintrag
+// seine Adresse wählen. Steht ein zweiter Proxy vor Caddy, liefert das Paket deshalb dessen
+// Adresse und nicht die des Clients.
 package clientip
 
 import (
@@ -32,127 +21,120 @@ import (
 	"sync/atomic"
 )
 
-// loopbackCIDRs is the always-trusted baseline: only a loopback peer may set
-// forwarding headers. It keeps local development and health checks working and
-// is the safe default when no proxies are configured.
-var loopbackCIDRs = []string{"127.0.0.0/8", "::1/128"}
+// loopbackNetze sind immer vertraut, damit die Entwicklung am eigenen Rechner und die
+// Bereitschaftsprüfung ohne Einstellung laufen.
+var loopbackNetze = []string{"127.0.0.0/8", "::1/128"}
 
-// Resolver maps an incoming request to a client IP given a set of trusted proxy
-// networks. It is safe for concurrent use.
-type Resolver struct {
-	trusted []*net.IPNet
+// ermittler ordnet einer Anfrage die Adresse des Clients zu und glaubt dabei nur Proxys aus
+// seinen vertrauten Netzen. Er wird nach dem Anlegen nicht mehr geändert.
+type ermittler struct {
+	vertraut []*net.IPNet
 }
 
-// NewResolver builds a Resolver from CIDR strings or bare IPs (a bare IP is
-// treated as a /32 or /128). Blank or unparsable entries are skipped.
-func NewResolver(cidrs []string) *Resolver {
-	rs := &Resolver{}
-	for _, raw := range cidrs {
-		c := strings.TrimSpace(raw)
-		if c == "" {
+// neuerErmittler liest die vertrauten Netze aus CIDR-Angaben oder einzelnen Adressen. Leere
+// und unlesbare Einträge übergeht er, damit ein Tippfehler in der Umgebung den Start nicht
+// verhindert.
+func neuerErmittler(netze []string) *ermittler {
+	e := &ermittler{}
+	for _, roh := range netze {
+		netz := strings.TrimSpace(roh)
+		if netz == "" {
 			continue
 		}
-		if !strings.Contains(c, "/") {
-			if strings.Contains(c, ":") {
-				c += "/128"
+		if !strings.Contains(netz, "/") {
+			if strings.Contains(netz, ":") {
+				netz += "/128"
 			} else {
-				c += "/32"
+				netz += "/32"
 			}
 		}
-		if _, network, err := net.ParseCIDR(c); err == nil {
-			rs.trusted = append(rs.trusted, network)
+		if _, gelesen, err := net.ParseCIDR(netz); err == nil {
+			e.vertraut = append(e.vertraut, gelesen)
 		}
 	}
-	return rs
+	return e
 }
 
-// FromRequest returns the best-effort real client IP as a bare address (no port).
-func (rs *Resolver) FromRequest(r *http.Request) string {
-	peer := hostOnly(r.RemoteAddr)
-	if !rs.isTrusted(peer) {
-		// Direct connection from a non-proxy: forwarding headers are untrusted.
-		return peer
+// ausAnfrage liefert die Adresse des Clients ohne Port.
+func (e *ermittler) ausAnfrage(r *http.Request) string {
+	gegenstelle := ohnePort(r.RemoteAddr)
+	if !e.istVertraut(gegenstelle) {
+		return gegenstelle
 	}
-	// The immediate peer is a trusted proxy. It appended the address it saw as the
-	// RIGHTMOST X-Forwarded-For entry; that is the client. Everything left of it was
-	// sent BY the client and is never consulted (see package comment).
-	if ip := rechtesterEintrag(r.Header.Get("X-Forwarded-For")); ip != "" {
-		return ip
+	if adresse := rechtesterEintrag(r.Header.Get("X-Forwarded-For")); adresse != "" {
+		return adresse
 	}
-	// No X-Forwarded-For: fall back to the single-valued X-Real-IP set by the
-	// immediate proxy, otherwise the peer itself.
-	if xri := strings.TrimSpace(r.Header.Get("X-Real-IP")); xri != "" {
-		return xri
+	// X-Real-IP trägt nur einen Wert und stammt vom selben Proxy.
+	if adresse := strings.TrimSpace(r.Header.Get("X-Real-IP")); adresse != "" {
+		return adresse
 	}
-	return peer
+	return gegenstelle
 }
 
-// rechtesterEintrag liefert den letzten nicht-leeren Eintrag einer kommaseparierten
-// Liste — "" wenn es keinen gibt.
-func rechtesterEintrag(xff string) string {
-	parts := strings.Split(xff, ",")
-	for i := len(parts) - 1; i >= 0; i-- {
-		if ip := strings.TrimSpace(parts[i]); ip != "" {
-			return ip
+// rechtesterEintrag liefert den letzten nicht leeren Eintrag einer Liste mit Kommas, sonst
+// eine leere Zeichenkette.
+func rechtesterEintrag(liste string) string {
+	eintraege := strings.Split(liste, ",")
+	for i := len(eintraege) - 1; i >= 0; i-- {
+		if adresse := strings.TrimSpace(eintraege[i]); adresse != "" {
+			return adresse
 		}
 	}
 	return ""
 }
 
-// isTrusted reports whether ipStr is a configured trusted proxy address.
-func (rs *Resolver) isTrusted(ipStr string) bool {
-	ip := net.ParseIP(ipStr)
+// istVertraut meldet, ob die Adresse in einem der vertrauten Netze liegt.
+func (e *ermittler) istVertraut(adresse string) bool {
+	ip := net.ParseIP(adresse)
 	if ip == nil {
 		return false
 	}
-	for _, network := range rs.trusted {
-		if network.Contains(ip) {
+	for _, netz := range e.vertraut {
+		if netz.Contains(ip) {
 			return true
 		}
 	}
 	return false
 }
 
-// hostOnly strips the port from a RemoteAddr, tolerating values that carry no
-// port (e.g. a bare IP in tests or over a Unix socket).
-func hostOnly(remoteAddr string) string {
-	if host, _, err := net.SplitHostPort(remoteAddr); err == nil {
+// ohnePort nimmt den Port von einer Adresse. Eine Adresse ohne Port bleibt, wie sie ist; so
+// kommt sie in Tests und über einen Unix-Socket.
+func ohnePort(adresse string) string {
+	if host, _, err := net.SplitHostPort(adresse); err == nil {
 		return host
 	}
-	return remoteAddr
+	return adresse
 }
 
-// defaultResolver is the process-wide resolver used by the package-level
-// FromRequest. It starts trusting loopback only and is replaced at startup via
-// Configure/ConfigureFromEnv.
-var defaultResolver atomic.Pointer[Resolver]
+// prozessweit ist der Ermittler, den AusAnfrage nimmt. Er vertraut zunächst nur Loopback;
+// der Start ersetzt ihn über SetzeProxysAusUmgebung.
+var prozessweit atomic.Pointer[ermittler]
 
 func init() {
-	defaultResolver.Store(NewResolver(loopbackCIDRs))
+	prozessweit.Store(neuerErmittler(loopbackNetze))
 }
 
-// Configure replaces the process-wide resolver. Loopback is always trusted in
-// addition to the supplied networks. Call once during startup.
-func Configure(cidrs []string) {
-	combined := make([]string, 0, len(cidrs)+len(loopbackCIDRs))
-	combined = append(combined, cidrs...)
-	combined = append(combined, loopbackCIDRs...)
-	defaultResolver.Store(NewResolver(combined))
+// SetzeProxys legt fest, aus welchen Netzen ein Proxy als vertraut gilt. Loopback gilt
+// zusätzlich immer.
+func SetzeProxys(netze []string) {
+	alle := make([]string, 0, len(netze)+len(loopbackNetze))
+	alle = append(alle, netze...)
+	alle = append(alle, loopbackNetze...)
+	prozessweit.Store(neuerErmittler(alle))
 }
 
-// ConfigureFromEnv configures the process-wide resolver from the TRUSTED_PROXIES
-// environment variable (comma-separated CIDRs or bare IPs). Unset or empty
-// leaves loopback as the only trusted network.
-func ConfigureFromEnv() {
-	raw := strings.TrimSpace(os.Getenv("TRUSTED_PROXIES"))
-	if raw == "" {
-		Configure(nil)
+// SetzeProxysAusUmgebung liest die vertrauten Netze aus TRUSTED_PROXIES, getrennt durch
+// Kommas. Ist die Variable leer, bleibt nur Loopback vertraut.
+func SetzeProxysAusUmgebung() {
+	roh := strings.TrimSpace(os.Getenv("TRUSTED_PROXIES"))
+	if roh == "" {
+		SetzeProxys(nil)
 		return
 	}
-	Configure(strings.Split(raw, ","))
+	SetzeProxys(strings.Split(roh, ","))
 }
 
-// FromRequest resolves the client IP using the process-wide resolver.
-func FromRequest(r *http.Request) string {
-	return defaultResolver.Load().FromRequest(r)
+// AusAnfrage liefert die Adresse des Clients zu einer Anfrage, ohne Port.
+func AusAnfrage(r *http.Request) string {
+	return prozessweit.Load().ausAnfrage(r)
 }

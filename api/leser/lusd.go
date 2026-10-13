@@ -154,7 +154,7 @@ func (s *Tueren) protokolliereLusdImport(r *http.Request, res *lusd.PreviewResul
 		"massenabgang_bestaetigt":  massenabgangBestaetigt,
 	}
 	if err := repository.NewAuditRepository(s.DB.Pool).
-		LogAdminAktion(r.Context(), claims.UserID, "LUSD_IMPORT", clientip.FromRequest(r), details); err != nil {
+		LogAdminAktion(r.Context(), claims.UserID, "LUSD_IMPORT", clientip.AusAnfrage(r), details); err != nil {
 		log.Printf("LUSD-Import: Audit-Eintrag fehlgeschlagen: %v", err)
 	}
 }

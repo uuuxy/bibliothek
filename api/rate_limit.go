@@ -34,7 +34,7 @@ func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 				return
 			}
 
-			ip := clientip.FromRequest(r)
+			ip := clientip.AusAnfrage(r)
 			if !limiter.Allow(ip) {
 				apierrors.SendHTTPError(w, http.StatusTooManyRequests, errors.New("rate limit exceeded"))
 				return

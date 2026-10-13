@@ -68,7 +68,7 @@ func (s *Tueren) ZusammenfuehrenSchuelerHandler(auditRepo repository.AuditReposi
 		// Ziel, geschrieben in der Transaktion (repository.schreibeRueckwegEintrag).
 		// Schlüssel `schueler_id` für den verbliebenen (Vokabular der Auskunft/Tilgung).
 		if claims, ok := auth.GetClaims(r.Context()); ok {
-			if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "SCHUELER_ZUSAMMENGEFUEHRT", clientip.FromRequest(r), map[string]any{
+			if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "SCHUELER_ZUSAMMENGEFUEHRT", clientip.AusAnfrage(r), map[string]any{
 				"schueler_id":        erg.ZielID,
 				"barcode":            erg.BarcodeID,
 				"aufgeloest_id":      rumpf.QuelleID,
