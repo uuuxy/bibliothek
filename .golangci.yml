@@ -21,6 +21,8 @@ linters:
         - name: exported
         # Jedes Paket trägt genau einen Kommentar, unmittelbar über der package-Zeile.
         - name: package-comments
+        # Ein Typ nennt seinen Empfänger in jeder Methode gleich, nie this oder self.
+        - name: receiver-naming
     rowserrcheck:
       # rowserrcheck kennt database/sql von Haus aus nicht pgx — hier explizit
       # den pgx-v5-Treiber registrieren, sonst prüft es unsere Query-Aufrufe nicht.

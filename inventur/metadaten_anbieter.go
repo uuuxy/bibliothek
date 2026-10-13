@@ -354,9 +354,9 @@ func (b *marcBibDaten) autor() string {
 }
 
 // sucheDNB fragt die Deutsche Nationalbibliothek (DNB) über die MARC21-XML-Schnittstelle ab.
-func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
+func (c *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
 	url := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=NUM=%s&recordSchema=MARC21-xml", isbn)
-	koerper, fehler := client.holeInhalt(kontext, url)
+	koerper, fehler := c.holeInhalt(kontext, url)
 	if fehler != nil {
 		return nil, fehler
 	}
@@ -405,7 +405,7 @@ func cqlAlleWoerter(text string) string {
 
 // SucheTextDNB fragt die DNB per Freitext ab — für die Bestellsuche, wenn keine ISBN
 // vorliegt. Liefert mehrere Treffer; die Auswahl trifft die Oberfläche.
-func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query string) ([]MetadatenErgebnis, error) {
+func (c *MetadatenClient) SucheTextDNB(kontext context.Context, query string) ([]MetadatenErgebnis, error) {
 	trimmed := strings.TrimSpace(query)
 	if trimmed == "" {
 		return nil, nil
@@ -420,7 +420,7 @@ func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query strin
 	}
 
 	apiURL := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=%s&recordSchema=MARC21-xml&maximumRecords=10", sruQuery)
-	koerper, fehler := client.holeInhalt(kontext, apiURL)
+	koerper, fehler := c.holeInhalt(kontext, apiURL)
 	if fehler != nil {
 		return nil, fehler
 	}

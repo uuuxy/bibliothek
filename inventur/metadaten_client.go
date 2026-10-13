@@ -106,12 +106,12 @@ var ErrUngueltigeISBN = errors.New("ungültiges ISBN-Format")
 // liefert keine andere Quelle; SucheNachISBN fragt nach der DNB auch Google Books und
 // OpenLibrary und lädt das Cover herunter — für einen Vorschlag unnötig, und das anonyme
 // Tageskontingent von Google teilen wir mit allen.
-func (client *MetadatenClient) SucheDNBNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
+func (c *MetadatenClient) SucheDNBNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
 	saubereIsbn := isbnutil.CleanISBN(isbn)
 	if !validiereISBN(saubereIsbn) {
 		return nil, ErrUngueltigeISBN
 	}
-	ergebnis, fehler := client.sucheDNB(kontext, saubereIsbn)
+	ergebnis, fehler := c.sucheDNB(kontext, saubereIsbn)
 	switch {
 	case errors.Is(fehler, errQuelleNichtErreichbar):
 		return nil, fmt.Errorf("%w: %v", ErrDNBNichtErreichbar, fehler)
@@ -124,7 +124,7 @@ func (client *MetadatenClient) SucheDNBNachISBN(kontext context.Context, isbn st
 
 // SucheNachISBN iteriert der Reihe nach über verschiedene Buch-APIs (DNB, Google, OpenLibrary),
 // bis für die gesuchte ISBN gültige Titel-/Autorendaten gefunden wurden.
-func (client *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
+func (c *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
 	var ergebnis *MetadatenErgebnis
 	var fehler error
 
@@ -142,16 +142,16 @@ func (client *MetadatenClient) SucheNachISBN(kontext context.Context, isbn strin
 	// Nebenbei wird gezählt, ob überhaupt EINE Quelle geantwortet hat: „alle nicht
 	// erreichbar" ist ein Ausfall (Sentinel → 502 beim Aufrufer), kein Nicht-Treffer.
 	quellen := []func(context.Context, string) (*MetadatenErgebnis, error){
-		client.sucheDNB,
-		client.sucheGoogleBooks,
-		client.sucheOpenLibrary,
+		c.sucheDNB,
+		c.sucheGoogleBooks,
+		c.sucheOpenLibrary,
 	}
 	erreichbar := false
 	var letzterAusfall error
 	for _, quelle := range quellen {
 		ergebnis, fehler = quelle(kontext, saubereIsbn)
 		if fehler == nil && ergebnis != nil && (ergebnis.Titel != "" || ergebnis.Autor != "") {
-			return client.beendeSuche(kontext, ergebnis, saubereIsbn), nil
+			return c.beendeSuche(kontext, ergebnis, saubereIsbn), nil
 		}
 		if errors.Is(fehler, errQuelleNichtErreichbar) {
 			letzterAusfall = fehler
@@ -169,8 +169,8 @@ func (client *MetadatenClient) SucheNachISBN(kontext context.Context, isbn strin
 
 // beendeSuche füllt das MetadatenErgebnis mit fehlenden Informationen auf:
 // automatische Kategorisierung (Fach und Schulstufe) sowie das lokal gespeicherte Cover.
-func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) *MetadatenErgebnis {
-	ergebnis.CoverURL = client.aufloeseCover(kontext, ergebnis, isbn)
+func (c *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) *MetadatenErgebnis {
+	ergebnis.CoverURL = c.aufloeseCover(kontext, ergebnis, isbn)
 
 	ergebnis.Fach, ergebnis.JahrgangVon, ergebnis.JahrgangBis = automatischeKategorisierung(ergebnis.Titel, ergebnis.Untertitel)
 	return ergebnis
@@ -186,7 +186,7 @@ func (client *MetadatenClient) beendeSuche(kontext context.Context, ergebnis *Me
 // HTML-Seite statt eines Bildes lieferte. Stattdessen laden wir jeden Kandidaten echt herunter;
 // downloadAndSaveCoverLocally akzeptiert nur dekodierbare Bilder ausreichender Größe. Ein
 // fehlgeschlagener Download verwirft hier NICHT mehr ein bereits gefundenes Cover.
-func (client *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) string {
+func (c *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *MetadatenErgebnis, isbn string) string {
 	// DNB und OpenLibrary werden mit der Normalform gefragt, derselben Regel wie in der
 	// Datenbank: Eine zehnstellige ISBN wird nur mit richtigem Prüfzeichen dreizehnstellig.
 	nummer := isbnutil.Normalform(isbn)
@@ -203,7 +203,7 @@ func (client *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *
 	kandidaten = append(kandidaten, fmt.Sprintf("https://portal.dnb.de/opac/mvb/cover?isbn=%s", url.QueryEscape(nummer)))
 
 	// 3. Google Books — separat abfragen, falls die Metadaten von DNB kamen (DNB liefert keine Cover-URL im Datensatz).
-	if gb, err := client.sucheGoogleBooks(kontext, isbn); err == nil && gb != nil && gb.CoverURL != "" {
+	if gb, err := c.sucheGoogleBooks(kontext, isbn); err == nil && gb != nil && gb.CoverURL != "" {
 		kandidaten = append(kandidaten, gb.CoverURL)
 	}
 
@@ -211,7 +211,7 @@ func (client *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *
 	kandidaten = append(kandidaten, fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-L.jpg?default=false", nummer))
 
 	for _, kandidat := range kandidaten {
-		if lokal := downloadAndSaveCoverLocally(kontext, client.httpClient, kandidat, isbn); lokal != "" {
+		if lokal := downloadAndSaveCoverLocally(kontext, c.httpClient, kandidat, isbn); lokal != "" {
 			return lokal
 		}
 	}
@@ -219,7 +219,7 @@ func (client *MetadatenClient) aufloeseCover(kontext context.Context, ergebnis *
 }
 
 // holeInhalt ist eine HTTP-GET Wrapper-Funktion, die die Antwort einer API als Bytearray zurückliefert.
-func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string) ([]byte, error) {
+func (c *MetadatenClient) holeInhalt(kontext context.Context, apiURL string) ([]byte, error) {
 	// Angefragt wird die NEU GEBAUTE URL, nicht apiURL: Geprüft hätte url.Parse,
 	// losgeschickt worden wäre der rohe String. Wo sich die beiden Parser über ein
 	// Zeichen uneinig sind, geht die Anfrage an einen anderen Host als den geprüften
@@ -236,7 +236,7 @@ func (client *MetadatenClient) holeInhalt(kontext context.Context, apiURL string
 		return nil, fehler
 	}
 	anfrage.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-	antwort, fehler := client.httpClient.Do(anfrage)
+	antwort, fehler := c.httpClient.Do(anfrage)
 	if fehler != nil {
 		// Transportfehler tragen das Sentinel: Die Quelle war NICHT da — der Unterschied
 		// zwischen „Netz weg" (502) und „Buch unbekannt" (404) entsteht genau hier.

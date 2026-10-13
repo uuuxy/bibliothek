@@ -16,14 +16,14 @@ import (
 // *.sql file exactly once, in filename order (lexicographic = numeric prefix order).
 // Each migration runs in its own transaction; on failure the run is aborted and
 // the error is returned — the database is left in its last-successfully-migrated state.
-func (d *Database) RunMigrations(ctx context.Context, migrationsDir string) error {
+func (db *Database) RunMigrations(ctx context.Context, migrationsDir string) error {
 	// 0. Fresh-database-Erkennung + schema.sql-Baseline
-	if err := d.ensureBaselineSchema(ctx); err != nil {
+	if err := db.ensureBaselineSchema(ctx); err != nil {
 		return err
 	}
 
 	// 1. Ensure the tracking table exists (idempotent)
-	if err := d.ensureMigrationsTable(ctx); err != nil {
+	if err := db.ensureMigrationsTable(ctx); err != nil {
 		return err
 	}
 
@@ -39,7 +39,7 @@ func (d *Database) RunMigrations(ctx context.Context, migrationsDir string) erro
 	// 3. Apply each file that hasn't been recorded yet
 	applied := 0
 	for _, path := range files {
-		didApply, err := d.applyMigration(ctx, path)
+		didApply, err := db.applyMigration(ctx, path)
 		if err != nil {
 			return err
 		}
@@ -59,9 +59,9 @@ func (d *Database) RunMigrations(ctx context.Context, migrationsDir string) erro
 // ensureBaselineSchema erkennt eine frische Datenbank (fehlende schema_migrations-
 // Tabelle) und spielt in diesem Fall schema.sql als Ausgangsbasis ein. Eine fehlende
 // schema.sql ist kein Fehler (nur eine Warnung).
-func (d *Database) ensureBaselineSchema(ctx context.Context) error {
+func (db *Database) ensureBaselineSchema(ctx context.Context) error {
 	var hasMigrationsTable bool
-	err := d.Pool.QueryRow(ctx, "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'schema_migrations')").Scan(&hasMigrationsTable)
+	err := db.Pool.QueryRow(ctx, "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'schema_migrations')").Scan(&hasMigrationsTable)
 	if err != nil {
 		return fmt.Errorf("migrations: failed to check for schema_migrations: %w", err)
 	}
@@ -75,7 +75,7 @@ func (d *Database) ensureBaselineSchema(ctx context.Context) error {
 		log.Printf("Migrations: warning: schema.sql not found: %v", err)
 		return nil
 	}
-	if _, err := d.Pool.Exec(ctx, string(schemaBytes)); err != nil {
+	if _, err := db.Pool.Exec(ctx, string(schemaBytes)); err != nil {
 		return fmt.Errorf("migrations: failed to apply schema.sql: %w", err)
 	}
 	log.Println("Migrations: schema.sql applied successfully.")
@@ -83,8 +83,8 @@ func (d *Database) ensureBaselineSchema(ctx context.Context) error {
 }
 
 // ensureMigrationsTable legt die Tracking-Tabelle schema_migrations idempotent an.
-func (d *Database) ensureMigrationsTable(ctx context.Context) error {
-	_, err := d.Pool.Exec(ctx, `
+func (db *Database) ensureMigrationsTable(ctx context.Context) error {
+	_, err := db.Pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS schema_migrations (
 			version     VARCHAR(255) PRIMARY KEY,
 			applied_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -123,11 +123,11 @@ func collectMigrationFiles(migrationsDir string) (files []string, skip bool, err
 // applyMigration wendet eine einzelne Migrationsdatei an, sofern ihre Version noch
 // nicht in schema_migrations vermerkt ist. didApply=false heißt: bereits angewendet.
 // Jede Migration läuft in einer eigenen Transaktion (Atomarität pro Datei).
-func (d *Database) applyMigration(ctx context.Context, path string) (didApply bool, err error) {
+func (db *Database) applyMigration(ctx context.Context, path string) (didApply bool, err error) {
 	version := filepath.Base(path)
 
 	var exists bool
-	if err := d.Pool.QueryRow(ctx,
+	if err := db.Pool.QueryRow(ctx,
 		"SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version = $1)", version,
 	).Scan(&exists); err != nil {
 		return false, fmt.Errorf("migrations: failed to check version %q: %w", version, err)
@@ -144,7 +144,7 @@ func (d *Database) applyMigration(ctx context.Context, path string) (didApply bo
 	}
 
 	// Execute in a transaction for atomicity
-	tx, err := d.Pool.Begin(ctx)
+	tx, err := db.Pool.Begin(ctx)
 	if err != nil {
 		return false, fmt.Errorf("migrations: failed to begin transaction for %q: %w", version, err)
 	}

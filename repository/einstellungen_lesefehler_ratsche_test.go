@@ -31,7 +31,9 @@ func TestEinstellungenLesefehlerWirdNichtVerworfen(t *testing.T) {
 			return err
 		}
 		if d.IsDir() {
-			if name := d.Name(); name == "node_modules" || name == ".git" || name == "frontend" {
+			// Versteckte Ordner tragen keinen Quelltext des Programms, wohl aber Arbeitskopien.
+			if name := d.Name(); name == "node_modules" || name == "frontend" || name == "testdata" ||
+				(strings.HasPrefix(name, ".") && pfad != "..") {
 				return filepath.SkipDir
 			}
 			return nil

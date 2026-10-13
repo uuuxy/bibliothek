@@ -7,9 +7,9 @@ import (
 )
 
 // HasPhoto checks if an encrypted photo exists for the student.
-func (repo *pgStudentRepository) HasPhoto(ctx context.Context, studentID string) (bool, error) {
+func (r *pgStudentRepository) HasPhoto(ctx context.Context, studentID string) (bool, error) {
 	var hasPhoto bool
-	err := repo.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler_fotos WHERE schueler_id = $1)", studentID).Scan(&hasPhoto)
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler_fotos WHERE schueler_id = $1)", studentID).Scan(&hasPhoto)
 	return hasPhoto, err
 }
 
@@ -24,12 +24,12 @@ func OffeneSchaeden(ctx context.Context, q DBQueryer, leserID string) (anzahl in
 }
 
 // OffeneSchaeden: Anzahl und Summe der unbezahlten Forderungen des Lesers.
-func (repo *pgStudentRepository) OffeneSchaeden(ctx context.Context, studentID string) (int, float64, error) {
-	return OffeneSchaeden(ctx, repo.db, studentID)
+func (r *pgStudentRepository) OffeneSchaeden(ctx context.Context, studentID string) (int, float64, error) {
+	return OffeneSchaeden(ctx, r.db, studentID)
 }
 
 // GetActiveBorrowedBooks retrieves all books currently borrowed by the student.
-func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, studentID string) ([]BorrowedBook, error) {
+func (r *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, studentID string) ([]BorrowedBook, error) {
 	query := `
 		SELECT 
 			e.id, 
@@ -49,7 +49,7 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 		WHERE a.schueler_id = $1 AND a.rueckgabe_am IS NULL
 		ORDER BY a.ausgeliehen_am DESC
 	`
-	rows, err := repo.db.Query(ctx, query, studentID)
+	rows, err := r.db.Query(ctx, query, studentID)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +79,8 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 }
 
 // GetDistinctClasses returns a list of all active classes.
-func (repo *pgStudentRepository) GetDistinctClasses(ctx context.Context) ([]string, error) {
-	rows, err := repo.db.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL ORDER BY klasse")
+func (r *pgStudentRepository) GetDistinctClasses(ctx context.Context) ([]string, error) {
+	rows, err := r.db.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL ORDER BY klasse")
 	if err != nil {
 		return nil, err
 	}
@@ -115,8 +115,8 @@ const ListStudentsWithStatsLimit = 500
 // JAHRGANG genau das ist: die Klassen, die zu ihm gehören. Die Zuordnung steht nicht
 // hier, sondern an einer Stelle in der API — sie braucht das Klassenschema der Schule
 // („ET" ist Jahrgang 11), und das kann SQL nicht.
-func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klassen []string, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, klassen, suche, listeAktiveSchueler, sortierung)
+func (r *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klassen []string, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
+	return r.listSchuelerMitStats(ctx, klassen, suche, listeAktiveSchueler, sortierung)
 }
 
 // ListEhemaligeWithStats liefert die Schüler, die die Schule verlassen haben
@@ -124,8 +124,8 @@ func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klas
 // Schülerdatei. Bis zum 05.09.2026 bettete der Reiter die Abgängerliste ein; seit die
 // wieder die Abschlussklassen meint (noch an der Schule), brauchen die Weggegangenen
 // eine eigene Liste. Jüngster Abgang zuerst, dann Name.
-func (repo *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, nil, suche, listeEhemalige, sortierung)
+func (r *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
+	return r.listSchuelerMitStats(ctx, nil, suche, listeEhemalige, sortierung)
 }
 
 // ListLeserMitStats liefert ALLE Leser — Schüler und Kollegium — für die Leserdatei.
@@ -133,8 +133,8 @@ func (repo *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suc
 // Dieselben Zeilen und dieselbe Suche wie die Schülerliste, nur über die Tabelle `leser`
 // statt über die Sicht `schueler`. Bis zum 16.09.2026 stand ein Kollege in keiner Liste;
 // man sah an der Theke, dass er ein Buch bekommen hatte, aber nirgends, welche er hat.
-func (repo *pgStudentRepository) ListLeserMitStats(ctx context.Context, klassen []string, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, klassen, suche, listeAlleLeser, sortierung)
+func (r *pgStudentRepository) ListLeserMitStats(ctx context.Context, klassen []string, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
+	return r.listSchuelerMitStats(ctx, klassen, suche, listeAlleLeser, sortierung)
 }
 
 // listenArt sagt, WELCHE Zeilen eine Liste zeigt. Die drei Fälle sind die drei Reiter
@@ -152,7 +152,7 @@ const (
 	listeAlleLeser
 )
 
-func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klassen []string, suche string, art listenArt, sortierung SchuelerSortierung) ([]StudentListStat, error) {
+func (r *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klassen []string, suche string, art listenArt, sortierung SchuelerSortierung) ([]StudentListStat, error) {
 	// Die Bedingungen werden zusammengesetzt, weil jede für sich optional ist. Die
 	// Platzhalternummern stehen fest ($1/$2 Suche, $3 Klasse) und die zugehörigen
 	// Argumente werden nur dann angehängt, wenn ihre Bedingung auch im SQL landet —
@@ -213,7 +213,7 @@ func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klass
 	// nullbar (ein Kollege hat keine Klasse und oft keinen gedruckten Ausweis). Ohne das
 	// zerbricht der Scan an der ersten Lehrkraft — dort, wo eben noch eine Liste stand,
 	// stünde ein 500.
-	rows, err := repo.db.Query(ctx, praefix+`
+	rows, err := r.db.Query(ctx, praefix+`
 		SELECT s.id, COALESCE(s.barcode_id, ''), s.vorname, s.nachname, COALESCE(s.klasse, ''),
 			COALESCE(s.abgaenger_jahr, 0), s.ist_gesperrt, s.art,
 			COALESCE(s.is_manually_blocked, false) as is_manually_blocked,
