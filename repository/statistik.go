@@ -38,7 +38,7 @@ type Ladenhueter struct {
 	Erscheinungsjahr int    `json:"erscheinungsjahr,omitempty"`
 }
 
-// BestandKennzahlen bündelt alle aggregierten Zahlen aus EINEM Scan über
+// BestandKennzahlen bündelt alle aggregierten Zahlen aus einem Scan über
 // buecher_exemplare (statt mehrerer Subselects pro Kennzahl).
 type BestandKennzahlen struct {
 	GesamtBestand    int
@@ -73,19 +73,18 @@ func BestandsFilterBedingung(typ string) (fragment string, normalform string) {
 // einem einzigen aggregierten Statement.
 func LadeBestandKennzahlen(ctx context.Context, db Datenbank, typFilter string) (*BestandKennzahlen, error) {
 	// Als "Verlust" zählen ausschliesslich unfreiwillige Abgänge: VERLUST (nicht
-	// auffindbar) und BESCHAEDIGUNG (Schadensfall). Bewusst NICHT enthalten sind
-	// AUSSORTIERT (veraltet/verschlissen, kuratierte Entfernung) und BESTANDSKORREKTUR
-	// (Import-/Sync-Anpassung, laut Migration 043 "kein echter Abgang") — sie würden
+	// auffindbar) und BESCHAEDIGUNG (Schadensfall). Bewusst nicht enthalten sind
+	// AUSSORTIERT (veraltet/verschlissen, kuratierte Entfernung) und Bestandskorrektur
+	// (Import-/Sync-Anpassung, "kein echter Abgang") — sie würden
 	// Verlustquote und Wiederbeschaffungswert künstlich aufblähen. aussonderung_grund
-	// ist per chk_aussonderung_grund (Migration 043) nur bei ist_ausgesondert gesetzt.
+	// ist per chk_aussonderung_grund nur bei ist_ausgesondert gesetzt.
 	// Die Grenze ist die des Abgangsbuchs: Ein bestelltes Exemplar, das nie eintraf und
 	// als verloren ausgebucht wurde, war nie im Bestand und ist kein Verlust.
 	const istVerlust = sqlIstAbgang + " AND e.aussonderung_grund IN ('VERLUST', 'BESCHAEDIGUNG')"
 
-	// ⚡ Bolt: Extracted active loans subquery into a CTE and restored DISTINCT.
-	// This prevents the PostgreSQL planner from executing a suboptimal nested loop left join
-	// when the dataset scales, instead allowing a highly efficient parallel hash join,
-	// while strictly preventing row duplication if a single copy has multiple active loans.
+	// Die offenen Ausleihen stehen als CTE mit DISTINCT vor der Abfrage: So wählt der Planer
+	// bei wachsendem Bestand einen Hash-Join statt einer verschachtelten Schleife, und ein
+	// Exemplar mit zwei offenen Ausleihen verdoppelt keine Zeile.
 	q := fmt.Sprintf(`
 		WITH aktive_ausleihen AS (
 			SELECT DISTINCT exemplar_id FROM ausleihen WHERE rueckgabe_am IS NULL
@@ -121,13 +120,13 @@ func LadeBestandKennzahlen(ctx context.Context, db Datenbank, typFilter string) 
 	return k, nil
 }
 
-// AusleihZeitraumBedingung mappt den ?zeitraum=-Parameter auf ein serverkontrolliertes
-// SQL-Fragment für das Renner-Ranking (Werte sind nie nutzergesteuertes SQL).
+// AusleihZeitraumBedingung bildet den Parameter ?zeitraum= auf ein SQL-Stück für die Rangliste
+// der Renner ab; die Werte bestimmt der Server, nie die Anfrage.
 //
-// Das Schuljahr wird in Go in der Schulzeitzone bestimmt (schulzeit), nicht per
-// CURRENT_DATE in der Sitzungszone der DB (UTC): am 1. August bzw. 1. Januar zwischen
-// 0 und 1 Uhr Berliner Zeit lag der Stichtag sonst ein Jahr daneben (Rasterdurchgang
-// 02.09.2026). Das Datum wird als ISO-Literal eingesetzt — kein Nutzerwert.
+// Das Schuljahr wird in Go in der Zeitzone der Schule bestimmt (schulzeit), nicht per
+// CURRENT_DATE in der Zeitzone der Sitzung (UTC): Am 1. August und am 1. Januar zwischen 0 und
+// 1 Uhr Berliner Zeit läge der Stichtag sonst ein Jahr daneben. Das Datum wird als ISO-Literal
+// eingesetzt und ist kein Wert der Anfrage.
 func AusleihZeitraumBedingung(zeitraum string) string {
 	switch zeitraum {
 	case "schuljahr":
@@ -190,7 +189,7 @@ func LadeRenner(ctx context.Context, db Datenbank, ausleihenFilter, typFilter st
 }
 
 // LadeLadenhueter liefert die Ladenhüter: entweder seit >2 Jahren nicht mehr
-// ausgeliehen, ODER noch nie ausgeliehen UND bereits seit >2 Jahren im Bestand. Der
+// ausgeliehen, oder noch nie ausgeliehen und bereits seit >2 Jahren im Bestand. Der
 // Bestandsalter-Filter (MIN(e.erstellt_am)) verhindert, dass frisch gekaufte Neuzugänge
 // — nie ausgeliehen, weil brandneu — sofort auf der Aussonderungsliste landen und
 // versehentlich entsorgt werden. Best-effort mit leerer Liste bei Fehlern.

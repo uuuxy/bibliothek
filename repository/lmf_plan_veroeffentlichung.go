@@ -9,16 +9,15 @@ import (
 	"time"
 )
 
-// Entwurf und Veröffentlichung des LMF-Plans (Migration 100, Absprache vom 06.09.2026: „der Plan
-// nimmt die Schulleitung immer erst ab") und die zwei Regeln, die den Plan je Art
-// verschieden machen (06.09.2026):
+// Entwurf und Veröffentlichung des LMF-Plans (den Plan nimmt die Schulleitung ab, bevor er
+// gilt) und die zwei Regeln, die den Plan je Art verschieden machen:
 //
-//   - Vor den Sommerferien geben ALLE Klassen ihre alten Bücher ab und bekommen direkt die
+//   - Vor den Sommerferien geben alle Klassen ihre alten Bücher ab und bekommen direkt die
 //     neuen — außer den Abschlussklassen und den Klassen, die zum neuen Schuljahr neu
-//     gebildet werden (die 6er werden auf die Zweige H, R, G verteilt): die geben NUR ab.
+//     gebildet werden (die 6er werden auf die Zweige H, R, G verteilt): die geben nur ab.
 //   - Nach den Sommerferien bekommen nur die neu gebildeten Klassen ihre Bücher — die
-//     Eingangsjahrgänge, Einstellung lmf_eingangsjahrgaenge (Vorgabe „5, 7"; „manchmal
-//     kann ja auch mal was dazwischenkommen").
+//     Eingangsjahrgänge, Einstellung lmf_eingangsjahrgaenge (Vorgabe „5, 7"; einstellbar,
+//     weil auch einmal etwas dazwischenkommt).
 
 // lmfEingangsjahrgaengeVorgabe ist die Vorgabe der Einstellung: neue 5er und 7er.
 const lmfEingangsjahrgaengeVorgabe = "5, 7"
@@ -44,12 +43,10 @@ func EingangsjahrgaengeAus(einstellung string) []int {
 	return jahrgaenge
 }
 
-// NormalisiereEingangsjahrgaenge prüft die Eingabe und gibt sie in Normalform zurück
-// („5, 7"). Fehler statt stiller Vorgabe: Bis zum Rasterdurchgang am 06.09.2026 wurde
-// jeder Text gespeichert und angezeigt, aber beim Lesen still verworfen — „8/9" (mit
-// Schrägstrich, so wie Klassen geschrieben werden) hieß gespeichert „8/9" und gerechnet
-// „5, 7". Hier stand bis zum 10.09.2026, der Nachbar lmf_stichtag
-// prüfe „seit jeher" — er tat es nicht; seitdem NormalisiereLMFStichtag.
+// NormalisiereEingangsjahrgaenge prüft die Eingabe und gibt sie in Normalform zurück („5, 7").
+// Ein Fehler statt einer stillen Vorgabe: Sonst würde ein Text wie „8/9" (mit Schrägstrich, wie
+// Klassen geschrieben werden) gespeichert und angezeigt, beim Lesen aber verworfen, und
+// gerechnet würde mit „5, 7".
 func NormalisiereEingangsjahrgaenge(text string) (string, error) {
 	if strings.TrimSpace(text) == "" {
 		return "", nil // leer heißt Vorgabe — das entscheidet der Patch-Pfad
@@ -80,10 +77,10 @@ func NormalisiereEingangsjahrgaenge(text string) (string, error) {
 // tageImMonat eines Nicht-Schaltjahres: Ein Stichtag 29.02. gäbe es drei von vier Jahren nicht.
 var tageImMonat = [13]int{0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 
-// NormalisiereLMFStichtag prüft den Lernmittel-Stichtag: „MM-TT", ein echter Kalendertag.
-// Leer heißt Vorgabe (das entscheidet der Patch-Pfad). Bis zum 10.09.2026 prüfte der
-// Server ihn nicht: „30.06." wurde gespeichert und angezeigt, gerechnet wurde still mit
-// 07-31 (lmfStichtagMonatTag), „02-30" wurde zum 2. März (Bestands-Durchgang).
+// NormalisiereLMFStichtag prüft den Lernmittel-Stichtag: „MM-TT", ein echter Kalendertag. Leer
+// heißt Vorgabe (das entscheidet der Patch-Pfad). Ohne die Prüfung würde „30.06." gespeichert
+// und angezeigt, gerechnet aber still mit 07-31 (lmfStichtagMonatTag), und „02-30" würde zum 2.
+// März.
 func NormalisiereLMFStichtag(text string) (string, error) {
 	s := strings.TrimSpace(text)
 	if s == "" {

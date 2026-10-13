@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// Geraet repräsentiert ein physisches Hardware-Gerät (z. B. Laptop, iPad) der Schule (Tabelle `geraete`).
+// Geraet ist ein Gerät der Schule, etwa ein Laptop oder ein iPad (Tabelle geraete).
 type Geraet struct {
 	// ID ist die UUID des Geräts.
 	ID string `json:"id"`

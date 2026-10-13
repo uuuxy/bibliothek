@@ -1,15 +1,14 @@
 package repository
 
-// loeschrueckstand.go — der Wächter über die nächtlichen Löschroutinen.
+// Der Wächter über die nächtlichen Löschroutinen.
 //
-// Er stellt jede Frage aus loeschfristen.go noch einmal, aber als `count(*)` statt als
-// DELETE/UPDATE, und mit einem Tag Kulanz. Die Antwort ist die einzige, die zählt: Wie
-// viele Zeilen müssten seit mindestens einem Tag weg sein und sind es nicht?
+// Er stellt jede Frage aus loeschfristen.go noch einmal, aber als `count(*)` statt als DELETE
+// oder UPDATE, und mit einem Tag Kulanz. Die Antwort ist die einzige, die zählt: Wie viele
+// Zeilen müssten seit mindestens einem Tag weg sein und sind es nicht?
 //
-// Das ist bewusst ZUSTAND, nicht Protokoll. Ein Job, der still scheitert (falsche
-// Spalte, fehlende Migration, toter Cron), schreibt keine Logzeile, die jemand liest —
-// aber er hinterlässt genau diesen Rückstand. Bis zum 23.08.2026 sah das nur EINE der
-// sechs Routinen; die anderen fünf liefen jede Nacht unbeobachtet.
+// Das ist Zustand, nicht Protokoll. Ein Job, der still scheitert (falsche Spalte, fehlende
+// Migration, toter Cron), schreibt keine Logzeile, die jemand liest, aber er hinterlässt genau
+// diesen Rückstand. Deshalb hat jede Routine ihre Zeile im Wächter.
 
 import (
 	"context"
@@ -27,7 +26,7 @@ type LoeschRueckstand struct {
 }
 
 // zaehle beantwortet eine Löschbedingung als Anzahl. Sie nimmt die Bedingung als
-// GANZES entgegen — Text und Zahlen sind daran nicht mehr getrennt einsetzbar.
+// ganzes entgegen — Text und Zahlen sind daran nicht mehr getrennt einsetzbar.
 func (a *BetriebszustandAbfragen) zaehle(ctx context.Context, tabelle, alias string, b Loeschbedingung) (int, error) {
 	von := tabelle
 	if alias != "" {
@@ -180,7 +179,7 @@ func (a *BetriebszustandAbfragen) zaehleRueckstandVorgaengeUndProtokoll(ctx cont
 	}
 	stand = append(stand, reservierungen)
 
-	// 5b. Quittierte Nachbuch-Meldungen (Migration 117): Lesehistorie-Frist, höchstens 30 Tage.
+	// 5b. Quittierte Nachbuch-Meldungen: Lesehistorie-Frist, höchstens 30 Tage.
 	nachbuchTage := NachbuchMeldungenTage(einst)
 	nachbuch := LoeschRueckstand{Routine: "Quittierte Nachbuch-Meldungen", Frist: tageText(nachbuchTage)}
 	if nachbuch.Zeilen, err = a.zaehle(ctx, "nachbuch_meldungen", "", praedikatNachbuchMeldungen(nachbuchTage, KulanzWaechter)); err != nil {
@@ -203,12 +202,9 @@ func (a *BetriebszustandAbfragen) zaehleRueckstandVorgaengeUndProtokoll(ctx cont
 }
 
 // ProtokollAufbewahrungMonateOderVorgabe liest die Aufbewahrungsfrist aus den Einstellungen und
-// setzt die Untergrenze durch — die EINE Quelle für den Job (jobs.RunAuditAufbewahrung)
-// und den Wächter.
-//
-// Vorher las eine eigene Methode die Zeile per rohem SQL an den Einstellungen vorbei.
-// Das war eine zweite Wahrheitsquelle für denselben Wert; seit die Frist über die
-// Oberfläche einstellbar ist, wäre sie auch eine falsche geworden.
+// setzt die Untergrenze durch: die eine Quelle für den Job (jobs.RunAuditAufbewahrung) und den
+// Wächter. Eine zweite Stelle, die die Zeile an den Einstellungen vorbei läse, wäre eine zweite
+// Wahrheit für denselben Wert.
 func ProtokollAufbewahrungMonateOderVorgabe(v *int) int {
 	if v == nil || *v < protokollAufbewahrungMonateMinimum {
 		return ProtokollAufbewahrungMonateVorgabe
@@ -226,8 +222,8 @@ func tageText(tage int) string {
 }
 
 // TageMitZahl nennt eine Zahl von Tagen mit dem passenden Wort: „1 Tag", sonst „N Tage".
-// Selbstprüfung und Datenschutz-Auskunft schreiben ihre Fristen damit; seit die Frist der
-// Schülerbücherei ein Tag ist (29.09.2026), kommt die Eins dort vor.
+// Selbstprüfung und Datenschutz-Auskunft schreiben ihre Fristen damit; die Frist der
+// Schülerbücherei ist ein Tag, die Eins kommt dort also vor.
 func TageMitZahl(tage int) string {
 	if tage == 1 {
 		return "1 Tag"

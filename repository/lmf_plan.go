@@ -12,11 +12,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Der LMF-Plan als Reihenfolge (Migration 097): Ein Plan je Art und Schuljahr trägt den
+// Der LMF-Plan als Reihenfolge: Ein Plan je Art und Schuljahr trägt den
 // Rahmen (erster Tag, Startstunde, Stunden je Tag), seine Zeilen stehen in lmf_termine
 // mit Position — Datum und Stunde hat der Server aus dem Rahmen gerechnet
 // (pkg/lmfplan) und schreibt sie mit, damit Portal, PDF und die Frist-Kopplung den Plan
-// lesen wie bisher. Ausgelassene Klassen (die Oberstufe organisiert sich selbst) merkt
+// nur lesen. Ausgelassene Klassen (die Oberstufe organisiert sich selbst) merkt
 // sich der Plan, damit sie nicht als „ohne Termin" gelten und das nächste Jahr sie
 // wieder auslässt.
 
@@ -25,20 +25,20 @@ type LMFPlan struct {
 	ID              string `json:"id"`
 	Art             string `json:"art"`
 	SchuljahrBeginn string `json:"schuljahr_beginn"` // YYYY-MM-DD
-	// ErsterTag/Startstunde: der Beginn. Beim Rückgabe-Plan GERECHNET aus dem Ende
-	// (Migration 101), beim Ausgabe-Plan die Vorgabe des Planers.
+	// ErsterTag/Startstunde: der Beginn. Beim Rückgabe-Plan gerechnet aus dem Ende,
+	// beim Ausgabe-Plan die Vorgabe des Planers.
 	ErsterTag    string `json:"erster_tag"` // YYYY-MM-DD
 	Startstunde  int    `json:"startstunde"`
 	StundenJeTag int    `json:"stunden_je_tag"`
-	// LetzterTag/LetzteStunde: der Anker des Rückgabe-Plans — Donnerstag vor den
-	// Sommerferien, 4. Stunde (06.09.2026); die Reihenfolge fließt rückwärts
-	// davor. Beim Ausgabe-Plan leer ("" / 0): sein Anker ist der Beginn.
+	// LetzterTag und LetzteStunde sind der Anker des Rückgabe-Plans: Donnerstag vor den
+	// Sommerferien, 4. Stunde; die Reihenfolge fließt rückwärts davor. Beim Ausgabe-Plan leer
+	// ("" und 0): Sein Anker ist der Beginn.
 	LetzterTag   string `json:"letzter_tag"` // YYYY-MM-DD oder ""
 	LetzteStunde int    `json:"letzte_stunde"`
-	// VeroeffentlichtAm: nil = Entwurf (Migration 100) — nur im Planer sichtbar, keine
+	// VeroeffentlichtAm: nil = Entwurf — nur im Planer sichtbar, keine
 	// Fristen. Gesetzt (RFC 3339) = gilt für Portal, PDF und Frist-Kopplung.
 	VeroeffentlichtAm *string `json:"veroeffentlicht_am"`
-	// FreieTage: Tage, die dieser Plan überspringt (Migration 099) — bewegliche
+	// FreieTage: Tage, die dieser Plan überspringt — bewegliche
 	// Ferientage, pädagogische Tage, der Brückentag nach Fronleichnam. Gesetzliche
 	// Feiertage stehen hier nicht, die kennt der Server (pkg/lmfplan).
 	FreieTage []LMFFreierTag `json:"freie_tage"`
@@ -50,9 +50,9 @@ type LMFFreierTag struct {
 	Grund string `json:"grund"`
 }
 
-// LMFPlanZeile ist eine Zeile der Reihenfolge — mit den vom Server gerechneten Plätzen.
-// Fest: Datum und Stunde sind vorgegeben, nicht gerechnet (die Klasse mit dem Ausflug,
-// Migration 099); die übrigen Zeilen fließen um diesen Platz herum.
+// LMFPlanZeile ist eine Zeile der Reihenfolge, mit den vom Server gerechneten Plätzen. Fest
+// heißt: Datum und Stunde sind vorgegeben, nicht gerechnet (die Klasse mit dem Ausflug); die
+// übrigen Zeilen fließen um diesen Platz herum.
 type LMFPlanZeile struct {
 	Position int      `json:"position"`
 	Datum    string   `json:"datum"`
@@ -180,27 +180,21 @@ func (a *LMFAbfragen) ladeAusgelassene(ctx context.Context, planID string) ([]st
 	return klassen, rows.Err()
 }
 
-// SchreibePlan legt den Plan der Art für das Schuljahr des ersten Tages an oder schreibt
-// ihn um — Rahmen (mit freien Tagen), Zeilen (vollständig ersetzt, mit Platz, Position
-// und fest-Marke) und ausgelassene Klassen in einer Transaktion. Klassennamen laufen
-// durch das Vokabular; die Antwort trägt die kanonisierten Namen. Der Veröffentlichungs-
-// Stempel bleibt, wie er ist: Ein neuer Plan ist Entwurf, ein veröffentlichter bleibt
-// veröffentlicht (Migration 100).
+// SchreibePlan legt den Plan der Art für das Schuljahr des ersten Tages an oder schreibt ihn
+// um: Rahmen (mit freien Tagen), Zeilen (vollständig ersetzt, mit Platz, Position und
+// fest-Marke) und ausgelassene Klassen. Klassennamen laufen durch das Vokabular; die Antwort
+// trägt die Namen in dessen Schreibweise. Der Stempel der Veröffentlichung bleibt, wie er ist:
+// Ein neuer Plan ist Entwurf, ein veröffentlichter bleibt veröffentlicht.
 //
-// Geschrieben wird in eine Transaktion, die der AUFRUFER hält — damit
-// Plan und Frist-Kopplung in einer Klammer stehen (api/lernmittel/lmf_plan.go). Bis 07.09.2026
-// hieß das SaveLmfPlan und committete selbst, und die Kopplung lief danach am Pool:
-// Scheiterte sie, war der Plan geschrieben und die Fristen halb — ein Zustand, den ein
-// zweiter Anlauf nicht mehr reparieren konnte, weil der alte Plan nicht mehr lesbar war.
-// Eine Hülle mit eigener Transaktion gibt es bewusst nicht mehr: Sie rief niemand, und
-// eine Tür, durch die niemand geht, ist eine, die irgendwann jemand falsch benutzt.
+// Geschrieben wird in die Transaktion des Rufers, damit Plan und Frist-Kopplung in einer
+// Klammer stehen (api/lernmittel/lmf_plan.go). Schriebe der Plan für sich fest und liefe die
+// Kopplung danach, wäre nach ihrem Scheitern der Plan geschrieben und die Fristen halb; ein
+// zweiter Anlauf könnte das nicht reparieren, weil der alte Plan nicht mehr lesbar ist.
 func (a *LMFAbfragen) SchreibePlan(ctx context.Context, tx pgx.Tx, plan LMFPlan, zeilen []LMFPlanZeile, plaetze []lmfplan.Platz, ausgelassen []string) (LMFPlanStand, error) {
-	// Je Zeile ein Platz — die Schleife unten greift mit plaetze[i] in die zweite
-	// Scheibe. Bis zum 12.09.2026 sicherte das nur der eine Aufrufer zu (Register,
-	// Paket 5: „vier Zusicherungen halten nur per Verabredung"); hier steht sie an der
-	// Tür, die sie braucht, und VOR dem ersten Schreiben: Ein Missverhältnis wäre sonst
-	// ein Indexfehler mitten in einer offenen Transaktion — halb geschriebener Plan,
-	// keine lesbare Meldung.
+	// Je Zeile ein Platz: Die Schleife unten greift mit plaetze[i] in die zweite Scheibe. Die
+	// Prüfung steht an der Tür, die sie braucht, und vor dem ersten Schreiben: Ein
+	// Missverhältnis wäre sonst ein Indexfehler mitten in einer offenen Transaktion, mit halb
+	// geschriebenem Plan und ohne lesbare Meldung.
 	if len(plaetze) != len(zeilen) {
 		return LMFPlanStand{}, fmt.Errorf("lmf-plan: %d Plätze für %d Zeilen", len(plaetze), len(zeilen))
 	}
@@ -224,7 +218,7 @@ func (a *LMFAbfragen) SchreibePlan(ctx context.Context, tx pgx.Tx, plan LMFPlan,
 		plan.Art, sjb, ersterTag, plan.Startstunde, plan.StundenJeTag, plan.LetzterTag, plan.LetzteStunde), &st.Plan); err != nil {
 		return st, err
 	}
-	// Zeilen vollständig ersetzen: Der Plan IST die Reihenfolge, Einzel-IDs gibt es nicht.
+	// Zeilen vollständig ersetzen: Der Plan ist die Reihenfolge, Einzel-IDs gibt es nicht.
 	if _, err := tx.Exec(ctx, `DELETE FROM lmf_termine WHERE plan_id = $1`, st.Plan.ID); err != nil {
 		return st, err
 	}

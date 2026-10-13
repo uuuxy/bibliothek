@@ -1,16 +1,16 @@
 package repository
 
-// dsgvo_konto_vorgaenge.go — die Vorgänge, die eine Person mit ihrem Zugangskonto selbst
-// bearbeitet hat: gebuchte Ausleihen und Rückgaben, Stornierungen, Bescheide, Inventuren,
-// bearbeitete Meldungen, Protokoll- und Verwaltungseinträge, dazu die laufenden Anmeldungen
-// (seit wann; der Prüfwert des Passworts steht nicht darin). Das VVT zählt sie zu ihren Daten
-// (Tätigkeit 3); entschieden am 24.09.2026: in die Auskunft, OHNE die Daten Dritter
-// (OFFEN.md 5.19, Art. 15 Abs. 4 DSGVO). Deshalb liest jede Teilabfrage nur Zeitpunkt,
-// Handlung und — beim Verwaltungsprotokoll — die IP-Adresse des eigenen Arbeitsplatzes. Wer
-// betroffen war, welches Buch, welcher Betrag, welche Protokoll-Details: nichts davon.
+// Die Vorgänge, die eine Person mit ihrem Zugangskonto selbst bearbeitet hat: gebuchte
+// Ausleihen und Rückgaben, Stornierungen, Bescheide, Inventuren, bearbeitete Meldungen,
+// Protokoll- und Verwaltungseinträge, dazu die laufenden Anmeldungen (seit wann; der Prüfwert
+// des Passworts steht nicht darin). Das VVT zählt sie zu ihren Daten (Tätigkeit 3); sie stehen
+// in der Auskunft ohne die Daten Dritter (Art. 15 Abs. 4 DSGVO). Deshalb liest jede Teilabfrage
+// nur Zeitpunkt, Handlung und, beim Verwaltungsprotokoll, die IP-Adresse des eigenen
+// Arbeitsplatzes. Wer betroffen war, welches Buch, welcher Betrag, welche Protokoll-Details:
+// nichts davon.
 //
-// Jede Spalte, die auf benutzer zeigt, steht hier oder bei den Anfragen (dsgvo_konto.go);
-// die Ratsche repository/dsgvo_konto_quellen_pg_test.go hält die Liste gegen das Schema.
+// Jede Spalte, die auf benutzer zeigt, steht hier oder bei den Anfragen (dsgvo_konto.go); die
+// Ratsche repository/dsgvo_konto_quellen_pg_test.go hält die Liste gegen das Schema.
 //
 // Der Zeitpunkt ist ein Zeiger: Bearbeiter und Zeitpunkt setzen die Schreiber zusammen, die
 // Datenbank verlangt es aber nicht. Eine Zeile mit Bearbeiter und ohne Zeitpunkt soll in der

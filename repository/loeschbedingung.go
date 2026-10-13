@@ -1,11 +1,10 @@
 package repository
 
-// loeschbedingung.go — die Begriffe, mit denen die Löschroutinen rechnen: Fristen,
-// Kulanz, und die Bauform, in der eine Bedingung ihre Zahlen mit sich führt.
+// Die Begriffe, mit denen die Löschroutinen rechnen: Fristen, Kulanz und die Bauform, in der
+// eine Bedingung ihre Zahlen mit sich führt.
 //
-// Getrennt von loeschfristen.go, wo die Bedingungen selbst stehen: Dort ändert sich
-// etwas, wenn eine fachliche Regel wechselt — hier, wenn eine Frist wechselt. Zwei
-// Anlässe, zwei Dateien.
+// Getrennt von loeschfristen.go, wo die Bedingungen selbst stehen: Dort ändert sich etwas, wenn
+// eine fachliche Regel wechselt, hier, wenn eine Frist wechselt.
 
 const (
 	// KulanzJob ist die Kulanz des Löschers selbst: keine. Er ist die Instanz, die die
@@ -18,18 +17,17 @@ const (
 	// AnonymisierungPapierkorbTage sind die Tage nach dem Soft-Delete
 	// (Papierkorb), nach denen ein Schüler-Datensatz anonymisiert wird.
 	AnonymisierungPapierkorbTage = 180
-	// AbgaengerKarenzTageVorgabe ist die Vorgabe der Karenzzeit nach dem Abgang: So
-	// lange bleibt ein Abgänger ohne offene Vorgänge nur gesperrt, bevor der nächtliche
-	// Job ihn anonymisiert. Bis zum 02.09.2026 anonymisierte der LUSD-Import sofort — und
-	// nahm damit jede Reparatur einer falschen Zuordnung (Namensänderung ohne Schüler-ID
-	// = Abgänger + Neuanlage) mit. 90 Tage decken das erste Quartal nach dem Schuljahres-
-	// wechsel, in dem solche Fälle an der Theke auffallen. Der Wert ist einstellbar
-	// (AbgaengerKarenzSchluessel); 0 heißt „sofort" wie früher. Die endgültige Löschung
-	// (AbgaengerStichjahr, 30. Januar) trifft seit 05.09.2026 nur anonymisierte Zeilen —
-	// sie wartet die Karenz ab, statt sie abzuschneiden (praedikatAbgaengerLoeschung).
+	// AbgaengerKarenzTageVorgabe ist die Vorgabe der Karenzzeit nach dem Abgang: So lange
+	// bleibt ein Abgänger ohne offene Vorgänge nur gesperrt, bevor der nächtliche Job ihn
+	// anonymisiert. Eine sofortige Anonymisierung beim LUSD-Import nähme jede Reparatur einer
+	// falschen Zuordnung mit (Namensänderung ohne Schüler-ID = Abgänger + Neuanlage). 90 Tage
+	// decken das erste Quartal nach dem Schuljahreswechsel, in dem solche Fälle an der Theke
+	// auffallen. Der Wert ist einstellbar (AbgaengerKarenzSchluessel); 0 heißt „sofort". Die
+	// endgültige Löschung (AbgaengerStichjahr, 30. Januar) trifft nur anonymisierte Zeilen: Sie
+	// wartet die Karenz ab, statt sie abzuschneiden (praedikatAbgaengerLoeschung).
 	AbgaengerKarenzTageVorgabe = 90
 	// AbgaengerKarenzSchluessel ist die Zeile in system_einstellungen, aus der Import,
-	// Job und Wächter die Karenz lesen — EIN Schlüssel für drei Leser.
+	// Job und Wächter die Karenz lesen — ein Schlüssel für drei Leser.
 	AbgaengerKarenzSchluessel = "abgaenger_karenz_tage"
 
 	// BearbeiterKennungTage sind die Tage nach der Rückgabe, nach denen eine Ausleihe nicht
@@ -44,21 +42,18 @@ const (
 	// (wer hat die Gebühr storniert?) ist der Zweck der Tabellen.
 	protokollAufbewahrungMonateMinimum = 6
 	// ProtokollAufbewahrungSchluessel ist die Zeile in system_einstellungen, aus der Job
-	// UND Wächter die Frist lesen.
+	// und Wächter die Frist lesen.
 	ProtokollAufbewahrungSchluessel = "audit_aufbewahrung_monate"
 )
 
-// Loeschbedingung ist eine WHERE-Bedingung MIT ihren Parametern.
+// Loeschbedingung ist eine WHERE-Bedingung mit ihren Parametern.
 //
-// Warum als Paar und nicht als String: Vorher lieferte jedes Prädikat nur den Text, die
-// Zahlen setzte der Aufrufer daneben ein. Das ist eine Konvention, die nichts durchsetzt
-// — und bei `make_interval(months => $1, days => $2)` kostet ein Vertauschen alles: Aus
-// 24 Monaten Aufbewahrung werden 24 Tage, die Grenze springt um zwei Jahre nach vorn und
-// das Protokoll ist bis auf den letzten Monat weg. Nächtlich, unumkehrbar, und es
-// kompiliert fehlerfrei. Die fünf anderen Prädikate überstehen ein Vertauschen nur, weil
-// Addition kommutativ ist — zufällig sicher ist nicht sicher.
-//
-// Jetzt kann die Zahl nur noch dorthin, wo ihr Name steht.
+// Ein Paar und kein String: Lieferte ein Prädikat nur den Text und setzte der Rufer die Zahlen
+// daneben ein, wäre das eine Verabredung, die nichts durchsetzt. Bei `make_interval(months =>
+// $1, days => $2)` kostet ein Vertauschen alles: Aus 24 Monaten Aufbewahrung werden 24 Tage,
+// die Grenze springt um zwei Jahre nach vorn, und das Protokoll ist bis auf den letzten Monat
+// weg, nächtlich, unumkehrbar und ohne Fehler beim Bauen. So kann die Zahl nur dorthin, wo ihr
+// Name steht.
 type Loeschbedingung struct {
 	Where string
 	Args  []any

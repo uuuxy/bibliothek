@@ -22,7 +22,7 @@ type UeberfaelligesMedium struct {
 	Barcode string `json:"barcode"`
 	// CoverURL verweist optional auf das Coverbild des Buchs.
 	CoverURL string `json:"cover_url,omitempty"`
-	// FaelligAm ist das formatierte Fälligkeitsdatum (z. B. "20.06.2026").
+	// FaelligAm ist der Tag der Frist als Text (TT.MM.JJJJ).
 	FaelligAm string `json:"faellig_am"`
 	// TageUeberfaellig speichert die Anzahl der Tage, die das Medium bereits überfällig ist.
 	TageUeberfaellig int `json:"tage_ueberfaellig"`
@@ -80,14 +80,11 @@ func NewMahnwesenAbfragen(pool db.PgxPoolIface) *MahnwesenAbfragen {
 	return &MahnwesenAbfragen{db: pool}
 }
 
-// ZaehleRueckgabenHeute zählt die heute zurückgegebenen Ausleihen — „heute" ist der
-// Kalendertag der SCHULE.
-//
-// Bis zum 17.09.2026 rechneten beide Seiten in der Zeitzone der Sitzung (im Image UTC):
-// Eine Rückgabe zwischen 0 und 2 Uhr Berliner Zeit zählte zum Vortag. Die Zahl steht auf
-// dem Dashboard der Bibliothek; sie ist keine Grundlage für eine Entscheidung, aber eine
-// Zahl, die um zwei Stunden verrutscht, erklärt niemandem, warum die Rückgabe von eben
-// nicht zu sehen ist.
+// ZaehleRueckgabenHeute zählt die heute zurückgegebenen Ausleihen; „heute" ist der Kalendertag
+// der Schule. In der Zeitzone der Sitzung (im Image UTC) zählte eine Rückgabe zwischen 0 und 2
+// Uhr Berliner Zeit zum Vortag. Die Zahl steht auf dem Dashboard der Bibliothek; eine Zahl, die
+// um zwei Stunden verrutscht, erklärt niemandem, warum die Rückgabe von eben nicht zu sehen
+// ist.
 func (a *MahnwesenAbfragen) ZaehleRueckgabenHeute(ctx context.Context) (int, error) {
 	var anzahl int
 	err := a.db.QueryRow(ctx, `

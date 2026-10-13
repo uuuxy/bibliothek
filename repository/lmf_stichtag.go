@@ -1,26 +1,15 @@
 package repository
 
-// lmf_stichtag.go — der globale LMF-Stichtag („MM-TT", Vorgabe 31.07.): EINE Rechnung.
+// Der globale LMF-Stichtag („MM-TT", Vorgabe 31.07.): eine Rechnung für die Ausleihe und für
+// den Rückweg des Plans. Mit zwei Fassungen bekäme dasselbe Schulbuch je nach Weg eine andere
+// Frist: Die Rechnung `jahr := now.Year(); if now.Month() >= August { jahr++ }` stimmt nur,
+// solange der Stichtag in die zweite Hälfte des Schuljahres fällt (Januar bis Juli); ein
+// Stichtag im September ergäbe den 30.09. des folgenden Schuljahres, dreizehn Monate Frist.
 //
-// Bis zum 06.09.2026 stand sie zweimal im Haus, und die beiden Fassungen waren sich nur
-// bei der Vorgabe einig:
+// Zwei Fragen gehen an dieselbe Rechnung, weil die Pfade Verschiedenes wissen wollen; die eine
+// ist über die andere gebaut, nicht neben sie:
 //
-//   - internal/service (Ausleihe) rechnete `jahr := now.Year(); if now.Month() >= August
-//     { jahr++ }`. Das stimmt nur, solange der Stichtag in die ZWEITE Hälfte des
-//     Schuljahres fällt (Januar–Juli). Ein Stichtag im September ergab dort den 30.09.
-//     des FOLGENDEN Schuljahres — dreizehn Monate Frist.
-//   - api (Rückweg des Plans) rechnete über SchuljahrBeginn und lag damit richtig; der
-//     Kommentar daneben behauptete „dieselbe Rechnung wie die Fristberechnung beim
-//     Ausleihen". Sie war es nicht.
-//
-// Dasselbe Schulbuch hätte je nach Weg eine um ein Jahr verschiedene Frist bekommen:
-// beim Ausleihen die eine, beim Herausnehmen der Klasse aus dem Plan die andere.
-// Bugklasse „Doppelte Wahrheitsquelle" (docs/sweeps.md).
-//
-// Geblieben sind ZWEI Fragen an dieselbe Rechnung, weil die Pfade wirklich Verschiedenes
-// wissen wollen — die eine ist über die andere gebaut, nicht neben sie:
-//
-//   - LMFStichtagImSchuljahr: „Welcher Tag ist der Stichtag DIESES Schuljahres?" Das ist
+//   - LMFStichtagImSchuljahr: „Welcher Tag ist der Stichtag dieses Schuljahres?" Das ist
 //     die Frage des Rückwegs: Eine Klasse verliert ihren Termin, ihre Fristen gehen an
 //     den Stichtag des Schuljahres zurück, in dem der Termin lag.
 //   - LMFStichtagAbTag: „Welcher Stichtag liegt noch vor mir?" Das ist die Frage der
@@ -36,8 +25,8 @@ import (
 )
 
 // LMFStichtagVorgabe ist die Vorgabe: 31. Juli, das Ende des hessischen Schuljahres.
-// Sie steht hier und wird von den Einstellungen, ihrem Zurücksetzen und den
-// Notfallwerten der Ausleihe gelesen — vorher stand das Literal an fünf Stellen.
+// Einstellungen, ihr Zurücksetzen und die Notfallwerte der Ausleihe lesen sie hier, damit das
+// Literal an einer Stelle steht.
 const LMFStichtagVorgabe = "07-31"
 
 // lmfStichtagMonatTag zerlegt „MM-TT". Unlesbares fällt auf die Vorgabe zurück: Der
@@ -60,11 +49,11 @@ func lmfStichtagMonatTag(stichtag string) (time.Month, int) {
 // LMFStichtagImSchuljahr legt den Stichtag in das Schuljahr eines Tages: die erste
 // Wiederkehr von „MM-TT" ab dem 1. August dieses Schuljahres. Für die Vorgabe 07-31 ist
 // das immer der letzte Tag des Schuljahres; für einen Stichtag ab August der Termin im
-// ERSTEN Kalenderjahr des Schuljahres.
+// ersten Kalenderjahr des Schuljahres.
 //
 // Die Uhrzeit ist 12:00 der Schulzeitzone — ein Mittagswert, der bei keiner
 // Sommerzeitumstellung auf den Nachbartag kippt. Zur Frist wird daraus erst
-// service.TagesEndeInSchulzeitzone (23:59:59); diese Funktion liefert einen KALENDERTAG,
+// service.TagesEndeInSchulzeitzone (23:59:59); diese Funktion liefert einen Kalendertag,
 // keine Frist.
 func LMFStichtagImSchuljahr(tag time.Time, stichtag string) time.Time {
 	monat, tagImMonat := lmfStichtagMonatTag(stichtag)

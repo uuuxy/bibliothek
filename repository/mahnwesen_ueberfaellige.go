@@ -135,13 +135,12 @@ func KlassenSchluessel(klasse string) string {
 	return strings.ToLower(strings.TrimSpace(klasse))
 }
 
-// reichereLehrerEmailsAn ordnet den Klassen die Lehrer-E-Mails aus dem Mapping zu.
-// Best-effort: bei fehlendem/teilweisem Mapping bleibt LehrerEmail leer.
+// reichereLehrerEmailsAn ordnet den Klassen die Adressen der Klassenleitungen zu. Fehlt eine
+// Zuordnung, bleibt LehrerEmail leer.
 //
-// Verglichen wird NORMALISIERT. Vorher war es ein exakter Schlüsselvergleich: Ein im
-// Mapping als „5A" oder mit angehängtem Leerzeichen erfasstes Kürzel traf die Klasse
-// „5a" nicht — die Oberfläche meldete „keine E-Mail", obwohl die Adresse hinterlegt
-// war, und der Versand übersprang die Klasse still.
+// Verglichen wird normalisiert: Bei einem genauen Vergleich träfe ein Kürzel, das als „5A" oder
+// mit angehängtem Leerzeichen erfasst ist, die Klasse „5a" nicht. Die Oberfläche meldete „keine
+// E-Mail", obwohl die Adresse hinterlegt ist, und der Versand überspränge die Klasse still.
 func (a *MahnwesenAbfragen) reichereLehrerEmailsAn(ctx context.Context, klassen []MahnwesenKlasse) {
 	if len(klassen) == 0 {
 		return

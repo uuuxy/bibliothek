@@ -8,11 +8,11 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Der LMF-Plan (Migration 096): Rückgabe- und Ausgabetermine je Klasse — die Excel-
+// Der LMF-Plan: Rückgabe- und Ausgabetermine je Klasse — die Excel-
 // Tabelle der Schule als Tabelle im System. Ein Termin hat Datum, Stunde, Art und
 // Vermerk und 0..n Klassen aus dem Vokabular; „Bücher setzen" ist ein Termin ohne
-// Klasse, „6F1/6F2" einer mit zwei. Geschrieben werden Termine seit Migration 097
-// NUR über den Plan (lmf_plan.go): Die Reihenfolge ist die Wahrheit, Datum und Stunde
+// Klasse, „6F1/6F2" einer mit zwei. Geschrieben werden Termine
+// nur über den Plan (lmf_plan.go): Die Reihenfolge ist die Wahrheit, Datum und Stunde
 // sind gerechnet — eine zweite Tür je Zeile gäbe zwei Wahrheiten.
 
 // Die zwei Arten eines Termins: Rückgabe (setzt die Frist der Klasse) und Ausgabe.
@@ -21,10 +21,9 @@ const (
 	LMFTerminAusgabe   = "ausgabe"
 )
 
-// LMFTermin ist eine Zeile des Plans, so wie Oberfläche und PDF sie lesen. „Nur
-// Rückgabe" ist seit 06.09.2026 kein gerechnetes Feld mehr, sondern Text im Vermerk —
-// der Planer belegt ihn im Vorschlag vor, die Bibliothek darf ihn ändern (Absprache: „fest
-// verankert … das ist nicht gut, es sollte im Feld sein").
+// LMFTermin ist eine Zeile des Plans, so wie Oberfläche und PDF sie lesen. „Nur Rückgabe" ist
+// kein gerechnetes Feld, sondern Text im Vermerk: Der Planer belegt ihn im Vorschlag vor, die
+// Bibliothek darf ihn ändern.
 type LMFTermin struct {
 	ID      string   `json:"id"`
 	Datum   string   `json:"datum"` // YYYY-MM-DD
@@ -71,7 +70,7 @@ func NewLMFAbfragen(pool db.PgxPoolIface) *LMFAbfragen {
 // LadeTermine liefert die Termine veröffentlichter Pläne ab einem Datum
 // (einschließlich), nach Datum und Stunde sortiert; ab = Nullzeit liefert alle. Die
 // Klassen kommen sortiert mit, damit „6F1/6F2" in Oberfläche und PDF gleich aussieht.
-// Entwürfe (Migration 100) sieht nur, wer MitEntwuerfen setzt.
+// Entwürfe sieht nur, wer MitEntwuerfen setzt.
 func (a *LMFAbfragen) LadeTermine(ctx context.Context, ab time.Time, f LMFListenFilter) ([]LMFTermin, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT t.id, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.art, t.vermerk,
@@ -110,18 +109,16 @@ func nullbaresDatum(t time.Time) *time.Time {
 // LMFTerminLage sagt, wo eine Klasse im veröffentlichten Rückgabe-Plan steht, gesehen von
 // einem Kalendertag aus. Der Ausleihdienst fragt sie beim Ausleihen eines Schulbuchs.
 type LMFTerminLage struct {
-	// Naechster ist der früheste Rückgabe-Termin der Klasse NACH dem Tag (Mitternacht,
+	// Naechster ist der früheste Rückgabe-Termin der Klasse nach dem Tag (Mitternacht,
 	// Schulzeitzone) — Schreibvariante der Klasse egal, Ausgabe-Zeilen zählen nicht,
-	// Entwürfe zählen nicht (Migration 100).
+	// Entwürfe zählen nicht.
 	Naechster time.Time
 	// Bevorstehend: es gibt einen solchen Termin.
 	Bevorstehend bool
-	// Vergangen: die Klasse hatte im Schuljahr des Tages schon einen Rückgabe-Termin am
-	// oder vor dem Tag. Dann bekommt ein Schulbuch, das jetzt noch ausgegeben wird, den
-	// Stichtag des FOLGENDEN Schuljahres als Frist (Entscheidung vom 13.09.2026). Bis
-	// zum 14.09.2026 galt am Termintag der Termin selbst als Frist (heute 23:59) und danach
-	// der Stichtag des laufenden Schuljahres — ein Tag in den Ferien; nach den Ferien wäre
-	// die ganze Klasse überfällig und nach 14 Tagen gesperrt gewesen.
+	// Vergangen: Die Klasse hatte im Schuljahr des Tages schon einen Rückgabe-Termin am oder
+	// vor dem Tag. Dann bekommt ein Schulbuch, das jetzt noch ausgegeben wird, den Stichtag des
+	// folgenden Schuljahres als Frist. Mit dem Stichtag des laufenden Schuljahres läge die
+	// Frist in den Ferien; danach wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt.
 	Vergangen bool
 }
 
@@ -154,12 +151,11 @@ func (a *LMFAbfragen) LadeRueckgabeTerminLage(ctx context.Context, klasse string
 }
 
 // sqlSchulbuchFristGehtMit sagt, wessen offene Schulbücher eine Frist für die ganze Klasse
-// mitnehmen — die Massenverlängerung (VerlaengereLernmittelDerKlasse) und der LMF-Plan
-// (SetzeLernmittelFristFuerKlassen); s ist die Sicht `schueler`. Es ist die Regel der Theke
-// für das Lernmittel (service.SperreAmLeserHaeltAn): Die Sperre von Hand hält an, ein
+// mitnehmen: die Massenverlängerung (VerlaengereLernmittelDerKlasse) und der LMF-Plan
+// (SetzeLernmittelFristFuerKlassen); s ist die Sicht `schueler`. Es ist die Regel der Theke für
+// das Lernmittel (service.SperreAmLeserHaeltAn): Die Sperre von Hand hält an, ein
 // anonymisierter Datensatz bekommt nichts, der Papierkorb ist draußen. Die Sperre, die das
-// Programm den Ehemaligen setzt (ist_gesperrt), zählt nicht — entschieden am 28.09.2026.
-// Vorher ließen beide Wege jedes Kind mit ist_gesperrt aus.
+// Programm den Ehemaligen setzt (ist_gesperrt), zählt nicht.
 const sqlSchulbuchFristGehtMit = `s.deleted_at IS NULL AND s.anonymized_at IS NULL AND COALESCE(s.is_manually_blocked, false) = false`
 
 // SetzeLernmittelFristFuerKlassen schreibt die Frist offener Lernmittel-Ausleihen der
@@ -172,7 +168,7 @@ const sqlSchulbuchFristGehtMit = `s.deleted_at IS NULL AND s.anonymized_at IS NU
 // Fristen zu berühren, die jemand von Hand gesetzt hat).
 //
 // Arbeitet auf einem Executor des Aufrufers — die Plan-Handler koppeln die Fristen in
-// DERSELBEN Transaktion wie den Plan.
+// derselben Transaktion wie den Plan.
 func (a *LMFAbfragen) SetzeLernmittelFristFuerKlassen(ctx context.Context, ex Datenbank, klassen []string, frist time.Time, von, bis time.Time, nurWennFristAm *time.Time) (int64, error) {
 	if len(klassen) == 0 {
 		return 0, nil

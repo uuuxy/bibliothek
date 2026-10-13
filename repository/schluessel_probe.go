@@ -20,14 +20,13 @@ type VerschluesselteSpalte struct {
 	DatenSpalte  string
 }
 
-// VerschluesselteSpalten ist die EINE Liste dieser Spalten. Zwei Leser: der
-// Schlüsselwechsel (cmd/rotate-encryption-key) und die Probe darunter. Bis zum 21.09.2026
-// stand die Liste nur im Werkzeug; eine zweite für die Probe wäre die Stelle gewesen, an
-// der eine neue Spalte vergessen wird. Dass die Liste vollständig ist, prüft
+// VerschluesselteSpalten ist die eine Liste dieser Spalten. Zwei Leser: der Schlüsselwechsel
+// (cmd/rotate-encryption-key) und die Probe darunter. Eine zweite Liste für die Probe wäre die
+// Stelle, an der eine neue Spalte vergessen wird. Dass die Liste vollständig ist, prüft
 // TestRotiere_JedeVerschluesselteSpalteStehtInDerListe gegen die Datenbank.
 //
-// Tabellen- und Spaltennamen gehen in SQL-Text ein — sie stammen ausschließlich aus
-// dieser Konstante, nie aus einer Eingabe.
+// Tabellen- und Spaltennamen gehen in SQL-Text ein; sie stammen ausschließlich aus dieser
+// Konstante, nie aus einer Eingabe.
 var VerschluesselteSpalten = []VerschluesselteSpalte{
 	{"Schülerfotos", "schueler_fotos", "schueler_id", "foto_encrypted"},
 	{"SMTP-Passwort", "mail_settings_config", "id", "smtp_password_encrypted"},
@@ -42,16 +41,15 @@ type SchluesselProbe struct {
 	NichtLesbar []string
 }
 
-// PruefeSchluesselGegenBestand entschlüsselt je verschlüsselter Spalte EINEN Wert.
+// PruefeSchluesselGegenBestand entschlüsselt je verschlüsselter Spalte einen Wert. Ohne die
+// Probe merkt nichts im System, wenn der Schlüssel in der .env nicht zu den Daten passt, etwa
+// nach einer Wiederherstellung auf einem neuen Server mit neuer .env. Sichtbar würde es erst
+// dort, wo es weh tut: Ein Foto bleibt leer, die Mahnmail geht nicht raus, weil das
+// SMTP-Passwort nicht lesbar ist.
 //
-// Anlass (21.09.2026): Nichts im System merkte, wenn der Schlüssel in der .env nicht zu
-// den Daten passt — nach einer Wiederherstellung auf einem neuen Server mit neuer .env
-// etwa. Sichtbar wurde es erst dort, wo es weh tut: Ein Foto bleibt leer, die Mahnmail
-// geht nicht raus, weil das SMTP-Passwort nicht lesbar ist.
-//
-// GRENZE: eine Stichprobe je Spalte, kein Durchlauf. Sie findet den falschen Schlüssel,
-// nicht einen Bestand mit zwei Schlüsseln — den verhindert der Schlüsselwechsel selbst
-// (ein nicht lesbarer Datensatz bricht ihn ab).
+// Grenze: eine Stichprobe je Spalte, kein Durchlauf. Sie findet den falschen Schlüssel, nicht
+// einen Bestand mit zwei Schlüsseln; den verhindert der Schlüsselwechsel selbst (ein nicht
+// lesbarer Datensatz bricht ihn ab).
 func PruefeSchluesselGegenBestand(ctx context.Context, pool db.PgxPoolIface) (SchluesselProbe, error) {
 	var probe SchluesselProbe
 	for _, s := range VerschluesselteSpalten {

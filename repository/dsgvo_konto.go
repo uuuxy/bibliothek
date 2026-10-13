@@ -1,12 +1,10 @@
 package repository
 
-// dsgvo_konto.go — der Teil der Auskunft nach Art. 15 DSGVO, der am ZUGANGSKONTO hängt: das
-// Konto selbst, die Klassenleitungen, die eigenen Anfragen im Kollegiums-Portal, die
-// Einträge des Verwaltungsprotokolls über das Konto und die Vorgänge, die die Person selbst
-// bearbeitet hat (dsgvo_konto_vorgaenge.go). Bis zum 24.09.2026 endete die Auskunft
-// eines Kollegen mit „nicht gefunden" (Stammdaten aus der Sicht `schueler`); entschieden ist
-// seither: Die Auskunft gibt es für jeden Leser (OFFEN.md 5.19). Den Teil am Leser liest
-// dsgvo_auskunft.go.
+// Der Teil der Auskunft nach Art. 15 DSGVO, der am Zugangskonto hängt: das Konto selbst, die
+// Klassenleitungen, die eigenen Anfragen im Kollegiums-Portal, die Einträge des
+// Verwaltungsprotokolls über das Konto und die Vorgänge, die die Person selbst bearbeitet hat
+// (dsgvo_konto_vorgaenge.go). Die Auskunft gibt es für jeden Leser, auch für einen Kollegen.
+// Den Teil am Leser liest dsgvo_auskunft.go.
 
 import (
 	"context"
@@ -51,11 +49,11 @@ type DSGVOAnfrage struct {
 	Kommentar     string     `json:"kommentar"`
 	ErstelltAm    time.Time  `json:"erstellt_am"`
 	Erledigt      bool       `json:"erledigt"`
-	ErledigtAm    *time.Time `json:"erledigt_am"` // beim Klassensatz vor Migration 089 leer
+	ErledigtAm    *time.Time `json:"erledigt_am"` // bei einem alten Klassensatz leer
 	ErledigtNotiz string     `json:"erledigt_notiz"`
 }
 
-// DSGVOKontoEreignis ist ein Eintrag des Verwaltungsprotokolls ÜBER das Konto: angelegt,
+// DSGVOKontoEreignis ist ein Eintrag des Verwaltungsprotokolls über das Konto: angelegt,
 // geändert, selbst beantragt. Wer ihn ausgelöst hat (admin_id, IP-Adresse), ist eine andere
 // Person und steht deshalb nicht darin.
 type DSGVOKontoEreignis struct {
@@ -165,10 +163,10 @@ func sammle[T any](ctx context.Context, q Datenbank, sql string, lies func(pgx.R
 }
 
 // DSGVOFrueheresZugangskonto ist ein gelöschtes Konto, das auf diesen Leser zeigte, samt den
-// Einträgen über das Konto, die nach dem Löschen noch zu finden sind (seit 29.09.2026,
-// OFFEN.md 5.19). Nach dem Löschen führt kein Fremdschlüssel mehr vom Leser zum Konto; der
-// Weg ist der Löscheintrag (konto_loeschspur.go), der die Leserkennung trägt. Löscheinträge
-// von vor dem 29.09.2026 tragen sie nicht und bleiben hier unsichtbar.
+// Einträgen über das Konto, die nach dem Löschen noch zu finden sind. Nach dem Löschen führt
+// kein Fremdschlüssel mehr vom Leser zum Konto; der Weg ist der Löscheintrag
+// (konto_loeschspur.go), der die Leserkennung trägt. Ältere Löscheinträge tragen sie nicht und
+// bleiben hier unsichtbar.
 type DSGVOFrueheresZugangskonto struct {
 	ID          string    `json:"id"`
 	GeloeschtAm time.Time `json:"geloescht_am"`

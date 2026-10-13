@@ -23,16 +23,16 @@ type kontoLoeschung struct {
 
 // protokolliereKontoLoeschung schreibt den Löscheintrag eines Zugangskontos in die
 // Datensatz-Historie. Ein Konto fällt über zwei Türen: Benutzer & Rechte (LoescheKonto) und das
-// Löschen der Leserzeile eines Kollegen (LegeLeserInPapierkorb). Bis zum 29.09.2026 schrieb nur die
-// erste einen Eintrag mit dem Konto, und keiner nannte den Leser. Nach dem Löschen führt kein
-// Fremdschlüssel mehr vom Leser zum Konto (benutzer.leser_id und alle Verweise auf benutzer
-// stehen auf SET NULL); dieser Eintrag ist der Weg dorthin.
+// Löschen der Leserzeile eines Kollegen (LegeLeserInPapierkorb); beide schreiben den Eintrag
+// mit dem Konto und dem Leser. Nach dem Löschen führt kein Fremdschlüssel mehr vom Leser zum
+// Konto (benutzer.leser_id und alle Verweise auf benutzer stehen auf SET NULL); dieser Eintrag
+// ist der Weg dorthin.
 //
 // Die Leserkennung steht unter schueler_id wie in jedem anderen Protokolleintrag über einen
 // Leser: Darüber findet die Auskunft das frühere Konto (LadeDSGVOFruehereZugangskonten), und
 // darüber nimmt die Tilgung beim endgültigen Löschen des Lesers Name und Adresse heraus
-// (protokollSchluesselMitPersonenbezug). Jeder Schlüssel steht wörtlich hier, damit das Gate
-// in protokoll_personenbezug_test.go ihn sieht.
+// (protokollSchluesselMitPersonenbezug). Jeder Schlüssel steht wörtlich hier, damit das Gate in
+// protokoll_personenbezug_test.go ihn sieht.
 func (a *pgProtokollAbfragen) protokolliereKontoLoeschung(ctx context.Context, tx pgx.Tx, l kontoLoeschung) error {
 	details := map[string]any{
 		"vorname":  l.vorname,
@@ -65,8 +65,8 @@ func (a *pgProtokollAbfragen) protokolliereKontoLoeschung(ctx context.Context, t
 }
 
 // loescheKontenDerLeserzeile löscht die Zugangskonten, die auf eine Leserzeile zeigen, und
-// schreibt je Konto den Löscheintrag — die Tür „Leserzeile eines Kollegen in den Papierkorb"
-// (LegeLeserInPapierkorb). Bis zum 29.09.2026 stand dort nur die Zahl der gelöschten Konten.
+// schreibt je Konto den Löscheintrag: die Tür „Leserzeile eines Kollegen in den Papierkorb"
+// (LegeLeserInPapierkorb).
 func (a *pgProtokollAbfragen) loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID string) (int64, error) {
 	rows, err := tx.Query(ctx, `
 		SELECT id::text, coalesce(vorname, ''), coalesce(nachname, ''), coalesce(email, ''), coalesce(rolle::text, '')
