@@ -2,9 +2,8 @@ package system
 
 // betriebsbereitschaft_handler.go — trägt die Lage zusammen und liefert sie aus.
 //
-// Getrennt von den Regeln in internal/bereitschaft/bereitschaft.go, und zwar aus einem Grund: Die
-// Regeln sollen ohne Umgebungsvariablen und ohne Datenbank prüfbar sein. Alles, was die
-// Aussenwelt befragt, steht hier.
+// Die Regeln stehen in internal/bereitschaft und sind ohne Umgebungsvariablen und ohne
+// Datenbank prüfbar. Hier steht, was Umgebung, Einstellungen und Datenbank befragt.
 
 import (
 	"bibliothek/auth"
@@ -16,34 +15,17 @@ import (
 	"strings"
 
 	"bibliothek/api/tuer"
-	"bibliothek/internal/ausweis"
 	"bibliothek/jobs"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
-// BetriebsbereitschaftResponse ist die Antwort des Endpunkts.
-//
-// Gesamt fasst zusammen, damit die Oberfläche nicht selbst rechnen muss — die schärfste
-// Stufe gewinnt. Sonst stünde die Regel an zwei Stellen und liefe auseinander.
+// BetriebsbereitschaftResponse ist die Antwort des Endpunkts. Gesamt fasst die Befunde zusammen
+// (bereitschaft.Gesamt), damit die Oberfläche nicht selbst rechnet.
 type BetriebsbereitschaftResponse struct {
 	Gesamt  string                `json:"gesamt"`
 	Befunde []bereitschaft.Befund `json:"befunde"`
-}
-
-// schaerfste liefert die höchste vorkommende Stufe.
-func schaerfste(befunde []bereitschaft.Befund) string {
-	gesamt := bereitschaft.StufeOK
-	for _, b := range befunde {
-		switch b.Stufe {
-		case bereitschaft.StufeKritisch:
-			return bereitschaft.StufeKritisch
-		case bereitschaft.StufeWarnung:
-			gesamt = bereitschaft.StufeWarnung
-		}
-	}
-	return gesamt
 }
 
 // sammleLage trägt die Lage zusammen — geteilt zwischen dem Handler (Seite) und dem
@@ -144,9 +126,7 @@ func rechteKlassenUndAdminsInDieLage(ctx context.Context, zustandRepo *repositor
 	}
 
 	if schueler, zuordnungen, listen, err := zustandRepo.KlassenBestand(ctx); err == nil {
-		lage.KlassenOhneLehrkraft = fehlendeEintraege(mitKlassenleitung(schueler), zuordnungen)
-		lage.VerwaisteZuordnungen = fehlendeEintraege(zuordnungen, schueler)
-		lage.VerwaisteBuecherliste = fehlendeEintraege(listen, schueler)
+		lage.TrageKlassenEin(schueler, zuordnungen, listen)
 	}
 
 	if admins, err := zustandRepo.AktiveAdmins(ctx); err == nil {
@@ -203,44 +183,8 @@ func (s *Tueren) BetriebsbereitschaftHandler(
 	return func(w http.ResponseWriter, r *http.Request) {
 		befunde := bereitschaft.Pruefe(s.sammleLage(r.Context(), settingsRepo, mailRepo, zustandRepo))
 		tuer.RespondJSON(w, http.StatusOK, BetriebsbereitschaftResponse{
-			Gesamt:  schaerfste(befunde),
+			Gesamt:  bereitschaft.Gesamt(befunde),
 			Befunde: befunde,
 		})
 	}
-}
-
-// mitKlassenleitung lässt die Klassen übrig, für die die Schule eine Klassenleitung hat: bis
-// Jahrgang 10. Die Oberstufe (ET, 12T, 13T) hat keine, und ein Name ohne Ziffer („ABG") ist
-// ein Sonderwert.
-func mitKlassenleitung(klassen []string) []string {
-	mit := []string{}
-	for _, k := range klassen {
-		if _, jahrgang, lesbar := ausweis.AblaufJahrgang(k); lesbar {
-			if jahrgang <= ausweis.AbschlussMittelstufe {
-				mit = append(mit, k)
-			}
-			continue
-		}
-		// Eine Zahl außerhalb 1 bis 13 („70R1") bleibt gemeldet: Ihre Mahnliste erreicht niemanden.
-		if k != "" && k[0] >= '0' && k[0] <= '9' {
-			mit = append(mit, k)
-		}
-	}
-	return mit
-}
-
-// fehlendeEintraege liefert alle Werte aus `menge`, die in `referenz` fehlen —
-// nie nil, damit „geprüft und leer" von „nicht erhoben" (nil) unterscheidbar bleibt.
-func fehlendeEintraege(menge, referenz []string) []string {
-	bekannt := make(map[string]bool, len(referenz))
-	for _, r := range referenz {
-		bekannt[r] = true
-	}
-	fehlt := []string{}
-	for _, m := range menge {
-		if !bekannt[m] {
-			fehlt = append(fehlt, m)
-		}
-	}
-	return fehlt
 }

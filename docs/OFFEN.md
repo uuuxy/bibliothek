@@ -475,8 +475,8 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   seit dem 12.10.2026 in `mailservice/mail_sender.go`. Und
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
   Typ aus `net/http` tragen `schaden/bescheid_handler.go` (211; die Rechnung des
-  Ersatzwerts steht seit dem 12.10.2026 in `internal/service`), `leser/dsgvo_auskunft.go` (193),
-  `system/betriebsbereitschaft_handler.go` (175) und `mahnwesen/graduates_mail.go` (157). Die Messung und ihre
+  Ersatzwerts steht seit dem 12.10.2026 in `internal/service`), `leser/dsgvo_auskunft.go` (193)
+  und `mahnwesen/graduates_mail.go` (157). Die Messung und ihre
   Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt: diese Dateien der Reihe nach
   lesen und trennen, was Regel und was Füll-Funktion ist.
 - **Die Zuordnung der Importe steht zweimal.** Katalog-Import und Bestands-Import laden den

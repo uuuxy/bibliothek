@@ -244,6 +244,21 @@ func Pruefe(l Lage) []Befund {
 	return befunde
 }
 
+// Gesamt fasst die Befunde zu einer Stufe zusammen: Die schärfste gewinnt. Die Seite und jeder
+// andere Leser fragen sie hier, damit die Regel nicht ein zweites Mal in der Oberfläche steht.
+func Gesamt(befunde []Befund) string {
+	gesamt := StufeOK
+	for _, b := range befunde {
+		switch b.Stufe {
+		case StufeKritisch:
+			return StufeKritisch
+		case StufeWarnung:
+			gesamt = StufeWarnung
+		}
+	}
+	return gesamt
+}
+
 // ferientabelleVorlaufJahre: Wie viele Jahre vor dem Ende der Tabelle die Warnung
 // kommt. Zwei — die KMK beschließt den nächsten Block Jahre im Voraus, und der Plan
 // für den Sommer wird im Frühjahr gemacht.
