@@ -19,12 +19,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// GlobalExtendLMFRequest holds the JSON payload for extending LMF loans by class.
-type GlobalExtendLMFRequest struct {
-	Klasse              string `json:"klasse"`
-	NeuesRueckgabeDatum string `json:"neues_rueckgabe_datum"` // Expected format "2006-01-02"
-}
-
 // OverrideDueDateRequest holds the JSON payload for manually overriding a due date.
 type OverrideDueDateRequest struct {
 	FaelligAm string `json:"faellig_am" validate:"required"` // ISO 8601 or YYYY-MM-DD
@@ -239,68 +233,6 @@ func (s *Server) sperreDerAusleihe(ctx context.Context, w http.ResponseWriter, a
 		return false, "", false
 	}
 	return gesperrt, grund, true
-}
-
-// GlobalExtendLMFHandler performs a mass-extension for all LMF media for a specific class.
-// It executes a single SQL transaction to ensure consistency.
-func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req GlobalExtendLMFRequest
-		if !tuer.DecodeAndValidate(w, r, &req) {
-			return
-		}
-
-		if req.Klasse == "" || req.NeuesRueckgabeDatum == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("klasse und neues_rueckgabe_datum sind erforderlich"))
-			return
-		}
-
-		newDate, err := time.Parse("2006-01-02", req.NeuesRueckgabeDatum)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges Datumsformat (erwartet YYYY-MM-DD)"))
-			return
-		}
-		// Tagesende in der Schulzeitzone (Berlin) — dieselbe Definition wie jede andere
-		// Frist (service.TagesEndeInSchulzeitzone), nicht roh 23:59:59 UTC.
-		newDate = service.TagesEndeInSchulzeitzone(newDate)
-
-		ctx := r.Context()
-		tx, err := s.DB.Pool.Begin(ctx)
-		if err != nil {
-			log.Printf("Fehler beim Starten der Transaktion: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
-			return
-		}
-		defer db.SafeRollback(ctx, tx)
-
-		angepasst, err := repository.VerlaengereLernmittelDerKlasse(ctx, tx, req.Klasse, newDate)
-		if err != nil {
-			log.Printf("Fehler beim globalen Verlängern: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("fehler beim Ausführen des Updates"))
-			return
-		}
-
-		if err := tx.Commit(ctx); err != nil {
-			log.Printf("Fehler beim Commit der Transaktion: %v", err)
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
-			return
-		}
-
-		// Wie bei der Frist einer einzelnen Ausleihe (FRIST_OVERRIDE): Wer die Fristen einer
-		// ganzen Klasse verschiebt, steht im Protokoll. Bewegt sich keine Frist, steht nichts.
-		if angepasst > 0 {
-			s.ProtokolliereVerwaltung(ctx, tuer.AuditFristKlasseGeaendert, map[string]any{
-				"klasse":            req.Klasse,
-				"neue_frist":        newDate.Format(time.RFC3339),
-				"fristen_angepasst": angepasst,
-			})
-		}
-
-		tuer.RespondJSON(w, http.StatusOK, map[string]interface{}{
-			"success":       true,
-			"updated_count": angepasst,
-		})
-	}
 }
 
 // checkAusleiheGesperrt prüft, ob eine Sperre am Leser die Verlängerung dieser Ausleihe

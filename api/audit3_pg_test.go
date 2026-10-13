@@ -88,7 +88,7 @@ func globalExtend(t *testing.T, srv *Server, klasse, datum string) *httptest.Res
 	req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/lmf/global-extend", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.GlobalExtendLMFHandler()(rec, req)
+	srv.lernmittel().GlobalExtendLMFHandler()(rec, req)
 	return rec
 }
 

@@ -82,7 +82,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// ── AUSLEIHEN (Loans) ──
 	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", s.RequirePermission("edit_books")(s.ExtendLoanHandler(settingsRepo)))
-	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.RequirePermission("edit_books")(s.GlobalExtendLMFHandler()))
+	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.RequirePermission("edit_books")(s.lernmittel().GlobalExtendLMFHandler()))
 
 	// ── LMF-PLAN (Rückgabe-/Ausgabetermine je Klasse, Migration 096) ──
 	// Lesen: jede Sitzung (das Kollegium liest den Plan im Portal; Stufe 0 — Daten und

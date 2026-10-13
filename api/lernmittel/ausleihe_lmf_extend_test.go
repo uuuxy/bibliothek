@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 import (
 	"bytes"
@@ -120,7 +120,7 @@ func TestGlobalExtendLMFHandler(t *testing.T) {
 			}
 			defer mock.Close()
 
-			srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: mock}}}
+			srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: mock}}}
 			handler := srv.GlobalExtendLMFHandler()
 
 			tt.setupMock(mock)

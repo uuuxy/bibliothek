@@ -1,6 +1,7 @@
 // Package lernmittel trägt die Türen des LMF-Plans: wann welche Klasse ihre Schulbücher abgibt
 // und bekommt. Die Bibliothek schreibt den Plan als Reihenfolge, das Kollegium liest die Termine
-// im Portal und als PDF.
+// im Portal und als PDF. Dazu die Verlängerung der Lernmittel einer Klasse auf ein Datum, die
+// LMF-Aktionen der Einstellungen.
 package lernmittel
 
 import "bibliothek/api/tuer"

@@ -1,4 +1,4 @@
-package api
+package lernmittel
 
 import (
 	"net/http"
@@ -36,7 +36,7 @@ func TestGlobalExtendLMF_SchreibvariantenRobust(t *testing.T) {
 	leer := testdaten.SeedAusleihe(t, pool, sid, "LMF Bio 5", alteFrist)
 	freihand := testdaten.SeedAusleihe(t, pool, sid, "Der Hobbit", alteFrist)
 
-	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
+	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	req := httptest.NewRequest(http.MethodPost, "/api/ausleihen/lmf/global-extend",
 		strings.NewReader(`{"klasse":"05A","neues_rueckgabe_datum":"2026-07-31"}`))
 	rec := httptest.NewRecorder()

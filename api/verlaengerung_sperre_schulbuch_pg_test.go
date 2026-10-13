@@ -160,7 +160,7 @@ func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_FristVonHand(t *testing.T
 func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_Klasse(t *testing.T) {
 	l := sperrFristLageAnlegen(t)
 	rec := httptest.NewRecorder()
-	l.srv.GlobalExtendLMFHandler()(rec, httptest.NewRequest(http.MethodPost, "/api/ausleihen/global-extend-lmf",
+	l.srv.lernmittel().GlobalExtendLMFHandler()(rec, httptest.NewRequest(http.MethodPost, "/api/ausleihen/global-extend-lmf",
 		strings.NewReader(`{"klasse":"10r1","neues_rueckgabe_datum":"2027-06-30"}`)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Klassenverlängerung: %d %s", rec.Code, rec.Body.String())
