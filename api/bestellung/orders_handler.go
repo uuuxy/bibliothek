@@ -166,22 +166,6 @@ func (s *Tueren) GetIncomingShipmentsHandler() http.HandlerFunc {
 	}
 }
 
-// OrderSearchItem ist ein Suchtreffer der Bestellsuche. Source unterscheidet die
-// Herkunft: "local" kommt aus dem eigenen Katalog und trägt dann auch CurrentStock,
-// "dnb" ist ein Fremdtreffer ohne Bestand. IsDuplicate warnt, dass der Titel bereits im
-// Haus steht — nachbestellen ist erlaubt, aber es soll niemand versehentlich tun.
-type OrderSearchItem struct {
-	ID           string `json:"id,omitempty"`
-	Titel        string `json:"titel"`
-	Autor        string `json:"autor"`
-	ISBN         string `json:"isbn"`
-	Verlag       string `json:"verlag,omitempty"`
-	CoverURL     string `json:"cover_url,omitempty"`
-	Source       string `json:"source"` // "local" or "dnb"
-	CurrentStock int    `json:"current_stock,omitempty"`
-	IsDuplicate  bool   `json:"is_duplicate,omitempty"`
-}
-
 // OrderSearchRequest trägt den Suchbegriff der Bestellsuche — ISBN oder Freitext.
 type OrderSearchRequest struct {
 	Query string `json:"query"`

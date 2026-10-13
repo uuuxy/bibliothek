@@ -100,7 +100,6 @@ var phantomBestand = map[string]int{
 	"repository/leser_foto.go:SpeichereFoto":                            1,
 	"inventur/datenbank_klassen.go:AddBooksToClasses":                   1,
 	"inventur/datenbank_klassen.go:DeleteClassGroup":                    1,
-	"inventur/datenbank_klassen.go:NormalizeAllClasses":                 4,
 	"inventur/datenbank_klassen.go:UpdateClassBooks":                    2,
 	"inventur/datenbank_klassen.go:insertClassBookBindings":             1,
 	"inventur/db_books_create.go:legeImportExemplareAn":                 1,

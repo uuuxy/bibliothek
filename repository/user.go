@@ -203,12 +203,6 @@ type UpdateUserParams struct {
 	Barcode        *string
 }
 
-// Leer sagt, ob die Änderung kein Feld nennt.
-func (p UpdateUserParams) Leer() bool {
-	return p.Vorname == nil && p.Nachname == nil && p.Email == nil && p.Rolle == nil &&
-		p.Aktiv == nil && !p.BarcodeGenannt
-}
-
 // KontoStand ist ein Konto nach dem Ändern: was der Protokolleintrag darüber festhält.
 type KontoStand struct {
 	Email string

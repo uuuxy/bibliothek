@@ -256,67 +256,6 @@ func (repo *BookRepository) DeleteClassGroup(ctx context.Context, classNames []s
 	return nil
 }
 
-// NormalizeAllClasses vereinheitlicht die Klassenbezeichnungen im Bestand (etwa „5A"
-// und „5a" zur selben Klasse). Läuft in einer Transaktion: entweder alle oder keine.
-func (repo *BookRepository) NormalizeAllClasses(ctx context.Context) error {
-	tx, err := repo.db.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("transaktion konnte nicht gestartet werden: %w", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }() //nolint:errcheck
-
-	// Step 1: Bereinigung von Leerzeichen.
-	// Lösche Duplikate, die entstehen würden, wenn wir die Leerzeichen entfernen.
-	_, err = tx.Exec(ctx, `
-		DELETE FROM class_books cb1
-		WHERE class_name LIKE '% %'
-		AND EXISTS (
-			SELECT 1 FROM class_books cb2
-			WHERE cb2.class_name = REPLACE(cb1.class_name, ' ', '')
-			AND cb2.book_id = cb1.book_id
-		)
-	`)
-	if err != nil {
-		return fmt.Errorf("fehler beim bereinigen doppelter klassennamen vor leerzeichen-entfernung: %w", err)
-	}
-
-	// Update zum Entfernen von Leerzeichen
-	_, err = tx.Exec(ctx, `
-		UPDATE class_books
-		SET class_name = REPLACE(class_name, ' ', '')
-		WHERE class_name LIKE '% %'
-	`)
-	if err != nil {
-		return fmt.Errorf("fehler beim entfernen von leerzeichen in klassennamen: %w", err)
-	}
-
-	// Step 2: Delete books that would cause a unique key violation (führende Nullen)
-	_, err = tx.Exec(ctx, `
-		DELETE FROM class_books cb1
-		WHERE (class_name ~ '^[1-9][^0-9]' OR class_name ~ '^[1-9]$')
-		AND EXISTS (
-			SELECT 1 FROM class_books cb2
-			WHERE cb2.class_name = '0' || cb1.class_name
-			AND cb2.book_id = cb1.book_id
-		)
-	`)
-	if err != nil {
-		return fmt.Errorf("fehler beim bereinigen doppelter klassennamen: %w", err)
-	}
-
-	// Step 2: Update the remaining rows
-	_, err = tx.Exec(ctx, `
-		UPDATE class_books
-		SET class_name = '0' || class_name
-		WHERE class_name ~ '^[1-9][^0-9]' OR class_name ~ '^[1-9]$'
-	`)
-	if err != nil {
-		return fmt.Errorf("fehler beim normalisieren der klassennamen: %w", err)
-	}
-
-	return tx.Commit(ctx)
-}
-
 // AddBooksToClasses ergänzt Titel in mehreren Klassensätzen, ohne die bestehende
 // Zuordnung zu ersetzen — anders als UpdateClassBooks, das sie neu schreibt.
 func (repo *BookRepository) AddBooksToClasses(ctx context.Context, classNames []string, bookIDs []string) error {

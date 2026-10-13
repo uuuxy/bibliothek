@@ -2,7 +2,6 @@ package littera
 
 import (
 	"io"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -104,7 +103,7 @@ func LeseAusleihen(r io.Reader) ([]Ausleihe, error) {
 			ExemplarID:     exemplar,
 			LeserID:        leser,
 			Zurueckgegeben: wahrheitswert(z["Zurückgegeben"]),
-			Mahnungen:      zahlAus(z["Mahnungen"]),
+			Mahnungen:      zahlOderNull(z["Mahnungen"]),
 		}
 		a.AusgeliehenAm, _ = DatumAus(z["Verleihdatum"])
 		a.Frist, _ = DatumAus(z["Rückgabedatum"])
@@ -124,14 +123,6 @@ func wahrheitswert(roh string) bool {
 		return true
 	}
 	return false
-}
-
-func zahlAus(roh string) int {
-	n, err := strconv.Atoi(strings.TrimSpace(roh))
-	if err != nil {
-		return 0
-	}
-	return n
 }
 
 // NurOffene liefert die Ausleihen, bei denen das Buch noch beim Entleiher ist.
