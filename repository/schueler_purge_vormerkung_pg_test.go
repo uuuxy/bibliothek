@@ -39,13 +39,13 @@ func TestPurgeStudent_BedientNaechstenWartenden(t *testing.T) {
 		t.Fatalf("wartende Vormerkung anlegen: %v", err)
 	}
 
-	// In den Papierkorb legen, damit PurgeStudent überhaupt greift.
+	// In den Papierkorb legen, damit LoescheLeserEndgueltig überhaupt greift.
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET deleted_at = now() WHERE id = $1`, gehend); err != nil {
 		t.Fatalf("weichlöschen: %v", err)
 	}
 
-	if err := NewAuditRepository(pool).PurgeStudent(ctx, gehend, bearbeiter); err != nil {
-		t.Fatalf("PurgeStudent: %v", err)
+	if err := NewProtokollAbfragen(pool).LoescheLeserEndgueltig(ctx, gehend, bearbeiter); err != nil {
+		t.Fatalf("LoescheLeserEndgueltig: %v", err)
 	}
 
 	var status string

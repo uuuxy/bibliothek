@@ -39,7 +39,7 @@ func bescheidErstellenUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.BescheidErstellenHandler(repository.NewBescheidRepository(pool), repository.NewAuditRepository(pool))(rec, req)
+	srv.BescheidErstellenHandler(repository.NewBescheidRepository(pool), repository.NewProtokollAbfragen(pool))(rec, req)
 	return rec
 }
 
@@ -340,7 +340,7 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.BescheidUebergebenHandler(repo, repository.NewAuditRepository(pool))(rec, req)
+		srv.BescheidUebergebenHandler(repo, repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
 	}
 	if rec := uebergeben(); rec.Code != http.StatusConflict {
@@ -398,7 +398,7 @@ func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Bezahlt über den echten Pfad, danach ist die Frist vorbei.
-	if err := repository.NewAuditRepository(pool).BezahltGebuehr(ctx, f, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := repository.NewProtokollAbfragen(pool).VerbucheZahlung(ctx, f, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Bezahlt: %v", err)
 	}
 	if _, err := pool.Exec(ctx, `UPDATE schadensersatz_bescheide SET frist_bis = CURRENT_DATE - 1 WHERE id = $1`, b.ID); err != nil {

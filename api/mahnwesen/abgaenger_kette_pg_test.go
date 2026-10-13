@@ -168,11 +168,11 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 		WHERE id = ANY($1)`, []string{anna, ben}); err != nil {
 		t.Fatalf("Abgang laut LUSD: %v", err)
 	}
-	auditRepo := repository.NewAuditRepository(pool)
-	if err := auditRepo.PurgeAbgaenger(ctx, anna, ""); err != nil {
+	auditRepo := repository.NewProtokollAbfragen(pool)
+	if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, anna, ""); err != nil {
 		t.Fatalf("Purge nach Rückgabe: %v", err)
 	}
-	if err := auditRepo.PurgeAbgaenger(ctx, ben, ""); err == nil {
+	if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, ben, ""); err == nil {
 		t.Error("Ben wurde trotz offenem Buch endgültig gelöscht")
 	}
 

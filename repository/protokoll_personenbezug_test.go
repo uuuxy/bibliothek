@@ -53,7 +53,7 @@ var bleibtSchluessel = map[string]string{
 	"ausleihen":               "Zahl der umgehängten Ausleihen beim Zusammenführen",
 	"barcode_id":              "Nummer des Exemplars, nicht des Lesers",
 	"bearbeiter_id":           "Kennung des Kontos, das die Forderung storniert hat",
-	"benutzer_id":             "Konto-Kennung aus der Zeit getrennter Lehrerausleihen; alle Aufrufer von LogAusleihe und LogRueckgabe übergeben heute einen leeren Wert",
+	"benutzer_id":             "Konto-Kennung aus der Zeit getrennter Lehrerausleihen; alle Aufrufer von ProtokolliereAusleihe und ProtokolliereRueckgabe übergeben heute einen leeren Wert",
 	"bescheid_id":             "Kennung des Bescheids; er bleibt als Beleg, sein Empfänger wird getilgt",
 	"betrag":                  "Betrag der Forderung, Beleg",
 	"erstellt_am":             "Datum",

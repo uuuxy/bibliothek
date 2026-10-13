@@ -51,7 +51,7 @@ func TestSpurenTilgung_CronDecktDieselbenSpurenWieDerPurge(t *testing.T) {
 		t.Fatalf("aktiven Schüler anlegen: %v", err)
 	}
 
-	// Je eine Lesehistorie-Zeile, wie sie die Ausleihe schreibt (repository/audit_books.go:
+	// Je eine Lesehistorie-Zeile, wie sie die Ausleihe schreibt (repository/protokoll.go:
 	// tabelle='ausleihen', Schüler nur in details), plus je eine Vormerkung und je eine
 	// schueler-Historienzeile — die Spuren, die der Purge-Pfad nachweislich tilgt.
 	for _, s := range []struct{ id, name string }{

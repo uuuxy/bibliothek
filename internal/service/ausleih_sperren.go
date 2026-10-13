@@ -146,9 +146,9 @@ func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string,
 // Aufgerufen wird sie, wenn die Ausleihe entstanden ist, nicht schon bei der Prüfung: Am
 // Gerät unterbricht die Zubehör-Liste zwischen beidem, und beim Buch können danach noch
 // Ausleihlimit und Vormerkung abweisen — dann ist nichts übergangen worden.
-func protokolliereUebergangen(ctx context.Context, audit repository.AuditRepository, staffID, leserID string, uebergangen []string) {
+func protokolliereUebergangen(ctx context.Context, audit repository.ProtokollAbfragen, staffID, leserID string, uebergangen []string) {
 	for _, grund := range uebergangen {
-		logAuditErr(overrideBlockAction, audit.LogAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
+		logAuditErr(overrideBlockAction, audit.ProtokolliereAdminAktion(ctx, staffID, "OVERRIDE_BLOCK", "", map[string]any{
 			"schueler_id": leserID,
 			"reason":      grund,
 		}))

@@ -60,7 +60,7 @@ func TestAnonymisierung_TilgtNameUndFreitextDerTitelLoeschspur(t *testing.T) {
 	einzeln := titelMitSpur("Löschspur einzeln", "TLS-EX-1")
 	gesammelt := titelMitSpur("Löschspur gesammelt", "TLS-EX-2")
 
-	if err := repository.NewAuditRepository(pool).DeleteTitle(ctx, einzeln, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, einzeln, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("einzelnen Titel löschen: %v", err)
 	}
 	if err := inventur.NewBookRepository(pool).DeleteBooks(ctx, []string{gesammelt}); err != nil {
@@ -138,7 +138,7 @@ func TestAnonymisierung_TilgtDieLoeschspurAuchNachDemZusammenfuehren(t *testing.
 		`INSERT INTO vormerkungen (titel_id, schueler_id, status) VALUES ($1, $2, 'wartend')`, titelID, quelle); err != nil {
 		t.Fatalf("Vormerkung anlegen: %v", err)
 	}
-	if err := repository.NewAuditRepository(pool).DeleteTitle(ctx, titelID, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {

@@ -71,7 +71,7 @@ func (s *Tueren) RestoreStudentHandler() http.HandlerFunc {
 			return
 		}
 
-		// Restore: deleted_at zurücknehmen UND die Lösch-Sperre aufheben. DeleteStudent
+		// Restore: deleted_at zurücknehmen UND die Lösch-Sperre aufheben. LegeLeserInPapierkorb
 		// setzt ist_gesperrt=true mit block_reason='Systematisch gelöscht'; ohne das
 		// Aufheben bliebe der wiederhergestellte Schüler dauerhaft gesperrt (Zombie-Sperre)
 		// und könnte nichts ausleihen. Eine Sperre aus ANDEREM Grund bleibt bestehen.
@@ -137,7 +137,7 @@ func restoreKollision(err error) (string, bool) {
 // PurgeStudentHandler entfernt einen im Papierkorb liegenden Schüler endgültig und
 // DSGVO-konform (Ausleihhistorie/Audit anonymisiert, bezahlte Schäden gelöscht,
 // Datensatz entfernt). Offene Ausleihen/unbezahlte Schäden blockieren die Löschung.
-func (s *Tueren) PurgeStudentHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) PurgeStudentHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -152,7 +152,7 @@ func (s *Tueren) PurgeStudentHandler(auditRepo repository.AuditRepository) http.
 		}
 
 		ctx := r.Context()
-		if err := auditRepo.PurgeStudent(ctx, id, claims.UserID); err != nil {
+		if err := auditRepo.LoescheLeserEndgueltig(ctx, id, claims.UserID); err != nil {
 			// Blockade (offene Ausleihen / unbezahlte Schäden / nicht im Papierkorb) ist ein
 			// Konflikt. Alles andere NICHT: Bis zum 17.09.2026 bekam jeder Fehler die 409 —
 			// auch ein Verbindungsabbruch. Das schickt die Bibliothek los, einen offenen

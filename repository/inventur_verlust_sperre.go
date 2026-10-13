@@ -10,7 +10,7 @@ package repository
 // verschwände hier still und unwiederbringlich.
 //
 // Deshalb dieselbe Regel wie überall sonst, wo dieses System Daten endgültig entfernt
-// (siehe blockiereBeiOffenenVorgaengen für Schüler): Solange etwas offen ist, wird
+// (siehe pruefeKeineOffenenVorgaenge für Schüler): Solange etwas offen ist, wird
 // nicht gelöscht — und der Grund wird benannt, nicht verschluckt.
 
 import (
@@ -48,7 +48,7 @@ func (r *InventoryRepository) pruefeVerlusteLoeschbar(ctx context.Context, ids [
 		},
 		{
 			// ist_bezahlt = false genügt: Der Storno setzt ist_bezahlt = true
-			// (StornierungGebuehr), eine stornierte Gebühr ist also keine offene.
+			// (StorniereForderung), eine stornierte Gebühr ist also keine offene.
 			"unbezahlte Gebühr",
 			`SELECT DISTINCT exemplar_id FROM schadensfaelle
 			 WHERE exemplar_id = ANY($1) AND ist_bezahlt = false`,

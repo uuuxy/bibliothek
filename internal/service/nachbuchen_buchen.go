@@ -166,7 +166,7 @@ func (s *defaultLoanService) leiheImSavepointAus(ctx context.Context, tx pgx.Tx,
 	if chkCtx.istSchueler() {
 		entferneErfuellteVormerkung(ctx, sp, l.copy, l.leser.ID, resp)
 	}
-	if err := s.auditRepo.LogAusleihe(ctx, sp, l.copy.ID, l.leser.ID, "", l.e.StaffID); err != nil {
+	if err := s.auditRepo.ProtokolliereAusleihe(ctx, sp, l.copy.ID, l.leser.ID, "", l.e.StaffID); err != nil {
 		return nil, nil, err
 	}
 	if err := sp.Commit(ctx); err != nil {
@@ -212,7 +212,7 @@ func (s *defaultLoanService) nimmZurueck(ctx context.Context, tx pgx.Tx, l *nach
 	if aktiv.SchuelerID == nil {
 		return nil, nil
 	}
-	if err := s.auditRepo.LogRueckgabe(ctx, tx, l.copy.ID, *aktiv.SchuelerID, "", l.e.StaffID); err != nil {
+	if err := s.auditRepo.ProtokolliereRueckgabe(ctx, tx, l.copy.ID, *aktiv.SchuelerID, "", l.e.StaffID); err != nil {
 		return nil, err
 	}
 	if !fremd {

@@ -9,11 +9,11 @@ import (
 	"bibliothek/repository"
 )
 
-// TestDeleteTitle_TresenAuskunftFindetGeloeschteExemplare ist das Paar-Gate zum
-// B-Posten „DeleteTitle löscht Exemplare ohne Barcode-Snapshot" (Befund-Register,
+// TestLoescheTitel_TresenAuskunftFindetGeloeschteExemplare ist das Paar-Gate zum
+// B-Posten „LoescheTitel löscht Exemplare ohne Barcode-Snapshot" (Befund-Register,
 // 01.09.2026): Die Tresen-Auskunft findet gelöschte Exemplare AUSSCHLIESSLICH über
 // audit_log-Zeilen mit tabelle='buecher_exemplare' und details->>'barcode_id'
-// (repository.SucheTresenExemplare). DeleteCopy und das Verlust-Löschen schreiben
+// (repository.FindeTresenExemplare). SondereExemplarAus und das Verlust-Löschen schreiben
 // diese Spur längst — beim Löschen eines ganzen TITELS fiel jedes Exemplar ohne
 // sie: Wer so ein Buch später am Tresen scannte, bekam „nie gesehen" statt
 // „gelöscht am …".
@@ -21,7 +21,7 @@ import (
 // Geprüft wird das PAAR (Schreiber ↔ Leseweg), nicht die Audit-Zeile allein: Eine
 // Zeile im falschen Format sähe im SELECT count(*) gut aus und bliebe für die
 // Auskunft trotzdem unsichtbar (Lehre LUSD-Paarungs-Gates).
-func TestDeleteTitle_TresenAuskunftFindetGeloeschteExemplare(t *testing.T) {
+func TestLoescheTitel_TresenAuskunftFindetGeloeschteExemplare(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -31,12 +31,12 @@ func TestDeleteTitle_TresenAuskunftFindetGeloeschteExemplare(t *testing.T) {
 	testdaten.Exemplar(t, pool, titelID, "SNAP-TITELDEL-2", true, "")
 	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "titelloescher@test.invalid")
 
-	if err := repository.NewAuditRepository(pool).DeleteTitle(ctx, titelID, bearbeiter); err != nil {
-		t.Fatalf("DeleteTitle: %v", err)
+	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
+		t.Fatalf("LoescheTitel: %v", err)
 	}
 
 	for _, barcode := range []string{"SNAP-TITELDEL-1", "SNAP-TITELDEL-2"} {
-		zeilen, err := repository.SucheTresenExemplare(ctx, pool, barcode)
+		zeilen, err := repository.FindeTresenExemplare(ctx, pool, barcode)
 		if err != nil {
 			t.Fatalf("Tresen-Auskunft für %s: %v", barcode, err)
 		}

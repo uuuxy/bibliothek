@@ -227,8 +227,8 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 	// Audit-Spur über den ECHTEN Schreiber: /api/audit darf sie nicht ausbreiten,
 	// die Tresen-Auskunft muss sie (Stufe 2) zeigen.
 	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
-		return repository.NewAuditRepository(pool).
-			LogAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.mitarbeiterID)
+		return repository.NewProtokollAbfragen(pool).
+			ProtokolliereAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.mitarbeiterID)
 	})
 
 	t.Cleanup(func() {

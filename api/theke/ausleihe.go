@@ -112,14 +112,14 @@ func (s *Tueren) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 }
 
 // OverrideDueDateHandler manually overrides the due date of an active loan.
-func (s *Tueren) OverrideDueDateHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) OverrideDueDateHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleOverrideDueDate(w, r, auditRepo)
 	}
 }
 
 // handleOverrideDueDate setzt die Frist einer laufenden Ausleihe von Hand.
-func (s *Tueren) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository) {
+func (s *Tueren) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, auditRepo repository.ProtokollAbfragen) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
@@ -176,7 +176,7 @@ func (s *Tueren) handleOverrideDueDate(w http.ResponseWriter, r *http.Request, a
 	// (Mahnfristen, Auto-Sperre) — er gehört revisionssicher protokolliert, genau wie
 	// der Checkout-Override (OVERRIDE_BLOCK). Best effort: Der Eingriff gilt, auch wenn
 	// das Log klemmt, aber der Fehlversuch steht wenigstens im Server-Log.
-	if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "FRIST_OVERRIDE", "", map[string]any{
+	if logErr := auditRepo.ProtokolliereAdminAktion(ctx, claims.UserID, "FRIST_OVERRIDE", "", map[string]any{
 		"ausleihe_id": id,
 		"neue_frist":  newFrist.Format(time.RFC3339),
 	}); logErr != nil {

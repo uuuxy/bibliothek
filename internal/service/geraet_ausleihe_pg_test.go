@@ -50,7 +50,7 @@ func neueGeraeteTheke(t *testing.T) *geraeteTheke {
 		}
 	})
 	g.svc = NewDeviceService(pool, repository.NewStudentRepository(pool), repository.NewLoanRepository(pool),
-		repository.NewAuditRepository(pool))
+		repository.NewProtokollAbfragen(pool))
 	return g
 }
 
@@ -337,15 +337,15 @@ func TestGeraetRueckgabe_ZweiPlaetzeBuchenNurEinmal(t *testing.T) {
 }
 
 // protokollScheitert ist ein Protokoll, das Ausleihe und Rückgabe nicht schreiben kann.
-type protokollScheitert struct{ repository.AuditRepository }
+type protokollScheitert struct{ repository.ProtokollAbfragen }
 
 var errProtokollProbe = errors.New("protokoll nicht schreibbar")
 
-func (protokollScheitert) LogAusleihe(context.Context, pgx.Tx, string, string, string, string) error {
+func (protokollScheitert) ProtokolliereAusleihe(context.Context, pgx.Tx, string, string, string, string) error {
 	return errProtokollProbe
 }
 
-func (protokollScheitert) LogRueckgabe(context.Context, pgx.Tx, string, string, string, string) error {
+func (protokollScheitert) ProtokolliereRueckgabe(context.Context, pgx.Tx, string, string, string, string) error {
 	return errProtokollProbe
 }
 
@@ -357,7 +357,7 @@ func TestGeraet_OhneProtokollWederAusleiheNochRueckgabe(t *testing.T) {
 	nummer := g.geraet(t, "protokoll")
 	leser := g.schueler(t, "Protokoll")
 	ohneProtokoll := NewDeviceService(g.pool, repository.NewStudentRepository(g.pool), repository.NewLoanRepository(g.pool),
-		protokollScheitert{repository.NewAuditRepository(g.pool)})
+		protokollScheitert{repository.NewProtokollAbfragen(g.pool)})
 
 	if _, err := ohneProtokoll.HandleDeviceAction(ctx, nummer, &leser, true, false, g.ausgabe); !errors.Is(err, errProtokollProbe) {
 		t.Fatalf("Ausleihe ohne Protokoll: Fehler %v, erwartet den des Protokolls", err)

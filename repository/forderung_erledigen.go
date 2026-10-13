@@ -40,12 +40,12 @@ func betragFuerErledigung(ctx context.Context, tx pgx.Tx, schadensfallID string)
 	return betrag, nil
 }
 
-// StornierungGebuehr markiert eine ausstehende Gebühr (Schadensfall) als storniert und schreibt einen
+// StorniereForderung markiert eine ausstehende Gebühr (Schadensfall) als storniert und schreibt einen
 // revisionssicheren Audit-Eintrag. Dies ersetzt das physische Löschen von Schadensfällen, um die Historie zu wahren.
 // ist_bezahlt wird bewusst mitgesetzt: Alle Offen-Filter hängen an ist_bezahlt = false;
 // die Lesepfade unterscheiden bezahlt/storniert über storniert_am.
-func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error {
-	tx, err := r.db.Begin(ctx)
+func (a *pgProtokollAbfragen) StorniereForderung(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error {
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 		details["schueler_id"] = *leserID
 	}
 	kontext := "Gebühr storniert"
-	if err = r.insertAuditLog(ctx, tx, auditEntry{
+	if err = a.schreibeEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", DatensatzID: schadensfallID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: details,
@@ -93,11 +93,11 @@ func (r *pgAuditRepository) StornierungGebuehr(ctx context.Context, schadensfall
 	return tx.Commit(ctx)
 }
 
-// BezahltGebuehr verbucht die Zahlung einer ausstehenden Gebühr (der Alltagsfall:
+// VerbucheZahlung verbucht die Zahlung einer ausstehenden Gebühr (der Alltagsfall:
 // Barzahlung am Tresen) und schreibt den Audit-Eintrag. Die Storno-Spalten bleiben
 // unberührt — bezahlt und storniert bleiben so unterscheidbar.
-func (r *pgAuditRepository) BezahltGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string) error {
-	tx, err := r.db.Begin(ctx)
+func (a *pgProtokollAbfragen) VerbucheZahlung(ctx context.Context, schadensfallID string, bearbeiterID string) error {
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ func (r *pgAuditRepository) BezahltGebuehr(ctx context.Context, schadensfallID s
 	}
 
 	kontext := "Gebühr bezahlt"
-	if err = r.insertAuditLog(ctx, tx, auditEntry{
+	if err = a.schreibeEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "schadensfaelle", Aktion: "ZAHLUNG", DatensatzID: schadensfallID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: map[string]any{
@@ -126,28 +126,6 @@ func (r *pgAuditRepository) BezahltGebuehr(ctx context.Context, schadensfallID s
 		},
 	}); err != nil {
 		return fmt.Errorf("writing audit log: %w", err)
-	}
-
-	return tx.Commit(ctx)
-}
-
-// LogSystemAktion schreibt einen Audit-Eintrag für eine rein systemgesteuerte Aktion (ohne Bearbeiter-ID).
-// Dies wird typischerweise von Cronjobs, DSGVO-Routinebereinigungen oder Datensicherungen verwendet.
-func (r *pgAuditRepository) LogSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer db.SafeRollback(ctx, tx)
-
-	// Systemaktionen verwenden eine Standard-Null-UUID als Datensatz-ID
-	const systemSentinelID = "00000000-0000-0000-0000-000000000000"
-
-	if err = r.insertAuditLog(ctx, tx, auditEntry{
-		Tabelle: tabelle, Aktion: aktion, DatensatzID: systemSentinelID,
-		Akteur: "SYSTEM", Kontext: &kontext, Details: details,
-	}); err != nil {
-		return err
 	}
 
 	return tx.Commit(ctx)

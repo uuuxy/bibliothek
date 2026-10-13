@@ -19,7 +19,7 @@ import (
 
 // Ein manuell gesperrter Schüler muss aus dem Papierkorb zurückkommen — mit seinem Grund.
 //
-// Fund des Komplett-Durchgangs 31.08.2026: DeleteStudent überschrieb block_reason
+// Fund des Komplett-Durchgangs 31.08.2026: LegeLeserInPapierkorb überschrieb block_reason
 // BEDINGUNGSLOS mit 'Systematisch gelöscht' — als einziger Schreiber im Baum; alle
 // anderen (LUSD-Abgang, Versetzung, Sperr-Endpunkt) bewahren einen bestehenden Grund
 // per COALESCE(NULLIF(...)). Folge: Der echte Sperrgrund („Ausweismissbrauch, Eltern
@@ -33,7 +33,7 @@ func TestPapierkorb_ManuelleSperreUeberlebtLoeschenUndRestore(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "papierkorb@test.invalid")
 
 	gesperrt := testdaten.SeedSchueler(t, pool, "S-SPERRE-1", "Mia", "5a")
@@ -111,7 +111,7 @@ func sperrZustand(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, manuel
 
 // Ein zweites Löschen darf die Lösch-Uhr nicht neu stellen.
 //
-// Fund aus dem Bestands-Durchgang 10.09.2026 (Register): DeleteStudent schrieb
+// Fund aus dem Bestands-Durchgang 10.09.2026 (Register): LegeLeserInPapierkorb schrieb
 // `deleted_at = CURRENT_TIMESTAMP` bedingungslos, und geprüft wurde davor nur, DASS es
 // den Schüler gibt — nicht, ob er schon im Papierkorb liegt. Wer eine Zeile ein zweites
 // Mal löschte, verschob damit die 180-Tage-Frist der Anonymisierung
@@ -123,7 +123,7 @@ func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "papierkorb-uhr@test.invalid")
 	schueler := testdaten.SeedSchueler(t, pool, "S-UHR-1", "Uri", "5a")
 

@@ -71,7 +71,7 @@ func TestSchuelerScanTraegtAbholfachHinweis(t *testing.T) {
 	bookRepo := repository.NewBookRepository(pool)
 	userRepo := repository.NewKontoAbfragen(pool)
 	loanRepo := repository.NewLoanRepository(pool)
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	loanSvc := NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
 	svc := NewOmniboxService(pool, studentRepo, bookRepo, userRepo, loanRepo, loanSvc, deviceSvc)

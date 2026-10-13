@@ -31,12 +31,12 @@ var koerperlicheLoeschungBestand = map[string]struct {
 	anzahl int
 	grund  string
 }{
-	"repository/audit_books.go": {2, "Titel löschen (einzeln): erst die Exemplare, dann der Titel. " +
-		"Spur je Exemplar mit AuditAktionTitelGeloescht."},
+	"repository/titel_loeschen.go": {2, "Titel löschen (einzeln): erst die Exemplare, dann der Titel. " +
+		"Spur je Exemplar mit ProtokollAktionTitelGeloescht."},
 	"inventur/db_books_delete.go": {1, "Titel löschen (Massenaktion): die Exemplare fallen per " +
-		"ON DELETE CASCADE. Spur je Exemplar in db_books_delete_spur.go, ebenfalls AuditAktionTitelGeloescht."},
+		"ON DELETE CASCADE. Spur je Exemplar in db_books_delete_spur.go, ebenfalls ProtokollAktionTitelGeloescht."},
 	"repository/inventur_verlust_aktionen.go": {1, "Verlust endgültig löschen (Inventur). " +
-		"Spur je Exemplar mit AuditAktionVerlustEndgueltigGeloescht."},
+		"Spur je Exemplar mit ProtokollAktionVerlustEndgueltigGeloescht."},
 }
 
 var musterKoerperlicheLoeschung = regexp.MustCompile(`(?i)DELETE\s+FROM\s+buecher_(exemplare|titel)\b`)
@@ -105,7 +105,7 @@ func TestKoerperlicheLoeschung_FuenfteAnweisungIstEineFrage(t *testing.T) {
 	for _, p := range neu {
 		t.Errorf("%s löscht Bestandszeilen KÖRPERLICH. Damit fällt das Exemplar aus dem "+
 			"Abgangsbuch, das es sonst führen würde. Bitte eine Protokollspur legen (siehe "+
-			"AuditAktionTitelGeloescht) und mit diesem Satz in koerperlicheLoeschungBestand "+
+			"ProtokollAktionTitelGeloescht) und mit diesem Satz in koerperlicheLoeschungBestand "+
 			"eintragen — sonst verliert der Nachweis stillschweigend eine Zeile.", p)
 	}
 	for _, p := range gewachsen {

@@ -38,8 +38,8 @@ func (s *Basis) ProtokolliereVerwaltung(ctx context.Context, aktion string, deta
 	if s.DB == nil || s.DB.Pool == nil {
 		return
 	}
-	if err := repository.NewAuditRepository(s.DB.Pool).
-		LogAdminAktion(ctx, claims.UserID, aktion, "", details); err != nil {
+	if err := repository.NewProtokollAbfragen(s.DB.Pool).
+		ProtokolliereAdminAktion(ctx, claims.UserID, aktion, "", details); err != nil {
 		log.Printf("Protokoll (%s) fehlgeschlagen: %v", aktion, err)
 	}
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// -- Mocking AuditRepository --
+// -- Mocking ProtokollAbfragen --
 
 type MockAuditRepo struct {
 	DeleteStudentCalls   int
@@ -20,53 +20,53 @@ type MockAuditRepo struct {
 	LogSystemAktionCalls int
 }
 
-func (m *MockAuditRepo) DeleteTitle(ctx context.Context, titleID string, bearbeiterID string) error {
+func (m *MockAuditRepo) LoescheTitel(ctx context.Context, titleID string, bearbeiterID string) error {
 	return nil
 }
 
-func (m *MockAuditRepo) DeleteCopy(ctx context.Context, copyID string, bearbeiterID string) error {
+func (m *MockAuditRepo) SondereExemplarAus(ctx context.Context, copyID string, bearbeiterID string) error {
 	return nil
 }
 
-func (m *MockAuditRepo) DeleteUser(ctx context.Context, userID string, bearbeiterID string) error {
+func (m *MockAuditRepo) LoescheKonto(ctx context.Context, userID string, bearbeiterID string) error {
 	return nil
 }
 
-func (m *MockAuditRepo) DeleteStudent(ctx context.Context, studentID string, bearbeiterID string, grund string) error {
+func (m *MockAuditRepo) LegeLeserInPapierkorb(ctx context.Context, studentID string, bearbeiterID string, grund string) error {
 	m.DeleteStudentCalls++
 	return nil
 }
 
-func (m *MockAuditRepo) PurgeStudent(ctx context.Context, studentID string, bearbeiterID string) error {
+func (m *MockAuditRepo) LoescheLeserEndgueltig(ctx context.Context, studentID string, bearbeiterID string) error {
 	return nil
 }
 
-func (m *MockAuditRepo) PurgeAbgaenger(ctx context.Context, studentID string, bearbeiterID string) error {
+func (m *MockAuditRepo) LoescheAbgaengerEndgueltig(ctx context.Context, studentID string, bearbeiterID string) error {
 	m.PurgeAbgaengerCalls++
 	return nil
 }
 
-func (m *MockAuditRepo) LogAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error {
+func (m *MockAuditRepo) ProtokolliereAdminAktion(ctx context.Context, adminID string, aktion string, ip string, details map[string]any) error {
 	return nil
 }
 
-func (m *MockAuditRepo) StornierungGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error {
+func (m *MockAuditRepo) StorniereForderung(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error {
 	return nil
 }
 
-func (m *MockAuditRepo) BezahltGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string) error {
+func (m *MockAuditRepo) VerbucheZahlung(ctx context.Context, schadensfallID string, bearbeiterID string) error {
 	return nil
 }
 
-func (m *MockAuditRepo) LogAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
+func (m *MockAuditRepo) ProtokolliereAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
 	return nil
 }
 
-func (m *MockAuditRepo) LogRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
+func (m *MockAuditRepo) ProtokolliereRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
 	return nil
 }
 
-func (m *MockAuditRepo) LogSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error {
+func (m *MockAuditRepo) ProtokolliereSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error {
 	m.LogSystemAktionCalls++
 	return nil
 }
@@ -156,16 +156,16 @@ func TestRunGDPRDeleteAbgaenger_Deleted(t *testing.T) {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 
-	// Der Job muss die ECHTE Löschung (PurgeAbgaenger) rufen, nicht den Soft-Delete
-	// (DeleteStudent) — sonst bliebe die PII im Papierkorb.
+	// Der Job muss die ECHTE Löschung (LoescheAbgaengerEndgueltig) rufen, nicht den Soft-Delete
+	// (LegeLeserInPapierkorb) — sonst bliebe die PII im Papierkorb.
 	if auditMock.PurgeAbgaengerCalls != 1 {
-		t.Errorf("erwartete 1 PurgeAbgaenger Aufruf, bekam %d", auditMock.PurgeAbgaengerCalls)
+		t.Errorf("erwartete 1 LoescheAbgaengerEndgueltig Aufruf, bekam %d", auditMock.PurgeAbgaengerCalls)
 	}
 	if auditMock.DeleteStudentCalls != 0 {
-		t.Errorf("DeleteStudent (Soft-Delete) darf NICHT gerufen werden, war %d", auditMock.DeleteStudentCalls)
+		t.Errorf("LegeLeserInPapierkorb (Soft-Delete) darf NICHT gerufen werden, war %d", auditMock.DeleteStudentCalls)
 	}
 	if auditMock.LogSystemAktionCalls != 1 {
-		t.Errorf("erwartete 1 LogSystemAktion Aufruf, bekam %d", auditMock.LogSystemAktionCalls)
+		t.Errorf("erwartete 1 ProtokolliereSystemAktion Aufruf, bekam %d", auditMock.LogSystemAktionCalls)
 	}
 }
 
@@ -201,9 +201,9 @@ func TestRunGDPRDeleteAbgaenger_Blocked(t *testing.T) {
 
 	// 0 Aufrufe, da niemand berechtigt war
 	if auditMock.PurgeAbgaengerCalls != 0 {
-		t.Errorf("erwartete 0 PurgeAbgaenger Aufrufe, bekam %d", auditMock.PurgeAbgaengerCalls)
+		t.Errorf("erwartete 0 LoescheAbgaengerEndgueltig Aufrufe, bekam %d", auditMock.PurgeAbgaengerCalls)
 	}
 	if auditMock.LogSystemAktionCalls != 0 {
-		t.Errorf("erwartete 0 LogSystemAktion Aufrufe, bekam %d", auditMock.LogSystemAktionCalls)
+		t.Errorf("erwartete 0 ProtokolliereSystemAktion Aufrufe, bekam %d", auditMock.LogSystemAktionCalls)
 	}
 }

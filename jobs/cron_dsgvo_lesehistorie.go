@@ -58,7 +58,7 @@ func (s *Scheduler) RunLesehistorieBefristung() {
 	if gesamt == 0 {
 		return
 	}
-	if err := s.auditRepo.LogSystemAktion(ctx, "ausleihen", "ANONYMIZE",
+	if err := s.auditRepo.ProtokolliereSystemAktion(ctx, "ausleihen", "ANONYMIZE",
 		"DSGVO Lesehistorie befristet: abgeschlossene Ausleihen vom Schüler getrennt",
 		map[string]any{
 			"schuelerbuecherei_getrennt": getrenntFreihand,

@@ -8,29 +8,29 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// snapshotBenutzerRows liefert die Stammdaten-Zeile, die DeleteUser vor dem Löschen
+// snapshotBenutzerRows liefert die Stammdaten-Zeile, die LoescheKonto vor dem Löschen
 // für das Audit-Log sichert.
 func snapshotBenutzerRows() *pgxmock.Rows {
 	// `leser_id` NULL: Diese Fälle prüfen die Vorab-Prüfung auf offene Ausleihen. Was mit
-	// einer Leserzeile geschieht, prüft der PG-Test (audit_users_leserzeile_pg_test.go) —
+	// einer Leserzeile geschieht, prüft der PG-Test (konto_loeschen_leserzeile_pg_test.go) —
 	// er muss es, weil die Prüfung den Fremdschlüssel-Katalog der Datenbank liest.
 	return pgxmock.NewRows([]string{"vorname", "nachname", "email", "rolle", "leser_id"}).
 		AddRow("Erika", "Muster", "erika@schule.de", "KOLLEGIUM", nil)
 }
 
-// TestDeleteUser_RejectsWhenActiveLoans sichert Bug 2 (Stranded Handapparat) ab: Hat ein
-// Mitarbeiter/Lehrer noch nicht zurückgegebene Handapparat-Ausleihen, muss DeleteUser mit
-// ErrUserHasActiveLoans abbrechen — und darf das DELETE gar nicht erst absetzen, sonst
+// TestLoescheKonto_RejectsWhenActiveLoans sichert Bug 2 (Stranded Handapparat) ab: Hat ein
+// Mitarbeiter/Lehrer noch nicht zurückgegebene Handapparat-Ausleihen, muss LoescheKonto mit
+// ErrKontoHatAusleihen abbrechen — und darf das DELETE gar nicht erst absetzen, sonst
 // verlöre die Leserzeile ihr Konto (benutzer.leser_id, ON DELETE SET NULL) und die Bücher
 // blieben ohne zuordenbaren Ausleiher stehen.
-func TestDeleteUser_RejectsWhenActiveLoans(t *testing.T) {
+func TestLoescheKonto_RejectsWhenActiveLoans(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewAuditRepository(mock)
+	repo := NewProtokollAbfragen(mock)
 	const userID = "user-123"
 
 	mock.ExpectBegin()
@@ -43,26 +43,26 @@ func TestDeleteUser_RejectsWhenActiveLoans(t *testing.T) {
 	// KEIN ExpectExec("DELETE …"): Die Löschung muss vor dem destruktiven Statement scheitern.
 	mock.ExpectRollback()
 
-	err = repo.DeleteUser(context.Background(), userID, "admin-1")
-	if !errors.Is(err, ErrUserHasActiveLoans) {
-		t.Fatalf("erwartet ErrUserHasActiveLoans, bekam: %v", err)
+	err = repo.LoescheKonto(context.Background(), userID, "admin-1")
+	if !errors.Is(err, ErrKontoHatAusleihen) {
+		t.Fatalf("erwartet ErrKontoHatAusleihen, bekam: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene/unerwartete Mock-Erwartungen: %v", err)
 	}
 }
 
-// TestDeleteUser_SucceedsWhenNoActiveLoans stellt sicher, dass die Pre-Flight-Prüfung den
+// TestLoescheKonto_SucceedsWhenNoActiveLoans stellt sicher, dass die Pre-Flight-Prüfung den
 // Normalfall (keine offenen Ausleihen) nicht blockiert: Der Benutzer wird gelöscht, die
 // Löschung ins Audit-Log geschrieben und committet.
-func TestDeleteUser_SucceedsWhenNoActiveLoans(t *testing.T) {
+func TestLoescheKonto_SucceedsWhenNoActiveLoans(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewAuditRepository(mock)
+	repo := NewProtokollAbfragen(mock)
 	const userID = "user-456"
 
 	mock.ExpectBegin()
@@ -81,7 +81,7 @@ func TestDeleteUser_SucceedsWhenNoActiveLoans(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	if err := repo.DeleteUser(context.Background(), userID, "admin-1"); err != nil {
+	if err := repo.LoescheKonto(context.Background(), userID, "admin-1"); err != nil {
 		t.Fatalf("unerwarteter Fehler bei Löschung ohne offene Ausleihen: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {

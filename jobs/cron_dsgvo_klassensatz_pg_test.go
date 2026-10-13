@@ -66,7 +66,7 @@ func TestKlassensatzBefristung_LoeschtNurErledigteNachFrist(t *testing.T) {
 		"WIEDER-OFFEN":   lege("WIEDER-OFFEN", false, tage(400)),
 	}
 
-	NewScheduler(pool, repository.NewAuditRepository(pool)).RunKlassensatzBefristung()
+	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunKlassensatzBefristung()
 
 	for name, bleibt := range map[string]bool{
 		"ALT-ERLEDIGT": false, "JUNG-ERLEDIGT": true, "ALT-OFFEN": true, "OHNE-ZEITPUNKT": true,
@@ -124,7 +124,7 @@ func TestKlassensatzBefristung_NullSchaltetAb(t *testing.T) {
 		t.Fatalf("Einstellung: %v", err)
 	}
 
-	NewScheduler(pool, repository.NewAuditRepository(pool)).RunKlassensatzBefristung()
+	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunKlassensatzBefristung()
 
 	var n int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM klassensatz_reservierungen WHERE id = $1`, id).Scan(&n); err != nil {

@@ -24,7 +24,7 @@ func aendereLeser(t *testing.T, srv *Tueren, id, rumpf string) *httptest.Respons
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.PatchStudentHandler(repository.NewAuditRepository(srv.DB.Pool))(rec, req)
+	srv.PatchStudentHandler(repository.NewProtokollAbfragen(srv.DB.Pool))(rec, req)
 	return rec
 }
 

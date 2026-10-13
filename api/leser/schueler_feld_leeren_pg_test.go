@@ -49,7 +49,7 @@ func TestSchuelerFeldLeeren_WirktInDerDatenbank(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.PatchStudentHandler(repository.NewAuditRepository(pool))(rec, req)
+		srv.PatchStudentHandler(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
 	}
 
@@ -112,7 +112,7 @@ func TestSchuelerPflichtfeldLeeren_WirdAbgelehnt(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.PatchStudentHandler(repository.NewAuditRepository(pool))(rec, req)
+		srv.PatchStudentHandler(repository.NewProtokollAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusBadRequest {
 			t.Errorf("%s gab %d statt 400 — ein Pflichtfeld liess sich leeren", rumpf, rec.Code)
 		}

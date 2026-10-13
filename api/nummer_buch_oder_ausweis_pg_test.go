@@ -80,7 +80,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 	t.Run("Schülerakte: den Barcode eines Buchs als Ausweis eintragen", func(t *testing.T) {
 		exemplar(t, "N131-B")
 		id := schueler(t, "N131-B-S")
-		rec := fahre(srv.leser().PatchStudentHandler(repository.NewAuditRepository(pool)),
+		rec := fahre(srv.leser().PatchStudentHandler(repository.NewProtokollAbfragen(pool)),
 			http.MethodPatch, "/api/schueler/"+id, id, `{"barcode_id":"N131-B"}`)
 		pruefe(t, rec, http.StatusConflict, "Barcode eines Buchs")
 	})
@@ -112,7 +112,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 				t.Errorf("Bearbeiter aufräumen: %v", err)
 			}
 		})
-		if err := repository.NewAuditRepository(pool).DeleteStudent(ctx, id, bearbeiter, "Test"); err != nil {
+		if err := repository.NewProtokollAbfragen(pool).LegeLeserInPapierkorb(ctx, id, bearbeiter, "Test"); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 		exemplar(t, "N131-D")

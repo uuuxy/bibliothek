@@ -56,7 +56,7 @@ func TestDeleteBooks_VermerktObDasExemplarImBestandWar(t *testing.T) {
 		if err := pool.QueryRow(ctx, `
 			SELECT (details->>$2)::boolean FROM audit_log
 			WHERE tabelle = 'buecher_exemplare' AND aktion = 'DELETE' AND datensatz_id = $1`,
-			fall.id, repository.AuditDetailWarImBestand).Scan(&vermerk); err != nil {
+			fall.id, repository.ProtokollDetailWarImBestand).Scan(&vermerk); err != nil {
 			t.Fatalf("Spur von %s: %v", fall.barcode, err)
 		}
 		if vermerk == nil || *vermerk != fall.erwartet {

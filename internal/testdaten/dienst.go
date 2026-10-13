@@ -20,7 +20,7 @@ func AusleiheUeberDenDienst(t *testing.T, pool *pgxpool.Pool, barcode, schuelerI
 
 	bookRepo := repository.NewBookRepository(pool)
 	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
-		repository.NewLoanRepository(pool), repository.NewAuditRepository(pool))
+		repository.NewLoanRepository(pool), repository.NewProtokollAbfragen(pool))
 
 	exemplar, err := bookRepo.GetCopyByBarcode(ctx, barcode)
 	if err != nil {

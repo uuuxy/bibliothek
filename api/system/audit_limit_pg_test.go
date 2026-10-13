@@ -71,8 +71,8 @@ func TestAuditLogIstBegrenzt(t *testing.T) {
 
 	// Und es sind die JÜNGSTEN. Eine Grenze, die die ältesten liefert, wäre schlimmer als
 	// keine: Das Logbuch zeigte dauerhaft nur die Vergangenheit, und niemand bemerkte es.
-	if eintraege[0].Timestamp.Before(eintraege[1].Timestamp) {
+	if eintraege[0].Zeitstempel.Before(eintraege[1].Zeitstempel) {
 		t.Fatalf("Reihenfolge falsch: erster Eintrag (%s) ist älter als der zweite (%s)",
-			eintraege[0].Timestamp, eintraege[1].Timestamp)
+			eintraege[0].Zeitstempel, eintraege[1].Zeitstempel)
 	}
 }

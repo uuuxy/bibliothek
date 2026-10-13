@@ -139,7 +139,7 @@ func TestNachtlauf_NimmtWasSeitZwoelfStundenFaelligIst(t *testing.T) {
 		}
 	}
 
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunNaechtlicheDSGVO()
 	s.RunAuditAufbewahrung()
 

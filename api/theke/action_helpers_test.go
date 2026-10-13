@@ -23,7 +23,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 
 	studentRepo := repository.NewStudentRepository(mock)
 	loanRepo := repository.NewLoanRepository(mock)
-	auditRepo := repository.NewAuditRepository(mock)
+	auditRepo := repository.NewProtokollAbfragen(mock)
 	bookRepo := repository.NewBookRepository(mock)
 	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 
@@ -134,7 +134,7 @@ func TestHandleBookReturn(t *testing.T) {
 
 	studentRepo := repository.NewStudentRepository(mock)
 	loanRepo := repository.NewLoanRepository(mock)
-	auditRepo := repository.NewAuditRepository(mock)
+	auditRepo := repository.NewProtokollAbfragen(mock)
 	bookRepo := repository.NewBookRepository(mock)
 	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := service.NewDeviceService(mock, studentRepo, loanRepo, auditRepo)

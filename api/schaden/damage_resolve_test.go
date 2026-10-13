@@ -18,17 +18,17 @@ import (
 // Das SQL-Verhalten selbst sichert repository/gebuehr_erledigung_pg_test.go.
 
 type stubGebuehrAuditRepo struct {
-	repository.AuditRepository
+	repository.ProtokollAbfragen
 	stornoErr  error
 	bezahltErr error
 	grund      string
 }
 
-func (s *stubGebuehrAuditRepo) StornierungGebuehr(_ context.Context, _, _, grund string) error {
+func (s *stubGebuehrAuditRepo) StorniereForderung(_ context.Context, _, _, grund string) error {
 	s.grund = grund
 	return s.stornoErr
 }
-func (s *stubGebuehrAuditRepo) BezahltGebuehr(_ context.Context, _, _ string) error {
+func (s *stubGebuehrAuditRepo) VerbucheZahlung(_ context.Context, _, _ string) error {
 	return s.bezahltErr
 }
 

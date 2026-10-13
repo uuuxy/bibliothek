@@ -22,8 +22,8 @@ type kontoLoeschung struct {
 }
 
 // protokolliereKontoLoeschung schreibt den Löscheintrag eines Zugangskontos in die
-// Datensatz-Historie. Ein Konto fällt über zwei Türen: Benutzer & Rechte (DeleteUser) und das
-// Löschen der Leserzeile eines Kollegen (DeleteStudent). Bis zum 29.09.2026 schrieb nur die
+// Datensatz-Historie. Ein Konto fällt über zwei Türen: Benutzer & Rechte (LoescheKonto) und das
+// Löschen der Leserzeile eines Kollegen (LegeLeserInPapierkorb). Bis zum 29.09.2026 schrieb nur die
 // erste einen Eintrag mit dem Konto, und keiner nannte den Leser. Nach dem Löschen führt kein
 // Fremdschlüssel mehr vom Leser zum Konto (benutzer.leser_id und alle Verweise auf benutzer
 // stehen auf SET NULL); dieser Eintrag ist der Weg dorthin.
@@ -33,7 +33,7 @@ type kontoLoeschung struct {
 // darüber nimmt die Tilgung beim endgültigen Löschen des Lesers Name und Adresse heraus
 // (protokollSchluesselMitPersonenbezug). Jeder Schlüssel steht wörtlich hier, damit das Gate
 // in protokoll_personenbezug_test.go ihn sieht.
-func (r *pgAuditRepository) protokolliereKontoLoeschung(ctx context.Context, tx pgx.Tx, l kontoLoeschung) error {
+func (a *pgProtokollAbfragen) protokolliereKontoLoeschung(ctx context.Context, tx pgx.Tx, l kontoLoeschung) error {
 	details := map[string]any{
 		"vorname":  l.vorname,
 		"nachname": l.nachname,
@@ -54,7 +54,7 @@ func (r *pgAuditRepository) protokolliereKontoLoeschung(ctx context.Context, tx 
 		akteur = "USER"
 		bearbeiter = &l.bearbeiterID
 	}
-	if err := r.insertAuditLog(ctx, tx, auditEntry{
+	if err := a.schreibeEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "benutzer", Aktion: "DELETE", DatensatzID: l.kontoID,
 		BearbeiterID: bearbeiter, Akteur: akteur, Kontext: l.kontext,
 		Details: details,
@@ -66,8 +66,8 @@ func (r *pgAuditRepository) protokolliereKontoLoeschung(ctx context.Context, tx 
 
 // loescheKontenDerLeserzeile löscht die Zugangskonten, die auf eine Leserzeile zeigen, und
 // schreibt je Konto den Löscheintrag — die Tür „Leserzeile eines Kollegen in den Papierkorb"
-// (DeleteStudent). Bis zum 29.09.2026 stand dort nur die Zahl der gelöschten Konten.
-func (r *pgAuditRepository) loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID string) (int64, error) {
+// (LegeLeserInPapierkorb). Bis zum 29.09.2026 stand dort nur die Zahl der gelöschten Konten.
+func (a *pgProtokollAbfragen) loescheKontenDerLeserzeile(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID string) (int64, error) {
 	rows, err := tx.Query(ctx, `
 		SELECT id::text, coalesce(vorname, ''), coalesce(nachname, ''), coalesce(email, ''), coalesce(rolle::text, '')
 		FROM benutzer WHERE leser_id = $1 FOR UPDATE`, leserID)
@@ -103,7 +103,7 @@ func (r *pgAuditRepository) loescheKontenDerLeserzeile(ctx context.Context, tx p
 		geloescht++
 		leser := leserID
 		k.leserID, k.bearbeiterID, k.kontext = &leser, bearbeiterID, &kontext
-		if err := r.protokolliereKontoLoeschung(ctx, tx, k); err != nil {
+		if err := a.protokolliereKontoLoeschung(ctx, tx, k); err != nil {
 			return geloescht, err
 		}
 	}

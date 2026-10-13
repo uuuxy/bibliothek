@@ -61,7 +61,7 @@ func TestGDPRAnonymize_KarenzUhrUndEinstellung(t *testing.T) {
 	setzeKarenz("90")
 	a := lege("KZ-A", "100 days", "1 day")
 	b := lege("KZ-B", "0 days", "400 days")
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunGDPRAnonymizeOldData()
 	if !anonymisiert(a) {
 		t.Error("A (abgaenger_seit vor 100 Tagen) muss bei Karenz 90 anonymisiert sein — rechnet der Job mit aktualisiert_am?")
@@ -119,7 +119,7 @@ func TestGDPRAnonymize_OhneEinstellungenWirdNichtsAnonymisiert(t *testing.T) {
 	if _, err := pool.Exec(ctx, `ALTER TABLE system_einstellungen RENAME TO system_einstellungen_weg`); err != nil {
 		t.Fatalf("Tabelle umbenennen: %v", err)
 	}
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunGDPRAnonymizeOldData()
 	if _, err := pool.Exec(ctx, `ALTER TABLE system_einstellungen_weg RENAME TO system_einstellungen`); err != nil {
 		t.Fatalf("Tabelle zurückbenennen: %v", err)

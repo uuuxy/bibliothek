@@ -6,21 +6,21 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-func TestNewAuditRepository(t *testing.T) {
+func TestNewProtokollAbfragen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("Fehler beim Erstellen von pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewAuditRepository(mock)
+	repo := NewProtokollAbfragen(mock)
 	if repo == nil {
-		t.Fatal("NewAuditRepository sollte nicht nil zurückgeben")
+		t.Fatal("NewProtokollAbfragen sollte nicht nil zurückgeben")
 	}
 
 	// Typprüfung, dass es wirklich der gewünschte Typ ist
-	_, ok := repo.(*pgAuditRepository)
+	_, ok := repo.(*pgProtokollAbfragen)
 	if !ok {
-		t.Errorf("NewAuditRepository gibt falschen Typ zurück")
+		t.Errorf("NewProtokollAbfragen gibt falschen Typ zurück")
 	}
 }

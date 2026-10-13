@@ -13,7 +13,7 @@ import (
 )
 
 // Die Rundreise: Was die Auskunft zeigt, muss die Tilgung leeren — am echten Postgres,
-// über die echten Pfade (DeleteStudent → PurgeStudent), über JEDE Quelle der
+// über die echten Pfade (LegeLeserInPapierkorb → LoescheLeserEndgueltig), über JEDE Quelle der
 // gemeinsamen Liste testdaten.DsgvoSchuelerQuellen.
 //
 // Drei Prüfungen:
@@ -81,7 +81,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 				(idempotency_key, exemplar_id, barcode, ergebnis, grund, vorbesitzer_schueler_id, gescannt_am)
 				VALUES (gen_random_uuid(), $1, 'B-RUNDREISE', 'umgebucht', 'Rundreise', $2, NOW() - interval '1 hour')`, exID, sid)
 		case "audit_log":
-			// Lesehistorie, wie sie die Ausleihe schreibt (repository/audit_books.go) —
+			// Lesehistorie, wie sie die Ausleihe schreibt (repository/protokoll.go) —
 			// je eine Zeile für den Prüfling und den fremden Schüler.
 			for _, z := range []struct{ id, name string }{{sid, entl}, {fremd, fremdEnt}} {
 				if _, err = pool.Exec(ctx, `
@@ -129,9 +129,9 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 	// Der echte Lösch-Weg beginnt mit dem Soft-Delete — der schreibt den PII-Snapshot
 	// (Vorname, Nachname, Barcode) in audit_log.details, genau die Spur, die die
 	// Tilgung später neutralisieren muss.
-	auditRepo := repository.NewAuditRepository(pool)
-	if err := auditRepo.DeleteStudent(ctx, sid, "", "Rundreise"); err != nil {
-		t.Fatalf("DeleteStudent: %v", err)
+	auditRepo := repository.NewProtokollAbfragen(pool)
+	if err := auditRepo.LegeLeserInPapierkorb(ctx, sid, "", "Rundreise"); err != nil {
+		t.Fatalf("LegeLeserInPapierkorb: %v", err)
 	}
 
 	// ── 1. Die Auskunft zeigt VORHER aus jeder Quelle etwas ──
@@ -182,8 +182,8 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 	}
 
 	// ── Der echte Lösch-Weg zu Ende: Purge aus dem Papierkorb ──
-	if err := auditRepo.PurgeStudent(ctx, sid, ""); err != nil {
-		t.Fatalf("PurgeStudent: %v", err)
+	if err := auditRepo.LoescheLeserEndgueltig(ctx, sid, ""); err != nil {
+		t.Fatalf("LoescheLeserEndgueltig: %v", err)
 	}
 
 	// ── 2. Wertbasierte Sonde: keiner der markanten Werte überlebt in den Protokollen ──

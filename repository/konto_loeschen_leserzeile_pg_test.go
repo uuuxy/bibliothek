@@ -17,14 +17,14 @@ import (
 //
 // Geprüft wird am ECHTEN Postgres, weil die Prüfung den Fremdschlüssel-Katalog der
 // Datenbank liest: Ein Mock würde genau das nachspielen, was hier die Frage ist.
-func TestDeleteUser_LeserzeileGehtMitWennUnberuehrt(t *testing.T) {
+func TestLoescheKonto_LeserzeileGehtMitWennUnberuehrt(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewAuditRepository(pool)
+	repo := NewProtokollAbfragen(pool)
 
 	konto, leser := seedZugangsanfrage(t, pool, "anfrage.unberuehrt@schule.example")
-	if err := repo.DeleteUser(ctx, konto, seedBearbeiter(t, pool)); err != nil {
+	if err := repo.LoescheKonto(ctx, konto, seedBearbeiter(t, pool)); err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 
@@ -37,11 +37,11 @@ func TestDeleteUser_LeserzeileGehtMitWennUnberuehrt(t *testing.T) {
 // Menschen und nicht dem Konto. Hier eine abgeschlossene Ausleihe — ein Fremdschlüssel mit
 // RESTRICT, der das Löschen ohnehin abwiese; die Prüfung muss ihn VORHER sehen, damit der
 // Vorgang nicht an einer Constraint-Meldung endet.
-func TestDeleteUser_LeserzeileBleibtWennEtwasDranHaengt(t *testing.T) {
+func TestLoescheKonto_LeserzeileBleibtWennEtwasDranHaengt(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewAuditRepository(pool)
+	repo := NewProtokollAbfragen(pool)
 
 	konto, leser := seedZugangsanfrage(t, pool, "anfrage.mitbuch@schule.example")
 	bearbeiter := seedBearbeiter(t, pool)
@@ -49,7 +49,7 @@ func TestDeleteUser_LeserzeileBleibtWennEtwasDranHaengt(t *testing.T) {
 	loan := seedAusleihe(t, pool, copyID, leser, bearbeiter)
 	returnLoan(t, pool, loan)
 
-	if err := repo.DeleteUser(ctx, konto, bearbeiter); err != nil {
+	if err := repo.LoescheKonto(ctx, konto, bearbeiter); err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 
@@ -60,18 +60,18 @@ func TestDeleteUser_LeserzeileBleibtWennEtwasDranHaengt(t *testing.T) {
 
 // Ein Ausweis hält die Zeile ebenfalls — ihn sieht keine Fremdschlüssel-Abfrage, er steht
 // als Spalte in der Zeile. Eine Nummer ist vergeben und wird nie recycelt.
-func TestDeleteUser_LeserzeileBleibtMitAusweis(t *testing.T) {
+func TestLoescheKonto_LeserzeileBleibtMitAusweis(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewAuditRepository(pool)
+	repo := NewProtokollAbfragen(pool)
 
 	konto, leser := seedZugangsanfrage(t, pool, "anfrage.mitausweis@schule.example")
 	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = 'A-77001' WHERE id = $1`, leser); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := repo.DeleteUser(ctx, konto, seedBearbeiter(t, pool)); err != nil {
+	if err := repo.LoescheKonto(ctx, konto, seedBearbeiter(t, pool)); err != nil {
 		t.Fatalf("Konto löschen: %v", err)
 	}
 

@@ -143,10 +143,10 @@ type exemplarSnapshot struct {
 
 // leseExemplarSnapshots sammelt ALLE Exemplare der zu löschenden Titel — in der
 // Transaktion der Löschung, bevor die Zeilen fallen. Nicht nur die verliehenen:
-// Die Tresen-Auskunft (repository.SucheTresenExemplare) findet gelöschte Exemplare
+// Die Tresen-Auskunft (repository.FindeTresenExemplare) findet gelöschte Exemplare
 // ausschließlich über audit_log-Zeilen mit tabelle='buecher_exemplare' und
 // details->>'barcode_id'; die Ausleihen-Spur oben sieht sie nicht. Bis zum
-// 01.09.2026 fehlte dieser Snapshot hier wie beim Geschwister-Pfad DeleteTitle
+// 01.09.2026 fehlte dieser Snapshot hier wie beim Geschwister-Pfad LoescheTitel
 // (Befund-Register): Ein per Titel-Löschung verschwundenes Buch war beim Scannen
 // „nie gesehen" statt „gelöscht am …".
 func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exemplarSnapshot, error) {
@@ -176,16 +176,16 @@ func leseExemplarSnapshots(ctx context.Context, tx pgx.Tx, ids []string) ([]exem
 }
 
 // protokolliereGeloeschteExemplare schreibt je Exemplar die Barcode-Spur — dasselbe
-// Format wie DeleteCopy und das Verlust-Löschen (repository), damit die Auskunft
+// Format wie SondereExemplarAus und das Verlust-Löschen (repository), damit die Auskunft
 // alle drei Wege gleich findet. Läuft in der Transaktion der Löschung.
 func protokolliereGeloeschteExemplare(ctx context.Context, tx pgx.Tx, snaps []exemplarSnapshot) error {
 	for _, s := range snaps {
 		details, err := json.Marshal(map[string]any{
 			"barcode_id": s.Barcode,
 			"titel":      s.Titel,
-			"action":     repository.AuditAktionTitelGeloescht,
+			"action":     repository.ProtokollAktionTitelGeloescht,
 
-			repository.AuditDetailWarImBestand: s.WarImBestand,
+			repository.ProtokollDetailWarImBestand: s.WarImBestand,
 		})
 		if err != nil {
 			return fmt.Errorf("protokoll des gelöschten exemplars: %w", err)
@@ -221,7 +221,7 @@ type offenerSchaden struct {
 //
 // Warum das eine eigene Spur braucht (Rasterdurchgang 06.09.2026): Beide Löschwege
 // räumen `schadensfaelle` ohne Rücksicht auf `ist_bezahlt` ab; der Funktionskommentar in
-// repository/audit_books.go behauptete sogar, nur ABGESCHLOSSENE Fälle würden bereinigt.
+// repository/titel_loeschen.go behauptete sogar, nur ABGESCHLOSSENE Fälle würden bereinigt.
 // Ein unbezahlter Schadensfall ist aber Geld, das ein Schüler der Schule schuldet, und er
 // steuert sechs Entscheidungen — Kontoanzeige, Lösch-Sperre, Zusammenführen,
 // Abgänger-Wächter, LUSD-Anonymisierungsbremse und das DSGVO-Löschprädikat. Mit dem Titel

@@ -65,7 +65,7 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 	studentRepo := repository.NewStudentRepository(pool)
 	bookRepo := repository.NewBookRepository(pool)
 	loanRepo := repository.NewLoanRepository(pool)
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	loanSvc := service.NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := service.NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
 	omnibox := service.NewOmniboxService(pool, studentRepo, bookRepo, repository.NewKontoAbfragen(pool), loanRepo, loanSvc, deviceSvc)

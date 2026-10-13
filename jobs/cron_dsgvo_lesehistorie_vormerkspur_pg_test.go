@@ -16,7 +16,7 @@ import (
 // nichts einen Leser an ein Buch. Die Zeile einer gelöschten Forderung behält ihn, sie belegt,
 // wessen Forderung mit dem Titel gelöscht wurde.
 //
-// Die Zeilen entstehen über die Tür der Buchakte (DeleteTitle); der Wächter stellt dieselbe
+// Die Zeilen entstehen über die Tür der Buchakte (LoescheTitel); der Wächter stellt dieselbe
 // Frage wie der Lauf: vorher meldet er die fällige Zeile, danach nichts.
 func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 	adminDSN := os.Getenv(drillEnvVar)
@@ -52,7 +52,7 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 
 	// titelMitVormerkungUndForderung legt einen Titel an, an dem eine offene Vormerkung und
 	// eine offene Forderung des Lesers hängen, und löscht ihn über die Tür der Buchakte.
-	audit := repository.NewAuditRepository(pool)
+	audit := repository.NewProtokollAbfragen(pool)
 	titelMitVormerkungUndForderung := func(name, barcode string) (titelID, exemplarID string) {
 		t.Helper()
 		zeile(&titelID, `INSERT INTO buecher_titel (titel, signatur) VALUES ($1, 'JF') RETURNING id`, name)
@@ -60,7 +60,7 @@ func TestLesehistorieBefristung_VormerkSpurVerliertDenLeser(t *testing.T) {
 		must(`INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titelID, schuelerID)
 		must(`INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
 			VALUES ($1, $2, 'Einband gerissen', 9.50)`, exemplarID, schuelerID)
-		if err := audit.DeleteTitle(ctx, titelID, bearbeiterID); err != nil {
+		if err := audit.LoescheTitel(ctx, titelID, bearbeiterID); err != nil {
 			t.Fatalf("Titel %q löschen: %v", name, err)
 		}
 		return titelID, exemplarID

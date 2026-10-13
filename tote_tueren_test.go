@@ -29,7 +29,7 @@ import (
 // Reparatur bei Rot: Entweder die Tür samt Implementierung und Test zurückbauen
 // (Regelfall — Parallel-Türen driften), oder sie hier mit Begründung eintragen.
 var bewussteTueren = map[string]string{
-	// (derzeit leer — StornierungGebuehr hat seit 16.08.2026 seine Tür:
+	// (derzeit leer — StorniereForderung hat seit 16.08.2026 seine Tür:
 	// POST /api/schadensfaelle/{id}/storno, siehe api/schaden/damage_resolve.go)
 }
 

@@ -30,7 +30,7 @@ func (s *Scheduler) RunGDPRAnonymizeLoans() {
 
 	// System-Audit-Eintrag schreiben
 	if count > 0 {
-		if err := s.auditRepo.LogSystemAktion(ctx, "ausleihen", "ANONYMIZE",
+		if err := s.auditRepo.ProtokolliereSystemAktion(ctx, "ausleihen", "ANONYMIZE",
 			"GDPR 14-Tage-Anonymisierung der Bearbeiter-IDs",
 			map[string]any{
 				"betroffene_ausleihen": count,
@@ -80,7 +80,7 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 
 	// PII-Spuren anonymisierter Schüler in den NEBEN-Tabellen tilgen. Bis 21.08.2026
 	// leerte dieser Pfad NUR die schueler-Zeile — der Hard-Delete-Pfad
-	// (entferneSchuelerPIIUndLoesche) räumte die Audit-Details, die Feld-Anonymisierung
+	// (tilgeSpurenUndLoescheLeser) räumte die Audit-Details, die Feld-Anonymisierung
 	// aber nicht. Folge: Ein soft-gelöschter Schüler war nach 180 Tagen „anonymisiert",
 	// sein Klarname (audit_log.details) und seine LUSD-ID (audit_logs.details) lebten
 	// jedoch bis zur Audit-Aufbewahrung (24 Monate) weiter — bis zu 1,5 Jahre
@@ -90,7 +90,7 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 
 	if count > 0 {
 		log.Printf("Scheduler GDPR Anonymize: successfully anonymized %d old student records.", count)
-		if err := s.auditRepo.LogSystemAktion(ctx, "schueler", "ANONYMIZE",
+		if err := s.auditRepo.ProtokolliereSystemAktion(ctx, "schueler", "ANONYMIZE",
 			"DSGVO Anonymisierung alter Datensätze (Soft-Delete > 180T oder Abgänger > Karenzzeit)",
 			map[string]any{
 				"betroffene_schueler": count,

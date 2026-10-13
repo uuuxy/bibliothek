@@ -27,7 +27,7 @@ import (
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /benutzer/{id} [delete]
-func (s *Tueren) DeleteUserHandler(auditRepo repository.AuditRepository, userRepo repository.KontoAbfragen) http.HandlerFunc {
+func (s *Tueren) DeleteUserHandler(auditRepo repository.ProtokollAbfragen, userRepo repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleDeleteUser(w, r, auditRepo, userRepo)
 	}
@@ -35,7 +35,7 @@ func (s *Tueren) DeleteUserHandler(auditRepo repository.AuditRepository, userRep
 
 // handleDeleteUser prüft, ob das Konto gelöscht werden darf, und ordnet die Ablehnungen des
 // Löschens ein.
-func (s *Tueren) handleDeleteUser(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository, userRepo repository.KontoAbfragen) {
+func (s *Tueren) handleDeleteUser(w http.ResponseWriter, r *http.Request, auditRepo repository.ProtokollAbfragen, userRepo repository.KontoAbfragen) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("missing session information"))
@@ -62,11 +62,11 @@ func (s *Tueren) handleDeleteUser(w http.ResponseWriter, r *http.Request, auditR
 		return
 	}
 
-	err := auditRepo.DeleteUser(ctx, id, claims.UserID)
+	err := auditRepo.LoescheKonto(ctx, id, claims.UserID)
 	if err != nil {
 		// Aktive Handapparat-Ausleihen sind ein Konflikt (409), kein Serverfehler:
 		// Der Admin muss die Bücher erst zurückbuchen.
-		if errors.Is(err, repository.ErrUserHasActiveLoans) {
+		if errors.Is(err, repository.ErrKontoHatAusleihen) {
 			apierrors.SendHTTPError(w, http.StatusConflict, err)
 			return
 		}

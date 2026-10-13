@@ -36,7 +36,7 @@ const meldungSperreFehler = "Fehler beim Aktualisieren der Sperre"
 //
 // Jede Änderung steht im Protokoll (LESER_GESPERRT, LESER_ENTSPERRT), wie das Übergehen an
 // der Theke (OVERRIDE_BLOCK).
-func (s *Tueren) LockStudentHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) LockStudentHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		return s.handleLockStudent(w, r, auditRepo)
 	})
@@ -44,7 +44,7 @@ func (s *Tueren) LockStudentHandler(auditRepo repository.AuditRepository) http.H
 
 // handleLockStudent schaltet die Sperre in einer Transaktion um und schreibt den Eintrag ins
 // Protokoll.
-func (s *Tueren) handleLockStudent(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository) error {
+func (s *Tueren) handleLockStudent(w http.ResponseWriter, r *http.Request, auditRepo repository.ProtokollAbfragen) error {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		return apierrors.Unauthorized("missing session information", nil)
@@ -127,7 +127,7 @@ func (s *Tueren) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 // protokolliereSperre schreibt das Sperren und das Aufheben ins Protokoll. Best effort wie
 // FRIST_OVERRIDE: Die Änderung gilt, auch wenn das Log klemmt; der Fehlversuch steht im
 // Server-Log. Aufheben ohne bestehende Sperre ändert nichts und schreibt nichts.
-func protokolliereSperre(r *http.Request, auditRepo repository.AuditRepository, adminID, id string, sperren bool, grund string, alt repository.LeserSperrStand) {
+func protokolliereSperre(r *http.Request, auditRepo repository.ProtokollAbfragen, adminID, id string, sperren bool, grund string, alt repository.LeserSperrStand) {
 	aktion, details := "LESER_GESPERRT", map[string]any{"schueler_id": id, "grund": grund}
 	if !sperren {
 		if !alt.VonHand && !alt.VomProgramm {
@@ -140,7 +140,7 @@ func protokolliereSperre(r *http.Request, auditRepo repository.AuditRepository, 
 			"vom_programm": alt.VomProgramm,
 		}
 	}
-	if err := auditRepo.LogAdminAktion(r.Context(), adminID, aktion, clientip.AusAnfrage(r), details); err != nil {
+	if err := auditRepo.ProtokolliereAdminAktion(r.Context(), adminID, aktion, clientip.AusAnfrage(r), details); err != nil {
 		log.Printf("Audit für %s fehlgeschlagen: %v", aktion, err)
 	}
 }

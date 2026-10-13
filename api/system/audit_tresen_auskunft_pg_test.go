@@ -4,7 +4,7 @@ package system
 //
 // Echtes Postgres statt pgxmock, weil die geprüfte Logik in SQL lebt (JSONB-Suche
 // in audit_log.details, LEFT JOINs auf gelöschte Personen) — und weil die Ereignisse
-// von den ECHTEN Schreibern stammen sollen (LogAusleihe, EndgueltigLoescheVerlust-
+// von den ECHTEN Schreibern stammen sollen (ProtokolliereAusleihe, EndgueltigLoescheVerlust-
 // Exemplare, TilgeSchuelerSpuren), nicht von nachgestellten INSERTs: Nur so prüft
 // der Test den Live-Pfad und nicht die eigene Annahme über dessen Format.
 
@@ -84,7 +84,7 @@ func rufeTresenAuskunft(t *testing.T, srv *Tueren, adminID, barcode string) Tres
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: adminID, Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.TresenAuskunftHandler(repository.NewAuditRepository(srv.DB.Pool)).ServeHTTP(rec, req)
+	srv.TresenAuskunftHandler(repository.NewProtokollAbfragen(srv.DB.Pool)).ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d, Körper: %s", rec.Code, rec.Body.String())
 	}
@@ -104,12 +104,12 @@ func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	w := baueTresenWelt(t, pool)
 
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
-		if err := auditRepo.LogAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID); err != nil {
+		if err := auditRepo.ProtokolliereAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID); err != nil {
 			return err
 		}
-		return auditRepo.LogRueckgabe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID)
+		return auditRepo.ProtokolliereRueckgabe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID)
 	})
 
 	// Verlust buchen und über den echten Löschpfad endgültig entfernen — der
@@ -170,9 +170,9 @@ func TestTresenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	w := baueTresenWelt(t, pool)
 
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
-		return auditRepo.LogAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID)
+		return auditRepo.ProtokolliereAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID)
 	})
 	// Die echte Tilgung (dieselbe Liste wie Purge und Cron), nicht ein nachgebautes UPDATE.
 	if err := repository.TilgeSchuelerSpuren(ctx, pool, w.schuelerID, "Testtilgung"); err != nil {
@@ -232,7 +232,7 @@ func TestTresenAuskunftOhneBarcode(t *testing.T) {
 	}
 }
 
-// Ein Kollege leiht seit Migration 125 wie jeder Leser: LogAusleihe bekommt seine Leser-Id
+// Ein Kollege leiht seit Migration 125 wie jeder Leser: ProtokolliereAusleihe bekommt seine Leser-Id
 // als schuelerID, benutzerID bleibt leer (alle acht Aufrufer). Die Auskunft löste den Namen
 // bis zum 22.09.2026 über die SICHT `schueler` auf — für einen Kollegen fand sie nichts und
 // meldete „Personenbezug getilgt", obwohl Person und Bezug da sind (OFFEN.md 5.19).
@@ -254,9 +254,9 @@ func TestTresenAuskunftNenntDenKollegen(t *testing.T) {
 		pgtest.RaeumeAuf(t, pool, `DELETE FROM leser WHERE id = $1`, kollegeID)
 	})
 
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	pgtest.InTx(t, pool, func(tx pgx.Tx) error {
-		return auditRepo.LogAusleihe(ctx, tx, w.exemplarID, kollegeID, "", w.adminID)
+		return auditRepo.ProtokolliereAusleihe(ctx, tx, w.exemplarID, kollegeID, "", w.adminID)
 	})
 
 	auskunft := rufeTresenAuskunft(t, srv, w.adminID, w.barcode)

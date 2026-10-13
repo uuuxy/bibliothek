@@ -29,7 +29,7 @@ import (
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /buecher/exemplare/{id} [delete]
-func (s *Tueren) DeleteCopyHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) DeleteCopyHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -45,7 +45,7 @@ func (s *Tueren) DeleteCopyHandler(auditRepo repository.AuditRepository) http.Ha
 
 		ctx := r.Context()
 
-		err := auditRepo.DeleteCopy(ctx, id, claims.UserID)
+		err := auditRepo.SondereExemplarAus(ctx, id, claims.UserID)
 		if err != nil {
 			// Sentinels statt Textvergleich: Der frühere Vergleich („Exemplar ist
 			// aktuell noch verliehen!") traf den Repo-Text nie — ein verliehenes Buch
@@ -78,7 +78,7 @@ func (s *Tueren) DeleteCopyHandler(auditRepo repository.AuditRepository) http.Ha
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /buecher/titel/{id} [delete]
-func (s *Tueren) DeleteTitleHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) DeleteTitleHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -93,7 +93,7 @@ func (s *Tueren) DeleteTitleHandler(auditRepo repository.AuditRepository) http.H
 
 		ctx := r.Context()
 
-		err := auditRepo.DeleteTitle(ctx, id, claims.UserID)
+		err := auditRepo.LoescheTitel(ctx, id, claims.UserID)
 		if err != nil {
 			if errors.Is(err, repository.ErrTitelHatAktiveAusleihen) {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, err)

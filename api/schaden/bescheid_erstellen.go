@@ -44,7 +44,7 @@ type BescheidErstellenRequest struct {
 // @Param        body body BescheidErstellenRequest true "Pot, deadline and positions"
 // @Success      201 {object} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [post]
-func (s *Tueren) BescheidErstellenHandler(bescheidRepo repository.BescheidRepository, auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) BescheidErstellenHandler(bescheidRepo repository.BescheidRepository, auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		return s.handleBescheidErstellen(w, r, bescheidRepo, auditRepo)
 	})
@@ -52,7 +52,7 @@ func (s *Tueren) BescheidErstellenHandler(bescheidRepo repository.BescheidReposi
 
 // handleBescheidErstellen prüft die Anfrage und die Pflichtangaben, schreibt den Bescheid und
 // protokolliert ihn.
-func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository, auditRepo repository.AuditRepository) error {
+func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository, auditRepo repository.ProtokollAbfragen) error {
 	id := r.PathValue("id")
 	var req BescheidErstellenRequest
 	if id == "" {

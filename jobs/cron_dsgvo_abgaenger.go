@@ -56,11 +56,11 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	var failures []string
 
 	for _, student := range students {
-		// PurgeAbgaenger statt DeleteStudent: DeleteStudent ist ein Soft-Delete
-		// (Papierkorb) — die PII bliebe erhalten. PurgeAbgaenger entfernt sie wirklich
+		// LoescheAbgaengerEndgueltig statt LegeLeserInPapierkorb: LegeLeserInPapierkorb ist ein Soft-Delete
+		// (Papierkorb) — die PII bliebe erhalten. LoescheAbgaengerEndgueltig entfernt sie wirklich
 		// (Ausleihhistorie anonymisiert, Datensatz gelöscht). Der Löschgrund steht im
 		// Audit-Log über den festen Kontext der Methode.
-		if err := s.auditRepo.PurgeAbgaenger(ctx, student.ID, ""); err != nil {
+		if err := s.auditRepo.LoescheAbgaengerEndgueltig(ctx, student.ID, ""); err != nil {
 			log.Printf("Scheduler GDPR Delete: failed to purge student ID %s: %v",
 				logger.OhneUmbruch(student.ID), err)
 			failures = append(failures, student.ID)
@@ -73,7 +73,7 @@ func (s *Scheduler) RunGDPRDeleteAbgaenger() {
 	}
 
 	// Batch-Zusammenfassung ins Audit-Log schreiben
-	if err := s.auditRepo.LogSystemAktion(ctx, "schueler", "BATCH_DELETE",
+	if err := s.auditRepo.ProtokolliereSystemAktion(ctx, "schueler", "BATCH_DELETE",
 		"DSGVO-Abgänger-Batch-Löschung",
 		map[string]any{
 			"geloescht":      deleted,

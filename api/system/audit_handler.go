@@ -18,7 +18,7 @@ type AuditLogEntry struct {
 	Tabelle            string    `json:"tabelle"`
 	Aktion             string    `json:"aktion"`
 	DatensatzID        string    `json:"datensatz_id"`
-	Timestamp          time.Time `json:"timestamp"`
+	Zeitstempel        time.Time `json:"timestamp"`
 	BearbeiterID       string    `json:"bearbeiter_id"`
 	BearbeiterVorname  string    `json:"bearbeiter_vorname"`
 	BearbeiterNachname string    `json:"bearbeiter_nachname"`
@@ -53,7 +53,7 @@ func (s *Tueren) GetAuditLogsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		zeilen, err := repository.ListeAuditLog(ctx, s.DB.Pool, auditLogMaxZeilen)
+		zeilen, err := repository.LadeProtokoll(ctx, s.DB.Pool, auditLogMaxZeilen)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

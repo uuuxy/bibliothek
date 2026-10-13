@@ -145,7 +145,7 @@ func (s *defaultLoanService) handleNewLoan(
 		entferneErfuellteVormerkung(ctx, tx, copy, chkCtx.borrowerID, resp)
 	}
 
-	if err := s.auditRepo.LogAusleihe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
+	if err := s.auditRepo.ProtokolliereAusleihe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
 		return nil, err
 	}
 	resp.Student = chkCtx.leser
@@ -197,7 +197,7 @@ func (s *defaultLoanService) handleReturn(
 		return nil, err
 	}
 
-	if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
+	if err := s.auditRepo.ProtokolliereRueckgabe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
 		return nil, err
 	}
 	resp.Student = chkCtx.leser
@@ -250,7 +250,7 @@ func (s *defaultLoanService) handleForeignReturn(
 	}
 
 	if activeLoan.SchuelerID != nil {
-		if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, *activeLoan.SchuelerID, "", staffID); err != nil {
+		if err := s.auditRepo.ProtokolliereRueckgabe(ctx, tx, copy.ID, *activeLoan.SchuelerID, "", staffID); err != nil {
 			return nil, err
 		}
 	}

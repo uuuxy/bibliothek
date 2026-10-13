@@ -52,7 +52,7 @@ func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, bar
 // BESCHAEDIGUNG aus der Schadensmeldung — bleibt via COALESCE beim blossen Bearbeiten der
 // Notiz erhalten. Beim Reaktivieren wird der Grund gelöscht, sonst lehnt der CHECK ab.
 // Guard seit 31.08.2026: „Ausgesondert" hatte DREI Türen, aber nur das Ausbuchen
-// (audit_books.DeleteCopy) prüfte die offene Ausleihe. Über die beiden anderen ließ sich
+// (ProtokollAbfragen.SondereExemplarAus) prüfte die offene Ausleihe. Über die beiden anderen ließ sich
 // ein Buch aussondern, das ein Schüler gerade in der Tasche hatte — es verschwand aus
 // Katalog, Kiosk und Inventur, während der Schüler in der Mahnstrecke blieb (Bugklasse
 // „Zwei Türen zum selben Zustand"). Unbekannte IDs waren zudem stille „Erfolge"

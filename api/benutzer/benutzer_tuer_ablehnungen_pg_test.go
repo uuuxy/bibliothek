@@ -24,7 +24,7 @@ func TestBenutzerLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	userRepo := repository.NewKontoAbfragen(pool)
 
 	konto := func(vorname, rolle string) string {

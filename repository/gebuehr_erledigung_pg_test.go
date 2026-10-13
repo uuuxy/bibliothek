@@ -28,7 +28,7 @@ func seedOffenerSchadensfall(t *testing.T, pool *pgxpool.Pool, schuelerID, exemp
 func TestGebuehrErledigung_BezahltUndStorno(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	repo := NewAuditRepository(pool)
+	repo := NewProtokollAbfragen(pool)
 
 	schueler := seedSchueler(t, pool, "S-GEB-1", "Mia", "8b")
 	exemplare := seedSignaturMitExemplaren(t, pool, "GebErl", 2)
@@ -44,7 +44,7 @@ func TestGebuehrErledigung_BezahltUndStorno(t *testing.T) {
 
 	// (1) Storno: setzt ist_bezahlt UND die Storno-Spalten, Audit trägt den DB-Betrag.
 	storno := seedOffenerSchadensfall(t, pool, schueler, exemplare[0], 12.50)
-	if err := repo.StornierungGebuehr(ctx, storno, bearbeiter, "Buch wiedergefunden"); err != nil {
+	if err := repo.StorniereForderung(ctx, storno, bearbeiter, "Buch wiedergefunden"); err != nil {
 		t.Fatalf("Storno: %v", err)
 	}
 	var istBezahlt bool
@@ -69,17 +69,17 @@ func TestGebuehrErledigung_BezahltUndStorno(t *testing.T) {
 	}
 
 	// (2) Doppel-Storno und Bezahlen eines erledigten Falls → Konflikt-Sentinel.
-	if err := repo.StornierungGebuehr(ctx, storno, bearbeiter, "nochmal"); !errors.Is(err, ErrSchadensfallErledigt) {
+	if err := repo.StorniereForderung(ctx, storno, bearbeiter, "nochmal"); !errors.Is(err, ErrSchadensfallErledigt) {
 		t.Errorf("Doppel-Storno: erwartet ErrSchadensfallErledigt, bekam %v", err)
 	}
-	if err := repo.BezahltGebuehr(ctx, storno, bearbeiter); !errors.Is(err, ErrSchadensfallErledigt) {
+	if err := repo.VerbucheZahlung(ctx, storno, bearbeiter); !errors.Is(err, ErrSchadensfallErledigt) {
 		t.Errorf("Bezahlen nach Storno: erwartet ErrSchadensfallErledigt, bekam %v", err)
 	}
 
 	// (3) Bezahlt: setzt ist_bezahlt, lässt die Storno-Spalten unberührt —
 	// bezahlt und storniert bleiben unterscheidbar (DSGVO-PDF, Kontoauszug).
 	bezahlt := seedOffenerSchadensfall(t, pool, schueler, exemplare[1], 7.00)
-	if err := repo.BezahltGebuehr(ctx, bezahlt, bearbeiter); err != nil {
+	if err := repo.VerbucheZahlung(ctx, bezahlt, bearbeiter); err != nil {
 		t.Fatalf("Bezahlen: %v", err)
 	}
 	var bezahltFlag bool
@@ -94,7 +94,7 @@ func TestGebuehrErledigung_BezahltUndStorno(t *testing.T) {
 	}
 
 	// (4) Unbekannte ID → 404-Sentinel, nicht der Konflikt.
-	err := repo.BezahltGebuehr(ctx, "00000000-0000-0000-0000-000000000000", bearbeiter)
+	err := repo.VerbucheZahlung(ctx, "00000000-0000-0000-0000-000000000000", bearbeiter)
 	if !errors.Is(err, ErrSchadensfallNichtGefunden) {
 		t.Errorf("unbekannte ID: erwartet ErrSchadensfallNichtGefunden, bekam %v", err)
 	}

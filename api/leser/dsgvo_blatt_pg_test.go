@@ -38,18 +38,18 @@ func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "blatt-bearbeiter@test.invalid")
 	titelID := testdaten.SeedMonitorTitel(t, pool, "Blatt-Titel Mathematik", "Aut Or", false, 0)
 	exID := testdaten.Exemplar(t, pool, titelID, "BLATT-EX-1", true, "")
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 
 	// Ausleihe und Rückgabe.
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := auditRepo.LogAusleihe(ctx, tx, exID, sid, "", bearbeiter); err != nil {
-		t.Fatalf("LogAusleihe: %v", err)
+	if err := auditRepo.ProtokolliereAusleihe(ctx, tx, exID, sid, "", bearbeiter); err != nil {
+		t.Fatalf("ProtokolliereAusleihe: %v", err)
 	}
-	if err := auditRepo.LogRueckgabe(ctx, tx, exID, sid, "", bearbeiter); err != nil {
-		t.Fatalf("LogRueckgabe: %v", err)
+	if err := auditRepo.ProtokolliereRueckgabe(ctx, tx, exID, sid, "", bearbeiter); err != nil {
+		t.Fatalf("ProtokolliereRueckgabe: %v", err)
 	}
 	// Die Spur einer Vormerkung, deren Titel gelöscht wurde.
 	if err := repository.ProtokolliereWartendeBezuege(ctx, tx, []repository.WartenderBezug{{
@@ -69,18 +69,18 @@ func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 		VALUES ($1, $2, 'Blatt-Schaden', 24.50, false) RETURNING id`, exID, sid).Scan(&schadenID); err != nil {
 		t.Fatalf("Forderung anlegen: %v", err)
 	}
-	if err := auditRepo.StornierungGebuehr(ctx, schadenID, bearbeiter, "Blatt-Grund der Stornierung"); err != nil {
-		t.Fatalf("StornierungGebuehr: %v", err)
+	if err := auditRepo.StorniereForderung(ctx, schadenID, bearbeiter, "Blatt-Grund der Stornierung"); err != nil {
+		t.Fatalf("StorniereForderung: %v", err)
 	}
 
 	// Sperre gesetzt und aufgehoben, LUSD-ID nachgetragen.
 	anfrage := httptest.NewRequest("POST", "/api/schueler/"+sid+"/sperre", nil)
 	protokolliereSperre(anfrage, auditRepo, bearbeiter, sid, true, "Blatt-Sperrgrund", repository.LeserSperrStand{})
 	protokolliereSperre(anfrage, auditRepo, bearbeiter, sid, false, "", repository.LeserSperrStand{VonHand: true, Grund: "Blatt-Sperrgrund"})
-	if err := auditRepo.LogAdminAktion(ctx, bearbeiter, "LUSD_ID_NACHGETRAGEN", "127.0.0.1", map[string]any{
+	if err := auditRepo.ProtokolliereAdminAktion(ctx, bearbeiter, "LUSD_ID_NACHGETRAGEN", "127.0.0.1", map[string]any{
 		"schueler_id": sid, "lusd_id": "BLATT-LUSD-4711",
 	}); err != nil {
-		t.Fatalf("LogAdminAktion: %v", err)
+		t.Fatalf("ProtokolliereAdminAktion: %v", err)
 	}
 
 	// Der Löscheintrag eines Zugangskontos steht bei den früheren Konten, nicht im Protokoll.
@@ -93,8 +93,8 @@ func TestDsgvoBlatt_ProtokollzeilenInWorten(t *testing.T) {
 	}
 
 	// In den Papierkorb: der Eintrag an der Leserzeile selbst.
-	if err := auditRepo.DeleteStudent(ctx, sid, bearbeiter, "Blatt-Löschgrund"); err != nil {
-		t.Fatalf("DeleteStudent: %v", err)
+	if err := auditRepo.LegeLeserInPapierkorb(ctx, sid, bearbeiter, "Blatt-Löschgrund"); err != nil {
+		t.Fatalf("LegeLeserInPapierkorb: %v", err)
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}

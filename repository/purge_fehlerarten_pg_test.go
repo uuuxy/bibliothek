@@ -23,7 +23,7 @@ import (
 func TestPurge_UnterscheidetKonfliktVonServerfehler(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := repository.NewAuditRepository(pool)
+	repo := repository.NewProtokollAbfragen(pool)
 
 	var schueler string
 	if err := pool.QueryRow(ctx, `
@@ -38,14 +38,14 @@ func TestPurge_UnterscheidetKonfliktVonServerfehler(t *testing.T) {
 	})
 
 	// (1) Nicht im Papierkorb → Blockade, also Konflikt.
-	err := repo.PurgeStudent(ctx, schueler, "")
+	err := repo.LoescheLeserEndgueltig(ctx, schueler, "")
 	if !errors.Is(err, repository.ErrLoeschenBlockiert) {
 		t.Errorf("ein Datensatz außerhalb des Papierkorbs muss als Blockade kenntlich sein, bekam: %v", err)
 	}
 
 	// (2) Unbekannte Kennung → nicht gefunden, kein Konflikt. Die Bibliothek soll nicht
 	// nach einer offenen Ausleihe suchen, wenn es die Person gar nicht gibt.
-	err = repo.PurgeStudent(ctx, "00000000-0000-0000-0000-000000000000", "")
+	err = repo.LoescheLeserEndgueltig(ctx, "00000000-0000-0000-0000-000000000000", "")
 	if !errors.Is(err, repository.ErrLeserNichtGefunden) {
 		t.Errorf("eine unbekannte Kennung muss als „nicht gefunden\" kenntlich sein, bekam: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestPurge_UnterscheidetKonfliktVonServerfehler(t *testing.T) {
 		}
 	})
 
-	err = repo.PurgeStudent(ctx, schueler, "")
+	err = repo.LoescheLeserEndgueltig(ctx, schueler, "")
 	if !errors.Is(err, repository.ErrLoeschenBlockiert) {
 		t.Errorf("eine offene Ausleihe muss als Blockade gemeldet werden, bekam: %v", err)
 	}

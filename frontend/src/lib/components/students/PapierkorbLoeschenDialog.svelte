@@ -1,7 +1,7 @@
 <!-- @component PapierkorbLoeschenDialog — Rückfrage vorm endgültigen Löschen (Art. 17).
 
      Anders als das Archivieren (Soft-Delete, nächtliche Frist räumt nach) ist das hier
-     der sofortige, unumkehrbare Löschweg: PurgeStudent tilgt Ausleihhistorie und
+     der sofortige, unumkehrbare Löschweg: LoescheLeserEndgueltig tilgt Ausleihhistorie und
      Audit-Spur und entfernt den Datensatz. Eigener M3-Dialog statt window.confirm(),
      aus demselben Grund wie beim Fehlbestand (VerlustLoeschenDialog). -->
 <script>

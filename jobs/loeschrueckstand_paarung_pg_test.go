@@ -64,7 +64,7 @@ func TestLoeschRueckstand_WaechterUndJobStellenDieselbeFrage(t *testing.T) {
 	// was der Cron plant (Start in cron.go): die nächtliche Folge und die Audit-Aufbewahrung um
 	// 03:00. Bis zum 29.09.2026 rief der Test jede Routine einzeln auf; eine Routine, die im
 	// Nachtlauf fehlt, wäre dann grün geblieben und erst im Betrieb als Rückstand aufgefallen.
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunNaechtlicheDSGVO()
 	s.RunAuditAufbewahrung()
 
@@ -310,7 +310,7 @@ func TestLesehistorie_ErreichtDieSpurGeloeschterTitel(t *testing.T) {
 	// Schlüssel, an dem die Frist hängt.
 	spur("B-OHNE-ID", false)
 
-	NewScheduler(pool, repository.NewAuditRepository(pool)).RunLesehistorieBefristung()
+	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunLesehistorieBefristung()
 
 	lies := func(barcode string) string {
 		t.Helper()

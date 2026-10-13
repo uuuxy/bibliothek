@@ -28,7 +28,7 @@ func sperrTuerAufruf(t *testing.T, pool *pgxpool.Pool, akteur, id, body string) 
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: akteur, Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.LockStudentHandler(repository.NewAuditRepository(pool)).ServeHTTP(rec, req)
+	srv.LockStudentHandler(repository.NewProtokollAbfragen(pool)).ServeHTTP(rec, req)
 	return rec
 }
 

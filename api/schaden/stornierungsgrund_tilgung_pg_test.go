@@ -133,7 +133,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 		if _, err := pool.Exec(ctx, `UPDATE leser SET deleted_at = NOW() WHERE id = $1`, leser); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
-		if err := repository.NewAuditRepository(pool).PurgeStudent(ctx, leser, kontoID); err != nil {
+		if err := repository.NewProtokollAbfragen(pool).LoescheLeserEndgueltig(ctx, leser, kontoID); err != nil {
 			t.Fatalf("endgültig löschen: %v", err)
 		}
 
@@ -148,7 +148,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 		_, titelID := storniere(t, leser, "C", grund)
 		stehtAnBeidenStellen(t, grund)
 
-		if err := repository.NewAuditRepository(pool).DeleteTitle(ctx, titelID, kontoID); err != nil {
+		if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, kontoID); err != nil {
 			t.Fatalf("Titel löschen: %v", err)
 		}
 		if n := imProtokoll(t, grund); n != 1 {

@@ -61,7 +61,7 @@ func TestProfilNenntOffeneForderungen(t *testing.T) {
 	forderung(t, mitID, "B-FORD-1", 12.00, false, false)
 	forderung(t, mitID, "B-FORD-2", 7.50, false, false)
 	forderung(t, mitID, "B-FORD-3", 30.00, true, false)
-	// Ein Storno setzt ist_bezahlt mit (repository/audit_system.go).
+	// Ein Storno setzt ist_bezahlt mit (repository/forderung_erledigen.go).
 	forderung(t, mitID, "B-FORD-4", 4.00, true, true)
 	ohneID := leser(t, "Ohne")
 

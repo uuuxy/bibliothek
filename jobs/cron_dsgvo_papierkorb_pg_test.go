@@ -11,7 +11,7 @@ import (
 )
 
 // Gelöschte Kollegen fallen nach 180 Tagen im Papierkorb endgültig (entschieden am 28.09.2026,
-// docs/OFFEN.md 5.19) — über denselben Weg wie „Endgültig löschen" von Hand (PurgeStudent).
+// docs/OFFEN.md 5.19) — über denselben Weg wie „Endgültig löschen" von Hand (LoescheLeserEndgueltig).
 //
 // Erwartung nach dem Lauf:
 //
@@ -86,7 +86,7 @@ func TestPapierkorbKollegen_LoeschtNachFristUndHaeltOffeneVorgaenge(t *testing.T
 		INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
 		VALUES ($1, $2, 'Wasserschaden', 12.50) RETURNING id`, exemplar("PK-SCHADEN"), ids["K-FORDERUNG"])
 
-	NewScheduler(pool, repository.NewAuditRepository(pool)).RunPapierkorbKollegenLoeschung()
+	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunPapierkorbKollegenLoeschung()
 
 	for name, bleibt := range map[string]bool{
 		"K-ALT": false, "K-JUNG": true, "K-AUSLEIHE": true, "K-FORDERUNG": true, "K-AKTIV": true, "S-ALT": true,

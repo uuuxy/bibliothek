@@ -180,9 +180,9 @@ func schreibeStandort(ctx context.Context, tx pgx.Tx, s standortStand, a Standor
 	if tag.RowsAffected() != 1 {
 		return fmt.Errorf("standort: exemplar %s: %d zeilen statt 1", s.id, tag.RowsAffected())
 	}
-	audit := &pgAuditRepository{}
+	audit := &pgProtokollAbfragen{}
 	kontext := "Standort geändert"
-	if err := audit.insertAuditLog(ctx, tx, auditEntry{
+	if err := audit.schreibeEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "buecher_exemplare", Aktion: "UPDATE", DatensatzID: s.id,
 		BearbeiterID: &a.BearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: map[string]any{"standort_alt": s.standort, "standort_neu": a.Standort},

@@ -17,7 +17,7 @@ func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 	erlaubt := map[string]string{
 		// Seit 31.08.2026 fährt auch der DSGVO-Cron (jobs/cron_dsgvo.go) diese Statements —
 		// über repository.SpurTilgungen, die eine Liste; er hat keine eigene Tür mehr.
-		"repository/audit_users.go": "SpurTilgungen (DSGVO: Purge + LUSD-Anonymisierung + Cron)",
+		"repository/spur_tilgung.go": "SpurTilgungen (DSGVO: Purge + LUSD-Anonymisierung + Cron)",
 		// Die Anweisungen, die SpurTilgungen aus den Schlüssellisten baut: Personenbezug neben
 		// der Kennung eines Lesers und in den Einträgen seiner früheren Zugangskonten.
 		"repository/protokoll_personenbezug.go": "Anweisungen der SpurTilgungen (Schlüssel mit Personenbezug)",

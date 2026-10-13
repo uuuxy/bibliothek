@@ -51,10 +51,10 @@ func TestAusweisnummer_KommtNieWieder(t *testing.T) {
 		art  string
 		weg  func(t *testing.T, id string)
 	}{
-		{"endgültig gelöscht (Papierkorb, PurgeStudent)", "schueler", func(t *testing.T, id string) {
+		{"endgültig gelöscht (Papierkorb, LoescheLeserEndgueltig)", "schueler", func(t *testing.T, id string) {
 			ausfuehren(t, `UPDATE leser SET deleted_at = now() WHERE id = $1`, id)
-			if err := repository.NewAuditRepository(pool).PurgeStudent(ctx, id, ""); err != nil {
-				t.Fatalf("PurgeStudent: %v", err)
+			if err := repository.NewProtokollAbfragen(pool).LoescheLeserEndgueltig(ctx, id, ""); err != nil {
+				t.Fatalf("LoescheLeserEndgueltig: %v", err)
 			}
 		}},
 		// Dieselbe Zuweisung über dieselbe Sicht wie die DSGVO-Anonymisierung

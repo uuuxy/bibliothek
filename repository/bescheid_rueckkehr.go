@@ -120,7 +120,7 @@ func VerbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterI
 	return befund, nil
 }
 
-// storniereWeilZurueck beendet die Forderung wie StornierungGebuehr: ist_bezahlt mit
+// storniereWeilZurueck beendet die Forderung wie StorniereForderung: ist_bezahlt mit
 // gesetzt (alle Offen-Filter hängen daran), storniert_am unterscheidet sie von einer
 // echten Zahlung. Dieselbe Audit-Aktion STORNIERUNG, damit die Revision EINE Form kennt.
 func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID string, betrag float64, bearbeiterID, grund string) error {
@@ -141,13 +141,13 @@ func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID strin
 	if err != nil {
 		return fmt.Errorf("forderung stornieren: %w", err)
 	}
-	// Dieselben Schlüssel wie StornierungGebuehr; die Kennung des Lesers ist der Griff der Tilgung.
+	// Dieselben Schlüssel wie StorniereForderung; die Kennung des Lesers ist der Griff der Tilgung.
 	details := map[string]any{"betrag": betrag, "grund": grund, "anlass": "rueckgabe"}
 	if leserID != nil {
 		details["schueler_id"] = *leserID
 	}
 	kontext := "Forderung storniert: das Buch ist zurück"
-	return schreibeAuditLog(ctx, q, auditEntry{
+	return schreibeAuditLog(ctx, q, protokollEintrag{
 		Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", DatensatzID: schadensfallID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: details,
@@ -169,7 +169,7 @@ func merkeRueckgabeNachUebergabe(ctx context.Context, q Datenbank, f rueckkehrFo
 		return fmt.Errorf("bescheid %s ließ sich nicht als Rückgabe nach Übergabe vermerken", f.bescheidID)
 	}
 	kontext := "Rückgabe nach Übergabe — die Schulaufsicht ist unverzüglich zu informieren"
-	return schreibeAuditLog(ctx, q, auditEntry{
+	return schreibeAuditLog(ctx, q, protokollEintrag{
 		Tabelle: "schadensersatz_bescheide", Aktion: "UPDATE", DatensatzID: f.bescheidID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: map[string]any{"referenznummer": f.referenznummer, "schadensfall_id": f.id},

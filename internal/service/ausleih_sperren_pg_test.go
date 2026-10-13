@@ -48,7 +48,7 @@ func neueSperrTheke(t *testing.T) *sperrTheke {
 	students := repository.NewStudentRepository(pool)
 	books := repository.NewBookRepository(pool)
 	loans := repository.NewLoanRepository(pool)
-	audit := repository.NewAuditRepository(pool)
+	audit := repository.NewProtokollAbfragen(pool)
 	loanSvc := service.NewLoanService(pool, students, books, loans, audit)
 	deviceSvc := service.NewDeviceService(pool, students, loans, audit)
 	return &sperrTheke{

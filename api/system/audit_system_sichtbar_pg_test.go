@@ -53,7 +53,7 @@ func TestAuditLogZeigtSystemEintraege(t *testing.T) {
 		t.Fatalf("Nutzer-Eintrag anlegen: %v", err)
 	}
 
-	// ... und einer OHNE, so wie LogSystemAktion ihn schreibt.
+	// ... und einer OHNE, so wie ProtokolliereSystemAktion ihn schreibt.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur)
 		VALUES ($1, 'DELETE', gen_random_uuid(), NULL, 'SYSTEM')

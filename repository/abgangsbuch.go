@@ -86,7 +86,7 @@ type Abgangsbuch struct {
 }
 
 // SQLWarImBestand sagt, ob ein Exemplar je im Bestand war: Es trägt ein Zugangsdatum
-// (Migration 129). Die Löschspuren vermerken dasselbe (AuditDetailWarImBestand).
+// (Migration 129). Die Löschspuren vermerken dasselbe (ProtokollDetailWarImBestand).
 const SQLWarImBestand = `e.zugang_am IS NOT NULL`
 
 // SQLIstAbgang ist die Grenze beider Abfragen und der Verlustzahlen der Statistik:
@@ -157,8 +157,8 @@ func LadeAbgangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Abga
 		  AND details->>'action' = ANY($1)
 		  AND timestamp >= $2 AND timestamp < $3
 		  -- Ältere Spuren tragen den Vermerk nicht und zählen weiter mit.
-		  AND COALESCE((details->>'`+AuditDetailWarImBestand+`')::boolean, true)
-	`, []string{AuditAktionTitelGeloescht, AuditAktionVerlustEndgueltigGeloescht},
+		  AND COALESCE((details->>'`+ProtokollDetailWarImBestand+`')::boolean, true)
+	`, []string{ProtokollAktionTitelGeloescht, ProtokollAktionVerlustEndgueltigGeloescht},
 		abVon, bisAusschliesslich).Scan(&buch.AusKatalogGeloescht); err != nil {
 		return buch, err
 	}

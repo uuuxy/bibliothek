@@ -53,7 +53,7 @@ func TestAuditAufbewahrung_LoeschtAltesUndProtokolliert(t *testing.T) {
 	seed(`INSERT INTO audit_logs (admin_id, aktion, ip_adresse, zeitstempel)
 	      VALUES ($1, 'LOGIN', '203.0.113.7', now() - make_interval(months => $2))`, 3)
 
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunAuditAufbewahrung()
 
 	zaehle := func(query string) int {

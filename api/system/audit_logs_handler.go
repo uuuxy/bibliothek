@@ -18,7 +18,7 @@ type AdminAuditLogEntry struct {
 	AdminName   string    `json:"admin_name"`
 	Aktion      string    `json:"aktion"`
 	Details     any       `json:"details"`
-	IpAdresse   string    `json:"ip_adresse"`
+	IPAdresse   string    `json:"ip_adresse"`
 	Zeitstempel time.Time `json:"zeitstempel"`
 }
 
@@ -27,7 +27,7 @@ func (s *Tueren) GetAdminAuditLogsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		zeilen, err := repository.ListeAdminProtokoll(ctx, s.DB.Pool)
+		zeilen, err := repository.LadeAdminProtokoll(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

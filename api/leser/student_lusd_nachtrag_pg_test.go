@@ -45,7 +45,7 @@ func TestLusdIDKontrolliertNachtragbar(t *testing.T) {
 		return id
 	}
 
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	patch := func(id, body string) *httptest.ResponseRecorder {
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 		req := httptest.NewRequest(http.MethodPatch, "/x", strings.NewReader(body))

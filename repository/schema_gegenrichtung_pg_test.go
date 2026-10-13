@@ -48,7 +48,7 @@ var fkAktionenBestand = []string{
 	// Befragt am 23.09.2026 (Migration 138): Die Schlagworte eines Titels fallen mit ihm —
 	// Absicht. Sie beschreiben nur diesen Titel, niemand wartet auf sie, und das Wort selbst
 	// bleibt stehen (ohne Titel fällt es aus den Vorschlägen, SchlagwortVorschlaege). Das
-	// Löschen steht im Protokoll (DeleteTitle schreibt vorher einen Schnappschuss des Titels);
+	// Löschen steht im Protokoll (LoescheTitel schreibt vorher einen Schnappschuss des Titels);
 	// die Schlagworte stehen nicht darin.
 	"CASCADE  titel_schlagworte.titel_id -> buecher_titel",
 	// Wird ein Wort gelöscht, verschwindet es aus allen Titeln — Litteras „Löschen (auch aus
@@ -106,7 +106,7 @@ var fkAktionenBestand = []string{
 	// sie gehoert der Anlage und nicht dem Leser. Wer die Folge behandelt: niemand muss
 	// es, weil ein Konto ohne Leserzeile ein gueltiger Zustand ist (es leiht dann nichts
 	// aus). Wer es merkt: die Tilgung setzt die Spalte ohnehin selbst auf NULL
-	// (repository/audit_users.go, spurTilgungen) und schreibt das ins Protokoll; der
+	// (repository/spur_tilgung.go, spurTilgungen) und schreibt das ins Protokoll; der
 	// Fremdschluessel ist nur das Netz darunter.
 	"SET NULL  benutzer.leser_id -> leser",
 	"SET NULL  audit_log.bearbeiter_id -> benutzer",

@@ -51,12 +51,12 @@ func bescheidAkteur(ctx context.Context) string {
 
 // bescheidAudit protokolliert einen Eingriff. Dasselbe Muster wie der LMF-Plan: ohne
 // Anmeldung oder ohne Datenbank gibt es nichts zu schreiben.
-func bescheidAudit(ctx context.Context, s *Tueren, auditRepo repository.AuditRepository, aktion string, details map[string]any, ip string) {
+func bescheidAudit(ctx context.Context, s *Tueren, auditRepo repository.ProtokollAbfragen, aktion string, details map[string]any, ip string) {
 	claims, ok := auth.GetClaims(ctx)
 	if !ok || s.DB == nil || s.DB.Pool == nil || auditRepo == nil {
 		return
 	}
-	if err := auditRepo.LogAdminAktion(ctx, claims.UserID, aktion, ip, details); err != nil {
+	if err := auditRepo.ProtokolliereAdminAktion(ctx, claims.UserID, aktion, ip, details); err != nil {
 		log.Printf("Audit %s fehlgeschlagen: %v", aktion, err)
 	}
 }
@@ -114,7 +114,7 @@ func (s *Tueren) BescheidSchuelerListeHandler(bescheidRepo repository.BescheidRe
 // @Param        id path string true "Notice ID"
 // @Success      200 {object} map[string]any
 // @Router       /bescheide/{id}/uebergeben [post]
-func (s *Tueren) BescheidUebergebenHandler(bescheidRepo repository.BescheidRepository, auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) BescheidUebergebenHandler(bescheidRepo repository.BescheidRepository, auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {

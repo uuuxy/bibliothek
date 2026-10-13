@@ -51,7 +51,7 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 		h(rec, req)
 		return rec
 	}
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 
 	gesperrt := func() bool {
 		t.Helper()

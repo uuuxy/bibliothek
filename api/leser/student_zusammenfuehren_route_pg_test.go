@@ -32,7 +32,7 @@ func zusammenfuehrenUeberRoute(t *testing.T, srv *Tueren, pool *pgxpool.Pool, be
 	req.SetPathValue("id", zielID)
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
-	srv.ZusammenfuehrenSchuelerHandler(repository.NewAuditRepository(pool))(rec, tuertest.AlsBenutzer(req, benutzerID))
+	srv.ZusammenfuehrenSchuelerHandler(repository.NewProtokollAbfragen(pool))(rec, tuertest.AlsBenutzer(req, benutzerID))
 	return rec
 }
 

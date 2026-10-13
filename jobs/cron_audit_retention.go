@@ -53,7 +53,7 @@ func (s *Scheduler) RunAuditAufbewahrung() {
 
 	// Meta-Audit: Die Löschung hinterlässt genau EINE Zeile mit den Zahlen — sonst
 	// sähe eine spätere Prüfung nur ein Protokoll mit unerklärlicher Vorderkante.
-	if err := s.auditRepo.LogSystemAktion(ctx, "audit_log", "RETENTION",
+	if err := s.auditRepo.ProtokolliereSystemAktion(ctx, "audit_log", "RETENTION",
 		"Aufbewahrungsfrist angewendet", map[string]any{
 			"frist_monate":        monate,
 			"geloescht_audit_log": geloeschtDatensatz,

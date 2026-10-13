@@ -15,10 +15,10 @@ import (
 // Anonymisierung nimmt nur Schüler (PredikatAnonymisierung), und einen Kollegen darf sie nicht
 // anonymisieren (chk_leser_nur_schueler_werden_abgaenger). Entschieden am 28.09.2026
 // (docs/OFFEN.md 5.19): nach derselben Frist wie beim Schüler endgültig löschen. Sein
-// Zugangskonto ist schon beim Löschen gegangen (DeleteStudent, entschieden am 16.09.2026).
+// Zugangskonto ist schon beim Löschen gegangen (LegeLeserInPapierkorb, entschieden am 16.09.2026).
 
 // RunPapierkorbKollegenLoeschung löscht Kollegen endgültig, die seit 180 Tagen im Papierkorb
-// liegen. Derselbe Weg wie „Endgültig löschen" von Hand: PurgeStudent prüft den Papierkorb und
+// liegen. Derselbe Weg wie „Endgültig löschen" von Hand: LoescheLeserEndgueltig prüft den Papierkorb und
 // offene Vorgänge ein zweites Mal, in der Transaktion der Löschung.
 func (s *Scheduler) RunPapierkorbKollegenLoeschung() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
@@ -39,7 +39,7 @@ func (s *Scheduler) RunPapierkorbKollegenLoeschung() {
 	var fehlschlaege []string
 	for _, id := range ids {
 		// Leerer Bearbeiter: Das Protokoll nennt SYSTEM als Akteur statt einer Person.
-		if err := s.auditRepo.PurgeStudent(ctx, id, ""); err != nil {
+		if err := s.auditRepo.LoescheLeserEndgueltig(ctx, id, ""); err != nil {
 			log.Printf("Scheduler Papierkorb: Leser %s nicht gelöscht: %v", logger.OhneUmbruch(id), err)
 			fehlschlaege = append(fehlschlaege, id)
 			continue
@@ -47,7 +47,7 @@ func (s *Scheduler) RunPapierkorbKollegenLoeschung() {
 		geloescht++
 	}
 
-	if err := s.auditRepo.LogSystemAktion(ctx, "schueler", "BATCH_DELETE",
+	if err := s.auditRepo.ProtokolliereSystemAktion(ctx, "schueler", "BATCH_DELETE",
 		"DSGVO: gelöschte Kollegen nach 180 Tagen im Papierkorb endgültig gelöscht",
 		map[string]any{
 			"geloescht":    geloescht,

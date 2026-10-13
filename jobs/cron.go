@@ -19,7 +19,7 @@ import (
 // Scheduler verwaltet Hintergrund-Automatisierungsaufgaben.
 type Scheduler struct {
 	db        db.PgxPoolIface
-	auditRepo repository.AuditRepository
+	auditRepo repository.ProtokollAbfragen
 	cron      *cron.Cron
 }
 
@@ -31,7 +31,7 @@ type Scheduler struct {
 // Nacht der Sommerzeit-Umstellung ins Leere — 02:30 Ortszeit existiert dann nicht, und
 // die Sicherung fiele still aus (der gefährlichste Zustand, den dieses System kennt).
 // Mit UTC bleiben alle Cron-Zeiten DST-immun; die Kommentare unten rechnen bewusst in UTC.
-func NewScheduler(db db.PgxPoolIface, auditRepo repository.AuditRepository) *Scheduler {
+func NewScheduler(db db.PgxPoolIface, auditRepo repository.ProtokollAbfragen) *Scheduler {
 	return &Scheduler{
 		db:        db,
 		auditRepo: auditRepo,

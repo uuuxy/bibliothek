@@ -112,7 +112,7 @@ func TestGDPRAnonymize_KarenzUhrLaeuftAbLetztemVorgang(t *testing.T) {
 	offen := legeAbgaenger("KR-OFFEN")
 	legeAusleihe(offen, legeExemplar("KR-OFFEN-EX"), "150 days", "")
 
-	NewScheduler(pool, repository.NewAuditRepository(pool)).RunGDPRAnonymizeOldData()
+	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunGDPRAnonymizeOldData()
 
 	if anonymisiert(rueck) {
 		t.Error("RUECK: Rückgabe vor 5 Tagen muss die Karenz-Uhr neu starten — anonymisiert trotzdem (Uhr = nur abgaenger_seit?)")

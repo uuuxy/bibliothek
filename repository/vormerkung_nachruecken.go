@@ -33,7 +33,7 @@ const sqlWartenderDarfAbholen = `s.deleted_at IS NULL AND s.ist_gesperrt = false
 // die Vormerkung (FOR UPDATE OF v). Eine Vormerkung, die eine Rückgabe gerade bedient, wird
 // übergangen; hält eine Ausleihe die Zeile des Schülers, bleibt er trotzdem an der Reihe.
 // Liefert true, wenn jemand bedient wurde.
-func bedieneNaechstenWartenden(ctx context.Context, ex SpurenExecutor, exemplarID, titelID string, jetzt time.Time) (bool, error) {
+func bedieneNaechstenWartenden(ctx context.Context, ex SpurenDatenbank, exemplarID, titelID string, jetzt time.Time) (bool, error) {
 	frist, err := Abholfrist(ctx, ex, jetzt)
 	if err != nil {
 		return false, err
@@ -71,7 +71,7 @@ func bedieneNaechstenWartenden(ctx context.Context, ex SpurenExecutor, exemplarI
 //
 // Die Abholfrist des Nachrückenden zählt ab jetzt: Die Tilgung ist ein Schritt der Liste
 // spurTilgungen und hat keine eigene Uhr.
-func loescheVormerkungenUndRuecktNach(ctx context.Context, ex SpurenExecutor, schuelerIDs []string) (int64, error) {
+func loescheVormerkungenUndRuecktNach(ctx context.Context, ex SpurenDatenbank, schuelerIDs []string) (int64, error) {
 	rows, err := ex.Query(ctx, `
 		DELETE FROM vormerkungen WHERE schueler_id = ANY($1::uuid[])
 		RETURNING bereitgestellt_exemplar_id, titel_id`, schuelerIDs)

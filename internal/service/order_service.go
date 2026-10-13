@@ -293,7 +293,7 @@ type BulkReceiveParams struct {
 }
 
 // BulkReceiveOrder marks all pre-allocated items as received.
-func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repository.AuditRepository, params BulkReceiveParams) ([]ReceivedItem, error) {
+func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repository.ProtokollAbfragen, params BulkReceiveParams) ([]ReceivedItem, error) {
 	eingebucht, err := repository.BucheZulaufEin(ctx, pool, params.ExemplarIDs)
 	if err != nil {
 		return nil, err
@@ -306,7 +306,7 @@ func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repos
 		items = append(items, ReceivedItem(e))
 	}
 
-	logAuditErr("wareneingang-bulk", auditRepo.LogAdminAktion(ctx, params.AdminID, "BULK_RECEIVE_ITEMS", params.IPAddr, map[string]any{
+	logAuditErr("wareneingang-bulk", auditRepo.ProtokolliereAdminAktion(ctx, params.AdminID, "BULK_RECEIVE_ITEMS", params.IPAddr, map[string]any{
 		"received_count": len(items),
 		"message":        "Wareneingang gebucht (Massen-Freigabe)",
 	}))

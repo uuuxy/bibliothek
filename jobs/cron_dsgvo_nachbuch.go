@@ -37,7 +37,7 @@ func (s *Scheduler) RunNachbuchMeldungenBefristung() {
 		return
 	}
 	log.Printf("Scheduler Nachbuch-Meldungen: %d quittierte Meldungen nach %d Tagen gelöscht", geloescht, tage)
-	if err := s.auditRepo.LogSystemAktion(ctx, "nachbuch_meldungen", "DELETE",
+	if err := s.auditRepo.ProtokolliereSystemAktion(ctx, "nachbuch_meldungen", "DELETE",
 		"DSGVO: quittierte Nachbuch-Meldungen nach Frist gelöscht",
 		map[string]any{"geloescht": geloescht, "tage": tage}); err != nil {
 		log.Printf("Scheduler Nachbuch-Meldungen: Audit-Eintrag fehlgeschlagen: %v", err)

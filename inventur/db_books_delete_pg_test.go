@@ -200,9 +200,9 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 	// 4. BEIDE Exemplare bleiben am Tresen auffindbar — nicht nur das verliehene.
 	//    Die Tresen-Auskunft findet gelöschte Exemplare ausschließlich über
 	//    audit_log-Zeilen mit tabelle='buecher_exemplare' und details->>'barcode_id'
-	//    (repository.SucheTresenExemplare); die Ausleihen-Spur aus Schritt 2 sieht sie
+	//    (repository.FindeTresenExemplare); die Ausleihen-Spur aus Schritt 2 sieht sie
 	//    nicht. Bis zum 01.09.2026 fehlte dieser Snapshot hier wie beim
-	//    Geschwister-Pfad DeleteTitle (Befund-Register): Ein per Titel-Löschung
+	//    Geschwister-Pfad LoescheTitel (Befund-Register): Ein per Titel-Löschung
 	//    verschwundenes Buch war beim Scannen „nie gesehen" statt „gelöscht am …".
 	//    Geprüft über den echten Leseweg, nicht über count(*) — eine Zeile im falschen
 	//    Format bestünde die Zählung und bliebe trotzdem unsichtbar.
@@ -210,7 +210,7 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		{"ZB-REGAL", imRegal},
 		{"ZB-DRAUSSEN", verliehen},
 	} {
-		zeilen, err := repository.SucheTresenExemplare(ctx, pool, fall.barcode)
+		zeilen, err := repository.FindeTresenExemplare(ctx, pool, fall.barcode)
 		if err != nil {
 			t.Fatalf("Tresen-Auskunft für %s: %v", fall.barcode, err)
 		}

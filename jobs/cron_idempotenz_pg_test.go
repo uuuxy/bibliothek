@@ -45,7 +45,7 @@ func TestIdempotencyCleanup_LoeschtNurAbgelaufeneSchluessel(t *testing.T) {
 	seed(abgelaufen, 25)
 	seed(frisch, 23)
 
-	NewScheduler(pool, repository.NewAuditRepository(pool)).RunIdempotencyCleanup()
+	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunIdempotencyCleanup()
 
 	rows, err := pool.Query(ctx, `SELECT idempotency_key::text FROM idempotency_keys ORDER BY 1`)
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, mahnRepo *repository.MahnwesenRepository, auditRepo repository.AuditRepository) {
+func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, mahnRepo *repository.MahnwesenRepository, auditRepo repository.ProtokollAbfragen) {
 	// ── SCHUELER (Students) ──
 	// Die Klassenliste hinter Jahrgangsfilter und Jahrgangs-Auswahlfeld (OFFEN.md 9.5).
 	lmfKlassenRepo := repository.NewLmfTerminRepository(s.DB.Pool)
@@ -93,7 +93,7 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("GET /api/schadensfaelle/{id}/pdf", s.RequirePermission("view_students")(s.schaden().GenerateDamagePDFHandler()))
 	// Gebühren-Erledigung: Lesen wie die Akte (view_students), Erledigen wie das
 	// Anlegen (edit_students) — Begründung im Kopf von api/schaden/damage_resolve.go.
-	auditRepoGebuehren := repository.NewAuditRepository(s.DB.Pool)
+	auditRepoGebuehren := repository.NewProtokollAbfragen(s.DB.Pool)
 	mux.Handle("GET /api/schueler/{id}/schadensfaelle", s.RequirePermission("view_students")(s.schaden().ListStudentSchadensfaelleHandler(damageRepo)))
 
 	// ── SCHADENSERSATZ-BESCHEIDE (Migration 110) ──

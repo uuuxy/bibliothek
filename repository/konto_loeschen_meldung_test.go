@@ -5,12 +5,12 @@ import (
 	"testing"
 )
 
-// ErrUserHasActiveLoans erscheint in der Benutzerverwaltung als Meldung (409 beim Löschen,
+// ErrKontoHatAusleihen erscheint in der Benutzerverwaltung als Meldung (409 beim Löschen,
 // api/benutzer/user_admin_loeschen.go). Sie beschreibt den Zustand so, wie ihn die Bibliothek kennt —
 // ausgeliehene Bücher —, nicht mit einem Wort aus dem Code. Bis zum 16.09.2026 hieß sie
 // „Benutzer hat noch aktive Handapparat-Ausleihen".
-func TestErrUserHasActiveLoans_OhneWortAusDemCode(t *testing.T) {
-	meldung := ErrUserHasActiveLoans.Error()
+func TestErrKontoHatAusleihen_OhneWortAusDemCode(t *testing.T) {
+	meldung := ErrKontoHatAusleihen.Error()
 	if strings.Contains(meldung, "Handapparat") {
 		t.Errorf("die Meldung enthält „Handapparat“: %q", meldung)
 	}

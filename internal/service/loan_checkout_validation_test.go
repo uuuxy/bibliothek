@@ -56,25 +56,27 @@ type mockAuditRepo struct {
 	adminAktionCalls int
 }
 
-func (m *mockAuditRepo) LogAdminAktion(ctx context.Context, adminID, aktion, ip string, details map[string]any) error {
+func (m *mockAuditRepo) ProtokolliereAdminAktion(ctx context.Context, adminID, aktion, ip string, details map[string]any) error {
 	m.adminAktionCalls++
 	return nil
 }
-func (m *mockAuditRepo) DeleteTitle(ctx context.Context, t, b string) error           { return nil }
-func (m *mockAuditRepo) DeleteCopy(ctx context.Context, c, b string) error            { return nil }
-func (m *mockAuditRepo) DeleteUser(ctx context.Context, u, b string) error            { return nil }
-func (m *mockAuditRepo) DeleteStudent(ctx context.Context, s, b, g string) error      { return nil }
-func (m *mockAuditRepo) PurgeStudent(ctx context.Context, s, b string) error          { return nil }
-func (m *mockAuditRepo) PurgeAbgaenger(ctx context.Context, s, b string) error        { return nil }
-func (m *mockAuditRepo) StornierungGebuehr(ctx context.Context, s, b, g string) error { return nil }
-func (m *mockAuditRepo) BezahltGebuehr(ctx context.Context, s, b string) error        { return nil }
-func (m *mockAuditRepo) LogAusleihe(ctx context.Context, tx pgx.Tx, e, s, bu, b string) error {
+func (m *mockAuditRepo) LoescheTitel(ctx context.Context, t, b string) error             { return nil }
+func (m *mockAuditRepo) SondereExemplarAus(ctx context.Context, c, b string) error       { return nil }
+func (m *mockAuditRepo) LoescheKonto(ctx context.Context, u, b string) error             { return nil }
+func (m *mockAuditRepo) LegeLeserInPapierkorb(ctx context.Context, s, b, g string) error { return nil }
+func (m *mockAuditRepo) LoescheLeserEndgueltig(ctx context.Context, s, b string) error   { return nil }
+func (m *mockAuditRepo) LoescheAbgaengerEndgueltig(ctx context.Context, s, b string) error {
 	return nil
 }
-func (m *mockAuditRepo) LogRueckgabe(ctx context.Context, tx pgx.Tx, e, s, bu, b string) error {
+func (m *mockAuditRepo) StorniereForderung(ctx context.Context, s, b, g string) error { return nil }
+func (m *mockAuditRepo) VerbucheZahlung(ctx context.Context, s, b string) error       { return nil }
+func (m *mockAuditRepo) ProtokolliereAusleihe(ctx context.Context, tx pgx.Tx, e, s, bu, b string) error {
 	return nil
 }
-func (m *mockAuditRepo) LogSystemAktion(ctx context.Context, tabelle, aktion, kontext string, details map[string]any) error {
+func (m *mockAuditRepo) ProtokolliereRueckgabe(ctx context.Context, tx pgx.Tx, e, s, bu, b string) error {
+	return nil
+}
+func (m *mockAuditRepo) ProtokolliereSystemAktion(ctx context.Context, tabelle, aktion, kontext string, details map[string]any) error {
 	return nil
 }
 

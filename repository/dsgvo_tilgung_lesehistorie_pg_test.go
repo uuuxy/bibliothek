@@ -32,7 +32,7 @@ func TestTilgeSchuelerSpuren_TilgtAuchDieLesehistorie(t *testing.T) {
 	titelID := testdaten.SeedMonitorTitel(t, pool, "Tilgungs-Titel", "Jug Til", false, 0)
 	exID := testdaten.Exemplar(t, pool, titelID, "TILG-1", true, "")
 
-	// Zwei Protokollzeilen wie sie die Ausleihe/Rückgabe schreibt (audit_books.go):
+	// Zwei Protokollzeilen wie sie die Ausleihe/Rückgabe schreibt (protokoll.go):
 	// die des Schülers und die eines anderen — die fremde muss stehen bleiben.
 	for _, s := range []string{sid, fremd} {
 		if _, err := pool.Exec(ctx, `

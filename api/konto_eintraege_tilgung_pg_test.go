@@ -31,7 +31,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),
 			`DELETE FROM benutzer WHERE email LIKE '%@konto-eintraege.invalid'`); err != nil {
@@ -96,7 +96,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 		if _, err := pool.Exec(ctx, `UPDATE leser SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL`, leserID); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
-		if err := auditRepo.PurgeStudent(ctx, leserID, admin); err != nil {
+		if err := auditRepo.LoescheLeserEndgueltig(ctx, leserID, admin); err != nil {
 			t.Fatalf("endgültig löschen: %v", err)
 		}
 	}

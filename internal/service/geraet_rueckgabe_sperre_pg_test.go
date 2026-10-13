@@ -55,7 +55,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 
 	studentRepo := repository.NewStudentRepository(pool)
 	loanRepo := repository.NewLoanRepository(pool)
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	svc := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
 
 	legeGeraetAn := func(t *testing.T, name string) string {

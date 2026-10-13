@@ -182,9 +182,9 @@ func TestPurgeStudent_AnonymisiertUndLoescht(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	auditRepo := repository.NewAuditRepository(pool)
-	if err := auditRepo.PurgeStudent(ctx, sid, ""); err != nil {
-		t.Fatalf("PurgeStudent: %v", err)
+	auditRepo := repository.NewProtokollAbfragen(pool)
+	if err := auditRepo.LoescheLeserEndgueltig(ctx, sid, ""); err != nil {
+		t.Fatalf("LoescheLeserEndgueltig: %v", err)
 	}
 	var lusdSpuren int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_logs WHERE details ? 'lusd_id' AND details->>'schueler_id' = $1`, sid).Scan(&lusdSpuren); err != nil {
@@ -267,8 +267,8 @@ func TestPurgeStudent_OffeneAusleiheBlockiert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	auditRepo := repository.NewAuditRepository(pool)
-	if err := auditRepo.PurgeStudent(ctx, sid, ""); err == nil {
+	auditRepo := repository.NewProtokollAbfragen(pool)
+	if err := auditRepo.LoescheLeserEndgueltig(ctx, sid, ""); err == nil {
 		t.Error("Purge trotz offener Ausleihe durchgelaufen — Buch wäre verwaist")
 	}
 
@@ -285,7 +285,7 @@ func TestPurgeStudent_OffeneAusleiheBlockiert(t *testing.T) {
 // TestAbgaengerRetentionKette sichert die DSGVO-Kette ab, die sonst nie schliesst:
 // Ein Abgänger mit offenem Buch wird gesperrt (Name bleibt) UND bekommt sein
 // abgaenger_jahr aufs Abgangsjahr — nur so erfasst ihn der Cronjob später. Nach der
-// Buchrückgabe entfernt PurgeAbgaenger ihn endgültig (PII weg).
+// Buchrückgabe entfernt LoescheAbgaengerEndgueltig ihn endgültig (PII weg).
 func TestAbgaengerRetentionKette(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -342,18 +342,18 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 		t.Errorf("Abgänger mit offenem Buch soll gesperrt sein, Name behalten: gesperrt=%v vorname=%q", gesperrt, vorname)
 	}
 
-	// PurgeAbgaenger ist blockiert, solange das Buch offen ist.
-	auditRepo := repository.NewAuditRepository(pool)
-	if err := auditRepo.PurgeAbgaenger(ctx, sid, ""); err == nil {
-		t.Error("PurgeAbgaenger trotz offenem Buch durchgelaufen")
+	// LoescheAbgaengerEndgueltig ist blockiert, solange das Buch offen ist.
+	auditRepo := repository.NewProtokollAbfragen(pool)
+	if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, sid, ""); err == nil {
+		t.Error("LoescheAbgaengerEndgueltig trotz offenem Buch durchgelaufen")
 	}
 
-	// Buch zurückgeben -> jetzt entfernt PurgeAbgaenger den Datensatz endgültig.
+	// Buch zurückgeben -> jetzt entfernt LoescheAbgaengerEndgueltig den Datensatz endgültig.
 	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = now() WHERE id = $1`, loanID); err != nil {
 		t.Fatal(err)
 	}
-	if err := auditRepo.PurgeAbgaenger(ctx, sid, ""); err != nil {
-		t.Fatalf("PurgeAbgaenger nach Rückgabe: %v", err)
+	if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, sid, ""); err != nil {
+		t.Fatalf("LoescheAbgaengerEndgueltig nach Rückgabe: %v", err)
 	}
 	var exists bool
 	if err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM schueler WHERE id = $1)`, sid).Scan(&exists); err != nil {

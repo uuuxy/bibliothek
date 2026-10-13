@@ -66,7 +66,7 @@ func (s *Tueren) pruefeSchuelerLoeschbar(ctx context.Context, id string) (int, e
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /schueler/{id} [delete]
-func (s *Tueren) DeleteStudentHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) DeleteStudentHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -83,7 +83,7 @@ func (s *Tueren) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 		ctx := r.Context()
 
 		// Niemand löscht seine eigene Leserzeile. Beim Kollegium fiele damit auch das
-		// eigene Konto (DeleteStudent) — der Löschende spielte sich mitten im Vorgang
+		// eigene Konto (LegeLeserInPapierkorb) — der Löschende spielte sich mitten im Vorgang
 		// selbst aus der Anmeldung. Die Benutzerverwaltung hält dieselbe Regel für Konten
 		// (DeleteUserHandler, „eigenes Konto kann nicht gelöscht werden").
 		eigene, err := repository.LeserIDVonKonto(ctx, s.DB.Pool, claims.UserID)
@@ -104,7 +104,7 @@ func (s *Tueren) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 		}
 
 		// Transaktionales Löschen mit Audit-Log
-		if err := auditRepo.DeleteStudent(ctx, id, claims.UserID, "Manuelle Löschung"); err != nil {
+		if err := auditRepo.LegeLeserInPapierkorb(ctx, id, claims.UserID, "Manuelle Löschung"); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -136,7 +136,7 @@ func parseGeburtsdatum(raw string) (*time.Time, error) {
 
 // PatchStudentHandler aktualisiert editierbare Felder eines Schülers (klasse, abgaenger_jahr).
 // Wird nun auch für das Bearbeiten aller Stammdaten in der UI genutzt.
-func (s *Tueren) PatchStudentHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) PatchStudentHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handlePatchStudent(w, r, auditRepo)
 	}
@@ -144,7 +144,7 @@ func (s *Tueren) PatchStudentHandler(auditRepo repository.AuditRepository) http.
 
 // handlePatchStudent prüft die Änderung, schreibt sie und trägt nach, was erst nach dem
 // Schreiben entstehen darf.
-func (s *Tueren) handlePatchStudent(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository) {
+func (s *Tueren) handlePatchStudent(w http.ResponseWriter, r *http.Request, auditRepo repository.ProtokollAbfragen) {
 	claims, ok := auth.GetClaims(r.Context())
 	if !ok {
 		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("Sitzungs-Information fehlt oder ist abgelaufen"))
@@ -232,7 +232,7 @@ func (s *Tueren) pruefeSchuelerAenderung(ctx context.Context, w http.ResponseWri
 // trageNachUndProtokolliere legt nach dem Schreiben das Konto zur Schul-E-Mail an und
 // schreibt die Protokolleinträge der Nachträge. false heißt: Die Ablehnung ist schon
 // beantwortet.
-func (s *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository, claims *auth.Claims, id string, a schuelerAenderung) bool {
+func (s *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Request, auditRepo repository.ProtokollAbfragen, claims *auth.Claims, id string, a schuelerAenderung) bool {
 	ctx := r.Context()
 	if a.kontoAdresse != "" {
 		// Das Konto entsteht immer, aktiv nur bei manage_users — dieselbe Paarung wie beim
@@ -244,7 +244,7 @@ func (s *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 		}
 		// ziel_id ist die Kennung des Kontos: Daran findet die Auskunft den Eintrag beim Konto,
 		// auch nachdem es gelöscht ist. Mit dem Leser fällt sie wieder (Tilgung).
-		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "KOLLEGIUMSKONTO_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
+		if logErr := auditRepo.ProtokolliereAdminAktion(ctx, claims.UserID, "KOLLEGIUMSKONTO_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
 			"schueler_id": id,
 			"ziel_id":     kontoID,
 		}); logErr != nil {
@@ -253,7 +253,7 @@ func (s *Tueren) trageNachUndProtokolliere(w http.ResponseWriter, r *http.Reques
 	}
 
 	if a.lusdNachgetragen != "" {
-		if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "LUSD_ID_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
+		if logErr := auditRepo.ProtokolliereAdminAktion(ctx, claims.UserID, "LUSD_ID_NACHGETRAGEN", clientip.AusAnfrage(r), map[string]any{
 			"schueler_id": id,
 			"lusd_id":     a.lusdNachgetragen,
 		}); logErr != nil {

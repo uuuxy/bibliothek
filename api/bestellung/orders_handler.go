@@ -236,7 +236,7 @@ func (s *Tueren) BulkReceiveOrderHandler() http.HandlerFunc {
 			adminID = claims.UserID
 		}
 
-		auditRepo := repository.NewAuditRepository(s.DB.Pool)
+		auditRepo := repository.NewProtokollAbfragen(s.DB.Pool)
 
 		receivedItems, err := service.BulkReceiveOrder(ctx, s.DB.Pool, auditRepo, service.BulkReceiveParams{
 			ExemplarIDs: req.ExemplarIDs,

@@ -285,7 +285,7 @@ func raeumeWerkAuf(ctx context.Context, tx pgx.Tx, werkID string) error {
 }
 
 // WerkeDerTitel nimmt die Sperre der Auflagen und liefert die Werke, zu denen die genannten
-// Titel gehören. Für die Löschwege eines Titels (DeleteTitle, inventur.DeleteBooks): Sie rufen
+// Titel gehören. Für die Löschwege eines Titels (LoescheTitel, inventur.DeleteBooks): Sie rufen
 // das als ERSTES in ihrer Transaktion auf — erst die Sperre, dann die Zeilen, dieselbe
 // Reihenfolge wie Zusammenfassen und Lösen (sperreAuflagen); umgekehrt warteten zwei
 // Transaktionen aufeinander. Nach dem Löschen räumt RaeumeWerkeAuf auf.

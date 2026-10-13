@@ -69,7 +69,7 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 	studentRepo := repository.NewStudentRepository(pool)
 	bookRepo := repository.NewBookRepository(pool)
 	loanRepo := repository.NewLoanRepository(pool)
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	userRepo := repository.NewKontoAbfragen(pool)
 	loanSvc := service.NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := service.NewDeviceService(pool, studentRepo, loanRepo, auditRepo)

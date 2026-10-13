@@ -142,12 +142,12 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	bearbeiter := testdaten.SeedPortalLehrkraft(t, pool, "abgang-zulauf@test.invalid")
 	titelID := testdaten.TitelMitSignatur(t, pool, "Nie geliefert", "Nie 1", 0)
 
 	geloescht := testdaten.ZulaufExemplar(t, pool, titelID, "AB-ZULAUF-LOESCHEN")
-	if err := auditRepo.DeleteCopy(ctx, geloescht, bearbeiter); err != nil {
+	if err := auditRepo.SondereExemplarAus(ctx, geloescht, bearbeiter); err != nil {
 		t.Fatalf("bestelltes Exemplar löschen: %v", err)
 	}
 	ausgesondert := testdaten.ZulaufExemplar(t, pool, titelID, "AB-ZULAUF-STATUS")
@@ -156,7 +156,7 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 	}
 	// Gegenprobe: Dieselbe Tür an einem Exemplar aus dem Bestand ist ein Abgang.
 	imBestand := testdaten.Exemplar(t, pool, titelID, "AB-BESTAND", true, "")
-	if err := auditRepo.DeleteCopy(ctx, imBestand, bearbeiter); err != nil {
+	if err := auditRepo.SondereExemplarAus(ctx, imBestand, bearbeiter); err != nil {
 		t.Fatalf("Exemplar aus dem Bestand löschen: %v", err)
 	}
 
@@ -212,7 +212,7 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	titelID := testdaten.TitelMitSignatur(t, pool, "Mit Zulauf geloescht", "Zul 1", 0)
 	testdaten.Exemplar(t, pool, titelID, "AG-BESTAND", true, "")
 	testdaten.ZulaufExemplar(t, pool, titelID, "AG-ZULAUF")
-	if err := repository.NewAuditRepository(pool).DeleteTitle(ctx, titelID, bearbeiter); err != nil {
+	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiter); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 	if n := geloescht(); n != 1 {
@@ -235,7 +235,7 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 
 	// Gegenprobe: Ohne den Vermerk zählt dieselbe Spur mit.
 	if _, err := pool.Exec(ctx, `UPDATE audit_log SET details = details - $1 WHERE details->>'barcode_id' = 'AG-ZULAUF'`,
-		repository.AuditDetailWarImBestand); err != nil {
+		repository.ProtokollDetailWarImBestand); err != nil {
 		t.Fatalf("Vermerk entfernen: %v", err)
 	}
 	if n := geloescht(); n != 2 {
@@ -352,7 +352,7 @@ func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
 
 	// Durch die ECHTE Tür löschen, nicht per SQL: Gemessen wird der Weg, den das Personal
 	// nimmt — samt der Protokollspur, aus der die Zahl entsteht.
-	if err := repository.NewAuditRepository(pool).DeleteTitle(ctx, titelID, bearbeiterID); err != nil {
+	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, bearbeiterID); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
 

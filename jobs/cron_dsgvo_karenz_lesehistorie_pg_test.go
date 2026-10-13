@@ -105,7 +105,7 @@ func TestGDPRAnonymize_LesehistorieVerstelltKarenzUhrNicht(t *testing.T) {
 	alt := legeAbgaenger("KL-ALT")
 	legeAusleihe(alt, legeExemplar("KL-ALT-EX"), "200 days", "95 days")
 
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunLesehistorieBefristung()
 
 	// Die Vorbedingung des Tests: Der Lauf hat die Zuordnung wirklich genommen. Ohne

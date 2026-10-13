@@ -20,12 +20,12 @@ import (
 // Es gibt FÜNF Türen zu diesem Zustand, und jede hat ihren eigenen Wächter:
 //
 //	Soft-Delete (Papierkorb, Oberfläche) → pruefeSchuelerLoeschbar
-//	PurgeStudent (endgültig, von Hand)   → blockiereBeiOffenenVorgaengen
-//	PurgeAbgaenger (Cronjob, nachts)     → blockiereBeiOffenenVorgaengen
+//	LoescheLeserEndgueltig (endgültig, von Hand)   → pruefeKeineOffenenVorgaenge
+//	LoescheAbgaengerEndgueltig (Cronjob, nachts)     → pruefeKeineOffenenVorgaenge
 //	Anonymisierungs-Cronjob              → PredikatAnonymisierung (jobs-Paket getestet)
 //	LUSD-Import                          → repository.SperreAbgaenger statt anonymisieren
 //
-// Belegt war davon bisher genau eine (PurgeStudent bei offener Ausleihe). Für die
+// Belegt war davon bisher genau eine (LoescheLeserEndgueltig bei offener Ausleihe). Für die
 // übrigen stand der Schutz teils NUR IM KOMMENTAR — „unbezahlte würden die Löschung
 // blockieren" in jobs/cron_dsgvo_abgaenger_pg_test.go. Genau diese Sorte Zusage hat in
 // diesem Projekt schon einmal nicht gehalten.
@@ -36,7 +36,7 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 
 	// baueFall legt einen Schüler mit genau EINEM offenen Vorgang an.
 	// vorgang: "ausleihe" = Buch noch draußen, "schaden" = Gebühr unbezahlt.
@@ -119,8 +119,8 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 
 		t.Run("endgültiges Löschen von Hand blockiert bei "+vorgang, func(t *testing.T) {
 			sid := baueFall(t, "SP-PURGE", vorgang, true)
-			if err := auditRepo.PurgeStudent(ctx, sid, ""); err == nil {
-				t.Fatalf("PurgeStudent trotz offenem Vorgang (%s) durchgelaufen", vorgang)
+			if err := auditRepo.LoescheLeserEndgueltig(ctx, sid, ""); err == nil {
+				t.Fatalf("LoescheLeserEndgueltig trotz offenem Vorgang (%s) durchgelaufen", vorgang)
 			}
 			var da bool
 			if err := pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM schueler WHERE id = $1)`, sid).Scan(&da); err != nil {
@@ -133,8 +133,8 @@ func TestLoeschsperreBeiOffenenVorgaengen(t *testing.T) {
 
 		t.Run("Cronjob blockiert bei "+vorgang, func(t *testing.T) {
 			sid := baueFall(t, "SP-CRON", vorgang, false)
-			if err := auditRepo.PurgeAbgaenger(ctx, sid, ""); err == nil {
-				t.Fatalf("PurgeAbgaenger trotz offenem Vorgang (%s) durchgelaufen", vorgang)
+			if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, sid, ""); err == nil {
+				t.Fatalf("LoescheAbgaengerEndgueltig trotz offenem Vorgang (%s) durchgelaufen", vorgang)
 			}
 			nochDa(t, sid)
 		})
@@ -177,8 +177,8 @@ func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
 		t.Fatalf("Schadensfall: %v", err)
 	}
 
-	auditRepo := repository.NewAuditRepository(pool)
-	if err := auditRepo.PurgeAbgaenger(ctx, sid, ""); err == nil {
+	auditRepo := repository.NewProtokollAbfragen(pool)
+	if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, sid, ""); err == nil {
 		t.Fatal("Vorbedingung verfehlt: die unbezahlte Gebühr sperrt nicht")
 	} else if !strings.Contains(err.Error(), "blockiert") {
 		t.Fatalf("unerwarteter Fehler statt Blockade: %v", err)
@@ -186,11 +186,11 @@ func TestStornoHebtDieLoeschsperreAuf(t *testing.T) {
 
 	// Über den echten Storno-Weg, nicht per UPDATE von Hand — sonst prüfte der Test
 	// seine eigene Annahme statt des Codes.
-	if err := auditRepo.StornierungGebuehr(ctx, fallID, adminFuerStorno(t, pool), "Kulanz"); err != nil {
+	if err := auditRepo.StorniereForderung(ctx, fallID, adminFuerStorno(t, pool), "Kulanz"); err != nil {
 		t.Fatalf("Storno: %v", err)
 	}
 
-	if err := auditRepo.PurgeAbgaenger(ctx, sid, ""); err != nil {
+	if err := auditRepo.LoescheAbgaengerEndgueltig(ctx, sid, ""); err != nil {
 		t.Fatalf("nach dem Storno muss die Löschung durchgehen, sonst läuft die Frist nie ab: %v", err)
 	}
 }

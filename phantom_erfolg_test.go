@@ -17,7 +17,7 @@ import (
 // Anlass (31.08.2026): Ein Exec (UPDATE/DELETE per ID) läuft fehlerfrei, trifft 0 Zeilen,
 // und der Aufrufer meldet trotzdem Erfolg — teils samt Audit-Eintrag über eine Änderung,
 // die nie stattfand. Der Sweep über alle 163 Exec-Stellen fand 10 solcher Pfade (u. a.
-// Mail-Vorlage, UpdateUser, DeleteTitle, DeleteUser, Vormerkung löschen) plus einen
+// Mail-Vorlage, Konto ändern, Titel löschen, Konto löschen, Vormerkung löschen) plus einen
 // Grenzfall; alle sind behoben (RowsAffected → Sentinel → 404/409, Hausform wie
 // book_inventory.go).
 //
@@ -108,8 +108,8 @@ var phantomBestand = map[string]int{
 	// Dieselbe Bauart wie die Zeile darüber (Rasterdurchgang 06.09.2026): ein INSERT ins
 	// Protokoll je gelesener Zeile. Ein CommandTag zu prüfen hieße, einen INSERT ohne
 	// ON CONFLICT auf 1 zu vergleichen — die Fehlerrückgabe deckt den Fall schon ab.
-	"inventur/db_books_delete_spur.go:protokolliereOffeneSchaeden":       1,
-	"repository/audit_books_forderung.go:protokolliereOffeneForderungen": 1,
+	"inventur/db_books_delete_spur.go:protokolliereOffeneSchaeden":          1,
+	"repository/titel_loeschen_forderung.go:protokolliereOffeneForderungen": 1,
 	// Dritte Zeile derselben Bauart (Frage 12 „Gegenrichtung Schema", 06.09.2026):
 	// ein INSERT ins Protokoll je Zeile, die der CASCADE gleich nimmt.
 	"repository/titel_loeschen_wartende.go:ProtokolliereWartendeBezuege": 1,
@@ -145,11 +145,11 @@ var phantomBestand = map[string]int{
 	// RowsAffected; das Ergebnis misst repository/auflagen_pg_test.go.
 	"repository/auflagen.go:nimmAuflagenSperre":               1,
 	"repository/auflagen.go:raeumeWerkAuf":                    1,
-	"repository/audit.go:SchreibeAdminProtokoll":              1,
-	"repository/audit.go:insertAuditLog":                      1,
-	"repository/audit_books.go:DeleteTitle":                   3,
-	"repository/audit_system.go:BezahltGebuehr":               1,
-	"repository/audit_users.go:entferneSchuelerPIIUndLoesche": 2,
+	"repository/protokoll.go:SchreibeAdminProtokoll":          1,
+	"repository/protokoll.go:schreibeEintrag":                 1,
+	"repository/titel_loeschen.go:LoescheTitel":               3,
+	"repository/forderung_erledigen.go:VerbucheZahlung":       1,
+	"repository/leser_loeschen.go:tilgeSpurenUndLoescheLeser": 2,
 	"repository/barcode_vergabe.go:hebeSequenzUeberBestand":   1,
 	// Umschlüsselung der Protokollspuren beim Zusammenführen (02.09.2026): audit_log/
 	// audit_logs dürfen 0 Zeilen zur Quelle haben — 0 ist kein Phantom, das Ergebnis

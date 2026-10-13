@@ -638,7 +638,7 @@ HTTP-Anfrage
 | `api/bestellung/`       | 2.438 Zeilen, 18 Dateien   | Die Türen des Bestellwesens: Vorschläge zum Nachbestellen, die Suche nach Titeln, die Bestellung mit ihrer Mail an den Lieferanten, Zulauf und Wareneingang, Bestellhistorie mit Übersicht, Einzelheiten und Bericht, die Lieferanten, die Bestätigung im Haus und über den Link des Lieferanten, das erneute Senden der Mail, der Topf einer Bestellung |
 | `api/leser/`            | 3.007 Zeilen, 18 Dateien   | Die Türen der Leserdatei: die Liste der Leser mit Klassen und Jahrgängen, die Leserakte, Anlegen, Ändern, Sperren, Löschen mit Papierkorb, das Zusammenführen zweier Datensätze, das Passbild, der Abgleich mit der LUSD, die Versetzung zum Schuljahreswechsel, die Auskunft nach Art. 15 DSGVO, der Kontoauszug |
 | `api/theke/`            | 1.562 Zeilen, 11 Dateien   | Die Türen der Theke: der Scan mit Ausleihe und Rückgabe, das Nachbuchen der Warteschlange ohne Netz mit seinen Meldungen und der Liste der Buchnummern, die Suche der Omnibox, Verlängern und Frist von Hand an einer Ausleihe, die Vormerkungen |
-| `repository/`           | 22.404 Zeilen, 152 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
+| `repository/`           | 22.337 Zeilen, 156 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
 | `internal/service/`     | 5.246 Zeilen, 31 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, die Rechnung des Ersatzwerts eines Buchs (`ersatzwert_vorschlag.go`), Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan, womit ein neuer Plan beginnt (Rahmen und Reihenfolge) und seine Verteilung über die Schultage, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/leser/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 990 Zeilen, 3 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, die Zusammenfassung der Befunde zu einer Stufe (`Gesamt`), der Vergleich der Klassen mit den Zuordnungen der Klassenleitungen und den Bücherlisten (`klassen.go`), dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
@@ -788,11 +788,11 @@ Googles Regelwerk für Go nennt in
 [Package size](https://google.github.io/styleguide/go/best-practices#package-size) die Probe:
 Muss ein Nutzer zweier Pakete beide einbinden, um eines sinnvoll zu nutzen, gehören sie
 zusammen, und eng gekoppelte Typen in einem Paket müssen ihre Einzelheiten nicht öffentlich
-machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 152 Dateien
-hat höchstens 119 Zeilen, neun von zehn höchstens 282, vier haben über 500 (`bescheid.go`
-657, `audit_users.go` 648, `schueler_zusammenfuehren.go` 634, `schlagworte_pflege.go` 527;
-gezählt am 13.10.2026 abends). Eine Teilung schriebe 2.228 Zeilen in 465 Dateien um, die einen
-Namen des Pakets nennen, und bewegte einen Teil der 158 Testdateien.
+machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 156 Dateien
+hat höchstens 119 Zeilen, neun von zehn höchstens 276, drei haben über 500 (`bescheid.go`
+657, `schueler_zusammenfuehren.go` 634, `schlagworte_pflege.go` 527; gezählt am 13.10.2026
+abends). Eine Teilung schriebe 2.213 Zeilen in 461 Dateien um, die einen Namen des Pakets
+nennen, und bewegte einen Teil der 161 Testdateien.
 
 ##### Tür und Abfrage
 
@@ -1000,7 +1000,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   (`&Server{Basis: tuer.Basis{DB: …}}`). Router, Routenlisten und die Kette der Middleware
   bleiben in `api/`.
 - Einträge in `audit_logs` schreibt eine Anweisung, `repository.SchreibeAdminProtokoll`;
-  `LogAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
+  `ProtokolliereAdminAktion` nimmt die Details als Tabelle und geht denselben Weg, ebenso die
   Selbstanmeldung in `auth/`. Dafür bindet `auth/` `repository/` ein; umgekehrt darf
   `repository/` `auth/` nicht einbinden, sonst entsteht ein Kreis.
 - Hängt die SET-Liste einer Änderung von den genannten Feldern ab, nennt `repository/` die
@@ -1554,7 +1554,7 @@ Welcher Pfad welche Zeile sperrt:
 | Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LockStudentHandler` (`api/leser/student_lock.go`)                   |
 | Auflagen zusammenfassen und lösen | erst die Advisory-Sperre der Auflagen, dann die **Titel**-Zeilen, nach `id` geordnet | `sperreAuflagen` (`repository/auflagen.go`)   |
 | Schlagworte eines Titels, Schlagwort-Pflege | die **Titel**-Zeile bzw. die **Schlagwort**-Zeilen, mehrere nach `id` geordnet | `SetzeSchlagworte` (`repository/schlagworte.go`), `sperreSchlagwort` und `LoescheSchlagworte` (`repository/schlagworte_pflege.go`) |
-| Bescheid, Inventur-Abschluss, Zusammenführen, Bestellmittel, Audit-System | jeweils die betroffene Zeile                  | `repository/bescheid_*.go`, `inventur_session_finish.go`, `schueler_zusammenfuehren.go`, `bestellung_mittel.go`, `audit_system.go` |
+| Bescheid, Inventur-Abschluss, Zusammenführen, Bestellmittel, Audit-System | jeweils die betroffene Zeile                  | `repository/bescheid_*.go`, `inventur_session_finish.go`, `schueler_zusammenfuehren.go`, `bestellung_mittel.go`, `forderung_erledigen.go` |
 
 > **Warum hier die Ausleihe-Zeile steht:** Die frühere Kurzfassung `ARCHITECTURE.md` (bis
 > 18.09.2026) nannte für „Schaden erfassen" die Exemplar-Zeile (`buecher_exemplare`,
@@ -2248,7 +2248,7 @@ höchstens Serverzeit).
 | **Eine Unique-Verletzung wird 409, nicht 500**                  | Ein Doppelscan ist ein Fachfall, keine Störung. `mapLoanCreateErr` bildet SQLSTATE 23505 ab                                                     |
 | **DB-Aussetzer bei der Sitzungsprüfung wird 503, nicht 401**    | Eine 401 meldet den Arbeitsplatz ab, obwohl die Sitzung gültig ist                                                                               |
 | **Ein unbekannter `/api/`-Pfad wird 404, nicht die App-Shell**  | Vorher antwortete er „200 text/html", und der Aufrufer scheiterte erst beim JSON-Parsen — mit einer Meldung, die nichts mit der Ursache zu tun hat |
-| **Jede `rows.Next()`-Schleife endet mit `rows.Err()`**          | Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als **Erfolg** — die Liste wäre still unvollständig. In `audit_books.go` hätte das einen Titel trotz aktiver Ausleihen als „ausleihbar" behandeln können |
+| **Jede `rows.Next()`-Schleife endet mit `rows.Err()`**          | Ohne das gilt ein Verbindungsabbruch mitten in der Iteration als **Erfolg** — die Liste wäre still unvollständig. In `titel_loeschen.go` hätte das einen Titel trotz aktiver Ausleihen als „ausleihbar" behandeln können |
 | **Schweigen ist kein Erfolg**                                   | Ein Nachbuch-Schlüssel ohne Antwort bleibt in der Warteschlange liegen                                                                          |
 | **Eine gekappte Liste sagt es**                                 | Wo eine Ausgabe begrenzt wird, steht die Begrenzung dabei — auch wenn zusätzlich gefiltert wurde                                                 |
 | **Fehlt einer Liste eine Quelle, sagt sie es**                  | Die Bestellsuche zeigt den eigenen Katalog und die DNB. Antwortet die DNB nicht, bleibt es bei 200 mit den Treffern aus dem Katalog, und der Kopf `X-DNB-Ausfall` nennt den Ausfall; die Trefferliste zeigt ihn. Ohne ihn sähe ein Buch, das die DNB kennt, aus wie eines, das sie nicht kennt. Ist ein fremder Dienst die einzige Quelle, antwortet die Tür mit 502 |

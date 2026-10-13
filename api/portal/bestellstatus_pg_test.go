@@ -62,7 +62,7 @@ func TestBestellstatusSpalteStattNotizMagie(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT id FROM buecher_exemplare WHERE barcode_id='F1-ZULAUF'`).Scan(&exemplarID); err != nil {
 		t.Fatalf("Exemplar-ID: %v", err)
 	}
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	if _, err := service.BulkReceiveOrder(ctx, pool, auditRepo, service.BulkReceiveParams{
 		ExemplarIDs: []string{exemplarID},
 		AdminID:     "00000000-0000-0000-0000-000000000001",

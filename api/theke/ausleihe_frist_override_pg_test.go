@@ -53,7 +53,7 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 
 	call := func(ausleiheID, datum string) *httptest.ResponseRecorder {
 		srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-		auditRepo := repository.NewAuditRepository(pool)
+		auditRepo := repository.NewProtokollAbfragen(pool)
 		mux := http.NewServeMux()
 		mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(auditRepo))
 		req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleiheID+"/faelligkeit",
@@ -147,7 +147,7 @@ func TestOverrideDueDate_TagesendeInSchulzeitzone(t *testing.T) {
 	ausleihe := testdaten.SeedAusleihe(t, pool, sid, "Buch TZ", time.Date(2023, 1, 1, 23, 59, 59, 0, time.UTC))
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	mux := http.NewServeMux()
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(auditRepo))
 
@@ -201,7 +201,7 @@ func TestOverrideDueDate_AblehnungenZeitstempelUndMahnstufe(t *testing.T) {
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	mux := http.NewServeMux()
-	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(repository.NewAuditRepository(pool)))
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", srv.OverrideDueDateHandler(repository.NewProtokollAbfragen(pool)))
 	rufe := func(ausleiheID, rumpf string, angemeldet bool) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest("PATCH", "/api/admin/ausleihen/"+ausleiheID+"/faelligkeit", strings.NewReader(rumpf))

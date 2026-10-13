@@ -137,7 +137,7 @@ func TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_FristVonHand(t *testing.T
 		t.Fatalf("Test-Admin: %v", err)
 	}
 	mux := http.NewServeMux()
-	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", l.srv.theke().OverrideDueDateHandler(repository.NewAuditRepository(l.pool)))
+	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", l.srv.theke().OverrideDueDateHandler(repository.NewProtokollAbfragen(l.pool)))
 	// Ein Datum in der Zukunft — nur dann prüft der Weg die Sperre (ein Rückruf bleibt erlaubt).
 	zukunft := time.Now().AddDate(1, 0, 0).Format("2006-01-02")
 	for _, f := range l.faelle() {

@@ -91,7 +91,7 @@ func TestAuflagen_EinSchreibpfad(t *testing.T) {
 	}
 
 	// Nicht-leer-Garantie je Quelle, von Hand gezählt am 25.09.2026: In der Tür stehen
-	// INSERT INTO werke, drei SET werk_id und DELETE FROM werke; Titel löschen DeleteTitle und
+	// INSERT INTO werke, drei SET werk_id und DELETE FROM werke; Titel löschen LoescheTitel und
 	// DeleteBooks. Findet der Detektor weniger, misst er nichts mehr.
 	if schreiberInTuer < 5 {
 		t.Errorf("nur %d Schreiber in %s gefunden — erwartet mindestens 5: misst der Detektor noch?", schreiberInTuer, tuer)
@@ -148,7 +148,7 @@ func schreibtWerk(sql string) bool {
 }
 
 // literaleIn liefert den Inhalt aller Zeichenketten-Literale einer Deklaration — Rohstrings
-// und doppelt quotierte (DeleteTitle schreibt sein DELETE in Anführungszeichen).
+// und doppelt quotierte (LoescheTitel schreibt sein DELETE in Anführungszeichen).
 func literaleIn(n ast.Node) []string {
 	var out []string
 	ast.Inspect(n, func(k ast.Node) bool {

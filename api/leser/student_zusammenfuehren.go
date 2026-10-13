@@ -30,7 +30,7 @@ type zusammenfuehrenRumpf struct {
 
 // ZusammenfuehrenSchuelerHandler bedient POST /api/schueler/{id}/zusammenfuehren — {id}
 // bleibt, quelle_id geht darin auf.
-func (s *Tueren) ZusammenfuehrenSchuelerHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) ZusammenfuehrenSchuelerHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		zielID := r.PathValue("id")
 		var rumpf zusammenfuehrenRumpf
@@ -68,7 +68,7 @@ func (s *Tueren) ZusammenfuehrenSchuelerHandler(auditRepo repository.AuditReposi
 		// Ziel, geschrieben in der Transaktion (repository.schreibeRueckwegEintrag).
 		// Schlüssel `schueler_id` für den verbliebenen (Vokabular der Auskunft/Tilgung).
 		if claims, ok := auth.GetClaims(r.Context()); ok {
-			if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "SCHUELER_ZUSAMMENGEFUEHRT", clientip.AusAnfrage(r), map[string]any{
+			if err := auditRepo.ProtokolliereAdminAktion(r.Context(), claims.UserID, "SCHUELER_ZUSAMMENGEFUEHRT", clientip.AusAnfrage(r), map[string]any{
 				"schueler_id":        erg.ZielID,
 				"barcode":            erg.BarcodeID,
 				"aufgeloest_id":      rumpf.QuelleID,

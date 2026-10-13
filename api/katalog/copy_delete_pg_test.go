@@ -23,7 +23,7 @@ import (
 //     verliehen!") mit einem Repo-Text in anderer Schreibung („exemplar ist aktuell noch
 //     verliehen") — der Vergleich traf NIE. Ein verliehenes Buch endete als 500, und der
 //     Sanitizer ersetzte die Auskunft durch „Ein interner Datenbankfehler ist
-//     aufgetreten". Die Nachbar-Funktion (DeleteTitle) hatte denselben Bug schon einmal —
+//     aufgetreten". Die Nachbar-Funktion (LoescheTitel) hatte denselben Bug schon einmal —
 //     und wurde per Sentinel repariert; diese hier blieb beim fragilen Text.
 //  2. Phantom-Erfolg: Bei unbekannter oder bereits ausgesonderter ID traf der UPDATE
 //     null Zeilen, RowsAffected prüfte niemand — Antwort 200 samt Audit-Eintrag über
@@ -47,7 +47,7 @@ func TestDeleteCopy_VerliehenIst400_PhantomIst404(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: bearbeiter}))
 		rec := httptest.NewRecorder()
-		srv.DeleteCopyHandler(repository.NewAuditRepository(pool))(rec, req)
+		srv.DeleteCopyHandler(repository.NewProtokollAbfragen(pool))(rec, req)
 		return rec
 	}
 

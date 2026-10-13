@@ -56,7 +56,7 @@ func TestAnliegenBefristung_LoeschtNurErledigteNachFrist(t *testing.T) {
 		"ALT-OFFEN":     anlege("ALT-OFFEN", 400, true),
 	}
 
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunAnliegenBefristung()
 
 	existiert := func(id string) bool {
@@ -117,7 +117,7 @@ func TestAnliegenBefristung_NullSchaltetAb(t *testing.T) {
 		t.Fatalf("Einstellung: %v", err)
 	}
 
-	NewScheduler(pool, repository.NewAuditRepository(pool)).RunAnliegenBefristung()
+	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunAnliegenBefristung()
 
 	var n int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM lehrer_anliegen WHERE id = $1`, id).Scan(&n); err != nil {

@@ -115,7 +115,7 @@ func TestNaechtlicheDSGVO_LoeschungWartetDieKarenzAb(t *testing.T) {
 	schaden := legeAbgaenger("LK-SCHADEN", "")
 	legeSchaden(schaden, legeExemplar("LK-SCHADEN-EX"), false)
 
-	NewScheduler(pool, repository.NewAuditRepository(pool)).RunNaechtlicheDSGVO()
+	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunNaechtlicheDSGVO()
 
 	if da, anonym := zustand(spaet); !da || anonym {
 		t.Errorf("SPAET: Rückgabe vor 5 Tagen muss die volle Karenz bekommen — existiert=%v, anonymisiert=%v (Löschung kennt die Karenz nicht?)", da, anonym)

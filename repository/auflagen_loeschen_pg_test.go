@@ -8,7 +8,7 @@ import (
 // Ein Werk mit weniger als zwei Titeln fällt — auch, wenn Titel gelöscht werden
 // (Rasterdurchgang 25.09.2026, docs/OFFEN.md 4.18, Frage 1 und 12). Bis dahin stand die Regel
 // nur im Lösen: Ein gelöschter Titel ließ den anderen allein an seinem Werk zurück.
-func TestDeleteTitle_HaeltDieRegelDerAuflagen(t *testing.T) {
+func TestLoescheTitel_HaeltDieRegelDerAuflagen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
@@ -21,7 +21,7 @@ func TestDeleteTitle_HaeltDieRegelDerAuflagen(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	repo := NewAuditRepository(pool)
+	repo := NewProtokollAbfragen(pool)
 	bearbeiter := seedBearbeiter(t, pool)
 	werke := func() (n int) {
 		t.Helper()
@@ -32,8 +32,8 @@ func TestDeleteTitle_HaeltDieRegelDerAuflagen(t *testing.T) {
 	}
 
 	// Drei Auflagen, eine gelöscht: Das Buch bleibt mit zweien.
-	if err := repo.DeleteTitle(ctx, c, bearbeiter); err != nil {
-		t.Fatalf("DeleteTitle: %v", err)
+	if err := repo.LoescheTitel(ctx, c, bearbeiter); err != nil {
+		t.Fatalf("LoescheTitel: %v", err)
 	}
 	if n := werke(); n != 1 {
 		t.Errorf("nach dem Löschen der dritten Auflage: %d Werke — erwartet 1", n)
@@ -43,8 +43,8 @@ func TestDeleteTitle_HaeltDieRegelDerAuflagen(t *testing.T) {
 	}
 
 	// Noch eine gelöscht: Das Werk fällt, der letzte Titel ist wieder sein eigenes Buch.
-	if err := repo.DeleteTitle(ctx, b, bearbeiter); err != nil {
-		t.Fatalf("DeleteTitle: %v", err)
+	if err := repo.LoescheTitel(ctx, b, bearbeiter); err != nil {
+		t.Fatalf("LoescheTitel: %v", err)
 	}
 	var werkID *string
 	if err := pool.QueryRow(ctx, `SELECT werk_id::text FROM buecher_titel WHERE id = $1`, a).Scan(&werkID); err != nil {

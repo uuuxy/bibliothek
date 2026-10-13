@@ -48,11 +48,11 @@ type defaultDeviceService struct {
 	pool        db.PgxPoolIface
 	studentRepo repository.StudentRepository
 	loanRepo    repository.LoanRepository
-	auditRepo   repository.AuditRepository
+	auditRepo   repository.ProtokollAbfragen
 }
 
 // NewDeviceService erstellt eine neue Instanz des Standard-Geräteservice.
-func NewDeviceService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, loanRepo repository.LoanRepository, auditRepo repository.AuditRepository) DeviceService {
+func NewDeviceService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, loanRepo repository.LoanRepository, auditRepo repository.ProtokollAbfragen) DeviceService {
 	return &defaultDeviceService{
 		pool:        pool,
 		studentRepo: studentRepo,
@@ -176,7 +176,7 @@ func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g 
 	}
 
 	// Revisionssicheres Audit-Log schreiben.
-	if err := s.auditRepo.LogAusleihe(ctx, tx, g.ID, leser.ID, "", staffID); err != nil {
+	if err := s.auditRepo.ProtokolliereAusleihe(ctx, tx, g.ID, leser.ID, "", staffID); err != nil {
 		return nil, err
 	}
 
@@ -225,7 +225,7 @@ func (s *defaultDeviceService) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, 
 
 	// Revisionssicheres Audit-Log für die Rückgabe schreiben.
 	if activeLoan.SchuelerID != nil {
-		if err := s.auditRepo.LogRueckgabe(ctx, tx, g.ID, *activeLoan.SchuelerID, "", staffID); err != nil {
+		if err := s.auditRepo.ProtokolliereRueckgabe(ctx, tx, g.ID, *activeLoan.SchuelerID, "", staffID); err != nil {
 			return nil, err
 		}
 	}

@@ -12,8 +12,8 @@ import (
 
 // TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres schließt die Gate-Lücke, die
 // den GDPR-Anonymisierungs-Bug so lange verborgen hielt (Cron-Matrix-Sweep 20.08.2026):
-// Die harte DSGVO-Löschung fälliger Abgänger (RunGDPRDeleteAbgaenger → PurgeAbgaenger →
-// entferneSchuelerPIIUndLoesche) war NUR mit pgxmock getestet — ein Schema-/Constraint-/
+// Die harte DSGVO-Löschung fälliger Abgänger (RunGDPRDeleteAbgaenger → LoescheAbgaengerEndgueltig →
+// tilgeSpurenUndLoescheLeser) war NUR mit pgxmock getestet — ein Schema-/Constraint-/
 // FK-Fehler (etwa ein ON DELETE RESTRICT auf einer Nebentabelle) würde still scheitern und
 // nur geloggt, die Löschung fände nie statt. Dieser Test fährt die volle Kette gegen echtes
 // Postgres mit allen verknüpften Zeilen und prüft, dass der Schüler wirklich weg ist und
@@ -91,7 +91,7 @@ func TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 		t.Fatalf("Foto: %v", err)
 	}
 
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunGDPRDeleteAbgaenger()
 
 	zaehle := func(query string, args ...any) int {
@@ -194,7 +194,7 @@ func TestGDPRAnonymizeLoans_GegenEchtesPostgres(t *testing.T) {
 	laufend := leihe("läuft noch", "ANL-EX5", "$3", "NULL::uuid",
 		`now() - interval '60 days', now() + interval '10 days', NULL`)
 
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunGDPRAnonymizeLoans()
 
 	ohneBearbeiter := func(id string) bool {

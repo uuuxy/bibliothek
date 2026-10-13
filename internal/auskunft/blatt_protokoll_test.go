@@ -12,8 +12,9 @@ import (
 
 // Das Blatt nennt jeden Vorgang der Datensatz-Historie in Worten. Die Fälle sind die Einträge,
 // die die Schreiber heute anlegen: Tabelle, Aktion, Merker und kontext stehen so in
-// repository/audit_books.go, audit_users.go, audit_system.go, bescheid_rueckkehr.go,
-// schueler_zusammenfuehren.go, titel_loeschen_wartende.go und inventur/db_books_delete_spur.go.
+// repository/protokoll.go, titel_loeschen.go, exemplar_aussondern.go, leser_loeschen.go,
+// forderung_erledigen.go, bescheid_rueckkehr.go, schueler_zusammenfuehren.go,
+// titel_loeschen_wartende.go und inventur/db_books_delete_spur.go.
 func TestDsgvoVorgang(t *testing.T) {
 	satz := func(s string) *string { return &s }
 	faelle := []struct {

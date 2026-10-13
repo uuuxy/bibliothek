@@ -263,7 +263,7 @@ func ordnePositionenZu(ctx context.Context, tx pgx.Tx, bescheidID string, e Besc
 }
 
 // bescheidHatOffenePosition: Steht auf dem Brief b noch eine unbezahlte Forderung?
-// Bezahlt UND Storno setzen ist_bezahlt (audit_system.go) — beide erledigen die Position.
+// Bezahlt UND Storno setzen ist_bezahlt (forderung_erledigen.go) — beide erledigen die Position.
 //
 // Daraus leitet sich „erledigt" ab (Konzept 4.3): Die Spalte status kennt den Wert, aber
 // kein Schreibpfad setzt ihn — Bezahlen und Storno laufen über die Forderung, nicht über

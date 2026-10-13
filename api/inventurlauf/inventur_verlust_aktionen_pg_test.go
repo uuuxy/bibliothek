@@ -158,7 +158,7 @@ func TestVerlusteLoeschen_LoeschtNurVerlusteUndNenntSie(t *testing.T) {
 			SELECT count(*) FROM audit_log
 			WHERE tabelle = 'buecher_exemplare' AND aktion = 'DELETE' AND datensatz_id = $1
 			  AND bearbeiter_id = $2 AND details->>'action' = $3`,
-			lage[barcode], admin, repository.AuditAktionVerlustEndgueltigGeloescht); n != 1 {
+			lage[barcode], admin, repository.ProtokollAktionVerlustEndgueltigGeloescht); n != 1 {
 			t.Errorf("%s: %d Protokolleinträge mit dem angemeldeten Benutzer, erwartet 1", barcode, n)
 		}
 	}

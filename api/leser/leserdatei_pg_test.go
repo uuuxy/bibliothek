@@ -219,7 +219,7 @@ func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 		req.SetPathValue("id", id)
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
 		rec := httptest.NewRecorder()
-		srv.LockStudentHandler(repository.NewAuditRepository(pool)).ServeHTTP(rec, req)
+		srv.LockStudentHandler(repository.NewProtokollAbfragen(pool)).ServeHTTP(rec, req)
 		return rec
 	}
 	gesperrt := func() bool {

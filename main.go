@@ -365,7 +365,7 @@ func main() {
 	slog.Info("Server-Sent Events (SSE) broker started.")
 
 	// 5. Background Jobs & Scheduler
-	auditRepo := repository.NewAuditRepository(database.Pool)
+	auditRepo := repository.NewProtokollAbfragen(database.Pool)
 	scheduler := jobs.NewScheduler(database.Pool, auditRepo)
 	scheduler.Start()
 	defer scheduler.Stop()

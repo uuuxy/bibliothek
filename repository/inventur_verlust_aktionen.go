@@ -61,7 +61,7 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 		return false, RueckkehrBefund{}, fmt.Errorf("verlustbericht aktualisieren fehlgeschlagen: %w", err)
 	}
 
-	if err := schreibeAuditLog(ctx, r.db, auditEntry{
+	if err := schreibeAuditLog(ctx, r.db, protokollEintrag{
 		Tabelle: "buecher_exemplare", Aktion: "UPDATE", DatensatzID: exemplarID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER",
 		Kontext: strPtr("Als Verlust gebuchtes Exemplar beim Nachsuchen gefunden"),
@@ -159,13 +159,13 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 	}
 
 	for _, s := range treffer {
-		if err := schreibeAuditLog(ctx, r.db, auditEntry{
+		if err := schreibeAuditLog(ctx, r.db, protokollEintrag{
 			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: s.id,
 			BearbeiterID: &bearbeiterID, Akteur: "USER",
 			Kontext: strPtr("Als Verlust gebuchtes Exemplar endgültig gelöscht"),
 			Details: map[string]any{
 				"barcode_id": s.barcode, "titel": s.titel,
-				"action": AuditAktionVerlustEndgueltigGeloescht, AuditDetailWarImBestand: s.warImBestand,
+				"action": ProtokollAktionVerlustEndgueltigGeloescht, ProtokollDetailWarImBestand: s.warImBestand,
 			},
 		}); err != nil {
 			return nil, err
@@ -181,13 +181,13 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 func strPtr(s string) *string { return &s }
 
 // schreibeAuditLog schreibt EINEN audit_log-Eintrag über die Schnittstelle Datenbank.
-// Eigene, kleine Kopie statt pgAuditRepository.insertAuditLog: Jene
+// Eigene, kleine Kopie statt pgProtokollAbfragen.schreibeEintrag: Jene
 // verlangt konkret pgx.Tx, hier liegt aber nur r.db (Datenbank) vor — dieselbe
 // Verengung, die schon FinishInventurSession umgeht, indem es Pool und Tx über
 // dasselbe Interface anspricht. Direktes Schreiben in audit_log ist an mehreren
 // Stellen im Projekt so üblich (z. B. api/leser/student_update.go), nicht nur über die
-// Kapselung in audit.go.
-func schreibeAuditLog(ctx context.Context, db Datenbank, e auditEntry) error {
+// Kapselung in protokoll.go.
+func schreibeAuditLog(ctx context.Context, db Datenbank, e protokollEintrag) error {
 	var detailsJSON []byte
 	if e.Details != nil {
 		var err error

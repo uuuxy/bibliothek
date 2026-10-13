@@ -48,7 +48,7 @@ func (s *Scheduler) RunAnliegenBefristung() {
 	}
 	log.Printf("Scheduler Anliegen: %d erledigte Anliegen nach %d Tagen gelöscht", geloescht, tage)
 
-	if err := s.auditRepo.LogSystemAktion(ctx, "lehrer_anliegen", "DELETE",
+	if err := s.auditRepo.ProtokolliereSystemAktion(ctx, "lehrer_anliegen", "DELETE",
 		"DSGVO: erledigte Anliegen nach Frist gelöscht",
 		map[string]any{"geloescht": geloescht, "tage": tage}); err != nil {
 		log.Printf("Scheduler Anliegen: Audit-Eintrag fehlgeschlagen: %v", err)
@@ -85,7 +85,7 @@ func (s *Scheduler) RunKlassensatzBefristung() {
 	}
 	log.Printf("Scheduler Klassensatz: %d erledigte Reservierungen nach %d Tagen gelöscht", geloescht, tage)
 
-	if err := s.auditRepo.LogSystemAktion(ctx, "klassensatz_reservierungen", "DELETE",
+	if err := s.auditRepo.ProtokolliereSystemAktion(ctx, "klassensatz_reservierungen", "DELETE",
 		"DSGVO: erledigte Klassensatz-Reservierungen nach Frist gelöscht",
 		map[string]any{"geloescht": geloescht, "tage": tage}); err != nil {
 		log.Printf("Scheduler Klassensatz: Audit-Eintrag fehlgeschlagen: %v", err)

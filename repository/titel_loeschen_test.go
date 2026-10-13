@@ -9,14 +9,14 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// snapshotTitelRows liefert die Zeile, die DeleteTitle vor dem Löschen für das Audit-Log
+// snapshotTitelRows liefert die Zeile, die LoescheTitel vor dem Löschen für das Audit-Log
 // sichert.
 func snapshotTitelRows() *pgxmock.Rows {
 	return pgxmock.NewRows([]string{"titel", "autor", "isbn"}).
 		AddRow("Der Vorleser", "Bernhard Schlink", "9783161484100")
 }
 
-// TestDeleteTitle_MeldetAktiveAusleihenAlsSentinel sichert die Bedienbarkeit des
+// TestLoescheTitel_MeldetAktiveAusleihenAlsSentinel sichert die Bedienbarkeit des
 // Löschpfads ab.
 //
 // Die Sperre selbst hat immer funktioniert — ein Titel mit verliehenen Exemplaren wurde
@@ -28,14 +28,14 @@ func snapshotTitelRows() *pgxmock.Rows {
 // weiterarbeitet, verschwand hinter „Serverfehler".
 //
 // Deshalb ein Sentinel statt eines Textvergleichs: errors.Is überlebt jede Umformulierung.
-func TestDeleteTitle_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
+func TestLoescheTitel_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewAuditRepository(mock)
+	repo := NewProtokollAbfragen(mock)
 	const titelID = "11111111-1111-1111-1111-111111111111"
 
 	mock.ExpectBegin()
@@ -50,7 +50,7 @@ func TestDeleteTitle_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 	// KEIN ExpectExec("DELETE …"): Der Abbruch muss vor jedem zerstörenden Statement kommen.
 	mock.ExpectRollback()
 
-	err = repo.DeleteTitle(context.Background(), titelID, "admin-1")
+	err = repo.LoescheTitel(context.Background(), titelID, "admin-1")
 
 	if !errors.Is(err, ErrTitelHatAktiveAusleihen) {
 		t.Fatalf("erwartet ErrTitelHatAktiveAusleihen (der Handler antwortet darauf mit HTTP 400), bekam: %v", err)
@@ -66,16 +66,16 @@ func TestDeleteTitle_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 	}
 }
 
-// TestDeleteTitle_LoeschtOhneAktiveAusleihen ist die Gegenprobe: Ohne offene Ausleihen
+// TestLoescheTitel_LoeschtOhneAktiveAusleihen ist die Gegenprobe: Ohne offene Ausleihen
 // darf die Sperre nicht greifen, sonst liesse sich nie ein Titel entfernen.
-func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
+func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewAuditRepository(mock)
+	repo := NewProtokollAbfragen(mock)
 	const titelID = "22222222-2222-2222-2222-222222222222"
 
 	mock.ExpectBegin()
@@ -138,14 +138,14 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 		WithArgs("buecher_titel", "DELETE", titelID,
 			pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	// Je Exemplar der Barcode-Snapshot im Geschwister-Format (DeleteCopy, Verlust).
+	// Je Exemplar der Barcode-Snapshot im Geschwister-Format (SondereExemplarAus, Verlust).
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("buecher_exemplare", "DELETE", "ex-1",
 			pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	if err := repo.DeleteTitle(context.Background(), titelID, "admin-1"); err != nil {
+	if err := repo.LoescheTitel(context.Background(), titelID, "admin-1"); err != nil {
 		t.Fatalf("Löschen ohne offene Ausleihen muss durchgehen, bekam: %v", err)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -153,17 +153,17 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	}
 }
 
-// TestDeleteTitle_LeseFehlerBlocktLoeschung: Bricht die Ausleih-Abfrage mittendrin ab,
+// TestLoescheTitel_LeseFehlerBlocktLoeschung: Bricht die Ausleih-Abfrage mittendrin ab,
 // darf NICHT von „keine offenen Ausleihen" ausgegangen werden — sonst löschte ein
 // Verbindungsfehler den Titel samt verliehener Exemplare.
-func TestDeleteTitle_LeseFehlerBlocktLoeschung(t *testing.T) {
+func TestLoescheTitel_LeseFehlerBlocktLoeschung(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	repo := NewAuditRepository(mock)
+	repo := NewProtokollAbfragen(mock)
 	const titelID = "33333333-3333-3333-3333-333333333333"
 	leseFehler := errors.New("Verbindung während der Iteration verloren")
 
@@ -179,7 +179,7 @@ func TestDeleteTitle_LeseFehlerBlocktLoeschung(t *testing.T) {
 	// KEIN ExpectExec: Bei unklarer Lage wird nichts gelöscht.
 	mock.ExpectRollback()
 
-	err = repo.DeleteTitle(context.Background(), titelID, "admin-1")
+	err = repo.LoescheTitel(context.Background(), titelID, "admin-1")
 	if err == nil {
 		t.Fatal("ein Lesefehler darf nicht als 'keine offenen Ausleihen' durchgehen")
 	}
@@ -191,17 +191,17 @@ func TestDeleteTitle_LeseFehlerBlocktLoeschung(t *testing.T) {
 // ptrString: pgxmock reicht Zeiger unverändert durch; die Spalte schueler_id ist nullbar.
 func ptrString(s string) *string { return &s }
 
-// LogAusleihe/LogRueckgabe schreiben in die ÜBERGEBENE Transaktion und eröffnen keine
+// ProtokolliereAusleihe/ProtokolliereRueckgabe schreiben in die ÜBERGEBENE Transaktion und eröffnen keine
 // eigene (Register B, 07.09.2026): pgxmock kennt nur das eine Begin des Aufrufers — ein
 // zweites Begin oder ein Commit im Repository wäre eine unerwartete Erwartung und macht
 // den Test rot. Am alten Stand (eigene Tx mit Commit) fiel er genau so.
-func TestLogAusleihe_SchreibtInDieUebergebeneTransaktion(t *testing.T) {
+func TestProtokolliereAusleihe_SchreibtInDieUebergebeneTransaktion(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-	repo := NewAuditRepository(mock)
+	repo := NewProtokollAbfragen(mock)
 	ctx := context.Background()
 
 	mock.ExpectBegin()
@@ -216,11 +216,11 @@ func TestLogAusleihe_SchreibtInDieUebergebeneTransaktion(t *testing.T) {
 		WithArgs("ausleihen", "RETURN", "ex-1", pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-	if err := repo.LogAusleihe(ctx, tx, "ex-1", "s-1", "", "b-1"); err != nil {
-		t.Fatalf("LogAusleihe: %v", err)
+	if err := repo.ProtokolliereAusleihe(ctx, tx, "ex-1", "s-1", "", "b-1"); err != nil {
+		t.Fatalf("ProtokolliereAusleihe: %v", err)
 	}
-	if err := repo.LogRueckgabe(ctx, tx, "ex-1", "s-1", "", "b-1"); err != nil {
-		t.Fatalf("LogRueckgabe: %v", err)
+	if err := repo.ProtokolliereRueckgabe(ctx, tx, "ex-1", "s-1", "", "b-1"); err != nil {
+		t.Fatalf("ProtokolliereRueckgabe: %v", err)
 	}
 	// Der Aufrufer committet — nicht das Repository.
 	mock.ExpectCommit()

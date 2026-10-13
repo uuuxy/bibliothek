@@ -9,9 +9,9 @@ import (
 )
 
 // Das lokal gespeicherte Cover fällt mit seinem Titel, an beiden Lösch-Türen. Die Maske
-// „Buch bearbeiten" (DeleteTitle) ließ die Datei liegen, nur die Massenaktion der
+// „Buch bearbeiten" (LoescheTitel) ließ die Datei liegen, nur die Massenaktion der
 // Bestandstabelle nahm sie mit. Eine Datei, die ein weiterer Titel trägt, bleibt.
-func TestDeleteTitle_NimmtDasLokaleCoverMit(t *testing.T) {
+func TestLoescheTitel_NimmtDasLokaleCoverMit(t *testing.T) {
 	pool := pgTestPool(t)
 	resetAuflagen(t, pool)
 	ctx := context.Background()
@@ -54,11 +54,11 @@ func TestDeleteTitle_NimmtDasLokaleCoverMit(t *testing.T) {
 		t.Errorf("Cover nur dieser Titel: %v, erwartet nur %s — das geteilte trägt ein weiterer Titel", nur, eigen)
 	}
 
-	repo := NewAuditRepository(pool)
+	repo := NewProtokollAbfragen(pool)
 	bearbeiter := seedBearbeiter(t, pool)
 	for _, id := range []string{allein, erster} {
-		if err := repo.DeleteTitle(ctx, id, bearbeiter); err != nil {
-			t.Fatalf("DeleteTitle: %v", err)
+		if err := repo.LoescheTitel(ctx, id, bearbeiter); err != nil {
+			t.Fatalf("LoescheTitel: %v", err)
 		}
 	}
 	if vorhanden(eigen) {
@@ -68,8 +68,8 @@ func TestDeleteTitle_NimmtDasLokaleCoverMit(t *testing.T) {
 		t.Fatalf("%s ist entfernt, ein zweiter Titel trägt es noch", geteilt)
 	}
 
-	if err := repo.DeleteTitle(ctx, zweiter, bearbeiter); err != nil {
-		t.Fatalf("DeleteTitle: %v", err)
+	if err := repo.LoescheTitel(ctx, zweiter, bearbeiter); err != nil {
+		t.Fatalf("LoescheTitel: %v", err)
 	}
 	if vorhanden(geteilt) {
 		t.Errorf("%s liegt noch da, beide Titel sind gelöscht", geteilt)

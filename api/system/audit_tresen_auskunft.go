@@ -16,7 +16,7 @@ package system
 // Befristung (details ohne schueler_id) zeigt auch dieser Weg bewusst nichts mehr:
 // Er liest nur, was rechtlich noch da sein darf, und stellt nichts wieder her.
 //
-// Die Abfragen selbst stehen in repository/audit_tresen.go (Schichtungs-Regel:
+// Die Abfragen selbst stehen in repository/protokoll_tresen.go (Schichtungs-Regel:
 // ein Handler formuliert kein SQL).
 
 import (
@@ -87,7 +87,7 @@ func tresenEreignis(z repository.TresenEreignisZeile) TresenEreignis {
 }
 
 // TresenAuskunftHandler beantwortet GET /api/audit/tresen-auskunft?barcode=…
-func (s *Tueren) TresenAuskunftHandler(auditRepo repository.AuditRepository) http.HandlerFunc {
+func (s *Tueren) TresenAuskunftHandler(auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleTresenAuskunft(w, r, auditRepo)
 	}
@@ -95,7 +95,7 @@ func (s *Tueren) TresenAuskunftHandler(auditRepo repository.AuditRepository) htt
 
 // handleTresenAuskunft sucht die Exemplare zum Barcode und ihre Vorgänge und protokolliert den
 // Blick, bevor er antwortet.
-func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, auditRepo repository.AuditRepository) {
+func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, auditRepo repository.ProtokollAbfragen) {
 	barcode := strings.TrimSpace(r.URL.Query().Get("barcode"))
 	if barcode == "" || len(barcode) > 64 {
 		apierrors.SendHTTPError(w, http.StatusBadRequest,
@@ -103,7 +103,7 @@ func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, au
 		return
 	}
 
-	exemplarZeilen, err := repository.SucheTresenExemplare(r.Context(), s.DB.Pool, barcode)
+	exemplarZeilen, err := repository.FindeTresenExemplare(r.Context(), s.DB.Pool, barcode)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -117,7 +117,7 @@ func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, au
 
 	ereignisse := []TresenEreignis{}
 	if len(ids) > 0 {
-		zeilen, err := repository.SucheTresenEreignisse(r.Context(), s.DB.Pool, ids, tresenMaxEreignisse)
+		zeilen, err := repository.FindeTresenEreignisse(r.Context(), s.DB.Pool, ids, tresenMaxEreignisse)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -136,7 +136,7 @@ func (s *Tueren) handleTresenAuskunft(w http.ResponseWriter, r *http.Request, au
 			errors.New("keine sitzung im kontext"))
 		return
 	}
-	if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "TRESEN_AUSKUNFT",
+	if err := auditRepo.ProtokolliereAdminAktion(r.Context(), claims.UserID, "TRESEN_AUSKUNFT",
 		clientip.AusAnfrage(r), map[string]any{
 			"barcode":            barcode,
 			"treffer_exemplare":  len(exemplare),

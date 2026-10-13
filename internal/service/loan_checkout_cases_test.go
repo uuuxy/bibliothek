@@ -25,7 +25,7 @@ func TestHandleNewLoan_Student_Success(t *testing.T) {
 	studentRepo := repository.NewStudentRepository(mock)
 	bookRepo := repository.NewBookRepository(mock)
 	loanRepo := repository.NewLoanRepository(mock)
-	auditRepo := repository.NewAuditRepository(mock)
+	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
 	if !ok {
 		t.Fatal("NewLoanService liefert keinen *defaultLoanService")
@@ -91,7 +91,7 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 	studentRepo := repository.NewStudentRepository(mock)
 	bookRepo := repository.NewBookRepository(mock)
 	loanRepo := repository.NewLoanRepository(mock)
-	auditRepo := repository.NewAuditRepository(mock)
+	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
 	if !ok {
 		t.Fatal("NewLoanService liefert keinen *defaultLoanService")
@@ -152,7 +152,7 @@ func TestHandleNewLoan_ErzeugeAusleiheError(t *testing.T) {
 	studentRepo := repository.NewStudentRepository(mock)
 	bookRepo := repository.NewBookRepository(mock)
 	loanRepo := repository.NewLoanRepository(mock)
-	auditRepo := repository.NewAuditRepository(mock)
+	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
 	if !ok {
 		t.Fatal("NewLoanService liefert keinen *defaultLoanService")
@@ -200,7 +200,7 @@ func TestHandleNewLoan_CommitError(t *testing.T) {
 	studentRepo := repository.NewStudentRepository(mock)
 	bookRepo := repository.NewBookRepository(mock)
 	loanRepo := repository.NewLoanRepository(mock)
-	auditRepo := repository.NewAuditRepository(mock)
+	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
 	if !ok {
 		t.Fatal("NewLoanService liefert keinen *defaultLoanService")

@@ -15,7 +15,7 @@ import "strings"
 //   - grund, reason: der Sperrgrund (LESER_GESPERRT, LESER_ENTSPERRT; OVERRIDE_BLOCK bis
 //     zum 24.09.2026) und der getippte Grund einer Stornierung (STORNIERUNG in audit_log)
 //   - schuldner, beschreibung: Name und Freitext einer offenen Forderung, die mit ihrem
-//     Titel gelöscht wurde (audit_books_forderung.go, inventur/db_books_delete_spur.go)
+//     Titel gelöscht wurde (titel_loeschen_forderung.go, inventur/db_books_delete_spur.go)
 //   - betrifft: Name eines Lesers, dessen Vormerkung mit dem Titel fiel
 //     (titel_loeschen_wartende.go)
 //   - entleiher: Name aus der Spur einer laufenden Ausleihe, deren Titel gelöscht wurde

@@ -114,7 +114,7 @@ func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 // (entschieden am 28.09.2026, docs/OFFEN.md 5.19). Dieselbe Frist wie beim Schüler, der dort
 // anonymisiert wird; einen Kollegen verbietet chk_leser_nur_schueler_werden_abgaenger zu
 // anonymisieren, deshalb fällt er ganz — über denselben Weg wie „Endgültig löschen" von Hand
-// (PurgeStudent). Offene Ausleihen und unbezahlte Forderungen halten ihn, wie dort.
+// (LoescheLeserEndgueltig). Offene Ausleihen und unbezahlte Forderungen halten ihn, wie dort.
 //
 // Gefragt wird die Tabelle leser, nicht die Sicht schueler: Die zeigt keinen Kollegen.
 func PredikatKollegenPapierkorb(kulanz int) Loeschbedingung {
@@ -236,7 +236,7 @@ func PredikatLesehistorieAusleihen(land bool, tage, kulanz int) Loeschbedingung 
 
 // PredikatLesehistorieProtokoll liefert die WHERE-Bedingung, mit der dem Ausleih-
 // Protokoll (audit_log, Alias `al`) die Schüler-Zuordnung genommen wird. datensatz_id
-// ist dort das EXEMPLAR (so schreibt logLoanEvent), die Klasse kommt über sein Eigentum.
+// ist dort das EXEMPLAR (so schreibt protokolliereLeihvorgang), die Klasse kommt über sein Eigentum.
 // Ein Eintrag bleibt, solange dieser Schüler dieses Exemplar noch offen hat oder ein
 // offener Schadensfall daran hängt.
 func PredikatLesehistorieProtokoll(land bool, tage, kulanz int) Loeschbedingung {

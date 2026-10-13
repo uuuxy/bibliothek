@@ -38,7 +38,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	bookRepo := repository.NewBookRepository(pool)
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	damageRepo := repository.NewDamageRepository(pool)
 
 	// Ein Bearbeiter für das Ausbuchen: Es schreibt einen Audit-Eintrag und verlangt
@@ -77,9 +77,9 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 		t.Fatalf("Status-Tür: HTTP %d: %s", rec.Code, rec.Body.String())
 	}
 
-	// Tür 3: Ausbuchen (DeleteCopy) — sondert aus, statt zu löschen.
+	// Tür 3: Ausbuchen (SondereExemplarAus) — sondert aus, statt zu löschen.
 	drei := testdaten.Exemplar(t, pool, titelID, "ABG-3", true, "")
-	if err := auditRepo.DeleteCopy(ctx, drei, bearbeiterID); err != nil {
+	if err := auditRepo.SondereExemplarAus(ctx, drei, bearbeiterID); err != nil {
 		t.Fatalf("Ausbuchen: %v", err)
 	}
 

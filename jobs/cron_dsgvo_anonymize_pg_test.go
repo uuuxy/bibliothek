@@ -63,7 +63,7 @@ func TestGDPRAnonymizeOldData_LeertAllePII(t *testing.T) {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
 
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunGDPRAnonymizeOldData()
 
 	// (a) Die Anonymisierung MUSS gelaufen sein. Vor dem Fix scheiterte die Query still
@@ -148,7 +148,7 @@ func TestGDPRAnonymize_LoeschtFotosAnonymisierterSchueler(t *testing.T) {
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('S-FOTO-AKTIV', 'Anna', 'Aktiv', '7a', 2030) RETURNING id`)
 
-	NewScheduler(pool, repository.NewAuditRepository(pool)).RunGDPRAnonymizeOldData()
+	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunGDPRAnonymizeOldData()
 
 	hatFoto := func(id string) bool {
 		t.Helper()
@@ -204,7 +204,7 @@ func TestGDPRAnonymize_TilgtNebenTabellenPII(t *testing.T) {
 		t.Fatalf("Schüler: %v", err)
 	}
 
-	// audit_log: fachliche Historie mit Klarname (wie DeleteStudent schreibt).
+	// audit_log: fachliche Historie mit Klarname (wie LegeLeserInPapierkorb schreibt).
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO audit_log (tabelle, aktion, datensatz_id, details, akteur)
 		VALUES ('schueler', 'UPDATE', $1, jsonb_build_object('nachname', $2::text), 'USER')`,
@@ -230,7 +230,7 @@ func TestGDPRAnonymize_TilgtNebenTabellenPII(t *testing.T) {
 		t.Fatalf("vormerkung-Seed: %v", err)
 	}
 
-	NewScheduler(pool, repository.NewAuditRepository(pool)).RunGDPRAnonymizeOldData()
+	NewScheduler(pool, repository.NewProtokollAbfragen(pool)).RunGDPRAnonymizeOldData()
 
 	// Anonymisierung muss gelaufen sein.
 	var anon bool

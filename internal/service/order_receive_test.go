@@ -31,7 +31,7 @@ func TestBulkReceiveOrder_ReturnsReceivedItemsWithEtikettStatus(t *testing.T) {
 		WithArgs(pgxmock.AnyArg(), "BULK_RECEIVE_ITEMS", pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
-	items, err := BulkReceiveOrder(t.Context(), mock, repository.NewAuditRepository(mock), BulkReceiveParams{
+	items, err := BulkReceiveOrder(t.Context(), mock, repository.NewProtokollAbfragen(mock), BulkReceiveParams{
 		ExemplarIDs: ids,
 		AdminID:     "admin-1",
 		IPAddr:      "127.0.0.1",
@@ -68,7 +68,7 @@ func TestBulkReceiveOrder_NoMatchingCopiesReturnsError(t *testing.T) {
 		WithArgs(ids).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id", "titel", "autor", "etikett_gedruckt"}))
 
-	items, err := BulkReceiveOrder(t.Context(), mock, repository.NewAuditRepository(mock), BulkReceiveParams{
+	items, err := BulkReceiveOrder(t.Context(), mock, repository.NewProtokollAbfragen(mock), BulkReceiveParams{
 		ExemplarIDs: ids,
 		AdminID:     "admin-1",
 		IPAddr:      "127.0.0.1",

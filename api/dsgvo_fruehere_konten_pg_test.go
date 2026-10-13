@@ -52,7 +52,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),
 			`DELETE FROM benutzer WHERE email LIKE '%@fruehere-konten.invalid'`); err != nil {
@@ -146,7 +146,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("Konto des Kollegen anlegen: %v", err)
 	}
-	if err := auditRepo.DeleteStudent(ctx, kollege, admin, "Test"); err != nil {
+	if err := auditRepo.LegeLeserInPapierkorb(ctx, kollege, admin, "Test"); err != nil {
 		t.Fatalf("Kollegen löschen: %v", err)
 	}
 	a = auskunftZu(kollege)
@@ -156,7 +156,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 
 	// Beim endgültigen Löschen des Lesers fallen Name und Adresse aus dem Löscheintrag; der
 	// Eintrag selbst bleibt (Rolle, Kennung als Pseudonym).
-	if err := auditRepo.PurgeStudent(ctx, kollege, admin); err != nil {
+	if err := auditRepo.LoescheLeserEndgueltig(ctx, kollege, admin); err != nil {
 		t.Fatalf("Kollegen endgültig löschen: %v", err)
 	}
 	var details map[string]any
@@ -192,7 +192,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
 	userRepo := repository.NewKontoAbfragen(pool)
-	auditRepo := repository.NewAuditRepository(pool)
+	auditRepo := repository.NewProtokollAbfragen(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),
 			`DELETE FROM benutzer WHERE email LIKE '%@konto-eintraege.invalid'`); err != nil {
@@ -310,7 +310,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 		if _, err := pool.Exec(ctx, `UPDATE leser SET deleted_at = NOW() WHERE id = $1`, leserID); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
-		if err := auditRepo.PurgeStudent(ctx, leserID, admin); err != nil {
+		if err := auditRepo.LoescheLeserEndgueltig(ctx, leserID, admin); err != nil {
 			t.Fatalf("endgültig löschen: %v", err)
 		}
 		if n := pgtest.ZaehleZeilen(t, pool, `SELECT count(*) FROM audit_logs

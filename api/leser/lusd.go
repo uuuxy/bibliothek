@@ -153,8 +153,8 @@ func (s *Tueren) protokolliereLusdImport(r *http.Request, res *lusd.PreviewResul
 		"karenz_tage":              res.KarenzTage,
 		"massenabgang_bestaetigt":  massenabgangBestaetigt,
 	}
-	if err := repository.NewAuditRepository(s.DB.Pool).
-		LogAdminAktion(r.Context(), claims.UserID, "LUSD_IMPORT", clientip.AusAnfrage(r), details); err != nil {
+	if err := repository.NewProtokollAbfragen(s.DB.Pool).
+		ProtokolliereAdminAktion(r.Context(), claims.UserID, "LUSD_IMPORT", clientip.AusAnfrage(r), details); err != nil {
 		log.Printf("LUSD-Import: Audit-Eintrag fehlgeschlagen: %v", err)
 	}
 }

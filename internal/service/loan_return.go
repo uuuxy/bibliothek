@@ -121,7 +121,7 @@ func (s *defaultLoanService) handleRueckgabe(ctx context.Context, tx pgx.Tx, cop
 
 	// Revisionssicheres Audit-Log schreiben
 	if activeLoan.SchuelerID != nil {
-		if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, *activeLoan.SchuelerID, "", staffID); err != nil {
+		if err := s.auditRepo.ProtokolliereRueckgabe(ctx, tx, copy.ID, *activeLoan.SchuelerID, "", staffID); err != nil {
 			return nil, err
 		}
 	}

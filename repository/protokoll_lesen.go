@@ -6,27 +6,27 @@ import (
 	"time"
 )
 
-// AuditLogZeile ist ein Eintrag im Protokoll der Vorgänge mit dem Namen des Bearbeiters.
+// ProtokollZeile ist ein Eintrag im Protokoll der Vorgänge mit dem Namen des Bearbeiters.
 // Akteur unterscheidet USER von SYSTEM: Ein Eintrag ohne Bearbeiter wäre sonst nicht von
 // einem Datenfehler zu unterscheiden.
-type AuditLogZeile struct {
+type ProtokollZeile struct {
 	ID                 string
 	Tabelle            string
 	Aktion             string
 	DatensatzID        string
-	Timestamp          time.Time
+	Zeitstempel        time.Time
 	BearbeiterID       string
 	BearbeiterVorname  string
 	BearbeiterNachname string
 	Akteur             string
 }
 
-// ListeAuditLog liefert die jüngsten Einträge des Protokolls der Vorgänge, höchstens limit.
+// LadeProtokoll liefert die jüngsten Einträge des Protokolls der Vorgänge, höchstens limit.
 //
 // LEFT JOIN, weil Vorgänge des Programms selbst (Bereinigung, Sicherung, automatische Sperre)
 // keinen Bearbeiter tragen und trotzdem im Protokoll stehen müssen. COALESCE, weil Bearbeiter
 // und Name damit leer sein können und die Felder der Zeile es nicht sind.
-func ListeAuditLog(ctx context.Context, db Datenbank, limit int) ([]AuditLogZeile, error) {
+func LadeProtokoll(ctx context.Context, db Datenbank, limit int) ([]ProtokollZeile, error) {
 	query := `
 			SELECT l.id, l.tabelle, l.aktion, l.datensatz_id, l.timestamp,
 			       COALESCE(l.bearbeiter_id::text, ''),
@@ -42,10 +42,10 @@ func ListeAuditLog(ctx context.Context, db Datenbank, limit int) ([]AuditLogZeil
 	}
 	defer rows.Close()
 
-	var zeilen []AuditLogZeile
+	var zeilen []ProtokollZeile
 	for rows.Next() {
-		var l AuditLogZeile
-		err := rows.Scan(&l.ID, &l.Tabelle, &l.Aktion, &l.DatensatzID, &l.Timestamp,
+		var l ProtokollZeile
+		err := rows.Scan(&l.ID, &l.Tabelle, &l.Aktion, &l.DatensatzID, &l.Zeitstempel,
 			&l.BearbeiterID, &l.BearbeiterVorname, &l.BearbeiterNachname, &l.Akteur)
 		if err != nil {
 			return nil, err
@@ -63,13 +63,13 @@ type AdminProtokollZeile struct {
 	AdminName   string
 	Aktion      string
 	Details     any
-	IpAdresse   string
+	IPAdresse   string
 	Zeitstempel time.Time
 }
 
-// ListeAdminProtokoll liefert die jüngsten 1000 Einträge des Protokolls der Verwaltung. Eine
+// LadeAdminProtokoll liefert die jüngsten 1000 Einträge des Protokolls der Verwaltung. Eine
 // Zeile, die sich nicht lesen lässt, wird ausgelassen.
-func ListeAdminProtokoll(ctx context.Context, db Datenbank) ([]AdminProtokollZeile, error) {
+func LadeAdminProtokoll(ctx context.Context, db Datenbank) ([]AdminProtokollZeile, error) {
 	query := `
 			SELECT 
 				a.id, a.admin_id, coalesce(b.vorname || ' ' || b.nachname, 'System/Unbekannt'),
@@ -88,7 +88,7 @@ func ListeAdminProtokoll(ctx context.Context, db Datenbank) ([]AdminProtokollZei
 	var zeilen []AdminProtokollZeile
 	for rows.Next() {
 		var l AdminProtokollZeile
-		if err := rows.Scan(&l.ID, &l.AdminID, &l.AdminName, &l.Aktion, &l.Details, &l.IpAdresse, &l.Zeitstempel); err != nil {
+		if err := rows.Scan(&l.ID, &l.AdminID, &l.AdminName, &l.Aktion, &l.Details, &l.IPAdresse, &l.Zeitstempel); err != nil {
 			continue
 		}
 		zeilen = append(zeilen, l)

@@ -139,7 +139,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		              NOW() - make_interval(days => $3))`, exemplarVon(ids[name]), schuelerID, tage)
 	}
 
-	s := NewScheduler(pool, repository.NewAuditRepository(pool))
+	s := NewScheduler(pool, repository.NewProtokollAbfragen(pool))
 	s.RunLesehistorieBefristung()
 
 	auditTraegtSchueler := func(name string) bool {

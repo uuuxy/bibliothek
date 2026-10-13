@@ -82,7 +82,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 	})
 
 	svc := NewDeviceService(pool, repository.NewStudentRepository(pool), repository.NewLoanRepository(pool),
-		repository.NewAuditRepository(pool))
+		repository.NewProtokollAbfragen(pool))
 
 	faelle := []struct {
 		name, kennung string

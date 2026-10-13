@@ -21,9 +21,9 @@ import (
 //   - Trennen der Ausleihen: PredikatLesehistorieAusleihen fragt nicht nach der Art.
 //   - Erledigte Klassensatz-Reservierungen fallen nach derselben Frist wie erledigte Wünsche
 //     und Meldungen (RunKlassensatzBefristung). Ein gelöschter Kollege fällt nach 180 Tagen im
-//     Papierkorb endgültig (RunPapierkorbKollegenLoeschung, über PurgeStudent); offene
+//     Papierkorb endgültig (RunPapierkorbKollegenLoeschung, über LoescheLeserEndgueltig); offene
 //     Ausleihen und unbezahlte Forderungen halten ihn. Sein Zugangskonto geht schon beim
-//     Löschen (DeleteStudent).
+//     Löschen (LegeLeserInPapierkorb).
 //
 // Die Fristen sind die eingestellten, mit denen auch die Jobs rechnen (DsgvoFristWerte), damit
 // eine geänderte Frist hier nicht als Werksvorgabe stehen bleibt.

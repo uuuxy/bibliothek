@@ -120,7 +120,7 @@ type defaultLoanService struct {
 	studentRepo repository.StudentRepository
 	bookRepo    repository.BookRepository
 	loanRepo    repository.LoanRepository
-	auditRepo   repository.AuditRepository
+	auditRepo   repository.ProtokollAbfragen
 	// userRepo löst Lehrerausweise auf, die offline gescannt wurden (nur die Nachbuch-Tür
 	// setzt es; der Online-Scan kennt die Lehrkraft schon).
 	userRepo repository.KontoAbfragen
@@ -139,7 +139,7 @@ func (s *defaultLoanService) heute() time.Time {
 }
 
 // NewLoanService erzeugt eine neue Instanz des standardmäßigen LoanService.
-func NewLoanService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, loanRepo repository.LoanRepository, auditRepo repository.AuditRepository) LoanService {
+func NewLoanService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, loanRepo repository.LoanRepository, auditRepo repository.ProtokollAbfragen) LoanService {
 	return &defaultLoanService{
 		pool:        pool,
 		studentRepo: studentRepo,

@@ -1,6 +1,6 @@
 package repository
 
-// audit_books_forderung.go — die Spur, die eine gelöschte Forderung hinterlässt.
+// titel_loeschen_forderung.go — die Spur, die eine gelöschte Forderung hinterlässt.
 //
 // Gegenstück zu inventur/db_books_delete_spur.go für den Einzel-Titel-Weg. Beide
 // Löschwege räumen `schadensfaelle` ohne Rücksicht auf `ist_bezahlt` ab; das ist gewollt

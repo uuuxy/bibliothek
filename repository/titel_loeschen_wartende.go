@@ -25,7 +25,7 @@ package repository
 //
 // Warum hier und nicht im inventur-Paket: Es gibt ZWEI Türen zum Titel-Löschen — die
 // Massenaktion der Bestandstabelle (DELETE /api/books, inventur/db_books_delete.go) und
-// der Knopf der Buch-Akte (DELETE /api/buecher/titel/{id}, repository/audit_books.go).
+// der Knopf der Buch-Akte (DELETE /api/buecher/titel/{id}, repository/titel_loeschen.go).
 // Beide fahren über denselben CASCADE. Zwei Fassungen derselben Regel wären genau die
 // Bugklasse, gegen die Frage 3 gebaut ist; `inventur` importiert `repository`, also
 // steht sie hier.
