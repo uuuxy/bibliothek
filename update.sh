@@ -10,7 +10,7 @@
 #   5. Nach erfolgreichem Deploy: Vorab-Sicherung verschlüsseln, Klartext löschen
 #   6. Alte Backups aufräumen: vordeploy_ älter als 30 Tage, Klartext älter als 2 Tage.
 #      Gelöscht wird nur hier, bei einem Lauf — eine Uhr, die ohne Lauf löscht, gibt es nicht.
-#   7. Docker-Build-Cache älter als 7 Tage wird aufgeräumt
+#   7. Docker-Build-Cache wird geleert
 # ==============================================================================
 set -euo pipefail
 
@@ -51,9 +51,6 @@ BACKUP_RETENTION_DAYS=30
 # gebraucht worden oder war nie nötig, aber in keinem Fall soll sie einen Monat lang
 # jeden Schülernamen im Klartext auf der Platte halten.
 KLARTEXT_RETENTION_DAYS=2
-# Build-Cache-Schichten, die seit dieser Zeit niemand mehr angefasst hat, fliegen raus.
-# 168h = 7 Tage — lang genug, dass der Cache des letzten Updates erhalten bleibt.
-BUILD_CACHE_RETENTION_HOURS=168
 
 DB_CONTAINER="bibliothek-db"
 DB_USER="postgres"
@@ -444,35 +441,31 @@ if [ "${REMAINING_KLAR}" -gt 0 ]; then
     log_warn "${REMAINING_KLAR} UNVERSCHLÜSSELTE/S Backup/s liegt/liegen dort ebenfalls (Klarnamen im Klartext)."
 fi
 
-# ── Schritt 7: Docker-Build-Cache aufräumen ───────────────────────────────────
-log_step "Schritt 7: Docker-Build-Cache aufräumen (älter als ${BUILD_CACHE_RETENTION_HOURS}h)"
+# ── Schritt 7: Docker-Build-Cache leeren ──────────────────────────────────────
+log_step "Schritt 7: Docker-Build-Cache leeren"
 
-# Jedes Update baut ein neues Image, und der BuildKit-Cache wächst dabei unbegrenzt
-# weiter — niemand räumt ihn von allein ab. Am 09.08.2026 stand er bei 14,47 GB und
-# füllte die 38-GB-Platte zu 82 %. Läuft sie voll, steht der ganze Server, samt der
-# fremden Dienste hinter demselben Caddy.
+# Jedes Update baut ein neues Image, und der Build-Cache wächst dabei weiter. Läuft die
+# Platte voll, steht der ganze Server, samt der fremden Dienste hinter demselben Caddy.
 #
-# Der Zeitfilter ist Absicht: Der Cache des GERADE gebauten Images bleibt liegen, das
-# nächste Update ist also weiterhin schnell. Nur Schichten, die seit einer Woche
-# niemand angefasst hat, fallen weg.
+# Geleert wird ganz, ohne Zeitfilter: Mit `--filter until=…` löscht Docker je Lauf nur die
+# äußerste Schicht jeder Kette und führt ihre Eltern danach als eben benutzt. Das nächste
+# Update baut dafür jede Schicht neu; das laufende Image bleibt, bis das neue steht.
 #
-# Bewusst NICHT `docker system prune` und erst recht kein `docker volume prune`: Auf
-# diesem Server liegen fremde benannte Volumes (school-calendar, inkl. deren Postgres
-# und Backups), die Docker als "unbenutzt" führt. Ein Volume-Prune löschte sie.
+# Kein `docker system prune` und kein `docker volume prune`: Auf diesem Server liegen fremde
+# benannte Volumes (school-calendar mit Postgres und Backups), die Docker als unbenutzt führt.
 FREI_VORHER="$(df -Pk / | awk 'NR==2 {print $4}')"
 
-# Ein fehlgeschlagenes Aufräumen darf ein geglücktes Update NICHT zum Fehler machen —
-# deshalb hier keine Abbruchbedingung, sondern nur eine Warnung.
-if docker builder prune -af --filter "until=${BUILD_CACHE_RETENTION_HOURS}h" >/dev/null 2>&1; then
+# Scheitert das Leeren, bleibt das Update geglückt: eine Warnung, kein Abbruch.
+if docker builder prune -af >/dev/null 2>&1; then
     FREI_NACHHER="$(df -Pk / | awk 'NR==2 {print $4}')"
     BEFREIT_MB=$(( (FREI_NACHHER - FREI_VORHER) / 1024 ))
     if [ "${BEFREIT_MB}" -gt 0 ]; then
-        log_ok "Build-Cache aufgeräumt: ${BEFREIT_MB} MB frei geworden."
+        log_ok "Build-Cache geleert: ${BEFREIT_MB} MB frei geworden."
     else
-        log_info "Build-Cache aufgeräumt: nichts Altes vorhanden."
+        log_info "Build-Cache geleert: Es war nichts zu löschen."
     fi
 else
-    log_warn "Build-Cache konnte nicht aufgeräumt werden — das Update selbst ist davon unberührt."
+    log_warn "Build-Cache konnte nicht geleert werden — das Update selbst ist davon unberührt."
 fi
 log_info "Speicher auf /: $(df -h / | awk 'NR==2 {print $4}') frei ($(df -h / | awk 'NR==2 {print $5}') belegt)"
 

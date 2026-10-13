@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 12.10.2026 (Entwurf)
+Stand: 13.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -172,7 +172,7 @@ einmal allein, nur mit diesen Seiten.
 | Runner-Abbild der Prüfläufe  | wenn GitHub ein neues Ubuntu-Abbild bereitstellt oder das eingesetzte abkündigt; seit dem 08.10.2026 `ubuntu-26.04` | Ankündigung von GitHub; alle vier Workflows nennen das Abbild fest, `ubuntu-latest` nimmt keiner | Probelauf mit `gh workflow run ci.yml -f runner=<Abbild>`, dann `runs-on` in allen vier Workflows umstellen und den Namen in `.github/actionlint.yaml` eintragen, solange actionlint ihn nicht kennt; den ersten Lauf je Workflow ansehen |
 | PostgreSQL, Hauptversion     | 18 wird bis 14. November 2030 gepflegt                                                                                      | ein Test verlangt eine Hauptversion an allen Stellen (`docs/umgebung_paritaet_test.go`)                                                          | nur über Sicherung und Wiederherstellung ([DEPLOYMENT.md](DEPLOYMENT.md) §5); den `pg_dump`-Client im `Dockerfile` mitziehen, sonst schlägt die sonntägliche Probe Alarm                                                             |
 | PostgreSQL, Nebenversion     | vierteljährlich                                                                                                             | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` holt das Datenbank-Image bei jedem Update neu; nicht gebaut ([OFFEN.md](OFFEN.md) 5.31)                                                                                                       |
-| Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` baut mit `--pull --no-cache`; bis dahin hält der Build-Cache die Schicht mit `apk upgrade` fest, und ein Neubau holt die Korrekturen nicht ([OFFEN.md](OFFEN.md) 5.31)                        |
+| Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` baut mit `--pull --no-cache`. Seit dem 13.10.2026 leert `update.sh` den Build-Cache nach jedem Update, das folgende baut die Schicht mit `apk upgrade` neu; `--pull` für die Basis-Images steht aus ([OFFEN.md](OFFEN.md) 5.31)                        |
 | Update einspielen            | mindestens einmal im Monat, auch ohne neue Funktionen (entschieden am 28.09.2026)                                           | —                                                                                                                                                | ein Update nach 3.1; sobald 5.31 gebaut ist, holt es dabei die Sicherheitskorrekturen von Datenbank und Paketen                                                                                                                      |
 | Ferien                       | Sommerferien Hessens stehen bis 2030 im Programm, die übrigen Ferien bis zum Schuljahr 2029/30                              | ab Januar 2029: Test rot, Warnung in der Betriebsbereitschaft                                                                                    | neue Termine von KMK und Kultusministerium eintragen (`pkg/lmfplan/ferien.go`, `schulferien.go`). Sommerferien kann die Schule selbst eintragen: Einstellungen → LUSD & Versetzung → Sommerferien                                    |
 | Betriebsbereitschaft         | täglich                                                                                                                     | Alarm-Mail bei kritischem Befund                                                                                                                 | Befund, Folge und Abhilfe stehen in der Mail ([FACHKONZEPT.md](FACHKONZEPT.md) §15)                                                                                                                                                  |
@@ -336,6 +336,25 @@ Für die Entwicklung und für jeden, der sie übernimmt.
   alten trugen. Der Name steht seitdem in `.github/actionlint.yaml`; kennt ihn eine neue
   Fassung von actionlint, fällt der Eintrag weg. Am Arbeitsplatz nachstellen: das Abbild aus
   `ci.yml` (`docker run --rm -v "$PWD:/repo:ro" --workdir /repo rhysd/actionlint:…`).
+- **Ein Browser-Test scheitert an „no space left on device“, die Platte des Arbeitsplatzes
+  ist voll (13.10.2026).** Am Code lag es nicht: Von 460 GB waren 2,2 frei. 94 GB belegte
+  der Bauzwischenspeicher von Go, 159 GB der Build-Cache von Docker. Go legt je Pfad einer
+  Arbeitskopie eigene Einträge an und räumt sie erst nach Tagen; mehrere
+  Wegwerf-Arbeitskopien am Tag und Proben per Overlay füllen ihn schnell. Docker hält den
+  Build-Cache an der eingestellten Grenze (`builder.gc` in der Einstellungsdatei des
+  Dienstes, hier 20 GB), zählt dabei aber keine Schicht, die auf einem Basis-Image aufbaut,
+  das auch als Image im lokalen Speicher liegt. Nachgestellt: Nach
+  `docker pull golang:1.27.2-alpine` führte `docker buildx du` 5,7 GB mehr als „Shared“,
+  nach `docker rmi` wieder nicht. 138 GB solcher Schichten aus fünf Monaten lagen so
+  außerhalb der Grenze. Abhilfe: `go clean -cache` und `docker builder prune --all --force`;
+  danach waren 239 GB frei. Ein Zeitfilter (`--filter until=168h`) hilft nicht: Der Lauf
+  löscht je Kette nur die äußerste Schicht und führt ihre Eltern danach als eben benutzt
+  (33 von 159 GB, 336 von 337 Eltern trugen danach die neue Zeit). Volumes bleiben
+  unberührt, dort liegen Datenbanken. Vorbeugen: Eine Wegwerf-Arbeitskopie baut in einen
+  eigenen Zwischenspeicher (`GOCACHE=<Ordner>`), der mit ihr gelöscht wird; was Docker
+  belegt, zeigen `docker system df` und die letzten Zeilen von `docker buildx du`. Am
+  Server lief dieselbe Regel mit Zeitfilter in `update.sh`, der Build-Cache stand dort bei
+  12,8 GB von 38; seither leert Schritt 7 ihn nach jedem Update ganz.
 
 ---
 

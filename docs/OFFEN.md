@@ -400,7 +400,10 @@ Schulserver feststeht.
   `apk --no-cache upgrade`. Der Build-Cache hält diese Schicht fest, solange die Zeilen davor
   gleich bleiben, und `update.sh` baut ohne `--pull` und ohne `--no-cache`. Der Trivy-Scan der
   CI prüft ein frisch gebautes Image, nicht das am Server. **Entschieden: `--pull --no-cache`;**
-  jedes Update baut dann alles neu (in der CI 93 Sekunden).
+  jedes Update baut dann alles neu (in der CI 93 Sekunden). Seit dem 13.10.2026 leert
+  `update.sh` nach jedem Update den Build-Cache ganz (Schritt 7): Das folgende Update baut
+  damit schon jede Schicht neu, auch die mit `apk upgrade`. Offen bleibt `--pull` für die
+  Basis-Images.
 - **Das Löschen hängt am Lauf** (gefunden am 28.09.2026). `update.sh` und `scripts/backup.sh`
   löschen alte Sicherungen nur, wenn sie laufen. Kommt kein Update mehr, bleibt die letzte
   Vorab-Sicherung für immer; ein Klartext-Rest nach einem misslungenen Update bleibt bis zum
