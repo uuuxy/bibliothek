@@ -55,12 +55,12 @@ func (s *Tueren) coverQuelleErlaubt(r *http.Request, isbn, sichereURL string) bo
 		return false
 	}
 	for _, q := range quellen {
-		if gepr, ok := coverquelle.SichereURL(q, coverquelle.CoverHosts); ok && gepr == sichereURL {
+		if gepr, ok := coverquelle.SichereURL(q, coverquelle.BildHosts); ok && gepr == sichereURL {
 			return true
 		}
 	}
 	for _, k := range coverKandidatenFuerISBN(isbnSauber) {
-		if gepr, ok := coverquelle.SichereURL(k, coverquelle.CoverHosts); ok && gepr == sichereURL {
+		if gepr, ok := coverquelle.SichereURL(k, coverquelle.BildHosts); ok && gepr == sichereURL {
 			return imKatalog || s.istAngemeldet(r)
 		}
 	}

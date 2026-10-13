@@ -40,7 +40,7 @@ func schreibeCoverDatei(t *testing.T, name string) string {
 			img.Set(x, y, color.RGBA{R: uint8(x * 4), G: uint8(y * 2), B: uint8(x + y), A: 255})
 		}
 	}
-	daten, err := imageutil.EncodeImageWebP(img, 80)
+	daten, err := imageutil.ErzeugeWebP(img, 80)
 	if err != nil {
 		t.Fatalf("WebP schreiben: %v", err)
 	}

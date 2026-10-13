@@ -1,24 +1,14 @@
-// Package coverquelle hält die Host-Allowlists für Buchcover und Buchmetadaten und
-// baut geprüfte URLs aus validierten Teilen neu auf.
+// Package coverquelle führt die Listen der Hosts, von denen das Programm Cover und Metadaten
+// holt, und baut eine geprüfte URL aus ihren geprüften Teilen neu auf.
 //
-// Warum das Neubauen nötig ist, obwohl der Hostname schon geprüft wurde: Geprüft wird
-// mit url.Parse, angefragt wurde bisher der ROHE Eingabe-String. Zwischen beiden kann
-// eine Differenz liegen — verschiedene Parser sind sich über Zeichen wie \, @, #, ?
-// und über die Behandlung von Backslashes nicht immer einig ("Parsing Differential").
-// Setzt der HTTP-Client die URL anders zusammen als der Prüfer sie gelesen hat, geht
-// die Anfrage an einen anderen Host als den freigegebenen. Die Prüfung hätte dann
-// zugestimmt, ohne dass sie dasselbe Ziel gesehen hat.
+// Der Neuaufbau schließt eine Lücke zwischen Prüfen und Abrufen: Geprüft wird mit url.Parse,
+// und zwei Parser lesen Zeichen wie \, @, # und ? nicht immer gleich. Ginge die rohe Eingabe an
+// den HTTP-Client, könnte die Anfrage einen anderen Host erreichen als den geprüften. In der
+// neuen URL ist das Schema fest HTTPS, der Host stammt aus der Liste, und vom Rufer kommen nur
+// Pfad und Query; ein abweichender Port fällt dabei weg.
 //
-// Der Neuaufbau beseitigt das: Schema fest HTTPS, Host aus der ALLOWLIST-Konstante
-// (nicht aus der Eingabe), und nur Pfad und Query stammen vom Aufrufer — die können
-// weder Host noch Schema noch Port beeinflussen. Ein "https://covers.openlibrary.org
-// :2222/x.jpg" verliert damit auch seinen Port, ein "http://…" wird zu HTTPS.
-//
-// Die Listen standen bis zum 04.08.2026 dreifach im Code (api/katalog/image_caching.go,
-// inventur/cover_downloader.go, inventur/metadaten_client.go), zusammengehalten von
-// einem Kommentar, der zur Pflege aufrief. Eine Sicherheitsliste, deren Gleichheit nur
-// ein Kommentar behauptet, driftet — sie tat es bereits: Die Metadaten-Liste kannte
-// books.google.* nicht.
+// Die Listen stehen nur hier, damit jede Stelle, die eine fremde Adresse abruft, dieselben
+// Hosts erlaubt.
 package coverquelle
 
 import (
@@ -26,8 +16,8 @@ import (
 	"strings"
 )
 
-// CoverHosts sind die Bezugsquellen für Cover-BILDER.
-var CoverHosts = []string{
+// BildHosts sind die Hosts, von denen Cover-Bilder kommen dürfen.
+var BildHosts = []string{
 	"covers.openlibrary.org",
 	"portal.dnb.de",
 	"services.dnb.de",
@@ -37,8 +27,9 @@ var CoverHosts = []string{
 	"books.google.de",
 }
 
-// MetadatenHosts sind die Quellen für Titel-/Autorendaten. Bewusst enger als
-// CoverHosts: Von books.google.* holt das Inventur-Modul nur Bilder, keine Datensätze.
+// MetadatenHosts sind die Hosts, von denen Daten zu Titel und Autor kommen dürfen. Die Liste
+// ist enger als BildHosts: Von books.google.* holt das Paket inventur nur Bilder, keine
+// Datensätze.
 var MetadatenHosts = []string{
 	"services.dnb.de",
 	"www.googleapis.com",
@@ -47,13 +38,12 @@ var MetadatenHosts = []string{
 	"portal.dnb.de",
 }
 
-// kanonischerHost bildet einen Hostnamen auf die passende Allowlist-Konstante ab;
-// "" heißt: nicht erlaubt.
+// kanonischerHost liefert zu einem Hostnamen den gleichlautenden Eintrag der Liste oder "",
+// wenn er nicht erlaubt ist.
 //
-// Zurückgegeben wird bewusst das LISTEN-ELEMENT und nicht die Eingabe, obwohl beide
-// bei einem Treffer gleich sind: Damit kann in der neu gebauten URL garantiert kein
-// Zeichen aus der Eingabe im Host-Teil landen, auch wenn der Vergleich später einmal
-// unschärfer wird (Groß-/Kleinschreibung, Unicode-Normalisierung).
+// Zurück kommt der Eintrag der Liste und nicht die Eingabe: So steht im Host der neu gebauten
+// URL kein Zeichen aus der Eingabe, auch wenn der Vergleich einmal Groß- und Kleinschreibung
+// übergeht.
 func kanonischerHost(hostname string, erlaubte []string) string {
 	for _, h := range erlaubte {
 		if hostname == h {
@@ -63,20 +53,20 @@ func kanonischerHost(hostname string, erlaubte []string) string {
 	return ""
 }
 
-// SichereURL prüft rohURL gegen erlaubte und liefert eine aus geprüften Teilen neu
-// gebaute HTTPS-URL. ok=false heißt: Host nicht erlaubt oder URL unlesbar.
+// SichereURL prüft rohURL gegen die erlaubten Hosts und liefert eine aus geprüften Teilen neu
+// gebaute HTTPS-URL; ok ist false, wenn der Host nicht erlaubt oder die URL unlesbar ist.
 func SichereURL(rohURL string, erlaubte []string) (string, bool) {
-	parsed, err := url.Parse(strings.TrimSpace(rohURL))
+	u, err := url.Parse(strings.TrimSpace(rohURL))
 	if err != nil {
 		return "", false
 	}
-	host := kanonischerHost(parsed.Hostname(), erlaubte)
+	host := kanonischerHost(u.Hostname(), erlaubte)
 	if host == "" {
 		return "", false
 	}
-	sicher := "https://" + host + "/" + strings.TrimPrefix(parsed.EscapedPath(), "/")
-	if parsed.RawQuery != "" {
-		sicher += "?" + parsed.RawQuery
+	sicher := "https://" + host + "/" + strings.TrimPrefix(u.EscapedPath(), "/")
+	if u.RawQuery != "" {
+		sicher += "?" + u.RawQuery
 	}
 	return sicher, true
 }

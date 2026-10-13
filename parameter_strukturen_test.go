@@ -46,7 +46,7 @@ var parameterStrukturen = map[string]string{
 	"TitelBestand":                         "fehlende Map = Import ordnet Exemplare keinem oder dem falschen Titel zu",
 	"klassifizierungsLauf":                 "fehlendes Feld = LUSD-Klassifizierung ohne Ergebnis- oder Gesehen-Liste",
 	"Bestellbericht":                       "fehlendes Feld = Bericht über den falschen Zeitraum, ohne Preise oder ohne Bestellungen",
-	"CoverPlatz":                           "fehlendes Maß = Cover an Position 0 oder mit Größe 0",
+	"Flaeche":                              "fehlendes Maß = Cover an Position 0 oder mit Größe 0",
 	// Nachgetragen im Rasterdurchgang 06.09.2026 (Frage 7): Alle drei entstanden am
 	// 05./06.09. — „exemplarZurGruppe" sogar in einem Commit, dessen Botschaft genau
 	// diese Bugklasse nennt („fünf benachbarte string-Parameter, der Vertauscher war

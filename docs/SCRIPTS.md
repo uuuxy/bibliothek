@@ -478,7 +478,7 @@ Decompression-Bomb-Guard:
 ```go
 import "bibliothek/pkg/imageutil"
 
-if err := imageutil.GuardImageDimensions(r.Body, 50_000_000); err != nil {
+if err := imageutil.PruefeBildgroesse(daten); err != nil {
     // Bild zu groß oder ungültig
 }
 ```

@@ -17,43 +17,44 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// Bildplatzierung im Inhaltsstrom, in Punkt und von unten gemessen:
-// `q 19.84 0 0 29.76 51.02 562.68 cm /I… Do Q` — Breite, Höhe, linker Rand, Unterkante.
+// bildPlatz trifft die Platzierung eines Bilds im Inhaltsstrom, in Punkt und von unten
+// gemessen: `q 19.84 0 0 29.76 51.02 562.68 cm /I… Do Q` nennt Breite, Höhe, linken Rand und
+// Unterkante.
 var bildPlatz = regexp.MustCompile(`q ([0-9.]+) 0 0 ([0-9.]+) ([0-9.]+) ([0-9.]+) cm /I[0-9a-f]+ Do Q`)
 
 // schreibeCover legt ein Bild der genannten Größe ab und liefert seine Adresse.
 func schreibeCover(t *testing.T, name string, breite, hoehe int) string {
 	t.Helper()
-	img := image.NewRGBA(image.Rect(0, 0, breite, hoehe))
+	bild := image.NewRGBA(image.Rect(0, 0, breite, hoehe))
 	for y := 0; y < hoehe; y++ {
 		for x := 0; x < breite; x++ {
-			img.Set(x, y, color.RGBA{R: uint8(x), G: uint8(y), B: 90, A: 255})
+			bild.Set(x, y, color.RGBA{R: uint8(x), G: uint8(y), B: 90, A: 255})
 		}
 	}
-	var buf bytes.Buffer
-	if err := png.Encode(&buf, img); err != nil {
+	var puffer bytes.Buffer
+	if err := png.Encode(&puffer, bild); err != nil {
 		t.Fatalf("PNG erzeugen: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(Wurzel, name), buf.Bytes(), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(Wurzel, name), puffer.Bytes(), 0o600); err != nil {
 		t.Fatalf("Bild schreiben: %v", err)
 	}
 	return "/" + Wurzel + "/" + name
 }
 
-// blattMit legt ein Dokument an, ruft fn auf seiner ersten Seite und liefert das fertige PDF.
-// Ein Fehler am Dokument bricht den Test ab: Er stünde sonst erst bei Output.
-func blattMit(t *testing.T, fn func(doc *gofpdf.Fpdf)) []byte {
+// blattMit legt ein Dokument an, ruft zeichne auf seiner ersten Seite und liefert das fertige
+// PDF. Ein Fehler am Dokument bricht den Test ab; er zeigte sich sonst erst bei Output.
+func blattMit(t *testing.T, zeichne func(pdf *gofpdf.Fpdf)) []byte {
 	t.Helper()
-	doc := gofpdf.New("P", "mm", "A4", "")
-	doc.AddPage()
-	doc.SetFont("Arial", "", 10)
-	doc.Cell(40, 5, "Blatt")
-	fn(doc)
-	var buf bytes.Buffer
-	if err := doc.Output(&buf); err != nil {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "", 10)
+	pdf.Cell(40, 5, "Blatt")
+	zeichne(pdf)
+	var puffer bytes.Buffer
+	if err := pdf.Output(&puffer); err != nil {
 		t.Fatalf("Dokument schreiben: %v", err)
 	}
-	return buf.Bytes()
+	return puffer.Bytes()
 }
 
 // platzierungen liest Breite, Höhe, linken Rand und Oberkante jedes Bilds in Millimetern.
@@ -77,26 +78,26 @@ func platzierungen(t *testing.T, roh []byte) [][4]float64 {
 	return orte
 }
 
-// Das Cover steht im Seitenverhältnis des Bilds in seinem Platz und darin mittig: ein
-// Hochformat so hoch wie der Platz, ein Querformat so breit.
-func TestBindeEin_SetztDasCoverImSeitenverhaeltnisInDenPlatz(t *testing.T) {
+// Das Cover steht im Seitenverhältnis des Bilds in seiner Fläche und darin mittig: ein
+// Hochformat so hoch wie die Fläche, ein Querformat so breit.
+func TestBindeEin_SetztDasCoverImSeitenverhaeltnisInDieFlaeche(t *testing.T) {
 	bereiteWurzel(t)
 	hoch := schreibeCover(t, "hoch.png", 40, 60)
 	quer := schreibeCover(t, "quer.png", 120, 40)
 	genau := schreibeCover(t, "genau.png", 30, 45)
 
 	for _, f := range []struct {
-		name  string
-		cover string
-		platz CoverPlatz
-		will  [4]float64 // Breite, Höhe, linker Rand, Oberkante
+		name    string
+		cover   string
+		flaeche Flaeche
+		will    [4]float64 // Breite, Höhe, linker Rand, Oberkante
 	}{
-		{"Hochformat im Quadrat", hoch, CoverPlatz{X: 20, Y: 30, Breite: 12, Hoehe: 12}, [4]float64{8, 12, 22, 30}},
-		{"Querformat im Hochformat", quer, CoverPlatz{X: 20, Y: 30, Breite: 12, Hoehe: 18}, [4]float64{12, 4, 20, 37}},
-		{"Bild in der Form des Platzes", genau, CoverPlatz{X: 50, Y: 60, Breite: 10, Hoehe: 15}, [4]float64{10, 15, 50, 60}},
+		{"Hochformat im Quadrat", hoch, Flaeche{X: 20, Y: 30, Breite: 12, Hoehe: 12}, [4]float64{8, 12, 22, 30}},
+		{"Querformat im Hochformat", quer, Flaeche{X: 20, Y: 30, Breite: 12, Hoehe: 18}, [4]float64{12, 4, 20, 37}},
+		{"Bild in der Form der Fläche", genau, Flaeche{X: 50, Y: 60, Breite: 10, Hoehe: 15}, [4]float64{10, 15, 50, 60}},
 	} {
-		roh := blattMit(t, func(doc *gofpdf.Fpdf) {
-			if !BindeEin(doc, f.cover, f.platz) {
+		roh := blattMit(t, func(pdf *gofpdf.Fpdf) {
+			if !BindeEin(pdf, f.cover, f.flaeche) {
 				t.Errorf("%s: kein Cover gesetzt", f.name)
 			}
 		})
@@ -124,8 +125,8 @@ func TestBindeEin_OhneCoverBleibtDasBlattHeil(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, coverURL := range []string{"", "/uploads/fehlt.png", "/uploads/kaputt.png", "https://example.org/cover.png", "/uploads/../geheim.txt"} {
-		roh := blattMit(t, func(doc *gofpdf.Fpdf) {
-			if BindeEin(doc, coverURL, CoverPlatz{X: 20, Y: 30, Breite: 10, Hoehe: 15}) {
+		roh := blattMit(t, func(pdf *gofpdf.Fpdf) {
+			if BindeEin(pdf, coverURL, Flaeche{X: 20, Y: 30, Breite: 10, Hoehe: 15}) {
 				t.Errorf("%q: als Cover gesetzt", coverURL)
 			}
 		})
@@ -139,9 +140,9 @@ func TestBindeEin_OhneCoverBleibtDasBlattHeil(t *testing.T) {
 func TestBindeEin_DasselbeCoverStehtEinmalImDokument(t *testing.T) {
 	bereiteWurzel(t)
 	cover := schreibeCover(t, "doppelt.png", 40, 60)
-	roh := blattMit(t, func(doc *gofpdf.Fpdf) {
+	roh := blattMit(t, func(pdf *gofpdf.Fpdf) {
 		for zeile := 0; zeile < 3; zeile++ {
-			if !BindeEin(doc, cover, CoverPlatz{X: 20, Y: 30 + float64(zeile)*20, Breite: 10, Hoehe: 15}) {
+			if !BindeEin(pdf, cover, Flaeche{X: 20, Y: 30 + float64(zeile)*20, Breite: 10, Hoehe: 15}) {
 				t.Errorf("Zeile %d: kein Cover gesetzt", zeile)
 			}
 		}

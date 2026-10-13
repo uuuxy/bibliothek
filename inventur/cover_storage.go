@@ -34,7 +34,7 @@ func prepareImageForStorage(img image.Image, maxWidth, maxHeight int, quality fl
 		src = dst
 	}
 
-	out, err := imageutil.EncodeImageWebP(src, quality)
+	out, err := imageutil.ErzeugeWebP(src, quality)
 	if err != nil {
 		return nil, "", err
 	}

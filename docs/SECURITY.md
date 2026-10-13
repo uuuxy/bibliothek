@@ -289,7 +289,7 @@ dass er an jeder Einsetzstelle aufgerufen wird.
 
 ### Foto-Uploads (Schülerfotos)
 
-- **Decompression-Bomb-Schutz:** `pkg/imageutil.GuardImageDimensions()` liest per `image.DecodeConfig` nur den Bild-Header (ohne volle Dekodierung). Bilder über 50 Megapixel werden abgelehnt, bevor `image.Decode` die vollständige Pixelmatrix allokiert (Schutz gegen RAM-Erschöpfung durch präparierte Bilder).
+- **Decompression-Bomb-Schutz:** `pkg/imageutil.PruefeBildgroesse()` liest per `image.DecodeConfig` nur den Bild-Header (ohne volle Dekodierung). Bilder über 50 Megapixel werden abgelehnt, bevor `image.Decode` die vollständige Pixelmatrix allokiert (Schutz gegen RAM-Erschöpfung durch präparierte Bilder).
 - **MIME-Prüfung:** Über echte Dekodierung, nicht nur Dateiendung.
 - **Verschlüsselung:** Fotos werden AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank gespeichert — kein Klarpfad auf dem Dateisystem.
 - **Path-Traversal:** Alle Pfadoperationen nutzen `filepath.Base` + `filepath.Clean` + Prefix-Guard.
@@ -297,7 +297,7 @@ dass er an jeder Einsetzstelle aufgerufen wird.
 ### Cover-Uploads
 
 - 10 MB Body-Limit, 0600 Dateiberechtigungen.
-- Ebenfalls `GuardImageDimensions` vor dem vollständigen Decode.
+- Ebenfalls `PruefeBildgroesse` vor dem vollständigen Decode.
 - **Pfadbindung über `os.OpenRoot`** (seit 06.08.2026, `inventur/uploads_pfad.go`). Vorher
   stand an drei Stellen `filepath.Join` → `filepath.Clean` → `strings.HasPrefix`. Das hält
   den geradlinigen Fall auf, ist aber eine Prüfung **im Programm** über einen Pfad, der
@@ -318,7 +318,7 @@ dutzende Bilder gleichzeitig lädt. Jetzt gilt:
 | --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Cache-Name (`?isbn=`) | nur Ziffern, Trennstriche, abschließendes `X` | Er wird zum Dateinamen; beliebige Zeichenketten legten beliebige Dateien an                |
 | Antwortgröße          | 10 MB (`io.LimitReader`)                      | Der fremde Server bestimmte, wie viel RAM ein Aufruf kostet                                |
-| Bildgröße             | 50 MP (`GuardImageDimensions`, nur Header)    | Decompression-Bomb: 30000×30000 px ≈ 3,6 GB im Speicher, wenige hundert KB auf der Leitung |
+| Bildgröße             | 50 MP (`PruefeBildgroesse`, nur Header)       | Decompression-Bomb: 30000×30000 px ≈ 3,6 GB im Speicher, wenige hundert KB auf der Leitung |
 | Downloads/IP          | 30/s — **nur der Cache-Fehltreffer**          | Verstärkung: eine Anfrage von außen = eine ausgehende Anfrage von uns                      |
 
 **Gebunden an den Katalog (seit 05.09.2026, `api/katalog/cover_quelle_bindung.go`).** Cache-Schlüssel

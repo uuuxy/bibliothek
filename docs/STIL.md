@@ -21,7 +21,7 @@ fest, was erreicht ist. Neuer Code folgt den Regeln von Anfang an.
 - Was die Bibliothek und das Projekt benennen, heißt deutsch, ohne Umlaute geschrieben (`ae`,
   `oe`, `ue`, `ss`): `Leser`, `Rueckgabe`, `PruefeFrist`.
 - Lehnwörter bleiben, wie man sie im Deutschen sagt: Barcode, Cover, Scan, Import, Export,
-  Backup, Mail, Token, Cache, Cookie, Router, Middleware, Upload.
+  Backup, Mail, Token, Cache, Cookie, Router, Middleware, Upload, Host.
 - Englisch ist nur, was Go oder eine Bibliothek vorgibt: `New…` für den Erzeuger eines Typs,
   `Err…` für einen Fehlerwert, `Test…`, `Must…`, `main`, `init` und die Methoden fremder
   Schnittstellen (`Error`, `String`, `ServeHTTP`, `Scan`, `Close`).

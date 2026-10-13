@@ -120,7 +120,7 @@ func serveCachedCover(w http.ResponseWriter, r *http.Request, root *os.Root, fil
 // braucht auch das Inventur-Modul (Cover-Download und Metadaten-Abruf), und die Liste
 // stand dort in eigenen Kopien, die bereits auseinandergelaufen waren.
 func baueSichereCoverURL(urlStr string) (string, bool) {
-	return coverquelle.SichereURL(urlStr, coverquelle.CoverHosts)
+	return coverquelle.SichereURL(urlStr, coverquelle.BildHosts)
 }
 
 // coverHTTPClient lädt Cover mit Schutzmaßnahmen, die http.DefaultClient fehlen:
@@ -176,7 +176,7 @@ func ladeCoverBytes(ctx context.Context, urlStr string) ([]byte, error) {
 	//   der Leitung und rund 3,6 GB im Speicher dieses Prozesses. Der Endpunkt ist
 	//   öffentlich, und covers.openlibrary.org steht zwar auf der Allowlist, wird aber
 	//   von Freiwilligen befüllt — die Allowlist begrenzt das Ziel, nicht den Inhalt.
-	// GuardImageDimensions liest dafür nur den Bild-Header (image.DecodeConfig
+	// PruefeBildgroesse liest dafür nur den Bild-Header (image.DecodeConfig
 	// allokiert keine Pixeldaten).
 	rohBytes, err := io.ReadAll(io.LimitReader(resp.Body, maxCoverBytes+1))
 	if err != nil {
@@ -190,7 +190,7 @@ func ladeCoverBytes(ctx context.Context, urlStr string) ([]byte, error) {
 	if coverquelle.IstErsatzbild(rohBytes) {
 		return nil, errors.New("cover download: die Quelle hat zu dieser ISBN kein Cover (Ersatzbild)")
 	}
-	if err := imageutil.GuardImageDimensions(rohBytes); err != nil {
+	if err := imageutil.PruefeBildgroesse(rohBytes); err != nil {
 		return nil, err
 	}
 	return rohBytes, nil

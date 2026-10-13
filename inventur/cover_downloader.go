@@ -125,9 +125,9 @@ func downloadAndSaveCoverLocally(ctx context.Context, client *http.Client, cover
 
 	// Erst den Bild-Header prüfen, dann dekodieren: Die 10-MB-Grenze in ladeCoverBytes
 	// begrenzt die Leitung, nicht den Speicher — ein stark komprimiertes Riesenbild ist
-	// klein auf der Leitung und groß im RAM (30000×30000 ≈ 3,6 GB). GuardImageDimensions
+	// klein auf der Leitung und groß im RAM (30000×30000 ≈ 3,6 GB). PruefeBildgroesse
 	// liest nur den Header und allokiert keine Pixeldaten.
-	if err := imageutil.GuardImageDimensions(fileBytes); err != nil {
+	if err := imageutil.PruefeBildgroesse(fileBytes); err != nil {
 		log.Printf("Cover-Download: Bild abgelehnt (%s): %v", coverURL, err)
 		return ""
 	}

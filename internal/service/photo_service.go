@@ -52,7 +52,7 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 
 	// 3. Konvertierung nach WebP. Die Umwandlung rechnet nur auf den übergebenen Bytes;
 	// scheitert sie, liegt es am Bild (kein JPEG oder PNG, zu groß), nicht am Server.
-	webpBytes, err := imageutil.ConvertToWebP(imgBytes, 80)
+	webpBytes, err := imageutil.AlsWebP(imgBytes, 80)
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrFotoUnlesbar, err)
 	}

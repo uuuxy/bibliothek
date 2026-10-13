@@ -10,53 +10,49 @@ import (
 	"image/draw"
 	"image/jpeg"
 
-	// Registriert den WebP-Decoder prozessweit. WebP ist unser Speicherformat für Cover
-	// (siehe inventur/cover_storage.go), aber weder image/jpeg noch image/png kennen es —
-	// ohne diesen Import scheitert image.Decode auf genau den Dateien, die wir selbst schreiben.
+	// Cover liegen als WebP auf der Platte. Ohne diesen Decoder scheitert image.Decode an den
+	// Dateien, die das Programm selbst schreibt.
 	_ "golang.org/x/image/webp"
 )
 
-// DefaultJPEGQuality ist die Standard-Qualitätsstufe für erzeugte JPEGs. 80 ist bei den
-// hier üblichen Bildgrößen optisch unauffällig und deutlich kompakter als verlustfreies PNG.
-const DefaultJPEGQuality = 80
+// JPEGQualitaet ist die Qualitätsstufe für erzeugte JPEG. Bei den hier üblichen Bildgrößen
+// fällt 80 nicht auf und braucht deutlich weniger Platz als ein verlustfreies PNG.
+const JPEGQualitaet = 80
 
-// ConvertToJPEG dekodiert beliebige unterstützte Bild-Bytes (JPEG, PNG, GIF, WebP) und
-// enkodiert sie als Baseline-JPEG.
+// AlsJPEG wandelt ein Bild in ein Baseline-JPEG; das Paket bringt die Decoder für JPEG, PNG
+// und WebP mit.
 //
-// Zweck ist die Einbettung in PDFs: gofpdf beherrscht ausschließlich JPG, PNG und GIF und
-// erkennt den Typ an der Dateiendung. Unsere Cover liegen aber als WebP auf der Platte, sind
-// dort also nicht direkt einbettbar. JPEG statt PNG als Zielformat, weil Cover Fotos sind —
-// ein PNG-Reencode eines 600×900-Covers ist rund zehnmal so groß, und eine Mahnliste enthält
-// pro überfälligem Buch eines.
-func ConvertToJPEG(imgBytes []byte, quality int) ([]byte, error) {
-	// Gleicher Bomb-Schutz wie beim WebP-Pfad: die Datei stammt zwar aus unserem eigenen
-	// Upload-Verzeichnis, wird hier aber ungeprüft dekodiert.
-	if err := GuardImageDimensions(imgBytes); err != nil {
+// Gebraucht wird es zum Einbetten in ein PDF: gofpdf kennt nur JPG, PNG und GIF, die Cover
+// liegen aber als WebP vor. Das Ziel ist JPEG, weil Cover Fotos sind und als PNG ein Vielfaches
+// an Platz brauchen; eine Mahnliste trägt je überfälligem Titel eines.
+func AlsJPEG(daten []byte, qualitaet int) ([]byte, error) {
+	// Die Datei kommt aus dem eigenen Upload-Verzeichnis, wird hier aber ungeprüft dekodiert.
+	if err := PruefeBildgroesse(daten); err != nil {
 		return nil, err
 	}
-	img, _, err := image.Decode(bytes.NewReader(imgBytes))
+	bild, _, err := image.Decode(bytes.NewReader(daten))
 	if err != nil {
 		return nil, fmt.Errorf("fehler beim Dekodieren des Bildes: %w", err)
 	}
-	var out bytes.Buffer
-	if err := jpeg.Encode(&out, flattenOnWhite(img), &jpeg.Options{Quality: quality}); err != nil {
+	var puffer bytes.Buffer
+	if err := jpeg.Encode(&puffer, aufWeiss(bild), &jpeg.Options{Quality: qualitaet}); err != nil {
 		return nil, fmt.Errorf("fehler beim JPEG-Enkodieren: %w", err)
 	}
-	return out.Bytes(), nil
+	return puffer.Bytes(), nil
 }
 
-// flattenOnWhite legt ein Bild mit Alphakanal auf weißen Grund. JPEG kennt keine Transparenz:
-// ohne dieses Flatten liefe der Alphakanal beim Enkodieren einfach weg und transparente
-// Flächen würden schwarz — auf einem weißen Ausdruck ein auffälliger Fehler.
-func flattenOnWhite(img image.Image) image.Image {
-	// Alle Bildtypen des Standardpakets bieten Opaque(); ist es bereits deckend, sparen wir
-	// uns die Kopie. Fehlt die Methode, wird sicherheitshalber geflattet.
-	if o, ok := img.(interface{ Opaque() bool }); ok && o.Opaque() {
-		return img
+// aufWeiss legt ein Bild mit Alphakanal auf weißen Grund. JPEG kennt keine Transparenz; ohne
+// diesen Schritt würden durchsichtige Flächen schwarz, auf einem weißen Blatt ein sichtbarer
+// Fehler.
+func aufWeiss(bild image.Image) image.Image {
+	// Ein schon deckendes Bild braucht keine Kopie. Fehlt die Methode Opaque, wird es
+	// vorsichtshalber kopiert.
+	if o, ok := bild.(interface{ Opaque() bool }); ok && o.Opaque() {
+		return bild
 	}
-	bounds := img.Bounds()
-	dst := image.NewRGBA(bounds)
-	draw.Draw(dst, bounds, image.NewUniform(color.White), image.Point{}, draw.Src)
-	draw.Draw(dst, bounds, img, bounds.Min, draw.Over)
-	return dst
+	grenzen := bild.Bounds()
+	ziel := image.NewRGBA(grenzen)
+	draw.Draw(ziel, grenzen, image.NewUniform(color.White), image.Point{}, draw.Src)
+	draw.Draw(ziel, grenzen, bild, grenzen.Min, draw.Over)
+	return ziel
 }

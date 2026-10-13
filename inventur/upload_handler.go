@@ -35,7 +35,7 @@ func processUploadedImage(fileBytes []byte, id string) ([]byte, string, error) {
 	// Decompression-Bomb-Schutz: Dimensionen anhand des Headers prüfen, bevor die
 	// vollständige Pixelmatrix alloziert wird (image.Decode würde sonst sofort
 	// width×height×4 Byte reservieren — bei manipulierten Bildern Gigabytes).
-	if err := imageutil.GuardImageDimensions(fileBytes); err != nil {
+	if err := imageutil.PruefeBildgroesse(fileBytes); err != nil {
 		return nil, "", err
 	}
 	img, format, err := image.Decode(bytes.NewReader(fileBytes))

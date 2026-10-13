@@ -2,9 +2,9 @@ package coverquelle
 
 import "testing"
 
-// Was der Neuaufbau ÜBER die reine Hostnamen-Prüfung hinaus leistet: Er nimmt Schema
-// und Port aus der Eingabe heraus. Ohne ihn geht genau der rohe String los, den ein
-// zweiter Parser anders lesen kann als der prüfende.
+// Der Neuaufbau nimmt Schema und Port aus der Eingabe heraus. Ohne ihn ginge die rohe
+// Zeichenkette an den HTTP-Client, und ein zweiter Parser kann sie anders lesen als der
+// prüfende.
 func TestSichereURL(t *testing.T) {
 	faelle := []struct {
 		name    string
@@ -23,8 +23,8 @@ func TestSichereURL(t *testing.T) {
 			"https://books.google.com/books/content?id=abc&printsec=frontcover", true,
 		},
 		{
-			// Der Port ist der greifbarste Gewinn: Ohne Neuaufbau ginge die Anfrage an
-			// covers.openlibrary.org:2222 — Hostname erlaubt, Ziel ein anderer Dienst.
+			// Ohne Neuaufbau ginge die Anfrage an covers.openlibrary.org:2222: der Hostname
+			// erlaubt, das Ziel ein anderer Dienst.
 			"abweichender Port wird verworfen",
 			"https://covers.openlibrary.org:2222/b/isbn/123-M.jpg",
 			"https://covers.openlibrary.org/b/isbn/123-M.jpg", true,
@@ -36,12 +36,12 @@ func TestSichereURL(t *testing.T) {
 		},
 		{"fremder Host", "https://angreifer.example/x.jpg", "", false},
 		{
-			"Allowlist-Name als Subdomain des Angreifers",
+			"erlaubter Name als Subdomain des Angreifers",
 			"https://covers.openlibrary.org.angreifer.example/x.jpg", "", false,
 		},
 		{
-			// Klassiker: Alles vor dem @ ist Userinfo, der echte Host steht dahinter.
-			"Allowlist-Name als Userinfo vor fremdem Host",
+			// Alles vor dem @ ist Userinfo, der Host steht dahinter.
+			"erlaubter Name als Userinfo vor fremdem Host",
 			"https://covers.openlibrary.org@angreifer.example/x.jpg", "", false,
 		},
 		{"IP statt Hostname", "https://127.0.0.1/x.jpg", "", false},
@@ -51,7 +51,7 @@ func TestSichereURL(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got, ok := SichereURL(f.eingabe, CoverHosts)
+			got, ok := SichereURL(f.eingabe, BildHosts)
 			if ok != f.ok {
 				t.Fatalf("SichereURL(%q) ok = %v; want %v", f.eingabe, ok, f.ok)
 			}
@@ -62,42 +62,38 @@ func TestSichereURL(t *testing.T) {
 	}
 }
 
-// erlaubt: Prüfhelfer der Tests. Die Produktivform IstErlaubt (nur prüfen, nicht neu
-// bauen) ist am 22.09.2026 mit dem manuellen Cover-Update gefallen; wer eine URL
-// anfasst, ruft sie auch ab und nimmt SichereURL.
+// erlaubt sagt, ob SichereURL die Adresse annimmt.
 func erlaubt(rohURL string, erlaubte []string) bool {
 	_, ok := SichereURL(rohURL, erlaubte)
 	return ok
 }
 
-// Die Metadaten-Liste ist bewusst enger als die Cover-Liste. Der Test hält den
-// Unterschied fest, damit er nicht beim nächsten Aufräumen "vereinheitlicht" wird.
-func TestMetadatenHostsSindEngerAlsCoverHosts(t *testing.T) {
-	// Von Google Books holt das Inventur-Modul nur Bilder, keine Datensätze.
+// Die Liste für Metadaten ist mit Absicht enger als die für Bilder. Der Test hält den
+// Unterschied fest, damit ihn niemand beim Aufräumen angleicht.
+func TestMetadatenHostsSindEngerAlsBildHosts(t *testing.T) {
+	// Von Google Books holt das Paket inventur nur Bilder, keine Datensätze.
 	const googleBooks = "https://books.google.com/books/content?id=abc"
-	if !erlaubt(googleBooks, CoverHosts) {
+	if !erlaubt(googleBooks, BildHosts) {
 		t.Error("books.google.com muss für Cover erlaubt sein")
 	}
 	if erlaubt(googleBooks, MetadatenHosts) {
-		t.Error("books.google.com darf für Metadaten NICHT erlaubt sein")
+		t.Error("books.google.com darf für Metadaten nicht erlaubt sein")
 	}
 
-	// Jeder Metadaten-Host muss auch Cover liefern dürfen — sonst ist die engere Liste
-	// nicht enger, sondern schlicht anders, und das wäre ein Versehen.
+	// Jeder Host für Metadaten darf auch Bilder liefern. Sonst wäre die engere Liste nicht
+	// enger, sondern anders, und das wäre ein Versehen.
 	for _, h := range MetadatenHosts {
-		if !erlaubt("https://"+h+"/x", CoverHosts) {
-			t.Errorf("Metadaten-Host %q fehlt in CoverHosts — die Listen sind auseinandergelaufen", h)
+		if !erlaubt("https://"+h+"/x", BildHosts) {
+			t.Errorf("Metadaten-Host %q fehlt in BildHosts: Die Listen sind auseinandergelaufen", h)
 		}
 	}
 }
 
-// lobid.org steht in KEINER der beiden Listen. Das ist kein Versehen, sondern der
-// dokumentierte Ist-Zustand: inventur.sucheLobid hat keinen Aufrufer, und selbst mit
-// einem käme die Anfrage hier nicht durch. Wer die Quelle aktivieren will, muss beides
-// anfassen — dieser Test macht sichtbar, dass ein Eintrag hier allein nicht reicht.
+// lobid.org steht in keiner der beiden Listen, und kein Programmcode fragt dort an. Wer die
+// Quelle anschließt, trägt sie hier ein und baut den Abruf; eines allein genügt nicht.
 func TestLobidIstNichtFreigegeben(t *testing.T) {
 	const lobid = "https://lobid.org/resources/search?q=isbn:123"
-	if erlaubt(lobid, MetadatenHosts) || erlaubt(lobid, CoverHosts) {
-		t.Error("lobid.org ist freigegeben — dann gehört auch der tote Aufrufpfad sucheLobid angeschlossen")
+	if erlaubt(lobid, MetadatenHosts) || erlaubt(lobid, BildHosts) {
+		t.Error("lobid.org ist freigegeben, aber kein Programmcode fragt dort an")
 	}
 }

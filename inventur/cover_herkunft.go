@@ -16,5 +16,5 @@ import "bibliothek/pkg/coverquelle"
 // SichereCoverURL liefert die aus geprüften Teilen neu gebaute Cover-URL.
 // ok=false heißt: Host nicht erlaubt oder URL unlesbar.
 func SichereCoverURL(rohURL string) (string, bool) {
-	return coverquelle.SichereURL(rohURL, coverquelle.CoverHosts)
+	return coverquelle.SichereURL(rohURL, coverquelle.BildHosts)
 }

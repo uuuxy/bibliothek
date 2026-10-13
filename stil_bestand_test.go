@@ -46,7 +46,6 @@ var stilBestand = map[string]stilZahl{
 	"mailservice":            {Fach: 2, Verb: 2, Kuerzel: 0, Datei: 0, Datum: 5},
 	"pdf":                    {Fach: 16, Verb: 26, Kuerzel: 3, Datei: 0, Datum: 9},
 	"pkg/code39":             {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 2},
-	"pkg/coverquelle":        {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 1},
 	"pkg/ersatzwert":         {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 5},
 	"pkg/lmf":                {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 2},
 	"pkg/lmfplan":            {Fach: 0, Verb: 1, Kuerzel: 0, Datei: 0, Datum: 15},
@@ -55,5 +54,4 @@ var stilBestand = map[string]stilZahl{
 	"pkg/xlsxgrenze":         {Fach: 0, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 2},
 	"repository":             {Fach: 146, Verb: 58, Kuerzel: 77, Datei: 29, Datum: 183},
 	"sse":                    {Fach: 1, Verb: 0, Kuerzel: 0, Datei: 0, Datum: 0},
-	"pkg/imageutil":          {Fach: 0, Verb: 4, Kuerzel: 0, Datei: 0, Datum: 0},
 }

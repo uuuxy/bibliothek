@@ -1,12 +1,9 @@
-// Package coverdatei liest lokal gespeicherte Buchcover und liefert sie in einer Form,
-// die PDF-Erzeuger einbetten können.
+// Package coverdatei liest lokal gespeicherte Cover und setzt sie in ein PDF.
 //
-// Warum ein eigenes Paket: Cover liegen als WebP unter „uploads/" (inventur/
-// cover_storage.go), aber weder gofpdf noch maroto kennen WebP. Den Weg dorthin —
-// Pfad prüfen, Datei innerhalb des Wurzelverzeichnisses öffnen, nach JPEG wandeln —
-// brauchen die Mahnliste (pdf/mahnliste.go) und der Schulbuch-Export
-// (inventur/lernmittel_pdf.go); eine zweite Fassung wäre die Gelegenheit, die
-// Pfadprüfung schwächer nachzubauen.
+// Cover liegen als WebP unter „uploads/", und gofpdf kennt WebP nicht. Den Weg dorthin (Pfad
+// prüfen, Datei innerhalb der Wurzel öffnen, nach JPEG wandeln) brauchen die Mahnliste und die
+// Lernmittelliste. Stünde er zweimal im Code, hätte die zweite Fassung leicht die schwächere
+// Pfadprüfung.
 package coverdatei
 
 import (
@@ -21,14 +18,14 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// Wurzel ist das Verzeichnis aller lokal gespeicherten Bilder, relativ zum
-// Arbeitsverzeichnis des Servers. Pfadprüfung und Zugriff auf das Verzeichnis liegen in
-// pkg/coverablage, das ohne Bildbibliothek auskommt.
+// Wurzel ist das Verzeichnis aller lokal gespeicherten Bilder, relativ zum Arbeitsverzeichnis
+// des Servers. Pfadprüfung und Zugriff liegen in pkg/coverablage, das ohne Bildbibliothek
+// auskommt.
 const Wurzel = coverablage.Wurzel
 
-// Pfad löst die Cover-URL eines Titels in einen lesbaren lokalen Dateipfad auf.
-// Rückgabe "" heißt: kein verwendbares Cover — der Aufrufer zeichnet dann nur den Rahmen.
-func Pfad(coverURL string) string {
+// lokalerPfad liefert zur Cover-URL eines Titels den Pfad der Datei oder "", wenn es kein
+// verwendbares Cover gibt.
+func lokalerPfad(coverURL string) string {
 	rel, pfad, ok := coverablage.Zerlege(coverURL)
 	if !ok {
 		return ""
@@ -46,14 +43,13 @@ func Pfad(coverURL string) string {
 	return pfad
 }
 
-// AlsJPEG liest das Cover und gibt es als Baseline-JPEG zurück; ok ist false, wenn es
-// kein verwendbares Cover gibt.
+// alsJPEG liest das Cover und liefert es als Baseline-JPEG; ok ist false, wenn es kein
+// verwendbares Cover gibt.
 //
-// Jeder Fehler führt zu ok=false statt zu einem Fehlerwert: Ein unlesbares, defektes
-// oder überdimensioniertes Cover darf nie das ganze Dokument kosten. Es fehlt dann
-// still — genau eine Zeile ohne Bild statt einer Liste, die mit 500 endet. Ein
-// Verzeichnis braucht keine eigene Abweisung: io.ReadAll scheitert daran von selbst.
-func AlsJPEG(coverURL string) (bilddaten []byte, pfad string, ok bool) {
+// Jeder Fehler führt zu ok=false und nicht zu einem Fehlerwert: Ein unlesbares, kaputtes oder
+// übergroßes Cover soll eine Zeile ohne Bild kosten und nicht das ganze Dokument. Ein
+// Verzeichnis braucht keine eigene Abweisung, weil io.ReadAll daran scheitert.
+func alsJPEG(coverURL string) (bilddaten []byte, pfad string, ok bool) {
 	rel, pfad, ok := coverablage.Zerlege(coverURL)
 	if !ok {
 		return nil, "", false
@@ -64,53 +60,53 @@ func AlsJPEG(coverURL string) (bilddaten []byte, pfad string, ok bool) {
 	}
 	defer closeutil.Schliesse(wurzel, "coverdatei wurzel")
 
-	f, err := wurzel.Open(rel)
+	datei, err := wurzel.Open(rel)
 	if err != nil {
 		return nil, "", false
 	}
-	defer closeutil.Schliesse(f, "coverdatei bild")
+	defer closeutil.Schliesse(datei, "coverdatei bild")
 
-	roh, err := io.ReadAll(f)
+	roh, err := io.ReadAll(datei)
 	if err != nil {
 		return nil, "", false
 	}
-	jpg, err := imageutil.ConvertToJPEG(roh, imageutil.DefaultJPEGQuality)
+	jpg, err := imageutil.AlsJPEG(roh, imageutil.JPEGQualitaet)
 	if err != nil {
 		return nil, "", false
 	}
 	return jpg, pfad, true
 }
 
-// CoverPlatz nennt, wohin ein Cover auf dem Blatt kommt: die Ecke oben links und die größte
+// Flaeche nennt, wohin ein Cover auf dem Blatt kommt: die Ecke oben links und die größte
 // Breite und Höhe, in der Einheit des Dokuments.
-type CoverPlatz struct {
+type Flaeche struct {
 	X, Y, Breite, Hoehe float64
 }
 
-// BindeEin setzt das lokal gespeicherte Cover in den Platz, im Seitenverhältnis des Bilds und
+// BindeEin setzt das lokal gespeicherte Cover in die Fläche, im Seitenverhältnis des Bilds und
 // darin mittig, und meldet, ob es eines gab. Fehler bleiben still: Ein Fehler an einem
 // gofpdf-Dokument bleibt bis Output stehen, ein unlesbares Cover kostete sonst das ganze Blatt.
-func BindeEin(doc *gofpdf.Fpdf, coverURL string, platz CoverPlatz) bool {
+func BindeEin(pdf *gofpdf.Fpdf, coverURL string, flaeche Flaeche) bool {
 	opt := gofpdf.ImageOptions{ImageType: "JPG"}
-	name := Pfad(coverURL)
+	name := lokalerPfad(coverURL)
 	if name == "" {
 		return false
 	}
 	// gofpdf hält ein Bild unter seinem Namen vor: Derselbe Titel in mehreren Zeilen wird nur
 	// einmal gelesen und gewandelt.
-	info := doc.GetImageInfo(name)
+	info := pdf.GetImageInfo(name)
 	if info == nil {
-		jpg, _, ok := AlsJPEG(coverURL)
+		jpg, _, ok := alsJPEG(coverURL)
 		if !ok {
 			return false
 		}
-		info = doc.RegisterImageOptionsReader(name, opt, bytes.NewReader(jpg))
+		info = pdf.RegisterImageOptionsReader(name, opt, bytes.NewReader(jpg))
 	}
 	if info == nil || info.Width() <= 0 || info.Height() <= 0 {
 		return false
 	}
-	massstab := math.Min(platz.Breite/info.Width(), platz.Hoehe/info.Height())
+	massstab := math.Min(flaeche.Breite/info.Width(), flaeche.Hoehe/info.Height())
 	breite, hoehe := info.Width()*massstab, info.Height()*massstab
-	doc.ImageOptions(name, platz.X+(platz.Breite-breite)/2, platz.Y+(platz.Hoehe-hoehe)/2, breite, hoehe, false, opt, 0, "")
+	pdf.ImageOptions(name, flaeche.X+(flaeche.Breite-breite)/2, flaeche.Y+(flaeche.Hoehe-hoehe)/2, breite, hoehe, false, opt, 0, "")
 	return true
 }

@@ -181,7 +181,7 @@ func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Lernmitte
 		pdf.AddPage()
 	}
 	oben := pdf.GetY()
-	platz := coverdatei.CoverPlatz{X: randLinks + (spCover-coverBrt)/2, Y: oben + (zeilenH-coverH)/2, Breite: coverBrt, Hoehe: coverH}
+	platz := coverdatei.Flaeche{X: randLinks + (spCover-coverBrt)/2, Y: oben + (zeilenH-coverH)/2, Breite: coverBrt, Hoehe: coverH}
 	if !coverdatei.BindeEin(pdf, t.CoverURL, platz) && t.CoverURL != "" {
 		*fehlend++
 	}

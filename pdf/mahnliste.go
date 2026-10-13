@@ -49,7 +49,7 @@ const (
 func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med MahnlisteMedium, rowHeight float64) {
 	startY := pdf.GetY()
 
-	coverdatei.BindeEin(pdf, med.CoverURL, coverdatei.CoverPlatz{X: 18, Y: startY + 0.5, Breite: 7, Hoehe: rowHeight - 1})
+	coverdatei.BindeEin(pdf, med.CoverURL, coverdatei.Flaeche{X: 18, Y: startY + 0.5, Breite: 7, Hoehe: rowHeight - 1})
 
 	// Den Rahmen der Cover-Zelle gibt es auch ohne Bild.
 	pdf.SetXY(18, startY)
