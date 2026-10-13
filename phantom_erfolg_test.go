@@ -157,7 +157,7 @@ var phantomBestand = map[string]int{
 	"repository/schueler_zusammenfuehren.go:verschiebeVorgaenge": 1,
 	"repository/book_inventory.go:BulkUpsertBookTitles":          1,
 	// Seit 15.09.2026 heißt der Rumpf meldeSchaden (Transaktion des Aufrufers, damit
-	// der Bescheid Verlust und Brief in EINER Transaktion bucht); ReportDamage ist nur
+	// der Bescheid Verlust und Brief in EINER Transaktion bucht); SchadensAbfragen.Melde ist nur
 	// noch die Hülle. Die drei Tags sind dieselben wie vorher (Exemplar aussondern,
 	// Vormerkung lösen, Ausleihe beenden) — die Ausleihe ist per FOR UPDATE gelesen.
 	"repository/schaden_melden.go:meldeSchaden": 3,

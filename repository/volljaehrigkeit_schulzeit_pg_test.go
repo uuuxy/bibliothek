@@ -26,16 +26,16 @@ func TestVolljaehrigkeit_RechnetInDerSchulzeitzone(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 
-	// Genau der Ausdruck aus EmpfaengerFuerBescheid — abgeschrieben, also nachgeprüft:
+	// Genau der Ausdruck aus LadeEmpfaenger — abgeschrieben, also nachgeprüft:
 	// Ohne diesen Wächter bliebe der Test grün, während die Abfrage längst wieder mit
 	// CURRENT_DATE rechnet. Er misst dann seine eigene Kopie.
 	ausdruck := `coalesce(geburtsdatum <= ` + sqlSchulHeute + ` - INTERVAL '18 years', false)`
-	quelle, err := os.ReadFile("bescheid.go")
+	quelle, err := os.ReadFile("bescheid_vorschlag.go")
 	if err != nil {
-		t.Fatalf("bescheid.go nicht lesbar: %v", err)
+		t.Fatalf("bescheid_vorschlag.go nicht lesbar: %v", err)
 	}
 	if !strings.Contains(string(quelle), "geburtsdatum <= `+sqlSchulHeute+` - INTERVAL '18 years'") {
-		t.Fatal("EmpfaengerFuerBescheid rechnet die Volljährigkeit nicht mehr mit sqlSchulHeute — " +
+		t.Fatal("LadeEmpfaenger rechnet die Volljährigkeit nicht mehr mit sqlSchulHeute — " +
 			"entweder ist der Test nachzuziehen oder die Abfrage ist zurückgefallen")
 	}
 

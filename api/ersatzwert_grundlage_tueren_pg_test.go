@@ -57,7 +57,7 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 	})
 
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
-	bescheidRepo := repository.NewBescheidRepository(pool)
+	bescheidRepo := repository.NewBescheidAbfragen(pool)
 	admin := testdaten.AdminFuerAudit(t, pool)
 	rufe := func(t *testing.T, h http.Handler, methode, pfad, rumpf, kennung string, ziel any) {
 		t.Helper()

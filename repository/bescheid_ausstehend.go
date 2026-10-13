@@ -7,7 +7,7 @@ import (
 
 // Die Stufe zwischen Mahnliste und Bescheid (15.09.2026).
 //
-// „Verlust melden" beendet die Ausleihe (ReportDamage). Damit fällt das Kind aus der
+// „Verlust melden" beendet die Ausleihe (SchadensAbfragen.Melde). Damit fällt das Kind aus der
 // Mahnliste, die nur offene Ausleihen kennt — und der Bescheid, der genau diese
 // Forderung braucht, war nur erreichbar, solange die Liste noch nicht neu geladen war.
 // Diese Abfrage macht die Stufe sichtbar: je Kind eine Zeile über seine offenen
@@ -30,13 +30,13 @@ type ForderungOhneBescheid struct {
 	Land bool `json:"land"`
 }
 
-// Ausstehend liefert je Kind die offenen Forderungen ohne Bescheid, älteste zuerst.
+// LadeForderungenOhneBescheid liefert je Kind die offenen Forderungen ohne Bescheid, älteste zuerst.
 //
-// Dieselbe Bedingung wie OffeneForderungen und ordnePositionenZu: offen, nicht
+// Dieselbe Bedingung wie LadeOffeneForderungen und ordnePositionenZu: offen, nicht
 // storniert, noch auf keinem Brief. Gelöschte Schüler bleiben draußen (Papierkorb,
 // DSGVO) — wie in der Mahnliste.
-func (r *pgBescheidRepository) Ausstehend(ctx context.Context) ([]ForderungOhneBescheid, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *pgBescheidAbfragen) LadeForderungenOhneBescheid(ctx context.Context) ([]ForderungOhneBescheid, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT s.id, s.vorname || ' ' || s.nachname, coalesce(s.klasse, ''),
 		       count(*)::int, coalesce(sum(f.betrag), 0)::float8, min(f.erstellt_am),
 		       bool_or(e.id IS NOT NULL AND `+ExemplarTopfSQL+` = 'land')

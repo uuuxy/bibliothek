@@ -38,7 +38,7 @@ func neuerCopyStatusAufbau(t *testing.T) (pgxmock.PgxPoolIface, http.HandlerFunc
 	t.Cleanup(mock.Close)
 
 	server := &Tueren{Basis: &tuer.Basis{}}
-	return mock, server.UpdateCopyStatusHandler(repository.NewBookRepository(mock), repository.NewBescheidRepository(mock))
+	return mock, server.UpdateCopyStatusHandler(repository.NewBookRepository(mock), repository.NewBescheidAbfragen(mock))
 }
 
 func sendeStatusUpdate(t *testing.T, handler http.HandlerFunc, body string) *httptest.ResponseRecorder {

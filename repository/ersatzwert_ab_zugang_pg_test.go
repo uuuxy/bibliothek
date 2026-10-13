@@ -23,9 +23,9 @@ func TestErsatzwert_ZaehltAbZugangNichtAbBestelltag(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	repo, ok := NewBescheidRepository(pool).(*pgBescheidRepository)
+	repo, ok := NewBescheidAbfragen(pool).(*pgBescheidAbfragen)
 	if !ok {
-		t.Fatalf("NewBescheidRepository liefert %T", NewBescheidRepository(pool))
+		t.Fatalf("NewBescheidAbfragen liefert %T", NewBescheidAbfragen(pool))
 	}
 
 	// Der Bestelltag liegt im vorigen Schuljahr, der Zugang (heute) im laufenden.
@@ -95,9 +95,9 @@ func TestErsatzwert_ZaehltAbZugangNichtAbBestelltag(t *testing.T) {
 	exemplarID := bestelltUndGeliefert(t, "B-ZS"+suffix+"-1")
 
 	t.Run("Betragsvorschlag: null Schuljahre im Bestand", func(t *testing.T) {
-		g, err := repo.GroessenFuerExemplar(ctx, exemplarID)
+		g, err := repo.LadeGroessenFuerExemplar(ctx, exemplarID)
 		if err != nil {
-			t.Fatalf("GroessenFuerExemplar: %v", err)
+			t.Fatalf("LadeGroessenFuerExemplar: %v", err)
 		}
 		if g.SchuljahreImBestand != 0 {
 			t.Fatalf("SchuljahreImBestand = %d, erwartet 0 — gerechnet ab dem Bestelltag statt ab dem Zugang", g.SchuljahreImBestand)
@@ -112,9 +112,9 @@ func TestErsatzwert_ZaehltAbZugangNichtAbBestelltag(t *testing.T) {
 		`, exemplarID, schuelerID, jetzt.AddDate(0, 0, -60), jetzt.AddDate(0, 0, -30)); err != nil {
 			t.Fatalf("Ausleihe anlegen: %v", err)
 		}
-		liste, err := repo.UeberfaelligeAusleihen(ctx, schuelerID)
+		liste, err := repo.LadeUeberfaelligeAusleihen(ctx, schuelerID)
 		if err != nil {
-			t.Fatalf("UeberfaelligeAusleihen: %v", err)
+			t.Fatalf("LadeUeberfaelligeAusleihen: %v", err)
 		}
 		if len(liste) != 1 {
 			t.Fatalf("%d überfällige Ausleihen, erwartet 1", len(liste))
@@ -131,9 +131,9 @@ func TestErsatzwert_ZaehltAbZugangNichtAbBestelltag(t *testing.T) {
 		`, exemplarID, schuelerID); err != nil {
 			t.Fatalf("Schadensfall anlegen: %v", err)
 		}
-		liste, err := repo.OffeneForderungen(ctx, schuelerID)
+		liste, err := repo.LadeOffeneForderungen(ctx, schuelerID)
 		if err != nil {
-			t.Fatalf("OffeneForderungen: %v", err)
+			t.Fatalf("LadeOffeneForderungen: %v", err)
 		}
 		if len(liste) != 1 {
 			t.Fatalf("%d offene Forderungen, erwartet 1", len(liste))
@@ -153,9 +153,9 @@ func TestErsatzwert_ZaehltAbZugangNichtAbBestelltag(t *testing.T) {
 		`, titelID, "B-ZS"+suffix+"-2", bestelltAm).Scan(&id); err != nil {
 			t.Fatalf("Exemplar anlegen: %v", err)
 		}
-		g, err := repo.GroessenFuerExemplar(ctx, id)
+		g, err := repo.LadeGroessenFuerExemplar(ctx, id)
 		if err != nil {
-			t.Fatalf("GroessenFuerExemplar: %v", err)
+			t.Fatalf("LadeGroessenFuerExemplar: %v", err)
 		}
 		if g.SchuljahreImBestand != 1 {
 			t.Fatalf("SchuljahreImBestand = %d, erwartet 1", g.SchuljahreImBestand)

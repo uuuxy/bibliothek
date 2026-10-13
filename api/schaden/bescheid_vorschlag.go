@@ -73,7 +73,7 @@ type BescheidVorschlag struct {
 // @Param        id path string true "Student ID"
 // @Success      200 {object} BescheidVorschlag
 // @Router       /schueler/{id}/bescheid-vorschlag [get]
-func (s *Tueren) BescheidVorschlagHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) BescheidVorschlagHandler(bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		return s.handleBescheidVorschlag(w, r, bescheidRepo)
 	})
@@ -81,7 +81,7 @@ func (s *Tueren) BescheidVorschlagHandler(bescheidRepo repository.BescheidReposi
 
 // handleBescheidVorschlag sammelt, was auf einen Bescheid kann: offene Forderungen und
 // überfällige Bücher, je mit Betragsvorschlag.
-func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository) error {
+func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidAbfragen) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
@@ -101,7 +101,7 @@ func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request,
 		Positionen:      []BescheidVorschlagPosition{},
 		Ausleihen:       []BescheidVorschlagAusleihe{},
 	}
-	empfaenger, err := bescheidRepo.EmpfaengerFuerBescheid(ctx, id)
+	empfaenger, err := bescheidRepo.LadeEmpfaenger(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return apierrors.NotFound("Schüler nicht gefunden", err)
@@ -111,14 +111,14 @@ func (s *Tueren) handleBescheidVorschlag(w http.ResponseWriter, r *http.Request,
 	vorschlag.SchuelerName = strings.TrimSpace(empfaenger.Vorname + " " + empfaenger.Nachname)
 	vorschlag.Klasse = empfaenger.Klasse
 
-	offene, err := bescheidRepo.OffeneForderungen(ctx, id)
+	offene, err := bescheidRepo.LadeOffeneForderungen(ctx, id)
 	if err != nil {
 		return apierrors.Internal("Offene Forderungen konnten nicht gelesen werden", err)
 	}
 	for _, f := range offene {
 		vorschlag.Positionen = append(vorschlag.Positionen, bescheidVorschlagAus(f, quelle))
 	}
-	ueberfaellig, err := bescheidRepo.UeberfaelligeAusleihen(ctx, id)
+	ueberfaellig, err := bescheidRepo.LadeUeberfaelligeAusleihen(ctx, id)
 	if err != nil {
 		return apierrors.Internal("Überfällige Ausleihen konnten nicht gelesen werden", err)
 	}

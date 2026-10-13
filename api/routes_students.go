@@ -88,7 +88,7 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("POST /api/abgaenger/mail", s.RequirePermission("create_orders")(s.mahnwesen().SendAbgaengerKontoauszuegeHandler()))
 
 	// Kiosk / Damage
-	damageRepo := repository.NewDamageRepository(s.DB.Pool)
+	damageRepo := repository.NewSchadensAbfragen(s.DB.Pool)
 	mux.Handle("POST /api/damage/report", s.RequirePermission("edit_students")(s.schaden().ReportDamageHandler(damageRepo)))
 	mux.Handle("GET /api/schadensfaelle/{id}/pdf", s.RequirePermission("view_students")(s.schaden().GenerateDamagePDFHandler()))
 	// Gebühren-Erledigung: Lesen wie die Akte (view_students), Erledigen wie das
@@ -103,7 +103,7 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// edit_students — wer eine Forderung anlegen und stornieren darf, schreibt auch den
 	// Brief dazu. Ein eigenes Recht bliebe ab Werk bei niemandem und wäre eine Tür, die
 	// keiner öffnen kann; die Entscheidung steht als E-Frage im Konzept.
-	bescheidRepo := repository.NewBescheidRepository(s.DB.Pool)
+	bescheidRepo := repository.NewBescheidAbfragen(s.DB.Pool)
 	mux.Handle("GET /api/schueler/{id}/bescheid-vorschlag", s.RequirePermission("edit_students")(s.schaden().BescheidVorschlagHandler(bescheidRepo)))
 	// Der Betragsvorschlag des Melde-Dialogs (OFFEN.md 9.3 a): dasselbe Recht wie das
 	// Melden selbst — wer die Forderung anlegen darf, darf auch den Vorschlag dafür sehen.

@@ -11,7 +11,7 @@ import (
 // SchadensArt ist die Fallgruppe einer Forderung — genau die beiden Kästchen des
 // Bescheid-Formulars (chk_schaden_art, Migration 110): Sie entscheidet, welches Kästchen
 // der Brief ankreuzt und ob er die Rückgabe verlangt. Ein eigener Typ, damit sie in der
-// Parameterliste von ReportDamage nicht stumm mit der Beschreibung vertauscht wird.
+// Parameterliste von SchadensAbfragen.Melde nicht stumm mit der Beschreibung vertauscht wird.
 type SchadensArt string
 
 const (
@@ -21,19 +21,19 @@ const (
 	SchadensArtBeschaedigt SchadensArt = "beschaedigt"
 )
 
-// Gueltig sagt, ob a einer der beiden Werte ist.
-func (a SchadensArt) Gueltig() bool {
+// IstGueltig sagt, ob a einer der beiden Werte ist.
+func (a SchadensArt) IstGueltig() bool {
 	return a == SchadensArtNichtZurueck || a == SchadensArtBeschaedigt
 }
 
-// DamageRepository defines operations for managing book damages and related loan actions.
-type DamageRepository interface {
-	// ReportDamage bucht einen Verlust oder Schaden an einer Ausleihe. Einen Schuldner nimmt
+// SchadensAbfragen defines operations for managing book damages and related loan actions.
+type SchadensAbfragen interface {
+	// Melde bucht einen Verlust oder Schaden an einer Ausleihe. Einen Schuldner nimmt
 	// die Tür nicht entgegen: Er steht an der Ausleihe.
-	ReportDamage(ctx context.Context, copyID, loanID, benutzerID, beschreibung string, art SchadensArt, betrag float64) (string, error)
-	// ListSchadensfaelleVonSchueler liefert alle Schadensfälle eines Schülers,
+	Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, betrag float64) (string, error)
+	// LadeZuLeser liefert alle Schadensfälle eines Schülers,
 	// neueste zuerst — die Gebühren-Sektion der Schülerakte.
-	ListSchadensfaelleVonSchueler(ctx context.Context, schuelerID string) ([]Schadensfall, error)
+	LadeZuLeser(ctx context.Context, leserID string) ([]Schadensfall, error)
 }
 
 // Schadensfall ist eine Zeile der Gebühren-/Schadensliste eines Schülers.
@@ -55,19 +55,19 @@ type Schadensfall struct {
 	BescheidID *string `json:"bescheid_id"`
 }
 
-type pgDamageRepository struct {
+type pgSchadensAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewDamageRepository returns a new PostgreSQL implementation of DamageRepository.
-func NewDamageRepository(db db.PgxPoolIface) DamageRepository {
-	return &pgDamageRepository{db: db}
+// NewSchadensAbfragen returns a new PostgreSQL implementation of SchadensAbfragen.
+func NewSchadensAbfragen(db db.PgxPoolIface) SchadensAbfragen {
+	return &pgSchadensAbfragen{db: db}
 }
 
-// ListSchadensfaelleVonSchueler liefert alle Schadensfälle eines Schülers, neueste zuerst.
+// LadeZuLeser liefert alle Schadensfälle eines Schülers, neueste zuerst.
 // LEFT JOIN: exemplar_id kann NULL sein (Geräteschäden), dann bleiben Titel/Barcode leer.
-func (r *pgDamageRepository) ListSchadensfaelleVonSchueler(ctx context.Context, schuelerID string) ([]Schadensfall, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *pgSchadensAbfragen) LadeZuLeser(ctx context.Context, leserID string) ([]Schadensfall, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT sf.id, sf.beschreibung, sf.betrag, sf.ist_bezahlt, sf.erstellt_am,
 		       sf.storniert_am, sf.stornierungsgrund, t.titel, e.barcode_id, sf.bescheid_id
 		FROM schadensfaelle sf
@@ -75,7 +75,7 @@ func (r *pgDamageRepository) ListSchadensfaelleVonSchueler(ctx context.Context, 
 		LEFT JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE sf.schueler_id = $1
 		ORDER BY sf.erstellt_am DESC
-	`, schuelerID)
+	`, leserID)
 	if err != nil {
 		return nil, err
 	}
@@ -100,20 +100,20 @@ func (r *pgDamageRepository) ListSchadensfaelleVonSchueler(ctx context.Context, 
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrExemplarNeuVerliehen = errors.New("Exemplar wurde zwischenzeitlich neu ausgeliehen — bitte den Vorgang neu laden")
 
-// ReportDamage bucht einen Verlust oder Schaden in eigener Transaktion — der Weg aus der
+// Melde bucht einen Verlust oder Schaden in eigener Transaktion — der Weg aus der
 // Schülerakte („Verlust/Schaden melden"). Der Rumpf ist meldeSchaden; der Bescheid ruft
 // ihn in seiner eigenen Transaktion (Stufe 2 des Mahnverfahrens).
-func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, benutzerID, beschreibung string, art SchadensArt, betrag float64) (string, error) {
-	tx, err := r.db.Begin(ctx)
+func (a *pgSchadensAbfragen) Melde(ctx context.Context, exemplarID, ausleiheID, bearbeiterID, beschreibung string, art SchadensArt, betrag float64) (string, error) {
+	tx, err := a.db.Begin(ctx)
 	if err != nil {
 		return "", err
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	schadensID, err := meldeSchaden(ctx, tx, meldeSchadenParams{
-		copyID:       copyID,
-		loanID:       loanID,
-		benutzerID:   benutzerID,
+	schadensID, err := meldeSchaden(ctx, tx, schadensMeldung{
+		exemplarID:   exemplarID,
+		ausleiheID:   ausleiheID,
+		bearbeiterID: bearbeiterID,
 		beschreibung: beschreibung,
 		art:          art,
 		betrag:       betrag,

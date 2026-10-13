@@ -19,9 +19,9 @@ import (
 )
 
 // queryRechnungItems lädt die offenen Forderungen eines Schülers ohne Bescheid als
-// Rechnungspositionen (repository.ListeOffeneForderungenOhneBescheid).
+// Rechnungspositionen (repository.LadeOffeneForderungenOhneBescheid).
 func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.RechnungItem, error) {
-	posten, err := repository.ListeOffeneForderungenOhneBescheid(ctx, dbPool, schuelerID)
+	posten, err := repository.LadeOffeneForderungenOhneBescheid(ctx, dbPool, schuelerID)
 	if err != nil {
 		return nil, err
 	}

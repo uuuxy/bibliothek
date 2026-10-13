@@ -25,13 +25,13 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	// Der konkrete Typ, weil ein Untertest gegen schuljahreMitAusleihe vergleicht — die
+	// Der konkrete Typ, weil ein Untertest gegen zaehleSchuljahreMitAusleihe vergleicht — die
 	// private Methode, die der Bescheid-Weg benutzt. Zweiwertig geprüft, damit ein
 	// Umbau der Konstruktorsignatur hier einen Satz erzeugt und keine Panik.
-	repo, ok := NewBescheidRepository(pool).(*pgBescheidRepository)
+	repo, ok := NewBescheidAbfragen(pool).(*pgBescheidAbfragen)
 	if !ok {
-		t.Fatalf("NewBescheidRepository liefert %T, erwartet *pgBescheidRepository",
-			NewBescheidRepository(pool))
+		t.Fatalf("NewBescheidAbfragen liefert %T, erwartet *pgBescheidAbfragen",
+			NewBescheidAbfragen(pool))
 	}
 
 	schuljahrBeginn := SchuljahrBeginn(schulzeit.Jetzt())
@@ -98,9 +98,9 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 	t.Run("frisch beschafft, nie ausgeliehen — 1. Verleihjahr", func(t *testing.T) {
 		id := erworbenVorJahren(t, 0, 20.00)
 
-		g, err := repo.GroessenFuerExemplar(ctx, id)
+		g, err := repo.LadeGroessenFuerExemplar(ctx, id)
 		if err != nil {
-			t.Fatalf("GroessenFuerExemplar: %v", err)
+			t.Fatalf("LadeGroessenFuerExemplar: %v", err)
 		}
 		if g.Kaufpreis != 20.00 {
 			t.Errorf("Kaufpreis = %.2f, want 20.00", g.Kaufpreis)
@@ -117,9 +117,9 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 	t.Run("vier Schuljahre im Bestand — 5. Verleihjahr, 20 %", func(t *testing.T) {
 		id := erworbenVorJahren(t, 4, 30.00)
 
-		g, err := repo.GroessenFuerExemplar(ctx, id)
+		g, err := repo.LadeGroessenFuerExemplar(ctx, id)
 		if err != nil {
-			t.Fatalf("GroessenFuerExemplar: %v", err)
+			t.Fatalf("LadeGroessenFuerExemplar: %v", err)
 		}
 		if g.SchuljahreImBestand != 4 {
 			t.Fatalf("SchuljahreImBestand = %d, want 4", g.SchuljahreImBestand)
@@ -140,9 +140,9 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 			ausgeliehenAm(t, id, schuljahrBeginn.AddDate(0, 0, tage))
 		}
 
-		g, err := repo.GroessenFuerExemplar(ctx, id)
+		g, err := repo.LadeGroessenFuerExemplar(ctx, id)
 		if err != nil {
-			t.Fatalf("GroessenFuerExemplar: %v", err)
+			t.Fatalf("LadeGroessenFuerExemplar: %v", err)
 		}
 		if g.SchuljahreMitAusleihe != 1 {
 			t.Errorf("SchuljahreMitAusleihe = %d, want 1 — drei Ausleihen, aber EIN Schuljahr",
@@ -158,18 +158,18 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 	t.Run("dieselbe Zählung wie der Bescheid-Weg", func(t *testing.T) {
 		// Die eigentliche Zusicherung dieses Gates: Melde-Dialog und Bescheid dürfen für
 		// dasselbe Exemplar nie verschiedene Verleihjahre nennen. Verglichen wird gegen
-		// schuljahreMitAusleihe — den Zähler, den OffeneForderungen benutzt.
+		// zaehleSchuljahreMitAusleihe — den Zähler, den LadeOffeneForderungen benutzt.
 		id := erworbenVorJahren(t, 2, 25.00)
 		ausgeliehenAm(t, id, schuljahrBeginn.AddDate(-2, 0, 5))
 		ausgeliehenAm(t, id, schuljahrBeginn.AddDate(-1, 0, 5))
 
-		g, err := repo.GroessenFuerExemplar(ctx, id)
+		g, err := repo.LadeGroessenFuerExemplar(ctx, id)
 		if err != nil {
-			t.Fatalf("GroessenFuerExemplar: %v", err)
+			t.Fatalf("LadeGroessenFuerExemplar: %v", err)
 		}
-		ueberDenBescheidWeg, err := repo.schuljahreMitAusleihe(ctx, []string{id})
+		ueberDenBescheidWeg, err := repo.zaehleSchuljahreMitAusleihe(ctx, []string{id})
 		if err != nil {
-			t.Fatalf("schuljahreMitAusleihe: %v", err)
+			t.Fatalf("zaehleSchuljahreMitAusleihe: %v", err)
 		}
 		if g.SchuljahreMitAusleihe != ueberDenBescheidWeg[id] {
 			t.Errorf("Melde-Dialog zählt %d Schuljahre, der Bescheid-Weg %d — für dasselbe "+
@@ -182,7 +182,7 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 		// Der Dialog fragt beim Öffnen; zwischen Anzeige und Klick kann ein Exemplar
 		// verschwunden sein. Der Handler macht daraus ein 404 — dafür muss hier ein
 		// erkennbares ErrNoRows ankommen und kein irgendwie gearteter Scan-Fehler.
-		_, err := repo.GroessenFuerExemplar(ctx, "00000000-0000-0000-0000-000000000000")
+		_, err := repo.LadeGroessenFuerExemplar(ctx, "00000000-0000-0000-0000-000000000000")
 		if err == nil {
 			t.Fatal("kein Fehler für ein Exemplar, das es nicht gibt")
 		}

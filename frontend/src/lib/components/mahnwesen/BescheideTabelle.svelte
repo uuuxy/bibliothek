@@ -3,7 +3,7 @@
 
      Die ersten drei Reiter des Mahnwesens fragen „Wer hat Bücher zu spät?". Dieser
      fragt nach dem Geld: Sobald ein Verlust oder Schaden gemeldet ist, endet die
-     Ausleihe (ReportDamage), das Kind fällt aus der Mahnliste — und stand bis zum
+     Ausleihe (repository/schaden.go), das Kind fällt aus der Mahnliste — und stand bis zum
      15.09.2026 nirgends mehr, bis jemand zufällig den Bescheid fand. Jetzt hat die
      Stufe „Forderung offen, noch kein Brief" ihre eigene Zeile, oben, weil sie der
      erste Schritt ist; darunter die Briefe, abgelaufene Fristen zuerst (Server).

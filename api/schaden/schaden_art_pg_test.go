@@ -46,7 +46,7 @@ func TestSchadenMelden_ArtKommtAusDerMeldung(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.ReportDamageHandler(repository.NewDamageRepository(pool))(rec, req)
+		srv.ReportDamageHandler(repository.NewSchadensAbfragen(pool))(rec, req)
 		return rec, loan
 	}
 

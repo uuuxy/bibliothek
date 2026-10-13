@@ -21,14 +21,14 @@ import (
 // @Success      200 {object} service.ErsatzwertVorschlag
 // @Failure      404 {object} apierrors.APIError
 // @Router       /buecher/exemplare/{id}/ersatzwert-vorschlag [get]
-func (s *Tueren) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
 
-		groessen, err := bescheidRepo.GroessenFuerExemplar(r.Context(), id)
+		groessen, err := bescheidRepo.LadeGroessenFuerExemplar(r.Context(), id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Exemplar nicht gefunden", err)

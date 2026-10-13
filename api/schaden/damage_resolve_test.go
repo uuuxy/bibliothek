@@ -15,7 +15,7 @@ import (
 
 // Die HTTP-Schicht der Gebühren-Erledigung: Statuscode-Mapping der Sentinels
 // (404/409 statt sanitiertem 500), Pflicht-Grund beim Storno, 401 ohne Session.
-// Das SQL-Verhalten selbst sichert repository/gebuehr_erledigung_pg_test.go.
+// Das SQL-Verhalten selbst sichert repository/forderung_erledigen_pg_test.go.
 
 type stubGebuehrAuditRepo struct {
 	repository.ProtokollAbfragen

@@ -101,7 +101,7 @@ test.describe('Schadensersatz-Bescheid', () => {
 		// Der Reiter „Schadensersatz" steht in der Reihe nach Dringlichkeit — und zeigt das
 		// Kind SCHON VOR dem Brief: Seit dem 15.09.2026 hat die Stufe „Forderung offen, noch
 		// kein Bescheid" eine eigene Zeile. Vorher war ein Kind mit gemeldetem Verlust
-		// nirgends zu sehen, sobald die Mahnliste neu geladen war (ReportDamage beendet die
+		// nirgends zu sehen, sobald die Mahnliste neu geladen war (die Schadensmeldung beendet die
 		// Ausleihe).
 		await expect(page.getByRole('tab', { name: /Schadensersatz/ })).toBeVisible();
 		await page.getByRole('tab', { name: /Schadensersatz/ }).click();

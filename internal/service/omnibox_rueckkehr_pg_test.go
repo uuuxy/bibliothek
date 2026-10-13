@@ -79,8 +79,8 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	userRepo := repository.NewKontoAbfragen(pool)
 	loanRepo := repository.NewLoanRepository(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	damageRepo := repository.NewDamageRepository(pool)
-	bescheidRepo := repository.NewBescheidRepository(pool)
+	damageRepo := repository.NewSchadensAbfragen(pool)
+	bescheidRepo := repository.NewBescheidAbfragen(pool)
 	loanSvc := NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
 	svc := NewOmniboxService(pool, studentRepo, bookRepo, userRepo, loanRepo, loanSvc, deviceSvc)
@@ -108,15 +108,15 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 			`SELECT id FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL`, exemplarID).Scan(&loanID); err != nil {
 			t.Fatalf("Ausleihe lesen: %v", err)
 		}
-		schadensID, err := damageRepo.ReportDamage(ctx, exemplarID, loanID, mitarbeiterID,
+		schadensID, err := damageRepo.Melde(ctx, exemplarID, loanID, mitarbeiterID,
 			"Nicht zurückgegeben (Test)", repository.SchadensArtNichtZurueck, 12.00)
 		if err != nil {
 			t.Fatalf("Forderung melden: %v", err)
 		}
-		b, err := bescheidRepo.Erstelle(ctx, repository.BescheidEingabe{
+		b, err := bescheidRepo.LegeAn(ctx, repository.BescheidEingabe{
 			SchuelerID: schuelerID, Mittel: "land", Kassenjahr: time.Now().Year(), FristBis: frist,
 			Positionen:     []repository.BescheidPositionEingabe{{SchadensfallID: schadensID, Betrag: 12.00}},
-			Snapshot:       map[string]string{"name": "Wieder Da"},
+			Empfaenger:     map[string]string{"name": "Wieder Da"},
 			ErstelltVon:    mitarbeiterID,
 			Referenznummer: func(nr int) string { return fmt.Sprintf("TEST-%s-%04d", suffix, nr) },
 		})
@@ -171,7 +171,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	if offen, _ := forderungOffen(t, barcodeUeberg); !offen {
 		t.Error("nach der Übergabe darf die Schule die Forderung nicht selbst stornieren — der Fall liegt bei der Aufsicht")
 	}
-	b, err := bescheidRepo.Lies(ctx, bescheidID)
+	b, err := bescheidRepo.Lade(ctx, bescheidID)
 	if err != nil {
 		t.Fatalf("Bescheid lesen: %v", err)
 	}
@@ -215,7 +215,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		`SELECT id FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL`, defektID).Scan(&defektLoanID); err != nil {
 		t.Fatalf("Ausleihe lesen: %v", err)
 	}
-	if _, err := damageRepo.ReportDamage(ctx, defektID, defektLoanID, mitarbeiterID,
+	if _, err := damageRepo.Melde(ctx, defektID, defektLoanID, mitarbeiterID,
 		"Wasserschaden (Test)", repository.SchadensArtBeschaedigt, 7.50); err != nil {
 		t.Fatalf("Schaden melden: %v", err)
 	}

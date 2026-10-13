@@ -24,7 +24,7 @@ import (
 // es nichts zu tun.
 //
 // Seit dem 15.09.2026 endet mit dem Fund auch die Forderung „nicht zurückgegeben", die
-// das Buch abgerechnet hat (VerbucheRueckkehr, dieselbe Regel wie an der Theke): Vorher
+// das Buch abgerechnet hat (verbucheRueckkehr, dieselbe Regel wie an der Theke): Vorher
 // stand das Buch wieder im Regal, das Kind blieb gesperrt und die Forderung offen —
 // beendet wurde sie nur, wenn das Buch über die Theke zurückkam (OFFEN.md 5.3). Der
 // Befund sagt, was storniert wurde und ob ein Bescheid schon bei der Aufsicht liegt.

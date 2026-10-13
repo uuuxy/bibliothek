@@ -44,7 +44,7 @@ type BescheidErstellenRequest struct {
 // @Param        body body BescheidErstellenRequest true "Pot, deadline and positions"
 // @Success      201 {object} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [post]
-func (s *Tueren) BescheidErstellenHandler(bescheidRepo repository.BescheidRepository, auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
+func (s *Tueren) BescheidErstellenHandler(bescheidRepo repository.BescheidAbfragen, auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		return s.handleBescheidErstellen(w, r, bescheidRepo, auditRepo)
 	})
@@ -52,7 +52,7 @@ func (s *Tueren) BescheidErstellenHandler(bescheidRepo repository.BescheidReposi
 
 // handleBescheidErstellen prüft die Anfrage und die Pflichtangaben, schreibt den Bescheid und
 // protokolliert ihn.
-func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository, auditRepo repository.ProtokollAbfragen) error {
+func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidAbfragen, auditRepo repository.ProtokollAbfragen) error {
 	id := r.PathValue("id")
 	var req BescheidErstellenRequest
 	if id == "" {
@@ -92,14 +92,14 @@ func (s *Tueren) handleBescheidErstellen(w http.ResponseWriter, r *http.Request,
 		Mittel:         req.Mittel,
 		Kassenjahr:     frist.Year(),
 		FristBis:       frist,
-		Snapshot:       snapshot,
+		Empfaenger:     snapshot,
 		Absender:       bescheidAbsenderAus(angaben, schule),
 		ErstelltVon:    bescheidAkteur(ctx),
 		Referenznummer: func(nr int) string { return angaben.Referenznummer(frist.Year(), nr) },
 	}
 	eingabe.Positionen, eingabe.Verluste = bescheidPostenAus(req)
 
-	bescheid, err := bescheidRepo.Erstelle(ctx, eingabe)
+	bescheid, err := bescheidRepo.LegeAn(ctx, eingabe)
 	if err != nil {
 		// Die Zuordnungs-Prüfung ist ein Bedienfehler (Forderung bezahlt, storniert
 		// oder schon auf einem Brief), kein Serverfehler — ebenso ein Buch, das

@@ -30,7 +30,7 @@ func TestBescheidNachdruck_AbsenderBleibtWieZumBriefdatum(t *testing.T) {
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	repo := repository.NewBescheidRepository(pool)
+	repo := repository.NewBescheidAbfragen(pool)
 
 	sid := testdaten.SeedSchueler(t, pool, "S-ABSENDER", "Absenderkind", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Biologie 8")

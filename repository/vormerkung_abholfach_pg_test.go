@@ -12,7 +12,7 @@ import (
 //   - lehnt bedieneNaechstenWartenden das ausgesonderte Exemplar ab, der Nächste wird nie
 //     bedient.
 //
-// Bis zum 10.09.2026 tat das nur EINE von sieben Türen (ReportDamage). Inventur-Abschluss
+// Bis zum 10.09.2026 tat das nur EINE von sieben Türen (SchadensAbfragen.Melde). Inventur-Abschluss
 // (das Abholfach steht nicht im Regal und wird nicht gescannt → VERLUST), Status-Editor,
 // Aussondern, Ausbuchen, Bestandskorrektur, Defekt-Markierung und das Löschen von
 // Fehlbeständen ließen sie stehen (Bestands-Durchgang, Bugklasse „Ausgang ohne

@@ -12,18 +12,18 @@ import (
 // gemeldeten Schaden BESCHAEDIGUNG, auch bei „nicht zurückgegeben" — die Fund-Meldung
 // und das endgültige Löschen des Fehlbestandsberichts fanden diese Exemplare nie
 // (beide kennen nur VERLUST, OFFEN.md 5.3). Rot am alten Code: grund = BESCHAEDIGUNG.
-func TestReportDamage_NichtZurueckgegebenIstVerlust(t *testing.T) {
+func TestSchadenMelden_NichtZurueckgegebenIstVerlust(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewDamageRepository(pool)
+	repo := NewSchadensAbfragen(pool)
 
 	copyID := seedSignaturMitExemplaren(t, pool, "VerlustGrund", 1)[0]
 	schueler := seedSchueler(t, pool, "VG-A", "Dana", "8b")
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
 
-	if _, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 0); err != nil {
+	if _, err := repo.Melde(ctx, copyID, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 0); err != nil {
 		t.Fatalf("Verlust melden: %v", err)
 	}
 	if grund := aussonderungsGrund(t, pool, copyID); grund != "VERLUST" {
@@ -50,11 +50,11 @@ func TestMarkiereVerlustAlsGefunden_BeendetForderung(t *testing.T) {
 	schueler := seedSchueler(t, pool, "FF-A", "Emil", "9c")
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
-	schadensID, err := NewDamageRepository(pool).ReportDamage(ctx, copyID, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 18.50)
+	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter, "nicht zurückgegeben", SchadensArtNichtZurueck, 18.50)
 	if err != nil {
 		t.Fatalf("Verlust melden: %v", err)
 	}
-	// Unabhängig vom Grund, den ReportDamage setzt: Der Fund verlangt VERLUST.
+	// Unabhängig vom Grund, den SchadensAbfragen.Melde setzt: Der Fund verlangt VERLUST.
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET aussonderung_grund = 'VERLUST' WHERE id = $1`, copyID); err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func aussonderungsGrund(t *testing.T, pool *pgxpool.Pool, copyID string) string 
 //
 // Rot am alten Code: Die Forderung entstand — und stand in keiner Übersicht, weil beide
 // Listen die Sicht `schueler` lesen (OFFEN.md 5.17, Fund 1).
-func TestReportDamage_KollegeOhneForderung(t *testing.T) {
+func TestSchadenMelden_KollegeOhneForderung(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -109,7 +109,7 @@ func TestReportDamage_KollegeOhneForderung(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, copyID, kollege, bearbeiter)
 
-	schadensID, err := NewDamageRepository(pool).ReportDamage(ctx, copyID, loan, bearbeiter,
+	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter,
 		"nicht zurückgegeben", SchadensArtNichtZurueck, 15.0)
 	if err != nil {
 		t.Fatalf("Verlust melden: %v", err)
@@ -143,7 +143,7 @@ func TestReportDamage_KollegeOhneForderung(t *testing.T) {
 
 // Ohne Forderung gibt es keine Zeile, an der die Idempotenz hängt. Ein zweiter Klick darf
 // deshalb nicht das Rückgabedatum verschieben.
-func TestReportDamage_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
+func TestSchadenMelden_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -152,9 +152,9 @@ func TestReportDamage_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
 	kollege := seedKollege(t, pool, "A-90002", "Tom")
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, copyID, kollege, bearbeiter)
-	repo := NewDamageRepository(pool)
+	repo := NewSchadensAbfragen(pool)
 
-	if _, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
+	if _, err := repo.Melde(ctx, copyID, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
 		t.Fatalf("erste Meldung: %v", err)
 	}
 	var erste time.Time
@@ -162,7 +162,7 @@ func TestReportDamage_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
+	if _, err := repo.Melde(ctx, copyID, loan, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
 		t.Fatalf("zweite Meldung: %v", err)
 	}
 	var zweite time.Time

@@ -38,7 +38,7 @@ func (s *Tueren) GenerateDamagePDFHandler() http.HandlerFunc {
 		// Steht die Forderung auf einem Schadensersatz-Bescheid, gilt der Bescheid: Ein
 		// Elternbrief daneben nennte sie ein zweites Mal, mit eigener Frist und eigenem
 		// Zahlungsweg. Dieselbe Regel wie bei der Ersatzforderung
-		// (repository.ListeOffeneForderungenOhneBescheid); docs/OFFEN.md 5.2, 23.09.2026.
+		// (repository.LadeOffeneForderungenOhneBescheid); docs/OFFEN.md 5.2, 23.09.2026.
 		if aufBescheid {
 			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
 				"die Forderung steht auf einem Schadensersatz-Bescheid — dafür gilt der Bescheid, kein Elternbrief"))
@@ -104,8 +104,8 @@ func (s *Tueren) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 		Hausnummer:       fall.Hausnummer,
 		PLZ:              fall.PLZ,
 		Ort:              fall.Ort,
-		BuchTitel:        fall.BuchTitel,
-		ExemplarBarcode:  fall.ExemplarBarcode,
+		BuchTitel:        fall.Titel,
+		ExemplarBarcode:  fall.Barcode,
 		Land:             fall.Land,
 	}, aufBescheid, nil
 }

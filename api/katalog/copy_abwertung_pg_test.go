@@ -39,7 +39,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	statusTuer := srv.UpdateCopyStatusHandler(repository.NewBookRepository(pool), repository.NewBescheidRepository(pool))
+	statusTuer := srv.UpdateCopyStatusHandler(repository.NewBookRepository(pool), repository.NewBescheidAbfragen(pool))
 
 	setze := func(t *testing.T, koerper string) *httptest.ResponseRecorder {
 		t.Helper()
@@ -116,7 +116,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 	leseReq := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/exemplare", nil)
 	leseReq.SetPathValue("id", titelID)
 	leseRec := httptest.NewRecorder()
-	srv.GetTitleCopiesHandler(repository.NewBescheidRepository(pool)).ServeHTTP(leseRec, leseReq)
+	srv.GetTitleCopiesHandler(repository.NewBescheidAbfragen(pool)).ServeHTTP(leseRec, leseReq)
 	if leseRec.Code != http.StatusOK {
 		t.Fatalf("Exemplare lesen: erwartet 200, war %d: %s", leseRec.Code, leseRec.Body.String())
 	}
@@ -188,7 +188,7 @@ func TestExemplarliste_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/exemplare", nil)
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()
-	srv.GetTitleCopiesHandler(repository.NewBescheidRepository(pool)).ServeHTTP(rec, req)
+	srv.GetTitleCopiesHandler(repository.NewBescheidAbfragen(pool)).ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Exemplare lesen: erwartet 200, war %d: %s", rec.Code, rec.Body.String())
 	}
@@ -261,7 +261,7 @@ func TestExemplarliste_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/exemplare", nil)
 		req.SetPathValue("id", titelID)
 		rec := httptest.NewRecorder()
-		srv.GetTitleCopiesHandler(repository.NewBescheidRepository(pool)).ServeHTTP(rec, req)
+		srv.GetTitleCopiesHandler(repository.NewBescheidAbfragen(pool)).ServeHTTP(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Exemplare lesen: %d — %s", rec.Code, rec.Body.String())
 		}

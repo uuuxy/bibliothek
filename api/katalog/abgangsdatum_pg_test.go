@@ -39,7 +39,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	ctx := context.Background()
 	bookRepo := repository.NewBookRepository(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
-	damageRepo := repository.NewDamageRepository(pool)
+	damageRepo := repository.NewSchadensAbfragen(pool)
 
 	// Ein Bearbeiter für das Ausbuchen: Es schreibt einen Audit-Eintrag und verlangt
 	// deshalb eine echte Benutzer-ID.
@@ -72,7 +72,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	// Einstellungen — ohne Pool stürzt er dort ab (dieselbe Falle wie bei der Leserdatei
 	// am 17.09.2026).
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
+	srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidAbfragen(pool))(rec, tuertest.AlsBenutzer(req, testdaten.AdminFuerAudit(t, pool)))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status-Tür: HTTP %d: %s", rec.Code, rec.Body.String())
 	}
@@ -94,7 +94,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 		vier, schuelerID).Scan(&ausleiheID); err != nil {
 		t.Fatalf("Ausleihe anlegen: %v", err)
 	}
-	if _, err := damageRepo.ReportDamage(ctx, vier, ausleiheID, bearbeiterID, "Wasserschaden",
+	if _, err := damageRepo.Melde(ctx, vier, ausleiheID, bearbeiterID, "Wasserschaden",
 		repository.SchadensArtBeschaedigt, 12.50); err != nil {
 		t.Fatalf("Schaden melden: %v", err)
 	}

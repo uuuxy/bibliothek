@@ -58,13 +58,13 @@ func (b RueckkehrBefund) AufsichtHinweis() string {
 		strings.Join(b.AufsichtInformieren, ", "))
 }
 
-// VerbucheRueckkehr behandelt die offenen „nicht zurückgegeben"-Forderungen eines
+// verbucheRueckkehr behandelt die offenen „nicht zurückgegeben"-Forderungen eines
 // Exemplars, das wieder aufgetaucht ist.
 //
 // Die Transaktionsgrenze liegt beim Aufrufer (wie MarkiereVerlustAlsGefunden): Das
 // Zurückholen des Exemplars und das Ende der Forderung gehören in EINE Transaktion —
 // sonst steht das Buch wieder im Regal und die Forderung bleibt, oder umgekehrt.
-func VerbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterID string) (RueckkehrBefund, error) {
+func verbucheRueckkehr(ctx context.Context, q Datenbank, exemplarID, bearbeiterID string) (RueckkehrBefund, error) {
 	var befund RueckkehrBefund
 
 	// FOR UPDATE OF f: Zwei Arbeitsplätze, die denselben Barcode gleichzeitig scannen,

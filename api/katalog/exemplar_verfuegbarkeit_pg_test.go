@@ -42,7 +42,7 @@ func exemplarZeilen(t *testing.T, srv *Tueren, titelID string) []struct {
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()
 
-	srv.GetTitleCopiesHandler(repository.NewBescheidRepository(srv.DB.Pool))(rec, req)
+	srv.GetTitleCopiesHandler(repository.NewBescheidAbfragen(srv.DB.Pool))(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Exemplarliste: Status %d, Body %s", rec.Code, rec.Body.String())

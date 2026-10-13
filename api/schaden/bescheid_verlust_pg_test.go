@@ -55,7 +55,7 @@ func bescheidVorschlagUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.BescheidVorschlagHandler(repository.NewBescheidRepository(pool))(rec, req)
+	srv.BescheidVorschlagHandler(repository.NewBescheidAbfragen(pool))(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Vorschlag: Status %d: %s", rec.Code, rec.Body.String())
 	}

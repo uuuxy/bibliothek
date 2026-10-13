@@ -140,7 +140,7 @@ var fkAktionenBestand = []string{
 	// des Exemplars überlebt (api/inventurlauf/inventur_verlust_aktionen.go).
 	"SET NULL  inventur_verluste.exemplar_id -> buecher_exemplare",
 	// Befragt: Die Vormerkung fällt zurück auf „wartend", wenn ihr bereitgestelltes
-	// Exemplar verschwindet (repository/damage.go).
+	// Exemplar verschwindet (repository/schaden.go).
 	"SET NULL  vormerkungen.bereitgestellt_exemplar_id -> buecher_exemplare",
 	// Befragt am 07.09.2026: Die harmlose Hälfte — die Bestellung hält Name und E-Mail
 	// des Händlers als eigene Abschrift, die Historie überlebt das Löschen unbeschadet
@@ -462,7 +462,7 @@ var triggerBestand = []string{
 	"trg_schlagwort_verweis_pruefen @ schlagworte",
 	"trg_titel_schlagwort_kein_verweis @ titel_schlagworte",
 	// Migration 112, befragt am 10.09.2026: Die Folge (Vormerkung zurück auf „wartend")
-	// ist genau der Zweck — vorher kannte sie nur ReportDamage, sechs andere Aussonder- und
+	// ist genau der Zweck — vorher kannte sie nur SchadensAbfragen.Melde, sechs andere Aussonder- und
 	// Löschwege ließen das Kind im Abholfach stehen (repository/vormerkung_abholfach_pg_test.go).
 	"trg_exemplar_aus_dem_umlauf @ buecher_exemplare",
 	"trg_exemplar_geloescht_abholfach @ buecher_exemplare",

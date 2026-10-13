@@ -69,9 +69,9 @@ func bescheidAudit(ctx context.Context, s *Tueren, auditRepo repository.Protokol
 // @Param        status query string false "offen = nur nicht übergebene"
 // @Success      200 {array} repository.Bescheid
 // @Router       /bescheide [get]
-func (s *Tueren) BescheidListeHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) BescheidListeHandler(bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		liste, err := bescheidRepo.Liste(r.Context(), r.URL.Query().Get("status") == "offen")
+		liste, err := bescheidRepo.LadeListe(r.Context(), r.URL.Query().Get("status") == "offen")
 		if err != nil {
 			return apierrors.Internal("Bescheide konnten nicht gelesen werden", err)
 		}
@@ -88,13 +88,13 @@ func (s *Tueren) BescheidListeHandler(bescheidRepo repository.BescheidRepository
 // @Param        id path string true "Student ID"
 // @Success      200 {array} repository.Bescheid
 // @Router       /schueler/{id}/bescheide [get]
-func (s *Tueren) BescheidSchuelerListeHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) BescheidSchuelerListeHandler(bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest(tuer.MeldungIDLeer, errors.New("missing id"))
 		}
-		liste, err := bescheidRepo.ZuSchueler(r.Context(), id)
+		liste, err := bescheidRepo.LadeZuSchueler(r.Context(), id)
 		if err != nil {
 			return apierrors.Internal("Bescheide konnten nicht gelesen werden", err)
 		}
@@ -114,7 +114,7 @@ func (s *Tueren) BescheidSchuelerListeHandler(bescheidRepo repository.BescheidRe
 // @Param        id path string true "Notice ID"
 // @Success      200 {object} map[string]any
 // @Router       /bescheide/{id}/uebergeben [post]
-func (s *Tueren) BescheidUebergebenHandler(bescheidRepo repository.BescheidRepository, auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
+func (s *Tueren) BescheidUebergebenHandler(bescheidRepo repository.BescheidAbfragen, auditRepo repository.ProtokollAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {

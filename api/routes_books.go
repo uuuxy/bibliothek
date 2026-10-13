@@ -38,7 +38,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// (OFFEN.md 9.8, Stufe 2b). Recht bleibt view_books: Was ein Ersatz kostet, ist eine
 	// Angabe über das BUCH — kein Schülerdatum. Gerechnet wird mit derselben Funktion wie
 	// im Melde-Dialog, gelesen über das Bescheid-Repository, dem die Staffel-Größen gehören.
-	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.katalog().GetTitleCopiesHandler(repository.NewBescheidRepository(s.DB.Pool))))
+	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.katalog().GetTitleCopiesHandler(repository.NewBescheidAbfragen(s.DB.Pool))))
 	// Ausleiher und Historie hinter view_students, nicht view_books: Beide
 	// verknüpfen Schülernamen mit Titeln (die Historie über Jahre) — dieselbe
 	// Befundklasse wie die Vormerkungen (bewertung/sicherheitsbefund-*.md),
@@ -77,7 +77,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 
 	// Update specific copy fields
 	mux.Handle("PUT /api/buecher/exemplare/{id}/barcode", s.RequirePermission("edit_books")(s.katalog().UpdateCopyBarcodeHandler(bookRepo)))
-	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.katalog().UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(s.DB.Pool))))
+	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.katalog().UpdateCopyStatusHandler(bookRepo, repository.NewBescheidAbfragen(s.DB.Pool))))
 
 	// ── AUSLEIHEN (Loans) ──
 	settingsRepo := repository.NewEinstellungsAbfragen(s.DB.Pool)

@@ -21,8 +21,8 @@ type SchadensfallBrief struct {
 	Hausnummer       string
 	PLZ              string
 	Ort              string
-	BuchTitel        string
-	ExemplarBarcode  string
+	Titel            string
+	Barcode          string
 	Land             bool
 }
 
@@ -57,7 +57,7 @@ func LadeSchadensfallBrief(ctx context.Context, db Datenbank, id string) (Schade
 		&f.Beschreibung, &f.Betrag, &f.ErstelltAm,
 		&f.SchuelerVorname, &f.SchuelerNachname, &f.SchuelerKlasse,
 		&f.Strasse, &f.Hausnummer, &f.PLZ, &f.Ort,
-		&f.BuchTitel, &f.ExemplarBarcode, &f.Land, &aufBescheid,
+		&f.Titel, &f.Barcode, &f.Land, &aufBescheid,
 	)
 	if err != nil {
 		return SchadensfallBrief{}, false, err
@@ -88,7 +88,7 @@ type RechnungsPosition struct {
 	Land         bool
 }
 
-// ListeOffeneForderungenOhneBescheid lädt die offenen (unbezahlten) Schadensfälle eines
+// LadeOffeneForderungenOhneBescheid lädt die offenen (unbezahlten) Schadensfälle eines
 // Schülers als Rechnungspositionen.
 //
 // LEFT JOIN, nicht INNER (Bestands-Durchgang 06.09.2026, Frage 3): `exemplar_id` und
@@ -114,7 +114,7 @@ type RechnungsPosition struct {
 //
 // Eine unlesbare Zeile bricht ab: Eine Rechnung, der still eine Position fehlt, nennt einen zu
 // kleinen Betrag. Lieber gar kein Brief als ein falscher.
-func ListeOffeneForderungenOhneBescheid(ctx context.Context, db Datenbank, schuelerID uuid.UUID) ([]RechnungsPosition, error) {
+func LadeOffeneForderungenOhneBescheid(ctx context.Context, db Datenbank, schuelerID uuid.UUID) ([]RechnungsPosition, error) {
 	query := `
 		SELECT COALESCE(t.titel, g.modellname, sf.beschreibung),
 		       COALESCE(e.barcode_id, g.barcode_id, ''),
@@ -140,18 +140,18 @@ func ListeOffeneForderungenOhneBescheid(ctx context.Context, db Datenbank, schue
 	}
 	defer rows.Close()
 
-	var items []RechnungsPosition
+	var positionen []RechnungsPosition
 	for rows.Next() {
-		var item RechnungsPosition
-		if err := rows.Scan(&item.Titel, &item.Barcode, &item.Ausleihdatum, &item.Ersatzpreis, &item.Land); err != nil {
+		var p RechnungsPosition
+		if err := rows.Scan(&p.Titel, &p.Barcode, &p.Ausleihdatum, &p.Ersatzpreis, &p.Land); err != nil {
 			return nil, err
 		}
-		items = append(items, item)
+		positionen = append(positionen, p)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return items, nil
+	return positionen, nil
 }
 
 // HatOffeneForderungAufBescheid sagt, ob eine unbezahlte Forderung des Lesers auf einem

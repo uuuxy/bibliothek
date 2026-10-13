@@ -177,7 +177,7 @@ Ausweisnummer und Klasse mit 200 weg. Beide Richtungen sind jetzt geregelt und g
 | Bestellbedarf meint **Lernmittel**: Freihandbestand sind bewusste Einzelstücke (Prüf-/Leseexemplare) und wird nie „aufgefüllt" | 🟡 Default `?type=lmf` + Test                                           | `api/bestellung/reorders.go`, `api/bestellung/reorders_test.go`                   |
 | Bestätigung einer Bestellung gilt genau einmal                                                                                 | 🟢 `WHERE bestaetigt_am IS NULL` (409 statt Überschreiben)              | `api/bestellung/bestellbestaetigung_handler.go` (`bestaetigeBestellung`)                     |
 | Eine Referenznummer wird **nie zweimal** vergeben (Bescheid)                                                                   | 🟢 UNIQUE + gesperrter Zähler (`UPDATE … RETURNING`) + PG-Test parallel | `uniq_bescheid_nummer`, `schadensersatz_nummern`, `api/schaden/bescheid_pg_test.go`       |
-| Eine Forderung steht auf **höchstens einem** Bescheid                                                                          | 🟡 WHERE-Bedingung der Zuordnung + PG-Test (409)                        | `repository/bescheid.go` (`ordnePositionenZu`)                                    |
+| Eine Forderung steht auf **höchstens einem** Bescheid                                                                          | 🟡 WHERE-Bedingung der Zuordnung + PG-Test (409)                        | `repository/bescheid_anlegen.go` (`ordnePositionenZu`)                                    |
 | Der Nachdruck eines Bescheids ergibt **dasselbe Blatt** (Nummer, Betrag, Anschrift)                                            | 🟡 Empfänger-Snapshot + PG-Test am PDF                                  | `schadensersatz_bescheide.empfaenger_snapshot`, `api/schaden/bescheid_pg_test.go`         |
 | Übergabe an die Aufsicht erst **nach Fristablauf**, genau einmal und **nur mit offener Forderung**                             | 🟡 `WHERE` = `bescheidFristAbgelaufen` + PG-Test (bezahlt → 409)        | `repository/bescheid.go` (`Uebergebe`)                                            |
 | Ein Bescheid ohne offene Forderung ist **erledigt** (abgeleitet, nicht gespeichert — Bezahlen/Storno laufen über die Forderung) | 🟡 Leser-Ableitung `bescheidHatOffenePosition` + PG-Test               | `repository/bescheid.go` (`bescheidSpalten`)                                      |
@@ -584,7 +584,7 @@ Bestand am 07.10.2026:
 - **Frage 3, die Prüfung der Schwester:** Führen zwei Türen zum selben Vorgang, prüft jede,
   was die andere prüft? Beleg vom 07.10.2026: Der Bescheid lehnte ein Buch ab, das
   inzwischen zurück ist, „Verlust melden" in der Akte nicht — das Buch im Regal wurde als
-  Verlust ausgesondert, das Kind bekam eine Forderung (`repository/damage_race_test.go`).
+  Verlust ausgesondert, das Kind bekam eine Forderung (`repository/schaden_melden_ausleihe_pg_test.go`).
 
 ### Zu Frage 19 (neu am 07.10.2026)
 

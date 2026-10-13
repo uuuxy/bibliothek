@@ -44,7 +44,7 @@ func TestExemplarliste_SagtWasZumBestandZaehlt(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titel+"/exemplare", nil)
 	req.SetPathValue("id", titel)
 	rec := httptest.NewRecorder()
-	srv.GetTitleCopiesHandler(repository.NewBescheidRepository(pool))(rec, req)
+	srv.GetTitleCopiesHandler(repository.NewBescheidAbfragen(pool))(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Exemplarliste: Status %d, Body %s", rec.Code, rec.Body.String())
 	}

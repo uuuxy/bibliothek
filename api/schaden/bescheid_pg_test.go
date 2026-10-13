@@ -39,7 +39,7 @@ func bescheidErstellenUeberHandler(t *testing.T, srv *Tueren, pool *pgxpool.Pool
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: testdaten.AdminFuerAudit(t, pool), Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.BescheidErstellenHandler(repository.NewBescheidRepository(pool), repository.NewProtokollAbfragen(pool))(rec, req)
+	srv.BescheidErstellenHandler(repository.NewBescheidAbfragen(pool), repository.NewProtokollAbfragen(pool))(rec, req)
 	return rec
 }
 
@@ -316,7 +316,7 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	repo := repository.NewBescheidRepository(pool)
+	repo := repository.NewBescheidAbfragen(pool)
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-4", "Fristkind", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Physik 9")
@@ -384,7 +384,7 @@ func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	repo := repository.NewBescheidRepository(pool)
+	repo := repository.NewBescheidAbfragen(pool)
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-BEZ", "Zahlkind", "08G2")
 	titelID := testdaten.BescheidLernmittel(t, pool, "Biologie 8")
@@ -405,7 +405,7 @@ func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gelesen, err := repo.Lies(ctx, b.ID)
+	gelesen, err := repo.Lade(ctx, b.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -415,7 +415,7 @@ func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
 	if err := repo.Uebergebe(ctx, b.ID); !errors.Is(err, pgx.ErrNoRows) {
 		t.Errorf("Übergabe eines bezahlten Bescheids: err = %v, want pgx.ErrNoRows (409)", err)
 	}
-	offen, err := repo.Liste(ctx, true)
+	offen, err := repo.LadeListe(ctx, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -435,7 +435,7 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 	ctx := context.Background()
 	testdaten.BescheidAngabenSetzen(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	repo := repository.NewBescheidRepository(pool)
+	repo := repository.NewBescheidAbfragen(pool)
 
 	sid := testdaten.SeedSchueler(t, pool, "S-BESCHEID-5", "Umzugskind", "08G2")
 	if _, err := pool.Exec(ctx,

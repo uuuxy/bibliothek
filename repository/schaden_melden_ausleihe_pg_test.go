@@ -8,14 +8,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestReportDamageRace sichert den Race-Schutz ab: Bleibt das Schadensformular offen,
+// TestSchadenMelden_InzwischenNeuVerliehen sichert den Race-Schutz ab: Bleibt das Schadensformular offen,
 // während das Buch zurückgegeben und neu ausgeliehen wird, darf der "Melden"-Klick das
 // jetzt aktiv verliehene Exemplar nicht aussondern.
-func TestReportDamageRace(t *testing.T) {
+func TestSchadenMelden_InzwischenNeuVerliehen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewDamageRepository(pool)
+	repo := NewSchadensAbfragen(pool)
 
 	ex := seedSignaturMitExemplaren(t, pool, "RaceTest", 1)
 	copyID := ex[0]
@@ -30,7 +30,7 @@ func TestReportDamageRace(t *testing.T) {
 	seedAusleihe(t, pool, copyID, schuelerB, bearbeiter)
 
 	// Jetzt kommt der verspätete "Schaden melden"-Klick mit der ALTEN loanID.
-	_, err := repo.ReportDamage(ctx, copyID, alteLoan, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 5.0)
+	_, err := repo.Melde(ctx, copyID, alteLoan, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 5.0)
 	if !errors.Is(err, ErrExemplarNeuVerliehen) {
 		t.Fatalf("erwartet ErrExemplarNeuVerliehen, war: %v", err)
 	}
@@ -49,13 +49,13 @@ func TestReportDamageRace(t *testing.T) {
 	}
 }
 
-// TestReportDamageNormalfall stellt sicher, dass der Guard den regulären Fall nicht
+// TestSchadenMelden_Normalfall stellt sicher, dass der Guard den regulären Fall nicht
 // blockiert: Ein Schaden an der eigenen, noch aktiven Ausleihe geht durch.
-func TestReportDamageNormalfall(t *testing.T) {
+func TestSchadenMelden_Normalfall(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewDamageRepository(pool)
+	repo := NewSchadensAbfragen(pool)
 
 	ex := seedSignaturMitExemplaren(t, pool, "NormalTest", 1)
 	copyID := ex[0]
@@ -63,7 +63,7 @@ func TestReportDamageNormalfall(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
 
-	schadensID, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 3.0)
+	schadensID, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 3.0)
 	if err != nil {
 		t.Fatalf("regulärer Schaden abgelehnt: %v", err)
 	}
@@ -78,16 +78,16 @@ func TestReportDamageNormalfall(t *testing.T) {
 	}
 }
 
-// TestReportDamageIdempotent sichert #4 (Doppelte Rechnungen) ab: Ein doppelt abgeschickter
+// TestSchadenMelden_Idempotent sichert #4 (Doppelte Rechnungen) ab: Ein doppelt abgeschickter
 // "Schaden melden"-Klick mit derselben ausleihe_id darf den Schüler nicht zweimal belasten.
 // Der zweite Aufruf muss den bereits angelegten Schadensfall idempotent zurückgeben; es darf
 // genau EIN Schadensfall entstehen. Der FOR-UPDATE-Lock auf der Ausleihe-Zeile serialisiert
 // dabei auch die echt parallele Variante (zwei Transaktionen gleichzeitig).
-func TestReportDamageIdempotent(t *testing.T) {
+func TestSchadenMelden_Idempotent(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewDamageRepository(pool)
+	repo := NewSchadensAbfragen(pool)
 
 	ex := seedSignaturMitExemplaren(t, pool, "IdemTest", 1)
 	copyID := ex[0]
@@ -95,11 +95,11 @@ func TestReportDamageIdempotent(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
 
-	id1, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
+	id1, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
 	if err != nil {
 		t.Fatalf("erster Report abgelehnt: %v", err)
 	}
-	id2, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
+	id2, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
 	if err != nil {
 		t.Fatalf("zweiter Report (Doppelklick) abgelehnt: %v", err)
 	}
@@ -158,15 +158,15 @@ func returnLoan(t *testing.T, pool *pgxpool.Pool, loanID string) {
 	}
 }
 
-// TestReportDamageSchuldnerAusAusleihe belegt die Objektbindung: Der Schadensfall wird dem
-// Schuldner der Ausleihe zugeschrieben. Eine Kennung des Schuldners nimmt ReportDamage nicht
+// TestSchadenMelden_SchuldnerAusAusleihe belegt die Objektbindung: Der Schadensfall wird dem
+// Schuldner der Ausleihe zugeschrieben. Eine Kennung des Schuldners nimmt SchadensAbfragen.Melde nicht
 // entgegen; dass die mitgeschickte schueler_id der Anfrage folgenlos bleibt, prüft
 // api/schaden/schaden_schuldner_pg_test.go an der Route.
-func TestReportDamageSchuldnerAusAusleihe(t *testing.T) {
+func TestSchadenMelden_SchuldnerAusAusleihe(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewDamageRepository(pool)
+	repo := NewSchadensAbfragen(pool)
 
 	ex := seedSignaturMitExemplaren(t, pool, "BindTest", 1)
 	copyID := ex[0]
@@ -176,9 +176,9 @@ func TestReportDamageSchuldnerAusAusleihe(t *testing.T) {
 
 	loan := seedAusleihe(t, pool, copyID, echterSchuldner, bearbeiter)
 
-	schadensID, err := repo.ReportDamage(ctx, copyID, loan, bearbeiter, "Riss", SchadensArtBeschaedigt, 4.0)
+	schadensID, err := repo.Melde(ctx, copyID, loan, bearbeiter, "Riss", SchadensArtBeschaedigt, 4.0)
 	if err != nil {
-		t.Fatalf("ReportDamage: %v", err)
+		t.Fatalf("Melde: %v", err)
 	}
 
 	var gebucht string
@@ -196,8 +196,8 @@ func TestReportDamageSchuldnerAusAusleihe(t *testing.T) {
 // Ausleihe dort weiter in der Liste. „Nicht zurückgegeben" auf diese Zeile darf das Buch, das
 // im Regal steht, nicht aussondern und dem Kind keine Forderung anhängen. Der Weg über den
 // Bescheid prüft dasselbe (bucheVerluste). „Beschädigt zurückgegeben" bleibt nach der Rückgabe
-// möglich (TestReportDamage_ResetsAbholbereiteVormerkung).
-func TestReportDamage_AusleiheInzwischenZurueck(t *testing.T) {
+// möglich (TestSchadenMelden_SetztAbholbereiteVormerkungZurueck).
+func TestSchadenMelden_AusleiheInzwischenZurueck(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -208,7 +208,7 @@ func TestReportDamage_AusleiheInzwischenZurueck(t *testing.T) {
 	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
 	returnLoan(t, pool, loan)
 
-	_, err := NewDamageRepository(pool).ReportDamage(ctx, copyID, loan, bearbeiter,
+	_, err := NewSchadensAbfragen(pool).Melde(ctx, copyID, loan, bearbeiter,
 		"nicht zurückgegeben", SchadensArtNichtZurueck, 12.0)
 	if !errors.Is(err, ErrAusleiheInzwischenZurueck) {
 		t.Fatalf("erwartet ErrAusleiheInzwischenZurueck, war: %v", err)
@@ -228,7 +228,7 @@ func TestReportDamage_AusleiheInzwischenZurueck(t *testing.T) {
 
 // Das Exemplar steht an der Ausleihe wie der Schuldner. Nennt die Anfrage ein anderes, trifft
 // die Meldung trotzdem das geliehene Buch und lässt das genannte in Ruhe.
-func TestReportDamage_ExemplarKommtAusDerAusleihe(t *testing.T) {
+func TestSchadenMelden_ExemplarKommtAusDerAusleihe(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -239,7 +239,7 @@ func TestReportDamage_ExemplarKommtAusDerAusleihe(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, geliehen, schueler, bearbeiter)
 
-	schadensID, err := NewDamageRepository(pool).ReportDamage(ctx, imRegal, loan, bearbeiter,
+	schadensID, err := NewSchadensAbfragen(pool).Melde(ctx, imRegal, loan, bearbeiter,
 		"Wasserschaden", SchadensArtBeschaedigt, 6.0)
 	if err != nil {
 		t.Fatalf("Meldung abgelehnt: %v", err)

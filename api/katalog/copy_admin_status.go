@@ -38,7 +38,7 @@ type UpdateStatusRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /buecher/exemplare/{id}/status [put]
-func (s *Tueren) UpdateCopyStatusHandler(bookRepo repository.BookRepository, bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) UpdateCopyStatusHandler(bookRepo repository.BookRepository, bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleUpdateCopyStatus(w, r, bookRepo, bescheidRepo)
 	}
@@ -46,7 +46,7 @@ func (s *Tueren) UpdateCopyStatusHandler(bookRepo repository.BookRepository, bes
 
 // handleUpdateCopyStatus speichert Status und Zustand eines Exemplars und nennt den neuen
 // Ersatzwert.
-func (s *Tueren) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, bookRepo repository.BookRepository, bescheidRepo repository.BescheidRepository) {
+func (s *Tueren) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, bookRepo repository.BookRepository, bescheidRepo repository.BescheidAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
@@ -100,7 +100,7 @@ func (s *Tueren) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 	// Scheitert die Nachfrage, bleibt es bei der Erfolgsmeldung: Gespeichert ist
 	// gespeichert, und eine fehlende Auskunft darf daraus keinen Fehler machen.
 	antwort := map[string]any{"status": "success"}
-	if g, groessenErr := bescheidRepo.GroessenFuerExemplar(ctx, id); groessenErr == nil {
+	if g, groessenErr := bescheidRepo.LadeGroessenFuerExemplar(ctx, id); groessenErr == nil {
 		v := service.ErsatzwertVorschlagAus(g, service.ErsatzwertPreisquelle(ctx, s.DB.Pool))
 		antwort["ersatzwert"] = v.Betrag
 		antwort["ersatzwert_herleitung"] = v.Herleitung

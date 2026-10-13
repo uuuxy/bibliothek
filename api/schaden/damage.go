@@ -12,7 +12,7 @@ import (
 
 // ReportDamageHandler handles POST /api/damage/report
 // Sets ist_ausgesondert = true, inserts into schadensfaelle, and ends the loan.
-func (s *Tueren) ReportDamageHandler(damageRepo repository.DamageRepository) http.HandlerFunc {
+func (s *Tueren) ReportDamageHandler(damageRepo repository.SchadensAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
@@ -36,13 +36,13 @@ func (s *Tueren) ReportDamageHandler(damageRepo repository.DamageRepository) htt
 			return nil
 		}
 		art := repository.SchadensArt(req.Art)
-		if !art.Gueltig() {
+		if !art.IstGueltig() {
 			//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
 			return apierrors.BadRequest("Bitte angeben, ob das Buch nicht zurückgegeben oder beschädigt zurückgegeben wurde.",
 				errors.New("art fehlt oder ist ungültig"))
 		}
 
-		schadensID, err := damageRepo.ReportDamage(r.Context(), req.CopyID, req.LoanID, claims.UserID, req.Beschreibung, art, req.Betrag)
+		schadensID, err := damageRepo.Melde(r.Context(), req.CopyID, req.LoanID, claims.UserID, req.Beschreibung, art, req.Betrag)
 		if err != nil {
 			// Inzwischen neu verliehen oder zurückgegeben: ein Konflikt (409), kein
 			// Serverfehler. Die Akte zeigt einen Stand, den es nicht mehr gibt.

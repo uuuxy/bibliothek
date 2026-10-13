@@ -120,14 +120,14 @@ func (s *Tueren) DeleteTitleHandler(auditRepo repository.ProtokollAbfragen) http
 // @Failure      400  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /buecher/titel/{id}/exemplare [get]
-func (s *Tueren) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
+func (s *Tueren) GetTitleCopiesHandler(bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleGetTitleCopies(w, r, bescheidRepo)
 	}
 }
 
 // handleGetTitleCopies liest die Exemplare eines Titels mit Eigentum und Ersatzwert.
-func (s *Tueren) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidRepository) {
+func (s *Tueren) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, bescheidRepo repository.BescheidAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing title ID parameter"))
@@ -203,7 +203,7 @@ func (s *Tueren) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 	//
 	// Scheitert das, bleibt die Liste stehen und die Werte fehlen: Der Ersatzwert
 	// ist eine Auskunft, kein Grund, die Exemplar-Liste zu verweigern.
-	if groessen, err := bescheidRepo.GroessenFuerTitel(ctx, id); err == nil {
+	if groessen, err := bescheidRepo.LadeGroessenFuerTitel(ctx, id); err == nil {
 		quelle := service.ErsatzwertPreisquelle(ctx, s.DB.Pool)
 		for i := range copies {
 			g, da := groessen[copies[i].ID]

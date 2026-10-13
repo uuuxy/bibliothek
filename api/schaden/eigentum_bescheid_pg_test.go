@@ -78,16 +78,16 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 	}
 
 	// 2. Der Reiter „Schadensersatz": Wer einen Landes-Bescheid bekommen kann.
-	zeilen, err := repository.NewBescheidRepository(pool).Ausstehend(ctx)
+	zeilen, err := repository.NewBescheidAbfragen(pool).LadeForderungenOhneBescheid(ctx)
 	if err != nil {
-		t.Fatalf("Ausstehend: %v", err)
+		t.Fatalf("LadeForderungenOhneBescheid: %v", err)
 	}
 	land := map[string]bool{}
 	for _, z := range zeilen {
 		land[z.SchuelerID] = z.Land
 	}
 	if !land[sidLand] || land[sidTraeger] {
-		t.Errorf("Ausstehend: Land %v bei der Lektüre, %v beim Schulbuch des Trägers — erwartet true, false",
+		t.Errorf("LadeForderungenOhneBescheid: Land %v bei der Lektüre, %v beim Schulbuch des Trägers — erwartet true, false",
 			land[sidLand], land[sidTraeger])
 	}
 

@@ -467,7 +467,7 @@ darüber ein und kommen deshalb nach ihm an die Reihe: `auskunft`, `bereitschaft
 `tuertest` und `routertest` nach `api/`. Ihre Attrappen erfüllen Schnittstellen von dort
 (`tuertest.EinstellungenAttrappe.Lade`) und bekommen ihre Namen mit diesen.
 
-**`repository/` in Ausschnitten:** Das Paket hat 156 Dateien mit 22.300 Zeilen und wird je
+**`repository/` in Ausschnitten:** Das Paket hat 158 Dateien mit 22.300 Zeilen und wird je
 Sache umgestellt (Lieferant, Leser, Titel und Exemplar, Ausleihe …), jeder Ausschnitt mit
 seinen Rufern als eigener Commit; sein Bestand in `stil_bestand_test.go` sinkt dabei. Das
 Muster steht am ersten Ausschnitt (`repository/lieferant.go`): Das Modell heißt wie die Sache

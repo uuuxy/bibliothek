@@ -35,5 +35,5 @@ func HoleExemplarZurueck(ctx context.Context, q Datenbank, exemplarID, bearbeite
 	if tag.RowsAffected() == 0 {
 		return RueckkehrBefund{}, ErrExemplarNichtGefunden
 	}
-	return VerbucheRueckkehr(ctx, q, exemplarID, bearbeiterID)
+	return verbucheRueckkehr(ctx, q, exemplarID, bearbeiterID)
 }

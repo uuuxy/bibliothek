@@ -28,7 +28,7 @@ func TestVerleihjahrZaehltSchuljahre(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	repo := NewBescheidRepository(pool)
+	repo := NewBescheidAbfragen(pool)
 
 	schuljahrBeginn := SchuljahrBeginn(schulzeit.Jetzt())
 
@@ -107,7 +107,7 @@ func TestVerleihjahrZaehltSchuljahre(t *testing.T) {
 	// Vielfach verliehen, alles im selben Schuljahr: bleibt das 1. Verleihjahr.
 	vielfach := forderung(t, "vielfach", schuljahrBeginn.AddDate(0, 0, 1), 4)
 
-	forderungen, err := repo.OffeneForderungen(ctx, schuelerID)
+	forderungen, err := repo.LadeOffeneForderungen(ctx, schuelerID)
 	if err != nil {
 		t.Fatalf("offene Forderungen lesen: %v", err)
 	}

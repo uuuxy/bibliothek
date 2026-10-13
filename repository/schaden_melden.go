@@ -7,14 +7,14 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// meldeSchadenParams trägt die Angaben einer Schadensmeldung. Als Struktur, weil vier
+// schadensMeldung trägt die Angaben einer Schadensmeldung. Als Struktur, weil vier
 // Kennungen und Texte (Exemplar, Ausleihe, Bearbeiter, Beschreibung) nebeneinander
 // string sind: Positionsweise vertauscht, liefe die Meldung ohne Fehler auf das falsche
 // Exemplar oder die falsche Ausleihe.
-type meldeSchadenParams struct {
-	copyID       string
-	loanID       string
-	benutzerID   string
+type schadensMeldung struct {
+	exemplarID   string
+	ausleiheID   string
+	bearbeiterID string
 	beschreibung string
 	art          SchadensArt
 	betrag       float64
@@ -24,7 +24,7 @@ type meldeSchadenParams struct {
 // Forderung anlegen, Ausleihe beenden, Abholfach lösen — alles innerhalb der
 // Transaktion des Aufrufers.
 //
-// Bis zum 15.09.2026 war das der Rumpf von ReportDamage mit eigener Transaktion. Seit
+// Bis zum 15.09.2026 war das der Rumpf von SchadensAbfragen.Melde mit eigener Transaktion. Seit
 // Stufe 2 des Mahnverfahrens bucht auch der Schadensersatz-Bescheid Verluste, und zwar
 // in DERSELBEN Transaktion wie Nummer und Brief: Papier und Datenbank dürfen nicht
 // auseinanderlaufen (ein Brief über ein Buch, dessen Ausleihe weiterläuft, oder ein
@@ -34,19 +34,19 @@ type meldeSchadenParams struct {
 // „beschädigt" BESCHAEDIGUNG. Bis zum 15.09.2026 stand bei beiden BESCHAEDIGUNG; das
 // endgültige Löschen und die Fund-Meldung des Fehlbestandsberichts kennen aber nur
 // VERLUST (OFFEN.md 5.3), und die Verlustquote (statistik.go) zählt beide.
-func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (string, error) {
-	ausleihe, err := ladeSchadensAusleihe(ctx, tx, params)
+func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (string, error) {
+	ausleihe, err := ladeSchadensAusleihe(ctx, tx, meldung)
 	if err != nil {
 		return "", err
 	}
-	vorhanden, erledigt, err := pruefeSchadensmeldung(ctx, tx, params, ausleihe)
+	vorhanden, erledigt, err := pruefeSchadensmeldung(ctx, tx, meldung, ausleihe)
 	if err != nil || erledigt {
 		return vorhanden, err
 	}
-	loanSchuelerID, exemplarID, ohneForderung := ausleihe.schuelerID, ausleihe.exemplarID, ausleihe.ohneForderung
+	schuldnerID, exemplarID, ohneForderung := ausleihe.schuelerID, ausleihe.exemplarID, ausleihe.ohneForderung
 
 	grund := "BESCHAEDIGUNG"
-	if params.art == SchadensArtNichtZurueck {
+	if meldung.art == SchadensArtNichtZurueck {
 		grund = "VERLUST"
 	}
 	if _, err := tx.Exec(ctx, `
@@ -55,7 +55,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (st
 		    zustand_notiz = $2, aktualisiert_am = CURRENT_TIMESTAMP,
 		    letzte_bewegung_am = `+sqlStempelJetzt+`
 		WHERE id = $3
-	`, grund, params.beschreibung, exemplarID); err != nil {
+	`, grund, meldung.beschreibung, exemplarID); err != nil {
 		return "", err
 	}
 
@@ -78,7 +78,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (st
 			INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, art)
 			VALUES ($1, $2, $3, $4, $5, $6)
 			RETURNING id
-		`, exemplarID, params.loanID, loanSchuelerID, params.beschreibung, params.betrag, string(params.art)).Scan(&schadensID); err != nil {
+		`, exemplarID, meldung.ausleiheID, schuldnerID, meldung.beschreibung, meldung.betrag, string(meldung.art)).Scan(&schadensID); err != nil {
 			return "", err
 		}
 	}
@@ -91,7 +91,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (st
 		UPDATE ausleihen
 		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = NULLIF($1, '')::uuid
 		WHERE id = $2 AND rueckgabe_am IS NULL
-	`, params.benutzerID, params.loanID); err != nil {
+	`, meldung.bearbeiterID, meldung.ausleiheID); err != nil {
 		return "", err
 	}
 	// Ohne Forderung ist die Kennung leer — es gibt keinen Schadensfall, auf den sie zeigen
@@ -121,15 +121,15 @@ type schadensAusleihe struct {
 // Ein Kollege bekommt keine Forderung: Der Bescheid ist ein Schreiben an
 // Erziehungsberechtigte, und über den Ersatz einer Lehrkraft entscheidet die Schulleitung.
 // Gebucht wird trotzdem, was den Bestand angeht.
-func ladeSchadensAusleihe(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (schadensAusleihe, error) {
-	a := schadensAusleihe{exemplarID: params.copyID}
+func ladeSchadensAusleihe(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (schadensAusleihe, error) {
+	a := schadensAusleihe{exemplarID: meldung.exemplarID}
 	var exemplarID *string
 	if err := tx.QueryRow(ctx, `
 		SELECT a.schueler_id, a.exemplar_id::text, a.rueckgabe_am IS NOT NULL,
 		       COALESCE(e.ist_ausgesondert, false)
 		FROM ausleihen a
 		LEFT JOIN buecher_exemplare e ON e.id = a.exemplar_id
-		WHERE a.id = $1 FOR UPDATE OF a`, params.loanID,
+		WHERE a.id = $1 FOR UPDATE OF a`, meldung.ausleiheID,
 	).Scan(&a.schuelerID, &exemplarID, &a.zurueck, &a.exemplarAusgesondert); err != nil {
 		return a, err // pgx.ErrNoRows: Ausleihe existiert nicht
 	}
@@ -149,10 +149,10 @@ func ladeSchadensAusleihe(ctx context.Context, tx pgx.Tx, params meldeSchadenPar
 // pruefeSchadensmeldung sagt, ob die Meldung noch etwas zu buchen hat. erledigt mit der
 // Kennung des vorhandenen Schadensfalls: Die Ausleihe ist schon gemeldet, nichts wird doppelt
 // gebucht.
-func pruefeSchadensmeldung(ctx context.Context, tx pgx.Tx, params meldeSchadenParams, a schadensAusleihe) (vorhanden string, erledigt bool, err error) {
+func pruefeSchadensmeldung(ctx context.Context, tx pgx.Tx, meldung schadensMeldung, a schadensAusleihe) (vorhanden string, erledigt bool, err error) {
 	err = tx.QueryRow(ctx,
 		`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
-		params.loanID,
+		meldung.ausleiheID,
 	).Scan(&vorhanden)
 	if err == nil {
 		return vorhanden, true, nil
@@ -167,7 +167,7 @@ func pruefeSchadensmeldung(ctx context.Context, tx pgx.Tx, params meldeSchadenPa
 	if err := tx.QueryRow(ctx, `
 		SELECT count(*) FROM ausleihen
 		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL AND id <> $2
-	`, a.exemplarID, params.loanID).Scan(&fremdeAktive); err != nil {
+	`, a.exemplarID, meldung.ausleiheID).Scan(&fremdeAktive); err != nil {
 		return "", false, err
 	}
 	if fremdeAktive > 0 {
@@ -179,7 +179,7 @@ func pruefeSchadensmeldung(ctx context.Context, tx pgx.Tx, params meldeSchadenPa
 	// zurückgegeben" bleibt nach der Rückgabe möglich. Beim Kollegium gibt es keine Forderung,
 	// an der die eigene frühere Meldung zu erkennen wäre; dort zeigt sie das ausgesonderte
 	// Exemplar, und der zweite Klick ändert nichts.
-	if a.zurueck && params.art == SchadensArtNichtZurueck {
+	if a.zurueck && meldung.art == SchadensArtNichtZurueck {
 		if a.ohneForderung && a.exemplarAusgesondert {
 			return "", true, nil
 		}

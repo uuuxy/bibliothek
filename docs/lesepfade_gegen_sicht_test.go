@@ -48,7 +48,8 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/vormerkung_nachruecken.go": {1, "Nachrücken im Abholfach — Vormerkungen gibt es nur für Schüler (Tür: Create)"},
 	"repository/ausleihe_frist.go":         {1, "Massen-Verlängerung der Lernmittel einer KLASSE; ein Kollege leiht auf Dauer (ist_handapparat) und soll keine Klassenfrist bekommen"},
 	"repository/mahnwesen_queries.go":      {3, "Gemahnt werden Schüler, nicht das Kollegium (Entscheidung zum Lehrer-Anliegen, Kommentar an der ersten Abfrage); das Blatt folgt derselben Auswahl, und ZaehleMahnungTx zählt, was auf dem Blatt steht"},
-	"repository/bescheid.go":               {4, "Bescheide hängen an Forderungen, und ein Kollege bekommt keine (Tür: schaden_melden.go, ohneForderung)"},
+	"repository/bescheid.go":               {3, "Bescheide hängen an Forderungen, und ein Kollege bekommt keine (Tür: schaden_melden.go, ohneForderung)"},
+	"repository/bescheid_vorschlag.go":     {1, "Empfänger eines Bescheids — Bescheide hängen an Forderungen, und ein Kollege bekommt keine (Tür: schaden_melden.go, ohneForderung)"},
 	"repository/bescheid_ausstehend.go":    {1, "Offene Forderungen ohne Bescheid — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
 	// Durchsicht der Akte und des Drucks, 21.09.2026.
 	"repository/student_profile_queries.go": {1, "Liste der Klassen — Klassen haben nur Schüler"},

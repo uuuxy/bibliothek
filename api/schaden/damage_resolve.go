@@ -22,13 +22,13 @@ import (
 
 // ListStudentSchadensfaelleHandler liefert alle Schadensfälle eines Schülers für
 // die Gebühren-Sektion der Schülerakte (GET /api/schueler/{id}/schadensfaelle).
-func (s *Tueren) ListStudentSchadensfaelleHandler(damageRepo repository.DamageRepository) http.HandlerFunc {
+func (s *Tueren) ListStudentSchadensfaelleHandler(damageRepo repository.SchadensAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 		if id == "" {
 			return apierrors.BadRequest("Schüler-ID fehlt", nil)
 		}
-		faelle, err := damageRepo.ListSchadensfaelleVonSchueler(r.Context(), id)
+		faelle, err := damageRepo.LadeZuLeser(r.Context(), id)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Schadensfälle", err)
 		}

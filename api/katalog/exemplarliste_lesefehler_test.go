@@ -35,7 +35,7 @@ func TestExemplarliste_UnlesbareZeileIstEinFehler(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/t1/exemplare", nil)
 	req.SetPathValue("id", "t1")
 	rec := httptest.NewRecorder()
-	srv.GetTitleCopiesHandler(repository.NewBescheidRepository(mock))(rec, req)
+	srv.GetTitleCopiesHandler(repository.NewBescheidAbfragen(mock))(rec, req)
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("Status %d, erwartet 500 — eine unlesbare Zeile fiel still weg: %s", rec.Code, rec.Body.String())

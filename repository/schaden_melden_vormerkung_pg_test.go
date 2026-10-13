@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-// TestReportDamage_ResetsAbholbereiteVormerkung sichert #3 ab: Wird ein Exemplar, das bei der
+// TestSchadenMelden_SetztAbholbereiteVormerkungZurueck sichert #3 ab: Wird ein Exemplar, das bei der
 // Rückgabe gerade einem wartenden Schüler zugewiesen wurde (Vormerkung 'abholbereit'), als
 // beschädigt ausgesondert, darf keine Geister-Zuteilung auf ein defektes Buch zurückbleiben.
 // Die Vormerkung muss auf 'wartend' zurückfallen und die Exemplar-Bindung gelöst werden.
-func TestReportDamage_ResetsAbholbereiteVormerkung(t *testing.T) {
+func TestSchadenMelden_SetztAbholbereiteVormerkungZurueck(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -30,9 +30,9 @@ func TestReportDamage_ResetsAbholbereiteVormerkung(t *testing.T) {
 		t.Fatalf("Vormerkung anlegen: %v", err)
 	}
 
-	repo := NewDamageRepository(pool)
-	if _, err := repo.ReportDamage(ctx, ex[0], loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 10.0); err != nil {
-		t.Fatalf("ReportDamage: %v", err)
+	repo := NewSchadensAbfragen(pool)
+	if _, err := repo.Melde(ctx, ex[0], loan, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 10.0); err != nil {
+		t.Fatalf("Melde: %v", err)
 	}
 
 	var status string

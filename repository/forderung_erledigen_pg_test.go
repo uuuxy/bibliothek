@@ -25,7 +25,7 @@ func seedOffenerSchadensfall(t *testing.T, pool *pgxpool.Pool, schuelerID, exemp
 	return id
 }
 
-func TestGebuehrErledigung_BezahltUndStorno(t *testing.T) {
+func TestForderungErledigen_BezahltUndStorno(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 	repo := NewProtokollAbfragen(pool)
@@ -100,7 +100,7 @@ func TestGebuehrErledigung_BezahltUndStorno(t *testing.T) {
 	}
 
 	// (5) Die Liste der Schülerakte führt beide Fälle, neueste zuerst.
-	liste, err := NewDamageRepository(pool).ListSchadensfaelleVonSchueler(ctx, schueler)
+	liste, err := NewSchadensAbfragen(pool).LadeZuLeser(ctx, schueler)
 	if err != nil {
 		t.Fatalf("Liste: %v", err)
 	}

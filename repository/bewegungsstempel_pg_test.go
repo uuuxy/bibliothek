@@ -189,10 +189,10 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 	}
 	zuletzt := stempel()
 
-	if _, err := meldeSchaden(ctx, lang, meldeSchadenParams{
-		copyID:       f.exemplarID,
-		loanID:       loan.ID,
-		benutzerID:   f.bearbeiterID,
+	if _, err := meldeSchaden(ctx, lang, schadensMeldung{
+		exemplarID:   f.exemplarID,
+		ausleiheID:   loan.ID,
+		bearbeiterID: f.bearbeiterID,
 		beschreibung: "Stempel-Test",
 		art:          SchadensArtNichtZurueck,
 		betrag:       10,
@@ -271,7 +271,7 @@ func beginne(t *testing.T, pool *pgxpool.Pool) pgx.Tx {
 
 // Die Regel statt der Auswahl (OFFEN.md 5.15, Migration 132): Bis zum 22.09.2026 stempelten
 // Aussondern, Bestandskorrektur, Schadensmeldung und Soft-Delete — „Verloren" und
-// Reaktivieren im Status-Editor, der Inventur-Abschluss und repository/damage.go nicht. Der
+// Reaktivieren im Status-Editor, der Inventur-Abschluss und repository/schaden.go nicht. Der
 // Test oben prüft eine feste Liste; ein neuer Schreiber ohne Stempel bliebe grün. Jetzt
 // stempelt die Datenbank jeden Wechsel von ist_ausgesondert oder ist_ausleihbar, den ein
 // Schreiber nicht selbst stempelt — geprüft an ROHEN Updates, wie sie jeder vergessliche

@@ -17,7 +17,7 @@ import (
 // VERLUST, Forderung „nicht zurückgegeben" — und dann Nummer und Brief, alles in EINER
 // Transaktion. Papier == Datenbank: Es gibt keinen Brief über ein Buch, dessen Ausleihe
 // weiterläuft, und keine beendete Ausleihe ohne Brief. Kommt das Buch zurück, storniert
-// der Theke-Scan die Forderung (VerbucheRueckkehr).
+// der Theke-Scan die Forderung (verbucheRueckkehr).
 
 // UeberfaelligeAusleihe ist ein überfälliges Buch eines Kindes, das noch keine Forderung
 // trägt — ein Kandidat für den Brief.
@@ -60,10 +60,10 @@ var (
 	ErrAusleiheFremd = errors.New("Ein gewähltes Buch ist nicht an dieses Kind ausgeliehen.")
 )
 
-// UeberfaelligeAusleihen liest die überfälligen Bücher eines Kindes ohne offene
+// LadeUeberfaelligeAusleihen liest die überfälligen Bücher eines Kindes ohne offene
 // Forderung. Dasselbe Prädikat wie die Mahnliste (rueckgabe_frist < jetzt); was schon
-// eine Forderung trägt, steht bei OffeneForderungen.
-func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schuelerID string) ([]UeberfaelligeAusleihe, error) {
+// eine Forderung trägt, steht bei LadeOffeneForderungen.
+func (a *pgBescheidAbfragen) LadeUeberfaelligeAusleihen(ctx context.Context, schuelerID string) ([]UeberfaelligeAusleihe, error) {
 	// EIN Zeitpunkt für beide Rechnungen dieser Funktion: Bis zum 17.09.2026 filterte das
 	// SQL mit CURRENT_TIMESTAMP (Uhr der Datenbank), während die Staffel das Schuljahr aus
 	// schulzeit.Jetzt() (Uhr des Servers) bestimmte. Zwei Uhren, eine Antwort — und am
@@ -71,7 +71,7 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 	// im alten zählte: Das Buch stand in der Liste, die Staffel nannte eine Stufe daneben.
 	// Der Unterschied ist heute klein (dieselbe Maschine), aber er ist nicht zugesichert.
 	jetzt := schulzeit.Jetzt()
-	rows, err := r.db.Query(ctx, `
+	rows, err := a.db.Query(ctx, `
 		SELECT a.id, e.id, t.titel, coalesce(t.isbn, ''), coalesce(e.einkaufspreis, 0)::float8,
 		       coalesce(t.listenpreis, 0)::float8, coalesce(e.zustand_abwertung_prozent, 0),
 		       -- Zugang statt Bestelltag (Migration 129, Begründung an ersatzwert_groessen.go).
@@ -101,23 +101,23 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 	out := []UeberfaelligeAusleihe{}
 	exemplare := []string{}
 	for rows.Next() {
-		var a UeberfaelligeAusleihe
+		var u UeberfaelligeAusleihe
 		var zugang *time.Time
-		if err := rows.Scan(&a.AusleiheID, &a.ExemplarID, &a.Titel, &a.ISBN, &a.Kaufpreis,
-			&a.Listenpreis, &a.ZustandAbschlag,
-			&a.Topf, &a.FaelligSeit, &a.Mahnstufe, &a.LetztesMahndatum, &zugang); err != nil {
+		if err := rows.Scan(&u.AusleiheID, &u.ExemplarID, &u.Titel, &u.ISBN, &u.Kaufpreis,
+			&u.Listenpreis, &u.ZustandAbschlag,
+			&u.Topf, &u.FaelligSeit, &u.Mahnstufe, &u.LetztesMahndatum, &zugang); err != nil {
 			return nil, err
 		}
 		if zugang != nil {
-			a.SchuljahreImBestand = heute - schuljahrVon(*zugang)
+			u.SchuljahreImBestand = heute - schuljahrVon(*zugang)
 		}
-		out = append(out, a)
-		exemplare = append(exemplare, a.ExemplarID)
+		out = append(out, u)
+		exemplare = append(exemplare, u.ExemplarID)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	schuljahre, err := r.schuljahreMitAusleihe(ctx, exemplare)
+	schuljahre, err := a.zaehleSchuljahreMitAusleihe(ctx, exemplare)
 	if err != nil {
 		return nil, err
 	}
@@ -161,10 +161,10 @@ func bucheVerluste(ctx context.Context, tx pgx.Tx, e BescheidEingabe, referenznu
 		case zurueck:
 			return nil, ErrAusleiheInzwischenZurueck
 		}
-		schadensfallID, err := meldeSchaden(ctx, tx, meldeSchadenParams{
-			copyID:       exemplarID,
-			loanID:       v.AusleiheID,
-			benutzerID:   e.ErstelltVon,
+		schadensfallID, err := meldeSchaden(ctx, tx, schadensMeldung{
+			exemplarID:   exemplarID,
+			ausleiheID:   v.AusleiheID,
+			bearbeiterID: e.ErstelltVon,
 			beschreibung: beschreibung,
 			art:          SchadensArtNichtZurueck,
 			betrag:       v.Betrag,

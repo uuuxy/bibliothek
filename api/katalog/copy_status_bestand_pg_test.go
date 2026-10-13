@@ -25,7 +25,7 @@ func TestCopyStatus_AntwortNenntDenBestand(t *testing.T) {
 	ctx := context.Background()
 	bookRepo := repository.NewBookRepository(pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	handler := srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))
+	handler := srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidAbfragen(pool))
 	titelID := testdaten.TitelMitSignatur(t, pool, "Status-Titel", "Sta 1", 0)
 
 	ausgesondert := func(barcode string) string {

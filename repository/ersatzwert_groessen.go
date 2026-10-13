@@ -19,8 +19,8 @@ import (
 // Medienzentrums nennt genau das: „weder Einkaufs- bzw. Listenpreise noch
 // Beschädigungsgrade hinterlegt, fehlende Restwertberechnung z.Zt. Handeingabe."
 //
-// Die Zählung ist BEWUSST dieselbe wie in OffeneForderungen und nicht eine zweite: beide
-// zählen Schuljahre über schuljahrVon und schuljahreMitAusleihe. Zwei Auslegungen
+// Die Zählung ist BEWUSST dieselbe wie in LadeOffeneForderungen und nicht eine zweite: beide
+// zählen Schuljahre über schuljahrVon und zaehleSchuljahreMitAusleihe. Zwei Auslegungen
 // derselben Grenze verschöben den Betrag um eine ganze Stufe der Staffel — und diese
 // Zahl steht am Ende in einem Bescheid an Erziehungsberechtigte.
 
@@ -48,14 +48,14 @@ type ErsatzwertGroessen struct {
 	Topf string
 }
 
-// GroessenFuerExemplar liest die Größen des Staffel-Vorschlags für ein Exemplar.
+// LadeGroessenFuerExemplar liest die Größen des Staffel-Vorschlags für ein Exemplar.
 //
 // Ein unbekanntes Exemplar ist kein Fehler, sondern ein leeres Ergebnis: Der Dialog
 // fragt beim Öffnen, und ein Exemplar kann zwischen Anzeige und Klick ausgesondert oder
 // gelöscht worden sein. Ein 500 an dieser Stelle nähme dem Personal die Möglichkeit,
 // den Schaden überhaupt zu melden — es soll dann nur den Betrag selbst eintragen.
-func (r *pgBescheidRepository) GroessenFuerExemplar(ctx context.Context, exemplarID string) (ErsatzwertGroessen, error) {
-	alle, err := r.groessen(ctx, "e.id = $1", exemplarID)
+func (a *pgBescheidAbfragen) LadeGroessenFuerExemplar(ctx context.Context, exemplarID string) (ErsatzwertGroessen, error) {
+	alle, err := a.ladeGroessen(ctx, "e.id = $1", exemplarID)
 	if err != nil {
 		return ErsatzwertGroessen{}, err
 	}
@@ -68,24 +68,24 @@ func (r *pgBescheidRepository) GroessenFuerExemplar(ctx context.Context, exempla
 	return g, nil
 }
 
-// GroessenFuerTitel liest dieselben Größen für ALLE Exemplare eines Titels — in einer
+// LadeGroessenFuerTitel liest dieselben Größen für ALLE Exemplare eines Titels — in einer
 // Abfrage, nicht einer pro Exemplar.
 //
 // Die Buchakte zeigt den heutigen Buchwert an jedem Exemplar (OFFEN.md 9.8, Stufe 2b).
 // Ein Aufruf je Karte wäre bei einem Klassensatz mit 30 Bänden 30 Abfragen für eine
 // Seite; die Zählung der Schuljahre nimmt ohnehin eine Liste.
-func (r *pgBescheidRepository) GroessenFuerTitel(ctx context.Context, titelID string) (map[string]ErsatzwertGroessen, error) {
-	return r.groessen(ctx, "e.titel_id = $1", titelID)
+func (a *pgBescheidAbfragen) LadeGroessenFuerTitel(ctx context.Context, titelID string) (map[string]ErsatzwertGroessen, error) {
+	return a.ladeGroessen(ctx, "e.titel_id = $1", titelID)
 }
 
-// groessen ist die EINE Abfrage hinter beiden Wegen. Zwei Fassungen desselben SELECTs
+// ladeGroessen ist die EINE Abfrage hinter beiden Wegen. Zwei Fassungen desselben SELECTs
 // wären zwei Auslegungen derselben Staffel — und die Zahl steht in einem Bescheid.
 //
 // coalesce auf den Listenpreis: Die Spalte ist nullbar (NULL = nicht erfasst), und
 // 0 bedeutet für die Staffel dasselbe — sie weicht dann auf den Kaufpreis aus. Ein
 // Scan in float64 ohne coalesce wäre ein 500 beim ersten Titel ohne Preis.
-func (r *pgBescheidRepository) groessen(ctx context.Context, bedingung string, wert any) (map[string]ErsatzwertGroessen, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *pgBescheidAbfragen) ladeGroessen(ctx context.Context, bedingung string, wert any) (map[string]ErsatzwertGroessen, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT e.id,
 		       coalesce(e.einkaufspreis, 0)::float8,
 		       coalesce(t.listenpreis, 0)::float8,
@@ -116,7 +116,7 @@ func (r *pgBescheidRepository) groessen(ctx context.Context, bedingung string, w
 			&g.Topf, &zugang); err != nil {
 			return nil, err
 		}
-		// Dieselbe Rechnung wie in OffeneForderungen: Schuljahre, nicht Kalenderjahre.
+		// Dieselbe Rechnung wie in LadeOffeneForderungen: Schuljahre, nicht Kalenderjahre.
 		if zugang != nil {
 			g.SchuljahreImBestand = schuljahrVon(schulzeit.Jetzt()) - schuljahrVon(*zugang)
 		}
@@ -128,7 +128,7 @@ func (r *pgBescheidRepository) groessen(ctx context.Context, bedingung string, w
 	}
 
 	// Geteilter Zähler mit dem Bescheid-Weg statt einer zweiten Abfrage daneben.
-	schuljahre, err := r.schuljahreMitAusleihe(ctx, ids)
+	schuljahre, err := a.zaehleSchuljahreMitAusleihe(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

@@ -16,7 +16,7 @@ func TestAusstehend_NurOffeneForderungenOhneBescheid(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
-	repo := NewBescheidRepository(pool)
+	repo := NewBescheidAbfragen(pool)
 
 	var titelID string
 	if err := pool.QueryRow(ctx, `
@@ -104,9 +104,9 @@ func TestAusstehend_NurOffeneForderungenOhneBescheid(t *testing.T) {
 		t.Fatalf("Bescheid zuordnen: %v", err)
 	}
 
-	liste, err := repo.Ausstehend(ctx)
+	liste, err := repo.LadeForderungenOhneBescheid(ctx)
 	if err != nil {
-		t.Fatalf("Ausstehend: %v", err)
+		t.Fatalf("LadeForderungenOhneBescheid: %v", err)
 	}
 	je := map[string]ForderungOhneBescheid{}
 	for _, z := range liste {

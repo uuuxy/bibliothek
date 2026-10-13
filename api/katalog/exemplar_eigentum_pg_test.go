@@ -46,7 +46,7 @@ func exemplarKarten(t *testing.T, srv *Tueren, pool *pgxpool.Pool, titelID strin
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/exemplare", nil)
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()
-	srv.GetTitleCopiesHandler(repository.NewBescheidRepository(pool))(rec, req)
+	srv.GetTitleCopiesHandler(repository.NewBescheidAbfragen(pool))(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Exemplarliste: Status %d: %s", rec.Code, rec.Body.String())
 	}
