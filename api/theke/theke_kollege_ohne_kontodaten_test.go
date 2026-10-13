@@ -20,7 +20,7 @@ import (
 // verloren gegangen ist.
 func TestActionResponse_KollegeOhneKontodaten(t *testing.T) {
 	gebdatum := "1980-04-01"
-	voll := &repository.Student{
+	voll := &repository.Leser{
 		ID: "leser-1", BarcodeID: "L-0001", Vorname: "Frieda", Nachname: "Fachlehrerin",
 		Art:          "lehrkraft",
 		Geburtsdatum: &gebdatum,

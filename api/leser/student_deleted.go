@@ -23,7 +23,7 @@ func (s *Tueren) GetDeletedStudentsHandler() http.HandlerFunc {
 		// Papierkorb ist zum Wiederherstellen der JÜNGSTEN Löschungen da; 1000 ist weit
 		// über dem realistischen Bestand einer manuell befüllten Papierkorb-Ansicht.
 		const papierkorbLimit = 1000
-		zeilen, err := repository.ListePapierkorb(ctx, s.DB.Pool, papierkorbLimit)
+		zeilen, err := repository.LadePapierkorb(ctx, s.DB.Pool, papierkorbLimit)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -42,8 +42,8 @@ func (s *Tueren) GetDeletedStudentsHandler() http.HandlerFunc {
 				"klasse":         z.Klasse,
 				"abgaenger_jahr": z.AbgaengerJahr,
 				"ist_gesperrt":   z.Gesperrt,
-				"deleted_at":     z.DeletedAt,
-				"anonymized_at":  z.AnonymizedAt,
+				"deleted_at":     z.GeloeschtAm,
+				"anonymized_at":  z.AnonymisiertAm,
 			})
 		}
 
@@ -65,7 +65,7 @@ func (s *Tueren) RestoreStudentHandler() http.HandlerFunc {
 		// Anonymisierte Papierkorb-Zeilen (anonymized_at gesetzt) sind kein Schüler mehr,
 		// sondern ein Pseudonym ohne Namen — „wiederherstellen" ergäbe einen gesperrten
 		// „Anonym"-Datensatz in der aktiven Liste (Prüfung 22.08.2026). 409 statt Restore.
-		if anonymisiert, err := repository.PapierkorbLeserAnonymisiert(ctx, s.DB.Pool, id); err == nil && anonymisiert {
+		if anonymisiert, err := repository.IstPapierkorbLeserAnonymisiert(ctx, s.DB.Pool, id); err == nil && anonymisiert {
 			apierrors.SendHTTPError(w, http.StatusConflict,
 				errors.New("dieser Datensatz ist bereits anonymisiert (DSGVO) und kann nicht wiederhergestellt werden"))
 			return

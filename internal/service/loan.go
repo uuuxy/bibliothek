@@ -71,7 +71,7 @@ type LoanResult struct {
 	// Book enthält die Daten des betroffenen Buchexemplars.
 	Book *repository.Exemplar
 	// Student ist das Schülerprofil, falls die Aktion für einen Schüler durchgeführt wurde.
-	Student *repository.Student
+	Student *repository.Leser
 	// Teacher ist das Benutzerprofil, falls die Aktion für eine Lehrkraft durchgeführt wurde.
 	Teacher *repository.Konto
 	// DueDate gibt das berechnete Rückgabedatum an (nur bei erfolgreicher Ausleihe).
@@ -82,7 +82,7 @@ type LoanResult struct {
 	Fremdrueckgabe bool
 	// Vorbesitzer ist der LESER, der das Buch zuvor ausgeliehen hatte (bei Fremdrückgabe).
 	// Ein zweites Feld für Lehrkräfte gab es bis Migration 125; es gibt nur noch Leser.
-	Vorbesitzer *repository.Student
+	Vorbesitzer *repository.Leser
 	// HasVormerkung ist wahr, wenn für das Buch eine Vormerkung vorliegt und es nun für den nächsten Schüler bereitgestellt wurde.
 	HasVormerkung bool
 	// VormerkungTitel ist der Titel des vorgemerkten Buchs.
@@ -117,7 +117,7 @@ type LoanService interface {
 // defaultLoanService implementiert den LoanService unter Verwendung von Repositories.
 type defaultLoanService struct {
 	pool        db.PgxPoolIface
-	studentRepo repository.StudentRepository
+	studentRepo repository.LeserAbfragen
 	bookRepo    repository.KatalogAbfragen
 	loanRepo    repository.AusleihAbfragen
 	auditRepo   repository.ProtokollAbfragen
@@ -139,7 +139,7 @@ func (s *defaultLoanService) heute() time.Time {
 }
 
 // NewLoanService erzeugt eine neue Instanz des standardmäßigen LoanService.
-func NewLoanService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.KatalogAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) LoanService {
+func NewLoanService(pool db.PgxPoolIface, studentRepo repository.LeserAbfragen, bookRepo repository.KatalogAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) LoanService {
 	return &defaultLoanService{
 		pool:        pool,
 		studentRepo: studentRepo,

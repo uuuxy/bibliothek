@@ -76,7 +76,7 @@ func TestLeserAenderung_AnweisungUndWerte(t *testing.T) {
 // Ohne genanntes Feld setzt die Anweisung nur den Zeitpunkt; ein einzelnes Feld trägt $1.
 func TestLeserAenderung_WenigeFelder(t *testing.T) {
 	var keine LeserAenderung
-	if !keine.Leer() {
+	if !keine.IstLeer() {
 		t.Error("eine Änderung ohne Feld gilt nicht als leer")
 	}
 	query, args := keine.anweisung("k")
@@ -86,7 +86,7 @@ func TestLeserAenderung_WenigeFelder(t *testing.T) {
 
 	ort := "Ortsname"
 	eine := LeserAenderung{Ort: &ort}
-	if eine.Leer() {
+	if eine.IstLeer() {
 		t.Error("eine Änderung mit einem Feld gilt als leer")
 	}
 	query, args = eine.anweisung("k")

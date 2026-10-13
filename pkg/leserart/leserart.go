@@ -47,7 +47,7 @@ func IstBekannt(art string) bool {
 func IstSchueler(art string) bool { return art == Schueler }
 
 // IstKollegium sagt, ob die Art keine Schüler-Art ist. Leer heißt Schüler: Eine Abfrage über
-// die Sicht schueler füllt die Art nicht (repository.Student.Art), und
+// die Sicht schueler füllt die Art nicht (repository.Leser.Art), und
 // frontend/src/lib/leserArt.js antwortet genauso.
 func IstKollegium(art string) bool { return art != "" && art != Schueler }
 

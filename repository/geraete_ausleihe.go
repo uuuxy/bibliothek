@@ -88,11 +88,11 @@ func BucheGeraeteRueckgabe(ctx context.Context, tx Datenbank, ausleiheID, bearbe
 	return nil
 }
 
-// LeserNameUndKlasse liefert einen Leser, der nicht gelöscht ist, mit Vorname, Nachname und
+// LadeLeserNameUndKlasse liefert einen Leser, der nicht gelöscht ist, mit Vorname, Nachname und
 // Klasse und sonst nichts; fehlt er, kommt pgx.ErrNoRows. Gelesen wird leser und nicht die
 // Sicht schueler: Der Gesuchte kann ein Kollege sein.
-func LeserNameUndKlasse(ctx context.Context, db Datenbank, leserID string) (Student, error) {
-	var l Student
+func LadeLeserNameUndKlasse(ctx context.Context, db Datenbank, leserID string) (Leser, error) {
+	var l Leser
 	err := db.QueryRow(ctx,
 		"SELECT vorname, nachname, coalesce(klasse, '') FROM leser WHERE id = $1 AND deleted_at IS NULL",
 		leserID).Scan(&l.Vorname, &l.Nachname, &l.Klasse)

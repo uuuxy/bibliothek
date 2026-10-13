@@ -153,7 +153,7 @@ func (s *Tueren) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 // die Kanonisierung nicht mehr entstehen. Er bleibt, damit ein Namenskonflikt
 // den Schuljahreswechsel auch künftig nie scheitern lässt.
 func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *PromoteStudentsResponse) error {
-	zeilen, err := repository.LeseKlassenleitungVersetzungen(ctx, tx)
+	zeilen, err := repository.LadeKlassenleitungVersetzungen(ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -166,7 +166,7 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *Promot
 			resp.MappingEntfernt++
 			continue
 		}
-		belegt, err := repository.KlassenleitungVorhanden(ctx, tx, z.Neu)
+		belegt, err := repository.IstKlassenleitungVorhanden(ctx, tx, z.Neu)
 		if err != nil {
 			return err
 		}

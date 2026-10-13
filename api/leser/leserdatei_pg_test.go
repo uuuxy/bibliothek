@@ -25,7 +25,7 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	studentRepo := repository.NewStudentRepository(pool)
+	studentRepo := repository.NewLeserAbfragen(pool)
 	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a126", Rolle: auth.RoleAdmin}
 
 	t.Cleanup(func() {
@@ -46,7 +46,7 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
 
-	liste := func(t *testing.T, adresse string) []repository.StudentListStat {
+	liste := func(t *testing.T, adresse string) []repository.LeserListenZeile {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, adresse, nil)
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
@@ -55,7 +55,7 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 		if rec.Code != http.StatusOK {
 			t.Fatalf("GET %s: Status %d, %s", adresse, rec.Code, rec.Body.String())
 		}
-		var out []repository.StudentListStat
+		var out []repository.LeserListenZeile
 		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
 			t.Fatalf("Antwort lesen: %v (%s)", err, rec.Body.String())
 		}
@@ -63,8 +63,8 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 	}
 	// nurTest filtert die Zeilen dieses Tests heraus — die Datenbank trägt daneben, was
 	// andere Tests und der Seed hinterlassen haben.
-	nurTest := func(zeilen []repository.StudentListStat) map[string]repository.StudentListStat {
-		out := map[string]repository.StudentListStat{}
+	nurTest := func(zeilen []repository.LeserListenZeile) map[string]repository.LeserListenZeile {
+		out := map[string]repository.LeserListenZeile{}
 		for _, z := range zeilen {
 			if z.Nachname == "Leserdateitest" {
 				out[z.Vorname] = z
@@ -114,7 +114,7 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	studentRepo := repository.NewStudentRepository(pool)
+	studentRepo := repository.NewLeserAbfragen(pool)
 	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a127", Rolle: auth.RoleAdmin}
 
 	t.Cleanup(func() {

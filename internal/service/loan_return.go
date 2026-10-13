@@ -97,12 +97,12 @@ func (s *defaultLoanService) HandleSimpleReturn(
 // sondern nur in der Spalte, in der der Ausleiher stand — und die Mitarbeiter-Fassung
 // vergaß dabei, den Ausleiher in die Antwort zu legen.
 func (s *defaultLoanService) handleRueckgabe(ctx context.Context, tx pgx.Tx, copy *repository.Exemplar, activeLoan *repository.Ausleihe, staffID string, resp *LoanResult) (*LoanResult, error) {
-	var borrower *repository.Student
+	var borrower *repository.Leser
 	if activeLoan.SchuelerID != nil {
 		var err error
-		// GetLeserByID: Der Ausleiher kann ein Kollege sein; die Sicht `schueler` zeigte
+		// LeserAbfragen.Finde: Der Ausleiher kann ein Kollege sein; die Sicht `schueler` zeigte
 		// ihn nicht und die Rückgabe meldete dann einen Ausleiher, den es nicht gibt.
-		borrower, err = s.studentRepo.GetLeserByID(ctx, *activeLoan.SchuelerID)
+		borrower, err = s.studentRepo.Finde(ctx, *activeLoan.SchuelerID)
 		if err != nil {
 			return nil, err
 		}

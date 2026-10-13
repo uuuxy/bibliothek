@@ -37,16 +37,16 @@ import (
 
 // parameterStrukturen: Typname → warum ein fehlendes Feld hier schadet.
 var parameterStrukturen = map[string]string{
-	"DueDateOptions":                       "fehlendes Feld = 0 Tage Frist und damit eine falsche Mahnung",
-	"BarcodePruefOptionen":                 "fehlendes Feld = leere Ausschluss-ID oder leere Meldung",
-	"BulkReceiveParams":                    "fehlendes Feld = Wareneingang ohne Bearbeiter oder ohne IP im Protokoll",
-	"Kuerzung":                             "fehlendes Feld = Übernahme-Protokoll ohne Quelle, Kennung oder Wert",
-	"rueckwegEintragParams":                "fehlendes Feld = Rückweg-Spur des Zusammenführens ohne Bezug",
-	"schreibeZusammengefuehrtesZielParams": "fehlendes Feld = Zielsatz ohne Herkunft",
-	"TitelBestand":                         "fehlende Map = Import ordnet Exemplare keinem oder dem falschen Titel zu",
-	"klassifizierungsLauf":                 "fehlendes Feld = LUSD-Klassifizierung ohne Ergebnis- oder Gesehen-Liste",
-	"Bestellbericht":                       "fehlendes Feld = Bericht über den falschen Zeitraum, ohne Preise oder ohne Bestellungen",
-	"Flaeche":                              "fehlendes Maß = Cover an Position 0 oder mit Größe 0",
+	"DueDateOptions":         "fehlendes Feld = 0 Tage Frist und damit eine falsche Mahnung",
+	"BarcodePruefOptionen":   "fehlendes Feld = leere Ausschluss-ID oder leere Meldung",
+	"BulkReceiveParams":      "fehlendes Feld = Wareneingang ohne Bearbeiter oder ohne IP im Protokoll",
+	"Kuerzung":               "fehlendes Feld = Übernahme-Protokoll ohne Quelle, Kennung oder Wert",
+	"rueckwegEintrag":        "fehlendes Feld = Rückweg-Spur des Zusammenführens ohne Bezug",
+	"zusammengefuehrtesZiel": "fehlendes Feld = Zielsatz ohne Herkunft",
+	"TitelBestand":           "fehlende Map = Import ordnet Exemplare keinem oder dem falschen Titel zu",
+	"klassifizierungsLauf":   "fehlendes Feld = LUSD-Klassifizierung ohne Ergebnis- oder Gesehen-Liste",
+	"Bestellbericht":         "fehlendes Feld = Bericht über den falschen Zeitraum, ohne Preise oder ohne Bestellungen",
+	"Flaeche":                "fehlendes Maß = Cover an Position 0 oder mit Größe 0",
 	// Nachgetragen im Rasterdurchgang 06.09.2026 (Frage 7): Alle drei entstanden am
 	// 05./06.09. — „exemplarZurGruppe" sogar in einem Commit, dessen Botschaft genau
 	// diese Bugklasse nennt („fünf benachbarte string-Parameter, der Vertauscher war

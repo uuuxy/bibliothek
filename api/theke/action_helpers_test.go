@@ -21,7 +21,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	}
 	defer mock.Close()
 
-	studentRepo := repository.NewStudentRepository(mock)
+	studentRepo := repository.NewLeserAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	bookRepo := repository.NewKatalogAbfragen(mock)
@@ -132,7 +132,7 @@ func TestHandleBookReturn(t *testing.T) {
 	}
 	defer mock.Close()
 
-	studentRepo := repository.NewStudentRepository(mock)
+	studentRepo := repository.NewLeserAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	bookRepo := repository.NewKatalogAbfragen(mock)

@@ -17,7 +17,7 @@
 **Learning:** Found multiple sequential `strings.ReplaceAll` calls in `internal/service/import_dynamic.go` being used to strip characters from ISBNs during CSV import loops. This leads to unnecessary allocations and garbage collection overhead.
 **Action:** Replaced sequential `strings.ReplaceAll` with a single-pass byte array allocation and population when stripping multiple ASCII characters to avoid intermediate allocations and improve performance.
 ## 2026-07-27 - [Optimize ListStudentsWithStats Queries]
-**Learning:** Found redundant subqueries in `ListStudentsWithStats` (`repository/student_profile_queries.go`) where the same subquery calculating loaned books count was used twice in the `SELECT` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
+**Learning:** Found redundant subqueries in `ListStudentsWithStats` (`repository/leser_liste.go`) where the same subquery calculating loaned books count was used twice in the `SELECT` clause. This forces PostgreSQL to evaluate the expensive subquery twice per row.
 **Action:** Used `LEFT JOIN LATERAL (...) l ON true` to evaluate the subquery exactly once per row and then referenced `l.ausgeliehen_anzahl` and `l.ueberfaellig_anzahl` in the `SELECT` clause, preventing the redundant subquery execution and improving read performance.
 ## 2024-05-30 - Optimize bestellhistorie handler n+1
 **What:** Optimized `ladeBestellhistoriePositionen` in `api/bestellhistorie_handler.go`. Converted the correlated subquery inside the `SELECT` list that counted `etiketten_offen` into a `LEFT JOIN LATERAL` on a derived table counting the labels grouped by `titel_id`.

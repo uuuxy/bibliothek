@@ -6,10 +6,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// schuljahreswechselLockKey ist der feste Advisory-Lock-Schlüssel, der gleichzeitige
+// schuljahreswechselSperre ist der feste Advisory-Lock-Schlüssel, der gleichzeitige
 // Versetzungsläufe hart serialisiert (siehe SperreSchuljahreswechsel). Ein beliebiger,
 // aber im Projekt eindeutiger Wert.
-const schuljahreswechselLockKey int64 = 748_2026
+const schuljahreswechselSperre int64 = 748_2026
 
 // AktionSchuljahreswechsel ist die Aktion, unter der ein Lauf in audit_logs steht. An ihr
 // erkennt ZaehleJuengsteSchuljahreswechsel den Lauf davor.
@@ -18,7 +18,7 @@ const AktionSchuljahreswechsel = "SCHULJAHRESWECHSEL"
 // SperreSchuljahreswechsel hält gleichzeitige Läufe auseinander: Der zweite wartet, bis die
 // Transaktion des ersten endet, und sieht dann dessen Eintrag im Protokoll.
 func SperreSchuljahreswechsel(ctx context.Context, tx pgx.Tx) error {
-	_, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, schuljahreswechselLockKey)
+	_, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock($1)`, schuljahreswechselSperre)
 	return err
 }
 
@@ -34,7 +34,7 @@ func ZaehleJuengsteSchuljahreswechsel(ctx context.Context, db Datenbank) (int, e
 	return laeufe, err
 }
 
-// versetzeSchuelerQuery zählt Klassenbezeichnungen um eine Stufe hoch und markiert
+// sqlVersetzeSchueler zählt Klassenbezeichnungen um eine Stufe hoch und markiert
 // Abschlussklassen als Abgänger. WER Abschlussklasse ist, sagt allein
 // AbschlussklasseSQL — dieselbe Regel, nach der die Abgängerliste
 // (api/mahnwesen/graduates.go) diese Klassen von Mai bis Juli zum Einsammeln zeigt. Bis zum
@@ -47,7 +47,7 @@ func ZaehleJuengsteSchuljahreswechsel(ctx context.Context, db Datenbank) (int, e
 //     schreiben.
 //   - lpad erhält führende Nullen ('05a' → '06a'), ohne beim Stellenwechsel zu
 //     kürzen ('09' → '10', greatest() verhindert lpad-Truncation).
-var versetzeSchuelerQuery = `
+var sqlVersetzeSchueler = `
 	WITH parsed AS (
 		SELECT id,
 			   klasse,
@@ -99,6 +99,6 @@ var versetzeSchuelerQuery = `
 // um eine Stufe hoch, macht die Abschlussklassen zu Abgängern und liefert beide Zahlen. zone
 // ist die Zeitzone der Schule; in ihr wird das Abgangsjahr bestimmt.
 func VersetzeSchueler(ctx context.Context, db Datenbank, zone string) (versetzt, abgaenger int, err error) {
-	err = db.QueryRow(ctx, versetzeSchuelerQuery, zone).Scan(&versetzt, &abgaenger)
+	err = db.QueryRow(ctx, sqlVersetzeSchueler, zone).Scan(&versetzt, &abgaenger)
 	return versetzt, abgaenger, err
 }

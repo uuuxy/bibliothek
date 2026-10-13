@@ -28,7 +28,7 @@ const AusweisPraefix = "A-"
 // Zeichen wie nach Wert gleich sortieren.
 func AusweisNummer(n int) string { return fmt.Sprintf("%s%05d", AusweisPraefix, n) }
 
-// Naechste liefert die nächste freie laufende Ausweisnummer, ohne Vorsilbe; die gedruckte Form
+// ZieheNaechste liefert die nächste freie laufende Ausweisnummer, ohne Vorsilbe; die gedruckte Form
 // setzt AusweisNummer. Der Zähler steht in der Datenbank (ausweis_nummer_start), weil auch die
 // Trigger aktives_konto_hat_ausweis und aktives_konto_behaelt_ausweis ihn brauchen: Ein
 // Nummernkreis hat einen Zähler.
@@ -41,7 +41,7 @@ func AusweisNummer(n int) string { return fmt.Sprintf("%s%05d", AusweisPraefix, 
 //
 // Die Nummern der Exemplare kommen nicht von hier, sondern aus barcode_seq
 // (repository/barcode_vergabe.go).
-func (a *AusweisnummernAbfragen) Naechste(ctx context.Context) (int, error) {
+func (a *AusweisnummernAbfragen) ZieheNaechste(ctx context.Context) (int, error) {
 	var n int64
 	if err := a.db.QueryRow(ctx, `SELECT ausweis_nummer_start()`).Scan(&n); err != nil {
 		return 0, fmt.Errorf("nächste ausweisnummer: %w", err)

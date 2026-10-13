@@ -17,7 +17,7 @@ func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 	const karte = "B97601826457"
 	svc := &defaultOmniboxService{
 		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{
 			karte: {ID: "s1", Vorname: "Nina", Nachname: "Berger"},
 		}},
 	}
@@ -42,7 +42,7 @@ func TestLehrerausweisOhnePraefix(t *testing.T) {
 	const karte = "B97601826458"
 	svc := &defaultOmniboxService{
 		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{
 			karte: {ID: "l1", Vorname: "Anna", Nachname: "Berg", Art: "lehrkraft"},
 		}},
 	}
@@ -64,7 +64,7 @@ func TestLehrerausweisOhnePraefix(t *testing.T) {
 func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 	for _, eingabe := range []string{"Goethe", "Die Leiden des jungen Werther"} {
 		resp, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: eingabe})
@@ -87,7 +87,7 @@ func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{
 			"L-4711": {ID: "s1", BarcodeID: "L-4711", Vorname: "Ersatz", Nachname: "Nummer"},
 		}},
 	}
@@ -106,7 +106,7 @@ func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
 func TestVorsilbeEntscheidetNichtDieTabelle(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{
 			"S-0815": {ID: "l1", Vorname: "Anna", Nachname: "Berg", Art: "lehrkraft"},
 		}},
 	}
@@ -124,7 +124,7 @@ func TestVorsilbeEntscheidetNichtDieTabelle(t *testing.T) {
 func TestUnbekannterAusweisMeldetSichLaut(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 	for _, code := range []string{"S-404", "L-404"} {
 		resp, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: code})

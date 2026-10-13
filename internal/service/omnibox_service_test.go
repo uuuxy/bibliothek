@@ -13,12 +13,12 @@ import (
 
 // stubLeserRepo liefert einen festen Leser für die Ausweis-Stufe der Theke.
 type stubLeserRepo struct {
-	repository.StudentRepository
-	leser *repository.Student
+	repository.LeserAbfragen
+	leser *repository.Leser
 	err   error
 }
 
-func (m *stubLeserRepo) GetLeserByBarcode(ctx context.Context, barcode string) (*repository.Student, error) {
+func (m *stubLeserRepo) FindeZuBarcode(ctx context.Context, barcode string) (*repository.Leser, error) {
 	return m.leser, m.err
 }
 
@@ -29,17 +29,17 @@ func (m *stubLeserRepo) GetLeserByBarcode(ctx context.Context, barcode string) (
 func TestHandleAusweisAction(t *testing.T) {
 	tests := []struct {
 		name        string
-		leser       *repository.Student
+		leser       *repository.Leser
 		err         error
 		expectError bool
 	}{
 		{
 			name:  "Kollege",
-			leser: &repository.Student{ID: "leser-123", Art: "lehrkraft"},
+			leser: &repository.Leser{ID: "leser-123", Art: "lehrkraft"},
 		},
 		{
 			name:  "Schüler",
-			leser: &repository.Student{ID: "leser-456", Art: "schueler"},
+			leser: &repository.Leser{ID: "leser-456", Art: "schueler"},
 		},
 		{
 			name:        "Not Found",
@@ -83,7 +83,7 @@ func TestHandleAusweisAction(t *testing.T) {
 func TestNewOmniboxService(t *testing.T) {
 	// Setup zero-value dependencies (we just need to verify they get injected correctly)
 	var pool db.PgxPoolIface
-	var studentRepo repository.StudentRepository
+	var studentRepo repository.LeserAbfragen
 	var bookRepo repository.KatalogAbfragen
 	var userRepo repository.KontoAbfragen
 	var loanRepo repository.AusleihAbfragen

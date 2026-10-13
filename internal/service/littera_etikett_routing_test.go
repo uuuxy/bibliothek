@@ -29,7 +29,7 @@ func TestProcessQuery_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 	loanSvc := &etikettLoanSvc{}
 	svc := &defaultOmniboxService{
 		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{"58968": exemplar}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
 		loanSvc:     loanSvc,
 	}
 
@@ -48,7 +48,7 @@ func TestProcessQuery_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 func TestProcessQuery_UnbekanntesEtikettFaelltAufSuche(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 
 	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "1241170039561", StaffID: "staff", StaffRole: "admin"})

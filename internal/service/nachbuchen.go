@@ -36,7 +36,7 @@ type NachbuchService interface {
 // NewNachbuchService baut die Tür auf demselben Rumpf wie der Ausleih-Service — dieselben
 // Schranken, dieselben Schreiber. userRepo löst Lehrerausweise auf, die offline gescannt
 // wurden.
-func NewNachbuchService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.KatalogAbfragen, userRepo repository.KontoAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) NachbuchService {
+func NewNachbuchService(pool db.PgxPoolIface, studentRepo repository.LeserAbfragen, bookRepo repository.KatalogAbfragen, userRepo repository.KontoAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) NachbuchService {
 	return &defaultLoanService{pool: pool, studentRepo: studentRepo, bookRepo: bookRepo, userRepo: userRepo, loanRepo: loanRepo, auditRepo: auditRepo}
 }
 
@@ -88,7 +88,7 @@ type nachbuchLage struct {
 	e           NachbuchEintrag
 	gescannt    time.Time
 	copy        *repository.Exemplar
-	leser       *repository.Student
+	leser       *repository.Leser
 	ausweis     *string // nicht auflösbarer Ausweis-Barcode, als Text für die Meldung
 	activeLoan  *repository.Ausleihe
 	befund      repository.RueckkehrBefund
@@ -244,7 +244,7 @@ func (s *defaultLoanService) loeseExemplar(ctx context.Context, barcode string) 
 func (s *defaultLoanService) loesePerson(ctx context.Context, l *nachbuchLage) error {
 	e := l.e
 	if e.LeserID != nil && *e.LeserID != "" {
-		leser, err := s.studentRepo.GetLeserByID(ctx, *e.LeserID)
+		leser, err := s.studentRepo.Finde(ctx, *e.LeserID)
 		if err != nil {
 			return err
 		}
@@ -254,7 +254,7 @@ func (s *defaultLoanService) loesePerson(ctx context.Context, l *nachbuchLage) e
 	if e.AusweisBarcode == nil || *e.AusweisBarcode == "" {
 		return nil
 	}
-	leser, err := s.studentRepo.GetLeserByBarcode(ctx, *e.AusweisBarcode)
+	leser, err := s.studentRepo.FindeZuBarcode(ctx, *e.AusweisBarcode)
 	if err != nil {
 		return err
 	}

@@ -286,14 +286,14 @@ func (s *Tueren) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 		// Das Konto entsteht in DERSELBEN Transaktion wie die Leserzeile — scheitert es,
 		// darf auch die Zeile nicht stehen bleiben (die belegte Adresse ist der häufige
 		// Fall und heisst: Die Person steht schon da).
-		params := repository.LegeKollegiumskontoParams{
+		params := repository.KollegiumskontoNeu{
 			Vorname:  req.Vorname,
 			Nachname: req.Nachname,
 			Email:    req.Email,
 			LeserID:  studentID,
 			Aktiv:    darfFreischalten,
 		}
-		if kontoID, err = repository.LegeKollegiumskonto(ctx, tx, params); err != nil {
+		if kontoID, err = repository.LegeKollegiumskontoAn(ctx, tx, params); err != nil {
 			antworteAufKontoFehler(w, err, strings.ToLower(strings.TrimSpace(req.Email)))
 			return "", "", false
 		}
@@ -317,7 +317,7 @@ func (s *Tueren) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 // „Mein Portal" längst selbst angemeldet hat. false heißt: Die Antwort ist geschrieben.
 func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWriter, req CreateStudentRequest, parsedGebdatum *time.Time) bool {
 	if leserart.IstSchueler(req.Art) {
-		isDuplicate, err := repository.SchuelerDubletteVorhanden(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
+		isDuplicate, err := repository.IstSchuelerDubletteVorhanden(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return false
@@ -328,7 +328,7 @@ func antworteAufLeserDublette(ctx context.Context, tx pgx.Tx, w http.ResponseWri
 		}
 		return true
 	}
-	belegt, err := repository.LeserNamensdubletteVorhanden(ctx, tx, req.Vorname, req.Nachname)
+	belegt, err := repository.IstLeserNamensdubletteVorhanden(ctx, tx, req.Vorname, req.Nachname)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
@@ -390,7 +390,7 @@ func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter,
 		// gerechnet gäbe der Generator sie ein zweites Mal aus — und der eindeutige Index
 		// quittierte das als 500 statt mit einer Auskunft. Ein Nummernkreis, zwei
 		// Generatoren: genau der Fehler aus Migration 068, nur eine Tabelle weiter.
-		startNum, err := seqRepo.Naechste(ctx)
+		startNum, err := seqRepo.ZieheNaechste(ctx)
 		if err != nil {
 			db.SafeRollback(ctx, tx)
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -407,7 +407,7 @@ func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter,
 	// Gelöschte Leser geben ihre Nummer frei — dieselbe Bedingung wie
 	// uniq_schueler_barcode_active, sonst wiese die Prüfung eine Nummer ab, die die
 	// Datenbank vergeben würde.
-	exists, err := repository.AusweisnummerVergeben(ctx, tx, requested)
+	exists, err := repository.IstAusweisnummerVergeben(ctx, tx, requested)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", false

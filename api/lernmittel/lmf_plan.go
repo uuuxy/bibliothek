@@ -138,7 +138,7 @@ func (s *Tueren) handleGetLmfPlan(w http.ResponseWriter, r *http.Request) error 
 		antwort.Plan, antwort.Zeilen, antwort.Ausgelassen = &plan, stand.Zeilen, stand.Ausgelassen
 		antwort.Vorbei = service.LmfPlanVorbei(stand, s.Jetzt())
 	}
-	// Klassen mit aktiven Schülern. GetDistinctClasses zählt Abgänger mit; die Klasse eines
+	// Klassen mit aktiven Schülern. LeserAbfragen.LadeKlassen zählt Abgänger mit; die Klasse eines
 	// Abgängers ohne aktive Schüler stünde im Planer sonst als „mit Schülern".
 	klassen, err := repo.KlassenMitSchuelern(r.Context())
 	if err != nil {

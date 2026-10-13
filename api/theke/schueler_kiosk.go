@@ -8,7 +8,7 @@ import "bibliothek/repository"
 // BEWUSST und dürfen nie dazukommen: /api/action und /api/search hängen am
 // Recht perform_actions, das auch die Helfer-Rolle trägt, und der Seed
 // verspricht dieser Rolle ausdrücklich keinen Zugriff auf Schülerprofile.
-// Bis 18.08.2026 lief hier der volle repository.Student-Datensatz durch —
+// Bis 18.08.2026 lief hier der volle repository.Leser-Datensatz durch —
 // Sicherheitsbefund bewertung/sicherheitsbefund-kiosk-suche.md. Die vollen
 // Profile gibt es weiterhin, aber nur hinter view_students (/api/schueler…).
 type SchuelerKiosk struct {
@@ -30,7 +30,7 @@ type SchuelerKiosk struct {
 }
 
 // zumKioskSchueler reduziert einen vollen Schülerdatensatz auf die Theken-Sicht.
-func zumKioskSchueler(s *repository.Student) *SchuelerKiosk {
+func zumKioskSchueler(s *repository.Leser) *SchuelerKiosk {
 	if s == nil {
 		return nil
 	}
@@ -42,12 +42,12 @@ func zumKioskSchueler(s *repository.Student) *SchuelerKiosk {
 		Nachname:          s.Nachname,
 		Klasse:            s.Klasse,
 		IstGesperrt:       s.IstGesperrt,
-		IsManuallyBlocked: s.IsManuallyBlocked,
+		IsManuallyBlocked: s.IstVonHandGesperrt,
 	}
 }
 
 // zuKioskSchuelern reduziert eine Trefferliste (Suche) auf die Theken-Sicht.
-func zuKioskSchuelern(students []repository.Student) []SchuelerKiosk {
+func zuKioskSchuelern(students []repository.Leser) []SchuelerKiosk {
 	kiosk := make([]SchuelerKiosk, 0, len(students))
 	for i := range students {
 		kiosk = append(kiosk, *zumKioskSchueler(&students[i]))

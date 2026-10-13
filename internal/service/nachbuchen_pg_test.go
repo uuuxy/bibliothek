@@ -52,7 +52,7 @@ func nbAufbau(t *testing.T) *nbWelt {
 	w.code = "B-NB-" + suffix
 	w.exemplarID = eins("Exemplar", `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, einkaufspreis) VALUES ($1, $2, true, 12.00) RETURNING id`, w.titelID, w.code)
 
-	studentRepo := repository.NewStudentRepository(pool)
+	studentRepo := repository.NewLeserAbfragen(pool)
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)

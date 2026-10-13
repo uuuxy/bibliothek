@@ -2,20 +2,20 @@ package repository
 
 import "context"
 
-// SchuelerEtikettZeile ist das Minimum, das auf einem Klebeetikett steht.
+// LeserEtikettZeile ist das Minimum, das auf einem Klebeetikett steht.
 //
-// Bewusst ein eigener, schmaler Typ statt Student: Der Etikettenbogen braucht vier
+// Bewusst ein eigener, schmaler Typ statt Leser: Der Etikettenbogen braucht vier
 // Felder, und ein Aufruf, der das ganze Schülerprofil holt, zieht Adresse, Sperrgrund
 // und Elternmail durch eine Schicht, die davon nichts wissen muss (Datenminimierung,
 // dieselbe Haltung wie bei den Statistik-Abfragen).
-type SchuelerEtikettZeile struct {
+type LeserEtikettZeile struct {
 	BarcodeID string
 	Vorname   string
 	Nachname  string
 	Klasse    string
 }
 
-// EtikettenZeilen liest die Etikettenangaben zu den angegebenen LESER-IDs.
+// LadeEtikettZeilen liest die Etikettenangaben zu den angegebenen LESER-IDs.
 //
 // Sortiert nach Klasse, Nachname, Vorname — nicht in der Reihenfolge der übergebenen
 // IDs: Die Markierungsreihenfolge in der Schülerdatei ist zufällig (mal von oben
@@ -26,7 +26,7 @@ type SchuelerEtikettZeile struct {
 // markierte Klassen auf dem Bogen ineinander (gemessen: 7A, 7A, 7A, 7B, 7B, 7B, 7B,
 // 7B, 7A, …), und wer die Etiketten klassenweise austeilt, klaubt sie einzeln
 // heraus. Es ist außerdem dieselbe Reihenfolge, die die Leserdatei selbst führt
-// (Kollegium zuerst, dann die gewohnte Kartei-Reihenfolge — listSchuelerMitStats) und
+// (Kollegium zuerst, dann die gewohnte Kartei-Reihenfolge — ladeListe) und
 // der der Ausweis-Stapeldruck folgt: Zwei Ausgaben derselben Auswahl sollen nicht
 // verschieden sortiert aus dem Drucker kommen.
 //
@@ -39,12 +39,12 @@ type SchuelerEtikettZeile struct {
 // Fehler: Ein gleichzeitig gelöschter Mensch soll den ganzen Bogen nicht verhindern.
 // Seit die Abfrage die Tabelle liest, ist das auch der einzige Grund, aus dem eine Zeile
 // fehlen kann.
-func (r *pgStudentRepository) EtikettenZeilen(ctx context.Context, ids []string) ([]SchuelerEtikettZeile, error) {
+func (a *pgLeserAbfragen) LadeEtikettZeilen(ctx context.Context, ids []string) ([]LeserEtikettZeile, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
 
-	rows, err := r.db.Query(ctx, `
+	rows, err := a.db.Query(ctx, `
 		SELECT coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''), coalesce(klasse, '')
 		FROM leser
 		WHERE id = ANY($1) AND deleted_at IS NULL
@@ -55,9 +55,9 @@ func (r *pgStudentRepository) EtikettenZeilen(ctx context.Context, ids []string)
 	}
 	defer rows.Close()
 
-	zeilen := make([]SchuelerEtikettZeile, 0, len(ids))
+	zeilen := make([]LeserEtikettZeile, 0, len(ids))
 	for rows.Next() {
-		var z SchuelerEtikettZeile
+		var z LeserEtikettZeile
 		if err := rows.Scan(&z.BarcodeID, &z.Vorname, &z.Nachname, &z.Klasse); err != nil {
 			return nil, err
 		}

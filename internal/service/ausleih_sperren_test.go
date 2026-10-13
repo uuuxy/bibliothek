@@ -18,7 +18,7 @@ import (
 
 // pruefeMitMock ruft den Prüfweg mit einem Mock-Pool, auf dem vorbereiten die erwarteten
 // Abfragen einträgt, und prüft danach, dass genau diese liefen.
-func pruefeMitMock(t *testing.T, leser *repository.Student, lernmittel, uebergehen bool, vorbereiten func(pgxmock.PgxPoolIface)) (sperrLage, error) {
+func pruefeMitMock(t *testing.T, leser *repository.Leser, lernmittel, uebergehen bool, vorbereiten func(pgxmock.PgxPoolIface)) (sperrLage, error) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -35,8 +35,8 @@ func pruefeMitMock(t *testing.T, leser *repository.Student, lernmittel, uebergeh
 
 func keineAbfrage(pgxmock.PgxPoolIface) {}
 
-func schueler(mod func(*repository.Student)) *repository.Student {
-	s := &repository.Student{ID: "s1", Art: "schueler", Klasse: "5a"}
+func schueler(mod func(*repository.Leser)) *repository.Leser {
+	s := &repository.Leser{ID: "s1", Art: "schueler", Klasse: "5a"}
 	if mod != nil {
 		mod(s)
 	}
@@ -48,12 +48,12 @@ func schueler(mod func(*repository.Student)) *repository.Student {
 // „Für eine Ausleihe muss jedoch die Sperre zunächst in den Leserstammdaten aufgehoben
 // werden!"
 func TestAusleihSperren_SperreAmLeserLaesstSichNichtUebergehen(t *testing.T) {
-	faelle := map[string]*repository.Student{
-		"von Hand": schueler(func(s *repository.Student) {
-			s.IsManuallyBlocked, s.BlockReason = true, strPtr("Ausweis verloren")
+	faelle := map[string]*repository.Leser{
+		"von Hand": schueler(func(s *repository.Leser) {
+			s.IstVonHandGesperrt, s.Sperrgrund = true, strPtr("Ausweis verloren")
 		}),
-		"vom Programm (Ehemalige)": schueler(func(s *repository.Student) {
-			s.IstGesperrt, s.BlockReason = true, strPtr("Automatisierte Abgänger-Sperre (offene Vorgänge)")
+		"vom Programm (Ehemalige)": schueler(func(s *repository.Leser) {
+			s.IstGesperrt, s.Sperrgrund = true, strPtr("Automatisierte Abgänger-Sperre (offene Vorgänge)")
 		}),
 	}
 	for name, leser := range faelle {
@@ -68,7 +68,7 @@ func TestAusleihSperren_SperreAmLeserLaesstSichNichtUebergehen(t *testing.T) {
 						uebergehen, IstSperreAmLeser(err), IstUebergehbareSperre(err))
 				}
 				var sg *SperrGrundFehler
-				if !errors.As(err, &sg) || sg.Grund != *leser.BlockReason {
+				if !errors.As(err, &sg) || sg.Grund != *leser.Sperrgrund {
 					t.Errorf("der Grund fehlt in der Meldung: %v", err)
 				}
 			}
@@ -82,8 +82,8 @@ func TestAusleihSperren_SperreAmLeserLaesstSichNichtUebergehen(t *testing.T) {
 // der zwei Automatiken fragt die Datenbank.
 func TestAusleihSperren_LernmittelNurSperreVonHand(t *testing.T) {
 	t.Run("Ehemalige, offene Forderung, überfällig: keine Abfrage, keine Sperre", func(t *testing.T) {
-		leser := schueler(func(s *repository.Student) {
-			s.IstGesperrt, s.BlockReason = true, strPtr("Automatisierte Abgänger-Sperre (Schuljahreswechsel)")
+		leser := schueler(func(s *repository.Leser) {
+			s.IstGesperrt, s.Sperrgrund = true, strPtr("Automatisierte Abgänger-Sperre (Schuljahreswechsel)")
 		})
 		lage, err := pruefeMitMock(t, leser, true, false, keineAbfrage)
 		if err != nil {
@@ -94,8 +94,8 @@ func TestAusleihSperren_LernmittelNurSperreVonHand(t *testing.T) {
 		}
 	})
 	t.Run("Gegenprobe: die Sperre von Hand hält auch das Lernmittel auf", func(t *testing.T) {
-		leser := schueler(func(s *repository.Student) {
-			s.IsManuallyBlocked, s.BlockReason = true, strPtr("Hausverbot")
+		leser := schueler(func(s *repository.Leser) {
+			s.IstVonHandGesperrt, s.Sperrgrund = true, strPtr("Hausverbot")
 		})
 		if _, err := pruefeMitMock(t, leser, true, false, keineAbfrage); !IstSperreAmLeser(err) {
 			t.Errorf("Sperre von Hand beim Lernmittel: erwartet Sperre am Leser, bekam %v", err)
@@ -108,13 +108,13 @@ func TestAusleihSperren_LernmittelNurSperreVonHand(t *testing.T) {
 // Forderung und Überfällig zählen bei ihm nicht.
 func TestAusleihSperren_KollegeWirdNieGesperrt(t *testing.T) {
 	for _, art := range []string{"lehrkraft", "liv"} {
-		leser := &repository.Student{ID: "k1", Art: art, IsManuallyBlocked: true, IstGesperrt: true, BlockReason: strPtr("alt")}
+		leser := &repository.Leser{ID: "k1", Art: art, IstVonHandGesperrt: true, IstGesperrt: true, Sperrgrund: strPtr("alt")}
 		if _, err := pruefeMitMock(t, leser, false, false, keineAbfrage); err != nil {
 			t.Errorf("%s abgewiesen: %v", art, err)
 		}
 	}
 	t.Run("leere Art heißt Schüler (Sicht schueler) — die Sperre gilt", func(t *testing.T) {
-		leser := &repository.Student{ID: "s1", IsManuallyBlocked: true, BlockReason: strPtr("Test")}
+		leser := &repository.Leser{ID: "s1", IstVonHandGesperrt: true, Sperrgrund: strPtr("Test")}
 		if _, err := pruefeMitMock(t, leser, false, false, keineAbfrage); !IstSperreAmLeser(err) {
 			t.Errorf("erwartet Sperre am Leser, bekam %v", err)
 		}
@@ -124,8 +124,8 @@ func TestAusleihSperren_KollegeWirdNieGesperrt(t *testing.T) {
 // Ein anonymisierter Datensatz ist keine Person mehr: nichts, auch kein Lernmittel. Ohne
 // Merkmal — aufheben lässt sich diese Sperre nicht (api/leser/student_lock.go lehnt ab).
 func TestAusleihSperren_AnonymisiertBekommtNichts(t *testing.T) {
-	leser := schueler(func(s *repository.Student) {
-		s.IstAnonymisiert, s.IstGesperrt, s.BlockReason = true, true, strPtr("Abgänger anonymisiert")
+	leser := schueler(func(s *repository.Leser) {
+		s.IstAnonymisiert, s.IstGesperrt, s.Sperrgrund = true, true, strPtr("Abgänger anonymisiert")
 	})
 	for _, lernmittel := range []bool{false, true} {
 		_, err := pruefeMitMock(t, leser, lernmittel, true, keineAbfrage)

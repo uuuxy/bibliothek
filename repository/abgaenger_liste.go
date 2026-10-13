@@ -11,25 +11,25 @@ import (
 var abgaengerBedingung = "s.deleted_at IS NULL AND s.ist_abgaenger = false AND " +
 	AbschlussklasseSQL("s.klasse")
 
-// AbgaengerMitBuechern ist ein Schüler einer Abschlussklasse mit der Zahl seiner offenen und
+// AbgaengerMitAusleihen ist ein Schüler einer Abschlussklasse mit der Zahl seiner offenen und
 // davon überfälligen Bücher und der Adresse seiner Klassenleitung (leer, wenn keine
 // hinterlegt ist).
-type AbgaengerMitBuechern struct {
-	ID            string
-	BarcodeID     string
-	Vorname       string
-	Nachname      string
-	Klasse        string
-	AbgaengerJahr int
-	IstGesperrt   bool
-	OffeneBuecher int
-	Ueberfaellig  int
-	LehrerEmail   string
+type AbgaengerMitAusleihen struct {
+	ID              string
+	BarcodeID       string
+	Vorname         string
+	Nachname        string
+	Klasse          string
+	AbgaengerJahr   int
+	IstGesperrt     bool
+	OffeneAusleihen int
+	Ueberfaellig    int
+	LehrerEmail     string
 }
 
-// ListeAbgaengerMitOffenenBuechern liefert eine Zeile je Abgänger mit offenen Ausleihen, nach
+// LadeAbgaengerMitOffenenAusleihen liefert eine Zeile je Abgänger mit offenen Ausleihen, nach
 // Klasse und Nachname geordnet.
-func ListeAbgaengerMitOffenenBuechern(ctx context.Context, db Datenbank) ([]AbgaengerMitBuechern, error) {
+func LadeAbgaengerMitOffenenAusleihen(ctx context.Context, db Datenbank) ([]AbgaengerMitAusleihen, error) {
 	query := `
 		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
 		       COUNT(a.id)                                        AS offene_buecher,
@@ -53,11 +53,11 @@ func ListeAbgaengerMitOffenenBuechern(ctx context.Context, db Datenbank) ([]Abga
 	}
 	defer rows.Close()
 
-	zeilen := []AbgaengerMitBuechern{}
+	zeilen := []AbgaengerMitAusleihen{}
 	for rows.Next() {
-		var z AbgaengerMitBuechern
+		var z AbgaengerMitAusleihen
 		if err := rows.Scan(&z.ID, &z.BarcodeID, &z.Vorname, &z.Nachname, &z.Klasse, &z.AbgaengerJahr,
-			&z.IstGesperrt, &z.OffeneBuecher, &z.Ueberfaellig, &z.LehrerEmail); err != nil {
+			&z.IstGesperrt, &z.OffeneAusleihen, &z.Ueberfaellig, &z.LehrerEmail); err != nil {
 			return nil, err
 		}
 		zeilen = append(zeilen, z)
@@ -78,10 +78,10 @@ type AbgaengerAusleihe struct {
 	Frist           time.Time
 }
 
-// ListeAbgaengerAusleihen liefert die offenen Ausleihen der Abgänger nach Klasse, Nachname und
+// LadeAbgaengerAusleihen liefert die offenen Ausleihen der Abgänger nach Klasse, Nachname und
 // Titel geordnet. Eine leere Klasse heißt alle; nurIDs engt auf die genannten Schüler ein
 // (nil = keine Einengung) und ist ein Schnitt mit der Abgängerliste, keine zweite Auswahl.
-func ListeAbgaengerAusleihen(ctx context.Context, db Datenbank, klasse string, nurIDs []string) ([]AbgaengerAusleihe, error) {
+func LadeAbgaengerAusleihen(ctx context.Context, db Datenbank, klasse string, nurIDs []string) ([]AbgaengerAusleihe, error) {
 	detailQuery := `
 		SELECT s.id, s.vorname, s.nachname, s.klasse,
 		       t.titel,

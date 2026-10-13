@@ -35,8 +35,8 @@ type KontoSchreiber interface {
 // macht daraus eine 404 statt einer 500 — „nicht gefunden" ist keine Störung.
 var ErrLeserNichtGefunden = errors.New("leser nicht gefunden")
 
-// LeserArt liefert die Art einer Leserzeile (chk_leser_art, Migration 153).
-func LeserArt(ctx context.Context, pool db.PgxPoolIface, leserID string) (string, error) {
+// LadeLeserArt liefert die Art einer Leserzeile (chk_leser_art, Migration 153).
+func LadeLeserArt(ctx context.Context, pool db.PgxPoolIface, leserID string) (string, error) {
 	var art string
 	err := pool.QueryRow(ctx, `SELECT art FROM leser WHERE id = $1`, leserID).Scan(&art)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -45,13 +45,13 @@ func LeserArt(ctx context.Context, pool db.PgxPoolIface, leserID string) (string
 	return art, err
 }
 
-// LeserArtUndKontoEmail liefert die Art der Leserzeile und die Adresse an ihrem Konto
+// LadeLeserArtUndKontoEmail liefert die Art der Leserzeile und die Adresse an ihrem Konto
 // ("" = kein Konto) in EINER Abfrage — der Handler entscheidet an genau diesem Paar.
 //
 // Bei mehreren Konten an derselben Zeile gilt das älteste. Das ist der Normalfall-Fall
 // von einem Konto (trg_benutzer_hat_leserzeile), aber die Reihenfolge macht die Antwort
 // eindeutig, statt sich auf eine Zusage zu verlassen, die kein Index hält.
-func LeserArtUndKontoEmail(ctx context.Context, pool db.PgxPoolIface, leserID string) (art, email string, err error) {
+func LadeLeserArtUndKontoEmail(ctx context.Context, pool db.PgxPoolIface, leserID string) (art, email string, err error) {
 	err = pool.QueryRow(ctx, `
 		SELECT l.art,
 		       COALESCE((SELECT b.email FROM benutzer b
@@ -65,8 +65,8 @@ func LeserArtUndKontoEmail(ctx context.Context, pool db.PgxPoolIface, leserID st
 	return art, email, err
 }
 
-// KontoEmail liefert die Schul-Adresse am Konto dieser Leserzeile ("" = kein Konto).
-func KontoEmail(ctx context.Context, pool db.PgxPoolIface, leserID string) (string, error) {
+// LadeKontoEmail liefert die Schul-Adresse am Konto dieser Leserzeile ("" = kein Konto).
+func LadeKontoEmail(ctx context.Context, pool db.PgxPoolIface, leserID string) (string, error) {
 	var email string
 	err := pool.QueryRow(ctx, `
 		SELECT COALESCE(email, '') FROM benutzer
@@ -78,8 +78,8 @@ func KontoEmail(ctx context.Context, pool db.PgxPoolIface, leserID string) (stri
 	return email, err
 }
 
-// LeserName liefert Vor- und Nachnamen einer Leserzeile.
-func LeserName(ctx context.Context, pool db.PgxPoolIface, leserID string) (vorname, nachname string, err error) {
+// LadeLeserName liefert Vor- und Nachnamen einer Leserzeile.
+func LadeLeserName(ctx context.Context, pool db.PgxPoolIface, leserID string) (vorname, nachname string, err error) {
 	err = pool.QueryRow(ctx,
 		`SELECT COALESCE(vorname, ''), nachname FROM leser WHERE id = $1`, leserID).Scan(&vorname, &nachname)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -93,10 +93,10 @@ func LeserName(ctx context.Context, pool db.PgxPoolIface, leserID string) (vorna
 // stünde in der Leserdatei und käme nie ins Portal.
 var ErrKontoNichtEntstanden = errors.New("das Konto ist nicht entstanden")
 
-// LegeKollegiumskontoParams trägt die Angaben des neuen Kontos. Als Struktur, weil
+// KollegiumskontoNeu trägt die Angaben des neuen Kontos. Als Struktur, weil
 // Vorname, Nachname, E-Mail und Leserzeile nebeneinander string sind: Vor- und Nachname
 // positionsweise vertauscht, stünde die Person ohne jeden Fehler falsch im Konto.
-type LegeKollegiumskontoParams struct {
+type KollegiumskontoNeu struct {
 	Vorname  string
 	Nachname string
 	Email    string
@@ -104,7 +104,7 @@ type LegeKollegiumskontoParams struct {
 	Aktiv    bool
 }
 
-// LegeKollegiumskonto hängt an eine Leserzeile das Anmeldekonto.
+// LegeKollegiumskontoAn hängt an eine Leserzeile das Anmeldekonto.
 //
 // `LeserID` wird ausdrücklich mitgegeben, damit der Wächter trg_benutzer_hat_leserzeile
 // NICHT anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
@@ -118,7 +118,7 @@ type LegeKollegiumskontoParams struct {
 //
 // Liefert die Kennung des neuen Kontos: Mit ihr schreibt der Aufrufer den Protokolleintrag
 // über das Konto (ziel_id), an dem die Auskunft es findet — auch nachdem es gelöscht ist.
-func LegeKollegiumskonto(ctx context.Context, q KontoSchreiber, params LegeKollegiumskontoParams) (string, error) {
+func LegeKollegiumskontoAn(ctx context.Context, q KontoSchreiber, params KollegiumskontoNeu) (string, error) {
 	var kontoID string
 	err := q.QueryRow(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id, zugang_beantragt_am)
@@ -140,11 +140,11 @@ func IstAdressenKollision(err error) bool {
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
 
-// LeserIDVonKonto liefert die Leserzeile zu einem Konto ("" = unbekanntes Konto).
+// LadeLeserIDVonKonto liefert die Leserzeile zu einem Konto ("" = unbekanntes Konto).
 //
 // Gebraucht für den Selbstschutz beim Löschen: Wer seine eigene Leserzeile löscht,
 // verliert beim Kollegium im selben Vorgang sein Konto.
-func LeserIDVonKonto(ctx context.Context, pool db.PgxPoolIface, kontoID string) (string, error) {
+func LadeLeserIDVonKonto(ctx context.Context, pool db.PgxPoolIface, kontoID string) (string, error) {
 	var leserID string
 	err := pool.QueryRow(ctx,
 		`SELECT COALESCE(leser_id::text, '') FROM benutzer WHERE id = $1`, kontoID).Scan(&leserID)

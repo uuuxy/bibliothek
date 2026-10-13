@@ -246,7 +246,7 @@ func (s *Tueren) checkAusleiheGesperrt(ctx context.Context, ausleiheID string) (
 	if err != nil || leserID == nil {
 		return false, "", err
 	}
-	leser, err := repository.NewStudentRepository(s.DB.Pool).GetLeserByID(ctx, *leserID)
+	leser, err := repository.NewLeserAbfragen(s.DB.Pool).Finde(ctx, *leserID)
 	if err != nil {
 		return false, "", err
 	}

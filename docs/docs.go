@@ -3009,7 +3009,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/repository.StudentListStat"
+                                "$ref": "#/definitions/repository.LeserListenZeile"
                             }
                         }
                     },
@@ -4980,7 +4980,7 @@ const docTemplate = `{
                 "entliehene_buecher": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.BorrowedBook"
+                        "$ref": "#/definitions/repository.LaufendeAusleihe"
                     }
                 },
                 "foto_url": {
@@ -5252,47 +5252,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "uebergeben_am": {
-                    "type": "string"
-                }
-            }
-        },
-        "repository.BorrowedBook": {
-            "type": "object",
-            "properties": {
-                "ausgeliehen_am": {
-                    "type": "string"
-                },
-                "ausleihe_id": {
-                    "type": "string"
-                },
-                "autor": {
-                    "type": "string"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "cover_url": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "isbn": {
-                    "description": "ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein\nCover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den\nCover-Proxy) — und das ist bei importierten Beständen der Normalfall.",
-                    "type": "string"
-                },
-                "ist_dauerleihe": {
-                    "description": "IstDauerleihe ist die Ausleihe an jemanden, der kein Schüler ist\n(` + "`" + `ausleihen.ist_handapparat` + "`" + `, gesetzt in erzeugeAusleihe und im Geräte-Pfad).\n\nSie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die\nes nicht gibt: Entschieden am 16.09.2026 — „kollegen haben keine frist bzw werden einfach\nnie gesperrt!\" Die Sperr-Automatik hält das seit jeher (sie zählt nur Ausleihen mit\nist_handapparat = false); die Akte rechnete daneben ihr eigenes „überfällig\" aus\ndem Datum und färbte die Zeile nach einem Jahr rot.",
-                    "type": "boolean"
-                },
-                "ist_lernmittel": {
-                    "description": "IstLernmittel steuert die Marke „Lernmittel\" an der Ausleihzeile — aus der\nSpalte (Migration 093), nicht mehr aus einem LMF-Präfix in Titel oder Signatur.",
-                    "type": "boolean"
-                },
-                "rueckgabe_frist": {
-                    "type": "string"
-                },
-                "titel": {
                     "type": "string"
                 }
             }
@@ -5625,7 +5584,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "ist_lernmittel": {
-                    "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel,\nMigration 093) — Schuljahresfrist statt Tage, zählt nicht ins Ausleihlimit.",
+                    "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel). Es trägt\ndie Frist des Schuljahres statt einer in Tagen und zählt nicht ins Ausleihlimit.",
                     "type": "boolean"
                 },
                 "jahrgang_bis": {
@@ -5636,7 +5595,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "mehrjahresband": {
-                    "description": "Mehrjahresband und JahrgangBis kommen vom Titel (Migration 134): Bleibt das Buch über\nmehrere Schuljahre beim Kind, rechnet die Fristregel bis zum Stichtag des Schuljahres,\nin dem das Kind JahrgangBis beendet (internal/service/loan_rules.go).",
+                    "description": "Mehrjahresband und JahrgangBis kommen vom Titel: Bleibt das Buch über\nmehrere Schuljahre beim Kind, rechnet die Fristregel bis zum Stichtag des Schuljahres,\nin dem das Kind JahrgangBis beendet (internal/service/loan_rules.go).",
                     "type": "boolean"
                 },
                 "signatur": {
@@ -5758,6 +5717,93 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.LaufendeAusleihe": {
+            "type": "object",
+            "properties": {
+                "ausgeliehen_am": {
+                    "type": "string"
+                },
+                "ausleihe_id": {
+                    "type": "string"
+                },
+                "autor": {
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "cover_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isbn": {
+                    "description": "ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein\nCover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den\nCover-Proxy) — und das ist bei importierten Beständen der Normalfall.",
+                    "type": "string"
+                },
+                "ist_dauerleihe": {
+                    "description": "IstDauerleihe ist die Ausleihe an jemanden, der kein Schüler ist\n(` + "`" + `ausleihen.ist_handapparat` + "`" + `, gesetzt in erzeugeAusleihe und im Geräte-Pfad).\n\nSie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die\nes nicht gibt: Entschieden am 16.09.2026 — „kollegen haben keine frist bzw werden einfach\nnie gesperrt!\" Die Sperr-Automatik hält das seit jeher (sie zählt nur Ausleihen mit\nist_handapparat = false); die Akte rechnete daneben ihr eigenes „überfällig\" aus\ndem Datum und färbte die Zeile nach einem Jahr rot.",
+                    "type": "boolean"
+                },
+                "ist_lernmittel": {
+                    "description": "IstLernmittel steuert die Marke „Lernmittel\" an der Ausleihzeile — aus der\nSpalte (Migration 093), nicht mehr aus einem LMF-Präfix in Titel oder Signatur.",
+                    "type": "boolean"
+                },
+                "rueckgabe_frist": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.LeserListenZeile": {
+            "type": "object",
+            "properties": {
+                "abgaenger_jahr": {
+                    "type": "integer"
+                },
+                "art": {
+                    "description": "Art ist Schüler, Lehrkraft oder LiV. Die Leserdatei führt sie als eigene Spalte —\nein Kollege hat keine Klasse, und ohne die Art stünde er in der Liste wie ein\nSchüler mit fehlender Angabe.",
+                    "type": "string"
+                },
+                "ausgeliehen_count": {
+                    "type": "integer"
+                },
+                "ausweis_gueltig_bis": {
+                    "description": "AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt — aus dem\nBildungsgang der Klasse gerechnet, NICHT aus AbgaengerJahr (siehe\ninternal/ausweis). nil heißt: aus dieser Klassenbezeichnung nicht ableitbar,\ndann fragt der Druckdialog nach.",
+                    "type": "integer"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "foto_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_manually_blocked": {
+                    "type": "boolean"
+                },
+                "ist_gesperrt": {
+                    "type": "boolean"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "ueberfaellig_count": {
+                    "type": "integer"
+                },
+                "vorname": {
                     "type": "string"
                 }
             }
@@ -5991,52 +6037,6 @@ const docTemplate = `{
                 }
             }
         },
-        "repository.StudentListStat": {
-            "type": "object",
-            "properties": {
-                "abgaenger_jahr": {
-                    "type": "integer"
-                },
-                "art": {
-                    "description": "Art ist Schüler, Lehrkraft oder LiV. Die Leserdatei führt sie als eigene Spalte —\nein Kollege hat keine Klasse, und ohne die Art stünde er in der Liste wie ein\nSchüler mit fehlender Angabe.",
-                    "type": "string"
-                },
-                "ausgeliehen_count": {
-                    "type": "integer"
-                },
-                "ausweis_gueltig_bis": {
-                    "description": "AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt — aus dem\nBildungsgang der Klasse gerechnet, NICHT aus AbgaengerJahr (siehe\ninternal/ausweis). nil heißt: aus dieser Klassenbezeichnung nicht ableitbar,\ndann fragt der Druckdialog nach.",
-                    "type": "integer"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "foto_url": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_manually_blocked": {
-                    "type": "boolean"
-                },
-                "ist_gesperrt": {
-                    "type": "boolean"
-                },
-                "klasse": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "ueberfaellig_count": {
-                    "type": "integer"
-                },
-                "vorname": {
-                    "type": "string"
-                }
-            }
-        },
         "repository.SystemEinstellungen": {
             "type": "object",
             "properties": {
@@ -6193,7 +6193,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "auflage": {
-                    "description": "Auflage ist die Auflagenbezeichnung („4. Aufl. 2023\", Migration 126). Eine neue\nAuflage trägt eine eigene ISBN und ist damit ein eigener Titel; dieses Feld sagt,\nwelcher von zwei gleich heißenden Zeilen man vor sich hat.",
+                    "description": "Auflage ist die Auflagenbezeichnung („4. Aufl. 2023\"). Eine neue Auflage trägt eine\neigene ISBN und ist damit ein eigener Titel; dieses Feld sagt, welche von zwei gleich\nheißenden Zeilen man vor sich hat.",
                     "type": "string"
                 },
                 "autor": {
@@ -6201,7 +6201,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "bestand": {
-                    "description": "Bestand und Verfuegbar füllen NUR die Suchabfragen (FindeTitel,\nFindeTitelUnscharf) — Protokoll des Medienzentrums vom 16.09.2026, Punkt 4:\n„Bücher, zu denen es keine Exemplare gibt, tauchen in der Trefferliste auf.\"\nEin Titel ohne Exemplare ist ein legitimer Zustand (angelegt ohne\nBestandsangabe, Altbestand aus Littera) — verstecken wäre falsch, aber die\nTrefferliste muss es SAGEN.\n\nZeiger, weil „nicht mitgeliefert\" und „null Exemplare\" zwei verschiedene\nDinge sind: Jede andere Abfrage, die einen Titel liefert (Katalog, Import,\nBestellwesen), lässt die Felder nil, und die Oberfläche schreibt dann gar\nnichts statt „0 Exemplare\" über einen Titel, dessen Bestand niemand gezählt\nhat.",
+                    "description": "Bestand und Verfuegbar füllen nur die Suchabfragen (FindeTitel, FindeTitelUnscharf): Die\nTrefferliste sagt damit, wie viele Exemplare ein Titel hat und wie viele davon frei sind.\n\nZeiger, weil „nicht mitgeliefert\" und „null Exemplare\" zwei verschiedene Dinge sind: Jede\nandere Abfrage, die einen Titel liefert (Katalog, Import, Bestellwesen), lässt die Felder\nnil, und die Oberfläche schreibt dann gar nichts statt „0 Exemplare\" über einen Titel,\ndessen Bestand niemand gezählt hat.",
                     "type": "integer"
                 },
                 "cover_url": {
@@ -6234,7 +6234,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ist_lernmittel": {
-                    "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Die Regeln —\nFrist, Limit, öffentlicher Katalog, Löschfrist — lesen dieses Feld, nicht den Text.",
+                    "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit. Die Regeln —\nFrist, Limit, öffentlicher Katalog, Löschfrist — lesen dieses Feld, nicht den Text.",
                     "type": "boolean"
                 },
                 "medientyp": {
@@ -6242,7 +6242,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "mehrjahresband": {
-                    "description": "Mehrjahresband (Migration 134, Antwort der Schule vom 22.09.2026): Das Buch bleibt über\ndie Spanne JahrgangVon..JahrgangBis beim Kind; die Frist rechnet bis zum Stichtag des\nSchuljahres, in dem das Kind JahrgangBis beendet. Die Jahreszahl ist JahrgangBis, eine\nzweite gibt es nicht.",
+                    "description": "Mehrjahresband: Das Buch bleibt über die Spanne JahrgangVon..JahrgangBis beim Kind; die\nFrist rechnet bis zum Stichtag des Schuljahres, in dem das Kind JahrgangBis beendet. Die\nJahreszahl ist JahrgangBis, eine zweite gibt es nicht.",
                     "type": "boolean"
                 },
                 "signatur": {

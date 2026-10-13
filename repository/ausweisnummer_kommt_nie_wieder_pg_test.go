@@ -70,7 +70,7 @@ func TestAusweisnummer_KommtNieWieder(t *testing.T) {
 		}},
 		{"zusammengeführt (die Quelle fällt)", "schueler", func(t *testing.T, id string) {
 			ziel := neu(t, "schueler", "A-10048")
-			if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, id)); err != nil {
+			if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, id)); err != nil {
 				t.Fatalf("Zusammenführen: %v", err)
 			}
 		}},

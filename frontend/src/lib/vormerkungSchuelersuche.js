@@ -5,7 +5,7 @@
 // weil die Route am Theken-Recht hängt, meldete die Schülersuche in der Buchakte ohne
 // perform_actions nur noch „Suche nicht möglich" — obwohl der Reiter mit der Theke nichts
 // zu tun hat. Die Schülerdatei sucht mit derselben Bedingung (Name, Barcode, Klasse;
-// repository.SchuelerSuchBedingung), lässt Abgänger weg (für die wird nichts mehr
+// repository.leserSuchBedingung), lässt Abgänger weg (für die wird nichts mehr
 // vorgemerkt) und trägt das Recht, das zu den Daten passt.
 //
 // Eigenes Modul, damit der Weg ohne Browser prüfbar ist (vormerkungSchuelersuche.test.js)

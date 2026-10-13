@@ -37,7 +37,7 @@ func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := &Tueren{Basis: &tuer.Basis{}}
-	h := s.SearchHandler(repository.NewStudentRepository(pool), repository.NewKatalogAbfragen(pool))
+	h := s.SearchHandler(repository.NewLeserAbfragen(pool), repository.NewKatalogAbfragen(pool))
 	suche := func(q string) UnifiedSearchResult {
 		t.Helper()
 		w := httptest.NewRecorder()
@@ -59,7 +59,7 @@ func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
 		t.Errorf("Ausweis: %+v", r.Treffer)
 	}
 	// Der Ausweis eines Kollegen ist derselbe Sprung: Die Akte ist eine Maske für jeden, und
-	// die Theke löst ihn längst über GetLeserByBarcode auf. Bis zum 21.09.2026 fragte die
+	// die Theke löst ihn längst über FindeZuBarcode auf. Bis zum 21.09.2026 fragte die
 	// Scan-Erkennung als einzige Stelle noch die Sicht `schueler` — Treffer nil, und die
 	// Suchleiste fiel auf die unscharfe Namenssuche zurück (OFFEN.md 5.19).
 	if r := suche("A-KOLL-77"); r.Treffer == nil || r.Treffer.Typ != "schueler" || r.Treffer.ID != kollegeID {

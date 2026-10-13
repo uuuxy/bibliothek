@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// TestListLeserMitStats_ZeigtKollegium ist der Rot-Test der Leserdatei: Bis zum
+// TestLadeLeserListe_ZeigtKollegium ist der Rot-Test der Leserdatei: Bis zum
 // 16.09.2026 gab es nur die Schülerdatei, und sie las die Sicht `schueler`. Ein Kollege
 // stand in keiner Liste — man sah nicht, welche Bücher er hat.
 //
@@ -17,7 +17,7 @@ import (
 //  2. Kollegium steht VORN. Die ungefilterte Liste ist bei 500 Zeilen gekappt; stünde
 //     das Kollegium hinter den Schülern, wäre es bei 875 Schülern nie zu sehen — und
 //     zwar lautlos.
-func TestListLeserMitStats_ZeigtKollegium(t *testing.T) {
+func TestLadeLeserListe_ZeigtKollegium(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -26,10 +26,10 @@ func TestListLeserMitStats_ZeigtKollegium(t *testing.T) {
 	seedSuchLeser(t, pool, "LLIST-2", "Katrin", "Wendlandt", "lehrkraft")
 	seedSuchLeser(t, pool, "", "Hendrik", "Aalbers", "liv")
 
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
 	// Die Schülerdatei-Sicht bleibt, was sie war.
-	nurSchueler, err := repo.ListStudentsWithStats(ctx, nil, "", SchuelerSortierung{})
+	nurSchueler, err := repo.LadeSchuelerListe(ctx, nil, "", LeserSortierung{})
 	if err != nil {
 		t.Fatalf("Schülerliste: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestListLeserMitStats_ZeigtKollegium(t *testing.T) {
 		t.Errorf("ohne Art-Angabe darf die Liste nur Schüler zeigen, bekommen: %+v", nurSchueler)
 	}
 
-	alle, err := repo.ListLeserMitStats(ctx, nil, "", SchuelerSortierung{})
+	alle, err := repo.LadeLeserListe(ctx, nil, "", LeserSortierung{})
 	if err != nil {
 		t.Fatalf("Leserliste: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestListLeserMitStats_ZeigtKollegium(t *testing.T) {
 	}
 
 	// Die Suche läuft über alle — genau das ist „eine Suche über alle Leser".
-	treffer, err := repo.ListLeserMitStats(ctx, nil, "Wendlandt", SchuelerSortierung{})
+	treffer, err := repo.LadeLeserListe(ctx, nil, "Wendlandt", LeserSortierung{})
 	if err != nil {
 		t.Fatalf("Suche in der Leserdatei: %v", err)
 	}

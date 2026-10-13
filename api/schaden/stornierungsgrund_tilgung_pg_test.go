@@ -169,7 +169,7 @@ func TestStornierungsgrund_FaelltMitDerPerson(t *testing.T) {
 		storniere(t, quelle, "D", grund)
 		stehtAnBeidenStellen(t, grund)
 
-		if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
+		if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 			t.Fatalf("Zusammenführen: %v", err)
 		}
 		anonymisiere(t, ziel)

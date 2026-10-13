@@ -5,23 +5,23 @@ import (
 	"time"
 )
 
-// PapierkorbZeile ist ein Leser im Papierkorb. AnonymizedAt ist gesetzt, wenn die Zeile nach
+// PapierkorbZeile ist ein Leser im Papierkorb. AnonymisiertAm ist gesetzt, wenn die Zeile nach
 // der Frist anonymisiert wurde: Dann ist sie kein Leser mehr, sondern ein Pseudonym.
 type PapierkorbZeile struct {
-	ID            string
-	Barcode       string
-	Vorname       string
-	Nachname      string
-	Klasse        string
-	AbgaengerJahr *int
-	Gesperrt      bool
-	DeletedAt     time.Time
-	AnonymizedAt  *time.Time
+	ID             string
+	Barcode        string
+	Vorname        string
+	Nachname       string
+	Klasse         string
+	AbgaengerJahr  *int
+	Gesperrt       bool
+	GeloeschtAm    time.Time
+	AnonymisiertAm *time.Time
 }
 
-// ListePapierkorb liefert die Leser im Papierkorb, die jüngsten Löschungen zuerst und
+// LadePapierkorb liefert die Leser im Papierkorb, die jüngsten Löschungen zuerst und
 // höchstens limit Zeilen.
-func ListePapierkorb(ctx context.Context, db Datenbank, limit int) ([]PapierkorbZeile, error) {
+func LadePapierkorb(ctx context.Context, db Datenbank, limit int) ([]PapierkorbZeile, error) {
 	rows, err := db.Query(ctx, `
 			SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''),
 			       coalesce(klasse, ''), abgaenger_jahr, coalesce(ist_gesperrt, false), deleted_at,
@@ -39,7 +39,7 @@ func ListePapierkorb(ctx context.Context, db Datenbank, limit int) ([]Papierkorb
 	zeilen := []PapierkorbZeile{}
 	for rows.Next() {
 		var z PapierkorbZeile
-		if err := rows.Scan(&z.ID, &z.Barcode, &z.Vorname, &z.Nachname, &z.Klasse, &z.AbgaengerJahr, &z.Gesperrt, &z.DeletedAt, &z.AnonymizedAt); err != nil {
+		if err := rows.Scan(&z.ID, &z.Barcode, &z.Vorname, &z.Nachname, &z.Klasse, &z.AbgaengerJahr, &z.Gesperrt, &z.GeloeschtAm, &z.AnonymisiertAm); err != nil {
 			return nil, err
 		}
 		zeilen = append(zeilen, z)
@@ -47,9 +47,9 @@ func ListePapierkorb(ctx context.Context, db Datenbank, limit int) ([]Papierkorb
 	return zeilen, rows.Err()
 }
 
-// PapierkorbLeserAnonymisiert sagt, ob ein Leser im Papierkorb schon anonymisiert ist;
+// IstPapierkorbLeserAnonymisiert sagt, ob ein Leser im Papierkorb schon anonymisiert ist;
 // pgx.ErrNoRows, wenn er nicht im Papierkorb liegt.
-func PapierkorbLeserAnonymisiert(ctx context.Context, db Datenbank, id string) (bool, error) {
+func IstPapierkorbLeserAnonymisiert(ctx context.Context, db Datenbank, id string) (bool, error) {
 	var anonymisiert bool
 	err := db.QueryRow(ctx,
 		`SELECT anonymized_at IS NOT NULL FROM leser WHERE id = $1 AND deleted_at IS NOT NULL`, id,

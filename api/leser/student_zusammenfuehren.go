@@ -17,7 +17,7 @@ import (
 
 // Zusammenführen zweier Schülerdatensätze — das Sicherheitsnetz hinter der Umbenennungs-
 // Paarung des LUSD-Imports (internal/lusd/paarung.go). Regeln und SQL stehen in
-// repository/schueler_zusammenfuehren.go; hier nur Recht, Rumpf, Fehlerbild und Audit.
+// repository/leser_zusammenfuehren.go; hier nur Recht, Rumpf, Fehlerbild und Audit.
 //
 // Recht merge_students (eigenes Recht seit 03.09.2026, vorher manage_students_admin wie
 // Purge und DSGVO-Auskunft): Es ist ein Eingriff in die
@@ -45,7 +45,7 @@ func (s *Tueren) ZusammenfuehrenSchuelerHandler(auditRepo repository.ProtokollAb
 		if claims, ok := auth.GetClaims(r.Context()); ok {
 			bearbeiterID = claims.UserID
 		}
-		erg, err := repository.ZusammenfuehrenSchueler(r.Context(), s.DB.Pool, repository.ZusammenfuehrenAuftrag{
+		erg, err := repository.FuehreLeserZusammen(r.Context(), s.DB.Pool, repository.ZusammenfuehrenAuftrag{
 			ZielID: zielID, QuelleID: rumpf.QuelleID, BearbeiterID: bearbeiterID,
 		})
 		switch {
@@ -90,7 +90,7 @@ func (s *Tueren) ZusammenfuehrenSchuelerHandler(auditRepo repository.ProtokollAb
 // selbst. Die Aktivliste der Schülerdatei blendet Abgänger aus; hier sind sie das Ziel.
 func (s *Tueren) ZusammenfuehrenKandidatenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		treffer, err := repository.SucheZusammenfuehrenKandidaten(r.Context(), s.DB.Pool, r.PathValue("id"), r.URL.Query().Get("q"), 20)
+		treffer, err := repository.FindeZusammenfuehrenKandidaten(r.Context(), s.DB.Pool, r.PathValue("id"), r.URL.Query().Get("q"), 20)
 		if err != nil {
 			return apierrors.Internal("Kandidatensuche fehlgeschlagen", err)
 		}

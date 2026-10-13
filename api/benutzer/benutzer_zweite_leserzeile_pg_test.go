@@ -22,7 +22,7 @@ import (
 // 22.09.2026 zweimal in der Leserdatei: einmal mit Ausweis und Geschichte, einmal leer.
 // Repariert wurde das mit „Zusammenführen"; entstehen soll es gar nicht. Der Weg zum
 // Konto an einer vorhandenen Leserzeile ist die Schul-E-Mail in der Akte
-// (LegeKollegiumskonto) — dorthin verweist die Antwort.
+// (LegeKollegiumskontoAn) — dorthin verweist die Antwort.
 func TestBenutzerAnlegen_KeineZweiteLeserzeileFuerDieselbePerson(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

@@ -18,8 +18,8 @@ func TestLoanResultAlsOmnibox(t *testing.T) {
 	frist := time.Date(2026, 7, 31, 23, 59, 59, 0, time.UTC)
 	ausleihe := "ausleihe-1"
 	buch := &repository.Exemplar{ID: "ex-1", TitelID: "titel-1", BarcodeID: "B-1", Titel: "Natura 1"}
-	leser := &repository.Student{ID: "leser-1", BarcodeID: "S-1", Vorname: "Ada", Nachname: "Beispiel"}
-	vorbesitzer := &repository.Student{ID: "leser-2"}
+	leser := &repository.Leser{ID: "leser-1", BarcodeID: "S-1", Vorname: "Ada", Nachname: "Beispiel"}
+	vorbesitzer := &repository.Leser{ID: "leser-2"}
 	hinweis := &repository.AuflagenMischung{Klasse: "08G1", Auflage: "2. Auflage"}
 
 	antwort := LoanResultAlsOmnibox(&LoanResult{

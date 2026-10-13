@@ -57,7 +57,7 @@ func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, userRepo r
 // Littera-Übernahme. Der Wächter trg_benutzer_hat_leserzeile hängt jedem neuen Konto eine
 // frische Leserzeile an — dieselbe Person stünde dann zweimal in der Leserdatei, einmal mit
 // Ausweis und Geschichte, einmal leer. Der Weg zum Konto an der vorhandenen Zeile ist die
-// Schul-E-Mail in der Akte (LegeKollegiumskonto); dorthin verweist die Antwort (409).
+// Schul-E-Mail in der Akte (LegeKollegiumskontoAn); dorthin verweist die Antwort (409).
 //
 // Was zählt, entscheidet KontoAbfragen.HatLeserzeileOhneKonto.
 func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, userRepo repository.KontoAbfragen, vorname, nachname string) bool {

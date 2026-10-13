@@ -21,14 +21,14 @@ func expectSettings(mock pgxmock.PgxPoolIface, maxAusleihen string) {
 }
 
 func schuelerCtx(id string) *checkoutContext {
-	return &checkoutContext{borrowerID: id, leser: &repository.Student{ID: id, Art: "schueler"}}
+	return &checkoutContext{borrowerID: id, leser: &repository.Leser{ID: id, Art: "schueler"}}
 }
 
 // lehrkraftCtx ist der Gegenpart: ein Leser, der kein Schüler ist. Die Schülerregeln
 // (Limit, Vormerkung, Zählung) hängen seit Migration 125 an der ART, nicht mehr daran, aus
 // welcher Tabelle der Ausleiher kam.
 func lehrkraftCtx(id string) *checkoutContext {
-	return &checkoutContext{borrowerID: id, leser: &repository.Student{ID: id, Art: "lehrkraft"}}
+	return &checkoutContext{borrowerID: id, leser: &repository.Leser{ID: id, Art: "lehrkraft"}}
 }
 
 func buchMitTitel(titel string) *repository.Exemplar {
@@ -179,7 +179,7 @@ func TestMapLoanCreateErr(t *testing.T) {
 // auf das Tagesende der Schul-Zeitzone normalisiert wie jede andere Frist. Vor Migration
 // 125 entschied das die Tabelle, aus der er kam; jetzt seine Art.
 func TestResolveBorrower_NichtSchuelerBekommtJahresfrist(t *testing.T) {
-	svc, _, mock := newValidationService(t, &repository.Student{
+	svc, _, mock := newValidationService(t, &repository.Leser{
 		ID: "l1", Vorname: "Anna", Nachname: "Lehrerin", Art: "lehrkraft",
 	})
 	defer mock.Close()

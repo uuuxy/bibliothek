@@ -73,7 +73,7 @@ type Titel struct {
 // leseTitelMitZusatz liest die feste Spaltenliste eines Titels und danach beliebige
 // Zusatzspalten, etwa count(*) OVER () für die Gesamtzahl der Treffer. So bleibt die
 // Spaltenliste an einer Stelle.
-func leseTitelMitZusatz(row Scanner, zusatz ...any) (*Titel, error) {
+func leseTitelMitZusatz(row scanner, zusatz ...any) (*Titel, error) {
 	var t Titel
 	ziele := []any{
 		&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.CoverURL, &t.Medientyp, &t.Signatur, &t.Auflage, &t.Mehrjahresband, &t.IstLernmittel, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,

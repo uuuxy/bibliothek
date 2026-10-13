@@ -42,7 +42,7 @@ func TestListStudentsLeereListeIstArray(t *testing.T) {
 	// 17.09.2026 holte der Handler sie sich über s.DB.Pool — ohne Datenbank
 	// ein nil-Zeiger, und dieser Test stürzte mit SIGSEGV ab statt zu prüfen, was er
 	// prüfen soll. Dass hier nil stehen DARF, ist die Zusicherung.
-	handler := server.ListStudentsHandler(repository.NewStudentRepository(mock), nil)
+	handler := server.ListStudentsHandler(repository.NewLeserAbfragen(mock), nil)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/schueler", nil))

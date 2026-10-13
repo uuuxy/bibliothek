@@ -17,7 +17,7 @@ import (
 
 // Die Akte nennt den offenen Betrag eines Lesers im Kopf, in jedem Reiter. Er kommt mit dem
 // Profil und aus derselben Abfrage, nach der die Theke beim Ausleihen warnt
-// (repository.OffeneSchaeden). Bezahlte und stornierte Forderungen zählen nicht.
+// (repository.ZaehleOffeneSchaeden). Bezahlte und stornierte Forderungen zählen nicht.
 func TestProfilNenntOffeneForderungen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -72,7 +72,7 @@ func TestProfilNenntOffeneForderungen(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.GetStudentProfileHandler(repository.NewStudentRepository(pool))(rec, req)
+		srv.GetStudentProfileHandler(repository.NewLeserAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Profil %s: %d %s", id, rec.Code, rec.Body.String())
 		}

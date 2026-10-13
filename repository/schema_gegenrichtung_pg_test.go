@@ -89,7 +89,7 @@ var fkAktionenBestand = []string{
 	"CASCADE  inventur_erfassungen.session_id -> inventur_sessions",
 	"CASCADE  inventur_verluste.session_id -> inventur_sessions",
 	// Befragt am 06.09.2026: Das Foto ist PII und MUSS mit dem Kind fallen; beim
-	// Zusammenführen wandert es vorher (das jüngere gewinnt, schueler_zusammenfuehren.go).
+	// Zusammenführen wandert es vorher (das jüngere gewinnt, leser_zusammenfuehren.go).
 	"CASCADE  schueler_fotos.schueler_id -> leser",
 	// Befragt am 06.09.2026: Hier ist der CASCADE nur das Netz — die Spuren-Tilgung
 	// löscht die Vormerkungen selbst (Freitext-Notiz ist PII). Ihr fehlte das

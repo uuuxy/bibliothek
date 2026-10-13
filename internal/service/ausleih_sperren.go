@@ -46,7 +46,7 @@ type sperrLage struct {
 // pruefeAusleihSperren prüft die Sperren für eine NEUE Ausleihe an leser. Eine Rückgabe
 // prüft sie nie: Wer gesperrt ist, muss zurückgeben können. q trägt die Abfragen — am Scan
 // der Pool, beim Nachbuchen die Transaktion des Eintrags. uebergehen ist override_block.
-func pruefeAusleihSperren(ctx context.Context, q repository.Datenbank, leser *repository.Student, lernmittel, uebergehen bool) (sperrLage, error) {
+func pruefeAusleihSperren(ctx context.Context, q repository.Datenbank, leser *repository.Leser, lernmittel, uebergehen bool) (sperrLage, error) {
 	if err := SperreAmLeserHaeltAn(leser, lernmittel); err != nil {
 		return sperrLage{}, err
 	}
@@ -61,7 +61,7 @@ func pruefeAusleihSperren(ctx context.Context, q repository.Datenbank, leser *re
 // an? Beim Schulbuch nur die von Hand, beim Kollegen keine; der anonymisierte Datensatz bekommt
 // nichts. Entschieden am 28.09.2026: Der Satz der Schule gilt auch für die Ehemaligen und auch
 // bei der Verlängerung. Die Hinweise (Forderung, überfällig) halten eine Verlängerung nicht an.
-func SperreAmLeserHaeltAn(leser *repository.Student, lernmittel bool) error {
+func SperreAmLeserHaeltAn(leser *repository.Leser, lernmittel bool) error {
 	if istKollegium(leser) {
 		return nil
 	}
@@ -69,19 +69,19 @@ func SperreAmLeserHaeltAn(leser *repository.Student, lernmittel bool) error {
 }
 
 // istKollegium: jede Art außer Schüler; leer heißt Schüler (leserart.IstKollegium).
-func istKollegium(leser *repository.Student) bool {
+func istKollegium(leser *repository.Leser) bool {
 	return leserart.IstKollegium(leser.Art)
 }
 
 // pruefeSperreAmLeser prüft die zwei Schalter am Leser. Ihr Merkmal (SperreAmLeser) sagt der
 // Theke, dass sie nichts übergehen, sondern die Sperre aufheben lässt. Der Grund steht im
 // SperrGrundFehler; wer view_students nicht hat, bekommt ihn nicht (api.ohneSperrgrund).
-func pruefeSperreAmLeser(leser *repository.Student, lernmittel bool) error {
+func pruefeSperreAmLeser(leser *repository.Leser, lernmittel bool) error {
 	if leser.IstAnonymisiert {
 		// Ohne Merkmal: Aufheben kann man diese Sperre nicht (api/leser/student_lock.go lehnt ab).
 		return fmt.Errorf("%w: der Datensatz ist anonymisiert", ErrBlocked)
 	}
-	if leser.IsManuallyBlocked {
+	if leser.IstVonHandGesperrt {
 		return &SperrGrundFehler{
 			Kern:  SperreAmLeser(fmt.Errorf("%w: Manuelle Sperre", ErrBlocked)),
 			Grund: sperrGrund(leser, "ohne Grund"),
@@ -99,9 +99,9 @@ func pruefeSperreAmLeser(leser *repository.Student, lernmittel bool) error {
 }
 
 // sperrGrund ist der Grund am Leser oder, wenn keiner da ist, ersatz.
-func sperrGrund(leser *repository.Student, ersatz string) string {
-	if leser.BlockReason != nil && *leser.BlockReason != "" {
-		return *leser.BlockReason
+func sperrGrund(leser *repository.Leser, ersatz string) string {
+	if leser.Sperrgrund != nil && *leser.Sperrgrund != "" {
+		return *leser.Sperrgrund
 	}
 	return ersatz
 }
@@ -113,7 +113,7 @@ func sperrGrund(leser *repository.Student, ersatz string) string {
 func pruefeHinweise(ctx context.Context, q repository.Datenbank, leserID string, uebergehen bool) (sperrLage, error) {
 	var lage sperrLage
 
-	offen, _, err := repository.OffeneSchaeden(ctx, q, leserID)
+	offen, _, err := repository.ZaehleOffeneSchaeden(ctx, q, leserID)
 	if err != nil {
 		return sperrLage{}, err
 	}

@@ -21,7 +21,7 @@ type KatalogAbfragen interface {
 
 	// FindeTitelUnscharf sucht tokenweise über Titel, Autor, ISBN und Signatur mit
 	// einer Ergebnismengenbegrenzung. Zweiter Rückgabewert ist die Gesamtzahl der
-	// Treffer vor dem Limit (siehe StudentRepository.SearchStudentsFuzzy).
+	// Treffer vor dem Limit (siehe LeserAbfragen.FindeUnscharf).
 	FindeTitelUnscharf(ctx context.Context, queryText string, limit int) ([]Titel, int, error)
 
 	// LadeTitel sucht einen Buchtitel anhand seiner UUID, optimiert für Transaktionen.

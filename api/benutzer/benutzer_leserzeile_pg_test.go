@@ -89,7 +89,7 @@ func TestBenutzerBekommtLeserzeile(t *testing.T) {
 			t.Errorf("Ausweis an der Leserzeile = %q, erwartet LZ-1", ausweis)
 		}
 		// Und die Theke findet ihn dort: dieselbe Abfrage, die der Scan stellt.
-		leser, err := repository.NewStudentRepository(pool).GetLeserByBarcode(ctx, "LZ-1")
+		leser, err := repository.NewLeserAbfragen(pool).FindeZuBarcode(ctx, "LZ-1")
 		if err != nil || leser == nil {
 			t.Fatalf("die Theke findet den neuen Ausweis nicht (err=%v)", err)
 		}

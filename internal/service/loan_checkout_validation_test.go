@@ -16,39 +16,39 @@ import (
 // der Rest erfüllt das Interface als No-op. ---
 
 type mockStudentRepo struct {
-	student *repository.Student
+	student *repository.Leser
 	err     error
 }
 
-// GetLeserByID ist die Abfrage des Ausleihpfads seit Migration 125: Sie liest die TABELLE
+// Finde ist die Abfrage des Ausleihpfads seit Migration 125: Sie liest die TABELLE
 // und findet damit auch einen Kollegen.
-func (m *mockStudentRepo) GetLeserByID(ctx context.Context, id string) (*repository.Student, error) {
+func (m *mockStudentRepo) Finde(ctx context.Context, id string) (*repository.Leser, error) {
 	return m.student, m.err
 }
-func (m *mockStudentRepo) GetLeserByBarcode(ctx context.Context, barcode string) (*repository.Student, error) {
+func (m *mockStudentRepo) FindeZuBarcode(ctx context.Context, barcode string) (*repository.Leser, error) {
 	return nil, nil
 }
-func (m *mockStudentRepo) SearchStudentsFuzzy(ctx context.Context, q string, limit int) ([]repository.Student, int, error) {
+func (m *mockStudentRepo) FindeUnscharf(ctx context.Context, q string, limit int) ([]repository.Leser, int, error) {
 	return nil, 0, nil
 }
-func (m *mockStudentRepo) HasPhoto(ctx context.Context, id string) (bool, error) { return false, nil }
-func (m *mockStudentRepo) OffeneSchaeden(ctx context.Context, id string) (int, float64, error) {
+func (m *mockStudentRepo) HatFoto(ctx context.Context, id string) (bool, error) { return false, nil }
+func (m *mockStudentRepo) ZaehleOffeneSchaeden(ctx context.Context, id string) (int, float64, error) {
 	return 0, 0, nil
 }
-func (m *mockStudentRepo) GetActiveBorrowedBooks(ctx context.Context, id string) ([]repository.BorrowedBook, error) {
+func (m *mockStudentRepo) LadeLaufendeAusleihen(ctx context.Context, id string) ([]repository.LaufendeAusleihe, error) {
 	return nil, nil
 }
-func (m *mockStudentRepo) GetDistinctClasses(ctx context.Context) ([]string, error) { return nil, nil }
-func (m *mockStudentRepo) EtikettenZeilen(ctx context.Context, ids []string) ([]repository.SchuelerEtikettZeile, error) {
+func (m *mockStudentRepo) LadeKlassen(ctx context.Context) ([]string, error) { return nil, nil }
+func (m *mockStudentRepo) LadeEtikettZeilen(ctx context.Context, ids []string) ([]repository.LeserEtikettZeile, error) {
 	return nil, nil
 }
-func (m *mockStudentRepo) ListStudentsWithStats(ctx context.Context, klassen []string, suche string, sortierung repository.SchuelerSortierung) ([]repository.StudentListStat, error) {
+func (m *mockStudentRepo) LadeSchuelerListe(ctx context.Context, klassen []string, suche string, sortierung repository.LeserSortierung) ([]repository.LeserListenZeile, error) {
 	return nil, nil
 }
-func (m *mockStudentRepo) ListLeserMitStats(ctx context.Context, klassen []string, suche string, sortierung repository.SchuelerSortierung) ([]repository.StudentListStat, error) {
+func (m *mockStudentRepo) LadeLeserListe(ctx context.Context, klassen []string, suche string, sortierung repository.LeserSortierung) ([]repository.LeserListenZeile, error) {
 	return nil, nil
 }
-func (m *mockStudentRepo) ListEhemaligeWithStats(ctx context.Context, suche string, sortierung repository.SchuelerSortierung) ([]repository.StudentListStat, error) {
+func (m *mockStudentRepo) LadeEhemaligenListe(ctx context.Context, suche string, sortierung repository.LeserSortierung) ([]repository.LeserListenZeile, error) {
 	return nil, nil
 }
 
@@ -105,7 +105,7 @@ func expectFristSettings(mock pgxmock.PgxPoolIface) {
 			AddRow("standard_ausleihfrist_tage", strPtr("14")))
 }
 
-func newValidationService(t *testing.T, student *repository.Student) (*defaultLoanService, *mockAuditRepo, pgxmock.PgxPoolIface) {
+func newValidationService(t *testing.T, student *repository.Leser) (*defaultLoanService, *mockAuditRepo, pgxmock.PgxPoolIface) {
 	t.Helper()
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -125,7 +125,7 @@ func activeStudent(id string) *string { return &id }
 // --- Tests ---
 
 func TestResolveBorrower_HappyPath(t *testing.T) {
-	svc, _, mock := newValidationService(t, &repository.Student{
+	svc, _, mock := newValidationService(t, &repository.Leser{
 		ID: "s1", Klasse: "5a", Vorname: "Max", Nachname: "Mustermann", Art: "schueler",
 	})
 	defer mock.Close()
@@ -149,8 +149,8 @@ func TestResolveBorrower_HappyPath(t *testing.T) {
 // Auflösen sperrt nicht: Ein gesperrter Schüler wird aufgelöst, die Sperre prüft der
 // Checkout danach. Sperrte schon das Auflösen, wäre die eigene Rückgabe wieder gesperrt.
 func TestResolveBorrower_SperrtNicht(t *testing.T) {
-	svc, audit, mock := newValidationService(t, &repository.Student{
-		ID: "s1", Klasse: "5a", Art: "schueler", IstGesperrt: true, BlockReason: strPtr("überfällig"),
+	svc, audit, mock := newValidationService(t, &repository.Leser{
+		ID: "s1", Klasse: "5a", Art: "schueler", IstGesperrt: true, Sperrgrund: strPtr("überfällig"),
 	})
 	defer mock.Close()
 

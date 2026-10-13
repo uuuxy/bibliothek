@@ -84,7 +84,7 @@ type Exemplar struct {
 }
 
 // leseExemplar ist eine Hilfsfunktion zum Einlesen einer Zeile in ein Exemplar-Objekt.
-func leseExemplar(row Scanner) (*Exemplar, error) {
+func leseExemplar(row scanner) (*Exemplar, error) {
 	var bc Exemplar
 	err := row.Scan(
 		&bc.ID, &bc.TitelID, &bc.BarcodeID, &bc.ZustandNotiz, &bc.ErworbenAm, &bc.IstAusleihbar, &bc.IstAusgesondert, &bc.ErstelltAm, &bc.AktualisiertAm,

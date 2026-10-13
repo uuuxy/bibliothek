@@ -6,107 +6,60 @@ import (
 	"strings"
 )
 
-// HasPhoto checks if an encrypted photo exists for the student.
-func (r *pgStudentRepository) HasPhoto(ctx context.Context, studentID string) (bool, error) {
-	var hasPhoto bool
-	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler_fotos WHERE schueler_id = $1)", studentID).Scan(&hasPhoto)
-	return hasPhoto, err
+// LeserListenZeile represents a student along with their current loan statistics.
+type LeserListenZeile struct {
+	ID            string `json:"id"`
+	BarcodeID     string `json:"barcode_id"`
+	Vorname       string `json:"vorname"`
+	Nachname      string `json:"nachname"`
+	Klasse        string `json:"klasse"`
+	AbgaengerJahr int    `json:"abgaenger_jahr"`
+	IstGesperrt   bool   `json:"ist_gesperrt"`
+	// Art ist Schüler, Lehrkraft oder LiV. Die Leserdatei führt sie als eigene Spalte —
+	// ein Kollege hat keine Klasse, und ohne die Art stünde er in der Liste wie ein
+	// Schüler mit fehlender Angabe.
+	Art                string `json:"art"`
+	IstVonHandGesperrt bool   `json:"is_manually_blocked"`
+	HatFoto            bool   `json:"-"`
+	FotoURL            string `json:"foto_url"`
+	AnzahlAusgeliehen  int    `json:"ausgeliehen_count"`
+	AnzahlUeberfaellig int    `json:"ueberfaellig_count"`
+	// AusweisGueltigBis ist das Jahr, bis zu dem der Schülerausweis gilt — aus dem
+	// Bildungsgang der Klasse gerechnet, NICHT aus AbgaengerJahr (siehe
+	// internal/ausweis). nil heißt: aus dieser Klassenbezeichnung nicht ableitbar,
+	// dann fragt der Druckdialog nach.
+	AusweisGueltigBis *int `json:"ausweis_gueltig_bis,omitempty"`
 }
 
-// OffeneSchaeden zählt die unbezahlten Forderungen eines Lesers aus jedem Topf und nennt ihre
-// Summe. Ein Storno setzt ist_bezahlt mit, die eine Bedingung deckt beides. Die Akte und der
-// Hinweis an der Theke (service.pruefeHinweise) fragen beide hier, damit sie dieselbe Zahl nennen.
-func OffeneSchaeden(ctx context.Context, q Datenbank, leserID string) (anzahl int, summe float64, err error) {
-	err = q.QueryRow(ctx,
-		`SELECT COUNT(*), COALESCE(SUM(betrag), 0)::float8 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
-		leserID).Scan(&anzahl, &summe)
-	return anzahl, summe, err
-}
-
-// OffeneSchaeden: Anzahl und Summe der unbezahlten Forderungen des Lesers.
-func (r *pgStudentRepository) OffeneSchaeden(ctx context.Context, studentID string) (int, float64, error) {
-	return OffeneSchaeden(ctx, r.db, studentID)
-}
-
-// GetActiveBorrowedBooks retrieves all books currently borrowed by the student.
-func (r *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, studentID string) ([]BorrowedBook, error) {
-	query := `
-		SELECT 
-			e.id, 
-			a.id AS ausleihe_id,
-			e.barcode_id, 
-			t.titel, 
-			coalesce(t.autor, ''), 
-			coalesce(t.isbn, ''),
-			coalesce(t.cover_url, ''),
-			t.ist_lernmittel,
-			a.ausgeliehen_am,
-			a.rueckgabe_frist,
-			a.ist_handapparat
-		FROM ausleihen a
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE a.schueler_id = $1 AND a.rueckgabe_am IS NULL
-		ORDER BY a.ausgeliehen_am DESC
-	`
-	rows, err := r.db.Query(ctx, query, studentID)
+// LadeKlassen returns a list of all active classes.
+func (a *pgLeserAbfragen) LadeKlassen(ctx context.Context) ([]string, error) {
+	rows, err := a.db.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL ORDER BY klasse")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var books []BorrowedBook
-	for rows.Next() {
-		var b BorrowedBook
-		if err := rows.Scan(
-			&b.ID,
-			&b.AusleiheID,
-			&b.BarcodeID,
-			&b.Titel,
-			&b.Autor,
-			&b.ISBN,
-			&b.CoverURL,
-			&b.IstLernmittel,
-			&b.AusgeliehenAm,
-			&b.RueckgabeFrist,
-			&b.IstDauerleihe,
-		); err != nil {
-			return nil, err
-		}
-		books = append(books, b)
-	}
-	return books, rows.Err()
-}
-
-// GetDistinctClasses returns a list of all active classes.
-func (r *pgStudentRepository) GetDistinctClasses(ctx context.Context) ([]string, error) {
-	rows, err := r.db.Query(ctx, "SELECT DISTINCT klasse FROM schueler WHERE klasse != '' AND deleted_at IS NULL ORDER BY klasse")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var classes []string
+	var klassen []string
 	for rows.Next() {
 		var k string
 		if err := rows.Scan(&k); err == nil {
-			classes = append(classes, k)
+			klassen = append(klassen, k)
 		}
 	}
-	return classes, rows.Err()
+	return klassen, rows.Err()
 }
 
-// ListStudentsWithStatsLimit ist die Obergrenze der ungefilterten Schülerdatei. Sie
+// leserListeMax ist die Obergrenze der ungefilterten Schülerdatei. Sie
 // existiert, damit eine Schule mit 20.000 Schülern nicht bei jedem Seitenaufruf die
 // komplette Kartei über die Leitung schickt. Wer jemanden dahinter sucht, findet ihn
 // über suche — die Suche läuft auf dem Server und kennt keine Grenze bei 500.
-const ListStudentsWithStatsLimit = 500
+const leserListeMax = 500
 
-// ListStudentsWithStats liefert Schüler samt Ausleihzahlen, optional auf eine Klasse
+// LadeSchuelerListe liefert Schüler samt Ausleihzahlen, optional auf eine Klasse
 // eingegrenzt und/oder auf einen Suchbegriff (Name oder Barcode).
 //
 // Gesucht wird über dieselben SQL-Bausteine wie in der Omnibox an der Theke
-// (SchuelerSuchCTE/-Bedingung/-Rang, siehe student_queries.go): Tokens in beliebiger
+// (leserSuchCTE/-Bedingung/-Rang, siehe leser_suche.go): Tokens in beliebiger
 // Reihenfolge, diakritikfrei, deutsche Ersatzschreibung in beide Richtungen. Vorher
 // filterte die Schülerdatei im Browser über die ersten 500 gelieferten Zeilen — wer
 // alphabetisch dahinter lag, war über die Suche nicht erreichbar, und zwar abhängig vom
@@ -115,26 +68,26 @@ const ListStudentsWithStatsLimit = 500
 // JAHRGANG genau das ist: die Klassen, die zu ihm gehören. Die Zuordnung steht nicht
 // hier, sondern an einer Stelle in der API — sie braucht das Klassenschema der Schule
 // („ET" ist Jahrgang 11), und das kann SQL nicht.
-func (r *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klassen []string, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
-	return r.listSchuelerMitStats(ctx, klassen, suche, listeAktiveSchueler, sortierung)
+func (a *pgLeserAbfragen) LadeSchuelerListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
+	return a.ladeListe(ctx, klassen, suche, listeAktiveSchueler, sortierung)
 }
 
-// ListEhemaligeWithStats liefert die Schüler, die die Schule verlassen haben
+// LadeEhemaligenListe liefert die Schüler, die die Schule verlassen haben
 // (ist_abgaenger = true, nicht gelöscht) — der Reiter „Ehemalige / Archiv" der
 // Schülerdatei. Bis zum 05.09.2026 bettete der Reiter die Abgängerliste ein; seit die
 // wieder die Abschlussklassen meint (noch an der Schule), brauchen die Weggegangenen
 // eine eigene Liste. Jüngster Abgang zuerst, dann Name.
-func (r *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
-	return r.listSchuelerMitStats(ctx, nil, suche, listeEhemalige, sortierung)
+func (a *pgLeserAbfragen) LadeEhemaligenListe(ctx context.Context, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
+	return a.ladeListe(ctx, nil, suche, listeEhemalige, sortierung)
 }
 
-// ListLeserMitStats liefert ALLE Leser — Schüler und Kollegium — für die Leserdatei.
+// LadeLeserListe liefert ALLE Leser — Schüler und Kollegium — für die Leserdatei.
 //
 // Dieselben Zeilen und dieselbe Suche wie die Schülerliste, nur über die Tabelle `leser`
 // statt über die Sicht `schueler`. Bis zum 16.09.2026 stand ein Kollege in keiner Liste;
 // man sah an der Theke, dass er ein Buch bekommen hatte, aber nirgends, welche er hat.
-func (r *pgStudentRepository) ListLeserMitStats(ctx context.Context, klassen []string, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
-	return r.listSchuelerMitStats(ctx, klassen, suche, listeAlleLeser, sortierung)
+func (a *pgLeserAbfragen) LadeLeserListe(ctx context.Context, klassen []string, suche string, sortierung LeserSortierung) ([]LeserListenZeile, error) {
+	return a.ladeListe(ctx, klassen, suche, listeAlleLeser, sortierung)
 }
 
 // listenArt sagt, WELCHE Zeilen eine Liste zeigt. Die drei Fälle sind die drei Reiter
@@ -152,7 +105,7 @@ const (
 	listeAlleLeser
 )
 
-func (r *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klassen []string, suche string, art listenArt, sortierung SchuelerSortierung) ([]StudentListStat, error) {
+func (a *pgLeserAbfragen) ladeListe(ctx context.Context, klassen []string, suche string, art listenArt, sortierung LeserSortierung) ([]LeserListenZeile, error) {
 	// Die Bedingungen werden zusammengesetzt, weil jede für sich optional ist. Die
 	// Platzhalternummern stehen fest ($1/$2 Suche, $3 Klasse) und die zugehörigen
 	// Argumente werden nur dann angehängt, wenn ihre Bedingung auch im SQL landet —
@@ -179,15 +132,15 @@ func (r *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klassen 
 	limit := ""
 
 	if tokens := suchTokens(suche); len(tokens) > 0 {
-		praefix = SchuelerSuchCTE
+		praefix = leserSuchCTE
 		// mitKlasse: Die Schülerdatei durchsuchte schon immer auch die Klasse ("10a"
 		// listet die Klasse). Das darf die Serversuche nicht stillschweigend verlieren.
-		bedingungen = append(bedingungen, SchuelerSuchBedingung(true))
+		bedingungen = append(bedingungen, leserSuchBedingung(true))
 		args = append(args, tokens, tokens[0])
 	} else {
 		// Nur die reine Liste wird gekappt. Eine Suche darf das nicht — genau daran
 		// ist sie vorher gescheitert.
-		limit = fmt.Sprintf(" LIMIT %d", ListStudentsWithStatsLimit)
+		limit = fmt.Sprintf(" LIMIT %d", leserListeMax)
 	}
 
 	// = ANY statt =, seit der Filter auch einen ganzen Jahrgang meinen kann (17.09.2026,
@@ -201,19 +154,19 @@ func (r *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klassen 
 	}
 
 	// Die Reihenfolge — Vorgabe, Suchrang oder die vom Benutzer gewählte Spalte. Die
-	// Regeln stehen in schueler_sortierung.go, samt der Begründung, warum das Kollegium
+	// Regeln stehen in leser_sortierung.go, samt der Begründung, warum das Kollegium
 	// auch beim Sortieren oben bleibt.
 	suchRang := ""
 	if praefix != "" {
-		suchRang = SchuelerSuchRang
+		suchRang = leserSuchRang
 	}
-	orderBy := sortierung.sqlOrderBy(art, suchRang)
+	orderBy := sortierung.sqlSortierung(art, suchRang)
 
 	// coalesce auf Ausweis, Klasse und Abgängerjahr: Seit Migration 123 sind die drei
 	// nullbar (ein Kollege hat keine Klasse und oft keinen gedruckten Ausweis). Ohne das
 	// zerbricht der Scan an der ersten Lehrkraft — dort, wo eben noch eine Liste stand,
 	// stünde ein 500.
-	rows, err := r.db.Query(ctx, praefix+`
+	rows, err := a.db.Query(ctx, praefix+`
 		SELECT s.id, COALESCE(s.barcode_id, ''), s.vorname, s.nachname, COALESCE(s.klasse, ''),
 			COALESCE(s.abgaenger_jahr, 0), s.ist_gesperrt, s.art,
 			COALESCE(s.is_manually_blocked, false) as is_manually_blocked,
@@ -244,16 +197,16 @@ func (r *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klassen 
 	}
 	defer rows.Close()
 
-	var stats []StudentListStat
+	var stats []LeserListenZeile
 	for rows.Next() {
-		var s StudentListStat
-		if err := rows.Scan(&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.Art, &s.IsManuallyBlocked, &s.AusgeliehenCount, &s.UeberfaelligCount, &s.HasFoto); err != nil {
+		var s LeserListenZeile
+		if err := rows.Scan(&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.Art, &s.IstVonHandGesperrt, &s.AnzahlAusgeliehen, &s.AnzahlUeberfaellig, &s.HatFoto); err != nil {
 			return nil, err
 		}
-		if s.BarcodeID != "" && s.HasFoto {
+		if s.BarcodeID != "" && s.HatFoto {
 			s.FotoURL = fmt.Sprintf("/api/schueler/%s/photo", s.BarcodeID)
 		}
-		// Wie in scanStudentMitZusatz: Die Ausweisgültigkeit wird beim Lesen gerechnet,
+		// Wie in leseLeserMitZusatz: Die Ausweisgültigkeit wird beim Lesen gerechnet,
 		// nicht gespeichert. Der Klassensatz-Druck im Ausweis-Designer liest über diese
 		// Liste — ohne die Zeile trüge dort jede Karte "Gültig bis: –".
 		s.AusweisGueltigBis = ausweisGueltigBis(s.Klasse)

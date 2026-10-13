@@ -638,7 +638,7 @@ HTTP-Anfrage
 | `api/bestellung/`       | 2.438 Zeilen, 18 Dateien   | Die Türen des Bestellwesens: Vorschläge zum Nachbestellen, die Suche nach Titeln, die Bestellung mit ihrer Mail an den Lieferanten, Zulauf und Wareneingang, Bestellhistorie mit Übersicht, Einzelheiten und Bericht, die Lieferanten, die Bestätigung im Haus und über den Link des Lieferanten, das erneute Senden der Mail, der Topf einer Bestellung |
 | `api/leser/`            | 3.007 Zeilen, 18 Dateien   | Die Türen der Leserdatei: die Liste der Leser mit Klassen und Jahrgängen, die Leserakte, Anlegen, Ändern, Sperren, Löschen mit Papierkorb, das Zusammenführen zweier Datensätze, das Passbild, der Abgleich mit der LUSD, die Versetzung zum Schuljahreswechsel, die Auskunft nach Art. 15 DSGVO, der Kontoauszug |
 | `api/theke/`            | 1.562 Zeilen, 11 Dateien   | Die Türen der Theke: der Scan mit Ausleihe und Rückgabe, das Nachbuchen der Warteschlange ohne Netz mit seinen Meldungen und der Liste der Buchnummern, die Suche der Omnibox, Verlängern und Frist von Hand an einer Ausleihe, die Vormerkungen |
-| `repository/`           | 21.956 Zeilen, 165 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
+| `repository/`           | 21.962 Zeilen, 166 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
 | `internal/service/`     | 5.246 Zeilen, 31 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, die Rechnung des Ersatzwerts eines Buchs (`ersatzwert_vorschlag.go`), Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan, womit ein neuer Plan beginnt (Rahmen und Reihenfolge) und seine Verteilung über die Schultage, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/leser/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 990 Zeilen, 3 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, die Zusammenfassung der Befunde zu einer Stufe (`Gesamt`), der Vergleich der Klassen mit den Zuordnungen der Klassenleitungen und den Bücherlisten (`klassen.go`), dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
@@ -788,9 +788,9 @@ Googles Regelwerk für Go nennt in
 [Package size](https://google.github.io/styleguide/go/best-practices#package-size) die Probe:
 Muss ein Nutzer zweier Pakete beide einbinden, um eines sinnvoll zu nutzen, gehören sie
 zusammen, und eng gekoppelte Typen in einem Paket müssen ihre Einzelheiten nicht öffentlich
-machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 165 Dateien hat
-höchstens 117 Zeilen, neun von zehn höchstens 263, zwei haben über 500
-(`schueler_zusammenfuehren.go` 634, `schlagworte_pflege.go` 524; gezählt am 14.10.2026 nachts).
+machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 166 Dateien hat
+höchstens 112 Zeilen, neun von zehn höchstens 254, zwei haben über 500
+(`leser_zusammenfuehren.go` 634, `schlagworte_pflege.go` 524; gezählt am 14.10.2026 nachts).
 Eine Teilung schriebe 2.213 Zeilen in 461 Dateien um, die einen Namen des Pakets nennen, und
 bewegte einen Teil der 161 Testdateien.
 
@@ -954,7 +954,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   lässt.
 - Die Sperrprüfung einer neuen Ausleihe (`internal/service/ausleih_sperren.go`) entscheidet,
   welche Sperre hält und welcher Hinweis sich übergehen lässt. Ihre zwei Zahlen liest sie aus
-  `repository/`: die offenen Forderungen (`OffeneSchaeden`) und die überfälligen Bücher
+  `repository/`: die offenen Forderungen (`ZaehleOffeneSchaeden`) und die überfälligen Bücher
   (`ZaehleUeberfaelligeAusleihen`: offen, kein Gerät, keine Dauerleihe, länger überfällig als
   die Kulanz). Den Hinweis auf das Abholfach beim Scan eines Ausweises liest
   `LadeAbholbereiteTitel`; lässt er sich nicht laden, bleibt er leer und der Scan geht weiter
@@ -2027,7 +2027,7 @@ müssen `LOWER(rolle::text)` verwenden — kein `= 'KOLLEGIUM'`.
 
 **Sprache:** Fachwörter sind deutsch (`ausleihen`, `leser`, `vormerkungen`, `Ersatzwert`,
 `Abgaenger`, `Nachbuchen`). Aus der Frühzeit steht Englisch daneben, auch für dieselbe Sache:
-Der Typ `repository.Student` hält einen Leser. Welches Wort gilt, legt [STIL.md](STIL.md)
+Der Typ `repository.Leser` hält einen Leser. Welches Wort gilt, legt [STIL.md](STIL.md)
 fest; das [Glossar](#12-glossar) nennt, wo der Code noch anders heißt.
 
 ---
@@ -3994,8 +3994,8 @@ Forderung für ein Gerät.
 
 #### Versetzung und eine Klasse, deren Zahl kein Jahrgang ist
 
-Die Versetzung liest die Zahl am Anfang der Klasse (`versetzeSchuelerQuery` in
-`repository/schuljahreswechsel.go` und `LeseKlassenleitungVersetzungen` in
+Die Versetzung liest die Zahl am Anfang der Klasse (`sqlVersetzeSchueler` in
+`repository/schuljahreswechsel.go` und `LadeKlassenleitungVersetzungen` in
 `repository/klassenleitung.go`). Nachgestellt am 04.10.2026 am
 Router, in der Vorschau (`dry_run`):
 
@@ -4177,7 +4177,7 @@ Fenstern bekannt ist:
   Hintergrund-Tab). Beim Aufwachen wäre der Herzschlag alt und das Band stünde bis zum nächsten
   Ping, höchstens 15 s. Nicht nachgestellt.
 - Schreibweise der Nummern (entschieden am 23.09.2026: am Server nichts bauen). Der Server
-  schlägt Nummern exakt nach (`GetLeserByBarcode`, `KatalogAbfragen.FindeExemplar`); die Theke
+  schlägt Nummern exakt nach (`LeserAbfragen.FindeZuBarcode`, `KatalogAbfragen.FindeExemplar`); die Theke
   vereinheitlicht vorher (`normalisiereScan`, nur mit Ziffer hinter der Vorsilbe) — beim
   Buchen und in der Offline-Warteschlange. Roh fragt nur die Vorschau beim Tippen
   (`/api/search`). Gemessen am Testserver am 23.09.2026: alle gespeicherten Vorsilben groß

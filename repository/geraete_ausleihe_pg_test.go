@@ -302,7 +302,7 @@ func TestBucheGeraeteRueckgabe_SchreibtJedeAngabe(t *testing.T) {
 	}
 }
 
-// LeserNameUndKlasse nennt Vorname, Nachname und Klasse und füllt sonst kein Feld: Die Antwort
+// LadeLeserNameUndKlasse nennt Vorname, Nachname und Klasse und füllt sonst kein Feld: Die Antwort
 // der Theke trägt den Vorbesitzer eines Geräts, mehr als seinen Namen braucht sie nicht. Ein
 // Kollege hat keine Klasse, ein gelöschter Leser ist pgx.ErrNoRows.
 func TestLeserNameUndKlasse_NurNameUndKlasse(t *testing.T) {
@@ -329,12 +329,12 @@ func TestLeserNameUndKlasse_NurNameUndKlasse(t *testing.T) {
 		t.Fatalf("gelöschten Leser anlegen: %v", err)
 	}
 
-	faelle := map[string]Student{
+	faelle := map[string]Leser{
 		schueler: {Vorname: "Vorname der Probe", Nachname: "Nachname der Probe", Klasse: "07B"},
 		kollege:  {Vorname: "Kollegin", Nachname: "Ohneklasse"},
 	}
 	for id, soll := range faelle {
-		ist, err := LeserNameUndKlasse(ctx, tx, id)
+		ist, err := LadeLeserNameUndKlasse(ctx, tx, id)
 		if err != nil {
 			t.Fatalf("%s: %v", soll.Nachname, err)
 		}
@@ -342,7 +342,7 @@ func TestLeserNameUndKlasse_NurNameUndKlasse(t *testing.T) {
 			t.Errorf("%s:\n  ist  %+v\n  soll %+v", soll.Nachname, ist, soll)
 		}
 	}
-	if _, err := LeserNameUndKlasse(ctx, tx, geloescht); !errors.Is(err, pgx.ErrNoRows) {
+	if _, err := LadeLeserNameUndKlasse(ctx, tx, geloescht); !errors.Is(err, pgx.ErrNoRows) {
 		t.Errorf("gelöschter Leser: Fehler %v, erwartet pgx.ErrNoRows", err)
 	}
 }

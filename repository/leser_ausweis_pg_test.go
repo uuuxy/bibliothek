@@ -15,7 +15,7 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-func TestGetLeserByBarcode_FindetSchuelerUndKollegium(t *testing.T) {
+func TestFindeZuBarcode_FindetSchuelerUndKollegium(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	t.Cleanup(func() {
@@ -43,10 +43,10 @@ func TestGetLeserByBarcode_FindetSchuelerUndKollegium(t *testing.T) {
 	anlegen("LP-LK", "lehrkraft")
 	anlegen("LP-LIV", "liv")
 
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
 	for barcode, art := range map[string]string{"LP-SCH": "schueler", "LP-LK": "lehrkraft", "LP-LIV": "liv"} {
-		leser, err := repo.GetLeserByBarcode(ctx, barcode)
+		leser, err := repo.FindeZuBarcode(ctx, barcode)
 		if err != nil {
 			t.Fatalf("%s: %v", barcode, err)
 		}

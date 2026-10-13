@@ -49,7 +49,7 @@ func neueGeraeteTheke(t *testing.T) *geraeteTheke {
 			}
 		}
 	})
-	g.svc = NewDeviceService(pool, repository.NewStudentRepository(pool), repository.NewAusleihAbfragen(pool),
+	g.svc = NewDeviceService(pool, repository.NewLeserAbfragen(pool), repository.NewAusleihAbfragen(pool),
 		repository.NewProtokollAbfragen(pool))
 	return g
 }
@@ -356,7 +356,7 @@ func TestGeraet_OhneProtokollWederAusleiheNochRueckgabe(t *testing.T) {
 	ctx := context.Background()
 	nummer := g.geraet(t, "protokoll")
 	leser := g.schueler(t, "Protokoll")
-	ohneProtokoll := NewDeviceService(g.pool, repository.NewStudentRepository(g.pool), repository.NewAusleihAbfragen(g.pool),
+	ohneProtokoll := NewDeviceService(g.pool, repository.NewLeserAbfragen(g.pool), repository.NewAusleihAbfragen(g.pool),
 		protokollScheitert{repository.NewProtokollAbfragen(g.pool)})
 
 	if _, err := ohneProtokoll.HandleDeviceAction(ctx, nummer, &leser, true, false, g.ausgabe); !errors.Is(err, errProtokollProbe) {

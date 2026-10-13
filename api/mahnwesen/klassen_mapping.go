@@ -23,7 +23,7 @@ func (s *Tueren) GetKlassenMappingHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		zeilen, err := repository.ListeKlassenleitungen(ctx, s.DB.Pool)
+		zeilen, err := repository.LadeKlassenleitungen(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

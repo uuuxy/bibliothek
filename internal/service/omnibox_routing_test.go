@@ -30,11 +30,11 @@ func (r *routingBookRepo) FindeTitel(_ context.Context, _ string) ([]repository.
 }
 
 type routingStudentRepo struct {
-	repository.StudentRepository
-	students map[string]*repository.Student
+	repository.LeserAbfragen
+	students map[string]*repository.Leser
 }
 
-func (r *routingStudentRepo) GetLeserByBarcode(_ context.Context, barcode string) (*repository.Student, error) {
+func (r *routingStudentRepo) FindeZuBarcode(_ context.Context, barcode string) (*repository.Leser, error) {
 	return r.students[barcode], nil
 }
 
@@ -44,7 +44,7 @@ func (r *routingStudentRepo) GetLeserByBarcode(_ context.Context, barcode string
 func TestProcessQuery_AusweisOhnePraefix(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{
 			"20240001737": {ID: "s1", BarcodeID: "20240001737", Vorname: "Mia", Nachname: "Muster"},
 		}},
 	}
@@ -63,7 +63,7 @@ func TestProcessQuery_AusweisOhnePraefix(t *testing.T) {
 func TestProcessQuery_UnbekannteNummerFaelltAufSuche(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 
 	res, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "gibtesnicht", StaffID: "staff", StaffRole: "admin"})
@@ -75,9 +75,9 @@ func TestProcessQuery_UnbekannteNummerFaelltAufSuche(t *testing.T) {
 	}
 }
 
-// GetLeserByID bedient die Auswahl aus der Trefferliste: Dort steht die ID, nicht die
+// Finde bedient die Auswahl aus der Trefferliste: Dort steht die ID, nicht die
 // Ausweisnummer — ein Kollege ohne gedruckten Ausweis hat gar keine.
-func (r *routingStudentRepo) GetLeserByID(_ context.Context, id string) (*repository.Student, error) {
+func (r *routingStudentRepo) Finde(_ context.Context, id string) (*repository.Leser, error) {
 	for _, s := range r.students {
 		if s.ID == id {
 			return s, nil
@@ -94,7 +94,7 @@ func (r *routingStudentRepo) GetLeserByID(_ context.Context, id string) (*reposi
 func TestProcessQuery_LeserAusDerTrefferliste(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{
 			"ohne-ausweis": {ID: "l1", Vorname: "Hendrik", Nachname: "Wendlandt", Art: "liv"},
 		}},
 	}
@@ -114,7 +114,7 @@ func TestProcessQuery_LeserAusDerTrefferliste(t *testing.T) {
 func TestProcessQuery_LeserIDUnbekannt(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
-		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Leser{}},
 	}
 
 	if _, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "leser:fehlt", StaffID: "staff", StaffRole: "admin"}); err == nil {

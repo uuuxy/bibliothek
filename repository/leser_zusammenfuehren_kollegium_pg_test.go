@@ -65,7 +65,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 		ziel := legeLeser(t, "Katrin", "Wendlandt", "liv", "ZF-K-1")
 		quelle := legeLeser(t, "Katrin", "Wendlandt", "lehrkraft", "")
 
-		erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
+		erg, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
 		if err != nil {
 			t.Fatalf("Zusammenführen: %v", err)
 		}
@@ -99,7 +99,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 			{"Kollege als Ziel", kollege, schueler},
 		} {
 			t.Run(f.name, func(t *testing.T) {
-				_, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(f.ziel, f.quelle))
+				_, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(f.ziel, f.quelle))
 				if !errors.Is(err, repository.ErrZusammenfuehrenVerschiedeneArten) {
 					t.Fatalf("Fehler war %v, erwartet ErrZusammenfuehrenVerschiedeneArten", err)
 				}
@@ -121,7 +121,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 		zwilling := legeLeser(t, "Such", "Gleichnam", "liv", "")
 		schueler := legeSchueler(t, "Gleichnam", "ZF-S-3")
 
-		treffer, err := repository.SucheZusammenfuehrenKandidaten(ctx, pool, kollege, "Gleichnam", 20)
+		treffer, err := repository.FindeZusammenfuehrenKandidaten(ctx, pool, kollege, "Gleichnam", 20)
 		if err != nil {
 			t.Fatalf("Suche vom Kollegen aus: %v", err)
 		}
@@ -136,7 +136,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 			t.Fatal("ein Schüler steht in der Trefferliste eines Kollegen")
 		}
 
-		vomSchueler, err := repository.SucheZusammenfuehrenKandidaten(ctx, pool, schueler, "Gleichnam", 20)
+		vomSchueler, err := repository.FindeZusammenfuehrenKandidaten(ctx, pool, schueler, "Gleichnam", 20)
 		if err != nil {
 			t.Fatalf("Suche vom Schüler aus: %v", err)
 		}
@@ -149,7 +149,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 
 	// Ein aktives Konto ist nie ohne Nummer (Migration 145, docs/OFFEN.md 5.16) — auch nicht,
 	// wenn es beim Zusammenführen auf eine Zeile ohne Nummer wandert. Das Ziel behält seine
-	// Nummer (siehe Kopf von repository/schueler_zusammenfuehren.go); hat es keine, kommt
+	// Nummer (siehe Kopf von repository/leser_zusammenfuehren.go); hat es keine, kommt
 	// eine aus dem Generator.
 	t.Run("ein aktives Konto wandert nicht auf eine Zeile ohne Nummer", func(t *testing.T) {
 		ziel := legeLeser(t, "Ohne", "Nummerziel", "lehrkraft", "")
@@ -160,7 +160,7 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 			RETURNING leser_id`).Scan(&quelle); err != nil {
 			t.Fatalf("Konto anlegen: %v", err)
 		}
-		if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
+		if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 			t.Fatalf("Zusammenführen: %v", err)
 		}
 		var nummer *string

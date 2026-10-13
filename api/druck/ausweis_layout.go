@@ -59,7 +59,7 @@ func (s *Tueren) SaveAusweisLayoutHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := repository.SpeichereAusweisLayout(r.Context(), s.DB.Pool, string(body)); err != nil {
+		if err := repository.SchreibeAusweisLayout(r.Context(), s.DB.Pool, string(body)); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("Ausweis-Design konnte nicht gespeichert werden"))
 			return
 		}

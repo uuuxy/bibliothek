@@ -35,7 +35,7 @@ import (
 // anheben und im Commit begründen. Sinkt ein Zähler (Stelle behoben/entfernt), wird
 // er hier ABGESENKT — die Ratsche dreht nur zu.
 var phantomBestand = map[string]int{
-	"repository/ausweis_layout.go:SpeichereAusweisLayout":         1,
+	"repository/ausweis_layout.go:SchreibeAusweisLayout":          1,
 	"repository/dsgvo_auskunft.go:SchreibeDsgvoAuskunftProtokoll": 1,
 	// Die Anweisungen des LUSD-Imports: die Sperre des Laufs (kein Schreibvorgang), Adoption
 	// und Aktualisierung (null Zeilen heißt, der Schutz der Bedingung hat gegriffen, der Lauf
@@ -97,7 +97,7 @@ var phantomBestand = map[string]int{
 	// Bestands gelöscht. Der Import meldet nur angelegte Titel und Exemplare.
 	"repository/bestandsimport.go:SetzeImportSignaturen": 1,
 	// Legt das Passbild an oder ersetzt es: Die Anweisung trifft immer genau eine Zeile.
-	"repository/leser_foto.go:SpeichereFoto":                            1,
+	"repository/leser_foto.go:SchreibeFoto":                             1,
 	"inventur/datenbank_klassen.go:AddBooksToClasses":                   1,
 	"inventur/datenbank_klassen.go:DeleteClassGroup":                    1,
 	"inventur/datenbank_klassen.go:UpdateClassBooks":                    2,
@@ -153,8 +153,8 @@ var phantomBestand = map[string]int{
 	// Umschlüsselung der Protokollspuren beim Zusammenführen (02.09.2026): audit_log/
 	// audit_logs dürfen 0 Zeilen zur Quelle haben — 0 ist kein Phantom, das Ergebnis
 	// (jede Tabelle wandert) misst TestZusammenfuehren_JedeTabelleWandert am Postgres.
-	"repository/schueler_zusammenfuehren.go:verschiebeVorgaenge": 1,
-	"repository/titel_schreiben.go:SchreibeTitel":                1,
+	"repository/leser_zusammenfuehren.go:verschiebeVorgaenge": 1,
+	"repository/titel_schreiben.go:SchreibeTitel":             1,
 	// Seit 15.09.2026 heißt der Rumpf meldeSchaden (Transaktion des Aufrufers, damit
 	// der Bescheid Verlust und Brief in EINER Transaktion bucht); SchadensAbfragen.Melde ist nur
 	// noch die Hülle. Die drei Tags sind dieselben wie vorher (Exemplar aussondern,

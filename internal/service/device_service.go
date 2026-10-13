@@ -22,7 +22,7 @@ type DeviceResult struct {
 	// Geraet enthält die Stammdaten des betroffenen Geräts.
 	Geraet *repository.Geraet
 	// Student ist der Leser, für den die Aktion durchgeführt wurde.
-	Student *repository.Student
+	Student *repository.Leser
 	// DueDate gibt die berechnete Rückgabefrist für das Gerät an (nur bei Ausleihe).
 	DueDate *time.Time
 	// LoanID ist die ID des verknüpften Ausleihdatensatzes.
@@ -30,7 +30,7 @@ type DeviceResult struct {
 	// Fremdrueckgabe ist wahr, wenn das Gerät von einer anderen Person als dem Ausleiher zurückgegeben wurde.
 	Fremdrueckgabe bool
 	// Vorbesitzer ist der Leser, der das Gerät zuletzt ausgeliehen hatte (bei Fremdrückgabe).
-	Vorbesitzer *repository.Student
+	Vorbesitzer *repository.Leser
 }
 
 // DeviceService definiert die Schnittstelle für alle Aktionen rund um Hardware-Geräte (z. B. Laptops, Tablets).
@@ -46,13 +46,13 @@ type DeviceService interface {
 // defaultDeviceService ist die Standard-Implementierung des DeviceService.
 type defaultDeviceService struct {
 	pool        db.PgxPoolIface
-	studentRepo repository.StudentRepository
+	studentRepo repository.LeserAbfragen
 	loanRepo    repository.AusleihAbfragen
 	auditRepo   repository.ProtokollAbfragen
 }
 
 // NewDeviceService erstellt eine neue Instanz des Standard-Geräteservice.
-func NewDeviceService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) DeviceService {
+func NewDeviceService(pool db.PgxPoolIface, studentRepo repository.LeserAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) DeviceService {
 	return &defaultDeviceService{
 		pool:        pool,
 		studentRepo: studentRepo,
@@ -93,7 +93,7 @@ func pruefeGeraetAusleihbar(g repository.Geraet) error {
 // am Leser und beide Hinweise. Die Rückgabe nimmt ladeRueckgeber, ein gesperrter Leser muss
 // sein Gerät zurückgeben können. Die Lage geht mit zurück: leiheGeraetAus rechnet aus ihren
 // Einstellungen die Frist und protokolliert, was übergangen wurde.
-func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *string, overrideBlock bool) (*repository.Student, sperrLage, error) {
+func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *string, overrideBlock bool) (*repository.Leser, sperrLage, error) {
 	leser, err := s.ladeRueckgeber(ctx, activeLeserID)
 	if err != nil || leser == nil {
 		return nil, sperrLage{}, err
@@ -114,11 +114,11 @@ func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *st
 
 // ladeRueckgeber ermittelt den aktiven Leser aus dem gescannten Ausweis, ohne
 // Sperrprüfung. Die Rückgabe braucht ihn nur, um eine Fremdrückgabe zu erkennen.
-func (s *defaultDeviceService) ladeRueckgeber(ctx context.Context, activeLeserID *string) (*repository.Student, error) {
+func (s *defaultDeviceService) ladeRueckgeber(ctx context.Context, activeLeserID *string) (*repository.Leser, error) {
 	if activeLeserID == nil || *activeLeserID == "" {
 		return nil, nil
 	}
-	leser, err := s.studentRepo.GetLeserByID(ctx, *activeLeserID)
+	leser, err := s.studentRepo.Finde(ctx, *activeLeserID)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func geraeteRueckgabeFrist(now time.Time, kalender lmfplan.Ferientabelle) time.T
 	return kalender.Tagesfrist(now, geraeteLeihfristTage)
 }
 
-func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Student, lage sperrLage, staffID string) (*DeviceResult, error) {
+func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Leser, lage sperrLage, staffID string) (*DeviceResult, error) {
 	if leser == nil {
 		return nil, meldung(ErrInvalidState, "Bitte scannen Sie zuerst einen Ausweis")
 	}
@@ -194,7 +194,7 @@ func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g 
 
 // ermittleVorbesitzer stellt fest, ob eine Fremdrückgabe vorliegt (Rückgeber ≠ Ausleiher)
 // und lädt in diesem Fall die Stammdaten des ursprünglichen Ausleihers in resp.
-func (s *defaultDeviceService) ermittleVorbesitzer(ctx context.Context, activeLoan *repository.Ausleihe, leser *repository.Student, resp *DeviceResult) (bool, error) {
+func (s *defaultDeviceService) ermittleVorbesitzer(ctx context.Context, activeLoan *repository.Ausleihe, leser *repository.Leser, resp *DeviceResult) (bool, error) {
 	if activeLoan.SchuelerID == nil {
 		return false, nil
 	}
@@ -202,7 +202,7 @@ func (s *defaultDeviceService) ermittleVorbesitzer(ctx context.Context, activeLo
 		return false, nil
 	}
 	// Ein gelöschter Vorbesitzer bleibt ohne Namen; eine Fremdrückgabe ist es trotzdem.
-	vorbesitzer, err := repository.LeserNameUndKlasse(ctx, s.pool, *activeLoan.SchuelerID)
+	vorbesitzer, err := repository.LadeLeserNameUndKlasse(ctx, s.pool, *activeLoan.SchuelerID)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return false, err
 	}
@@ -211,7 +211,7 @@ func (s *defaultDeviceService) ermittleVorbesitzer(ctx context.Context, activeLo
 }
 
 // gibGeraetZurueck behandelt Fall B: das ausgeliehene Gerät wird zurückgegeben.
-func (s *defaultDeviceService) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repository.Geraet, activeLoan *repository.Ausleihe, leser *repository.Student, staffID string) (*DeviceResult, error) {
+func (s *defaultDeviceService) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, g *repository.Geraet, activeLoan *repository.Ausleihe, leser *repository.Leser, staffID string) (*DeviceResult, error) {
 	resp := &DeviceResult{}
 
 	isFremd, err := s.ermittleVorbesitzer(ctx, activeLoan, leser, resp)
@@ -271,7 +271,7 @@ func (s *defaultDeviceService) HandleDeviceAction(
 	// Die Sperren (Gerät defekt oder ausgesondert, Leser gesperrt) gelten der Ausleihe, nicht
 	// der Rückgabe: Eine offene Ausleihe muss sich schließen lassen
 	// (geraet_rueckgabe_sperre_pg_test.go).
-	var leser *repository.Student
+	var leser *repository.Leser
 	var lage sperrLage
 	if hasActiveLoan {
 		leser, err = s.ladeRueckgeber(ctx, activeLeserID)

@@ -33,7 +33,7 @@ func LegeLeserAn(ctx context.Context, db Datenbank, l LeserNeu) (string, error) 
 	return id, err
 }
 
-// SchuelerDubletteVorhanden erkennt einen bereits existierenden Schüler anhand von
+// IstSchuelerDubletteVorhanden erkennt einen bereits existierenden Schüler anhand von
 // Vor-/Nachname und Geburtsdatum (case-insensitive, ohne soft-gelöschte Datensätze).
 //
 // Ein fehlendes Geburtsdatum ist bewusst KEIN Duplikat-Kriterium: Zwei namensgleiche
@@ -49,21 +49,21 @@ func LegeLeserAn(ctx context.Context, db Datenbank, l LeserNeu) (string, error) 
 // der der Unique-Index und der LUSD-Schlüssel rechnen: „Müller" und „Mueller" sind ein
 // Mensch. Vorher nur lower(): Die Schreibvariante rutschte an der Prüfung vorbei und
 // stand als zweite Zeile in der Datenbank.
-func SchuelerDubletteVorhanden(ctx context.Context, db Datenbank, vorname, nachname string, gebdatum *time.Time) (bool, error) {
+func IstSchuelerDubletteVorhanden(ctx context.Context, db Datenbank, vorname, nachname string, gebdatum *time.Time) (bool, error) {
 	var isDuplicate bool
 	q := `SELECT EXISTS(SELECT 1 FROM schueler WHERE suchnorm(vorname) = suchnorm($1) AND suchnorm(nachname) = suchnorm($2) AND geburtsdatum = $3::DATE AND deleted_at IS NULL)`
 	err := db.QueryRow(ctx, q, vorname, nachname, gebdatum).Scan(&isDuplicate)
 	return isDuplicate, err
 }
 
-// LeserNamensdubletteVorhanden sucht einen aktiven Leser mit demselben Namen — in der
+// IstLeserNamensdubletteVorhanden sucht einen aktiven Leser mit demselben Namen — in der
 // Normalform suchnorm, also „Müller" wie „Mueller".
 //
 // Gefragt wird die TABELLE `leser` und über ALLE Arten: Ein Kollege, der schon als
 // Schülerzeile aus dem Altbestand steht, ist derselbe Mensch. Die Prüfung ist bewusst
 // grob — sie weist auch zwei echte Namensvettern ab. Das ist der seltenere Fall, und er
 // meldet sich sofort; ein stiller zweiter Eintrag meldet sich nie.
-func LeserNamensdubletteVorhanden(ctx context.Context, db Datenbank, vorname, nachname string) (bool, error) {
+func IstLeserNamensdubletteVorhanden(ctx context.Context, db Datenbank, vorname, nachname string) (bool, error) {
 	var belegt bool
 	q := `SELECT EXISTS(SELECT 1 FROM leser
 	       WHERE suchnorm(vorname) = suchnorm($1) AND suchnorm(nachname) = suchnorm($2)
@@ -72,10 +72,10 @@ func LeserNamensdubletteVorhanden(ctx context.Context, db Datenbank, vorname, na
 	return belegt, err
 }
 
-// AusweisnummerVergeben sagt, ob ein aktiver Leser die Ausweisnummer trägt. Gefragt wird die
+// IstAusweisnummerVergeben sagt, ob ein aktiver Leser die Ausweisnummer trägt. Gefragt wird die
 // Tabelle leser über alle Arten; gelöschte Leser geben ihre Nummer frei, wie
 // uniq_schueler_barcode_active.
-func AusweisnummerVergeben(ctx context.Context, db Datenbank, barcode string) (bool, error) {
+func IstAusweisnummerVergeben(ctx context.Context, db Datenbank, barcode string) (bool, error) {
 	var vergeben bool
 	err := db.QueryRow(ctx,
 		`SELECT EXISTS(SELECT 1 FROM leser WHERE barcode_id = $1 AND deleted_at IS NULL)`,

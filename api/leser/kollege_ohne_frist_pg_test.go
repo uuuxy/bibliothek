@@ -96,7 +96,7 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{UserID: id, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
-		srv.GetStudentProfileHandler(repository.NewStudentRepository(pool))(rec, req)
+		srv.GetStudentProfileHandler(repository.NewLeserAbfragen(pool))(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Profil %s: %d %s", id, rec.Code, rec.Body.String())
 		}
@@ -146,16 +146,16 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 	t.Run("die Leserliste zählt den Kollegen nicht als überfällig, den Schüler schon", func(t *testing.T) {
 		zaehleUeberfaellig := func(t *testing.T, leserID string) int {
 			t.Helper()
-			// ListLeserMitStats ist die Abfrage der LESERDATEI — sie führt Schüler und
+			// LadeLeserListe ist die Abfrage der LESERDATEI — sie führt Schüler und
 			// Kollegium in einer Liste und ist damit die Stelle, an der ein Kollege
 			// überhaupt mit einer Zahl auftauchen kann.
-			stats, err := repository.NewStudentRepository(pool).ListLeserMitStats(ctx, nil, "Frist", repository.SchuelerSortierung{})
+			stats, err := repository.NewLeserAbfragen(pool).LadeLeserListe(ctx, nil, "Frist", repository.LeserSortierung{})
 			if err != nil {
 				t.Fatalf("Leserliste: %v", err)
 			}
 			for _, s := range stats {
 				if s.ID == leserID {
-					return s.UeberfaelligCount
+					return s.AnzahlUeberfaellig
 				}
 			}
 			t.Fatalf("Leser %s steht nicht in der Liste", leserID)

@@ -183,11 +183,11 @@ func ersteZeit(a, b *time.Time) *time.Time {
 	return b
 }
 
-// ZusammenfuehrenSchueler führt quelle in ziel auf — in einer Transaktion, mit beiden
+// FuehreLeserZusammen führt quelle in ziel auf — in einer Transaktion, mit beiden
 // Zeilen gesperrt. Reihenfolge ist Schutz: Erst wandern die Fremdschlüssel, dann fällt
 // die Quelle, ERST DANN bekommt das Ziel die Stammdaten — sonst kollidierten Name +
 // Geburtsdatum bzw. lusd_id am partiellen Unique-Index, solange die Quelle noch lebt.
-func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a ZusammenfuehrenAuftrag) (*ZusammenfuehrenErgebnis, error) {
+func FuehreLeserZusammen(ctx context.Context, pool db.PgxPoolIface, a ZusammenfuehrenAuftrag) (*ZusammenfuehrenErgebnis, error) {
 	if a.ZielID == a.QuelleID {
 		return nil, ErrZusammenfuehrenGleich
 	}
@@ -221,7 +221,7 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 	if err != nil {
 		return nil, err
 	}
-	if err := schreibeRueckwegEintrag(ctx, tx, rueckwegEintragParams{
+	if err := schreibeRueckwegEintrag(ctx, tx, rueckwegEintrag{
 		BearbeiterID: a.BearbeiterID,
 		Ziel:         ziel,
 		Quelle:       quelle,
@@ -239,10 +239,10 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 
 	f, o := fuehrend(ziel, quelle)
 	erg.Vorname, erg.Nachname, erg.Klasse = f.vorname, f.nachname, f.klasse
-	if err := schreibeZusammengefuehrtesZiel(ctx, tx, schreibeZusammengefuehrtesZielParams{
+	if err := schreibeZusammengefuehrtesZiel(ctx, tx, zusammengefuehrtesZiel{
 		ZielID:        ziel.id,
-		F:             f,
-		O:             o,
+		Fuehrend:      f,
+		Andere:        o,
 		AbgaengerJahr: AbgaengerJahr(f.klasse),
 		Quelle:        quelle,
 	}); err != nil {
@@ -288,7 +288,7 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 	// Dublette auf denselben Titel: Es bleibt die weiter fortgeschrittene Vormerkung
 	// (abholbereit vor wartend), bei Gleichstand die ältere, dann die des Ziels — egal,
 	// auf welcher Seite sie steht. Sonst verlöre das Kind den bereitgestellten Platz.
-	if g.VormerkungenDoppelt, err = idsAus(ctx, tx, `
+	if g.VormerkungenDoppelt, err = ladeIDs(ctx, tx, `
 		WITH paar AS (
 			SELECT v.id, v.schueler_id, v.titel_id, v.erstellt_am,
 			       CASE WHEN v.status = 'abholbereit' THEN 2 ELSE 1 END AS rang
@@ -303,25 +303,25 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		return nil, fmt.Errorf("doppelte vormerkungen: %w", err)
 	}
 	erg.DoppelteVormerkungen = int64(len(g.VormerkungenDoppelt))
-	if g.Ausleihen, err = idsAus(ctx, tx, `UPDATE ausleihen SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
+	if g.Ausleihen, err = ladeIDs(ctx, tx, `UPDATE ausleihen SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("ausleihen verschieben: %w", err)
 	}
-	if g.Schadensfaelle, err = idsAus(ctx, tx, `UPDATE schadensfaelle SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
+	if g.Schadensfaelle, err = ladeIDs(ctx, tx, `UPDATE schadensfaelle SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("schadensfälle verschieben: %w", err)
 	}
-	if g.Vormerkungen, err = idsAus(ctx, tx, `UPDATE vormerkungen SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
+	if g.Vormerkungen, err = ladeIDs(ctx, tx, `UPDATE vormerkungen SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("vormerkungen verschieben: %w", err)
 	}
 	// Der Bescheid hängt per SET NULL: Bliebe er stehen, machte der DELETE der Quelle ihn
 	// STILL personenlos — weg aus der Akte und der Auskunft des Ziels, und die Tilgung
 	// (sie sucht über schueler_id) fände Name und Anschrift im Snapshot nie mehr. Der
 	// Snapshot selbst bleibt, wie er ist: Er zeigt, an wen der Brief damals ging.
-	if g.Bescheide, err = idsAus(ctx, tx, `UPDATE schadensersatz_bescheide SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
+	if g.Bescheide, err = ladeIDs(ctx, tx, `UPDATE schadensersatz_bescheide SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("bescheide verschieben: %w", err)
 	}
 	// Nachbuch-Meldungen (Migration 117) hängen per SET NULL: Blieben sie stehen, machte der
 	// DELETE der Quelle sie still personenlos — die Meldung zeigte kein Kind mehr.
-	if g.NachbuchMeldungen, err = idsAus(ctx, tx, `UPDATE nachbuch_meldungen SET ausleiher_schueler_id = CASE WHEN ausleiher_schueler_id = $2 THEN $1 ELSE ausleiher_schueler_id END, vorbesitzer_schueler_id = CASE WHEN vorbesitzer_schueler_id = $2 THEN $1 ELSE vorbesitzer_schueler_id END WHERE ausleiher_schueler_id = $2 OR vorbesitzer_schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
+	if g.NachbuchMeldungen, err = ladeIDs(ctx, tx, `UPDATE nachbuch_meldungen SET ausleiher_schueler_id = CASE WHEN ausleiher_schueler_id = $2 THEN $1 ELSE ausleiher_schueler_id END, vorbesitzer_schueler_id = CASE WHEN vorbesitzer_schueler_id = $2 THEN $1 ELSE vorbesitzer_schueler_id END WHERE ausleiher_schueler_id = $2 OR vorbesitzer_schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("nachbuch-meldungen verschieben: %w", err)
 	}
 	erg.NachbuchMeldungen = int64(len(g.NachbuchMeldungen))
@@ -338,7 +338,7 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		return nil, fmt.Errorf("älteres foto weichen lassen: %w", err)
 	}
 	g.ZielFotoGewichen = gewichen.RowsAffected() == 1
-	fotos, err := idsAus(ctx, tx, `UPDATE schueler_fotos SET schueler_id = $1 WHERE schueler_id = $2
+	fotos, err := ladeIDs(ctx, tx, `UPDATE schueler_fotos SET schueler_id = $1 WHERE schueler_id = $2
 		AND NOT EXISTS (SELECT 1 FROM schueler_fotos WHERE schueler_id = $1) RETURNING schueler_id`, ziel, quelle)
 	if err != nil {
 		return nil, fmt.Errorf("foto verschieben: %w", err)
@@ -387,7 +387,7 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 // wüsste.
 func verschiebeZugangskonto(ctx context.Context, tx pgx.Tx, ziel, quelle string, g *gewanderteVorgaenge) error {
 	var err error
-	if g.PlatzhalterKonten, err = idsAus(ctx, tx, `
+	if g.PlatzhalterKonten, err = ladeIDs(ctx, tx, `
 		DELETE FROM benutzer b
 		 WHERE b.leser_id IN ($1, $2)
 		   AND lower(b.email) LIKE '%'||$3
@@ -407,7 +407,7 @@ func verschiebeZugangskonto(ctx context.Context, tx pgx.Tx, ziel, quelle string,
 	if zielKonto && quelleKonto {
 		return ErrZusammenfuehrenZweiKonten
 	}
-	if g.Konten, err = idsAus(ctx, tx,
+	if g.Konten, err = ladeIDs(ctx, tx,
 		`UPDATE benutzer SET leser_id = $1, aktualisiert_am = NOW() WHERE leser_id = $2 RETURNING id`,
 		ziel, quelle); err != nil {
 		return fmt.Errorf("zugangskonto verschieben: %w", err)
@@ -415,8 +415,8 @@ func verschiebeZugangskonto(ctx context.Context, tx pgx.Tx, ziel, quelle string,
 	return nil
 }
 
-// idsAus führt ein Statement mit RETURNING aus und sammelt die Kennungen.
-func idsAus(ctx context.Context, tx pgx.Tx, sql string, args ...any) ([]string, error) {
+// ladeIDs führt ein Statement mit RETURNING aus und sammelt die Kennungen.
+func ladeIDs(ctx context.Context, tx pgx.Tx, sql string, args ...any) ([]string, error) {
 	rows, err := tx.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
@@ -433,9 +433,9 @@ func idsAus(ctx context.Context, tx pgx.Tx, sql string, args ...any) ([]string, 
 	return ids, rows.Err()
 }
 
-// rueckwegEintragParams bündelt die Angaben des Rückweg-Eintrags. Ziel und Quelle sind
+// rueckwegEintrag bündelt die Angaben des Rückweg-Eintrags. Ziel und Quelle sind
 // typgleich — als Positionsargumente wären sie stumm vertauschbar.
-type rueckwegEintragParams struct {
+type rueckwegEintrag struct {
 	BearbeiterID string
 	Ziel         *zusammenfuehrenZeile
 	Quelle       *zusammenfuehrenZeile
@@ -450,7 +450,7 @@ type rueckwegEintragParams struct {
 // in dem die Quelle weg ist und die Spur fehlt. Lebenszyklus: Wird das Ziel später
 // anonymisiert, ersetzt SpurTilgungen dieses Objekt als Ganzes — die Klardaten der
 // Quelle leben nicht länger als die des Ziels.
-func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, p rueckwegEintragParams) error {
+func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, p rueckwegEintrag) error {
 	details, err := json.Marshal(map[string]any{
 		"action":             "zusammenfuehren",
 		"aufgeloest_id":      p.Quelle.id,
@@ -509,10 +509,10 @@ func stammdatenSnapshot(z *zusammenfuehrenZeile) map[string]any {
 	}
 }
 
-type schreibeZusammengefuehrtesZielParams struct {
+type zusammengefuehrtesZiel struct {
 	ZielID        string
-	F             *zusammenfuehrenZeile
-	O             *zusammenfuehrenZeile
+	Fuehrend      *zusammenfuehrenZeile
+	Andere        *zusammenfuehrenZeile
 	AbgaengerJahr int
 	Quelle        *zusammenfuehrenZeile
 }
@@ -525,7 +525,7 @@ type schreibeZusammengefuehrtesZielParams struct {
 // Eine MANUELLE Sperre der Quelle (Ausweis gestohlen, Hausverbot …) gehört zur Person,
 // nicht zum Datensatz: Sie geht auf das Ziel über — mit ihrem Grund, sofern das Ziel
 // nicht selbst schon manuell gesperrt ist (dann bleibt dessen Grund).
-func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p schreibeZusammengefuehrtesZielParams) error {
+func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p zusammengefuehrtesZiel) error {
 	tag, err := tx.Exec(ctx, `
 		UPDATE leser SET
 			vorname = $2, nachname = $3,
@@ -559,11 +559,11 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p schreibeZu
 				ELSE block_reason END,
 			aktualisiert_am = NOW()
 		WHERE id = $1`,
-		p.ZielID, p.F.vorname, p.F.nachname, p.F.klasse,
-		ersteZeit(p.F.geburtsdatum, p.O.geburtsdatum), ersteZeit(p.F.eintritt, p.O.eintritt),
-		erster(p.F.strasse, p.O.strasse), erster(p.F.hausnummer, p.O.hausnummer), erster(p.F.plz, p.O.plz),
-		erster(p.F.ort, p.O.ort), erster(p.F.elternEmail, p.O.elternEmail),
-		erster(p.F.lusdID, p.O.lusdID), ersteZeit(p.F.bestaetigtAm, p.O.bestaetigtAm), p.AbgaengerJahr,
+		p.ZielID, p.Fuehrend.vorname, p.Fuehrend.nachname, p.Fuehrend.klasse,
+		ersteZeit(p.Fuehrend.geburtsdatum, p.Andere.geburtsdatum), ersteZeit(p.Fuehrend.eintritt, p.Andere.eintritt),
+		erster(p.Fuehrend.strasse, p.Andere.strasse), erster(p.Fuehrend.hausnummer, p.Andere.hausnummer), erster(p.Fuehrend.plz, p.Andere.plz),
+		erster(p.Fuehrend.ort, p.Andere.ort), erster(p.Fuehrend.elternEmail, p.Andere.elternEmail),
+		erster(p.Fuehrend.lusdID, p.Andere.lusdID), ersteZeit(p.Fuehrend.bestaetigtAm, p.Andere.bestaetigtAm), p.AbgaengerJahr,
 		p.Quelle.manuellGesperrt, p.Quelle.sperrgrund)
 	if err != nil {
 		return fmt.Errorf("ziel schreiben: %w", err)
@@ -578,21 +578,21 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p schreibeZu
 // Gesperrte, denn genau die sucht man beim Zusammenführen — die Aktivliste der
 // Schülerdatei blendet sie aus.
 type ZusammenfuehrenKandidat struct {
-	ID            string  `json:"id"`
-	BarcodeID     string  `json:"barcode_id"`
-	Vorname       string  `json:"vorname"`
-	Nachname      string  `json:"nachname"`
-	Klasse        string  `json:"klasse"`
-	Geburtsdatum  *string `json:"geburtsdatum,omitempty"`
-	IstAbgaenger  bool    `json:"ist_abgaenger"`
-	IstGesperrt   bool    `json:"ist_gesperrt"`
-	OffeneBuecher int64   `json:"offene_buecher"`
+	ID              string  `json:"id"`
+	BarcodeID       string  `json:"barcode_id"`
+	Vorname         string  `json:"vorname"`
+	Nachname        string  `json:"nachname"`
+	Klasse          string  `json:"klasse"`
+	Geburtsdatum    *string `json:"geburtsdatum,omitempty"`
+	IstAbgaenger    bool    `json:"ist_abgaenger"`
+	IstGesperrt     bool    `json:"ist_gesperrt"`
+	OffeneAusleihen int64   `json:"offene_buecher"`
 }
 
-// SucheZusammenfuehrenKandidaten sucht mit denselben Bausteinen wie Theke und
+// FindeZusammenfuehrenKandidaten sucht mit denselben Bausteinen wie Theke und
 // Schülerdatei (suchnorm, Tokens) über ALLE nicht gelöschten, nicht anonymisierten
 // Schüler — außer dem Datensatz, von dem aus gesucht wird.
-func SucheZusammenfuehrenKandidaten(ctx context.Context, pool db.PgxPoolIface, ausserID, suche string, limit int) ([]ZusammenfuehrenKandidat, error) {
+func FindeZusammenfuehrenKandidaten(ctx context.Context, pool db.PgxPoolIface, ausserID, suche string, limit int) ([]ZusammenfuehrenKandidat, error) {
 	tokens := suchTokens(suche)
 	if len(tokens) == 0 {
 		return []ZusammenfuehrenKandidat{}, nil
@@ -603,10 +603,10 @@ func SucheZusammenfuehrenKandidaten(ctx context.Context, pool db.PgxPoolIface, a
 	// nicht `*string`. Ohne COALESCE scheitert der Scan an der ersten Kollegenzeile — und
 	// zwar als 500 „interner Datenbankfehler", den nur ein PG-Test findet.
 	//
-	// Der Seitenvergleich unten hält dieselbe Grenze wie ZusammenfuehrenSchueler: Wer von
+	// Der Seitenvergleich unten hält dieselbe Grenze wie FuehreLeserZusammen: Wer von
 	// einem Schüler aus sucht, bekommt Schüler; wer von einem Kollegen aus sucht,
 	// Kollegen. Sonst böte die Liste an, was das Zusammenführen danach ablehnt.
-	rows, err := pool.Query(ctx, SchuelerSuchCTE+`
+	rows, err := pool.Query(ctx, leserSuchCTE+`
 		SELECT s.id, COALESCE(s.barcode_id, ''), s.vorname, s.nachname, COALESCE(s.klasse, ''),
 		       TO_CHAR(s.geburtsdatum, 'YYYY-MM-DD'),
 		       s.ist_abgaenger, s.ist_gesperrt,
@@ -614,8 +614,8 @@ func SucheZusammenfuehrenKandidaten(ctx context.Context, pool db.PgxPoolIface, a
 		FROM leser s
 		WHERE s.deleted_at IS NULL AND s.anonymized_at IS NULL AND s.id <> $4
 		  AND (s.art = 'schueler') = ((SELECT art FROM leser WHERE id = $4) = 'schueler')
-		  AND `+SchuelerSuchBedingung(true)+`
-		ORDER BY `+SchuelerSuchRang+`, s.nachname, s.vorname
+		  AND `+leserSuchBedingung(true)+`
+		ORDER BY `+leserSuchRang+`, s.nachname, s.vorname
 		LIMIT $3`, tokens, tokens[0], limit, ausserID)
 	if err != nil {
 		return nil, err
@@ -625,7 +625,7 @@ func SucheZusammenfuehrenKandidaten(ctx context.Context, pool db.PgxPoolIface, a
 	for rows.Next() {
 		var k ZusammenfuehrenKandidat
 		if err := rows.Scan(&k.ID, &k.BarcodeID, &k.Vorname, &k.Nachname, &k.Klasse, &k.Geburtsdatum,
-			&k.IstAbgaenger, &k.IstGesperrt, &k.OffeneBuecher); err != nil {
+			&k.IstAbgaenger, &k.IstGesperrt, &k.OffeneAusleihen); err != nil {
 			return nil, err
 		}
 		out = append(out, k)

@@ -8,7 +8,7 @@ package service
 // Lehrerprofil nicht gefunden" (404). Zwei Folgen: Ein Datenbank-Aussetzer sah aus wie ein
 // Bedienfehler, und eine Lehrkraft ohne Ausweis scheiterte am Scan der NULL-Spalte in einen
 // string — ebenfalls als 404. Seit Migration 125 liest der Ausleihpfad die Leserzeile
-// (GetLeserByID) und damit dieselbe Quelle wie die Theke; die NULL-Spalte kommt als
+// (Finde) und damit dieselbe Quelle wie die Theke; die NULL-Spalte kommt als
 // coalesce, und die Frist entscheidet die Art.
 
 import (
@@ -41,7 +41,7 @@ func TestResolveBorrower_LehrkraftOhneAusweis(t *testing.T) {
 		}
 	})
 
-	svc := &defaultLoanService{pool: pool, studentRepo: repository.NewStudentRepository(pool)}
+	svc := &defaultLoanService{pool: pool, studentRepo: repository.NewLeserAbfragen(pool)}
 	chk, err := svc.resolveBorrowerAndDueTime(ctx, &repository.Exemplar{}, &leserID)
 	if err != nil {
 		t.Fatalf("eine aktive Lehrkraft ohne Ausweis muss ausleihen können, bekam: %v", err)

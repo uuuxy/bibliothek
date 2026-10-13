@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, seedSQL, uniqueSuffix, menuepunkt } from './helpers.js';
 
-// Fund 31.08.2026 nachts (Duc-Bauer-Spur, flasch3): ListStudentsWithStats filterte
+// Fund 31.08.2026 nachts (Duc-Bauer-Spur, flasch3): LeserAbfragen.LadeSchuelerListe filterte
 // nur deleted_at — ein als Abgänger markierter Schüler stand zusätzlich mitten in
 // „Aktive Schüler", als „Gesperrt" ohne erkennbaren Grund. Nach dem Schuljahres-
 // wechsel wären das ~100 Karteileichen zwischen den Aktiven (später sogar mit

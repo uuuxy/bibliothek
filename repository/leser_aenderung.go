@@ -90,8 +90,8 @@ func (a LeserAenderung) Spalten() []string {
 	return a.zuweisungen().spalten
 }
 
-// Leer sagt, ob die Änderung kein Feld nennt.
-func (a LeserAenderung) Leer() bool {
+// IstLeer sagt, ob die Änderung kein Feld nennt.
+func (a LeserAenderung) IstLeer() bool {
 	return len(a.Spalten()) == 0
 }
 

@@ -84,7 +84,7 @@ func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 		t.Fatalf("Exemplar anlegen: %v", err)
 	}
 
-	studentRepo := repository.NewStudentRepository(pool)
+	studentRepo := repository.NewLeserAbfragen(pool)
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)

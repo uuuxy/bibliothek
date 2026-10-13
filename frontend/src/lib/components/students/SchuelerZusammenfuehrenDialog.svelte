@@ -1,6 +1,6 @@
 <!-- @component SchuelerZusammenfuehrenDialog — zwei Datensätze, ein Mensch (Umbenennung
      ohne Schüler-ID, Dublette). Der Admin sucht den anderen Datensatz (auch Abgänger und
-     Gesperrte) und legt fest, welcher bleibt; Regeln in repository/schueler_zusammenfuehren.go,
+     Gesperrte) und legt fest, welcher bleibt; Regeln in repository/leser_zusammenfuehren.go,
      Konzept in docs/LUSD.md §5. Seit 07.09.2026 auf Modal.svelte (Register 05.09.);
      Kopfzeile und Schließen-Knopf stellt das Bauteil. -->
 <script>

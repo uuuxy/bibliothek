@@ -149,7 +149,7 @@ Fällt eine Dublette erst später auf — das Kind steht mit dem alten Ausweis a
 gilt als gesperrter Abgänger — führt ein Admin (Recht `merge_students`, „Schüler zusammenführen" — einzeln delegierbar) beide
 Datensätze zusammen: **Schülerakte → Stammdaten & Adresse → „Doppelter Datensatz?"**.
 
-Regeln (`repository/schueler_zusammenfuehren.go`):
+Regeln (`repository/leser_zusammenfuehren.go`):
 
 - Das **Ziel bleibt** (UUID, Ausweis-Barcode). Faustregel: Es bleibt der Datensatz, dessen
   Ausweis das Kind in der Hand hat.
@@ -212,10 +212,10 @@ auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_gate_pg_test.
 | Anwenden: Batch, Neuanlage, Abgänger, Karenz                         | `internal/lusd/anwenden.go` (Reihenfolge und Regeln), `repository/lusd_import.go` (die Anweisungen)                                                            |
 | Lauf, Bremse des Massenabgangs                                       | `internal/lusd/lauf.go`                                                                                                                                |
 | Tür: Upload, Wahl des Admins, Audit                                  | `api/leser/lusd.go`                                                                                                                                          |
-| Zusammenführen                                                       | `repository/schueler_zusammenfuehren.go`, `api/leser/student_zusammenfuehren.go`                                                                             |
+| Zusammenführen                                                       | `repository/leser_zusammenfuehren.go`, `api/leser/student_zusammenfuehren.go`                                                                             |
 | Karenz-Prädikat, Job, Wächter                                        | `repository/loeschfristen.go`, `jobs/cron_dsgvo.go`, `repository/loeschrueckstand.go`; Uhr: `migrations/137_letzter_vorgang_am_leser.sql`              |
 | Oberfläche                                                           | `frontend/src/lib/components/students/LusdImportView.svelte`, `LusdUmbenennungen.svelte`, `lusdVorschauRubriken.js`, `SchuelerZusammenfuehren*.svelte` |
-| Tests, die den Jahreszyklus spielen                                  | `api/leser/lusd_namensmodus_pg_test.go`, `api/leser/lusd_umbenennung_pg_test.go`, `repository/student_zusammenfuehren_pg_test.go`, `internal/lusd/paarung_test.go`             |
+| Tests, die den Jahreszyklus spielen                                  | `api/leser/lusd_namensmodus_pg_test.go`, `api/leser/lusd_umbenennung_pg_test.go`, `repository/leser_zusammenfuehren_pg_test.go`, `internal/lusd/paarung_test.go`             |
 
 Zwei Tests halten fest, was ein Umbau des Schreibens nicht verlieren darf.
 `api/leser/lusd_klassenwechsel_pg_test.go` prüft die Paarung: Jeder Schüler bekommt die Klasse, die

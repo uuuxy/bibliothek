@@ -25,7 +25,7 @@ type UnifiedSearchResult struct {
 }
 
 // SearchHandler provides a unified fuzzy search for students and books without requiring prefixes.
-func (s *Tueren) SearchHandler(studentRepo repository.StudentRepository, bookRepo repository.KatalogAbfragen) http.HandlerFunc {
+func (s *Tueren) SearchHandler(studentRepo repository.LeserAbfragen, bookRepo repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := strings.TrimSpace(r.URL.Query().Get("q"))
 		if query == "" {
@@ -39,7 +39,7 @@ func (s *Tueren) SearchHandler(studentRepo repository.StudentRepository, bookRep
 
 		// Using channels or just sequential is fine, but sequential is easier and perfectly fast enough
 		// for a local postgres database with limits.
-		students, studentsTotal, err := studentRepo.SearchStudentsFuzzy(ctx, query, limit)
+		students, studentsTotal, err := studentRepo.FindeUnscharf(ctx, query, limit)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

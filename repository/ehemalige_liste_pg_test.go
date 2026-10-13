@@ -8,10 +8,10 @@ import (
 // Der Reiter „Ehemalige / Archiv" und „Aktive Schüler" sind dieselbe Abfrage mit
 // umgekehrtem Vorzeichen — hier der Beweis, dass keine Zeile in beiden oder in keiner
 // Liste landet: aktiv, weggegangen, gelöscht.
-func TestListEhemaligeWithStats_GegenstueckDerAktiven(t *testing.T) {
+func TestLadeEhemaligenListe_GegenstueckDerAktiven(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	repo := &pgStudentRepository{db: pool}
+	repo := &pgLeserAbfragen{db: pool}
 
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, deleted_at) VALUES
@@ -27,16 +27,16 @@ func TestListEhemaligeWithStats_GegenstueckDerAktiven(t *testing.T) {
 		}
 	})
 
-	ehemalige, err := repo.ListEhemaligeWithStats(ctx, "Ehemtest", SchuelerSortierung{})
+	ehemalige, err := repo.LadeEhemaligenListe(ctx, "Ehemtest", LeserSortierung{})
 	if err != nil {
-		t.Fatalf("ListEhemaligeWithStats: %v", err)
+		t.Fatalf("LadeEhemaligenListe: %v", err)
 	}
-	aktive, err := repo.ListStudentsWithStats(ctx, nil, "Ehemtest", SchuelerSortierung{})
+	aktive, err := repo.LadeSchuelerListe(ctx, nil, "Ehemtest", LeserSortierung{})
 	if err != nil {
-		t.Fatalf("ListStudentsWithStats: %v", err)
+		t.Fatalf("LadeSchuelerListe: %v", err)
 	}
 
-	namen := func(l []StudentListStat) map[string]bool {
+	namen := func(l []LeserListenZeile) map[string]bool {
 		m := map[string]bool{}
 		for _, s := range l {
 			m[s.Vorname] = true
@@ -52,7 +52,7 @@ func TestListEhemaligeWithStats_GegenstueckDerAktiven(t *testing.T) {
 	}
 
 	// Ohne Suchbegriff: jüngster Abgang zuerst.
-	alle, err := repo.ListEhemaligeWithStats(ctx, "", SchuelerSortierung{})
+	alle, err := repo.LadeEhemaligenListe(ctx, "", LeserSortierung{})
 	if err != nil {
 		t.Fatal(err)
 	}

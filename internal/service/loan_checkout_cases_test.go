@@ -22,7 +22,7 @@ func TestHandleNewLoan_Student_Success(t *testing.T) {
 	}
 	defer mock.Close()
 
-	studentRepo := repository.NewStudentRepository(mock)
+	studentRepo := repository.NewLeserAbfragen(mock)
 	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
@@ -37,7 +37,7 @@ func TestHandleNewLoan_Student_Success(t *testing.T) {
 	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
 		borrowerID: "student1",
-		leser:      &repository.Student{ID: "student1", Vorname: "Max", Art: "schueler"},
+		leser:      &repository.Leser{ID: "student1", Vorname: "Max", Art: "schueler"},
 		dueTime:    time.Now().Add(14 * 24 * time.Hour),
 	}
 	staffID := "staff1"
@@ -88,7 +88,7 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 	}
 	defer mock.Close()
 
-	studentRepo := repository.NewStudentRepository(mock)
+	studentRepo := repository.NewLeserAbfragen(mock)
 	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
@@ -103,7 +103,7 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
 		borrowerID: "teacher1",
-		leser:      &repository.Student{ID: "teacher1", Vorname: "Anna", Art: "lehrkraft"},
+		leser:      &repository.Leser{ID: "teacher1", Vorname: "Anna", Art: "lehrkraft"},
 		dueTime:    time.Now().Add(365 * 24 * time.Hour),
 	}
 	staffID := "staff1"
@@ -149,7 +149,7 @@ func TestHandleNewLoan_ErzeugeAusleiheError(t *testing.T) {
 	}
 	defer mock.Close()
 
-	studentRepo := repository.NewStudentRepository(mock)
+	studentRepo := repository.NewLeserAbfragen(mock)
 	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
@@ -164,7 +164,7 @@ func TestHandleNewLoan_ErzeugeAusleiheError(t *testing.T) {
 	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
 		borrowerID: "student1",
-		leser:      &repository.Student{ID: "student1", Vorname: "Max", Art: "schueler"},
+		leser:      &repository.Leser{ID: "student1", Vorname: "Max", Art: "schueler"},
 		dueTime:    time.Now().Add(14 * 24 * time.Hour),
 	}
 	staffID := "staff1"
@@ -197,7 +197,7 @@ func TestHandleNewLoan_CommitError(t *testing.T) {
 	}
 	defer mock.Close()
 
-	studentRepo := repository.NewStudentRepository(mock)
+	studentRepo := repository.NewLeserAbfragen(mock)
 	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
@@ -212,7 +212,7 @@ func TestHandleNewLoan_CommitError(t *testing.T) {
 	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
 		borrowerID: "teacher1",
-		leser:      &repository.Student{ID: "teacher1", Vorname: "Anna", Art: "lehrkraft"},
+		leser:      &repository.Leser{ID: "teacher1", Vorname: "Anna", Art: "lehrkraft"},
 		dueTime:    time.Now().Add(365 * 24 * time.Hour),
 	}
 	staffID := "staff1"

@@ -62,7 +62,7 @@ func TestTheke_AuflagenHinweisBeiGemischterKlasse(t *testing.T) {
 		testdaten.Exemplar(t, pool, t2, fmt.Sprintf("B-518T-%d", i), true, "")
 	}
 
-	studentRepo := repository.NewStudentRepository(pool)
+	studentRepo := repository.NewLeserAbfragen(pool)
 	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)

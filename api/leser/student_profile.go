@@ -12,11 +12,11 @@ import (
 
 // resolveFotoURL liefert die Foto-URL eines Schülers, falls ein (verschlüsseltes) Foto
 // hinterlegt ist, sonst einen leeren String.
-func resolveFotoURL(ctx context.Context, studentRepo repository.StudentRepository, student *repository.Student) string {
+func resolveFotoURL(ctx context.Context, studentRepo repository.LeserAbfragen, student *repository.Leser) string {
 	if student.BarcodeID == "" {
 		return ""
 	}
-	hasPhoto, err := studentRepo.HasPhoto(ctx, student.ID)
+	hasPhoto, err := studentRepo.HatFoto(ctx, student.ID)
 	if err == nil && hasPhoto {
 		return fmt.Sprintf("/api/schueler/%s/photo", student.BarcodeID)
 	}
@@ -60,8 +60,8 @@ type StudentProfileResponse struct {
 	// bei Lehrkraft und LiV die Kennung, an der die Anmeldung die Person erkennt.
 	// Leer heißt: Diese Person hat noch kein Konto, die Adresse ist in der Akte
 	// nachtragbar. Bei einem Schüler steht hier nie etwas.
-	Email             string                    `json:"email"`
-	EntlieheneBuecher []repository.BorrowedBook `json:"entliehene_buecher"`
+	Email             string                        `json:"email"`
+	EntlieheneBuecher []repository.LaufendeAusleihe `json:"entliehene_buecher"`
 }
 
 // OffeneForderungen sind Anzahl und Summe der unbezahlten Forderungen eines Lesers.
@@ -84,7 +84,7 @@ type OffeneForderungen struct {
 // @Failure      500  {object}  map[string]string
 // @Router       /schueler/{id} [get]
 func (s *Tueren) GetStudentProfileHandler(
-	studentRepo repository.StudentRepository,
+	studentRepo repository.LeserAbfragen,
 ) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		return s.handleGetStudentProfile(w, r, studentRepo)
@@ -93,7 +93,7 @@ func (s *Tueren) GetStudentProfileHandler(
 
 // handleGetStudentProfile stellt die Akte eines Lesers zusammen: Stammdaten, Foto, Ausleihen,
 // offene Forderungen und beim Kollegium die Schul-Adresse.
-func (s *Tueren) handleGetStudentProfile(w http.ResponseWriter, r *http.Request, studentRepo repository.StudentRepository) error {
+func (s *Tueren) handleGetStudentProfile(w http.ResponseWriter, r *http.Request, studentRepo repository.LeserAbfragen) error {
 	id := r.PathValue("id")
 	if id == "" {
 		return apierrors.BadRequest("missing student ID parameter", nil)
@@ -103,10 +103,10 @@ func (s *Tueren) handleGetStudentProfile(w http.ResponseWriter, r *http.Request,
 
 	// 1. Den Leser laden — Schüler oder Kollegium.
 	//
-	// GetLeserByID statt GetByID: Letzteres liest die Sicht `schueler`, und eine
-	// Lehrkraft käme damit als 404 zurück. An der Theke hieße das: Der Kollege ist
-	// geladen, aber niemand sieht, welche Bücher er hat.
-	student, err := studentRepo.GetLeserByID(ctx, id)
+	// LeserAbfragen.Finde liest die Tabelle `leser`: Über die Sicht `schueler` käme eine
+	// Lehrkraft als 404 zurück. An der Theke hieße das: Der Kollege ist geladen, aber
+	// niemand sieht, welche Bücher er hat.
+	student, err := studentRepo.Finde(ctx, id)
 	if err != nil {
 		return apierrors.Internal("Fehler beim Laden des Lesers", err)
 	}
@@ -118,17 +118,17 @@ func (s *Tueren) handleGetStudentProfile(w http.ResponseWriter, r *http.Request,
 	fotoURL := resolveFotoURL(ctx, studentRepo, student)
 
 	// 3. Retrieve currently active loans for this student
-	borrowedBooks, err := studentRepo.GetActiveBorrowedBooks(ctx, id)
+	borrowedBooks, err := studentRepo.LadeLaufendeAusleihen(ctx, id)
 	if err != nil {
 		return apierrors.Internal("Fehler beim Laden der ausgeliehenen Bücher", err)
 	}
 	if borrowedBooks == nil {
-		borrowedBooks = []repository.BorrowedBook{}
+		borrowedBooks = []repository.LaufendeAusleihe{}
 	}
 
 	// 3.5 Offene Forderungen. Ein Fehler bricht ab: „nichts offen" wäre sonst eine Auskunft,
 	// die niemand geprüft hat.
-	anzahl, summe, err := studentRepo.OffeneSchaeden(ctx, student.ID)
+	anzahl, summe, err := studentRepo.ZaehleOffeneSchaeden(ctx, student.ID)
 	if err != nil {
 		return apierrors.Internal("Fehler beim Laden der offenen Forderungen", err)
 	}
@@ -158,8 +158,8 @@ func (s *Tueren) handleGetStudentProfile(w http.ResponseWriter, r *http.Request,
 		LusdID:            student.LusdID,
 		HasOpenDamages:    anzahl > 0,
 		OffeneForderungen: OffeneForderungen{Anzahl: anzahl, Summe: summe},
-		IsManuallyBlocked: student.IsManuallyBlocked,
-		BlockReason:       student.BlockReason,
+		IsManuallyBlocked: student.IstVonHandGesperrt,
+		BlockReason:       student.Sperrgrund,
 		Strasse:           student.Strasse,
 		Hausnummer:        student.Hausnummer,
 		Plz:               student.Plz,
@@ -182,9 +182,9 @@ func (s *Tueren) handleGetStudentProfile(w http.ResponseWriter, r *http.Request,
 // @Success      200  {array}   string
 // @Failure      500  {object}  map[string]string
 // @Router       /klassen [get]
-func (s *Tueren) GetClassesHandler(studentRepo repository.StudentRepository) http.HandlerFunc {
+func (s *Tueren) GetClassesHandler(studentRepo repository.LeserAbfragen) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		classes, err := studentRepo.GetDistinctClasses(r.Context())
+		classes, err := studentRepo.LadeKlassen(r.Context())
 		if err != nil {
 			return apierrors.Internal("Fehler beim Laden der Klassen", err)
 		}

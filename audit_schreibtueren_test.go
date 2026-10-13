@@ -30,7 +30,7 @@ func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 		// UMGESCHLÜSSELT, nicht gelöscht oder geändert — sonst verlöre die Art.-15-Auskunft
 		// die Lesehistorie, und die DSGVO-Tilgung fände sie nicht mehr (dieselben Schlüssel
 		// wie SpurTilgungen). Aussage und Zeitstempel der Einträge bleiben.
-		"repository/schueler_zusammenfuehren.go": "verschiebeVorgaenge (Umschlüsselung beim Zusammenführen)",
+		"repository/leser_zusammenfuehren.go": "verschiebeVorgaenge (Umschlüsselung beim Zusammenführen)",
 	}
 	muster := regexp.MustCompile(`(?i)\b(UPDATE|DELETE\s+FROM)\s+audit_logs?\b`)
 	var verstoesse []string

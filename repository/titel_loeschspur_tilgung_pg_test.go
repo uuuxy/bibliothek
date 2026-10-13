@@ -141,7 +141,7 @@ func TestAnonymisierung_TilgtDieLoeschspurAuchNachDemZusammenfuehren(t *testing.
 	if err := repository.NewProtokollAbfragen(pool).LoescheTitel(ctx, titelID, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Titel löschen: %v", err)
 	}
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 		t.Fatalf("Zusammenführen: %v", err)
 	}
 

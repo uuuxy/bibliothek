@@ -28,7 +28,7 @@ import (
 //     falschen Ort.
 //
 // Seit dem 16.09.2026 gibt es die Frage nicht mehr: Die Nummern kommen aus derselben
-// Sequenz wie die der Handanlage (AusweisnummernAbfragen.Naechste, ausweis_nummer_start), einmal je Lauf gezogen
+// Sequenz wie die der Handanlage (AusweisnummernAbfragen.ZieheNaechste, ausweis_nummer_start), einmal je Lauf gezogen
 // und fortlaufend weitergezählt. Dieser Test prüft nur noch die FORM — dass Import und
 // Handanlage dieselbe erzeugen. Dass zwei Läufe sich nicht ins Gehege kommen, prüft
 // api/leser/lusd_ausweisnummern_pg_test.go an der echten Datenbank; an einer reinen

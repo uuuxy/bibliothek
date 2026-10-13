@@ -24,14 +24,14 @@ import (
 // @Param        art     query     string  false  "Leer = nur Schüler; 'alle' = die Leserdatei (Schüler und Kollegium)"
 // @Param        sortierung query  string  false  "Spalte: name | klasse | ausgeliehen; leer = Reihenfolge der Kartei"
 // @Param        richtung   query  string  false  "auf | ab (Vorgabe: auf)"
-// @Success      200     {array}   repository.StudentListStat
+// @Success      200     {array}   repository.LeserListenZeile
 // @Failure      500     {object}  map[string]string
 // @Router       /schueler [get]
 // lmfRepo liefert die Klassen für den Jahrgangsfilter. Als PARAMETER, nicht über s.DB:
 // Die Handler dieses Pakets bekommen ihre Repositories von außen, und ein Griff nach
 // s.DB.Pool sprengt jeden Test, der die Türen ohne Datenbank baut — genau daran ist
 // TestListStudentsLeereListeIstArray am 17.09.2026 mit einem nil-Zeiger abgestürzt.
-func (s *Tueren) ListStudentsHandler(studentRepo repository.StudentRepository, lmfRepo *repository.LmfTerminRepository) http.HandlerFunc {
+func (s *Tueren) ListStudentsHandler(studentRepo repository.LeserAbfragen, lmfRepo *repository.LmfTerminRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		// Klasse ODER Jahrgang — die Klasse gewinnt, wenn beides kommt (sie ist die
 		// genauere Angabe). Die Übersetzung steht in schueler_jahrgang_filter.go.
@@ -43,7 +43,7 @@ func (s *Tueren) ListStudentsHandler(studentRepo repository.StudentRepository, l
 		if ohneTreffer {
 			// Zu diesem Jahrgang gibt es keine Klasse. Eine leere Liste ist die richtige
 			// Antwort; ohne diesen Zweig stünde hier die ganze Kartei.
-			tuer.RespondJSON(w, http.StatusOK, []repository.StudentListStat{})
+			tuer.RespondJSON(w, http.StatusOK, []repository.LeserListenZeile{})
 			return nil
 		}
 		// q sucht auf dem Server. Ohne das filterte die Schülerdatei im Browser über die
@@ -64,15 +64,15 @@ func (s *Tueren) ListStudentsHandler(studentRepo repository.StudentRepository, l
 		// beiden letzten wäre ein Kollege in der Liste falsch: Eine Vormerkung schickt
 		// eine Nachricht an die Elternadresse, und die hat er nicht. Deshalb bleibt die
 		// Vorgabe „nur Schüler", und wer alle meint, sagt es.
-		var students []repository.StudentListStat
+		var students []repository.LeserListenZeile
 		var err error
 		switch {
 		case r.URL.Query().Get("status") == "ehemalige":
-			students, err = studentRepo.ListEhemaligeWithStats(r.Context(), suche, sortierung)
+			students, err = studentRepo.LadeEhemaligenListe(r.Context(), suche, sortierung)
 		case r.URL.Query().Get("art") == "alle":
-			students, err = studentRepo.ListLeserMitStats(r.Context(), klassen, suche, sortierung)
+			students, err = studentRepo.LadeLeserListe(r.Context(), klassen, suche, sortierung)
 		default:
-			students, err = studentRepo.ListStudentsWithStats(r.Context(), klassen, suche, sortierung)
+			students, err = studentRepo.LadeSchuelerListe(r.Context(), klassen, suche, sortierung)
 		}
 		if err != nil {
 			return apierrors.Internal("Fehler beim Abrufen der Leserliste", err)
@@ -90,17 +90,17 @@ func (s *Tueren) ListStudentsHandler(studentRepo repository.StudentRepository, l
 // Einstellungen, Rasterdurchgang 16.09.2026): Die Liste käme sortiert nach irgendetwas
 // zurück, die Oberfläche zeigte ihren Pfeil an der geklickten Spalte, und niemand würde
 // je erfahren, dass beides nicht zusammenpasst. Die Meldung nennt die erlaubten Werte.
-func leserSortierung(r *http.Request) (repository.SchuelerSortierung, *apierrors.APIError) {
-	spalte := repository.SchuelerSortierspalte(strings.TrimSpace(r.URL.Query().Get("sortierung")))
+func leserSortierung(r *http.Request) (repository.LeserSortierung, *apierrors.APIError) {
+	spalte := repository.LeserSortierspalte(strings.TrimSpace(r.URL.Query().Get("sortierung")))
 	richtung := strings.TrimSpace(r.URL.Query().Get("richtung"))
 
-	s := repository.SchuelerSortierung{Spalte: spalte, Absteigend: richtung == "ab"}
-	if !s.Erlaubt() {
-		erlaubt := make([]string, 0, len(repository.SchuelerSortierspalten))
-		for _, e := range repository.SchuelerSortierspalten {
+	s := repository.LeserSortierung{Spalte: spalte, Absteigend: richtung == "ab"}
+	if !s.IstErlaubt() {
+		erlaubt := make([]string, 0, len(repository.LeserSortierspalten))
+		for _, e := range repository.LeserSortierspalten {
 			erlaubt = append(erlaubt, string(e))
 		}
-		return repository.SchuelerSortierung{}, apierrors.BadRequest(
+		return repository.LeserSortierung{}, apierrors.BadRequest(
 			"Unbekannte Sortierung "+strconv.Quote(string(spalte))+" — erlaubt sind: "+
 				strings.Join(erlaubt, ", ")+" (oder leer für die Reihenfolge der Kartei).",
 			errors.New("unbekannte sortierspalte"))
@@ -108,7 +108,7 @@ func leserSortierung(r *http.Request) (repository.SchuelerSortierung, *apierrors
 	// „ab" oder leer/„auf" — ein dritter Wert ist ein Tippfehler des Aufrufers und
 	// bekommt dieselbe Antwort wie eine unbekannte Spalte.
 	if richtung != "" && richtung != "auf" && richtung != "ab" {
-		return repository.SchuelerSortierung{}, apierrors.BadRequest(
+		return repository.LeserSortierung{}, apierrors.BadRequest(
 			"Unbekannte Richtung "+strconv.Quote(richtung)+" — erlaubt sind: auf, ab.",
 			errors.New("unbekannte sortierrichtung"))
 	}

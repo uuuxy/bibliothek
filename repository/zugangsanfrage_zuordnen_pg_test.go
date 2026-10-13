@@ -24,7 +24,7 @@ import (
 //
 // Zugeordnet wird deshalb, statt zu löschen: Das vorhandene Konto zieht auf die
 // vorhandene Leserzeile um, die Zeile des Wächters geht darin auf. Das Verfahren dafür
-// gibt es bereits (repository.ZusammenfuehrenSchueler); dieser Test hält fest, dass es
+// gibt es bereits (repository.FuehreLeserZusammen); dieser Test hält fest, dass es
 // den Weg der Selbstanmeldung wirklich trägt — die anderen Zusammenführungs-Tests legen
 // ihre Leserzeilen von Hand an und gehen am Wächter vorbei.
 func TestZugangsanfrageZuordnen(t *testing.T) {
@@ -71,7 +71,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 		ziel := legeAltbestandAn(t, "Anna", "Bergér", "ZO-ALT-1", "ZO1")
 		konto, waise := legeZugangsanfrageAn(t, "Anna", "Berger", "anna.berger@schule.invalid")
 
-		erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, waise))
+		erg, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, waise))
 		if err != nil {
 			t.Fatalf("zuordnen: %v", err)
 		}
@@ -134,7 +134,7 @@ func TestZugangsanfrageZuordnen(t *testing.T) {
 		_, waise := legeZugangsanfrageAn(t, "Jan", "Kuepper", "jan.kuepper@schule.invalid")
 
 		// Verkehrt herum: die Zeile des Wächters als Ziel.
-		if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(waise, alt)); err != nil {
+		if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(waise, alt)); err != nil {
 			t.Fatalf("verkehrte Richtung: %v", err)
 		}
 		if n := zfZaehle(t, pool, `SELECT count(*) FROM leser WHERE id = $1`, alt); n != 0 {
@@ -191,7 +191,7 @@ func TestZugangsanfrageZuordnen_LitteraPlatzhalterWeicht(t *testing.T) {
 		t.Fatalf("Zugangsanfrage anlegen: %v", err)
 	}
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, waise)); err != nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, waise)); err != nil {
 		t.Fatalf("zuordnen: %v", err)
 	}
 
@@ -251,7 +251,7 @@ func TestZugangsanfrageZuordnen_ZweiEchteKontenBrechenWeiterAb(t *testing.T) {
 		t.Fatalf("zweites Konto: %v", err)
 	}
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err == nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err == nil {
 		t.Fatal("zwei echte Konten wurden zusammengeführt — eine der beiden Anmeldungen ist verloren")
 	}
 	// Nichts darf angetastet sein.

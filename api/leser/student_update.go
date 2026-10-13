@@ -26,7 +26,7 @@ import (
 func (s *Tueren) pruefeSchuelerLoeschbar(ctx context.Context, id string) (int, error) {
 	// `leser` statt der Sicht `schueler`: Die zeigt nur Schüler, und ein Kollege kam hier
 	// als „nicht gefunden" zurück, bevor auch nur eine Regel geprüft war.
-	studentExists, err := repository.LeserVorhanden(ctx, s.DB.Pool, id)
+	studentExists, err := repository.IstLeserVorhanden(ctx, s.DB.Pool, id)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -34,7 +34,7 @@ func (s *Tueren) pruefeSchuelerLoeschbar(ctx context.Context, id string) (int, e
 		return http.StatusNotFound, errors.New("leser nicht gefunden")
 	}
 
-	hasActiveLoans, err := repository.LeserHatOffeneAusleihen(ctx, s.DB.Pool, id)
+	hasActiveLoans, err := repository.HatLeserOffeneAusleihen(ctx, s.DB.Pool, id)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -42,7 +42,7 @@ func (s *Tueren) pruefeSchuelerLoeschbar(ctx context.Context, id string) (int, e
 		return http.StatusBadRequest, errors.New("löschen nicht möglich: Dieser Leser hat noch entliehene Bücher")
 	}
 
-	hasUnpaidDamages, err := repository.LeserHatUnbezahlteForderungen(ctx, s.DB.Pool, id)
+	hasUnpaidDamages, err := repository.HatLeserUnbezahlteForderungen(ctx, s.DB.Pool, id)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -86,7 +86,7 @@ func (s *Tueren) DeleteStudentHandler(auditRepo repository.ProtokollAbfragen) ht
 		// eigene Konto (LegeLeserInPapierkorb) — der Löschende spielte sich mitten im Vorgang
 		// selbst aus der Anmeldung. Die Benutzerverwaltung hält dieselbe Regel für Konten
 		// (DeleteUserHandler, „eigenes Konto kann nicht gelöscht werden").
-		eigene, err := repository.LeserIDVonKonto(ctx, s.DB.Pool, claims.UserID)
+		eigene, err := repository.LadeLeserIDVonKonto(ctx, s.DB.Pool, claims.UserID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -222,7 +222,7 @@ func (s *Tueren) pruefeSchuelerAenderung(ctx context.Context, w http.ResponseWri
 	// Ohne Zuweisung läuft kein UPDATE, etwa wenn nur die unveränderte LUSD-ID mitkam. Eine
 	// nachzutragende Adresse ist Arbeit, auch wenn an der Leserzeile nichts steht; sonst
 	// wäre „nur die Schul-E-Mail nachtragen" ein 400.
-	if b.Leer() && kontoAdresse == "" {
+	if b.IstLeer() && kontoAdresse == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
 		return keine, false
 	}
@@ -358,7 +358,7 @@ func (s *Tueren) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 
 	// Gelesen wird die Tabelle leser, nicht die Sicht schueler: Ein Kollege steht nicht in der
 	// Sicht.
-	aktuell, err := repository.LeserArt(ctx, s.DB.Pool, id)
+	aktuell, err := repository.LadeLeserArt(ctx, s.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))

@@ -16,7 +16,7 @@ import (
 //
 // Beides trägt direkt auf einen gedruckten Klebebogen: Die falsche Reihenfolge merkt
 // man erst beim Verteilen, und der Typfehler legt den Druck ganz still lahm (500).
-func TestEtikettenZeilen_ZweiKlassenBleibenBeieinander(t *testing.T) {
+func TestLadeEtikettZeilen_ZweiKlassenBleibenBeieinander(t *testing.T) {
 	// Der eigentliche Grund für die Sortierung. Wer "7" in die Schülerdatei tippt und
 	// alle Treffer markiert, bekommt zwei Klassen auf einen Bogen. Sortiert allein nach
 	// Nachname laufen sie ineinander (gemessen an echten Daten: 7A, 7A, 7A, 7B, 7B, 7B,
@@ -42,9 +42,9 @@ func TestEtikettenZeilen_ZweiKlassenBleibenBeieinander(t *testing.T) {
 		ids = append(ids, id)
 	}
 
-	zeilen, err := NewStudentRepository(pool).EtikettenZeilen(ctx, ids)
+	zeilen, err := NewLeserAbfragen(pool).LadeEtikettZeilen(ctx, ids)
 	if err != nil {
-		t.Fatalf("EtikettenZeilen: %v", err)
+		t.Fatalf("LadeEtikettZeilen: %v", err)
 	}
 
 	var folge []string
@@ -63,7 +63,7 @@ func TestEtikettenZeilen_ZweiKlassenBleibenBeieinander(t *testing.T) {
 	}
 }
 
-func TestEtikettenZeilen_SortiertUndNurLebende(t *testing.T) {
+func TestLadeEtikettZeilen_SortiertUndNurLebende(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -79,11 +79,11 @@ func TestEtikettenZeilen_SortiertUndNurLebende(t *testing.T) {
 		t.Fatalf("Schüler als gelöscht markieren: %v", err)
 	}
 
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
-	zeilen, err := repo.EtikettenZeilen(ctx, []string{zimmer, anders, mueller, geloescht})
+	zeilen, err := repo.LadeEtikettZeilen(ctx, []string{zimmer, anders, mueller, geloescht})
 	if err != nil {
-		t.Fatalf("EtikettenZeilen: %v", err)
+		t.Fatalf("LadeEtikettZeilen: %v", err)
 	}
 
 	var namen []string
@@ -110,7 +110,7 @@ func TestEtikettenZeilen_SortiertUndNurLebende(t *testing.T) {
 	}
 }
 
-func TestEtikettenZeilen_UnbekannteIDsSindKeinFehler(t *testing.T) {
+func TestLadeEtikettZeilen_UnbekannteIDsSindKeinFehler(t *testing.T) {
 	// Zwischen dem Markieren und dem Druck kann ein Schüler gelöscht worden sein
 	// (Mehrplatzbetrieb). Der Bogen soll deshalb mit den übrigen Namen entstehen und
 	// nicht abbrechen; der Aufrufer vergleicht die Anzahl.
@@ -119,25 +119,25 @@ func TestEtikettenZeilen_UnbekannteIDsSindKeinFehler(t *testing.T) {
 	ctx := context.Background()
 
 	da := seedSuchSchueler(t, pool, "ETI-5", "Lea", "Berger")
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
-	zeilen, err := repo.EtikettenZeilen(ctx, []string{da, "00000000-0000-0000-0000-000000000000"})
+	zeilen, err := repo.LadeEtikettZeilen(ctx, []string{da, "00000000-0000-0000-0000-000000000000"})
 	if err != nil {
-		t.Fatalf("EtikettenZeilen mit unbekannter ID: %v", err)
+		t.Fatalf("LadeEtikettZeilen mit unbekannter ID: %v", err)
 	}
 	if len(zeilen) != 1 || zeilen[0].BarcodeID != "ETI-5" {
 		t.Errorf("erwartet genau Lea Berger, bekommen %+v", zeilen)
 	}
 }
 
-func TestEtikettenZeilen_LeereListeFragtDieDatenbankNichtAn(t *testing.T) {
+func TestLadeEtikettZeilen_LeereListeFragtDieDatenbankNichtAn(t *testing.T) {
 	// `= ANY('{}')` wäre gültiges SQL, aber eine Abfrage ohne Zweck. Der Handler
 	// weist leere Aufträge ohnehin ab — hier steht, dass auch die Schicht darunter
 	// nicht in einen Fehler läuft.
 	pool := pgTestPool(t)
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
-	zeilen, err := repo.EtikettenZeilen(context.Background(), nil)
+	zeilen, err := repo.LadeEtikettZeilen(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("leere Liste: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestEtikettenZeilen_LeereListeFragtDieDatenbankNichtAn(t *testing.T) {
 	}
 }
 
-// TestEtikettenZeilen_LaesstKeinenKollegenWeg: Seit dem 16.09.2026 stehen Schüler und
+// TestLadeEtikettZeilen_LaesstKeinenKollegenWeg: Seit dem 16.09.2026 stehen Schüler und
 // Kollegium in derselben Liste, mit demselben Häkchen davor. Wer „alle markieren" drückt
 // und einen Etikettenbogen anfordert, meint auch die Kollegen.
 //
@@ -154,7 +154,7 @@ func TestEtikettenZeilen_LeereListeFragtDieDatenbankNichtAn(t *testing.T) {
 // Bogen — der Druck gelang, der Bogen war nur kürzer, und gemerkt hätte man es beim
 // Verteilen. Solange die Kollegen in keiner Liste standen, war die Sicht richtig; mit der
 // Leserdatei wurde sie zum stillen Verlust.
-func TestEtikettenZeilen_LaesstKeinenKollegenWeg(t *testing.T) {
+func TestLadeEtikettZeilen_LaesstKeinenKollegenWeg(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -179,9 +179,9 @@ func TestEtikettenZeilen_LaesstKeinenKollegenWeg(t *testing.T) {
 		ids = append(ids, id)
 	}
 
-	zeilen, err := NewStudentRepository(pool).EtikettenZeilen(ctx, ids)
+	zeilen, err := NewLeserAbfragen(pool).LadeEtikettZeilen(ctx, ids)
 	if err != nil {
-		t.Fatalf("EtikettenZeilen: %v", err)
+		t.Fatalf("LadeEtikettZeilen: %v", err)
 	}
 	if len(zeilen) != 3 {
 		namen := make([]string, 0, len(zeilen))

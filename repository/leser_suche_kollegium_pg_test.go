@@ -25,14 +25,14 @@ func seedSuchLeser(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachname,
 	return id
 }
 
-// TestSearchStudentsFuzzy_FindetKollegium ist der Rot-Test für die Namenssuche an der
+// TestFindeUnscharf_FindetKollegium ist der Rot-Test für die Namenssuche an der
 // Theke: Ein Kollege lässt sich seit Migration 125 über seinen Ausweis laden, über
 // seinen NAMEN aber nicht — die Suche las die Sicht `schueler`, und die zeigt ihn nicht.
 // Wer den Ausweis gerade nicht zur Hand hat, findet ihn damit an der Theke nicht.
 //
 // Geprüft wird zugleich die Art am Treffer: Ohne sie stünde ein Kollege ohne Klasse in
 // der Trefferliste wie ein Schüler mit fehlender Angabe.
-func TestSearchStudentsFuzzy_FindetKollegium(t *testing.T) {
+func TestFindeUnscharf_FindetKollegium(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -43,8 +43,8 @@ func TestSearchStudentsFuzzy_FindetKollegium(t *testing.T) {
 	// gefunden werden — und der Scan der Spalten darf an der NULL nicht zerbrechen.
 	seedSuchLeser(t, pool, "", "Hendrik", "Wendlandt", "liv")
 
-	repo := NewStudentRepository(pool)
-	treffer, gesamt, err := repo.SearchStudentsFuzzy(ctx, "Wendlandt", 10)
+	repo := NewLeserAbfragen(pool)
+	treffer, gesamt, err := repo.FindeUnscharf(ctx, "Wendlandt", 10)
 	if err != nil {
 		t.Fatalf("Suche nach Kollegium: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestSearchStudentsFuzzy_FindetKollegium(t *testing.T) {
 
 	// Die Schüler-Suche daneben muss weiter Schüler finden — und an ihnen steht
 	// 'schueler', nicht der leere String.
-	schuelerTreffer, _, err := repo.SearchStudentsFuzzy(ctx, "Wendland", 10)
+	schuelerTreffer, _, err := repo.FindeUnscharf(ctx, "Wendland", 10)
 	if err != nil {
 		t.Fatalf("Suche nach Schüler: %v", err)
 	}

@@ -54,7 +54,7 @@ func TestLeserListe_UnbekannteSortierungIstEin400(t *testing.T) {
 // Die erlaubten Werte kommen aus DERSELBEN Liste, die das Repository kennt — sonst
 // erlaubt die Tür etwas, das die Abfrage nicht sortieren kann, oder umgekehrt.
 func TestLeserListe_ErlaubteSortierungen(t *testing.T) {
-	for _, spalte := range repository.SchuelerSortierspalten {
+	for _, spalte := range repository.LeserSortierspalten {
 		for _, richtung := range []string{"", "auf", "ab"} {
 			req := httptest.NewRequest(http.MethodGet,
 				"/api/schueler?sortierung="+string(spalte)+"&richtung="+richtung, nil)

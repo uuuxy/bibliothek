@@ -47,7 +47,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let timer;
 
-	/** Muss zu ListStudentsWithStatsLimit im Backend passen: Erreicht die ungefilterte
+	/** Muss zu leserListeMax im Backend passen: Erreicht die ungefilterte
 	 *  Liste diese Länge, ist sie gekappt und die Ansicht sagt das auch. */
 	const LISTEN_GRENZE = 500;
 
@@ -197,7 +197,7 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			// Hier stand bis zum 17.09.2026 zusätzlich `jahrgang === ''` — mit dem Kommentar,
 			// ein Jahrgangsfilter laufe „wie die Suche auf dem Server OHNE Kappung". Der Satz
 			// war falsch: Das LIMIT 500 hängt allein daran, ob ein SUCHTEXT da ist
-			// (repository/student_profile_queries.go), der Klassenfilter wird erst danach
+			// (repository/leser_liste.go), der Klassenfilter wird erst danach
 			// angehängt. Am echten Postgres nachgemessen: 520 Leser einer Klasse ergeben 500
 			// Zeilen. Ein Jahrgang dieser Schule bleibt darunter, aber das ist Glück und keine
 			// Zusicherung — und ein Schutz, den nur ein Kommentar behauptet, ist keiner.

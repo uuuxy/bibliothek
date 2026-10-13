@@ -15,7 +15,7 @@ import (
 type checkoutContext struct {
 	borrowerID string
 	// leser ist der Ausleiher. Über die Theke immer gesetzt; er trägt seine Art.
-	leser   *repository.Student
+	leser   *repository.Leser
 	dueTime time.Time
 	// uebergangen sind die Hinweise, die override_block übergangen hat
 	// (pruefeAusleihSperren). handleNewLoan protokolliert sie, wenn die Ausleihe steht.
@@ -44,7 +44,7 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(ctx context.Context, copy
 		return nil, meldung(ErrInvalidState, "Kein Leser aktiv")
 	}
 
-	leser, err := s.studentRepo.GetLeserByID(ctx, *leserID)
+	leser, err := s.studentRepo.Finde(ctx, *leserID)
 	if err != nil {
 		return nil, err
 	}

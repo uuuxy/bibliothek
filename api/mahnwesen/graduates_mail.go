@@ -116,7 +116,7 @@ func (s *Tueren) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 // „0 versendet, 12 übersprungen" — ein stiller Totalausfall, der wie ein Ergebnis
 // aussieht.
 func (s *Tueren) klassenlehrerAdressen(ctx context.Context) (map[string]string, error) {
-	return repository.KlassenleitungsAdressen(ctx, s.DB.Pool)
+	return repository.LadeKlassenleitungsAdressen(ctx, s.DB.Pool)
 }
 
 // waehleAbgaengerKlassen gruppiert die Kontoauszüge nach Klasse, hängt den

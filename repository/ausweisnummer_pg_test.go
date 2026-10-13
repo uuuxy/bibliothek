@@ -26,7 +26,7 @@ func naechsteAusweisnummer(t *testing.T, pool *pgxpool.Pool) int {
 		t.Fatal(err)
 	}
 	defer db.SafeRollback(ctx, tx)
-	n, err := repository.NewAusweisnummernAbfragen(tx).Naechste(ctx)
+	n, err := repository.NewAusweisnummernAbfragen(tx).ZieheNaechste(ctx)
 	if err != nil {
 		t.Fatalf("Naechste: %v", err)
 	}

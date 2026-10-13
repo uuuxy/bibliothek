@@ -20,7 +20,7 @@ func (m *mockLoanRepo) BucheRueckgabe(ctx context.Context, tx pgx.Tx, loanID str
 }
 
 func TestHandleForeignReturn_Student(t *testing.T) {
-	svc, _, mockPool := newValidationService(t, &repository.Student{
+	svc, _, mockPool := newValidationService(t, &repository.Leser{
 		ID: "s1", Vorname: "Max", Nachname: "Mustermann",
 	})
 	defer mockPool.Close()
@@ -66,10 +66,10 @@ func TestHandleForeignReturn_Student(t *testing.T) {
 
 // Auch das Buch eines Kollegen muss bei der Fremdrückgabe seinen Vorbesitzer NENNEN. Das
 // ging vor Migration 125 über eine zweite Spalte und eine zweite Abfrage in die
-// Kontentabelle; jetzt ist es derselbe Weg wie beim Schüler — GetLeserByID, nicht die
+// Kontentabelle; jetzt ist es derselbe Weg wie beim Schüler — Finde, nicht die
 // Sicht `schueler`, sonst bliebe der Vorbesitzer namenlos.
 func TestHandleForeignReturn_Kollege(t *testing.T) {
-	svc, _, mockPool := newValidationService(t, &repository.Student{
+	svc, _, mockPool := newValidationService(t, &repository.Leser{
 		ID: "t1", Vorname: "Hans", Nachname: "Lehrer", Art: "lehrkraft",
 	})
 	defer mockPool.Close()
@@ -117,7 +117,7 @@ func TestHandleForeignReturn_Kollege(t *testing.T) {
 }
 
 func TestHandleForeignReturn_ReturnLoanError(t *testing.T) {
-	svc, _, mockPool := newValidationService(t, &repository.Student{
+	svc, _, mockPool := newValidationService(t, &repository.Leser{
 		ID: "s1", Vorname: "Max", Nachname: "Mustermann",
 	})
 	defer mockPool.Close()
@@ -149,7 +149,7 @@ func TestHandleForeignReturn_ReturnLoanError(t *testing.T) {
 }
 
 func TestHandleForeignReturn_CommitError(t *testing.T) {
-	svc, _, mockPool := newValidationService(t, &repository.Student{
+	svc, _, mockPool := newValidationService(t, &repository.Leser{
 		ID: "s1", Vorname: "Max", Nachname: "Mustermann",
 	})
 	defer mockPool.Close()

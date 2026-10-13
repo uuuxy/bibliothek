@@ -25,7 +25,7 @@ type OmniboxResult struct {
 	Message string
 	// Student enthält den LESER, dessen Ausweis gescannt oder für den eine Aktion
 	// durchgeführt wurde.
-	Student *repository.Student
+	Student *repository.Leser
 	// Book enthält die Daten des betroffenen Buchs (Ausleihe/Rückgabe).
 	Book *repository.Exemplar
 	// Geraet enthält die Daten des betroffenen Geräts (Hardware-Ausleihe/Rückgabe).
@@ -37,7 +37,7 @@ type OmniboxResult struct {
 	// Fremdrueckgabe zeigt an, ob die Rückgabe durch eine andere Person erfolgt ist.
 	Fremdrueckgabe bool
 	// Vorbesitzer enthält den LESER, der das Buch/Gerät zuvor ausgeliehen hatte (bei Fremdrückgabe).
-	Vorbesitzer *repository.Student
+	Vorbesitzer *repository.Leser
 	// SearchResults enthält Suchergebnisse bei einer allgemeinen Buchtitel-Suche.
 	SearchResults []repository.Titel
 	// HasVormerkung zeigt an, ob für das zurückgegebene Buch eine Reservierung aktiv wurde.
@@ -95,7 +95,7 @@ type OmniboxService interface {
 // defaultOmniboxService ist die Standard-Implementierung des OmniboxService.
 type defaultOmniboxService struct {
 	pool        db.PgxPoolIface
-	studentRepo repository.StudentRepository
+	studentRepo repository.LeserAbfragen
 	bookRepo    repository.KatalogAbfragen
 	userRepo    repository.KontoAbfragen
 	loanRepo    repository.AusleihAbfragen
@@ -106,7 +106,7 @@ type defaultOmniboxService struct {
 // NewOmniboxService erzeugt eine neue Instanz des standardmäßigen OmniboxService.
 func NewOmniboxService(
 	pool db.PgxPoolIface,
-	studentRepo repository.StudentRepository,
+	studentRepo repository.LeserAbfragen,
 	bookRepo repository.KatalogAbfragen,
 	userRepo repository.KontoAbfragen,
 	loanRepo repository.AusleihAbfragen,
@@ -242,7 +242,7 @@ func (s *defaultOmniboxService) verarbeite(ctx context.Context, q OmniboxQuery) 
 // Bis Migration 125 standen Lehrkräfte in `benutzer` und Schüler in `schueler`, und die
 // Reihenfolge brauchte eine eigene Lehrer-Stufe; ohne sie lief ein gescannter
 // Lehrerausweis bis in die Volltextsuche. Seitdem stehen alle Leser in `leser`, und eine
-// Stufe (GetLeserByBarcode) findet den Ausweis, gleich welcher Art. In Littera gibt es den
+// Stufe (LeserAbfragen.FindeZuBarcode) findet den Ausweis, gleich welcher Art. In Littera gibt es den
 // Unterschied nicht; die Karte ist dieselbe, nur der Aufdruck lautet „Lehrerausweis".
 //
 // Die Lookups liefern bei Nichttreffer (nil, nil); ein non-nil Fehler ist daher ein
@@ -272,7 +272,7 @@ func (s *defaultOmniboxService) resolveOhnePraefix(ctx context.Context, q Omnibo
 		}
 	}
 
-	leser, leserErr := s.studentRepo.GetLeserByBarcode(ctx, q.Query)
+	leser, leserErr := s.studentRepo.FindeZuBarcode(ctx, q.Query)
 	if leserErr != nil {
 		return fmt.Errorf("datenbankfehler bei Ausweis-Auflösung: %w", leserErr)
 	}
@@ -309,7 +309,7 @@ func (s *defaultOmniboxService) mapDeviceResult(dr *DeviceResult, resp *OmniboxR
 // Die Vorsilbe sagt jetzt nur noch „Ausweis": Eine unbekannte Nummer bleibt ein lauter Fehler
 // und verschwindet nicht in der Volltextsuche.
 func (s *defaultOmniboxService) handleAusweisAction(ctx context.Context, query string, resp *OmniboxResult) error {
-	leser, err := s.studentRepo.GetLeserByBarcode(ctx, query)
+	leser, err := s.studentRepo.FindeZuBarcode(ctx, query)
 	if err != nil {
 		return err
 	}
@@ -332,7 +332,7 @@ const leserIDPraefix = "leser:"
 // Eine unbekannte ID ist ein lauter Fehler und fällt NICHT in die Volltextsuche: Dort
 // stünde „keine Treffer", und der Klick sähe aus, als sei nichts passiert.
 func (s *defaultOmniboxService) handleLeserIDAction(ctx context.Context, id string, resp *OmniboxResult) error {
-	leser, err := s.studentRepo.GetLeserByID(ctx, id)
+	leser, err := s.studentRepo.Finde(ctx, id)
 	if err != nil {
 		return fmt.Errorf("datenbankfehler bei der Leser-Auflösung: %w", err)
 	}
@@ -347,7 +347,7 @@ func (s *defaultOmniboxService) handleLeserIDAction(ctx context.Context, id stri
 //
 // Der Hinweis gilt Vormerkungen, und die legen nur Schüler an — für einen Kollegen ist
 // die Liste leer, ohne dass es hier einer Fallunterscheidung bedarf.
-func (s *defaultOmniboxService) zeigeLeser(ctx context.Context, leser *repository.Student, resp *OmniboxResult) {
+func (s *defaultOmniboxService) zeigeLeser(ctx context.Context, leser *repository.Leser, resp *OmniboxResult) {
 	resp.Type = "student"
 	resp.Student = leser
 	resp.Abholbereit = s.ladeAbholbereiteVormerkungen(ctx, leser.ID)

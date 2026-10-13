@@ -36,12 +36,12 @@ func TestLeserSortierung(t *testing.T) {
 		t.Fatalf("Klassen setzen: %v", err)
 	}
 
-	repo := NewStudentRepository(pool)
-	namen := func(t *testing.T, sortierung SchuelerSortierung) []string {
+	repo := NewLeserAbfragen(pool)
+	namen := func(t *testing.T, sortierung LeserSortierung) []string {
 		t.Helper()
-		zeilen, err := repo.ListLeserMitStats(ctx, nil, "SORT", sortierung)
+		zeilen, err := repo.LadeLeserListe(ctx, nil, "SORT", sortierung)
 		if err != nil {
-			t.Fatalf("ListLeserMitStats: %v", err)
+			t.Fatalf("LadeLeserListe: %v", err)
 		}
 		var out []string
 		for _, z := range zeilen {
@@ -66,7 +66,7 @@ func TestLeserSortierung(t *testing.T) {
 	// eine Regel, die der Benutzer sieht. Für die Vorgabe wird NUR das geprüft: Welche
 	// Reihenfolge der Suchrang innerhalb der Gruppen wählt, ist nicht Sache dieses
 	// Tests (die Zeilen hier sind über ihren Barcode gefunden, nicht über den Namen).
-	for _, sortierung := range []SchuelerSortierung{
+	for _, sortierung := range []LeserSortierung{
 		{},
 		{Spalte: SortiereName},
 		{Spalte: SortiereName, Absteigend: true},
@@ -82,34 +82,34 @@ func TestLeserSortierung(t *testing.T) {
 	}
 
 	gleich(t, "nach Name aufsteigend",
-		namen(t, SchuelerSortierung{Spalte: SortiereName}),
+		namen(t, LeserSortierung{Spalte: SortiereName}),
 		[]string{"Bauer", "Ahrens", "Maier", "Zeidler"})
 
 	gleich(t, "nach Name absteigend",
-		namen(t, SchuelerSortierung{Spalte: SortiereName, Absteigend: true}),
+		namen(t, LeserSortierung{Spalte: SortiereName, Absteigend: true}),
 		[]string{"Bauer", "Zeidler", "Maier", "Ahrens"})
 
 	// Nach Klasse: 05F1 (Zeidler), 07B (Ahrens), 09G (Maier) — gegenläufig zum Namen.
 	gleich(t, "nach Klasse aufsteigend",
-		namen(t, SchuelerSortierung{Spalte: SortiereKlasse}),
+		namen(t, LeserSortierung{Spalte: SortiereKlasse}),
 		[]string{"Bauer", "Zeidler", "Ahrens", "Maier"})
 
 	gleich(t, "nach Klasse absteigend",
-		namen(t, SchuelerSortierung{Spalte: SortiereKlasse, Absteigend: true}),
+		namen(t, LeserSortierung{Spalte: SortiereKlasse, Absteigend: true}),
 		[]string{"Bauer", "Maier", "Ahrens", "Zeidler"})
 
 	// Die Spalte „Geliehene Bücher" — ohne Ausleihen sortiert sie nach dem zweiten
 	// Schlüssel (Name), und genau das ist die Zusicherung: eine stabile Reihenfolge
 	// statt der, die Postgres gerade liefert.
 	gleich(t, "nach Ausleihzahl (alle 0 → Name)",
-		namen(t, SchuelerSortierung{Spalte: SortiereAusgeliehen}),
+		namen(t, LeserSortierung{Spalte: SortiereAusgeliehen}),
 		[]string{"Bauer", "Ahrens", "Maier", "Zeidler"})
 }
 
 // Eine unbekannte Spalte ist nicht erlaubt — die Prüfung sitzt im Typ, nicht erst im SQL.
-func TestSchuelerSortierungErlaubt(t *testing.T) {
+func TestLeserSortierungIstErlaubt(t *testing.T) {
 	for _, f := range []struct {
-		spalte SchuelerSortierspalte
+		spalte LeserSortierspalte
 		soll   bool
 	}{
 		{SortiereKartei, true},
@@ -120,7 +120,7 @@ func TestSchuelerSortierungErlaubt(t *testing.T) {
 		{"s.nachname; DROP TABLE leser", false},
 		{"ausgeliehen_anzahl", false},
 	} {
-		if ist := (SchuelerSortierung{Spalte: f.spalte}).Erlaubt(); ist != f.soll {
+		if ist := (LeserSortierung{Spalte: f.spalte}).IstErlaubt(); ist != f.soll {
 			t.Errorf("Erlaubt(%q) = %v, erwartet %v", f.spalte, ist, f.soll)
 		}
 	}

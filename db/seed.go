@@ -343,7 +343,7 @@ func (db *Database) InitAdmin(ctx context.Context) error {
 	}
 
 	// Gespeichert wird die Adresse, wie die Anmeldung sie sucht und wie die übrigen Wege ein
-	// Konto anlegen (repository.LegeKollegiumskonto): klein und ohne Leerraum.
+	// Konto anlegen (repository.LegeKollegiumskontoAn): klein und ohne Leerraum.
 	email := strings.ToLower(strings.TrimSpace(os.Getenv("INITIAL_ADMIN_EMAIL")))
 
 	if email == "" {

@@ -151,7 +151,7 @@ func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 
 	// Instantiate repositories for database queries
-	studentRepo := repository.NewStudentRepository(s.DB.Pool)
+	studentRepo := repository.NewLeserAbfragen(s.DB.Pool)
 	bookRepo := repository.NewKatalogAbfragen(s.DB.Pool)
 	loanRepo := repository.NewAusleihAbfragen(s.DB.Pool)
 	auditRepo := repository.NewProtokollAbfragen(s.DB.Pool)

@@ -22,17 +22,17 @@ func LadeFotoZurAusweisnummer(ctx context.Context, db Datenbank, ausweisnummer s
 	return ciphertext, err
 }
 
-// AusweisnummerDesLesers liefert die Ausweisnummer zur Kennung eines Lesers, leer, wenn er
+// LadeAusweisnummerDesLesers liefert die Ausweisnummer zur Kennung eines Lesers, leer, wenn er
 // noch keine hat, oder pgx.ErrNoRows, wenn es den Leser nicht gibt. Gelesen wird die Tabelle
 // leser und nicht die Sicht schueler: Ein Passbild kann jeder Leser bekommen.
-func AusweisnummerDesLesers(ctx context.Context, db Datenbank, leserID string) (string, error) {
+func LadeAusweisnummerDesLesers(ctx context.Context, db Datenbank, leserID string) (string, error) {
 	var ausweisnummer string
 	err := db.QueryRow(ctx, "SELECT COALESCE(barcode_id, '') FROM leser WHERE id = $1", leserID).Scan(&ausweisnummer)
 	return ausweisnummer, err
 }
 
-// SpeichereFoto legt das verschlüsselte Passbild eines Lesers ab oder ersetzt das vorhandene.
-func SpeichereFoto(ctx context.Context, db Datenbank, leserID string, verschluesselt []byte) error {
+// SchreibeFoto legt das verschlüsselte Passbild eines Lesers ab oder ersetzt das vorhandene.
+func SchreibeFoto(ctx context.Context, db Datenbank, leserID string, verschluesselt []byte) error {
 	query := `
 		INSERT INTO schueler_fotos (schueler_id, foto_encrypted)
 		VALUES ($1, $2)

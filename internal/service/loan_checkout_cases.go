@@ -226,14 +226,14 @@ func (s *defaultLoanService) handleForeignReturn(
 	staffID string,
 	resp *LoanResult,
 ) (*LoanResult, error) {
-	// Der Vorbesitzer ist ein Leser — Schüler oder Kollege. Deshalb GetLeserByID und
+	// Der Vorbesitzer ist ein Leser — Schüler oder Kollege. Deshalb LeserAbfragen.Finde und
 	// nicht GetByID: Letzteres liest die Sicht `schueler` und meldete für das Buch eines
 	// Kollegen „Vorbesitzer unbekannt".
-	var prevLeser *repository.Student
+	var prevLeser *repository.Leser
 	var err error
 
 	if activeLoan.SchuelerID != nil {
-		prevLeser, err = s.studentRepo.GetLeserByID(ctx, *activeLoan.SchuelerID)
+		prevLeser, err = s.studentRepo.Finde(ctx, *activeLoan.SchuelerID)
 		if err != nil {
 			log.Printf("fremdrückgabe: Vorbesitzer konnte nicht geladen werden: %v", err)
 		}

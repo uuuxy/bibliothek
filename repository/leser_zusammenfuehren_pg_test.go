@@ -48,7 +48,7 @@ func TestZusammenfuehren_QuelleGehtImZielAuf(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
+	erg, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
 	if err != nil {
 		t.Fatalf("Zusammenführen: %v", err)
 	}
@@ -90,7 +90,7 @@ func TestZusammenfuehren_HebtAbgaengerSperreOhneVorgaengeAuf(t *testing.T) {
 	ziel := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Alt", Nachname: "Frei", Klasse: "07A", Barcode: "ZF-3", Geb: testdaten.Datum(2012, 4, 4), Abgaenger: true})
 	quelle := testdaten.LegeUmbSchuelerAn(t, pool, testdaten.UmbSchueler{Vorname: "Alt", Nachname: "Frei-Neu", Klasse: "08A", Barcode: "ZF-4", Geb: testdaten.Datum(2012, 4, 4)})
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 		t.Fatal(err)
 	}
 	var gesperrt bool
@@ -113,13 +113,13 @@ func TestZusammenfuehren_Abweisungen(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(a, a)); !errors.Is(err, repository.ErrZusammenfuehrenGleich) {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(a, a)); !errors.Is(err, repository.ErrZusammenfuehrenGleich) {
 		t.Errorf("gleicher Datensatz: %v", err)
 	}
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(a, anon)); !errors.Is(err, repository.ErrZusammenfuehrenAnonymisiert) {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(a, anon)); !errors.Is(err, repository.ErrZusammenfuehrenAnonymisiert) {
 		t.Errorf("anonymisierte Quelle: %v", err)
 	}
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(a, "00000000-0000-0000-0000-000000000000")); !errors.Is(err, repository.ErrZusammenfuehrenNichtGefunden) {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(a, "00000000-0000-0000-0000-000000000000")); !errors.Is(err, repository.ErrZusammenfuehrenNichtGefunden) {
 		t.Errorf("unbekannte Quelle: %v", err)
 	}
 	if n := zfZaehle(t, pool, `SELECT count(*) FROM schueler WHERE deleted_at IS NULL`); n != 2 {
@@ -140,7 +140,7 @@ func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	treffer, err := repository.SucheZusammenfuehrenKandidaten(ctx, pool, ich, "Suchwort", 20)
+	treffer, err := repository.FindeZusammenfuehrenKandidaten(ctx, pool, ich, "Suchwort", 20)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +242,7 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 		}
 	}
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 		t.Fatalf("Zusammenführen: %v", err)
 	}
 
@@ -275,7 +275,7 @@ func TestZusammenfuehren_RueckwegAusDemProtokoll(t *testing.T) {
 	}
 	testdaten.SeedOffeneAusleihe(t, pool, quelle, "ZFR")
 
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -341,7 +341,7 @@ func TestZusammenfuehren_ManuelleSperreDerQuelleBleibt(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt = true, is_manually_blocked = true, block_reason = 'Manuell: Ausweis als gestohlen gemeldet' WHERE id = $1`, quelle); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 		t.Fatal(err)
 	}
 	var gesperrt, manuell bool
@@ -370,7 +370,7 @@ func TestZusammenfuehren_AktiveHandanlageSchlaegtAbgaenger(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE schueler SET lusd_bestaetigt_am = NULL WHERE id = $1`, quelle); err != nil {
 		t.Fatal(err)
 	}
-	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
+	erg, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -399,7 +399,7 @@ func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
 		VALUES ($1, $2, 'abholbereit', $3, CURRENT_TIMESTAMP + INTERVAL '2 days')`, titelID, quelle, exID); err != nil {
 		t.Fatal(err)
 	}
-	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
+	erg, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -431,7 +431,7 @@ func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
+	if _, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle)); err != nil {
 		t.Fatal(err)
 	}
 	var foto []byte
@@ -470,7 +470,7 @@ func TestZusammenfuehren_ZweiKontenBrichtAb(t *testing.T) {
 		}
 	}
 
-	_, err := repository.ZusammenfuehrenSchueler(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
+	_, err := repository.FuehreLeserZusammen(ctx, pool, testdaten.ZusammenfuehrenAuftrag(ziel, quelle))
 	if err == nil {
 		t.Fatal("das Zusammenführen ging durch — eine der beiden Anmeldungen wäre verloren")
 	}

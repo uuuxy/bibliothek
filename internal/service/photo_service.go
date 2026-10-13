@@ -33,7 +33,7 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 	// (TestUploadStudentPhoto_AuchFuerKollegen). COALESCE, weil ein Kollege aus der
 	// Selbstanmeldung noch keine Nummer hat (OFFEN.md 5.16 C) — das Bild wird gespeichert,
 	// eine Bild-URL gibt es wie in resolveFotoURL erst mit der Nummer.
-	barcodeID, err := repository.AusweisnummerDesLesers(ctx, dbPool, studentID)
+	barcodeID, err := repository.LadeAusweisnummerDesLesers(ctx, dbPool, studentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", ErrFotoLeserUnbekannt
@@ -64,7 +64,7 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 	}
 
 	// 5. In der Datenbank abspeichern (Upsert in schueler_fotos)
-	if err := repository.SpeichereFoto(ctx, dbPool, studentID, encryptedData); err != nil {
+	if err := repository.SchreibeFoto(ctx, dbPool, studentID, encryptedData); err != nil {
 		return "", fmt.Errorf("fehler beim speichern des fotos in der db: %w", err)
 	}
 

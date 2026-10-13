@@ -45,7 +45,7 @@ func neueSperrTheke(t *testing.T) *sperrTheke {
 	aufraeumen()
 	t.Cleanup(aufraeumen)
 
-	students := repository.NewStudentRepository(pool)
+	students := repository.NewLeserAbfragen(pool)
 	books := repository.NewKatalogAbfragen(pool)
 	loans := repository.NewAusleihAbfragen(pool)
 	audit := repository.NewProtokollAbfragen(pool)

@@ -3,7 +3,7 @@ import { render } from '@testing-library/svelte';
 import StudentPrintReceipt from './StudentPrintReceipt.svelte';
 
 // Die Quittung liest die Ausleihen so, wie die Leserakte sie vom Server bekommt
-// (repository.BorrowedBook: barcode_id, ausgeliehen_am, rueckgabe_frist). Mit anderen
+// (repository.LaufendeAusleihe: barcode_id, ausgeliehen_am, rueckgabe_frist). Mit anderen
 // Feldnamen stand je Buch „-" und zweimal „Keine Angabe" auf dem Ausdruck.
 describe('StudentPrintReceipt', () => {
 	it('nennt je Ausleihe Nummer, Ausleihdatum und Frist', () => {

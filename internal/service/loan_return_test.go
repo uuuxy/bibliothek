@@ -49,7 +49,7 @@ func TestHandleRueckgabe_ReturnLoanTxError(t *testing.T) {
 	svc := &defaultLoanService{
 		pool:        mockPool,
 		loanRepo:    &mockLoanRepoReturn{returnErr: expectedErr},
-		studentRepo: &mockStudentRepo{student: &repository.Student{ID: "leser1", Art: "lehrkraft"}},
+		studentRepo: &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -88,7 +88,7 @@ func TestHandleRueckgabe_CommitError(t *testing.T) {
 		pool:        mockPool,
 		loanRepo:    &mockLoanRepoReturn{},
 		auditRepo:   audit,
-		studentRepo: &mockStudentRepo{student: &repository.Student{ID: "leser1", Art: "lehrkraft"}},
+		studentRepo: &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -134,7 +134,7 @@ func TestHandleRueckgabe_Success(t *testing.T) {
 		pool:        mockPool,
 		loanRepo:    &mockLoanRepoReturn{},
 		auditRepo:   audit,
-		studentRepo: &mockStudentRepo{student: &repository.Student{ID: "leser1", Art: "lehrkraft"}},
+		studentRepo: &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -183,7 +183,7 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 		pool:        mockPool,
 		loanRepo:    &mockLoanRepoReturn{},
 		auditRepo:   audit,
-		studentRepo: &mockStudentRepo{student: &repository.Student{ID: "leser1", Art: "lehrkraft"}},
+		studentRepo: &mockStudentRepo{student: &repository.Leser{ID: "leser1", Art: "lehrkraft"}},
 		// Donnerstag vor den Herbstferien (05.10.–17.10.2026): plus drei Tage ist Sonntag, der
 		// nächste Schultag der Montag nach den Ferien.
 		jetzt: func() time.Time { return time.Date(2026, time.October, 1, 10, 0, 0, 0, schoolLocation()) },

@@ -84,7 +84,7 @@ func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, 
 	}
 
 	resp := &LoanResult{}
-	var vorbesitzer *repository.Student
+	var vorbesitzer *repository.Leser
 	if l.activeLoan != nil {
 		var err error
 		vorbesitzer, err = s.nimmZurueck(ctx, tx, l, true, resp)
@@ -198,7 +198,7 @@ var errScanVeraltet = errors.New("scan veraltet")
 
 // nimmZurueck beendet die aktive Ausleihe zum Scan-Zeitpunkt, bedient die Vormerkung und
 // schreibt das Protokoll; liefert den Vorbesitzer für Antwort und Meldung.
-func (s *defaultLoanService) nimmZurueck(ctx context.Context, tx pgx.Tx, l *nachbuchLage, fremd bool, resp *LoanResult) (*repository.Student, error) {
+func (s *defaultLoanService) nimmZurueck(ctx context.Context, tx pgx.Tx, l *nachbuchLage, fremd bool, resp *LoanResult) (*repository.Leser, error) {
 	aktiv := l.activeLoan
 	if err := repository.BucheRueckgabeZum(ctx, tx, aktiv.ID, l.e.StaffID, fremd, &l.gescannt); err != nil {
 		if istPruefungVerletzt(err) {
@@ -218,7 +218,7 @@ func (s *defaultLoanService) nimmZurueck(ctx context.Context, tx pgx.Tx, l *nach
 	if !fremd {
 		return nil, nil
 	}
-	return s.studentRepo.GetLeserByID(ctx, *aktiv.SchuelerID)
+	return s.studentRepo.Finde(ctx, *aktiv.SchuelerID)
 }
 
 // nachbuchKontext baut den Ausleih-Kontext mit der Frist ab dem Scan-Zeitpunkt.

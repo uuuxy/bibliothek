@@ -10,11 +10,11 @@ import (
 
 // vollerTestStudent trägt in JEDEM sensiblen Feld einen Markerwert. Taucht einer
 // der Marker in einer Kiosk-Antwort auf, ist die Datenminimierung gerissen.
-func vollerTestStudent() repository.Student {
+func vollerTestStudent() repository.Leser {
 	geb := "2012-05-14"
-	return repository.Student{
+	return repository.Leser{
 		ID: "s-1", BarcodeID: "20240001737", Vorname: "Mia", Nachname: "Muster",
-		Klasse: "7a", IstGesperrt: true, IsManuallyBlocked: true,
+		Klasse: "7a", IstGesperrt: true, IstVonHandGesperrt: true,
 		Strasse: "MARKER-STRASSE", Hausnummer: "MARKER-NR", Plz: "MARKER-PLZ",
 		Ort: "MARKER-ORT", ElternEmail: "MARKER-ELTERN@example.org",
 		Geburtsdatum: &geb,
@@ -55,7 +55,7 @@ func TestKioskAntwortenOhneSchuelerPII(t *testing.T) {
 	}
 	pruefeKioskJSON(t, resp, "ActionResponse")
 
-	suche := UnifiedSearchResult{Students: zuKioskSchuelern([]repository.Student{s})}
+	suche := UnifiedSearchResult{Students: zuKioskSchuelern([]repository.Leser{s})}
 	pruefeKioskJSON(t, suche, "UnifiedSearchResult")
 
 	// Was die Theke BRAUCHT, muss drinbleiben — sonst wäre der leichteste Weg,

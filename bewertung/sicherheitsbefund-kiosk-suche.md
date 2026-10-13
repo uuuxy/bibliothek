@@ -16,14 +16,14 @@ haben soll.
 ## Betroffene Stellen
 
 - Route: `api/routes_misc.go:35` — `mux.Handle("GET /api/search", s.RequirePermission("perform_actions")(searchHandler))`
-- Handler: `api/search.go:23` (`SearchHandler`) — serialisiert `repository.Student` unverändert
-- Query: `repository/student_queries.go:146` (`SearchStudentsFuzzy`)
-- Struct: `repository/models.go:31` (`repository.Student`)
+- Handler: `api/search.go:23` (`SearchHandler`) — serialisiert `repository.Leser` unverändert
+- Query: `repository/leser_suche.go:146` (`SearchStudentsFuzzy`)
+- Struct: `repository/models.go:31` (`repository.Leser`)
 - Rechtevergabe: `db/seed.go:162` (`HELFER` → `perform_actions = true`)
 
 ## Worin der Fehler besteht
 
-`SearchHandler` gibt die komplette `repository.Student`-Struktur zurück. Die zugrunde
+`SearchHandler` gibt die komplette `repository.Leser`-Struktur zurück. Die zugrunde
 liegende Abfrage selektiert den vollen Datensatz:
 
 ```sql
@@ -82,7 +82,7 @@ statt sich auf einen Serialisierungsfilter zu verlassen.
 Derselbe volle `Student`-Datensatz wird auch beim Kiosk-Scan zurückgegeben:
 
 - Route: `api/routes_misc.go:30` — `POST /api/action`, Recht `perform_actions` (Helfer)
-- `ActionResponse.Student` ist `*repository.Student` (voller Datensatz) — `api/action_types.go:41`
+- `ActionResponse.Student` ist `*repository.Leser` (voller Datensatz) — `api/action_types.go:41`
 - Befüllt bei jedem Schüler-Barcode-Scan: `internal/service/omnibox_service.go:194` (`handleStudentAction` → `resp.Student = student`)
 
 Etwas geringere Schwere als die Suche, weil ein gültiger Schüler-Barcode bekannt/gescannt

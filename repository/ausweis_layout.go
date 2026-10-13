@@ -17,8 +17,8 @@ func LadeAusweisLayout(ctx context.Context, db Datenbank) (string, error) {
 	return wert, err
 }
 
-// SpeichereAusweisLayout legt das Ausweis-Design an oder ersetzt es.
-func SpeichereAusweisLayout(ctx context.Context, db Datenbank, wert string) error {
+// SchreibeAusweisLayout legt das Ausweis-Design an oder ersetzt es.
+func SchreibeAusweisLayout(ctx context.Context, db Datenbank, wert string) error {
 	_, err := db.Exec(ctx,
 		`INSERT INTO system_einstellungen (schluessel, wert, aktualisiert_am)
 			 VALUES ($1, $2, CURRENT_TIMESTAMP)

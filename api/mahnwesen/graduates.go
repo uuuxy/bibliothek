@@ -30,16 +30,16 @@ import (
 // davon überfälligen Bücher — das ist die handlungsrelevante Information (was muss noch
 // zurück?), nicht die Ausweisnummer.
 type AbgaengerZeile struct {
-	ID            string `json:"id"`
-	BarcodeID     string `json:"barcode_id"`
-	Vorname       string `json:"vorname"`
-	Nachname      string `json:"nachname"`
-	Klasse        string `json:"klasse"`
-	AbgaengerJahr int    `json:"abgaenger_jahr"`
-	IstGesperrt   bool   `json:"ist_gesperrt"`
-	OffeneBuecher int    `json:"offene_buecher"`
-	Ueberfaellig  int    `json:"ueberfaellig"`
-	LehrerEmail   string `json:"lehrer_email"`
+	ID              string `json:"id"`
+	BarcodeID       string `json:"barcode_id"`
+	Vorname         string `json:"vorname"`
+	Nachname        string `json:"nachname"`
+	Klasse          string `json:"klasse"`
+	AbgaengerJahr   int    `json:"abgaenger_jahr"`
+	IstGesperrt     bool   `json:"ist_gesperrt"`
+	OffeneAusleihen int    `json:"offene_buecher"`
+	Ueberfaellig    int    `json:"ueberfaellig"`
+	LehrerEmail     string `json:"lehrer_email"`
 }
 
 // AbgaengerAntwort ist die Antwort von GET /api/abgaenger: das Saisonfenster und die
@@ -52,7 +52,7 @@ type AbgaengerAntwort struct {
 
 // queryGraduatesBasic liefert eine Zeile je Abgänger mit offenen Ausleihen.
 func (s *Tueren) queryGraduatesBasic(ctx context.Context) ([]AbgaengerZeile, error) {
-	liste, err := repository.ListeAbgaengerMitOffenenBuechern(ctx, s.DB.Pool)
+	liste, err := repository.LadeAbgaengerMitOffenenAusleihen(ctx, s.DB.Pool)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (s *Tueren) GetGraduatesHandler() http.HandlerFunc {
 // ist, bekommt auch mit seiner Kennung keine Seite. So folgt der Druck der Suche der
 // Oberfläche, ohne dass der Server die Suche ein zweites Mal formuliert.
 func (s *Tueren) queryAbgaengerKontoauszug(ctx context.Context, klasse string, nurIDs []string) ([]pdf.KontoauszugEintrag, error) {
-	ausleihen, err := repository.ListeAbgaengerAusleihen(ctx, s.DB.Pool, klasse, nurIDs)
+	ausleihen, err := repository.LadeAbgaengerAusleihen(ctx, s.DB.Pool, klasse, nurIDs)
 	if err != nil {
 		return nil, err
 	}

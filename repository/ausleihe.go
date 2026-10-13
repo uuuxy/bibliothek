@@ -82,7 +82,7 @@ func NewAusleihAbfragen(db db.PgxPoolIface) AusleihAbfragen {
 }
 
 // leseAusleihe liest eine Zeile der Tabelle ausleihen in eine Ausleihe.
-func leseAusleihe(row Scanner) (*Ausleihe, error) {
+func leseAusleihe(row scanner) (*Ausleihe, error) {
 	var l Ausleihe
 	err := row.Scan(
 		&l.ID, &l.ExemplarID, &l.SchuelerID, &l.AusgeliehenAm, &l.RueckgabeFrist, &l.RueckgabeAm, &l.BearbeiterID, &l.RueckgabeBearbeiterID, &l.IstFremdrueckgabe, &l.IstHandapparat,

@@ -23,7 +23,7 @@ func seedSuchSchueler(t *testing.T, pool *pgxpool.Pool, barcode, vorname, nachna
 
 // namenDerTreffer bildet die Ergebnisse auf "Vorname Nachname" ab — so lesen sich
 // die Fehlermeldungen wie die Trefferliste in der Omnibox.
-func namenDerTreffer(treffer []Student) []string {
+func namenDerTreffer(treffer []Leser) []string {
 	namen := make([]string, 0, len(treffer))
 	for _, s := range treffer {
 		namen = append(namen, s.Vorname+" "+s.Nachname)
@@ -40,11 +40,11 @@ func enthaelt(namen []string, gesucht string) bool {
 	return false
 }
 
-// TestSearchStudentsFuzzy_ReihenfolgeUndDiakritika ist der eigentliche Beleg für den
+// TestFindeUnscharf_ReihenfolgeUndDiakritika ist der eigentliche Beleg für den
 // Umbau der Namenssuche. Alles hier ist gegen echtes Postgres nötig: ILIKE-Semantik,
 // unaccent() und der IMMUTABLE-Wrapper existieren im Mock nicht, ein Unit-Test würde
 // grün laufen und trotzdem nichts über das Verhalten an der Theke aussagen.
-func TestSearchStudentsFuzzy_ReihenfolgeUndDiakritika(t *testing.T) {
+func TestFindeUnscharf_ReihenfolgeUndDiakritika(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -59,7 +59,7 @@ func TestSearchStudentsFuzzy_ReihenfolgeUndDiakritika(t *testing.T) {
 	// (so kommt er aus manchen Importen) und wird mit Umlaut gesucht.
 	seedSuchSchueler(t, pool, "SUCH-7", "Kaethe", "Schaefer")
 
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
 	faelle := []struct {
 		name    string
@@ -105,7 +105,7 @@ func TestSearchStudentsFuzzy_ReihenfolgeUndDiakritika(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			treffer, _, err := repo.SearchStudentsFuzzy(ctx, f.eingabe, 10)
+			treffer, _, err := repo.FindeUnscharf(ctx, f.eingabe, 10)
 			if err != nil {
 				t.Fatalf("Suche %q: %v", f.eingabe, err)
 			}
@@ -117,10 +117,10 @@ func TestSearchStudentsFuzzy_ReihenfolgeUndDiakritika(t *testing.T) {
 	}
 }
 
-// TestSearchStudentsFuzzy_TrenntNamensgleiche sichert die Kernaussage des Umbaus ab:
+// TestFindeUnscharf_TrenntNamensgleiche sichert die Kernaussage des Umbaus ab:
 // Vor- plus Nachname engt auf eine Person ein. Vorher lieferte "Lena Hoffmann" gar
 // nichts, weil keine Spalte den kompletten String enthielt.
-func TestSearchStudentsFuzzy_TrenntNamensgleiche(t *testing.T) {
+func TestFindeUnscharf_TrenntNamensgleiche(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -129,9 +129,9 @@ func TestSearchStudentsFuzzy_TrenntNamensgleiche(t *testing.T) {
 	seedSuchSchueler(t, pool, "TRENN-2", "Lena", "Bauer")
 	seedSuchSchueler(t, pool, "TRENN-3", "Lena", "Fischer")
 
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
-	alle, _, err := repo.SearchStudentsFuzzy(ctx, "Lena", 10)
+	alle, _, err := repo.FindeUnscharf(ctx, "Lena", 10)
 	if err != nil {
 		t.Fatalf("Suche 'Lena': %v", err)
 	}
@@ -139,7 +139,7 @@ func TestSearchStudentsFuzzy_TrenntNamensgleiche(t *testing.T) {
 		t.Errorf("'Lena' sollte 3 Schüler finden, fand %d: %v", len(alle), namenDerTreffer(alle))
 	}
 
-	eine, _, err := repo.SearchStudentsFuzzy(ctx, "Lena Hoffmann", 10)
+	eine, _, err := repo.FindeUnscharf(ctx, "Lena Hoffmann", 10)
 	if err != nil {
 		t.Fatalf("Suche 'Lena Hoffmann': %v", err)
 	}
@@ -148,11 +148,11 @@ func TestSearchStudentsFuzzy_TrenntNamensgleiche(t *testing.T) {
 	}
 }
 
-// TestSearchStudentsFuzzy_GesamtzahlTrotzLimit belegt, dass die Trefferzahl die
+// TestFindeUnscharf_GesamtzahlTrotzLimit belegt, dass die Trefferzahl die
 // vollständige Menge nennt und nicht die Länge der gekürzten Liste. Ohne das steht
 // im Dropdown "Schüler (2)", obwohl es fünf sind — die Kraft an der Theke hätte
 // keinen Anlass, weiterzutippen.
-func TestSearchStudentsFuzzy_GesamtzahlTrotzLimit(t *testing.T) {
+func TestFindeUnscharf_GesamtzahlTrotzLimit(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -161,9 +161,9 @@ func TestSearchStudentsFuzzy_GesamtzahlTrotzLimit(t *testing.T) {
 		seedSuchSchueler(t, pool, "LIMIT-"+n, "Maximilian", n)
 	}
 
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
-	treffer, gesamt, err := repo.SearchStudentsFuzzy(ctx, "Maximilian", 2)
+	treffer, gesamt, err := repo.FindeUnscharf(ctx, "Maximilian", 2)
 	if err != nil {
 		t.Fatalf("Suche: %v", err)
 	}
@@ -175,10 +175,10 @@ func TestSearchStudentsFuzzy_GesamtzahlTrotzLimit(t *testing.T) {
 	}
 }
 
-// TestSearchStudentsFuzzy_RanktVollenNamenNachOben prüft die Sortierung: Wer beide
+// TestFindeUnscharf_RanktVollenNamenNachOben prüft die Sortierung: Wer beide
 // Namensteile tippt, will die passende Person oben sehen und nicht alphabetisch
 // irgendwo. Bauer stünde sonst vor Hoffmann.
-func TestSearchStudentsFuzzy_RanktVollenNamenNachOben(t *testing.T) {
+func TestFindeUnscharf_RanktVollenNamenNachOben(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -187,9 +187,9 @@ func TestSearchStudentsFuzzy_RanktVollenNamenNachOben(t *testing.T) {
 	seedSuchSchueler(t, pool, "RANK-2", "Hoffmann", "Lenau") // Namensteile vertauscht als Störtreffer
 	seedSuchSchueler(t, pool, "RANK-3", "Lena", "Hoffmann")
 
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
-	treffer, _, err := repo.SearchStudentsFuzzy(ctx, "Lena Hoffmann", 10)
+	treffer, _, err := repo.FindeUnscharf(ctx, "Lena Hoffmann", 10)
 	if err != nil {
 		t.Fatalf("Suche: %v", err)
 	}
@@ -201,10 +201,10 @@ func TestSearchStudentsFuzzy_RanktVollenNamenNachOben(t *testing.T) {
 	}
 }
 
-// TestSearchStudentsFuzzy_WildcardsWirkenNichtAlsMuster stellt sicher, dass die
+// TestFindeUnscharf_WildcardsWirkenNichtAlsMuster stellt sicher, dass die
 // LIKE-Metazeichen escaped werden. Ohne das Escaping wäre eine getippte "%" eine
 // Wildcard und lieferte die halbe Schülerschaft statt keiner Treffer.
-func TestSearchStudentsFuzzy_WildcardsWirkenNichtAlsMuster(t *testing.T) {
+func TestFindeUnscharf_WildcardsWirkenNichtAlsMuster(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -212,10 +212,10 @@ func TestSearchStudentsFuzzy_WildcardsWirkenNichtAlsMuster(t *testing.T) {
 	seedSuchSchueler(t, pool, "WILD-1", "Lena", "Hoffmann")
 	seedSuchSchueler(t, pool, "WILD-2", "Tim", "Berger")
 
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
 	for _, eingabe := range []string{"%", "_", "%%"} {
-		treffer, gesamt, err := repo.SearchStudentsFuzzy(ctx, eingabe, 10)
+		treffer, gesamt, err := repo.FindeUnscharf(ctx, eingabe, 10)
 		if err != nil {
 			t.Fatalf("Suche %q: %v", eingabe, err)
 		}
@@ -225,19 +225,19 @@ func TestSearchStudentsFuzzy_WildcardsWirkenNichtAlsMuster(t *testing.T) {
 	}
 }
 
-// TestSearchStudentsFuzzy_LeereEingabe: Ohne Token darf die Suche nicht die gesamte
+// TestFindeUnscharf_LeereEingabe: Ohne Token darf die Suche nicht die gesamte
 // Schülerschaft ausschütten.
-func TestSearchStudentsFuzzy_LeereEingabe(t *testing.T) {
+func TestFindeUnscharf_LeereEingabe(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
 	seedSuchSchueler(t, pool, "LEER-1", "Lena", "Hoffmann")
 
-	repo := NewStudentRepository(pool)
+	repo := NewLeserAbfragen(pool)
 
 	for _, eingabe := range []string{"", "   "} {
-		treffer, gesamt, err := repo.SearchStudentsFuzzy(ctx, eingabe, 10)
+		treffer, gesamt, err := repo.FindeUnscharf(ctx, eingabe, 10)
 		if err != nil {
 			t.Fatalf("Suche %q: %v", eingabe, err)
 		}

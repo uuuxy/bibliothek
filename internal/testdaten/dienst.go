@@ -19,7 +19,7 @@ func AusleiheUeberDenDienst(t *testing.T, pool *pgxpool.Pool, barcode, schuelerI
 	ctx := context.Background()
 
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
+	loanSvc := service.NewLoanService(pool, repository.NewLeserAbfragen(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 
 	exemplar, err := bookRepo.FindeExemplar(ctx, barcode)

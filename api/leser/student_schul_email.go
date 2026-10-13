@@ -48,7 +48,7 @@ func (s *Tueren) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 	}
 	neu := strings.ToLower(strings.TrimSpace(*reqEmail))
 
-	art, amKonto, err := repository.LeserArtUndKontoEmail(ctx, s.DB.Pool, id)
+	art, amKonto, err := repository.LadeLeserArtUndKontoEmail(ctx, s.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
@@ -123,7 +123,7 @@ func antworteAufKontoFehler(w http.ResponseWriter, err error, email string) {
 // Zeile SELBST und nicht aus dem Request: Wer im selben Speichern den Namen ändert, soll
 // ihn nicht in zwei Schreibweisen bekommen — Leserzeile und Konto sind dieselbe Person.
 func (s *Tueren) trageKontoNach(ctx context.Context, w http.ResponseWriter, leserID, email string, aktiv bool) (kontoID string, ok bool) {
-	vorname, nachname, err := repository.LeserName(ctx, s.DB.Pool, leserID)
+	vorname, nachname, err := repository.LadeLeserName(ctx, s.DB.Pool, leserID)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
@@ -132,14 +132,14 @@ func (s *Tueren) trageKontoNach(ctx context.Context, w http.ResponseWriter, lese
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", false
 	}
-	params := repository.LegeKollegiumskontoParams{
+	params := repository.KollegiumskontoNeu{
 		Vorname:  vorname,
 		Nachname: nachname,
 		Email:    email,
 		LeserID:  leserID,
 		Aktiv:    aktiv,
 	}
-	kontoID, err = repository.LegeKollegiumskonto(ctx, s.DB.Pool, params)
+	kontoID, err = repository.LegeKollegiumskontoAn(ctx, s.DB.Pool, params)
 	if err != nil {
 		antworteAufKontoFehler(w, err, email)
 		return "", false
@@ -167,7 +167,7 @@ func (s *Tueren) pruefeAusweisLeerung(ctx context.Context, w http.ResponseWriter
 	if reqBarcode == nil || strings.TrimSpace(*reqBarcode) != "" {
 		return true
 	}
-	art, err := repository.LeserArt(ctx, s.DB.Pool, id)
+	art, err := repository.LadeLeserArt(ctx, s.DB.Pool, id)
 	if err != nil {
 		if errors.Is(err, repository.ErrLeserNichtGefunden) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
@@ -191,5 +191,5 @@ func (s *Tueren) pruefeAusweisLeerung(ctx context.Context, w http.ResponseWriter
 // ist das Schülerprofil der häufige Fall — eine Abfrage, die immer leer zurückkommt,
 // gehört nicht in jeden Aufruf.
 func (s *Tueren) kontoEmail(ctx context.Context, leserID string) (string, error) {
-	return repository.KontoEmail(ctx, s.DB.Pool, leserID)
+	return repository.LadeKontoEmail(ctx, s.DB.Pool, leserID)
 }

@@ -526,8 +526,8 @@ func TestImportierteLehrkraftIstAmScannerAuffindbar(t *testing.T) {
 	}
 
 	// Genau die Abfrage, die die Omnibox stellt.
-	lehrkraft, err := repository.NewStudentRepository(pool).
-		GetLeserByBarcode(context.Background(), "B97601826458")
+	lehrkraft, err := repository.NewLeserAbfragen(pool).
+		FindeZuBarcode(context.Background(), "B97601826458")
 	if err != nil {
 		t.Fatalf("Ausweis-Abfrage: %v", err)
 	}

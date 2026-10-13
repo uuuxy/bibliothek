@@ -12,9 +12,9 @@ type Klassenleitung struct {
 	ErstelltAm          time.Time
 }
 
-// ListeKlassenleitungen liefert alle Zuordnungen nach Klasse geordnet. Eine Zeile, die sich
+// LadeKlassenleitungen liefert alle Zuordnungen nach Klasse geordnet. Eine Zeile, die sich
 // nicht lesen lässt, wird ausgelassen.
-func ListeKlassenleitungen(ctx context.Context, db Datenbank) ([]Klassenleitung, error) {
+func LadeKlassenleitungen(ctx context.Context, db Datenbank) ([]Klassenleitung, error) {
 	rows, err := db.Query(ctx,
 		`SELECT klasse, lehrer_email, erstellt_am FROM klassen_lehrer_mapping ORDER BY klasse`)
 	if err != nil {
@@ -33,11 +33,11 @@ func ListeKlassenleitungen(ctx context.Context, db Datenbank) ([]Klassenleitung,
 	return zeilen, rows.Err()
 }
 
-// KlassenleitungsAdressen liefert die Zuordnung als Nachschlagetabelle, die Klasse in der Form
+// LadeKlassenleitungsAdressen liefert die Zuordnung als Nachschlagetabelle, die Klasse in der Form
 // von KlassenSchluessel: „5A" in der Zuordnung trifft die Klasse „5a". Jeder Fehler bricht ab.
 // Ein Versand, der mit einer halben Tabelle weiterliefe, hielte jede fehlende Klasse für eine
 // ohne Adresse und meldete das wie ein Ergebnis.
-func KlassenleitungsAdressen(ctx context.Context, db Datenbank) (map[string]string, error) {
+func LadeKlassenleitungsAdressen(ctx context.Context, db Datenbank) (map[string]string, error) {
 	rows, err := db.Query(ctx, `SELECT klasse, lehrer_email FROM klassen_lehrer_mapping`)
 	if err != nil {
 		return nil, err
@@ -89,9 +89,9 @@ type KlassenleitungVersetzung struct {
 	Entfaellt bool
 }
 
-// LeseKlassenleitungVersetzungen liest die Zuordnungen absteigend nach Stufe und liest sie ganz,
+// LadeKlassenleitungVersetzungen liest die Zuordnungen absteigend nach Stufe und liest sie ganz,
 // bevor die Transaktion wieder schreibt.
-func LeseKlassenleitungVersetzungen(ctx context.Context, db Datenbank) ([]KlassenleitungVersetzung, error) {
+func LadeKlassenleitungVersetzungen(ctx context.Context, db Datenbank) ([]KlassenleitungVersetzung, error) {
 	rows, err := db.Query(ctx, `
 		SELECT klasse,
 		       lpad((substring(klasse from '^\d+')::int + 1)::text,
@@ -121,8 +121,8 @@ func LeseKlassenleitungVersetzungen(ctx context.Context, db Datenbank) ([]Klasse
 	return zeilen, nil
 }
 
-// KlassenleitungVorhanden sagt, ob es für die Klasse eine Zuordnung gibt.
-func KlassenleitungVorhanden(ctx context.Context, db Datenbank, klasse string) (bool, error) {
+// IstKlassenleitungVorhanden sagt, ob es für die Klasse eine Zuordnung gibt.
+func IstKlassenleitungVorhanden(ctx context.Context, db Datenbank, klasse string) (bool, error) {
 	var vorhanden bool
 	err := db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM klassen_lehrer_mapping WHERE klasse = $1)`, klasse).Scan(&vorhanden)
 	return vorhanden, err

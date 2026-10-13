@@ -9,42 +9,42 @@ package repository
 // Prüfung „enthält keine Anführungszeichen" wäre die Art Schutz, die man einmal
 // vergisst.
 
-// SchuelerSortierspalte ist die Spalte, nach der der Benutzer sortiert hat.
-type SchuelerSortierspalte string
+// LeserSortierspalte ist die Spalte, nach der der Benutzer sortiert hat.
+type LeserSortierspalte string
 
 const (
 	// SortiereKartei ist die Vorgabe: die gewohnte Reihenfolge der Kartei (Klasse,
 	// Nachname, Vorname) bzw. bei den Ehemaligen der jüngste Abgang zuerst.
-	SortiereKartei SchuelerSortierspalte = ""
+	SortiereKartei LeserSortierspalte = ""
 	// SortiereName sortiert nach Nachname, dann Vorname.
-	SortiereName SchuelerSortierspalte = "name"
+	SortiereName LeserSortierspalte = "name"
 	// SortiereKlasse sortiert nach Klasse, innerhalb der Klasse nach Namen.
-	SortiereKlasse SchuelerSortierspalte = "klasse"
+	SortiereKlasse LeserSortierspalte = "klasse"
 	// SortiereAusgeliehen sortiert nach der Zahl der geliehenen Bücher — die Spalte,
 	// nach der jemand sucht, der wissen will, wer viel draußen hat.
-	SortiereAusgeliehen SchuelerSortierspalte = "ausgeliehen"
+	SortiereAusgeliehen LeserSortierspalte = "ausgeliehen"
 )
 
-// SchuelerSortierspalten sind die erlaubten Werte, für die Prüfung an der API-Tür.
+// LeserSortierspalten sind die erlaubten Werte, für die Prüfung an der API-Tür.
 // Eine Liste und keine 15 if-Zweige: Sie steht auch in der Fehlermeldung.
-var SchuelerSortierspalten = []SchuelerSortierspalte{
+var LeserSortierspalten = []LeserSortierspalte{
 	SortiereName, SortiereKlasse, SortiereAusgeliehen,
 }
 
-// SchuelerSortierung ist Spalte und Richtung zusammen — ein Wert, weil die Richtung
+// LeserSortierung ist Spalte und Richtung zusammen — ein Wert, weil die Richtung
 // ohne Spalte nichts bedeutet.
-type SchuelerSortierung struct {
-	Spalte     SchuelerSortierspalte
+type LeserSortierung struct {
+	Spalte     LeserSortierspalte
 	Absteigend bool
 }
 
-// Erlaubt meldet, ob die Spalte eine der bekannten ist. Die leere Spalte (Vorgabe)
+// IstErlaubt meldet, ob die Spalte eine der bekannten ist. Die leere Spalte (Vorgabe)
 // gehört dazu.
-func (s SchuelerSortierung) Erlaubt() bool {
+func (s LeserSortierung) IstErlaubt() bool {
 	if s.Spalte == SortiereKartei {
 		return true
 	}
-	for _, erlaubt := range SchuelerSortierspalten {
+	for _, erlaubt := range LeserSortierspalten {
 		if s.Spalte == erlaubt {
 			return true
 		}
@@ -52,7 +52,7 @@ func (s SchuelerSortierung) Erlaubt() bool {
 	return false
 }
 
-// sqlOrderBy baut die ORDER-BY-Liste.
+// sqlSortierung baut die ORDER-BY-Liste.
 //
 // Die GRUPPE steht in der Leserdatei immer vorn, auch wenn der Benutzer sortiert: Die
 // ungefilterte Liste ist bei 500 Zeilen gekappt, und ohne diesen Schlüssel fiele ein
@@ -62,7 +62,7 @@ func (s SchuelerSortierung) Erlaubt() bool {
 // Der zweite Schlüssel ist immer der Name: Ohne ihn stünden bei gleicher Klasse (oder
 // gleicher Ausleihzahl) die Zeilen in der Reihenfolge, die Postgres gerade liefert, und
 // die Liste sähe bei jedem Laden anders aus.
-func (s SchuelerSortierung) sqlOrderBy(art listenArt, suchRang string) string {
+func (s LeserSortierung) sqlSortierung(art listenArt, suchRang string) string {
 	gruppe := ""
 	if art == listeAlleLeser {
 		gruppe = "(s.art = 'schueler'), "

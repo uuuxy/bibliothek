@@ -17,7 +17,7 @@ func TestErkenneScan(t *testing.T) {
 	dbFehler := errors.New("verbindung weg")
 	exemplar := &repository.Exemplar{ID: "ex-1", TitelID: "titel-1", BarcodeID: "B-12345"}
 	altesEtikett := &repository.Exemplar{ID: "ex-2", TitelID: "titel-2", BarcodeID: "58968"}
-	leser := &repository.Student{ID: "leser-1", BarcodeID: "S-7"}
+	leser := &repository.Leser{ID: "leser-1", BarcodeID: "S-7"}
 
 	// nurUnter liefert das Exemplar genau für diesen Barcode.
 	nurUnter := func(barcode string, ex *repository.Exemplar) func(context.Context, string) (*repository.Exemplar, error) {
@@ -33,7 +33,7 @@ func TestErkenneScan(t *testing.T) {
 		name       string
 		wert       string
 		exemplare  func(context.Context, string) (*repository.Exemplar, error)
-		leser      *repository.Student
+		leser      *repository.Leser
 		leserErr   error
 		soll       *ScanTreffer
 		sollFehler error

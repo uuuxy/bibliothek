@@ -16,7 +16,7 @@ package service
 // Wer kein Schüler ist, bekommt das Gerät als Dauerleihe (ausleihen.ist_handapparat), ein
 // Schüler nicht: dieselbe Regel wie beim Buch. Ohne das Merkmal stünde die Lehrkraft nach
 // Ablauf der Frist mit einer überfälligen Ausleihe in der Leserdatei, mit ihm zählte das Gerät
-// eines Schülers dort nie als überfällig (listSchuelerMitStats).
+// eines Schülers dort nie als überfällig (LeserAbfragen.ladeListe).
 
 import (
 	"context"
@@ -81,7 +81,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 		}
 	})
 
-	svc := NewDeviceService(pool, repository.NewStudentRepository(pool), repository.NewAusleihAbfragen(pool),
+	svc := NewDeviceService(pool, repository.NewLeserAbfragen(pool), repository.NewAusleihAbfragen(pool),
 		repository.NewProtokollAbfragen(pool))
 
 	faelle := []struct {

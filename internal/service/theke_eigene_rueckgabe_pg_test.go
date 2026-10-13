@@ -32,7 +32,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	}
 
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
+	loanSvc := service.NewLoanService(pool, repository.NewLeserAbfragen(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 	ex, err := bookRepo.FindeExemplar(ctx, "B-SPERRE-1")
 	if err != nil {
@@ -89,7 +89,7 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 
 	bearbeiter := testdaten.AdminFuerAudit(t, pool)
 	bookRepo := repository.NewKatalogAbfragen(pool)
-	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
+	loanSvc := service.NewLoanService(pool, repository.NewLeserAbfragen(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Titel Fremdrueckgabe", 3)
