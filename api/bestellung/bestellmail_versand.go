@@ -59,7 +59,12 @@ func bestellmailDatenAus(res *service.OrderResult) bestellmailDaten {
 // sagt, ob der Bestätigungs-Link darin steht. Der erste und der erneute Versand gehen beide
 // hier durch, damit der Lieferant beide Male dieselbe Mail bekommt.
 func (s *Tueren) sendeBestellmail(ctx context.Context, d bestellmailDaten) (mitLink bool, err error) {
-	settings, _ := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx) //nolint:errcheck
+	// Ein Lesefehler ist ein Fehler: Mit den Vorgaben ginge die Mail ohne die Angaben der Schule
+	// und ohne Link hinaus. Der Aufrufer vermerkt den Versand dann als gescheitert.
+	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	if err != nil {
+		return false, fmt.Errorf("einstellungen lesen: %w", err)
+	}
 	schule := pdf.SchuleInfo{
 		Name:    settings.SchuleName,
 		Strasse: settings.SchuleStrasse,

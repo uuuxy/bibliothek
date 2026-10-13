@@ -136,6 +136,7 @@ internal/testdaten/schaden.go: unreachable func: BescheidForderung
 internal/testdaten/schaden.go: unreachable func: BescheidRumpf
 internal/testdaten/schaden.go: unreachable func: In28Tagen
 internal/testdaten/schaden.go: unreachable func: SeedOffenerSchaden
+internal/testdaten/lesefehler.go: unreachable func: PoolMitLesefehler.Query
 
 # Testinfrastruktur per Paket-Design: eine Anfrage an eine Tür stellen und ihre Antwort lesen,
 # dazu die Attrappe der DNB (vorher Helfer in Testdateien von api/, die Tests mehrerer Themen

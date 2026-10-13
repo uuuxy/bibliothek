@@ -29,17 +29,21 @@ func (s *Tueren) loadMahnungTemplate(ctx context.Context) (betreff, textBody str
 }
 
 // ladeMahnbriefVorlage liest Betreff und Text aus der Vorlage und die Absenderzeile aus den
-// Angaben zur Schule.
-func (s *Tueren) ladeMahnbriefVorlage(ctx context.Context) pdf.MahnbriefVorlage {
+// Angaben zur Schule. Sind die Einstellungen nicht lesbar, kommt der Fehler zurück: Mit den
+// Vorgaben hätte der Brief keinen Absender.
+func (s *Tueren) ladeMahnbriefVorlage(ctx context.Context) (pdf.MahnbriefVorlage, error) {
 	betreff, text := s.loadMahnungTemplate(ctx)
-	settings, _ := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx) //nolint:errcheck
+	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	if err != nil {
+		return pdf.MahnbriefVorlage{}, fmt.Errorf("einstellungen lesen: %w", err)
+	}
 	schule := pdf.SchuleInfo{
 		Name:    settings.SchuleName,
 		Strasse: settings.SchuleStrasse,
 		PLZ:     settings.SchulePLZ,
 		Ort:     settings.SchuleOrt,
 	}
-	return pdf.MahnbriefVorlage{Betreff: betreff, Text: text, Absender: schule.Absenderzeile()}
+	return pdf.MahnbriefVorlage{Betreff: betreff, Text: text, Absender: schule.Absenderzeile()}, nil
 }
 
 // mahnbriefEmpfaenger füllt die Eingabe des Erzeugers aus den Zeilen der Abfrage: je Schüler
@@ -76,7 +80,11 @@ func mahnbriefEmpfaenger(briefe []repository.MahnbriefEmpfaenger) []pdf.Mahnbrie
 // Fehlerantwort ist geschrieben, das Zählen nimmt der Rollback zurück.
 func (s *Tueren) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.ResponseWriter, ausleihIDs []string) ([]byte, bool) {
 	// Vorlage und Absender vor der Transaktion: Sie hält eine Verbindung und Zeilensperren.
-	vorlage := s.ladeMahnbriefVorlage(ctx)
+	vorlage, err := s.ladeMahnbriefVorlage(ctx)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return nil, false
+	}
 
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {

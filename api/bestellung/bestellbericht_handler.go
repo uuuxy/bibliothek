@@ -52,6 +52,44 @@ func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool, mittel 
 	return titel
 }
 
+// berichtAnfrage sind die geprüften Angaben aus der Query des Bestellberichts.
+type berichtAnfrage struct {
+	von, bis            time.Time
+	vonText, bisText    string
+	lieferantID, mittel string
+	jahresansicht       bool
+	titel               string
+}
+
+// leseBerichtAnfrage prüft die Query des Bestellberichts. Ein Fehler ist die Meldung an die
+// Oberfläche: Jede der drei Prüfungen weist eine Eingabe ab.
+func leseBerichtAnfrage(r *http.Request) (berichtAnfrage, error) {
+	q := r.URL.Query()
+	a := berichtAnfrage{
+		vonText:       q.Get("von"),
+		bisText:       q.Get("bis"),
+		mittel:        q.Get("mittel"),
+		jahresansicht: q.Get("jahresansicht") == "true",
+	}
+	var err error
+	if a.von, a.bis, err = parseBerichtZeitraum(a.vonText, a.bisText); err != nil {
+		return berichtAnfrage{}, err
+	}
+	// Geprüft wie jede Kennung aus der Query (tuer.UUIDAusQuery): Ein Rohtext wie `x` ginge
+	// sonst in `AND lieferant_id = $n` und käme von Postgres als 500 zurück (22P02).
+	if a.lieferantID, err = tuer.UUIDAusQuery(r, "lieferant_id"); err != nil {
+		return berichtAnfrage{}, err
+	}
+	// Der Topf-Filter macht aus dem Bericht das Blatt, gegen das eine Rechnung geprüft wird.
+	// Ein unbekannter Wert ist ein Fehler und kein stiller Gesamtbericht: Sonst prüfte das
+	// Sekretariat die Landes-Rechnung gegen eine Liste, in der auch die Schülerbücherei steht.
+	if !repository.MittelFilterGueltig(a.mittel) {
+		return berichtAnfrage{}, repository.MittelFilterFehler(a.mittel)
+	}
+	a.titel = berichtTitelAbleiten(q.Get("titel"), a.lieferantID, a.jahresansicht, a.mittel)
+	return a, nil
+}
+
 // GetBestellBerichtPDFHandler liefert den Bericht über die Bestellungen eines Zeitraums als PDF.
 // Den Erzeuger trägt pdf/bestellbericht.go; die Tür prüft die Eingabe, liest die Bestellungen
 // und füllt seine Eingabe.
@@ -67,36 +105,13 @@ func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool, mittel 
 func (s *Tueren) GetBestellBerichtPDFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		q := r.URL.Query()
-
-		vonStr := q.Get("von")
-		bisStr := q.Get("bis")
-		von, bis, err := parseBerichtZeitraum(vonStr, bisStr)
+		a, err := leseBerichtAnfrage(r)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		bisExklusiv := bis.AddDate(0, 0, 1)
 
-		// Geprüft wie jede Kennung aus der Query (tuer.UUIDAusQuery): Ein Rohtext wie `x` ginge
-		// sonst in `AND lieferant_id = $n` und käme von Postgres als 500 zurück (22P02).
-		lieferantID, err := tuer.UUIDAusQuery(r, "lieferant_id")
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
-			return
-		}
-		// Der Topf-Filter macht aus dem Bericht das Blatt, gegen das eine Rechnung geprüft wird.
-		// Ein unbekannter Wert ist ein Fehler und kein stiller Gesamtbericht: Sonst prüfte das
-		// Sekretariat die Landes-Rechnung gegen eine Liste, in der auch die Schülerbücherei steht.
-		mittel := q.Get("mittel")
-		if !repository.MittelFilterGueltig(mittel) {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, repository.MittelFilterFehler(mittel))
-			return
-		}
-		jahresansicht := q.Get("jahresansicht") == "true"
-		berichtTitel := berichtTitelAbleiten(q.Get("titel"), lieferantID, jahresansicht, mittel)
-
-		orders, orderIndex, err := repository.LadeBerichtBestellungen(ctx, s.DB.Pool, von, bisExklusiv, lieferantID, mittel)
+		orders, orderIndex, err := repository.LadeBerichtBestellungen(ctx, s.DB.Pool, a.von, a.bis.AddDate(0, 0, 1), a.lieferantID, a.mittel)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -107,8 +122,13 @@ func (s *Tueren) GetBestellBerichtPDFHandler() http.HandlerFunc {
 			return
 		}
 
-		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-		settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
+		// Ein Lesefehler ist ein Fehler: Mit den Vorgaben stünde das Blatt ohne den Kopf der
+		// Schule da, und die Vorgabe entschiede, ob es Beträge nennt.
+		settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
+			return
+		}
 		schule := pdf.SchuleInfo{
 			Name:    settings.SchuleName,
 			Strasse: settings.SchuleStrasse,
@@ -122,10 +142,10 @@ func (s *Tueren) GetBestellBerichtPDFHandler() http.HandlerFunc {
 			return
 		}
 		pdfBytes, err := pdf.GenerateBestellberichtPDF(pdf.Bestellbericht{
-			Titel:         berichtTitel,
-			Von:           von,
-			Bis:           bis,
-			Jahresansicht: jahresansicht,
+			Titel:         a.titel,
+			Von:           a.von,
+			Bis:           a.bis,
+			Jahresansicht: a.jahresansicht,
 			MitPreisen:    settings.PreiseErfassen,
 			Toepfe:        toepfe,
 		}, schule)
@@ -134,7 +154,7 @@ func (s *Tueren) GetBestellBerichtPDFHandler() http.HandlerFunc {
 			return
 		}
 
-		dateiname := fmt.Sprintf("bestellbericht_%s_%s.pdf", vonStr, bisStr)
+		dateiname := fmt.Sprintf("bestellbericht_%s_%s.pdf", a.vonText, a.bisText)
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set(tuer.HeaderContentDisposition, fmt.Sprintf(`attachment; filename="%s"`, dateiname))
 		w.WriteHeader(http.StatusOK)

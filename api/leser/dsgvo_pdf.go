@@ -37,11 +37,10 @@ func (s *Tueren) DsgvoAuskunftPDFHandler() http.HandlerFunc {
 			return err
 		}
 
-		// Rechenschaftspflicht: Auskunftserteilung protokollieren (wie JSON-Variante).
-		s.protokolliereDsgvoAuskunft(ctx, id)
-
-		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-		settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck // Header fällt sonst auf Defaults zurück
+		settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+		if err != nil {
+			return apierrors.Internal(tuer.MeldungEinstellungenUnlesbar, err)
+		}
 		schule := pdf.SchuleInfo{
 			Name:    settings.SchuleName,
 			Strasse: settings.SchuleStrasse,
@@ -53,6 +52,10 @@ func (s *Tueren) DsgvoAuskunftPDFHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("PDF-Erzeugung fehlgeschlagen", err)
 		}
+
+		// Rechenschaftspflicht: Die erteilte Auskunft steht im Protokoll, wie bei der Auskunft
+		// am Bildschirm. Erst hier, wenn das Blatt steht: Der Eintrag sagt, dass es erteilt ist.
+		s.protokolliereDsgvoAuskunft(ctx, id)
 
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 		w.Header().Set(tuer.HeaderContentDisposition, `attachment; filename="DSGVO-Auskunft.pdf"`)

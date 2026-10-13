@@ -45,8 +45,13 @@ func (s *Tueren) GenerateDamagePDFHandler() http.HandlerFunc {
 			return
 		}
 
-		settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
-		settings, _ := settingsRepo.GetSettings(ctx) //nolint:errcheck
+		// Ein Lesefehler ist ein Fehler: Mit den Vorgaben nennte der Brief keine Schule und
+		// die Bankverbindung der Vorgabe statt der eingetragenen.
+		settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("einstellungen lesen: %w", err))
+			return
+		}
 		schule := pdf.SchuleInfo{
 			Name:    settings.SchuleName,
 			Strasse: settings.SchuleStrasse,

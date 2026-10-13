@@ -10,6 +10,7 @@ import (
 	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/auskunft"
+	"bibliothek/internal/testdaten"
 	"bibliothek/pdf"
 
 	"github.com/pashagolub/pgxmock/v5"
@@ -109,14 +110,19 @@ func TestDsgvoAuskunftPDFHandler_Success(t *testing.T) {
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "timestamp", "email", "rolle"}))
 
+	// Die Tür liest die Einstellungen zweimal: für die Fristen der Pflichtangaben und für den
+	// Kopf der Schule.
+	for range 2 {
+		mock.ExpectQuery(`SELECT schluessel, wert FROM system_einstellungen`).
+			WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
+				AddRow("schule_name", testdaten.Ptr("Test School")).
+				AddRow("schule_ort", testdaten.Ptr("Test City")))
+	}
+
+	// Der Eintrag über die erteilte Auskunft folgt dem Blatt.
 	mock.ExpectExec(`INSERT INTO audit_log`).
 		WithArgs(dsgvoTestID, (*string)(nil), "SYSTEM").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-
-	mock.ExpectQuery(`SELECT schluessel, wert FROM system_einstellungen`).
-		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-			AddRow("schule_name", "Test School").
-			AddRow("schule_ort", "Test City"))
 
 	rec := dsgvoPDFRequest(t, mock, dsgvoTestID)
 

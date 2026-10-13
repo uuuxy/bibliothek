@@ -82,6 +82,7 @@ func TestKeineNeuenRohenEinstellungsLeser(t *testing.T) {
 		"internal/testdaten/bestellung.go": "Prüfhilfe der Tests: setzt und entfernt die öffentliche Adresse",
 		"internal/testdaten/etikett.go":    "Prüfhilfe der Tests: setzt und entfernt den Eigentumsvermerk der Schülerbücherei",
 		"internal/testdaten/schaden.go":    "Prüfhilfe der Tests: setzt und entfernt die Pflichtangaben des Bescheids",
+		"internal/testdaten/lesefehler.go": "Prüfhilfe der Tests: nennt die Abfrage der Einstellungen, um sie scheitern zu lassen; liest nichts",
 	}
 
 	gefunden := map[string]bool{}
