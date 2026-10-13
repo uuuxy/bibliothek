@@ -25,26 +25,25 @@ type Titel struct {
 	Erscheinungsjahr int `json:"erscheinungsjahr,omitempty"`
 	// Signatur speichert die Bibliothekssignatur (z. B. Standort/Regal).
 	Signatur string `json:"signatur,omitempty"`
-	// Auflage ist die Auflagenbezeichnung („4. Aufl. 2023", Migration 126). Eine neue
-	// Auflage trägt eine eigene ISBN und ist damit ein eigener Titel; dieses Feld sagt,
-	// welcher von zwei gleich heißenden Zeilen man vor sich hat.
+	// Auflage ist die Auflagenbezeichnung („4. Aufl. 2023"). Eine neue Auflage trägt eine
+	// eigene ISBN und ist damit ein eigener Titel; dieses Feld sagt, welche von zwei gleich
+	// heißenden Zeilen man vor sich hat.
 	Auflage string `json:"auflage,omitempty"`
-	// Mehrjahresband (Migration 134, Antwort der Schule vom 22.09.2026): Das Buch bleibt über
-	// die Spanne JahrgangVon..JahrgangBis beim Kind; die Frist rechnet bis zum Stichtag des
-	// Schuljahres, in dem das Kind JahrgangBis beendet. Die Jahreszahl ist JahrgangBis, eine
-	// zweite gibt es nicht.
+	// Mehrjahresband: Das Buch bleibt über die Spanne JahrgangVon..JahrgangBis beim Kind; die
+	// Frist rechnet bis zum Stichtag des Schuljahres, in dem das Kind JahrgangBis beendet. Die
+	// Jahreszahl ist JahrgangBis, eine zweite gibt es nicht.
 	Mehrjahresband bool `json:"mehrjahresband"`
-	// IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Die Regeln —
+	// IstLernmittel: Schulbuch der Lernmittelfreiheit. Die Regeln —
 	// Frist, Limit, öffentlicher Katalog, Löschfrist — lesen dieses Feld, nicht den Text.
 	IstLernmittel bool `json:"ist_lernmittel"`
-	// Fach, JahrgangVon, JahrgangBis kommen NUR aus dem Katalogisat-Import (Zerlegung
+	// Fach, JahrgangVon, JahrgangBis kommen nur aus dem Katalogisat-Import (Zerlegung
 	// der Littera-Signatur „LMF Bio 7", Schlagwörter, Zielgruppe) und gehen nur in den
 	// Upsert; kein Leser füllt sie. 0 bzw. "" heißt „unbekannt, Bestand nicht anfassen".
 	Fach        string `json:"-"`
 	JahrgangVon int    `json:"-"`
 	JahrgangBis int    `json:"-"`
 	// Schlagworte kommen ebenso nur aus dem Katalogisat (MAB 710) und gehen nur in den Upsert:
-	// an Titel, die noch keine tragen (docs/OFFEN.md 4.20, Stufe 3).
+	// an Titel, die noch keine tragen.
 	Schlagworte []string `json:"-"`
 	// CoverURL verweist auf das Bild des Buchumschlags.
 	CoverURL string `json:"cover_url,omitempty"`
@@ -57,18 +56,13 @@ type Titel struct {
 	// ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften,omitempty"`
 
-	// Bestand und Verfuegbar füllen NUR die Suchabfragen (FindeTitel,
-	// FindeTitelUnscharf) — Protokoll des Medienzentrums vom 16.09.2026, Punkt 4:
-	// „Bücher, zu denen es keine Exemplare gibt, tauchen in der Trefferliste auf."
-	// Ein Titel ohne Exemplare ist ein legitimer Zustand (angelegt ohne
-	// Bestandsangabe, Altbestand aus Littera) — verstecken wäre falsch, aber die
-	// Trefferliste muss es SAGEN.
+	// Bestand und Verfuegbar füllen nur die Suchabfragen (FindeTitel, FindeTitelUnscharf): Die
+	// Trefferliste sagt damit, wie viele Exemplare ein Titel hat und wie viele davon frei sind.
 	//
-	// Zeiger, weil „nicht mitgeliefert" und „null Exemplare" zwei verschiedene
-	// Dinge sind: Jede andere Abfrage, die einen Titel liefert (Katalog, Import,
-	// Bestellwesen), lässt die Felder nil, und die Oberfläche schreibt dann gar
-	// nichts statt „0 Exemplare" über einen Titel, dessen Bestand niemand gezählt
-	// hat.
+	// Zeiger, weil „nicht mitgeliefert" und „null Exemplare" zwei verschiedene Dinge sind: Jede
+	// andere Abfrage, die einen Titel liefert (Katalog, Import, Bestellwesen), lässt die Felder
+	// nil, und die Oberfläche schreibt dann gar nichts statt „0 Exemplare" über einen Titel,
+	// dessen Bestand niemand gezählt hat.
 	Bestand    *int `json:"bestand,omitempty"`
 	Verfuegbar *int `json:"verfuegbar,omitempty"`
 	// ImZulauf zählt die bestellten, noch nicht eingetroffenen Exemplare
@@ -76,9 +70,9 @@ type Titel struct {
 	ImZulauf *int `json:"im_zulauf,omitempty"`
 }
 
-// leseTitelMitZusatz scannt die Standard-Spaltenliste und danach beliebige
-// Zusatzspalten (z. B. count(*) OVER () für die Gesamttrefferzahl) — siehe
-// scanStudentMitZusatz, gleiche Begründung.
+// leseTitelMitZusatz liest die feste Spaltenliste eines Titels und danach beliebige
+// Zusatzspalten, etwa count(*) OVER () für die Gesamtzahl der Treffer. So bleibt die
+// Spaltenliste an einer Stelle.
 func leseTitelMitZusatz(row Scanner, zusatz ...any) (*Titel, error) {
 	var t Titel
 	ziele := []any{

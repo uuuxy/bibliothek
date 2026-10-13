@@ -55,17 +55,16 @@ func LadeEtikettDatenDerBestellung(ctx context.Context, db Datenbank, bestellung
 
 // LadeEtikettDatenDesTitels liefert die Exemplare eines Titels, die nicht ausgesondert sind.
 func LadeEtikettDatenDesTitels(ctx context.Context, db Datenbank, titelID string) ([]EtikettDaten, error) {
-	// Das Jahr ist das des Zugangs (zugang_am, Migration 129) — im Bestellweg ist erworben_am
-	// der Bestelltag, und ein im Dezember bestelltes Buch käme sonst mit dem alten Jahr aufs
-	// Etikett und mit dem neuen ins Zugangsbuch. Der Rückfall auf erworben_am (NOT NULL,
-	// Vorgabe der Schultag, Migration 139) deckt Zeilen ohne Zugangsdatum; to_char liefert damit immer
-	// vier Ziffern und nie NULL.
+	// Das Jahr ist das des Zugangs (zugang_am): Im Bestellweg ist erworben_am der Bestelltag,
+	// und ein im Dezember bestelltes Buch käme sonst mit dem alten Jahr aufs Etikett und mit
+	// dem neuen ins Zugangsbuch. Der Rückfall auf erworben_am (NOT NULL, Vorgabe der Schultag)
+	// deckt Zeilen ohne Zugangsdatum; to_char liefert damit immer vier Ziffern und nie NULL.
 	//
-	// Ausgesonderte Exemplare bleiben draußen (17.09.2026, OFFEN.md 5.5): Wer die Etiketten
-	// eines Titels druckt, klebt sie auf Bücher, die im Regal stehen. Ein ausgesondertes
-	// Exemplar gibt es dort nicht mehr — sein Etikett ist ein Blatt Papier für ein Buch,
-	// das niemand findet, und auf einem Bogen mit fortlaufenden Plätzen verschiebt es alle
-	// folgenden. Die Zeile bleibt in der Datenbank; nur gedruckt wird sie nicht.
+	// Ausgesonderte Exemplare bleiben draußen: Wer die Etiketten eines Titels druckt, klebt sie
+	// auf Bücher, die im Regal stehen. Das Etikett eines ausgesonderten Exemplars ist ein Blatt
+	// Papier für ein Buch, das niemand findet, und auf einem Bogen mit fortlaufenden Plätzen
+	// verschiebt es alle folgenden. Die Zeile bleibt in der Datenbank; nur gedruckt wird sie
+	// nicht.
 	query := `
 		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'), coalesce(t.signatur, ''),
 		       ` + ExemplarTopfSQL + `

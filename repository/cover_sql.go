@@ -3,7 +3,7 @@ package repository
 // sqlCoverOderDNB ist das Cover eines Titels in den Listen der Bestellung (Zulauf, Bestellsuche,
 // Bestellbedarf): sein eigener Eintrag, sonst die Cover-Adresse der DNB zu seiner ISBN, sonst
 // leer. Ein leerer Eintrag gilt als keiner. Die Adresse nennt die ISBN ohne Bindestriche: Mit
-// ihnen trägt sie noch eine Zeile, die Migration 140 oder 157 neben einer Dublette stehen ließ.
+// ihnen trägt sie noch eine Zeile, deren Normalform schon ein anderer Titel trägt.
 //
 // titelAlias ist der Alias der Titelzeile in der umgebenden Abfrage.
 func sqlCoverOderDNB(titelAlias string) string {

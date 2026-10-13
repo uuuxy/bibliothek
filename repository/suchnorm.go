@@ -9,32 +9,32 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// suchnorm ist der Go-Zwilling der SQL-Funktion suchnorm(text) aus Migration 054 —
-// die EINE Normalform für Namensvergleiche in diesem Projekt. Zwei Schritte wie dort:
+// suchnorm ist der Go-Zwilling der SQL-Funktion suchnorm(text) —
+// die eine Normalform für Namensvergleiche in diesem Projekt. Zwei Schritte wie dort:
 //
 //  1. Kleinschreibung, dann Diakritika weg (unaccent): Öztürk → ozturk, García → garcia,
 //     Nguyễn → nguyen, Łukasz → lukasz, Straße → strasse.
 //  2. Die deutschen Ersatzschreibungen auf denselben Nenner: ss→s, ue→u, oe→o, ae→a —
-//     in DIESER Reihenfolge, so treffen sich „Mueller" und „Müller" (beide → muller).
+//     in dieser Reihenfolge, so treffen sich „Mueller" und „Müller" (beide → muller).
 //
 // Warum ein Zwilling und nicht ein SELECT suchnorm($1): Der LUSD-Import bildet seinen
-// Namensschlüssel aus geparsten CSV-Zeilen UND aus geladenen Bestandszeilen in Go
-// (LusdNamensSchluessel); bis zum 05.09.2026 war das nur lower+trim, und „Anna Müller"
-// von Hand angelegt wurde vom Export „Anna Mueller" nie gefunden — Neuanlage plus
+// Namensschlüssel aus geparsten CSV-Zeilen und aus geladenen Bestandszeilen in Go
+// (LusdNamensSchluessel). Mit lower und trim allein fände der Export „Anna Mueller" die
+// von Hand angelegte „Anna Müller" nie — Neuanlage plus
 // „nicht im Export" statt Zuordnung. Ein Zwilling verpflichtet zur Parität:
 // suchnorm_pg_test.go vergleicht beide Seiten, damit die Schülersuche (SQL) und der
 // Importschlüssel (Go) nie still verschiedene Menschen meinen.
 //
 // Wie „unaccent" nachgebaut ist: je Zeichen zuerst die Ausnahmetabelle (unaccentTabelle),
 // sonst die Unicode-Zerlegung — Grundbuchstabe plus Akzent, Akzent weg. Die Tabelle ist
-// aus der Datenbank ERZEUGT, nicht ausgedacht: Für jedes Zeichen der lateinischen Blöcke
+// aus der Datenbank erzeugt, nicht ausgedacht: Für jedes Zeichen der lateinischen Blöcke
 // (Latin-1 Supplement, Extended-A/B, Extended Additional) steht darin, was
 // unaccent(lower(x)) liefert, wo das von der Zerlegung abweicht — in beide Richtungen.
 // Buchstaben ohne abtrennbaren Akzent, die unaccent trotzdem kennt (ħ→h, ŋ→n, ǆ→dz,
-// ß→ss), und Zeichen, die unaccent NICHT kennt und stehen lässt, obwohl sie zerlegbar
+// ß→ss), und Zeichen, die unaccent nicht kennt und stehen lässt, obwohl sie zerlegbar
 // wären (ǣ, ǿ). Die SQL-Seite ist die Referenz samt ihrer Lücken — auf ihr stehen die
-// Indizes. Der erste Zwilling (nur neun Sonderfälle von Hand) lag bei 110 Zeichen daneben;
-// das fiel erst dem Zeichen-Durchlauf auf, nicht dem Namenskorpus.
+// Indizes. Neun Sonderfälle von Hand reichen nicht: Sie liegen bei 110 Zeichen daneben;
+// das zeigt erst der Durchlauf über alle Zeichen, nicht ein Korpus von Namen.
 //
 // TestSuchnorm_ZeichenDurchlaufGoUndSQL prüft jedes Zeichen dieser Blöcke gegen die
 // Datenbank. Ändert ein Postgres-Upgrade die unaccent-Regeln, wird er rot, und die
@@ -72,8 +72,8 @@ func zerlegeRune(r rune) string {
 	return z
 }
 
-// unaccentTabelle: erzeugt am 05.09.2026 gegen PostgreSQL 18.6 (unaccent-Regeln der
-// Erweiterung) über U+00C0–U+024F und U+1E00–U+1EFF. Schlüssel ist das Zeichen NACH
+// unaccentTabelle: erzeugt gegen PostgreSQL 18.6 (unaccent-Regeln der
+// Erweiterung) über U+00C0–U+024F und U+1E00–U+1EFF. Schlüssel ist das Zeichen nach
 // strings.ToLower, Wert die Ausgabe von unaccent(lower(x)). Nur die Abweichungen von
 // der Zerlegung stehen hier; alles andere (ä, é, ç, ñ, ș …) ergibt sich aus ihr.
 var unaccentTabelle = map[rune]string{

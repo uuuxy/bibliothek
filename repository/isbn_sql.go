@@ -1,11 +1,11 @@
 package repository
 
-// SQLTitelTraegtISBN ist die Bedingung „der Titel trägt diese ISBN", in jeder Schreibweise
-// und in beiden Längen: Verglichen wird die Normalform (isbn_normalform, Migration 133 und
-// 157; in Go isbnutil.Normalform). wert ist der SQL-Ausdruck der gefragten Nummer.
+// SQLTitelTraegtISBN ist die Bedingung „der Titel trägt diese ISBN", in jeder Schreibweise und
+// in beiden Längen: Verglichen wird die Normalform (isbn_normalform; in Go
+// isbnutil.Normalform). wert ist der SQL-Ausdruck der gefragten Nummer.
 //
-// Auch die Spalte geht durch die Funktion: Eine Zeile, die Migration 140 oder 157 neben
-// einer Dublette stehen ließ, trägt ihre ISBN noch in der alten Schreibweise.
+// Auch die Spalte geht durch die Funktion: Eine Zeile, deren Normalform schon ein anderer Titel
+// trägt (eine Dublette), führt ihre ISBN noch in der alten Schreibweise.
 //
 // titelAlias ist der Alias der Titeltabelle in der umgebenden Abfrage, leer für keinen.
 func SQLTitelTraegtISBN(titelAlias, wert string) string {

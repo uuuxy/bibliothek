@@ -22,14 +22,13 @@ type ExemplarNeu struct {
 	EtikettGedruckt bool
 	// Einkaufspreis speichert den Netto-Anschaffungspreis des Exemplars.
 	Einkaufspreis float64
-	// Bestellstatus setzt neue Exemplare aus dem Bestellwesen in die Pipeline
-	// ('bestellt' oder 'im_zulauf'); leer = kein Bestellvorgang (NULL).
-	// Seit Migration 071 entscheidet NUR diese Spalte über die Sichtbarkeit
-	// im OPAC — die zustand_notiz ist reiner Menschentext.
+	// Bestellstatus setzt neue Exemplare aus dem Bestellwesen in den Bestellweg ('bestellt'
+	// oder 'im_zulauf'); leer heißt kein Bestellvorgang (NULL). Nur diese Spalte entscheidet
+	// über die Sichtbarkeit im OPAC, die zustand_notiz ist Text für Menschen.
 	Bestellstatus string
 	// BestellungID verweist auf die Bestellung, aus der das Exemplar entstanden ist.
 	// Leer bei Handanlage und Import — dann wird NULL geschrieben. Der Verweis trägt die
-	// Etikettenseite des Lieferanten-Links: Sie muss genau die Exemplare DIESER Lieferung
+	// Etikettenseite des Lieferanten-Links: Sie muss genau die Exemplare dieser Lieferung
 	// drucken, nicht alle Exemplare des Titels.
 	BestellungID string
 }
@@ -72,13 +71,13 @@ type Exemplar struct {
 	Medientyp string `json:"medientyp,omitempty"`
 	// Signatur speichert die Bibliothekssignatur.
 	Signatur string `json:"signatur,omitempty"`
-	// Mehrjahresband und JahrgangBis kommen vom Titel (Migration 134): Bleibt das Buch über
+	// Mehrjahresband und JahrgangBis kommen vom Titel: Bleibt das Buch über
 	// mehrere Schuljahre beim Kind, rechnet die Fristregel bis zum Stichtag des Schuljahres,
 	// in dem das Kind JahrgangBis beendet (internal/service/loan_rules.go).
 	Mehrjahresband bool `json:"mehrjahresband"`
 	JahrgangBis    int  `json:"jahrgang_bis"`
-	// IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel,
-	// Migration 093) — Schuljahresfrist statt Tage, zählt nicht ins Ausleihlimit.
+	// IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel). Es trägt
+	// die Frist des Schuljahres statt einer in Tagen und zählt nicht ins Ausleihlimit.
 	IstLernmittel bool `json:"ist_lernmittel"`
 	// ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften,omitempty"`

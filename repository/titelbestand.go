@@ -47,8 +47,8 @@ func (b TitelBestand) Merke(isbn, titel, id string) {
 }
 
 // LadeTitelBestand lädt den vorhandenen Titelbestand; beide Importe ordnen damit zu. Tragen
-// zwei Titel dieselbe ISBN in verschiedener Schreibweise (eine Dublette, die Migration 140
-// oder 157 stehen ließ), gilt der, der sie in der Normalform trägt.
+// zwei Titel dieselbe ISBN in verschiedener Schreibweise (eine Dublette), gilt der, der sie
+// in der Normalform trägt.
 func LadeTitelBestand(ctx context.Context, tx pgx.Tx) (TitelBestand, error) {
 	rows, err := tx.Query(ctx, "SELECT id, COALESCE(isbn, ''), titel FROM buecher_titel")
 	if err != nil {

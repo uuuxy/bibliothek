@@ -6,16 +6,16 @@ import (
 	"time"
 )
 
-// Die Barcodes der Theke (Stufe 2 des Offline-Baus, Commit 12): die Nummern ALLER Exemplare,
+// Die Barcodes der Theke: die Nummern aller Exemplare,
 // damit der Theken-Rechner ohne Netz eine nackte Ziffernfolge einordnen kann — Buch oder
 // Ausweis. Nur Nummern, keine Personendaten.
 //
-// Ausgesonderte gehören dazu (Rasterdurchgang 15.09.2026, OFFEN.md 5.15): Kommt ein verloren
+// Ausgesonderte gehören dazu: Kommt ein verloren
 // gemeldetes Buch offline zurück, holt das Nachbuchen es in den Umlauf. Fehlte seine Nummer,
 // gälte es an der Theke als unklar und sperrte die Zuordnung. barcode_id ist über alle
 // Exemplare eindeutig; eine Nummer bleibt eine Buchnummer, auch wenn das Buch abgeschrieben ist.
 //
-// Littera-Etiketten stehen NICHT als EAN-13 in der Liste, nur als Nummer: Der Rechner rechnet
+// Littera-Etiketten stehen nicht als EAN-13 in der Liste, nur als Nummer: Der Rechner rechnet
 // das Etikett selbst zurück (frontend/src/lib/litteraEtikett.js, gleiche Prüffälle wie der
 // Server) und schlägt die Nummer nach.
 
@@ -42,7 +42,7 @@ func LadeBuchbarcodeStand(ctx context.Context, q Datenbank) (BuchbarcodeStand, e
 
 // LadeBuchbarcodes liest die Barcodes aller Exemplare, aufsteigend.
 //
-// Bewusst OHNE LIMIT — anders als jede andere Listen-Abfrage (vgl. api/system/audit_limit_pg_test.go).
+// Bewusst ohne LIMIT — anders als jede andere Listen-Abfrage (vgl. api/system/audit_limit_pg_test.go).
 // Eine gekappte Liste wäre schlimmer als keine: Die fehlenden Bücher gälten offline als
 // „unklar", und niemand sähe, dass es an der Kappung liegt. Der Umfang ist durch den
 // Bestand begrenzt und wächst nicht von selbst weiter; der Aufrufer misst die ausgelieferte

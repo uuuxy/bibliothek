@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Der Standort eines Exemplars (docs/OFFEN.md 5.53, Migration 158): wo es steht, wenn nicht an
+// Der Standort eines Exemplars: wo es steht, wenn nicht an
 // seinem Platz nach der Signatur. Die Übernahme aus Littera schreibt ihn beim Anlegen
 // (internal/littera), jedes andere neue Exemplar erbt ihn von den Exemplaren seines Titels
 // (SQLGeerbterStandort); von Hand wird er geändert wie das Eigentum: Exemplare eines Titels

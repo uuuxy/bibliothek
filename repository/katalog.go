@@ -32,8 +32,8 @@ type KatalogAbfragen interface {
 
 	// AendereExemplarStatus ändert den Ausleih- und Aussonderungsstatus eines Exemplars.
 	//
-	// zustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars (Migration 127).
-	// nil heißt UNANGETASTET, nicht 0: Der Status-Editor schickt das Feld nur mit, wenn ein
+	// zustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars.
+	// nil heißt unangetastet, nicht 0: Der Status-Editor schickt das Feld nur mit, wenn ein
 	// Mensch es angefasst hat, und ein Statuswechsel darf einen erfassten Wasserschaden
 	// nicht stillschweigend auf 0 zurückstellen (Upsert-Blanking).
 	//

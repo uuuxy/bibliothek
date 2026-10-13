@@ -12,8 +12,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Schlagworte am Titel (Migration 138, docs/OFFEN.md 4.20) — frei eintragbar wie in
-// Littera, mit Vorschlägen aus dem Bestand. Diese Datei ist der EINE Schreibpfad: Das
+// Schlagworte am Titel — frei eintragbar wie in
+// Littera, mit Vorschlägen aus dem Bestand. Diese Datei ist der eine Schreibpfad: Das
 // Buchformular (PUT/POST /api/books) und der Bestellkorb
 // (PUT /api/buecher/titel/{id}/schlagworte) rufen beide SetzeSchlagworte, damit die
 // Regeln — Form, Grenzen, „vorhandene Schreibweise gewinnt" — an einer Stelle stehen.
@@ -23,21 +23,20 @@ const (
 	// sie, damit ein zu langes Wort als 400 mit Text ankommt statt als 500.
 	SchlagwortMaxZeichen = 80
 	// SchlagworteJeTitelMax begrenzt die Menge eines Titels. Littera kennt keine Grenze, und
-	// seine Daten brauchen mehr, als eine Hand-Eintragung je braucht: Im Katalogisat vom Juni
-	// 2026 tragen 132 Titel mehr als 30 Schlagworte, einer 282 („Pflanzen und Umwelt": Bäume,
-	// Algen, Pilze …; docs/OFFEN.md 4.20). Bis zum 30.09.2026 lag die Grenze bei 30 und hätte
-	// diese Wörter beim Einlesen verloren. Eine Grenze bleibt: Ohne sie wäre ein Fehler im
-	// Aufrufer (ein ganzer Text, am Komma zerlegt) eine Liste von Tausenden Wörtern.
+	// seine Daten brauchen mehr, als eine Eintragung von Hand je braucht: Im Katalogisat vom
+	// Juni 2026 tragen 132 Titel mehr als 30 Schlagworte, einer 282 („Pflanzen und Umwelt":
+	// Bäume, Algen, Pilze …). Eine Grenze bleibt: Ohne sie wäre ein Fehler im Rufer (ein ganzer
+	// Text, am Komma zerlegt) eine Liste von Tausenden Wörtern.
 	SchlagworteJeTitelMax = 300
 	// schlagwortVorschlaegeMax kappt die Vorschlagsliste, die das Feld beim Öffnen lädt. Die
 	// Häufigsten kommen zuerst; wer tippt, bekommt die Treffer über alle Wörter
 	// (schlagwortVorschlaegeSucheMax).
 	schlagwortVorschlaegeMax = 500
-	// schlagwortVorschlaegeSucheMax kappt die Treffer einer Suche beim Tippen. Bis zum
-	// 30.09.2026 gab es nur die 500 Häufigsten. Mit den Littera-Wörtern (Katalogisat vom Juni
-	// 2026: 13.224 Wörter) deckten sie 56 % der Zuordnungen ab; 12.724 Wörter wurden nie
-	// angeboten, 854 davon mit fünf und mehr Titeln. Wer „Pilz" tippte, sah das vorhandene
-	// „Pilze" nicht und legte ein zweites Wort an (Rasterdurchgang vom 30.09.2026).
+	// schlagwortVorschlaegeSucheMax kappt die Treffer einer Suche beim Tippen. Gesucht wird
+	// über alle Wörter: Von den Littera-Wörtern (Katalogisat vom Juni 2026: 13.224 Wörter)
+	// decken die 500 häufigsten 56 % der Zuordnungen ab; 12.724 Wörter würden sonst nie
+	// angeboten, 854 davon mit fünf und mehr Titeln. Wer „Pilz" tippt, sähe das vorhandene
+	// „Pilze" nicht und legte ein zweites Wort an.
 	schlagwortVorschlaegeSucheMax = 50
 )
 
@@ -90,7 +89,7 @@ type SchlagwortAufbereitung struct {
 }
 
 // SchlagworteAusFremddaten bringt die Schlagworte eines Titels aus einem Import (Littera:
-// Übernahme aus der Sicherung und Katalogisat, docs/OFFEN.md 4.20) in die Form, die
+// Übernahme aus der Sicherung und Katalogisat) in die Form, die
 // SetzeSchlagworte annimmt — Wort für Wort, damit ein einzelnes leeres oder zu langes Wort nicht
 // die ganze Liste kostet, wie es bei der Eingabe in der Maske richtig ist. Doppelte fallen ohne
 // Rücksicht auf Groß- und Kleinschreibung, das erste gewinnt; über SchlagworteJeTitelMax bleiben
@@ -127,7 +126,7 @@ func SchlagworteAusFremddaten(roh []string) ([]string, SchlagwortAufbereitung) {
 // mitgeschickt" von „leer", siehe inventur.BuchEingabe).
 //
 // Unbekannte Wörter werden angelegt. Ein Wort, das es in anderer Groß- und
-// Kleinschreibung schon gibt, wird NICHT neu angelegt: Wer „fantasy" tippt, bekommt das
+// Kleinschreibung schon gibt, wird nicht neu angelegt: Wer „fantasy" tippt, bekommt das
 // vorhandene „Fantasy". Sonst stünden nach einem Jahr drei Schreibweisen nebeneinander,
 // und die Suche fände jeweils nur einen Teil.
 //
@@ -168,7 +167,7 @@ func SetzeSchlagworte(ctx context.Context, q Datenbank, titelID string, roh []st
 	// kommt dazu. Zwei Anweisungen statt einer schreibenden CTE — ein INSERT in einer CTE
 	// ist für die übrige Anweisung unsichtbar, die neuen Wörter fehlten dann hier.
 	//
-	// Seit Migration 143 kann ein genanntes Wort ein Verweis sein („Tierfantasy" →
+	// Ein genanntes Wort kann ein Verweis sein („Tierfantasy" →
 	// „Fantasy"): Am Titel hängt dann sein Ziel. COALESCE(verweis_auf, id) ist die eine
 	// Stelle, an der das aufgelöst wird — in beiden Anweisungen gleich.
 	if _, err := tx.Exec(ctx, `

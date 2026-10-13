@@ -12,16 +12,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Auflagen eines Schulbuchs (Migration 148, docs/OFFEN.md 4.18). Eine neue Auflage ist ein
+// Auflagen eines Schulbuchs. Eine neue Auflage ist ein
 // eigener Titel mit eigener ISBN und bleibt es; zusammengefasst werden die Titel, die
 // dasselbe Buch sind, über eine gemeinsame werk_id. Gelesen wird über
 // COALESCE(werk_id, id) — ein Titel ohne Werk ist sein eigenes.
 //
-// Diese Datei ist der EINE Schreibpfad von werk_id und werke. Die Titelmaske, der
+// Diese Datei ist der eine Schreibpfad von werk_id und werke. Die Titelmaske, der
 // Bestellkorb und die beiden Löschwege eines Titels rufen dieselben Funktionen, damit die
 // Regeln an einer Stelle stehen:
 //
-//   - nur Lernmittel (docs/OFFEN.md 4.18: „Es geht ausdrücklich NUR um Schulbücher");
+//   - nur Lernmittel;
 //   - zwei Gruppen werden eine, wenn zwei ihrer Titel zusammengefasst werden;
 //   - ein Werk, an dem weniger als zwei Titel hängen, fällt samt dem letzten Verweis.
 
@@ -285,14 +285,13 @@ func raeumeWerkAuf(ctx context.Context, tx pgx.Tx, werkID string) error {
 }
 
 // LadeWerkeDerTitel nimmt die Sperre der Auflagen und liefert die Werke, zu denen die genannten
-// Titel gehören. Für die Löschwege eines Titels (LoescheTitel, inventur.DeleteBooks): Sie rufen
-// das als ERSTES in ihrer Transaktion auf — erst die Sperre, dann die Zeilen, dieselbe
-// Reihenfolge wie Zusammenfassen und Lösen (sperreAuflagen); umgekehrt warteten zwei
-// Transaktionen aufeinander. Nach dem Löschen räumt RaeumeWerkeAuf auf.
+// Titel gehören. Die Löschwege eines Titels (LoescheTitel, inventur.DeleteBooks) rufen das als
+// Erstes in ihrer Transaktion auf: erst die Sperre, dann die Zeilen, dieselbe Reihenfolge wie
+// Zusammenfassen und Lösen (sperreAuflagen); umgekehrt warteten zwei Transaktionen aufeinander.
 //
-// Rasterdurchgang 25.09.2026 (docs/OFFEN.md 4.18, Frage 1 und 12): Die Regel „ein Werk mit
-// weniger als zwei Titeln fällt" stand nur im Lösen. Wurde einer von zwei Titeln gelöscht,
-// blieb der andere allein an seinem Werk; wurden beide gelöscht, blieb das Werk ohne Titel.
+// Nach dem Löschen räumt RaeumeWerkeAuf auf: Die Regel „ein Werk mit weniger als zwei Titeln
+// fällt" gilt auch beim Löschen. Sonst bliebe nach einem von zwei Titeln der andere allein an
+// seinem Werk, nach beiden das Werk ohne Titel.
 func LadeWerkeDerTitel(ctx context.Context, tx pgx.Tx, titelIDs []string) ([]string, error) {
 	if err := nimmAuflagenSperre(ctx, tx); err != nil {
 		return nil, err

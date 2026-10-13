@@ -8,12 +8,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Gemischte Auflagen in einer Klasse (docs/OFFEN.md 4.18, Stufe 5). Entschieden am 17.09.2026:
-// „Die Ausgabe warnt, wenn eine Klasse gemischte Auflagen bekommt. Still darf das nicht
-// passieren: verschiedene Auflagen heißen verschiedene Seitenzahlen." Am 25.09.2026: als
+// Gemischte Auflagen in einer Klasse: Die Ausgabe warnt, wenn eine Klasse gemischte Auflagen
+// bekommt, denn verschiedene Auflagen heißen verschiedene Seitenzahlen. Die Warnung ist eine
 // Hinweiszeile an der Theke wie bei der Fremdrückgabe, kein Dialog.
 //
-// Die Frage ist nur lesend und hängt an einer Ausleihe, die schon gebucht ist: Welche ANDEREN
+// Die Frage ist nur lesend und hängt an einer Ausleihe, die schon gebucht ist: Welche anderen
 // Auflagen desselben Buchs haben Kinder aus derselben Klasse gerade? „Dieselbe Klasse" wie in
 // der Klassensatz-Übersicht (GetClassGroups): klassen_normkey über die Sicht schueler, nur
 // aktive Kinder.

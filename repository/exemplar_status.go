@@ -27,26 +27,24 @@ func (a *pgKatalogAbfragen) SetzeExemplarBarcode(ctx context.Context, id string,
 	return nil
 }
 
-// AendereExemplarStatus ändert den Verleihstatus und Zustand eines Exemplars.
+// AendereExemplarStatus ändert den Verleihstatus und den Zustand eines Exemplars.
 //
-// aussonderung_grund muss hier mitgeführt werden (chk_aussonderung_grund, Migration
-// 043): ausgesondert verlangt genau einen Grund, im Umlauf verlangt NULL. Der einzige
-// Aufrufer ist der Status-Editor, und dort setzt genau EIN Zustand aus — "Verloren".
-// Deshalb ist VERLUST der fachliche Default (Betreiber-Entscheidung 19.08.2026): "Verloren"
-// in der Oberfläche muss in der Verlustquote zählen (statistik.go: VERLUST/BESCHAEDIGUNG),
-// nicht als AUSSORTIERT verschwinden. Ein bereits gesetzter, spezifischerer Grund — etwa
-// BESCHAEDIGUNG aus der Schadensmeldung — bleibt via COALESCE beim blossen Bearbeiten der
-// Notiz erhalten. Beim Reaktivieren wird der Grund gelöscht, sonst lehnt der CHECK ab.
-// Guard seit 31.08.2026: „Ausgesondert" hatte DREI Türen, aber nur das Ausbuchen
-// (ProtokollAbfragen.SondereExemplarAus) prüfte die offene Ausleihe. Über die beiden anderen ließ sich
-// ein Buch aussondern, das ein Schüler gerade in der Tasche hatte — es verschwand aus
-// Katalog, Kiosk und Inventur, während der Schüler in der Mahnstrecke blieb (Bugklasse
-// „Zwei Türen zum selben Zustand"). Unbekannte IDs waren zudem stille „Erfolge"
-// (RowsAffected prüfte niemand).
+// aussonderung_grund wird mitgeführt (chk_aussonderung_grund): Ausgesondert verlangt genau
+// einen Grund, im Umlauf verlangt NULL. Der einzige Rufer ist der Status-Editor, und dort
+// sondert genau ein Zustand aus, „Verloren". Deshalb ist VERLUST die Vorgabe: „Verloren" in der
+// Oberfläche zählt in der Verlustquote (statistik.go: VERLUST/BESCHAEDIGUNG) und verschwindet
+// nicht als AUSSORTIERT. Ein schon gesetzter, genauerer Grund, etwa BESCHAEDIGUNG aus der
+// Schadensmeldung, bleibt über COALESCE erhalten, wenn nur die Notiz bearbeitet wird. Beim
+// Reaktivieren wird der Grund gelöscht, sonst lehnt der CHECK ab.
 //
-// Der Beschädigungsgrad (Migration 127) reist mit, weil er im selben Dialog steht — aber
-// nur, wenn er mitgeschickt wird: COALESCE($5, alter Wert). Ohne das wäre jeder
-// Statuswechsel eine stille 0, und der Ersatzbetrag stiege wieder auf den vollen Zeitwert.
+// Ein verliehenes Exemplar lässt sich nicht aussondern, wie beim Ausbuchen
+// (ProtokollAbfragen.SondereExemplarAus): Es verschwände aus Katalog, Kiosk und Inventur,
+// während der Schüler in der Mahnstrecke bliebe. Eine unbekannte Kennung ist ein Fehler, kein
+// stiller Erfolg.
+//
+// Der Beschädigungsgrad reist mit, weil er im selben Dialog steht, aber nur, wenn er
+// mitgeschickt wird: COALESCE($5, alter Wert). Ohne das wäre jeder Statuswechsel eine stille 0,
+// und der Ersatzbetrag stiege wieder auf den vollen Zeitwert.
 //
 // Wird ein Exemplar dabei ausgesondert, steht es mit der Person im Protokoll
 // (ProtokolliereAussonderung), in derselben Transaktion wie der Wechsel. Wer ein schon
@@ -122,7 +120,7 @@ func (a *pgKatalogAbfragen) IstExemplarImBestand(ctx context.Context, id string)
 	return imBestand, err
 }
 
-// deuteAussonderungsHindernis unterscheidet, WARUM der Aussonderungs-Guard nichts traf:
+// deuteAussonderungsHindernis unterscheidet, warum der Aussonderungs-Guard nichts traf:
 // verliehen (400 mit Auskunft) oder unbekannt (404) — statt eines stillen „Erfolgs".
 func deuteAussonderungsHindernis(ctx context.Context, q Datenbank, id string) error {
 	var verliehen bool

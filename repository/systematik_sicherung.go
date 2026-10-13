@@ -11,26 +11,26 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// fachSchreiber ist der minimale Datenbankzugriff der Fach-Registrierung. Pool
-// (db.PgxPoolIface) und pgx.Tx erfüllen ihn beide — die Importe registrieren
-// innerhalb ihrer Transaktion. Seit dem 02.09.2026 liegt die Funktion hier statt im
-// inventur-Paket, damit auch der Katalogisat-Import (repository.SchreibeTitel)
-// und der Access-Altbestand (internal/littera) sie ohne Import-Zyklus erreichen.
+// fachSchreiber ist der kleinste Datenbankzugriff der Fach-Registrierung. Pool
+// (db.PgxPoolIface) und pgx.Tx erfüllen ihn beide: Die Importe registrieren innerhalb ihrer
+// Transaktion. Die Funktion liegt hier und nicht im Paket inventur, damit auch der
+// Katalogisat-Import (SchreibeTitel) und der Access-Altbestand (internal/littera) sie ohne
+// Import-Zyklus erreichen.
 type fachSchreiber interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
-// StelleFaecherSicher registriert unbekannte Fächer in systematik_kategorien, BEVOR
-// ein Schreibpfad sie in buecher_titel.subject einträgt — subject ist seit Migration
-// 078 ein Fremdschlüssel auf systematik_kategorien(bezeichnung). Die Lehre aus
-// Migration 021→060: Ein FK, den die Importe nicht bedienen, lässt jeden Import mit
-// neuem Fach scheitern — und wird beim nächsten Aufräumen wieder abgerissen.
+// StelleFaecherSicher registriert unbekannte Fächer in systematik_kategorien, bevor ein
+// Schreibpfad sie in buecher_titel.subject einträgt: subject ist ein Fremdschlüssel auf
+// systematik_kategorien(bezeichnung). Ein Fremdschlüssel, den die Importe nicht bedienen, lässt
+// jeden Import mit neuem Fach scheitern.
 //
-// Liefert je ROH-Eingabe die kanonische Schreibweise; eine bestehende Registrierung
-// gewinnt case-insensitiv. Der Aufrufer schreibt den GELIEFERTEN Wert, nicht seinen
-// rohen — "deutsch" neben "Deutsch" scheiterte sonst am FK. Leere Eingaben fehlen in
-// der Karte und liefern beim Zugriff "", das die Schreibpfade per NULLIF zu NULL machen.
+// Liefert je roher Eingabe die Schreibweise der Systematik; eine bestehende Registrierung
+// gewinnt ohne Rücksicht auf Groß- und Kleinschreibung. Der Rufer schreibt den gelieferten
+// Wert, nicht seinen rohen: "deutsch" neben "Deutsch" scheiterte sonst am Fremdschlüssel. Leere
+// Eingaben fehlen in der Karte und liefern beim Zugriff "", das die Schreibpfade per NULLIF zu
+// NULL machen.
 func StelleFaecherSicher(ctx context.Context, db fachSchreiber, faecher []string) (map[string]string, error) {
 	kanonisch := make(map[string]string, len(faecher))
 	for _, roh := range faecher {

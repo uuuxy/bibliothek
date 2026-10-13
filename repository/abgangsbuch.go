@@ -7,15 +7,12 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
-// Das Abgangsbuch: welche Exemplare in einem Zeitraum aus dem Bestand gegangen sind.
+// Das Abgangsbuch: welche Exemplare in einem Zeitraum aus dem Bestand gegangen sind. Die Schule
+// druckt den Nachweis zum Stichtag aus und heftet ihn ab.
 //
-// Protokoll des Medienzentrums vom 16.09.2026, Punkt 1 („Zugangs- und Abgangsbuch
-// fehlen"). Das Datum dazu steht seit Migration 128 am Exemplar; hier ist der Nachweis,
-// den die Schule zum Stichtag ausdruckt und abheftet.
-//
-// Getrennt nach Topf, weil die Finanzen getrennt geführt werden: Lernmittel gehören dem
-// Land, der Bücherei-Bestand dem Schulträger (docs/mittel_konzept.md 1.1/1.2). Ein
-// Nachweis, der beides mischt, muss von Hand sortiert werden, bevor er irgendwo hingeht.
+// Getrennt nach Topf, weil die Finanzen getrennt geführt werden: Lernmittel gehören dem Land,
+// der Bücherei-Bestand dem Schulträger (docs/mittel_konzept.md 1.1/1.2). Ein Nachweis, der
+// beides mischt, muss von Hand sortiert werden, bevor er irgendwo hingeht.
 
 // AbgangsZeile ist ein Abgang, wie er im Buch steht.
 type AbgangsZeile struct {
@@ -28,11 +25,11 @@ type AbgangsZeile struct {
 	// Bildschirm dieselben vier Wörter benutzen — zwei Übersetzungen desselben
 	// Schlüssels laufen auseinander, sobald einer davon geändert wird.
 	GrundText string `json:"grund_text"`
-	// Topf: 'land' oder 'schultraeger' — dasselbe Vokabular wie bei Bestellung und Bescheid
-	// (Migrationen 109/110) und dieselbe Regel wie am Etikett (repository.ExemplarTopfSQL):
-	// Eigentum am Exemplar, sonst Topf der Bestellung, sonst der Titel. Bis zum 29.09.2026
-	// entschied hier allein der Titel; ein Buch, das der Schulträger bezahlt hatte, ging dann
-	// als Abgang des Landes ab, obwohl sein Etikett den Schulträger nannte.
+	// Topf ist 'land' oder 'schultraeger', dasselbe Vokabular wie bei Bestellung und Bescheid
+	// und dieselbe Regel wie am Etikett (ExemplarTopfSQL): Eigentum am Exemplar, sonst Topf der
+	// Bestellung, sonst der Titel. Entschiede allein der Titel, ginge ein Buch, das der
+	// Schulträger bezahlt hat, als Abgang des Landes ab, obwohl sein Etikett den Schulträger
+	// nennt.
 	Topf string `json:"topf"`
 }
 
@@ -49,57 +46,54 @@ func abgangsgrundText(grund string) string {
 	case "BESTANDSKORREKTUR":
 		return "Bestandskorrektur"
 	case "":
-		// Kommt nur bei Altdaten vor: chk_aussonderung_grund verlangt seit Migration 043
-		// einen Grund. Ein leeres Feld im Nachweis sähe nach Druckfehler aus.
+		// Kommt nur bei Altdaten vor: chk_aussonderung_grund verlangt einen Grund. Ein leeres
+		// Feld im Nachweis sähe nach Druckfehler aus.
 		return "ohne Angabe"
 	default:
 		return grund
 	}
 }
 
-// Abgangsbuch bündelt Zeitraum, Zeilen und die beiden Zahlen, die sagen, was NICHT in der
-// Liste steht.
+// Abgangsbuch bündelt Zeitraum, Zeilen und die beiden Zahlen, die sagen, was nicht in der Liste
+// steht.
 //
-// OhneZeitpunkt ist kein Schönheitsfehler, sondern die wichtigste Zahl auf dem Blatt: Was
-// vor Migration 128 ausgesondert wurde, hat kein Abgangsdatum und kann keinem Zeitraum
-// zugeordnet werden. Diese Exemplare stehen in KEINER Halbjahresliste. Wer die Zahl nicht
-// hinschreibt, behauptet Vollständigkeit, die es nicht gibt.
+// OhneZeitpunkt ist die wichtigste Zahl auf dem Blatt: Ein Exemplar aus dem Altbestand, das
+// ohne Abgangsdatum ausgesondert ist, lässt sich keinem Zeitraum zuordnen und steht in keiner
+// Halbjahresliste. Wer die Zahl nicht hinschreibt, behauptet Vollständigkeit, die es nicht
+// gibt.
 type Abgangsbuch struct {
 	Von           time.Time      `json:"von"`
 	Bis           time.Time      `json:"bis"`
 	Zeilen        []AbgangsZeile `json:"zeilen"`
 	OhneZeitpunkt int            `json:"ohne_zeitpunkt"`
-	// AusKatalogGeloescht ist die zweite Lücke dieses Nachweises, gefunden im
-	// Rasterdurchgang vom 17.09.2026 (Frage 12) und an der Datenbank nachgestellt: Drei
-	// Türen entfernen ein Exemplar KÖRPERLICH statt es auszusondern — Titel löschen
-	// (einzeln und als Massenaktion) und „Verlust endgültig löschen" in der Inventur.
-	// Danach steht die Zeile in keiner Abfrage über `buecher_exemplare` mehr, auch nicht
-	// in diesem Buch: Ein Exemplar, das gestern noch mit Abgangsdatum hier stand,
-	// verschwindet mit seinem Titel rückwirkend aus einem Halbjahr, das vielleicht schon
-	// unterschrieben ist.
+	// AusKatalogGeloescht ist die zweite Lücke dieses Nachweises: Drei Türen entfernen ein
+	// Exemplar körperlich, statt es auszusondern, nämlich Titel löschen (einzeln und als
+	// Massenaktion) und „Verlust endgültig löschen" in der Inventur. Danach steht die Zeile in
+	// keiner Abfrage über `buecher_exemplare` mehr, auch nicht in diesem Buch: Ein Exemplar,
+	// das mit Abgangsdatum hier stand, verschwindet mit seinem Titel rückwirkend aus einem
+	// Halbjahr, das vielleicht schon unterschrieben ist.
 	//
-	// Gezählt wird, was das Protokoll hergibt — mehr nicht. Titel, Signatur und
-	// Abgangsgrund sind mit dem Exemplar gegangen; sie hier aus dem Protokolltext zu
-	// rekonstruieren hieße, einen Nachweis aus Bruchstücken zu bauen. Die Zahl mit dem
-	// Verweis aufs Protokoll ist die ehrliche Auskunft, die fehlende Zeile ist es nicht.
+	// Gezählt wird, was das Protokoll hergibt. Titel, Signatur und Abgangsgrund sind mit dem
+	// Exemplar gegangen; sie aus dem Protokolltext zu rekonstruieren hieße, einen Nachweis aus
+	// Bruchstücken zu bauen.
 	AusKatalogGeloescht int `json:"aus_katalog_geloescht"`
 }
 
-// SQLWarImBestand sagt, ob ein Exemplar je im Bestand war: Es trägt ein Zugangsdatum
-// (Migration 129). Die Löschspuren vermerken dasselbe (ProtokollDetailWarImBestand).
+// SQLWarImBestand sagt, ob ein Exemplar je im Bestand war: Es trägt ein Zugangsdatum.
+// Die Löschspuren vermerken dasselbe (ProtokollDetailWarImBestand).
 const SQLWarImBestand = `e.zugang_am IS NOT NULL`
 
 // sqlIstAbgang ist die Grenze beider Abfragen und der Verlustzahlen der Statistik:
 // ausgesondert und vorher im Bestand gewesen.
 // Ein bestelltes Exemplar, das nie eintraf und ausgebucht wurde, trägt kein Zugangsdatum
-// (Migration 129) und steht damit in keinem der beiden Bücher.
+// und steht damit in keinem der beiden Bücher.
 const sqlIstAbgang = `e.ist_ausgesondert = true AND ` + SQLWarImBestand
 
 // LadeAbgangsbuch liest die Abgänge eines Zeitraums. `von` und `bis` sind Kalendertage der
-// Schule, beide EINSCHLIESSLICH — der 15.9. gehört noch in das Halbjahr, das an ihm endet.
+// Schule, beide einschließlich — der 15.9. gehört noch in das Halbjahr, das an ihm endet.
 //
 // Verglichen wird auf Zeitpunkten statt auf `(ausgesondert_am AT TIME ZONE …)::date`: Der
-// Ausdruck um die Spalte herum macht den Teilindex aus Migration 128 unbrauchbar. Die
+// Ausdruck um die Spalte herum macht den Teilindex unbrauchbar. Die
 // Grenzen entstehen deshalb hier, in der Zeitzone der Schule — die Datenbanksitzung läuft
 // in UTC, und zwischen Mitternacht in Berlin und Mitternacht UTC läge ein Abgang sonst im
 // falschen Halbjahr.
@@ -148,8 +142,8 @@ func LadeAbgangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Abga
 	}
 
 	// Die körperlich gelöschten Exemplare des Zeitraums — die einzige Spur, die von ihnen
-	// bleibt. Gezählt wird am Zeitpunkt der LÖSCHUNG, und das ist hier auch der richtige
-	// Zeitpunkt: Für ein Exemplar, das aus der Tabelle verschwindet, IST die Löschung der
+	// bleibt. Gezählt wird am Zeitpunkt der Löschung, und das ist hier auch der richtige
+	// Zeitpunkt: Für ein Exemplar, das aus der Tabelle verschwindet, ist die Löschung der
 	// Abgang. Ein Ausbuchen davor stünde ohnehin schon in der Liste oben.
 	if err := q.QueryRow(ctx, `
 		SELECT count(*) FROM audit_log

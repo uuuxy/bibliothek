@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Suche über Schlagworte (docs/OFFEN.md 4.20, freigegeben am 23.09.2026): Katalog und
+// Suche über Schlagworte: Katalog und
 // Portal finden einen Titel auch über seine Schlagworte und über die Verweise darauf. Wer
 // „Tierfantasy" sucht, findet die Titel mit „Fantasy", sobald „Tierfantasy" ein Verweis auf
 // „Fantasy" ist.
@@ -20,7 +20,7 @@ import (
 // Ein Schlagwort steht für sich, ein Verweis für sein Ziel.
 
 // sqlWortZumTitel verbindet jedes Wort — Schlagwort oder Verweis — mit den Titeln, die sein
-// Ziel tragen. Ein Titel hängt nie an einem Verweis (Migration 143); jede Zeile von
+// Ziel tragen. Ein Titel hängt nie an einem Verweis; jede Zeile von
 // titel_schlagworte trifft deshalb das Wort selbst und jeden Verweis darauf genau einmal.
 const sqlWortZumTitel = `schlagworte sw
 		JOIN titel_schlagworte tsw ON tsw.schlagwort_id = coalesce(sw.verweis_auf, sw.id)`

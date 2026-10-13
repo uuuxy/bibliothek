@@ -7,21 +7,18 @@ import (
 
 // Vergabe der Exemplarnummern (Präfix "B-").
 //
-// EINE Quelle für alle Wege — Bestellwesen, Handvergabe in der Exemplarkarte,
-// Littera-Import: die Postgres-Sequenz barcode_seq. Sie zählt streng aufwärts und sieht
-// die Tabelle nie an. Eine einmal vergebene Nummer kann deshalb auch dann nicht
-// zurückkehren, wenn ihr Exemplar hart gelöscht wird (Titel löschen, Massenlöschung in
-// der Bestandsverwaltung, „endgültig löschen" im Fehlbestand). Genau das ist gewollt:
-// Die Nummer klebt physisch am Buch, und ein Etikett mit recycelter Nummer bucht auf
-// das falsche Exemplar.
+// Eine Quelle für alle Wege (Bestellwesen, Handvergabe in der Exemplarkarte, Littera-Import):
+// die Postgres-Sequenz barcode_seq. Sie zählt streng aufwärts und sieht die Tabelle nie an.
+// Eine einmal vergebene Nummer kehrt deshalb auch dann nicht zurück, wenn ihr Exemplar hart
+// gelöscht wird (Titel löschen, Massenlöschung in der Bestandsverwaltung, „endgültig löschen"
+// im Fehlbestand). Das ist gewollt: Die Nummer klebt am Buch, und ein Etikett mit einer
+// wiederverwendeten Nummer bucht auf das falsche Exemplar.
 //
-// Vorher gab es hier eine zweite Vergabestelle: Der Knopf „Interne ID generieren"
-// rechnete MAX(Nummer)+1 aus dem Bestand (SequenceRepository.GetNextSequence). Beide
-// Stellen lieferten dieselbe nächste Nummer, aber nur die Sequenz zählte weiter — die
-// von Hand vergebene Nummer kam bei der nächsten Bestellung erneut und lief in den
-// UNIQUE-Constraint. Weil die Exemplare einer Bestellung in EINER Transaktion per
-// CopyFrom entstehen, kostete das nicht die Position, sondern die ganze Bestellung.
-// Der Ausweis-Generator (seit Migration 136 ausweis_nummer_start in der Datenbank) bedient
+// Eine zweite Vergabestelle, die MAX(Nummer)+1 aus dem Bestand rechnet, darf es nicht geben:
+// Beide lieferten dieselbe nächste Nummer, aber nur die Sequenz zählte weiter. Die von Hand
+// vergebene Nummer käme bei der nächsten Bestellung erneut und liefe in den UNIQUE-Constraint;
+// weil die Exemplare einer Bestellung in einer Transaktion per CopyFrom entstehen, kostete das
+// die ganze Bestellung. Der Ausweis-Generator (ausweis_nummer_start in der Datenbank) bedient
 // nur die Ausweisnummern („A-").
 
 // barcodeZiehVersuche begrenzt die Nachzieh-Runden. Nach dem Heben der Sequenz über den

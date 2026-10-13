@@ -12,24 +12,21 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// Pflege der Schlagworte (Migration 143, docs/OFFEN.md 4.20 Stufe 1): umbenennen,
-// zusammenführen, löschen, Verweise und die Filter-Markierung. Das ist die zweite
-// Schreib-Tür der Tabelle schlagworte neben SetzeSchlagworte (am Titel); beide halten
-// dieselben Regeln, die Migration 143 zusätzlich in der Datenbank festschreibt: kein
-// Verweis auf sich selbst, keine Kette, kein Titel an einem Verweis, kein Verweis als Filter.
+// Pflege der Schlagworte: umbenennen, zusammenführen, löschen, Verweise und die
+// Filter-Markierung. Das ist die zweite Schreib-Tür der Tabelle schlagworte neben
+// SetzeSchlagworte (am Titel); beide halten dieselben Regeln, die die Datenbank zusätzlich
+// festschreibt: kein Verweis auf sich selbst, keine Kette, kein Titel an einem Verweis, kein
+// Verweis als Filter.
 
 // schlagwortPflegeTrefferMax kappt die Zeilen einer Antwort; die Antwort sagt, wie viele zur
-// Suche passen. Gesucht wird am Server über alle Wörter. Bis zum 30.09.2026 lieferte die Tür
-// die ersten 5.000 in alphabetischer Folge, und die Seite suchte im Browser nur darunter —
-// in der Annahme „eine Schülerbücherei hat Hunderte Schlagworte, nicht Zehntausende". Das
-// Katalogisat aus Littera vom Juni 2026 trägt 13.207 verschiedene (docs/OFFEN.md 4.20); zwei
-// Drittel davon wären auf der Pflegeseite weder zu finden noch als Filter zu markieren
-// gewesen. Dasselbe Muster wie die Serversuche der Leserdatei (schuelerSuche.svelte.js).
+// Suche passen. Gesucht wird am Server über alle Wörter: Das Katalogisat aus Littera vom Juni
+// 2026 trägt 13.207 verschiedene, und eine Liste, die nur die ersten Tausend ausliefert und im
+// Browser durchsucht, zeigte die meisten davon nie. Dasselbe Muster wie die Serversuche der
+// Leserdatei (schuelerSuche.svelte.js).
 const schlagwortPflegeTrefferMax = 200
 
-// schlagworteLoeschenMax begrenzt, wie viele Wörter ein Löschauftrag nennen darf. Bis zum
-// 30.09.2026 war das die Kappung der Pflegeliste; die Zahl bleibt, die Anzeige hat jetzt
-// ihre eigene Grenze.
+// schlagworteLoeschenMax begrenzt, wie viele Wörter ein Löschauftrag nennen darf. Die Anzeige
+// hat ihre eigene Grenze (schlagwortPflegeTrefferMax).
 const schlagworteLoeschenMax = 5000
 
 var (
@@ -72,7 +69,7 @@ type SchlagwortPflegeListe struct {
 
 // sqlPflegeSuchePasst ist die Bedingung der Pflegesuche ($1 = Suchtext, leer = alle): Das
 // Wort oder ein Verweis darauf enthält den Text, ohne Rücksicht auf Groß- und
-// Kleinschreibung — wie bisher im Browser. Verglichen wird über lower() wie im eindeutigen
+// Kleinschreibung. Verglichen wird über lower() wie im eindeutigen
 // Index der Wörter, nicht über LIKE; so braucht der Suchtext keine maskierten Joker.
 const sqlPflegeSuchePasst = `($1 = ''
 	OR strpos(lower(s.wort), lower($1)) > 0
@@ -149,7 +146,7 @@ func einWort(roh string) (string, error) {
 	return woerter[0], nil
 }
 
-// regelFehler übersetzt eine Ausnahme der Trigger aus Migration 143 in ErrSchlagwortRegel.
+// regelFehler übersetzt eine Ausnahme der Trigger in ErrSchlagwortRegel.
 // Die Tür prüft dieselben Regeln vorher; die Datenbank ist der Rückhalt, etwa wenn zwei
 // Pflegende gleichzeitig arbeiten.
 func regelFehler(err error, was string) error {
@@ -164,15 +161,15 @@ func regelFehler(err error, was string) error {
 
 // BenenneSchlagwortUm gibt einem Wort eine neue Schreibweise; alle Titel tragen danach die
 // neue. Gibt es das neue Wort schon (ohne Rücksicht auf Groß- und Kleinschreibung) als
-// ANDERES Schlagwort, ist das ein Zusammenführen und wird abgelehnt (ErrSchlagwortGibtEs) —
+// anderes Schlagwort, ist das ein Zusammenführen und wird abgelehnt (ErrSchlagwortGibtEs) —
 // die Pflegeseite fragt dann nach. Nur die Schreibweise zu ändern („fantasy" → „Fantasy")
 // geht. Ist die neue Schreibweise ein Verweis auf eben dieses Wort, tauschen die beiden:
 // „Krimi" mit dem Verweis „Kriminalroman" wird „Kriminalroman", der Verweis geht im Wort
-// auf. Vorher lehnte die Tür das ab und riet zum Zusammenführen — das scheitert an einem
+// auf. Zusammenführen ginge hier nicht: Es scheitert an einem
 // eigenen Verweis („nicht mit sich selbst").
 //
 // alteAlsVerweis lässt die alte Schreibweise als Verweis auf das Wort stehen, wie beim
-// Zusammenführen (entschieden am 23.09.2026, docs/OFFEN.md 4.20). Das hält eine Maske
+// Zusammenführen. Das hält eine Maske
 // richtig, die beim Umbenennen offen war: Buchformular und Bestellkorb schicken beim
 // Speichern die Menge zurück, die sie beim Öffnen gelesen haben, und die alte Schreibweise
 // löst sich dann zum Wort auf. Ohne Verweis — so macht es Littera — legt ein solches
@@ -380,7 +377,7 @@ type SchlagwortLoeschung struct {
 // LoescheSchlagworte löscht die gewählten Wörter in einer Transaktion — alle oder keins; die
 // Titel verlieren sie, die Verweise darauf fallen mit (ON DELETE CASCADE). Mehrere auf einmal
 // wie in Littera („Datenbearbeitung", Markieren und Löschen), für das Aufräumen nach dem
-// Einlesen der Littera-Schlagworte (docs/OFFEN.md 4.20). Ein einzelnes Wort ist eine Liste mit
+// Einlesen der Littera-Schlagworte. Ein einzelnes Wort ist eine Liste mit
 // einem Eintrag: eine Tür, eine Regel. Gibt es eine Kennung nicht (mehr), löscht die Tür
 // nichts (ErrSchlagwortNichtGefunden) — die Pflegeseite lädt dann den neuen Stand.
 func LoescheSchlagworte(ctx context.Context, q Datenbank, ids []string) (SchlagwortLoeschung, error) {
@@ -397,9 +394,9 @@ func LoescheSchlagworte(ctx context.Context, q Datenbank, ids []string) (Schlagw
 	}
 	defer db.SafeRollback(ctx, tx)
 	// Wie viele verschiedene Wörter gewählt sind, zählt die Datenbank: Sie liest „7C9E…" und
-	// „7c9e…" als dieselbe Kennung, die Tür nimmt beide Schreibweisen an. Entdoppelt wurde
-	// bis zum 23.09.2026 der Text in Go — zwei Schreibweisen zählten als zwei Wörter, die
-	// Sperre fand eine Zeile, und die Tür meldete 404, obwohl alles da war.
+	// „7c9e…" als dieselbe Kennung, die Tür nimmt beide Schreibweisen an. Entdoppelte Go den
+	// Text, zählten zwei Schreibweisen als zwei Wörter, die Sperre fände eine Zeile, und die
+	// Tür meldete 404, obwohl alles da ist.
 	var gewaehlt, gesperrt int
 	if err := tx.QueryRow(ctx, `SELECT count(DISTINCT k)::int FROM unnest($1::uuid[]) k`, ids).
 		Scan(&gewaehlt); err != nil {

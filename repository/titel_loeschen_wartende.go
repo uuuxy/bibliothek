@@ -1,13 +1,11 @@
 package repository
 
-// titel_loeschen_wartende.go — wer auf einen Titel wartet, wenn er gelöscht wird.
+// Wer auf einen Titel wartet, wenn er gelöscht wird.
 //
-// Frage 12 „Gegenrichtung Schema" (06.09.2026): Die DDL sagt mehr als der Code. An
-// `buecher_titel` hängen VIER Kinder mit ON DELETE CASCADE — Exemplare, `class_books`,
-// `klassensatz_reservierungen` und `vormerkungen`. Der Löschpfad kannte davon nur die
-// Exemplare (und über RESTRICT indirekt Ausleihen und Forderungen, die er seit dem
-// 23.08. bzw. dem Rasterdurchgang desselben Tages protokolliert). Die beiden
-// Warteschlangen fielen lautlos.
+// An `buecher_titel` hängen vier Kinder mit ON DELETE CASCADE: Exemplare, `class_books`,
+// `klassensatz_reservierungen` und `vormerkungen`. Die Exemplare führt der Löschpfad selbst,
+// Ausleihen und Forderungen hält RESTRICT; die beiden Warteschlangen und die Zuordnung zu
+// Klassensätzen fielen ohne diese Datei lautlos.
 //
 // Dahinter stehen Menschen, die etwas getan haben und darauf warten:
 //
@@ -19,16 +17,14 @@ package repository
 //   - `class_books` ist die von Hand gepflegte Zuordnung eines Titels zu Klassensätzen.
 //     Der Satz schrumpft, ohne dass irgendwo steht, warum.
 //
-// Dieselbe Antwort wie bei den offenen Ausleihen und Forderungen: Was verschwindet,
-// steht vorher im Protokoll. Ein spurlos verschwundener Wartender ist ein verlorener
-// Wartender.
+// Dieselbe Antwort wie bei den offenen Ausleihen und Forderungen: Was verschwindet, steht davor
+// im Protokoll.
 //
-// Warum hier und nicht im inventur-Paket: Es gibt ZWEI Türen zum Titel-Löschen — die
-// Massenaktion der Bestandstabelle (DELETE /api/books, inventur/db_books_delete.go) und
-// der Knopf der Buch-Akte (DELETE /api/buecher/titel/{id}, repository/titel_loeschen.go).
-// Beide fahren über denselben CASCADE. Zwei Fassungen derselben Regel wären genau die
-// Bugklasse, gegen die Frage 3 gebaut ist; `inventur` importiert `repository`, also
-// steht sie hier.
+// Warum hier und nicht im Paket inventur: Es gibt zwei Türen zum Löschen eines Titels, die
+// Massenaktion der Bestandstabelle (DELETE /api/books, inventur/db_books_delete.go) und den
+// Knopf der Buch-Akte (DELETE /api/buecher/titel/{id}, repository/titel_loeschen.go). Beide
+// fahren über denselben CASCADE, und zwei Fassungen derselben Regel liefen auseinander;
+// `inventur` importiert `repository`, also steht sie hier.
 
 import (
 	"context"
@@ -58,7 +54,7 @@ type wartendeAbfrager interface {
 }
 
 // LadeWartendeBezuege sammelt Vormerkungen, Klassensatz-Reservierungen und
-// Klassensatz-Zuordnungen der Titel — VOR dem Löschen, denn danach sind sie weg.
+// Klassensatz-Zuordnungen der Titel — vor dem Löschen, denn danach sind sie weg.
 func LadeWartendeBezuege(ctx context.Context, q wartendeAbfrager, ids []string) ([]WartenderBezug, error) {
 	var alle []WartenderBezug
 

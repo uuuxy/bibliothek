@@ -1,22 +1,19 @@
 package repository
 
-// Der Bestand eines Titels — EINE Definition für alle Abfragen, die ihn nennen.
+// Der Bestand eines Titels: eine Definition für alle Abfragen, die ihn nennen. Ohne die Zahlen
+// stünde ein Titel ohne Exemplar in der Trefferliste wie jeder andere.
 //
-// Anlass: Protokoll des Medienzentrums vom 16.09.2026, Punkt 4 („Bücher, zu denen es
-// keine Exemplare gibt, tauchen in der Trefferliste auf"). Die Theke zeigte solche Titel
-// ohne jeden Hinweis; der Katalog schrieb immerhin „Keine Exemplare".
-//
-// Die beiden Prädikate sind WÖRTLICH die der Klassenbuch-Abfrage
-// (inventur/datenbank_klassen.go), und das ist der Zweck dieser Datei: Zwei Auslegungen
-// von „verfügbar" ergäben zwei Zahlen über denselben Titel, und an der Theke entscheidet
-// diese Zahl, ob jemand losläuft und im Regal sucht.
+// Die beiden Prädikate sind wörtlich die der Klassenbuch-Abfrage
+// (inventur/datenbank_klassen.go), und das ist der Zweck dieser Datei: Zwei Auslegungen von
+// „verfügbar" ergäben zwei Zahlen über denselben Titel, und an der Theke entscheidet diese
+// Zahl, ob jemand losläuft und im Regal sucht.
 //
 //   - gesamt:     im Bestand, nicht ausgesondert, nicht mehr im Zulauf
 //     (bestellstatus IS NULL — ein bestelltes Buch steht noch nicht im Regal).
 //   - verfuegbar: davon die ausleihbaren, die gerade niemand hat.
 //   - im Zulauf:  bestellt, noch nicht eingetroffen. Ohne diese dritte Zahl sagte die
 //     Trefferliste über einen Titel, dessen Exemplare alle unterwegs sind, „Keine
-//     Exemplare" — und schickte den Kollegen ins Regal (docs/OFFEN.md 5.5).
+//     Exemplare" — und schickte den Kollegen ins Regal.
 const (
 	// SQLExemplarImBestand ist die Grenze von „gesamt" selbst, für Abfragen über die
 	// Exemplare als `e`. Die Buchmaske zeigt diese Zahl im Feld „Aktueller Bestand", und die
@@ -47,16 +44,14 @@ const (
 // als `e` joinen (Katalogliste, Klassenbücher) statt je Titel zu zählen.
 const SQLFilterImZulauf = `COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NOT NULL)`
 
-// SQLTitelHatExemplar sagt, ob ein Titel überhaupt ein Exemplar hat, das nicht
-// ausgesondert ist — im Regal, verliehen oder im Zulauf. Titel ohne ein solches Exemplar
-// erscheinen seit dem 22.09.2026 in keinem Katalog mehr (Antwort der Schule auf Punkt 4 des
-// Protokolls: „Ein Titel/Werk ohne (verliehene oder verfügbare) Exemplare im Bestand sollte
-// aus unserer Sicht nicht im Katalog erscheinen"). Der Zulauf zählt als vorhanden: Die
-// Bücher kommen, und wer die Bestellung sieht, soll den Titel finden.
+// SQLTitelHatExemplar sagt, ob ein Titel überhaupt ein Exemplar hat, das nicht ausgesondert
+// ist: im Regal, verliehen oder im Zulauf. Ein Titel ohne ein solches Exemplar erscheint in
+// keinem Katalog. Der Zulauf zählt als vorhanden: Die Bücher kommen, und wer die Bestellung
+// sieht, soll den Titel finden.
 //
-// Der Titel bleibt in der Tabelle — er verschwindet aus der Sicht, nicht aus dem Bestand,
-// sonst legt ihn jemand ein zweites Mal an. Die Verwaltung erreicht ihn über die Sicht
-// „Ohne Exemplare" derselben Liste (inventur.ListBooks) und die Bestellliste.
+// Der Titel bleibt in der Tabelle: Er verschwindet aus der Sicht, nicht aus dem Bestand, sonst
+// legt ihn jemand ein zweites Mal an. Die Verwaltung erreicht ihn über die Sicht „Ohne
+// Exemplare" derselben Liste (inventur.ListBooks) und die Bestellliste.
 //
 // titelAlias ist der Alias der Titeltabelle in der umgebenden Abfrage (`b`, `bt`).
 func SQLTitelHatExemplar(titelAlias string) string {

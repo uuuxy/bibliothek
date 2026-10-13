@@ -10,12 +10,12 @@ import (
 	"bibliothek/pkg/isbnutil"
 )
 
-// SchreibeTitel speichert viele Titel in EINEM gepipelineten Batch statt
+// SchreibeTitel speichert viele Titel in einem gepipelineten Batch statt
 // je Titel eine eigene Datenbank-Rundreise (der frühere N+1 ließ den MAB2-Import
 // mit ~15.000 Titeln gegen eine nicht-lokale DB in Client-Timeouts laufen).
 //
 // Jeder Titel wird zuerst über die ISBN, dann über den Titel gegen den Bestand
-// gematcht. Der Titel-Fallback gilt AUCH für Datensätze mit ISBN: die Bestands-CSV
+// gematcht. Der Titel-Fallback gilt auch für Datensätze mit ISBN: die Bestands-CSV
 // legt Titel ohne ISBN an — würde das Katalogisat-XML danach nur über die ISBN
 // matchen, entstünde für jeden dieser Titel eine Dublette. Beim Titel-Match wird
 // die ISBN nachgetragen (eine bereits gesetzte ISBN bleibt unangetastet). Die
@@ -48,18 +48,18 @@ func (a *pgKatalogAbfragen) SchreibeTitel(ctx context.Context, titel []Titel) (i
 	// eine Quelle ohne diese Angabe (z. B. MAB-Exporte ohne Autor-Feld) darf einen
 	// bereits bekannten, besseren Wert nicht stillschweigend leeren.
 	//
-	// ist_lernmittel wird per OR nur GESETZT, nie gelöscht: Ein Buch, das jemand in der
+	// ist_lernmittel wird per OR nur gesetzt, nie gelöscht: Ein Buch, das jemand in der
 	// Maske als Lernmittel markiert hat, verliert das nicht durch einen Export, der es
 	// nicht kennt. Das Fach füllt nur eine Leerstelle. Die Jahrgangsspanne
 	// dagegen folgt der Quelle, sobald sie beide Werte nennt: Litteras Signatur ist für
 	// den Altbestand die gepflegte Quelle. Nennt die Quelle keine, bleibt am Titel, was
 	// dort steht.
 	//
-	// Ausgenommen ist ein Mehrjahresband (Migration 134): Den Schalter gibt es nur in
+	// Ausgenommen ist ein Mehrjahresband: Den Schalter gibt es nur in
 	// der Titel-Verwaltung, und wer ihn setzt, setzt die Spanne mit — sie ist dann
 	// gepflegt, und an ihrem „bis" hängt die Frist. Die Signatur nennt oft nur einen
 	// Jahrgang („LMF Bio 7"); übernommen, verletzte sie chk_mehrjahresband_spanne, und der
-	// ganze Import fiele (Rasterdurchgang 23.09.2026, K1).
+	// ganze Import fiele.
 	const sqlAendern = `
 		UPDATE buecher_titel SET
 			titel = $2,
@@ -76,7 +76,7 @@ func (a *pgKatalogAbfragen) SchreibeTitel(ctx context.Context, titel []Titel) (i
 		WHERE id = $1
 	`
 
-	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer vor dem
+	// subject ist FK auf die Systematik: unbekannte Fächer vor dem
 	// SendBatch in derselben Transaktion registrieren (danach ist die Verbindung bis
 	// br.Close() belegt) und jede Zeile auf die kanonische Schreibweise ziehen.
 	kanonisch, err := StelleFaecherSicher(ctx, tx, faecherDerTitel(titel))
@@ -149,7 +149,7 @@ func faecherDerTitel(titel []Titel) []string {
 }
 
 // ergaenzeSchlagworteAusImport schreibt die Schlagworte des Katalogisats an die Titel, die noch
-// keine tragen (docs/OFFEN.md 4.20, Stufe 3) — über SetzeSchlagworte, den Pfad des
+// keine tragen — über SetzeSchlagworte, den Pfad des
 // Buchformulars, aufbereitet wie in der Übernahme aus der Sicherung (SchlagworteAusFremddaten).
 // Wer schon Schlagworte trägt, behält seine: Ein erneuter Import überschreibt keine Pflege —
 // dieselbe Regel wie beim Fach, das nur Leerstellen füllt. Nennen zwei Datensätze denselben
@@ -157,11 +157,11 @@ func faecherDerTitel(titel []Titel) []string {
 //
 // Die Titel werden nach dem Batch über dieselbe Zuordnung gefunden wie im Upsert
 // (reiheTitelEin): zuerst die ISBN, sonst der Titel. Neu angelegte stehen dann schon in der
-// Tabelle, der Batch gibt ihre Kennungen nicht zurück. Gefragt wird für JEDEN Datensatz der
+// Tabelle, der Batch gibt ihre Kennungen nicht zurück. Gefragt wird für jeden Datensatz der
 // Datei, auch für die, die der Upsert als Dublette übergangen hat: Im Katalogisat vom Juni 2026
 // steht mancher Titel zweimal, der erste Eintrag ohne Schlagworte, der zweite mit. Nur mit den
-// eingereihten Datensätzen brachte erst ein zweiter Lauf deren Schlagworte (gemessen am
-// 30.09.2026: 253 Zuordnungen mehr); so bringt sie der erste. Ein zweiter Lauf derselben Datei
+// eingereihten Datensätzen brächte erst ein zweiter Lauf deren Schlagworte (gemessen:
+// 253 Zuordnungen mehr); so bringt sie der erste. Ein zweiter Lauf derselben Datei
 // ergänzt danach höchstens Titel, die der Upsert selbst erst beim zweiten Mal zuordnet (am
 // Katalogisat vom Juni 2026: einer), und ersetzt nie vorhandene Schlagworte.
 func ergaenzeSchlagworteAusImport(ctx context.Context, tx pgx.Tx, titel []Titel) error {

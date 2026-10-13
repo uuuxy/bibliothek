@@ -79,7 +79,7 @@ type TitelAusleiher struct {
 // LadeAusleiherDesTitels liefert die offenen Ausleihen eines Titels, die früheste Frist
 // zuerst.
 //
-// LEFT JOIN auf BEIDE Ausleiher-Arten: Eine Ausleihe an eine Lehrkraft trägt keine
+// LEFT JOIN auf beide Ausleiher-Arten: Eine Ausleihe an eine Lehrkraft trägt keine
 // schueler_id, und der frühere INNER JOIN auf schueler ließ sie damit verschwinden
 // — der Reiter zeigte weniger Ausleiher, als der Titel hat, und wer das Exemplar
 // suchte, suchte im Regal. Die Art reist mit: Beim Kollegen zeigt die Tür statt der Klasse

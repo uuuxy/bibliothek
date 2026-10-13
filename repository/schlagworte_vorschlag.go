@@ -9,13 +9,13 @@ import (
 )
 
 // schlagwortStichwoerterMax kappt die Kandidaten eines Satzes. Die DNB liefert bis zu 98
-// Verlagswörter je Titel (gemessen am 23.09.2026); die Kappung hält nur eine unerwartet
+// Verlagswörter je Titel (gemessen); die Kappung hält nur eine unerwartet
 // lange Antwort von der Datenbank fern.
 const schlagwortStichwoerterMax = 300
 
 // schlagworteAusStichwoertern gleicht die Stichwörter eines DNB-Satzes (Gattungsbegriffe und
 // Verlagswörter, inventur.MetadatenErgebnis.Stichwoerter) gegen die eigene Liste ab —
-// der Schlagwort-Vorschlag beim Bestellen per ISBN (docs/OFFEN.md 4.20). Vorgeschlagen wird
+// der Schlagwort-Vorschlag beim Bestellen per ISBN. Vorgeschlagen wird
 // nur, was es schon gibt: ein Schlagwort, das mindestens ein Titel trägt, oder ein Verweis
 // darauf, aufgelöst zu seinem Ziel („Science Fiction" → „Science-Fiction"). Dieselbe Regel
 // wie die Vorschlagsliste beim Tippen (FindeSchlagwortVorschlaege: ein Wort ohne Titel ist meist
@@ -40,7 +40,7 @@ func schlagworteAusStichwoertern(ctx context.Context, q Datenbank, stichwoerter 
 }
 
 // Normdatenbegriff ist ein Schlagwort der Gemeinsamen Normdatei aus einem DNB-Satz (MARC 600
-// bis 651 mit $2 gnd; inventur.MetadatenErgebnis.Normdaten, docs/OFFEN.md 4.25). Formen sind
+// bis 651 mit $2 gnd; inventur.MetadatenErgebnis.Normdaten). Formen sind
 // die Schreibweisen, unter denen er in der Liste stehen kann; Anzeige ist die, in der er als
 // neues Wort angeboten wird. Die DNB schreibt eine Person „Kafka, Franz", die Littera-Liste
 // „Kafka <Franz>" — im Katalogisat vom Juni 2026 stehen 2.059 Wörter in dieser Form und eines
@@ -51,11 +51,11 @@ type Normdatenbegriff struct {
 }
 
 // schlagworteAusNormdaten gleicht die Normdatei-Begriffe eines DNB-Satzes gegen die eigene Liste
-// ab (entschieden am 30.09.2026, docs/OFFEN.md 4.25). Steht ein Begriff in einer seiner Formen in
+// ab. Steht ein Begriff in einer seiner Formen in
 // der Liste — als Wort mit Titeln oder als Verweis darauf —, kommt er zu vorhanden, aufgelöst zu
 // seinem Ziel wie beim Stichwort-Vorschlag. Sonst kommt er zu neu, in der Anzeige-Form: Die
 // Normdatei ist ein festes Vokabular ohne Werbewörter, anders als die Verlagswörter, die nur
-// über die Liste kommen (gemessen am 30.09.2026 an 56 DNB-Sätzen des Katalogisats: 86 Begriffe,
+// über die Liste kommen (gemessen an 56 DNB-Sätzen des Katalogisats: 86 Begriffe,
 // 56 davon schon in der Liste, die übrigen wie „Judo", „Oslo", „Schulstress"). Ein Wort, das zu
 // lang für die Liste wäre, wird nicht angeboten. Beide Antworten sind alphabetisch, ohne
 // Doppelte und nie nil; eingetragen wird nur, was jemand anklickt.
@@ -153,7 +153,7 @@ func listenZiele(ctx context.Context, q Datenbank, roh []string) (map[string]str
 // (schlagworteAusStichwoertern, schlagworteAusNormdaten), neu die Normdatei-Wörter, die die Liste
 // noch nicht kennt. Die eine Regel für beide Türen: das Anlegen beim Bestellen (POST
 // /api/buecher/aus-isbn) und den Vorschlag im Buchformular und beim Nachbestellen (GET
-// /api/schlagworte/dnb-vorschlag, entschieden am 30.09.2026). Beide Listen nie nil.
+// /api/schlagworte/dnb-vorschlag). Beide Listen nie nil.
 func SchlagwortVorschlagAusDNB(ctx context.Context, q Datenbank, stichwoerter []string, normdaten []Normdatenbegriff) (liste, neu []string, err error) {
 	ausStichwoertern, err := schlagworteAusStichwoertern(ctx, q, stichwoerter)
 	if err != nil {

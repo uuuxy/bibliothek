@@ -6,22 +6,20 @@ import (
 	"time"
 )
 
-// HoleExemplarZurueck bringt ein ausgesondertes oder gesperrtes Exemplar zurück in den
-// Umlauf und beendet die Forderung, die seine Abwesenheit abgerechnet hat — in der
-// Transaktion des AUFRUFERS.
+// HoleExemplarZurueck bringt ein ausgesondertes oder gesperrtes Exemplar zurück in den Umlauf
+// und beendet die Forderung, die seine Abwesenheit abgerechnet hat, in der Transaktion des
+// Rufers.
 //
-// Bis zum 15.09.2026 lag dieser Rumpf im Omnibox-Service mit eigener Transaktion. Stufe 2
-// des Offline-Baus braucht ihn als Baustein (OFFEN.md 2.2, Commit 8): Das Nachbuchen holt
-// ein verloren gemeldetes Buch zurück und bucht im selben Schritt die Ausleihe — beides
-// muss zusammen gelingen oder zusammen scheitern. Getrennt wäre eines von beiden möglich:
-// das Buch zurück im Regal und die Forderung weiter offen (das Kind bliebe gesperrt), oder
-// die Forderung storniert, ohne dass das Buch wieder ausleihbar ist. Der Online-Scan
-// (omnibox_service.holeExemplarZurueck) und der Fund im Fehlbestandsbericht
-// (MarkiereVerlustAlsGefunden) legen ihre Transaktion selbst darum.
+// Die Transaktion gehört dem Rufer, weil das Nachbuchen ein verloren gemeldetes Buch zurückholt
+// und im selben Schritt die Ausleihe bucht: Beides muss zusammen gelingen oder zusammen
+// scheitern. Getrennt wäre eines von beiden möglich: das Buch zurück im Regal und die Forderung
+// weiter offen (das Kind bliebe gesperrt), oder die Forderung storniert, ohne dass das Buch
+// wieder ausleihbar ist. Der Online-Scan (omnibox_service.holeExemplarZurueck) und der Fund im
+// Fehlbestandsbericht (MarkiereVerlustAlsGefunden) legen ihre Transaktion selbst darum.
 //
-// 0 Zeilen heißt: Das Exemplar ist zwischen Lookup und Update verschwunden — dann darf
-// niemand „reaktiviert" melden (Phantom-Erfolg-Sweep 31.08.2026).
-// bewegtAm ist der Zeitpunkt der Rückkehr (nil = jetzt); das Nachbuchen gibt den Scan-Zeitpunkt mit.
+// 0 Zeilen heißt: Das Exemplar ist zwischen Nachschlagen und Ändern verschwunden; dann darf
+// niemand „reaktiviert" melden. bewegtAm ist der Zeitpunkt der Rückkehr (nil heißt jetzt); das
+// Nachbuchen gibt den Zeitpunkt des Scans mit.
 func HoleExemplarZurueck(ctx context.Context, q Datenbank, exemplarID, bearbeiterID string, bewegtAm *time.Time) (RueckkehrBefund, error) {
 	tag, err := q.Exec(ctx, `
 		UPDATE buecher_exemplare

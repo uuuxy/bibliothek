@@ -12,13 +12,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Das Eigentum von Hand ändern (docs/OFFEN.md 4.24, Stufe 3, freigegeben am 29.09.2026) — wie
-// in Littera „Exemplardaten anpassen": Exemplare eines Titels markieren, einen Wert für alle
-// setzen. Ein einzelnes Exemplar ist eine Liste mit einem Eintrag: eine Tür, eine Regel.
+// Das Eigentum von Hand ändern, wie in Littera „Exemplardaten anpassen": Exemplare eines Titels
+// markieren, einen Wert für alle setzen. Ein einzelnes Exemplar ist eine Liste mit einem
+// Eintrag: eine Tür, eine Regel.
 //
 // Das Eigentum wirkt auf Etikett, Zugangs- und Abgangsbuch und Schadensersatz
 // (ExemplarTopfSQL). Deshalb ist der Grund Pflicht, und jede Änderung steht mit altem und neuem
-// Wert im Protokoll — wie beim Topf einer Bestellung (BestellMittelDialog).
+// Wert im Protokoll, wie beim Topf einer Bestellung (BestellMittelDialog).
 
 // exemplarEigentumListeMax begrenzt eine Änderung. Ein Titel mit mehr Exemplaren wird in
 // mehreren Schritten geändert; die Buchakte markiert höchstens, was sie zeigt.
