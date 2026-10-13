@@ -84,3 +84,20 @@ func TestAuditDetails_EinSchluesselFuerDenSchueler(t *testing.T) {
 			"die Schreibform hat sich geändert, Detektor nachziehen.", schuelerIDForm)
 	}
 }
+
+// Eine Quelle ohne Fremdschlüssel findet keine Abfrage am Schema. Fällt sie aus der Liste,
+// prüfen Auskunft und Tilgung diese Tabelle nicht mehr, und die übrigen Prüfungen bleiben grün.
+func TestDsgvoQuellenOhneFremdschluessel_BleibenInDerListe(t *testing.T) {
+	ohneFremdschluessel := map[string]bool{}
+	for _, q := range testdaten.DsgvoSchuelerQuellen {
+		if !q.MitFK {
+			ohneFremdschluessel[q.Tabelle] = true
+		}
+	}
+	for _, tabelle := range []string{"leser", "audit_log", "audit_logs"} {
+		if !ohneFremdschluessel[tabelle] {
+			t.Errorf("testdaten.DsgvoSchuelerQuellen führt %s nicht mehr als Quelle ohne Fremdschlüssel: "+
+				"Auskunft und Tilgung prüft an dieser Tabelle dann nichts mehr", tabelle)
+		}
+	}
+}
