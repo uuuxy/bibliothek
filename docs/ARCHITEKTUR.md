@@ -55,6 +55,8 @@ Dokumenten unter [`docs/`](../README.md#dokumentation):
 
 ## Lesewege
 
+- **Neu im Code, zehn Minuten Zeit:** [WEGWEISER.md](WEGWEISER.md) — eine Seite: der Weg einer
+  Anfrage, vom Menüpunkt zum Ordner, die Stelle für häufige Änderungen.
 - **Neu im Projekt, eine Stunde Zeit:** Kapitel 1 → 4 → 5 (Level 1+2) → 12. Danach
   [FACHKONZEPT.md §1](FACHKONZEPT.md) für die Omnibox, weil daran der ganze Betrieb hängt.
 - **Ich muss etwas ändern:** Kapitel 5 (welcher Baustein), 8 (welches Querschnittskonzept
