@@ -9,9 +9,8 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// lernmittelTabellenSpalten sind die vier Spalten der Ausleihhistorie — exakt die
-// Beschriftung, die auf dem physischen Lernmittel-Etikett bereits verwendet wird
-// (Schuljahr / Name des Schülers / Klasse / Zustand), mit Breiten in mm.
+// lernmittelTabellenSpalten sind die vier Spalten der Ausleihhistorie mit ihren Breiten in
+// mm, beschriftet wie auf den Lernmittel-Etiketten, die schon in den Büchern kleben.
 var lernmittelTabellenSpalten = []struct {
 	Titel string
 	Breit float64
@@ -22,14 +21,12 @@ var lernmittelTabellenSpalten = []struct {
 	{"Zustand", 20},
 }
 
-// lernmittelTabellenZeilen ist die Anzahl leerer Datenzeilen zum handschriftlichen
-// Ausfüllen — ein Buch durchläuft typischerweise mehrere Schuljahre, bevor es
-// ausgesondert wird.
+// lernmittelTabellenZeilen ist die Zahl der leeren Zeilen zum Ausfüllen von Hand: Ein Buch
+// durchläuft mehrere Schuljahre, bevor es ausgesondert wird.
 const lernmittelTabellenZeilen = 6
 
-// Maße des großen Etiketts. Ein A6-Feld ist exakt ein Viertel einer A4-Seite
-// (210×297 = 2×105 mal 2×148,5) — deshalb passen vier davon ohne jede Skalierung auf
-// ein Blatt, und der Aufdruck bleibt millimetergenau so groß wie bisher.
+// Maße des großen Etiketts. Ein A6-Feld ist ein Viertel einer A4-Seite (210×297 = 2×105 mal
+// 2×148,5): Vier davon passen ohne Skalierung auf ein Blatt.
 const (
 	lernmittelFeldBreite = 105.0 // A6-Breite
 	lernmittelFeldHoehe  = 148.5 // A6-Höhe
@@ -39,23 +36,19 @@ const (
 )
 
 // GenerateLernmittelEtikettenPDF erzeugt die großen Lernmittel-Etiketten für Lieferanten,
-// die selbst etikettieren und dafür fertige Etiketten von uns brauchen (z. B. Naacher).
-// Enthält dieselben Kopfangaben wie das kleine Etikett (zeichneBarcodeLabel) —
-// Schulname, Titel, Ansch.J./Signatur, Barcode, Exemplar-Nr., Eigentumsvermerk —,
-// zusätzlich eine Tabelle für die mehrjährige Ausleihhistorie, für die auf dem kleinen
-// Format kein Platz ist.
+// die selbst etikettieren. Sie tragen die Kopfangaben des kleinen Etiketts
+// (zeichneBarcodeLabel) und dazu eine Tabelle für die Ausleihhistorie über mehrere Jahre,
+// für die das kleine Format keinen Platz hat.
 //
-// VIER Etiketten je A4-Seite (2×2), seit 06.08.2026. Vorher war jede Seite ein eigenes
-// A6-Blatt: ein Exemplar = eine Seite. Auf einem gewöhnlichen A4-Drucker kam damit ein
-// Etikett pro Blatt heraus, außer man stellte im Druckdialog von Hand „4 Seiten pro
-// Blatt" ein — was niemand tut, der einen Stapel Etiketten braucht (telefonische
-// Rückmeldung Naacher). Die Anordnung gehört in die Datei, nicht in den Druckdialog.
+// Vier Etiketten stehen auf einer A4-Seite (2×2). Mit einem Etikett je Seite käme auf einem
+// A4-Drucker ein Etikett je Blatt heraus, außer jemand stellte im Druckdialog „4 Seiten pro
+// Blatt" ein; die Anordnung gehört in die Datei.
 func GenerateLernmittelEtikettenPDF(items []BuchEtikett) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(lernmittelRand, lernmittelRand, lernmittelRand)
 	// Ohne das setzt gofpdf mitten in die Tabelle des unteren Feldes einen Seitenumbruch,
-	// sobald der Inhalt in die untere 2-cm-Zone reicht. Die Position jedes Feldes rechnen
-	// wir selbst aus — automatische Umbrüche würden sie verschieben.
+	// sobald der Inhalt in die unteren 2 cm reicht. Die Lage jedes Feldes rechnet der
+	// Erzeuger selbst; ein Umbruch von gofpdf verschöbe sie.
 	pdf.SetAutoPageBreak(false, 0)
 	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
@@ -77,12 +70,9 @@ func GenerateLernmittelEtikettenPDF(items []BuchEtikett) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// zeichneSchnittlinien zeichnet das Kreuz, an dem die vier Etiketten getrennt werden.
-//
-// Ohne die Linien muss man die Mitte des Blattes schätzen — bei einem Etikett, das
-// später in ein Buch geklebt wird, sieht man jeden schiefen Schnitt. Hellgrau und
-// haarfein, damit die Linie beim Zuschneiden verschwindet und nicht als Rahmen auf dem
-// fertigen Etikett stehen bleibt.
+// zeichneSchnittlinien zeichnet das Kreuz, an dem die vier Etiketten getrennt werden. Ohne
+// die Linien wäre die Mitte des Blatts zu schätzen. Sie sind hellgrau und haarfein, damit
+// sie beim Zuschneiden verschwinden und nicht als Rahmen auf dem Etikett stehen bleiben.
 func zeichneSchnittlinien(pdf *gofpdf.Fpdf) {
 	pdf.SetDrawColor(200, 200, 200)
 	pdf.SetLineWidth(0.1)
@@ -92,9 +82,9 @@ func zeichneSchnittlinien(pdf *gofpdf.Fpdf) {
 	pdf.SetLineWidth(0.2)
 }
 
-// zeichneLernmittelEtikett rendert EIN großes Etikett in das Feld mit der linken oberen
-// Ecke (ox, oy). Alle Maße im Rumpf sind relativ zu diesem Ursprung — genau das ist der
-// Unterschied zur Fassung davor, die absolut auf einer eigenen A6-Seite zeichnete.
+// zeichneLernmittelEtikett setzt ein großes Etikett in das Feld mit der linken oberen Ecke
+// (ox, oy). Alle Maße im Rumpf zählen ab diesem Ursprung, weil vier Felder auf einer Seite
+// stehen.
 func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item BuchEtikett, ox, oy float64) {
 	const breite = lernmittelInhalt
 	x := ox + lernmittelRand
@@ -144,13 +134,10 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item Buc
 	zeichneLernmittelTabelle(pdf, tr, x, y)
 }
 
-// zeichneLernmittelTabelle rendert die Ausleihhistorie-Tabelle (Kopfzeile + leere
-// Datenzeilen) ab der übergebenen Ecke — dieselbe Border-Zellen-Technik wie in
-// mahnliste.go und bestellanschreiben.go.
-//
-// x wird durchgereicht und nicht mehr fest auf 10 gesetzt: Seit vier Etiketten auf einer
-// Seite stehen, liegen die beiden rechten Felder bei x = 115. Ein festes SetX(10) hätte
-// deren Tabellen an den linken Blattrand gezogen — unter das Nachbaretikett.
+// zeichneLernmittelTabelle setzt die Tabelle der Ausleihhistorie (Kopfzeile und leere
+// Zeilen) ab der übergebenen Ecke, mit umrandeten Zellen wie in mahnliste.go und
+// bestellanschreiben.go. x kommt vom Aufrufer: Die zwei rechten Felder der Seite beginnen
+// bei x = 115, ein fester linker Rand zöge ihre Tabellen unter das Nachbaretikett.
 func zeichneLernmittelTabelle(pdf *gofpdf.Fpdf, tr func(string) string, x, y float64) {
 	const zeilenhoehe = 7.0
 

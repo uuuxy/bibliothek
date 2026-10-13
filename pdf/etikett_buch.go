@@ -38,7 +38,7 @@ func kuerzeAufEtikett(pdf *gofpdf.Fpdf, tr func(string) string, text string, zei
 	return pdfzeichen.KuerzeAufBreite(pdf, tr, pdfzeichen.KuerzeAufZeichen(text, zeichen), breite)
 }
 
-// zeichneQRLabel rendert ein Etikett mit QR-Code (Titel, Autor, QR, Barcode-Text).
+// zeichneQRLabel setzt ein Etikett mit QR-Code: Titel, Autor, Code und darunter die Nummer.
 func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BuchEtikett, pos labelPos) {
 	breite := format.LabelWidth - 4
 	pdf.SetFont("Arial", "B", 8)
@@ -49,14 +49,13 @@ func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat
 	pdf.SetXY(pos.X+2, pos.Y+7)
 	pdf.Cell(breite, 4, tr(kuerzeAufEtikett(pdf, tr, item.Autor, 30, breite)))
 
-	// Generate dynamic QR code PNG
 	barcodeImg, err := strichcode.PNG(item.BarcodeID, true, 200, 200)
 	if err == nil {
 		imgReader := bytes.NewReader(barcodeImg)
 		pdf.RegisterImageOptionsReader(item.BarcodeID, gofpdf.ImageOptions{ImageType: "PNG"}, imgReader)
 		qrSize := 16.0
 		if format.LabelHeight < 30 {
-			qrSize = 12.0 // scale down for smaller labels like standard_52
+			qrSize = 12.0 // niedrige Etiketten wie standard_52 fassen den großen Code nicht
 		}
 		qrX := pos.X + (format.LabelWidth-qrSize)/2
 		qrY := pos.Y + 11.0
@@ -66,7 +65,6 @@ func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat
 		pdf.Image(item.BarcodeID, qrX, qrY, qrSize, qrSize, false, "", 0, "")
 	}
 
-	// Barcode text
 	pdf.SetFont("Arial", "B", 8)
 	textY := pos.Y + 28
 	if format.LabelHeight < 30 {
@@ -76,11 +74,10 @@ func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat
 	pdf.CellFormat(format.LabelWidth-4, 4, tr(item.BarcodeID), "", 0, "C", false, 0, "")
 }
 
-// zweiteZeile kombiniert Anschaffungsjahr und Signatur auf EINER Zeile
-// ("Ansch.J. 2016 · LMF-Deutsch 5"), statt für die Signatur eine eigene siebte Zeile zu
-// verlangen. Die physischen Formate (Zweckform L4760: 38,1 mm, Avery 3475: 37 mm) sind
-// randvoll — der bestehende Inhalt füllt schon rund 35 mm, eine zusätzliche volle Zeile
-// hätte das Etikett über seine Klebefläche hinaus wachsen lassen.
+// zweiteZeile setzt Anschaffungsjahr und Signatur in eine Zeile ("Ansch.J. 2016 ·
+// LMF-Deutsch 5"). Für eine eigene Zeile je Angabe sind die Bögen zu niedrig: Der übrige
+// Inhalt füllt rund 35 mm, die Etiketten sind 38,1 mm (Zweckform L4760) und 37 mm (Avery
+// 3475) hoch.
 func zweiteZeile(jahr, signatur string) string {
 	switch {
 	case jahr != "" && signatur != "":
@@ -94,9 +91,8 @@ func zweiteZeile(jahr, signatur string) string {
 	}
 }
 
-// zeichneBarcodeLabel rendert ein Etikett mit 1D-Barcode (Code39/Code128).
-// zeichneBarcodeLabel setzt das Buchetikett nach der Vorlage, die in der Bibliothek
-// seit Jahren an den Büchern klebt:
+// zeichneBarcodeLabel setzt das Buchetikett mit Strichcode nach der Vorlage, die in der
+// Bibliothek an den Büchern klebt:
 //
 //	Philipp-Reis-Schule, Friedrichsdorf   ← fett, Schulname aus den Einstellungen
 //	Seydlitz - Geographie Gymnasium       ← fett, Titel
@@ -105,14 +101,10 @@ func zweiteZeile(jahr, signatur string) string {
 //	Exemplar-Nr.: 82347
 //	Eigentum des Landes Hessen
 //
-// Vorher standen dort drei Angaben: ein fest verdrahtetes "Schulbibliothek", der Titel
-// und die nackte Nummer. Der Eigentumsvermerk fehlte ganz — bei einem Buch, das dem
-// Land gehört und über Jahre durch Schülerhände geht, ist er der Grund, warum es
-// zurückkommt.
-//
-// Auf dem kleinen Format (21,2 mm) ist für sechs Zeilen kein Platz. Dort entfallen
-// Anschaffungsjahr/Signatur und Eigentumsvermerk — lieber weniger Angaben als
-// übereinander gedruckte.
+// Der Eigentumsvermerk ist bei einem Buch, das dem Land gehört und über Jahre durch
+// Schülerhände geht, der Grund, warum es zurückkommt. Auf dem kleinen Format (21,2 mm) ist
+// für sechs Zeilen kein Platz: Dort entfallen Anschaffungsjahr mit Signatur und der
+// Eigentumsvermerk, sonst stünden Zeilen übereinander.
 func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BuchEtikett, pos labelPos) {
 	grossesEtikett := format.LabelHeight >= 30
 
@@ -155,8 +147,8 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 	}
 	y += bcHeight + 1.5
 
-	// Die Nummer unter dem Barcode ist DIESELBE, die der Barcode trägt — die Beschriftung
-	// benennt sie nur, damit sie ohne Scanner ablesbar ist (etwa auf der Mahnliste).
+	// Die Nummer unter dem Strichcode ist die, die er trägt; die Beschriftung benennt sie,
+	// damit sie ohne Scanner ablesbar ist (etwa für die Mahnliste).
 	pdf.SetFont("Courier", "B", 9)
 	pdf.SetXY(pos.X, y)
 	beschriftung := item.BarcodeID
@@ -173,11 +165,9 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 	}
 }
 
-// GenerateLabelsPDF creates a standardized A4 PDF label sheet.
-// formatId: identifies the label sheet (e.g. "zweckform_l4760")
-// startPosition: 1-based index to start printing on the first page (to skip used labels)
-// isQR: if true, a QR code is generated instead of a 1D Code39 barcode.
-// items: the labels to print.
+// GenerateLabelsPDF erzeugt A4-Bögen mit Buchetiketten. formatId nennt den Bogen (etwa
+// "zweckform_l4760"), startPosition zählt ab 1 und überspringt die schon abgezogenen
+// Etiketten eines angebrochenen Bogens, isQR druckt einen QR-Code statt des Strichcodes.
 func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []BuchEtikett) (*gofpdf.Fpdf, error) {
 	format, _ := GetLabelFormat(formatId)
 
@@ -199,14 +189,11 @@ func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []Bu
 	return pdf, nil
 }
 
-// zeichneRaster legt `anzahl` Etiketten in das Raster des Bogens und ruft je Etikett
-// `zeichne` mit seiner linken oberen Ecke auf. Startposition (angebrochener Bogen),
-// Spalten-/Zeilenrechnung und Seitenumbruch stehen damit an EINER Stelle.
-//
-// Es gibt die Funktion, seit die Schüler-Etiketten dazugekommen sind: Sie brauchen
-// dasselbe Raster mit anderem Inhalt. Eine zweite Kopie der Rechnung wäre der Anfang
-// zweier Bögen, die sich irgendwann um eine halbe Zeile unterscheiden — und das merkt
-// niemand am Bildschirm, sondern erst an einem verdruckten Bogen Klebeetiketten.
+// zeichneRaster legt anzahl Etiketten in das Raster des Bogens und ruft je Etikett zeichne
+// mit seiner linken oberen Ecke auf. Startposition, Spalten- und Zeilenrechnung und
+// Seitenumbruch stehen damit an einer Stelle, für Buch- und Schüler-Etiketten: Zwei
+// Rechnungen wichen irgendwann um eine halbe Zeile voneinander ab, und das zeigt erst ein
+// verdruckter Bogen.
 func zeichneRaster(pdf *gofpdf.Fpdf, format LabelFormat, startPosition, anzahl int, zeichne func(i int, pos labelPos)) {
 	// 1-basierte Startposition auf einen 0-basierten Versatz bringen.
 	versatz := startPosition - 1
