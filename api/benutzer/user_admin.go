@@ -46,11 +46,11 @@ type UserResponse struct {
 // @Success      200  {array}   UserResponse
 // @Failure      500  {object}  map[string]string
 // @Router       /benutzer [get]
-func (s *Tueren) ListUsersHandler(userRepo repository.UserRepository) http.HandlerFunc {
+func (s *Tueren) ListUsersHandler(userRepo repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		users, err := userRepo.GetUsers(ctx)
+		users, err := userRepo.LadeAlle(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

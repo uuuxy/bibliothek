@@ -73,7 +73,7 @@ type LoanResult struct {
 	// Student ist das Schülerprofil, falls die Aktion für einen Schüler durchgeführt wurde.
 	Student *repository.Student
 	// Teacher ist das Benutzerprofil, falls die Aktion für eine Lehrkraft durchgeführt wurde.
-	Teacher *repository.User
+	Teacher *repository.Konto
 	// DueDate gibt das berechnete Rückgabedatum an (nur bei erfolgreicher Ausleihe).
 	DueDate *time.Time
 	// LoanID ist die eindeutige ID des Ausleihvorgangs.
@@ -123,7 +123,7 @@ type defaultLoanService struct {
 	auditRepo   repository.AuditRepository
 	// userRepo löst Lehrerausweise auf, die offline gescannt wurden (nur die Nachbuch-Tür
 	// setzt es; der Online-Scan kennt die Lehrkraft schon).
-	userRepo repository.UserRepository
+	userRepo repository.KontoAbfragen
 	// jetzt ist die Uhr der Fristberechnung; nil heißt time.Now. Tests setzen einen festen
 	// Tag, um die Frist am Tag vor, am und nach dem Rückgabetermin zu prüfen (Bugklasse
 	// „Frist am Tag des Ereignisses", docs/sweeps.md).

@@ -39,8 +39,8 @@ func normalisiereBenutzerRolle(rolle string) string {
 // Die Eindeutigkeit ist hier mehr als Datenhygiene: Die Anmeldung findet den Benutzer
 // über seine E-Mail (auth/handlers.go). Zwei Datensätze mit derselben Adresse hießen,
 // dass nicht mehr feststeht, wessen Konto ein Login öffnet.
-func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, email, excludeID string) bool {
-	exists, err := userRepo.CheckEmailExists(ctx, email, excludeID)
+func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.KontoAbfragen, email, excludeID string) bool {
+	exists, err := userRepo.IstEmailVergeben(ctx, email, excludeID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
@@ -59,9 +59,9 @@ func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, userRepo r
 // Ausweis und Geschichte, einmal leer. Der Weg zum Konto an der vorhandenen Zeile ist die
 // Schul-E-Mail in der Akte (LegeKollegiumskonto); dorthin verweist die Antwort (409).
 //
-// Was zählt, entscheidet UserRepository.LeserzeileOhneKonto.
-func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, vorname, nachname string) bool {
-	vorhanden, err := userRepo.LeserzeileOhneKonto(ctx, vorname, nachname)
+// Was zählt, entscheidet KontoAbfragen.HatLeserzeileOhneKonto.
+func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, userRepo repository.KontoAbfragen, vorname, nachname string) bool {
+	vorhanden, err := userRepo.HatLeserzeileOhneKonto(ctx, vorname, nachname)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
@@ -84,11 +84,11 @@ type BarcodePruefOptionen struct {
 // pruefeBarcodeEindeutig liefert den optionalen Barcode-Pointer und validiert dessen
 // Eindeutigkeit. Ist kein Barcode gesetzt, wird (nil, true) geliefert. Bei Konflikt
 // oder DB-Fehler wird die HTTP-Antwort direkt geschrieben (ok=false).
-func pruefeBarcodeEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, opt BarcodePruefOptionen) (barcode *string, ok bool) {
+func pruefeBarcodeEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.KontoAbfragen, opt BarcodePruefOptionen) (barcode *string, ok bool) {
 	if opt.BarcodeID == "" {
 		return nil, true
 	}
-	exists, err := userRepo.CheckBarcodeExists(ctx, opt.BarcodeID, opt.ExcludeID)
+	exists, err := userRepo.IstAusweisnummerVergeben(ctx, opt.BarcodeID, opt.ExcludeID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return nil, false

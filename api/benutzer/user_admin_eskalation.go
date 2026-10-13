@@ -60,11 +60,11 @@ func pruefeAdminVergabe(w http.ResponseWriter, r *http.Request, gewuenschteRolle
 // pruefeAdminZiel verlangt Administratorrechte, wenn das Ziel HEUTE ein Administrator
 // ist — unabhängig davon, welches Feld geändert werden soll. Ein unbekanntes Ziel
 // (kein Treffer) lässt die Prüfung passieren; darüber entscheidet der Handler.
-func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request, userRepo repository.UserRepository, id string) bool {
+func pruefeAdminZiel(ctx context.Context, w http.ResponseWriter, r *http.Request, userRepo repository.KontoAbfragen, id string) bool {
 	if aufruferIstAdmin(r) {
 		return true
 	}
-	rolle, err := userRepo.GetRolleByID(ctx, id)
+	rolle, err := userRepo.LadeRolle(ctx, id)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false

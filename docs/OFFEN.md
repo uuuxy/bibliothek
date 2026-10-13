@@ -473,7 +473,7 @@ seinen Rufern als eigener Commit; sein Bestand in `stil_bestand_test.go` sinkt d
 Muster steht am ersten Ausschnitt (`repository/lieferant.go`): Das Modell heißt wie die Sache
 (`Lieferant`), was sie liest und schreibt `LieferantenAbfragen`, die Fassung an Postgres
 `pgLieferantenAbfragen`, der Erzeuger `NewLieferantenAbfragen`, und eine Methode wiederholt
-die Sache nicht (`Lade` statt `GetSupplierByID`). Offen sind dort noch die Ausschnitte Konto,
+die Sache nicht (`Lade` statt `GetSupplierByID`). Offen sind dort noch die Ausschnitte
 Protokoll, Schaden und Bescheid, Inventur, Bestellung, Vormerkung und Reservierung, Ausleihe,
 Titel und Exemplar, Leser und der Rest (Auskunft, Löschfristen, Statistik, Mahnwesen,
 Lernmittel).

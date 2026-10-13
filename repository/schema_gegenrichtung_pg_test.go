@@ -359,7 +359,7 @@ var triggerBestand = []string{
 	// Leserzeile und trägt deren Kennung in NEW.leser_id ein. Das ist der Zweck — ein Konto
 	// ohne Leserzeile fände die Theke nicht, und fünf Einfüge-Pfade einzeln daran zu
 	// erinnern hieße, dass der sechste es vergisst. Wer die Folge merkt: jeder Aufrufer,
-	// der `RETURNING leser_id` liest (repository.CreateUser, internal/littera).
+	// der `RETURNING leser_id` liest (KontoAbfragen.LegeAn, internal/littera).
 	//
 	// Die Trigger trg_benutzer_ausweis_eindeutig (Migration 118),
 	// trg_benutzer_kollegium_personenart (120) und trg_schueler_ausweis_eindeutig (118)

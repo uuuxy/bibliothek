@@ -18,7 +18,7 @@ import (
 // Migration 131: Eine Nummer ist entweder ein Buch oder ein Ausweis. Die drei Schüler-Türen
 // (Anlegen, Akte, Wiederherstellen) übersetzen die Ablehnung des Wächters in eine Auskunft
 // (409). Das Kollegiumskonto prüfte vor dem Schreiben nur die Leserzeilen
-// (CheckBarcodeExists) und reichte die Ablehnung der Datenbank als 500 durch — die
+// (IstAusweisnummerVergeben) und reichte die Ablehnung der Datenbank als 500 durch — die
 // Bibliothek sah „interner Fehler“ statt „das ist die Nummer eines Buchs“
 // (Rasterdurchgang 22.09.2026, Frage 5: stille Fehler).
 func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
@@ -26,7 +26,7 @@ func TestKollegiumskonto_NummerEinesBuchsIstEineAuskunft(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	userRepo := repository.NewUserRepository(pool)
+	userRepo := repository.NewKontoAbfragen(pool)
 	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a131", Rolle: auth.RoleAdmin}
 
 	var titelID string

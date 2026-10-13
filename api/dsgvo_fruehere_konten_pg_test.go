@@ -51,7 +51,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 	ctx := context.Background()
 	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
-	userRepo := repository.NewUserRepository(pool)
+	userRepo := repository.NewKontoAbfragen(pool)
 	auditRepo := repository.NewAuditRepository(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),
@@ -191,7 +191,7 @@ func TestDsgvoAuskunft_NenntAnmeldungUndNachtragBeimKonto(t *testing.T) {
 	ctx := context.Background()
 	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
-	userRepo := repository.NewUserRepository(pool)
+	userRepo := repository.NewKontoAbfragen(pool)
 	auditRepo := repository.NewAuditRepository(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),

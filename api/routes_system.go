@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository, userRepo repository.UserRepository, dbPool db.PgxPoolIface) {
+func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.AuditRepository, userRepo repository.KontoAbfragen, dbPool db.PgxPoolIface) {
 	// ── BENUTZER (Users) ──
 	mux.Handle("GET /api/benutzer", s.RequirePermission("manage_users")(s.benutzer().ListUsersHandler(userRepo)))
 	mux.Handle("POST /api/benutzer", s.RequirePermission("manage_users")(s.benutzer().CreateUserHandler(userRepo)))

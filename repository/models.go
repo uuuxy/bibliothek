@@ -5,33 +5,27 @@ import (
 	"time"
 )
 
-// User repräsentiert einen Systemadministrator, Lehrer oder ein Bibliotheks-Teammitglied.
-type User struct {
-	// ID ist der eindeutige Primärschlüssel (UUID) des Benutzers.
+// Konto ist der Zugang einer Person zum Programm: Lehrkraft, Verwaltung oder Helfer (Tabelle
+// benutzer).
+type Konto struct {
+	// ID ist die UUID des Kontos.
 	ID string `json:"id"`
-	// BarcodeID ist die gescannte Kennung auf dem Mitarbeiterausweis.
+	// BarcodeID ist die Ausweisnummer aus der Leserzeile des Kontos.
 	BarcodeID string `json:"barcode_id"`
-	// Vorname ist der Vorname des Benutzers.
-	Vorname string `json:"vorname"`
-	// Nachname ist der Nachname des Benutzers.
-	Nachname string `json:"nachname"`
-	// Rolle definiert die Rechteklasse (z. B. "ADMIN", "LEHRER", "HELFER").
+	Vorname   string `json:"vorname"`
+	Nachname  string `json:"nachname"`
+	// Rolle ist die Rechteklasse des Kontos (Aufzählung benutzer_rolle).
 	Rolle string `json:"rolle"`
-	// Email ist die E-Mail-Adresse für Systembenachrichtigungen.
+	// Email ist die Adresse, mit der sich die Person anmeldet.
 	Email string `json:"email"`
-	// Aktiv zeigt an, ob das Benutzerkonto aktiv ist und sich anmelden darf.
-	Aktiv bool `json:"aktiv"`
-	// ErstelltAm ist der Zeitstempel der Benutzerregistrierung.
+	// Aktiv sagt, ob sich die Person anmelden darf.
+	Aktiv      bool      `json:"aktiv"`
 	ErstelltAm time.Time `json:"erstellt_am"`
-	// KEIN Permissions-Feld mehr (Sweep 01.09.2026, Fund A4): Es wurde nie
-	// befüllt und stand als "permissions": null in jeder Omnibox-Antwort mit
-	// Lehrkraft (ActionResponse.Teacher). Die echten Rechte tragen
-	// api.UserResponse (Benutzerverwaltung) und auth.LoginResponse (Sitzung).
-	// ZugangBeantragtAm: von der Selbstanmeldung gesetzt, von der Freischaltung gelöscht
-	// (Migration 086). nil = kein offener Antrag.
+	// ZugangBeantragtAm setzt die Selbstanmeldung, das Freischalten leert es; nil heißt kein
+	// offener Antrag.
 	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
-	// LeserID ist die Leserzeile dieses Kontos (Migration 125): Dort stehen Ausweis und
-	// Ausleihen. Jedes Konto hat eine — dafür sorgt ein Trigger, nicht der Aufrufer.
+	// LeserID ist die Leserzeile des Kontos: Dort stehen Ausweis und Ausleihen. Jedes Konto
+	// hat eine; dafür sorgt ein Trigger und nicht der Rufer.
 	LeserID string `json:"leser_id"`
 }
 

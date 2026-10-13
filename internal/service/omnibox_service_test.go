@@ -85,7 +85,7 @@ func TestNewOmniboxService(t *testing.T) {
 	var pool db.PgxPoolIface
 	var studentRepo repository.StudentRepository
 	var bookRepo repository.BookRepository
-	var userRepo repository.UserRepository
+	var userRepo repository.KontoAbfragen
 	var loanRepo repository.LoanRepository
 	var loanSvc LoanService
 	var deviceSvc DeviceService

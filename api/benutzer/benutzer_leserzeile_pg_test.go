@@ -26,7 +26,7 @@ func TestBenutzerBekommtLeserzeile(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	userRepo := repository.NewUserRepository(pool)
+	userRepo := repository.NewKontoAbfragen(pool)
 	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a125", Rolle: auth.RoleAdmin}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE id IN

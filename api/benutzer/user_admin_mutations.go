@@ -49,14 +49,14 @@ type CreateUserRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /benutzer [post]
-func (s *Tueren) CreateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
+func (s *Tueren) CreateUserHandler(userRepo repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleCreateUser(w, r, userRepo)
 	}
 }
 
 // handleCreateUser prüft Rolle, Adresse und Ausweis, legt das Konto an und protokolliert es.
-func (s *Tueren) handleCreateUser(w http.ResponseWriter, r *http.Request, userRepo repository.UserRepository) {
+func (s *Tueren) handleCreateUser(w http.ResponseWriter, r *http.Request, userRepo repository.KontoAbfragen) {
 	var req CreateUserRequest
 	if !tuer.DecodeAndValidate(w, r, &req) {
 		return
@@ -95,7 +95,7 @@ func (s *Tueren) handleCreateUser(w http.ResponseWriter, r *http.Request, userRe
 
 	// Die Leserzeile — und damit der Platz für Ausweis und Ausleihen — entsteht dabei
 	// von selbst (Trigger trg_benutzer_hat_leserzeile, Migration 125).
-	kontoID, err := userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole)
+	kontoID, err := userRepo.LegeAn(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole)
 	if err != nil {
 		if meldeAusweisKollision(w, err) {
 			return
@@ -135,7 +135,7 @@ type UpdateUserRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /benutzer/{id} [put]
-func (s *Tueren) UpdateUserHandler(userRepo repository.UserRepository) http.HandlerFunc {
+func (s *Tueren) UpdateUserHandler(userRepo repository.KontoAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleUpdateUser(w, r, userRepo)
 	}
@@ -143,7 +143,7 @@ func (s *Tueren) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 
 // handleUpdateUser prüft die Schutzregeln vor jedem Schreibzugriff, ändert das Konto und
 // protokolliert es.
-func (s *Tueren) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRepo repository.UserRepository) {
+func (s *Tueren) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRepo repository.KontoAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing user ID parameter"))
@@ -183,7 +183,7 @@ func (s *Tueren) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRe
 	if !ok {
 		return
 	}
-	stand, err := userRepo.UpdateUser(ctx, aenderung)
+	stand, err := userRepo.Aendere(ctx, aenderung)
 	if err != nil {
 		// Kein Protokolleintrag und kein Cache-Invalidate für eine Änderung, die nie
 		// stattfand.
@@ -223,14 +223,14 @@ func pruefeGenanntePflichtfelder(w http.ResponseWriter, req UpdateUserRequest) b
 
 // antworteOhneKontoAenderung beantwortet einen Rumpf, der nichts nennt: nichts geschrieben,
 // kein Protokolleintrag. Ein unbekanntes Konto bleibt eine 404.
-func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, id string) {
-	rolle, err := userRepo.GetRolleByID(ctx, id)
+func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, userRepo repository.KontoAbfragen, id string) {
+	rolle, err := userRepo.LadeRolle(ctx, id)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
 	if rolle == "" {
-		apierrors.SendHTTPError(w, http.StatusNotFound, repository.ErrBenutzerNichtGefunden)
+		apierrors.SendHTTPError(w, http.StatusNotFound, repository.ErrKontoNichtGefunden)
 		return
 	}
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
@@ -239,8 +239,8 @@ func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, user
 
 // kontoAenderungAus prüft die genannte E-Mail und Ausweisnummer auf Eindeutigkeit und baut die
 // Änderung für das Repository. ok=false: Die Ablehnung ist schon beantwortet.
-func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, id string, req UpdateUserRequest) (repository.UpdateUserParams, bool) {
-	aenderung := repository.UpdateUserParams{
+func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, userRepo repository.KontoAbfragen, id string, req UpdateUserRequest) (repository.KontoAenderung, bool) {
+	aenderung := repository.KontoAenderung{
 		ID: id, Vorname: req.Vorname, Nachname: req.Nachname, Email: req.Email, Aktiv: req.Aktiv,
 	}
 	if req.Email != nil && !pruefeEmailEindeutig(ctx, w, userRepo, *req.Email, id) {
@@ -267,7 +267,7 @@ func kontoAenderungAus(ctx context.Context, w http.ResponseWriter, userRepo repo
 // antworteAufKontoAenderungsfehler ordnet den Fehler beim Ändern eines Kontos ein: unbekannte
 // Kennung 404, belegter Ausweis 409, alles andere 500.
 func antworteAufKontoAenderungsfehler(w http.ResponseWriter, err error) {
-	if errors.Is(err, repository.ErrBenutzerNichtGefunden) {
+	if errors.Is(err, repository.ErrKontoNichtGefunden) {
 		apierrors.SendHTTPError(w, http.StatusNotFound, err)
 		return
 	}

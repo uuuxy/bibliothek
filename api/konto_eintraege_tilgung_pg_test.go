@@ -30,7 +30,7 @@ func TestKontoEintraege_FallenMitDemLeser(t *testing.T) {
 	ctx := t.Context()
 	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Server{Basis: tuer.Basis{DB: &db.Database{Pool: pool}}}
-	userRepo := repository.NewUserRepository(pool)
+	userRepo := repository.NewKontoAbfragen(pool)
 	auditRepo := repository.NewAuditRepository(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),

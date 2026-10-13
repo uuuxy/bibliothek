@@ -25,7 +25,7 @@ func TestBenutzerLoeschen_AblehnungenUeberDieTuer(t *testing.T) {
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	auditRepo := repository.NewAuditRepository(pool)
-	userRepo := repository.NewUserRepository(pool)
+	userRepo := repository.NewKontoAbfragen(pool)
 
 	konto := func(vorname, rolle string) string {
 		t.Helper()
@@ -117,7 +117,7 @@ func TestBenutzerAendern_UnbekannteKennungOhneProtokoll(t *testing.T) {
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 		&auth.Claims{UserID: admin, Rolle: auth.RoleAdmin}))
 	rec := httptest.NewRecorder()
-	srv.UpdateUserHandler(repository.NewUserRepository(pool))(rec, req)
+	srv.UpdateUserHandler(repository.NewKontoAbfragen(pool))(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("Status %d, erwartet 404: %s", rec.Code, rec.Body.String())

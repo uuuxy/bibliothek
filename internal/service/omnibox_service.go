@@ -97,7 +97,7 @@ type defaultOmniboxService struct {
 	pool        db.PgxPoolIface
 	studentRepo repository.StudentRepository
 	bookRepo    repository.BookRepository
-	userRepo    repository.UserRepository
+	userRepo    repository.KontoAbfragen
 	loanRepo    repository.LoanRepository
 	loanSvc     LoanService
 	deviceSvc   DeviceService
@@ -108,7 +108,7 @@ func NewOmniboxService(
 	pool db.PgxPoolIface,
 	studentRepo repository.StudentRepository,
 	bookRepo repository.BookRepository,
-	userRepo repository.UserRepository,
+	userRepo repository.KontoAbfragen,
 	loanRepo repository.LoanRepository,
 	loanSvc LoanService,
 	deviceSvc DeviceService,

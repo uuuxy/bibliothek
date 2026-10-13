@@ -68,7 +68,7 @@ func TestListUsersLiefertEchteRechte(t *testing.T) {
 	}
 
 	rec := httptest.NewRecorder()
-	srv.ListUsersHandler(repository.NewUserRepository(pool)).
+	srv.ListUsersHandler(repository.NewKontoAbfragen(pool)).
 		ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/benutzer", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Status %d, Koerper: %s", rec.Code, rec.Body.String())

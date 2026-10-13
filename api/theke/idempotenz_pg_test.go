@@ -90,7 +90,7 @@ func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 	auditRepo := repository.NewAuditRepository(pool)
 	loanSvc := service.NewLoanService(pool, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := service.NewDeviceService(pool, studentRepo, loanRepo, auditRepo)
-	echt := service.NewOmniboxService(pool, studentRepo, bookRepo, repository.NewUserRepository(pool), loanRepo, loanSvc, deviceSvc)
+	echt := service.NewOmniboxService(pool, studentRepo, bookRepo, repository.NewKontoAbfragen(pool), loanRepo, loanSvc, deviceSvc)
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}}
 	schluessel := "3f2504e0-4f89-11d3-9a0c-0305e82c" + suffix[len(suffix)-4:]

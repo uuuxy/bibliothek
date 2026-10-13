@@ -223,7 +223,7 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 		t.Fatal(err)
 	}
 	wahr, falsch := true, false
-	if _, err := repository.NewUserRepository(pool).UpdateUser(ctx, repository.UpdateUserParams{
+	if _, err := repository.NewKontoAbfragen(pool).Aendere(ctx, repository.KontoAenderung{
 		ID: id, Aktiv: &wahr,
 	}); err != nil {
 		t.Fatalf("freischalten: %v", err)
@@ -242,7 +242,7 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 
 	// 5. Bewusst deaktivieren: Das ist kein Antrag mehr — die Meldung sagt „deaktiviert",
 	//    nicht „beantragt". Sonst wartete die Person auf eine Freischaltung, die nicht kommt.
-	if _, err := repository.NewUserRepository(pool).UpdateUser(ctx, repository.UpdateUserParams{
+	if _, err := repository.NewKontoAbfragen(pool).Aendere(ctx, repository.KontoAenderung{
 		ID: id, Aktiv: &falsch,
 	}); err != nil {
 		t.Fatalf("deaktivieren: %v", err)

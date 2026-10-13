@@ -12,39 +12,39 @@ import (
 	"bibliothek/repository"
 )
 
-// eskalationsRepo ist ein UserRepository, das nur die für die Rechtetrennung nötigen
-// Fragen beantwortet. Das eingebettete Interface hält den Fake klein — jede nicht
-// überschriebene Methode würde beim Aufruf panisch werden und damit anzeigen, dass der
-// Handler mehr tut als hier abgebildet.
+// eskalationsRepo erfüllt KontoAbfragen und beantwortet nur die Fragen, die die Trennung der
+// Rechte braucht. Die eingebettete Schnittstelle hält die Attrappe klein: Jede Methode, die
+// sie nicht überschreibt, bricht beim Aufruf ab und zeigt so, dass die Tür mehr tut als hier
+// abgebildet.
 type eskalationsRepo struct {
-	repository.UserRepository
+	repository.KontoAbfragen
 	rollen    map[string]string // Benutzer-ID → aktuelle Rolle
 	geaendert bool
 	angelegt  bool
 }
 
-func (r *eskalationsRepo) GetRolleByID(_ context.Context, id string) (string, error) {
+func (r *eskalationsRepo) LadeRolle(_ context.Context, id string) (string, error) {
 	return r.rollen[id], nil
 }
 
-func (r *eskalationsRepo) CheckEmailExists(_ context.Context, _, _ string) (bool, error) {
+func (r *eskalationsRepo) IstEmailVergeben(_ context.Context, _, _ string) (bool, error) {
 	return false, nil
 }
 
-func (r *eskalationsRepo) CheckBarcodeExists(_ context.Context, _, _ string) (bool, error) {
+func (r *eskalationsRepo) IstAusweisnummerVergeben(_ context.Context, _, _ string) (bool, error) {
 	return false, nil
 }
 
-func (r *eskalationsRepo) LeserzeileOhneKonto(_ context.Context, _, _ string) (bool, error) {
+func (r *eskalationsRepo) HatLeserzeileOhneKonto(_ context.Context, _, _ string) (bool, error) {
 	return false, nil
 }
 
-func (r *eskalationsRepo) CreateUser(_ context.Context, _ *string, _, _, _, _ string) (string, error) {
+func (r *eskalationsRepo) LegeAn(_ context.Context, _ *string, _, _, _, _ string) (string, error) {
 	r.angelegt = true
 	return "neu-1", nil
 }
 
-func (r *eskalationsRepo) UpdateUser(_ context.Context, _ repository.UpdateUserParams) (repository.KontoStand, error) {
+func (r *eskalationsRepo) Aendere(_ context.Context, _ repository.KontoAenderung) (repository.KontoStand, error) {
 	r.geaendert = true
 	return repository.KontoStand{}, nil
 }

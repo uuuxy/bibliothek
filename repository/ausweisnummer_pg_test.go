@@ -117,7 +117,7 @@ func TestAusweisnummer_KontoBekommtEineBeimAnlegen(t *testing.T) {
 // Eine offene Zugangsanfrage (inaktiv) bekommt keine Nummer — sonst bliebe ihre Leserzeile
 // nach einer Ablehnung als Waise stehen (repository.loescheUnberuehrteLeserzeile). Die
 // Freischaltung vergibt sie, auch wenn derselbe Vorgang danach die Leserzeile mit leerem
-// Ausweisfeld schreibt (repository.UpdateUser): Der Trigger wartet bis zum Commit.
+// Ausweisfeld schreibt (KontoAbfragen.Aendere): Der Trigger wartet bis zum Commit.
 func TestAusweisnummer_AnfrageKeineFreischaltungEine(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -142,7 +142,7 @@ func TestAusweisnummer_AnfrageKeineFreischaltungEine(t *testing.T) {
 		t.Fatalf("offene Anfrage trägt Ausweis %s, erwartet keinen", *n)
 	}
 
-	// Freischaltung wie UpdateUser: erst das Konto, dann die Leserzeile mit leerem Feld.
+	// Freischaltung wie KontoAbfragen.Aendere: erst das Konto, dann die Leserzeile mit leerem Feld.
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -171,7 +171,7 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	users := repository.NewUserRepository(pool)
+	users := repository.NewKontoAbfragen(pool)
 
 	var kontoID, leserID string
 	if err := pool.QueryRow(ctx, `
@@ -195,7 +195,7 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 		}
 	}
 	aendere := func(aktiv bool) error {
-		_, err := users.UpdateUser(ctx, repository.UpdateUserParams{
+		_, err := users.Aendere(ctx, repository.KontoAenderung{
 			ID: kontoID, Aktiv: &aktiv, BarcodeGenannt: true,
 		})
 		return err
@@ -207,7 +207,8 @@ func TestAusweisnummer_LeerenZiehtNeue(t *testing.T) {
 	}
 	pruefe("roh geleert", "A-10002")
 
-	// Die Benutzerverwaltung schickt ein leeres Feld; UpdateUser schreibt es als NULL.
+	// Die Verwaltung der Konten schickt ein leeres Feld; KontoAbfragen.Aendere schreibt es als
+	// NULL.
 	if err := aendere(true); err != nil {
 		t.Fatalf("Benutzerverwaltung: %v", err)
 	}
@@ -352,7 +353,7 @@ func pruefeMigrationslauf(t *testing.T, pool *pgxpool.Pool, datei string, soll m
 }
 
 // NULL über NULL ist kein Leeren: Die Zeile hat noch keine Nummer. So schreibt die
-// Freischaltung einer Zugangsanfrage (repository.UpdateUser, leeres Feld) — erst das Konto,
+// Freischaltung einer Zugangsanfrage (KontoAbfragen.Aendere, leeres Feld) — erst das Konto,
 // dann die Leserzeile, in einer Transaktion. Der Trigger an leser lässt das liegen; die Nummer
 // kommt wie seit Migration 136 beim Commit, und mit ihr erst der Lock des Generators.
 func TestAusweisnummer_NullUeberNullZiehtErstBeimCommit(t *testing.T) {

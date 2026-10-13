@@ -68,7 +68,7 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return ErrBenutzerNichtGefunden
+		return ErrKontoNichtGefunden
 	}
 
 	// Die Leserzeile des Kontos geht MIT, wenn sie unberührt ist.

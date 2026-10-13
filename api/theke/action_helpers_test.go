@@ -138,7 +138,7 @@ func TestHandleBookReturn(t *testing.T) {
 	bookRepo := repository.NewBookRepository(mock)
 	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := service.NewDeviceService(mock, studentRepo, loanRepo, auditRepo)
-	omniboxSvc := service.NewOmniboxService(mock, studentRepo, bookRepo, repository.NewUserRepository(mock), loanRepo, loanSvc, deviceSvc)
+	omniboxSvc := service.NewOmniboxService(mock, studentRepo, bookRepo, repository.NewKontoAbfragen(mock), loanRepo, loanSvc, deviceSvc)
 
 	copyID := "copy-1"
 	barcode := "B-9999"

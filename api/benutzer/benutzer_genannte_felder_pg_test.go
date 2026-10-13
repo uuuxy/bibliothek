@@ -25,7 +25,7 @@ func TestBenutzerAendern_SchreibtNurDieGenanntenFelder(t *testing.T) {
 	ctx := t.Context()
 	admin := testdaten.AdminFuerAudit(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	userRepo := repository.NewUserRepository(pool)
+	userRepo := repository.NewKontoAbfragen(pool)
 	t.Cleanup(func() {
 		if _, err := pool.Exec(context.Background(),
 			`DELETE FROM benutzer WHERE email LIKE '%@genannte-felder.invalid'`); err != nil {
