@@ -1,7 +1,7 @@
 // Package mahnwesen trägt die Türen des Mahnwesens und der Abgänger: die überfälligen Ausleihen
-// je Klasse, Mahnlisten und Mahnbriefe als PDF und als Mail an die Klassenleitungen, dazu die
-// Liste der Abschlussklassen mit offenen Büchern in der Saison und ihre Kontoauszüge als PDF
-// und als Mail.
+// je Klasse, Mahnlisten und Mahnbriefe als PDF und als Mail an die Klassenleitungen, deren
+// Adressen je Klasse, dazu die Liste der Abschlussklassen mit offenen Büchern in der Saison
+// und ihre Kontoauszüge als PDF und als Mail.
 package mahnwesen
 
 import "bibliothek/api/tuer"

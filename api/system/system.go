@@ -1,7 +1,7 @@
 // Package system trägt die Türen der Systempflege: die Einstellungen und die Mail-Einrichtung
-// mit ihren Vorlagen und den Adressen der Klassenleitungen, die Selbstprüfung der
-// Betriebsbereitschaft mit ihrer täglichen Warnmail, der Stand der Sicherung, das Protokoll,
-// Statistik und Übersicht und die zwei Importe, über die ein Bestand ins Programm kommt.
+// mit ihren Vorlagen, die Selbstprüfung der Betriebsbereitschaft mit ihrer täglichen Warnmail,
+// der Stand der Sicherung, das Protokoll, Statistik und Übersicht und die zwei Importe, über
+// die ein Bestand ins Programm kommt.
 package system
 
 import "bibliothek/api/tuer"

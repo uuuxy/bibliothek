@@ -531,7 +531,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt, nach Druck und Bestellung `api/`, `api/katalog`, `repository/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/druck`, `api/bestellung` und `internal/buchetikett` ergänzt, am 13.10.2026 nach den Lesern `api/`, `api/system` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/leser` und in 5.2.2 die Regel ergänzt, zu welchem Thema eine Tür gehört
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt, nach Druck und Bestellung `api/`, `api/katalog`, `repository/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/druck`, `api/bestellung` und `internal/buchetikett` ergänzt, am 13.10.2026 nach den Lesern `api/`, `api/mahnwesen` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/leser` und in 5.2.2 die Regel ergänzt, zu welchem Thema eine Tür gehört
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -626,8 +626,8 @@ HTTP-Anfrage
 | `api/inventurlauf/`     | 791 Zeilen, 6 Dateien      | Die Türen der Inventur: einen Lauf über die ganze Bibliothek, eine Signatur oder Fach und Klasse beginnen, Exemplare scannen, den Lauf abschließen oder verwerfen, den Fehlbestand lesen, ein als Verlust gebuchtes Exemplar wieder aufnehmen oder endgültig löschen. Der Name weicht dem Medienkatalog `inventur/` aus (5.2.3) |
 | `api/benutzer/`         | 839 Zeilen, 7 Dateien      | Die Türen zu „Benutzer & Rechte": die Konten des Personals und die Matrix, die je Rolle nennt, was sie darf, mit den Regeln zum Schutz der Admin-Konten |
 | `api/portal/`           | 694 Zeilen, 6 Dateien      | „Mein Portal" des Kollegiums (Suche im Katalog, Reservierung von Klassensätzen, Meldungen an die Bibliothek), der öffentliche Katalog und die Folien für den Monitor |
-| `api/system/`           | 1.661 Zeilen, 14 Dateien   | Die Türen der Systempflege: Einstellungen, Mail-Einrichtung und Vorlagen, die Adressen der Klassenleitungen, die Selbstprüfung der Betriebsbereitschaft mit ihrer täglichen Warnmail, der Stand der Sicherung, das Protokoll, Statistik und Übersicht, die zwei Importe |
-| `api/mahnwesen/`        | 1.315 Zeilen, 8 Dateien    | Die Türen des Mahnwesens und der Abgänger: die überfälligen Ausleihen je Klasse, Mahnlisten und Mahnbriefe als PDF und als Mail an die Klassenleitungen, die Liste der Abschlussklassen mit offenen Büchern in der Saison und ihre Kontoauszüge |
+| `api/system/`           | 1.550 Zeilen, 13 Dateien   | Die Türen der Systempflege: Einstellungen, Mail-Einrichtung und Vorlagen, die Selbstprüfung der Betriebsbereitschaft mit ihrer täglichen Warnmail, der Stand der Sicherung, das Protokoll, Statistik und Übersicht, die zwei Importe |
+| `api/mahnwesen/`        | 1.426 Zeilen, 9 Dateien    | Die Türen des Mahnwesens und der Abgänger: die überfälligen Ausleihen je Klasse, Mahnlisten und Mahnbriefe als PDF und als Mail an die Klassenleitungen, deren Adressen je Klasse, die Liste der Abschlussklassen mit offenen Büchern in der Saison und ihre Kontoauszüge |
 | `api/schaden/`          | 1.126 Zeilen, 9 Dateien    | Die Türen zu Schaden und Ersatz: einen Verlust oder Schaden melden, Forderungen lesen und erledigen, der Vorschlag zum Betrag, der Bescheid über den Schadensersatz, die Rechnung an die Eltern und der Brief zu einem Schadensfall |
 | `api/katalog/`          | 3.089 Zeilen, 23 Dateien   | Die Türen des Medienkatalogs zu einem Titel und seinen Exemplaren: Exemplare, Ausleiher und Historie eines Titels, Nummer, Zustand, Eigentum und Standort eines Exemplars, die nächste freie Nummer, Auflagen, Signaturen, Systematik, Schlagworte, die Abfrage über die ISBN, die Cover, die Geräte, Zugangs- und Abgangsbuch. Titelliste, Buchmaske und Import stehen in `inventur/` (5.2.3) |
 | `api/druck/`            | 642 Zeilen, 6 Dateien      | Die Türen des Druck-Centers: die Etiketten eines Titels und eines Druckauftrags als PDF, die Liste der Exemplare ohne Etikett mit Zähler, Vermerk und Stichtag, die Etiketten für Schüler, das Design der Ausweise, ein Strichcode als Bild |
@@ -665,13 +665,16 @@ Theke stehen noch in `api/`.
   erreicht eine Tür unter denselben Namen wie am Server (`s.DB`, `s.Jetzt()`), und es gibt
   sie einmal. Der Typ steht mit dem Kommentar zum Paket in der Datei, die wie das Paket
   heißt (`api/lernmittel/lernmittel.go`).
-- Zu welchem Thema eine Tür gehört, sagt die Seite der Oberfläche, die sie ruft, nicht der
-  Name ihrer Datei. Die Adressen der Klassenleitungen pflegt nur die Seite der Einstellungen:
-  Ihre Türen stehen bei der Systempflege (`api/system/klassen_mapping.go`), auch wenn ihre
-  Routen neben denen der Leser angemeldet sind. Die nächste freie Exemplarnummer ruft die
-  Buchmaske und steht beim Katalog, den Kontoauszug ruft die Leserakte, er steht bei den
-  Lesern. Rufen mehrere Seiten eine Tür, steht sie bei dem Thema, dessen Daten sie liest: die
-  Liste der Klassen bei den Lesern.
+- Zu welchem Thema eine Tür gehört, sagt die Stelle der Oberfläche, die sie ruft, nicht der
+  Name ihrer Datei: der Menüpunkt, in den Einstellungen die Kategorie. Die Einstellungen
+  tragen Kategorien mehrerer Themen. Die Lieferanten stehen bei der Bestellung, die
+  Schlagworte beim Katalog, „LUSD & Versetzung" bei den Lesern und die Adressen der
+  Klassenleitungen („Mahnwesen-Routing") beim Mahnwesen (`api/mahnwesen/klassen_mapping.go`),
+  auch wenn ihre Routen neben denen der Leser angemeldet sind. Bei der Systempflege steht,
+  was die Einstellungen selbst speichern, und die Mail-Einrichtung. Die nächste freie
+  Exemplarnummer ruft die Buchmaske und steht beim Katalog, den Kontoauszug ruft die
+  Leserakte, er steht bei den Lesern. Rufen Stellen mehrerer Themen eine Tür, steht sie bei
+  dem Thema, dessen Daten sie liest: die Liste der Klassen bei den Lesern.
 - Die Routenlisten bleiben in `api/` (`routes_*.go`): Dort steht jede Tür mit Adresse und
   Recht. Sie erreichen ein Thema über den Zugang des Servers, eine Methode mit dem Namen des
   Themas (`s.lernmittel().PutLmfPlanHandler()`, erklärt in `api/router.go`). Eine Tür, die
@@ -2747,9 +2750,10 @@ wenn man ihn einmal gebraucht hat.
   der Test über den Router bei den Lernmitteln. Seither vergleicht
   `api/zugaenge_basis_test.go` je Zugang den Zeiger mit der Basis des Servers und die Liste
   der geprüften Zugänge mit den erklärten. Ein neues Thema trägt seinen Zugang dort ein.
-  Mit den Lesern (13.10.2026) kam dazu: Vor dem Umzug je Tür des Themas die rufende Seite
-  suchen (`grep -rn "<Adresse>" frontend/src`); ruft sie nur eine Seite eines anderen Themas,
-  zieht die Tür dorthin (5.2.2). Welchen Helfer ein Test braucht, der in `api/` bleibt, nennt
+  Mit den Lesern (13.10.2026) kam dazu: Vor dem Umzug je Tür des Themas die rufende Stelle
+  der Oberfläche suchen (`grep -rn "<Adresse>" frontend/src`), bis zum Menüpunkt oder zur
+  Kategorie der Einstellungen, die das Bauteil einbindet; nennt sie ein anderes Thema, zieht
+  die Tür dorthin (5.2.2). Welchen Helfer ein Test braucht, der in `api/` bleibt, nennt
   der Probelauf erst mit der endgültigen Liste: nach dem Herausnehmen der Tests zweier Themen
   wiederholen. Zieht eine Liste zu den Prüfhilfen, die mehrere Prüfungen lesen, belegt eine
   Probe mit einem Eintrag zu viel, dass jede Prüfung sie am neuen Ort liest, und je Art von
@@ -3544,8 +3548,8 @@ generischen Helfern sieht er nicht.
 Das Paket trägt Router, Middleware und die Türen eines Themas, der Theke. Die der elf
 übrigen stehen seit dem 12. und 13.10.2026 in eigenen Paketen darunter: `api/lernmittel`
 (1.110 Zeilen in sechs Dateien), `api/inventurlauf` (791 in sechs), `api/benutzer` (839 in
-sieben), `api/portal` (694 in sechs), `api/system` (1.661 in 14), `api/mahnwesen` (1.315 in
-acht), `api/schaden` (1.126 in neun), `api/katalog` (3.089 in 23), `api/druck` (642 in
+sieben), `api/portal` (694 in sechs), `api/system` (1.550 in 13), `api/mahnwesen` (1.426 in
+neun), `api/schaden` (1.126 in neun), `api/katalog` (3.089 in 23), `api/druck` (642 in
 sechs), `api/bestellung` (2.816 in 18) und `api/leser` (3.007 in 18).
 Mit 3.487 Zeilen ist `api/` kleiner als `repository/` (22.367 Zeilen in 151 Dateien),
 `inventur/` (6.547) und `internal/service` (5.020). Seine

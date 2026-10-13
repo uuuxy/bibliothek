@@ -63,9 +63,9 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.leser().GetClassesHandler(studentRepo)))
 	// Die besetzten Jahrgänge fürs Filter-Auswahlfeld der Leserdatei (OFFEN.md 9.5).
 	mux.Handle("GET /api/jahrgaenge", s.RequirePermission("view_students")(s.leser().JahrgaengeHandler(lmfKlassenRepo)))
-	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_settings")(s.system().GetKlassenMappingHandler()))
-	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_settings")(s.system().UpsertKlassenMappingHandler()))
-	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_settings")(s.system().DeleteKlassenMappingHandler()))
+	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_settings")(s.mahnwesen().GetKlassenMappingHandler()))
+	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_settings")(s.mahnwesen().UpsertKlassenMappingHandler()))
+	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_settings")(s.mahnwesen().DeleteKlassenMappingHandler()))
 
 	// LUSD Import
 	// import_students statt manage_users: Das Recht war geseedet und in der

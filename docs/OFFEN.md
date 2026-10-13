@@ -535,11 +535,11 @@ von Stufe 4 zehn der elf Themen.
   | Thema      | Dateien | Zeilen | Routen | Testdateien | Dateien heute in `api/` |
   | ---------- | ------- | ------ | ------ | ----------- | ----------------------- |
   | Katalog    | 21      | 3.035  | 43     | 35          | `copy_admin*.go`, `auflagen_handler.go`, `book_systematik_handler.go`, `isbn_handler.go`, `schlagwort*.go`, `signaturen_handler.go`, `systematik_handler.go`, `lookups.go`, `exemplar_*.go`, `cover.go`, `cover_quelle_bindung.go`, `image_caching.go`, `geraete.go`, `abgangsbuch_handler.go`, `zugangsbuch_handler.go`, `bestandsbuch.go`, seit dem 12.10.2026 in `api/katalog` |
-  | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go`, dazu der Kontoauszug (`print_kontoauszug.go`); seit dem 13.10.2026 in `api/leser`, ohne `klassen_mapping.go`: Die Adressen der Klassenleitungen ruft nur die Seite der Einstellungen, sie stehen bei der Systempflege |
+  | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go`, dazu der Kontoauszug (`print_kontoauszug.go`); seit dem 13.10.2026 in `api/leser`, ohne `klassen_mapping.go`: Die Adressen der Klassenleitungen pflegt die Kategorie „Mahnwesen-Routing" der Einstellungen, sie stehen beim Mahnwesen |
   | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go`, seit dem 12.10.2026 in `api/bestellung` |
-  | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system`; seit dem 13.10.2026 dazu `klassen_mapping.go` (die Adressen der Klassenleitungen) |
+  | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system` |
   | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go` |
-  | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go`, seit dem 12.10.2026 in `api/mahnwesen` |
+  | Mahnwesen  | 7       | 1.302  | 6      | 11          | `mahnwesen*.go`, `graduates*.go`, `abgaenger_fenster.go`, seit dem 12.10.2026 in `api/mahnwesen`; seit dem 13.10.2026 dazu `klassen_mapping.go` (die Adressen der Klassenleitungen) |
   | Druck      | 8       | 1.172  | 15     | 8           | `labels.go`, `etiketten_offen.go`, `buchbarcodes_handler.go`, `barcode_*.go`, `schueler_etiketten.go`, `ausweis_layout.go`, `print_kontoauszug.go` (der Kontoauszug aus `print.go`); seit dem 12.10.2026 in `api/druck`, ohne drei Dateien, die nach der rufenden Seite zogen oder ziehen: `barcode_sequence.go` zum Katalog, `buchbarcodes_handler.go` zur Theke, der Kontoauszug zu den Lesern |
   | Schaden    | 7       | 1.154  | 13     | 10          | `bescheid_*.go`, `ersatzwert_vorschlag_handler.go`, `damage*.go`, `pdf.go`, dazu die Rechnung an die Eltern aus `print.go`; seit dem 12.10.2026 in `api/schaden` |
   | Lernmittel | 5       | 1.098  | 7      | 8           | `lmf_*.go`, seit dem 12.10.2026 in `api/lernmittel` |
@@ -701,9 +701,11 @@ von Stufe 4 zehn der elf Themen.
   | ----- | ----------- | ------- | ----------- | -------- | ------ |
   | Leser | `api/leser` | 17      | 57          | 52       | 21     |
 
-  Die Türen zu den Adressen der Klassenleitungen ruft nur die Seite der Einstellungen
-  (Kategorie „Mahnwesen-Routing"); sie stehen bei der Systempflege
-  (`api/system/klassen_mapping.go`), nicht bei den Lesern. Im Weg standen ein Helfer und eine
+  Die Türen zu den Adressen der Klassenleitungen ruft die Kategorie „Mahnwesen-Routing" der
+  Einstellungen; sie stehen beim Mahnwesen (`api/mahnwesen/klassen_mapping.go`), nicht bei
+  den Lesern. Zu welchem Thema eine Tür gehört, sagt die Stelle der Oberfläche, die sie ruft:
+  der Menüpunkt, in den Einstellungen die Kategorie
+  ([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2). Im Weg standen ein Helfer und eine
   Liste aus Testdateien, die in `api/` bleiben: Den Stand eines Schülers liest jetzt
   `testdaten.LeseSchuelerStatus`, die Liste der Tabellen mit Bezug auf einen Leser steht als
   `testdaten.DsgvoSchuelerQuellen` bei den Prüfhilfen. Vier Prüfungen lesen sie: Der Scan am
