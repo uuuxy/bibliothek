@@ -50,6 +50,11 @@ dieser Nummer aus [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1.
   Speicher außer Haus nie. Vorschlag: Es löscht dort nach derselben Regel (die jüngsten 14
   Nächte, dazu je Woche eine für 12 Wochen); eine Löschregel, die jemand am Speicher von Hand
   einstellt, braucht es dann nicht. (7.3, R8)
+- [ ] Etiketten auf die Breite der Zelle kürzen statt nach Zeichenzahl? Vorschlag: ja. Am
+  Vorgabe-Bogen ändert sich für einen Titel in gewöhnlicher Schreibweise nichts. Am kleinen
+  Bogen (48,3 mm) druckt ein langer Titel heute rund 5 mm auf jedes Nachbaretikett, mit
+  QR-Code rund 13 mm auf das rechte; er endete dann nach rund 33 statt 40 Zeichen. Am
+  Lernmittel-Etikett endete der Titel nach rund 39 statt 42 Zeichen. (5.63)
 - [ ] Zwei zugelieferte Pull Requests vom 13.10.2026 (734 und 735), beide am selben Tag am
   Code geprüft. Vorschlag: 734 übernehmen, 735 schließen. 734 gibt dem aufklappbaren Bereich
   im Vorrat des LMF-Plans (`LmfPlanVorrat.svelte`) eine Kennung und nennt sie am Knopf
@@ -207,8 +212,8 @@ der Nummer nichts mehr dazu offen ist.
   Tür und Regel sind gelesen und getrennt, beide Importe fragen den Titelbestand mit einer
   Methode. Was an der Tür bleibt und warum, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2
   (Tür und Abfrage), die Größen in 11.1 unter R4.
-- [ ] **Etiketten kürzen nach Zeichenzahl (5.63):** an neun Stellen messen, ob ein Text über
-  den Rand des Etiketts läuft.
+- [ ] **Etiketten kürzen nach Zeichenzahl (5.63):** gemessen am 13.10.2026; nach der
+  Entscheidung an neun Stellen auf die Breite kürzen.
 
 Was nur mit Anlass gebaut wird, steht nicht hier, sondern in
 [ARCHITEKTUR.md](ARCHITEKTUR.md) 11.5 „Bekannte Grenzen".
@@ -436,12 +441,42 @@ gedruckte Breite (`pdfzeichen.KuerzeAufZelle`; die Fehlerart steht in [sweeps.md
 langer Titel bis zu 6 mm, ein Titel in Großbuchstaben bis zu 33 mm über die Nachbarzelle.
 
 Nach Zeichen kürzen weiter die Etiketten (gezählt am 09.10.2026): `pdf/etikett_buch.go` an fünf
-Stellen, `pdf/etikett_lernmittel.go` an vier. Zu tun je Stelle: mit ihrer Schrift und der Breite
-des Etiketts messen, ob die zugelassene Zahl breiter Buchstaben über den Rand läuft, und dann
-auf die Breite kürzen. Die Etiketten sind im Aussehen abgenommen; mit der Umstellung ändert sich,
-wo ein langer Titel endet. Die Zeile mit den Auflagen im Schulbuch-Export
-(`inventur/lernmittel_pdf.go`) kürzt ebenfalls nach Zeichen; sie bricht über drei Zeilen um und
-braucht eine andere Messung.
+Stellen, `pdf/etikett_lernmittel.go` an vier.
+
+**Gemessen am 13.10.2026:** je Stelle mit ihrer Schrift gegen die Breite ihrer Zelle, einmal ein
+gewöhnlich langer Text in Groß- und Kleinschreibung, einmal derselbe in Großbuchstaben, jeder
+auf die zugelassene Zahl gekürzt. Die Zahl sagt, um wie viele Millimeter der Text breiter ist
+als die Zelle; „passt" heißt schmaler.
+
+| Stelle (Schrift, zugelassene Zeichen) | Bogen 63,5 mm (Vorgabe) | Bogen 70 mm | Bogen 48,3 mm |
+| ------------------------------------- | ----------------------- | ----------- | ------------- |
+| Buch: Schulname (8 pt fett, 42)       | passt; groß +13,3       | passt; groß +6,8 | +14,4; groß +28,5 |
+| Buch: Titel mit Strichcode (8 pt fett, 40) | passt; groß +6,9   | passt; groß +0,4 | +10,8; groß +22,1 |
+| Buch: Titel mit QR-Code (8 pt fett, 40) | passt; groß +10,9     | passt; groß +4,4 | +14,8; groß +26,1 |
+| Buch: Autor mit QR-Code (7 pt, 30)    | passt                   | passt       | passt         |
+| Buch: Jahr und Signatur (7 pt, 45)    | passt                   | passt       | nicht gedruckt |
+| Buch: Eigentumsvermerk (7 pt, 45)     | passt; groß +4,7        | passt       | nicht gedruckt |
+
+Lernmittel-Etikett (Zelle 85 mm im Feld von 105 mm): Schulname (11 pt fett, 45) +7,1 und groß
++26,9; Titel (12 pt fett, 42) +8,6 und groß +26,7; Jahr und Signatur (9 pt, 48) passt, groß
++2,0; Eigentumsvermerk (8 pt, 48) passt.
+
+Der Text steht mittig, ein Überstand verteilt sich auf beide Seiten; am Etikett mit QR-Code
+stehen Titel und Autor linksbündig, der Überstand liegt rechts. Am Buchetikett reicht die Zelle
+über das ganze Etikett (mit QR-Code bis 2 mm vor den Rand): Was übersteht, steht auf dem
+Nachbaretikett. Am Lernmittel-Etikett liegen je 10 mm Rand um die Zelle; bis 20 mm Überstand
+bleiben auf dem Etikett.
+
+**Was sich mit dem Kürzen auf die Breite ändert:** Am Vorgabe-Bogen und am Bogen mit 70 mm endet
+ein Titel in gewöhnlicher Schreibweise wie heute oder später (es passen 43 und 48 Zeichen statt
+40), ein Titel in Großbuchstaben früher (nach 35 und 40 Zeichen). Am kleinen Bogen endet ein
+langer Titel nach rund 33 statt 40 Zeichen und druckt nicht mehr auf das Nachbaretikett. Am
+Lernmittel-Etikett endet der Titel nach rund 39 statt 42 Zeichen, der Schulname nach rund 42
+statt 45. Nach der Entscheidung je Stelle `pdfzeichen.KuerzeAufZelle` und ein Test mit dem
+breitesten Text.
+
+Die Zeile mit den Auflagen im Schulbuch-Export (`inventur/lernmittel_pdf.go`) kürzt ebenfalls
+nach Zeichen; sie bricht über drei Zeilen um und braucht eine andere Messung.
 
 ---
 
