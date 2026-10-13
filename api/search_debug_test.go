@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bibliothek/api/tuer"
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
@@ -24,7 +25,7 @@ func TestSuche_AnfrageMitDoppelpunkt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	database := &db.Database{Pool: pool}
 
-	srv := NewServer(database, nil, nil, false)
+	srv := &Server{Basis: tuer.Basis{DB: database}}
 	handler := srv.SearchHandler(repository.NewStudentRepository(pool), repository.NewBookRepository(pool))
 
 	rr := httptest.NewRecorder()
