@@ -1,4 +1,4 @@
-package api
+package api_test
 
 import (
 	"encoding/json"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/routertest"
 	"bibliothek/internal/testdaten"
 	"bibliothek/repository"
 
@@ -81,7 +82,7 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
-	adminID, rufe := protokollWelt(t, pool)
+	adminID, rufe := routertest.MitAufruf(t, pool)
 	t.Cleanup(func() {
 		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_log WHERE details->>'action' = $1`, repository.AuditAktionAusgesondert)
 	})

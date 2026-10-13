@@ -588,8 +588,8 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   Zwölf davon brauchen Tests aus mehr als einem Thema und ziehen mit ihrer Stufe: acht hängen
   an einem oder zwei Themen, die Liste der Tabellen mit Bezug auf einen Leser gehört zu den
   Tests der Auskunft (seit dem 13.10.2026 `testdaten.DsgvoSchuelerQuellen`), und drei bauen
-  den ganzen Router (`routerMitSitzung`, `routerMitSitzungUeber`,
-  `protokollWelt`). Mit der Inventur zog am 12.10.2026 ein weiterer nach
+  den ganzen Router (seit dem 12.10.2026 `routertest.MitSitzung`, `MitSitzungUeber` und
+  `MitAufruf`). Mit der Inventur zog am 12.10.2026 ein weiterer nach
   (`tuertest.AntwortOhneDB`: eine Tür ohne Datenbank rufen), mit dem Mahnwesen fünf: einen
   Anhang aus einer abgefangenen Mail lesen (`smtptest.DateiAusMail`, `smtptest.PDFAusMail`)
   und Zeilen für einen Test anlegen (`testdaten.AusleihbaresExemplar`,
@@ -759,7 +759,7 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   einen Plan über die Route und prüft, dass die Türen in die Datenbank des Servers schreiben
   und mit seiner Uhr rechnen, auch wenn sie nach dem Bau des Routers gestellt wird. Konto,
   Sitzung und Anmeldung liefert `tuertest.AdminSitzung`; denselben Helfer ruft
-  `routerMitSitzungUeber` in `api/`. Gezählt am 12.10.2026: Von den acht Testdateien der
+  `routertest.MitSitzungUeber`. Gezählt am 12.10.2026: Von den acht Testdateien der
   Lernmittel brauchte keine den Router. In `api/` bauen ihn 29 Testdateien; sieben brauchen
   dazu Namen eines Themas, 22 rufen die Türen nur über ihre Adresse. An den Adressen gemessen
   rufen 20 der 29 Türen genau eines Themas und ziehen in Stufe 4 mit ihm um; 19 sind es
@@ -772,11 +772,11 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   Schreibwege) bleiben in `api/`. Für die Helfer, die den Router bauen, gibt es seit dem
   12.10.2026 das Paket `internal/routertest`, das `api/` einbindet; es trägt `MitSitzung`,
   `MitSitzungUeber` (der Server bekommt einen eigenen Pool) und `MitAufruf` (ein Admin-Konto
-  mit fertigem Aufruf über den Router, in `api/` heißt er `protokollWelt`). Ein Test im Paket
-  `api` kann es nicht nutzen und behält seinen Helfer in
-  `api/pgtest_support_test.go`: Beide rufen `tuertest.AdminSitzung` und bauen den Server. Ob
-  die Tests, die in `api/` bleiben, am Ende als Testpaket stehen und der Helfer dort
-  entfällt, entscheidet Stufe 5.
+  mit fertigem Aufruf über den Router). Ein Test im Paket `api` kann es nicht nutzen. Vier
+  Tests in `api/` bauten den Router über Zwillinge dieser drei Helfer; sie stehen seit dem
+  13.10.2026 als Testpaket (`package api_test`) und nehmen `internal/routertest`, die
+  Zwillinge sind entfallen. Die übrigen Tests in `api/` brauchen keinen Helfer, der `api/`
+  einbindet, und bleiben im Paket.
 - **Prüfungen, die Dateien lesen.** Jede der 43 Prüfungen, die Go-Dateien des Baums
   durchlaufen, sieht eine Datei in einem Unterordner von `api/` (belegt am 12.10.2026, je mit
   einer Probe). Beim Umzug eines Themas werden von selbst rot und ziehen mit: jede

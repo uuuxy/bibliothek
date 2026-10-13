@@ -261,7 +261,7 @@ func TestBestandImport_UeberDieTuer(t *testing.T) {
 }
 
 // importWelt legt ein Admin-Konto mit Sitzung an und liefert einen Aufruf über den ganzen
-// Router — dieselbe Bauart wie protokollWelt, nur mit frei wählbarem Inhaltstyp für die
+// Router — dieselbe Bauart wie routertest.MitAufruf, nur mit frei wählbarem Inhaltstyp für die
 // Mehrteil-Form.
 func importWelt(t *testing.T, pool *pgxpool.Pool) (adminID string, sitzung string,
 	rufeRoh func(t *testing.T, methode, pfad, rumpf, typ string) *httptest.ResponseRecorder) {

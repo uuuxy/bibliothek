@@ -549,7 +549,7 @@ SONAR_TOKEN=sqp_… ./scripts/sonar_scan.sh
 docker rm -f biblio-test-pg
 ```
 
-Der DB-Name **muss** „test" enthalten (Sicherheits-Notbremse in `pgtest_support_test.go`
+Der DB-Name **muss** „test" enthalten (Sicherheits-Notbremse in `internal/pgtest/pgtest.go`
 vor dem `DROP SCHEMA`).
 
 Der Projektschlüssel steht in `sonar-project.properties`, der Token gehört zu diesem Projekt.

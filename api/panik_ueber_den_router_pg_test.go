@@ -1,4 +1,4 @@
-package api
+package api_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/routertest"
 	"bibliothek/repository"
 
 	"github.com/getsentry/sentry-go"
@@ -49,7 +50,7 @@ func anfrageInPanik(t *testing.T, konto string) *httptest.ResponseRecorder {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	scharf := false
-	_, sitzung, router := routerMitSitzungUeber(t, pool, poolMitPanik{PgxPoolIface: pool, scharf: &scharf},
+	_, sitzung, router := routertest.MitSitzungUeber(t, pool, poolMitPanik{PgxPoolIface: pool, scharf: &scharf},
 		konto, "Paula", "Panik")
 	t.Cleanup(func() { pgtest.Aufraeumen(t, pool, `DELETE FROM benutzer WHERE email = $1`, konto) })
 	rufe := func() (rec *httptest.ResponseRecorder) {

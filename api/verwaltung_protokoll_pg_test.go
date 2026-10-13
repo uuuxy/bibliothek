@@ -1,4 +1,4 @@
-package api
+package api_test
 
 import (
 	"encoding/json"
@@ -9,11 +9,9 @@ import (
 	"time"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/routertest"
 	"bibliothek/internal/testdaten"
-	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Vier Türen der Verwaltung ändern, wohin Mahnlisten und Bestellungen gehen, was in den Mails
@@ -21,20 +19,11 @@ import (
 // Bearbeiter, Zeit und Gegenstand. Die Mailadresse selbst steht nicht darin, sie bliebe bis
 // zur Aufbewahrungsfrist des Protokolls, auch wenn die Lehrkraft die Schule verlassen hat.
 // Eine Anfrage, die nichts ändert, und eine abgelehnte schreiben keinen Eintrag.
-// protokollWelt legt ein Admin-Konto mit Sitzung an und liefert seine Kennung und einen Aufruf
-// über den ganzen Router.
-func protokollWelt(t *testing.T, pool *pgxpool.Pool) (adminID string, rufe func(t *testing.T, methode, pfad, rumpf string) *httptest.ResponseRecorder) {
-	t.Helper()
-	adminID, sitzung, router := routerMitSitzung(t, pool,
-		"verwaltung-protokoll@example.org", "Vera", "Verwaltung")
-	return adminID, tuertest.RouterAufruf(router, sitzung)
-}
-
 func TestVerwaltung_AenderungStehtImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
-	adminID, rufe := protokollWelt(t, pool)
+	adminID, rufe := routertest.MitAufruf(t, pool)
 
 	const (
 		adresseLeitung  = "frau.beispiel@schule.example"
@@ -259,7 +248,7 @@ func TestSchlagwortPflege_UnumkehrbaresStehtImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
-	adminID, rufe := protokollWelt(t, pool)
+	adminID, rufe := routertest.MitAufruf(t, pool)
 	t.Cleanup(func() {
 		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion LIKE 'SCHLAGWORT_%'`)
 		pgtest.Aufraeumen(t, pool, `DELETE FROM schlagworte WHERE wort LIKE 'Protokollprobe%'`)

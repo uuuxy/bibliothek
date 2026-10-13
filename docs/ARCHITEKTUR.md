@@ -2440,10 +2440,10 @@ wenn man ihn einmal gebraucht hat.
   ein Paket mit der Endung `_test`, wenn Tests im selben Paket einen Kreis ergäben. Der Test
   baut den Server mit `api.NewServer`; Konto, Sitzung und Anmeldung liefert
   `tuertest.AdminSitzung`. Beides in einem Schritt liefert `routertest.MitSitzung`; das Paket
-  `internal/routertest` bindet `api/` ein und ist deshalb nur für solche Testpakete, ein Test
-  im Paket `api` behält seinen Helfer (`routerMitSitzung`). Muster:
-  `api/lernmittel/lmf_plan_tuer_pg_test.go`, `api/system/littera_import_pg_test.go`. Prüfungen
-  über alle Routen bleiben in `api/`.
+  `internal/routertest` bindet `api/` ein und ist deshalb nur für solche Testpakete, auch in `api/`
+  selbst (`package api_test`); ein Test im Paket `api` kann es nicht nutzen. Muster:
+  `api/lernmittel/lmf_plan_tuer_pg_test.go`, `api/system/littera_import_pg_test.go`,
+  `api/verwaltung_protokoll_pg_test.go`. Prüfungen über alle Routen bleiben in `api/`.
 - **Gegenprobe am Rückbau.** Ein neuer Test zählt, wenn er am alten Code rot war. Als Beweis
   gilt die erwartete Meldung des Tests, nicht der Exit-Code: Ein Rückbau, der nicht übersetzt,
   endet auch mit 1. Ohne den Arbeitsstand anzufassen geht es in Go mit

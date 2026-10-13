@@ -1,4 +1,4 @@
-package api
+package api_test
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/internal/routertest"
 	"bibliothek/internal/testdaten"
 )
 
@@ -19,7 +20,7 @@ func TestVerwaltung_LeserUndMailEinstellungenStehenImProtokoll(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := t.Context()
-	adminID, rufe := protokollWelt(t, pool)
+	adminID, rufe := routertest.MitAufruf(t, pool)
 	t.Cleanup(func() {
 		pgtest.Aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion IN
 			('DELETE_STUDENT', 'RESTORE_STUDENT', 'PURGE_STUDENT', 'UPDATE_MAIL_SETTINGS')`)
