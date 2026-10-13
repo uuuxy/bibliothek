@@ -531,7 +531,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 
 ## 5. Bausteinsicht
 
-Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt, nach Druck und Bestellung `api/`, `api/katalog`, `repository/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/druck`, `api/bestellung` und `internal/buchetikett` ergänzt, am 13.10.2026 nach den Lesern `api/`, `api/mahnwesen` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/leser` und in 5.2.2 die Regel ergänzt, zu welchem Thema eine Tür gehört, nach der Theke `api/`, `api/druck`, `api/lernmittel` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/theke` ergänzt, in 5.2.2 die Ratsche genannt, die die Themen auseinanderhält, nach Stufe 5 in 5.2.2 ergänzt, wo ein Test steht und warum `repository/` ein Paket bleibt
+Stand: 10.10.2026 · Umfangszahlen der Backend-Pakete (5.2.2) gemessen am 10.10.2026, die übrigen am 08.10.2026; Messbefehl für die Routen im Anhang am 10.10.2026 berichtigt; am 12.10.2026 in 5.2.2 die übrigen Pakete unter `internal/` neu gezählt (zwei Pakete für Prüfhilfen dazu), nach Stufe 2 des Umzugs der Türen `api/`, `mailservice/` und die übrigen Pakete unter `internal/` erneut, das Paket `api/tuer` und der Mailversand ergänzt, in 5.4.3 die Aufteilung der Rechteprüfung, nach Stufe 3 `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/lernmittel` und in 5.2.2 die Themen unter `api/` ergänzt, nach den ersten vier Themen von Stufe 4 `api/`, `api/tuer`, `auth/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/inventurlauf`, `api/benutzer`, `api/portal` und `api/system` ergänzt, nach Mahnwesen und Schaden `api/`, `internal/service` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/mahnwesen` und `api/schaden` ergänzt, nach dem Katalog `api/` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/katalog` ergänzt, nach Druck und Bestellung `api/`, `api/katalog`, `repository/` und die übrigen Pakete unter `internal/` erneut gezählt, die Pakete `api/druck`, `api/bestellung` und `internal/buchetikett` ergänzt, am 13.10.2026 nach den Lesern `api/`, `api/mahnwesen` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/leser` und in 5.2.2 die Regel ergänzt, zu welchem Thema eine Tür gehört, nach der Theke `api/`, `api/druck`, `api/lernmittel` und die übrigen Pakete unter `internal/` erneut gezählt, das Paket `api/theke` ergänzt, in 5.2.2 die Ratsche genannt, die die Themen auseinanderhält, nach Stufe 5 in 5.2.2 ergänzt, wo ein Test steht und warum `repository/` ein Paket bleibt, abends in 5.2.2 neun Pakete neu gezählt (fünf Themen, `repository/`, `internal/service`, `internal/bereitschaft`, `pdf/`), ergänzt, was neben einer Tür steht und welche Dateien ohne Tür bleiben
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -622,33 +622,33 @@ HTTP-Anfrage
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
 | `api/`                  | 1.844 Zeilen, 12 Dateien   | HTTP-Schicht: Router mit den Routenlisten und den Zugängen zu den Themen, Middleware, CSRF, Rate-Limit und die Abmeldung. Die Türen stehen je Thema in einem eigenen Paket darunter (Themen unter `api/`) |
 | `api/tuer/`             | 530 Zeilen, 5 Dateien      | Was jede Tür braucht: Eingabe lesen und Antwort schreiben, die Rechteprüfung mit ihrem Zwischenspeicher, das Protokoll der Verwaltung mit dem Eintrag zur Konto-Anlage, die Uhr. Der Typ `Basis` trägt Datenbank, Anmeldung, Live-Leitung und Uhr; `api.Server` bettet ihn ein |
-| `api/lernmittel/`       | 1.193 Zeilen, 7 Dateien    | Die Türen des LMF-Plans, das erste Thema mit eigenem Paket: den Plan als Reihenfolge lesen, rechnen, speichern, veröffentlichen und verwerfen, die Termine für das Kollegium als Liste und als PDF, das Signal an offene Ansichten, dazu die Verlängerung der Lernmittel einer Klasse. Der Typ `Tueren` hält die `tuer.Basis` des Servers als eingebetteten Zeiger |
+| `api/lernmittel/`       | 981 Zeilen, 7 Dateien      | Die Türen des LMF-Plans, das erste Thema mit eigenem Paket: den Plan als Reihenfolge lesen, rechnen, speichern, veröffentlichen und verwerfen, die Termine für das Kollegium als Liste und als PDF, das Signal an offene Ansichten, dazu die Verlängerung der Lernmittel einer Klasse. Der Typ `Tueren` hält die `tuer.Basis` des Servers als eingebetteten Zeiger |
 | `api/inventurlauf/`     | 791 Zeilen, 6 Dateien      | Die Türen der Inventur: einen Lauf über die ganze Bibliothek, eine Signatur oder Fach und Klasse beginnen, Exemplare scannen, den Lauf abschließen oder verwerfen, den Fehlbestand lesen, ein als Verlust gebuchtes Exemplar wieder aufnehmen oder endgültig löschen. Der Name weicht dem Medienkatalog `inventur/` aus (5.2.3) |
 | `api/benutzer/`         | 839 Zeilen, 7 Dateien      | Die Türen zu „Benutzer & Rechte": die Konten des Personals und die Matrix, die je Rolle nennt, was sie darf, mit den Regeln zum Schutz der Admin-Konten |
 | `api/portal/`           | 694 Zeilen, 6 Dateien      | „Mein Portal" des Kollegiums (Suche im Katalog, Reservierung von Klassensätzen, Meldungen an die Bibliothek), der öffentliche Katalog und die Folien für den Monitor |
-| `api/system/`           | 1.550 Zeilen, 13 Dateien   | Die Türen der Systempflege: Einstellungen, Mail-Einrichtung und Vorlagen, die Selbstprüfung der Betriebsbereitschaft mit ihrer täglichen Warnmail, der Stand der Sicherung, das Protokoll, Statistik und Übersicht, die zwei Importe |
-| `api/mahnwesen/`        | 1.426 Zeilen, 9 Dateien    | Die Türen des Mahnwesens und der Abgänger: die überfälligen Ausleihen je Klasse, Mahnlisten und Mahnbriefe als PDF und als Mail an die Klassenleitungen, deren Adressen je Klasse, die Liste der Abschlussklassen mit offenen Büchern in der Saison und ihre Kontoauszüge |
-| `api/schaden/`          | 1.126 Zeilen, 9 Dateien    | Die Türen zu Schaden und Ersatz: einen Verlust oder Schaden melden, Forderungen lesen und erledigen, der Vorschlag zum Betrag, der Bescheid über den Schadensersatz, die Rechnung an die Eltern und der Brief zu einem Schadensfall |
+| `api/system/`           | 1.494 Zeilen, 13 Dateien   | Die Türen der Systempflege: Einstellungen, Mail-Einrichtung und Vorlagen, die Selbstprüfung der Betriebsbereitschaft mit ihrer täglichen Warnmail, der Stand der Sicherung, das Protokoll, Statistik und Übersicht, die zwei Importe |
+| `api/mahnwesen/`        | 1.429 Zeilen, 9 Dateien    | Die Türen des Mahnwesens und der Abgänger: die überfälligen Ausleihen je Klasse, Mahnlisten und Mahnbriefe als PDF und als Mail an die Klassenleitungen, deren Adressen je Klasse, die Liste der Abschlussklassen mit offenen Büchern in der Saison und ihre Kontoauszüge |
+| `api/schaden/`          | 1.184 Zeilen, 12 Dateien   | Die Türen zu Schaden und Ersatz: einen Verlust oder Schaden melden, Forderungen lesen und erledigen, der Vorschlag zum Betrag, der Bescheid über den Schadensersatz, die Rechnung an die Eltern und der Brief zu einem Schadensfall |
 | `api/katalog/`          | 3.089 Zeilen, 23 Dateien   | Die Türen des Medienkatalogs zu einem Titel und seinen Exemplaren: Exemplare, Ausleiher und Historie eines Titels, Nummer, Zustand, Eigentum und Standort eines Exemplars, die nächste freie Nummer, Auflagen, Signaturen, Systematik, Schlagworte, die Abfrage über die ISBN, die Cover, die Geräte, Zugangs- und Abgangsbuch. Titelliste, Buchmaske und Import stehen in `inventur/` (5.2.3) |
 | `api/druck/`            | 687 Zeilen, 7 Dateien      | Die Türen des Druck-Centers: die Suche nach einem Titel, die Etiketten eines Titels und eines Druckauftrags als PDF, die Liste der Exemplare ohne Etikett mit Zähler, Vermerk und Stichtag, die Etiketten für Schüler, das Design der Ausweise, ein Strichcode als Bild |
-| `api/bestellung/`       | 2.816 Zeilen, 18 Dateien   | Die Türen des Bestellwesens: Vorschläge zum Nachbestellen, die Suche nach Titeln, die Bestellung mit ihrer Mail an den Lieferanten, Zulauf und Wareneingang, Bestellhistorie mit Übersicht, Einzelheiten und Bericht, die Lieferanten, die Bestätigung im Haus und über den Link des Lieferanten, das erneute Senden der Mail, der Topf einer Bestellung |
+| `api/bestellung/`       | 2.438 Zeilen, 18 Dateien   | Die Türen des Bestellwesens: Vorschläge zum Nachbestellen, die Suche nach Titeln, die Bestellung mit ihrer Mail an den Lieferanten, Zulauf und Wareneingang, Bestellhistorie mit Übersicht, Einzelheiten und Bericht, die Lieferanten, die Bestätigung im Haus und über den Link des Lieferanten, das erneute Senden der Mail, der Topf einer Bestellung |
 | `api/leser/`            | 3.007 Zeilen, 18 Dateien   | Die Türen der Leserdatei: die Liste der Leser mit Klassen und Jahrgängen, die Leserakte, Anlegen, Ändern, Sperren, Löschen mit Papierkorb, das Zusammenführen zweier Datensätze, das Passbild, der Abgleich mit der LUSD, die Versetzung zum Schuljahreswechsel, die Auskunft nach Art. 15 DSGVO, der Kontoauszug |
 | `api/theke/`            | 1.562 Zeilen, 11 Dateien   | Die Türen der Theke: der Scan mit Ausleihe und Rückgabe, das Nachbuchen der Warteschlange ohne Netz mit seinen Meldungen und der Liste der Buchnummern, die Suche der Omnibox, Verlängern und Frist von Hand an einer Ausleihe, die Vormerkungen |
-| `repository/`           | 22.367 Zeilen, 151 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke                                        |
-| `internal/service/`     | 5.020 Zeilen, 29 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, die Rechnung des Ersatzwerts eines Buchs (`ersatzwert_vorschlag.go`), Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan und womit ein neuer Plan beginnt, Importe, Littera-Etiketten                          |
+| `repository/`           | 22.404 Zeilen, 152 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
+| `internal/service/`     | 5.246 Zeilen, 31 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, die Rechnung des Ersatzwerts eines Buchs (`ersatzwert_vorschlag.go`), Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan, womit ein neuer Plan beginnt (Rahmen und Reihenfolge) und seine Verteilung über die Schultage, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/leser/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
-| `internal/bereitschaft/` | 924 Zeilen, 2 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
+| `internal/bereitschaft/` | 990 Zeilen, 3 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, die Zusammenfassung der Befunde zu einer Stufe (`Gesamt`), der Vergleich der Klassen mit den Zuordnungen der Klassenleitungen und den Bücherlisten (`klassen.go`), dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
 | `internal/auskunft/`    | 1.252 Zeilen, 6 Dateien    | Auskunft nach Art. 15 DSGVO über einen Leser: die Typen der Antwort, die Pflichtangaben aus den eingestellten Fristen, der Wortlaut der Protokolleinträge und das Blatt, gedruckt aus derselben Antwort. Die zwei Türen und das Sammeln stehen in `api/leser/dsgvo_auskunft.go` und `api/leser/dsgvo_pdf.go`, die Abfragen in `repository/dsgvo_*.go` |
 | `inventur/`             | 6.547 Zeilen, 42 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
 | `auth/`                 | 1.793 Zeilen, 11 Dateien   | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Sperre nach Inaktivität mit Prüfwert des Passworts (`sitzungen`), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh |
 | `jobs/`                 | 1.607 Zeilen, 14 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 724 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
 | `pkg/` (26 Pakete)      | 3.001 Zeilen, 35 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
-| `pdf/`                  | 3.356 Zeilen, 21 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben |
+| `pdf/`                  | 3.826 Zeilen, 23 Dateien   | Erzeugte Dokumente: Kontoauszug, Rechnung, Schadensfall, Bescheid, LMF-Plan, Zahlungsweg, Schulkopf, die Etiketten für Bücher, Lernmittel und Schüler samt ihren Bogenformaten, Zugangs- und Abgangsbuch, Mahnliste, Mahnbrief, Bestellanschreiben, Bestellbericht |
 | `mailservice/`          | 686 Zeilen, 5 Dateien      | Aufbau einer Mail mit Anlagen (`MailRequest`, `SendEmail`), SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), die Konfiguration, mit der verschickt wird (gespeicherte Zeile, sonst die Umgebung) |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
-| `internal/*` (übrige)   | 7.097 Zeilen, 58 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `buchetikett` (Eingabe der Etiketten-Erzeuger für Bücher: Typ des Druckauftrags, Kopf der Schule, Wahl des Eigentumsvermerks nach dem Topf, die Daten eines Etiketts aus Titel, Bestellung und Druckauftrag), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest`/`routertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
+| `internal/*` (übrige)   | 7.098 Zeilen, 58 Dateien | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `buchetikett` (Eingabe der Etiketten-Erzeuger für Bücher: Typ des Druckauftrags, Kopf der Schule, Wahl des Eigentumsvermerks nach dem Topf, die Daten eines Etiketts aus Titel, Bestellung und Druckauftrag), `pgtest`/`smtptest`/`pdftest`/`xlsxtest`/`testdaten`/`tuertest`/`routertest` (Prüfhilfen: gewöhnliche Pakete, die nur Tests einbinden) |
 | `migrations/`           | 166 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.517 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
@@ -751,8 +751,9 @@ Seit dem 13.10.2026 gilt:
 ##### Warum `repository/` ein Paket bleibt
 
 Entschieden am 13.10.2026 nach einer Messung: Die Datenbankschicht wird nicht nach den Themen
-der Türen geteilt. Gemessen mit Typprüfung (`go/types`) über den Produktivcode: je Name von
-`repository/`, welche Pakete ihn brauchen und was die Dateien voneinander brauchen.
+der Türen geteilt. Gemessen mit Typprüfung (`go/types`) über den Produktivcode am Stand vom
+Nachmittag dieses Tages (151 Dateien, 22.367 Zeilen): je Name von `repository/`, welche
+Pakete ihn brauchen und was die Dateien voneinander brauchen.
 
 - An den Türen sieht die Schicht teilbar aus: Von 465 Namen, die ein Thema braucht, braucht
   437 genau ein Thema.
@@ -783,15 +784,15 @@ Googles Regelwerk für Go nennt in
 [Package size](https://google.github.io/styleguide/go/best-practices#package-size) die Probe:
 Muss ein Nutzer zweier Pakete beide einbinden, um eines sinnvoll zu nutzen, gehören sie
 zusammen, und eng gekoppelte Typen in einem Paket müssen ihre Einzelheiten nicht öffentlich
-machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der Dateien hat
-höchstens 120 Zeilen, neun von zehn höchstens 282, fünf haben über 500 (`bescheid.go` 657,
-`audit_users.go` 648, `schueler_zusammenfuehren.go` 634, `schlagworte_pflege.go` 527,
-`book_inventory.go` 521). Eine Teilung schriebe 2.228 Zeilen in 465 Dateien um, die einen
+machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 152 Dateien
+hat höchstens 119 Zeilen, neun von zehn höchstens 282, vier haben über 500 (`bescheid.go`
+657, `audit_users.go` 648, `schueler_zusammenfuehren.go` 634, `schlagworte_pflege.go` 527;
+gezählt am 13.10.2026 abends). Eine Teilung schriebe 2.228 Zeilen in 465 Dateien um, die einen
 Namen des Pakets nennen, und bewegte einen Teil der 158 Testdateien.
 
 ##### Tür und Abfrage
 
-Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.62):
+Seit dem 09.10.2026 gilt für `api/` und `repository/`:
 
 - Die Tür prüft Eingabe und Recht, öffnet die Transaktion, bestimmt die Reihenfolge der
   Schritte, entscheidet Status und Meldung und schreibt ins Protokoll. Die Anweisung und das
@@ -868,6 +869,22 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/` ([OFFEN.md](OFFEN.md) 5.6
   das Blatt (`api/schaden/bescheid_auskunft_test.go`).
 - Unterscheidet eine Tür in ihrer Meldung, ob die Abfrage scheiterte oder das Lesen ihrer
   Zeilen, trägt der Fehler des Lesens `repository.ErrZeileUnlesbar`.
+- Neben einer Tür steht in ihrer Datei, was sie für Anfrage und Antwort braucht: die Prüfung
+  der Eingabe mit Status und Meldung, Füll-Funktionen zwischen den Typen der Schichten, das
+  Sammeln aus Datenbank, Einstellungen und Umgebung, der Versand an die Empfänger ihrer Mail
+  und das Protokoll. Eine Regel, die ohne Anfrage gilt, steht bei ihrem Fach. Die Probe:
+  Müsste eine zweite Stelle die Funktion nachformulieren, wenn `repository/`,
+  `internal/service` oder ein anderes Thema dieselbe Antwort braucht? Am 13.10.2026 sind
+  danach die sechs Dateien mit den meisten Zeilen in Funktionen ohne einen Typ aus
+  `net/http` gelesen. Umgezogen sind der Erzeuger des Bestellberichts (`pdf/`), die Regeln
+  des LMF-Plans (`internal/service`) und drei Regeln der Selbstprüfung
+  (`internal/bereitschaft`). An der Tür bleiben: der Bescheid (Füll-Funktionen,
+  Eingabeprüfung, die Anrede als fertiger Text nach der Volljährigkeit; die Datei ist nach
+  den Schritten Vorschlag, Erstellen und Druck geteilt, `api/schaden/bescheid_*.go`), die
+  Auskunft nach Art. 15 (Zeilen lesen und in die Typen der Antwort wandeln, das Recht am
+  Zugangskonto, das Protokoll) und die Kontoauszüge der Abgänger (wer was bekommt, die
+  Schleife des Versands, die Rückmeldung). Die Messung zählt auch solche Funktionen; sie
+  zeigt, wo zu lesen ist, und sagt nicht, dass dort eine Regel steht (11.1, R4).
 - Für die Nachtläufe gilt dieselbe Teilung. `jobs/` bestimmt, wann ein Lauf fährt, liest die
   Einstellungen, schreibt Protokollzeile und Systemeintrag und entscheidet, ob ein Fehler den
   Lauf beendet. Die Anweisungen stehen in `repository/nachtlauf.go`. Wo eine Frist gilt, setzt
@@ -1010,7 +1027,17 @@ noch die zwei Dateien der Restore-Probe in `jobs/`: Sie legen eine Wegwerf-Daten
 zählen darin die Tabellen, keine ihrer Anweisungen trifft eine Tabelle der Anwendung. Dass
 die Detektoren messen, belegen sie an `repository/`: Dort müssen sie Anweisungen finden.
 `api/schichtung_test.go` führt die Dateien von `api/` ohne Tür als Bestand, der nur kleiner
-werden kann. Als Anweisung zählt auch eine Massenkopie (`CopyFrom`): Sie nennt Tabelle und
+werden kann. Seit dem 13.10.2026 sind es 25, und sie bleiben: je Thema die Datei mit seinem
+Typ (zwölf), drei in `api/tuer` (`constants.go`, `verwaltung_protokoll.go`, `tuer.go`) und
+zehn mit Typen einer Anfrage oder Antwort, Füll-Funktionen und Helfern mehrerer Türen
+(`lernmittel/lmf_plan_live.go`, `system/betriebsbereitschaft_alarm.go`,
+`mahnwesen/abgaenger_fenster.go`, `mahnwesen/mahnwesen_mail.go`,
+`schaden/bescheid_schnappschuss.go`, `bestellung/bestellmail_anhaenge.go`,
+`bestellung/bestellmail_versand.go`, `leser/student_klasse_regel.go`,
+`theke/action_types.go`, `theke/schueler_kiosk.go`). Der Bestand sieht eine Datei nicht, die
+`net/http` nur für Statuswerte einbindet (`theke/nachbuchen_schluessel.go`), und keine Regel
+in einer Datei mit Tür; die sechs Dateien mit den meisten Zeilen ohne Anfrage sind dafür
+gelesen (oben, „Neben einer Tür"). Als Anweisung zählt auch eine Massenkopie (`CopyFrom`): Sie nennt Tabelle und
 Spalten als Werte und trägt keinen SQL-Text. So schrieb `api/` die Positionen einer Bestellung
 bis zum 09.10.2026, ohne dass der Zähler es sah; sie schreibt jetzt
 `repository.SchreibeBestellpositionen`.
@@ -1920,7 +1947,7 @@ Der Rückweg steht Schritt für Schritt in
 
 ## 8. Querschnittliche Konzepte
 
-Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, dazu wo ein Test über den ganzen Router steht, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand, in 8.14 das Paket für Tests über den Router aus einem Testpaket und was der Umzug der nächsten vier Themen am Handgriff ergänzt hat, danach die Vorarbeit bei Mahnwesen und Schaden und was beim Umzug einer Prüfung über den Quellbaum still bleibt, dazu die Prüfung der Zugänge, am 13.10.2026 der Umzug von Testdateien zu ihrem Paket (Stufe 5) und der eigene Bauzwischenspeicher einer Wegwerf-Arbeitskopie
+Stand: 08.10.2026 · am 09.10.2026 in 8.3 der Wächter für die Bearbeiter zurückgegebener Ausleihen ergänzt, in 8.9 Mahnliste und Mahnbrief getrennt und der Hinweis zum Umbruch in einer Tabelle ergänzt, 8.14 um die Handgriffe zum Umzug einer Anweisung, zum Aufnehmen der Anweisungen an der Datenbank, zum Umstellen eines Namens und zum Vergleich einer neu geschriebenen Datei ergänzt, am 10.10.2026 dort die Aufnahme mehrerer Pakete in fester Reihenfolge, am 12.10.2026 die Handgriffe zum Umzug von Dateien in einen Unterordner, von Helfern der Tests in ein Paket für Prüfhilfen, von Code in ein Paket, das die Türen einbinden, und von den Türen eines Themas in ein eigenes Paket, dazu wo ein Test über den ganzen Router steht, in 8.6 der Test zur Panik in einer Tür genannt, in 8.3 die Fundstelle des Protokolls der Verwaltung nachgezogen, in 8.10 der Ort von Aufbau und Versand, in 8.14 das Paket für Tests über den Router aus einem Testpaket und was der Umzug der nächsten vier Themen am Handgriff ergänzt hat, danach die Vorarbeit bei Mahnwesen und Schaden und was beim Umzug einer Prüfung über den Quellbaum still bleibt, dazu die Prüfung der Zugänge, am 13.10.2026 der Umzug von Testdateien zu ihrem Paket (Stufe 5) und der eigene Bauzwischenspeicher einer Wegwerf-Arbeitskopie; am 13.10.2026 abends in 8.14 der Handgriff zum Umzug einer Regel aus einer Datei mit Tür
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -2885,6 +2912,22 @@ wenn man ihn einmal gebraucht hat.
   wurden die Tests zuerst an einem Maß: keine Nennung eines Namens aus `api/`. Drei blieben
   dabei unbemerkt, weil sie den Typ `Server` nennen und ihn nur bauen, um an den Pool zu
   kommen. Danach deshalb jede Testdatei lesen, die aus dem Paket nur einen Typ braucht.
+- **Eine Regel zieht aus einer Datei mit Tür in ihr Fachpaket** (5.2.2, Tür und Abfrage).
+  Belegt wird am Ergebnis, nicht am Lesen: dieselben Eingaben durch die alten und die neuen
+  Funktionen schicken, je als Wegwerf-Test per `go test -overlay` im Paket seines Stands, und
+  die Ergebnisse als JSON Byte für Byte vergleichen; ein Blatt als entpackte Inhaltsströme.
+  Die Eingaben erzeugt ein Skript einmal als Datei, beide Stände lesen sie. Am alten Stand
+  mit `-coverprofile` messen, welche Blöcke die Eingaben auslassen, und zwei Läufe desselben
+  Stands gegeneinander halten. Eine geänderte Stelle im neuen Stand muss im Vergleich
+  auffallen. Danach je Regel und je Aufrufstelle eine Rückbau-Probe. Am 13.10.2026 blieben
+  von 169 Proben an vier Umzügen 16 zuerst grün: 15 an Lücken, die es vor dem Umzug schon gab
+  und die seither einen Test haben, eine lässt sich nicht nachstellen (eine Tür übergeht
+  einen Fehler, den die Datenbank ausschließt). Der Umzug macht solche Lücken sichtbar, weil
+  die Probe an jeder Aufrufstelle fragt, welcher Test sie hält. Wird eine Datei nur geteilt,
+  genügt der Vergleich je Erklärung, Token für Token ohne Kommentare. Ein Kommentar über
+  einem Feld eines Antworttyps steht als Beschreibung in `docs/docs.go`: nach einer Änderung
+  dort `swag init -g main.go -o docs`; `docs/swagger_drift_test.go` vergleicht nur die
+  Adressen und sieht eine veraltete Beschreibung nicht.
 
 ---
 
@@ -3604,7 +3647,7 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 
 ## 11. Risiken und technische Schulden
 
-Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen und nach Stufe 2 Überschrift und Zahl der Methoden neu gezählt, nach Stufe 3 Überschrift, Dateigrößen und Zahl der Methoden erneut, nach den ersten vier Themen von Stufe 4 ein weiteres Mal, nach Mahnwesen und Schaden, nach dem Katalog und nach Druck und Bestellung erneut, in 11.5 die vier Symbolknöpfe mit dem Hinweis des Browsers ergänzt; am 13.10.2026 in R4 nach den Lesern Überschrift, Größenvergleich, Dateigrößen und Zahl der Methoden neu gezählt, nach der Theke erneut, dazu die Einstufung und was offen bleibt, nach Stufe 5 den Abschluss des Umbaus
+Stand: 09.10.2026 · am 10.10.2026 in R4 Überschrift und Größenvergleich berichtigt, Dateigrößen ergänzt; Zahl der Routen berichtigt (229, davon 211 in `api/`); am 12.10.2026 in R4 die Entscheidung zu den Themenordnern nachgezogen und nach Stufe 2 Überschrift und Zahl der Methoden neu gezählt, nach Stufe 3 Überschrift, Dateigrößen und Zahl der Methoden erneut, nach den ersten vier Themen von Stufe 4 ein weiteres Mal, nach Mahnwesen und Schaden, nach dem Katalog und nach Druck und Bestellung erneut, in 11.5 die vier Symbolknöpfe mit dem Hinweis des Browsers ergänzt; am 13.10.2026 in R4 nach den Lesern Überschrift, Größenvergleich, Dateigrößen und Zahl der Methoden neu gezählt, nach der Theke erneut, dazu die Einstufung und was offen bleibt, nach Stufe 5 den Abschluss des Umbaus, abends Größenvergleich, Dateigrößen und die Messung der Funktionen ohne Anfrage nach dem Trennen der Regeln neu gezählt
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](OFFEN.md). Hier
@@ -3672,28 +3715,34 @@ generischen Helfern sieht er nicht.
 
 `api/` trägt den Router mit den Routenlisten, die Middleware, CSRF, Rate-Limit und die
 Abmeldung. Die Türen der zwölf Themen stehen seit dem 12. und 13.10.2026 in eigenen Paketen
-darunter: `api/lernmittel` (1.193 Zeilen in sieben Dateien), `api/inventurlauf` (791 in
-sechs), `api/benutzer` (839 in sieben), `api/portal` (694 in sechs), `api/system` (1.550 in
-13), `api/mahnwesen` (1.426 in neun), `api/schaden` (1.126 in neun), `api/katalog` (3.089 in
-23), `api/druck` (687 in sieben), `api/bestellung` (2.816 in 18), `api/leser` (3.007 in 18)
+darunter: `api/lernmittel` (981 Zeilen in sieben Dateien), `api/inventurlauf` (791 in
+sechs), `api/benutzer` (839 in sieben), `api/portal` (694 in sechs), `api/system` (1.494 in
+13), `api/mahnwesen` (1.429 in neun), `api/schaden` (1.184 in zwölf), `api/katalog` (3.089 in
+23), `api/druck` (687 in sieben), `api/bestellung` (2.438 in 18), `api/leser` (3.007 in 18)
 und `api/theke` (1.562 in elf).
-Das größte Paket der Türen ist `api/katalog`; `repository/` hat 22.367 Zeilen in 151
-Dateien, `inventur/` 6.547 und `internal/service` 5.020. Die Dateien von `api/`, gemessen am
+Das größte Paket der Türen ist `api/katalog`; `repository/` hat 22.404 Zeilen in 152
+Dateien, `inventur/` 6.547 und `internal/service` 5.246. Die Dateien von `api/`, gemessen am
 13.10.2026 nach dem Umzug aller Themen: Die Hälfte hat höchstens 125 Zeilen, neun von zehn
-höchstens 208, die größten sind `router.go` (379) und `middleware.go` (366). Von den 134
-Dateien der Themen hat die Hälfte höchstens 111 Zeilen, neun von zehn höchstens 278, sechs
-haben über 400: `lernmittel/lmf_plan.go` (692), `schaden/bescheid_handler.go` (623),
-`bestellung/bestellbericht_handler.go` (567), `leser/student_update.go` (555),
-`mahnwesen/mahnwesen_bulk_mail.go` (423) und `leser/student_create.go` (420). Die meisten
-Zeilen in Funktionen ohne einen Typ aus `net/http` tragen
-`bestellung/bestellbericht_handler.go`, `lernmittel/lmf_plan.go` und
-`schaden/bescheid_handler.go` ([OFFEN.md](OFFEN.md) 5.62).
+höchstens 208, die größten sind `router.go` (379) und `middleware.go` (366). Von den 137
+Dateien der Themen hat die Hälfte höchstens 112 Zeilen, neun von zehn höchstens 277, vier
+haben über 400 (gezählt am 13.10.2026 abends): `leser/student_update.go` (555),
+`lernmittel/lmf_plan.go` (490), `mahnwesen/mahnwesen_bulk_mail.go` (423) und
+`leser/student_create.go` (420). Am Morgen desselben Tages waren es sechs, die drei größten
+`lernmittel/lmf_plan.go` (692), `schaden/bescheid_handler.go` (623) und
+`bestellung/bestellbericht_handler.go` (567): Der Erzeuger des Bestellberichts steht jetzt
+in `pdf/` (die Datei der Tür hat 189 Zeilen), die Regeln des LMF-Plans in
+`internal/service`, und die Türen des Bescheids stehen je Schritt in einer eigenen Datei
+(die größte hat 192 Zeilen). In Funktionen ohne einen Typ aus `net/http` stehen in den
+Themen 3.162 Zeilen in 209 Funktionen, am Morgen 3.665 in 232; die meisten tragen
+`leser/dsgvo_auskunft.go` (193), `mahnwesen/graduates_mail.go` (159) und
+`system/betriebsbereitschaft_handler.go` (132). Was davon an der Tür bleibt und warum, steht
+in 5.2.2 (Tür und Abfrage).
 
 Dass kein Thema ein anderes einbindet, hält seit dem 13.10.2026
 `api/themen_ratsche_test.go`. Der Umbau ist seit dem 13.10.2026 abgeschlossen: 38
 Testdateien, die nichts aus `api/` prüfen, stehen bei ihrem Paket; in `api/` liegen noch 48
 zu Router, Middleware, Routenlisten und Türen zweier Themen. `repository/` bleibt ein
-Paket: Ohne Umbau ließen sich 48 seiner 151 Dateien einem Thema zuordnen (5.2.2).
+Paket: Ohne Umbau ließen sich bei der Messung 48 von 151 Dateien einem Thema zuordnen (5.2.2).
 
 Gemessen am 09.10.2026, bevor der Abbau begann: In drei Monaten war das Paket von 10.463 auf
 30.785 Zeilen gewachsen und trug neben den Türen Teile der Fachlogik: den Aufbau der PDFs und
@@ -3714,8 +3763,7 @@ Bestandsbücher, Mahnliste, Mahnbrief und Bestellanschreiben in `pdf/`, der Stri
 die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung in `pkg/mitteltopf`, ihr Bestätigungs-Link in `pkg/bestelllink`, die
 Abfragen der Türen in `repository/` (5.2.2, Tür und Abfrage). `schichtung_ratsche_test.go` weist jede
 SQL-Anweisung außerhalb der Datenbankschicht ab, `api/schichtung_test.go` führt die Dateien
-ohne Tür als Bestand, der nur kleiner werden kann. Was
-bleibt, steht in [OFFEN.md](OFFEN.md) 5.62. Die Türen selbst standen in einem Paket, der Typ
+ohne Tür als Bestand, der nur kleiner werden kann. Die Türen selbst standen in einem Paket, der Typ
 `Server` trug 340 Methoden. Entschieden am 12.10.2026: Sie ziehen in Stufen in Themenordner
 um; die Stufen stehen in den Commit-Nachrichten vom 12. und 13.10.2026. Seit Stufe 2 (12.10.2026) steht,
 was jede Tür braucht, in `api/tuer` (520 Zeilen in fünf Dateien, neun Methoden am Typ

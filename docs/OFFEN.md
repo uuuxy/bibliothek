@@ -195,8 +195,10 @@ der Nummer nichts mehr dazu offen ist.
   Karten nicht (drei mit runderer Ecke), der erste Lauf von `release.yml` auf Ubuntu 26, die
   Excel-Bibliothek und gosec auf einem unveröffentlichten Stand, drei falsche Warnungen des
   Linters im Sammel-Update der Oberfläche.
-- [ ] **Schichtung des Backends (5.62):** die Regeln in Dateien, die auch eine Tür tragen, je
-  Datei lesen und trennen; die Zuordnung der zwei Importe zusammenlegen.
+- [x] **Schichtung des Backends (5.62):** abgeschlossen am 13.10.2026. Die sechs Dateien mit
+  Tür und Regel sind gelesen und getrennt, beide Importe fragen den Titelbestand mit einer
+  Methode. Was an der Tür bleibt und warum, steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2
+  (Tür und Abfrage), die Größen in 11.1 unter R4.
 - [ ] **Etiketten kürzen nach Zeichenzahl (5.63):** an neun Stellen messen, ob ein Text über
   den Rand des Etiketts läuft.
 
@@ -417,80 +419,6 @@ Schulserver feststeht.
   entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
-
-### 5.62 Schichtung des Backends: `api/` trägt Regeln und SQL
-
-**Entschieden am 09.10.2026: wird jetzt abgebaut,** vor dem Echtstart und in einzelnen
-Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko steht in
-[ARCHITEKTUR.md](ARCHITEKTUR.md) 11.1 unter R4, die Messwerte vom 09.10.2026 ebenfalls.
-
-- **Die Bremse steht.** `schichtung_ratsche_test.go` weist jede SQL-Anweisung außerhalb der
-  Datenbankschicht ab und führt die Dateien, die noch welche tragen, als Bestand, der nur
-  sinken kann; `api/schichtung_test.go` führt die Dateien von `api/` ohne Tür als Bestand, der
-  nur kleiner werden kann. Stand am 09.10.2026: keine Datei von `api/` mit SQL (am Anfang 48
-  mit 177 Anweisungen), 12 Dateien ohne Tür (am Anfang 44); `api/` hat 21.319 Zeilen in 136
-  Dateien (am Anfang 30.785 in 168).
-- **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
-  `internal/lusd` (Tür in `api/leser/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
-  Selbstprüfung und die Regel zu den Start-Geheimnissen in `internal/bereitschaft`, die
-  Auskunft nach Art. 15 DSGVO mit ihrem Blatt in `internal/auskunft` (Türen in
-  `api/leser/dsgvo_auskunft.go` und `api/leser/dsgvo_pdf.go`), der
-  Strichcode in `pkg/strichcode`, die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung mit ihren Texten in
-  `pkg/mitteltopf`, ihr Bestätigungs-Link in `pkg/bestelllink`, die Zuordnung der
-  Kopfzeile einer Importdatei beim Importer, das Anlegen einer Bestellung, der Text der
-  Bestellmail, die Kopplung der Lernmittel-Fristen an den LMF-Plan und die Vorgabe für einen
-  neuen Plan in `internal/service`; in `pdf/` stehen
-  der Bescheid (`bescheid.go`), die Etiketten mit ihren Bogenformaten (`etikett_*.go`), die
-  Bestandsbücher (`abgangsbuch.go`, `zugangsbuch.go`), die Mahnliste (`mahnliste.go`), der
-  Mahnbrief (`mahnbrief.go`) und das Bestellanschreiben (`bestellanschreiben.go`). Kein
-  PDF-Erzeuger steht mehr in `api/`, und keine Datei ohne Tür trägt dort noch Regeln. Was ein Erzeuger aus `repository/`
-  liest, bekommt er in `pdf/` als eigenen Typ; die Tür füllt ihn (ARCHITEKTUR 5.2.2; dort
-  steht auch, warum die Auskunft ein eigenes Paket hat). Je Thema ein Commit; die
-  Tests der Türen bleiben stehen und belegen, dass sich nichts ändert. Die Anlagen der Bestellmail
-  (`bestellung/bestellmail_anhaenge.go`, bisher `pdf_service.go`) sind kein Erzeuger: Die Datei stellt sie
-  zusammen und verschickt die Mail; sie bleibt als Helfer bei ihren Türen.
-  Die Tests an der Datenbank bleiben in `api/`, weil ihre Helfer dort liegen; was sie aus einem
-  umgezogenen Paket brauchen, ist dort sichtbar gemacht. Die Regeln für Tür und Abfrage stehen in
-  [ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.2, der Handgriff zum Umzug einer Anweisung in 8.14.
-- **Was ohne Tür bleibt.** Die 25 Dateien des Bestands sind Typen einer Anfrage oder
-  Antwort, Füll-Funktionen und Helfer mehrerer Türen (1.187 Zeilen, gezählt am 13.10.2026).
-  In `api/` selbst steht keine mehr. Drei stehen seit dem
-  12.10.2026 in `api/tuer`, dem Paket mit dem, was
-  jede Tür braucht: `constants.go`, `verwaltung_protokoll.go` und `tuer.go` (der Typ `Basis`
-  und die Uhr). 22 stehen in den Paketen der Themen: Mit ihrem Thema
-  umgezogen sind `lernmittel/lmf_plan_live.go`, `system/betriebsbereitschaft_alarm.go`,
-  `mahnwesen/abgaenger_fenster.go` (die Grenzen der Abgänger-Saison),
-  `mahnwesen/mahnwesen_mail.go`, `schaden/bescheid_schnappschuss.go`,
-  `bestellung/bestellmail_anhaenge.go` (stellt die Anlagen der Bestellmail zusammen und
-  verschickt sie), `bestellung/bestellmail_versand.go` (trägt auch die Rückmeldung nach
-  dem Versand), `leser/student_klasse_regel.go` (prüft eine Eingabe der zwei Türen zum
-  Anlegen und Ändern und trägt deren Meldung; keine andere Schicht ruft sie),
-  `theke/action_types.go` und `theke/schueler_kiosk.go` (die Typen des Scans und die Sicht
-  der Theke auf einen Schüler), dazu kommt je Thema die
-  Datei mit seinem Typ (zwölf). Der
-  Bestand fällt damit nicht auf null. Die sechs Dateien mit Regeln sind am 09.10.2026
-  ausgezogen; wohin, steht oben und in ARCHITEKTUR 5.2.2.
-- **Was der Bestand nicht sieht.** Eine Datei bindet `net/http` nur für Statuswerte ein und
-  trägt keine Tür: `theke/nachbuchen_schluessel.go` (148 Zeilen); der Mailversand, die zweite, steht
-  seit dem 12.10.2026 in `mailservice/mail_sender.go`. Und
-  Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
-  Typ aus `net/http` tragen `leser/dsgvo_auskunft.go` (193)
-  und `mahnwesen/graduates_mail.go` (157). Die Messung und ihre
-  Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt: diese Dateien der Reihe nach
-  lesen und trennen, was Regel und was Füll-Funktion ist.
-
-**Die Abfragen außerhalb der Datenbankschicht sind umgezogen** (seit dem 10.10.2026). Zur
-Datenbankschicht zählen `repository/`, `inventur/` mit eigener Schicht
-([ARCHITEKTUR.md](ARCHITEKTUR.md) 5.2.3), `db/`, der Schreiber der Littera-Übernahme und die
-Einmal-Werkzeuge unter `cmd/`; die Liste mit dem Grund je Paket steht in
-`schichtung_ratsche_test.go`. Außerhalb davon tragen noch die zwei Dateien der Restore-Probe
-in `jobs/` Anweisungen (am Anfang 28 Dateien). Die zwei bleiben: Sie legen eine
-Wegwerf-Datenbank an, entfernen sie und zählen darin die Tabellen, und keine der Anweisungen
-trifft eine Tabelle der Anwendung. Die Ratsche weist jede weitere ab.
-
-**Nächster Schritt: die Regeln in den Dateien mit Tür** (oben, „Was der Bestand nicht sieht").
-Eine Regel in einer Datei mit Tür erschwert das Lesen, führt aber zu keinem zweiten Weg zum
-selben Zustand; deshalb kamen die Abfragen zuerst.
 
 ### 5.63 Etiketten kürzen nach Zeichenzahl
 
