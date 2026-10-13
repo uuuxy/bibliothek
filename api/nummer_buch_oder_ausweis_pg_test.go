@@ -12,6 +12,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 	"bibliothek/repository"
 )
 
@@ -86,8 +87,10 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 
 	t.Run("Leser anlegen mit dem Barcode eines Buchs", func(t *testing.T) {
 		exemplar(t, "N131-C")
-		code, body := createStudent(t, srv,
-			`{"vorname":"Ada","nachname":"Anlage","klasse":"7a","geburtsdatum":"2012-01-02","barcode_id":"N131-C"}`)
+		rec := httptest.NewRecorder()
+		srv.CreateStudentHandler().ServeHTTP(rec, tuertest.JSONPost("/api/schueler",
+			`{"vorname":"Ada","nachname":"Anlage","klasse":"7a","geburtsdatum":"2012-01-02","barcode_id":"N131-C"}`))
+		code, body := rec.Code, rec.Body.String()
 		if code != http.StatusConflict || !strings.Contains(body, "Barcode eines Buchs") {
 			t.Fatalf("erwartet 409 „Barcode eines Buchs“, war %d: %s", code, body)
 		}

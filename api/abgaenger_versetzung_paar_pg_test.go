@@ -12,6 +12,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 	"bibliothek/internal/testdaten"
+	"bibliothek/internal/tuertest"
 )
 
 // Paar-Gate: Die Abgängerliste und die Versetzung müssen dieselbe Menge sehen. Die Liste
@@ -42,7 +43,11 @@ func TestAbgaengerliste_UndVersetzungSehenDieselbeMenge(t *testing.T) {
 		ausListe[z.Vorname] = true
 	}
 
-	versetzungAusfuehren(t, pool, false)
+	admin := testdaten.AdminKonto(t, pool, "paar-versetzung@test.invalid", "Paar", "Versetzung")
+	if rec := tuertest.RufeAlsAdmin(t, admin, srv.PromoteStudentsHandler(), http.MethodPost,
+		"/api/students/promote", `{"confirm": true}`, nil); rec.Code != http.StatusOK {
+		t.Fatalf("Versetzung: Status %d — %s", rec.Code, rec.Body.String())
+	}
 	rows, err := pool.Query(ctx, `SELECT vorname FROM schueler WHERE ist_abgaenger = true`)
 	if err != nil {
 		t.Fatal(err)
