@@ -61,7 +61,11 @@ func TestBackfillMittelOrdnetNurEindeutigeAltBestellungenZu(t *testing.T) {
 		case want == nil && got != nil:
 			t.Errorf("Bestellung %s: Topf %q geraten, want NULL", id, *got)
 		case want != nil && (got == nil || *got != *want):
-			t.Errorf("Bestellung %s: Topf %v, want %q", id, got, *want)
+			ist := "NULL"
+			if got != nil {
+				ist = *got
+			}
+			t.Errorf("Bestellung %s: Topf %s, want %q", id, ist, *want)
 		}
 	}
 
