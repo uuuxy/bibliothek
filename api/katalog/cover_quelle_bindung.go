@@ -50,7 +50,7 @@ func (s *Tueren) coverQuelleErlaubt(r *http.Request, isbn, sichereURL string) bo
 		return false
 	}
 	isbnSauber := isbnutil.OhneTrenner(isbn)
-	quellen, imKatalog, err := repository.CoverQuellenFuerISBN(r.Context(), s.DB.Pool, isbnSauber)
+	quellen, imKatalog, err := repository.LadeCoverQuellenFuerISBN(r.Context(), s.DB.Pool, isbnSauber)
 	if err != nil {
 		return false
 	}

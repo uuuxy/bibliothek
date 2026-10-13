@@ -101,12 +101,12 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 					}).AddRow(
 						"b1", "123", "Book 1", "Author 1", "Sig 1", "url", "Math", "G", false, int64(5), int64(10), int64(2), &dateStr, 0, "Buch", 5, 10, "Sub", "Ver", 2020, map[string]any{}, "4. Aufl. 2023", nil, false, "", 0,
 					))
-				// Die Suchwörter der gelieferten Titel (repository.SuchwoerterDerTitel).
+				// Die Suchwörter der gelieferten Titel (repository.LadeSuchwoerterDerTitel).
 				m.ExpectQuery("(?s)SELECT tsw.titel_id.*FROM schlagworte sw").
 					WithArgs([]string{"b1"}).
 					WillReturnRows(pgxmock.NewRows([]string{"titel_id", "woerter"}).
 						AddRow("b1", []string{"Fantasy", "Tierfantasy"}))
-				// Die Standorte der Exemplare im Bestand (repository.StandorteDerTitel).
+				// Die Standorte der Exemplare im Bestand (repository.LadeStandorteDerTitel).
 				m.ExpectQuery("(?s)SELECT e.titel_id::text, e.standort.*FROM buecher_exemplare e").
 					WithArgs([]string{"b1"}).
 					WillReturnRows(pgxmock.NewRows([]string{"titel_id", "standort", "anzahl"}).

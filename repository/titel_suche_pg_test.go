@@ -25,7 +25,7 @@ func seedSuchTitel(t *testing.T, pool *pgxpool.Pool, titel, autor, isbn, signatu
 	return id
 }
 
-func titelDerTreffer(treffer []BookTitle) []string {
+func titelDerTreffer(treffer []Titel) []string {
 	namen := make([]string, 0, len(treffer))
 	for _, b := range treffer {
 		namen = append(namen, b.Titel)
@@ -33,10 +33,10 @@ func titelDerTreffer(treffer []BookTitle) []string {
 	return namen
 }
 
-// TestSearchTitlesFuzzy_TokenUndDiakritika deckt für die Titelsuche dieselben Fälle
+// TestFindeTitelUnscharf_TokenUndDiakritika deckt für die Titelsuche dieselben Fälle
 // ab wie die Namenssuche: Die Eingabe wird tokenweise geprüft, sodass Autor und
 // Titel gemischt getippt werden können, und Diakritika stehen nicht im Weg.
-func TestSearchTitlesFuzzy_TokenUndDiakritika(t *testing.T) {
+func TestFindeTitelUnscharf_TokenUndDiakritika(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -48,7 +48,7 @@ func TestSearchTitlesFuzzy_TokenUndDiakritika(t *testing.T) {
 	// Autor bereits in Ersatzschreibung erfasst — die Suche mit Umlaut muss ihn finden.
 	seedSuchTitel(t, pool, "Die Blechtrommel", "Guenter Grass", "978-3-423-11821-5", "SIG-E5")
 
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 
 	faelle := []struct {
 		name    string
@@ -72,7 +72,7 @@ func TestSearchTitlesFuzzy_TokenUndDiakritika(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			treffer, _, err := repo.SearchTitlesFuzzy(ctx, f.eingabe, 10)
+			treffer, _, err := repo.FindeTitelUnscharf(ctx, f.eingabe, 10)
 			if err != nil {
 				t.Fatalf("Suche %q: %v", f.eingabe, err)
 			}
@@ -84,9 +84,9 @@ func TestSearchTitlesFuzzy_TokenUndDiakritika(t *testing.T) {
 	}
 }
 
-// TestSearchTitlesFuzzy_GesamtzahlTrotzLimit: wie bei der Schülersuche muss die
+// TestFindeTitelUnscharf_GesamtzahlTrotzLimit: wie bei der Schülersuche muss die
 // Trefferzahl die volle Menge nennen, nicht die Länge der gekürzten Liste.
-func TestSearchTitlesFuzzy_GesamtzahlTrotzLimit(t *testing.T) {
+func TestFindeTitelUnscharf_GesamtzahlTrotzLimit(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -95,9 +95,9 @@ func TestSearchTitlesFuzzy_GesamtzahlTrotzLimit(t *testing.T) {
 		seedSuchTitel(t, pool, "Faust Band "+n, "Goethe", "978-0-00-00000"+n, "SIG-F"+n)
 	}
 
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 
-	treffer, gesamt, err := repo.SearchTitlesFuzzy(ctx, "Faust", 2)
+	treffer, gesamt, err := repo.FindeTitelUnscharf(ctx, "Faust", 2)
 	if err != nil {
 		t.Fatalf("Suche: %v", err)
 	}
@@ -109,18 +109,18 @@ func TestSearchTitlesFuzzy_GesamtzahlTrotzLimit(t *testing.T) {
 	}
 }
 
-// TestSearchTitlesFuzzy_LeereEingabe: ohne Token kein Rundumschlag über den Katalog.
-func TestSearchTitlesFuzzy_LeereEingabe(t *testing.T) {
+// TestFindeTitelUnscharf_LeereEingabe: ohne Token kein Rundumschlag über den Katalog.
+func TestFindeTitelUnscharf_LeereEingabe(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
 	seedSuchTitel(t, pool, "Der Vorleser", "Bernhard Schlink", "978-3-257-06065-3", "SIG-A1")
 
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 
 	for _, eingabe := range []string{"", "   "} {
-		treffer, gesamt, err := repo.SearchTitlesFuzzy(ctx, eingabe, 10)
+		treffer, gesamt, err := repo.FindeTitelUnscharf(ctx, eingabe, 10)
 		if err != nil {
 			t.Fatalf("Suche %q: %v", eingabe, err)
 		}

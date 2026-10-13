@@ -27,7 +27,7 @@ type OmniboxResult struct {
 	// durchgeführt wurde.
 	Student *repository.Student
 	// Book enthält die Daten des betroffenen Buchs (Ausleihe/Rückgabe).
-	Book *repository.BookCopy
+	Book *repository.Exemplar
 	// Geraet enthält die Daten des betroffenen Geräts (Hardware-Ausleihe/Rückgabe).
 	Geraet *repository.Geraet
 	// DueDate gibt das Rückgabedatum der aktuellen Ausleihe an.
@@ -39,7 +39,7 @@ type OmniboxResult struct {
 	// Vorbesitzer enthält den LESER, der das Buch/Gerät zuvor ausgeliehen hatte (bei Fremdrückgabe).
 	Vorbesitzer *repository.Student
 	// SearchResults enthält Suchergebnisse bei einer allgemeinen Buchtitel-Suche.
-	SearchResults []repository.BookTitle
+	SearchResults []repository.Titel
 	// HasVormerkung zeigt an, ob für das zurückgegebene Buch eine Reservierung aktiv wurde.
 	HasVormerkung bool
 	// VormerkungTitel ist der Titel des reservierten Buchs.
@@ -96,7 +96,7 @@ type OmniboxService interface {
 type defaultOmniboxService struct {
 	pool        db.PgxPoolIface
 	studentRepo repository.StudentRepository
-	bookRepo    repository.BookRepository
+	bookRepo    repository.KatalogAbfragen
 	userRepo    repository.KontoAbfragen
 	loanRepo    repository.AusleihAbfragen
 	loanSvc     LoanService
@@ -107,7 +107,7 @@ type defaultOmniboxService struct {
 func NewOmniboxService(
 	pool db.PgxPoolIface,
 	studentRepo repository.StudentRepository,
-	bookRepo repository.BookRepository,
+	bookRepo repository.KatalogAbfragen,
 	userRepo repository.KontoAbfragen,
 	loanRepo repository.AusleihAbfragen,
 	loanSvc LoanService,
@@ -249,7 +249,7 @@ func (s *defaultOmniboxService) verarbeite(ctx context.Context, q OmniboxQuery) 
 // echter DB-Fehler und wird propagiert (→ HTTP 500), statt ihn als "nicht gefunden" zu
 // verschlucken.
 func (s *defaultOmniboxService) resolveOhnePraefix(ctx context.Context, q OmniboxQuery, resp *OmniboxResult) error {
-	copy, lookupErr := s.bookRepo.GetCopyByBarcode(ctx, q.Query)
+	copy, lookupErr := s.bookRepo.FindeExemplar(ctx, q.Query)
 	if lookupErr != nil {
 		return fmt.Errorf("datenbankfehler bei Barcode-Auflösung: %w", lookupErr)
 	}
@@ -262,7 +262,7 @@ func (s *defaultOmniboxService) resolveOhnePraefix(ctx context.Context, q Omnibo
 	// erneut nachschlagen — nur ein existierendes Exemplar löst eine Aktion aus,
 	// alles andere fällt unverändert zur Ausweis-/Volltextstufe durch.
 	if nummer, istEtikett := dekodiereLitteraEtikett(q.Query); istEtikett {
-		dekodiert, dekodiertErr := s.bookRepo.GetCopyByBarcode(ctx, nummer)
+		dekodiert, dekodiertErr := s.bookRepo.FindeExemplar(ctx, nummer)
 		if dekodiertErr != nil {
 			return fmt.Errorf("datenbankfehler bei Etikett-Auflösung: %w", dekodiertErr)
 		}
@@ -376,7 +376,7 @@ func (s *defaultOmniboxService) ladeAbholbereiteVormerkungen(ctx context.Context
 
 // handleSearchAction führt eine Volltextsuche über Buchtitel, Autoren, ISBN und Systematik aus.
 func (s *defaultOmniboxService) handleSearchAction(ctx context.Context, query string, resp *OmniboxResult) error {
-	titles, err := s.bookRepo.SearchTitles(ctx, query)
+	titles, err := s.bookRepo.FindeTitel(ctx, query)
 	if err != nil {
 		return err
 	}
@@ -398,7 +398,7 @@ func (s *defaultOmniboxService) handleSearchAction(ctx context.Context, query st
 // Exemplar die Notiz (Zählung 15.09.2026). Hinter der toten Tür lag ein stiller NULL-Scan
 // (vormerkungen.notiz in einen string), der dem berechtigten Kind 403 gemeldet hätte.
 // Beides ist mit dem Zweig gefallen (OFFEN.md 5.14).
-func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query string, copy *repository.BookCopy, staffID string, resp *OmniboxResult) (fertig bool, err error) {
+func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query string, copy *repository.Exemplar, staffID string, resp *OmniboxResult) (fertig bool, err error) {
 	activeLoan, err := s.loanRepo.FindeOffene(ctx, copy.ID)
 	if err != nil {
 		return false, err
@@ -466,7 +466,7 @@ func aufsichtHinweis(b repository.RueckkehrBefund) string {
 // Wenn kein aktiver Ausleiher vorhanden ist, wird das Buch zurückgegeben.
 // Ist ein Schüler oder Lehrer aktiv, wird das Buch an diesen ausgeliehen.
 func (s *defaultOmniboxService) handleBookAction(ctx context.Context, q OmniboxQuery, resp *OmniboxResult) error {
-	copy, err := s.bookRepo.GetCopyByBarcode(ctx, q.Query)
+	copy, err := s.bookRepo.FindeExemplar(ctx, q.Query)
 	if err != nil {
 		return err
 	}

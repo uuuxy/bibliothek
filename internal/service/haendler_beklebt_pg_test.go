@@ -46,7 +46,7 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	beklebtID := testdaten.Haendler(t, pool, "Beklebt", true)
 	selbstID := testdaten.Haendler(t, pool, "Selbst", false)
@@ -95,14 +95,14 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 
 // Die Etiketten im Lieferanten-Mailanhang entstehen aus ProcessOrder, NICHT aus dem
 // Druck-Center-Pfad (buchetikett.DesTitels) — die Signatur muss deshalb hier ankommen, über
-// die echte Kette GetTitleByIDTx → BarcodeLabelDetail. Ein Unit-Test, der Signatur
+// die echte Kette KatalogAbfragen.LadeTitel → BarcodeLabelDetail. Ein Unit-Test, der Signatur
 // direkt ans Struct schreibt, beweist das nicht: Genau so blieb sie im Mailanhang leer.
 func TestProcessOrder_LabelsTragenSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "MitSignatur", false)
 	titel := testdaten.TitelMitSignatur(t, pool, "Deutschbuch 5", "LMF-Deutsch 5", 0)
@@ -131,7 +131,7 @@ func TestProcessOrder_BeklebenderHaendlerOhneBarcodebogen(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "BeklebtOhneBogen", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-OhneBogen", 0)

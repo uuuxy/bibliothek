@@ -58,7 +58,7 @@ func bestellungMitEtiketten(t *testing.T, srv *Tueren, pool *pgxpool.Pool, menge
 func bestellungMitEtikettenAus(t *testing.T, srv *Tueren, pool *pgxpool.Pool, menge int, mittel string) string {
 	t.Helper()
 	ctx := context.Background()
-	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(srv.DB, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Formatprobe", 0)

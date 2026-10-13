@@ -27,14 +27,14 @@ type UpdateBarcodeRequest struct {
 // @Failure      409   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /buecher/exemplare/{id}/barcode [put]
-func (s *Tueren) UpdateCopyBarcodeHandler(bookRepo repository.BookRepository) http.HandlerFunc {
+func (s *Tueren) UpdateCopyBarcodeHandler(bookRepo repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleUpdateCopyBarcode(w, r, bookRepo)
 	}
 }
 
 // handleUpdateCopyBarcode setzt den Barcode eines Exemplars und ordnet die Ablehnungen ein.
-func (s *Tueren) handleUpdateCopyBarcode(w http.ResponseWriter, r *http.Request, bookRepo repository.BookRepository) {
+func (s *Tueren) handleUpdateCopyBarcode(w http.ResponseWriter, r *http.Request, bookRepo repository.KatalogAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
@@ -53,7 +53,7 @@ func (s *Tueren) handleUpdateCopyBarcode(w http.ResponseWriter, r *http.Request,
 
 	ctx := r.Context()
 
-	if err := bookRepo.UpdateCopyBarcode(ctx, id, req.Barcode); err != nil {
+	if err := bookRepo.SetzeExemplarBarcode(ctx, id, req.Barcode); err != nil {
 		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, err)
 			return

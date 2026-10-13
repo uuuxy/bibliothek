@@ -102,7 +102,7 @@ function trifftBegriff(b, term, isbnFormenDesBegriffs, istJahrgang) {
 	// Die Signatur ist die Regaladresse (Handbuch).
 	if (b.signatur?.toLowerCase().includes(term)) return true;
 	// Schlagworte und die Verweise darauf (docs/OFFEN.md 4.20). Welche Wörter einen
-	// Titel finden, entscheidet der Server (repository.SuchwoerterDerTitel) — dieselbe
+	// Titel finden, entscheidet der Server (repository.LadeSuchwoerterDerTitel) — dieselbe
 	// Regel, nach der die Titel-Verwaltung und das Portal am Server suchen.
 	if (
 		Array.isArray(b.suchwoerter) &&

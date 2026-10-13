@@ -84,7 +84,7 @@ func TestAlterAufdruckMitPruefzeichenWirdGelesen(t *testing.T) {
 	})
 
 	studentRepo := repository.NewStudentRepository(pool)
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	userRepo := repository.NewKontoAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)

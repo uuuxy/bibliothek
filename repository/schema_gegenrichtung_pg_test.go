@@ -47,7 +47,7 @@ var fkAktionenBestand = []string{
 	"CASCADE  buecher_exemplare.titel_id -> buecher_titel",
 	// Befragt am 23.09.2026 (Migration 138): Die Schlagworte eines Titels fallen mit ihm —
 	// Absicht. Sie beschreiben nur diesen Titel, niemand wartet auf sie, und das Wort selbst
-	// bleibt stehen (ohne Titel fällt es aus den Vorschlägen, SchlagwortVorschlaege). Das
+	// bleibt stehen (ohne Titel fällt es aus den Vorschlägen, FindeSchlagwortVorschlaege). Das
 	// Löschen steht im Protokoll (LoescheTitel schreibt vorher einen Schnappschuss des Titels);
 	// die Schlagworte stehen nicht darin.
 	"CASCADE  titel_schlagworte.titel_id -> buecher_titel",
@@ -435,7 +435,7 @@ var triggerBestand = []string{
 	// Wer einen gespeicherten Titeltext mit einem Wert aus Go vergleicht, muss ihn ebenfalls
 	// zusammensetzen; die DNB-Antwort tut das in inventur.dekodiereMARC, die Schlagworte in
 	// repository.schlagwortNormalform, die Titelschlüssel beider Importe (Katalogisat und
-	// Listenimport) in repository.NormalisiereTitelKey — dort fehlte es bis zum Rasterdurchgang
+	// Listenimport) in repository.NormalisiereTitelSchluessel — dort fehlte es bis zum Rasterdurchgang
 	// vom 30.09.2026 (internal/service/import_dynamic_nfc_pg_test.go). Die Signatur ist bewusst
 	// nicht dabei.
 	// Migration 160, befragt am 07.10.2026: Derselbe Trigger, jetzt unter dem Namen der Form,

@@ -72,7 +72,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 	t.Run("Buch umetikettieren auf die Nummer eines Ausweises", func(t *testing.T) {
 		schueler(t, "N131-A")
 		ex := exemplar(t, "N131-A-B")
-		rec := fahre(srv.katalog().UpdateCopyBarcodeHandler(repository.NewBookRepository(pool)),
+		rec := fahre(srv.katalog().UpdateCopyBarcodeHandler(repository.NewKatalogAbfragen(pool)),
 			http.MethodPut, "/api/buecher/exemplare/"+ex+"/barcode", ex, `{"barcode":"N131-A"}`)
 		pruefe(t, rec, http.StatusConflict, "Ausweis eines Lesers")
 	})

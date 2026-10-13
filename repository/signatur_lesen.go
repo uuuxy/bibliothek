@@ -12,10 +12,10 @@ type SignaturGruppe struct {
 	Exemplare int
 }
 
-// ListeSignaturGruppen liefert die Regaladressen, die an Titeln vorkommen, mit ihrem Umfang.
+// LadeSignaturGruppen liefert die Regaladressen, die an Titeln vorkommen, mit ihrem Umfang.
 // Ausgesonderte Exemplare zählen nicht mit.
-func ListeSignaturGruppen(ctx context.Context, db Datenbank) ([]SignaturGruppe, error) {
-	regal := SQLSignaturRegaladresse("t.signatur")
+func LadeSignaturGruppen(ctx context.Context, db Datenbank) ([]SignaturGruppe, error) {
+	regal := sqlSignaturRegaladresse("t.signatur")
 	rows, err := db.Query(ctx, `
 			SELECT `+regal+` AS signatur,
 			       count(DISTINCT t.id) AS titel,
@@ -42,9 +42,9 @@ func ListeSignaturGruppen(ctx context.Context, db Datenbank) ([]SignaturGruppe, 
 	return gruppen, rows.Err()
 }
 
-// SignaturBuch ist ein Titel der Regalansicht mit der Zahl seiner Exemplare und der davon
+// SignaturTitel ist ein Titel der Regalansicht mit der Zahl seiner Exemplare und der davon
 // verliehenen.
-type SignaturBuch struct {
+type SignaturTitel struct {
 	TitelID   string
 	Signatur  string
 	Titel     string
@@ -54,10 +54,10 @@ type SignaturBuch struct {
 	Verliehen int
 }
 
-// ListeBuecherUnterSignatur liefert die Titel, deren Signatur mit dem Präfix beginnt, in der
-// Reihenfolge des Regals und höchstens limit Zeilen. Das Prädikat ist SignaturPraefixBedingung,
+// LadeTitelUnterSignatur liefert die Titel, deren Signatur mit dem Präfix beginnt, in der
+// Reihenfolge des Regals und höchstens limit Zeilen. Das Prädikat ist signaturPraefixBedingung,
 // dasselbe wie beim Bereich einer Inventur.
-func ListeBuecherUnterSignatur(ctx context.Context, db Datenbank, signatur string, limit int) ([]SignaturBuch, error) {
+func LadeTitelUnterSignatur(ctx context.Context, db Datenbank, signatur string, limit int) ([]SignaturTitel, error) {
 	rows, err := db.Query(ctx, fmt.Sprintf(`
 			SELECT t.id::text,
 			       btrim(t.signatur),
@@ -76,15 +76,15 @@ func ListeBuecherUnterSignatur(ctx context.Context, db Datenbank, signatur strin
 			GROUP BY t.id, t.signatur, t.titel, t.autor, t.isbn
 			ORDER BY btrim(t.signatur), t.titel
 			LIMIT $2
-		`, SignaturPraefixBedingung("t.signatur", 1)), signatur, limit)
+		`, signaturPraefixBedingung("t.signatur", 1)), signatur, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	buecher := []SignaturBuch{}
+	buecher := []SignaturTitel{}
 	for rows.Next() {
-		var b SignaturBuch
+		var b SignaturTitel
 		if err := rows.Scan(&b.TitelID, &b.Signatur, &b.Titel, &b.Autor, &b.ISBN, &b.Exemplare, &b.Verliehen); err != nil {
 			return nil, zeileUnlesbar(err)
 		}

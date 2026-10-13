@@ -17,8 +17,8 @@ func TestAbgangsgrundText(t *testing.T) {
 	}
 
 	for _, f := range faelle {
-		if got := AbgangsgrundText(f.grund); got != f.erwartet {
-			t.Errorf("AbgangsgrundText(%q) = %q, erwartet %q", f.grund, got, f.erwartet)
+		if got := abgangsgrundText(f.grund); got != f.erwartet {
+			t.Errorf("abgangsgrundText(%q) = %q, erwartet %q", f.grund, got, f.erwartet)
 		}
 	}
 }

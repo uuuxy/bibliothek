@@ -24,10 +24,10 @@ type TitelExemplar struct {
 	Standort                string
 }
 
-// ListeExemplareDesTitels liefert alle Exemplare eines Titels, die ausgesonderten zuletzt,
+// LadeExemplareDesTitels liefert alle Exemplare eines Titels, die ausgesonderten zuletzt,
 // sonst nach Barcode. Eine unlesbare Zeile ist ein Fehler, kein Exemplar, das still aus der
 // Akte verschwindet.
-func ListeExemplareDesTitels(ctx context.Context, db Datenbank, titelID string) ([]TitelExemplar, error) {
+func LadeExemplareDesTitels(ctx context.Context, db Datenbank, titelID string) ([]TitelExemplar, error) {
 	query := `
 		SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.ist_ausleihbar, e.ist_ausgesondert,
 		       (` + SQLExemplarImBestand + `) AS im_bestand,
@@ -76,7 +76,7 @@ type TitelAusleiher struct {
 	IstDauerleihe    bool
 }
 
-// ListeAusleiherDesTitels liefert die offenen Ausleihen eines Titels, die früheste Frist
+// LadeAusleiherDesTitels liefert die offenen Ausleihen eines Titels, die früheste Frist
 // zuerst.
 //
 // LEFT JOIN auf BEIDE Ausleiher-Arten: Eine Ausleihe an eine Lehrkraft trägt keine
@@ -87,7 +87,7 @@ type TitelAusleiher struct {
 // Klassenfilter des Reiters liest dieses Feld. COALESCE auf 'Anonym' deckt die getrennte Ausleihe
 // ab — laufende trifft die Lesehistorie-Befristung zwar nicht, aber die Antwort soll
 // auch dann keinen leeren Namen tragen.
-func ListeAusleiherDesTitels(ctx context.Context, db Datenbank, titelID string) ([]TitelAusleiher, error) {
+func LadeAusleiherDesTitels(ctx context.Context, db Datenbank, titelID string) ([]TitelAusleiher, error) {
 	query := `
 			SELECT
 			  COALESCE(l.vorname, 'Anonym') AS vorname,
@@ -131,9 +131,9 @@ type TitelAusleihe struct {
 	RueckgabeAm     *time.Time
 }
 
-// ListeAusleihhistorieDesTitels liefert die letzten 200 Ausleihen eines Titels, die jüngste
+// LadeAusleihhistorieDesTitels liefert die letzten 200 Ausleihen eines Titels, die jüngste
 // zuerst.
-func ListeAusleihhistorieDesTitels(ctx context.Context, db Datenbank, titelID string) ([]TitelAusleihe, error) {
+func LadeAusleihhistorieDesTitels(ctx context.Context, db Datenbank, titelID string) ([]TitelAusleihe, error) {
 	query := `
 			SELECT 
 			  l.vorname AS vorname,

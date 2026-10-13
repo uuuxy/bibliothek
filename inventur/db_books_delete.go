@@ -43,8 +43,8 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	defer db.SafeRollback(ctx, tx)
 
 	// Bücher in mehreren Auflagen (docs/OFFEN.md 4.18): Ihre Werke müssen danach noch stimmen.
-	// Als erstes — die Sperre der Auflagen kommt vor jeder Zeilensperre (repository.WerkeDerTitel).
-	werke, err := repository.WerkeDerTitel(ctx, tx, ids)
+	// Als erstes — die Sperre der Auflagen kommt vor jeder Zeilensperre (repository.LadeWerkeDerTitel).
+	werke, err := repository.LadeWerkeDerTitel(ctx, tx, ids)
 	if err != nil {
 		return err
 	}
@@ -62,11 +62,11 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	// Vormerkungen, Klassensatz-Reservierungen und Klassensatz-Zuordnungen fallen per
 	// ON DELETE CASCADE mit dem Titel — die DDL sagt das, der Code sagte es nicht
 	// (Frage 12 „Gegenrichtung Schema", 06.09.2026). Vorher lesen, danach ist es weg.
-	wartende, err := repository.LeseWartendeBezuege(ctx, tx, ids)
+	wartende, err := repository.LadeWartendeBezuege(ctx, tx, ids)
 	if err != nil {
 		return err
 	}
-	localCovers, err := repository.LokaleCoverNurDieserTitel(ctx, tx, ids)
+	localCovers, err := repository.LadeLokaleCoverNurDieserTitel(ctx, tx, ids)
 	if err != nil {
 		return err
 	}

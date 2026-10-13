@@ -34,7 +34,7 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Naacher-Paritaet", true)
 	// Signatur und Autor sind gesetzt: Zwei leere Felder wären auf beiden Wegen gleich, auch

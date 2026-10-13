@@ -18,12 +18,12 @@ import (
 
 // Die Status-Tür nennt nach dem Speichern, ob das Exemplar zum Bestand zählt. Die Karte der
 // Buchakte benennt den Zustand danach („Bestellt", „Ausgesondert" oder ein Wort des
-// Bestands) und rechnet die Regel von UpdateCopyStatus nicht selbst nach.
+// Bestands) und rechnet die Regel von AendereExemplarStatus nicht selbst nach.
 func TestCopyStatus_AntwortNenntDenBestand(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 	handler := srv.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidAbfragen(pool))
 	titelID := testdaten.TitelMitSignatur(t, pool, "Status-Titel", "Sta 1", 0)
@@ -31,7 +31,7 @@ func TestCopyStatus_AntwortNenntDenBestand(t *testing.T) {
 	ausgesondert := func(barcode string) string {
 		t.Helper()
 		id := testdaten.Exemplar(t, pool, titelID, barcode, true, "")
-		if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+		if err := bookRepo.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 			t.Fatalf("aussondern %s: %v", barcode, err)
 		}
 		return id

@@ -122,7 +122,7 @@ func (s *Tueren) logImportAudit(r *http.Request, aktion, details string) {
 // Eine Datei, die kein Katalogisat ist (z. B. Schlagwort-/Systematik-Export),
 // ist ein Nutzer-Formatfehler und wird als 400 gemeldet, nicht als 500.
 func (s *Tueren) verarbeiteLitteraXML(w http.ResponseWriter, r *http.Request, content []byte) {
-	importSvc := service.NewImportService(repository.NewBookRepository(s.DB.Pool), s.DB.Pool)
+	importSvc := service.NewImportService(repository.NewKatalogAbfragen(s.DB.Pool), s.DB.Pool)
 	importedCount, err := importSvc.ParseLitteraXML(r.Context(), bytes.NewReader(content))
 	if err != nil {
 		status := http.StatusInternalServerError
@@ -175,7 +175,7 @@ func (s *Tueren) LitteraImportHandler() http.HandlerFunc {
 			return
 		}
 
-		importSvc := service.NewImportService(repository.NewBookRepository(s.DB.Pool), s.DB.Pool)
+		importSvc := service.NewImportService(repository.NewKatalogAbfragen(s.DB.Pool), s.DB.Pool)
 		newTitlesCount, importedCopiesCount, err := importSvc.ImportDynamic(r.Context(), rows, headerMap)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -252,7 +252,7 @@ func (s *Tueren) BestandImportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bookRepo := repository.NewBookRepository(s.DB.Pool)
+	bookRepo := repository.NewKatalogAbfragen(s.DB.Pool)
 	importSvc := service.NewImportService(bookRepo, s.DB.Pool)
 
 	newTitles, importedCopies, err := importSvc.ImportDynamic(r.Context(), rows, headerMap)

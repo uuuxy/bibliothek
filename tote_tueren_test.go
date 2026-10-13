@@ -13,7 +13,7 @@ import (
 // Gate gegen tote Interface-Türen.
 //
 // Anlass (16.08.2026): UpsertBookTitle stand fünf Wochen ohne produktiven Aufrufer
-// im BookRepository-Interface — nur Implementierung und ein eigener Test hielten es
+// in der Schnittstelle KatalogAbfragen — nur Implementierung und ein eigener Test hielten es
 // am Leben. In der Zeit driftete sein Blanking-Schutz vom echten Bulk-Pfad weg.
 // `deadcode` (x/tools) KANN diese Klasse nicht finden: Sobald ein Typ in ein
 // Interface gewandelt wird, gilt seine komplette Methodentabelle als erreichbar
@@ -82,8 +82,8 @@ func TestInterfaceOhneProduktivenAufrufer(t *testing.T) {
 	if len(deklariert) < 20 {
 		t.Fatalf("nur %d Interface-Methoden gefunden — der Scanner greift vermutlich nicht mehr", len(deklariert))
 	}
-	if _, ok := deklariert["BulkUpsertBookTitles"]; !ok {
-		t.Fatal("BulkUpsertBookTitles nicht als Interface-Methode erkannt — der Scanner greift nicht mehr")
+	if _, ok := deklariert["SchreibeTitel"]; !ok {
+		t.Fatal("SchreibeTitel nicht als Interface-Methode erkannt — der Scanner greift nicht mehr")
 	}
 
 	for name, ort := range deklariert {

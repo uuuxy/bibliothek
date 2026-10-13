@@ -23,7 +23,7 @@ import (
 // Regeln, mechanisch:
 //  1. SQL, das werk_id schreibt (SET-Klausel, Spaltenliste eines INSERT) oder die Tabelle
 //     werke ändert, steht nur in repository/auflagen.go.
-//  2. Jede Funktion mit DELETE FROM buecher_titel ruft WerkeDerTitel und RaeumeWerkeAuf.
+//  2. Jede Funktion mit DELETE FROM buecher_titel ruft LadeWerkeDerTitel und RaeumeWerkeAuf.
 //
 // BLINDHEIT: Liest Zeichenketten-Literale einzeln — SQL, das erst aus Variablen oder
 // Sprintf-Teilen entsteht, sieht sie nur, soweit das Merkmal in einem Literal steht. Skripte
@@ -74,9 +74,9 @@ func TestAuflagen_EinSchreibpfad(t *testing.T) {
 			}
 			if loescht {
 				loescher++
-				if !istFunktion || !ruft(fn.Body, "WerkeDerTitel") || !ruft(fn.Body, "RaeumeWerkeAuf") {
+				if !istFunktion || !ruft(fn.Body, "LadeWerkeDerTitel") || !ruft(fn.Body, "RaeumeWerkeAuf") {
 					verstoesse = append(verstoesse, ort+": löscht Titel, ohne die Werke zu halten — "+
-						"zuerst repository.WerkeDerTitel, nach dem DELETE RaeumeWerkeAuf")
+						"zuerst repository.LadeWerkeDerTitel, nach dem DELETE RaeumeWerkeAuf")
 				}
 			}
 		}

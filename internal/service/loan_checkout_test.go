@@ -31,14 +31,14 @@ func lehrkraftCtx(id string) *checkoutContext {
 	return &checkoutContext{borrowerID: id, leser: &repository.Student{ID: id, Art: "lehrkraft"}}
 }
 
-func buchMitTitel(titel string) *repository.BookCopy {
-	return &repository.BookCopy{Titel: titel, Medientyp: "Buch", IstAusleihbar: true}
+func buchMitTitel(titel string) *repository.Exemplar {
+	return &repository.Exemplar{Titel: titel, Medientyp: "Buch", IstAusleihbar: true}
 }
 
 // lernmittel bildet ein Schulbuch ab: Seit Migration 093 zählt allein das Feld,
 // Titel und Signatur sind freier Text.
-func lernmittel(titel string) *repository.BookCopy {
-	return &repository.BookCopy{Titel: titel, IstLernmittel: true, Medientyp: "Buch", IstAusleihbar: true}
+func lernmittel(titel string) *repository.Exemplar {
+	return &repository.Exemplar{Titel: titel, IstLernmittel: true, Medientyp: "Buch", IstAusleihbar: true}
 }
 
 // --- Ausleihlimit (max_ausleihen_schueler) ---

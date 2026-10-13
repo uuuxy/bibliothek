@@ -111,7 +111,7 @@ func TestSignaturTrifftDenInventurScope(t *testing.T) {
 	voll := SignaturAus("LMF Deu 7", "Bie")
 	regal := "LMF Deu 7"
 
-	// Nachbildung von repository.SignaturPraefixBedingung in Go: gleich ODER
+	// Nachbildung von repository.signaturPraefixBedingung in Go: gleich ODER
 	// Praefix mit folgendem Leerzeichen.
 	trifft := voll == regal || strings.HasPrefix(voll, regal+" ")
 	if !trifft {

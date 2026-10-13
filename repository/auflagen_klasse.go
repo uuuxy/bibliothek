@@ -38,11 +38,11 @@ type AuflagenMischung struct {
 	Andere           []AuflageInKlasse `json:"andere"`
 }
 
-// AuflagenMischungInKlasse liefert den Hinweis für die Ausleihe eines Exemplars von titelID
+// LadeAuflagenMischungInKlasse liefert den Hinweis für die Ausleihe eines Exemplars von titelID
 // an schuelerID — oder nil, wenn es keinen gibt: Der Titel gehört zu keinem Werk, der Leser
 // ist kein Schüler oder hat keine Klasse, oder in der Klasse hat niemand eine andere Auflage.
 // Die Ausleihe selbst zählt nicht mit (sie ist diese Auflage).
-func AuflagenMischungInKlasse(ctx context.Context, q Datenbank, titelID, schuelerID string) (*AuflagenMischung, error) {
+func LadeAuflagenMischungInKlasse(ctx context.Context, q Datenbank, titelID, schuelerID string) (*AuflagenMischung, error) {
 	var m AuflagenMischung
 	var werkID *string
 	err := q.QueryRow(ctx, `

@@ -80,7 +80,7 @@ func TestSetzeSchlagworte_ErsetztDieMengeUndLeerEntferntAlle(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Schritt %d: %v", i+1, err)
 		}
-		gelesen, err := SchlagworteDesTitels(ctx, pool, id)
+		gelesen, err := LadeSchlagworteDesTitels(ctx, pool, id)
 		if err != nil {
 			t.Fatalf("Schritt %d lesen: %v", i+1, err)
 		}
@@ -105,7 +105,7 @@ func TestSetzeSchlagworte_UnbekannterTitel(t *testing.T) {
 		}
 	}
 	// Lesen ebenso: „keine Schlagworte" wäre für eine falsche Kennung ein Scheinerfolg.
-	if woerter, err := SchlagworteDesTitels(ctx, pool, unbekannt); !errors.Is(err, ErrTitelNichtGefunden) {
+	if woerter, err := LadeSchlagworteDesTitels(ctx, pool, unbekannt); !errors.Is(err, ErrTitelNichtGefunden) {
 		t.Errorf("Lesen: %q, Fehler %v, erwartet ErrTitelNichtGefunden", woerter, err)
 	}
 	var angelegt int
@@ -179,7 +179,7 @@ func TestSchlagwortVorschlaege_HaeufigsteZuerstGekapptOhneWaisen(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	vorschlaege, err := SchlagwortVorschlaege(ctx, pool, "")
+	vorschlaege, err := FindeSchlagwortVorschlaege(ctx, pool, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,7 +238,7 @@ func TestSchlagwortVorschlaege_SucheUeberAlleWoerter(t *testing.T) {
 
 	woerter := func(suche string) []string {
 		t.Helper()
-		vorschlaege, err := SchlagwortVorschlaege(ctx, pool, suche)
+		vorschlaege, err := FindeSchlagwortVorschlaege(ctx, pool, suche)
 		if err != nil {
 			t.Fatalf("Suche %+q: %v", suche, err)
 		}

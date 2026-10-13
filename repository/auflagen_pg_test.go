@@ -112,7 +112,7 @@ func TestFasseAuflagenZusammen_DritteAuflageKommtDazu(t *testing.T) {
 	if _, err := FasseAuflagenZusammen(ctx, pool, c, a); err != nil {
 		t.Fatalf("dritte Auflage: %v", err)
 	}
-	auflagen, err := AuflagenDesTitels(ctx, pool, b)
+	auflagen, err := LadeAuflagenDesTitels(ctx, pool, b)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +207,7 @@ func TestFasseAuflagenZusammen_UnbekannterTitel(t *testing.T) {
 	if _, err := LoeseAuflage(ctx, pool, unbekannt); !errors.Is(err, ErrTitelNichtGefunden) {
 		t.Errorf("lösen: Fehler %v, erwartet ErrTitelNichtGefunden", err)
 	}
-	if _, err := AuflagenDesTitels(ctx, pool, unbekannt); !errors.Is(err, ErrTitelNichtGefunden) {
+	if _, err := LadeAuflagenDesTitels(ctx, pool, unbekannt); !errors.Is(err, ErrTitelNichtGefunden) {
 		t.Errorf("lesen: Fehler %v, erwartet ErrTitelNichtGefunden", err)
 	}
 }
@@ -286,7 +286,7 @@ func TestAuflagenDesTitels_BestandWieImKatalog(t *testing.T) {
 		t.Fatalf("Exemplare anlegen: %v", err)
 	}
 
-	auflagen, err := AuflagenDesTitels(ctx, pool, id)
+	auflagen, err := LadeAuflagenDesTitels(ctx, pool, id)
 	if err != nil {
 		t.Fatal(err)
 	}

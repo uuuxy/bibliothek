@@ -100,7 +100,7 @@ func TestSchreibeSchlagworte_AlleWoerterUeberDenSchreibpfad(t *testing.T) {
 
 func schlagworteAm(t *testing.T, pool *pgxpool.Pool, titelID string) []string {
 	t.Helper()
-	w, err := repository.SchlagworteDesTitels(context.Background(), pool, titelID)
+	w, err := repository.LadeSchlagworteDesTitels(context.Background(), pool, titelID)
 	if err != nil {
 		t.Fatal(err)
 	}

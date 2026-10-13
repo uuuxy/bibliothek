@@ -25,9 +25,9 @@ func TestSuche_FindetISBNInJederSchreibweise(t *testing.T) {
 		INSERT INTO buecher_exemplare (titel_id, barcode_id) SELECT id, 'B-NORMALFORM-1' FROM t`); err != nil {
 		t.Fatal(err)
 	}
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 	for _, suchtext := range []string{"978-3-16-148", "9783161484", "978 3 16 148410 0"} {
-		treffer, err := repo.SearchTitles(ctx, suchtext)
+		treffer, err := repo.FindeTitel(ctx, suchtext)
 		if err != nil {
 			t.Fatalf("suchen %q: %v", suchtext, err)
 		}

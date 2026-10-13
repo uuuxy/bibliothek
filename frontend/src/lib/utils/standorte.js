@@ -25,7 +25,7 @@ export async function ladeStandorte() {
 
 /**
  * Zählt die Standorte der Exemplare eines Titels für den Kopf der Buchakte. Gezählt wird wie
- * in der Titel-Verwaltung (repository.StandorteDerTitel): nur Exemplare im Bestand, die der
+ * in der Titel-Verwaltung (repository.LadeStandorteDerTitel): nur Exemplare im Bestand, die der
  * Server mit `im_bestand` kennzeichnet.
  *
  * @param {{ standort?: string, im_bestand?: boolean }[]} exemplare

@@ -72,11 +72,11 @@ func TestZerlegeLMFTeil(t *testing.T) {
 // stubBookRepo zeichnet Upserts auf; alle übrigen Interface-Methoden
 // stammen aus dem eingebetteten Nil-Interface und dürfen nicht aufgerufen werden.
 type stubBookRepo struct {
-	repository.BookRepository
-	titles []repository.BookTitle
+	repository.KatalogAbfragen
+	titles []repository.Titel
 }
 
-func (s *stubBookRepo) BulkUpsertBookTitles(_ context.Context, titles []repository.BookTitle) (int, error) {
+func (s *stubBookRepo) SchreibeTitel(_ context.Context, titles []repository.Titel) (int, error) {
 	s.titles = append(s.titles, titles...)
 	return len(titles), nil
 }
@@ -137,7 +137,7 @@ func TestParseLitteraXML_LMFUndSignatur(t *testing.T) {
 		t.Fatalf("importierte Titel = %d, want 4", count)
 	}
 
-	want := []repository.BookTitle{
+	want := []repository.Titel{
 		{Titel: "Physik Oberstufe", Signatur: "Uc", IstLernmittel: true, Fach: lmf.FachPhysik, JahrgangVon: 11, JahrgangBis: 13},
 		{Titel: "Biologie heute 7", Signatur: "LMF Bio 7", IstLernmittel: true, Fach: lmf.FachBiologie, JahrgangVon: 7, JahrgangBis: 7},
 		{Titel: "Die Republik von Weimar 1918-1933", Signatur: "Ev", IstLernmittel: false, Fach: lmf.FachGeschichte},

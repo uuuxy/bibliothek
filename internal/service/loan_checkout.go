@@ -37,7 +37,7 @@ func istEigeneRueckgabe(chkCtx *checkoutContext, activeLoan *repository.Ausleihe
 // pruefeSchuelerAusleihlimit erzwingt das Ausleihlimit für Schüler. Ausgenommen sind
 // LMF-Bücher und jede Rückgabe — bei einer Rückgabe entsteht keine Ausleihe, die gegen
 // das Limit zählen könnte.
-func (s *defaultLoanService) pruefeSchuelerAusleihlimit(ctx context.Context, chkCtx *checkoutContext, copy *repository.BookCopy, activeLoansCount int, neueAusleihe bool) error {
+func (s *defaultLoanService) pruefeSchuelerAusleihlimit(ctx context.Context, chkCtx *checkoutContext, copy *repository.Exemplar, activeLoansCount int, neueAusleihe bool) error {
 	if !chkCtx.istSchueler() {
 		return nil
 	}
@@ -77,7 +77,7 @@ func (s *defaultLoanService) pruefeVormerkungKonflikt(ctx context.Context, tx pg
 // (Ausleiher scannt sein eigenes Buch) oder um eine Fremdrückgabe mit anschließender Neuausleihe.
 func (s *defaultLoanService) HandleUnifiedCheckout(
 	ctx context.Context,
-	copy *repository.BookCopy,
+	copy *repository.Exemplar,
 	activeLeserID *string,
 	staffID string,
 	overrideBlock bool,

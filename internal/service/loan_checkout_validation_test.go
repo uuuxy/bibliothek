@@ -132,7 +132,7 @@ func TestResolveBorrower_HappyPath(t *testing.T) {
 
 	expectFristSettings(mock)
 
-	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
+	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
 	ctx, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, activeStudent("s1"))
 
 	if err != nil {
@@ -156,7 +156,7 @@ func TestResolveBorrower_SperrtNicht(t *testing.T) {
 
 	expectFristSettings(mock)
 
-	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
+	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
 	ctx, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, activeStudent("s1"))
 
 	if err != nil {
@@ -174,7 +174,7 @@ func TestResolveBorrower_NoActiveBorrower(t *testing.T) {
 	svc, _, mock := newValidationService(t, nil)
 	defer mock.Close()
 
-	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
+	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
 	_, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, nil)
 
 	if !errors.Is(err, ErrInvalidState) {

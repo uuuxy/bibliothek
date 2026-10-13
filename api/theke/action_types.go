@@ -21,19 +21,19 @@ type ActionRequest struct {
 
 // ActionResponse is the polymorphic output payload returned by the Omnibox.
 type ActionResponse struct {
-	Type            string                 `json:"type"`                       // "student", "ausleihe", "rueckgabe", "search_results", "info"
-	Message         string                 `json:"message,omitempty"`          // Informational message for the frontend
-	Student         *SchuelerKiosk         `json:"student,omitempty"`          // Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe SchuelerKiosk)
-	Book            *repository.BookCopy   `json:"book,omitempty"`             // Book copy details if applicable
-	Geraet          *repository.Geraet     `json:"geraet,omitempty"`           // Hardware details if applicable
-	DueDate         *time.Time             `json:"due_date,omitempty"`         // Return deadline for check-outs
-	LoanID          *string                `json:"loan_id,omitempty"`          // Loan UUID (for Undo support on returns)
-	Fremdrueckgabe  bool                   `json:"fremdrueckgabe,omitempty"`   // Flag for returns from another reader
-	Vorbesitzer     *SchuelerKiosk         `json:"vorbesitzer,omitempty"`      // Original borrower if foreign return (Theken-Sicht)
-	SearchResults   []repository.BookTitle `json:"search_results,omitempty"`   // Full-text search list
-	HasVormerkung   bool                   `json:"has_vormerkung,omitempty"`   // True if returned book has a pending reservation
-	VormerkungTitel string                 `json:"vormerkung_titel,omitempty"` // Title name of the reserved book
-	VormerkungUser  string                 `json:"vormerkung_user,omitempty"`  // Reserved for: student name & class
+	Type            string               `json:"type"`                       // "student", "ausleihe", "rueckgabe", "search_results", "info"
+	Message         string               `json:"message,omitempty"`          // Informational message for the frontend
+	Student         *SchuelerKiosk       `json:"student,omitempty"`          // Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe SchuelerKiosk)
+	Book            *repository.Exemplar `json:"book,omitempty"`             // Book copy details if applicable
+	Geraet          *repository.Geraet   `json:"geraet,omitempty"`           // Hardware details if applicable
+	DueDate         *time.Time           `json:"due_date,omitempty"`         // Return deadline for check-outs
+	LoanID          *string              `json:"loan_id,omitempty"`          // Loan UUID (for Undo support on returns)
+	Fremdrueckgabe  bool                 `json:"fremdrueckgabe,omitempty"`   // Flag for returns from another reader
+	Vorbesitzer     *SchuelerKiosk       `json:"vorbesitzer,omitempty"`      // Original borrower if foreign return (Theken-Sicht)
+	SearchResults   []repository.Titel   `json:"search_results,omitempty"`   // Full-text search list
+	HasVormerkung   bool                 `json:"has_vormerkung,omitempty"`   // True if returned book has a pending reservation
+	VormerkungTitel string               `json:"vormerkung_titel,omitempty"` // Title name of the reserved book
+	VormerkungUser  string               `json:"vormerkung_user,omitempty"`  // Reserved for: student name & class
 	// RegalfreigabeBarcode: reserved copy in the hold shelf to be returned to the
 	// regular shelf because the student took a different copy of the same title.
 	RegalfreigabeBarcode string `json:"regalfreigabe_barcode,omitempty"`

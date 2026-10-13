@@ -36,7 +36,7 @@ func aussonderungsSpur(t *testing.T, pool *pgxpool.Pool, exemplarID string) []au
 		FROM audit_log
 		WHERE tabelle = 'buecher_exemplare' AND aktion = 'UPDATE' AND datensatz_id = $1
 		  AND details->>'action' = $2
-		ORDER BY timestamp`, exemplarID, repository.AuditAktionAusgesondert)
+		ORDER BY timestamp`, exemplarID, repository.ProtokollAktionAusgesondert)
 	if err != nil {
 		t.Fatalf("Protokoll lesen: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 	ctx := t.Context()
 	adminID, rufe := routertest.MitAufruf(t, pool)
 	t.Cleanup(func() {
-		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE details->>'action' = $1`, repository.AuditAktionAusgesondert)
+		pgtest.RaeumeAuf(t, pool, `DELETE FROM audit_log WHERE details->>'action' = $1`, repository.ProtokollAktionAusgesondert)
 	})
 
 	t.Run("Status in der Buchakte", func(t *testing.T) {

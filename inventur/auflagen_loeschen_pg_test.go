@@ -8,7 +8,7 @@ import (
 )
 
 // Die Massenaktion der Bestandstabelle hält dieselbe Regel wie das Löschen eines einzelnen
-// Titels (repository.WerkeDerTitel, RaeumeWerkeAuf): Werden beide Auflagen eines Buchs
+// Titels (repository.LadeWerkeDerTitel, RaeumeWerkeAuf): Werden beide Auflagen eines Buchs
 // gelöscht, bleibt kein Werk ohne Titel zurück; bleibt eine von zweien, ist sie wieder ihr
 // eigenes Buch (Rasterdurchgang 25.09.2026, docs/OFFEN.md 4.18).
 func TestDeleteBooks_HaeltDieRegelDerAuflagen(t *testing.T) {

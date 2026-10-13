@@ -5201,14 +5201,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "anzahl_positionen": {
-                    "description": "AnzahlPositionen: wie viele Forderungen auf dem Brief stehen.",
+                    "description": "AnzahlPositionen zählt die Forderungen auf dem Brief.",
                     "type": "integer"
                 },
                 "brief_datum": {
                     "type": "string"
                 },
                 "frist_abgelaufen": {
-                    "description": "FristAbgelaufen: offen und die Frist ist vorbei — das ist die Arbeitsliste.",
+                    "description": "FristAbgelaufen heißt: offen, und die Frist ist vorbei. Diese Bescheide sind die\nArbeitsliste.",
                     "type": "boolean"
                 },
                 "frist_bis": {
@@ -5239,7 +5239,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rueckgabe_nach_uebergabe": {
-                    "description": "RueckgabeNachUebergabe: Merker für „die Aufsicht ist zu informieren\".",
+                    "description": "RueckgabeNachUebergabe merkt, dass ein Buch zurückkam, nachdem der Bescheid übergeben\nwar: Die Schulaufsicht ist dann zu informieren.",
                     "type": "boolean"
                 },
                 "schueler_id": {
@@ -5252,172 +5252,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "uebergeben_am": {
-                    "type": "string"
-                }
-            }
-        },
-        "repository.BookCopy": {
-            "type": "object",
-            "properties": {
-                "aktualisiert_am": {
-                    "description": "AktualisiertAm ist das letzte Änderungsdatum.",
-                    "type": "string"
-                },
-                "autor": {
-                    "description": "Autor ist der Autor des Werks.",
-                    "type": "string"
-                },
-                "barcode_id": {
-                    "description": "BarcodeID ist die physische Inventar- oder Barcode-Nummer des Exemplars.",
-                    "type": "string"
-                },
-                "cover_url": {
-                    "description": "CoverURL ist das Coverbild des Werks.",
-                    "type": "string"
-                },
-                "erstellt_am": {
-                    "description": "ErstelltAm ist das System-Erfassungsdatum.",
-                    "type": "string"
-                },
-                "erweiterteEigenschaften": {
-                    "description": "ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.",
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "erworben_am": {
-                    "description": "ErworbenAm ist das Kaufdatum oder Zugangsdatum des Exemplars.",
-                    "type": "string"
-                },
-                "id": {
-                    "description": "ID ist die UUID des konkreten Exemplars.",
-                    "type": "string"
-                },
-                "isbn": {
-                    "description": "ISBN ist die ISBN des Werks.",
-                    "type": "string"
-                },
-                "ist_ausgesondert": {
-                    "description": "IstAusgesondert markiert verloren gegangene, beschädigte oder ausgemusterte Bücher.",
-                    "type": "boolean"
-                },
-                "ist_ausleihbar": {
-                    "description": "IstAusleihbar gibt an, ob das Buch verliehen werden darf.",
-                    "type": "boolean"
-                },
-                "ist_lernmittel": {
-                    "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel,\nMigration 093) — Schuljahresfrist statt Tage, zählt nicht ins Ausleihlimit.",
-                    "type": "boolean"
-                },
-                "jahrgang_bis": {
-                    "type": "integer"
-                },
-                "medientyp": {
-                    "description": "Medientyp ist die Medienart (z. B. \"Buch\").",
-                    "type": "string"
-                },
-                "mehrjahresband": {
-                    "description": "Mehrjahresband und JahrgangBis kommen vom Titel (Migration 134): Bleibt das Buch über\nmehrere Schuljahre beim Kind, rechnet die Fristregel bis zum Stichtag des Schuljahres,\nin dem das Kind JahrgangBis beendet (internal/service/loan_rules.go).",
-                    "type": "boolean"
-                },
-                "signatur": {
-                    "description": "Signatur speichert die Bibliothekssignatur.",
-                    "type": "string"
-                },
-                "titel": {
-                    "description": "Titel ist der Haupttitel des Werks.",
-                    "type": "string"
-                },
-                "titel_id": {
-                    "description": "TitelID verweist auf die Metadaten des Buchtitels.",
-                    "type": "string"
-                },
-                "verlag": {
-                    "description": "Verlag ist der Verlag des Werks.",
-                    "type": "string"
-                },
-                "zustand_notiz": {
-                    "description": "ZustandNotiz dokumentiert eventuelle Beschädigungen (z. B. \"Wasserschaden\") oder Reservierungen.",
-                    "type": "string"
-                }
-            }
-        },
-        "repository.BookTitle": {
-            "type": "object",
-            "properties": {
-                "aktualisiert_am": {
-                    "description": "AktualisiertAm ist der letzte Änderungszeitpunkt.",
-                    "type": "string"
-                },
-                "auflage": {
-                    "description": "Auflage ist die Auflagenbezeichnung („4. Aufl. 2023\", Migration 126). Eine neue\nAuflage trägt eine eigene ISBN und ist damit ein eigener Titel; dieses Feld sagt,\nwelcher von zwei gleich heißenden Zeilen man vor sich hat.",
-                    "type": "string"
-                },
-                "autor": {
-                    "description": "Autor ist der Name des Autors oder der Autoren.",
-                    "type": "string"
-                },
-                "bestand": {
-                    "description": "Bestand und Verfuegbar füllen NUR die Suchabfragen (SearchTitles,\nSearchTitlesFuzzy) — Protokoll des Medienzentrums vom 16.09.2026, Punkt 4:\n„Bücher, zu denen es keine Exemplare gibt, tauchen in der Trefferliste auf.\"\nEin Titel ohne Exemplare ist ein legitimer Zustand (angelegt ohne\nBestandsangabe, Altbestand aus Littera) — verstecken wäre falsch, aber die\nTrefferliste muss es SAGEN.\n\nZeiger, weil „nicht mitgeliefert\" und „null Exemplare\" zwei verschiedene\nDinge sind: Jede andere Abfrage, die einen Titel liefert (Katalog, Import,\nBestellwesen), lässt die Felder nil, und die Oberfläche schreibt dann gar\nnichts statt „0 Exemplare\" über einen Titel, dessen Bestand niemand gezählt\nhat.",
-                    "type": "integer"
-                },
-                "cover_url": {
-                    "description": "CoverURL verweist auf das Bild des Buchumschlags.",
-                    "type": "string"
-                },
-                "erscheinungsjahr": {
-                    "description": "Erscheinungsjahr ist das Publikationsjahr.",
-                    "type": "integer"
-                },
-                "erstellt_am": {
-                    "description": "ErstelltAm ist der Erstellungszeitpunkt.",
-                    "type": "string"
-                },
-                "erweiterteEigenschaften": {
-                    "description": "ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.",
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "id": {
-                    "description": "ID ist die UUID des Buchtitels.",
-                    "type": "string"
-                },
-                "im_zulauf": {
-                    "description": "ImZulauf zählt die bestellten, noch nicht eingetroffenen Exemplare\n(SQLBestandImZulauf) — gleiche Zeiger-Regel wie Bestand.",
-                    "type": "integer"
-                },
-                "isbn": {
-                    "description": "ISBN ist die Internationale Standardbuchnummer (ISBN-10 oder ISBN-13).",
-                    "type": "string"
-                },
-                "ist_lernmittel": {
-                    "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Die Regeln —\nFrist, Limit, öffentlicher Katalog, Löschfrist — lesen dieses Feld, nicht den Text.",
-                    "type": "boolean"
-                },
-                "medientyp": {
-                    "description": "Medientyp klassifiziert die Art des Mediums (z. B. \"Buch\", \"CD\", \"DVD\").",
-                    "type": "string"
-                },
-                "mehrjahresband": {
-                    "description": "Mehrjahresband (Migration 134, Antwort der Schule vom 22.09.2026): Das Buch bleibt über\ndie Spanne JahrgangVon..JahrgangBis beim Kind; die Frist rechnet bis zum Stichtag des\nSchuljahres, in dem das Kind JahrgangBis beendet. Die Jahreszahl ist JahrgangBis, eine\nzweite gibt es nicht.",
-                    "type": "boolean"
-                },
-                "signatur": {
-                    "description": "Signatur speichert die Bibliothekssignatur (z. B. Standort/Regal).",
-                    "type": "string"
-                },
-                "titel": {
-                    "description": "Titel ist der Haupttitel des Werks.",
-                    "type": "string"
-                },
-                "untertitel": {
-                    "description": "Untertitel enthält optionale Zusatzangaben zum Titel.",
-                    "type": "string"
-                },
-                "verfuegbar": {
-                    "type": "integer"
-                },
-                "verlag": {
-                    "description": "Verlag ist der herausgebende Buchverlag.",
                     "type": "string"
                 }
             }
@@ -5742,6 +5576,91 @@ const docTemplate = `{
                 }
             }
         },
+        "repository.Exemplar": {
+            "type": "object",
+            "properties": {
+                "aktualisiert_am": {
+                    "description": "AktualisiertAm ist das letzte Änderungsdatum.",
+                    "type": "string"
+                },
+                "autor": {
+                    "description": "Autor ist der Autor des Werks.",
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "description": "BarcodeID ist die physische Inventar- oder Barcode-Nummer des Exemplars.",
+                    "type": "string"
+                },
+                "cover_url": {
+                    "description": "CoverURL ist das Coverbild des Werks.",
+                    "type": "string"
+                },
+                "erstellt_am": {
+                    "description": "ErstelltAm ist das System-Erfassungsdatum.",
+                    "type": "string"
+                },
+                "erweiterteEigenschaften": {
+                    "description": "ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "erworben_am": {
+                    "description": "ErworbenAm ist das Kaufdatum oder Zugangsdatum des Exemplars.",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID ist die UUID des konkreten Exemplars.",
+                    "type": "string"
+                },
+                "isbn": {
+                    "description": "ISBN ist die ISBN des Werks.",
+                    "type": "string"
+                },
+                "ist_ausgesondert": {
+                    "description": "IstAusgesondert markiert verloren gegangene, beschädigte oder ausgemusterte Bücher.",
+                    "type": "boolean"
+                },
+                "ist_ausleihbar": {
+                    "description": "IstAusleihbar gibt an, ob das Buch verliehen werden darf.",
+                    "type": "boolean"
+                },
+                "ist_lernmittel": {
+                    "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel,\nMigration 093) — Schuljahresfrist statt Tage, zählt nicht ins Ausleihlimit.",
+                    "type": "boolean"
+                },
+                "jahrgang_bis": {
+                    "type": "integer"
+                },
+                "medientyp": {
+                    "description": "Medientyp ist die Medienart (z. B. \"Buch\").",
+                    "type": "string"
+                },
+                "mehrjahresband": {
+                    "description": "Mehrjahresband und JahrgangBis kommen vom Titel (Migration 134): Bleibt das Buch über\nmehrere Schuljahre beim Kind, rechnet die Fristregel bis zum Stichtag des Schuljahres,\nin dem das Kind JahrgangBis beendet (internal/service/loan_rules.go).",
+                    "type": "boolean"
+                },
+                "signatur": {
+                    "description": "Signatur speichert die Bibliothekssignatur.",
+                    "type": "string"
+                },
+                "titel": {
+                    "description": "Titel ist der Haupttitel des Werks.",
+                    "type": "string"
+                },
+                "titel_id": {
+                    "description": "TitelID verweist auf die Metadaten des Buchtitels.",
+                    "type": "string"
+                },
+                "verlag": {
+                    "description": "Verlag ist der Verlag des Werks.",
+                    "type": "string"
+                },
+                "zustand_notiz": {
+                    "description": "ZustandNotiz dokumentiert eventuelle Beschädigungen (z. B. \"Wasserschaden\") oder Reservierungen.",
+                    "type": "string"
+                }
+            }
+        },
         "repository.ForderungOhneBescheid": {
             "type": "object",
             "properties": {
@@ -5752,7 +5671,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "land": {
-                    "description": "Land: mindestens eine der Forderungen betrifft ein Buch des Landes (Eigentum nach\nExemplarTopfSQL) und kann damit auf den Bescheid des Landes. Die Rechnung der\nSchülerbücherei ist noch nicht gebaut (mittel_konzept.md 4.7, Etappe 3). Bis zum\n29.09.2026 hieß das Feld lernmittel und las ist_lernmittel des Titels.",
+                    "description": "Land heißt: Mindestens eine der Forderungen betrifft ein Buch des Landes (Eigentum nach\nExemplarTopfSQL) und kann auf den Bescheid des Landes. Für die Schülerbücherei gibt es\nnoch keinen Brief (mittel_konzept.md 4.7).",
                     "type": "boolean"
                 },
                 "schueler_id": {
@@ -5762,7 +5681,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "seit": {
-                    "description": "Seit: die älteste dieser Forderungen — so lange wartet der Fall schon.",
+                    "description": "Seit ist das Datum der ältesten dieser Forderungen: So lange wartet der Fall schon.",
                     "type": "string"
                 },
                 "summe": {
@@ -5825,14 +5744,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "exemplar_id": {
-                    "description": "ExemplarID kann fehlen (leerer String): Das FK-Feld geht bei einer endgültigen\nLöschung des Exemplars auf NULL (Migration 059, ON DELETE SET NULL) — die\nTextspalten bleiben trotzdem lesbar. Ohne ExemplarID sind \"Gefunden\" und\n\"endgültig löschen\" nicht mehr möglich, das Exemplar ist ja schon weg.",
+                    "description": "ExemplarID ist leer, wenn das Exemplar endgültig gelöscht wurde (ON DELETE SET NULL); die\nTextspalten bleiben lesbar. „Gefunden\" und „endgültig löschen\" sind dann nicht mehr\nmöglich.",
                     "type": "string"
                 },
                 "gebucht_am": {
                     "type": "string"
                 },
                 "gefunden_am": {
-                    "description": "GefundenAm ist gesetzt, sobald das Exemplar beim Nachsuchen wiedergefunden und\nüber den \"Gefunden\"-Knopf zurück in Umlauf gebracht wurde (Migration 061).",
+                    "description": "GefundenAm ist gesetzt, sobald das Exemplar beim Nachsuchen gefunden und über „Gefunden\"\nzurück in den Umlauf gebracht wurde.",
                     "type": "string"
                 },
                 "signatur": {
@@ -6266,6 +6185,87 @@ const docTemplate = `{
                 }
             }
         },
+        "repository.Titel": {
+            "type": "object",
+            "properties": {
+                "aktualisiert_am": {
+                    "description": "AktualisiertAm ist der letzte Änderungszeitpunkt.",
+                    "type": "string"
+                },
+                "auflage": {
+                    "description": "Auflage ist die Auflagenbezeichnung („4. Aufl. 2023\", Migration 126). Eine neue\nAuflage trägt eine eigene ISBN und ist damit ein eigener Titel; dieses Feld sagt,\nwelcher von zwei gleich heißenden Zeilen man vor sich hat.",
+                    "type": "string"
+                },
+                "autor": {
+                    "description": "Autor ist der Name des Autors oder der Autoren.",
+                    "type": "string"
+                },
+                "bestand": {
+                    "description": "Bestand und Verfuegbar füllen NUR die Suchabfragen (FindeTitel,\nFindeTitelUnscharf) — Protokoll des Medienzentrums vom 16.09.2026, Punkt 4:\n„Bücher, zu denen es keine Exemplare gibt, tauchen in der Trefferliste auf.\"\nEin Titel ohne Exemplare ist ein legitimer Zustand (angelegt ohne\nBestandsangabe, Altbestand aus Littera) — verstecken wäre falsch, aber die\nTrefferliste muss es SAGEN.\n\nZeiger, weil „nicht mitgeliefert\" und „null Exemplare\" zwei verschiedene\nDinge sind: Jede andere Abfrage, die einen Titel liefert (Katalog, Import,\nBestellwesen), lässt die Felder nil, und die Oberfläche schreibt dann gar\nnichts statt „0 Exemplare\" über einen Titel, dessen Bestand niemand gezählt\nhat.",
+                    "type": "integer"
+                },
+                "cover_url": {
+                    "description": "CoverURL verweist auf das Bild des Buchumschlags.",
+                    "type": "string"
+                },
+                "erscheinungsjahr": {
+                    "description": "Erscheinungsjahr ist das Publikationsjahr.",
+                    "type": "integer"
+                },
+                "erstellt_am": {
+                    "description": "ErstelltAm ist der Erstellungszeitpunkt.",
+                    "type": "string"
+                },
+                "erweiterteEigenschaften": {
+                    "description": "ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "id": {
+                    "description": "ID ist die UUID des Buchtitels.",
+                    "type": "string"
+                },
+                "im_zulauf": {
+                    "description": "ImZulauf zählt die bestellten, noch nicht eingetroffenen Exemplare\n(SQLBestandImZulauf) — gleiche Zeiger-Regel wie Bestand.",
+                    "type": "integer"
+                },
+                "isbn": {
+                    "description": "ISBN ist die Internationale Standardbuchnummer (ISBN-10 oder ISBN-13).",
+                    "type": "string"
+                },
+                "ist_lernmittel": {
+                    "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Die Regeln —\nFrist, Limit, öffentlicher Katalog, Löschfrist — lesen dieses Feld, nicht den Text.",
+                    "type": "boolean"
+                },
+                "medientyp": {
+                    "description": "Medientyp klassifiziert die Art des Mediums (z. B. \"Buch\", \"CD\", \"DVD\").",
+                    "type": "string"
+                },
+                "mehrjahresband": {
+                    "description": "Mehrjahresband (Migration 134, Antwort der Schule vom 22.09.2026): Das Buch bleibt über\ndie Spanne JahrgangVon..JahrgangBis beim Kind; die Frist rechnet bis zum Stichtag des\nSchuljahres, in dem das Kind JahrgangBis beendet. Die Jahreszahl ist JahrgangBis, eine\nzweite gibt es nicht.",
+                    "type": "boolean"
+                },
+                "signatur": {
+                    "description": "Signatur speichert die Bibliothekssignatur (z. B. Standort/Regal).",
+                    "type": "string"
+                },
+                "titel": {
+                    "description": "Titel ist der Haupttitel des Werks.",
+                    "type": "string"
+                },
+                "untertitel": {
+                    "description": "Untertitel enthält optionale Zusatzangaben zum Titel.",
+                    "type": "string"
+                },
+                "verfuegbar": {
+                    "type": "integer"
+                },
+                "verlag": {
+                    "description": "Verlag ist der herausgebende Buchverlag.",
+                    "type": "string"
+                }
+            }
+        },
         "schaden.BescheidErstellenRequest": {
             "type": "object",
             "properties": {
@@ -6492,7 +6492,7 @@ const docTemplate = `{
                     "description": "Book copy details if applicable",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/repository.BookCopy"
+                            "$ref": "#/definitions/repository.Exemplar"
                         }
                     ]
                 },
@@ -6532,7 +6532,7 @@ const docTemplate = `{
                     "description": "Full-text search list",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/repository.BookTitle"
+                        "$ref": "#/definitions/repository.Titel"
                     }
                 },
                 "student": {

@@ -23,7 +23,7 @@ import (
 // SELECTs galt still als „keine Vormerkung".
 func TestProcessReturnVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 	ctx := context.Background()
-	copy := &repository.BookCopy{ID: "11111111-1111-1111-1111-111111111111",
+	copy := &repository.Exemplar{ID: "11111111-1111-1111-1111-111111111111",
 		TitelID: "22222222-2222-2222-2222-222222222222", Titel: "Tschick"}
 
 	t.Run("UPDATE scheitert → Fehler, keine Abholfach-Behauptung", func(t *testing.T) {

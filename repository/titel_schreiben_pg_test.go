@@ -9,19 +9,19 @@ import (
 // verify_katalogisat_test.go in internal/service): 4.747 von 13.708 Titeln haben
 // dort ein leeres Autor-Feld, 779 ein Jahr von 0. Ein erneuter Import über einen
 // bereits vorhandenen Bestand darf solche fehlenden Felder NICHT nachträglich
-// leeren — genau das tat BulkUpsertBookTitles vor dieser Korrektur: qUpdate schrieb
+// leeren — genau das tat SchreibeTitel vor dieser Korrektur: qUpdate schrieb
 // autor/verlag/erscheinungsjahr ungeschützt, während signatur/isbn längst per
 // COALESCE(NULLIF(...)) geschützt waren. Ein Reimport mit einer schlechteren
 // Datenquelle hätte den bestehenden, besseren Bestand stillschweigend verarmt.
-func TestBulkUpsertBookTitles_LeereFelderUeberschreibenBestandNicht(t *testing.T) {
+func TestSchreibeTitel_LeereFelderUeberschreibenBestandNicht(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 
 	// Bestand: vollständiger Titel mit Autor, Verlag und Jahr.
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{{
 		Titel: "Effi Briest", Autor: "Fontane, Theodor",
 		ISBN: "9783150001", Verlag: "Reclam", Erscheinungsjahr: 2001, Signatur: "Pa",
 	}}); err != nil {
@@ -30,7 +30,7 @@ func TestBulkUpsertBookTitles_LeereFelderUeberschreibenBestandNicht(t *testing.T
 
 	// Reimport derselben ISBN aus einer Quelle ohne Autor/Verlag/Jahr (wie es im
 	// echten MAB-Export häufig vorkommt), aber mit neuer Signatur.
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{{
 		Titel: "Effi Briest", ISBN: "9783150001", Signatur: "Pg",
 	}}); err != nil {
 		t.Fatalf("Reimport: %v", err)
@@ -61,21 +61,21 @@ func TestBulkUpsertBookTitles_LeereFelderUeberschreibenBestandNicht(t *testing.T
 
 // Ein Reimport MIT neuen Werten darf die alten weiterhin ersetzen (Enrichment) —
 // der Fix darf kein Deadlock in Richtung "nie mehr ändern" werden.
-func TestBulkUpsertBookTitles_NichtLeereFelderUeberschreibenBestand(t *testing.T) {
+func TestSchreibeTitel_NichtLeereFelderUeberschreibenBestand(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
 
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{{
 		Titel: "Faust", Autor: "Unbekannt", ISBN: "9783150002",
 		Verlag: "Alter Verlag", Erscheinungsjahr: 1990, Signatur: "De",
 	}}); err != nil {
 		t.Fatalf("Erstimport: %v", err)
 	}
 
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{{
 		Titel: "Faust", Autor: "Goethe, Johann Wolfgang von", ISBN: "9783150002",
 		Verlag: "Reclam", Erscheinungsjahr: 2020, Signatur: "Deu",
 	}}); err != nil {
@@ -103,10 +103,10 @@ func TestBulkUpsertBookTitles_NichtLeereFelderUeberschreibenBestand(t *testing.T
 // einen Titel der ganze Import (am alten Code: „violates check constraint
 // chk_mehrjahresband_spanne"). Den Schalter gibt es nur in der Titel-Verwaltung; wer ihn
 // setzt, setzt die Spanne mit, und an ihrem „bis" hängt die Frist.
-func TestBulkUpsertBookTitles_MehrjahresbandBehaeltSeineSpanne(t *testing.T) {
+func TestSchreibeTitel_MehrjahresbandBehaeltSeineSpanne(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 	const isbnBand, isbnNormal = "9780000134017", "9780000134024"
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn IN ($1, $2)`, isbnBand, isbnNormal); err != nil {
@@ -121,7 +121,7 @@ func TestBulkUpsertBookTitles_MehrjahresbandBehaeltSeineSpanne(t *testing.T) {
 	}
 
 	// Gegenprobe: Ohne Schalter folgt die Spanne weiter der Quelle.
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{{
 		Titel: "Normal Bio 7", ISBN: isbnNormal, Signatur: "LMF Bio 7",
 		IstLernmittel: true, JahrgangVon: 7, JahrgangBis: 7,
 	}}); err != nil {
@@ -135,7 +135,7 @@ func TestBulkUpsertBookTitles_MehrjahresbandBehaeltSeineSpanne(t *testing.T) {
 		t.Errorf("gewöhnlicher Titel: Spanne %d–%d, erwartet 7–7 aus der Signatur", von, bis)
 	}
 
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{{
 		Titel: "Band Bio 7-9", ISBN: isbnBand, Signatur: "LMF Bio 7",
 		IstLernmittel: true, JahrgangVon: 7, JahrgangBis: 7,
 	}}); err != nil {
@@ -155,11 +155,11 @@ func TestBulkUpsertBookTitles_MehrjahresbandBehaeltSeineSpanne(t *testing.T) {
 // die Zuordnung muss dieselbe Form führen. Sonst findet der Import den vorhandenen Titel nicht,
 // legt ihn neu an und scheitert am UNIQUE-Index — der ganze Import, er läuft in einer
 // Transaktion.
-func TestBulkUpsertBookTitles_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
+func TestSchreibeTitel_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 
 	titelZur := func(isbn string) (anzahl int, signatur string) {
 		t.Helper()
@@ -172,12 +172,12 @@ func TestBulkUpsertBookTitles_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 
 	// Der Bestand trägt die dreizehnstellige; die Datei nennt das Buch zehnstellig und unter
 	// einem anderen Titeltext, damit nur die ISBN zuordnen kann.
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{{
 		Titel: "Harry Potter und der Stein der Weisen", ISBN: "9783551551672", Signatur: "Jf",
 	}}); err != nil {
 		t.Fatalf("Erstimport: %v", err)
 	}
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{{
 		Titel: "Harry Potter 1", ISBN: "3551551677", Signatur: "JF Row",
 	}}); err != nil {
 		t.Fatalf("Import mit der zehnstelligen ISBN: %v", err)
@@ -188,7 +188,7 @@ func TestBulkUpsertBookTitles_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 
 	// Eine Datei nennt dasselbe Buch in beiden Längen: ein Titel, der zweite Datensatz ist
 	// eine Dublette innerhalb der Datei.
-	eingereiht, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{
+	eingereiht, err := repo.SchreibeTitel(ctx, []Titel{
 		{Titel: "Advanced Organic Chemistry", ISBN: "0306406152"},
 		{Titel: "Advanced Organic Chemistry, Part A", ISBN: "9780306406157"},
 	})
@@ -200,8 +200,8 @@ func TestBulkUpsertBookTitles_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 	}
 
 	// Der Aufrufer behält seine Liste, wie er sie übergeben hat.
-	datei := []BookTitle{{Titel: "Harry Potter 1", ISBN: "3551551677"}}
-	if _, err := repo.BulkUpsertBookTitles(ctx, datei); err != nil {
+	datei := []Titel{{Titel: "Harry Potter 1", ISBN: "3551551677"}}
+	if _, err := repo.SchreibeTitel(ctx, datei); err != nil {
 		t.Fatal(err)
 	}
 	if datei[0].ISBN != "3551551677" {
@@ -211,7 +211,7 @@ func TestBulkUpsertBookTitles_BeideLaengenDerISBNSindEinTitel(t *testing.T) {
 
 // Das Fach eines importierten Titels kommt an: Kennt die Systematik es noch nicht, wird es in
 // derselben Transaktion registriert, und der Titel trägt es.
-func TestBulkUpsertBookTitles_FachWirdRegistriertUndEingetragen(t *testing.T) {
+func TestSchreibeTitel_FachWirdRegistriertUndEingetragen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
@@ -227,7 +227,7 @@ func TestBulkUpsertBookTitles_FachWirdRegistriertUndEingetragen(t *testing.T) {
 		}
 	})
 
-	if _, err := NewBookRepository(pool).BulkUpsertBookTitles(ctx, []BookTitle{
+	if _, err := NewKatalogAbfragen(pool).SchreibeTitel(ctx, []Titel{
 		{Titel: "Sterne und Planeten", Fach: fach},
 		{Titel: "Ohne Fach"},
 	}); err != nil {
@@ -254,10 +254,10 @@ func TestBulkUpsertBookTitles_FachWirdRegistriertUndEingetragen(t *testing.T) {
 
 // Nennt die Quelle keinen Jahrgang, bleibt er am neuen Titel unbekannt (NULL, Migration 162),
 // und ein vorhandener Titel behält seine Spanne: Der Import überschreibt sie nicht mit nichts.
-func TestBulkUpsertBookTitles_OhneJahrgangBleibtUnbekannt(t *testing.T) {
+func TestSchreibeTitel_OhneJahrgangBleibtUnbekannt(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 	const isbnNeu, isbnMitSpanne = "9780000162011", "9780000162028"
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn IN ($1, $2)`, isbnNeu, isbnMitSpanne); err != nil {
@@ -270,7 +270,7 @@ func TestBulkUpsertBookTitles_OhneJahrgangBleibtUnbekannt(t *testing.T) {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{
 		{Titel: "Roman ohne Jahrgang", ISBN: isbnNeu},
 		{Titel: "Lesebuch 7 bis 9", ISBN: isbnMitSpanne},
 	}); err != nil {
@@ -298,10 +298,10 @@ func TestBulkUpsertBookTitles_OhneJahrgangBleibtUnbekannt(t *testing.T) {
 // Nennt die Quelle eine Spanne über mehrere Jahrgänge, steht sie als „von" und „bis" am Titel,
 // am neuen wie am vorhandenen ohne Jahrgang. Mit einem einzigen Jahrgang fiele nicht auf, wenn
 // die zwei Werte vertauscht ankämen.
-func TestBulkUpsertBookTitles_SpanneKommtAlsVonUndBisAn(t *testing.T) {
+func TestSchreibeTitel_SpanneKommtAlsVonUndBisAn(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 	const isbnNeu, isbnVorhanden = "9780000163018", "9780000163025"
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn IN ($1, $2)`, isbnNeu, isbnVorhanden); err != nil {
@@ -313,7 +313,7 @@ func TestBulkUpsertBookTitles_SpanneKommtAlsVonUndBisAn(t *testing.T) {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{
 		{Titel: "Natur und Technik 7 bis 9", ISBN: isbnNeu, IstLernmittel: true, JahrgangVon: 7, JahrgangBis: 9},
 		{Titel: "Oberstufenband ohne Jahrgang", ISBN: isbnVorhanden, JahrgangVon: 11, JahrgangBis: 13},
 	}); err != nil {

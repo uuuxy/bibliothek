@@ -48,7 +48,7 @@ var listenGrenze = map[string]string{
 	"GET /api/books $.data": "Kappung bei 50000 Titeln mit Warnung im Log (listBooksSicherheitsLimit, " +
 		"inventur/datenbank_buecher_leser.go)",
 	"GET /api/signaturen $": "keine Obergrenze in der Abfrage; eine Zeile je Regaladresse (GROUP BY über die " +
-		"Titel), die Liste wächst mit den Regalen, nicht mit den Büchern (repository.ListeSignaturGruppen)",
+		"Titel), die Liste wächst mit den Regalen, nicht mit den Büchern (repository.LadeSignaturGruppen)",
 }
 
 // listenUnbefragt: der Bestand ohne Antwort. Eine befragte Liste wandert mit ihrer Antwort

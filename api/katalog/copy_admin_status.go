@@ -38,7 +38,7 @@ type UpdateStatusRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /buecher/exemplare/{id}/status [put]
-func (s *Tueren) UpdateCopyStatusHandler(bookRepo repository.BookRepository, bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
+func (s *Tueren) UpdateCopyStatusHandler(bookRepo repository.KatalogAbfragen, bescheidRepo repository.BescheidAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		s.handleUpdateCopyStatus(w, r, bookRepo, bescheidRepo)
 	}
@@ -46,7 +46,7 @@ func (s *Tueren) UpdateCopyStatusHandler(bookRepo repository.BookRepository, bes
 
 // handleUpdateCopyStatus speichert Status und Zustand eines Exemplars und nennt den neuen
 // Ersatzwert.
-func (s *Tueren) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, bookRepo repository.BookRepository, bescheidRepo repository.BescheidAbfragen) {
+func (s *Tueren) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, bookRepo repository.KatalogAbfragen, bescheidRepo repository.BescheidAbfragen) {
 	id := r.PathValue("id")
 	if id == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("missing copy ID parameter"))
@@ -78,7 +78,7 @@ func (s *Tueren) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 		req.IstAusgesondert = false
 	}
 
-	if err := bookRepo.UpdateCopyStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert,
+	if err := bookRepo.AendereExemplarStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert,
 		req.ZustandNotiz, req.ZustandAbwertungProzent, claims.UserID); err != nil {
 		if errors.Is(err, repository.ErrExemplarNochVerliehen) {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
@@ -108,7 +108,7 @@ func (s *Tueren) handleUpdateCopyStatus(w http.ResponseWriter, r *http.Request, 
 	}
 	// Ob das Exemplar jetzt zum Bestand zählt: Freigeben und Aussondern holen ein bestelltes
 	// Exemplar aus dem Zulauf, und die Karte der Buchakte benennt den Zustand danach.
-	if imBestand, bestandErr := bookRepo.ExemplarImBestand(ctx, id); bestandErr == nil {
+	if imBestand, bestandErr := bookRepo.IstExemplarImBestand(ctx, id); bestandErr == nil {
 		antwort["im_bestand"] = imBestand
 	}
 	tuer.RespondJSON(w, http.StatusOK, antwort)

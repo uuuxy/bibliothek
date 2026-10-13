@@ -21,9 +21,9 @@ type ScanTreffer struct {
 // ErkenneScan löst einen Wert exakt auf: erst Exemplar-Barcode, dann Littera-Etikett
 // (EAN-13 → Mediennummer), dann Ausweis (Schüler oder Kollegium). Dieselbe Reihenfolge wie
 // resolveOhnePraefix in der Theke, nur ohne Buchung.
-func ErkenneScan(ctx context.Context, bookRepo repository.BookRepository, studentRepo repository.StudentRepository, q string) (*ScanTreffer, error) {
+func ErkenneScan(ctx context.Context, bookRepo repository.KatalogAbfragen, studentRepo repository.StudentRepository, q string) (*ScanTreffer, error) {
 	for _, kandidat := range exemplarKandidaten(q) {
-		copy, err := bookRepo.GetCopyByBarcode(ctx, kandidat)
+		copy, err := bookRepo.FindeExemplar(ctx, kandidat)
 		if err != nil {
 			return nil, fmt.Errorf("exemplar auflösen: %w", err)
 		}

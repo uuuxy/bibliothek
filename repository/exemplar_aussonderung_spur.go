@@ -15,8 +15,8 @@ import (
 // Die Zustandsnotiz steht nicht im Eintrag: Sie ist Freitext und kann eine Person nennen, und
 // ein Protokolleintrag bleibt bis zur Audit-Aufbewahrung.
 
-// AuditAktionAusgesondert kennzeichnet den Eintrag in details->>'action'.
-const AuditAktionAusgesondert = "ausgesondert"
+// ProtokollAktionAusgesondert kennzeichnet den Eintrag in details->>'action'.
+const ProtokollAktionAusgesondert = "ausgesondert"
 
 // Die Wege stehen im Feld kontext des Eintrags.
 const (
@@ -53,7 +53,7 @@ func ProtokolliereAussonderung(ctx context.Context, q Datenbank, exemplarIDs []s
 		       jsonb_build_object('action', $4::text, 'grund', e.aussonderung_grund) || $5::jsonb
 		FROM buecher_exemplare e
 		WHERE e.id = ANY($1::uuid[]) AND e.ist_ausgesondert`,
-		exemplarIDs, bearbeiterID, weg, AuditAktionAusgesondert, string(zusatzJSON))
+		exemplarIDs, bearbeiterID, weg, ProtokollAktionAusgesondert, string(zusatzJSON))
 	if err != nil {
 		return fmt.Errorf("aussonderung protokollieren: %w", err)
 	}

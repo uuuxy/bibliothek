@@ -29,7 +29,7 @@ func TestEigentumsvermerkFolgtDemTopf_LieferantenLinkUndMailanhang(t *testing.T)
 	ctx := context.Background()
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
 
-	svc := service.NewOrderService(srv.DB, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(srv.DB, repository.NewKatalogAbfragen(pool))
 	res, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 		Mittel:     mitteltopf.Schultraeger,
 		SupplierID: testdaten.Haendler(t, pool, "Naacher", true),

@@ -45,12 +45,12 @@ type Feld struct {
 
 // ImportService stellt Geschäftslogik für Datenimporte bereit.
 type ImportService struct {
-	bookRepo repository.BookRepository
+	bookRepo repository.KatalogAbfragen
 	db       db.PgxPoolIface
 }
 
 // NewImportService erstellt einen neuen ImportService.
-func NewImportService(bookRepo repository.BookRepository, dbPool db.PgxPoolIface) *ImportService {
+func NewImportService(bookRepo repository.KatalogAbfragen, dbPool db.PgxPoolIface) *ImportService {
 	return &ImportService{bookRepo: bookRepo, db: dbPool}
 }
 
@@ -75,7 +75,7 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 	// Titel sammeln und in EINEM gepipelineten Batch schreiben (statt je Titel
 	// eine eigene DB-Rundreise) — der frühere N+1 ließ den Import mit ~15.000
 	// Titeln gegen eine nicht-lokale DB in Client-Timeouts laufen.
-	books := make([]repository.BookTitle, 0, len(root.Items))
+	books := make([]repository.Titel, 0, len(root.Items))
 
 	for _, kat := range root.Items {
 		book, ok := bookTitleAusFelder(parseKatalogisat(kat))
@@ -85,7 +85,7 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 		books = append(books, book)
 	}
 
-	importedCount, err := s.bookRepo.BulkUpsertBookTitles(ctx, books)
+	importedCount, err := s.bookRepo.SchreibeTitel(ctx, books)
 	if err != nil {
 		return 0, err
 	}
@@ -99,7 +99,7 @@ type litteraFelder struct {
 	// zielgruppen (MAB 070b: „Sekundarstufe 1", „Lehrer") und schlagwoerter (MAB 710:
 	// „Physik", „Schulbuch", …) — bis zum 02.09.2026 vom Import weggeworfen, obwohl
 	// zwei Drittel der Titel Schlagwörter tragen und sie das Fach nennen. Seit dem
-	// 30.09.2026 kommen die Schlagwörter selbst mit (repository.BookTitle.Schlagworte).
+	// 30.09.2026 kommen die Schlagwörter selbst mit (repository.Titel.Schlagworte).
 	// 070b trägt Litteras Interessenkreise, bis zu fünf je Titel; entschieden am 30.09.2026:
 	// Sie kommen als Schlagworte mit (docs/OFFEN.md 4.20), und die Jahrgangsspanne entsteht aus
 	// allen. Bis dahin gewann der letzte Wert, und „Lehrer" oder „Referendare" gingen verloren.
@@ -144,11 +144,11 @@ func parseKatalogisat(kat Katalogisat) litteraFelder {
 	return f
 }
 
-// bookTitleAusFelder wandelt die Rohfelder in einen BookTitle um. ok=false bedeutet:
+// bookTitleAusFelder wandelt die Rohfelder in einen Titel um. ok=false bedeutet:
 // der Datensatz hat keinen Titel und wird übersprungen.
-func bookTitleAusFelder(f litteraFelder) (repository.BookTitle, bool) {
+func bookTitleAusFelder(f litteraFelder) (repository.Titel, bool) {
 	if f.titel == "" {
-		return repository.BookTitle{}, false // Ein Titel ist zwingend erforderlich
+		return repository.Titel{}, false // Ein Titel ist zwingend erforderlich
 	}
 
 	// Lernmittelfreiheit: Litteras Kennung steht in der Signatur („LMF Bio 7") oder im
@@ -173,7 +173,7 @@ func bookTitleAusFelder(f litteraFelder) (repository.BookTitle, bool) {
 		verlag = f.ort
 	}
 
-	return repository.BookTitle{
+	return repository.Titel{
 		Titel:            f.titel,
 		Autor:            f.autor,
 		ISBN:             f.isbn,

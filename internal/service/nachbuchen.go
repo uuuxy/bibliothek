@@ -36,7 +36,7 @@ type NachbuchService interface {
 // NewNachbuchService baut die Tür auf demselben Rumpf wie der Ausleih-Service — dieselben
 // Schranken, dieselben Schreiber. userRepo löst Lehrerausweise auf, die offline gescannt
 // wurden.
-func NewNachbuchService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, userRepo repository.KontoAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) NachbuchService {
+func NewNachbuchService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.KatalogAbfragen, userRepo repository.KontoAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) NachbuchService {
 	return &defaultLoanService{pool: pool, studentRepo: studentRepo, bookRepo: bookRepo, userRepo: userRepo, loanRepo: loanRepo, auditRepo: auditRepo}
 }
 
@@ -87,7 +87,7 @@ type NachbuchErgebnis struct {
 type nachbuchLage struct {
 	e           NachbuchEintrag
 	gescannt    time.Time
-	copy        *repository.BookCopy
+	copy        *repository.Exemplar
 	leser       *repository.Student
 	ausweis     *string // nicht auflösbarer Ausweis-Barcode, als Text für die Meldung
 	activeLoan  *repository.Ausleihe
@@ -224,13 +224,13 @@ func holeAbgeschriebenesZurueck(ctx context.Context, tx pgx.Tx, l *nachbuchLage,
 
 // loeseExemplar findet das Exemplar zum gescannten Barcode — direkt oder über die
 // EAN-13 eines Littera-Etiketts (dieselben Formen wie der Online-Scan).
-func (s *defaultLoanService) loeseExemplar(ctx context.Context, barcode string) (*repository.BookCopy, error) {
-	copy, err := s.bookRepo.GetCopyByBarcode(ctx, barcode)
+func (s *defaultLoanService) loeseExemplar(ctx context.Context, barcode string) (*repository.Exemplar, error) {
+	copy, err := s.bookRepo.FindeExemplar(ctx, barcode)
 	if err != nil || copy != nil {
 		return copy, err
 	}
 	if nummer, istEtikett := dekodiereLitteraEtikett(barcode); istEtikett {
-		return s.bookRepo.GetCopyByBarcode(ctx, nummer)
+		return s.bookRepo.FindeExemplar(ctx, nummer)
 	}
 	return nil, nil
 }

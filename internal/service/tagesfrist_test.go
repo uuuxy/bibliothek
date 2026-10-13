@@ -66,7 +66,7 @@ func TestResolveCheckoutDueDate_SommerferienAusDerEinstellung(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow(lmfplan.SommerferienSchluessel, strPtr(`[{"jahr":2031,"von":"2031-07-14","bis":"2031-08-22"}]`)))
 
-	got, err := svc.resolveCheckoutDueDate(context.Background(), &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}, "5a")
+	got, err := svc.resolveCheckoutDueDate(context.Background(), &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}

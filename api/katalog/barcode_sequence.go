@@ -22,7 +22,7 @@ import (
 // klebte.
 func (s *Tueren) NextBarcodeHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		nextBarcode, err := repository.NaechsterFreierExemplarBarcode(r.Context(), s.DB.Pool)
+		nextBarcode, err := repository.ZieheFreienExemplarBarcode(r.Context(), s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

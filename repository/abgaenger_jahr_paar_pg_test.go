@@ -14,7 +14,7 @@ import (
 // „ist Abschlussklasse" (repository.AbschlussklasseSQL) sind Zwillinge derselben Regel.
 // Verglichen wird nicht eine Stichprobe, sondern der Formenraum: Jahrgang 1–13 × Zweig
 // (keiner, F, G, H, R, T, plus Kleinschreibung und Leerzeichen) × Zug. Zwilling mit
-// Vollprobe (sweeps.md) — der Suchnorm-Zwilling lag bei einer Stichprobe 110 Zeichen
+// Vollprobe (sweeps.md) — der suchnorm-Zwilling lag bei einer Stichprobe 110 Zeichen
 // daneben, ohne dass es jemand sah.
 func TestAbgaengerJahr_GoUndSQLSindEineRegel(t *testing.T) {
 	pool := pgtest.Pool(t)

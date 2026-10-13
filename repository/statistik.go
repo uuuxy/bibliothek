@@ -80,7 +80,7 @@ func LadeBestandKennzahlen(ctx context.Context, db Datenbank, typeFilter string)
 	// ist per chk_aussonderung_grund (Migration 043) nur bei ist_ausgesondert gesetzt.
 	// Die Grenze ist die des Abgangsbuchs: Ein bestelltes Exemplar, das nie eintraf und
 	// als verloren ausgebucht wurde, war nie im Bestand und ist kein Verlust.
-	const istVerlust = SQLIstAbgang + " AND e.aussonderung_grund IN ('VERLUST', 'BESCHAEDIGUNG')"
+	const istVerlust = sqlIstAbgang + " AND e.aussonderung_grund IN ('VERLUST', 'BESCHAEDIGUNG')"
 
 	// ⚡ Bolt: Extracted active loans subquery into a CTE and restored DISTINCT.
 	// This prevents the PostgreSQL planner from executing a suboptimal nested loop left join

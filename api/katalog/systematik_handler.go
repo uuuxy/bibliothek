@@ -203,7 +203,7 @@ func (s *Tueren) handleUpdateSystematik(w http.ResponseWriter, r *http.Request) 
 // sachgruppenBezeichnung liest die Bezeichnung einer Sachgruppe; eine unbekannte Kennung ist
 // ein 404.
 func sachgruppenBezeichnung(ctx context.Context, tx pgx.Tx, id string) (string, error) {
-	bezeichnung, err := repository.SachgruppenBezeichnung(ctx, tx, id)
+	bezeichnung, err := repository.LadeSachgruppenBezeichnung(ctx, tx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", apierrors.NotFound("Sachgruppe nicht gefunden", err)
@@ -232,7 +232,7 @@ func (s *Tueren) DeleteSystematikHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id := r.PathValue("id")
 
-		bezeichnung, err := repository.SachgruppenBezeichnung(r.Context(), s.DB.Pool, id)
+		bezeichnung, err := repository.LadeSachgruppenBezeichnung(r.Context(), s.DB.Pool, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apierrors.NotFound("Sachgruppe nicht gefunden", err)

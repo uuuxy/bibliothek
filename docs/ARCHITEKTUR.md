@@ -638,7 +638,7 @@ HTTP-Anfrage
 | `api/bestellung/`       | 2.438 Zeilen, 18 Dateien   | Die Türen des Bestellwesens: Vorschläge zum Nachbestellen, die Suche nach Titeln, die Bestellung mit ihrer Mail an den Lieferanten, Zulauf und Wareneingang, Bestellhistorie mit Übersicht, Einzelheiten und Bericht, die Lieferanten, die Bestätigung im Haus und über den Link des Lieferanten, das erneute Senden der Mail, der Topf einer Bestellung |
 | `api/leser/`            | 3.007 Zeilen, 18 Dateien   | Die Türen der Leserdatei: die Liste der Leser mit Klassen und Jahrgängen, die Leserakte, Anlegen, Ändern, Sperren, Löschen mit Papierkorb, das Zusammenführen zweier Datensätze, das Passbild, der Abgleich mit der LUSD, die Versetzung zum Schuljahreswechsel, die Auskunft nach Art. 15 DSGVO, der Kontoauszug |
 | `api/theke/`            | 1.562 Zeilen, 11 Dateien   | Die Türen der Theke: der Scan mit Ausleihe und Rückgabe, das Nachbuchen der Warteschlange ohne Netz mit seinen Meldungen und der Liste der Buchnummern, die Suche der Omnibox, Verlängern und Frist von Hand an einer Ausleihe, die Vormerkungen |
-| `repository/`           | 21.964 Zeilen, 161 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
+| `repository/`           | 21.995 Zeilen, 165 Dateien | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen, die Anweisungen der Nachtläufe, der Sitzungen, der Anmeldung und der Theke, der Titelbestand, an dem beide Importe zuordnen                                        |
 | `internal/service/`     | 5.246 Zeilen, 31 Dateien | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, die Rechnung des Ersatzwerts eines Buchs (`ersatzwert_vorschlag.go`), Bestellungen (Anlegen, Wareneingang, Suche, Text der Bestellmail, Frist des Bestätigungs-Links), Kopplung der Lernmittel-Fristen an den LMF-Plan, womit ein neuer Plan beginnt (Rahmen und Reihenfolge) und seine Verteilung über die Schultage, Importe, Littera-Etiketten                          |
 | `internal/lusd/`        | 1.781 Zeilen, 9 Dateien    | Abgleich mit dem Export der LUSD: Datei lesen (CSV, Excel), Zeilen dem Bestand zuordnen, Vorschau, Umbenennungs-Paare, Anwenden in einer Transaktion. Die Tür steht in `api/leser/lusd.go`, die Anweisungen in `repository/lusd_import.go` |
 | `internal/bereitschaft/` | 990 Zeilen, 3 Dateien     | Selbstprüfung der Betriebsbereitschaft: eine reine Funktion über eine Lage, die je Bereich einen Befund mit Folge und Abhilfe liefert, die Zusammenfassung der Befunde zu einer Stufe (`Gesamt`), der Vergleich der Klassen mit den Zuordnungen der Klassenleitungen und den Bücherlisten (`klassen.go`), dazu die Regel, ob der Server mit einem Beispiel-Geheimnis startet (`geheimnisse.go`). Die Lage trägt die Tür zusammen (`api/system/betriebsbereitschaft_handler.go`), den täglichen Alarm verschickt `api/system/betriebsbereitschaft_alarm.go` |
@@ -788,8 +788,8 @@ Googles Regelwerk für Go nennt in
 [Package size](https://google.github.io/styleguide/go/best-practices#package-size) die Probe:
 Muss ein Nutzer zweier Pakete beide einbinden, um eines sinnvoll zu nutzen, gehören sie
 zusammen, und eng gekoppelte Typen in einem Paket müssen ihre Einzelheiten nicht öffentlich
-machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 161 Dateien hat
-höchstens 118 Zeilen, neun von zehn höchstens 263, zwei haben über 500
+machen. Gefunden wird in `repository/` über den Namen der Datei: Die Hälfte der 165 Dateien hat
+höchstens 117 Zeilen, neun von zehn höchstens 263, zwei haben über 500
 (`schueler_zusammenfuehren.go` 634, `schlagworte_pflege.go` 527; gezählt am 14.10.2026 nachts).
 Eine Teilung schriebe 2.213 Zeilen in 461 Dateien um, die einen Namen des Pakets nennen, und
 bewegte einen Teil der 161 Testdateien.
@@ -924,7 +924,7 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
   `LadeTitelBestand`, beide fragen ihn mit derselben Methode, zu welchem Titel eine Zeile
   gehört (`TitelBestand.TitelZu`, `repository/titelbestand.go`: zuerst die ISBN in ihrer
   Normalform, sonst der Titeltext), und beide legen einen neuen Titel mit derselben Anweisung
-  an (`reiheTitelAnlageEin`, `repository/book_inventory.go`). Die zwei Karten des Bestands
+  an (`reiheTitelAnlageEin`, `repository/titel_schreiben.go`). Die zwei Karten des Bestands
   sind außerhalb des Typs nicht erreichbar: Eine vierte Stelle kann die Frage nicht noch
   einmal selbst formulieren, wie es der Upsert, die Zuordnung der Schlagworte und der
   Bestands-Import bis zum 13.10.2026 je für sich taten. Bis zum 09.10.2026 führte der
@@ -4113,7 +4113,7 @@ Fenstern bekannt ist:
   199 Heftnummern, 432 solche Nummern (an Titeln mit zusammen 11.278 Exemplaren) und 39 andere
   Angaben; im Katalog-Export vom Juni 2026 5.033, 955, 69 und 96. Die Übernahme bringt alles ins
   Feld „Auflage"; es steht in der Buchakte, in der Maske „Buch bearbeiten" und in „Suche &
-  Filter" unter dem Titel. Keine Suche vergleicht das Feld (`repository/book_search.go`,
+  Filter" unter dem Titel. Keine Suche vergleicht das Feld (`repository/titel_suche.go`,
   `inventur/datenbank_buecher_leser.go`): Ein Heft lässt sich nicht über seine Nummer finden,
   ein Buch nicht über „D-Ga-066". Anlass zum Bauen: Die Bücherei sucht nach einer dieser
   Angaben.
@@ -4167,7 +4167,7 @@ Fenstern bekannt ist:
   der Transaktion: Ändert eine lange Transaktion ein Etikett und committet nach einem kürzeren
   Schreiber, bleibt es bei 304. Nachgestellt hinter dem Build-Tag `raster`
   (`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_ ./repository/`). Heute ändert nur
-  `UpdateCopyBarcode` einen Barcode, als kurzer Einzelbefehl — scharf wird es erst mit einem
+  `KatalogAbfragen.SetzeExemplarBarcode` einen Barcode, als kurzer Einzelbefehl — scharf wird es erst mit einem
   Schreiber, der in einer langen Transaktion umetikettiert (Durchgang 15.09.2026).
 - Ein Ausweis aus dem Altbestand ohne Vorsilbe (gemessen `B97601826457`) ist ohne Netz „unklar"
   und wird abgewiesen. Hängt am Ausweis-Neudruck und entscheidet sich mit dem frischen
@@ -4177,7 +4177,7 @@ Fenstern bekannt ist:
   Hintergrund-Tab). Beim Aufwachen wäre der Herzschlag alt und das Band stünde bis zum nächsten
   Ping, höchstens 15 s. Nicht nachgestellt.
 - Schreibweise der Nummern (entschieden am 23.09.2026: am Server nichts bauen). Der Server
-  schlägt Nummern exakt nach (`GetLeserByBarcode`, `GetCopyByBarcode`); die Theke
+  schlägt Nummern exakt nach (`GetLeserByBarcode`, `KatalogAbfragen.FindeExemplar`); die Theke
   vereinheitlicht vorher (`normalisiereScan`, nur mit Ziffer hinter der Vorsilbe) — beim
   Buchen und in der Offline-Warteschlange. Roh fragt nur die Vorschau beim Tippen
   (`/api/search`). Gemessen am Testserver am 23.09.2026: alle gespeicherten Vorsilben groß
@@ -4265,8 +4265,8 @@ Fenstern bekannt ist:
   weitere Auflage erscheint (Titelmaske: unter „Andere Auflagen" steht keine Liste). Kein Schaden; die
   Ratsche `auflagen_schreibpfad_ratsche_test.go` liest keine Skripte.
 - Der Katalogisat-Import legt Einträge über den Titeltext zusammen, und ein zweiter Lauf schreibt
-  die Angaben des zuletzt passenden Eintrags darüber (`queueTitelUpsert` in
-  `BulkUpsertBookTitles` sucht über die ISBN, sonst über den Titeltext). Gemessen am 30.09.2026
+  die Angaben des zuletzt passenden Eintrags darüber (`reiheTitelEin` in
+  `SchreibeTitel` sucht über die ISBN, sonst über den Titeltext). Gemessen am 30.09.2026
   am Export vom Juni 2026: Aus 13.708 Einträgen werden 11.302 Titel (226 echte Dubletten, 432
   mit gleicher ISBN und anderem Text, 1.748 mit gleichem Text bei anderer oder fehlender ISBN) —
   „Harry Potter und der Feuerkelch" steht als Buch, Taschenbuch und DVD in der Datei und wird
@@ -4415,7 +4415,7 @@ Fenstern bekannt ist:
   als LEFT JOIN aus der Leserzeile in die Sitzung, nur damit das Feld gefüllt bleibt.
 - Tabellen-Inline-Felder mit 36 px: eine `size="sm"`-Variante von `Feld` erst bei Bedienbefund.
 - `LabelHeight >= 30` steht zweimal (`pdf/etikett_buch.go`, `pdf/etikett_schueler.go`).
-- Zwei Normalformen für Namen (`repository.Suchnorm`, `normName` in `internal/lusd/paarung.go`); beim
+- Zwei Normalformen für Namen (`repository.suchnorm`, `normName` in `internal/lusd/paarung.go`); beim
   Anfassen der Paarung zusammenführen.
 - Der Paritätstest vergleicht keine COMMENTs und Seeds.
 - Erbe der PR-Zulieferungen: Go-Testdateien über 200 Zeilen, ein schwacher Export-CSV-Test.
@@ -4515,7 +4515,7 @@ Einstieg.
 | **Nachbuchen**              | Das Einbuchen offline erfasster Scans nach Rückkehr des Netzes, mit Scan-Zeitpunkt und Abweichungsmeldung                                                                | `api/theke/nachbuchen_handler.go`, `internal/service/nachbuchen.go` |
 | **Omnibox**                 | Das **eine** Eingabefeld des Tresens für alle Scans und Suchen                                                                                                          | `internal/service/omnibox_service.go`, `frontend/src/lib/Omnibox.svelte` |
 | **OPAC**                    | Der öffentliche Katalog unter `/katalog` — ohne Anmeldung, ohne Personendaten                                                                                            | `api/portal/opac.go`                                               |
-| **Regaladresse**            | Der Teil einer Signatur vor „ / ". Vorschläge, die Seite „Signaturen" und die Auswahl der Inventur fassen nach ihr zusammen; am Titel bleibt die ganze Aufschrift | `SQLSignaturRegaladresse` (`repository/signatur_praefix.go`) |
+| **Regaladresse**            | Der Teil einer Signatur vor „ / ". Vorschläge, die Seite „Signaturen" und die Auswahl der Inventur fassen nach ihr zusammen; am Titel bleibt die ganze Aufschrift | `sqlSignaturRegaladresse` (`repository/signatur_praefix.go`) |
 | **Schlagwort**              | Freies Wort am Titel (Thema, Gattung), mehrere je Titel, wie in Littera; ein Wort ist seine Kleinschreibung. Gepflegt unter Einstellungen → Schlagworte                 | `schlagworte`, `titel_schlagworte`, `repository.SetzeSchlagworte` |
 | **Schnellrückgabe**         | Modus der Theke für einen Stapel vom Rückgabetisch: Jeder Scan nimmt nur zurück und leiht nie aus; ein gescannter Ausweis beendet ihn | `stores/omnibox.svelte.js`, `OmniboxSchnellrueckgabe.svelte` |
 | **Signatur / Systematik**   | Ordnungsbegriff im Regal. Der Teil vor „ / " ist die **Regaladresse**; wo ein einzelnes Stück abweichend steht, sagt der **Standort** | `systematik_kategorien`, `repository/signatur_praefix.go` |
@@ -4543,7 +4543,7 @@ Einstieg.
 | **Rot-Beweis**               | Der Nachweis, dass ein Gate im echten Fehlerfall wirklich rot wird                                                                                            |
 | **Blindheit** (einer Ratsche)| Was ein Detektor aus seiner Mechanik heraus **nicht** sehen kann. Steht je Ratsche in der Landkarte in [sweeps.md](sweeps.md)                               |
 | **Invariante**               | Eine Aussage, die immer wahr sein muss — mit Angabe der **Ebene**, auf der sie durchgesetzt ist (🟢 DB / 🟡 Code / 🔴 Doku)                                     |
-| **Zwilling**                 | Zwei Implementierungen derselben Regel (etwa `suchnorm` in SQL und `repository.Suchnorm` in Go), deren Gleichheit ein Gate erzwingt                            |
+| **Zwilling**                 | Zwei Implementierungen derselben Regel (etwa `suchnorm` in SQL und `repository.suchnorm` in Go), deren Gleichheit ein Gate erzwingt                            |
 | **Selbstprüfung**            | Die Seite unter *System*, die beantwortet: Was ist eingerichtet, aber nicht in Betrieb?                                                                        |
 | **Bereitschafts-Wächter**    | Der Mailversand kritischer Befunde der Selbstprüfung — der Wächter, der sich meldet, statt gelesen werden zu müssen                                            |
 | **Restore-Probe**            | Das wöchentliche Einspielen des jüngsten Backups in eine Wegwerf-Datenbank                                                                                     |

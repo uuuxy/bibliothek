@@ -122,9 +122,9 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 
 	// 6. Der Scan am Buch. Code39 druckt den Inhalt in GROSSBUCHSTABEN — die Nummer muss
 	//    also genau so gefunden werden, wie sie auf dem Aufkleber steht.
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	for _, barcode := range ausMail {
-		exemplar, err := bookRepo.GetCopyByBarcode(ctx, strings.ToUpper(barcode))
+		exemplar, err := bookRepo.FindeExemplar(ctx, strings.ToUpper(barcode))
 		if err != nil {
 			t.Fatalf("Scan von %q findet kein Exemplar: %v", barcode, err)
 		}

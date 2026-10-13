@@ -75,7 +75,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	})
 
 	studentRepo := repository.NewStudentRepository(pool)
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	userRepo := repository.NewKontoAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
@@ -94,7 +94,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 			VALUES ($1, $2, true, 20.00) RETURNING id`, titelID, barcode).Scan(&exemplarID); err != nil {
 			t.Fatalf("Exemplar anlegen: %v", err)
 		}
-		ex, err := bookRepo.GetCopyByBarcode(ctx, barcode)
+		ex, err := bookRepo.FindeExemplar(ctx, barcode)
 		if err != nil {
 			t.Fatalf("Exemplar lesen: %v", err)
 		}
@@ -203,7 +203,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	// „Verlust/Schaden melden" aus der Schülerakte mit der Art „beschädigt". Bis zum
 	// 16.09.2026 stand hier MarkCopyDefekt — eine Tür ohne Aufrufer, die mit
 	// Migration 125 zur Hälfte in einen SQL-Fehler lief und deshalb entfernt ist.
-	exDefekt, err := bookRepo.GetCopyByBarcode(ctx, barcodeDefekt)
+	exDefekt, err := bookRepo.FindeExemplar(ctx, barcodeDefekt)
 	if err != nil {
 		t.Fatalf("Exemplar lesen: %v", err)
 	}

@@ -339,7 +339,7 @@ func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository
 	// 1. Versuchen, nicht-ausgeliehene Exemplare auszusondern
 	//
 	// ist_ausleihbar = false gehört dazu, wie in den anderen Aussonderungswegen
-	// (repository/exemplar_aussondern.go, schaden.go, book_inventory.go): Ein ausgesondertes
+	// (repository/exemplar_aussondern.go, schaden.go, exemplar_status.go): Ein ausgesondertes
 	// Exemplar, das sich weiterhin „ausleihbar" nennt, verleiht der erste Leser, der nur
 	// diese Spalte prüft.
 	query := `

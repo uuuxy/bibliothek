@@ -11,8 +11,8 @@ import (
 )
 
 // Der Katalog des Kollegiums: die Suche in „Mein Portal". Dieselbe Abfrage wie der
-// öffentliche Katalog (repository.SucheImKatalog), aber hinter der Anmeldung und mit
-// repository.KollegiumSichtbar: auch Lernmittel und Titel, deren Exemplare bestellt und
+// öffentliche Katalog (repository.FindeImKatalog), aber hinter der Anmeldung und mit
+// repository.SQLKollegiumSichtbar: auch Lernmittel und Titel, deren Exemplare bestellt und
 // noch nicht eingetroffen sind. Im Portal werden die Klassensätze reserviert, und das sind
 // zum größten Teil Schulbücher; ohne Anmeldung bleiben sie verborgen, weil die
 // Bestandszahlen der Schule nicht offen ins Netz gehören.
@@ -41,8 +41,8 @@ func (s *Tueren) KollegiumKatalogSucheHandler() http.HandlerFunc {
 			return
 		}
 
-		treffer, gesamt, err := repository.SucheImKatalog(r.Context(), s.DB.Pool, repository.KatalogSuche{
-			Sichtbar:     repository.KollegiumSichtbar("bt"),
+		treffer, gesamt, err := repository.FindeImKatalog(r.Context(), s.DB.Pool, repository.KatalogSuche{
+			Sichtbar:     repository.SQLKollegiumSichtbar("bt"),
 			Suchtext:     q,
 			SchlagwortID: schlagwortID,
 			Grenze:       opacGrenze,
@@ -66,7 +66,7 @@ func (s *Tueren) KollegiumKatalogSucheHandler() http.HandlerFunc {
 // ihrer Kennung für ?schlagwort_id=. Nur Wörter, zu denen dieser Katalog einen Titel zeigt.
 func (s *Tueren) KollegiumKatalogFilterHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		filter, err := repository.SchlagwortFilterImKatalog(r.Context(), s.DB.Pool, repository.KollegiumSichtbar("bt"))
+		filter, err := repository.LadeSchlagwortFilterImKatalog(r.Context(), s.DB.Pool, repository.SQLKollegiumSichtbar("bt"))
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

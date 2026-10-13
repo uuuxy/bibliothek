@@ -111,11 +111,11 @@ func TestAbgangsbuch_ZurueckgeholtesStehtNichtDrin(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 
 	titelID := testdaten.TitelMitSignatur(t, pool, "Irrtum", "Irr 1", 0)
 	id := testdaten.Exemplar(t, pool, titelID, "AB-IRRTUM", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := bookRepo.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("aussondern: %v", err)
 	}
 	von, bis := schulzeit.Halbjahr(schulzeit.Jetzt())
@@ -151,7 +151,7 @@ func TestAbgangsbuch_NieEingetroffenesIstKeinAbgang(t *testing.T) {
 		t.Fatalf("bestelltes Exemplar löschen: %v", err)
 	}
 	ausgesondert := testdaten.ZulaufExemplar(t, pool, titelID, "AB-ZULAUF-STATUS")
-	if err := repository.NewBookRepository(pool).UpdateCopyStatus(ctx, ausgesondert, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, ausgesondert, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
 	}
 	// Gegenprobe: Dieselbe Tür an einem Exemplar aus dem Bestand ist ein Abgang.
@@ -222,7 +222,7 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	// Verlust endgültig löschen: ein bestelltes Exemplar, im Status-Editor als verloren ausgebucht.
 	zweiterTitel := testdaten.TitelMitSignatur(t, pool, "Nie geliefert, verloren", "Zul 2", 0)
 	verloren := testdaten.ZulaufExemplar(t, pool, zweiterTitel, "AG-ZULAUF-VERLOREN")
-	if err := repository.NewBookRepository(pool).UpdateCopyStatus(ctx, verloren, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := repository.NewKatalogAbfragen(pool).AendereExemplarStatus(ctx, verloren, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
 	}
 	entfernt, err := repository.NewInventurAbfragen(pool).LoescheVerlusteEndgueltig(ctx, []string{verloren}, bearbeiter)

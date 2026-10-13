@@ -167,7 +167,7 @@ describe('buecherSuchen: mehrere Begriffe', () => {
 
 // Schlagworte (docs/OFFEN.md 4.20): Welche Wörter einen Titel finden, sagt der Server je
 // Titel — seine Schlagworte und die Verweise darauf (`suchwoerter`, siehe
-// repository.SuchwoerterDerTitel). Die Suche prüft sie wie Titel und Autor.
+// repository.LadeSuchwoerterDerTitel). Die Suche prüft sie wie Titel und Autor.
 describe('buecherSuchen: Schlagworte und Verweise', () => {
 	const katalog = [
 		buch({

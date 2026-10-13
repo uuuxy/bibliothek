@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"strings"
 
 	"bibliothek/pkg/isbnutil"
 
@@ -14,11 +15,11 @@ import (
 // zweites Mal an.
 type TitelBestand struct {
 	nachISBN  map[string]string // Normalform der ISBN → Kennung des Titels
-	nachTitel map[string]string // NormalisiereTitelKey des Titels → Kennung des Titels
+	nachTitel map[string]string // NormalisiereTitelSchluessel des Titels → Kennung des Titels
 }
 
-// NeuerTitelBestand liefert einen leeren Bestand.
-func NeuerTitelBestand() TitelBestand {
+// NewTitelBestand liefert einen leeren Bestand.
+func NewTitelBestand() TitelBestand {
 	return TitelBestand{nachISBN: map[string]string{}, nachTitel: map[string]string{}}
 }
 
@@ -32,7 +33,7 @@ func (b TitelBestand) TitelZu(isbn, titel string) (id string, bekannt bool) {
 			return id, true
 		}
 	}
-	id, bekannt = b.nachTitel[NormalisiereTitelKey(titel)]
+	id, bekannt = b.nachTitel[NormalisiereTitelSchluessel(titel)]
 	return id, bekannt
 }
 
@@ -42,7 +43,7 @@ func (b TitelBestand) Merke(isbn, titel, id string) {
 	if schluessel := isbnutil.Normalform(isbn); schluessel != "" {
 		b.nachISBN[schluessel] = id
 	}
-	b.nachTitel[NormalisiereTitelKey(titel)] = id
+	b.nachTitel[NormalisiereTitelSchluessel(titel)] = id
 }
 
 // LadeTitelBestand lädt den vorhandenen Titelbestand; beide Importe ordnen damit zu. Tragen
@@ -55,7 +56,7 @@ func LadeTitelBestand(ctx context.Context, tx pgx.Tx) (TitelBestand, error) {
 	}
 	defer rows.Close()
 
-	bestand := NeuerTitelBestand()
+	bestand := NewTitelBestand()
 	for rows.Next() {
 		var id, isbn, titel string
 		if err := rows.Scan(&id, &isbn, &titel); err != nil {
@@ -66,10 +67,21 @@ func LadeTitelBestand(ctx context.Context, tx pgx.Tx) (TitelBestand, error) {
 				bestand.nachISBN[schluessel] = id
 			}
 		}
-		bestand.nachTitel[NormalisiereTitelKey(titel)] = id
+		bestand.nachTitel[NormalisiereTitelSchluessel(titel)] = id
 	}
 	if err := rows.Err(); err != nil {
 		return TitelBestand{}, err
 	}
 	return bestand, nil
+}
+
+// NormalisiereTitelSchluessel bildet den Schlüssel für das Titel-Matching der Importe: der Titel
+// ohne Anführungszeichen, in der Form, in der die Datenbank ihn speichert
+// (TiteltextNormalform). Littera-Exporte kodieren Anführungszeichen uneinheitlich
+// (PDF-Konvertierung: `""South Africa"""`, XML: `"South Africa"`); käme derselbe Titel mit
+// zwei Leerzeichen oder zerlegtem Umlaut aus einer Datei, träfe er den gespeicherten sonst
+// nicht, und der Import legte ihn ein zweites Mal an. Nur für Map-Schlüssel verwenden, der
+// gespeicherte Titel behält seine Anführungszeichen.
+func NormalisiereTitelSchluessel(titel string) string {
+	return TiteltextNormalform(strings.ReplaceAll(titel, `"`, ""))
 }

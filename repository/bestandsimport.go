@@ -18,7 +18,7 @@ import (
 // und liefert ihre Kennungen in der Reihenfolge der Eingabe. Unbekannte Fächer registriert die
 // Funktion vorher in der Systematik und schreibt jedes Fach in der dort geführten Schreibweise:
 // subject ist ein Fremdschlüssel.
-func LegeImportTitelAn(ctx context.Context, tx pgx.Tx, titel []BookTitle) ([]string, error) {
+func LegeImportTitelAn(ctx context.Context, tx pgx.Tx, titel []Titel) ([]string, error) {
 	if len(titel) == 0 {
 		return nil, nil
 	}

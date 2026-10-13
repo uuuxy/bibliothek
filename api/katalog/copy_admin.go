@@ -136,7 +136,7 @@ func (s *Tueren) handleGetTitleCopies(w http.ResponseWriter, r *http.Request, be
 
 	ctx := r.Context()
 
-	zeilen, err := repository.ListeExemplareDesTitels(ctx, s.DB.Pool, id)
+	zeilen, err := repository.LadeExemplareDesTitels(ctx, s.DB.Pool, id)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -247,7 +247,7 @@ func (s *Tueren) GetTitleBorrowersHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		zeilen, err := repository.ListeAusleiherDesTitels(ctx, s.DB.Pool, id)
+		zeilen, err := repository.LadeAusleiherDesTitels(ctx, s.DB.Pool, id)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -306,7 +306,7 @@ func (s *Tueren) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	zeilen, err := repository.ListeAusleihhistorieDesTitels(ctx, s.DB.Pool, id)
+	zeilen, err := repository.LadeAusleihhistorieDesTitels(ctx, s.DB.Pool, id)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return

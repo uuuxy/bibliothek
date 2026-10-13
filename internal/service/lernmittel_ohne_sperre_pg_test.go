@@ -42,7 +42,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	testdaten.Exemplar(t, pool, lernmittel, "B-LMF-SPERRE-1", true, "")
 	testdaten.Exemplar(t, pool, buecherei, "B-LMF-SPERRE-2", true, "")
 
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 	uebergangen := func() int {
@@ -57,7 +57,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	vorher := uebergangen()
 
 	// Das Lernmittel geht raus — ohne Override, ohne Protokolleintrag.
-	schulbuch, err := bookRepo.GetCopyByBarcode(ctx, "B-LMF-SPERRE-1")
+	schulbuch, err := bookRepo.FindeExemplar(ctx, "B-LMF-SPERRE-1")
 	if err != nil {
 		t.Fatalf("Lernmittel laden: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestTheke_LernmittelTrotzOffenerForderung(t *testing.T) {
 	}
 
 	// Gegenprobe: Das Buch der Schülerbücherei bleibt hinter der Forderung.
-	roman, err := bookRepo.GetCopyByBarcode(ctx, "B-LMF-SPERRE-2")
+	roman, err := bookRepo.FindeExemplar(ctx, "B-LMF-SPERRE-2")
 	if err != nil {
 		t.Fatalf("Roman laden: %v", err)
 	}

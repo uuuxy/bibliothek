@@ -11,11 +11,11 @@ import (
 // Das Katalogisat bringt die Littera-Schlagworte mit (docs/OFFEN.md 4.20, Stufe 3, entschieden am
 // 30.09.2026) — aber nur an Titel, die noch keine tragen: Ein erneuter Import überschreibt keine
 // Pflege, wie beim Fach. Über SetzeSchlagworte, aufbereitet wie in der Übernahme aus der Sicherung.
-func TestBulkUpsertBookTitles_SchlagworteNurAnTitelOhne(t *testing.T) {
+func TestSchreibeTitel_SchlagworteNurAnTitelOhne(t *testing.T) {
 	pool := pgTestPool(t)
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 
 	// Vorher: ein gepflegter Titel mit eigenem Schlagwort und einer ohne.
 	gepflegt := seedSchlagwortTitel(t, pool, "Die Republik von Weimar")
@@ -28,7 +28,7 @@ func TestBulkUpsertBookTitles_SchlagworteNurAnTitelOhne(t *testing.T) {
 	for i := range viele {
 		viele[i] = fmt.Sprintf("Pflanze %03d", i)
 	}
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{
 		{Titel: "Die Republik von Weimar", Schlagworte: []string{"Weimarer Republik", "Deutsche Geschichte"}},
 		{Titel: "Krabat", Schlagworte: []string{"Schwarze Magie", "schwarze magie", "  ", "Lehrling"}},
 		{Titel: "Tintenherz", ISBN: "9783791504650", Schlagworte: []string{"Abenteuer", "Italien"}},
@@ -52,7 +52,7 @@ func TestBulkUpsertBookTitles_SchlagworteNurAnTitelOhne(t *testing.T) {
 		ohne:             {"Lehrling", "Schwarze Magie"},
 		id("Tintenherz"): {"Abenteuer", "Italien"},
 	} {
-		got, err := SchlagworteDesTitels(ctx, pool, titelID)
+		got, err := LadeSchlagworteDesTitels(ctx, pool, titelID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -60,7 +60,7 @@ func TestBulkUpsertBookTitles_SchlagworteNurAnTitelOhne(t *testing.T) {
 			t.Errorf("Titel %s trägt %q, erwartet %q", titelID, got, will)
 		}
 	}
-	pflanzen, err := SchlagworteDesTitels(ctx, pool, id("Pflanzen und Umwelt"))
+	pflanzen, err := LadeSchlagworteDesTitels(ctx, pool, id("Pflanzen und Umwelt"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,12 +69,12 @@ func TestBulkUpsertBookTitles_SchlagworteNurAnTitelOhne(t *testing.T) {
 	}
 
 	// Ein zweiter Lauf derselben Datei ändert nichts mehr: Jetzt tragen alle welche.
-	if _, err := repo.BulkUpsertBookTitles(ctx, []BookTitle{
+	if _, err := repo.SchreibeTitel(ctx, []Titel{
 		{Titel: "Krabat", Schlagworte: []string{"Anderes Wort"}},
 	}); err != nil {
 		t.Fatal(err)
 	}
-	got, err := SchlagworteDesTitels(ctx, pool, ohne)
+	got, err := LadeSchlagworteDesTitels(ctx, pool, ohne)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,13 +100,13 @@ func TestSchlagworteAusFremddaten_WortFuerWort(t *testing.T) {
 // schon mit dem ersten Lauf kommen, und ein zweiter Lauf derselben Datei ändert nichts mehr.
 // Gemessen am 30.09.2026: Mit nur den eingereihten Datensätzen brachte erst der zweite Lauf 253
 // Zuordnungen.
-func TestBulkUpsertBookTitles_SchlagworteAuchAusDerDublette(t *testing.T) {
+func TestSchreibeTitel_SchlagworteAuchAusDerDublette(t *testing.T) {
 	pool := pgTestPool(t)
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 
-	datei := []BookTitle{
+	datei := []Titel{
 		{Titel: "Momo"},
 		{Titel: "Momo", ISBN: "9783522202107", Schlagworte: []string{"Zeit", "Freundschaft"}},
 	}
@@ -120,14 +120,14 @@ func TestBulkUpsertBookTitles_SchlagworteAuchAusDerDublette(t *testing.T) {
 		}
 		return s
 	}
-	if _, err := repo.BulkUpsertBookTitles(ctx, datei); err != nil {
+	if _, err := repo.SchreibeTitel(ctx, datei); err != nil {
 		t.Fatal(err)
 	}
 	nachEins := stand()
 	if nachEins != "1 2 Freundschaft,Zeit" {
 		t.Errorf("nach dem ersten Lauf: %q, erwartet 1 Titel mit Freundschaft und Zeit", nachEins)
 	}
-	if _, err := repo.BulkUpsertBookTitles(ctx, datei); err != nil {
+	if _, err := repo.SchreibeTitel(ctx, datei); err != nil {
 		t.Fatal(err)
 	}
 	if nachZwei := stand(); nachZwei != nachEins {
@@ -139,7 +139,7 @@ func TestBulkUpsertBookTitles_SchlagworteAuchAusDerDublette(t *testing.T) {
 // ihres Datensatzes. Die Zuordnung der Schlagworte fragt den Bestand wie der Upsert davor,
 // zuerst über die ISBN; nur über den Titeltext träfen beide Datensätze dieselbe Auflage, und
 // die andere bliebe ohne.
-func TestBulkUpsertBookTitles_SchlagworteJeAuflageUeberDieISBN(t *testing.T) {
+func TestSchreibeTitel_SchlagworteJeAuflageUeberDieISBN(t *testing.T) {
 	pool := pgTestPool(t)
 	resetSchlagworte(t, pool)
 	ctx := context.Background()
@@ -160,14 +160,14 @@ func TestBulkUpsertBookTitles_SchlagworteJeAuflageUeberDieISBN(t *testing.T) {
 	}
 	idA, idB := lege(isbnA), lege(isbnB)
 
-	if _, err := NewBookRepository(pool).BulkUpsertBookTitles(ctx, []BookTitle{
+	if _, err := NewKatalogAbfragen(pool).SchreibeTitel(ctx, []Titel{
 		{Titel: titel, ISBN: isbnA, Schlagworte: []string{"Auflage A"}},
 		{Titel: titel, ISBN: isbnB, Schlagworte: []string{"Auflage B"}},
 	}); err != nil {
 		t.Fatal(err)
 	}
 	for id, will := range map[string][]string{idA: {"Auflage A"}, idB: {"Auflage B"}} {
-		got, err := SchlagworteDesTitels(ctx, pool, id)
+		got, err := LadeSchlagworteDesTitels(ctx, pool, id)
 		if err != nil {
 			t.Fatal(err)
 		}

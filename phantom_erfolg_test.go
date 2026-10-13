@@ -19,7 +19,7 @@ import (
 // die nie stattfand. Der Sweep über alle 163 Exec-Stellen fand 10 solcher Pfade (u. a.
 // Mail-Vorlage, Konto ändern, Titel löschen, Konto löschen, Vormerkung löschen) plus einen
 // Grenzfall; alle sind behoben (RowsAffected → Sentinel → 404/409, Hausform wie
-// book_inventory.go).
+// exemplar_status.go).
 //
 // Regel: Wer den pgconn.CommandTag eines Exec verwirft (`_, err := x.Exec(...)` oder
 // bare Aufruf), steht in diesem Bestand — mit der Zahl der Stellen je Funktion. Eine
@@ -30,7 +30,7 @@ import (
 // je Stelle steht im Sweep-Bericht (docs/sweeps.md, Zeile Phantom-Erfolg).
 //
 // Reparatur bei Rot: Entweder ist die neue Stelle ein Einzelzeilen-Schreibpfad, dessen
-// Erfolg jemand meldet — dann RowsAffected prüfen (Muster: book_inventory.go,
+// Erfolg jemand meldet — dann RowsAffected prüfen (Muster: exemplar_status.go,
 // ErrExemplarNichtGefunden). Oder 0 Zeilen ist dort legitim — dann den Zähler hier
 // anheben und im Commit begründen. Sinkt ein Zähler (Stelle behoben/entfernt), wird
 // er hier ABGESENKT — die Ratsche dreht nur zu.
@@ -154,7 +154,7 @@ var phantomBestand = map[string]int{
 	// audit_logs dürfen 0 Zeilen zur Quelle haben — 0 ist kein Phantom, das Ergebnis
 	// (jede Tabelle wandert) misst TestZusammenfuehren_JedeTabelleWandert am Postgres.
 	"repository/schueler_zusammenfuehren.go:verschiebeVorgaenge": 1,
-	"repository/book_inventory.go:BulkUpsertBookTitles":          1,
+	"repository/titel_schreiben.go:SchreibeTitel":                1,
 	// Seit 15.09.2026 heißt der Rumpf meldeSchaden (Transaktion des Aufrufers, damit
 	// der Bescheid Verlust und Brief in EINER Transaktion bucht); SchadensAbfragen.Melde ist nur
 	// noch die Hülle. Die drei Tags sind dieselben wie vorher (Exemplar aussondern,
@@ -250,7 +250,7 @@ func TestPhantomErfolg_KeineNeuenVerworfenenCommandTags(t *testing.T) {
 		switch {
 		case ist > soll:
 			t.Errorf("%s verwirft %d CommandTag(s), eingefroren sind %d — neue Stelle: "+
-				"RowsAffected prüfen (Muster book_inventory.go) oder hier begründet einfrieren", k, ist, soll)
+				"RowsAffected prüfen (Muster exemplar_status.go) oder hier begründet einfrieren", k, ist, soll)
 		case ist < soll:
 			t.Errorf("%s verwirft nur noch %d CommandTag(s), eingefroren sind %d — Ratsche "+
 				"zudrehen: Zähler absenken", k, ist, soll)

@@ -121,7 +121,7 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, bestand reposi
 	// Needs new title
 	cacheKey = isbn
 	if cacheKey == "" {
-		cacheKey = repository.NormalisiereTitelKey(z.titel)
+		cacheKey = repository.NormalisiereTitelSchluessel(z.titel)
 	}
 
 	var jahr int
@@ -158,8 +158,8 @@ func fachDerZeile(t *importNewTitle) string {
 
 // alsTitel füllt den Titel, wie die Datenbankschicht ihn anlegt. Das Fach kommt aus der
 // Lernmittelsignatur („LMF Ma 6" → Mathematik), sonst aus der Kategorie (fachDerZeile).
-func (t *importNewTitle) alsTitel() repository.BookTitle {
-	return repository.BookTitle{
+func (t *importNewTitle) alsTitel() repository.Titel {
+	return repository.Titel{
 		Titel:            t.Titel,
 		Autor:            t.Autor,
 		Verlag:           t.Verlag,
@@ -176,7 +176,7 @@ func (t *importNewTitle) alsTitel() repository.BookTitle {
 // fuegeNeueTitelEin legt die neuen Titel an und trägt sie im Bestand nach: Die Exemplare
 // derselben Datei finden sie im zweiten Durchgang.
 func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*importNewTitle, newTitlesOrder []string, bestand repository.TitelBestand) (int, error) {
-	neu := make([]repository.BookTitle, 0, len(newTitlesOrder))
+	neu := make([]repository.Titel, 0, len(newTitlesOrder))
 	for _, key := range newTitlesOrder {
 		neu = append(neu, newTitlesMap[key].alsTitel())
 	}

@@ -21,7 +21,7 @@ import (
 // Bis dahin rief der Druckbildschirm GET /api/search (perform_actions): dieselbe Suche,
 // aber mit Schüler-Kiosk-Daten in der Antwort, die er nie zeigte — und gekoppelt an das
 // Theken-Recht, obwohl der Bildschirm nur Titel braucht. Die Suchgüte muss die der Theke
-// bleiben (SearchTitlesFuzzy: Signatur, ISBN, Umlaut-Normalisierung) — die Inventur-Liste
+// bleiben (KatalogAbfragen.FindeTitelUnscharf: Signatur, ISBN, Umlaut-Normalisierung) — die Inventur-Liste
 // GET /api/books kann das nicht, deshalb ist das eine eigene Tür und kein Umzug dorthin.
 func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -37,7 +37,7 @@ func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 	}
 
 	s := &Tueren{Basis: &tuer.Basis{}}
-	h := s.TitelSucheHandler(repository.NewBookRepository(pool))
+	h := s.TitelSucheHandler(repository.NewKatalogAbfragen(pool))
 	rufe := func(q string) (int, string, TitelSucheResult) {
 		t.Helper()
 		w := httptest.NewRecorder()

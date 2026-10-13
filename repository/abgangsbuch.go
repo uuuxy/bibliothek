@@ -36,9 +36,9 @@ type AbgangsZeile struct {
 	Topf string `json:"topf"`
 }
 
-// AbgangsgrundText übersetzt den gespeicherten Grund (chk_aussonderung_grund) in die
+// abgangsgrundText übersetzt den gespeicherten Grund (chk_aussonderung_grund) in die
 // Sprache des Nachweises.
-func AbgangsgrundText(grund string) string {
+func abgangsgrundText(grund string) string {
 	switch grund {
 	case "VERLUST":
 		return "Verlust"
@@ -89,11 +89,11 @@ type Abgangsbuch struct {
 // (Migration 129). Die Löschspuren vermerken dasselbe (ProtokollDetailWarImBestand).
 const SQLWarImBestand = `e.zugang_am IS NOT NULL`
 
-// SQLIstAbgang ist die Grenze beider Abfragen und der Verlustzahlen der Statistik:
+// sqlIstAbgang ist die Grenze beider Abfragen und der Verlustzahlen der Statistik:
 // ausgesondert und vorher im Bestand gewesen.
 // Ein bestelltes Exemplar, das nie eintraf und ausgebucht wurde, trägt kein Zugangsdatum
 // (Migration 129) und steht damit in keinem der beiden Bücher.
-const SQLIstAbgang = `e.ist_ausgesondert = true AND ` + SQLWarImBestand
+const sqlIstAbgang = `e.ist_ausgesondert = true AND ` + SQLWarImBestand
 
 // LadeAbgangsbuch liest die Abgänge eines Zeitraums. `von` und `bis` sind Kalendertage der
 // Schule, beide EINSCHLIESSLICH — der 15.9. gehört noch in das Halbjahr, das an ihm endet.
@@ -117,7 +117,7 @@ func LadeAbgangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Abga
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		`+ExemplarTopfJoin+`
-		WHERE `+SQLIstAbgang+`
+		WHERE `+sqlIstAbgang+`
 		  AND e.ausgesondert_am >= $1 AND e.ausgesondert_am < $2
 		-- Spalte 6 ist der Topf: 'land' vor 'schultraeger', die Reihenfolge des Ausdrucks.
 		ORDER BY 6, e.ausgesondert_am, t.titel, e.barcode_id
@@ -133,7 +133,7 @@ func LadeAbgangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Abga
 			return buch, err
 		}
 		z.Datum = z.Datum.In(loc)
-		z.GrundText = AbgangsgrundText(z.Grund)
+		z.GrundText = abgangsgrundText(z.Grund)
 		buch.Zeilen = append(buch.Zeilen, z)
 	}
 	if err := rows.Err(); err != nil {
@@ -142,7 +142,7 @@ func LadeAbgangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Abga
 
 	if err := q.QueryRow(ctx, `
 		SELECT count(*) FROM buecher_exemplare e
-		WHERE `+SQLIstAbgang+` AND e.ausgesondert_am IS NULL
+		WHERE `+sqlIstAbgang+` AND e.ausgesondert_am IS NULL
 	`).Scan(&buch.OhneZeitpunkt); err != nil {
 		return buch, err
 	}

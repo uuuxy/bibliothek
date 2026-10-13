@@ -58,7 +58,7 @@ func TestAuflageKommtMit(t *testing.T) {
 		t.Errorf("die Kürzung fehlt im Protokoll:\n%s", log)
 	}
 
-	treffer, err := repository.NewBookRepository(pool).SearchTitles(ctx, "Faust")
+	treffer, err := repository.NewKatalogAbfragen(pool).FindeTitel(ctx, "Faust")
 	if err != nil {
 		t.Fatalf("Suche der Anwendung: %v", err)
 	}

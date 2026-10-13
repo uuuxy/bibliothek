@@ -11,10 +11,10 @@ import (
 // wurde — mehr Loan-Verhalten braucht der Routing-Beweis nicht.
 type etikettLoanSvc struct {
 	LoanService
-	zuletzt *repository.BookCopy
+	zuletzt *repository.Exemplar
 }
 
-func (l *etikettLoanSvc) HandleSimpleReturn(_ context.Context, copy *repository.BookCopy, _ string) (*LoanResult, error) {
+func (l *etikettLoanSvc) HandleSimpleReturn(_ context.Context, copy *repository.Exemplar, _ string) (*LoanResult, error) {
 	l.zuletzt = copy
 	return &LoanResult{Type: "rueckgabe", Book: copy}, nil
 }
@@ -25,10 +25,10 @@ func (l *etikettLoanSvc) HandleSimpleReturn(_ context.Context, copy *repository.
 // muss beim richtigen Buch landen — und eine unbekannte EAN weiterhin in der
 // Volltextsuche, nicht in einem falschen Treffer.
 func TestProcessQuery_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
-	exemplar := &repository.BookCopy{ID: "ex1", BarcodeID: "58968", Titel: "Testbuch", IstAusleihbar: true}
+	exemplar := &repository.Exemplar{ID: "ex1", BarcodeID: "58968", Titel: "Testbuch", IstAusleihbar: true}
 	loanSvc := &etikettLoanSvc{}
 	svc := &defaultOmniboxService{
-		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{"58968": exemplar}},
+		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{"58968": exemplar}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
 		loanSvc:     loanSvc,
 	}
@@ -47,7 +47,7 @@ func TestProcessQuery_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 // auslösen — sie läuft wie bisher in die Volltextsuche.
 func TestProcessQuery_UnbekanntesEtikettFaelltAufSuche(t *testing.T) {
 	svc := &defaultOmniboxService{
-		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
 	}
 

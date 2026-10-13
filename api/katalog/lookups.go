@@ -13,7 +13,7 @@ import (
 func (s *Tueren) GetSystematicsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		kategorien, err := repository.ListeSystematikKategorien(ctx, s.DB.Pool)
+		kategorien, err := repository.LadeSystematikKategorien(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
 			return
@@ -38,7 +38,7 @@ func (s *Tueren) GetSystematicsHandler() http.HandlerFunc {
 func (s *Tueren) GetFaecherHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		faecher, err := repository.ListeFaecher(ctx, s.DB.Pool)
+		faecher, err := repository.LadeFaecher(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
 			return

@@ -14,7 +14,7 @@ import (
 // fachSchreiber ist der minimale Datenbankzugriff der Fach-Registrierung. Pool
 // (db.PgxPoolIface) und pgx.Tx erfüllen ihn beide — die Importe registrieren
 // innerhalb ihrer Transaktion. Seit dem 02.09.2026 liegt die Funktion hier statt im
-// inventur-Paket, damit auch der Katalogisat-Import (repository.BulkUpsertBookTitles)
+// inventur-Paket, damit auch der Katalogisat-Import (repository.SchreibeTitel)
 // und der Access-Altbestand (internal/littera) sie ohne Import-Zyklus erreichen.
 type fachSchreiber interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)

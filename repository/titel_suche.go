@@ -2,37 +2,13 @@ package repository
 
 import (
 	"context"
-	"errors"
-
-	"github.com/jackc/pgx/v5"
 )
 
-// GetCopyByBarcode löst einen Buch-Barcode auf.
-func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string) (*BookCopy, error) {
-	query := `
-		SELECT 
-			e.id, e.titel_id, coalesce(e.barcode_id, ''), coalesce(e.zustand_notiz, ''), e.erworben_am, coalesce(e.ist_ausleihbar, false), coalesce(e.ist_ausgesondert, false), e.erstellt_am, e.aktualisiert_am,
-			coalesce(t.titel, ''), coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, ''), coalesce(t.medientyp, ''), coalesce(t.signatur, ''), t.mehrjahresband, coalesce(t.jahrgang_bis, 0), t.ist_lernmittel, coalesce(t.erweiterte_eigenschaften, '{}'::jsonb)
-		FROM buecher_exemplare e
-		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE e.barcode_id = $1
-		LIMIT 1
-	`
-	bc, err := scanBookCopy(r.db.QueryRow(ctx, query, barcode))
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return bc, nil
-}
-
-// SearchTitles führt eine sprachenspezifische Volltextsuche über Buchtitel und Autoren durch.
+// FindeTitel führt eine sprachenspezifische Volltextsuche über Buchtitel und Autoren durch.
 // Der Teilstring-Vergleich daneben nimmt den Suchtext in der Form, in der Titeltexte
 // gespeichert sind (TiteltextNormalform).
-func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error) {
-	queryText = TiteltextNormalform(queryText)
+func (a *pgKatalogAbfragen) FindeTitel(ctx context.Context, suchtext string) ([]Titel, error) {
+	suchtext = TiteltextNormalform(suchtext)
 	query := `
 		SELECT 
 			b.id, coalesce(b.titel, ''), coalesce(b.untertitel, ''), coalesce(b.autor, ''), coalesce(b.isbn, ''), coalesce(b.verlag, ''), coalesce(b.erscheinungsjahr, 0), coalesce(b.cover_url, ''), coalesce(b.medientyp, ''), coalesce(b.signatur, ''), coalesce(b.auflage, ''), b.mehrjahresband, b.ist_lernmittel, b.erstellt_am, b.aktualisiert_am, coalesce(b.erweiterte_eigenschaften, '{}'::jsonb),
@@ -49,28 +25,28 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 		ORDER BY ts_rank(b.search_vector, plainto_tsquery('german', $1::text)) DESC, b.titel ASC
 		LIMIT 50
 	`
-	rows, err := r.db.Query(ctx, query, queryText)
+	rows, err := a.db.Query(ctx, query, suchtext)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var results []BookTitle
+	var treffer []Titel
 	for rows.Next() {
-		t, err := scanBookTitleMitBestand(rows)
+		t, err := leseTitelMitBestand(rows)
 		if err != nil {
 			return nil, err
 		}
-		results = append(results, *t)
+		treffer = append(treffer, *t)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return results, nil
+	return treffer, nil
 }
 
-// SearchTitlesFuzzy führt eine Wildcard-Suche für Auto-Vervollständigungen oder ungenaue Anfragen aus
+// FindeTitelUnscharf führt eine Wildcard-Suche für Auto-Vervollständigungen oder ungenaue Anfragen aus
 // und liefert zusätzlich die Gesamtzahl der Treffer (nicht nur die des Limits).
 //
 // Wie bei der Schülersuche muss jedes Token irgendeine Spalte treffen, statt die
@@ -78,8 +54,8 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 // Autor + Titel, was der frühere Ganzstring-Vergleich nicht konnte. Die
 // ISBN-Gleichheit bleibt als eigener Zweig bestehen — dort wird die ganze,
 // bindestrichbereinigte Eingabe verglichen, nicht tokenweise.
-func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText string, limit int) ([]BookTitle, int, error) {
-	tokens := suchTokens(queryText)
+func (a *pgKatalogAbfragen) FindeTitelUnscharf(ctx context.Context, suchtext string, limit int) ([]Titel, int, error) {
+	tokens := suchTokens(suchtext)
 	if len(tokens) == 0 {
 		return nil, 0, nil
 	}
@@ -124,38 +100,41 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 			b.titel ASC
 		LIMIT $3
 	`
-	rows, err := r.db.Query(ctx, query, tokens, queryText, limit, tokens[0])
+	rows, err := a.db.Query(ctx, query, tokens, suchtext, limit, tokens[0])
 	if err != nil {
 		return nil, 0, err
 	}
 	defer rows.Close()
 
-	var results []BookTitle
+	var treffer []Titel
 	gesamt := 0
 	for rows.Next() {
 		var zeilenGesamt int
-		t, err := scanBookTitleMitBestand(rows, &zeilenGesamt)
+		t, err := leseTitelMitBestand(rows, &zeilenGesamt)
 		if err != nil {
 			return nil, 0, err
 		}
 		gesamt = zeilenGesamt
-		results = append(results, *t)
+		treffer = append(treffer, *t)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, 0, err
 	}
 
-	return results, gesamt, nil
+	return treffer, gesamt, nil
 }
 
-// GetTitleByIDTx sucht einen Buchtitel anhand seiner UUID, optimiert für Transaktionen.
-func (r *pgBookRepository) GetTitleByIDTx(ctx context.Context, tx pgx.Tx, id string) (*BookTitle, error) {
-	query := "SELECT id, coalesce(titel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(signatur, '') FROM buecher_titel WHERE id = $1"
-
-	var t BookTitle
-	err := tx.QueryRow(ctx, query, id).Scan(&t.ID, &t.Titel, &t.Autor, &t.ISBN, &t.Verlag, &t.Signatur)
+// leseTitelMitBestand scannt die Standard-Spaltenliste und danach die beiden
+// Bestandszahlen. Getrennt von scanBookTitle, weil die übrigen Abfragen sie nicht
+// mitliefern — und ein Titel mit nil-Bestand sagt „nicht gezählt", nicht „keine da".
+func leseTitelMitBestand(row Scanner, zusatz ...any) (*Titel, error) {
+	var gesamt, verfuegbar, imZulauf int
+	t, err := leseTitelMitZusatz(row, append([]any{&gesamt, &verfuegbar, &imZulauf}, zusatz...)...)
 	if err != nil {
 		return nil, err
 	}
-	return &t, nil
+	t.Bestand = &gesamt
+	t.Verfuegbar = &verfuegbar
+	t.ImZulauf = &imZulauf
+	return t, nil
 }

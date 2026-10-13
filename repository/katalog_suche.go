@@ -15,10 +15,10 @@ type KatalogTreffer struct {
 	Verfuegbar, Gesamt, ImZulauf     int
 }
 
-// KatalogSuche ist eine Anfrage an SucheImKatalog.
+// KatalogSuche ist eine Anfrage an FindeImKatalog.
 type KatalogSuche struct {
 	// Sichtbar ist das Prädikat über buecher_titel als `bt`, das festlegt, welche Titel der
-	// Katalog zeigt: OeffentlichSichtbar("bt") ohne Anmeldung, KollegiumSichtbar("bt") in
+	// Katalog zeigt: OeffentlichSichtbar("bt") ohne Anmeldung, SQLKollegiumSichtbar("bt") in
 	// „Mein Portal".
 	Sichtbar     string
 	Suchtext     string
@@ -26,15 +26,15 @@ type KatalogSuche struct {
 	Grenze       int
 }
 
-// KollegiumSichtbar ist das Prädikat des Katalogs in „Mein Portal": jeder Titel mit einem
+// SQLKollegiumSichtbar ist das Prädikat des Katalogs in „Mein Portal": jeder Titel mit einem
 // Exemplar, das nicht ausgesondert ist — im Regal, verliehen oder bestellt. Lernmittel
 // gehören dazu: Das Kollegium reserviert dort die Klassensätze, und ohne sie fände die
 // Suche das Biologiebuch der 8 nicht, das im Bestand steht.
-func KollegiumSichtbar(titelAlias string) string {
+func SQLKollegiumSichtbar(titelAlias string) string {
 	return SQLTitelHatExemplar(titelAlias)
 }
 
-// SucheImKatalog liefert die Titel eines Katalogs alphabetisch, höchstens s.Grenze, und die
+// FindeImKatalog liefert die Titel eines Katalogs alphabetisch, höchstens s.Grenze, und die
 // Zahl aller Treffer vor der Kappung. Ohne Suchtext und ohne Schlagwort ist die Antwort leer.
 //
 // Der öffentliche Katalog und der des Kollegiums suchen über diese eine Abfrage und
@@ -45,7 +45,7 @@ func KollegiumSichtbar(titelAlias string) string {
 // LIKE-Jokern für die Teilstring-Vergleiche. Ein nacktes „%" träfe sonst den ganzen Bestand.
 // Beide Male in der Form, in der Titeltexte und Schlagworte gespeichert sind
 // (TiteltextNormalform).
-func SucheImKatalog(ctx context.Context, q Datenbank, s KatalogSuche) ([]KatalogTreffer, int, error) {
+func FindeImKatalog(ctx context.Context, q Datenbank, s KatalogSuche) ([]KatalogTreffer, int, error) {
 	s.Suchtext = TiteltextNormalform(s.Suchtext)
 	if s.Suchtext == "" && s.SchlagwortID == "" {
 		return []KatalogTreffer{}, 0, nil
@@ -63,7 +63,7 @@ func SucheImKatalog(ctx context.Context, q Datenbank, s KatalogSuche) ([]Katalog
 	}
 	if s.SchlagwortID != "" {
 		args = append(args, s.SchlagwortID)
-		bedingungen = append(bedingungen, SQLTitelMitSchlagwort("bt", fmt.Sprintf("$%d", len(args))))
+		bedingungen = append(bedingungen, sqlTitelMitSchlagwort("bt", fmt.Sprintf("$%d", len(args))))
 	}
 
 	rows, err := q.Query(ctx, fmt.Sprintf(`
@@ -109,14 +109,14 @@ func maskiereLikeJoker(s string) string {
 	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
 }
 
-// SchlagwortFilterImKatalog liefert die Wörter, die die Pflegeseite als Filter markiert hat
+// LadeSchlagwortFilterImKatalog liefert die Wörter, die die Pflegeseite als Filter markiert hat
 // (ist_filter), alphabetisch — aber nur die, zu denen der Katalog mit dem Prädikat sichtbar
 // (über buecher_titel als `bt`) mindestens einen Titel zeigt. Ein Filter, der nichts
 // findet, stünde sonst als Sackgasse über der Suche.
 //
 // Die Abfrage geht vom Wort zu seinen Titeln, nicht umgekehrt: Eine Bedingung je Wort über
 // alle Titel lief an 13.000 Titeln und 20 Filterwörtern 353 ms, diese Form 4 ms.
-func SchlagwortFilterImKatalog(ctx context.Context, q Datenbank, sichtbar string) ([]SchlagwortFilter, error) {
+func LadeSchlagwortFilterImKatalog(ctx context.Context, q Datenbank, sichtbar string) ([]SchlagwortFilter, error) {
 	rows, err := q.Query(ctx, `
 		SELECT f.id::text, f.wort
 		FROM schlagworte f

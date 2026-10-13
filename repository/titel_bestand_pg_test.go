@@ -120,10 +120,10 @@ func TestTitelSucheNenntDenBestand(t *testing.T) {
 	}
 	versteckt := []string{"Ohne Exemplar", "Nur ausgesondert"}
 
-	// BEIDE Türen prüfen: Die Theke sucht über SearchTitlesFuzzy, der
-	// Katalog/Aktionspfad über SearchTitles. Eine der beiden zu vergessen wäre genau
+	// BEIDE Türen prüfen: Die Theke sucht über FindeTitelUnscharf, der
+	// Katalog/Aktionspfad über FindeTitel. Eine der beiden zu vergessen wäre genau
 	// die Art Lücke, um die es hier geht.
-	pruefe := func(t *testing.T, tuer string, zeilen []BookTitle) {
+	pruefe := func(t *testing.T, tuer string, zeilen []Titel) {
 		t.Helper()
 		gefunden := 0
 		for _, z := range zeilen {
@@ -153,16 +153,16 @@ func TestTitelSucheNenntDenBestand(t *testing.T) {
 		}
 	}
 
-	repo := NewBookRepository(pool)
-	zeilen, err := repo.SearchTitles(ctx, marke)
+	repo := NewKatalogAbfragen(pool)
+	zeilen, err := repo.FindeTitel(ctx, marke)
 	if err != nil {
-		t.Fatalf("SearchTitles: %v", err)
+		t.Fatalf("FindeTitel: %v", err)
 	}
-	pruefe(t, "SearchTitles", zeilen)
+	pruefe(t, "FindeTitel", zeilen)
 
-	fuzzy, _, err := repo.SearchTitlesFuzzy(ctx, marke, 50)
+	fuzzy, _, err := repo.FindeTitelUnscharf(ctx, marke, 50)
 	if err != nil {
-		t.Fatalf("SearchTitlesFuzzy: %v", err)
+		t.Fatalf("FindeTitelUnscharf: %v", err)
 	}
-	pruefe(t, "SearchTitlesFuzzy", fuzzy)
+	pruefe(t, "FindeTitelUnscharf", fuzzy)
 }

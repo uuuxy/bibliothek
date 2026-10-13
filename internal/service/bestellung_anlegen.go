@@ -22,12 +22,12 @@ import (
 // OrderService legt Bestellungen an.
 type OrderService struct {
 	db           *db.Database
-	bookRepo     repository.BookRepository
+	bookRepo     repository.KatalogAbfragen
 	supplierRepo repository.LieferantenAbfragen
 }
 
 // NewOrderService erstellt eine neue OrderService-Instanz.
-func NewOrderService(database *db.Database, bookRepo repository.BookRepository) *OrderService {
+func NewOrderService(database *db.Database, bookRepo repository.KatalogAbfragen) *OrderService {
 	return &OrderService{
 		db:           database,
 		bookRepo:     bookRepo,
@@ -122,7 +122,7 @@ var (
 type bestellItemResult struct {
 	summary  BestellterTitel
 	position repository.BestellpositionNeu
-	copies   []repository.BookCopyInsert
+	copies   []repository.ExemplarNeu
 	labels   []BestellEtikett
 	betrag   float64
 }
@@ -209,7 +209,7 @@ type bestellPosten struct {
 	labels       []BestellEtikett
 	summary      []BestellterTitel
 	positionen   []repository.BestellpositionNeu
-	copies       []repository.BookCopyInsert
+	copies       []repository.ExemplarNeu
 	gesamtbetrag float64
 	menge        int
 }
@@ -248,7 +248,7 @@ func (s *OrderService) schreibeExemplareUndPositionen(ctx context.Context, tx pg
 	for i := range posten.copies {
 		posten.copies[i].BestellungID = bestellungID
 	}
-	if err := s.bookRepo.BulkInsertCopiesTx(ctx, tx, posten.copies); err != nil {
+	if err := s.bookRepo.LegeExemplareAn(ctx, tx, posten.copies); err != nil {
 		return fmt.Errorf("bulk insert error: %w", err)
 	}
 	if err := repository.SchreibeBestellpositionen(ctx, tx, bestellungID, posten.positionen); err != nil {
@@ -266,7 +266,7 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 		return nil, fmt.Errorf("%w, angegeben ist %d", ErrMengeUngueltig, item.Menge)
 	}
 
-	title, err := s.bookRepo.GetTitleByIDTx(ctx, tx, item.TitelID)
+	title, err := s.bookRepo.LadeTitel(ctx, tx, item.TitelID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrTitelUnbekannt
@@ -294,7 +294,7 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 	}
 
 	// Jedes Exemplar bekommt seinen Barcode schon mit der Bestellung, auch ohne Barcodebogen.
-	barcodes, err := s.bookRepo.GenerateBarcodes(ctx, item.Menge)
+	barcodes, err := s.bookRepo.ErzeugeBarcodes(ctx, item.Menge)
 	if err != nil {
 		return nil, fmt.Errorf("sequence error: %w", err)
 	}
@@ -317,7 +317,7 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 
 	for i := 0; i < item.Menge; i++ {
 		barcodeID := barcodes[i]
-		res.copies = append(res.copies, repository.BookCopyInsert{
+		res.copies = append(res.copies, repository.ExemplarNeu{
 			TitelID:         item.TitelID,
 			BarcodeID:       barcodeID,
 			ZustandNotiz:    statusText,

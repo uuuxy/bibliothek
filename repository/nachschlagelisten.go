@@ -7,8 +7,8 @@ type SystematikKategorie struct {
 	ID, Kuerzel, Bezeichnung string
 }
 
-// ListeSystematikKategorien liefert alle Sachgruppen nach ihrer Bezeichnung geordnet.
-func ListeSystematikKategorien(ctx context.Context, db Datenbank) ([]SystematikKategorie, error) {
+// LadeSystematikKategorien liefert alle Sachgruppen nach ihrer Bezeichnung geordnet.
+func LadeSystematikKategorien(ctx context.Context, db Datenbank) ([]SystematikKategorie, error) {
 	rows, err := db.Query(ctx, "SELECT id, kuerzel, bezeichnung FROM systematik_kategorien ORDER BY bezeichnung ASC")
 	if err != nil {
 		return nil, err
@@ -25,9 +25,9 @@ func ListeSystematikKategorien(ctx context.Context, db Datenbank) ([]SystematikK
 	return kategorien, rows.Err()
 }
 
-// ListeFaecher liefert die Fächer, die an Titeln eingetragen sind, je einmal und ohne Leerraum
+// LadeFaecher liefert die Fächer, die an Titeln eingetragen sind, je einmal und ohne Leerraum
 // am Rand: die Auswahl für eine Inventur nach Fach.
-func ListeFaecher(ctx context.Context, db Datenbank) ([]string, error) {
+func LadeFaecher(ctx context.Context, db Datenbank) ([]string, error) {
 	rows, err := db.Query(ctx, `
 			SELECT DISTINCT btrim(subject)
 			FROM buecher_titel

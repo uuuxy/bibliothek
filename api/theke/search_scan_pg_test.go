@@ -37,7 +37,7 @@ func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := &Tueren{Basis: &tuer.Basis{}}
-	h := s.SearchHandler(repository.NewStudentRepository(pool), repository.NewBookRepository(pool))
+	h := s.SearchHandler(repository.NewStudentRepository(pool), repository.NewKatalogAbfragen(pool))
 	suche := func(q string) UnifiedSearchResult {
 		t.Helper()
 		w := httptest.NewRecorder()

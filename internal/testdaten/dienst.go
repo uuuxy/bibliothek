@@ -18,11 +18,11 @@ func AusleiheUeberDenDienst(t *testing.T, pool *pgxpool.Pool, barcode, schuelerI
 	t.Helper()
 	ctx := context.Background()
 
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 
-	exemplar, err := bookRepo.GetCopyByBarcode(ctx, barcode)
+	exemplar, err := bookRepo.FindeExemplar(ctx, barcode)
 	if err != nil {
 		t.Fatalf("Exemplar %s laden: %v", barcode, err)
 	}

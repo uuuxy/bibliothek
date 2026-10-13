@@ -21,7 +21,7 @@ const (
 	// Bestand bleibt damit ohne Neubeklebung scannbar.
 	BarcodeLittera Barcodequelle = "littera"
 	// BarcodeNeu vergibt B-XXXXX aus der Postgres-Sequenz barcode_seq — dieselbe Quelle,
-	// aus der auch die Anwendung ihre Barcodes zieht (repository/book_inventory.go).
+	// aus der auch die Anwendung ihre Barcodes zieht (repository/barcode_vergabe.go).
 	// Damit sind Kollisionen ausgeschlossen, aber alle Bücher brauchen neue Etiketten.
 	BarcodeNeu Barcodequelle = "neu"
 )

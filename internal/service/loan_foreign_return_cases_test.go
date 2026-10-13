@@ -34,7 +34,7 @@ func TestHandleForeignReturn_Student(t *testing.T) {
 		ID:         "loan1",
 		SchuelerID: strPtr("s1"),
 	}
-	copy := &repository.BookCopy{
+	copy := &repository.Exemplar{
 		ID:        "copy1",
 		BarcodeID: "B-C1",
 		Titel:     "Testbuch",
@@ -83,7 +83,7 @@ func TestHandleForeignReturn_Kollege(t *testing.T) {
 		ID:         "loan2",
 		SchuelerID: strPtr("t1"),
 	}
-	copy := &repository.BookCopy{
+	copy := &repository.Exemplar{
 		ID:        "copy2",
 		BarcodeID: "B-C2",
 		Titel:     "Lehrerbuch",
@@ -132,7 +132,7 @@ func TestHandleForeignReturn_ReturnLoanError(t *testing.T) {
 		ID:         "loan3",
 		SchuelerID: strPtr("s1"),
 	}
-	copy := &repository.BookCopy{
+	copy := &repository.Exemplar{
 		ID: "copy3",
 	}
 
@@ -163,7 +163,7 @@ func TestHandleForeignReturn_CommitError(t *testing.T) {
 		ID:         "loan4",
 		SchuelerID: strPtr("s1"),
 	}
-	copy := &repository.BookCopy{
+	copy := &repository.Exemplar{
 		ID:        "copy4",
 		BarcodeID: "B-C4",
 		Titel:     "Testbuch",

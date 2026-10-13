@@ -233,7 +233,7 @@ func LeseExemplare(r io.Reader) ([]Exemplar, error) {
 // („Bie"). Auf dem Etikett steht beides untereinander, geschrieben „LMF Deu 7 / Bie".
 //
 // Die Trennung mit " / " ist kein Schmuck: Der Inventur-Scope liest die Signatur als
-// Präfix mit Grenze am LEERZEICHEN (repository.SignaturPraefixBedingung). Ein Regal
+// Präfix mit Grenze am LEERZEICHEN (repository.signaturPraefixBedingung). Ein Regal
 // „LMF Deu 7" trifft damit „LMF Deu 7 / Bie" — ohne die Leerzeichen um den Schrägstrich
 // hieße die Adresse „LMF Deu 7/Bie" und das Regal fände sein eigenes Buch nicht.
 //

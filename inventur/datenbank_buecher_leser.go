@@ -189,11 +189,11 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, searc
 	for i := range books {
 		ids[i] = books[i].ID
 	}
-	suchwoerter, err := repository.SuchwoerterDerTitel(ctx, repo.db, ids)
+	suchwoerter, err := repository.LadeSuchwoerterDerTitel(ctx, repo.db, ids)
 	if err != nil {
 		return nil, err
 	}
-	standorte, err := repository.StandorteDerTitel(ctx, repo.db, ids)
+	standorte, err := repository.LadeStandorteDerTitel(ctx, repo.db, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (repo *BookRepository) ListExternalCoverBooks(ctx context.Context, limit in
 // Einzel-Read. Nicht in buchListenSelect: Die Katalogliste bleibt schlank, und ein Feld,
 // das dort als nil steht, sagt „nicht geladen" — Speichern lässt es dann unangetastet.
 func (repo *BookRepository) SchlagworteDesTitels(ctx context.Context, id string) ([]string, error) {
-	return repository.SchlagworteDesTitels(ctx, repo.db, id)
+	return repository.LadeSchlagworteDesTitels(ctx, repo.db, id)
 }
 
 // ListBooksByIDs retrieves list of books for provided IDs.

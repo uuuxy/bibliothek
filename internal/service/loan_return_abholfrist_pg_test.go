@@ -60,7 +60,7 @@ func TestRueckgabe_AbholfristMitFesterUhr(t *testing.T) {
 
 			svc := &defaultLoanService{pool: pool, jetzt: func() time.Time { return fall.jetzt }}
 			resp := &LoanResult{}
-			buch := &repository.BookCopy{ID: exemplarID, TitelID: titelID, Titel: "Abholfrist-Testband"}
+			buch := &repository.Exemplar{ID: exemplarID, TitelID: titelID, Titel: "Abholfrist-Testband"}
 			if err := svc.processReturnVormerkungTx(ctx, tx, buch, resp, nil); err != nil {
 				t.Fatalf("Rückgabe: %v", err)
 			}

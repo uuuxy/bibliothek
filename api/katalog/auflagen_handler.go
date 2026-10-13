@@ -44,7 +44,7 @@ func (s *Tueren) GetTitelAuflagenHandler() http.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		auflagen, err := repository.AuflagenDesTitels(r.Context(), s.DB.Pool, id)
+		auflagen, err := repository.LadeAuflagenDesTitels(r.Context(), s.DB.Pool, id)
 		if err != nil {
 			return auflagenFehler(err, "gelesen")
 		}

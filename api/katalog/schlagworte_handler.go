@@ -31,7 +31,7 @@ type TitelSchlagworte struct {
 
 // GetSchlagwortVorschlaegeHandler liefert die Schlagworte, die im Bestand vorkommen — ohne
 // ?suche= die häufigsten zuerst (höchstens 500), mit ?suche= die Wörter, die den Text
-// enthalten, über alle Wörter (höchstens 50; repository.SchlagwortVorschlaege). Die
+// enthalten, über alle Wörter (höchstens 50; repository.FindeSchlagwortVorschlaege). Die
 // Vorschlagsliste der Eingabefelder, wie GET /api/signaturen für die Signatur; das Feld
 // fragt beim Tippen nach (utils/schlagwortVorschlaege.svelte.js).
 //
@@ -45,7 +45,7 @@ type TitelSchlagworte struct {
 // @Router       /schlagworte [get]
 func (s *Tueren) GetSchlagwortVorschlaegeHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		vorschlaege, err := repository.SchlagwortVorschlaege(r.Context(), s.DB.Pool, r.URL.Query().Get("suche"))
+		vorschlaege, err := repository.FindeSchlagwortVorschlaege(r.Context(), s.DB.Pool, r.URL.Query().Get("suche"))
 		if err != nil {
 			return apierrors.Internal("Schlagworte konnten nicht geladen werden", err)
 		}
@@ -72,7 +72,7 @@ func (s *Tueren) GetTitelSchlagworteHandler() http.HandlerFunc {
 		if !kennung.IstUUID(id) {
 			return apierrors.BadRequest("ungültige Titel-ID", errors.New("keine UUID"))
 		}
-		woerter, err := repository.SchlagworteDesTitels(r.Context(), s.DB.Pool, id)
+		woerter, err := repository.LadeSchlagworteDesTitels(r.Context(), s.DB.Pool, id)
 		if err != nil {
 			return schlagwortFehler(err)
 		}

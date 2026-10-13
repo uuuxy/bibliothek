@@ -20,9 +20,9 @@ import (
 // (ExemplarTopfSQL). Deshalb ist der Grund Pflicht, und jede Änderung steht mit altem und neuem
 // Wert im Protokoll — wie beim Topf einer Bestellung (BestellMittelDialog).
 
-// ExemplarEigentumListeMax begrenzt eine Änderung. Ein Titel mit mehr Exemplaren wird in
+// exemplarEigentumListeMax begrenzt eine Änderung. Ein Titel mit mehr Exemplaren wird in
 // mehreren Schritten geändert; die Buchakte markiert höchstens, was sie zeigt.
-const ExemplarEigentumListeMax = 1000
+const exemplarEigentumListeMax = 1000
 
 // ErrEigentumUngueltig ist eine Eingabe, die die Tür nicht annimmt (400).
 var ErrEigentumUngueltig = errors.New("eigentum ungültig")
@@ -147,8 +147,8 @@ func pruefeEigentumAenderung(a EigentumAenderung) error {
 	switch {
 	case len(a.ExemplarIDs) == 0:
 		return fmt.Errorf("%w: kein Exemplar gewählt", ErrEigentumUngueltig)
-	case len(a.ExemplarIDs) > ExemplarEigentumListeMax:
-		return fmt.Errorf("%w: höchstens %d Exemplare auf einmal", ErrEigentumUngueltig, ExemplarEigentumListeMax)
+	case len(a.ExemplarIDs) > exemplarEigentumListeMax:
+		return fmt.Errorf("%w: höchstens %d Exemplare auf einmal", ErrEigentumUngueltig, exemplarEigentumListeMax)
 	case a.Eigentum != "" && !mitteltopf.IstGueltig(a.Eigentum):
 		return fmt.Errorf("%w: unbekanntes Eigentum %q", ErrEigentumUngueltig, a.Eigentum)
 	case strings.TrimSpace(a.Grund) == "":

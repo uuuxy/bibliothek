@@ -69,7 +69,7 @@ func TestAuflagenMischungInKlasse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	m, err := AuflagenMischungInKlasse(ctx, pool, neu, neuling)
+	m, err := LadeAuflagenMischungInKlasse(ctx, pool, neu, neuling)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,22 +90,22 @@ func TestAuflagenMischungInKlasse(t *testing.T) {
 		VALUES ('L-518011', 'Lena', 'Test', 'lehrkraft', '7b') RETURNING id`).Scan(&kollege); err != nil {
 		t.Fatal(err)
 	}
-	if m, err := AuflagenMischungInKlasse(ctx, pool, neu, kollege); err != nil || m != nil {
+	if m, err := LadeAuflagenMischungInKlasse(ctx, pool, neu, kollege); err != nil || m != nil {
 		t.Errorf("Kollege: %+v, %v — erwartet kein Hinweis", m, err)
 	}
 
 	// Die 7c bekommt die neue Auflage: dort hat nur Emil die alte.
 	emma := seedSchueler(t, pool, "S-518007", "Emma", "7c")
-	if m, err := AuflagenMischungInKlasse(ctx, pool, neu, emma); err != nil || m == nil || m.Andere[0].Kinder != 1 {
+	if m, err := LadeAuflagenMischungInKlasse(ctx, pool, neu, emma); err != nil || m == nil || m.Andere[0].Kinder != 1 {
 		t.Errorf("7c: %+v, %v — erwartet 1 Kind mit der 3. Auflage", m, err)
 	}
 
 	// Ohne Werk kein Hinweis; ebenso ohne andere Auflage in der Klasse.
-	if m, err := AuflagenMischungInKlasse(ctx, pool, einzeln, neuling); err != nil || m != nil {
+	if m, err := LadeAuflagenMischungInKlasse(ctx, pool, einzeln, neuling); err != nil || m != nil {
 		t.Errorf("Titel ohne Werk: %+v, %v — erwartet kein Hinweis", m, err)
 	}
 	fremd := seedSchueler(t, pool, "S-518008", "Finn", "9a")
-	if m, err := AuflagenMischungInKlasse(ctx, pool, neu, fremd); err != nil || m != nil {
+	if m, err := LadeAuflagenMischungInKlasse(ctx, pool, neu, fremd); err != nil || m != nil {
 		t.Errorf("9a ohne andere Auflage: %+v, %v — erwartet kein Hinweis", m, err)
 	}
 }

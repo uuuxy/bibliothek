@@ -74,7 +74,7 @@ func (s *Tueren) ExemplarStandortHandler() http.HandlerFunc {
 // @Router       /exemplare/standorte [get]
 func (s *Tueren) ExemplarStandorteHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		liste, err := repository.ExemplarStandorte(r.Context(), s.DB.Pool)
+		liste, err := repository.LadeExemplarStandorte(r.Context(), s.DB.Pool)
 		if err != nil {
 			return apierrors.Internal("Die Standorte konnten nicht geladen werden", err)
 		}

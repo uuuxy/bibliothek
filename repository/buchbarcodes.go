@@ -27,9 +27,9 @@ type BuchbarcodeStand struct {
 	Juengste *time.Time
 }
 
-// LiesBuchbarcodeStand liest die Kennzahl über den Index, ohne die Liste zu lesen — ein
+// LadeBuchbarcodeStand liest die Kennzahl über den Index, ohne die Liste zu lesen — ein
 // unveränderter Bestand spart damit die ganze Auslieferung.
-func LiesBuchbarcodeStand(ctx context.Context, q Datenbank) (BuchbarcodeStand, error) {
+func LadeBuchbarcodeStand(ctx context.Context, q Datenbank) (BuchbarcodeStand, error) {
 	var s BuchbarcodeStand
 	err := q.QueryRow(ctx, `
 		SELECT count(*), max(aktualisiert_am) FROM buecher_exemplare
@@ -40,14 +40,14 @@ func LiesBuchbarcodeStand(ctx context.Context, q Datenbank) (BuchbarcodeStand, e
 	return s, nil
 }
 
-// ListeBuchbarcodes liest die Barcodes aller Exemplare, aufsteigend.
+// LadeBuchbarcodes liest die Barcodes aller Exemplare, aufsteigend.
 //
 // Bewusst OHNE LIMIT — anders als jede andere Listen-Abfrage (vgl. api/system/audit_limit_pg_test.go).
 // Eine gekappte Liste wäre schlimmer als keine: Die fehlenden Bücher gälten offline als
 // „unklar", und niemand sähe, dass es an der Kappung liegt. Der Umfang ist durch den
 // Bestand begrenzt und wächst nicht von selbst weiter; der Aufrufer misst die ausgelieferte
 // Größe und warnt, wenn die Annahme kippt.
-func ListeBuchbarcodes(ctx context.Context, q Datenbank, erwartet int) ([]string, error) {
+func LadeBuchbarcodes(ctx context.Context, q Datenbank, erwartet int) ([]string, error) {
 	rows, err := q.Query(ctx, `
 		SELECT barcode_id FROM buecher_exemplare
 		WHERE barcode_id IS NOT NULL AND barcode_id <> ''

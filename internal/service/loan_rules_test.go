@@ -252,7 +252,7 @@ func TestResolveCheckoutDueDate_LeseclubOverride(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
-	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
+	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
 	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
@@ -276,7 +276,7 @@ func TestResolveCheckoutDueDate_LeseclubVergangenGiltNicht(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
-	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
+	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
 	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
@@ -298,7 +298,7 @@ func TestResolveCheckoutDueDate_LeseclubAusgeschaltetGiltNicht(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(rows)
 
-	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
+	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
 	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
@@ -326,7 +326,7 @@ func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow((*time.Time)(nil), false))
 
 	// LMF-Schulbücher folgen dem Stichtag, nicht dem Leseclub-Zieldatum.
-	copy := &repository.BookCopy{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
+	copy := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "9a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
@@ -348,7 +348,7 @@ func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
 	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(&termin, false))
 
-	copy := &repository.BookCopy{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
+	copy := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "9H1")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
@@ -363,7 +363,7 @@ func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
 	// Mehrjahresband (Spanne bis über den aktuellen Jahrgang): kein Lookup, Stichtag im Zieljahr.
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
-	mehrjahr := &repository.BookCopy{Titel: "Atlas", IstLernmittel: true, Medientyp: "Buch", Mehrjahresband: true, JahrgangBis: 10}
+	mehrjahr := &repository.Exemplar{Titel: "Atlas", IstLernmittel: true, Medientyp: "Buch", Mehrjahresband: true, JahrgangBis: 10}
 	got, err = svc.resolveCheckoutDueDate(context.Background(), mehrjahr, "9H1")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
@@ -385,7 +385,7 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 
 	// Feste Uhr: 01.09.2026 plus 21 Tage ist ein Schultag (TestCalculateDueDate_RegularBook).
 	svc.jetzt = func() time.Time { return time.Date(2026, time.September, 1, 10, 0, 0, 0, schoolLocation()) }
-	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
+	copy := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
 	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
 	// Bewusst kein Fehler: bei DB-Ausfall greifen Notfall-Defaults (21 Tage),
 	// damit die Ausleihe nicht komplett blockiert.
@@ -466,7 +466,7 @@ func TestResolveCheckoutDueDate_AmOderNachDemTerminGiltDerStichtagDesFolgendenSc
 			mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 				WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(fall.bevorstehend, fall.vergangen))
 
-			copy := &repository.BookCopy{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
+			copy := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 			got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "9H2")
 			if err != nil {
 				t.Fatalf("unerwarteter Fehler: %v", err)

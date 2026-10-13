@@ -184,7 +184,7 @@ func TestKlasseEntfaellt_Migration163(t *testing.T) {
 // Die Theke liest zu jedem gescannten Buch, bis zu welchem Jahrgang ein Mehrjahresband beim
 // Kind bleibt. An einem Titel ohne Jahrgang ist das 0: An der leeren Spalte darf der Scan
 // nicht scheitern.
-func TestGetCopyByBarcode_TitelOhneJahrgang(t *testing.T) {
+func TestFindeExemplar_TitelOhneJahrgang(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	const barcode = "JAHRGANG-162-THEKE"
@@ -207,7 +207,7 @@ func TestGetCopyByBarcode_TitelOhneJahrgang(t *testing.T) {
 		}
 	})
 
-	exemplar, err := NewBookRepository(pool).GetCopyByBarcode(ctx, barcode)
+	exemplar, err := NewKatalogAbfragen(pool).FindeExemplar(ctx, barcode)
 	if err != nil || exemplar == nil {
 		t.Fatalf("Exemplar eines Titels ohne Jahrgang lesen: %v (gefunden: %v)", err, exemplar != nil)
 	}

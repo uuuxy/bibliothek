@@ -20,7 +20,7 @@ import (
 func (s *defaultLoanService) erzeugeAusleihe(
 	ctx context.Context,
 	tx pgx.Tx,
-	copy *repository.BookCopy,
+	copy *repository.Exemplar,
 	chkCtx *checkoutContext,
 	staffID string,
 ) (*repository.Ausleihe, error) {
@@ -64,7 +64,7 @@ func (s *defaultLoanService) erzeugeAusleihe(
 func (s *defaultLoanService) deuteAusleiheKonflikt(
 	ctx context.Context,
 	tx pgx.Tx,
-	copy *repository.BookCopy,
+	copy *repository.Exemplar,
 	chkCtx *checkoutContext,
 ) error {
 	aktiv, err := s.loanRepo.SperreOffene(ctx, tx, copy.ID)
@@ -109,7 +109,7 @@ func mapLoanCreateErr(err error) error {
 // ausgeliehen hat. Lag für ihn ein anderes Exemplar im Abholfach als das, das er genommen hat,
 // muss es zurück ins Regal: Seine Nummer geht als Regal-Hinweis in die Antwort. Einen Fehler
 // meldet die Funktion nicht weiter, sie schreibt ihn ins Log.
-func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, schuelerID string, resp *LoanResult) {
+func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, copy *repository.Exemplar, schuelerID string, resp *LoanResult) {
 	bereitgestellt, err := repository.LoescheErfuellteVormerkung(ctx, tx, copy.TitelID, schuelerID)
 	if err != nil {
 		log.Printf("ausleihe: Vormerkung für Titel %s konnte nicht entfernt werden: %v", copy.TitelID, err)
@@ -131,7 +131,7 @@ func entferneErfuellteVormerkung(ctx context.Context, tx pgx.Tx, copy *repositor
 func (s *defaultLoanService) handleNewLoan(
 	ctx context.Context,
 	tx pgx.Tx,
-	copy *repository.BookCopy,
+	copy *repository.Exemplar,
 	chkCtx *checkoutContext,
 	staffID string,
 	resp *LoanResult,
@@ -167,10 +167,10 @@ func (s *defaultLoanService) handleNewLoan(
 }
 
 // auflagenHinweis fragt NACH der Buchung, ob die Klasse gemischte Auflagen bekommt
-// (repository.AuflagenMischungInKlasse). Ein Fehler hier darf die gebuchte Ausleihe nicht
+// (repository.LadeAuflagenMischungInKlasse). Ein Fehler hier darf die gebuchte Ausleihe nicht
 // als gescheitert melden: Er landet im Log, und die Theke zeigt keinen Hinweis.
 func (s *defaultLoanService) auflagenHinweis(ctx context.Context, titelID, schuelerID string) *repository.AuflagenMischung {
-	m, err := repository.AuflagenMischungInKlasse(ctx, s.pool, titelID, schuelerID)
+	m, err := repository.LadeAuflagenMischungInKlasse(ctx, s.pool, titelID, schuelerID)
 	if err != nil {
 		log.Printf("auflagen-hinweis: %v", err)
 		return nil
@@ -182,7 +182,7 @@ func (s *defaultLoanService) auflagenHinweis(ctx context.Context, titelID, schue
 func (s *defaultLoanService) handleReturn(
 	ctx context.Context,
 	tx pgx.Tx,
-	copy *repository.BookCopy,
+	copy *repository.Exemplar,
 	chkCtx *checkoutContext,
 	activeLoan *repository.Ausleihe,
 	staffID string,
@@ -221,7 +221,7 @@ func (s *defaultLoanService) handleReturn(
 func (s *defaultLoanService) handleForeignReturn(
 	ctx context.Context,
 	tx pgx.Tx,
-	copy *repository.BookCopy,
+	copy *repository.Exemplar,
 	activeLoan *repository.Ausleihe,
 	staffID string,
 	resp *LoanResult,

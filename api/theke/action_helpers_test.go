@@ -24,10 +24,10 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	studentRepo := repository.NewStudentRepository(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
-	bookRepo := repository.NewBookRepository(mock)
+	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 
-	copy := &repository.BookCopy{
+	copy := &repository.Exemplar{
 		ID:            "copy-1",
 		BarcodeID:     "B-1234",
 		TitelID:       "titel-1",
@@ -135,7 +135,7 @@ func TestHandleBookReturn(t *testing.T) {
 	studentRepo := repository.NewStudentRepository(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
-	bookRepo := repository.NewBookRepository(mock)
+	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanSvc := service.NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo)
 	deviceSvc := service.NewDeviceService(mock, studentRepo, loanRepo, auditRepo)
 	omniboxSvc := service.NewOmniboxService(mock, studentRepo, bookRepo, repository.NewKontoAbfragen(mock), loanRepo, loanSvc, deviceSvc)
@@ -144,7 +144,7 @@ func TestHandleBookReturn(t *testing.T) {
 	barcode := "B-9999"
 	staffID := "staff-1"
 
-	// Mock GetCopyByBarcode
+	// Mock FindeExemplar
 	mock.ExpectQuery("SELECT e\\.id, e\\.titel_id, coalesce\\(e\\.barcode_id, ''\\), coalesce\\(e\\.zustand_notiz, ''\\), e\\.erworben_am, coalesce\\(e\\.ist_ausleihbar, false\\), coalesce\\(e\\.ist_ausgesondert, false\\), e\\.erstellt_am, e\\.aktualisiert_am, coalesce\\(t\\.titel, ''\\), coalesce\\(t\\.autor, ''\\), coalesce\\(t\\.verlag, ''\\), coalesce\\(t\\.isbn, ''\\), coalesce\\(t\\.cover_url, ''\\), coalesce\\(t\\.medientyp, ''\\), coalesce\\(t\\.signatur, ''\\), t\\.mehrjahresband, coalesce\\(t\\.jahrgang_bis, 0\\), t\\.ist_lernmittel, coalesce\\(t\\.erweiterte_eigenschaften, '\\{\\}'::jsonb\\) FROM buecher_exemplare e JOIN buecher_titel t ON e\\.titel_id = t\\.id WHERE e\\.barcode_id = \\$1 LIMIT 1").
 		WithArgs(barcode).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "barcode_id", "zustand_notiz", "erworben_am", "ist_ausleihbar", "ist_ausgesondert", "erstellt_am", "aktualisiert_am", "titel", "autor", "verlag", "isbn", "cover_url", "medientyp", "signatur", "mehrjahresband", "jahrgang_bis", "ist_lernmittel", "erweiterte_eigenschaften"}).

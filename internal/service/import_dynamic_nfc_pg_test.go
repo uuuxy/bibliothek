@@ -11,7 +11,7 @@ import (
 
 // Seit Migration 154 speichert die Datenbank Titeltexte zusammengesetzt (NFC,
 // trg_titel_text_normalform). Der Listenimport erkennt einen vorhandenen Titel ohne ISBN an
-// seinem Text (repository.NormalisiereTitelKey). Kommt derselbe Titel in der Datei zerlegt an
+// seinem Text (repository.NormalisiereTitelSchluessel). Kommt derselbe Titel in der Datei zerlegt an
 // („a" + U+0308, so liefert die DNB Umlaute), muss er den gespeicherten treffen; sonst legt der
 // Import ihn ein zweites Mal an (Rasterdurchgang vom 30.09.2026). Die zerlegten Zeichen stehen
 // als Escape, damit kein Editor sie still zusammensetzt.
@@ -65,7 +65,7 @@ func TestImportDynamic_ZerlegterTitelTrifftGespeicherten(t *testing.T) {
 // Seit Migration 160 speichert die Datenbank Titeltexte mit einem Leerzeichen zwischen den
 // Wörtern. Littera führt Titel mit zwei Leerzeichen in Folge und mit geschütztem Leerzeichen;
 // kommt so ein Titel ein zweites Mal aus einer Datei, muss er den gespeicherten treffen
-// (repository.NormalisiereTitelKey), sonst legt der Import ihn noch einmal an.
+// (repository.NormalisiereTitelSchluessel), sonst legt der Import ihn noch einmal an.
 func TestImportDynamic_TitelMitLeerraumInFolgeTrifftGespeicherten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

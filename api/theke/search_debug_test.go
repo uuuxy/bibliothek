@@ -26,7 +26,7 @@ func TestSuche_AnfrageMitDoppelpunkt(t *testing.T) {
 	database := &db.Database{Pool: pool}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: database}}
-	handler := srv.SearchHandler(repository.NewStudentRepository(pool), repository.NewBookRepository(pool))
+	handler := srv.SearchHandler(repository.NewStudentRepository(pool), repository.NewKatalogAbfragen(pool))
 
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "/api/search?q=max:1", nil))

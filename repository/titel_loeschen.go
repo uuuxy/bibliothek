@@ -33,7 +33,7 @@ func (a *pgProtokollAbfragen) LoescheTitel(ctx context.Context, titelID string, 
 
 	// Gehört der Titel zu einem Buch in mehreren Auflagen, muss das Werk danach noch stimmen.
 	// Zuerst, weil die Sperre der Auflagen vor jeder Zeilensperre kommt.
-	werke, err := WerkeDerTitel(ctx, tx, []string{titelID})
+	werke, err := LadeWerkeDerTitel(ctx, tx, []string{titelID})
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (a *pgProtokollAbfragen) LoescheTitel(ctx context.Context, titelID string, 
 	}
 	// Das lokal gespeicherte Cover fällt mit dem Titel, wie in der Massenaktion der
 	// Bestandstabelle (inventur.DeleteBooks).
-	cover, err := LokaleCoverNurDieserTitel(ctx, tx, []string{titelID})
+	cover, err := LadeLokaleCoverNurDieserTitel(ctx, tx, []string{titelID})
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func protokolliereWasMitDemTitelFaellt(ctx context.Context, tx pgx.Tx, titelID s
 	if err := protokolliereOffeneForderungen(ctx, tx, titelID); err != nil {
 		return err
 	}
-	wartende, err := LeseWartendeBezuege(ctx, tx, []string{titelID})
+	wartende, err := LadeWartendeBezuege(ctx, tx, []string{titelID})
 	if err != nil {
 		return err
 	}

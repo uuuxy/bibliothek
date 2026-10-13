@@ -20,7 +20,7 @@ type vormerkTheke struct {
 	pool        *pgxpool.Pool
 	suffix      string
 	mitarbeiter string
-	buecher     repository.BookRepository
+	buecher     repository.KatalogAbfragen
 	svc         LoanService
 }
 
@@ -28,7 +28,7 @@ func neueVormerkTheke(t *testing.T) *vormerkTheke {
 	t.Helper()
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	v := &vormerkTheke{pool: pool, suffix: fmt.Sprintf("%d", time.Now().UnixNano()), buecher: repository.NewBookRepository(pool)}
+	v := &vormerkTheke{pool: pool, suffix: fmt.Sprintf("%d", time.Now().UnixNano()), buecher: repository.NewKatalogAbfragen(pool)}
 	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
 		VALUES ('Vormerktheke', 'Ausgabe', $1, 'mitarbeiter', true) RETURNING id`, "vormerktheke-"+v.suffix+"@schule.invalid").Scan(&v.mitarbeiter); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
@@ -98,7 +98,7 @@ func (v *vormerkTheke) legeBereit(t *testing.T, titelID, leserID, nummer string)
 func (v *vormerkTheke) leihe(t *testing.T, nummer, leserID string) (*LoanResult, error) {
 	t.Helper()
 	ctx := context.Background()
-	exemplar, err := v.buecher.GetCopyByBarcode(ctx, nummer)
+	exemplar, err := v.buecher.FindeExemplar(ctx, nummer)
 	if err != nil || exemplar == nil {
 		t.Fatalf("Exemplar %s laden: %v", nummer, err)
 	}

@@ -80,7 +80,7 @@ describe('KollegiumPortal', () => {
 	 * ob ein Klassensatz für ihre Gruppe überhaupt reicht.
 	 *
 	 * Das war lange kaputt und völlig unsichtbar: Das Portal fragte `/api/search`, das
-	 * `BookTitle` ohne Bestandsfeld liefert. Das Abzeichen hängt an `{#if book.verfuegbar
+	 * `repository.Titel` ohne Bestandsfeld liefert. Das Abzeichen hängt an `{#if book.verfuegbar
 	 * != null}` — ein Wächter, der still übersprang. Kein Fehler, keine Lücke im Layout,
 	 * die Zahl fehlte einfach. Deshalb prüft dieser Test den TEXT, nicht das Vorhandensein
 	 * eines Elements.

@@ -55,7 +55,7 @@ func TestFreiesBuchWirdNichtAufDenScannerGebucht(t *testing.T) {
 
 	repo := &selbstausleiheLoanRepo{mock: mock}
 	svc := &defaultLoanService{loanRepo: repo}
-	copy := &repository.BookCopy{ID: "c1", TitelID: "t1", IstAusleihbar: true}
+	copy := &repository.Exemplar{ID: "c1", TitelID: "t1", IstAusleihbar: true}
 
 	_, err = svc.HandleSimpleReturn(context.Background(), copy, "staff1")
 

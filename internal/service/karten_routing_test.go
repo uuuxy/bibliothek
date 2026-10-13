@@ -16,7 +16,7 @@ import (
 func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 	const karte = "B97601826457"
 	svc := &defaultOmniboxService{
-		bookRepo: &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
 			karte: {ID: "s1", Vorname: "Nina", Nachname: "Berger"},
 		}},
@@ -41,7 +41,7 @@ func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 func TestLehrerausweisOhnePraefix(t *testing.T) {
 	const karte = "B97601826458"
 	svc := &defaultOmniboxService{
-		bookRepo: &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
 			karte: {ID: "l1", Vorname: "Anna", Nachname: "Berg", Art: "lehrkraft"},
 		}},
@@ -63,7 +63,7 @@ func TestLehrerausweisOhnePraefix(t *testing.T) {
 // Ausweis und muss in der Volltextsuche landen (Frage vom 16.09.2026).
 func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 	svc := &defaultOmniboxService{
-		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
 	}
 	for _, eingabe := range []string{"Goethe", "Die Leiden des jungen Werther"} {
@@ -86,7 +86,7 @@ func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 // über den neu gedruckten Ausweis noch über die Namenssuche ladbar (OFFEN.md 5.15).
 func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
 	svc := &defaultOmniboxService{
-		bookRepo: &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
 			"L-4711": {ID: "s1", BarcodeID: "L-4711", Vorname: "Ersatz", Nachname: "Nummer"},
 		}},
@@ -105,7 +105,7 @@ func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
 // S-Nummer muss laden.
 func TestVorsilbeEntscheidetNichtDieTabelle(t *testing.T) {
 	svc := &defaultOmniboxService{
-		bookRepo: &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
 			"S-0815": {ID: "l1", Vorname: "Anna", Nachname: "Berg", Art: "lehrkraft"},
 		}},
@@ -123,7 +123,7 @@ func TestVorsilbeEntscheidetNichtDieTabelle(t *testing.T) {
 // sie verschwindet nicht leise in der Volltextsuche.
 func TestUnbekannterAusweisMeldetSichLaut(t *testing.T) {
 	svc := &defaultOmniboxService{
-		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
 	}
 	for _, code := range []string{"S-404", "L-404"} {

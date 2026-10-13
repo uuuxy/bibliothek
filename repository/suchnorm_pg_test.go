@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// Zwillings-Pflicht: Suchnorm (Go) und suchnorm (SQL, Migration 054) müssen für jeden
+// Zwillings-Pflicht: suchnorm (Go) und suchnorm (SQL, Migration 054) müssen für jeden
 // Namen dasselbe liefern — sonst findet die Schülersuche einen Menschen, den der
 // LUSD-Schlüssel nicht findet (oder umgekehrt), und niemand merkt es. Der Korpus deckt
 // ab, was an einer hessischen Schule wirklich in Namenslisten steht: deutsche Umlaute und
@@ -31,8 +31,8 @@ func TestSuchnorm_GoUndSQLSindZwillinge(t *testing.T) {
 		if err := pool.QueryRow(ctx, `SELECT suchnorm($1)`, name).Scan(&sql); err != nil {
 			t.Fatalf("suchnorm(%q): %v", name, err)
 		}
-		if got := Suchnorm(name); got != sql {
-			t.Errorf("Suchnorm(%q) = %q, SQL suchnorm = %q — die Zwillinge sind auseinander", name, got, sql)
+		if got := suchnorm(name); got != sql {
+			t.Errorf("suchnorm(%q) = %q, SQL suchnorm = %q — die Zwillinge sind auseinander", name, got, sql)
 		}
 	}
 }
@@ -55,7 +55,7 @@ func TestSuchnorm_ZeichenDurchlaufGoUndSQL(t *testing.T) {
 			if err := pool.QueryRow(ctx, `SELECT suchnorm($1)`, name).Scan(&sql); err != nil {
 				t.Fatalf("suchnorm(%q U+%04X): %v", name, r, err)
 			}
-			if got := Suchnorm(name); got != sql {
+			if got := suchnorm(name); got != sql {
 				abweichungen = append(abweichungen, fmt.Sprintf("U+%04X %q: Go %q, SQL %q", r, name, got, sql))
 			}
 		}

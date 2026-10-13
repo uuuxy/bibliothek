@@ -2,7 +2,7 @@ package repository
 
 import "fmt"
 
-// SignaturPraefixBedingung liefert das SQL-Prädikat „diese Signatur liegt im Regalbereich
+// signaturPraefixBedingung liefert das SQL-Prädikat „diese Signatur liegt im Regalbereich
 // des Platzhalters $n" — die EINZIGE Auslegung dessen, was eine Signatur als Bereich meint.
 //
 // Eine Signatur ist eine Regaladresse; eine kürzere Adresse meint einen größeren Bereich.
@@ -20,7 +20,7 @@ import "fmt"
 // spalte ist der qualifizierte Spaltenname (z. B. "t.signatur"); platzhalter die Nummer
 // des Bind-Parameters, der den Bereich trägt. Der Platzhalter kommt mehrfach vor, das
 // Argument wird trotzdem nur EINMAL übergeben.
-func SignaturPraefixBedingung(spalte string, platzhalter int) string {
+func signaturPraefixBedingung(spalte string, platzhalter int) string {
 	return fmt.Sprintf(
 		"(btrim(%[1]s) = btrim($%[2]d) OR left(btrim(%[1]s), length(btrim($%[2]d)) + 1) = btrim($%[2]d) || ' ')",
 		spalte, platzhalter)
@@ -30,13 +30,13 @@ func SignaturPraefixBedingung(spalte string, platzhalter int) string {
 // Kürzel des Titels darin: „LMF Deu 7 / Bie". Die Littera-Übernahme setzt die Aufschrift
 // des Buchrückens damit zusammen (littera.SignaturAus), die Liste der Signaturen fasst an
 // ihm zusammen. Die Leerzeichen gehören dazu: An ihnen endet die Regaladresse für
-// SignaturPraefixBedingung.
+// signaturPraefixBedingung.
 const SignaturTrenner = " / "
 
-// SQLSignaturRegaladresse liefert den Ausdruck für die Regaladresse einer Signatur: den Teil
+// sqlSignaturRegaladresse liefert den Ausdruck für die Regaladresse einer Signatur: den Teil
 // vor dem ersten Trenner, bei einer einteiligen Signatur sie selbst. In der Sicherung von
 // 2010 trägt die erste Zeile der Aufschrift nie den Trenner, die zweite 235-mal; geteilt wird
 // deshalb am ersten.
-func SQLSignaturRegaladresse(spalte string) string {
+func sqlSignaturRegaladresse(spalte string) string {
 	return fmt.Sprintf("btrim(split_part(btrim(%s), '%s', 1))", spalte, SignaturTrenner)
 }

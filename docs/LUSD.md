@@ -66,7 +66,7 @@ Die Datei entscheidet, die Vorschau nennt die Stufe im Banner:
 | **nur Name**            | weder ID noch Datum (LANIS-Klassenliste) | Notweg; Namensgleiche werden nie zugeordnet, nur gemeldet |
 
 Der Namensschlüssel beider Namensstufen ist die Normalform `suchnorm` (Migration 054;
-Go-Zwilling `repository.Suchnorm`, Parität geratscht): Müller ≡ Mueller ≡ MÜLLER,
+Go-Zwilling `repository.suchnorm`, Parität geratscht): Müller ≡ Mueller ≡ MÜLLER,
 Öztürk ≡ Oeztuerk. Bis 05.09.2026 war er nur lower+trim, und eine Handanlage „Anna Müller"
 wurde vom Export „Anna Mueller" nie gefunden (Neuanlage + „nicht im Export"). Fallen zwei
 Bestandsschüler erst in der Normalform zusammen (Bauer/Baur), meldet die Vorschau sie als

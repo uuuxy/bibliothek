@@ -181,7 +181,7 @@ Zwei Folgerungen:
 
 1. **Die Präfix-Auslegung aus Migration 060 passt zu den echten Daten.** `Sig1` ist
    hierarchisch am Leerzeichen aufgebaut (`LMF` → `LMF Bio` → `LMF Bio 11`), genau die
-   Grenze, nach der `repository.SignaturPraefixBedingung` schneidet.
+   Grenze, nach der `repository.signaturPraefixBedingung` schneidet.
 
 2. **Unser `buecher_titel.signatur` liegt am Titel — Littera am Exemplar.** Gemessen
    über den fertigen Lesepfad: Bei **72 von 10.422** Titeln mit Signatur (0,7 %)
@@ -205,7 +205,7 @@ Lernmitteln. An den 10.422 Titeln stehen nach der Übernahme 6.251 verschiedene 
 **Liste und Vorschläge nennen die Regaladresse** (entschieden und gebaut am 07.10.2026). Die
 Seite „Signaturen", die Vorschläge im Feld „Signatur" (Buchformular, Bestellkorb) und die
 Auswahl der Inventur lesen `GET /api/signaturen`; die Liste fasst nach dem Teil vor dem ersten
-„ / " zusammen (`repository.SQLSignaturRegaladresse`, der Trenner ist
+„ / " zusammen (`repository.sqlSignaturRegaladresse`, der Trenner ist
 `repository.SignaturTrenner`, mit dem `SignaturAus` die Aufschrift zusammensetzt). Am Titel
 bleibt die ganze Aufschrift, die Regalansicht zeigt sie. Littera baut die zweite Zeile in der
 Vorgabe aus den „3 Anfangsbuchstaben des Verfassers" (Handbuch, „Generierung der Signatur"); in

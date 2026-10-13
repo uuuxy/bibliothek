@@ -181,13 +181,13 @@ func parseGrade(klasse string) int {
 // resolveCheckoutDueDate ermittelt das Fälligkeitsdatum für eine neue Buchausleihe.
 // Hierbei werden Sonderaktionen wie der Ferien-Leseclub ausgewertet, um reguläre Leihfristen zu überschreiben.
 // resolveCheckoutDueDate rechnet die Frist ab der Uhr des Dienstes (jetzt).
-func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string) (time.Time, error) {
+func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *repository.Exemplar, borrowerKlasse string) (time.Time, error) {
 	return s.resolveCheckoutDueDateAm(ctx, copy, borrowerKlasse, s.heute())
 }
 
 // resolveCheckoutDueDateAm rechnet die Frist ab einem gegebenen Tag — beim Nachbuchen der
 // Scan-Zeitpunkt (Frist, Mahnwesen und Lesehistorie rechnen ab dem Scan), am Online-Scan jetzt.
-func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string, heute time.Time) (time.Time, error) {
+func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy *repository.Exemplar, borrowerKlasse string, heute time.Time) (time.Time, error) {
 	settings, err := s.querySettings(ctx)
 	heute = heute.In(schoolLocation())
 	additionalYears := mehrjahresbandJahre(copy, borrowerKlasse)
@@ -227,7 +227,7 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 // mehrjahresbandJahre: Ein Mehrjahresband (Migration 134) bleibt bis zum Ende von JahrgangBis
 // beim Kind. Die Jahre über das laufende Schuljahr hinaus sind der Abstand zwischen der Klasse
 // des Kindes und JahrgangBis; ein Kind über der Spanne bekommt ein Schuljahr wie jedes andere.
-func mehrjahresbandJahre(copy *repository.BookCopy, borrowerKlasse string) int {
+func mehrjahresbandJahre(copy *repository.Exemplar, borrowerKlasse string) int {
 	if copy.Mehrjahresband && copy.JahrgangBis > 0 && borrowerKlasse != "" {
 		currentGrade := parseGrade(borrowerKlasse)
 		if currentGrade > 0 && copy.JahrgangBis >= currentGrade {
@@ -251,7 +251,7 @@ func mehrjahresbandJahre(copy *repository.BookCopy, borrowerKlasse string) int {
 //     Termin im Juli 2027, gibt ihn am 31.07.2029 zurück.
 //
 // Ein Fehler beim Nachschlagen hält die Ausleihe nicht an: Dann gilt der Stichtag.
-func (s *defaultLoanService) fristNachLmfPlan(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string, heute time.Time, settings *SystemEinstellungen, additionalYears int) (time.Time, bool) {
+func (s *defaultLoanService) fristNachLmfPlan(ctx context.Context, copy *repository.Exemplar, borrowerKlasse string, heute time.Time, settings *SystemEinstellungen, additionalYears int) (time.Time, bool) {
 	if copy.IstLernmittel && borrowerKlasse != "" {
 		lage, lageErr := repository.NewLmfTerminRepository(s.pool).RueckgabeTerminLage(ctx, borrowerKlasse, heute)
 		if lageErr == nil && lage.Vergangen {
@@ -270,7 +270,7 @@ func (s *defaultLoanService) fristNachLmfPlan(ctx context.Context, copy *reposit
 // Frist aller regulären Bestände (ausgenommen Lernmittel) — aber nur, solange es nicht vorbei
 // ist. Bleibt der Schalter nach den Ferien an, wäre das vergangene Ferienende sonst die Frist
 // jeder neuen Ausleihe: sofort überfällig, nach 14 Tagen gesperrt. Dann gilt die reguläre Frist.
-func leseclubFrist(copy *repository.BookCopy, settings *SystemEinstellungen, heute time.Time) (time.Time, bool) {
+func leseclubFrist(copy *repository.Exemplar, settings *SystemEinstellungen, heute time.Time) (time.Time, bool) {
 	if !copy.IstLernmittel && settings.FerienLeseclubAktiv && settings.FerienLeseclubZieldatum != nil {
 		t, parseErr := time.Parse("2006-01-02", *settings.FerienLeseclubZieldatum)
 		if parseErr == nil {

@@ -20,7 +20,7 @@ import (
 // Ein Fehler kommt zurück, und der Aufrufer rollt die Rückgabe zurück: Meldete die Theke „ins
 // Abholfach legen", während die Vormerkung wartend bliebe, läge das Buch im Fach und wäre
 // zugleich frei ausleihbar. Die Theke wiederholt den Scan.
-func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, resp *LoanResult, returningSchuelerID *string) error {
+func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx pgx.Tx, copy *repository.Exemplar, resp *LoanResult, returningSchuelerID *string) error {
 	// Die älteste wartende Vormerkung eines Schülers, der abholen darf; die des Schülers, der
 	// gerade zurückgibt, ist ausgenommen.
 	wartende, da, err := repository.SperreNaechsteWartendeVormerkung(ctx, tx, copy.TitelID, returningSchuelerID)
@@ -57,7 +57,7 @@ func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx p
 // Ausleiher aktiv ist.
 func (s *defaultLoanService) HandleSimpleReturn(
 	ctx context.Context,
-	copy *repository.BookCopy,
+	copy *repository.Exemplar,
 	staffID string,
 ) (*LoanResult, error) {
 	resp := &LoanResult{}
@@ -96,7 +96,7 @@ func (s *defaultLoanService) HandleSimpleReturn(
 // Mitarbeiter, der sein eigenes Buch scannt. Sie unterschieden sich nicht in der Sache,
 // sondern nur in der Spalte, in der der Ausleiher stand — und die Mitarbeiter-Fassung
 // vergaß dabei, den Ausleiher in die Antwort zu legen.
-func (s *defaultLoanService) handleRueckgabe(ctx context.Context, tx pgx.Tx, copy *repository.BookCopy, activeLoan *repository.Ausleihe, staffID string, resp *LoanResult) (*LoanResult, error) {
+func (s *defaultLoanService) handleRueckgabe(ctx context.Context, tx pgx.Tx, copy *repository.Exemplar, activeLoan *repository.Ausleihe, staffID string, resp *LoanResult) (*LoanResult, error) {
 	var borrower *repository.Student
 	if activeLoan.SchuelerID != nil {
 		var err error

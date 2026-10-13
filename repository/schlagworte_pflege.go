@@ -79,10 +79,10 @@ const sqlPflegeSuchePasst = `($1 = ''
 	OR EXISTS (SELECT 1 FROM schlagworte v
 	           WHERE v.verweis_auf = s.id AND strpos(lower(v.wort), lower($1)) > 0))`
 
-// SchlagworteZurPflege liefert die Schlagworte, die zur Suche passen (leer = alle), mit
+// LadeSchlagworteZurPflege liefert die Schlagworte, die zur Suche passen (leer = alle), mit
 // Titelzahl, Verweisziel und den Verweisen darauf, alphabetisch und höchstens
 // schlagwortPflegeTrefferMax Zeilen, dazu die Zahlen der ganzen Tabelle.
-func SchlagworteZurPflege(ctx context.Context, q Datenbank, suche string) (SchlagwortPflegeListe, error) {
+func LadeSchlagworteZurPflege(ctx context.Context, q Datenbank, suche string) (SchlagwortPflegeListe, error) {
 	liste := SchlagwortPflegeListe{Zeilen: []SchlagwortPflegeZeile{}}
 	suche = schlagwortNormalform(suche)
 	if err := q.QueryRow(ctx, `

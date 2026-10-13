@@ -34,12 +34,12 @@ const barcodeZiehVersuche = 3
 // den Cast auf bigint nicht sprengt und damit die Bestellung mitreißt.
 const barcodeNummerMuster = `^B-[0-9]{1,15}$`
 
-// NaechsterFreierExemplarBarcode liefert die nächste freie Exemplarnummer für die
+// ZieheFreienExemplarBarcode liefert die nächste freie Exemplarnummer für die
 // Handvergabe in der Exemplarkarte.
 //
 // Die Nummer ist danach verbraucht, auch wenn der Vorschlag nicht gespeichert wird.
 // Eine Lücke im Nummernkreis ist harmlos — eine doppelt vergebene Nummer nicht.
-func NaechsterFreierExemplarBarcode(ctx context.Context, db Datenbank) (string, error) {
+func ZieheFreienExemplarBarcode(ctx context.Context, db Datenbank) (string, error) {
 	barcodes, err := ZieheFreieExemplarBarcodes(ctx, db, 1)
 	if err != nil {
 		return "", err
@@ -64,7 +64,7 @@ func ZieheFreieExemplarBarcodes(ctx context.Context, db Datenbank, anzahl int) (
 		if err != nil {
 			return nil, err
 		}
-		belegt, err := belegteBarcodes(ctx, db, kandidaten)
+		belegt, err := ladeBelegteBarcodes(ctx, db, kandidaten)
 		if err != nil {
 			return nil, err
 		}
@@ -111,8 +111,8 @@ func zieheAusSequenz(ctx context.Context, db Datenbank, anzahl int) ([]string, e
 	return codes, nil
 }
 
-// belegteBarcodes meldet, welche der Kandidaten bereits an einem Exemplar hängen.
-func belegteBarcodes(ctx context.Context, db Datenbank, kandidaten []string) (map[string]bool, error) {
+// ladeBelegteBarcodes meldet, welche der Kandidaten bereits an einem Exemplar hängen.
+func ladeBelegteBarcodes(ctx context.Context, db Datenbank, kandidaten []string) (map[string]bool, error) {
 	rows, err := db.Query(ctx,
 		`SELECT barcode_id FROM buecher_exemplare WHERE barcode_id = ANY($1)`, kandidaten)
 	if err != nil {

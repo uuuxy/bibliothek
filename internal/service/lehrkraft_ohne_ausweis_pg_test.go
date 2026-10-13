@@ -42,7 +42,7 @@ func TestResolveBorrower_LehrkraftOhneAusweis(t *testing.T) {
 	})
 
 	svc := &defaultLoanService{pool: pool, studentRepo: repository.NewStudentRepository(pool)}
-	chk, err := svc.resolveBorrowerAndDueTime(ctx, &repository.BookCopy{}, &leserID)
+	chk, err := svc.resolveBorrowerAndDueTime(ctx, &repository.Exemplar{}, &leserID)
 	if err != nil {
 		t.Fatalf("eine aktive Lehrkraft ohne Ausweis muss ausleihen können, bekam: %v", err)
 	}

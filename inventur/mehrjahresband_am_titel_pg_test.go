@@ -13,8 +13,8 @@ import (
 
 // Mehrjahresband am Werk (Migration 134, Antwort der Schule vom 22.09.2026, docs/OFFEN.md
 // 9.6): Was die Maske über Anlegen und Ändern schreibt, muss an der Tür ankommen, die die
-// Fristregel liest — repository.GetCopyByBarcode füllt BookCopy.Mehrjahresband und
-// BookCopy.JahrgangBis, und daraus rechnet internal/service/loan_rules.go die Jahre über
+// Fristregel liest — repository.FindeExemplar füllt Exemplar.Mehrjahresband und
+// Exemplar.JahrgangBis, und daraus rechnet internal/service/loan_rules.go die Jahre über
 // den Stichtag hinaus. Der Einzel-Read (ListBooksByIDs) muss den Schalter ebenfalls liefern,
 // sonst zeigt die Maske nach dem Öffnen „aus" und schreibt das beim Speichern zurück
 // (Upsert-Blanking-Bugklasse). Rot gesehen am Rückbau beider Schreibpfade (22.09.2026).
@@ -43,7 +43,7 @@ func TestMehrjahresband_StehtAmWerkUndErreichtDieFristregel(t *testing.T) {
 
 	lies := func(schritt string) (fristAn bool, fristBis int, maskeAn bool) {
 		t.Helper()
-		ex, err := repository.NewBookRepository(pool).GetCopyByBarcode(ctx, "B-MJB-1")
+		ex, err := repository.NewKatalogAbfragen(pool).FindeExemplar(ctx, "B-MJB-1")
 		if err != nil || ex == nil {
 			t.Fatalf("%s: Exemplar laden: %v", schritt, err)
 		}

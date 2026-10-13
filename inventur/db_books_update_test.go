@@ -203,6 +203,6 @@ func TestSyncBookStock(t *testing.T) {
 // erwarteAussonderungsSpur erwartet den Protokolleintrag für die genannten Exemplare.
 func erwarteAussonderungsSpur(mock pgxmock.PgxPoolIface, exemplarIDs ...string) {
 	mock.ExpectExec(`INSERT INTO audit_log`).
-		WithArgs(exemplarIDs, "bearbeiter-1", repository.AussonderungsWegBestandskorrektur, repository.AuditAktionAusgesondert, "{}").
+		WithArgs(exemplarIDs, "bearbeiter-1", repository.AussonderungsWegBestandskorrektur, repository.ProtokollAktionAusgesondert, "{}").
 		WillReturnResult(pgxmock.NewResult("INSERT", int64(len(exemplarIDs))))
 }

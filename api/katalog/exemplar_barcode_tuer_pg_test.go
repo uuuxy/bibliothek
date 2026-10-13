@@ -40,7 +40,7 @@ func TestExemplarBarcodeAendern_UeberDieTuer(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		srv.UpdateCopyBarcodeHandler(repository.NewBookRepository(pool))(rec, req)
+		srv.UpdateCopyBarcodeHandler(repository.NewKatalogAbfragen(pool))(rec, req)
 		return rec
 	}
 

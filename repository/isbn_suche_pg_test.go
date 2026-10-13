@@ -13,7 +13,7 @@ func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 
 	const titel = "Advanced Organic Chemistry"
 	var id string
@@ -26,24 +26,24 @@ func TestSuche_FindetDenTitelUeberDieZehnstelligeISBN(t *testing.T) {
 	}
 
 	for _, suchtext := range []string{"0306406152", "0-306-40615-2", "9780306406157", "978-0-306-40615-7"} {
-		volltext, err := repo.SearchTitles(ctx, suchtext)
+		volltext, err := repo.FindeTitel(ctx, suchtext)
 		if err != nil {
-			t.Fatalf("SearchTitles(%q): %v", suchtext, err)
+			t.Fatalf("FindeTitel(%q): %v", suchtext, err)
 		}
 		if len(volltext) != 1 || volltext[0].Titel != titel {
-			t.Errorf("SearchTitles(%q): %d Treffer, erwartet den Titel %q", suchtext, len(volltext), titel)
+			t.Errorf("FindeTitel(%q): %d Treffer, erwartet den Titel %q", suchtext, len(volltext), titel)
 		}
-		tokenweise, gesamt, err := repo.SearchTitlesFuzzy(ctx, suchtext, 10)
+		tokenweise, gesamt, err := repo.FindeTitelUnscharf(ctx, suchtext, 10)
 		if err != nil {
-			t.Fatalf("SearchTitlesFuzzy(%q): %v", suchtext, err)
+			t.Fatalf("FindeTitelUnscharf(%q): %v", suchtext, err)
 		}
 		if len(tokenweise) != 1 || gesamt != 1 || tokenweise[0].Titel != titel {
-			t.Errorf("SearchTitlesFuzzy(%q): %d Treffer (gesamt %d), erwartet den Titel %q", suchtext, len(tokenweise), gesamt, titel)
+			t.Errorf("FindeTitelUnscharf(%q): %d Treffer (gesamt %d), erwartet den Titel %q", suchtext, len(tokenweise), gesamt, titel)
 		}
 	}
 
 	// Gegenprobe: Dieselben Ziffern mit falschem Prüfzeichen sind eine andere Nummer.
-	if treffer, err := repo.SearchTitles(ctx, "0306406153"); err != nil || len(treffer) != 0 {
-		t.Errorf("SearchTitles mit falschem Prüfzeichen: %d Treffer, %v — erwartet keinen", len(treffer), err)
+	if treffer, err := repo.FindeTitel(ctx, "0306406153"); err != nil || len(treffer) != 0 {
+		t.Errorf("FindeTitel mit falschem Prüfzeichen: %d Treffer, %v — erwartet keinen", len(treffer), err)
 	}
 }

@@ -59,7 +59,7 @@ func erbWege() []erbWeg {
 			}
 		}},
 		{"Bestellung", func(t *testing.T, pool *pgxpool.Pool, titel erbTitel) {
-			svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
+			svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 			if _, err := svc.ProcessOrder(ctx, service.BestellAuftrag{
 				Mittel:     mitteltopf.Land,
 				SupplierID: testdaten.Haendler(t, pool, "Händler "+titel.isbn, false),

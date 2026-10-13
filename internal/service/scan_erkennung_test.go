@@ -15,13 +15,13 @@ import (
 // unbekannte Nummer, und die Volltextsuche liefe los.
 func TestErkenneScan(t *testing.T) {
 	dbFehler := errors.New("verbindung weg")
-	exemplar := &repository.BookCopy{ID: "ex-1", TitelID: "titel-1", BarcodeID: "B-12345"}
-	altesEtikett := &repository.BookCopy{ID: "ex-2", TitelID: "titel-2", BarcodeID: "58968"}
+	exemplar := &repository.Exemplar{ID: "ex-1", TitelID: "titel-1", BarcodeID: "B-12345"}
+	altesEtikett := &repository.Exemplar{ID: "ex-2", TitelID: "titel-2", BarcodeID: "58968"}
 	leser := &repository.Student{ID: "leser-1", BarcodeID: "S-7"}
 
 	// nurUnter liefert das Exemplar genau für diesen Barcode.
-	nurUnter := func(barcode string, ex *repository.BookCopy) func(context.Context, string) (*repository.BookCopy, error) {
-		return func(_ context.Context, gefragt string) (*repository.BookCopy, error) {
+	nurUnter := func(barcode string, ex *repository.Exemplar) func(context.Context, string) (*repository.Exemplar, error) {
+		return func(_ context.Context, gefragt string) (*repository.Exemplar, error) {
 			if gefragt == barcode {
 				return ex, nil
 			}
@@ -32,7 +32,7 @@ func TestErkenneScan(t *testing.T) {
 	faelle := []struct {
 		name       string
 		wert       string
-		exemplare  func(context.Context, string) (*repository.BookCopy, error)
+		exemplare  func(context.Context, string) (*repository.Exemplar, error)
 		leser      *repository.Student
 		leserErr   error
 		soll       *ScanTreffer
@@ -59,7 +59,7 @@ func TestErkenneScan(t *testing.T) {
 		{name: "weder Exemplar noch Ausweis", wert: "unbekannt"},
 		{
 			name: "Fehler beim Exemplar", wert: "B-12345",
-			exemplare:  func(context.Context, string) (*repository.BookCopy, error) { return nil, dbFehler },
+			exemplare:  func(context.Context, string) (*repository.Exemplar, error) { return nil, dbFehler },
 			sollFehler: dbFehler,
 		},
 		{name: "Fehler beim Ausweis", wert: "S-7", leserErr: dbFehler, sollFehler: dbFehler},

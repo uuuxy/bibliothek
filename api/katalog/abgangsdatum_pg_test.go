@@ -37,7 +37,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	damageRepo := repository.NewSchadensAbfragen(pool)
 
@@ -57,7 +57,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	// Tür 1: die Repository-Methode des Status-Editors, direkt (POST /aussondern ist am
 	// 22.09.2026 gestrichen, OFFEN.md 4.16)
 	eins := testdaten.Exemplar(t, pool, titelID, "ABG-1", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, eins, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := bookRepo.AendereExemplarStatus(ctx, eins, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
 	}
 
@@ -100,7 +100,7 @@ func TestAbgangsdatum_JedeTuerStempelt(t *testing.T) {
 	}
 
 	for _, fall := range []struct{ name, id string }{
-		{"UpdateCopyStatus", eins},
+		{"AendereExemplarStatus", eins},
 		{"PUT /status", zwei},
 		{"Ausbuchen", drei},
 		{"Schaden melden", vier},
@@ -117,11 +117,11 @@ func TestAbgangsdatum_ZweitesUpdateVerschiebtNichts(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 
 	titelID := testdaten.TitelMitSignatur(t, pool, "Abgangs-Titel 2", "Abg 2", 0)
 	id := testdaten.Exemplar(t, pool, titelID, "ABG-STABIL", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := bookRepo.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
 	}
 	erst := abgangsdatum(t, pool, id)
@@ -138,8 +138,8 @@ func TestAbgangsdatum_ZweitesUpdateVerschiebtNichts(t *testing.T) {
 	alt := abgangsdatum(t, pool, id)
 
 	// Nochmal dieselbe Tür, und ein UPDATE, das die Spalte gar nicht nennt.
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err == nil {
-		// UpdateCopyStatus meldet bei einem bereits ausgesonderten Exemplar keinen Fehler;
+	if err := bookRepo.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err == nil {
+		// AendereExemplarStatus meldet bei einem bereits ausgesonderten Exemplar keinen Fehler;
 		// entscheidend ist der Stempel darunter.
 		_ = err
 	}
@@ -159,11 +159,11 @@ func TestAbgangsdatum_RueckholenLoeschtDenStempel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 
 	titelID := testdaten.TitelMitSignatur(t, pool, "Abgangs-Titel 3", "Abg 3", 0)
 	id := testdaten.Exemplar(t, pool, titelID, "ABG-ZURUECK", true, "")
-	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := bookRepo.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("Aussondern: %v", err)
 	}
 	if abgangsdatum(t, pool, id) == nil {

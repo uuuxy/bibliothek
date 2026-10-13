@@ -25,7 +25,7 @@ func TestAbholbereit_FaelltZurueckWennDasExemplarVerschwindet(t *testing.T) {
 	ex := seedSignaturMitExemplaren(t, pool, "Abholfach", 4)
 	schueler := seedSchueler(t, pool, "AF-1", "Mia", "7a")
 	bearbeiter := seedBearbeiter(t, pool)
-	books := NewBookRepository(pool)
+	books := NewKatalogAbfragen(pool)
 
 	tueren := []struct {
 		name string
@@ -45,7 +45,7 @@ func TestAbholbereit_FaelltZurueckWennDasExemplarVerschwindet(t *testing.T) {
 			_, err := pool.Exec(ctx, `DELETE FROM buecher_exemplare WHERE id = $1`, ex)
 			return err
 		}},
-		{"DecommissionCopy", ex[3], func(ex string) error { return books.UpdateCopyStatus(ctx, ex, false, true, "", nil, bearbeiter) }},
+		{"DecommissionCopy", ex[3], func(ex string) error { return books.AendereExemplarStatus(ctx, ex, false, true, "", nil, bearbeiter) }},
 	}
 	for _, tuer := range tueren {
 		var vID string

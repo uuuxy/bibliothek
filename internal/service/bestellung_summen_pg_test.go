@@ -19,7 +19,7 @@ func TestProcessOrder_ZweiPositionenZaehlenZusammen(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 
 	lieferant := testdaten.Haendler(t, pool, "Summen", false)
 	erster := testdaten.TitelMitMeldebestand(t, pool, "LMF-Summe Eins", 0)
@@ -65,7 +65,7 @@ func TestProcessOrder_OhneGueltigenTopfEntstehtNichts(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.Haendler(t, pool, "Ohne Topf", true)
 	titel := testdaten.TitelMitMeldebestand(t, pool, "LMF-Ohne-Topf", 0)
 
@@ -96,7 +96,7 @@ func TestProcessOrder_JedePositionStehtInIhrenSpalten(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewBookRepository(pool))
+	svc := service.NewOrderService(&db.Database{Pool: pool}, repository.NewKatalogAbfragen(pool))
 	lieferant := testdaten.Haendler(t, pool, "Spalten", false)
 	erster := testdaten.TitelMitMeldebestand(t, pool, "LMF-Spalte Eins", 0)
 	zweiter := testdaten.TitelMitMeldebestand(t, pool, "LMF-Spalte Zwei", 0)

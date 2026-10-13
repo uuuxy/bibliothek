@@ -57,7 +57,7 @@ type Book struct {
 	// vorhandenen unangetastet. Eine leere Liste ist eine Aussage — keine Schlagworte.
 	Schlagworte []string `json:"schlagworte"`
 	// Suchwoerter: die Wörter, über die die Katalogsuche im Browser den Titel findet —
-	// seine Schlagworte und die Verweise darauf (repository.SuchwoerterDerTitel). Nur in
+	// seine Schlagworte und die Verweise darauf (repository.LadeSuchwoerterDerTitel). Nur in
 	// der Katalogliste. Ein Suchindex, keine Anzeige und kein Schreibweg: Ein Verweis ist
 	// kein Schlagwort des Titels, und das Speichern liest das Feld nicht.
 	Suchwoerter []string `json:"suchwoerter,omitempty"`
@@ -69,7 +69,7 @@ type Book struct {
 	WerkID   string `json:"werkId,omitempty"`
 	WerkRang int    `json:"werkRang,omitempty"`
 	// Standorte: je Standort die Zahl der Exemplare im Bestand, die ihn tragen
-	// (repository.StandorteDerTitel, docs/OFFEN.md 5.53). Nur in der Katalogliste, für die
+	// (repository.LadeStandorteDerTitel, docs/OFFEN.md 5.53). Nur in der Katalogliste, für die
 	// Spalte „Standort" der Titel-Verwaltung; geändert wird der Standort am Exemplar.
 	Standorte []repository.StandortZahl `json:"standorte,omitempty"`
 }

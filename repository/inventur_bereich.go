@@ -25,7 +25,7 @@ func (s InventurBereich) dimensionen(start int) ([]string, []any) {
 	var args []any
 	platz := start
 	if s.Signatur != nil {
-		bedingungen = append(bedingungen, SignaturPraefixBedingung("t.signatur", platz))
+		bedingungen = append(bedingungen, signaturPraefixBedingung("t.signatur", platz))
 		args = append(args, *s.Signatur)
 		platz++
 	}

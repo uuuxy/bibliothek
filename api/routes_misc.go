@@ -21,7 +21,7 @@ func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/public/bestellung/{token}/bestaetigen", s.bestellung().OeffentlichBestaetigenHandler())
 }
 
-func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, omniboxSvc service.OmniboxService, nachbuchSvc service.NachbuchService) {
+func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.KatalogAbfragen, omniboxSvc service.OmniboxService, nachbuchSvc service.NachbuchService) {
 	// Central Omnibox Action Dispatcher.
 	// perform_actions (nicht view_students): das ist die Kiosk-/Terminal-Kernfunktion
 	// (Ausleihe/Rückgabe/Scan/Suche). So kann die Helfer-Rolle am Terminal arbeiten,

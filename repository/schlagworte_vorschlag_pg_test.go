@@ -43,7 +43,7 @@ func TestSchlagworteAusStichwoertern_NurWasDieEigeneListeKennt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := SchlagworteAusStichwoertern(ctx, pool, []string{
+	got, err := schlagworteAusStichwoertern(ctx, pool, []string{
 		"Jugendbuch", "Burgen", "  erste   liebe ", "KRIEG",
 		"Science Fiction", "Weltall", "TikTok", "Fantasy", "fantasy",
 	})
@@ -56,11 +56,11 @@ func TestSchlagworteAusStichwoertern_NurWasDieEigeneListeKennt(t *testing.T) {
 	}
 
 	// Das ganze Wort, kein Teil davon: „Kriegsende" ist nicht „Krieg".
-	if teil, err := SchlagworteAusStichwoertern(ctx, pool, []string{"Kriegsende"}); err != nil || len(teil) != 0 {
+	if teil, err := schlagworteAusStichwoertern(ctx, pool, []string{"Kriegsende"}); err != nil || len(teil) != 0 {
 		t.Errorf("„Kriegsende“: %q, %v — erwartet nichts", teil, err)
 	}
 
-	leer, err := SchlagworteAusStichwoertern(ctx, pool, nil)
+	leer, err := schlagworteAusStichwoertern(ctx, pool, nil)
 	if err != nil || leer == nil || len(leer) != 0 {
 		t.Errorf("ohne Stichwörter: %q, %v — erwartet eine leere Liste", leer, err)
 	}
@@ -81,7 +81,7 @@ func TestSchlagworte_ZerlegteUmlauteSindDasselbeWort(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := SchlagworteAusStichwoertern(ctx, pool, []string{zerlegt, "  gar\u0308ten "})
+	got, err := schlagworteAusStichwoertern(ctx, pool, []string{zerlegt, "  gar\u0308ten "})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestSchlagworteAusNormdaten_VorhandenUndNeu(t *testing.T) {
 	begriff := func(anzeige string, formen ...string) Normdatenbegriff {
 		return Normdatenbegriff{Anzeige: anzeige, Formen: append([]string{anzeige}, formen...)}
 	}
-	vorhanden, neu, err := SchlagworteAusNormdaten(ctx, pool, []Normdatenbegriff{
+	vorhanden, neu, err := schlagworteAusNormdaten(ctx, pool, []Normdatenbegriff{
 		begriff("Kafka <Franz>", "Kafka, Franz"),
 		begriff("weltkrieg <1939-1945>"), // der Verweis, klein geschrieben
 		begriff("Judo"),
@@ -162,7 +162,7 @@ func TestSchlagworteAusNormdaten_VorhandenUndNeu(t *testing.T) {
 
 	// Ein Begriff, dessen Anzeige ein Wort nennt, das über einen anderen Begriff schon unter
 	// den vorhandenen steht, wird nicht zusätzlich als neu angeboten.
-	doppeltV, doppeltN, err := SchlagworteAusNormdaten(ctx, pool, []Normdatenbegriff{
+	doppeltV, doppeltN, err := schlagworteAusNormdaten(ctx, pool, []Normdatenbegriff{
 		begriff("weltkrieg <1939-1945>"),
 		{Anzeige: "Zweiter Weltkrieg", Formen: []string{"Weltkrieg II"}},
 	})
@@ -173,7 +173,7 @@ func TestSchlagworteAusNormdaten_VorhandenUndNeu(t *testing.T) {
 		t.Errorf("vorhanden %q, neu %q — erwartet nur „Zweiter Weltkrieg“ unter den vorhandenen", doppeltV, doppeltN)
 	}
 
-	leerV, leerN, err := SchlagworteAusNormdaten(ctx, pool, nil)
+	leerV, leerN, err := schlagworteAusNormdaten(ctx, pool, nil)
 	if err != nil || leerV == nil || leerN == nil || len(leerV)+len(leerN) != 0 {
 		t.Errorf("ohne Begriffe: %q, %q, %v — erwartet zwei leere Listen", leerV, leerN, err)
 	}

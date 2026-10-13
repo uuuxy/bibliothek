@@ -46,7 +46,7 @@ func TestLoescheTitel_NimmtDasLokaleCoverMit(t *testing.T) {
 	zweiter := titelMit("Cover geteilt 2", geteilt)
 	fremd := titelMit("Cover im Netz", "https://portal.dnb.de/opac/mvb/cover?isbn=9783551551672")
 
-	nur, err := LokaleCoverNurDieserTitel(ctx, pool, []string{allein, erster, fremd})
+	nur, err := LadeLokaleCoverNurDieserTitel(ctx, pool, []string{allein, erster, fremd})
 	if err != nil {
 		t.Fatal(err)
 	}

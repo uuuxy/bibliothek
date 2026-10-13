@@ -10,7 +10,7 @@ import (
 
 // DesTitels lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr, Signatur) eines Titels.
 func DesTitels(ctx context.Context, datenbank repository.Datenbank, id string) ([]BarcodeLabelDetail, error) {
-	zeilen, err := repository.EtikettDatenDesTitels(ctx, datenbank, id)
+	zeilen, err := repository.LadeEtikettDatenDesTitels(ctx, datenbank, id)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func DesTitels(ctx context.Context, datenbank repository.Datenbank, id string) (
 // Exemplare, die bewusst ohne Vorab-Barcode bestellt wurden — die beklebt dann die
 // Bibliothek selbst, und beide würden dasselbe Buch bekleben.
 func DerBestellung(ctx context.Context, datenbank repository.Datenbank, bestellungID string) ([]BarcodeLabelDetail, error) {
-	zeilen, err := repository.EtikettDatenDerBestellung(ctx, datenbank, bestellungID)
+	zeilen, err := repository.LadeEtikettDatenDerBestellung(ctx, datenbank, bestellungID)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func ErgaenzeServerfelder(ctx context.Context, datenbank repository.Datenbank, i
 		return
 	}
 
-	bekannt, err := repository.EtikettServerfelderZuBarcodes(ctx, datenbank, barcodes)
+	bekannt, err := repository.LadeEtikettServerfelderZuBarcodes(ctx, datenbank, barcodes)
 	if err != nil {
 		if errors.Is(err, repository.ErrZeileUnlesbar) {
 			log.Printf("Etiketten: Serverfelder unvollständig gelesen: %v", err)

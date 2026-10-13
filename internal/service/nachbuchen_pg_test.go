@@ -53,7 +53,7 @@ func nbAufbau(t *testing.T) *nbWelt {
 	w.exemplarID = eins("Exemplar", `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, einkaufspreis) VALUES ($1, $2, true, 12.00) RETURNING id`, w.titelID, w.code)
 
 	studentRepo := repository.NewStudentRepository(pool)
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	w.svc = NewNachbuchService(pool, studentRepo, bookRepo, repository.NewKontoAbfragen(pool), loanRepo, auditRepo)

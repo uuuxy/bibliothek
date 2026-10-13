@@ -40,7 +40,7 @@ func LusdNamensSchluessel(vorname, nachname string) string {
 }
 
 // namensteilNorm ist die EINE Regel hinter beiden Schlüsseln: Ränder und Mehrfach-
-// Leerzeichen weg, dann die Normalform suchnorm (Migration 054, Go-Zwilling Suchnorm).
+// Leerzeichen weg, dann die Normalform suchnorm (Migration 054, Go-Zwilling suchnorm).
 // Bis 05.09.2026 stand hier nur lower+trim — „Anna Müller" von Hand angelegt wurde vom
 // Export „Anna Mueller" nie gefunden: Neuanlage plus „nicht im Export" statt Zuordnung.
 // Gefahrlos ist die weitere Regel, weil der Import einen doppelt belegten Schlüssel als
@@ -50,7 +50,7 @@ func LusdNamensSchluessel(vorname, nachname string) string {
 // „Anna" sind verschiedene Vornamen; die Umbenennungs-Paarung (internal/lusd/paarung.go)
 // hat dafür ihre eigene, weitere Regel mit menschlicher Bestätigung.
 func namensteilNorm(s string) string {
-	return Suchnorm(strings.Join(strings.Fields(s), " "))
+	return suchnorm(strings.Join(strings.Fields(s), " "))
 }
 
 // LusdBestandsSchueler ist eine nicht gelöschte schueler-Zeile, so wie der LUSD-Import

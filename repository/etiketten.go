@@ -30,10 +30,10 @@ type EtikettExemplar struct {
 	EtikettGedruckt bool
 }
 
-// ListeEtikettenExemplare liefert die Exemplare eines Status (offen, erledigt, alle), die
+// LadeEtikettenExemplare liefert die Exemplare eines Status (offen, erledigt, alle), die
 // neuesten zuerst und höchstens limit Zeilen; suche filtert über Titel und Barcode. Scheitert
 // das Lesen der Zeilen, trägt der Fehler ErrZeileUnlesbar.
-func ListeEtikettenExemplare(ctx context.Context, db Datenbank, status, suche string, limit int) ([]EtikettExemplar, error) {
+func LadeEtikettenExemplare(ctx context.Context, db Datenbank, status, suche string, limit int) ([]EtikettExemplar, error) {
 	statusBedingung := etikettenStatusBedingung(status)
 	rows, err := db.Query(ctx, `
 			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY-MM-DD'),

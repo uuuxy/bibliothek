@@ -63,18 +63,3 @@ func SQLTitelHatExemplar(titelAlias string) string {
 	return `EXISTS (SELECT 1 FROM buecher_exemplare hx
 		WHERE hx.titel_id = ` + titelAlias + `.id AND hx.ist_ausgesondert = false)`
 }
-
-// scanBookTitleMitBestand scannt die Standard-Spaltenliste und danach die beiden
-// Bestandszahlen. Getrennt von scanBookTitle, weil die übrigen Abfragen sie nicht
-// mitliefern — und ein Titel mit nil-Bestand sagt „nicht gezählt", nicht „keine da".
-func scanBookTitleMitBestand(row Scanner, zusatz ...any) (*BookTitle, error) {
-	var gesamt, verfuegbar, imZulauf int
-	t, err := scanBookTitleMitZusatz(row, append([]any{&gesamt, &verfuegbar, &imZulauf}, zusatz...)...)
-	if err != nil {
-		return nil, err
-	}
-	t.Bestand = &gesamt
-	t.Verfuegbar = &verfuegbar
-	t.ImZulauf = &imZulauf
-	return t, nil
-}

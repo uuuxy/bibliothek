@@ -52,23 +52,23 @@ func naechsteInterneNummer(t *testing.T, srv *Tueren) string {
 // Exemplare damit anlegen (service.ProcessOrder). Schlägt der Insert
 // fehl, kippt in der Anwendung die komplette Bestellung — deshalb ist der Insert hier
 // Teil der Prüfung und nicht nur der gezogene Barcode.
-func bestelleExemplare(t *testing.T, pool *pgxpool.Pool, repo repository.BookRepository, titelID string, menge int) []string {
+func bestelleExemplare(t *testing.T, pool *pgxpool.Pool, repo repository.KatalogAbfragen, titelID string, menge int) []string {
 	t.Helper()
 	ctx := context.Background()
 
-	barcodes, err := repo.GenerateBarcodes(ctx, menge)
+	barcodes, err := repo.ErzeugeBarcodes(ctx, menge)
 	if err != nil {
 		t.Fatalf("Barcodes für %d Exemplare ziehen: %v", menge, err)
 	}
-	kopien := make([]repository.BookCopyInsert, menge)
+	kopien := make([]repository.ExemplarNeu, menge)
 	for i, bc := range barcodes {
-		kopien[i] = repository.BookCopyInsert{TitelID: titelID, BarcodeID: bc}
+		kopien[i] = repository.ExemplarNeu{TitelID: titelID, BarcodeID: bc}
 	}
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatalf("Tx starten: %v", err)
 	}
-	if err := repo.BulkInsertCopiesTx(ctx, tx, kopien); err != nil {
+	if err := repo.LegeExemplareAn(ctx, tx, kopien); err != nil {
 		db.SafeRollback(ctx, tx)
 		t.Fatalf("Bestellung über %d Exemplare anlegen (Barcodes %v): %v", menge, barcodes, err)
 	}
@@ -112,7 +112,7 @@ func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Vergabe", 0)
 
@@ -122,7 +122,7 @@ func TestBarcodeVergabe_HandvergabeKollidiertNichtMitBestellung(t *testing.T) {
 	// 2. Ein Altbestands-Exemplar bekommt über den Knopf eine interne Nummer.
 	platzhalter := testdaten.Exemplar(t, pool, titel, "SYS-1", true, "")
 	handNummer := naechsteInterneNummer(t, srv)
-	if err := bookRepo.UpdateCopyBarcode(context.Background(), platzhalter, handNummer); err != nil {
+	if err := bookRepo.SetzeExemplarBarcode(context.Background(), platzhalter, handNummer); err != nil {
 		t.Fatalf("Handvergabe von %s: %v", handNummer, err)
 	}
 
@@ -167,7 +167,7 @@ func TestBarcodeVergabe_UeberspringtVonHandVergebeneNummern(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 
 	titel := testdaten.TitelMitMeldebestand(t, pool, "Barcode-Drift", 0)
 

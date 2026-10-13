@@ -39,7 +39,7 @@ func TestExemplarAbwertung_SchreibenLesenUndUnangetastet(t *testing.T) {
 	}
 
 	srv := &Tueren{Basis: &tuer.Basis{DB: &db.Database{Pool: pool}}}
-	statusTuer := srv.UpdateCopyStatusHandler(repository.NewBookRepository(pool), repository.NewBescheidAbfragen(pool))
+	statusTuer := srv.UpdateCopyStatusHandler(repository.NewKatalogAbfragen(pool), repository.NewBescheidAbfragen(pool))
 
 	setze := func(t *testing.T, koerper string) *httptest.ResponseRecorder {
 		t.Helper()

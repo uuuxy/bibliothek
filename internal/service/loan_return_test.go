@@ -58,7 +58,7 @@ func TestHandleRueckgabe_ReturnLoanTxError(t *testing.T) {
 		t.Fatalf("failed to begin tx: %v", err)
 	}
 
-	copy := &repository.BookCopy{ID: "copy1"}
+	copy := &repository.Exemplar{ID: "copy1"}
 	staffID := "staff1"
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
@@ -105,7 +105,7 @@ func TestHandleRueckgabe_CommitError(t *testing.T) {
 	expectedErr := errors.New("commit error")
 	mockPool.ExpectCommit().WillReturnError(expectedErr)
 
-	copy := &repository.BookCopy{ID: "copy1", TitelID: "t1"}
+	copy := &repository.Exemplar{ID: "copy1", TitelID: "t1"}
 	staffID := "staff1"
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
@@ -150,7 +150,7 @@ func TestHandleRueckgabe_Success(t *testing.T) {
 
 	mockPool.ExpectCommit()
 
-	copy := &repository.BookCopy{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
+	copy := &repository.Exemplar{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
 	staffID := "staff1"
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
@@ -213,7 +213,7 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 
 	mockPool.ExpectCommit()
 
-	copy := &repository.BookCopy{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
+	copy := &repository.Exemplar{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
 	staffID := "staff1"
 	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
 	// Mitarbeiter selbst ist, der das Buch zurückbringt.
@@ -245,7 +245,7 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 // ausgeliehen", und die Theke wiese eine Rückgabe ab, die es gibt.
 func TestHandleSimpleReturn_ReichtFehlerWeiter(t *testing.T) {
 	dbFehler := errors.New("verbindung weg")
-	exemplar := &repository.BookCopy{ID: "ex-1"}
+	exemplar := &repository.Exemplar{ID: "ex-1"}
 
 	t.Run("die Transaktion beginnt nicht", func(t *testing.T) {
 		svc := &defaultLoanService{loanRepo: &mockLoanRepoReturn{beginErr: dbFehler}}

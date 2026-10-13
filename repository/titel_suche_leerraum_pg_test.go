@@ -14,7 +14,7 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewBookRepository(pool)
+	repo := NewKatalogAbfragen(pool)
 
 	const gespeichert = "La Peste"
 	var id string
@@ -33,32 +33,32 @@ func TestSuche_LeerraumInFolgeTrenntSuchtextUndTitelNicht(t *testing.T) {
 		"Camus, Alb",
 		"Camus," + tabulator + "Alb",
 	} {
-		theke, err := repo.SearchTitles(ctx, suchtext)
+		theke, err := repo.FindeTitel(ctx, suchtext)
 		if err != nil {
-			t.Fatalf("SearchTitles(%+q): %v", suchtext, err)
+			t.Fatalf("FindeTitel(%+q): %v", suchtext, err)
 		}
 		if len(theke) != 1 || theke[0].Titel != gespeichert {
-			t.Errorf("SearchTitles(%+q): %d Treffer, erwartet den Titel %q", suchtext, len(theke), gespeichert)
+			t.Errorf("FindeTitel(%+q): %d Treffer, erwartet den Titel %q", suchtext, len(theke), gespeichert)
 		}
-		katalog, gesamt, err := SucheImKatalog(ctx, pool, KatalogSuche{
-			Sichtbar: KollegiumSichtbar("bt"), Suchtext: suchtext, Grenze: 10,
+		katalog, gesamt, err := FindeImKatalog(ctx, pool, KatalogSuche{
+			Sichtbar: SQLKollegiumSichtbar("bt"), Suchtext: suchtext, Grenze: 10,
 		})
 		if err != nil {
-			t.Fatalf("SucheImKatalog(%+q): %v", suchtext, err)
+			t.Fatalf("FindeImKatalog(%+q): %v", suchtext, err)
 		}
 		if len(katalog) != 1 || gesamt != 1 || katalog[0].Titel != gespeichert {
-			t.Errorf("SucheImKatalog(%+q): %d Treffer (gesamt %d), erwartet den Titel %q", suchtext, len(katalog), gesamt, gespeichert)
+			t.Errorf("FindeImKatalog(%+q): %d Treffer (gesamt %d), erwartet den Titel %q", suchtext, len(katalog), gesamt, gespeichert)
 		}
 	}
 
 	// Gegenprobe: Der Leerraum fällt nicht weg, zwei Wörter bleiben zwei.
-	if treffer, err := repo.SearchTitles(ctx, "LaPes"); err != nil || len(treffer) != 0 {
-		t.Errorf("SearchTitles ohne Leerzeichen: %d Treffer, %v — erwartet keinen", len(treffer), err)
+	if treffer, err := repo.FindeTitel(ctx, "LaPes"); err != nil || len(treffer) != 0 {
+		t.Errorf("FindeTitel ohne Leerzeichen: %d Treffer, %v — erwartet keinen", len(treffer), err)
 	}
 	// Ein Suchtext nur aus Leerraum ist kein Suchtext: Der Katalog antwortet leer.
-	if treffer, gesamt, err := SucheImKatalog(ctx, pool, KatalogSuche{
-		Sichtbar: KollegiumSichtbar("bt"), Suchtext: " " + geschuetzt + " ", Grenze: 10,
+	if treffer, gesamt, err := FindeImKatalog(ctx, pool, KatalogSuche{
+		Sichtbar: SQLKollegiumSichtbar("bt"), Suchtext: " " + geschuetzt + " ", Grenze: 10,
 	}); err != nil || len(treffer) != 0 || gesamt != 0 {
-		t.Errorf("SucheImKatalog nur mit Leerraum: %d Treffer (gesamt %d), %v — erwartet keinen", len(treffer), gesamt, err)
+		t.Errorf("FindeImKatalog nur mit Leerraum: %d Treffer (gesamt %d), %v — erwartet keinen", len(treffer), gesamt, err)
 	}
 }

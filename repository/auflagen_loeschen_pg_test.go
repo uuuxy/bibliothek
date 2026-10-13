@@ -38,7 +38,7 @@ func TestLoescheTitel_HaeltDieRegelDerAuflagen(t *testing.T) {
 	if n := werke(); n != 1 {
 		t.Errorf("nach dem Löschen der dritten Auflage: %d Werke — erwartet 1", n)
 	}
-	if auflagen, err := AuflagenDesTitels(ctx, pool, a); err != nil || len(auflagen) != 2 {
+	if auflagen, err := LadeAuflagenDesTitels(ctx, pool, a); err != nil || len(auflagen) != 2 {
 		t.Errorf("Auflagen nach dem Löschen: %+v, %v — erwartet zwei", auflagen, err)
 	}
 

@@ -14,9 +14,9 @@ func LegeSachgruppeAn(ctx context.Context, db Datenbank, kuerzel, bezeichnung st
 	return id, err
 }
 
-// SachgruppenBezeichnung liest die Bezeichnung einer Sachgruppe; pgx.ErrNoRows, wenn es die
+// LadeSachgruppenBezeichnung liest die Bezeichnung einer Sachgruppe; pgx.ErrNoRows, wenn es die
 // Kennung nicht gibt.
-func SachgruppenBezeichnung(ctx context.Context, db Datenbank, id string) (string, error) {
+func LadeSachgruppenBezeichnung(ctx context.Context, db Datenbank, id string) (string, error) {
 	var bezeichnung string
 	err := db.QueryRow(ctx,
 		`SELECT bezeichnung FROM systematik_kategorien WHERE id = $1::uuid`, id).Scan(&bezeichnung)

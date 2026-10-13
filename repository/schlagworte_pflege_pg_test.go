@@ -52,7 +52,7 @@ func woerterAm(t *testing.T, pool *pgxpool.Pool, titel string) []string {
 	if err := pool.QueryRow(context.Background(), `SELECT id FROM buecher_titel WHERE titel = $1`, titel).Scan(&id); err != nil {
 		t.Fatalf("Titel %q: %v", titel, err)
 	}
-	w, err := SchlagworteDesTitels(context.Background(), pool, id)
+	w, err := LadeSchlagworteDesTitels(context.Background(), pool, id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func woerterAm(t *testing.T, pool *pgxpool.Pool, titel string) []string {
 
 func pflegeZeile(t *testing.T, pool *pgxpool.Pool, wort string) SchlagwortPflegeZeile {
 	t.Helper()
-	liste, err := SchlagworteZurPflege(context.Background(), pool, wort)
+	liste, err := LadeSchlagworteZurPflege(context.Background(), pool, wort)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -411,7 +411,7 @@ func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ohne, err := SchlagworteZurPflege(ctx, pool, "")
+	ohne, err := LadeSchlagworteZurPflege(ctx, pool, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -425,7 +425,7 @@ func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
 			ohne.Gesamt, ohne.Verweise, ohne.Filter, ohne.Treffer)
 	}
 
-	pinguin, err := SchlagworteZurPflege(ctx, pool, "  ZWERGp ")
+	pinguin, err := LadeSchlagworteZurPflege(ctx, pool, "  ZWERGp ")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -438,7 +438,7 @@ func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
 	}
 
 	// Über den Verweis: die Zeile des Verweises und die seines Ziels.
-	frack, err := SchlagworteZurPflege(ctx, pool, "frackvogel")
+	frack, err := LadeSchlagworteZurPflege(ctx, pool, "frackvogel")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -452,7 +452,7 @@ func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
 	}
 
 	// Ein Prozentzeichen ist Text, kein Joker.
-	joker, err := SchlagworteZurPflege(ctx, pool, "%")
+	joker, err := LadeSchlagworteZurPflege(ctx, pool, "%")
 	if err != nil {
 		t.Fatal(err)
 	}

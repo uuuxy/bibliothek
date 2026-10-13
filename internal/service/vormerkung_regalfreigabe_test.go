@@ -24,7 +24,7 @@ func TestRegalfreigabe_AnderesExemplar(t *testing.T) {
 	defer mock.Close()
 	tx := beginTx(t, mock)
 
-	copyB := &repository.BookCopy{ID: "exB", TitelID: "titel1"}
+	copyB := &repository.Exemplar{ID: "exB", TitelID: "titel1"}
 
 	// Die gelöschte Vormerkung hatte Exemplar A bereitgestellt (nicht B).
 	mock.ExpectQuery(deleteVormerkungQuery).WithArgs("titel1", "s1").
@@ -53,7 +53,7 @@ func TestRegalfreigabe_SelbesExemplar(t *testing.T) {
 	defer mock.Close()
 	tx := beginTx(t, mock)
 
-	copyA := &repository.BookCopy{ID: "exA", TitelID: "titel1"}
+	copyA := &repository.Exemplar{ID: "exA", TitelID: "titel1"}
 
 	mock.ExpectQuery(deleteVormerkungQuery).WithArgs("titel1", "s1").
 		WillReturnRows(pgxmock.NewRows([]string{"bereitgestellt_exemplar_id"}).AddRow(strPtr("exA")))
@@ -80,7 +80,7 @@ func TestRegalfreigabe_KeineVormerkung(t *testing.T) {
 	defer mock.Close()
 	tx := beginTx(t, mock)
 
-	copyX := &repository.BookCopy{ID: "exX", TitelID: "titel9"}
+	copyX := &repository.Exemplar{ID: "exX", TitelID: "titel9"}
 
 	mock.ExpectQuery(deleteVormerkungQuery).WithArgs("titel9", "s1").
 		WillReturnError(pgx.ErrNoRows)

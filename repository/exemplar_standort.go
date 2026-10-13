@@ -26,13 +26,13 @@ import (
 // ExemplarStandortMaxZeichen ist die Länge, die chk_exemplar_standort zulässt (wie Litteras Feld).
 const ExemplarStandortMaxZeichen = 255
 
-// ExemplarStandortListeMax begrenzt eine Änderung wie ExemplarEigentumListeMax: Beide ändern,
+// exemplarStandortListeMax begrenzt eine Änderung wie exemplarEigentumListeMax: Beide ändern,
 // was die Buchakte markiert.
-const ExemplarStandortListeMax = ExemplarEigentumListeMax
+const exemplarStandortListeMax = exemplarEigentumListeMax
 
-// ExemplarStandorteMax kappt die Vorschlagsliste: Freitext kann sie wachsen lassen, und die
+// exemplarStandorteMax kappt die Vorschlagsliste: Freitext kann sie wachsen lassen, und die
 // seltensten Werte fallen dann zuerst heraus.
-const ExemplarStandorteMax = 1000
+const exemplarStandorteMax = 1000
 
 // ErrStandortUngueltig ist eine Eingabe, die die Tür nicht annimmt (400).
 var ErrStandortUngueltig = errors.New("standort ungültig")
@@ -197,8 +197,8 @@ func pruefeStandortAenderung(a StandortAenderung) error {
 	switch {
 	case len(a.ExemplarIDs) == 0:
 		return fmt.Errorf("%w: kein Exemplar gewählt", ErrStandortUngueltig)
-	case len(a.ExemplarIDs) > ExemplarStandortListeMax:
-		return fmt.Errorf("%w: höchstens %d Exemplare auf einmal", ErrStandortUngueltig, ExemplarStandortListeMax)
+	case len(a.ExemplarIDs) > exemplarStandortListeMax:
+		return fmt.Errorf("%w: höchstens %d Exemplare auf einmal", ErrStandortUngueltig, exemplarStandortListeMax)
 	case utf8.RuneCountInString(a.Standort) > ExemplarStandortMaxZeichen:
 		return fmt.Errorf("%w: höchstens %d Zeichen", ErrStandortUngueltig, ExemplarStandortMaxZeichen)
 	case a.BearbeiterID == "":
@@ -207,17 +207,17 @@ func pruefeStandortAenderung(a StandortAenderung) error {
 	return nil
 }
 
-// ExemplarStandorte nennt die Standorte, die an Exemplaren im Bestand vorkommen, den
+// LadeExemplarStandorte nennt die Standorte, die an Exemplaren im Bestand vorkommen, den
 // häufigsten zuerst — die Vorschläge des Dialogs „Standort ändern". Ein Wert, den nur noch
 // ausgesonderte Exemplare tragen, wird nicht mehr vorgeschlagen.
-func ExemplarStandorte(ctx context.Context, q Datenbank) ([]StandortZahl, error) {
+func LadeExemplarStandorte(ctx context.Context, q Datenbank) ([]StandortZahl, error) {
 	rows, err := q.Query(ctx, `
 		SELECT e.standort, count(*)::int
 		FROM buecher_exemplare e
 		WHERE e.standort IS NOT NULL AND `+SQLExemplarImBestand+`
 		GROUP BY e.standort
 		ORDER BY count(*) DESC, e.standort
-		LIMIT $1`, ExemplarStandorteMax)
+		LIMIT $1`, exemplarStandorteMax)
 	if err != nil {
 		return nil, fmt.Errorf("standorte lesen: %w", err)
 	}
@@ -236,11 +236,11 @@ func ExemplarStandorte(ctx context.Context, q Datenbank) ([]StandortZahl, error)
 	return liste, nil
 }
 
-// StandorteDerTitel zählt je Titel die Standorte seiner Exemplare im Bestand, für die Spalte
+// LadeStandorteDerTitel zählt je Titel die Standorte seiner Exemplare im Bestand, für die Spalte
 // „Standort" der Titel-Verwaltung. Dieselbe Grenze wie die Zahl „Bestand" daneben
 // (SQLExemplarImBestand): Die Zahlen einer Zeile sind höchstens so groß wie ihr Bestand. Ein
 // Titel ohne Standort steht nicht in der Antwort.
-func StandorteDerTitel(ctx context.Context, q Datenbank, titelIDs []string) (map[string][]StandortZahl, error) {
+func LadeStandorteDerTitel(ctx context.Context, q Datenbank, titelIDs []string) (map[string][]StandortZahl, error) {
 	jeTitel := make(map[string][]StandortZahl)
 	if len(titelIDs) == 0 {
 		return jeTitel, nil

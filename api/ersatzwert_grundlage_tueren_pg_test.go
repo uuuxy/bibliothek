@@ -102,7 +102,7 @@ func TestErsatzwert_BerechnungsgrundlageGiltAnJederTuer(t *testing.T) {
 			Ersatzwert *float64 `json:"ersatzwert"`
 			Herleitung string   `json:"ersatzwert_herleitung"`
 		}
-		rufe(t, srv.katalog().UpdateCopyStatusHandler(repository.NewBookRepository(pool), bescheidRepo), http.MethodPut,
+		rufe(t, srv.katalog().UpdateCopyStatusHandler(repository.NewKatalogAbfragen(pool), bescheidRepo), http.MethodPut,
 			"/api/buecher/exemplare/"+exID+"/status",
 			`{"ist_ausleihbar":true,"ist_ausgesondert":false,"zustand_notiz":""}`, exID, &status)
 		if status.Ersatzwert == nil {

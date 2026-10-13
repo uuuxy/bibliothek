@@ -6,7 +6,7 @@ import "testing"
 // auch immer, sonst der Titeltext. Der Titeltext zählt auch für eine Zeile mit ISBN, weil der
 // Bestand denselben Titel ohne ISBN führen kann.
 func TestTitelBestand_TitelZu(t *testing.T) {
-	b := NeuerTitelBestand()
+	b := NewTitelBestand()
 	b.Merke("9783060619000", "Deutschbuch 9", "id-deutsch")
 	b.Merke("", "Faust", "id-faust")
 	b.Merke("3-12-733771-X", "Lambacher Schweizer 7", "id-mathe") // zehnstellig mit Bindestrichen
@@ -37,7 +37,7 @@ func TestTitelBestand_TitelZu(t *testing.T) {
 // Ein nachgetragener Titel ersetzt, was unter derselben ISBN oder demselben Titeltext stand:
 // Der Lauf hat ihn eben angelegt, und die folgenden Zeilen der Datei meinen ihn.
 func TestTitelBestand_MerkeErsetzt(t *testing.T) {
-	b := NeuerTitelBestand()
+	b := NewTitelBestand()
 	b.Merke("9783060619000", "Deutschbuch 9", "id-alt")
 	b.Merke("978-3-06-061900-0", "Deutschbuch 9", "id-neu")
 	if id, _ := b.TitelZu("9783060619000", ""); id != "id-neu" {

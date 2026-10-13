@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.BookRepository, auditRepo repository.ProtokollAbfragen) {
+func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.KatalogAbfragen, auditRepo repository.ProtokollAbfragen) {
 	// ── BUECHER (Titles & Copies) ──
 	mux.Handle("DELETE /api/buecher/titel/{id}", s.RequirePermission("delete_books")(s.katalog().DeleteTitleHandler(auditRepo)))
 	// Bestellkorb-Korrektur der Signatur (create_orders, nicht edit_books — dieselbe

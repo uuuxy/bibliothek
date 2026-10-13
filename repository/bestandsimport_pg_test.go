@@ -58,7 +58,7 @@ func TestLadeTitelBestand_BeiDoppelterISBNGiltDieNormalform(t *testing.T) {
 			if ist := bestand.nachISBN[f.normal]; ist != idNormal {
 				t.Errorf("unter %s steht der Titel %s, erwartet der Titel in Normalform %s", f.normal, ist, idNormal)
 			}
-			if ist := bestand.nachTitel[NormalisiereTitelKey("Bestand-Probe Normalform")]; ist != idNormal {
+			if ist := bestand.nachTitel[NormalisiereTitelSchluessel("Bestand-Probe Normalform")]; ist != idNormal {
 				t.Errorf("unter dem Titeltext steht %s, erwartet %s", ist, idNormal)
 			}
 			if _, da := bestand.nachISBN[f.alt]; da {
@@ -70,7 +70,7 @@ func TestLadeTitelBestand_BeiDoppelterISBNGiltDieNormalform(t *testing.T) {
 
 // Der Katalog-Import legt einen neuen Titel mit jedem Feld des Datensatzes an. Jedes Feld trägt
 // einen eigenen Wert: Mit gleichen fiele nicht auf, wenn zwei vertauscht ankämen.
-func TestBulkUpsertBookTitles_JedesFeldEinesNeuenTitelsKommtAn(t *testing.T) {
+func TestSchreibeTitel_JedesFeldEinesNeuenTitelsKommtAn(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	const isbn, fach = "9780000562029", "Importfach Felderkunde"
@@ -85,16 +85,16 @@ func TestBulkUpsertBookTitles_JedesFeldEinesNeuenTitelsKommtAn(t *testing.T) {
 	raeume()
 	t.Cleanup(raeume)
 
-	neu := BookTitle{
+	neu := Titel{
 		Titel: "Felder-Probe Katalog", Autor: "Autorin im Katalog", ISBN: isbn, Verlag: "Verlag im Katalog",
 		Erscheinungsjahr: 2017, Signatur: "LMF Fel 5-6", IstLernmittel: true, Fach: fach,
 		JahrgangVon: 5, JahrgangBis: 6,
 	}
-	if _, err := NewBookRepository(pool).BulkUpsertBookTitles(ctx, []BookTitle{neu}); err != nil {
+	if _, err := NewKatalogAbfragen(pool).SchreibeTitel(ctx, []Titel{neu}); err != nil {
 		t.Fatalf("Import: %v", err)
 	}
 
-	var ist BookTitle
+	var ist Titel
 	if err := pool.QueryRow(ctx, `
 		SELECT titel, coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0),
 		       coalesce(signatur, ''), ist_lernmittel, coalesce(subject, ''), coalesce(jahrgang_von, 0),

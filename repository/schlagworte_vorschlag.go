@@ -13,12 +13,12 @@ import (
 // lange Antwort von der Datenbank fern.
 const schlagwortStichwoerterMax = 300
 
-// SchlagworteAusStichwoertern gleicht die Stichwörter eines DNB-Satzes (Gattungsbegriffe und
+// schlagworteAusStichwoertern gleicht die Stichwörter eines DNB-Satzes (Gattungsbegriffe und
 // Verlagswörter, inventur.MetadatenErgebnis.Stichwoerter) gegen die eigene Liste ab —
 // der Schlagwort-Vorschlag beim Bestellen per ISBN (docs/OFFEN.md 4.20). Vorgeschlagen wird
 // nur, was es schon gibt: ein Schlagwort, das mindestens ein Titel trägt, oder ein Verweis
 // darauf, aufgelöst zu seinem Ziel („Science Fiction" → „Science-Fiction"). Dieselbe Regel
-// wie die Vorschlagsliste beim Tippen (SchlagwortVorschlaege: ein Wort ohne Titel ist meist
+// wie die Vorschlagsliste beim Tippen (FindeSchlagwortVorschlaege: ein Wort ohne Titel ist meist
 // ein Tippfehler, der nicht weiterleben soll) und dieselbe Auflösung wie der Schreibpfad
 // (coalesce(verweis_auf, id)).
 //
@@ -27,7 +27,7 @@ const schlagwortStichwoerterMax = 300
 // Umlaute zusammengesetzt) — kein Teilstring: „Krieg" soll nicht „Kriegsende" vorschlagen.
 // Die Antwort ist alphabetisch und ohne Doppelte; leer, wenn nichts passt. Geschrieben wird
 // nichts: Das Ja gibt ein Mensch.
-func SchlagworteAusStichwoertern(ctx context.Context, q Datenbank, stichwoerter []string) ([]string, error) {
+func schlagworteAusStichwoertern(ctx context.Context, q Datenbank, stichwoerter []string) ([]string, error) {
 	treffer, err := listenZiele(ctx, q, stichwoerter)
 	if err != nil {
 		return nil, fmt.Errorf("schlagwort-vorschlag aus stichwörtern: %w", err)
@@ -50,7 +50,7 @@ type Normdatenbegriff struct {
 	Formen  []string
 }
 
-// SchlagworteAusNormdaten gleicht die Normdatei-Begriffe eines DNB-Satzes gegen die eigene Liste
+// schlagworteAusNormdaten gleicht die Normdatei-Begriffe eines DNB-Satzes gegen die eigene Liste
 // ab (entschieden am 30.09.2026, docs/OFFEN.md 4.25). Steht ein Begriff in einer seiner Formen in
 // der Liste — als Wort mit Titeln oder als Verweis darauf —, kommt er zu vorhanden, aufgelöst zu
 // seinem Ziel wie beim Stichwort-Vorschlag. Sonst kommt er zu neu, in der Anzeige-Form: Die
@@ -59,7 +59,7 @@ type Normdatenbegriff struct {
 // 56 davon schon in der Liste, die übrigen wie „Judo", „Oslo", „Schulstress"). Ein Wort, das zu
 // lang für die Liste wäre, wird nicht angeboten. Beide Antworten sind alphabetisch, ohne
 // Doppelte und nie nil; eingetragen wird nur, was jemand anklickt.
-func SchlagworteAusNormdaten(ctx context.Context, q Datenbank, begriffe []Normdatenbegriff) (vorhanden, neu []string, err error) {
+func schlagworteAusNormdaten(ctx context.Context, q Datenbank, begriffe []Normdatenbegriff) (vorhanden, neu []string, err error) {
 	var formen []string
 	for _, b := range begriffe {
 		formen = append(formen, b.Formen...)
@@ -79,7 +79,7 @@ func SchlagworteAusNormdaten(ctx context.Context, q Datenbank, begriffe []Normda
 		}
 	}
 	vorhanden = alphabetischOhneDoppelte(vorhanden)
-	return vorhanden, neueOhneVorhandene(neuRoh, vorhanden), nil
+	return vorhanden, ohneVorhandene(neuRoh, vorhanden), nil
 }
 
 // listenZiel nennt das Wort der Liste, das die erste dort stehende Form des Begriffs trifft;
@@ -93,9 +93,9 @@ func listenZiel(b Normdatenbegriff, treffer map[string]string) string {
 	return ""
 }
 
-// neueOhneVorhandene liefert die neuen Wörter alphabetisch, ohne Doppelte und ohne die, die
+// ohneVorhandene liefert die neuen Wörter alphabetisch, ohne Doppelte und ohne die, die
 // schon unter den vorhandenen stehen; nie nil.
-func neueOhneVorhandene(neuRoh, vorhanden []string) []string {
+func ohneVorhandene(neuRoh, vorhanden []string) []string {
 	schonDa := make(map[string]bool, len(vorhanden))
 	for _, w := range vorhanden {
 		schonDa[strings.ToLower(w)] = true
@@ -150,24 +150,24 @@ func listenZiele(ctx context.Context, q Datenbank, roh []string) (map[string]str
 
 // SchlagwortVorschlagAusDNB ist der ganze Schlagwort-Vorschlag zu einem DNB-Satz: liste sind die
 // Wörter der eigenen Liste, die der Satz als Gattung, Verlagswort oder Normdatei-Schlagwort nennt
-// (SchlagworteAusStichwoertern, SchlagworteAusNormdaten), neu die Normdatei-Wörter, die die Liste
+// (schlagworteAusStichwoertern, schlagworteAusNormdaten), neu die Normdatei-Wörter, die die Liste
 // noch nicht kennt. Die eine Regel für beide Türen: das Anlegen beim Bestellen (POST
 // /api/buecher/aus-isbn) und den Vorschlag im Buchformular und beim Nachbestellen (GET
 // /api/schlagworte/dnb-vorschlag, entschieden am 30.09.2026). Beide Listen nie nil.
 func SchlagwortVorschlagAusDNB(ctx context.Context, q Datenbank, stichwoerter []string, normdaten []Normdatenbegriff) (liste, neu []string, err error) {
-	ausStichwoertern, err := SchlagworteAusStichwoertern(ctx, q, stichwoerter)
+	ausStichwoertern, err := schlagworteAusStichwoertern(ctx, q, stichwoerter)
 	if err != nil {
 		return nil, nil, err
 	}
-	ausNormdaten, neu, err := SchlagworteAusNormdaten(ctx, q, normdaten)
+	ausNormdaten, neu, err := schlagworteAusNormdaten(ctx, q, normdaten)
 	if err != nil {
 		return nil, nil, err
 	}
-	return SchlagworteZusammen(ausStichwoertern, ausNormdaten), neu, nil
+	return schlagworteZusammen(ausStichwoertern, ausNormdaten), neu, nil
 }
 
-// SchlagworteZusammen führt Vorschlagslisten zu einer zusammen: alphabetisch, ohne Doppelte.
-func SchlagworteZusammen(listen ...[]string) []string {
+// schlagworteZusammen führt Vorschlagslisten zu einer zusammen: alphabetisch, ohne Doppelte.
+func schlagworteZusammen(listen ...[]string) []string {
 	var alle []string
 	for _, l := range listen {
 		alle = append(alle, l...)

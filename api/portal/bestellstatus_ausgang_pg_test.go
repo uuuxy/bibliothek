@@ -17,7 +17,7 @@ import (
 // immer weg (Bestands-Durchgang 10.09.2026, Bugklasse „Zustands-Ausgang ohne Räumer").
 //
 // Die zwei Türen, die das nicht taten:
-//   - der Status-Editor der Buchakte (UpdateCopyStatus) — ein angekommenes Buch auf
+//   - der Status-Editor der Buchakte (AendereExemplarStatus) — ein angekommenes Buch auf
 //     „verfügbar" gestellt statt über den Wareneingang: ausleihbar, aber nirgends gezählt;
 //   - das Aussondern (DecommissionCopy) — ein Buch, das der Händler nicht liefert: Es
 //     blieb für immer im Wareneingang, und „alle einbuchen" machte das AUSGESONDERTE
@@ -26,7 +26,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	testdaten.ResetBestandsdaten(t, pool)
-	books := repository.NewBookRepository(pool)
+	books := repository.NewKatalogAbfragen(pool)
 
 	zulauf := func(titel, barcode string) string {
 		t.Helper()
@@ -52,8 +52,8 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 
 	// 1. Status-Editor: auf „verfügbar" gestellt → kein Zulauf mehr, im OPAC gezählt.
 	frei := zulauf("Zulauf-Editor-Titel", "ZL-EDIT")
-	if err := books.UpdateCopyStatus(ctx, frei, true, false, "", nil, ""); err != nil {
-		t.Fatalf("UpdateCopyStatus: %v", err)
+	if err := books.AendereExemplarStatus(ctx, frei, true, false, "", nil, ""); err != nil {
+		t.Fatalf("AendereExemplarStatus: %v", err)
 	}
 	if s := bestellstatus(frei); s != nil {
 		t.Errorf("Status-Editor ließ bestellstatus=%q stehen", *s)
@@ -64,7 +64,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 
 	// 2. Aussondern: kein Zulauf mehr, nicht im Wareneingang, und einbuchen belebt es nicht.
 	weg := zulauf("Zulauf-Storno-Titel", "ZL-STORNO")
-	if err := books.UpdateCopyStatus(ctx, weg, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+	if err := books.AendereExemplarStatus(ctx, weg, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("DecommissionCopy: %v", err)
 	}
 	if s := bestellstatus(weg); s != nil {

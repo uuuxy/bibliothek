@@ -67,7 +67,7 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 	w.exemplarID = testdaten.Exemplar(t, pool, titelID, w.code, true, "")
 
 	studentRepo := repository.NewStudentRepository(pool)
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanRepo := repository.NewAusleihAbfragen(pool)
 	auditRepo := repository.NewProtokollAbfragen(pool)
 	userRepo := repository.NewKontoAbfragen(pool)

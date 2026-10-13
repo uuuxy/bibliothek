@@ -17,15 +17,15 @@ import (
 // die Theke lädt.
 
 type routingBookRepo struct {
-	repository.BookRepository
-	copies map[string]*repository.BookCopy
+	repository.KatalogAbfragen
+	copies map[string]*repository.Exemplar
 }
 
-func (r *routingBookRepo) GetCopyByBarcode(_ context.Context, barcode string) (*repository.BookCopy, error) {
+func (r *routingBookRepo) FindeExemplar(_ context.Context, barcode string) (*repository.Exemplar, error) {
 	return r.copies[barcode], nil
 }
 
-func (r *routingBookRepo) SearchTitles(_ context.Context, _ string) ([]repository.BookTitle, error) {
+func (r *routingBookRepo) FindeTitel(_ context.Context, _ string) ([]repository.Titel, error) {
 	return nil, nil
 }
 
@@ -43,7 +43,7 @@ func (r *routingStudentRepo) GetLeserByBarcode(_ context.Context, barcode string
 // ohne das bestehende Buch-Routing oder die Volltextsuche zu stören.
 func TestProcessQuery_AusweisOhnePraefix(t *testing.T) {
 	svc := &defaultOmniboxService{
-		bookRepo: &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
 			"20240001737": {ID: "s1", BarcodeID: "20240001737", Vorname: "Mia", Nachname: "Muster"},
 		}},
@@ -62,7 +62,7 @@ func TestProcessQuery_AusweisOhnePraefix(t *testing.T) {
 // die weder Buch- noch Ausweis-Barcode sind, weiterhin in der Volltextsuche landen.
 func TestProcessQuery_UnbekannteNummerFaelltAufSuche(t *testing.T) {
 	svc := &defaultOmniboxService{
-		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
 	}
 
@@ -93,7 +93,7 @@ func (r *routingStudentRepo) GetLeserByID(_ context.Context, id string) (*reposi
 // leer, und der Klick tat nichts.
 func TestProcessQuery_LeserAusDerTrefferliste(t *testing.T) {
 	svc := &defaultOmniboxService{
-		bookRepo: &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo: &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
 			"ohne-ausweis": {ID: "l1", Vorname: "Hendrik", Nachname: "Wendlandt", Art: "liv"},
 		}},
@@ -113,7 +113,7 @@ func TestProcessQuery_LeserAusDerTrefferliste(t *testing.T) {
 // „keine Treffer", und an der Theke sähe es aus, als sei der Klick ins Leere gegangen.
 func TestProcessQuery_LeserIDUnbekannt(t *testing.T) {
 	svc := &defaultOmniboxService{
-		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		bookRepo:    &routingBookRepo{copies: map[string]*repository.Exemplar{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
 	}
 

@@ -29,9 +29,9 @@ func TestStatistik_NieEingetroffenesIstKeinVerlust(t *testing.T) {
 		[]string{nie, imBestand}); err != nil {
 		t.Fatalf("Preis setzen: %v", err)
 	}
-	buecher := repository.NewBookRepository(pool)
+	buecher := repository.NewKatalogAbfragen(pool)
 	for _, id := range []string{nie, imBestand} {
-		if err := buecher.UpdateCopyStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
+		if err := buecher.AendereExemplarStatus(ctx, id, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 			t.Fatalf("als verloren ausbuchen: %v", err)
 		}
 	}

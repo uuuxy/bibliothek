@@ -143,7 +143,7 @@ func TestDeleteBooks(t *testing.T) {
 }
 
 // erwarteAuflagenSperre: DeleteBooks nimmt als ERSTES die Sperre der Auflagen und liest die
-// Werke der Titel (repository.WerkeDerTitel, docs/OFFEN.md 4.18) — hier gehört keiner zu
+// Werke der Titel (repository.LadeWerkeDerTitel, docs/OFFEN.md 4.18) — hier gehört keiner zu
 // einem, also räumt repository.RaeumeWerkeAuf danach nichts auf.
 func erwarteAuflagenSperre(mock pgxmock.PgxPoolIface, ids any) {
 	mock.ExpectExec(`SELECT pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).

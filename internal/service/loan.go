@@ -69,7 +69,7 @@ type LoanResult struct {
 	// Type spezifiziert die Art des Ergebnisses (z. B. "ausleihe", "rueckgabe", "info").
 	Type string
 	// Book enthält die Daten des betroffenen Buchexemplars.
-	Book *repository.BookCopy
+	Book *repository.Exemplar
 	// Student ist das Schülerprofil, falls die Aktion für einen Schüler durchgeführt wurde.
 	Student *repository.Student
 	// Teacher ist das Benutzerprofil, falls die Aktion für eine Lehrkraft durchgeführt wurde.
@@ -106,19 +106,19 @@ type LoanService interface {
 	// HandleUnifiedCheckout wickelt die Ausleihe eines Buchexemplars an den aktiven Leser ab.
 	// Falls das Exemplar bereits von jemand anderem ausgeliehen war, wird dieses zuerst automatisch zurückgegeben
 	// (Fremdrückgabe) und danach für den neuen Ausleiher verbucht.
-	HandleUnifiedCheckout(ctx context.Context, copy *repository.BookCopy, activeLeserID *string, staffID string, overrideBlock bool) (*LoanResult, error)
+	HandleUnifiedCheckout(ctx context.Context, copy *repository.Exemplar, activeLeserID *string, staffID string, overrideBlock bool) (*LoanResult, error)
 
 	// HandleSimpleReturn wickelt die direkte Rückgabe eines Buchexemplars ab (ohne dass ein neuer Ausleiher aktiv ist).
 	// Ein freies Exemplar ist hier ein Fehler: Ausgeliehen wird über den Ausweis, nicht
 	// dadurch, dass ein angemeldetes Konto ein Buch in die Hand nimmt.
-	HandleSimpleReturn(ctx context.Context, copy *repository.BookCopy, staffID string) (*LoanResult, error)
+	HandleSimpleReturn(ctx context.Context, copy *repository.Exemplar, staffID string) (*LoanResult, error)
 }
 
 // defaultLoanService implementiert den LoanService unter Verwendung von Repositories.
 type defaultLoanService struct {
 	pool        db.PgxPoolIface
 	studentRepo repository.StudentRepository
-	bookRepo    repository.BookRepository
+	bookRepo    repository.KatalogAbfragen
 	loanRepo    repository.AusleihAbfragen
 	auditRepo   repository.ProtokollAbfragen
 	// userRepo löst Lehrerausweise auf, die offline gescannt wurden (nur die Nachbuch-Tür
@@ -139,7 +139,7 @@ func (s *defaultLoanService) heute() time.Time {
 }
 
 // NewLoanService erzeugt eine neue Instanz des standardmäßigen LoanService.
-func NewLoanService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) LoanService {
+func NewLoanService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.KatalogAbfragen, loanRepo repository.AusleihAbfragen, auditRepo repository.ProtokollAbfragen) LoanService {
 	return &defaultLoanService{
 		pool:        pool,
 		studentRepo: studentRepo,

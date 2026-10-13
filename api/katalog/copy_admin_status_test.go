@@ -38,7 +38,7 @@ func neuerCopyStatusAufbau(t *testing.T) (pgxmock.PgxPoolIface, http.HandlerFunc
 	t.Cleanup(mock.Close)
 
 	server := &Tueren{Basis: &tuer.Basis{}}
-	return mock, server.UpdateCopyStatusHandler(repository.NewBookRepository(mock), repository.NewBescheidAbfragen(mock))
+	return mock, server.UpdateCopyStatusHandler(repository.NewKatalogAbfragen(mock), repository.NewBescheidAbfragen(mock))
 }
 
 func sendeStatusUpdate(t *testing.T, handler http.HandlerFunc, body string) *httptest.ResponseRecorder {
@@ -56,7 +56,7 @@ func sendeStatusUpdate(t *testing.T, handler http.HandlerFunc, body string) *htt
 // statusBearbeiter ist die Person, unter der die Tests speichern.
 const statusBearbeiter = "bearbeiter-1"
 
-// erwarteStatusSpeichern erwartet den Ablauf von UpdateCopyStatus bis zur Anweisung: die
+// erwarteStatusSpeichern erwartet den Ablauf von AendereExemplarStatus bis zur Anweisung: die
 // Transaktion, den Stand vor dem Wechsel unter Sperre und die Anweisung selbst.
 func erwarteStatusSpeichern(mock pgxmock.PgxPoolIface, muster string, args ...any) {
 	mock.ExpectBegin()
@@ -72,7 +72,7 @@ func TestUpdateCopyStatus_AussondernFuehrtGrundMit(t *testing.T) {
 	erwarteStatusSpeichern(mock, updateCopyStatusPattern, false, true, "Wasserschaden", "ex-1", (*int)(nil))
 	// Der Wechsel in „ausgesondert" steht mit der Person im Protokoll, ohne die Notiz.
 	mock.ExpectExec(`INSERT INTO audit_log`).
-		WithArgs([]string{"ex-1"}, statusBearbeiter, repository.AussonderungsWegStatus, repository.AuditAktionAusgesondert, "{}").
+		WithArgs([]string{"ex-1"}, statusBearbeiter, repository.AussonderungsWegStatus, repository.ProtokollAktionAusgesondert, "{}").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 

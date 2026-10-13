@@ -28,7 +28,7 @@ type SignaturGruppe struct {
 // Die frühere Tabelle `signatures` war eine zweite, ungepflegte Wahrheit: Sie kannte
 // Namen, die an keinem Buch hingen, und kannte die Signaturen der Bücher nicht.
 //
-// Zusammengefasst wird nach der Regaladresse (repository.SQLSignaturRegaladresse): „LMF Deu 7
+// Zusammengefasst wird nach der Regaladresse (repository.sqlSignaturRegaladresse): „LMF Deu 7
 // / Bie" und „LMF Deu 7 / Gri" stehen im selben Regal. Das Kürzel dahinter ordnet in Littera
 // innerhalb des Regals (Vorgabe: die ersten drei Buchstaben des Verfassers) und gehört meist
 // zu einem einzigen Titel; als Vorschlag für ein neues Buch und als Bereich einer Inventur
@@ -43,7 +43,7 @@ type SignaturGruppe struct {
 // @Router       /signaturen [get]
 func (s *Tueren) GetSignaturenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		zeilen, err := repository.ListeSignaturGruppen(r.Context(), s.DB.Pool)
+		zeilen, err := repository.LadeSignaturGruppen(r.Context(), s.DB.Pool)
 		if err != nil {
 			if errors.Is(err, repository.ErrZeileUnlesbar) {
 				return apierrors.Internal("Signaturzeile unlesbar", err)
@@ -83,7 +83,7 @@ type SignaturBuecherResponse struct {
 // GetSignaturBuecherHandler liefert die Titel unter einer Signatur — in Regalreihenfolge.
 //
 // Die Signatur wird als PRÄFIX verstanden. Das Prädikat kommt aus
-// repository.SignaturPraefixBedingung — derselben Funktion, aus der sich auch der
+// repository.signaturPraefixBedingung — derselben Funktion, aus der sich auch der
 // Inventur-Scope speist. Zwei eigene Kopien wären hier auseinandergelaufen, und der
 // Unterschied fiele erst auf, wenn eine Inventur andere Bücher bucht, als die
 // Regalansicht zeigt.
@@ -104,7 +104,7 @@ func (s *Tueren) GetSignaturBuecherHandler() http.HandlerFunc {
 			return apierrors.BadRequest("signatur ist erforderlich", errors.New("leere signatur"))
 		}
 
-		zeilen, err := repository.ListeBuecherUnterSignatur(r.Context(), s.DB.Pool, signatur, signaturBuecherLimit+1)
+		zeilen, err := repository.LadeTitelUnterSignatur(r.Context(), s.DB.Pool, signatur, signaturBuecherLimit+1)
 		if err != nil {
 			if errors.Is(err, repository.ErrZeileUnlesbar) {
 				return apierrors.Internal("Buchzeile unlesbar", err)

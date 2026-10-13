@@ -9,7 +9,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// Suchnorm ist der Go-Zwilling der SQL-Funktion suchnorm(text) aus Migration 054 —
+// suchnorm ist der Go-Zwilling der SQL-Funktion suchnorm(text) aus Migration 054 —
 // die EINE Normalform für Namensvergleiche in diesem Projekt. Zwei Schritte wie dort:
 //
 //  1. Kleinschreibung, dann Diakritika weg (unaccent): Öztürk → ozturk, García → garcia,
@@ -39,7 +39,7 @@ import (
 // TestSuchnorm_ZeichenDurchlaufGoUndSQL prüft jedes Zeichen dieser Blöcke gegen die
 // Datenbank. Ändert ein Postgres-Upgrade die unaccent-Regeln, wird er rot, und die
 // Tabelle wird aus seiner Ausgabe nachgezogen.
-func Suchnorm(s string) string {
+func suchnorm(s string) string {
 	var b strings.Builder
 	for _, r := range strings.ToLower(s) {
 		if ersatz, ok := unaccentTabelle[r]; ok {

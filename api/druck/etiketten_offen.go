@@ -64,7 +64,7 @@ func etikettenSuchtext(r *http.Request) string {
 // @Router       /exemplare/etiketten-offen [get]
 func (s *Tueren) EtikettenOffenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		zeilen, err := repository.ListeEtikettenExemplare(r.Context(), s.DB.Pool,
+		zeilen, err := repository.LadeEtikettenExemplare(r.Context(), s.DB.Pool,
 			r.URL.Query().Get("status"), etikettenSuchtext(r), etikettenOffenLimit)
 		if err != nil {
 			if errors.Is(err, repository.ErrZeileUnlesbar) {

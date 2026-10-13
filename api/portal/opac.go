@@ -61,7 +61,7 @@ func (s *Tueren) PublicCatalogSearchHandler() http.HandlerFunc {
 			return
 		}
 
-		treffer, gesamt, err := repository.SucheImKatalog(r.Context(), s.DB.Pool, repository.KatalogSuche{
+		treffer, gesamt, err := repository.FindeImKatalog(r.Context(), s.DB.Pool, repository.KatalogSuche{
 			Sichtbar: repository.OeffentlichSichtbar("bt"),
 			Suchtext: q,
 			Grenze:   opacGrenze,

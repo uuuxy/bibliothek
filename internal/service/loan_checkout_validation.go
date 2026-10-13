@@ -39,7 +39,7 @@ func (c *checkoutContext) istSchueler() bool {
 // hieß sie „Lehrerausleihe = Dauerleihgabe". Gespeichert wird das Jahr, aber die Ausleihe
 // eines Kollegen ist eine Dauerleihe: Sie wird nie überfällig, und die Akte zeigt „ohne
 // Frist" (entschieden am 16.09.2026).
-func (s *defaultLoanService) resolveBorrowerAndDueTime(ctx context.Context, copy *repository.BookCopy, leserID *string) (*checkoutContext, error) {
+func (s *defaultLoanService) resolveBorrowerAndDueTime(ctx context.Context, copy *repository.Exemplar, leserID *string) (*checkoutContext, error) {
 	if leserID == nil || *leserID == "" {
 		return nil, meldung(ErrInvalidState, "Kein Leser aktiv")
 	}

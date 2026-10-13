@@ -70,7 +70,7 @@ func (s *Tueren) BuchbarcodesHandler() http.HandlerFunc {
 		// ohne die Liste zu lesen. Ein unveränderter Bestand spart damit die ganze
 		// Auslieferung. Ausgesonderte zählen nicht mit: Sie fehlen auch in der Liste,
 		// also muss ihr Wegfallen den Stand ändern.
-		kennzahl, err := repository.LiesBuchbarcodeStand(ctx, s.DB.Pool)
+		kennzahl, err := repository.LadeBuchbarcodeStand(ctx, s.DB.Pool)
 		if err != nil {
 			return apierrors.Internal("Buch-Barcodes konnten nicht gezählt werden", err)
 		}
@@ -91,7 +91,7 @@ func (s *Tueren) BuchbarcodesHandler() http.HandlerFunc {
 			return nil
 		}
 
-		barcodes, err := repository.ListeBuchbarcodes(ctx, s.DB.Pool, kennzahl.Anzahl)
+		barcodes, err := repository.LadeBuchbarcodes(ctx, s.DB.Pool, kennzahl.Anzahl)
 		if err != nil {
 			return apierrors.Internal("Buch-Barcodes konnten nicht gelesen werden", err)
 		}

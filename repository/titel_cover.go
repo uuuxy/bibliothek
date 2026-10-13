@@ -10,16 +10,16 @@ import (
 	"bibliothek/pkg/coverablage"
 )
 
-// titelCoverLeser ist, was LokaleCoverNurDieserTitel braucht: eine Transaktion oder der Pool.
+// titelCoverLeser ist, was LadeLokaleCoverNurDieserTitel braucht: eine Transaktion oder der Pool.
 type titelCoverLeser interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
 
-// LokaleCoverNurDieserTitel liefert die lokal gespeicherten Cover (/uploads/…) der Titel,
+// LadeLokaleCoverNurDieserTitel liefert die lokal gespeicherten Cover (/uploads/…) der Titel,
 // die kein weiterer Titel trägt: die Dateien, die nach dem Löschen dieser Titel niemandem
 // mehr gehören. Beide Lösch-Türen eines Titels fragen hier, vor dem Löschen und in derselben
 // Transaktion; entfernt werden die Dateien erst nach dem Commit (LoescheCoverDateien).
-func LokaleCoverNurDieserTitel(ctx context.Context, q titelCoverLeser, ids []string) ([]string, error) {
+func LadeLokaleCoverNurDieserTitel(ctx context.Context, q titelCoverLeser, ids []string) ([]string, error) {
 	rows, err := q.Query(ctx, `
 		SELECT t.cover_url FROM buecher_titel t
 		WHERE t.id = ANY($1::uuid[]) AND t.cover_url LIKE '/uploads/%'
@@ -71,9 +71,9 @@ type TitelMitISBN struct {
 	ISBN string
 }
 
-// TitelFuerCoverAbgleich liest die Titel aus CoverAbgleichAuswahl. Die Zeilen sind gelesen und
+// LadeTitelFuerCoverAbgleich liest die Titel aus CoverAbgleichAuswahl. Die Zeilen sind gelesen und
 // geschlossen, bevor der Abgleich je Titel schreibt.
-func TitelFuerCoverAbgleich(ctx context.Context, db Datenbank) ([]TitelMitISBN, error) {
+func LadeTitelFuerCoverAbgleich(ctx context.Context, db Datenbank) ([]TitelMitISBN, error) {
 	rows, err := db.Query(ctx, CoverAbgleichAuswahl)
 	if err != nil {
 		return nil, err

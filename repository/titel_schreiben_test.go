@@ -8,11 +8,11 @@ import (
 
 const testQUpdate = "UPDATE"
 
-func neuerUpsertContext() *titelUpsertContext {
-	return &titelUpsertContext{
-		bestand:   NeuerTitelBestand(),
-		seenISBN:  map[string]bool{},
-		seenTitel: map[string]bool{},
+func neuerUpsertContext() *titelSchreibLauf {
+	return &titelSchreibLauf{
+		bestand:       NewTitelBestand(),
+		geseheneISBN:  map[string]bool{},
+		geseheneTitel: map[string]bool{},
 	}
 }
 
@@ -20,12 +20,12 @@ func neuerUpsertContext() *titelUpsertContext {
 // legt Titel OHNE ISBN an. Kommt danach das MAB2-XML mit ISBN, muss der Datensatz
 // über den TITEL gematcht werden (UPDATE mit ISBN-Nachtrag) — vor dem Fix wurde
 // nur über die ISBN gematcht und für jeden CSV-Titel eine Dublette angelegt.
-func TestQueueTitelUpsert_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
+func TestReiheTitelEin_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
 	c := neuerUpsertContext()
 	c.bestand.nachTitel["LMF-Deutschbuch 9"] = "id-bestand"
 
 	batch := &pgx.Batch{}
-	ok := queueTitelUpsert(batch, BookTitle{
+	ok := reiheTitelEin(batch, Titel{
 		Titel: "LMF-Deutschbuch 9", ISBN: "9783060619000", Signatur: "De 9",
 	}, c, testQUpdate)
 
@@ -46,17 +46,17 @@ func TestQueueTitelUpsert_TitelFallbackBeiUnbekannterISBN(t *testing.T) {
 
 // Eine Datei mit ISBN-Variante und ISBN-loser Variante desselben Titels darf nur
 // EINEN Insert erzeugen.
-func TestQueueTitelUpsert_InBatchDedupUeberVarianten(t *testing.T) {
+func TestReiheTitelEin_InBatchDedupUeberVarianten(t *testing.T) {
 	c := neuerUpsertContext()
 	batch := &pgx.Batch{}
 
-	if ok := queueTitelUpsert(batch, BookTitle{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate); !ok {
+	if ok := reiheTitelEin(batch, Titel{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate); !ok {
 		t.Fatal("erster Datensatz muss eingereiht werden")
 	}
-	if ok := queueTitelUpsert(batch, BookTitle{Titel: "Faust"}, c, testQUpdate); ok {
+	if ok := reiheTitelEin(batch, Titel{Titel: "Faust"}, c, testQUpdate); ok {
 		t.Error("ISBN-lose Variante desselben Titels muss als In-Batch-Dublette übersprungen werden")
 	}
-	if ok := queueTitelUpsert(batch, BookTitle{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate); ok {
+	if ok := reiheTitelEin(batch, Titel{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate); ok {
 		t.Error("identische ISBN muss als In-Batch-Dublette übersprungen werden")
 	}
 	if len(batch.QueuedQueries) != 1 {
@@ -68,7 +68,7 @@ func TestQueueTitelUpsert_InBatchDedupUeberVarianten(t *testing.T) {
 // (PDF-CSV: `""South Africa"""`, XML: `"South Africa"`). Der Matching-Schlüssel
 // muss beide Varianten auf denselben Wert abbilden — sonst legt jeder Import
 // eine Dublette an. Der gespeicherte Titel bleibt davon unberührt.
-func TestNormalisiereTitelKey(t *testing.T) {
+func TestNormalisiereTitelSchluessel(t *testing.T) {
 	tests := []struct {
 		in, want string
 	}{
@@ -83,20 +83,20 @@ func TestNormalisiereTitelKey(t *testing.T) {
 		{"Anha\u0308nge und Register", "Anh\u00e4nge und Register"},
 	}
 	for _, tt := range tests {
-		if got := NormalisiereTitelKey(tt.in); got != tt.want {
-			t.Errorf("NormalisiereTitelKey(%+q) = %+q, want %+q", tt.in, got, tt.want)
+		if got := NormalisiereTitelSchluessel(tt.in); got != tt.want {
+			t.Errorf("NormalisiereTitelSchluessel(%+q) = %+q, want %+q", tt.in, got, tt.want)
 		}
 	}
 }
 
 // Titel, die sich nur in der Anführungszeichen-Kodierung unterscheiden, müssen
 // dieselbe Bestandszeile treffen (UPDATE statt INSERT-Dublette).
-func TestQueueTitelUpsert_QuoteVariantenMatchen(t *testing.T) {
+func TestReiheTitelEin_QuoteVariantenMatchen(t *testing.T) {
 	c := neuerUpsertContext()
-	c.bestand.nachTitel[NormalisiereTitelKey(`"Kein Bock auf Lernen?"`)] = "id-quoted"
+	c.bestand.nachTitel[NormalisiereTitelSchluessel(`"Kein Bock auf Lernen?"`)] = "id-quoted"
 
 	batch := &pgx.Batch{}
-	ok := queueTitelUpsert(batch, BookTitle{Titel: `Kein Bock auf Lernen?`}, c, testQUpdate)
+	ok := reiheTitelEin(batch, Titel{Titel: `Kein Bock auf Lernen?`}, c, testQUpdate)
 
 	if !ok || batch.QueuedQueries[0].SQL != testQUpdate || batch.QueuedQueries[0].Arguments[0] != "id-quoted" {
 		t.Errorf("Quote-Variante muss die bestehende Zeile updaten, got ok=%v %v", ok, batch.QueuedQueries[0])
@@ -104,13 +104,13 @@ func TestQueueTitelUpsert_QuoteVariantenMatchen(t *testing.T) {
 }
 
 // ISBN-Match hat Vorrang vor dem Titel-Match: existieren beide, gewinnt die ISBN-Zeile.
-func TestQueueTitelUpsert_ISBNVorTitel(t *testing.T) {
+func TestReiheTitelEin_ISBNVorTitel(t *testing.T) {
 	c := neuerUpsertContext()
 	c.bestand.nachISBN["978-1"] = "id-isbn"
 	c.bestand.nachTitel["Faust"] = "id-titel"
 
 	batch := &pgx.Batch{}
-	queueTitelUpsert(batch, BookTitle{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate)
+	reiheTitelEin(batch, Titel{Titel: "Faust", ISBN: "978-1"}, c, testQUpdate)
 
 	if q := batch.QueuedQueries[0]; q.SQL != testQUpdate || q.Arguments[0] != "id-isbn" {
 		t.Errorf("erwartet UPDATE auf id-isbn, got %q %v", q.SQL, q.Arguments[0])

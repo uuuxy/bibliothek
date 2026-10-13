@@ -190,7 +190,7 @@ func SetzeSchlagworte(ctx context.Context, q Datenbank, titelID string, roh []st
 		return nil, fmt.Errorf("schlagworte verbinden: %w", err)
 	}
 
-	gespeichert, err := SchlagworteDesTitels(ctx, tx, titelID)
+	gespeichert, err := LadeSchlagworteDesTitels(ctx, tx, titelID)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func SetzeSchlagworte(ctx context.Context, q Datenbank, titelID string, roh []st
 	return gespeichert, nil
 }
 
-// SchlagworteDesTitels liefert die Schlagworte eines Titels alphabetisch, in der
+// LadeSchlagworteDesTitels liefert die Schlagworte eines Titels alphabetisch, in der
 // gespeicherten Schreibweise. Ohne Wörter eine leere Liste, nie nil: Das Formular
 // schickt, was es gelesen hat, zurück — und „leer" muss dort als [] ankommen, nicht als
 // „nichts gesagt".
@@ -208,7 +208,7 @@ func SetzeSchlagworte(ctx context.Context, q Datenbank, titelID string, roh []st
 // Ein unbekannter Titel ist ErrTitelNichtGefunden, keine leere Liste: Die Abfrage geht
 // vom Titel aus, und ohne Titel gibt es keine Zeile. Sonst bekäme ein Aufrufer mit einer
 // falschen Kennung „keine Schlagworte" als Erfolg gemeldet.
-func SchlagworteDesTitels(ctx context.Context, q Datenbank, titelID string) ([]string, error) {
+func LadeSchlagworteDesTitels(ctx context.Context, q Datenbank, titelID string) ([]string, error) {
 	var woerter []string
 	err := q.QueryRow(ctx, `
 		SELECT coalesce(array_agg(s.wort ORDER BY lower(s.wort)) FILTER (WHERE s.id IS NOT NULL), '{}')
@@ -232,7 +232,7 @@ type SchlagwortZahl struct {
 	Titel int    `json:"titel"`
 }
 
-// SchlagwortVorschlaege liefert die Wörter, die mindestens ein Titel trägt. Ohne Suche die
+// FindeSchlagwortVorschlaege liefert die Wörter, die mindestens ein Titel trägt. Ohne Suche die
 // häufigsten zuerst, gekappt auf schlagwortVorschlaegeMax. Mit Suche die Wörter, die den
 // Text enthalten — über alle Wörter, ohne Rücksicht auf Groß- und Kleinschreibung, wie die
 // Suche der Pflegeseite (strpos über lower(), kein LIKE-Joker) —, die mit dem Text
@@ -242,7 +242,7 @@ type SchlagwortZahl struct {
 // wieder entfernt — meist ein Tippfehler, der nicht als Vorschlag weiterleben soll.
 // Verweise tragen keine Titel und fehlen deshalb ebenso; wer einen tippt, bekommt beim
 // Speichern sein Ziel (SetzeSchlagworte).
-func SchlagwortVorschlaege(ctx context.Context, q Datenbank, suche string) ([]SchlagwortZahl, error) {
+func FindeSchlagwortVorschlaege(ctx context.Context, q Datenbank, suche string) ([]SchlagwortZahl, error) {
 	suche = schlagwortNormalform(suche)
 	grenze := schlagwortVorschlaegeMax
 	if suche != "" {

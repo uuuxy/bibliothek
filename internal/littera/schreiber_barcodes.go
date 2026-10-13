@@ -139,7 +139,7 @@ func (s *Schreiber) vorhandeneBarcodes(ctx context.Context) (map[string]bool, er
 // vergebeNeueBarcodes zieht die fehlenden Nummern aus barcode_seq.
 //
 // Bewusst aus der Postgres-Sequenz und nicht aus einem Zähler in Go: Aus derselben
-// Sequenz bedient sich die laufende Anwendung (repository/book_inventory.go). Ein
+// Sequenz bedient sich die laufende Anwendung (repository/barcode_vergabe.go). Ein
 // eigener Zähler im Werkzeug wäre am Tag nach dem Import wieder eingeholt worden.
 func (s *Schreiber) vergebeNeueBarcodes(
 	ctx context.Context, exemplare []Exemplar, belegt map[string]bool, zuweisung map[string]string,

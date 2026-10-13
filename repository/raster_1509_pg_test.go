@@ -39,12 +39,12 @@ func TestRaster_StandMerkerUebersiehtLangeTransaktion(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET zustand_notiz = 'kurz' WHERE id = $1`, y.exemplarID); err != nil {
 		t.Fatalf("kurzer Schreiber: %v", err)
 	}
-	vorher, err := LiesBuchbarcodeStand(ctx, pool)
+	vorher, err := LadeBuchbarcodeStand(ctx, pool)
 	if err != nil {
 		t.Fatalf("Stand vorher: %v", err)
 	}
 
-	// Die lange Transaktion etikettiert X um (wie UpdateCopyBarcode) und committet danach.
+	// Die lange Transaktion etikettiert X um (wie SetzeExemplarBarcode) und committet danach.
 	neu := fmt.Sprintf("B-RASTER-%d", time.Now().UnixNano())
 	if _, err := lang.Exec(ctx, `UPDATE buecher_exemplare SET barcode_id = $1, aktualisiert_am = CURRENT_TIMESTAMP WHERE id = $2`, neu, x.exemplarID); err != nil {
 		t.Fatalf("umetikettieren: %v", err)
@@ -52,11 +52,11 @@ func TestRaster_StandMerkerUebersiehtLangeTransaktion(t *testing.T) {
 	if err := lang.Commit(ctx); err != nil {
 		t.Fatalf("commit: %v", err)
 	}
-	nachher, err := LiesBuchbarcodeStand(ctx, pool)
+	nachher, err := LadeBuchbarcodeStand(ctx, pool)
 	if err != nil {
 		t.Fatalf("Stand nachher: %v", err)
 	}
-	liste, err := ListeBuchbarcodes(ctx, pool, 0)
+	liste, err := LadeBuchbarcodes(ctx, pool, 0)
 	if err != nil {
 		t.Fatalf("Liste: %v", err)
 	}

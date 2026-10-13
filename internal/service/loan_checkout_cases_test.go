@@ -23,7 +23,7 @@ func TestHandleNewLoan_Student_Success(t *testing.T) {
 	defer mock.Close()
 
 	studentRepo := repository.NewStudentRepository(mock)
-	bookRepo := repository.NewBookRepository(mock)
+	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
@@ -34,7 +34,7 @@ func TestHandleNewLoan_Student_Success(t *testing.T) {
 	tx := beginTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
-	copy := &repository.BookCopy{ID: uuidCopy, TitelID: "titel1"}
+	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
 		borrowerID: "student1",
 		leser:      &repository.Student{ID: "student1", Vorname: "Max", Art: "schueler"},
@@ -89,7 +89,7 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 	defer mock.Close()
 
 	studentRepo := repository.NewStudentRepository(mock)
-	bookRepo := repository.NewBookRepository(mock)
+	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
@@ -100,7 +100,7 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 	tx := beginTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
-	copy := &repository.BookCopy{ID: uuidCopy, TitelID: "titel1"}
+	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
 		borrowerID: "teacher1",
 		leser:      &repository.Student{ID: "teacher1", Vorname: "Anna", Art: "lehrkraft"},
@@ -150,7 +150,7 @@ func TestHandleNewLoan_ErzeugeAusleiheError(t *testing.T) {
 	defer mock.Close()
 
 	studentRepo := repository.NewStudentRepository(mock)
-	bookRepo := repository.NewBookRepository(mock)
+	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
@@ -161,7 +161,7 @@ func TestHandleNewLoan_ErzeugeAusleiheError(t *testing.T) {
 	tx := beginTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
-	copy := &repository.BookCopy{ID: uuidCopy, TitelID: "titel1"}
+	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
 		borrowerID: "student1",
 		leser:      &repository.Student{ID: "student1", Vorname: "Max", Art: "schueler"},
@@ -198,7 +198,7 @@ func TestHandleNewLoan_CommitError(t *testing.T) {
 	defer mock.Close()
 
 	studentRepo := repository.NewStudentRepository(mock)
-	bookRepo := repository.NewBookRepository(mock)
+	bookRepo := repository.NewKatalogAbfragen(mock)
 	loanRepo := repository.NewAusleihAbfragen(mock)
 	auditRepo := repository.NewProtokollAbfragen(mock)
 	svc, ok := NewLoanService(mock, studentRepo, bookRepo, loanRepo, auditRepo).(*defaultLoanService)
@@ -209,7 +209,7 @@ func TestHandleNewLoan_CommitError(t *testing.T) {
 	tx := beginTx(t, mock)
 
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
-	copy := &repository.BookCopy{ID: uuidCopy, TitelID: "titel1"}
+	copy := &repository.Exemplar{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
 		borrowerID: "teacher1",
 		leser:      &repository.Student{ID: "teacher1", Vorname: "Anna", Art: "lehrkraft"},

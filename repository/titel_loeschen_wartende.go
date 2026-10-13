@@ -57,9 +57,9 @@ type wartendeAbfrager interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
 
-// LeseWartendeBezuege sammelt Vormerkungen, Klassensatz-Reservierungen und
+// LadeWartendeBezuege sammelt Vormerkungen, Klassensatz-Reservierungen und
 // Klassensatz-Zuordnungen der Titel — VOR dem Löschen, denn danach sind sie weg.
-func LeseWartendeBezuege(ctx context.Context, q wartendeAbfrager, ids []string) ([]WartenderBezug, error) {
+func LadeWartendeBezuege(ctx context.Context, q wartendeAbfrager, ids []string) ([]WartenderBezug, error) {
 	var alle []WartenderBezug
 
 	// Nur offene Vormerkungen: Eine erledigte Zeile beschreibt einen abgeschlossenen

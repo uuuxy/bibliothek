@@ -14,7 +14,7 @@ import (
 //   - am Server (Titel-Verwaltung, öffentlicher Katalog und Portal) als Bedingung,
 //     SQLTitelUeberSchlagwort;
 //   - im Browser (Medienkatalog „Suche & Filter" lädt die ganze Liste und filtert selbst)
-//     als Wörter je Titel, SuchwoerterDerTitel.
+//     als Wörter je Titel, LadeSuchwoerterDerTitel.
 //
 // Beide lösen ein Wort so auf wie der Schreibpfad SetzeSchlagworte: coalesce(verweis_auf, id).
 // Ein Schlagwort steht für sich, ein Verweis für sein Ziel.
@@ -41,14 +41,14 @@ func SQLTitelUeberSchlagwort(titelAlias, muster string) string {
 		WHERE sw.wort ILIKE '%' || ` + muster + ` || '%')`
 }
 
-// SQLTitelMitSchlagwort ist die Bedingung „der Titel trägt das Wort mit dieser Kennung" —
+// sqlTitelMitSchlagwort ist die Bedingung „der Titel trägt das Wort mit dieser Kennung" —
 // der Filter im Portal. kennung ist der SQL-Ausdruck eines Parameters; die Unterabfrage
 // hängt dann nicht vom Titel ab, und Postgres rechnet sie einmal je Suche. Sie geht über
 // dieselbe Zuordnung wie die Suche und die Liste der Filter (sqlWortZumTitel). Ein
 // Filterwort ist nie ein Verweis (chk_schlagwort_verweis_kein_filter), die Auflösung
 // ändert für es also nichts; Liste und gefilterte Suche lesen aber dieselbe Zuordnung und
 // können nicht auseinanderlaufen.
-func SQLTitelMitSchlagwort(titelAlias, kennung string) string {
+func sqlTitelMitSchlagwort(titelAlias, kennung string) string {
 	return titelAlias + `.id IN (
 		SELECT tsw.titel_id FROM ` + sqlWortZumTitel + `
 		WHERE sw.id = ` + kennung + `)`
@@ -60,13 +60,13 @@ type SchlagwortFilter struct {
 	Wort string `json:"wort"`
 }
 
-// SuchwoerterDerTitel liefert je Titel die Wörter, über die er gefunden wird: seine
+// LadeSuchwoerterDerTitel liefert je Titel die Wörter, über die er gefunden wird: seine
 // Schlagworte und die Verweise darauf, alphabetisch. Ein Titel ohne Schlagworte fehlt in
 // der Antwort.
 //
 // Das ist ein Suchindex, keine Anzeige: Ein Verweis ist kein Schlagwort des Titels. Was am
-// Titel steht, liefert SchlagworteDesTitels.
-func SuchwoerterDerTitel(ctx context.Context, q Datenbank, titelIDs []string) (map[string][]string, error) {
+// Titel steht, liefert LadeSchlagworteDesTitels.
+func LadeSuchwoerterDerTitel(ctx context.Context, q Datenbank, titelIDs []string) (map[string][]string, error) {
 	woerter := make(map[string][]string)
 	if len(titelIDs) == 0 {
 		return woerter, nil

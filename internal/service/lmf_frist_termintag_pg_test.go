@@ -26,7 +26,7 @@ func TestLmfFrist_AmOderNachDemRueckgabeterminGiltDasFolgendeSchuljahr(t *testin
 	rueckgabePlanJuni2027(t, pool)
 
 	svc := &defaultLoanService{pool: pool}
-	schulbuch := &repository.BookCopy{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
+	schulbuch := &repository.Exemplar{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 	tag := func(d string) time.Time {
 		x, err := time.ParseInLocation("2006-01-02", d, schulzeit.Zone())
 		if err != nil {
@@ -116,7 +116,7 @@ func TestLmfFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 	rueckgabePlanJuni2027(t, pool)
 
 	svc := &defaultLoanService{pool: pool}
-	band := &repository.BookCopy{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", Mehrjahresband: true, JahrgangBis: 11}
+	band := &repository.Exemplar{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", Mehrjahresband: true, JahrgangBis: 11}
 	tag := func(d string) time.Time {
 		x, err := time.ParseInLocation("2006-01-02", d, schulzeit.Zone())
 		if err != nil {
@@ -165,7 +165,7 @@ func TestLmfFrist_OhneKaestchenUndBuechereiBuch(t *testing.T) {
 	termin := TagesEndeInSchulzeitzone(time.Date(2027, time.June, 29, 10, 0, 0, 0, schulzeit.Zone()))
 	svc := &defaultLoanService{pool: pool, jetzt: func() time.Time { return heute }}
 
-	ohneKaestchen := &repository.BookCopy{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", JahrgangBis: 11}
+	ohneKaestchen := &repository.Exemplar{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", JahrgangBis: 11}
 	got, err := svc.resolveCheckoutDueDate(ctx, ohneKaestchen, "9H2")
 	if err != nil {
 		t.Fatalf("Frist: %v", err)
@@ -175,7 +175,7 @@ func TestLmfFrist_OhneKaestchenUndBuechereiBuch(t *testing.T) {
 			got.In(schulzeit.Zone()), termin.In(schulzeit.Zone()))
 	}
 
-	buecherei := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
+	buecherei := &repository.Exemplar{Titel: "Der Hobbit", Medientyp: "Buch"}
 	got, err = svc.resolveCheckoutDueDate(ctx, buecherei, "9H2")
 	if err != nil {
 		t.Fatalf("Frist: %v", err)

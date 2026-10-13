@@ -11,7 +11,7 @@ import (
 )
 
 // BookRepository ist der Datenbankzugang des Inventur-Moduls (Titel, Klassensätze,
-// Metadaten). Nicht zu verwechseln mit repository.BookRepository — jenes bedient den
+// Metadaten). Nicht zu verwechseln mit repository.KatalogAbfragen — jenes bedient den
 // Ausleihbetrieb.
 type BookRepository struct {
 	db db.PgxPoolIface

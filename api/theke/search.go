@@ -15,17 +15,17 @@ import (
 // StudentsTotal/BooksTotal nennen die Gesamttrefferzahl vor dem Limit, damit die
 // Omnibox eine gekürzte Liste als gekürzt ausweisen kann.
 type UnifiedSearchResult struct {
-	Students      []SchuelerKiosk        `json:"students"`
-	Books         []repository.BookTitle `json:"books"`
-	StudentsTotal int                    `json:"students_total"`
-	BooksTotal    int                    `json:"books_total"`
+	Students      []SchuelerKiosk    `json:"students"`
+	Books         []repository.Titel `json:"books"`
+	StudentsTotal int                `json:"students_total"`
+	BooksTotal    int                `json:"books_total"`
 	// Treffer: exakte Auflösung eines Scans (Exemplar-Barcode, Littera-EAN, Ausweis) —
 	// die globale Suchleiste springt damit direkt zur Akte (03.09.2026). nil = kein Scan.
 	Treffer *service.ScanTreffer `json:"treffer,omitempty"`
 }
 
 // SearchHandler provides a unified fuzzy search for students and books without requiring prefixes.
-func (s *Tueren) SearchHandler(studentRepo repository.StudentRepository, bookRepo repository.BookRepository) http.HandlerFunc {
+func (s *Tueren) SearchHandler(studentRepo repository.StudentRepository, bookRepo repository.KatalogAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := strings.TrimSpace(r.URL.Query().Get("q"))
 		if query == "" {
@@ -45,7 +45,7 @@ func (s *Tueren) SearchHandler(studentRepo repository.StudentRepository, bookRep
 			return
 		}
 
-		books, booksTotal, err := bookRepo.SearchTitlesFuzzy(ctx, query, limit)
+		books, booksTotal, err := bookRepo.FindeTitelUnscharf(ctx, query, limit)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -57,7 +57,7 @@ func (s *Tueren) SearchHandler(studentRepo repository.StudentRepository, bookRep
 		}
 
 		if books == nil {
-			books = []repository.BookTitle{}
+			books = []repository.Titel{}
 		}
 
 		// Reduktion auf die Theken-Sicht: /api/search hängt an perform_actions

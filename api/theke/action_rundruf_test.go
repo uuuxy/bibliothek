@@ -101,7 +101,7 @@ func TestActionHandler_RundrufBeiAusleiheUndRueckgabe(t *testing.T) {
 		}
 	}
 
-	buch := &repository.BookCopy{ID: "c1", BarcodeID: "B-1", Titel: "Rundruf-Band"}
+	buch := &repository.Exemplar{ID: "c1", BarcodeID: "B-1", Titel: "Rundruf-Band"}
 	for _, f := range []struct {
 		typ      string
 		fremd    bool

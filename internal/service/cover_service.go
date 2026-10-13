@@ -70,7 +70,7 @@ func (s *CoverService) SyncMissingCoversAsync() {
 	// Verarbeitet: noch nie versuchte (PENDING), fehlgeschlagene (FAILED, erneuter Versuch)
 	// sowie Alt-Titel mit externer Cover-URL (FOUND, aber nicht lokal) — diese werden auf
 	// ein lokales WebP migriert, damit nichts mehr extern (mit Hotlink-/Bot-Risiko) lädt.
-	missing, err := repository.TitelFuerCoverAbgleich(ctx, s.db)
+	missing, err := repository.LadeTitelFuerCoverAbgleich(ctx, s.db)
 	if err != nil {
 		log.Printf("Cover Sync: Fehler beim Abrufen der fehlenden Cover: %v", err)
 		return

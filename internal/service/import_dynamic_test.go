@@ -31,7 +31,7 @@ func TestCleanISBN(t *testing.T) {
 // bestandMit baut einen Titelbestand für die Tests: je ISBN ein Titel des Bestands mit eigenem
 // Titeltext, dazu Titel ohne ISBN unter ihrem Titeltext.
 func bestandMit(nachISBN, nachTitel map[string]string) repository.TitelBestand {
-	b := repository.NeuerTitelBestand()
+	b := repository.NewTitelBestand()
 	for isbn, id := range nachISBN {
 		b.Merke(isbn, "Titel im Bestand zur ISBN "+isbn, id)
 	}
@@ -72,7 +72,7 @@ func TestBaueNeuTitelAusZeile(t *testing.T) {
 		{
 			name:         "new title by titel (no isbn)",
 			row:          []string{"Neu 2", "Autor", "Verlag", "", "2020", "Kat", "Sig", "BC2"},
-			wantCacheKey: repository.NormalisiereTitelKey("Neu 2"),
+			wantCacheKey: repository.NormalisiereTitelSchluessel("Neu 2"),
 			wantOk:       true,
 			wantISBN:     "",
 		},
@@ -130,7 +130,7 @@ func TestSammleNeueTitel(t *testing.T) {
 		{"Titel C", "333", ""},    // Missing barcode -> skip
 	}
 
-	lookup := repository.NeuerTitelBestand()
+	lookup := repository.NewTitelBestand()
 
 	newTitlesMap, newTitlesOrder := sammleNeueTitel(rows, headerMap, lookup)
 

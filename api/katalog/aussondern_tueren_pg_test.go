@@ -32,7 +32,7 @@ import (
 func TestAussondern_StatusTuerPrueftAusleihe(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 
 	titelID := testdaten.SeedMonitorTitel(t, pool, "Tueren-Titel", "Jug Tue", false, 0)
 	verliehen := testdaten.Exemplar(t, pool, titelID, "TUER-VERLIEHEN", true, "")

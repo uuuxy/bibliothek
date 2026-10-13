@@ -21,7 +21,7 @@ import (
 // sperrTheke ist die Theke eines Tests: Buch- und Geräte-Pfad über echte Dienste.
 type sperrTheke struct {
 	pool       *pgxpool.Pool
-	books      repository.BookRepository
+	books      repository.KatalogAbfragen
 	loanSvc    service.LoanService
 	omnibox    service.OmniboxService
 	bearbeiter string
@@ -46,7 +46,7 @@ func neueSperrTheke(t *testing.T) *sperrTheke {
 	t.Cleanup(aufraeumen)
 
 	students := repository.NewStudentRepository(pool)
-	books := repository.NewBookRepository(pool)
+	books := repository.NewKatalogAbfragen(pool)
 	loans := repository.NewAusleihAbfragen(pool)
 	audit := repository.NewProtokollAbfragen(pool)
 	loanSvc := service.NewLoanService(pool, students, books, loans, audit)
@@ -63,7 +63,7 @@ func neueSperrTheke(t *testing.T) *sperrTheke {
 // buch leiht das Exemplar barcode an leserID aus, wie der Scan an der Theke.
 func (th *sperrTheke) buch(t *testing.T, barcode, leserID string, uebergehen bool) error {
 	t.Helper()
-	ex, err := th.books.GetCopyByBarcode(context.Background(), barcode)
+	ex, err := th.books.FindeExemplar(context.Background(), barcode)
 	if err != nil {
 		t.Fatalf("Exemplar %s laden: %v", barcode, err)
 	}

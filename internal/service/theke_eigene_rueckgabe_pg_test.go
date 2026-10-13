@@ -31,10 +31,10 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 		t.Fatalf("Sperre setzen: %v", err)
 	}
 
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
-	ex, err := bookRepo.GetCopyByBarcode(ctx, "B-SPERRE-1")
+	ex, err := bookRepo.FindeExemplar(ctx, "B-SPERRE-1")
 	if err != nil {
 		t.Fatalf("Exemplar laden: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	}
 
 	// Gegenprobe: Eine neue Ausleihe an dasselbe Kind bleibt gesperrt.
-	ex, err = bookRepo.GetCopyByBarcode(ctx, "B-SPERRE-1")
+	ex, err = bookRepo.FindeExemplar(ctx, "B-SPERRE-1")
 	if err != nil {
 		t.Fatalf("Exemplar neu laden: %v", err)
 	}
@@ -88,7 +88,7 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 	ctx := context.Background()
 
 	bearbeiter := testdaten.AdminFuerAudit(t, pool)
-	bookRepo := repository.NewBookRepository(pool)
+	bookRepo := repository.NewKatalogAbfragen(pool)
 	loanSvc := service.NewLoanService(pool, repository.NewStudentRepository(pool), bookRepo,
 		repository.NewAusleihAbfragen(pool), repository.NewProtokollAbfragen(pool))
 
@@ -123,7 +123,7 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 	// fremdrueckgabe scannt das Buch des Eigentümers, während `inSitzung` an der Theke steht.
 	fremdrueckgabe := func(t *testing.T, barcode, inSitzung, eigentuemer string) {
 		t.Helper()
-		ex, err := bookRepo.GetCopyByBarcode(ctx, barcode)
+		ex, err := bookRepo.FindeExemplar(ctx, barcode)
 		if err != nil {
 			t.Fatalf("Exemplar %s laden: %v", barcode, err)
 		}

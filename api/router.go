@@ -152,7 +152,7 @@ func (s *Server) Routes() http.Handler {
 
 	// Instantiate repositories for database queries
 	studentRepo := repository.NewStudentRepository(s.DB.Pool)
-	bookRepo := repository.NewBookRepository(s.DB.Pool)
+	bookRepo := repository.NewKatalogAbfragen(s.DB.Pool)
 	loanRepo := repository.NewAusleihAbfragen(s.DB.Pool)
 	auditRepo := repository.NewProtokollAbfragen(s.DB.Pool)
 	mahnRepo := repository.NewMahnwesenRepository(s.DB.Pool)
