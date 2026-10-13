@@ -11,20 +11,15 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Indizes, die still nutzlos werden können.
+// Ein Teilindex gilt nur, wenn die Bedingung der Abfrage seine Bedingung einschließt. Wer
+// repository.EtikettOffenBedingung lockert, macht idx_buecher_exemplare_etikett_offen
+// unbrauchbar, ohne Fehlermeldung und ohne rote Prüfung, nur langsamer; das fiele erst auf,
+// wenn der Bestand gewachsen ist. Der Test liest deshalb den Ausführungsplan und verlangt den
+// Namen des Index darin.
 //
-// Ein Teil-Index gilt nur, wenn die Abfrage-Bedingung seine Bedingung IMPLIZIERT. Wer
-// repository.EtikettOffenBedingung lockert, macht
-// idx_buecher_exemplare_etikett_offen unbrauchbar — ohne Fehlermeldung, ohne rotes Gate,
-// nur langsamer. Genau so etwas fällt erst auf, wenn der Bestand gewachsen ist.
-//
-// Der Test liest deshalb den Ausführungsplan und verlangt den Indexnamen darin. Er ist
-// die einzige Stelle, die den Zusammenhang zwischen Go-Konstante und Migration prüft.
-//
-// enable_seqscan=off macht ihn unabhängig von der Größe der Test-DB: Bei drei Zeilen
-// nähme Postgres sonst immer den vollen Durchlauf, und der Test wäre grün, egal ob der
-// Index passt. Erzwungen wird nur die Präferenz — ist der Index nicht ANWENDBAR, kann
-// auch enable_seqscan=off ihn nicht in den Plan holen, und genau das ist der Befund.
+// enable_seqscan=off macht ihn unabhängig von der Größe der Test-Datenbank: Bei drei Zeilen
+// nähme Postgres sonst immer den vollen Durchlauf. Erzwungen wird nur der Vorzug; passt der
+// Index nicht zur Abfrage, holt auch enable_seqscan=off ihn nicht in den Plan.
 func TestEtikettenOffenNutztDenTeilindex(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -75,8 +70,8 @@ func TestBestellhistorieNutztDenDatumsindex(t *testing.T) {
 	}
 }
 
-// erklaere liefert den Ausführungsplan als Text (ohne ANALYZE — es geht um die Wahl des
-// Zugriffspfads, nicht um Laufzeiten auf einer leeren Test-DB).
+// erklaere liefert den Ausführungsplan als Text, ohne die Abfrage auszuführen: Es geht um die
+// Wahl des Zugriffspfads, nicht um Laufzeiten auf einer leeren Test-Datenbank.
 func erklaere(t *testing.T, conn *pgxpool.Conn, sql string) string {
 	t.Helper()
 	rows, err := conn.Query(context.Background(), "EXPLAIN "+sql)

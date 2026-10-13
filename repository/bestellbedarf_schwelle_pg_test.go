@@ -11,11 +11,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestLadeBestellbedarf_GesamtNichtVerfuegbar sichert den Meldebestand-Fix ab: Der
-// Bestellbedarf richtet sich nach dem BESITZ (gesamt, nicht ausgesondert), nicht nach
-// dem gerade verfügbaren Bestand. Sonst würde jeder verliehene Lernmittel-Klassensatz
-// (im Schuljahr der Normalfall) als "kritisch nachbestellen" gemeldet — die Liste war
-// mit Fehlalarmen geflutet und die vorgeschlagene Menge (Meldebestand − verfügbar) zu hoch.
+// Der Bestellbedarf misst sich am Gesamtbestand (nicht ausgesondert) und nicht am gerade
+// verfügbaren: Sonst gälte jeder verliehene Klassensatz, im Schuljahr der Normalfall, als
+// Bedarf, und die vorgeschlagene Menge wäre zu hoch.
 func TestLadeBestellbedarf_GesamtNichtVerfuegbar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -23,8 +21,8 @@ func TestLadeBestellbedarf_GesamtNichtVerfuegbar(t *testing.T) {
 
 	schueler := testdaten.SeedSchueler(t, pool, "R-1", "Ida", "5a")
 
-	// A) Voll verliehener Klassensatz: 30 Exemplare, alle ausgeliehen (verfügbar 0,
-	//    gesamt 30), Meldebestand 5 → KEIN Bestellgrund.
+	// A) Voll verliehener Klassensatz: 30 Exemplare, alle ausgeliehen (verfügbar 0, gesamt 30),
+	// Schwelle 5: kein Grund zu bestellen.
 	tVoll := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe 7", 5)
 	for i := 0; i < 30; i++ {
 		e := testdaten.Exemplar(t, pool, tVoll, barcodeN("V", i), true, "")
@@ -37,8 +35,8 @@ func TestLadeBestellbedarf_GesamtNichtVerfuegbar(t *testing.T) {
 		testdaten.Exemplar(t, pool, tKnapp, barcodeN("K", i), true, "")
 	}
 
-	// C) Bereits bestellt: 2 eigene + 3 "bestellt"-Platzhalter = gesamt 5 → gedeckt,
-	//    kein erneuter Bedarf (die "bestellt"-Platzhalter zählen in gesamt mit).
+	// C) Schon bestellt: 2 eigene und 3 als bestellt vermerkte Exemplare ergeben gesamt 5. Der
+	// Bedarf ist gedeckt, weil die bestellten im Gesamtbestand mitzählen.
 	tBestellt := testdaten.TitelMitMeldebestand(t, pool, "LMF-Bio 6", 5)
 	testdaten.Exemplar(t, pool, tBestellt, "BE-1", true, "")
 	testdaten.Exemplar(t, pool, tBestellt, "BE-2", true, "")
@@ -46,7 +44,7 @@ func TestLadeBestellbedarf_GesamtNichtVerfuegbar(t *testing.T) {
 		testdaten.Exemplar(t, pool, tBestellt, barcodeN("BE", i+3), false, "bestellt")
 	}
 
-	// Schwelle 5 = früherer Meldebestand-Default; die Auswahllogik bleibt so unverändert.
+	// Schwelle 5, wie der Meldebestand der drei Titel.
 	reorders, err := repository.LadeBestellbedarf(ctx, pool, bestellbedarfFilterLMF(), 5)
 	if err != nil {
 		t.Fatalf("LadeBestellbedarf: %v", err)
@@ -72,9 +70,8 @@ func TestLadeBestellbedarf_GesamtNichtVerfuegbar(t *testing.T) {
 	}
 }
 
-// TestLadeBestellbedarf_SchwelleSteuert beweist, dass jetzt die konfigurierbare Schwelle die
-// Aufnahme steuert — nicht mehr der pauschale Meldebestand-Default 5. Ein Titel mit
-// gesamt 3 erscheint bei Schwelle 5, verschwindet aber bei Schwelle 2.
+// Die eingestellte Schwelle steuert die Aufnahme, nicht der Meldebestand am Titel: Ein Titel
+// mit gesamt 3 erscheint bei Schwelle 5 und fehlt bei Schwelle 2.
 func TestLadeBestellbedarf_SchwelleSteuert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -103,12 +100,9 @@ func TestLadeBestellbedarf_SchwelleSteuert(t *testing.T) {
 	}
 }
 
-// TestLadeBestellbedarf_LMFNurInSignatur sichert den Signatur-Fix ab (05.08.2026): Der
-// Regelfall bei manueller Neuanlage über die Admin-Oberfläche ist ein Klartext-Titel
-// ("Mathematik Neue Wege 9") mit dem LMF-Kennzeichen NUR in der Signatur
-// ("LMF Ma" — Auto-Vorschlag). Vor dieser Änderung prüfte LadeBestellbedarf ausschliesslich
-// den Titel und liess solche Bücher nie unter die Bestellbedarf-Schwelle fallen, egal
-// wie knapp der Bestand war.
+// Ein von Hand angelegtes Lernmittel trägt oft einen Titel in Klartext („Mathematik Neue Wege
+// 9") und das Kennzeichen der Lernmittel nur in der Signatur („LMF Ma", der Vorschlag der
+// Maske). Auch ein solches Buch fällt unter die Schwelle.
 func TestLadeBestellbedarf_LMFNurInSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
@@ -133,7 +127,8 @@ func TestLadeBestellbedarf_LMFNurInSignatur(t *testing.T) {
 	}
 }
 
-// bestellbedarfFilterLMF liefert das Default-(LMF-)Filterfragment ohne HTTP-Request.
+// bestellbedarfFilterLMF liefert die Bedingung der Vorgabe (Lernmittel), ohne eine Anfrage zu
+// bauen.
 func bestellbedarfFilterLMF() string {
 	frag, _ := repository.BestandsFilterBedingung("lmf")
 	return frag
@@ -152,16 +147,16 @@ func barcodeN(prefix string, i int) string {
 	return prefix + "-" + string(rune('a'+i%26)) + string(rune('0'+i/26))
 }
 
-// TestLadeBestellbedarf_ZaehltAmBuch: Zwei Auflagen desselben Buchs (Migration 148,
-// docs/OFFEN.md 4.18) stehen als EINE Zeile. Ihre Summe steht gegen die Schwelle, gezeigt
-// wird die neueste Auflage — die wird bestellt —, und die Zeile trägt die Aufschlüsselung.
-// Getrennt gezählt lag jede für sich unter der Schwelle, und dasselbe Buch stand zweimal da,
-// auch wenn beide zusammen reichten. Ein Titel ohne Werk bleibt, wie er war.
+// Zwei Auflagen desselben Buchs stehen als eine Zeile. Ihre Summe steht gegen die Schwelle,
+// gezeigt wird die neueste Auflage, denn die wird bestellt, und die Zeile trägt die
+// Aufschlüsselung. Getrennt gezählt läge jede für sich unter der Schwelle, und dasselbe Buch
+// stünde zweimal da, auch wenn beide zusammen reichen. Ein Titel ohne Werk ist sein eigenes
+// Buch.
 func TestLadeBestellbedarf_ZaehltAmBuch(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
-	// CASCADE nimmt buecher_titel mit (werk_id verweist auf werke) — deshalb vor dem Anlegen.
+	// CASCADE nimmt buecher_titel mit (werk_id verweist auf werke); deshalb vor dem Anlegen.
 	if _, err := pool.Exec(ctx, `TRUNCATE werke CASCADE`); err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +188,7 @@ func TestLadeBestellbedarf_ZaehltAmBuch(t *testing.T) {
 		return m
 	}
 
-	// Schwelle 3: Zusammen sind es 3 — kein Bedarf. Getrennt stünden beide da (2 und 1).
+	// Schwelle 3: Zusammen sind es 3, also kein Bedarf. Getrennt stünden beide da (2 und 1).
 	r, err := repository.LadeBestellbedarf(ctx, pool, filter, 3)
 	if err != nil {
 		t.Fatalf("LadeBestellbedarf: %v", err)
@@ -209,7 +204,8 @@ func TestLadeBestellbedarf_ZaehltAmBuch(t *testing.T) {
 		t.Errorf("Schwelle 3: Titel ohne Werk %+v — erwartet wie bisher: da, Bestand 1, ohne Aufschlüsselung", e)
 	}
 
-	// Schwelle 5: eine Zeile für das Buch — die neueste Auflage, die Summe, die Aufschlüsselung.
+	// Schwelle 5: eine Zeile für das Buch mit der neuesten Auflage, der Summe und der
+	// Aufschlüsselung.
 	r, err = repository.LadeBestellbedarf(ctx, pool, filter, 5)
 	if err != nil {
 		t.Fatalf("LadeBestellbedarf: %v", err)

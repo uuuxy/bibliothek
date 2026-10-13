@@ -5,34 +5,22 @@ import (
 	"time"
 )
 
-// BestellVerlaufPosition ist eine Position innerhalb einer Bestellung des Verlaufs.
-// Die Feldkommentare unten tragen die eigentlichen Fallstricke — nullbare TitelID und
-// die Frage, worauf sich EtikettenOffen bezieht.
+// BestellVerlaufPosition ist eine Position einer Bestellung im Verlauf.
 type BestellVerlaufPosition struct {
 	TitelName   string  `json:"titel_name"`
 	ISBN        string  `json:"isbn"`
 	Menge       int     `json:"menge"`
 	Einzelpreis float64 `json:"einzelpreis"`
 	Gesamtpreis float64 `json:"gesamtpreis"`
-	// TitelID verweist auf den Titelsatz. Sie kann leer sein: Die Fremdschlüssel-Regel
-	// ist ON DELETE SET NULL — eine Bestellung bleibt als Beleg bestehen, auch wenn der
-	// Titel später aus dem Katalog verschwindet. Die Oberfläche darf daraus also keinen
-	// Verweis bauen, ohne vorher zu prüfen.
+	// TitelID verweist auf den Titel und kann leer sein: Der Fremdschlüssel steht auf ON DELETE
+	// SET NULL, die Bestellung bleibt als Beleg, wenn der Titel aus dem Katalog verschwindet.
+	// Die Oberfläche baut daraus keinen Verweis, ohne zu prüfen.
 	TitelID string `json:"titel_id,omitempty"`
-	// EtikettenOffen zählt die Exemplare DIESES TITELS ohne gedrucktes Etikett — nicht
-	// die dieser Lieferung. Die Zahl ist damit ehrlich das, was die Nachdruck-Liste beim
-	// Filtern auf diesen Titel auch zeigen wird.
-	//
-	// Hier stand bis zum 08.08.2026 als Begründung, welches Exemplar aus welcher
-	// Lieferung stammt, stehe nirgends. Das stimmte, als der Satz geschrieben wurde, und
-	// war seit Migration 063 falsch: buecher_exemplare.bestellung_id ist gesetzt, und die
-	// Detailansicht (api/bestellung/bestelldetail_handler.go) zeigt genau diese Exemplare. Die
-	// Titel-Zählung hier bleibt trotzdem richtig — sie gehört zum Verweis auf die
-	// Nachdruck-Liste, und die filtert nach Titel, nicht nach Lieferung.
-	//
-	// Sie trägt den Verweis: Ohne sie müsste die Oberfläche blind verlinken und öffnete
-	// in der Hälfte der Fälle eine leere Liste — ein Verweis, der ins Leere führt,
-	// entwertet alle anderen gleich mit.
+	// EtikettenOffen zählt die Exemplare dieses Titels ohne gedrucktes Etikett, nicht die
+	// dieser Lieferung: Das ist, was die Liste zum Nachdrucken beim Filtern auf den Titel
+	// zeigt. Die Zahl trägt den Verweis dorthin; ohne sie öffnete er in der Hälfte der Fälle
+	// eine leere Liste. Welche Exemplare aus dieser Lieferung stammen, zeigt die Detailansicht
+	// (api/bestellung/bestelldetail_handler.go).
 	EtikettenOffen int `json:"etiketten_offen"`
 }
 
@@ -47,36 +35,34 @@ type BestellVerlaufEintrag struct {
 	Gesamtbetrag    float64                  `json:"gesamtbetrag"`
 	AnzahlExemplare int                      `json:"anzahl_exemplare"`
 	Positionen      []BestellVerlaufPosition `json:"positionen"`
-	// Mittel: der Topf ('land' / 'schultraeger', Migration 109); leer = Alt-Bestellung
-	// ohne eindeutige Zuordnung.
+	// Mittel ist der Topf ('land' oder 'schultraeger'); leer bei einer alten Bestellung ohne
+	// eindeutige Zuordnung.
 	Mittel string `json:"mittel"`
 
-	// MitBestaetigung: DIESE Bestellung ist mit einem Bestätigungs-Link rausgegangen —
-	// sie hat einen Token bekommen. Steuert, ob die Oberfläche den Bestätigen-Schritt
-	// überhaupt anzeigt.
+	// MitBestaetigung heißt: Diese Bestellung ist mit einem Link zur Bestätigung
+	// hinausgegangen, sie hat einen Token. Daran hängt, ob die Oberfläche den Schritt
+	// „Bestätigen" zeigt.
 	//
-	// Bewusst am Token der Bestellung und NICHT am heutigen Merkmal des Lieferanten:
-	// Hauptlieferant darf nur einer sein (Migration 066). Zöge die Zahl über den
-	// Lieferanten, verlören alle offenen Bestellungen des bisherigen Hauptlieferanten in
-	// dem Moment ihren Bestätigen-Schritt, in dem jemand anderes den Link bekommt —
-	// obwohl sie mit Link rausgegangen sind und weiter auf Bestätigung warten. Der Token
-	// bleibt, was er ist. Dieselbe Regel nutzt die Übersicht
+	// Es hängt am Token der Bestellung und nicht am heutigen Merkmal des Lieferanten:
+	// Hauptlieferant ist immer nur einer, und beim Wechsel verlören sonst alle offenen
+	// Bestellungen des bisherigen ihren Schritt, obwohl sie mit Link hinausgegangen sind und
+	// weiter warten. Dieselbe Regel nutzt die Übersicht
 	// (api/bestellung/bestellhistorie_uebersicht.go).
 	MitBestaetigung bool `json:"mit_bestaetigung"`
-	// BestaetigtAm: Zeitpunkt der externen Bestätigung, NULL solange unbestätigt.
+	// BestaetigtAm ist der Zeitpunkt der Bestätigung; nil, solange sie aussteht.
 	BestaetigtAm *time.Time `json:"bestaetigt_am,omitempty"`
-	// EtikettenGroesse: beim Bestätigen gewählte Größe ('klein'/'gross'), NULL solange
-	// unbestätigt.
+	// EtikettenGroesse ist die beim Bestätigen gewählte Größe ('klein' oder 'gross'); nil,
+	// solange die Bestätigung aussteht.
 	EtikettenGroesse *string `json:"etiketten_groesse,omitempty"`
-	// BestaetigtDurch unterscheidet die beiden Wege: 'lieferant' = über den verschickten
-	// Link selbst bestätigt, 'bibliothek' = hier von Hand nachgetragen. Ohne diese
-	// Unterscheidung sähe eine Vermutung aus wie eine Rückmeldung.
+	// BestaetigtDurch unterscheidet die beiden Wege: 'lieferant' heißt über den verschickten
+	// Link bestätigt, 'bibliothek' heißt hier von Hand nachgetragen. Ohne die Unterscheidung
+	// sähe eine Vermutung aus wie eine Rückmeldung.
 	BestaetigtDurch *string `json:"bestaetigt_durch,omitempty"`
-	// LinkAktiv: Für diese Bestellung ist ein gültiger Bestätigungs-Link unterwegs. Der
-	// Link selbst kann hier nicht stehen — gespeichert ist nur sein Hash.
+	// LinkAktiv heißt: Für diese Bestellung ist ein gültiger Link zur Bestätigung unterwegs.
+	// Der Link selbst steht nirgends; gespeichert ist nur sein Hash.
 	LinkAktiv bool `json:"link_aktiv"`
-	// LinkGueltigBis: Ablauf des aktuellen Links (nil ohne Link) — damit die Bibliothek
-	// sieht, bis wann der Händler noch bestätigen und Etiketten drucken kann.
+	// LinkGueltigBis ist der Ablauf des Links (nil ohne Link): bis wann der Händler noch
+	// bestätigen und Etiketten drucken kann.
 	LinkGueltigBis *time.Time `json:"link_gueltig_bis,omitempty"`
 	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail,
 	// solange die Bestellung nicht bestätigt ist (sqlBestellmailOffen). nil =
@@ -84,12 +70,13 @@ type BestellVerlaufEintrag struct {
 	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
 }
 
-// LadeBestellVerlauf lädt alle Bestellköpfe (neueste zuerst) und einen Index
-// Bestell-ID → Position im Slice für das spätere Zuordnen der Positionen.
+// LadeBestellVerlauf lädt die Köpfe der Bestellungen, die neuesten zuerst, und dazu je
+// Bestellung ihren Platz in der Liste, an dem LadeBestellVerlaufPositionen die Positionen
+// einhängt.
 func LadeBestellVerlauf(ctx context.Context, db Datenbank, limit int, mittel string) ([]BestellVerlaufEintrag, map[string]int, error) {
-	// Kein JOIN auf lieferanten mehr nötig: Beide Bestätigungs-Angaben stehen an der
-	// Bestellung selbst. Das ist auch der Grund, warum eine Bestellung ihren gelöschten
-	// Lieferanten als vollständiger Beleg überlebt (lieferant_id ON DELETE SET NULL).
+	// Ohne JOIN auf lieferanten: Beide Angaben zur Bestätigung stehen an der Bestellung.
+	// Deshalb überlebt eine Bestellung ihren gelöschten Lieferanten als vollständiger Beleg
+	// (lieferant_id ON DELETE SET NULL).
 	args := []any{limit}
 	abfrage := `
 		SELECT b.id, b.lieferant_name, b.lieferant_email, b.kundennummer, b.bestelldatum,
@@ -138,12 +125,12 @@ func LadeBestellVerlauf(ctx context.Context, db Datenbank, limit int, mittel str
 	return bestellungen, platzJeBestellung, nil
 }
 
-// LadeBestellVerlaufPositionen lädt alle Positionen in einer Query und ordnet sie den
-// Bestellungen über orderIndex zu (Gesamtpreis wird pro Position berechnet).
+// LadeBestellVerlaufPositionen lädt die Positionen aller geladenen Bestellungen in einer
+// Abfrage und hängt sie über platzJeBestellung ein; den Gesamtpreis rechnet es je Position.
 func LadeBestellVerlaufPositionen(ctx context.Context, db Datenbank, bestellungen []BestellVerlaufEintrag, platzJeBestellung map[string]int) error {
-	// EtikettOffenBedingung ist dieselbe Definition, die auch die Nachdruck-Liste und
-	// ihr Zähler verwenden (api/druck/etiketten_offen.go). Wäre sie hier abgeschrieben, zeigte der
-	// Verweis irgendwann eine andere Zahl als die Liste, die er öffnet.
+	// EtikettOffenBedingung ist dieselbe Bestimmung, die die Liste zum Nachdrucken und ihr
+	// Zähler nehmen (api/druck/etiketten_offen.go). Hier abgeschrieben, zeigte der Verweis
+	// irgendwann eine andere Zahl als die Liste, die er öffnet.
 	rows, err := db.Query(ctx, `
 		SELECT p.bestellung_id, p.titel_name, p.isbn, p.menge, p.einzelpreis,
 		       coalesce(p.titel_id::text, ''),
@@ -178,11 +165,9 @@ func LadeBestellVerlaufPositionen(ctx context.Context, db Datenbank, bestellunge
 	return rows.Err()
 }
 
-// geladeneIDs liefert die IDs der tatsächlich geladenen Bestellungen.
-//
-// Die Positionen-Abfrage holte vorher die Positionen ALLER Bestellungen der Datenbank
-// (Unterabfrage ohne Grenze) und warf die überzähligen beim Zuordnen weg. Mit dem Limit
-// oben wäre das der teuerste Teil der Anfrage geblieben.
+// geladeneIDs liefert die IDs der geladenen Bestellungen. Die Abfrage der Positionen fragt nur
+// nach ihnen; ohne die Grenze läse sie die Positionen aller Bestellungen und würfe die
+// überzähligen weg.
 func geladeneIDs(platzJeBestellung map[string]int) []string {
 	ids := make([]string, 0, len(platzJeBestellung))
 	for id := range platzJeBestellung {

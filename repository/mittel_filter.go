@@ -6,36 +6,33 @@ import (
 	"bibliothek/pkg/mitteltopf"
 )
 
-// Der Topf-Filter für Listen und Berichte (#596, Bauplan 7.3 Schritt 4).
+// Der Filter nach Topf für Listen und Berichte. Er kennt drei Werte, und der dritte ist der
+// Grund für diese Datei: „ohne" sind die alten Bestellungen ohne eindeutigen Topf. In der
+// Spalte sind sie NULL, im Filter brauchen sie einen Namen, weil ein leerer Parameter „alle"
+// heißt und nicht „die ohne Zuordnung"; sonst suchte man die Bestellungen, die man berichtigen
+// will, und bekäme die ganze Liste.
 //
-// Drei Werte, und der dritte ist der Grund für diese Datei: „ohne" sind die
-// Alt-Bestellungen, deren Topf der Backfill (Migration 109) nicht eindeutig bestimmen
-// konnte. In der SPALTE sind sie NULL, im Filter brauchen sie einen Namen — ein leerer
-// Parameter heißt „alle", nicht „die ohne Zuordnung". Ohne diese Unterscheidung suchte
-// man die Bestellungen, die man korrigieren will, und bekäme die ganze Liste.
-//
-// Beide Türen (Historie und Bericht) benutzen dieselbe Übersetzung. Zwei Auslegungen
-// desselben Parameters wären genau die Doppelung, bei der die Liste eine Bestellung zeigt,
-// die im Bericht daneben fehlt.
+// Historie und Bericht nehmen dieselbe Übersetzung: Mit zwei Auslegungen desselben Parameters
+// zeigte die Liste eine Bestellung, die im Bericht daneben fehlt.
 
 // mittelOhneFilter ist der Filterwert für „ohne Zuordnung" (Spalte IS NULL).
 const mittelOhneFilter = "ohne"
 
-// IstMittelFilterGueltig prüft den Parameter, bevor er in eine Abfrage geht. Leer = alle.
+// IstMittelFilterGueltig prüft den Parameter, bevor er in eine Abfrage geht. Leer heißt alle.
 func IstMittelFilterGueltig(filter string) bool {
 	return filter == "" || filter == mittelOhneFilter || mitteltopf.IstGueltig(filter)
 }
 
-// MittelFilterFehler ist die Meldung an der Tür — sie nennt die erlaubten Werte, damit
-// niemand raten muss.
+// MittelFilterFehler ist die Meldung an der Tür. Sie nennt die erlaubten Werte, damit niemand
+// raten muss.
 func MittelFilterFehler(filter string) error {
 	return fmt.Errorf("unbekannter Topf %q — erlaubt sind %q, %q und %q",
 		filter, mitteltopf.Land, mitteltopf.Schultraeger, mittelOhneFilter)
 }
 
-// mittelBedingung liefert die SQL-Bedingung zum Filter und den Parameterwert dazu.
-// Die Bedingung ist leer, wenn nicht gefiltert wird; arg ist nil, wenn die Bedingung
-// ohne Parameter auskommt (IS NULL).
+// mittelBedingung liefert die SQL-Bedingung zum Filter und den Wert des Parameters dazu. Die
+// Bedingung ist leer, wenn nicht gefiltert wird; arg ist nil, wenn sie ohne Parameter auskommt
+// (IS NULL).
 func mittelBedingung(filter, spalte string, index int) (bedingung string, arg any) {
 	switch filter {
 	case "":

@@ -7,31 +7,14 @@ import (
 	"bibliothek/db"
 )
 
-// Datenzugriff für die Detailansicht EINER Bestellung.
-//
-// Die Liste (/api/bestellhistorie) ist auf die neuesten 200 gedeckelt und trägt pro
-// Position nur Titel, ISBN, Menge und Preis — genug für eine Tabellenzeile, zu wenig,
-// um eine Lieferung wiederzuerkennen. Diese Schicht liefert deshalb zusätzlich Autor,
-// Verlag, Cover und vor allem die tatsächlich angelegten Exemplare mit ihren Barcodes.
-//
-// Dass das geht, ist neuer als der Kommentar in api/bestellung/bestellhistorie_handler.go
-// behauptet:
-// Seit Migration 063 trägt jedes beim Bestellen angelegte Exemplar seine bestellung_id
-// (service.ProcessOrder schreibt den Kopf vor den Exemplaren, damit die ID existiert).
-// Für Altbestand aus dem Littera-Import ist die Spalte leer — die Ansicht sagt das dann
-// auch, statt eine leere Liste als "keine Exemplare" auszugeben.
-
-// EtikettOffenBedingung ist die EINZIGE Definition von "Etikett steht noch aus".
-// Der Zähler im Bestellwesen, die Nachdruck-Liste im Druck-Center und die Positionen
-// dieser Detailansicht teilen sie sich — sonst nennt der Verweis irgendwann eine andere
-// Zahl, als die Liste hat, die er öffnet, und keiner der beiden Werte ist mehr zu trauen.
+// EtikettOffenBedingung ist die eine Bestimmung von „Etikett steht noch aus". Der Zähler im
+// Bestellwesen, die Liste zum Nachdrucken im Druck-Center und die Positionen der Detailansicht
+// teilen sie; sonst nennte der Verweis eine andere Zahl, als die Liste hat, die er öffnet.
 // api/druck/etiketten_offen.go übernimmt den Wert von hier.
 //
-// Ausgesonderte Exemplare stehen nicht mehr im Regal; für sie ein Etikett zu drucken
-// wäre immer falsch.
-//
-// Das Alias `e` ist Teil der Bedingung: Jede Abfrage, die sie einsetzt, muss
-// buecher_exemplare als e führen.
+// Ausgesonderte Exemplare stehen nicht mehr im Regal; für sie wäre ein Etikett immer falsch.
+// Der Alias e gehört zur Bedingung: Jede Abfrage, die sie einsetzt, führt buecher_exemplare als
+// e.
 const EtikettOffenBedingung = `e.etikett_gedruckt = false AND e.ist_ausgesondert = false`
 
 // BestellungKopf sind die Stammdaten einer Bestellung.
@@ -47,16 +30,15 @@ type BestellungKopf struct {
 	BestaetigtAm    *time.Time `json:"bestaetigt_am,omitempty"`
 	BestaetigtDurch *string    `json:"bestaetigt_durch,omitempty"`
 
-	// EtikettenGroesse und LinkAktiv tragen denselben Namen wie in der Bestellhistorie,
-	// damit die Detailansicht BestellStatusBlock unverändert weiterverwenden kann. Der
-	// Bestätigungs-Ablauf gehört an EINE Stelle — ein nachgebauter zweiter Block wäre
-	// genau die Parallelwelt, die diese Seite gerade beseitigt hat.
+	// EtikettenGroesse und LinkAktiv heißen wie in der Bestellhistorie, damit die Detailansicht
+	// denselben Baustein der Oberfläche nutzen kann (BestellStatusBlock): Der Ablauf der
+	// Bestätigung steht an einer Stelle.
 	EtikettenGroesse *string `json:"etiketten_groesse,omitempty"`
 	LinkAktiv        bool    `json:"link_aktiv"`
 
-	// Mittel: der Topf der Bestellung ('land' / 'schultraeger', Migration 109). Leer bei
-	// Alt-Bestellungen ohne eindeutige Zuordnung — die Oberfläche zeigt dann „ohne
-	// Zuordnung", nie einen geratenen Topf.
+	// Mittel ist der Topf der Bestellung ('land' oder 'schultraeger'). Leer bei einer alten
+	// Bestellung ohne eindeutige Zuordnung; die Oberfläche zeigt dann „ohne Zuordnung" und
+	// keinen geratenen Topf.
 	Mittel string `json:"mittel"`
 
 	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail,
@@ -65,12 +47,9 @@ type BestellungKopf struct {
 	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
 }
 
-// BestellPositionDetail ist eine bestellte Zeile samt Angaben aus dem Titelsatz.
-//
-// Autor, Verlag und CoverURL sind in buecher_titel nullbar und werden per COALESCE zu
-// leeren Zeichenketten — ein nullbarer Wert in einem nicht-nullbaren Go-Typ ist in
-// diesem Projekt eine wiederkehrende 500er-Quelle ("cannot scan NULL"). Leer heisst
-// hier "nicht hinterlegt", und die Oberfläche zeigt dann nichts statt eines Fehlers.
+// BestellPositionDetail ist eine bestellte Zeile mit den Angaben aus dem Titel. Autor, Verlag
+// und CoverURL können in buecher_titel leer sein und kommen über COALESCE als leerer Text: NULL
+// ließe sich nicht in einen Text lesen. Leer heißt „nicht hinterlegt".
 type BestellPositionDetail struct {
 	TitelID     string  `json:"titel_id,omitempty"`
 	TitelName   string  `json:"titel_name"`
@@ -82,12 +61,11 @@ type BestellPositionDetail struct {
 	Einzelpreis float64 `json:"einzelpreis"`
 	Gesamtpreis float64 `json:"gesamtpreis"`
 
-	// EtikettenOffen zählt die Exemplare DIESES TITELS ohne Etikett — nicht die dieser
-	// Lieferung. Bewusst dieselbe Zahl wie in der Bestellhistorie: Sie trägt den Verweis
-	// in die Nachdruck-Liste, und die filtert nach Titel. Eine hier genauere,
-	// lieferungsbezogene Zahl führte in eine Liste, die mehr Zeilen zeigt als der Knopf
-	// versprochen hat. Wie viele Bücher DIESER Lieferung noch ein Etikett brauchen, steht
-	// stattdessen an den Exemplaren selbst (BestellExemplar.EtikettGedruckt).
+	// EtikettenOffen zählt die Exemplare dieses Titels ohne Etikett, nicht die dieser
+	// Lieferung, wie in der Bestellhistorie: Die Zahl trägt den Verweis in die Liste zum
+	// Nachdrucken, und die filtert nach Titel. Eine Zahl je Lieferung führte in eine Liste mit
+	// mehr Zeilen, als der Knopf nennt. Wie viele Bücher dieser Lieferung noch ein Etikett
+	// brauchen, steht an den Exemplaren (BestellExemplar.EtikettGedruckt).
 	EtikettenOffen int `json:"etiketten_offen"`
 }
 
@@ -107,7 +85,11 @@ type BestellungDetail struct {
 	Exemplare  []BestellExemplar       `json:"exemplare"`
 }
 
-// BestelldetailAbfragen kapselt die Abfragen der Bestell-Detailansicht.
+// BestelldetailAbfragen liest, was die Detailansicht einer Bestellung zeigt. Die Liste der
+// Bestellhistorie trägt je Position nur Titel, ISBN, Menge und Preis; hier kommen Autor,
+// Verlag, Cover und die angelegten Exemplare mit ihren Barcodes dazu, an denen sich eine
+// Lieferung wiedererkennen lässt. Jedes beim Bestellen angelegte Exemplar trägt seine
+// bestellung_id; am Altbestand aus Littera ist die Spalte leer.
 type BestelldetailAbfragen interface {
 	Lade(ctx context.Context, bestellungID string) (*BestellungDetail, error)
 }
@@ -116,11 +98,13 @@ type pgBestelldetailAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewBestelldetailAbfragen erzeugt das Repository für die Bestell-Detailansicht.
+// NewBestelldetailAbfragen liefert die Abfragen der Detailansicht an Postgres.
 func NewBestelldetailAbfragen(pool db.PgxPoolIface) BestelldetailAbfragen {
 	return &pgBestelldetailAbfragen{db: pool}
 }
 
+// Lade lädt Kopf, Positionen und Exemplare einer Bestellung; pgx.ErrNoRows, wenn es sie nicht
+// gibt.
 func (a *pgBestelldetailAbfragen) Lade(ctx context.Context, bestellungID string) (*BestellungDetail, error) {
 	kopf, err := a.ladeKopf(ctx, bestellungID)
 	if err != nil {
@@ -140,8 +124,8 @@ func (a *pgBestelldetailAbfragen) Lade(ctx context.Context, bestellungID string)
 	return &BestellungDetail{BestellungKopf: *kopf, Positionen: positionen, Exemplare: exemplare}, nil
 }
 
-// ladeKopf liefert pgx.ErrNoRows, wenn es die Bestellung nicht gibt — der Handler macht
-// daraus einen 404 statt einer leeren Seite, die aussieht wie eine leere Bestellung.
+// ladeKopf liefert pgx.ErrNoRows, wenn es die Bestellung nicht gibt; die Tür macht daraus 404
+// statt einer Seite, die wie eine leere Bestellung aussieht.
 func (a *pgBestelldetailAbfragen) ladeKopf(ctx context.Context, bestellungID string) (*BestellungKopf, error) {
 	var k BestellungKopf
 	err := a.db.QueryRow(ctx, `
@@ -164,11 +148,10 @@ func (a *pgBestelldetailAbfragen) ladeKopf(ctx context.Context, bestellungID str
 	return &k, nil
 }
 
-// ladePositionen verbindet die Bestellzeile mit dem Titelsatz.
-//
-// LEFT JOIN mit Absicht: bestellungen_positionen.titel_id ist ON DELETE SET NULL, eine
-// Bestellung bleibt also als Beleg bestehen, wenn der Titel später aus dem Katalog
-// verschwindet. Ein INNER JOIN liesse solche Positionen wortlos aus dem Beleg fallen.
+// ladePositionen verbindet die Bestellzeile mit dem Titel. Mit LEFT JOIN:
+// bestellungen_positionen.titel_id steht auf ON DELETE SET NULL, die Bestellung bleibt als
+// Beleg, wenn der Titel aus dem Katalog verschwindet, und mit INNER JOIN fielen solche
+// Positionen aus dem Beleg.
 func (a *pgBestelldetailAbfragen) ladePositionen(ctx context.Context, bestellungID string) ([]BestellPositionDetail, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT coalesce(p.titel_id::text, ''), p.titel_name, p.isbn, p.menge, p.einzelpreis,
@@ -198,10 +181,9 @@ func (a *pgBestelldetailAbfragen) ladePositionen(ctx context.Context, bestellung
 	return positionen, rows.Err()
 }
 
-// ladeExemplare liefert die Bücher, die AUS DIESER Bestellung entstanden sind.
-//
-// Sortiert nach Titel und Barcode: Der Barcode ist die Nummer, die auf dem Buch klebt,
-// und wer sie im Regal sucht, sucht sie in aufsteigender Reihenfolge.
+// ladeExemplare liefert die Bücher, die aus dieser Bestellung entstanden sind, sortiert nach
+// Titel und Barcode: Der Barcode klebt auf dem Buch, und wer es im Regal sucht, sucht in
+// aufsteigender Reihenfolge.
 func (a *pgBestelldetailAbfragen) ladeExemplare(ctx context.Context, bestellungID string) ([]BestellExemplar, error) {
 	rows, err := a.db.Query(ctx, `
 		SELECT e.barcode_id, e.titel_id::text, t.titel, e.etikett_gedruckt, e.ist_ausgesondert

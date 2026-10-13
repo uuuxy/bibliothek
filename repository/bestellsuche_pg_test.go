@@ -157,8 +157,8 @@ func TestFindeTitelZumBestellen_HoechstensFuenfzigUndDerBesteZuerst(t *testing.T
 }
 
 // FindeISBNsImKatalog nennt von den gefragten ISBNs die, die ein Titel trägt, unter ihrer
-// Normalform. Auch die Spalte geht durch die Normalform: Zwei Titel, die Migration 140 oder
-// 157 als Dublette stehen ließ, tragen ihre ISBN beide in alter Schreibweise.
+// Normalform. Auch die Spalte geht durch die Normalform: Zwei Titel, die als Dublette stehen
+// blieben, tragen ihre ISBN beide in alter Schreibweise.
 func TestFindeISBNsImKatalog_NenntVorhandeneUnterIhrerNormalform(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()

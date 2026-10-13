@@ -15,9 +15,9 @@ type ZulaufExemplar struct {
 	Titel        string
 	ISBN         string
 	CoverURL     string
-	// Bestellung, Lieferant und Bestelldatum fehlen am Altbestand, der vor Migration 063 bestellt
-	// wurde. Als Zeiger: Ein NULL in einer der drei Spalten bräche sonst das Lesen der ganzen
-	// Liste ab.
+	// Bestellung, Lieferant und Bestelldatum fehlen an Exemplaren, die bestellt wurden, bevor
+	// ein Exemplar seine Bestellung trug. Als Zeiger: Ein NULL in einer der drei Spalten bräche
+	// sonst das Lesen der ganzen Liste ab.
 	BestellungID  *string
 	LieferantName *string
 	Bestelldatum  *time.Time

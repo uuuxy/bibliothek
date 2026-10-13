@@ -9,9 +9,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Der Versand der Bestellmail an der Bestellung (Migration 161). mail_gescheitert_am trägt
-// den Zeitpunkt des letzten gescheiterten Versuchs; NULL heißt, dass kein gescheiterter
-// Versand vermerkt ist.
+// Der Versand der Bestellmail steht an der Bestellung: mail_gescheitert_am trägt den Zeitpunkt
+// des letzten gescheiterten Versuchs; NULL heißt, dass kein gescheiterter Versand vermerkt ist.
 
 // sqlBestellmailOffen ist der Vermerk, wie Liste, Detail und der erneute Versand ihn lesen:
 // der Zeitpunkt des gescheiterten Versands, solange die Bestellung nicht bestätigt ist. Hat
@@ -112,9 +111,8 @@ func bestellmailNichtOffenOderUnbekannt(ctx context.Context, pool db.PgxPoolIfac
 	return ErrBestellmailNichtOffen
 }
 
-// ladeBestellmailPositionen liest die Zeilen der Bestellung für das Anschreiben. Titel und
-// ISBN stehen an der Position, Autor und Verlag am Titel; ist er inzwischen gelöscht,
-// bleiben sie leer.
+// ladeBestellmailPositionen liest die Zeilen der Bestellung für das Anschreiben. Titel und ISBN
+// stehen an der Position, Autor und Verlag am Titel; ist der Titel gelöscht, bleiben sie leer.
 func ladeBestellmailPositionen(ctx context.Context, pool db.PgxPoolIface, bestellungID string) ([]BestellmailPosition, error) {
 	rows, err := pool.Query(ctx, `
 		SELECT p.titel_name, COALESCE(t.autor, ''), COALESCE(p.isbn, ''), COALESCE(t.verlag, ''), p.menge

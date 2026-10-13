@@ -14,9 +14,8 @@ type BerichtBestellung struct {
 	Bestelldatum    time.Time
 	Gesamtbetrag    float64
 	AnzahlExemplare int
-	// Mittel ist der Topf, aus dem die Bestellung bezahlt wird (Migration 109). Leer =
-	// Alt-Bestellung ohne eindeutige Zuordnung; sie wird als solche ausgewiesen und
-	// niemals einem Topf zugeschlagen.
+	// Mittel ist der Topf, aus dem die Bestellung bezahlt wird. Leer heißt alte Bestellung ohne
+	// eindeutige Zuordnung; sie wird als solche ausgewiesen und keinem Topf zugeschlagen.
 	Mittel     string
 	Positionen []BerichtPosition
 }

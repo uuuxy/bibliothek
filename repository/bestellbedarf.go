@@ -6,38 +6,36 @@ import (
 	"fmt"
 )
 
-// Bestellbedarf ist ein Titel, dessen verfügbarer Bestand unter den Meldebestand
-// gefallen ist.
+// Bestellbedarf ist eine Zeile der Bedarfsliste: ein Titel, dessen Gesamtbestand unter der
+// Schwelle des Bestellbedarfs liegt.
 type Bestellbedarf struct {
 	ID     string `json:"id"`
 	Titel  string `json:"titel"`
 	Autor  string `json:"autor"`
 	ISBN   string `json:"isbn"`
 	Verlag string `json:"verlag"`
-	// Signatur und Erscheinungsjahr helfen beim Nachbestellen, die richtige Ausgabe zu
-	// treffen — bei Lernmitteln unterscheiden sich Jahrgänge oft nur darin.
+	// Signatur und Erscheinungsjahr helfen, beim Nachbestellen die richtige Ausgabe zu treffen:
+	// Bei Lernmitteln unterscheiden sich die Ausgaben oft nur darin.
 	Signatur         string `json:"signatur,omitempty"`
 	Erscheinungsjahr int    `json:"erscheinungsjahr,omitempty"`
 	CoverURL         string `json:"cover_url,omitempty"`
 	Meldebestand     int    `json:"meldebestand"`
-	// VerfuegbarBestand = aktuell im Regal (nicht ausgeliehen, nicht ausgesondert).
-	// Reine Anzeige-Kontextzahl — NICHT die Nachbestell-Schwelle (siehe GesamtBestand).
+	// VerfuegbarBestand zählt, was im Regal steht (nicht ausgeliehen, nicht ausgesondert). Die
+	// Zahl dient der Anzeige; der Bedarf misst sich an GesamtBestand.
 	VerfuegbarBestand int `json:"verfuegbarer_bestand"`
-	// GesamtBestand = alle nicht ausgesonderten Exemplare (inkl. der als "bestellt"
-	// markierten Platzhalter). DAS ist die Nachbestell-Schwelle: Meldebestand meint die
-	// Zahl der Exemplare, die man BESITZEN will — nicht, wie viele gerade im Regal stehen.
-	// Bei Lernmitteln ist ein Klassensatz das ganze Schuljahr verliehen — "0 verfügbar"
-	// bei 30 vorhandenen ist KEIN Bestellgrund, deshalb triggert gesamt < meldebestand.
+	// GesamtBestand zählt alle nicht ausgesonderten Exemplare, auch die als bestellt
+	// vermerkten. Daran misst sich der Bedarf: Gemeint ist, wie viele Exemplare die Schule
+	// besitzen will, nicht wie viele gerade im Regal stehen. Ein Klassensatz ist das ganze
+	// Schuljahr verliehen; „0 verfügbar" bei 30 vorhandenen ist kein Grund zu bestellen.
 	GesamtBestand int `json:"gesamt_bestand"`
-	// IstLernmittel: Vorschlag für den Topf der Bestellung (Warenkorb, mittel.js).
-	// Mitgeliefert, obwohl die Vorgabe ?type=lmf ist — bei ?type=alle stünden sonst
-	// Bücherei-Titel ohne Kennzeichen im Warenkorb.
+	// IstLernmittel ist der Vorschlag für den Topf der Bestellung im Warenkorb. Es steht auch
+	// bei der Vorgabe ?type=lmf dabei: Bei ?type=alle stünden sonst Titel der Bücherei ohne
+	// Kennzeichen im Warenkorb.
 	IstLernmittel bool `json:"ist_lernmittel"`
-	// Auflagen: Gehört der Titel zu einem Buch mit mehreren Auflagen (Migration 148,
-	// docs/OFFEN.md 4.18), ist die Zeile das Buch. Die beiden Bestandszahlen oben sind die
-	// Summe, Titel, ISBN und Kennung oben die der neuesten Auflage — sie wird bestellt —, und
-	// hier steht die Aufschlüsselung, die neueste zuerst. Ein Buch mit einer Auflage hat das
-	// Feld nicht.
+	// Auflagen: Gehört der Titel zu einem Buch mit mehreren Auflagen, ist die Zeile das Buch.
+	// Die beiden Bestandszahlen oben sind die Summe; Titel, ISBN und Kennung sind die der
+	// neuesten Auflage, denn die wird bestellt. Hier steht die Aufschlüsselung, die neueste
+	// zuerst. Ein Buch mit einer Auflage hat das Feld nicht.
 	Auflagen []BestellbedarfAuflage `json:"auflagen,omitempty"`
 }
 
@@ -53,26 +51,22 @@ type BestellbedarfAuflage struct {
 	GesamtBestand     int    `json:"gesamt_bestand"`
 }
 
-// LadeBestellbedarf liefert die Titel, deren BESITZ (gesamt, nicht ausgesondert) unter der
-// konfigurierten Bestellbedarf-Schwelle liegt — der größte Fehlbestand zuerst. Bewusst
-// gesamt statt verfügbar: sonst würde jeder verliehene Lernmittel-Klassensatz (im
-// Schuljahr der Normalfall) als Bestellbedarf gemeldet. Da "gesamt" die als "bestellt"
-// markierten Platzhalter mitzählt, ist die Liste zugleich bereits-bestellt-bewusst.
-// Die Schwelle ersetzt den früheren pro-Titel-Meldebestand (der pauschal auf 5 stand und
-// fast jeden Titel meldete); t.meldebestand wird nur noch informativ mitgeliefert.
+// LadeBestellbedarf liefert die Titel, deren Gesamtbestand (nicht ausgesondert) unter der
+// eingestellten Schwelle liegt, den größten Fehlbestand zuerst. Gesamt und nicht verfügbar:
+// Sonst gälte jeder verliehene Klassensatz, im Schuljahr der Normalfall, als Bedarf. Weil der
+// Gesamtbestand die als bestellt vermerkten Exemplare mitzählt, fällt ein Titel aus der Liste,
+// sobald genug bestellt ist. t.meldebestand steht nur zur Anzeige dabei.
 //
-// Gezählt wird am Buch (Migration 148, docs/OFFEN.md 4.18, entschieden am 25.09.2026):
-// Auflagen mit derselben werk_id bilden eine Zeile, ihre Summe steht gegen die Schwelle,
-// und gezeigt wird die neueste Auflage (SQLNeuesteAuflageZuerst) — die wird
-// bestellt. Ein Titel ohne Werk ist über COALESCE(werk_id, id) sein eigenes Buch; für ihn
-// ändert sich nichts. Der Filter nach Topf (typeFilter) gilt je Auflage, bevor gezählt wird.
+// Gezählt wird am Buch: Auflagen mit derselben werk_id bilden eine Zeile, ihre Summe steht
+// gegen die Schwelle, und gezeigt wird die neueste Auflage (SQLNeuesteAuflageZuerst), denn die
+// wird bestellt. Ein Titel ohne Werk ist über COALESCE(werk_id, id) sein eigenes Buch. Die
+// Bedingung des Topfs (topfBedingung) gilt je Auflage, bevor gezählt wird.
 func LadeBestellbedarf(ctx context.Context, db Datenbank, topfBedingung string, schwelle int) ([]Bestellbedarf, error) {
 	neueste := SQLNeuesteAuflageZuerst("t")
-	// Ein LATERAL je Titel liefert beide Bestandszahlen in einem Durchgang; danach wird je
-	// Buch summiert, und DISTINCT ON wählt die neueste Auflage je Buch in einem Durchgang.
-	// Nicht als zweites LATERAL je Zeile: Das lief für jede Zeile einmal über alle Titel —
-	// gemessen am 25.09.2026 lokal über 6.048 Titel (?type=alle, Schwelle 3) 810–825 ms gegen
-	// 25–35 ms der Abfrage je Titel; so sind es 66–71 ms bei denselben 5.208 Zeilen.
+	// Ein LATERAL je Titel liefert beide Bestandszahlen in einem Durchgang; danach wird je Buch
+	// summiert, und DISTINCT ON wählt die neueste Auflage je Buch. Ein zweites LATERAL je Zeile
+	// liefe für jede Zeile einmal über alle Titel: gemessen über 6.048 Titel 810 bis 825 ms
+	// gegen 66 bis 71 ms in dieser Form.
 	query := fmt.Sprintf(`
 		WITH titel AS (
 			SELECT t.id, COALESCE(t.werk_id, t.id) AS buch, t.titel, t.autor, t.isbn, t.verlag,
