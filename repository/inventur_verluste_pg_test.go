@@ -8,9 +8,9 @@ import (
 // seedVerlorenesExemplar legt einen Titel mit einem Exemplar an, schliesst eine
 // eigene Inventur-Session ohne diesen Scan ab und liefert die entstandene
 // Exemplar-ID — also genau den Zustand, den MarkiereVerlustAlsGefunden und
-// EndgueltigLoescheVerlustExemplare in der Praxis vorfinden (ist_ausgesondert=true,
+// LoescheVerlusteEndgueltig in der Praxis vorfinden (ist_ausgesondert=true,
 // aussonderung_grund='VERLUST', eine Zeile in inventur_verluste).
-func seedVerlorenesExemplar(t *testing.T, ctx context.Context, repo *InventoryRepository, titel, barcode, bearbeiterID string) string {
+func seedVerlorenesExemplar(t *testing.T, ctx context.Context, repo *InventurAbfragen, titel, barcode, bearbeiterID string) string {
 	t.Helper()
 	var titelID string
 	if err := repo.db.QueryRow(ctx,
@@ -31,7 +31,7 @@ func seedVerlorenesExemplar(t *testing.T, ctx context.Context, repo *InventoryRe
 	).Scan(&sessionID); err != nil {
 		t.Fatalf("Session anlegen: %v", err)
 	}
-	if _, err := repo.FinishInventurSession(ctx, sessionID, InventurScope{}, bearbeiterID); err != nil {
+	if _, err := repo.SchliesseLaufAb(ctx, sessionID, InventurBereich{}, bearbeiterID); err != nil {
 		t.Fatalf("Session abschliessen (Exemplar als Verlust buchen): %v", err)
 	}
 	return exemplarID
@@ -45,7 +45,7 @@ func TestMarkiereVerlustAlsGefunden(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 
 	bearbeiterID := seedBearbeiter(t, pool)
 	exemplarID := seedVerlorenesExemplar(t, ctx, repo, "Physikbuch 8", "GEF-1", bearbeiterID)
@@ -98,7 +98,7 @@ func TestMarkiereVerlustAlsGefunden(t *testing.T) {
 func TestMarkiereVerlustAlsGefunden_UnbekannteID(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 
 	gefunden, _, err := repo.MarkiereVerlustAlsGefunden(context.Background(), "00000000-0000-0000-0000-000000000000", "bearbeiter-1")
 	if err != nil {
@@ -109,16 +109,16 @@ func TestMarkiereVerlustAlsGefunden_UnbekannteID(t *testing.T) {
 	}
 }
 
-// TestEndgueltigLoescheVerlustExemplare belegt den Lösch-Knopf: Nur tatsächlich als
+// TestLoescheVerlusteEndgueltig belegt den Lösch-Knopf: Nur tatsächlich als
 // VERLUST gebuchte Exemplare verschwinden, ein normales (nicht ausgesondertes)
 // Exemplar in derselben Anfrage bleibt unangetastet — die Route darf nicht zum
 // allgemeinen Lösch-Weg werden. Und der Fehlbestandsbericht bleibt lesbar (Migration
 // 059: ON DELETE SET NULL, die Textspalten sind eine Abschrift).
-func TestEndgueltigLoescheVerlustExemplare(t *testing.T) {
+func TestLoescheVerlusteEndgueltig(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 
 	bearbeiterID := seedBearbeiter(t, pool)
 	verloren1 := seedVerlorenesExemplar(t, ctx, repo, "Chemiebuch 9", "LOE-1", bearbeiterID)
@@ -139,10 +139,10 @@ func TestEndgueltigLoescheVerlustExemplare(t *testing.T) {
 		t.Fatalf("normales Exemplar anlegen: %v", err)
 	}
 
-	geloescht, err := repo.EndgueltigLoescheVerlustExemplare(ctx,
+	geloescht, err := repo.LoescheVerlusteEndgueltig(ctx,
 		[]string{verloren1, verloren2, normalID, "00000000-0000-0000-0000-000000000000"}, bearbeiterID)
 	if err != nil {
-		t.Fatalf("EndgueltigLoescheVerlustExemplare: %v", err)
+		t.Fatalf("LoescheVerlusteEndgueltig: %v", err)
 	}
 	if len(geloescht) != 2 {
 		t.Fatalf("%d gelöscht, erwartet 2 (nur die beiden Verlust-Exemplare)", len(geloescht))

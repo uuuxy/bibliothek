@@ -17,11 +17,11 @@ import (
 // RESTRICT auf ausleihen.exemplar_id, gemeldet als 500 → „interner Datenbankfehler".
 // Ein Buch verschwindet aber typischerweise, NACHDEM es ausgeliehen war — der grüne
 // Test prüfte den einen Fall, den es kaum gibt.
-func TestEndgueltigLoescheVerlust_MitAusleihhistorie(t *testing.T) {
+func TestLoescheVerlusteEndgueltig_MitAusleihhistorie(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 	bearbeiter := seedBearbeiter(t, pool)
 
 	exemplarID := seedVerlorenesExemplar(t, ctx, repo, "Erdkundebuch 7", "VL-HIST", bearbeiter)
@@ -36,7 +36,7 @@ func TestEndgueltigLoescheVerlust_MitAusleihhistorie(t *testing.T) {
 		t.Fatalf("bezahlte Gebühr: %v", err)
 	}
 
-	geloescht, err := repo.EndgueltigLoescheVerlustExemplare(ctx, []string{exemplarID}, bearbeiter)
+	geloescht, err := repo.LoescheVerlusteEndgueltig(ctx, []string{exemplarID}, bearbeiter)
 	if err != nil {
 		t.Fatalf("Exemplar mit Ausleihhistorie ließ sich nicht löschen: %v", err)
 	}
@@ -68,14 +68,14 @@ func TestEndgueltigLoescheVerlust_MitAusleihhistorie(t *testing.T) {
 	}
 }
 
-// TestEndgueltigLoescheVerlust_OffeneGebuehrSperrt: Eine unbezahlte Gebühr ist eine
+// TestLoescheVerlusteEndgueltig_OffeneForderungSperrt: Eine unbezahlte Gebühr ist eine
 // Forderung der Schule. Sie mitzulöschen hieße, sie unwiederbringlich aufzugeben —
 // und zwar lautlos, als Nebenwirkung eines Aufräumknopfs.
-func TestEndgueltigLoescheVerlust_OffeneGebuehrSperrt(t *testing.T) {
+func TestLoescheVerlusteEndgueltig_OffeneForderungSperrt(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 	bearbeiter := seedBearbeiter(t, pool)
 
 	frei := seedVerlorenesExemplar(t, ctx, repo, "Mathebuch 5", "VL-FREI", bearbeiter)
@@ -88,7 +88,7 @@ func TestEndgueltigLoescheVerlust_OffeneGebuehrSperrt(t *testing.T) {
 		t.Fatalf("offene Gebühr: %v", err)
 	}
 
-	_, err := repo.EndgueltigLoescheVerlustExemplare(ctx, []string{frei, gesperrt}, bearbeiter)
+	_, err := repo.LoescheVerlusteEndgueltig(ctx, []string{frei, gesperrt}, bearbeiter)
 	if err == nil {
 		t.Fatal("Stapel mit offener Gebühr durchgelaufen — die Forderung wäre weg")
 	}

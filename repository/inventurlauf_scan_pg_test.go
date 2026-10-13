@@ -5,24 +5,24 @@ import (
 	"testing"
 )
 
-// TestNewInventoryRepository prüft die Initialisierung des Repositories.
-func TestNewInventoryRepository(t *testing.T) {
+// TestNewInventurAbfragen prüft die Initialisierung des Repositories.
+func TestNewInventurAbfragen(t *testing.T) {
 	pool := pgTestPool(t)
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 	if repo == nil {
-		t.Fatal("erwartet, dass NewInventoryRepository ein Repository zurückgibt, war aber nil")
+		t.Fatal("erwartet, dass NewInventurAbfragen ein Repository zurückgibt, war aber nil")
 	}
 	if repo.db == nil {
 		t.Fatal("erwartet, dass das übergebene DB-Objekt gespeichert wird, war aber nil")
 	}
 }
 
-// TestGetExemplarForInventoryScan prüft das Laden von Exemplaren für den Inventur-Scan.
-func TestGetExemplarForInventoryScan(t *testing.T) {
+// TestInventurLadeExemplar prüft das Laden von Exemplaren für den Inventur-Scan.
+func TestInventurLadeExemplar(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 
 	// 1. Titel anlegen
 	var titelID string
@@ -102,34 +102,34 @@ func TestGetExemplarForInventoryScan(t *testing.T) {
 	}
 
 	t.Run("Normales Exemplar mit Cover", func(t *testing.T) {
-		res, err := repo.GetExemplarForInventoryScan(ctx, "SCAN-NORM")
+		res, err := repo.LadeExemplar(ctx, "SCAN-NORM")
 		if err != nil {
 			t.Fatalf("Fehler beim Laden: %v", err)
 		}
-		if res.CopyID != normalExID {
-			t.Errorf("erwartete CopyID %q, war %q", normalExID, res.CopyID)
+		if res.ExemplarID != normalExID {
+			t.Errorf("erwartete CopyID %q, war %q", normalExID, res.ExemplarID)
 		}
-		if res.Title != "Der Hobbit" {
-			t.Errorf("erwarteter Titel 'Der Hobbit', war %q", res.Title)
+		if res.Titel != "Der Hobbit" {
+			t.Errorf("erwarteter Titel 'Der Hobbit', war %q", res.Titel)
 		}
 		if res.CoverURL != "http://example.com/cover.jpg" {
 			t.Errorf("erwartete CoverURL 'http://example.com/cover.jpg', war %q", res.CoverURL)
 		}
-		if res.IsAusgesondert {
+		if res.IstAusgesondert {
 			t.Error("erwartete IsAusgesondert = false, war true")
 		}
-		if res.IsLent {
+		if res.IstVerliehen {
 			t.Error("erwartete IsLent = false, war true")
 		}
 	})
 
 	t.Run("Titel ohne Cover - coalesce to empty string", func(t *testing.T) {
-		res, err := repo.GetExemplarForInventoryScan(ctx, "SCAN-NOCOVER")
+		res, err := repo.LadeExemplar(ctx, "SCAN-NOCOVER")
 		if err != nil {
 			t.Fatalf("Fehler beim Laden: %v", err)
 		}
-		if res.CopyID != ohneCoverExID {
-			t.Errorf("erwartete CopyID %q, war %q", ohneCoverExID, res.CopyID)
+		if res.ExemplarID != ohneCoverExID {
+			t.Errorf("erwartete CopyID %q, war %q", ohneCoverExID, res.ExemplarID)
 		}
 		if res.CoverURL != "" {
 			t.Errorf("erwartete leere CoverURL (COALESCE greift nicht?), war %q", res.CoverURL)
@@ -137,33 +137,33 @@ func TestGetExemplarForInventoryScan(t *testing.T) {
 	})
 
 	t.Run("Ausgesondertes Exemplar", func(t *testing.T) {
-		res, err := repo.GetExemplarForInventoryScan(ctx, "SCAN-AUSG")
+		res, err := repo.LadeExemplar(ctx, "SCAN-AUSG")
 		if err != nil {
 			t.Fatalf("Fehler beim Laden: %v", err)
 		}
-		if res.CopyID != ausgesondertExID {
-			t.Errorf("erwartete CopyID %q, war %q", ausgesondertExID, res.CopyID)
+		if res.ExemplarID != ausgesondertExID {
+			t.Errorf("erwartete CopyID %q, war %q", ausgesondertExID, res.ExemplarID)
 		}
-		if !res.IsAusgesondert {
+		if !res.IstAusgesondert {
 			t.Error("erwartete IsAusgesondert = true, war false")
 		}
 	})
 
 	t.Run("Verliehenes Exemplar", func(t *testing.T) {
-		res, err := repo.GetExemplarForInventoryScan(ctx, "SCAN-VERL")
+		res, err := repo.LadeExemplar(ctx, "SCAN-VERL")
 		if err != nil {
 			t.Fatalf("Fehler beim Laden: %v", err)
 		}
-		if res.CopyID != verliehenExID {
-			t.Errorf("erwartete CopyID %q, war %q", verliehenExID, res.CopyID)
+		if res.ExemplarID != verliehenExID {
+			t.Errorf("erwartete CopyID %q, war %q", verliehenExID, res.ExemplarID)
 		}
-		if !res.IsLent {
+		if !res.IstVerliehen {
 			t.Error("erwartete IsLent = true (EXISTS Subquery greift nicht?), war false")
 		}
 	})
 
 	t.Run("Nicht existierendes Exemplar", func(t *testing.T) {
-		res, err := repo.GetExemplarForInventoryScan(ctx, "GIBT-ES-NICHT")
+		res, err := repo.LadeExemplar(ctx, "GIBT-ES-NICHT")
 		if err == nil {
 			t.Error("erwartete einen Fehler bei unbekanntem Barcode, war nil")
 		}

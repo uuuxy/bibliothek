@@ -34,15 +34,15 @@ func (req InventurStartRequest) signaturNormalisiert() string {
 }
 
 // scope leitet den auswertbaren Scope aus dem Request ab.
-func (req InventurStartRequest) scope() repository.InventurScope {
+func (req InventurStartRequest) scope() repository.InventurBereich {
 	switch req.Type {
 	case "signature":
 		sig := req.signaturNormalisiert()
-		return repository.InventurScope{Signatur: &sig}
+		return repository.InventurBereich{Signatur: &sig}
 	case "filter":
-		return repository.InventurScope{Subject: req.Subject, Grade: req.Grade}
+		return repository.InventurBereich{Fach: req.Subject, Jahrgang: req.Grade}
 	default:
-		return repository.InventurScope{}
+		return repository.InventurBereich{}
 	}
 }
 
@@ -141,9 +141,9 @@ func (s *Tueren) InventurStartHandler() http.HandlerFunc {
 			benutzerID = claims.UserID
 		}
 
-		invRepo := repository.NewInventoryRepository(s.DB.Pool)
+		invRepo := repository.NewInventurAbfragen(s.DB.Pool)
 
-		session, err := invRepo.CreateInventurSession(ctx, req.Type, req.scope(), scopeLabelFuer(req), benutzerID)
+		session, err := invRepo.LegeLaufAn(ctx, req.Type, req.scope(), scopeLabelFuer(req), benutzerID)
 		if err != nil {
 			// Identischer Scope läuft schon ODER der gewünschte überschneidet sich mit
 			// einer offenen Inventur — beides ist ein bewusster 409, kein Serverfehler.
@@ -155,7 +155,7 @@ func (s *Tueren) InventurStartHandler() http.HandlerFunc {
 			return
 		}
 
-		erwartet, err := invRepo.GetInventurSession(ctx, session.ID)
+		erwartet, err := invRepo.LadeLaufMitErwartung(ctx, session.ID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -163,8 +163,8 @@ func (s *Tueren) InventurStartHandler() http.HandlerFunc {
 
 		tuer.RespondJSON(w, http.StatusOK, InventurStartResponse{
 			SessionID: session.ID,
-			Scope:     session.ScopeType,
-			Label:     session.ScopeLabel,
+			Scope:     session.BereichArt,
+			Label:     session.Bezeichnung,
 			Erwartet:  erwartet.Erwartet,
 		})
 	}

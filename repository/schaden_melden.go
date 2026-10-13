@@ -26,7 +26,7 @@ type schadensMeldung struct {
 //
 // Der Grund der Aussonderung folgt der Fallgruppe: „nicht zurückgegeben" ist VERLUST,
 // „beschädigt" BESCHAEDIGUNG. Der Fund im Fehlbestandsbericht und das endgültige Löschen dort
-// kennen nur VERLUST (inventur_verlust_aktionen.go); die Verlustquote (statistik.go) zählt
+// kennen nur VERLUST (inventur_verluste.go); die Verlustquote (statistik.go) zählt
 // beide.
 func meldeSchaden(ctx context.Context, tx pgx.Tx, meldung schadensMeldung) (string, error) {
 	ausleihe, err := ladeSchadensAusleihe(ctx, tx, meldung)

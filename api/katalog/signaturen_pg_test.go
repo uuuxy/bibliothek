@@ -45,12 +45,12 @@ func TestSignaturScope_PraefixMitGrenze(t *testing.T) {
 	// NICHT im Regal: voellig andere Signatur.
 	exFremd := testdaten.SeedSignaturMitExemplar(t, pool, "LMF Mat "+suffix, "SIG-FREMD-"+suffix)
 
-	invRepo := repository.NewInventoryRepository(pool)
-	scope := repository.InventurScope{Signatur: &basis}
+	invRepo := repository.NewInventurAbfragen(pool)
+	scope := repository.InventurBereich{Signatur: &basis}
 
-	anzahl, err := invRepo.ZaehleScope(ctx, scope)
+	anzahl, err := invRepo.ZaehleBereich(ctx, scope)
 	if err != nil {
-		t.Fatalf("ZaehleScope: %v", err)
+		t.Fatalf("ZaehleBereich: %v", err)
 	}
 	if anzahl != 2 {
 		t.Errorf("Scope %q: erwartet 2 Exemplare (genau + Unterfach), waren %d", basis, anzahl)
@@ -58,9 +58,9 @@ func TestSignaturScope_PraefixMitGrenze(t *testing.T) {
 
 	imScope := map[string]bool{exGenau: true, exUnter: true, exNachbar: false, exFremd: false}
 	for exID, erwartet := range imScope {
-		drin, err := invRepo.ExemplarImScope(ctx, exID, scope)
+		drin, err := invRepo.IstExemplarImBereich(ctx, exID, scope)
 		if err != nil {
-			t.Fatalf("ExemplarImScope %s: %v", exID, err)
+			t.Fatalf("IstExemplarImBereich %s: %v", exID, err)
 		}
 		if drin != erwartet {
 			t.Errorf("Exemplar %s im Scope %q: erwartet %v, war %v", exID, basis, erwartet, drin)

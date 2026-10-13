@@ -46,12 +46,12 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 	testdaten.SeedSignaturMitExemplar(t, pool, sigVerworfen, barcodeGescannt)
 	testdaten.SeedSignaturMitExemplar(t, pool, sigVerworfen, barcodeLiegtNoch)
 
-	invRepo := repository.NewInventoryRepository(pool)
-	geprueft, err := invRepo.CreateInventurSession(ctx, "signature", repository.InventurScope{Signatur: &sigGeprueft}, "Geprüft", "")
+	invRepo := repository.NewInventurAbfragen(pool)
+	geprueft, err := invRepo.LegeLaufAn(ctx, "signature", repository.InventurBereich{Signatur: &sigGeprueft}, "Geprüft", "")
 	if err != nil {
 		t.Fatalf("Session anlegen: %v", err)
 	}
-	verworfen, err := invRepo.CreateInventurSession(ctx, "signature", repository.InventurScope{Signatur: &sigVerworfen}, "Verworfen", "")
+	verworfen, err := invRepo.LegeLaufAn(ctx, "signature", repository.InventurBereich{Signatur: &sigVerworfen}, "Verworfen", "")
 	if err != nil {
 		t.Fatalf("Session anlegen: %v", err)
 	}
@@ -127,7 +127,7 @@ func TestInventurVerworfen_StehtNichtAlsVollstaendigInDerListe(t *testing.T) {
 }
 
 // Eine laufende Inventur ist nie verworfen — die Datenbank hält die Regel für jeden
-// Schreiber neben AbortInventurSession (chk_inv_session_verworfen_beendet, Migration 149).
+// Schreiber neben VerwerfeLauf (chk_inv_session_verworfen_beendet, Migration 149).
 func TestInventurVerworfen_DatenbankHaeltDieRegel(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
@@ -137,8 +137,8 @@ func TestInventurVerworfen_DatenbankHaeltDieRegel(t *testing.T) {
 	testdaten.ResetBestandsdaten(t, pool)
 
 	sig := fmt.Sprintf("INV-Regel-%d", time.Now().UnixNano())
-	session, err := repository.NewInventoryRepository(pool).CreateInventurSession(ctx, "signature",
-		repository.InventurScope{Signatur: &sig}, "Regel", "")
+	session, err := repository.NewInventurAbfragen(pool).LegeLaufAn(ctx, "signature",
+		repository.InventurBereich{Signatur: &sig}, "Regel", "")
 	if err != nil {
 		t.Fatalf("Session anlegen: %v", err)
 	}

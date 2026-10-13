@@ -36,7 +36,7 @@ func (s *Tueren) InventurVerlustGefundenHandler() http.HandlerFunc {
 		}
 		defer db.SafeRollback(ctx, tx)
 
-		invRepo := repository.NewInventoryRepository(tx)
+		invRepo := repository.NewInventurAbfragen(tx)
 		gefunden, befund, err := invRepo.MarkiereVerlustAlsGefunden(ctx, id, claims.UserID)
 		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
 			// Zwischen Lesen und Zurückholen verschwunden — kein Serverfehler, nichts gebucht.
@@ -108,8 +108,8 @@ func (s *Tueren) handleInventurVerlusteLoeschen(w http.ResponseWriter, r *http.R
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	invRepo := repository.NewInventoryRepository(tx)
-	geloeschteIDs, err := invRepo.EndgueltigLoescheVerlustExemplare(ctx, req.ExemplarIDs, claims.UserID)
+	invRepo := repository.NewInventurAbfragen(tx)
+	geloeschteIDs, err := invRepo.LoescheVerlusteEndgueltig(ctx, req.ExemplarIDs, claims.UserID)
 	if err != nil {
 		// 409 statt 500: Ein gebundenes Exemplar ist eine Lage, kein Störfall. Als
 		// Internal ersetzte der Sanitizer den Text durch „interner Datenbankfehler"

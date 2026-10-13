@@ -191,13 +191,13 @@ func TestAussondern_StehtMitDerPersonImProtokoll(t *testing.T) {
 		gezaehlt := testdaten.Exemplar(t, pool, titelID, "SPUR-INV-1", true, "")
 		fehlt := testdaten.Exemplar(t, pool, titelID, "SPUR-INV-2", true, "")
 		signatur := "SpuInv"
-		invRepo := repository.NewInventoryRepository(pool)
-		session, err := invRepo.CreateInventurSession(ctx, "signature",
-			repository.InventurScope{Signatur: &signatur}, "SpuInv", "")
+		invRepo := repository.NewInventurAbfragen(pool)
+		session, err := invRepo.LegeLaufAn(ctx, "signature",
+			repository.InventurBereich{Signatur: &signatur}, "SpuInv", "")
 		if err != nil {
 			t.Fatalf("Inventur beginnen: %v", err)
 		}
-		if err := invRepo.RecordInventurScan(ctx, session.ID, gezaehlt); err != nil {
+		if err := invRepo.VerbucheScan(ctx, session.ID, gezaehlt); err != nil {
 			t.Fatalf("Exemplar zählen: %v", err)
 		}
 

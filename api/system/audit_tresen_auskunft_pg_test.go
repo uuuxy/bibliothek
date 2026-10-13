@@ -120,8 +120,8 @@ func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 		WHERE id = $1`, w.exemplarID); err != nil {
 		t.Fatalf("Verlust buchen: %v", err)
 	}
-	geloescht, err := repository.NewInventoryRepository(pool).
-		EndgueltigLoescheVerlustExemplare(ctx, []string{w.exemplarID}, w.adminID)
+	geloescht, err := repository.NewInventurAbfragen(pool).
+		LoescheVerlusteEndgueltig(ctx, []string{w.exemplarID}, w.adminID)
 	if err != nil || len(geloescht) != 1 {
 		t.Fatalf("endgültig löschen: %v (gelöscht: %v)", err, geloescht)
 	}

@@ -72,13 +72,13 @@ func (s *Tueren) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	invRepo := repository.NewInventoryRepository(tx)
+	invRepo := repository.NewInventurAbfragen(tx)
 
 	// Session in derselben Transaktion EXKLUSIV sperren (FOR UPDATE): verhindert den
 	// doppelten Abschluss UND koordiniert gegen gleichzeitige Scans (die die Zeile
 	// FOR SHARE halten) — der Verlust-Snapshot wird erst gezogen, wenn kein Scan mehr
 	// offen ist. Liefert zugleich den gespeicherten Scope für das Verlust-Update.
-	session, err := invRepo.SperreInventurSessionFuerAbschluss(ctx, req.SessionID)
+	session, err := invRepo.SperreLaufFuerAbschluss(ctx, req.SessionID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
@@ -88,7 +88,7 @@ func (s *Tueren) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count, err := invRepo.FinishInventurSession(ctx, session.ID, session.Scope(), claims.UserID)
+	count, err := invRepo.SchliesseLaufAb(ctx, session.ID, session.Bereich(), claims.UserID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -97,7 +97,7 @@ func (s *Tueren) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 	// In DERSELBEN Transaktion gelesen, vor dem Commit: Danach ist der Fehlbestand
 	// zwar dauerhaft gespeichert, aber ein Fehler beim Lesen dürfte den Abschluss
 	// nicht mehr zurückrollen — die Aussonderung wäre dann schon geschrieben.
-	fehlbestand, err := invRepo.LadeInventurVerluste(ctx, session.ID)
+	fehlbestand, err := invRepo.LadeVerluste(ctx, session.ID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -138,8 +138,8 @@ func (s *Tueren) InventurFehlbestandHandler() http.HandlerFunc {
 			return apierrors.BadRequest("session_id fehlt", nil)
 		}
 
-		invRepo := repository.NewInventoryRepository(s.DB.Pool)
-		liste, err := invRepo.LadeInventurVerluste(r.Context(), sessionID)
+		invRepo := repository.NewInventurAbfragen(s.DB.Pool)
+		liste, err := invRepo.LadeVerluste(r.Context(), sessionID)
 		if err != nil {
 			return apierrors.Internal("Fehlbestand konnte nicht geladen werden", err)
 		}

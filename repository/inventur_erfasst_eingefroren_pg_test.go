@@ -20,7 +20,7 @@ import (
 func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 
 	eins := func(was, sql string, args ...any) string {
 		t.Helper()
@@ -55,8 +55,8 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 	ex2 := eins("Exemplar 2", `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'INV-E2') RETURNING id`, titelID)
 
 	praefix := "INV"
-	sess, err := repo.CreateInventurSession(ctx, "signature",
-		InventurScope{Signatur: &praefix}, "INV", "")
+	sess, err := repo.LegeLaufAn(ctx, "signature",
+		InventurBereich{Signatur: &praefix}, "INV", "")
 	if err != nil {
 		t.Fatalf("Session anlegen: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 		}
 	}
 
-	if _, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{Signatur: &praefix}, bearbeiter); err != nil {
+	if _, err := repo.SchliesseLaufAb(ctx, sess.ID, InventurBereich{Signatur: &praefix}, bearbeiter); err != nil {
 		t.Fatalf("Session abschließen: %v", err)
 	}
 
@@ -91,10 +91,10 @@ func TestInventurErgebnisAendertSichNichtNachtraeglich(t *testing.T) {
 
 // erfassteLautBericht liest die Zahl so, wie die Oberfläche sie zeigt: über die Liste
 // der abgeschlossenen Durchgänge.
-func erfassteLautBericht(t *testing.T, pool interface{}, repo *InventoryRepository, sessionID string) int {
+func erfassteLautBericht(t *testing.T, pool interface{}, repo *InventurAbfragen, sessionID string) int {
 	t.Helper()
 	_ = pool
-	sessions, err := repo.ListAbgeschlosseneInventurSessions(context.Background(), 50)
+	sessions, err := repo.LadeAbgeschlosseneLaeufe(context.Background(), 50)
 	if err != nil {
 		t.Fatalf("abgeschlossene Sessions lesen: %v", err)
 	}

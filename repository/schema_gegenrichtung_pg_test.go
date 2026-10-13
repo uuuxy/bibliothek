@@ -275,8 +275,8 @@ var checkBedingungenBestand = []string{
 	// bietet sie nicht an (inventur/jahrgang_vorgabe_pg_test.go).
 	"chk_jahrgang_spanne",
 	// Migration 149, befragt am 29.09.2026: Eine laufende Inventur ist nie verworfen. Die
-	// Schreiber der beiden Spalten: CreateInventurSession legt ohne beide an (false, NULL),
-	// FinishInventurSession setzt nur abgeschlossen_am, AbortInventurSession setzt beide in
+	// Schreiber der beiden Spalten: LegeLaufAn legt ohne beide an (false, NULL),
+	// SchliesseLaufAb setzt nur abgeschlossen_am, VerwerfeLauf setzt beide in
 	// einer Anweisung — keiner läuft gegen die Regel. Keiner setzt abgeschlossen_am zurück;
 	// wer je „Inventur wieder öffnen" baut und verworfen stehen lässt, bekommt einen Abbruch
 	// (23514), keinen Satz (api/inventurlauf/inventur_verworfen_pg_test.go).

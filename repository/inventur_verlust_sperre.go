@@ -32,10 +32,10 @@ var ErrVerlustNochGebunden = errors.New("exemplar hängt noch an einem laufenden
 // Bewusst alles-oder-nichts: Ein Teilerfolg („28 von 30 gelöscht") lässt die Bedienung
 // mit der Frage zurück, welche zwei übrig sind und warum. Mit den Barcodes im Text kann
 // man sie in der Liste abwählen und den Rest durchlaufen lassen.
-func (r *InventoryRepository) pruefeVerlusteLoeschbar(ctx context.Context, ids []string, barcodeVon map[string]string) error {
+func (a *InventurAbfragen) pruefeVerlusteLoeschbar(ctx context.Context, ids []string, barcodeVon map[string]string) error {
 	// Die offene Ausleihe ist ein Sicherheitsnetz, kein erwarteter Fall: Der
 	// Inventurabschluss bucht ein verliehenes Exemplar gar nicht erst als Verlust
-	// (InventurScope.Bedingung schließt es aus). Sie kostet eine Abfrage und deckt den
+	// (InventurBereich.bedingung schließt es aus). Sie kostet eine Abfrage und deckt den
 	// Weg ab, den heute niemand kennt.
 	for _, sperre := range []struct {
 		grund string
@@ -54,7 +54,7 @@ func (r *InventoryRepository) pruefeVerlusteLoeschbar(ctx context.Context, ids [
 			 WHERE exemplar_id = ANY($1) AND ist_bezahlt = false`,
 		},
 	} {
-		betroffen, err := r.barcodesZu(ctx, sperre.query, ids, barcodeVon)
+		betroffen, err := a.ladeBarcodesZu(ctx, sperre.query, ids, barcodeVon)
 		if err != nil {
 			return err
 		}
@@ -66,10 +66,10 @@ func (r *InventoryRepository) pruefeVerlusteLoeschbar(ctx context.Context, ids [
 	return nil
 }
 
-// barcodesZu liefert die Barcodes der Exemplare, die die Abfrage zurückgibt — sortiert,
+// ladeBarcodesZu liefert die Barcodes der Exemplare, die die Abfrage zurückgibt — sortiert,
 // damit die Meldung bei gleicher Lage gleich lautet.
-func (r *InventoryRepository) barcodesZu(ctx context.Context, query string, ids []string, barcodeVon map[string]string) ([]string, error) {
-	rows, err := r.db.Query(ctx, query, ids)
+func (a *InventurAbfragen) ladeBarcodesZu(ctx context.Context, query string, ids []string, barcodeVon map[string]string) ([]string, error) {
+	rows, err := a.db.Query(ctx, query, ids)
 	if err != nil {
 		return nil, fmt.Errorf("prüfung auf laufende vorgänge fehlgeschlagen: %w", err)
 	}

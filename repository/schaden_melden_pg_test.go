@@ -58,7 +58,7 @@ func TestMarkiereVerlustAlsGefunden_BeendetForderung(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gefunden, befund, err := NewInventoryRepository(pool).MarkiereVerlustAlsGefunden(ctx, copyID, bearbeiter)
+	gefunden, befund, err := NewInventurAbfragen(pool).MarkiereVerlustAlsGefunden(ctx, copyID, bearbeiter)
 	if err != nil {
 		t.Fatalf("MarkiereVerlustAlsGefunden: %v", err)
 	}

@@ -14,7 +14,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 	bearbeiter := seedBearbeiter(t, pool)
 
 	mathe, deutsch := "Mathematik", "Deutsch"
@@ -22,19 +22,19 @@ func TestInventurParallelbetrieb(t *testing.T) {
 	deutschEx := seedSignaturMitExemplaren(t, pool, deutsch, 4)
 
 	// Kollege A: Mathe-Session, scannt 3 von 5.
-	sessA, err := repo.CreateInventurSession(ctx, "signature", InventurScope{Signatur: &mathe}, "Mathematik", "")
+	sessA, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &mathe}, "Mathematik", "")
 	if err != nil {
 		t.Fatalf("Session A anlegen: %v", err)
 	}
 	for _, ex := range matheEx[:3] {
-		if err := repo.RecordInventurScan(ctx, sessA.ID, ex); err != nil {
+		if err := repo.VerbucheScan(ctx, sessA.ID, ex); err != nil {
 			t.Fatalf("Scan A: %v", err)
 		}
 	}
 
 	// Kollege B startet PARALLEL eine Deutsch-Session — im alten Modell hätte das A's
 	// Fortschritt global gelöscht.
-	sessB, err := repo.CreateInventurSession(ctx, "signature", InventurScope{Signatur: &deutsch}, "Deutsch", "")
+	sessB, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &deutsch}, "Deutsch", "")
 	if err != nil {
 		t.Fatalf("Session B anlegen: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestInventurParallelbetrieb(t *testing.T) {
 	}
 
 	// A schließt ab: genau die 2 nicht gescannten Mathe-Exemplare gelten als Verlust.
-	verloren, err := repo.FinishInventurSession(ctx, sessA.ID, InventurScope{Signatur: &mathe}, bearbeiter)
+	verloren, err := repo.SchliesseLaufAb(ctx, sessA.ID, InventurBereich{Signatur: &mathe}, bearbeiter)
 	if err != nil {
 		t.Fatalf("Finish A: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 	bearbeiter := seedBearbeiter(t, pool)
 
 	physik := "Physik"
@@ -75,9 +75,9 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	leiheAus(t, pool, ex[0]) // ein Exemplar verliehen
 
 	// Scope zählt nur die 2 physisch anwesenden.
-	scope, err := repo.ZaehleScope(ctx, InventurScope{Signatur: &physik})
+	scope, err := repo.ZaehleBereich(ctx, InventurBereich{Signatur: &physik})
 	if err != nil {
-		t.Fatalf("ZaehleScope: %v", err)
+		t.Fatalf("ZaehleBereich: %v", err)
 	}
 	if scope != 2 {
 		t.Errorf("Scope mit 1 verliehenen: erwartet 2, war %d", scope)
@@ -85,11 +85,11 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 
 	// Session starten, NICHTS scannen, abschließen: nur die 2 anwesenden fehlen.
 	// Das verliehene Buch darf nicht darunter sein.
-	sess, err := repo.CreateInventurSession(ctx, "signature", InventurScope{Signatur: &physik}, "Physik", "")
+	sess, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &physik}, "Physik", "")
 	if err != nil {
 		t.Fatalf("Session anlegen: %v", err)
 	}
-	verloren, err := repo.FinishInventurSession(ctx, sess.ID, InventurScope{Signatur: &physik}, bearbeiter)
+	verloren, err := repo.SchliesseLaufAb(ctx, sess.ID, InventurBereich{Signatur: &physik}, bearbeiter)
 	if err != nil {
 		t.Fatalf("Finish: %v", err)
 	}
@@ -101,51 +101,51 @@ func TestInventurAusgelieheneNichtVerloren(t *testing.T) {
 	}
 }
 
-// TestInventurEineOffeneSessionJeScope prüft den partiellen Unique-Index: Ein zweiter
+// TestInventurEinOffenerLaufJeBereich prüft den partiellen Unique-Index: Ein zweiter
 // Start im selben Scope wird als ErrInventurLaeuftBereits abgewiesen (statt still den
 // Fortschritt zu übernehmen/überschreiben).
-func TestInventurEineOffeneSessionJeScope(t *testing.T) {
+func TestInventurEinOffenerLaufJeBereich(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 
 	chemie := "Chemie"
 	seedSignaturMitExemplaren(t, pool, chemie, 2)
 
-	if _, err := repo.CreateInventurSession(ctx, "signature", InventurScope{Signatur: &chemie}, "Chemie", ""); err != nil {
+	if _, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &chemie}, "Chemie", ""); err != nil {
 		t.Fatalf("erste Session: %v", err)
 	}
 
-	_, err := repo.CreateInventurSession(ctx, "signature", InventurScope{Signatur: &chemie}, "Chemie", "")
+	_, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &chemie}, "Chemie", "")
 	if !errors.Is(err, ErrInventurLaeuftBereits) {
 		t.Errorf("zweite Session im selben Scope: erwartet ErrInventurLaeuftBereits, war %v", err)
 	}
 
 	// Nach Abbruch ist der Scope wieder frei.
-	offen, err := repo.ListOffeneInventurSessions(ctx)
+	offen, err := repo.LadeOffeneLaeufe(ctx)
 	if err != nil {
 		t.Fatalf("ListOffene: %v", err)
 	}
 	if len(offen) != 1 {
 		t.Fatalf("erwartet 1 offene Session, waren %d", len(offen))
 	}
-	if err := repo.AbortInventurSession(ctx, offen[0].ID); err != nil {
+	if err := repo.VerwerfeLauf(ctx, offen[0].ID); err != nil {
 		t.Fatalf("Abort: %v", err)
 	}
-	if _, err := repo.CreateInventurSession(ctx, "signature", InventurScope{Signatur: &chemie}, "Chemie", ""); err != nil {
+	if _, err := repo.LegeLaufAn(ctx, "signature", InventurBereich{Signatur: &chemie}, "Chemie", ""); err != nil {
 		t.Errorf("nach Abbruch muss ein Neustart möglich sein, war: %v", err)
 	}
 }
 
-// TestInventurFilterScopeFachKlasse sichert den gezielten Teil-Scope ab: eine Inventur
+// TestInventurBereichFachUndJahrgang sichert den gezielten Teil-Scope ab: eine Inventur
 // nach Fach + Klasse erfasst genau die Titel mit passendem Fach UND Jahrgangsbereich —
 // nicht die mit falschem Fach oder außerhalb der Klasse.
-func TestInventurFilterScopeFachKlasse(t *testing.T) {
+func TestInventurBereichFachUndJahrgang(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
 	ctx := context.Background()
-	repo := NewInventoryRepository(pool)
+	repo := NewInventurAbfragen(pool)
 	bearbeiter := seedBearbeiter(t, pool)
 
 	matheKl5 := seedFachExemplar(t, pool, "Mathematik", 5, 6, "BC-MA5")  // im Scope
@@ -161,39 +161,39 @@ func TestInventurFilterScopeFachKlasse(t *testing.T) {
 	}
 
 	subject, grade := "Mathematik", 5
-	scope := InventurScope{Subject: &subject, Grade: &grade}
+	scope := InventurBereich{Fach: &subject, Jahrgang: &grade}
 
-	if n, err := repo.ZaehleScope(ctx, scope); err != nil {
-		t.Fatalf("ZaehleScope: %v", err)
+	if n, err := repo.ZaehleBereich(ctx, scope); err != nil {
+		t.Fatalf("ZaehleBereich: %v", err)
 	} else if n != 1 {
 		t.Errorf("Scope 'Mathe Kl.5': erwartet 1, war %d", n)
 	}
 
 	// Dimensions-Prüfung (Scan-Warnung): nur das passende Fach+Klasse gehört dazu.
-	if in, err := repo.ExemplarImScope(ctx, matheKl5, scope); err != nil {
-		t.Fatalf("ExemplarImScope matheKl5: %v", err)
+	if in, err := repo.IstExemplarImBereich(ctx, matheKl5, scope); err != nil {
+		t.Fatalf("IstExemplarImBereich matheKl5: %v", err)
 	} else if !in {
 		t.Error("Mathe Kl.5 sollte im Scope sein")
 	}
 
-	if in, err := repo.ExemplarImScope(ctx, deutschKl5, scope); err != nil {
-		t.Fatalf("ExemplarImScope deutschKl5: %v", err)
+	if in, err := repo.IstExemplarImBereich(ctx, deutschKl5, scope); err != nil {
+		t.Fatalf("IstExemplarImBereich deutschKl5: %v", err)
 	} else if in {
 		t.Error("Deutsch Kl.5 sollte NICHT im Scope sein (falsches Fach)")
 	}
-	if in, err := repo.ExemplarImScope(ctx, matheOhne, scope); err != nil {
-		t.Fatalf("ExemplarImScope matheOhne: %v", err)
+	if in, err := repo.IstExemplarImBereich(ctx, matheOhne, scope); err != nil {
+		t.Fatalf("IstExemplarImBereich matheOhne: %v", err)
 	} else if in {
 		t.Error("Mathe ohne Jahrgang sollte NICHT im Scope einer Klasse sein")
 	}
 
-	sess, err := repo.CreateInventurSession(ctx, "filter", scope, "Mathematik · Kl. 5", "")
+	sess, err := repo.LegeLaufAn(ctx, "filter", scope, "Mathematik · Kl. 5", "")
 	if err != nil {
 		t.Fatalf("Filter-Session anlegen: %v", err)
 	}
 
 	// Nichts scannen, abschließen: genau das eine In-Scope-Exemplar fehlt.
-	verloren, err := repo.FinishInventurSession(ctx, sess.ID, scope, bearbeiter)
+	verloren, err := repo.SchliesseLaufAb(ctx, sess.ID, scope, bearbeiter)
 	if err != nil {
 		t.Fatalf("Finish: %v", err)
 	}

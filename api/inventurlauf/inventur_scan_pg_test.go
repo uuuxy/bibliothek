@@ -39,8 +39,8 @@ func TestInventurScan_FremderScopeNichtErfasst(t *testing.T) {
 	testdaten.SeedSignaturMitExemplar(t, pool, sigDeutsch, barcodeDeutsch)
 	exMathe := testdaten.SeedSignaturMitExemplar(t, pool, "INV-Mathe-"+suffix, barcodeMathe)
 
-	invRepo := repository.NewInventoryRepository(pool)
-	session, err := invRepo.CreateInventurSession(ctx, "signature", repository.InventurScope{Signatur: &sigDeutsch}, "Deutsch", "")
+	invRepo := repository.NewInventurAbfragen(pool)
+	session, err := invRepo.LegeLaufAn(ctx, "signature", repository.InventurBereich{Signatur: &sigDeutsch}, "Deutsch", "")
 	if err != nil {
 		t.Fatalf("Deutsch-Session anlegen: %v", err)
 	}
@@ -110,8 +110,8 @@ func TestInventurScan_UnbekannterBarcodeNenntKeinenDatenbankfehler(t *testing.T)
 		t.Fatalf("Sessions leeren: %v", err)
 	}
 	testdaten.ResetBestandsdaten(t, pool)
-	session, err := repository.NewInventoryRepository(pool).
-		CreateInventurSession(ctx, "global", repository.InventurScope{}, "Komplette Bibliothek", "")
+	session, err := repository.NewInventurAbfragen(pool).
+		LegeLaufAn(ctx, "global", repository.InventurBereich{}, "Komplette Bibliothek", "")
 	if err != nil {
 		t.Fatalf("Inventur anlegen: %v", err)
 	}
@@ -166,8 +166,8 @@ func TestInventurScan_Fehlerfaelle(t *testing.T) {
 		t.Fatalf("Ausleihe anlegen: %v", err)
 	}
 
-	invRepo := repository.NewInventoryRepository(pool)
-	session, err := invRepo.CreateInventurSession(ctx, "signature", repository.InventurScope{Signatur: &sigDeutsch}, "Deutsch", "")
+	invRepo := repository.NewInventurAbfragen(pool)
+	session, err := invRepo.LegeLaufAn(ctx, "signature", repository.InventurBereich{Signatur: &sigDeutsch}, "Deutsch", "")
 	if err != nil {
 		t.Fatalf("Deutsch-Session anlegen: %v", err)
 	}

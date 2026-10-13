@@ -24,7 +24,7 @@ func TestStatusConstraints(t *testing.T) {
 
 	// Der frühere Unterfall "inventur-status nur NULL/ausstehend/erfasst" entfiel mit
 	// Migration 045: Die Spalte inventur_status existiert nicht mehr, der Inventur-
-	// Fortschritt ist session-gebunden (siehe repository/inventur_session_repo_test.go).
+	// Fortschritt ist session-gebunden (siehe repository/inventurlauf_pg_test.go).
 
 	// Der Unterfall „grade_level nur 0–13" entfiel mit Migration 163: Die Spalte existiert
 	// nicht mehr, den Jahrgang prüft chk_jahrgang_spanne

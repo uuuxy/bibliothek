@@ -52,7 +52,7 @@ func verlustLage(t *testing.T, pool *pgxpool.Pool, barcodes ...string) map[strin
 		`INSERT INTO inventur_sessions (scope_type) VALUES ('global') RETURNING id`).Scan(&sessionID); err != nil {
 		t.Fatalf("Inventur anlegen: %v", err)
 	}
-	gebucht, err := repository.NewInventoryRepository(pool).FinishInventurSession(ctx, sessionID, repository.InventurScope{}, testdaten.AdminFuerAudit(t, pool))
+	gebucht, err := repository.NewInventurAbfragen(pool).SchliesseLaufAb(ctx, sessionID, repository.InventurBereich{}, testdaten.AdminFuerAudit(t, pool))
 	if err != nil {
 		t.Fatalf("Inventur abschließen: %v", err)
 	}

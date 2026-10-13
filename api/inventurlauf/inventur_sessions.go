@@ -48,9 +48,9 @@ type AbgeschlosseneInventurDTO struct {
 // @Router       /inventur/abgeschlossen [get]
 func (s *Tueren) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		invRepo := repository.NewInventoryRepository(s.DB.Pool)
+		invRepo := repository.NewInventurAbfragen(s.DB.Pool)
 
-		sessions, err := invRepo.ListAbgeschlosseneInventurSessions(r.Context(), 10)
+		sessions, err := invRepo.LadeAbgeschlosseneLaeufe(r.Context(), 10)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -64,7 +64,7 @@ func (s *Tueren) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
 			}
 			out = append(out, AbgeschlosseneInventurDTO{
 				SessionID:       sessions[i].ID,
-				Label:           sessions[i].ScopeLabel,
+				Label:           sessions[i].Bezeichnung,
 				AbgeschlossenAm: abgeschlossen,
 				Erfasst:         sessions[i].Erfasst,
 				Verluste:        sessions[i].Verluste,
@@ -88,9 +88,9 @@ func (s *Tueren) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
 func (s *Tueren) ListInventurSessionsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		invRepo := repository.NewInventoryRepository(s.DB.Pool)
+		invRepo := repository.NewInventurAbfragen(s.DB.Pool)
 
-		sessions, err := invRepo.ListOffeneInventurSessions(ctx)
+		sessions, err := invRepo.LadeOffeneLaeufe(ctx)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -98,15 +98,15 @@ func (s *Tueren) ListInventurSessionsHandler() http.HandlerFunc {
 
 		out := make([]InventurSessionDTO, 0, len(sessions))
 		for i := range sessions {
-			erwartet, err := invRepo.ZaehleScope(ctx, sessions[i].Scope())
+			erwartet, err := invRepo.ZaehleBereich(ctx, sessions[i].Bereich())
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
 			out = append(out, InventurSessionDTO{
 				SessionID:   sessions[i].ID,
-				Scope:       sessions[i].ScopeType,
-				Label:       sessions[i].ScopeLabel,
+				Scope:       sessions[i].BereichArt,
+				Label:       sessions[i].Bezeichnung,
 				GestartetAm: sessions[i].GestartetAm,
 				Erfasst:     sessions[i].Erfasst,
 				Erwartet:    erwartet,
@@ -145,9 +145,9 @@ func (s *Tueren) InventurAbortHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		invRepo := repository.NewInventoryRepository(s.DB.Pool)
-		if err := invRepo.AbortInventurSession(ctx, req.SessionID); err != nil {
-			if errors.Is(err, repository.ErrInventurSessionNichtGefunden) {
+		invRepo := repository.NewInventurAbfragen(s.DB.Pool)
+		if err := invRepo.VerwerfeLauf(ctx, req.SessionID); err != nil {
+			if errors.Is(err, repository.ErrInventurlaufNichtGefunden) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)
 				return
 			}

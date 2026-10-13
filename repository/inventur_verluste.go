@@ -2,19 +2,66 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
 )
 
+// InventurVerlust ist eine Zeile des Fehlbestandsberichts.
+type InventurVerlust struct {
+	// ExemplarID kann fehlen (leerer String): Das FK-Feld geht bei einer endgültigen
+	// Löschung des Exemplars auf NULL (Migration 059, ON DELETE SET NULL) — die
+	// Textspalten bleiben trotzdem lesbar. Ohne ExemplarID sind "Gefunden" und
+	// "endgültig löschen" nicht mehr möglich, das Exemplar ist ja schon weg.
+	ExemplarID string `json:"exemplar_id,omitempty"`
+	BarcodeID  string `json:"barcode_id"`
+	Titel      string `json:"titel"`
+	Autor      string `json:"autor"`
+	Signatur   string `json:"signatur"`
+	GebuchtAm  string `json:"gebucht_am"`
+	// GefundenAm ist gesetzt, sobald das Exemplar beim Nachsuchen wiedergefunden und
+	// über den "Gefunden"-Knopf zurück in Umlauf gebracht wurde (Migration 061).
+	GefundenAm string `json:"gefunden_am,omitempty"`
+}
+
+// LadeVerluste liefert den Fehlbestand einer abgeschlossenen Session.
+//
+// Sortiert nach Signatur und Titel — das ist die Reihenfolge, in der man mit der Liste
+// durchs Regal geht. Nach Barcode oder Buchungszeit sortiert wäre sie zum Nachsuchen
+// unbrauchbar, weil man dann kreuz und quer laufen müsste.
+func (a *InventurAbfragen) LadeVerluste(ctx context.Context, laufID string) ([]InventurVerlust, error) {
+	rows, err := a.db.Query(ctx, `
+		SELECT coalesce(exemplar_id::text, ''), barcode_id, titel, autor, signatur,
+		       to_char(gebucht_am, 'YYYY-MM-DD"T"HH24:MI:SSOF'),
+		       coalesce(to_char(gefunden_am, 'YYYY-MM-DD"T"HH24:MI:SSOF'), '')
+		FROM inventur_verluste
+		WHERE session_id = $1
+		ORDER BY signatur, titel, barcode_id
+	`, laufID)
+	if err != nil {
+		return nil, fmt.Errorf("fehlbestand laden fehlgeschlagen: %w", err)
+	}
+	defer rows.Close()
+
+	// Nie nil: Eine leere Liste muss beim Client als [] ankommen.
+	liste := make([]InventurVerlust, 0)
+	for rows.Next() {
+		var v InventurVerlust
+		if err := rows.Scan(&v.ExemplarID, &v.BarcodeID, &v.Titel, &v.Autor, &v.Signatur, &v.GebuchtAm, &v.GefundenAm); err != nil {
+			return nil, fmt.Errorf("fehlbestand lesen fehlgeschlagen: %w", err)
+		}
+		liste = append(liste, v)
+	}
+	return liste, rows.Err()
+}
+
 // Zwei Handlungen für den Fehlbestandsbericht (Migration 061). Vorher war er reine
 // Anzeige — Rückmeldung aus der Bibliothek (05.08.2026): „was mache ich [dann]? ich kann nicht weiter damit
 // machen!" Beim Regal-Absuchen gibt es genau zwei Ausgänge je Zeile: das Buch taucht
 // doch wieder auf, oder es bleibt endgültig weg. Beide brauchen einen Knopf.
 //
-// Transaktionsgrenze liegt bewusst NICHT hier: Wie FinishInventurSession erwarten
+// Transaktionsgrenze liegt bewusst NICHT hier: Wie SchliesseLaufAb erwarten
 // diese Methoden ein bereits eröffnetes db (Pool oder Tx) — der Aufrufer (Handler)
 // eröffnet die Transaktion, damit Snapshot, Update und Audit-Log atomar bleiben.
 
@@ -28,9 +75,9 @@ import (
 // stand das Buch wieder im Regal, das Kind blieb gesperrt und die Forderung offen —
 // beendet wurde sie nur, wenn das Buch über die Theke zurückkam (OFFEN.md 5.3). Der
 // Befund sagt, was storniert wurde und ob ein Bescheid schon bei der Aufsicht liegt.
-func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, exemplarID, bearbeiterID string) (bool, RueckkehrBefund, error) {
+func (a *InventurAbfragen) MarkiereVerlustAlsGefunden(ctx context.Context, exemplarID, bearbeiterID string) (bool, RueckkehrBefund, error) {
 	var barcode, titel string
-	err := r.db.QueryRow(ctx,
+	err := a.db.QueryRow(ctx,
 		`SELECT e.barcode_id, t.titel FROM buecher_exemplare e
 		 JOIN buecher_titel t ON t.id = e.titel_id
 		 WHERE e.id = $1 AND e.ist_ausgesondert = true AND e.aussonderung_grund = 'VERLUST'`,
@@ -46,7 +93,7 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 	// Derselbe Baustein wie an der Theke (seit 15.09.2026, Stufe 2, Commit 8): Umlauf und
 	// Forderung in der Transaktion des Handlers. Bis dahin stand das UPDATE hier ein zweites
 	// Mal — zwei Schreibweisen für eine Rückkehr, die nur zufällig einig waren.
-	befund, err := HoleExemplarZurueck(ctx, r.db, exemplarID, bearbeiterID, nil)
+	befund, err := HoleExemplarZurueck(ctx, a.db, exemplarID, bearbeiterID, nil)
 	if err != nil {
 		return false, RueckkehrBefund{}, err
 	}
@@ -54,17 +101,17 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 	// Alle noch offenen Verlust-Zeilen dieses Exemplars schliessen, nicht nur die einer
 	// bestimmten Session — ein Exemplar kann rein rechnerisch mehrfach als Verlust
 	// gebucht worden sein, wenn ein Fund vor dem Klick hier nie eingetragen wurde.
-	if _, err := r.db.Exec(ctx, `
+	if _, err := a.db.Exec(ctx, `
 		UPDATE inventur_verluste SET gefunden_am = CURRENT_TIMESTAMP
 		WHERE exemplar_id = $1 AND gefunden_am IS NULL
 	`, exemplarID); err != nil {
 		return false, RueckkehrBefund{}, fmt.Errorf("verlustbericht aktualisieren fehlgeschlagen: %w", err)
 	}
 
-	if err := schreibeAuditLog(ctx, r.db, protokollEintrag{
+	if err := schreibeProtokollEintrag(ctx, a.db, protokollEintrag{
 		Tabelle: "buecher_exemplare", Aktion: "UPDATE", DatensatzID: exemplarID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER",
-		Kontext: strPtr("Als Verlust gebuchtes Exemplar beim Nachsuchen gefunden"),
+		Kontext: zeigerAuf("Als Verlust gebuchtes Exemplar beim Nachsuchen gefunden"),
 		Details: map[string]any{"barcode_id": barcode, "titel": titel, "action": "verlust_gefunden"},
 	}); err != nil {
 		return false, RueckkehrBefund{}, err
@@ -72,7 +119,7 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 	return true, befund, nil
 }
 
-// EndgueltigLoescheVerlustExemplare entfernt bereits als Verlust gebuchte Exemplare
+// LoescheVerlusteEndgueltig entfernt bereits als Verlust gebuchte Exemplare
 // unwiderruflich aus dem Katalog. Der Fehlbestandsbericht bleibt lesbar (Migration
 // 059: ON DELETE SET NULL, die Textspalten sind eine Abschrift) — nur das Löschen
 // beendet den offenen Zustand endgültig.
@@ -82,12 +129,12 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 // sie darf nur aufräumen, was der Fehlbestandsbericht selbst schon als verloren
 // gebucht hat. Liefert die Zahl der tatsächlich gelöschten Exemplare (IDs, die schon
 // vorher weg waren oder nicht VERLUST sind, werden still übersprungen).
-func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Context, exemplarIDs []string, bearbeiterID string) ([]string, error) {
+func (a *InventurAbfragen) LoescheVerlusteEndgueltig(ctx context.Context, exemplarIDs []string, bearbeiterID string) ([]string, error) {
 	if len(exemplarIDs) == 0 {
 		return nil, nil
 	}
 
-	rows, err := r.db.Query(ctx, `
+	rows, err := a.db.Query(ctx, `
 		SELECT e.id, e.barcode_id, t.titel, `+SQLWarImBestand+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
@@ -124,7 +171,7 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 		barcodeVon[s.id] = s.barcode
 	}
 
-	if err := r.pruefeVerlusteLoeschbar(ctx, ids, barcodeVon); err != nil {
+	if err := a.pruefeVerlusteLoeschbar(ctx, ids, barcodeVon); err != nil {
 		return nil, err
 	}
 
@@ -142,27 +189,27 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 	// (inventur_verluste hält eine Abschrift, ON DELETE SET NULL), und der Barcode wird
 	// wieder frei: `buecher_exemplare.barcode_id` ist UNIQUE ohne Teilindex, eine
 	// stehengebliebene Zeile blockierte den Aufkleber für immer.
-	if _, err := r.db.Exec(ctx,
+	if _, err := a.db.Exec(ctx,
 		`DELETE FROM schadensfaelle WHERE exemplar_id = ANY($1)`, ids,
 	); err != nil {
 		return nil, fmt.Errorf("erledigte schadensfälle der verlust-exemplare löschen fehlgeschlagen: %w", err)
 	}
-	if _, err := r.db.Exec(ctx,
+	if _, err := a.db.Exec(ctx,
 		`DELETE FROM ausleihen WHERE exemplar_id = ANY($1) AND rueckgabe_am IS NOT NULL`, ids,
 	); err != nil {
 		return nil, fmt.Errorf("ausleihhistorie der verlust-exemplare löschen fehlgeschlagen: %w", err)
 	}
-	if _, err := r.db.Exec(ctx,
+	if _, err := a.db.Exec(ctx,
 		`DELETE FROM buecher_exemplare WHERE id = ANY($1)`, ids,
 	); err != nil {
 		return nil, fmt.Errorf("verlust-exemplare endgültig löschen fehlgeschlagen: %w", err)
 	}
 
 	for _, s := range treffer {
-		if err := schreibeAuditLog(ctx, r.db, protokollEintrag{
+		if err := schreibeProtokollEintrag(ctx, a.db, protokollEintrag{
 			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: s.id,
 			BearbeiterID: &bearbeiterID, Akteur: "USER",
-			Kontext: strPtr("Als Verlust gebuchtes Exemplar endgültig gelöscht"),
+			Kontext: zeigerAuf("Als Verlust gebuchtes Exemplar endgültig gelöscht"),
 			Details: map[string]any{
 				"barcode_id": s.barcode, "titel": s.titel,
 				"action": ProtokollAktionVerlustEndgueltigGeloescht, ProtokollDetailWarImBestand: s.warImBestand,
@@ -178,33 +225,4 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 	return ids, nil
 }
 
-func strPtr(s string) *string { return &s }
-
-// schreibeAuditLog schreibt EINEN audit_log-Eintrag über die Schnittstelle Datenbank.
-// Eigene, kleine Kopie statt pgProtokollAbfragen.schreibeEintrag: Jene
-// verlangt konkret pgx.Tx, hier liegt aber nur r.db (Datenbank) vor — dieselbe
-// Verengung, die schon FinishInventurSession umgeht, indem es Pool und Tx über
-// dasselbe Interface anspricht. Direktes Schreiben in audit_log ist an mehreren
-// Stellen im Projekt so üblich (z. B. api/leser/student_update.go), nicht nur über die
-// Kapselung in protokoll.go.
-func schreibeAuditLog(ctx context.Context, db Datenbank, e protokollEintrag) error {
-	var detailsJSON []byte
-	if e.Details != nil {
-		var err error
-		detailsJSON, err = json.Marshal(e.Details)
-		if err != nil {
-			return fmt.Errorf("audit details serialization: %w", err)
-		}
-	}
-	_, err := db.Exec(ctx, `
-		INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur, kontext, details)
-		VALUES ($1, $2, $3::uuid, $4, $5, $6, $7)
-	`, e.Tabelle, e.Aktion, e.DatensatzID, e.BearbeiterID, e.Akteur, e.Kontext,
-		func() any {
-			if detailsJSON == nil {
-				return nil
-			}
-			return string(detailsJSON)
-		}())
-	return err
-}
+func zeigerAuf(s string) *string { return &s }

@@ -12,7 +12,7 @@ import (
 // TestInventurFehlbestandNenntDieBuecher belegt, dass der Abschluss einer Inventur nicht
 // nur ZÄHLT, sondern festhält, WELCHE Exemplare fehlen.
 //
-// Vorher gab FinishInventurSession allein eine Zahl zurück: „47 Verluste". Damit kann
+// Vorher gab SchliesseLaufAb allein eine Zahl zurück: „47 Verluste". Damit kann
 // niemand ins Regal gehen und nachsehen, ob ein Buch wirklich fehlt oder nur falsch
 // einsortiert war. Und rekonstruieren liess es sich danach auch nicht mehr — die
 // Exemplare fallen durch die Aussonderung aus der Scope-Bedingung.
@@ -60,12 +60,12 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 		t.Fatalf("Session anlegen: %v", err)
 	}
 
-	repo := NewInventoryRepository(pool)
-	if err := repo.RecordInventurScan(ctx, sessionID, gescannt); err != nil {
+	repo := NewInventurAbfragen(pool)
+	if err := repo.VerbucheScan(ctx, sessionID, gescannt); err != nil {
 		t.Fatalf("Scan erfassen: %v", err)
 	}
 
-	verloren, err := repo.FinishInventurSession(ctx, sessionID, InventurScope{}, bearbeiter)
+	verloren, err := repo.SchliesseLaufAb(ctx, sessionID, InventurBereich{}, bearbeiter)
 	if err != nil {
 		t.Fatalf("Abschluss: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 		t.Fatalf("%d Verluste gemeldet, erwartet 2 (das gescannte Exemplar darf nicht dabei sein)", verloren)
 	}
 
-	liste, err := repo.LadeInventurVerluste(ctx, sessionID)
+	liste, err := repo.LadeVerluste(ctx, sessionID)
 	if err != nil {
 		t.Fatalf("Fehlbestand laden: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 	if _, err := pool.Exec(ctx, `DELETE FROM buecher_exemplare WHERE id = $1`, fehlt1); err != nil {
 		t.Fatalf("Exemplar loeschen: %v", err)
 	}
-	nachher, err := repo.LadeInventurVerluste(ctx, sessionID)
+	nachher, err := repo.LadeVerluste(ctx, sessionID)
 	if err != nil {
 		t.Fatalf("Fehlbestand nach Loeschung: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 	}
 }
 
-// TestInventurScanFinishKoordination belegt den Nebenläufigkeits-Fix (19.08.2026):
+// TestInventurScanUndAbschlussAbgestimmt belegt den Nebenläufigkeits-Fix (19.08.2026):
 // Im Multi-Scanner-Betrieb darf ein Scan, der zeitgleich zum Abschluss eintrifft, ein
 // physisch vorliegendes Buch NICHT als Verlust hinterlassen. Der Scan hält die Session
 // FOR SHARE, der Abschluss FOR UPDATE — entweder committet der Scan zuerst (dann sieht
@@ -120,7 +120,7 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 //
 // Der Test erzwingt das enge Fenster: Der Scan startet seine Transaktion und hält die
 // FOR-SHARE-Sperre, WÄHREND der Abschluss versucht, FOR UPDATE zu nehmen.
-func TestInventurScanFinishKoordination(t *testing.T) {
+func TestInventurScanUndAbschlussAbgestimmt(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 
@@ -144,7 +144,7 @@ func TestInventurScanFinishKoordination(t *testing.T) {
 			t.Fatalf("Session: %v", err)
 		}
 
-		repo := NewInventoryRepository(pool)
+		repo := NewInventurAbfragen(pool)
 		var wg sync.WaitGroup
 		start := make(chan struct{})
 		var scanErr, finishErr error
@@ -152,7 +152,7 @@ func TestInventurScanFinishKoordination(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			<-start
-			scanErr = repo.RecordInventurScan(ctx, sessionID, exID)
+			scanErr = repo.VerbucheScan(ctx, sessionID, exID)
 		}()
 		go func() {
 			defer wg.Done()
@@ -163,13 +163,13 @@ func TestInventurScanFinishKoordination(t *testing.T) {
 				return
 			}
 			defer db.SafeRollback(ctx, tx)
-			txRepo := NewInventoryRepository(tx)
-			s, err := txRepo.SperreInventurSessionFuerAbschluss(ctx, sessionID)
+			txRepo := NewInventurAbfragen(tx)
+			s, err := txRepo.SperreLaufFuerAbschluss(ctx, sessionID)
 			if err != nil {
 				finishErr = err
 				return
 			}
-			if _, err := txRepo.FinishInventurSession(ctx, s.ID, s.Scope(), bearbeiter); err != nil {
+			if _, err := txRepo.SchliesseLaufAb(ctx, s.ID, s.Bereich(), bearbeiter); err != nil {
 				finishErr = err
 				return
 			}

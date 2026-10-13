@@ -225,7 +225,7 @@ func TestAbgangsbuch_NieEingetroffenesZaehltNichtAlsGeloescht(t *testing.T) {
 	if err := repository.NewBookRepository(pool).UpdateCopyStatus(ctx, verloren, false, true, "", nil, testdaten.AdminFuerAudit(t, pool)); err != nil {
 		t.Fatalf("bestelltes Exemplar aussondern: %v", err)
 	}
-	entfernt, err := repository.NewInventoryRepository(pool).EndgueltigLoescheVerlustExemplare(ctx, []string{verloren}, bearbeiter)
+	entfernt, err := repository.NewInventurAbfragen(pool).LoescheVerlusteEndgueltig(ctx, []string{verloren}, bearbeiter)
 	if err != nil || len(entfernt) != 1 {
 		t.Fatalf("Verlust endgültig löschen: %v, entfernt %v — dann misst dieser Test nichts", err, entfernt)
 	}

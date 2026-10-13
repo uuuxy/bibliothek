@@ -17,8 +17,8 @@ const meldungUnbekannterBarcode = "Zu diesem Barcode gibt es kein Exemplar."
 
 // ladeExemplarFuerScan lädt die für die Inventur-Logik nötigen Exemplardetails.
 // ok=false: die Fehlerantwort (404 bei unbekanntem Barcode, sonst 500) wurde bereits geschrieben.
-func ladeExemplarFuerScan(ctx context.Context, invRepo *repository.InventoryRepository, w http.ResponseWriter, barcodeID string) (*repository.InventoryScanResult, bool) {
-	res, err := invRepo.GetExemplarForInventoryScan(ctx, barcodeID)
+func ladeExemplarFuerScan(ctx context.Context, invRepo *repository.InventurAbfragen, w http.ResponseWriter, barcodeID string) (*repository.InventurExemplar, bool) {
+	res, err := invRepo.LadeExemplar(ctx, barcodeID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			// Der Satz steht am Scanner unter „Unbekanntes Buch“; der Fehler der Datenbank geht ins Log.
@@ -88,10 +88,10 @@ func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	invRepo := repository.NewInventoryRepository(s.DB.Pool)
+	invRepo := repository.NewInventurAbfragen(s.DB.Pool)
 
 	// Session muss offen sein — sonst ist der Scan gegenstandslos (404).
-	session, err := invRepo.LadeInventurSession(ctx, req.SessionID)
+	session, err := invRepo.LadeLauf(ctx, req.SessionID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("keine laufende Inventur zu dieser Session"))
@@ -105,12 +105,12 @@ func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if res.IsAusgesondert {
+	if res.IstAusgesondert {
 		apierrors.SendHTTPError(w, http.StatusConflict, fmt.Errorf("exemplar %s ist bereits ausgesondert", req.BarcodeID))
 		return
 	}
 
-	imScope, err := invRepo.ExemplarImScope(ctx, res.CopyID, session.Scope())
+	imScope, err := invRepo.IstExemplarImBereich(ctx, res.ExemplarID, session.Bereich())
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
@@ -130,7 +130,7 @@ func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 	if !imScope {
 		tuer.RespondJSON(w, http.StatusConflict, InventurScanResponse{
 			BarcodeID: req.BarcodeID,
-			Titel:     res.Title,
+			Titel:     res.Titel,
 			CoverURL:  res.CoverURL,
 			Status:    "ausser_scope",
 			Warnungen: []string{"Buch gehört nicht zum Bereich dieser Inventur — es wurde NICHT erfasst. Bitte im zuständigen Inventur-Bereich scannen."},
@@ -138,7 +138,7 @@ func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := invRepo.RecordInventurScan(ctx, req.SessionID, res.CopyID); err != nil {
+	if err := invRepo.VerbucheScan(ctx, req.SessionID, res.ExemplarID); err != nil {
 		// Die Session wurde inzwischen abgeschlossen (Multi-Scanner-Wettlauf) — der Scan
 		// ist gegenstandslos, aber kein Serverfehler. 409 mit klarer Meldung.
 		if errors.Is(err, repository.ErrInventurAbgeschlossen) {
@@ -152,9 +152,9 @@ func (s *Tueren) handleInventurScan(w http.ResponseWriter, r *http.Request) {
 
 	tuer.RespondJSON(w, http.StatusOK, InventurScanResponse{
 		BarcodeID: req.BarcodeID,
-		Titel:     res.Title,
+		Titel:     res.Titel,
 		CoverURL:  res.CoverURL,
 		Status:    "erfasst",
-		Warnungen: inventurWarnungen(res.IsLent),
+		Warnungen: inventurWarnungen(res.IstVerliehen),
 	})
 }

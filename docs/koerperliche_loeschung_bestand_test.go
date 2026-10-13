@@ -35,7 +35,7 @@ var koerperlicheLoeschungBestand = map[string]struct {
 		"Spur je Exemplar mit ProtokollAktionTitelGeloescht."},
 	"inventur/db_books_delete.go": {1, "Titel löschen (Massenaktion): die Exemplare fallen per " +
 		"ON DELETE CASCADE. Spur je Exemplar in db_books_delete_spur.go, ebenfalls ProtokollAktionTitelGeloescht."},
-	"repository/inventur_verlust_aktionen.go": {1, "Verlust endgültig löschen (Inventur). " +
+	"repository/inventur_verluste.go": {1, "Verlust endgültig löschen (Inventur). " +
 		"Spur je Exemplar mit ProtokollAktionVerlustEndgueltigGeloescht."},
 }
 

@@ -138,7 +138,7 @@ func storniereWeilZurueck(ctx context.Context, q Datenbank, schadensfallID strin
 		details["schueler_id"] = *leserID
 	}
 	kontext := "Forderung storniert: das Buch ist zurück"
-	return schreibeAuditLog(ctx, q, protokollEintrag{
+	return schreibeProtokollEintrag(ctx, q, protokollEintrag{
 		Tabelle: "schadensfaelle", Aktion: "STORNIERUNG", DatensatzID: schadensfallID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: details,
@@ -160,7 +160,7 @@ func merkeRueckgabeNachUebergabe(ctx context.Context, q Datenbank, f rueckkehrFo
 		return fmt.Errorf("bescheid %s ließ sich nicht als Rückgabe nach Übergabe vermerken", f.bescheidID)
 	}
 	kontext := "Rückgabe nach Übergabe — die Schulaufsicht ist unverzüglich zu informieren"
-	return schreibeAuditLog(ctx, q, protokollEintrag{
+	return schreibeProtokollEintrag(ctx, q, protokollEintrag{
 		Tabelle: "schadensersatz_bescheide", Aktion: "UPDATE", DatensatzID: f.bescheidID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 		Details: map[string]any{"referenznummer": f.referenznummer, "schadensfall_id": f.id},
