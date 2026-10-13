@@ -169,8 +169,12 @@ lässt sich dort anhalten.
   und Theke (`api/theke`). Alle zwölf Themen stehen in eigenen Paketen.
 - [ ] Stufe 5, Abschluss: Tests, die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die
   Dokumente nennen die neue Gliederung. Eine Messung an `repository/` entscheidet, ob die
-  Datenbankschicht folgt. Gebaut ist seit dem 13.10.2026 die Ratsche, dass kein Thema ein
-  anderes einbindet (`api/themen_ratsche_test.go`).
+  Datenbankschicht folgt. Gebaut sind seit dem 13.10.2026 die Ratsche, dass kein Thema ein
+  anderes einbindet (`api/themen_ratsche_test.go`), und der Umzug der Tests: 35 Testdateien
+  stehen bei dem Paket, dessen Regel sie prüfen (24 in `repository/`, drei in
+  `internal/service`, je eine in `db/`, `internal/lusd` und `pkg/leserart`, fünf im
+  Wurzelpaket); sechs prüfen `api/` und bleiben dort. Offen sind die Dokumente und die
+  Messung.
 
 ### Später: kleine Fehler und Aufräumarbeit
 
@@ -785,7 +789,7 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   Typ mit seinem Paket nennt (die Ausnahmen in `uuid_eingaben_test.go`:
   `benutzer.CreateUserRequest.BarcodeID`), und
   Prüfungen, die ihr Thema in festen Dateien suchen: `mail_vorlagen_platzhalter_test.go` den
-  Standardtext in `mahnwesen/mahnwesen_bulk.go`; `lmf_plan_live_test.go` ist mit den Lernmitteln
+  Standardtext in `api/mahnwesen/mahnwesen_bulk.go`; `lmf_plan_live_test.go` ist mit den Lernmitteln
   umgezogen und liest die Schreibwege des LMF-Plans in der Routenliste einen Ordner höher.
   Die Routenlisten (`router.go`, `routes_*.go`) bleiben in `api/`; neun
   Prüfungen lesen sie dort beim Namen. Eine Prüfung, die den Aufruf einer Funktion am Namen
@@ -794,11 +798,13 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   Formen. Umgekehrt sieht eine Prüfung, die mit ihrem Thema umzieht und den Baum ab `..`
   durchläuft, einen Ordner tiefer nur noch `api/` und bleibt grün. In Stufe 4 betrifft es eine
   Prüfung: Die Ratsche zum Abgangsdatum stand bei den Tests an den Türen des Katalogs und
-  steht seit dem 12.10.2026 in `abgangsdatum_ratsche_test.go`, wo sie bleibt; in den
-  Listen der übrigen vier Themen steht kein Baumlauf (gemessen am 12.10.2026). Sechs
-  Testdateien in `api/` durchlaufen den Baum ab `..`. Zieht eine in Stufe 5 zu ihrem Paket,
-  braucht sie die Wurzel von dort und eine Probe mit einem Verstoß außerhalb ihres Ordners.
-  Der Handgriff steht in [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
+  stand vom 12.10.2026 an in einer eigenen Datei in `api/`; in den Listen der übrigen vier
+  Themen steht kein Baumlauf (gemessen am 12.10.2026). Seit dem 13.10.2026 stehen die fünf
+  Prüfungen über den ganzen Baum, die keine Tür prüfen, im Wurzelpaket und lesen ihn ab `.`
+  (`abgangsdatum_ratsche_test.go`, `bestellstatus_ratsche_test.go`,
+  `privilegierte_felder_test.go`, `wegweiser_test.go`, `mail_vorlagen_platzhalter_test.go`),
+  je belegt mit einem Verstoß außerhalb von `api/`. Der Handgriff steht in
+  [ARCHITEKTUR.md](ARCHITEKTUR.md) 8.14.
 - **Verweise beim Pfad.** Die Dokumente nennen Dateien aus `api/` an 307 Stellen beim Pfad, der
   Go-Code außerhalb von `api/` an 147 Stellen in 90 Dateien, die Oberfläche an 67 (gezählt am
   12.10.2026). `docs/dateiverweise_test.go` hält die Verweise der Dokumente, der Kommentare im

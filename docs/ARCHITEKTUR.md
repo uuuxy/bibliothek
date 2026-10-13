@@ -2747,8 +2747,8 @@ wenn man ihn einmal gebraucht hat.
   zu melden. Ein gezielt gelesener Pfad wird dagegen von selbst rot, weil die Datei fehlt.
   Vor dem Umzug deshalb in den umziehenden Testdateien nach Baumläufen suchen
   (`filepath.Walk`, `filepath.WalkDir`, `os.ReadDir`, Pfade über `..`). Eine Prüfung über den
-  Baum, die keine Tür prüft, wird vorher in eine eigene Datei geschnitten und bleibt in
-  `api/`. Sie hält selbst, dass ihr Lauf die Stelle erreicht, an der ihr Gegenstand steht:
+  Baum, die keine Tür prüft, wird vorher in eine eigene Datei geschnitten; seit Stufe 5
+  steht sie im Wurzelpaket bei den übrigen Prüfungen über den Baum. Sie hält selbst, dass ihr Lauf die Stelle erreicht, an der ihr Gegenstand steht:
   `abgangsdatum_ratsche_test.go` zählt die Zeilen, die die Spalte nennen, und scheitert
   bei null. Belegt am 12.10.2026 am Katalog: Am umgezogenen Stand blieb ein Schreiber des
   Abgangsdatums in `repository/` unbemerkt, am Stand davor wird der Test rot; mit der Zählung
