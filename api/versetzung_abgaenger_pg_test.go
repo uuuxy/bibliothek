@@ -54,7 +54,7 @@ func TestVersetzung_AbgaengerTraegtKarenzUhrUndKehrtEntsperrtZurueck(t *testing.
 	}, true, true); err != nil {
 		t.Fatal(err)
 	}
-	gesperrt, abgaenger, reason, _ := leseSchuelerStatus(t, pool, id)
+	gesperrt, abgaenger, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
 	if gesperrt || abgaenger || reason != nil {
 		t.Errorf("Versetzungs-Abgänger kehrt als Ghost-Block zurück: gesperrt=%v abgaenger=%v grund=%v", gesperrt, abgaenger, reason)
 	}

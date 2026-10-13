@@ -51,7 +51,7 @@ func TestAnonymisiereAbgaenger_LoeschtFoto(t *testing.T) {
 	if fotos != 0 {
 		t.Error("verschlüsseltes Foto wurde bei der Anonymisierung nicht gelöscht")
 	}
-	if _, abgaenger, _, vorname := leseSchuelerStatus(t, pool, id); !abgaenger || vorname != "Abgänger" {
+	if _, abgaenger, _, vorname := testdaten.LeseSchuelerStatus(t, pool, id); !abgaenger || vorname != "Abgänger" {
 		t.Errorf("Datensatz nicht korrekt anonymisiert: vorname=%q abgaenger=%v", vorname, abgaenger)
 	}
 }
@@ -101,17 +101,6 @@ func runAktualisiere(t *testing.T, pool *pgxpool.Pool, zeile repository.LusdAktu
 	}
 }
 
-// leseSchuelerStatus liefert Sperr-/Abgänger-Status, Grund und Vorname nach dem Update.
-func leseSchuelerStatus(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, abgaenger bool, reason *string, vorname string) {
-	t.Helper()
-	if err := pool.QueryRow(context.Background(),
-		`SELECT ist_gesperrt, ist_abgaenger, block_reason, vorname FROM schueler WHERE id = $1`, id).
-		Scan(&gesperrt, &abgaenger, &reason, &vorname); err != nil {
-		t.Fatalf("Status lesen: %v", err)
-	}
-	return
-}
-
 func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 	pool := pgtest.Pool(t)
 
@@ -122,7 +111,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 
 		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Max", Nachname: "Muster", Klasse: "9a"}, id)
 
-		gesperrt, abgaenger, reason, _ := leseSchuelerStatus(t, pool, id)
+		gesperrt, abgaenger, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
 		if gesperrt {
 			t.Error("Rückkehrer ohne offene Vorgänge muss entsperrt sein (Permanent Ghost-Block)")
 		}
@@ -142,7 +131,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 
 		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Lea", Nachname: "Klein", Klasse: "9a"}, id)
 
-		gesperrt, abgaenger, reason, _ := leseSchuelerStatus(t, pool, id)
+		gesperrt, abgaenger, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
 		if !gesperrt {
 			t.Error("mit offener Ausleihe muss die Sperre bestehen bleiben")
 		}
@@ -162,7 +151,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 
 		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Tom", Nachname: "Groß", Klasse: "9a"}, id)
 
-		gesperrt, _, reason, _ := leseSchuelerStatus(t, pool, id)
+		gesperrt, _, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
 		if !gesperrt {
 			t.Error("mit unbezahltem Schaden muss die Sperre bestehen bleiben")
 		}
@@ -178,7 +167,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 
 		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Nia", Nachname: "Wolf", Klasse: "9a"}, id)
 
-		gesperrt, abgaenger, reason, _ := leseSchuelerStatus(t, pool, id)
+		gesperrt, abgaenger, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
 		if !gesperrt {
 			t.Error("manuelle Sperre darf nicht automatisch aufgehoben werden")
 		}
@@ -198,7 +187,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 
 		runAktualisiere(t, pool, repository.LusdAktualisierung{Vorname: "Sophie", Nachname: "Real", Klasse: "Q1"}, id)
 
-		gesperrt, abgaenger, reason, vorname := leseSchuelerStatus(t, pool, id)
+		gesperrt, abgaenger, reason, vorname := testdaten.LeseSchuelerStatus(t, pool, id)
 		if gesperrt {
 			t.Error("anonymisierter Rückkehrer muss entsperrt werden")
 		}

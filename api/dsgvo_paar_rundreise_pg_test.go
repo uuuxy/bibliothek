@@ -14,7 +14,7 @@ import (
 
 // Die Rundreise: Was die Auskunft zeigt, muss die Tilgung leeren — am echten Postgres,
 // über die echten Pfade (DeleteStudent → PurgeStudent), über JEDE Quelle der
-// gemeinsamen Liste dsgvoSchuelerQuellen (dsgvo_paar_vollstaendigkeit_test.go).
+// gemeinsamen Liste testdaten.DsgvoSchuelerQuellen.
 //
 // Drei Prüfungen:
 //  1. VORHER zeigt die Art.-15-Auskunft aus jeder Quelle etwas — sonst ist die
@@ -27,7 +27,7 @@ import (
 //     referenziert nach der Löschung niemanden mehr).
 //  3. Die Artefakte eines ZWEITEN Schülers überleben unangetastet (Über-Tilgung).
 //
-// Wächst dsgvoSchuelerQuellen (FK-Ratsche unten), zwingt der default-Zweig der
+// Wächst testdaten.DsgvoSchuelerQuellen (FK-Ratsche unten), zwingt der default-Zweig der
 // Seed-Schleife diesen Test zum Mitwachsen.
 func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 	pool := pgtest.Pool(t)
@@ -56,7 +56,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 
 	// Je Quelle der gemeinsamen Liste ein Artefakt — der default-Zweig hält die
 	// Schleife mit der Liste im Gleichschritt.
-	for _, q := range dsgvoSchuelerQuellen {
+	for _, q := range testdaten.DsgvoSchuelerQuellen {
 		var err error
 		switch q.Tabelle {
 		case "leser":
@@ -140,7 +140,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sammleDsgvoDaten vor der Löschung: %v", err)
 	}
-	for _, q := range dsgvoSchuelerQuellen {
+	for _, q := range testdaten.DsgvoSchuelerQuellen {
 		leer := false
 		switch q.Tabelle {
 		case "leser":
@@ -239,7 +239,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 }
 
 // Die Wachstums-Ratsche des Paars: Jede FK-Spalte auf schueler, die das Schema kennt,
-// muss in dsgvoSchuelerQuellen stehen — und umgekehrt. Wer eine neue Tabelle mit
+// muss in testdaten.DsgvoSchuelerQuellen stehen — und umgekehrt. Wer eine neue Tabelle mit
 // Schülerbezug baut, wird hier rot, bis Auskunft UND Tilgung sie kennen (die Liste
 // erzwingt beides: den Quelltext-Scan der Auskunft und die Seed-Schleife der Rundreise).
 //
@@ -292,7 +292,7 @@ func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
 	// unbekannte Referenz fiele sonst durch, und genau das ist der Fall, den er sucht.
 	spaltenImBezug := regexp.MustCompile(`\b[a-z_]*(?:schueler_id|leser_id)\b`)
 	inListe := map[string]bool{}
-	for _, q := range dsgvoSchuelerQuellen {
+	for _, q := range testdaten.DsgvoSchuelerQuellen {
 		if !q.MitFK {
 			continue
 		}
@@ -308,8 +308,8 @@ func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
 	for fk := range imSchema {
 		if !inListe[fk] {
 			t.Errorf("das Schema kennt die Schüler-Referenz %s, die DSGVO-Quellenliste nicht — "+
-				"in dsgvoSchuelerQuellen aufnehmen und Auskunft UND Tilgung nachziehen "+
-				"(dsgvo_paar_vollstaendigkeit_test.go)", fk)
+				"in testdaten.DsgvoSchuelerQuellen aufnehmen und Auskunft UND Tilgung nachziehen "+
+				"(internal/testdaten/dsgvo.go)", fk)
 		}
 	}
 	for fk := range inListe {

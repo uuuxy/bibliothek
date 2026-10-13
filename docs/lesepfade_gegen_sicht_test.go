@@ -68,6 +68,8 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/kontoauszug.go":             {1, "Kontoauszug — für Kollegen bewusst nicht (OFFEN.md 5.16 A)"},
 	// Auflagen eines Buchs, 25.09.2026 (OFFEN.md 4.18, Stufe 5).
 	"repository/auflagen_klasse.go": {2, "Hinweis an der Theke zu gemischten Auflagen in einer KLASSE — Klassen haben nur Schüler; dieselbe Klassendefinition wie inventur/datenbank_klassen.go, und der Aufruf steht nur hinter istSchueler()"},
+	// Prüfhilfe der Tests, kein Lesepfad des Programms.
+	"internal/testdaten/leser.go": {1, "LeseSchuelerStatus liest den Stand eines Schülers für die Tests zu LUSD-Abgleich und Versetzung — beide kennen nur Schüler"},
 }
 
 // lesepfadeUngeprueft: seit dem 22.09.2026 leer (28 Dateien am 21./22.09. durchgesehen). NUR SCHRUMPFEN —

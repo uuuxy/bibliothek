@@ -154,7 +154,7 @@ func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
 // hängen per CASCADE, der Bescheid per SET NULL: Fällt ihr UPDATE weg, nimmt der DELETE
 // der Quelle sie STILL mit bzw. lässt sie personenlos zurück (Rasterdurchgang 02.09.2026).
 //
-// Die Tabellen kommen aus dsgvoSchuelerQuellen, nicht aus einer Abschrift. Bis zum
+// Die Tabellen kommen aus testdaten.DsgvoSchuelerQuellen, nicht aus einer Abschrift. Bis zum
 // 10.09.2026 stand hier eine eigene Liste, deren Kommentar „dieselbe Liste" behauptete —
 // sie blieb bei sieben Tabellen stehen, als Migration 110 die Bescheide in die echte
 // Liste brachte. Das Zusammenführen ließ den Bescheid der Quelle danach ohne Schüler
@@ -176,7 +176,7 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 	}
 	type zaehlung struct{ was, sql string }
 	var zaehlungen []zaehlung
-	for _, q := range dsgvoSchuelerQuellen {
+	for _, q := range testdaten.DsgvoSchuelerQuellen {
 		switch q.Tabelle {
 		case "leser":
 			// Die Zeile selbst wandert nicht — sie geht im Ziel auf.
@@ -237,7 +237,7 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 				VALUES ('Zft', 'Konto', 'zft-konto@test.invalid', 'kollegium', true, $1::uuid)`, quelle)
 			zaehlungen = append(zaehlungen, zaehlung{"benutzer", `SELECT count(*) FROM benutzer WHERE leser_id = $1`})
 		default:
-			t.Fatalf("dsgvoSchuelerQuellen kennt %s (%s), das Zusammenführen-Gate nicht — "+
+			t.Fatalf("testdaten.DsgvoSchuelerQuellen kennt %s (%s), das Zusammenführen-Gate nicht — "+
 				"verschiebeVorgaenge und diesen Test nachziehen", q.Tabelle, q.Bezug)
 		}
 	}

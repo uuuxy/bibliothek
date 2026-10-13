@@ -137,3 +137,15 @@ func AdminKonto(t *testing.T, pool *pgxpool.Pool, email, vorname, nachname strin
 	}
 	return id
 }
+
+// LeseSchuelerStatus liest, ob ein Schüler gesperrt und als Abgänger geführt ist, dazu seinen
+// Sperrgrund und Vornamen.
+func LeseSchuelerStatus(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, abgaenger bool, reason *string, vorname string) {
+	t.Helper()
+	if err := pool.QueryRow(context.Background(),
+		`SELECT ist_gesperrt, ist_abgaenger, block_reason, vorname FROM schueler WHERE id = $1`, id).
+		Scan(&gesperrt, &abgaenger, &reason, &vorname); err != nil {
+		t.Fatalf("Status lesen: %v", err)
+	}
+	return
+}

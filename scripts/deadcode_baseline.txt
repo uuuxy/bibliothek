@@ -112,6 +112,7 @@ internal/testdaten/leser.go: unreachable func: AdminFuerAudit
 internal/testdaten/leser.go: unreachable func: Klassenleitung
 internal/testdaten/leser.go: unreachable func: ZusammenfuehrenAuftrag
 internal/testdaten/leser.go: unreachable func: AdminKonto
+internal/testdaten/leser.go: unreachable func: LeseSchuelerStatus
 internal/testdaten/rechte.go: unreachable func: GenauEinRecht
 internal/testdaten/ausleihe.go: unreachable func: SeedAusleihe
 internal/testdaten/ausleihe.go: unreachable func: SeedLeserAusleihe

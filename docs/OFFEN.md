@@ -582,8 +582,9 @@ von Stufe 4 neun der elf Themen.
   `internal/pdftest` und `internal/smtptest`; zwei weitere reichten nur an eine Funktion dort
   weiter und sind entfallen. In `api/` teilen sich Testdateien noch 91 Helfer aus 51 Dateien.
   Zwölf davon brauchen Tests aus mehr als einem Thema und ziehen mit ihrer Stufe: acht hängen
-  an einem oder zwei Themen, die Liste `dsgvoSchuelerQuellen` gehört zu den Tests der
-  Auskunft, und drei bauen den ganzen Router (`routerMitSitzung`, `routerMitSitzungUeber`,
+  an einem oder zwei Themen, die Liste der Tabellen mit Bezug auf einen Leser gehört zu den
+  Tests der Auskunft (seit dem 13.10.2026 `testdaten.DsgvoSchuelerQuellen`), und drei bauen
+  den ganzen Router (`routerMitSitzung`, `routerMitSitzungUeber`,
   `protokollWelt`). Mit der Inventur zog am 12.10.2026 ein weiterer nach
   (`tuertest.AntwortOhneDB`: eine Tür ohne Datenbank rufen), mit dem Mahnwesen fünf: einen
   Anhang aus einer abgefangenen Mail lesen (`smtptest.DateiAusMail`, `smtptest.PDFAusMail`)

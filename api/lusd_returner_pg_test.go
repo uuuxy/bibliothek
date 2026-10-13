@@ -61,7 +61,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 			t.Errorf("erwartet genau 1 aktive Zeile für L-RETURN, waren %d", count)
 		}
 
-		gesperrt, abgaenger, reason, _ := leseSchuelerStatus(t, pool, id)
+		gesperrt, abgaenger, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
 		if gesperrt {
 			t.Error("beglichener Rückkehrer bleibt gesperrt (Ghost-Block) — Pipeline reaktiviert nicht")
 		}
@@ -101,7 +101,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 			t.Fatalf("Import darf nicht fehlschlagen: %v", err)
 		}
 
-		gesperrt, abgaenger, reason, _ := leseSchuelerStatus(t, pool, id)
+		gesperrt, abgaenger, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
 		if !gesperrt {
 			t.Error("Rückkehrer mit offener Ausleihe muss gesperrt bleiben")
 		}
@@ -142,7 +142,7 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 		if _, err := s.computeLusdChanges(ctx, zeile, true, true); err != nil {
 			t.Fatalf("zweiter Import: %v", err)
 		}
-		gesperrt, _, reason, _ := leseSchuelerStatus(t, pool, id)
+		gesperrt, _, reason, _ := testdaten.LeseSchuelerStatus(t, pool, id)
 		if gesperrt || reason != nil {
 			t.Errorf("nach der Rückgabe noch gesperrt (Grund %v) — die Sperre wird nie mehr aufgehoben", reason)
 		}
