@@ -42,8 +42,8 @@ func (a *pgKatalogAbfragen) LegeExemplareAn(ctx context.Context, tx pgx.Tx, exem
 	for _, c := range exemplare {
 		zeilen = append(zeilen, []any{
 			c.TitelID, c.BarcodeID, c.ZustandNotiz, c.IstAusleihbar, c.EtikettGedruckt, c.Einkaufspreis,
-			bestellungIDOderNull(c.BestellungID), leererStringAlsNull(c.Bestellstatus),
-			leererStringAlsNull(standorte[c.TitelID]),
+			leerAlsNull(c.BestellungID), leerAlsNull(c.Bestellstatus),
+			leerAlsNull(standorte[c.TitelID]),
 		})
 	}
 
@@ -54,24 +54,4 @@ func (a *pgKatalogAbfragen) LegeExemplareAn(ctx context.Context, tx pgx.Tx, exem
 		pgx.CopyFromRows(zeilen),
 	)
 	return err
-}
-
-// leererStringAlsNull übersetzt den leeren Text in SQL-NULL: Beim Bestellstatus lehnt die
-// CHECK-Constraint chk_exemplar_bestellstatus den leeren String ab, im Protokoll der
-// Verwaltung (audit_logs) steht ein fehlender Bearbeiter und eine fehlende Adresse als NULL.
-func leererStringAlsNull(s string) any {
-	if s == "" {
-		return nil
-	}
-	return s
-}
-
-// bestellungIDOderNull übersetzt den leeren String in ein SQL-NULL. Der leere String
-// ginge als UUID nicht durch — CopyFrom bricht dann die ganze Bestellung ab, obwohl
-// "keine Bestellung" der Normalfall für Handanlage und Import ist.
-func bestellungIDOderNull(id string) any {
-	if id == "" {
-		return nil
-	}
-	return id
 }

@@ -107,7 +107,7 @@ func SchreibeAdminProtokoll(ctx context.Context, q Datenbank, adminID, aktion, i
 		INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse, zeitstempel)
 		VALUES ($1, $2, $3::jsonb, $4, CURRENT_TIMESTAMP)
 	`
-	_, err := q.Exec(ctx, query, leererStringAlsNull(adminID), aktion, details, leererStringAlsNull(ip))
+	_, err := q.Exec(ctx, query, leerAlsNull(adminID), aktion, details, leerAlsNull(ip))
 	return err
 }
 

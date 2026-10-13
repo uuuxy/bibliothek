@@ -90,9 +90,9 @@ func LegeLUSDSchuelerAn(ctx context.Context, tx pgx.Tx, n LUSDNeuzugang) error {
 			 strasse, hausnummer, plz, ort, eltern_email, lusd_bestaetigt_am, schul_eintritt_am)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), $13)`,
 		n.Ausweisnummer, n.Vorname, n.Nachname, n.Klasse, n.AbgaengerJahr,
-		leererStringAlsNull(n.LUSDID), n.Geburtsdatum,
-		leererStringAlsNull(n.Strasse), leererStringAlsNull(n.Hausnummer), leererStringAlsNull(n.PLZ),
-		leererStringAlsNull(n.Ort), leererStringAlsNull(n.ElternEmail), n.EintrittAm)
+		leerAlsNull(n.LUSDID), n.Geburtsdatum,
+		leerAlsNull(n.Strasse), leerAlsNull(n.Hausnummer), leerAlsNull(n.PLZ),
+		leerAlsNull(n.Ort), leerAlsNull(n.ElternEmail), n.EintrittAm)
 	return err
 }
 
