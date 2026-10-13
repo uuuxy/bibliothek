@@ -1,7 +1,7 @@
 // Das Eigentum eines Exemplars, wie die Exemplarkarte es nennt (docs/OFFEN.md 4.24, Stufe 3).
 //
 // Wert und Herkunft kommen fertig vom Server (repository.ExemplarTopfSQL und
-// ExemplarTopfHerkunftSQL) — hier wird nichts abgeleitet, nur benannt. Dieselben Wörter wie im
+// exemplarTopfHerkunftSQL) — hier wird nichts abgeleitet, nur benannt. Dieselben Wörter wie im
 // Warenkorb und im Topf-Dialog der Bestellung (bestellungen/mittel.js).
 
 import { MITTEL } from './bestellungen/mittel.js';

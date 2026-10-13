@@ -13,7 +13,7 @@ import (
 // zählt die Exemplare, die nicht ausgesondert sind, auch ein bestelltes. Ein Titel, der außer
 // seinem Titel nichts trägt und kein Exemplar hat, steht mit leeren Feldern in der Liste: Er
 // lässt sich bestellen. Ohne eigenes Cover nennt der Treffer die Cover-Adresse der DNB.
-func TestSucheTitelZumBestellen_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
+func TestFindeTitelZumBestellen_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -48,9 +48,9 @@ func TestSucheTitelZumBestellen_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 		}
 	}
 
-	treffer, err := SucheTitelZumBestellen(ctx, tx, "Suchfelder")
+	treffer, err := FindeTitelZumBestellen(ctx, tx, "Suchfelder")
 	if err != nil {
-		t.Fatalf("SucheTitelZumBestellen: %v", err)
+		t.Fatalf("FindeTitelZumBestellen: %v", err)
 	}
 	ist := map[string]BestellsucheTreffer{}
 	for _, tr := range treffer {
@@ -81,7 +81,7 @@ func TestSucheTitelZumBestellen_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 // Die Bestellsuche findet einen Titel über den Volltext, über ein Stück seines Titels oder
 // seines Autors und über ein Stück seiner ISBN. Jeder Suchtext trifft über genau einen der
 // Wege: Die Stücke enden mitten im Wort, der Volltext nennt die Wörter in anderer Folge und Form.
-func TestSucheTitelZumBestellen_FindetUeberJedenWeg(t *testing.T) {
+func TestFindeTitelZumBestellen_FindetUeberJedenWeg(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -103,7 +103,7 @@ func TestSucheTitelZumBestellen_FindetUeberJedenWeg(t *testing.T) {
 		{"Stück des Autors", "Verfasserprobe Mei"},
 		{"Stück der ISBN", "00009133"},
 	} {
-		treffer, err := SucheTitelZumBestellen(ctx, tx, f.suchtext)
+		treffer, err := FindeTitelZumBestellen(ctx, tx, f.suchtext)
 		if err != nil {
 			t.Fatalf("%s: %v", f.weg, err)
 		}
@@ -111,7 +111,7 @@ func TestSucheTitelZumBestellen_FindetUeberJedenWeg(t *testing.T) {
 			t.Errorf("%s, Suche %q: %+v, erwartet den Titel %s", f.weg, f.suchtext, treffer, id)
 		}
 	}
-	treffer, err := SucheTitelZumBestellen(ctx, tx, "Wegprobe Zeitschrift")
+	treffer, err := FindeTitelZumBestellen(ctx, tx, "Wegprobe Zeitschrift")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func TestSucheTitelZumBestellen_FindetUeberJedenWeg(t *testing.T) {
 // Die Bestellsuche liefert höchstens 50 Treffer und wählt sie nach dem Rang des Volltexts: Ein
 // Titel, der das Wort des Suchtexts trägt, steht vor denen, die es nur als Stück im Autor
 // tragen, wo auch immer sein Titel im Alphabet steht. Gleichrangige stehen nach ihrem Titel.
-func TestSucheTitelZumBestellen_HoechstensFuenfzigUndDerBesteZuerst(t *testing.T) {
+func TestFindeTitelZumBestellen_HoechstensFuenfzigUndDerBesteZuerst(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -143,9 +143,9 @@ func TestSucheTitelZumBestellen_HoechstensFuenfzigUndDerBesteZuerst(t *testing.T
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 
-	treffer, err := SucheTitelZumBestellen(ctx, tx, "Rangprobe")
+	treffer, err := FindeTitelZumBestellen(ctx, tx, "Rangprobe")
 	if err != nil {
-		t.Fatalf("SucheTitelZumBestellen: %v", err)
+		t.Fatalf("FindeTitelZumBestellen: %v", err)
 	}
 	if len(treffer) != 50 {
 		t.Fatalf("%d Treffer, erwartet 50 von 103", len(treffer))
@@ -156,10 +156,10 @@ func TestSucheTitelZumBestellen_HoechstensFuenfzigUndDerBesteZuerst(t *testing.T
 	}
 }
 
-// ISBNsImKatalog nennt von den gefragten ISBNs die, die ein Titel trägt, unter ihrer
+// FindeISBNsImKatalog nennt von den gefragten ISBNs die, die ein Titel trägt, unter ihrer
 // Normalform. Auch die Spalte geht durch die Normalform: Zwei Titel, die Migration 140 oder
 // 157 als Dublette stehen ließ, tragen ihre ISBN beide in alter Schreibweise.
-func TestISBNsImKatalog_NenntVorhandeneUnterIhrerNormalform(t *testing.T) {
+func TestFindeISBNsImKatalog_NenntVorhandeneUnterIhrerNormalform(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -179,9 +179,9 @@ func TestISBNsImKatalog_NenntVorhandeneUnterIhrerNormalform(t *testing.T) {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 
-	menge, err := ISBNsImKatalog(ctx, tx, []string{"9780000913364", "9780000913388", "9780000913371"})
+	menge, err := FindeISBNsImKatalog(ctx, tx, []string{"9780000913364", "9780000913388", "9780000913371"})
 	if err != nil {
-		t.Fatalf("ISBNsImKatalog: %v", err)
+		t.Fatalf("FindeISBNsImKatalog: %v", err)
 	}
 	_, normal := menge["9780000913364"]
 	_, alt := menge["9780000913388"]
@@ -191,16 +191,16 @@ func TestISBNsImKatalog_NenntVorhandeneUnterIhrerNormalform(t *testing.T) {
 }
 
 // Ohne gefragte ISBN ist die Menge leer, und die Datenbank wird nicht gefragt.
-func TestISBNsImKatalog_OhneISBNKeineAbfrage(t *testing.T) {
+func TestFindeISBNsImKatalog_OhneISBNKeineAbfrage(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
 
-	menge, err := ISBNsImKatalog(context.Background(), mock, nil)
+	menge, err := FindeISBNsImKatalog(context.Background(), mock, nil)
 	if err != nil {
-		t.Fatalf("ISBNsImKatalog: %v", err)
+		t.Fatalf("FindeISBNsImKatalog: %v", err)
 	}
 	if len(menge) != 0 {
 		t.Errorf("Menge %v, erwartet leer", menge)

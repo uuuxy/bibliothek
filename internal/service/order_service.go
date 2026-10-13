@@ -41,7 +41,7 @@ type GroupedItem struct {
 // (Altbestand vor Migration 063) steht unter dem Tag seiner Anlage und dem Lieferanten, den
 // seine Notiz nennt.
 func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*ShipmentGroup, error) {
-	exemplare, err := repository.ExemplareImZulauf(ctx, pool)
+	exemplare, err := repository.LadeExemplareImZulauf(ctx, pool)
 	if err != nil {
 		return nil, err
 	}
@@ -184,10 +184,10 @@ func SearchOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inventu
 	return append(treffer, vonDNB...), dnbAusfall, nil
 }
 
-// searchLocalOrders durchsucht den eigenen Katalog (repository.SucheTitelZumBestellen). Scheitert
+// searchLocalOrders durchsucht den eigenen Katalog (repository.FindeTitelZumBestellen). Scheitert
 // die Abfrage, bleibt die Liste leer: Die Treffer der DNB kommen ohnehin getrennt dazu.
 func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) []OrderSearchItem {
-	treffer, err := repository.SucheTitelZumBestellen(ctx, pool, query)
+	treffer, err := repository.FindeTitelZumBestellen(ctx, pool, query)
 	if err != nil {
 		return nil
 	}
@@ -235,12 +235,12 @@ func searchDNBOrders(ctx context.Context, pool db.PgxPoolIface, metaClient *inve
 }
 
 // sammleExistierendeISBNs fragt, welche der ISBNs schon ein Titel trägt, und liefert sie als
-// Menge (repository.ISBNsImKatalog). Beide Seiten stehen in der Normalform: Die DNB nennt eine
+// Menge (repository.FindeISBNsImKatalog). Beide Seiten stehen in der Normalform: Die DNB nennt eine
 // ISBN mit Bindestrichen und bei älteren Sätzen zehnstellig, der Katalog führt sie
 // dreizehnstellig; der Treffer hieße sonst „Neu". Ein Fehler wird protokolliert und ergibt
 // eine leere Menge; die Suche in der DNB scheitert daran nicht.
 func sammleExistierendeISBNs(ctx context.Context, pool db.PgxPoolIface, isbns []string) map[string]struct{} {
-	existing, err := repository.ISBNsImKatalog(ctx, pool, isbns)
+	existing, err := repository.FindeISBNsImKatalog(ctx, pool, isbns)
 	if err != nil {
 		log.Printf("order-service: Bulk ISBN-Existenzprüfung fehlgeschlagen: %v", err)
 		return map[string]struct{}{}

@@ -33,15 +33,15 @@ func (s *Tueren) GetReordersHandler() http.HandlerFunc {
 // reordersMitSettings liefert den Bestellbedarf gemäß Konfiguration: Warnung aus →
 // leere Liste; sonst gefiltert auf gesamt < Schwelle. Eine Quelle für Ansicht UND
 // PDF-Export, damit beide nie auseinanderlaufen.
-func (s *Tueren) reordersMitSettings(ctx context.Context, r *http.Request) ([]repository.ReorderTitle, error) {
+func (s *Tueren) reordersMitSettings(ctx context.Context, r *http.Request) ([]repository.Bestellbedarf, error) {
 	settings, err := repository.NewEinstellungsAbfragen(s.DB.Pool).Lade(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if !settings.BestellbedarfWarnungAktiv {
-		return []repository.ReorderTitle{}, nil
+		return []repository.Bestellbedarf{}, nil
 	}
-	return repository.ListeBestellbedarf(ctx, s.DB.Pool, reorderFilter(r), settings.BestellbedarfSchwelle)
+	return repository.LadeBestellbedarf(ctx, s.DB.Pool, reorderFilter(r), settings.BestellbedarfSchwelle)
 }
 
 // reorderFilter liest ?type= und fällt auf den LMF-Bestand zurück (siehe

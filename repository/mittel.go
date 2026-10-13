@@ -22,20 +22,20 @@ package repository
 // Anders als beim Bestellen wird hier aus dem Titel abgeleitet: Dort wäre ein Fallback die
 // stille Zuordnung zum falschen Topf, hier ist er die einzige Auskunft über ein Buch, das
 // nie über dieses System bestellt wurde.
-const ExemplarTopfSQL = `COALESCE(` + ExemplarTopfBelegtSQL + `, CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END)`
+const ExemplarTopfSQL = `COALESCE(` + exemplarTopfBelegtSQL + `, CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END)`
 
-// ExemplarTopfHerkunftSQL sagt, woher ExemplarTopfSQL seinen Wert nimmt: 'littera' oder 'hand'
+// exemplarTopfHerkunftSQL sagt, woher ExemplarTopfSQL seinen Wert nimmt: 'littera' oder 'hand'
 // (Eigentum am Exemplar, Quelle aus Migration 151), 'bestellung' oder 'vorgabe' (die
 // Faustregel aus dem Titel). Die Buchakte nennt es neben dem Eigentum. Dieselbe Reihenfolge wie
 // ExemplarTopfSQL, dieselben Aliasse.
-const ExemplarTopfHerkunftSQL = `CASE WHEN e.eigentum IS NOT NULL THEN e.eigentum_quelle ` +
+const exemplarTopfHerkunftSQL = `CASE WHEN e.eigentum IS NOT NULL THEN e.eigentum_quelle ` +
 	`WHEN bv_topf.mittel IS NOT NULL THEN 'bestellung' ELSE 'vorgabe' END`
 
-// ExemplarTopfBelegtSQL ist der Teil von ExemplarTopfSQL, der auf einem Beleg steht: das
+// exemplarTopfBelegtSQL ist der Teil von ExemplarTopfSQL, der auf einem Beleg steht: das
 // Eigentum am Exemplar oder der Topf seiner Bestellung. NULL, wo es beides nicht gibt. Das
 // Zugangsbuch liest nur diesen Teil — es weist nach, aus welchem Geld ein Buch kam, und die
 // Faustregel aus dem Titel ist dafür kein Nachweis. Dieselben Aliasse wie ExemplarTopfSQL.
-const ExemplarTopfBelegtSQL = `COALESCE(e.eigentum, bv_topf.mittel)`
+const exemplarTopfBelegtSQL = `COALESCE(e.eigentum, bv_topf.mittel)`
 
 // ExemplarTopfJoin hängt die Bestellung des Exemplars an, aus der ExemplarTopfSQL liest.
 const ExemplarTopfJoin = `LEFT JOIN bestellungen_verlauf bv_topf ON bv_topf.id = e.bestellung_id`

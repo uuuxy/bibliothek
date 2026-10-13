@@ -44,9 +44,9 @@ func LegeBestellkopfAn(ctx context.Context, tx pgx.Tx, k BestellkopfNeu) (id str
 	return id, linkGueltigBis, err
 }
 
-// BestellungZuIdempotenzSchluessel liest die Bestellung, die mit diesem Schlüssel schon
+// LadeBestellungZuIdempotenzSchluessel liest die Bestellung, die mit diesem Schlüssel schon
 // angelegt wurde: Kennung, Name des Lieferanten und Zahl der Exemplare.
-func BestellungZuIdempotenzSchluessel(ctx context.Context, db Datenbank, schluessel string) (id, lieferantName string, anzahlExemplare int, err error) {
+func LadeBestellungZuIdempotenzSchluessel(ctx context.Context, db Datenbank, schluessel string) (id, lieferantName string, anzahlExemplare int, err error) {
 	err = db.QueryRow(ctx, `
 		SELECT id, lieferant_name, anzahl_exemplare
 		FROM bestellungen_verlauf WHERE idempotenz_schluessel = $1`,

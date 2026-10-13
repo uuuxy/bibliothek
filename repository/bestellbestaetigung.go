@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// BestellungImBestaetigungsweg sagt, ob die Bestellung über den Bestelllink bestätigt wird.
+// IstBestellungImBestaetigungsweg sagt, ob die Bestellung über den Bestelllink bestätigt wird.
 // Zwei Wege zählen: Die Bestellung ist mit einem Link hinausgegangen (Token vorhanden); daran
 // ändert ein späterer Wechsel des Hauptlieferanten nichts, sie wartet weiter. Oder ihr
 // Lieferant ist heute Hauptlieferant und sie hat noch keinen Link, weil beim Bestellen keine
@@ -13,7 +13,7 @@ import (
 //
 // COALESCE, weil die Bestellung ihren gelöschten Lieferanten als Beleg überlebt
 // (lieferant_id NULL): Ohne es scheiterte das Lesen des Wahrheitswerts.
-func BestellungImBestaetigungsweg(ctx context.Context, db Datenbank, id string) (bool, error) {
+func IstBestellungImBestaetigungsweg(ctx context.Context, db Datenbank, id string) (bool, error) {
 	var ok bool
 	err := db.QueryRow(ctx, `
 		SELECT b.bestaetigungs_token_hash IS NOT NULL OR coalesce(l.ist_hauptlieferant, false)
@@ -58,9 +58,9 @@ func ErneuereBestaetigungsToken(ctx context.Context, db Datenbank, bestellungID,
 	return gueltigBis, err
 }
 
-// BestellungZuTokenHash liefert die Bestellung, zu der der Hash eines gültigen
+// LadeBestellungZuTokenHash liefert die Bestellung, zu der der Hash eines gültigen
 // Bestätigungs-Links gehört. Unbekannt und abgelaufen sind derselbe Fall: pgx.ErrNoRows.
-func BestellungZuTokenHash(ctx context.Context, db Datenbank, tokenHash string) (string, error) {
+func LadeBestellungZuTokenHash(ctx context.Context, db Datenbank, tokenHash string) (string, error) {
 	var id string
 	err := db.QueryRow(ctx, `
 		SELECT id FROM bestellungen_verlauf
@@ -107,8 +107,8 @@ type OeffentlichePosition struct {
 	Menge     int
 }
 
-// ListeOeffentlichePositionen liefert die Positionen einer Bestellung nach Titel geordnet.
-func ListeOeffentlichePositionen(ctx context.Context, db Datenbank, bestellungID string) ([]OeffentlichePosition, error) {
+// LadeOeffentlichePositionen liefert die Positionen einer Bestellung nach Titel geordnet.
+func LadeOeffentlichePositionen(ctx context.Context, db Datenbank, bestellungID string) ([]OeffentlichePosition, error) {
 	rows, err := db.Query(ctx, `
 		SELECT titel_name, isbn, menge FROM bestellungen_positionen
 		WHERE bestellung_id = $1 ORDER BY titel_name

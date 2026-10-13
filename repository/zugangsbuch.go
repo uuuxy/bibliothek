@@ -30,7 +30,7 @@ type ZugangsZeile struct {
 	// Lieferant steht im Zugangsbuch, weil die Arbeitshilfe ihn verlangt. Leer, wenn keine
 	// Bestellung hinterlegt ist — dann gibt es keinen Lieferanten, den man nennen könnte.
 	Lieferant string `json:"lieferant"`
-	// Topf: das Eigentum, soweit es belegt ist (repository.ExemplarTopfBelegtSQL) — am
+	// Topf: das Eigentum, soweit es belegt ist (repository.exemplarTopfBelegtSQL) — am
 	// Exemplar ausdrücklich gesetzt (Migration 150, etwa aus dem Littera-Vermerk), sonst der
 	// Topf der BESTELLUNG, aus der das Exemplar kam. Leer, wenn es beides nicht gibt. Bewusst
 	// nicht aus `ist_lernmittel` des Titels abgeleitet: Beim Zugang geht es darum, aus welchem
@@ -70,7 +70,7 @@ func LadeZugangsbuch(ctx context.Context, q Datenbank, von, bis time.Time) (Zuga
 	// sondern falsch: Es machte aus dem 16.09. je nach Sitzungszeitzone den 15.
 	rows, err := q.Query(ctx, `
 		SELECT e.zugang_am, e.barcode_id, t.titel, COALESCE(t.signatur, ''),
-		       COALESCE(bv_topf.lieferant_name, ''), COALESCE(`+ExemplarTopfBelegtSQL+`, '')
+		       COALESCE(bv_topf.lieferant_name, ''), COALESCE(`+exemplarTopfBelegtSQL+`, '')
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		`+ExemplarTopfJoin+`

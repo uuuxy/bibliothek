@@ -13,18 +13,18 @@ import (
 // den Zeitpunkt des letzten gescheiterten Versuchs; NULL heißt, dass kein gescheiterter
 // Versand vermerkt ist.
 
-// SQLBestellmailOffen ist der Vermerk, wie Liste, Detail und der erneute Versand ihn lesen:
+// sqlBestellmailOffen ist der Vermerk, wie Liste, Detail und der erneute Versand ihn lesen:
 // der Zeitpunkt des gescheiterten Versands, solange die Bestellung nicht bestätigt ist. Hat
 // der Händler über den Link bestätigt oder die Bibliothek seine Zusage nachgetragen, hat er
 // die Bestellung; „Mail nicht versendet" wäre dann falsch, und ein erneuter Versand brächte
 // sie ein zweites Mal zu ihm. Die Bestellung muss als `b` gebunden sein.
-const SQLBestellmailOffen = `CASE WHEN b.bestaetigt_am IS NULL THEN b.mail_gescheitert_am END`
+const sqlBestellmailOffen = `CASE WHEN b.bestaetigt_am IS NULL THEN b.mail_gescheitert_am END`
 
-// SQLBestellungMitBestaetigung sagt, ob die Bestellung mit einem Bestätigungs-Link rausging.
+// sqlBestellungMitBestaetigung sagt, ob die Bestellung mit einem Bestätigungs-Link rausging.
 // Für sie zeigt die Oberfläche den Bestätigungsblock, in dem sich die Zusage des Händlers
 // nachtragen lässt; Liste, Detail und NimmBestellmailVermerk lesen dieselbe Bedingung. Die
 // Bestellung muss als `b` gebunden sein.
-const SQLBestellungMitBestaetigung = `b.bestaetigungs_token_hash IS NOT NULL`
+const sqlBestellungMitBestaetigung = `b.bestaetigungs_token_hash IS NOT NULL`
 
 // ErrBestellmailNichtOffen meldet: Die Bestellung trägt keinen offenen gescheiterten Versand.
 // Ihre Mail ging raus, ein anderer Arbeitsplatz sendet sie gerade erneut, sie ist bestätigt,
@@ -80,7 +80,7 @@ func BeanspruchBestellmail(ctx context.Context, pool db.PgxPoolIface, bestellung
 		  FROM (SELECT b.id, COALESCE(l.email, b.lieferant_email) AS empfaenger
 		          FROM bestellungen_verlauf b
 		          LEFT JOIN lieferanten l ON l.id = b.lieferant_id
-		         WHERE b.id = $1 AND `+SQLBestellmailOffen+` IS NOT NULL
+		         WHERE b.id = $1 AND `+sqlBestellmailOffen+` IS NOT NULL
 		           FOR UPDATE OF b) offen
 		 WHERE ziel.id = offen.id
 		RETURNING ziel.lieferant_name, offen.empfaenger, COALESCE(ziel.kundennummer, ''), COALESCE(ziel.mittel, '')`,
@@ -91,7 +91,7 @@ func BeanspruchBestellmail(ctx context.Context, pool db.PgxPoolIface, bestellung
 	if err != nil {
 		return nil, err
 	}
-	a.Positionen, err = leseBestellmailPositionen(ctx, pool, bestellungID)
+	a.Positionen, err = ladeBestellmailPositionen(ctx, pool, bestellungID)
 	if err != nil {
 		return nil, err
 	}
@@ -112,10 +112,10 @@ func bestellmailNichtOffenOderUnbekannt(ctx context.Context, pool db.PgxPoolIfac
 	return ErrBestellmailNichtOffen
 }
 
-// leseBestellmailPositionen liest die Zeilen der Bestellung für das Anschreiben. Titel und
+// ladeBestellmailPositionen liest die Zeilen der Bestellung für das Anschreiben. Titel und
 // ISBN stehen an der Position, Autor und Verlag am Titel; ist er inzwischen gelöscht,
 // bleiben sie leer.
-func leseBestellmailPositionen(ctx context.Context, pool db.PgxPoolIface, bestellungID string) ([]BestellmailPosition, error) {
+func ladeBestellmailPositionen(ctx context.Context, pool db.PgxPoolIface, bestellungID string) ([]BestellmailPosition, error) {
 	rows, err := pool.Query(ctx, `
 		SELECT p.titel_name, COALESCE(t.autor, ''), COALESCE(p.isbn, ''), COALESCE(t.verlag, ''), p.menge
 		  FROM bestellungen_positionen p
@@ -146,8 +146,8 @@ func NimmBestellmailVermerk(ctx context.Context, pool db.PgxPoolIface, bestellun
 		UPDATE bestellungen_verlauf b
 		   SET mail_gescheitert_am = NULL
 		 WHERE b.id = $1
-		   AND `+SQLBestellmailOffen+` IS NOT NULL
-		   AND NOT (`+SQLBestellungMitBestaetigung+`)`, bestellungID)
+		   AND `+sqlBestellmailOffen+` IS NOT NULL
+		   AND NOT (`+sqlBestellungMitBestaetigung+`)`, bestellungID)
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func NimmBestellmailVermerk(ctx context.Context, pool db.PgxPoolIface, bestellun
 	// einen Bestätigungsschritt.
 	var mitBestaetigung bool
 	if err := pool.QueryRow(ctx, `
-		SELECT `+SQLBestellungMitBestaetigung+` AND `+SQLBestellmailOffen+` IS NOT NULL
+		SELECT `+sqlBestellungMitBestaetigung+` AND `+sqlBestellmailOffen+` IS NOT NULL
 		  FROM bestellungen_verlauf b WHERE b.id = $1`, bestellungID).Scan(&mitBestaetigung); err != nil {
 		return err
 	}

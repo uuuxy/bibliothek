@@ -936,9 +936,9 @@ Seit dem 09.10.2026 gilt für `api/` und `repository/`:
 - Wareneingang und Bestellsuche (`internal/service/order_service.go`) gruppieren den Zulauf
   nach Bestellung, hängen die Treffer der DNB an die des eigenen Katalogs, merken an ihnen an,
   welche ISBN ein Titel schon trägt, und schreiben das Einbuchen ins Protokoll. Ihre
-  Anweisungen stehen in `repository/bestellung_zulauf.go` (`ExemplareImZulauf`,
-  `BucheZulaufEin`) und `repository/bestellsuche.go` (`SucheTitelZumBestellen`,
-  `ISBNsImKatalog`). Das Cover einer Zeile formuliert `sqlCoverOderDNB` einmal für Zulauf,
+  Anweisungen stehen in `repository/bestellung_zulauf.go` (`LadeExemplareImZulauf`,
+  `BucheZulaufEin`) und `repository/bestellsuche.go` (`FindeTitelZumBestellen`,
+  `FindeISBNsImKatalog`). Das Cover einer Zeile formuliert `sqlCoverOderDNB` einmal für Zulauf,
   Bestellsuche und Bestellbedarf: der eigene Eintrag des Titels, sonst die Cover-Adresse der
   DNB zu seiner ISBN. Bricht das Lesen der vorhandenen ISBN ab, gilt keine als vorhanden; bis
   zum 10.10.2026 galten die bis dahin gelesenen.
@@ -2449,11 +2449,11 @@ vierzig Terminen von selbst um.
   Und der erneute Versand nimmt der Bestellung den Vermerk, bevor er sendet
   (`repository.BeanspruchBestellmail`): Ein zweiter Klick bekommt 409 und schickt nichts
   doppelt; scheitert der Versuch, kommt der Vermerk zurück. Liste, Detail und der erneute
-  Versand lesen den Vermerk über einen Ausdruck (`repository.SQLBestellmailOffen`): Er gilt,
+  Versand lesen den Vermerk über einen Ausdruck (`repository.sqlBestellmailOffen`): Er gilt,
   solange die Bestellung nicht bestätigt ist. Hat der Händler die Bestellung auf anderem Weg
   erhalten, nimmt `DELETE /api/bestellungen/{id}/mail` den Vermerk, ohne zu senden
   (`repository.NimmBestellmailVermerk`), und schreibt einen Eintrag ins Protokoll. Die Tür
-  gilt nur für Bestellungen ohne Bestätigungs-Link (`repository.SQLBestellungMitBestaetigung`,
+  gilt nur für Bestellungen ohne Bestätigungs-Link (`repository.sqlBestellungMitBestaetigung`,
   dieselbe Bedingung wie `mit_bestaetigung` in Liste und Detail): Mit Link zeigt die
   Oberfläche den Bestätigungsblock, und der nennte den Link nach dem Entfernen als mit der
   Mail verschickt; dort nimmt die nachgetragene Zusage den Vermerk.
@@ -3971,7 +3971,7 @@ schickt und das nicht ankommt.
 
 Den Vermerk an einer Bestellung (8.9) nehmen „Erneut senden", die Bestätigung des Händlers
 und „Auf anderem Weg bestellt". Wird die Lieferung im Wareneingang gebucht, bleibt er stehen:
-`repository.SQLBestellmailOffen` fragt nur die Bestätigung (am Code gelesen am 07.10.2026).
+`repository.sqlBestellmailOffen` fragt nur die Bestätigung (am Code gelesen am 07.10.2026).
 Anlass zum Bauen: In der Bestellhistorie stehen gelieferte Bestellungen mit dem Hinweis.
 
 #### Eine Forderung für ein Gerät lässt sich nicht anlegen

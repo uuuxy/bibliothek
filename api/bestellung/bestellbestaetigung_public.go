@@ -78,7 +78,7 @@ func (s *Tueren) bestellungPerToken(ctx context.Context, token string) (string, 
 	if token == "" {
 		return "", pgx.ErrNoRows
 	}
-	return repository.BestellungZuTokenHash(ctx, s.DB.Pool, bestelllink.Hash(token))
+	return repository.LadeBestellungZuTokenHash(ctx, s.DB.Pool, bestelllink.Hash(token))
 }
 
 // sendeTokenFehler bildet jeden Zugriffsfehler auf 404 ab — abgelaufen, zurückgezogen
@@ -131,7 +131,7 @@ func (s *Tueren) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 	}
 	a.GrossesEtikett = mitteltopf.HatGrossesLernmittelEtikett(kopf.Mittel)
 
-	positionen, err := repository.ListeOeffentlichePositionen(ctx, s.DB.Pool, bestellungID)
+	positionen, err := repository.LadeOeffentlichePositionen(ctx, s.DB.Pool, bestellungID)
 	if err != nil {
 		return nil, err
 	}

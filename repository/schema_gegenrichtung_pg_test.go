@@ -127,7 +127,7 @@ var fkAktionenBestand = []string{
 	"SET NULL  nachbuch_meldungen.quittiert_von -> benutzer",
 	"SET NULL  nachbuch_meldungen.vorbesitzer_schueler_id -> leser",
 	// Befragt am 06.09.2026: LEFT JOIN mit ausdrücklicher Begründung im Code
-	// (bestelldetail_repo.go), beide Geschwister-Pfade halten es genauso.
+	// (bestelldetail.go), beide Geschwister-Pfade halten es genauso.
 	"SET NULL  bestellungen_positionen.titel_id -> buecher_titel",
 	// Befragt am 25.09.2026 (Migration 148): Ein Werk löscht nur repository/auflagen.go, und
 	// erst, nachdem es den letzten Titel daran gelöst hat (raeumeWerkAuf, vereineWerke) —
@@ -246,7 +246,7 @@ var checkBedingungenBestand = []string{
 	// mitteltopf.IstGueltig → 400). Keiner läuft gegen die Regel; ein dritter Schreiber, der nur
 	// eigentum setzt, bekommt einen Abbruch (23514), keinen Satz
 	// (api/katalog/exemplar_eigentum_pg_test.go, Schritt 6). Gegenfrage: NULL/NULL ist der Normalfall —
-	// ExemplarTopfHerkunftSQL liest die Quelle nur, wenn Eigentum steht.
+	// exemplarTopfHerkunftSQL liest die Quelle nur, wenn Eigentum steht.
 	"chk_exemplar_eigentum_mit_quelle", "chk_exemplar_eigentum_quelle",
 	// Migration 158, befragt am 06.10.2026: Ein gesetzter Standort ist nicht leer und höchstens
 	// 255 Zeichen lang. Drei Schreiber. Die Littera-Übernahme (sqlExemplarEinfuegen) liest

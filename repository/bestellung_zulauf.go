@@ -23,9 +23,9 @@ type ZulaufExemplar struct {
 	Bestelldatum  *time.Time
 }
 
-// ExemplareImZulauf liefert die bestellten, noch nicht eingetroffenen Exemplare, das jüngste
+// LadeExemplareImZulauf liefert die bestellten, noch nicht eingetroffenen Exemplare, das jüngste
 // zuerst. Eine fehlende Notiz kommt als leerer Text, aus demselben Grund wie die Zeiger.
-func ExemplareImZulauf(ctx context.Context, db Datenbank) ([]ZulaufExemplar, error) {
+func LadeExemplareImZulauf(ctx context.Context, db Datenbank) ([]ZulaufExemplar, error) {
 	rows, err := db.Query(ctx, `
 		SELECT e.id, e.titel_id, e.erstellt_am, COALESCE(e.zustand_notiz, ''), t.titel, COALESCE(t.isbn, ''),
 		       `+sqlCoverOderDNB("t")+`,

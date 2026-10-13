@@ -38,7 +38,7 @@ func (s *Tueren) GetBestellhistorieHandler() http.HandlerFunc {
 		// nicht im Browser — sonst zeigte „Lernmittelfreiheit" nur, was von den neuesten
 		// 200 Bestellungen übrig bleibt.
 		mittel := r.URL.Query().Get("mittel")
-		if !repository.MittelFilterGueltig(mittel) {
+		if !repository.IstMittelFilterGueltig(mittel) {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, repository.MittelFilterFehler(mittel))
 			return
 		}

@@ -10,7 +10,7 @@ import (
 
 // Die Liste des Zulaufs liest jede Spalte in ihr Feld. Jede Spalte trägt einen eigenen Wert:
 // Mit gleichen fiele nicht auf, wenn zwei vertauscht ankämen.
-func TestExemplareImZulauf_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
+func TestLadeExemplareImZulauf_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -40,9 +40,9 @@ func TestExemplareImZulauf_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 		t.Fatalf("Exemplar anlegen: %v", err)
 	}
 
-	zeilen, err := ExemplareImZulauf(ctx, tx)
+	zeilen, err := LadeExemplareImZulauf(ctx, tx)
 	if err != nil {
-		t.Fatalf("ExemplareImZulauf: %v", err)
+		t.Fatalf("LadeExemplareImZulauf: %v", err)
 	}
 	var ist *ZulaufExemplar
 	for i := range zeilen {
@@ -73,7 +73,7 @@ func TestExemplareImZulauf_JedeSpalteKommtInIhremFeldAn(t *testing.T) {
 // Exemplar ohne Bestellstatus gehört nicht dazu, auch wenn es nicht ausleihbar ist. Bestellung,
 // Lieferant und Bestelldatum fehlen am Altbestand, eine Notiz und eine ISBN können fehlen:
 // Keines davon bricht das Lesen ab.
-func TestExemplareImZulauf_NurBestelltesUndDasJuengsteZuerst(t *testing.T) {
+func TestLadeExemplareImZulauf_NurBestelltesUndDasJuengsteZuerst(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -104,9 +104,9 @@ func TestExemplareImZulauf_NurBestelltesUndDasJuengsteZuerst(t *testing.T) {
 		}
 	}
 
-	zeilen, err := ExemplareImZulauf(ctx, tx)
+	zeilen, err := LadeExemplareImZulauf(ctx, tx)
 	if err != nil {
-		t.Fatalf("ExemplareImZulauf: %v", err)
+		t.Fatalf("LadeExemplareImZulauf: %v", err)
 	}
 	var nummern []string
 	for _, z := range zeilen {
@@ -135,7 +135,7 @@ func TestExemplareImZulauf_NurBestelltesUndDasJuengsteZuerst(t *testing.T) {
 // Eintrag gilt als keiner, und die Adresse nennt die ISBN ohne Bindestriche. Mit Bindestrichen
 // oder leer trägt sie nur eine Zeile aus der Zeit vor dem Trigger; sie kommt deshalb an ihm
 // vorbei in die Tabelle.
-func TestExemplareImZulauf_CoverFaelltAufDieDNBZurueck(t *testing.T) {
+func TestLadeExemplareImZulauf_CoverFaelltAufDieDNBZurueck(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -177,9 +177,9 @@ func TestExemplareImZulauf_CoverFaelltAufDieDNBZurueck(t *testing.T) {
 		titelZuFall[titelID] = f.name
 	}
 
-	zeilen, err := ExemplareImZulauf(ctx, tx)
+	zeilen, err := LadeExemplareImZulauf(ctx, tx)
 	if err != nil {
-		t.Fatalf("ExemplareImZulauf: %v", err)
+		t.Fatalf("LadeExemplareImZulauf: %v", err)
 	}
 	cover := map[string]string{}
 	for _, z := range zeilen {

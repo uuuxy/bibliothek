@@ -25,9 +25,9 @@ type BestaetigenRequest struct {
 
 // bestellungImBestaetigungsweg beantwortet für BEIDE Bestätigungs-Handler dieselbe Frage:
 // Gehört diese Bestellung überhaupt zum Bestätigungs-Weg?
-// Die Abfrage und ihre zwei Wege stehen an repository.BestellungImBestaetigungsweg.
+// Die Abfrage und ihre zwei Wege stehen an repository.IstBestellungImBestaetigungsweg.
 func (s *Tueren) bestellungImBestaetigungsweg(ctx context.Context, id string) (bool, error) {
-	return repository.BestellungImBestaetigungsweg(ctx, s.DB.Pool, id)
+	return repository.IstBestellungImBestaetigungsweg(ctx, s.DB.Pool, id)
 }
 
 // BestaetigenBestellungHandler trägt einen rein externen Vorgang nach: Lieferanten wie

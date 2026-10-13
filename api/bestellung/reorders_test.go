@@ -14,7 +14,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// reorderSpalten spiegelt die Projektion aus ListeBestellbedarf.
+// reorderSpalten spiegelt die Projektion aus LadeBestellbedarf.
 func reorderSpalten() []string {
 	return []string{"id", "titel", "autor", "isbn", "verlag", "signatur",
 		"erscheinungsjahr", "cover_url", "meldebestand", "verfuegbar", "gesamt", "ist_lernmittel", "auflagen"}
@@ -37,9 +37,9 @@ func TestQueryReorders(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows(reorderSpalten()).
 			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 5, 1, 3, true, []byte(nil)))
 
-	results, err := repository.ListeBestellbedarf(context.Background(), server.DB.Pool, "", 5)
+	results, err := repository.LadeBestellbedarf(context.Background(), server.DB.Pool, "", 5)
 	if err != nil {
-		t.Fatalf("ListeBestellbedarf: unerwarteter Fehler: %v", err)
+		t.Fatalf("LadeBestellbedarf: unerwarteter Fehler: %v", err)
 	}
 	if len(results) != 1 {
 		t.Fatalf("erwartet 1 Treffer, waren %d", len(results))

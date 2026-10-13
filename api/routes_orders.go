@@ -23,7 +23,7 @@ func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *service.Order
 	// Reihenfolge: Der ServeMux von Go 1.22 bevorzugt das genauere Muster, /uebersicht
 	// und /bericht gewinnen also gegen {id}.
 	mux.Handle("GET /api/bestellhistorie/{id}", s.RequirePermission("view_orders")(
-		s.bestellung().GetBestelldetailHandler(repository.NewBestelldetailRepository(s.DB.Pool))))
+		s.bestellung().GetBestelldetailHandler(repository.NewBestelldetailAbfragen(s.DB.Pool))))
 	mux.Handle("GET /api/lieferanten", s.RequirePermission("view_orders")(s.bestellung().ListSuppliersHandler()))
 	mux.Handle("POST /api/lieferanten", s.RequirePermission("create_orders")(s.bestellung().CreateSupplierHandler()))
 	mux.Handle("PUT /api/lieferanten/{id}", s.RequirePermission("create_orders")(s.bestellung().UpdateSupplierHandler()))

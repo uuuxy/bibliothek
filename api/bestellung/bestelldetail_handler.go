@@ -20,7 +20,7 @@ import (
 // eine einzige Bestellung angesehen wird.
 //
 // Kein SQL in dieser Datei: Ein neuer Handler nimmt repository/ (siehe schichtung_ratsche_test.go).
-func (s *Tueren) GetBestelldetailHandler(repo repository.BestelldetailRepository) http.HandlerFunc {
+func (s *Tueren) GetBestelldetailHandler(repo repository.BestelldetailAbfragen) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -28,7 +28,7 @@ func (s *Tueren) GetBestelldetailHandler(repo repository.BestelldetailRepository
 			return
 		}
 
-		detail, err := repo.GetBestellungDetail(r.Context(), id)
+		detail, err := repo.Lade(r.Context(), id)
 		if err != nil {
 			// 404 statt 500: Eine unbekannte ID ist keine Störung, sondern ein veralteter
 			// Verweis — und der Sanitizer macht aus jeder 500 ohnehin "interner

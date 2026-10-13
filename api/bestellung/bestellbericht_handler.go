@@ -83,7 +83,7 @@ func leseBerichtAnfrage(r *http.Request) (berichtAnfrage, error) {
 	// Der Topf-Filter macht aus dem Bericht das Blatt, gegen das eine Rechnung geprüft wird.
 	// Ein unbekannter Wert ist ein Fehler und kein stiller Gesamtbericht: Sonst prüfte das
 	// Sekretariat die Landes-Rechnung gegen eine Liste, in der auch die Schülerbücherei steht.
-	if !repository.MittelFilterGueltig(a.mittel) {
+	if !repository.IstMittelFilterGueltig(a.mittel) {
 		return berichtAnfrage{}, repository.MittelFilterFehler(a.mittel)
 	}
 	a.titel = berichtTitelAbleiten(q.Get("titel"), a.lieferantID, a.jahresansicht, a.mittel)

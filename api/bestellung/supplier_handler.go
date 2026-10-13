@@ -106,7 +106,7 @@ func (s *Tueren) ListSuppliersHandler() http.HandlerFunc {
 
 		// Der Hauptlieferant zuerst: Das Bestellformular nimmt sonst den alphabetisch
 		// ersten, und die Vorauswahl bliebe wirkungslos.
-		zeilen, err := repository.ListeLieferanten(ctx, s.DB.Pool)
+		zeilen, err := repository.LadeLieferanten(ctx, s.DB.Pool)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -291,7 +291,7 @@ func (s *Tueren) DeleteSupplierHandler() http.HandlerFunc {
 		// einzige Tür, und ein Hinweis, den nur ein Formular kennt, ist keine Regel. Der
 		// Weg bleibt offen — erst einen anderen zum Hauptlieferanten machen (oder den
 		// Schalter abwählen), dann löschen.
-		istHaupt, name, err := repository.LieferantHauptUndName(ctx, s.DB.Pool, id)
+		istHaupt, name, err := repository.LadeLieferantHauptUndName(ctx, s.DB.Pool, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))

@@ -43,9 +43,9 @@ type LieferantenZeile struct {
 	KundennummerSchultraeger string
 }
 
-// ListeLieferanten liefert alle Lieferanten, den Hauptlieferanten zuerst: Das Bestellformular
+// LadeLieferanten liefert alle Lieferanten, den Hauptlieferanten zuerst: Das Bestellformular
 // wählt den ersten der Liste vor.
-func ListeLieferanten(ctx context.Context, db Datenbank) ([]LieferantenZeile, error) {
+func LadeLieferanten(ctx context.Context, db Datenbank) ([]LieferantenZeile, error) {
 	rows, err := db.Query(ctx, `
 			SELECT id, name, email, kundennummer, erstellt_am, ist_hauptlieferant, kundennummer_schultraeger
 			FROM lieferanten
@@ -108,9 +108,9 @@ func AendereLieferantStammdaten(ctx context.Context, db Datenbank, id string, na
 	return alt, neu, err
 }
 
-// LieferantHauptUndName liest, ob ein Lieferant Hauptlieferant ist, und seinen Namen;
+// LadeLieferantHauptUndName liest, ob ein Lieferant Hauptlieferant ist, und seinen Namen;
 // pgx.ErrNoRows, wenn es ihn nicht gibt.
-func LieferantHauptUndName(ctx context.Context, db Datenbank, id string) (istHaupt bool, name string, err error) {
+func LadeLieferantHauptUndName(ctx context.Context, db Datenbank, id string) (istHaupt bool, name string, err error) {
 	err = db.QueryRow(ctx,
 		"SELECT ist_hauptlieferant, name FROM lieferanten WHERE id = $1", id).Scan(&istHaupt, &name)
 	return istHaupt, name, err

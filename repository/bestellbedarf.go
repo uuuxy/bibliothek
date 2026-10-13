@@ -6,9 +6,9 @@ import (
 	"fmt"
 )
 
-// ReorderTitle ist ein Titel, dessen verfügbarer Bestand unter den Meldebestand
+// Bestellbedarf ist ein Titel, dessen verfügbarer Bestand unter den Meldebestand
 // gefallen ist.
-type ReorderTitle struct {
+type Bestellbedarf struct {
 	ID     string `json:"id"`
 	Titel  string `json:"titel"`
 	Autor  string `json:"autor"`
@@ -38,13 +38,13 @@ type ReorderTitle struct {
 	// Summe, Titel, ISBN und Kennung oben die der neuesten Auflage — sie wird bestellt —, und
 	// hier steht die Aufschlüsselung, die neueste zuerst. Ein Buch mit einer Auflage hat das
 	// Feld nicht.
-	Auflagen []ReorderAuflage `json:"auflagen,omitempty"`
+	Auflagen []BestellbedarfAuflage `json:"auflagen,omitempty"`
 }
 
-// ReorderAuflage ist eine Auflage in der Aufschlüsselung einer Zeile, mit denselben zwei
+// BestellbedarfAuflage ist eine Auflage in der Aufschlüsselung einer Zeile, mit denselben zwei
 // Zahlen, deren Summe die Zeile trägt, und mit ihrer ISBN: Wer in der Liste nach der alten
 // Auflage sucht (oder sie scannt), soll die Zeile des Buchs finden.
-type ReorderAuflage struct {
+type BestellbedarfAuflage struct {
 	ID                string `json:"id"`
 	Auflage           string `json:"auflage"`
 	ISBN              string `json:"isbn"`
@@ -53,7 +53,7 @@ type ReorderAuflage struct {
 	GesamtBestand     int    `json:"gesamt_bestand"`
 }
 
-// ListeBestellbedarf liefert die Titel, deren BESITZ (gesamt, nicht ausgesondert) unter der
+// LadeBestellbedarf liefert die Titel, deren BESITZ (gesamt, nicht ausgesondert) unter der
 // konfigurierten Bestellbedarf-Schwelle liegt — der größte Fehlbestand zuerst. Bewusst
 // gesamt statt verfügbar: sonst würde jeder verliehene Lernmittel-Klassensatz (im
 // Schuljahr der Normalfall) als Bestellbedarf gemeldet. Da "gesamt" die als "bestellt"
@@ -66,7 +66,7 @@ type ReorderAuflage struct {
 // und gezeigt wird die neueste Auflage (SQLNeuesteAuflageZuerst) — die wird
 // bestellt. Ein Titel ohne Werk ist über COALESCE(werk_id, id) sein eigenes Buch; für ihn
 // ändert sich nichts. Der Filter nach Topf (typeFilter) gilt je Auflage, bevor gezählt wird.
-func ListeBestellbedarf(ctx context.Context, db Datenbank, typeFilter string, schwelle int) ([]ReorderTitle, error) {
+func LadeBestellbedarf(ctx context.Context, db Datenbank, topfBedingung string, schwelle int) ([]Bestellbedarf, error) {
 	neueste := SQLNeuesteAuflageZuerst("t")
 	// Ein LATERAL je Titel liefert beide Bestandszahlen in einem Durchgang; danach wird je
 	// Buch summiert, und DISTINCT ON wählt die neueste Auflage je Buch in einem Durchgang.
@@ -114,7 +114,7 @@ func ListeBestellbedarf(ctx context.Context, db Datenbank, typeFilter string, sc
 		FROM buch b
 		JOIN neueste n ON n.buch = b.buch
 		ORDER BY ($1 - b.gesamt) DESC, n.titel ASC
-	`, typeFilter, neueste, neueste, sqlCoverOderDNB("n"))
+	`, topfBedingung, neueste, neueste, sqlCoverOderDNB("n"))
 
 	rows, err := db.Query(ctx, query, schwelle)
 	if err != nil {
@@ -122,9 +122,9 @@ func ListeBestellbedarf(ctx context.Context, db Datenbank, typeFilter string, sc
 	}
 	defer rows.Close()
 
-	results := make([]ReorderTitle, 0)
+	zeilen := make([]Bestellbedarf, 0)
 	for rows.Next() {
-		var t ReorderTitle
+		var t Bestellbedarf
 		var auflagen []byte
 		if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.ISBN, &t.Verlag, &t.Signatur,
 			&t.Erscheinungsjahr, &t.CoverURL, &t.Meldebestand, &t.VerfuegbarBestand,
@@ -136,10 +136,10 @@ func ListeBestellbedarf(ctx context.Context, db Datenbank, typeFilter string, sc
 				return nil, fmt.Errorf("auflagen der zeile %s: %w", t.ID, err)
 			}
 		}
-		results = append(results, t)
+		zeilen = append(zeilen, t)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return results, nil
+	return zeilen, nil
 }

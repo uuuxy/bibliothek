@@ -36,7 +36,7 @@ func holeDetail(t *testing.T, srv *Tueren, pool *pgxpool.Pool, bestellungID stri
 	req := httptest.NewRequest(http.MethodGet, "/api/bestellhistorie/"+bestellungID, nil)
 	req.SetPathValue("id", bestellungID)
 	rec := httptest.NewRecorder()
-	srv.GetBestelldetailHandler(repository.NewBestelldetailRepository(pool)).ServeHTTP(rec, req)
+	srv.GetBestelldetailHandler(repository.NewBestelldetailAbfragen(pool)).ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Detail Status = %d, body: %s", rec.Code, rec.Body.String())
 	}
@@ -168,7 +168,7 @@ func TestBestelldetail_UnbekannteBestellungIst404(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/bestellhistorie/"+unbekannt, nil)
 	req.SetPathValue("id", unbekannt)
 	rec := httptest.NewRecorder()
-	srv.GetBestelldetailHandler(repository.NewBestelldetailRepository(pool)).ServeHTTP(rec, req)
+	srv.GetBestelldetailHandler(repository.NewBestelldetailAbfragen(pool)).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("Status = %d, want 404 — body: %s", rec.Code, rec.Body.String())

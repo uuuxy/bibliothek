@@ -11,12 +11,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestQueryReorders_GesamtNichtVerfuegbar sichert den Meldebestand-Fix ab: Der
+// TestLadeBestellbedarf_GesamtNichtVerfuegbar sichert den Meldebestand-Fix ab: Der
 // Bestellbedarf richtet sich nach dem BESITZ (gesamt, nicht ausgesondert), nicht nach
 // dem gerade verfügbaren Bestand. Sonst würde jeder verliehene Lernmittel-Klassensatz
 // (im Schuljahr der Normalfall) als "kritisch nachbestellen" gemeldet — die Liste war
 // mit Fehlalarmen geflutet und die vorgeschlagene Menge (Meldebestand − verfügbar) zu hoch.
-func TestQueryReorders_GesamtNichtVerfuegbar(t *testing.T) {
+func TestLadeBestellbedarf_GesamtNichtVerfuegbar(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -28,7 +28,7 @@ func TestQueryReorders_GesamtNichtVerfuegbar(t *testing.T) {
 	tVoll := testdaten.TitelMitMeldebestand(t, pool, "LMF-Mathe 7", 5)
 	for i := 0; i < 30; i++ {
 		e := testdaten.Exemplar(t, pool, tVoll, barcodeN("V", i), true, "")
-		lendExemplar(t, pool, e, schueler)
+		leiheExemplarAus(t, pool, e, schueler)
 	}
 
 	// B) Echter Fehlbestand: nur 3 eigene Exemplare (gesamt 3 < Meldebestand 5).
@@ -47,12 +47,12 @@ func TestQueryReorders_GesamtNichtVerfuegbar(t *testing.T) {
 	}
 
 	// Schwelle 5 = früherer Meldebestand-Default; die Auswahllogik bleibt so unverändert.
-	reorders, err := repository.ListeBestellbedarf(ctx, pool, reorderFilterFragmentLMF(), 5)
+	reorders, err := repository.LadeBestellbedarf(ctx, pool, bestellbedarfFilterLMF(), 5)
 	if err != nil {
-		t.Fatalf("ListeBestellbedarf: %v", err)
+		t.Fatalf("LadeBestellbedarf: %v", err)
 	}
 
-	got := map[string]repository.ReorderTitle{}
+	got := map[string]repository.Bestellbedarf{}
 	for _, r := range reorders {
 		got[r.Titel] = r
 	}
@@ -72,10 +72,10 @@ func TestQueryReorders_GesamtNichtVerfuegbar(t *testing.T) {
 	}
 }
 
-// TestQueryReorders_SchwelleSteuert beweist, dass jetzt die konfigurierbare Schwelle die
+// TestLadeBestellbedarf_SchwelleSteuert beweist, dass jetzt die konfigurierbare Schwelle die
 // Aufnahme steuert — nicht mehr der pauschale Meldebestand-Default 5. Ein Titel mit
 // gesamt 3 erscheint bei Schwelle 5, verschwindet aber bei Schwelle 2.
-func TestQueryReorders_SchwelleSteuert(t *testing.T) {
+func TestLadeBestellbedarf_SchwelleSteuert(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -85,31 +85,31 @@ func TestQueryReorders_SchwelleSteuert(t *testing.T) {
 		testdaten.Exemplar(t, pool, tKnapp, barcodeN("P", i), true, "")
 	}
 
-	filter := reorderFilterFragmentLMF()
-	r, err := repository.ListeBestellbedarf(ctx, pool, filter, 5)
+	filter := bestellbedarfFilterLMF()
+	r, err := repository.LadeBestellbedarf(ctx, pool, filter, 5)
 	if err != nil {
-		t.Fatalf("ListeBestellbedarf error: %v", err)
+		t.Fatalf("LadeBestellbedarf error: %v", err)
 	}
 	if len(r) != 1 {
 		t.Errorf("Schwelle 5: erwartet 1 Treffer (gesamt 3 < 5), waren %d", len(r))
 	}
 
-	r2, err := repository.ListeBestellbedarf(ctx, pool, filter, 2)
+	r2, err := repository.LadeBestellbedarf(ctx, pool, filter, 2)
 	if err != nil {
-		t.Fatalf("ListeBestellbedarf error: %v", err)
+		t.Fatalf("LadeBestellbedarf error: %v", err)
 	}
 	if len(r2) != 0 {
 		t.Errorf("Schwelle 2: erwartet 0 Treffer (gesamt 3 ≥ 2) — Schwelle steuert, nicht Meldebestand 5, waren %d", len(r2))
 	}
 }
 
-// TestQueryReorders_LMFNurInSignatur sichert den Signatur-Fix ab (05.08.2026): Der
+// TestLadeBestellbedarf_LMFNurInSignatur sichert den Signatur-Fix ab (05.08.2026): Der
 // Regelfall bei manueller Neuanlage über die Admin-Oberfläche ist ein Klartext-Titel
 // ("Mathematik Neue Wege 9") mit dem LMF-Kennzeichen NUR in der Signatur
-// ("LMF Ma" — Auto-Vorschlag). Vor dieser Änderung prüfte ListeBestellbedarf ausschliesslich
+// ("LMF Ma" — Auto-Vorschlag). Vor dieser Änderung prüfte LadeBestellbedarf ausschliesslich
 // den Titel und liess solche Bücher nie unter die Bestellbedarf-Schwelle fallen, egal
 // wie knapp der Bestand war.
-func TestQueryReorders_LMFNurInSignatur(t *testing.T) {
+func TestLadeBestellbedarf_LMFNurInSignatur(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -119,12 +119,12 @@ func TestQueryReorders_LMFNurInSignatur(t *testing.T) {
 		testdaten.Exemplar(t, pool, tID, barcodeN("S", i), true, "")
 	}
 
-	reorders, err := repository.ListeBestellbedarf(ctx, pool, reorderFilterFragmentLMF(), 5)
+	reorders, err := repository.LadeBestellbedarf(ctx, pool, bestellbedarfFilterLMF(), 5)
 	if err != nil {
-		t.Fatalf("ListeBestellbedarf: %v", err)
+		t.Fatalf("LadeBestellbedarf: %v", err)
 	}
 
-	got := map[string]repository.ReorderTitle{}
+	got := map[string]repository.Bestellbedarf{}
 	for _, r := range reorders {
 		got[r.Titel] = r
 	}
@@ -133,13 +133,13 @@ func TestQueryReorders_LMFNurInSignatur(t *testing.T) {
 	}
 }
 
-// reorderFilterFragmentLMF liefert das Default-(LMF-)Filterfragment ohne HTTP-Request.
-func reorderFilterFragmentLMF() string {
+// bestellbedarfFilterLMF liefert das Default-(LMF-)Filterfragment ohne HTTP-Request.
+func bestellbedarfFilterLMF() string {
 	frag, _ := repository.BestandsFilterBedingung("lmf")
 	return frag
 }
 
-func lendExemplar(t *testing.T, pool *pgxpool.Pool, exemplarID, schuelerID string) {
+func leiheExemplarAus(t *testing.T, pool *pgxpool.Pool, exemplarID, schuelerID string) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(),
 		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
@@ -152,12 +152,12 @@ func barcodeN(prefix string, i int) string {
 	return prefix + "-" + string(rune('a'+i%26)) + string(rune('0'+i/26))
 }
 
-// TestQueryReorders_ZaehltAmBuch: Zwei Auflagen desselben Buchs (Migration 148,
+// TestLadeBestellbedarf_ZaehltAmBuch: Zwei Auflagen desselben Buchs (Migration 148,
 // docs/OFFEN.md 4.18) stehen als EINE Zeile. Ihre Summe steht gegen die Schwelle, gezeigt
 // wird die neueste Auflage — die wird bestellt —, und die Zeile trägt die Aufschlüsselung.
 // Getrennt gezählt lag jede für sich unter der Schwelle, und dasselbe Buch stand zweimal da,
 // auch wenn beide zusammen reichten. Ein Titel ohne Werk bleibt, wie er war.
-func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
+func TestLadeBestellbedarf_ZaehltAmBuch(t *testing.T) {
 	pool := pgtest.Pool(t)
 	testdaten.ResetBestandsdaten(t, pool)
 	ctx := context.Background()
@@ -184,9 +184,9 @@ func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
 	if _, err := repository.FasseAuflagenZusammen(ctx, pool, alt, neu); err != nil {
 		t.Fatalf("zusammenfassen: %v", err)
 	}
-	filter := reorderFilterFragmentLMF()
-	nachID := func(liste []repository.ReorderTitle) map[string]repository.ReorderTitle {
-		m := map[string]repository.ReorderTitle{}
+	filter := bestellbedarfFilterLMF()
+	nachID := func(liste []repository.Bestellbedarf) map[string]repository.Bestellbedarf {
+		m := map[string]repository.Bestellbedarf{}
 		for _, r := range liste {
 			m[r.ID] = r
 		}
@@ -194,9 +194,9 @@ func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
 	}
 
 	// Schwelle 3: Zusammen sind es 3 — kein Bedarf. Getrennt stünden beide da (2 und 1).
-	r, err := repository.ListeBestellbedarf(ctx, pool, filter, 3)
+	r, err := repository.LadeBestellbedarf(ctx, pool, filter, 3)
 	if err != nil {
-		t.Fatalf("ListeBestellbedarf: %v", err)
+		t.Fatalf("LadeBestellbedarf: %v", err)
 	}
 	got := nachID(r)
 	if _, drin := got[alt]; drin {
@@ -210,9 +210,9 @@ func TestQueryReorders_ZaehltAmBuch(t *testing.T) {
 	}
 
 	// Schwelle 5: eine Zeile für das Buch — die neueste Auflage, die Summe, die Aufschlüsselung.
-	r, err = repository.ListeBestellbedarf(ctx, pool, filter, 5)
+	r, err = repository.LadeBestellbedarf(ctx, pool, filter, 5)
 	if err != nil {
-		t.Fatalf("ListeBestellbedarf: %v", err)
+		t.Fatalf("LadeBestellbedarf: %v", err)
 	}
 	got = nachID(r)
 	if _, drin := got[alt]; drin {

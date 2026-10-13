@@ -43,7 +43,7 @@ type Abschnitt[T any] struct {
 // nicht geben (repository.ExemplarTopfSQL endet in der Faustregel aus dem Titel und hat immer
 // eine Antwort), beim Zugangsbuch schon: Ein Exemplar ohne Eigentum am Exemplar und ohne
 // Bestellung trägt keinen Beleg darüber, aus welchem Geld es bezahlt wurde — und geraten wird
-// das nicht (repository.ExemplarTopfBelegtSQL).
+// das nicht (repository.exemplarTopfBelegtSQL).
 func abschnitteAus[T any](zeilen []T, topfVon func(T) string) []Abschnitt[T] {
 	nach := map[string][]T{}
 	for _, z := range zeilen {

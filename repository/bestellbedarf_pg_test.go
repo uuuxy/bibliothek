@@ -9,7 +9,7 @@ import (
 
 // Der Bestellbedarf nennt für einen Titel ohne eigenes Cover die Cover-Adresse der DNB zu
 // seiner ISBN, wie Zulauf und Bestellsuche (sqlCoverOderDNB).
-func TestListeBestellbedarf_OhneEigenesCoverDieAdresseDerDNB(t *testing.T) {
+func TestLadeBestellbedarf_OhneEigenesCoverDieAdresseDerDNB(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	tx := beginne(t, pool)
@@ -25,9 +25,9 @@ func TestListeBestellbedarf_OhneEigenesCoverDieAdresseDerDNB(t *testing.T) {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 
-	liste, err := ListeBestellbedarf(ctx, tx, "", 1)
+	liste, err := LadeBestellbedarf(ctx, tx, "", 1)
 	if err != nil {
-		t.Fatalf("ListeBestellbedarf: %v", err)
+		t.Fatalf("LadeBestellbedarf: %v", err)
 	}
 	for _, zeile := range liste {
 		if zeile.ID != id {

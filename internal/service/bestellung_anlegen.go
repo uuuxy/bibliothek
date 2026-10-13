@@ -397,7 +397,7 @@ func (s *OrderService) ladeBestehendeBestellung(ctx context.Context, idempotenzS
 	var res OrderResult
 	res.BereitsVorhanden = true
 	var err error
-	res.BestellungID, res.SupplierName, res.TotalAllocated, err = repository.BestellungZuIdempotenzSchluessel(ctx, s.db.Pool, idempotenzSchluessel)
+	res.BestellungID, res.SupplierName, res.TotalAllocated, err = repository.LadeBestellungZuIdempotenzSchluessel(ctx, s.db.Pool, idempotenzSchluessel)
 	if err != nil {
 		return nil, fmt.Errorf("bestehende bestellung laden: %w", err)
 	}

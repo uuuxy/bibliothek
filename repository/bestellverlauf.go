@@ -79,7 +79,7 @@ type BestellVerlaufEintrag struct {
 	// sieht, bis wann der Händler noch bestätigen und Etiketten drucken kann.
 	LinkGueltigBis *time.Time `json:"link_gueltig_bis,omitempty"`
 	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail,
-	// solange die Bestellung nicht bestätigt ist (SQLBestellmailOffen). nil =
+	// solange die Bestellung nicht bestätigt ist (sqlBestellmailOffen). nil =
 	// kein offener gescheiterter Versand.
 	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
 }
@@ -94,14 +94,14 @@ func LadeBestellVerlauf(ctx context.Context, db Datenbank, limit int, mittel str
 	abfrage := `
 		SELECT b.id, b.lieferant_name, b.lieferant_email, b.kundennummer, b.bestelldatum,
 		       b.gesamtbetrag, b.anzahl_exemplare,
-		       ` + SQLBestellungMitBestaetigung + `,
+		       ` + sqlBestellungMitBestaetigung + `,
 		       b.bestaetigt_am, b.etiketten_groesse, b.bestaetigt_durch,
 		       (b.bestaetigungs_token_hash IS NOT NULL
 		        AND (b.token_gueltig_bis IS NULL OR b.token_gueltig_bis > now())),
-		       b.token_gueltig_bis, coalesce(b.mittel, ''), ` + SQLBestellmailOffen + `
+		       b.token_gueltig_bis, coalesce(b.mittel, ''), ` + sqlBestellmailOffen + `
 		FROM bestellungen_verlauf b
 		WHERE true`
-	if bedingung, arg := MittelBedingung(mittel, "b.mittel", len(args)+1); bedingung != "" {
+	if bedingung, arg := mittelBedingung(mittel, "b.mittel", len(args)+1); bedingung != "" {
 		abfrage += bedingung
 		if arg != nil {
 			args = append(args, arg)
@@ -117,34 +117,34 @@ func LadeBestellVerlauf(ctx context.Context, db Datenbank, limit int, mittel str
 	}
 	defer rows.Close()
 
-	orders := make([]BestellVerlaufEintrag, 0)
-	orderIndex := map[string]int{}
+	bestellungen := make([]BestellVerlaufEintrag, 0)
+	platzJeBestellung := map[string]int{}
 
 	for rows.Next() {
-		var o BestellVerlaufEintrag
-		if err := rows.Scan(&o.ID, &o.LieferantName, &o.LieferantEmail, &o.Kundennummer,
-			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.MitBestaetigung,
-			&o.BestaetigtAm, &o.EtikettenGroesse, &o.BestaetigtDurch, &o.LinkAktiv, &o.LinkGueltigBis, &o.Mittel,
-			&o.MailGescheitertAm); err != nil {
+		var b BestellVerlaufEintrag
+		if err := rows.Scan(&b.ID, &b.LieferantName, &b.LieferantEmail, &b.Kundennummer,
+			&b.Bestelldatum, &b.Gesamtbetrag, &b.AnzahlExemplare, &b.MitBestaetigung,
+			&b.BestaetigtAm, &b.EtikettenGroesse, &b.BestaetigtDurch, &b.LinkAktiv, &b.LinkGueltigBis, &b.Mittel,
+			&b.MailGescheitertAm); err != nil {
 			return nil, nil, err
 		}
-		o.Positionen = []BestellVerlaufPosition{}
-		orderIndex[o.ID] = len(orders)
-		orders = append(orders, o)
+		b.Positionen = []BestellVerlaufPosition{}
+		platzJeBestellung[b.ID] = len(bestellungen)
+		bestellungen = append(bestellungen, b)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, nil, err
 	}
-	return orders, orderIndex, nil
+	return bestellungen, platzJeBestellung, nil
 }
 
 // LadeBestellVerlaufPositionen lädt alle Positionen in einer Query und ordnet sie den
 // Bestellungen über orderIndex zu (Gesamtpreis wird pro Position berechnet).
-func LadeBestellVerlaufPositionen(ctx context.Context, db Datenbank, orders []BestellVerlaufEintrag, orderIndex map[string]int) error {
+func LadeBestellVerlaufPositionen(ctx context.Context, db Datenbank, bestellungen []BestellVerlaufEintrag, platzJeBestellung map[string]int) error {
 	// EtikettOffenBedingung ist dieselbe Definition, die auch die Nachdruck-Liste und
 	// ihr Zähler verwenden (api/druck/etiketten_offen.go). Wäre sie hier abgeschrieben, zeigte der
 	// Verweis irgendwann eine andere Zahl als die Liste, die er öffnet.
-	posRows, err := db.Query(ctx, `
+	rows, err := db.Query(ctx, `
 		SELECT p.bestellung_id, p.titel_name, p.isbn, p.menge, p.einzelpreis,
 		       coalesce(p.titel_id::text, ''),
 		       coalesce(e_counts.etiketten_offen, 0)
@@ -157,25 +157,25 @@ func LadeBestellVerlaufPositionen(ctx context.Context, db Datenbank, orders []Be
 		) e_counts ON e_counts.titel_id = p.titel_id
 		WHERE p.bestellung_id = ANY($1)
 		ORDER BY p.bestellung_id, p.titel_name
-	`, geladeneIDs(orderIndex))
+	`, geladeneIDs(platzJeBestellung))
 	if err != nil {
 		return err
 	}
-	defer posRows.Close()
+	defer rows.Close()
 
-	for posRows.Next() {
+	for rows.Next() {
 		var bestellungID string
-		var pos BestellVerlaufPosition
-		if err := posRows.Scan(&bestellungID, &pos.TitelName, &pos.ISBN, &pos.Menge, &pos.Einzelpreis,
-			&pos.TitelID, &pos.EtikettenOffen); err != nil {
+		var p BestellVerlaufPosition
+		if err := rows.Scan(&bestellungID, &p.TitelName, &p.ISBN, &p.Menge, &p.Einzelpreis,
+			&p.TitelID, &p.EtikettenOffen); err != nil {
 			return err
 		}
-		pos.Gesamtpreis = float64(pos.Menge) * pos.Einzelpreis
-		if idx, ok := orderIndex[bestellungID]; ok {
-			orders[idx].Positionen = append(orders[idx].Positionen, pos)
+		p.Gesamtpreis = float64(p.Menge) * p.Einzelpreis
+		if platz, ok := platzJeBestellung[bestellungID]; ok {
+			bestellungen[platz].Positionen = append(bestellungen[platz].Positionen, p)
 		}
 	}
-	return posRows.Err()
+	return rows.Err()
 }
 
 // geladeneIDs liefert die IDs der tatsächlich geladenen Bestellungen.
@@ -183,9 +183,9 @@ func LadeBestellVerlaufPositionen(ctx context.Context, db Datenbank, orders []Be
 // Die Positionen-Abfrage holte vorher die Positionen ALLER Bestellungen der Datenbank
 // (Unterabfrage ohne Grenze) und warf die überzähligen beim Zuordnen weg. Mit dem Limit
 // oben wäre das der teuerste Teil der Anfrage geblieben.
-func geladeneIDs(orderIndex map[string]int) []string {
-	ids := make([]string, 0, len(orderIndex))
-	for id := range orderIndex {
+func geladeneIDs(platzJeBestellung map[string]int) []string {
+	ids := make([]string, 0, len(platzJeBestellung))
+	for id := range platzJeBestellung {
 		ids = append(ids, id)
 	}
 	return ids

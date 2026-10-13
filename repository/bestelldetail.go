@@ -60,7 +60,7 @@ type BestellungKopf struct {
 	Mittel string `json:"mittel"`
 
 	// MailGescheitertAm: Zeitpunkt des letzten gescheiterten Versands der Bestellmail,
-	// solange die Bestellung nicht bestätigt ist (SQLBestellmailOffen). nil = kein offener
+	// solange die Bestellung nicht bestätigt ist (sqlBestellmailOffen). nil = kein offener
 	// gescheiterter Versand.
 	MailGescheitertAm *time.Time `json:"mail_gescheitert_am,omitempty"`
 }
@@ -107,32 +107,32 @@ type BestellungDetail struct {
 	Exemplare  []BestellExemplar       `json:"exemplare"`
 }
 
-// BestelldetailRepository kapselt die Abfragen der Bestell-Detailansicht.
-type BestelldetailRepository interface {
-	GetBestellungDetail(ctx context.Context, bestellungID string) (*BestellungDetail, error)
+// BestelldetailAbfragen kapselt die Abfragen der Bestell-Detailansicht.
+type BestelldetailAbfragen interface {
+	Lade(ctx context.Context, bestellungID string) (*BestellungDetail, error)
 }
 
-type pgBestelldetailRepository struct {
+type pgBestelldetailAbfragen struct {
 	db db.PgxPoolIface
 }
 
-// NewBestelldetailRepository erzeugt das Repository für die Bestell-Detailansicht.
-func NewBestelldetailRepository(pool db.PgxPoolIface) BestelldetailRepository {
-	return &pgBestelldetailRepository{db: pool}
+// NewBestelldetailAbfragen erzeugt das Repository für die Bestell-Detailansicht.
+func NewBestelldetailAbfragen(pool db.PgxPoolIface) BestelldetailAbfragen {
+	return &pgBestelldetailAbfragen{db: pool}
 }
 
-func (r *pgBestelldetailRepository) GetBestellungDetail(ctx context.Context, bestellungID string) (*BestellungDetail, error) {
-	kopf, err := r.ladeKopf(ctx, bestellungID)
+func (a *pgBestelldetailAbfragen) Lade(ctx context.Context, bestellungID string) (*BestellungDetail, error) {
+	kopf, err := a.ladeKopf(ctx, bestellungID)
 	if err != nil {
 		return nil, err
 	}
 
-	positionen, err := r.ladePositionen(ctx, bestellungID)
+	positionen, err := a.ladePositionen(ctx, bestellungID)
 	if err != nil {
 		return nil, err
 	}
 
-	exemplare, err := r.ladeExemplare(ctx, bestellungID)
+	exemplare, err := a.ladeExemplare(ctx, bestellungID)
 	if err != nil {
 		return nil, err
 	}
@@ -142,16 +142,16 @@ func (r *pgBestelldetailRepository) GetBestellungDetail(ctx context.Context, bes
 
 // ladeKopf liefert pgx.ErrNoRows, wenn es die Bestellung nicht gibt — der Handler macht
 // daraus einen 404 statt einer leeren Seite, die aussieht wie eine leere Bestellung.
-func (r *pgBestelldetailRepository) ladeKopf(ctx context.Context, bestellungID string) (*BestellungKopf, error) {
+func (a *pgBestelldetailAbfragen) ladeKopf(ctx context.Context, bestellungID string) (*BestellungKopf, error) {
 	var k BestellungKopf
-	err := r.db.QueryRow(ctx, `
+	err := a.db.QueryRow(ctx, `
 		SELECT id, lieferant_name, lieferant_email, kundennummer, bestelldatum,
 		       gesamtbetrag, anzahl_exemplare,
-		       `+SQLBestellungMitBestaetigung+`,
+		       `+sqlBestellungMitBestaetigung+`,
 		       bestaetigt_am, bestaetigt_durch, etiketten_groesse,
 		       (bestaetigungs_token_hash IS NOT NULL
 		        AND (token_gueltig_bis IS NULL OR token_gueltig_bis > now())),
-		       coalesce(mittel, ''), `+SQLBestellmailOffen+`
+		       coalesce(mittel, ''), `+sqlBestellmailOffen+`
 		FROM bestellungen_verlauf b
 		WHERE id = $1
 	`, bestellungID).Scan(&k.ID, &k.LieferantName, &k.LieferantEmail, &k.Kundennummer,
@@ -169,8 +169,8 @@ func (r *pgBestelldetailRepository) ladeKopf(ctx context.Context, bestellungID s
 // LEFT JOIN mit Absicht: bestellungen_positionen.titel_id ist ON DELETE SET NULL, eine
 // Bestellung bleibt also als Beleg bestehen, wenn der Titel später aus dem Katalog
 // verschwindet. Ein INNER JOIN liesse solche Positionen wortlos aus dem Beleg fallen.
-func (r *pgBestelldetailRepository) ladePositionen(ctx context.Context, bestellungID string) ([]BestellPositionDetail, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *pgBestelldetailAbfragen) ladePositionen(ctx context.Context, bestellungID string) ([]BestellPositionDetail, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT coalesce(p.titel_id::text, ''), p.titel_name, p.isbn, p.menge, p.einzelpreis,
 		       coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.cover_url, ''),
 		       (SELECT count(*) FROM buecher_exemplare e
@@ -202,8 +202,8 @@ func (r *pgBestelldetailRepository) ladePositionen(ctx context.Context, bestellu
 //
 // Sortiert nach Titel und Barcode: Der Barcode ist die Nummer, die auf dem Buch klebt,
 // und wer sie im Regal sucht, sucht sie in aufsteigender Reihenfolge.
-func (r *pgBestelldetailRepository) ladeExemplare(ctx context.Context, bestellungID string) ([]BestellExemplar, error) {
-	rows, err := r.db.Query(ctx, `
+func (a *pgBestelldetailAbfragen) ladeExemplare(ctx context.Context, bestellungID string) ([]BestellExemplar, error) {
+	rows, err := a.db.Query(ctx, `
 		SELECT e.barcode_id, e.titel_id::text, t.titel, e.etikett_gedruckt, e.ist_ausgesondert
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id

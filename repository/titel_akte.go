@@ -7,7 +7,7 @@ import (
 
 // TitelExemplar ist ein Exemplar in der Akte seines Titels. ImBestand heißt weder ausgesondert
 // noch bestellt (SQLExemplarImBestand), IstVerfuegbar heißt nicht verliehen. Eigentum und
-// seine Herkunft folgen der einen Regel (ExemplarTopfSQL, ExemplarTopfHerkunftSQL);
+// seine Herkunft folgen der einen Regel (ExemplarTopfSQL, exemplarTopfHerkunftSQL);
 // LitteraEigentumsvermerk ist der Wortlaut aus Littera, wenn es einen gab.
 type TitelExemplar struct {
 	ID                      string
@@ -33,7 +33,7 @@ func ListeExemplareDesTitels(ctx context.Context, db Datenbank, titelID string) 
 		       (` + SQLExemplarImBestand + `) AS im_bestand,
 		       coalesce(e.zustand_abwertung_prozent, 0),
 		       NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL) AS ist_verfuegbar,
-		       ` + ExemplarTopfSQL + `, ` + ExemplarTopfHerkunftSQL + `,
+		       ` + ExemplarTopfSQL + `, ` + exemplarTopfHerkunftSQL + `,
 		       coalesce(e.erweiterte_eigenschaften->>'littera_eigentumsvermerk', ''),
 		       coalesce(e.standort, '')
 		FROM buecher_exemplare e

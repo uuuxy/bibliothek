@@ -42,7 +42,7 @@ func LadeBerichtBestellungen(ctx context.Context, db Datenbank, von, bisExklusiv
 		args = append(args, lieferantID)
 		orderQuery += fmt.Sprintf(" AND lieferant_id = $%d", len(args))
 	}
-	if bedingung, arg := MittelBedingung(mittel, "mittel", len(args)+1); bedingung != "" {
+	if bedingung, arg := mittelBedingung(mittel, "mittel", len(args)+1); bedingung != "" {
 		orderQuery += bedingung
 		if arg != nil {
 			args = append(args, arg)
