@@ -59,7 +59,7 @@ test('Sperrstatus: eine Wahrheit für Liste, Profil und Umschalter', async ({ pa
 
 	// 2) Profil des System-Gesperrten. Bis zum 24.09.2026 bot der Knopf hier „Schüler
 	//    sperren" an — er löste nur das Handschloss, die Sperre des Programms blieb. Seitdem
-	//    hebt er jede Sperre am Leser auf (api/student_lock.go) und richtet sich nach
+	//    hebt er jede Sperre am Leser auf (api/leser/student_lock.go) und richtet sich nach
 	//    demselben Prädikat wie die Anzeige.
 	// Seit 09.09.2026 öffnet der NAME das Profil, nicht die Zeile (nested-interactive).
 	await zeile2.getByRole('button', { name: /^Profil von/ }).click();

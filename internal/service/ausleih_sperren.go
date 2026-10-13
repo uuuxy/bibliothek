@@ -78,7 +78,7 @@ func istKollegium(leser *repository.Student) bool {
 // SperrGrundFehler; wer view_students nicht hat, bekommt ihn nicht (api.ohneSperrgrund).
 func pruefeSperreAmLeser(leser *repository.Student, lernmittel bool) error {
 	if leser.IstAnonymisiert {
-		// Ohne Merkmal: Aufheben kann man diese Sperre nicht (api/student_lock.go lehnt ab).
+		// Ohne Merkmal: Aufheben kann man diese Sperre nicht (api/leser/student_lock.go lehnt ab).
 		return fmt.Errorf("%w: der Datensatz ist anonymisiert", ErrBlocked)
 	}
 	if leser.IsManuallyBlocked {

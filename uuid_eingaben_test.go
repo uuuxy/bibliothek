@@ -45,9 +45,9 @@ import (
 // „paket:Funktion:ohne Validierung" → warum es so richtig ist. Belegt am 13.09.2026 an
 // information_schema.columns: alle Barcode-Spalten und schueler.lusd_id sind VARCHAR.
 var uuidEingabenAusnahmen = map[string]string{
-	"api.CreateStudentRequest.BarcodeID":         "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
-	"api.patchStudentRequest.BarcodeID":          "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
-	"api.patchStudentRequest.LusdID":             "schueler.lusd_id ist VARCHAR (LUSD-Schlüssel)",
+	"leser.CreateStudentRequest.BarcodeID":       "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
+	"leser.patchStudentRequest.BarcodeID":        "schueler.barcode_id ist VARCHAR (Ausweis-Barcode)",
+	"leser.patchStudentRequest.LusdID":           "schueler.lusd_id ist VARCHAR (LUSD-Schlüssel)",
 	"benutzer.CreateUserRequest.BarcodeID":       "benutzer.barcode_id ist VARCHAR",
 	"benutzer.UpdateUserRequest.BarcodeID":       "benutzer.barcode_id ist VARCHAR",
 	"katalog.GeraetRequest.BarcodeID":            "geraete.barcode_id ist VARCHAR",

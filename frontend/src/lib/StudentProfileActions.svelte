@@ -38,7 +38,7 @@
 	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
 
 	// Zwei der Dokumente gibt es für einen Kollegen NICHT: Kontoauszug und
-	// Ersatzforderung lesen die Sicht `schueler` (api/print_kontoauszug.go,
+	// Ersatzforderung lesen die Sicht `schueler` (api/leser/print_kontoauszug.go,
 	// api/schaden/print_rechnung.go) und beantworten seine ID
 	// mit „nicht gefunden". Ein Knopf, der nur scheitern kann, ist schlechter als keiner —
 	// und die Ersatzforderung ist ohnehin ein Schreiben an die Eltern eines Schülers. Die

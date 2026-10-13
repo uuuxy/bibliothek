@@ -1,6 +1,6 @@
 // Package lusd gleicht den Bestand der Schüler mit einem Export der LUSD ab: Es liest die
 // Datei, ordnet jede Zeile dem Bestand zu, bildet die Vorschau und wendet die Änderungen in
-// einer Transaktion an. Die Tür steht in api/lusd.go, die Anweisungen an die Datenbank stehen
+// einer Transaktion an. Die Tür steht in api/leser/lusd.go, die Anweisungen an die Datenbank stehen
 // in repository/lusd_import.go.
 package lusd
 

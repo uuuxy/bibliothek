@@ -195,7 +195,7 @@ func dsgvoAnfrageArt(art string) string {
 }
 
 // dsgvoKontoAktion schreibt die Aktion eines Kontoereignisses aus (Schreiber:
-// api/benutzer/user_admin_mutations.go, auth/selbstanmeldung.go, api/student_update.go). Ein
+// api/benutzer/user_admin_mutations.go, auth/selbstanmeldung.go, api/leser/student_update.go). Ein
 // unbekannter Wert bleibt stehen.
 func dsgvoKontoAktion(aktion string) string {
 	switch aktion {

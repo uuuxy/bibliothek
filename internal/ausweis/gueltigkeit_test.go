@@ -62,7 +62,7 @@ func TestGueltigBisJahr(t *testing.T) {
 		{"Q3", 2027, "Q3 liegt in Jahrgang 13"},
 		{"Q4", 2027, "Q4 ebenfalls Jahrgang 13"},
 
-		// Oberstufe in der Schreibweise DIESER Schule: ET, 12T, 13T (api/student_create.go
+		// Oberstufe in der Schreibweise DIESER Schule: ET, 12T, 13T (api/leser/student_create.go
 		// nennt sie ebenso). Sie tragen eine führende Ziffer und fielen damit an der
 		// E/Q-Erkennung vorbei ins Klassenmuster; „T" galt als unbekannter Zweig, also
 		// Mittelstufe. Für 12T hieß das: gültig bis Ende Jahrgang 12 statt 13 — der

@@ -24,6 +24,7 @@ func TestJederZugangReichtDieBasisDesServersWeiter(t *testing.T) {
 		"inventurlauf": s.inventurlauf().Basis,
 		"katalog":      s.katalog().Basis,
 		"lernmittel":   s.lernmittel().Basis,
+		"leser":        s.leser().Basis,
 		"mahnwesen":    s.mahnwesen().Basis,
 		"portal":       s.portal().Basis,
 		"schaden":      s.schaden().Basis,

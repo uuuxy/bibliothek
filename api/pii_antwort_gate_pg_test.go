@@ -288,7 +288,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		// Liste von Zahlen. Keine Positiv-Kontrolle mit einem Kanarienwert möglich — es gibt
 		// in dieser Antwort keinen Text. Das Gate prüft hier also nur, dass nichts
 		// Personenbezogenes durchfällt; DASS die Zahlen stimmen, steht in
-		// schueler_jahrgang_filter_pg_test.go.
+		// api/leser/schueler_jahrgang_filter_pg_test.go.
 		"GET /api/jahrgaenge":              {URL: "/api/jahrgaenge"},
 		"GET /api/lmf-termine":             {URL: "/api/lmf-termine"},
 		"GET /api/lmf-termine/pdf":         {URL: "/api/lmf-termine/pdf"},

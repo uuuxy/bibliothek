@@ -44,7 +44,7 @@ func TestAbgaengerliste_UndVersetzungSehenDieselbeMenge(t *testing.T) {
 	}
 
 	admin := testdaten.AdminKonto(t, pool, "paar-versetzung@test.invalid", "Paar", "Versetzung")
-	if rec := tuertest.RufeAlsAdmin(t, admin, srv.PromoteStudentsHandler(), http.MethodPost,
+	if rec := tuertest.RufeAlsAdmin(t, admin, srv.leser().PromoteStudentsHandler(), http.MethodPost,
 		"/api/students/promote", `{"confirm": true}`, nil); rec.Code != http.StatusOK {
 		t.Fatalf("Versetzung: Status %d — %s", rec.Code, rec.Body.String())
 	}

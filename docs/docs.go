@@ -3043,7 +3043,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.CreateStudentRequest"
+                            "$ref": "#/definitions/leser.CreateStudentRequest"
                         }
                     }
                 ],
@@ -3111,7 +3111,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.StudentProfileResponse"
+                            "$ref": "#/definitions/leser.StudentProfileResponse"
                         }
                     },
                     "400": {
@@ -3474,7 +3474,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.promoteStudentsRequest"
+                            "$ref": "#/definitions/leser.promoteStudentsRequest"
                         }
                     }
                 ],
@@ -3482,7 +3482,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.PromoteStudentsResponse"
+                            "$ref": "#/definitions/leser.PromoteStudentsResponse"
                         }
                     },
                     "400": {
@@ -3819,39 +3819,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.CreateStudentRequest": {
-            "type": "object",
-            "required": [
-                "nachname",
-                "vorname"
-            ],
-            "properties": {
-                "art": {
-                    "description": "Art: eine aus pkg/leserart. Leer heißt „schueler\" — die Vorgabe der\nSpalte und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.",
-                    "type": "string"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "email": {
-                    "description": "Email ist die Schuladresse und PFLICHT, wo ein Zugang zu „Mein Portal\" dazugehört:\nLehrkraft, LiV, Sekretariat, U-plus (leserart.MitKonto; Absprache vom 16.09.2026).\nBei einem Schüler, einem Praktikum und einem Fachbereich bleibt sie leer — sie\nbekommen kein Konto (Entscheidung vom 30.09.2026).\n\nSie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine\nPerson (IMAP), und über sie greift ` + "`" + `benutzer_email_unique` + "`" + `. Genau das verhindert den\nDoppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein\nPortal\" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite\nLeserzeile an.",
-                    "type": "string"
-                },
-                "geburtsdatum": {
-                    "description": "Geburtsdatum (YYYY-MM-DD) ist Pflicht für einen SCHÜLER — geprüft im Handler mit\neigener Meldung, weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe\nerrGeburtsdatumPflicht.",
-                    "type": "string"
-                },
-                "klasse": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "vorname": {
-                    "type": "string"
-                }
-            }
-        },
         "api.NachbuchenEintrag": {
             "type": "object",
             "required": [
@@ -3955,45 +3922,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.OffeneForderungen": {
-            "type": "object",
-            "properties": {
-                "anzahl": {
-                    "type": "integer"
-                },
-                "summe": {
-                    "type": "number"
-                }
-            }
-        },
-        "api.PromoteStudentsResponse": {
-            "type": "object",
-            "properties": {
-                "archived_count": {
-                    "type": "integer"
-                },
-                "dry_run": {
-                    "type": "boolean"
-                },
-                "mapping_entfernt": {
-                    "type": "integer"
-                },
-                "mapping_konflikte": {
-                    "description": "Zuordnungen, deren Zielname schon belegt war (z. B. '9a' und '09a' laufen\nbeide auf '10a'): Sie bleiben unverändert stehen und werden hier genannt,\nstatt den ganzen Lauf scheitern zu lassen.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "mapping_versetzt": {
-                    "description": "Klassenlehrer-Zuordnungen, die mit versetzt / als Abschlussklasse entfernt\nwurden (Befund F3: bis 18.08.2026 blieb die Zuordnung beim Jahreswechsel\nauf den alten Klassennamen stehen — die Mahnliste der neuen 6a ging an\nniemanden, ohne Fehlermeldung).",
-                    "type": "integer"
-                },
-                "promoted_count": {
-                    "type": "integer"
-                }
-            }
-        },
         "api.SchuelerKiosk": {
             "type": "object",
             "properties": {
@@ -4022,102 +3950,6 @@ const docTemplate = `{
                 },
                 "vorname": {
                     "type": "string"
-                }
-            }
-        },
-        "api.StudentProfileResponse": {
-            "type": "object",
-            "properties": {
-                "abgaenger_jahr": {
-                    "type": "integer"
-                },
-                "art": {
-                    "description": "Art: eine aus pkg/leserart. Die Akte richtet sich danach: Ein Kollege hat\nkeine Klasse, kein Abgangsjahr, keine Elternadresse und keine LUSD-Kennung — ohne\ndie Art zeigte die Akte ihm diese Felder als „Keine Angabe\" und behauptete damit,\ndass sie fehlen. Sie gehören ihm gar nicht.",
-                    "type": "string"
-                },
-                "ausweis_gueltig_bis": {
-                    "description": "AusweisGueltigBis ist das Ablaufjahr des Schülerausweises (31.07.), aus dem\nBildungsgang gerechnet — NICHT AbgaengerJahr, das die DSGVO-Löschung steuert.\nDer profilseitige Ausweisdruck liest genau dieses Feld; fehlt es hier, druckt\ndie Karte \"Gültig bis: 31.07.–\", obwohl das Repository den Wert kennt.",
-                    "type": "integer"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "block_reason": {
-                    "type": "string"
-                },
-                "eltern_email": {
-                    "type": "string"
-                },
-                "email": {
-                    "description": "Email ist die SCHUL-Adresse am Konto (benutzer.email), nicht die der Eltern —\nbei Lehrkraft und LiV die Kennung, an der die Anmeldung die Person erkennt.\nLeer heißt: Diese Person hat noch kein Konto, die Adresse ist in der Akte\nnachtragbar. Bei einem Schüler steht hier nie etwas.",
-                    "type": "string"
-                },
-                "entliehene_buecher": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/repository.BorrowedBook"
-                    }
-                },
-                "foto_url": {
-                    "type": "string"
-                },
-                "geburtsdatum": {
-                    "type": "string"
-                },
-                "has_open_damages": {
-                    "type": "boolean"
-                },
-                "hausnummer": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "is_manually_blocked": {
-                    "type": "boolean"
-                },
-                "ist_gesperrt": {
-                    "type": "boolean"
-                },
-                "klasse": {
-                    "type": "string"
-                },
-                "lusd_id": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "offene_forderungen": {
-                    "description": "OffeneForderungen ist der Kontozustand neben der Sperre: Die Akte zeigt ihn in jedem\nReiter, ohne die Liste der Forderungen abzurufen.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/api.OffeneForderungen"
-                        }
-                    ]
-                },
-                "ort": {
-                    "type": "string"
-                },
-                "plz": {
-                    "type": "string"
-                },
-                "strasse": {
-                    "type": "string"
-                },
-                "vorname": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.promoteStudentsRequest": {
-            "type": "object",
-            "properties": {
-                "confirm": {
-                    "type": "boolean"
-                },
-                "dry_run": {
-                    "type": "boolean"
                 }
             }
         },
@@ -5307,6 +5139,174 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/repository.LmfPlanZeile"
                     }
+                }
+            }
+        },
+        "leser.CreateStudentRequest": {
+            "type": "object",
+            "required": [
+                "nachname",
+                "vorname"
+            ],
+            "properties": {
+                "art": {
+                    "description": "Art: eine aus pkg/leserart. Leer heißt „schueler\" — die Vorgabe der\nSpalte und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.",
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "email": {
+                    "description": "Email ist die Schuladresse und PFLICHT, wo ein Zugang zu „Mein Portal\" dazugehört:\nLehrkraft, LiV, Sekretariat, U-plus (leserart.MitKonto; Absprache vom 16.09.2026).\nBei einem Schüler, einem Praktikum und einem Fachbereich bleibt sie leer — sie\nbekommen kein Konto (Entscheidung vom 30.09.2026).\n\nSie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine\nPerson (IMAP), und über sie greift ` + "`" + `benutzer_email_unique` + "`" + `. Genau das verhindert den\nDoppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein\nPortal\" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite\nLeserzeile an.",
+                    "type": "string"
+                },
+                "geburtsdatum": {
+                    "description": "Geburtsdatum (YYYY-MM-DD) ist Pflicht für einen SCHÜLER — geprüft im Handler mit\neigener Meldung, weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe\nerrGeburtsdatumPflicht.",
+                    "type": "string"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
+                }
+            }
+        },
+        "leser.OffeneForderungen": {
+            "type": "object",
+            "properties": {
+                "anzahl": {
+                    "type": "integer"
+                },
+                "summe": {
+                    "type": "number"
+                }
+            }
+        },
+        "leser.PromoteStudentsResponse": {
+            "type": "object",
+            "properties": {
+                "archived_count": {
+                    "type": "integer"
+                },
+                "dry_run": {
+                    "type": "boolean"
+                },
+                "mapping_entfernt": {
+                    "type": "integer"
+                },
+                "mapping_konflikte": {
+                    "description": "Zuordnungen, deren Zielname schon belegt war (z. B. '9a' und '09a' laufen\nbeide auf '10a'): Sie bleiben unverändert stehen und werden hier genannt,\nstatt den ganzen Lauf scheitern zu lassen.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "mapping_versetzt": {
+                    "description": "Klassenlehrer-Zuordnungen, die mit versetzt / als Abschlussklasse entfernt\nwurden (Befund F3: bis 18.08.2026 blieb die Zuordnung beim Jahreswechsel\nauf den alten Klassennamen stehen — die Mahnliste der neuen 6a ging an\nniemanden, ohne Fehlermeldung).",
+                    "type": "integer"
+                },
+                "promoted_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "leser.StudentProfileResponse": {
+            "type": "object",
+            "properties": {
+                "abgaenger_jahr": {
+                    "type": "integer"
+                },
+                "art": {
+                    "description": "Art: eine aus pkg/leserart. Die Akte richtet sich danach: Ein Kollege hat\nkeine Klasse, kein Abgangsjahr, keine Elternadresse und keine LUSD-Kennung — ohne\ndie Art zeigte die Akte ihm diese Felder als „Keine Angabe\" und behauptete damit,\ndass sie fehlen. Sie gehören ihm gar nicht.",
+                    "type": "string"
+                },
+                "ausweis_gueltig_bis": {
+                    "description": "AusweisGueltigBis ist das Ablaufjahr des Schülerausweises (31.07.), aus dem\nBildungsgang gerechnet — NICHT AbgaengerJahr, das die DSGVO-Löschung steuert.\nDer profilseitige Ausweisdruck liest genau dieses Feld; fehlt es hier, druckt\ndie Karte \"Gültig bis: 31.07.–\", obwohl das Repository den Wert kennt.",
+                    "type": "integer"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "block_reason": {
+                    "type": "string"
+                },
+                "eltern_email": {
+                    "type": "string"
+                },
+                "email": {
+                    "description": "Email ist die SCHUL-Adresse am Konto (benutzer.email), nicht die der Eltern —\nbei Lehrkraft und LiV die Kennung, an der die Anmeldung die Person erkennt.\nLeer heißt: Diese Person hat noch kein Konto, die Adresse ist in der Akte\nnachtragbar. Bei einem Schüler steht hier nie etwas.",
+                    "type": "string"
+                },
+                "entliehene_buecher": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.BorrowedBook"
+                    }
+                },
+                "foto_url": {
+                    "type": "string"
+                },
+                "geburtsdatum": {
+                    "type": "string"
+                },
+                "has_open_damages": {
+                    "type": "boolean"
+                },
+                "hausnummer": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_manually_blocked": {
+                    "type": "boolean"
+                },
+                "ist_gesperrt": {
+                    "type": "boolean"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "lusd_id": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "offene_forderungen": {
+                    "description": "OffeneForderungen ist der Kontozustand neben der Sperre: Die Akte zeigt ihn in jedem\nReiter, ohne die Liste der Forderungen abzurufen.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/leser.OffeneForderungen"
+                        }
+                    ]
+                },
+                "ort": {
+                    "type": "string"
+                },
+                "plz": {
+                    "type": "string"
+                },
+                "strasse": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
+                }
+            }
+        },
+        "leser.promoteStudentsRequest": {
+            "type": "object",
+            "properties": {
+                "confirm": {
+                    "type": "boolean"
+                },
+                "dry_run": {
+                    "type": "boolean"
                 }
             }
         },

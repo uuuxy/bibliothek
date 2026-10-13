@@ -80,7 +80,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 	t.Run("Schülerakte: den Barcode eines Buchs als Ausweis eintragen", func(t *testing.T) {
 		exemplar(t, "N131-B")
 		id := schueler(t, "N131-B-S")
-		rec := fahre(srv.PatchStudentHandler(repository.NewAuditRepository(pool)),
+		rec := fahre(srv.leser().PatchStudentHandler(repository.NewAuditRepository(pool)),
 			http.MethodPatch, "/api/schueler/"+id, id, `{"barcode_id":"N131-B"}`)
 		pruefe(t, rec, http.StatusConflict, "Barcode eines Buchs")
 	})
@@ -88,7 +88,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 	t.Run("Leser anlegen mit dem Barcode eines Buchs", func(t *testing.T) {
 		exemplar(t, "N131-C")
 		rec := httptest.NewRecorder()
-		srv.CreateStudentHandler().ServeHTTP(rec, tuertest.JSONPost("/api/schueler",
+		srv.leser().CreateStudentHandler().ServeHTTP(rec, tuertest.JSONPost("/api/schueler",
 			`{"vorname":"Ada","nachname":"Anlage","klasse":"7a","geburtsdatum":"2012-01-02","barcode_id":"N131-C"}`))
 		code, body := rec.Code, rec.Body.String()
 		if code != http.StatusConflict || !strings.Contains(body, "Barcode eines Buchs") {
@@ -116,7 +116,7 @@ func TestNummerBuchOderAusweis_AnDenTueren(t *testing.T) {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 		exemplar(t, "N131-D")
-		rec := fahre(srv.RestoreStudentHandler(), http.MethodPost, "/api/schueler/"+id+"/restore", id, "")
+		rec := fahre(srv.leser().RestoreStudentHandler(), http.MethodPost, "/api/schueler/"+id+"/restore", id, "")
 		pruefe(t, rec, http.StatusConflict, "Barcode eines Buchs")
 	})
 }

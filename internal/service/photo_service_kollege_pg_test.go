@@ -15,7 +15,7 @@ import (
 )
 
 // Das Passbild eines Kollegen: Die Akte ist eine Maske für jeden und zeigt auch ihm den
-// Kamera-Knopf; die Auslieferung (api/photo_serve.go) liest seit dem 17.09.2026 die Tabelle
+// Kamera-Knopf; die Auslieferung (api/leser/photo_serve.go) liest seit dem 17.09.2026 die Tabelle
 // `leser`, damit sein Bild herauskommt. Der Upload las bis zum 22.09.2026 aber noch die
 // Sicht `schueler` und antwortete einem Kollegen „schüler nicht gefunden" (404) — die eine
 // Richtung war repariert, die andere nicht (OFFEN.md 5.19).

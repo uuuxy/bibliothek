@@ -9,9 +9,9 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// ── SCHUELER (Students) ──
 	// Die Klassenliste hinter Jahrgangsfilter und Jahrgangs-Auswahlfeld (OFFEN.md 9.5).
 	lmfKlassenRepo := repository.NewLmfTerminRepository(s.DB.Pool)
-	mux.Handle("GET /api/schueler", s.RequirePermission("view_students")(s.ListStudentsHandler(studentRepo, lmfKlassenRepo)))
-	mux.Handle("GET /api/schueler/{id}", s.RequirePermission("view_students")(s.GetStudentProfileHandler(studentRepo)))
-	mux.Handle("POST /api/schueler", s.RequirePermission("create_students")(s.CreateStudentHandler()))
+	mux.Handle("GET /api/schueler", s.RequirePermission("view_students")(s.leser().ListStudentsHandler(studentRepo, lmfKlassenRepo)))
+	mux.Handle("GET /api/schueler/{id}", s.RequirePermission("view_students")(s.leser().GetStudentProfileHandler(studentRepo)))
+	mux.Handle("POST /api/schueler", s.RequirePermission("create_students")(s.leser().CreateStudentHandler()))
 
 	// Klebeetiketten der markierten Schüler (Name, Klasse, Barcode). view_students wie
 	// der Ausweis-Stapeldruck: Es ist derselbe Vorgang mit anderem Papier, und die
@@ -23,31 +23,31 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// Rechte-Oberfläche aber gar nicht sichtbar (Audit-Befund 01.08.2026).
 	// Ungefährlich: Beide Rechte sind für alle Rollen identisch geseedet
 	// (ADMIN/MITARBEITER ja, LEHRER/HELFER nein) — niemand gewinnt oder verliert Zugriff.
-	mux.Handle("PATCH /api/schueler/{id}", s.RequirePermission("edit_students")(s.PatchStudentHandler(auditRepo)))
-	mux.Handle("PATCH /api/admin/students/{id}/lock", s.RequirePermission("edit_students")(s.LockStudentHandler(auditRepo)))
-	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.DeleteStudentHandler(auditRepo)))
+	mux.Handle("PATCH /api/schueler/{id}", s.RequirePermission("edit_students")(s.leser().PatchStudentHandler(auditRepo)))
+	mux.Handle("PATCH /api/admin/students/{id}/lock", s.RequirePermission("edit_students")(s.leser().LockStudentHandler(auditRepo)))
+	mux.Handle("DELETE /api/schueler/{id}", s.RequirePermission("delete_students")(s.leser().DeleteStudentHandler(auditRepo)))
 
 	// DSGVO-Betroffenenauskunft (Art. 15) — manage_students_admin (seit 24.08.2026, vorher manage_users):
 	// Der Export bündelt sämtliche personenbezogenen Daten eines Lesers. Zeigt auf ihn ein
 	// Zugangskonto, verlangt der Handler zusätzlich manage_users (dsgvoKontoRecht, 28.09.2026).
-	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft", s.RequirePermission("manage_students_admin")(s.DsgvoAuskunftHandler()))
-	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft/pdf", s.RequirePermission("manage_students_admin")(s.DsgvoAuskunftPDFHandler()))
+	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft", s.RequirePermission("manage_students_admin")(s.leser().DsgvoAuskunftHandler()))
+	mux.Handle("GET /api/schueler/{id}/dsgvo-auskunft/pdf", s.RequirePermission("manage_students_admin")(s.leser().DsgvoAuskunftPDFHandler()))
 
 	// Zusammenführen zweier Datensätze (Umbenennung ohne Schüler-ID, Dublette aus
 	// Handanlage + Import): Admin-Recht wie Purge — unumkehrbar, Identitätseingriff.
-	mux.Handle("POST /api/schueler/{id}/zusammenfuehren", s.RequirePermission("merge_students")(s.ZusammenfuehrenSchuelerHandler(auditRepo)))
-	mux.Handle("GET /api/schueler/{id}/zusammenfuehren-kandidaten", s.RequirePermission("merge_students")(s.ZusammenfuehrenKandidatenHandler()))
+	mux.Handle("POST /api/schueler/{id}/zusammenfuehren", s.RequirePermission("merge_students")(s.leser().ZusammenfuehrenSchuelerHandler(auditRepo)))
+	mux.Handle("GET /api/schueler/{id}/zusammenfuehren-kandidaten", s.RequirePermission("merge_students")(s.leser().ZusammenfuehrenKandidatenHandler()))
 
 	// Papierkorb
-	mux.Handle("GET /api/schueler/deleted", s.RequirePermission("delete_students")(s.GetDeletedStudentsHandler()))
-	mux.Handle("POST /api/schueler/{id}/restore", s.RequirePermission("delete_students")(s.RestoreStudentHandler()))
+	mux.Handle("GET /api/schueler/deleted", s.RequirePermission("delete_students")(s.leser().GetDeletedStudentsHandler()))
+	mux.Handle("POST /api/schueler/{id}/restore", s.RequirePermission("delete_students")(s.leser().RestoreStudentHandler()))
 	// Endgültig löschen (DSGVO-Purge): getrennte, stärkere Berechtigung als Soft-Delete.
-	mux.Handle("DELETE /api/schueler/deleted/{id}", s.RequirePermission("manage_students_admin")(s.PurgeStudentHandler(auditRepo)))
+	mux.Handle("DELETE /api/schueler/deleted/{id}", s.RequirePermission("manage_students_admin")(s.leser().PurgeStudentHandler(auditRepo)))
 
 	// Photos — die beiden Richtungen sprechen bewusst UNTERSCHIEDLICHE Kennungen an:
 	// hochgeladen wird über die Schüler-UUID (der Aufrufer kennt den Datensatz),
 	// ausgeliefert über den Barcode. Letzteres ist kein Zufall: resolveFotoURL
-	// (api/student_profile.go), student_profile_queries.go und photo_service.go bauen
+	// (api/leser/student_profile.go), student_profile_queries.go und photo_service.go bauen
 	// die Bild-URL alle drei als /api/schueler/<barcode>/photo, und das Frontend rendert
 	// sie unverändert als <img src>.
 	//
@@ -56,13 +56,13 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// wies jeden echten Barcode (z. B. "S-abg1-ms3p7309e19de436") mit 400 "ungültiges
 	// UUID Format" ab — verifiziert am laufenden System. Kein einziges Schülerfoto wurde
 	// je ausgeliefert; die URL blieb dieselbe, nur die Prüfung passte nicht zu ihr.
-	mux.Handle("POST /api/schueler/{id}/photo", s.RequirePermission("upload_photos")(s.UploadStudentPhotoHandler()))
-	mux.Handle("GET /api/schueler/{barcode_id}/photo", s.RequirePermission("view_students")(s.ServeStudentPhotoHandler()))
+	mux.Handle("POST /api/schueler/{id}/photo", s.RequirePermission("upload_photos")(s.leser().UploadStudentPhotoHandler()))
+	mux.Handle("GET /api/schueler/{barcode_id}/photo", s.RequirePermission("view_students")(s.leser().ServeStudentPhotoHandler()))
 
 	// Klassen
-	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.GetClassesHandler(studentRepo)))
+	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.leser().GetClassesHandler(studentRepo)))
 	// Die besetzten Jahrgänge fürs Filter-Auswahlfeld der Leserdatei (OFFEN.md 9.5).
-	mux.Handle("GET /api/jahrgaenge", s.RequirePermission("view_students")(s.JahrgaengeHandler(lmfKlassenRepo)))
+	mux.Handle("GET /api/jahrgaenge", s.RequirePermission("view_students")(s.leser().JahrgaengeHandler(lmfKlassenRepo)))
 	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_settings")(s.system().GetKlassenMappingHandler()))
 	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_settings")(s.system().UpsertKlassenMappingHandler()))
 	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_settings")(s.system().DeleteKlassenMappingHandler()))
@@ -74,11 +74,11 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// ist schlimmer als keiner: Er behauptet eine Einstellung, die es nicht gibt.
 	// Identisch geseedet zu manage_users für ADMIN und MITARBEITER, LEHRER und HELFER
 	// bleiben ausgeschlossen — die Zuordnung ändert sich also für niemanden.
-	mux.Handle("POST /api/lusd/preview", s.RequirePermission("import_students")(s.PostLusdPreviewHandler()))
-	mux.Handle("POST /api/lusd/import", s.RequirePermission("import_students")(s.PostLusdImportHandler()))
+	mux.Handle("POST /api/lusd/preview", s.RequirePermission("import_students")(s.leser().PostLusdPreviewHandler()))
+	mux.Handle("POST /api/lusd/import", s.RequirePermission("import_students")(s.leser().PostLusdImportHandler()))
 
 	// Promotion
-	mux.Handle("POST /api/students/promote", s.RequirePermission("manage_students_admin")(s.PromoteStudentsHandler()))
+	mux.Handle("POST /api/students/promote", s.RequirePermission("manage_students_admin")(s.leser().PromoteStudentsHandler()))
 
 	// Abgänger (Graduates)
 	mux.Handle("GET /api/abgaenger", s.RequirePermission("view_graduates")(s.mahnwesen().GetGraduatesHandler()))

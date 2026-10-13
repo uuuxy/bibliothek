@@ -29,7 +29,7 @@ export function schuelerRechte(user) {
 		auskunft: hatRecht(user, 'manage_students_admin'),
 		// Zeigt auf den Leser ein Zugangskonto, verlangt der Server zusätzlich manage_users: Die
 		// Auskunft nennt dann Konto, Kontoereignisse und selbst bearbeitete Vorgänge mit
-		// IP-Adresse (api/dsgvo_auskunft.go, dsgvoKontoRecht; seit 28.09.2026).
+		// IP-Adresse (api/leser/dsgvo_auskunft.go, dsgvoKontoRecht; seit 28.09.2026).
 		auskunftMitKonto: hatRecht(user, 'manage_users'),
 		// POST /api/schueler/{id}/photo
 		foto: hatRecht(user, 'upload_photos'),
@@ -42,7 +42,7 @@ export function schuelerRechte(user) {
 
 /**
  * Bietet die Akte DIESES Lesers die DSGVO-Auskunft an? `profil.email` ist die Adresse am
- * Zugangskonto (api/student_profile.go); leer heißt: kein Konto.
+ * Zugangskonto (api/leser/student_profile.go); leer heißt: kein Konto.
  * @param {ReturnType<typeof schuelerRechte>} rechte
  * @param {{ email?: string } | null | undefined} profil
  * @returns {boolean}

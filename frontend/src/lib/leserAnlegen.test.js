@@ -83,7 +83,7 @@ describe('Neuen Leser anlegen', () => {
 	});
 
 	// Die Gegenrichtung — dass beim Schüler KEINE Adresse mitgeht — steht bewusst nicht
-	// hier, sondern im Server-Test (api/leser_kollegium_konto_pg_test.go). Hier wäre sie
+	// hier, sondern im Server-Test (api/leser/leser_kollegium_konto_pg_test.go). Hier wäre sie
 	// teuer zu bekommen: Ein Schüler braucht zusätzlich Klasse und Geburtsdatum, sonst
 	// kommt das Formular gar nicht erst los. Und sie ist dort auch besser aufgehoben — der
 	// Server weist eine Adresse an einem Schüler ausdrücklich ab, das Formular schickt sie

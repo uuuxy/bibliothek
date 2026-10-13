@@ -21,7 +21,7 @@
      Nachtragen, nicht ändern: Steht am Konto bereits eine Adresse, ist das Feld eine
      Anzeige (readonly, damit man sie lesen und kopieren kann). Geändert wird sie in der
      Benutzerverwaltung — sie ist die Identität des Kontos, und zwei Türen zu demselben
-     Zustand kennt nur eine die Regeln (api/student_schul_email.go).
+     Zustand kennt nur eine die Regeln (api/leser/student_schul_email.go).
 
      Praktikum und Fachbereich bekommen keinen Zugang (30.09.2026, artMitKonto): Bei ihnen
      ist das Feld verschlossen wie beim Schüler — außer ein Konto besteht schon, dann bleibt

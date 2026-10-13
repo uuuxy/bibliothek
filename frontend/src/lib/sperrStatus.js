@@ -11,7 +11,7 @@
 //
 // ist_gesperrt ist die Sperre, die das Programm setzt (Ehemalige, Papierkorb,
 // Anonymisierung); is_manually_blocked die von Hand. Seit dem 24.09.2026 hebt der
-// Knopf in der Akte beide auf (api/student_lock.go) und richtet sich deshalb nach
+// Knopf in der Akte beide auf (api/leser/student_lock.go) und richtet sich deshalb nach
 // diesem Prädikat. Einen Kollegen sperrt niemand mehr (entschieden am 16.09.2026,
 // bestätigt am 24.09.2026) — eine alte Sperre an seinem Konto zeigt die Anzeige nicht
 // an, weil die Theke sie nicht prüft.

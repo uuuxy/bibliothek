@@ -104,7 +104,7 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 		return rec
 	}
 
-	rec := rufe(t, srv.DsgvoAuskunftHandler(), "/api/schueler/"+leser+"/dsgvo-auskunft")
+	rec := rufe(t, srv.leser().DsgvoAuskunftHandler(), "/api/schueler/"+leser+"/dsgvo-auskunft")
 	var a auskunft.DsgvoAuskunftResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
 		t.Fatalf("Antwort lesen: %v", err)
@@ -153,7 +153,7 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 		}
 	}
 
-	pdfRec := rufe(t, srv.DsgvoAuskunftPDFHandler(), "/api/schueler/"+leser+"/dsgvo-auskunft/pdf")
+	pdfRec := rufe(t, srv.leser().DsgvoAuskunftPDFHandler(), "/api/schueler/"+leser+"/dsgvo-auskunft/pdf")
 	blatt := strings.Join(pdftest.Texte(t, pdfRec.Body.Bytes()), "\n")
 	for _, soll := range []string{"(Lehrkraft)", "kora@auskunft-kollege.invalid", "Kanari-Wunschtitel", "Konto angelegt"} {
 		if !strings.Contains(blatt, soll) {

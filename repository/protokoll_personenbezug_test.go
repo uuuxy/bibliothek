@@ -19,7 +19,7 @@ import (
 // Viermal derselbe Fehler: LUSD-ID (6d01f27a), Ausweisnummer (131a534a), Sperrgrund
 // (5b50202d), Name und Freitext der Titel-Löschspur (08406df4). Jedes Mal kam ein Wert der
 // Leserzeile oder ein Freitext neben schueler_id ins Protokoll, und die Tilgung entfernte ihn
-// nicht. Die Rundreise (api/dsgvo_paar_rundreise_pg_test.go) sieht nur Werte, die sie selbst
+// nicht. Die Rundreise (api/leser/dsgvo_paar_rundreise_pg_test.go) sieht nur Werte, die sie selbst
 // anlegt.
 //
 // Detektor am Merkmal, nicht an einer Liste von Schreibern: jede Map im Nicht-Test-Code, die
@@ -31,7 +31,7 @@ import (
 // „getilgt" heißt: der Schlüssel steht in protokollSchluesselMitPersonenbezug
 // (protokoll_personenbezug.go), aus der die Tilgung ihre Anweisungen für audit_logs und
 // audit_log baut. Dass die Anweisungen die Schlüssel wirklich nehmen, zeigen die PG-Tests
-// (api/titel_loeschspur_tilgung_pg_test.go, api/sperrgrund_tilgung_pg_test.go).
+// (api/titel_loeschspur_tilgung_pg_test.go, api/leser/sperrgrund_tilgung_pg_test.go).
 //
 // Dieselbe Einordnung gilt neben der Kennung eines Zugangskontos (ziel_id): Einträge über ein
 // Konto tragen Name und Adresse, und die Tilgung nimmt sie aus den Einträgen der früheren

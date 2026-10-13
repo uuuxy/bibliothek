@@ -36,7 +36,7 @@ test('Leserdatei: ein Kollege steht in der Liste, hat eine Akte und ist über de
 	// Über die Tür anlegen, die die Leserdatei selbst benutzt: Art zuerst, keine Klasse,
 	// kein Geburtsdatum.
 	//
-	// Die Schul-E-Mail ist seit dem 16.09.2026 PFLICHT (api/student_create.go): Ohne sie
+	// Die Schul-E-Mail ist seit dem 16.09.2026 PFLICHT (api/leser/student_create.go): Ohne sie
 	// entsteht kein Konto, und ohne Konto stünde die Person zweimal in der Leserdatei,
 	// sobald sie sich selbst anmeldet. Die Domain muss zu SELBSTANMELDUNG_DOMAIN passen —
 	// im lokalen Stack `test.local` (docker-compose.local.yml).

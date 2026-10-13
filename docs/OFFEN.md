@@ -165,8 +165,8 @@ lässt sich dort anhalten.
 - [ ] Stufe 4, die übrigen elf Themen, je Thema ein Schritt. Umgezogen: Inventur
   (`api/inventurlauf`), Benutzer (`api/benutzer`), Portal (`api/portal`), System
   (`api/system`), Mahnwesen (`api/mahnwesen`), Schaden (`api/schaden`), Katalog
-  (`api/katalog`), Druck (`api/druck`), Bestellung (`api/bestellung`). Offen: Leser, zuletzt
-  die Theke.
+  (`api/katalog`), Druck (`api/druck`), Bestellung (`api/bestellung`), Leser (`api/leser`).
+  Offen: die Theke.
 - [ ] Stufe 5, Abschluss: Eine Ratsche hält, dass kein Thema ein anderes einbindet. Tests,
   die nichts aus `api/` prüfen, ziehen zu ihrem Paket. Die Dokumente nennen die neue
   Gliederung. Eine Messung an `repository/` entscheidet, ob die Datenbankschicht folgt.
@@ -415,10 +415,10 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   mit 177 Anweisungen), 12 Dateien ohne Tür (am Anfang 44); `api/` hat 21.319 Zeilen in 136
   Dateien (am Anfang 30.785 in 168).
 - **Umzug je Thema.** Was keine Tür ist, zieht in ein eigenes Paket. Der LUSD-Import steht in
-  `internal/lusd` (Tür in `api/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
+  `internal/lusd` (Tür in `api/leser/lusd.go`, Anweisungen in `repository/lusd_import.go`), die
   Selbstprüfung und die Regel zu den Start-Geheimnissen in `internal/bereitschaft`, die
   Auskunft nach Art. 15 DSGVO mit ihrem Blatt in `internal/auskunft` (Türen in
-  `api/dsgvo_auskunft.go` und `api/dsgvo_pdf.go`), der
+  `api/leser/dsgvo_auskunft.go` und `api/leser/dsgvo_pdf.go`), der
   Strichcode in `pkg/strichcode`, die Arten eines Lesers in `pkg/leserart`, die Töpfe einer Bestellung mit ihren Texten in
   `pkg/mitteltopf`, ihr Bestätigungs-Link in `pkg/bestelllink`, die Zuordnung der
   Kopfzeile einer Importdatei beim Importer, das Anlegen einer Bestellung, der Text der
@@ -459,7 +459,7 @@ Schritten; bis dahin galt „beim fachlichen Anfassen einer Datei". Das Risiko s
   Regeln in einer Datei, die auch eine Tür trägt: Die meisten Zeilen in Funktionen ohne einen
   Typ aus `net/http` tragen `bestellung/bestellbericht_handler.go` (367),
   `lernmittel/lmf_plan.go` (260), `schaden/bescheid_handler.go` (211; die Rechnung des
-  Ersatzwerts steht seit dem 12.10.2026 in `internal/service`), `dsgvo_auskunft.go` (193),
+  Ersatzwerts steht seit dem 12.10.2026 in `internal/service`), `leser/dsgvo_auskunft.go` (193),
   `system/betriebsbereitschaft_handler.go` (175) und `mahnwesen/graduates_mail.go` (157). Die Messung und ihre
   Grenze stehen in ARCHITEKTUR 11.1 unter R4. Nächster Schritt: diese Dateien der Reihe nach
   lesen und trennen, was Regel und was Füll-Funktion ist.
@@ -535,7 +535,7 @@ von Stufe 4 neun der elf Themen.
   | Thema      | Dateien | Zeilen | Routen | Testdateien | Dateien heute in `api/` |
   | ---------- | ------- | ------ | ------ | ----------- | ----------------------- |
   | Katalog    | 21      | 3.035  | 43     | 35          | `copy_admin*.go`, `auflagen_handler.go`, `book_systematik_handler.go`, `isbn_handler.go`, `schlagwort*.go`, `signaturen_handler.go`, `systematik_handler.go`, `lookups.go`, `exemplar_*.go`, `cover.go`, `cover_quelle_bindung.go`, `image_caching.go`, `geraete.go`, `abgangsbuch_handler.go`, `zugangsbuch_handler.go`, `bestandsbuch.go`, seit dem 12.10.2026 in `api/katalog` |
-  | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go`; `klassen_mapping.go` steht seit dem 13.10.2026 bei der Systempflege, weil nur die Seite der Einstellungen es ruft |
+  | Leser      | 17      | 3.022  | 23     | 56          | `student_*.go`, `schueler_jahrgang_filter.go`, `photo_*.go`, `lusd.go`, `klassen_mapping.go`, `dsgvo_*.go`, dazu der Kontoauszug (`print_kontoauszug.go`); seit dem 13.10.2026 in `api/leser`, ohne `klassen_mapping.go`: Die Adressen der Klassenleitungen ruft nur die Seite der Einstellungen, sie stehen bei der Systempflege |
   | Bestellung | 17      | 2.824  | 23     | 24          | `bestell*.go`, `orders_handler.go`, `supplier_handler.go`, `reorders*.go`, seit dem 12.10.2026 in `api/bestellung` |
   | System     | 12      | 1.537  | 17     | 20          | `settings.go`, `backup_status.go`, `betriebsbereitschaft_*.go`, `audit_*.go`, `stats.go`, `reporting_dashboard.go`, `mail_settings.go`, `mail_routes.go`, `littera_import.go`, seit dem 12.10.2026 in `api/system`; seit dem 13.10.2026 dazu `klassen_mapping.go` (die Adressen der Klassenleitungen) |
   | Theke      | 9       | 1.472  | 11     | 24          | `action*.go`, `search.go`, `schueler_kiosk.go`, `nachbuch*.go`, `ausleihe.go`, `vormerkungen.go` |
@@ -653,7 +653,7 @@ von Stufe 4 neun der elf Themen.
   Kaufpreis" beachtet; `api/ersatzwert_grundlage_tueren_pg_test.go` vergleicht jetzt alle
   vier. Die frühere Datei `print.go` trug die Rechnung an die Eltern und den Kontoauszug; die Rechnung
   gehört zum Schaden (`print_rechnung.go`), der Kontoauszug steht in
-  `api/print_kontoauszug.go`. Die Tür der Rechnung ist eine Funktion ohne Server und steht
+  `api/leser/print_kontoauszug.go`. Die Tür der Rechnung ist eine Funktion ohne Server und steht
   in der Routenliste mit dem Paketnamen (`schaden.PrintRechnungHandler`).
 - **Der Katalog ist umgezogen (Stufe 4, 12.10.2026),** mit Vorarbeit in drei Commits:
 

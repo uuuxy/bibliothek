@@ -87,7 +87,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	t.Run("Schüler anlegen mit der Nummer einer Lehrkraft", func(t *testing.T) {
 		lehrkraft(t, "AW118-A", "a@ausweis118.invalid")
 		rec := httptest.NewRecorder()
-		srv.CreateStudentHandler().ServeHTTP(rec, tuertest.JSONPost("/api/schueler",
+		srv.leser().CreateStudentHandler().ServeHTTP(rec, tuertest.JSONPost("/api/schueler",
 			`{"vorname":"Ada","nachname":"Anlage","klasse":"7a","geburtsdatum":"2012-01-02","barcode_id":"AW118-A"}`))
 		code, body := rec.Code, rec.Body.String()
 		if code != http.StatusBadRequest || !strings.Contains(body, "bereits verwendet") {
@@ -98,7 +98,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	t.Run("Schülerakte: Nummer einer Lehrkraft eintragen", func(t *testing.T) {
 		lehrkraft(t, "AW118-B", "b@ausweis118.invalid")
 		id := schueler(t, "AW118-B-S")
-		rec := fahre(srv.PatchStudentHandler(repository.NewAuditRepository(pool)),
+		rec := fahre(srv.leser().PatchStudentHandler(repository.NewAuditRepository(pool)),
 			http.MethodPatch, "/api/schueler/"+id, id, `{"barcode_id":"AW118-B"}`)
 		pruefe(t, rec, http.StatusConflict, "Ausweis")
 	})
@@ -110,7 +110,7 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 		lehrkraft(t, "AW118-C", "c@ausweis118.invalid")
-		rec := fahre(srv.RestoreStudentHandler(), http.MethodPost, "/api/schueler/"+id+"/restore", id, "")
+		rec := fahre(srv.leser().RestoreStudentHandler(), http.MethodPost, "/api/schueler/"+id+"/restore", id, "")
 		pruefe(t, rec, http.StatusConflict, "Ausweis")
 	})
 

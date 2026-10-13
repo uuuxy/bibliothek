@@ -823,7 +823,7 @@ func pruefeBeispielLieferanten(l Lage) Befund {
 // pruefeKlassenDrift macht die Text-Verbindungen des Klassennamens sichtbar
 // (Befund F3, bewertung/datenbank-pruefbericht.md): Schüler, Klassenlehrer-
 // Zuordnung und Bücherlisten hängen nur an übereinstimmenden Namen. Der
-// Jahreswechsel versetzt die Zuordnung seit 18.08.2026 mit (student_promotion.go),
+// Jahreswechsel versetzt die Zuordnung seit 18.08.2026 mit (api/leser/student_promotion.go),
 // aber Umbenennungen von Hand oder LUSD-Umschichtungen können weiter driften —
 // und ohne diese Prüfung merkt es niemand, bis eine Mahnliste leer läuft.
 // Bewusst nur Warnung: Eine Klasse ohne Lehrkraft-Zuordnung kann gewollt sein

@@ -293,7 +293,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	//
 	// Wird die Leserzeile aus dem Papierkorb zurückgeholt, kommt sie OHNE Zugang zurück.
 	// Den legt man an, indem man in der Akte die Schul-E-Mail nachträgt
-	// (api/student_schul_email.go) — derselbe Weg wie beim Altbestand.
+	// (api/leser/student_schul_email.go) — derselbe Weg wie beim Altbestand.
 	var kontenGeloescht int64
 	if !leserart.IstSchueler(art) {
 		if kontenGeloescht, err = r.loescheKontenDerLeserzeile(ctx, tx, studentID, bearbeiterID); err != nil {
@@ -592,7 +592,7 @@ var spurTilgungen = []SpurTilgung{
 		// andere Personen nennen kann, und die Sperr-Tür schreibt ihn als grund ins Protokoll
 		// (LESER_GESPERRT, LESER_ENTSPERRT), das Übergehen an der Theke bis zum 24.09.2026 als
 		// reason (OVERRIDE_BLOCK). Rasterdurchgang 24.09.2026,
-		// api/sperrgrund_tilgung_pg_test.go. Die Schlüssel stehen seit dem 29.09.2026 in
+		// api/leser/sperrgrund_tilgung_pg_test.go. Die Schlüssel stehen seit dem 29.09.2026 in
 		// protokollSchluesselMitPersonenbezug, eine Liste für beide Protokolle.
 		Beschreibung: "audit_logs (Personenbezug neben der Leserkennung)",
 		sql:          tilgePersonenbezugImProtokoll("audit_logs"),

@@ -18,7 +18,7 @@
 	let reason = $state('');
 
 	// Aufheben, sobald eine Sperre am Leser besteht — von Hand oder die der Ehemaligen; die Tür
-	// nimmt beide weg (api/student_lock.go, seit dem 24.09.2026). Dasselbe Prädikat wie der
+	// nimmt beide weg (api/leser/student_lock.go, seit dem 24.09.2026). Dasselbe Prädikat wie der
 	// Knopf, der dieses Fenster öffnet (StudentKontoStatus).
 	let gesperrt = $derived(ausleiheGesperrt(profile));
 	// Beim Sperren (nicht beim Entsperren) ist ein Grund Pflicht — deckt sich mit dem

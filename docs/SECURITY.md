@@ -690,7 +690,7 @@ Spalte. Bis dahin ging das **nicht**: Das Formular schickte für ein geräumtes 
 JSON-null, was im Backend als „nicht mitgeschickt“ ankam; die Oberfläche meldete
 „gespeichert“, und beim nächsten Öffnen stand der alte Wert wieder da. Wer die Löschung
 einer Adresse oder der Eltern-Mail verlangte, konnte sie also nur über die vollständige
-Anonymisierung bekommen. Belegt durch `api/schueler_feld_leeren_pg_test.go` (gegen echtes
+Anonymisierung bekommen. Belegt durch `api/leser/schueler_feld_leeren_pg_test.go` (gegen echtes
 PostgreSQL, in beide Richtungen: löschbar ist, was löschbar sein darf — Vor-/Nachname,
 Klasse und Ausweisnummer werden mit 400 abgelehnt, `geburtsdatum` bleibt als Schlüssel
 des LUSD-Abgleichs unlöschbar).

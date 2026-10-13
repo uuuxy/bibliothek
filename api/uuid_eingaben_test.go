@@ -61,7 +61,7 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 		{"Schüler-Etiketten, leeres Element", s.druck().PrintSchuelerEtikettenHandler(nil), http.MethodPost, "/api/print/schueler-etiketten", `{"formatId":"x","schuelerIds":[""]}`},
 		{"Fehlbestand ?session_id in urn-Form", s.inventurlauf().InventurFehlbestandHandler(), http.MethodGet, "/api/inventur/fehlbestand?session_id=" + urnForm, ""},
 		{"Inventur abschließen, urn-Form", s.inventurlauf().InventurFinishHandler(), http.MethodPost, "/api/inventur/finish", `{"session_id":"` + urnForm + `"}`},
-		{"Schüler zusammenführen, urn-Form", s.ZusammenfuehrenSchuelerHandler(nil), http.MethodPost, "/api/schueler/11111111-1111-1111-1111-111111111111/zusammenfuehren", `{"quelle_id":"` + urnForm + `"}`},
+		{"Schüler zusammenführen, urn-Form", s.leser().ZusammenfuehrenSchuelerHandler(nil), http.MethodPost, "/api/schueler/11111111-1111-1111-1111-111111111111/zusammenfuehren", `{"quelle_id":"` + urnForm + `"}`},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {

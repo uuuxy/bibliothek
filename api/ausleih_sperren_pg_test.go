@@ -202,7 +202,7 @@ func TestTheke_EhemaligeSperreNichtAmSchulbuch(t *testing.T) {
 
 // Ein anonymisierter Datensatz bekommt nichts, auch kein Schulbuch — die Namenssuche der
 // Theke findet ihn noch („Abgänger Anonymisiert-…"). Die Sperre trägt kein Merkmal: Aufheben
-// kann man sie nicht (student_lock_pg_test.go).
+// kann man sie nicht (api/leser/student_lock_pg_test.go).
 // Rot gesehen am Rückbau: die Prüfung auf IstAnonymisiert entfernt — das Schulbuch geht an
 // den anonymisierten Datensatz.
 func TestTheke_AnonymisiertBekommtKeinSchulbuch(t *testing.T) {

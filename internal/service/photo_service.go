@@ -28,7 +28,7 @@ var (
 // verschlüsselt ihn per AES und speichert ihn in der Datenbank ab.
 func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID string, base64DataStr string) (string, error) {
 	// 1. Die Ausweisnummer des LESERS — Tabelle `leser`, nicht die Sicht `schueler`: Die
-	// Akte bietet den Kamera-Knopf jedem Leser an, und die Auslieferung (api/photo_serve.go)
+	// Akte bietet den Kamera-Knopf jedem Leser an, und die Auslieferung (api/leser/photo_serve.go)
 	// liest sein Bild über dieselbe Tabelle. Über die Sicht bekam ein Kollege hier 404
 	// (TestUploadStudentPhoto_AuchFuerKollegen). COALESCE, weil ein Kollege aus der
 	// Selbstanmeldung noch keine Nummer hat (OFFEN.md 5.16 C) — das Bild wird gespeichert,

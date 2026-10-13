@@ -185,7 +185,7 @@ func strPtr(s string) *string { return &s }
 // verlangt konkret pgx.Tx, hier liegt aber nur r.db (DBQueryer) vor — dieselbe
 // Verengung, die schon FinishInventurSession umgeht, indem es Pool und Tx über
 // dasselbe Interface anspricht. Direktes Schreiben in audit_log ist an mehreren
-// Stellen im Projekt so üblich (z. B. api/student_update.go), nicht nur über die
+// Stellen im Projekt so üblich (z. B. api/leser/student_update.go), nicht nur über die
 // Kapselung in audit.go.
 func schreibeAuditLog(ctx context.Context, db DBQueryer, e auditEntry) error {
 	var detailsJSON []byte
