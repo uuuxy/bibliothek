@@ -120,7 +120,7 @@ func (s *Tueren) handleLockStudent(w http.ResponseWriter, r *http.Request, audit
 	protokolliereSperre(r, auditRepo, claims.UserID, id, req.IsLocked, reason, alt)
 
 	w.Header().Set("Content-Type", "application/json")
-	httpresp.Encode(w, student)
+	httpresp.SchreibeJSON(w, student)
 	return nil
 }
 

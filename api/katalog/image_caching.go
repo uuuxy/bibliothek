@@ -104,7 +104,7 @@ func serveCoverFallback(w http.ResponseWriter) {
 	w.Header().Set(tuer.HeaderContentType, "image/gif")
 	w.Header().Set(tuer.HeaderCacheControl, "public, max-age=86400")
 	w.WriteHeader(http.StatusOK)
-	httpresp.Write(w, coverFallbackGIF)
+	httpresp.Schreibe(w, coverFallbackGIF)
 }
 
 func serveCachedCover(w http.ResponseWriter, r *http.Request, root *os.Root, fileName string) {
@@ -291,7 +291,7 @@ func (s *Tueren) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 	// Zweig ist gebremst — und er antwortet im Grenzfall mit dem Fallback-GIF statt mit
 	// 429, weil am anderen Ende ein <img> hängt: Ein Fehlercode erzeugt dort nur einen
 	// roten Konsoleneintrag, das Bild fehlt so oder so. Der nächste Aufruf holt es nach.
-	if !coverDownloadLimiter.Allow(clientip.AusAnfrage(r)) {
+	if !coverDownloadLimiter.LaesstDurch(clientip.AusAnfrage(r)) {
 		serveCoverFallback(w)
 		return
 	}

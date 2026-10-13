@@ -115,6 +115,6 @@ func (s *Tueren) UpdatePermissionsHandler() http.HandlerFunc {
 		tuer.InvalidatePermissionCache()
 
 		w.Header().Set("Content-Type", "application/json")
-		httpresp.Write(w, []byte(`{"status":"success"}`))
+		httpresp.Schreibe(w, []byte(`{"status":"success"}`))
 	}
 }

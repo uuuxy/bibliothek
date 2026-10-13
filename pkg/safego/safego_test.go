@@ -5,37 +5,33 @@ import (
 	"testing"
 )
 
-// TestGuardFaengtPanic beweist den Kern: Eine Goroutine, die mit Guard geschützt ist,
-// nimmt den Prozess bei einem Panic NICHT mit. Ohne Guard würde dieser Test das
-// gesamte Testbinary zum Absturz bringen (unrecovered panic in goroutine).
-func TestGuardFaengtPanic(t *testing.T) {
+// Ohne FangePanic beendete das Panic der Goroutine den ganzen Testlauf.
+func TestFangePanic_ProzessUeberlebt(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
-		defer Guard("test-goroutine")
+		defer FangePanic("test-goroutine")
 		panic("simulierter Parser-Absturz")
 	}()
 
-	wg.Wait() // Kehrt nur zurück, wenn das Panic gefangen wurde.
+	wg.Wait() // kehrt nur zurück, wenn das Panic gefangen ist
 }
 
-// TestGuardLaesstNormalenAblaufDurch stellt sicher, dass Guard im Normalfall (kein
-// Panic) nichts stört und der Code hinter ihm ganz durchläuft.
-func TestGuardLaesstNormalenAblaufDurch(t *testing.T) {
+func TestFangePanic_LaesstNormalenAblaufDurch(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	erledigt := false
 	go func() {
 		defer wg.Done()
-		defer Guard("test-goroutine")
+		defer FangePanic("test-goroutine")
 		erledigt = true
 	}()
 
 	wg.Wait()
 	if !erledigt {
-		t.Error("Guard hat den normalen Ablauf unterbrochen")
+		t.Error("FangePanic hat den normalen Ablauf unterbrochen")
 	}
 }

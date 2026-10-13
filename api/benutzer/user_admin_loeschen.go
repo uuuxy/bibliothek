@@ -79,5 +79,5 @@ func (s *Tueren) handleDeleteUser(w http.ResponseWriter, r *http.Request, auditR
 	}
 
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
-	httpresp.Write(w, []byte(`{"status":"success"}`))
+	httpresp.Schreibe(w, []byte(`{"status":"success"}`))
 }

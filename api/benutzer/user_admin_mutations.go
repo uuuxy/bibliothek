@@ -107,7 +107,7 @@ func (s *Tueren) handleCreateUser(w http.ResponseWriter, r *http.Request, userRe
 	s.ProtokolliereKontoAnlage(r.Context(), kontoID, req.Email, dbEnumRole, req.Vorname, req.Nachname)
 
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
-	httpresp.Write(w, []byte(`{"status":"success"}`))
+	httpresp.Schreibe(w, []byte(`{"status":"success"}`))
 }
 
 // UpdateUserRequest nennt, was an einem Konto geändert wird. Ein fehlendes Feld bleibt, wie es
@@ -199,7 +199,7 @@ func (s *Tueren) handleUpdateUser(w http.ResponseWriter, r *http.Request, userRe
 	tuer.InvalidatePermissionCache()
 
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
-	httpresp.Write(w, []byte(`{"status":"success"}`))
+	httpresp.Schreibe(w, []byte(`{"status":"success"}`))
 }
 
 // nenntNichts sagt, ob der Rumpf kein Feld des Kontos nennt.
@@ -234,7 +234,7 @@ func antworteOhneKontoAenderung(ctx context.Context, w http.ResponseWriter, user
 		return
 	}
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
-	httpresp.Write(w, []byte(`{"status":"success"}`))
+	httpresp.Schreibe(w, []byte(`{"status":"success"}`))
 }
 
 // kontoAenderungAus prüft die genannte E-Mail und Ausweisnummer auf Eindeutigkeit und baut die

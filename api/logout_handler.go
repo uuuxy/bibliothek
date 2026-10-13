@@ -21,7 +21,7 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 			if errors.Is(err, http.ErrNoCookie) {
 				// Already logged out — idempotent
 				w.Header().Set("Content-Type", "application/json")
-				httpresp.Write(w, []byte(`{"status":"ok"}`))
+				httpresp.Schreibe(w, []byte(`{"status":"ok"}`))
 				return
 			}
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
@@ -77,6 +77,6 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		httpresp.Write(w, []byte(`{"status":"ok"}`))
+		httpresp.Schreibe(w, []byte(`{"status":"ok"}`))
 	}
 }

@@ -98,7 +98,7 @@ func (s *Tueren) DeleteVormerkungHandler(vormerkungRepo repository.VormerkungRep
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		httpresp.Write(w, []byte(`{"status":"gelöscht"}`))
+		httpresp.Schreibe(w, []byte(`{"status":"gelöscht"}`))
 		return nil
 	})
 }

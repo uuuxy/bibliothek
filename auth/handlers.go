@@ -196,7 +196,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		}
 
 		w.Header().Set(headerContentType, contentTypeJSON)
-		httpresp.Encode(w, LoginResponse{
+		httpresp.SchreibeJSON(w, LoginResponse{
 			UserID:      user.id,
 			Email:       user.email,
 			Rolle:       role,
@@ -471,10 +471,10 @@ func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.Handle
 		w.Header().Set(headerContentType, contentTypeJSON)
 		if gesperrt {
 			w.WriteHeader(http.StatusLocked)
-			httpresp.Encode(w, map[string]string{"error": ErrSitzungGesperrt.Error(), "email": antwort.Email})
+			httpresp.SchreibeJSON(w, map[string]string{"error": ErrSitzungGesperrt.Error(), "email": antwort.Email})
 			return
 		}
-		httpresp.Encode(w, antwort)
+		httpresp.SchreibeJSON(w, antwort)
 	}
 }
 
@@ -530,7 +530,7 @@ func erneuereSitzung(w http.ResponseWriter, r *http.Request, authenticator *Auth
 		if remaining > authenticator.tokenDuration/2 {
 			// Token is still fresh enough, return current session info
 			w.Header().Set(headerContentType, contentTypeJSON)
-			httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "skipped"})
+			httpresp.SchreibeJSON(w, map[string]string{"status": "ok", "refresh": "skipped"})
 			return
 		}
 	}
@@ -545,7 +545,7 @@ func erneuereSitzung(w http.ResponseWriter, r *http.Request, authenticator *Auth
 	}
 	if !verlaengert {
 		w.Header().Set(headerContentType, contentTypeJSON)
-		httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "skipped"})
+		httpresp.SchreibeJSON(w, map[string]string{"status": "ok", "refresh": "skipped"})
 		return
 	}
 
@@ -567,5 +567,5 @@ func erneuereSitzung(w http.ResponseWriter, r *http.Request, authenticator *Auth
 	})
 
 	w.Header().Set(headerContentType, contentTypeJSON)
-	httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "renewed"})
+	httpresp.SchreibeJSON(w, map[string]string{"status": "ok", "refresh": "renewed"})
 }

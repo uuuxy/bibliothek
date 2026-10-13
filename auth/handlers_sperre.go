@@ -28,7 +28,7 @@ func SperrenHandler(authenticator *Authenticator) http.HandlerFunc {
 			return
 		}
 		w.Header().Set(headerContentType, contentTypeJSON)
-		httpresp.Encode(w, map[string]bool{"gesperrt": gesperrt})
+		httpresp.SchreibeJSON(w, map[string]bool{"gesperrt": gesperrt})
 	}
 }
 
@@ -81,7 +81,7 @@ func EntsperrenHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) htt
 		}
 
 		w.Header().Set(headerContentType, contentTypeJSON)
-		httpresp.Encode(w, antwort)
+		httpresp.SchreibeJSON(w, antwort)
 	}
 }
 

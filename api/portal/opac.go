@@ -43,7 +43,7 @@ func opacTitelAus(t repository.KatalogTreffer) OpacTitel {
 // schreibeLeereTrefferliste antwortet auf eine Suche ohne Suchtext und ohne Filter.
 func schreibeLeereTrefferliste(w http.ResponseWriter) {
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
-	httpresp.Write(w, []byte("[]"))
+	httpresp.Schreibe(w, []byte("[]"))
 }
 
 // PublicCatalogSearchHandler handles GET /api/public/opac/suche?q=...

@@ -144,7 +144,7 @@ func (handler *APIHandler) processImportRows(ctx context.Context, dataRows [][]s
 		go func(row []string) {
 			defer wg.Done()
 			defer func() { <-sem }()
-			defer safego.Guard("excel-import-zeile")
+			defer safego.FangePanic("excel-import-zeile")
 
 			book, err := verarbeiteImportZeile(ImportConfig{
 				Ctx:       ctx,

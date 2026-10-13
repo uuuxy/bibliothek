@@ -63,7 +63,7 @@ func (s *CoverService) SyncMissingCoversAsync() {
 	// beim Lesen der DB-Zeilen oder im Dispatch — risse sonst den gesamten Prozess mit.
 	// Steht NACH dem Store(false)-Defer, damit auf einem Panik BEIDES läuft: recovern UND
 	// das Running-Flag zurücksetzen (sonst überspringt jeder künftige Lauf für immer).
-	defer safego.Guard("cover-sync")
+	defer safego.FangePanic("cover-sync")
 
 	ctx := context.Background()
 
@@ -102,7 +102,7 @@ func (s *CoverService) SyncMissingCoversAsync() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			defer safego.Guard("cover-sync-worker")
+			defer safego.FangePanic("cover-sync-worker")
 			for mc := range jobs {
 				<-throttle.C
 				s.processCover(ctx, client, mc, &found, &notFound, &failed)

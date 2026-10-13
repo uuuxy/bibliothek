@@ -36,7 +36,7 @@ func (s *Tueren) BarcodeHandler() http.HandlerFunc {
 		// Ausweisnummer, und der Browser legte sie mit dem Bild ein Jahr lang ab. Das
 		// PII-Antwort-Gate führt Ausweisnummern als Stufe 1 und prüft diese Route eigens
 		// (adresseTraegtPersonendaten).
-		httpresp.Write(w, pngBytes)
+		httpresp.Schreibe(w, pngBytes)
 	}
 }
 

@@ -8,70 +8,71 @@ import (
 	"time"
 )
 
-type visitor struct {
-	tokens     float64
-	lastRefill time.Time
+type besucher struct {
+	vorrat  float64
+	zuletzt time.Time
 }
 
-// Limiter führt je Adresse einen Vorrat von limit Anfragen, der sich in einer Sekunde wieder
-// füllt.
-type Limiter struct {
-	mu       sync.Mutex
-	visitors map[string]*visitor
-	limit    int // max requests per second
+// Bremse führt je Adresse einen Vorrat von jeSekunde Anfragen, der sich in einer Sekunde
+// wieder füllt.
+type Bremse struct {
+	mu        sync.Mutex
+	jeAdresse map[string]*besucher
+	jeSekunde int
 }
 
 // New liefert eine Bremse mit limit Anfragen je Sekunde und Adresse.
-func New(limit int) *Limiter {
-	return &Limiter{
-		visitors: make(map[string]*visitor),
-		limit:    limit,
+func New(limit int) *Bremse {
+	return &Bremse{
+		jeAdresse: make(map[string]*besucher),
+		jeSekunde: limit,
 	}
 }
 
-func (l *Limiter) cleanupStaleVisitors(now time.Time) {
-	if len(l.visitors) <= 5000 {
+// raeumeAlteAuf entfernt Adressen, die fünf Minuten nichts geschickt haben, sobald mehr als
+// 5000 gemerkt sind; sonst wüchse die Karte mit jeder neuen Adresse.
+func (b *Bremse) raeumeAlteAuf(jetzt time.Time) {
+	if len(b.jeAdresse) <= 5000 {
 		return
 	}
-	for k, vis := range l.visitors {
-		if now.Sub(vis.lastRefill) > 5*time.Minute {
-			delete(l.visitors, k)
+	for adresse, alt := range b.jeAdresse {
+		if jetzt.Sub(alt.zuletzt) > 5*time.Minute {
+			delete(b.jeAdresse, adresse)
 		}
 	}
 }
 
-// Allow checks if the IP is allowed to perform a request under token bucket rules.
-func (l *Limiter) Allow(ip string) bool {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+// LaesstDurch meldet, ob die Adresse noch eine Anfrage frei hat, und nimmt sie dann aus
+// ihrem Vorrat.
+func (b *Bremse) LaesstDurch(adresse string) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
-	now := time.Now()
-	v, exists := l.visitors[ip]
-	if !exists {
-		v = &visitor{
-			tokens:     float64(l.limit),
-			lastRefill: now,
+	jetzt := time.Now()
+	besuch, bekannt := b.jeAdresse[adresse]
+	if !bekannt {
+		besuch = &besucher{
+			vorrat:  float64(b.jeSekunde),
+			zuletzt: jetzt,
 		}
-		l.visitors[ip] = v
+		b.jeAdresse[adresse] = besuch
 
-		// Clean up stale visitor entries to prevent memory leaks
-		l.cleanupStaleVisitors(now)
+		b.raeumeAlteAuf(jetzt)
 
-		v.tokens -= 1.0
+		besuch.vorrat -= 1.0
 		return true
 	}
 
-	elapsed := now.Sub(v.lastRefill)
-	v.lastRefill = now
+	vergangen := jetzt.Sub(besuch.zuletzt)
+	besuch.zuletzt = jetzt
 
-	// Refill tokens proportional to elapsed time
-	v.tokens += elapsed.Seconds() * float64(l.limit)
-	if v.tokens > float64(l.limit) {
-		v.tokens = float64(l.limit)
+	besuch.vorrat += vergangen.Seconds() * float64(b.jeSekunde)
+	if besuch.vorrat > float64(b.jeSekunde) {
+		besuch.vorrat = float64(b.jeSekunde)
 	}
 
-	if v.tokens >= 1.0 {
-		v.tokens -= 1.0
+	if besuch.vorrat >= 1.0 {
+		besuch.vorrat -= 1.0
 		return true
 	}
 

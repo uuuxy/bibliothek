@@ -94,7 +94,7 @@ func (s *Tueren) handleOeffentlicheEtiketten(w http.ResponseWriter, r *http.Requ
 	w.Header().Set(tuer.HeaderContentType, tuer.ContentTypePDF)
 	// inline: Der Lieferant soll den Bogen im Browser sehen und direkt drucken können.
 	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"etiketten_%s.pdf\"", groesse))
-	httpresp.Write(w, daten)
+	httpresp.Schreibe(w, daten)
 }
 
 // baueEtikettenPDF erzeugt den Bogen in der gewünschten Größe.

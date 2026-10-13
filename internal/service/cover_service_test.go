@@ -36,7 +36,7 @@ func (panicQueryDB) Query(context.Context, string, ...any) (pgx.Rows, error) {
 }
 
 // TestSyncMissingCoversUeberlebtPanik: Ein Panik in der ÄUSSEREN Sync-Goroutine darf
-// den Prozess NICHT mitreissen (safego.Guard) — und muss coverSyncRunning zurücksetzen,
+// den Prozess NICHT mitreissen (safego.FangePanic) — und muss coverSyncRunning zurücksetzen,
 // sonst überspringt jeder künftige Lauf für immer.
 func TestSyncMissingCoversUeberlebtPanik(t *testing.T) {
 	coverSyncRunning.Store(false)

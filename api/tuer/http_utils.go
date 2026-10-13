@@ -108,7 +108,7 @@ func DecodeAndValidate[T any](w http.ResponseWriter, r *http.Request, target *T)
 func RespondJSON(w http.ResponseWriter, status int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	httpresp.Encode(w, payload)
+	httpresp.SchreibeJSON(w, payload)
 }
 
 // RespondSuccess is a convenience function that sends a {"status": "success"} JSON response.

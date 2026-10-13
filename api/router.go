@@ -333,10 +333,10 @@ func (s *Server) healthHandler() http.HandlerFunc {
 		w.Header().Set(tuer.HeaderContentType, tuer.ContentTypeJSON)
 		if err := s.DB.Pool.Ping(r.Context()); err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			httpresp.Write(w, []byte(`{"status":"unhealthy","error":"database unreachable"}`))
+			httpresp.Schreibe(w, []byte(`{"status":"unhealthy","error":"database unreachable"}`))
 			return
 		}
-		httpresp.Write(w, []byte(`{"status":"healthy"}`))
+		httpresp.Schreibe(w, []byte(`{"status":"healthy"}`))
 	}
 }
 

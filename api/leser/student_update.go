@@ -179,7 +179,7 @@ func (s *Tueren) handlePatchStudent(w http.ResponseWriter, r *http.Request, audi
 	if req.AbgaengerJahr != nil {
 		response["abgaenger_jahr"] = *req.AbgaengerJahr
 	}
-	httpresp.Encode(w, response)
+	httpresp.SchreibeJSON(w, response)
 }
 
 // schuelerAenderung ist eine geprüfte Änderung an der Leserzeile samt dem, was nach dem
