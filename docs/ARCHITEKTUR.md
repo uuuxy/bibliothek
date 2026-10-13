@@ -3574,7 +3574,7 @@ und `api/theke` (1.562 in elf).
 Das größte Paket der Türen ist `api/katalog`; `repository/` hat 22.367 Zeilen in 151
 Dateien, `inventur/` 6.547 und `internal/service` 5.020. Die Dateien von `api/`, gemessen am
 13.10.2026 nach dem Umzug aller Themen: Die Hälfte hat höchstens 125 Zeilen, neun von zehn
-höchstens 208, die größten sind `router.go` (379) und `middleware.go` (366). Von den 139
+höchstens 208, die größten sind `router.go` (379) und `middleware.go` (366). Von den 134
 Dateien der Themen hat die Hälfte höchstens 111 Zeilen, neun von zehn höchstens 278, sechs
 haben über 400: `lernmittel/lmf_plan.go` (692), `schaden/bescheid_handler.go` (623),
 `bestellung/bestellbericht_handler.go` (567), `leser/student_update.go` (555),

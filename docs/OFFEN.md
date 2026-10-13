@@ -739,7 +739,8 @@ Seit dem 13.10.2026 stehen alle zwölf Themen in eigenen Paketen. Offen ist Stuf
   Server entfiel sie. Vier Testdateien bleiben in `api/`: die Fristen der Idempotenz gegen
   die Fristen der Middleware (dafür ist `theke.IdempotenzSpeicherfrist` groß geschrieben),
   die Personendaten-Grenze, die UUID-Eingaben und die vier Wege einer Verlängerung. Zwei
-  davon brauchten Namen aus Testdateien der Theke: Die Attrappe der Einstellungen steht bei
+  davon brauchten klein geschriebene Namen, die mit der Theke umzogen: Die Attrappe der
+  Einstellungen aus einer ihrer Testdateien steht bei
   den Prüfhilfen (`tuertest.EinstellungenAttrappe`), der Test zum Sperrgrund prüft nur eine
   Funktion der Theke und zog in einer eigenen Datei mit ihr um. Der Test der Suche mit
   Doppelpunkt baute den Server über `NewServer` und baut ihn jetzt als Literal. Zwei der
