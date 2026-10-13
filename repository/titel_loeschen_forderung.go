@@ -1,11 +1,11 @@
 package repository
 
-// titel_loeschen_forderung.go — die Spur, die eine gelöschte Forderung hinterlässt.
+// Die Spur, die eine gelöschte Forderung hinterlässt.
 //
-// Gegenstück zu inventur/db_books_delete_spur.go für den Einzel-Titel-Weg. Beide
-// Löschwege räumen `schadensfaelle` ohne Rücksicht auf `ist_bezahlt` ab; das ist gewollt
-// (sonst hielte der FK den Titel fest), aber es darf nicht spurlos geschehen: Ein
-// unbezahlter Schadensfall ist Geld, das ein Schüler der Schule schuldet.
+// Das Gegenstück zu inventur/db_books_delete_spur.go für das Löschen eines einzelnen Titels.
+// Beide Wege räumen schadensfaelle ohne Rücksicht auf ist_bezahlt ab, weil der Fremdschlüssel
+// den Titel sonst festhielte. Spurlos darf das nicht geschehen: Ein unbezahlter Schadensfall
+// ist Geld, das ein Leser der Schule schuldet.
 
 import (
 	"context"
@@ -15,14 +15,14 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// protokolliereOffeneForderungen hält jede unbezahlte, nicht stornierte Forderung der
-// Exemplare dieses Titels fest — in derselben Transaktion, direkt vor dem DELETE.
+// protokolliereOffeneForderungen hält jede unbezahlte, nicht stornierte Forderung der Exemplare
+// dieses Titels fest, in derselben Transaktion vor dem DELETE.
 //
-// `schueler_id` ist nicht nur Information, sondern der Schlüssel, an dem die Tilgung die
-// Zeile findet: Beim Anonymisieren und beim endgültigen Löschen fallen schuldner und
-// beschreibung (protokollSchluesselMitPersonenbezug). Die Lesehistorie-Befristung nimmt der
-// Zeile den Leser nicht: Sie belegt, wessen Forderung mit dem Titel gelöscht wurde. Bis zur
-// Tilgung gilt die Audit-Aufbewahrung (24 Monate).
+// schueler_id ist der Schlüssel, an dem die Tilgung die Zeile findet: Beim Anonymisieren und
+// beim endgültigen Löschen fallen schuldner und beschreibung
+// (protokollSchluesselMitPersonenbezug). Die Befristung der Lesehistorie nimmt der Zeile den
+// Leser nicht: Sie belegt, wessen Forderung mit dem Titel gelöscht wurde. Bis zur Tilgung gilt
+// die Aufbewahrung des Protokolls.
 func protokolliereOffeneForderungen(ctx context.Context, tx pgx.Tx, titelID string) error {
 	rows, err := tx.Query(ctx, `
 		SELECT sf.id, e.id, e.barcode_id,

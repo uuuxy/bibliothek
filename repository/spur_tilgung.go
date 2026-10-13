@@ -9,31 +9,26 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// SpurenDatenbank ist der kleinste gemeinsame Nenner von pgx.Tx und dem Pool. Query
-// steht mit drin, seit eine Tilgung nicht mehr nur schreibt, sondern das Ergebnis ihres
-// eigenen DELETE braucht (Vormerkungen, siehe vormerkung_nachruecken.go).
+// SpurenDatenbank ist, woran eine Tilgung läuft: eine Transaktion oder der Pool. Query gehört
+// dazu, weil eine Tilgung das Ergebnis ihres eigenen DELETE brauchen kann (Vormerkungen,
+// vormerkung_nachruecken.go).
 type SpurenDatenbank interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
 
-// SpurTilgung ist EINE Anweisung der Spuren-Tilgung, parametrisiert über eine
-// Schüler-MENGE. Die Liste darunter ist die einzige Quelle dafür, welche Spuren eines
-// Schülers in den Neben-Tabellen stehen — Purge/LUSD-Abgang (ein Schüler, in der Tx,
-// Abbruch beim ersten Fehler) und der nächtliche Cron (alle anonymisierten, am Pool,
-// weiter beim Fehler) fahren DIESELBEN Statements und unterscheiden sich nur in
-// Menge und Fehlerpolitik.
-//
-// Anlass (31.08.2026): Cron und Purge pflegten die Liste getrennt; dem Cron fehlte
-// genau die Lesehistorie — der Klarname (details->>'entleiher') überlebte die
-// Anonymisierung (jobs/dsgvo_spuren_paarung_pg_test.go, am alten Stand rot gesehen).
+// SpurTilgung ist eine Anweisung der Tilgung über eine Menge von Lesern. Die Liste darunter ist
+// die einzige Quelle dafür, welche Spuren eines Lesers in den Nebentabellen stehen: Das
+// endgültige Löschen und der Abgang aus der LUSD (ein Leser, in der Transaktion, Abbruch beim
+// ersten Fehler) und der nächtliche Lauf (alle anonymisierten, am Pool, weiter beim Fehler)
+// fahren dieselben Anweisungen. Mit zwei Listen fehlte dem Lauf die Lesehistorie, und der Name
+// überlebte die Anonymisierung (jobs/dsgvo_spuren_paarung_pg_test.go).
 type SpurTilgung struct {
 	Beschreibung string
 	sql          string // $1 = Schüler-IDs als text[]; $2 = Grund (nur brauchtGrund)
 	brauchtGrund bool
-	// schritt steht STATT sql, wenn eine Tilgung mehr ist als eine Anweisung — sie
-	// bleibt trotzdem ein Eintrag DIESER Liste, damit Purge, LUSD-Abgang und Cron
-	// weiterhin dasselbe tun.
+	// schritt steht statt sql, wenn eine Tilgung mehr ist als eine Anweisung. Sie bleibt ein
+	// Eintrag dieser Liste, damit alle Wege dasselbe tun.
 	schritt func(ctx context.Context, ex SpurenDatenbank, schuelerIDs []string) (int64, error)
 }
 
@@ -51,28 +46,25 @@ func (st SpurTilgung) Tilge(ctx context.Context, ex SpurenDatenbank, schuelerIDs
 	return tag.RowsAffected(), err
 }
 
-// SpurTilgungen liefert die Statement-Liste für den set-basierten Cron
-// (jobs/cron_dsgvo.go). Purge und LUSD-Pfad gehen über TilgeSchuelerSpuren.
+// SpurTilgungen liefert die Liste für den nächtlichen Lauf, der über Mengen arbeitet
+// (jobs/cron_dsgvo.go). Das endgültige Löschen und der Abgang gehen über TilgeSchuelerSpuren.
 func SpurTilgungen() []SpurTilgung { return spurTilgungen }
 
 var spurTilgungen = []SpurTilgung{
 	{
-		// Zugangskonto (Migration 123): Das KONTO bleibt — es ist die Anmeldung samt
-		// Rechten und gehoert nicht dem Leser, sondern der Anlage. Was faellt, ist die
-		// Verknuepfung: Nach der Tilgung soll keine Anmeldung mehr auf diese getilgte
-		// Person zeigen. Der Fremdschluessel steht auf ON DELETE SET NULL und greift erst,
-		// wenn die Leserzeile ganz verschwindet; diese Zeile raeumt den Fall davor
-		// (Anonymisierung, Zeile bleibt). Idempotent: NULL bleibt NULL.
+		// Zugangskonto: Das Konto bleibt, es ist die Anmeldung samt Rechten und gehört der
+		// Anlage. Was fällt, ist die Verknüpfung: Nach der Tilgung zeigt keine Anmeldung mehr
+		// auf die getilgte Person. Der Fremdschlüssel (ON DELETE SET NULL) greift erst, wenn
+		// die Leserzeile verschwindet; diese Anweisung räumt den Fall davor, in dem die Zeile
+		// anonymisiert stehen bleibt. Wiederholbar: NULL bleibt NULL.
 		Beschreibung: "benutzer (Verknuepfung zur Leserzeile)",
 		sql: `UPDATE benutzer SET leser_id = NULL, aktualisiert_am = NOW()
 			WHERE leser_id = ANY($1::uuid[])`,
 	},
 	{
-		// Nachbuch-Meldungen (Migration 117): Die Meldung bleibt als Vorgang — Barcode,
-		// Ergebnis, Grund —, der Personenbezug fällt: beide Schüler-Spalten auf NULL. Die
-		// Fremdschlüssel stehen auf ON DELETE SET NULL, sobald der Datensatz verschwindet;
-		// diese Zeile räumt die Anonymisierung davor (anonymized_at, Zeile bleibt).
-		// Idempotent: NULL bleibt NULL.
+		// Nachbuch-Meldungen: Die Meldung bleibt als Vorgang (Barcode, Ergebnis, Grund), der
+		// Personenbezug fällt, beide Spalten mit dem Leser werden NULL. Wie beim Konto räumt
+		// die Anweisung den Fall, in dem die Zeile anonymisiert stehen bleibt. Wiederholbar.
 		Beschreibung: "nachbuch_meldungen (Ausleiher und Vorbesitzer)",
 		sql: `UPDATE nachbuch_meldungen
 			SET ausleiher_schueler_id = CASE WHEN ausleiher_schueler_id = ANY($1::uuid[]) THEN NULL ELSE ausleiher_schueler_id END,
@@ -80,21 +72,19 @@ var spurTilgungen = []SpurTilgung{
 			WHERE ausleiher_schueler_id = ANY($1::uuid[]) OR vorbesitzer_schueler_id = ANY($1::uuid[])`,
 	},
 	{
-		// Schadensersatz-Bescheid (Migration 110): Der Brief BLEIBT als Beleg — über seine
-		// Referenznummer werden Zahlungen zugeordnet, und Rechnungsunterlagen liegen
-		// Jahre. Was fällt, ist der Personenbezug: der Empfänger-Snapshot (Anrede, Name,
-		// Anschrift zum Briefdatum). Der Fremdschlüssel wird von ON DELETE SET NULL
-		// geleert, sobald der Schülerdatensatz verschwindet; diese Zeile räumt den
-		// Klartext, der sonst im JSONB stehen bliebe. Idempotent: leeres Objekt bleibt leer.
+		// Schadensersatz-Bescheid: Der Brief bleibt als Beleg, über seine Referenznummer werden
+		// Zahlungen zugeordnet. Was fällt, ist die Aufnahme des Empfängers (Anrede, Name,
+		// Anschrift zum Datum des Briefs), die sonst im JSON stehen bliebe; den Fremdschlüssel
+		// leert ON DELETE SET NULL. Wiederholbar: Ein leeres Objekt bleibt leer.
 		Beschreibung: "schadensersatz_bescheide (Empfänger-Snapshot)",
 		sql: `UPDATE schadensersatz_bescheide
 			SET empfaenger_snapshot = '{}'::jsonb
 			WHERE schueler_id = ANY($1::uuid[]) AND empfaenger_snapshot <> '{}'::jsonb`,
 	},
 	{
-		// Datensatz-Historie: LegeLeserInPapierkorb legt Vor-/Nachname, Klasse und Barcode in
-		// details ab; das ganze Objekt wird durch den Anonymisierungs-Marker ersetzt.
-		// Idempotent über den Marker.
+		// Datensatz-Historie: LegeLeserInPapierkorb legt Vor- und Nachname, Klasse und Barcode
+		// in details ab; das ganze Objekt wird durch die Marke der Anonymisierung ersetzt.
+		// Wiederholbar über die Marke.
 		Beschreibung: "audit_log (Datensatz-Historie, tabelle='schueler')",
 		sql: `UPDATE audit_log
 			SET details = jsonb_build_object('anonymisiert', true, 'grund', $2::text)
@@ -103,40 +93,33 @@ var spurTilgungen = []SpurTilgung{
 		brauchtGrund: true,
 	},
 	{
-		// Lesehistorie: dieselben Zeilen, die die Art.-15-Auskunft dem Schüler zurechnet
-		// (repository/dsgvo_auskunft.go: tabelle='ausleihen' AND details->>'schueler_id' = id).
-		// Die Buchungshistorie selbst BLEIBT (Nachweis, dass ein Exemplar unterwegs war),
-		// nur ihr Personenbezug fällt — dieselben Schlüssel, die auch die
-		// Lesehistorie-Befristung entfernt (jobs/cron_dsgvo_lesehistorie.go).
+		// Lesehistorie: dieselben Zeilen, die die Auskunft dem Leser zurechnet
+		// (dsgvo_auskunft.go: tabelle = 'ausleihen' und details->>'schueler_id'). Der Eintrag
+		// bleibt als Nachweis, dass ein Exemplar unterwegs war; es fallen die Schlüssel mit
+		// Personenbezug, dieselben, die auch die Befristung der Lesehistorie entfernt
+		// (jobs/cron_dsgvo_lesehistorie.go).
 		Beschreibung: "audit_log (Lesehistorie, tabelle='ausleihen')",
 		sql: `UPDATE audit_log
 			SET details = details - 'schueler_id' - 'entleiher'
 			WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = ANY($1::text[])`,
 	},
 	{
-		// Name und Freitext, die neben der Kennung des Lesers in der Datensatz-Historie
-		// stehen: die Spur einer offenen Forderung oder Vormerkung, deren Titel gelöscht wurde
-		// (schuldner, beschreibung, betrifft). Die Einträge bleiben als Beleg, die Kennung ist
-		// danach ein Pseudonym. Bis zum 29.09.2026 fehlte diese Anweisung; die
-		// Lesehistorie-Befristung erreicht diese Zeilen nicht (sie arbeitet nur auf
-		// tabelle = 'ausleihen'). repository/titel_loeschspur_tilgung_pg_test.go.
+		// Name und Freitext neben der Kennung des Lesers in der Datensatz-Historie: die Spur
+		// einer offenen Forderung oder Vormerkung, deren Titel gelöscht wurde (schuldner,
+		// beschreibung, betrifft). Die Einträge bleiben als Beleg, die Kennung ist danach ein
+		// Pseudonym. Die Befristung der Lesehistorie erreicht diese Zeilen nicht, sie arbeitet
+		// nur auf tabelle = 'ausleihen' (titel_loeschspur_tilgung_pg_test.go).
 		Beschreibung: "audit_log (Personenbezug neben der Leserkennung)",
 		sql:          tilgePersonenbezugImProtokoll("audit_log"),
 	},
 	{
-		// Die staatliche LUSD-ID (LUSD_ID_NACHGETRAGEN) und die Ausweis-Barcodes
-		// (SCHUELER_ZUSAMMENGEFUEHRT): Nur die Schlüssel mit Personenbezug fallen; Aktion,
-		// Zeit und schueler_id (nach Anonymisierung ein Pseudonym) bleiben für die
-		// Rechenschaftspflicht erhalten. Der Barcode gehört dazu, weil die anonyme Hülle
-		// einen ANON-Barcode bekommt, damit die physische Karte nicht mehr aufgeht — im
-		// Verwaltungsprotokoll stand die alte Nummer sonst bis zu 24 Monate neben der UUID
-		// (Rasterdurchgang 02.09.2026).
-		// Der Grund einer Sperre ebenso: Die Anonymisierung ersetzt block_reason, weil er
-		// andere Personen nennen kann, und die Sperr-Tür schreibt ihn als grund ins Protokoll
-		// (LESER_GESPERRT, LESER_ENTSPERRT), das Übergehen an der Theke bis zum 24.09.2026 als
-		// reason (OVERRIDE_BLOCK). Rasterdurchgang 24.09.2026,
-		// api/leser/sperrgrund_tilgung_pg_test.go. Die Schlüssel stehen seit dem 29.09.2026 in
-		// protokollSchluesselMitPersonenbezug, eine Liste für beide Protokolle.
+		// Im Protokoll der Verwaltung fallen nur die Schlüssel mit Personenbezug; Aktion, Zeit
+		// und schueler_id (nach der Anonymisierung ein Pseudonym) bleiben für die Rechenschaft.
+		// Dazu gehören die LUSD-ID, der Barcode des Ausweises (die anonyme Zeile bekommt einen
+		// neuen, damit die Karte nicht mehr aufgeht; die alte Nummer stünde sonst bis zum Ende
+		// der Aufbewahrung neben der Kennung) und der Grund einer Sperre, der andere Personen
+		// nennen kann. Die Schlüssel stehen in protokollSchluesselMitPersonenbezug, einer Liste
+		// für beide Protokolle (api/leser/sperrgrund_tilgung_pg_test.go).
 		Beschreibung: "audit_logs (Personenbezug neben der Leserkennung)",
 		sql:          tilgePersonenbezugImProtokoll("audit_logs"),
 	},
@@ -161,26 +144,22 @@ var spurTilgungen = []SpurTilgung{
 			  AND (beschreibung <> '' OR stornierungsgrund IS NOT NULL)`,
 	},
 	{
-		// Vormerkungen: die Freitext-Notiz kann personenbezogen sein, und die Vormerkung
-		// eines gelöschten/anonymisierten Schülers ist funktionslos. Beim Purge räumt sie
-		// auch der FK-CASCADE — hier steht sie trotzdem, damit der Cron-Pfad (Schüler
-		// lebt als anonymisierte Hülle weiter) dieselbe Liste fahren kann.
+		// Vormerkungen: Die Notiz kann die Person nennen, und die Vormerkung eines gelöschten
+		// oder anonymisierten Lesers hat keine Aufgabe mehr. Beim endgültigen Löschen räumt sie
+		// auch der Fremdschlüssel (CASCADE); sie steht trotzdem hier, damit der nächtliche
+		// Lauf, bei dem die Zeile anonymisiert weiterbesteht, dieselbe Liste fährt.
 		//
-		// Kein reines DELETE: Lag für das Kind schon ein Exemplar abholbereit, muss es
-		// an den nächsten Wartenden gehen — sonst bleibt das Buch auf dem Abholregal
-		// liegen und die Schlange rückt nie nach (06.09.2026).
+		// Kein bloßes DELETE: Lag für den Leser schon ein Exemplar zum Abholen bereit, geht es
+		// an den nächsten Wartenden; sonst bliebe das Buch im Abholregal liegen.
 		Beschreibung: "vormerkungen (gelöscht, Warteschlange nachgerückt)",
 		schritt:      loescheVormerkungenUndRuecktNach,
 	},
 }
 
-// TilgeSchuelerSpuren entfernt die Personendaten EINES Schülers aus den Neben-Tabellen —
-// gemeinsamer Schritt von LUSD-Abgänger-Anonymisierung (AnonymisiereAbgaenger) und Purge.
-// Historie der Lücken: Bis 22.08.2026 hatte nur der Cron-Pfad alle damaligen Statements
-// (A3: LUSD-ID überlebte 24 Monate); bis 31.08.2026 fehlte hier die Lesehistorie, danach
-// fehlte sie dem Cron — seither ist spurTilgungen die eine Liste für beide.
-// Idempotent; muss VOR dem DELETE des Schülers laufen (audit_logs hängt nur per
-// details->>'schueler_id' am Schüler, nicht per FK).
+// TilgeSchuelerSpuren entfernt die Personendaten eines Lesers aus den Nebentabellen: der
+// gemeinsame Schritt der Anonymisierung eines Abgängers (AnonymisiereAbgaenger) und des
+// endgültigen Löschens. Wiederholbar; es läuft vor dem DELETE des Lesers, weil audit_logs nur
+// über details->>'schueler_id' am Leser hängt und nicht über einen Fremdschlüssel.
 func TilgeSchuelerSpuren(ctx context.Context, ex SpurenDatenbank, schuelerID, grund string) error {
 	for _, st := range spurTilgungen {
 		if _, err := st.Tilge(ctx, ex, []string{schuelerID}, grund); err != nil {

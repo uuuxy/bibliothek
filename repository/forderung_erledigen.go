@@ -10,18 +10,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Sentinel-Fehler der Gebühren-Erledigung — die Handler mappen sie auf 404/409.
-// Ein generischer Fehler würde vom 500-Sanitizer zu "interner Datenbankfehler"
-// verschluckt und erreichte das Formular nie.
+// Die Fehler beim Erledigen einer Forderung. Die Tür macht daraus „nicht gefunden" oder einen
+// Konflikt; ein Fehler ohne Namen käme als „interner Fehler" beim Formular an.
 var (
 	ErrSchadensfallNichtGefunden = errors.New("Schadensfall nicht gefunden")
 	ErrSchadensfallErledigt      = errors.New("Schadensfall wurde bereits bezahlt oder storniert")
 )
 
-// betragFuerErledigung liest den Betrag eines noch offenen Schadensfalls und sperrt
-// die Zeile (FOR UPDATE) bis zum Commit. Der Betrag steht damit IMMER aus der
-// Datenbank im Audit-Protokoll — nie aus dem Request, wo ihn ein Client fälschen
-// könnte. Gleichzeitig liefert die Abfrage die 404/409-Unterscheidung.
+// betragFuerErledigung liest den Betrag einer offenen Forderung und sperrt die Zeile bis zum
+// Commit. Im Protokoll steht so der Betrag aus der Datenbank und nicht der aus der Anfrage.
+// Eine unbekannte und eine schon erledigte Forderung meldet die Funktion je mit eigenem Fehler.
 func betragFuerErledigung(ctx context.Context, tx pgx.Tx, schadensfallID string) (float64, error) {
 	var betrag float64
 	var istBezahlt bool
@@ -40,10 +38,9 @@ func betragFuerErledigung(ctx context.Context, tx pgx.Tx, schadensfallID string)
 	return betrag, nil
 }
 
-// StorniereForderung markiert eine ausstehende Gebühr (Schadensfall) als storniert und schreibt einen
-// revisionssicheren Audit-Eintrag. Dies ersetzt das physische Löschen von Schadensfällen, um die Historie zu wahren.
-// ist_bezahlt wird bewusst mitgesetzt: Alle Offen-Filter hängen an ist_bezahlt = false;
-// die Lesepfade unterscheiden bezahlt/storniert über storniert_am.
+// StorniereForderung setzt eine offene Forderung auf storniert und schreibt den Eintrag dazu;
+// die Zeile bleibt als Beleg stehen. ist_bezahlt wird mitgesetzt: Wer offene Forderungen zählt,
+// fragt nur ist_bezahlt = false, und bezahlt und storniert unterscheidet storniert_am.
 func (a *pgProtokollAbfragen) StorniereForderung(ctx context.Context, schadensfallID string, bearbeiterID string, grund string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
@@ -93,9 +90,9 @@ func (a *pgProtokollAbfragen) StorniereForderung(ctx context.Context, schadensfa
 	return tx.Commit(ctx)
 }
 
-// VerbucheZahlung verbucht die Zahlung einer ausstehenden Gebühr (der Alltagsfall:
-// Barzahlung am Tresen) und schreibt den Audit-Eintrag. Die Storno-Spalten bleiben
-// unberührt — bezahlt und storniert bleiben so unterscheidbar.
+// VerbucheZahlung verbucht die Zahlung einer offenen Forderung, im Alltag bar an der Theke, und
+// schreibt den Eintrag dazu. Die Spalten der Stornierung bleiben leer; so bleiben bezahlt und
+// storniert unterscheidbar.
 func (a *pgProtokollAbfragen) VerbucheZahlung(ctx context.Context, schadensfallID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {

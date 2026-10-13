@@ -9,25 +9,17 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// snapshotTitelRows liefert die Zeile, die LoescheTitel vor dem Löschen für das Audit-Log
-// sichert.
+// snapshotTitelRows liefert die Zeile, die LoescheTitel vor dem Löschen für das Protokoll
+// liest.
 func snapshotTitelRows() *pgxmock.Rows {
 	return pgxmock.NewRows([]string{"titel", "autor", "isbn"}).
 		AddRow("Der Vorleser", "Bernhard Schlink", "9783161484100")
 }
 
-// TestLoescheTitel_MeldetAktiveAusleihenAlsSentinel sichert die Bedienbarkeit des
-// Löschpfads ab.
-//
-// Die Sperre selbst hat immer funktioniert — ein Titel mit verliehenen Exemplaren wurde
-// nie gelöscht. Unbrauchbar war die Rückmeldung: Der Handler erkannte den Fall an
-// err.Error()[:22] == "Löschen fehlgeschlagen:" und traf damit nie. Der Text begann
-// klein, das Literal groß, und 22 Bytes können ein 24-Byte-Literal ohnehin nicht treffen
-// (die Umlaute zählen doppelt). Jeder blockierte Löschversuch endete deshalb als HTTP 500
-// — und die Liste der noch verliehenen Barcodes, also genau die Auskunft, mit der man
-// weiterarbeitet, verschwand hinter „Serverfehler".
-//
-// Deshalb ein Sentinel statt eines Textvergleichs: errors.Is überlebt jede Umformulierung.
+// Ein Titel mit verliehenen Exemplaren wurde nie gelöscht; unbrauchbar war die Rückmeldung. Die
+// Tür erkannte den Fall am Anfang des Fehlertexts und traf nie, jeder abgelehnte Versuch endete
+// als Serverfehler, und die Liste der verliehenen Barcodes ging verloren. Deshalb ein
+// Fehlerwert: errors.Is übersteht jede Umformulierung.
 func TestLoescheTitel_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -47,7 +39,7 @@ func TestLoescheTitel_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).
 			AddRow("B-00042").AddRow("B-00043"))
-	// KEIN ExpectExec("DELETE …"): Der Abbruch muss vor jedem zerstörenden Statement kommen.
+	// Kein ExpectExec("DELETE …"): Der Abbruch kommt vor jeder Anweisung, die etwas löscht.
 	mock.ExpectRollback()
 
 	err = repo.LoescheTitel(context.Background(), titelID, "admin-1")
@@ -66,8 +58,8 @@ func TestLoescheTitel_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 	}
 }
 
-// TestLoescheTitel_LoeschtOhneAktiveAusleihen ist die Gegenprobe: Ohne offene Ausleihen
-// darf die Sperre nicht greifen, sonst liesse sich nie ein Titel entfernen.
+// Die Gegenprobe: Ohne offene Ausleihen greift die Sperre nicht, sonst ließe sich nie ein Titel
+// entfernen.
 func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -86,15 +78,14 @@ func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"})) // keine offenen Ausleihen
-	// Barcode-Snapshots der Exemplare vor den DELETEs — die Tresen-Auskunft findet
-	// gelöschte Exemplare nur über diese Spur (Befund 01.09.2026).
+	// Die Barcodes der Exemplare vor dem Löschen: Die Tresen-Auskunft findet gelöschte
+	// Exemplare nur über diese Spur.
 	mock.ExpectQuery("FROM buecher_exemplare e WHERE e.titel_id").
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "war_im_bestand"}).
 			AddRow("ex-1", "B-00001", true))
-	// Offene Forderungen VOR dem Löschen ins Protokoll (Rasterdurchgang 06.09.2026):
-	// Ein unbezahlter Schadensfall ist Geld, das ein Schüler schuldet, und er verschwand
-	// bis dahin mit dem Titel, ohne dass jemand ihn später nachtragen konnte.
+	// Offene Forderungen vor dem Löschen ins Protokoll: Ein unbezahlter Schadensfall ist Geld,
+	// das ein Leser schuldet, und verschwände sonst mit dem Titel.
 	mock.ExpectQuery("FROM schadensfaelle sf").
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "schuldner",
@@ -103,10 +94,9 @@ func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("ex-1", pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	// Die drei CASCADE-Kinder des Titels (Frage 12 „Gegenrichtung Schema", 06.09.2026):
-	// Vormerkungen, Klassensatz-Reservierungen und Klassensatz-Zuordnungen fallen mit —
-	// die DDL sagte das längst, das Verfahren erwähnte es nicht. Hier eine wartende
-	// Vormerkung, damit auch die Protokollzeile erwartet wird.
+	// Was mit dem Titel über CASCADE fällt: Vormerkungen, Klassensatz-Reservierungen und
+	// Klassensatz-Zuordnungen. Hier eine wartende Vormerkung, damit auch ihre Zeile im
+	// Protokoll erwartet wird.
 	mock.ExpectQuery("FROM vormerkungen v").
 		WithArgs([]string{titelID}).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "wer", "status", "seit", "schueler_id"}).
@@ -132,13 +122,14 @@ func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("DELETE", 3))
 	mock.ExpectExec("DELETE FROM buecher_titel").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 1))
-	// Der Audit-Eintrag ist revisionssicher gefordert — Tabelle, Aktion und Datensatz
-	// werden deshalb festgenagelt, der Rest (Bearbeiter, Kontext, Details-JSON) nicht.
+	// Vom Eintrag sind Tabelle, Aktion und Datensatz festgelegt, der Rest (Bearbeiter, Kontext,
+	// Details) nicht.
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("buecher_titel", "DELETE", titelID,
 			pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
-	// Je Exemplar der Barcode-Snapshot im Geschwister-Format (SondereExemplarAus, Verlust).
+	// Je Exemplar der Eintrag mit Barcode in der Form der Geschwister (SondereExemplarAus,
+	// Verlust).
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("buecher_exemplare", "DELETE", "ex-1",
 			pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
@@ -153,9 +144,8 @@ func TestLoescheTitel_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	}
 }
 
-// TestLoescheTitel_LeseFehlerBlocktLoeschung: Bricht die Ausleih-Abfrage mittendrin ab,
-// darf NICHT von „keine offenen Ausleihen" ausgegangen werden — sonst löschte ein
-// Verbindungsfehler den Titel samt verliehener Exemplare.
+// Bricht die Abfrage der Ausleihen mittendrin ab, gilt nicht „keine offenen Ausleihen": Sonst
+// löschte ein Fehler der Verbindung den Titel samt verliehener Exemplare.
 func TestLoescheTitel_LeseFehlerBlocktLoeschung(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -176,7 +166,7 @@ func TestLoescheTitel_LeseFehlerBlocktLoeschung(t *testing.T) {
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).
 			AddRow("B-00042").RowError(0, leseFehler))
-	// KEIN ExpectExec: Bei unklarer Lage wird nichts gelöscht.
+	// Kein ExpectExec: Bei unklarer Lage wird nichts gelöscht.
 	mock.ExpectRollback()
 
 	err = repo.LoescheTitel(context.Background(), titelID, "admin-1")
@@ -191,10 +181,9 @@ func TestLoescheTitel_LeseFehlerBlocktLoeschung(t *testing.T) {
 // ptrString: pgxmock reicht Zeiger unverändert durch; die Spalte schueler_id ist nullbar.
 func ptrString(s string) *string { return &s }
 
-// ProtokolliereAusleihe/ProtokolliereRueckgabe schreiben in die ÜBERGEBENE Transaktion und eröffnen keine
-// eigene (Register B, 07.09.2026): pgxmock kennt nur das eine Begin des Aufrufers — ein
-// zweites Begin oder ein Commit im Repository wäre eine unerwartete Erwartung und macht
-// den Test rot. Am alten Stand (eigene Tx mit Commit) fiel er genau so.
+// ProtokolliereAusleihe und ProtokolliereRueckgabe schreiben in die übergebene Transaktion und
+// öffnen keine eigene: pgxmock kennt nur das eine Begin des Rufers, ein zweites Begin oder ein
+// Commit in der Abfrage träfe keine Erwartung und machte den Test rot.
 func TestProtokolliereAusleihe_SchreibtInDieUebergebeneTransaktion(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -222,7 +211,7 @@ func TestProtokolliereAusleihe_SchreibtInDieUebergebeneTransaktion(t *testing.T)
 	if err := repo.ProtokolliereRueckgabe(ctx, tx, "ex-1", "s-1", "", "b-1"); err != nil {
 		t.Fatalf("ProtokolliereRueckgabe: %v", err)
 	}
-	// Der Aufrufer committet — nicht das Repository.
+	// Den Commit setzt der Rufer, nicht die Abfrage.
 	mock.ExpectCommit()
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatalf("Commit: %v", err)
@@ -232,9 +221,9 @@ func TestProtokolliereAusleihe_SchreibtInDieUebergebeneTransaktion(t *testing.T)
 	}
 }
 
-// erwarteAuflagenSperre: Das Löschen nimmt als ERSTES die Sperre der Auflagen und liest die
-// Werke des Titels (WerkeDerTitel, docs/OFFEN.md 4.18) — hier gehört er zu keinem, also
-// räumt RaeumeWerkeAuf danach nichts auf.
+// erwarteAuflagenSperre: Das Löschen nimmt zuerst die Sperre der Auflagen und liest die Werke
+// des Titels (WerkeDerTitel). Hier gehört er zu keinem, also räumt RaeumeWerkeAuf danach nichts
+// auf.
 func erwarteAuflagenSperre(mock pgxmock.PgxPoolIface, ids []string) {
 	mock.ExpectExec(`SELECT pg_advisory_xact_lock`).WithArgs(auflagenLockKey).
 		WillReturnResult(pgxmock.NewResult("SELECT", 1))

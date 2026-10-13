@@ -474,9 +474,8 @@ Muster steht am ersten Ausschnitt (`repository/lieferant.go`): Das Modell heißt
 (`Lieferant`), was sie liest und schreibt `LieferantenAbfragen`, die Fassung an Postgres
 `pgLieferantenAbfragen`, der Erzeuger `NewLieferantenAbfragen`, und eine Methode wiederholt
 die Sache nicht (`Lade` statt `GetSupplierByID`). Offen sind dort noch die Ausschnitte
-Protokoll, Schaden und Bescheid, Inventur, Bestellung, Vormerkung und Reservierung, Ausleihe,
-Titel und Exemplar, Leser und der Rest (Auskunft, Löschfristen, Statistik, Mahnwesen,
-Lernmittel).
+Schaden und Bescheid, Inventur, Bestellung, Vormerkung und Reservierung, Ausleihe, Titel und
+Exemplar, Leser und der Rest (Auskunft, Löschfristen, Statistik, Mahnwesen, Lernmittel).
 
 **Beleg je Paket:** Umbenannt wird mit dem Werkzeug der Sprache (`gopls rename`), das jede
 Nennung über die Typprüfung findet. Danach laufen die ganze Go-Suite an der Datenbank, der
@@ -519,6 +518,16 @@ Antworttyps, steht er auch in `docs/docs.go`: danach `swag init -g main.go -o do
   Anmeldung und Uhr tut.
 - Die Zuweisung des Kopfs der Schule aus den Einstellungen (`pdf.SchuleInfo{Name: …}`) steht
   an acht Türen.
+- `repository.ProtokollAbfragen` trägt neben dem Schreiben der Einträge das Löschen von Titel,
+  Konto und Leser, das Aussondern eines Exemplars und das Erledigen einer Forderung, weil jeder
+  dieser Vorgänge mit seinem Eintrag in einer Transaktion steht. Wer „Titel löschen" sucht,
+  sucht beim Titel. Die Dateien heißen schon nach ihrer Sache (`titel_loeschen.go`,
+  `leser_loeschen.go`, `konto_loeschen.go`, `exemplar_aussondern.go`, `forderung_erledigen.go`);
+  die Methoden ziehen an die Abfragen ihrer Sache, sobald deren Ausschnitt umgestellt ist.
+- Derselbe Ort hat zwei Wörter: „Theke" (669 Go-Namen, 549 Nennungen in der Oberfläche, das
+  Paket `api/theke`) und „Tresen" (124 Go-Namen, 16 Nennungen in der Oberfläche, darunter die
+  Beschriftung „Tresen-Auskunft"; gezählt am 13.10.2026). Ein Wort festlegen und in
+  [STIL.md](STIL.md), Abschnitt 2, eintragen.
 - Die Oberfläche: 459 Dateien ohne Tests, `Student` in 30 Dateinamen gegen 15 mit `schueler`
   oder `leser`.
 

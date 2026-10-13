@@ -9,16 +9,16 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ErrExemplarNochVerliehen / ErrExemplarNichtGefunden: dieselbe Sentinel-Bauart für das
-// EINZELNE Exemplar. Der Handler entschied hier bis zum 31.08.2026 per Textvergleich —
-// „Exemplar ist aktuell noch verliehen!" gegen „exemplar ist aktuell noch verliehen"
-// (Großschreibung + Ausrufezeichen): Der Vergleich traf nie, ein verliehenes Buch endete
-// als 500 mit Sanitizer-Text statt als 400 mit Auskunft.
+// Die Fehler beim Aussondern eines Exemplars. Fehlerwerte und kein Vergleich am Text der
+// Meldung: Der traf nie, und ein verliehenes Buch endete als Serverfehler statt als Auskunft.
 var (
 	ErrExemplarNochVerliehen = errors.New("exemplar ist aktuell noch verliehen")
 	ErrExemplarNichtGefunden = errors.New("exemplar nicht gefunden oder bereits ausgebucht")
 )
 
+// SondereExemplarAus bucht ein Exemplar aus und schreibt den Eintrag dazu. Die Zeile bleibt in
+// der Tabelle und gilt als ausgesondert, weil Ausleihen und Schadensfälle an ihr hängen. Ein
+// verliehenes Exemplar lehnt es ab.
 func (a *pgProtokollAbfragen) SondereExemplarAus(ctx context.Context, exemplarID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
@@ -26,10 +26,8 @@ func (a *pgProtokollAbfragen) SondereExemplarAus(ctx context.Context, exemplarID
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Snapshot erstellen: Exemplardaten vor dem Aussondern für das Audit-Log sichern.
-	// ErrNoRows ist hier KEIN tolerierbarer Fall (bis 31.08.2026 war er es): Eine
-	// unbekannte ID endete sonst als Phantom-Erfolg — 200 samt Audit-Eintrag über eine
-	// Löschung, die nie stattfand.
+	// Was der Eintrag nennt, wird vor dem Ändern gelesen. Ein unbekanntes Exemplar ist ein
+	// Fehler: Sonst entstünde ein Eintrag über ein Aussondern, das es nicht gab.
 	var barcode, zustandNotiz, titel string
 	var titelID string
 	err = tx.QueryRow(ctx,
@@ -46,7 +44,6 @@ func (a *pgProtokollAbfragen) SondereExemplarAus(ctx context.Context, exemplarID
 		return fmt.Errorf("failed to snapshot copy for audit: %w", err)
 	}
 
-	// Sicherheitsschranke: Ist das Exemplar aktuell noch verliehen?
 	var offeneAusleihen int
 	err = tx.QueryRow(ctx, "SELECT count(*) FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL", exemplarID).Scan(&offeneAusleihen)
 	if err != nil {
@@ -56,10 +53,9 @@ func (a *pgProtokollAbfragen) SondereExemplarAus(ctx context.Context, exemplarID
 		return ErrExemplarNochVerliehen
 	}
 
-	// Soft-Delete durchführen: Exemplar sperren und Zustand auf "Systematisch gelöscht"
-	// setzen. Der Guard ist_ausgesondert = false macht den Doppelklick zum 404 statt zum
-	// zweiten „Erfolg" — und verhindert, dass ein Wiederholungsklick die Zustandsnotiz
-	// eines längst ausgebuchten Exemplars erneut überschreibt.
+	// Die Bedingung ist_ausgesondert = false macht den zweiten Klick zu „nicht gefunden" statt
+	// zu einem zweiten Erfolg und verhindert, dass er die Notiz eines längst ausgebuchten
+	// Exemplars überschreibt.
 	tag, err := tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT', zustand_notiz = 'Systematisch gelöscht', bestellstatus = NULL, letzte_bewegung_am = "+sqlStempelJetzt+" WHERE id = $1 AND ist_ausgesondert = false", exemplarID)
 	if err != nil {
 		return err

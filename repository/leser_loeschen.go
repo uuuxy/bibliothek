@@ -11,17 +11,12 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// LegeLeserInPapierkorb verschiebt einen Schüler in den Papierkorb (Soft-Delete): deleted_at
-// wird gesetzt und der Datensatz gesperrt. Die personenbezogenen Daten (PII) bleiben
-// zunächst erhalten, damit ein versehentliches Löschen per RestoreStudentHandler
-// rückgängig gemacht werden kann.
+// LegeLeserInPapierkorb legt einen Leser in den Papierkorb: deleted_at wird gesetzt und der
+// Leser gesperrt. Seine Daten bleiben, damit sich ein versehentliches Löschen zurücknehmen
+// lässt; endgültig löscht LoescheLeserEndgueltig.
 //
-// ACHTUNG: Dies ist KEINE DSGVO-Löschung — die PII (Name, Adresse, Ausleihhistorie,
-// Audit-Logs, Schadensfälle) bleibt bestehen. Die endgültige Anonymisierung/Löschung
-// macht LoescheLeserEndgueltig (endgültiges Entfernen aus dem Papierkorb).
-//
-// Der Aufruf ist über die HTTP-API (bearbeiterID = Benutzer-UUID) und den Cronjob
-// (bearbeiterID = "" → SYSTEM) möglich.
+// Die Tür ruft es mit der ID des Bearbeiters, der nächtliche Lauf mit leerer ID; der Eintrag
+// nennt dann SYSTEM.
 func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID string, bearbeiterID string, grund string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
@@ -29,13 +24,8 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Snapshot erstellen: Daten für das Audit-Log vor dem Löschen sichern.
-	//
-	// Gelesen wird die TABELLE `leser`, nicht die Sicht `schueler`: Die zeigt nur Schüler,
-	// und für einen Kollegen lief dieser ganze Weg bis zum 16.09.2026 ins Leere — der
-	// Snapshot blieb leer, das UPDATE traf null Zeilen, und der Handler antwortete „nicht
-	// gefunden". Deshalb stand der Löschknopf in seiner Akte gar nicht erst (docs/OFFEN.md
-	// 5.16 C).
+	// Was der Eintrag nennt, wird vorher gelesen, aus der Tabelle leser und nicht aus der Sicht
+	// schueler: Die zeigt nur Schüler, und für einen Kollegen liefe der Weg ins Leere.
 	var vorname, nachname, klasse, barcodeID, art string
 	var abgaengerJahr int
 	err = tx.QueryRow(ctx,
@@ -48,23 +38,15 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 		return fmt.Errorf("failed to snapshot student for audit: %w", err)
 	}
 
-	// Soft-Delete durchführen anstatt physisch zu löschen.
+	// Ein bestehender Grund der Sperre bleibt stehen (COALESCE über NULLIF), wie in
+	// SperreAbgaenger: Überschriebe das Löschen ihn, hielte das Zurückholen die Zeile für bloß
+	// durch das Löschen gesperrt, nähme die Sperre zurück und verletzte
+	// chk_schueler_block_reason; ein von Hand gesperrter Leser ließe sich nicht zurückholen,
+	// und sein Grund wäre weg.
 	//
-	// COALESCE(NULLIF(...)) statt blindem Überschreiben (31.08.2026): Ein BESTEHENDER
-	// Sperrgrund bleibt stehen — dasselbe Muster wie in SperreAbgaenger (lusd_import.go) und
-	// schuljahreswechsel.go. Vorher war dieser Schreiber der einzige, der den Grund
-	// plattmachte, und der Restore erkannte die Zeile dann an seinem eigenen Marker als
-	// bloße Lösch-Sperre: Er setzte ist_gesperrt=false und block_reason=NULL, während
-	// is_manually_blocked=true stehen blieb — Verstoß gegen chk_schueler_block_reason
-	// (gesperrt ⇒ Grund nicht leer), also 23514 → 500. Ein manuell gesperrter Schüler
-	// ließ sich nach dem Löschen nie wiederherstellen, und sein echter Grund war weg.
-	//
-	// COALESCE auf deleted_at (12.09.2026, Register): Liegt die Zeile schon im
-	// Papierkorb, bleibt der ERSTE Zeitpunkt stehen. Er ist die Uhr der Anonymisierung
-	// (repository.PredikatAnonymisierung, 180 Tage); ein zweites Löschen schob sie um
-	// die ganze bereits abgelaufene Zeit nach hinten — still, denn die Antwort lautete
-	// beide Male „success". Löschen bleibt damit wiederholbar, ohne die Frist zu
-	// verlängern.
+	// COALESCE auch auf deleted_at: Liegt die Zeile schon im Papierkorb, bleibt der erste
+	// Zeitpunkt. Er ist die Uhr der Anonymisierung (PredikatAnonymisierung); ein zweites
+	// Löschen schöbe sie sonst nach hinten.
 	tag, err := tx.Exec(ctx, `UPDATE leser
 		SET deleted_at = COALESCE(deleted_at, CURRENT_TIMESTAMP),
 		    ist_gesperrt = true,
@@ -77,20 +59,14 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 		return fmt.Errorf("%w: %s", ErrLeserNichtGefunden, leserID)
 	}
 
-	// Beim Kollegium geht das KONTO mit — Entschieden am 16.09.2026: „wenn ein kollege gelöscht
-	// wird dann wird alles gelöscht."
+	// Beim Kollegium geht das Konto mit. Es bleibt nicht abgeschaltet stehen, weil die Adresse
+	// der Schlüssel der Anmeldung ist: Ein Konto im Papierkorb hielte sie besetzt, und wer die
+	// Person neu anlegt, bekäme „Unter … steht bereits ein Zugang" über einen Eintrag, der
+	// nirgends zu sehen ist. Die Spuren bleiben: Jeder Fremdschlüssel auf benutzer steht auf ON
+	// DELETE SET NULL, die Einträge verlieren nur den Verweis.
 	//
-	// Es bleibt nicht als abgeschaltete Hülle stehen, und das aus einem nachprüfbaren
-	// Grund: Die Adresse ist der Schlüssel der Anmeldung (`benutzer_email_unique`). Ein
-	// stehengebliebenes Konto hielte sie besetzt, und wer die Person danach neu anlegt,
-	// bekäme „Unter … steht bereits ein Zugang" — über einen Eintrag, der im Papierkorb
-	// liegt und nirgends zu sehen ist. Die Spuren gehen dabei nicht verloren: Jeder
-	// Fremdschlüssel auf `benutzer` trägt ON DELETE SET NULL, die Protokollzeilen bleiben
-	// also stehen und verlieren nur den Verweis.
-	//
-	// Wird die Leserzeile aus dem Papierkorb zurückgeholt, kommt sie OHNE Zugang zurück.
-	// Den legt man an, indem man in der Akte die Schul-E-Mail nachträgt
-	// (api/leser/student_schul_email.go) — derselbe Weg wie beim Altbestand.
+	// Aus dem Papierkorb kommt die Leserzeile ohne Zugang zurück. Den legt man an, indem man in
+	// der Akte die Schul-E-Mail nachträgt (api/leser/student_schul_email.go).
 	var kontenGeloescht int64
 	if !leserart.IstSchueler(art) {
 		if kontenGeloescht, err = a.loescheKontenDerLeserzeile(ctx, tx, leserID, bearbeiterID); err != nil {
@@ -98,7 +74,7 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 		}
 	}
 
-	// Akteur ermitteln (entweder manueller Admin-User oder automatische System-Bereinigung)
+	// Ohne Bearbeiter war es der nächtliche Lauf.
 	var akteur string
 	var bearbeiterPtr *string
 	if bearbeiterID != "" {
@@ -110,7 +86,6 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 
 	kontext := "Soft-Delete Routine"
 
-	// Protokolleintrag schreiben
 	if err = a.schreibeEintrag(ctx, tx, protokollEintrag{
 		Tabelle: "schueler", Aktion: "UPDATE", DatensatzID: leserID,
 		BearbeiterID: bearbeiterPtr, Akteur: akteur, Kontext: &kontext,
@@ -124,8 +99,8 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 			"geloescht_am":   time.Now().UTC().Format(time.RFC3339),
 			"action":         "soft_delete",
 			"art":            art,
-			// Wie viele Zugänge dabei erloschen sind — ohne diese Zahl liesse sich später
-			// nicht mehr sagen, ob die Person je einen hatte.
+			// Wie viele Zugänge dabei erloschen sind: Ohne diese Zahl ließe sich später nicht
+			// mehr sagen, ob die Person je einen hatte.
 			"konten_geloescht": kontenGeloescht,
 		},
 	}); err != nil {
@@ -135,9 +110,8 @@ func (a *pgProtokollAbfragen) LegeLeserInPapierkorb(ctx context.Context, leserID
 	return tx.Commit(ctx)
 }
 
-// pruefeKeineOffenenVorgaenge verhindert das endgültige Löschen, solange Bücher
-// draußen sind oder eine Gebühr offen ist — in beiden Fällen läuft noch ein
-// berechtigtes Interesse, das die Aufbewahrung rechtfertigt.
+// pruefeKeineOffenenVorgaenge lehnt das endgültige Löschen ab, solange ein Buch draußen oder
+// eine Forderung unbezahlt ist: In beiden Fällen besteht noch ein Grund, die Daten zu behalten.
 func pruefeKeineOffenenVorgaenge(ctx context.Context, tx pgx.Tx, leserID string) error {
 	var offeneAusleihen int
 	if err := tx.QueryRow(ctx, `SELECT count(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL`, leserID).Scan(&offeneAusleihen); err != nil {
@@ -156,12 +130,11 @@ func pruefeKeineOffenenVorgaenge(ctx context.Context, tx pgx.Tx, leserID string)
 	return nil
 }
 
-// tilgeSpurenUndLoescheLeser ist die gemeinsame DSGVO-Löschung für LoescheLeserEndgueltig
-// (manueller Papierkorb) und LoescheAbgaengerEndgueltig (Cronjob): Ausleihhistorie anonymisieren
-// (schueler_id = NULL — beide Entleiher NULL ist laut check_loan_borrower erlaubt),
-// bezahlte Schadensfälle löschen, Schüler-Audit-Details anonymisieren (dabei fallen
-// auch die Vormerkungen, siehe TilgeSchuelerSpuren), Datensatz entfernen (der
-// FK-CASCADE räumt dann nur noch das Foto), Löschung ohne PII protokollieren.
+// tilgeSpurenUndLoescheLeser ist das endgültige Löschen für beide Wege, aus dem Papierkorb und
+// für Abgänger: Die Ausleihen verlieren ihren Leser, die erledigten Schadensfälle werden
+// gelöscht, die Spuren in den Nebentabellen getilgt (TilgeSchuelerSpuren, dabei fallen auch die
+// Vormerkungen), die Zeile des Lesers entfernt und das Löschen ohne Personenbezug
+// protokolliert.
 func (a *pgProtokollAbfragen) tilgeSpurenUndLoescheLeser(ctx context.Context, tx pgx.Tx, leserID, bearbeiterID, kontextText string) error {
 	if _, err := tx.Exec(ctx, `UPDATE ausleihen SET schueler_id = NULL WHERE schueler_id = $1`, leserID); err != nil {
 		return fmt.Errorf("anonymizing loans: %w", err)
@@ -172,8 +145,8 @@ func (a *pgProtokollAbfragen) tilgeSpurenUndLoescheLeser(ctx context.Context, tx
 	if err := TilgeSchuelerSpuren(ctx, tx, leserID, "DSGVO-Löschung"); err != nil {
 		return err
 	}
-	// `leser` statt der Sicht `schueler`: Sonst bliebe die Zeile eines Kollegen beim
-	// endgültigen Löschen stehen — mit anonymisierter Historie, aber vorhandenem Namen.
+	// Aus leser und nicht aus der Sicht schueler: Sonst bliebe die Zeile eines Kollegen stehen,
+	// ohne Vorgänge, aber mit Namen.
 	tag, err := tx.Exec(ctx, `DELETE FROM leser WHERE id = $1`, leserID)
 	if err != nil {
 		return fmt.Errorf("deleting student: %w", err)
@@ -198,20 +171,16 @@ func (a *pgProtokollAbfragen) tilgeSpurenUndLoescheLeser(ctx context.Context, tx
 	return nil
 }
 
-// ErrLoeschenBlockiert meldet: Die Löschung ist nicht möglich, WEIL noch etwas offen ist —
-// eine Ausleihe, ein unbezahlter Schaden, oder die Zeile liegt gar nicht im Papierkorb.
-//
-// Der Handler braucht den Unterschied (17.09.2026, OFFEN.md 5.6): Bis hierher beantwortete
-// er JEDEN Fehler des Purge mit 409 „Konflikt" — auch einen Verbindungsabbruch oder einen
-// kaputten Constraint. Ein Serverfehler, der sich als Konflikt ausgibt, schickt die
-// Bibliothek los, ein Problem zu suchen, das es nicht gibt, und verdeckt das echte
-// (Bugklasse „Fehler-Kollaps", docs/sweeps.md).
+// ErrLoeschenBlockiert meldet, dass das endgültige Löschen nicht möglich ist, weil noch etwas
+// offen ist (eine Ausleihe, ein unbezahlter Schaden) oder die Zeile nicht im Papierkorb liegt.
+// Die Tür braucht den Unterschied zu jedem anderen Fehler: Ein Abbruch der Verbindung, der sich
+// als Konflikt ausgibt, schickt die Bibliothek los, ein Problem zu suchen, das es nicht gibt.
 //
 //nolint:staticcheck // ST1005: die Meldung steht so vor dem Menschen.
 var ErrLoeschenBlockiert = errors.New("Endgültiges Löschen blockiert")
 
-// LoescheLeserEndgueltig entfernt einen im Papierkorb liegenden Schüler endgültig und
-// DSGVO-konform. Nur aus dem Papierkorb; offene Ausleihen/unbezahlte Schäden blockieren.
+// LoescheLeserEndgueltig entfernt einen Leser, der im Papierkorb liegt, endgültig. Offene
+// Ausleihen und unbezahlte Forderungen verhindern es.
 func (a *pgProtokollAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
@@ -219,7 +188,7 @@ func (a *pgProtokollAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserI
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Nur bereits weichgelöschte Schüler (Papierkorb) dürfen endgültig entfernt werden.
+	// Endgültig gelöscht wird nur aus dem Papierkorb.
 	var imPapierkorb bool
 	err = tx.QueryRow(ctx, `SELECT deleted_at IS NOT NULL FROM leser WHERE id = $1`, leserID).Scan(&imPapierkorb)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -241,12 +210,10 @@ func (a *pgProtokollAbfragen) LoescheLeserEndgueltig(ctx context.Context, leserI
 	return tx.Commit(ctx)
 }
 
-// LoescheAbgaengerEndgueltig entfernt einen ehemaligen Schüler (Abgänger) endgültig und
-// DSGVO-konform — der Cronjob-Pendant zu LoescheLeserEndgueltig. Anders als LoescheLeserEndgueltig ist der
-// Abgänger NICHT im Papierkorb (ist_abgaenger=true, deleted_at IS NULL); die Auswahl
-// (Karenzzeit, ist_abgaenger) trifft der Aufrufer. Die Blockade bei offenen Vorgängen
-// wird hier dennoch geprüft — als Sicherheitsnetz gegen einen Race zwischen Auswahl
-// und Löschung.
+// LoescheAbgaengerEndgueltig entfernt einen Abgänger endgültig, für den nächtlichen Lauf. Der
+// Abgänger liegt nicht im Papierkorb; wen es trifft (Karenz, Merkmal Abgänger), wählt der
+// Rufer. Offene Vorgänge prüft die Funktion trotzdem, weil zwischen Auswahl und Löschen ein
+// Buch ausgeliehen sein kann.
 func (a *pgProtokollAbfragen) LoescheAbgaengerEndgueltig(ctx context.Context, leserID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {

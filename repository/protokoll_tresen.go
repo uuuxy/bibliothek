@@ -1,47 +1,46 @@
 package repository
 
-// audit_tresen.go — die Abfragen der Tresen-Auskunft (api/system/audit_tresen_auskunft.go):
-// der eine zweckgebundene Leseweg in audit_log.details (Betreiber-Entscheidung
-// 01.09.2026, Befund-Register). Paketfunktionen über Datenbank statt Methoden auf
-// ProtokollAbfragen — dieselbe Bauart wie TilgeSchuelerSpuren: Das Interface trägt
-// die Schreibpfade, dieser Leseweg braucht keinen Mock-Zwang für alle Fakes.
+// Die Abfragen der Tresen-Auskunft (api/system/audit_tresen_auskunft.go): der eine Leseweg in
+// die Details des Protokolls, an einen Zweck gebunden. Es sind Funktionen über Datenbank und
+// keine Methoden an ProtokollAbfragen: Die Schnittstelle trägt die Schreibwege, und für das
+// Lesen müsste sonst jede Attrappe wachsen.
 
 import (
 	"context"
 	"time"
 )
 
-// TresenExemplarZeile ist ein Exemplar, das ein Barcode heute oder früher
-// bezeichnete. Status: "im_bestand", "ausgesondert" oder "geloescht" (die Zeile in
-// buecher_exemplare existiert nicht mehr, nur noch der Audit-Snapshot).
+// TresenExemplarZeile ist ein Exemplar, das ein Barcode heute oder früher bezeichnete. Status
+// ist „im_bestand", „ausgesondert" oder „geloescht"; im letzten Fall gibt es die Zeile in
+// buecher_exemplare nicht mehr, nur ihre Spur im Protokoll.
 type TresenExemplarZeile struct {
 	ExemplarID string
 	Titel      string
 	Status     string
 }
 
-// TresenEreignisZeile ist ein CHECKOUT/RETURN-Protokolleintrag mit aufgelösten
-// Klarnamen. Leere Namen heißen: Personenbezug getilgt oder Person gelöscht —
-// die Deutung trifft der Handler, nicht die Abfrage.
+// TresenEreignisZeile ist ein Eintrag zu Ausleihe oder Rückgabe mit den Namen der Beteiligten.
+// Ein leerer Name heißt: Der Personenbezug ist getilgt oder die Person gelöscht; wie das zu
+// lesen ist, entscheidet die Tür.
 //
-// LeserName/LeserArt: der Entleiher aus `details->>'schueler_id'` — seit Migration 125
-// jeder Leser, Schüler wie Kollegium. KontoName: Einträge vor Migration 125 trugen einen
-// Kollegen als Konto unter `benutzer_id`; heute schreibt das kein Aufrufer mehr.
+// LeserName und LeserArt nennen den Entleiher aus details->>'schueler_id', Schüler wie
+// Kollegium. KontoName füllen nur alte Einträge, die einen Kollegen als Konto unter benutzer_id
+// trugen; heute schreibt das kein Rufer mehr.
 type TresenEreignisZeile struct {
 	Zeitpunkt      time.Time
 	Aktion         string
 	LeserName      string
 	LeserKlasse    string
-	LeserArt       string // chk_leser_art (Migration 153); leer ohne Treffer
+	LeserArt       string // Art des Lesers (chk_leser_art); leer ohne Treffer
 	KontoName      string
 	BearbeiterName string
 }
 
-// FindeTresenExemplare löst einen Barcode zu Exemplaren auf: erst der Bestand
-// (auch ausgesonderte Zeilen tragen ihren Barcode noch), dann die Snapshot-Details
-// des Protokolls für Exemplare, deren Zeile es nicht mehr gibt (DISTINCT ON: der
-// jüngste Snapshot benennt den Titel). Ein Barcode kann mehrfach treffen — nach
-// endgültigem Löschen wird die Nummer frei und kann an einem neuen Exemplar kleben.
+// FindeTresenExemplare nennt die Exemplare zu einem Barcode: zuerst den Bestand (auch ein
+// ausgesondertes Exemplar trägt seinen Barcode noch), dann aus dem Protokoll die Exemplare,
+// deren Zeile es nicht mehr gibt; der jüngste Eintrag nennt den Titel. Ein Barcode kann
+// mehrfach treffen: Nach dem endgültigen Löschen ist die Nummer frei und kann an einem neuen
+// Exemplar kleben.
 func FindeTresenExemplare(ctx context.Context, db Datenbank, barcode string) ([]TresenExemplarZeile, error) {
 	const q = `
 		SELECT e.id::text, t.titel,
@@ -77,10 +76,9 @@ func FindeTresenExemplare(ctx context.Context, db Datenbank, barcode string) ([]
 	return zeilen, rows.Err()
 }
 
-// FindeTresenEreignisse liest die CHECKOUT/RETURN-Protokolle der Exemplare und löst
-// die Personen zu Klarnamen auf. LEFT JOIN, nicht JOIN: Ein getilgter Bezug oder
-// eine gelöschte Person darf den Vorgang nicht verschlucken. limit kappt die Liste
-// (unbegrenzte Listen-Endpunkte sind eine bekannte Bugklasse dieses Projekts).
+// FindeTresenEreignisse liest die Einträge zu Ausleihe und Rückgabe der Exemplare und löst die
+// Personen zu Namen auf. LEFT JOIN, damit ein getilgter Bezug oder eine gelöschte Person den
+// Vorgang nicht verschluckt; limit kappt die Liste.
 func FindeTresenEreignisse(ctx context.Context, db Datenbank, exemplarIDs []string, limit int) ([]TresenEreignisZeile, error) {
 	const q = `
 		SELECT l.timestamp, l.aktion,

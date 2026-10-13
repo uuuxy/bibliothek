@@ -9,15 +9,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ErrTitelHatAktiveAusleihen meldet, dass ein Titel nicht gelöscht werden kann, weil
-// noch Exemplare verliehen sind. Das ist ein Bedienfehler (HTTP 400), keine Störung.
-//
-// Als Sentinel und nicht als Textvergleich: Der Handler prüfte die Meldung früher per
-// err.Error()[:22] gegen "Löschen fehlgeschlagen:" — und traf nie. Der Text hier begann
-// klein, das Literal groß, und 22 Bytes können ein 24-Byte-Literal ohnehin nicht
-// treffen (die Umlaute zählen doppelt). Jeder blockierte Löschversuch wurde damit zu
-// einem HTTP 500, und die Liste der noch verliehenen Barcodes — genau die Auskunft, die
-// weiterhilft — verschwand hinter „Serverfehler".
+// ErrTitelHatAktiveAusleihen meldet, dass ein Titel nicht gelöscht werden kann, weil noch
+// Exemplare verliehen sind: ein Bedienfehler (400), keine Störung. Ein Fehlerwert und kein
+// Vergleich am Text der Meldung: Der traf nie, jeder abgelehnte Versuch wurde zum Serverfehler,
+// und die Liste der verliehenen Barcodes ging verloren.
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, nutzer-sichtbare Meldung
 var ErrTitelHatAktiveAusleihen = errors.New("Löschen fehlgeschlagen: folgende Exemplare sind noch verliehen")
@@ -25,11 +20,10 @@ var ErrTitelHatAktiveAusleihen = errors.New("Löschen fehlgeschlagen: folgende E
 // ErrTitelNichtGefunden meldet eine unbekannte ID beim Löschen eines Titels.
 var ErrTitelNichtGefunden = errors.New("titel nicht gefunden")
 
-// LoescheTitel entfernt einen Buchtitel vollständig aus dem Katalog und erstellt einen revisionssicheren Audit-Eintrag.
-// Vor dem Löschen wird geprüft, ob noch Exemplare dieses Titels verliehen sind (was das Löschen blockiert).
-// Historische Ausleihen und ALLE Schadensfälle des Titels werden bereinigt, um
-// Fremdschlüssel-Fehler zu vermeiden — unbezahlte Forderungen stehen vorher im
-// Protokoll (protokolliereOffeneForderungen).
+// LoescheTitel löscht einen Titel mit seinen Exemplaren und schreibt die Einträge dazu. Ist ein
+// Exemplar verliehen, lehnt es ab. Zurückgegebene Ausleihen und alle Schadensfälle des Titels
+// fallen mit, weil ihre Fremdschlüssel den Titel sonst hielten; unbezahlte Forderungen stehen
+// vorher im Protokoll (protokolliereOffeneForderungen).
 func (a *pgProtokollAbfragen) LoescheTitel(ctx context.Context, titelID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
@@ -37,8 +31,8 @@ func (a *pgProtokollAbfragen) LoescheTitel(ctx context.Context, titelID string, 
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Gehört der Titel zu einem Buch in mehreren Auflagen, muss das Werk danach noch stimmen
-	// (docs/OFFEN.md 4.18). Als erstes: Die Sperre der Auflagen kommt vor jeder Zeilensperre.
+	// Gehört der Titel zu einem Buch in mehreren Auflagen, muss das Werk danach noch stimmen.
+	// Zuerst, weil die Sperre der Auflagen vor jeder Zeilensperre kommt.
 	werke, err := WerkeDerTitel(ctx, tx, []string{titelID})
 	if err != nil {
 		return err
@@ -57,7 +51,8 @@ func (a *pgProtokollAbfragen) LoescheTitel(ctx context.Context, titelID string, 
 	if err != nil {
 		return err
 	}
-	// Verknüpfte Einträge (Schadensfälle, alte Rückgaben) löschen, um ON DELETE RESTRICT Fehler zu vermeiden
+	// Schadensfälle und zurückgegebene Ausleihen zuerst: Ihre Fremdschlüssel hielten die
+	// Exemplare sonst fest (ON DELETE RESTRICT).
 	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titelID); err != nil {
 		return fmt.Errorf("failed to delete damage records for title: %w", err)
 	}
@@ -65,14 +60,12 @@ func (a *pgProtokollAbfragen) LoescheTitel(ctx context.Context, titelID string, 
 		return fmt.Errorf("failed to delete past loans for title: %w", err)
 	}
 
-	// Alle zugehörigen Exemplare löschen
 	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE titel_id = $1", titelID); err != nil {
 		return fmt.Errorf("failed to delete associated copies: %w", err)
 	}
 
-	// Eigentlichen Titel-Datensatz löschen. 0 Zeilen heißt unbekannte Kennung: Der Snapshot
-	// toleriert ErrNoRows und es gibt keine aktiven Ausleihen, ohne die Prüfung entstünde
-	// ein Protokolleintrag über einen Titel, den es nie gab.
+	// Keine getroffene Zeile heißt unbekannte ID: Die Aufnahme oben lässt einen fehlenden Titel
+	// durch, und ohne diese Prüfung entstünde ein Eintrag über einen Titel, den es nie gab.
 	tag, err := tx.Exec(ctx, "DELETE FROM buecher_titel WHERE id = $1", titelID)
 	if err != nil {
 		return err
@@ -125,8 +118,8 @@ func leseTitelVorDemLoeschen(ctx context.Context, tx pgx.Tx, titelID string) (ti
 	return vorher, err
 }
 
-// pruefeKeineAktivenAusleihen ist die Sicherheitsschranke vor dem Löschen: Ist ein Exemplar
-// des Titels verliehen, nennt der Fehler die Barcodes.
+// pruefeKeineAktivenAusleihen lehnt das Löschen ab, solange ein Exemplar des Titels verliehen
+// ist; der Fehler nennt die Barcodes.
 func pruefeKeineAktivenAusleihen(ctx context.Context, tx pgx.Tx, titelID string) error {
 	var verliehen []string
 	rows, err := tx.Query(ctx, `
@@ -226,19 +219,14 @@ func (a *pgProtokollAbfragen) protokolliereTitelLoeschung(ctx context.Context, t
 	return nil
 }
 
-// SondereExemplarAus bucht ein physisches Exemplar aus dem System aus (Soft-Delete) und protokolliert dies im Audit-Log.
-// Da historische Ausleihdaten und Schadensfälle für statistische Zwecke erhalten bleiben müssen, wird das Exemplar
-// nicht physisch aus der Tabelle gelöscht, sondern als ausgesondert markiert.
-// Die Protokoll-Marker der drei Türen, die ein Exemplar KÖRPERLICH entfernen.
-//
-// Warum als Konstante und nicht als getippter Text an drei Stellen: Seit dem 17.09.2026
-// liest das Abgangsbuch sie (abgangsbuch.go). Ein Exemplar, das gelöscht statt
-// ausgesondert wird, fällt aus jeder Abfrage über `buecher_exemplare` — der Nachweis kann
-// es nur über diese Spur zählen. Wer den Text an einer Tür umbenennt, ohne die Abfrage zu
-// kennen, senkt die Zahl still auf 0, und ein Nachweis, der schweigt, sieht aus wie einer,
-// der vollständig ist. So ist die Umbenennung eine Änderung an EINEM Wort.
+// Die Marken im Protokoll der Türen, die ein Exemplar körperlich entfernen. Konstanten und kein
+// getippter Text an jeder Tür, weil das Abgangsbuch sie liest (abgangsbuch.go): Ein gelöschtes
+// Exemplar fällt aus jeder Abfrage über buecher_exemplare, der Nachweis zählt es nur über diese
+// Spur. Wer den Text an einer Tür ändert, ohne die Abfrage zu kennen, senkt die Zahl auf 0, und
+// ein Nachweis, der schweigt, sieht aus wie ein vollständiger.
 const (
-	// ProtokollAktionTitelGeloescht: Das Exemplar ging mit seinem Titel (beide Lösch-Türen).
+	// ProtokollAktionTitelGeloescht: Das Exemplar ging mit seinem Titel, an beiden Türen zum
+	// Löschen.
 	ProtokollAktionTitelGeloescht = "titel_geloescht"
 	// ProtokollAktionVerlustEndgueltigGeloescht: Ein als Verlust gebuchtes Exemplar wurde in
 	// der Inventur endgültig entfernt (api/inventurlauf/inventur_verlust_aktionen.go).

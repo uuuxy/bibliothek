@@ -9,14 +9,15 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// ErrKontoHatAusleihen signalisiert, dass ein Benutzer nicht gelöscht werden kann, weil er
-// noch Bücher ausgeliehen hat (offene Ausleihen auf seiner Leserzeile).
-// Nutzer-sichtbar (409) — deshalb ohne Wörter aus dem Code (konto_loeschen_meldung_test.go).
+// ErrKontoHatAusleihen meldet, dass ein Konto nicht gelöscht werden kann, weil auf seiner
+// Leserzeile noch Ausleihen offen sind. Der Text steht so vor dem Menschen (409) und nennt
+// deshalb kein Wort aus dem Code (konto_loeschen_meldung_test.go).
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrKontoHatAusleihen = errors.New("Das Konto hat noch ausgeliehene Bücher — bitte zuerst zurückbuchen")
 
-// LoescheKonto löscht einen Systembenutzer endgültig aus der Datenbank und erfasst die Löschung im Audit-Log.
+// LoescheKonto löscht ein Konto und schreibt den Eintrag dazu. Offene Ausleihen auf seiner
+// Leserzeile verhindern es; eine unberührte Leserzeile geht mit.
 func (a *pgProtokollAbfragen) LoescheKonto(ctx context.Context, kontoID string, bearbeiterID string) error {
 	tx, err := a.db.Begin(ctx)
 	if err != nil {
@@ -24,9 +25,8 @@ func (a *pgProtokollAbfragen) LoescheKonto(ctx context.Context, kontoID string, 
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Snapshot erstellen: Benutzerdaten vor dem Löschen sichern. Die `leser_id` wird
-	// mitgelesen, weil sie nach dem DELETE nicht mehr zu finden ist (ON DELETE SET NULL am
-	// Konto, und die Zeile selbst ist dann weg).
+	// Was der Eintrag nennt, wird vor dem Löschen gelesen. Die leser_id auch: Nach dem DELETE
+	// ist sie nicht mehr zu finden.
 	var vorname, nachname, email, rolle string
 	var leserID *string
 	err = tx.QueryRow(ctx,
@@ -38,11 +38,8 @@ func (a *pgProtokollAbfragen) LoescheKonto(ctx context.Context, kontoID string, 
 		return fmt.Errorf("failed to snapshot user for audit: %w", err)
 	}
 
-	// Schutz vor verwaisten Ausleihen: Die Bücher hängen an der LESERZEILE des Kontos,
-	// und benutzer.leser_id trägt ON DELETE SET NULL. Ein DELETE ließe die Bücher im
-	// Status "ausgeliehen" zurück, während die Leserzeile ihren Namen verliert — dauerhaft
-	// blockiert und nicht mehr zuordenbar. Deshalb die Löschung verweigern, solange offene
-	// Ausleihen bestehen.
+	// Die Bücher hängen an der Leserzeile des Kontos und blieben nach seinem Löschen als
+	// ausgeliehen stehen. Deshalb kein Löschen, solange Ausleihen offen sind.
 	var aktiveAusleihen int
 	if err = tx.QueryRow(ctx,
 		`SELECT count(*) FROM ausleihen a
@@ -56,10 +53,8 @@ func (a *pgProtokollAbfragen) LoescheKonto(ctx context.Context, kontoID string, 
 		return fmt.Errorf("%w (%d offen)", ErrKontoHatAusleihen, aktiveAusleihen)
 	}
 
-	// 0 Zeilen = unbekannte ID: Der Snapshot oben toleriert ErrNoRows, der Ausleihen-Zähler
-	// steht auf 0 — eine unbekannte Benutzer-ID lief glatt durch und hinterließ einen
-	// DELETE-Audit-Eintrag über ein Konto, das es nie gab (Phantom-Erfolg-Sweep 31.08.2026;
-	// der Schüler-Purge 140 Zeilen weiter unten prüft längst).
+	// Keine getroffene Zeile heißt unbekannte ID: Die Aufnahme oben lässt ein fehlendes Konto
+	// durch, und ohne diese Prüfung entstünde ein Eintrag über ein Konto, das es nie gab.
 	tag, err := tx.Exec(ctx, "DELETE FROM benutzer WHERE id = $1", kontoID)
 	if err != nil {
 		return err
@@ -68,17 +63,15 @@ func (a *pgProtokollAbfragen) LoescheKonto(ctx context.Context, kontoID string, 
 		return ErrKontoNichtGefunden
 	}
 
-	// Die Leserzeile des Kontos geht MIT, wenn sie unberührt ist.
+	// Die Leserzeile des Kontos geht mit, wenn sie unberührt ist. Der Fall ist die abgelehnte
+	// Zugangsanfrage: Die Selbstanmeldung legt ein Konto an, der Trigger
+	// trg_benutzer_hat_leserzeile hängt eine frische Leserzeile daran, und nach dem Löschen des
+	// Kontos bliebe sie als Waise stehen, ohne Ausweis und mit dem aus der Adresse geratenen
+	// Namen.
 	//
-	// Anlass: Eine abgelehnte Zugangsanfrage. Die Selbstanmeldung legt ein Konto ohne
-	// Leserzeile an, der Wächter `trg_benutzer_hat_leserzeile` hängt eine frische daran.
-	// Wird die Anfrage abgelehnt und das Konto gelöscht, blieb diese Zeile als Waise in der
-	// Leserdatei stehen: ohne Ausweis, ohne Vorgänge, mit dem aus der E-Mail-Adresse
-	// geratenen Namen (Rasterdurchgang 16.09.2026, OFFEN.md 5.18, Fund 1).
-	//
-	// „Unberührt" heißt: kein Ausweis und nichts, was an ihr hängt. Hängt doch etwas daran —
-	// Bücher, ein Schadensfall, ein Foto, eine Vormerkung —, BLEIBT die Zeile stehen; sie
-	// gehört dann einem Menschen, der in der Leserdatei steht, und nicht dem Konto.
+	// „Unberührt" heißt: kein Ausweis und nichts, was an ihr hängt. Hängt etwas daran (Bücher,
+	// ein Schadensfall, ein Foto, eine Vormerkung), bleibt die Zeile; sie gehört dann einem
+	// Menschen in der Lesertabelle und nicht dem Konto.
 	geloescht, grund, err := loescheUnberuehrteLeserzeile(ctx, tx, leserID)
 	if err != nil {
 		return err
@@ -102,20 +95,17 @@ func (a *pgProtokollAbfragen) LoescheKonto(ctx context.Context, kontoID string, 
 	return tx.Commit(ctx)
 }
 
-// loescheUnberuehrteLeserzeile entfernt die Leserzeile eines gelöschten Kontos, sofern an
-// ihr nichts hängt. Liefert zurück, ob gelöscht wurde, und sonst den Grund.
+// loescheUnberuehrteLeserzeile entfernt die Leserzeile eines gelöschten Kontos, sofern nichts
+// an ihr hängt, und liefert, ob gelöscht wurde, sonst den Grund.
 //
-// Die Liste der Tabellen kommt aus dem KATALOG der Datenbank, nicht aus dem Go-Code. Das
-// ist der Kern und keine Spielerei: An `leser` hängen Fremdschlüssel mit gemischter
-// Löschwirkung — RESTRICT bei Ausleihen und Schadensfällen, CASCADE bei Fotos und
-// Vormerkungen, SET NULL bei Bescheiden, Nachbuch-Meldungen und Konten. Eine Aufzählung in
-// Go hielte das nur bis zur nächsten Tabelle, die jemand anhängt: Bei CASCADE verschwänden
-// deren Zeilen still mit, bei SET NULL verlören sie ihren Bezug. Wer eine Tabelle anhängt,
-// bekommt die Prüfung hier geschenkt.
+// Welche Tabellen an leser hängen, liest sie aus dem Katalog der Datenbank und nicht aus einer
+// Liste im Code: Die Fremdschlüssel wirken verschieden (RESTRICT bei Ausleihen und
+// Schadensfällen, CASCADE bei Fotos und Vormerkungen, SET NULL bei Bescheiden,
+// Nachbuch-Meldungen und Konten). Mit einer Liste verschwänden die Zeilen der nächsten
+// angehängten Tabelle bei CASCADE mit oder verlören bei SET NULL ihren Bezug.
 //
-// Der Ausweis ist der Sonderfall, den keine Fremdschlüssel-Abfrage sieht: Er steht als
-// Spalte in der Zeile selbst. Eine Nummer ist vergeben und wird nie recycelt — wer eine
-// hat, steht in der Leserdatei.
+// Den Ausweis sieht keine Abfrage über Fremdschlüssel: Er steht als Spalte in der Zeile. Eine
+// Nummer wird nie neu vergeben; wer eine hat, bleibt in der Lesertabelle.
 func loescheUnberuehrteLeserzeile(ctx context.Context, tx pgx.Tx, leserID *string) (bool, string, error) {
 	if leserID == nil || *leserID == "" {
 		return false, "", nil
@@ -156,7 +146,7 @@ func loescheUnberuehrteLeserzeile(ctx context.Context, tx pgx.Tx, leserID *strin
 		return false, "", fmt.Errorf("leserzeile löschen: %w", err)
 	}
 	// Null Zeilen heißt: Die Zeile war zwischen Prüfung und Löschung schon weg. Kein Fehler,
-	// aber auch kein „gelöscht" — der Audit-Eintrag soll nicht behaupten, was nicht geschah.
+	// aber auch kein „gelöscht": Der Eintrag soll nicht behaupten, was nicht geschah.
 	if tag.RowsAffected() == 0 {
 		return false, "schon weg", nil
 	}
