@@ -71,7 +71,7 @@ func (db *Database) InitMailKonfig(ctx context.Context) error {
 	}
 	var verschluesselt []byte
 	if passwort != "" {
-		verschluesselt, err = crypto.Encrypt([]byte(passwort))
+		verschluesselt, err = crypto.Verschluessele([]byte(passwort))
 		if err != nil {
 			return err
 		}

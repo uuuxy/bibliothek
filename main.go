@@ -245,11 +245,11 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	// zum 06.08.2026 VORRANGIG — an allen Prüfungen dieser Funktion vorbei. Er wird jetzt
 	// nicht mehr gelesen; wer ihn gesetzt hat, erwartet aber, dass er gilt. Also lieber
 	// hier laut abbrechen als verschlüsseln, womit der Betrieb nicht rechnet.
-	if alt := os.Getenv(crypto.AltName); alt != "" && alt != aesKey {
+	if alt := os.Getenv(crypto.FruehereVariable); alt != "" && alt != aesKey {
 		log.Fatalf("FATAL: %s ist gesetzt und weicht von %s ab. Der Zweitname wird nicht mehr gelesen — "+
 			"bitte %s entfernen und ausschließlich %s setzen. Achtung: Mit dem falschen Schlüssel sind "+
 			"Schülerfotos und das gespeicherte SMTP-Passwort nicht mehr entschlüsselbar.",
-			crypto.AltName, crypto.SchluesselVariable, crypto.AltName, crypto.SchluesselVariable)
+			crypto.FruehereVariable, crypto.SchluesselVariable, crypto.FruehereVariable, crypto.SchluesselVariable)
 	}
 
 	// Sicherheit: Die im Repo committeten Default-Secrets dürfen im echten Produktionsbetrieb

@@ -55,7 +55,7 @@ func TestMailEinstellungen_PasswortImRundweg(t *testing.T) {
 	if bytes.Contains(stand.SMTPPasswordEncrypted, []byte(passwort)) {
 		t.Fatal("das Passwort steht im Klartext in der Zeile")
 	}
-	klar, err := crypto.Decrypt(stand.SMTPPasswordEncrypted)
+	klar, err := crypto.Entschluessele(stand.SMTPPasswordEncrypted)
 	if err != nil {
 		t.Fatalf("entschlüsseln: %v", err)
 	}
@@ -97,7 +97,7 @@ func TestMailEinstellungen_LeeresPasswortLaesstDasGespeicherteStehen(t *testing.
 	if !bytes.Equal(nachher.SMTPPasswordEncrypted, vorher.SMTPPasswordEncrypted) {
 		t.Fatal("ein Speichern ohne Passwort hat das gespeicherte verändert")
 	}
-	klar, err := crypto.Decrypt(nachher.SMTPPasswordEncrypted)
+	klar, err := crypto.Entschluessele(nachher.SMTPPasswordEncrypted)
 	if err != nil || string(klar) != "Erstes-Passwort" {
 		t.Errorf("nach dem zweiten Speichern entschlüsselt %q (Fehler %v), erwartet das erste Passwort", klar, err)
 	}

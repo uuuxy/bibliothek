@@ -1,39 +1,25 @@
-// Package backupkrypto trägt Schlüsselableitung und Dateiformat der verschlüsselten
-// Backups — und NUR das.
+// Package backupkrypto leitet den Schlüssel der verschlüsselten Backups ab und kennt ihr
+// Dateiformat.
 //
-// Es lag bis zum 23.08.2026 in `jobs`. Dieses Paket zieht über seine übrigen Dateien die
-// WebP-Bibliothek mit, und die braucht cgo: Jedes Werkzeug, das nur entschlüsseln wollte,
-// musste deshalb mit CGO_ENABLED=1 gebaut werden (Dockerfile-Kommentar zu
-// cmd/restore-backup). Als mit cmd/encrypt-backup ein zweites solches Werkzeug dazukam,
-// war das der Punkt, die 100 Zeilen Krypto aus der Abhängigkeit zu lösen: Hier hängt
-// nichts außer der Standardbibliothek und golang.org/x/crypto/scrypt daran.
+// Es hängt nur an der Standardbibliothek und golang.org/x/crypto/scrypt. So lassen sich die
+// Werkzeuge, die nur ver- oder entschlüsseln (cmd/encrypt-backup, cmd/restore-backup), ohne
+// cgo bauen; das Paket jobs zieht die WebP-Bibliothek mit und braucht cgo.
 //
-// Angreifermodell: Eine Backup-Datei enthält den GESAMTEN Bestand — Klarnamen,
-// Adressen, Geburtsdaten und Ausleihhistorie Minderjähriger — und liegt zusätzlich
-// außer Haus (S3). Wer eine Datei erlangt, kann Passphrase-Kandidaten OFFLINE
-// durchprobieren, ohne dass irgendein Server das bremst oder bemerkt.
+// Eine Backup-Datei enthält den ganzen Bestand (Namen, Adressen, Geburtsdaten und die
+// Ausleihen Minderjähriger) und liegt auch außer Haus. Wer eine Datei erlangt, kann
+// Passphrasen ohne Bremse durchprobieren. Der Schlüssel wird deshalb mit scrypt abgeleitet
+// (N=2^15, r=8, p=1), je Datei mit eigenem Salt von 16 Byte: Das verteuert jeden Versuch um
+// Größenordnungen und macht eine Vorberechnung wertlos. Eine Entschlüsselung kostet rund
+// 100 ms.
 //
-// Bis 21.08.2026 war der AES-Schlüssel `SHA256(passphrase)` — ein einziger
-// Hash-Durchlauf, ohne Salt. Auf GPU sind das Milliarden Versuche/Sekunde: Eine
-// gemerkte 32-Zeichen-Passphrase (Länge ≥ 32 war die einzige Prüfung, und Länge ist
-// nicht Entropie) fällt damit in praktikabler Zeit, und ohne Salt ließe sich die
-// Ableitung über alle Dateien hinweg vorberechnen.
-//
-// Jetzt leitet scrypt ab (N=2^15, r=8, p=1) — speicherhart, pro Datei mit eigenem
-// 16-Byte-Salt. Das macht jeden Rateversuch um Größenordnungen teurer und die
-// Vorberechnung wertlos. Für die seltene, legitime Entschlüsselung (Restore, Probe)
-// kostet es einmalig ~100 ms — kein Faktor.
-//
-// Dateiformat (einziges, versioniert für künftige KDF-Wechsel):
+// Das Dateiformat trägt eine Kennung und eine Fassung, damit sich ein späterer Wechsel der
+// Ableitung unterscheiden lässt:
 //
 //	"BKDF" 0x02 [16B Salt] [12B GCM-Nonce] [Ciphertext+Tag]   → scrypt
 //
-// Der frühere SHA-256-Weg (kein Salt, schwach als Passwort-KDF) ist GANZ entfernt, nicht
-// nur für neue Dateien: Im Pilotbetrieb existieren keine schützenswerten Altbackups, und
-// den schwachen Pfad nur zur Rückwärtskompatibilität mitzuschleppen wäre ein dauerhafter
-// Schwachpunkt (CodeQL go/weak-sensitive-data-hashing). Eine Datei ohne die Format-
-// Kennung wird deshalb abgelehnt statt schwach entschlüsselt. Das Magic bleibt, damit ein
-// späterer KDF-Wechsel sauber unterscheidbar ist.
+// Eine Datei ohne diese Kennung wird abgelehnt. Die frühere Ableitung mit einem Durchlauf
+// SHA-256 ohne Salt liest das Programm nicht mehr, weil sie als Ableitung aus einer Passphrase
+// schwach ist.
 package backupkrypto
 
 import (
@@ -45,39 +31,37 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
-var backupMagic = []byte("BKDF")
+var kennung = []byte("BKDF")
 
 const (
-	backupFormatScrypt = 0x02
-	backupSaltLaenge   = 16
-	// scrypt-Parameter: N=2^15 ist der gängige „interaktive" Härtegrad (~100 ms,
-	// ~32 MB). Höher ginge, doch dieselbe Ableitung läuft in der wöchentlichen
-	// Restore-Probe — die Kosten müssen für den legitimen Fall tragbar bleiben.
+	formatScrypt = 0x02
+	saltLaenge   = 16
+	// N=2^15 ist die übliche Härte für eine Ableitung, auf die jemand wartet (rund 100 ms und
+	// 32 MB). Dieselbe Ableitung läuft in der wöchentlichen Restore-Probe und muss dort
+	// tragbar bleiben.
 	scryptN = 1 << 15
 	scryptR = 8
 	scryptP = 1
 )
 
-// leiteScryptAb erzeugt den 32-Byte-AES-Schlüssel aus Passphrase und Salt.
+// leiteScryptAb liefert den AES-Schlüssel von 32 Byte aus Passphrase und Salt.
 func leiteScryptAb(passphrase string, salt []byte) ([]byte, error) {
 	return scrypt.Key([]byte(passphrase), salt, scryptN, scryptR, scryptP, 32)
 }
 
-// VerschluesseleBackup verschlüsselt den komprimierten Dump im scrypt-Format. Exportiert
-// als symmetrisches Gegenstück zu EntschluesseleBackup — Werkzeuge (cmd/encrypt-backup,
-// cmd/restore-backup) und Tests
-// erzeugen damit gültige Backups, ohne das Format selbst nachzubauen.
-// Ausgabe: backupMagic ‖ 0x02 ‖ Salt ‖ Nonce ‖ Ciphertext+Tag.
-func VerschluesseleBackup(passphrase string, klartext []byte) ([]byte, error) {
-	salt := make([]byte, backupSaltLaenge)
+// Verschluessele verschlüsselt den gepackten Dump im Format des Pakets: Kennung, Fassung,
+// Salt, Nonce, Ciphertext mit Tag. Werkzeuge und Tests erzeugen damit gültige Backups, ohne
+// das Format nachzubauen.
+func Verschluessele(passphrase string, klartext []byte) ([]byte, error) {
+	salt := make([]byte, saltLaenge)
 	if _, err := rand.Read(salt); err != nil {
 		return nil, fmt.Errorf("salt erzeugen: %w", err)
 	}
-	key, err := leiteScryptAb(passphrase, salt)
+	schluessel, err := leiteScryptAb(passphrase, salt)
 	if err != nil {
 		return nil, fmt.Errorf("scrypt-Ableitung: %w", err)
 	}
-	gcm, err := neuesGCM(key)
+	gcm, err := newGCM(schluessel)
 	if err != nil {
 		return nil, err
 	}
@@ -85,68 +69,65 @@ func VerschluesseleBackup(passphrase string, klartext []byte) ([]byte, error) {
 	if _, err := rand.Read(nonce); err != nil {
 		return nil, fmt.Errorf("nonce erzeugen: %w", err)
 	}
-	// Kopf = Magic ‖ Format ‖ Salt ‖ Nonce. Seal hängt Ciphertext+Tag an diesen Kopf
-	// an (es fügt die Nonce NICHT selbst hinzu) — Ergebnis: der komplette Rahmen.
-	kopf := append(append([]byte{}, backupMagic...), backupFormatScrypt)
+	// Der Kopf ist Kennung, Fassung, Salt und Nonce. Seal hängt Ciphertext und Tag an ihn an;
+	// die Nonce fügt es nicht selbst hinzu.
+	kopf := append(append([]byte{}, kennung...), formatScrypt)
 	kopf = append(kopf, salt...)
 	kopf = append(kopf, nonce...)
 	return gcm.Seal(kopf, nonce, klartext, nil), nil
 }
 
-// EntschluesseleBackup öffnet ausschließlich das scrypt-Format. Eine Datei ohne
-// die Format-Kennung wird abgelehnt, NICHT mehr über den früheren SHA-256-Weg gelesen:
-// Es existieren keine schützenswerten Altbackups (Pilotbetrieb), und ein einzelner
-// SHA-256-Durchlauf als Passwort-KDF ist schwach (CodeQL go/weak-sensitive-data-hashing).
-// Statt den schwachen Pfad für Rückwärtskompatibilität mitzuschleppen, ist er entfernt —
-// die einzige Ableitung ist scrypt.
-func EntschluesseleBackup(passphrase string, daten []byte) ([]byte, error) {
+// Entschluessele öffnet eine Datei im Format des Pakets. Eine Datei ohne die Kennung wird
+// abgelehnt.
+func Entschluessele(passphrase string, daten []byte) ([]byte, error) {
 	if !IstScryptFormat(daten) {
 		return nil, fmt.Errorf("kein gültiges Backup: scrypt-Format-Kennung fehlt (Dateien von vor der scrypt-Umstellung werden nicht unterstützt)")
 	}
-	rest := daten[len(backupMagic)+1:]
-	if len(rest) < backupSaltLaenge {
+	rest := daten[len(kennung)+1:]
+	if len(rest) < saltLaenge {
 		return nil, fmt.Errorf("backup zu kurz: Salt fehlt")
 	}
-	salt, hinterSalt := rest[:backupSaltLaenge], rest[backupSaltLaenge:]
-	key, err := leiteScryptAb(passphrase, salt)
+	salt, hinterSalt := rest[:saltLaenge], rest[saltLaenge:]
+	schluessel, err := leiteScryptAb(passphrase, salt)
 	if err != nil {
 		return nil, fmt.Errorf("scrypt-Ableitung: %w", err)
 	}
-	return oeffneGCM(key, hinterSalt)
+	return oeffneGCM(schluessel, hinterSalt)
 }
 
-// IstScryptFormat prüft das Magic am Dateianfang. Die Kollision mit einer alten
-// Datei, deren zufällige Nonce genau mit "BKDF"+0x02 beginnt, liegt bei 2^-40 pro
-// Datei — praktisch ausgeschlossen.
+// IstScryptFormat prüft Kennung und Fassung am Anfang der Datei. Dass eine Datei im früheren
+// Format zufällig so beginnt, hat die Wahrscheinlichkeit 2^-40.
 func IstScryptFormat(daten []byte) bool {
-	if len(daten) < len(backupMagic)+1 {
+	if len(daten) < len(kennung)+1 {
 		return false
 	}
-	for i, b := range backupMagic {
+	for i, b := range kennung {
 		if daten[i] != b {
 			return false
 		}
 	}
-	return daten[len(backupMagic)] == backupFormatScrypt
+	return daten[len(kennung)] == formatScrypt
 }
 
-func neuesGCM(key []byte) (cipher.AEAD, error) {
-	block, err := aes.NewCipher(key)
+// newGCM liefert AES-GCM unter dem Schlüssel.
+func newGCM(schluessel []byte) (cipher.AEAD, error) {
+	block, err := aes.NewCipher(schluessel)
 	if err != nil {
 		return nil, fmt.Errorf("aes-Cipher: %w", err)
 	}
 	return cipher.NewGCM(block)
 }
 
-// oeffneGCM erwartet daten = Nonce ‖ Ciphertext+Tag.
-func oeffneGCM(key, daten []byte) ([]byte, error) {
-	gcm, err := neuesGCM(key)
+// oeffneGCM entschlüsselt daten, die mit der Nonce beginnen; dahinter folgen Ciphertext und
+// Tag.
+func oeffneGCM(schluessel, daten []byte) ([]byte, error) {
+	gcm, err := newGCM(schluessel)
 	if err != nil {
 		return nil, err
 	}
 	if len(daten) < gcm.NonceSize() {
 		return nil, fmt.Errorf("backup zu kurz: Nonce fehlt")
 	}
-	nonce, ct := daten[:gcm.NonceSize()], daten[gcm.NonceSize():]
-	return gcm.Open(nil, nonce, ct, nil)
+	nonce, geheimtext := daten[:gcm.NonceSize()], daten[gcm.NonceSize():]
+	return gcm.Open(nil, nonce, geheimtext, nil)
 }

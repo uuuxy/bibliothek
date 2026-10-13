@@ -115,7 +115,7 @@ func LadeSMTPKonfig(ctx context.Context, dbPool db.PgxPoolIface) (SMTPKonfig, er
 	}
 
 	if len(gespeichert.SMTPPasswordEncrypted) > 0 {
-		entschluesselt, err := crypto.Decrypt(gespeichert.SMTPPasswordEncrypted)
+		entschluesselt, err := crypto.Entschluessele(gespeichert.SMTPPasswordEncrypted)
 		if err != nil {
 			// Nicht auf die Umgebung ausweichen: Ein unlesbares Passwort heißt, dass der
 			// APP_ENCRYPTION_KEY nicht mehr derselbe ist. Das muss auffallen, statt still

@@ -748,7 +748,7 @@ Frist gesetzt wurde.
 
 ## 🛡️ Netzwerksicherheit & Security-Header
 
-Restriktive HTTP-Header in `internal/middleware/security.go`:
+Restriktive HTTP-Header in `internal/middleware/sicherheitskopfzeilen.go`:
 
 - `frame-ancestors 'none'` — verhindert Clickjacking via iFrame
 - `form-action 'self'` — Formulare nur an eigene API
@@ -783,7 +783,7 @@ gilt auch für Zwischenspeicher im Netz (RFC 9111, 5.2.2.5).
   zum Nachbuchen ([VVT-Entwurf](datenschutz/vvt_entwurf.md), Zusatz zu Tätigkeit 1 und 2).
 - **Gate:** `api/pii_antwort_gate_pg_test.go` verlangt `no-store` an jeder lesenden Route ab
   Stufe 1 und an den Routen, deren Adresse eine Personenkennung trägt
-  (`adresseTraegtPersonendaten`); `internal/middleware/security_test.go` prüft die Vorgabe
+  (`adresseTraegtPersonendaten`); `internal/middleware/sicherheitskopfzeilen_test.go` prüft die Vorgabe
   selbst.
 - **Nicht gebaut:** `Clear-Site-Data` beim Abmelden, das ASVS 14.3.1 als Hilfe nennt. Es wirkt
   nur beim Abmelden über den Knopf, und der Browser legt keine Antwort mit Personendaten mehr

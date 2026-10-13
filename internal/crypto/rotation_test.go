@@ -6,11 +6,10 @@ import (
 	"testing"
 )
 
-// Der Schlüsselwechsel steht und fällt damit, dass EncryptMit/DecryptMit sich exakt
-// so verhalten wie Encrypt/Decrypt — nur mit ausdrücklich übergebenem Schlüssel. Wäre
-// das nicht so, produzierte cmd/rotate-encryption-key einen Bestand, den die Anwendung
-// hinterher nicht mehr lesen kann. Und zwar erst dann sichtbar, wenn jemand ein
-// Schülerfoto öffnet.
+// Der Wechsel des Schlüssels hängt daran, dass VerschluesseleMit und EntschluesseleMit sich
+// verhalten wie Verschluessele und Entschluessele, nur mit ausdrücklich übergebenem Schlüssel.
+// Sonst hinterließe cmd/rotate-encryption-key einen Bestand, den das Programm nicht mehr lesen
+// kann, und das zeigte sich erst, wenn jemand ein Foto öffnet.
 
 func TestSchluesselAus(t *testing.T) {
 	faelle := map[string]struct {
@@ -29,7 +28,7 @@ func TestSchluesselAus(t *testing.T) {
 
 	for name, f := range faelle {
 		t.Run(name, func(t *testing.T) {
-			key, err := SchluesselAus(f.wert)
+			schluessel, err := SchluesselAus(f.wert)
 			if f.fehler {
 				if err == nil {
 					t.Fatalf("%s", f.begruend)
@@ -44,29 +43,29 @@ func TestSchluesselAus(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unerwarteter Fehler: %v", err)
 			}
-			if len(key) != f.laenge {
-				t.Errorf("Schlüssellänge %d, erwartet %d", len(key), f.laenge)
+			if len(schluessel) != f.laenge {
+				t.Errorf("Schlüssellänge %d, erwartet %d", len(schluessel), f.laenge)
 			}
 		})
 	}
 }
 
-func TestEncryptMitUndDecryptMitSindGegenlaeufig(t *testing.T) {
-	key, err := SchluesselAus("12345678901234567890123456789012")
+func TestVerschluesseleMitUndEntschluesseleMitSindGegenlaeufig(t *testing.T) {
+	schluessel, err := SchluesselAus("12345678901234567890123456789012")
 	if err != nil {
 		t.Fatalf("Schlüssel: %v", err)
 	}
 
 	klartext := []byte("ein Schülerfoto oder ein SMTP-Passwort")
-	ct, err := EncryptMit(key, klartext)
+	geheimtext, err := VerschluesseleMit(schluessel, klartext)
 	if err != nil {
 		t.Fatalf("verschlüsseln: %v", err)
 	}
-	if bytes.Contains(ct, klartext) {
+	if bytes.Contains(geheimtext, klartext) {
 		t.Fatal("der Klartext steht unverändert im Ciphertext")
 	}
 
-	zurueck, err := DecryptMit(key, ct)
+	zurueck, err := EntschluesseleMit(schluessel, geheimtext)
 	if err != nil {
 		t.Fatalf("entschlüsseln: %v", err)
 	}
@@ -75,9 +74,9 @@ func TestEncryptMitUndDecryptMitSindGegenlaeufig(t *testing.T) {
 	}
 }
 
-// Der Kern des Wechsels: Was mit dem alten Schlüssel geschrieben wurde, liest der neue
-// NICHT. Genau deshalb muss rotate-encryption-key jeden Datensatz anfassen — und genau
-// deshalb ist ein bloßer Tausch der Umgebungsvariable Datenverlust.
+// Was mit dem alten Schlüssel geschrieben wurde, liest der neue nicht. Deshalb fasst
+// rotate-encryption-key jeden Datensatz an, und ein bloßer Tausch der Umgebungsvariable wäre
+// Datenverlust.
 func TestNeuerSchluesselLiestAltenBestandNicht(t *testing.T) {
 	alt, err := SchluesselAus("12345678901234567890123456789012")
 	if err != nil {
@@ -88,25 +87,25 @@ func TestNeuerSchluesselLiestAltenBestandNicht(t *testing.T) {
 		t.Fatalf("neuer Schlüssel: %v", err)
 	}
 
-	ct, err := EncryptMit(alt, []byte("geheim"))
+	geheimtext, err := VerschluesseleMit(alt, []byte("geheim"))
 	if err != nil {
 		t.Fatalf("verschlüsseln: %v", err)
 	}
 
-	if _, err := DecryptMit(neu, ct); err == nil {
-		t.Fatal("der neue Schlüssel konnte alten Bestand lesen — dann wäre AES-GCM kaputt")
+	if _, err := EntschluesseleMit(neu, geheimtext); err == nil {
+		t.Fatal("der neue Schlüssel konnte alten Bestand lesen; dann wäre AES-GCM kaputt")
 	}
 
-	// Und nach der Umschlüsselung liest ihn der neue sehr wohl.
-	klartext, err := DecryptMit(alt, ct)
+	// Nach dem Umschlüsseln liest ihn der neue.
+	klartext, err := EntschluesseleMit(alt, geheimtext)
 	if err != nil {
 		t.Fatalf("mit altem Schlüssel entschlüsseln: %v", err)
 	}
-	umgeschluesselt, err := EncryptMit(neu, klartext)
+	umgeschluesselt, err := VerschluesseleMit(neu, klartext)
 	if err != nil {
 		t.Fatalf("neu verschlüsseln: %v", err)
 	}
-	zurueck, err := DecryptMit(neu, umgeschluesselt)
+	zurueck, err := EntschluesseleMit(neu, umgeschluesselt)
 	if err != nil {
 		t.Fatalf("mit neuem Schlüssel entschlüsseln: %v", err)
 	}
@@ -115,22 +114,23 @@ func TestNeuerSchluesselLiestAltenBestandNicht(t *testing.T) {
 	}
 }
 
-// EncryptMit muss bei gleichem Klartext verschiedene Ciphertexte liefern (frische Nonce).
-func TestEncryptMitNutztFrischeNonce(t *testing.T) {
-	key, err := SchluesselAus("12345678901234567890123456789012")
+// VerschluesseleMit liefert zu gleichem Klartext verschiedene Ciphertexte, weil jeder Aufruf
+// eine frische Nonce nimmt.
+func TestVerschluesseleMitNimmtFrischeNonce(t *testing.T) {
+	schluessel, err := SchluesselAus("12345678901234567890123456789012")
 	if err != nil {
 		t.Fatalf("Schlüssel: %v", err)
 	}
 
-	a, err := EncryptMit(key, []byte("gleich"))
+	a, err := VerschluesseleMit(schluessel, []byte("gleich"))
 	if err != nil {
 		t.Fatalf("verschlüsseln: %v", err)
 	}
-	b, err := EncryptMit(key, []byte("gleich"))
+	b, err := VerschluesseleMit(schluessel, []byte("gleich"))
 	if err != nil {
 		t.Fatalf("verschlüsseln: %v", err)
 	}
 	if bytes.Equal(a, b) {
-		t.Error("zwei Verschlüsselungen desselben Klartexts sind identisch — die Nonce wird wiederverwendet")
+		t.Error("zwei Verschlüsselungen desselben Klartexts sind gleich: Die Nonce wird wiederverwendet")
 	}
 }

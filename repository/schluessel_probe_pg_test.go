@@ -45,7 +45,7 @@ func TestPruefeSchluesselGegenBestand(t *testing.T) {
 	}
 
 	// Mit dem Schlüssel der Anlage abgelegt und gelesen: passt.
-	verschluesselt, err := crypto.Encrypt([]byte("smtp-geheim"))
+	verschluesselt, err := crypto.Verschluessele([]byte("smtp-geheim"))
 	if err != nil {
 		t.Fatalf("verschlüsseln: %v", err)
 	}

@@ -3,7 +3,7 @@
  *
  * Bis zum 30.09.2026 lieferte der Server `/api/barcode` mit `Cache-Control:
  * max-age=31536000` — ein Jahr. Seitdem gilt `no-store` wie für jede Antwort unter /api/
- * (internal/middleware/security.go, OFFEN.md 5.29): Die Adresse trägt den Inhalt, beim
+ * (internal/middleware/sicherheitskopfzeilen.go, OFFEN.md 5.29): Die Adresse trägt den Inhalt, beim
  * Ausweis also die Ausweisnummer, und der Browser legte sie mit dem Bild ab.
  *
  * Am 17.09.2026 brach das lange Ablegen schon einmal. Der Drucker stellte von Code 39 (mit

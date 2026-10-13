@@ -105,7 +105,7 @@ func TestFotoUpload_SpeichertVerschluesseltUndNenntDieAdresse(t *testing.T) {
 	if bytes.HasPrefix(gespeichert, []byte("RIFF")) {
 		t.Error("das Bild liegt unverschlüsselt in der Datenbank")
 	}
-	klar, err := crypto.Decrypt(gespeichert)
+	klar, err := crypto.Entschluessele(gespeichert)
 	if err != nil {
 		t.Fatalf("gespeichertes Bild entschlüsseln: %v", err)
 	}

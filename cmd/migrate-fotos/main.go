@@ -221,7 +221,7 @@ func migriereFoto(pool db.PgxPoolIface, root *os.Root, name string, barcodeID st
 		return false
 	}
 
-	encryptedData, err := crypto.Encrypt(imgBytes)
+	encryptedData, err := crypto.Verschluessele(imgBytes)
 	if err != nil {
 		slog.Error("Konnte Bild nicht verschlüsseln", "file", name, "error", err)
 		return false
@@ -266,7 +266,7 @@ func zurueckgelesenUndGleich(pool db.PgxPoolIface, studentID string, original []
 		return false
 	}
 
-	klar, err := crypto.Decrypt(gespeichert)
+	klar, err := crypto.Entschluessele(gespeichert)
 	if err != nil {
 		slog.Error("Zurückgelesenes Foto ließ sich nicht entschlüsseln", "student_id", studentID, "error", err)
 		return false

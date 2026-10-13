@@ -67,7 +67,7 @@ func PruefeSchluesselGegenBestand(ctx context.Context, pool db.PgxPoolIface) (Sc
 			return SchluesselProbe{}, fmt.Errorf("%s lesen: %w", s.Beschreibung, err)
 		}
 		probe.Geprueft++
-		if _, err := crypto.Decrypt(wert); err != nil {
+		if _, err := crypto.Entschluessele(wert); err != nil {
 			probe.NichtLesbar = append(probe.NichtLesbar, s.Beschreibung)
 		}
 	}

@@ -76,7 +76,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 	}
 
 	// AES-256-GCM mit scrypt-abgeleitetem Schlüssel (internal/backupkrypto).
-	encrypted, err := backupkrypto.VerschluesseleBackup(encKey, compressedData)
+	encrypted, err := backupkrypto.Verschluessele(encKey, compressedData)
 	if err != nil {
 		// #nosec G706
 		log.Printf("Backup: encryption failed: %v", err)

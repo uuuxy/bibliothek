@@ -42,7 +42,7 @@ func TestRun_RundwegUeberDenEchtenRestore(t *testing.T) {
 		umgebung(map[string]string{"BACKUP_ENCRYPTION_KEY": testKey}))
 	require.NoError(t, err)
 
-	komprimiert, err := backupkrypto.EntschluesseleBackup(testKey, aus.Bytes())
+	komprimiert, err := backupkrypto.Entschluessele(testKey, aus.Bytes())
 	require.NoError(t, err)
 	leser, err := gzip.NewReader(bytes.NewReader(komprimiert))
 	require.NoError(t, err)

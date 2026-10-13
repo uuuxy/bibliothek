@@ -61,7 +61,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, getenv func(s
 		return err
 	}
 
-	verschluesselt, err := backupkrypto.VerschluesseleBackup(encKey, klartext)
+	verschluesselt, err := backupkrypto.Verschluessele(encKey, klartext)
 	if err != nil {
 		return fmt.Errorf("verschlüsselung fehlgeschlagen: %w", err)
 	}
@@ -74,7 +74,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer, getenv func(s
 	// bemerkt würde das erst beim Wiederherstellen, also im schlechtestmöglichen Moment.
 	// Die Gegenprobe kostet einen zweiten scrypt-Durchlauf (~100 ms) — gemessen am
 	// Risiko ist das nichts.
-	zurueck, err := backupkrypto.EntschluesseleBackup(encKey, verschluesselt)
+	zurueck, err := backupkrypto.Entschluessele(encKey, verschluesselt)
 	if err != nil {
 		return fmt.Errorf("gegenprobe fehlgeschlagen — die verschlüsselte Ausgabe ließe sich nicht wiederherstellen: %w", err)
 	}

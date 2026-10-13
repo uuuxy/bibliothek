@@ -79,7 +79,7 @@ func (s *Tueren) BuchbarcodesHandler() http.HandlerFunc {
 		// no-cache an der 200 und an der 304: Eine 304 bringt den Cache-Control-Kopf mit,
 		// den die 200 hätte (RFC 9110, 15.4.5). Bis zum 30.09.2026 fehlte er an der 304;
 		// seitdem stünde dort sonst die Vorgabe no-store der Schnittstelle
-		// (internal/middleware/security.go). no-cache statt no-store, weil die Liste nur
+		// (internal/middleware/sicherheitskopfzeilen.go). no-cache statt no-store, weil die Liste nur
 		// Buchnummern trägt: erneut fragen, aber der ETag darf sparen.
 		w.Header().Set("Cache-Control", "no-cache")
 

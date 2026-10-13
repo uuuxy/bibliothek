@@ -443,8 +443,9 @@ nennen ein Datum. Mit Typprüfung gemessen: 515 von 2.105 öffentlichen Namen ne
 Paket; 111 davon sind Typen, die eine von außen gerufene Funktion annimmt oder zurückgibt, und
 bleiben öffentlich, rund 15 Methoden gibt eine Schnittstelle vor.
 
-**Fertig sind 26 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
-gelesen und ohne Änderung).
+**Fertig sind 30 von 79 Paketen:** alle unter `pkg/` (`pkg/betrag` und `pkg/coverablage`
+gelesen und ohne Änderung), dazu `internal/ausweis`, `internal/backupkrypto`, `internal/crypto`
+und `internal/middleware`.
 
 **Ein Paket ist fertig, wenn:**
 

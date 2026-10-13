@@ -98,7 +98,7 @@ func TestUploadStudentPhoto_ZweitesFotoErsetztDasErste(t *testing.T) {
 		if err := pool.QueryRow(ctx, `SELECT foto_encrypted FROM schueler_fotos WHERE schueler_id = $1`, leserID).Scan(&verschluesselt); err != nil {
 			t.Fatal(err)
 		}
-		klar, err := crypto.Decrypt(verschluesselt)
+		klar, err := crypto.Entschluessele(verschluesselt)
 		if err != nil {
 			t.Fatalf("gespeichertes Foto nicht entschlüsselbar: %v", err)
 		}

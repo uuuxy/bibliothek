@@ -1,18 +1,17 @@
 // Package ausweis rechnet aus, bis wann ein Schülerausweis gilt.
 //
-// Warum das NICHT schueler.abgaenger_jahr benutzt, obwohl der Ausweis bisher genau das
-// anzeigte: Die beiden Zahlen beantworten verschiedene Fragen.
+// Die Gültigkeit kommt nicht aus schueler.abgaenger_jahr, weil die zwei Zahlen verschiedene
+// Fragen beantworten:
 //
-//	abgaenger_jahr  Wann verlässt der Schüler die SCHULE?
-//	                Steuert die DSGVO-Löschung (jobs/cron.go, PurgeAbgaenger) und die
-//	                Stapel-Archivierung. Ein Gymnasialschüler bleibt bis 13.
-//	Gültigkeit      Wie lange gilt die KARTE?
-//	                Die Schule stellt Ausweise bis zum Ende der Mittelstufe aus
-//	                (9 bzw. 10); für die Oberstufe gibt es einen neuen.
+//	abgaenger_jahr  Wann verlässt der Schüler die Schule?
+//	                Daran hängen die Löschung nach der DSGVO und die Archivierung im
+//	                Stapel. Ein Schüler des Gymnasialzweigs bleibt bis 13.
+//	Gültigkeit      Wie lange gilt die Karte?
+//	                Die Schule stellt Ausweise bis zum Ende der Mittelstufe aus (9 oder
+//	                10); für die Oberstufe gibt es einen neuen.
 //
-// Würde man die Ausweisgültigkeit aus abgaenger_jahr ableiten, hinge die
-// Aufbewahrungsfrist einer Schülerakte daran, was auf eine Plastikkarte gedruckt wird.
-// Zwei Zahlen, zwei Funktionen, kein gemeinsamer Schalter.
+// Käme die Gültigkeit aus abgaenger_jahr, hinge die Aufbewahrungsfrist einer Schülerakte
+// daran, was auf einer Karte steht.
 package ausweis
 
 import (
@@ -22,13 +21,11 @@ import (
 	"time"
 )
 
-// SchuljahrEnde liefert das Jahr, in dem das zum Zeitpunkt jetzt laufende Schuljahr
-// endet (Schuljahr 2026/27 → 2027).
+// SchuljahrEnde liefert das Jahr, in dem das laufende Schuljahr endet (Schuljahr 2026/27:
+// 2027).
 //
-// Die Grenze liegt im August — dieselbe Auslegung wie im Versetzungslauf und im
-// Littera-Import (internal/littera/schreiber.go, StandardOptionen). Eine zweite
-// Auslegung wäre hier fatal: Sie verschöbe jeden Ausweis um genau ein Jahr, und zwar
-// nur zwischen August und Dezember.
+// Die Grenze liegt im August wie im Versetzungslauf und im Import aus Littera. Eine zweite
+// Auslegung verschöbe jeden Ausweis um ein Jahr, und zwar nur zwischen August und Dezember.
 func SchuljahrEnde(jetzt time.Time) int {
 	jahr := jetzt.Year()
 	if jetzt.Month() >= time.August {
@@ -37,65 +34,62 @@ func SchuljahrEnde(jetzt time.Time) int {
 	return jahr
 }
 
-// klassenMuster zerlegt eine Klassenbezeichnung der Mittelstufe: führende Ziffern =
-// Jahrgang (führende Null erlaubt), danach Zweigbuchstabe und Zug.
+// klassenMuster zerlegt die Bezeichnung einer Klasse der Mittelstufe: Die Ziffern am Anfang
+// sind der Jahrgang (eine führende Null ist erlaubt), danach folgen der Buchstabe des Zweigs
+// und der Zug.
 //
 //	"05F1" → 5, "F1"      "5F1" → 5, "F1"
 //	"7H1"  → 7, "H1"      "9R1" → 9, "R1"
 //
-// Dieselbe Auslegung wie im Versetzungslauf (repository/schuljahreswechsel.go:
-// substring(klasse from '^\d+')) und im Littera-Import (internal/littera/abgang.go).
-// Drei Stellen, eine Konvention — liefen sie auseinander, bekäme derselbe Schüler je
-// nach Weg ein anderes Datum.
+// Der Versetzungslauf in repository und der Import aus Littera lesen die Klasse genauso.
+// Liefen die drei auseinander, bekäme derselbe Schüler je nach Weg ein anderes Datum.
 var klassenMuster = regexp.MustCompile(`^(\d+)(.*)$`)
 
-// Abschlussjahrgang nennt den Jahrgang, mit dessen Ende der Ausweis abläuft.
+// Der Jahrgang, mit dessen Ende ein Ausweis abläuft, je nach Zweig.
 const (
 	AbschlussHauptschule = 9
 	AbschlussMittelstufe = 10
 	AbschlussOberstufe   = 13
 )
 
-// Jahrgang der Oberstufenphasen in Hessen (G9, Stand August 2026):
-// Einführungsphase E ist Jahrgang 11, die Qualifikationsphase umfasst 12 und 13 —
-// Q1/Q2 liegen in Jahrgang 12, Q3/Q4 in Jahrgang 13. Das Abitur steht am Ende von Q4.
+// Die Jahrgänge der Phasen der Oberstufe in Hessen (G9): Die Einführungsphase E ist Jahrgang
+// 11, Q1 und Q2 liegen in Jahrgang 12, Q3 und Q4 in Jahrgang 13; das Abitur steht am Ende von
+// Q4.
 //
-// Belegt am Bildungsgang der Schule selbst: Ein Realschulzweig, der mit Jahrgang 10
-// endet, und eine Oberstufe, die mit 13 schließt, ergeben zusammen G9. Bei G8 läge die
-// Oberstufe auf 10–12.
+// Belegt ist das am Bildungsgang der Schule: Ein Realschulzweig, der mit Jahrgang 10 endet,
+// und eine Oberstufe, die mit 13 schließt, ergeben G9. Bei G8 läge die Oberstufe auf 10 bis
+// 12.
 const (
 	jahrgangEinfuehrungsphase = 11
 	jahrgangQ12               = 12
 	jahrgangQ34               = 13
 )
 
-// AblaufJahrgang liefert den Jahrgang, mit dessen Schuljahresende der Ausweis abläuft,
-// sowie den Jahrgang, in dem der Schüler gerade steckt.
+// AblaufJahrgang liefert den Jahrgang, mit dessen Schuljahresende der Ausweis abläuft, und
+// den Jahrgang, in dem der Schüler gerade ist.
 //
-// ok=false bedeutet: Aus dieser Klassenbezeichnung lässt sich nichts ableiten. Dann
-// darf NICHTS geraten werden — ein erfundenes Datum auf einem Ausweis fällt niemandem
-// auf, bis die Karte an der Ausleihe abgewiesen wird. Der Druckdialog fragt in dem Fall
-// nach.
+// ok ist false, wenn sich aus der Bezeichnung der Klasse nichts ableiten lässt. Geraten wird
+// dann nicht: Ein erfundenes Datum auf einem Ausweis fiele erst auf, wenn die Karte an der
+// Ausleihe abgewiesen wird. Der Druckdialog fragt in dem Fall nach.
 //
 //	5F1, 6G2 (Förderstufe)     → gilt bis Ende Jahrgang 10
 //	7H1, 8H2 (Hauptschulzweig) → gilt bis Ende Jahrgang 9
 //	7R1, 9R1 (Realschulzweig)  → gilt bis Ende Jahrgang 10
-//	7G1, 8G2 (Gymnasialzweig)  → gilt bis Ende Jahrgang 10  ← Mittelstufe, NICHT 13
+//	7G1, 8G2 (Gymnasialzweig)  → gilt bis Ende Jahrgang 10, nicht 13
 //	E1, E2, Q1…Q4 (Oberstufe)  → gilt bis Ende Jahrgang 13
-//	ET, 12T, 13T (Oberstufe)   → gilt bis Ende Jahrgang 13  ← Schreibweise dieser Schule
+//	ET, 12T, 13T (Oberstufe)   → gilt bis Ende Jahrgang 13, Schreibweise dieser Schule
 //
-// Der Gymnasialzweig endet hier bewusst mit 10 und nicht mit 13, obwohl der Schüler die
-// Schule erst nach 13 verlässt: Die Schule stellt Ausweise für die Mittelstufe aus, für
-// die Oberstufe gibt es einen neuen. Nebeneffekt, der dafür spricht: Das Passbild ist
-// dann nicht sechs Jahre alt.
+// Der Gymnasialzweig endet hier mit 10, obwohl der Schüler die Schule erst nach 13 verlässt:
+// Die Schule stellt Ausweise für die Mittelstufe aus, für die Oberstufe gibt es einen neuen.
+// Das Passbild ist so auch nicht sechs Jahre alt.
 func AblaufJahrgang(klasse string) (ablauf int, aktuell int, ok bool) {
 	k := strings.ToUpper(strings.TrimSpace(klasse))
 	if k == "" {
 		return 0, 0, false
 	}
 
-	// Oberstufe zuerst: E1/Q3 tragen keine führende Ziffer und fallen sonst durch das
-	// Klassenmuster, weil das Ziffern am Anfang verlangt.
+	// Die Oberstufe zuerst: E1 und Q3 beginnen nicht mit einer Ziffer, und das Klassenmuster
+	// verlangt eine.
 	if jahrgang, treffer := oberstufenJahrgang(k); treffer {
 		return AbschlussOberstufe, jahrgang, true
 	}
@@ -110,19 +104,11 @@ func AblaufJahrgang(klasse string) (ablauf int, aktuell int, ok bool) {
 	}
 
 	abschluss := abschlussAusZweig(teile[2])
-	// Liegt der Jahrgang ÜBER dem Regelabschluss des Zweigs, gilt der Jahrgang.
-	//
-	// Der Fall ist nicht theoretisch: "10H1" ist das freiwillige 10. Hauptschuljahr auf
-	// dem Weg zum Mittleren Abschluss. Der Hauptschulzweig endet regulär mit 9, ein
-	// Zehntklässler darin ist also kein Datenfehler, sondern ein regulärer Bildungsweg.
-	//
-	// Vorher wurde hier abgelehnt, und der Ausweis eines 10H-Schülers hatte KEIN Datum —
-	// ausgerechnet in dem Jahr, in dem er einen neuen braucht. Gerechnet wird jetzt bis
-	// zum Ende des Jahrgangs, in dem er tatsächlich steckt. Das ist die Aussage, die
-	// immer stimmt: Wer in Jahrgang X ist, beendet mindestens dieses Schuljahr.
-	//
-	// Nach unten bleibt es abgesichert — ein Jahrgang außerhalb 1..13 ist oben schon
-	// aussortiert, ein Datum in der Vergangenheit kann so nicht entstehen.
+	// Liegt der Jahrgang über dem Abschluss des Zweigs, gilt der Jahrgang: „10H1" ist das
+	// freiwillige zehnte Jahr im Hauptschulzweig auf dem Weg zum Mittleren Abschluss, kein
+	// Datenfehler. Gerechnet wird bis zum Ende des Jahrgangs, in dem der Schüler ist; wer in
+	// Jahrgang X ist, beendet mindestens dieses Schuljahr. Ein Datum in der Vergangenheit
+	// entsteht so nicht, weil ein Jahrgang außerhalb von 1 bis 13 oben schon abgewiesen ist.
 	if jahrgang > abschluss {
 		abschluss = jahrgang
 	}
@@ -139,32 +125,26 @@ func oberstufenJahrgang(k string) (int, bool) {
 	case k == "Q3", k == "Q4":
 		return jahrgangQ34, true
 	case strings.HasPrefix(k, "Q"):
-		// Unbekannter Q-Zusatz: Die Phase steht fest, das Jahr nicht. Der spätere
-		// Jahrgang ist die sichere Annahme — ein zu frühes Ablaufdatum macht einen
-		// gültigen Ausweis ungültig, ein zu spätes fällt beim nächsten Druck auf.
+		// Ein unbekannter Zusatz hinter Q: Die Phase steht fest, das Jahr nicht. Angenommen
+		// wird der spätere Jahrgang: Ein zu frühes Ablaufdatum macht einen gültigen Ausweis
+		// ungültig, ein zu spätes fällt beim nächsten Druck auf.
 		return jahrgangQ34, true
 	}
 	return 0, false
 }
 
-// abschlussAusZweig liest den Bildungsgang aus dem ersten Buchstaben hinter dem
-// Jahrgang. Was dahinter steht, ist der Zug ("H1" → Hauptschulzweig, Zug 1).
+// abschlussAusZweig liest den Bildungsgang aus dem ersten Buchstaben hinter dem Jahrgang; was
+// danach steht, ist der Zug („H1": Hauptschulzweig, Zug 1).
 //
-// Ist der Zweig NICHT erkennbar — kein Buchstabe ("10") oder ein unbekannter ("10a",
-// "7X1") —, gilt der längste Weg der Mittelstufe (Jahrgang 10).
-//
-// Das ist kein Raten, sondern dieselbe Regel, die für die Förderstufe ohnehin gilt:
-// Dort steht der Zweig noch nicht fest, und angesetzt wird der längste Weg. Der Fehler
-// kann damit nur in EINE Richtung gehen — der Ausweis eines Hauptschülers gilt ein Jahr
-// länger als nötig. Das ist folgenlos, denn mit dem Abgang wird das Konto ohnehin
-// gesperrt. Andersherum wäre es schlimm: Ein zu früh ablaufender Ausweis wird an der
+// Ist der Zweig nicht erkennbar, weil kein Buchstabe folgt („10") oder ein unbekannter
+// („10a", „7X1"), gilt der längste Weg der Mittelstufe, Jahrgang 10. So ist es auch in der
+// Förderstufe, in der der Zweig noch nicht feststeht. Der Fehler geht damit nur in eine
+// Richtung: Der Ausweis eines Hauptschülers gilt ein Jahr länger als nötig, und mit dem
+// Abgang wird das Konto ohnehin gesperrt. Ein zu früh ablaufender Ausweis würde an der
 // Ausleihe abgewiesen, während der Schüler noch zur Schule geht.
 //
-// Bis zum 07.08.2026 lieferte ein unbekannter Zweig gar nichts. Formal war das sauber
-// ("nichts raten"), praktisch unbrauchbar: Auf dem Produktivsystem tragen 25 von 31
-// Klassen keinen Zweigbuchstaben (5a…10d), und damit hätte fast jeder Ausweis ein von
-// Hand eingetragenes Datum gebraucht. Eine Automatik, die im Alltag nie greift, ist
-// keine.
+// Ohne diese Annahme bräuchte fast jeder Ausweis ein Datum von Hand, wo die Klassen keinen
+// Buchstaben für den Zweig tragen (5a bis 10d).
 func abschlussAusZweig(zweigUndZug string) int {
 	rest := strings.TrimSpace(zweigUndZug)
 	if rest != "" {
@@ -173,24 +153,21 @@ func abschlussAusZweig(zweigUndZug string) int {
 		case 'H':
 			return AbschlussHauptschule
 		case 'T':
-			// Die Oberstufe DIESER Schule heißt ET, 12T, 13T (so auch in
-			// api/leser/student_create.go). Die beiden letzten tragen eine führende Ziffer
-			// und fallen deshalb nicht in die E/Q-Erkennung, sondern hierher — als
-			// unbekannter Zweig galten sie bis zum 12.09.2026 als Mittelstufe. Für
-			// 12T hieß das: gültig bis Ende Jahrgang 12 statt 13, also ein Jahr zu
-			// früh. Ein zu früh ablaufender Ausweis ist genau der Fall, den diese
-			// Datei sonst überall vermeidet: Er fällt erst an der Ausleihe auf.
+			// Die Oberstufe dieser Schule heißt ET, 12T und 13T. 12T und 13T beginnen mit
+			// einer Ziffer und kommen deshalb nicht über die Erkennung von E und Q, sondern
+			// hierher. Als unbekannter Zweig gälte 12T bis Ende Jahrgang 12 und liefe ein
+			// Jahr zu früh ab.
 			return AbschlussOberstufe
 		}
 	}
 	return AbschlussMittelstufe
 }
 
-// GueltigBisJahr rechnet das Kalenderjahr aus, in dem der Ausweis abläuft.
+// GueltigBisJahr liefert das Kalenderjahr, in dem der Ausweis abläuft.
 //
-// schuljahrEnde ist das Jahr, in dem das AKTUELLE Schuljahr endet (Schuljahr 2026/27 →
-// 2027). Ein Siebtklässler im Hauptschulzweig verlässt die Mittelstufe nach Jahrgang 9,
-// sein Ausweis gilt also zwei Schuljahre länger.
+// schuljahrEnde ist das Jahr, in dem das laufende Schuljahr endet (Schuljahr 2026/27: 2027).
+// Ein Siebtklässler im Hauptschulzweig verlässt die Mittelstufe nach Jahrgang 9; sein Ausweis
+// gilt also zwei Schuljahre länger.
 func GueltigBisJahr(klasse string, schuljahrEnde int) (int, bool) {
 	ablauf, aktuell, ok := AblaufJahrgang(klasse)
 	if !ok {

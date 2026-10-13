@@ -514,7 +514,7 @@ var adresseTraegtPersonendaten = map[string]string{
 
 // pruefeKeinAblegen: Eine Antwort mit Personendaten trägt Cache-Control: no-store — seit
 // dem 30.09.2026 (OFFEN.md 5.29; OWASP ASVS 5.0, 14.3.2). Die Vorgabe setzt
-// internal/middleware/security.go für jede Antwort unter /api/; rot wird es, wenn ein
+// internal/middleware/sicherheitskopfzeilen.go für jede Antwort unter /api/; rot wird es, wenn ein
 // Handler sie mit einem eigenen Kopf aufweicht oder die Middleware aus der Kette fällt.
 func pruefeKeinAblegen(t *testing.T, route, fall string, stufe int, rec *httptest.ResponseRecorder) {
 	t.Helper()
@@ -527,7 +527,7 @@ func pruefeKeinAblegen(t *testing.T, route, fall string, stufe int, rec *httptes
 	}
 	t.Errorf("%s%s (Stufe %d): Cache-Control %q — eine Antwort mit Personendaten muss no-store tragen, "+
 		"sonst legt der Browser sie auf der Festplatte ab, über das Abmelden hinaus.\n"+
-		"→ Die Vorgabe setzt internal/middleware/security.go für /api/. Setzt der Handler einen eigenen "+
+		"→ Die Vorgabe setzt internal/middleware/sicherheitskopfzeilen.go für /api/. Setzt der Handler einen eigenen "+
 		"Cache-Control-Kopf, diesen entfernen oder auf no-store setzen.",
 		route, fall, stufe, strings.Join(werte, ", "))
 }

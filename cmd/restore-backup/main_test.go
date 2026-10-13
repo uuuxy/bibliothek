@@ -20,7 +20,7 @@ import (
 // vorfindet, statt es im Test nachzubauen.
 func createBackup(t *testing.T, passphrase string, cleartext []byte) []byte {
 	t.Helper()
-	enc, err := backupkrypto.VerschluesseleBackup(passphrase, cleartext)
+	enc, err := backupkrypto.Verschluessele(passphrase, cleartext)
 	require.NoError(t, err)
 	return enc
 }

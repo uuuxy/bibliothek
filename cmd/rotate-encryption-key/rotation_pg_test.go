@@ -48,7 +48,7 @@ func schluessel(t *testing.T, hex string) []byte {
 
 func verschluesselt(t *testing.T, key, klartext []byte) []byte {
 	t.Helper()
-	b, err := crypto.EncryptMit(key, klartext)
+	b, err := crypto.VerschluesseleMit(key, klartext)
 	if err != nil {
 		t.Fatalf("verschlüsseln: %v", err)
 	}
@@ -139,13 +139,13 @@ func TestRotiere_SchluesseltBeideTabellenUm(t *testing.T) {
 		"Foto":     {liesFoto(t, pool, leserID), fotoKlartext},
 		"Passwort": {liesPasswort(t, pool), passwortKlartext},
 	} {
-		klar, err := crypto.DecryptMit(neu, geschrieben.wert)
+		klar, err := crypto.EntschluesseleMit(neu, geschrieben.wert)
 		if err != nil {
 			t.Errorf("%s: mit dem NEUEN Schlüssel nicht lesbar: %v", name, err)
 		} else if !bytes.Equal(klar, geschrieben.klartext) {
 			t.Errorf("%s: Klartext nach dem Wechsel verändert: %q", name, klar)
 		}
-		if _, err := crypto.DecryptMit(alt, geschrieben.wert); err == nil {
+		if _, err := crypto.EntschluesseleMit(alt, geschrieben.wert); err == nil {
 			t.Errorf("%s: mit dem ALTEN Schlüssel noch lesbar — der Wechsel hat nicht geschrieben", name)
 		}
 	}

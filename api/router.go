@@ -312,7 +312,7 @@ func (s *Server) wrapMiddleware(mux http.Handler) http.Handler {
 	// las sie r.PathValue("id"), bevor die Route aufgelöst war — der Wert ist dort immer
 	// leer, die Prüfung lief also nie (Audit-Befund 01.08.2026). Sie sitzt jetzt in
 	// RequirePermission, also hinter dem Routing, wo PathValue gefüllt ist.
-	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.SecurityHeadersMiddleware(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(ErweitereLesefristFuerLangeUploads(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(KompressionMiddleware(mux))))))))))))
+	globalHandler := PanicRecoveryMiddleware(sentryMiddleware(middleware.Sicherheitskopfzeilen(CORSMiddleware(LoggingMiddleware(s.HTTPSRedirectMiddleware(ErweitereLesefristFuerLangeUploads(bodyLimiter(timeoutLimiter(rateLimiter(s.CSRFMiddleware(KompressionMiddleware(mux))))))))))))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log incoming request without exposing IP addresses (.RemoteAddr stripped for DSGVO)

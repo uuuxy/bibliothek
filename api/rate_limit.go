@@ -25,7 +25,7 @@ func RateLimitMiddleware(limit int) func(http.Handler) http.Handler {
 			// kompletten A4-Bogen (Standard 52 = 52 Etiketten) und feuert pro Etikett ein <img src="/api/barcode…">
 			// nahezu gleichzeitig ab — das sprengt sonst das 50-Requests/s-Bucket und liefert 429 (authentifiziert,
 			// view_books, winzige PNGs; seit dem 30.09.2026 legt der Browser sie nicht mehr ab, jeder Seitenaufruf
-			// holt sie also neu — internal/middleware/security.go). Exakter Pfad-Match, damit /api/barcode/next (JSON)
+			// holt sie also neu — internal/middleware/sicherheitskopfzeilen.go). Exakter Pfad-Match, damit /api/barcode/next (JSON)
 			// weiter limitiert bleibt.
 			// /events (SSE) ist eine langlebige Verbindung, die bei jedem (Re-)Connect sonst einen Token verbraucht
 			// und flaky Clients unnötig ausbremst.

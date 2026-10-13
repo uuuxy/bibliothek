@@ -301,11 +301,11 @@ func vergleicheBestand(t *testing.T, erwartet, tatsaechlich map[string]int) {
 }
 
 // entschluesseleUndPacke bildet exakt den Weg von cmd/restore-backup nach:
-// backupkrypto.EntschluesseleBackup, dann gunzip.
+// backupkrypto.Entschluessele, dann gunzip.
 func entschluesseleUndPacke(t *testing.T, key string, roh []byte) string {
 	t.Helper()
 
-	komprimiert, err := backupkrypto.EntschluesseleBackup(key, roh)
+	komprimiert, err := backupkrypto.Entschluessele(key, roh)
 	if err != nil {
 		t.Fatalf("Entschlüsselung fehlgeschlagen: %v", err)
 	}

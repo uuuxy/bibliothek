@@ -21,7 +21,7 @@ import (
 // rot — genau so passiert am 23.08.2026.
 func erwarteGegenprobe(t *testing.T, mock pgxmock.PgxPoolIface, schuelerID, inhalt string) {
 	t.Helper()
-	chiffre, err := crypto.Encrypt([]byte(inhalt))
+	chiffre, err := crypto.Verschluessele([]byte(inhalt))
 	require.NoError(t, err)
 	mock.ExpectQuery("SELECT foto_encrypted FROM schueler_fotos").
 		WithArgs(schuelerID).

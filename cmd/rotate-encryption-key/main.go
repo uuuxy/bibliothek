@@ -52,7 +52,7 @@ func main() {
 		return
 	}
 
-	altSchluessel, err := crypto.GetMasterKey()
+	altSchluessel, err := crypto.SchluesselAusUmgebung()
 	if err != nil {
 		log.Fatalf("FATAL: alter Schlüssel (%s) nicht brauchbar: %v", crypto.SchluesselVariable, err)
 	}

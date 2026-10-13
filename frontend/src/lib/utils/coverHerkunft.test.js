@@ -5,7 +5,7 @@ import { coverSrc, coverKandidaten } from './coverSrc.js';
 
 // Gleiche Herkunft für ALLE Bilder — das ist seit dem 06.08.2026 keine Stilfrage mehr,
 // sondern die Voraussetzung der Content-Security-Policy: img-src kennt kein https: mehr
-// (internal/middleware/security.go). Eine wiedereingeführte fremde Bildadresse würde im
+// (internal/middleware/sicherheitskopfzeilen.go). Eine wiedereingeführte fremde Bildadresse würde im
 // Browser stumm blockiert; die Kachel bliebe einfach leer. Genau die Sorte Fehler, die
 // niemand meldet, weil es aussieht wie "das Buch hat halt kein Cover".
 

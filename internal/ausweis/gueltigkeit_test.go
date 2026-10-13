@@ -2,10 +2,9 @@ package ausweis
 
 import "testing"
 
-// Die Klassenformate stammen aus der Schule selbst (06.08.2026): "05F1" oder "5F1",
-// "06G2" oder "6G2", "7H1", "8G2", "9R1", Oberstufe "E1"/"E2" und "Q1".."Q4".
-// Beide Schreibweisen mit und ohne führende Null müssen dasselbe ergeben — LUSD und
-// Littera liefern sie unterschiedlich.
+// Die Schreibweisen der Klassen stammen aus der Schule: "05F1" oder "5F1", "06G2" oder
+// "6G2", "7H1", "8G2", "9R1", in der Oberstufe "E1", "E2" und "Q1" bis "Q4". Mit und ohne
+// führende Null ergibt sich dasselbe; LUSD und Littera liefern die Klasse verschieden.
 func TestGueltigBisJahr(t *testing.T) {
 	const schuljahrEnde = 2027 // Schuljahr 2026/27
 
@@ -27,8 +26,8 @@ func TestGueltigBisJahr(t *testing.T) {
 		{"8H2", 2028, "Jahrgang 8 → Ende 9"},
 		{"9H1", 2027, "bereits im Abschlussjahrgang"},
 
-		// Real- und Gymnasialzweig enden für den AUSWEIS beide mit 10 — der
-		// Gymnasialzweig bekommt für die Oberstufe einen neuen.
+		// Real- und Gymnasialzweig enden für den Ausweis beide mit 10; der Gymnasialzweig
+		// bekommt für die Oberstufe einen neuen.
 		{"7R1", 2030, "Jahrgang 7 → Ende 10"},
 		{"9R1", 2028, "Jahrgang 9 → Ende 10"},
 		{"7G1", 2030, "Gymnasialzweig: Ausweis bis Ende Mittelstufe, nicht bis 13"},
@@ -36,10 +35,9 @@ func TestGueltigBisJahr(t *testing.T) {
 		{"10R2", 2027, "Abschlussjahrgang selbst"},
 		{"10G2", 2027, "Gymnasialzweig im Abschlussjahrgang der Mittelstufe"},
 
-		// Freiwilliges 10. Hauptschuljahr (Weg zum Mittleren Abschluss). Der
-		// Hauptschulzweig endet regulär mit 9 — ein Zehntklässler darin ist trotzdem
-		// kein Datenfehler. Vorher lieferte das KEIN Datum, ausgerechnet im Jahr, in
-		// dem ein neuer Ausweis fällig ist.
+		// Das freiwillige zehnte Jahr im Hauptschulzweig (Weg zum Mittleren Abschluss). Der
+		// Zweig endet sonst mit 9; ein Zehntklässler darin ist trotzdem kein Datenfehler und
+		// braucht in diesem Jahr einen neuen Ausweis.
 		{"10H1", 2027, "10. Hauptschuljahr: gilt bis zum Ende dieses Jahrgangs"},
 		{"11H1", 2027, "auch darüber hinaus wird kein Datum in der Vergangenheit erzeugt"},
 
@@ -62,12 +60,10 @@ func TestGueltigBisJahr(t *testing.T) {
 		{"Q3", 2027, "Q3 liegt in Jahrgang 13"},
 		{"Q4", 2027, "Q4 ebenfalls Jahrgang 13"},
 
-		// Oberstufe in der Schreibweise DIESER Schule: ET, 12T, 13T (api/leser/student_create.go
-		// nennt sie ebenso). Sie tragen eine führende Ziffer und fielen damit an der
-		// E/Q-Erkennung vorbei ins Klassenmuster; „T" galt als unbekannter Zweig, also
-		// Mittelstufe. Für 12T hieß das: gültig bis Ende Jahrgang 12 statt 13 — der
-		// Ausweis eines Schülers der Qualifikationsphase lief ein Jahr zu früh ab, und
-		// das fällt erst an der Ausleihe auf (Bestands-Durchgang 10.09.2026).
+		// Die Oberstufe in der Schreibweise dieser Schule: ET, 12T, 13T. 12T und 13T beginnen
+		// mit einer Ziffer und kommen deshalb nicht über die Erkennung von E und Q. Gälte „T"
+		// als unbekannter Zweig, liefe der Ausweis eines Schülers in 12T ein Jahr zu früh ab,
+		// und das fiele erst an der Ausleihe auf.
 		{"12T1", 2028, "Q-Phase dieser Schule: Jahrgang 12 → Ende 13"},
 		{"13T1", 2027, "Jahrgang 13 ist der Abschlussjahrgang selbst"},
 		{"12T", 2028, "auch ohne Zug"},
@@ -92,10 +88,9 @@ func TestGueltigBisJahr(t *testing.T) {
 	}
 }
 
-// Was sich nicht ableiten lässt, darf NICHT geraten werden. Ein erfundenes Datum auf
-// einem Ausweis fällt niemandem auf, bis die Karte an der Ausleihe abgewiesen wird —
-// dann steht ein Schüler mit einer Karte da, die nach Papier aussieht und nichts gilt.
-// Der Druckdialog fragt in diesen Fällen nach.
+// Was sich nicht ableiten lässt, wird nicht geraten. Ein erfundenes Datum auf einem Ausweis
+// fiele erst auf, wenn die Karte an der Ausleihe abgewiesen wird. Der Druckdialog fragt in
+// diesen Fällen nach.
 func TestUnbekannteKlassenWerdenNichtGeraten(t *testing.T) {
 	unbekannt := []string{
 		"",           // leer
@@ -112,9 +107,9 @@ func TestUnbekannteKlassenWerdenNichtGeraten(t *testing.T) {
 	}
 }
 
-// Der Ablaufjahrgang selbst ist die fachliche Aussage; das Kalenderjahr ist nur die
-// Umrechnung darauf. Beides getrennt geprüft, damit ein Fehler in der Jahresrechnung
-// nicht als Regelfehler durchgeht.
+// Der Jahrgang, mit dem der Ausweis abläuft, ist die Regel; das Kalenderjahr ist die
+// Umrechnung darauf. Beides ist getrennt geprüft, damit ein Fehler in der Rechnung mit Jahren
+// nicht wie ein Fehler der Regel aussieht.
 func TestAblaufJahrgang(t *testing.T) {
 	faelle := []struct {
 		klasse          string
@@ -141,9 +136,8 @@ func TestAblaufJahrgang(t *testing.T) {
 	}
 }
 
-// Das Schuljahr ist ein Parameter, kein globaler Zustand: Derselbe Schüler muss im
-// nächsten Schuljahr ein um eins höheres Ablaufjahr bekommen, ohne dass die Regel
-// angefasst wird.
+// Das Schuljahr ist ein Parameter und kein Zustand des Pakets: Derselbe Schüler bekommt im
+// nächsten Schuljahr ein um eins höheres Ablaufjahr, ohne dass die Regel angefasst wird.
 func TestSchuljahrVerschiebtMit(t *testing.T) {
 	for _, ende := range []int{2027, 2028, 2035} {
 		jahr, ok := GueltigBisJahr("7H1", ende)

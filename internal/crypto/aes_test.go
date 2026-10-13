@@ -7,227 +7,217 @@ import (
 	"testing"
 )
 
-func TestGetMasterKey(t *testing.T) {
-	tests := []struct {
-		name       string
-		key        string
-		wantLen    int
-		wantErr    bool
-		wantErrMsg string
+func TestSchluesselAusUmgebung(t *testing.T) {
+	faelle := []struct {
+		name        string
+		wert        string
+		wantLaenge  int
+		wantFehler  bool
+		wantMeldung string
 	}{
 		{
-			name:       "nicht gesetzt",
-			key:        "",
-			wantErr:    true,
-			wantErrMsg: "nicht gesetzt",
+			name:        "nicht gesetzt",
+			wert:        "",
+			wantFehler:  true,
+			wantMeldung: "nicht gesetzt",
 		},
 		{
-			name:    "32-Byte-Klartext",
-			key:     "12345678901234567890123456789012",
-			wantLen: 32,
+			name:       "32-Byte-Klartext",
+			wert:       "12345678901234567890123456789012",
+			wantLaenge: 32,
 		},
 		{
-			name:    "64 Hex-Zeichen",
-			key:     hex.EncodeToString([]byte("12345678901234567890123456789012")),
-			wantLen: 32,
+			name:       "64 Hex-Zeichen",
+			wert:       hex.EncodeToString([]byte("12345678901234567890123456789012")),
+			wantLaenge: 32,
 		},
 		{
-			name:       "kaputtes Hex",
-			key:        "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ",
-			wantErr:    true,
-			wantErrMsg: "ungültiges Hex-Format",
+			name:        "kaputtes Hex",
+			wert:        "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ",
+			wantFehler:  true,
+			wantMeldung: "ungültiges Hex-Format",
 		},
 		{
-			name:       "falsche Länge",
-			key:        "short",
-			wantErr:    true,
-			wantErrMsg: "muss genau 32 Zeichen",
+			name:        "falsche Länge",
+			wert:        "short",
+			wantFehler:  true,
+			wantMeldung: "muss genau 32 Zeichen",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv(SchluesselVariable, tt.key)
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			t.Setenv(SchluesselVariable, f.wert)
 
-			key, err := GetMasterKey()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetMasterKey() error = %v, wantErr %v", err, tt.wantErr)
+			schluessel, err := SchluesselAusUmgebung()
+			if (err != nil) != f.wantFehler {
+				t.Errorf("SchluesselAusUmgebung() Fehler = %v, erwartet Fehler: %v", err, f.wantFehler)
 				return
 			}
-			if tt.wantErr && !strings.Contains(err.Error(), tt.wantErrMsg) {
-				t.Errorf("GetMasterKey() error = %v, wantErrMsg %v", err, tt.wantErrMsg)
+			if f.wantFehler && !strings.Contains(err.Error(), f.wantMeldung) {
+				t.Errorf("SchluesselAusUmgebung() Fehler = %v, erwartet mit %q", err, f.wantMeldung)
 			}
-			if !tt.wantErr && len(key) != tt.wantLen {
-				t.Errorf("GetMasterKey() len = %v, want %v", len(key), tt.wantLen)
+			if !f.wantFehler && len(schluessel) != f.wantLaenge {
+				t.Errorf("SchluesselAusUmgebung() Länge = %v, want %v", len(schluessel), f.wantLaenge)
 			}
 		})
 	}
 }
 
-// Das Gate gegen die zweite Tür: ENCRYPTION_KEY wurde bis zum 06.08.2026 VORRANGIG
-// gelesen und umging damit jede Startprüfung (Länge, Hex-Form, Default-Erkennung unter
-// ENFORCE_PROD_SECRETS). Verschlüsselt worden wäre dann mit einem anderen Schlüssel als
-// dem geprüften — Schülerfotos und das gespeicherte SMTP-Passwort wären still
-// unlesbar geworden.
-//
-// Fällt dieser Test, ist der Zweitname zurück.
-func TestGetMasterKeyIgnoriertDenAltnamen(t *testing.T) {
-	t.Setenv(AltName, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+// Der frühere zweite Name ENCRYPTION_KEY wird nicht gelesen. Gälte er, ginge er an jeder
+// Prüfung des Starts vorbei (Länge, Hex-Form, Beispielwerte unter ENFORCE_PROD_SECRETS), und
+// verschlüsselt würde mit einem anderen Schlüssel als dem geprüften: Die Fotos der Schüler und
+// das Passwort des Mailservers wären danach nicht mehr lesbar.
+func TestSchluesselAusUmgebung_LiestDenFrueherenNamenNicht(t *testing.T) {
+	t.Setenv(FruehereVariable, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 	t.Setenv(SchluesselVariable, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
 
-	key, err := GetMasterKey()
+	schluessel, err := SchluesselAusUmgebung()
 	if err != nil {
-		t.Fatalf("GetMasterKey() error = %v", err)
+		t.Fatalf("SchluesselAusUmgebung() Fehler = %v", err)
 	}
-	if string(key) != "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" {
-		t.Fatalf("GetMasterKey() nahm %q — der Altname %s gewinnt wieder", key, AltName)
+	if string(schluessel) != "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" {
+		t.Fatalf("SchluesselAusUmgebung() nahm %q: Der frühere Name %s gilt wieder", schluessel, FruehereVariable)
 	}
 
-	// Und ohne den gültigen Namen trägt der Altname gar nichts.
+	// Ohne den gültigen Namen trägt der frühere nichts.
 	t.Setenv(SchluesselVariable, "")
-	if _, err := GetMasterKey(); err == nil {
-		t.Fatalf("%s allein hat gereicht — er wird noch gelesen", AltName)
+	if _, err := SchluesselAusUmgebung(); err == nil {
+		t.Fatalf("%s allein hat gereicht: Er wird noch gelesen", FruehereVariable)
 	}
 }
 
-func TestEncryptDecrypt(t *testing.T) {
-	// Set a valid 32-byte key for encryption/decryption tests
+func TestVerschluesseleUndEntschluessele(t *testing.T) {
 	t.Setenv(SchluesselVariable, "12345678901234567890123456789012")
 
-	plaintext := []byte("secret message")
+	klartext := []byte("secret message")
 
-	// Test Encrypt
-	ciphertext, err := Encrypt(plaintext)
+	geheimtext, err := Verschluessele(klartext)
 	if err != nil {
-		t.Fatalf("Encrypt() error = %v", err)
+		t.Fatalf("Verschluessele() Fehler = %v", err)
 	}
-	if len(ciphertext) == 0 {
-		t.Fatal("Encrypt() returned empty ciphertext")
+	if len(geheimtext) == 0 {
+		t.Fatal("Verschluessele() lieferte nichts")
 	}
 
-	// Test Decrypt
-	decrypted, err := Decrypt(ciphertext)
+	entschluesselt, err := Entschluessele(geheimtext)
 	if err != nil {
-		t.Fatalf("Decrypt() error = %v", err)
+		t.Fatalf("Entschluessele() Fehler = %v", err)
 	}
 
-	if !bytes.Equal(plaintext, decrypted) {
-		t.Errorf("Decrypt() = %v, want %v", string(decrypted), string(plaintext))
+	if !bytes.Equal(klartext, entschluesselt) {
+		t.Errorf("Entschluessele() = %v, want %v", string(entschluesselt), string(klartext))
 	}
 }
 
-func TestDecryptErrors(t *testing.T) {
-	// Set a valid 32-byte key
+func TestEntschluessele_Fehler(t *testing.T) {
 	t.Setenv(SchluesselVariable, "12345678901234567890123456789012")
 
-	t.Run("Short ciphertext", func(t *testing.T) {
-		shortCiphertext := []byte("short")
-		_, err := Decrypt(shortCiphertext)
+	t.Run("zu kurz", func(t *testing.T) {
+		zuKurz := []byte("short")
+		_, err := Entschluessele(zuKurz)
 		if err == nil || !strings.Contains(err.Error(), "ciphertext ist zu kurz") {
-			t.Errorf("Decrypt(short) error = %v, want 'ciphertext ist zu kurz'", err)
+			t.Errorf("Entschluessele(zu kurz) Fehler = %v, want 'ciphertext ist zu kurz'", err)
 		}
 	})
 
-	t.Run("Tampered data", func(t *testing.T) {
-		plaintext := []byte("secret message")
-		ciphertext, err := Encrypt(plaintext)
+	t.Run("verändert", func(t *testing.T) {
+		klartext := []byte("secret message")
+		geheimtext, err := Verschluessele(klartext)
 		if err != nil {
-			t.Fatalf("Encrypt() error = %v", err)
+			t.Fatalf("Verschluessele() Fehler = %v", err)
 		}
 
-		// Tamper with the ciphertext (flip a bit in the actual ciphertext, after the nonce)
-		// Nonce size is 12 for GCM
-		ciphertext[15] ^= 1
+		// Ein Bit im Ciphertext kippen. Die Nonce von GCM belegt die ersten 12 Byte; Stelle
+		// 15 liegt dahinter.
+		geheimtext[15] ^= 1
 
-		_, err = Decrypt(ciphertext)
+		_, err = Entschluessele(geheimtext)
 		if err == nil || !strings.Contains(err.Error(), "entschlüsselung fehlgeschlagen") {
-			t.Errorf("Decrypt(tampered) error = %v, want 'entschlüsselung fehlgeschlagen'", err)
+			t.Errorf("Entschluessele(verändert) Fehler = %v, want 'entschlüsselung fehlgeschlagen'", err)
 		}
 	})
 }
 
-func TestEncryptDecryptNoKey(t *testing.T) {
-	// Ensure no key is set
+func TestVerschluesseleUndEntschluessele_OhneSchluessel(t *testing.T) {
 	t.Setenv(SchluesselVariable, "")
 	t.Setenv("APP_ENCRYPTION_KEY", "")
 
-	plaintext := []byte("secret message")
+	klartext := []byte("secret message")
 
-	_, err := Encrypt(plaintext)
+	_, err := Verschluessele(klartext)
 	if err == nil {
-		t.Error("Encrypt() expected error without key")
+		t.Error("Verschluessele() ohne Schlüssel: erwartet einen Fehler")
 	}
 
-	_, err = Decrypt([]byte("some-ciphertext"))
+	_, err = Entschluessele([]byte("some-ciphertext"))
 	if err == nil {
-		t.Error("Decrypt() expected error without key")
+		t.Error("Entschluessele() ohne Schlüssel: erwartet einen Fehler")
 	}
 }
 
-func TestEncryptMitDecryptMit(t *testing.T) {
-	key := []byte("12345678901234567890123456789012")
-	plaintext := []byte("secret message for explicit key")
+func TestVerschluesseleMitUndEntschluesseleMit(t *testing.T) {
+	schluessel := []byte("12345678901234567890123456789012")
+	klartext := []byte("secret message for explicit key")
 
-	// Test EncryptMit
-	ciphertext, err := EncryptMit(key, plaintext)
+	geheimtext, err := VerschluesseleMit(schluessel, klartext)
 	if err != nil {
-		t.Fatalf("EncryptMit() error = %v", err)
+		t.Fatalf("VerschluesseleMit() Fehler = %v", err)
 	}
-	if len(ciphertext) == 0 {
-		t.Fatal("EncryptMit() returned empty ciphertext")
+	if len(geheimtext) == 0 {
+		t.Fatal("VerschluesseleMit() lieferte nichts")
 	}
 
-	// Test DecryptMit
-	decrypted, err := DecryptMit(key, ciphertext)
+	entschluesselt, err := EntschluesseleMit(schluessel, geheimtext)
 	if err != nil {
-		t.Fatalf("DecryptMit() error = %v", err)
+		t.Fatalf("EntschluesseleMit() Fehler = %v", err)
 	}
 
-	if !bytes.Equal(plaintext, decrypted) {
-		t.Errorf("DecryptMit() = %v, want %v", string(decrypted), string(plaintext))
+	if !bytes.Equal(klartext, entschluesselt) {
+		t.Errorf("EntschluesseleMit() = %v, want %v", string(entschluesselt), string(klartext))
 	}
 }
 
-func TestEncryptMitDecryptMitErrors(t *testing.T) {
-	validKey := []byte("12345678901234567890123456789012")
-	invalidKey := []byte("short")
-	plaintext := []byte("secret")
+func TestVerschluesseleMitUndEntschluesseleMit_Fehler(t *testing.T) {
+	gueltig := []byte("12345678901234567890123456789012")
+	ungueltig := []byte("short")
+	klartext := []byte("secret")
 
-	t.Run("Invalid Key EncryptMit", func(t *testing.T) {
-		_, err := EncryptMit(invalidKey, plaintext)
+	t.Run("VerschluesseleMit mit ungültigem Schlüssel", func(t *testing.T) {
+		_, err := VerschluesseleMit(ungueltig, klartext)
 		if err == nil {
-			t.Error("EncryptMit() expected error with invalid key")
+			t.Error("VerschluesseleMit() mit ungültigem Schlüssel: erwartet einen Fehler")
 		}
 	})
 
-	t.Run("Invalid Key DecryptMit", func(t *testing.T) {
-		_, err := DecryptMit(invalidKey, []byte("some-ciphertext-long-enough-for-nonce"))
+	t.Run("EntschluesseleMit mit ungültigem Schlüssel", func(t *testing.T) {
+		_, err := EntschluesseleMit(ungueltig, []byte("some-ciphertext-long-enough-for-nonce"))
 		if err == nil {
-			t.Error("DecryptMit() expected error with invalid key")
+			t.Error("EntschluesseleMit() mit ungültigem Schlüssel: erwartet einen Fehler")
 		}
 	})
 
-	t.Run("Short ciphertext DecryptMit", func(t *testing.T) {
-		shortCiphertext := []byte("short")
-		_, err := DecryptMit(validKey, shortCiphertext)
+	t.Run("EntschluesseleMit zu kurz", func(t *testing.T) {
+		zuKurz := []byte("short")
+		_, err := EntschluesseleMit(gueltig, zuKurz)
 		if err == nil || !strings.Contains(err.Error(), "ciphertext ist zu kurz") {
-			t.Errorf("DecryptMit(short) error = %v, want 'ciphertext ist zu kurz'", err)
+			t.Errorf("EntschluesseleMit(zu kurz) Fehler = %v, want 'ciphertext ist zu kurz'", err)
 		}
 	})
 
-	t.Run("Tampered data DecryptMit", func(t *testing.T) {
-		ciphertext, err := EncryptMit(validKey, plaintext)
+	t.Run("EntschluesseleMit verändert", func(t *testing.T) {
+		geheimtext, err := VerschluesseleMit(gueltig, klartext)
 		if err != nil {
-			t.Fatalf("EncryptMit() error = %v", err)
+			t.Fatalf("VerschluesseleMit() Fehler = %v", err)
 		}
 
-		// Tamper with the ciphertext (flip a bit in the actual ciphertext, after the nonce)
-		// Nonce size is 12 for GCM
-		ciphertext[15] ^= 1
+		// Ein Bit im Ciphertext kippen. Die Nonce von GCM belegt die ersten 12 Byte; Stelle
+		// 15 liegt dahinter.
+		geheimtext[15] ^= 1
 
-		_, err = DecryptMit(validKey, ciphertext)
+		_, err = EntschluesseleMit(gueltig, geheimtext)
 		if err == nil || !strings.Contains(err.Error(), "entschlüsselung fehlgeschlagen") {
-			t.Errorf("DecryptMit(tampered) error = %v, want 'entschlüsselung fehlgeschlagen'", err)
+			t.Errorf("EntschluesseleMit(verändert) Fehler = %v, want 'entschlüsselung fehlgeschlagen'", err)
 		}
 	})
 }

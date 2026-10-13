@@ -57,7 +57,7 @@ func (r *MailSettingsRepository) GetConfig(ctx context.Context) (*MailSettings, 
 func (r *MailSettingsRepository) UpdateConfig(ctx context.Context, host, port, user, smtpPassword, sender string) error {
 	if smtpPassword != "" {
 		// Passwort verschlüsseln
-		encrypted, err := crypto.Encrypt([]byte(smtpPassword))
+		encrypted, err := crypto.Verschluessele([]byte(smtpPassword))
 		if err != nil {
 			return fmt.Errorf("fehler beim Verschlüsseln des Passworts: %w", err)
 		}

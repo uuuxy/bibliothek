@@ -7,102 +7,99 @@ import (
 	"testing"
 )
 
-// gzipBytes komprimiert wie die Backup-Pipeline in RunDatabaseBackup.
-func gzipBytes(t *testing.T, data []byte) []byte {
+// packe packt mit gzip wie der Backup-Lauf in jobs.
+func packe(t *testing.T, daten []byte) []byte {
 	t.Helper()
-	var buf bytes.Buffer
-	gz := gzip.NewWriter(&buf)
-	if _, err := gz.Write(data); err != nil {
-		t.Fatalf("gzip write: %v", err)
+	var puffer bytes.Buffer
+	gz := gzip.NewWriter(&puffer)
+	if _, err := gz.Write(daten); err != nil {
+		t.Fatalf("gzip schreiben: %v", err)
 	}
 	if err := gz.Close(); err != nil {
-		t.Fatalf("gzip close: %v", err)
+		t.Fatalf("gzip schließen: %v", err)
 	}
-	return buf.Bytes()
+	return puffer.Bytes()
 }
 
-func gunzipBytes(t *testing.T, data []byte) []byte {
+func entpacke(t *testing.T, daten []byte) []byte {
 	t.Helper()
-	gz, err := gzip.NewReader(bytes.NewReader(data))
+	gz, err := gzip.NewReader(bytes.NewReader(daten))
 	if err != nil {
-		t.Fatalf("gzip reader: %v", err)
+		t.Fatalf("gzip öffnen: %v", err)
 	}
-	out, err := io.ReadAll(gz)
+	entpackt, err := io.ReadAll(gz)
 	if err != nil {
-		t.Fatalf("gunzip read: %v", err)
+		t.Fatalf("gzip lesen: %v", err)
 	}
-	return out
+	return entpackt
 }
 
-// TestBackupRestoreRoundTrip beweist, dass Verschlüsselung (jobs.RunDatabaseBackup und
-// cmd/encrypt-backup, jetzt scrypt) und Entschlüsselung (cmd/restore-backup) ein
-// zusammenpassendes Paar sind. Schlägt
-// er fehl, sind die automatischen .sql.gz.enc-Backups NICHT wiederherstellbar.
-func TestBackupRestoreRoundTrip(t *testing.T) {
+// Verschlüsseln (der Backup-Lauf in jobs und cmd/encrypt-backup) und Entschlüsseln
+// (cmd/restore-backup) passen zusammen. Schlägt der Test fehl, lassen sich die automatischen
+// Backups (.sql.gz.enc) nicht wiederherstellen.
+func TestVerschluesseleUndEntschluessele(t *testing.T) {
 	passphrase := "produktions-passphrase-mind-32-zeichen-xx"
-	originalSQL := []byte("-- pg_dump\nCREATE TABLE schueler (id uuid PRIMARY KEY);\nINSERT INTO schueler VALUES ('00000000-0000-0000-0000-000000000001');\n")
+	sql := []byte("-- pg_dump\nCREATE TABLE schueler (id uuid PRIMARY KEY);\nINSERT INTO schueler VALUES ('00000000-0000-0000-0000-000000000001');\n")
 
-	compressed := gzipBytes(t, originalSQL)
-	encrypted, err := VerschluesseleBackup(passphrase, compressed)
+	gepackt := packe(t, sql)
+	verschluesselt, err := Verschluessele(passphrase, gepackt)
 	if err != nil {
-		t.Fatalf("VerschluesseleBackup: %v", err)
+		t.Fatalf("Verschluessele: %v", err)
 	}
 
-	// Das neue Format MUSS das Magic tragen — sonst würde es als Altformat gelesen.
-	if !IstScryptFormat(encrypted) {
-		t.Fatal("neues Backup trägt nicht das scrypt-Magic")
+	// Ohne die Kennung läse Entschluessele die Datei nicht.
+	if !IstScryptFormat(verschluesselt) {
+		t.Fatal("das Backup trägt die Kennung des Formats nicht")
 	}
 
-	decrypted, err := EntschluesseleBackup(passphrase, encrypted)
+	entschluesselt, err := Entschluessele(passphrase, verschluesselt)
 	if err != nil {
-		t.Fatalf("DecryptBackup: %v", err)
+		t.Fatalf("Entschluessele: %v", err)
 	}
-	if !bytes.Equal(gunzipBytes(t, decrypted), originalSQL) {
+	if !bytes.Equal(entpacke(t, entschluesselt), sql) {
 		t.Errorf("wiederhergestelltes SQL weicht ab")
 	}
 }
 
-// TestBackupRestore_AltformatWirdAbgelehnt hält fest, dass der schwache SHA-256-Weg
-// GANZ entfernt ist: Eine Datei ohne die scrypt-Format-Kennung (so begannen die alten
-// Backups: direkt mit [Nonce][Ciphertext]) wird abgelehnt, nicht mehr schwach
-// entschlüsselt. Im Pilotbetrieb gibt es keine schützenswerten Altbackups; ein
-// mitgeschleppter SHA-256-Pfad wäre nur ein dauerhafter Schwachpunkt.
-func TestBackupRestore_AltformatWirdAbgelehnt(t *testing.T) {
-	// Beliebige Bytes ohne "BKDF"-Magic stehen für ein Backup im alten Format.
-	altbackup := bytes.Repeat([]byte{0x01}, 64)
-	if IstScryptFormat(altbackup) {
-		t.Fatal("Testdaten dürfen das scrypt-Magic nicht tragen")
+// Eine Datei ohne die Kennung wird abgelehnt und nicht über die frühere Ableitung mit SHA-256
+// gelesen; so begannen die früheren Backups, gleich mit Nonce und Ciphertext.
+func TestEntschluessele_LehntDateiOhneKennungAb(t *testing.T) {
+	// Beliebige Bytes ohne „BKDF" stehen für ein Backup im früheren Format.
+	ohneKennung := bytes.Repeat([]byte{0x01}, 64)
+	if IstScryptFormat(ohneKennung) {
+		t.Fatal("Testdaten dürfen die Kennung nicht tragen")
 	}
-	if _, err := EntschluesseleBackup("egal-passphrase-mind-32-zeichen-xxxxxxxx", altbackup); err == nil {
-		t.Fatal("ein Backup ohne scrypt-Format-Kennung muss abgelehnt werden (kein schwacher SHA-256-Fallback)")
+	if _, err := Entschluessele("egal-passphrase-mind-32-zeichen-xxxxxxxx", ohneKennung); err == nil {
+		t.Fatal("ein Backup ohne die Kennung des Formats muss abgelehnt werden (keine Ableitung mit SHA-256)")
 	}
 }
 
-func TestBackupRestore_WrongKeyFails(t *testing.T) {
-	encrypted, err := VerschluesseleBackup("richtige-passphrase-mind-32-zeichen-xx", gzipBytes(t, []byte("geheime daten")))
+func TestEntschluessele_FalschePassphraseScheitert(t *testing.T) {
+	verschluesselt, err := Verschluessele("richtige-passphrase-mind-32-zeichen-xx", packe(t, []byte("geheime daten")))
 	if err != nil {
-		t.Fatalf("VerschluesseleBackup: %v", err)
+		t.Fatalf("Verschluessele: %v", err)
 	}
-	// Falscher Schlüssel muss an der GCM-Authentifizierung scheitern (kein stiller Müll).
-	if _, err := EntschluesseleBackup("FALSCHE-passphrase-mind-32-zeichen-xxxx", encrypted); err == nil {
-		t.Error("Entschlüsselung mit falschem Schlüssel soll fehlschlagen, war aber erfolgreich")
-	}
-}
-
-func TestBackupRestore_TruncatedCiphertextFails(t *testing.T) {
-	if _, err := EntschluesseleBackup("egal-passphrase-mind-32-zeichen-xxxxxxxx", []byte{0x01, 0x02}); err == nil {
-		t.Error("zu kurzer Ciphertext (< Nonce) soll Fehler liefern")
+	// Eine falsche Passphrase scheitert an der Authentifizierung von GCM und liefert keinen
+	// Datenmüll.
+	if _, err := Entschluessele("FALSCHE-passphrase-mind-32-zeichen-xxxx", verschluesselt); err == nil {
+		t.Error("Entschlüsselung mit falscher Passphrase soll fehlschlagen, war aber erfolgreich")
 	}
 }
 
-func TestBackupRestore_TamperedCiphertextFails(t *testing.T) {
-	encrypted, err := VerschluesseleBackup("passphrase-mind-32-zeichen-xxxxxxxxxxxx", gzipBytes(t, []byte("integritaet")))
+func TestEntschluessele_ZuKurzeDateiScheitert(t *testing.T) {
+	if _, err := Entschluessele("egal-passphrase-mind-32-zeichen-xxxxxxxx", []byte{0x01, 0x02}); err == nil {
+		t.Error("eine Datei, die kürzer ist als die Nonce, soll einen Fehler liefern")
+	}
+}
+
+func TestEntschluessele_VeraenderteDateiScheitert(t *testing.T) {
+	verschluesselt, err := Verschluessele("passphrase-mind-32-zeichen-xxxxxxxxxxxx", packe(t, []byte("integritaet")))
 	if err != nil {
-		t.Fatalf("VerschluesseleBackup: %v", err)
+		t.Fatalf("Verschluessele: %v", err)
 	}
-	// Letztes Byte (im GCM-Tag-Bereich) kippen → Manipulation muss erkannt werden.
-	encrypted[len(encrypted)-1] ^= 0xFF
-	if _, err := EntschluesseleBackup("passphrase-mind-32-zeichen-xxxxxxxxxxxx", encrypted); err == nil {
-		t.Error("manipulierter Ciphertext soll an der GCM-Integritätsprüfung scheitern")
+	// Das letzte Byte liegt im Tag von GCM; ein gekipptes Bit dort muss auffallen.
+	verschluesselt[len(verschluesselt)-1] ^= 0xFF
+	if _, err := Entschluessele("passphrase-mind-32-zeichen-xxxxxxxxxxxx", verschluesselt); err == nil {
+		t.Error("eine veränderte Datei soll an der Prüfung der Integrität von GCM scheitern")
 	}
 }

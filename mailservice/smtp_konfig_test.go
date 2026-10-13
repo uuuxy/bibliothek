@@ -39,7 +39,7 @@ func TestLadeSMTPKonfigGespeichertesGewinnt(t *testing.T) {
 	t.Setenv("SMTP_PORT", "25")
 	t.Setenv("SMTP_FROM", "alt@example.de")
 
-	verschluesselt, err := crypto.Encrypt([]byte("geheim123"))
+	verschluesselt, err := crypto.Verschluessele([]byte("geheim123"))
 	if err != nil {
 		t.Fatalf("Verschlüsseln: %v", err)
 	}

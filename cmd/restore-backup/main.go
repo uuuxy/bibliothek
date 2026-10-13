@@ -51,7 +51,7 @@ func run() error {
 	}
 
 	// 1. AES-256-GCM entschlüsseln (identische Schlüsselableitung wie beim Backup).
-	compressed, err := backupkrypto.EntschluesseleBackup(encKey, ciphertext)
+	compressed, err := backupkrypto.Entschluessele(encKey, ciphertext)
 	if err != nil {
 		return fmt.Errorf("entschlüsselung fehlgeschlagen (falscher Schlüssel oder beschädigte/manipulierte Datei?): %w", err)
 	}

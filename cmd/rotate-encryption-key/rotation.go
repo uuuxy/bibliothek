@@ -88,13 +88,13 @@ func rotiereTabelle(ctx context.Context, tx pgx.Tx, t umschluesselung, alt, neu 
 	aktualisieren := fmt.Sprintf(`UPDATE %s SET %s = $1 WHERE %s = $2`, t.Tabelle, t.DatenSpalte, t.IDSpalte)
 
 	for _, d := range gelesen {
-		klartext, err := crypto.DecryptMit(alt, d.wert)
+		klartext, err := crypto.EntschluesseleMit(alt, d.wert)
 		if err != nil {
 			return 0, fmt.Errorf("datensatz %s ließ sich mit dem alten Schlüssel nicht entschlüsseln "+
 				"(steht in %s wirklich der Schlüssel, mit dem diese Daten geschrieben wurden?): %w",
 				d.id, crypto.SchluesselVariable, err)
 		}
-		neuerWert, err := crypto.EncryptMit(neu, klartext)
+		neuerWert, err := crypto.VerschluesseleMit(neu, klartext)
 		if err != nil {
 			return 0, fmt.Errorf("datensatz %s ließ sich nicht neu verschlüsseln: %w", d.id, err)
 		}

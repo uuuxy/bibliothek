@@ -60,7 +60,7 @@ func TestInitMailKonfigLaesstGespeicherteKonfigurationInRuhe(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", testSchluessel)
 	t.Setenv("SMTP_HOST", "smtp.aus-der-umgebung.de")
 
-	verschluesselt, err := crypto.Encrypt([]byte("egal"))
+	verschluesselt, err := crypto.Verschluessele([]byte("egal"))
 	if err != nil {
 		t.Fatalf("Verschlüsseln: %v", err)
 	}

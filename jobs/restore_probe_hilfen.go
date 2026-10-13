@@ -41,7 +41,7 @@ func juengsteBackupDatei(dir string) (string, error) {
 
 // entschluesseleBackup entschlüsselt (AES-256-GCM) und entpackt (gzip) ein Backup.
 func entschluesseleBackup(encKey string, roh []byte) ([]byte, error) {
-	klar, err := backupkrypto.EntschluesseleBackup(encKey, roh)
+	klar, err := backupkrypto.Entschluessele(encKey, roh)
 	if err != nil {
 		return nil, fmt.Errorf("entschlüsselung fehlgeschlagen (falscher Schlüssel oder beschädigte Datei): %w", err)
 	}

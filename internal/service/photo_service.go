@@ -58,7 +58,7 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 	}
 
 	// 4. Verschlüsseln der WebP-Bytes
-	encryptedData, err := crypto.Encrypt(webpBytes)
+	encryptedData, err := crypto.Verschluessele(webpBytes)
 	if err != nil {
 		return "", fmt.Errorf("fehler bei der fotostrukturierung: %w", err)
 	}
