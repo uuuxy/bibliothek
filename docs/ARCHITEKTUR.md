@@ -2350,8 +2350,12 @@ nennen, wem sie gehören („Fortsetzung: …"), beim Mahnbrief über einen Seit
 auch der Text der Vorlage auf die nächste Seite laufen kann. Den Text einer Zelle kürzen sie,
 das Bestellanschreiben, Zugangs- und Abgangsbuch, der Bestellbericht und der Schulbuch-Export auf
 ihre gedruckte Breite (`pdfzeichen.KuerzeAufZelle`), nicht auf eine Zahl von Zeichen: gofpdf
-druckt Überlanges über die Nachbarzelle. Die Etiketten kürzen weiter nach Zeichen
-([OFFEN.md](OFFEN.md) 5.63). Ein Block, der
+druckt Überlanges über die Nachbarzelle. Buch- und Lernmittel-Etikett kürzen jede Zeile auf
+ihre Obergrenze in Zeichen und auf die Breite ihrer Zelle (`kuerzeAufEtikett` in
+`pdf/etikett_buch.go`): Die Zeichenzahl hält die Zeile auf breiten Bögen, wie sie abgenommen
+ist, die Breite hält sie auf dem Bogen mit 48,3 mm im Etikett. Gemessen wird gegen die ganze
+Zelle, ohne den Rand, den gofpdf in einer Zelle lässt; mit ihm stünde der Schulname auf diesem
+Bogen gekürzt da. Ein Block, der
 zusammengehört (Gruß und Unterschrift), prüft seinen Platz als Ganzes.
 
 **Ausweise: zwei Renderer, einer fürs Papier.** Der Ausweis-Designer zeichnet die Karte

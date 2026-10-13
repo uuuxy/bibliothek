@@ -35,6 +35,8 @@ internal/pdftest/pdftest.go: unreachable func: texteInReihenfolge
 internal/pdftest/seiten.go: unreachable func: Seiten
 # Dazu die Prüfung, ob ein gedruckter Text in seine Zelle passt (Tests in pdf/, api/ und inventur/).
 internal/pdftest/spalte.go: unreachable func: InSpalte
+internal/pdftest/spalte.go: unreachable func: InSpalteFett
+internal/pdftest/spalte.go: unreachable func: inSpalte
 # Dazu das PDF als durchsuchbarer Text und der Anfang einer Antwort für eine Fehlermeldung
 # (vorher Helfer in Testdateien von api/).
 internal/pdftest/suchtext.go: unreachable func: Suchtext

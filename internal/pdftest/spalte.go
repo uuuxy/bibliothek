@@ -15,8 +15,20 @@ import (
 // seiner Zelle (Millimeter, in Arial der genannten Größe).
 func InSpalte(t *testing.T, gedruckt, quelle string, groesse, platz float64) {
 	t.Helper()
+	inSpalte(t, gedruckt, quelle, "", groesse, platz)
+}
+
+// InSpalteFett prüft dasselbe für einen Text in fetter Schrift; fett ist jeder Buchstabe
+// breiter, und eine Messung in magerer Schrift ließe einen zu breiten Text durch.
+func InSpalteFett(t *testing.T, gedruckt, quelle string, groesse, platz float64) {
+	t.Helper()
+	inSpalte(t, gedruckt, quelle, "B", groesse, platz)
+}
+
+func inSpalte(t *testing.T, gedruckt, quelle, schnitt string, groesse, platz float64) {
+	t.Helper()
 	messen := gofpdf.New("P", "mm", "A4", "")
-	messen.SetFont("Arial", "", groesse)
+	messen.SetFont("Arial", schnitt, groesse)
 	tr := pdfzeichen.Uebersetzer(messen.UnicodeTranslatorFromDescriptor(""))
 	if breite := messen.GetStringWidth(tr(gedruckt)); breite > platz {
 		t.Errorf("%q ist gedruckt %.1f mm breit, die Zelle lässt %.1f mm", gedruckt, breite, platz)

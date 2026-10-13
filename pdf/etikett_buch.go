@@ -30,15 +30,24 @@ type BuchEtikett struct {
 	Eigentumsvermerk string
 }
 
+// kuerzeAufEtikett kürzt den Text einer Zeile des Etiketts für die gerade gesetzte Schrift:
+// auf höchstens zeichen Zeichen und auf die Breite der Zelle. Die Zeichenzahl begrenzt die
+// Zeile auf breiten Bögen, die Breite hält sie auf schmalen im Etikett; gofpdf druckt
+// Überlanges über den Rand der Zelle, am Buchetikett also auf das Nachbaretikett.
+func kuerzeAufEtikett(pdf *gofpdf.Fpdf, tr func(string) string, text string, zeichen int, breite float64) string {
+	return pdfzeichen.KuerzeAufBreite(pdf, tr, pdfzeichen.KuerzeAufZeichen(text, zeichen), breite)
+}
+
 // zeichneQRLabel rendert ein Etikett mit QR-Code (Titel, Autor, QR, Barcode-Text).
-func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BuchEtikett, titel, autor string, pos labelPos) {
+func zeichneQRLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BuchEtikett, pos labelPos) {
+	breite := format.LabelWidth - 4
 	pdf.SetFont("Arial", "B", 8)
 	pdf.SetXY(pos.X+2, pos.Y+3)
-	pdf.Cell(format.LabelWidth-4, 4, tr(titel))
+	pdf.Cell(breite, 4, tr(kuerzeAufEtikett(pdf, tr, item.Titel, 40, breite)))
 
 	pdf.SetFont("Arial", "", 7)
 	pdf.SetXY(pos.X+2, pos.Y+7)
-	pdf.Cell(format.LabelWidth-4, 4, tr(autor))
+	pdf.Cell(breite, 4, tr(kuerzeAufEtikett(pdf, tr, item.Autor, 30, breite)))
 
 	// Generate dynamic QR code PNG
 	barcodeImg, err := strichcode.PNG(item.BarcodeID, true, 200, 200)
@@ -104,24 +113,24 @@ func zweiteZeile(jahr, signatur string) string {
 // Auf dem kleinen Format (21,2 mm) ist für sechs Zeilen kein Platz. Dort entfallen
 // Anschaffungsjahr/Signatur und Eigentumsvermerk — lieber weniger Angaben als
 // übereinander gedruckte.
-func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BuchEtikett, titel string, pos labelPos) {
+func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelFormat, item BuchEtikett, pos labelPos) {
 	grossesEtikett := format.LabelHeight >= 30
 
 	y := pos.Y + 2.5
 	pdf.SetFont("Arial", "B", 8)
 	pdf.SetXY(pos.X, y)
-	pdf.CellFormat(format.LabelWidth, 3.5, tr(pdfzeichen.KuerzeAufZeichen(item.Schulname, 42)), "", 0, "C", false, 0, "")
+	pdf.CellFormat(format.LabelWidth, 3.5, tr(kuerzeAufEtikett(pdf, tr, item.Schulname, 42, format.LabelWidth)), "", 0, "C", false, 0, "")
 
 	y += 3.5
 	pdf.SetXY(pos.X, y)
-	pdf.CellFormat(format.LabelWidth, 3.5, tr(titel), "", 0, "C", false, 0, "")
+	pdf.CellFormat(format.LabelWidth, 3.5, tr(kuerzeAufEtikett(pdf, tr, item.Titel, 40, format.LabelWidth)), "", 0, "C", false, 0, "")
 
 	zeile2 := zweiteZeile(item.AnschaffungsJahr, item.Signatur)
 	if grossesEtikett && zeile2 != "" {
 		y += 3.5
 		pdf.SetFont("Arial", "", 7)
 		pdf.SetXY(pos.X, y)
-		pdf.CellFormat(format.LabelWidth, 3, tr(pdfzeichen.KuerzeAufZeichen(zeile2, 45)), "", 0, "C", false, 0, "")
+		pdf.CellFormat(format.LabelWidth, 3, tr(kuerzeAufEtikett(pdf, tr, zeile2, 45, format.LabelWidth)), "", 0, "C", false, 0, "")
 		y += 3
 	} else {
 		y += 3.5
@@ -160,7 +169,7 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 		y += 4.5
 		pdf.SetFont("Arial", "", 7)
 		pdf.SetXY(pos.X, y)
-		pdf.CellFormat(format.LabelWidth, 3, tr(pdfzeichen.KuerzeAufZeichen(vermerk, 45)), "", 0, "C", false, 0, "")
+		pdf.CellFormat(format.LabelWidth, 3, tr(kuerzeAufEtikett(pdf, tr, vermerk, 45, format.LabelWidth)), "", 0, "C", false, 0, "")
 	}
 }
 
@@ -180,15 +189,10 @@ func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []Bu
 	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	zeichneRaster(pdf, format, startPosition, len(items), func(i int, pos labelPos) {
-		item := items[i]
-		// Titel und Autor auf die Etikettenbreite bringen (zeichen-, nicht byteweise).
-		titel := pdfzeichen.KuerzeAufZeichen(item.Titel, 40)
-		autor := pdfzeichen.KuerzeAufZeichen(item.Autor, 30)
-
 		if isQR {
-			zeichneQRLabel(pdf, tr, format, item, titel, autor, pos)
+			zeichneQRLabel(pdf, tr, format, items[i], pos)
 		} else {
-			zeichneBarcodeLabel(pdf, tr, format, item, titel, pos)
+			zeichneBarcodeLabel(pdf, tr, format, items[i], pos)
 		}
 	})
 
